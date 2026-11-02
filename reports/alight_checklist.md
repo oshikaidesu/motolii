@@ -690,3 +690,4 @@ AbsentMotion（AM の写し）の欄の要素を機械で書き出し（panels/*
 - [ ] `.wgsl` に `#generator` の札が無い（11/2）：`doc_wgsl_tags`（`doc_recipes.h:74`）が札を付けない。自分で絵を作る `tt_`、`nf_`、`tf_` の 55 本が札で絞れない
 - [ ] ASCII の文字セットの残り（11/2）：Blocks、Shades、Hatching、Katakana、Custom。Geist Mono に字が無く、作者の処理でも Light に戻るか入れた字次第。字のあるフォントを決めれば文字盤の絵だけで入る
 - [ ] 3 つ以上から選ぶ欄が数字のつまみ（11/2）：`--select@` の言葉が `.wgsl` に届かない。Shader Lab の Color Mode などが言葉で選べない
+- [ ] 主なテストの束が 28 本 7 分 9 秒に育った（11/2）：`skin/book/dart_test.yaml` の「1 分以内」は 10/29 の 10 本 49 秒の時の話。1 本 2〜34 秒。各部の代表を残して 1 分に戻す。全部は CI が流す
