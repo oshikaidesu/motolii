@@ -2,17 +2,11 @@
 
 [![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![ledger](https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml)
 
-**ネットで見つけたかっこいい表現を、自分の動画にすぐ使う。** 新しい表現のために、開発者の対応を待たない。
+**After Effects を開いて、閉じた人へ。**
 
-Motolii は MV（絵が主役のモーショングラフィックス）を作る、macOS のアプリです。ネットで配られているシェーダーの効果（ISF・WGSL）や AviUtl2 のスクリプトを、**ファイルを置くだけで**自分の動画に掛けられます。2D と 3D を一つの画面の中で扱います。
-
-- **いまの段階**：作っている途中（作者 1 人、このリポジトリは 2026-10-12 から）。配れるアプリはまだ無く、試すにはソースから組みます。
-- **いま試すと良い人**：Mac（Apple Silicon）があり、ターミナルでコマンドを貼って組める人。シェーダーの効果や AviUtl2 のスクリプトを動画に使ってみたい人。
-- **まだ待つと良い人**：普段の制作にすぐ使いたい人、Windows の人、アプリを入れるだけで使いたい人。
+好きな表現を見つけて、組み合わせて、一本の映像にする。MV（絵が主役のモーショングラフィックス）のための、macOS の映像制作ソフトです。
 
 [English](README.en.md) ・ [質問・相談（Discussions）](https://github.com/oshikaidesu/motolii/discussions) ・ [不具合（Issues）](https://github.com/oshikaidesu/motolii/issues)　どちらも日本語・英語のどちらでも。
-
-**画面の言葉**：Stage（場面＝描かれる絵）、Layer（レイヤー）、Timeline、Inspector（選んだレイヤーの値）、Create・Effects（レシピや効果の一覧＝棚）、Render（書き出し）。プロジェクトファイルは `.motolii`。コードと台帳では、画面を「窓」、エンジンを「中身」、レイヤーを「物」、プロジェクトファイルを「書類」と呼んでいる。
 
 | Motolii で作った 8 秒（文字・3D・効果） | アプリの画面（その 8 秒を開いた所） |
 |---|---|
@@ -20,21 +14,53 @@ Motolii は MV（絵が主役のモーショングラフィックス）を作る
 
 *左の 8 秒は、レシピ（線の模様）・3D の輪・文字・光（Glow）・RGB のずれを置いて書き出した物。組み立てた後に `docs/examples/mv.sh` の 1 行で同じ物が `~/Movies/Motolii/mv.mp4` にできます。*
 
+## 見て選ぶ
+
+効果やアニメーションは、動くタイルを見て探せます。名前を知らなくても、仕上がりを見て選べます。
+
+## 直接動かす
+
+触り方は Alight Motion が手本です。文字や図形を置いて、Animate を入れて動かせばキーが打たれ、イーズは区間ごとに選べます。2D と 3D はモードを切り替えず、文字も写真も動画も 3D モデルも同じ場面に置けます。
+
+## ネットの表現を、そのまま足す
+
+p5.js のスケッチも Shadertoy のシェーダーも、貼るだけでレイヤーになります。ISF、WGSL、AviUtl2 のスクリプトは、フォルダに置けば棚に出ます。本体の更新も再起動も要りません。貼ったあともキーを打てて、p5 は時間の速さまで編集できます。
+
 ![配られている ISF の効果 8 本を写真と文字に掛けた所](docs/media/effects.jpg)
 
 *配られている ISF の効果 8 本（CMYK Halftone・Bad TV・Duotone・Edges・Dither-Bayer・Kaleidoscope Tile・Glow-Fast・Pixellate）を、写真（パブリックドメイン）と文字に掛けた所。どれも作者のファイルのまま。*
+
+## 映像を完成させるまで
+
+音楽や動画を並べ、動きを調整し、効果を重ねて、MP4 に書き出します。Lottie の読み込み、MIDI の音符、物理演算も使えます。
+
+## なぜ作ったか
+
+Alight Motion の次を探して After Effects を開き、閉じた。だから作った。
+
+なぜ映像表現は、制作ソフトを越えて持ち運べないのか。
+
+## 試す前に
+
+- **いまの段階**：作っている途中（作者 1 人、このリポジトリは 2026-10-12 から）。配れるアプリはまだ無く、試すにはソースから組みます。
+- **いま試すと良い人**：Mac（Apple Silicon）があり、ターミナルでコマンドを貼って組める人。p5.js、Shadertoy、シェーダーの効果、AviUtl2 のスクリプトを動画に使ってみたい人。
+- **まだ待つと良い人**：普段の制作にすぐ使いたい人、Windows の人、アプリを入れるだけで使いたい人。
+
+**画面の言葉**：Stage（場面＝描かれる絵）、Layer（レイヤー）、Timeline、Inspector（選んだレイヤーの値）、Create・Effects（レシピや効果の一覧＝棚）、Render（書き出し）。プロジェクトファイルは `.motolii`。コードと台帳では、画面を「窓」、エンジンを「中身」、レイヤーを「物」、プロジェクトファイルを「書類」と呼んでいる。
 
 ## 何ができるか（いま）
 
 | できる事 | 使う物 | いまの様子 |
 |---|---|---|
-| VJ の道具で配られている画面の効果を掛ける | ISF（`.fs`、[ISF-Files](https://github.com/Vidvox/ISF-Files) など） | 効果のフォルダに置けば棚に出る。ISF-Files の 327 本中 318 本が通る（`filament/check/all.sh` で数え直せる）。同梱 115 本 |
-| WebGPU のシェーダーの効果を掛ける | WGSL（`.wgsl`、three.js などの画面効果を移した物） | 場面全体に掛かる。同梱 18 本 |
+| VJ の道具で配られている画面の効果を掛ける | ISF（`.fs`、[ISF-Files](https://github.com/Vidvox/ISF-Files) など） | 効果のフォルダに置けば棚に出る。ISF-Files の 327 本中 318 本が通る（`filament/check/all.sh` で数え直せる）。同梱 419 本 |
+| WebGPU のシェーダーの効果を掛ける | WGSL（`.wgsl`、three.js などの画面効果を移した物） | 場面全体に掛かる。同梱 168 本 |
+| p5.js のスケッチを貼る | p5.js（コードをコピーして、画面で ⌘V） | レイヤーになり、Program の棚に残る。キーを打てて、Time Remap で時間の速さも曲げられる。OpenProcessing の 168 作で 97 作に絵が出た（11/1 の数え、版が混ざった値。見た目の一致は別で、最初の 42 作を目で見て約 16 作） |
+| Shadertoy のシェーダーを貼る | GLSL（コードをコピーして、画面で ⌘V） | 自分で描く作品はレイヤーになり、`iChannel` を読む作品は選んだレイヤーに掛かる。どちらも Program の棚に残る。API の写し 36,668 本から無作為に取った 300 本のうち、261 本で絵が出て動いた（2026-11 初めの数え）。黒 30 本のうち 26 本はマウスなどの入力待ち、入らないのが 9 本。Time Remap は p5.js だけで、シェーダーにはまだ無い |
 | AviUtl2（日本の動画編集ソフト）の効果を使う | `.anm2`・`.obj2`（中の HLSL を WGSL に変えて動かす） | 同梱 172 パッケージ。10/26 の数えで、当時同梱の 594 本中 372 本が最後まで動いた（[`reports/aviutl2/catalogue.md`](reports/aviutl2/catalogue.md)）。DLL の要る物はまだ |
 | 動画・写真・文字・図形・3D のモデル・点群を置く | 動画（GStreamer）、文字と図形（ThorVG）、glTF・`.ply`（Filament） | 動く |
 | After Effects のアニメーションを置く | Lottie の `.json`（ThorVG） | 動く |
 | 音符を場面の部品にする | MIDI（`.mid`）：ピアノロール、音に合わせて値にキーを打つ | 動く。MIDI の音はまだ鳴らない（動画の音は鳴る） |
-| 1 回で絵を作る・物に動きを付ける | 自分のスクリプト（`.js`） | 置けば棚に出る。同梱のレシピ 44 本 |
+| 1 回で絵を作る・物に動きを付ける | 自分のスクリプト（`.js`） | 置けば棚に出る。同梱のレシピ 101 本 |
 | ネットの TSL（three.js のシェーダー言語）の表現 | three.js 自身の変換器で WGSL に | WGSL まで。棚にはまだ無い |
 
 ほか：キーフレームとイーズ（anime.js のイーズもそのまま使える）、物理（Jolt）、ガラスの屈折、mp4 への書き出し。何が在ってどこまで確かめたかの全部は、作者の台帳 [`ASSETS.md`](ASSETS.md) にあります。
@@ -43,20 +69,19 @@ Motolii は MV（絵が主役のモーショングラフィックス）を作る
 
 **速さ**（M4、上の 8 秒の作例、1080×1920）：1 コマ約 4 ms で、毎秒 240 コマでも落ちない。8 秒の書き出しは約 5 秒（ffmpeg の符号化を含む）。測り直すには、作例を作ってから `printf 'time 240\n' | filament/edit.sh ~/Movies/Motolii/mv.motolii`。
 
-## 他の道具との違い
+## 他の道具との使い分け
 
 | | Motolii | After Effects | Cavalry | Alight Motion | Blender | VDMX・TouchDesigner | Motion Canvas・Rive |
 |---|---|---|---|---|---|---|---|
-| 新しい表現の足し方 | 配られているファイルを置く（ISF・WGSL・AviUtl2・JS） | プラグインを買う・作る | 自分で組む | アプリの更新を待つ | ノードや Python で組む | ISF（VDMX）や GLSL を組む | コードを書く・エディタで作る |
 | 主な使い道 | MV の映像を作って書き出す | 映像の合成 | 2D のモーショングラフィックス | スマホで映像 | 3D 全般 | ライブの映像（演奏） | コードで映像（Motion Canvas）、アプリの中のアニメーション（Rive） |
 | 2D と 3D | 一つの場面（Filament） | 2D と 3D のレイヤー | 2D が中心 | 2D が中心 | 3D が中心 | 両方（組み方による） | 2D |
 | 動く所 | macOS（Apple Silicon）だけ | Windows・macOS | Windows・macOS | iOS・Android | Windows・macOS・Linux | VDMX は macOS、TouchDesigner は Windows・macOS | ブラウザ・各種 |
-| 成熟度 | このリポジトリで 2 週間、作者 1 人、リリース無し | 長く使われている | 製品 | 製品 | 長く使われている | 製品 | 使われている |
+| 成熟度 | このリポジトリは 2026-10-12 から、作者 1 人、リリース無し | 長く使われている | 製品 | 製品 | 長く使われている | 製品 | 使われている |
 | 値段・ライセンス | 無料、Apache-2.0 か MIT | 有料 | 有料（無料版あり） | 有料（無料版あり） | 無料、GPL | 有料（無料版あり） | Motion Canvas は無料・MIT、Rive は無料版あり |
 
-**本当に違う所**：ISF をそのまま読む道具は他にもあります（VDMX・MadMapper）。Motolii の違いは、ISF・WGSL・AviUtl2 の効果、Filament の 3D、タイムライン、mp4 の書き出しを一つにした組み合わせです。
+**本当に違う所**：ISF をそのまま読む道具は他にもあります（VDMX・MadMapper）。Motolii の違いは、ISF・WGSL・AviUtl2 の効果、p5.js と Shadertoy の貼り付け、Filament の 3D、タイムライン、mp4 の書き出しを一つにした組み合わせです。
 
-**Motolii がまだ負けている所**：出来上がった道具としての安定と機能の数（どれも上の道具が上）、配れるアプリが無い事、Windows で動かない事、ライブで演奏する使い方は考えていない事。
+**まだ出来ない事**：出来上がった道具としての安定と機能の数は、これから。配れるアプリが無い事、Windows で動かない事、ライブで演奏する使い方は考えていない事。
 
 **操作の手本が Alight Motion な訳**：スマホで MV を作る人が慣れている触り方を、まず全部なぞってから、その先へ行くため。Alight Motion の効果と機能 201 のうち、Motolii に有るのは 101、一部が 39、無いのが 60（2026-10-28 の数え、[`reports/alight_map.md`](reports/alight_map.md)）。
 
@@ -183,6 +208,8 @@ Motolii の一番の使い方です。例として、[ISF-Files](https://github.
    ![写真に ASCII Art を掛けて書き出した所](docs/media/drop_ascii.jpg)
 
 この手順は試験としても走ります（`skin/book/integration_test/drop_effect_test.dart`：画面を開いたまま置く → 棚に出る → 見本の絵ができる → 掛ける → 書き出して、そのコマが正しく描かれているのを確かめた）。WGSL（`.wgsl`）・レシピ（`.js`、`recipes/` に）・イーズ（`.way`、`ways/` に）・AviUtl2 のスクリプト（作者のフォルダごと、`aviutl_scripts/` に）も同じ置き方です。保存したファイルの名前の終わりが `.fs` になっているか確かめてください（ブラウザが `.txt` を付けることがある）。
+
+p5.js と Shadertoy は、置かずに貼ります。作品のコードをコピーして、画面で ⌘V。コードは Program の棚に残ります。
 
 ### 次に：自分の素材で
 
