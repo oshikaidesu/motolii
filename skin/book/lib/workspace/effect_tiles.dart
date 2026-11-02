@@ -113,7 +113,7 @@ abstract final class EffectTiles {
   static String get own => Platform.environment['MOTOLII_OWN'] ?? '${Platform.environment['HOME']}/Library/Application Support/Motolii';
 
   /// The library's own folders beside the maker's (as the inside's doc_folders: the folder above its out/).
-  static List<String> get library => [for (final f in const ['effects', 'aviutl_scripts', 'recipes', 'animators']) '$motoliiDir/$f'];
+  static List<String> get library => [for (final f in const ['effects', 'aviutl_scripts', 'recipes', 'animators', 'relations']) '$motoliiDir/$f'];
 
   /// Watched until the subscription is cancelled; [changed] is told after the folders are read again and after tiles are drawn.
   static StreamSubscription<FileSystemEvent>? watch(Motolii m, void Function() changed, {void Function(String file)? program}) {

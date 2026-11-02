@@ -301,7 +301,7 @@ static DocScript* doc_script_of(Doc& d, const std::string& file, bool runs = tru
             const ScriptKnob& k = s.knobs[i];
             const bool open = (ext == ".wgsl" || ext == ".fs") && k.kind == "track" && k.step < 1.0;   // (a number of an effect, none that counts: an author's range is what its knob shows, not all it can do)
             // (a motion's knobs a camera's too: it takes AbsentMotion's motions, golf ㊴; its strength was refused on it)
-            s.values.push_back(DocValue{s.names[i].c_str(), absent ? "film picture text shape solid stage camera" : "film picture text shape solid stage", k.kind == "select" ? 0.0 : k.low, k.kind == "select" ? 0.0 : k.high, k.kind == "track", k.kind == "select" ? k.words.c_str() : nullptr, open});
+            s.values.push_back(DocValue{s.names[i].c_str(), absent ? "film picture text shape solid stage camera" : "film picture text shape solid stage behaviour", k.kind == "select" ? 0.0 : k.low, k.kind == "select" ? 0.0 : k.high, k.kind == "track", k.kind == "select" ? k.words.c_str() : nullptr, open});
             s.shown.push_back(DocShown{s.names[i].c_str(), k.kind == "check" ? "onoff" : k.kind == "picture" || k.kind == "sound" ? "thing" : "", "", k.label.c_str(), k.low, k.high, nullptr, open});
         }
         if (absent) {   // (read, not run: which of AbsentMotion's its head says)
@@ -410,6 +410,7 @@ static const DocCard doc_cards[] = {
     {"Follow", "strength leader lag leader_b hand", "file", "follow"},
     {"Push", "strength leader radius", "file", "push"},
     {"Group", "strength lag x y spread scatter rotate rotate_y size opacity", "file", "group"},   // (things in an order and nothing else: away by its own move, turn, size and opacity, each in turn)
+    {"Relation", "strength", "file", "relate"},   // (one written as a file: its own knobs come under it, as a recipe's)
     {"Note", "label note", nullptr, nullptr, true},   // (what a maker wrote of it: After Effects' layer comment)
     {"Trim Paths", "trim trim_begin trim_offset", "trim", "+"},
     {"Datamosh", "mosh_with mosh_at", "mosh", "+"},

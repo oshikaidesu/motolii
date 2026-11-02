@@ -172,6 +172,8 @@ void motolii_files_changed(void);
 /* The motions a thing may be given (Cavalry's Animators: "name\tpath\tlabel", one to a line, until the next call): a thing's
    script is the path of the one it has (a text given one moves letter by letter). */
 const char* motolii_animators(Motolii* m);
+/* The relations written as files (relations/*.js): "name\tfile", one to a line, as the animators. */
+const char* motolii_relations(Motolii* m);
 /* What the inside's hand has spent its time on since it was opened (a line of words, for measuring). */
 const char* motolii_spent(Motolii* m);
 /* Whether the inside is telling the stage a moment just now (the document held): a shell that reads each picture may

@@ -39,7 +39,7 @@ inline std::vector<std::string> script_files(const std::string& word) {
 }
 
 // A file of p5.js's own two, setup() and draw(), as sketches are written: not a recipe of ours, whose code is each().
-inline bool script_is_sketch(const std::string& src) { return src.find("function each") == std::string::npos && (src.find("function draw") != std::string::npos || src.find("function setup") != std::string::npos || src.find("createCanvas") != std::string::npos); }
+inline bool script_is_sketch(const std::string& src) { return src.find("function each") == std::string::npos && (src.find("function draw") != std::string::npos || src.find("function relate") != std::string::npos || src.find("function setup") != std::string::npos || src.find("createCanvas") != std::string::npos); }
 // The lines of a sketch that draw: a for makes hundreds from one line and a count may grow, the line stays. Each is told
 // to the run as it comes, __L (as Processing's Tweak Mode rewrites a sketch's source to reach its numbers,
 // java/src/processing/mode/java/tweak), and is a knob of the thing, how strong that line's shapes are, named line_ and its
@@ -73,6 +73,7 @@ public:
     int height();
     std::string said(const std::string& js);   // what the sketch says to that, as words
     std::vector<uint8_t> bytes(const std::string& js);   // what it leaves in __bytes on being told that
+    std::vector<double> numbers(const std::string& js);   // what it answers to that, a Float64Array (empty: it failed, and says so once)
     std::vector<double> paints(int frame, int had, int pic = -1);
     std::vector<int> lines() const;   // (a sketch's lines that draw, as sketch_marked says)   // what makes that frame on a canvas holding the frame `had` (p5_stand.h's __paints)
     // Each copy at a moment, the knobs as the document says them now (a select by the word it is).

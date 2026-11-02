@@ -19,7 +19,7 @@ static bool doc_knows(Doc& d, int thing, const char* name = nullptr, const doubl
         if (doc_knows(d, thing, base.c_str())) v = &looped;
         d.trouble.clear();
     }
-    if (!v && !strncmp(name, "js_", 3) && doc_among("film picture text shape solid stage camera", kind))   // (a knob of the thing's script; a camera's motion's, golf ㊴)
+    if (!v && !strncmp(name, "js_", 3) && doc_among("film picture text shape solid stage camera behaviour", kind))   // (a knob of the thing's script; a camera's motion's, golf ㊴)
         for (const DocScript* sc : doc_scripts_on(d, thing))
             for (const DocValue& one : sc->values)
                 if (!strcmp(one.name, name)) v = &one;
@@ -27,7 +27,7 @@ static bool doc_knows(Doc& d, int thing, const char* name = nullptr, const doubl
         std::string all;
         for (const DocValue& one : doc_values)
             if (doc_among(one.kinds, kind) && (!moves || one.moves)) all += std::string(all.empty() ? "" : ", ") + one.name;
-        if (doc_among("film picture text shape solid stage camera", kind))
+        if (doc_among("film picture text shape solid stage camera behaviour", kind))
             for (const DocScript* sc : doc_scripts_on(d, thing))
                 for (const DocValue& one : sc->values)
                     if (!moves || one.moves) all += std::string(all.empty() ? "" : ", ") + one.name;
@@ -95,7 +95,7 @@ static int doc_add(Doc& d, const char* kind, const char* file) {
     const bool sound = !strcmp(kind, "sound");
     if (sound) kind = "film";
     if (!doc_among(doc_kinds, kind) && strcmp(kind, "behaviour")) return d.trouble = std::string("a thing is one of: ") + doc_kinds + " behaviour", 0;
-    if (!strcmp(kind, "behaviour") && !doc_among("stagger oscillator noise random around row follow push group", file)) return d.trouble = "a behaviour is a stagger, an oscillator, a noise, a random, or a relation: around, row, follow, push", 0;
+    if (!strcmp(kind, "behaviour") && !doc_among("stagger oscillator noise random around row follow push group relate", file)) return d.trouble = "a behaviour is a stagger, an oscillator, a noise, a random, or a relation: around, row, follow, push", 0;
     if (!strcmp(kind, "light") && !doc_among("sun point spot", file)) return d.trouble = "a light is a sun, a point or a spot", 0;
     // (it comes on at the stage's present moment, the playhead: AbsentMotion's addAudio and addText, startTime frameStart(frame))
     if (!doc_change(d, sqlite3_mprintf("insert into thing default values; insert into fact(thing, name, at, value) values(last_insert_rowid(), 'kind', 0.0, %Q); insert into fact(thing, name, at, value) values(last_insert_rowid(), %Q, 0.0, %Q); insert into fact(thing, name, at, value) select id, 'start', 0.0, %!.17g from thing where %d order by id desc limit 1%s",
@@ -121,7 +121,7 @@ static int doc_duplicate(Doc& d, int thing) {
     return made;
 }
 static bool doc_release(Doc& d, int by, double now);
-static bool doc_free(Doc& d, int thing, int by, double now, bool stay);
+static bool doc_free(Doc& d, int thing, int by, double now, bool stay, const std::vector<std::pair<std::string, double>>* told = nullptr);
 static std::vector<int> doc_things(Doc& d);
 static bool doc_remove(Doc& d, int thing) {
     if (doc_knows(d, thing) && doc_number(d, thing, "lock", 0, 0) > 0.5) return d.trouble = "it is locked", false;
@@ -191,15 +191,19 @@ static const char* doc_lasting(const std::string& name) {   // (a name made at r
     static std::set<std::string> kept;
     return kept.insert(name).first->c_str();
 }
-static bool doc_free(Doc& d, int thing, int by, double now, bool stay) {
+static std::vector<std::pair<std::string, double>> doc_shown_now(Doc& d, int thing, double now) {   // (each connected value and where it shows now)
+    std::vector<std::pair<std::string, double>> names;
+    doc_rows(d, sqlite3_mprintf("select name from fact where thing = %d and name glob '*_by' and value <> 0", thing), [&](sqlite3_stmt* q) { names.push_back({(const char*)sqlite3_column_text(q, 0), 0.0}); });
+    for (auto& [n, shown] : names) shown = doc_literal(d, thing, doc_lasting(n.substr(0, n.size() - 3)), now, 0.0);
+    return names;
+}
+static bool doc_free(Doc& d, int thing, int by, double now, bool stay, const std::vector<std::pair<std::string, double>>* told) {
     const Doc::Relation rel = doc_relation_of(d, by);   // (a copy: what follows forgets it)
     const auto at = std::find(rel.members.begin(), rel.members.end(), thing);
     if (at == rel.members.end()) return d.trouble = "it is not in that relation", false;
     const size_t i = (size_t)(at - rel.members.begin());
     const int was = rel.under.empty() ? 0 : rel.under[i];
-    std::vector<std::pair<std::string, double>> names;   // (each connected value and where it shows now)
-    doc_rows(d, sqlite3_mprintf("select name from fact where thing = %d and name glob '*_by' and value <> 0", thing), [&](sqlite3_stmt* q) { names.push_back({(const char*)sqlite3_column_text(q, 0), 0.0}); });
-    for (auto& [n, shown] : names) shown = doc_literal(d, thing, doc_lasting(n.substr(0, n.size() - 3)), now, 0.0);
+    const std::vector<std::pair<std::string, double>> names = told ? *told : doc_shown_now(d, thing, now);
     const auto word = [&](const char* name, int r, const std::function<std::string(size_t, const std::string&)>& each) {
         std::string all;
         std::istringstream said(doc_word(d, r, name));
@@ -293,7 +297,7 @@ static bool doc_relate(Doc& d, int by, const char* ids, double now) {
     ok = ok && doc_say(d, by, "members", order.c_str()) && doc_say(d, by, "under", under.c_str()) && doc_say(d, by, "from", from.c_str());
     for (const int t : members) {
         ok = ok && doc_set(d, t, "x_by", by) && doc_set(d, t, "y_by", by) && (!doc_knows(d, t, "z") || doc_set(d, t, "z_by", by));   // (its depth too, where it has one: a ring tipped back, a leader in depth)
-        if (type == "around" || type == "row" || type == "group")   // (its turns, size and opacity too: the relation's own, given in turn)
+        if (type == "around" || type == "row" || type == "group" || type == "relate")   // (its turns, size and opacity too: the relation's own, given in turn)
             for (const char* n : {"rotate", "rotate_x", "rotate_y", "size", "opacity"}) ok = ok && (!doc_knows(d, t, n) || doc_set(d, t, (std::string(n) + "_by").c_str(), by));
     }
     return doc_acted(d) && ok;
@@ -355,9 +359,11 @@ static bool doc_remove(Doc& d, int thing);
 static bool doc_release(Doc& d, int by, double now) {
     if (doc_word(d, by, "kind") != "behaviour") return d.trouble = "that is no relation", false;
     const std::vector<int> all = doc_members_of(d, by);   // (a copy: freeing one forgets the list)
+    std::map<int, std::vector<std::pair<std::string, double>>> shown;   // (all read before any goes: a relation written as a file says each one's place from all the others)
+    for (const int t : all) if (t) shown[t] = doc_shown_now(d, t, now);
     doc_act(d);   // (one step: all of them freed and the relation gone, or none of it)
     bool ok = true;
-    for (const int t : all) if (ok && t) ok = doc_free(d, t, by, now, true);
+    for (const int t : all) if (ok && t) ok = doc_free(d, t, by, now, true, &shown[t]);
     ok = ok && doc_remove(d, by);
     return doc_acted(d) && ok;
 }

@@ -21,6 +21,9 @@ extension MotoliiShelves on Motolii {
   /// The motions a thing may be given (Cavalry's Animators): each one's name and file (a thing's script is the file of the one it has).
   List<(String, String)> get animators => _folders.putIfAbsent('animators', () => _labelled(_animators(_m).toDartString()));
 
+  /// The relations written as files (a relation's script is the file of the one it is): each one's name and file.
+  List<(String, String)> get relations => _folders.putIfAbsent('relations', () => _labelled(_relations(_m).toDartString()));
+
   /// What an effect (of a thing or of the whole screen) or a motion is for, as the inside says: the shelf's kind ('' none said).
   String label(String name) {
     _said();

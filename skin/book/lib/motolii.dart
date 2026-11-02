@@ -178,6 +178,7 @@ class Motolii {
   late final _effects = _b.motolii_effects;
   late final _looks = _b.motolii_looks;
   late final _animators = _b.motolii_animators;
+  late final _relations = _b.motolii_relations;
   late final _spent = _b.motolii_spent;
   late final _define = _b.motolii_define;
   late final _wayNumbers = _b.motolii_way_numbers;

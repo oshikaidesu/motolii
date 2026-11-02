@@ -126,6 +126,53 @@ static const Doc::Relation& doc_relation_of(Doc& d, int by) {
     return d.relationsOf.emplace(by, std::move(r)).first->second;
 }
 static const std::vector<int>& doc_members_of(Doc& d, int by) { return doc_relation_of(d, by).members; }
+// What a relation written as a file says of all its things at a moment. Its relate() is told them all at once, as a Python
+// Effector in Cinema 4D's Full Control is, not one value at a time as the kinds below: each one's place can hang on all the
+// others. For each thing, doc_relate_names in turn. Empty: no file, or it failed (what is under it shows, and it says why).
+static const char* const doc_relate_names[] = {"x", "y", "z", "size", "rotate", "rotate_x", "rotate_y", "opacity"};
+static double doc_related(Doc& d, int by, int thing, const char* name, double t, double own);
+static const std::vector<double>& doc_related_all(Doc& d, int by, double t) {
+    Doc::RelatedKept& k = d.relatedKept[by];
+    const long changes = d.file ? (long)sqlite3_total_changes(d.file) : 0;
+    if (k.at == t && k.changes == changes && k.made == doc_scripts_made(d) && d.held.thing < 0) return k.values;
+    k.at = t, k.changes = changes, k.made = doc_scripts_made(d), k.values.clear();
+    DocScript* sc = doc_script_of(d, doc_word(d, by, "script"));
+    if (!sc || !sc->run || !sc->run->ok()) return k.values;
+    const Doc::Relation& rel = doc_relation_of(d, by);
+    constexpr size_t many = std::size(doc_relate_names);
+    std::ostringstream js;
+    js.precision(12);
+    js << "__relates([";
+    for (size_t i = 0; i < rel.members.size(); ++i) {
+        const int thing = rel.members[i];
+        if (!thing) continue;
+        const int was = rel.under.empty() ? 0 : rel.under[i];
+        js << '[';
+        double size = 1;
+        for (const char* name : doc_relate_names) {
+            const double own = doc_number(d, thing, name, t, !strcmp(name, "size") || !strcmp(name, "opacity") ? 1 : 0), is = was ? doc_related(d, was, thing, name, t, own) : own;
+            if (!strcmp(name, "size")) size = is;
+            js << is << ',';
+        }
+        float2 half{0.f};
+        doc_half(d, thing, &half);
+        js << 2.0 * half.x * size << ',' << 2.0 * half.y * size << ',' << thing << "],";
+    }
+    js << "]," << t << ",{";
+    for (size_t i = 0; i < sc->knobs.size(); ++i) {
+        js << sc->knobs[i].name << ':';
+        if (sc->knobs[i].kind != "select") { js << doc_number(d, by, sc->names[i].c_str(), t, sc->knobs[i].usual) << ','; continue; }
+        const std::string w = doc_word(d, by, sc->names[i].c_str());
+        js << '"' << (w.empty() ? sc->knobs[i].words.substr(0, sc->knobs[i].words.find(' ')) : w) << "\",";
+    }
+    js << "})";
+    const std::vector<double> said = sc->run->numbers(js.str());
+    if (said.empty()) return k.values;
+    k.values.assign(many * rel.members.size(), 0.0);
+    for (size_t i = 0, in = 0; i < rel.members.size(); ++i)
+        if (rel.members[i]) { if (many * (in + 1) <= said.size()) std::copy_n(said.begin() + (long)(many * in), many, k.values.begin() + (long)(many * i)); ++in; }
+    return k.values;
+}
 // What a relation gives a value of one of its things (`own`: the thing's own value there), weighed by its strength: it
 // starts from what the relation the thing was in before gives (else its own value); an around or a row that knows where
 // the thing showed when it came in adds the step from there to its place (so a hand that moves the thing moves it), a
@@ -146,6 +193,13 @@ static double doc_related(Doc& d, int by, int thing, const char* name, double t,
     if (doc_number(d, by, "visible", 0, 1) <= 0.5) return base;   // (switched off, its eye shut: what it is on top of shows, its strength kept)
     const double came = rel.from.empty() || (n != "x" && n != "y") ? std::nan("") : rel.from[2 * i + (n == "y" ? 1 : 0)];   // (where it showed when it came in: across and up only)
     const auto leader = [&](const char* which) { const int l = (int)doc_number(d, by, which, 0, 0); return l != thing ? l : 0; };
+    if (type == "relate") {
+        if (d.settled) return base;
+        const std::vector<double>& all = doc_related_all(d, by, t);
+        constexpr size_t many = std::size(doc_relate_names);
+        for (size_t j = 0; j < many; ++j) if (n == doc_relate_names[j]) return many * i + j < all.size() ? base + (all[many * i + j] - base) * s : base;
+        return base;
+    }
     if ((type == "around" || type == "row" || type == "group") && (n == "rotate" || n == "rotate_x" || n == "rotate_y"))   // (its own turn added to each, in turn)
         return base + doc_number(d, by, name, ti, 0) * s;
     if ((type == "around" || type == "row" || type == "group") && (n == "size" || n == "opacity"))   // (its own size and opacity as a share of each one's, in turn: 0 opacity out is gone)

@@ -285,7 +285,7 @@ static std::string doc_moving(Doc& d, int thing) {
     std::string names;
     for (const DocValue& one : doc_values)
         if (one.moves && doc_among(one.kinds, kind)) names += std::string(names.empty() ? "" : " ") + one.name;
-    if (doc_among("film picture text shape solid stage camera", kind))   // (and its scripts' knobs that take keys, an effect's tracks, as doc_has lists them: golf_noise.md 44)
+    if (doc_among("film picture text shape solid stage camera behaviour", kind))   // (and its scripts' knobs that take keys, an effect's tracks, as doc_has lists them: golf_noise.md 44)
         for (const DocScript* sc : doc_scripts_on(d, thing))
             for (const DocValue& one : sc->values) if (one.moves) names += std::string(names.empty() ? "" : " ") + one.name;
     return names;
@@ -296,7 +296,7 @@ static std::string doc_has(Doc& d, int thing) {
     std::string names;
     for (const DocValue& one : doc_values)
         if (doc_among(one.kinds, kind)) names += std::string(names.empty() ? "" : " ") + one.name;
-    if (doc_among("film picture text shape solid stage camera", kind))
+    if (doc_among("film picture text shape solid stage camera behaviour", kind))
         for (const DocScript* sc : doc_scripts_on(d, thing))
             for (const DocValue& one : sc->values) names += std::string(names.empty() ? "" : " ") + one.name;
     return names;
@@ -409,7 +409,7 @@ static std::string doc_cards_of(Doc& d, int thing, std::string* more = nullptr) 
             if (!card.empty()) all += (all.empty() ? "" : "; ") + card;
         }
     if (!besides.empty()) all += (all.empty() ? "" : "; ") + besides;
-    if (doc_among("picture text shape solid stage", doc_word(d, thing, "kind")))   // (its script's own card: the knobs its head declares)
+    if (doc_among("picture text shape solid stage behaviour", doc_word(d, thing, "kind")))   // (its script's own card: the knobs its head declares)
         if (const std::vector<DocScript*> scs = doc_scripts_on(d, thing); !scs.empty()) {
             std::string names = thing == 0 ? "script follow" : "script";
             for (const DocScript* sc : scs)

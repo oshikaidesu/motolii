@@ -61,6 +61,19 @@ class MotoliiBindings {
   late final _motolii_animators = _motolii_animatorsPtr
       .asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
 
+  ffi.Pointer<pkg_ffi.Utf8> motolii_relations(ffi.Pointer<Motolii> m) {
+    return _motolii_relations(m);
+  }
+
+  late final _motolii_relationsPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)
+        >
+      >('motolii_relations');
+  late final _motolii_relations = _motolii_relationsPtr
+      .asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
+
   int motolii_answer(ffi.Pointer<Motolii> m, int ticket) {
     return _motolii_answer(m, ticket);
   }

@@ -85,7 +85,7 @@ std::vector<ScriptKnob> script_knobs(const std::string& file) {
         std::stringstream all;
         all << in.rdbuf();
         const std::string told = door_js(all.str(), door_form(all.str()));   // (a form from the net told as a sketch: door.h)
-        if (script_is_sketch(told)) {
+        if (script_is_sketch(told) && told.find("function relate") == std::string::npos) {   // (a relation is p5's too, but its head says its knobs)
             if (door_form(all.str()) == "three") {   // (which part of the scene this thing is: doc_door.h)
                 ScriptKnob part;
                 part.kind = "track", part.name = "part", part.label = "Part", part.high = 9999, part.step = 1;
@@ -343,8 +343,8 @@ std::vector<int> Script::lines() const {
     for (const SketchLine& l : own->lines) all.push_back(l.line);
     return all;
 }
-std::vector<double> Script::paints(int frame, int had, int pic) {
-    const std::string js = "__paints(" + std::to_string(frame) + "," + std::to_string(had) + "," + std::to_string(pic) + ")";
+std::vector<double> Script::paints(int frame, int had, int pic) { return numbers("__paints(" + std::to_string(frame) + "," + std::to_string(had) + "," + std::to_string(pic) + ")"); }
+std::vector<double> Script::numbers(const std::string& js) {
     JSValue out = JS_Eval(own->cx, js.c_str(), js.size(), "sketch", JS_EVAL_TYPE_GLOBAL);
     if (JS_IsException(out) && own->trouble.empty()) {   // (its draw() has failed: it stays as it was, and says so once)
         JSValue e = JS_GetException(own->cx);

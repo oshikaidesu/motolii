@@ -88,7 +88,7 @@ class _DeskRelationsState extends State<DeskRelations> {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(many ? '$together picked' : 'Pick two or more', style: T.micro(Grey.g63)),
-                  for (final k in wsRelations)
+                  for (final k in wsRelationChoices(ws))
                     GestureDetector(key: ValueKey('ws-tab-relate-$k'), onTap: many ? () => wsRelate(ws, k) : null, child: IntrinsicWidth(child: DeskLayerChip(wsRelationWord(k), many ? WsT.accent : Grey.g38))),
                 ],
               ),

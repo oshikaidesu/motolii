@@ -296,6 +296,14 @@ function __shaded_take(seconds) {   // (the shader that paints its stage and wha
   }
   return JSON.stringify({ vert: __shaded._vertSrc, frag: __shaded._fragSrc, kind: __shaded_kind, width: globalThis.width, height: globalThis.height, density: pixelDensity(), told });
 }
+function __relates(all, t, k) {   // (a relation written as a file: its relate() told all its things at once, doc_relations.h; what it leaves out stays as it was)
+  const names = ['x', 'y', 'z', 'size', 'rotate', 'rotate_x', 'rotate_y', 'opacity'], many = names.length, by = [];
+  const things = all.map((v, i) => { const o = { i, w: v[many], h: v[many + 1], id: v[many + 2] }; names.forEach((n, j) => o[n] = v[j]); return o; });
+  (relate(things, t, k) || things).forEach((o, n) => by[o && o.i !== undefined ? o.i : n] = o);
+  const out = new Float64Array(many * all.length);
+  all.forEach((v, i) => names.forEach((n, j) => { const is = by[i] && by[i][n]; out[i * many + j] = typeof is === 'number' && isFinite(is) ? is : v[j]; }));
+  return out;
+}
 function __paints(f, had, pic) {   // (what makes frame f on a canvas holding frame `had`: all since it was last wiped, or if `had` is on that way only what came after it; first a 1 if it is to be wiped)
   __to(f);
   const q = __tex[pic], frames = q ? q.frames : __frames, from = q ? q.from : __from;

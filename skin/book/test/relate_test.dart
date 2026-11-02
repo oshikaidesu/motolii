@@ -13,6 +13,48 @@ import 'package:lab_book/workspace/stage.dart';
 import 'door.dart';
 
 void main() {
+  testWidgets('a relation written as a file: its word makes it, named by the file, and it answers for all its things at once', (t) async {
+    final m = Motolii.open('${Directory.systemTemp.createTempSync('relate').path}/relate.motolii')!;
+    addTearDown(m.close);
+    final ws = Ws()..join(m);
+    final made = [for (var i = 0; i < 3; i++) m.add('shape', 'circle')];
+    for (final (n, i) in made.indexed) {
+      m.set(i, 'x', n - 1.0);
+    }
+    ws.reread();
+    t.view.physicalSize = const Size(924, 616);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel('motolii/stage'), (_) async => -1);
+    await t.pumpWidget(WidgetsApp(
+      color: const Color(0xFF000000),
+      builder: (_, _) => WsScope(ws: ws, child: const Align(alignment: Alignment.topLeft, child: SizedBox(width: 924, height: 616, child: Row(children: [Expanded(child: WsStage()), SizedBox(width: 300, child: DeskRelations())])))),
+    ));
+    await t.pumpAndSettle();
+    final file = m.relations.firstWhere((r) => r.$2.endsWith('swell.js')).$2;
+    final before = {for (final i in made) i: m.frame(i)!}, wide = before[made[1]]![2];
+
+    ws.pickMany([for (final i in made) '$i']);
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(ValueKey('ws-tab-relate-$file')));
+    await settled(t, ws);
+    final r = m.things.firstWhere((i) => !made.contains(i));
+    expect((m.word(r, 'file'), m.word(r, 'script'), m.word(r, 'name')), ('relate', file, 'Swell'));
+    expect(wsMembersOf(ws), {for (final i in made) '$i'});
+    expect(before[made[0]]![0] - m.frame(made[0])![0], closeTo(.6 * wide, 1), reason: 'the one at Focus grows 2.2 times: each side moves away by half of what it grew');
+    expect(m.frame(made[2])![0] - before[made[2]]![0], closeTo(.6 * wide, 1));
+    expect(m.frame(made[1])![0], closeTo(before[made[1]]![0], 1), reason: 'it stays in the middle');
+
+    final showing = {for (final i in made) i: m.frame(i)!};
+    wsRelease(ws..select('$r'));
+    await settled(t, ws);
+    expect(m.things, isNot(contains(r)));
+    for (final i in made) {
+      expect(m.frame(i)![0], closeTo(showing[i]![0], 1), reason: 'Bake leaves each where it shows, though each one\'s place hung on the others');
+      expect(m.frame(i)![2], closeTo(i == made[1] ? 2.2 * wide : wide, 1), reason: 'and as large: a frame says a relation\'s size only once it is baked');
+    }
+  });
+
   testWidgets('picked with no picture at this moment: the words on the stage and the tab make it, a relation picked with them stays out', (t) async {
     final m = Motolii.open('${Directory.systemTemp.createTempSync('relate').path}/relate.motolii')!;
     addTearDown(m.close);

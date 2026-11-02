@@ -1,13 +1,24 @@
 // Joined: a relation made of the things picked together (Ws.many): a behaviour of that kind (the inside's around, row,
 // follow or push) and the things put in it as they show now (the inside's relate: their order, its middle and size,
 // a leader, what each was in before), one step, picked once made.
+import '../motolii.dart';
 import 'moves.dart';
 import 'ws.dart';
 
-const wsRelations = ['around', 'row', 'follow', 'push', 'group'];
+const wsRelations = ['around', 'row', 'follow', 'push', 'group', 'relate'];
+
+/// What can be pressed to make a relation: the kinds the inside knows, then each one written as a file (relations/*.js,
+/// the library's and the maker's: what is put there shows here).
+List<String> wsRelationChoices(Ws ws) => [for (final k in wsRelations) if (k != 'relate') k, for (final r in ws.inside?.relations ?? const <(String, String)>[]) r.$2];
 
 /// What a relation's kind is called where it is pressed.
-String wsRelationWord(String kind) => kind == 'group' ? 'Move in' : kind[0].toUpperCase() + kind.substring(1);
+String wsRelationWord(String kind) {
+  final name = kind == 'group' ? 'Move in' : kind.split('/').last.replaceAll('.js', '');
+  return name[0].toUpperCase() + name.substring(1);
+}
+
+/// A relation's kind, or the file it is written as.
+String wsRelationOf(Motolii m, int t) => m.word(t, 'file') == 'relate' ? m.word(t, 'script') : m.word(t, 'file');
 
 /// What is picked together that a relation can hold: a relation picked with them (Select All takes it too) stays out.
 List<String> wsRelatable(Ws ws) => [
@@ -20,7 +31,12 @@ void wsRelate(Ws ws, String kind) {
   if (m == null || who.length < 2) return;
   if (kind == 'group') return wsMakeMove(ws, who, (ws.frame / Ws.fps * 10).round() / 10);   // (a group is a move: it comes in from where it is said to, at the playhead)
   m.later('together', number: 1);   // (one step, asked without waiting: the behaviour is the thing the add makes)
-  ws.after(m.later('add', name: 'behaviour', word: kind), null, (b) => ws.select('$b'));   // (picked as soon as it is there: its card, its row)
+  final file = kind.endsWith('.js');
+  ws.after(m.later('add', name: 'behaviour', word: file ? 'relate' : kind), null, (b) => ws.select('$b'));   // (picked as soon as it is there: its card, its row)
+  if (file) {
+    m.later('say', thing: -1, name: 'script', word: kind);
+    m.later('say', thing: -1, name: 'name', word: wsRelationWord(kind));   // (its row and its card say which it is)
+  }
   m.later('set', thing: -1, name: 'strength', number: 1);   // (said, so its card shows it as it works)
   if ((kind == 'follow' || kind == 'push') && ws.manyByHand) m.later('set', thing: -1, name: 'leader', number: double.parse(who.first));   // (picked one by one: the first leads, as it was picked first)
   m.later('relate', thing: -1, word: who.join(' '));

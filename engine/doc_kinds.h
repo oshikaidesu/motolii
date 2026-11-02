@@ -72,6 +72,8 @@ struct Doc {
     std::map<int, Scripted> scripted;
     struct AbsentKept { double at = -1; long changes = -1; int seen = -1; std::vector<AbsentCopy> copies; };
     std::map<int, AbsentKept> absentKept;
+    struct RelatedKept { double at = -1; long changes = -1; int made = -1; std::vector<double> values; };
+    std::map<int, RelatedKept> relatedKept;   // (what a relation written as a file last said of all its things: doc_relations.h)
     std::map<int, std::pair<std::string, std::string>> drawingKept;   // (each freehand stroke's outline as AbsentMotion's drawing effects last made it, by what they were: doc_moment)   // (each thing's copies as AbsentMotion's repeat effects lay them, at the moment last asked: doc_absent_copies)
     std::shared_ptr<struct DocScripts> scripts;   // (its scripts, each run as its file says: doc_values.h)
     std::map<int, ThingFx> thingFx;     // the things with effects of their own (thing_fx.h): each drawn alone, its effects on, laid where it lies
@@ -129,7 +131,7 @@ struct Doc {
 // words), and whether it can move (take keys).
 static const char* const doc_kinds = "film picture text solid shape camera light";   // (the kinds of thing)
 static const char* const doc_drawn = "film picture text solid shape";          // (those that are seen)
-static const char* const doc_relations = "around row follow push group";   // (the kinds of relation: a group is the plainest, things in an order and nothing else)
+static const char* const doc_relations = "around row follow push group relate";   // (the kinds of relation: a group is the plainest, things in an order and nothing else)
 static const char* const doc_shapes = "ring gem cube ball sketch";             // (the kit's own shapes a solid may be)
 // (whether a value is keyed, in SQLite's words: see doc_key)
 #define DOC_KEYED "(select count(*) > 1 or max(at) <> 0 or max(way) is not null from fact where thing = %d and name = %Q)"
@@ -148,7 +150,7 @@ static const DocValue doc_values[] = {
     //  how much it bounces, how it rubs; and the stage's pull down, in units of the stage a second each second)
     {"physics", doc_drawn, 0, 0, false, "none moves still"},
     // (a recipe as code: a JavaScript file that says where each copy is (script.h); its head's knobs are values of the thing, named js_ and the knob's name)
-    {"script", "picture text shape solid stage", 0, 0, false, ""},   // (the stage's: a whole-screen effect, a .wgsl file: screen.h)
+    {"script", "picture text shape solid stage behaviour", 0, 0, false, ""},   // (the stage's: a whole-screen effect, a .wgsl file: screen.h)
     // (a thing's own effects, After Effects' effects on a layer: the whole-screen ones' .wgsl files, one over another, on the thing as the camera sees it)
     //  (a camera's: AbsentMotion's motions only, its place moved by them as AbsentMotion's camera is: doc_fx_say)
     {"fx", "film picture text shape solid camera", 0, 0, false, ""},
