@@ -1,116 +1,61 @@
-<h1 align="center">Motolii</h1>
+# Motolii
 
-<h3 align="center">ネットで見つけた表現を、すぐ自分の映像に。</h3>
+[![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![ledger](https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml)
 
-<p align="center">After Effects のような MV・モーショングラフィックス制作を、もっと手軽に。</p>
+**ネットで見つけた表現を、すぐ自分の映像に。**
 
-<p align="center">Motolii は、ネットに公開されている映像表現を直接取り込み、2D・3D・動画・音楽と組み合わせられるオープンソースの映像制作ソフトです。</p>
+After Effects のような MV・モーショングラフィックス制作を、もっと手軽に。
 
-<p align="center">
-  <a href="https://github.com/oshikaidesu/motolii/actions/workflows/build.yml"><img alt="build" src="https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg"></a>
-  <a href="https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml"><img alt="ledger" src="https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml/badge.svg"></a>
-</p>
+Motolii は、Web で公開されているエフェクトやスクリプトを取り込み、2D・3D・動画・音楽と組み合わせられるオープンソースの映像制作ソフトです。
 
-<p align="center">
-  <a href="README.en.md">English</a> ・ <a href="https://github.com/oshikaidesu/motolii/discussions">質問・相談（Discussions）</a> ・ <a href="https://github.com/oshikaidesu/motolii/issues">不具合（Issues）</a>　どちらも日本語・英語のどちらでも。
-</p>
+[English](README.en.md) ・ [質問・相談（Discussions）](https://github.com/oshikaidesu/motolii/discussions) ・ [不具合（Issues）](https://github.com/oshikaidesu/motolii/issues)　どちらも日本語・英語のどちらでも。
 
-<p align="center">
-  <img src="docs/media/mv.gif" alt="光る文字、回るピンクの輪、線の模様、色のずれ" width="202">
-  <img src="docs/media/window.jpg" alt="Motolii の画面：左に素材と棚、真ん中に場面、下にタイムライン、右に値" width="600">
-</p>
+![Motolii の画面：左に素材と棚、真ん中に場面、下にタイムライン、右に値](docs/media/window.jpg)
 
-<p align="center"><sub>左：Motolii で作った 8 秒（文字・3D・効果）。レシピ（線の模様）・3D の輪・文字・光（Glow）・RGB のずれを置いて書き出した物。右：アプリの画面（その 8 秒を開いた所）。組み立てた後に <code>docs/examples/mv.sh</code> の 1 行で同じ物が <code>~/Movies/Motolii/mv.mp4</code> にできます。</sub></p>
+## 1. ネットの表現を、そのまま使う
 
-## 1. 使いたい表現のために、また別の道具が必要？
+Shadertoy で見つけたシェーダーをコピーして貼る。p5.js のスケッチも、タイムライン上のレイヤーに。
 
-ネットで見つけたかっこいいエフェクト。作り方を調べると、専用プラグインが必要だったり、何十個もの操作を再現するチュートリアルだったりする。
+ISF、WGSL、AviUtl2 のスクリプトはフォルダに入れるだけ。アプリを再起動せずにエフェクト一覧へ追加され、動くサムネイルも自動で作られます。
 
-便利なスクリプトを見つけても、それを使いやすくするために、今度はスクリプト管理パネルを探す。
+専用プラグインを探したり、画面を録画して動画にしたりする代わりに、対応する表現をコードのまま扱えます。
 
-Web で動く作品を見つけたら、画面収録して動画にする。けれど、動画にした時点で、色や形、動きの速さといった元の値は自由に変えられなくなる。
+取り込んだあともキーフレームを打ち、別のエフェクトと重ねられます。p5.js のスケッチなら、時間の進み方も編集できます。
 
-<h3 align="center">表現を動かすコードはすでに公開されているのに、<br>なぜ制作ソフトで使うために作り直さなければならないのか？</h3>
+![配られている ISF の効果 8 本を写真と文字に掛けた所](docs/media/effects.jpg)
 
-<p align="center">Motolii は、そこを変えようとしています。</p>
+*配られている ISF の効果 8 本を、写真（パブリックドメイン）と文字に掛けた所。どれも作者のファイルのまま。*
 
-### コードを、そのまま映像の素材に
+## 2. 操作も、もっと手軽に
 
-p5.js や Shadertoy で公開されているコードをコピーして、Motolii に貼り付ける。
+エフェクトは動くサムネイルを見ながら探せます。名前を知らなくても、仕上がりから選べます。
 
-対応する作品なら、それだけでタイムライン上のレイヤーやエフェクトになります。
+操作は Alight Motion が手本。文字や図形を画面上で直接動かし、Animate を有効にすればキーフレームを記録できます。イージングも区間ごとに調整できます。
 
-動画に焼き付ける必要はありません。取り込んだあともキーフレームで動かしたり、ほかのエフェクトと組み合わせたりできます。p5.js のスケッチなら、Time Remap で時間の進み方も編集できます。
+2D と 3D はモードを切り替えず、文字・写真・動画・3D モデルを同じ場面に置けます。
 
-### エフェクトを追加するための、専用パネルを増やさない
+## 3. 一本の映像にする
 
-ISF、WGSL、AviUtl2 のスクリプトなどは、対応するフォルダに入れるとエフェクト一覧に現れます。
+ネットから取り込んだ表現に、文字や 3D モデルを重ねる。音楽に合わせて動かし、エフェクトを掛けて、MP4 に書き出す。
 
-アプリの再起動は不要。追加したエフェクトの見本も自動で作られます。
+Lottie のアニメーション、MIDI の音符を使った動き、物理演算にも対応しています。
 
-新しい表現を使うたびに、管理ツールやプラグインを増やすのではなく、同じ場所から探して使えます。
+![光る文字、回るピンクの輪、線の模様、色のずれ](docs/media/mv.gif)
 
-### ひとつの形式に閉じない
+*Motolii で作った 8 秒。組み立てた後に `docs/examples/mv.sh` の 1 行で同じ物が `~/Movies/Motolii/mv.mp4` にできます。*
 
-映像表現は、After Effects のプラグインとしてだけ作られているわけではありません。
+**好きな表現を見つけて、組み合わせて、一本の映像にする。**
 
-VJ のための ISF、Web の p5.js や Shadertoy、日本の AviUtl2 スクリプト、WebGPU の WGSL。
+## 対応形式と動作状況
 
-Motolii は、異なる場所で作られた表現を、同じタイムラインで扱えるようにします。
+| 形式 | 確認した結果 |
+|---|---|
+| ISF | 327 本中 318 本 |
+| Shadertoy | 300 本中 261 本で絵が出て動いた |
+| p5.js | 168 作中 97 作で絵が出た |
+| AviUtl2 | 594 本中 372 本が最後まで動いた |
 
-<p align="center">
-  <img src="docs/media/effects.jpg" alt="配られている ISF の効果 8 本を写真と文字に掛けた所" width="640">
-</p>
-
-<p align="center"><sub>配られている ISF の効果 8 本（CMYK Halftone・Bad TV・Duotone・Edges・Dither-Bayer・Kaleidoscope Tile・Glow-Fast・Pixellate）を、写真（パブリックドメイン）と文字に掛けた所。どれも作者のファイルのまま。</sub></p>
-
-すべてのコードが動くわけではありません。対応形式と実際の動作検証結果は、下の表で公開しています。
-
-## 2. 表現を持ち込んだあとも、操作で困らないように
-
-使えるエフェクトが増えても、探せなければ意味がない。
-
-名前を知らないエフェクトを探す。大量の設定から動かしたい値を見つける。2D と 3D の作業を行き来する。
-
-こうした操作も、Motolii が見直したい部分です。
-
-<img src="docs/media/card_pick.jpg" alt="Effects の棚のタイルと、効果を掛けた場面" align="left" width="430">
-
-<h3>名前ではなく、見た目で選ぶ</h3>
-
-エフェクトやアニメーションは、動くサムネイルで探せます。
-
-新しく追加したエフェクトも自動でプレビューを作るので、ファイル名だけを頼りに選ぶ必要はありません。
-
-<br clear="all">
-
-<img src="docs/media/card_move.jpg" alt="3D の輪を場面で選び、右の欄で 2D・2.5D・3D と位置を操作している所" align="right" width="430">
-
-<h3>画面の中で直接動かす</h3>
-
-Alight Motion を操作の手本に、文字や図形を配置して、そのまま画面で編集できます。
-
-Animate を有効にして値を変えれば、キーフレームが記録されます。イージングは区間ごとに調整できます。
-
-<br clear="all">
-
-### 2D と 3D を分けない
-
-文字、図形、写真、動画、3D モデル、点群を同じ場面に置けます。
-
-2D と 3D のモードを切り替えることなく、ひとつのタイムラインで組み合わせられます。
-
-## 3. 見つけた表現を、一本の映像に
-
-ネットから取り込んだシェーダーに、文字や 3D モデルを重ねる。
-
-音楽に合わせてキーフレームを打つ。MIDI の音符を動きに使う。物理演算でオブジェクトを動かす。
-
-Lottie のアニメーションや動画も組み合わせて、完成した映像を MP4 に書き出せます。
-
-<h3 align="center">好きな表現を見つけて、組み合わせて、一本の映像にする。</h3>
-
-<p align="center">それが Motolii です。</p>
+※ 検証時点・条件はそれぞれ異なります。p5.js は表示できても元作品と見た目が一致するとは限りません。詳しい条件と制限は[検証記録](reports/sketch_import_2026-11-01.md)に記載します。
 
 ## 試す前に
 
