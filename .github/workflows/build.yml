@@ -45,9 +45,16 @@ jobs:
       - run: engine/check/all.sh
       - run: cd skin/book && flutter analyze lib test integration_test --no-fatal-infos --no-fatal-warnings
         if: success() || failure()   # (the window's checks told even when the engine's failed)
-      - run: cd skin/book && flutter test --file-reporter json:test_events.json
+      - run: |   # (workspace_joined_test.dart is one process, its parts joined by part: each opening leaves memory behind, 33 GB whole on a Mac of this machine's 7 GB; flutter test's own --total-shards gives each eighth a process of its own, 2.4 GB measured)
+          cd skin/book
+          failed=0
+          flutter test $(find test -name '*_test.dart' ! -name workspace_joined_test.dart) --file-reporter json:test_events.json || failed=1
+          for i in 0 1 2 3 4 5 6 7; do
+            flutter test test/workspace_joined_test.dart --total-shards 8 --shard-index $i --file-reporter json:test_events_$i.json || failed=1
+          done
+          exit $failed
         if: success() || failure()
-      - run: python3 .github/test_failures.py skin/book/test_events.json   # (what the test package counts as not passed while its github lines say nothing: its own json, read)
+      - run: for f in skin/book/test_events*.json; do python3 .github/test_failures.py $f; done   # (what the test package counts as not passed while its github lines say nothing: its own json, read)
         if: failure()
       - run: for f in $(ls -t ~/Library/Logs/DiagnosticReports/*.ips 2>/dev/null | head -3); do echo "== $f"; head -c 6000 "$f"; echo; done   # (a test process that died says nothing in its own log: the Mac's crash report says where)
         if: failure()
