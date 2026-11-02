@@ -118,7 +118,7 @@ const _rowsE = <(String, String, Map<String, Object>)>[
   ('Hexagon Array', 'Hexagonalize', {'progress': .5}),
   ('Iridescence', 'Sine Warp Gradient', {}),
 ];
-// (section C: the thing's picture on a solid's faces, the solid named in its fx (filament/solids/*.js, as Alight
+// (section C: the thing's picture on a solid's faces, the solid named in its fx (engine/solids/*.js, as Alight
 //  Motion's faux-3D); the thing turned a little (its own values, '@') so its sides are seen)
 const _turned = <String, Object>{'@rotate_x': 25, '@rotate_y': 35};
 const _rowsC = <(String, String, Map<String, Object>)>[

@@ -1,6 +1,6 @@
 # AviUtl 変換器の次の手（10/26、自分たちで決めた）
 
-変換器（`filament/aviutl.cpp`・`aviutl_fx.h`）に足す物は、どれも「借りた決まり ＋ Motolii がもう持っている借り物」へ写すだけにする。自分で効果や 3D の描き方は書かない。
+変換器（`engine/aviutl.cpp`・`aviutl_fx.h`）に足す物は、どれも「借りた決まり ＋ Motolii がもう持っている借り物」へ写すだけにする。自分で効果や 3D の描き方は書かない。
 
 ## お手本（どちらも MIT）
 | 物 | 何を借りるか | 何を借りないか |
@@ -63,9 +63,9 @@
   - どちらでも、blob-tracey は道具の画面（画像を落とし込む）なので、動画とつまみの値を渡す小さなページが要る（blob-tracey の部品 `src/core`・`src/render` を呼ぶ）。
 - 10/26 試した：timesnap の `preparePage`（README の Node の口）で blob-tracey の公開デモの `#fileInput` に写真を渡したが、画像が読み込まれず空の画面のまま。puppeteer だけ（時計の差し替え無し）でも、この Mac の Chrome を指定しても同じ。なので時計の差し替えや古い Chromium のせいではない。公開デモはリポジトリの版と違う（「PRO」の表示がある）。原因は確かめていない。次はリポジトリの版を手元で組み立て、`src/main.ts` の画像の受け取りを読んでから試す。→ 10/26 読んだ：`#fileInput` の `change` で `loadUserImageFile` を呼ぶ素直な作り（`src/main.ts:103-111`、動画を読む `loadUserVideoFile` は部品にあるが入力につながっていない）。手元で組み立てた版（`npm run build`、54 KB）でも同じく読み込まれなかった。puppeteer 2.1.1（timesnap が使う版）のファイルを入れる操作が今の Chrome で `change` を起こしていない疑い（確かめていない）。2 回続けて同じなので止めた。次は作者の見本の読み込み口（`loadSampleImage`、`dist/samples`）を使う道を読む。
 - 10/26 **動いた**：写真が読み込まれなかった原因は、timesnap が使う puppeteer 2.1.1（2020 年）のファイルを入れる操作だった。今の puppeteer-core（25.16.0）とこの Mac の Chrome なら、作者の画面の `#fileInput` がそのまま働く。作者の手順だけで動かした：作者のプリセット（`src/ui/Presets.ts` の 7 つ、esbuild で読んで JSON に書き出しただけ）を作者の JSON の読み込み口 `#jsonFileInput` へ → 写真を `#fileInput` へ → 作者の書き出しボタン `#btnSnapshot`（`canvas.toDataURL` の PNG）を Chrome の保存で受け取る。7 つとも 1024×546 の絵が取れた（`reports/blob_tracey_presets.jpg`、写真は作者の見本 `public/samples/traffic_reference.jpg`）。物差しで高級側：clean_brackets（細い角かっこと十字だけ）、organic_contour、ae_showcase。うるさい側：tech_brackets、glitch_surveillance。プリセットのデータは作者のファイルにあるが、このリポジトリの版では画面につながっていない。
-- 10/26 **動画も動いた**：Motolii の見本の動画（`filament/out/vid/happy.mp4`、緑の背景の猫）を ffmpeg で 12 コマ／秒の 24 コマにし、同じページのまま 1 コマずつ作者のファイル入力へ渡して、作者の書き出しボタンで書き出した。24 コマに 17.5 秒（1 コマ約 0.7 秒）。作者の「コマをまたいだ追跡」がそのまま効き、番号 #01 が全コマで同じまま座標だけ変わる（`reports/blob_tracey_video.mp4`、プリセット clean_brackets）。
+- 10/26 **動画も動いた**：Motolii の見本の動画（`engine/out/vid/happy.mp4`、緑の背景の猫）を ffmpeg で 12 コマ／秒の 24 コマにし、同じページのまま 1 コマずつ作者のファイル入力へ渡して、作者の書き出しボタンで書き出した。24 コマに 17.5 秒（1 コマ約 0.7 秒）。作者の「コマをまたいだ追跡」がそのまま効き、番号 #01 が全コマで同じまま座標だけ変わる（`reports/blob_tracey_video.mp4`、プリセット clean_brackets）。
 - 残り：動画にするには 1 コマずつ写真として渡して書き出す（このリポジトリの版は動画の読み込み `loadUserVideoFile` を入力につないでいない）。Motolii から呼ぶには Node と Chrome が要る（Datamosh の ffmpeg と同じく外の道具を呼ぶ形）。
-- 10/26 **ユーザーの指摘で道を替えた（Chrome は要らない）**：ブロブ追跡の流行りの元は TouchDesigner の Blob Track で、中身は OpenCV。Chrome の要らない元として **k1sh0r/blob-tracker**（MIT、https://github.com/k1sh0r/blob-tracker 、Python・OpenCV・ffmpeg、「TouchDesigner 風のエディットのブロブ追跡の見た目」）が見つかった。README どおり `blobtrack.py in.mp4 -o out.mp4` が手を入れずに動き、見本の猫の動画 3 秒（90 コマ）を 12.5 秒（1 コマ約 0.14 秒、Chrome の道の 5 倍速）で処理した（`reports/blobtrack_k1sh0r.mp4`）。細い白い枠、等幅の小さな札、つなぐ線、角の印。Python の部品としても使え、コマごとに `last_tracks`（番号・位置・大きさ・種類）が取れる。Motolii は猫の輪郭（`filament/catball/bake.py`）で既に Python と OpenCV を、Datamosh で ffmpeg を使っているので、新しく足す物は無い。Chrome と Node の道（blob-tracey）は取り下げる。
+- 10/26 **ユーザーの指摘で道を替えた（Chrome は要らない）**：ブロブ追跡の流行りの元は TouchDesigner の Blob Track で、中身は OpenCV。Chrome の要らない元として **k1sh0r/blob-tracker**（MIT、https://github.com/k1sh0r/blob-tracker 、Python・OpenCV・ffmpeg、「TouchDesigner 風のエディットのブロブ追跡の見た目」）が見つかった。README どおり `blobtrack.py in.mp4 -o out.mp4` が手を入れずに動き、見本の猫の動画 3 秒（90 コマ）を 12.5 秒（1 コマ約 0.14 秒、Chrome の道の 5 倍速）で処理した（`reports/blobtrack_k1sh0r.mp4`）。細い白い枠、等幅の小さな札、つなぐ線、角の印。Python の部品としても使え、コマごとに `last_tracks`（番号・位置・大きさ・種類）が取れる。Motolii は猫の輪郭（`engine/catball/bake.py`）で既に Python と OpenCV を、Datamosh で ffmpeg を使っているので、新しく足す物は無い。Chrome と Node の道（blob-tracey）は取り下げる。
 - 同じ道で、Tracery 級の追跡オーバーレイ（blob-tracey、MIT、ブラウザの Canvas に頼る）と p5.js のスケッチが手を入れずに動く。
 - Mac での手順（手本どおり）：(1) CEF の Mac 版（BSD）を、CEF 公式の見本 cefsimple のまま動かす。(2) oov の client.cc の受け渡しをそのまま当てた別アプリにする。(3) 変換器の `require("browser")` からそれを呼ぶ。
 - Motolii では、変換器に `require("browser")` の代役を足し、同じ約束でブラウザに描かせる。そうすれば aviutl_browser 用のコンテンツ（.abc・フォルダ、p5.js のスケッチを含む）がそのまま動く。

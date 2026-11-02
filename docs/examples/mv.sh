@@ -5,4 +5,4 @@
 cd "$(dirname "$0")/../.."
 out=$HOME/Movies/Motolii
 mkdir -p $out && rm -f $out/mv.motolii
-{ cat docs/examples/mv.txt; print "say 0 script $PWD/filament/effects/rgbshift.wgsl"; print "write $out/mv.mp4"; } | filament/edit.sh $out/mv.motolii | grep -E 'NOT|write'
+{ cat docs/examples/mv.txt; print "say 0 script $PWD/engine/effects/rgbshift.wgsl"; print "write $out/mv.mp4"; } | engine/edit.sh $out/mv.motolii | grep -E 'NOT|write'

@@ -31,21 +31,21 @@
   - puxiao（中国）の TSL 教本（ライセンス無し）
   - y11i（日本）の TSL 部品（MIT）
 
-## 取り寄せた物（`filament/tsl/sources.tsv`、48 か所、1.7 GB）
+## 取り寄せた物（`engine/tsl/sources.tsv`、48 か所、1.7 GB）
 
-- `./tsl/fetch.sh` が、一覧に書いた版（コミット）を丸ごと `filament/third_party/tsl/<名前>/` に取ってくる。中身は変えていない。ThorVG の取り方と同じ。git には載せない。
+- `./tsl/fetch.sh` が、一覧に書いた版（コミット）を丸ごと `engine/third_party/tsl/<名前>/` に取ってくる。中身は変えていない。ThorVG の取り方と同じ。git には載せない。
 - ライセンス：MIT が 38、Apache-2.0 が 1、CC0 が 1、「MIT-by-Codrops」が 8。
   - MIT-by-Codrops は、Codrops の記事のデモで、置き場にはライセンスが書かれていない物。Codrops の決まり「特に書いていなければ MIT」で扱った。
 - 主な物：
   - 集まり：tsl-textures、TSLFX、Shader Lab、ノイズの集まり（bandinopla）、y11i の部品と psrdnoise
   - 場面：powershot（カメラの再現）、銀河、海 3 つ、炎 2 つ、粒子 5 つ、Codrops の記事のデモ 18 本ほど、など
-- three.js 公式の TSL の仕上げの部品（`examples/jsm/tsl/display`、45 本）は、`filament/tsl/package.json` の three.js 0.185.1 に入っている。
+- three.js 公式の TSL の仕上げの部品（`examples/jsm/tsl/display`、45 本）は、`engine/tsl/package.json` の three.js 0.185.1 に入っている。
 
 **ライセンスが無い、または不明なので、取り寄せずに見るだけにした物**：
 singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-sandbox（Bruno Simon）、html-in-canvas-cracks、lego-stylized-nature、tsl-scifi-earth、lib3、subsurface-refraction-shader、web-ocean-3d（素材のライセンスだけ）、ICS MEDIA の tutorial-three（All Rights Reserved）、puxiao の TSL 教本、Simon_Dev_TSL_Shaders、tsl-easings（akella）、nibi。
 使うには作者への確認が要る。
 
-## WGSL にした（`filament/tsl/*.ts`、`./tsl/run.sh <名前>`）
+## WGSL にした（`engine/tsl/*.ts`、`./tsl/run.sh <名前>`）
 
 変換はどれも three.js 自身の変換器（`convert.ts`）。効果の作り方は、各作者の README や説明のとおりにした。
 
@@ -98,7 +98,7 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
 ## 何段も描く効果を正しくした：作者の render() ごと Dawn で回す（10/26）
 
 - 何段も描く効果（Bloom、ASCII、Annotations、Blob Tracking など）は、途中の絵を作る JS の部分（作者の `render()`）も要る。そこで、three.js の描く仕組み（WebGPURenderer）と Shader Lab の作者の「画面無しで描く口」（`createHeadlessRenderer`）を、そのまま Dawn の上で回した。
-- JS から Dawn を呼ぶ口は、Dawn の作者が出している組み立て済みの物（npm の `webgpu` 0.6.2 = dawn.node、MIT）。まず Node の上で確かめた（`filament/tsl/check_node/check.ts`、Node は確かめにだけ使う）。
+- JS から Dawn を呼ぶ口は、Dawn の作者が出している組み立て済みの物（npm の `webgpu` 0.6.2 = dawn.node、MIT）。まず Node の上で確かめた（`engine/tsl/check_node/check.ts`、Node は確かめにだけ使う）。
 - 足した物（どれも、ブラウザなら最初からある物）：
   - Canvas 2D：`@napi-rs/canvas`（MIT、Skia）
   - 字形：作者の部品に同梱の 3 つ（Geist Sans・Geist Mono・BSMNT Grotesque）を、作者の `fonts.css` の名前で登録
@@ -170,7 +170,7 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
 
 ## Dawn の WebGPU の口を Motolii の Dawn から組み立てた（10/26）
 
-- Dawn 自身の JS の口（dawn.node）を、Motolii の Dawn の組み立て（Filament の `out/wgpu`）に `DAWN_BUILD_NODE_BINDINGS=ON` を足して組み立てた（`filament/tsl/dawn_node.sh`）。44 秒、13 MB。
+- Dawn 自身の JS の口（dawn.node）を、Motolii の Dawn の組み立て（Filament の `out/wgpu`）に `DAWN_BUILD_NODE_BINDINGS=ON` を足して組み立てた（`engine/tsl/dawn_node.sh`）。44 秒、13 MB。
   - 材料 3 つ（node-api-headers、node-addon-api、gpuweb の `webgpu.idl`）は、Dawn の `DEPS` が決めた版で取った。
   - Go は Homebrew の 1.27.3（Dawn の指定は 1.26.6）。
 - 確かめ：確かめの台本（`check_node`）で、npm の組み立て済みの口の代わりにこれを使った（`DAWN_NODE=<path>`）。Displaced Rings と Bloom で、絵は 1 バイトも違わない（640×360、違う画素 0）。
@@ -192,10 +192,10 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
   - 記録：Dawn の上の WebGPU 層（`src/dawn/native/webgpu`、内側は同じ Dawn の Metal）が、通った呼び出しを全部、命令と中身の 2 本に書く（`CaptureContext`、`StartCapture`）。
   - 流し直し：Dawn の replay（`src/dawn/replay`、`Capture::Create` → `Replay::Create` → `Play`）。名前（label）で描き先を取り出せる（`GetObjectByLabel`）。
   - 手本：Dawn の試験 `DawnTest.cpp` の Recorder（184-230 行）と `CaptureAndReplayTests.cpp`（52 個の試験）。
-- 組み立て：`filament/tsl/dawn_capture.sh` が、記録できる dawn.node を Motolii の out/wgpu とは別の場所（`out/wgpu_capture`）に組む（4 分 44 秒）。Motolii の Dawn は触らない。
-  - 足したのは dawn.node の `capture=<path>` の合図だけ（`filament/tsl/dawn_capture.patch`、Dawn のコードに 2 か所、`MOTOLII_DAWN_CAPTURE` の時だけ）。アダプタの頼み方は DawnTest.cpp:708-713、記録の始め方は Recorder::CreateAndStart のとおり。
+- 組み立て：`engine/tsl/dawn_capture.sh` が、記録できる dawn.node を Motolii の out/wgpu とは別の場所（`out/wgpu_capture`）に組む（4 分 44 秒）。Motolii の Dawn は触らない。
+  - 足したのは dawn.node の `capture=<path>` の合図だけ（`engine/tsl/dawn_capture.patch`、Dawn のコードに 2 か所、`MOTOLII_DAWN_CAPTURE` の時だけ）。アダプタの頼み方は DawnTest.cpp:708-713、記録の始め方は Recorder::CreateAndStart のとおり。
   - 確かめの台本 `check_node/check.ts` は 3 か所だけ変えた：dawn.node の設定を `DAWN_FLAGS` で渡す、最後の描き先に名前 `motolii_out` を付ける（three.js は名前を GPU の label にそのまま渡す：three.webgpu.js 76623）、最後に装置を閉じる（記録が終わる）。
-- 再生：`filament/dawn_probe/replay_on_dawn.sh <記録> motolii_out 640 360 <出力>`。Motolii の Dawn（out/wgpu）に元からある replay の部品（`libreplay.a`）で流し直し、描き先を読み戻す。three.js も JS も使わない。
+- 再生：`engine/dawn_probe/replay_on_dawn.sh <記録> motolii_out 640 360 <出力>`。Motolii の Dawn（out/wgpu）に元からある replay の部品（`libreplay.a`）で流し直し、描き先を読み戻す。three.js も JS も使わない。
 - 結果（640×360、ユーザーの写真）：
 
 | 効果 | 記録（命令＋中身） | 流し直した絵と Node の絵 |
@@ -217,12 +217,12 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
   - 理由（Dawn のコード）：Replay の「1 コマ」の区切りは、画面に出す瞬間（`surface.Present()`、Replay.cpp:1510-1515）だけ。画面なしの記録には区切りが無い。
 - 仮に画面つきで記録して区切りを入れても、Replay は読み位置を前に進めるだけ（`PlayFrameImpl`、Replay.cpp:1594-1602）。同じコマを、時間を変えてもう一度流す口は無い。しかも各コマには、記録した時の時間を書く命令（writeBuffer）がそのまま入っている。
 - なので、時間を変えて動かすこと、毎コマの時間を測ることは、Replay ではできない。Replay は「取り込んだ一式が正しいか」を確かめる道具として使い、本番の再生には使わない。
-- Motolii が既に持っている「何段も描く・毎コマ時間を渡す」仕組みは ISF の PASSES（`filament/isf.cpp`：TARGET、PERSISTENT、FLOAT、大きさ。WGSL にして Motolii の画面で描く）。TSL の何段も描く効果をこの形に載せられるかは、まだ確かめていない。
+- Motolii が既に持っている「何段も描く・毎コマ時間を渡す」仕組みは ISF の PASSES（`engine/isf.cpp`：TARGET、PERSISTENT、FLOAT、大きさ。WGSL にして Motolii の画面で描く）。TSL の何段も描く効果をこの形に載せられるかは、まだ確かめていない。
 
 ### 1 コマは何でできているか：記録を数えた（10/26）
 
 - 切り直し：「何で再生するか」を選ぶ前に、「この効果の 1 コマは実際に何でできているか」を記録から数えた。
-  - 道具は `filament/dawn_probe/capture_list.sh <記録>`。Dawn 自身の記録の読み歩き（CaptureWalker、SurfaceDiscoveryVisitor、ProcessEncoderCommands）の上に、作る・書く・送る・命令の中身を 1 行ずつ出す見方を足しただけ。
+  - 道具は `engine/dawn_probe/capture_list.sh <記録>`。Dawn 自身の記録の読み歩き（CaptureWalker、SurfaceDiscoveryVisitor、ProcessEncoderCommands）の上に、作る・書く・送る・命令の中身を 1 行ずつ出す見方を足しただけ。
 - Bloom（作者の初期設定）：最初に全部作ったあと、281 回送るだけで、値を書く命令は 0。時間で変わらない。
 - Displaced Rings（作者の初期設定）：作ったあと 73 回送るだけで、値を書く命令は 0。時間で変わらない。
   - なので、この 2 つでは「時間を変えて同じ絵になるか」は確かめようがない。
@@ -263,7 +263,7 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
 |---|---|---|
 | Chainsawkitten/WebGPUReconstruct | MIT、2026-10-26 | ブラウザの WebGPU を記録してネイティブの Dawn・wgpu で流し直す。目的はデバッグと再現（README）。Motolii が既に持つ Dawn の記録・流し直しと同じ種類で、時間を変えて繰り返さない |
 | brendan-duncan/webgpu_recorder | MIT、2026-06-08 | .wgpu は JSON の `init`（1 回）・`frames`（コマごとの命令の並び）・`data`（中身）に分かれる（README の Binary Recording Format）。再生役は JS（webgpu_player.js）で、記録したコマを順に流す |
-| mrRay/ISF_Spec | MIT、2025-03-20 | 何段も描く・前のコマを残す・時間・つまみをデータで書く形式。Motolii は既に読んでいる（`filament/isf.cpp`） |
+| mrRay/ISF_Spec | MIT、2025-03-20 | 何段も描く・前のコマを残す・時間・つまみをデータで書く形式。Motolii は既に読んでいる（`engine/isf.cpp`） |
 | mrRay/ISFMSLKit | GitHub では NOASSERTION（ChatGPT は BSD と言うが未確認）、2026-09-16 | ISF を Metal で動かす |
 | takahirox/tsl-node-editor | MIT、2026-10-16 | TSL のノード編集。出すのは TSL と three.js のコード |
 | dfranx/SHADERed | MIT、2023-09-22 | シェーダーの IDE、Shadertoy を取り込むプラグイン |

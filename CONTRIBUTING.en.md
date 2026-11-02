@@ -18,14 +18,14 @@ As in [`README.en.md`](README.en.md) ("Try it"). If you will commit, once in you
 git config core.hooksPath .githooks
 ```
 
-How the code is laid out: [`ARCHITECTURE.md`](ARCHITECTURE.md) and [`filament/README.md`](filament/README.md) (which files the current build uses; the rest are earlier probes).
+How the code is laid out: [`ARCHITECTURE.md`](ARCHITECTURE.md) and [`engine/README.md`](engine/README.md) (which files the current build uses; the rest are earlier probes).
 
 ## Checks
 
 | What | Command | When it holds |
 |---|---|---|
 | The ledger (rule 2 below) | `python3 .githooks/assets_check.py` | `ASSETS.md covers all … files` |
-| The engine's checks, together (their tools: `brew bundle --file=Brewfile.checks` and `python3 -m pip install --user pillow numpy`) | `filament/check/all.sh` | `all checks held` (exit 1 if any says NO); one at a time: `filament/check/*.sh` |
+| The engine's checks, together (their tools: `brew bundle --file=Brewfile.checks` and `python3 -m pip install --user pillow numpy`) | `engine/check/all.sh` | `all checks held` (exit 1 if any says NO); one at a time: `engine/check/*.sh` |
 | The window's tests | `cd skin/book && flutter test` | Tests that need the engine are skipped if it is not built |
 | The window's code | `cd skin/book && flutter analyze lib test integration_test` | No errors (100 notices today) |
 | The first piece in the window | `cd skin/book && flutter drive --profile -d macos --driver=test_driver/integration_test.dart --target=integration_test/first_piece_test.dart` | Writes `docs/media/window_step1..4.png` |
@@ -39,17 +39,17 @@ GitHub Actions runs the ledger check on every push and pull request (`.github/wo
 3. **Say where things came from.** In the commit or pull request: what was borrowed from where (URL, version or commit), what was checked and what is not done yet. Example: `git show d46f69cac`. Keep the first line (the subject) to about 72 characters and put the details after a blank line (git's convention; much of the history so far has long subjects, but from now on).
 4. **Bundling other people's work.**
    - Keep the author's folder as unchanged as possible, with their licence text (`LICENSE`) and where it came from (`SOURCE.txt`: name and author / licence / from / page) beside it.
-   - Work whose author publishes no licence text is not bundled; fetch it from the author at build time instead (`filament/midi_roll.sh` is an example).
-   - Changes to upstream code are kept as patches, applied to a pinned upstream at build time (`filament/dawn_probe/tvg_on_dawn.sh` is an example).
+   - Work whose author publishes no licence text is not bundled; fetch it from the author at build time instead (`engine/midi_roll.sh` is an example).
+   - Changes to upstream code are kept as patches, applied to a pinned upstream at build time (`engine/dawn_probe/tvg_on_dawn.sh` is an example).
    - Add a row to [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
 ## Good first tasks
 
 | What | Where to start | Difficulty |
 |---|---|---|
-| An `.app` you can hand out: put the Homebrew libraries the engine loads (GStreamer, glib, SQLite, LuaJIT, QuickJS, and ffmpeg for writing) inside the `.app`, with [dylibbundler](https://github.com/auriamg/macdylibbundler) or GStreamer's macOS framework | `filament/edit.sh`, `skin/book/macos/` | Medium |
-| AviUtl2 calls still missing (`obj.drawpoly`, the "circle" figure, …), following the references (AviUtl2's lua.txt, sashimono-edit) | `reports/aviutl2/converter_plan.md`, `filament/aviutl.cpp` | Medium–hard |
-| TSL looks on the editor's shelves | `filament/tsl/`, `reports/tsl_collection.md` | Medium |
+| An `.app` you can hand out: put the Homebrew libraries the engine loads (GStreamer, glib, SQLite, LuaJIT, QuickJS, and ffmpeg for writing) inside the `.app`, with [dylibbundler](https://github.com/auriamg/macdylibbundler) or GStreamer's macOS framework | `engine/edit.sh`, `skin/book/macos/` | Medium |
+| AviUtl2 calls still missing (`obj.drawpoly`, the "circle" figure, …), following the references (AviUtl2's lua.txt, sashimono-edit) | `reports/aviutl2/converter_plan.md`, `engine/aviutl.cpp` | Medium–hard |
+| TSL looks on the editor's shelves | `engine/tsl/`, `reports/tsl_collection.md` | Medium |
 | English beside the headings of `ASSETS.md` | `ASSETS.md` | Easy |
 | The window's integration tests write into `reports/`; make them use a temporary folder | `skin/book/integration_test/` | Easy |
 
@@ -58,4 +58,4 @@ GitHub Actions runs the ledger check on every push and pull request (`.github/wo
 - macOS on Apple silicon only.
 - The window's tests (`flutter test`) all pass run together (2026-10-28, 146 on the CI Mac, one skipped). In CI a failure stops the run.
 - The engine (`libmotolii.dylib`) loads Homebrew's GStreamer and others, so a built `.app` does not run on another Mac as it is.
-- `filament/` mixes the current engine with earlier probes at one level; [`filament/README.md`](filament/README.md) lists which files the current build uses.
+- `engine/` mixes the current engine with earlier probes at one level; [`engine/README.md`](engine/README.md) lists which files the current build uses.

@@ -6,7 +6,7 @@
 ## 1. 見た物・走らせた物
 
 読んだ物：`AE_RUBRIC.md`、`reports/ae_rubric/evidence.md`、`try.md`、`round_03_viewer.md`、`records/` の全部、
-`filament/check/doc_calls.txt`、`doc_wrong.txt`。ほかは読んでいない。
+`engine/check/doc_calls.txt`、`doc_wrong.txt`。ほかは読んでいない。
 
 見た動画（ffmpeg でコマを抜いて絵で見た）：`neko_v4`、`mask_v7`、`lay_v3`、`edit_v4`、`puppet_v6`、`puppet_v6_forty`、
 `puppet_v6_awkward`、`led_v5_arch`。それぞれ 0・1・2 枚目、4分の1、真ん中、4分の3、最後の3枚。
@@ -17,8 +17,8 @@
 音：耳では聞いていない（聞けない）。**誰も聞いていない。** 8本の音の有無を調べ、音を数字にして
 `out/vid/happy.mp4`・`mohsen.mp4` と重ねて比べた。古い太鼓（`mask_v6` の音）とも重ねて比べた。
 
-自分で走らせた物：`./edit.sh` を 16 個の文書（`filament/out/judge4_*.motolii`）で 25 回ほど。
-絵は `filament/out/wgpu_kit/out/judge4_*.png` に 40 枚ほど。動画は `judge4_a.mp4`（5秒、自分の作品）と、短い物を数本（0.5〜5秒）。
+自分で走らせた物：`./edit.sh` を 16 個の文書（`engine/out/judge4_*.motolii`）で 25 回ほど。
+絵は `engine/out/wgpu_kit/out/judge4_*.png` に 40 枚ほど。動画は `judge4_a.mp4`（5秒、自分の作品）と、短い物を数本（0.5〜5秒）。
 打った行と返事は `/tmp/judge_view4/calls_*.txt`・`out_*.txt`。どの回も 3〜13 秒で終わった。止まった（固まった）回は 0。
 **道具が途中で終わった回が 6**（4章）。
 
@@ -29,7 +29,7 @@
 やらなかった物：`records.sh` の走らせ直し（禁止）。速さ・10分流し・AEファイル 97 本・14 本の色は記録の文面を読んだだけ。
 .webp と HEIC の写真、.gltf、日本語のファイル名、作業中に窓で見る事（窓が無い）。
 `puppet_v6_awkward` の元の動画14本は見ていない（読んで良い場所に無い）。
-`filament/out/judge4.motolii`（00:23 の日付、私の物ではない）は `list` で中を見ただけで、変えていない。
+`engine/out/judge4.motolii`（00:23 の日付、私の物ではない）は `list` で中を見ただけで、変えていない。
 
 ## 2. 点
 
@@ -79,7 +79,7 @@
 - (a) 1個置く手数：動画 1、写真 1、AEの絵 1、3Dファイル 1、ガラス 1。背景にするのは 3手（`add`、`set z -1`、`set high 4.2`）。緑を抜くのは +1手。
   文字は 4手（`add type`、`say words`、`say colour`、`set high`）。`add type` だけでは何も見えず、文を入れても黒い舞台に黒に近い字で、高さ1だと数文字で画面からはみ出す。
 - (b) 毎コマ呼ぶ物：文書からは 0。
-- (c) 中の名前：5個。①ファイルの場所を `filament/out/wgpu_kit/` から見た形で書く事。
+- (c) 中の名前：5個。①ファイルの場所を `engine/out/wgpu_kit/` から見た形で書く事。
   ②`WebGPU device error: VALIDATION Texture size ([Extent3D width:12724 …` が何十行。③`libc++abi: terminating due to uncaught exception of type utils::PreconditionPanic`。
   ④FFmpeg の `[Parsed_atempo_4 …] Value 0.400000 for parameter 'tempo' out of range`、`Error opening output file`。⑤`Unable to parse glTF file.`
   （3回目の GStreamer・gltfio・`ln:` の行は今回は出なかった。）

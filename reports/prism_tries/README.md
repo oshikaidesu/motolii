@@ -9,7 +9,7 @@ git 以前の控えのフォルダ4つ（filament_base・filament_holes・filame
 
 | 画 | 何か | どう撮ったか |
 |---|---|---|
-| `1_glass_and_path.png` | prism.mm・prism_glass・prism_filament・prism_path・prism_drop、glass_scene の三角のプリズム | 当時の書き出し（filament/out の prism*.png、日時が元のファイルと同じ）。prism-drop は当時描けずに赤紫 |
+| `1_glass_and_path.png` | prism.mm・prism_glass・prism_filament・prism_path・prism_drop、glass_scene の三角のプリズム | 当時の書き出し（engine/out の prism*.png、日時が元のファイルと同じ）。prism-drop は当時描けずに赤紫 |
 | `2_gpu_splat_and_hp.png` | prism_gpu（luma.gl の分光の集光を Filament で）、prism_hp（HPWater の1色の集光を RGB に分ける、4通り）、prism_drop | 10/25 に控えの中で build_one.sh で組み立てて動かした |
 | `3_cross.png` | prism_cross（1色で計算した集光を色に分ける確かめ、5通り） | 10/25 に、prism.mm の `dump` で数値の地図（prism-mono.f32・prism-spec.f32）を書いてから動かした |
 

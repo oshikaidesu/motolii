@@ -1,5 +1,5 @@
 # The whole build on a GitHub Apple silicon Mac, as README.md's "Build and open" does it, then the checks:
-# the engine's (filament/check/all.sh) and the window's (flutter analyze; flutter test, which has known failures, only tells).
+# the engine's (engine/check/all.sh) and the window's (flutter analyze; flutter test, which has known failures, only tells).
 # Run on each push to main and each pull request that touch the code, and by hand (Actions › build › Run workflow): the
 # whole set of tests is the machine's, the few main ones the maker's after each fix (Fowler and Humble's deployment
 # pipeline, Continuous Delivery ch. 5: a fast commit stage, then the slower stages; Flutter's Tree hygiene: the tree kept
@@ -10,9 +10,9 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['filament/**', 'skin/**', 'Brewfile', '.github/workflows/build.yml']
+    paths: ['engine/**', 'skin/**', 'Brewfile', '.github/workflows/build.yml']
   pull_request:
-    paths: ['filament/**', 'skin/**', 'Brewfile', '.github/workflows/build.yml']
+    paths: ['engine/**', 'skin/**', 'Brewfile', '.github/workflows/build.yml']
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: false
@@ -27,22 +27,22 @@ jobs:
         id: deps
         with:
           path: |
-            filament/third_party/filament_src
-            filament/third_party/skia_src
-            filament/third_party/thorvg_src
-            filament/third_party/physics
-            filament/third_party/libtess2
-            filament/third_party/ISF-Files
-          key: deps-${{ runner.os }}-${{ hashFiles('filament/dawn_probe/*.patch', 'filament/dawn_probe/build.sh', 'filament/dawn_probe/tvg_on_dawn.sh', 'filament/skia.sh', 'filament/jolt.sh', 'filament/libtess2.sh', 'filament/check/isf_all.sh') }}
+            engine/third_party/filament_src
+            engine/third_party/skia_src
+            engine/third_party/thorvg_src
+            engine/third_party/physics
+            engine/third_party/libtess2
+            engine/third_party/ISF-Files
+          key: deps-${{ runner.os }}-${{ hashFiles('engine/dawn_probe/*.patch', 'engine/dawn_probe/build.sh', 'engine/dawn_probe/tvg_on_dawn.sh', 'engine/skia.sh', 'engine/jolt.sh', 'engine/libtess2.sh', 'engine/check/isf_all.sh') }}
       - run: brew bundle
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: 3.47.2
           channel: stable
-      - run: filament/dawn_probe/build.sh
-      - run: filament/edit.sh build.motolii < /dev/null
+      - run: engine/dawn_probe/build.sh
+      - run: engine/edit.sh build.motolii < /dev/null
       - run: brew bundle --file=Brewfile.checks && python3 -m pip install --quiet --break-system-packages pillow numpy   # (what the checks use)
-      - run: filament/check/all.sh
+      - run: engine/check/all.sh
       - run: cd skin/book && flutter analyze lib test integration_test --no-fatal-infos --no-fatal-warnings
         if: success() || failure()   # (the window's checks told even when the engine's failed)
       - run: cd skin/book && flutter test --file-reporter json:test_events.json
@@ -55,10 +55,10 @@ jobs:
         if: always() && steps.deps.outputs.cache-hit != 'true'
         with:
           path: |
-            filament/third_party/filament_src
-            filament/third_party/skia_src
-            filament/third_party/thorvg_src
-            filament/third_party/physics
-            filament/third_party/libtess2
-            filament/third_party/ISF-Files
+            engine/third_party/filament_src
+            engine/third_party/skia_src
+            engine/third_party/thorvg_src
+            engine/third_party/physics
+            engine/third_party/libtess2
+            engine/third_party/ISF-Files
           key: ${{ steps.deps.outputs.cache-primary-key }}

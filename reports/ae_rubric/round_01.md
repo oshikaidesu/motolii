@@ -4,7 +4,7 @@
 コード（kit.h、video.h、drawn.h、motion.h、flat.mat、thick_glass.mat、matte.mat、matte.glsl、far_side/far_look.mat、studio.glsl、
 neko/mask/puppet/led.mm、パッチ2本、gpu_door、ビルド用スクリプト）。何もビルドせず、何も走らせていない。速さの数字は「未確認」。
 
-注：採点の途中で `filament/video.h` が書き換わった（未コミット。`video()` に切り出し・速度・逆再生の引数が増え、音は「読んで捨てる」から「読まない」に）。
+注：採点の途中で `engine/video.h` が書き換わった（未コミット。`video()` に切り出し・速度・逆再生の引数が増え、音は「読んで捨てる」から「読まない」に）。
 証拠にも動画にも無いので点には入れていない。下の video.h の行番号は、コミット f6ede88 の版（262行）の物。次の回に、動く動画を付けて出せば2番が上がる。
 
 ## 点

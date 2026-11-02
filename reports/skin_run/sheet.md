@@ -4,12 +4,12 @@
 
 ## 目標
 
-ウィジェットブックの見本の窓（`lab_book` の Workspace › Workspace）を、本物の中身（`filament/motolii.h`）につなぐ。つないだ窓だけで、手本の画を作れる所まで。
+ウィジェットブックの見本の窓（`lab_book` の Workspace › Workspace）を、本物の中身（`engine/motolii.h`）につなぐ。つないだ窓だけで、手本の画を作れる所まで。
 
 ## 作る的（この順）
 
 1. `reports/show/edit_v5.mp4` と同じ物を、窓だけで作り直す（AEの絵の背景、色抜きの猫、打った文字2つ、ガラスの輪、3Dの狐、写真）。
-2. 猫ミームの人形劇（`filament/out/vid/` の色抜きの猫を何匹か＋打った文字＋背景）。
+2. 猫ミームの人形劇（`engine/out/vid/` の色抜きの猫を何匹か＋打った文字＋背景）。
 3. 青いロケットのコラージュ（`research_notes/refs/G_rocket_collage_blue.jpg`：3D を四角い窓で切って並べる、白い粘土の見た目、キリル文字、平らな帯）。
 
 ## 採点者は2人、毎回新しい人

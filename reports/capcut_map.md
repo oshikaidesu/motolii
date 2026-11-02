@@ -80,7 +80,7 @@ CapCut の名前のうち英語の名前が分かる 1088 本を、見本の名�
 
 - 元ネタの本物（ByteDance の素材）は借りられない。なので各行の借りる先は、①名前が同じ開いた物があればそれを先頭に（「名前が同じ」と書く）、②無ければ同じ種類の開いた物、の順。
 - 一番の借り先は **gl-transitions**（つなぎ目、125 本、MIT。手元の ISF-Files に 68 本が ISF に直して入っている）、**Vidvox ISF-Files**（画面の効果、手元に 327 本、MIT）、**Animista**（入り・出・文字、BSD-2）と **Animate.css v3.7.2**（MIT、v4 は Hippocratic なので v3 を使う）、粒の絵は **Kenney Particle Pack**（CC0）、人の切り抜きは **MediaPipe**（Apache-2.0）。
-- 使わない：GSAP（独自ライセンス）、Lygia（Prosperity、商用は買い取り）、Shadertoy の多く（CC BY-NC-SA）、ISF の Boxinator（CC BY-NC、`filament/effects/` に入っているので外す候補）、Smoke Screen・ASCII Art（Shadertoy 由来でライセンスの表示なし）、掘金の抖音まねのコード（ライセンス無し）。
+- 使わない：GSAP（独自ライセンス）、Lygia（Prosperity、商用は買い取り）、Shadertoy の多く（CC BY-NC-SA）、ISF の Boxinator（CC BY-NC、`engine/effects/` に入っているので外す候補）、Smoke Screen・ASCII Art（Shadertoy 由来でライセンスの表示なし）、掘金の抖音まねのコード（ライセンス無し）。
 
 ## 規約（取れない理由）
 

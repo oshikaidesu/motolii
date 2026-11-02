@@ -4,7 +4,7 @@
 Filament 1.77.2 を Dawn（WebGPU）で動かして測った物。**Windows では一度も動かしていない。**
 
 場所は `~/motolii`。動画は `reports/show/`、絵は `reports/ae_rubric/stills/`、
-検査が出した文面そのままは `reports/ae_rubric/records/`（`filament/records.sh` が全部を走らせ直して書く）。
+検査が出した文面そのままは `reports/ae_rubric/records/`（`engine/records.sh` が全部を走らせ直して書く）。
 使う人が打つ物は `reports/ae_rubric/try.md`。
 
 2回目の採点（`round_02_*.md`、4.5）の後に変わった所には【新】、2版で間違っていた所には【訂正】と書く。
@@ -21,8 +21,8 @@ Filament 1.77.2 を Dawn（WebGPU）で動かして測った物。**Windows で�
 - FFmpeg（動画の書き出しだけ。場面の絵をパイプで渡す）
 
 人の物への手入れ（パッチ）：1回目から変えていない。
-- Filament へ：`filament/dawn_probe/filament_dawn_compute.patch` 375行（足した行は159）。今夜の場面が使っていない部分（計算用の口など）も残ったまま。
-- ThorVG へ：`filament/dawn_probe/thorvg_z.patch` 362行（足した行は157）。本家には送らない。
+- Filament へ：`engine/dawn_probe/filament_dawn_compute.patch` 375行（足した行は159）。今夜の場面が使っていない部分（計算用の口など）も残ったまま。
+- ThorVG へ：`engine/dawn_probe/thorvg_z.patch` 362行（足した行は157）。本家には送らない。
 
 自分で書いた物：今夜の場面が通る所だけで **2250行**（2版の時は 2124。文書の直しと3Dファイルの口で増えた）。
 - `kit.h` 933、`video.h` 345、`drawn.h` 119、`motion.h` 137、`doc.h` 244、`solid.h` 74【新】
@@ -30,7 +30,7 @@ Filament 1.77.2 を Dawn（WebGPU）で動かして測った物。**Windows で�
 - つなぎ：`dawn_probe/gpu_door.*` 43、`dawn_probe/kit_wgpu.sh` 40
 - led の場面だけが使う物を足すと +228（`glasslight.mat` 99、`paper.mat` 77、`floor_shade.mat` 35、`paper_copy.mat` 17）
 - 場面（例として書いた物）：edit 51、lay 24、neko 104、puppet 64、mask 98、wall 41、ae 54、led 60
-- `filament/` には、今夜の場面が使っていない古い材質が90本ほど、`kit.h` には今夜だれも呼ばない関数（`glass_blocks`、`bubbles`、`box_light`、`own_glass`、`letters`）が残っている（消していない）。
+- `engine/` には、今夜の場面が使っていない古い材質が90本ほど、`kit.h` には今夜だれも呼ばない関数（`glass_blocks`、`bubbles`、`box_light`、`own_glass`、`letters`）が残っている（消していない）。
 
 公式でない口を使っている所（2回目の借り物の採点者は 6.5個と数えた。`round_02_borrowed.md` の (c)）：
 - GStreamer の Mac 用部品が絵に付けている札を、公開されていない並びを知っている前提で読んでいる（`video.h` の `VideoCoreVideoMeta`）。
@@ -88,7 +88,7 @@ Filament 1.77.2 を Dawn（WebGPU）で動かして測った物。**Windows で�
 
 【訂正】2版まで、見本の動画の音は道具箱が後から付けた拍子（太鼓）で、素材の音ではなかった。採点者に「素材の音と取り違える」と言われたので、太鼓は消した。
 【新】書き出した動画に、動画の素材そのものの音が入る（切り出し・速さ・逆再生・繰り返し・出る時刻に合わせて、FFmpeg が切って混ぜる）。作業中に鳴らす事はしていない。
-確かめ（`records/sound.txt`、検査は `filament/check/sound.sh`）：書き出した音と元のファイルの音が一番よく重なる所を探して、ずれを出す。
+確かめ（`records/sound.txt`、検査は `engine/check/sound.sh`）：書き出した音と元のファイルの音が一番よく重なる所を探して、ずれを出す。
 - 人形劇（音つきの猫ミーム2本）：ずれ 2.0 ms と 3.5 ms。短い方の動画が頭に戻る所（6.78秒）でも、音が一緒に頭に戻る（ずれ 0.0 ms）。
 - 文書（1.5秒から出して、2秒目から切って、2倍速にした動画）：ずれ 5.0 ms。出る前は無音。
 - 猫の民衆（動画51本ぶんの音）も書き出せる（`neko_v4.mp4`。51本が同時に鳴るのでうるさい。山は 0 dB で頭打ちにしてある）。
@@ -130,11 +130,11 @@ Filament 1.77.2 を Dawn（WebGPU）で動かして測った物。**Windows で�
 
 ## 編集
 
-`filament/doc.h`（244行）と `filament/edit.mm`（51行）。場面を C++ で書かずに、**1本のプログラムが文書を開いて、呼び出しを1行ずつ受ける。**
+`engine/doc.h`（244行）と `engine/edit.mm`（51行）。場面を C++ で書かずに、**1本のプログラムが文書を開いて、呼び出しを1行ずつ受ける。**
 - 文書＝SQLite のファイル1個。中身は「物・名前・時刻・値」の事実の並び。
 - 呼び出し：置く（動画・AEの絵と写真・3Dファイル・ガラス）、消す、値を変える、言葉を変える（重ね方など）、キーを打つ・消す、取り消し、やり直し。
   1回の呼び出し＝1個の変更＝取り消し1歩。変更は呼び出しが返る時にはファイルに入っている。取り消しの歩みもファイルに入っているので、閉じて開いても取り消せる。
-- 【新・訂正】2回目の採点者が見つけた傷3つを直した（`records/doc.txt`、検査は `filament/check/doc.sh`、打つ行は `check/doc_calls.txt` と `check/doc_wrong.txt`）：
+- 【新・訂正】2回目の採点者が見つけた傷3つを直した（`records/doc.txt`、検査は `engine/check/doc.sh`、打つ行は `check/doc_calls.txt` と `check/doc_wrong.txt`）：
   - **取り消しが、同じ値を2回変えると壊れた** → 直した。原因：値の変更を「消して入れ直す」で書いていて、SQLite の記録が2件に割れ、戻す時にぶつかっていた。SQLite 自身の「あれば更新」の書き方にした。
     検査：同じ値を3回、同じ時刻のキーを2回、キーのある値を上書き、の後に取り消し7回（8回目は「取り消す物が無い」）、やり直し3回。
   - **文書に置いたAEの絵が、自分の長さで黙って消えた**（`edit_v1.mp4` は5秒から後が真っ黒）→ 直した。物は、長さ（duration）を言わない限りずっと出ていて、終わりまで行ったら頭から繰り返す。`edit_v2.mp4` は最後まで背景がある。
@@ -157,7 +157,7 @@ Filament 1.77.2 を Dawn（WebGPU）で動かして測った物。**Windows で�
 ## Mac と Windows
 
 Mac だけ。動画の受け渡しは Mac 用の道しか書いていない。SQLite は Homebrew の物を使っている（macOS に元からある物のヘッダには session の宣言が無い）。
-`filament/WINDOWS.md` は古いガラス用の道で、今の土台（Dawn、ThorVG、GStreamer）の Windows の道は書かれていない。
+`engine/WINDOWS.md` は古いガラス用の道で、今の土台（Dawn、ThorVG、GStreamer）の Windows の道は書かれていない。
 
 ## 3回目の後（2026-10-14 未明）
 
@@ -192,7 +192,7 @@ Filament へのパッチの使っていない部分を消す（約11個）、led
 
 4回目の点：使う人の目 70.5 ＋ 借り物度 1（厳しく 54.5個、甘く 29個）＝ **5.2**。
 
-使う人の目の採点者が見つけた物と、その後（検査は `filament/check/doc.sh`、結果は `records/doc.txt`）：
+使う人の目の採点者が見つけた物と、その後（検査は `engine/check/doc.sh`、結果は `records/doc.txt`）：
 - **普通の入力で道具が終わった（4つ）** → 直した。
   長い文（73字）：1枚の絵に入らない長さの行は、小さく組む。無いフォルダへの書き出し：「そんなフォルダは無い」と断る。
   速さ 0.2 の音つき動画の書き出し：FFmpeg の音の速さ変えは半分ずつなので、重ねて掛ける（0.2 で書けた）。FFmpeg が途中でやめても、道具は終わらずに「書けなかった」と言う。
@@ -209,23 +209,23 @@ Filament へのパッチの使っていない部分を消す（約11個）、led
 `edit_v5.mp4` は `edit_v4` と同じ文書を、元の色のまま出る設定で書き直した物。
 
 編集の中身を C の関数の口にした（4回目の後）：
-- `filament/motolii.h`（37行、関数18個）：開く、置く、消す、値、言葉、キー、キーを消す、取り消し、やり直し、長さ、時刻、絵、動画の書き出し、一覧、間違いの理由。
+- `engine/motolii.h`（37行、関数18個）：開く、置く、消す、値、言葉、キー、キーを消す、取り消し、やり直し、長さ、時刻、絵、動画の書き出し、一覧、間違いの理由。
   ガワは文書を持たず、取っ手と物の番号だけを持つ（lumit の作法）。Flutter からは dart:ffi でこのヘッダの関数を呼ぶ形になる（**Flutter からはまだ呼んでいない**）。
-- `filament/motolii.mm`（57行）は各関数を `doc.h` と `kit.h` に渡すだけ。全部まとめて共有ライブラリ1個（`out/libmotolii.dylib`、23MB）になる。
-- 行を読む道具（`filament/edit.cpp`、62行）は、`motolii.h` だけを呼ぶ客に作り直した（Filament も ThorVG も SQLite も知らない。40KB）。文書の検査と音の検査は、この客を通して前と同じ結果（`records/doc.txt`、`records/sound.txt`）。
-- 素の C から同じ口を呼ぶ検査（`filament/check/api.c`、`records/api.txt`）：ガラスを置く、値、キー、取り消し、間違いの理由、絵。通った。
+- `engine/motolii.mm`（57行）は各関数を `doc.h` と `kit.h` に渡すだけ。全部まとめて共有ライブラリ1個（`out/libmotolii.dylib`、23MB）になる。
+- 行を読む道具（`engine/edit.cpp`、62行）は、`motolii.h` だけを呼ぶ客に作り直した（Filament も ThorVG も SQLite も知らない。40KB）。文書の検査と音の検査は、この客を通して前と同じ結果（`records/doc.txt`、`records/sound.txt`）。
+- 素の C から同じ口を呼ぶ検査（`engine/check/api.c`、`records/api.txt`）：ガラスを置く、値、キー、取り消し、間違いの理由、絵。通った。
 - 無い物：動いている絵をガワに渡す口（共有テクスチャ）、変わった所だけ知らせる流れ、ドラッグ中の仮置き。舞台の大きさは開く時に決めるが、カメラは決め打ち。
 
 最後の取り直し（`records/when.txt` の版 d545612、2026-10-14 02:26）：AEのファイル 97／103、動画の色 14／14、動画の時間 98行、文書の検査（35個の間違いを断る、開き直しは同じ絵、色はファイルのまま）、
 音 5 ms 以内、C からの呼び出し（`records/api.txt`）。猫の民衆10分：36000枚中 落ち1枚（1分目、最長 4.7 ms）。メモリは 101MB（3分目）→ 108MB（10分目）で、**毎分 1MB ずつ上がるのは直っていない**。
 1枚の時間：wall 3.4 ms、mask 7.9 ms、puppet 2.1 ms、lay 4.7 ms、neko 7.1 ms。
-Windows の道筋は `filament/WINDOWS.md` の頭に、今の土台（Dawn、ThorVG、GStreamer、SQLite）の物として書き直した（ソースを読んだだけ。何もビルドしていない）。
+Windows の道筋は `engine/WINDOWS.md` の頭に、今の土台（Dawn、ThorVG、GStreamer、SQLite）の物として書き直した（ソースを読んだだけ。何もビルドしていない）。
 
 ## 朝（2026-10-14）：ユーザーと話して直した事
 
 - **キーの読み違いを直した。** 夜の間「区間イージングは捨てる物」と逆に読んで、文書のキーを「間は1種類のなめらかさだけ」で作っていた。正しくは Motolii 独自の物で、**キーとキーの「間」そのものを決める**。
   この紙の上の方にある「キーごとの速度曲線は無い」「なめらかで行き過ぎない1種類だけ」という文は、その誤った作りの説明。2〜4回目の採点もその作りと、その読みの採点表で行われた。
-- **作り直した**（`filament/doc.h`）：キーは値を持つ。キーから次のキーまでの間が「行き方」を持つ。行き方は名前つきで文書の中にあり、中身は式。式を計算するのは SQLite（文書の入れ物そのもの。1回 0.2〜0.35 マイクロ秒）。
+- **作り直した**（`engine/doc.h`）：キーは値を持つ。キーから次のキーまでの間が「行き方」を持つ。行き方は名前つきで文書の中にあり、中身は式。式を計算するのは SQLite（文書の入れ物そのもの。1回 0.2〜0.35 マイクロ秒）。
   はじめから入れた行き方は7つ（smooth、linear、in、out、hold、bounce、wiggle）。自分の行き方は式1行で足せる。どの行き方も両端でキーの値に合う（合わない式は足す時に断る）。
   GStreamer の controller は使わなくなった（間ごとに行き方を変えられないため）。
 - 検査（`check/doc_ways.txt`、`records/doc.txt`）：1→3 の2秒の間で、linear は 0.5秒で 1.5、hold は 1.99秒まで 1・2秒で 3、wiggle は両端で 1 と 3・途中は 1.643、bounce、自分で足した overshoot、どれも期待の値。
@@ -237,9 +237,9 @@ Windows の道筋は `filament/WINDOWS.md` の頭に、今の土台（Dawn、Tho
 
 間の行き方は、過去の倉庫から持ってきた（同じ朝、ユーザーに「それらは過去倉庫から持ってこれる」と言われて）：
 - 上の「作り直した」の中の「はじめから入れた行き方は7つ（smooth、linear、in、out、hold、bounce、wiggle）」は私が式を決めた物で、**消した**。
-- 代わりに、過去の倉庫 `~/rust_ae/Motolii`（`motolii/crates/motolii-doc/src/eval/track.rs`、`bezier.rs`）の間の定義9種類を、名前・数の名前と並び・式・断る数の決まりごと、そのまま C++ に写した（`filament/interp.h`、162行）：
+- 代わりに、過去の倉庫 `~/rust_ae/Motolii`（`motolii/crates/motolii-doc/src/eval/track.rs`、`bezier.rs`）の間の定義9種類を、名前・数の名前と並び・式・断る数の決まりごと、そのまま C++ に写した（`engine/interp.h`、162行）：
   Hold、Linear、Bezier、Bounce、Elastic、Cyclic、Random、Steps、ElasticSteps。
-- 写しの確かめ（`filament/check/interp_twin.sh`、`records/interp_twin.txt`）：倉庫の式の行をそのまま別の場所でコンパイルして、41点×10通りで C++ の写しと突き合わせた。**差 0**（小数12桁まで）。Bezier は倉庫の物差しの厳密な3行と 2e-16 で合う。倉庫の中は読むだけで、何も書いていない。
+- 写しの確かめ（`engine/check/interp_twin.sh`、`records/interp_twin.txt`）：倉庫の式の行をそのまま別の場所でコンパイルして、41点×10通りで C++ の写しと突き合わせた。**差 0**（小数12桁まで）。Bezier は倉庫の物差しの厳密な3行と 2e-16 で合う。倉庫の中は読むだけで、何も書いていない。
 - 倉庫に無くて私が置いた物：数を言わない時の「いつもの数」のうち、Cyclic の peak・linear・envelope_end、Random の5つ、ElasticSteps の elasticity。何も言わない間を Bezier（過去のスキンの「Ease」の数）にした事。
   倉庫の GSAP の名前の表は持ってきていない（ユーザー：「負の遺産」）。
 - 式で足す行き方（`define`、SQLite が計算）は残してある。9種類に無い動きのための口。

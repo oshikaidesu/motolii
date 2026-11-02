@@ -21,11 +21,11 @@ git config core.hooksPath .githooks
 | 何を | コマンド | 通った時 |
 |---|---|---|
 | 台帳（下の決まり 2） | `python3 .githooks/assets_check.py` | `ASSETS.md covers all … files` |
-| 中身の試験（まとめて。試験の道具は `brew bundle --file=Brewfile.checks` と `python3 -m pip install --user pillow numpy`） | `filament/check/all.sh` | `all checks held`（どれかが NO なら exit 1）。1 本ずつは `filament/check/*.sh` |
+| 中身の試験（まとめて。試験の道具は `brew bundle --file=Brewfile.checks` と `python3 -m pip install --user pillow numpy`） | `engine/check/all.sh` | `all checks held`（どれかが NO なら exit 1）。1 本ずつは `engine/check/*.sh` |
 | 窓の試験 | `cd skin/book && flutter test` | 中身を組んでいない時は、中身を使う試験が飛ばされる |
 | 窓の書き方 | `cd skin/book && flutter analyze lib test integration_test` | エラー 0（今ある注意は 100） |
 
-GitHub の Actions は、台帳の確かめを毎回走らせます（`.github/workflows/assets.yml`、知らせるだけで PR は止めない）。組み立て全部と試験は `.github/workflows/build.yml`（Apple Silicon の Mac で、README の手順どおり組んで `check/all.sh`・`flutter analyze`・`flutter test`。コードに触る PR と、Actions の画面から手で）。窓での最初の 1 本の確かめは `cd skin/book && flutter drive --profile -d macos --driver=test_driver/integration_test.dart --target=integration_test/first_piece_test.dart`（`docs/media/window_step1..4.png` を書く）。作りは [`ARCHITECTURE.md`](ARCHITECTURE.md) と [`filament/README.md`](filament/README.md)。行動規範は [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)、脆弱性は [`SECURITY.md`](SECURITY.md)。
+GitHub の Actions は、台帳の確かめを毎回走らせます（`.github/workflows/assets.yml`、知らせるだけで PR は止めない）。組み立て全部と試験は `.github/workflows/build.yml`（Apple Silicon の Mac で、README の手順どおり組んで `check/all.sh`・`flutter analyze`・`flutter test`。コードに触る PR と、Actions の画面から手で）。窓での最初の 1 本の確かめは `cd skin/book && flutter drive --profile -d macos --driver=test_driver/integration_test.dart --target=integration_test/first_piece_test.dart`（`docs/media/window_step1..4.png` を書く）。作りは [`ARCHITECTURE.md`](ARCHITECTURE.md) と [`engine/README.md`](engine/README.md)。行動規範は [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)、脆弱性は [`SECURITY.md`](SECURITY.md)。
 
 ## 決まり
 
@@ -40,17 +40,17 @@ GitHub の Actions は、台帳の確かめを毎回走らせます（`.github/w
 
 ### 4. 他の人の作品を入れる時
 - 作者のフォルダごと、なるべく手を入れずに置く。隣に作者のライセンスの文書（`LICENSE`）と、取ってきた所（`SOURCE.txt`：名前と作者／licence／from／page）。
-- 作者がライセンスの文書を出していない物は入れない（入れる代わりに、組み立ての時に作者の所から取る：`filament/midi_roll.sh` が例）。
-- 手を入れる物は、元に当てる差分（`.patch`）に分けて、元は組み立ての時に作者の配布元から取る（`filament/dawn_probe/tvg_on_dawn.sh` が例）。
+- 作者がライセンスの文書を出していない物は入れない（入れる代わりに、組み立ての時に作者の所から取る：`engine/midi_roll.sh` が例）。
+- 手を入れる物は、元に当てる差分（`.patch`）に分けて、元は組み立ての時に作者の配布元から取る（`engine/dawn_probe/tvg_on_dawn.sh` が例）。
 - [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) に行を足す。
 
 ## 手を付けやすい所
 
 | 何 | どこから | 難しさ |
 |---|---|---|
-| 配れる `.app`：中身が読む Homebrew の部品（GStreamer・glib・SQLite・LuaJIT・QuickJS）を `.app` の中に入れる。[dylibbundler](https://github.com/auriamg/macdylibbundler) か GStreamer の macOS 用フレームワーク | `filament/edit.sh`、`skin/book/macos/` | 中 |
-| AviUtl2 のスクリプトで足りない呼び出し（`obj.drawpoly`、図形「円」など）を、手本（AviUtl2 の lua.txt、sashimono-edit）どおりに | `reports/aviutl2/converter_plan.md`、`filament/aviutl.cpp` | 中〜難 |
-| TSL の表現を編集の棚に出す | `filament/tsl/`、`reports/tsl_collection.md` | 中 |
+| 配れる `.app`：中身が読む Homebrew の部品（GStreamer・glib・SQLite・LuaJIT・QuickJS）を `.app` の中に入れる。[dylibbundler](https://github.com/auriamg/macdylibbundler) か GStreamer の macOS 用フレームワーク | `engine/edit.sh`、`skin/book/macos/` | 中 |
+| AviUtl2 のスクリプトで足りない呼び出し（`obj.drawpoly`、図形「円」など）を、手本（AviUtl2 の lua.txt、sashimono-edit）どおりに | `reports/aviutl2/converter_plan.md`、`engine/aviutl.cpp` | 中〜難 |
+| TSL の表現を編集の棚に出す | `engine/tsl/`、`reports/tsl_collection.md` | 中 |
 | 台帳 `ASSETS.md` の見出しに英語を添える | `ASSETS.md` | 易 |
 | 窓の結合テストの出力先（いまは `reports/`）を一時フォルダに | `skin/book/integration_test/` | 易 |
 
@@ -59,4 +59,4 @@ GitHub の Actions は、台帳の確かめを毎回走らせます（`.github/w
 - 動くのは macOS（Apple Silicon）だけ。
 - 窓の試験（`flutter test`）は、まとめて走らせても全部通る（2026-10-28、CI の Mac で 146 本、1 本は飛ばし）。CI でも落ちたら止まる。
 - 中身（`libmotolii.dylib`）は Homebrew の GStreamer などを読むので、作った `.app` はそのままでは他の Mac で動きません。
-- `filament/` の直下には、今の中身と前の試しのファイルが並んでいます（前の試しのスクリプトは `filament/sdk.sh` が取る組み立て済みの Filament を使う）。
+- `engine/` の直下には、今の中身と前の試しのファイルが並んでいます（前の試しのスクリプトは `engine/sdk.sh` が取る組み立て済みの Filament を使う）。

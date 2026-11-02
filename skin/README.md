@@ -1,6 +1,6 @@
 # skin — Motolii の窓
 
-Motolii の窓（Flutter、macOS）と、その見た目の決まり。窓は操作だけで、絵は中身（`../filament/`）が描く。
+Motolii の窓（Flutter、macOS）と、その見た目の決まり。窓は操作だけで、絵は中身（`../engine/`）が描く。
 
 ## 中身
 - `book/` — 窓そのもの。Flutter の Widgetbook として組んであり、`Workspace › Workspace › Live` が本物の窓（[`book/lib/workspace/README.md`](book/lib/workspace/README.md)）。試験は `book/test/`・`book/integration_test/`。

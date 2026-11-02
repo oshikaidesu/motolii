@@ -100,7 +100,7 @@ class EffectsShelf extends StatelessWidget {
 }
 
 /// One tile, whatever draws it: what it does to a sample (the picture the inside says, drawn by effect_tiles.dart and
-/// moving while the hand is on it, as Alight Motion's tiles move; or made by filament/fx_tiles.sh; without one, a thing's
+/// moving while the hand is on it, as Alight Motion's tiles move; or made by engine/fx_tiles.sh; without one, a thing's
 /// effect its small drawing, else a plain tile), its name, ON (and its place among those on the stage) when it is on,
 /// NO CHANGE when it is seen to change nothing on the sample, the star for a thing's effect.
 class EffectTile extends StatelessWidget {

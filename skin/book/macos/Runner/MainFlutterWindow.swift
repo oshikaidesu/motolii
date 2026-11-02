@@ -58,7 +58,7 @@ final class LiveTexture: NSObject, FlutterTexture {
   }
 }
 
-/// The live glass (motolii/filament/out/libglass_live.dylib).
+/// The live glass (motolii/engine/out/libglass_live.dylib).
 /// Channel "motolii/glass", method "start" {lib, base, width, height, env: {name: value}} -> texture id, or -1.
 /// Everything else (sun, camera, pace) the Dart side sets through the library's own C functions.
 enum GlassTexture {
@@ -97,7 +97,7 @@ enum GlassTexture {
   }
 }
 
-/// The present inside's stage (motolii/filament/out/libmotolii.dylib, motolii.h). The Dart side opens the document
+/// The present inside's stage (motolii/engine/out/libmotolii.dylib, motolii.h). The Dart side opens the document
 /// itself (dart:ffi) and makes it live; here the library is only asked for its last finished picture and how many
 /// there have been (the inside keeps the clock).
 /// Channel "motolii/stage", method "start" {lib, handle (the Motolii* as a number), and which picture: front and frames,

@@ -189,7 +189,7 @@
 
 ## 4. 技術の差（今の AviUtl2 変換器と比べて）
 
-今の変換器（filament/aviutl.h, aviutl.cpp, aviutl_fx.h）は .anm2 / .obj2 だけを読む。Lua は LuaJIT 2.1 で、os・io・debug・dofile・loadfile を外してある。obj は 13 個の関数を持ち、そのほかの名前は「not yet」で止まる。
+今の変換器（engine/aviutl.h, aviutl.cpp, aviutl_fx.h）は .anm2 / .obj2 だけを読む。Lua は LuaJIT 2.1 で、os・io・debug・dofile・loadfile を外してある。obj は 13 個の関数を持ち、そのほかの名前は「not yet」で止まる。
 
 ### ファイルと文字
 

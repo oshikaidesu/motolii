@@ -1,5 +1,5 @@
-// Glass › Live: the Filament glass of motolii/filament, drawn live and shown here as a texture.
-// The library (out/libglass_live.dylib, built by filament/build_live.sh) draws every frame on the GPU into a pixel
+// Glass › Live: the Filament glass of motolii/engine, drawn live and shown here as a texture.
+// The library (out/libglass_live.dylib, built by engine/build_live.sh) draws every frame on the GPU into a pixel
 // buffer; the macOS runner hands that same buffer to Flutter (macos/Runner/MainFlutterWindow.swift, GlassTexture).
 // Nothing is copied and nothing is read back. This file only shows the texture and sends numbers: drag turns the
 // camera, the wheel moves it nearer or further, the knobs set the sun and the pace.
@@ -84,7 +84,7 @@ class _GlassLiveViewState extends State<GlassLiveView> {
       final id = await _channel.invokeMethod<int>('start', {'lib': lib, 'base': _dir, 'width': _w, 'height': _h, 'env': _scene});
       if (!mounted) return;
       if (id == null || id < 0) {
-        setState(() => _problem = 'Could not load $lib\nBuild it with filament/build_live.sh');
+        setState(() => _problem = 'Could not load $lib\nBuild it with engine/build_live.sh');
         return;
       }
       _lib = _Lib(DynamicLibrary.open(lib));

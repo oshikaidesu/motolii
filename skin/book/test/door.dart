@@ -19,7 +19,7 @@ import 'package:lab_book/workspace/desk_ease_side.dart' show EaseShapes, easeFit
 export 'package:lab_book/motolii.dart' show motoliiDir;
 export 'package:lab_book/workspace/door.dart';
 
-/// Whether the inside is built (filament/edit.sh): a test that needs it says `skip: !insideBuilt`.
+/// Whether the inside is built (engine/edit.sh): a test that needs it says `skip: !insideBuilt`.
 final insideBuilt = File('$motoliiDir/out/libmotolii.dylib').existsSync();
 
 /// Tall enough for a box of the Colors shelf at its first size to be pressed, under the wheel and the samples.

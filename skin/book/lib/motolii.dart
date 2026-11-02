@@ -1,4 +1,4 @@
-// The present inside (motolii/filament/motolii.h), called straight from Dart: dart:ffi on its C calls, as
+// The present inside (motolii/engine/motolii.h), called straight from Dart: dart:ffi on its C calls, as
 // sets/glass_live.dart calls the old glass. The skin holds no document: it holds this handle and the numbers of things.
 // One call = one change = one step of undo. A call that is not done returns false and [trouble] says why.
 // macOS only, Debug build only (the Debug entitlements have the sandbox off so that the library can be loaded).
@@ -19,18 +19,18 @@ part 'motolii_questions.dart';
 part 'motolii_shelves.dart';
 part 'motolii_watch.dart';
 
-/// Where the inside lives: --dart-define=MOTOLII_DIR=/path/to/motolii/filament, or else the filament/ found going up from
+/// Where the inside lives: --dart-define=MOTOLII_DIR=/path/to/motolii/engine, or else the engine/ found going up from
 /// where it was started (flutter test runs in skin/book) or from this program (the app is built under skin/book/build/).
 final String motoliiDir = () {
   const given = String.fromEnvironment('MOTOLII_DIR');
   if (given.isNotEmpty) return given;
   for (final from in [Directory.current, File(Platform.resolvedExecutable).parent]) {
     for (var d = from.absolute; ; d = d.parent) {
-      if (File('${d.path}/filament/edit.sh').existsSync()) return '${d.path}/filament';
+      if (File('${d.path}/engine/edit.sh').existsSync()) return '${d.path}/engine';
       if (d.parent.path == d.path) break;
     }
   }
-  return 'filament';
+  return 'engine';
 }();
 
 /// The document the window opens: --dart-define=MOTOLII_DOC=/path/to.motolii, or the inside's own out/skin.motolii.

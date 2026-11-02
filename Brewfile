@@ -1,5 +1,5 @@
 # What Motolii's build asks of Homebrew (Homebrew Bundle:  brew bundle).  Xcode, Python 3 and Flutter 3.47.2 are not from here.
-# To build: filament/dawn_probe/build.sh, filament/edit.sh
+# To build: engine/dawn_probe/build.sh, engine/edit.sh
 brew "cmake"
 brew "ninja"
 brew "meson"

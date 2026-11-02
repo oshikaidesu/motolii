@@ -4,7 +4,7 @@
 //   rayq one                         one triangle, two lines (does the query work at all?)
 //   rayq shapes <studio.ktx> <out.png>   simple glass solids (a torus, a box with round edges), three models of the
 //                                    optics by MODEL=0|1|2 (src/shapes.rs, src/glass.wgsl)
-//   rayq band <mesh.bin> [check|time|pace]   the band's mesh (written by filament/band.mm MODEL=D), band.mm's "ref" camera,
+//   rayq band <mesh.bin> [check|time|pace]   the band's mesh (written by engine/band.mm MODEL=D), band.mm's "ref" camera,
 //                                    the same rule as model D (band_bvh.mat). check: against a CPU trace that tries
 //                                    every triangle. time: GPU time of the pass alone.
 //
@@ -143,7 +143,7 @@ fn load(path: &str) -> Mesh {
     let f = |from: usize, n: usize| -> Vec<f32> { raw[from..from + n * 4].chunks(4).map(|c| f32::from_le_bytes(c.try_into().unwrap())).collect() };
     let pos = f(8, nv * 3);
     let idx: Vec<u32> = raw[8 + nv * 12..8 + nv * 12 + ni * 4].chunks(4).map(|c| u32::from_le_bytes(c.try_into().unwrap())).collect();
-    assert!(raw.len() >= 8 + nv * 24 + ni * 4, "mesh file without normals: run filament/out/band with MODEL=D again");
+    assert!(raw.len() >= 8 + nv * 24 + ni * 4, "mesh file without normals: run engine/out/band with MODEL=D again");
     let nrm = f(8 + nv * 12 + ni * 4, nv * 3);
     Mesh { pos, idx, nrm }
 }

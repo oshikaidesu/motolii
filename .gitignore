@@ -1,16 +1,16 @@
 # build products and render output
 out/
 third_party/
-# (filament/third_party holds what the build fetches, kept out, beside a few small bundled works, kept in: a new one is let in below)
-!/filament/third_party/
-/filament/third_party/*
-!/filament/third_party/anime/
-!/filament/third_party/godot_easing/
-!/filament/third_party/js/
-!/filament/third_party/midi_roll/
-!/filament/third_party/thermion_frame/
-/filament/third_party/js/hermes/
-/filament/third_party/midi_roll/PianoRollSvg.js
+# (engine/third_party holds what the build fetches, kept out, beside a few small bundled works, kept in: a new one is let in below)
+!/engine/third_party/
+/engine/third_party/*
+!/engine/third_party/anime/
+!/engine/third_party/godot_easing/
+!/engine/third_party/js/
+!/engine/third_party/midi_roll/
+!/engine/third_party/thermion_frame/
+/engine/third_party/js/hermes/
+/engine/third_party/midi_roll/PianoRollSvg.js
 target/
 build/
 node_modules/
@@ -22,11 +22,11 @@ node_modules/
 /bridge/
 /melt/
 # compiled test program without an extension
-/filament*/prism
+/engine*/prism
 # collected reference pictures and clips (280 MB, not source); add later if wanted
 /research_notes/
 
-# made from their sources by lottie3d.py (filament/led.sh, filament/motion_test.sh)
+# made from their sources by lottie3d.py (engine/led.sh, engine/motion_test.sh)
 __pycache__/
 # Kept on this machine only, not in git: the reports' pictures and films (many show other people's apps or footage),
 # Windows binaries inside the AviUtl2 packages (Motolii runs on macOS), and packages whose author gives no licence text.
@@ -36,19 +36,19 @@ __pycache__/
 /reports/**/*.mp4
 /reports/**/*.gif
 /reports/**/*.webm
-/filament/aviutl_scripts/**/*.mod2
-/filament/aviutl_scripts/**/*.aux2
-/filament/aviutl_scripts/**/*.exe
-/filament/aviutl_scripts/**/*.dll
-/filament/aviutl_scripts/HexBrowns__AviUtl2Browser_H/Script/browser/exe/
-/filament/aviutl_scripts/Korarei__Constraint/
-/filament/aviutl_scripts/Natadecoco2539__TextBackplate/
-/filament/aviutl_scripts/Tettu0530__NCS風音声波形__NCSAudioVisualizer_/
-/filament/aviutl_scripts/zopty__光学モーションブラー/
-/filament/aviutl_scripts/もも猫__ウェーブクリッピング/
-/filament/aviutl_scripts/もも猫__スカラップ円/
-/filament/aviutl_scripts/もも猫__ルーローの多角形/
-/filament/aviutl_scripts/暘_弥涼__SliceGlitch/
+/engine/aviutl_scripts/**/*.mod2
+/engine/aviutl_scripts/**/*.aux2
+/engine/aviutl_scripts/**/*.exe
+/engine/aviutl_scripts/**/*.dll
+/engine/aviutl_scripts/HexBrowns__AviUtl2Browser_H/Script/browser/exe/
+/engine/aviutl_scripts/Korarei__Constraint/
+/engine/aviutl_scripts/Natadecoco2539__TextBackplate/
+/engine/aviutl_scripts/Tettu0530__NCS風音声波形__NCSAudioVisualizer_/
+/engine/aviutl_scripts/zopty__光学モーションブラー/
+/engine/aviutl_scripts/もも猫__ウェーブクリッピング/
+/engine/aviutl_scripts/もも猫__スカラップ円/
+/engine/aviutl_scripts/もも猫__ルーローの多角形/
+/engine/aviutl_scripts/暘_弥涼__SliceGlitch/
 /reports/user_panels/sheets/youtube/
 /build.motolii
 /reports/user_panels/

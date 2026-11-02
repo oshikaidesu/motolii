@@ -1,4 +1,4 @@
-// The window joined to the real inside (filament/out/libmotolii.dylib, built by filament/edit.sh), driven as a hand
+// The window joined to the real inside (engine/out/libmotolii.dylib, built by engine/edit.sh), driven as a hand
 // would drive it: what a seat does reaches the document, and one act is one step back. Where the inside is not
 // built these are skipped.
 import 'dart:ffi';
@@ -373,7 +373,7 @@ void main() {
 
   testWidgets('a preset of your own is the maker\'s, a file in ways/: a tile of the Ease desk in every document, written into the document when put on a key', (t) async {
     final ws = await _pump(t), m = ws.inside!;
-    expect(m.wayNames, contains('Snappy'), reason: 'filament/ways/snappy.way, the maker\'s own');
+    expect(m.wayNames, contains('Snappy'), reason: 'engine/ways/snappy.way, the maker\'s own');
     expect(unseated(ws).map((e) => e.name), contains('Snappy'), reason: 'a tile, nothing of the window changed');
     for (final u in [.1, .3, .5, .8]) {
       expect(m.wayAt('Snappy', u), closeTo(bezierY(const Offset(.2, 0), const Offset(0, 1), u), 1e-3), reason: 'at $u');

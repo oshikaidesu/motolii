@@ -6,7 +6,7 @@
 ## 1. 見た物・走らせた物
 
 読んだ物：`AE_RUBRIC.md`、`reports/ae_rubric/evidence.md`、`try.md`、`round_02_viewer.md`、`records/` の全部、
-`filament/check/doc_calls.txt`、`doc_wrong.txt`。
+`engine/check/doc_calls.txt`、`doc_wrong.txt`。
 
 見た動画（ffmpeg でコマを抜いて絵で見た。最初の3枚、最後の3枚、途中の8枚）：
 `neko_v4`、`mask_v6`、`lay_v2`、`edit_v2`、`puppet_v6`、`puppet_v5_forty`、`puppet_v5_awkward`、`led_v4_arch`。
@@ -16,8 +16,8 @@
 
 音：耳では聞いていない（聞けない）。音を数字にして、元の `happy.mp4`・`mohsen.mp4` と重ねて比べた。8本の音の有無も調べた。
 
-自分で走らせた物：`./edit.sh` を 13 個の文書（`filament/out/judge3_*.motolii`）で 17 回。
-絵は `filament/out/wgpu_kit/out/judge3_*.png` に 30 枚ほど。動画は2本（`judge3_d.mp4` 3.5秒、`judge3_f.mov` 8秒）。
+自分で走らせた物：`./edit.sh` を 13 個の文書（`engine/out/judge3_*.motolii`）で 17 回。
+絵は `engine/out/wgpu_kit/out/judge3_*.png` に 30 枚ほど。動画は2本（`judge3_d.mp4` 3.5秒、`judge3_f.mov` 8秒）。
 打った行と返事は `/tmp/judge_view3/*.txt`・`*.out` に残してある。どの回も 3〜8 秒で終わった。止まった回は 0。
 黙って終わった回が 1（下の4章）。
 
@@ -66,7 +66,7 @@
 8番のために数えた物：
 - (a) 1個置く手数：動画 1、写真 1、AEの絵 1、3Dファイル 1、ガラス 1。背景にするのは 3手（`add`、`set z -1`、`set high 4.2`）。緑を抜くのは +1手。
 - (b) 毎コマ呼ぶ物：文書からは 0。
-- (c) 中の名前：4個。①ファイルの場所を `filament/out/wgpu_kit/` から見た形で書く事。②`GStreamer-Controller-CRITICAL … gst_timed_value_control_source_set` の行。
+- (c) 中の名前：4個。①ファイルの場所を `engine/out/wgpu_kit/` から見た形で書く事。②`GStreamer-Controller-CRITICAL … gst_timed_value_control_source_set` の行。
   ③`gltfio: Auto-loading resources … deprecated` が15行（.gltf を置いた時）。④`ln: out/wgpu_kit/out/lightroom: File exists`。
 - (d) スイッチ：0。
 - (e) 捨てる物の持ち込み：0。

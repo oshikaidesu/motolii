@@ -43,7 +43,7 @@
 | BAO Boa（BAO） | 道に沿って層を曲げる | F（1） | 止まる：同梱の曲げKR は `obj.drawpoly` で止まる |
 | TypeMonkey（aescripts） | 音に合わせて文字が並んで動く | F（1） | 一部：同梱の LyricMotioN（動く）、AutoLyricAnimation_K（`obj.rand` で止まる） |
 | VC Reflect（Video Copilot、無料） | 物の映り込み | G（1） | 候補（未確認） |
-| ORB（Video Copilot、無料） | 惑星などの球 | G（1） | 有る：立体の形 Ellipsoid（`filament/solids/Ellipsoid.js`）に絵を貼る |
+| ORB（Video Copilot、無料） | 惑星などの球 | G（1） | 有る：立体の形 Ellipsoid（`engine/solids/Ellipsoid.js`）に絵を貼る |
 | Thicc Stroke（無料） | マスクに沿った太い線 | G（1） | 有る：形の trim（線を描き進める） |
 | Mocha Pro（Boris FX） | 平面の追跡 | C E（2） | 道具に近いので外した |
 

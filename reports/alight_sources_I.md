@@ -10,7 +10,7 @@
 | エンジンに手が要る（借りる先はある。読み込む口・渡す口が足りない） | **7** | Chromatic Zoom Blur、Color Balance、Grunge、Parenting Helper、Ring、Scatter Field、Streak Strips |
 | 借りる先が見つからない | **3** | Matte Fringe、Scale Assist、Warp Blur |
 
-「そのまま置ける」6 本のうち 5 本は、要る .fs がもう `filament/effects/` に入っている。足すのは `Layer Position.fs` の 1 本だけ（Raster Transform 用）。
+「そのまま置ける」6 本のうち 5 本は、要る .fs がもう `engine/effects/` に入っている。足すのは `Layer Position.fs` の 1 本だけ（Raster Transform 用）。
 
 ## 何をする物か、どう調べたか
 
@@ -30,7 +30,7 @@
 
 ## 1 本ずつ
 
-- **Advanced Chroma Key**（分類 matte）：最大 4 色を、それぞれ「抜く（Exclude）」か「残す（Include）」にして抜く。色ごとに Threshold 0.10、Feather 0.05、Luma Sensitivity 0.25 があり、Show Mask で抜け方を白黒で見られる。普通の Chroma Key より細かく決められる。 — 借りる先：ISF `Chroma Mask.fs`（VIDVOX、ISF-Files は MIT、**もう `filament/effects/` に在る**）。HSV ごとの許す幅、dilate、blur、showAlpha が付いている。alphaMode の Multiply は、中の注記どおり「Chroma Mask を何枚も重ねる時」用。動画の物だけなら GStreamer `alpha`（LGPL、method=custom、target-r/g/b、angle、noise-level、black/white-sensitivity）も使える。 — 入れ方：物の fx に `Chroma Mask.fs` を色の数だけ並べ、2 枚目からは alphaMode=Multiply にする。Show Mask は showAlpha。**Include（その色だけ残す）は Chroma Mask に無い**ので、ここだけ足りない。
+- **Advanced Chroma Key**（分類 matte）：最大 4 色を、それぞれ「抜く（Exclude）」か「残す（Include）」にして抜く。色ごとに Threshold 0.10、Feather 0.05、Luma Sensitivity 0.25 があり、Show Mask で抜け方を白黒で見られる。普通の Chroma Key より細かく決められる。 — 借りる先：ISF `Chroma Mask.fs`（VIDVOX、ISF-Files は MIT、**もう `engine/effects/` に在る**）。HSV ごとの許す幅、dilate、blur、showAlpha が付いている。alphaMode の Multiply は、中の注記どおり「Chroma Mask を何枚も重ねる時」用。動画の物だけなら GStreamer `alpha`（LGPL、method=custom、target-r/g/b、angle、noise-level、black/white-sensitivity）も使える。 — 入れ方：物の fx に `Chroma Mask.fs` を色の数だけ並べ、2 枚目からは alphaMode=Multiply にする。Show Mask は showAlpha。**Include（その色だけ残す）は Chroma Mask に無い**ので、ここだけ足りない。
 
 - **Chromatic Zoom Blur**（blur、会員）：中心から放射状にぼかし、赤・緑・青でぼかしの強さを変える。つまみは Center、Strength 0.15、Adaptive。 — 借りる先：glfx.js の `src/filters/blur/zoomblur.js`（MIT、Evan Wallace。centerX・centerY・strength、41 回読む放射のぼかし）と、色ごとにずらす所は ISF `Chroma Zoom.fs`（toneburst、ISF-Files MIT、まだ入れていない。red/green/blue_zoom、center）。 — 入れ方：glfx.js はシェーダーを `new gl.Shader(null, '…')` に文字で渡す作りなので、three_isf.cpp と同じように QuickJS で読み、代わりの小さな `gl` を渡して文字だけ取り出せば ISF の道に乗る（ここがエンジンの手）。まず `Chroma Zoom.fs` → zoomBlur の順に並べる。色ごとに強さを変えるのは近い形になるだけ。
 
@@ -50,7 +50,7 @@
 
 - **Parenting Helper**（分類なし。transform・parenting）：親が回ったり大きさを変えたりした時に、子がどうついて行くかを変える。Scale と Rotation のそれぞれを Normal（普通）・Locked（位置だけついて行き、向きと大きさは変えない）・Weighted（倍率をかけてついて行く。200% で 2 倍回る）から選ぶ。Auto Rotate（X 軸か Y 軸）は親の横か縦の動きから自動で回す（車輪）。Radius Adjust で車輪の半径を直す。 — 借りる先：Rive の C++ ランタイム `src/constraints/rotation_constraint.cpp`・`scale_constraint.cpp`（rive-app/rive-runtime、MIT）。doesCopy を外すと自分の向きを保つので Locked、copyFactor が Weighted の倍率にあたる。Locked だけなら Godot の RemoteTransform2D/3D（MIT）の update_rotation・update_scale の考え方も同じ。 — 入れ方：今の Motolii の parent は、親の置き方（doc_place の行列）を丸ごと掛ける（doc_relations.h の doc_above）。ここで親の行列を移動・回転・大きさに分け、回転と大きさにだけ倍率をかけてから掛け直す。これがエンジンの手。**Auto Rotate は見本が見つからない**。式は Alight Motion の説明そのまま（進んだ距離 ÷ 半径 で回す）。
 
-- **Raster Transform**（transform）：Move & Transform と同じく大きさ・回転・ずらしを変える。ただし絵になった後、前の効果を掛けた後に動かすので、効果の結果ごと動かせる。つまみは Scale、Angle、Offset、Mask To Layer、Alpha、Fill、Sampling（Nearest・Linear）。 — 借りる先：ISF `Zoom.fs` と `Rotate.fs`（VIDVOX、MIT、**在る**）、ずらしは ISF `Layer Position.fs`（VIDVOX、MIT、**まだ入れていない**。offset、repeatImage）。 — 入れ方：`Layer Position.fs` を `filament/effects/` に足す。物の fx の中で、前の効果の後ろに Zoom → Rotate → Layer Position の順に並べる（Motolii の物ごとの効果は、並べた順に掛かる）。Mask To Layer・Fill・Nearest は無い。
+- **Raster Transform**（transform）：Move & Transform と同じく大きさ・回転・ずらしを変える。ただし絵になった後、前の効果を掛けた後に動かすので、効果の結果ごと動かせる。つまみは Scale、Angle、Offset、Mask To Layer、Alpha、Fill、Sampling（Nearest・Linear）。 — 借りる先：ISF `Zoom.fs` と `Rotate.fs`（VIDVOX、MIT、**在る**）、ずらしは ISF `Layer Position.fs`（VIDVOX、MIT、**まだ入れていない**。offset、repeatImage）。 — 入れ方：`Layer Position.fs` を `engine/effects/` に足す。物の fx の中で、前の効果の後ろに Zoom → Rotate → Layer Position の順に並べる（Motolii の物ごとの効果は、並べた順に掛かる）。Mask To Layer・Fill・Nearest は無い。
 
 - **Ring**（3d）：平らな面でできた立体の輪を描き、その物の絵を面に貼る。つまみは向き、回転、Radius、Width、Length、Smoothing、位置、Scale、光（Flat・点光源・平行光・Depth Map・Normal Map など）、貼り方（Mirror、Stretch、Repeat X/Y、Angle、Crop、Twirl、Offset）。 — 借りる先：輪の形は three.js の `LatheGeometry`（四角を回せば平らな面の輪）か、`CylinderGeometry` の openEnded（MIT）。Motolii には三角形の torus（kit_stage.h の torus()）と、形の ring がもう在る。 — 入れ方：A 段の「絵を立体の面に貼る」（Box・Cube・Cylinder・Torus など faux-3D の 16 本）と同じ手が要る。その物の画面外の絵（thing_fx が作る）を、Filament の 3D の物の材質に色の絵として渡す。
 

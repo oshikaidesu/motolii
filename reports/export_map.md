@@ -4,7 +4,7 @@ Motolii の書き出しの画面（skin/book/lib/workspace/top_bar.dart:246）�
 
 ## 先に分かったこと：書き出しの中身の持ち主
 
-書き出しは GStreamer ではなく、外の `ffmpeg` コマンドを文字列で組み立てて呼んでいる（filament/kit_draw.h:41）。
+書き出しは GStreamer ではなく、外の `ffmpeg` コマンドを文字列で組み立てて呼んでいる（engine/kit_draw.h:41）。
 
 - コマの速さは **60 で決め打ち**（`-r 60`、`time_is(s, i / 60.0)`）。画面の「Rate」の表示とは別に、いつも 60。
 - 画質は libx264 の CRF 17、キーフレーム 60 ごと、yuv420p、faststart。音は AAC 160k。

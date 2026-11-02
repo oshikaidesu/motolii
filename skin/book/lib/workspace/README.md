@@ -25,17 +25,17 @@ Workspace(document: path, tools: [
 - 例：`test/workspace_window_test.dart` の「a desk tool of your own」。
 
 ## 自分のプリセット（Ease の動き方）を足す
-プリセットは利用者の持ち物（スクリプトと同じ）。利用者のフォルダ（下の「利用者のフォルダ」）の `ways/` にファイルを 1 つ置くと、どの書類でも Ease の desk にタイルで出る。本体が持って来る見本は `filament/ways/`。式で使えるもの：`a`（前のキーの値）、`b`（次のキーの値）、`u`（区間の 0〜1）、`p1`〜`p4`（区間に付けた数）、`bezier(u, x1, y1, x2, y2)`。
+プリセットは利用者の持ち物（スクリプトと同じ）。利用者のフォルダ（下の「利用者のフォルダ」）の `ways/` にファイルを 1 つ置くと、どの書類でも Ease の desk にタイルで出る。本体が持って来る見本は `engine/ways/`。式で使えるもの：`a`（前のキーの値）、`b`（次のキーの値）、`u`（区間の 0〜1）、`p1`〜`p4`（区間に付けた数）、`bezier(u, x1, y1, x2, y2)`。
 ```
 // Snappy: fast away from the first key, a long soft landing          (1 行目：名前、コロンの後は説明)
 a + (b - a) * bezier(u, .2, 0, 0, 1)                                 (a: 前のキーの値、b: 次のキーの値、u: 区間の 0〜1)
 ```
 - キーに当てると、その式が書類に書き込まれる（書類を人に渡しても同じに動く）。当てるのと書き込むのは 1 歩（undo 1 回）。
-- 例：`filament/ways/snappy.way`、`test/workspace_joined_test.dart` の「a preset is in the maker's own folder」（テストは `MOTOLII_OWN` を一時フォルダにする）。
+- 例：`engine/ways/snappy.way`、`test/workspace_joined_test.dart` の「a preset is in the maker's own folder」（テストは `MOTOLII_OWN` を一時フォルダにする）。
 
 ## 利用者のフォルダ（スクリプト・エフェクト・動き・プリセット）
-Mac：`~/Library/Application Support/Motolii/`、Windows：`%APPDATA%\\Motolii\\`（`MOTOLII_OWN` で差し替え）。中のフォルダごとに、置いた瞬間に出る（本体の見本は `filament/` の同じ名前のフォルダ。同じ名前なら利用者のが勝つ）。
-- `recipes/*.js`：1 回で絵を作るスクリプト。Create 棚にタイルで出て、つまみは物の **Script** カードに出る。頭の書き方は `filament/script.h` の先頭（AviUtl2 と同じ `// --track@名前:ラベル,最小,最大,初め,刻み`、`--check@`、`--select@`）、例は `filament/recipes/`。
+Mac：`~/Library/Application Support/Motolii/`、Windows：`%APPDATA%\\Motolii\\`（`MOTOLII_OWN` で差し替え）。中のフォルダごとに、置いた瞬間に出る（本体の見本は `engine/` の同じ名前のフォルダ。同じ名前なら利用者のが勝つ）。
+- `recipes/*.js`：1 回で絵を作るスクリプト。Create 棚にタイルで出て、つまみは物の **Script** カードに出る。頭の書き方は `engine/script.h` の先頭（AviUtl2 と同じ `// --track@名前:ラベル,最小,最大,初め,刻み`、`--check@`、`--select@`）、例は `engine/recipes/`。
 - `effects/*.wgsl`：画面全体のエフェクト（Effects 棚）。`animators/*.js`：物に付ける動き。
 - `ways/*.way`：Ease のプリセット（上）。
 - どれも本家のファイルは 1 行も変えない。カードの名前を自分で付ける（例：Wobble）のはまだできない（Script と出る）。

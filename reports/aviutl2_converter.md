@@ -219,7 +219,7 @@ obj.pixelshader("psmain","object",nil,{bright/100},"add")
 
 ### 道具があるか
 
-- **Filament の glslang**（`filament/third_party/filament_src/third_party/glslang`）
+- **Filament の glslang**（`engine/third_party/filament_src/third_party/glslang`）
   - 元ソースには HLSL を読む部分がある：`glslang/HLSL/` の hlslGrammar.cpp、hlslParseHelper.cpp ほか 7 本。上の CMakeLists.txt には `option(ENABLE_HLSL ... ON)` がある。
   - ところが Filament が実際に組み立てる `tnt/CMakeLists.txt` では `ENABLE_HLSL` が消してある（コメントになっている）。組み上がった `out/wgpu/third_party/glslang/tnt/glslang/libglslang.a` の中身 30 個に hlsl*.o は 1 つも無い。
   - → 今のままでは HLSL を読めない。7 本を足し、`-DENABLE_HLSL` を付けて組み直せば読める。

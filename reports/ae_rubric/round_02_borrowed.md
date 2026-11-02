@@ -5,7 +5,7 @@
 ## 1. 読んだ物
 
 全部読んだ：
-- `filament/kit.h`（908行）、`video.h`、`drawn.h`、`motion.h`、`doc.h`
+- `engine/kit.h`（908行）、`video.h`、`drawn.h`、`motion.h`、`doc.h`
 - 材質：`flat.mat`、`thick_glass.mat`、`matte.mat`、`matte.glsl`、`far_look.mat`、`far_side.mat`、`studio.glsl`、`glasslight.mat`、`paper.mat`、`floor_shade.mat`、`paper_copy.mat`、`spectrum.glsl`
 - 場面：`edit.mm`、`lay.mm`、`neko.mm`、`puppet.mm`、`mask.mm`、`wall.mm`、`ae.mm`、`led.mm`
 - つなぎ：`dawn_probe/gpu_door.h`、`gpu_door.cpp`、`CMakeLists.txt`、`build.sh`、`kit_wgpu.sh`、`tvg_on_dawn.sh`、`edit.sh`、`records.sh`、`lay.sh`、`neko.sh`、`check/` の5個
@@ -210,7 +210,7 @@ Mac 専用の混ざり（`kit.h:32-37`、文字の立体、PNG 書き、メモ�
 4. **(f) は数えるのに、10点の条件に入っていない**（「(a)〜(e) が0」）。
 5. **「理由が書いてある」は7点の所でしか効かない**。5点と3点では、訳がある自作も無い自作も同じ。
 6. **発明の置き場が無い**。シェーダでも時刻でもパッチでもない自作（`doc.h` の文書の形と見比べの仕組み、`motion.h` の行列の組み立て、手作りの形、取り消しの積み）に文字が無い。(g)「自分で決めた形と決まり」を足す。
-7. **寝ている物を数えない**。`filament/` に材質が93本ある。`kit.h` には今夜だれも呼ばない物がある（`glass_blocks`、`bubbles`、`box_light`、`own_glass`、`letters`）。「見通せない」側の傷なのに、どこにも入らない。
+7. **寝ている物を数えない**。`engine/` に材質が93本ある。`kit.h` には今夜だれも呼ばない物がある（`glass_blocks`、`bubbles`、`box_light`、`own_glass`、`letters`）。「見通せない」側の傷なのに、どこにも入らない。
 8. **持ち主の口の使い方の誤り**（貸して返さない、放さない）が (c) なのか別なのか書いていない。今回は (c) に入れた。
 9. **「借りすぎて重い・配れない」側に数える物が無い**。Homebrew の GStreamer と SQLite に絶対の道でつなぐ（`edit.sh:6`）、Filament を15分かけてソースから作る、手を入れた写しが2つ。
 10. **1場面しか通らない物（led の光と紙）と、全場面が通る物（板、ガラス）が同じ1個**。

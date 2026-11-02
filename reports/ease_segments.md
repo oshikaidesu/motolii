@@ -48,7 +48,7 @@
 | GSAP（RoughEase・CustomWiggle・CustomBounce・SlowMo・ExpoScale） | 借りない | 独自（「All rights reserved」、OSI でない） | 考え方だけ表に残す。ばらつきは anime.js の irregular、揺れ・跳ねは Penner と spring で作る |
 
 ## Motolii の区間の持ち方と、入れ方
-- 今：区間ごとに「型＋数字 5 つ」（`filament/interp.h` の 9 型）か「名前の付いた道」（`filament/ways.h`、Cavalry の Magic Easing の名前、SQLite の式）か「利用者の式」（ways/ の 1 ファイル＝1 式、`bezier()` が使える）。式は SQLite とスクリプト（QuickJS）の両方で同じ文字が動く。
+- 今：区間ごとに「型＋数字 5 つ」（`engine/interp.h` の 9 型）か「名前の付いた道」（`engine/ways.h`、Cavalry の Magic Easing の名前、SQLite の式）か「利用者の式」（ways/ の 1 ファイル＝1 式、`bezier()` が使える）。式は SQLite とスクリプト（QuickJS）の両方で同じ文字が動く。
 - **anime.js をそのまま QuickJS で動かす**のが一番借りる形（Motolii は QuickJS をもう持っている）。式を写さず、区間の型の名前とつまみで anime.js の関数を呼ぶ。
 - 写すなら、SQLite の 1 式に収まる物（Penner の族、Back、Elastic、steps、ばねの閉じた形）は `ways.h` に出典つきで。点の並び（`linear()`・irregular）は 1 式に収まらないので QuickJS 側。
 - Alight Motion の 6 種は、この上で「既定の数字の組」として持つ（`alight_ease/` の曲線に合わせる）。

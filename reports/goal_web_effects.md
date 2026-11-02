@@ -7,18 +7,18 @@ shader-effects-inc/shaders（shaders.com、MIT、200 種）の効果を、Motoli
 ## できたと言える条件
 
 1. `reports/splat_orbit.mp4`（Motolii が書き出した動画）に、作者の Glitch を掛けた動画が、Motolii の中で撮れる。動画は作者の VideoTexture か ImageTexture を通る。
-2. 物の効果の段の 1 つとして載る（`filament/thing_fx.h` の段の並び。ThorVG と同じ道：Filament の描く糸の順番に入れる `door::on_driver`、結果は `Texture::Builder::import` で Filament へ）。
+2. 物の効果の段の 1 つとして載る（`engine/thing_fx.h` の段の並び。ThorVG と同じ道：Filament の描く糸の順番に入れる `door::on_driver`、結果は `Texture::Builder::import` で Filament へ）。
 3. つまみは作者の定義（各効果の props の範囲と初期値）をそのまま使う。時間は作者の口 `renderFrame({ deltaSeconds })` で Motolii の時間軸の 1 コマにつなぐ。
 4. 1920×1080 で 1 コマ 16.7 ms 未満。QuickJS の分と GPU の分を分けて測る。
 
 ## 今あるもの（動かして確かめた）
 
 - 作者のレンダラー（npm の組み立て済み `shaders@4.0.5` の `createRendererFromJSON`）が、Motolii の QuickJS-ng 0.17 の上で、Filament の装置を借りて描く。Plasma の上の Glitch が Node で描いた絵と 1 バイトも違わない。640×360 で 1 コマ 3.4〜4.5 ms。
-  - 動かし方：`./filament/dawn_probe/js_effects.sh <preset.json> <w> <h> <frames> <out.rgba>`（preset の例：`{"components":[{"type":"Glitch","children":[{"type":"Plasma"}]}]}`）
+  - 動かし方：`./engine/dawn_probe/js_effects.sh <preset.json> <w> <h> <frames> <out.rgba>`（preset の例：`{"components":[{"type":"Glitch","children":[{"type":"Plasma"}]}]}`）
 - 部品：
-  - `filament/tsl/jsrh_napi/build.sh` と `jsrh_qjs017_dawn.patch`：BabylonJS/JsRuntimeHost（980cfb0、MIT）の QuickJS の Node-API を、Motolii の QuickJS に `Napi::Attach` で付ける。0.17 との違い 1 か所と、足りない関数 3 つ。
-  - `filament/tsl/dawn_lend.patch`：Dawn の JS の口（dawn.node）に Filament の Dawn の呼び先の表（`motolii_dawn_procs`）を使わせ、装置とテクスチャを `wrapDevice`・`wrapTexture` で包む。
-  - `filament/tsl/jsrh_napi/shaders.ts`、`web_globals.ts`：作者のレンダラーを回す包みと、QuickJS に無い Web の部品（core-js、event-target-shim、abort-controller、fast-text-encoding）。
+  - `engine/tsl/jsrh_napi/build.sh` と `jsrh_qjs017_dawn.patch`：BabylonJS/JsRuntimeHost（980cfb0、MIT）の QuickJS の Node-API を、Motolii の QuickJS に `Napi::Attach` で付ける。0.17 との違い 1 か所と、足りない関数 3 つ。
+  - `engine/tsl/dawn_lend.patch`：Dawn の JS の口（dawn.node）に Filament の Dawn の呼び先の表（`motolii_dawn_procs`）を使わせ、装置とテクスチャを `wrapDevice`・`wrapTexture` で包む。
+  - `engine/tsl/jsrh_napi/shaders.ts`、`web_globals.ts`：作者のレンダラーを回す包みと、QuickJS に無い Web の部品（core-js、event-target-shim、abort-controller、fast-text-encoding）。
 - 経緯と数字：`reports/shaderport_video.md`。
 
 ## 残っている穴

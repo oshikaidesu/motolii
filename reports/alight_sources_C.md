@@ -6,11 +6,11 @@
 
 **物の絵（もう在る）→ Filament の立体のテクスチャ。形は three.js の形の関数を QuickJS でそのまま動かして作る。**
 
-1. **物の絵**：`filament/thing_fx.h` がもう、物を 1 つだけ別の画に描いて、その上に効果を順にかけている（`st.seen` が出来上がりの絵）。これをそのままテクスチャにする。効果を先にかけた絵が貼られるので、Alight の Twirl（貼る前の渦）は ISF の `Twirl.fs` を fx に足せば済む。
+1. **物の絵**：`engine/thing_fx.h` がもう、物を 1 つだけ別の画に描いて、その上に効果を順にかけている（`st.seen` が出来上がりの絵）。これをそのままテクスチャにする。効果を先にかけた絵が貼られるので、Alight の Twirl（貼る前の渦）は ISF の `Twirl.fs` を fx に足せば済む。
    - 気をつける所：いまの絵は「カメラから見た物の箱」。2D の物ならそのまま平らな絵だが、2.5D で傾いた物は傾いて写る。貼る用には、物の面に真っすぐ向いた平行投影のカメラで撮る aim がもう 1 つ要る（`thing_fx_aim` の隣、30 行ほど）。
 2. **形**：three.js（MIT、r186）の `three.core.js` を QuickJS-ng でそのまま読み、`BoxGeometry` などを呼んで、位置・法線・UV・番号の配列を Motolii の `Mesh`（`kit_stage.h`、もう UV0 を Filament に渡している）へ写す。`three_isf.cpp`（three.js のシェーダーを QuickJS で動かす、151 行）と同じやり方。
    - **確かめた**（qjs 0.17.0、`three.core.js` を手を入れずに）：読み込み 24 ms。Box 24 点、Cylinder 292 点、6 角柱 40 点、Pyramid 19 点、Octahedron 24 点、Sphere 1225 点、Torus 5289 点（8 ms）、Heart 3444 点、Star Prism 108 点、Tunnel 3185 点。どれも UV がある。`RoundedBoxGeometry` と `BufferGeometryUtils.mergeGeometries`（examples、MIT）も、`'three'` の読み先を差し替えるだけで動いた。面取りした星の柱 100 個で 89 ms。
-   - three.js の置き場：今は過去の倉庫の `rust_ae/Motolii/work/path-tube/drei-ref/node_modules/three`（v0.186.1）にしか丸ごと無い（読むだけ）。`research_notes/threejs_shaders/three` は部分 clone で、形のファイルの中身が無い。`filament/third_party/js/three/` に `three.core.js`（1.4 MB）と examples の 2 本を置く事になる。
+   - three.js の置き場：今は過去の倉庫の `rust_ae/Motolii/work/path-tube/drei-ref/node_modules/three`（v0.186.1）にしか丸ごと無い（読むだけ）。`research_notes/threejs_shaders/three` は部分 clone で、形のファイルの中身が無い。`engine/third_party/js/three/` に `three.core.js`（1.4 MB）と examples の 2 本を置く事になる。
 3. **材質**：Filament の見本 `samples/materials/texturedLit.mat`（Apache-2.0）の `baseColor = texture(albedo, getUV0())` を、いまの `floor_lit.mat` に足した物を 1 本。UV の行列（three.js の `Matrix3.setUvTransform` と同じ並び）、透明な所は masked、内側も見える doubleSided（Tunnel・Hollow Box）。Flat（光なし）は unlit の版をもう 1 本（`samples/materials/image.mat` の形）。
 
 **Alight より良くなる所**：Alight はレイマーチ（どの形にも Precision のつまみ）でレイヤーの中だけに描く。Motolii では本物の立体として世界に入るので、他の立体と前後し、影を落とし受け、Filament の光（sun・point・spot）と反射が効く。Alight の Orientation・Rotation・Position・Scale は物の x・y・z・rotate_x/y・scale_x/y/z のキーがそのまま受け持つ。
@@ -21,11 +21,11 @@
 - Smoothing（角を丸く）：形ごとに下に書く。
 
 **触るファイルと大きさ（目安）**：
-- 新しく `filament/solid_three.cpp`（+ `.h`）：QuickJS で three.js を読み、形のファイルを走らせ、配列を `Mesh` に写す。150 行ほど（`three_isf.cpp` と同じ大きさ）。
-- 新しく `filament/solids/*.js`：1 種 1 ファイル、5〜20 行。頭に AviUtl2 式のつまみ（レシピ `script.h` と同じ書き方）、下で three.js の形を呼ぶだけ。
-- 新しく `filament/solid_image.mat`（50 行ほど）と unlit の版。
-- `filament/doc_moment_fx.h`：物の fx の中に形の .js があれば、絵の板（`effected.mat`）の代わりにその形を物の場所に置き、毎コマ `image` に `st.seen` を渡す（20〜30 行）。Alight と同じく「効果の 1 つ」として扱える。
-- `filament/thing_fx.h`：平らに撮る aim（30 行ほど）。
+- 新しく `engine/solid_three.cpp`（+ `.h`）：QuickJS で three.js を読み、形のファイルを走らせ、配列を `Mesh` に写す。150 行ほど（`three_isf.cpp` と同じ大きさ）。
+- 新しく `engine/solids/*.js`：1 種 1 ファイル、5〜20 行。頭に AviUtl2 式のつまみ（レシピ `script.h` と同じ書き方）、下で three.js の形を呼ぶだけ。
+- 新しく `engine/solid_image.mat`（50 行ほど）と unlit の版。
+- `engine/doc_moment_fx.h`：物の fx の中に形の .js があれば、絵の板（`effected.mat`）の代わりにその形を物の場所に置き、毎コマ `image` に `st.seen` を渡す（20〜30 行）。Alight と同じく「効果の 1 つ」として扱える。
+- `engine/thing_fx.h`：平らに撮る aim（30 行ほど）。
 - `build_lib.sh`・`edit.sh`：1 行ずつ。
 - 合わせて C++ 300 行ほど＋材質 2 本＋形の .js 16 本。
 - ついで：いまのキットの形（`kit_stage.h` の `cube`・`sphere`・`torus`・`gem`）は自分で書いた物で、`cube` と `gem` は UV が全部 0（絵を貼れない）。three.js の形に替えれば、立体 cube・ball・ring も絵を貼れるようになる。
@@ -61,7 +61,7 @@
 - **Star Prism**：星の輪郭は three.js の見本 `examples/webgl_geometry_extrude_shapes.html` の星（半径を交互に 10 点、MIT）か Motolii の star の形（points・inner）。押し出しは `ExtrudeGeometry`（MIT）— 入れ方：Heart と同じ（bevel で Smoothing、`UVGenerator`）。Motolii の形の輪郭ならどれでも押し出せるので、Alight より広い。
 - **Three-axis Cross**：three.js `BoxGeometry` 3 本（x・y・z に細長く）を examples の `BufferGeometryUtils.mergeGeometries`（MIT）で 1 つに（確かめた：72 点）— 入れ方：Smoothing は `RoundedBoxGeometry` を 3 本。Alight のガイドにはつまみが書いてない（「まだ書いている途中」）ので、腕の太さ・長さは Alight で見て決める。
 - **Torus**：three.js `TorusGeometry`（MIT）— 入れ方：そのまま（u が輪を 1 周、v が管を 1 周）。いまの立体 ring は自分で書いた `torus()` なので、これに替える。
-- **Tunnel**：three.js `CylinderGeometry(…, openEnded=true)`（MIT）を内側から見る。曲がったトンネルにするなら `TubeGeometry`＋`CatmullRomCurve3`（MIT、確かめた：3185 点）— 入れ方：材質は doubleSided（内側が見える）、`WrapMode::REPEAT` で絵を奥へ繰り返し、UV の v をずらすと奥へ流れる。遠くを暗くするのは Filament の View の fog。Alight のガイドにはつまみが無い。手元の ISF に Tunnel の物は無い（`filament/recipes/tunnel.js` は写しを並べるレシピで別物）。
+- **Tunnel**：three.js `CylinderGeometry(…, openEnded=true)`（MIT）を内側から見る。曲がったトンネルにするなら `TubeGeometry`＋`CatmullRomCurve3`（MIT、確かめた：3185 点）— 入れ方：材質は doubleSided（内側が見える）、`WrapMode::REPEAT` で絵を奥へ繰り返し、UV の v をずらすと奥へ流れる。遠くを暗くするのは Filament の View の fog。Alight のガイドにはつまみが無い。手元の ISF に Tunnel の物は無い（`engine/recipes/tunnel.js` は写しを並べるレシピで別物）。
 
 ## 出所が無い・決まっていない物
 
@@ -76,4 +76,4 @@
 - three.js の見本：[webgl_geometry_shapes.html](https://raw.githubusercontent.com/mrdoob/three.js/r180/examples/webgl_geometry_shapes.html)（heartShape）、[webgl_geometry_extrude_shapes.html](https://raw.githubusercontent.com/mrdoob/three.js/r180/examples/webgl_geometry_extrude_shapes.html)（星）
 - [d3-contour](https://github.com/d3/d3-contour)（ISC）、[contours の説明](https://d3js.org/d3-contour/contour)
 - Blender の Star：[add_mesh_star.py](https://raw.githubusercontent.com/blender/blender-addons/main/add_mesh_extra_objects/add_mesh_star.py)（GPL-2.0+）、[Add Mesh Extra Objects](https://docs.blender.org/manual/en/2.81/addons/add_mesh/mesh_extra_objects.html)
-- 手元：`filament/thing_fx.h`、`kit_stage.h`、`doc_match.h`、`three_isf.cpp`、`floor_lit.mat`、`effected.mat`、`third_party/filament_src/samples/`（`rendertarget.cpp`、`materials/texturedLit.mat`、`image.mat`、`depthVisualizer.mat`、`heightfield.mat`）、`research_notes/isf/ISF-Files/ISF/`（`Sphere Map.fs`、`cube.fs`、`Twirl.fs`）
+- 手元：`engine/thing_fx.h`、`kit_stage.h`、`doc_match.h`、`three_isf.cpp`、`floor_lit.mat`、`effected.mat`、`third_party/filament_src/samples/`（`rendertarget.cpp`、`materials/texturedLit.mat`、`image.mat`、`depthVisualizer.mat`、`heightfield.mat`）、`research_notes/isf/ISF-Files/ISF/`（`Sphere Map.fs`、`cube.fs`、`Twirl.fs`）

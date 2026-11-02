@@ -66,7 +66,7 @@ Reddit は組み込みブラウザが安全上の理由で開かなかった。�
 
 見た所：検索 8 回、どれも要約だけ。本家の頁は Dwitter の About と Turtletoy の API の説明を読んだ。Shadertoy の利用規約は Cloudflare の確認で止まり、読めていない。確認は通していない。棚は `ASSETS.md`、`reports/effect_sets.md`、`reports/capcut_families.md`、`reports/capcut_origins.md` を見た。
 
-やり方：`door.h` がコードの形を読み分け、`later door` か窓の ⌘V で舞台に置く。実物を Git の外に取り、1 本ずつ通して 2 秒目の絵を目で見た。数は 11/1 夜の最後の走行の物で、その後の小さな直し（下の注）の後の全走行は Mac が落ちて終わっていない。入口の見本は `filament/check/door.sh` が毎回確かめる。
+やり方：`door.h` がコードの形を読み分け、`later door` か窓の ⌘V で舞台に置く。実物を Git の外に取り、1 本ずつ通して 2 秒目の絵を目で見た。数は 11/1 夜の最後の走行の物で、その後の小さな直し（下の注）の後の全走行は Mac が落ちて終わっていない。入口の見本は `engine/check/door.sh` が毎回確かめる。
 
 | 入口 | どこから取ったか | 本数 | 絵が出た | 出なかった物 |
 |---|---|---|---|---|
@@ -515,7 +515,7 @@ OpenProcessing の多くは by-nc-sa。ここまでは非営利のテストだ�
 
 **枠（Tracery、blob tracking）。** TD の Blob Track TOP は OpenCV の枠の検出を部品にした物で、TD 発ではない。元は画像処理の連結成分で、2007 年の multiblob（Pd）のような作品用の道具がある。バズっている見た目の最初の 1 本は特定できなかった。見た目の道具は Tracery（AE）、AE Blob Tracker、Shader Lab。どれも「動いた所のかたまりに飾りの枠」で、人を見分けてはいない。Shader Lab は説明でラベルは飾りと言っている。
 
-**Motolii での結果。** `filament/recipes/Blob Track.js` を足した（3f49e7e4c）。`tracker.ts` を型だけ外してスケッチに載せ、エンジンは変えていない。OpenCV の `vtest.avi`（git の外）で、Create の棚から載せて本物の窓で再生まで確認。初回は 1 コマ 93 ms だったが、周りのマスとの比較が重いと切り分け、変化の小さいマスを飛ばして 41 ms、解析を 1 回おきにして 27 ms。
+**Motolii での結果。** `engine/recipes/Blob Track.js` を足した（3f49e7e4c）。`tracker.ts` を型だけ外してスケッチに載せ、エンジンは変えていない。OpenCV の `vtest.avi`（git の外）で、Create の棚から載せて本物の窓で再生まで確認。初回は 1 コマ 93 ms だったが、周りのマスとの比較が重いと切り分け、変化の小さいマスを飛ばして 41 ms、解析を 1 回おきにして 27 ms。
 
 **タイムズレ（Time Displacement、スリットスキャン）。** 元は写真のスリットスキャンで、映画では 2001 年宇宙の旅（1968）のスターゲートが有名（抜粋）。AE の Time Displacement と TD の Time Machine TOP は同じ考えで、絵の明るさがその場所の遅れを決める。Motolii の Time Displacement（keijiro/SlitScanCam）は横か縦の傾きしか持たない。マップの追加は途中で止めた。残りはチェックリストの T の末尾。
 
@@ -537,7 +537,7 @@ OpenProcessing の多くは by-nc-sa。ここまでは非営利のテストだ�
 
 **何を変えたか。** 最初は `map` に印を付けてコードを書き換える案で作り始めたが、1 行も書く前にやめた。ユーザーの指摘：「それに最初から書き換え、ではないのかもしれないよ」「おれはp5.jsに編集可能な時間軸を持たせたいからだ」。スケッチは順に 1 回だけ走り、コマを取ってある（`p5_stand.h` の `__to`）ので、曲線は「どのコマを出すか」を選ぶだけで済む。
 
-**どこをどう見たか。** 棚：`reports/alight_checklist.md` に Time Remap の行が未着手で残っていた。`filament/doc_values.h` に AE の loopOut（cycle・pingpong・offset）が既にあった。見本：AbsentMotion の `VideoTiming.kt` と `SpeedPanel.kt` は全文を読んだ（Apache-2.0）。Alight Motion の Time Remapping は速さのキーを素材の時間の上に置き、1 → 1 の区間では曲線が効かず、行き過ぎる曲線も断る（`CurveCompatibilityTest.kt`）。ツールは動画と音声にしか出ず、プログラムは対象外。AE の説明書 Time-stretching and time-remapping は本文が 403 で読めず、検索の抜粋だけ：有効にするとレイヤーの頭と終わりにキーが 2 個入り、値は位置と同じ時間になる。Ease の区間の形をそのまま使えて、行き過ぎも戻りもできる AE の形を取った。
+**どこをどう見たか。** 棚：`reports/alight_checklist.md` に Time Remap の行が未着手で残っていた。`engine/doc_values.h` に AE の loopOut（cycle・pingpong・offset）が既にあった。見本：AbsentMotion の `VideoTiming.kt` と `SpeedPanel.kt` は全文を読んだ（Apache-2.0）。Alight Motion の Time Remapping は速さのキーを素材の時間の上に置き、1 → 1 の区間では曲線が効かず、行き過ぎる曲線も断る（`CurveCompatibilityTest.kt`）。ツールは動画と音声にしか出ず、プログラムは対象外。AE の説明書 Time-stretching and time-remapping は本文が 403 で読めず、検索の抜粋だけ：有効にするとレイヤーの頭と終わりにキーが 2 個入り、値は位置と同じ時間になる。Ease の区間の形をそのまま使えて、行き過ぎも戻りもできる AE の形を取った。
 
 **確かめた事。** 全部コードはそのまま。
 

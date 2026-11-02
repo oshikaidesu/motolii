@@ -1,4 +1,4 @@
-// rayq band: every pixel's line of sight through the glass band, by the rule of model D (filament/band_bvh.mat):
+// rayq band: every pixel's line of sight through the glass band, by the rule of model D (engine/band_bvh.mat):
 // bend in (smooth normal of the surface entered), ask the mesh for the next surface, leave if Snell's law lets the
 // line out (flat normal of the triangle met), mirror and ask again if not. The asking is the GPU's own query.
 // One colour, no branching, no noise, nothing kept between frames.

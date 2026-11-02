@@ -16,31 +16,31 @@ Motolii は「ネットで見つけたかっこいい表現を、自分の動画
 
 | 物 | 作者・出所 | ライセンス | 置き場所 |
 |---|---|---|---|
-| AviUtl2 のスクリプト 172 パッケージ（一覧は下） | 各作者。集め方は [Neosku/aviutl2-catalog-data](https://github.com/Neosku/aviutl2-catalog-data) の入れ方の手順どおり | MIT 133・CC0 26・Unlicense 6・BSD-3-Clause 4・MIT-0 2・Apache-2.0 1 | `filament/aviutl_scripts/<作者>__<名前>/`（各フォルダに LICENSE と SOURCE.txt） |
-| ISF の効果 | [Vidvox/ISF-Files](https://github.com/Vidvox/ISF-Files) ほか（各 .fs の `CREDIT` に作者） | MIT | `filament/effects/*.fs`、`ISF-Files-LICENSE.txt` |
-| ossia score の ISF：Directional Blur・Polar Coordinates・Radial Blur | [ossia/score-user-library](https://github.com/ossia/score-user-library) | CC BY-SA 4.0（この 3 本と、その改変だけに掛かる） | `filament/effects/Directional Blur.fs`・`Polar Coordinates.fs`・`Radial Blur.fs`、`ossia-score-user-library-LICENSE.txt` |
-| ossia score の ISF：Luma Key（IMIMOT、memo.tv から移植） | [ossia/score-user-library](https://github.com/ossia/score-user-library) | MIT | `filament/effects/Luma Key.fs`、`ossia-LICENSE-ISF.txt` |
-| three.js の画面の効果（WGSL にした物） | [mrdoob/three.js](https://github.com/mrdoob/three.js) の examples/jsm/shaders | MIT | `filament/effects/*.wgsl`（各ファイルの 1 行目に出所）、`three-LICENSE.txt` |
-| AbsentMotion の効果（SkSL を Skia の skslc で WGSL にした物） | [Comett1225/AbsentMotion](https://github.com/Comett1225/AbsentMotion) app/src/main/assets/effects、コミット 0f5d891 | Apache-2.0（Copyright 2026 The AbsentMotion authors） | `filament/effects/am_*.wgsl`（各ファイルの 1 行目に出所と改変）、`AbsentMotion-LICENSE.txt`、`AbsentMotion-NOTICE.txt` |
-| Sashimono Edit の効果（GLSL を ISF にした物） | [kagemorikosame/sashimono-edit](https://github.com/kagemorikosame/sashimono-edit) src/sashimono/effects/builtin.py、コミット 761b6e4ba247 | MIT（Copyright (c) 2026 Sashimono Edit contributors） | `filament/effects/* (Sashimono).fs`（`filament/effects/from_sashimono.py` で作った物）、`filament/effects/sashimono-LICENSE.txt` |
-| pixi-filters の OutlineFilter（Multi-Border の縁） | [pixijs/filters](https://github.com/pixijs/filters) 6.1.5、lib/outline/outline.mjs | MIT（Copyright (c) 2013-2025 Mathew Groves, Chad Engler） | `filament/effects/Multi-Border.fs`（ISF の頭に出所と、uniform を入力にした所）、`pixi-filters-LICENSE.txt` |
-| gl-chromakey の ProcessChromaKey（Key Spill Cleaner の色かぶり取り） | [bhj/gl-chromakey](https://github.com/bhj/gl-chromakey)、src/lib/shaders/fragmentShaderPaint.js | MIT（Copyright (c) 2011 Mozilla Foundation、Copyright (c) 2020-2025 RadRoot LLC） | `filament/effects/Key Spill Cleaner.fs`（ISF の頭に出所と、絵の読み方を ISF の IMG_NORM_PIXEL にした所）、`gl-chromakey-LICENSE.txt` |
-| YMM4-LuaScript の aviutl_rand（AviUtl2 のスクリプトの obj.rand・rand） | [routersys/YMM4-LuaScript](https://github.com/routersys/YMM4-LuaScript)、native/shim.lua・native/worker.lua、コミット fd540b834bfd | MIT（Copyright (c) 2026 routersys） | `filament/aviutl_fx.h`（Lua のまま、頭に出所）、`filament/ymm4-luascript-LICENSE.txt` |
-| 場面転換の効果 13 本（ISF-Files が ISF にした物） | [gl-transitions](https://github.com/gl-transitions/gl-transitions)（各 .fs の頭に作者：gre、Jake Nelson、Fernando Kuteken、bobylito、Hewlett-Packard ほか） | 各ファイルの頭のとおり：MIT 12 本、BSD-3-Clause 1 本（Inverted Page Curl、Copyright (c) 2010 Hewlett-Packard。著作権表示とライセンスの全文がファイルの中のコメントにある） | `filament/effects/Fade.fs`・`Wipe *.fs` など、`CREDIT` に gl-transitions の URL |
-| CRT の仕上げ（WGSL に改変） | [vercel-labs/vgpu](https://github.com/vercel-labs/vgpu) の post.wgsl | MIT | `filament/effects/crt_finish.wgsl`、`vgpu-LICENSE.txt` |
-| データモッシュ（WGSL に改変） | [newomp4/phosphor](https://github.com/newomp4/phosphor) | MIT | `filament/effects/datamosh.wgsl`、`phosphor-LICENSE.txt` |
-| 時間のずらし（WGSL に改変） | [keijiro/SlitScanCam](https://github.com/keijiro/SlitScanCam) | Unlicense | `filament/effects/time_displacement.wgsl`、`SlitScanCam-LICENSE.txt` |
-| 効果の見本の写真（熱気球） | Wikimedia Commons「Mid-Hudson balloon festival 15」（Juliancolton 撮影） | パブリックドメイン（PD-self） | `filament/fx_sample.jpg`（正方形に切った物）、効果の見本 `filament/effects/*.png` はこれに掛けた物 |
-| 点群の効果 4 本 | [playcanvas/engine](https://github.com/playcanvas/engine) の scripts/esm/gsplat | MIT | `filament/effects/*.mjs`、`playcanvas-LICENSE.txt` |
-| three.js（形を作る部品） | [mrdoob/three.js](https://github.com/mrdoob/three.js) r186 | MIT | `filament/third_party/js/three/` |
-| d3-contour・d3-array | [d3](https://github.com/d3) | ISC | `filament/third_party/js/d3-contour/`、`d3-array/` |
-| anime.js v4.5.0 | [juliangarnier/anime](https://github.com/juliangarnier/anime) | MIT | `filament/third_party/anime/` |
-| p5.js 1.11.13 | [processing/p5.js](https://github.com/processing/p5.js) | LGPL-2.1 | `filament/third_party/js/p5/`（配布の `p5.min.js` と `license.txt` をそのまま、差し替えられる普通のファイルとして読む） |
-| Cube Wave（Coding Challenge 86） | [CodingTrain/Coding-Challenges](https://github.com/CodingTrain/Coding-Challenges)（Copyright (c) 2022 Coding Train） | MIT | `filament/recipes/Cube Wave.js`（1 行目に元、以下そのまま） |
-| Godot のイーズの式 | [godotengine/godot](https://github.com/godotengine/godot) の easing_equations.h（Robert Penner の式） | MIT | `filament/third_party/godot_easing/` |
-| 画面の拍子 | [nmfisher/thermion](https://github.com/nmfisher/thermion) | Apache-2.0 | `filament/third_party/thermion_frame/`（NOTICE.md） |
-| ブロブの追跡 | [k1sh0r/blob-tracker](https://github.com/k1sh0r/blob-tracker) | MIT | `filament/blobtrack/kit/` |
-| JetBrains Mono（ブロブの追跡の文字） | [JetBrains/JetBrainsMono](https://github.com/JetBrains/JetBrainsMono) | SIL OFL 1.1 | `filament/blobtrack/kit/JetBrainsMono-Regular.ttf`、`JetBrainsMono-OFL.txt` |
+| AviUtl2 のスクリプト 172 パッケージ（一覧は下） | 各作者。集め方は [Neosku/aviutl2-catalog-data](https://github.com/Neosku/aviutl2-catalog-data) の入れ方の手順どおり | MIT 133・CC0 26・Unlicense 6・BSD-3-Clause 4・MIT-0 2・Apache-2.0 1 | `engine/aviutl_scripts/<作者>__<名前>/`（各フォルダに LICENSE と SOURCE.txt） |
+| ISF の効果 | [Vidvox/ISF-Files](https://github.com/Vidvox/ISF-Files) ほか（各 .fs の `CREDIT` に作者） | MIT | `engine/effects/*.fs`、`ISF-Files-LICENSE.txt` |
+| ossia score の ISF：Directional Blur・Polar Coordinates・Radial Blur | [ossia/score-user-library](https://github.com/ossia/score-user-library) | CC BY-SA 4.0（この 3 本と、その改変だけに掛かる） | `engine/effects/Directional Blur.fs`・`Polar Coordinates.fs`・`Radial Blur.fs`、`ossia-score-user-library-LICENSE.txt` |
+| ossia score の ISF：Luma Key（IMIMOT、memo.tv から移植） | [ossia/score-user-library](https://github.com/ossia/score-user-library) | MIT | `engine/effects/Luma Key.fs`、`ossia-LICENSE-ISF.txt` |
+| three.js の画面の効果（WGSL にした物） | [mrdoob/three.js](https://github.com/mrdoob/three.js) の examples/jsm/shaders | MIT | `engine/effects/*.wgsl`（各ファイルの 1 行目に出所）、`three-LICENSE.txt` |
+| AbsentMotion の効果（SkSL を Skia の skslc で WGSL にした物） | [Comett1225/AbsentMotion](https://github.com/Comett1225/AbsentMotion) app/src/main/assets/effects、コミット 0f5d891 | Apache-2.0（Copyright 2026 The AbsentMotion authors） | `engine/effects/am_*.wgsl`（各ファイルの 1 行目に出所と改変）、`AbsentMotion-LICENSE.txt`、`AbsentMotion-NOTICE.txt` |
+| Sashimono Edit の効果（GLSL を ISF にした物） | [kagemorikosame/sashimono-edit](https://github.com/kagemorikosame/sashimono-edit) src/sashimono/effects/builtin.py、コミット 761b6e4ba247 | MIT（Copyright (c) 2026 Sashimono Edit contributors） | `engine/effects/* (Sashimono).fs`（`engine/effects/from_sashimono.py` で作った物）、`engine/effects/sashimono-LICENSE.txt` |
+| pixi-filters の OutlineFilter（Multi-Border の縁） | [pixijs/filters](https://github.com/pixijs/filters) 6.1.5、lib/outline/outline.mjs | MIT（Copyright (c) 2013-2025 Mathew Groves, Chad Engler） | `engine/effects/Multi-Border.fs`（ISF の頭に出所と、uniform を入力にした所）、`pixi-filters-LICENSE.txt` |
+| gl-chromakey の ProcessChromaKey（Key Spill Cleaner の色かぶり取り） | [bhj/gl-chromakey](https://github.com/bhj/gl-chromakey)、src/lib/shaders/fragmentShaderPaint.js | MIT（Copyright (c) 2011 Mozilla Foundation、Copyright (c) 2020-2025 RadRoot LLC） | `engine/effects/Key Spill Cleaner.fs`（ISF の頭に出所と、絵の読み方を ISF の IMG_NORM_PIXEL にした所）、`gl-chromakey-LICENSE.txt` |
+| YMM4-LuaScript の aviutl_rand（AviUtl2 のスクリプトの obj.rand・rand） | [routersys/YMM4-LuaScript](https://github.com/routersys/YMM4-LuaScript)、native/shim.lua・native/worker.lua、コミット fd540b834bfd | MIT（Copyright (c) 2026 routersys） | `engine/aviutl_fx.h`（Lua のまま、頭に出所）、`engine/ymm4-luascript-LICENSE.txt` |
+| 場面転換の効果 13 本（ISF-Files が ISF にした物） | [gl-transitions](https://github.com/gl-transitions/gl-transitions)（各 .fs の頭に作者：gre、Jake Nelson、Fernando Kuteken、bobylito、Hewlett-Packard ほか） | 各ファイルの頭のとおり：MIT 12 本、BSD-3-Clause 1 本（Inverted Page Curl、Copyright (c) 2010 Hewlett-Packard。著作権表示とライセンスの全文がファイルの中のコメントにある） | `engine/effects/Fade.fs`・`Wipe *.fs` など、`CREDIT` に gl-transitions の URL |
+| CRT の仕上げ（WGSL に改変） | [vercel-labs/vgpu](https://github.com/vercel-labs/vgpu) の post.wgsl | MIT | `engine/effects/crt_finish.wgsl`、`vgpu-LICENSE.txt` |
+| データモッシュ（WGSL に改変） | [newomp4/phosphor](https://github.com/newomp4/phosphor) | MIT | `engine/effects/datamosh.wgsl`、`phosphor-LICENSE.txt` |
+| 時間のずらし（WGSL に改変） | [keijiro/SlitScanCam](https://github.com/keijiro/SlitScanCam) | Unlicense | `engine/effects/time_displacement.wgsl`、`SlitScanCam-LICENSE.txt` |
+| 効果の見本の写真（熱気球） | Wikimedia Commons「Mid-Hudson balloon festival 15」（Juliancolton 撮影） | パブリックドメイン（PD-self） | `engine/fx_sample.jpg`（正方形に切った物）、効果の見本 `engine/effects/*.png` はこれに掛けた物 |
+| 点群の効果 4 本 | [playcanvas/engine](https://github.com/playcanvas/engine) の scripts/esm/gsplat | MIT | `engine/effects/*.mjs`、`playcanvas-LICENSE.txt` |
+| three.js（形を作る部品） | [mrdoob/three.js](https://github.com/mrdoob/three.js) r186 | MIT | `engine/third_party/js/three/` |
+| d3-contour・d3-array | [d3](https://github.com/d3) | ISC | `engine/third_party/js/d3-contour/`、`d3-array/` |
+| anime.js v4.5.0 | [juliangarnier/anime](https://github.com/juliangarnier/anime) | MIT | `engine/third_party/anime/` |
+| p5.js 1.11.13 | [processing/p5.js](https://github.com/processing/p5.js) | LGPL-2.1 | `engine/third_party/js/p5/`（配布の `p5.min.js` と `license.txt` をそのまま、差し替えられる普通のファイルとして読む） |
+| Cube Wave（Coding Challenge 86） | [CodingTrain/Coding-Challenges](https://github.com/CodingTrain/Coding-Challenges)（Copyright (c) 2022 Coding Train） | MIT | `engine/recipes/Cube Wave.js`（1 行目に元、以下そのまま） |
+| Godot のイーズの式 | [godotengine/godot](https://github.com/godotengine/godot) の easing_equations.h（Robert Penner の式） | MIT | `engine/third_party/godot_easing/` |
+| 画面の拍子 | [nmfisher/thermion](https://github.com/nmfisher/thermion) | Apache-2.0 | `engine/third_party/thermion_frame/`（NOTICE.md） |
+| ブロブの追跡 | [k1sh0r/blob-tracker](https://github.com/k1sh0r/blob-tracker) | MIT | `engine/blobtrack/kit/` |
+| JetBrains Mono（ブロブの追跡の文字） | [JetBrains/JetBrainsMono](https://github.com/JetBrains/JetBrainsMono) | SIL OFL 1.1 | `engine/blobtrack/kit/JetBrainsMono-Regular.ttf`、`JetBrainsMono-OFL.txt` |
 
 ## 2. 組み立ての時に取ってくる物（リポジトリには入っていない）
 
@@ -48,17 +48,17 @@ Motolii は「ネットで見つけたかっこいい表現を、自分の動画
 
 | 物 | 版 | ライセンス | 取ってくるスクリプト | Motolii の差分 |
 |---|---|---|---|---|
-| [Filament](https://github.com/google/filament)（Dawn・glslang を含む） | v1.77.2 | Apache-2.0 ほか | `filament/dawn_probe/build.sh` | `filament/dawn_probe/filament_dawn_compute.patch`、`glslang_hlsl.patch`、`filament/tsl/dawn_lend.patch` |
-| [ThorVG](https://github.com/thorvg/thorvg) | 9203245 | MIT | `filament/dawn_probe/tvg_on_dawn.sh` | `filament/dawn_probe/thorvg_*.patch` |
-| [Skia](https://skia.org/)（パスの部分だけ） | chrome/m149 | BSD-3-Clause | `filament/skia.sh` | なし |
-| [libtess2](https://github.com/memononen/libtess2) | 8dbd648 | SGI Free Software License B 2.0 | `filament/libtess2.sh` | なし |
-| [Jolt Physics](https://github.com/jrouwe/JoltPhysics) | a4b24c3 | MIT | `filament/jolt.sh` | なし |
-| [PianoRollSvg.js](https://github.com/bladeSk/midi-to-piano-roll)（MIDI ビューのピアノロール） | 205854e | MIT（作者の package.json の申告。ライセンスの文書が作者の側に無いので同梱しない） | `filament/midi_roll.sh` | なし |
-| [Filament の組み立て済み SDK](https://github.com/google/filament/releases/tag/v1.77.2)（前の試しのスクリプトだけが使う） | v1.77.2 | Apache-2.0 | `filament/sdk.sh` | なし |
-| [BabylonJS/JsRuntimeHost](https://github.com/BabylonJS/JsRuntimeHost) の Node-API | 980cfb0 | MIT | `filament/tsl/jsrh_napi/build.sh` | `jsrh_qjs017_dawn.patch` |
-| TSL の表現 48 か所 | `filament/tsl/sources.tsv` のとおり | 各作者 | `filament/tsl/fetch.sh` | `filament/tsl/*_target.patch`、`ics_tilt.patch` |
+| [Filament](https://github.com/google/filament)（Dawn・glslang を含む） | v1.77.2 | Apache-2.0 ほか | `engine/dawn_probe/build.sh` | `engine/dawn_probe/filament_dawn_compute.patch`、`glslang_hlsl.patch`、`engine/tsl/dawn_lend.patch` |
+| [ThorVG](https://github.com/thorvg/thorvg) | 9203245 | MIT | `engine/dawn_probe/tvg_on_dawn.sh` | `engine/dawn_probe/thorvg_*.patch` |
+| [Skia](https://skia.org/)（パスの部分だけ） | chrome/m149 | BSD-3-Clause | `engine/skia.sh` | なし |
+| [libtess2](https://github.com/memononen/libtess2) | 8dbd648 | SGI Free Software License B 2.0 | `engine/libtess2.sh` | なし |
+| [Jolt Physics](https://github.com/jrouwe/JoltPhysics) | a4b24c3 | MIT | `engine/jolt.sh` | なし |
+| [PianoRollSvg.js](https://github.com/bladeSk/midi-to-piano-roll)（MIDI ビューのピアノロール） | 205854e | MIT（作者の package.json の申告。ライセンスの文書が作者の側に無いので同梱しない） | `engine/midi_roll.sh` | なし |
+| [Filament の組み立て済み SDK](https://github.com/google/filament/releases/tag/v1.77.2)（前の試しのスクリプトだけが使う） | v1.77.2 | Apache-2.0 | `engine/sdk.sh` | なし |
+| [BabylonJS/JsRuntimeHost](https://github.com/BabylonJS/JsRuntimeHost) の Node-API | 980cfb0 | MIT | `engine/tsl/jsrh_napi/build.sh` | `jsrh_qjs017_dawn.patch` |
+| TSL の表現 48 か所 | `engine/tsl/sources.tsv` のとおり | 各作者 | `engine/tsl/fetch.sh` | `engine/tsl/*_target.patch`、`ics_tilt.patch` |
 | [perfect_freehand](https://pub.dev/packages/perfect_freehand)（Brush の筆跡の輪郭。元は Steve Ruiz の perfect-freehand） | 2.5.2+1 | MIT（Copyright (c) 2021 Stephen Ruiz、2023 Adil Hanney） | `skin/book/pubspec.yaml`（flutter pub get） | なし |
-| [AbsentMotion](https://github.com/Comett1225/AbsentMotion)（効果を WGSL にする元） | 0f5d891 | Apache-2.0 | `filament/absent.sh` | なし |
+| [AbsentMotion](https://github.com/Comett1225/AbsentMotion)（効果を WGSL にする元） | 0f5d891 | Apache-2.0 | `engine/absent.sh` | なし |
 
 ## 3. AviUtl2 のスクリプトの一覧（172）
 

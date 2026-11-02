@@ -1,5 +1,5 @@
 // The README's "put an effect from the net in": an ISF file Motolii does not bundle (ASCII Art, from Vidvox's ISF-Files,
-// which filament/check/isf_all.sh fetches) put in the maker's own effects folder, seen on the Effects shelf at once and
+// which engine/check/isf_all.sh fetches) put in the maker's own effects folder, seen on the Effects shelf at once and
 // put on a photo; a picture of the shelf and of the stage after (docs/media/drop_step1..2.png). Put in with the window open: the shelf sees it, and its
 // tile is drawn on the balloon by itself (lib/workspace/effect_tiles.dart).
 //   flutter drive --profile -d macos --driver=test_driver/integration_test.dart --target=integration_test/drop_effect_test.dart
@@ -28,7 +28,7 @@ void main() {
     t.view.physicalSize = const Size(3200, 1920);
     addTearDown(t.view.resetPhysicalSize);
     final from = File('$motoliiDir/third_party/ISF-Files/ISF/ASCII Art.fs');
-    expect(from.existsSync(), isTrue, reason: 'fetch ISF-Files with filament/check/isf_all.sh');
+    expect(from.existsSync(), isTrue, reason: 'fetch ISF-Files with engine/check/isf_all.sh');
     final own = Directory.systemTemp.createTempSync('own');
     Directory('${own.path}/effects').createSync();
     final setenv = DynamicLibrary.process().lookupFunction<Int32 Function(Pointer<Utf8>, Pointer<Utf8>, Int32), int Function(Pointer<Utf8>, Pointer<Utf8>, int)>('setenv');

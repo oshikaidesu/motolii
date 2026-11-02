@@ -6,7 +6,7 @@
 ## 1. 読んだ物
 
 全部読んだ：
-- `filament/kit.h`（927行）、`video.h`（348）、`drawn.h`（110）、`motion.h`（137）、`doc.h`（245）、`solid.h`（69）
+- `engine/kit.h`（927行）、`video.h`（348）、`drawn.h`（110）、`motion.h`（137）、`doc.h`（245）、`solid.h`（69）
 - 材質：`flat.mat`、`thick_glass.mat`、`matte.mat`、`matte.glsl`、`far_look.mat`、`far_side.mat`、`studio.glsl`
 - 場面：`edit.mm`、`lay.mm`、`neko.mm`、`puppet.mm`、`mask.mm`、`wall.mm`、`ae.mm`、`led.mm`
 - つなぎ：`dawn_probe/gpu_door.h`、`gpu_door.cpp`、`CMakeLists.txt`、`kit_wgpu.sh`、`tvg_on_dawn.sh`、`edit.sh`、`records.sh`、`check/` の9個
@@ -114,7 +114,7 @@
 4. `letters`：`kit.h:306-334`。これのためだけに SceneKit と ModelIO が全部のプログラムに付く（`kit.h:33-35`、`kit_wgpu.sh:36`）。
 5. `font`：`drawn.h:23-28`。
 6. `sun_to`：`kit.h:906-910`。
-7. 古い山：`filament/` に材質93本（今夜使うのは9本）、場面49本（今夜は8本）、ヘッダ14本（今夜は6本）。`poster`、`blade` の材質も毎回ビルドされる。
+7. 古い山：`engine/` に材質93本（今夜使うのは9本）、場面49本（今夜は8本）、ヘッダ14本（今夜は6本）。`poster`、`blade` の材質も毎回ビルドされる。
 
 呼ぶ所が無い事は grep で確かめた。`kit.h:1-3` の頭の説明は古い場面（poster、blocks、glassbox）の話のまま。
 

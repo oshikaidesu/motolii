@@ -5,7 +5,7 @@
 
 ## 1. 見た物・走らせた物
 
-読んだ物：`AE_RUBRIC.md`、`reports/ae_rubric/evidence.md`、`try.md`、`records/` の8本全部、`filament/check/doc_calls.txt`。
+読んだ物：`AE_RUBRIC.md`、`reports/ae_rubric/evidence.md`、`try.md`、`records/` の8本全部、`engine/check/doc_calls.txt`。
 `round_01.md` は点の行だけ見た（比べるため。点は写していない）。
 
 見た動画（ffmpeg でコマを抜いて絵で見た。最初の3枚・最後の1枚・途中の8枚）：
@@ -13,8 +13,8 @@
 8本とも、同じ絵の繰り返しコマと真っ黒のコマを数でも調べた。音の有無と大きさも測った。
 見た絵：`stills/edit_v1.jpg`、`stills/puppet_v4_awkward.jpg`。
 
-自分で走らせた物：`./edit.sh` を 13 個の文書（`filament/out/judge*.motolii`）で 30 回ほど。
-絵は `filament/out/wgpu_kit/out/judge_*.png`、動画は1本だけ（`judge_f.mp4`、6.8秒）と、空の文書の動画1本（`judge_empty.mp4`）。
+自分で走らせた物：`./edit.sh` を 13 個の文書（`engine/out/judge*.motolii`）で 30 回ほど。
+絵は `engine/out/wgpu_kit/out/judge_*.png`、動画は1本だけ（`judge_f.mp4`、6.8秒）と、空の文書の動画1本（`judge_empty.mp4`）。
 打った呼び出しと返事は `/tmp/judge_view/` に残してある。どの回も 2〜6 秒で終わり、止まった回・落ちた回は 0。
 
 やらなかった物：`records.sh` の走らせ直し（禁止）。速さ・10分流し・色・AEファイル97本は記録の文面を読んだだけで、測り直していない。
@@ -63,7 +63,7 @@
 8番のために数えた物：
 - (a) 1個置く手数：動画 1手。ガラス 1手。AEの絵を背景にするのは 3手（`add`、`set z -1`、`set high 4.2`）。
 - (b) 毎コマ呼ぶ物：文書からは 0。（場面のコードは読んでいないので数えていない。evidence は「自分で動かしたい物の場所だけ」と言う）
-- (c) 中の名前：2個。ファイルの場所を `filament/out/wgpu_kit/` から見た形で書く事。間違えた時の文面に出る `flat.filamat`。
+- (c) 中の名前：2個。ファイルの場所を `engine/out/wgpu_kit/` から見た形で書く事。間違えた時の文面に出る `flat.filamat`。
 - (d) スイッチ：`try.md` には 0。
 - (e) 捨てる物の持ち込み：0。
 

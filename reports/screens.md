@@ -95,7 +95,7 @@
 - 何も選んでいない時：「Nothing selected」と、ステージのカード。文書の大きさ・速さの欄は隠してある（sets/inspector/inspector_choosers_header.dart:340）
 - 見出し：種類、名前（表示）、Animate all（変える）（sets/inspector/inspector_choosers_header.dart:231）
 - カード：題を押してたたむ、たたむと要約とキーの点
-- Transform（2D・2.5D・3D、小さな図、位置・大きさ・回転）、Anchor（27 点）、Layer（不透明度、親）、Camera（Target は見本の名前、Orbit、Framing、Roll）、Text（中身、字体、大きさ、揃え）、Fill and stroke、Blending、Light・Copies・Drop Shadow・Trim Paths（図で触る）、Wave・Physics・Scatter・Field・Connect（動きの見本）、ほかのエンジンのカード（filament/doc_values.h:286 の一覧）
+- Transform（2D・2.5D・3D、小さな図、位置・大きさ・回転）、Anchor（27 点）、Layer（不透明度、親）、Camera（Target は見本の名前、Orbit、Framing、Roll）、Text（中身、字体、大きさ、揃え）、Fill and stroke、Blending、Light・Copies・Drop Shadow・Trim Paths（図で触る）、Wave・Physics・Scatter・Field・Connect（動きの見本）、ほかのエンジンのカード（engine/doc_values.h:286 の一覧）
 - 値の札の種類：オン・オフ、選ぶ、言葉、ファイル、棒、色、角度、%、こする、さいころ、＋−、2D の板
 - 数字の欄：こする（⇧×10、⌥×0.1）、矢印、Enter で打つ、「Number required」、「— Mixed」、キーの点
 - 選び札の一覧：検索、一覧、「No match」、Esc・外で閉じる

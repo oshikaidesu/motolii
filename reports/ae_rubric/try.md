@@ -3,11 +3,11 @@
 ## 文書を開いて、呼び出しで編集する
 
 ```
-cd ~/motolii/filament
+cd ~/motolii/engine
 ./edit.sh out/mine.motolii
 ```
 
-開いたら、1行に1つ打つ（ファイルの場所は `filament/out/wgpu_kit/` から見た形）：
+開いたら、1行に1つ打つ（ファイルの場所は `engine/out/wgpu_kit/` から見た形）：
 
 ```
 add picture ../../third_party/thorvg_example/res/lottie/gradient_background.json
@@ -37,7 +37,7 @@ list
 
 - `add 種類 ファイル` … 置く。返事に物の番号が出る（番号は使い回さない）。種類：
   film（動画）、picture（AE のファイル、写真の .jpg／.png）、text（文字。ファイルはフォント .ttf）、solid（3Dのファイル .glb／.gltf）、glass（ring、gem、cube）。
-  フォントは `filament/out/arial_black.ttf` と `arial_unicode.ttf`（日本語も入っている）に、この Mac の物への近道が置いてある。
+  フォントは `engine/out/arial_black.ttf` と `arial_unicode.ttf`（日本語も入っている）に、この Mac の物への近道が置いてある。
 - `set 番号 名前 数` … 値を変える。`key 番号 名前 時刻 数` … その時刻にキーを打つ。`unkey 番号 名前 時刻` … キーを消す。
 - `say 番号 名前 言葉` … 言葉の値を変える（`blend` に normal／add／multiply／screen。文字なら `text` に行の終わりまでの文、`fill` に6桁の色 ff3366）。文字の `size` は1行の高さ。`remove 番号` … 消す。
 - `undo`、`redo` … 取り消し、やり直し。閉じて開き直した後でも効く。
@@ -59,7 +59,7 @@ list
 - ファイルの名前は行の終わりまで（空白があってもいい）。文書の中の色は、ファイルの色のまま出る（白 255 は 255）。
 - フォントは .ttf だけ（.ttc は読めない）。フォントに無い字は出ない（Arial Black に日本語は無い。日本語は arial_unicode.ttf で）。
 
-絵と動画は `filament/out/wgpu_kit/out/` に出る。保存の操作は無い（打った時にもうファイルに入っている）。
+絵と動画は `engine/out/wgpu_kit/out/` に出る。保存の操作は無い（打った時にもうファイルに入っている）。
 文書からはまだ出来ない事：型（マスク）、カメラを動かす、ぼかし、影。音は書き出した動画に入る（作業中は鳴らない）。
 
 ## 出来上がった場面を見る
@@ -71,9 +71,9 @@ list
 
 ## 検査を走らせ直す
 
-`cd filament && ./records.sh`（20分ほど。結果は `reports/ae_rubric/records/`）。
+`cd engine && ./records.sh`（20分ほど。結果は `reports/ae_rubric/records/`）。
 
 ## 同じ事を C の関数で（Flutter のガワが呼ぶ形）
 
-`filament/motolii.h` が口。`filament/check/api.c` が素の C からの呼び方の見本（`filament/out/wgpu_kit/` で `../api_check ../mine2.motolii out/api.png`）。
+`engine/motolii.h` が口。`engine/check/api.c` が素の C からの呼び方の見本（`engine/out/wgpu_kit/` で `../api_check ../mine2.motolii out/api.png`）。
 上の行を読む道具（`edit.sh`）も、中ではこの関数だけを呼んでいる。

@@ -7,7 +7,7 @@ root = subprocess.run(['git', 'rev-parse', '--show-toplevel'], capture_output=Tr
 os.chdir(root)
 ledger = open('ASSETS.md', encoding='utf-8').read()
 # (a place is what stands between ` ` and looks like a path. A bare name after a place on the same line is in that
-#  place's folder: `filament/glass_live.h`, `glass_live.mm`)
+#  place's folder: `engine/glass_live.h`, `glass_live.mm`)
 places = []
 for line in ledger.split('\n'):
     folder = ''

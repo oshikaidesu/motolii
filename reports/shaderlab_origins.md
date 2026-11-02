@@ -4,7 +4,7 @@ Shader Lab（basementstudio/shader-lab、Apache-2.0）の効果を、外にあ�
 「TSL を根本から殺したら何を失うか」を量るため。
 
 - 照らした先：
-  - Motolii に入っている 295 本（`filament/effects`、ISF・three.js・vgpu）
+  - Motolii に入っている 295 本（`engine/effects`、ISF・three.js・vgpu）
   - Noisemaker（MIT、`shaders/effects/*/*/wgsl`、WGSL と GLSL の両方あり、約 230 本）
   - EffectCraft（Apache-2.0／MIT、`docs/effects.md`、AE の効果の写し、GPU 280 本）
   - Paper Shaders（Apache-2.0）
@@ -114,8 +114,8 @@ Shader Lab（basementstudio/shader-lab、Apache-2.0）の効果を、外にあ�
   - シェーダー（`WGSLNodeBuilder`）
   - uniform のバイト（`binding.update()` → `binding.buffer`）
   - 板の形の数
-  - 作り方は `filament/dawn_probe/tsl_dump.ts`（QuickJS で回す）。three.js が描く前にすることを、同じ順でしている：カメラを WebGPU の座標の決まりにする（three.webgpu.js 62657）、`NodeFrame` で値を更新する。
-- 描く側は `filament/dawn_probe/tsl_on_dawn.cpp`。
+  - 作り方は `engine/dawn_probe/tsl_dump.ts`（QuickJS で回す）。three.js が描く前にすることを、同じ順でしている：カメラを WebGPU の座標の決まりにする（three.webgpu.js 62657）、`NodeFrame` で値を更新する。
+- 描く側は `engine/dawn_probe/tsl_on_dawn.cpp`。
   - 装置と読み戻しは `tvg_on_dawn.cpp` と同じ。
   - 描く手順は Dawn の `samples/HelloTriangle.cpp` と同じ。
   - シェーダーが宣言した並びのまま描く（`layout` を指定せず、Dawn に任せる）。Filament の決まりを通らない。
@@ -144,6 +144,6 @@ Shader Lab（basementstudio/shader-lab、Apache-2.0）の効果を、外にあ�
     - 色の小さな違い。平均の色はブラウザ 74, 64, 51 に対して Motolii の Dawn 73, 62, 45。明るさの対応は 16→13、112→113、240→240 で、明るい中間（208→190）だけずれる。
   - 色の違いの原因は確かめていない。候補は、ブラウザ側の色の管理か、色を整える仕上げか、画面を撮った時の色の扱い。
 - 試しも直した：
-  - `filament/dawn_probe/tsl_dump.ts` を、作者の `applyLayerState` を通す形にした。
+  - `engine/dawn_probe/tsl_dump.ts` を、作者の `applyLayerState` を通す形にした。
   - `tsl_on_dawn.cpp` は、読み戻しの 1 行を 256 バイトの倍数にそろえた（WebGPU の決まり。前の試しは幅 256 だったので当たらなかった）。
 - 分かったこと：TSL の変換も描く手順も、three.js と Dawn のまま合っていた。ずれたのは、作者がすること（層の設定）を私が飛ばした所だけ。

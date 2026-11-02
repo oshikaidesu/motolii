@@ -81,7 +81,7 @@ Windows 版も作る予定です。Filament、ThorVG、GStreamer、Flutter な�
 
 | できる事 | 使う物 | いまの様子 |
 |---|---|---|
-| VJ の道具で配られている画面の効果を掛ける | ISF（`.fs`、[ISF-Files](https://github.com/Vidvox/ISF-Files) など） | 効果のフォルダに置けば棚に出る。ISF-Files の 327 本中 318 本が通る（`filament/check/all.sh` で数え直せる）。同梱 419 本 |
+| VJ の道具で配られている画面の効果を掛ける | ISF（`.fs`、[ISF-Files](https://github.com/Vidvox/ISF-Files) など） | 効果のフォルダに置けば棚に出る。ISF-Files の 327 本中 318 本が通る（`engine/check/all.sh` で数え直せる）。同梱 419 本 |
 | WebGPU のシェーダーの効果を掛ける | WGSL（`.wgsl`、three.js などの画面効果を移した物） | 場面全体に掛かる。同梱 168 本 |
 | p5.js のスケッチを貼る | p5.js（コードをコピーして、画面で ⌘V） | レイヤーになり、Program の棚に残る。キーを打てて、Time Remap で時間の速さも曲げられる。OpenProcessing の 168 作で 97 作に絵が出た（11/1 の数え、版が混ざった値。見た目の一致は別で、最初の 42 作を目で見て約 16 作） |
 | Shadertoy のシェーダーを貼る | GLSL（コードをコピーして、画面で ⌘V） | 自分で描く作品はレイヤーになり、`iChannel` を読む作品は選んだレイヤーに掛かる。どちらも Program の棚に残る。API の写し 36,668 本から無作為に取った 300 本のうち、261 本で絵が出て動いた（2026-11 初めの数え）。黒 30 本のうち 26 本はマウスなどの入力待ち、入らないのが 9 本。Time Remap は p5.js だけで、シェーダーにはまだ無い |
@@ -96,9 +96,9 @@ Windows 版も作る予定です。Filament、ThorVG、GStreamer、Flutter な�
 
 ほか：キーフレームとイーズ（anime.js のイーズもそのまま使える）、物理（Jolt）、ガラスの屈折、mp4 への書き出し。何が在ってどこまで確かめたかの全部は、作者の台帳 [`ASSETS.md`](ASSETS.md) にあります。
 
-**組み立ての確かめ**：GitHub の Apple Silicon の Mac（macos-15）で、この README の手順どおりに新しく組み、エンジンの試験（`filament/check/all.sh`）と画面の analyze が通る（上の build の印。2026-10-27 に緑）。画面の試験は 126 本中 117 本が通り、8 本は落ちる（[`CONTRIBUTING.md`](CONTRIBUTING.md) の「知っている穴」）。
+**組み立ての確かめ**：GitHub の Apple Silicon の Mac（macos-15）で、この README の手順どおりに新しく組み、エンジンの試験（`engine/check/all.sh`）と画面の analyze が通る（上の build の印。2026-10-27 に緑）。画面の試験は 126 本中 117 本が通り、8 本は落ちる（[`CONTRIBUTING.md`](CONTRIBUTING.md) の「知っている穴」）。
 
-**速さ**（M4、上の 8 秒の作例、1080×1920）：1 コマ約 4 ms で、毎秒 240 コマでも落ちない。8 秒の書き出しは約 5 秒（ffmpeg の符号化を含む）。測り直すには、作例を作ってから `printf 'time 240\n' | filament/edit.sh ~/Movies/Motolii/mv.motolii`。
+**速さ**（M4、上の 8 秒の作例、1080×1920）：1 コマ約 4 ms で、毎秒 240 コマでも落ちない。8 秒の書き出しは約 5 秒（ffmpeg の符号化を含む）。測り直すには、作例を作ってから `printf 'time 240\n' | engine/edit.sh ~/Movies/Motolii/mv.motolii`。
 
 ## いまの状態
 
@@ -162,16 +162,16 @@ brew bundle
 `Brewfile` の物（GStreamer・SQLite・ffmpeg・cmake など）が入ります。最後に `Homebrew Bundle complete!` と出れば成功。
 
 ```bash
-filament/dawn_probe/build.sh
+engine/dawn_probe/build.sh
 ```
 
 Filament（WebGPU）を取ってきて組みます（M4 で約 5 分）。最後に `dawn_probe: 4096 triangles …` と数字の行が出れば成功。
 
 ```bash
-filament/edit.sh build.motolii < /dev/null
+engine/edit.sh build.motolii < /dev/null
 ```
 
-エンジンを組みます。ThorVG・Skia・libtess2・Jolt などは、ここで初回だけ取ってきます。`edit.sh` はプロジェクトファイルを開いて命令を待つ道具なので、`< /dev/null` で「命令なし」を渡し、組み立てて空のファイルを作ったらすぐ終わらせています。`filament/out/libmotolii.dylib` ができれば成功（`build.motolii` は消してかまいません）。
+エンジンを組みます。ThorVG・Skia・libtess2・Jolt などは、ここで初回だけ取ってきます。`edit.sh` はプロジェクトファイルを開いて命令を待つ道具なので、`< /dev/null` で「命令なし」を渡し、組み立てて空のファイルを作ったらすぐ終わらせています。`engine/out/libmotolii.dylib` ができれば成功（`build.motolii` は消してかまいません）。
 
 ```bash
 skin/book/live.sh
@@ -201,7 +201,7 @@ Motolii の一番の使い方です。例として、[ISF-Files](https://github.
 
 1. 効果のファイル（`.fs`）を落とす。例：ISF-Files のページで `ISF/ASCII Art.fs` を開き、Raw を右クリックして「リンク先を別名で保存」。
 2. Finder で ⌘⇧G を押し、`~/Library/Application Support/Motolii/` と打って開く。中に `effects` というフォルダを作り（無ければ）、落としたファイルを入れる。
-3. 画面の Effects の棚に、その場で出る（閉じて開き直さなくてよい）。タイルの絵（気球の写真にその効果を掛けた見本）も数秒で自動で作られる。Alight Motion の棚のように、手を乗せると動く（0.1〜1.9 秒の 8 コマ）。棚の効果は全部こうして描かれ（`~/Library/Caches/Motolii/tiles/` に、ファイルを書き換えると描き直す）、見本の写真が変わって見えない物（既定の値では何も起きない物、他のスクリプトの手伝い、まだ動かない物）には **NO CHANGE** と出る。同梱の効果で、ファイルの既定の値では何も起きない物は、掛けた瞬間に見える値で入る（測った値：`filament/effects/first.tsv`、`fx_first.sh` で作る。遷移はタイルの中で 0→1 に動く）。レイヤーを選んで、タイルを押し、下の **Add**。
+3. 画面の Effects の棚に、その場で出る（閉じて開き直さなくてよい）。タイルの絵（気球の写真にその効果を掛けた見本）も数秒で自動で作られる。Alight Motion の棚のように、手を乗せると動く（0.1〜1.9 秒の 8 コマ）。棚の効果は全部こうして描かれ（`~/Library/Caches/Motolii/tiles/` に、ファイルを書き換えると描き直す）、見本の写真が変わって見えない物（既定の値では何も起きない物、他のスクリプトの手伝い、まだ動かない物）には **NO CHANGE** と出る。同梱の効果で、ファイルの既定の値では何も起きない物は、掛けた瞬間に見える値で入る（測った値：`engine/effects/first.tsv`、`fx_first.sh` で作る。遷移はタイルの中で 0→1 に動く）。レイヤーを選んで、タイルを押し、下の **Add**。
    ![Effects の棚に ASCII Art が出た所](docs/media/drop_shelf.jpg)
 4. 画面の中でも書き出しても、こうなる（写真に ASCII Art を掛けた所）。
    ![写真に ASCII Art を掛けて書き出した所](docs/media/drop_ascii.jpg)
@@ -222,13 +222,13 @@ p5.js と Shadertoy は、置かずに貼ります。作品のコードをコピ
 <details>
 <summary><b>最初の 1 本（コマンドで）</b></summary>
 
-画面を使わずに、レシピで絵を作り、光（Glow）と場面全体の RGB のずれ（`rgbshift.wgsl`）を掛けて、8 秒の mp4 に書き出す例です。`filament/edit.sh` はプロジェクトファイルを開いて、1 行ずつの命令を受けます（`help` で一覧）。
+画面を使わずに、レシピで絵を作り、光（Glow）と場面全体の RGB のずれ（`rgbshift.wgsl`）を掛けて、8 秒の mp4 に書き出す例です。`engine/edit.sh` はプロジェクトファイルを開いて、1 行ずつの命令を受けます（`help` で一覧）。
 
 ```bash
-filament/edit.sh $HOME/Movies/Motolii/first_cmd.motolii <<EOF
+engine/edit.sh $HOME/Movies/Motolii/first_cmd.motolii <<EOF
 make Weave
 effect 1 Glow
-say 0 script $PWD/filament/effects/rgbshift.wgsl
+say 0 script $PWD/engine/effects/rgbshift.wgsl
 write $HOME/Movies/Motolii/first_cmd.mp4
 EOF
 ```
@@ -254,9 +254,9 @@ EOF
 | `brew: command not found` | [brew.sh](https://brew.sh/ja/) の 1 行で Homebrew を入れる |
 | `xcrun: error` や、Xcode が無いと言われる | App Store で Xcode を入れ、一度開いて追加の部品を入れ、`sudo xcodebuild -license accept` |
 | `No space left on device` | 空きを 10 GB 以上にしてから、止まったコマンドをもう一度 |
-| `git clone` や `build.sh` がネットの途中で止まった | 同じコマンドをもう一度。直らなければ `filament/third_party/` の中の止まった物のフォルダを消してからもう一度 |
-| `ld: library 'webgpu_dawn' not found` | `filament/dawn_probe/build.sh` を先に走らせる |
-| 画面は開くが場面が黒い | エンジンを組んだか確かめる（`filament/out/libmotolii.dylib` があるか）。無ければ `filament/edit.sh build.motolii < /dev/null` |
+| `git clone` や `build.sh` がネットの途中で止まった | 同じコマンドをもう一度。直らなければ `engine/third_party/` の中の止まった物のフォルダを消してからもう一度 |
+| `ld: library 'webgpu_dawn' not found` | `engine/dawn_probe/build.sh` を先に走らせる |
+| 画面は開くが場面が黒い | エンジンを組んだか確かめる（`engine/out/libmotolii.dylib` があるか）。無ければ `engine/edit.sh build.motolii < /dev/null` |
 
 それでも止まったら [Issue](https://github.com/oshikaidesu/motolii/issues) に、走らせたコマンドと出た文をそのまま貼ってください（ひな型があります）。使い方の質問は [Discussions](https://github.com/oshikaidesu/motolii/discussions) へ。日本語・英語のどちらでも。
 
@@ -265,7 +265,7 @@ EOF
 <details>
 <summary><b>新しくする・消す</b></summary>
 
-- 新しくする：`git pull` の後、`filament/dawn_probe/build.sh` と `filament/edit.sh build.motolii < /dev/null` をもう一度（変わった所だけ組み直す）。画面は `skin/book/live.sh` が組み直す。
+- 新しくする：`git pull` の後、`engine/dawn_probe/build.sh` と `engine/edit.sh build.motolii < /dev/null` をもう一度（変わった所だけ組み直す）。画面は `skin/book/live.sh` が組み直す。
 - 消す：`motolii` のフォルダを消す（取ってきた物と組んだ物は全部この中）。作ったプロジェクトと動画は `~/Movies/Motolii/` に残ります（別の所に置いた物はそこに）。Flutter は `~/flutter` を消す。`brew bundle` で入れた物は `brew uninstall` で。
 
 </details>
@@ -295,7 +295,7 @@ EOF
 
 ```mermaid
 flowchart LR
-  W["アプリの画面<br/>Flutter（skin/book）"] -- "C の呼び出し<br/>motolii.h" --> E["エンジン libmotolii.dylib<br/>（filament/）"]
+  W["アプリの画面<br/>Flutter（skin/book）"] -- "C の呼び出し<br/>motolii.h" --> E["エンジン libmotolii.dylib<br/>（engine/）"]
   E --> F["Filament<br/>3D・最後の合成"]
   E --> T["ThorVG<br/>2D・文字"]
   E --> G["GStreamer・ffmpeg<br/>動画を読む・書く"]
@@ -305,7 +305,7 @@ flowchart LR
   E -- "描いた絵をコピーせずに" --> W
 ```
 
-画面は操作だけで、絵はエンジンが描きます。エンジンのフォルダ名が `filament/` なのは歴史的な理由で、Google の Filament そのものではありません（Filament は組み立ての時に取ってきます）。`filament/` の直下には、今の組み立てが使う 63 本と、前の試し（今も自分のスクリプトで動く）が並んでいます。どれが今の物かは [`filament/README.md`](filament/README.md)、作りの全体は [`ARCHITECTURE.md`](ARCHITECTURE.md)。
+画面は操作だけで、絵はエンジン（`engine/`）が描きます。Google の Filament は組み立ての時に取ってきます。`engine/` の直下には、今の組み立てが使う 63 本と、前の試し（今も自分のスクリプトで動く）が並んでいます。どれが今の物かは [`engine/README.md`](engine/README.md)、作りの全体は [`ARCHITECTURE.md`](ARCHITECTURE.md)。
 
 ## これから
 
@@ -329,10 +329,10 @@ flowchart LR
 
 | 場所 | 中身 |
 |---|---|
-| `filament/` | エンジン。入口と、今の組み立てが使うファイルの一覧は [`filament/README.md`](filament/README.md) |
-| `filament/effects/`・`recipes/`・`animators/`・`ways/` | 同梱の効果・レシピ・動き・イーズ（利用者のフォルダと同じ形） |
-| `filament/aviutl_scripts/` | 同梱の AviUtl2 のスクリプト（作者ごと、LICENSE と SOURCE.txt つき） |
-| `filament/check/` | エンジンの試験（`all.sh` でまとめて） |
+| `engine/` | エンジン。入口と、今の組み立てが使うファイルの一覧は [`engine/README.md`](engine/README.md) |
+| `engine/effects/`・`recipes/`・`animators/`・`ways/` | 同梱の効果・レシピ・動き・イーズ（利用者のフォルダと同じ形） |
+| `engine/aviutl_scripts/` | 同梱の AviUtl2 のスクリプト（作者ごと、LICENSE と SOURCE.txt つき） |
+| `engine/check/` | エンジンの試験（`all.sh` でまとめて） |
 | `skin/book/` | アプリの画面（Flutter、macOS）。試験は `test/` と `integration_test/` |
 | `thorvg/` | ThorVG を wgpu に載せた前の結合（前の試しのスクリプトが使う） |
 | `old/` | 前の土台の実験（今の作りからは使っていない） |
@@ -345,7 +345,7 @@ flowchart LR
 
 | 外向け | 作者の作業メモ（日本語、そのまま公開） |
 |---|---|
-| `README.md`・`README.en.md`・`ARCHITECTURE.md`・`CONTRIBUTING.md`・`CONTRIBUTING.en.md`・`THIRD_PARTY_NOTICES.md`・`filament/README.md` | `ASSETS.md`（在る物の台帳。コミットの見張りが読むので一番上）・`docs/notes/`（やること・採点表）・`reports/`（調べた記録。絵と動画、人の投稿を集めた物は git に入れていない）・`skin/OVERVIEW.md`・`skin/PROCESS.md`（10 月初めの記録） |
+| `README.md`・`README.en.md`・`ARCHITECTURE.md`・`CONTRIBUTING.md`・`CONTRIBUTING.en.md`・`THIRD_PARTY_NOTICES.md`・`engine/README.md` | `ASSETS.md`（在る物の台帳。コミットの見張りが読むので一番上）・`docs/notes/`（やること・採点表）・`reports/`（調べた記録。絵と動画、人の投稿を集めた物は git に入れていない）・`skin/OVERVIEW.md`・`skin/PROCESS.md`（10 月初めの記録） |
 
 </details>
 

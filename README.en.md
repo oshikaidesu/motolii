@@ -81,7 +81,7 @@ Each was checked at a different time under different conditions. A p5.js work th
 
 | You can | With | State |
 |---|---|---|
-| Put picture effects shared by VJ tools on your video | ISF (`.fs`, [ISF-Files](https://github.com/Vidvox/ISF-Files) and others) | Put one in the effects folder and it is on the shelf. 318 of ISF-Files' 327 run (`filament/check/all.sh` counts them again). 419 bundled |
+| Put picture effects shared by VJ tools on your video | ISF (`.fs`, [ISF-Files](https://github.com/Vidvox/ISF-Files) and others) | Put one in the effects folder and it is on the shelf. 318 of ISF-Files' 327 run (`engine/check/all.sh` counts them again). 419 bundled |
 | Put WebGPU shader effects on it | WGSL (`.wgsl`, e.g. three.js screen effects moved over) | On the whole composition. 168 bundled |
 | Paste a p5.js sketch | p5.js (copy the code, ⌘V in the app) | It becomes a layer and stays on the Program shelf. You can set keys, and bend its speed with Time Remap. Of 168 works from OpenProcessing, 97 drew a picture (counted on 11/1, with mixed versions; matching the original is another thing: of the first 42, seen by eye, about 16) |
 | Paste a Shadertoy shader | GLSL (copy the code, ⌘V in the app) | One that draws by itself becomes a layer; one that reads `iChannel` goes on the picked layer. Either way it stays on the Program shelf. Of 300 picked at random from an API copy of 36,668, 261 drew and moved (counted in early November 2026). Of the 30 black ones, 26 wait for input such as a mouse; 9 did not go in. Time Remap is p5.js only, not on shaders yet |
@@ -96,9 +96,9 @@ A work's rights stay with its author. Many works on Shadertoy and OpenProcessing
 
 Also: keyframes and easing (anime.js eases work as they are), physics (Jolt), refracting glass, writing mp4. Everything that exists and how far it was checked is in the author's ledger [`ASSETS.md`](ASSETS.md) (Japanese).
 
-**Build check**: on a GitHub Apple silicon Mac (macos-15) it is built fresh exactly as this README says, and the engine's checks (`filament/check/all.sh`) and the UI's analyzer pass (the build badge above; green on 2026-10-27). Of the UI's tests, 117 of 126 pass there and 8 fail ([`CONTRIBUTING.en.md`](CONTRIBUTING.en.md), Known gaps).
+**Build check**: on a GitHub Apple silicon Mac (macos-15) it is built fresh exactly as this README says, and the engine's checks (`engine/check/all.sh`) and the UI's analyzer pass (the build badge above; green on 2026-10-27). Of the UI's tests, 117 of 126 pass there and 8 fail ([`CONTRIBUTING.en.md`](CONTRIBUTING.en.md), Known gaps).
 
-**Speed** (M4, the 8-second example above, 1080×1920): about 4 ms a frame, no frame dropped even at 240 a second; writing the 8 seconds takes about 5 seconds, ffmpeg's encoding included. To measure again, make the example, then `printf 'time 240\n' | filament/edit.sh ~/Movies/Motolii/mv.motolii`.
+**Speed** (M4, the 8-second example above, 1080×1920): about 4 ms a frame, no frame dropped even at 240 a second; writing the 8 seconds takes about 5 seconds, ffmpeg's encoding included. To measure again, make the example, then `printf 'time 240\n' | engine/edit.sh ~/Movies/Motolii/mv.motolii`.
 
 ## Where it stands
 
@@ -162,16 +162,16 @@ brew bundle
 Installs what the `Brewfile` lists (GStreamer, SQLite, ffmpeg, cmake, …). `Homebrew Bundle complete!` at the end means it worked.
 
 ```bash
-filament/dawn_probe/build.sh
+engine/dawn_probe/build.sh
 ```
 
 Fetches and builds Filament with its WebGPU backend (~5 minutes on an M4). A last line `dawn_probe: 4096 triangles …` with numbers means it worked.
 
 ```bash
-filament/edit.sh build.motolii < /dev/null
+engine/edit.sh build.motolii < /dev/null
 ```
 
-Builds the engine, fetching ThorVG, Skia, libtess2 and Jolt the first time. `edit.sh` opens a project file and waits for calls; `< /dev/null` gives it none, so it builds, makes an empty file and ends. `filament/out/libmotolii.dylib` existing means it worked (`build.motolii` can be deleted).
+Builds the engine, fetching ThorVG, Skia, libtess2 and Jolt the first time. `edit.sh` opens a project file and waits for calls; `< /dev/null` gives it none, so it builds, makes an empty file and ends. `engine/out/libmotolii.dylib` existing means it worked (`build.motolii` can be deleted).
 
 ```bash
 skin/book/live.sh
@@ -201,7 +201,7 @@ This is what Motolii is for. As an example, `ASCII Art.fs` from [ISF-Files](http
 
 1. Download the effect file (`.fs`). For example, open `ISF/ASCII Art.fs` on the ISF-Files page, right-click Raw and save the link.
 2. In Finder press ⌘⇧G, type `~/Library/Application Support/Motolii/` and go. Make a folder `effects` there (if there is none) and put the file in it.
-3. It appears on the Effects shelf at once (no restart). Its tile picture (the balloon photo with that effect on) is made by itself within seconds, and moves while the pointer is on it, as Alight Motion's shelf does (8 frames, 0.1–1.9 s). Every effect on the shelf is drawn this way (in `~/Library/Caches/Motolii/tiles/`; a file written over is drawn again), and one that is not seen to change the sample (its defaults do nothing, it helps other scripts, or it does not run yet) says **NO CHANGE**. A bundled effect whose file's own values do nothing comes with values that show as it is put on (measured: `filament/effects/first.tsv`, made by `fx_first.sh`; a transition goes 0→1 in its tile). Pick a layer, press the tile, then **Add**.
+3. It appears on the Effects shelf at once (no restart). Its tile picture (the balloon photo with that effect on) is made by itself within seconds, and moves while the pointer is on it, as Alight Motion's shelf does (8 frames, 0.1–1.9 s). Every effect on the shelf is drawn this way (in `~/Library/Caches/Motolii/tiles/`; a file written over is drawn again), and one that is not seen to change the sample (its defaults do nothing, it helps other scripts, or it does not run yet) says **NO CHANGE**. A bundled effect whose file's own values do nothing comes with values that show as it is put on (measured: `engine/effects/first.tsv`, made by `fx_first.sh`; a transition goes 0→1 in its tile). Pick a layer, press the tile, then **Add**.
    ![ASCII Art on the Effects shelf](docs/media/drop_shelf.jpg)
 4. In the app and written out, it looks like this (ASCII Art on a photo).
    ![ASCII Art on a photo, written out](docs/media/drop_ascii.jpg)
@@ -222,13 +222,13 @@ p5.js and Shadertoy are pasted, not dropped: copy the work's code and press ⌘V
 <details>
 <summary><b>Your first piece (commands)</b></summary>
 
-A recipe makes a picture, a glow goes on it, an RGB split (`rgbshift.wgsl`) goes on the whole composition, and 8 seconds are written as mp4. `filament/edit.sh` opens a project file and takes one call per line (`help` lists them).
+A recipe makes a picture, a glow goes on it, an RGB split (`rgbshift.wgsl`) goes on the whole composition, and 8 seconds are written as mp4. `engine/edit.sh` opens a project file and takes one call per line (`help` lists them).
 
 ```bash
-filament/edit.sh $HOME/Movies/Motolii/first_cmd.motolii <<EOF
+engine/edit.sh $HOME/Movies/Motolii/first_cmd.motolii <<EOF
 make Weave
 effect 1 Glow
-say 0 script $PWD/filament/effects/rgbshift.wgsl
+say 0 script $PWD/engine/effects/rgbshift.wgsl
 write $HOME/Movies/Motolii/first_cmd.mp4
 EOF
 ```
@@ -248,9 +248,9 @@ EOF
 | `brew: command not found` | Install Homebrew with the one line on [brew.sh](https://brew.sh/) |
 | `xcrun: error`, or Xcode missing | Install Xcode from the App Store, open it once to add its components, then `sudo xcodebuild -license accept` |
 | `No space left on device` | Free 10 GB or more, then run the command that stopped again |
-| `git clone` or `build.sh` stopped on the network | Run the same command again; if it still stops, delete the half-fetched folder in `filament/third_party/` and run it again |
-| `ld: library 'webgpu_dawn' not found` | Run `filament/dawn_probe/build.sh` first |
-| The app opens but the composition is black | Check the engine is built (`filament/out/libmotolii.dylib`); if not, `filament/edit.sh build.motolii < /dev/null` |
+| `git clone` or `build.sh` stopped on the network | Run the same command again; if it still stops, delete the half-fetched folder in `engine/third_party/` and run it again |
+| `ld: library 'webgpu_dawn' not found` | Run `engine/dawn_probe/build.sh` first |
+| The app opens but the composition is black | Check the engine is built (`engine/out/libmotolii.dylib`); if not, `engine/edit.sh build.motolii < /dev/null` |
 
 Still stuck? Open an [issue](https://github.com/oshikaidesu/motolii/issues) with the command you ran and what it printed (there is a template). Questions about using it go to [Discussions](https://github.com/oshikaidesu/motolii/discussions). English or Japanese.
 
@@ -259,7 +259,7 @@ Still stuck? Open an [issue](https://github.com/oshikaidesu/motolii/issues) with
 <details>
 <summary><b>Updating and removing</b></summary>
 
-- Update: `git pull`, then run `filament/dawn_probe/build.sh` and `filament/edit.sh build.motolii < /dev/null` again (only what changed is rebuilt); `skin/book/live.sh` rebuilds the app.
+- Update: `git pull`, then run `engine/dawn_probe/build.sh` and `engine/edit.sh build.motolii < /dev/null` again (only what changed is rebuilt); `skin/book/live.sh` rebuilds the app.
 - Remove: delete the `motolii` folder (everything fetched and built is inside it). Your projects and videos stay in `~/Movies/Motolii/` (or wherever else you put them). Flutter: delete `~/flutter`. What `brew bundle` installed goes with `brew uninstall`.
 
 </details>
@@ -289,7 +289,7 @@ Still stuck? Open an [issue](https://github.com/oshikaidesu/motolii/issues) with
 
 ```mermaid
 flowchart LR
-  W["The app's UI<br/>Flutter (skin/book)"] -- "C calls<br/>motolii.h" --> E["Engine, libmotolii.dylib<br/>(filament/)"]
+  W["The app's UI<br/>Flutter (skin/book)"] -- "C calls<br/>motolii.h" --> E["Engine, libmotolii.dylib<br/>(engine/)"]
   E --> F["Filament<br/>3D, final compositing"]
   E --> T["ThorVG<br/>2D, text"]
   E --> G["GStreamer, ffmpeg<br/>reading and writing video"]
@@ -299,7 +299,7 @@ flowchart LR
   E -- "its picture, not copied" --> W
 ```
 
-The UI only takes your hands; the engine draws. The engine's folder is named `filament/` for historical reasons — it is Motolii's engine, not Google's Filament (which is fetched at build time). At its top level sit the 63 files the current build uses beside earlier probes (which still run with their own scripts): [`filament/README.md`](filament/README.md) says which is which, and [`ARCHITECTURE.md`](ARCHITECTURE.md) has the whole design.
+The UI only takes your hands; the engine (`engine/`) draws. Google's Filament is fetched at build time. At the engine's top level sit the 63 files the current build uses beside earlier probes (which still run with their own scripts): [`engine/README.md`](engine/README.md) says which is which, and [`ARCHITECTURE.md`](ARCHITECTURE.md) has the whole design.
 
 ## Next
 
@@ -318,10 +318,10 @@ The project's stance: **code you write yourself is a debt.** Look for an existin
 
 | Folder | What |
 |---|---|
-| `filament/` | The engine; its entry points and the files the current build uses: [`filament/README.md`](filament/README.md) |
-| `filament/effects/`, `recipes/`, `animators/`, `ways/` | Bundled effects, recipes, motions and eases (the same shape as your own folder) |
-| `filament/aviutl_scripts/` | Bundled AviUtl2 scripts (per author, with LICENSE and SOURCE.txt) |
-| `filament/check/` | The engine's checks (`all.sh` runs them) |
+| `engine/` | The engine; its entry points and the files the current build uses: [`engine/README.md`](engine/README.md) |
+| `engine/effects/`, `recipes/`, `animators/`, `ways/` | Bundled effects, recipes, motions and eases (the same shape as your own folder) |
+| `engine/aviutl_scripts/` | Bundled AviUtl2 scripts (per author, with LICENSE and SOURCE.txt) |
+| `engine/check/` | The engine's checks (`all.sh` runs them) |
 | `skin/book/` | The UI (Flutter, macOS); tests in `test/` and `integration_test/` |
 | `thorvg/`, `old/` | Earlier work, kept |
 | `docs/` | This README's pictures and examples (`media/`, `examples/`) and the author's working notes (`notes/`, Japanese) |
