@@ -88,6 +88,11 @@ cat > $W/slow.js <<'J'
 function setup() { createCanvas(100, 100); frameRate(30); }
 function draw() { background(255, 0, 0); }
 J
+cat > $W/ticks.js <<'J'
+let x = 10;
+function setup() { createCanvas(800, 600); noStroke(); }
+function draw() { background(0); fill(255, 0, 0); rect(x, 0, 20, 600); x += 5; }
+J
 python3 - $W <<'P'
 import os,subprocess,sys
 from PIL import Image,ImageChops
@@ -149,6 +154,9 @@ th=g('t0').resize((80,60)); redx=[x for x in range(80) if th.getpixel((x,30))[0]
 print('pixelDensity(2) is as large as 1:','yes' if redx and redx[0]<(80-th.size[0])/2+2 and 30<len(redx)<52 else f'NO ({redx[:2]} {len(redx)})')
 run('s',f'add picture {W}/slow.js','set 1 size 3',f'still {at("h0")}')
 print('frameRate(30) has drawn by its first frame:','yes' if near('h0',(255,0,0))>1000 else f'NO ({near("h0",(255,0,0))})')
+said=run('own',f'add picture {W}/ticks.js','set 1 size 3','at 0.5',f'still {at("o0")}','key 1 time_remap 0 1','key 1 time_remap 1 0','way 1 time_remap 0 SlowOut','at 0.5',f'still {at("o1")}','at 0.25',f'still {at("o2")}','key 1 time_remap 0 0','key 1 time_remap 1 1','say 1 time_remap_loop offset','at 0.5',f'still {at("o3")}','at 1.5',f'still {at("o4")}')
+bar=lambda n:g(n).split()[0].point(lambda v:255*(v>128)).getbbox()[0]
+print('a program\'s own time keyed goes through its frames by any way, back too, and its code stays as it is:','yes' if 'NOT done' not in said and bar('o1')<bar('o2')<bar('o0')<bar('o3')<bar('o4') and abs(bar('o4')-bar('o3')-280)<=6 else f'NO ({bar("o0")} {bar("o1")} {bar("o2")} {bar("o3")} {bar("o4")} {said[-200:]})')   # (a second past: the same way again, 60 frames on)
 import http.server,functools,threading
 serve=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(http.server.SimpleHTTPRequestHandler,directory=f'{W}/net'))
 threading.Thread(target=serve.serve_forever,daemon=True).start()

@@ -468,8 +468,16 @@ static bool doc_parent(Doc& d, int thing, double to) {
     if (ok && doc_knows(d, thing, "size") && !doc_keys(d, thing, "size")) ok = doc_set(d, thing, "size", std::clamp(size * sizeWas / sizeTo, 1e-3, 1e4));
     return doc_acted(d) && ok;
 }
+static double doc_lasts(Doc& d, int thing);
 static bool doc_key_here(Doc& d, int thing, const char* name, double at) {
     if (!doc_knows(d, thing, name, nullptr, nullptr, true)) return false;
+    if (!strcmp(name, "time_remap") && !doc_keys(d, thing, name)) {   // (After Effects' Enable Time Remapping: a key at its start and one at its end, each its own time there; so one step)
+        const double gone = doc_number(d, thing, "begin", 0, 0), start = doc_number(d, thing, "start", 0, 0), lasts = doc_lasts(d, thing) > 0.0 ? doc_lasts(d, thing) : std::max(1e-3, doc_seconds(d) - start);
+        doc_act(d);
+        const bool ok = doc_key(d, thing, name, start, gone) && doc_key(d, thing, name, start + lasts, gone + lasts) && (at <= start || at >= start + lasts || doc_key(d, thing, name, at, gone + at - start));
+        if (!ok) d.act_ok = false;
+        return doc_acted(d) && ok;
+    }
     return doc_keys(d, thing, name, at) && doc_keys(d, thing, name) ? true : doc_key(d, thing, name, at, doc_number(d, thing, name, at, doc_usual_on(d, thing, name)));
 }
 // What a group holds, however deep: the things under a Null (a thing's parent that is not a Null holds nothing: After

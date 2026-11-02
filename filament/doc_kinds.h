@@ -68,7 +68,7 @@ struct Doc {
     std::vector<double> phys_until;     // and till when its keys have it
     bool phys_stale = true, phys_any = false;   // (the document changed since the world was last looked at; some thing has physics)
     std::string phys_made;              // all the world was made of, as the document said it then (made again only when that changes)
-    struct Scripted { double at = -1; int made = -1; std::vector<ScriptCopy> copies; };
+    struct Scripted { double at = -1, own = -1; int made = -1; std::vector<ScriptCopy> copies; };
     std::map<int, Scripted> scripted;
     struct AbsentKept { double at = -1; long changes = -1; int seen = -1; std::vector<AbsentCopy> copies; };
     std::map<int, AbsentKept> absentKept;
@@ -174,6 +174,7 @@ static const DocValue doc_values[] = {
     {"points", "shape", 1, 360, false, nullptr}, {"inner", "shape", 0.01, 1, false, nullptr}, {"round", "shape picture", 0, 0.5, true, nullptr}, {"crop_left", "picture", 0, 0.95, false, nullptr}, {"crop_top", "picture", 0, 0.95, false, nullptr}, {"crop_right", "picture", 0, 0.95, false, nullptr}, {"crop_bottom", "picture", 0, 0.95, false, nullptr},   // (a photo cut in from each side, a share of its width or height: Alight Motion's crop)   // (a polygon's or star's points, a star's inner points, its corners rounded)
     {"start", doc_kinds, 0, 1e6, false, nullptr}, {"duration", doc_kinds, 1e-3, 1e6, false, nullptr},
     {"begin", "film picture text shape", 0, 1e6, false, nullptr}, {"speed", "film solid picture text shape", -100, 100, false, nullptr}, {"keyed", "film", 0, 1, false, nullptr},
+    {"time_remap", "picture text shape solid", 0, 1e6, true, nullptr}, {"time_remap_loop", "picture text shape solid", 0, 0, false, "none cycle pingpong offset"},   // (the seconds of its own a program is at, what is keyed as After Effects' Time Remap: doc_own_time; and past its last key: loopOut, doc_keys_at)
     {"poster_at", "stage", -1, 1e6, false, nullptr},   // (the moment the document's own picture is drawn at, seconds; below 0: where the playhead is as it is left: Alight Motion's Set Project Thumbnail, motolii_poster)
     {"layer_length", "stage", 0, 3600, false, nullptr},   // (how long a thing put in lasts, seconds; 0: to the document's end: AbsentMotion's New Layer Length, doc_add)
     {"bpm", "stage", 0, 999, false, nullptr},   // (the document's tempo, beats a minute; 0: none. What the timeline's grid goes by: Live's Tempo field; Alight Motion has none)

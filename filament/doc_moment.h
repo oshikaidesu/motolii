@@ -255,7 +255,7 @@ static void doc_moment(Doc& d, double now) {
             }
             if (moved) kept_drop(s, t.drawn), t.drawn->shownAt = t.drawn->sketchAt = -1;
         }
-        if (t.drawn && t.drawn->seconds > 0.f) picture_at(s, t.drawn, std::fmod((float)lies[i].since, t.drawn->seconds));
+        if (t.drawn && t.drawn->seconds > 0.f) picture_at(s, t.drawn, std::fmod((float)doc_own_time(d, thing, now, lies[i].since), t.drawn->seconds));
         if (t.drawn && !t.drawn->effects.empty()) {   // (its effects as they are now: those that move are drawn again)
             DrawnFx fx;
             std::string why;

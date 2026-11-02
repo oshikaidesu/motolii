@@ -102,7 +102,8 @@ static math::mat4 doc_place(Doc& d, int thing, double now, int deeper, int copy,
     } else if (member)   // (a recipe as code: each copy where the thing's script says, on top of what its copies' values say)
         if (DocScript* sc = doc_script_of(d, doc_literal_word(d, thing, "script")); sc && sc->run && sc->run->ok() && doc_literal_word(d, thing, "shape") != "sketch") {   // (a sketch's own mesh has no copies to place: doc_sketch.h)
             Doc::Scripted& kept = d.scripted[thing];
-            if (kept.at != said || kept.made != doc_scripts_made(d) || (int)kept.copies.size() != n) {   // (every copy at once, the knobs read once)
+            const double gone = doc_literal(d, thing, "begin", 0, 0), begins = doc_literal(d, thing, "start", 0, 0) - gone, clock = doc_own_time(d, thing, said, said - begins);   // (a part after a cut goes on from where it was: doc_own_clock)
+            if (kept.at != said || kept.own != clock || kept.made != doc_scripts_made(d) || (int)kept.copies.size() != n) {   // (every copy at once, the knobs read once)
                 std::map<std::string, double> numbers;
                 std::map<std::string, std::string> words;
                 for (size_t i = 0; i < sc->knobs.size(); ++i) {
@@ -112,10 +113,9 @@ static math::mat4 doc_place(Doc& d, int thing, double now, int deeper, int copy,
                     }
                     else numbers[sc->knobs[i].name] = doc_number(d, thing, sc->names[i].c_str(), said, sc->knobs[i].usual);
                 }
-                kept.at = said, kept.made = doc_scripts_made(d);
-                const double gone = doc_literal(d, thing, "begin", 0, 0), begins = doc_literal(d, thing, "start", 0, 0) - gone;   // (a part after a cut goes on from where it was: doc_own_clock)
+                kept.at = said, kept.own = clock, kept.made = doc_scripts_made(d);
                 numbers["duration"] = doc_literal(d, thing, "duration", 0, -1) + (doc_literal(d, thing, "duration", 0, -1) > 0.0 ? gone : 0.0);   // (how long the thing lasts: an Out ends before it)
-                kept.copies = sc->run->copies(n, said - begins, numbers, words, (double)d.stage->h / std::max(1.0, doc_number(d, 0, "high", 0, 1080) * doc_point(d, thing, said)));   // (a pixel of the document, where the thing stands)
+                kept.copies = sc->run->copies(n, clock, numbers, words, (double)d.stage->h / std::max(1.0, doc_number(d, 0, "high", 0, 1080) * doc_point(d, thing, said)));   // (a pixel of the document, where the thing stands)
             }
             const ScriptCopy c = copy < n ? kept.copies[(size_t)copy] : ScriptCopy{};
             shift += math::double3{c.x, c.y, c.z};

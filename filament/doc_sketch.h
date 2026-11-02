@@ -67,7 +67,7 @@ static void doc_sketch_mesh(Doc& d, int thing, Doc::Shown& t, double now) {
     DocScript* sc = doc_script_of(d, doc_literal_word(d, thing, "script"));
     if (!sc || !sc->run || !sc->run->ok()) return;
     const double gone = doc_literal(d, thing, "begin", 0, 0), begins = doc_literal(d, thing, "start", 0, 0) - gone;
-    const int frame = std::max(0, (int)std::lround((now - begins) * 60.0));
+    const int frame = (int)std::lround(doc_own_time(d, thing, now, now - begins) * 60.0);
     const auto shown = doc_shown_at(d, thing, now);
     const math::double4 from = inverse(shown) * math::double4{s.camera->getPosition(), 1.0};
     const float3 eye = float3{(float)(from.x / from.w), (float)(from.y / from.w), (float)(from.z / from.w)};
