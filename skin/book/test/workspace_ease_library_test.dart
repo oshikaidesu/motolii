@@ -453,16 +453,23 @@ void main() {
       ..pickKey((layer: '$cube', frame: 0))
       ..front('Ease');
     await t.pumpAndSettle();
+    Future<void> pasted(String way) async {   // (Paste Curve first asks the clipboard: on a slow Mac the press settles before the window is waiting on anything)
+      for (var i = 0; i < 200 && m.wayOf(cube, 'x', 0) != way; i++) {
+        await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+        await settled(t, ws);
+      }
+    }
+
     board = 'ease: cubic-bezier(.2, 0, 0, 1)';
     await menu(t, 'paste');
-    await settled(t, ws);
+    await pasted('Bezier 0.2 0 0 1');
     expect(m.wayOf(cube, 'x', 0), 'Bezier 0.2 0 0 1', reason: m.trouble);
     board = null;
     await menu(t, 'copy');
     expect(board, 'cubic-bezier(0.2, 0.0, 0.0, 1.0)');
     board = 'linear(0, 0.8 25%, 1)';
     await menu(t, 'paste');
-    await settled(t, ws);
+    await pasted('linear(0,0.8~25%,1)');
     expect(m.wayOf(cube, 'x', 0), 'linear(0,0.8~25%,1)', reason: m.trouble);
     expect((await m.shownAt([(cube, 'x', .25)])).single, closeTo(.8, .001), reason: 'the stage goes by its points');
     await t.pumpAndSettle();
