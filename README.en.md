@@ -4,9 +4,7 @@
 
 <p align="center">Music videos and motion graphics like those made in After Effects, made easier.</p>
 
-<p align="center">Copy the code of a p5.js sketch or a Shadertoy shader and paste it. That alone makes it a layer in your video.</p>
-
-<p align="center">Pick effects from moving thumbnails and move text and shapes directly on the stage. Combine 2D, 3D and web looks on one timeline and write out an MP4.</p>
+<p align="center">Motolii is an open-source video maker that takes looks published on the net directly and combines them with 2D, 3D, video and music.</p>
 
 <p align="center">
   <a href="https://github.com/oshikaidesu/motolii/actions/workflows/build.yml"><img alt="build" src="https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg"></a>
@@ -24,43 +22,95 @@
 
 <p align="center"><sub>Left: 8 seconds made with Motolii (text, 3D, effects): a recipe (the lines), a 3D ring, text, a glow and an RGB split, written out. Right: the app, with those 8 seconds open. Once built, <code>docs/examples/mv.sh</code> makes the same as <code>~/Movies/Motolii/mv.mp4</code> in one line.</sub></p>
 
+## 1. Another tool, just to use the look you want?
+
+You find a cool effect on the net. Look up how it's made, and it needs a dedicated plugin, or a tutorial that rebuilds it in dozens of steps.
+
+You find a handy script, and then you go looking for a script manager panel to make it usable.
+
+You find a piece that runs on the web, so you screen-record it into a video. But the moment it's a video, the original values, its colours, shapes and speed, can no longer be changed freely.
+
+<h3 align="center">The code that moves these looks is already public.<br>So why must it be rebuilt before production software can use it?</h3>
+
+<p align="center">Motolii is trying to change that.</p>
+
+### Code as video material, just as it is
+
+Copy code published on p5.js or Shadertoy and paste it into Motolii.
+
+If the work is supported, that alone makes it a layer or an effect on the timeline.
+
+There's no need to burn it into video. Once it's in, you can move it with keyframes and combine it with other effects. With a p5.js sketch, you can also edit how its time runs with Time Remap.
+
+### No extra panel just to add an effect
+
+ISF, WGSL, AviUtl2 scripts and more appear in the effects list when you put them in the matching folder.
+
+No restart. Samples of the effects you add are made automatically.
+
+Instead of adding another manager or plugin for each new look, you find and use them all in one place.
+
+### Not closed to one format
+
+Looks aren't only made as After Effects plugins.
+
+ISF for VJs, p5.js and Shadertoy on the web, Japan's AviUtl2 scripts, WebGPU's WGSL.
+
+Motolii lets looks made in different places share one timeline.
+
+<p align="center">
+  <img src="docs/media/effects.jpg" alt="Eight shared ISF effects on a photo and text" width="640">
+</p>
+
+<p align="center"><sub>Eight ISF effects as their authors share them (CMYK Halftone, Bad TV, Duotone, Edges, Dither-Bayer, Kaleidoscope Tile, Glow-Fast, Pixellate) on a public-domain photo and text.</sub></p>
+
+Not all code runs. The supported formats and the results of actually testing them are published in the table below.
+
+## 2. So the handling doesn't get in the way once a look is in
+
+More effects mean nothing if you can't find them.
+
+Finding an effect you don't know the name of. Finding the value you want to move among piles of settings. Going back and forth between 2D and 3D work.
+
+Handling like this is also what Motolii wants to rethink.
+
 <img src="docs/media/card_pick.jpg" alt="Tiles on the Effects shelf, and the stage with an effect on it" align="left" width="430">
 
-<h3>See it, pick it</h3>
+<h3>Pick by looks, not by name</h3>
 
-Find effects you don't know the name of by their moving thumbnails. Samples of the effects you add are made automatically.
+Effects and animations can be found by their moving thumbnails.
+
+Effects you add get a preview automatically too, so you never have to choose by file name alone.
 
 <br clear="all">
 
 <img src="docs/media/card_move.jpg" alt="A 3D ring picked on the stage, with 2D, 2.5D, 3D and position in the panel on the right" align="right" width="430">
 
-<h3>Move it by hand</h3>
+<h3>Move it directly on the stage</h3>
 
-The handling is modelled on Alight Motion. Place text, shapes, video and 3D models on one stage, turn on Animate and move them with keyframes.
+With Alight Motion as the model for the handling, you place text and shapes and edit them right on the stage.
 
-<br clear="all">
-
-<img src="docs/media/effects.jpg" alt="Eight shared ISF effects on a photo and text" align="left" width="430">
-
-<h3>Add looks from the net as they are</h3>
-
-Paste in p5.js and Shadertoy code. ISF, WGSL, AviUtl2 scripts and more load from a folder, and can be added without restarting the app.
-
-<sub>The picture: eight ISF effects as their authors share them, on a public-domain photo and text.</sub>
+Turn on Animate and change a value, and a keyframe is recorded. Easing can be adjusted for each stretch.
 
 <br clear="all">
 
-## Why it was made
+### 2D and 3D are not separate
 
-<h3 align="center">Effects are made of code.<br>So why do they have to be rebuilt for every piece of video software?</h3>
+Text, shapes, photos, video, 3D models and point clouds can all stand on one stage.
 
-Plenty of looks are already published on the net.
+With no mode to switch between 2D and 3D, they combine on one timeline.
 
-But bringing them into production software can mean porting to a dedicated plugin or writing them out as video. And once a look is video, you can no longer edit the values in its code.
+## 3. From a look you found to a finished video
 
-Motolii takes code in the formats it supports as it is, moves it on the timeline, and lets you combine it with your other material.
+Layer text and 3D models over a shader taken from the net.
 
-You shouldn't have to wait for the software itself to catch up before you can use a new look. That is the video maker Motolii aims to be.
+Set keyframes to the music. Use MIDI notes for motion. Move objects with physics.
+
+Bring in Lottie animations and video too, and write the finished video out as an MP4.
+
+<h3 align="center">Find the looks you love, put them together, and finish one video.</h3>
+
+<p align="center">That is Motolii.</p>
 
 ## Before you try
 
