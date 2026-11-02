@@ -2198,6 +2198,8 @@ void _tests3() {
     final row = find.byKey(ValueKey('ws-screen-${half.$2}'));   // (a file's effect, by its file: dock_effects.dart)
     await t.enterText(find.descendant(of: find.byType(DockSearch), matching: find.byType(EditableText)), half.$1);
     await t.pumpAndSettle();
+    await t.runAsync(() => Scrollable.ensureVisible(t.element(row), alignment: 0));   // (up the shelf: the foot a first press opens covers its lower half, reports/alight_checklist.md T)
+    await t.pumpAndSettle();
     await doubleTap(t, row);
     await settled(t, ws);
     expect(m.word(cube, 'fx'), half.$2, reason: m.trouble);

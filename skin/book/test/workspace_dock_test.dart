@@ -296,7 +296,7 @@ void main() {
   testWidgets('an effect put on with words typed is the first for those words the next time: Alfred\'s Keyword Latching (golf_noise.md (94))', (t) async {
     DockTags.latchedAt(File('${Directory.systemTemp.createTempSync('latch').path}/latched.json'));
     final ws = _joined();
-    await _shelf(t, ws, const Size(240, 918), 'Effects');
+    await _shelf(t, ws, const Size(240, 6000), 'Effects');   // (tall, all the blurs in sight: the shelf makes only the tiles that are)
     final search = find.descendant(of: find.byType(DockSearch), matching: find.byType(EditableText));
     List<String> shown() => [
       for (final e in find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('ws-screen-')).evaluate())
@@ -364,7 +364,7 @@ void main() {
     expect(m.tags(m.effects.firstWhere((e) => e.$2.endsWith('/datamosh.wgsl')).$2), containsAll(['multipass', 'feedback', 'time']), reason: 'a WGSL effect read too: its --pass@ lines, one kept, the clock read');
     expect(m.tags(m.effects.firstWhere((e) => e.$2.endsWith('/am_brightnesscontrast.wgsl')).$2), isNot(contains('time')), reason: 'a clock field declared and not read is not the clock');
     if (m.effects.any((e) => e.$1 == 'NCSVisualizer')) expect(m.tags(m.effects.firstWhere((e) => e.$1 == 'NCSVisualizer').$2), containsAll(['generator', 'sound']), reason: 'an AviUtl2 custom object (.obj2) that reads obj.getaudio');   // (a maker's own script, not in the repository: CI has none)
-    await _shelf(t, ws, const Size(240, 918), 'Effects');
+    await _shelf(t, ws, const Size(240, 6000), 'Effects');   // (tall, all that hear in sight: the shelf makes only the tiles that are)
     List<String> shown() => [
       for (final e in find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('ws-screen-')).evaluate())
         nameOf[(e.widget.key! as ValueKey<String>).value.substring('ws-screen-'.length)]!,

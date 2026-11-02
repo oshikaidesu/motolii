@@ -82,13 +82,16 @@ class EffectsShelf extends StatelessWidget {
         Expanded(
           child: shown.isEmpty
               ? DockEmpty(c.query)
-              : SingleChildScrollView(
-                  child: LayoutBuilder(
-                    builder: (context, box) {
-                      final cols = wsCols(box.maxWidth, Shape.z(84)), w = wsCell(box.maxWidth, cols);
-                      return Wrap(spacing: WsT.gutter, runSpacing: WsT.gutter, children: [for (final t in shown) SizedBox(width: w, child: t)]);
-                    },
-                  ),
+              : LayoutBuilder(
+                  builder: (context, box) {
+                    final cols = wsCols(box.maxWidth, Shape.z(84)), w = wsCell(box.maxWidth, cols);
+                    return GridView.builder(   // (only the tiles in sight are made, Flutter's own lazy grid, as the Fonts shelf's rows: a Wrap made all 1,293 at each opening)
+                      padding: EdgeInsets.zero,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: cols, crossAxisSpacing: WsT.gutter, mainAxisSpacing: WsT.gutter, mainAxisExtent: w + Shape.z(18)),   // (a tile: its square and its name, EffectTile)
+                      itemCount: shown.length,
+                      itemBuilder: (context, i) => shown[i],
+                    );
+                  },
                 ),
         ),
         if (sel != null && m.picture(sel.id).isNotEmpty)   // (its pictures large and moving, as Alight Motion's effect browser opens a large moving sample of the one pressed)

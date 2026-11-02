@@ -84,7 +84,7 @@ static std::string doc_wgsl_tags(const std::filesystem::path& file) {
             }
             feedback = feedback || line.find("--history@") != std::string::npos;
             image = image || line.find("--picture@") != std::string::npos;
-        } else if (!clock && std::regex_search(line, ticks)) clock = true;
+        } else if (!clock && (line.find("time") != std::string::npos || line.find("frame") != std::string::npos) && std::regex_search(line, ticks)) clock = true;   // (the regex only where its words are, as ripgrep's literals: 1,024 lines of 82,592, and std::regex was most of the shelf's listing)
     }
     std::string tags;
     for (const auto& [on, word] : {std::pair{passes > 1, "multipass"}, {feedback, "feedback"}, {clock, "time"}, {image, "image"}}) if (on) tags += (tags.empty() ? "" : " ") + std::string(word);

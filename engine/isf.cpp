@@ -275,7 +275,7 @@ std::string isf_tags(const std::string& file) {
     tag(sound, "sound");
     tag(passes.Size() > 1, "multipass");   // (Shadertoy's Multipass)
     tag(feedback, "feedback");
-    tag(std::regex_search(body, clock), "time");
+    tag((body.find("TIME") != std::string::npos || body.find("FRAMEINDEX") != std::string::npos || body.find("DATE") != std::string::npos) && std::regex_search(body, clock), "time");   // (the regex only where its words are: doc_wgsl_tags)
     tag(!transition && pictures.size() > 1, "image");   // (another thing's picture in, beside its own: Shadertoy's Webcam, a picture from outside)
     return tags;
 }
