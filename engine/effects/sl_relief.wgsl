@@ -21,451 +21,454 @@
 // --track@engraveDepth:Engrave Depth,0,2,0.5,0.01
 // --track@lineSpacing:Line Spacing,2,40,5,0.5
 // --track@engraveAngle:Line Angle,-180,180,0,1
-// Three.js r185 - Node System
-
-// global
-diagnostic( off, derivative_uniformity );
-
-
-// structs
-
-struct OutputStruct {
-	@location( 0 ) color: vec4<f32>
-};
-var<private> output : OutputStruct;
-
-// uniforms
+diagnostic(off, derivative_uniformity);
 struct Knobs {
   time: f32,
+  passindex: f32,
   resolution: vec2<f32>,
-  bevel: f32,
-  heightFrom: f32,
-  engraveDepth: f32,
-  grain: f32,
-  engrave: f32,
-  engraveAngle: f32,
-  lineSpacing: f32,
-  grainSize: f32,
-  surface: f32,
-  color: vec3<f32>,
-  ambient: f32,
-  depth: f32,
+  frameRect: vec4<f32>,
+  passRect: vec4<f32>,
   relief: f32,
+  heightFrom: f32,
+  depth: f32,
+  bevel: f32,
+  amount: f32,
   lightAngle: f32,
   elevation: f32,
-  shininess: f32,
+  ambient: f32,
+  surface: f32,
+  color: vec3<f32>,
   specular: f32,
-  amount: f32,
+  shininess: f32,
+  grain: f32,
+  grainSize: f32,
+  engrave: f32,
+  engraveDepth: f32,
+  lineSpacing: f32,
+  engraveAngle: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;
 @group(0) @binding(2) var<uniform> knobs: Knobs;
 fn to_linear(c: vec3f) -> vec3f { return select(pow((c + 0.055) / 1.055, vec3f(2.4)), c / 12.92, c <= vec3f(0.04045)); }
 fn to_srgb(c: vec3f) -> vec3f { return select(1.055 * pow(c, vec3f(1.0 / 2.4)) - 0.055, c * 12.92, c <= vec3f(0.0031308)); }
-fn picture_read(uv: vec2<f32>) -> vec4<f32> { return picture_read_level(uv, 0.0); }
-fn picture_read_level(uv: vec2<f32>, level: f32) -> vec4<f32> {
-  let p = textureSampleLevel(picture, picture_sampler, uv, level);
-  if (p.a <= 0.0) { return vec4<f32>(0.0); }
-  return vec4<f32>(to_linear(clamp(p.rgb / p.a, vec3f(0.0), vec3f(1.0))) * p.a, p.a);
+fn framed(uv: vec2f) -> vec2f { return uv * knobs.frameRect.zw + knobs.frameRect.xy; }
+fn picture_read(uv: vec2f) -> vec4f { return picture_read_level(uv, 0.0); }
+fn picture_read_level(uv: vec2f, level: f32) -> vec4f {
+  let p = textureSampleLevel(picture, picture_sampler, framed(uv), level);
+  if (p.a <= 0.0) { return vec4f(0.0); }
+  return vec4f(to_linear(clamp(p.rgb / p.a, vec3f(0.0), vec3f(1.0))), p.a);
 }
-fn to_shelf(p: vec4<f32>) -> vec4<f32> {
-  if (p.a <= 0.0) { return vec4<f32>(0.0); }
-  return vec4<f32>(to_srgb(clamp(p.rgb / p.a, vec3f(0.0), vec3f(1.0))) * p.a, p.a);
-}
+fn picture_load(p: vec2i, level: u32) -> vec4f { return picture_read_level((vec2f(p) + 0.5) / knobs.resolution, 0.0); }
+fn target_read(t: texture_2d<f32>, s: sampler, uv: vec2f) -> vec4f { return textureSampleLevel(t, s, framed(uv), 0.0); }
+fn target_load(t: texture_2d<f32>, p: vec2i, level: u32) -> vec4f { return textureLoad(t, p + vec2i(knobs.frameRect.xy * vec2f(textureDimensions(t)) + 0.5), level); }
+fn target_read_level(t: texture_2d<f32>, s: sampler, uv: vec2f, level: f32) -> vec4f { return textureSampleLevel(t, s, framed(uv), level); }
+fn to_shelf(p: vec4f) -> vec4f { return vec4f(to_srgb(clamp(p.rgb, vec3f(0.0), vec3f(1.0))) * p.a, p.a); }
+fn none(uv: vec2f) -> vec4f { return vec4f(0.0); }
+fn none_level(uv: vec2f, level: f32) -> vec4f { return vec4f(0.0); }
+fn none_load(p: vec2i, level: u32) -> vec4f { return vec4f(0.0); }
+
+// structs
+
+struct p0_OutputStruct {
+	@location( 0 ) color: vec4<f32>
+};
+var<private> p0_output : p0_OutputStruct;
+
+// uniforms
 
 
 // vars
-var<private> DiffuseColor : vec4<f32>;
-var<private> nodeVar0 : vec4<f32>;
-var<private> nodeVar1 : vec2<f32>;
-var<private> nodeVar2 : vec4<f32>;
-var<private> nodeVar3 : vec4<f32>;
-var<private> nodeVar4 : vec2<f32>;
-var<private> nodeVar5 : vec2<f32>;
-var<private> nodeVar6 : vec4<f32>;
-var<private> nodeVar7 : vec4<f32>;
-var<private> nodeVar8 : vec4<f32>;
-var<private> nodeVar9 : vec4<f32>;
-var<private> nodeVar10 : vec4<f32>;
-var<private> nodeVar11 : vec4<f32>;
-var<private> nodeVar12 : vec4<f32>;
-var<private> nodeVar13 : vec4<f32>;
-var<private> nodeVar14 : f32;
-var<private> nodeVar15 : f32;
-var<private> nodeVar16 : f32;
-var<private> nodeVar17 : f32;
-var<private> nodeVar18 : f32;
-var<private> nodeVar19 : f32;
-var<private> nodeVar20 : f32;
-var<private> nodeVar21 : f32;
-var<private> nodeVar22 : f32;
-var<private> nodeVar23 : f32;
-var<private> nodeVar24 : f32;
-var<private> nodeVar25 : f32;
-var<private> nodeVar26 : f32;
-var<private> nodeVar27 : f32;
-var<private> nodeVar28 : f32;
-var<private> nodeVar29 : vec2<f32>;
-var<private> nodeVar30 : vec4<f32>;
-var<private> nodeVar31 : vec3<f32>;
-var<private> nodeVar32 : f32;
-var<private> nodeVar33 : f32;
-var<private> nodeVar34 : f32;
-var<private> nodeVar35 : f32;
-var<private> nodeVar36 : vec2<f32>;
-var<private> nodeVar37 : f32;
-var<private> nodeVar38 : vec2<f32>;
-var<private> nodeVar39 : vec2<f32>;
-var<private> nodeVar40 : vec3<f32>;
-var<private> nodeVar41 : vec3<f32>;
-var<private> nodeVar42 : vec2<f32>;
-var<private> nodeVar43 : vec3<f32>;
-var<private> nodeVar44 : vec3<f32>;
-var<private> nodeVar45 : vec2<f32>;
-var<private> nodeVar46 : vec2<f32>;
-var<private> nodeVar47 : vec2<f32>;
-var<private> nodeVar48 : vec3<f32>;
-var<private> nodeVar49 : vec3<f32>;
-var<private> nodeVar50 : vec2<f32>;
-var<private> nodeVar51 : vec3<f32>;
-var<private> nodeVar52 : vec3<f32>;
-var<private> nodeVar53 : vec2<f32>;
-var<private> nodeVar54 : f32;
-var<private> nodeVar55 : f32;
-var<private> nodeVar56 : f32;
-var<private> nodeVar57 : vec2<f32>;
-var<private> nodeVar58 : vec2<f32>;
-var<private> nodeVar59 : vec3<f32>;
-var<private> nodeVar60 : vec3<f32>;
-var<private> nodeVar61 : vec2<f32>;
-var<private> nodeVar62 : vec3<f32>;
-var<private> nodeVar63 : vec3<f32>;
-var<private> nodeVar64 : vec2<f32>;
-var<private> nodeVar65 : vec2<f32>;
-var<private> nodeVar66 : vec2<f32>;
-var<private> nodeVar67 : vec3<f32>;
-var<private> nodeVar68 : vec3<f32>;
-var<private> nodeVar69 : vec2<f32>;
-var<private> nodeVar70 : vec3<f32>;
-var<private> nodeVar71 : vec3<f32>;
-var<private> nodeVar72 : f32;
-var<private> nodeVar73 : vec2<f32>;
-var<private> nodeVar74 : vec2<f32>;
-var<private> nodeVar75 : vec2<f32>;
-var<private> nodeVar76 : vec3<f32>;
-var<private> nodeVar77 : vec3<f32>;
-var<private> nodeVar78 : vec2<f32>;
-var<private> nodeVar79 : vec3<f32>;
-var<private> nodeVar80 : vec3<f32>;
-var<private> nodeVar81 : vec2<f32>;
-var<private> nodeVar82 : vec2<f32>;
-var<private> nodeVar83 : vec2<f32>;
-var<private> nodeVar84 : vec3<f32>;
-var<private> nodeVar85 : vec3<f32>;
-var<private> nodeVar86 : vec2<f32>;
-var<private> nodeVar87 : vec3<f32>;
-var<private> nodeVar88 : vec3<f32>;
-var<private> nodeVar89 : vec2<f32>;
-var<private> nodeVar90 : vec3<f32>;
-var<private> nodeVar91 : vec3<f32>;
-var<private> nodeVar92 : f32;
-var<private> nodeVar93 : f32;
-var<private> nodeVar94 : vec2<f32>;
-var<private> nodeVar95 : f32;
-var<private> nodeVar96 : vec2<f32>;
-var<private> nodeVar97 : vec2<f32>;
-var<private> nodeVar98 : vec3<f32>;
-var<private> nodeVar99 : vec3<f32>;
-var<private> nodeVar100 : vec2<f32>;
-var<private> nodeVar101 : vec3<f32>;
-var<private> nodeVar102 : vec3<f32>;
-var<private> nodeVar103 : vec2<f32>;
-var<private> nodeVar104 : vec2<f32>;
-var<private> nodeVar105 : vec2<f32>;
-var<private> nodeVar106 : vec3<f32>;
-var<private> nodeVar107 : vec3<f32>;
-var<private> nodeVar108 : vec2<f32>;
-var<private> nodeVar109 : vec3<f32>;
-var<private> nodeVar110 : vec3<f32>;
-var<private> nodeVar111 : vec2<f32>;
-var<private> nodeVar112 : f32;
-var<private> nodeVar113 : f32;
-var<private> nodeVar114 : f32;
-var<private> nodeVar115 : vec2<f32>;
-var<private> nodeVar116 : vec2<f32>;
-var<private> nodeVar117 : vec3<f32>;
-var<private> nodeVar118 : vec3<f32>;
-var<private> nodeVar119 : vec2<f32>;
-var<private> nodeVar120 : vec3<f32>;
-var<private> nodeVar121 : vec3<f32>;
-var<private> nodeVar122 : vec2<f32>;
-var<private> nodeVar123 : vec2<f32>;
-var<private> nodeVar124 : vec2<f32>;
-var<private> nodeVar125 : vec3<f32>;
-var<private> nodeVar126 : vec3<f32>;
-var<private> nodeVar127 : vec2<f32>;
-var<private> nodeVar128 : vec3<f32>;
-var<private> nodeVar129 : vec3<f32>;
-var<private> nodeVar130 : f32;
-var<private> nodeVar131 : vec2<f32>;
-var<private> nodeVar132 : vec2<f32>;
-var<private> nodeVar133 : vec2<f32>;
-var<private> nodeVar134 : vec3<f32>;
-var<private> nodeVar135 : vec3<f32>;
-var<private> nodeVar136 : vec2<f32>;
-var<private> nodeVar137 : vec3<f32>;
-var<private> nodeVar138 : vec3<f32>;
-var<private> nodeVar139 : vec2<f32>;
-var<private> nodeVar140 : vec2<f32>;
-var<private> nodeVar141 : vec2<f32>;
-var<private> nodeVar142 : vec3<f32>;
-var<private> nodeVar143 : vec3<f32>;
-var<private> nodeVar144 : vec2<f32>;
-var<private> nodeVar145 : vec3<f32>;
-var<private> nodeVar146 : vec3<f32>;
-var<private> nodeVar147 : vec2<f32>;
-var<private> nodeVar148 : vec3<f32>;
-var<private> nodeVar149 : vec3<f32>;
-var<private> nodeVar150 : f32;
-var<private> nodeVar151 : f32;
-var<private> nodeVar152 : vec2<f32>;
-var<private> nodeVar153 : f32;
-var<private> nodeVar154 : vec2<f32>;
-var<private> nodeVar155 : vec2<f32>;
-var<private> nodeVar156 : vec3<f32>;
-var<private> nodeVar157 : vec3<f32>;
-var<private> nodeVar158 : vec2<f32>;
-var<private> nodeVar159 : vec3<f32>;
-var<private> nodeVar160 : vec3<f32>;
-var<private> nodeVar161 : vec2<f32>;
-var<private> nodeVar162 : vec2<f32>;
-var<private> nodeVar163 : vec2<f32>;
-var<private> nodeVar164 : vec3<f32>;
-var<private> nodeVar165 : vec3<f32>;
-var<private> nodeVar166 : vec2<f32>;
-var<private> nodeVar167 : vec3<f32>;
-var<private> nodeVar168 : vec3<f32>;
-var<private> nodeVar169 : vec2<f32>;
-var<private> nodeVar170 : f32;
-var<private> nodeVar171 : f32;
-var<private> nodeVar172 : f32;
-var<private> nodeVar173 : vec2<f32>;
-var<private> nodeVar174 : vec2<f32>;
-var<private> nodeVar175 : vec3<f32>;
-var<private> nodeVar176 : vec3<f32>;
-var<private> nodeVar177 : vec2<f32>;
-var<private> nodeVar178 : vec3<f32>;
-var<private> nodeVar179 : vec3<f32>;
-var<private> nodeVar180 : vec2<f32>;
-var<private> nodeVar181 : vec2<f32>;
-var<private> nodeVar182 : vec2<f32>;
-var<private> nodeVar183 : vec3<f32>;
-var<private> nodeVar184 : vec3<f32>;
-var<private> nodeVar185 : vec2<f32>;
-var<private> nodeVar186 : vec3<f32>;
-var<private> nodeVar187 : vec3<f32>;
-var<private> nodeVar188 : f32;
-var<private> nodeVar189 : vec2<f32>;
-var<private> nodeVar190 : vec2<f32>;
-var<private> nodeVar191 : vec2<f32>;
-var<private> nodeVar192 : vec3<f32>;
-var<private> nodeVar193 : vec3<f32>;
-var<private> nodeVar194 : vec2<f32>;
-var<private> nodeVar195 : vec3<f32>;
-var<private> nodeVar196 : vec3<f32>;
-var<private> nodeVar197 : vec2<f32>;
-var<private> nodeVar198 : vec2<f32>;
-var<private> nodeVar199 : vec2<f32>;
-var<private> nodeVar200 : vec3<f32>;
-var<private> nodeVar201 : vec3<f32>;
-var<private> nodeVar202 : vec2<f32>;
-var<private> nodeVar203 : vec3<f32>;
-var<private> nodeVar204 : vec3<f32>;
-var<private> nodeVar205 : vec2<f32>;
-var<private> nodeVar206 : vec3<f32>;
-var<private> nodeVar207 : vec3<f32>;
-var<private> nodeVar208 : f32;
-var<private> nodeVar209 : f32;
-var<private> nodeVar210 : vec2<f32>;
-var<private> nodeVar211 : f32;
-var<private> nodeVar212 : vec2<f32>;
-var<private> nodeVar213 : vec2<f32>;
-var<private> nodeVar214 : vec3<f32>;
-var<private> nodeVar215 : vec3<f32>;
-var<private> nodeVar216 : vec2<f32>;
-var<private> nodeVar217 : vec3<f32>;
-var<private> nodeVar218 : vec3<f32>;
-var<private> nodeVar219 : vec2<f32>;
-var<private> nodeVar220 : vec2<f32>;
-var<private> nodeVar221 : vec2<f32>;
-var<private> nodeVar222 : vec3<f32>;
-var<private> nodeVar223 : vec3<f32>;
-var<private> nodeVar224 : vec2<f32>;
-var<private> nodeVar225 : vec3<f32>;
-var<private> nodeVar226 : vec3<f32>;
-var<private> nodeVar227 : vec2<f32>;
-var<private> nodeVar228 : f32;
-var<private> nodeVar229 : f32;
-var<private> nodeVar230 : f32;
-var<private> nodeVar231 : vec2<f32>;
-var<private> nodeVar232 : vec2<f32>;
-var<private> nodeVar233 : vec3<f32>;
-var<private> nodeVar234 : vec3<f32>;
-var<private> nodeVar235 : vec2<f32>;
-var<private> nodeVar236 : vec3<f32>;
-var<private> nodeVar237 : vec3<f32>;
-var<private> nodeVar238 : vec2<f32>;
-var<private> nodeVar239 : vec2<f32>;
-var<private> nodeVar240 : vec2<f32>;
-var<private> nodeVar241 : vec3<f32>;
-var<private> nodeVar242 : vec3<f32>;
-var<private> nodeVar243 : vec2<f32>;
-var<private> nodeVar244 : vec3<f32>;
-var<private> nodeVar245 : vec3<f32>;
-var<private> nodeVar246 : f32;
-var<private> nodeVar247 : vec2<f32>;
-var<private> nodeVar248 : vec2<f32>;
-var<private> nodeVar249 : vec2<f32>;
-var<private> nodeVar250 : vec3<f32>;
-var<private> nodeVar251 : vec3<f32>;
-var<private> nodeVar252 : vec2<f32>;
-var<private> nodeVar253 : vec3<f32>;
-var<private> nodeVar254 : vec3<f32>;
-var<private> nodeVar255 : vec2<f32>;
-var<private> nodeVar256 : vec2<f32>;
-var<private> nodeVar257 : vec2<f32>;
-var<private> nodeVar258 : vec3<f32>;
-var<private> nodeVar259 : vec3<f32>;
-var<private> nodeVar260 : vec2<f32>;
-var<private> nodeVar261 : vec3<f32>;
-var<private> nodeVar262 : vec3<f32>;
-var<private> nodeVar263 : vec2<f32>;
-var<private> nodeVar264 : vec3<f32>;
-var<private> nodeVar265 : vec3<f32>;
-var<private> nodeVar266 : vec3<f32>;
-var<private> nodeVar267 : f32;
-var<private> nodeVar268 : vec3<f32>;
-var<private> nodeVar269 : f32;
-var<private> nodeVar270 : f32;
-var<private> nodeVar271 : vec3<f32>;
-var<private> nodeVar272 : vec3<f32>;
-var<private> nodeVar273 : vec4<f32>;
-var<private> nodeVar274 : vec3<f32>;
-var<private> nodeVar275 : f32;
-var<private> nodeVar276 : vec3<f32>;
-var<private> nodeVar277 : vec4<f32>;
-var<private> Output : vec4<f32>;
-var<private> nodeVar278 : vec4<f32>;
+var<private> p0_DiffuseColor : vec4<f32>;
+var<private> p0_nodeVar0 : vec4<f32>;
+var<private> p0_nodeVar1 : vec2<f32>;
+var<private> p0_nodeVar2 : vec4<f32>;
+var<private> p0_nodeVar3 : vec4<f32>;
+var<private> p0_nodeVar4 : vec2<f32>;
+var<private> p0_nodeVar5 : vec2<f32>;
+var<private> p0_nodeVar6 : vec4<f32>;
+var<private> p0_nodeVar7 : vec4<f32>;
+var<private> p0_nodeVar8 : vec4<f32>;
+var<private> p0_nodeVar9 : vec4<f32>;
+var<private> p0_nodeVar10 : vec4<f32>;
+var<private> p0_nodeVar11 : vec4<f32>;
+var<private> p0_nodeVar12 : vec4<f32>;
+var<private> p0_nodeVar13 : vec4<f32>;
+var<private> p0_nodeVar14 : f32;
+var<private> p0_nodeVar15 : f32;
+var<private> p0_nodeVar16 : f32;
+var<private> p0_nodeVar17 : f32;
+var<private> p0_nodeVar18 : f32;
+var<private> p0_nodeVar19 : f32;
+var<private> p0_nodeVar20 : f32;
+var<private> p0_nodeVar21 : f32;
+var<private> p0_nodeVar22 : f32;
+var<private> p0_nodeVar23 : f32;
+var<private> p0_nodeVar24 : f32;
+var<private> p0_nodeVar25 : f32;
+var<private> p0_nodeVar26 : f32;
+var<private> p0_nodeVar27 : f32;
+var<private> p0_nodeVar28 : f32;
+var<private> p0_nodeVar29 : vec2<f32>;
+var<private> p0_nodeVar30 : vec4<f32>;
+var<private> p0_nodeVar31 : vec3<f32>;
+var<private> p0_nodeVar32 : f32;
+var<private> p0_nodeVar33 : f32;
+var<private> p0_nodeVar34 : f32;
+var<private> p0_nodeVar35 : f32;
+var<private> p0_nodeVar36 : vec2<f32>;
+var<private> p0_nodeVar37 : f32;
+var<private> p0_nodeVar38 : vec2<f32>;
+var<private> p0_nodeVar39 : vec2<f32>;
+var<private> p0_nodeVar40 : vec3<f32>;
+var<private> p0_nodeVar41 : vec3<f32>;
+var<private> p0_nodeVar42 : vec2<f32>;
+var<private> p0_nodeVar43 : vec3<f32>;
+var<private> p0_nodeVar44 : vec3<f32>;
+var<private> p0_nodeVar45 : vec2<f32>;
+var<private> p0_nodeVar46 : vec2<f32>;
+var<private> p0_nodeVar47 : vec2<f32>;
+var<private> p0_nodeVar48 : vec3<f32>;
+var<private> p0_nodeVar49 : vec3<f32>;
+var<private> p0_nodeVar50 : vec2<f32>;
+var<private> p0_nodeVar51 : vec3<f32>;
+var<private> p0_nodeVar52 : vec3<f32>;
+var<private> p0_nodeVar53 : vec2<f32>;
+var<private> p0_nodeVar54 : f32;
+var<private> p0_nodeVar55 : f32;
+var<private> p0_nodeVar56 : f32;
+var<private> p0_nodeVar57 : vec2<f32>;
+var<private> p0_nodeVar58 : vec2<f32>;
+var<private> p0_nodeVar59 : vec3<f32>;
+var<private> p0_nodeVar60 : vec3<f32>;
+var<private> p0_nodeVar61 : vec2<f32>;
+var<private> p0_nodeVar62 : vec3<f32>;
+var<private> p0_nodeVar63 : vec3<f32>;
+var<private> p0_nodeVar64 : vec2<f32>;
+var<private> p0_nodeVar65 : vec2<f32>;
+var<private> p0_nodeVar66 : vec2<f32>;
+var<private> p0_nodeVar67 : vec3<f32>;
+var<private> p0_nodeVar68 : vec3<f32>;
+var<private> p0_nodeVar69 : vec2<f32>;
+var<private> p0_nodeVar70 : vec3<f32>;
+var<private> p0_nodeVar71 : vec3<f32>;
+var<private> p0_nodeVar72 : f32;
+var<private> p0_nodeVar73 : vec2<f32>;
+var<private> p0_nodeVar74 : vec2<f32>;
+var<private> p0_nodeVar75 : vec2<f32>;
+var<private> p0_nodeVar76 : vec3<f32>;
+var<private> p0_nodeVar77 : vec3<f32>;
+var<private> p0_nodeVar78 : vec2<f32>;
+var<private> p0_nodeVar79 : vec3<f32>;
+var<private> p0_nodeVar80 : vec3<f32>;
+var<private> p0_nodeVar81 : vec2<f32>;
+var<private> p0_nodeVar82 : vec2<f32>;
+var<private> p0_nodeVar83 : vec2<f32>;
+var<private> p0_nodeVar84 : vec3<f32>;
+var<private> p0_nodeVar85 : vec3<f32>;
+var<private> p0_nodeVar86 : vec2<f32>;
+var<private> p0_nodeVar87 : vec3<f32>;
+var<private> p0_nodeVar88 : vec3<f32>;
+var<private> p0_nodeVar89 : vec2<f32>;
+var<private> p0_nodeVar90 : vec3<f32>;
+var<private> p0_nodeVar91 : vec3<f32>;
+var<private> p0_nodeVar92 : f32;
+var<private> p0_nodeVar93 : f32;
+var<private> p0_nodeVar94 : vec2<f32>;
+var<private> p0_nodeVar95 : f32;
+var<private> p0_nodeVar96 : vec2<f32>;
+var<private> p0_nodeVar97 : vec2<f32>;
+var<private> p0_nodeVar98 : vec3<f32>;
+var<private> p0_nodeVar99 : vec3<f32>;
+var<private> p0_nodeVar100 : vec2<f32>;
+var<private> p0_nodeVar101 : vec3<f32>;
+var<private> p0_nodeVar102 : vec3<f32>;
+var<private> p0_nodeVar103 : vec2<f32>;
+var<private> p0_nodeVar104 : vec2<f32>;
+var<private> p0_nodeVar105 : vec2<f32>;
+var<private> p0_nodeVar106 : vec3<f32>;
+var<private> p0_nodeVar107 : vec3<f32>;
+var<private> p0_nodeVar108 : vec2<f32>;
+var<private> p0_nodeVar109 : vec3<f32>;
+var<private> p0_nodeVar110 : vec3<f32>;
+var<private> p0_nodeVar111 : vec2<f32>;
+var<private> p0_nodeVar112 : f32;
+var<private> p0_nodeVar113 : f32;
+var<private> p0_nodeVar114 : f32;
+var<private> p0_nodeVar115 : vec2<f32>;
+var<private> p0_nodeVar116 : vec2<f32>;
+var<private> p0_nodeVar117 : vec3<f32>;
+var<private> p0_nodeVar118 : vec3<f32>;
+var<private> p0_nodeVar119 : vec2<f32>;
+var<private> p0_nodeVar120 : vec3<f32>;
+var<private> p0_nodeVar121 : vec3<f32>;
+var<private> p0_nodeVar122 : vec2<f32>;
+var<private> p0_nodeVar123 : vec2<f32>;
+var<private> p0_nodeVar124 : vec2<f32>;
+var<private> p0_nodeVar125 : vec3<f32>;
+var<private> p0_nodeVar126 : vec3<f32>;
+var<private> p0_nodeVar127 : vec2<f32>;
+var<private> p0_nodeVar128 : vec3<f32>;
+var<private> p0_nodeVar129 : vec3<f32>;
+var<private> p0_nodeVar130 : f32;
+var<private> p0_nodeVar131 : vec2<f32>;
+var<private> p0_nodeVar132 : vec2<f32>;
+var<private> p0_nodeVar133 : vec2<f32>;
+var<private> p0_nodeVar134 : vec3<f32>;
+var<private> p0_nodeVar135 : vec3<f32>;
+var<private> p0_nodeVar136 : vec2<f32>;
+var<private> p0_nodeVar137 : vec3<f32>;
+var<private> p0_nodeVar138 : vec3<f32>;
+var<private> p0_nodeVar139 : vec2<f32>;
+var<private> p0_nodeVar140 : vec2<f32>;
+var<private> p0_nodeVar141 : vec2<f32>;
+var<private> p0_nodeVar142 : vec3<f32>;
+var<private> p0_nodeVar143 : vec3<f32>;
+var<private> p0_nodeVar144 : vec2<f32>;
+var<private> p0_nodeVar145 : vec3<f32>;
+var<private> p0_nodeVar146 : vec3<f32>;
+var<private> p0_nodeVar147 : vec2<f32>;
+var<private> p0_nodeVar148 : vec3<f32>;
+var<private> p0_nodeVar149 : vec3<f32>;
+var<private> p0_nodeVar150 : f32;
+var<private> p0_nodeVar151 : f32;
+var<private> p0_nodeVar152 : vec2<f32>;
+var<private> p0_nodeVar153 : f32;
+var<private> p0_nodeVar154 : vec2<f32>;
+var<private> p0_nodeVar155 : vec2<f32>;
+var<private> p0_nodeVar156 : vec3<f32>;
+var<private> p0_nodeVar157 : vec3<f32>;
+var<private> p0_nodeVar158 : vec2<f32>;
+var<private> p0_nodeVar159 : vec3<f32>;
+var<private> p0_nodeVar160 : vec3<f32>;
+var<private> p0_nodeVar161 : vec2<f32>;
+var<private> p0_nodeVar162 : vec2<f32>;
+var<private> p0_nodeVar163 : vec2<f32>;
+var<private> p0_nodeVar164 : vec3<f32>;
+var<private> p0_nodeVar165 : vec3<f32>;
+var<private> p0_nodeVar166 : vec2<f32>;
+var<private> p0_nodeVar167 : vec3<f32>;
+var<private> p0_nodeVar168 : vec3<f32>;
+var<private> p0_nodeVar169 : vec2<f32>;
+var<private> p0_nodeVar170 : f32;
+var<private> p0_nodeVar171 : f32;
+var<private> p0_nodeVar172 : f32;
+var<private> p0_nodeVar173 : vec2<f32>;
+var<private> p0_nodeVar174 : vec2<f32>;
+var<private> p0_nodeVar175 : vec3<f32>;
+var<private> p0_nodeVar176 : vec3<f32>;
+var<private> p0_nodeVar177 : vec2<f32>;
+var<private> p0_nodeVar178 : vec3<f32>;
+var<private> p0_nodeVar179 : vec3<f32>;
+var<private> p0_nodeVar180 : vec2<f32>;
+var<private> p0_nodeVar181 : vec2<f32>;
+var<private> p0_nodeVar182 : vec2<f32>;
+var<private> p0_nodeVar183 : vec3<f32>;
+var<private> p0_nodeVar184 : vec3<f32>;
+var<private> p0_nodeVar185 : vec2<f32>;
+var<private> p0_nodeVar186 : vec3<f32>;
+var<private> p0_nodeVar187 : vec3<f32>;
+var<private> p0_nodeVar188 : f32;
+var<private> p0_nodeVar189 : vec2<f32>;
+var<private> p0_nodeVar190 : vec2<f32>;
+var<private> p0_nodeVar191 : vec2<f32>;
+var<private> p0_nodeVar192 : vec3<f32>;
+var<private> p0_nodeVar193 : vec3<f32>;
+var<private> p0_nodeVar194 : vec2<f32>;
+var<private> p0_nodeVar195 : vec3<f32>;
+var<private> p0_nodeVar196 : vec3<f32>;
+var<private> p0_nodeVar197 : vec2<f32>;
+var<private> p0_nodeVar198 : vec2<f32>;
+var<private> p0_nodeVar199 : vec2<f32>;
+var<private> p0_nodeVar200 : vec3<f32>;
+var<private> p0_nodeVar201 : vec3<f32>;
+var<private> p0_nodeVar202 : vec2<f32>;
+var<private> p0_nodeVar203 : vec3<f32>;
+var<private> p0_nodeVar204 : vec3<f32>;
+var<private> p0_nodeVar205 : vec2<f32>;
+var<private> p0_nodeVar206 : vec3<f32>;
+var<private> p0_nodeVar207 : vec3<f32>;
+var<private> p0_nodeVar208 : f32;
+var<private> p0_nodeVar209 : f32;
+var<private> p0_nodeVar210 : vec2<f32>;
+var<private> p0_nodeVar211 : f32;
+var<private> p0_nodeVar212 : vec2<f32>;
+var<private> p0_nodeVar213 : vec2<f32>;
+var<private> p0_nodeVar214 : vec3<f32>;
+var<private> p0_nodeVar215 : vec3<f32>;
+var<private> p0_nodeVar216 : vec2<f32>;
+var<private> p0_nodeVar217 : vec3<f32>;
+var<private> p0_nodeVar218 : vec3<f32>;
+var<private> p0_nodeVar219 : vec2<f32>;
+var<private> p0_nodeVar220 : vec2<f32>;
+var<private> p0_nodeVar221 : vec2<f32>;
+var<private> p0_nodeVar222 : vec3<f32>;
+var<private> p0_nodeVar223 : vec3<f32>;
+var<private> p0_nodeVar224 : vec2<f32>;
+var<private> p0_nodeVar225 : vec3<f32>;
+var<private> p0_nodeVar226 : vec3<f32>;
+var<private> p0_nodeVar227 : vec2<f32>;
+var<private> p0_nodeVar228 : f32;
+var<private> p0_nodeVar229 : f32;
+var<private> p0_nodeVar230 : f32;
+var<private> p0_nodeVar231 : vec2<f32>;
+var<private> p0_nodeVar232 : vec2<f32>;
+var<private> p0_nodeVar233 : vec3<f32>;
+var<private> p0_nodeVar234 : vec3<f32>;
+var<private> p0_nodeVar235 : vec2<f32>;
+var<private> p0_nodeVar236 : vec3<f32>;
+var<private> p0_nodeVar237 : vec3<f32>;
+var<private> p0_nodeVar238 : vec2<f32>;
+var<private> p0_nodeVar239 : vec2<f32>;
+var<private> p0_nodeVar240 : vec2<f32>;
+var<private> p0_nodeVar241 : vec3<f32>;
+var<private> p0_nodeVar242 : vec3<f32>;
+var<private> p0_nodeVar243 : vec2<f32>;
+var<private> p0_nodeVar244 : vec3<f32>;
+var<private> p0_nodeVar245 : vec3<f32>;
+var<private> p0_nodeVar246 : f32;
+var<private> p0_nodeVar247 : vec2<f32>;
+var<private> p0_nodeVar248 : vec2<f32>;
+var<private> p0_nodeVar249 : vec2<f32>;
+var<private> p0_nodeVar250 : vec3<f32>;
+var<private> p0_nodeVar251 : vec3<f32>;
+var<private> p0_nodeVar252 : vec2<f32>;
+var<private> p0_nodeVar253 : vec3<f32>;
+var<private> p0_nodeVar254 : vec3<f32>;
+var<private> p0_nodeVar255 : vec2<f32>;
+var<private> p0_nodeVar256 : vec2<f32>;
+var<private> p0_nodeVar257 : vec2<f32>;
+var<private> p0_nodeVar258 : vec3<f32>;
+var<private> p0_nodeVar259 : vec3<f32>;
+var<private> p0_nodeVar260 : vec2<f32>;
+var<private> p0_nodeVar261 : vec3<f32>;
+var<private> p0_nodeVar262 : vec3<f32>;
+var<private> p0_nodeVar263 : vec2<f32>;
+var<private> p0_nodeVar264 : vec3<f32>;
+var<private> p0_nodeVar265 : vec3<f32>;
+var<private> p0_nodeVar266 : vec3<f32>;
+var<private> p0_nodeVar267 : f32;
+var<private> p0_nodeVar268 : vec3<f32>;
+var<private> p0_nodeVar269 : f32;
+var<private> p0_nodeVar270 : f32;
+var<private> p0_nodeVar271 : vec3<f32>;
+var<private> p0_nodeVar272 : vec3<f32>;
+var<private> p0_nodeVar273 : vec4<f32>;
+var<private> p0_nodeVar274 : vec3<f32>;
+var<private> p0_nodeVar275 : f32;
+var<private> p0_nodeVar276 : vec3<f32>;
+var<private> p0_nodeVar277 : vec4<f32>;
+var<private> p0_Output : vec4<f32>;
+var<private> p0_nodeVar278 : vec4<f32>;
 
 // codes
 
 
-@fragment
-fn main(@location(0) door_uv: vec2<f32>) -> OutputStruct {
-	let nodeVarying4 = vec2<f32>(door_uv.x, 1.0 - door_uv.y);
+fn p0_main(door_uv: vec2f) -> p0_OutputStruct {
+	let nodeVarying4 = vec2f(door_uv.x, 1.0 - door_uv.y);
 
 	// flow
 	// code
 
-	nodeVar0 = picture_read( vec2<f32>( nodeVarying4.x, ( 1.0 - nodeVarying4.y ) ) );
-	nodeVar1 = vec2<f32>( nodeVarying4.x, ( 1.0 - nodeVarying4.y ) );
-	nodeVar2 = picture_read( nodeVar1 );
-	nodeVar3 = nodeVar2;
-	nodeVar4 = vec2<f32>( knobs.resolution.x, knobs.resolution.y );
-	nodeVar5 = ( vec2<f32>( ( 1.0 / nodeVar4.x ), ( 1.0 / nodeVar4.y ) ) * vec2<f32>( knobs.bevel ) );
-	nodeVar6 = picture_read( ( nodeVar1 + vec2<f32>( nodeVar5.x, 0.0 ) ) );
-	nodeVar7 = nodeVar6;
-	nodeVar8 = picture_read( ( nodeVar1 - vec2<f32>( nodeVar5.x, 0.0 ) ) );
-	nodeVar9 = nodeVar8;
-	nodeVar10 = picture_read( ( nodeVar1 + vec2<f32>( 0.0, nodeVar5.y ) ) );
-	nodeVar11 = nodeVar10;
-	nodeVar12 = picture_read( ( nodeVar1 - vec2<f32>( 0.0, nodeVar5.y ) ) );
-	nodeVar13 = nodeVar12;
-	nodeVar14 = nodeVar3.w;
-	nodeVar15 = nodeVar7.w;
-	nodeVar16 = nodeVar9.w;
-	nodeVar17 = nodeVar11.w;
-	nodeVar18 = nodeVar13.w;
+	p0_nodeVar0 = picture_read( vec2<f32>( nodeVarying4.x, ( 1.0 - nodeVarying4.y ) ) );
+	p0_nodeVar1 = vec2<f32>( nodeVarying4.x, ( 1.0 - nodeVarying4.y ) );
+	p0_nodeVar2 = picture_read( p0_nodeVar1 );
+	p0_nodeVar3 = p0_nodeVar2;
+	p0_nodeVar4 = vec2<f32>( f32(knobs.resolution.x), f32(knobs.resolution.y) );
+	p0_nodeVar5 = ( vec2<f32>( ( 1.0 / p0_nodeVar4.x ), ( 1.0 / p0_nodeVar4.y ) ) * vec2<f32>( f32(knobs.bevel) ) );
+	p0_nodeVar6 = picture_read( ( p0_nodeVar1 + vec2<f32>( p0_nodeVar5.x, 0.0 ) ) );
+	p0_nodeVar7 = p0_nodeVar6;
+	p0_nodeVar8 = picture_read( ( p0_nodeVar1 - vec2<f32>( p0_nodeVar5.x, 0.0 ) ) );
+	p0_nodeVar9 = p0_nodeVar8;
+	p0_nodeVar10 = picture_read( ( p0_nodeVar1 + vec2<f32>( 0.0, p0_nodeVar5.y ) ) );
+	p0_nodeVar11 = p0_nodeVar10;
+	p0_nodeVar12 = picture_read( ( p0_nodeVar1 - vec2<f32>( 0.0, p0_nodeVar5.y ) ) );
+	p0_nodeVar13 = p0_nodeVar12;
+	p0_nodeVar14 = p0_nodeVar3.w;
+	p0_nodeVar15 = p0_nodeVar7.w;
+	p0_nodeVar16 = p0_nodeVar9.w;
+	p0_nodeVar17 = p0_nodeVar11.w;
+	p0_nodeVar18 = p0_nodeVar13.w;
 
-	if ( ( knobs.heightFrom < 0.5 ) ) {
+	if ( ( f32(knobs.heightFrom) < 0.5 ) ) {
 
-		nodeVar20 = clamp( dot( vec3<f32>( nodeVar3.x, nodeVar3.y, nodeVar3.z ), vec3<f32>( 0.2126, 0.7152, 0.0722 ) ), 0.0, 1.0 );
+		p0_nodeVar20 = clamp( dot( vec3<f32>( p0_nodeVar3.x, p0_nodeVar3.y, p0_nodeVar3.z ), vec3<f32>( 0.2126, 0.7152, 0.0722 ) ), 0.0, 1.0 );
 
-		if ( ( nodeVar20 <= 0.0031308 ) ) {
+		if ( ( p0_nodeVar20 <= 0.0031308 ) ) {
 
-			nodeVar19 = ( nodeVar20 * 12.92 );
-
-		} else {
-
-			nodeVar19 = ( ( pow( nodeVar20, 0.4166666666666667 ) * 1.055 ) - 0.055 );
-
-		}
-
-		nodeVar14 = nodeVar19;
-		nodeVar22 = clamp( dot( vec3<f32>( nodeVar7.x, nodeVar7.y, nodeVar7.z ), vec3<f32>( 0.2126, 0.7152, 0.0722 ) ), 0.0, 1.0 );
-
-		if ( ( nodeVar22 <= 0.0031308 ) ) {
-
-			nodeVar21 = ( nodeVar22 * 12.92 );
+			p0_nodeVar19 = ( p0_nodeVar20 * 12.92 );
 
 		} else {
 
-			nodeVar21 = ( ( pow( nodeVar22, 0.4166666666666667 ) * 1.055 ) - 0.055 );
+			p0_nodeVar19 = ( ( pow( p0_nodeVar20, 0.4166666666666667 ) * 1.055 ) - 0.055 );
 
 		}
 
-		nodeVar15 = nodeVar21;
-		nodeVar24 = clamp( dot( vec3<f32>( nodeVar9.x, nodeVar9.y, nodeVar9.z ), vec3<f32>( 0.2126, 0.7152, 0.0722 ) ), 0.0, 1.0 );
+		p0_nodeVar14 = p0_nodeVar19;
+		p0_nodeVar22 = clamp( dot( vec3<f32>( p0_nodeVar7.x, p0_nodeVar7.y, p0_nodeVar7.z ), vec3<f32>( 0.2126, 0.7152, 0.0722 ) ), 0.0, 1.0 );
 
-		if ( ( nodeVar24 <= 0.0031308 ) ) {
+		if ( ( p0_nodeVar22 <= 0.0031308 ) ) {
 
-			nodeVar23 = ( nodeVar24 * 12.92 );
+			p0_nodeVar21 = ( p0_nodeVar22 * 12.92 );
 
 		} else {
 
-			nodeVar23 = ( ( pow( nodeVar24, 0.4166666666666667 ) * 1.055 ) - 0.055 );
+			p0_nodeVar21 = ( ( pow( p0_nodeVar22, 0.4166666666666667 ) * 1.055 ) - 0.055 );
 
 		}
 
-		nodeVar16 = nodeVar23;
-		nodeVar26 = clamp( dot( vec3<f32>( nodeVar11.x, nodeVar11.y, nodeVar11.z ), vec3<f32>( 0.2126, 0.7152, 0.0722 ) ), 0.0, 1.0 );
+		p0_nodeVar15 = p0_nodeVar21;
+		p0_nodeVar24 = clamp( dot( vec3<f32>( p0_nodeVar9.x, p0_nodeVar9.y, p0_nodeVar9.z ), vec3<f32>( 0.2126, 0.7152, 0.0722 ) ), 0.0, 1.0 );
 
-		if ( ( nodeVar26 <= 0.0031308 ) ) {
+		if ( ( p0_nodeVar24 <= 0.0031308 ) ) {
 
-			nodeVar25 = ( nodeVar26 * 12.92 );
+			p0_nodeVar23 = ( p0_nodeVar24 * 12.92 );
 
 		} else {
 
-			nodeVar25 = ( ( pow( nodeVar26, 0.4166666666666667 ) * 1.055 ) - 0.055 );
+			p0_nodeVar23 = ( ( pow( p0_nodeVar24, 0.4166666666666667 ) * 1.055 ) - 0.055 );
 
 		}
 
-		nodeVar17 = nodeVar25;
-		nodeVar28 = clamp( dot( vec3<f32>( nodeVar13.x, nodeVar13.y, nodeVar13.z ), vec3<f32>( 0.2126, 0.7152, 0.0722 ) ), 0.0, 1.0 );
+		p0_nodeVar16 = p0_nodeVar23;
+		p0_nodeVar26 = clamp( dot( vec3<f32>( p0_nodeVar11.x, p0_nodeVar11.y, p0_nodeVar11.z ), vec3<f32>( 0.2126, 0.7152, 0.0722 ) ), 0.0, 1.0 );
 
-		if ( ( nodeVar28 <= 0.0031308 ) ) {
+		if ( ( p0_nodeVar26 <= 0.0031308 ) ) {
 
-			nodeVar27 = ( nodeVar28 * 12.92 );
+			p0_nodeVar25 = ( p0_nodeVar26 * 12.92 );
 
 		} else {
 
-			nodeVar27 = ( ( pow( nodeVar28, 0.4166666666666667 ) * 1.055 ) - 0.055 );
+			p0_nodeVar25 = ( ( pow( p0_nodeVar26, 0.4166666666666667 ) * 1.055 ) - 0.055 );
 
 		}
 
-		nodeVar18 = nodeVar27;
+		p0_nodeVar17 = p0_nodeVar25;
+		p0_nodeVar28 = clamp( dot( vec3<f32>( p0_nodeVar13.x, p0_nodeVar13.y, p0_nodeVar13.z ), vec3<f32>( 0.2126, 0.7152, 0.0722 ) ), 0.0, 1.0 );
+
+		if ( ( p0_nodeVar28 <= 0.0031308 ) ) {
+
+			p0_nodeVar27 = ( p0_nodeVar28 * 12.92 );
+
+		} else {
+
+			p0_nodeVar27 = ( ( pow( p0_nodeVar28, 0.4166666666666667 ) * 1.055 ) - 0.055 );
+
+		}
+
+		p0_nodeVar18 = p0_nodeVar27;
 		
 
 	} else {
 
 
-		if ( ( knobs.heightFrom < 1.5 ) ) {
+		if ( ( f32(knobs.heightFrom) < 1.5 ) ) {
 
-			nodeVar14 = nodeVar3.x;
-			nodeVar15 = nodeVar7.x;
-			nodeVar16 = nodeVar9.x;
-			nodeVar17 = nodeVar11.x;
-			nodeVar18 = nodeVar13.x;
+			p0_nodeVar14 = p0_nodeVar3.x;
+			p0_nodeVar15 = p0_nodeVar7.x;
+			p0_nodeVar16 = p0_nodeVar9.x;
+			p0_nodeVar17 = p0_nodeVar11.x;
+			p0_nodeVar18 = p0_nodeVar13.x;
 			
 
 		}
@@ -474,374 +477,379 @@ fn main(@location(0) door_uv: vec2<f32>) -> OutputStruct {
 
 	}
 
-	nodeVar29 = ( nodeVar1 * nodeVar4 );
-	nodeVar30 = picture_read( nodeVar1 );
-	nodeVar31 = vec3<f32>( nodeVar30.x, nodeVar30.y, nodeVar30.z );
-	nodeVar32 = 0.0;
-	nodeVar33 = 0.0;
+	p0_nodeVar29 = ( p0_nodeVar1 * p0_nodeVar4 );
+	p0_nodeVar30 = picture_read( p0_nodeVar1 );
+	p0_nodeVar31 = vec3<f32>( p0_nodeVar30.x, p0_nodeVar30.y, p0_nodeVar30.z );
+	p0_nodeVar32 = 0.0;
+	p0_nodeVar33 = 0.0;
 
-	if ( ( ( knobs.engraveDepth > 0.0 ) || ( knobs.grain > 0.0 ) ) ) {
-
-
-		if ( ( knobs.engrave < 0.5 ) ) {
-
-			nodeVar34 = 0.0;
-
-		} else {
+	if ( ( ( f32(knobs.engraveDepth) > 0.0 ) || ( f32(knobs.grain) > 0.0 ) ) ) {
 
 
-			if ( ( knobs.engrave < 1.5 ) ) {
+		if ( ( f32(knobs.engrave) < 0.5 ) ) {
 
-				nodeVar36 = ( nodeVar29 + vec2<f32>( 1.0, 0.0 ) );
-				nodeVar37 = ( knobs.engraveAngle * 0.017453292519943295 );
-				nodeVar38 = vec2<f32>( ( ( ( nodeVar36.y * cos( nodeVar37 ) ) - ( nodeVar36.x * sin( nodeVar37 ) ) ) / ( knobs.lineSpacing * 9.0 ) ), 3.1 );
-				nodeVar39 = floor( nodeVar38 );
-				nodeVar40 = fract( ( vec3<f32>( nodeVar39.x, nodeVar39.y, nodeVar39.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar41 = ( nodeVar40 + vec3<f32>( dot( nodeVar40, ( vec3<f32>( nodeVar40.y, nodeVar40.z, nodeVar40.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar42 = ( nodeVar39 + vec2<f32>( 1.0, 0.0 ) );
-				nodeVar43 = fract( ( vec3<f32>( nodeVar42.x, nodeVar42.y, nodeVar42.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar44 = ( nodeVar43 + vec3<f32>( dot( nodeVar43, ( vec3<f32>( nodeVar43.y, nodeVar43.z, nodeVar43.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar45 = fract( nodeVar38 );
-				nodeVar46 = ( ( nodeVar45 * nodeVar45 ) * ( vec2<f32>( 3.0 ) - ( nodeVar45 * vec2<f32>( 2.0 ) ) ) );
-				nodeVar47 = ( nodeVar39 + vec2<f32>( 0.0, 1.0 ) );
-				nodeVar48 = fract( ( vec3<f32>( nodeVar47.x, nodeVar47.y, nodeVar47.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar49 = ( nodeVar48 + vec3<f32>( dot( nodeVar48, ( vec3<f32>( nodeVar48.y, nodeVar48.z, nodeVar48.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar50 = ( nodeVar39 + vec2<f32>( 1.0, 1.0 ) );
-				nodeVar51 = fract( ( vec3<f32>( nodeVar50.x, nodeVar50.y, nodeVar50.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar52 = ( nodeVar51 + vec3<f32>( dot( nodeVar51, ( vec3<f32>( nodeVar51.y, nodeVar51.z, nodeVar51.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar35 = cos( ( ( ( ( ( nodeVar36.x * cos( nodeVar37 ) ) + ( nodeVar36.y * sin( nodeVar37 ) ) ) + ( ( mix( mix( fract( ( ( nodeVar41.x + nodeVar41.y ) * nodeVar41.z ) ), fract( ( ( nodeVar44.x + nodeVar44.y ) * nodeVar44.z ) ), nodeVar46.x ), mix( fract( ( ( nodeVar49.x + nodeVar49.y ) * nodeVar49.z ) ), fract( ( ( nodeVar52.x + nodeVar52.y ) * nodeVar52.z ) ), nodeVar46.x ), nodeVar46.y ) - 0.5 ) * ( knobs.lineSpacing * 0.8 ) ) ) / knobs.lineSpacing ) * 6.283185307179586 ) );
-
-			} else {
-
-				nodeVar53 = ( ( nodeVar29 + vec2<f32>( 1.0, 0.0 ) ) - ( nodeVar4 * vec2<f32>( 0.5 ) ) );
-				nodeVar54 = atan2( nodeVar53.y, nodeVar53.x );
-				nodeVar55 = ( ( min( nodeVar4.x, nodeVar4.y ) * 1.5707963267948966 ) / knobs.lineSpacing );
-				nodeVar56 = length( nodeVar53 );
-				nodeVar57 = vec2<f32>( ( ( nodeVar54 * nodeVar55 ) / 6.2831853 ), ( nodeVar56 / ( knobs.lineSpacing * 14.0 ) ) );
-				nodeVar58 = floor( nodeVar57 );
-				nodeVar59 = fract( ( vec3<f32>( nodeVar58.x, nodeVar58.y, nodeVar58.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar60 = ( nodeVar59 + vec3<f32>( dot( nodeVar59, ( vec3<f32>( nodeVar59.y, nodeVar59.z, nodeVar59.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar61 = ( nodeVar58 + vec2<f32>( 1.0, 0.0 ) );
-				nodeVar62 = fract( ( vec3<f32>( nodeVar61.x, nodeVar61.y, nodeVar61.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar63 = ( nodeVar62 + vec3<f32>( dot( nodeVar62, ( vec3<f32>( nodeVar62.y, nodeVar62.z, nodeVar62.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar64 = fract( nodeVar57 );
-				nodeVar65 = ( ( nodeVar64 * nodeVar64 ) * ( vec2<f32>( 3.0 ) - ( nodeVar64 * vec2<f32>( 2.0 ) ) ) );
-				nodeVar66 = ( nodeVar58 + vec2<f32>( 0.0, 1.0 ) );
-				nodeVar67 = fract( ( vec3<f32>( nodeVar66.x, nodeVar66.y, nodeVar66.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar68 = ( nodeVar67 + vec3<f32>( dot( nodeVar67, ( vec3<f32>( nodeVar67.y, nodeVar67.z, nodeVar67.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar69 = ( nodeVar58 + vec2<f32>( 1.0, 1.0 ) );
-				nodeVar70 = fract( ( vec3<f32>( nodeVar69.x, nodeVar69.y, nodeVar69.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar71 = ( nodeVar70 + vec3<f32>( dot( nodeVar70, ( vec3<f32>( nodeVar70.y, nodeVar70.z, nodeVar70.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar72 = min( nodeVar4.x, nodeVar4.y );
-				nodeVar35 = ( cos( ( ( nodeVar54 * nodeVar55 ) + ( ( mix( mix( fract( ( ( nodeVar60.x + nodeVar60.y ) * nodeVar60.z ) ), fract( ( ( nodeVar63.x + nodeVar63.y ) * nodeVar63.z ) ), nodeVar65.x ), mix( fract( ( ( nodeVar68.x + nodeVar68.y ) * nodeVar68.z ) ), fract( ( ( nodeVar71.x + nodeVar71.y ) * nodeVar71.z ) ), nodeVar65.x ), nodeVar65.y ) - 0.5 ) * 1.4 ) ) ) * smoothstep( ( nodeVar72 * 0.06 ), ( nodeVar72 * 0.22 ), nodeVar56 ) );
-
-			}
-
-			nodeVar34 = nodeVar35;
-
-		}
-
-		nodeVar73 = ( nodeVar29 + vec2<f32>( 1.0, 0.0 ) );
-		nodeVar74 = ( nodeVar73 / vec2<f32>( knobs.grainSize ) );
-		nodeVar75 = floor( nodeVar74 );
-		nodeVar76 = fract( ( vec3<f32>( nodeVar75.x, nodeVar75.y, nodeVar75.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar77 = ( nodeVar76 + vec3<f32>( dot( nodeVar76, ( vec3<f32>( nodeVar76.y, nodeVar76.z, nodeVar76.x ) + vec3<f32>( 33.33 ) ) ) ) );
-		nodeVar78 = ( nodeVar75 + vec2<f32>( 1.0, 0.0 ) );
-		nodeVar79 = fract( ( vec3<f32>( nodeVar78.x, nodeVar78.y, nodeVar78.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar80 = ( nodeVar79 + vec3<f32>( dot( nodeVar79, ( vec3<f32>( nodeVar79.y, nodeVar79.z, nodeVar79.x ) + vec3<f32>( 33.33 ) ) ) ) );
-		nodeVar81 = fract( nodeVar74 );
-		nodeVar82 = ( ( nodeVar81 * nodeVar81 ) * ( vec2<f32>( 3.0 ) - ( nodeVar81 * vec2<f32>( 2.0 ) ) ) );
-		nodeVar83 = ( nodeVar75 + vec2<f32>( 0.0, 1.0 ) );
-		nodeVar84 = fract( ( vec3<f32>( nodeVar83.x, nodeVar83.y, nodeVar83.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar85 = ( nodeVar84 + vec3<f32>( dot( nodeVar84, ( vec3<f32>( nodeVar84.y, nodeVar84.z, nodeVar84.x ) + vec3<f32>( 33.33 ) ) ) ) );
-		nodeVar86 = ( nodeVar75 + vec2<f32>( 1.0, 1.0 ) );
-		nodeVar87 = fract( ( vec3<f32>( nodeVar86.x, nodeVar86.y, nodeVar86.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar88 = ( nodeVar87 + vec3<f32>( dot( nodeVar87, ( vec3<f32>( nodeVar87.y, nodeVar87.z, nodeVar87.x ) + vec3<f32>( 33.33 ) ) ) ) );
-		nodeVar89 = floor( ( ( nodeVar73 / vec2<f32>( knobs.grainSize ) ) * vec2<f32>( 2.1 ) ) );
-		nodeVar90 = fract( ( vec3<f32>( nodeVar89.x, nodeVar89.y, nodeVar89.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar91 = ( nodeVar90 + vec3<f32>( dot( nodeVar90, ( vec3<f32>( nodeVar90.y, nodeVar90.z, nodeVar90.x ) + vec3<f32>( 33.33 ) ) ) ) );
-
-		if ( ( knobs.engrave < 0.5 ) ) {
-
-			nodeVar92 = 0.0;
+			p0_nodeVar34 = 0.0;
 
 		} else {
 
 
-			if ( ( knobs.engrave < 1.5 ) ) {
+			if ( ( f32(knobs.engrave) < 1.5 ) ) {
 
-				nodeVar94 = ( nodeVar29 - vec2<f32>( 1.0, 0.0 ) );
-				nodeVar95 = ( knobs.engraveAngle * 0.017453292519943295 );
-				nodeVar96 = vec2<f32>( ( ( ( nodeVar94.y * cos( nodeVar95 ) ) - ( nodeVar94.x * sin( nodeVar95 ) ) ) / ( knobs.lineSpacing * 9.0 ) ), 3.1 );
-				nodeVar97 = floor( nodeVar96 );
-				nodeVar98 = fract( ( vec3<f32>( nodeVar97.x, nodeVar97.y, nodeVar97.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar99 = ( nodeVar98 + vec3<f32>( dot( nodeVar98, ( vec3<f32>( nodeVar98.y, nodeVar98.z, nodeVar98.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar100 = ( nodeVar97 + vec2<f32>( 1.0, 0.0 ) );
-				nodeVar101 = fract( ( vec3<f32>( nodeVar100.x, nodeVar100.y, nodeVar100.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar102 = ( nodeVar101 + vec3<f32>( dot( nodeVar101, ( vec3<f32>( nodeVar101.y, nodeVar101.z, nodeVar101.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar103 = fract( nodeVar96 );
-				nodeVar104 = ( ( nodeVar103 * nodeVar103 ) * ( vec2<f32>( 3.0 ) - ( nodeVar103 * vec2<f32>( 2.0 ) ) ) );
-				nodeVar105 = ( nodeVar97 + vec2<f32>( 0.0, 1.0 ) );
-				nodeVar106 = fract( ( vec3<f32>( nodeVar105.x, nodeVar105.y, nodeVar105.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar107 = ( nodeVar106 + vec3<f32>( dot( nodeVar106, ( vec3<f32>( nodeVar106.y, nodeVar106.z, nodeVar106.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar108 = ( nodeVar97 + vec2<f32>( 1.0, 1.0 ) );
-				nodeVar109 = fract( ( vec3<f32>( nodeVar108.x, nodeVar108.y, nodeVar108.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar110 = ( nodeVar109 + vec3<f32>( dot( nodeVar109, ( vec3<f32>( nodeVar109.y, nodeVar109.z, nodeVar109.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar93 = cos( ( ( ( ( ( nodeVar94.x * cos( nodeVar95 ) ) + ( nodeVar94.y * sin( nodeVar95 ) ) ) + ( ( mix( mix( fract( ( ( nodeVar99.x + nodeVar99.y ) * nodeVar99.z ) ), fract( ( ( nodeVar102.x + nodeVar102.y ) * nodeVar102.z ) ), nodeVar104.x ), mix( fract( ( ( nodeVar107.x + nodeVar107.y ) * nodeVar107.z ) ), fract( ( ( nodeVar110.x + nodeVar110.y ) * nodeVar110.z ) ), nodeVar104.x ), nodeVar104.y ) - 0.5 ) * ( knobs.lineSpacing * 0.8 ) ) ) / knobs.lineSpacing ) * 6.283185307179586 ) );
+				p0_nodeVar36 = ( p0_nodeVar29 + vec2<f32>( 1.0, 0.0 ) );
+				p0_nodeVar37 = ( f32(knobs.engraveAngle) * 0.017453292519943295 );
+				p0_nodeVar38 = vec2<f32>( ( ( ( p0_nodeVar36.y * cos( p0_nodeVar37 ) ) - ( p0_nodeVar36.x * sin( p0_nodeVar37 ) ) ) / ( f32(knobs.lineSpacing) * 9.0 ) ), 3.1 );
+				p0_nodeVar39 = floor( p0_nodeVar38 );
+				p0_nodeVar40 = fract( ( vec3<f32>( p0_nodeVar39.x, p0_nodeVar39.y, p0_nodeVar39.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar41 = ( p0_nodeVar40 + vec3<f32>( dot( p0_nodeVar40, ( vec3<f32>( p0_nodeVar40.y, p0_nodeVar40.z, p0_nodeVar40.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar42 = ( p0_nodeVar39 + vec2<f32>( 1.0, 0.0 ) );
+				p0_nodeVar43 = fract( ( vec3<f32>( p0_nodeVar42.x, p0_nodeVar42.y, p0_nodeVar42.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar44 = ( p0_nodeVar43 + vec3<f32>( dot( p0_nodeVar43, ( vec3<f32>( p0_nodeVar43.y, p0_nodeVar43.z, p0_nodeVar43.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar45 = fract( p0_nodeVar38 );
+				p0_nodeVar46 = ( ( p0_nodeVar45 * p0_nodeVar45 ) * ( vec2<f32>( 3.0 ) - ( p0_nodeVar45 * vec2<f32>( 2.0 ) ) ) );
+				p0_nodeVar47 = ( p0_nodeVar39 + vec2<f32>( 0.0, 1.0 ) );
+				p0_nodeVar48 = fract( ( vec3<f32>( p0_nodeVar47.x, p0_nodeVar47.y, p0_nodeVar47.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar49 = ( p0_nodeVar48 + vec3<f32>( dot( p0_nodeVar48, ( vec3<f32>( p0_nodeVar48.y, p0_nodeVar48.z, p0_nodeVar48.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar50 = ( p0_nodeVar39 + vec2<f32>( 1.0, 1.0 ) );
+				p0_nodeVar51 = fract( ( vec3<f32>( p0_nodeVar50.x, p0_nodeVar50.y, p0_nodeVar50.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar52 = ( p0_nodeVar51 + vec3<f32>( dot( p0_nodeVar51, ( vec3<f32>( p0_nodeVar51.y, p0_nodeVar51.z, p0_nodeVar51.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar35 = cos( ( ( ( ( ( p0_nodeVar36.x * cos( p0_nodeVar37 ) ) + ( p0_nodeVar36.y * sin( p0_nodeVar37 ) ) ) + ( ( mix( mix( fract( ( ( p0_nodeVar41.x + p0_nodeVar41.y ) * p0_nodeVar41.z ) ), fract( ( ( p0_nodeVar44.x + p0_nodeVar44.y ) * p0_nodeVar44.z ) ), p0_nodeVar46.x ), mix( fract( ( ( p0_nodeVar49.x + p0_nodeVar49.y ) * p0_nodeVar49.z ) ), fract( ( ( p0_nodeVar52.x + p0_nodeVar52.y ) * p0_nodeVar52.z ) ), p0_nodeVar46.x ), p0_nodeVar46.y ) - 0.5 ) * ( f32(knobs.lineSpacing) * 0.8 ) ) ) / f32(knobs.lineSpacing) ) * 6.283185307179586 ) );
 
 			} else {
 
-				nodeVar111 = ( ( nodeVar29 - vec2<f32>( 1.0, 0.0 ) ) - ( nodeVar4 * vec2<f32>( 0.5 ) ) );
-				nodeVar112 = atan2( nodeVar111.y, nodeVar111.x );
-				nodeVar113 = ( ( min( nodeVar4.x, nodeVar4.y ) * 1.5707963267948966 ) / knobs.lineSpacing );
-				nodeVar114 = length( nodeVar111 );
-				nodeVar115 = vec2<f32>( ( ( nodeVar112 * nodeVar113 ) / 6.2831853 ), ( nodeVar114 / ( knobs.lineSpacing * 14.0 ) ) );
-				nodeVar116 = floor( nodeVar115 );
-				nodeVar117 = fract( ( vec3<f32>( nodeVar116.x, nodeVar116.y, nodeVar116.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar118 = ( nodeVar117 + vec3<f32>( dot( nodeVar117, ( vec3<f32>( nodeVar117.y, nodeVar117.z, nodeVar117.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar119 = ( nodeVar116 + vec2<f32>( 1.0, 0.0 ) );
-				nodeVar120 = fract( ( vec3<f32>( nodeVar119.x, nodeVar119.y, nodeVar119.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar121 = ( nodeVar120 + vec3<f32>( dot( nodeVar120, ( vec3<f32>( nodeVar120.y, nodeVar120.z, nodeVar120.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar122 = fract( nodeVar115 );
-				nodeVar123 = ( ( nodeVar122 * nodeVar122 ) * ( vec2<f32>( 3.0 ) - ( nodeVar122 * vec2<f32>( 2.0 ) ) ) );
-				nodeVar124 = ( nodeVar116 + vec2<f32>( 0.0, 1.0 ) );
-				nodeVar125 = fract( ( vec3<f32>( nodeVar124.x, nodeVar124.y, nodeVar124.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar126 = ( nodeVar125 + vec3<f32>( dot( nodeVar125, ( vec3<f32>( nodeVar125.y, nodeVar125.z, nodeVar125.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar127 = ( nodeVar116 + vec2<f32>( 1.0, 1.0 ) );
-				nodeVar128 = fract( ( vec3<f32>( nodeVar127.x, nodeVar127.y, nodeVar127.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar129 = ( nodeVar128 + vec3<f32>( dot( nodeVar128, ( vec3<f32>( nodeVar128.y, nodeVar128.z, nodeVar128.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar130 = min( nodeVar4.x, nodeVar4.y );
-				nodeVar93 = ( cos( ( ( nodeVar112 * nodeVar113 ) + ( ( mix( mix( fract( ( ( nodeVar118.x + nodeVar118.y ) * nodeVar118.z ) ), fract( ( ( nodeVar121.x + nodeVar121.y ) * nodeVar121.z ) ), nodeVar123.x ), mix( fract( ( ( nodeVar126.x + nodeVar126.y ) * nodeVar126.z ) ), fract( ( ( nodeVar129.x + nodeVar129.y ) * nodeVar129.z ) ), nodeVar123.x ), nodeVar123.y ) - 0.5 ) * 1.4 ) ) ) * smoothstep( ( nodeVar130 * 0.06 ), ( nodeVar130 * 0.22 ), nodeVar114 ) );
+				p0_nodeVar53 = ( ( p0_nodeVar29 + vec2<f32>( 1.0, 0.0 ) ) - ( p0_nodeVar4 * vec2<f32>( 0.5 ) ) );
+				p0_nodeVar54 = atan2( p0_nodeVar53.y, p0_nodeVar53.x );
+				p0_nodeVar55 = ( ( min( p0_nodeVar4.x, p0_nodeVar4.y ) * 1.5707963267948966 ) / f32(knobs.lineSpacing) );
+				p0_nodeVar56 = length( p0_nodeVar53 );
+				p0_nodeVar57 = vec2<f32>( ( ( p0_nodeVar54 * p0_nodeVar55 ) / 6.2831853 ), ( p0_nodeVar56 / ( f32(knobs.lineSpacing) * 14.0 ) ) );
+				p0_nodeVar58 = floor( p0_nodeVar57 );
+				p0_nodeVar59 = fract( ( vec3<f32>( p0_nodeVar58.x, p0_nodeVar58.y, p0_nodeVar58.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar60 = ( p0_nodeVar59 + vec3<f32>( dot( p0_nodeVar59, ( vec3<f32>( p0_nodeVar59.y, p0_nodeVar59.z, p0_nodeVar59.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar61 = ( p0_nodeVar58 + vec2<f32>( 1.0, 0.0 ) );
+				p0_nodeVar62 = fract( ( vec3<f32>( p0_nodeVar61.x, p0_nodeVar61.y, p0_nodeVar61.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar63 = ( p0_nodeVar62 + vec3<f32>( dot( p0_nodeVar62, ( vec3<f32>( p0_nodeVar62.y, p0_nodeVar62.z, p0_nodeVar62.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar64 = fract( p0_nodeVar57 );
+				p0_nodeVar65 = ( ( p0_nodeVar64 * p0_nodeVar64 ) * ( vec2<f32>( 3.0 ) - ( p0_nodeVar64 * vec2<f32>( 2.0 ) ) ) );
+				p0_nodeVar66 = ( p0_nodeVar58 + vec2<f32>( 0.0, 1.0 ) );
+				p0_nodeVar67 = fract( ( vec3<f32>( p0_nodeVar66.x, p0_nodeVar66.y, p0_nodeVar66.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar68 = ( p0_nodeVar67 + vec3<f32>( dot( p0_nodeVar67, ( vec3<f32>( p0_nodeVar67.y, p0_nodeVar67.z, p0_nodeVar67.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar69 = ( p0_nodeVar58 + vec2<f32>( 1.0, 1.0 ) );
+				p0_nodeVar70 = fract( ( vec3<f32>( p0_nodeVar69.x, p0_nodeVar69.y, p0_nodeVar69.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar71 = ( p0_nodeVar70 + vec3<f32>( dot( p0_nodeVar70, ( vec3<f32>( p0_nodeVar70.y, p0_nodeVar70.z, p0_nodeVar70.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar72 = min( p0_nodeVar4.x, p0_nodeVar4.y );
+				p0_nodeVar35 = ( cos( ( ( p0_nodeVar54 * p0_nodeVar55 ) + ( ( mix( mix( fract( ( ( p0_nodeVar60.x + p0_nodeVar60.y ) * p0_nodeVar60.z ) ), fract( ( ( p0_nodeVar63.x + p0_nodeVar63.y ) * p0_nodeVar63.z ) ), p0_nodeVar65.x ), mix( fract( ( ( p0_nodeVar68.x + p0_nodeVar68.y ) * p0_nodeVar68.z ) ), fract( ( ( p0_nodeVar71.x + p0_nodeVar71.y ) * p0_nodeVar71.z ) ), p0_nodeVar65.x ), p0_nodeVar65.y ) - 0.5 ) * 1.4 ) ) ) * smoothstep( ( p0_nodeVar72 * 0.06 ), ( p0_nodeVar72 * 0.22 ), p0_nodeVar56 ) );
 
 			}
 
-			nodeVar92 = nodeVar93;
+			p0_nodeVar34 = p0_nodeVar35;
 
 		}
 
-		nodeVar131 = ( nodeVar29 - vec2<f32>( 1.0, 0.0 ) );
-		nodeVar132 = ( nodeVar131 / vec2<f32>( knobs.grainSize ) );
-		nodeVar133 = floor( nodeVar132 );
-		nodeVar134 = fract( ( vec3<f32>( nodeVar133.x, nodeVar133.y, nodeVar133.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar135 = ( nodeVar134 + vec3<f32>( dot( nodeVar134, ( vec3<f32>( nodeVar134.y, nodeVar134.z, nodeVar134.x ) + vec3<f32>( 33.33 ) ) ) ) );
-		nodeVar136 = ( nodeVar133 + vec2<f32>( 1.0, 0.0 ) );
-		nodeVar137 = fract( ( vec3<f32>( nodeVar136.x, nodeVar136.y, nodeVar136.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar138 = ( nodeVar137 + vec3<f32>( dot( nodeVar137, ( vec3<f32>( nodeVar137.y, nodeVar137.z, nodeVar137.x ) + vec3<f32>( 33.33 ) ) ) ) );
-		nodeVar139 = fract( nodeVar132 );
-		nodeVar140 = ( ( nodeVar139 * nodeVar139 ) * ( vec2<f32>( 3.0 ) - ( nodeVar139 * vec2<f32>( 2.0 ) ) ) );
-		nodeVar141 = ( nodeVar133 + vec2<f32>( 0.0, 1.0 ) );
-		nodeVar142 = fract( ( vec3<f32>( nodeVar141.x, nodeVar141.y, nodeVar141.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar143 = ( nodeVar142 + vec3<f32>( dot( nodeVar142, ( vec3<f32>( nodeVar142.y, nodeVar142.z, nodeVar142.x ) + vec3<f32>( 33.33 ) ) ) ) );
-		nodeVar144 = ( nodeVar133 + vec2<f32>( 1.0, 1.0 ) );
-		nodeVar145 = fract( ( vec3<f32>( nodeVar144.x, nodeVar144.y, nodeVar144.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar146 = ( nodeVar145 + vec3<f32>( dot( nodeVar145, ( vec3<f32>( nodeVar145.y, nodeVar145.z, nodeVar145.x ) + vec3<f32>( 33.33 ) ) ) ) );
-		nodeVar147 = floor( ( ( nodeVar131 / vec2<f32>( knobs.grainSize ) ) * vec2<f32>( 2.1 ) ) );
-		nodeVar148 = fract( ( vec3<f32>( nodeVar147.x, nodeVar147.y, nodeVar147.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar149 = ( nodeVar148 + vec3<f32>( dot( nodeVar148, ( vec3<f32>( nodeVar148.y, nodeVar148.z, nodeVar148.x ) + vec3<f32>( 33.33 ) ) ) ) );
-		nodeVar32 = ( ( ( ( ( nodeVar34 * 0.5 ) * knobs.engraveDepth ) * ( 0.35 + ( ( 1.0 - nodeVar14 ) * 0.65 ) ) ) + ( ( ( ( mix( mix( fract( ( ( nodeVar77.x + nodeVar77.y ) * nodeVar77.z ) ), fract( ( ( nodeVar80.x + nodeVar80.y ) * nodeVar80.z ) ), nodeVar82.x ), mix( fract( ( ( nodeVar85.x + nodeVar85.y ) * nodeVar85.z ) ), fract( ( ( nodeVar88.x + nodeVar88.y ) * nodeVar88.z ) ), nodeVar82.x ), nodeVar82.y ) * 0.6 ) + ( fract( ( ( nodeVar91.x + nodeVar91.y ) * nodeVar91.z ) ) * 0.4 ) ) - 0.5 ) * knobs.grain ) ) - ( ( ( ( nodeVar92 * 0.5 ) * knobs.engraveDepth ) * ( 0.35 + ( ( 1.0 - nodeVar14 ) * 0.65 ) ) ) + ( ( ( ( mix( mix( fract( ( ( nodeVar135.x + nodeVar135.y ) * nodeVar135.z ) ), fract( ( ( nodeVar138.x + nodeVar138.y ) * nodeVar138.z ) ), nodeVar140.x ), mix( fract( ( ( nodeVar143.x + nodeVar143.y ) * nodeVar143.z ) ), fract( ( ( nodeVar146.x + nodeVar146.y ) * nodeVar146.z ) ), nodeVar140.x ), nodeVar140.y ) * 0.6 ) + ( fract( ( ( nodeVar149.x + nodeVar149.y ) * nodeVar149.z ) ) * 0.4 ) ) - 0.5 ) * knobs.grain ) ) );
+		p0_nodeVar73 = ( p0_nodeVar29 + vec2<f32>( 1.0, 0.0 ) );
+		p0_nodeVar74 = ( p0_nodeVar73 / vec2<f32>( f32(knobs.grainSize) ) );
+		p0_nodeVar75 = floor( p0_nodeVar74 );
+		p0_nodeVar76 = fract( ( vec3<f32>( p0_nodeVar75.x, p0_nodeVar75.y, p0_nodeVar75.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar77 = ( p0_nodeVar76 + vec3<f32>( dot( p0_nodeVar76, ( vec3<f32>( p0_nodeVar76.y, p0_nodeVar76.z, p0_nodeVar76.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar78 = ( p0_nodeVar75 + vec2<f32>( 1.0, 0.0 ) );
+		p0_nodeVar79 = fract( ( vec3<f32>( p0_nodeVar78.x, p0_nodeVar78.y, p0_nodeVar78.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar80 = ( p0_nodeVar79 + vec3<f32>( dot( p0_nodeVar79, ( vec3<f32>( p0_nodeVar79.y, p0_nodeVar79.z, p0_nodeVar79.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar81 = fract( p0_nodeVar74 );
+		p0_nodeVar82 = ( ( p0_nodeVar81 * p0_nodeVar81 ) * ( vec2<f32>( 3.0 ) - ( p0_nodeVar81 * vec2<f32>( 2.0 ) ) ) );
+		p0_nodeVar83 = ( p0_nodeVar75 + vec2<f32>( 0.0, 1.0 ) );
+		p0_nodeVar84 = fract( ( vec3<f32>( p0_nodeVar83.x, p0_nodeVar83.y, p0_nodeVar83.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar85 = ( p0_nodeVar84 + vec3<f32>( dot( p0_nodeVar84, ( vec3<f32>( p0_nodeVar84.y, p0_nodeVar84.z, p0_nodeVar84.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar86 = ( p0_nodeVar75 + vec2<f32>( 1.0, 1.0 ) );
+		p0_nodeVar87 = fract( ( vec3<f32>( p0_nodeVar86.x, p0_nodeVar86.y, p0_nodeVar86.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar88 = ( p0_nodeVar87 + vec3<f32>( dot( p0_nodeVar87, ( vec3<f32>( p0_nodeVar87.y, p0_nodeVar87.z, p0_nodeVar87.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar89 = floor( ( ( p0_nodeVar73 / vec2<f32>( f32(knobs.grainSize) ) ) * vec2<f32>( 2.1 ) ) );
+		p0_nodeVar90 = fract( ( vec3<f32>( p0_nodeVar89.x, p0_nodeVar89.y, p0_nodeVar89.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar91 = ( p0_nodeVar90 + vec3<f32>( dot( p0_nodeVar90, ( vec3<f32>( p0_nodeVar90.y, p0_nodeVar90.z, p0_nodeVar90.x ) + vec3<f32>( 33.33 ) ) ) ) );
 
-		if ( ( knobs.engrave < 0.5 ) ) {
+		if ( ( f32(knobs.engrave) < 0.5 ) ) {
 
-			nodeVar150 = 0.0;
+			p0_nodeVar92 = 0.0;
 
 		} else {
 
 
-			if ( ( knobs.engrave < 1.5 ) ) {
+			if ( ( f32(knobs.engrave) < 1.5 ) ) {
 
-				nodeVar152 = ( nodeVar29 + vec2<f32>( 0.0, 1.0 ) );
-				nodeVar153 = ( knobs.engraveAngle * 0.017453292519943295 );
-				nodeVar154 = vec2<f32>( ( ( ( nodeVar152.y * cos( nodeVar153 ) ) - ( nodeVar152.x * sin( nodeVar153 ) ) ) / ( knobs.lineSpacing * 9.0 ) ), 3.1 );
-				nodeVar155 = floor( nodeVar154 );
-				nodeVar156 = fract( ( vec3<f32>( nodeVar155.x, nodeVar155.y, nodeVar155.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar157 = ( nodeVar156 + vec3<f32>( dot( nodeVar156, ( vec3<f32>( nodeVar156.y, nodeVar156.z, nodeVar156.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar158 = ( nodeVar155 + vec2<f32>( 1.0, 0.0 ) );
-				nodeVar159 = fract( ( vec3<f32>( nodeVar158.x, nodeVar158.y, nodeVar158.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar160 = ( nodeVar159 + vec3<f32>( dot( nodeVar159, ( vec3<f32>( nodeVar159.y, nodeVar159.z, nodeVar159.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar161 = fract( nodeVar154 );
-				nodeVar162 = ( ( nodeVar161 * nodeVar161 ) * ( vec2<f32>( 3.0 ) - ( nodeVar161 * vec2<f32>( 2.0 ) ) ) );
-				nodeVar163 = ( nodeVar155 + vec2<f32>( 0.0, 1.0 ) );
-				nodeVar164 = fract( ( vec3<f32>( nodeVar163.x, nodeVar163.y, nodeVar163.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar165 = ( nodeVar164 + vec3<f32>( dot( nodeVar164, ( vec3<f32>( nodeVar164.y, nodeVar164.z, nodeVar164.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar166 = ( nodeVar155 + vec2<f32>( 1.0, 1.0 ) );
-				nodeVar167 = fract( ( vec3<f32>( nodeVar166.x, nodeVar166.y, nodeVar166.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar168 = ( nodeVar167 + vec3<f32>( dot( nodeVar167, ( vec3<f32>( nodeVar167.y, nodeVar167.z, nodeVar167.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar151 = cos( ( ( ( ( ( nodeVar152.x * cos( nodeVar153 ) ) + ( nodeVar152.y * sin( nodeVar153 ) ) ) + ( ( mix( mix( fract( ( ( nodeVar157.x + nodeVar157.y ) * nodeVar157.z ) ), fract( ( ( nodeVar160.x + nodeVar160.y ) * nodeVar160.z ) ), nodeVar162.x ), mix( fract( ( ( nodeVar165.x + nodeVar165.y ) * nodeVar165.z ) ), fract( ( ( nodeVar168.x + nodeVar168.y ) * nodeVar168.z ) ), nodeVar162.x ), nodeVar162.y ) - 0.5 ) * ( knobs.lineSpacing * 0.8 ) ) ) / knobs.lineSpacing ) * 6.283185307179586 ) );
+				p0_nodeVar94 = ( p0_nodeVar29 - vec2<f32>( 1.0, 0.0 ) );
+				p0_nodeVar95 = ( f32(knobs.engraveAngle) * 0.017453292519943295 );
+				p0_nodeVar96 = vec2<f32>( ( ( ( p0_nodeVar94.y * cos( p0_nodeVar95 ) ) - ( p0_nodeVar94.x * sin( p0_nodeVar95 ) ) ) / ( f32(knobs.lineSpacing) * 9.0 ) ), 3.1 );
+				p0_nodeVar97 = floor( p0_nodeVar96 );
+				p0_nodeVar98 = fract( ( vec3<f32>( p0_nodeVar97.x, p0_nodeVar97.y, p0_nodeVar97.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar99 = ( p0_nodeVar98 + vec3<f32>( dot( p0_nodeVar98, ( vec3<f32>( p0_nodeVar98.y, p0_nodeVar98.z, p0_nodeVar98.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar100 = ( p0_nodeVar97 + vec2<f32>( 1.0, 0.0 ) );
+				p0_nodeVar101 = fract( ( vec3<f32>( p0_nodeVar100.x, p0_nodeVar100.y, p0_nodeVar100.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar102 = ( p0_nodeVar101 + vec3<f32>( dot( p0_nodeVar101, ( vec3<f32>( p0_nodeVar101.y, p0_nodeVar101.z, p0_nodeVar101.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar103 = fract( p0_nodeVar96 );
+				p0_nodeVar104 = ( ( p0_nodeVar103 * p0_nodeVar103 ) * ( vec2<f32>( 3.0 ) - ( p0_nodeVar103 * vec2<f32>( 2.0 ) ) ) );
+				p0_nodeVar105 = ( p0_nodeVar97 + vec2<f32>( 0.0, 1.0 ) );
+				p0_nodeVar106 = fract( ( vec3<f32>( p0_nodeVar105.x, p0_nodeVar105.y, p0_nodeVar105.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar107 = ( p0_nodeVar106 + vec3<f32>( dot( p0_nodeVar106, ( vec3<f32>( p0_nodeVar106.y, p0_nodeVar106.z, p0_nodeVar106.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar108 = ( p0_nodeVar97 + vec2<f32>( 1.0, 1.0 ) );
+				p0_nodeVar109 = fract( ( vec3<f32>( p0_nodeVar108.x, p0_nodeVar108.y, p0_nodeVar108.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar110 = ( p0_nodeVar109 + vec3<f32>( dot( p0_nodeVar109, ( vec3<f32>( p0_nodeVar109.y, p0_nodeVar109.z, p0_nodeVar109.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar93 = cos( ( ( ( ( ( p0_nodeVar94.x * cos( p0_nodeVar95 ) ) + ( p0_nodeVar94.y * sin( p0_nodeVar95 ) ) ) + ( ( mix( mix( fract( ( ( p0_nodeVar99.x + p0_nodeVar99.y ) * p0_nodeVar99.z ) ), fract( ( ( p0_nodeVar102.x + p0_nodeVar102.y ) * p0_nodeVar102.z ) ), p0_nodeVar104.x ), mix( fract( ( ( p0_nodeVar107.x + p0_nodeVar107.y ) * p0_nodeVar107.z ) ), fract( ( ( p0_nodeVar110.x + p0_nodeVar110.y ) * p0_nodeVar110.z ) ), p0_nodeVar104.x ), p0_nodeVar104.y ) - 0.5 ) * ( f32(knobs.lineSpacing) * 0.8 ) ) ) / f32(knobs.lineSpacing) ) * 6.283185307179586 ) );
 
 			} else {
 
-				nodeVar169 = ( ( nodeVar29 + vec2<f32>( 0.0, 1.0 ) ) - ( nodeVar4 * vec2<f32>( 0.5 ) ) );
-				nodeVar170 = atan2( nodeVar169.y, nodeVar169.x );
-				nodeVar171 = ( ( min( nodeVar4.x, nodeVar4.y ) * 1.5707963267948966 ) / knobs.lineSpacing );
-				nodeVar172 = length( nodeVar169 );
-				nodeVar173 = vec2<f32>( ( ( nodeVar170 * nodeVar171 ) / 6.2831853 ), ( nodeVar172 / ( knobs.lineSpacing * 14.0 ) ) );
-				nodeVar174 = floor( nodeVar173 );
-				nodeVar175 = fract( ( vec3<f32>( nodeVar174.x, nodeVar174.y, nodeVar174.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar176 = ( nodeVar175 + vec3<f32>( dot( nodeVar175, ( vec3<f32>( nodeVar175.y, nodeVar175.z, nodeVar175.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar177 = ( nodeVar174 + vec2<f32>( 1.0, 0.0 ) );
-				nodeVar178 = fract( ( vec3<f32>( nodeVar177.x, nodeVar177.y, nodeVar177.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar179 = ( nodeVar178 + vec3<f32>( dot( nodeVar178, ( vec3<f32>( nodeVar178.y, nodeVar178.z, nodeVar178.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar180 = fract( nodeVar173 );
-				nodeVar181 = ( ( nodeVar180 * nodeVar180 ) * ( vec2<f32>( 3.0 ) - ( nodeVar180 * vec2<f32>( 2.0 ) ) ) );
-				nodeVar182 = ( nodeVar174 + vec2<f32>( 0.0, 1.0 ) );
-				nodeVar183 = fract( ( vec3<f32>( nodeVar182.x, nodeVar182.y, nodeVar182.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar184 = ( nodeVar183 + vec3<f32>( dot( nodeVar183, ( vec3<f32>( nodeVar183.y, nodeVar183.z, nodeVar183.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar185 = ( nodeVar174 + vec2<f32>( 1.0, 1.0 ) );
-				nodeVar186 = fract( ( vec3<f32>( nodeVar185.x, nodeVar185.y, nodeVar185.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar187 = ( nodeVar186 + vec3<f32>( dot( nodeVar186, ( vec3<f32>( nodeVar186.y, nodeVar186.z, nodeVar186.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar188 = min( nodeVar4.x, nodeVar4.y );
-				nodeVar151 = ( cos( ( ( nodeVar170 * nodeVar171 ) + ( ( mix( mix( fract( ( ( nodeVar176.x + nodeVar176.y ) * nodeVar176.z ) ), fract( ( ( nodeVar179.x + nodeVar179.y ) * nodeVar179.z ) ), nodeVar181.x ), mix( fract( ( ( nodeVar184.x + nodeVar184.y ) * nodeVar184.z ) ), fract( ( ( nodeVar187.x + nodeVar187.y ) * nodeVar187.z ) ), nodeVar181.x ), nodeVar181.y ) - 0.5 ) * 1.4 ) ) ) * smoothstep( ( nodeVar188 * 0.06 ), ( nodeVar188 * 0.22 ), nodeVar172 ) );
+				p0_nodeVar111 = ( ( p0_nodeVar29 - vec2<f32>( 1.0, 0.0 ) ) - ( p0_nodeVar4 * vec2<f32>( 0.5 ) ) );
+				p0_nodeVar112 = atan2( p0_nodeVar111.y, p0_nodeVar111.x );
+				p0_nodeVar113 = ( ( min( p0_nodeVar4.x, p0_nodeVar4.y ) * 1.5707963267948966 ) / f32(knobs.lineSpacing) );
+				p0_nodeVar114 = length( p0_nodeVar111 );
+				p0_nodeVar115 = vec2<f32>( ( ( p0_nodeVar112 * p0_nodeVar113 ) / 6.2831853 ), ( p0_nodeVar114 / ( f32(knobs.lineSpacing) * 14.0 ) ) );
+				p0_nodeVar116 = floor( p0_nodeVar115 );
+				p0_nodeVar117 = fract( ( vec3<f32>( p0_nodeVar116.x, p0_nodeVar116.y, p0_nodeVar116.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar118 = ( p0_nodeVar117 + vec3<f32>( dot( p0_nodeVar117, ( vec3<f32>( p0_nodeVar117.y, p0_nodeVar117.z, p0_nodeVar117.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar119 = ( p0_nodeVar116 + vec2<f32>( 1.0, 0.0 ) );
+				p0_nodeVar120 = fract( ( vec3<f32>( p0_nodeVar119.x, p0_nodeVar119.y, p0_nodeVar119.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar121 = ( p0_nodeVar120 + vec3<f32>( dot( p0_nodeVar120, ( vec3<f32>( p0_nodeVar120.y, p0_nodeVar120.z, p0_nodeVar120.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar122 = fract( p0_nodeVar115 );
+				p0_nodeVar123 = ( ( p0_nodeVar122 * p0_nodeVar122 ) * ( vec2<f32>( 3.0 ) - ( p0_nodeVar122 * vec2<f32>( 2.0 ) ) ) );
+				p0_nodeVar124 = ( p0_nodeVar116 + vec2<f32>( 0.0, 1.0 ) );
+				p0_nodeVar125 = fract( ( vec3<f32>( p0_nodeVar124.x, p0_nodeVar124.y, p0_nodeVar124.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar126 = ( p0_nodeVar125 + vec3<f32>( dot( p0_nodeVar125, ( vec3<f32>( p0_nodeVar125.y, p0_nodeVar125.z, p0_nodeVar125.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar127 = ( p0_nodeVar116 + vec2<f32>( 1.0, 1.0 ) );
+				p0_nodeVar128 = fract( ( vec3<f32>( p0_nodeVar127.x, p0_nodeVar127.y, p0_nodeVar127.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar129 = ( p0_nodeVar128 + vec3<f32>( dot( p0_nodeVar128, ( vec3<f32>( p0_nodeVar128.y, p0_nodeVar128.z, p0_nodeVar128.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar130 = min( p0_nodeVar4.x, p0_nodeVar4.y );
+				p0_nodeVar93 = ( cos( ( ( p0_nodeVar112 * p0_nodeVar113 ) + ( ( mix( mix( fract( ( ( p0_nodeVar118.x + p0_nodeVar118.y ) * p0_nodeVar118.z ) ), fract( ( ( p0_nodeVar121.x + p0_nodeVar121.y ) * p0_nodeVar121.z ) ), p0_nodeVar123.x ), mix( fract( ( ( p0_nodeVar126.x + p0_nodeVar126.y ) * p0_nodeVar126.z ) ), fract( ( ( p0_nodeVar129.x + p0_nodeVar129.y ) * p0_nodeVar129.z ) ), p0_nodeVar123.x ), p0_nodeVar123.y ) - 0.5 ) * 1.4 ) ) ) * smoothstep( ( p0_nodeVar130 * 0.06 ), ( p0_nodeVar130 * 0.22 ), p0_nodeVar114 ) );
 
 			}
 
-			nodeVar150 = nodeVar151;
+			p0_nodeVar92 = p0_nodeVar93;
 
 		}
 
-		nodeVar189 = ( nodeVar29 + vec2<f32>( 0.0, 1.0 ) );
-		nodeVar190 = ( nodeVar189 / vec2<f32>( knobs.grainSize ) );
-		nodeVar191 = floor( nodeVar190 );
-		nodeVar192 = fract( ( vec3<f32>( nodeVar191.x, nodeVar191.y, nodeVar191.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar193 = ( nodeVar192 + vec3<f32>( dot( nodeVar192, ( vec3<f32>( nodeVar192.y, nodeVar192.z, nodeVar192.x ) + vec3<f32>( 33.33 ) ) ) ) );
-		nodeVar194 = ( nodeVar191 + vec2<f32>( 1.0, 0.0 ) );
-		nodeVar195 = fract( ( vec3<f32>( nodeVar194.x, nodeVar194.y, nodeVar194.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar196 = ( nodeVar195 + vec3<f32>( dot( nodeVar195, ( vec3<f32>( nodeVar195.y, nodeVar195.z, nodeVar195.x ) + vec3<f32>( 33.33 ) ) ) ) );
-		nodeVar197 = fract( nodeVar190 );
-		nodeVar198 = ( ( nodeVar197 * nodeVar197 ) * ( vec2<f32>( 3.0 ) - ( nodeVar197 * vec2<f32>( 2.0 ) ) ) );
-		nodeVar199 = ( nodeVar191 + vec2<f32>( 0.0, 1.0 ) );
-		nodeVar200 = fract( ( vec3<f32>( nodeVar199.x, nodeVar199.y, nodeVar199.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar201 = ( nodeVar200 + vec3<f32>( dot( nodeVar200, ( vec3<f32>( nodeVar200.y, nodeVar200.z, nodeVar200.x ) + vec3<f32>( 33.33 ) ) ) ) );
-		nodeVar202 = ( nodeVar191 + vec2<f32>( 1.0, 1.0 ) );
-		nodeVar203 = fract( ( vec3<f32>( nodeVar202.x, nodeVar202.y, nodeVar202.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar204 = ( nodeVar203 + vec3<f32>( dot( nodeVar203, ( vec3<f32>( nodeVar203.y, nodeVar203.z, nodeVar203.x ) + vec3<f32>( 33.33 ) ) ) ) );
-		nodeVar205 = floor( ( ( nodeVar189 / vec2<f32>( knobs.grainSize ) ) * vec2<f32>( 2.1 ) ) );
-		nodeVar206 = fract( ( vec3<f32>( nodeVar205.x, nodeVar205.y, nodeVar205.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar207 = ( nodeVar206 + vec3<f32>( dot( nodeVar206, ( vec3<f32>( nodeVar206.y, nodeVar206.z, nodeVar206.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar131 = ( p0_nodeVar29 - vec2<f32>( 1.0, 0.0 ) );
+		p0_nodeVar132 = ( p0_nodeVar131 / vec2<f32>( f32(knobs.grainSize) ) );
+		p0_nodeVar133 = floor( p0_nodeVar132 );
+		p0_nodeVar134 = fract( ( vec3<f32>( p0_nodeVar133.x, p0_nodeVar133.y, p0_nodeVar133.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar135 = ( p0_nodeVar134 + vec3<f32>( dot( p0_nodeVar134, ( vec3<f32>( p0_nodeVar134.y, p0_nodeVar134.z, p0_nodeVar134.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar136 = ( p0_nodeVar133 + vec2<f32>( 1.0, 0.0 ) );
+		p0_nodeVar137 = fract( ( vec3<f32>( p0_nodeVar136.x, p0_nodeVar136.y, p0_nodeVar136.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar138 = ( p0_nodeVar137 + vec3<f32>( dot( p0_nodeVar137, ( vec3<f32>( p0_nodeVar137.y, p0_nodeVar137.z, p0_nodeVar137.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar139 = fract( p0_nodeVar132 );
+		p0_nodeVar140 = ( ( p0_nodeVar139 * p0_nodeVar139 ) * ( vec2<f32>( 3.0 ) - ( p0_nodeVar139 * vec2<f32>( 2.0 ) ) ) );
+		p0_nodeVar141 = ( p0_nodeVar133 + vec2<f32>( 0.0, 1.0 ) );
+		p0_nodeVar142 = fract( ( vec3<f32>( p0_nodeVar141.x, p0_nodeVar141.y, p0_nodeVar141.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar143 = ( p0_nodeVar142 + vec3<f32>( dot( p0_nodeVar142, ( vec3<f32>( p0_nodeVar142.y, p0_nodeVar142.z, p0_nodeVar142.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar144 = ( p0_nodeVar133 + vec2<f32>( 1.0, 1.0 ) );
+		p0_nodeVar145 = fract( ( vec3<f32>( p0_nodeVar144.x, p0_nodeVar144.y, p0_nodeVar144.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar146 = ( p0_nodeVar145 + vec3<f32>( dot( p0_nodeVar145, ( vec3<f32>( p0_nodeVar145.y, p0_nodeVar145.z, p0_nodeVar145.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar147 = floor( ( ( p0_nodeVar131 / vec2<f32>( f32(knobs.grainSize) ) ) * vec2<f32>( 2.1 ) ) );
+		p0_nodeVar148 = fract( ( vec3<f32>( p0_nodeVar147.x, p0_nodeVar147.y, p0_nodeVar147.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar149 = ( p0_nodeVar148 + vec3<f32>( dot( p0_nodeVar148, ( vec3<f32>( p0_nodeVar148.y, p0_nodeVar148.z, p0_nodeVar148.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar32 = ( ( ( ( ( p0_nodeVar34 * 0.5 ) * f32(knobs.engraveDepth) ) * ( 0.35 + ( ( 1.0 - p0_nodeVar14 ) * 0.65 ) ) ) + ( ( ( ( mix( mix( fract( ( ( p0_nodeVar77.x + p0_nodeVar77.y ) * p0_nodeVar77.z ) ), fract( ( ( p0_nodeVar80.x + p0_nodeVar80.y ) * p0_nodeVar80.z ) ), p0_nodeVar82.x ), mix( fract( ( ( p0_nodeVar85.x + p0_nodeVar85.y ) * p0_nodeVar85.z ) ), fract( ( ( p0_nodeVar88.x + p0_nodeVar88.y ) * p0_nodeVar88.z ) ), p0_nodeVar82.x ), p0_nodeVar82.y ) * 0.6 ) + ( fract( ( ( p0_nodeVar91.x + p0_nodeVar91.y ) * p0_nodeVar91.z ) ) * 0.4 ) ) - 0.5 ) * f32(knobs.grain) ) ) - ( ( ( ( p0_nodeVar92 * 0.5 ) * f32(knobs.engraveDepth) ) * ( 0.35 + ( ( 1.0 - p0_nodeVar14 ) * 0.65 ) ) ) + ( ( ( ( mix( mix( fract( ( ( p0_nodeVar135.x + p0_nodeVar135.y ) * p0_nodeVar135.z ) ), fract( ( ( p0_nodeVar138.x + p0_nodeVar138.y ) * p0_nodeVar138.z ) ), p0_nodeVar140.x ), mix( fract( ( ( p0_nodeVar143.x + p0_nodeVar143.y ) * p0_nodeVar143.z ) ), fract( ( ( p0_nodeVar146.x + p0_nodeVar146.y ) * p0_nodeVar146.z ) ), p0_nodeVar140.x ), p0_nodeVar140.y ) * 0.6 ) + ( fract( ( ( p0_nodeVar149.x + p0_nodeVar149.y ) * p0_nodeVar149.z ) ) * 0.4 ) ) - 0.5 ) * f32(knobs.grain) ) ) );
 
-		if ( ( knobs.engrave < 0.5 ) ) {
+		if ( ( f32(knobs.engrave) < 0.5 ) ) {
 
-			nodeVar208 = 0.0;
+			p0_nodeVar150 = 0.0;
 
 		} else {
 
 
-			if ( ( knobs.engrave < 1.5 ) ) {
+			if ( ( f32(knobs.engrave) < 1.5 ) ) {
 
-				nodeVar210 = ( nodeVar29 - vec2<f32>( 0.0, 1.0 ) );
-				nodeVar211 = ( knobs.engraveAngle * 0.017453292519943295 );
-				nodeVar212 = vec2<f32>( ( ( ( nodeVar210.y * cos( nodeVar211 ) ) - ( nodeVar210.x * sin( nodeVar211 ) ) ) / ( knobs.lineSpacing * 9.0 ) ), 3.1 );
-				nodeVar213 = floor( nodeVar212 );
-				nodeVar214 = fract( ( vec3<f32>( nodeVar213.x, nodeVar213.y, nodeVar213.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar215 = ( nodeVar214 + vec3<f32>( dot( nodeVar214, ( vec3<f32>( nodeVar214.y, nodeVar214.z, nodeVar214.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar216 = ( nodeVar213 + vec2<f32>( 1.0, 0.0 ) );
-				nodeVar217 = fract( ( vec3<f32>( nodeVar216.x, nodeVar216.y, nodeVar216.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar218 = ( nodeVar217 + vec3<f32>( dot( nodeVar217, ( vec3<f32>( nodeVar217.y, nodeVar217.z, nodeVar217.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar219 = fract( nodeVar212 );
-				nodeVar220 = ( ( nodeVar219 * nodeVar219 ) * ( vec2<f32>( 3.0 ) - ( nodeVar219 * vec2<f32>( 2.0 ) ) ) );
-				nodeVar221 = ( nodeVar213 + vec2<f32>( 0.0, 1.0 ) );
-				nodeVar222 = fract( ( vec3<f32>( nodeVar221.x, nodeVar221.y, nodeVar221.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar223 = ( nodeVar222 + vec3<f32>( dot( nodeVar222, ( vec3<f32>( nodeVar222.y, nodeVar222.z, nodeVar222.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar224 = ( nodeVar213 + vec2<f32>( 1.0, 1.0 ) );
-				nodeVar225 = fract( ( vec3<f32>( nodeVar224.x, nodeVar224.y, nodeVar224.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar226 = ( nodeVar225 + vec3<f32>( dot( nodeVar225, ( vec3<f32>( nodeVar225.y, nodeVar225.z, nodeVar225.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar209 = cos( ( ( ( ( ( nodeVar210.x * cos( nodeVar211 ) ) + ( nodeVar210.y * sin( nodeVar211 ) ) ) + ( ( mix( mix( fract( ( ( nodeVar215.x + nodeVar215.y ) * nodeVar215.z ) ), fract( ( ( nodeVar218.x + nodeVar218.y ) * nodeVar218.z ) ), nodeVar220.x ), mix( fract( ( ( nodeVar223.x + nodeVar223.y ) * nodeVar223.z ) ), fract( ( ( nodeVar226.x + nodeVar226.y ) * nodeVar226.z ) ), nodeVar220.x ), nodeVar220.y ) - 0.5 ) * ( knobs.lineSpacing * 0.8 ) ) ) / knobs.lineSpacing ) * 6.283185307179586 ) );
+				p0_nodeVar152 = ( p0_nodeVar29 + vec2<f32>( 0.0, 1.0 ) );
+				p0_nodeVar153 = ( f32(knobs.engraveAngle) * 0.017453292519943295 );
+				p0_nodeVar154 = vec2<f32>( ( ( ( p0_nodeVar152.y * cos( p0_nodeVar153 ) ) - ( p0_nodeVar152.x * sin( p0_nodeVar153 ) ) ) / ( f32(knobs.lineSpacing) * 9.0 ) ), 3.1 );
+				p0_nodeVar155 = floor( p0_nodeVar154 );
+				p0_nodeVar156 = fract( ( vec3<f32>( p0_nodeVar155.x, p0_nodeVar155.y, p0_nodeVar155.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar157 = ( p0_nodeVar156 + vec3<f32>( dot( p0_nodeVar156, ( vec3<f32>( p0_nodeVar156.y, p0_nodeVar156.z, p0_nodeVar156.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar158 = ( p0_nodeVar155 + vec2<f32>( 1.0, 0.0 ) );
+				p0_nodeVar159 = fract( ( vec3<f32>( p0_nodeVar158.x, p0_nodeVar158.y, p0_nodeVar158.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar160 = ( p0_nodeVar159 + vec3<f32>( dot( p0_nodeVar159, ( vec3<f32>( p0_nodeVar159.y, p0_nodeVar159.z, p0_nodeVar159.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar161 = fract( p0_nodeVar154 );
+				p0_nodeVar162 = ( ( p0_nodeVar161 * p0_nodeVar161 ) * ( vec2<f32>( 3.0 ) - ( p0_nodeVar161 * vec2<f32>( 2.0 ) ) ) );
+				p0_nodeVar163 = ( p0_nodeVar155 + vec2<f32>( 0.0, 1.0 ) );
+				p0_nodeVar164 = fract( ( vec3<f32>( p0_nodeVar163.x, p0_nodeVar163.y, p0_nodeVar163.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar165 = ( p0_nodeVar164 + vec3<f32>( dot( p0_nodeVar164, ( vec3<f32>( p0_nodeVar164.y, p0_nodeVar164.z, p0_nodeVar164.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar166 = ( p0_nodeVar155 + vec2<f32>( 1.0, 1.0 ) );
+				p0_nodeVar167 = fract( ( vec3<f32>( p0_nodeVar166.x, p0_nodeVar166.y, p0_nodeVar166.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar168 = ( p0_nodeVar167 + vec3<f32>( dot( p0_nodeVar167, ( vec3<f32>( p0_nodeVar167.y, p0_nodeVar167.z, p0_nodeVar167.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar151 = cos( ( ( ( ( ( p0_nodeVar152.x * cos( p0_nodeVar153 ) ) + ( p0_nodeVar152.y * sin( p0_nodeVar153 ) ) ) + ( ( mix( mix( fract( ( ( p0_nodeVar157.x + p0_nodeVar157.y ) * p0_nodeVar157.z ) ), fract( ( ( p0_nodeVar160.x + p0_nodeVar160.y ) * p0_nodeVar160.z ) ), p0_nodeVar162.x ), mix( fract( ( ( p0_nodeVar165.x + p0_nodeVar165.y ) * p0_nodeVar165.z ) ), fract( ( ( p0_nodeVar168.x + p0_nodeVar168.y ) * p0_nodeVar168.z ) ), p0_nodeVar162.x ), p0_nodeVar162.y ) - 0.5 ) * ( f32(knobs.lineSpacing) * 0.8 ) ) ) / f32(knobs.lineSpacing) ) * 6.283185307179586 ) );
 
 			} else {
 
-				nodeVar227 = ( ( nodeVar29 - vec2<f32>( 0.0, 1.0 ) ) - ( nodeVar4 * vec2<f32>( 0.5 ) ) );
-				nodeVar228 = atan2( nodeVar227.y, nodeVar227.x );
-				nodeVar229 = ( ( min( nodeVar4.x, nodeVar4.y ) * 1.5707963267948966 ) / knobs.lineSpacing );
-				nodeVar230 = length( nodeVar227 );
-				nodeVar231 = vec2<f32>( ( ( nodeVar228 * nodeVar229 ) / 6.2831853 ), ( nodeVar230 / ( knobs.lineSpacing * 14.0 ) ) );
-				nodeVar232 = floor( nodeVar231 );
-				nodeVar233 = fract( ( vec3<f32>( nodeVar232.x, nodeVar232.y, nodeVar232.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar234 = ( nodeVar233 + vec3<f32>( dot( nodeVar233, ( vec3<f32>( nodeVar233.y, nodeVar233.z, nodeVar233.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar235 = ( nodeVar232 + vec2<f32>( 1.0, 0.0 ) );
-				nodeVar236 = fract( ( vec3<f32>( nodeVar235.x, nodeVar235.y, nodeVar235.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar237 = ( nodeVar236 + vec3<f32>( dot( nodeVar236, ( vec3<f32>( nodeVar236.y, nodeVar236.z, nodeVar236.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar238 = fract( nodeVar231 );
-				nodeVar239 = ( ( nodeVar238 * nodeVar238 ) * ( vec2<f32>( 3.0 ) - ( nodeVar238 * vec2<f32>( 2.0 ) ) ) );
-				nodeVar240 = ( nodeVar232 + vec2<f32>( 0.0, 1.0 ) );
-				nodeVar241 = fract( ( vec3<f32>( nodeVar240.x, nodeVar240.y, nodeVar240.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar242 = ( nodeVar241 + vec3<f32>( dot( nodeVar241, ( vec3<f32>( nodeVar241.y, nodeVar241.z, nodeVar241.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar243 = ( nodeVar232 + vec2<f32>( 1.0, 1.0 ) );
-				nodeVar244 = fract( ( vec3<f32>( nodeVar243.x, nodeVar243.y, nodeVar243.x ) * vec3<f32>( 0.1031 ) ) );
-				nodeVar245 = ( nodeVar244 + vec3<f32>( dot( nodeVar244, ( vec3<f32>( nodeVar244.y, nodeVar244.z, nodeVar244.x ) + vec3<f32>( 33.33 ) ) ) ) );
-				nodeVar246 = min( nodeVar4.x, nodeVar4.y );
-				nodeVar209 = ( cos( ( ( nodeVar228 * nodeVar229 ) + ( ( mix( mix( fract( ( ( nodeVar234.x + nodeVar234.y ) * nodeVar234.z ) ), fract( ( ( nodeVar237.x + nodeVar237.y ) * nodeVar237.z ) ), nodeVar239.x ), mix( fract( ( ( nodeVar242.x + nodeVar242.y ) * nodeVar242.z ) ), fract( ( ( nodeVar245.x + nodeVar245.y ) * nodeVar245.z ) ), nodeVar239.x ), nodeVar239.y ) - 0.5 ) * 1.4 ) ) ) * smoothstep( ( nodeVar246 * 0.06 ), ( nodeVar246 * 0.22 ), nodeVar230 ) );
+				p0_nodeVar169 = ( ( p0_nodeVar29 + vec2<f32>( 0.0, 1.0 ) ) - ( p0_nodeVar4 * vec2<f32>( 0.5 ) ) );
+				p0_nodeVar170 = atan2( p0_nodeVar169.y, p0_nodeVar169.x );
+				p0_nodeVar171 = ( ( min( p0_nodeVar4.x, p0_nodeVar4.y ) * 1.5707963267948966 ) / f32(knobs.lineSpacing) );
+				p0_nodeVar172 = length( p0_nodeVar169 );
+				p0_nodeVar173 = vec2<f32>( ( ( p0_nodeVar170 * p0_nodeVar171 ) / 6.2831853 ), ( p0_nodeVar172 / ( f32(knobs.lineSpacing) * 14.0 ) ) );
+				p0_nodeVar174 = floor( p0_nodeVar173 );
+				p0_nodeVar175 = fract( ( vec3<f32>( p0_nodeVar174.x, p0_nodeVar174.y, p0_nodeVar174.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar176 = ( p0_nodeVar175 + vec3<f32>( dot( p0_nodeVar175, ( vec3<f32>( p0_nodeVar175.y, p0_nodeVar175.z, p0_nodeVar175.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar177 = ( p0_nodeVar174 + vec2<f32>( 1.0, 0.0 ) );
+				p0_nodeVar178 = fract( ( vec3<f32>( p0_nodeVar177.x, p0_nodeVar177.y, p0_nodeVar177.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar179 = ( p0_nodeVar178 + vec3<f32>( dot( p0_nodeVar178, ( vec3<f32>( p0_nodeVar178.y, p0_nodeVar178.z, p0_nodeVar178.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar180 = fract( p0_nodeVar173 );
+				p0_nodeVar181 = ( ( p0_nodeVar180 * p0_nodeVar180 ) * ( vec2<f32>( 3.0 ) - ( p0_nodeVar180 * vec2<f32>( 2.0 ) ) ) );
+				p0_nodeVar182 = ( p0_nodeVar174 + vec2<f32>( 0.0, 1.0 ) );
+				p0_nodeVar183 = fract( ( vec3<f32>( p0_nodeVar182.x, p0_nodeVar182.y, p0_nodeVar182.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar184 = ( p0_nodeVar183 + vec3<f32>( dot( p0_nodeVar183, ( vec3<f32>( p0_nodeVar183.y, p0_nodeVar183.z, p0_nodeVar183.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar185 = ( p0_nodeVar174 + vec2<f32>( 1.0, 1.0 ) );
+				p0_nodeVar186 = fract( ( vec3<f32>( p0_nodeVar185.x, p0_nodeVar185.y, p0_nodeVar185.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar187 = ( p0_nodeVar186 + vec3<f32>( dot( p0_nodeVar186, ( vec3<f32>( p0_nodeVar186.y, p0_nodeVar186.z, p0_nodeVar186.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar188 = min( p0_nodeVar4.x, p0_nodeVar4.y );
+				p0_nodeVar151 = ( cos( ( ( p0_nodeVar170 * p0_nodeVar171 ) + ( ( mix( mix( fract( ( ( p0_nodeVar176.x + p0_nodeVar176.y ) * p0_nodeVar176.z ) ), fract( ( ( p0_nodeVar179.x + p0_nodeVar179.y ) * p0_nodeVar179.z ) ), p0_nodeVar181.x ), mix( fract( ( ( p0_nodeVar184.x + p0_nodeVar184.y ) * p0_nodeVar184.z ) ), fract( ( ( p0_nodeVar187.x + p0_nodeVar187.y ) * p0_nodeVar187.z ) ), p0_nodeVar181.x ), p0_nodeVar181.y ) - 0.5 ) * 1.4 ) ) ) * smoothstep( ( p0_nodeVar188 * 0.06 ), ( p0_nodeVar188 * 0.22 ), p0_nodeVar172 ) );
 
 			}
 
-			nodeVar208 = nodeVar209;
+			p0_nodeVar150 = p0_nodeVar151;
 
 		}
 
-		nodeVar247 = ( nodeVar29 - vec2<f32>( 0.0, 1.0 ) );
-		nodeVar248 = ( nodeVar247 / vec2<f32>( knobs.grainSize ) );
-		nodeVar249 = floor( nodeVar248 );
-		nodeVar250 = fract( ( vec3<f32>( nodeVar249.x, nodeVar249.y, nodeVar249.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar251 = ( nodeVar250 + vec3<f32>( dot( nodeVar250, ( vec3<f32>( nodeVar250.y, nodeVar250.z, nodeVar250.x ) + vec3<f32>( 33.33 ) ) ) ) );
-		nodeVar252 = ( nodeVar249 + vec2<f32>( 1.0, 0.0 ) );
-		nodeVar253 = fract( ( vec3<f32>( nodeVar252.x, nodeVar252.y, nodeVar252.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar254 = ( nodeVar253 + vec3<f32>( dot( nodeVar253, ( vec3<f32>( nodeVar253.y, nodeVar253.z, nodeVar253.x ) + vec3<f32>( 33.33 ) ) ) ) );
-		nodeVar255 = fract( nodeVar248 );
-		nodeVar256 = ( ( nodeVar255 * nodeVar255 ) * ( vec2<f32>( 3.0 ) - ( nodeVar255 * vec2<f32>( 2.0 ) ) ) );
-		nodeVar257 = ( nodeVar249 + vec2<f32>( 0.0, 1.0 ) );
-		nodeVar258 = fract( ( vec3<f32>( nodeVar257.x, nodeVar257.y, nodeVar257.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar259 = ( nodeVar258 + vec3<f32>( dot( nodeVar258, ( vec3<f32>( nodeVar258.y, nodeVar258.z, nodeVar258.x ) + vec3<f32>( 33.33 ) ) ) ) );
-		nodeVar260 = ( nodeVar249 + vec2<f32>( 1.0, 1.0 ) );
-		nodeVar261 = fract( ( vec3<f32>( nodeVar260.x, nodeVar260.y, nodeVar260.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar262 = ( nodeVar261 + vec3<f32>( dot( nodeVar261, ( vec3<f32>( nodeVar261.y, nodeVar261.z, nodeVar261.x ) + vec3<f32>( 33.33 ) ) ) ) );
-		nodeVar263 = floor( ( ( nodeVar247 / vec2<f32>( knobs.grainSize ) ) * vec2<f32>( 2.1 ) ) );
-		nodeVar264 = fract( ( vec3<f32>( nodeVar263.x, nodeVar263.y, nodeVar263.x ) * vec3<f32>( 0.1031 ) ) );
-		nodeVar265 = ( nodeVar264 + vec3<f32>( dot( nodeVar264, ( vec3<f32>( nodeVar264.y, nodeVar264.z, nodeVar264.x ) + vec3<f32>( 33.33 ) ) ) ) );
-		nodeVar33 = ( ( ( ( ( nodeVar150 * 0.5 ) * knobs.engraveDepth ) * ( 0.35 + ( ( 1.0 - nodeVar14 ) * 0.65 ) ) ) + ( ( ( ( mix( mix( fract( ( ( nodeVar193.x + nodeVar193.y ) * nodeVar193.z ) ), fract( ( ( nodeVar196.x + nodeVar196.y ) * nodeVar196.z ) ), nodeVar198.x ), mix( fract( ( ( nodeVar201.x + nodeVar201.y ) * nodeVar201.z ) ), fract( ( ( nodeVar204.x + nodeVar204.y ) * nodeVar204.z ) ), nodeVar198.x ), nodeVar198.y ) * 0.6 ) + ( fract( ( ( nodeVar207.x + nodeVar207.y ) * nodeVar207.z ) ) * 0.4 ) ) - 0.5 ) * knobs.grain ) ) - ( ( ( ( nodeVar208 * 0.5 ) * knobs.engraveDepth ) * ( 0.35 + ( ( 1.0 - nodeVar14 ) * 0.65 ) ) ) + ( ( ( ( mix( mix( fract( ( ( nodeVar251.x + nodeVar251.y ) * nodeVar251.z ) ), fract( ( ( nodeVar254.x + nodeVar254.y ) * nodeVar254.z ) ), nodeVar256.x ), mix( fract( ( ( nodeVar259.x + nodeVar259.y ) * nodeVar259.z ) ), fract( ( ( nodeVar262.x + nodeVar262.y ) * nodeVar262.z ) ), nodeVar256.x ), nodeVar256.y ) * 0.6 ) + ( fract( ( ( nodeVar265.x + nodeVar265.y ) * nodeVar265.z ) ) * 0.4 ) ) - 0.5 ) * knobs.grain ) ) );
+		p0_nodeVar189 = ( p0_nodeVar29 + vec2<f32>( 0.0, 1.0 ) );
+		p0_nodeVar190 = ( p0_nodeVar189 / vec2<f32>( f32(knobs.grainSize) ) );
+		p0_nodeVar191 = floor( p0_nodeVar190 );
+		p0_nodeVar192 = fract( ( vec3<f32>( p0_nodeVar191.x, p0_nodeVar191.y, p0_nodeVar191.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar193 = ( p0_nodeVar192 + vec3<f32>( dot( p0_nodeVar192, ( vec3<f32>( p0_nodeVar192.y, p0_nodeVar192.z, p0_nodeVar192.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar194 = ( p0_nodeVar191 + vec2<f32>( 1.0, 0.0 ) );
+		p0_nodeVar195 = fract( ( vec3<f32>( p0_nodeVar194.x, p0_nodeVar194.y, p0_nodeVar194.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar196 = ( p0_nodeVar195 + vec3<f32>( dot( p0_nodeVar195, ( vec3<f32>( p0_nodeVar195.y, p0_nodeVar195.z, p0_nodeVar195.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar197 = fract( p0_nodeVar190 );
+		p0_nodeVar198 = ( ( p0_nodeVar197 * p0_nodeVar197 ) * ( vec2<f32>( 3.0 ) - ( p0_nodeVar197 * vec2<f32>( 2.0 ) ) ) );
+		p0_nodeVar199 = ( p0_nodeVar191 + vec2<f32>( 0.0, 1.0 ) );
+		p0_nodeVar200 = fract( ( vec3<f32>( p0_nodeVar199.x, p0_nodeVar199.y, p0_nodeVar199.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar201 = ( p0_nodeVar200 + vec3<f32>( dot( p0_nodeVar200, ( vec3<f32>( p0_nodeVar200.y, p0_nodeVar200.z, p0_nodeVar200.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar202 = ( p0_nodeVar191 + vec2<f32>( 1.0, 1.0 ) );
+		p0_nodeVar203 = fract( ( vec3<f32>( p0_nodeVar202.x, p0_nodeVar202.y, p0_nodeVar202.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar204 = ( p0_nodeVar203 + vec3<f32>( dot( p0_nodeVar203, ( vec3<f32>( p0_nodeVar203.y, p0_nodeVar203.z, p0_nodeVar203.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar205 = floor( ( ( p0_nodeVar189 / vec2<f32>( f32(knobs.grainSize) ) ) * vec2<f32>( 2.1 ) ) );
+		p0_nodeVar206 = fract( ( vec3<f32>( p0_nodeVar205.x, p0_nodeVar205.y, p0_nodeVar205.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar207 = ( p0_nodeVar206 + vec3<f32>( dot( p0_nodeVar206, ( vec3<f32>( p0_nodeVar206.y, p0_nodeVar206.z, p0_nodeVar206.x ) + vec3<f32>( 33.33 ) ) ) ) );
+
+		if ( ( f32(knobs.engrave) < 0.5 ) ) {
+
+			p0_nodeVar208 = 0.0;
+
+		} else {
+
+
+			if ( ( f32(knobs.engrave) < 1.5 ) ) {
+
+				p0_nodeVar210 = ( p0_nodeVar29 - vec2<f32>( 0.0, 1.0 ) );
+				p0_nodeVar211 = ( f32(knobs.engraveAngle) * 0.017453292519943295 );
+				p0_nodeVar212 = vec2<f32>( ( ( ( p0_nodeVar210.y * cos( p0_nodeVar211 ) ) - ( p0_nodeVar210.x * sin( p0_nodeVar211 ) ) ) / ( f32(knobs.lineSpacing) * 9.0 ) ), 3.1 );
+				p0_nodeVar213 = floor( p0_nodeVar212 );
+				p0_nodeVar214 = fract( ( vec3<f32>( p0_nodeVar213.x, p0_nodeVar213.y, p0_nodeVar213.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar215 = ( p0_nodeVar214 + vec3<f32>( dot( p0_nodeVar214, ( vec3<f32>( p0_nodeVar214.y, p0_nodeVar214.z, p0_nodeVar214.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar216 = ( p0_nodeVar213 + vec2<f32>( 1.0, 0.0 ) );
+				p0_nodeVar217 = fract( ( vec3<f32>( p0_nodeVar216.x, p0_nodeVar216.y, p0_nodeVar216.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar218 = ( p0_nodeVar217 + vec3<f32>( dot( p0_nodeVar217, ( vec3<f32>( p0_nodeVar217.y, p0_nodeVar217.z, p0_nodeVar217.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar219 = fract( p0_nodeVar212 );
+				p0_nodeVar220 = ( ( p0_nodeVar219 * p0_nodeVar219 ) * ( vec2<f32>( 3.0 ) - ( p0_nodeVar219 * vec2<f32>( 2.0 ) ) ) );
+				p0_nodeVar221 = ( p0_nodeVar213 + vec2<f32>( 0.0, 1.0 ) );
+				p0_nodeVar222 = fract( ( vec3<f32>( p0_nodeVar221.x, p0_nodeVar221.y, p0_nodeVar221.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar223 = ( p0_nodeVar222 + vec3<f32>( dot( p0_nodeVar222, ( vec3<f32>( p0_nodeVar222.y, p0_nodeVar222.z, p0_nodeVar222.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar224 = ( p0_nodeVar213 + vec2<f32>( 1.0, 1.0 ) );
+				p0_nodeVar225 = fract( ( vec3<f32>( p0_nodeVar224.x, p0_nodeVar224.y, p0_nodeVar224.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar226 = ( p0_nodeVar225 + vec3<f32>( dot( p0_nodeVar225, ( vec3<f32>( p0_nodeVar225.y, p0_nodeVar225.z, p0_nodeVar225.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar209 = cos( ( ( ( ( ( p0_nodeVar210.x * cos( p0_nodeVar211 ) ) + ( p0_nodeVar210.y * sin( p0_nodeVar211 ) ) ) + ( ( mix( mix( fract( ( ( p0_nodeVar215.x + p0_nodeVar215.y ) * p0_nodeVar215.z ) ), fract( ( ( p0_nodeVar218.x + p0_nodeVar218.y ) * p0_nodeVar218.z ) ), p0_nodeVar220.x ), mix( fract( ( ( p0_nodeVar223.x + p0_nodeVar223.y ) * p0_nodeVar223.z ) ), fract( ( ( p0_nodeVar226.x + p0_nodeVar226.y ) * p0_nodeVar226.z ) ), p0_nodeVar220.x ), p0_nodeVar220.y ) - 0.5 ) * ( f32(knobs.lineSpacing) * 0.8 ) ) ) / f32(knobs.lineSpacing) ) * 6.283185307179586 ) );
+
+			} else {
+
+				p0_nodeVar227 = ( ( p0_nodeVar29 - vec2<f32>( 0.0, 1.0 ) ) - ( p0_nodeVar4 * vec2<f32>( 0.5 ) ) );
+				p0_nodeVar228 = atan2( p0_nodeVar227.y, p0_nodeVar227.x );
+				p0_nodeVar229 = ( ( min( p0_nodeVar4.x, p0_nodeVar4.y ) * 1.5707963267948966 ) / f32(knobs.lineSpacing) );
+				p0_nodeVar230 = length( p0_nodeVar227 );
+				p0_nodeVar231 = vec2<f32>( ( ( p0_nodeVar228 * p0_nodeVar229 ) / 6.2831853 ), ( p0_nodeVar230 / ( f32(knobs.lineSpacing) * 14.0 ) ) );
+				p0_nodeVar232 = floor( p0_nodeVar231 );
+				p0_nodeVar233 = fract( ( vec3<f32>( p0_nodeVar232.x, p0_nodeVar232.y, p0_nodeVar232.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar234 = ( p0_nodeVar233 + vec3<f32>( dot( p0_nodeVar233, ( vec3<f32>( p0_nodeVar233.y, p0_nodeVar233.z, p0_nodeVar233.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar235 = ( p0_nodeVar232 + vec2<f32>( 1.0, 0.0 ) );
+				p0_nodeVar236 = fract( ( vec3<f32>( p0_nodeVar235.x, p0_nodeVar235.y, p0_nodeVar235.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar237 = ( p0_nodeVar236 + vec3<f32>( dot( p0_nodeVar236, ( vec3<f32>( p0_nodeVar236.y, p0_nodeVar236.z, p0_nodeVar236.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar238 = fract( p0_nodeVar231 );
+				p0_nodeVar239 = ( ( p0_nodeVar238 * p0_nodeVar238 ) * ( vec2<f32>( 3.0 ) - ( p0_nodeVar238 * vec2<f32>( 2.0 ) ) ) );
+				p0_nodeVar240 = ( p0_nodeVar232 + vec2<f32>( 0.0, 1.0 ) );
+				p0_nodeVar241 = fract( ( vec3<f32>( p0_nodeVar240.x, p0_nodeVar240.y, p0_nodeVar240.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar242 = ( p0_nodeVar241 + vec3<f32>( dot( p0_nodeVar241, ( vec3<f32>( p0_nodeVar241.y, p0_nodeVar241.z, p0_nodeVar241.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar243 = ( p0_nodeVar232 + vec2<f32>( 1.0, 1.0 ) );
+				p0_nodeVar244 = fract( ( vec3<f32>( p0_nodeVar243.x, p0_nodeVar243.y, p0_nodeVar243.x ) * vec3<f32>( 0.1031 ) ) );
+				p0_nodeVar245 = ( p0_nodeVar244 + vec3<f32>( dot( p0_nodeVar244, ( vec3<f32>( p0_nodeVar244.y, p0_nodeVar244.z, p0_nodeVar244.x ) + vec3<f32>( 33.33 ) ) ) ) );
+				p0_nodeVar246 = min( p0_nodeVar4.x, p0_nodeVar4.y );
+				p0_nodeVar209 = ( cos( ( ( p0_nodeVar228 * p0_nodeVar229 ) + ( ( mix( mix( fract( ( ( p0_nodeVar234.x + p0_nodeVar234.y ) * p0_nodeVar234.z ) ), fract( ( ( p0_nodeVar237.x + p0_nodeVar237.y ) * p0_nodeVar237.z ) ), p0_nodeVar239.x ), mix( fract( ( ( p0_nodeVar242.x + p0_nodeVar242.y ) * p0_nodeVar242.z ) ), fract( ( ( p0_nodeVar245.x + p0_nodeVar245.y ) * p0_nodeVar245.z ) ), p0_nodeVar239.x ), p0_nodeVar239.y ) - 0.5 ) * 1.4 ) ) ) * smoothstep( ( p0_nodeVar246 * 0.06 ), ( p0_nodeVar246 * 0.22 ), p0_nodeVar230 ) );
+
+			}
+
+			p0_nodeVar208 = p0_nodeVar209;
+
+		}
+
+		p0_nodeVar247 = ( p0_nodeVar29 - vec2<f32>( 0.0, 1.0 ) );
+		p0_nodeVar248 = ( p0_nodeVar247 / vec2<f32>( f32(knobs.grainSize) ) );
+		p0_nodeVar249 = floor( p0_nodeVar248 );
+		p0_nodeVar250 = fract( ( vec3<f32>( p0_nodeVar249.x, p0_nodeVar249.y, p0_nodeVar249.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar251 = ( p0_nodeVar250 + vec3<f32>( dot( p0_nodeVar250, ( vec3<f32>( p0_nodeVar250.y, p0_nodeVar250.z, p0_nodeVar250.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar252 = ( p0_nodeVar249 + vec2<f32>( 1.0, 0.0 ) );
+		p0_nodeVar253 = fract( ( vec3<f32>( p0_nodeVar252.x, p0_nodeVar252.y, p0_nodeVar252.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar254 = ( p0_nodeVar253 + vec3<f32>( dot( p0_nodeVar253, ( vec3<f32>( p0_nodeVar253.y, p0_nodeVar253.z, p0_nodeVar253.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar255 = fract( p0_nodeVar248 );
+		p0_nodeVar256 = ( ( p0_nodeVar255 * p0_nodeVar255 ) * ( vec2<f32>( 3.0 ) - ( p0_nodeVar255 * vec2<f32>( 2.0 ) ) ) );
+		p0_nodeVar257 = ( p0_nodeVar249 + vec2<f32>( 0.0, 1.0 ) );
+		p0_nodeVar258 = fract( ( vec3<f32>( p0_nodeVar257.x, p0_nodeVar257.y, p0_nodeVar257.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar259 = ( p0_nodeVar258 + vec3<f32>( dot( p0_nodeVar258, ( vec3<f32>( p0_nodeVar258.y, p0_nodeVar258.z, p0_nodeVar258.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar260 = ( p0_nodeVar249 + vec2<f32>( 1.0, 1.0 ) );
+		p0_nodeVar261 = fract( ( vec3<f32>( p0_nodeVar260.x, p0_nodeVar260.y, p0_nodeVar260.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar262 = ( p0_nodeVar261 + vec3<f32>( dot( p0_nodeVar261, ( vec3<f32>( p0_nodeVar261.y, p0_nodeVar261.z, p0_nodeVar261.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar263 = floor( ( ( p0_nodeVar247 / vec2<f32>( f32(knobs.grainSize) ) ) * vec2<f32>( 2.1 ) ) );
+		p0_nodeVar264 = fract( ( vec3<f32>( p0_nodeVar263.x, p0_nodeVar263.y, p0_nodeVar263.x ) * vec3<f32>( 0.1031 ) ) );
+		p0_nodeVar265 = ( p0_nodeVar264 + vec3<f32>( dot( p0_nodeVar264, ( vec3<f32>( p0_nodeVar264.y, p0_nodeVar264.z, p0_nodeVar264.x ) + vec3<f32>( 33.33 ) ) ) ) );
+		p0_nodeVar33 = ( ( ( ( ( p0_nodeVar150 * 0.5 ) * f32(knobs.engraveDepth) ) * ( 0.35 + ( ( 1.0 - p0_nodeVar14 ) * 0.65 ) ) ) + ( ( ( ( mix( mix( fract( ( ( p0_nodeVar193.x + p0_nodeVar193.y ) * p0_nodeVar193.z ) ), fract( ( ( p0_nodeVar196.x + p0_nodeVar196.y ) * p0_nodeVar196.z ) ), p0_nodeVar198.x ), mix( fract( ( ( p0_nodeVar201.x + p0_nodeVar201.y ) * p0_nodeVar201.z ) ), fract( ( ( p0_nodeVar204.x + p0_nodeVar204.y ) * p0_nodeVar204.z ) ), p0_nodeVar198.x ), p0_nodeVar198.y ) * 0.6 ) + ( fract( ( ( p0_nodeVar207.x + p0_nodeVar207.y ) * p0_nodeVar207.z ) ) * 0.4 ) ) - 0.5 ) * f32(knobs.grain) ) ) - ( ( ( ( p0_nodeVar208 * 0.5 ) * f32(knobs.engraveDepth) ) * ( 0.35 + ( ( 1.0 - p0_nodeVar14 ) * 0.65 ) ) ) + ( ( ( ( mix( mix( fract( ( ( p0_nodeVar251.x + p0_nodeVar251.y ) * p0_nodeVar251.z ) ), fract( ( ( p0_nodeVar254.x + p0_nodeVar254.y ) * p0_nodeVar254.z ) ), p0_nodeVar256.x ), mix( fract( ( ( p0_nodeVar259.x + p0_nodeVar259.y ) * p0_nodeVar259.z ) ), fract( ( ( p0_nodeVar262.x + p0_nodeVar262.y ) * p0_nodeVar262.z ) ), p0_nodeVar256.x ), p0_nodeVar256.y ) * 0.6 ) + ( fract( ( ( p0_nodeVar265.x + p0_nodeVar265.y ) * p0_nodeVar265.z ) ) * 0.4 ) ) - 0.5 ) * f32(knobs.grain) ) ) );
 		
 
 	}
 
 
-	if ( ( (1 * knobs.surface + 0) > 0.5 ) ) {
+	if ( ( f32(knobs.surface) > 0.5 ) ) {
 
-		nodeVar266 = nodeVar31;
+		p0_nodeVar266 = p0_nodeVar31;
 
 	} else {
 
-		nodeVar266 = knobs.color;
+		p0_nodeVar266 = vec3<f32>(knobs.color.x, knobs.color.y, knobs.color.z);
 
 	}
 
 
-	if ( ( (1 * knobs.relief + 0) > 0.5 ) ) {
+	if ( ( f32(knobs.relief) > 0.5 ) ) {
 
-		nodeVar267 = -1.0;
+		p0_nodeVar267 = -1.0;
 
 	} else {
 
-		nodeVar267 = 1.0;
+		p0_nodeVar267 = 1.0;
 
 	}
 
-	nodeVar268 = normalize( vec3<f32>( ( ( ( ( ( nodeVar15 - nodeVar16 ) * knobs.depth ) * nodeVar267 ) + nodeVar32 ) * -2.0 ), ( ( ( ( ( nodeVar17 - nodeVar18 ) * knobs.depth ) * nodeVar267 ) + nodeVar33 ) * 2.0 ), 1.0 ) );
-	nodeVar269 = ( knobs.lightAngle * 0.017453292519943295 );
-	nodeVar270 = ( knobs.elevation * 0.017453292519943295 );
-	nodeVar271 = normalize( vec3<f32>( ( cos( nodeVar269 ) * cos( nodeVar270 ) ), ( sin( nodeVar269 ) * cos( nodeVar270 ) ), sin( nodeVar270 ) ) );
-	nodeVar272 = normalize( ( nodeVar271 + vec3<f32>( 0.0, 0.0, 1.0 ) ) );
-	nodeVar273 = vec4<f32>( mix( nodeVar31, clamp( ( ( nodeVar266 * vec3<f32>( ( knobs.ambient + ( ( 1.0 - knobs.ambient ) * ( max( dot( nodeVar268, nodeVar271 ), 0.0 ) / sin( nodeVar270 ) ) ) ) ) ) + vec3<f32>( ( max( ( pow( max( dot( nodeVar268, nodeVar272 ), 0.0 ), knobs.shininess ) - pow( max( nodeVar272.z, 0.0 ), knobs.shininess ) ), 0.0 ) * knobs.specular ) ) ), vec3<f32>( 0.0 ), vec3<f32>( 1.0 ) ), knobs.amount ), nodeVar30.w );
-	nodeVar274 = vec3<f32>( nodeVar273.x, nodeVar273.y, nodeVar273.z );
-	nodeVar275 = ( ( ( nodeVar274.x * 0.2126 ) + ( nodeVar274.y * 0.7152 ) ) + ( nodeVar274.z * 0.0722 ) );
-	nodeVar276 = mix( vec3<f32>( nodeVar275, nodeVar275, nodeVar275 ), nodeVar274, f32(1.0) );
-	nodeVar277 = vec4<f32>( clamp( vec3<f32>( ( ( ( nodeVar276.x * ( ( 0.213 + ( cos( f32(0.0) ) * 0.787 ) ) - ( sin( f32(0.0) ) * 0.213 ) ) ) + ( nodeVar276.y * ( ( 0.715 - ( cos( f32(0.0) ) * 0.715 ) ) - ( sin( f32(0.0) ) * 0.715 ) ) ) ) + ( nodeVar276.z * ( ( 0.072 - ( cos( f32(0.0) ) * 0.072 ) ) + ( sin( f32(0.0) ) * 0.928 ) ) ) ), ( ( ( nodeVar276.x * ( ( 0.213 - ( cos( f32(0.0) ) * 0.213 ) ) + ( sin( f32(0.0) ) * 0.143 ) ) ) + ( nodeVar276.y * ( ( 0.715 + ( cos( f32(0.0) ) * 0.285 ) ) + ( sin( f32(0.0) ) * 0.14 ) ) ) ) + ( nodeVar276.z * ( ( 0.072 - ( cos( f32(0.0) ) * 0.072 ) ) - ( sin( f32(0.0) ) * 0.283 ) ) ) ), ( ( ( nodeVar276.x * ( ( 0.213 - ( cos( f32(0.0) ) * 0.213 ) ) - ( sin( f32(0.0) ) * 0.787 ) ) ) + ( nodeVar276.y * ( ( 0.715 - ( cos( f32(0.0) ) * 0.715 ) ) + ( sin( f32(0.0) ) * 0.715 ) ) ) ) + ( nodeVar276.z * ( ( 0.072 + ( cos( f32(0.0) ) * 0.928 ) ) + ( sin( f32(0.0) ) * 0.072 ) ) ) ) ), vec3<f32>( 0.0, 0.0, 0.0 ), vec3<f32>( 1.0, 1.0, 1.0 ) ), clamp( nodeVar273.w, 0.0, 1.0 ) );
-	DiffuseColor = vec4<f32>( mix( nodeVar0.xyz, nodeVar277.xyz, ( clamp( f32(1.0), 0.0, 1.0 ) * clamp( nodeVar277.w, 0.0, 1.0 ) ) ), clamp( nodeVar0.w, 0.0, 1.0 ) );
-	DiffuseColor.w = ( DiffuseColor.w * f32(1.0) );
-	nodeVar278 = max( vec4<f32>( DiffuseColor.xyz, DiffuseColor.w ), vec4<f32>( 0.0 ) );
-	Output = nodeVar278;
+	p0_nodeVar268 = normalize( vec3<f32>( ( ( ( ( ( p0_nodeVar15 - p0_nodeVar16 ) * f32(knobs.depth) ) * p0_nodeVar267 ) + p0_nodeVar32 ) * -2.0 ), ( ( ( ( ( p0_nodeVar17 - p0_nodeVar18 ) * f32(knobs.depth) ) * p0_nodeVar267 ) + p0_nodeVar33 ) * 2.0 ), 1.0 ) );
+	p0_nodeVar269 = ( f32(knobs.lightAngle) * 0.017453292519943295 );
+	p0_nodeVar270 = ( f32(knobs.elevation) * 0.017453292519943295 );
+	p0_nodeVar271 = normalize( vec3<f32>( ( cos( p0_nodeVar269 ) * cos( p0_nodeVar270 ) ), ( sin( p0_nodeVar269 ) * cos( p0_nodeVar270 ) ), sin( p0_nodeVar270 ) ) );
+	p0_nodeVar272 = normalize( ( p0_nodeVar271 + vec3<f32>( 0.0, 0.0, 1.0 ) ) );
+	p0_nodeVar273 = vec4<f32>( mix( p0_nodeVar31, clamp( ( ( p0_nodeVar266 * vec3<f32>( ( f32(knobs.ambient) + ( ( 1.0 - f32(knobs.ambient) ) * ( max( dot( p0_nodeVar268, p0_nodeVar271 ), 0.0 ) / sin( p0_nodeVar270 ) ) ) ) ) ) + vec3<f32>( ( max( ( pow( max( dot( p0_nodeVar268, p0_nodeVar272 ), 0.0 ), f32(knobs.shininess) ) - pow( max( p0_nodeVar272.z, 0.0 ), f32(knobs.shininess) ) ), 0.0 ) * f32(knobs.specular) ) ) ), vec3<f32>( 0.0 ), vec3<f32>( 1.0 ) ), f32(knobs.amount) ), p0_nodeVar30.w );
+	p0_nodeVar274 = vec3<f32>( p0_nodeVar273.x, p0_nodeVar273.y, p0_nodeVar273.z );
+	p0_nodeVar275 = ( ( ( p0_nodeVar274.x * 0.2126 ) + ( p0_nodeVar274.y * 0.7152 ) ) + ( p0_nodeVar274.z * 0.0722 ) );
+	p0_nodeVar276 = mix( vec3<f32>( p0_nodeVar275, p0_nodeVar275, p0_nodeVar275 ), p0_nodeVar274, f32(1.0) );
+	p0_nodeVar277 = vec4<f32>( clamp( vec3<f32>( ( ( ( p0_nodeVar276.x * ( ( 0.213 + ( cos( f32(0.0) ) * 0.787 ) ) - ( sin( f32(0.0) ) * 0.213 ) ) ) + ( p0_nodeVar276.y * ( ( 0.715 - ( cos( f32(0.0) ) * 0.715 ) ) - ( sin( f32(0.0) ) * 0.715 ) ) ) ) + ( p0_nodeVar276.z * ( ( 0.072 - ( cos( f32(0.0) ) * 0.072 ) ) + ( sin( f32(0.0) ) * 0.928 ) ) ) ), ( ( ( p0_nodeVar276.x * ( ( 0.213 - ( cos( f32(0.0) ) * 0.213 ) ) + ( sin( f32(0.0) ) * 0.143 ) ) ) + ( p0_nodeVar276.y * ( ( 0.715 + ( cos( f32(0.0) ) * 0.285 ) ) + ( sin( f32(0.0) ) * 0.14 ) ) ) ) + ( p0_nodeVar276.z * ( ( 0.072 - ( cos( f32(0.0) ) * 0.072 ) ) - ( sin( f32(0.0) ) * 0.283 ) ) ) ), ( ( ( p0_nodeVar276.x * ( ( 0.213 - ( cos( f32(0.0) ) * 0.213 ) ) - ( sin( f32(0.0) ) * 0.787 ) ) ) + ( p0_nodeVar276.y * ( ( 0.715 - ( cos( f32(0.0) ) * 0.715 ) ) + ( sin( f32(0.0) ) * 0.715 ) ) ) ) + ( p0_nodeVar276.z * ( ( 0.072 + ( cos( f32(0.0) ) * 0.928 ) ) + ( sin( f32(0.0) ) * 0.072 ) ) ) ) ), vec3<f32>( 0.0, 0.0, 0.0 ), vec3<f32>( 1.0, 1.0, 1.0 ) ), clamp( p0_nodeVar273.w, 0.0, 1.0 ) );
+	p0_DiffuseColor = vec4<f32>( mix( p0_nodeVar0.xyz, p0_nodeVar277.xyz, ( clamp( f32(1.0), 0.0, 1.0 ) * clamp( p0_nodeVar277.w, 0.0, 1.0 ) ) ), clamp( p0_nodeVar0.w, 0.0, 1.0 ) );
+	p0_DiffuseColor.w = ( p0_DiffuseColor.w * f32(1.0) );
+	p0_nodeVar278 = max( vec4<f32>( p0_DiffuseColor.xyz, p0_DiffuseColor.w ), vec4<f32>( 0.0 ) );
+	p0_Output = p0_nodeVar278;
 
 	// result
 
-	output.color = nodeVar278;
+	p0_output.color = p0_nodeVar278;
 
-	output.color = to_shelf(output.color);
-	return output;
+	return p0_output;
 
+}
+
+@fragment
+fn main(@location(0) door_on: vec2f) -> @location(0) vec4f {
+  let door_uv = (door_on - knobs.passRect.xy) / knobs.passRect.zw;
+  return to_shelf(p0_main(door_uv).color);
 }

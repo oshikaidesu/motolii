@@ -86,7 +86,10 @@ const { getLayerDefinition } = await import("../../third_party/tsl/basementstudi
 const { buildParameterValues } = await import("../../third_party/tsl/basementstudio__shader-lab/src/lib/editor/parameter-schema")
 const layers = layersFile.endsWith(".json") ? JSON.parse(fs.readFileSync(layersFile, "utf8")) : layersFile.split(",").map((type: string) => {
   const d: any = getLayerDefinition(type as any)
-  return { id: type, type, kind: d.kind, name: type, visible: true, opacity: 1, blendMode: "normal", compositeMode: "filter", hue: 0, saturation: 1, params: buildParameterValues(d.params) }
+  // (KNOB=key=value: one of its values moved; a list's by its place in the list, as the shelf's whole-number knob says it)
+  const params = buildParameterValues(d.params), [key, value] = (process.env.KNOB ?? "=").split("="), p: any = (d.params as any[]).find((x: any) => x.key === key)
+  if (p) params[key] = p.type === "select" ? p.options[+value].value : p.type === "boolean" ? value === "1" : +value
+  return { id: type, type, kind: d.kind, name: type, visible: true, opacity: 1, blendMode: "normal", compositeMode: "filter", hue: 0, saturation: 1, params }
 })
 const config = { composition: { width: 1920, height: 1080 }, layers, timeline: { duration: 6, loop: true, tracks: [] } }
 // TARGET=x,y (0..1 on the picture) is a thing's place. The passes that follow a pointer read globalThis.motoliiTarget.
@@ -103,8 +106,9 @@ let out = headless.render(frame, picture)
 // its passes are compiled in the background and take effect once ready (pipeline-manager.ts: compilingPasses): draw
 // again, letting that work finish in between, until the picture stops changing
 // (and its clock running at 60 a second, as the browser's: some passes step only when the time moves, blob tracking's tracker)
+// (WAIT_MS: more time for that first compile, which a big effect at full size needs)
 for (let i = 1; i <= 40; i++) {
-  await new Promise(r => setTimeout(r, 50))
+  await new Promise(r => setTimeout(r, i == 1 ? +(process.env.WAIT_MS ?? 50) : 50))
   if (hostPoint) {
     const [x, y] = hostPoint.split(",").map(Number)
     const t = i / 40

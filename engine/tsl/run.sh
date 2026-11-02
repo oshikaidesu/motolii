@@ -5,4 +5,5 @@ set -e
 cd "$(dirname "$0")"
 NODE_PATH=$PWD/node_modules npx esbuild $1.ts --tsconfig=../third_party/tsl/basementstudio__shader-lab/tsconfig.json --bundle --format=esm --platform=neutral --main-fields=module,main \
   --outfile=out/$1.mjs --external:qjs:std --external:qjs:os --external:typescript --log-level=error
-qjs -m out/$1.mjs
+n=$1; shift
+qjs -m out/$n.mjs "$@"

@@ -274,3 +274,20 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
   - 「段の形を値ごとデータで書いて、ネイティブで毎コマ回す」形は ISF が既に持ち、Motolii も既に読める。
   - 二つを繋ぐ所（記録や three.js の段の組み立てから、ISF のような段の形を作る所）は、既存の物が無い。
 - ChatGPT が挙げた、動画編集ならではの注意：前のコマの絵を使う効果（CRT など）は、時間を戻したり飛ばしたりすると、手前のコマから計算し直す必要がある。
+
+## 何段も描く効果も棚へ：作者の render() を書き留める（11/2）
+
+繋ぐ所は `engine/tsl/shader_lab_shelf.ts` と `shelf_file.ts`（合わせて約 350 行）。作者の `render()` を、何も描かず言われた事だけ書き留める renderer で 1 回回し、材質、描き先の絵、値を段ごとに取る。段は `screen.h` の `--pass@` に、段の WGSL は three.js の変換器が書いたまま 1 本の `.wgsl` に入る。three.js も Node も遊ぶ時には要らない。
+
+- 作れた物：35 本。作れなかった物：particle-grid（3D の点と compute。「板 1 枚を描く」形でない）。
+- 作者のレンダラと比べた：`engine/tsl/check_node/` で、Motolii が描いた同じ 1080p の絵を渡し、同じ時刻（40/60 秒）の色の差を RMS で測った。
+  - 完全に同じ 5 本：dithering、posterize、shape、photographic-cells（色。透明度は違う）、outline（既定は不透明な絵を変えないので、線の絵は比べていない）。
+  - 0.5% 以下が 16 本、2% 以下が 27 本、5% 以下が 33 本。一番大きいのは Ink 7.7%、次が Connected Dots 6.2%。目では見分けが付かず、差は線の縁とノイズの粒に出る。
+  - Displaced Rings は絵の外が作者は不透明な黒、棚は透明。動画に重ねるので直さない。
+  - 比べて見つかった道具の誤り：表を線形で読んで Dithering の点が消えた、表の端で先頭へ折り返して Lumen Print の空が荒れた、「ある設定の時だけ描く段」の絵が残ってエンジンに断られた、Spacing で大きさが変わる表を固定の割合で取った。どれも `shelf_file.ts` か `shader_lab_shelf.ts` で直した。
+- つまみ：全 469 本を端の値へ動かし、絵が変わるかを `edit.sh` で見た（480×270、2 分）。397 本が変わる。72 本は既定の状態で変わらず、51 本は作者の表に `visibleWhen` がある別モード用、21 本は理由を調べていない（Glass の tint、Focus Blur の kind など）。作者の値と画素で比べたのは既定の値だけ。
+- 見つかったつまみの誤り：赤・緑・青が別々の uniform の色は赤しか繋がらず、既定値も隣の数字を拾っていた（Gradient、Halftone）。直した。
+- 重さ（この Mac、1080p、1 秒の枚数、同じ計測の 2 回目）：Pixel Sorting 16（作者のレンダラは 1 枚 53 ms）、Ink 19、Glass 22、Plotter 37、Bloom 123。段を選ぶ `if` の連なりを `switch` にして Pixel Sorting は 7 枚から上がった。
+- 窓：Bloom を Circle に付けて光り、Threshold を上げて消えた。残りの 34 本は窓で見ていない。
+
+作者のレンダラとの差をつまみの値ごとに測る 70 通りの試しは、途中で止めた（エンジン側の `set` が名前違いで全部断られていて、比べる意味が無かった。互換が目的でもない）。残した試しは上の「絵が変わるか」だけ。

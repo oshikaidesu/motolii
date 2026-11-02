@@ -10,981 +10,993 @@
 // --check@flipLight:Flip Light,0
 // --check@lego:Lego,0
 // --track@outlineWidth:Outline,0,4,1,0.1
-// Three.js r185 - Node System
-
-// global
-diagnostic( off, derivative_uniformity );
-
-
-// structs
-
-struct OutputStruct {
-	@location( 0 ) color: vec4<f32>
-};
-var<private> output : OutputStruct;
-
-// uniforms
+// --track@outlineColor_x:Outline Color r,0,1,0.0030352698352941175,0.001
+// --track@outlineColor_y:Outline Color g,0,1,0.0030352698352941175,0.001
+// --track@outlineColor_z:Outline Color b,0,1,0.0030352698352941175,0.001
+diagnostic(off, derivative_uniformity);
 struct Knobs {
   time: f32,
+  passindex: f32,
   resolution: vec2<f32>,
+  frameRect: vec4<f32>,
+  passRect: vec4<f32>,
   cellSize: f32,
-  maxHeight: f32,
   depth: f32,
-  lego: f32,
+  maxHeight: f32,
   topShade: f32,
-  flipLight: f32,
   lightShade: f32,
   darkShade: f32,
+  flipLight: f32,
+  lego: f32,
   outlineWidth: f32,
+  outlineColor: vec3<f32>,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;
 @group(0) @binding(2) var<uniform> knobs: Knobs;
 fn to_linear(c: vec3f) -> vec3f { return select(pow((c + 0.055) / 1.055, vec3f(2.4)), c / 12.92, c <= vec3f(0.04045)); }
 fn to_srgb(c: vec3f) -> vec3f { return select(1.055 * pow(c, vec3f(1.0 / 2.4)) - 0.055, c * 12.92, c <= vec3f(0.0031308)); }
-fn picture_read(uv: vec2<f32>) -> vec4<f32> { return picture_read_level(uv, 0.0); }
-fn picture_read_level(uv: vec2<f32>, level: f32) -> vec4<f32> {
-  let p = textureSampleLevel(picture, picture_sampler, uv, level);
-  if (p.a <= 0.0) { return vec4<f32>(0.0); }
-  return vec4<f32>(to_linear(clamp(p.rgb / p.a, vec3f(0.0), vec3f(1.0))) * p.a, p.a);
+fn framed(uv: vec2f) -> vec2f { return uv * knobs.frameRect.zw + knobs.frameRect.xy; }
+fn picture_read(uv: vec2f) -> vec4f { return picture_read_level(uv, 0.0); }
+fn picture_read_level(uv: vec2f, level: f32) -> vec4f {
+  let p = textureSampleLevel(picture, picture_sampler, framed(uv), level);
+  if (p.a <= 0.0) { return vec4f(0.0); }
+  return vec4f(to_linear(clamp(p.rgb / p.a, vec3f(0.0), vec3f(1.0))), p.a);
 }
-fn to_shelf(p: vec4<f32>) -> vec4<f32> {
-  if (p.a <= 0.0) { return vec4<f32>(0.0); }
-  return vec4<f32>(to_srgb(clamp(p.rgb / p.a, vec3f(0.0), vec3f(1.0))) * p.a, p.a);
-}
+fn picture_load(p: vec2i, level: u32) -> vec4f { return picture_read_level((vec2f(p) + 0.5) / knobs.resolution, 0.0); }
+fn target_read(t: texture_2d<f32>, s: sampler, uv: vec2f) -> vec4f { return textureSampleLevel(t, s, framed(uv), 0.0); }
+fn target_load(t: texture_2d<f32>, p: vec2i, level: u32) -> vec4f { return textureLoad(t, p + vec2i(knobs.frameRect.xy * vec2f(textureDimensions(t)) + 0.5), level); }
+fn target_read_level(t: texture_2d<f32>, s: sampler, uv: vec2f, level: f32) -> vec4f { return textureSampleLevel(t, s, framed(uv), level); }
+fn to_shelf(p: vec4f) -> vec4f { return vec4f(to_srgb(clamp(p.rgb, vec3f(0.0), vec3f(1.0))) * p.a, p.a); }
+fn none(uv: vec2f) -> vec4f { return vec4f(0.0); }
+fn none_level(uv: vec2f, level: f32) -> vec4f { return vec4f(0.0); }
+fn none_load(p: vec2i, level: u32) -> vec4f { return vec4f(0.0); }
+
+// structs
+
+struct p0_OutputStruct {
+	@location( 0 ) color: vec4<f32>
+};
+var<private> p0_output : p0_OutputStruct;
+
+// uniforms
 
 
 // vars
-var<private> DiffuseColor : vec4<f32>;
-var<private> nodeVar0 : vec4<f32>;
-var<private> nodeVar1 : vec3<f32>;
-var<private> nodeVar2 : f32;
-var<private> nodeVar3 : vec2<f32>;
-var<private> nodeVar4 : vec2<f32>;
-var<private> nodeVar5 : vec2<f32>;
-var<private> nodeVar6 : f32;
-var<private> nodeVar7 : f32;
-var<private> nodeVar8 : f32;
-var<private> nodeVar9 : f32;
-var<private> nodeVar10 : f32;
-var<private> nodeVar11 : f32;
-var<private> nodeVar12 : f32;
-var<private> nodeVar13 : f32;
-var<private> nodeVar14 : f32;
-var<private> nodeVar15 : f32;
-var<private> nodeVar16 : vec2<f32>;
-var<private> nodeVar17 : vec4<f32>;
-var<private> nodeVar18 : f32;
-var<private> nodeVar19 : f32;
-var<private> nodeVar20 : vec2<f32>;
-var<private> nodeVar21 : f32;
-var<private> nodeVar22 : f32;
-var<private> nodeVar23 : f32;
-var<private> nodeVar24 : f32;
-var<private> nodeVar25 : f32;
-var<private> nodeVar26 : f32;
-var<private> nodeVar27 : f32;
-var<private> nodeVar28 : f32;
-var<private> nodeVar29 : f32;
-var<private> nodeVar30 : f32;
-var<private> nodeVar31 : vec2<f32>;
-var<private> nodeVar32 : vec4<f32>;
-var<private> nodeVar33 : f32;
-var<private> nodeVar34 : f32;
-var<private> nodeVar35 : vec2<f32>;
-var<private> nodeVar36 : f32;
-var<private> nodeVar37 : f32;
-var<private> nodeVar38 : f32;
-var<private> nodeVar39 : f32;
-var<private> nodeVar40 : f32;
-var<private> nodeVar41 : f32;
-var<private> nodeVar42 : f32;
-var<private> nodeVar43 : f32;
-var<private> nodeVar44 : f32;
-var<private> nodeVar45 : f32;
-var<private> nodeVar46 : vec2<f32>;
-var<private> nodeVar47 : vec4<f32>;
-var<private> nodeVar48 : f32;
-var<private> nodeVar49 : f32;
-var<private> nodeVar50 : vec2<f32>;
-var<private> nodeVar51 : f32;
-var<private> nodeVar52 : f32;
-var<private> nodeVar53 : f32;
-var<private> nodeVar54 : f32;
-var<private> nodeVar55 : f32;
-var<private> nodeVar56 : f32;
-var<private> nodeVar57 : f32;
-var<private> nodeVar58 : f32;
-var<private> nodeVar59 : f32;
-var<private> nodeVar60 : f32;
-var<private> nodeVar61 : vec2<f32>;
-var<private> nodeVar62 : vec4<f32>;
-var<private> nodeVar63 : f32;
-var<private> nodeVar64 : f32;
-var<private> nodeVar65 : vec2<f32>;
-var<private> nodeVar66 : f32;
-var<private> nodeVar67 : f32;
-var<private> nodeVar68 : f32;
-var<private> nodeVar69 : f32;
-var<private> nodeVar70 : f32;
-var<private> nodeVar71 : f32;
-var<private> nodeVar72 : f32;
-var<private> nodeVar73 : f32;
-var<private> nodeVar74 : f32;
-var<private> nodeVar75 : f32;
-var<private> nodeVar76 : vec2<f32>;
-var<private> nodeVar77 : vec4<f32>;
-var<private> nodeVar78 : f32;
-var<private> nodeVar79 : f32;
-var<private> nodeVar80 : vec2<f32>;
-var<private> nodeVar81 : f32;
-var<private> nodeVar82 : f32;
-var<private> nodeVar83 : f32;
-var<private> nodeVar84 : f32;
-var<private> nodeVar85 : f32;
-var<private> nodeVar86 : f32;
-var<private> nodeVar87 : f32;
-var<private> nodeVar88 : f32;
-var<private> nodeVar89 : f32;
-var<private> nodeVar90 : f32;
-var<private> nodeVar91 : vec2<f32>;
-var<private> nodeVar92 : vec4<f32>;
-var<private> nodeVar93 : f32;
-var<private> nodeVar94 : f32;
-var<private> nodeVar95 : vec2<f32>;
-var<private> nodeVar96 : f32;
-var<private> nodeVar97 : f32;
-var<private> nodeVar98 : f32;
-var<private> nodeVar99 : f32;
-var<private> nodeVar100 : f32;
-var<private> nodeVar101 : f32;
-var<private> nodeVar102 : f32;
-var<private> nodeVar103 : f32;
-var<private> nodeVar104 : f32;
-var<private> nodeVar105 : f32;
-var<private> nodeVar106 : vec2<f32>;
-var<private> nodeVar107 : vec4<f32>;
-var<private> nodeVar108 : f32;
-var<private> nodeVar109 : f32;
-var<private> nodeVar110 : vec2<f32>;
-var<private> nodeVar111 : f32;
-var<private> nodeVar112 : f32;
-var<private> nodeVar113 : f32;
-var<private> nodeVar114 : f32;
-var<private> nodeVar115 : f32;
-var<private> nodeVar116 : f32;
-var<private> nodeVar117 : f32;
-var<private> nodeVar118 : f32;
-var<private> nodeVar119 : f32;
-var<private> nodeVar120 : f32;
-var<private> nodeVar121 : vec2<f32>;
-var<private> nodeVar122 : vec4<f32>;
-var<private> nodeVar123 : bool;
-var<private> nodeVar124 : bool;
-var<private> nodeVar125 : bool;
-var<private> nodeVar126 : bool;
-var<private> nodeVar127 : bool;
-var<private> nodeVar128 : bool;
-var<private> nodeVar129 : bool;
-var<private> nodeVar130 : bool;
-var<private> nodeVar131 : vec3<f32>;
-var<private> nodeVar132 : vec3<f32>;
-var<private> nodeVar133 : vec3<f32>;
-var<private> nodeVar134 : vec3<f32>;
-var<private> nodeVar135 : vec3<f32>;
-var<private> nodeVar136 : vec3<f32>;
-var<private> nodeVar137 : vec3<f32>;
-var<private> nodeVar138 : f32;
-var<private> nodeVar139 : vec2<f32>;
-var<private> nodeVar140 : vec2<f32>;
-var<private> nodeVar141 : vec2<f32>;
-var<private> nodeVar142 : vec2<f32>;
-var<private> nodeVar143 : vec2<f32>;
-var<private> nodeVar144 : vec2<f32>;
-var<private> nodeVar145 : vec2<f32>;
-var<private> nodeVar146 : vec2<f32>;
-var<private> nodeVar147 : f32;
-var<private> nodeVar148 : f32;
-var<private> nodeVar149 : f32;
-var<private> nodeVar150 : f32;
-var<private> nodeVar151 : f32;
-var<private> nodeVar152 : f32;
-var<private> nodeVar153 : f32;
-var<private> nodeVar154 : f32;
-var<private> nodeVar155 : vec2<f32>;
-var<private> nodeVar156 : f32;
-var<private> nodeVar157 : bool;
-var<private> nodeVar158 : f32;
-var<private> nodeVar159 : f32;
-var<private> nodeVar160 : f32;
-var<private> nodeVar161 : f32;
-var<private> nodeVar162 : f32;
-var<private> nodeVar163 : bool;
-var<private> nodeVar164 : f32;
-var<private> nodeVar165 : f32;
-var<private> nodeVar166 : f32;
-var<private> nodeVar167 : bool;
-var<private> nodeVar168 : f32;
-var<private> nodeVar169 : f32;
-var<private> nodeVar170 : f32;
-var<private> nodeVar171 : f32;
-var<private> nodeVar172 : f32;
-var<private> nodeVar173 : vec4<f32>;
-var<private> nodeVar174 : vec3<f32>;
-var<private> nodeVar175 : f32;
-var<private> nodeVar176 : vec3<f32>;
-var<private> nodeVar177 : vec4<f32>;
-var<private> Output : vec4<f32>;
-var<private> nodeVar178 : vec4<f32>;
+var<private> p0_DiffuseColor : vec4<f32>;
+var<private> p0_nodeVar0 : vec4<f32>;
+var<private> p0_nodeVar1 : vec3<f32>;
+var<private> p0_nodeVar2 : f32;
+var<private> p0_nodeVar3 : vec2<f32>;
+var<private> p0_nodeVar4 : vec2<f32>;
+var<private> p0_nodeVar5 : vec2<f32>;
+var<private> p0_nodeVar6 : f32;
+var<private> p0_nodeVar7 : f32;
+var<private> p0_nodeVar8 : f32;
+var<private> p0_nodeVar9 : f32;
+var<private> p0_nodeVar10 : f32;
+var<private> p0_nodeVar11 : f32;
+var<private> p0_nodeVar12 : f32;
+var<private> p0_nodeVar13 : f32;
+var<private> p0_nodeVar14 : f32;
+var<private> p0_nodeVar15 : f32;
+var<private> p0_nodeVar16 : vec2<f32>;
+var<private> p0_nodeVar17 : vec4<f32>;
+var<private> p0_nodeVar18 : f32;
+var<private> p0_nodeVar19 : f32;
+var<private> p0_nodeVar20 : vec2<f32>;
+var<private> p0_nodeVar21 : f32;
+var<private> p0_nodeVar22 : f32;
+var<private> p0_nodeVar23 : f32;
+var<private> p0_nodeVar24 : f32;
+var<private> p0_nodeVar25 : f32;
+var<private> p0_nodeVar26 : f32;
+var<private> p0_nodeVar27 : f32;
+var<private> p0_nodeVar28 : f32;
+var<private> p0_nodeVar29 : f32;
+var<private> p0_nodeVar30 : f32;
+var<private> p0_nodeVar31 : vec2<f32>;
+var<private> p0_nodeVar32 : vec4<f32>;
+var<private> p0_nodeVar33 : f32;
+var<private> p0_nodeVar34 : f32;
+var<private> p0_nodeVar35 : vec2<f32>;
+var<private> p0_nodeVar36 : f32;
+var<private> p0_nodeVar37 : f32;
+var<private> p0_nodeVar38 : f32;
+var<private> p0_nodeVar39 : f32;
+var<private> p0_nodeVar40 : f32;
+var<private> p0_nodeVar41 : f32;
+var<private> p0_nodeVar42 : f32;
+var<private> p0_nodeVar43 : f32;
+var<private> p0_nodeVar44 : f32;
+var<private> p0_nodeVar45 : f32;
+var<private> p0_nodeVar46 : vec2<f32>;
+var<private> p0_nodeVar47 : vec4<f32>;
+var<private> p0_nodeVar48 : f32;
+var<private> p0_nodeVar49 : f32;
+var<private> p0_nodeVar50 : vec2<f32>;
+var<private> p0_nodeVar51 : f32;
+var<private> p0_nodeVar52 : f32;
+var<private> p0_nodeVar53 : f32;
+var<private> p0_nodeVar54 : f32;
+var<private> p0_nodeVar55 : f32;
+var<private> p0_nodeVar56 : f32;
+var<private> p0_nodeVar57 : f32;
+var<private> p0_nodeVar58 : f32;
+var<private> p0_nodeVar59 : f32;
+var<private> p0_nodeVar60 : f32;
+var<private> p0_nodeVar61 : vec2<f32>;
+var<private> p0_nodeVar62 : vec4<f32>;
+var<private> p0_nodeVar63 : f32;
+var<private> p0_nodeVar64 : f32;
+var<private> p0_nodeVar65 : vec2<f32>;
+var<private> p0_nodeVar66 : f32;
+var<private> p0_nodeVar67 : f32;
+var<private> p0_nodeVar68 : f32;
+var<private> p0_nodeVar69 : f32;
+var<private> p0_nodeVar70 : f32;
+var<private> p0_nodeVar71 : f32;
+var<private> p0_nodeVar72 : f32;
+var<private> p0_nodeVar73 : f32;
+var<private> p0_nodeVar74 : f32;
+var<private> p0_nodeVar75 : f32;
+var<private> p0_nodeVar76 : vec2<f32>;
+var<private> p0_nodeVar77 : vec4<f32>;
+var<private> p0_nodeVar78 : f32;
+var<private> p0_nodeVar79 : f32;
+var<private> p0_nodeVar80 : vec2<f32>;
+var<private> p0_nodeVar81 : f32;
+var<private> p0_nodeVar82 : f32;
+var<private> p0_nodeVar83 : f32;
+var<private> p0_nodeVar84 : f32;
+var<private> p0_nodeVar85 : f32;
+var<private> p0_nodeVar86 : f32;
+var<private> p0_nodeVar87 : f32;
+var<private> p0_nodeVar88 : f32;
+var<private> p0_nodeVar89 : f32;
+var<private> p0_nodeVar90 : f32;
+var<private> p0_nodeVar91 : vec2<f32>;
+var<private> p0_nodeVar92 : vec4<f32>;
+var<private> p0_nodeVar93 : f32;
+var<private> p0_nodeVar94 : f32;
+var<private> p0_nodeVar95 : vec2<f32>;
+var<private> p0_nodeVar96 : f32;
+var<private> p0_nodeVar97 : f32;
+var<private> p0_nodeVar98 : f32;
+var<private> p0_nodeVar99 : f32;
+var<private> p0_nodeVar100 : f32;
+var<private> p0_nodeVar101 : f32;
+var<private> p0_nodeVar102 : f32;
+var<private> p0_nodeVar103 : f32;
+var<private> p0_nodeVar104 : f32;
+var<private> p0_nodeVar105 : f32;
+var<private> p0_nodeVar106 : vec2<f32>;
+var<private> p0_nodeVar107 : vec4<f32>;
+var<private> p0_nodeVar108 : f32;
+var<private> p0_nodeVar109 : f32;
+var<private> p0_nodeVar110 : vec2<f32>;
+var<private> p0_nodeVar111 : f32;
+var<private> p0_nodeVar112 : f32;
+var<private> p0_nodeVar113 : f32;
+var<private> p0_nodeVar114 : f32;
+var<private> p0_nodeVar115 : f32;
+var<private> p0_nodeVar116 : f32;
+var<private> p0_nodeVar117 : f32;
+var<private> p0_nodeVar118 : f32;
+var<private> p0_nodeVar119 : f32;
+var<private> p0_nodeVar120 : f32;
+var<private> p0_nodeVar121 : vec2<f32>;
+var<private> p0_nodeVar122 : vec4<f32>;
+var<private> p0_nodeVar123 : bool;
+var<private> p0_nodeVar124 : bool;
+var<private> p0_nodeVar125 : bool;
+var<private> p0_nodeVar126 : bool;
+var<private> p0_nodeVar127 : bool;
+var<private> p0_nodeVar128 : bool;
+var<private> p0_nodeVar129 : bool;
+var<private> p0_nodeVar130 : bool;
+var<private> p0_nodeVar131 : vec3<f32>;
+var<private> p0_nodeVar132 : vec3<f32>;
+var<private> p0_nodeVar133 : vec3<f32>;
+var<private> p0_nodeVar134 : vec3<f32>;
+var<private> p0_nodeVar135 : vec3<f32>;
+var<private> p0_nodeVar136 : vec3<f32>;
+var<private> p0_nodeVar137 : vec3<f32>;
+var<private> p0_nodeVar138 : f32;
+var<private> p0_nodeVar139 : vec2<f32>;
+var<private> p0_nodeVar140 : vec2<f32>;
+var<private> p0_nodeVar141 : vec2<f32>;
+var<private> p0_nodeVar142 : vec2<f32>;
+var<private> p0_nodeVar143 : vec2<f32>;
+var<private> p0_nodeVar144 : vec2<f32>;
+var<private> p0_nodeVar145 : vec2<f32>;
+var<private> p0_nodeVar146 : vec2<f32>;
+var<private> p0_nodeVar147 : f32;
+var<private> p0_nodeVar148 : f32;
+var<private> p0_nodeVar149 : f32;
+var<private> p0_nodeVar150 : f32;
+var<private> p0_nodeVar151 : f32;
+var<private> p0_nodeVar152 : f32;
+var<private> p0_nodeVar153 : f32;
+var<private> p0_nodeVar154 : f32;
+var<private> p0_nodeVar155 : vec2<f32>;
+var<private> p0_nodeVar156 : f32;
+var<private> p0_nodeVar157 : bool;
+var<private> p0_nodeVar158 : f32;
+var<private> p0_nodeVar159 : f32;
+var<private> p0_nodeVar160 : f32;
+var<private> p0_nodeVar161 : f32;
+var<private> p0_nodeVar162 : f32;
+var<private> p0_nodeVar163 : bool;
+var<private> p0_nodeVar164 : f32;
+var<private> p0_nodeVar165 : f32;
+var<private> p0_nodeVar166 : f32;
+var<private> p0_nodeVar167 : bool;
+var<private> p0_nodeVar168 : f32;
+var<private> p0_nodeVar169 : f32;
+var<private> p0_nodeVar170 : f32;
+var<private> p0_nodeVar171 : f32;
+var<private> p0_nodeVar172 : f32;
+var<private> p0_nodeVar173 : vec4<f32>;
+var<private> p0_nodeVar174 : vec3<f32>;
+var<private> p0_nodeVar175 : f32;
+var<private> p0_nodeVar176 : vec3<f32>;
+var<private> p0_nodeVar177 : vec4<f32>;
+var<private> p0_Output : vec4<f32>;
+var<private> p0_nodeVar178 : vec4<f32>;
 
 // codes
 
 
-@fragment
-fn main(@location(0) door_uv: vec2<f32>) -> OutputStruct {
-	let nodeVarying4 = vec2<f32>(door_uv.x, 1.0 - door_uv.y);
+fn p0_main(door_uv: vec2f) -> p0_OutputStruct {
+	let nodeVarying4 = vec2f(door_uv.x, 1.0 - door_uv.y);
 
 	// flow
 	// code
 
-	nodeVar0 = picture_read( vec2<f32>( nodeVarying4.x, ( 1.0 - nodeVarying4.y ) ) );
-	nodeVar3 = vec2<f32>( knobs.resolution.x, knobs.resolution.y );
-	nodeVar4 = ( vec2<f32>( nodeVarying4.x, ( 1.0 - nodeVarying4.y ) ) * nodeVar3 );
-	nodeVar5 = vec2<f32>( nodeVar4.x, ( nodeVar4.y + ( 0.0 * knobs.cellSize ) ) );
-	nodeVar6 = ( ( ( nodeVar5.x * 0.5773502691896257 ) - ( nodeVar5.y / 3.0 ) ) / knobs.cellSize );
-	nodeVar7 = floor( ( nodeVar6 + 0.5 ) );
-	nodeVar8 = abs( ( nodeVar7 - nodeVar6 ) );
-	nodeVar9 = ( ( nodeVar5.y * 0.6666666666666666 ) / knobs.cellSize );
-	nodeVar10 = floor( ( nodeVar9 + 0.5 ) );
-	nodeVar11 = abs( ( nodeVar10 - nodeVar9 ) );
-	nodeVar12 = ( ( - nodeVar6 ) - nodeVar9 );
-	nodeVar13 = floor( ( nodeVar12 + 0.5 ) );
-	nodeVar14 = abs( ( nodeVar13 - nodeVar12 ) );
+	p0_nodeVar0 = picture_read( vec2<f32>( nodeVarying4.x, ( 1.0 - nodeVarying4.y ) ) );
+	p0_nodeVar3 = vec2<f32>( f32(knobs.resolution.x), f32(knobs.resolution.y) );
+	p0_nodeVar4 = ( vec2<f32>( nodeVarying4.x, ( 1.0 - nodeVarying4.y ) ) * p0_nodeVar3 );
+	p0_nodeVar5 = vec2<f32>( p0_nodeVar4.x, ( p0_nodeVar4.y + ( 0.0 * f32(knobs.cellSize) ) ) );
+	p0_nodeVar6 = ( ( ( p0_nodeVar5.x * 0.5773502691896257 ) - ( p0_nodeVar5.y / 3.0 ) ) / f32(knobs.cellSize) );
+	p0_nodeVar7 = floor( ( p0_nodeVar6 + 0.5 ) );
+	p0_nodeVar8 = abs( ( p0_nodeVar7 - p0_nodeVar6 ) );
+	p0_nodeVar9 = ( ( p0_nodeVar5.y * 0.6666666666666666 ) / f32(knobs.cellSize) );
+	p0_nodeVar10 = floor( ( p0_nodeVar9 + 0.5 ) );
+	p0_nodeVar11 = abs( ( p0_nodeVar10 - p0_nodeVar9 ) );
+	p0_nodeVar12 = ( ( - p0_nodeVar6 ) - p0_nodeVar9 );
+	p0_nodeVar13 = floor( ( p0_nodeVar12 + 0.5 ) );
+	p0_nodeVar14 = abs( ( p0_nodeVar13 - p0_nodeVar12 ) );
 
-	if ( ( ( nodeVar8 > nodeVar11 ) && ( nodeVar8 > nodeVar14 ) ) ) {
+	if ( ( ( p0_nodeVar8 > p0_nodeVar11 ) && ( p0_nodeVar8 > p0_nodeVar14 ) ) ) {
 
-		nodeVar2 = ( ( - nodeVar10 ) - nodeVar13 );
+		p0_nodeVar2 = ( ( - p0_nodeVar10 ) - p0_nodeVar13 );
 
 	} else {
 
-		nodeVar2 = nodeVar7;
+		p0_nodeVar2 = p0_nodeVar7;
 
 	}
 
 
-	if ( ( ( ( nodeVar8 <= nodeVar11 ) || ( nodeVar8 <= nodeVar14 ) ) && ( nodeVar11 > nodeVar14 ) ) ) {
+	if ( ( ( ( p0_nodeVar8 <= p0_nodeVar11 ) || ( p0_nodeVar8 <= p0_nodeVar14 ) ) && ( p0_nodeVar11 > p0_nodeVar14 ) ) ) {
 
-		nodeVar15 = ( ( - nodeVar2 ) - nodeVar13 );
+		p0_nodeVar15 = ( ( - p0_nodeVar2 ) - p0_nodeVar13 );
 
 	} else {
 
-		nodeVar15 = nodeVar10;
+		p0_nodeVar15 = p0_nodeVar10;
 
 	}
 
-	nodeVar16 = vec2<f32>( ( ( ( nodeVar2 * 1.7320508075688772 ) + ( nodeVar15 * 0.8660254037844386 ) ) * knobs.cellSize ), ( ( nodeVar15 * 1.5 ) * knobs.cellSize ) );
-	nodeVar17 = picture_read( ( nodeVar16 / nodeVar3 ) );
-	nodeVar20 = vec2<f32>( nodeVar4.x, ( nodeVar4.y + ( 1.0 * knobs.cellSize ) ) );
-	nodeVar21 = ( ( ( nodeVar20.x * 0.5773502691896257 ) - ( nodeVar20.y / 3.0 ) ) / knobs.cellSize );
-	nodeVar22 = floor( ( nodeVar21 + 0.5 ) );
-	nodeVar23 = abs( ( nodeVar22 - nodeVar21 ) );
-	nodeVar24 = ( ( nodeVar20.y * 0.6666666666666666 ) / knobs.cellSize );
-	nodeVar25 = floor( ( nodeVar24 + 0.5 ) );
-	nodeVar26 = abs( ( nodeVar25 - nodeVar24 ) );
-	nodeVar27 = ( ( - nodeVar21 ) - nodeVar24 );
-	nodeVar28 = floor( ( nodeVar27 + 0.5 ) );
-	nodeVar29 = abs( ( nodeVar28 - nodeVar27 ) );
+	p0_nodeVar16 = vec2<f32>( ( ( ( p0_nodeVar2 * 1.7320508075688772 ) + ( p0_nodeVar15 * 0.8660254037844386 ) ) * f32(knobs.cellSize) ), ( ( p0_nodeVar15 * 1.5 ) * f32(knobs.cellSize) ) );
+	p0_nodeVar17 = picture_read( ( p0_nodeVar16 / p0_nodeVar3 ) );
+	p0_nodeVar20 = vec2<f32>( p0_nodeVar4.x, ( p0_nodeVar4.y + ( 1.0 * f32(knobs.cellSize) ) ) );
+	p0_nodeVar21 = ( ( ( p0_nodeVar20.x * 0.5773502691896257 ) - ( p0_nodeVar20.y / 3.0 ) ) / f32(knobs.cellSize) );
+	p0_nodeVar22 = floor( ( p0_nodeVar21 + 0.5 ) );
+	p0_nodeVar23 = abs( ( p0_nodeVar22 - p0_nodeVar21 ) );
+	p0_nodeVar24 = ( ( p0_nodeVar20.y * 0.6666666666666666 ) / f32(knobs.cellSize) );
+	p0_nodeVar25 = floor( ( p0_nodeVar24 + 0.5 ) );
+	p0_nodeVar26 = abs( ( p0_nodeVar25 - p0_nodeVar24 ) );
+	p0_nodeVar27 = ( ( - p0_nodeVar21 ) - p0_nodeVar24 );
+	p0_nodeVar28 = floor( ( p0_nodeVar27 + 0.5 ) );
+	p0_nodeVar29 = abs( ( p0_nodeVar28 - p0_nodeVar27 ) );
 
-	if ( ( ( nodeVar23 > nodeVar26 ) && ( nodeVar23 > nodeVar29 ) ) ) {
+	if ( ( ( p0_nodeVar23 > p0_nodeVar26 ) && ( p0_nodeVar23 > p0_nodeVar29 ) ) ) {
 
-		nodeVar19 = ( ( - nodeVar25 ) - nodeVar28 );
-
-	} else {
-
-		nodeVar19 = nodeVar22;
-
-	}
-
-
-	if ( ( ( ( nodeVar23 <= nodeVar26 ) || ( nodeVar23 <= nodeVar29 ) ) && ( nodeVar26 > nodeVar29 ) ) ) {
-
-		nodeVar30 = ( ( - nodeVar19 ) - nodeVar28 );
+		p0_nodeVar19 = ( ( - p0_nodeVar25 ) - p0_nodeVar28 );
 
 	} else {
 
-		nodeVar30 = nodeVar25;
-
-	}
-
-	nodeVar31 = vec2<f32>( ( ( ( nodeVar19 * 1.7320508075688772 ) + ( nodeVar30 * 0.8660254037844386 ) ) * knobs.cellSize ), ( ( nodeVar30 * 1.5 ) * knobs.cellSize ) );
-	nodeVar32 = picture_read( ( nodeVar31 / nodeVar3 ) );
-	nodeVar35 = vec2<f32>( nodeVar4.x, ( nodeVar4.y + ( 2.0 * knobs.cellSize ) ) );
-	nodeVar36 = ( ( ( nodeVar35.x * 0.5773502691896257 ) - ( nodeVar35.y / 3.0 ) ) / knobs.cellSize );
-	nodeVar37 = floor( ( nodeVar36 + 0.5 ) );
-	nodeVar38 = abs( ( nodeVar37 - nodeVar36 ) );
-	nodeVar39 = ( ( nodeVar35.y * 0.6666666666666666 ) / knobs.cellSize );
-	nodeVar40 = floor( ( nodeVar39 + 0.5 ) );
-	nodeVar41 = abs( ( nodeVar40 - nodeVar39 ) );
-	nodeVar42 = ( ( - nodeVar36 ) - nodeVar39 );
-	nodeVar43 = floor( ( nodeVar42 + 0.5 ) );
-	nodeVar44 = abs( ( nodeVar43 - nodeVar42 ) );
-
-	if ( ( ( nodeVar38 > nodeVar41 ) && ( nodeVar38 > nodeVar44 ) ) ) {
-
-		nodeVar34 = ( ( - nodeVar40 ) - nodeVar43 );
-
-	} else {
-
-		nodeVar34 = nodeVar37;
+		p0_nodeVar19 = p0_nodeVar22;
 
 	}
 
 
-	if ( ( ( ( nodeVar38 <= nodeVar41 ) || ( nodeVar38 <= nodeVar44 ) ) && ( nodeVar41 > nodeVar44 ) ) ) {
+	if ( ( ( ( p0_nodeVar23 <= p0_nodeVar26 ) || ( p0_nodeVar23 <= p0_nodeVar29 ) ) && ( p0_nodeVar26 > p0_nodeVar29 ) ) ) {
 
-		nodeVar45 = ( ( - nodeVar34 ) - nodeVar43 );
+		p0_nodeVar30 = ( ( - p0_nodeVar19 ) - p0_nodeVar28 );
 
 	} else {
 
-		nodeVar45 = nodeVar40;
+		p0_nodeVar30 = p0_nodeVar25;
 
 	}
 
-	nodeVar46 = vec2<f32>( ( ( ( nodeVar34 * 1.7320508075688772 ) + ( nodeVar45 * 0.8660254037844386 ) ) * knobs.cellSize ), ( ( nodeVar45 * 1.5 ) * knobs.cellSize ) );
-	nodeVar47 = picture_read( ( nodeVar46 / nodeVar3 ) );
-	nodeVar50 = vec2<f32>( nodeVar4.x, ( nodeVar4.y + ( 3.0 * knobs.cellSize ) ) );
-	nodeVar51 = ( ( ( nodeVar50.x * 0.5773502691896257 ) - ( nodeVar50.y / 3.0 ) ) / knobs.cellSize );
-	nodeVar52 = floor( ( nodeVar51 + 0.5 ) );
-	nodeVar53 = abs( ( nodeVar52 - nodeVar51 ) );
-	nodeVar54 = ( ( nodeVar50.y * 0.6666666666666666 ) / knobs.cellSize );
-	nodeVar55 = floor( ( nodeVar54 + 0.5 ) );
-	nodeVar56 = abs( ( nodeVar55 - nodeVar54 ) );
-	nodeVar57 = ( ( - nodeVar51 ) - nodeVar54 );
-	nodeVar58 = floor( ( nodeVar57 + 0.5 ) );
-	nodeVar59 = abs( ( nodeVar58 - nodeVar57 ) );
+	p0_nodeVar31 = vec2<f32>( ( ( ( p0_nodeVar19 * 1.7320508075688772 ) + ( p0_nodeVar30 * 0.8660254037844386 ) ) * f32(knobs.cellSize) ), ( ( p0_nodeVar30 * 1.5 ) * f32(knobs.cellSize) ) );
+	p0_nodeVar32 = picture_read( ( p0_nodeVar31 / p0_nodeVar3 ) );
+	p0_nodeVar35 = vec2<f32>( p0_nodeVar4.x, ( p0_nodeVar4.y + ( 2.0 * f32(knobs.cellSize) ) ) );
+	p0_nodeVar36 = ( ( ( p0_nodeVar35.x * 0.5773502691896257 ) - ( p0_nodeVar35.y / 3.0 ) ) / f32(knobs.cellSize) );
+	p0_nodeVar37 = floor( ( p0_nodeVar36 + 0.5 ) );
+	p0_nodeVar38 = abs( ( p0_nodeVar37 - p0_nodeVar36 ) );
+	p0_nodeVar39 = ( ( p0_nodeVar35.y * 0.6666666666666666 ) / f32(knobs.cellSize) );
+	p0_nodeVar40 = floor( ( p0_nodeVar39 + 0.5 ) );
+	p0_nodeVar41 = abs( ( p0_nodeVar40 - p0_nodeVar39 ) );
+	p0_nodeVar42 = ( ( - p0_nodeVar36 ) - p0_nodeVar39 );
+	p0_nodeVar43 = floor( ( p0_nodeVar42 + 0.5 ) );
+	p0_nodeVar44 = abs( ( p0_nodeVar43 - p0_nodeVar42 ) );
 
-	if ( ( ( nodeVar53 > nodeVar56 ) && ( nodeVar53 > nodeVar59 ) ) ) {
+	if ( ( ( p0_nodeVar38 > p0_nodeVar41 ) && ( p0_nodeVar38 > p0_nodeVar44 ) ) ) {
 
-		nodeVar49 = ( ( - nodeVar55 ) - nodeVar58 );
-
-	} else {
-
-		nodeVar49 = nodeVar52;
-
-	}
-
-
-	if ( ( ( ( nodeVar53 <= nodeVar56 ) || ( nodeVar53 <= nodeVar59 ) ) && ( nodeVar56 > nodeVar59 ) ) ) {
-
-		nodeVar60 = ( ( - nodeVar49 ) - nodeVar58 );
+		p0_nodeVar34 = ( ( - p0_nodeVar40 ) - p0_nodeVar43 );
 
 	} else {
 
-		nodeVar60 = nodeVar55;
-
-	}
-
-	nodeVar61 = vec2<f32>( ( ( ( nodeVar49 * 1.7320508075688772 ) + ( nodeVar60 * 0.8660254037844386 ) ) * knobs.cellSize ), ( ( nodeVar60 * 1.5 ) * knobs.cellSize ) );
-	nodeVar62 = picture_read( ( nodeVar61 / nodeVar3 ) );
-	nodeVar65 = vec2<f32>( nodeVar4.x, ( nodeVar4.y + ( 4.0 * knobs.cellSize ) ) );
-	nodeVar66 = ( ( ( nodeVar65.x * 0.5773502691896257 ) - ( nodeVar65.y / 3.0 ) ) / knobs.cellSize );
-	nodeVar67 = floor( ( nodeVar66 + 0.5 ) );
-	nodeVar68 = abs( ( nodeVar67 - nodeVar66 ) );
-	nodeVar69 = ( ( nodeVar65.y * 0.6666666666666666 ) / knobs.cellSize );
-	nodeVar70 = floor( ( nodeVar69 + 0.5 ) );
-	nodeVar71 = abs( ( nodeVar70 - nodeVar69 ) );
-	nodeVar72 = ( ( - nodeVar66 ) - nodeVar69 );
-	nodeVar73 = floor( ( nodeVar72 + 0.5 ) );
-	nodeVar74 = abs( ( nodeVar73 - nodeVar72 ) );
-
-	if ( ( ( nodeVar68 > nodeVar71 ) && ( nodeVar68 > nodeVar74 ) ) ) {
-
-		nodeVar64 = ( ( - nodeVar70 ) - nodeVar73 );
-
-	} else {
-
-		nodeVar64 = nodeVar67;
+		p0_nodeVar34 = p0_nodeVar37;
 
 	}
 
 
-	if ( ( ( ( nodeVar68 <= nodeVar71 ) || ( nodeVar68 <= nodeVar74 ) ) && ( nodeVar71 > nodeVar74 ) ) ) {
+	if ( ( ( ( p0_nodeVar38 <= p0_nodeVar41 ) || ( p0_nodeVar38 <= p0_nodeVar44 ) ) && ( p0_nodeVar41 > p0_nodeVar44 ) ) ) {
 
-		nodeVar75 = ( ( - nodeVar64 ) - nodeVar73 );
+		p0_nodeVar45 = ( ( - p0_nodeVar34 ) - p0_nodeVar43 );
 
 	} else {
 
-		nodeVar75 = nodeVar70;
+		p0_nodeVar45 = p0_nodeVar40;
 
 	}
 
-	nodeVar76 = vec2<f32>( ( ( ( nodeVar64 * 1.7320508075688772 ) + ( nodeVar75 * 0.8660254037844386 ) ) * knobs.cellSize ), ( ( nodeVar75 * 1.5 ) * knobs.cellSize ) );
-	nodeVar77 = picture_read( ( nodeVar76 / nodeVar3 ) );
-	nodeVar80 = vec2<f32>( nodeVar4.x, ( nodeVar4.y + ( 5.0 * knobs.cellSize ) ) );
-	nodeVar81 = ( ( ( nodeVar80.x * 0.5773502691896257 ) - ( nodeVar80.y / 3.0 ) ) / knobs.cellSize );
-	nodeVar82 = floor( ( nodeVar81 + 0.5 ) );
-	nodeVar83 = abs( ( nodeVar82 - nodeVar81 ) );
-	nodeVar84 = ( ( nodeVar80.y * 0.6666666666666666 ) / knobs.cellSize );
-	nodeVar85 = floor( ( nodeVar84 + 0.5 ) );
-	nodeVar86 = abs( ( nodeVar85 - nodeVar84 ) );
-	nodeVar87 = ( ( - nodeVar81 ) - nodeVar84 );
-	nodeVar88 = floor( ( nodeVar87 + 0.5 ) );
-	nodeVar89 = abs( ( nodeVar88 - nodeVar87 ) );
+	p0_nodeVar46 = vec2<f32>( ( ( ( p0_nodeVar34 * 1.7320508075688772 ) + ( p0_nodeVar45 * 0.8660254037844386 ) ) * f32(knobs.cellSize) ), ( ( p0_nodeVar45 * 1.5 ) * f32(knobs.cellSize) ) );
+	p0_nodeVar47 = picture_read( ( p0_nodeVar46 / p0_nodeVar3 ) );
+	p0_nodeVar50 = vec2<f32>( p0_nodeVar4.x, ( p0_nodeVar4.y + ( 3.0 * f32(knobs.cellSize) ) ) );
+	p0_nodeVar51 = ( ( ( p0_nodeVar50.x * 0.5773502691896257 ) - ( p0_nodeVar50.y / 3.0 ) ) / f32(knobs.cellSize) );
+	p0_nodeVar52 = floor( ( p0_nodeVar51 + 0.5 ) );
+	p0_nodeVar53 = abs( ( p0_nodeVar52 - p0_nodeVar51 ) );
+	p0_nodeVar54 = ( ( p0_nodeVar50.y * 0.6666666666666666 ) / f32(knobs.cellSize) );
+	p0_nodeVar55 = floor( ( p0_nodeVar54 + 0.5 ) );
+	p0_nodeVar56 = abs( ( p0_nodeVar55 - p0_nodeVar54 ) );
+	p0_nodeVar57 = ( ( - p0_nodeVar51 ) - p0_nodeVar54 );
+	p0_nodeVar58 = floor( ( p0_nodeVar57 + 0.5 ) );
+	p0_nodeVar59 = abs( ( p0_nodeVar58 - p0_nodeVar57 ) );
 
-	if ( ( ( nodeVar83 > nodeVar86 ) && ( nodeVar83 > nodeVar89 ) ) ) {
+	if ( ( ( p0_nodeVar53 > p0_nodeVar56 ) && ( p0_nodeVar53 > p0_nodeVar59 ) ) ) {
 
-		nodeVar79 = ( ( - nodeVar85 ) - nodeVar88 );
-
-	} else {
-
-		nodeVar79 = nodeVar82;
-
-	}
-
-
-	if ( ( ( ( nodeVar83 <= nodeVar86 ) || ( nodeVar83 <= nodeVar89 ) ) && ( nodeVar86 > nodeVar89 ) ) ) {
-
-		nodeVar90 = ( ( - nodeVar79 ) - nodeVar88 );
+		p0_nodeVar49 = ( ( - p0_nodeVar55 ) - p0_nodeVar58 );
 
 	} else {
 
-		nodeVar90 = nodeVar85;
-
-	}
-
-	nodeVar91 = vec2<f32>( ( ( ( nodeVar79 * 1.7320508075688772 ) + ( nodeVar90 * 0.8660254037844386 ) ) * knobs.cellSize ), ( ( nodeVar90 * 1.5 ) * knobs.cellSize ) );
-	nodeVar92 = picture_read( ( nodeVar91 / nodeVar3 ) );
-	nodeVar95 = vec2<f32>( nodeVar4.x, ( nodeVar4.y + ( 6.0 * knobs.cellSize ) ) );
-	nodeVar96 = ( ( ( nodeVar95.x * 0.5773502691896257 ) - ( nodeVar95.y / 3.0 ) ) / knobs.cellSize );
-	nodeVar97 = floor( ( nodeVar96 + 0.5 ) );
-	nodeVar98 = abs( ( nodeVar97 - nodeVar96 ) );
-	nodeVar99 = ( ( nodeVar95.y * 0.6666666666666666 ) / knobs.cellSize );
-	nodeVar100 = floor( ( nodeVar99 + 0.5 ) );
-	nodeVar101 = abs( ( nodeVar100 - nodeVar99 ) );
-	nodeVar102 = ( ( - nodeVar96 ) - nodeVar99 );
-	nodeVar103 = floor( ( nodeVar102 + 0.5 ) );
-	nodeVar104 = abs( ( nodeVar103 - nodeVar102 ) );
-
-	if ( ( ( nodeVar98 > nodeVar101 ) && ( nodeVar98 > nodeVar104 ) ) ) {
-
-		nodeVar94 = ( ( - nodeVar100 ) - nodeVar103 );
-
-	} else {
-
-		nodeVar94 = nodeVar97;
+		p0_nodeVar49 = p0_nodeVar52;
 
 	}
 
 
-	if ( ( ( ( nodeVar98 <= nodeVar101 ) || ( nodeVar98 <= nodeVar104 ) ) && ( nodeVar101 > nodeVar104 ) ) ) {
+	if ( ( ( ( p0_nodeVar53 <= p0_nodeVar56 ) || ( p0_nodeVar53 <= p0_nodeVar59 ) ) && ( p0_nodeVar56 > p0_nodeVar59 ) ) ) {
 
-		nodeVar105 = ( ( - nodeVar94 ) - nodeVar103 );
+		p0_nodeVar60 = ( ( - p0_nodeVar49 ) - p0_nodeVar58 );
 
 	} else {
 
-		nodeVar105 = nodeVar100;
+		p0_nodeVar60 = p0_nodeVar55;
 
 	}
 
-	nodeVar106 = vec2<f32>( ( ( ( nodeVar94 * 1.7320508075688772 ) + ( nodeVar105 * 0.8660254037844386 ) ) * knobs.cellSize ), ( ( nodeVar105 * 1.5 ) * knobs.cellSize ) );
-	nodeVar107 = picture_read( ( nodeVar106 / nodeVar3 ) );
-	nodeVar110 = vec2<f32>( nodeVar4.x, ( nodeVar4.y + ( 7.0 * knobs.cellSize ) ) );
-	nodeVar111 = ( ( ( nodeVar110.x * 0.5773502691896257 ) - ( nodeVar110.y / 3.0 ) ) / knobs.cellSize );
-	nodeVar112 = floor( ( nodeVar111 + 0.5 ) );
-	nodeVar113 = abs( ( nodeVar112 - nodeVar111 ) );
-	nodeVar114 = ( ( nodeVar110.y * 0.6666666666666666 ) / knobs.cellSize );
-	nodeVar115 = floor( ( nodeVar114 + 0.5 ) );
-	nodeVar116 = abs( ( nodeVar115 - nodeVar114 ) );
-	nodeVar117 = ( ( - nodeVar111 ) - nodeVar114 );
-	nodeVar118 = floor( ( nodeVar117 + 0.5 ) );
-	nodeVar119 = abs( ( nodeVar118 - nodeVar117 ) );
+	p0_nodeVar61 = vec2<f32>( ( ( ( p0_nodeVar49 * 1.7320508075688772 ) + ( p0_nodeVar60 * 0.8660254037844386 ) ) * f32(knobs.cellSize) ), ( ( p0_nodeVar60 * 1.5 ) * f32(knobs.cellSize) ) );
+	p0_nodeVar62 = picture_read( ( p0_nodeVar61 / p0_nodeVar3 ) );
+	p0_nodeVar65 = vec2<f32>( p0_nodeVar4.x, ( p0_nodeVar4.y + ( 4.0 * f32(knobs.cellSize) ) ) );
+	p0_nodeVar66 = ( ( ( p0_nodeVar65.x * 0.5773502691896257 ) - ( p0_nodeVar65.y / 3.0 ) ) / f32(knobs.cellSize) );
+	p0_nodeVar67 = floor( ( p0_nodeVar66 + 0.5 ) );
+	p0_nodeVar68 = abs( ( p0_nodeVar67 - p0_nodeVar66 ) );
+	p0_nodeVar69 = ( ( p0_nodeVar65.y * 0.6666666666666666 ) / f32(knobs.cellSize) );
+	p0_nodeVar70 = floor( ( p0_nodeVar69 + 0.5 ) );
+	p0_nodeVar71 = abs( ( p0_nodeVar70 - p0_nodeVar69 ) );
+	p0_nodeVar72 = ( ( - p0_nodeVar66 ) - p0_nodeVar69 );
+	p0_nodeVar73 = floor( ( p0_nodeVar72 + 0.5 ) );
+	p0_nodeVar74 = abs( ( p0_nodeVar73 - p0_nodeVar72 ) );
 
-	if ( ( ( nodeVar113 > nodeVar116 ) && ( nodeVar113 > nodeVar119 ) ) ) {
+	if ( ( ( p0_nodeVar68 > p0_nodeVar71 ) && ( p0_nodeVar68 > p0_nodeVar74 ) ) ) {
 
-		nodeVar109 = ( ( - nodeVar115 ) - nodeVar118 );
+		p0_nodeVar64 = ( ( - p0_nodeVar70 ) - p0_nodeVar73 );
 
 	} else {
 
-		nodeVar109 = nodeVar112;
+		p0_nodeVar64 = p0_nodeVar67;
 
 	}
 
 
-	if ( ( ( ( nodeVar113 <= nodeVar116 ) || ( nodeVar113 <= nodeVar119 ) ) && ( nodeVar116 > nodeVar119 ) ) ) {
+	if ( ( ( ( p0_nodeVar68 <= p0_nodeVar71 ) || ( p0_nodeVar68 <= p0_nodeVar74 ) ) && ( p0_nodeVar71 > p0_nodeVar74 ) ) ) {
 
-		nodeVar120 = ( ( - nodeVar109 ) - nodeVar118 );
+		p0_nodeVar75 = ( ( - p0_nodeVar64 ) - p0_nodeVar73 );
 
 	} else {
 
-		nodeVar120 = nodeVar115;
+		p0_nodeVar75 = p0_nodeVar70;
 
 	}
 
-	nodeVar121 = vec2<f32>( ( ( ( nodeVar109 * 1.7320508075688772 ) + ( nodeVar120 * 0.8660254037844386 ) ) * knobs.cellSize ), ( ( nodeVar120 * 1.5 ) * knobs.cellSize ) );
-	nodeVar122 = picture_read( ( nodeVar121 / nodeVar3 ) );
-	nodeVar123 = ( ( 7.0 < mix( 1.0, ( 1.0 + ( ( ( ( nodeVar122.x * 0.2126 ) + ( nodeVar122.y * 0.7152 ) ) + ( nodeVar122.z * 0.0722 ) ) * ( knobs.maxHeight - 1.0 ) ) ), knobs.depth ) ) && ( 0.0 < 0.5 ) );
+	p0_nodeVar76 = vec2<f32>( ( ( ( p0_nodeVar64 * 1.7320508075688772 ) + ( p0_nodeVar75 * 0.8660254037844386 ) ) * f32(knobs.cellSize) ), ( ( p0_nodeVar75 * 1.5 ) * f32(knobs.cellSize) ) );
+	p0_nodeVar77 = picture_read( ( p0_nodeVar76 / p0_nodeVar3 ) );
+	p0_nodeVar80 = vec2<f32>( p0_nodeVar4.x, ( p0_nodeVar4.y + ( 5.0 * f32(knobs.cellSize) ) ) );
+	p0_nodeVar81 = ( ( ( p0_nodeVar80.x * 0.5773502691896257 ) - ( p0_nodeVar80.y / 3.0 ) ) / f32(knobs.cellSize) );
+	p0_nodeVar82 = floor( ( p0_nodeVar81 + 0.5 ) );
+	p0_nodeVar83 = abs( ( p0_nodeVar82 - p0_nodeVar81 ) );
+	p0_nodeVar84 = ( ( p0_nodeVar80.y * 0.6666666666666666 ) / f32(knobs.cellSize) );
+	p0_nodeVar85 = floor( ( p0_nodeVar84 + 0.5 ) );
+	p0_nodeVar86 = abs( ( p0_nodeVar85 - p0_nodeVar84 ) );
+	p0_nodeVar87 = ( ( - p0_nodeVar81 ) - p0_nodeVar84 );
+	p0_nodeVar88 = floor( ( p0_nodeVar87 + 0.5 ) );
+	p0_nodeVar89 = abs( ( p0_nodeVar88 - p0_nodeVar87 ) );
 
-	if ( nodeVar123 ) {
+	if ( ( ( p0_nodeVar83 > p0_nodeVar86 ) && ( p0_nodeVar83 > p0_nodeVar89 ) ) ) {
 
-		nodeVar108 = 1.0;
+		p0_nodeVar79 = ( ( - p0_nodeVar85 ) - p0_nodeVar88 );
 
 	} else {
 
-		nodeVar108 = 0.0;
+		p0_nodeVar79 = p0_nodeVar82;
 
 	}
 
-	nodeVar124 = ( ( 6.0 < mix( 1.0, ( 1.0 + ( ( ( ( nodeVar107.x * 0.2126 ) + ( nodeVar107.y * 0.7152 ) ) + ( nodeVar107.z * 0.0722 ) ) * ( knobs.maxHeight - 1.0 ) ) ), knobs.depth ) ) && ( nodeVar108 < 0.5 ) );
 
-	if ( nodeVar124 ) {
+	if ( ( ( ( p0_nodeVar83 <= p0_nodeVar86 ) || ( p0_nodeVar83 <= p0_nodeVar89 ) ) && ( p0_nodeVar86 > p0_nodeVar89 ) ) ) {
 
-		nodeVar93 = 1.0;
+		p0_nodeVar90 = ( ( - p0_nodeVar79 ) - p0_nodeVar88 );
 
 	} else {
 
-		nodeVar93 = nodeVar108;
+		p0_nodeVar90 = p0_nodeVar85;
 
 	}
 
-	nodeVar125 = ( ( 5.0 < mix( 1.0, ( 1.0 + ( ( ( ( nodeVar92.x * 0.2126 ) + ( nodeVar92.y * 0.7152 ) ) + ( nodeVar92.z * 0.0722 ) ) * ( knobs.maxHeight - 1.0 ) ) ), knobs.depth ) ) && ( nodeVar93 < 0.5 ) );
+	p0_nodeVar91 = vec2<f32>( ( ( ( p0_nodeVar79 * 1.7320508075688772 ) + ( p0_nodeVar90 * 0.8660254037844386 ) ) * f32(knobs.cellSize) ), ( ( p0_nodeVar90 * 1.5 ) * f32(knobs.cellSize) ) );
+	p0_nodeVar92 = picture_read( ( p0_nodeVar91 / p0_nodeVar3 ) );
+	p0_nodeVar95 = vec2<f32>( p0_nodeVar4.x, ( p0_nodeVar4.y + ( 6.0 * f32(knobs.cellSize) ) ) );
+	p0_nodeVar96 = ( ( ( p0_nodeVar95.x * 0.5773502691896257 ) - ( p0_nodeVar95.y / 3.0 ) ) / f32(knobs.cellSize) );
+	p0_nodeVar97 = floor( ( p0_nodeVar96 + 0.5 ) );
+	p0_nodeVar98 = abs( ( p0_nodeVar97 - p0_nodeVar96 ) );
+	p0_nodeVar99 = ( ( p0_nodeVar95.y * 0.6666666666666666 ) / f32(knobs.cellSize) );
+	p0_nodeVar100 = floor( ( p0_nodeVar99 + 0.5 ) );
+	p0_nodeVar101 = abs( ( p0_nodeVar100 - p0_nodeVar99 ) );
+	p0_nodeVar102 = ( ( - p0_nodeVar96 ) - p0_nodeVar99 );
+	p0_nodeVar103 = floor( ( p0_nodeVar102 + 0.5 ) );
+	p0_nodeVar104 = abs( ( p0_nodeVar103 - p0_nodeVar102 ) );
 
-	if ( nodeVar125 ) {
+	if ( ( ( p0_nodeVar98 > p0_nodeVar101 ) && ( p0_nodeVar98 > p0_nodeVar104 ) ) ) {
 
-		nodeVar78 = 1.0;
+		p0_nodeVar94 = ( ( - p0_nodeVar100 ) - p0_nodeVar103 );
 
 	} else {
 
-		nodeVar78 = nodeVar93;
+		p0_nodeVar94 = p0_nodeVar97;
 
 	}
 
-	nodeVar126 = ( ( 4.0 < mix( 1.0, ( 1.0 + ( ( ( ( nodeVar77.x * 0.2126 ) + ( nodeVar77.y * 0.7152 ) ) + ( nodeVar77.z * 0.0722 ) ) * ( knobs.maxHeight - 1.0 ) ) ), knobs.depth ) ) && ( nodeVar78 < 0.5 ) );
 
-	if ( nodeVar126 ) {
+	if ( ( ( ( p0_nodeVar98 <= p0_nodeVar101 ) || ( p0_nodeVar98 <= p0_nodeVar104 ) ) && ( p0_nodeVar101 > p0_nodeVar104 ) ) ) {
 
-		nodeVar63 = 1.0;
+		p0_nodeVar105 = ( ( - p0_nodeVar94 ) - p0_nodeVar103 );
 
 	} else {
 
-		nodeVar63 = nodeVar78;
+		p0_nodeVar105 = p0_nodeVar100;
 
 	}
 
-	nodeVar127 = ( ( 3.0 < mix( 1.0, ( 1.0 + ( ( ( ( nodeVar62.x * 0.2126 ) + ( nodeVar62.y * 0.7152 ) ) + ( nodeVar62.z * 0.0722 ) ) * ( knobs.maxHeight - 1.0 ) ) ), knobs.depth ) ) && ( nodeVar63 < 0.5 ) );
+	p0_nodeVar106 = vec2<f32>( ( ( ( p0_nodeVar94 * 1.7320508075688772 ) + ( p0_nodeVar105 * 0.8660254037844386 ) ) * f32(knobs.cellSize) ), ( ( p0_nodeVar105 * 1.5 ) * f32(knobs.cellSize) ) );
+	p0_nodeVar107 = picture_read( ( p0_nodeVar106 / p0_nodeVar3 ) );
+	p0_nodeVar110 = vec2<f32>( p0_nodeVar4.x, ( p0_nodeVar4.y + ( 7.0 * f32(knobs.cellSize) ) ) );
+	p0_nodeVar111 = ( ( ( p0_nodeVar110.x * 0.5773502691896257 ) - ( p0_nodeVar110.y / 3.0 ) ) / f32(knobs.cellSize) );
+	p0_nodeVar112 = floor( ( p0_nodeVar111 + 0.5 ) );
+	p0_nodeVar113 = abs( ( p0_nodeVar112 - p0_nodeVar111 ) );
+	p0_nodeVar114 = ( ( p0_nodeVar110.y * 0.6666666666666666 ) / f32(knobs.cellSize) );
+	p0_nodeVar115 = floor( ( p0_nodeVar114 + 0.5 ) );
+	p0_nodeVar116 = abs( ( p0_nodeVar115 - p0_nodeVar114 ) );
+	p0_nodeVar117 = ( ( - p0_nodeVar111 ) - p0_nodeVar114 );
+	p0_nodeVar118 = floor( ( p0_nodeVar117 + 0.5 ) );
+	p0_nodeVar119 = abs( ( p0_nodeVar118 - p0_nodeVar117 ) );
 
-	if ( nodeVar127 ) {
+	if ( ( ( p0_nodeVar113 > p0_nodeVar116 ) && ( p0_nodeVar113 > p0_nodeVar119 ) ) ) {
 
-		nodeVar48 = 1.0;
+		p0_nodeVar109 = ( ( - p0_nodeVar115 ) - p0_nodeVar118 );
 
 	} else {
 
-		nodeVar48 = nodeVar63;
+		p0_nodeVar109 = p0_nodeVar112;
 
 	}
 
-	nodeVar128 = ( ( 2.0 < mix( 1.0, ( 1.0 + ( ( ( ( nodeVar47.x * 0.2126 ) + ( nodeVar47.y * 0.7152 ) ) + ( nodeVar47.z * 0.0722 ) ) * ( knobs.maxHeight - 1.0 ) ) ), knobs.depth ) ) && ( nodeVar48 < 0.5 ) );
 
-	if ( nodeVar128 ) {
+	if ( ( ( ( p0_nodeVar113 <= p0_nodeVar116 ) || ( p0_nodeVar113 <= p0_nodeVar119 ) ) && ( p0_nodeVar116 > p0_nodeVar119 ) ) ) {
 
-		nodeVar33 = 1.0;
+		p0_nodeVar120 = ( ( - p0_nodeVar109 ) - p0_nodeVar118 );
 
 	} else {
 
-		nodeVar33 = nodeVar48;
+		p0_nodeVar120 = p0_nodeVar115;
 
 	}
 
-	nodeVar129 = ( ( 1.0 < mix( 1.0, ( 1.0 + ( ( ( ( nodeVar32.x * 0.2126 ) + ( nodeVar32.y * 0.7152 ) ) + ( nodeVar32.z * 0.0722 ) ) * ( knobs.maxHeight - 1.0 ) ) ), knobs.depth ) ) && ( nodeVar33 < 0.5 ) );
+	p0_nodeVar121 = vec2<f32>( ( ( ( p0_nodeVar109 * 1.7320508075688772 ) + ( p0_nodeVar120 * 0.8660254037844386 ) ) * f32(knobs.cellSize) ), ( ( p0_nodeVar120 * 1.5 ) * f32(knobs.cellSize) ) );
+	p0_nodeVar122 = picture_read( ( p0_nodeVar121 / p0_nodeVar3 ) );
+	p0_nodeVar123 = ( ( 7.0 < mix( 1.0, ( 1.0 + ( ( ( ( p0_nodeVar122.x * 0.2126 ) + ( p0_nodeVar122.y * 0.7152 ) ) + ( p0_nodeVar122.z * 0.0722 ) ) * ( f32(knobs.maxHeight) - 1.0 ) ) ), f32(knobs.depth) ) ) && ( 0.0 < 0.5 ) );
 
-	if ( nodeVar129 ) {
+	if ( p0_nodeVar123 ) {
 
-		nodeVar18 = 1.0;
+		p0_nodeVar108 = 1.0;
 
 	} else {
 
-		nodeVar18 = nodeVar33;
+		p0_nodeVar108 = 0.0;
 
 	}
 
-	nodeVar130 = ( ( 0.0 < mix( 1.0, ( 1.0 + ( ( ( ( nodeVar17.x * 0.2126 ) + ( nodeVar17.y * 0.7152 ) ) + ( nodeVar17.z * 0.0722 ) ) * ( knobs.maxHeight - 1.0 ) ) ), knobs.depth ) ) && ( nodeVar18 < 0.5 ) );
+	p0_nodeVar124 = ( ( 6.0 < mix( 1.0, ( 1.0 + ( ( ( ( p0_nodeVar107.x * 0.2126 ) + ( p0_nodeVar107.y * 0.7152 ) ) + ( p0_nodeVar107.z * 0.0722 ) ) * ( f32(knobs.maxHeight) - 1.0 ) ) ), f32(knobs.depth) ) ) && ( p0_nodeVar108 < 0.5 ) );
 
-	if ( nodeVar130 ) {
+	if ( p0_nodeVar124 ) {
 
-		nodeVar1 = vec3<f32>( nodeVar17.x, nodeVar17.y, nodeVar17.z );
+		p0_nodeVar93 = 1.0;
+
+	} else {
+
+		p0_nodeVar93 = p0_nodeVar108;
+
+	}
+
+	p0_nodeVar125 = ( ( 5.0 < mix( 1.0, ( 1.0 + ( ( ( ( p0_nodeVar92.x * 0.2126 ) + ( p0_nodeVar92.y * 0.7152 ) ) + ( p0_nodeVar92.z * 0.0722 ) ) * ( f32(knobs.maxHeight) - 1.0 ) ) ), f32(knobs.depth) ) ) && ( p0_nodeVar93 < 0.5 ) );
+
+	if ( p0_nodeVar125 ) {
+
+		p0_nodeVar78 = 1.0;
+
+	} else {
+
+		p0_nodeVar78 = p0_nodeVar93;
+
+	}
+
+	p0_nodeVar126 = ( ( 4.0 < mix( 1.0, ( 1.0 + ( ( ( ( p0_nodeVar77.x * 0.2126 ) + ( p0_nodeVar77.y * 0.7152 ) ) + ( p0_nodeVar77.z * 0.0722 ) ) * ( f32(knobs.maxHeight) - 1.0 ) ) ), f32(knobs.depth) ) ) && ( p0_nodeVar78 < 0.5 ) );
+
+	if ( p0_nodeVar126 ) {
+
+		p0_nodeVar63 = 1.0;
+
+	} else {
+
+		p0_nodeVar63 = p0_nodeVar78;
+
+	}
+
+	p0_nodeVar127 = ( ( 3.0 < mix( 1.0, ( 1.0 + ( ( ( ( p0_nodeVar62.x * 0.2126 ) + ( p0_nodeVar62.y * 0.7152 ) ) + ( p0_nodeVar62.z * 0.0722 ) ) * ( f32(knobs.maxHeight) - 1.0 ) ) ), f32(knobs.depth) ) ) && ( p0_nodeVar63 < 0.5 ) );
+
+	if ( p0_nodeVar127 ) {
+
+		p0_nodeVar48 = 1.0;
+
+	} else {
+
+		p0_nodeVar48 = p0_nodeVar63;
+
+	}
+
+	p0_nodeVar128 = ( ( 2.0 < mix( 1.0, ( 1.0 + ( ( ( ( p0_nodeVar47.x * 0.2126 ) + ( p0_nodeVar47.y * 0.7152 ) ) + ( p0_nodeVar47.z * 0.0722 ) ) * ( f32(knobs.maxHeight) - 1.0 ) ) ), f32(knobs.depth) ) ) && ( p0_nodeVar48 < 0.5 ) );
+
+	if ( p0_nodeVar128 ) {
+
+		p0_nodeVar33 = 1.0;
+
+	} else {
+
+		p0_nodeVar33 = p0_nodeVar48;
+
+	}
+
+	p0_nodeVar129 = ( ( 1.0 < mix( 1.0, ( 1.0 + ( ( ( ( p0_nodeVar32.x * 0.2126 ) + ( p0_nodeVar32.y * 0.7152 ) ) + ( p0_nodeVar32.z * 0.0722 ) ) * ( f32(knobs.maxHeight) - 1.0 ) ) ), f32(knobs.depth) ) ) && ( p0_nodeVar33 < 0.5 ) );
+
+	if ( p0_nodeVar129 ) {
+
+		p0_nodeVar18 = 1.0;
+
+	} else {
+
+		p0_nodeVar18 = p0_nodeVar33;
+
+	}
+
+	p0_nodeVar130 = ( ( 0.0 < mix( 1.0, ( 1.0 + ( ( ( ( p0_nodeVar17.x * 0.2126 ) + ( p0_nodeVar17.y * 0.7152 ) ) + ( p0_nodeVar17.z * 0.0722 ) ) * ( f32(knobs.maxHeight) - 1.0 ) ) ), f32(knobs.depth) ) ) && ( p0_nodeVar18 < 0.5 ) );
+
+	if ( p0_nodeVar130 ) {
+
+		p0_nodeVar1 = vec3<f32>( p0_nodeVar17.x, p0_nodeVar17.y, p0_nodeVar17.z );
 
 	} else {
 
 
-		if ( nodeVar129 ) {
+		if ( p0_nodeVar129 ) {
 
-			nodeVar131 = vec3<f32>( nodeVar32.x, nodeVar32.y, nodeVar32.z );
+			p0_nodeVar131 = vec3<f32>( p0_nodeVar32.x, p0_nodeVar32.y, p0_nodeVar32.z );
 
 		} else {
 
 
-			if ( nodeVar128 ) {
+			if ( p0_nodeVar128 ) {
 
-				nodeVar132 = vec3<f32>( nodeVar47.x, nodeVar47.y, nodeVar47.z );
+				p0_nodeVar132 = vec3<f32>( p0_nodeVar47.x, p0_nodeVar47.y, p0_nodeVar47.z );
 
 			} else {
 
 
-				if ( nodeVar127 ) {
+				if ( p0_nodeVar127 ) {
 
-					nodeVar133 = vec3<f32>( nodeVar62.x, nodeVar62.y, nodeVar62.z );
+					p0_nodeVar133 = vec3<f32>( p0_nodeVar62.x, p0_nodeVar62.y, p0_nodeVar62.z );
 
 				} else {
 
 
-					if ( nodeVar126 ) {
+					if ( p0_nodeVar126 ) {
 
-						nodeVar134 = vec3<f32>( nodeVar77.x, nodeVar77.y, nodeVar77.z );
+						p0_nodeVar134 = vec3<f32>( p0_nodeVar77.x, p0_nodeVar77.y, p0_nodeVar77.z );
 
 					} else {
 
 
-						if ( nodeVar125 ) {
+						if ( p0_nodeVar125 ) {
 
-							nodeVar135 = vec3<f32>( nodeVar92.x, nodeVar92.y, nodeVar92.z );
+							p0_nodeVar135 = vec3<f32>( p0_nodeVar92.x, p0_nodeVar92.y, p0_nodeVar92.z );
 
 						} else {
 
 
-							if ( nodeVar124 ) {
+							if ( p0_nodeVar124 ) {
 
-								nodeVar136 = vec3<f32>( nodeVar107.x, nodeVar107.y, nodeVar107.z );
+								p0_nodeVar136 = vec3<f32>( p0_nodeVar107.x, p0_nodeVar107.y, p0_nodeVar107.z );
 
 							} else {
 
 
-								if ( nodeVar123 ) {
+								if ( p0_nodeVar123 ) {
 
-									nodeVar137 = vec3<f32>( nodeVar122.x, nodeVar122.y, nodeVar122.z );
+									p0_nodeVar137 = vec3<f32>( p0_nodeVar122.x, p0_nodeVar122.y, p0_nodeVar122.z );
 
 								} else {
 
-									nodeVar137 = vec3<f32>( 0.0, 0.0, 0.0 );
+									p0_nodeVar137 = vec3<f32>( 0.0, 0.0, 0.0 );
 
 								}
 
-								nodeVar136 = nodeVar137;
+								p0_nodeVar136 = p0_nodeVar137;
 
 							}
 
-							nodeVar135 = nodeVar136;
+							p0_nodeVar135 = p0_nodeVar136;
 
 						}
 
-						nodeVar134 = nodeVar135;
+						p0_nodeVar134 = p0_nodeVar135;
 
 					}
 
-					nodeVar133 = nodeVar134;
+					p0_nodeVar133 = p0_nodeVar134;
 
 				}
 
-				nodeVar132 = nodeVar133;
+				p0_nodeVar132 = p0_nodeVar133;
 
 			}
 
-			nodeVar131 = nodeVar132;
+			p0_nodeVar131 = p0_nodeVar132;
 
 		}
 
-		nodeVar1 = nodeVar131;
+		p0_nodeVar1 = p0_nodeVar131;
 
 	}
 
 
-	if ( nodeVar130 ) {
+	if ( p0_nodeVar130 ) {
 
-		nodeVar139 = nodeVar16;
+		p0_nodeVar139 = p0_nodeVar16;
 
 	} else {
 
 
-		if ( nodeVar129 ) {
+		if ( p0_nodeVar129 ) {
 
-			nodeVar140 = nodeVar31;
+			p0_nodeVar140 = p0_nodeVar31;
 
 		} else {
 
 
-			if ( nodeVar128 ) {
+			if ( p0_nodeVar128 ) {
 
-				nodeVar141 = nodeVar46;
+				p0_nodeVar141 = p0_nodeVar46;
 
 			} else {
 
 
-				if ( nodeVar127 ) {
+				if ( p0_nodeVar127 ) {
 
-					nodeVar142 = nodeVar61;
+					p0_nodeVar142 = p0_nodeVar61;
 
 				} else {
 
 
-					if ( nodeVar126 ) {
+					if ( p0_nodeVar126 ) {
 
-						nodeVar143 = nodeVar76;
+						p0_nodeVar143 = p0_nodeVar76;
 
 					} else {
 
 
-						if ( nodeVar125 ) {
+						if ( p0_nodeVar125 ) {
 
-							nodeVar144 = nodeVar91;
+							p0_nodeVar144 = p0_nodeVar91;
 
 						} else {
 
 
-							if ( nodeVar124 ) {
+							if ( p0_nodeVar124 ) {
 
-								nodeVar145 = nodeVar106;
+								p0_nodeVar145 = p0_nodeVar106;
 
 							} else {
 
 
-								if ( nodeVar123 ) {
+								if ( p0_nodeVar123 ) {
 
-									nodeVar146 = nodeVar121;
+									p0_nodeVar146 = p0_nodeVar121;
 
 								} else {
 
-									nodeVar146 = vec2<f32>( 0.0, 0.0 );
+									p0_nodeVar146 = vec2<f32>( 0.0, 0.0 );
 
 								}
 
-								nodeVar145 = nodeVar146;
+								p0_nodeVar145 = p0_nodeVar146;
 
 							}
 
-							nodeVar144 = nodeVar145;
+							p0_nodeVar144 = p0_nodeVar145;
 
 						}
 
-						nodeVar143 = nodeVar144;
+						p0_nodeVar143 = p0_nodeVar144;
 
 					}
 
-					nodeVar142 = nodeVar143;
+					p0_nodeVar142 = p0_nodeVar143;
 
 				}
 
-				nodeVar141 = nodeVar142;
+				p0_nodeVar141 = p0_nodeVar142;
 
 			}
 
-			nodeVar140 = nodeVar141;
+			p0_nodeVar140 = p0_nodeVar141;
 
 		}
 
-		nodeVar139 = nodeVar140;
+		p0_nodeVar139 = p0_nodeVar140;
 
 	}
 
 
-	if ( nodeVar130 ) {
+	if ( p0_nodeVar130 ) {
 
-		nodeVar147 = 0.0;
+		p0_nodeVar147 = 0.0;
 
 	} else {
 
 
-		if ( nodeVar129 ) {
+		if ( p0_nodeVar129 ) {
 
-			nodeVar148 = 1.0;
+			p0_nodeVar148 = 1.0;
 
 		} else {
 
 
-			if ( nodeVar128 ) {
+			if ( p0_nodeVar128 ) {
 
-				nodeVar149 = 2.0;
+				p0_nodeVar149 = 2.0;
 
 			} else {
 
 
-				if ( nodeVar127 ) {
+				if ( p0_nodeVar127 ) {
 
-					nodeVar150 = 3.0;
+					p0_nodeVar150 = 3.0;
 
 				} else {
 
 
-					if ( nodeVar126 ) {
+					if ( p0_nodeVar126 ) {
 
-						nodeVar151 = 4.0;
+						p0_nodeVar151 = 4.0;
 
 					} else {
 
 
-						if ( nodeVar125 ) {
+						if ( p0_nodeVar125 ) {
 
-							nodeVar152 = 5.0;
+							p0_nodeVar152 = 5.0;
 
 						} else {
 
 
-							if ( nodeVar124 ) {
+							if ( p0_nodeVar124 ) {
 
-								nodeVar153 = 6.0;
+								p0_nodeVar153 = 6.0;
 
 							} else {
 
 
-								if ( nodeVar123 ) {
+								if ( p0_nodeVar123 ) {
 
-									nodeVar154 = 7.0;
+									p0_nodeVar154 = 7.0;
 
 								} else {
 
-									nodeVar154 = 0.0;
+									p0_nodeVar154 = 0.0;
 
 								}
 
-								nodeVar153 = nodeVar154;
+								p0_nodeVar153 = p0_nodeVar154;
 
 							}
 
-							nodeVar152 = nodeVar153;
+							p0_nodeVar152 = p0_nodeVar153;
 
 						}
 
-						nodeVar151 = nodeVar152;
+						p0_nodeVar151 = p0_nodeVar152;
 
 					}
 
-					nodeVar150 = nodeVar151;
+					p0_nodeVar150 = p0_nodeVar151;
 
 				}
 
-				nodeVar149 = nodeVar150;
+				p0_nodeVar149 = p0_nodeVar150;
 
 			}
 
-			nodeVar148 = nodeVar149;
+			p0_nodeVar148 = p0_nodeVar149;
 
 		}
 
-		nodeVar147 = nodeVar148;
+		p0_nodeVar147 = p0_nodeVar148;
 
 	}
 
-	nodeVar155 = ( nodeVar4 - vec2<f32>( nodeVar139.x, ( nodeVar139.y - ( nodeVar147 * knobs.cellSize ) ) ) );
-	nodeVar156 = ( - ( abs( nodeVar155.x ) / 1.7320508075688772 ) );
-	nodeVar157 = ( nodeVar155.y < nodeVar156 );
-	nodeVar158 = ( knobs.cellSize * 0.4 );
-	nodeVar159 = ( knobs.cellSize * -0.5 );
-	nodeVar160 = ( nodeVar159 - ( knobs.cellSize * 0.18 ) );
-	nodeVar161 = ( nodeVar155.y - nodeVar160 );
-	nodeVar162 = ( knobs.cellSize * 0.2 );
-	nodeVar163 = ( ( ( ( nodeVar155.x / nodeVar158 ) * ( nodeVar155.x / nodeVar158 ) ) + ( ( nodeVar161 / nodeVar162 ) * ( nodeVar161 / nodeVar162 ) ) ) < 1.0 );
-	nodeVar164 = ( sqrt( clamp( ( 1.0 - ( ( nodeVar155.x / nodeVar158 ) * ( nodeVar155.x / nodeVar158 ) ) ), 0.0, 1.0 ) ) * nodeVar162 );
+	p0_nodeVar155 = ( p0_nodeVar4 - vec2<f32>( p0_nodeVar139.x, ( p0_nodeVar139.y - ( p0_nodeVar147 * f32(knobs.cellSize) ) ) ) );
+	p0_nodeVar156 = ( - ( abs( p0_nodeVar155.x ) / 1.7320508075688772 ) );
+	p0_nodeVar157 = ( p0_nodeVar155.y < p0_nodeVar156 );
+	p0_nodeVar158 = ( f32(knobs.cellSize) * 0.4 );
+	p0_nodeVar159 = ( f32(knobs.cellSize) * -0.5 );
+	p0_nodeVar160 = ( p0_nodeVar159 - ( f32(knobs.cellSize) * 0.18 ) );
+	p0_nodeVar161 = ( p0_nodeVar155.y - p0_nodeVar160 );
+	p0_nodeVar162 = ( f32(knobs.cellSize) * 0.2 );
+	p0_nodeVar163 = ( ( ( ( p0_nodeVar155.x / p0_nodeVar158 ) * ( p0_nodeVar155.x / p0_nodeVar158 ) ) + ( ( p0_nodeVar161 / p0_nodeVar162 ) * ( p0_nodeVar161 / p0_nodeVar162 ) ) ) < 1.0 );
+	p0_nodeVar164 = ( sqrt( clamp( ( 1.0 - ( ( p0_nodeVar155.x / p0_nodeVar158 ) * ( p0_nodeVar155.x / p0_nodeVar158 ) ) ), 0.0, 1.0 ) ) * p0_nodeVar162 );
 
-	if ( ( ( ( (1 * knobs.lego + 0) > 0.5 ) && nodeVar157 ) && ( nodeVar163 || ( ( ( abs( nodeVar155.x ) < nodeVar158 ) && ( nodeVar155.y >= ( nodeVar160 + nodeVar164 ) ) ) && ( nodeVar155.y < ( nodeVar159 + nodeVar164 ) ) ) ) ) ) {
+	if ( ( ( ( f32(knobs.lego) > 0.5 ) && p0_nodeVar157 ) && ( p0_nodeVar163 || ( ( ( abs( p0_nodeVar155.x ) < p0_nodeVar158 ) && ( p0_nodeVar155.y >= ( p0_nodeVar160 + p0_nodeVar164 ) ) ) && ( p0_nodeVar155.y < ( p0_nodeVar159 + p0_nodeVar164 ) ) ) ) ) ) {
 
 
-		if ( nodeVar163 ) {
+		if ( p0_nodeVar163 ) {
 
-			nodeVar165 = ( knobs.topShade * 0.92 );
+			p0_nodeVar165 = ( f32(knobs.topShade) * 0.92 );
 
 		} else {
 
-			nodeVar167 = ( (1 * knobs.flipLight + 0) > 0.5 );
+			p0_nodeVar167 = ( f32(knobs.flipLight) > 0.5 );
 
-			if ( nodeVar167 ) {
+			if ( p0_nodeVar167 ) {
 
-				nodeVar166 = knobs.lightShade;
+				p0_nodeVar166 = f32(knobs.lightShade);
 
 			} else {
 
-				nodeVar166 = knobs.darkShade;
+				p0_nodeVar166 = f32(knobs.darkShade);
 
 			}
 
 
-			if ( nodeVar167 ) {
+			if ( p0_nodeVar167 ) {
 
-				nodeVar168 = knobs.darkShade;
+				p0_nodeVar168 = f32(knobs.darkShade);
 
 			} else {
 
-				nodeVar168 = knobs.lightShade;
+				p0_nodeVar168 = f32(knobs.lightShade);
 
 			}
 
-			nodeVar165 = mix( nodeVar166, nodeVar168, clamp( ( ( ( nodeVar155.x / nodeVar158 ) + 1.0 ) * 0.5 ), 0.0, 1.0 ) );
+			p0_nodeVar165 = mix( p0_nodeVar166, p0_nodeVar168, clamp( ( ( ( p0_nodeVar155.x / p0_nodeVar158 ) + 1.0 ) * 0.5 ), 0.0, 1.0 ) );
 
 		}
 
-		nodeVar138 = nodeVar165;
+		p0_nodeVar138 = p0_nodeVar165;
 
 	} else {
 
 
-		if ( nodeVar157 ) {
+		if ( p0_nodeVar157 ) {
 
-			nodeVar169 = knobs.topShade;
+			p0_nodeVar169 = f32(knobs.topShade);
 
 		} else {
 
 
-			if ( ( ( nodeVar155.y >= nodeVar156 ) && ( nodeVar155.x > 0.0 ) ) ) {
+			if ( ( ( p0_nodeVar155.y >= p0_nodeVar156 ) && ( p0_nodeVar155.x > 0.0 ) ) ) {
 
 
-				if ( ( (1 * knobs.flipLight + 0) > 0.5 ) ) {
+				if ( ( f32(knobs.flipLight) > 0.5 ) ) {
 
-					nodeVar171 = knobs.darkShade;
+					p0_nodeVar171 = f32(knobs.darkShade);
 
 				} else {
 
-					nodeVar171 = knobs.lightShade;
+					p0_nodeVar171 = f32(knobs.lightShade);
 
 				}
 
-				nodeVar170 = nodeVar171;
+				p0_nodeVar170 = p0_nodeVar171;
 
 			} else {
 
 
-				if ( ( (1 * knobs.flipLight + 0) > 0.5 ) ) {
+				if ( ( f32(knobs.flipLight) > 0.5 ) ) {
 
-					nodeVar172 = knobs.lightShade;
+					p0_nodeVar172 = f32(knobs.lightShade);
 
 				} else {
 
-					nodeVar172 = knobs.darkShade;
+					p0_nodeVar172 = f32(knobs.darkShade);
 
 				}
 
-				nodeVar170 = nodeVar172;
+				p0_nodeVar170 = p0_nodeVar172;
 
 			}
 
-			nodeVar169 = nodeVar170;
+			p0_nodeVar169 = p0_nodeVar170;
 
 		}
 
-		nodeVar138 = nodeVar169;
+		p0_nodeVar138 = p0_nodeVar169;
 
 	}
 
-	nodeVar173 = vec4<f32>( mix( ( nodeVar1 * vec3<f32>( nodeVar138 ) ), vec3<f32>( vec3<f32>(0.0030352698352941175, 0.0030352698352941175, 0.0030352698352941175).x, vec3<f32>(0.0030352698352941175, 0.0030352698352941175, 0.0030352698352941175).y, vec3<f32>(0.0030352698352941175, 0.0030352698352941175, 0.0030352698352941175).z ), ( 1.0 - smoothstep( 0.0, max( knobs.outlineWidth, 0.0001 ), ( ( knobs.cellSize * 0.8660254037844386 ) - max( max( abs( nodeVar155.x ), abs( ( ( nodeVar155.x * 0.5 ) + ( nodeVar155.y * 0.8660254037844386 ) ) ) ), abs( ( ( nodeVar155.x * 0.5 ) - ( nodeVar155.y * 0.8660254037844386 ) ) ) ) ) ) ) ), 1.0 );
-	nodeVar174 = vec3<f32>( nodeVar173.x, nodeVar173.y, nodeVar173.z );
-	nodeVar175 = ( ( ( nodeVar174.x * 0.2126 ) + ( nodeVar174.y * 0.7152 ) ) + ( nodeVar174.z * 0.0722 ) );
-	nodeVar176 = mix( vec3<f32>( nodeVar175, nodeVar175, nodeVar175 ), nodeVar174, f32(1.0) );
-	nodeVar177 = vec4<f32>( clamp( vec3<f32>( ( ( ( nodeVar176.x * ( ( 0.213 + ( cos( f32(0.0) ) * 0.787 ) ) - ( sin( f32(0.0) ) * 0.213 ) ) ) + ( nodeVar176.y * ( ( 0.715 - ( cos( f32(0.0) ) * 0.715 ) ) - ( sin( f32(0.0) ) * 0.715 ) ) ) ) + ( nodeVar176.z * ( ( 0.072 - ( cos( f32(0.0) ) * 0.072 ) ) + ( sin( f32(0.0) ) * 0.928 ) ) ) ), ( ( ( nodeVar176.x * ( ( 0.213 - ( cos( f32(0.0) ) * 0.213 ) ) + ( sin( f32(0.0) ) * 0.143 ) ) ) + ( nodeVar176.y * ( ( 0.715 + ( cos( f32(0.0) ) * 0.285 ) ) + ( sin( f32(0.0) ) * 0.14 ) ) ) ) + ( nodeVar176.z * ( ( 0.072 - ( cos( f32(0.0) ) * 0.072 ) ) - ( sin( f32(0.0) ) * 0.283 ) ) ) ), ( ( ( nodeVar176.x * ( ( 0.213 - ( cos( f32(0.0) ) * 0.213 ) ) - ( sin( f32(0.0) ) * 0.787 ) ) ) + ( nodeVar176.y * ( ( 0.715 - ( cos( f32(0.0) ) * 0.715 ) ) + ( sin( f32(0.0) ) * 0.715 ) ) ) ) + ( nodeVar176.z * ( ( 0.072 + ( cos( f32(0.0) ) * 0.928 ) ) + ( sin( f32(0.0) ) * 0.072 ) ) ) ) ), vec3<f32>( 0.0, 0.0, 0.0 ), vec3<f32>( 1.0, 1.0, 1.0 ) ), clamp( nodeVar173.w, 0.0, 1.0 ) );
-	DiffuseColor = vec4<f32>( mix( nodeVar0.xyz, nodeVar177.xyz, ( clamp( f32(1.0), 0.0, 1.0 ) * clamp( nodeVar177.w, 0.0, 1.0 ) ) ), clamp( nodeVar0.w, 0.0, 1.0 ) );
-	DiffuseColor.w = ( DiffuseColor.w * f32(1.0) );
-	nodeVar178 = max( vec4<f32>( DiffuseColor.xyz, DiffuseColor.w ), vec4<f32>( 0.0 ) );
-	Output = nodeVar178;
+	p0_nodeVar173 = vec4<f32>( mix( ( p0_nodeVar1 * vec3<f32>( p0_nodeVar138 ) ), vec3<f32>( vec3<f32>(knobs.outlineColor.x, knobs.outlineColor.y, knobs.outlineColor.z).x, vec3<f32>(knobs.outlineColor.x, knobs.outlineColor.y, knobs.outlineColor.z).y, vec3<f32>(knobs.outlineColor.x, knobs.outlineColor.y, knobs.outlineColor.z).z ), ( 1.0 - smoothstep( 0.0, max( f32(knobs.outlineWidth), 0.0001 ), ( ( f32(knobs.cellSize) * 0.8660254037844386 ) - max( max( abs( p0_nodeVar155.x ), abs( ( ( p0_nodeVar155.x * 0.5 ) + ( p0_nodeVar155.y * 0.8660254037844386 ) ) ) ), abs( ( ( p0_nodeVar155.x * 0.5 ) - ( p0_nodeVar155.y * 0.8660254037844386 ) ) ) ) ) ) ) ), 1.0 );
+	p0_nodeVar174 = vec3<f32>( p0_nodeVar173.x, p0_nodeVar173.y, p0_nodeVar173.z );
+	p0_nodeVar175 = ( ( ( p0_nodeVar174.x * 0.2126 ) + ( p0_nodeVar174.y * 0.7152 ) ) + ( p0_nodeVar174.z * 0.0722 ) );
+	p0_nodeVar176 = mix( vec3<f32>( p0_nodeVar175, p0_nodeVar175, p0_nodeVar175 ), p0_nodeVar174, f32(1.0) );
+	p0_nodeVar177 = vec4<f32>( clamp( vec3<f32>( ( ( ( p0_nodeVar176.x * ( ( 0.213 + ( cos( f32(0.0) ) * 0.787 ) ) - ( sin( f32(0.0) ) * 0.213 ) ) ) + ( p0_nodeVar176.y * ( ( 0.715 - ( cos( f32(0.0) ) * 0.715 ) ) - ( sin( f32(0.0) ) * 0.715 ) ) ) ) + ( p0_nodeVar176.z * ( ( 0.072 - ( cos( f32(0.0) ) * 0.072 ) ) + ( sin( f32(0.0) ) * 0.928 ) ) ) ), ( ( ( p0_nodeVar176.x * ( ( 0.213 - ( cos( f32(0.0) ) * 0.213 ) ) + ( sin( f32(0.0) ) * 0.143 ) ) ) + ( p0_nodeVar176.y * ( ( 0.715 + ( cos( f32(0.0) ) * 0.285 ) ) + ( sin( f32(0.0) ) * 0.14 ) ) ) ) + ( p0_nodeVar176.z * ( ( 0.072 - ( cos( f32(0.0) ) * 0.072 ) ) - ( sin( f32(0.0) ) * 0.283 ) ) ) ), ( ( ( p0_nodeVar176.x * ( ( 0.213 - ( cos( f32(0.0) ) * 0.213 ) ) - ( sin( f32(0.0) ) * 0.787 ) ) ) + ( p0_nodeVar176.y * ( ( 0.715 - ( cos( f32(0.0) ) * 0.715 ) ) + ( sin( f32(0.0) ) * 0.715 ) ) ) ) + ( p0_nodeVar176.z * ( ( 0.072 + ( cos( f32(0.0) ) * 0.928 ) ) + ( sin( f32(0.0) ) * 0.072 ) ) ) ) ), vec3<f32>( 0.0, 0.0, 0.0 ), vec3<f32>( 1.0, 1.0, 1.0 ) ), clamp( p0_nodeVar173.w, 0.0, 1.0 ) );
+	p0_DiffuseColor = vec4<f32>( mix( p0_nodeVar0.xyz, p0_nodeVar177.xyz, ( clamp( f32(1.0), 0.0, 1.0 ) * clamp( p0_nodeVar177.w, 0.0, 1.0 ) ) ), clamp( p0_nodeVar0.w, 0.0, 1.0 ) );
+	p0_DiffuseColor.w = ( p0_DiffuseColor.w * f32(1.0) );
+	p0_nodeVar178 = max( vec4<f32>( p0_DiffuseColor.xyz, p0_DiffuseColor.w ), vec4<f32>( 0.0 ) );
+	p0_Output = p0_nodeVar178;
 
 	// result
 
-	output.color = nodeVar178;
+	p0_output.color = p0_nodeVar178;
 
-	output.color = to_shelf(output.color);
-	return output;
+	return p0_output;
 
+}
+
+@fragment
+fn main(@location(0) door_on: vec2f) -> @location(0) vec4f {
+  let door_uv = (door_on - knobs.passRect.xy) / knobs.passRect.zw;
+  return to_shelf(p0_main(door_uv).color);
 }

@@ -4,154 +4,163 @@
 // --track@levels:Levels,2,16,5,1
 // --track@gamma:Gamma,0.4,2.5,1,0.01
 // --check@mode:Mode,0
-// Three.js r185 - Node System
-
-// global
-diagnostic( off, derivative_uniformity );
-
-
-// structs
-
-struct OutputStruct {
-	@location( 0 ) color: vec4<f32>
-};
-var<private> output : OutputStruct;
-
-// uniforms
+diagnostic(off, derivative_uniformity);
 struct Knobs {
   time: f32,
-  mode: f32,
-  gamma: f32,
+  passindex: f32,
+  resolution: vec2<f32>,
+  frameRect: vec4<f32>,
+  passRect: vec4<f32>,
   levels: f32,
+  gamma: f32,
+  mode: f32,
 };
 @group(0) @binding(0) var picture: texture_2d<f32>;
 @group(0) @binding(1) var picture_sampler: sampler;
 @group(0) @binding(2) var<uniform> knobs: Knobs;
 fn to_linear(c: vec3f) -> vec3f { return select(pow((c + 0.055) / 1.055, vec3f(2.4)), c / 12.92, c <= vec3f(0.04045)); }
 fn to_srgb(c: vec3f) -> vec3f { return select(1.055 * pow(c, vec3f(1.0 / 2.4)) - 0.055, c * 12.92, c <= vec3f(0.0031308)); }
-fn picture_read(uv: vec2<f32>) -> vec4<f32> { return picture_read_level(uv, 0.0); }
-fn picture_read_level(uv: vec2<f32>, level: f32) -> vec4<f32> {
-  let p = textureSampleLevel(picture, picture_sampler, uv, level);
-  if (p.a <= 0.0) { return vec4<f32>(0.0); }
-  return vec4<f32>(to_linear(clamp(p.rgb / p.a, vec3f(0.0), vec3f(1.0))) * p.a, p.a);
+fn framed(uv: vec2f) -> vec2f { return uv * knobs.frameRect.zw + knobs.frameRect.xy; }
+fn picture_read(uv: vec2f) -> vec4f { return picture_read_level(uv, 0.0); }
+fn picture_read_level(uv: vec2f, level: f32) -> vec4f {
+  let p = textureSampleLevel(picture, picture_sampler, framed(uv), level);
+  if (p.a <= 0.0) { return vec4f(0.0); }
+  return vec4f(to_linear(clamp(p.rgb / p.a, vec3f(0.0), vec3f(1.0))), p.a);
 }
-fn to_shelf(p: vec4<f32>) -> vec4<f32> {
-  if (p.a <= 0.0) { return vec4<f32>(0.0); }
-  return vec4<f32>(to_srgb(clamp(p.rgb / p.a, vec3f(0.0), vec3f(1.0))) * p.a, p.a);
-}
+fn picture_load(p: vec2i, level: u32) -> vec4f { return picture_read_level((vec2f(p) + 0.5) / knobs.resolution, 0.0); }
+fn target_read(t: texture_2d<f32>, s: sampler, uv: vec2f) -> vec4f { return textureSampleLevel(t, s, framed(uv), 0.0); }
+fn target_load(t: texture_2d<f32>, p: vec2i, level: u32) -> vec4f { return textureLoad(t, p + vec2i(knobs.frameRect.xy * vec2f(textureDimensions(t)) + 0.5), level); }
+fn target_read_level(t: texture_2d<f32>, s: sampler, uv: vec2f, level: f32) -> vec4f { return textureSampleLevel(t, s, framed(uv), level); }
+fn to_shelf(p: vec4f) -> vec4f { return vec4f(to_srgb(clamp(p.rgb, vec3f(0.0), vec3f(1.0))) * p.a, p.a); }
+fn none(uv: vec2f) -> vec4f { return vec4f(0.0); }
+fn none_level(uv: vec2f, level: f32) -> vec4f { return vec4f(0.0); }
+fn none_load(p: vec2i, level: u32) -> vec4f { return vec4f(0.0); }
+
+// structs
+
+struct p0_OutputStruct {
+	@location( 0 ) color: vec4<f32>
+};
+var<private> p0_output : p0_OutputStruct;
+
+// uniforms
 
 
 // vars
-var<private> DiffuseColor : vec4<f32>;
-var<private> nodeVar0 : vec4<f32>;
-var<private> nodeVar1 : f32;
-var<private> nodeVar2 : bool;
-var<private> nodeVar3 : vec3<f32>;
-var<private> nodeVar4 : f32;
-var<private> nodeVar5 : f32;
-var<private> nodeVar6 : f32;
-var<private> nodeVar7 : vec3<f32>;
-var<private> nodeVar8 : f32;
-var<private> nodeVar9 : f32;
-var<private> nodeVar10 : vec3<f32>;
-var<private> nodeVar11 : f32;
-var<private> nodeVar12 : f32;
-var<private> nodeVar13 : f32;
-var<private> nodeVar14 : vec3<f32>;
-var<private> nodeVar15 : f32;
-var<private> nodeVar16 : f32;
-var<private> nodeVar17 : vec3<f32>;
-var<private> nodeVar18 : f32;
-var<private> nodeVar19 : f32;
-var<private> nodeVar20 : f32;
-var<private> nodeVar21 : vec3<f32>;
-var<private> nodeVar22 : f32;
-var<private> nodeVar23 : vec4<f32>;
-var<private> nodeVar24 : vec3<f32>;
-var<private> nodeVar25 : f32;
-var<private> nodeVar26 : vec3<f32>;
-var<private> nodeVar27 : vec4<f32>;
-var<private> Output : vec4<f32>;
-var<private> nodeVar28 : vec4<f32>;
+var<private> p0_DiffuseColor : vec4<f32>;
+var<private> p0_nodeVar0 : vec4<f32>;
+var<private> p0_nodeVar1 : f32;
+var<private> p0_nodeVar2 : bool;
+var<private> p0_nodeVar3 : vec3<f32>;
+var<private> p0_nodeVar4 : f32;
+var<private> p0_nodeVar5 : f32;
+var<private> p0_nodeVar6 : f32;
+var<private> p0_nodeVar7 : vec3<f32>;
+var<private> p0_nodeVar8 : f32;
+var<private> p0_nodeVar9 : f32;
+var<private> p0_nodeVar10 : vec3<f32>;
+var<private> p0_nodeVar11 : f32;
+var<private> p0_nodeVar12 : f32;
+var<private> p0_nodeVar13 : f32;
+var<private> p0_nodeVar14 : vec3<f32>;
+var<private> p0_nodeVar15 : f32;
+var<private> p0_nodeVar16 : f32;
+var<private> p0_nodeVar17 : vec3<f32>;
+var<private> p0_nodeVar18 : f32;
+var<private> p0_nodeVar19 : f32;
+var<private> p0_nodeVar20 : f32;
+var<private> p0_nodeVar21 : vec3<f32>;
+var<private> p0_nodeVar22 : f32;
+var<private> p0_nodeVar23 : vec4<f32>;
+var<private> p0_nodeVar24 : vec3<f32>;
+var<private> p0_nodeVar25 : f32;
+var<private> p0_nodeVar26 : vec3<f32>;
+var<private> p0_nodeVar27 : vec4<f32>;
+var<private> p0_Output : vec4<f32>;
+var<private> p0_nodeVar28 : vec4<f32>;
 
 // codes
 
 
-@fragment
-fn main(@location(0) door_uv: vec2<f32>) -> OutputStruct {
-	let nodeVarying4 = vec2<f32>(door_uv.x, 1.0 - door_uv.y);
+fn p0_main(door_uv: vec2f) -> p0_OutputStruct {
+	let nodeVarying4 = vec2f(door_uv.x, 1.0 - door_uv.y);
 
 	// flow
 	// code
 
-	nodeVar0 = picture_read( vec2<f32>( nodeVarying4.x, ( 1.0 - nodeVarying4.y ) ) );
-	nodeVar2 = ( (1 * knobs.mode + 0) > 0.5 );
+	p0_nodeVar0 = picture_read( vec2<f32>( nodeVarying4.x, ( 1.0 - nodeVarying4.y ) ) );
+	p0_nodeVar2 = ( f32(knobs.mode) > 0.5 );
 
-	if ( nodeVar2 ) {
+	if ( p0_nodeVar2 ) {
 
-		nodeVar3 = vec3<f32>( nodeVar0.x, nodeVar0.y, nodeVar0.z );
-		nodeVar4 = dot( nodeVar3, vec3<f32>( 0.2126, 0.7152, 0.0722 ) );
-		nodeVar5 = max( ( knobs.levels - 1.0 ), 1.0 );
-		nodeVar6 = ( pow( ( floor( ( ( pow( clamp( nodeVar4, 0.0, 1.0 ), knobs.gamma ) * nodeVar5 ) + 0.5 ) ) / nodeVar5 ), f32(1.0) ) / max( nodeVar4, 0.001 ) );
-		nodeVar1 = clamp( vec3<f32>( ( nodeVar3.x * nodeVar6 ), ( nodeVar3.y * nodeVar6 ), ( nodeVar3.z * nodeVar6 ) ), vec3<f32>( 0.0, 0.0, 0.0 ), vec3<f32>( 1.0, 1.0, 1.0 ) ).x;
+		p0_nodeVar3 = vec3<f32>( p0_nodeVar0.x, p0_nodeVar0.y, p0_nodeVar0.z );
+		p0_nodeVar4 = dot( p0_nodeVar3, vec3<f32>( 0.2126, 0.7152, 0.0722 ) );
+		p0_nodeVar5 = max( ( f32(knobs.levels) - 1.0 ), 1.0 );
+		p0_nodeVar6 = ( pow( ( floor( ( ( pow( clamp( p0_nodeVar4, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar5 ) + 0.5 ) ) / p0_nodeVar5 ), f32(1.0) ) / max( p0_nodeVar4, 0.001 ) );
+		p0_nodeVar1 = clamp( vec3<f32>( ( p0_nodeVar3.x * p0_nodeVar6 ), ( p0_nodeVar3.y * p0_nodeVar6 ), ( p0_nodeVar3.z * p0_nodeVar6 ) ), vec3<f32>( 0.0, 0.0, 0.0 ), vec3<f32>( 1.0, 1.0, 1.0 ) ).x;
 
 	} else {
 
-		nodeVar7 = vec3<f32>( nodeVar0.x, nodeVar0.y, nodeVar0.z );
-		nodeVar8 = max( ( knobs.levels - 1.0 ), 1.0 );
-		nodeVar1 = vec3<f32>( pow( ( floor( ( ( pow( clamp( nodeVar7.x, 0.0, 1.0 ), knobs.gamma ) * nodeVar8 ) + 0.5 ) ) / nodeVar8 ), f32(1.0) ), pow( ( floor( ( ( pow( clamp( nodeVar7.y, 0.0, 1.0 ), knobs.gamma ) * nodeVar8 ) + 0.5 ) ) / nodeVar8 ), f32(1.0) ), pow( ( floor( ( ( pow( clamp( nodeVar7.z, 0.0, 1.0 ), knobs.gamma ) * nodeVar8 ) + 0.5 ) ) / nodeVar8 ), f32(1.0) ) ).x;
+		p0_nodeVar7 = vec3<f32>( p0_nodeVar0.x, p0_nodeVar0.y, p0_nodeVar0.z );
+		p0_nodeVar8 = max( ( f32(knobs.levels) - 1.0 ), 1.0 );
+		p0_nodeVar1 = vec3<f32>( pow( ( floor( ( ( pow( clamp( p0_nodeVar7.x, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar8 ) + 0.5 ) ) / p0_nodeVar8 ), f32(1.0) ), pow( ( floor( ( ( pow( clamp( p0_nodeVar7.y, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar8 ) + 0.5 ) ) / p0_nodeVar8 ), f32(1.0) ), pow( ( floor( ( ( pow( clamp( p0_nodeVar7.z, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar8 ) + 0.5 ) ) / p0_nodeVar8 ), f32(1.0) ) ).x;
 
 	}
 
 
-	if ( nodeVar2 ) {
+	if ( p0_nodeVar2 ) {
 
-		nodeVar10 = vec3<f32>( nodeVar0.x, nodeVar0.y, nodeVar0.z );
-		nodeVar11 = dot( nodeVar10, vec3<f32>( 0.2126, 0.7152, 0.0722 ) );
-		nodeVar12 = max( ( knobs.levels - 1.0 ), 1.0 );
-		nodeVar13 = ( pow( ( floor( ( ( pow( clamp( nodeVar11, 0.0, 1.0 ), knobs.gamma ) * nodeVar12 ) + 0.5 ) ) / nodeVar12 ), f32(1.0) ) / max( nodeVar11, 0.001 ) );
-		nodeVar9 = clamp( vec3<f32>( ( nodeVar10.x * nodeVar13 ), ( nodeVar10.y * nodeVar13 ), ( nodeVar10.z * nodeVar13 ) ), vec3<f32>( 0.0, 0.0, 0.0 ), vec3<f32>( 1.0, 1.0, 1.0 ) ).y;
+		p0_nodeVar10 = vec3<f32>( p0_nodeVar0.x, p0_nodeVar0.y, p0_nodeVar0.z );
+		p0_nodeVar11 = dot( p0_nodeVar10, vec3<f32>( 0.2126, 0.7152, 0.0722 ) );
+		p0_nodeVar12 = max( ( f32(knobs.levels) - 1.0 ), 1.0 );
+		p0_nodeVar13 = ( pow( ( floor( ( ( pow( clamp( p0_nodeVar11, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar12 ) + 0.5 ) ) / p0_nodeVar12 ), f32(1.0) ) / max( p0_nodeVar11, 0.001 ) );
+		p0_nodeVar9 = clamp( vec3<f32>( ( p0_nodeVar10.x * p0_nodeVar13 ), ( p0_nodeVar10.y * p0_nodeVar13 ), ( p0_nodeVar10.z * p0_nodeVar13 ) ), vec3<f32>( 0.0, 0.0, 0.0 ), vec3<f32>( 1.0, 1.0, 1.0 ) ).y;
 
 	} else {
 
-		nodeVar14 = vec3<f32>( nodeVar0.x, nodeVar0.y, nodeVar0.z );
-		nodeVar15 = max( ( knobs.levels - 1.0 ), 1.0 );
-		nodeVar9 = vec3<f32>( pow( ( floor( ( ( pow( clamp( nodeVar14.x, 0.0, 1.0 ), knobs.gamma ) * nodeVar15 ) + 0.5 ) ) / nodeVar15 ), f32(1.0) ), pow( ( floor( ( ( pow( clamp( nodeVar14.y, 0.0, 1.0 ), knobs.gamma ) * nodeVar15 ) + 0.5 ) ) / nodeVar15 ), f32(1.0) ), pow( ( floor( ( ( pow( clamp( nodeVar14.z, 0.0, 1.0 ), knobs.gamma ) * nodeVar15 ) + 0.5 ) ) / nodeVar15 ), f32(1.0) ) ).y;
+		p0_nodeVar14 = vec3<f32>( p0_nodeVar0.x, p0_nodeVar0.y, p0_nodeVar0.z );
+		p0_nodeVar15 = max( ( f32(knobs.levels) - 1.0 ), 1.0 );
+		p0_nodeVar9 = vec3<f32>( pow( ( floor( ( ( pow( clamp( p0_nodeVar14.x, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar15 ) + 0.5 ) ) / p0_nodeVar15 ), f32(1.0) ), pow( ( floor( ( ( pow( clamp( p0_nodeVar14.y, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar15 ) + 0.5 ) ) / p0_nodeVar15 ), f32(1.0) ), pow( ( floor( ( ( pow( clamp( p0_nodeVar14.z, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar15 ) + 0.5 ) ) / p0_nodeVar15 ), f32(1.0) ) ).y;
 
 	}
 
 
-	if ( nodeVar2 ) {
+	if ( p0_nodeVar2 ) {
 
-		nodeVar17 = vec3<f32>( nodeVar0.x, nodeVar0.y, nodeVar0.z );
-		nodeVar18 = dot( nodeVar17, vec3<f32>( 0.2126, 0.7152, 0.0722 ) );
-		nodeVar19 = max( ( knobs.levels - 1.0 ), 1.0 );
-		nodeVar20 = ( pow( ( floor( ( ( pow( clamp( nodeVar18, 0.0, 1.0 ), knobs.gamma ) * nodeVar19 ) + 0.5 ) ) / nodeVar19 ), f32(1.0) ) / max( nodeVar18, 0.001 ) );
-		nodeVar16 = clamp( vec3<f32>( ( nodeVar17.x * nodeVar20 ), ( nodeVar17.y * nodeVar20 ), ( nodeVar17.z * nodeVar20 ) ), vec3<f32>( 0.0, 0.0, 0.0 ), vec3<f32>( 1.0, 1.0, 1.0 ) ).z;
+		p0_nodeVar17 = vec3<f32>( p0_nodeVar0.x, p0_nodeVar0.y, p0_nodeVar0.z );
+		p0_nodeVar18 = dot( p0_nodeVar17, vec3<f32>( 0.2126, 0.7152, 0.0722 ) );
+		p0_nodeVar19 = max( ( f32(knobs.levels) - 1.0 ), 1.0 );
+		p0_nodeVar20 = ( pow( ( floor( ( ( pow( clamp( p0_nodeVar18, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar19 ) + 0.5 ) ) / p0_nodeVar19 ), f32(1.0) ) / max( p0_nodeVar18, 0.001 ) );
+		p0_nodeVar16 = clamp( vec3<f32>( ( p0_nodeVar17.x * p0_nodeVar20 ), ( p0_nodeVar17.y * p0_nodeVar20 ), ( p0_nodeVar17.z * p0_nodeVar20 ) ), vec3<f32>( 0.0, 0.0, 0.0 ), vec3<f32>( 1.0, 1.0, 1.0 ) ).z;
 
 	} else {
 
-		nodeVar21 = vec3<f32>( nodeVar0.x, nodeVar0.y, nodeVar0.z );
-		nodeVar22 = max( ( knobs.levels - 1.0 ), 1.0 );
-		nodeVar16 = vec3<f32>( pow( ( floor( ( ( pow( clamp( nodeVar21.x, 0.0, 1.0 ), knobs.gamma ) * nodeVar22 ) + 0.5 ) ) / nodeVar22 ), f32(1.0) ), pow( ( floor( ( ( pow( clamp( nodeVar21.y, 0.0, 1.0 ), knobs.gamma ) * nodeVar22 ) + 0.5 ) ) / nodeVar22 ), f32(1.0) ), pow( ( floor( ( ( pow( clamp( nodeVar21.z, 0.0, 1.0 ), knobs.gamma ) * nodeVar22 ) + 0.5 ) ) / nodeVar22 ), f32(1.0) ) ).z;
+		p0_nodeVar21 = vec3<f32>( p0_nodeVar0.x, p0_nodeVar0.y, p0_nodeVar0.z );
+		p0_nodeVar22 = max( ( f32(knobs.levels) - 1.0 ), 1.0 );
+		p0_nodeVar16 = vec3<f32>( pow( ( floor( ( ( pow( clamp( p0_nodeVar21.x, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar22 ) + 0.5 ) ) / p0_nodeVar22 ), f32(1.0) ), pow( ( floor( ( ( pow( clamp( p0_nodeVar21.y, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar22 ) + 0.5 ) ) / p0_nodeVar22 ), f32(1.0) ), pow( ( floor( ( ( pow( clamp( p0_nodeVar21.z, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar22 ) + 0.5 ) ) / p0_nodeVar22 ), f32(1.0) ) ).z;
 
 	}
 
-	nodeVar23 = vec4<f32>( vec3<f32>( nodeVar1, nodeVar9, nodeVar16 ), 1.0 );
-	nodeVar24 = vec3<f32>( nodeVar23.x, nodeVar23.y, nodeVar23.z );
-	nodeVar25 = ( ( ( nodeVar24.x * 0.2126 ) + ( nodeVar24.y * 0.7152 ) ) + ( nodeVar24.z * 0.0722 ) );
-	nodeVar26 = mix( vec3<f32>( nodeVar25, nodeVar25, nodeVar25 ), nodeVar24, f32(1.0) );
-	nodeVar27 = vec4<f32>( clamp( vec3<f32>( ( ( ( nodeVar26.x * ( ( 0.213 + ( cos( f32(0.0) ) * 0.787 ) ) - ( sin( f32(0.0) ) * 0.213 ) ) ) + ( nodeVar26.y * ( ( 0.715 - ( cos( f32(0.0) ) * 0.715 ) ) - ( sin( f32(0.0) ) * 0.715 ) ) ) ) + ( nodeVar26.z * ( ( 0.072 - ( cos( f32(0.0) ) * 0.072 ) ) + ( sin( f32(0.0) ) * 0.928 ) ) ) ), ( ( ( nodeVar26.x * ( ( 0.213 - ( cos( f32(0.0) ) * 0.213 ) ) + ( sin( f32(0.0) ) * 0.143 ) ) ) + ( nodeVar26.y * ( ( 0.715 + ( cos( f32(0.0) ) * 0.285 ) ) + ( sin( f32(0.0) ) * 0.14 ) ) ) ) + ( nodeVar26.z * ( ( 0.072 - ( cos( f32(0.0) ) * 0.072 ) ) - ( sin( f32(0.0) ) * 0.283 ) ) ) ), ( ( ( nodeVar26.x * ( ( 0.213 - ( cos( f32(0.0) ) * 0.213 ) ) - ( sin( f32(0.0) ) * 0.787 ) ) ) + ( nodeVar26.y * ( ( 0.715 - ( cos( f32(0.0) ) * 0.715 ) ) + ( sin( f32(0.0) ) * 0.715 ) ) ) ) + ( nodeVar26.z * ( ( 0.072 + ( cos( f32(0.0) ) * 0.928 ) ) + ( sin( f32(0.0) ) * 0.072 ) ) ) ) ), vec3<f32>( 0.0, 0.0, 0.0 ), vec3<f32>( 1.0, 1.0, 1.0 ) ), clamp( nodeVar23.w, 0.0, 1.0 ) );
-	DiffuseColor = vec4<f32>( mix( nodeVar0.xyz, nodeVar27.xyz, ( clamp( f32(1.0), 0.0, 1.0 ) * clamp( nodeVar27.w, 0.0, 1.0 ) ) ), clamp( nodeVar0.w, 0.0, 1.0 ) );
-	DiffuseColor.w = ( DiffuseColor.w * f32(1.0) );
-	nodeVar28 = max( vec4<f32>( DiffuseColor.xyz, DiffuseColor.w ), vec4<f32>( 0.0 ) );
-	Output = nodeVar28;
+	p0_nodeVar23 = vec4<f32>( vec3<f32>( p0_nodeVar1, p0_nodeVar9, p0_nodeVar16 ), 1.0 );
+	p0_nodeVar24 = vec3<f32>( p0_nodeVar23.x, p0_nodeVar23.y, p0_nodeVar23.z );
+	p0_nodeVar25 = ( ( ( p0_nodeVar24.x * 0.2126 ) + ( p0_nodeVar24.y * 0.7152 ) ) + ( p0_nodeVar24.z * 0.0722 ) );
+	p0_nodeVar26 = mix( vec3<f32>( p0_nodeVar25, p0_nodeVar25, p0_nodeVar25 ), p0_nodeVar24, f32(1.0) );
+	p0_nodeVar27 = vec4<f32>( clamp( vec3<f32>( ( ( ( p0_nodeVar26.x * ( ( 0.213 + ( cos( f32(0.0) ) * 0.787 ) ) - ( sin( f32(0.0) ) * 0.213 ) ) ) + ( p0_nodeVar26.y * ( ( 0.715 - ( cos( f32(0.0) ) * 0.715 ) ) - ( sin( f32(0.0) ) * 0.715 ) ) ) ) + ( p0_nodeVar26.z * ( ( 0.072 - ( cos( f32(0.0) ) * 0.072 ) ) + ( sin( f32(0.0) ) * 0.928 ) ) ) ), ( ( ( p0_nodeVar26.x * ( ( 0.213 - ( cos( f32(0.0) ) * 0.213 ) ) + ( sin( f32(0.0) ) * 0.143 ) ) ) + ( p0_nodeVar26.y * ( ( 0.715 + ( cos( f32(0.0) ) * 0.285 ) ) + ( sin( f32(0.0) ) * 0.14 ) ) ) ) + ( p0_nodeVar26.z * ( ( 0.072 - ( cos( f32(0.0) ) * 0.072 ) ) - ( sin( f32(0.0) ) * 0.283 ) ) ) ), ( ( ( p0_nodeVar26.x * ( ( 0.213 - ( cos( f32(0.0) ) * 0.213 ) ) - ( sin( f32(0.0) ) * 0.787 ) ) ) + ( p0_nodeVar26.y * ( ( 0.715 - ( cos( f32(0.0) ) * 0.715 ) ) + ( sin( f32(0.0) ) * 0.715 ) ) ) ) + ( p0_nodeVar26.z * ( ( 0.072 + ( cos( f32(0.0) ) * 0.928 ) ) + ( sin( f32(0.0) ) * 0.072 ) ) ) ) ), vec3<f32>( 0.0, 0.0, 0.0 ), vec3<f32>( 1.0, 1.0, 1.0 ) ), clamp( p0_nodeVar23.w, 0.0, 1.0 ) );
+	p0_DiffuseColor = vec4<f32>( mix( p0_nodeVar0.xyz, p0_nodeVar27.xyz, ( clamp( f32(1.0), 0.0, 1.0 ) * clamp( p0_nodeVar27.w, 0.0, 1.0 ) ) ), clamp( p0_nodeVar0.w, 0.0, 1.0 ) );
+	p0_DiffuseColor.w = ( p0_DiffuseColor.w * f32(1.0) );
+	p0_nodeVar28 = max( vec4<f32>( p0_DiffuseColor.xyz, p0_DiffuseColor.w ), vec4<f32>( 0.0 ) );
+	p0_Output = p0_nodeVar28;
 
 	// result
 
-	output.color = nodeVar28;
+	p0_output.color = p0_nodeVar28;
 
-	output.color = to_shelf(output.color);
-	return output;
+	return p0_output;
 
+}
+
+@fragment
+fn main(@location(0) door_on: vec2f) -> @location(0) vec4f {
+  let door_uv = (door_on - knobs.passRect.xy) / knobs.passRect.zw;
+  return to_shelf(p0_main(door_uv).color);
 }
