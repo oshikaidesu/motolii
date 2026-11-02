@@ -3,11 +3,8 @@
 // `passindex`; every step's fragment shader kept as three's builder wrote it, its names apart.
 import { built } from "./convert"
 
-export const uniformsOf = (b: any) => {
-  const all: any[] = []
-  b.getBindings().forEach((g: any) => g.bindings.forEach((x: any) => { if (x.isUniformsGroup) for (const u of x.uniforms) all.push(u.nodeUniform) }))
-  return all
-}
+// (the builder's own list: getBindings() gives a shared group, time's, as first built, with that build's names)
+export const uniformsOf = (b: any) => [...b.uniforms.vertex, ...b.uniforms.fragment].filter((u: any) => !/texture|sampler/i.test(u.type))
 // A uniform's value as numbers (none: not a thing a knob can be).
 export function parts(v: any): number[] | null {
   if (typeof v === "number") return [v]
@@ -89,7 +86,7 @@ export type Said = Map<string, (string | undefined)[]>   // (a step's uniform, "
 export type Target = { name: string, kept: boolean, fine: boolean, share: [number, number], points: [number, number] }
 
 // Each step's shader with its names apart (p<step>_), what it reads and its uniforms said in the file's terms.
-function stepText(k: number, step: Step, said: Said, fields: Map<string, string>, nameOf: (t: any) => string, tables: Map<any, string>, share: [number, number]): string {
+function stepText(k: number, step: Step, said: Said, fields: Map<string, string>, nameOf: (t: any) => string, tables: Map<any, string>, share: [number, number], place: string): string {
   let body = step.frag.slice(step.frag.indexOf("// structs")), picture = new Map<string, any>(step.pictures)
   const reads: [RegExp, string][] = [], late: [string, string][] = []
   body = body.replace(/@binding\( \d+ \) @group\( \d+ \) var (\w+) : (texture_2d<f32>|sampler);\n/g, (_, name, type) => {
@@ -115,18 +112,20 @@ function stepText(k: number, step: Step, said: Said, fields: Map<string, string>
   })
   for (const [from, to] of reads) body = body.replace(from, to)
   for (const [from, to] of late) body = body.split(from).join(to)
-  const varying = /fn main\( (.*) \) -> OutputStruct \{/.exec(body)?.[1] ?? ""
+  const varying = /fn main\( ([\s\S]*?) \) -> OutputStruct \{/.exec(body)?.[1] ?? ""
   const given = varying.split(",").filter(x => x.trim()).map(x => /(\w+) : (vec\d<f32>)/.exec(x)!).map(([, name, type]) => {
     const was = step.varying.find(v => v.startsWith(`${name}=`))?.split("=")[1] ?? "uv"
-    return `\tlet ${name} = ${was === "position" ? "vec3f(2.0 * door_uv.x - 1.0, 1.0 - 2.0 * door_uv.y, 0.0)" : was === "normal" ? "vec3f(0.0, 0.0, 1.0)" : type === "vec2<f32>" ? "vec2f(door_uv.x, 1.0 - door_uv.y)" : "vec3f(door_uv.x, 1.0 - door_uv.y, 0.0)"};`
+    return `\tlet ${name} = ${name === "fragCoord" ? "vec4f(door_uv * knobs.resolution, 0.0, 1.0)" : was === "position" ? place : was === "normal" ? "vec3f(0.0, 0.0, 1.0)" : type === "vec2<f32>" ? "vec2f(door_uv.x, 1.0 - door_uv.y)" : "vec3f(door_uv.x, 1.0 - door_uv.y, 0.0)"};`
   }).join("\n")
-  body = body.replace(/@fragment\s*\n/, "").replace(/fn main\( .* \) -> OutputStruct \{/, `fn main(door_uv: vec2f) -> OutputStruct {\n${given}`)
+  body = body.replace(/@fragment\s*\n/, "").replace(/fn main\( [\s\S]*? \) -> OutputStruct \{/, `fn main(door_uv: vec2f) -> OutputStruct {\n${given}`)
   for (const m of [...body.matchAll(/^(?:fn|struct|const|var<private>|var)\s+(\w+)/gm)])
     body = body.replace(new RegExp(`(?<![.\\w])${m[1]}\\b`, "g"), `PSTEP_${m[1]}`)
   return body
 }
 
-export function fileText(head: string[], steps: Step[], said: Said, fields: Map<string, string>, targets: Target[], nameOf: (t: any) => string, tail: string | null): string {
+// `made`: a texture that makes its own picture (its place on a sheet as wide as what it fills, its see-through what is under
+// it, as an ISF generator's: isf.cpp, Preserve Underlying Transparency).
+export function fileText(head: string[], steps: Step[], said: Said, fields: Map<string, string>, targets: Target[], nameOf: (t: any) => string, tail: string | null, made = false): string {
   const last = steps.length - 1, tables = new Map<any, string>()
   let code = ""
   steps.forEach(s => s.pictures.forEach(([, t]) => {
@@ -140,12 +139,12 @@ export function fileText(head: string[], steps: Step[], said: Said, fields: Map<
   const bindings = bound.map((n, i) => `@group(0) @binding(${2 * i}) var ${n}: texture_2d<f32>;\n@group(0) @binding(${2 * i + 1}) var ${n}_sampler: sampler;\n`).join("")
   const each = steps.map((s, k) => {
     const t = s.target ? targets.find(x => x.name === nameOf(s.target)) : null
-    return stepText(k, s, said, fields, nameOf, tables, t ? t.share : [1, 1])
+    return stepText(k, s, said, fields, nameOf, tables, t ? t.share : [1, 1], made ? "vec3f((2.0 * door_uv.x - 1.0) * knobs.resolution.x * knobs.frameRect.z / (knobs.resolution.y * knobs.frameRect.w), 1.0 - 2.0 * door_uv.y, 0.0)" : "vec3f(2.0 * door_uv.x - 1.0, 1.0 - 2.0 * door_uv.y, 0.0)")
   })
   const texts = [...new Set(each)], of = each.map(t => texts.indexOf(t))   // (a step that draws what one before it does: that one's lines)
   const knobs = `struct Knobs {\n  time: f32,\n  passindex: f32,\n  resolution: vec2<f32>,\n  frameRect: vec4<f32>,\n  passRect: vec4<f32>,\n${[...fields].map(([n, t]) => `  ${n}: ${t},`).join("\n")}\n};\n`
   const drawn = tail ? steps.length : last, cases = texts.map((_, j) => of.map((o, k) => o === j && k < drawn ? `${k}u` : "").filter(x => x)).map((ks, j) => ks.length ? `    case ${ks.join(", ")}: { return p${j}_main(door_uv).color; }\n` : "").join("")
   const entry = `@fragment\nfn main(@location(0) door_on: vec2f) -> @location(0) vec4f {\n  let door_uv = (door_on - knobs.passRect.xy) / knobs.passRect.zw;\n${
-    drawn ? `  switch u32(knobs.passindex + 0.5) {\n${cases}    default: {}\n  }\n` : ""}  return to_shelf(${tail ? `target_read(${tail}, ${tail}_sampler, door_uv)` : `p${of[last]}_main(door_uv).color`});\n}\n`
+    drawn ? `  switch u32(knobs.passindex + 0.5) {\n${cases}    default: {}\n  }\n` : ""}  return to_shelf(${tail ? `target_read(${tail}, ${tail}_sampler, door_uv)` : `p${of[last]}_main(door_uv).color`})${made ? " * textureSampleLevel(picture, picture_sampler, framed(door_uv), 0.0).a" : ""};\n}\n`
   return [...head, "diagnostic(off, derivative_uniformity);", knobs + bindings + `@group(0) @binding(${2 * bound.length}) var<uniform> knobs: Knobs;\n` + tones + code, ...texts.map((t, j) => t.replace(/\bPSTEP_/g, `p${j}_`)), entry].join("\n")
 }
