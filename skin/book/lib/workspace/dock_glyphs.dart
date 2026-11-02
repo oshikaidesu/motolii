@@ -20,6 +20,7 @@ enum DockG {
   sort,
   filter,
   plus,
+  more,
   light,
   blur,
   distort,
@@ -151,6 +152,10 @@ class _P extends CustomPainter {
       case DockG.search:
         cv.drawCircle(p(.43, .43), w * .26, st);
         cv.drawLine(p(.63, .63), p(.86, .86), st);
+      case DockG.more:   // (three dots, a menu of what can be done to it)
+        for (final x in const [.2, .5, .8]) {
+          cv.drawCircle(p(x, .5), w * .07, fl);
+        }
       case DockG.close:
         cv.drawLine(p(.28, .28), p(.72, .72), st);
         cv.drawLine(p(.72, .28), p(.28, .72), st);

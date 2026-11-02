@@ -4,8 +4,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/gestures.dart' show PointerDeviceKind, kDoubleTapTimeout;
-import 'package:flutter/services.dart' show LogicalKeyboardKey;
+import 'package:flutter/gestures.dart' show PointerDeviceKind, kDoubleTapTimeout, kPrimaryButton, kSecondaryButton;
+import 'package:flutter/services.dart' show LogicalKeyboardKey, SystemChannels;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -215,14 +215,13 @@ void main() {
     await t.pumpWidget(const SizedBox());
   }, skip: !insideBuilt);
 
-  testWidgets('a file\'s effect starred: a ★ table of the starred, and kept for the next time', (t) async {
+  testWidgets('a file\'s effect starred: Favorites in the list holds the starred, and kept for the next time', (t) async {
     final kept = File('${Directory.systemTemp.createTempSync('stars').path}/effect_stars.json');
     dockStarsAt(kept);
     final ws = _joined();
     await _shelf(t, ws, const Size(600, 918), 'Effects');
     final tile = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('ws-screen-')).first;
     final id = (t.widget(tile).key as ValueKey<String>).value.substring('ws-screen-'.length);
-    expect(find.text('★'), findsNothing, reason: 'none starred: no table of them');
     final hand = await t.createGesture(kind: PointerDeviceKind.mouse);
     await hand.addPointer(location: t.getCenter(tile));
     await t.pumpAndSettle();
@@ -231,13 +230,13 @@ void main() {
     await hand.removePointer();
     await t.pumpAndSettle();
     expect(kept.readAsStringSync(), contains(id), reason: 'kept for the next time');
-    await t.tap(find.text('★'));
+    await t.tap(find.byKey(const ValueKey('ws-fx-place-★')));
     await t.pumpAndSettle();
     expect(find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('ws-screen-')), findsOneWidget, reason: 'the starred alone');
     await t.pumpWidget(const SizedBox());
   }, skip: !insideBuilt);
 
-  testWidgets('an effect put on comes among the last put on: in sight over the tiles and a Recent table, the newest first, and said in the log', (t) async {
+  testWidgets('an effect put on comes among the last put on: in sight over the tiles and Recent in the list, the newest first, and said in the log', (t) async {
     final kept = File('${Directory.systemTemp.createTempSync('recent').path}/effect_recent.json');
     effectRecentAt(kept);
     final ws = _joined();
@@ -245,8 +244,7 @@ void main() {
     final tiles = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('ws-screen-'));
     String idOf(Finder f) => (t.widget(f).key as ValueKey<String>).value.substring('ws-screen-'.length);
     final first = idOf(tiles.at(0)), second = idOf(tiles.at(1));
-    expect(find.text('Recent'), findsNothing, reason: 'none put on yet: no table of them');
-    expect(find.byKey(const ValueKey('ws-fx-recent')), findsNothing);
+    expect(find.byKey(const ValueKey('ws-fx-recent')), findsNothing, reason: 'none put on yet');
     Future<void> put(String id) async {
       await doubleTap(t, find.byKey(ValueKey('ws-screen-$id')));
       for (var i = 0; i < 200 && (ws.waiting || !effectRecent().contains(id)); i++) {   // (asked without waiting)
@@ -260,7 +258,7 @@ void main() {
     expect(effectRecent(), [second, first], reason: 'the newest first');
     expect(jsonDecode(kept.readAsStringSync()), [second, first], reason: 'kept for the next time');
     expect(find.descendant(of: find.byKey(const ValueKey('ws-fx-recent')), matching: find.byType(EffectTile)), findsNWidgets(2), reason: 'in sight over the tiles');
-    await t.tap(find.text('Recent'));
+    await t.tap(find.byKey(const ValueKey('ws-fx-place-Recent')));
     await t.pumpAndSettle();
     expect(find.byKey(const ValueKey('ws-fx-recent')), findsNothing, reason: 'not twice');
     expect(idOf(tiles.at(0)), second, reason: 'the table, the newest first');
@@ -269,6 +267,100 @@ void main() {
     expect([for (final l in lines) (jsonDecode(l) as Map)['id']], [first, second], reason: 'each said in the log, in its order');
     await t.pumpWidget(const SizedBox());
   }, skip: !insideBuilt);
+
+  testWidgets('a deck: a row in the list, made from words typed, a hand puts one in by its menu and by a drag and takes one out, renamed, kept for the next time, deleted', (t) async {
+    final kept = File('${Directory.systemTemp.createTempSync('decks').path}/effect_decks.json');
+    effectDecksAt(kept);
+    final ws = _joined();
+    await _shelf(t, ws, const Size(600, 918), 'Effects');
+    final tiles = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('ws-screen-'));
+    List<String> ids() => [for (final e in tiles.evaluate()) (e.widget.key as ValueKey<String>).value.substring('ws-screen-'.length)];
+    final m = ws.inside!, strangers = m.effects.where((e) => !e.$1.toLowerCase().contains('blur') && !m.about(e.$2).toLowerCase().contains('blur') && !m.tags(e.$2).contains('blur')).toList();
+    final stranger = strangers[0], another = strangers[1];
+    final search = find.descendant(of: find.byType(DockSearch), matching: find.byType(EditableText)), naming = find.descendant(of: find.byKey(const ValueKey('ws-fx-naming')), matching: find.byType(EditableText));
+    Finder place(String p) => find.byKey(ValueKey('ws-fx-place-$p'));
+    Future<void> press(Finder f, {int buttons = kPrimaryButton}) async {
+      await t.tap(f, buttons: buttons);
+      await t.pump(kDoubleTapTimeout + const Duration(milliseconds: 50));
+      await t.pumpAndSettle();
+    }
+    Future<void> type(Finder f, String words) async {
+      await t.enterText(f, words);
+      await t.pumpAndSettle();
+    }
+    await type(search, 'blur');
+    await press(find.byKey(const ValueKey('ws-fx-deck-new')));
+    await press(find.text('New Deck from “blur”'));
+    expect(place('@blur'), findsOneWidget, reason: 'a row in the list, by the words typed');
+    expect(t.widget<EditableText>(naming).focusNode.hasFocus, isTrue, reason: 'its name at once to write');
+    expect(t.widget<EditableText>(search).controller.text, '', reason: 'the words are the deck\'s now');
+    await type(naming, 'Soft');
+    await t.testTextInput.receiveAction(TextInputAction.done);
+    await t.pumpAndSettle();
+    expect([place('@blur').evaluate().length, place('@Soft').evaluate().length], [0, 1]);
+    final found = ids();
+    expect(found, isNotEmpty, reason: 'open, what its words find');
+    expect(jsonDecode(kept.readAsStringSync())['decks'][0]['words'], 'blur', reason: 'kept, and no hand listed what it found');
+    await press(place('All'));
+    await type(search, stranger.$1);
+    await press(find.byKey(ValueKey('ws-screen-${stranger.$2}')), buttons: kSecondaryButton);
+    await press(find.byKey(const ValueKey('ws-menu-Soft')));
+    await type(search, another.$1);
+    final hand = await t.startGesture(t.getCenter(find.byKey(ValueKey('ws-screen-${another.$2}'))));
+    await t.pump(const Duration(milliseconds: 50));
+    await hand.moveTo(t.getCenter(place('@Soft')));
+    await t.pump(const Duration(milliseconds: 50));
+    await hand.up();
+    await t.pumpAndSettle();
+    await type(search, '');
+    await press(place('@Soft'));
+    expect(ids(), containsAll([stranger.$2, another.$2]), reason: 'put in by hand, by its menu and by a drag, beside what its words find');
+    await press(find.byKey(ValueKey('ws-screen-${found.first}')));
+    await press(find.byKey(const ValueKey('ws-fx-more')));
+    expect(find.byKey(const ValueKey('ws-menu-Add to Favorites')), findsOneWidget, reason: 'the three dots open what a right click does');
+    await press(find.byKey(const ValueKey('ws-menu-Soft')));
+    expect(ids(), isNot(contains(found.first)), reason: 'one its words find, taken out by hand, stays out');
+    expect(ids(), contains(found[1]));
+    effectDecksAt(kept);   // (the next time)
+    expect(effectDecks().single.things.map((e) => e.sum), [effectSum(stranger.$2), effectSum(another.$2)], reason: 'known by what it is');
+    expect(effectDecks().single.without, {found.first});
+    await press(place('Recent'));   // (the list as read again)
+    await press(place('@Soft'));
+    await press(place('@Soft'), buttons: kSecondaryButton);
+    await press(find.byKey(const ValueKey('ws-menu-Delete')));
+    expect(place('@Soft'), findsNothing);
+    expect(ids(), isNotEmpty, reason: 'back on all');
+    await t.pumpWidget(const SizedBox());
+  }, skip: !insideBuilt);
+
+  testWidgets('a deck handed on as a line: pasted by the + of the decks, what this machine lacks kept and marked, and it comes back when the effect does', (t) async {
+    final ws = _joined();
+    await _shelf(t, ws, const Size(600, 918), 'Effects');
+    final m = ws.inside!, here = m.effects.first;
+    final line = deckCode(EffectDeck('Sent', things: [DeckThing(here.$2, here.$1, effectSum(here.$2)), DeckThing('/elsewhere/engine/effects/Nowhere.fs', 'Nowhere', 'abc')]));
+    expect(deckRead('hello'), isNull);
+    expect(line, startsWith(deckCodeHead));
+    expect(line, isNot(contains('/Users/')), reason: 'no one\'s folders go with it');
+    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => call.method == 'Clipboard.getData' ? {'text': line} : null);
+    addTearDown(() => t.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await t.tap(find.byKey(const ValueKey('ws-fx-deck-new')));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Paste Deck Code'));
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey('ws-fx-place-@Sent')), findsOneWidget);
+    expect(find.byKey(ValueKey('ws-screen-${here.$2}')), findsOneWidget, reason: 'the one here');
+    expect(find.text('NOT HERE'), findsOneWidget, reason: 'the one not, its name kept');
+    expect(find.text('Nowhere'), findsOneWidget);
+    final moved = EffectDeck('Moved', things: [DeckThing('/gone/${here.$2.split('/').last}', here.$1, effectSum(here.$2))]);
+    deckSettle(moved, {for (final e in m.effects) e.$2});
+    expect(moved.things.single.id, here.$2, reason: 'moved: found again by its fingerprint');
+    await t.pumpWidget(const SizedBox());
+  }, skip: !insideBuilt);
+
+  test('the pack an effect came in, from the folder its maker named', () {
+    expect(effectPack('/x/engine/aviutl_scripts/HexBrowns__HexScript/Script/A.anm2#b'), 'HexScript');
+    expect(effectPack('/x/engine/effects/Bloom.fs'), isNull);
+  });
 
   testWidgets('a file\'s effect with nothing picked comes on an adjustment layer over all else, picked (After Effects, Photoshop\'s Adjustments panel)', (t) async {
     final ws = _joined();

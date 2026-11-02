@@ -516,6 +516,20 @@ class Ws extends ChangeNotifier {
     ];
   }
 
+  /// Joined: all the effects and motions on anything in the document, as the shelf tells them. A document is a bundle
+  /// no hand made: Suitcase's Font Sense keeps in a document the fonts it uses.
+  Set<String> get fxUsed {
+    final m = _inside;
+    if (m == null) return const {};
+    return {
+      for (final t in m.things) ...[
+        for (final f in _files.allMatches(m.word(t, 'fx')).map((f) => f[0]!)) if (f != 'none') f,
+        ...fxOf('$t'),
+        if (m.word(t, 'script') case final s when s.isNotEmpty && s != 'none') s,
+      ],
+    };
+  }
+
   /// A shape as large as the picture, picked, one step with what [also] says to it.
   void whole(String kind, [void Function(Motolii m)? also]) {
     final m = _inside;

@@ -46,16 +46,22 @@ class DockMem {
   String folder = 'Footage';
   double treeHeight = 132;
 
+  /// The Effects shelf: where it looks (a row of its list: All, Recent, ★, In video, /pack, @deck) and the list's height
+  /// when the shelf is narrow.
+  String fxPlace = 'All';
+  double fxListHeight = 176;
+
 }
 
 /// One build's view of the dock for a shelf body: the memory, the search text, the document, and how to change local state.
 class DockCtx {
-  DockCtx(this.shelf, this.mem, this.query, this.ws, this.set);
+  DockCtx(this.shelf, this.mem, this.query, this.ws, this.set, this.clearSearch);
   final String shelf;
   final DockMem mem;
   final String query;
   final Ws ws;
   final void Function(VoidCallback) set;
+  final VoidCallback clearSearch;
 
   String? get sel => mem.sel[shelf];
   void pick(String id) => set(() => mem.sel[shelf] = id);
@@ -217,7 +223,7 @@ class DockSection extends StatelessWidget {
               style: T.micro(Grey.g91).copyWith(fontWeight: FontWeight.w700, letterSpacing: .9),
             ),
           ),
-          if (trailing case final w?) Flexible(child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerRight, child: w)),   // (drawn smaller in a narrow shelf, never cut)
+          if (trailing case final w?) Flexible(child: Align(alignment: Alignment.centerRight, child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerRight, child: w))),   // (drawn smaller in a narrow shelf, never cut)
           if (count != null) Text('$count', style: T.value(Grey.g56).copyWith(fontSize: T.px(10))),
         ],
       ),
@@ -298,10 +304,12 @@ class DockFooter extends StatelessWidget {
     this.doneLabel = 'Added',
     this.fresh = false,
     this.lasts,
+    this.more,
   });
 
   /// What the action does is make a new thing (not change the selected one): 'to new layer'.
   final bool fresh;
+  final Widget? more;   // (beside the action: Spotify's three dots)
   final Widget? lasts;   // (how long the new thing lasts, chosen before it is placed: beside where it goes)
   final Widget? preview;
   final String title, meta, action, doneLabel;
@@ -358,6 +366,7 @@ class DockFooter extends StatelessWidget {
             ),
           ),
           SizedBox(width: Shape.s(6)),
+          ?more,
           DockHover(
             onTap: done ? null : onAction,
             builder: (context, h) => AnimatedContainer(
@@ -492,12 +501,13 @@ class _DockSearchState extends State<DockSearch> {
 
 /// What a shelf shows when the search finds nothing.
 class DockEmpty extends StatelessWidget {
-  const DockEmpty(this.query, {super.key});
+  const DockEmpty(this.query, {super.key, this.said});
   final String query;
+  final String? said;   // (nothing typed: what is empty here, and what to do)
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.all(Shape.s(24)),
-    child: Text('Nothing matches “$query”', textAlign: TextAlign.center, style: T.label(Grey.g63)),
+    child: Text(said ?? 'Nothing matches “$query”', textAlign: TextAlign.center, style: T.label(Grey.g63)),
   );
 }
 

@@ -103,7 +103,7 @@ class _WsShelfState extends State<WsShelf> {
   Widget build(BuildContext context) {
     final ws = WsScope.read(context), name = widget.name;
     final (_, _, hint) = dockShelves.firstWhere((s) => s.$1 == name);
-    final c = DockCtx(name, _mem, _search.text.trim(), ws, setState);
+    final c = DockCtx(name, _mem, _search.text.trim(), ws, setState, _search.clear);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
