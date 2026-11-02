@@ -6,10 +6,23 @@
 #include "script.h"
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 bool aviutl_is(const std::string& file);
 inline std::string aviutl_path(const std::string& file) { return file.substr(0, file.find('#', file.rfind('/') + 1)); }   // (the file of "@x.anm2#name")
+// A script's name as a word of an effect list: the list is split at spaces (script_files) and the file taken to the last
+// "/" (aviutl_path), so those two of a name are written as a URL's fragment writes them (RFC 3986 2.1): 20 of the 355
+// bundled scripts have one, [Shader]Chromatic Aberration among them. A name shown is the name; only the word is coded.
+inline const std::pair<const char*, const char*> aviutl_coded[] = {{" ", "%20"}, {"/", "%2F"}};
+inline std::string aviutl_word(std::string name) {
+    for (const auto& [plain, coded] : aviutl_coded) for (size_t at; (at = name.find(plain)) != std::string::npos;) name.replace(at, 1, coded);
+    return name;
+}
+inline std::string aviutl_unword(std::string word) {
+    for (const auto& [plain, coded] : aviutl_coded) for (size_t at; (at = word.find(coded)) != std::string::npos;) word.replace(at, 3, plain);
+    return word;
+}
 // The script's own text (the file, or its part from "@name" to the next) and the whole file's (any part's shaders are its).
 bool aviutl_text(const std::string& file, std::string& own, std::string& all, std::string& why);
 // A variable its head says (--track@, --check@, --color@, --select@, --value@; the old --track0: and --check0: as obj's),

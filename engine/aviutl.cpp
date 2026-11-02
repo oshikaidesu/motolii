@@ -38,7 +38,7 @@ bool aviutl_text(const std::string& file, std::string& own, std::string& all, st
     own = all = text.str();
     if (std::filesystem::path(aviutl_path(file)).filename().string()[0] != '@') return true;
     // (an @ file: its scripts each from a line "@name" (lua.txt); none named, the first)
-    const std::string name = hash == std::string::npos ? "" : file.substr(hash + 1);
+    const std::string name = hash == std::string::npos ? "" : aviutl_unword(file.substr(hash + 1));
     std::smatch m;
     if (!std::regex_search(all, m, std::regex(name.empty() ? std::string("(^|\\n)@[^\\r\\n]*") : "(^|\\n)@" + std::regex_replace(name, std::regex(R"([.^$|()\[\]{}*+?\\])"), "\\$&") + "[ \\t]*\\r?\\n")))
         return why = "no script @" + name + " in " + file, false;

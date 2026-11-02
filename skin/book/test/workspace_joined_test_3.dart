@@ -2187,10 +2187,10 @@ void _tests3() {
     await _close(t);
   }, skip: !_built);
 
-  testWidgets('an AviUtl2 script on a thing is told as on: its path read to .anm2, spaces and all, as the inside reads the list', (t) async {
+  testWidgets('an AviUtl2 script on a thing is told as on: its path read to .anm2, spaces and all, and a space in its name is one word of the list', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     final cube = m.add('solid', 'cube');
-    final file = m.effects.firstWhere((e) => e.$2.contains('.anm2#') && e.$2.split('#').first.contains(' ') && !e.$2.split('#').last.contains(' ')).$2;
+    final file = m.effects.firstWhere((e) => e.$1 == '[Shader]Chromatic Aberration').$2;
     ws
       ..reread()
       ..select('$cube')

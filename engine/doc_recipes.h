@@ -145,7 +145,7 @@ static std::string doc_aviutl_names() {
                 const auto put = [&] {
                     std::string tags;
                     for (const auto& [on, word] : {std::pair{ext == ".scn2", "transition"}, {ext == ".obj2", "generator"}, {sound, "sound"}, {clock, "time"}}) if (on) tags += (tags.empty() ? "" : " ") + std::string(word);
-                    if (!name.empty()) lines += name + "\t" + f.string() + (many ? "#" + name : "") + "\t" + label + doc_tile(f.string() + (many ? "#" + name : ""), many ? std::filesystem::path() : std::filesystem::path(f).replace_extension(".png")) + "\t\t" + tags + "\n";
+                    if (!name.empty()) lines += name + "\t" + f.string() + (many ? "#" + aviutl_word(name) : "") + "\t" + label + doc_tile(f.string() + (many ? "#" + aviutl_word(name) : ""), many ? std::filesystem::path() : std::filesystem::path(f).replace_extension(".png")) + "\t\t" + tags + "\n";
                     sound = clock = false;
                 };
                 for (std::string line; std::getline(in, line);) {
