@@ -72,7 +72,7 @@ struct Doc {
     std::map<int, Scripted> scripted;
     struct AbsentKept { double at = -1; long changes = -1; int seen = -1; std::vector<AbsentCopy> copies; };
     std::map<int, AbsentKept> absentKept;
-    struct RelatedKept { double at = -1; long changes = -1; int made = -1; std::vector<double> values; };
+    struct RelatedKept { double at = -1; long changes = -1; int made = -1, solves = -1; std::vector<double> values; std::vector<std::vector<double>> frames; };   // (frames: a solver's, each from the one before, as Motolii's p5 keeps its own)
     std::map<int, RelatedKept> relatedKept;   // (what a relation written as a file last said of all its things: doc_relations.h)
     std::map<int, std::pair<std::string, std::string>> drawingKept;   // (each freehand stroke's outline as AbsentMotion's drawing effects last made it, by what they were: doc_moment)   // (each thing's copies as AbsentMotion's repeat effects lay them, at the moment last asked: doc_absent_copies)
     std::shared_ptr<struct DocScripts> scripts;   // (its scripts, each run as its file says: doc_values.h)
@@ -310,7 +310,7 @@ static const DocValue doc_values[] = {
     {"step", "behaviour", 0, 1e6, true, nullptr},   // (what it gives rounded to so many: 90, a quarter turn at a time; 0 not)
     // (where it works, Cavalry's falloff: inside a shape (any shape, seen or not, moving or not) all of it, outside none, between over
     //  falloff_soft units of the stage; inverted, the other way: elsewhere, the value is the thing's own)
-    {"falloff", "behaviour", 0, 1e9, false, nullptr},
+    {"region", "behaviour", 0, 1e9, false, nullptr},
     {"falloff_soft", "behaviour", 0, 1e4, true, nullptr},
     {"falloff_invert", "behaviour", 0, 1, false, nullptr},   // (where its outlines lie over each other: filled, or a hole every other time, SVG's and Cavalry's fill rule)
     // (a relation, a behaviour that sets its things in relation to each other or to one of them: around a middle, in a row,

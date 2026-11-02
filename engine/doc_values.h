@@ -90,6 +90,9 @@ static const DocShown doc_shown[] = {
     {"centre_y", "down", "px", "Centre Y", -2, 2, nullptr},
     {"leader", "thing", "", "Leader", 0, 0, nullptr},
     {"leader_b", "thing", "", "Hand to", 0, 0, nullptr},
+    {"region", "thing", "", "Falloff", 0, 0, nullptr},   // (a behaviour's or a relation's: the shape it works inside, Cavalry's Falloff)
+    {"falloff_soft", "stage", "px", "Soft", 0, 2, nullptr},
+    {"falloff_invert", "onoff", "", "Invert", 0, 1, nullptr},
     {"hand", "share", "%", "Handed", 0, 1, nullptr},
     {"lag", "", "s", "Lag", 0, 1, nullptr},
     {"spread", "share", "%", "Spread", 0, 3, nullptr},
@@ -411,6 +414,7 @@ static const DocCard doc_cards[] = {
     {"Push", "strength leader radius", "file", "push"},
     {"Group", "strength lag x y spread scatter rotate rotate_y size opacity", "file", "group"},   // (things in an order and nothing else: away by its own move, turn, size and opacity, each in turn)
     {"Relation", "strength", "file", "relate"},   // (one written as a file: its own knobs come under it, as a recipe's)
+    {"Falloff", "region falloff_soft falloff_invert", "file", "!"},   // (any with a file: a behaviour shows only such cards, doc_cards_of)
     {"Note", "label note", nullptr, nullptr, true},   // (what a maker wrote of it: After Effects' layer comment)
     {"Trim Paths", "trim trim_begin trim_offset", "trim", "+"},
     {"Datamosh", "mosh_with mosh_at", "mosh", "+"},

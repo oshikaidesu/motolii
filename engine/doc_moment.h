@@ -271,7 +271,7 @@ static void doc_moment(Doc& d, double now) {
                 const auto at = [&](const char* name, double otherwise) {
                     if (const int by = doc_driven_by(d, thing, name)) {
                         driven = true;
-                        if (const int f = (int)doc_number(d, by, "falloff", 0, 0); f && d.shown.count(f) && d.shown[f].drawn) {   // (weighed point by point, not copy by copy)
+                        if (const int f = (int)doc_number(d, by, "region", 0, 0); f && d.shown.count(f) && d.shown[f].drawn) {   // (weighed point by point, not copy by copy)
                             const math::mat4 there = doc_place(d, f, now, 0, 0, false);
                             const math::double4 middle = there * math::double4{0, 0, 0, 1};
                             const double r = length((there * math::double4{0.5 * d.shown[f].drawn->sheetHigh, 0, 0, 0}).xyz), soft = doc_number(d, by, "falloff_soft", now, 0);

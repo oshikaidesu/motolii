@@ -36,7 +36,7 @@ a + (b - a) * bezier(u, .2, 0, 0, 1)                                 (a: 前の�
 ## 利用者のフォルダ（スクリプト・エフェクト・動き・プリセット）
 Mac：`~/Library/Application Support/Motolii/`、Windows：`%APPDATA%\\Motolii\\`（`MOTOLII_OWN` で差し替え）。中のフォルダごとに、置いた瞬間に出る（本体の見本は `engine/` の同じ名前のフォルダ。同じ名前なら利用者のが勝つ）。
 - `recipes/*.js`：1 回で絵を作るスクリプト。Create 棚にタイルで出て、つまみは物の **Script** カードに出る。頭の書き方は `engine/script.h` の先頭（AviUtl2 と同じ `// --track@名前:ラベル,最小,最大,初め,刻み`、`--check@`、`--select@`）、例は `engine/recipes/`。
-- `relations/*.js`：たくさんの物を一度に動かす関係。舞台の上と関係タブにチップで出て、つまみは関係の **Script** カードに出る。頭の書き方はレシピと同じ。本体は `relate(things, t, k)` 1 つで、全員を受けて変える物だけ返す（返さない値はそのまま）。`things` の 1 個は `i`（元の順番）、`x`、`y`、`z`、`size`、`rotate`、`rotate_x`、`rotate_y`、`opacity`、`w`、`h`、`id`。p5 の `noise`、`createVector`、`constrain` などと `ease` が使える。例は `engine/relations/`。ファイルを置くか書き換えると、再起動なしで効く。
+- `relations/*.js`：たくさんの物を一度に動かす関係。舞台の上と関係タブにチップで出て、つまみは関係の **Script** カードに出る。頭の書き方はレシピと同じ。本体は `relate(things, t, k)` 1 つで、全員を受けて変える物だけ返す（返さない値はそのまま）。`things` の 1 個は `i`（元の順番）、`x`、`y`、`z`、`size`、`rotate`、`rotate_x`、`rotate_y`、`opacity`、`w`、`h`、`id`。`near` は Falloff の形に覆われている割合で、普通の関係はこの分だけ自動で弱まる。p5 の `noise`、`createVector`、`constrain` などと `ease` が使える。4 つ目の引数を取ると `relate(things, t, k, was)` になり、前のコマに返した物を `was[a.i]` で受ける（最初のコマは `null`。返した物の好きな値を覚えられる）。この形は自分で `near` を読む。例は `engine/relations/`。ファイルを置くか書き換えると、再起動なしで効く。
 - `effects/*.wgsl`：画面全体のエフェクト（Effects 棚）。`animators/*.js`：物に付ける動き。
 - `ways/*.way`：Ease のプリセット（上）。
 - どれも本家のファイルは 1 行も変えない。カードの名前を自分で付ける（例：Wobble）のはまだできない（Script と出る）。

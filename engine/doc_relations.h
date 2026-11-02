@@ -46,7 +46,7 @@ static math::mat4 doc_place(Doc& d, int thing, double now, int deeper, int copy,
 // How much of a behaviour works at a place on the stage: its falloff's shape (where it lies now, as shape_cut lays its
 // outline), all inside, none outside past falloff_soft; 1 with no falloff.
 static double doc_falloff_at(Doc& d, int by, math::double3 at, double t) {
-    const int f = (int)doc_number(d, by, "falloff", 0, 0);
+    const int f = (int)doc_number(d, by, "region", 0, 0);
     if (!f) return 1.0;
     const auto found = d.shown.find(f);
     const Drawn* b = found == d.shown.end() ? nullptr : found->second.drawn;
@@ -129,44 +129,63 @@ static const std::vector<int>& doc_members_of(Doc& d, int by) { return doc_relat
 // What a relation written as a file says of all its things at a moment. Its relate() is told them all at once, as a Python
 // Effector in Cinema 4D's Full Control is, not one value at a time as the kinds below: each one's place can hang on all the
 // others. For each thing, doc_relate_names in turn. Empty: no file, or it failed (what is under it shows, and it says why).
+// One whose relate() takes a fourth argument is a solver, as Cavalry's Value Solver and Context's saveObject: told what it
+// said the frame before, null at the first, it goes from the start of the stage a frame at a time at p5_stand.h's 60, and
+// each frame is kept so going back asks nothing; any change to the document starts it again. Held by hand, it waits.
 static const char* const doc_relate_names[] = {"x", "y", "z", "size", "rotate", "rotate_x", "rotate_y", "opacity"};
 static double doc_related(Doc& d, int by, int thing, const char* name, double t, double own);
 static const std::vector<double>& doc_related_all(Doc& d, int by, double t) {
     Doc::RelatedKept& k = d.relatedKept[by];
     const long changes = d.file ? (long)sqlite3_total_changes(d.file) : 0;
-    if (k.at == t && k.changes == changes && k.made == doc_scripts_made(d) && d.held.thing < 0) return k.values;
+    const bool same = k.changes == changes && k.made == doc_scripts_made(d);
+    if (k.at == t && same && d.held.thing < 0) return k.values;
+    if (!same) k.frames.clear(), k.solves = -1;
     k.at = t, k.changes = changes, k.made = doc_scripts_made(d), k.values.clear();
     DocScript* sc = doc_script_of(d, doc_word(d, by, "script"));
     if (!sc || !sc->run || !sc->run->ok()) return k.values;
+    if (k.solves < 0) { const std::vector<double> takes = sc->run->numbers("Float64Array.of(relate.length)"); k.solves = !takes.empty() && takes[0] > 3; }
     const Doc::Relation& rel = doc_relation_of(d, by);
     constexpr size_t many = std::size(doc_relate_names);
-    std::ostringstream js;
-    js.precision(12);
-    js << "__relates([";
-    for (size_t i = 0; i < rel.members.size(); ++i) {
-        const int thing = rel.members[i];
-        if (!thing) continue;
-        const int was = rel.under.empty() ? 0 : rel.under[i];
-        js << '[';
-        double size = 1;
-        for (const char* name : doc_relate_names) {
-            const double own = doc_number(d, thing, name, t, !strcmp(name, "size") || !strcmp(name, "opacity") ? 1 : 0), is = was ? doc_related(d, was, thing, name, t, own) : own;
-            if (!strcmp(name, "size")) size = is;
-            js << is << ',';
+    const auto ask = [&](double at, bool first) {
+        std::ostringstream js;
+        js.precision(12);
+        js << "__relates([";
+        for (size_t i = 0; i < rel.members.size(); ++i) {
+            const int thing = rel.members[i];
+            if (!thing) continue;
+            const int was = rel.under.empty() ? 0 : rel.under[i];
+            js << '[';
+            double size = 1;
+            math::double3 place{0.0};
+            for (const char* name : doc_relate_names) {
+                const double own = doc_number(d, thing, name, at, !strcmp(name, "size") || !strcmp(name, "opacity") ? 1 : 0), is = was ? doc_related(d, was, thing, name, at, own) : own;
+                if (!strcmp(name, "size")) size = is;
+                if (name[0] >= 'x' && !name[1]) place[name[0] - 'x'] = is;
+                js << is << ',';
+            }
+            float2 half{0.f};
+            doc_half(d, thing, &half);
+            js << 2.0 * half.x * size << ',' << 2.0 * half.y * size << ',' << thing << ',' << doc_falloff_at(d, by, place, at) << "],";
         }
-        float2 half{0.f};
-        doc_half(d, thing, &half);
-        js << 2.0 * half.x * size << ',' << 2.0 * half.y * size << ',' << thing << "],";
+        js << "]," << at << ",{";
+        for (size_t i = 0; i < sc->knobs.size(); ++i) {
+            js << sc->knobs[i].name << ':';
+            if (sc->knobs[i].kind != "select") { js << doc_number(d, by, sc->names[i].c_str(), at, sc->knobs[i].usual) << ','; continue; }
+            const std::string w = doc_word(d, by, sc->names[i].c_str());
+            js << '"' << (w.empty() ? sc->knobs[i].words.substr(0, sc->knobs[i].words.find(' ')) : w) << "\",";
+        }
+        js << "}," << by << ',' << (first ? "true" : "false") << ')';
+        return sc->run->numbers(js.str());
+    };
+    if (k.solves) {
+        const size_t frame = (size_t)std::max(0.0, std::round(t * 60.0));
+        while (k.frames.size() <= frame) {
+            std::vector<double> next = ask((double)k.frames.size() / 60.0, k.frames.empty());
+            if (next.empty()) return k.values;
+            k.frames.push_back(std::move(next));
+        }
     }
-    js << "]," << t << ",{";
-    for (size_t i = 0; i < sc->knobs.size(); ++i) {
-        js << sc->knobs[i].name << ':';
-        if (sc->knobs[i].kind != "select") { js << doc_number(d, by, sc->names[i].c_str(), t, sc->knobs[i].usual) << ','; continue; }
-        const std::string w = doc_word(d, by, sc->names[i].c_str());
-        js << '"' << (w.empty() ? sc->knobs[i].words.substr(0, sc->knobs[i].words.find(' ')) : w) << "\",";
-    }
-    js << "})";
-    const std::vector<double> said = sc->run->numbers(js.str());
+    const std::vector<double> said = k.solves ? k.frames[(size_t)std::max(0.0, std::round(t * 60.0))] : ask(t, false);
     if (said.empty()) return k.values;
     k.values.assign(many * rel.members.size(), 0.0);
     for (size_t i = 0, in = 0; i < rel.members.size(); ++i)
@@ -189,7 +208,7 @@ static double doc_related(Doc& d, int by, int thing, const char* name, double t,
     const int many = std::max(1, (int)rel.members.size()), was = rel.under.empty() ? 0 : rel.under[i];
     const auto start = [&](const char* what, double mine) { return was ? doc_related(d, was, thing, what, t, mine) : mine; };
     const double ti = type == "follow" ? t : t - doc_number(d, by, "lag", t, 0) * (double)i;   // (in turn: each so much later than the one before, as Cavalry's stagger; a follow's lag is its own)
-    const double base = start(name, own), s = std::clamp(doc_number(d, by, "strength", ti, 1), -1.0, 2.0);   // (past 1 and below 0 as an ease overshoots: a Back or an Elastic between two keys shows; held within twice)
+    const double base = start(name, own), strength = std::clamp(doc_number(d, by, "strength", ti, 1), -1.0, 2.0);   // (past 1 and below 0 as an ease overshoots: a Back or an Elastic between two keys shows; held within twice)
     if (doc_number(d, by, "visible", 0, 1) <= 0.5) return base;   // (switched off, its eye shut: what it is on top of shows, its strength kept)
     const double came = rel.from.empty() || (n != "x" && n != "y") ? std::nan("") : rel.from[2 * i + (n == "y" ? 1 : 0)];   // (where it showed when it came in: across and up only)
     const auto leader = [&](const char* which) { const int l = (int)doc_number(d, by, which, 0, 0); return l != thing ? l : 0; };
@@ -197,9 +216,10 @@ static double doc_related(Doc& d, int by, int thing, const char* name, double t,
         if (d.settled) return base;
         const std::vector<double>& all = doc_related_all(d, by, t);
         constexpr size_t many = std::size(doc_relate_names);
-        for (size_t j = 0; j < many; ++j) if (n == doc_relate_names[j]) return many * i + j < all.size() ? base + (all[many * i + j] - base) * s : base;
+        for (size_t j = 0; j < many; ++j) if (n == doc_relate_names[j]) return many * i + j < all.size() ? base + (all[many * i + j] - base) * strength : base;
         return base;
     }
+    const double s = strength * (doc_number(d, by, "region", 0, 0) ? doc_falloff_at(d, by, {start("x", doc_number(d, thing, "x", t, 0)), start("y", doc_number(d, thing, "y", t, 0)), start("z", doc_number(d, thing, "z", t, 0))}, t) : 1.0);   // (Cavalry's Falloff: a multiplier on its Strength; a file weighs its own, p5_stand.h's __relates)
     if ((type == "around" || type == "row" || type == "group") && (n == "rotate" || n == "rotate_x" || n == "rotate_y"))   // (its own turn added to each, in turn)
         return base + doc_number(d, by, name, ti, 0) * s;
     if ((type == "around" || type == "row" || type == "group") && (n == "size" || n == "opacity"))   // (its own size and opacity as a share of each one's, in turn: 0 opacity out is gone)

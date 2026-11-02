@@ -105,6 +105,39 @@ Motolii に効く事：
 - 検索の抜粋だけ：Creative Bloq（本文が取れない）、Greyscalegorilla の Edwards の話（本文が取れない）、EverybodyWiki と Yorkshire Post（403、回り道はしていない）。
 - 作者が「MoGraph から取った」と言った文は見つけていない。MoGraph から MASH への線は CG Channel の比較と名前からの推測。
 
+## Cavalry はどう解いたか（11/3、ユーザーの問い）
+
+| 問題 | Cavalry の解き方 | 確かめた所 |
+|---|---|---|
+| たくさんの物 | 別々の層を結ばず、Duplicator・文字・SVG の 1 層の中の sub-mesh にする。位置や回転は id ごとの配列（`shapePosition` など）で、Stagger は最初の id に最小、最後の id に最大を配る | Stagger と Duplicator の説明は検索の抜粋、属性名は `nodeDefinitions.json` |
+| 全員を一度に | JavaScript Deformer が `def.getPoints()` で全点を受け、`def.setPoints()` で返す | 本文 |
+| 範囲 | Falloff が点ごとに 1 から 0 を出し、Behaviour の Strength に掛ける。形は Circle、Rectangle、Linear、Sweep、Shape | 本文 |
+| 前のコマ | Value Solver が前のコマの値に積む（Accumulate、Highest、Lowest、Velocity）。Start Frame で始まり、Fade で戻る。Mesh Solver も同じで Pre-Roll がある。スクリプトは Context の `saveObject` で覚える | 本文。`saveObject` は検索の抜粋 |
+| 飛んだ時 | `.sdcache` に書く。説明は「重い物に役立つ」までで、飛んだ時の動きは書いていない | 本文 |
+
+別々の物どうしの関係については、Cavalry の説明からは解き方を見つけていない。接続で 1 本ずつつなぐ形までは 11/1 に確認した範囲。隣との間隔を保つ Apply Layout は、説明に間隔の話が無く、確かめられていない。
+
+## 食った物（11/3）
+
+| 物 | 見本 | 結果 |
+|---|---|---|
+| 範囲 | Cavalry の Falloff、MASH の `getFalloff` | 関係の Falloff 札で形を選ぶ。5 種にも効く。丸の外の物は元の場所のまま |
+| 前のコマ | Value Solver、Context の `saveObject`、Motolii の p5 の `__to` | `relate(things, t, k, was)`。60 コマ毎秒で積み、コマを取っておく。戻っても同じ位置 |
+| `flock.js` | Reynolds の Boids、MASH の Flight | 30 個が同じ向きに流れる |
+| `spring.js` | Cavalry と MASH の Spring（Mass、Damping、Speed Limit） | キーの動きを行き過ぎて戻る |
+| `stay.js` | Value Solver の Highest と Fade | 丸が通った所が変わったまま残る |
+| `look.js` | Look At、Target Effector、Orient | 12 本が先頭の 1 個（`members` の最初）を指した。手無しの絵で見た。テストは無い |
+
+速さ（立方体 30 個、1080p、1 コマ）：
+
+| 物 | ms |
+|---|---|
+| 関係なし | 16.43 |
+| `flock.js`（p5 のベクトル） | 34.22 |
+| `flock.js`（素の計算） | 17.41 |
+
+最初に先へ飛ぶと、2 秒分で約 0.3 秒かかった。1 分先なら約 9 秒の計算（測っていない）。戻るのは止まった絵 1 枚分の速さ。FastNoiseLite は入れていない。p5 の `noise` で足りている。
+
 ## 読めていない物
 
 - Plexus、Duik、Joysticks 'n Sliders、Rubberhose は今回読んでいない。
@@ -122,9 +155,11 @@ Motolii に効く事：
 - [C4D Inheritance Effector](https://help.maxon.net/c4d/r21/us/html/OEINHERITANCE-MGINHERITANCEEFFECTOR_GROUPEFFECTOR.html)
 - [C4D Python Effector](https://developers.maxon.net/docs/Cinema4DPythonSDK/manuals/introduction/python_effector.html)
 - [Unreal Motion Design Cloners and Effectors](https://dev.epicgames.com/documentation/en-us/unreal-engine/motion-design-cloners-and-effectors-in-unreal-engine)
-- [Boids](https://www.red3d.com/cwr/boids/)、[MoGraph の受賞（Maxon）](https://www.maxon.net/en/article/maxon-cinema-4d-mograph-toolset-honored-with-academy-award-for-scientific-and-technical-achievement)、[Sci-Tech 賞（CG Channel）](https://www.cgchannel.com/2018/12/motion-graphics-tools-devs-win-sci-tech-academy-awards)
+- [Boids](https://www.red3d.com/cwr/boids/)、[Steering Behaviors（Reynolds、1999）](https://www.red3d.com/cwr/steer/gdc99/)、[MoGraph の受賞（Maxon）](https://www.maxon.net/en/article/maxon-cinema-4d-mograph-toolset-honored-with-academy-award-for-scientific-and-technical-achievement)、[Sci-Tech 賞（CG Channel）](https://www.cgchannel.com/2018/12/motion-graphics-tools-devs-win-sci-tech-academy-awards)
 - [Mash の無料公開（CG Channel）](https://www.cgchannel.com/?p=45298)、[MASH 2.0](https://lesterbanks.com/2013/06/mainframe-releases-mash-2-0-procedural-animation-toolkit-for-maya-as-a-commercial-product/)、[MASH が Autodesk へ](https://cgpress.org/archives/mash-moves-to-autodesk.html)
 - [MASH のノード一覧](https://help.autodesk.com/cloudhelp/2023/ENU/Maya-MotionGraphics/files/GUID-D4FECFDC-F91A-4BDC-A1B0-A24EB087B2DD.htm)、[MASH の Python ノード](https://help.autodesk.com/cloudhelp/2017/ENU/Maya/files/GUID-DCB144BD-DFE2-418B-9838-E06963F61A20.htm)
 - [A First Look at Cavalry](https://www.schoolofmotion.com/blog/a-first-look-at-cavalry)、[Cavalry 1.1（CG Channel）](https://www.cgchannel.com/tag/cavalry-1-1)、[Cavalry の例](https://cavalry.studio/docs/getting-started/example-files/)
 - [FastNoiseLite](https://github.com/Auburn/FastNoiseLite)
+- [Value Solver](https://cavalry.studio/docs/nodes/behaviours/value-solver/)、[Mesh Solver](https://cavalry.studio/docs/nodes/behaviours/mesh-solver/)、[Falloff](https://cavalry.studio/docs/nodes/utilities/falloff/)、[Spring](https://cavalry.studio/docs/nodes/behaviours/spring/)、[Apply Layout](https://cavalry.studio/docs/nodes/behaviours/apply-layout/)
+- [Duplicator](https://docs.cavalry.scenegroup.co/nodes/shapes/duplicator/)、[Stagger](https://docs.cavalry.scenegroup.co/nodes/behaviours/stagger/)、[Context Module](https://cavalry.studio/docs/tech-info/scripting/context-module/)
 - [Cavalry Behaviours](https://cavalry.studio/docs/nodes/behaviours/)、[JavaScript Deformer](https://cavalry.studio/docs/nodes/behaviours/javascript-deformer/)

@@ -13,6 +13,57 @@ import 'package:lab_book/workspace/stage.dart';
 import 'door.dart';
 
 void main() {
+  testWidgets('a relation that remembers is the same on going back; a Falloff weighs one that does not; what a Falloff touched stays', (t) async {
+    final m = Motolii.open('${Directory.systemTemp.createTempSync('relate').path}/relate.motolii')!;
+    addTearDown(m.close);
+    final ws = Ws()..join(m);
+    final made = [for (var i = 0; i < 3; i++) m.add('shape', 'circle')], ring = m.add('shape', 'circle');
+    for (final (n, i) in made.indexed) {
+      m.set(i, 'x', n - 1.0);
+    }
+    m.set(ring, 'x', -1);
+    ws.reread();
+    t.view.physicalSize = const Size(924, 616);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel('motolii/stage'), (_) async => -1);
+    await t.pumpWidget(WidgetsApp(
+      color: const Color(0xFF000000),
+      builder: (_, _) => WsScope(ws: ws, child: const Align(alignment: Alignment.topLeft, child: SizedBox(width: 924, height: 616, child: Row(children: [Expanded(child: WsStage()), SizedBox(width: 300, child: DeskRelations())])))),
+    ));
+    await t.pumpAndSettle();
+    String file(String name) => m.relations.firstWhere((r) => r.$2.endsWith(name)).$2;
+    Future<int> relate(String name) async {
+      ws.pickMany([for (final i in made) '$i']);
+      await t.pumpAndSettle();
+      wsRelate(ws, file(name));
+      await settled(t, ws);
+      return int.parse(ws.selected!);
+    }
+
+    Future<double> shown(int i, String name, double at) async => (await m.shownAt([(made[i], name, at)])).single!;
+    final flock = await relate('flock.js'), early = await shown(0, 'x', 1), late = await shown(0, 'x', 2);
+    expect(early, isNot(closeTo(-1, .01)), reason: 'it has flown');
+    expect(await shown(0, 'x', 1), early, reason: 'going back: the frame it kept');
+    expect(late, isNot(early));
+    m.set(flock, 'visible', 0);
+
+    final wave = await relate('wave.js');
+    m.set(wave, 'region', ring.toDouble());
+    await settled(t, ws);
+    expect(await shown(0, 'y', .5), isNot(closeTo(0, .01)), reason: 'inside the shape');
+    expect(await shown(2, 'y', .5), closeTo(0, .001), reason: 'outside it: its own place');
+    m.set(wave, 'visible', 0);
+
+    m.key(ring, 'x', 0, -1);
+    m.key(ring, 'x', 1, -6);
+    final stay = await relate('stay.js');
+    m.set(stay, 'region', ring.toDouble());
+    await settled(t, ws);
+    expect(await shown(0, 'size', 2), closeTo(1.8, .01), reason: 'it has left, and what it touched stays');
+    expect(await shown(2, 'size', 2), closeTo(1, .01), reason: 'never touched');
+  });
+
   testWidgets('a relation written as a file: its word makes it, named by the file, and it answers for all its things at once', (t) async {
     final m = Motolii.open('${Directory.systemTemp.createTempSync('relate').path}/relate.motolii')!;
     addTearDown(m.close);
