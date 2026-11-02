@@ -146,7 +146,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
       ]);
     }
     Widget tile(_Fx e, bool small) => GestureDetector(onSecondaryTapDown: (d) => menuOn(e, d.globalPosition), child: e.tile(small));
-    final list = EffectPlaces(c, key: _places, known: known, packs: Map.fromEntries(packs.entries.toList()..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase()))), counts: {'All': all.length, 'Recent': recent.length, '★': all.where((e) => c.starred(e.id)).length, 'In video': all.where((e) => used.contains(e.id)).length}, decks: {for (final d in decks) d: deckIds[d]!.intersection(byId.keys.toSet()).length}, put: (d, id) {
+    Widget list(bool narrow) => EffectPlaces(c, key: _places, narrow: narrow, known: known, packs: Map.fromEntries(packs.entries.toList()..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase()))), counts: {'All': all.length, 'Recent': recent.length, '★': all.where((e) => c.starred(e.id)).length, 'In video': all.where((e) => used.contains(e.id)).length}, decks: {for (final d in decks) d: deckIds[d]!.intersection(byId.keys.toSet()).length}, put: (d, id) {
       if (!deckIds[d]!.contains(id)) put(d, every.firstWhere((e) => e.id == id));
     });
     final sel = c.foot([...all, ...lost].where((e) => e.id == c.sel).firstOrNull);
@@ -193,7 +193,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
                   ? Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        SizedBox(width: Shape.z(160), child: list),
+                        SizedBox(width: Shape.z(160), child: list(false)),
                         ColoredBox(color: WsT.ground, child: SizedBox(width: WsT.gutter)),
                         Expanded(child: tiles),
                       ],
@@ -201,7 +201,10 @@ class _EffectsShelfState extends State<EffectsShelf> {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        DockResizable(height: c.mem.fxListHeight, min: 44, max: box.maxHeight - 160, reset: dockFxListHeight, gripKey: const ValueKey('ws-fx-list-grip'), onHeight: (h) => c.set(() => c.mem.fxListHeight = h), child: list),
+                        if (c.mem.fxListOpen)
+                          DockResizable(height: c.mem.fxListHeight, min: 44, max: box.maxHeight - 160, reset: dockFxListHeight, gripKey: const ValueKey('ws-fx-list-grip'), onHeight: (h) => c.set(() => c.mem.fxListHeight = h), child: list(true))
+                        else
+                          SizedBox(height: Shape.z(22), child: list(true)),   // (the whole list over the tiles left 3.3 rows of them, 1.7 with the foot open, of the 5.4 and 3.8 before it)
                         Expanded(child: tiles),
                       ],
                     ),

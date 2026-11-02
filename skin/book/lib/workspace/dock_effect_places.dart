@@ -1,7 +1,10 @@
 // Where the Effects shelf looks: a list of its own beside or over the tiles, in the shape of the Media shelf's tree
 // (dock_files_browser.dart), as Ableton's browser sidebar lists its Collections, Final Cut's Effects browser its
 // categories, Spotify its Library, Premiere its bins: a press on a row shows what it holds among the tiles, and the
-// search and the kinds narrow within it. A bundle is never a chip beside the kinds.
+// search and the kinds narrow within it. A bundle is never a chip beside the kinds. Over the tiles, where the shelf is
+// narrow, it folds to the row that says where it looks: a press on a row gives the shelf to what it holds, and the row
+// brings the list back, as Alight Motion's browser goes from its categories to one's effects and back (EffectBrowser.kt:
+// 105, 197, 247).
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -20,8 +23,9 @@ const dockFxListHeight = 176.0;
 final carriedEffect = Expando<String>();
 
 class EffectPlaces extends StatefulWidget {
-  const EffectPlaces(this.c, {super.key, required this.counts, required this.packs, required this.decks, required this.put, required this.known});
+  const EffectPlaces(this.c, {super.key, required this.narrow, required this.counts, required this.packs, required this.decks, required this.put, required this.known});
   final DockCtx c;
+  final bool narrow;   // (over the tiles, not beside them)
   final Map<String, int> counts;   // (All, Recent, ★, In video: how many of what is found each holds)
   final Map<String, int> packs;
   final Map<EffectDeck, int> decks;
@@ -34,7 +38,7 @@ class EffectPlaces extends StatefulWidget {
 class EffectPlacesState extends State<EffectPlaces> {
   final _menu = GlobalKey<WsMenuState>();
   EffectDeck? _naming;   // (the deck whose name, or search, is being written in its row, as a Finder folder's)
-  bool _search = false;
+  bool _search = false, _folded = false;   // (folded: as it was before the row was needed)
   final _words = TextEditingController();
   late final FocusNode _focus = FocusNode()..addListener(() => _focus.hasFocus ? null : _named());
 
@@ -46,8 +50,9 @@ class EffectPlacesState extends State<EffectPlaces> {
   }
 
   void naming(EffectDeck d, {bool search = false}) {
-    final now = search ? d.words : d.name;
-    setState(() => (_naming = d, _search = search));
+    final now = search ? d.words : d.name, c = widget.c;
+    _folded = !c.mem.fxListOpen;
+    c.set(() => (_naming = d, _search = search, c.mem.fxListOpen = true));
     _words
       ..text = now
       ..selection = TextSelection(baseOffset: 0, extentOffset: now.length);
@@ -67,6 +72,7 @@ class EffectPlacesState extends State<EffectPlaces> {
       }
       effectDecksKeep();
       _naming = null;
+      if (_folded) c.mem.fxListOpen = false;
     });
   }
 
@@ -159,14 +165,31 @@ class EffectPlacesState extends State<EffectPlaces> {
     ),
   );
 
+  EffectDeck? _deckAt(String place) => widget.decks.keys.where((d) => '@${d.name}' == place).firstOrNull;
+
+  /// What a row says: its name, its mark, how many.
+  (String, DockG, int?) _said(String place) {
+    final p = widget.counts, deck = _deckAt(place);
+    return switch (place) {
+      'Recent' => ('Recent', DockG.time, p[place]),
+      '★' => ('Favorites', DockG.star, p[place]),
+      'In video' => ('In This Video', DockG.video, p[place]),
+      'Packs' => ('Packs', DockG.folder, widget.packs.length),
+      _ when deck != null => (deck.name, deck.words.isEmpty ? DockG.list : DockG.search, widget.decks[deck]),   // (one that finds by words its own mark, as Lightroom's smart collection beside a plain one)
+      _ when place.startsWith('/') => (place.substring(1), DockG.folder, widget.packs[place.substring(1)]),
+      _ => ('All Effects', DockG.effects, p['All']),
+    };
+  }
+
   /// One row: the Media shelf's folder row (_FolderRow), a press shows what it holds.
-  Widget _row(String place, String name, DockG g, int? n, {int depth = 0, bool? open, VoidCallback? onTap, ValueChanged<Offset>? menu, Widget? field, bool lit = false}) {
+  Widget _row(String place, {int depth = 0, bool? open, VoidCallback? onTap, ValueChanged<Offset>? menu, Widget? field, bool lit = false}) {
     final c = widget.c, here = c.mem.fxPlace == place || lit;
+    final (name, g, n) = _said(place);
     return GestureDetector(
       onSecondaryTapDown: menu == null ? null : (d) => menu(d.globalPosition),
       child: DockHover(
         key: ValueKey('ws-fx-place-$place'),
-        onTap: onTap ?? () => c.set(() => c.mem.fxPlace = place),
+        onTap: onTap ?? () => c.set(() => (c.mem.fxPlace = place, c.mem.fxListOpen = false)),
         builder: (context, h) => AnimatedContainer(
           duration: Mo.dur,
           curve: Mo.ease,
@@ -191,31 +214,39 @@ class EffectPlacesState extends State<EffectPlaces> {
     );
   }
 
-  Widget _deck(EffectDeck d, int n) => DragTarget<VoidCallback>(
+  Widget _deck(EffectDeck d) => DragTarget<VoidCallback>(
     onWillAcceptWithDetails: (o) => carriedEffect[o.data] != null,
     onAcceptWithDetails: (o) => widget.put(d, carriedEffect[o.data]!),
-    builder: (context, over, _) => _row('@${d.name}', d.name, d.words.isEmpty ? DockG.list : DockG.search, n, field: _naming == d ? _field(d) : null, lit: over.isNotEmpty, menu: (at) => _deckMenu(d, at)),   // (one that finds by words its own mark, as Lightroom's smart collection beside a plain one)
+    builder: (context, over, _) => _row('@${d.name}', field: _naming == d ? _field(d) : null, lit: over.isNotEmpty, menu: (at) => _deckMenu(d, at)),
   );
 
   @override
   Widget build(BuildContext context) {
-    final c = widget.c, p = widget.counts, open = c.mem.open.contains('fx:packs');
+    final c = widget.c, open = c.mem.open.contains('fx:packs'), deck = _deckAt(c.mem.fxPlace);
     return WsMenu(
       key: _menu,
       child: ColoredBox(
         color: WsT.body,
-        child: ListView(
+        child: widget.narrow && !c.mem.fxListOpen
+            ? DragTarget<VoidCallback>(   // (a tile carried over it opens the list, for a deck to drop it on: Finder's spring-loaded folders)
+                onWillAcceptWithDetails: (_) {
+                  c.set(() => c.mem.fxListOpen = true);
+                  return false;
+                },
+                builder: (context, _, _) => _row(c.mem.fxPlace, open: false, lit: true, onTap: () => c.set(() => c.mem.fxListOpen = true), menu: deck == null ? null : (at) => _deckMenu(deck, at)),
+              )
+            : ListView(
           padding: EdgeInsets.symmetric(vertical: Shape.s(2)),
           children: [
-            _row('All', 'All Effects', DockG.effects, p['All']),
-            _row('Recent', 'Recent', DockG.time, p['Recent']),
-            _row('★', 'Favorites', DockG.star, p['★']),
-            _row('In video', 'In This Video', DockG.video, p['In video']),
+            _row('All'),
+            _row('Recent'),
+            _row('★'),
+            _row('In video'),
             DockSection('Decks', trailing: Builder(builder: (b) => DockIconButton(DockG.plus, key: const ValueKey('ws-fx-deck-new'), onTap: () => _plus(b)))),
-            for (final e in widget.decks.entries) _deck(e.key, e.value),
-            _row('Packs', 'Packs', DockG.folder, widget.packs.length, open: open, onTap: () => c.toggle(c.mem.open, 'fx:packs')),   // (what the makers bundled, as Ableton's Packs: 186 of them, folded)
+            for (final d in widget.decks.keys) _deck(d),
+            _row('Packs', open: open, onTap: () => c.toggle(c.mem.open, 'fx:packs')),   // (what the makers bundled, as Ableton's Packs, folded)
             if (open)
-              for (final e in widget.packs.entries) _row('/${e.key}', e.key, DockG.folder, e.value, depth: 1),
+              for (final p in widget.packs.keys) _row('/$p', depth: 1),
           ],
         ),
       ),

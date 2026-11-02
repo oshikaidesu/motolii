@@ -357,6 +357,36 @@ void main() {
     await t.pumpWidget(const SizedBox());
   }, skip: !insideBuilt);
 
+  testWidgets('narrow, the list folds to the row that says where the shelf looks: a press opens it, a press on a row picks and folds it, a tile carried over it opens it for a deck', (t) async {
+    effectDecksAt(File('${Directory.systemTemp.createTempSync('decks').path}/effect_decks.json'));
+    effectDecks().add(EffectDeck('Soft'));
+    final ws = _joined();
+    await _shelf(t, ws, const Size(300, 918), 'Effects');
+    Finder place(String p) => find.byKey(ValueKey('ws-fx-place-$p'));
+    Future<void> press(Finder f) async {
+      await t.tap(f);
+      await t.pumpAndSettle();
+    }
+    expect([place('All').evaluate().length, place('Recent').evaluate().length], [1, 0], reason: 'one row, the rest of the shelf the tiles\'');
+    await press(place('All'));
+    expect([place('Recent').evaluate().length, place('@Soft').evaluate().length], [1, 1], reason: 'the list');
+    await press(place('@Soft'));
+    expect([place('@Soft').evaluate().length, place('All').evaluate().length], [1, 0], reason: 'folded, saying where it looks');
+    await press(place('@Soft'));
+    await press(place('All'));
+    final tile = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('ws-screen-')).first;
+    final hand = await t.startGesture(t.getCenter(tile));
+    await t.pump(const Duration(milliseconds: 50));
+    await hand.moveTo(t.getCenter(place('All')));
+    await t.pumpAndSettle();
+    await hand.moveTo(t.getCenter(place('@Soft')));
+    await t.pump(const Duration(milliseconds: 50));
+    await hand.up();
+    await t.pumpAndSettle();
+    expect(effectDecks().single.things, hasLength(1), reason: 'dropped on the deck the carrying opened');
+    await t.pumpWidget(const SizedBox());
+  }, skip: !insideBuilt);
+
   test('the pack an effect came in, from the folder its maker named', () {
     expect(effectPack('/x/engine/aviutl_scripts/HexBrowns__HexScript/Script/A.anm2#b'), 'HexScript');
     expect(effectPack('/x/engine/effects/Bloom.fs'), isNull);

@@ -698,6 +698,7 @@ AbsentMotion（AM の写し）の欄の要素を機械で書き出し（panels/*
 - [ ] AviUtl2 の影が `Float64` で作れない（11/2）：`[Shader]Chromatic Aberration` は 11 本中 8 本、`[Animation]Image Sequence (TimeControl)` は 1 本中 0 本（`SPIR-V capability 'Float64'`）。窓の上の赤い `1` がこれ。カードは付く
 - [ ] Program 棚と Create 棚も画面外のタイルまで全部作る（11/2）：`dock_program.dart:210`、`dock_make_2.dart:583` の `Wrap`。Effects 棚と同じく `GridView.builder` にできる
 - [x] 効果の棚に履歴が無い（11/2 済）：掛けた 40 本を新しい順に `Recent` の札に、10 本を棚の頭に常に出す（Alight Motion `EffectBrowser.kt:117,217`）。掛けるたびに何を打ってどの札から選んだかを `~/.motolii/effect_used.jsonl` に残す。分類の札は本数の多い順。調べは `reports/増え続ける効果の束ね方.md`
-- [x] 増え続ける効果を自分で束ねられない（11/3 済）：Effects 棚に Media と同じ形の一覧を足した。`All Effects` `Recent` `Favorites` `In This Video` `DECKS` `Packs` が並び、押すと中身がタイルに出る。デッキは手で入れた物と保存した検索の両方を持つ。入れ方は効果の右クリック、足元の `…`、ドラッグ。一覧の見本は Ableton、Final Cut Pro、Premiere、Spotify、入れ方の見本は Spotify と YouTube（`reports/増え続ける効果の束ね方.md`）
+- [x] 増え続ける効果を自分で束ねられない（11/3 済）：Effects 棚に Media と同じ形の一覧を足した。`All Effects` `Recent` `Favorites` `In This Video` `DECKS` `Packs` が並び、押すと中身がタイルに出る。デッキは手で入れた物と保存した検索の両方を持つ。入れ方は効果の右クリック、足元の `…`、ドラッグ。一覧の見本は Ableton、Final Cut Pro、Premiere、Spotify、入れ方の見本は Spotify と YouTube（`reports/増え続ける効果の束ね方.md`）。狭い棚では一覧を「いまどこか」を言う 1 行に畳む（Alight Motion `EffectBrowser.kt:105,197,247`）：広げたままだとタイルが 5.4 段から 3.3 段、足元が開くと 3.8 段から 1.7 段に減っていた。畳んで 5.2 段と 3.6 段
+- [ ] 効果の大きな見本が棚を削る（11/3）：足元が開くとタイルが 1.6 段分隠れる。Final Cut Pro はタイルをなぞると Viewer に、DaVinci Resolve は Hover Scrub Preview で Viewer に出す。Motolii なら Stage に出す形。掛けずに試す仕組みが要るので、まだ作っていない
 - [ ] デッキが増えると効果の右クリックが縦に長くなる（11/3）：デッキの数だけ行が増える。何個で困るかは測っていない。Spotify の一覧は検索が付く
 - [ ] ★ が場所で覚えられている（11/3）：`effect_stars.json` は効果のパスで持つので、ファイルを動かすと外れる。デッキは指紋で持つ（`effectSum`）。同じ持ち方に寄せられる

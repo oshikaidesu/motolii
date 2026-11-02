@@ -50,6 +50,7 @@ class DockMem {
   /// when the shelf is narrow.
   String fxPlace = 'All';
   double fxListHeight = 176;
+  bool fxListOpen = false;   // (narrow: else folded to the one row that says where it looks)
 
 }
 
