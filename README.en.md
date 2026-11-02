@@ -46,7 +46,7 @@ The handling is modelled on Alight Motion. Place text, shapes, video and 3D mode
 
 Paste in p5.js and Shadertoy code. ISF, WGSL, AviUtl2 scripts and more load from a folder, and can be added without restarting the app.
 
-<sub>The picture: eight ISF effects as their authors share them (CMYK Halftone, Bad TV, Duotone, Edges, Dither-Bayer, Kaleidoscope Tile, Glow-Fast, Pixellate) on a public-domain photo and text.</sub>
+<sub>The picture: eight ISF effects as their authors share them, on a public-domain photo and text.</sub>
 
 <br clear="all">
 

@@ -46,7 +46,7 @@ Alight Motion を手本にした操作。文字、図形、動画、3D モデル
 
 p5.js や Shadertoy のコードは貼り付けて使えます。ISF、WGSL、AviUtl2 のスクリプトなどはフォルダから読み込み、アプリを再起動せずに追加できます。
 
-<sub>絵は、配られている ISF の効果 8 本（CMYK Halftone・Bad TV・Duotone・Edges・Dither-Bayer・Kaleidoscope Tile・Glow-Fast・Pixellate）を、写真（パブリックドメイン）と文字に掛けた所。どれも作者のファイルのまま。</sub>
+<sub>絵は、配られている ISF の効果 8 本を、写真（パブリックドメイン）と文字に掛けた所。どれも作者のファイルのまま。</sub>
 
 <br clear="all">
 
