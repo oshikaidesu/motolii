@@ -181,18 +181,21 @@ class _WsShelfState extends State<WsShelf> {
           },
         ),
         Expanded(
-          child: switch (name) {
-            'Effects' => EffectsShelf(c),
-            'Fonts' => FontsShelf(c),
-            'Colors' => ColorsShelf(c),
-            'Create' => CreateShelf(c),
-            'Program' => ProgramShelf(c),
-            'Presets' => Padding(
-              padding: EdgeInsets.all(Shape.s(24)),
-              child: Text('No presets yet', textAlign: TextAlign.center, style: T.label(Grey.g63)),
-            ),
-            _ => MediaShelf(c),
-          },
+          child: ListenableBuilder(   // (a foot waiting for a second press opens when that can no longer come: DockCtx.foot)
+            listenable: DockHover.secondMayCome,
+            builder: (context, _) => switch (name) {
+              'Effects' => EffectsShelf(c),
+              'Fonts' => FontsShelf(c),
+              'Colors' => ColorsShelf(c),
+              'Create' => CreateShelf(c),
+              'Program' => ProgramShelf(c),
+              'Presets' => Padding(
+                padding: EdgeInsets.all(Shape.s(24)),
+                child: Text('No presets yet', textAlign: TextAlign.center, style: T.label(Grey.g63)),
+              ),
+              _ => MediaShelf(c),
+            },
+          ),
         ),
       ],
     );

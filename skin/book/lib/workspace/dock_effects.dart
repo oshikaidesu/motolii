@@ -74,7 +74,7 @@ class EffectsShelf extends StatelessWidget {
     final tagChips = [for (final t in (read.entries.where((t) => t.key != 'transition').toList()..sort((a, b) => b.value.compareTo(a.value))).take(8)) MapEntry('#${t.key}', t.value)];
     final starred = all.where((e) => c.starred(e.id)).length;   // (the starred a table of their own, as the Ease desk's ★)
     final chip = kinds.containsKey(c.chip) || tagChips.any((t) => t.key == c.chip) || (c.chip == '★' && starred > 0) ? c.chip : 'All', shown = [for (final e in all) if (chip == 'All' || (chip == '★' ? c.starred(e.id) : (chip.startsWith('#') ? tagsOf(e.id).contains(chip.substring(1)) : e.label == chip))) e.tile];
-    final sel = all.where((e) => e.id == c.sel).firstOrNull;
+    final sel = c.foot(all.where((e) => e.id == c.sel).firstOrNull);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

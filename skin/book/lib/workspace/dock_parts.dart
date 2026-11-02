@@ -27,6 +27,9 @@ class DockMem {
 
   /// Why the last thing asked of the inside for an entry was not done (by the entry's id).
   final trouble = <String, String>{};
+
+  /// The shelf's foot is open (DockCtx.foot).
+  bool footOpen = false;
   bool mediaList = false;
 
   /// Program: the picked one's code rather than the list.
@@ -56,6 +59,16 @@ class DockCtx {
 
   String? get sel => mem.sel[shelf];
   void pick(String id) => set(() => mem.sel[shelf] = id);
+
+  /// What the shelf's foot shows of its pick. A foot opening shortens the tiles, and a tile low on the shelf would leave
+  /// from under the second press of a double click: a shut foot opens once that press can no longer come, as Microsoft's
+  /// "How to distinguish between single and double clicks" times what a click does that a double click cannot follow.
+  /// The pick does not wait ("one click usually selects an item"), nor a foot already open (golf (77)).
+  P? foot<P>(P? picked) {
+    mem.footOpen = picked != null && (mem.footOpen || !DockHover.secondMayCome.value);
+    return mem.footOpen ? picked : null;
+  }
+
   String get chip => mem.chip[shelf] ?? 'All';
   void pickChip(String c) => set(() => mem.chip[shelf] = c);
   bool hit(String name) => query.isEmpty || name.toLowerCase().contains(query.toLowerCase());
@@ -78,6 +91,10 @@ class DockHover extends StatefulWidget {
 
   /// Whether ⌘ was held as the last tile was pressed.
   static bool cmdAtPress = false;
+
+  /// A tile that two presses act on was pressed, and a second press may still come (DockCtx.foot).
+  static final secondMayCome = ValueNotifier(false);
+  static Timer? _past;
   final Widget Function(BuildContext context, bool hover) builder;
   final VoidCallback? onTap;
 
@@ -109,7 +126,16 @@ class _DockHoverState extends State<DockHover> {
     final second = _second?.isActive ?? false;
     _second?.cancel();
     _second = second ? null : Timer(kDoubleTapTimeout, () {});
+    DockHover._past?.cancel();
+    DockHover.secondMayCome.value = true;
     if (!second) widget.onTap!();
+  }
+
+  // (counted from the release, as Flutter's own double tap: multitap.dart _registerFirstTap)
+  void _up(PointerEvent e) {
+    if (!DockHover.secondMayCome.value) return;
+    DockHover._past?.cancel();
+    DockHover._past = Timer(kDoubleTapTimeout, () => DockHover.secondMayCome.value = false);
   }
 
   @override
@@ -119,6 +145,8 @@ class _DockHoverState extends State<DockHover> {
     onExit: (_) => setState(() => _h = false),
     child: _carried(Listener(   // (the press as it comes, before the gestures settle which it is)
       onPointerDown: _down,
+      onPointerUp: _up,
+      onPointerCancel: _up,
       child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.picks && widget.onDoubleTap != null ? null : widget.onTap, onDoubleTap: widget.onDoubleTap, child: widget.builder(context, _h)),
     )),
   );

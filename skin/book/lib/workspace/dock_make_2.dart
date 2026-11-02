@@ -552,7 +552,7 @@ class CreateShelf extends StatelessWidget {
           if (c.chip == 'All' || c.chip == g) (g, [for (final id in near) ...items.where((m) => m.id == id)]),
       ].where((e) => e.$2.isNotEmpty).toList();
     }
-    final sel = makes.expand((e) => e.$2).where((m) => m.id == c.sel).firstOrNull;
+    final sel = c.foot(makes.expand((e) => e.$2).where((m) => m.id == c.sel).firstOrNull);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

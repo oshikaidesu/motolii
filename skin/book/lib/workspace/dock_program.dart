@@ -188,7 +188,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
       forms[p.form] = (forms[p.form] ?? 0) + 1;
     }
     final shown = all.where((p) => (c.chip == 'All' || c.chip == p.form) && (c.hit(p.name) || c.hit(p.stem) || c.hit(p.first))).toList();
-    final sel = (c.mem.programCode ? _stood(all) : null) ?? all.where((p) => p.file == c.sel).firstOrNull;
+    final sel = c.foot((c.mem.programCode ? _stood(all) : null) ?? all.where((p) => p.file == c.sel).firstOrNull);
     if (all.isEmpty) return Padding(padding: EdgeInsets.all(Shape.s(24)), child: Text('Copy code from the web, then Paste', textAlign: TextAlign.center, style: T.label(Grey.g63)));
     if (!c.mem.programCode) {
       ProgramTiles.ask(all.map((p) => p.file), () {

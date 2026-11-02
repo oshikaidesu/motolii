@@ -262,6 +262,8 @@ void main() {
     final tile = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('ws-screen-') && ws.inside!.picture((w.key as ValueKey<String>).value.substring('ws-screen-'.length)).isNotEmpty).first;   // (one with its pictures drawn)
     expect(find.byKey(const ValueKey('ws-fx-preview')), findsNothing, reason: 'none pressed: no sample');
     await t.tap(tile);
+    await t.pump();
+    expect(find.byKey(const ValueKey('ws-fx-preview')), findsNothing, reason: 'the tiles stay where they are while a second press may come');
     await t.pump(const Duration(milliseconds: 400));   // (one press picks: the second would put it on)
     await t.pump(const Duration(milliseconds: 600));
     expect(find.byKey(const ValueKey('ws-fx-preview')), findsOneWidget);

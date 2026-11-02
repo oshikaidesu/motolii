@@ -1664,6 +1664,7 @@ void _tests3() {
     ws.shelf = 'Program';
     await t.pumpAndSettle();
     await t.tap(find.text('p5.js 0test'));
+    await t.pump(const Duration(milliseconds: 400)); // (one press is known when the second does not come: its foot opens then, DockCtx.foot)
     await t.pumpAndSettle();
     await t.tap(find.text('Create'));
     await settled(t, ws);
@@ -2186,6 +2187,19 @@ void _tests3() {
     await _close(t);
   }, skip: !_built);
 
+  testWidgets('an AviUtl2 script on a thing is told as on: its path read to .anm2, spaces and all, as the inside reads the list', (t) async {
+    final ws = await _pump(t), m = ws.inside!;
+    final cube = m.add('solid', 'cube');
+    final file = m.effects.firstWhere((e) => e.$2.contains('.anm2#') && e.$2.split('#').first.contains(' ') && !e.$2.split('#').last.contains(' ')).$2;
+    ws
+      ..reread()
+      ..select('$cube')
+      ..screenToggle(file);
+    await settled(t, ws);
+    expect(ws.screenFx, [file], reason: m.trouble);
+    await _close(t);
+  }, skip: !_built);
+
   testWidgets('with a thing picked, an effect of the list goes on it (as the camera sees it, its fx), not on the whole stage; a press takes it off', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     final cube = m.add('solid', 'cube');
@@ -2197,8 +2211,6 @@ void _tests3() {
     await t.pumpAndSettle();
     final row = find.byKey(ValueKey('ws-screen-${half.$2}'));   // (a file's effect, by its file: dock_effects.dart)
     await t.enterText(find.descendant(of: find.byType(DockSearch), matching: find.byType(EditableText)), half.$1);
-    await t.pumpAndSettle();
-    await t.runAsync(() => Scrollable.ensureVisible(t.element(row), alignment: 0));   // (up the shelf: the foot a first press opens covers its lower half, reports/alight_checklist.md T)
     await t.pumpAndSettle();
     await doubleTap(t, row);
     await settled(t, ws);

@@ -50,7 +50,7 @@ class _Contents extends StatelessWidget {
     }
     final chip = kinds.containsKey(c.chip) ? c.chip : 'All';
     final shown = chip == 'All' ? items : items.where((n) => _kindOf(n) == chip).toList();
-    final sel = shown.where((n) => n.id == c.sel && !n.folder).firstOrNull;
+    final sel = c.foot(shown.where((n) => n.id == c.sel && !n.folder).firstOrNull);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
