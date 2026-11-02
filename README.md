@@ -90,7 +90,7 @@ Windows 版も作る予定です。Filament、ThorVG、GStreamer、Flutter な�
 | After Effects のアニメーションを置く | Lottie の `.json`（ThorVG） | 動く |
 | 音符を場面の部品にする | MIDI（`.mid`）：ピアノロール、音に合わせて値にキーを打つ | 動く。MIDI の音はまだ鳴らない（動画の音は鳴る） |
 | 1 回で絵を作る・物に動きを付ける | 自分のスクリプト（`.js`） | 置けば棚に出る。同梱のレシピ 101 本 |
-| ネットの TSL（three.js のシェーダー言語）の表現 | three.js 自身の変換器で WGSL に | WGSL まで。棚にはまだ無い |
+| ネットの TSL（three.js のシェーダー言語）の表現 | three.js 自身の変換器で WGSL に | Shader Lab の 19 本は棚にある。残りは WGSL まで |
 
 作品の権利は作者のものです。Shadertoy や OpenProcessing の作品には非営利の条件が付いた物が多いので、仕事に使う時は作者に確かめてください。
 

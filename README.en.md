@@ -90,7 +90,7 @@ Each was checked at a different time under different conditions. A p5.js work th
 | Place After Effects animations | Lottie `.json` (ThorVG) | Works |
 | Use notes as parts of the composition | MIDI (`.mid`): a piano roll, or keys set on values at each note | Works; MIDI is not heard yet (a video's sound is) |
 | Make a picture in one step, or give a layer a motion | Your own scripts (`.js`) | Put one in and it is on the shelf. 101 recipes bundled |
-| Looks written in TSL (three.js's shading language) | three.js's own compiler to WGSL | Up to WGSL; not on the shelves yet |
+| Looks written in TSL (three.js's shading language) | three.js's own compiler to WGSL | 19 from Shader Lab are on the shelves; the rest up to WGSL |
 
 A work's rights stay with its author. Many works on Shadertoy and OpenProcessing carry a non-commercial condition, so ask the author before using one in paid work.
 
