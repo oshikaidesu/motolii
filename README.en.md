@@ -2,9 +2,11 @@
 
 [![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![ledger](https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml)
 
-**For everyone who opened After Effects and closed it.**
+**Don't lock the looks you find on the net inside one program.**
 
-Find the looks you love, put them together, and finish one video. Motolii is a macOS video maker for music videos (picture-led motion graphics).
+Music videos and motion graphics like those made in After Effects, made easier.
+
+Pick effects by looking at them. Move text and shapes by hand. Put 2D, 3D and web looks together on one timeline.
 
 [日本語](README.md) · [Questions (Discussions)](https://github.com/oshikaidesu/motolii/discussions) · [Bugs (Issues)](https://github.com/oshikaidesu/motolii/issues) — English or Japanese.
 
@@ -13,6 +15,23 @@ Find the looks you love, put them together, and finish one video. Motolii is a m
 | ![Glowing text, a spinning pink ring, a pattern of lines, split colours](docs/media/mv.gif) | ![The Motolii UI: media and shelves on the left, the composition in the middle, the timeline below, values on the right](docs/media/window.jpg) |
 
 *The 8 seconds on the left: a recipe (the lines), a 3D ring, text, a glow and an RGB split, written out. Once built, `docs/examples/mv.sh` makes the same as `~/Movies/Motolii/mv.mp4` in one line.*
+
+## Why can't a look travel from one piece of software to another?
+
+Looks made in p5.js, Shadertoy, ISF and WGSL are out in the open on the net.
+
+Yet the way into video software is a plugin for that one program. Only what the plugin passes gets in, so the looks narrow right there. With no plugin, you burn the work to an image sequence, and its inner values can't be touched again.
+
+**The looks already exist. Why build them again for every program?**
+
+Motolii goes through no plugin. It keeps a door for each format in the app and takes a work without rewriting it. It stays code, so you can change it later and set keys on the timeline.
+
+- Until now: find it → hunt for or build a plugin for that program → use what gets through
+- Motolii: find it → paste it → edit it on the timeline
+
+Not everything runs. How far each format gets is counted in the table under "What it does today".
+
+I went to After Effects looking for what came after Alight Motion, and closed it. So I made this.
 
 ## See it, pick it
 
@@ -26,6 +45,8 @@ The handling takes Alight Motion as its model. Place text or a shape, turn on An
 
 A p5.js sketch or a Shadertoy shader becomes a layer when you paste it. ISF, WGSL and AviUtl2 scripts appear on the shelf when you drop them in the folder. No update, no restart. After pasting you can still set keys, and with p5 you can edit the speed of its time.
 
+A work's rights stay with its author. Many works on Shadertoy and OpenProcessing carry a non-commercial condition, so ask the author before using one in paid work.
+
 ![Eight shared ISF effects on a photo and text](docs/media/effects.jpg)
 
 *Eight ISF effects as their authors share them (CMYK Halftone, Bad TV, Duotone, Edges, Dither-Bayer, Kaleidoscope Tile, Glow-Fast, Pixellate) on a public-domain photo and text.*
@@ -33,12 +54,6 @@ A p5.js sketch or a Shadertoy shader becomes a layer when you paste it. ISF, WGS
 ## Through to the finished video
 
 Lay out music and video, adjust the motion, stack effects, and write an MP4. Lottie files, MIDI notes and physics work too.
-
-## Why it was made
-
-I went to After Effects looking for what came after Alight Motion, and closed it. So I made this.
-
-Why can't a look travel from one piece of software to another?
 
 ## Before you try
 

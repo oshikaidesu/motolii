@@ -2,9 +2,11 @@
 
 [![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![ledger](https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml)
 
-**After Effects を開いて、閉じた人へ。**
+**ネットで見つけた表現を、ソフトに閉じ込めない。**
 
-好きな表現を見つけて、組み合わせて、一本の映像にする。MV（絵が主役のモーショングラフィックス）のための、macOS の映像制作ソフトです。
+After Effects のような MV・モーショングラフィックス制作を、もっと手軽に。
+
+エフェクトは見て選ぶ。文字や図形は直接触って動かす。2D・3D・Web の表現をひとつのタイムラインで組み合わせる。
 
 [English](README.en.md) ・ [質問・相談（Discussions）](https://github.com/oshikaidesu/motolii/discussions) ・ [不具合（Issues）](https://github.com/oshikaidesu/motolii/issues)　どちらも日本語・英語のどちらでも。
 
@@ -13,6 +15,23 @@
 | ![光る文字、回るピンクの輪、線の模様、色のずれ](docs/media/mv.gif) | ![Motolii の画面：左に素材と棚、真ん中に場面、下にタイムライン、右に値](docs/media/window.jpg) |
 
 *左の 8 秒は、レシピ（線の模様）・3D の輪・文字・光（Glow）・RGB のずれを置いて書き出した物。組み立てた後に `docs/examples/mv.sh` の 1 行で同じ物が `~/Movies/Motolii/mv.mp4` にできます。*
+
+## なぜ映像表現は、制作ソフトを越えて持ち運べないのか
+
+ネットには p5.js、Shadertoy、ISF、WGSL で作られた映像表現が公開されています。
+
+でも映像制作ソフトの入口は、ソフトごとのプラグインです。プラグインが通す分しか持ち込めないので、表現はそこで狭くなります。プラグインが無ければ連番の画像に焼くしかなく、焼いた物は中の値をもう触れません。
+
+**表現はもうあるのに、なぜソフトごとに作り直すのか。**
+
+Motolii はプラグインを通しません。形式の入口を本体に持ち、作品を書き直さずに受け取ります。コードのまま残るので、あとから直せて、タイムラインでキーも打てます。
+
+- これまで：見つける → そのソフト専用のプラグインを探す・作る → 通った分だけ使える
+- Motolii：見つける → 貼る → タイムラインで編集する
+
+全部が動くわけではありません。どこまで動くかは、下の「何ができるか」の表に数で書いてあります。
+
+Alight Motion の次を探して After Effects を開き、閉じた。だから作った。
 
 ## 見て選ぶ
 
@@ -26,6 +45,8 @@
 
 p5.js のスケッチも Shadertoy のシェーダーも、貼るだけでレイヤーになります。ISF、WGSL、AviUtl2 のスクリプトは、フォルダに置けば棚に出ます。本体の更新も再起動も要りません。貼ったあともキーを打てて、p5 は時間の速さまで編集できます。
 
+作品の権利は作者のものです。Shadertoy や OpenProcessing の作品には非営利の条件が付いた物が多いので、仕事に使う時は作者に確かめてください。
+
 ![配られている ISF の効果 8 本を写真と文字に掛けた所](docs/media/effects.jpg)
 
 *配られている ISF の効果 8 本（CMYK Halftone・Bad TV・Duotone・Edges・Dither-Bayer・Kaleidoscope Tile・Glow-Fast・Pixellate）を、写真（パブリックドメイン）と文字に掛けた所。どれも作者のファイルのまま。*
@@ -33,12 +54,6 @@ p5.js のスケッチも Shadertoy のシェーダーも、貼るだけでレイ
 ## 映像を完成させるまで
 
 音楽や動画を並べ、動きを調整し、効果を重ねて、MP4 に書き出します。Lottie の読み込み、MIDI の音符、物理演算も使えます。
-
-## なぜ作ったか
-
-Alight Motion の次を探して After Effects を開き、閉じた。だから作った。
-
-なぜ映像表現は、制作ソフトを越えて持ち運べないのか。
 
 ## 試す前に
 
