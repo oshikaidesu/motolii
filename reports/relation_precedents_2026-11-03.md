@@ -64,6 +64,47 @@
 
 できない事は `reports/alight_checklist.md` の T 節。
 
+## Cavalry の元ネタ（11/3、ユーザーの「動きの元ネタもあるはず」）
+
+系譜：
+
+| 年 | 物 | 作った人 | 確かめた事 |
+|---|---|---|---|
+| 1986〜87 | Boids（群れの 3 規則：離れる、揃える、寄る） | Craig Reynolds | 本人のページ |
+| 2006 | MoGraph（C4D R9.6 の追加モジュール） | Per-Anders Edwards | Maxon の記事。元は本人の現場の必要 |
+| 2012 | MASH（Maya の無料ノード 12 個） | Mainframe North | CG Channel。MoGraph にありそうな機能と書く |
+| 2013 | MASH 2.0（21 個、C++ に書き直し、有料） | Mainframe | Lester Banks |
+| 2015 | MASH が Autodesk へ（24 個） | Mainframe から移管 | CGPress |
+| 2020 | Cavalry 1.0 | Scene Group。CG Channel は MASH の作り手と書く | 1.0 の日付は検索の抜粋 |
+
+動きの対応（名前を並べた物で、受け継いだと作者が言ったのは確かめていない）：
+
+| 動き | MoGraph | MASH | Cavalry |
+|---|---|---|---|
+| 範囲で効きを変える | Falloff、Fields | Falloff、Strength | Falloff、`strength` |
+| 順にずらす | Step、Delay | Time、Delay | Stagger |
+| 揺れる | Random、Formula | Signal（4D ノイズ、三角関数） | Oscillator、Noise |
+| ばね | 未確認 | Spring | Spring（`mass`、`damping`） |
+| 群れ | 未確認 | Flight | 定義に flock の語なし |
+| スクリプト | Python Effector | Python ノード | JavaScript |
+
+中身の出どころ（`/Applications/Cavalry.app` の同梱ファイルを読んだ。写していない）：
+- ノイズは FastNoise（Jordan Peck、MIT）。`third_party_licences.txt` に載っている。後継の FastNoiseLite は MIT で JavaScript 版がある。
+- ノードの種類は `simplexNoise`、`cellularNoise`。
+- 式の部品は exprtk。
+
+作例の元ネタ：Cavalry の例 14 本のうち、元を書いているのは Night and Day だけ（ある記事に着想）。作者の名前は無い。
+
+Motolii に効く事：
+- MASH の Python ノードは、全員の値を読み全員に書く形で今回の `relate()` に近い。さらに `getFalloff(0)` で物ごとの範囲の重みを読める。範囲を関係につなぐ時の見本。
+- 群れは Boids の 3 規則まで戻れる。前のコマの速さを覚える必要がある。
+
+確かめ方：
+- ページの本文（取得ツールの要約で読んだ）：School of Motion、CG Channel 2012・2018、Lester Banks、CGPress、Autodesk の MASH の 2 ページ、Reynolds、Maxon、Cavalry の例の一覧。
+- GitHub API で読んだ：FastNoiseLite の README。
+- 検索の抜粋だけ：Creative Bloq（本文が取れない）、Greyscalegorilla の Edwards の話（本文が取れない）、EverybodyWiki と Yorkshire Post（403、回り道はしていない）。
+- 作者が「MoGraph から取った」と言った文は見つけていない。MoGraph から MASH への線は CG Channel の比較と名前からの推測。
+
 ## 読めていない物
 
 - Plexus、Duik、Joysticks 'n Sliders、Rubberhose は今回読んでいない。
@@ -81,4 +122,9 @@
 - [C4D Inheritance Effector](https://help.maxon.net/c4d/r21/us/html/OEINHERITANCE-MGINHERITANCEEFFECTOR_GROUPEFFECTOR.html)
 - [C4D Python Effector](https://developers.maxon.net/docs/Cinema4DPythonSDK/manuals/introduction/python_effector.html)
 - [Unreal Motion Design Cloners and Effectors](https://dev.epicgames.com/documentation/en-us/unreal-engine/motion-design-cloners-and-effectors-in-unreal-engine)
+- [Boids](https://www.red3d.com/cwr/boids/)、[MoGraph の受賞（Maxon）](https://www.maxon.net/en/article/maxon-cinema-4d-mograph-toolset-honored-with-academy-award-for-scientific-and-technical-achievement)、[Sci-Tech 賞（CG Channel）](https://www.cgchannel.com/2018/12/motion-graphics-tools-devs-win-sci-tech-academy-awards)
+- [Mash の無料公開（CG Channel）](https://www.cgchannel.com/?p=45298)、[MASH 2.0](https://lesterbanks.com/2013/06/mainframe-releases-mash-2-0-procedural-animation-toolkit-for-maya-as-a-commercial-product/)、[MASH が Autodesk へ](https://cgpress.org/archives/mash-moves-to-autodesk.html)
+- [MASH のノード一覧](https://help.autodesk.com/cloudhelp/2023/ENU/Maya-MotionGraphics/files/GUID-D4FECFDC-F91A-4BDC-A1B0-A24EB087B2DD.htm)、[MASH の Python ノード](https://help.autodesk.com/cloudhelp/2017/ENU/Maya/files/GUID-DCB144BD-DFE2-418B-9838-E06963F61A20.htm)
+- [A First Look at Cavalry](https://www.schoolofmotion.com/blog/a-first-look-at-cavalry)、[Cavalry 1.1（CG Channel）](https://www.cgchannel.com/tag/cavalry-1-1)、[Cavalry の例](https://cavalry.studio/docs/getting-started/example-files/)
+- [FastNoiseLite](https://github.com/Auburn/FastNoiseLite)
 - [Cavalry Behaviours](https://cavalry.studio/docs/nodes/behaviours/)、[JavaScript Deformer](https://cavalry.studio/docs/nodes/behaviours/javascript-deformer/)
