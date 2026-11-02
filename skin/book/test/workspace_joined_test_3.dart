@@ -91,7 +91,7 @@ void _tests3() {
     expect(t.takeException(), isNull);
     await expectSameAfterReopen(t);
     await _close(t);
-  }, tags: 'main', skip: !_built);
+  }, skip: !_built);
 
   testWidgets('scale is three numbers of the document, each its own; a flat thing\'s scale z is its thickness, none at first, a solid\'s linked with the rest', (t) async {
     final ws = await _pump(t), m = ws.inside!;
@@ -597,7 +597,7 @@ void _tests3() {
     expect(m.word(text, 'text'), 'HELLO');
     expect(t.takeException(), isNull);
     await _close(t);
-  }, tags: 'main', skip: !_built);
+  }, skip: !_built);
 
   testWidgets('Transform holds what After Effects\' Layer Transform holds, in its order; the anchor has its box and its numbers together in the card under them', (t) async {
     final ws = await _pump(t), m = ws.inside!;
@@ -615,7 +615,7 @@ void _tests3() {
     expect(find.descendant(of: anchor, matching: find.byWidgetPredicate((w) => w is NumField && w.id == 'v_anchor_z')), findsOneWidget, reason: 'its numbers beside it');
     expect(t.takeException(), isNull);
     await _close(t);
-  }, tags: 'main', skip: !_built);
+  }, skip: !_built);
 
   testWidgets('a shape recipe begins at the playhead; a colour takes a picture fill\'s place; ⌘[ and ⌘] send it back and forward', (t) async {
     final ws = await _pump(t), m = ws.inside!;
@@ -717,7 +717,7 @@ void _tests3() {
     expect(panel.contains(box.center), isTrue, reason: 'the keys go to a box out of sight: $box in $panel');
     expect(t.takeException(), isNull);
     await _close(t);
-  }, tags: 'main', skip: !_built);
+  }, skip: !_built);
 
   testWidgets('the Text tool\'s row has its font, size, alignment and colour in one row, as Alight Motion\'s text bar', (t) async {
     final ws = await _pump(t), m = ws.inside!;
@@ -1518,7 +1518,7 @@ void _tests3() {
     expect(await shown('調整レイヤー'), contains('Background Copy'), reason: 'adjustment AND layer: After Effects\' adjustment layer by what it does');
     expect(t.takeException(), isNull);
     await _close(t);
-  }, tags: 'main', skip: !_built);
+  }, skip: !_built);
 
   testWidgets('the inks and the role fonts are kept with the document, not as steps: opened again, they are there (PowerPoint\'s theme colours and fonts; golf_noise.md (90))', (t) async {
     final ws = await _pump(t), m = ws.inside!;
@@ -1540,7 +1540,7 @@ void _tests3() {
     expect(again.inside!.settings.containsKey('ink'), isFalse, reason: 'none again: taken away');
     expect(t.takeException(), isNull);
     await _close(t);
-  }, tags: 'main', skip: !_built);
+  }, skip: !_built);
 
   testWidgets('an outline given a colour while it has no width comes 6 wide, one step (Alight Motion\'s border; golf_noise.md (89))', (t) async {
     final ws = await _pump(t), m = ws.inside!;

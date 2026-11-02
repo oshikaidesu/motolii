@@ -146,7 +146,7 @@ void _tests4() {
     expect(t.takeException(), isNull);
     await expectSameAfterReopen(t);
     await _close(t);
-  }, tags: 'main', skip: !_built);
+  }, skip: !_built);
 
   testWidgets('a value\'s key mark is always on its field, hollow with no key: a press keys it at the playhead, a press on its key there takes that away (Alight Motion\'s diamond, After Effects\' stopwatch: golf_noise.md (59))', (t) async {
     final ws = await _pump(t), m = ws.inside!;

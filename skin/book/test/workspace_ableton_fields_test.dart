@@ -215,7 +215,7 @@ void main() {
     expect(m.value(a, radius, 0), greaterThanOrEqualTo(4), reason: 'a scrub does not throw it back to the knob\'s end');
     expect(m.set(a, radius, -1), isFalse);
     await closeWorkspace(t);
-  }, tags: 'main', skip: !insideBuilt);
+  }, skip: !insideBuilt);
 
   testWidgets('a right click on any number offers Reset, Copy, Paste and its keys, on a row or an effect\'s knob alike (After Effects, Blender; all by the mouse alone)', (t) async {
     final ws = await openWorkspace(t), m = ws.inside!;
@@ -268,7 +268,7 @@ void main() {
     expect(find.text('Reset'), findsWidgets, reason: 'an effect\'s knob has the same menu: it had none');
     expect(t.takeException(), isNull);
     await closeWorkspace(t);
-  }, tags: 'main', skip: !insideBuilt);
+  }, skip: !insideBuilt);
 
   testWidgets('a list\'s keys: Down opens it, the arrows go along it, Return takes one, Esc leaves it, a letter goes to the first that starts so (W3C ARIA Authoring Practices, Select-Only Combobox)', (t) async {
     final ws = await openWorkspace(t), m = ws.inside!;
@@ -304,7 +304,7 @@ void main() {
     expect(m.word(a, 'blend'), chosen, reason: 'Esc leaves it as it was');
     expect(t.takeException(), isNull);
     await closeWorkspace(t);
-  }, tags: 'main', skip: !insideBuilt);
+  }, skip: !insideBuilt);
 
   testWidgets('Option on a card\'s head folds all the cards, and opens them again (the Mac\'s Option on a disclosure triangle, Finder\'s list)', (t) async {
     final ws = await openWorkspace(t), m = ws.inside!;
@@ -347,7 +347,7 @@ void main() {
     expect(find.text('Wave Warp'), findsWidgets);
     expect(t.takeException(), isNull);
     await closeWorkspace(t);
-  }, tags: 'main', skip: !insideBuilt);
+  }, skip: !insideBuilt);
 
   testWidgets('Copy all under a thing\'s effects, Paste on another: its whole stack goes over, in order, its knobs with it (Alight Motion\'s Copy Effects, Paste Effects)', (t) async {
     final ws = await openWorkspace(t), m = ws.inside!;
@@ -373,7 +373,7 @@ void main() {
     expect(m.value(b, 'blur', 0), 33, reason: 'its knobs with it');
     expect(t.takeException(), isNull);
     await closeWorkspace(t);
-  }, tags: 'main', skip: !insideBuilt);
+  }, skip: !insideBuilt);
 
   testWidgets('the Transform card\'s ⋮ flips and fits, a row\'s right click resets that row alone (Alight Motion\'s ⋯ on Move & Transform; they lay in the menu bar alone)', (t) async {
     final ws = await openWorkspace(t), m = ws.inside!;
@@ -404,7 +404,7 @@ void main() {
     expect([m.value(a, 'rotate', 0), m.value(a, 'x', 0)], [0, isNot(0)], reason: 'that row alone');
     expect(t.takeException(), isNull);
     await closeWorkspace(t);
-  }, tags: 'main', skip: !insideBuilt);
+  }, skip: !insideBuilt);
 
   testWidgets('a menu shuts when anything else is touched, by either button, and on Esc; another right click opens the next in its place', (t) async {
     final ws = await openWorkspace(t), m = ws.inside!;
@@ -459,7 +459,7 @@ void main() {
     expect(menu, findsNothing, reason: 'and on Esc');
     expect(t.takeException(), isNull);
     await closeWorkspace(t);
-  }, tags: 'main', skip: !insideBuilt);
+  }, skip: !insideBuilt);
 
   testWidgets('nothing picked, the inspector shows nothing unasked: the stage\'s own cards when Stage settings is pressed (After Effects\' Effect Controls, Alight Motion, Apple Motion\'s Project)', (t) async {
     final ws = await openWorkspace(t);
@@ -475,7 +475,7 @@ void main() {
     expect(find.byType(ValuesCard), findsNothing, reason: 'and put away');
     expect(t.takeException(), isNull);
     await closeWorkspace(t);
-  }, tags: 'main', skip: !insideBuilt);
+  }, skip: !insideBuilt);
 
   testWidgets('typing a number: Tab keeps it and opens the next field, Shift-Tab the one before; the arrows move what is typed; nothing typed is as Esc (After Effects, Figma, Blender)', (t) async {
     final ws = await openWorkspace(t), m = ws.inside!;
@@ -514,5 +514,5 @@ void main() {
     expect(find.text('Number required'), findsNothing);
     expect(t.takeException(), isNull);
     await closeWorkspace(t);
-  }, tags: 'main', skip: !insideBuilt);
+  }, skip: !insideBuilt);
 }

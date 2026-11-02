@@ -259,7 +259,7 @@ void _tests2() {
     expect(said('Top left'), findsOneWidget, reason: 'the icon on the row');
     expect(t.takeException(), isNull);
     await _close(t);
-  }, tags: 'main', skip: !_built);
+  }, skip: !_built);
 
   testWidgets('Parent: a thing goes with another without moving when it is given; moves with it after; no ring of parents', (t) async {
     final ws = await _pump(t), m = ws.inside!;
@@ -481,7 +481,7 @@ void _tests2() {
     expect(m.undo() && m.value(text, 'scale_z', 0) == 0, isTrue, reason: 'one step');
     expect(t.takeException(), isNull);
     await _close(t);
-  }, tags: 'main', skip: !_built);
+  }, skip: !_built);
 
   testWidgets('a thing shows what Alight Motion shows for its kind (AbsentMotion\'s LayerTools.kt); the rest is there when asked for by More, or once a value of it is said', (t) async {
     final ws = await _pump(t), m = ws.inside!;
@@ -514,7 +514,7 @@ void _tests2() {
     expect(titles(rect), isNot(contains('Copies')), reason: 'its Reset takes it away');
     expect(t.takeException(), isNull);
     await _close(t);
-  }, tags: 'main', skip: !_built);
+  }, skip: !_built);
 
   testWidgets('the Depth desk is the camera\'s lens: its focal length is the zoom, a scrub of the aperture is one step', (t) async {
     final ws = await _pump(t), m = ws.inside!;
@@ -937,5 +937,5 @@ void _tests2() {
     expect(t.takeException(), isNull);
     await expectSameAfterReopen(t);
     await _close(t);
-  }, tags: 'main', skip: !_built);
+  }, skip: !_built);
 }
