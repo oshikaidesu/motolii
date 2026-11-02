@@ -6,10 +6,9 @@ import "core-js/actual/url"
 import "core-js/actual/structured-clone"
 import * as std from "qjs:std"
 import * as THREE from "three/webgpu"
-import { time, uniform, uv } from "three/tsl"
+import { uniform, uv } from "three/tsl"
 import * as T from "../third_party/tsl/boytchev__tsl-textures/src/tsl-textures.js"
-import { plane } from "./convert"
-import { fileText, stepOf, type Said } from "./shelf_file"
+import { madeText } from "./shelf_file"
 
 const root = "../third_party/tsl/boytchev__tsl-textures/", dir = "../effects"
 const pages = (std.popen(`ls ${root}docs`, "r").readAsString() ?? "").split("\n").filter(f => f.endsWith(".md")).map(p => std.loadFile(`${root}docs/${p}`) ?? "")
@@ -55,19 +54,11 @@ for (const [name, f] of Object.entries(T) as [string, any][]) {
     if (f.defaults.$replaceExportUVS) args.uvs = uv()   // (the author's own word for a texture taken off its ball)
     const material: any = new THREE.MeshBasicNodeMaterial()
     material.colorNode = f(args)
-    const step = stepOf(new Map(), new THREE.Mesh(plane, material), undefined, undefined, null)
-    const said: Said = new Map()
-    for (const u of step.uniforms) {
-      if (u.node === time) said.set(`0:${u.name}`, ["knobs.time"])
-      else if (of.has(u.node)) said.set(`0:${u.name}`, of.get(u.node)!)
-    }
     const about = new RegExp(`^## .*\\n+(?!<)([^\\n]+)`, "m").exec(pages.find(t => t.includes(`import { ${name} }`)) ?? "")?.[1]
     const head = [`// ${title}: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/tsl/textures_shelf.ts)`, "// --label:Generate"]
     if (about) head.push(`// --about:${about.trim()}`)
-    const used = new Set(step.uniforms.map(u => u.node))   // (the page's other knobs move its bumps, not this colour)
-    const knobLines = lines.filter(([node]) => used.has(node)).map(([, line]) => line)
-    head.push(...knobLines)
-    std.open(`${dir}/tt_${name.replace(/[A-Z]/g, c => "_" + c.toLowerCase())}.wgsl`, "w").puts(fileText(head, [step], said, fields, [], t => t?.isDataTexture ? "own" : "picture", null, true))
-    console.log(`${name}: ${knobLines.length} knobs, ${step.uniforms.length} uniforms`)
+    const made = madeText(material, head, lines, fields, of)
+    std.open(`${dir}/tt_${name.replace(/[A-Z]/g, c => "_" + c.toLowerCase())}.wgsl`, "w").puts(made.text)
+    console.log(`${name}: ${made.knobs} knobs, ${made.uniforms} uniforms`)
   } catch (e: any) { console.log(`${name}: not made, ${String(e?.message ?? e).slice(0, 140)}`) }
 }

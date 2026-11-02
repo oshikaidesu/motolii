@@ -639,7 +639,7 @@ fn p0_turbulentSmokeRaw ( position : vec3<f32>, scale : f32, speed : f32, detail
 
 
 fn p0_main(door_uv: vec2f) -> p0_OutputStruct {
-	let nodeVarying4 = vec3f((2.0 * door_uv.x - 1.0) * knobs.resolution.x * knobs.frameRect.z / (knobs.resolution.y * knobs.frameRect.w), 1.0 - 2.0 * door_uv.y, 0.0);
+	let nodeVarying4 = vec3f((2.0 * door_uv.x - 1.0) * knobs.resolution.x / knobs.resolution.y, 1.0 - 2.0 * door_uv.y, 0.0);
 
 	// flow
 	// code

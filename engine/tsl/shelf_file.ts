@@ -1,7 +1,9 @@
 // three's shaders as one file of the effects shelf, the shape screen.h screen_read takes, the shape engine/isf.cpp makes of
 // ISF's PASSES: the stage's picture at binding 0, each target's after it, one struct of knobs, one entry that goes by
 // `passindex`; every step's fragment shader kept as three's builder wrote it, its names apart.
-import { built } from "./convert"
+import * as THREE from "three/webgpu"
+import { time } from "three/tsl"
+import { built, plane } from "./convert"
 
 // (the builder's own list: getBindings() gives a shared group, time's, as first built, with that build's names)
 export const uniformsOf = (b: any) => [...b.uniforms.vertex, ...b.uniforms.fragment].filter((u: any) => !/texture|sampler/i.test(u.type))
@@ -139,7 +141,7 @@ export function fileText(head: string[], steps: Step[], said: Said, fields: Map<
   const bindings = bound.map((n, i) => `@group(0) @binding(${2 * i}) var ${n}: texture_2d<f32>;\n@group(0) @binding(${2 * i + 1}) var ${n}_sampler: sampler;\n`).join("")
   const each = steps.map((s, k) => {
     const t = s.target ? targets.find(x => x.name === nameOf(s.target)) : null
-    return stepText(k, s, said, fields, nameOf, tables, t ? t.share : [1, 1], made ? "vec3f((2.0 * door_uv.x - 1.0) * knobs.resolution.x * knobs.frameRect.z / (knobs.resolution.y * knobs.frameRect.w), 1.0 - 2.0 * door_uv.y, 0.0)" : "vec3f(2.0 * door_uv.x - 1.0, 1.0 - 2.0 * door_uv.y, 0.0)")
+    return stepText(k, s, said, fields, nameOf, tables, t ? t.share : [1, 1], made ? "vec3f((2.0 * door_uv.x - 1.0) * knobs.resolution.x / knobs.resolution.y, 1.0 - 2.0 * door_uv.y, 0.0)" : "vec3f(2.0 * door_uv.x - 1.0, 1.0 - 2.0 * door_uv.y, 0.0)")
   })
   const texts = [...new Set(each)], of = each.map(t => texts.indexOf(t))   // (a step that draws what one before it does: that one's lines)
   const knobs = `struct Knobs {\n  time: f32,\n  passindex: f32,\n  resolution: vec2<f32>,\n  frameRect: vec4<f32>,\n  passRect: vec4<f32>,\n${[...fields].map(([n, t]) => `  ${n}: ${t},`).join("\n")}\n};\n`
@@ -147,4 +149,16 @@ export function fileText(head: string[], steps: Step[], said: Said, fields: Map<
   const entry = `@fragment\nfn main(@location(0) door_on: vec2f) -> @location(0) vec4f {\n  let door_uv = (door_on - knobs.passRect.xy) / knobs.passRect.zw;\n${
     drawn ? `  switch u32(knobs.passindex + 0.5) {\n${cases}    default: {}\n  }\n` : ""}  return to_shelf(${tail ? `target_read(${tail}, ${tail}_sampler, door_uv)` : `p${of[last]}_main(door_uv).color`})${made ? " * textureSampleLevel(picture, picture_sampler, framed(door_uv), 0.0).a" : ""};\n}\n`
   return [...head, "diagnostic(off, derivative_uniformity);", knobs + bindings + `@group(0) @binding(${2 * bound.length}) var<uniform> knobs: Knobs;\n` + tones + code, ...texts.map((t, j) => t.replace(/\bPSTEP_/g, `p${j}_`)), entry].join("\n")
+}
+
+// A material that makes its own picture, as one file: `of` says which of its uniforms are which knobs, `lines` is each
+// knob's head line with its uniform, and one the colour's shader does not read is not said.
+export function madeText(material: any, head: string[], lines: [any, string][], fields: Map<string, string>, of: Map<any, string[]>) {
+  const step = stepOf(new Map(), new THREE.Mesh(plane, material), undefined, undefined, null), said: Said = new Map()
+  for (const u of step.uniforms) {
+    if (u.node === time) said.set(`0:${u.name}`, ["knobs.time"])
+    else if (of.has(u.node)) said.set(`0:${u.name}`, of.get(u.node)!)
+  }
+  const used = new Set(step.uniforms.map(u => u.node)), kept = lines.filter(([node]) => used.has(node)).map(([, line]) => line)
+  return { text: fileText([...head, ...kept], [step], said, fields, [], t => t?.isDataTexture ? "own" : "picture", null, true), knobs: kept.length, uniforms: step.uniforms.length }
 }

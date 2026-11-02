@@ -300,3 +300,14 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
 - 試し：`edit.sh` で全 44 本を描き、つまみ 382 本を端の値へ動かして絵が変わるかを見た（480×270、断られた行 0）。381 本が変わる。変わらないのは Bricks の奥行きの大きさ（板は z が 0）。
 - 窓：Static noise を Circle に付けて形の中に出て、Scale を 4 にして模様が大きくなった。棚は 1262 本から 1306 本になった。他の 43 本は窓で見ていない。作者の絵とは比べていない（互換が目的ではない）。
 - 道具の誤りで見つかった物：`getBindings()` の共有の組が最初に作った時の名前のままで、2 本目以降の `time` が `NaN` になった（同じ組の並びの材質だけ。`uniformsOf` を作る度の一覧に変えた）。`fn main(` の引数が複数行の物を読めていなかった。`fragCoord` を 0〜1 にしていて Static noise と Halftone が平らだった（本当の画素に直した）。`smooth` は WGSL の予約語。Shader Lab の 35 本は作り直して 1 バイトも変わらなかった。
+- 窓で見つかった誤り：Circle の上で Impact の輪が楕円になった。`resolution` はもう枠の大きさなのに、枠の比をもう一度掛けていた（`screen.h` の `screen_knobs`）。tsl-textures の 41 本も同じ式だったので作り直した。
+
+## ノイズと爆発、three.js の見本の取捨（11/2）
+
+繋ぐ所は `engine/tsl/noise_fx_shelf.ts`（約 50 行）。互換が目的ではないので好き嫌いした。
+
+- 取った物：threejs-noise-functions の 9 本（Crater、Curl、Erosion、Gabor、Paper、Scratches、Stone、Wavelet、Wool）、TSLFX の Impact と Scatter。
+- 取らなかった物：blue、golden_ign、hash、hilbertBlue、value は 6 倍の座標だと升目の乱数に見える。perlin、simplex、worley は棚に同じ物がある。TSLFX の gradient、dotNoise、simplex2D・3D、template は部品か棚に同じ物があり、Shape は縦横比を持たない。
+- three.js の見本：取らない。bloom、film、dot screen、radial blur、sharpen などは棚に同じ物が既にある。dof、retroPass、stereoPass などは場面の奥行きやカメラが要る。bilateral、box、hash のぼかしと barrel は同じ名前が棚に無いが、同じ働きのぼかしと歪みが沢山ある。多くは自分の絵を描く段があり、1 枚の材質として作ると元の絵のまま出る。
+- 試し：全 11 本を `edit.sh` で描き、つまみ 34 本を端の値へ動かして全部絵が変わる。Gabor は座標がマイナスだと平らになるので、README の `uv()` と同じくプラスだけにした。
+- 窓：棚が 1317 本になり、Impact を Circle に付けて 33 コマ目で爆発が出て、つまみが並ぶのを見た。

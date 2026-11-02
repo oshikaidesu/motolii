@@ -343,7 +343,7 @@ fn p0_protozoaRaw ( position : vec3<f32>, matcap : vec2<f32>, scale : f32, fat :
 
 fn p0_main(door_uv: vec2f) -> p0_OutputStruct {
 	let v_normalViewGeometry = vec3f(door_uv.x, 1.0 - door_uv.y, 0.0);
-	let nodeVarying5 = vec3f((2.0 * door_uv.x - 1.0) * knobs.resolution.x * knobs.frameRect.z / (knobs.resolution.y * knobs.frameRect.w), 1.0 - 2.0 * door_uv.y, 0.0);
+	let nodeVarying5 = vec3f((2.0 * door_uv.x - 1.0) * knobs.resolution.x / knobs.resolution.y, 1.0 - 2.0 * door_uv.y, 0.0);
 
 	// flow
 	// code
