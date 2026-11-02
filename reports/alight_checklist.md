@@ -697,3 +697,4 @@ AbsentMotion（AM の写し）の欄の要素を機械で書き出し（panels/*
 - [x] 名前に空白か `/` がある AviUtl2 の効果が掛からない（11/2 済）：`[Shader]Chromatic Aberration` など 355 本中 20 本。効果のリストは空白で切る（`script.h:30`）のでダブルクリックしても付かなかった。リストの単語の中だけ URL の断片と同じ `%20`、`%2F` で書く（RFC 3986 2.1、`aviutl.h` `aviutl_word`）。棚に出る名前はそのまま。タイルは言い方が変わるので描き直しになる
 - [ ] AviUtl2 の影が `Float64` で作れない（11/2）：`[Shader]Chromatic Aberration` は 11 本中 8 本、`[Animation]Image Sequence (TimeControl)` は 1 本中 0 本（`SPIR-V capability 'Float64'`）。窓の上の赤い `1` がこれ。カードは付く
 - [ ] Program 棚と Create 棚も画面外のタイルまで全部作る（11/2）：`dock_program.dart:210`、`dock_make_2.dart:583` の `Wrap`。Effects 棚と同じく `GridView.builder` にできる
+- [x] 効果の棚に履歴が無い（11/2 済）：掛けた 40 本を新しい順に `Recent` の札に、10 本を棚の頭に常に出す（Alight Motion `EffectBrowser.kt:117,217`）。掛けるたびに何を打ってどの札から選んだかを `~/.motolii/effect_used.jsonl` に残す。分類の札は本数の多い順。調べは `reports/増え続ける効果の束ね方.md`

@@ -1,5 +1,6 @@
 // The shelves on a real document (the inside joined, test/door.dart): each lays out at the dock's sizes; Media is one
 // browser, its tree beside the contents when wide and above them when narrow, its search over where it is.
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -12,7 +13,9 @@ import 'package:lab_book/motolii.dart';
 import 'package:lab_book/workspace/dock.dart';
 import 'package:lab_book/workspace/create_preview.dart';
 import 'package:lab_book/workspace/dock_parts.dart' show DockIconButton, DockSearch, dockStarsAt;
+import 'package:lab_book/workspace/dock_effects.dart' show EffectTile;
 import 'package:lab_book/workspace/dock_tags.dart' show DockTags;
+import 'package:lab_book/workspace/effect_decks.dart';
 import 'package:lab_book/workspace/effect_tiles.dart';
 
 import 'door.dart';
@@ -231,6 +234,39 @@ void main() {
     await t.tap(find.text('★'));
     await t.pumpAndSettle();
     expect(find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('ws-screen-')), findsOneWidget, reason: 'the starred alone');
+    await t.pumpWidget(const SizedBox());
+  }, skip: !insideBuilt);
+
+  testWidgets('an effect put on comes among the last put on: in sight over the tiles and a Recent table, the newest first, and said in the log', (t) async {
+    final kept = File('${Directory.systemTemp.createTempSync('recent').path}/effect_recent.json');
+    effectRecentAt(kept);
+    final ws = _joined();
+    await _shelf(t, ws, const Size(600, 918), 'Effects');
+    final tiles = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('ws-screen-'));
+    String idOf(Finder f) => (t.widget(f).key as ValueKey<String>).value.substring('ws-screen-'.length);
+    final first = idOf(tiles.at(0)), second = idOf(tiles.at(1));
+    expect(find.text('Recent'), findsNothing, reason: 'none put on yet: no table of them');
+    expect(find.byKey(const ValueKey('ws-fx-recent')), findsNothing);
+    Future<void> put(String id) async {
+      await doubleTap(t, find.byKey(ValueKey('ws-screen-$id')));
+      for (var i = 0; i < 200 && (ws.waiting || !effectRecent().contains(id)); i++) {   // (asked without waiting)
+        await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+        await t.pump();
+      }
+      await t.pump(const Duration(milliseconds: 400));
+    }
+    await put(first);
+    await put(second);
+    expect(effectRecent(), [second, first], reason: 'the newest first');
+    expect(jsonDecode(kept.readAsStringSync()), [second, first], reason: 'kept for the next time');
+    expect(find.descendant(of: find.byKey(const ValueKey('ws-fx-recent')), matching: find.byType(EffectTile)), findsNWidgets(2), reason: 'in sight over the tiles');
+    await t.tap(find.text('Recent'));
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey('ws-fx-recent')), findsNothing, reason: 'not twice');
+    expect(idOf(tiles.at(0)), second, reason: 'the table, the newest first');
+    expect(tiles, findsNWidgets(2));
+    final lines = File('${kept.parent.path}/effect_used.jsonl').readAsLinesSync();
+    expect([for (final l in lines) (jsonDecode(l) as Map)['id']], [first, second], reason: 'each said in the log, in its order');
     await t.pumpWidget(const SizedBox());
   }, skip: !insideBuilt);
 

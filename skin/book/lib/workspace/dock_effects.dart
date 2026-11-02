@@ -9,6 +9,7 @@ import 'package:flutter/widgets.dart';
 import '../tokens.dart';
 import 'dock_parts.dart';
 import 'dock_tags.dart';
+import 'effect_decks.dart';
 import 'effect_tiles.dart';
 import 'ws.dart';
 
@@ -30,26 +31,27 @@ class EffectsShelf extends StatelessWidget {
     //  three.js .wgsl and an AviUtl2 script), its name, what it is for, its tile, whether it is on, what two presses do
     //  (also what a drop on the stage does), what it says of itself)
     // (put on with words typed: latched to them, the first for them next time, golf (94))
-    VoidCallback chosen(String id, VoidCallback put) => () {
+    VoidCallback chosen(String id, VoidCallback put, {bool taken = false}) => () {
       DockTags.latch('Effects', c.query, id);
+      if (!taken) c.set(() => effectUsed(id, words: c.query, chip: c.chip));
       put();
     };
-    final every = <({String id, String name, String label, Widget tile, bool on, VoidCallback apply, String said})>[
+    final every = <({String id, String name, String label, Widget Function(bool small) tile, bool on, VoidCallback apply, String said})>[
       if (picked)
         for (final (n, _) in m.thingEffects)
-          (id: n, name: n, label: m.label(n), on: on.contains(n), apply: chosen(n, () => ws.fxToggle(n)), said: _said(ws, n),
-           tile: EffectTile(n, file: m.picture(n), look: _FxLook(n), on: on.contains(n) ? 'ON' : null, picked: c.sel == n, onTap: () => c.pick(n), onApply: chosen(n, () => ws.fxToggle(n)), star: c)),
+          (id: n, name: n, label: m.label(n), on: on.contains(n), apply: chosen(n, () => ws.fxToggle(n), taken: on.contains(n)), said: _said(ws, n),
+           tile: (small) => EffectTile(n, small: small, file: m.picture(n), look: _FxLook(n), on: on.contains(n) ? 'ON' : null, picked: c.sel == n, onTap: () => c.pick(n), onApply: chosen(n, () => ws.fxToggle(n), taken: on.contains(n)), star: small ? null : c)),
       for (final (n, f) in _byName[m.effects] ??= ([...m.effects]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase()))))
-        (id: f, name: n, label: m.label(n), on: screen.contains(f), apply: chosen(f, () => ws.screenToggle(f)), said: m.about(f).isEmpty ? (picked ? 'On the picked thing' : 'On all under it') : m.about(f),
-         tile: EffectTile(n, key: ValueKey('ws-screen-$f'), file: m.picture(f), same: m.tileSame(f), on: screen.contains(f) ? 'ON ${screen.indexOf(f) + 1}' : null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.screenToggle(f)), star: c, starId: f)),
+        (id: f, name: n, label: m.label(n), on: screen.contains(f), apply: chosen(f, () => ws.screenToggle(f), taken: screen.contains(f)), said: m.about(f).isEmpty ? (picked ? 'On the picked thing' : 'On all under it') : m.about(f),
+         tile: (small) => EffectTile(n, key: small ? null : ValueKey('ws-screen-$f'), small: small, file: m.picture(f), same: m.tileSame(f), on: screen.contains(f) ? 'ON ${screen.indexOf(f) + 1}' : null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.screenToggle(f), taken: screen.contains(f)), star: small ? null : c, starId: f)),
       if (picked)   // (a look kept by its name, Save Look: given to the picked thing, its values, effects and keys)
         for (final (n, f) in m.looks)
           (id: f, name: n, label: 'Look', on: false, apply: chosen(f, () => ws.after(m.later('paste_style', thing: int.parse(ws.selected!), word: f))), said: 'A look for the picked thing',
-           tile: EffectTile(n, key: ValueKey('ws-look-$n'), file: m.picture(f), on: null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.after(m.later('paste_style', thing: int.parse(ws.selected!), word: f))), star: c, starId: f)),
+           tile: (small) => EffectTile(n, key: small ? null : ValueKey('ws-look-$n'), small: small, file: m.picture(f), on: null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.after(m.later('paste_style', thing: int.parse(ws.selected!), word: f))), star: small ? null : c, starId: f)),
       if (picked)
         for (final (n, f) in m.animators)
-          (id: f, name: n, label: 'Motion', on: ws.motion == f, apply: chosen(f, () => ws.motionToggle(f)), said: 'A motion for the picked thing',
-           tile: EffectTile(n, key: ValueKey('ws-motion-$n'), on: ws.motion == f ? 'ON' : null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.motionToggle(f)))),
+          (id: f, name: n, label: 'Motion', on: ws.motion == f, apply: chosen(f, () => ws.motionToggle(f), taken: ws.motion == f), said: 'A motion for the picked thing',
+           tile: (small) => EffectTile(n, key: small ? null : ValueKey('ws-motion-$n'), small: small, on: ws.motion == f ? 'ON' : null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.motionToggle(f), taken: ws.motion == f))),
     ];
     // (by its name, or by what it does in its maker's words, as Alight Motion's search reads the descriptions; when that
     //  finds nothing, a word typed wrong or in part, the nearest five by RapidFuzz (the inside's find, the user's choice),
@@ -73,12 +75,29 @@ class EffectsShelf extends StatelessWidget {
     //  filters, read from the shaders, golf (92))
     final tagChips = [for (final t in (read.entries.where((t) => t.key != 'transition').toList()..sort((a, b) => b.value.compareTo(a.value))).take(8)) MapEntry('#${t.key}', t.value)];
     final starred = all.where((e) => c.starred(e.id)).length;   // (the starred a table of their own, as the Ease desk's ★)
-    final chip = kinds.containsKey(c.chip) || tagChips.any((t) => t.key == c.chip) || (c.chip == '★' && starred > 0) ? c.chip : 'All', shown = [for (final e in all) if (chip == 'All' || (chip == '★' ? c.starred(e.id) : (chip.startsWith('#') ? tagsOf(e.id).contains(chip.substring(1)) : e.label == chip))) e.tile];
+    // (the last put on: forty in a table of their own, the Fonts shelf's Recent, the newest first; ten in sight over the
+    //  tiles while nothing narrows them, as Alight Motion's effect browser opens on its last ten, EffectBrowser.kt:217:
+    //  a list out of sight is not gone back to, Bergman's bookmarks, 32 of 41 by the bar always in sight)
+    final byId = {for (final e in all) e.id: e}, recent = [for (final id in effectRecent()) ?byId[id]];
+    final chip = kinds.containsKey(c.chip) || tagChips.any((t) => t.key == c.chip) || (c.chip == '★' && starred > 0) || (c.chip == 'Recent' && recent.isNotEmpty) ? c.chip : 'All';
+    final shown = chip == 'Recent' ? recent : [for (final e in all) if (chip == 'All' || (chip == '★' ? c.starred(e.id) : (chip.startsWith('#') ? tagsOf(e.id).contains(chip.substring(1)) : e.label == chip))) e];
+    final inSight = chip == 'All' && c.query.isEmpty ? recent.take(10).toList() : const <Never>[];
     final sel = c.foot(all.where((e) => e.id == c.sel).firstOrNull);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        DockChips([('All', all.length), if (starred > 0) ('★', starred), for (final t in tagChips) (t.key, t.value), for (final k in kinds.entries) (k.key, k.value)], active: chip, onPick: c.pickChip),   // (the tags read first, as Shadertoy's filters head its results: the kinds are many, thirty and more)
+        DockChips([('All', all.length), if (recent.isNotEmpty) ('Recent', recent.length), if (starred > 0) ('★', starred), for (final t in tagChips) (t.key, t.value), for (final k in kinds.entries.toList()..sort((a, b) => b.value.compareTo(a.value))) (k.key, k.value)], active: chip, onPick: c.pickChip),   // (the tags read first, as Shadertoy's filters head its results: the kinds are many, a hundred and more, the most first as the tags)
+        if (inSight.isNotEmpty)
+          GridView.count(
+            key: const ValueKey('ws-fx-recent'),
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.only(top: WsT.gutter, bottom: WsT.gutter),
+            crossAxisCount: 5,
+            crossAxisSpacing: WsT.gutter,
+            mainAxisSpacing: WsT.gutter,
+            children: [for (var i = 0; i < 10; i++) i < inSight.length ? inSight[i].tile(true) : const SizedBox()],   // (two rows from the first on, as Alight Motion's box of a fixed height: a tile does not leave from under the hand as the list grows)
+          ),
         Expanded(
           child: shown.isEmpty
               ? DockEmpty(c.query)
@@ -89,7 +108,7 @@ class EffectsShelf extends StatelessWidget {
                       padding: EdgeInsets.zero,
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: cols, crossAxisSpacing: WsT.gutter, mainAxisSpacing: WsT.gutter, mainAxisExtent: w + Shape.z(18)),   // (a tile: its square and its name, EffectTile)
                       itemCount: shown.length,
-                      itemBuilder: (context, i) => shown[i],
+                      itemBuilder: (context, i) => shown[i].tile(false),
                     );
                   },
                 ),
@@ -107,8 +126,9 @@ class EffectsShelf extends StatelessWidget {
 /// effect its small drawing, else a plain tile), its name, ON (and its place among those on the stage) when it is on,
 /// NO CHANGE when it is seen to change nothing on the sample, the star for a thing's effect.
 class EffectTile extends StatelessWidget {
-  const EffectTile(this.name, {super.key, this.file, this.look, required this.on, required this.onTap, this.onApply, this.picked = false, this.same = false, this.star, this.starId, this.naming});
+  const EffectTile(this.name, {super.key, this.file, this.look, required this.on, required this.onTap, this.onApply, this.picked = false, this.same = false, this.star, this.starId, this.naming, this.small = false});
   final String name;
+  final bool small;   // (its square alone, among the last put on: no name, no tags; the foot says which)
   final Widget? naming;   // (where its name is being written, in its place)
   final String? file, on;
   final CustomPainter? look;
@@ -135,14 +155,14 @@ class EffectTile extends StatelessWidget {
                 TileMoving(f, playing: h)
               else if (look != null)
                 FittedBox(child: CustomPaint(size: const Size(18, 16), painter: look)),
-              if (on case final o?) Positioned(left: 3, top: 3, child: DockTag(o, hue: WsT.accent, edge: true)),
-              if (same) Positioned(left: 3, bottom: 3, child: DockTag('NO CHANGE', hue: Grey.g63, edge: true)),   // (the sample as it is: its defaults show nothing on a photo, or it helps other scripts)
+              if (on case final o? when !small) Positioned(left: 3, top: 3, child: DockTag(o, hue: WsT.accent, edge: true)),
+              if (same && !small) Positioned(left: 3, bottom: 3, child: DockTag('NO CHANGE', hue: Grey.g63, edge: true)),   // (the sample as it is: its defaults show nothing on a photo, or it helps other scripts)
               if (star case final s? when s.starred(starId ?? name) || h) Positioned(right: 0, top: 0, child: DockStar(key: ValueKey('ws-star-${starId ?? name}'), on: s.starred(starId ?? name), onTap: () => s.star(starId ?? name))),
               if (on != null || picked || h) IgnorePointer(child: DecoratedBox(decoration: BoxDecoration(border: Border.all(color: on != null || picked ? WsT.accentInk : Grey.g76, width: on != null || picked ? 2 : 1)))),   // (drawn over all, taking no hand: the star under it is pressed)
             ],
           ),
         ),
-        Container(
+        if (!small) Container(
           height: Shape.z(18),
           padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
           alignment: Alignment.centerLeft,
