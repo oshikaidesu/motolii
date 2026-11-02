@@ -8,7 +8,7 @@ import * as std from "qjs:std"
 import * as os from "qjs:os"
 import * as THREE from "three/webgpu"
 
-const renderer: any = new THREE.WebGPURenderer({ canvas: { getContext() { return null }, style: {}, addEventListener() {} } as any })
+export const renderer: any = new THREE.WebGPURenderer({ canvas: { getContext() { return null }, style: {}, addEventListener() {} } as any })
 // The two things the builder asks the GPU it will draw on, answered as plain WebGPU with no optional features.
 renderer._initialized = true
 renderer.backend.hasFeature = () => false
@@ -16,7 +16,7 @@ renderer.backend.utils = new Proxy({}, { get: (_, k: string) => () => k === "get
 
 export const plane = new THREE.PlaneGeometry(2, 2)
 
-export function wgsl(object: any, material: any, camera?: any, scene?: any, drawable?: string): [string, string] {
+export function built(object: any, material: any, camera?: any, scene?: any): any {
   camera ??= new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
   scene ??= new THREE.Scene()
   camera.coordinateSystem = (THREE as any).WebGPUCoordinateSystem
@@ -25,7 +25,12 @@ export function wgsl(object: any, material: any, camera?: any, scene?: any, draw
   const b: any = new (THREE as any).WGSLNodeBuilder(object, renderer)
   b.scene = scene; b.material = material; b.camera = camera; b.context.material = material
   b.build()
-  if (drawable) writeDrawable(drawable, b, object, material, camera, scene)
+  return b
+}
+
+export function wgsl(object: any, material: any, camera?: any, scene?: any, drawable?: string): [string, string] {
+  const b = built(object, material, camera, scene)
+  if (drawable) writeDrawable(drawable, b, object, material, b.camera, b.scene)
   return [b.vertexShader, b.fragmentShader]
 }
 
