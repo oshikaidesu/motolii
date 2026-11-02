@@ -49,7 +49,7 @@ t=time.time(); done=pairs=0; broke=None
 known={'God Rays.fs','Pixellate.fs','Triangles.fs'}   # (Pixellate and Triangles clamp to 0..1 in their own lines; God Rays not read yet)
 alone=changed+random.sample(fx,len(fx)); seen=0; trimmed=[]
 while not broke and alone and time.time()-t<limit/2:   # (half the time: what was changed, then others this commit draws)
-    part=[[alone.pop(0)] for _ in range(min(40,len(alone)))]
+    part=[[alone.pop(0)] for _ in range(min(8,len(alone)))]   # (8 at a time, as the chains below: 1879333ec's CI run read 40 as standing still)
     why,o=draw(part)
     if why: broke=(why,part[min(o.count('still: done')-1,len(part)-1)],[]); break
     b=Image.open(f'{W}/plain.png').convert('L').point(lambda v:255 if v>6 else 0).getbbox(); F=(b[0]-128,b[1]-128,b[2]+128,b[3]+128)
