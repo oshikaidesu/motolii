@@ -24,30 +24,31 @@
 
 <p align="center"><sub>左：Motolii で作った 8 秒（文字・3D・効果）。レシピ（線の模様）・3D の輪・文字・光（Glow）・RGB のずれを置いて書き出した物。右：アプリの画面（その 8 秒を開いた所）。組み立てた後に <code>docs/examples/mv.sh</code> の 1 行で同じ物が <code>~/Movies/Motolii/mv.mp4</code> にできます。</sub></p>
 
-<table>
-<tr>
-<td width="50%"><img src="docs/media/card_pick.jpg" alt="Effects の棚のタイルと、効果を掛けた場面" width="100%"></td>
-<td width="50%">
+<img src="docs/media/card_pick.jpg" alt="Effects の棚のタイルと、効果を掛けた場面" align="left" width="430">
+
 <h3>見て選ぶ</h3>
+
 名前を知らないエフェクトも、動くサムネイルで探せます。追加したエフェクトの見本も自動で作られます。
-</td>
-</tr>
-<tr>
-<td width="50%">
+
+<br clear="all">
+
+<img src="docs/media/card_move.jpg" alt="3D の輪を場面で選び、右の欄で 2D・2.5D・3D と位置を操作している所" align="right" width="430">
+
 <h3>直接動かす</h3>
+
 Alight Motion を手本にした操作。文字、図形、動画、3D モデルを同じ場面に置き、Animate を有効にしてキーフレームで動かせます。
-</td>
-<td width="50%"><img src="docs/media/card_move.jpg" alt="3D の輪を場面で選び、右の欄で 2D・2.5D・3D と位置を操作している所" width="100%"></td>
-</tr>
-<tr>
-<td width="50%"><img src="docs/media/effects.jpg" alt="配られている ISF の効果 8 本を写真と文字に掛けた所" width="100%"></td>
-<td width="50%">
+
+<br clear="all">
+
+<img src="docs/media/effects.jpg" alt="配られている ISF の効果 8 本を写真と文字に掛けた所" align="left" width="430">
+
 <h3>ネットの表現を、そのまま足す</h3>
-p5.js や Shadertoy のコードは貼り付けて使えます。ISF、WGSL、AviUtl2 のスクリプトなどはフォルダから読み込み、アプリを再起動せずに追加できます。<br><br>
-<sub>配られている ISF の効果 8 本（CMYK Halftone・Bad TV・Duotone・Edges・Dither-Bayer・Kaleidoscope Tile・Glow-Fast・Pixellate）を、写真（パブリックドメイン）と文字に掛けた所。どれも作者のファイルのまま。</sub>
-</td>
-</tr>
-</table>
+
+p5.js や Shadertoy のコードは貼り付けて使えます。ISF、WGSL、AviUtl2 のスクリプトなどはフォルダから読み込み、アプリを再起動せずに追加できます。
+
+<sub>絵は、配られている ISF の効果 8 本（CMYK Halftone・Bad TV・Duotone・Edges・Dither-Bayer・Kaleidoscope Tile・Glow-Fast・Pixellate）を、写真（パブリックドメイン）と文字に掛けた所。どれも作者のファイルのまま。</sub>
+
+<br clear="all">
 
 ## なぜ作ったのか
 

@@ -24,30 +24,31 @@
 
 <p align="center"><sub>Left: 8 seconds made with Motolii (text, 3D, effects): a recipe (the lines), a 3D ring, text, a glow and an RGB split, written out. Right: the app, with those 8 seconds open. Once built, <code>docs/examples/mv.sh</code> makes the same as <code>~/Movies/Motolii/mv.mp4</code> in one line.</sub></p>
 
-<table>
-<tr>
-<td width="50%"><img src="docs/media/card_pick.jpg" alt="Tiles on the Effects shelf, and the stage with an effect on it" width="100%"></td>
-<td width="50%">
+<img src="docs/media/card_pick.jpg" alt="Tiles on the Effects shelf, and the stage with an effect on it" align="left" width="430">
+
 <h3>See it, pick it</h3>
+
 Find effects you don't know the name of by their moving thumbnails. Samples of the effects you add are made automatically.
-</td>
-</tr>
-<tr>
-<td width="50%">
+
+<br clear="all">
+
+<img src="docs/media/card_move.jpg" alt="A 3D ring picked on the stage, with 2D, 2.5D, 3D and position in the panel on the right" align="right" width="430">
+
 <h3>Move it by hand</h3>
+
 The handling is modelled on Alight Motion. Place text, shapes, video and 3D models on one stage, turn on Animate and move them with keyframes.
-</td>
-<td width="50%"><img src="docs/media/card_move.jpg" alt="A 3D ring picked on the stage, with 2D, 2.5D, 3D and position in the panel on the right" width="100%"></td>
-</tr>
-<tr>
-<td width="50%"><img src="docs/media/effects.jpg" alt="Eight shared ISF effects on a photo and text" width="100%"></td>
-<td width="50%">
+
+<br clear="all">
+
+<img src="docs/media/effects.jpg" alt="Eight shared ISF effects on a photo and text" align="left" width="430">
+
 <h3>Add looks from the net as they are</h3>
-Paste in p5.js and Shadertoy code. ISF, WGSL, AviUtl2 scripts and more load from a folder, and can be added without restarting the app.<br><br>
-<sub>Eight ISF effects as their authors share them (CMYK Halftone, Bad TV, Duotone, Edges, Dither-Bayer, Kaleidoscope Tile, Glow-Fast, Pixellate) on a public-domain photo and text.</sub>
-</td>
-</tr>
-</table>
+
+Paste in p5.js and Shadertoy code. ISF, WGSL, AviUtl2 scripts and more load from a folder, and can be added without restarting the app.
+
+<sub>The picture: eight ISF effects as their authors share them (CMYK Halftone, Bad TV, Duotone, Edges, Dither-Bayer, Kaleidoscope Tile, Glow-Fast, Pixellate) on a public-domain photo and text.</sub>
+
+<br clear="all">
 
 ## Why it was made
 
