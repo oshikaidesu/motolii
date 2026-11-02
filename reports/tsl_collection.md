@@ -311,3 +311,7 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
 - three.js の見本：取らない。bloom、film、dot screen、radial blur、sharpen などは棚に同じ物が既にある。dof、retroPass、stereoPass などは場面の奥行きやカメラが要る。bilateral、box、hash のぼかしと barrel は同じ名前が棚に無いが、同じ働きのぼかしと歪みが沢山ある。多くは自分の絵を描く段があり、1 枚の材質として作ると元の絵のまま出る。
 - 試し：全 11 本を `edit.sh` で描き、つまみ 34 本を端の値へ動かして全部絵が変わる。Gabor は座標がマイナスだと平らになるので、README の `uv()` と同じくプラスだけにした。
 - 窓：棚が 1317 本になり、Impact を Circle に付けて 33 コマ目で爆発が出て、つまみが並ぶのを見た。
+
+## Pattern：絵の表はファイルの中に（11/2）
+
+作者の `buildPatternAtlas` は SVG を 16×16 のマスに描いてマスクにする。ブラウザの Canvas の代わりに librsvg（`rsvg-convert`）で描き、同じ閾値でマスクにして、96×16 の表として `.wgsl` に書いた（`shelf_file.ts` の `table`、Dithering の表と同じ）。magick 内蔵の SVG は透明のまま何も描かなかった。Bars、Candles、Shapes の 3 本。つまみ 72 本のうち 9 本は既定の色モードで絵が変わる。残りは別の色モード用（Color Mode の最後の選択肢は既定と同じ 0、Tint などは Monochrome と Custom の時だけ）。

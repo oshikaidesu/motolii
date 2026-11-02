@@ -22,7 +22,7 @@ BlurPyramid.prototype.needsLevels = () => true   // (drawn always: whether its l
 const only = scriptArgs.slice(1)
 const types = only.length ? only : ["bloom", "chromatic-aberration", "circuit-bent", "connected-dots", "crt", "directional-blur", "displaced-rings", "displacement-map", "dithering",
   "dot-grid", "edge-detect", "erosion", "flares", "fluted-glass", "focus-blur", "glass", "gradient-map", "gradient", "halftone", "ink", "lumen-print", "outline",
-  "particle-grid", "photocopy", "photographic-cells", "pixel-sorting", "pixelation", "plotter", "posterize", "relief", "shape", "signal-rot", "slice", "smear", "threshold", "voxel"]
+  "particle-grid", "pattern:bars", "pattern:candles", "pattern:shapes", "photocopy", "photographic-cells", "pixel-sorting", "pixelation", "plotter", "posterize", "relief", "shape", "signal-rot", "slice", "smear", "threshold", "voxel"]
 const taken = new Set(["time", "frame", "aspect", "resolution", "width", "height", "screen", "passindex", "frameRect", "passRect"])   // (names screen.h fills itself: screen_knobs)
 const manager: any = { renderer: null, onRuntimeError: () => {} }
 const dir = "../effects", W = 2048, H = 1024   // (each level of a pyramid an exact share of it)
@@ -45,14 +45,33 @@ function drawn(pass: any, input: any, output: any, time: number, step: (scene: a
   pass.lastRenderer = null   // (a value moved later is not to be compiled on it)
 }
 
-for (const type of types) try {
+// What buildPatternAtlas draws on its canvas and how it turns that to a mask (pattern-atlas.ts), its SVGs drawn by librsvg.
+function atlas(preset: string, cell = 16): any {
+  const from = `../third_party/tsl/basementstudio__shader-lab/public/assets/patterns/${preset}`, raw = "out/atlas.rgba"
+  const files = (std.popen(`ls ${from}`, "r").readAsString() ?? "").split("\n").filter(f => f.endsWith(".svg"))
+  const data = new Uint8Array(files.length * cell * cell * 4), one = new Uint8Array(cell * cell * 4)
+  files.forEach((f, i) => {
+    std.popen(`rsvg-convert -w ${cell} -h ${cell} ${from}/${f} | magick png:- -depth 8 rgba:${raw}`, "r").readAsString()
+    const got = std.open(raw, "rb"); got.read(one.buffer, 0, one.length); got.close()
+    for (let y = 0; y < cell; y++) for (let x = 0; x < cell; x++) {
+      const p = (y * cell + x) * 4, on = one[p + 3] > 0 && Math.max(one[p], one[p + 1], one[p + 2]) > 32 ? 255 : 0, q = (y * files.length * cell + i * cell + x) * 4
+      data.set([on, on, on, 255], q)
+    }
+  })
+  return new THREE.DataTexture(data, files.length * cell, cell)
+}
+
+for (const word of types) try {
+  const [type, preset] = word.split(":")
   const definition = getLayerDefinition(type as any), about = LAYER_CATALOG[type as keyof typeof LAYER_CATALOG]
   const params = buildParameterValues(definition.params)
+  if (preset) params.preset = preset
   const layer = { assetId: null, blendMode: "normal", compositeMode: "filter", hue: 0, id: type, kind: definition.kind,
     maskConfig: { ...DEFAULT_MASK_CONFIG }, opacity: 1, params, saturation: 1, type, visible: true, mask: null }
   const pass: any = PipelineManager.prototype["createPass" as keyof PipelineManager].call(manager, layer)
   ;(PipelineManager.prototype as any).applyLayerState.call(manager, pass, layer)
   if (type === "plotter") pass.isStipple = () => true   // (drawn always, as the pyramid: which of its modes reads it is a knob's to say)
+  if (preset) { pass.atlasTexture = atlas(preset); pass.numPatternsUniform.value = pass.atlasTexture.image.width / 16; pass.atlasPending = false; pass.rebuildEffectNode() }
   const output = new THREE.RenderTarget(W, H, { type: THREE.HalfFloatType }), input = new THREE.Texture()
   const sized = (w: number, h: number) => { output.setSize(w, h); pass.resize?.(w, h); pass.updateLogicalSize?.(w, h) }
   sized(W, H)
@@ -136,7 +155,7 @@ for (const type of types) try {
     return got
   }
   const set = (key: string) => (v: any) => pass.updateParams({ ...params, [key]: v })
-  const lines = [`// ${about.label}: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/tsl/shader_lab_shelf.ts)`,
+  const lines = [`// ${about.label}${preset ? ` ${preset[0].toUpperCase() + preset.slice(1)}` : ""}: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/tsl/shader_lab_shelf.ts)`,
     `// --label:${about.category === "distort" ? "Distort" : "Stylize"}`]
   if (about.description) lines.push(`// --about:${about.description}`)
   for (const s of steps) { const t = targets.find(x => x.name === nameOf(s.target)); passes.push(`// --pass@${s.target ? t!.name : ""}:${t?.kept ? 1 : 0},${t?.fine ? 1 : 0},s${t?.share[0] ?? 1},s${t?.share[1] ?? 1}`) }
@@ -190,7 +209,7 @@ for (const type of types) try {
       for (const [form, of] of forms) { const line = fit(sizes.map(([w, h]) => of(w, h)), ys); if (line) { wire(at, line[0], line[1], form); break } }
     })
   }
-  const file = `${dir}/sl_${type.replace(/-/g, "_")}.wgsl`
+  const file = `${dir}/sl_${word.replace(/\W/g, "_")}.wgsl`
   std.open(file, "w").puts(fileText(lines, steps, said, fields, targets, nameOf, tail))
-  console.log(`${type}: ${steps.length} steps, ${targets.length} pictures, ${said.size} uniforms moved${left.length ? `, left as they are: ${left.join(" ")}` : ""}`)
-} catch (e: any) { console.log(`${type}: not made, ${String(e?.message ?? e).slice(0, 140)}`, std.getenv("TRACE") ? e?.stack : "") }
+  console.log(`${word}: ${steps.length} steps, ${targets.length} pictures, ${said.size} uniforms moved${left.length ? `, left as they are: ${left.join(" ")}` : ""}`)
+} catch (e: any) { console.log(`${word}: not made, ${String(e?.message ?? e).slice(0, 140)}`, std.getenv("TRACE") ? e?.stack : "") }
