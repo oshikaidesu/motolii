@@ -1,67 +1,71 @@
-# Motolii
+<h1 align="center">Motolii</h1>
 
-[![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![ledger](https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml)
+<h3 align="center">ネットで見つけた表現を、すぐ自分の映像に。</h3>
 
-**ネットで見つけた表現を、ソフトに閉じ込めない。**
+<p align="center">After Effects のような MV・モーショングラフィックス制作を、もっと手軽に。</p>
 
-After Effects のような MV・モーショングラフィックス制作を、もっと手軽に。
+<p align="center">p5.js や Shadertoy のコードをコピーして、貼り付ける。それだけで映像のレイヤーに。</p>
 
-エフェクトは見て選ぶ。文字や図形は直接触って動かす。2D・3D・Web の表現をひとつのタイムラインで組み合わせる。
+<p align="center">エフェクトは動くサムネイルから選び、文字や図形は画面で直接動かす。2D・3D・Web の表現をひとつのタイムラインで組み合わせて、MP4 に書き出せます。</p>
 
-[English](README.en.md) ・ [質問・相談（Discussions）](https://github.com/oshikaidesu/motolii/discussions) ・ [不具合（Issues）](https://github.com/oshikaidesu/motolii/issues)　どちらも日本語・英語のどちらでも。
+<p align="center">
+  <a href="https://github.com/oshikaidesu/motolii/actions/workflows/build.yml"><img alt="build" src="https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg"></a>
+  <a href="https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml"><img alt="ledger" src="https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml/badge.svg"></a>
+</p>
 
-| Motolii で作った 8 秒（文字・3D・効果） | アプリの画面（その 8 秒を開いた所） |
-|---|---|
-| ![光る文字、回るピンクの輪、線の模様、色のずれ](docs/media/mv.gif) | ![Motolii の画面：左に素材と棚、真ん中に場面、下にタイムライン、右に値](docs/media/window.jpg) |
+<p align="center">
+  <a href="README.en.md">English</a> ・ <a href="https://github.com/oshikaidesu/motolii/discussions">質問・相談（Discussions）</a> ・ <a href="https://github.com/oshikaidesu/motolii/issues">不具合（Issues）</a>　どちらも日本語・英語のどちらでも。
+</p>
 
-*左の 8 秒は、レシピ（線の模様）・3D の輪・文字・光（Glow）・RGB のずれを置いて書き出した物。組み立てた後に `docs/examples/mv.sh` の 1 行で同じ物が `~/Movies/Motolii/mv.mp4` にできます。*
+<p align="center">
+  <img src="docs/media/mv.gif" alt="光る文字、回るピンクの輪、線の模様、色のずれ" width="202">
+  <img src="docs/media/window.jpg" alt="Motolii の画面：左に素材と棚、真ん中に場面、下にタイムライン、右に値" width="600">
+</p>
 
-## なぜ映像表現は、制作ソフトを越えて持ち運べないのか
+<p align="center"><sub>左：Motolii で作った 8 秒（文字・3D・効果）。レシピ（線の模様）・3D の輪・文字・光（Glow）・RGB のずれを置いて書き出した物。右：アプリの画面（その 8 秒を開いた所）。組み立てた後に <code>docs/examples/mv.sh</code> の 1 行で同じ物が <code>~/Movies/Motolii/mv.mp4</code> にできます。</sub></p>
 
-ネットには p5.js、Shadertoy、ISF、WGSL で作られた映像表現が公開されています。
+<table>
+<tr>
+<td width="50%"><img src="docs/media/card_pick.jpg" alt="Effects の棚のタイルと、効果を掛けた場面" width="100%"></td>
+<td width="50%">
+<h3>見て選ぶ</h3>
+名前を知らないエフェクトも、動くサムネイルで探せます。追加したエフェクトの見本も自動で作られます。
+</td>
+</tr>
+<tr>
+<td width="50%">
+<h3>直接動かす</h3>
+Alight Motion を手本にした操作。文字、図形、動画、3D モデルを同じ場面に置き、Animate を有効にしてキーフレームで動かせます。
+</td>
+<td width="50%"><img src="docs/media/card_move.jpg" alt="3D の輪を場面で選び、右の欄で 2D・2.5D・3D と位置を操作している所" width="100%"></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/media/effects.jpg" alt="配られている ISF の効果 8 本を写真と文字に掛けた所" width="100%"></td>
+<td width="50%">
+<h3>ネットの表現を、そのまま足す</h3>
+p5.js や Shadertoy のコードは貼り付けて使えます。ISF、WGSL、AviUtl2 のスクリプトなどはフォルダから読み込み、アプリを再起動せずに追加できます。<br><br>
+<sub>配られている ISF の効果 8 本（CMYK Halftone・Bad TV・Duotone・Edges・Dither-Bayer・Kaleidoscope Tile・Glow-Fast・Pixellate）を、写真（パブリックドメイン）と文字に掛けた所。どれも作者のファイルのまま。</sub>
+</td>
+</tr>
+</table>
 
-でも映像制作ソフトの入口は、ソフトごとのプラグインです。プラグインが通す分しか持ち込めないので、表現はそこで狭くなります。プラグインが無ければ連番の画像に焼くしかなく、焼いた物は中の値をもう触れません。
+## なぜ作ったのか
 
-**表現はもうあるのに、なぜソフトごとに作り直すのか。**
+<h3 align="center">エフェクトはコードでできている。<br>それなのに、なぜ映像ソフトごとに作り直さなければならないのか？</h3>
 
-Motolii はプラグインを通しません。形式の入口を本体に持ち、作品を書き直さずに受け取ります。コードのまま残るので、あとから直せて、タイムラインでキーも打てます。
+ネットには、すでにたくさんの映像表現が公開されています。
 
-- これまで：見つける → そのソフト専用のプラグインを探す・作る → 通った分だけ使える
-- Motolii：見つける → 貼る → タイムラインで編集する
+しかし、制作ソフトに取り込むには、専用プラグインへの移植や動画への書き出しが必要になることがあります。動画にしてしまえば、元のコードの値を編集することもできません。
 
-全部が動くわけではありません。どこまで動くかは、下の「何ができるか」の表に数で書いてあります。
+Motolii は、対応する形式のコードをそのまま受け取り、タイムラインで動かし、ほかの素材と組み合わせられるようにしています。
 
-Alight Motion の次を探して After Effects を開き、閉じた。だから作った。
-
-## 見て選ぶ
-
-効果やアニメーションは、動くタイルを見て探せます。名前を知らなくても、仕上がりを見て選べます。
-
-## 直接動かす
-
-触り方は Alight Motion が手本です。文字や図形を置いて、Animate を入れて動かせばキーが打たれ、イーズは区間ごとに選べます。2D と 3D はモードを切り替えず、文字も写真も動画も 3D モデルも同じ場面に置けます。
-
-## ネットの表現を、そのまま足す
-
-p5.js のスケッチも Shadertoy のシェーダーも、貼るだけでレイヤーになります。ISF、WGSL、AviUtl2 のスクリプトは、フォルダに置けば棚に出ます。本体の更新も再起動も要りません。貼ったあともキーを打てて、p5 は時間の速さまで編集できます。
-
-作品の権利は作者のものです。Shadertoy や OpenProcessing の作品には非営利の条件が付いた物が多いので、仕事に使う時は作者に確かめてください。
-
-![配られている ISF の効果 8 本を写真と文字に掛けた所](docs/media/effects.jpg)
-
-*配られている ISF の効果 8 本（CMYK Halftone・Bad TV・Duotone・Edges・Dither-Bayer・Kaleidoscope Tile・Glow-Fast・Pixellate）を、写真（パブリックドメイン）と文字に掛けた所。どれも作者のファイルのまま。*
-
-## 映像を完成させるまで
-
-音楽や動画を並べ、動きを調整し、効果を重ねて、MP4 に書き出します。Lottie の読み込み、MIDI の音符、物理演算も使えます。
+新しい表現を使うために、ソフト本体の対応を待たなくていい。そんな映像制作ソフトを目指しています。
 
 ## 試す前に
 
 - **いまの段階**：作っている途中（作者 1 人、このリポジトリは 2026-10-12 から）。配れるアプリはまだ無く、試すにはソースから組みます。
 - **いま試すと良い人**：Mac（Apple Silicon）があり、ターミナルでコマンドを貼って組める人。p5.js、Shadertoy、シェーダーの効果、AviUtl2 のスクリプトを動画に使ってみたい人。
 - **まだ待つと良い人**：普段の制作にすぐ使いたい人、Windows の人、アプリを入れるだけで使いたい人。
-
-**画面の言葉**：Stage（場面＝描かれる絵）、Layer（レイヤー）、Timeline、Inspector（選んだレイヤーの値）、Create・Effects（レシピや効果の一覧＝棚）、Render（書き出し）。プロジェクトファイルは `.motolii`。コードと台帳では、画面を「窓」、エンジンを「中身」、レイヤーを「物」、プロジェクトファイルを「書類」と呼んでいる。
 
 ## 何ができるか（いま）
 
@@ -78,54 +82,24 @@ p5.js のスケッチも Shadertoy のシェーダーも、貼るだけでレイ
 | 1 回で絵を作る・物に動きを付ける | 自分のスクリプト（`.js`） | 置けば棚に出る。同梱のレシピ 101 本 |
 | ネットの TSL（three.js のシェーダー言語）の表現 | three.js 自身の変換器で WGSL に | WGSL まで。棚にはまだ無い |
 
+作品の権利は作者のものです。Shadertoy や OpenProcessing の作品には非営利の条件が付いた物が多いので、仕事に使う時は作者に確かめてください。
+
 ほか：キーフレームとイーズ（anime.js のイーズもそのまま使える）、物理（Jolt）、ガラスの屈折、mp4 への書き出し。何が在ってどこまで確かめたかの全部は、作者の台帳 [`ASSETS.md`](ASSETS.md) にあります。
 
 **組み立ての確かめ**：GitHub の Apple Silicon の Mac（macos-15）で、この README の手順どおりに新しく組み、エンジンの試験（`filament/check/all.sh`）と画面の analyze が通る（上の build の印。2026-10-27 に緑）。画面の試験は 126 本中 117 本が通り、8 本は落ちる（[`CONTRIBUTING.md`](CONTRIBUTING.md) の「知っている穴」）。
 
 **速さ**（M4、上の 8 秒の作例、1080×1920）：1 コマ約 4 ms で、毎秒 240 コマでも落ちない。8 秒の書き出しは約 5 秒（ffmpeg の符号化を含む）。測り直すには、作例を作ってから `printf 'time 240\n' | filament/edit.sh ~/Movies/Motolii/mv.motolii`。
 
-## 他の道具との使い分け
-
-| | Motolii | After Effects | Cavalry | Alight Motion | Blender | VDMX・TouchDesigner | Motion Canvas・Rive |
-|---|---|---|---|---|---|---|---|
-| 主な使い道 | MV の映像を作って書き出す | 映像の合成 | 2D のモーショングラフィックス | スマホで映像 | 3D 全般 | ライブの映像（演奏） | コードで映像（Motion Canvas）、アプリの中のアニメーション（Rive） |
-| 2D と 3D | 一つの場面（Filament） | 2D と 3D のレイヤー | 2D が中心 | 2D が中心 | 3D が中心 | 両方（組み方による） | 2D |
-| 動く所 | macOS（Apple Silicon）だけ | Windows・macOS | Windows・macOS | iOS・Android | Windows・macOS・Linux | VDMX は macOS、TouchDesigner は Windows・macOS | ブラウザ・各種 |
-| 成熟度 | このリポジトリは 2026-10-12 から、作者 1 人、リリース無し | 長く使われている | 製品 | 製品 | 長く使われている | 製品 | 使われている |
-| 値段・ライセンス | 無料、Apache-2.0 か MIT | 有料 | 有料（無料版あり） | 有料（無料版あり） | 無料、GPL | 有料（無料版あり） | Motion Canvas は無料・MIT、Rive は無料版あり |
-
-**本当に違う所**：ISF をそのまま読む道具は他にもあります（VDMX・MadMapper）。Motolii の違いは、ISF・WGSL・AviUtl2 の効果、p5.js と Shadertoy の貼り付け、Filament の 3D、タイムライン、mp4 の書き出しを一つにした組み合わせです。
-
-**まだ出来ない事**：出来上がった道具としての安定と機能の数は、これから。配れるアプリが無い事、Windows で動かない事、ライブで演奏する使い方は考えていない事。
-
-**操作の手本が Alight Motion な訳**：スマホで MV を作る人が慣れている触り方を、まず全部なぞってから、その先へ行くため。Alight Motion の効果と機能 201 のうち、Motolii に有るのは 101、一部が 39、無いのが 60（2026-10-28 の数え、[`reports/alight_map.md`](reports/alight_map.md)）。
-
-## 作り
-
-```mermaid
-flowchart LR
-  W["アプリの画面<br/>Flutter（skin/book）"] -- "C の呼び出し<br/>motolii.h" --> E["エンジン libmotolii.dylib<br/>（filament/）"]
-  E --> F["Filament<br/>3D・最後の合成"]
-  E --> T["ThorVG<br/>2D・文字"]
-  E --> G["GStreamer・ffmpeg<br/>動画を読む・書く"]
-  E --> S["SQLite<br/>プロジェクトファイル（.motolii）"]
-  F --> D["Dawn（WebGPU）"]
-  T --> D
-  E -- "描いた絵をコピーせずに" --> W
-```
-
-このリポジトリは、前の作り rust_ae（7 月から、非公開）の ThorVG と Filament の実験を写して始め、描く仕組みをここで作り直しました。画面（Flutter）は別の作業場で作っていた物を持ってきました。
-
-画面は操作だけで、絵はエンジンが描きます。エンジンのフォルダ名が `filament/` なのは歴史的な理由で、Google の Filament そのものではありません（Filament は組み立ての時に取ってきます）。`filament/` の直下には、今の組み立てが使う 63 本と、前の試し（今も自分のスクリプトで動く）が並んでいます。どれが今の物かは [`filament/README.md`](filament/README.md)、作りの全体は [`ARCHITECTURE.md`](ARCHITECTURE.md)。
-
 ## いまの状態
 
 - 動く：上の表の「動く」の物、保存（自動）と取り消し、再生（動画の音も鳴る）、mp4 への書き出し、画面のタイムライン・値の欄・棚。
-- 一部：AviUtl2 のスクリプト、Alight Motion の写し（上の 201 のうち有る 101）。
+- 一部：AviUtl2 のスクリプト、Alight Motion の写し（下の 201 のうち有る 101）。
 - 知っている不具合：コピーで作るレシピ（Iris・Weave など）にコマンドで画面用の効果を掛けると、絵が崩れる。
 - まだ：Windows、配れる `.app`（エンジンが Homebrew の部品を読むので、作った Mac の外では動かない）、MIDI の音。
 
 ## 使ってみる
+
+**画面の言葉**：Stage（場面＝描かれる絵）、Layer（レイヤー）、Timeline、Inspector（選んだレイヤーの値）、Create・Effects（レシピや効果の一覧＝棚）、Render（書き出し）。プロジェクトファイルは `.motolii`。コードと台帳では、画面を「窓」、エンジンを「中身」、レイヤーを「物」、プロジェクトファイルを「書類」と呼んでいる。
 
 ### 要る物
 
@@ -197,17 +171,17 @@ skin/book/live.sh
 
 ### 最初の 1 本（画面で）
 
-![1：空のプロジェクト](docs/media/window_step1.jpg)
+<img src="docs/media/window_step1.jpg" alt="1：空のプロジェクト" width="560">
 
 1. 画面が開いたら、左上のボタンの並びの 5 つ目（四角に ＋、**Create**）を押し、検索に `Iris` と打つ。
 2. **Iris** のタイルを押し、下の **Create** を押す。場面に色の輪が置かれ、下のタイムラインに帯が 1 本できる。
-   ![2：レシピ Iris を置いた所](docs/media/window_step2.jpg)
+   <img src="docs/media/window_step2.jpg" alt="2：レシピ Iris を置いた所" width="560">
 3. 輪を選んだまま、ボタンの並びの 2 つ目（きらめき、**Effects**）に替えて `Glow` を探し、押して下の **Add** を押す。輪が光り、ボタンが **Remove**（外す）に変わる。
-   ![3：Glow を掛けた所](docs/media/window_step3.jpg)
+   <img src="docs/media/window_step3.jpg" alt="3：Glow を掛けた所" width="560">
 4. 右上の **Render** を押すと、書き出しの小窓が出る。名前（例 `first`）を入れて小窓の **Render** を押す。
-   ![4：書き出しの小窓](docs/media/window_step4.jpg)
+   <img src="docs/media/window_step4.jpg" alt="4：書き出しの小窓" width="560">
 5. プロジェクトの隣に `first.mp4` ができ、上に `Written: first.mp4` と出る。
-   ![5：書き出した所](docs/media/window_step5.jpg)
+   <img src="docs/media/window_step5.jpg" alt="5：書き出した所" width="560">
 
 この 5 手は試験としても走ります（`skin/book/integration_test/first_piece_test.dart`。上の絵はこの試験が撮った物）。
 
@@ -235,7 +209,8 @@ p5.js と Shadertoy は、置かずに貼ります。作品のコードをコピ
 - **動かす**：右上の値の欄の **Animate all** を入れてから、値（位置・大きさなど）を横に引く。今の時刻にキーが打たれる。時刻を変えてもう一度引くと、その間が動く。動き方は下の **Ease** で選ぶ。
 - **保存・開く**：保存は自動（上に `Saved 時刻`）。新しいプロジェクトは メニューの **File › New Document**（⌘N）、同じフォルダの別のプロジェクトは **File › Open**。
 
-### 最初の 1 本（コマンドで）
+<details>
+<summary><b>最初の 1 本（コマンドで）</b></summary>
 
 画面を使わずに、レシピで絵を作り、光（Glow）と場面全体の RGB のずれ（`rgbshift.wgsl`）を掛けて、8 秒の mp4 に書き出す例です。`filament/edit.sh` はプロジェクトファイルを開いて、1 行ずつの命令を受けます（`help` で一覧）。
 
@@ -258,7 +233,10 @@ EOF
 
 上の 8 秒の作例は `docs/examples/mv.sh`（中の命令は `docs/examples/mv.txt`）。
 
-### 困ったら
+</details>
+
+<details>
+<summary><b>困ったら</b></summary>
 
 | 出た事 | 直し方 |
 |---|---|
@@ -272,10 +250,54 @@ EOF
 
 それでも止まったら [Issue](https://github.com/oshikaidesu/motolii/issues) に、走らせたコマンドと出た文をそのまま貼ってください（ひな型があります）。使い方の質問は [Discussions](https://github.com/oshikaidesu/motolii/discussions) へ。日本語・英語のどちらでも。
 
-### 新しくする・消す
+</details>
+
+<details>
+<summary><b>新しくする・消す</b></summary>
 
 - 新しくする：`git pull` の後、`filament/dawn_probe/build.sh` と `filament/edit.sh build.motolii < /dev/null` をもう一度（変わった所だけ組み直す）。画面は `skin/book/live.sh` が組み直す。
 - 消す：`motolii` のフォルダを消す（取ってきた物と組んだ物は全部この中）。作ったプロジェクトと動画は `~/Movies/Motolii/` に残ります（別の所に置いた物はそこに）。Flutter は `~/flutter` を消す。`brew bundle` で入れた物は `brew uninstall` で。
+
+</details>
+
+## 他の道具との使い分け
+
+<details>
+<summary>表で比べる</summary>
+
+| | Motolii | After Effects | Cavalry | Alight Motion | Blender | VDMX・TouchDesigner | Motion Canvas・Rive |
+|---|---|---|---|---|---|---|---|
+| 主な使い道 | MV の映像を作って書き出す | 映像の合成 | 2D のモーショングラフィックス | スマホで映像 | 3D 全般 | ライブの映像（演奏） | コードで映像（Motion Canvas）、アプリの中のアニメーション（Rive） |
+| 2D と 3D | 一つの場面（Filament） | 2D と 3D のレイヤー | 2D が中心 | 2D が中心 | 3D が中心 | 両方（組み方による） | 2D |
+| 動く所 | macOS（Apple Silicon）だけ | Windows・macOS | Windows・macOS | iOS・Android | Windows・macOS・Linux | VDMX は macOS、TouchDesigner は Windows・macOS | ブラウザ・各種 |
+| 成熟度 | このリポジトリは 2026-10-12 から、作者 1 人、リリース無し | 長く使われている | 製品 | 製品 | 長く使われている | 製品 | 使われている |
+| 値段・ライセンス | 無料、Apache-2.0 か MIT | 有料 | 有料（無料版あり） | 有料（無料版あり） | 無料、GPL | 有料（無料版あり） | Motion Canvas は無料・MIT、Rive は無料版あり |
+
+</details>
+
+**本当に違う所**：ISF をそのまま読む道具は他にもあります（VDMX・MadMapper）。Motolii の違いは、ISF・WGSL・AviUtl2 の効果、p5.js と Shadertoy の貼り付け、Filament の 3D、タイムライン、mp4 の書き出しを一つにした組み合わせです。
+
+**まだ出来ない事**：出来上がった道具としての安定と機能の数は、これから。配れるアプリが無い事、Windows で動かない事、ライブで演奏する使い方は考えていない事。
+
+**操作の手本が Alight Motion な訳**：スマホで MV を作る人が慣れている触り方を、まず全部なぞってから、その先へ行くため。Alight Motion の効果と機能 201 のうち、Motolii に有るのは 101、一部が 39、無いのが 60（2026-10-28 の数え、[`reports/alight_map.md`](reports/alight_map.md)）。
+
+## 作り
+
+```mermaid
+flowchart LR
+  W["アプリの画面<br/>Flutter（skin/book）"] -- "C の呼び出し<br/>motolii.h" --> E["エンジン libmotolii.dylib<br/>（filament/）"]
+  E --> F["Filament<br/>3D・最後の合成"]
+  E --> T["ThorVG<br/>2D・文字"]
+  E --> G["GStreamer・ffmpeg<br/>動画を読む・書く"]
+  E --> S["SQLite<br/>プロジェクトファイル（.motolii）"]
+  F --> D["Dawn（WebGPU）"]
+  T --> D
+  E -- "描いた絵をコピーせずに" --> W
+```
+
+このリポジトリは、前の作り rust_ae（7 月から、非公開）の ThorVG と Filament の実験を写して始め、描く仕組みをここで作り直しました。画面（Flutter）は別の作業場で作っていた物を持ってきました。
+
+画面は操作だけで、絵はエンジンが描きます。エンジンのフォルダ名が `filament/` なのは歴史的な理由で、Google の Filament そのものではありません（Filament は組み立ての時に取ってきます）。`filament/` の直下には、今の組み立てが使う 63 本と、前の試し（今も自分のスクリプトで動く）が並んでいます。どれが今の物かは [`filament/README.md`](filament/README.md)、作りの全体は [`ARCHITECTURE.md`](ARCHITECTURE.md)。
 
 ## これから
 
@@ -294,7 +316,8 @@ EOF
 - 今は自分で書いたコードも多い（画面の Flutter など）。借りられる物が見つかれば、自分のコードを捨てて取り替える。
 - コミットごとに、何をどこから借りたか（出典）を書く。
 
-### 並び
+<details>
+<summary><b>並び</b></summary>
 
 | 場所 | 中身 |
 |---|---|
@@ -307,11 +330,16 @@ EOF
 | `old/` | 前の土台の実験（今の作りからは使っていない） |
 | `docs/` | この README の絵と作例（`media/`・`examples/`）、作者の作業メモ（`notes/`） |
 
-### 文書の地図
+</details>
+
+<details>
+<summary><b>文書の地図</b></summary>
 
 | 外向け | 作者の作業メモ（日本語、そのまま公開） |
 |---|---|
 | `README.md`・`README.en.md`・`ARCHITECTURE.md`・`CONTRIBUTING.md`・`CONTRIBUTING.en.md`・`THIRD_PARTY_NOTICES.md`・`filament/README.md` | `ASSETS.md`（在る物の台帳。コミットの見張りが読むので一番上）・`docs/notes/`（やること・採点表）・`reports/`（調べた記録。絵と動画、人の投稿を集めた物は git に入れていない）・`skin/OVERVIEW.md`・`skin/PROCESS.md`（10 月初めの記録） |
+
+</details>
 
 ## ライセンス
 

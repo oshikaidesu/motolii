@@ -1,67 +1,71 @@
-# Motolii
+<h1 align="center">Motolii</h1>
 
-[![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![ledger](https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml)
+<h3 align="center">Use a look you found on the net in your own video, right away.</h3>
 
-**Don't lock the looks you find on the net inside one program.**
+<p align="center">Music videos and motion graphics like those made in After Effects, made easier.</p>
 
-Music videos and motion graphics like those made in After Effects, made easier.
+<p align="center">Copy the code of a p5.js sketch or a Shadertoy shader and paste it. That alone makes it a layer in your video.</p>
 
-Pick effects by looking at them. Move text and shapes by hand. Put 2D, 3D and web looks together on one timeline.
+<p align="center">Pick effects from moving thumbnails and move text and shapes directly on the stage. Combine 2D, 3D and web looks on one timeline and write out an MP4.</p>
 
-[日本語](README.md) · [Questions (Discussions)](https://github.com/oshikaidesu/motolii/discussions) · [Bugs (Issues)](https://github.com/oshikaidesu/motolii/issues) — English or Japanese.
+<p align="center">
+  <a href="https://github.com/oshikaidesu/motolii/actions/workflows/build.yml"><img alt="build" src="https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg"></a>
+  <a href="https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml"><img alt="ledger" src="https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml/badge.svg"></a>
+</p>
 
-| 8 seconds made with Motolii (text, 3D, effects) | The app, with those 8 seconds open |
-|---|---|
-| ![Glowing text, a spinning pink ring, a pattern of lines, split colours](docs/media/mv.gif) | ![The Motolii UI: media and shelves on the left, the composition in the middle, the timeline below, values on the right](docs/media/window.jpg) |
+<p align="center">
+  <a href="README.md">日本語</a> · <a href="https://github.com/oshikaidesu/motolii/discussions">Questions (Discussions)</a> · <a href="https://github.com/oshikaidesu/motolii/issues">Bugs (Issues)</a> — English or Japanese.
+</p>
 
-*The 8 seconds on the left: a recipe (the lines), a 3D ring, text, a glow and an RGB split, written out. Once built, `docs/examples/mv.sh` makes the same as `~/Movies/Motolii/mv.mp4` in one line.*
+<p align="center">
+  <img src="docs/media/mv.gif" alt="Glowing text, a spinning pink ring, a pattern of lines, split colours" width="202">
+  <img src="docs/media/window.jpg" alt="The Motolii UI: media and shelves on the left, the composition in the middle, the timeline below, values on the right" width="600">
+</p>
 
-## Why can't a look travel from one piece of software to another?
+<p align="center"><sub>Left: 8 seconds made with Motolii (text, 3D, effects): a recipe (the lines), a 3D ring, text, a glow and an RGB split, written out. Right: the app, with those 8 seconds open. Once built, <code>docs/examples/mv.sh</code> makes the same as <code>~/Movies/Motolii/mv.mp4</code> in one line.</sub></p>
 
-Looks made in p5.js, Shadertoy, ISF and WGSL are out in the open on the net.
+<table>
+<tr>
+<td width="50%"><img src="docs/media/card_pick.jpg" alt="Tiles on the Effects shelf, and the stage with an effect on it" width="100%"></td>
+<td width="50%">
+<h3>See it, pick it</h3>
+Find effects you don't know the name of by their moving thumbnails. Samples of the effects you add are made automatically.
+</td>
+</tr>
+<tr>
+<td width="50%">
+<h3>Move it by hand</h3>
+The handling is modelled on Alight Motion. Place text, shapes, video and 3D models on one stage, turn on Animate and move them with keyframes.
+</td>
+<td width="50%"><img src="docs/media/card_move.jpg" alt="A 3D ring picked on the stage, with 2D, 2.5D, 3D and position in the panel on the right" width="100%"></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/media/effects.jpg" alt="Eight shared ISF effects on a photo and text" width="100%"></td>
+<td width="50%">
+<h3>Add looks from the net as they are</h3>
+Paste in p5.js and Shadertoy code. ISF, WGSL, AviUtl2 scripts and more load from a folder, and can be added without restarting the app.<br><br>
+<sub>Eight ISF effects as their authors share them (CMYK Halftone, Bad TV, Duotone, Edges, Dither-Bayer, Kaleidoscope Tile, Glow-Fast, Pixellate) on a public-domain photo and text.</sub>
+</td>
+</tr>
+</table>
 
-Yet the way into video software is a plugin for that one program. Only what the plugin passes gets in, so the looks narrow right there. With no plugin, you burn the work to an image sequence, and its inner values can't be touched again.
+## Why it was made
 
-**The looks already exist. Why build them again for every program?**
+<h3 align="center">Effects are made of code.<br>So why do they have to be rebuilt for every piece of video software?</h3>
 
-Motolii goes through no plugin. It keeps a door for each format in the app and takes a work without rewriting it. It stays code, so you can change it later and set keys on the timeline.
+Plenty of looks are already published on the net.
 
-- Until now: find it → hunt for or build a plugin for that program → use what gets through
-- Motolii: find it → paste it → edit it on the timeline
+But bringing them into production software can mean porting to a dedicated plugin or writing them out as video. And once a look is video, you can no longer edit the values in its code.
 
-Not everything runs. How far each format gets is counted in the table under "What it does today".
+Motolii takes code in the formats it supports as it is, moves it on the timeline, and lets you combine it with your other material.
 
-I went to After Effects looking for what came after Alight Motion, and closed it. So I made this.
-
-## See it, pick it
-
-Effects and animations are moving tiles. You don't need to know a name; you pick by how it turns out.
-
-## Move it by hand
-
-The handling takes Alight Motion as its model. Place text or a shape, turn on Animate and move it, and keys are set; easing is chosen for each stretch between keys. 2D and 3D have no mode to switch: text, photos, video and 3D models all stand on one stage.
-
-## Add looks from the net as they are
-
-A p5.js sketch or a Shadertoy shader becomes a layer when you paste it. ISF, WGSL and AviUtl2 scripts appear on the shelf when you drop them in the folder. No update, no restart. After pasting you can still set keys, and with p5 you can edit the speed of its time.
-
-A work's rights stay with its author. Many works on Shadertoy and OpenProcessing carry a non-commercial condition, so ask the author before using one in paid work.
-
-![Eight shared ISF effects on a photo and text](docs/media/effects.jpg)
-
-*Eight ISF effects as their authors share them (CMYK Halftone, Bad TV, Duotone, Edges, Dither-Bayer, Kaleidoscope Tile, Glow-Fast, Pixellate) on a public-domain photo and text.*
-
-## Through to the finished video
-
-Lay out music and video, adjust the motion, stack effects, and write an MP4. Lottie files, MIDI notes and physics work too.
+You shouldn't have to wait for the software itself to catch up before you can use a new look. That is the video maker Motolii aims to be.
 
 ## Before you try
 
 - **Stage**: under development (one author; this repository since 2026-10-12). There is no release yet; you build it from source.
 - **Try it now if** you have an Apple silicon Mac, can paste commands into a terminal, and want to put p5.js, Shadertoy, shared shader effects or AviUtl2 scripts into a video.
 - **Wait if** you need it for everyday work, use Windows, or want an app you just install.
-
-**Words on screen**: Stage (the composition), Layer, Timeline, Inspector (the picked layer's values), Create and Effects (the shelves of recipes and effects), Render (writing out). Project files are `.motolii`. The code and the ledger call the UI "window", the engine "the inside", a layer "thing" and a project file "document".
 
 ## What it does today
 
@@ -78,54 +82,24 @@ Lay out music and video, adjust the motion, stack effects, and write an MP4. Lot
 | Make a picture in one step, or give a layer a motion | Your own scripts (`.js`) | Put one in and it is on the shelf. 101 recipes bundled |
 | Looks written in TSL (three.js's shading language) | three.js's own compiler to WGSL | Up to WGSL; not on the shelves yet |
 
+A work's rights stay with its author. Many works on Shadertoy and OpenProcessing carry a non-commercial condition, so ask the author before using one in paid work.
+
 Also: keyframes and easing (anime.js eases work as they are), physics (Jolt), refracting glass, writing mp4. Everything that exists and how far it was checked is in the author's ledger [`ASSETS.md`](ASSETS.md) (Japanese).
 
 **Build check**: on a GitHub Apple silicon Mac (macos-15) it is built fresh exactly as this README says, and the engine's checks (`filament/check/all.sh`) and the UI's analyzer pass (the build badge above; green on 2026-10-27). Of the UI's tests, 117 of 126 pass there and 8 fail ([`CONTRIBUTING.en.md`](CONTRIBUTING.en.md), Known gaps).
 
 **Speed** (M4, the 8-second example above, 1080×1920): about 4 ms a frame, no frame dropped even at 240 a second; writing the 8 seconds takes about 5 seconds, ffmpeg's encoding included. To measure again, make the example, then `printf 'time 240\n' | filament/edit.sh ~/Movies/Motolii/mv.motolii`.
 
-## Which tool for what
-
-| | Motolii | After Effects | Cavalry | Alight Motion | Blender | VDMX, TouchDesigner | Motion Canvas, Rive |
-|---|---|---|---|---|---|---|---|
-| Made for | Making and writing out MV footage | Compositing | 2D motion graphics | Video on a phone | 3D | Live visuals (performing) | Video in code (Motion Canvas), animation inside apps (Rive) |
-| 2D and 3D | One composition (Filament) | 2D and 3D layers | Mostly 2D | Mostly 2D | Mostly 3D | Both (as you wire it) | 2D |
-| Runs on | macOS (Apple silicon) only | Windows, macOS | Windows, macOS | iOS, Android | Windows, macOS, Linux | VDMX: macOS; TouchDesigner: Windows, macOS | Browser and others |
-| Maturity | This repository since 2026-10-12, one author, no release | Long established | Product | Product | Long established | Products | In use |
-| Price, licence | Free, Apache-2.0 or MIT | Paid | Paid (free tier) | Paid (free tier) | Free, GPL | Paid (free tier) | Motion Canvas free, MIT; Rive has a free tier |
-
-**What is really different**: other tools read ISF as it is too (VDMX, MadMapper). Motolii's difference is the combination: ISF, WGSL and AviUtl2 effects, pasted p5.js and Shadertoy, Filament's 3D, a timeline and mp4 output in one tool.
-
-**What it can't do yet**: stability and breadth of features as a finished tool are still to come. No app to hand out, no Windows, and no thought yet for performing live.
-
-**Why Alight Motion is the model for its handling**: people who make MVs on their phones already know how it feels; Motolii copies all of it first, then goes further. Of Alight Motion's 201 effects and features, Motolii has 101, 39 in part and 60 not at all (counted on 2026-10-28, [`reports/alight_map.md`](reports/alight_map.md)).
-
-## How it is built
-
-```mermaid
-flowchart LR
-  W["The app's UI<br/>Flutter (skin/book)"] -- "C calls<br/>motolii.h" --> E["Engine, libmotolii.dylib<br/>(filament/)"]
-  E --> F["Filament<br/>3D, final compositing"]
-  E --> T["ThorVG<br/>2D, text"]
-  E --> G["GStreamer, ffmpeg<br/>reading and writing video"]
-  E --> S["SQLite<br/>the project file (.motolii)"]
-  F --> D["Dawn (WebGPU)"]
-  T --> D
-  E -- "its picture, not copied" --> W
-```
-
-This repository began by copying the ThorVG and Filament experiments of the earlier take, rust_ae (since July, private), and rebuilt the drawing here; the UI (Flutter) came from a separate workshop.
-
-The UI only takes your hands; the engine draws. The engine's folder is named `filament/` for historical reasons — it is Motolii's engine, not Google's Filament (which is fetched at build time). At its top level sit the 63 files the current build uses beside earlier probes (which still run with their own scripts): [`filament/README.md`](filament/README.md) says which is which, and [`ARCHITECTURE.md`](ARCHITECTURE.md) has the whole design.
-
 ## Where it stands
 
 - Works: everything marked "Works" above, saving (automatic) and undo, playback (a video's sound is heard), writing mp4, the UI's timeline, value panel and shelves.
-- Partly: AviUtl2 scripts; copying Alight Motion (101 of the 201 above).
+- Partly: AviUtl2 scripts; copying Alight Motion (101 of the 201 below).
 - Known bugs: a screen effect put by command on a recipe made of copies (Iris, Weave, …) breaks the picture.
 - Not yet: Windows; an `.app` you can hand out (the engine loads Homebrew's libraries, so a build only runs on the Mac that made it); MIDI sound.
 
 ## Try it
+
+**Words on screen**: Stage (the composition), Layer, Timeline, Inspector (the picked layer's values), Create and Effects (the shelves of recipes and effects), Render (writing out). Project files are `.motolii`. The code and the ledger call the UI "window", the engine "the inside", a layer "thing" and a project file "document".
 
 ### What you need
 
@@ -197,17 +171,17 @@ Opens the app (the first time it seems to stop for 1–3 minutes while it builds
 
 ### Your first piece (in the app)
 
-![1: an empty project](docs/media/window_step1.jpg)
+<img src="docs/media/window_step1.jpg" alt="1: an empty project" width="560">
 
 1. In the row of buttons at the top left, press the 5th (a square with a plus, **Create**) and type `Iris` in the search box.
 2. Press the **Iris** tile, then **Create** at the bottom. A ring of colours appears and a band in the timeline.
-   ![2: the Iris recipe placed](docs/media/window_step2.jpg)
+   <img src="docs/media/window_step2.jpg" alt="2: the Iris recipe placed" width="560">
 3. With the ring picked, press the 2nd button (a sparkle, **Effects**), find `Glow`, press it, then **Add** at the bottom. The ring glows and the button turns into **Remove**.
-   ![3: Glow on it](docs/media/window_step3.jpg)
+   <img src="docs/media/window_step3.jpg" alt="3: Glow on it" width="560">
 4. Press **Render** at the top right; the Render box opens. Type a name (e.g. `first`) and press the box's **Render**.
-   ![4: the Render box](docs/media/window_step4.jpg)
+   <img src="docs/media/window_step4.jpg" alt="4: the Render box" width="560">
 5. `first.mp4` is written beside the project and the top bar says `Written: first.mp4`.
-   ![5: written](docs/media/window_step5.jpg)
+   <img src="docs/media/window_step5.jpg" alt="5: written" width="560">
 
 These five steps also run as a test (`skin/book/integration_test/first_piece_test.dart`, which took the pictures above).
 
@@ -235,7 +209,8 @@ p5.js and Shadertoy are pasted, not dropped: copy the work's code and press ⌘V
 - **Motion**: turn on **Animate all** in the value panel, then drag a value (position, size, …) across; a key is set at the current time. Move the time and drag again, and it moves in between. Choose how it moves in **Ease** below.
 - **Save and open**: saving is automatic (`Saved` and the time at the top). A new project: **File › New Document** (⌘N); another project in the same folder: **File › Open**.
 
-### Your first piece (commands)
+<details>
+<summary><b>Your first piece (commands)</b></summary>
 
 A recipe makes a picture, a glow goes on it, an RGB split (`rgbshift.wgsl`) goes on the whole composition, and 8 seconds are written as mp4. `filament/edit.sh` opens a project file and takes one call per line (`help` lists them).
 
@@ -252,7 +227,10 @@ EOF
 
 `make` makes layer 1 from a recipe (`recipes` lists them); `effect` puts an effect on it (`effects` lists them); `say 0 script` puts an effect on 0, the composition itself; `write` writes the mp4. Running the same calls again adds another layer to the same project; to start over, `rm ~/Movies/Motolii/first_cmd.motolii` first. The 8-second example at the top is `docs/examples/mv.sh` (its calls are in `docs/examples/mv.txt`).
 
-### If something stops
+</details>
+
+<details>
+<summary><b>If something stops</b></summary>
 
 | You see | Do |
 |---|---|
@@ -266,10 +244,54 @@ EOF
 
 Still stuck? Open an [issue](https://github.com/oshikaidesu/motolii/issues) with the command you ran and what it printed (there is a template). Questions about using it go to [Discussions](https://github.com/oshikaidesu/motolii/discussions). English or Japanese.
 
-### Updating and removing
+</details>
+
+<details>
+<summary><b>Updating and removing</b></summary>
 
 - Update: `git pull`, then run `filament/dawn_probe/build.sh` and `filament/edit.sh build.motolii < /dev/null` again (only what changed is rebuilt); `skin/book/live.sh` rebuilds the app.
 - Remove: delete the `motolii` folder (everything fetched and built is inside it). Your projects and videos stay in `~/Movies/Motolii/` (or wherever else you put them). Flutter: delete `~/flutter`. What `brew bundle` installed goes with `brew uninstall`.
+
+</details>
+
+## Which tool for what
+
+<details>
+<summary>Compare in a table</summary>
+
+| | Motolii | After Effects | Cavalry | Alight Motion | Blender | VDMX, TouchDesigner | Motion Canvas, Rive |
+|---|---|---|---|---|---|---|---|
+| Made for | Making and writing out MV footage | Compositing | 2D motion graphics | Video on a phone | 3D | Live visuals (performing) | Video in code (Motion Canvas), animation inside apps (Rive) |
+| 2D and 3D | One composition (Filament) | 2D and 3D layers | Mostly 2D | Mostly 2D | Mostly 3D | Both (as you wire it) | 2D |
+| Runs on | macOS (Apple silicon) only | Windows, macOS | Windows, macOS | iOS, Android | Windows, macOS, Linux | VDMX: macOS; TouchDesigner: Windows, macOS | Browser and others |
+| Maturity | This repository since 2026-10-12, one author, no release | Long established | Product | Product | Long established | Products | In use |
+| Price, licence | Free, Apache-2.0 or MIT | Paid | Paid (free tier) | Paid (free tier) | Free, GPL | Paid (free tier) | Motion Canvas free, MIT; Rive has a free tier |
+
+</details>
+
+**What is really different**: other tools read ISF as it is too (VDMX, MadMapper). Motolii's difference is the combination: ISF, WGSL and AviUtl2 effects, pasted p5.js and Shadertoy, Filament's 3D, a timeline and mp4 output in one tool.
+
+**What it can't do yet**: stability and breadth of features as a finished tool are still to come. No app to hand out, no Windows, and no thought yet for performing live.
+
+**Why Alight Motion is the model for its handling**: people who make MVs on their phones already know how it feels; Motolii copies all of it first, then goes further. Of Alight Motion's 201 effects and features, Motolii has 101, 39 in part and 60 not at all (counted on 2026-10-28, [`reports/alight_map.md`](reports/alight_map.md)).
+
+## How it is built
+
+```mermaid
+flowchart LR
+  W["The app's UI<br/>Flutter (skin/book)"] -- "C calls<br/>motolii.h" --> E["Engine, libmotolii.dylib<br/>(filament/)"]
+  E --> F["Filament<br/>3D, final compositing"]
+  E --> T["ThorVG<br/>2D, text"]
+  E --> G["GStreamer, ffmpeg<br/>reading and writing video"]
+  E --> S["SQLite<br/>the project file (.motolii)"]
+  F --> D["Dawn (WebGPU)"]
+  T --> D
+  E -- "its picture, not copied" --> W
+```
+
+This repository began by copying the ThorVG and Filament experiments of the earlier take, rust_ae (since July, private), and rebuilt the drawing here; the UI (Flutter) came from a separate workshop.
+
+The UI only takes your hands; the engine draws. The engine's folder is named `filament/` for historical reasons — it is Motolii's engine, not Google's Filament (which is fetched at build time). At its top level sit the 63 files the current build uses beside earlier probes (which still run with their own scripts): [`filament/README.md`](filament/README.md) says which is which, and [`ARCHITECTURE.md`](ARCHITECTURE.md) has the whole design.
 
 ## Next
 
@@ -283,6 +305,9 @@ See [`CONTRIBUTING.en.md`](CONTRIBUTING.en.md) (building, running the checks, th
 
 The project's stance: **code you write yourself is a debt.** Look for an existing implementation first and use it the way its author meant; bundle other people's work as unchanged as possible, with their licence and source beside it; keep changes to upstream code as patches applied at build time; say in each commit what was borrowed from where. A lot of Motolii is still its own code today (the Flutter UI, for one); where something can be borrowed instead, the own code goes.
 
+<details>
+<summary><b>Folders</b></summary>
+
 | Folder | What |
 |---|---|
 | `filament/` | The engine; its entry points and the files the current build uses: [`filament/README.md`](filament/README.md) |
@@ -292,6 +317,8 @@ The project's stance: **code you write yourself is a debt.** Look for an existin
 | `skin/book/` | The UI (Flutter, macOS); tests in `test/` and `integration_test/` |
 | `thorvg/`, `old/` | Earlier work, kept |
 | `docs/` | This README's pictures and examples (`media/`, `examples/`) and the author's working notes (`notes/`, Japanese) |
+
+</details>
 
 ## Licence
 
