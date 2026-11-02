@@ -4,47 +4,61 @@
 
 **Use a look you found on the net in your own video, right away.**
 
-Music videos and motion graphics like those made in After Effects, made easier.
+Motolii is an open-source video editor for making music videos and motion graphics.
 
-Motolii is an open-source video maker that takes in effects and scripts published on the web and combines them with 2D, 3D, video and music.
+It is being built so that the kind of work done in After Effects takes simpler handling. It can also use effects and scripts published on the web without rebuilding them as dedicated plugins.
 
 [日本語](README.md) · [Questions (Discussions)](https://github.com/oshikaidesu/motolii/discussions) · [Bugs (Issues)](https://github.com/oshikaidesu/motolii/issues) — English or Japanese.
 
 ![The Motolii UI: media and shelves on the left, the composition in the middle, the timeline below, values on the right](docs/media/window.jpg)
 
-## 1. Looks from the net, as they are
+## Effects and scripts
 
-Copy a shader you found on Shadertoy and paste it. A p5.js sketch becomes a layer on the timeline too.
+Motolii can load effects published on websites and for other software.
 
-ISF, WGSL and AviUtl2 scripts just go in a folder. They join the effects list without restarting the app, and their moving thumbnails are made automatically.
+A Shadertoy shader or a p5.js sketch, for example, can be used as a layer by copying its code and pasting it in. Once it is loaded, you can set keyframes on it and combine it with other effects.
 
-Instead of hunting for a dedicated plugin or recording the screen into a video, you can keep supported looks as code.
+ISF, WGSL and AviUtl2 scripts are supported too. Add a file to the designated folder and it appears in the effects list without restarting the app.
 
-Once they're in, you can still set keyframes and stack other effects on them. With a p5.js sketch, you can also edit how its time runs.
+A preview is generated automatically for each newly added effect, so you can choose by how it actually looks as well as by its name.
+
+Note: not all code in a supported format runs correctly. The test results are further down.
 
 ![Eight shared ISF effects on a photo and text](docs/media/effects.jpg)
 
 *Eight ISF effects as their authors share them, on a public-domain photo and text.*
 
-## 2. Easier handling too
+## Editing
 
-Find effects by watching their moving thumbnails. You can choose by how they turn out, without knowing their names.
+The handling is modelled on Alight Motion.
 
-The handling takes Alight Motion as its model. Move text and shapes directly on the stage, and turn on Animate to record keyframes. Easing can be adjusted for each stretch too.
+Text and shapes can be moved and transformed directly in the preview. With Animate on, changing a value records a keyframe. The easing between keyframes can be adjusted too.
 
-2D and 3D have no mode to switch: text, photos, video and 3D models share one stage.
+Effects can be found by their moving thumbnails. Effects you add are kept in the same list.
 
-## 3. Make it one video
+There is no need to switch between 2D and 3D: text, images, video, 3D models and more can sit in the same scene.
 
-Layer text and 3D models over a look from the net. Move it to the music, put effects on it and write out an MP4.
+## Making a video
 
-Lottie animations, motion from MIDI notes and physics work too.
+Place media on the timeline and animate it with effects and keyframes.
+
+Video and audio import, Lottie animations, animation from MIDI and physics are supported too.
+
+A finished video can be written out as an MP4.
 
 ![Glowing text, a spinning pink ring, a pattern of lines, split colours](docs/media/mv.gif)
 
 *8 seconds made with Motolii. Once built, `docs/examples/mv.sh` makes the same as `~/Movies/Motolii/mv.mp4` in one line.*
 
-**Find the looks you love, put them together, and finish one video.**
+## Requirements
+
+Motolii is still in development and supports Macs with Apple Silicon.
+
+There is no packaged app yet, so trying it means building it from source.
+
+A Windows version is planned. The main parts, such as Filament, ThorVG, GStreamer and Flutter, support Windows, and only a small share of the code, such as handing over video and the picture on screen, is tied directly to the Mac. It has not been built or tested on Windows yet.
+
+How each format runs, known bugs and the build steps are below.
 
 ## Supported formats and how they run
 
