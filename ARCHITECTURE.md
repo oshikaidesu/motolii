@@ -61,7 +61,7 @@ flowchart TB
 | 置く物 | 道 | どこ |
 |---|---|---|
 | ISF（`.fs`、GLSL） | glslang → SPIR-V → Tint → WGSL。Filament の組み立てに入っている物をそのまま使う | `engine/isf.cpp` |
-| WGSL（`.wgsl`） | そのまま。頭に AviUtl2 式のつまみの行 | `engine/screen.h`、`thing_fx.h` |
+| WGSL（`.wgsl`） | そのまま。頭に AviUtl2 式のつまみの行。横に置いた絵は `--image@名前:ファイル` で ThorVG が 1 回読む | `engine/screen.h`、`thing_fx.h` |
 | AviUtl2（`.anm2`・`.obj2`） | Lua は LuaJIT（AviUtl2 と同じ）で走らせ、`obj` の呼び出しを中身の物で受ける。中の HLSL は glslang の HLSL の読み手 → SPIR-V → Tint → WGSL | `engine/aviutl.cpp`、`aviutl_fx.h` |
 | three.js の形（`solids/*.js`） | QuickJS-ng で three.js を動かし、BufferGeometry を受け取る | `engine/solid_three.cpp` |
 | レシピ（`recipes/*.js`） | QuickJS-ng。1 回で物と値を作る | `engine/script.cpp` |

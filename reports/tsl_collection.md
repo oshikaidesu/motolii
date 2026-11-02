@@ -315,3 +315,12 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
 ## Pattern：絵の表はファイルの中に（11/2）
 
 作者の `buildPatternAtlas` は SVG を 16×16 のマスに描いてマスクにする。ブラウザの Canvas の代わりに librsvg（`rsvg-convert`）で描き、同じ閾値でマスクにして、96×16 の表として `.wgsl` に書いた（`shelf_file.ts` の `table`、Dithering の表と同じ）。magick 内蔵の SVG は透明のまま何も描かなかった。Bars、Candles、Shapes の 3 本。つまみ 72 本のうち 9 本は既定の色モードで絵が変わる。残りは別の色モード用（Color Mode の最後の選択肢は既定と同じ 0、Tint などは Monochrome と Custom の時だけ）。
+
+## ASCII：文字盤は横に置く絵（11/2）
+
+作者は Canvas に Geist Mono の字を並べて文字盤を作る（`ascii-atlas.ts`）。ブラウザの代わりに `magick` が同じフォントで同じ並びに描き、`sl_ascii_<組>.0.png` として `.wgsl` の横に置いた。字の幅と高さは `magick -debug annotate` で測った値。文字盤は 1 枚が約 172×304 で、ファイルの中の表に書くには大きいので、`.wgsl` の頭に `--image@名前:ファイル` を足した（`engine/screen.h`、ThorVG で 1 回読むだけ、`aviutl_load.h` の `aviutl_drawn` と同じ手順、RGBA8 で数字はそのまま）。
+
+- 取った物：Light、Dense、Boxes、Hex、Binary の 5 本。
+- 取らなかった物：Blocks、Shades、Hatching は Geist Mono に字が無く、作者の処理で Light と同じ絵になる。Katakana と Custom も今は無い。文字セットのつまみは文字盤が 1 枚なので外し、組ごとに 1 本にした。
+- 試し：`edit.sh` で全 5 本が描け、8 本で測った 80 つまみのうち 72 本で絵が変わった（残りは黒の背景で見えない `bgOpacity`）。ASCII Light は 1080p で 1 秒 100 枚（2 回目）。
+- 窓：棚が 1325 本になり、ASCII Light を Impact の後ろに付けて、33 コマ目で爆発が文字の列になるのを見た。Columns をドラッグで 80 から 4 へ動かすと絵が変わった。他の 4 本は窓では見ていない。作者のレンダラとは比べていない。

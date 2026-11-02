@@ -45,6 +45,11 @@ export function stepOf(made: Map<any, any>, mesh: any, camera: any, scene: any, 
 // three works in linear light on colours not premultiplied, the shelf's effects in sRGB on premultiplied ones (screen.h
 // screen_tone, whose lines these are). What is read goes through the frame as isf.cpp's `texture` does; a target's is as
 // three drew it.
+// (a picture beside the file, screen.h's --image@: read whole, no frame on it)
+const whole = `fn image_read(t: texture_2d<f32>, s: sampler, uv: vec2f) -> vec4f { return textureSampleLevel(t, s, uv, 0.0); }
+fn image_read_level(t: texture_2d<f32>, s: sampler, uv: vec2f, level: f32) -> vec4f { return textureSampleLevel(t, s, uv, level); }
+fn image_load(t: texture_2d<f32>, p: vec2i, level: u32) -> vec4f { return textureLoad(t, p, level); }
+`
 const tones = `fn to_linear(c: vec3f) -> vec3f { return select(pow((c + 0.055) / 1.055, vec3f(2.4)), c / 12.92, c <= vec3f(0.04045)); }
 fn to_srgb(c: vec3f) -> vec3f { return select(1.055 * pow(c, vec3f(1.0 / 2.4)) - 0.055, c * 12.92, c <= vec3f(0.0031308)); }
 fn framed(uv: vec2f) -> vec2f { return uv * knobs.frameRect.zw + knobs.frameRect.xy; }
@@ -88,15 +93,15 @@ export type Said = Map<string, (string | undefined)[]>   // (a step's uniform, "
 export type Target = { name: string, kept: boolean, fine: boolean, share: [number, number], points: [number, number] }
 
 // Each step's shader with its names apart (p<step>_), what it reads and its uniforms said in the file's terms.
-function stepText(k: number, step: Step, said: Said, fields: Map<string, string>, nameOf: (t: any) => string, tables: Map<any, string>, share: [number, number], place: string): string {
+function stepText(k: number, step: Step, said: Said, fields: Map<string, string>, nameOf: (t: any) => string, tables: Map<any, string>, images: Map<any, string>, share: [number, number], place: string): string {
   let body = step.frag.slice(step.frag.indexOf("// structs")), picture = new Map<string, any>(step.pictures)
   const reads: [RegExp, string][] = [], late: [string, string][] = []
   body = body.replace(/@binding\( \d+ \) @group\( \d+ \) var (\w+) : (texture_2d<f32>|sampler);\n/g, (_, name, type) => {
     if (type === "sampler") return ""
-    const t = picture.get(name), of = nameOf(t)
-    const fn = of === "picture" ? "picture" : tables.get(t), to = fn ?? `target_read( ${of}, ${of}_sampler`, by = fn ? `${fn}( ` : `${to}, `, level = fn ? `${fn}_level( ` : `target_read_level( ${of}, ${of}_sampler, `
+    const t = picture.get(name), of = images.get(t) ?? nameOf(t), kind = images.has(t) ? "image" : "target"
+    const fn = of === "picture" ? "picture" : tables.get(t), by = fn ? `${fn}( ` : `${kind}_read( ${of}, ${of}_sampler, `, level = fn ? `${fn}_level( ` : `${kind}_read_level( ${of}, ${of}_sampler, `
     late.push([`textureSample( ${name}, ${name}_sampler, `, fn === "picture" ? "picture_read( " : by], [`textureSampleLevel( ${name}, ${name}_sampler, `, fn === "picture" ? "picture_read_level( " : level],
-      [`textureLoad( ${name}, `, fn ? `${fn}_load( ` : `target_load( ${of}, `])
+      [`textureLoad( ${name}, `, fn ? `${fn}_load( ` : `${kind}_load( ${of}, `])
     return ""
   })
   const staged = (e: string) => e.replace(/\bS\.x\b/g, share[0] === 1 ? "knobs.resolution.x" : `(knobs.resolution.x / ${share[0]})`).replace(/\bS\.y\b/g, share[1] === 1 ? "knobs.resolution.y" : `(knobs.resolution.y / ${share[1]})`)
@@ -127,28 +132,30 @@ function stepText(k: number, step: Step, said: Said, fields: Map<string, string>
 
 // `made`: a texture that makes its own picture (its place on a sheet as wide as what it fills, its see-through what is under
 // it, as an ISF generator's: isf.cpp, Preserve Underlying Transparency).
-export function fileText(head: string[], steps: Step[], said: Said, fields: Map<string, string>, targets: Target[], nameOf: (t: any) => string, tail: string | null, made = false): string {
-  const last = steps.length - 1, tables = new Map<any, string>()
+// `saved`: where a picture of its own too large to say in the file goes, the file's name for it.
+export function fileText(head: string[], steps: Step[], said: Said, fields: Map<string, string>, targets: Target[], nameOf: (t: any) => string, tail: string | null, made = false, saved?: (t: any, i: number) => string): string {
+  const last = steps.length - 1, tables = new Map<any, string>(), images = new Map<any, string>()
   let code = ""
   steps.forEach(s => s.pictures.forEach(([, t]) => {
     if (nameOf(t) === "none") tables.set(t, "none")   // (read by a step and drawn by none, as the file plays: the author's own branch, off)
-    if (nameOf(t) !== "own" || tables.has(t)) return
+    if (nameOf(t) !== "own" || tables.has(t) || images.has(t)) return
+    if (saved && t.image.data instanceof Uint8Array && t.image.width * t.image.height > 4096 && new Set(t.image.data).size > 1) { head = [...head, `// --image@image${images.size}:${saved(t, images.size)}`]; images.set(t, `image${images.size}`); return }
     const fn = `own${tables.size}_read`
     tables.set(t, fn)
     code += table(fn, t) + `fn ${fn}_level(uv: vec2f, level: f32) -> vec4f { return ${fn}(uv); }\n`
   }))
-  const bound = ["picture", ...targets.map(t => t.name)]
+  const bound = ["picture", ...targets.map(t => t.name), ...images.values()]
   const bindings = bound.map((n, i) => `@group(0) @binding(${2 * i}) var ${n}: texture_2d<f32>;\n@group(0) @binding(${2 * i + 1}) var ${n}_sampler: sampler;\n`).join("")
   const each = steps.map((s, k) => {
     const t = s.target ? targets.find(x => x.name === nameOf(s.target)) : null
-    return stepText(k, s, said, fields, nameOf, tables, t ? t.share : [1, 1], made ? "vec3f((2.0 * door_uv.x - 1.0) * knobs.resolution.x / knobs.resolution.y, 1.0 - 2.0 * door_uv.y, 0.0)" : "vec3f(2.0 * door_uv.x - 1.0, 1.0 - 2.0 * door_uv.y, 0.0)")
+    return stepText(k, s, said, fields, nameOf, tables, images, t ? t.share : [1, 1], made ? "vec3f((2.0 * door_uv.x - 1.0) * knobs.resolution.x / knobs.resolution.y, 1.0 - 2.0 * door_uv.y, 0.0)" : "vec3f(2.0 * door_uv.x - 1.0, 1.0 - 2.0 * door_uv.y, 0.0)")
   })
   const texts = [...new Set(each)], of = each.map(t => texts.indexOf(t))   // (a step that draws what one before it does: that one's lines)
   const knobs = `struct Knobs {\n  time: f32,\n  passindex: f32,\n  resolution: vec2<f32>,\n  frameRect: vec4<f32>,\n  passRect: vec4<f32>,\n${[...fields].map(([n, t]) => `  ${n}: ${t},`).join("\n")}\n};\n`
   const drawn = tail ? steps.length : last, cases = texts.map((_, j) => of.map((o, k) => o === j && k < drawn ? `${k}u` : "").filter(x => x)).map((ks, j) => ks.length ? `    case ${ks.join(", ")}: { return p${j}_main(door_uv).color; }\n` : "").join("")
   const entry = `@fragment\nfn main(@location(0) door_on: vec2f) -> @location(0) vec4f {\n  let door_uv = (door_on - knobs.passRect.xy) / knobs.passRect.zw;\n${
     drawn ? `  switch u32(knobs.passindex + 0.5) {\n${cases}    default: {}\n  }\n` : ""}  return to_shelf(${tail ? `target_read(${tail}, ${tail}_sampler, door_uv)` : `p${of[last]}_main(door_uv).color`})${made ? " * textureSampleLevel(picture, picture_sampler, framed(door_uv), 0.0).a" : ""};\n}\n`
-  return [...head, "diagnostic(off, derivative_uniformity);", knobs + bindings + `@group(0) @binding(${2 * bound.length}) var<uniform> knobs: Knobs;\n` + tones + code, ...texts.map((t, j) => t.replace(/\bPSTEP_/g, `p${j}_`)), entry].join("\n")
+  return [...head, "diagnostic(off, derivative_uniformity);", knobs + bindings + `@group(0) @binding(${2 * bound.length}) var<uniform> knobs: Knobs;\n` + tones + (images.size ? whole : "") + code, ...texts.map((t, j) => t.replace(/\bPSTEP_/g, `p${j}_`)), entry].join("\n")
 }
 
 // A material that makes its own picture, as one file: `of` says which of its uniforms are which knobs, `lines` is each

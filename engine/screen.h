@@ -10,6 +10,8 @@
 #include "isf.h"
 #include "dawn_probe/screen_door.h"
 #include <math/half.h>
+#include <thorvg.h>
+#include <filesystem>
 #include <fstream>
 #include <regex>
 #include <sstream>
@@ -45,6 +47,9 @@ struct ScreenFx {
     std::vector<std::string> others;
     std::vector<Texture*> othersNow;   // (what each is this time: given before it is drawn; none, its own picture)
     std::vector<bool> othersOwn;       // (whether each is its own picture, this time)
+    // Those that are a picture file beside it (// --image@name:file, ISF's IMPORTED): each one's file, none for the rest.
+    std::vector<std::string> images;
+    std::vector<Texture*> imagesMade;
     bool source = false;   // (ISF's source, a generator: isf_tags)
     double frame[4] = {0, 0, 1, 1}, pass[4] = {0, 0, 1, 1};   // (the frame on the picture (ScreenStack), and on the picture this pass draws: a pass of a set size has none of it, on that side)
     // Its audio inputs (// --sound@name: ISF's audio and audioFFT), among the others in their places: each another
@@ -165,6 +170,14 @@ static bool screen_read(ScreenFx& fx, std::string& code) {
             fx.others.push_back(k.name), fx.sounds.push_back({});
             if (k.kind == "sound") fx.sounds.back() = {true, k.words.rfind("fft", 0) == 0, std::atoi(k.words.c_str() + k.words.find(' ') + 1)};
         }
+    fx.images.assign(fx.others.size(), "");
+    std::istringstream head(code);
+    for (std::string line; std::getline(head, line) && line.rfind("//", 0) == 0;) {
+        const size_t h = line.find("--image@"), colon = line.find(':', h);
+        if (h == std::string::npos || colon == std::string::npos) continue;
+        fx.others.push_back(line.substr(h + 8, colon - h - 8)), fx.sounds.push_back({});
+        fx.images.push_back((std::filesystem::path(file).parent_path() / line.substr(colon + 1)).string());
+    }
     if ((!fx.targets.empty() || !fx.others.empty()) && (int)fx.targets.size() + 1 + (int)__builtin_popcount(fx.layered) + (int)fx.others.size() != pictures) return fx.trouble = "its passes' pictures, its other images and the pictures it reads do not agree", false;
     if (fx.layered && !fx.historyFrames) return fx.trouble = "it reads an array of past frames and its head does not ask for them (--history@frames:share)", false;
     code = std::regex_replace(out, std::regex(R"(\bfn\s+fs_main\s*\()"), "fn main(");
@@ -223,10 +236,32 @@ struct ScreenStack {
     //  read); none given, or none back: silence)
     std::function<std::vector<float>(const std::string& file, const std::string& name, bool fft, int wide)> sounds;
 };
+// A picture file as ThorVG reads it, its numbers as they are, drawn once (aviutl_load.h aviutl_drawn).
+static Texture* screen_image(Stage& s, const std::string& file) {
+    float w = 0, h = 0;
+    tvg::Picture* p = tvg::Picture::gen();
+    if (p->load(file.c_str()) != tvg::Result::Success || p->size(&w, &h) != tvg::Result::Success || w < 1 || h < 1 || w > 4096 || h > 4096) return delete p, nullptr;
+    auto* pixels = new std::vector<uint32_t>((size_t)w * (size_t)h, 0);
+    tvg::Initializer::init(0);
+    tvg::SwCanvas* canvas = tvg::SwCanvas::gen();
+    const bool drew = canvas->target(pixels->data(), (uint32_t)w, (uint32_t)w, (uint32_t)h, tvg::ColorSpace::ABGR8888) == tvg::Result::Success && canvas->add(p) == tvg::Result::Success && canvas->draw(true) == tvg::Result::Success && canvas->sync() == tvg::Result::Success;
+    delete canvas;
+    if (!drew) return delete pixels, nullptr;
+    Texture* t = Texture::Builder().width((uint32_t)w).height((uint32_t)h).levels(1).format(Texture::InternalFormat::RGBA8).build(*s.engine);
+    t->setImage(*s.engine, 0, backend::PixelBufferDescriptor(pixels->data(), pixels->size() * 4, backend::PixelDataFormat::RGBA, backend::PixelDataType::UBYTE,
+        [](void*, size_t, void* u) { delete (std::vector<uint32_t>*)u; }, pixels));
+    return t;
+}
 // Each audio input's picture made its values now, and given as that input's picture (Filament's setImage; the
 // values handed over to be let go of when sent, Filament's PixelBufferDescriptor callback).
 static void screen_sounds(Stage& s, ScreenStack& st, ScreenFx& fx) {
     fx.othersNow.resize(fx.others.size(), nullptr);
+    fx.imagesMade.resize(fx.others.size(), nullptr);
+    for (size_t k = 0; k < fx.images.size(); ++k) {
+        if (fx.images[k].empty()) continue;
+        if (!fx.imagesMade[k] && !(fx.imagesMade[k] = screen_image(s, fx.images[k]))) { fx.trouble = "its picture " + fx.images[k] + " is not read", fx.images[k].clear(); continue; }
+        fx.othersNow[k] = fx.imagesMade[k];
+    }
     for (size_t k = 0; k < fx.sounds.size(); ++k) {
         ScreenFx::Sound& one = fx.sounds[k];
         if (!one.is) continue;

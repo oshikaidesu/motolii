@@ -22,7 +22,8 @@ BlurPyramid.prototype.needsLevels = () => true   // (drawn always: whether its l
 const only = scriptArgs.slice(1)
 const types = only.length ? only : ["bloom", "chromatic-aberration", "circuit-bent", "connected-dots", "crt", "directional-blur", "displaced-rings", "displacement-map", "dithering",
   "dot-grid", "edge-detect", "erosion", "flares", "fluted-glass", "focus-blur", "glass", "gradient-map", "gradient", "halftone", "ink", "lumen-print", "outline",
-  "particle-grid", "pattern:bars", "pattern:candles", "pattern:shapes", "photocopy", "photographic-cells", "pixel-sorting", "pixelation", "plotter", "posterize", "relief", "shape", "signal-rot", "slice", "smear", "threshold", "voxel"]
+  "particle-grid", "pattern:bars", "pattern:candles", "pattern:shapes", "photocopy", "photographic-cells", "pixel-sorting", "pixelation", "plotter", "posterize", "relief", "shape", "signal-rot", "slice", "smear", "threshold", "voxel",
+  ...["light", "dense", "boxes", "hex", "binary"].map(set => `ascii:${set}`)]
 const taken = new Set(["time", "frame", "aspect", "resolution", "width", "height", "screen", "passindex", "frameRect", "passRect"])   // (names screen.h fills itself: screen_knobs)
 const manager: any = { renderer: null, onRuntimeError: () => {} }
 const dir = "../effects", W = 2048, H = 1024   // (each level of a pyramid an exact share of it)
@@ -61,17 +62,48 @@ function atlas(preset: string, cell = 16): any {
   return new THREE.DataTexture(data, files.length * cell, cell)
 }
 
+// A Canvas for buildAsciiAtlas (ascii-atlas.ts): the author's Geist Mono at its 51 px drawn by magick where fillText asks, a
+// letter's numbers where getImageData does, the font's own measures (-debug annotate) where measureText does.
+const canvases = { documentElement: {}, createElement: () => {
+  const font = "../third_party/tsl/basementstudio__shader-lab/public/fonts/geist/Geist-Mono.woff2", raw = "out/glyph.rgba", drawn = new Map<string, Uint8Array>()
+  let data = new Uint8Array(4)
+  const canvas: any = { width: 1, height: 1, getContext: () => context }
+  const context = { clearRect: () => { data = new Uint8Array(canvas.width * canvas.height * 4) },
+    measureText: (text: string) => ({ width: 30.6 * [...text].length, fontBoundingBoxAscent: 47, fontBoundingBoxDescent: 12 }),
+    fillText: (text: string, x: number, y: number) => {
+      const key = `${text} ${x} ${y} ${canvas.width} ${canvas.height}`
+      if (!drawn.has(key)) {
+        const said = text.replace(/%/g, "%%").replace(/\\/g, "\\\\").replace(/^@/, "\\@").replace(/'/g, "'\\''")
+        std.popen(`magick -size ${canvas.width}x${canvas.height} xc:none -font ${font} -pointsize 51 -fill white -annotate +${x - 15.3}+${y} '${said}' -depth 8 rgba:${raw}`, "r").readAsString()
+        const one = new Uint8Array(canvas.width * canvas.height * 4), got = std.open(raw, "rb")
+        got.read(one.buffer, 0, one.length); got.close()
+        drawn.set(key, one)
+      }
+      data = drawn.get(key)!
+    },
+    getImageData: () => ({ data }) }
+  return canvas
+} }
+// A picture too large to say in the file, a PNG beside it.
+const saved = (word: string) => (t: any, i: number) => {
+  const name = `sl_${word.replace(/\W/g, "_")}.${i}.png`, raw = "out/saved.rgba", out = std.open(raw, "wb")
+  out.write(t.image.data.buffer, 0, t.image.data.length); out.close()
+  std.popen(`magick -size ${t.image.width}x${t.image.height} -depth 8 rgba:${raw} -define png:color-type=6 ${dir}/${name}`, "r").readAsString()
+  return name
+}
+
 for (const word of types) try {
   const [type, preset] = word.split(":")
+  if (type === "ascii") Object.assign(globalThis, { document: canvases, getComputedStyle: () => ({ getPropertyValue: () => "" }) })
   const definition = getLayerDefinition(type as any), about = LAYER_CATALOG[type as keyof typeof LAYER_CATALOG]
   const params = buildParameterValues(definition.params)
-  if (preset) params.preset = preset
+  if (preset) params[type === "ascii" ? "charset" : "preset"] = preset
   const layer = { assetId: null, blendMode: "normal", compositeMode: "filter", hue: 0, id: type, kind: definition.kind,
     maskConfig: { ...DEFAULT_MASK_CONFIG }, opacity: 1, params, saturation: 1, type, visible: true, mask: null }
   const pass: any = PipelineManager.prototype["createPass" as keyof PipelineManager].call(manager, layer)
   ;(PipelineManager.prototype as any).applyLayerState.call(manager, pass, layer)
   if (type === "plotter") pass.isStipple = () => true   // (drawn always, as the pyramid: which of its modes reads it is a knob's to say)
-  if (preset) { pass.atlasTexture = atlas(preset); pass.numPatternsUniform.value = pass.atlasTexture.image.width / 16; pass.atlasPending = false; pass.rebuildEffectNode() }
+  if (type === "pattern") { pass.atlasTexture = atlas(preset); pass.numPatternsUniform.value = pass.atlasTexture.image.width / 16; pass.atlasPending = false; pass.rebuildEffectNode() }
   const output = new THREE.RenderTarget(W, H, { type: THREE.HalfFloatType }), input = new THREE.Texture()
   const sized = (w: number, h: number) => { output.setSize(w, h); pass.resize?.(w, h); pass.updateLogicalSize?.(w, h) }
   sized(W, H)
@@ -163,6 +195,7 @@ for (const word of types) try {
   if (passes.length > 1) lines.push(...passes)
   const left: string[] = []
   for (const p of definition.params as any[]) {
+    if (p.key === "charset") continue   // (its letters are this file's picture)
     const knob = (taken.has(p.key) ? "own_" : "") + p.key.replace(/\W/g, "_"), label = p.label.replace(/,/g, "")
     let got = 0
     if (p.type === "number") {
@@ -210,6 +243,6 @@ for (const word of types) try {
     })
   }
   const file = `${dir}/sl_${word.replace(/\W/g, "_")}.wgsl`
-  std.open(file, "w").puts(fileText(lines, steps, said, fields, targets, nameOf, tail))
+  std.open(file, "w").puts(fileText(lines, steps, said, fields, targets, nameOf, tail, false, saved(word)))
   console.log(`${word}: ${steps.length} steps, ${targets.length} pictures, ${said.size} uniforms moved${left.length ? `, left as they are: ${left.join(" ")}` : ""}`)
 } catch (e: any) { console.log(`${word}: not made, ${String(e?.message ?? e).slice(0, 140)}`, std.getenv("TRACE") ? e?.stack : "") }
