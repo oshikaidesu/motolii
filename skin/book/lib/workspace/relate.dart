@@ -6,15 +6,24 @@ import 'ws.dart';
 
 const wsRelations = ['around', 'row', 'follow', 'push', 'group'];
 
+/// What a relation's kind is called where it is pressed.
+String wsRelationWord(String kind) => kind == 'group' ? 'Move in' : kind[0].toUpperCase() + kind.substring(1);
+
+/// What is picked together that a relation can hold: a relation picked with them (Select All takes it too) stays out.
+List<String> wsRelatable(Ws ws) => [
+  for (final id in ws.many)
+    if (int.tryParse(id) case final t? when ws.inside?.word(t, 'kind') != 'behaviour') id,
+];
+
 void wsRelate(Ws ws, String kind) {
-  final m = ws.inside;
-  if (m == null || ws.many.length < 2) return;
-  if (kind == 'group') return wsMakeMove(ws, ws.many.toList(), (ws.frame / Ws.fps * 10).round() / 10);   // (a group is a move: it comes in from where it is said to, at the playhead)
+  final m = ws.inside, who = wsRelatable(ws);
+  if (m == null || who.length < 2) return;
+  if (kind == 'group') return wsMakeMove(ws, who, (ws.frame / Ws.fps * 10).round() / 10);   // (a group is a move: it comes in from where it is said to, at the playhead)
   m.later('together', number: 1);   // (one step, asked without waiting: the behaviour is the thing the add makes)
   ws.after(m.later('add', name: 'behaviour', word: kind), null, (b) => ws.select('$b'));   // (picked as soon as it is there: its card, its row)
   m.later('set', thing: -1, name: 'strength', number: 1);   // (said, so its card shows it as it works)
-  if ((kind == 'follow' || kind == 'push') && ws.manyByHand) m.later('set', thing: -1, name: 'leader', number: double.parse(ws.many.first));   // (picked one by one: the first leads, as it was picked first)
-  m.later('relate', thing: -1, word: ws.many.join(' '));
+  if ((kind == 'follow' || kind == 'push') && ws.manyByHand) m.later('set', thing: -1, name: 'leader', number: double.parse(who.first));   // (picked one by one: the first leads, as it was picked first)
+  m.later('relate', thing: -1, word: who.join(' '));
   ws.after(m.later('together'), (_, _) => ws.reread());   // (made or not, the window shows what the document is)
 }
 

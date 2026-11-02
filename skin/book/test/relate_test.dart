@@ -6,12 +6,52 @@ import 'package:flutter/services.dart' show MethodChannel;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lab_book/motolii.dart';
+import 'package:lab_book/workspace/desk_relations.dart';
 import 'package:lab_book/workspace/relate.dart';
 import 'package:lab_book/workspace/stage.dart';
 
 import 'door.dart';
 
 void main() {
+  testWidgets('picked with no picture at this moment: the words on the stage and the tab make it, a relation picked with them stays out', (t) async {
+    final m = Motolii.open('${Directory.systemTemp.createTempSync('relate').path}/relate.motolii')!;
+    addTearDown(m.close);
+    final ws = Ws()..join(m);
+    final made = [for (var i = 0; i < 3; i++) m.add('shape', 'circle')];
+    for (final i in made) {
+      m.set(i, 'visible', 0);
+    }
+    ws.reread();
+    t.view.physicalSize = const Size(924, 616);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel('motolii/stage'), (_) async => -1);
+    await t.pumpWidget(WidgetsApp(
+      color: const Color(0xFF000000),
+      builder: (_, _) => WsScope(ws: ws, child: const Align(alignment: Alignment.topLeft, child: SizedBox(width: 924, height: 616, child: Row(children: [Expanded(child: WsStage()), SizedBox(width: 300, child: DeskRelations())])))),
+    ));
+    await t.pumpAndSettle();
+    expect(find.text('Pick two or more'), findsOneWidget);
+    expect(find.byKey(const ValueKey('ws-relate-row')), findsNothing);
+
+    ws.pickMany([for (final i in made) '$i']);
+    await t.pumpAndSettle();
+    expect(m.frame(made.first), isNull, reason: 'nothing of it shows now');
+    expect(find.byKey(const ValueKey('ws-relate-row')), findsOneWidget, reason: 'on the stage all the same');
+    await t.tap(find.byKey(const ValueKey('ws-tab-relate-row')));
+    await settled(t, ws);
+    final row = m.things.firstWhere((i) => !made.contains(i));
+    expect(m.word(row, 'file'), 'row');
+    expect(wsMembersOf(ws), {for (final i in made) '$i'});
+
+    ws.pickMany(['$row', for (final i in made) '$i']);
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const ValueKey('ws-tab-relate-around')));
+    await settled(t, ws);
+    expect(m.word(int.parse(ws.selected!), 'file'), 'around');
+    expect(wsMembersOf(ws), {for (final i in made) '$i'}, reason: 'the row is not one of what it moves');
+  });
+
   testWidgets('drawn round, Around: one behaviour, every thing inside connected, one step', (t) async {
     final m = Motolii.open('${Directory.systemTemp.createTempSync('relate').path}/relate.motolii')!;
     addTearDown(m.close);
