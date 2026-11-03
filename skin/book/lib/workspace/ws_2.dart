@@ -570,6 +570,23 @@ class Ws extends ChangeNotifier {
     return true;
   }
 
+  /// Joined: an effect put over the others on the picked thing, one more of it when it is on already, as After Effects'
+  /// Effects & Presets panel puts on another each time (Gaussian Blur 2), its values as they come. The next is named as
+  /// the inside's Duplicate names one ("Glow~2.fs", doc_fx_duplicate), which reads an ISF or a .wgsl file's alone.
+  bool screenPut(String file) {
+    final had = screenFx, dot = file.lastIndexOf('.');
+    if (!had.contains(file)) return screenToggle(file);
+    if (!file.endsWith('.fs') && !file.endsWith('.wgsl')) {
+      notice = 'Not taken: only an ISF or a .wgsl effect is put on again so far';   // (the inside's words, doc_fx_duplicate)
+      return false;
+    }
+    var n = 2;
+    while (had.contains('${file.substring(0, dot)}~$n${file.substring(dot)}')) {
+      n++;
+    }
+    return screenToggle('${file.substring(0, dot)}~$n${file.substring(dot)}');
+  }
+
   /// Joined: the motion the picked thing has (its script's file; '' none).
   String get motion {
     final t = int.tryParse(selected ?? '');

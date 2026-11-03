@@ -56,13 +56,15 @@ class _EffectsShelfState extends State<EffectsShelf> {
     }
     // (all of them whatever is picked, as After Effects' Effects & Presets panel lists them: nothing picked, those of a
     //  thing go on a new board, Ws.fxToggle)
+    // (an effect file on the picked thing taken off by Remove, a press putting on another: Ws.screenPut)
+    VoidCallback? off(_Fx e) => screen.contains(e.id) ? () => ws.screenToggle(e.id) : null;
     final every = <_Fx>[
       for (final (n, _) in m.thingEffects)
         (id: n, name: n, label: m.label(n), on: on.contains(n), apply: chosen(n, () => ws.fxToggle(n), taken: on.contains(n)), said: _said(ws, n),
          tile: (small) => EffectTile(n, small: small, file: m.picture(n), look: _FxLook(n), on: on.contains(n) ? 'ON' : null, picked: c.sel == n, onTap: () => c.pick(n), onApply: chosen(n, () => ws.fxToggle(n), taken: on.contains(n)), star: small ? null : c)),
       for (final (n, f) in EffectsShelf._byName[m.effects] ??= ([...m.effects]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase()))))
-        (id: f, name: n, label: m.label(n), on: screen.contains(f), apply: chosen(f, () => ws.screenToggle(f), taken: screen.contains(f)), said: m.about(f).isEmpty ? (picked ? 'On the picked thing' : 'On all under it') : m.about(f),
-         tile: (small) => EffectTile(n, key: small ? null : ValueKey('ws-screen-$f'), small: small, file: m.picture(f), same: m.tileSame(f), on: screen.contains(f) ? 'ON ${screen.indexOf(f) + 1}' : null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.screenToggle(f), taken: screen.contains(f)), star: small ? null : c, starId: f)),
+        (id: f, name: n, label: m.label(n), on: screen.contains(f), apply: chosen(f, () => ws.screenPut(f)), said: m.about(f).isEmpty ? (picked ? 'On the picked thing' : 'On all under it') : m.about(f),
+         tile: (small) => EffectTile(n, key: small ? null : ValueKey('ws-screen-$f'), small: small, file: m.picture(f), same: m.tileSame(f), on: screen.contains(f) ? 'ON ${screen.indexOf(f) + 1}' : null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.screenPut(f)), star: small ? null : c, starId: f)),
       // (a look kept by its name, Save Look: given to the picked thing, its values, effects and keys)
       for (final (n, f) in m.looks)
         (id: f, name: n, label: 'Look', on: false, apply: chosen(f, () => ws.lookPut(f)), said: picked ? 'A look for the picked thing' : 'A look, on a new board',
@@ -137,7 +139,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     void menuOn(_Fx e, Offset at) {
       final box = _menu.currentContext?.findRenderObject() as RenderBox?;
       _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [
-        WsMenuItem(e.on ? 'Remove' : 'Add', e.apply),
+        if (off(e) case final o?) ...[WsMenuItem('Add Again', e.apply), WsMenuItem('Remove', o)] else WsMenuItem(e.on ? 'Remove' : 'Add', e.apply),
         WsMenuItem(c.starred(e.id) ? 'Remove from Favorites' : 'Add to Favorites', () => c.star(e.id)),
         const WsMenuItem.rule(),
         for (final d in decks) WsMenuItem(d.name, () => put(d, e), keys: deckIds[d]!.contains(e.id) ? '✓' : ''),
@@ -212,7 +214,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
           ),
           if (sel != null && m.picture(sel.id).isNotEmpty)   // (its pictures large and moving, as Alight Motion's effect browser opens a large moving sample of the one pressed)
             SizedBox(key: const ValueKey('ws-fx-preview'), height: Shape.z(140), child: TileMoving(m.picture(sel.id), playing: true)),
-          if (sel != null) _FxFooter(sel.name, kind: sel.label, said: sel.said, done: sel.on, ws: ws, onAction: sel.apply, needs: !picked, more: Builder(builder: (b) => DockIconButton(DockG.more, key: const ValueKey('ws-fx-more'), onTap: () => menuOn(sel, (b.findRenderObject() as RenderBox).localToGlobal(Offset.zero))))),   // (none picked: a file's goes on a board of its own, one of a thing's waits for a thing)
+          if (sel != null) _FxFooter(sel.name, kind: sel.label, said: sel.said, done: sel.on, ws: ws, onAction: off(sel) ?? sel.apply, needs: !picked, more: Builder(builder: (b) => DockIconButton(DockG.more, key: const ValueKey('ws-fx-more'), onTap: () => menuOn(sel, (b.findRenderObject() as RenderBox).localToGlobal(Offset.zero))))),   // (none picked: it goes on a board of its own)
         ],
       ),
     );
@@ -332,7 +334,7 @@ class _FxFooter extends StatelessWidget {
   const _FxFooter(this.name, {required this.kind, required this.said, required this.ws, required this.done, required this.onAction, required this.needs, required this.more});
   final String name, kind, said;
   final Ws ws;
-  final bool done, needs;   // (needs: an effect of a thing, with no thing picked)
+  final bool done, needs;   // (needs: nothing picked, it makes a board)
   final VoidCallback onAction;
   final Widget more;
   @override

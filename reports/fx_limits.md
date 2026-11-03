@@ -21,6 +21,7 @@
 | `workspace/stage.dart`、`stage_view*.dart` | 舞台に落とした効果は、下にある物でなく選んでいる物へ | 落とした所の下の物を選んでから付ける。何も無い所は今まで通り。After Effects は Composition パネルの層へ落とした効果をその層に付ける |
 | `workspace/dock_effects.dart`、`dock_fonts.dart`、`dock.dart`、`dock_tags.dart` | タグの札は 8 つ、補完は 6 つ | 全部、多い順に横に滑る 1 行で（窓の札の行 `Usual.chips` と同じ）。補完も折り返さず 1 行に |
 | `workspace/effect_tiles.dart` | NO CHANGE の判定：写真 40 dB、カード 30 dB | AbsentMotion の `effect_thumbs.py` の change() と SAME = 2.0 そのまま：灰色に重ね、各色の差の平均（255 中）、一番違うコマが 2.0 未満なら見えない。同じ絵で PIL の change() と同じ値（3.608、3.524）を確かめた |
+| `workspace/dock_effects.dart`、`ws_2.dart` | 棚から押した効果がもう付いていたら外していた | もう一つ付ける（.fs・.wgsl）。After Effects の Effects & Presets は押すたびに増やす（Gaussian Blur 2）。名前はエンジンの Duplicate と同じ `Glow~2.fs`（doc_fx_duplicate）。外すのは足の Remove と右クリックの Remove。Posterize を二つ付け、二つ目だけ 2 段にすると絵が変わる（差 35.35）のを確かめた |
 
 ## 出典なし：使う人が気づくもの
 
@@ -46,7 +47,7 @@
 | `thing_fx.h:264`（確）、`thing_fx.h:251`（確） | 3D に立てた物の絵は 4096 画素まで。立体の面の絵は長い辺 2048（説明は 1024 と書く） | 近寄るとぼける |
 | `aviutl_fx.h:276,806` | image_max は物の枠。totalframe・frame_s・num は frame+1、0、1 | 大きくなるスクリプトが切れる。進み具合で動くものが狂う |
 | `aviutl_fx.h:561`、`aviutl.cpp:105-111,133` | ぼかしは縦横比と光の強さが 0 の時だけ。`--value`・`--file`・`--font`・`--string`・`--dialog` は既定値のまま | 一部のつまみが無い |
-| `doc_recipes.h:336` | 同じ効果をもう一つ（Duplicate）は .fs と .wgsl だけ | AviUtl2・Lottie・内蔵の効果は二つ重ねられない |
+| `doc_recipes.h:336` | 同じ効果をもう一つ（Duplicate、棚でもう一度押す）は .fs と .wgsl だけ。内蔵の効果は値を一つずつしか持たない | AviUtl2・Lottie・内蔵の効果は二つ重ねられない（棚で押すと「まだ」と出る） |
 | `hydra_isf.cpp:37,46,48,53` | 動く値は 0.1 秒ごと、30 秒まで。fft は 0 | 30 秒で止まる |
 | `sound.h:96`（確） | 音の解析は 10 秒知らせが無いと打ち切る | 長い音が途中まで |
 | `isf.cpp:120`（確） | つまみの行は 256 字まで | 名前の長いつまみが落ちる |
@@ -76,7 +77,6 @@
 |---|---|---|
 | `workspace/effect_tiles.dart:356,392` | 見本の絵を作る時に動かすつまみは 8 つまで。alpha・不透明度・合成・mix・seed・スイッチ・選択は飛ばす。つまみが効いたかの見方は 40 dB、どこまで回すかは 24 dB のまま（NO CHANGE の札だけ AbsentMotion に揃えた） | 9 つ目や飛ばしたつまみでだけ変わる効果が NO CHANGE |
 | `workspace/ws_2.dart:580-585`（確） | 動き（motion）は一つの物に一つ。新しいものが前のものと入れ替わる（Cavalry を挙げるが Cavalry は重ねる） | 二つ目を付けると一つ目が黙って消える |
-| `workspace/dock_effects.dart:60,64`、`ws_2.dart:561` | 棚から押した効果がもう付いていたら外す | 同じ効果を二つ重ねられない |
 | `workspace/dock_effects.dart:72`（確） | 動きのタイルに絵を渡していない | 動きのタイルが全部空 |
 | `engine/doc_kinds.h:163`、`workspace/workspace_seat.dart:149` | 光とグループには効果が付かない。なのに「+ Add Effect」は出る | 押すと断られる |
 | `engine/doc_values.h:306`、`sets/inspector/inspector_number_field_num_field_state.dart:73` | 幅の外まで打てるのは .wgsl・.fs の連続のつまみだけ | AviUtl2 のつまみは最大で止まる |
