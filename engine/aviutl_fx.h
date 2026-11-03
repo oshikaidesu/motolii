@@ -28,6 +28,8 @@ struct AviutlRun {
     door::Screen *place = nullptr, *poly = nullptr, *blur = nullptr;
     Texture *none = nullptr, *random = nullptr;
     std::set<std::string> said;
+    std::chrono::steady_clock::time_point until = std::chrono::steady_clock::time_point::max();   // (this frame's run stopped past it: aviutl_late)
+    std::string late;                               // (the knobs' values it ran past that with: not run again with them)
     Stage* s = nullptr;                             // (this frame's)
     std::string target, blend, sampler;
     bool drew = false;
@@ -105,7 +107,22 @@ struct K { step: vec2f, radius: f32, unused: f32 }
 }
 )";
 
-static AviutlRun& aviutl_of(lua_State* L) { return *(AviutlRun*)lua_touserdata(L, lua_upvalueindex(1)); }
+// A frame's run stopped once it takes longer than Redis's own limit for a script (lua-time-limit, 5000 ms), as Redis
+// stops one (script_lua.c luaMaskCountHook: a count hook every 100000 instructions, then every line so a pcall cannot
+// keep it going). LuaJIT calls no hook inside a loop it has compiled (measured, 11/4: `while true do cf() end` never
+// stopped), so each obj call looks too: a script stuck asking obj (as one in obj.getvalue held the tiles) stops there.
+static const char* const aviutl_too_long = "takes longer than 5 s a frame";
+static void aviutl_late(lua_State* L, lua_Debug*) {
+    lua_getfield(L, LUA_REGISTRYINDEX, "motolii.run");
+    const AviutlRun* r = (const AviutlRun*)lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    if (r && std::chrono::steady_clock::now() > r->until) lua_sethook(L, aviutl_late, LUA_MASKLINE, 0), luaL_error(L, "%s", aviutl_too_long);
+}
+static AviutlRun& aviutl_of(lua_State* L) {
+    AviutlRun& r = *(AviutlRun*)lua_touserdata(L, lua_upvalueindex(1));
+    if (std::chrono::steady_clock::now() > r.until) luaL_error(L, "%s", aviutl_too_long);
+    return r;
+}
 static std::string aviutl_name(std::string n) { return n == "obj" ? "object" : n == "tmp" ? "tempbuffer" : n == "frm" ? "framebuffer" : n; }
 static AviutlBuf& aviutl_buf(AviutlRun& r, const std::string& name, uint32_t w = 0, uint32_t h = 0) {   // (w, h: made that size)
     AviutlBuf& b = r.bufs[aviutl_name(name)];
@@ -716,6 +733,7 @@ static std::shared_ptr<AviutlRun> aviutl_made(Stage& s, const std::string& file)
     for (const ScriptKnob& k : aviutl_knobs(file)) r->usual[k.name] = k.usual;
     lua_State* L = r->L = luaL_newstate();
     luaL_openlibs(L);
+    lua_pushlightuserdata(L, r.get()), lua_setfield(L, LUA_REGISTRYINDEX, "motolii.run");   // (aviutl_late's)
     const std::string dir = std::filesystem::path(file).parent_path().string();
     const std::string sandbox = "os, io, debug, dofile, loadfile = nil, nil, nil, nil, nil\npackage.loaded.os, package.loaded.io, package.loaded.debug = nil, nil, nil\n"
                                 "local ffi = require('ffi'); ffi.C, ffi.load = nil, nil\npackage.loadlib, package.cpath = nil, ''\npackage.path = [==[" + dir + "/?.lua;" + dir + "/?/init.lua]==]\n";
@@ -807,8 +825,18 @@ static void aviutl_draw_step(Stage& s, AviutlRun& r, Texture* from, RenderTarget
             {"layer", numbers(r.file, "aviutl.layer", 1)}, {"index", 0}, {"num", 1}, {"id", 1}, {"effect_id", 1}, {"frame_s", 0}, {"frame_e", frame}, {"effect_layer", 1}, {"originframe", 0}, {"scene_id", 0}};
         for (const auto& [n, v] : values) lua_pushnumber(L, v), lua_setfield(L, -2, n);
         lua_pop(L, 1);
-        lua_rawgeti(L, LUA_REGISTRYINDEX, r.chunk);
-        if (lua_pcall(L, 0, 0, 0)) trouble = lua_tostring(L, -1) ? lua_tostring(L, -1) : "?", lua_pop(L, 1);
+        std::string with;   // (its knobs' values now)
+        for (const AviutlVar& v : r.vars) with += std::to_string(numbers(r.file, v.var, NAN)) + ",";
+        if (with == r.late) trouble = aviutl_too_long;
+        else {
+            r.until = std::chrono::steady_clock::now() + std::chrono::milliseconds(5000);
+            lua_sethook(L, aviutl_late, LUA_MASKCOUNT, 100000);
+            lua_rawgeti(L, LUA_REGISTRYINDEX, r.chunk);
+            if (lua_pcall(L, 0, 0, 0)) trouble = lua_tostring(L, -1) ? lua_tostring(L, -1) : "?", lua_pop(L, 1);
+            lua_sethook(L, nullptr, 0, 0);
+            r.until = std::chrono::steady_clock::time_point::max();
+            if (trouble.find(aviutl_too_long) != std::string::npos) r.late = with;
+        }
     }
     if (!trouble.empty()) {   // (the picture as it came, the reason said once)
         if (r.said.insert(trouble).second) std::fprintf(stderr, "the AviUtl2 script %s stops: %s\n", r.file.c_str(), trouble.substr(0, 400).c_str());

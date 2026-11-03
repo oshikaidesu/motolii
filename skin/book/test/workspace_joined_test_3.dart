@@ -2266,6 +2266,23 @@ void _tests3() {
     await _close(t);
   }, skip: !_built);
 
+  testWidgets('an AviUtl2 script that never ends, asking obj all the while (one held the tiles, 11/4), stops at Redis\'s 5 s a frame, its picture as it came, not run again with the same knobs', (t) async {
+    final ws = await _pump(t), m = ws.inside!;
+    final dir = Directory.systemTemp.createTempSync('motolii_forever'), file = '${dir.path}/forever.anm2';
+    File(file).writeAsStringSync('--track0:Count,1,10,1\nwhile true do obj.getvalue("x") end\n');
+    final cube = m.add('solid', 'cube');
+    expect(m.say(cube, 'fx', file), isTrue, reason: m.trouble);
+    Future<int> took(double at) async {
+      final w = Stopwatch()..start();
+      expect(await t.runAsync(() async => m.at(at) && m.still('${dir.path}/still.png')), isTrue, reason: m.trouble);
+      return w.elapsedMilliseconds;
+    }
+    expect([await took(0), await took(.5)], [inInclusiveRange(4500, 12000), lessThan(2000)], reason: 'the first frame stopped at its limit, the next not run again');
+    expect(m.set(cube, 'js_forever_track0', 3), isTrue, reason: m.trouble);   // (an effect file's knob: its file's name before it, doc_screen_knob)
+    expect(await took(1), inInclusiveRange(4500, 12000), reason: 'its knob turned: run again');
+    await _close(t);
+  }, skip: !_built);
+
   testWidgets('with a thing picked, an effect of the list goes on it (as the camera sees it, its fx), not on the whole stage; pressed again, one more (After Effects\' Effects & Presets); Remove takes it off', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     final cube = m.add('solid', 'cube');
