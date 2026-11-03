@@ -509,7 +509,8 @@ static int doc_element_above(Doc& d, int thing) {
 // The moment of itself an element put in shows at `at`, as long as it is now against as long as it was: its intro and
 // outro as they were, the middle held, stretched, looped or looped and stretched between, or nothing after its end
 // (Alight Motion's Re-timing; AbsentMotion's NestedClock, NestedScenes.kt, its at(): Apache-2.0, Copyright 2026 The
-// AbsentMotion authors; in seconds, not rounded to the middles of frames). -1e9: not seen then (Blank).
+// AbsentMotion authors; in seconds, not rounded to the middles of frames, but what Freeze holds: the middle of the
+// last frame, as its middle() puts its scene's end, not the moment after it). -1e9: not seen then (Blank).
 static double doc_element_clock(Doc& d, int el, double at) {
     const double origin = doc_keys_at(d, doc_keys_of(d, el, "start"), 0, 0), scene_end = doc_keys_at(d, doc_keys_of(d, el, "element_length"), 0, 0);
     const double lasts = doc_keys_at(d, doc_keys_of(d, el, "duration"), 0, -1), layer_end = lasts > 0.0 ? lasts : scene_end;
@@ -527,7 +528,10 @@ static double doc_element_clock(Doc& d, int el, double at) {
         else if (method == "loop_stretch" && span > 0.0 && room > 0.0) {
             const double each = room / std::max(1.0, std::round(room / span));
             mapped = intro + std::fmod(into, each) * span / each;
-        } else mapped = intro + std::min(into, span);   // (Freeze, as an element is made)
+        } else {   // (Freeze, as an element is made)
+            const double fps = d.stage ? screen_rate(*d.stage) : 60.0, held = (std::ceil(outro * fps - 1e-9) - 0.5) / fps;
+            mapped = into < span ? intro + into : std::max(intro, held);
+        }
     }
     return origin + mapped;
 }

@@ -146,6 +146,7 @@ struct ThingFx {
     Mesh* sheet = nullptr;
     MaterialInstance* look = nullptr;
     std::string lay;                       // (how its sheet lies on what is behind: Filament's own blending, effected.mat's ways; none: over it)
+    Scene* in = nullptr;                   // (the scene its sheet lies in: a group's that has effects of its own; none, the stage's)
     utils::Entity eye;                     // (its own camera's: told the stage's each picture, as samples/rendertarget.cpp's offscreen camera is)
     Camera* camera = nullptr;
     double box[4] = {0, 0, 0, 0};          // (where it is seen, in points of the stage: left, top, right, bottom)
@@ -184,10 +185,19 @@ static View* thing_fx_view(Stage& s, ThingFx& e) {
     return v;
 }
 
+// Its sheet (and solid) moved into the scene it lies in (`into`: a group's, or the stage's own): the kit makes and takes
+// off things in the stage's own only.
+static void thing_fx_into(Stage& s, ThingFx& e, Scene* into) {
+    Scene* const to = into ? into : s.scene;
+    for (const Stage::Made& made : s.made)   // (one made since, in the stage's own, moved too)
+        if ((made.of == e.sheet || (e.solid && made.of == e.solid)) && !to->hasEntity(made.thing)) (e.in ? e.in : s.scene)->remove(made.thing), s.scene->remove(made.thing), to->addEntity(made.thing);
+    e.in = to == s.scene ? nullptr : to;
+}
 // The sheet: the whole picture, samples/materials/image.mat's way (its points are the screen's own corners).
 static ThingFx& thing_fx_made(Stage& s, ThingFx& e, const std::string& lay = "", bool world = false, bool shell = false) {
     if (e.view && e.lay == lay && e.world == world && e.shell == shell) return e;
     if (!e.view) e.view = thing_fx_view(s, e);
+    thing_fx_into(s, e, s.scene);
     if (e.sheet) take_off(s, e.sheet), delete e.sheet;   // (another way of lying: its sheet made again in it)
     e.lay = lay, e.world = world, e.shell = shell;
     e.sheet = new Mesh;
@@ -201,6 +211,7 @@ static ThingFx& thing_fx_made(Stage& s, ThingFx& e, const std::string& lay = "",
 }
 
 static void thing_fx_off(Stage& s, ThingFx& e) {
+    thing_fx_into(s, e, s.scene);
     if (e.sheet) take_off(s, e.sheet), delete e.sheet;
     if (e.solid) take_off(s, e.solid), delete e.solid;
     if (e.view) s.engine->destroy(e.view->getScene()), s.engine->destroy(e.view);

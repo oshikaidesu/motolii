@@ -146,7 +146,7 @@ class _InspectorSeatState extends State<_InspectorSeat> {
           final t = int.parse(l!.id);
           ws.after(how.startsWith('flip') ? m.later('flip', thing: t, word: how.substring(4).toLowerCase()) : m.later('fit', thing: t, word: how), (_, _) => ws.reread());
         },
-        onAddEffect: int.tryParse(l?.id ?? '') == null || l?.kind == WsKind.audio ? null : () {
+        onAddEffect: int.tryParse(l?.id ?? '') == null || l?.kind == WsKind.audio || m.word(int.parse(l!.id), 'kind') == 'light' ? null : () {   // (a light takes none: the inside's fx is a film's, a picture's, a text's, a shape's, a solid's, a camera's)
           ws.shelf = 'Effects';
           askDockSearch();
         },

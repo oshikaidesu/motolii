@@ -82,18 +82,30 @@ static void doc_moment(Doc& d, double now) {
         runOf[i] = (int)sorts.size() - 1;
     }
     const int base = sorts.size() > 1 && sorts[0] == 0 && sorts[1] == 1 ? 1 : 0;   // (the last run in the stage's own view: flat things under the first solid ones)
+    const auto made = [&](int thing, bool shows) -> ThingFx& {   // (its view and its sheet, lying on what is behind as it says: Filament's own blending; one that reads what is under, as normal yet)
+        const std::string laid = doc_word(d, thing, "blend");
+        return thing_fx_made(s, d.thingFx[thing], shows ? "" : laid == "add" || laid == "multiply" || laid == "screen" ? laid : "", !shows && doc_thing_stands(d, thing, d.thingFx[thing]), shows);
+    };
+    const auto holder = [&](int thing) -> Scene* {   // (the scene of the nearest group above it that has effects of its own and is on now: its things drawn in it; none, the stage's)
+        for (int up = (int)doc_number(d, thing, "parent", 0, 0), n = 0; up > 0 && n < 64; up = (int)doc_number(d, up, "parent", 0, 0), ++n) {
+            if (!doc_holds_fx(d, up)) continue;
+            const auto at = std::find_if(lies.begin(), lies.end(), [&](const Lies& l) { return l.thing == up; });
+            if (at != lies.end() && runOf[(size_t)(at - lies.begin())] >= 0) return made(up, false).view->getScene();
+        }
+        return s.scene;
+    };
     for (size_t i = 0; i < lies.size(); ++i) {
         if (runOf[i] < 0) continue;
         const int run = runOf[i];
         Doc::Shown& t = *lies[i].shown;
-        const bool own = doc_fx_files(doc_fx_steps(d, lies[i].thing));   // (with effects of its own: drawn alone, its picture laid here: thing_fx.h)
-        const std::string laid = own ? doc_word(d, lies[i].thing, "blend") : std::string();   // (its sheet lies on what is behind as it says: Filament's own blending; one that reads what is under, as normal yet)
+        const bool own = doc_own_fx(d, lies[i].thing);   // (with effects of its own: drawn alone, its picture laid here: thing_fx.h)
         const bool shows = own && doc_thing_shows(d, lies[i].thing, d.thingFx[lies[i].thing]);   // (a solid that shows its picture itself stays in the stage's scene, and is filmed by its view too, the stage's lights with it)
-        Scene* into = own ? thing_fx_made(s, d.thingFx[lies[i].thing], shows ? "" : laid == "add" || laid == "multiply" || laid == "screen" ? laid : "", !shows && doc_thing_stands(d, lies[i].thing, d.thingFx[lies[i].thing]), shows).view->getScene() : s.scene;
+        Scene* const above = holder(lies[i].thing);
+        Scene* into = own ? made(lies[i].thing, shows).view->getScene() : above;
         if (shows) {
             s.scene->forEach([&, film = into](utils::Entity e) { if (s.engine->getLightManager().hasComponent(e)) film->addEntity(e); });
             doc_entities(s, t, [film = into](utils::Entity e) { film->addEntity(e); });
-            into = s.scene;
+            into = above;
         }   // (one view: every other run in the stage's own scene, kept in order by Filament's channels)
         Scene* const was = t.scene ? t.scene : s.scene;
         if (was != into) {   // (into the scene of its run; one not seen goes in when it is seen)
@@ -110,8 +122,9 @@ static void doc_moment(Doc& d, double now) {
                 for (size_t part = 0; part < faces.getPrimitiveCount(one); ++part) faces.setBlendOrderAt(one, part, (uint16_t)(i * 128)), faces.setGlobalBlendOrderEnabledAt(one, part, true);   // (128 places for each: its copies lie among themselves by how far off they are)
             });
         t.run = run, t.lies = (int)i;
-        if (own) {   // (its sheet where it lies: the same channel and the same blend order as it has)
+        if (own) {   // (its sheet where it lies: the same channel and the same blend order as it has, in the scene of the group it is in)
             auto& faces = s.engine->getRenderableManager();
+            thing_fx_into(s, d.thingFx[lies[i].thing], above);
             const bool stood = d.thingFx[lies[i].thing].world, deep = stood && lies[i].solid;   // (stood in the world: in depth as a sheet of its sort is, by how far off; a 2D thing's, by the order)
             if (stood) d.thingFx[lies[i].thing].look->setDepthCulling(deep), d.thingFx[lies[i].thing].look->setDepthWrite(deep);
             for (const Stage::Made& made : s.made)
@@ -123,14 +136,18 @@ static void doc_moment(Doc& d, double now) {
     }
     for (auto e = d.thingFx.begin(); e != d.thingFx.end();) {   // (no longer with effects of its own, or gone: let go)
         const auto at = std::find_if(lies.begin(), lies.end(), [&](const auto& l) { return l.thing == e->first; });
-        if (at == lies.end() || runOf[(size_t)(at - lies.begin())] < 0 || !doc_fx_files(doc_fx_steps(d, e->first))) {
+        if (at == lies.end() || runOf[(size_t)(at - lies.begin())] < 0 || !doc_own_fx(d, e->first)) {
             // (a thing gone out of its time keeps its effects' scene as the one it is in: its parts taken out of it and it
             //  in none before the scene is let go, else the next moment takes them out of a scene that is gone; Filament's
-            //  scene, destroyed, is touched no more: golf_noise.md 48, the window let go twice so in P15)
-            if (const auto t = d.shown.find(e->first); t != d.shown.end() && e->second.view && t->second.scene == e->second.view->getScene()) {
-                if (t->second.in) doc_entities(s, t->second, [&](utils::Entity x) { t->second.scene->remove(x); });
-                t->second.scene = nullptr, t->second.in = false;
-            }
+            //  scene, destroyed, is touched no more: golf_noise.md 48, the window let go twice so in P15. A group's: every
+            //  thing it held, and every sheet laid in it, the same)
+            Scene* const gone = e->second.view ? e->second.view->getScene() : nullptr;
+            for (auto& [thing, t] : d.shown)
+                if (gone && t.scene == gone) {
+                    if (t.in) doc_entities(s, t, [&](utils::Entity x) { gone->remove(x); });
+                    t.scene = nullptr, t.in = false;
+                }
+            for (auto& [thing, other] : d.thingFx) if (gone && other.in == gone) thing_fx_into(s, other, s.scene);
             thing_fx_off(s, e->second), e = d.thingFx.erase(e);
         } else ++e;
     }
@@ -537,6 +554,7 @@ static void doc_moment(Doc& d, double now) {
         const utils::Entity e = one.shown->light;
         if (e.isNull()) continue;
         std::vector<Scene*> all{s.scene};
+        for (const auto& [thing, e] : d.thingFx) if (e.view && doc_holds_fx(d, thing)) all.push_back(e.view->getScene());   // (and a group's with effects of its own: its things lit as on the stage)
         for (Scene* sc : all) one.on ? (sc->hasEntity(e) ? void() : sc->addEntity(e)) : sc->remove(e);
         if (!one.on) continue;
         auto& lights = s.engine->getLightManager();

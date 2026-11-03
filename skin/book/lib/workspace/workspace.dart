@@ -241,7 +241,13 @@ class _WorkspaceState extends State<Workspace> {
       // (its bar over theirs, as a precomposed layer's is)
       final from = all.map((t) => m.value(t, 'start', 0) ?? 0).reduce(math.min), ends = [for (final t in all) m.lasts(t) < 0 ? double.infinity : (m.value(t, 'start', 0) ?? 0) + m.lasts(t)];
       m.later('set', thing: -1, name: 'start', number: from);
-      if (ends.reduce(math.max).isFinite) m.later('set', thing: -1, name: 'duration', number: ends.reduce(math.max) - from);
+      // (and as long as what it holds, kept: its Element card's Re-timing plays that longer or shorter, as Alight Motion's
+      // group is a scene of its own that long: AbsentMotion's StructureActions.kt grouped, totalTime end - start)
+      if (ends.reduce(math.max).isFinite) {
+        for (final n in const ['duration', 'element_length']) {
+          m.later('set', thing: -1, name: n, number: ends.reduce(math.max) - from);
+        }
+      }
       if (mask.isNotEmpty) m.later('say', thing: -1, name: 'group_mask', word: mask);
       m.later('set', thing: -1, name: 'x', number: (c.dx - WsArt.centre.dx) / m.point);
       m.later('set', thing: -1, name: 'y', number: (WsArt.centre.dy - c.dy) / m.point);

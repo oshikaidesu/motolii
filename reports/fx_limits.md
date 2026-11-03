@@ -17,6 +17,10 @@
 | `engine/aviutl_load.h` `aviutl_drawn` | 同じく ThorVG を始めずに canvas を作っていた | 同。ThorVG の `tvgCanvas.cpp` SwCanvas::gen は始まる前は何も作らない |
 | `workspace/workspace_cards.dart`、`sets/inspector/inspector_number_field*.dart` | 打った数を表示の幅で止めていた（Datamosh の From 0–10 秒、Trim ±100%） | 表示の幅は滑らせる幅、打つ数はエンジンの幅まで（`@valid`）。After Effects の slider range と valid range（PF_FloatSliderDef の slider_min/max と valid_min/max） |
 | `workspace/dock_effects.dart` | 1 本しか無いパックを Packs に出さなかった | 全部出す。sashimono-edit の追加メニューはフォルダごとにサブメニューを作る（`add_menu.py:280-285`） |
+| `engine/doc_moment.h`、`doc_moment_fx.h`、`thing_fx.h` | グループ（Null）に効果を付けても何も起きなかった（絵を持たないので）（確：万華鏡を付けても絵が同じ） | グループに効果があれば、中の物をまとめて舞台と同じ大きさの 1 枚に描き、効果をそれに掛けて、グループの場所に置く。内蔵の効果（ぼかし等）も効く。Alight Motion のグループは舞台と同じ大きさの入れ子（AbsentMotion の `StructureActions.kt` grouped：embedScene の幅・高さは舞台のもの）、After Effects はプリコンプの層に掛けた効果が中の層まとめてに効く。測った：赤と青の境目の一番暗い所が、グループにぼかしで 107.7（ぼかし無し 106.7）、1 つずつぼかしで 57.7（黒い筋） |
+| `workspace/workspace_seat.dart` | 光にも「+ Add Effect」が出て、押すと断られた | 光には出さない（エンジンの fx は映像・絵・文字・形・立体・カメラのもの、`doc_kinds.h` の fx の行） |
+| `workspace/workspace.dart` の group、`engine/doc_values.h` doc_element_clock | ⌘G のグループの Element の札（Re-timing：Freeze・Stretch・Loop…）を選んでも何も起きなかった（元の長さを持たないので） | ⌘G の時に中の物の長さを element_length に入れる。AbsentMotion の grouped は入れ子の totalTime を end - start にする。測った：1 秒の動きのグループを 3 秒に伸ばし、Loop で 0.25・1.25・2.25 秒が同じ位置、Stretch で 1.5 秒が真ん中 |
+| `engine/doc_values.h` doc_element_clock | Freeze で伸ばすと、止める時刻が中身の終わりちょうどで、最後のコマが見えず何も映らなかった（確） | 止めるのは最後のコマの真ん中。AbsentMotion の NestedClock の middle()（`NestedScenes.kt` 17 行）。Loop・Stretch は丸めない（丸めると 1 周ごとに半コマずれた：92→97→102 画素） |
 | `workspace/dock_effects.dart`、`ws_2.dart` | 何も選んでいない時、内蔵の効果・ルック・動きを棚から消していた | いつも出す。何も選んでいない時に押すと、絵と同じ大きさの新しい板に付く。After Effects の scripting guide、Layer.applyPreset：「If no layer is selected, it applies the animation preset to a new solid layer.」（後ろを写す調整の板には ThorVG の効果が効かなかった：ぼかしで縁の量 9.60 → 9.60） |
 | `workspace/stage.dart`、`stage_view*.dart` | 舞台に落とした効果は、下にある物でなく選んでいる物へ | 落とした所の下の物を選んでから付ける。何も無い所は今まで通り。After Effects は Composition パネルの層へ落とした効果をその層に付ける |
 | `workspace/dock_effects.dart`、`dock_fonts.dart`、`dock.dart`、`dock_tags.dart` | タグの札は 8 つ、補完は 6 つ | 全部、多い順に横に滑る 1 行で（窓の札の行 `Usual.chips` と同じ）。補完も折り返さず 1 行に |
@@ -78,7 +82,6 @@
 | `workspace/effect_tiles.dart:356,392` | 見本の絵を作る時に動かすつまみは 8 つまで。alpha・不透明度・合成・mix・seed・スイッチ・選択は飛ばす。つまみが効いたかの見方は 40 dB、どこまで回すかは 24 dB のまま（NO CHANGE の札だけ AbsentMotion に揃えた） | 9 つ目や飛ばしたつまみでだけ変わる効果が NO CHANGE |
 | `workspace/ws_2.dart:580-585`（確） | 動き（motion）は一つの物に一つ。新しいものが前のものと入れ替わる（Cavalry を挙げるが Cavalry は重ねる） | 二つ目を付けると一つ目が黙って消える |
 | `workspace/dock_effects.dart:72`（確） | 動きのタイルに絵を渡していない | 動きのタイルが全部空 |
-| `engine/doc_kinds.h:163`、`workspace/workspace_seat.dart:149` | 光とグループには効果が付かない。なのに「+ Add Effect」は出る | 押すと断られる |
 | `engine/doc_values.h:306`、`sets/inspector/inspector_number_field_num_field_state.dart:73` | 幅の外まで打てるのは .wgsl・.fs の連続のつまみだけ | AviUtl2 のつまみは最大で止まる |
 | `engine/doc_values.h:308`、`workspace/workspace_keys.dart:27` | キーは数のつまみだけ | スイッチや選択にキーが打てない |
 | `engine/isf.cpp:122-129`、`aviutl.cpp:122,146,149`、`workspace/workspace_cards.dart:93` | 選択肢は数字に、`--color` は 0–255 の 3 本に、`--value`・`--file` はつまみ無し | 名前でなく数字、色見本でなく 3 本 |

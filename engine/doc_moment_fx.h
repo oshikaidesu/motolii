@@ -18,12 +18,22 @@ static void doc_thing_solid_aim(Doc& d, int thing, ThingFx& e) {   // (before th
     const auto wrap = e.solidRepeat ? TextureSampler::WrapMode::REPEAT : TextureSampler::WrapMode::CLAMP_TO_EDGE;
     e.solidLook->setParameter("image", thing_fx_seen(e.st), TextureSampler(TextureSampler::MinFilter::LINEAR, TextureSampler::MagFilter::LINEAR, wrap));
 }
+// A group with effects of its own (a Null its things go with, its fx saying any, ThorVG's own among them): its things
+// drawn together into its picture, its effects run on that, its sheet laid where it lies, as Alight Motion's group is a
+// scene of its own the stage's size (AbsentMotion's StructureActions.kt grouped: an embedScene as wide and high as the
+// scene) and After Effects' effects on a precomposed layer work on its layers together.
+static bool doc_holds_fx(Doc& d, int thing) {
+    if (doc_word(d, thing, "shape") != "null") return false;
+    const std::vector<std::string> steps = doc_fx_steps(d, thing);
+    return doc_fx_files(steps) || std::any_of(steps.begin(), steps.end(), [](const std::string& w) { return doc_thor_letter(w) != 0; });
+}
+static bool doc_own_fx(Doc& d, int thing) { return doc_fx_files(doc_fx_steps(d, thing)) || doc_holds_fx(d, thing); }
 // Whether its picture stands in the world where it lies (thing_fx_stand): a flat thing, one alone, whose effects work on
 // its own picture. Not one that reads what is behind it or draws on the whole stage (the stage's is their frame), nor a
-// solid or a thing of many copies (not one face).
+// solid or a thing of many copies (not one face), nor a group (its things where they are).
 static bool doc_thing_stands(Doc& d, int thing, ThingFx& e) {
     thing_effects(*d.stage, e.st, doc_fx_join(doc_fx_steps(d, thing)));
-    if (e.st.readsBehind || e.st.wide || !e.st.aviutl.empty()) return false;
+    if (e.st.readsBehind || e.st.wide || !e.st.aviutl.empty() || doc_holds_fx(d, thing)) return false;
     for (const std::string& w : doc_fx_list(d, thing)) if (solid_is(w)) return false;
     const auto shown = d.shown.find(thing);
     float2 half{0.f};
@@ -135,7 +145,15 @@ static double doc_aviutl_asked(Doc& d, int thing, const double* box, const std::
 static void doc_things_fx(Doc& d) {
     Stage& s = *d.stage;
     s.before.clear(), s.aim.clear(), s.after.clear(), d.beforeOf.clear();
-    for (auto& [thing, e] : d.thingFx) {   // (each drawn alone into a picture, its effects run on it, before the stage's own view: thing_fx.h)
+    std::vector<std::pair<int, int>> order;   // (the deepest first: a thing's picture made before that of the group it lies in)
+    for (const auto& [thing, e] : d.thingFx) {
+        int deep = 0;
+        for (int up = (int)doc_number(d, thing, "parent", 0, 0); up > 0 && deep < 64; up = (int)doc_number(d, up, "parent", 0, 0)) ++deep;
+        order.emplace_back(-deep, thing);
+    }
+    std::stable_sort(order.begin(), order.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+    for (const auto& [deep, thing] : order) {   // (each drawn alone into a picture, its effects run on it, before the stage's own view: thing_fx.h)
+        ThingFx& e = d.thingFx.at(thing);
         thing_effects(s, e.st, doc_fx_join(doc_fx_steps(d, thing)));
         e.solidFile.clear();
         for (const std::string& w : doc_fx_list(d, thing)) if (solid_is(w)) e.solidFile = w;   // (a solid's shape among them: its picture laid on that, thing_fx.h; the last named)
@@ -212,7 +230,7 @@ static void doc_things_fx(Doc& d) {
             double box[4] = {0, 0, (double)s.w, (double)s.h}, seen[4];
             {
                 std::lock_guard<std::recursive_timed_mutex> hold(d.lock);   // (asked while the picture is drawn)
-                const bool found = doc_seen_box(d, thing, d.stage->now, seen);
+                const bool found = !doc_holds_fx(d, thing) && doc_seen_box(d, thing, d.stage->now, seen);   // (a group's picture: the whole stage, as its scene is the stage's size)
                 if (found) {   // (where it is seen, as much of it as is on the stage: its picture, After Effects' layer;
                     //  with room around it for what its effects draw outside it, sashimono-edit's BAKE_MARGIN: 128 pixels,
                     //  engine/render/script_bake.py)
