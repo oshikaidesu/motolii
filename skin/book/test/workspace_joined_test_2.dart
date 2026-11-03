@@ -97,6 +97,11 @@ void _tests2() {
     final (a, b) = (mid(0), mid(20));
     expect([for (var i = 0; i < 40; i++) ((Offset(laid[i].$1, laid[i].$2) - a).distance < (Offset(laid[i].$1, laid[i].$2) - b).distance) == (i < 20)], everyElement(isTrue), reason: 'each nearer the middle of its own heap');
     expect(await t.runAsync(() => m.map(points.take(3).toList())), isNull, reason: 'too few to lay out');
+    final cells = (await t.runAsync(() => m.grid(laid, 7, 6)))!;   // (CloudToGrid's: each a cell of its own, the heaps kept apart)
+    Offset cell(int i) => Offset(cells[i] % 7 / 6, cells[i] ~/ 7 / 5);
+    final (ga, gb) = ([for (var i = 0; i < 20; i++) cell(i)].reduce((a, b) => a + b) / 20, [for (var i = 20; i < 40; i++) cell(i)].reduce((a, b) => a + b) / 20);
+    expect([cells.toSet().length, cells.every((c) => c >= 0 && c < 42), [for (var i = 0; i < 40; i++) ((cell(i) - ga).distance < (cell(i) - gb).distance) == (i < 20)].where((n) => n).length], [40, isTrue, greaterThan(36)], reason: 'none on another, each heap together on the grid');
+    expect(await t.runAsync(() => m.grid(laid, 5, 5)), isNull, reason: 'fewer cells than places');
 
     final text = m.add('text', _font);
     await t.runAsync(() => fontsRead(ws));
@@ -116,6 +121,27 @@ void _tests2() {
     await t.pumpAndSettle();
     expect(find.byKey(const ValueKey('ws-map-Fonts')), findsOneWidget, reason: 'the shelf is a map now');
     expect(map.places.value.length, greaterThan(fontsOffered! * .9), reason: 'the fonts are on it: those with the word\'s letters (300 of 305 on this Mac, five Noto fonts of other letters only having none to draw)');
+    await t.runAsync(() async {
+      for (var i = 0; i < 300 && map.gridded.value == 0; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      }
+    });
+    await t.pumpAndSettle();
+    final dots = [for (final e in find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('ws-map-Fonts-/')).evaluate()) t.getRect(find.byWidget(e.widget))];
+    expect([dots.length, [for (final (i, a) in dots.indexed) for (final b in dots.skip(i + 1)) if (a.overlaps(b)) 1].length], [map.places.value.length, 0], reason: 'on a grid: each seen, none over another');
+    String? picked() => ws.view.values.whereType<DockMem>().firstWhere((d) => d.mapped.contains('Fonts')).sel['Fonts'];   // (the dock it is a map on)
+    const georgia = '/System/Library/Fonts/Supplemental/Georgia.ttf';
+    await t.tap(find.byKey(const ValueKey('ws-map-Fonts-$georgia')));
+    await t.pump(const Duration(milliseconds: 400));   // (past a double press's wait)
+    await t.pumpAndSettle();
+    expect([picked(), find.byKey(const ValueKey('ws-alike-Fonts-$georgia')), m.word(text, 'file')], ['Georgia', findsOneWidget, isNot(endsWith('/Georgia.ttf'))], reason: 'one press picks it, the nearest under the map (XO\'s Similarity List), the picked text left as it was');
+    await t.tap(find.byKey(const ValueKey('ws-map-Fonts-next')));
+    await t.pump(const Duration(milliseconds: 400));
+    await t.pumpAndSettle();
+    expect([picked(), find.byKey(const ValueKey('ws-alike-Fonts-$georgia'))], [isNot('Georgia'), findsOneWidget], reason: 'its arrow: the next alike picked, the list kept');
+    await t.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await t.pumpAndSettle();
+    expect(picked(), 'Georgia', reason: 'the left key back to it, the map pressed last (not the stage\'s nudge)');
     await t.enterText(find.descendant(of: find.byType(DockSearch), matching: find.byType(EditableText)), 'Andale');
     await t.pumpAndSettle();
     final andale = find.byKey(const ValueKey('ws-map-Fonts-/System/Library/Fonts/Supplemental/Andale Mono.ttf'));

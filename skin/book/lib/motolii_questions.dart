@@ -118,6 +118,25 @@ extension MotoliiQuestions on Motolii {
     });
   }
 
+  /// Those [places] (0 to 1 each way) each given a cell of a [cols] x [rows] grid, the nearest for them all
+  /// (motolii_grid: CloudToGrid's way, SciPy's linear_sum_assignment): each one's cell, row * cols + column, in their
+  /// order (null: not laid), worked out on another isolate.
+  Future<List<int>?> grid(List<(double, double)> places, int cols, int rows) {
+    final lib = libPath;
+    return Isolate.run(() {
+      final n = places.length, xy = malloc<Double>(2 * n + 1), cell = malloc<Int>(n + 1);
+      for (final (i, (x, y)) in places.indexed) {
+        xy[2 * i] = x;
+        xy[2 * i + 1] = y;
+      }
+      final got = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_grid(xy, n, cols, rows, cell);
+      final laid = got == 0 ? null : [for (var i = 0; i < n; i++) cell[i]];
+      malloc.free(xy);
+      malloc.free(cell);
+      return laid;
+    });
+  }
+
   /// How a thing moves over a while, as the stage places it (its wave and all): [n] moments from [from] to before [to],
   /// four numbers each: where it is (x, y, units of the stage), how far turned (degrees), how large (a share). null: no
   /// such thing. Asked once when its values change, for a small preview that then plays by itself (motolii_path).

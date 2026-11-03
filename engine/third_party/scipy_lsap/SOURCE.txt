@@ -1,0 +1,5 @@
+scipy v1.14.1, scipy/optimize/rectangular_lsap/ (rectangular_lsap.cpp, rectangular_lsap.h) and LICENSE.txt, unchanged.
+https://raw.githubusercontent.com/scipy/scipy/v1.14.1/scipy/optimize/rectangular_lsap/rectangular_lsap.cpp  sha256 73d78155990732311a116bc04f7f64d874c0f3793172e9aab12a476cb3d15c2c
+https://raw.githubusercontent.com/scipy/scipy/v1.14.1/scipy/optimize/rectangular_lsap/rectangular_lsap.h    sha256 12127316115bb13a2927e84f532d09428a86a5cbf8f41e9773f0c3e0e1293197
+https://raw.githubusercontent.com/scipy/scipy/v1.14.1/LICENSE.txt (here LICENSE.scipy.txt)                    sha256 c29fb8e5936f33237a8b15256b4c6e93037f05bbf58c3d7b5755aede4c200173
+BSD-3-Clause. The solver is PM Larsen's, after DF Crouse 2016 (its own header says so). Taken 2026-11-04.

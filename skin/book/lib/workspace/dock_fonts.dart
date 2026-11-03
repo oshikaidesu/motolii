@@ -232,7 +232,13 @@ class FontsShelf extends StatelessWidget {
                         await _drawAll(m, files);
                         return [for (final f in from) if (_drawn[f] case final g?) _halved(g) else null];
                       });
-                      return DockMap(map, [for (final f in list) if (f.path case final p?) (p, _FontDot(f, c))], cell: 48, aspect: _dot.$1 / _dot.$2);
+                      final byPath = {for (final f in list) ?f.path: f};
+                      return DockMap(map, [for (final MapEntry(key: p, value: f) in byPath.entries) (p, _FontDot(f, c))], cell: 48, aspect: _dot.$1 / _dot.$2, picked: list.where((f) => f.family == c.sel).firstOrNull?.path, press: (p) {
+                        if (byPath[p] case final f?) {
+                          c.pick(f.family);   // (one press, as on the map: XO's hot swap, the role's font when no text is picked)
+                          _toRole(c, f);
+                        }
+                      });
                     }
                     if (box.maxWidth < 440) {
                       return ListView(

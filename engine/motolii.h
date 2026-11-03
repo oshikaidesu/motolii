@@ -52,6 +52,7 @@ const char* motolii_kind_of(const char* file);                     /* what kind 
 int motolii_sets(const char* font, const char* words);             /* 1 if a text in that font file can be those words (any thread, while a document is open) */
 int motolii_type_picture(const char* font, const char* words, int w, int h, unsigned char* grey);   /* those words in that font file white on black, as large as they fit, w * h bytes (any thread, while a document is open); 0: not drawn */
 int motolii_map(const float* points, int n, int dims, double* xy);   /* n points of dims numbers each laid on a plane, the alike near (t-SNE): 2n numbers, x and y from 0 to 1 (any thread); 0: fewer than 4 */
+int motolii_grid(const double* xy, int n, int cols, int rows, int* cell);   /* those n places (x, y from 0 to 1) each a cell of a cols x rows grid, the nearest for them all (row * cols + column; any thread); 0: not laid */
 int motolii_thumbnail(const char* film, const char* png, int wide);   /* a film's first picture written small, as a .png (asks nothing of a document: callable from any thread) */
 int motolii_thumbnail_at(const char* film, const char* png, int wide, double fraction);   /* the same, a picture that far along the film (0 to 1) */
 int motolii_thumbnail_seconds(const char* film, const char* png, int wide, double seconds);   /* the same, the picture so many seconds in */

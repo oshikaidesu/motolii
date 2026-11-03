@@ -177,7 +177,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
                   builder: (context, _) {
                     final map = dockMap('Effects'), drawing = EffectTiles.progress.value != null;
                     if (!drawing || map.places.value.isEmpty) map.need(m, [for (final e in every) if (m.picture(e.id).isNotEmpty) (e.id, m.picture(e.id))], (from) async => [for (final f in from) await dockTiny([for (final k in const [0, 7, 15]) EffectTiles.frame(f, k)])], also: drawing ? 'drawing' : '');   // (three moments of its sixteen: how it moves too)
-                    return DockMap(map, [for (final e in listed) (e.id, tile(e, true))]);
+                    return DockMap(map, [for (final e in listed) (e.id, tile(e, true))], picked: c.sel, press: c.pick);
                   },
                 )
               : LayoutBuilder(

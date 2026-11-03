@@ -4,6 +4,7 @@
 !/third_party/js/
 !/third_party/midi_roll/
 !/third_party/qdtsne/
+!/third_party/scipy_lsap/
 !/third_party/rapidfuzz/
 !/third_party/thermion_frame/
 probe

@@ -533,6 +533,39 @@ class MotoliiBindings {
         ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, int)
       >();
 
+  int motolii_grid(
+    ffi.Pointer<ffi.Double> xy,
+    int n,
+    int cols,
+    int rows,
+    ffi.Pointer<ffi.Int> cell,
+  ) {
+    return _motolii_grid(xy, n, cols, rows, cell);
+  }
+
+  late final _motolii_gridPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Int Function(
+            ffi.Pointer<ffi.Double>,
+            ffi.Int,
+            ffi.Int,
+            ffi.Int,
+            ffi.Pointer<ffi.Int>,
+          )
+        >
+      >('motolii_grid');
+  late final _motolii_grid = _motolii_gridPtr
+      .asFunction<
+        int Function(
+          ffi.Pointer<ffi.Double>,
+          int,
+          int,
+          int,
+          ffi.Pointer<ffi.Int>,
+        )
+      >();
+
   int motolii_guide(
     ffi.Pointer<Motolii> m,
     ffi.Pointer<pkg_ffi.Utf8> axis,

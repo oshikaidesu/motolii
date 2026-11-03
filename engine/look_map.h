@@ -20,6 +20,26 @@ int motolii_map(const float* points, int n, int dims, double* xy) {
     return n;
 }
 
+// Those places each given a cell of a cols x rows grid, the one nearest them all told (none on another): Kyle McDonald's
+// CloudToGrid, a t-SNE map's pictures on a grid as it does it (its nodes 0 to 1 each way as np.linspace, the cost each
+// place's squared distance to each node), the assignment solved by SciPy's own linear_sum_assignment
+// (third_party/scipy_lsap, BSD-3, as it is). cell[i]: row * cols + column. 0: not solved, too few cells, or so many
+// that each to each is past 4 million (32 MB, some seconds: about 2,000 on a grid).
+int motolii_grid(const double* xy, int n, int cols, int rows, int* cell) {
+    if (!xy || !cell || n < 1 || cols < 1 || rows < 1 || (long)cols * rows < n || (long)n * cols * rows > 4000000) return 0;
+    const int cells = cols * rows;
+    std::vector<double> cost((size_t)n * cells);
+    for (int i = 0; i < n; ++i)
+        for (int c = 0; c < cells; ++c) {
+            const double gx = cols > 1 ? (double)(c % cols) / (cols - 1) : .5, gy = rows > 1 ? (double)(c / cols) / (rows - 1) : .5;
+            cost[(size_t)i * cells + c] = (xy[2 * i] - gx) * (xy[2 * i] - gx) + (xy[2 * i + 1] - gy) * (xy[2 * i + 1] - gy);
+        }
+    std::vector<int64_t> a(n), b(n);
+    if (solve_rectangular_linear_sum_assignment(n, cells, cost.data(), false, a.data(), b.data()) != 0) return 0;
+    for (int i = 0; i < n; ++i) cell[a[i]] = (int)b[i];
+    return n;
+}
+
 // The words in a font file, white on black w by h, as large as they fit with a point round them, a byte a point (how
 // much is covered): ThorVG's own CPU canvas, as aviutl_load.h draws a script's words; the font let go again after, as
 // type_sets does (a font only asked about leaves memory). 0: not drawn.

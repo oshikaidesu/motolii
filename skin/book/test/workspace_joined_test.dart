@@ -37,7 +37,7 @@ import 'package:lab_book/workspace/zoom.dart' show WsZoom;
 import 'package:lab_book/sets/panels/media_parts.dart' show MiniSlider;
 import 'package:lab_book/sets/foundations/text_hand.dart' show wordsPicked;
 import 'package:lab_book/workspace/desk_kit.dart' show DeskScrub;
-import 'package:lab_book/workspace/dock_parts.dart' show DockChips, DockFooter, DockHover, DockIconButton, DockSearch;
+import 'package:lab_book/workspace/dock_parts.dart' show DockChips, DockFooter, DockHover, DockIconButton, DockMem, DockSearch;
 import 'package:lab_book/workspace/workspace.dart';
 import 'package:lab_book/workspace/top_bar.dart' show wsAskSize;
 import 'package:lab_book/workspace/desk_ease.dart';

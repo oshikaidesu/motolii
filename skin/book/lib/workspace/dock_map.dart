@@ -1,25 +1,39 @@
 // A shelf's map, as XLN Audio's XO's Space: each item where what is alike lies near (laid out by the inside's t-SNE,
-// motolii_map, as XO's are), the shelf's chips and words narrowing which are shown, as XO's filters narrow its Space;
-// moved and zoomed by Flutter's own InteractiveViewer. Laid out again when what the shelf holds changes (XO's Scan &
-// Refresh, done by itself), kept between openings beside the tiles (~/Library/Caches/Motolii).
+// motolii_map, as XO's are), then each given a cell of a grid so none hides another (Kyle McDonald's CloudToGrid, the
+// inside's motolii_grid); the shelf's chips and words narrowing which are shown, as XO's filters narrow its Space;
+// moved and zoomed by Flutter's own InteractiveViewer. Under it XO's Similarity List (Splice's Similar Sounds beside
+// its list): the nearest to the one picked, stepped along by its arrows or the left and right keys. Laid out again
+// when what the shelf holds changes (XO's Scan & Refresh, done by itself), kept between openings beside the tiles
+// (~/Library/Caches/Motolii).
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../motolii.dart' show Motolii, MotoliiQuestions;
 import '../tokens.dart';
+import 'dock_glyphs.dart';
+import 'dock_parts.dart' show DockIconButton;
+import 'ws.dart' show WsT;
 
 /// Where one shelf's items lie on its map, by id, 0 to 1 each way; [laying] while that is being worked out.
 class DockMapPlaces {
-  DockMapPlaces(this.name);
+  DockMapPlaces(this.name) {
+    places.addListener(_grids.clear);
+  }
   final String name;
   final places = ValueNotifier<Map<String, Offset>>(const {});
   final laying = ValueNotifier<bool>(false);
+  /// Told when a grid is laid ([grid]).
+  final gridded = ValueNotifier<int>(0);
   String? _for;
+  Motolii? _m;
+  final _grids = <String, Map<String, int>?>{};
 
   File get _kept => File('${Platform.environment['HOME']}/Library/Caches/Motolii/map_$name.json');
 
@@ -27,6 +41,7 @@ class DockMapPlaces {
   /// map); only when they are not the ones laid out last, nor the ones kept from before ([also]: what else they were
   /// laid out by, the same items read again when it changes).
   void need(Motolii m, List<(String, String)> items, Future<List<Float32List?>> Function(List<String> from) read, {String also = ''}) {
+    _m = m;
     final key = jsonEncode([also, for (final (id, from) in items) '$id\t$from']);
     if (key == _for) return;
     _for = key;
@@ -50,6 +65,30 @@ class DockMapPlaces {
         await _kept.writeAsString(jsonEncode({'for': key, 'places': {for (final MapEntry(key: id, value: at) in places.value.entries) id: [at.dx, at.dy]}}));
       } catch (_) {}   // (not kept: laid out again next time)
     });
+  }
+
+  /// Each item's cell of a [cols] x [rows] grid (row * cols + column), the nearest for them all; null while it is
+  /// being worked out (asked now, [gridded] told when done) or where it cannot be (too many: left where they lie).
+  Map<String, int>? grid(int cols, int rows) {
+    final key = '$cols x $rows', laid = places.value, m = _m;
+    if (_grids.containsKey(key) || m == null || laid.isEmpty) return _grids[key];
+    _grids[key] = null;
+    Zone.root.run(() async {
+      final cells = await m.grid([for (final p in laid.values) (p.dx, p.dy)], cols, rows);
+      if (!identical(laid, places.value)) return;   // (laid out again meanwhile: its own grid is asked)
+      _grids[key] = cells == null ? const {} : {for (final (i, id) in laid.keys.indexed) id: cells[i]};
+      gridded.value++;
+    });
+    return null;
+  }
+
+  /// [id] and the [k] - 1 nearest it on the map of [among], nearest first: XO's Similarity List ("the most similar
+  /// sounding in the XO Space").
+  List<String> alike(String id, Iterable<String> among, int k) {
+    final at = places.value, p = at[id];
+    if (p == null) return const [];
+    final near = [for (final o in among) if (o != id) if (at[o] case final q?) (o, (q - p).distanceSquared)]..sort((a, b) => a.$2.compareTo(b.$2));
+    return [id, for (final (o, _) in near.take(k - 1)) o];
   }
 }
 
@@ -85,35 +124,71 @@ Future<Float32List?> _read(List<String> files) async {
   return out;
 }
 
-/// The map: each shown item's tile ([cell] wide, [aspect] its width to its height) where it lies, the rest left off;
-/// what is said while it is being laid out.
-class DockMap extends StatelessWidget {
-  const DockMap(this.places, this.shown, {super.key, this.cell = 26, this.aspect = 1});
+/// The map: each shown item's tile in its cell, the cells as many as the items and as large as the room allows ([aspect]
+/// a tile's width to its height; [cell] wide where they lie before the grid comes), the rest left off; what is said
+/// while it is being laid out. [picked]: the one picked, its nearest under the map; [press]: one press on one of them.
+class DockMap extends StatefulWidget {
+  const DockMap(this.places, this.shown, {super.key, this.cell = 26, this.aspect = 1, this.picked, this.press});
   final DockMapPlaces places;
   final List<(String, Widget)> shown;
   final double cell, aspect;
+  final String? picked;
+  final void Function(String id)? press;
+  @override
+  State<DockMap> createState() => _DockMapState();
+}
+
+class _DockMapState extends State<DockMap> {
+  final _keys = FocusNode(debugLabel: 'ws-map');
+  String? _from;   // (where the list of the alike was made from: the one pressed on the map, as XO's from its Space)
+
+  @override
+  void dispose() {
+    _keys.dispose();
+    super.dispose();
+  }
+
+  String get _name => widget.places.name;
+
+  /// XO's arrows: [by] along the list of the alike (Shift: five).
+  void _step(List<String> list, int by) {
+    final i = list.indexOf(widget.picked ?? '');
+    if (i < 0 || widget.press == null) return;
+    widget.press!(list[(i + by).clamp(0, list.length - 1)]);
+  }
+
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: Listenable.merge([places.places, places.laying]),
+    listenable: Listenable.merge([widget.places.places, widget.places.laying, widget.places.gridded]),
     builder: (context, _) {
-      final at = places.places.value;
+      final at = widget.places.places.value;
       if (at.isEmpty) {
-        return Center(child: Text(places.laying.value ? 'Laying out the map…' : 'Nothing on the map yet', style: T.label(Grey.g63)));
+        return Center(child: Text(widget.places.laying.value ? 'Laying out the map…' : 'Nothing on the map yet', style: T.label(Grey.g63)));
       }
+      final tiles = {for (final (id, tile) in widget.shown) id: tile};
+      final sw = Shape.z(32) * widget.aspect, gap = Shape.s(4);
       return LayoutBuilder(
         builder: (context, box) {
-          final w = Shape.z(cell), h = w / aspect, room = Size(box.maxWidth, box.maxHeight);
-          return ClipRect(
-            child: InteractiveViewer(
-              key: ValueKey('ws-map-${places.name}'),
-              maxScale: 12,
-              boundaryMargin: EdgeInsets.all(w),
-              child: SizedBox.fromSize(
-                size: room,
-                child: Stack(
+          final k = math.max(2, ((box.maxWidth - 3 * Shape.z(20) - 2 * gap) / (sw + gap)).floor());
+          final picked = widget.picked;
+          if (picked != null && at.containsKey(picked) && (_from == null || !widget.places.alike(_from!, tiles.keys, k).contains(picked))) _from = picked;   // (picked elsewhere: its own list)
+          final list = picked == null || _from == null || !tiles.containsKey(_from) ? const <String>[] : widget.places.alike(_from!, tiles.keys, k);
+          return CallbackShortcuts(
+            bindings: {
+              const SingleActivator(LogicalKeyboardKey.arrowLeft): () => _step(list, -1),
+              const SingleActivator(LogicalKeyboardKey.arrowRight): () => _step(list, 1),
+              const SingleActivator(LogicalKeyboardKey.arrowLeft, shift: true): () => _step(list, -5),
+              const SingleActivator(LogicalKeyboardKey.arrowRight, shift: true): () => _step(list, 5),
+            },
+            child: Focus(
+              focusNode: _keys,
+              child: Listener(
+                behavior: HitTestBehavior.translucent,
+                onPointerDown: (_) => _keys.requestFocus(),   // (the keys go to the map once it is pressed, not to the stage's nudge)
+                child: Column(
                   children: [
-                    for (final (id, tile) in shown)
-                      if (at[id] case final p?) Positioned(key: ValueKey('ws-map-${places.name}-$id'), left: p.dx * (room.width - w), top: p.dy * (room.height - h), width: w, height: h, child: tile),
+                    Expanded(child: LayoutBuilder(builder: (context, room) => _map(at, tiles, Size(room.maxWidth, room.maxHeight)))),
+                    if (list.length > 1) _alike(list, tiles, sw, gap),
                   ],
                 ),
               ),
@@ -123,6 +198,69 @@ class DockMap extends StatelessWidget {
       );
     },
   );
+
+  Widget _map(Map<String, Offset> at, Map<String, Widget> tiles, Size room) {
+    final n = at.length, a = widget.aspect;
+    final cols = math.max(1, math.sqrt(n * room.width / (math.max(1.0, room.height) * a)).ceil()), rows = (n / cols).ceil();
+    final cw = math.min(room.width / cols, room.height * a / rows), ch = cw / a, left = (room.width - cols * cw) / 2;
+    final cells = widget.places.grid(cols, rows), w = Shape.z(widget.cell), h = w / a;
+    Rect? place(String id) => switch ((cells, at[id])) {
+      (final g?, _) when g.isNotEmpty => g[id] == null ? null : Rect.fromLTWH(left + g[id]! % cols * cw + 1, g[id]! ~/ cols * ch + 1, cw - 2, ch - 2),
+      (_, final p?) => Rect.fromLTWH(p.dx * (room.width - w), p.dy * (room.height - h), w, h),   // (before the grid comes, or too many for one: where they lie)
+      _ => null,
+    };
+    return ClipRect(
+      child: InteractiveViewer(
+        key: ValueKey('ws-map-$_name'),
+        maxScale: 12,
+        boundaryMargin: EdgeInsets.all(cw),
+        child: SizedBox.fromSize(
+          size: room,
+          child: Stack(
+            children: [
+              for (final MapEntry(key: id, value: tile) in tiles.entries)
+                if (place(id) case final r?)
+                  Positioned.fromRect(
+                    key: ValueKey('ws-map-$_name-$id'),
+                    rect: r,
+                    child: Listener(onPointerDown: (_) => _from = id, child: tile),   // (pressed on the map: the list made from it, as XO's Space)
+                  ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// XO's Similarity List under the map: its arrows, the alike in a row, and its Refresh (the picked one first:
+  /// Splice's Similar Sounds run again on one of its matches).
+  Widget _alike(List<String> list, Map<String, Widget> tiles, double sw, double gap) {
+    final i = list.indexOf(widget.picked ?? '');
+    Widget arrow(String key, int by) => Transform.flip(flipX: by < 0, child: DockIconButton(DockG.chevron, key: ValueKey('ws-map-$_name-$key'), onTap: () => _step(list, by)));
+    return Container(
+      key: ValueKey('ws-alike-$_name'),
+      padding: EdgeInsets.symmetric(vertical: gap),
+      color: WsT.card,
+      child: Row(
+        children: [
+          arrow('prev', -1),
+          Expanded(
+            child: Row(
+              children: [
+                for (final id in list)
+                  Padding(
+                    padding: EdgeInsets.only(right: gap),
+                    child: SizedBox(key: ValueKey('ws-alike-$_name-$id'), width: sw, height: sw / widget.aspect, child: tiles[id]),
+                  ),
+              ],
+            ),
+          ),
+          arrow('next', 1),
+          DockIconButton(DockG.reload, key: ValueKey('ws-map-$_name-refresh'), on: i > 0, onTap: () => setState(() => _from = widget.picked)),
+        ],
+      ),
+    );
+  }
 }
 
 /// Each shelf's map, while the window is open (not the document's).

@@ -47,6 +47,7 @@ Motolii は「ネットで見つけたかっこいい表現を、自分の動画
 | ブロブの追跡 | [k1sh0r/blob-tracker](https://github.com/k1sh0r/blob-tracker) | MIT | `engine/blobtrack/kit/` |
 | JetBrains Mono（ブロブの追跡の文字） | [JetBrains/JetBrainsMono](https://github.com/JetBrains/JetBrainsMono) | SIL OFL 1.1 | `engine/blobtrack/kit/JetBrainsMono-Regular.ttf`、`JetBrainsMono-OFL.txt` |
 | 棚の地図の t-SNE：qdtsne v3.0.3、knncolle v3.1.2、aarand v1.1.0、subpar v0.5.2、sanisizer v0.2.2 | [libscran/qdtsne](https://github.com/libscran/qdtsne) ほか（Copyright (c) Aaron Lun） | MIT | `engine/third_party/qdtsne/`（LICENSE.<名前>、SOURCE.txt） |
+| 棚の地図の格子：SciPy v1.14.1 の rectangular_lsap（linear_sum_assignment の中身、PM Larsen） | [scipy/scipy](https://github.com/scipy/scipy)（Copyright (c) 2001-2002 Enthought, Inc. 2003-2024, SciPy Developers） | BSD-3-Clause | `engine/third_party/scipy_lsap/`（LICENSE.scipy.txt、SOURCE.txt） |
 
 ## 2. 組み立ての時に取ってくる物（リポジトリには入っていない）
 
