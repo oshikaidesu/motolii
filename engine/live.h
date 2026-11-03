@@ -147,6 +147,8 @@ static void desk_marks(Stage& s, Live* l, int i) {
                 dot(knob, 2.75f);
             }
             for (float2 c : f.c) square(c, 2.75f);   // (the corners a hand pulls it larger by)
+            if (k.knob)
+                for (int i = 0; i < 4; ++i) square((f.c[i] + f.c[(i + 1) % 4]) * 0.5f, 2.75f);   // (its sides' middles, one way only: stage_view.dart _handles)
             tvg::Shape* ring = tvg::Shape::gen();   // (the point it turns about: a small ring and four short ticks)
             ring->appendCircle(f.pivot.x, f.pivot.y, 4.f * pt, 4.f * pt);
             ring->strokeWidth(1.f * pt), ring->strokeFill(0xB3, 0xC6, 0x6B, 200);

@@ -21,12 +21,20 @@ class _StageViewState extends State<StageView> implements StageHandles {
   }
 
   static const _crops = ['crop_left', 'crop_top', 'crop_right', 'crop_bottom'];
-  /// The picked photo's crop, each side's share cut in (the inside's): none for anything else.
+  /// The picked photo's crop, each side's share cut in (the inside's), while it is being cropped: none otherwise.
   List<double> _cropOf() {
     final m = WsScope.read(context).inside, t = int.tryParse(widget.selected ?? '');
-    if (m == null || t == null || m.word(t, 'kind') != 'picture' || !RegExp(r'\.(jpe?g|png|webp|bmp)$', caseSensitive: false).hasMatch(m.word(t, 'file'))) return const [];
+    if (m == null || t == null || _cropping != widget.selected || !_photo(m, t)) return const [];
     return [for (final n in _crops) m.value(t, n, 0) ?? 0];
   }
+
+  static bool _photo(Motolii m, int t) => m.word(t, 'kind') == 'picture' && RegExp(r'\.(jpe?g|png|webp|bmp)$', caseSensitive: false).hasMatch(m.word(t, 'file'));
+
+  // (a picked photo pressed twice is cropped, its crop's bars on its sides, till a press anywhere: Figma's and Keynote's
+  //  images, double-clicked; Alight Motion's crop takes a hand only while its own card is open)
+  String? _cropping;
+  String? _tapped;   // (the one pressed a moment ago, till the wait for a second press is over: Flutter's double tap's own wait)
+  Timer? _tapWait;
 
   /// The picked shape's form and how round its corners are (the inside's), for its own handles.
   (String, double) _formOf() {
@@ -93,6 +101,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
   void dispose() {
     _deskOf?.desk(0, 0, 0, 0, 0, 0); // (the stage's own picture again)
     _dollyRest?.cancel();
+    _tapWait?.cancel();
     super.dispose();
   }
 
@@ -444,7 +453,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
         final d = (value - local).distance;
         if (d > near) continue;
         near = d;
-        by = switch (key.split(' ').first) { 'corner' => 'scale', 'turn' => 'turn', 'anchor' => 'pivot', 'round' => 'round', 'points' => 'points', 'crop' => key, _ => null };
+        by = switch (key.split(' ').first) { 'corner' => 'scale', 'side' => 'edge', 'turn' => 'turn', 'anchor' => 'pivot', 'round' => 'round', 'points' => 'points', 'crop' => key, _ => null };
         grip = key;
       }
       for (final p in [...m.points(picked), for (final (h, _) in m.handles(picked)) h]) { // (a path's own point, moved with its handles; or a handle alone: the inside takes the nearest)
@@ -525,14 +534,26 @@ class _StageViewState extends State<StageView> implements StageHandles {
       return;
     }
     if (h.by case final way?) {
-      final gone = _doc(v, local) - _doc(v, h.from);
-      // (a corner: the side across stays, as Figma's and Keynote's; with ⌥ held, about its pivot, from the middle)
-      m.carry(way == 'scale' && !HardwareKeyboard.instance.isAltPressed ? 'side' : way, gone.dx, gone.dy);
+      var gone = _doc(v, local) - _doc(v, h.from);
+      // (a corner: the side across stays, as Figma's and Keynote's; with ⌥ held, about its pivot, from the middle. Its
+      //  width to its height kept, as Alight Motion's, Keynote's and Photoshop's corners; ⇧ lets go of that, Photoshop's.
+      //  A side's middle: that way only, the hand's travel across it)
+      final keys = HardwareKeyboard.instance, sized = way == 'scale' || way == 'edge';
+      if (_grip case final g? when way == 'edge') {
+        final at = handles[g], across = handles['side ${(int.parse(g.substring(5)) + 2) % 4}'];
+        if (at != null && across != null && (at - across).distance > 1) {
+          final n = (at - across) / (at - across).distance;
+          gone = n * (gone.dx * n.dx + gone.dy * n.dy);
+        }
+      }
+      m.carry(sized ? '${way == 'scale' && !keys.isShiftPressed ? 'even_' : ''}${keys.isAltPressed ? 'scale' : 'side'}' : way, gone.dx, gone.dy);
       _held = (from: h.from, moved: true, by: way);
       setState(() {});
       return;
     }
-    final by = _snapped(switch (widget.axis) { 1 => Offset(all.dx, 0), 2 => Offset(0, all.dy), _ => all }, v.s); // (the Move tool's way)
+    // (the Move tool's way; ⇧ held, across or down only, whichever the hand has gone further: Illustrator's and Figma's)
+    final axis = widget.axis == 0 && HardwareKeyboard.instance.isShiftPressed ? (all.dx.abs() >= all.dy.abs() ? 1 : 2) : widget.axis;
+    final by = _snapped(switch (axis) { 1 => Offset(all.dx, 0), 2 => Offset(0, all.dy), _ => all }, v.s);
     m.carry('place', by.dx, by.dy);
     _held = (from: h.from, moved: true, by: null);
     setState(() {});
@@ -643,9 +664,15 @@ class _StageViewState extends State<StageView> implements StageHandles {
               if (widget.make == 'pen') return _pen(v, d.localPosition, d.localPosition); // (a tap: a corner)
               if (widget.make == 'brush') return; // (a stroke is drawn, not tapped)
               if (widget.make != null) return _draw(v, _drawFrom = d.localPosition); // (only come down: one as it comes, there)
-              final hit = _hit(v, d.localPosition), ws = WsScope.read(context);
+              final hit = _hit(v, d.localPosition), ws = WsScope.read(context), m = ws.inside;
               if (HardwareKeyboard.instance.isShiftPressed || HardwareKeyboard.instance.isMetaPressed) return hit == null ? null : wsPickAlso(ws, hit); // (Shift or Cmd: one more picked together, or one less; on nothing, nothing lost)
+              final twice = hit != null && hit == _tapped;
+              _tapWait?.cancel();
+              _tapped = twice ? null : hit;
+              if (!twice) _tapWait = Timer(kDoubleTapTimeout, () => _tapped = null);
               ws.select(hit);
+              final crop = twice && m != null && _photo(m, int.parse(hit)) ? hit : null;
+              if (crop != _cropping) setState(() => _cropping = crop);
             },
             dragStartBehavior: DragStartBehavior.down, // (a thing is held where the hand came down, not where it had got to when the drag was known for one)
             onPanStart: (d) => _hold(v, _last = d.localPosition),

@@ -136,12 +136,19 @@ abstract interface class StageHandles {
 /// A shape's own too (Alight Motion's, on the canvas): its corners' roundness, in from its first corner along its
 /// diagonal as far as they are round (round: a share of its shorter side); a polygon's or star's points, out from the
 /// middle of its right side.
-/// A photo's crop (its left, top, right and bottom cut in, shares of its width or height): a bar on each side where it is cut.
+/// A photo's crop (its left, top, right and bottom cut in, shares of its width or height): a bar on each side where it is
+/// cut, in place of its sides' handles, while it is cropped (pressed twice).
 Map<String, Offset> _handles(Offset Function(Offset doc) scr, ArtBox b, {required bool knob, String form = '', double round = 0, List<double> crop = const []}) {
   final top = scr(b.top), dir = top - scr(b.c), n = dir.distance < 1 ? const Offset(0, -1) : dir / dir.distance;
   final c = [for (final p in b.corners) scr(p)];
   return {
     for (final (i, p) in c.indexed) 'corner $i': p,
+    if (knob && crop.length != 4) ...{   // (its sides' middles, one way only: Alight Motion's, Keynote's, Photoshop's; left, top, right, bottom)
+      'side 0': (c[0] + c[3]) / 2,
+      'side 1': (c[0] + c[1]) / 2,
+      'side 2': (c[1] + c[2]) / 2,
+      'side 3': (c[3] + c[2]) / 2,
+    },
     if (knob) 'turn': top + n * _V.stem,
     'anchor': scr(b.anchor),
     'body': scr(b.c),

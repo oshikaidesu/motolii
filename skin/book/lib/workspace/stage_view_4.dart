@@ -67,7 +67,10 @@ class _ViewPainter extends CustomPainter {
     }
     if (WsArt.boxOf(scene, parent) case final b?) c.drawPath(_boxPath(b), _line(Grey.g63, 1));   // (what the picked thing goes with: its frame, grey)
     for (final id in scene.gizmos.keys) _gizmo(c, id);
-    if (marked) return c.restore();
+    if (marked) {   // (the inside marks its frame, corners, sides, knob and pivot; its own handles are drawn here, over them)
+      if ((WsArt.boxOf(scene, sel), scene.layer(sel)) case (final b?, final l?)) _own(c, _handles(_scr, b, knob: l.kind != WsKind.camera && l.id != 'bg', form: form.$1, round: form.$2, crop: crop));
+      return c.restore();
+    }
     if (WsArt.boxOf(scene, hover) case final b?) _legible(c, _boxPath(b), wsLabel(hover!), 1);   // (in its label colour, as its row)
     if (WsArt.boxOf(scene, sel) case final b?) _selection(c, b, scene.layer(sel)!);
     c.restore();
@@ -166,12 +169,31 @@ class _ViewPainter extends CustomPainter {
       c.drawCircle(knob, 4.5 * big, Paint()..color = Grey.g00);
       c.drawCircle(knob, 3.5 * big, Paint()..color = lit);
     }
-    for (final (i, p) in pts.indexed) {
-      if (!seen('corner $i')) continue;
-      final r = Rect.fromCenter(center: p, width: _V.handle, height: _V.handle).inflate(grip == 'corner $i' ? _V.handle / 2 : 0);
+    for (final (key, p) in [for (final (i, p) in pts.indexed) ('corner $i', p), for (var i = 0; i < 4; i++) if (h['side $i'] case final s?) ('side $i', s)]) {
+      if (!seen(key)) continue;
+      final r = Rect.fromCenter(center: p, width: _V.handle, height: _V.handle).inflate(grip == key ? _V.handle / 2 : 0);
       c.drawRect(r.inflate(1), Paint()..color = Grey.g00);
       c.drawRect(r, Paint()..color = lit);
     }
+    _own(c, h);
+    final a = h['anchor']!;
+    if (seen('anchor')) {
+      final big = grip == 'anchor' ? 1.6 : 1.0;
+      c.drawCircle(a, 6 * big, _line(Grey.g00, 3.5));
+      c.drawCircle(a, 6 * big, _line(lit, 1.5));
+      for (final d in const [Offset(1, 0), Offset(-1, 0), Offset(0, 1), Offset(0, -1)]) {
+        c.drawLine(a + d * 3, a + d * 10 * big, _line(Grey.g00, 3));
+        c.drawLine(a + d * 3, a + d * 10 * big, _line(lit, 1.2));
+      }
+    }
+    final bounds = pts.skip(1).fold(Rect.fromPoints(pts[0], pts[0]), (r, p) => r.expandToInclude(Rect.fromPoints(p, p)));
+    _tag(c, bounds.topLeft, l.name, WsT.accent, WsT.onAccent, wsTone(l.kind));
+  }
+
+  /// The picked thing's own handles, besides its frame's (which the inside marks on its desk too: live.h desk_marks).
+  void _own(Canvas c, Map<String, Offset> h) {
+    final lit = WsT.accent.withValues(alpha: 1);
+    bool seen(String k) => grip == null || grip == k;
     if (h['round'] case final r? when seen('round')) {   // (its corners' roundness: a ring in from its first corner)
       final big = grip == 'round' ? 1.6 : 1.0;
       c.drawCircle(r, 4.5 * big, Paint()..color = Grey.g00);
@@ -189,18 +211,6 @@ class _ViewPainter extends CustomPainter {
         c.drawLine(p - along, p + along, _line(lit, 3));
       }
     }
-    final a = h['anchor']!;
-    if (seen('anchor')) {
-      final big = grip == 'anchor' ? 1.6 : 1.0;
-      c.drawCircle(a, 6 * big, _line(Grey.g00, 3.5));
-      c.drawCircle(a, 6 * big, _line(lit, 1.5));
-      for (final d in const [Offset(1, 0), Offset(-1, 0), Offset(0, 1), Offset(0, -1)]) {
-        c.drawLine(a + d * 3, a + d * 10 * big, _line(Grey.g00, 3));
-        c.drawLine(a + d * 3, a + d * 10 * big, _line(lit, 1.2));
-      }
-    }
-    final bounds = pts.skip(1).fold(Rect.fromPoints(pts[0], pts[0]), (r, p) => r.expandToInclude(Rect.fromPoints(p, p)));
-    _tag(c, bounds.topLeft, l.name, WsT.accent, WsT.onAccent, wsTone(l.kind));
   }
 
   /// A small rounded name tag sitting on top of [at] (moved inside the viewport when it would leave it).

@@ -57,12 +57,12 @@
 | お手本の操作 | どこ | Motolii いま | 印 |
 |---|---|---|---|
 | ドラッグ → 動かす、近くの物にくっつき線が出る | 3 つとも（Ableton は帯） | 同じ（スナップ 6 px） | 同じ |
-| ⇧ドラッグ → 横か縦だけ | Illustrator・Figma | 移動の帯で X / Y を選ぶだけ | 違う |
+| ⇧ドラッグ → 横か縦だけ | Illustrator・Figma | 同じ（11/3、`gizmo_scenarios.md`） | 同じ |
 | ⌃（Figma）・⌘（Ableton）を押している間 → くっつかない | Figma・Ableton | なし（帯の旗だけ） | 無い |
 | ⌥ドラッグ → 複製して動かす（⇧ も足すとまっすぐ） | 3 つとも | なし | 無い |
-| 角・辺の取っ手をドラッグ → 大きさ | Illustrator・Figma | 角だけ | 違う |
-| ⇧ を押して取っ手 → 縦横比を保つ | Illustrator・Figma | なし | 無い |
-| ⌥ を押して取っ手 → 真ん中から | Illustrator・Figma | なし | 無い |
+| 角・辺の取っ手をドラッグ → 大きさ | Illustrator・Figma | 同じ（11/3：辺の真ん中も。角は縦横比を保つ、Alight Motion・Keynote・Photoshop） | 同じ |
+| ⇧ を押して取っ手 → 縦横比を保つ | Illustrator・Figma | 角は初めから保つ。⇧ で自由（Photoshop、11/3） | 違う |
+| ⌥ を押して取っ手 → 真ん中から | Illustrator・Figma | 同じ（中心の周り） | 同じ |
 | 取っ手を反対まで引く → 反転 | Illustrator | なし | 無い |
 | 角の少し外に乗る → 回す形、ドラッグ → 回転 | Illustrator・Figma | 上の回転のつまみ | 違う |
 | 回転中に ⇧ → 15°（Figma）・45°（Illustrator）刻み | Illustrator・Figma | なし | 無い |
