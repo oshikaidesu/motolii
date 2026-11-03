@@ -230,12 +230,18 @@ class FontsShelf extends StatelessWidget {
                       _drawAll(m, files);
                       final clip = dockModel('fontclip_b32');   // (by how FontCLIP sees each, once it is made; else by its word drawn small)
                       map.need(m, [for (final f in files) (f, f)], (from) async {   // (each by its file: two files may have one name, Arial Unicode's)
-                        if (clip != null) return _byFontClip(m, clip, from);
-                        await _drawAll(m, files);
-                        return [for (final f in from) if (_drawn[f] case final g?) _halved(g) else null];
-                      }, also: clip ?? '');
-                      final byPath = {for (final f in list) ?f.path: f};
-                      return DockMap(map, [for (final MapEntry(key: p, value: f) in byPath.entries) (p, _FontDot(f, c))], cell: 48, aspect: _dot.$1 / _dot.$2, picked: list.where((f) => f.family == c.sel).firstOrNull?.path, press: (p) {
+                        final List<Float32List?> look;
+                        if (clip != null) {
+                          look = await _byFontClip(m, clip, from);
+                        } else {
+                          await _drawAll(m, files);
+                          look = [for (final f in from) if (_drawn[f] case final g?) _halved(g) else null];
+                        }
+                        final kinds = [for (final f in from) _kindOf(m, f)], all = kinds.toSet().toList();
+                        return dockTogether([look, [for (final k in kinds) Float32List(all.length)..[all.indexOf(k)] = 1]], const [1, 0.5]);   // (FontMap's style blended in at half: same-style fonts group together)
+                      }, also: '${clip ?? ''} kinds');
+                      final byPath = {for (final f in list) ?f.path: f}, kinds = {for (final p in files) p: _kindOf(m, p)};
+                      return DockMap(map, [for (final MapEntry(key: p, value: f) in byPath.entries) (p, _FontDot(f, c))], cell: 48, aspect: _dot.$1 / _dot.$2, picked: list.where((f) => f.family == c.sel).firstOrNull?.path, kinds: kinds, hue: _kindHue(kinds.values), press: (p) {
                         if (byPath[p] case final f?) {
                           c.pick(f.family);   // (one press, as on the map: XO's hot swap, the role's font when no text is picked)
                           _toRole(c, f);
@@ -380,6 +386,24 @@ Future<void> _drawAll(Motolii m, List<String> files) => _drawing ??= Zone.root.r
 /// pipeline/render/2-generate-svgs.mjs, generateEmbeddingSVG): "Hamburge" over "fonstiv" in a 224 square, 12 round it,
 /// each line in its half no wider than 200 nor taller than 85, set at 75 and never larger, its middle at its line's;
 /// black on white. 32 told at a time. null: not drawn.
+/// A font's kind on the map, as FontMap colours each by its category (sans-serif, serif, handwriting, monospace,
+/// decorative): the class CoreText gives it (motolii_font_tags), monospace before it as Google files a monospace font
+/// ('' none said).
+String _kindOf(Motolii m, String path) {
+  final t = m.fontTags(path);
+  return t.contains('mono') ? 'mono' : const ['serif', 'sans', 'script', 'ornaments', 'symbols'].firstWhere(t.contains, orElse: () => '');
+}
+
+/// A kind's colour on the map, Ableton Live's clip colours (wsLabelColour) in the order of the kinds most fonts have.
+Color? Function(String) _kindHue(Iterable<String> kinds) {
+  final had = <String, int>{};
+  for (final k in kinds) {
+    if (k.isNotEmpty) had[k] = (had[k] ?? 0) + 1;
+  }
+  final order = had.keys.toList()..sort((a, b) => had[b]!.compareTo(had[a]!));
+  return (k) => order.contains(k) ? wsLabelColour(order.indexOf(k)) : null;
+}
+
 Future<List<Float32List?>> _byFontClip(Motolii m, String model, List<String> files) async {
   final lines = [for (final w in const ['Hamburge', 'fonstiv']) await m.typePictures(files, w, 202, 87, most: 75)];
   final out = <Float32List?>[];
