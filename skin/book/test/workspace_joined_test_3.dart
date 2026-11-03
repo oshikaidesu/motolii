@@ -566,7 +566,7 @@ void _tests3() {
     Future<double> at(double s) async => (await m.shownAt([(b, 'x', s)])).single!;
     expect([await at(.25), await at(2), await at(3.75)], [closeTo(.125, 1e-6), closeTo(.5, 1e-6), closeTo(.875, 1e-6)], reason: 'stretch: the intro and outro as they were, the middle drawn out');
     expect(m.say(made, 'retime', 'freeze'), isTrue);
-    expect(await at(2), closeTo(.75, 1e-6), reason: 'freeze: the middle played, then held');
+    expect(await at(2), closeTo(((1.5 * Ws.fps).ceil() - .5) / Ws.fps / 2, 1e-6), reason: 'freeze: the middle played, then held at the middle of its last frame (AbsentMotion\'s NestedClock, middle())');
     expect(m.say(made, 'retime', 'loop'), isTrue);
     expect(await at(2), closeTo(.5, 1e-6), reason: 'loop: the middle again');
     expect(t.takeException(), isNull);
@@ -2266,7 +2266,7 @@ void _tests3() {
     await _close(t);
   }, skip: !_built);
 
-  testWidgets('with a thing picked, an effect of the list goes on it (as the camera sees it, its fx), not on the whole stage; a press takes it off', (t) async {
+  testWidgets('with a thing picked, an effect of the list goes on it (as the camera sees it, its fx), not on the whole stage; pressed again, one more (After Effects\' Effects & Presets); Remove takes it off', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     final cube = m.add('solid', 'cube');
     final half = m.effects.firstWhere((e) => e.$2.endsWith('/halftone.wgsl'));
@@ -2285,7 +2285,13 @@ void _tests3() {
     expect(find.descendant(of: row, matching: find.text('ON 1')), findsOneWidget);
     await doubleTap(t, row);
     await settled(t, ws);
-    expect(ws.screenFx, isEmpty, reason: 'taken off');
+    expect(ws.screenFx, [half.$2, half.$2.replaceFirst(RegExp(r'\.wgsl$'), '~2.wgsl')], reason: 'pressed again: one more of it');
+    expect(m.undo(), isTrue, reason: m.trouble);
+    ws.reread();
+    await t.pumpAndSettle();
+    await t.tap(find.text('Remove'));
+    await settled(t, ws);
+    expect(ws.screenFx, isEmpty, reason: 'Remove on the shelf\'s foot takes it off');
     expect(t.takeException(), isNull);
     await expectSameAfterReopen(t);
     await _close(t);
