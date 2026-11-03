@@ -136,7 +136,42 @@ Motolii に効く事：
 | `flock.js`（p5 のベクトル） | 34.22 |
 | `flock.js`（素の計算） | 17.41 |
 
-最初に先へ飛ぶと、2 秒分で約 0.3 秒かかった。1 分先なら約 9 秒の計算（測っていない）。戻るのは止まった絵 1 枚分の速さ。FastNoiseLite は入れていない。p5 の `noise` で足りている。
+最初に先へ飛ぶと、2 秒分で約 0.3 秒かかった。戻るのは止まった絵 1 枚分の速さ。FastNoiseLite は入れていない。p5 の `noise` で足りている。
+
+## 途切れず計算する（11/3、ユーザーの問い）
+
+最初の実装は、書類がどこか変わるたびに全部捨てていた。1 分の位置で測ると、上の「約 9 秒」は甘かった。
+
+| 1 分の位置での編集（立方体 30 個、1080p、窓なしで最後まで計算） | 前 | 今 |
+|---|---|---|
+| 群れと無関係な物を動かす | 20.4 秒 | 0.15 秒（普通の編集と同じ） |
+| 仲間の、計算に効かない値を変える | 約 20 秒（測らず） | 1.35 秒 |
+| 59 秒にキーを打つ（50 秒から後が変わる） | 20.8 秒 | 3.1 秒 |
+| つまみを変える（全部が変わる） | 20.5 秒 | 11.8 秒 |
+
+3 段で解いた。
+
+1. その手が触った物を SQLite の changeset で知る。計算が読んだ物と重ならなければ何もしない
+2. 重なれば各コマが告げられた内容を前回と比べ、違った最初のコマから先だけやり直す（GGPO の巻き戻し）
+3. 窓では計算を 1 拍 5 ms に分ける（React の Scheduler の値）。追いつくまで今ある絵を見せ続ける
+
+窓で 1 分先へ飛ぶと、25 秒以内に追いつく（約 15 秒後はまだ動いていて、約 25 秒後は止まっていた）。その間も行の選択、タブ、札がすぐ効き、舞台では群れが早送りで進む。追いついた絵は、最後まで一気に計算した絵と同じ並びになった（並べて目で確認）。静止画、書き出し、再生用に取っておく絵、Bake は最後まで待つ。
+
+Blender は変わったキャッシュを無効の印だけ付けて残し、最初のコマへ戻った時に捨てる（issue #112154 の検索の抜粋。本文は 403 で読めていない）。Motolii は書き出しと画面を同じにしたいので、今の場所から新しい値で続ける形は取らなかった。
+
+## ルールの推移（11/3、ユーザーの言葉「必ず 1 つのルールじゃなくて推移していく動きは自然の中に多い」）
+
+見本は 3 系統ある。
+
+| 推移 | 見本 | Motolii でのやり方 |
+|---|---|---|
+| ルールは同じで、少しの変化で群れの形が変わる | Couzin ら 2002。個体の小さな変化で群れの大きな移り変わりが起きる（抜粋。本文は読めていない） | つまみにキーを打つ。覚えた状態のまま続く |
+| 別のルールへ渡す | Houdini の POP Force の Activation（値が 0 を超えると動く。本文） | 関係を重ね、上の Strength にキーを打つ。0 の間は眠り、起きた時の場所から始まる |
+| 物ごとに次のルールへ移る | 3ds Max の Particle Flow の Test。通った粒だけ次の Event へ行く（抜粋） | 上の関係に Falloff を付けて形を動かす。形に触れた物から移る |
+
+足したのは眠る仕組みと、`flock.js` と `spring.js` が `near` を読む数行だけで、見本の 1 本はほかは既存の部品でできた。輪のまま眠り、Strength でその場から飛び立ち、つまみで縮んで弾け、帯が触れた左から順に輪へ帰る。
+
+分かった限界：Around と Row は「作った時の場所からの差」を足すので、下の関係の動きが残り、上に重ねても乗っ取れない。今回は輪を下に敷いて群れを上に重ねた。5 種は変えていない。
 
 ## 読めていない物
 
@@ -155,6 +190,8 @@ Motolii に効く事：
 - [C4D Inheritance Effector](https://help.maxon.net/c4d/r21/us/html/OEINHERITANCE-MGINHERITANCEEFFECTOR_GROUPEFFECTOR.html)
 - [C4D Python Effector](https://developers.maxon.net/docs/Cinema4DPythonSDK/manuals/introduction/python_effector.html)
 - [Unreal Motion Design Cloners and Effectors](https://dev.epicgames.com/documentation/en-us/unreal-engine/motion-design-cloners-and-effectors-in-unreal-engine)
+- [Houdini の POP Force](https://www.sidefx.com/ja/docs/houdini/nodes/dop/popforce.html)、[Particle Flow](https://help.autodesk.com/cloudhelp/2016/ENU/3DSMax/files/GUID-F4FD836C-5967-4DF4-9E2B-66A16292173D.htm)、[Couzin ら 2002](https://www.cs.princeton.edu/courses/archive/fall24/cos597C/bib/couzinKJRF.pdf)、[Blender issue #112154](https://projects.blender.org/blender/blender/issues/112154)
+- [React の frameYieldMs](https://raw.githubusercontent.com/facebook/react/main/packages/scheduler/src/SchedulerFeatureFlags.js)、[GGPO の呼び出し（Odin の包み）](https://pkg.odin-lang.org/vendor/ggpo)
 - [Boids](https://www.red3d.com/cwr/boids/)、[Steering Behaviors（Reynolds、1999）](https://www.red3d.com/cwr/steer/gdc99/)、[MoGraph の受賞（Maxon）](https://www.maxon.net/en/article/maxon-cinema-4d-mograph-toolset-honored-with-academy-award-for-scientific-and-technical-achievement)、[Sci-Tech 賞（CG Channel）](https://www.cgchannel.com/2018/12/motion-graphics-tools-devs-win-sci-tech-academy-awards)
 - [Mash の無料公開（CG Channel）](https://www.cgchannel.com/?p=45298)、[MASH 2.0](https://lesterbanks.com/2013/06/mainframe-releases-mash-2-0-procedural-animation-toolkit-for-maya-as-a-commercial-product/)、[MASH が Autodesk へ](https://cgpress.org/archives/mash-moves-to-autodesk.html)
 - [MASH のノード一覧](https://help.autodesk.com/cloudhelp/2023/ENU/Maya-MotionGraphics/files/GUID-D4FECFDC-F91A-4BDC-A1B0-A24EB087B2DD.htm)、[MASH の Python ノード](https://help.autodesk.com/cloudhelp/2017/ENU/Maya/files/GUID-DCB144BD-DFE2-418B-9838-E06963F61A20.htm)

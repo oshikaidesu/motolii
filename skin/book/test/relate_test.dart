@@ -64,6 +64,63 @@ void main() {
     expect(await shown(2, 'size', 2), closeTo(1, .01), reason: 'never touched');
   });
 
+  testWidgets('a relation that remembers goes on from what changed and no earlier; it sleeps till its Strength is over 0, and wakes where its things are', (t) async {
+    final dir = Directory.systemTemp.createTempSync('relate');
+    final m = Motolii.open('${dir.path}/relate.motolii')!;
+    addTearDown(m.close);
+    final ws = Ws()..join(m);
+    final made = [for (var i = 0; i < 3; i++) m.add('shape', 'circle')], other = m.add('shape', 'circle');
+    ws.reread();
+    t.view.physicalSize = const Size(924, 616);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel('motolii/stage'), (_) async => -1);
+    await t.pumpWidget(WidgetsApp(
+      color: const Color(0xFF000000),
+      builder: (_, _) => WsScope(ws: ws, child: const Align(alignment: Alignment.topLeft, child: SizedBox(width: 924, height: 616, child: Row(children: [Expanded(child: WsStage()), SizedBox(width: 300, child: DeskRelations())])))),
+    ));
+    await t.pumpAndSettle();
+    Future<int> relate(String name, String body) async {
+      final file = File('${dir.path}/$name')..writeAsStringSync(body);
+      ws.pickMany([for (final i in made) '$i']);
+      await t.pumpAndSettle();
+      wsRelate(ws, file.path);
+      await settled(t, ws);
+      return int.parse(ws.selected!);
+    }
+
+    Future<double> asked(double at) async => (await m.shownAt([(made[0], 'y', at)])).single!;
+    final count = await relate('count.js', 'var asked = 0;\nfunction relate(things, t, k, was) { ++asked; return things.map(a => ({ i: a.i, y: asked })); }\n');
+    expect(await asked(1), 61, reason: 'the first of it: 60 frames on from 0');
+
+    m.set(other, 'x', 2);
+    await settled(t, ws);
+    expect(await asked(1), 61, reason: 'a thing it does not read');
+    m.key(made[1], 'x', .5, 0);
+    await settled(t, ws);
+    expect(await asked(1), 61, reason: 'one it reads, told the same');
+    m.key(made[1], 'x', .75, 1);
+    await settled(t, ws);
+    expect(await asked(1), greaterThan(61), reason: 'told otherwise from just past .5: asked again');
+    expect(await asked(.5), 31, reason: 'those before it as they were');
+    m.set(count, 'visible', 0);
+
+    final since = await relate('since.js', 'function relate(things, t, k, was) { return things.map(a => ({ i: a.i, y: was ? was[a.i].y + 1 : 0 })); }\n');
+    m.key(since, 'strength', 1, 0);
+    m.key(since, 'strength', 1.0001, 1);
+    await settled(t, ws);
+    expect(await asked(.5), 0, reason: 'asleep: what is under it shows');
+    expect(await asked(2), closeTo(60, 1), reason: 'awake a second, not two');
+    m.set(since, 'visible', 0);
+
+    final low = await relate('low.js', '// --track@up:Up,0,9,1,0.01\nfunction relate(things, t, k) { return things.map(a => ({ i: a.i, y: k.up })); }\n');
+    await relate('high.js', 'function relate(things, t, k, was) { return things.map(a => ({ i: a.i, y: a.y })); }\n');
+    expect(await asked(1), 1);
+    m.set(low, 'js_up', 3);
+    await settled(t, ws);
+    expect(await asked(1), 3, reason: 'what is told it comes through the one under it');
+  });
+
   testWidgets('a relation written as a file: its word makes it, named by the file, and it answers for all its things at once', (t) async {
     final m = Motolii.open('${Directory.systemTemp.createTempSync('relate').path}/relate.motolii')!;
     addTearDown(m.close);

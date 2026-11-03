@@ -558,17 +558,19 @@ static void doc_forget(Doc& d);
 static void doc_note(Doc& d, int size, void* changeset) {
     sqlite3_changeset_iter* it = nullptr;
     if (sqlite3changeset_start(&it, size, changeset) != SQLITE_OK) return;
+    int last = -1;
     while (sqlite3changeset_next(it) == SQLITE_ROW) {
         const char* table = nullptr;
         int columns = 0, op = 0, indirect = 0;
         sqlite3changeset_op(it, &table, &columns, &op, &indirect);
-        if (!table || strcmp(table, "fact")) { d.things_changed = true; continue; }   // (the ways defined: anything may go another way)
+        if (!table || strcmp(table, "fact")) { d.things_changed = true; if (table && !strcmp(table, "way")) d.touched.push_back(-1); continue; }   // (the ways defined: anything may go another way)
         sqlite3_value *thing = nullptr, *name = nullptr;
         (op == SQLITE_INSERT ? sqlite3changeset_new : sqlite3changeset_old)(it, 0, &thing);
         (op == SQLITE_INSERT ? sqlite3changeset_new : sqlite3changeset_old)(it, 1, &name);
         if (!thing || !name) continue;
         const std::string n = (const char*)sqlite3_value_text(name);
         d.changed.insert({sqlite3_value_int(thing), n});
+        if (sqlite3_value_int(thing) != last) d.touched.push_back(last = sqlite3_value_int(thing));
         if (n == "kind" && op != SQLITE_UPDATE) d.things_changed = true;
     }
     sqlite3changeset_finalize(it);

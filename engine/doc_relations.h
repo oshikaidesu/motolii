@@ -51,12 +51,13 @@ static double doc_falloff_at(Doc& d, int by, math::double3 at, double t) {
     const auto found = d.shown.find(f);
     const Drawn* b = found == d.shown.end() ? nullptr : found->second.drawn;
     if (!b || !b->cut || !b->outline) return 1.0;
-    const math::double4 on = inverse(doc_place(d, f, t, 0, 0, false)) * math::double4{at, 1.0};
+    const math::mat4 place = doc_place(d, f, t, 0, 0, false);
+    const math::double4 on = inverse(place) * math::double4{at, 1.0};
     const tvg::PathCommand* cmds; const tvg::Point* pts; uint32_t cmdsCnt = 0, ptsCnt = 0;
     b->outline->path(&cmds, &cmdsCnt, &pts, &ptsCnt);
     float far = 0.f;
     const bool inside = sk_inside(cmds, cmdsCnt, pts, (float)(on.x / b->sheetHigh * b->plainHigh + 0.5 * b->cutW), (float)(0.5 * b->plainHigh - on.y / b->sheetHigh * b->plainHigh), &far);
-    const double soft = doc_number(d, by, "falloff_soft", t, 0), away = far / b->plainHigh * b->sheetHigh;
+    const double soft = doc_number(d, by, "falloff_soft", t, 0), away = far / b->plainHigh * b->sheetHigh * std::sqrt(length(place[0].xyz) * length(place[1].xyz));   // (Soft is the stage's, not the shape's: it does not grow with it)
     const double w = inside ? 1.0 : soft > 0.0 ? std::max(0.0, 1.0 - away / soft) : 0.0;
     return doc_number(d, by, "falloff_invert", 0, 0) > 0.5 ? 1.0 - w : w;
 }
@@ -131,22 +132,31 @@ static const std::vector<int>& doc_members_of(Doc& d, int by) { return doc_relat
 // others. For each thing, doc_relate_names in turn. Empty: no file, or it failed (what is under it shows, and it says why).
 // One whose relate() takes a fourth argument is a solver, as Cavalry's Value Solver and Context's saveObject: told what it
 // said the frame before, null at the first, it goes from the start of the stage a frame at a time at p5_stand.h's 60, and
-// each frame is kept so going back asks nothing; any change to the document starts it again. Held by hand, it waits.
+// each frame is kept so going back asks nothing. A step that touches nothing it reads leaves it be (SQLite's changeset,
+// doc_note; what it reads as a build system's dynamic dependencies are found, by watching); any other goes on only from
+// the first frame told otherwise, as GGPO's rollback goes back to the input that differed and runs on. With a window open
+// they have 5 ms of each picture, as React's Scheduler yields, showing the frames they have till they are made again; a
+// film, a still, a picture kept and Bake wait for all of it (DocExact). It sleeps while its Strength is 0, as Houdini's
+// Activation: what is under it shows, and it wakes where those things are then. Held by hand, it waits.
 static const char* const doc_relate_names[] = {"x", "y", "z", "size", "rotate", "rotate_x", "rotate_y", "opacity"};
 static double doc_related(Doc& d, int by, int thing, const char* name, double t, double own);
 static const std::vector<double>& doc_related_all(Doc& d, int by, double t) {
     Doc::RelatedKept& k = d.relatedKept[by];
+    struct Tells { Doc& d; Doc::RelatedKept& k; ~Tells() { if (d.reading) d.reading->insert(k.reads.begin(), k.reads.end()); } } tells{d, k};
     const long changes = d.file ? (long)sqlite3_total_changes(d.file) : 0;
-    const bool same = k.changes == changes && k.made == doc_scripts_made(d);
-    if (k.at == t && same && d.held.thing < 0) return k.values;
-    if (!same) k.frames.clear(), k.solves = -1;
-    k.at = t, k.changes = changes, k.made = doc_scripts_made(d), k.values.clear();
+    const bool same = k.changes == changes && k.made == doc_scripts_made(d) && k.seen == d.touched.size();
+    const auto spent = [&] { return d.live && !d.exact && !d.writing && std::chrono::steady_clock::now() - d.slice > std::chrono::milliseconds(5); };
+    if (k.at == t && same && d.held.thing < 0 && (!k.behind || spent())) { d.behind = d.behind || k.behind; return k.values; }
+    if (k.made != doc_scripts_made(d)) k.frames.clear(), k.told.clear(), k.sure = k.fresh = 0;
+    if (!same) k.solves = -1;
+    for (; k.seen < d.touched.size(); ++k.seen) if (d.touched[k.seen] < 0 || k.reads.count(d.touched[k.seen])) k.sure = 0;
+    k.at = t, k.changes = changes, k.made = doc_scripts_made(d), k.behind = false, k.values.clear();
     DocScript* sc = doc_script_of(d, doc_word(d, by, "script"));
     if (!sc || !sc->run || !sc->run->ok()) return k.values;
     if (k.solves < 0) { const std::vector<double> takes = sc->run->numbers("Float64Array.of(relate.length)"); k.solves = !takes.empty() && takes[0] > 3; }
     const Doc::Relation& rel = doc_relation_of(d, by);
     constexpr size_t many = std::size(doc_relate_names);
-    const auto ask = [&](double at, bool first) {
+    const auto tell = [&](double at, size_t frame) {
         std::ostringstream js;
         js.precision(12);
         js << "__relates([";
@@ -174,19 +184,33 @@ static const std::vector<double>& doc_related_all(Doc& d, int by, double t) {
             const std::string w = doc_word(d, by, sc->names[i].c_str());
             js << '"' << (w.empty() ? sc->knobs[i].words.substr(0, sc->knobs[i].words.find(' ')) : w) << "\",";
         }
-        js << "}," << by << ',' << (first ? "true" : "false") << ')';
-        return sc->run->numbers(js.str());
+        js << "}," << by << ',' << frame << ',' << (!k.solves || doc_number(d, by, "strength", at, 1) > 0 ? "true" : "false") << ')';
+        return js.str();
+    };
+    const auto told = [&](double at, size_t frame) {   // (watching what it reads, at the first)
+        std::set<int>* const outer = d.reading;
+        if (!frame) k.reads.clear(), d.reading = &k.reads;
+        const std::string js = tell(at, frame);
+        d.reading = outer;
+        return js;
     };
     if (k.solves) {
         const size_t frame = (size_t)std::max(0.0, std::round(t * 60.0));
-        while (k.frames.size() <= frame) {
-            std::vector<double> next = ask((double)k.frames.size() / 60.0, k.frames.empty());
+        while (k.sure <= frame) {
+            if (spent()) { k.behind = d.behind = true; break; }
+            const std::string js = told((double)k.sure / 60.0, k.sure);
+            const size_t heard = std::hash<std::string>{}(js);
+            if (k.sure < k.fresh && k.told[k.sure] == heard) { ++k.sure; continue; }
+            std::vector<double> next = sc->run->numbers(js);
             if (next.empty()) return k.values;
-            k.frames.push_back(std::move(next));
+            k.frames.resize(std::max(k.frames.size(), k.sure + 1)), k.told.resize(k.frames.size());
+            k.frames[k.sure] = std::move(next), k.told[k.sure] = heard;
+            k.fresh = ++k.sure;
         }
+        if (k.frames.empty()) return k.values;
     }
-    const std::vector<double> said = k.solves ? k.frames[(size_t)std::max(0.0, std::round(t * 60.0))] : ask(t, false);
-    if (said.empty()) return k.values;
+    const std::vector<double> said = k.solves ? k.frames[std::min((size_t)std::max(0.0, std::round(t * 60.0)), k.frames.size() - 1)] : sc->run->numbers(told(t, 0));
+    if (said.size() != many * (rel.members.size() - (size_t)std::count(rel.members.begin(), rel.members.end(), 0))) return k.values;
     k.values.assign(many * rel.members.size(), 0.0);
     for (size_t i = 0, in = 0; i < rel.members.size(); ++i)
         if (rel.members[i]) { if (many * (in + 1) <= said.size()) std::copy_n(said.begin() + (long)(many * in), many, k.values.begin() + (long)(many * i)); ++in; }

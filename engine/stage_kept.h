@@ -113,7 +113,7 @@ static bool stage_kept_one(StageKept& k, Doc& d, Stage& s, int rate, double budg
     }
     const auto t0 = std::chrono::steady_clock::now();
     const double playhead = s.now;   // (the moment the window shows, where a new thing starts: AbsentMotion's addAudio and addText, startTime frameStart(frame))
-    time_is(s, (double)at / rate);
+    { const DocExact exact(d); time_is(s, (double)at / rate); }
     const double moment = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();   // (the hand's part, as when it plays)
     RenderTarget* wasOut = s.out;
     Texture* const wasInto = s.drawnInto;

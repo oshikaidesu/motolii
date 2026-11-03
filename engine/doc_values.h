@@ -327,6 +327,7 @@ static DocScript* doc_script_of(Doc& d, const std::string& file, bool runs = tru
 // A thing's scripts: its one (a path may have spaces) and its own effects (paths with spaces between), or the stage's
 // effects, one over another.
 static std::string doc_word(Doc& d, int thing, const char* name);
+struct DocExact { Doc& d; bool was; explicit DocExact(Doc& d) : d(d), was(std::exchange(d.exact, true)) {} ~DocExact() { d.exact = was; } };
 static double doc_number(Doc& d, int thing, const char* name, double at, double otherwise);
 static std::vector<DocScript*> doc_scripts_on(Doc& d, int thing) {
     const std::string said = doc_word(d, thing, "script");
@@ -557,6 +558,7 @@ static double doc_number(Doc& d, int thing, const char* name, double at, double 
 // program has of reading time goes with it (After Effects' Time Remap, whose value is the layer's own time, any way between keys).
 static double doc_own_time(Doc& d, int thing, double at, double by) { return std::max(0.0, doc_number(d, thing, "time_remap", at, by)); }
 static const Doc::Keys& doc_keys_of(Doc& d, int thing, const char* name) {
+    if (d.reading) d.reading->insert(thing);
     auto& of = d.moving[thing];
     auto found = of.find(std::string_view(name));
     if (found == of.end()) {

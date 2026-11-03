@@ -198,6 +198,7 @@ static std::vector<std::pair<std::string, double>> doc_shown_now(Doc& d, int thi
     return names;
 }
 static bool doc_free(Doc& d, int thing, int by, double now, bool stay, const std::vector<std::pair<std::string, double>>* told) {
+    const DocExact exact(d);
     const Doc::Relation rel = doc_relation_of(d, by);   // (a copy: what follows forgets it)
     const auto at = std::find(rel.members.begin(), rel.members.end(), thing);
     if (at == rel.members.end()) return d.trouble = "it is not in that relation", false;
@@ -357,6 +358,7 @@ static bool doc_lead(Doc& d, int by, int leader, double now) {
 // A relation let go: each of its things kept where it shows at that moment, the relation gone.
 static bool doc_remove(Doc& d, int thing);
 static bool doc_release(Doc& d, int by, double now) {
+    const DocExact exact(d);
     if (doc_word(d, by, "kind") != "behaviour") return d.trouble = "that is no relation", false;
     const std::vector<int> all = doc_members_of(d, by);   // (a copy: freeing one forgets the list)
     std::map<int, std::vector<std::pair<std::string, double>>> shown;   // (all read before any goes: a relation written as a file says each one's place from all the others)

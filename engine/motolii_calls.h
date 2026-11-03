@@ -709,6 +709,7 @@ int motolii_still(Motolii* m, const char* png) {
     return by_hand(m, [m, png] {
         doc(m);
         if (!told(m, ends(png, ".png"), "a still is a .png") || !told(m, placed(png), "there is no such folder")) return 0;
+        const DocExact exact(doc(m));
         time_is(*m->s, m->now);
         return told(m, shoot(*m->s, png), "the file could not be written");
     });

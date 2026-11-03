@@ -341,9 +341,11 @@ static void motolii_hand(Motolii* m, std::string document, int wide, int high, s
         m->s->by_clock = m->playing;
         std::vector<std::function<void()>> films;   // (what the moment asks of the films: done once the document is let go)
         std::map<const void*, Stage::Sound> sounds;
+        bool behind = false;   // (a relation that remembers has not caught up: drawn again next beat, as a film without its picture)
         {
             std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
             m->telling = true;
+            m->d->live = true, m->d->slice = std::chrono::steady_clock::now();
             m->s->later = &films;
             time_is(*m->s, m->now);
             m->s->later = nullptr;
@@ -355,6 +357,7 @@ static void motolii_hand(Motolii* m, std::string document, int wide, int high, s
             }
             picture_moment(m);   // (the window's picture of this moment)
             m->telling = false;
+            behind = std::exchange(m->d->behind, false);
             sounds = heard_told(*m->s);   // (where each sound is to be: read of the document)
         }
         picture_tell(m);
@@ -362,7 +365,7 @@ static void motolii_hand(Motolii* m, std::string document, int wide, int high, s
         const long films_late = video_late;
         m->step = "putting the films at the moment";
         for (const auto& now : films) now();
-        const bool again = !m->playing && video_late != films_late;   // (a film without its picture for now yet, a seek under way: drawn again next beat, as a video sink shows its picture once it comes)
+        const bool again = (!m->playing && video_late != films_late) || behind;   // (a film without its picture for now yet, a seek under way: drawn again next beat, as a video sink shows its picture once it comes)
 
         { const double ms = 1e3 * std::chrono::duration<double>(std::chrono::steady_clock::now() - films_from).count(); m->films_ms += ms; m->films_most = std::max(m->films_most, ms); }   // (films put back or stepped on, while the shell reads the document)
         m->step = "putting the sounds at the moment";
