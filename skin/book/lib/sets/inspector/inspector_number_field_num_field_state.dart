@@ -70,9 +70,9 @@ class NumFieldState extends State<NumField> {
     super.dispose();
   }
 
-  double _clamp(double v) => math.min(widget.open ? double.infinity : widget.max ?? double.infinity, math.max(widget.open && (widget.min ?? 0) < 0 ? double.negativeInfinity : widget.min ?? double.negativeInfinity, v));
+  double _clamp(double v) => math.min(widget.open ? double.infinity : widget.validMax ?? widget.max ?? double.infinity, math.max(widget.open && (widget.min ?? 0) < 0 ? double.negativeInfinity : widget.validMin ?? widget.min ?? double.negativeInfinity, v));
   // (a scrub stops at the knob's ends, or where a number typed past them already lies)
-  double _scrubbed(double v) => !widget.open ? _clamp(v) : math.min(math.max(widget.max ?? double.infinity, _start), math.max(math.min(widget.min ?? double.negativeInfinity, _start), v));
+  double _scrubbed(double v) => !widget.open && widget.validMin == null && widget.validMax == null ? _clamp(v) : math.min(math.max(widget.max ?? double.infinity, _start), math.max(math.min(widget.min ?? double.negativeInfinity, _start), v));
   double _tidy(double v) => double.parse(v.toStringAsFixed(6));
 
   // contract: with several fields picked, typing sets them all; a scrub or nudge moves them all by the same amount.

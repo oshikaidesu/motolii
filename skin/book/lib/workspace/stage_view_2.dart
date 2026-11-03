@@ -7,6 +7,12 @@ class _StageViewState extends State<StageView> implements StageHandles {
   _View? _shown; // (the view as last laid out: where the handles are now)
 
   @override
+  String? hitAt(Offset global) {
+    final box = context.findRenderObject() as RenderBox?, v = _shown;
+    return box == null || v == null ? null : _hit(v, box.globalToLocal(global));
+  }
+
+  @override
   Map<String, Offset> get handles {
     final v = _shown, scene = widget.scene, b = WsArt.boxOf(scene, widget.selected), l = scene.layer(widget.selected);
     if (v == null || b == null || l == null) return const {};

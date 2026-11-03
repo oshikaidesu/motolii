@@ -159,11 +159,12 @@ class _WsShelfState extends State<WsShelf> {
             if (done.isEmpty) return const SizedBox.shrink();
             return Padding(
               padding: EdgeInsets.symmetric(horizontal: WsT.inset, vertical: Shape.s(3)),
-              child: Wrap(
-                spacing: Shape.s(4),
-                runSpacing: Shape.s(3),
+              child: SingleChildScrollView(   // (all of them in one line that slides, as the chips' row does: Usual.chips)
+                scrollDirection: Axis.horizontal,
+                child: Row(
                 children: [
-                  for (final t in done)
+                  for (final t in done) ...[
+                    if (t != done.first) SizedBox(width: Shape.s(4)),
                     DockHover(
                       onTap: () {
                         final text = DockTags.complete(_search.text, t);
@@ -175,7 +176,9 @@ class _WsShelfState extends State<WsShelf> {
                         child: Text(t, style: T.micro(Grey.g91)),
                       ),
                     ),
+                  ],
                 ],
+                ),
               ),
             );
           },

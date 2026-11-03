@@ -15,6 +15,12 @@
 | 同 | 格子の絵の大きさを、描かずに測っていた（作者は描く時に決める） | 作者の render() を回してから測る。場所で読むだけの絵（作者の `(cell + 0.5) / grid`）は舞台と同じ大きさにする。点の番号で読む絵（Connected Dots、textureLoad）は今のまま |
 | `engine/screen.h` `screen_image` | 効果の横に置く絵（`--image@`、ASCII の字の絵）を ThorVG を始める前に読み、動画だけの書類では字の絵が全部 0 になって真っ黒（確） | 読む前に `tvg::Initializer::init`。ThorVG の `tvgTaskScheduler.cpp` TaskScheduler::request は始まる前の仕事を捨てる |
 | `engine/aviutl_load.h` `aviutl_drawn` | 同じく ThorVG を始めずに canvas を作っていた | 同。ThorVG の `tvgCanvas.cpp` SwCanvas::gen は始まる前は何も作らない |
+| `workspace/workspace_cards.dart`、`sets/inspector/inspector_number_field*.dart` | 打った数を表示の幅で止めていた（Datamosh の From 0–10 秒、Trim ±100%） | 表示の幅は滑らせる幅、打つ数はエンジンの幅まで（`@valid`）。After Effects の slider range と valid range（PF_FloatSliderDef の slider_min/max と valid_min/max） |
+| `workspace/dock_effects.dart` | 1 本しか無いパックを Packs に出さなかった | 全部出す。sashimono-edit の追加メニューはフォルダごとにサブメニューを作る（`add_menu.py:280-285`） |
+| `workspace/dock_effects.dart`、`ws_2.dart` | 何も選んでいない時、内蔵の効果・ルック・動きを棚から消していた | いつも出す。何も選んでいない時に押すと、絵と同じ大きさの新しい板に付く。After Effects の scripting guide、Layer.applyPreset：「If no layer is selected, it applies the animation preset to a new solid layer.」（後ろを写す調整の板には ThorVG の効果が効かなかった：ぼかしで縁の量 9.60 → 9.60） |
+| `workspace/stage.dart`、`stage_view*.dart` | 舞台に落とした効果は、下にある物でなく選んでいる物へ | 落とした所の下の物を選んでから付ける。何も無い所は今まで通り。After Effects は Composition パネルの層へ落とした効果をその層に付ける |
+| `workspace/dock_effects.dart`、`dock_fonts.dart`、`dock.dart`、`dock_tags.dart` | タグの札は 8 つ、補完は 6 つ | 全部、多い順に横に滑る 1 行で（窓の札の行 `Usual.chips` と同じ）。補完も折り返さず 1 行に |
+| `workspace/effect_tiles.dart` | NO CHANGE の判定：写真 40 dB、カード 30 dB | AbsentMotion の `effect_thumbs.py` の change() と SAME = 2.0 そのまま：灰色に重ね、各色の差の平均（255 中）、一番違うコマが 2.0 未満なら見えない。同じ絵で PIL の change() と同じ値（3.608、3.524）を確かめた |
 
 ## 出典なし：使う人が気づくもの
 
@@ -68,20 +74,14 @@
 
 | どこ | 決め打ち | 使う人に見えること |
 |---|---|---|
-| `workspace/effect_tiles.dart:269,284,289-293,412` | NO CHANGE の判定：写真 40 dB、カード 30 dB（やり方は AbsentMotion、数は無し） | 動く効果でも NO CHANGE の札 |
-| `workspace/effect_tiles.dart:356,392` | 見本の絵を作る時に動かすつまみは 8 つまで。alpha・不透明度・合成・mix・seed・スイッチ・選択は飛ばす | 9 つ目や飛ばしたつまみでだけ変わる効果が NO CHANGE |
+| `workspace/effect_tiles.dart:356,392` | 見本の絵を作る時に動かすつまみは 8 つまで。alpha・不透明度・合成・mix・seed・スイッチ・選択は飛ばす。つまみが効いたかの見方は 40 dB、どこまで回すかは 24 dB のまま（NO CHANGE の札だけ AbsentMotion に揃えた） | 9 つ目や飛ばしたつまみでだけ変わる効果が NO CHANGE |
 | `workspace/ws_2.dart:580-585`（確） | 動き（motion）は一つの物に一つ。新しいものが前のものと入れ替わる（Cavalry を挙げるが Cavalry は重ねる） | 二つ目を付けると一つ目が黙って消える |
 | `workspace/dock_effects.dart:60,64`、`ws_2.dart:561` | 棚から押した効果がもう付いていたら外す | 同じ効果を二つ重ねられない |
-| `workspace/dock_effects.dart:58,65,69`（確） | 何も選んでいない時、内蔵の効果・ルック・動きを棚から消す | Gaussian Blur などが消えて見える |
 | `workspace/dock_effects.dart:72`（確） | 動きのタイルに絵を渡していない | 動きのタイルが全部空 |
 | `engine/doc_kinds.h:163`、`workspace/workspace_seat.dart:149` | 光とグループには効果が付かない。なのに「+ Add Effect」は出る | 押すと断られる |
-| `workspace/workspace_cards.dart:75,85` | 打った数を表示の幅で止める（Datamosh の From 0–10 秒、エンジンは 100 万。Trim ±100%、エンジンは ±1000%） | 15 秒と打つと 10 に戻る |
 | `engine/doc_values.h:306`、`sets/inspector/inspector_number_field_num_field_state.dart:73` | 幅の外まで打てるのは .wgsl・.fs の連続のつまみだけ | AviUtl2 のつまみは最大で止まる |
 | `engine/doc_values.h:308`、`workspace/workspace_keys.dart:27` | キーは数のつまみだけ | スイッチや選択にキーが打てない |
 | `engine/isf.cpp:122-129`、`aviutl.cpp:122,146,149`、`workspace/workspace_cards.dart:93` | 選択肢は数字に、`--color` は 0–255 の 3 本に、`--value`・`--file` はつまみ無し | 名前でなく数字、色見本でなく 3 本 |
-| `workspace/stage.dart:110-112` | 舞台に落とした効果は、下にある物でなく選んでいる物へ（挙げた Ableton は下にあるトラックへ） | 違う物に付く |
-| `workspace/dock_effects.dart:113`、`dock_tags.dart:80` | タグの札は 8 つ（#transition は出ない）、補完は 6 つ | 少ないタグは打たないと出ない |
-| `workspace/dock_effects.dart:91`（確） | 1 本しか無いパックは Packs に出さない | 1 本のパックが探せない |
 | `workspace/dock.dart:26,192-194` | Presets は空 | 空のタブ |
 | `workspace/effect_tiles.dart:60,180,199,229,237,414-420` | タイルの絵は 12 本ずつ作る。ffmpeg・sips が無いと静止画だけで NO CHANGE も無し | 絵がまとめて出る。ffmpeg 無しだと動かない |
 | `workspace/effect_tiles.dart:140,144`、`workspace_seat.dart:66`、`dock_effects.dart:173,196,214`、`ws_3.dart:41`、`dock_parts.dart:346` | 待ち時間と大きさ：300 ms、150 ms、タイル 84 画素以上、8 列まで、説明は 2 行で切る | 長い説明が切れる |

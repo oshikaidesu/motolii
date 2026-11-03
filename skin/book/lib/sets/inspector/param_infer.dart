@@ -77,6 +77,8 @@ class Param {
     this.fold,
     this.upIncreases = true,
     this.open = false,
+    this.validMin,
+    this.validMax,
     this.toShader = 1,
     this.why = '',
   });
@@ -97,6 +99,9 @@ class Param {
 
   /// [min] and [max] are how far its scrub goes; more is taken typed.
   final bool open;
+
+  /// How far a number typed goes, `@valid(lo, hi)`, where it is more than [min] and [max] (NumField.validMin).
+  final double? validMin, validMax;
 
   bool get bounded => min != null && max != null;
   double get step => dec == 0 ? 1 : math.pow(10, -dec).toDouble();
@@ -247,6 +252,8 @@ Param infer(Decl d) {
       options: opts,
       advanced: d.advanced,
       open: a.containsKey('open'),
+      validMin: _num(a['valid']?.elementAtOrNull(0)),
+      validMax: _num(a['valid']?.elementAtOrNull(1)),
       fold: d.fold,
       upIncreases: up,
       toShader: scale,

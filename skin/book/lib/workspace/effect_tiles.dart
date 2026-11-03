@@ -281,7 +281,7 @@ abstract final class EffectTiles {
         if (whole) m.say(0, 'script', 'none');
         if (onIt) m.say(thing, 'fx', 'none');
         if (made.length < moments.length) continue;
-        same = enough && _unseen(home, '${folder.path}/${moving ? 'moved' : 'plain'}', over: moving ? 30 : 40);   // (a card through any effect differs at its edge, 36.7 dB on these; what is plainly seen is under 30: fx_first.sh)
+        same = enough && _unseen(home, '${folder.path}/${moving ? 'moved' : 'plain'}');
         stands = !moving && !runs && sweeps.isEmpty;
         split = stands && !said.contains('generator');
         if (!same) break;
@@ -409,7 +409,7 @@ abstract final class EffectTiles {
   static final _plain = 255 * 255 / 10000.0, _clear = 255 * 255 / 251.0;   // (mean squared error at 40 dB, where _unseen stops seeing a change; at 24 dB, plainly seen and the picture still there, measured on these tiles)
 
   /// Whether two pictures are not seen to differ (as [_unseen]).
-  static bool _same(String a, String b) => (_psnr(a, b) ?? 0) > 40;
+  static bool _same(String a, String b) => _hardly(_differ(a, b));
 
   /// ffmpeg over a tile's pictures; false where it did not run (none where the window was opened from: its still alone).
   static bool _ffmpeg(List<String> also) {
@@ -420,22 +420,42 @@ abstract final class EffectTiles {
     }
   }
 
-  /// Whether none of its pictures is seen to differ from the sample's: ffmpeg's psnr, the worst of them over [over] dB
-  /// (measured on these tiles: the ones that show nothing all over 45 dB, the ones that show something under 40).
-  static bool _unseen(String home, String sample, {required double over}) => (_psnr('${home.substring(0, home.length - 4)}_%d.png', '${sample}_%d.png') ?? 0) > over;
+  /// Whether none of its pictures is seen to differ from the sample's (as [_hardly]).
+  static bool _unseen(String home, String sample) => _hardly(_differ('${home.substring(0, home.length - 4)}_%d.png', '${sample}_%d.png'));
 
-  /// The worst psnr between pictures, 1000 for none differing; null: no ffmpeg where the window was opened from, not said.
-  static double? _psnr(String a, String b) {
-    final ProcessResult r;
+  /// Whether the picture that differs most is "hardly visible": AbsentMotion's effect_thumbs.py, its SAME of 2.0 over
+  /// the frame that differs most (max(changes)). Not measured (no ffmpeg): not said to be.
+  static bool _hardly(List<double> changes) => changes.isNotEmpty && changes.every((c) => c < 2.0);
+
+  /// How far pictures differ, frame by frame, as AbsentMotion's effect_thumbs.py tells it (change(): each laid over
+  /// grey, each channel's difference out of 255, the mean): ffmpeg lays the two side by side, the mean is taken here.
+  /// Empty: no ffmpeg where the window was opened from, not measured.
+  static List<double> _differ(String a, String b) {
     try {
-      r = Process.runSync('ffmpeg', ['-hide_banner', '-i', a, '-i', b, '-lavfi', 'psnr', '-f', 'null', '-']);
+      final head = File(a.replaceFirst('%d', '0')).openSync()..setPositionSync(16);   // (the PNG's IHDR: its width, its height)
+      final wh = head.readSync(8);
+      head.closeSync();
+      final w = wh[0] << 24 | wh[1] << 16 | wh[2] << 8 | wh[3], h = wh[4] << 24 | wh[5] << 16 | wh[6] << 8 | wh[7];
+      final r = Process.runSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-i', a, '-i', b, '-lavfi', '[0:v]format=rgba[a];[1:v]format=rgba[b];[a][b]hstack=shortest=1', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-'], stdoutEncoding: null);
+      final d = r.stdout as List<int>, row = w * 4, frame = 2 * row * h;
+      if (r.exitCode != 0 || frame == 0) return const [];
+      double change(int f) {
+        var sum = 0.0;
+        for (var y = 0; y < h; y++) {
+          for (var x = f + y * 2 * row, end = x + row; x < end; x += 4) {
+            final pa = d[x + 3] / 255, pb = d[x + row + 3] / 255;
+            for (var c = 0; c < 3; c++) {
+              sum += (d[x + c] * pa + 128 * (1 - pa) - d[x + row + c] * pb - 128 * (1 - pb)).abs();
+            }
+          }
+        }
+        return sum / (w * h * 3);
+      }
+      return [for (var f = 0; f + frame <= d.length; f += frame) change(f)];
+    } on FileSystemException {
+      return const [];
     } on ProcessException {
-      return null;
+      return const [];
     }
-    return switch (RegExp(r'min:(inf|[\d.]+)').firstMatch('${r.stderr}')?.group(1)) {
-      null => null,
-      'inf' => 1000,
-      final min => double.parse(min),
-    };
   }
 }

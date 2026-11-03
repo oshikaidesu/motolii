@@ -76,13 +76,13 @@ abstract final class DockTags {
     return true;
   }
 
-  /// The tags that complete the word being typed (its end begun, not yet whole), at most [most].
-  static List<String> completing(String shelf, String query, {int most = 6}) {
+  /// The tags that complete the word being typed (its end begun, not yet whole), all of them.
+  static List<String> completing(String shelf, String query) {
     final words = query.split(RegExp(r'\s+'));
     final last = words.isEmpty ? '' : words.last.toLowerCase();
     if (last.isEmpty) return const [];
     final found = [for (final t in seen[shelf] ?? const <String>{}) if (t.startsWith(last) && t != last) t]..sort();
-    return found.take(most).toList();
+    return found;
   }
 
   /// The query with its last word made whole as [tag].

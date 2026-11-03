@@ -211,7 +211,7 @@ class FontsShelf extends StatelessWidget {
             ('Used', hits.where(used).length),
             ('Recent', hits.where((f) => fontRecent().contains(f.family)).length),
             ('Starred', hits.where((f) => c.starred(f.family)).length),
-            for (final t in top.take(8)) (t.key, t.value),
+            for (final t in top) (t.key, t.value),   // (all, the most first: the row slides, Usual.chips)
           ],
           active: c.chip,
           onPick: c.pickChip,

@@ -70,6 +70,7 @@ class _StageState extends State<_Stage> {
   Map<String, int> get _opts => _ws.view.putIfAbsent('stage.options', () => <String, int>{}) as Map<String, int>;
   final _cursor = ValueNotifier<Offset?>(null);
   final _focus = FocusNode(debugLabel: 'stage');
+  final _view = GlobalKey();   // (the view: what is under a tile let go over it)
   String? _shot;   // (the picture as it was when taken: a still among the system's temporary files)
   bool _showing = false;
 
@@ -109,7 +110,11 @@ class _StageState extends State<_Stage> {
     _tellEye(ws);
     return DragTarget<VoidCallback>(   // (a tile of a shelf dropped here does what its double press does: Ableton's drop of a device on a track)
       onWillAcceptWithDetails: (_) => true,
-      onAcceptWithDetails: (d) => d.data(),
+      onAcceptWithDetails: (d) {   // (on the thing it is let go over, as After Effects takes an effect dragged to a layer in
+        //  the Composition panel; over none, on the picked thing as a double press puts it)
+        if ((_view.currentState as StageHandles?)?.hitAt(d.offset) case final id?) ws.select(id);
+        d.data();
+      },
       builder: (context, hot, _) => DecoratedBox(
         position: DecorationPosition.foreground,
         decoration: BoxDecoration(border: hot.isEmpty ? null : Border.all(color: WsT.accent, width: 2)),
@@ -151,7 +156,7 @@ class _StageState extends State<_Stage> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      WsTwoFingers(onPinchStep: (step) => setState(() => _zoom = (_zoom + step).clamp(0, stageZooms.length - 1)), child: StageView(scene: scene, selected: ws.selected, zoom: _zoom, grid: _grid, safe: _safe, cursor: _cursor, onPoke: _focus.requestFocus, texture: ws.stageTexture, snapshot: _showing ? _shot : null, make: const [null, null, 'rect', 'circle', 'pen', 'text', 'brush', 'camera'][_tool], brushSize: const [8.0, 16.0, 32.0][_opts['brush.size'] ?? 1], brushTool: const [1, 0, 2, 3][_opts['brush.kind'] ?? 0], axis: _tool == 1 ? _opts['move.axis'] ?? 0 : 0, fromCentre: (_opts['ell.from'] ?? 0) == 1, snap: _tool < 2 && (_opts[_tool == 0 ? 'sel.snap' : 'move.snap'] ?? 1) == 1, pivots: (_opts['sel.pivot'] ?? 0) == 1, group: _tool == 0 && (_opts['sel.level'] ?? 0) == 1, mask: (_opts[_tool == 2 ? 'rect.mode' : 'pen.mode'] ?? 0) == 1 && (_tool == 2 || _tool == 4))), // (joined: the tool in hand draws a thing of the document)
+                      WsTwoFingers(onPinchStep: (step) => setState(() => _zoom = (_zoom + step).clamp(0, stageZooms.length - 1)), child: StageView(key: _view, scene: scene, selected: ws.selected, zoom: _zoom, grid: _grid, safe: _safe, cursor: _cursor, onPoke: _focus.requestFocus, texture: ws.stageTexture, snapshot: _showing ? _shot : null, make: const [null, null, 'rect', 'circle', 'pen', 'text', 'brush', 'camera'][_tool], brushSize: const [8.0, 16.0, 32.0][_opts['brush.size'] ?? 1], brushTool: const [1, 0, 2, 3][_opts['brush.kind'] ?? 0], axis: _tool == 1 ? _opts['move.axis'] ?? 0 : 0, fromCentre: (_opts['ell.from'] ?? 0) == 1, snap: _tool < 2 && (_opts[_tool == 0 ? 'sel.snap' : 'move.snap'] ?? 1) == 1, pivots: (_opts['sel.pivot'] ?? 0) == 1, group: _tool == 0 && (_opts['sel.level'] ?? 0) == 1, mask: (_opts[_tool == 2 ? 'rect.mode' : 'pen.mode'] ?? 0) == 1 && (_tool == 2 || _tool == 4))), // (joined: the tool in hand draws a thing of the document)
                     ],
                   ),
                 ),

@@ -126,6 +126,9 @@ class StageView extends StatefulWidget {
 /// (or a test, as tldraw's and Excalidraw's do) presses to take hold of each.
 abstract interface class StageHandles {
   Map<String, Offset> get handles;
+
+  /// The thing under a point of the screen, as a press there picks it (null: none).
+  String? hitAt(Offset global);
 }
 
 /// The selection's handles where they are drawn, by name: its four corners, the knob it turns by, the point it turns

@@ -43,7 +43,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     final ws = c.ws, m = ws.inside;
     if (m == null) return DockEmpty(c.query);
     final on = ws.fxOf(ws.selected), screen = ws.screenFx, picked = int.tryParse(ws.selected ?? '') != null;
-    // (a thing's own effects and motions go on a picked thing only; the whole-screen ones on it, or on the stage)
+    // (a thing's own effects, looks and motions go on the picked thing, or on a new board; the whole-screen ones on it, or on the stage)
     // (put on with words typed: latched to them, the first for them next time, golf (94))
     VoidCallback chosen(String id, VoidCallback put, {bool taken = false}) {
       final VoidCallback go = () {   // (a closure of its own, not a declaration's tear-off: what a carried tile is told by)
@@ -54,22 +54,22 @@ class _EffectsShelfState extends State<EffectsShelf> {
       carriedEffect[go] = id;
       return go;
     }
+    // (all of them whatever is picked, as After Effects' Effects & Presets panel lists them: nothing picked, those of a
+    //  thing go on a new board, Ws.fxToggle)
     final every = <_Fx>[
-      if (picked)
-        for (final (n, _) in m.thingEffects)
-          (id: n, name: n, label: m.label(n), on: on.contains(n), apply: chosen(n, () => ws.fxToggle(n), taken: on.contains(n)), said: _said(ws, n),
-           tile: (small) => EffectTile(n, small: small, file: m.picture(n), look: _FxLook(n), on: on.contains(n) ? 'ON' : null, picked: c.sel == n, onTap: () => c.pick(n), onApply: chosen(n, () => ws.fxToggle(n), taken: on.contains(n)), star: small ? null : c)),
+      for (final (n, _) in m.thingEffects)
+        (id: n, name: n, label: m.label(n), on: on.contains(n), apply: chosen(n, () => ws.fxToggle(n), taken: on.contains(n)), said: _said(ws, n),
+         tile: (small) => EffectTile(n, small: small, file: m.picture(n), look: _FxLook(n), on: on.contains(n) ? 'ON' : null, picked: c.sel == n, onTap: () => c.pick(n), onApply: chosen(n, () => ws.fxToggle(n), taken: on.contains(n)), star: small ? null : c)),
       for (final (n, f) in EffectsShelf._byName[m.effects] ??= ([...m.effects]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase()))))
         (id: f, name: n, label: m.label(n), on: screen.contains(f), apply: chosen(f, () => ws.screenToggle(f), taken: screen.contains(f)), said: m.about(f).isEmpty ? (picked ? 'On the picked thing' : 'On all under it') : m.about(f),
          tile: (small) => EffectTile(n, key: small ? null : ValueKey('ws-screen-$f'), small: small, file: m.picture(f), same: m.tileSame(f), on: screen.contains(f) ? 'ON ${screen.indexOf(f) + 1}' : null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.screenToggle(f), taken: screen.contains(f)), star: small ? null : c, starId: f)),
-      if (picked)   // (a look kept by its name, Save Look: given to the picked thing, its values, effects and keys)
-        for (final (n, f) in m.looks)
-          (id: f, name: n, label: 'Look', on: false, apply: chosen(f, () => ws.after(m.later('paste_style', thing: int.parse(ws.selected!), word: f))), said: 'A look for the picked thing',
-           tile: (small) => EffectTile(n, key: small ? null : ValueKey('ws-look-$n'), small: small, file: m.picture(f), on: null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.after(m.later('paste_style', thing: int.parse(ws.selected!), word: f))), star: small ? null : c, starId: f)),
-      if (picked)
-        for (final (n, f) in m.animators)
-          (id: f, name: n, label: 'Motion', on: ws.motion == f, apply: chosen(f, () => ws.motionToggle(f), taken: ws.motion == f), said: 'A motion for the picked thing',
-           tile: (small) => EffectTile(n, key: small ? null : ValueKey('ws-motion-$n'), small: small, on: ws.motion == f ? 'ON' : null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.motionToggle(f), taken: ws.motion == f))),
+      // (a look kept by its name, Save Look: given to the picked thing, its values, effects and keys)
+      for (final (n, f) in m.looks)
+        (id: f, name: n, label: 'Look', on: false, apply: chosen(f, () => ws.lookPut(f)), said: picked ? 'A look for the picked thing' : 'A look, on a new board',
+         tile: (small) => EffectTile(n, key: small ? null : ValueKey('ws-look-$n'), small: small, file: m.picture(f), on: null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.lookPut(f)), star: small ? null : c, starId: f)),
+      for (final (n, f) in m.animators)
+        (id: f, name: n, label: 'Motion', on: ws.motion == f, apply: chosen(f, () => ws.motionToggle(f), taken: ws.motion == f), said: picked ? 'A motion for the picked thing' : 'A motion, on a new board',
+         tile: (small) => EffectTile(n, key: small ? null : ValueKey('ws-motion-$n'), small: small, on: ws.motion == f ? 'ON' : null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.motionToggle(f), taken: ws.motion == f))),
     ];
     // (by its name, or by what it does in its maker's words, as Alight Motion's search reads the descriptions; when that
     //  finds nothing, a word typed wrong or in part, the nearest five by RapidFuzz (the inside's find, the user's choice),
@@ -88,7 +88,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     for (final e in every) {
       if (effectPack(e.id) case final p?) packs[p] = (packs[p] ?? 0) + 1;
     }
-    packs.removeWhere((_, n) => n < 2);   // (in the window most folders held one: one effect is no bundle)
+    // (every folder, one effect in it too, as sashimono-edit's add menu gives each folder its own submenu, add_menu.py:280)
     final deck = decks.where((d) => '@${d.name}' == c.mem.fxPlace).firstOrNull;
     final place = deck != null || !c.mem.fxPlace.startsWith('@') ? c.mem.fxPlace : 'All', pack = place.startsWith('/') ? place.substring(1) : null;
     // (the last put on the newest first, the Fonts shelf's Recent, as Alight Motion keeps forty, EffectBrowser.kt:117)
@@ -110,7 +110,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     //  a tag is typed with (DockTags), a kind of the same word being another thing (VIDVOX's Feedback kind is not the
     //  kept passes read); transition not twice, the kind Transition being read the same way (isf.cpp): Shadertoy's
     //  filters, read from the shaders, golf (92))
-    final tagChips = [for (final t in (read.entries.where((t) => t.key != 'transition').toList()..sort((a, b) => b.value.compareTo(a.value))).take(8)) MapEntry('#${t.key}', t.value)];
+    final tagChips = [for (final t in (read.entries.where((t) => t.key != 'transition').toList()..sort((a, b) => b.value.compareTo(a.value)))) MapEntry('#${t.key}', t.value)];   // (all, the most first: the row slides, as the kinds after them are all there)
     final chip = kinds.containsKey(c.chip) || tagChips.any((t) => t.key == c.chip) ? c.chip : 'All';
     final shown = [for (final e in here) if (chip == 'All' || (chip.startsWith('#') ? tagsOf(e.id).contains(chip.substring(1)) : e.label == chip)) e];
     // (one a deck holds and the shelf does not: its name kept, marked; not an effect of a thing, which waits for a thing)
