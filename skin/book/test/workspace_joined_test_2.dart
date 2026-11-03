@@ -102,6 +102,7 @@ void _tests2() {
     final (ga, gb) = ([for (var i = 0; i < 20; i++) cell(i)].reduce((a, b) => a + b) / 20, [for (var i = 20; i < 40; i++) cell(i)].reduce((a, b) => a + b) / 20);
     expect([cells.toSet().length, cells.every((c) => c >= 0 && c < 42), [for (var i = 0; i < 40; i++) ((cell(i) - ga).distance < (cell(i) - gb).distance) == (i < 20)].where((n) => n).length], [40, isTrue, greaterThan(36)], reason: 'none on another, each heap together on the grid');
     expect(await t.runAsync(() => m.grid(laid, 5, 5)), isNull, reason: 'fewer cells than places');
+    expect(await t.runAsync(() => m.likeness('/nowhere.onnx', [Uint8List(224 * 224 * 4)])), isNull, reason: 'no such reader of likeness: not told');
 
     final text = m.add('text', _font);
     await t.runAsync(() => fontsRead(ws));
@@ -121,6 +122,10 @@ void _tests2() {
     await t.pumpAndSettle();
     expect(find.byKey(const ValueKey('ws-map-Fonts')), findsOneWidget, reason: 'the shelf is a map now');
     expect(map.places.value.length, greaterThan(fontsOffered! * .9), reason: 'the fonts are on it: those with the word\'s letters (300 of 305 on this Mac, five Noto fonts of other letters only having none to draw)');
+    if (dockModel('fontclip_b32') != null) {   // (made on this machine by engine/look_models.py: the map then by FontCLIP)
+      const s = '/System/Library/Fonts/Supplemental/';
+      expect(map.alike('${s}Zapfino.ttf', map.places.value.keys, 5), containsAll(['${s}SnellRoundhand.ttc', '${s}Savoye LET.ttc']), reason: 'a script\'s nearest are scripts, as FontCLIP sees them (by the drawn letters alone, STIX\'s maths fonts were)');
+    }
     await t.runAsync(() async {
       for (var i = 0; i < 300 && map.gridded.value == 0; i++) {
         await Future<void>.delayed(const Duration(milliseconds: 100));

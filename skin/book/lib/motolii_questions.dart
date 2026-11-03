@@ -82,19 +82,38 @@ extension MotoliiQuestions on Motolii {
     });
   }
 
-  /// Of each font file, [words] in it white on black [w] by [h], a byte a point (motolii_type_picture; null: not drawn),
-  /// asked on another isolate as [setting].
-  Future<List<Uint8List?>> typePictures(List<String> fonts, String words, int w, int h) {
+  /// Of each font file, [words] in it white on black [w] by [h], a byte a point, no larger than size [most] when it is
+  /// more than 0 (motolii_type_picture; null: not drawn), asked on another isolate as [setting].
+  Future<List<Uint8List?>> typePictures(List<String> fonts, String words, int w, int h, {double most = 0}) {
     final lib = libPath;
     return Isolate.run(() {
       final ask = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_type_picture;
       final said = words.toNativeUtf8(), out = malloc<UnsignedChar>(w * h), all = <Uint8List?>[];
       for (final f in fonts) {
         final file = f.toNativeUtf8();
-        all.add(ask(file, said, w, h, out) != 0 ? Uint8List.fromList(out.cast<Uint8>().asTypedList(w * h)) : null);
+        all.add(ask(file, said, w, h, most, out) != 0 ? Uint8List.fromList(out.cast<Uint8>().asTypedList(w * h)) : null);
         malloc.free(file);
       }
       malloc.free(said);
+      malloc.free(out);
+      return all;
+    });
+  }
+
+  /// Each picture (224 points square, RGBA) told as [dims] numbers, one long, by the CLIP image encoder in the ONNX file
+  /// [model] (motolii_likeness), on another isolate; null: not told (no such model).
+  Future<List<Float32List>?> likeness(String model, List<Uint8List> pictures, {int dims = 512}) {
+    final lib = libPath;
+    return Isolate.run(() {
+      const side = 224 * 224 * 4;
+      final n = pictures.length, file = model.toNativeUtf8(), into = malloc<UnsignedChar>(n * side + 1), out = malloc<Float>(n * dims + 1);
+      for (final (i, p) in pictures.indexed) {
+        into.cast<Uint8>().asTypedList(n * side).setRange(i * side, (i + 1) * side, p);
+      }
+      final told = n > 0 && c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_likeness(file.cast(), into, n, dims, out) != 0;
+      final all = told ? [for (var i = 0; i < n; i++) Float32List.fromList(out.asTypedList(n * dims).sublist(i * dims, (i + 1) * dims))] : null;
+      malloc.free(file);
+      malloc.free(into);
       malloc.free(out);
       return all;
     });

@@ -228,10 +228,12 @@ class FontsShelf extends StatelessWidget {
                     if (c.mem.mapped.contains('Fonts')) {   // (as a map: each told by its letters as the stage sets them, ThorVG's)
                       final map = dockMap('Fonts'), files = [for (final f in fonts) ?f.path];
                       _drawAll(m, files);
+                      final clip = dockModel('fontclip_b32');   // (by how FontCLIP sees each, once it is made; else by its word drawn small)
                       map.need(m, [for (final f in files) (f, f)], (from) async {   // (each by its file: two files may have one name, Arial Unicode's)
+                        if (clip != null) return _byFontClip(m, clip, from);
                         await _drawAll(m, files);
                         return [for (final f in from) if (_drawn[f] case final g?) _halved(g) else null];
-                      });
+                      }, also: clip ?? '');
                       final byPath = {for (final f in list) ?f.path: f};
                       return DockMap(map, [for (final MapEntry(key: p, value: f) in byPath.entries) (p, _FontDot(f, c))], cell: 48, aspect: _dot.$1 / _dot.$2, picked: list.where((f) => f.family == c.sel).firstOrNull?.path, press: (p) {
                         if (byPath[p] case final f?) {
@@ -374,6 +376,35 @@ Future<void> _drawAll(Motolii m, List<String> files) => _drawing ??= Zone.root.r
   }
   dockRead.value++;
 });
+/// Each font as FontCLIP ([model]) sees its specimen drawn as FontMap draws it for FontCLIP (tfrere/fontmap,
+/// pipeline/render/2-generate-svgs.mjs, generateEmbeddingSVG): "Hamburge" over "fonstiv" in a 224 square, 12 round it,
+/// each line in its half no wider than 200 nor taller than 85, set at 75 and never larger, its middle at its line's;
+/// black on white. 32 told at a time. null: not drawn.
+Future<List<Float32List?>> _byFontClip(Motolii m, String model, List<String> files) async {
+  final lines = [for (final w in const ['Hamburge', 'fonstiv']) await m.typePictures(files, w, 202, 87, most: 75)];
+  final out = <Float32List?>[];
+  for (var i = 0; i < files.length; i += 32) {
+    final some = [for (var k = i; k < files.length && k < i + 32; k++) k], drawn = [for (final k in some) if (lines[0][k] != null && lines[1][k] != null) k];
+    final told = drawn.isEmpty ? null : await m.likeness(model, [for (final k in drawn) _specimen(lines[0][k]!, lines[1][k]!)]);
+    final by = {for (final (j, k) in drawn.indexed) k: told?[j]};
+    out.addAll([for (final k in some) by[k]]);
+  }
+  return out;
+}
+Uint8List _specimen(Uint8List top, Uint8List bottom) {
+  final px = Uint8List(224 * 224 * 4)..fillRange(0, 224 * 224 * 4, 255);
+  for (final (line, g) in [top, bottom].indexed) {
+    final y0 = 12 + 100 * line + 50 - 87 ~/ 2, x0 = 112 - 202 ~/ 2;   // (its middle at its line's)
+    for (var y = 0; y < 87; y++) {
+      for (var x = 0; x < 202; x++) {
+        final at = ((y0 + y) * 224 + x0 + x) * 4;
+        px[at] = px[at + 1] = px[at + 2] = 255 - g[y * 202 + x];
+      }
+    }
+  }
+  return px;
+}
+
 Float32List _halved(Uint8List g) {
   final (w, h) = (_dot.$1 ~/ 2, _dot.$2 ~/ 2);
   final out = Float32List(w * h);

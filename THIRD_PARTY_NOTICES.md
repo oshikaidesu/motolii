@@ -66,6 +66,8 @@ Motolii は「ネットで見つけたかっこいい表現を、自分の動画
 | TSL の表現 48 か所 | `engine/tsl/sources.tsv` のとおり | 各作者 | `engine/tsl/fetch.sh` | `engine/tsl/*_target.patch`、`ics_tilt.patch` |
 | [perfect_freehand](https://pub.dev/packages/perfect_freehand)（Brush の筆跡の輪郭。元は Steve Ruiz の perfect-freehand） | 2.5.2+1 | MIT（Copyright (c) 2021 Stephen Ruiz、2023 Adil Hanney） | `skin/book/pubspec.yaml`（flutter pub get） | なし |
 | [AbsentMotion](https://github.com/Comett1225/AbsentMotion)（効果を WGSL にする元） | 0f5d891 | Apache-2.0 | `engine/absent.sh` | なし |
+| [OpenAI CLIP](https://github.com/openai/CLIP) ViT-B/32 の絵の読み手（棚の地図：効果のコマ）。ONNX にして `~/Library/Caches/Motolii/models/clip_b32.onnx` に置く | open_clip の `openai` の重み（ViT-B-32.pt） | MIT | `engine/look_models.py`（読み込みは [open_clip](https://github.com/mlfoundations/open_clip)、MIT。書き出しは [PyTorch](https://github.com/pytorch/pytorch) の torch.onnx.export、BSD-3-Clause） | なし |
+| [FontCLIP](https://github.com/yukistavailable/FontCLIP)（Tatsukawa ら、Eurographics 2024）の絵の読み手（棚の地図：字体の見本）。ONNX にして `fontclip_b32.onnx` | setup_data.py の model.pt | MIT（重みも MIT と作者が issue 13 で） | `engine/look_models.py`（[FontMap](https://github.com/tfrere/fontmap) の fontclip_model.py の読み方、MIT） | なし |
 
 ## 3. AviUtl2 のスクリプトの一覧（172）
 

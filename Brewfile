@@ -4,11 +4,13 @@ brew "cmake"
 brew "ninja"
 brew "meson"
 brew "pkgconf"
-# What the editor links: films (GStreamer), the document (SQLite), AviUtl's scripts (LuaJIT), effects and recipes (QuickJS-ng)
+# What the editor links: films (GStreamer), the document (SQLite), AviUtl's scripts (LuaJIT), effects and recipes (QuickJS-ng),
+# the shelves' maps telling how alike pictures look (ONNX Runtime)
 brew "gstreamer"
 brew "sqlite"
 brew "luajit"
 brew "quickjs-ng"
+brew "onnxruntime"
 # What the editor runs: writing a film (ffmpeg makes the mp4, kit_draw.h's film)
 brew "ffmpeg"
 # (the tools only the checks use are in Brewfile.checks)

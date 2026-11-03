@@ -972,6 +972,39 @@ class MotoliiBindings {
   late final _motolii_let_go = _motolii_let_goPtr
       .asFunction<int Function(ffi.Pointer<Motolii>, int)>();
 
+  int motolii_likeness(
+    ffi.Pointer<pkg_ffi.Utf8> model,
+    ffi.Pointer<ffi.UnsignedChar> rgba,
+    int n,
+    int dims,
+    ffi.Pointer<ffi.Float> out,
+  ) {
+    return _motolii_likeness(model, rgba, n, dims, out);
+  }
+
+  late final _motolii_likenessPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Int Function(
+            ffi.Pointer<pkg_ffi.Utf8>,
+            ffi.Pointer<ffi.UnsignedChar>,
+            ffi.Int,
+            ffi.Int,
+            ffi.Pointer<ffi.Float>,
+          )
+        >
+      >('motolii_likeness');
+  late final _motolii_likeness = _motolii_likenessPtr
+      .asFunction<
+        int Function(
+          ffi.Pointer<pkg_ffi.Utf8>,
+          ffi.Pointer<ffi.UnsignedChar>,
+          int,
+          int,
+          ffi.Pointer<ffi.Float>,
+        )
+      >();
+
   ffi.Pointer<pkg_ffi.Utf8> motolii_list(ffi.Pointer<Motolii> m) {
     return _motolii_list(m);
   }
@@ -2283,9 +2316,10 @@ class MotoliiBindings {
     ffi.Pointer<pkg_ffi.Utf8> words,
     int w,
     int h,
+    double most,
     ffi.Pointer<ffi.UnsignedChar> grey,
   ) {
-    return _motolii_type_picture(font, words, w, h, grey);
+    return _motolii_type_picture(font, words, w, h, most, grey);
   }
 
   late final _motolii_type_picturePtr =
@@ -2296,6 +2330,7 @@ class MotoliiBindings {
             ffi.Pointer<pkg_ffi.Utf8>,
             ffi.Int,
             ffi.Int,
+            ffi.Float,
             ffi.Pointer<ffi.UnsignedChar>,
           )
         >
@@ -2307,6 +2342,7 @@ class MotoliiBindings {
           ffi.Pointer<pkg_ffi.Utf8>,
           int,
           int,
+          double,
           ffi.Pointer<ffi.UnsignedChar>,
         )
       >();

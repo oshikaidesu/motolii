@@ -124,6 +124,43 @@ Future<Float32List?> _read(List<String> files) async {
   return out;
 }
 
+/// The CLIP image encoder [name] (clip_b32: OpenAI's ViT-B/32; fontclip_b32: FontCLIP's) once it has been made
+/// (engine/look_models.py); null: not made, the maps tell pictures apart by their tiny colours ([dockTiny]).
+String? dockModel(String name) {
+  final f = '${Platform.environment['HOME']}/Library/Caches/Motolii/models/$name.onnx';
+  return File(f).existsSync() ? f : null;
+}
+
+/// Pictures' numbers by a CLIP image encoder ([model]): each picture made 224 square (as CLIP's own Resize takes it),
+/// its 512 numbers, several pictures one after another, so two effects are told apart frame by frame at the same
+/// moments: ViSiL's frame-to-frame likeness (Kordopatis-Zilos et al., ICCV 2019) taken only where the frames are of
+/// one moment, the effects' tiles all drawn at the same ones. null: one of them cannot be read, or not told. Read once
+/// while the window is open.
+final _clip = <String, Float32List>{};
+Future<Float32List?> dockSeen(Motolii m, String model, List<String> files) async {
+  final key = '$model\n${files.join('\n')}';
+  if (_clip[key] case final v?) return v;
+  final pictures = <Uint8List>[];
+  for (final f in files) {
+    try {
+      final codec = await ui.instantiateImageCodec(await File(f).readAsBytes(), targetWidth: 224, targetHeight: 224);
+      final image = (await codec.getNextFrame()).image;
+      pictures.add((await image.toByteData(format: ui.ImageByteFormat.rawRgba))!.buffer.asUint8List());
+      image.dispose();
+      codec.dispose();
+    } catch (_) {
+      return null;
+    }
+  }
+  final told = await m.likeness(model, pictures);
+  if (told == null) return null;
+  final v = Float32List(512 * told.length);
+  for (final (k, t) in told.indexed) {
+    v.setRange(512 * k, 512 * (k + 1), t);
+  }
+  return _clip[key] = v;
+}
+
 /// The map: each shown item's tile in its cell, the cells as many as the items and as large as the room allows ([aspect]
 /// a tile's width to its height; [cell] wide where they lie before the grid comes), the rest left off; what is said
 /// while it is being laid out. [picked]: the one picked, its nearest under the map; [press]: one press on one of them.

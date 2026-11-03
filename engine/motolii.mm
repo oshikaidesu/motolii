@@ -5,6 +5,7 @@
 #include "find.h"   // (the shelves' search)
 #include "qdtsne/qdtsne.hpp"   // (the shelves' maps: motolii_map)
 #include "rectangular_lsap.h"   // (the shelves' maps on a grid: motolii_grid)
+#include <onnxruntime_cxx_api.h>   // (how alike pictures look, for the shelves' maps: motolii_likeness)
 #include "look_map.h"   // (the shelves' maps)
 #include "motolii_calls.h"
 #include "motolii_write.h"
