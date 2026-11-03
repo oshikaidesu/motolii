@@ -30,11 +30,23 @@ class _StageViewState extends State<StageView> implements StageHandles {
 
   static bool _photo(Motolii m, int t) => m.word(t, 'kind') == 'picture' && RegExp(r'\.(jpe?g|png|webp|bmp)$', caseSensitive: false).hasMatch(m.word(t, 'file'));
 
-  // (a picked photo pressed twice is cropped, its crop's bars on its sides, till a press anywhere: Figma's and Keynote's
-  //  images, double-clicked; Alight Motion's crop takes a hand only while its own card is open)
+  // (a picked photo pressed twice is cropped, its crop's bars on its sides, till a press anywhere or Enter: Figma's Crop
+  //  an image; Keynote's images, double-clicked; Alight Motion's crop takes a hand only while its own card is open)
   String? _cropping;
   String? _tapped;   // (the one pressed a moment ago, till the wait for a second press is over: Flutter's double tap's own wait)
   Timer? _tapWait;
+  bool _enter(KeyEvent e) {   // (while no words are being typed)
+    if (_cropping == null || e is! KeyDownEvent || e.logicalKey != LogicalKeyboardKey.enter) return false;
+    if (primaryFocus?.context?.findAncestorWidgetOfExactType<EditableText>() != null) return false;
+    setState(() => _cropping = null);
+    return true;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    HardwareKeyboard.instance.addHandler(_enter);
+  }
 
   /// The picked shape's form and how round its corners are (the inside's), for its own handles.
   (String, double) _formOf() {
@@ -102,6 +114,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
     _deskOf?.desk(0, 0, 0, 0, 0, 0); // (the stage's own picture again)
     _dollyRest?.cancel();
     _tapWait?.cancel();
+    HardwareKeyboard.instance.removeHandler(_enter);
     super.dispose();
   }
 
@@ -463,6 +476,14 @@ class _StageViewState extends State<StageView> implements StageHandles {
         by = 'point';
         grip = null;
       }
+      // (just outside a corner it is turned: Figma's "Hover just outside one of the layer's bounds"; how far out,
+      //  tldraw's rotate corners, SelectionForegroundOverlayUtil.ts: a square 2 × 1.62 × 4.5 px out from each corner)
+      for (var i = 0; by == null && handles.containsKey('turn') && i < 4; i++) {
+        final (c, a, b) = (handles['corner $i'], handles['corner ${(i + 1) % 4}'], handles['corner ${(i + 3) % 4}']);
+        if (c == null || a == null || b == null || (c - a).distance < 1 || (c - b).distance < 1) continue;
+        final p = local - c, u = (c - a) / (c - a).distance, w = (c - b) / (c - b).distance, s = p.dx * u.dx + p.dy * u.dy, r = p.dx * w.dx + p.dy * w.dy;
+        if (s >= 0 && r >= 0 && s <= 14.58 && r <= 14.58) (by, grip) = ('turn', 'turn');
+      }
       if (by != null) {
         m.take(picked);
         final at = _doc(v, local); // (points of the picture, as the inside counts them)
@@ -535,10 +556,9 @@ class _StageViewState extends State<StageView> implements StageHandles {
     }
     if (h.by case final way?) {
       var gone = _doc(v, local) - _doc(v, h.from);
-      // (a corner: the side across stays, as Figma's and Keynote's; with ⌥ held, about its pivot, from the middle. Its
-      //  width to its height kept, as Alight Motion's, Keynote's and Photoshop's corners; ⇧ lets go of that, Photoshop's.
-      //  A side's middle: that way only, the hand's travel across it)
-      final keys = HardwareKeyboard.instance, sized = way == 'scale' || way == 'edge';
+      // (Figma's: a corner sizes it both ways freely, the side across staying; a side's middle that way only, the hand's
+      //  travel across it; ⇧ keeps its width to its height, or turns it 15° at a time; ⌥ about its pivot, from the middle)
+      final keys = HardwareKeyboard.instance, sized = way == 'scale' || way == 'edge', even = keys.isShiftPressed && (sized || way == 'turn') ? 'even_' : '';
       if (_grip case final g? when way == 'edge') {
         final at = handles[g], across = handles['side ${(int.parse(g.substring(5)) + 2) % 4}'];
         if (at != null && across != null && (at - across).distance > 1) {
@@ -546,7 +566,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
           gone = n * (gone.dx * n.dx + gone.dy * n.dy);
         }
       }
-      m.carry(sized ? '${way == 'scale' && !keys.isShiftPressed ? 'even_' : ''}${keys.isAltPressed ? 'scale' : 'side'}' : way, gone.dx, gone.dy);
+      m.carry('$even${sized ? (keys.isAltPressed ? 'scale' : 'side') : way}', gone.dx, gone.dy);
       _held = (from: h.from, moved: true, by: way);
       setState(() {});
       return;

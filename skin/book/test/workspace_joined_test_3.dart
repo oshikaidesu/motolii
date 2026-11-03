@@ -1235,7 +1235,7 @@ void _tests3() {
     await _close(t);
   }, skip: !_built);
 
-  testWidgets('a photo pressed twice is cropped: its crop bars on its sides, its left side pulled in cuts it, what is left staying; a press ends it (Figma\'s and Keynote\'s double-click, Alight Motion\'s crop)', (t) async {
+  testWidgets('a photo pressed twice is cropped: its crop bars on its sides, its left side pulled in cuts it, what is left staying; a press or Enter ends it (Figma\'s Crop an image)', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     final photo = m.add('picture', '$motoliiDir/fx_sample.jpg');
     expect(m.set(photo, 'size', .5), isTrue, reason: m.trouble);
@@ -1269,6 +1269,14 @@ void _tests3() {
     await press();
     await t.pumpAndSettle();
     expect([ws.selected, h().keys.any((k) => k.startsWith('crop'))], ['$photo', false], reason: 'a press ends it, the photo still picked');
+    await t.pump(kDoubleTapTimeout);
+    await press();
+    await press();
+    await t.pumpAndSettle();
+    expect(h().keys.where((k) => k.startsWith('crop')).length, 4, reason: 'pressed twice again');
+    await t.sendKeyEvent(LogicalKeyboardKey.enter);
+    await t.pumpAndSettle();
+    expect([ws.selected, h().keys.any((k) => k.startsWith('crop'))], ['$photo', false], reason: 'Enter ends it');
     expect(m.undo() && (m.value(photo, 'crop_left', 0) ?? 0) == 0, isTrue, reason: 'one step back');
     expect(t.takeException(), isNull);
     await _close(t);
@@ -1312,7 +1320,7 @@ void _tests3() {
     await _close(t);
   }, skip: !_built);
 
-  testWidgets('a corner handle pulled sizes the thing with the side across staying, as wide to high as it was; with ⌥ held, from its middle (Figma\'s and Keynote\'s handles; Alight Motion sizes from the middle only)', (t) async {
+  testWidgets('a corner handle pulled sizes the thing with the side across staying, each way as far as the hand goes; with ⌥ held, from its middle (Figma\'s handles)', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     final rect = m.add('shape', 'rect');
     expect(m.set(rect, 'size', .5), isTrue, reason: m.trouble);
@@ -1332,7 +1340,7 @@ void _tests3() {
     await pull();
     final after = m.frame(rect)!;
     expect([after[2], after[0] - after[2] / 2], [greaterThan(before[2] + 20), closeTo(before[0] - before[2] / 2, 1)], reason: 'wider, its left side where it was: ${m.trouble}');
-    expect(after[3] / after[2], closeTo(before[3] / before[2], .01), reason: 'as high to wide as it was: ${after[3]} ${before[3]}');
+    expect(after[3], closeTo(before[3], 1), reason: 'pulled across: as high as it was');
     await pull(alt: true);
     final mid = m.frame(rect)!;
     expect([mid[2], mid[0]], [greaterThan(after[2] + 20), closeTo(after[0], 1)], reason: 'wider again, its middle where it was');
@@ -1352,7 +1360,7 @@ void _tests3() {
     await _close(t);
   }, skip: !_built);
 
-  testWidgets('⇧ on a corner lets go of its width to its height (Photoshop\'s); a side\'s middle sizes it that way only (Alight Motion\'s, Keynote\'s); ⇧ on the thing moves it across or down only (Illustrator\'s, Figma\'s)', (t) async {
+  testWidgets('Figma\'s ⇧: a corner or a side\'s middle keeps its width to its height, the knob turns it 15° at a time, the thing goes across or down only; a side\'s middle sizes it that way only; just outside a corner it is turned', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     final rect = m.add('shape', 'rect');
     expect(m.set(rect, 'size', .5), isTrue, reason: m.trouble);
@@ -1362,20 +1370,37 @@ void _tests3() {
     await t.pumpAndSettle();
     final stage = find.byType(StageView), origin = t.getTopLeft(stage);
     Map<String, Offset> h() => (t.state(stage) as StageHandles).handles;
-    Future<List<double>> pull(String handle, Offset by, {bool shift = false}) async {
+    Future<List<double>> drag(Offset from, Offset by, {bool shift = false}) async {
       if (shift) await t.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
-      await t.timedDragFrom(origin + h()[handle]!, by, const Duration(milliseconds: 300));
+      final g = await t.startGesture(origin + from, kind: PointerDeviceKind.mouse);   // (a mouse, a frame at each step: a finger's tap gives up 18 away, and a short pull in real time may be taken in one jump, as a tap)
+      for (var i = 0; i < 10; i++) {
+        await g.moveBy(by / 10);
+        await t.pump(const Duration(milliseconds: 16));
+      }
+      await g.up();
+      await g.removePointer();
       if (shift) await t.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
       await settled(t, ws);
       return m.frame(rect)!;
     }
+    Future<List<double>> pull(String handle, Offset by, {bool shift = false}) => drag(h()[handle]!, by, shift: shift);
     final before = m.frame(rect)!;
-    final free = await pull('corner 2', const Offset(40, 0), shift: true);
-    expect([free[2], free[3]], [greaterThan(before[2] + 20), closeTo(before[3], 1)], reason: '⇧: wider, as high as it was');
+    final even = await pull('corner 2', const Offset(40, 0), shift: true);
+    expect([even[2], even[3] / even[2]], [greaterThan(before[2] + 15), closeTo(before[3] / before[2], .01)], reason: '⇧ on a corner: larger, as high to wide as it was');
     final side = await pull('side 3', const Offset(30, 40));
-    expect([side[3], side[2], side[1] - side[3] / 2], [greaterThan(free[3] + 20), closeTo(free[2], 1), closeTo(free[1] - free[3] / 2, 1)], reason: 'its bottom pulled down and aside: higher only, its top where it was');
-    final moved = await pull('body', const Offset(60, 12), shift: true);
-    expect([moved[0], moved[1]], [greaterThan(side[0] + 30), closeTo(side[1], .5)], reason: '⇧: across only');
+    expect([side[3], side[2], side[1] - side[3] / 2], [greaterThan(even[3] + 20), closeTo(even[2], 1), closeTo(even[1] - even[3] / 2, 1)], reason: 'its bottom pulled down and aside: higher only, its top where it was');
+    final both = await pull('side 2', const Offset(30, 0), shift: true);
+    expect([both[2], both[3] / both[2], both[0] - both[2] / 2, both[1]], [greaterThan(side[2] + 15), closeTo(side[3] / side[2], .01), closeTo(side[0] - side[2] / 2, 1), closeTo(side[1], 1)], reason: '⇧ on its right side: as much higher, about its middle, its left side where it was');
+    final turned = await drag(h()['corner 2']! + const Offset(8, 8), const Offset(0, 30));   // (outside the corner, past its handle)
+    expect([(m.value(rect, 'rotate', 0) ?? 0).abs(), turned[2], turned[3]], [greaterThan(3), closeTo(both[2], 1), closeTo(both[3], 1)], reason: 'just outside its corner: turned, not sized');
+    await pull('turn', const Offset(40, 10), shift: true);
+    final r = m.value(rect, 'rotate', 0) ?? 0;
+    expect([r != 0, (r / 15 - (r / 15).round()).abs()], [isTrue, lessThan(1e-6)], reason: '⇧ on the knob: by 15° ($r)');
+    expect(m.set(rect, 'rotate', 0), isTrue);
+    ws.reread();
+    await t.pumpAndSettle();
+    final upright = m.frame(rect)!, moved = await pull('body', const Offset(60, 12), shift: true);
+    expect([moved[0], moved[1]], [greaterThan(upright[0] + 30), closeTo(upright[1], .5)], reason: '⇧: across only');
     expect(t.takeException(), isNull);
     await _close(t);
   }, skip: !_built);

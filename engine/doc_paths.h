@@ -363,8 +363,10 @@ static bool doc_value(Doc& d, int thing, const char* name, double at, double* is
 //               hand has gone (a, b: points of the picture); a point's handles with it
 //   by "scale"  sized about its pivot as far as the hand has gone from where it took hold ("grip" first); "side" the
 //               same, the side or corner across from the hand staying where it is; "even_scale", "even_side" the
-//               same, held by a corner, its width and height grown alike (as far as the hand has gone along the way
-//               from that corner to the one across or the pivot)
+//               same, its width and height grown alike (held by a corner, as far as the hand has gone along the way
+//               from that corner to the one across or the pivot; by a side's middle, the other way as much)
+//   by "turn"   turned round its pivot as far as the hand has gone round it ("grip" first); "even_turn" the same, to
+//               the nearest 15°
 //   by a value's name  that number carried: a = what it is now
 static bool doc_hold(Doc& d, int thing) {
     if (!doc_knows(d, thing)) return false;
@@ -381,13 +383,16 @@ static double doc_own_clock(Doc& d, int t, double by) {
 }
 static bool doc_carry(Doc& d, const char* by, double a, double b) {
     Doc::Held& h = d.held;
-    // (a corner keeps its width to its height: Alight Motion's corner handles, AbsentMotion's Preview.kt; Keynote's and
-    //  Photoshop's corners; the hand's travel along the diagonal, so a corner pulled through the one across turns it over)
+    // (its width to its height kept, or turned by 15° at a time: Figma's Shift ("temporarily locks" the aspect ratio,
+    //  "snap rotation values to increments of 15"); a corner by the hand's travel along the diagonal, so a corner pulled
+    //  through the one across turns it over)
     const bool even = !strncmp(by, "even_", 5);
     if (even) by += 5;
-    const auto alike = [](double& k0, double& k1, double g0, double g1, double n0, double n1) {
-        if (std::fabs(g0) < 2.0 || std::fabs(g1) < 2.0) return;   // (an edge's middle: one way only)
-        k0 = k1 = (n0 * g0 + n1 * g1) / (g0 * g0 + g1 * g1);
+    const auto alike = [](double& k0, double& k1, bool& on0, bool& on1, double g0, double g1, double n0, double n1) {
+        if (on0 && on1) k0 = k1 = (n0 * g0 + n1 * g1) / (g0 * g0 + g1 * g1);
+        else if (on0) k1 = k0;   // (a side's middle: the other way as much)
+        else if (on1) k0 = k1;
+        on0 = on1 = on0 || on1;
     };
     if (h.thing < 0) return d.trouble = "nothing is held", false;
     const double now = d.stage->now;
@@ -422,12 +427,13 @@ static bool doc_carry(Doc& d, const char* by, double a, double b) {
         const double turned = h.from[" turned"] * (double)TAU / 360.0, c = std::cos(-turned), s = std::sin(-turned);   // (into the thing's own upright: as the picture counts, clockwise)
         if (!strcmp(by, "scale")) {   // (each way as far from the point it turns about as the hand now is, against where it took hold)
             const double g0 = c * gx - s * gy, g1 = s * gx + c * gy, n0 = c * hx - s * hy, n1 = s * hx + c * hy;
-            double k0 = std::fabs(g0) < 2.0 ? 1.0 : n0 / g0, k1 = std::fabs(g1) < 2.0 ? 1.0 : n1 / g1;
-            if (even) alike(k0, k1, g0, g1, n0, n1);
-            ok = (std::fabs(g0) < 2.0 || tries("scale_x", was("scale_x") * k0)) && (std::fabs(g1) < 2.0 || tries("scale_y", was("scale_y") * k1));
+            bool on0 = std::fabs(g0) >= 2.0, on1 = std::fabs(g1) >= 2.0;
+            double k0 = on0 ? n0 / g0 : 1.0, k1 = on1 ? n1 / g1 : 1.0;
+            if (even) alike(k0, k1, on0, on1, g0, g1, n0, n1);
+            ok = (!on0 || tries("scale_x", was("scale_x") * k0)) && (!on1 || tries("scale_y", was("scale_y") * k1));
         } else if (!strcmp(by, "turn")) {   // (round the point it turns about as far as the hand has gone round it; the picture counts clockwise, the stage the other way)
-            const double by = std::atan2(hy, hx) - std::atan2(gy, gx);
-            ok = tries("rotate", was("rotate") - by * 360.0 / (double)TAU);
+            const double by = std::atan2(hy, hx) - std::atan2(gy, gx), to = was("rotate") - by * 360.0 / (double)TAU;
+            ok = tries("rotate", even ? std::round(to / 15.0) * 15.0 : to);
         } else {   // (the point it turns about moved under the hand, the thing staying where it is seen: After Effects' Pan Behind)
             float2 half{0.5f};
             doc_half(d, h.thing, &half);
@@ -447,9 +453,10 @@ static bool doc_carry(Doc& d, const char* by, double a, double b) {
         const math::double2 grip = own(h.from[" grip x"] - mx, h.from[" grip y"] - my);
         const math::double2 o{std::fabs(grip.x) > w / 4.0 ? -std::copysign(w / 2.0, grip.x) : 0.0, std::fabs(grip.y) > hi / 4.0 ? -std::copysign(hi / 2.0, grip.y) : 0.0};   // (the side across, or the corner; an edge's middle: that way unsized)
         const math::double2 pivot = own(h.from[" pivot x"] - mx, h.from[" pivot y"] - my), g = grip - o, n = own(h.from[" grip x"] + a - mx, h.from[" grip y"] + b - my) - o;
-        double k0 = std::fabs(g.x) < 2.0 ? 1.0 : n.x / g.x, k1 = std::fabs(g.y) < 2.0 ? 1.0 : n.y / g.y;
-        if (even && o.x != 0.0 && o.y != 0.0) alike(k0, k1, g.x, g.y, n.x, n.y);
-        ok = (k0 == 1.0 || tries("scale_x", was("scale_x") * k0)) && (k1 == 1.0 || tries("scale_y", was("scale_y") * k1));
+        bool on0 = o.x != 0.0 && std::fabs(g.x) >= 2.0, on1 = o.y != 0.0 && std::fabs(g.y) >= 2.0;   // (an edge's middle: that way unsized)
+        double k0 = on0 ? n.x / g.x : 1.0, k1 = on1 ? n.y / g.y : 1.0;
+        if (even) alike(k0, k1, on0, on1, g.x, g.y, n.x, n.y);   // (a side's middle with it: the other way about the middle)
+        ok = (!on0 || tries("scale_x", was("scale_x") * k0)) && (!on1 || tries("scale_y", was("scale_y") * k1));
         const math::double2 back{(1.0 - k0) * (o.x - pivot.x), (1.0 - k1) * (o.y - pivot.y)};   // (sized about its pivot, the side across moved: so much back, in its own upright)
         const double dx = c * back.x + s * back.y, dy = -s * back.x + c * back.y, point = h.from[" point"];
         const math::double3 move = inverse(doc_above(d, h.thing, now).upperLeft()) * math::double3{dx / point, -dy / point, 0.0};

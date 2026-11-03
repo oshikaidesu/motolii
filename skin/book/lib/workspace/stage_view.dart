@@ -8,7 +8,7 @@ import 'dart:ui' show PointMode;
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/scheduler.dart' show SchedulerBinding;
-import 'package:flutter/services.dart' show HardwareKeyboard;
+import 'package:flutter/services.dart' show HardwareKeyboard, KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 
 import '../tokens.dart';
@@ -143,7 +143,7 @@ Map<String, Offset> _handles(Offset Function(Offset doc) scr, ArtBox b, {require
   final c = [for (final p in b.corners) scr(p)];
   return {
     for (final (i, p) in c.indexed) 'corner $i': p,
-    if (knob && crop.length != 4) ...{   // (its sides' middles, one way only: Alight Motion's, Keynote's, Photoshop's; left, top, right, bottom)
+    if (knob && crop.length != 4) ...{   // (its sides' middles, one way only: Figma's, Alight Motion's, Keynote's; left, top, right, bottom)
       'side 0': (c[0] + c[3]) / 2,
       'side 1': (c[0] + c[1]) / 2,
       'side 2': (c[1] + c[2]) / 2,
