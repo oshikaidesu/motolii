@@ -21,6 +21,27 @@ String? _layerOf(FileNode n, DockCtx c) => _used(c.ws)[n.id];
 
 bool _inUse(FileNode n, DockCtx c) => _layerOf(n, c) != null;
 
+/// Every thing that shows [file] (whole path), by the word that says so: its own file, or a shape filled with it.
+List<(int, String)> _showing(Motolii m, String file) => [
+  for (final t in m.things)
+    for (final w in const ['file', 'fill_media'])
+      if (m.word(t, w) case final f when f.isNotEmpty && m.whole(f) == file) (t, w),
+];
+
+/// [file] put in place of what [all] show, in one step, as Alight Motion's Media Info replaces a file in the whole scene
+/// (AbsentMotion's replaceMedia, model/Media.kt: the file's uri and every fill of it), After Effects' and Premiere Pro's
+/// Replace Footage.
+void _replaceAll(DockCtx c, List<(int, String)> all, String file) {
+  final m = c.ws.inside!;
+  m.later('together', number: 1);
+  for (final (t, w) in all) {
+    c.ws.after(m.later('say', thing: t, name: w, word: file), (done, why) {
+      if (!done) c.ws.notice = 'Not replaced: $why';
+    });
+  }
+  c.ws.after(m.later('together'), (_, _) => c.ws.reread());
+}
+
 /// The files picked together (⌘ and a press, as Finder adds to what is picked): placed together, one after another.
 final _filesPicked = <String>{};
 

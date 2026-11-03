@@ -307,6 +307,8 @@ class _Footer extends StatelessWidget {
     // (a picture or a film picked and another of its kind chosen: it shows that one instead, its place, size, keys and
     //  effects as they are: After Effects' Replace Layer Source, Premiere Pro's Replace With Clip; P17)
     final swaps = m != null && shape != null && !fills && layer != '$shape' && const {'picture', 'film'}.contains(m.word(shape, 'kind')) && _kindOfFile(n.id) == m.word(shape, 'kind');
+    // (its file shown by others too: all of them at once beside it, _replaceAll)
+    final all = swaps ? _showing(m, m.whole(m.word(shape, 'file'))) : const <(int, String)>[];
     return FutureBuilder<String>(   // (what the media is, as GStreamer's discoverer tells it: Alight Motion's Media Info; its file's kind and size until then)
       key: ValueKey(n.id),   // (a file of its own: what was told of the last one is not carried over till this one's comes)
       future: can && m != null ? mediaInfoOf(m.libPath, n.id) : null,
@@ -318,6 +320,20 @@ class _Footer extends StatelessWidget {
       done: !can && layer == null,
       doneLabel: 'Folder', // (the shelf lists only folders and files the inside can place: what cannot be placed is a folder)
       fresh: can && !fills && !swaps, // (placed, it is a new thing; filling or replacing, the picked one)
+      more: all.length > 1
+          ? DockHover(
+              key: const ValueKey('files-replace-all'),
+              onTap: () => _replaceAll(c, all, n.id),
+              builder: (context, h) => Container(
+                height: Shape.z(24),
+                margin: EdgeInsets.only(right: Shape.s(6)),
+                padding: EdgeInsets.symmetric(horizontal: Shape.s(10)),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: WsT.raised, borderRadius: BorderRadius.all(Shape.r(WsT.radius)), border: Border.all(color: h ? Grey.g95 : const Color(0x00000000))),
+                child: Text('All ${all.length}', style: T.name(Grey.g91).copyWith(fontWeight: FontWeight.w700)),
+              ),
+            )
+          : null,
       lasts: fills || swaps ? null : switch (_kindOfFile(n.id)) { 'picture' => _StillSeconds(c), 'film' || 'sound' when m != null => _FilmRange(c, n.id, mediaSecondsOf(m.libPath, n.id)), _ => null },
       onAction: () => fills
           ? c.ws.after(m.later('say', thing: shape, name: 'fill_media', word: n.id))

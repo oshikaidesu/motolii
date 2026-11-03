@@ -230,6 +230,39 @@ void main() {
     await t.pumpWidget(const SizedBox());
   }, skip: !insideBuilt);
 
+  testWidgets('a picture shown by several things: All beside Replace puts the new one in every one, one undo takes it back (Alight Motion\'s Media Info Replace: AbsentMotion\'s replaceMedia)', (t) async {
+    final ws = _joined(), m = ws.inside!, old = '${ws.documentFolder}/still.jpg', made = '${ws.documentFolder}/final.jpg';
+    File(old).copySync(made);
+    final a = m.add('picture', old), b = m.add('picture', old), box = m.add('shape', 'rect');
+    expect(a > 0 && b > 0 && box > 0 && m.say(box, 'fill_media', old), isTrue, reason: m.trouble);
+    ws
+      ..reread()
+      ..select('$a');
+    await _shelf(t, ws, const Size(520, 900), 'Media');
+    final folder = find.byKey(ValueKey('browser:file:${ws.documentFolder}'));
+    await t.ensureVisible(folder.first);
+    await t.tap(folder.first);
+    await t.pumpAndSettle();
+    final tile = find.byKey(ValueKey('browser:file:$made'));
+    for (var i = 0; i < 20 && tile.evaluate().isEmpty; i++) {
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await t.pumpAndSettle();
+    }
+    await t.tap(tile.first);
+    await t.pump(kDoubleTapTimeout + const Duration(milliseconds: 50));
+    await t.pumpAndSettle();
+    expect(find.text('All 3'), findsOneWidget, reason: 'two pictures and a shape filled with it');
+    await t.tap(find.text('All 3'));
+    for (var i = 0; i < 200 && ws.waiting; i++) {
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+      await t.pump();
+    }
+    expect([m.word(a, 'file'), m.word(b, 'file'), m.word(box, 'fill_media')], [made, made, made]);
+    m.undo();
+    expect([m.word(a, 'file'), m.word(b, 'file'), m.word(box, 'fill_media')], [old, old, old], reason: 'one step');
+    await t.pumpWidget(const SizedBox());
+  }, skip: !insideBuilt);
+
   testWidgets('a file\'s effect starred: Favorites in the list holds the starred, and kept for the next time', (t) async {
     final kept = File('${Directory.systemTemp.createTempSync('stars').path}/effect_stars.json');
     dockStarsAt(kept);
