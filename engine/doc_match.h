@@ -22,6 +22,21 @@ static bool doc_bends(Doc& d, int thing) {
 }
 // A film thing's real datamosh (mosh.h): the film made again with the other's motion poured in, once made; "" none
 // (not on, no other film, or not made yet: its own film meanwhile).
+// A level's drawing numbered `n`: the drawings of one folder told apart by the number at the end of their names,
+// between the name and the ending, as OpenToonz reads a level (animation.0001.tif, animation_0001.tif: tfilepath.cpp's
+// (\d+)), `file` one of them; its number as wide as that one's. "": -1, a timesheet's × (none); `file` itself when its
+// name ends in no number.
+static std::string doc_cel_file(const std::string& file, double n) {
+    if (n < 0) return "";
+    const std::filesystem::path p(file);
+    const std::string stem = p.stem().string();
+    size_t from = stem.size();
+    while (from > 0 && std::isdigit((unsigned char)stem[from - 1])) --from;
+    if (from == stem.size()) return file;
+    std::string number = std::to_string((long long)std::llround(n));
+    if (number.size() < stem.size() - from) number.insert(0, stem.size() - from - number.size(), '0');
+    return (p.parent_path() / (stem.substr(0, from) + number + p.extension().string())).string();
+}
 static std::string doc_mosh(Doc& d, int thing) {
     if (!doc_on(d, thing, "mosh") || doc_word(d, thing, "kind") != "film") return "";
     const int with = (int)doc_number(d, thing, "mosh_with", 0, 0);
@@ -91,7 +106,8 @@ static bool doc_match(Doc& d) {
         if (doc_on(d, thing, "scale_z")) of += " deep";   // (made once more as it is given depth: its sheet a box)
         if (doc_bevel(d, thing)) of += " bevel";
         if (doc_lit(d, thing)) of += " lit";   // (and as a lamp comes or goes)
-        if (of.find("kind=text") != std::string::npos) of += " shown=" + doc_text_shown(d, thing, s.now);   // (its words as AbsentMotion's text effects show them now: made again as they change (doc_moment))
+        if (of.find("kind=text") != std::string::npos) of += " shown=" + doc_text_shown(d, thing, s.now);
+        if (of.find("kind=picture") != std::string::npos && !doc_keys_of(d, thing, "cel").at.empty()) of += " cel=" + std::to_string(std::llround(doc_cel(d, thing, s.now)));   // (a level's drawing now: made again as its keys change it (doc_moment))   // (its words as AbsentMotion's text effects show them now: made again as they change (doc_moment))
         of += " order=" + doc_fx_join(doc_fx_list(d, thing)) + " fx=" + std::to_string((int)on("blur")) + (doc_word(d, thing, "shadow").empty() ? "0" : "1") + (doc_word(d, thing, "glow").empty() ? "0" : "1") + std::to_string((int)on("tint")) + std::to_string((int)on("tritone"))
             + " room=" + std::to_string(doc_fx_room(d, thing));
     }
@@ -250,6 +266,11 @@ static bool doc_match(Doc& d) {
             };
         } else if (kind == "picture") {
             std::string shown = file;
+            if (const Doc::Keys& cels = doc_keys_of(d, thing, "cel"); !cels.at.empty()) {   // (a level: the drawing its keys say now, held to the next as a timesheet holds it)
+                made.cel = doc_cel(d, thing, s.now), made.celMove = cels.at.size() > 1;
+                shown = doc_cel_file(file, made.cel);
+                if (!shown.empty() && !std::filesystem::is_regular_file(shown)) why = "no drawing " + std::to_string((long long)made.cel) + " beside " + std::filesystem::path(file).filename().string(), shown.clear();   // (OpenToonz marks a drawing its level lacks, red; it is not filled in)
+            }
             float rollHigh = 1.f;   // (a MIDI file: its piano roll, at its speed's tempo: midi_roll.cpp)
             if (std::filesystem::path(file).extension() == ".mid") {
                 const double speed = doc_number(d, thing, "speed", 0, 1);
@@ -352,7 +373,9 @@ static bool doc_match(Doc& d) {
             else if ((made.solid = solid(s, file.c_str(), mat4f{}, 1.f, (int)doc_number(d, thing, "copies", 0, 1))) && rgb >= 0) solid_fill(s, made.solid, colour, surface, model);
             if (made.solid) s.playing.erase(made.solid);   // (the document tells it its moment)
         } else why = std::string("its kind is one of: ") + doc_kinds;
-        if (!made.film && !made.drawn && !made.solid && !made.shape && !made.camera && made.light.isNull() && kind != "behaviour") { d.trouble = why + ": the " + kind + " " + std::filesystem::path(file + shape).filename().string() + " could not be made"; all = false; continue; }
+        if (made.celMove && !made.drawn) {   // (a level at a ×, or at a drawing it lacks: kept, nothing shown, so that its next drawing is seen)
+            if (made.cel >= 0) d.trouble = why + ": the picture " + std::filesystem::path(file).filename().string(), all = false;
+        } else if (!made.film && !made.drawn && !made.solid && !made.shape && !made.camera && made.light.isNull() && kind != "behaviour") { d.trouble = why + ": the " + kind + " " + std::filesystem::path(file + shape).filename().string() + " could not be made"; all = false; continue; }
         d.shown[thing] = made;
         if ((made.solid || made.shape) && !made.grains) {   // (a solid thing casts a shadow from a light that throws them, and takes one; a cloud's grains are their own light)
             const int group = (int)doc_number(d, thing, "light_group", 0, 0);

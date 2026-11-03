@@ -5,7 +5,7 @@ import 'dart:ffi';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data' show Float32List;
-import 'dart:ui' as ui show ImageByteFormat;
+import 'dart:ui' as ui show ImageByteFormat, instantiateImageCodec;
 
 import 'package:ffi/ffi.dart';
 

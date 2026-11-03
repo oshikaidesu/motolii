@@ -116,6 +116,7 @@ struct Doc {
                    double units = 1.0;    // (a flat thing's: points of the picture to a unit of the stage as it was made, which its effects are counted in)
                    int space = 3;
                    std::string words; bool wordsMove = false;   // (a text's words as made, and whether AbsentMotion's text effects change them as time goes: doc_text_shown)
+                   double cel = -2; bool celMove = false;   // (a level's drawing as made, and whether its keys change it as time goes)
                    Scene* scene = nullptr; int channel = -1;
                    MaterialInstance* look = nullptr;   // (a solid's own look, made by the kit: what a matte cuts)
                    struct Deep { uint32_t id; Drawn* sheet; float4 box; };   // (an After Effects picture's 3D layer: a sheet of its own where it is)
@@ -194,6 +195,7 @@ static const DocValue doc_values[] = {
     {"beats", "film", 0, 60, false, nullptr},   // (where its sound strikes: louder by so many dB at once; 0, none shown)
     {"blend", "film picture text shape", 0, 0, false, "normal add multiply screen darken lighten overlay soft_light hard_light color_dodge color_burn difference exclusion hue saturation color luminosity linear_burn linear_light vivid_light pin_light darker_color lighter_color subtract divide"}, {"file", "film picture solid text", 0, 0, false, ""}, {"shape", "solid", 0, 0, false, doc_shapes},
     {"text", "text", 0, 0, false, ""}, {"fill", "text solid shape light", 0, 0, false, ""}, {"fill_media", "shape", 0, 0, false, ""},
+    {"cel", "picture", -1, 1e6, true, nullptr},   // (a level's: which of its drawings is shown, by the number in its name (doc_cel_file), held from key to key as a timesheet holds it; -1: none, a timesheet's ×)
     {"marker", "picture", 0, 0, false, ""},   // (an After Effects file: which of its named stretches it plays, over and over; all: the whole of it)
     {"name", "film picture text solid shape camera light behaviour", 0, 0, false, ""},   // (what it is called where things are listed, a behaviour too; not said: by what it is)
     {"label", doc_kinds, 0, 0, false, "auto rose orange yellow lime green mint aqua sky blue periwinkle orchid magenta red tangerine azure teal"},   // (its colour on the timeline, chosen: Ableton Live's clip colours in the window's order; auto, one by its number)

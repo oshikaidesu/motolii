@@ -112,6 +112,7 @@ static const DocShown doc_shown[] = {
     {"drift_y", "down", "px/s", "Flow Y", -2, 2, nullptr},
     {"emissive", "", "×", "Light up", 0, 10, nullptr},
     {"marker", "", "", "Part", 0, 0, nullptr},
+    {"cel", "", "", "Drawing", 1, 100, nullptr},
     {"animation", "", "", "Movement", 0, 0, nullptr},
     {"begin", "", "s", "In", 0, 60, nullptr},
     {"speed", "", "×", "Speed", -4, 4, nullptr},
@@ -387,6 +388,7 @@ static const DocCard doc_cards[] = {
     {"Motion", "orient", "kind", "!camera", true},   // (how it goes along its way: turned the way it is going, After Effects' Auto-Orient)
     {"Play", "marker animation speed speed_hold frame_rate", "kind", "!stage", true},   // (a thing's; the stage's own frame rate is said in the size box)
     {"Time Remap", "time_remap time_remap_loop", "file", "~.js"}, {"Time Remap", "time_remap time_remap_loop", "script", "~.js"},   // (a program's own time, of one that paints flat and of one with a body: doc_own_time)
+    {"Drawing", "cel", "cel", "!0"},   // (a level's drawings: a picture told a drawing is one)
     {"Source", "begin", "kind", "film"},   // (where in its file it starts: Premiere Pro's Slip takes a number typed as the hand's drag does; the timeline's pale bar is the same value carried)
     {"Sound", "volume beats", "kind", "film"},   // (its beats: shown on the timeline's ruler where it strikes)
     {"Matte", "clip_matte clip_invert clip_feather", "clip", "1"},
@@ -562,6 +564,14 @@ static double doc_number(Doc& d, int thing, const char* name, double at, double 
 // are kept, so its time keyed only says which of them is seen: nothing in it is written again or run again, and every way a
 // program has of reading time goes with it (After Effects' Time Remap, whose value is the layer's own time, any way between keys).
 static double doc_own_time(Doc& d, int thing, double at, double by) { return std::max(0.0, doc_number(d, thing, "time_remap", at, by)); }
+// A level's drawing at a moment: its key there or the last before it, held to the next whatever way its keys go (a
+// timesheet's cells: a drawing is never between two, OpenToonz's xdtsio.cpp each to the next item); 1 if it has none.
+static double doc_cel(Doc& d, int thing, double at) {
+    const Doc::Keys& k = doc_keys_of(d, thing, "cel");
+    double held = k.value.empty() ? 1.0 : k.value.front();
+    for (size_t i = 0; i < k.at.size() && k.at[i] <= at + 1e-9; ++i) held = k.value[i];
+    return (double)std::llround(held);
+}
 static const Doc::Keys& doc_keys_of(Doc& d, int thing, const char* name) {
     if (d.reading) d.reading->insert(thing);
     auto& of = d.moving[thing];

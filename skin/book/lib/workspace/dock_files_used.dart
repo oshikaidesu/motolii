@@ -50,6 +50,7 @@ final _filesPicked = <String>{};
 /// another in the order picked (the inside's Stagger: Alight Motion adds several so); all of them picked. A still lasts
 /// as long as chosen under it (End: stills are laid together).
 Future<void> _placeAll(DockCtx c, List<String> files) async {
+  if (_level(files) case final drawings?) return _placeLevel(c, drawings);
   final m = c.ws.inside!;
   final lengths = [for (final (i, s) in (await Future.wait([for (final f in files) mediaSecondsOf(m.libPath, f)])).indexed) _kindOfFile(files[i]) == 'picture' ? _stillSeconds : s];   // (a still: as long as chosen)
   m.later('together', number: 1);
@@ -72,6 +73,42 @@ Future<void> _placeAll(DockCtx c, List<String> files) async {
     c.ws.pickMany([for (final i in all) '$i']);
     _filesPicked.clear();
   });
+}
+
+/// The pictures picked together, when they are the drawings of one level: one folder, one name, a number at its end
+/// (OpenToonz's level, animation_0001.png, read by (\d+): tfilepath.cpp), each by its number, the lowest first.
+List<(int, String)>? _level(List<String> files) {
+  final named = RegExp(r'^(.*?)(\d+)(\.[^./]+)$'), drawings = <(int, String)>[];
+  String? level;
+  for (final f in files) {
+    final m = named.firstMatch(f);
+    if (_kindOfFile(f) != 'picture' || m == null || (level ??= '${m[1]}${m[3]}') != '${m[1]}${m[3]}') return null;
+    drawings.add((int.parse(m[2]!), f));
+  }
+  return drawings.length < 2 ? null : (drawings..sort((a, b) => a.$1.compareTo(b.$1)));
+}
+
+/// A level put on the stage as one thing (OpenToonz's level, CLIP STUDIO's animation folder), its lowest drawing its
+/// file, fitted; which drawing shows a key of its Drawing for each, the drawing's own number (not the how-manieth:
+/// a drawing put in between, or a gap, moves no other), held to the next as a timesheet holds it (XDTS's frames, read
+/// by OpenToonz's xdtsio.cpp: each to the next item). Each at its number's frame of 24 a second from the lowest (24: as
+/// DiTiS reads a timesheet), so drawings numbered by their frames, 1, 3, 5, are held across the gaps, which the After
+/// Effects forum asks for and After Effects lacks; the timing is then changed by moving the keys.
+void _placeLevel(DockCtx c, List<(int, String)> drawings) {
+  final m = c.ws.inside!, from = c.ws.frame / Ws.fps, first = drawings.first.$1;
+  m.later('together', number: 1);
+  c.ws.after(m.later('add', word: drawings.first.$2), (done, why) {
+    if (!done) c.set(() => c.mem.trouble[drawings.first.$2] = why);
+  }, (made) => c.ws.select('$made'));
+  m.later('fit', thing: -1, word: 'fit');
+  m.later('set', thing: -1, name: 'duration', number: (drawings.last.$1 - first + 1) / 24);
+  for (final (n, _) in drawings) {
+    final at = '${from + (n - first) / 24}';
+    m.later('key', thing: -1, name: 'cel', word: at, number: n.toDouble());
+    m.later('way', thing: -1, name: 'cel', number: double.parse(at), word: 'hold');
+  }
+  c.ws.after(m.later('together'), (_, _) => c.ws.reread());
+  _filesPicked.clear();
 }
 
 /// A photo or a film comes fitted inside the picture, in its middle, as Alight Motion places one (AbsentMotion's

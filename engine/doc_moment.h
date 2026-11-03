@@ -10,6 +10,9 @@ static void doc_moment(Doc& d, double now) {
                     if (t.drawn && words_at(s, t.drawn, w)) t.words = w;
                     else return (void)doc_match(d);
                 }
+    if (now == s.now)   // (a level whose keys show another drawing now: it alone made again, as it reads now (doc_match))
+        for (auto& [thing, t] : d.shown)
+            if (t.celMove && doc_cel(d, thing, now) != t.cel) return (void)doc_match(d);
     const std::vector<int> lie = doc_laid(d);
     // Each thing as it is now, in the order they lie: whether it is on, and whether it is a solid thing.
     struct Lies { int thing; Doc::Shown* shown; bool on, solid; double since; bool open; };

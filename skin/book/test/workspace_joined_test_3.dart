@@ -1030,6 +1030,57 @@ void _tests3() {
     await _close(t);
   }, skip: !_built);
 
+  testWidgets('numbered drawings picked together are one thing, a level (OpenToonz\'s): which shows is a held key of its own number each, a gap held across, × none, a drawing not there told', (t) async {
+    final ws = await _pump(t), m = ws.inside!;
+    for (final (n, c) in [(1, 'red'), (2, 'lime'), (4, 'blue')]) {
+      expect(Process.runSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'color=c=$c:s=64x64', '-frames:v', '1', '${ws.documentFolder}/A_000$n.png']).exitCode, 0);
+    }
+    ws.shelf = 'Media';
+    await t.pumpAndSettle();
+    final folder = find.byKey(ValueKey('browser:file:${ws.documentFolder}'));
+    await t.ensureVisible(folder.first);
+    await t.tap(folder.first);
+    await t.pumpAndSettle();
+    Finder tile(int n) => find.byKey(ValueKey('browser:file:${ws.documentFolder}/A_000$n.png'));
+    for (var i = 0; i < 20 && tile(4).evaluate().isEmpty; i++) {
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await t.pumpAndSettle();
+    }
+    await t.tap(tile(1).first);
+    await t.pump(kDoubleTapTimeout);
+    await t.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+    for (final n in [4, 2]) {
+      await t.tap(tile(n).first);
+      await t.pump(kDoubleTapTimeout);
+    }
+    await t.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+    await t.pumpAndSettle();
+    await t.tap(find.text('Place 3'));
+    for (var i = 0; i < 200 && m.things.isEmpty; i++) {
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
+      await t.pump();
+    }
+    await settled(t, ws);
+    ws.reread();
+    expect([m.things.length, m.word(m.things.single, 'file').split('/').last, m.keyValues(m.things.single, 'cel'), m.lasts(m.things.single)], [1, 'A_0001.png', [1, 2, 4], closeTo(4 / 24, 1e-6)], reason: 'one thing, its lowest drawing its file, a key of its own number a drawing, as long as their numbers run');
+    final a = m.things.single, still = '${ws.documentFolder}/still.png';
+    Future<List<int>> seen(double at) async => (await t.runAsync(() async {
+      expect(m.at(at) && m.still(still), isTrue, reason: m.trouble);
+      final codec = await ui.instantiateImageCodec(File(still).readAsBytesSync());
+      final image = (await codec.getNextFrame()).image, px = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!.buffer.asUint8List(), i = 4 * (image.height ~/ 2 * image.width + image.width ~/ 2);
+      return [px[i], px[i + 1], px[i + 2]];
+    }))!;
+    bool most(List<int> rgb, int c) => rgb[c] > 200 && rgb.indexed.every((p) => p.$1 == c || p.$2 < 60);
+    final shown = [for (final f in [0, 1, 2, 3]) await seen(f / 24 + 1 / 48)];
+    expect([most(shown[0], 0), most(shown[1], 1), most(shown[2], 1), most(shown[3], 2)], everyElement(isTrue), reason: 'drawing 1, 2, 2 held across the missing 3, then 4: $shown');
+    expect(m.key(a, 'cel', 2 / 24, 4) && m.key(a, 'cel', 3 / 24, -1), isTrue, reason: m.trouble);   // (re-timed by its keys alone: 4 a frame sooner, then a timesheet's ×)
+    final (sooner, none) = (await seen(2 / 24 + 1 / 48), await seen(3 / 24 + 1 / 48));
+    expect([most(sooner, 2), [0, 1, 2].any((c) => most(none, c))], [isTrue, isFalse], reason: 'drawing 4 a frame sooner (its key\'s way not said: held all the same); at × no drawing: $sooner $none');
+    final lacks = m.key(a, 'cel', 3 / 24, 7);
+    expect([lacks, m.trouble, m.keyValues(a, 'cel'), m.things], [isFalse, contains('no drawing 7 beside A_0001.png'), [1, 2, 4, -1], [a]], reason: 'a drawing the level lacks: told (OpenToonz marks it red), not taken, as any change that cannot be made');
+    await _close(t);
+  }, skip: !_built);
+
   testWidgets('a photo placed from the Media shelf comes fitted inside the picture, in its middle, one step (Alight Motion\'s: AbsentMotion imageLayer; golf ㊱)', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     File('$motoliiDir/fx_sample.jpg').copySync('${ws.documentFolder}/photo.jpg');   // (857 x 857: a square on a wide picture)
