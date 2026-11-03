@@ -279,6 +279,9 @@ static Texture* screen_picture(Stage& s) {
     return Texture::Builder().width((uint32_t)s.w).height((uint32_t)s.h).levels(1).format(Texture::InternalFormat::RGBA8)
         .usage(Texture::Usage::COLOR_ATTACHMENT | Texture::Usage::SAMPLEABLE).build(*s.engine);
 }
+// The frames a second an effect is told (ISF's FRAMEINDEX and TIMEDELTA, Shadertoy's iFrameRate, AviUtl's obj.framerate):
+// the document's own, at whose frames its time is seen (kit_things.h time_is); none said, the stage's sixty it is drawn at.
+static double screen_rate(const Stage& s) { return s.frames > 0.0 ? s.frames : 60.0; }
 static void screen_knobs(Stage& s, ScreenFx& fx, const ScreenNumbers& numbers, int pass = 0, double pw = 0, double ph = 0) {
     std::vector<float> at(fx.bytes / 4, 0.f);
     const bool framed = std::any_of(fx.fields.begin(), fx.fields.end(), [](const ScreenFx::Field& f) { return f.name == "frameRect"; });   // (an ISF effect: told its frame's size. A WGSL one reads its layerRect, or the whole picture)
@@ -298,7 +301,8 @@ static void screen_knobs(Stage& s, ScreenFx& fx, const ScreenNumbers& numbers, i
         else if (f.name == "screen" && f.floats >= 4) v[2] = (float)w, v[3] = (float)h;   // (AbsentMotion's effects.cpp: screen is -area.left, -area.top, the scene's width and height. This picture is that scene, so a wave's reach is magnitude * min(screen.z, screen.w) * 0.01)
         else if ((f.name == "width" || f.name == "height") && std::none_of(fx.fields.begin(), fx.fields.end(), [](const ScreenFx::Field& g) { return g.name == "resolution"; }) && !(fx.file.ends_with(".fs") && std::any_of(fx.knobs.begin(), fx.knobs.end(), [&](const ScriptKnob& one) { return one.name == f.name; })))
             v[0] = (float)(f.name == "width" ? w : h);   // (three's picture size: halftone.wgsl divides by width and height. A shader that already has resolution, or an ISF knob of this name, keeps the knob the file declares)
-        else if (f.name == "frame") v[0] = (float)std::lround(s.now * 60.0);   // (ISF's FRAMEINDEX: the picture's number at sixty a second)
+        else if (f.name == "frame") v[0] = (float)std::lround(s.now * screen_rate(s));   // (ISF's FRAMEINDEX: the picture's number, ISF_Spec)
+        else if (f.name == "isf_rate") v[0] = (float)screen_rate(s);   // (ISF's TIMEDELTA its one over it: the time since the last frame, ISF_Spec)
         else if (f.name == "passindex") v[0] = (float)pass;   // (ISF's PASSINDEX: `pass` is a word WGSL keeps for itself)
         else if (f.name == "history_head") v[0] = (float)std::max(0, fx.head);
         else if (f.name == "history_count") v[0] = (float)fx.historyFrames;

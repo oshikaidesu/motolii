@@ -22,6 +22,7 @@
 | `workspace/dock_effects.dart`、`dock_fonts.dart`、`dock.dart`、`dock_tags.dart` | タグの札は 8 つ、補完は 6 つ | 全部、多い順に横に滑る 1 行で（窓の札の行 `Usual.chips` と同じ）。補完も折り返さず 1 行に |
 | `workspace/effect_tiles.dart` | NO CHANGE の判定：写真 40 dB、カード 30 dB | AbsentMotion の `effect_thumbs.py` の change() と SAME = 2.0 そのまま：灰色に重ね、各色の差の平均（255 中）、一番違うコマが 2.0 未満なら見えない。同じ絵で PIL の change() と同じ値（3.608、3.524）を確かめた |
 | `workspace/dock_effects.dart`、`ws_2.dart` | 棚から押した効果がもう付いていたら外していた | もう一つ付ける（.fs・.wgsl）。After Effects の Effects & Presets は押すたびに増やす（Gaussian Blur 2）。名前はエンジンの Duplicate と同じ `Glow~2.fs`（doc_fx_duplicate）。外すのは足の Remove と右クリックの Remove。Posterize を二つ付け、二つ目だけ 2 段にすると絵が変わる（差 35.35）のを確かめた |
+| `screen.h`、`isf.cpp`、`door_shadertoy.h`、`aviutl_fx.h` | 効果が見るコマ数が 60 固定（TIMEDELTA、FRAMEINDEX、iFrameRate、obj.framerate） | 書類のコマ数（`frame_rate`、0 なら舞台の 60）。ISF_Spec の TIMEDELTA は前のコマからの時間、FRAMEINDEX はコマの番号。書類の時間はもともとそのコマで見える（`kit_things.h:422`）。試し：TIMEDELTA と FRAMEINDEX を色にする ISF が 60 で 1/60・60、30 で 1/30・30。obj.framerate×4 の円が 240 px と 120 px。棚の .fs 12 本が付いて描ける |
 
 ## 出典なし：使う人が気づくもの
 
@@ -32,9 +33,8 @@
 | `thing_fx.h:36-41`、`screen.h:489-494` | 読めない・Dawn が通さない効果は黙って外す。理由は stderr だけ | 効果が付かないのに何も言われない |
 | `doc_match.h:211`、`doc_place.h:559-560` | 効果のファイルが無い・通らないと、物ごと作らない | レイヤーが出ない |
 | `aviutl_fx.h:144,728,813-815`、`199,238,244,366-373`、`554-622` | まだ書いていない `obj.*`、合成モード、drawtarget、setoption、`obj.effect`（6 つ程と Sashimono の作り直しだけ）で止まる | AviUtl2 の効果が何もしない |
-| `screen.h:301`、`isf.cpp:158`（確）、`door_shadertoy.h:127`、`aviutl_fx.h:804-806` | 効果が見る時間は 60 コマ固定（TIMEDELTA、FRAMEINDEX、iFrameRate、obj.framerate）。根拠は AGENTS.md の「60fps駆動」だけ | 24・30 コマの書類で動きがずれる |
 | `isf.cpp:158`（確） | DATE を (0,0,0,TIME) にする。ISF_Spec を挙げつつ、その中身と違う | 時計のシェーダーが 0 時 |
-| `isf.cpp:133`（確）、`isf.cpp:110,124-133` | point2D と色に MIN/MAX が無ければ 0..1。long の LABELS を捨てて数字に。event はスイッチに | 画素で指す点が 0..1 しか動かない。選択肢が数字で出る |
+| `isf.cpp:133`（確）、`isf.cpp:110,124-133` | point2D と色に MIN/MAX が無ければ 0..1（VVISF の ISFDoc.cpp は point2D に幅を付けない。.fs のつまみは打てば幅を越える）。long の LABELS を捨てて数字に（ISF_Spec は long を「pop-up menu」と書く。Motolii の選択は言葉で持ち、シェーダーには数しか届かないので、言葉を数に戻す所が要る）。event はスイッチに（ISF_Spec は押した時だけのボタン） | 画素で指す点がつまみでは 0..1 しか滑らない。選択肢が数字で出る |
 | `isf.cpp:86` | 同梱の絵（IMPORTED）を読むところが無い | 絵を同梱した ISF が通らない |
 | `isf.cpp:50-68,76` | PASSES の大きさの式：つまみで変わるものは断る。他は 1000 で測って割合にする | 多段の ISF の一部が通らない |
 | `isf.cpp:165-166`、`door_shadertoy.h:130` | テクスチャは 0 段だけ。LOD・bias・Grad を捨てる | LOD でぼかすシェーダーがくっきりのまま |

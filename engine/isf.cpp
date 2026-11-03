@@ -101,7 +101,7 @@ static std::string isf_wgsl(const std::string& text, const std::string& name, st
         glsl += "layout(set = 0, binding = " + std::to_string(2 * k) + ") uniform texture2D isf_tex_" + read[k] + ";\nlayout(set = 0, binding = " + std::to_string(2 * k + 1) + ") uniform sampler isf_smp_" + read[k] + ";\n";
     for (size_t k = 0; k < others.size(); ++k)
         glsl += "layout(set = 0, binding = " + std::to_string(2 * (read.size() + k)) + ") uniform texture2D isf_tex_" + others[k] + ";\nlayout(set = 0, binding = " + std::to_string(2 * (read.size() + k) + 1) + ") uniform sampler isf_smp_" + others[k] + ";\n";
-    glsl += "layout(set = 0, binding = " + std::to_string(2 * (read.size() + others.size())) + ") uniform Knobs {\n  float time;\n  vec2 resolution;\n  float frame;\n  float passindex;\n  float clip_time;\n  float clip_length;\n  vec4 frameRect;\n  vec4 passRect;\n";   // (and a thing's own: how far into it, how long it lasts, seconds, doc_moment_fx.h; the stage's: none)
+    glsl += "layout(set = 0, binding = " + std::to_string(2 * (read.size() + others.size())) + ") uniform Knobs {\n  float time;\n  vec2 resolution;\n  float frame;\n  float isf_rate;\n  float passindex;\n  float clip_time;\n  float clip_length;\n  vec4 frameRect;\n  vec4 passRect;\n";   // (and a thing's own: how far into it, how long it lasts, seconds, doc_moment_fx.h; the stage's: none)
     std::vector<std::string> switches;   // (an on/off knob: an int, as WGSL keeps no bool in a uniform, read as a bool where the shader names it, not where a colour's .r is)
     std::string lines;
     for (const auto& k : inputs.GetArray()) {
@@ -155,7 +155,7 @@ static std::string isf_wgsl(const std::string& text, const std::string& name, st
     }
     for (const std::string& n : others) glsl += "#define " + n + " sampler2D(isf_tex_" + n + ", isf_smp_" + n + ")\n";
     glsl += "#define " + picture + " sampler2D(isf_tex_" + picture + ", isf_smp_" + picture + ")\n";
-    glsl += "#define TIME time\n#define RENDERSIZE resolution\n#define TIMEDELTA (1.0 / 60.0)\n#define FRAMEINDEX int(frame)\n#define PASSINDEX int(passindex)\n#define DATE vec4(0.0, 0.0, 0.0, TIME)\n";   // (ISF_Spec: DATE.w the seconds of the day; here the document's own time, a clock that runs as the video does (Alight Motion's Timecode))
+    glsl += "#define TIME time\n#define RENDERSIZE resolution\n#define TIMEDELTA (1.0 / isf_rate)\n#define FRAMEINDEX int(frame)\n#define PASSINDEX int(passindex)\n#define DATE vec4(0.0, 0.0, 0.0, TIME)\n";   // (ISF_Spec: DATE.w the seconds of the day; here the document's own time, a clock that runs as the video does (Alight Motion's Timecode))
     for (const std::string& n : read) glsl += "#define isf_img_" + n + " sampler2D(isf_tex_" + n + ", isf_smp_" + n + ")\n#define _" + n + "_imgRect vec4(0.0, 0.0, RENDERSIZE)\n#define _" + n + "_imgSize RENDERSIZE\n#define _" + n + "_flip false\n";   // (VVISF's own words for a picture's place and size: each as large as the stage here)
     glsl += "#define vv_FragNormCoord isf_FragNormCoord\n";   // (ISF 1's name for it, as VVISF still says)
     glsl += "#define IMG_NORM_PIXEL(i, c) texture(i, c)\n#define IMG_PIXEL(i, c) texture(i, (c) / RENDERSIZE)\n";

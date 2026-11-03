@@ -801,9 +801,9 @@ static void aviutl_draw_step(Stage& s, AviutlRun& r, Texture* from, RenderTarget
             else lua_setglobal(L, v.var.c_str());
         }
         lua_getglobal(L, "obj");
-        const double frame = std::round(s.now * 60);
+        const double frame = std::round(s.now * screen_rate(s));
         const std::pair<const char*, double> values[] = {{"ox", 0}, {"oy", 0}, {"oz", 0}, {"rx", 0}, {"ry", 0}, {"rz", 0}, {"cx", 0}, {"cy", 0}, {"cz", 0}, {"sx", 1}, {"sy", 1}, {"sz", 1}, {"zoom", 1}, {"aspect", 0}, {"alpha", 1},
-            {"x", atX}, {"y", atY}, {"z", 0}, {"w", (double)ow}, {"h", (double)oh}, {"screen_w", (double)s.w}, {"screen_h", (double)s.h}, {"framerate", 60}, {"frame", frame}, {"time", s.now}, {"totalframe", frame + 1}, {"totaltime", s.now},
+            {"x", atX}, {"y", atY}, {"z", 0}, {"w", (double)ow}, {"h", (double)oh}, {"screen_w", (double)s.w}, {"screen_h", (double)s.h}, {"framerate", screen_rate(s)}, {"frame", frame}, {"time", s.now}, {"totalframe", frame + 1}, {"totaltime", s.now},
             {"layer", numbers(r.file, "aviutl.layer", 1)}, {"index", 0}, {"num", 1}, {"id", 1}, {"effect_id", 1}, {"frame_s", 0}, {"frame_e", frame}, {"effect_layer", 1}, {"originframe", 0}, {"scene_id", 0}};
         for (const auto& [n, v] : values) lua_pushnumber(L, v), lua_setfield(L, -2, n);
         lua_pop(L, 1);
