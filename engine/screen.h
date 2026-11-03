@@ -239,10 +239,10 @@ struct ScreenStack {
 // A picture file as ThorVG reads it, its numbers as they are, drawn once (aviutl_load.h aviutl_drawn).
 static Texture* screen_image(Stage& s, const std::string& file) {
     float w = 0, h = 0;
+    tvg::Initializer::init(0);   // (before the load: ThorVG lets a file's reading go when it is not started, tvgTaskScheduler.cpp TaskScheduler::request)
     tvg::Picture* p = tvg::Picture::gen();
     if (p->load(file.c_str()) != tvg::Result::Success || p->size(&w, &h) != tvg::Result::Success || w < 1 || h < 1 || w > 4096 || h > 4096) return delete p, nullptr;
     auto* pixels = new std::vector<uint32_t>((size_t)w * (size_t)h, 0);
-    tvg::Initializer::init(0);
     tvg::SwCanvas* canvas = tvg::SwCanvas::gen();
     const bool drew = canvas->target(pixels->data(), (uint32_t)w, (uint32_t)w, (uint32_t)h, tvg::ColorSpace::ABGR8888) == tvg::Result::Success && canvas->add(p) == tvg::Result::Success && canvas->draw(true) == tvg::Result::Success && canvas->sync() == tvg::Result::Success;
     delete canvas;

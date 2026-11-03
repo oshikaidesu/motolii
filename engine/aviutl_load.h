@@ -19,6 +19,7 @@ static const AviutlBuf* aviutl_drawn(AviutlRun& r, const std::string& key, uint3
     if (const auto kept = r.loaded.find(key); kept != r.loaded.end()) return &kept->second;
     if (!w || !h || w > 4096 || h > 4096) return nullptr;
     auto* pixels = new std::vector<uint32_t>((size_t)w * h, 0);
+    tvg::Initializer::init(0);   // (ThorVG makes no canvas, and reads no file, when it is not started: tvgCanvas.cpp SwCanvas::gen)
     tvg::SwCanvas* canvas = tvg::SwCanvas::gen();
     const bool drew = canvas->target(pixels->data(), w, w, h, tvg::ColorSpace::ABGR8888) == tvg::Result::Success && paint(canvas) && canvas->draw(true) == tvg::Result::Success && canvas->sync() == tvg::Result::Success;
     delete canvas;

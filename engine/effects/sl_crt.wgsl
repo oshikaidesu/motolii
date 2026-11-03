@@ -514,7 +514,7 @@ fn p0_main(door_uv: vec2f) -> p0_OutputStruct {
 	// code
 
 	p0_nodeVar0 = vec2<f32>( nodeVarying4.x, ( 1.0 - nodeVarying4.y ) );
-	p0_nodeVar1 = vec2<f32>( f32(2048.0), f32(1024.0) );
+	p0_nodeVar1 = vec2<f32>( f32(knobs.resolution.x), f32(knobs.resolution.y) );
 	p0_nodeVar2 = ( p0_nodeVar0 * p0_nodeVar1 );
 	p0_nodeVar3 = max( f32(knobs.cellSize), 2.0 );
 	p0_nodeVar4 = floor( ( p0_nodeVar2 / vec2<f32>( p0_nodeVar3 ) ) );
@@ -752,7 +752,7 @@ fn p0_main(door_uv: vec2f) -> p0_OutputStruct {
 	p0_nodeVar188 = vec3<f32>( p0_nodeVar187.x, p0_nodeVar187.y, p0_nodeVar187.z );
 	p0_nodeVar189 = dot( p0_nodeVar188, vec3<f32>( 0.2126, 0.7152, 0.0722 ) );
 	p0_nodeVar190 = ( p0_nodeVar189 + ( ( smoothstep( 0.38, 0.02, p0_nodeVar189 ) * f32(knobs.shadowLift) ) * 0.08 ) );
-	p0_nodeVar191 = vec2<f32>( ( 1.0 / max( f32(2048.0), 1.0 ) ), ( 1.0 / max( f32(1024.0), 1.0 ) ) );
+	p0_nodeVar191 = vec2<f32>( ( 1.0 / max( f32(knobs.resolution.x), 1.0 ) ), ( 1.0 / max( f32(knobs.resolution.y), 1.0 ) ) );
 	p0_nodeVar192 = picture_read( p0_nodeVar182 );
 	p0_nodeVar193 = vec3<f32>( p0_nodeVar192.x, p0_nodeVar192.y, p0_nodeVar192.z );
 	p0_nodeVar194 = dot( p0_nodeVar193, vec3<f32>( 0.2126, 0.7152, 0.0722 ) );

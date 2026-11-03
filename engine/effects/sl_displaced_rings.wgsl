@@ -211,7 +211,7 @@ fn p0_main(door_uv: vec2f) -> p0_OutputStruct {
 	p0_nodeVar5 = p0_nodeVar4;
 	p0_nodeVar6 = max( ( max( ( vec2<f32>((knobs.resolution.x / knobs.resolution.y), 1.0).x / vec2<f32>(knobs.resolution.x, knobs.resolution.y).x ), ( vec2<f32>((knobs.resolution.x / knobs.resolution.y), 1.0).y / vec2<f32>(knobs.resolution.x, knobs.resolution.y).y ) ) * 0.75 ), f32(knobs.softness) );
 	p0_nodeVar7 = 0.0;
-	p0_nodeVar8 = ( f32((0.0009765625 * knobs.lineWidth + 0)) * 0.5 );
+	p0_nodeVar8 = ( f32((knobs.lineWidth / knobs.resolution.y)) * 0.5 );
 	p0_nodeVar9 = ( 6.283185307179586 / max( f32(array<f32, 4>(0.0, 3.0, 4.0, 6.0)[u32(knobs.ringShape)]), 3.0 ) );
 	p0_nodeVar10 = cos( ( p0_nodeVar9 * 0.5 ) );
 
@@ -521,7 +521,7 @@ fn p0_main(door_uv: vec2f) -> p0_OutputStruct {
 
 		}
 
-		p0_nodeVar75 = max( ( f32(knobs.radius) - p0_nodeVar72 ), ( f32((0.0009765625 * knobs.lineWidth + 0)) * 4.0 ) );
+		p0_nodeVar75 = max( ( f32(knobs.radius) - p0_nodeVar72 ), ( f32((knobs.lineWidth / knobs.resolution.y)) * 4.0 ) );
 		p0_nodeVar50 = ( ( 1.0 - smoothstep( ( p0_nodeVar8 - p0_nodeVar6 ), ( p0_nodeVar8 + p0_nodeVar6 ), ( abs( ( fract( ( ( p0_nodeVar71 / p0_nodeVar75 ) + 0.5 ) ) - 0.5 ) ) * p0_nodeVar75 ) ) ) * step( 0.0, p0_nodeVar71 ) );
 		
 

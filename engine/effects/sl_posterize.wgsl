@@ -96,14 +96,14 @@ fn p0_main(door_uv: vec2f) -> p0_OutputStruct {
 		p0_nodeVar3 = vec3<f32>( p0_nodeVar0.x, p0_nodeVar0.y, p0_nodeVar0.z );
 		p0_nodeVar4 = dot( p0_nodeVar3, vec3<f32>( 0.2126, 0.7152, 0.0722 ) );
 		p0_nodeVar5 = max( ( f32(knobs.levels) - 1.0 ), 1.0 );
-		p0_nodeVar6 = ( pow( ( floor( ( ( pow( clamp( p0_nodeVar4, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar5 ) + 0.5 ) ) / p0_nodeVar5 ), f32(1.0) ) / max( p0_nodeVar4, 0.001 ) );
+		p0_nodeVar6 = ( pow( ( floor( ( ( pow( clamp( p0_nodeVar4, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar5 ) + 0.5 ) ) / p0_nodeVar5 ), f32((1.0 / knobs.gamma)) ) / max( p0_nodeVar4, 0.001 ) );
 		p0_nodeVar1 = clamp( vec3<f32>( ( p0_nodeVar3.x * p0_nodeVar6 ), ( p0_nodeVar3.y * p0_nodeVar6 ), ( p0_nodeVar3.z * p0_nodeVar6 ) ), vec3<f32>( 0.0, 0.0, 0.0 ), vec3<f32>( 1.0, 1.0, 1.0 ) ).x;
 
 	} else {
 
 		p0_nodeVar7 = vec3<f32>( p0_nodeVar0.x, p0_nodeVar0.y, p0_nodeVar0.z );
 		p0_nodeVar8 = max( ( f32(knobs.levels) - 1.0 ), 1.0 );
-		p0_nodeVar1 = vec3<f32>( pow( ( floor( ( ( pow( clamp( p0_nodeVar7.x, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar8 ) + 0.5 ) ) / p0_nodeVar8 ), f32(1.0) ), pow( ( floor( ( ( pow( clamp( p0_nodeVar7.y, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar8 ) + 0.5 ) ) / p0_nodeVar8 ), f32(1.0) ), pow( ( floor( ( ( pow( clamp( p0_nodeVar7.z, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar8 ) + 0.5 ) ) / p0_nodeVar8 ), f32(1.0) ) ).x;
+		p0_nodeVar1 = vec3<f32>( pow( ( floor( ( ( pow( clamp( p0_nodeVar7.x, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar8 ) + 0.5 ) ) / p0_nodeVar8 ), f32((1.0 / knobs.gamma)) ), pow( ( floor( ( ( pow( clamp( p0_nodeVar7.y, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar8 ) + 0.5 ) ) / p0_nodeVar8 ), f32((1.0 / knobs.gamma)) ), pow( ( floor( ( ( pow( clamp( p0_nodeVar7.z, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar8 ) + 0.5 ) ) / p0_nodeVar8 ), f32((1.0 / knobs.gamma)) ) ).x;
 
 	}
 
@@ -113,14 +113,14 @@ fn p0_main(door_uv: vec2f) -> p0_OutputStruct {
 		p0_nodeVar10 = vec3<f32>( p0_nodeVar0.x, p0_nodeVar0.y, p0_nodeVar0.z );
 		p0_nodeVar11 = dot( p0_nodeVar10, vec3<f32>( 0.2126, 0.7152, 0.0722 ) );
 		p0_nodeVar12 = max( ( f32(knobs.levels) - 1.0 ), 1.0 );
-		p0_nodeVar13 = ( pow( ( floor( ( ( pow( clamp( p0_nodeVar11, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar12 ) + 0.5 ) ) / p0_nodeVar12 ), f32(1.0) ) / max( p0_nodeVar11, 0.001 ) );
+		p0_nodeVar13 = ( pow( ( floor( ( ( pow( clamp( p0_nodeVar11, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar12 ) + 0.5 ) ) / p0_nodeVar12 ), f32((1.0 / knobs.gamma)) ) / max( p0_nodeVar11, 0.001 ) );
 		p0_nodeVar9 = clamp( vec3<f32>( ( p0_nodeVar10.x * p0_nodeVar13 ), ( p0_nodeVar10.y * p0_nodeVar13 ), ( p0_nodeVar10.z * p0_nodeVar13 ) ), vec3<f32>( 0.0, 0.0, 0.0 ), vec3<f32>( 1.0, 1.0, 1.0 ) ).y;
 
 	} else {
 
 		p0_nodeVar14 = vec3<f32>( p0_nodeVar0.x, p0_nodeVar0.y, p0_nodeVar0.z );
 		p0_nodeVar15 = max( ( f32(knobs.levels) - 1.0 ), 1.0 );
-		p0_nodeVar9 = vec3<f32>( pow( ( floor( ( ( pow( clamp( p0_nodeVar14.x, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar15 ) + 0.5 ) ) / p0_nodeVar15 ), f32(1.0) ), pow( ( floor( ( ( pow( clamp( p0_nodeVar14.y, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar15 ) + 0.5 ) ) / p0_nodeVar15 ), f32(1.0) ), pow( ( floor( ( ( pow( clamp( p0_nodeVar14.z, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar15 ) + 0.5 ) ) / p0_nodeVar15 ), f32(1.0) ) ).y;
+		p0_nodeVar9 = vec3<f32>( pow( ( floor( ( ( pow( clamp( p0_nodeVar14.x, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar15 ) + 0.5 ) ) / p0_nodeVar15 ), f32((1.0 / knobs.gamma)) ), pow( ( floor( ( ( pow( clamp( p0_nodeVar14.y, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar15 ) + 0.5 ) ) / p0_nodeVar15 ), f32((1.0 / knobs.gamma)) ), pow( ( floor( ( ( pow( clamp( p0_nodeVar14.z, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar15 ) + 0.5 ) ) / p0_nodeVar15 ), f32((1.0 / knobs.gamma)) ) ).y;
 
 	}
 
@@ -130,14 +130,14 @@ fn p0_main(door_uv: vec2f) -> p0_OutputStruct {
 		p0_nodeVar17 = vec3<f32>( p0_nodeVar0.x, p0_nodeVar0.y, p0_nodeVar0.z );
 		p0_nodeVar18 = dot( p0_nodeVar17, vec3<f32>( 0.2126, 0.7152, 0.0722 ) );
 		p0_nodeVar19 = max( ( f32(knobs.levels) - 1.0 ), 1.0 );
-		p0_nodeVar20 = ( pow( ( floor( ( ( pow( clamp( p0_nodeVar18, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar19 ) + 0.5 ) ) / p0_nodeVar19 ), f32(1.0) ) / max( p0_nodeVar18, 0.001 ) );
+		p0_nodeVar20 = ( pow( ( floor( ( ( pow( clamp( p0_nodeVar18, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar19 ) + 0.5 ) ) / p0_nodeVar19 ), f32((1.0 / knobs.gamma)) ) / max( p0_nodeVar18, 0.001 ) );
 		p0_nodeVar16 = clamp( vec3<f32>( ( p0_nodeVar17.x * p0_nodeVar20 ), ( p0_nodeVar17.y * p0_nodeVar20 ), ( p0_nodeVar17.z * p0_nodeVar20 ) ), vec3<f32>( 0.0, 0.0, 0.0 ), vec3<f32>( 1.0, 1.0, 1.0 ) ).z;
 
 	} else {
 
 		p0_nodeVar21 = vec3<f32>( p0_nodeVar0.x, p0_nodeVar0.y, p0_nodeVar0.z );
 		p0_nodeVar22 = max( ( f32(knobs.levels) - 1.0 ), 1.0 );
-		p0_nodeVar16 = vec3<f32>( pow( ( floor( ( ( pow( clamp( p0_nodeVar21.x, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar22 ) + 0.5 ) ) / p0_nodeVar22 ), f32(1.0) ), pow( ( floor( ( ( pow( clamp( p0_nodeVar21.y, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar22 ) + 0.5 ) ) / p0_nodeVar22 ), f32(1.0) ), pow( ( floor( ( ( pow( clamp( p0_nodeVar21.z, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar22 ) + 0.5 ) ) / p0_nodeVar22 ), f32(1.0) ) ).z;
+		p0_nodeVar16 = vec3<f32>( pow( ( floor( ( ( pow( clamp( p0_nodeVar21.x, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar22 ) + 0.5 ) ) / p0_nodeVar22 ), f32((1.0 / knobs.gamma)) ), pow( ( floor( ( ( pow( clamp( p0_nodeVar21.y, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar22 ) + 0.5 ) ) / p0_nodeVar22 ), f32((1.0 / knobs.gamma)) ), pow( ( floor( ( ( pow( clamp( p0_nodeVar21.z, 0.0, 1.0 ), f32(knobs.gamma) ) * p0_nodeVar22 ) + 0.5 ) ) / p0_nodeVar22 ), f32((1.0 / knobs.gamma)) ) ).z;
 
 	}
 

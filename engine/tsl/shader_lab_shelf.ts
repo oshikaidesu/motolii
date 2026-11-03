@@ -35,6 +35,26 @@ function fit(xs: number[], ys: number[]): [number, number] | null {
   const a = (ys[far] - ys[0]) / (xs[far] - xs[0]), c = ys[0] - a * xs[0], reach = Math.max(...ys) - Math.min(...ys)
   return reach > 0 && xs.every((x, i) => Math.abs(a * x + c - ys[i]) <= 1e-3 * reach) ? [a, c] : null
 }
+// A count the author rounds up (ascii-pass.ts gridWidth: Math.ceil((1 - originX) / cellUvWidth), 104 for 103 columns): the
+// line it keeps within one of, by least squares.
+function counted(xs: number[], ys: number[]): [number, number] | null {
+  if (!ys.every(Number.isInteger) || new Set(ys).size < 3) return null
+  const mx = xs.reduce((s, x) => s + x, 0) / xs.length, my = ys.reduce((s, y) => s + y, 0) / ys.length
+  const a = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0) / xs.reduce((s, x) => s + (x - mx) ** 2, 0), c = my - a * mx
+  return Number.isFinite(a) && xs.every((x, i) => Math.abs(a * x + c - ys[i]) <= 1) ? [a, c] : null
+}
+// What a knob `v` and the size it plays at `S` may go along as: their products and quotients, as the author's cells are
+// (ascii-pass.ts syncGridSize: cellWidth = frame.width / columns, cellHeight = cellWidth / aspect, cellUv = cell / size).
+function forms(v: string | null): [string, (x: number[]) => number][] {
+  const all: [string, (x: number[]) => number, number][] = []
+  for (const p of v ? [1, -1] : [0]) for (const q of [0, 1, -1]) for (const r of [0, 1, -1]) {
+    if (!p && !q && !r) continue
+    const up = [p > 0 ? v : "", q > 0 ? "S.x" : "", r > 0 ? "S.y" : ""].filter(x => x), down = [p < 0 ? v : "", q < 0 ? "S.x" : "", r < 0 ? "S.y" : ""].filter(x => x)
+    const under = down.length > 1 ? `(${down.join(" * ")})` : down[0]
+    all.push([down.length ? `(${up.join(" * ") || "1.0"} / ${under})` : up.length > 1 ? `(${up.join(" * ")})` : up[0]!, ([x, w, h]) => x ** p * w ** q * h ** r, Math.abs(p) + Math.abs(q) + Math.abs(r)])
+  }
+  return all.sort((a, b) => a[2] - b[2]).map(([form, of]) => [form, of])
+}
 const same = (a: number, b: number) => Math.abs(a - b) < 1e-5
 // What the author's render() does, told to a renderer that does nothing else (each step: step, each copy: copied).
 function drawn(pass: any, input: any, output: any, time: number, step: (scene: any, camera: any, target: any) => void, copied: (from: any, to: any) => void) {
@@ -107,6 +127,10 @@ for (const word of types) try {
   const output = new THREE.RenderTarget(W, H, { type: THREE.HalfFloatType }), input = new THREE.Texture()
   const sized = (w: number, h: number) => { output.setSize(w, h); pass.resize?.(w, h); pass.updateLogicalSize?.(w, h) }
   sized(W, H)
+  const resized = (w: number, h: number) => {   // (drawn twice once it is another size, as at first: crt-pass.ts resize sets historyPrimedFrames to 0)
+    sized(w, h)
+    for (let i = 0; i < 2; i++) drawn(pass, input, output, 0, () => {}, () => {})   // (at the time flat() draws at: some keep the time before, ink-pass.ts)
+  }
   // Pictures that are one: the two of a pair turned round each frame, and a picture copied whole to another.
   const joined = new Map<any, any>(), root = (t: any): any => joined.has(t) ? root(joined.get(t)) : t
   const join = (a: any, b: any) => { a = root(a); b = root(b); if (a !== b) joined.set(a, b) }
@@ -147,16 +171,25 @@ for (const word of types) try {
   const tail = reading ? nameOf(output.texture) : null
   // A picture whose size goes with a knob (a cell of it for each dot: connected-dots-pass.ts syncSiteGrid) as large as that
   // knob ever asks, a little over since its margin is in cells; what says its size then says the picture's own.
+  // Measured once it has drawn: some size theirs as they draw (ascii-pass.ts render, syncGridSize).
   const grew = new Map<string, any>()
   for (const p of definition.params as any[]) if (p.type === "number") for (const v of [p.min ?? 0, p.max ?? 1]) {
     pass.updateParams({ ...params, [p.key]: v })
+    drawn(pass, input, output, 0, () => {}, () => {})
     for (const [t, name] of names) {
       const x = targets.find(y => y.name === name)!, w = t.image.width / W, h = t.image.height / H
       if (w > x.share[0] || h > x.share[1]) { x.share = [Math.max(w, x.share[0]), Math.max(h, x.share[1])]; grew.set(name, t) }
     }
   }
   pass.updateParams(params)
-  for (const name of grew.keys()) { const x = targets.find(y => y.name === name)!; x.share = [x.share[0] * 1.1, x.share[1] * 1.1] }
+  drawn(pass, input, output, 0, () => {}, () => {})
+  // One read only by where on it, as ascii-pass.ts reads its grid ((cell + 0.5) / grid), is the same drawn larger: as large as
+  // the stage, so any count of cells fits it. One read by which of its points (textureLoad) is as large as the knob asks.
+  for (const name of [...grew.keys()]) {
+    const x = targets.find(y => y.name === name)!
+    if (steps.some(s => s.pictures.some(([u, t]) => t?.isRenderTargetTexture && names.get(root(t)) === name && s.frag.includes(`textureLoad( ${u}, `)))) x.share = [x.share[0] * 1.1, x.share[1] * 1.1]
+    else { x.share = [1, 1]; grew.delete(name) }
+  }
 
   const entries = (each: (step: number, name: string, part: number, v: number) => void) => steps.forEach((s, k) => s.uniforms.forEach((u, j) => parts(s.values[j])?.forEach((v, i) => each(k, u.name, i, v))))
   const flat = () => {   // (every number of every step, now)
@@ -187,6 +220,27 @@ for (const word of types) try {
     return got
   }
   const set = (key: string) => (v: any) => pass.updateParams({ ...params, [key]: v })
+  // (what goes with the size it plays at: the stage's in `S`, shelf_file.ts turning that into a step's own)
+  const sizes = [[W, H], [W * 1.5, H], [W * 2, H], [W, H * 1.5], [W, H * 2]]
+  const follow = (xs: number[][], ys: number[], v: string | null) => {   // (the simplest form that holds at every size)
+    for (const tried of [fit, counted]) for (const [form, of] of forms(v)) { const line = tried(xs.map(of), ys); if (line) return [line[0], line[1], form] as const }
+    return null
+  }
+  // A number knob's values at every size (cells go with both: ascii-pass.ts syncGridSize).
+  const together = (values: number[], key: string, to: string) => {
+    const seen = sizes.map(([w, h]) => (resized(w, h), values.map(v => (set(key)(v), flat()))))
+    pass.updateParams(params)
+    resized(W, H)
+    if (seen.some(at => at.some(s => !s))) return along(values, set(key), to)   // (not seen at every size: at the first, as a x + c)
+    const xs = sizes.flatMap(([w, h]) => values.map(v => [v, w, h]))
+    let got = 0
+    shape.forEach((at, n) => {
+      if (values.every((_, i) => same(seen[0][i]![n], seen[0][0]![n]))) return   // (this knob does not move it)
+      const line = follow(xs, seen.flatMap(one => one.map(s => s![n])), to)
+      if (line) { wire(at, line[0], line[1], line[2]); got++ }
+    })
+    return got
+  }
   const lines = [`// ${about.label}${preset ? ` ${preset[0].toUpperCase() + preset.slice(1)}` : ""}: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/tsl/shader_lab_shelf.ts)`,
     `// --label:${about.category === "distort" ? "Distort" : "Stylize"}`]
   if (about.description) lines.push(`// --about:${about.description}`)
@@ -200,7 +254,7 @@ for (const word of types) try {
     let got = 0
     if (p.type === "number") {
       const low = p.min ?? 0, high = p.max ?? 1, on = (x: number) => p.step ? low + Math.round((high - low) * x / p.step) * p.step : low + (high - low) * x
-      got = along([on(.25), on(.5), on(.75)], v => set(p.key)(v), `knobs.${knob}`)
+      got = together([on(.25), on(.5), on(.75)], p.key, `knobs.${knob}`)
       if (got) { fields.set(knob, "f32"); lines.push(`// --track@${knob}:${label},${low},${high},${p.defaultValue},${p.step ?? (high - low) / 100}`) }
     } else if (p.type === "select" && p.options.length > 2) {   // (as isf.cpp takes an ISF long: a whole number)
       got = along(p.options.map((_: any, i: number) => i), i => set(p.key)(p.options[i].value), `knobs.${knob}`, true)
@@ -228,20 +282,16 @@ for (const word of types) try {
   const flatAt = (time: number) => { const all: number[] = []; let k = 0; drawn(pass, input, output, time, () => { const s = steps[k++]; if (s) for (const u of s.uniforms) all.push(...(parts(u.node.value) ?? [NaN])) }, () => {}); return all }
   const times = [1, 2, 3].map(flatAt)
   shape.forEach((at, n) => { const line = fit([1, 2, 3], times.map(s => s[n])); if (line) wire(at, line[0], line[1], "knobs.time") })
-  // (what goes with the size it plays at: the stage's in `S`, shelf_file.ts turning that into a step's own)
-  const sizes = [[W, H], [W * 1.5, H], [W * 2, H], [W, H * 1.5], [W, H * 2]]
-  const seen = sizes.map(([w, h]) => (sized(w, h), flat()))
+  const seen = sizes.map(([w, h]) => (resized(w, h), flat()))
   const owns = sizes.map(([w, h]) => (sized(w, h), new Map([...grew].map(([name, t]) => [name, [t.image.width, t.image.height]]))))
-  sized(W, H)
-  if (seen.every(s => s)) {
-    const forms: [string, (w: number, h: number) => number][] = [["S.x", w => w], ["S.y", (_, h) => h], ["(1.0 / S.x)", w => 1 / w], ["(1.0 / S.y)", (_, h) => 1 / h], ["(S.x / S.y)", (w, h) => w / h], ["(S.y / S.x)", (w, h) => h / w]]
-    shape.forEach((at, n) => {
-      const ys = seen.map(s => s![n]), own = nameOf(steps[at[0]].target)
-      if (grew.has(own) && at[2] < 2 && ys.every((y, i) => same(y, owns[i].get(own)![at[2]]))) return wire(at, 1, 0, `knobs.resolution.${"xy"[at[2]]}`)
-      if (said.get(`${at[0]}:${at[1]}`)?.[at[2]] || ys.some(y => Number.isNaN(y))) return
-      for (const [form, of] of forms) { const line = fit(sizes.map(([w, h]) => of(w, h)), ys); if (line) { wire(at, line[0], line[1], form); break } }
-    })
-  }
+  resized(W, H)
+  if (seen.every(s => s)) shape.forEach((at, n) => {
+    const ys = seen.map(s => s![n]), own = nameOf(steps[at[0]].target)
+    if (grew.has(own) && at[2] < 2 && ys.every((y, i) => same(y, owns[i].get(own)![at[2]]))) return wire(at, 1, 0, `knobs.resolution.${"xy"[at[2]]}`)
+    if (said.get(`${at[0]}:${at[1]}`)?.[at[2]] || ys.some(y => Number.isNaN(y))) return
+    const line = follow(sizes.map(([w, h]) => [0, w, h]), ys, null)
+    if (line) wire(at, line[0], line[1], line[2])
+  })
   const file = `${dir}/sl_${word.replace(/\W/g, "_")}.wgsl`
   std.open(file, "w").puts(fileText(lines, steps, said, fields, targets, nameOf, tail, false, saved(word)))
   console.log(`${word}: ${steps.length} steps, ${targets.length} pictures, ${said.size} uniforms moved${left.length ? `, left as they are: ${left.join(" ")}` : ""}`)

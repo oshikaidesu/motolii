@@ -1,7 +1,7 @@
 // ASCII Binary: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/tsl/shader_lab_shelf.ts)
 // --label:Stylize
 // --about:Redraws the image as text characters, like an old terminal.
-// --pass@t0:0,1,s0.0390625,s0.01953125
+// --pass@t0:0,1,s1,s1
 // --pass@:0,0,s1,s1
 // --track@columns:Columns,4,400,80,1
 // --track@boldness:Boldness,-1,1,0,0.01
@@ -93,8 +93,8 @@ fn p0_main(door_uv: vec2f) -> p0_OutputStruct {
 	// flow
 	// code
 
-	p0_nodeVar0 = vec2<f32>( f32(0.0125), f32((0.02580645161290323 * ((knobs.resolution.x / 0.0390625) / (knobs.resolution.y / 0.01953125)) + -6.938893903907228e-18)) );
-	p0_nodeVar1 = ( vec2<f32>( f32(0.0), f32(0.0) ) + ( floor( ( vec2<f32>( nodeVarying4.x, ( 1.0 - nodeVarying4.y ) ) * vec2<f32>( f32(80.0), f32((0.24242424242424243 * knobs.columns + 0.030303030303031164)) ) ) ) * p0_nodeVar0 ) );
+	p0_nodeVar0 = vec2<f32>( f32((1.0 / knobs.columns)), f32((2.064516129032258 * (knobs.resolution.x / (knobs.columns * knobs.resolution.y)) + 0)) );
+	p0_nodeVar1 = ( vec2<f32>( f32(0.0), f32(0.0) ) + ( floor( ( vec2<f32>( nodeVarying4.x, ( 1.0 - nodeVarying4.y ) ) * vec2<f32>( f32((0.996969696969697 * knobs.columns + 0.9454545454545666)), f32((0.48398833828787835 * (knobs.columns * knobs.resolution.y / knobs.resolution.x) + 0.3994682106475196)) ) ) ) * p0_nodeVar0 ) );
 	p0_nodeVar2 = picture_read( clamp( ( p0_nodeVar1 + ( vec2<f32>( 0.16666666666666666, 0.16666666666666666 ) * p0_nodeVar0 ) ), vec2<f32>( 0.0, 0.0 ), vec2<f32>( 1.0, 1.0 ) ) );
 	p0_nodeVar3 = picture_read( clamp( ( p0_nodeVar1 + ( vec2<f32>( 0.5, 0.16666666666666666 ) * p0_nodeVar0 ) ), vec2<f32>( 0.0, 0.0 ), vec2<f32>( 1.0, 1.0 ) ) );
 	p0_nodeVar4 = picture_read( clamp( ( p0_nodeVar1 + ( vec2<f32>( 0.8333333333333334, 0.16666666666666666 ) * p0_nodeVar0 ) ), vec2<f32>( 0.0, 0.0 ), vec2<f32>( 1.0, 1.0 ) ) );
@@ -163,16 +163,16 @@ fn p1_main(door_uv: vec2f) -> p1_OutputStruct {
 
 	p1_nodeVar0 = picture_read( vec2<f32>( nodeVarying4.x, ( 1.0 - nodeVarying4.y ) ) );
 	p1_nodeVar1 = vec2<f32>( nodeVarying4.x, ( 1.0 - nodeVarying4.y ) );
-	p1_nodeVar2 = floor( ( ( p1_nodeVar1 - vec2<f32>( f32(0.0), f32(0.0) ) ) / vec2<f32>( f32(0.0125), f32((0.02580645161290323 * (knobs.resolution.x / knobs.resolution.y) + -6.938893903907228e-18)) ) ) );
-	p1_nodeVar3 = target_read( t0, t0_sampler, clamp( ( ( ( p1_nodeVar2 + vec2<f32>( ( ( 1.0 * 0.5 ) - 0.5 ) ) ) + vec2<f32>( 0.5, 0.5 ) ) / vec2<f32>( f32(80.0), f32((0.24242424242424243 * knobs.columns + 0.030303030303031164)) ) ), vec2<f32>( 0.0, 0.0 ), vec2<f32>( 1.0, 1.0 ) ) );
+	p1_nodeVar2 = floor( ( ( p1_nodeVar1 - vec2<f32>( f32(0.0), f32(0.0) ) ) / vec2<f32>( f32((1.0 / knobs.columns)), f32((2.064516129032258 * (knobs.resolution.x / (knobs.columns * knobs.resolution.y)) + 0)) ) ) );
+	p1_nodeVar3 = target_read( t0, t0_sampler, clamp( ( ( ( p1_nodeVar2 + vec2<f32>( ( ( 1.0 * 0.5 ) - 0.5 ) ) ) + vec2<f32>( 0.5, 0.5 ) ) / vec2<f32>( f32((0.996969696969697 * knobs.columns + 0.9454545454545666)), f32((0.48398833828787835 * (knobs.columns * knobs.resolution.y / knobs.resolution.x) + 0.3994682106475196)) ) ), vec2<f32>( 0.0, 0.0 ), vec2<f32>( 1.0, 1.0 ) ) );
 	p1_nodeVar4 = clamp( ( ( dot( p1_nodeVar3.xyz, vec3<f32>( 0.2126, 0.7152, 0.0722 ) ) - f32(knobs.signalBlackPoint) ) / max( ( f32(knobs.signalWhitePoint) - f32(knobs.signalBlackPoint) ), 0.001 ) ), 0.0, 1.0 );
 	p1_nodeVar5 = floor( ( ( mix( p1_nodeVar4, ( 1.0 - p1_nodeVar4 ), f32(knobs.invert) ) * ( f32(2.0) - 1.0 ) ) + 0.5 ) );
-	p1_nodeVar6 = vec2<f32>( f32(0.0125), f32((0.02580645161290323 * (knobs.resolution.x / knobs.resolution.y) + -6.938893903907228e-18)) );
+	p1_nodeVar6 = vec2<f32>( f32((1.0 / knobs.columns)), f32((2.064516129032258 * (knobs.resolution.x / (knobs.columns * knobs.resolution.y)) + 0)) );
 	p1_nodeVar7 = ( ( p1_nodeVar1 - ( vec2<f32>( f32(0.0), f32(0.0) ) + ( p1_nodeVar2 * p1_nodeVar6 ) ) ) / ( p1_nodeVar6 * vec2<f32>( 1.0 ) ) );
 	p1_nodeVar8 = clamp( p1_nodeVar7, vec2<f32>( 0.0, 0.0 ), vec2<f32>( 1.0, 1.0 ) );
 	p1_nodeVar9 = vec2<f32>( ( f32(0.13953488372093023) + ( p1_nodeVar8.x * f32(0.7209302325581395) ) ), ( f32(0.07894736842105263) + ( p1_nodeVar8.y * f32(0.8421052631578947) ) ) );
 	p1_nodeVar10 = image_read( image0, image0_sampler, vec2<f32>( ( ( ( p1_nodeVar5 - ( floor( ( p1_nodeVar5 / f32(3.0) ) ) * f32(3.0) ) ) + p1_nodeVar9.x ) / f32(3.0) ), ( ( floor( ( p1_nodeVar5 / f32(3.0) ) ) + p1_nodeVar9.y ) / f32(2.0) ) ) );
-	p1_nodeVar11 = ( clamp( smoothstep( -0.5, 0.5, ( ( ( ( p1_nodeVar10.x - 0.5 ) * f32(8.0) ) + ( f32(knobs.boldness) * 2.0 ) ) * ( ( ( f32((0.02580645161290323 * knobs.resolution.x + -7.105427357601002e-15)) * 1.0 ) * f32(1.0) ) / f32(64.0) ) ) ), 0.0, 1.0 ) * ( ( ( step( 0.0, p1_nodeVar7.x ) * step( p1_nodeVar7.x, 1.0 ) ) * step( 0.0, p1_nodeVar7.y ) ) * step( p1_nodeVar7.y, 1.0 ) ) );
+	p1_nodeVar11 = ( clamp( smoothstep( -0.5, 0.5, ( ( ( ( p1_nodeVar10.x - 0.5 ) * f32(8.0) ) + ( f32(knobs.boldness) * 2.0 ) ) * ( ( ( f32((2.064516129032258 * (knobs.resolution.x / knobs.columns) + 0)) * 1.0 ) * f32(1.0) ) / f32(64.0) ) ) ), 0.0, 1.0 ) * ( ( ( step( 0.0, p1_nodeVar7.x ) * step( p1_nodeVar7.x, 1.0 ) ) * step( 0.0, p1_nodeVar7.y ) ) * step( p1_nodeVar7.y, 1.0 ) ) );
 	p1_nodeVar12 = mix( vec3<f32>( 0.0, 0.0, 0.0 ), p1_nodeVar3.xyz, step( 0.0, p1_nodeVar11 ) );
 	p1_nodeVar13 = clamp( ( ( dot( p1_nodeVar12, vec3<f32>( 0.2126, 0.7152, 0.0722 ) ) - f32(knobs.signalBlackPoint) ) / max( ( f32(knobs.signalWhitePoint) - f32(knobs.signalBlackPoint) ), 0.001 ) ), 0.0, 1.0 );
 	p1_nodeVar14 = vec4<f32>( mix( ( ( p1_nodeVar12 * vec3<f32>( f32(knobs.bgOpacity) ) ) * vec3<f32>( f32((-1 * knobs.colorMode + 1)) ) ), mix( ( vec3<f32>( f32(knobs.monoColor.x), f32(knobs.monoColor.y), f32(knobs.monoColor.z) ) * vec3<f32>( mix( p1_nodeVar13, ( 1.0 - p1_nodeVar13 ), f32(knobs.invert) ) ) ), p1_nodeVar12, f32((-1 * knobs.colorMode + 1)) ), max( 0.0, p1_nodeVar11 ) ), 1.0 );
