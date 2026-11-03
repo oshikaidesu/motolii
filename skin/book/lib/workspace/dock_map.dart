@@ -141,6 +141,36 @@ class DockMap extends StatefulWidget {
 class _DockMapState extends State<DockMap> {
   final _keys = FocusNode(debugLabel: 'ws-map');
   String? _from;   // (where the list of the alike was made from: the one pressed on the map, as XO's from its Space)
+  final _seen = <String>[];   // (what was picked, in turn: XO's History)
+  int _at = -1;
+
+  @override
+  void initState() {
+    super.initState();
+    _saw(widget.picked);
+  }
+
+  @override
+  void didUpdateWidget(DockMap old) {
+    super.didUpdateWidget(old);
+    if (widget.picked != old.picked) _saw(widget.picked);
+  }
+
+  void _saw(String? id) {
+    if (id == null || (_at >= 0 && _seen[_at] == id)) return;   // (gone to by the history itself: kept as it is)
+    _seen
+      ..removeRange(_at + 1, _seen.length)
+      ..add(id);
+    _at = _seen.length - 1;
+  }
+
+  /// XO's History: the up and down keys back and forth through what was picked.
+  void _back(int by) {
+    final i = _at + by;
+    if (i < 0 || i >= _seen.length || widget.press == null) return;
+    _at = i;
+    widget.press!(_seen[i]);
+  }
 
   @override
   void dispose() {
@@ -179,6 +209,8 @@ class _DockMapState extends State<DockMap> {
               const SingleActivator(LogicalKeyboardKey.arrowRight): () => _step(list, 1),
               const SingleActivator(LogicalKeyboardKey.arrowLeft, shift: true): () => _step(list, -5),
               const SingleActivator(LogicalKeyboardKey.arrowRight, shift: true): () => _step(list, 5),
+              const SingleActivator(LogicalKeyboardKey.arrowUp): () => _back(-1),
+              const SingleActivator(LogicalKeyboardKey.arrowDown): () => _back(1),
             },
             child: Focus(
               focusNode: _keys,
