@@ -161,16 +161,69 @@ Future<Float32List?> dockSeen(Motolii m, String model, List<String> files) async
   return _clip[key] = v;
 }
 
+/// Items' numbers of several parts side by side, as FontMap lays fonts by FontCLIP's numbers beside their tags' and
+/// their shapes' (weighted 1, 0.5, 0.2): each part's numbers made of one spread in all, times its [weights]' share, those
+/// of the [even] parts first each made of one spread itself (a z-score, each number its own scale). Left off (null): an
+/// item the first part has none for; one another part has none for takes that part's mean (nothing told by it).
+List<Float32List?> dockTogether(List<List<Float32List?>> parts, List<double> weights, {Set<int> even = const {}}) {
+  final n = parts.first.length, made = <List<Float32List>>[];
+  for (final (k, rows) in parts.indexed) {
+    final dims = rows.nonNulls.firstOrNull?.length ?? 0, had = [for (final r in rows) if (r != null && r.length == dims) r];
+    final mean = Float64List(dims), sd = Float64List(dims)..fillRange(0, dims, 1);
+    for (final r in had) {
+      for (var i = 0; i < dims; i++) {
+        mean[i] += r[i] / had.length;
+      }
+    }
+    if (even.contains(k)) {
+      sd.fillRange(0, dims, 0);
+      for (final r in had) {
+        for (var i = 0; i < dims; i++) {
+          sd[i] += (r[i] - mean[i]) * (r[i] - mean[i]) / had.length;
+        }
+      }
+      for (var i = 0; i < dims; i++) {
+        sd[i] = math.sqrt(sd[i]) + 1e-6;
+      }
+    }
+    final out = [for (final _ in rows) Float32List(dims)];
+    var spread = 0.0;
+    for (final (j, r) in rows.indexed) {
+      if (r == null || r.length != dims) continue;
+      for (var i = 0; i < dims; i++) {
+        out[j][i] = (r[i] - mean[i]) / sd[i];
+        spread += out[j][i] * out[j][i] / had.length;
+      }
+    }
+    final by = spread > 0 ? weights[k] / math.sqrt(spread) : 0.0;
+    for (final r in out) {
+      for (var i = 0; i < dims; i++) {
+        r[i] *= by;
+      }
+    }
+    made.add(out);
+  }
+  return [
+    for (var i = 0; i < n; i++)
+      if (parts.first[i] == null) null else Float32List.fromList([for (final k in made) ...k[i]]),
+  ];
+}
+
 /// The map: each shown item's tile in its cell, the cells as many as the items and as large as the room allows ([aspect]
 /// a tile's width to its height; [cell] wide where they lie before the grid comes), the rest left off; what is said
 /// while it is being laid out. [picked]: the one picked, its nearest under the map; [press]: one press on one of them.
+/// [kinds]: what each is (the shelf's own word for it), each tile edged in its kind's [hue], as XO's Space colours each
+/// sound by its drum type and the Embedding Projector colours points by a column ("Color by"), and each coloured kind's
+/// name over where its tiles are, as DataMapPlot names each cluster at its middle.
 class DockMap extends StatefulWidget {
-  const DockMap(this.places, this.shown, {super.key, this.cell = 26, this.aspect = 1, this.picked, this.press});
+  const DockMap(this.places, this.shown, {super.key, this.cell = 26, this.aspect = 1, this.picked, this.press, this.kinds = const {}, this.hue});
   final DockMapPlaces places;
   final List<(String, Widget)> shown;
   final double cell, aspect;
   final String? picked;
   final void Function(String id)? press;
+  final Map<String, String> kinds;
+  final Color? Function(String kind)? hue;
   @override
   State<DockMap> createState() => _DockMapState();
 }
@@ -278,6 +331,11 @@ class _DockMapState extends State<DockMap> {
       (_, final p?) => Rect.fromLTWH(p.dx * (room.width - w), p.dy * (room.height - h), w, h),   // (before the grid comes, or too many for one: where they lie)
       _ => null,
     };
+    final where = <String, List<Offset>>{};
+    for (final id in tiles.keys) {
+      if ((widget.kinds[id], place(id)) case (final k?, final r?) when k.isNotEmpty) (where[k] ??= []).add(r.center);
+    }
+    Color? hue(String id) => widget.kinds[id] == null ? null : widget.hue?.call(widget.kinds[id]!);
     return ClipRect(
       child: InteractiveViewer(
         key: ValueKey('ws-map-$_name'),
@@ -292,7 +350,27 @@ class _DockMapState extends State<DockMap> {
                   Positioned.fromRect(
                     key: ValueKey('ws-map-$_name-$id'),
                     rect: r,
-                    child: Listener(onPointerDown: (_) => _from = id, child: tile),   // (pressed on the map: the list made from it, as XO's Space)
+                    child: Listener(   // (pressed on the map: the list made from it, as XO's Space)
+                      onPointerDown: (_) => _from = id,
+                      child: hue(id) == null ? tile : DecoratedBox(position: DecorationPosition.foreground, decoration: BoxDecoration(border: Border.all(color: hue(id)!, width: Shape.s(2))), child: tile),
+                    ),
+                  ),
+              for (final MapEntry(key: k, value: at) in where.entries)
+                if (widget.hue?.call(k) case final c?)   // (the names the colours' key: a kind with none goes unnamed)
+                  Positioned(
+                    key: ValueKey('ws-map-$_name-kind-$k'),
+                    left: at.map((p) => p.dx).reduce((a, b) => a + b) / at.length,
+                    top: at.map((p) => p.dy).reduce((a, b) => a + b) / at.length,
+                    child: IgnorePointer(
+                      child: FractionalTranslation(
+                        translation: const Offset(-0.5, -0.5),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: Shape.s(6), vertical: Shape.s(3)),
+                          color: WsT.card.withValues(alpha: 0.9),
+                          child: Text(k, style: T.title(c)),   // (read at a glance over the tiles, as a map's place names)
+                        ),
+                      ),
+                    ),
                   ),
             ],
           ),

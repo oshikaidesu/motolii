@@ -15,6 +15,7 @@ import 'package:lab_book/workspace/create_preview.dart';
 import 'package:lab_book/workspace/desk_kit.dart' show DeskChip;
 import 'package:lab_book/workspace/dock_parts.dart' show DockIconButton, DockMem, DockSearch, dockStarsAt;
 import 'package:lab_book/workspace/dock_effects.dart' show EffectTile;
+import 'package:lab_book/workspace/dock_map.dart' show DockMap, DockMapPlaces, dockTogether;
 import 'package:lab_book/workspace/dock_tags.dart' show DockTags;
 import 'package:lab_book/workspace/effect_decks.dart';
 import 'package:lab_book/workspace/effect_tiles.dart';
@@ -667,4 +668,26 @@ void main() {
     await t.pumpWidget(const SizedBox());
   }, tags: 'main', skip: !insideBuilt);
 
+  test('a map\'s kinds weigh more than looks: two Blurs that look apart lie nearer than a Blur and a Glitch that look alike (each kind an island, XO\'s drum types)', () {
+    final look = [Float32List.fromList([0, 0]), Float32List.fromList([1, 1]), Float32List.fromList([0, 0.05]), Float32List.fromList([0.6, 0.4])];
+    final kind = [for (final k in [0, 0, 1, 1]) Float32List(2)..[k] = 1];
+    final v = dockTogether([look, kind], const [1, 2], even: const {0});
+    double d(int a, int b) => [for (var i = 0; i < v[a]!.length; i++) (v[a]![i] - v[b]![i]) * (v[a]![i] - v[b]![i])].reduce((x, y) => x + y);
+    expect(d(0, 1), lessThan(d(0, 2)), reason: 'the other Blur, though it looks apart, before the Glitch that looks alike');
+    expect(dockTogether([[null, look[1]], [kind[0], kind[1]]], const [1, 2]).first, isNull, reason: 'no look: off the map');
+  });
+
+  testWidgets('a map names each kind over its tiles and edges each tile in its kind\'s colour (XO\'s coloured dots, DataMapPlot\'s names)', (t) async {
+    final places = DockMapPlaces('Test')..places.value = {'a': const Offset(0.1, 0.1), 'b': const Offset(0.15, 0.1), 'c': const Offset(0.1, 0.15), 'd': const Offset(0.9, 0.9)};
+    const red = Color(0xFFFF3636);
+    await t.pumpWidget(Directionality(
+      textDirection: TextDirection.ltr,
+      child: SizedBox(width: 400, height: 300, child: DockMap(places, [for (final id in ['a', 'b', 'c', 'd']) (id, const SizedBox.expand())], kinds: const {'a': 'Blur', 'b': 'Blur', 'c': 'Blur', 'd': 'Glitch'}, hue: (k) => k == 'Blur' ? red : null)),
+    ));
+    expect(find.text('Blur'), findsOneWidget, reason: 'coloured: named, once over its three');
+    expect(find.text('Glitch'), findsNothing, reason: 'no colour: no name');
+    final edged = find.descendant(of: find.byKey(const ValueKey('ws-map-Test-a')), matching: find.byType(DecoratedBox));
+    expect(((t.widget<DecoratedBox>(edged.first).decoration as BoxDecoration).border! as Border).top.color, red);
+    expect(find.descendant(of: find.byKey(const ValueKey('ws-map-Test-d')), matching: find.byType(DecoratedBox)), findsNothing, reason: 'a kind with no colour: no edge');
+  });
 }

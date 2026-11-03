@@ -3,9 +3,11 @@
 // whole-screen effects (on the picked thing as the camera sees it, or on the stage, in their order), the motions.
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 
+import '../motolii.dart' show Motolii;
 import '../tokens.dart';
 import 'dock_effect_places.dart';
 import 'dock_glyphs.dart';
@@ -129,7 +131,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     ];
     // (ten in sight over the tiles while nothing narrows them, as Alight Motion's effect browser opens on its last ten,
     //  EffectBrowser.kt:217: a list out of sight is not gone back to, Bergman's bookmarks, 32 of 41 by the bar always in sight)
-    final inSight = place == 'All' && chip == 'All' && c.query.isEmpty ? recent.take(10).toList() : const <_Fx>[];
+    final inSight = place == 'All' && chip == 'All' && c.query.isEmpty && !c.mem.mapped.contains('Effects') ? recent.take(10).toList() : const <_Fx>[];   // (on the map the map alone, as XO's Space: the recent box took half the shelf)
     final listed = [...shown, ...lost];
     void put(EffectDeck d, _Fx e) => c.set(() {
       d.toggle(e.id, e.name, found: d.words.isNotEmpty && found(d.words, e));
@@ -177,8 +179,9 @@ class _EffectsShelfState extends State<EffectsShelf> {
                   builder: (context, _) {
                     final map = dockMap('Effects'), drawing = EffectTiles.progress.value != null;
                     final clip = dockModel('clip_b32');   // (by how CLIP sees each moment, once it is made; else by tiny colours)
-                    if (!drawing || map.places.value.isEmpty) map.need(m, [for (final e in every) if (m.picture(e.id).isNotEmpty) (e.id, m.picture(e.id))], (from) async => [for (final f in from) await (clip == null ? dockTiny : (List<String> at) => dockSeen(m, clip, at))([for (final k in const [0, 7, 15]) EffectTiles.frame(f, k)])], also: '${drawing ? 'drawing' : ''} ${clip ?? ''}');   // (three moments of its sixteen: how it moves too)
-                    return DockMap(map, [for (final e in listed) (e.id, tile(e, true))], picked: c.sel, press: c.pick);
+                    final drawn = [for (final e in every) if (m.picture(e.id).isNotEmpty) e];
+                    if (!drawing || map.places.value.isEmpty) map.need(m, [for (final e in drawn) (e.id, m.picture(e.id))], (from) => _fxNumbers(m, clip, [for (final e in drawn) e.label], from), also: '${drawing ? 'drawing' : ''} ${clip ?? ''} kinds');
+                    return DockMap(map, [for (final e in listed) (e.id, tile(e, true))], picked: c.sel, press: c.pick, kinds: {for (final e in every) e.id: e.label}, hue: _kindHue(every));
                   },
                 )
               : LayoutBuilder(
@@ -331,6 +334,27 @@ class TileMovingState extends State<TileMoving> {
 
   @override
   Widget build(BuildContext context) => Image.file(key: ValueKey(FileStat.statSync(widget.file).modified), File(_step == null ? widget.file : EffectTiles.frame(widget.file, _way[_step!])), fit: BoxFit.cover, cacheWidth: EffectTiles.readWide, gaplessPlayback: true, errorBuilder: (_, _, _) => const SizedBox());
+}
+
+/// The Effects map's numbers for [ids], their tiles' moments read from [homes]: how each looks (CLIP's at three moments
+/// of its sixteen: how it moves too; or their tiny colours) beside what it is for, the shelf's own word ([kinds]: the
+/// inside's label, as an ISF's CATEGORIES or its startImage, endImage and progress say it, isf.cpp), that weighted
+/// twice: each kind an island, the alike near within it, as XO's Space keeps each drum type's colour together.
+Future<List<Float32List?>> _fxNumbers(Motolii m, String? clip, List<String> kinds, List<String> homes) async {
+  final look = [for (final f in homes) await (clip == null ? dockTiny : (List<String> at) => dockSeen(m, clip, at))([for (final k in const [0, 7, 15]) EffectTiles.frame(f, k)])];
+  final all = kinds.toSet().toList();
+  return dockTogether([look, [for (final k in kinds) Float32List(all.length)..[all.indexOf(k)] = 1]], const [1, 2], even: const {0});
+}
+
+/// A kind's colour on the map, Ableton Live's clip colours (wsLabelColour) in the order of the kinds most had, as the
+/// shelf's chips stand (the first sixteen; the rest none): the same kind the same colour whatever is shown.
+Color? Function(String) _kindHue(List<_Fx> every) {
+  final had = <String, int>{};
+  for (final e in every) {
+    if (e.label.isNotEmpty) had[e.label] = (had[e.label] ?? 0) + 1;
+  }
+  final order = (had.keys.toList()..sort((a, b) => had[b]!.compareTo(had[a]!))).take(16).toList();
+  return (k) => order.contains(k) ? wsLabelColour(order.indexOf(k)) : null;
 }
 
 /// Joined: the document's value an effect is, and what the picked thing has for it now.
