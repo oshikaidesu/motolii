@@ -86,6 +86,50 @@ void _tests2() {
     await _close(t);
   }, skip: !_built);
 
+  testWidgets('the Fonts shelf as a map, the alike near (XLN Audio\'s XO\'s Space, by t-SNE): each font its word as the stage sets it, the words typed narrowing it, two presses setting the picked text in it', (t) async {
+    final ws = await _pump(t), m = ws.inside!;
+    // (the inside's two: words drawn in a font, white on black; points laid out, the alike near)
+    final drawn = (await t.runAsync(() => m.typePictures(['/System/Library/Fonts/Supplemental/Georgia.ttf', '/nowhere.ttf'], 'Motion', 96, 32)))!;
+    expect([drawn[0]!.length, drawn[0]!.where((b) => b == 0).length, drawn[0]!.reduce(math.max), drawn[1]], [96 * 32, inInclusiveRange(1500, 2900), 255, isNull], reason: 'letters on black, most of it black; a file not there, none');
+    final points = [for (var i = 0; i < 40; i++) Float32List.fromList([i < 20 ? 0 : 10, (i % 20) * .01, 0])];   // (two heaps far apart)
+    final laid = (await t.runAsync(() => m.map(points)))!;
+    Offset mid(int from) => [for (var i = from; i < from + 20; i++) Offset(laid[i].$1, laid[i].$2)].reduce((a, b) => a + b) / 20;
+    final (a, b) = (mid(0), mid(20));
+    expect([for (var i = 0; i < 40; i++) ((Offset(laid[i].$1, laid[i].$2) - a).distance < (Offset(laid[i].$1, laid[i].$2) - b).distance) == (i < 20)], everyElement(isTrue), reason: 'each nearer the middle of its own heap');
+    expect(await t.runAsync(() => m.map(points.take(3).toList())), isNull, reason: 'too few to lay out');
+
+    final text = m.add('text', _font);
+    await t.runAsync(() => fontsRead(ws));
+    ws
+      ..reread()
+      ..select('$text')
+      ..shelf = 'Fonts';
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const ValueKey('ws-Fonts-map')));
+    await t.pump();
+    final map = dockMap('Fonts');
+    await t.runAsync(() async {
+      for (var i = 0; i < 600 && (map.laying.value || map.places.value.isEmpty); i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      }
+    });
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey('ws-map-Fonts')), findsOneWidget, reason: 'the shelf is a map now');
+    expect(map.places.value.length, greaterThan(fontsOffered! * .9), reason: 'the fonts are on it: those with the word\'s letters (300 of 305 on this Mac, five Noto fonts of other letters only having none to draw)');
+    await t.enterText(find.descendant(of: find.byType(DockSearch), matching: find.byType(EditableText)), 'Andale');
+    await t.pumpAndSettle();
+    final andale = find.byKey(const ValueKey('ws-map-Fonts-/System/Library/Fonts/Supplemental/Andale Mono.ttf'));
+    expect(andale, findsOneWidget, reason: 'the words typed leave it alone on the map');
+    await doubleTap(t, andale);
+    await settled(t, ws);
+    expect(m.word(text, 'file'), endsWith('/Andale Mono.ttf'), reason: m.trouble);
+    await t.tap(find.byKey(const ValueKey('ws-Fonts-rows')));
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey('ws-map-Fonts')), findsNothing, reason: 'back to its rows');
+    expect(t.takeException(), isNull);
+    await _close(t);
+  }, skip: !_built);
+
   testWidgets('P04: a title\'s font and a body\'s, kept for the texts added next (PowerPoint\'s theme fonts, Canva\'s brand fonts: golf_noise.md ㉚)', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     fontRecentAt(File('${Directory.systemTemp.createTempSync('fonts').path}/font_recent.json'));   // (not the maker's own list)

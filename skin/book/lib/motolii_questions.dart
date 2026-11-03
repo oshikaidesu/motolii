@@ -82,6 +82,42 @@ extension MotoliiQuestions on Motolii {
     });
   }
 
+  /// Of each font file, [words] in it white on black [w] by [h], a byte a point (motolii_type_picture; null: not drawn),
+  /// asked on another isolate as [setting].
+  Future<List<Uint8List?>> typePictures(List<String> fonts, String words, int w, int h) {
+    final lib = libPath;
+    return Isolate.run(() {
+      final ask = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_type_picture;
+      final said = words.toNativeUtf8(), out = malloc<UnsignedChar>(w * h), all = <Uint8List?>[];
+      for (final f in fonts) {
+        final file = f.toNativeUtf8();
+        all.add(ask(file, said, w, h, out) != 0 ? Uint8List.fromList(out.cast<Uint8>().asTypedList(w * h)) : null);
+        malloc.free(file);
+      }
+      malloc.free(said);
+      malloc.free(out);
+      return all;
+    });
+  }
+
+  /// [points] (each as many numbers) laid on a plane, the alike near (motolii_map: t-SNE): where each lies, 0 to 1 each
+  /// way, in their order (null: fewer than four), worked out on another isolate.
+  Future<List<(double, double)>?> map(List<Float32List> points) {
+    final lib = libPath;
+    return Isolate.run(() {
+      final n = points.length, dims = n == 0 ? 0 : points.first.length;
+      final at = malloc<Float>(n * dims + 1), xy = malloc<Double>(2 * n + 1);
+      for (var i = 0; i < n; i++) {
+        at.asTypedList(n * dims).setRange(i * dims, (i + 1) * dims, points[i]);
+      }
+      final got = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_map(at, n, dims, xy);
+      final laid = got == 0 ? null : [for (var i = 0; i < n; i++) (xy[2 * i], xy[2 * i + 1])];
+      malloc.free(at);
+      malloc.free(xy);
+      return laid;
+    });
+  }
+
   /// How a thing moves over a while, as the stage places it (its wave and all): [n] moments from [from] to before [to],
   /// four numbers each: where it is (x, y, units of the stage), how far turned (degrees), how large (a share). null: no
   /// such thing. Asked once when its values change, for a small preview that then plays by itself (motolii_path).

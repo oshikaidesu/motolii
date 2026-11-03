@@ -4,6 +4,7 @@
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data' show Float32List;
 import 'dart:ui' as ui show ImageByteFormat;
 
 import 'package:ffi/ffi.dart';
@@ -25,6 +26,7 @@ import 'package:lab_book/sets/inspector/inspector_direct_transform_canvas.dart' 
 import 'package:lab_book/sets/inspector/inspector_direct_transform_layout.dart' show TransformLayout;
 import 'package:lab_book/sets/inspector/inspector_rows_prop_row.dart';
 import 'package:lab_book/workspace/dock_fonts.dart';
+import 'package:lab_book/workspace/dock_map.dart' show dockMap;
 import 'package:lab_book/workspace/dock_glyphs.dart' show DockG;
 import 'package:lab_book/workspace/effect_tiles.dart' show EffectTiles;
 import 'package:lab_book/workspace/keys.dart' show WsKeys;

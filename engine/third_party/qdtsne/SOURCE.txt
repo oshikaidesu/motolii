@@ -1,0 +1,8 @@
+The include/ folders of five header-only libraries by Aaron Lun, all MIT (LICENSE.<name>), taken 2026-11-04, unchanged:
+  qdtsne     v3.0.3  https://github.com/libscran/qdtsne     tarball sha256 b93834005c65c63a035cccb0ba56399dd083bb96b19dd6b701bcdc60dc614035
+  knncolle   v3.1.2  https://github.com/knncolle/knncolle   tarball sha256 e3aee42c58197ffa7c1e265f50160c2039900d81a4d1aa21d7fd47fb76eafaaf
+  aarand     v1.1.0  https://github.com/LTLA/aarand         tarball sha256 af0bc29e38a02a23a95e0ab988f42510c73fbeb89c6f22162fa6a98f1b863dbe
+  subpar     v0.5.2  https://github.com/LTLA/subpar         tarball sha256 c8411250a0ff6cbcdcc21e534343b03dacff0c80b4b4a1b4134f7cc025bd1322
+  sanisizer  v0.2.2  https://github.com/LTLA/sanisizer      tarball sha256 8599a301172a39af96348d5e26e8a0d078be1f711a0ecd941d4fab9df159e712
+qdtsne needs the other four. The shelves' maps (look_map.h): t-SNE, as XLN Audio's XO lays its samples out by how alike
+they sound (its head of software design to Computer Music, 2019).

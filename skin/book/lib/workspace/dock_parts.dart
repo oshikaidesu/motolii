@@ -32,6 +32,9 @@ class DockMem {
   bool footOpen = false;
   bool mediaList = false;
 
+  /// The shelves shown as a map, the alike near (dock_map.dart), not as tiles in rows.
+  final mapped = <String>{};
+
   /// Program: the picked one's code rather than the list.
   bool programCode = false;
 

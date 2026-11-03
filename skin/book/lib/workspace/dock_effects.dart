@@ -9,6 +9,7 @@ import 'package:flutter/widgets.dart';
 import '../tokens.dart';
 import 'dock_effect_places.dart';
 import 'dock_glyphs.dart';
+import 'dock_map.dart';
 import 'dock_parts.dart';
 import 'dock_resizable.dart';
 import 'dock_tags.dart';
@@ -170,6 +171,15 @@ class _EffectsShelfState extends State<EffectsShelf> {
         Expanded(
           child: listed.isEmpty
               ? DockEmpty(c.query, said: c.query.isNotEmpty ? null : deck != null ? 'Drag an effect onto the deck, or right-click one' : 'Nothing here yet')
+              : c.mem.mapped.contains('Effects')
+              ? ListenableBuilder(   // (laid out by the tiles there are, and again once all are drawn: those drawn meanwhile join it then)
+                  listenable: EffectTiles.progress,
+                  builder: (context, _) {
+                    final map = dockMap('Effects'), drawing = EffectTiles.progress.value != null;
+                    if (!drawing || map.places.value.isEmpty) map.need(m, [for (final e in every) if (m.picture(e.id).isNotEmpty) (e.id, m.picture(e.id))], (from) async => [for (final f in from) await dockTiny([for (final k in const [0, 7, 15]) EffectTiles.frame(f, k)])], also: drawing ? 'drawing' : '');   // (three moments of its sixteen: how it moves too)
+                    return DockMap(map, [for (final e in listed) (e.id, tile(e, true))]);
+                  },
+                )
               : LayoutBuilder(
                   builder: (context, box) {
                     final cols = wsCols(box.maxWidth, Shape.z(84)), w = wsCell(box.maxWidth, cols);

@@ -119,6 +119,10 @@ class _WsShelfState extends State<WsShelf> {
               DockIconButton(DockG.list, on: !_mem.programCode, onTap: () => setState(() => _mem.programCode = false)),
               DockIconButton(DockG.program, on: _mem.programCode, onTap: () => setState(() => _mem.programCode = true)),
             ] else ...[
+              if (name == 'Effects' || name == 'Fonts') ...[   // (its items in rows, or as a map, the alike near: XO's Space beside its list, dock_map.dart)
+                DockIconButton(DockG.grid, key: ValueKey('ws-$name-rows'), on: !_mem.mapped.contains(name), onTap: () => setState(() => _mem.mapped.remove(name))),
+                DockIconButton(DockG.particles, key: ValueKey('ws-$name-map'), on: _mem.mapped.contains(name), onTap: () => setState(() => _mem.mapped.add(name))),
+              ],
               if (name == 'Effects')   // (the tiles being drawn, lit; a press draws the picked one's again, or, none picked, all of them: no source for it, the user's own wish)
                 ListenableBuilder(
                   listenable: EffectTiles.progress,

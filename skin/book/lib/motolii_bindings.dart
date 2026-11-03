@@ -61,19 +61,6 @@ class MotoliiBindings {
   late final _motolii_animators = _motolii_animatorsPtr
       .asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_relations(ffi.Pointer<Motolii> m) {
-    return _motolii_relations(m);
-  }
-
-  late final _motolii_relationsPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)
-        >
-      >('motolii_relations');
-  late final _motolii_relations = _motolii_relationsPtr
-      .asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
-
   int motolii_answer(ffi.Pointer<Motolii> m, int ticket) {
     return _motolii_answer(m, ticket);
   }
@@ -155,6 +142,24 @@ class MotoliiBindings {
         >
       >('motolii_cards');
   late final _motolii_cards = _motolii_cardsPtr
+      .asFunction<
+        ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, int)
+      >();
+
+  ffi.Pointer<pkg_ffi.Utf8> motolii_cards_more(
+    ffi.Pointer<Motolii> m,
+    int thing,
+  ) {
+    return _motolii_cards_more(m, thing);
+  }
+
+  late final _motolii_cards_morePtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Int)
+        >
+      >('motolii_cards_more');
+  late final _motolii_cards_more = _motolii_cards_morePtr
       .asFunction<
         ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, int)
       >();
@@ -1104,6 +1109,31 @@ class MotoliiBindings {
         int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)
       >();
 
+  int motolii_map(
+    ffi.Pointer<ffi.Float> points,
+    int n,
+    int dims,
+    ffi.Pointer<ffi.Double> xy,
+  ) {
+    return _motolii_map(points, n, dims, xy);
+  }
+
+  late final _motolii_mapPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Int Function(
+            ffi.Pointer<ffi.Float>,
+            ffi.Int,
+            ffi.Int,
+            ffi.Pointer<ffi.Double>,
+          )
+        >
+      >('motolii_map');
+  late final _motolii_map = _motolii_mapPtr
+      .asFunction<
+        int Function(ffi.Pointer<ffi.Float>, int, int, ffi.Pointer<ffi.Double>)
+      >();
+
   int motolii_mark(
     ffi.Pointer<Motolii> m,
     double at,
@@ -1646,6 +1676,19 @@ class MotoliiBindings {
       );
   late final _motolii_redo = _motolii_redoPtr
       .asFunction<int Function(ffi.Pointer<Motolii>)>();
+
+  ffi.Pointer<pkg_ffi.Utf8> motolii_relations(ffi.Pointer<Motolii> m) {
+    return _motolii_relations(m);
+  }
+
+  late final _motolii_relationsPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)
+        >
+      >('motolii_relations');
+  late final _motolii_relations = _motolii_relationsPtr
+      .asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
 
   int motolii_remove(ffi.Pointer<Motolii> m, int thing) {
     return _motolii_remove(m, thing);
@@ -2201,6 +2244,39 @@ class MotoliiBindings {
       >('motolii_trouble');
   late final _motolii_trouble = _motolii_troublePtr
       .asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
+
+  int motolii_type_picture(
+    ffi.Pointer<pkg_ffi.Utf8> font,
+    ffi.Pointer<pkg_ffi.Utf8> words,
+    int w,
+    int h,
+    ffi.Pointer<ffi.UnsignedChar> grey,
+  ) {
+    return _motolii_type_picture(font, words, w, h, grey);
+  }
+
+  late final _motolii_type_picturePtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Int Function(
+            ffi.Pointer<pkg_ffi.Utf8>,
+            ffi.Pointer<pkg_ffi.Utf8>,
+            ffi.Int,
+            ffi.Int,
+            ffi.Pointer<ffi.UnsignedChar>,
+          )
+        >
+      >('motolii_type_picture');
+  late final _motolii_type_picture = _motolii_type_picturePtr
+      .asFunction<
+        int Function(
+          ffi.Pointer<pkg_ffi.Utf8>,
+          ffi.Pointer<pkg_ffi.Utf8>,
+          int,
+          int,
+          ffi.Pointer<ffi.UnsignedChar>,
+        )
+      >();
 
   int motolii_undo(ffi.Pointer<Motolii> m) {
     return _motolii_undo(m);

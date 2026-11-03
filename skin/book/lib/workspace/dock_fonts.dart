@@ -3,13 +3,16 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter/widgets.dart';
 
+import '../motolii.dart' show Motolii, MotoliiQuestions;
 import '../tokens.dart';
 import 'desk_kit.dart' show DeskChip;
 import 'dock_files.dart' show dockRead;
+import 'dock_map.dart';
 import 'dock_parts.dart';
 import 'dock_tags.dart';
 import 'ws.dart';
@@ -222,6 +225,15 @@ class FontsShelf extends StatelessWidget {
               : LayoutBuilder(
                   builder: (context, box) {
                     String? usedBy(_Font f) => setIn[f.path]?.name;
+                    if (c.mem.mapped.contains('Fonts')) {   // (as a map: each told by its letters as the stage sets them, ThorVG's)
+                      final map = dockMap('Fonts'), files = [for (final f in fonts) ?f.path];
+                      _drawAll(m, files);
+                      map.need(m, [for (final f in files) (f, f)], (from) async {   // (each by its file: two files may have one name, Arial Unicode's)
+                        await _drawAll(m, files);
+                        return [for (final f in from) if (_drawn[f] case final g?) _halved(g) else null];
+                      });
+                      return DockMap(map, [for (final f in list) if (f.path case final p?) (p, _FontDot(f, c))], cell: 48, aspect: _dot.$1 / _dot.$2);
+                    }
                     if (box.maxWidth < 440) {
                       return ListView(
                         padding: EdgeInsets.zero,
@@ -339,6 +351,67 @@ class _FontRow extends StatelessWidget {
             if (star || h || sel) DockStar(on: star, ink: sel ? WsT.onAccent : null, onTap: () => c.star(f.family)) else SizedBox(width: Shape.s(20)),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// On the map: a family's word as the stage sets it (drawn by the inside, [_drawn]: no face of all of them loaded here),
+/// [_dot] points; its numbers are it made half as large, a point the four under it.
+const _dot = (96, 32);
+final _drawn = <String, Uint8List?>{}, _seen = <String, ui.Image>{}, _making = <String>{};
+Future<void>? _drawing;
+Future<void> _drawAll(Motolii m, List<String> files) => _drawing ??= Zone.root.run<Future<void>>(() async {   // (once, as fontsRead)
+  final drawn = await m.typePictures(files, 'Motion', _dot.$1, _dot.$2);
+  for (final (i, f) in files.indexed) {
+    _drawn[f] = drawn[i];
+  }
+  dockRead.value++;
+});
+Float32List _halved(Uint8List g) {
+  final (w, h) = (_dot.$1 ~/ 2, _dot.$2 ~/ 2);
+  final out = Float32List(w * h);
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      out[y * w + x] = (g[2 * y * _dot.$1 + 2 * x] + g[2 * y * _dot.$1 + 2 * x + 1] + g[(2 * y + 1) * _dot.$1 + 2 * x] + g[(2 * y + 1) * _dot.$1 + 2 * x + 1]) / 1020;
+    }
+  }
+  return out;
+}
+
+class _FontDot extends StatefulWidget {
+  const _FontDot(this.f, this.c);
+  final _Font f;
+  final DockCtx c;
+  @override
+  State<_FontDot> createState() => _FontDotState();
+}
+
+class _FontDotState extends State<_FontDot> {
+  void _make(String p, Uint8List g) {
+    final rgba = Uint8List(g.length * 4);
+    for (var i = 0; i < g.length; i++) {
+      rgba.setRange(i * 4, i * 4 + 4, [g[i], g[i], g[i], g[i]]);   // (white, its colours already by how much is covered: Flutter takes them so, seen white boxes otherwise)
+    }
+    ui.decodeImageFromPixels(rgba, _dot.$1, _dot.$2, ui.PixelFormat.rgba8888, (image) {   // (Flutter's own: the bytes as a picture)
+      _seen[p] = image;
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final f = widget.f, c = widget.c, sel = c.sel == f.family;
+    if ((f.path, _drawn[f.path]) case (final p?, final g?) when _making.add(p)) _make(p, g);
+    return DockHover(
+      onTap: () {
+        c.pick(f.family);
+        _toRole(c, f);
+      },
+      onDoubleTap: () => _setFont(c, f),
+      builder: (context, h) => Container(
+        color: dockFill(sel, h, WsT.card),
+        child: RawImage(image: _seen[f.path], color: T.ink(dockInk(sel, Grey.g95)), colorBlendMode: BlendMode.modulate, fit: BoxFit.contain),
       ),
     );
   }
