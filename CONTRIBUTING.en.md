@@ -58,6 +58,6 @@ GitHub Actions runs the ledger check on every push and pull request (`.github/wo
 ## Known gaps
 
 - macOS on Apple silicon only.
-- The UI's tests (`flutter test`) run together in CI, and one failure stops the run. On 2026-11-03 one relations test (`skin/book/test/relate_test.dart`) failed on the CI Mac only; it passes on a local Mac.
+- The UI's tests (`flutter test`) run together in CI, and one failure stops the run. One relations test (`skin/book/test/relate_test.dart`) failed once on the CI Mac (89a16b9b3) and held on the next run (e1e7ccf55); it holds on a local Mac. Why is not known.
 - The engine (`libmotolii.dylib`) loads Homebrew's GStreamer and others, so a built `.app` does not run on another Mac as it is.
 - `engine/` mixes the current engine with earlier probes at one level; [`engine/README.md`](engine/README.md) lists which files the current build uses.

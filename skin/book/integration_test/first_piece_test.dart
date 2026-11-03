@@ -23,6 +23,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   testWidgets('the first piece in the window', (t) async {
     t.view.physicalSize = const Size(3200, 1920);
+    t.testTextInput.register(); // (typing goes through the test's own keyboard, as cards_test.dart's: the integration binding registers none)
     addTearDown(t.view.resetPhysicalSize);
     final folder = Directory('${Directory.systemTemp.createTempSync('first').path}/Motolii')..createSync(); // (a folder named as README's ~/Movies/Motolii)
     final doc = '${folder.path}/first.motolii';
@@ -70,28 +71,34 @@ void main() {
     await t.pumpAndSettle();
     await t.enterText(find.descendant(of: find.byType(DockSearch), matching: find.byType(EditableText)), 'Glow');
     await t.pumpAndSettle();
-    final glow = find.text('Glow').first;
+    final glows = find.byElementPredicate((e) => e.widget is Text && (e.widget as Text).data == 'Glow' && e.findAncestorWidgetOfExactType<DockFooter>() == null);   // (the tile, as workspace_joined_test_2.dart's pick)
+    for (var i = 0; i < 200 && glows.evaluate().isEmpty; i++) {   // (the window lists the effects once the inside has told them)
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await t.pump();
+    }
+    final glow = glows.first;
     await seen(t, glow);
     await t.tap(glow);   // (picked on the shelf; its foot says what it is)
     await t.pump(const Duration(milliseconds: 400));
     await t.pumpAndSettle();
     await t.tap(find.descendant(of: find.byType(DockFooter), matching: find.text('Add')));
     await settled(t, ws);
-    for (var i = 0; i < 100 && !ws.fxOf(ws.selected).contains('Glow'); i++) {   // (put on without waiting)
+    bool glowing() => [for (final (title, _) in m.cards(iris)) title].contains('Glow');   // (the shelf's Glow is a file, a card of its own: workspace_joined_test_2.dart)
+    for (var i = 0; i < 100 && !glowing(); i++) {   // (put on without waiting)
       await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
       await t.pump();
     }
-    expect(ws.fxOf(ws.selected), contains('Glow'), reason: m.trouble);
+    expect(glowing(), isTrue, reason: m.trouble);
     await shot(3); // (the effect on it)
 
     await t.tap(find.text('Render').first);   // (the top bar's: it asks for a name)
     await t.pumpAndSettle();
     await shot(4); // (the Render box)
-    await t.enterText(find.byType(EditableText).last, 'first');
+    await t.enterText(find.descendant(of: find.ancestor(of: find.text('File'), matching: find.byType(Row)).first, matching: find.byType(EditableText)), 'first');   // (the box's own File: the shelf's search is an EditableText too)
     await t.pumpAndSettle();
     await t.tap(find.text('Render').last);
     await t.pumpAndSettle();
-    for (var i = 0; i < 400 && !(ws.notice ?? '').startsWith('Written'); i++) {
+    for (var i = 0; i < 3600 && !(ws.notice ?? '').startsWith('Written'); i++) {   // (3 minutes: 8 s of Iris with Glow is written in more than 20 here)
       await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
       await t.pump();
     }

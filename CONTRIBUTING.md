@@ -59,6 +59,6 @@ GitHub の Actions は、台帳の確かめを毎回走らせます（`.github/w
 ## 知っている穴
 
 - 動くのは macOS（Apple Silicon）だけ。
-- 窓の試験（`flutter test`）は CI でまとめて走らせ、1 本でも落ちたら止まる。2026-11-03 に関係の試験 1 本（`skin/book/test/relate_test.dart`）が CI の Mac でだけ落ちた（手元の Mac では通る）。
+- 窓の試験（`flutter test`）は CI でまとめて走らせ、1 本でも落ちたら止まる。関係の試験 1 本（`skin/book/test/relate_test.dart`）が CI の Mac で 1 度だけ落ち（89a16b9b3）、次の回（e1e7ccf55）は通った。手元の Mac では通る。訳は分かっていない。
 - 中身（`libmotolii.dylib`）は Homebrew の GStreamer などを読むので、作った `.app` はそのままでは他の Mac で動きません。
 - `engine/` の直下には、今の中身と前の試しのファイルが並んでいます（前の試しのスクリプトは `engine/sdk.sh` が取る組み立て済みの Filament を使う）。
