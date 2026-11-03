@@ -20,6 +20,8 @@ git config core.hooksPath .githooks
 
 How the code is laid out: [`ARCHITECTURE.md`](ARCHITECTURE.md) and [`engine/README.md`](engine/README.md) (which files the current build uses; the rest are earlier probes).
 
+Words in the code and the ledger: the UI is "window" (窓), the engine "the inside" (中身), a layer "thing" (物), a project file "document" (書類), the Stage "scene" (場面), and a tab of the left panel "shelf" (棚).
+
 ## Checks
 
 | What | Command | When it holds |
