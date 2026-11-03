@@ -173,6 +173,41 @@ Blender は変わったキャッシュを無効の印だけ付けて残し、最
 
 分かった限界：Around と Row は「作った時の場所からの差」を足すので、下の関係の動きが残り、上に重ねても乗っ取れない。今回は輪を下に敷いて群れを上に重ねた。5 種は変えていない。
 
+## Houdini と同じにする（11/3、ユーザーの言葉「houdiniと一緒にしよう」「実装してる他のリポジトリもあるはずだ」）
+
+それまでは関係ごとに速さを覚えていて、重ねると上は場所しか受け取らなかった。今は力の関係が全部 1 つの世界に入り、物は 1 つの粒になる。
+
+**どこを見たか**
+
+| 見た物 | どう見たか | 分かった事 |
+|---|---|---|
+| [POP Solver](https://www.sidefx.com/docs/houdini/nodes/dop/popsolver.html) | 公式の本文（読み取りツールの要約） | 粒は速さと力で更新される。POP の部品は力を溜める。`force` で `v` を更新し、`v` で `P` を動かす。部品の順番と、`force` を毎回 0 に戻すかはこのページに無い |
+| [POP Force](https://www.sidefx.com/docs/houdini/nodes/dop/popforce.html) | 公式の本文（要約） | `force` 属性を更新する。Activation はノード全体の入り切り。Group で当てる粒を絞る |
+| [POP Steer Separate](https://www.sidefx.com/docs/houdini/nodes/dop/popsteerseparate.html) | 公式の本文（要約） | 群れの舵も、粒なら同じ `force` に書く |
+| [d3-force の simulation.js](https://github.com/d3/d3-force/blob/main/src/simulation.js) | ソースの tick を読んだ（ISC） | 力を全部呼び、その後で `x += vx *= velocityDecay` を 1 回 |
+| [d3-force-3d](https://github.com/vasturiano/d3-force-3d) | README の要約と、npm の配布物の `src/collide.js` | 同じ約束の 3D 版（MIT）。力は位置を読み、速さに足す |
+| [Unity VFX Graph](https://docs.unity3d.com/Packages/com.unity.visualeffectgraph@13.1/manual/index.html)、[bevy_hanabi](https://www.github.com/djeedai/bevy_hanabi) | 検索の抜粋だけ | 力が速さを変え、後で位置を更新する同じ形。中身は読めていない |
+| Houdini の Bullet の `active` | [SideFX フォーラム](https://www.sidefx.com/forum/post/394221)の検索の抜粋と、[公式の例](https://sidefx.com/docs/houdini/examples/nodes/dop/rbdpackedobject/AnimatedObjects.html)の要約 | アニメから途中で動的へ渡せる。公式の例のページは属性名も速さの引き継ぎも書いていない |
+
+**食った物**
+
+- 約束は d3-force のまま：`force(things, t, k)` が今の場所を読み、速さに足す。d3 の力がそのまま動く。
+- 速さは d3-force と同じくコマあたり。1 コマに 1 回、全部の力に同じ状態を見せて足し合わせる。Houdini の溜める形に寄せた。
+- `collide.js` は `d3.forceCollide` をそのまま呼ぶ。`forceSimulation` は使わない。力ごとに JS の実行環境が別で、世界の 1 行の足し算は C++ の `doc_world.h` にあるため。
+- 物に書いた値は次のコマにもある。Houdini の粒の属性の形。ただし別の力からは見えない。
+
+**出典の無い決まり**
+
+どの力も押していない物は、下の場所へ戻る。押す量が 1 未満なら、下の場所との間を見せる。Houdini の粒なら惰性で飛び続けるので、ここは一緒ではない。Strength を下げた時に元へ戻る、今までの Motolii の動きを残した。Bullet の `active` は近いが、本文で確かめられていない。
+
+**測った事**
+
+30 個、力 3 つ（群れ・ばね・Collide）、1920×1080：計算済みの絵は 59 枚/秒。初回は 12 秒ぶんに 8.5 秒、1 コマ約 12 ms。窓では 8.6 秒先に約 15 秒で追いつき、計算済みなら実時間で再生できた。遅さの原因を 2 つ直した。`doc_script_of` が読むたびにファイルを開いていた事（書き出し 148 秒 → 38 秒）と、`spring.js` の `createVector`。
+
+見つけた不具合：別のスレッドから JS を呼ぶと QuickJS が「スタックあふれ」と誤判定した。`Script::numbers` で `JS_UpdateStackTop` を呼ぶ。
+
+分かった限界：間に挟んだ普通の関係は飛ばされる。1 つの力だけの Bake は絵を保てない。力を足し引きした後の Undo は計算し直す。残りは T 節。
+
 ## 読めていない物
 
 - Plexus、Duik、Joysticks 'n Sliders、Rubberhose は今回読んでいない。

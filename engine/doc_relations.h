@@ -127,95 +127,12 @@ static const Doc::Relation& doc_relation_of(Doc& d, int by) {
     return d.relationsOf.emplace(by, std::move(r)).first->second;
 }
 static const std::vector<int>& doc_members_of(Doc& d, int by) { return doc_relation_of(d, by).members; }
-// What a relation written as a file says of all its things at a moment. Its relate() is told them all at once, as a Python
-// Effector in Cinema 4D's Full Control is, not one value at a time as the kinds below: each one's place can hang on all the
-// others. For each thing, doc_relate_names in turn. Empty: no file, or it failed (what is under it shows, and it says why).
-// One whose relate() takes a fourth argument is a solver, as Cavalry's Value Solver and Context's saveObject: told what it
-// said the frame before, null at the first, it goes from the start of the stage a frame at a time at p5_stand.h's 60, and
-// each frame is kept so going back asks nothing. A step that touches nothing it reads leaves it be (SQLite's changeset,
-// doc_note; what it reads as a build system's dynamic dependencies are found, by watching); any other goes on only from
-// the first frame told otherwise, as GGPO's rollback goes back to the input that differed and runs on. With a window open
-// they have 5 ms of each picture, as React's Scheduler yields, showing the frames they have till they are made again; a
-// film, a still, a picture kept and Bake wait for all of it (DocExact). It sleeps while its Strength is 0, as Houdini's
-// Activation: what is under it shows, and it wakes where those things are then. Held by hand, it waits.
+// What a relation written as a file says of all its things (doc_world.h), and what those that push say of a thing's value.
 static const char* const doc_relate_names[] = {"x", "y", "z", "size", "rotate", "rotate_x", "rotate_y", "opacity"};
 static double doc_related(Doc& d, int by, int thing, const char* name, double t, double own);
-static const std::vector<double>& doc_related_all(Doc& d, int by, double t) {
-    Doc::RelatedKept& k = d.relatedKept[by];
-    struct Tells { Doc& d; Doc::RelatedKept& k; ~Tells() { if (d.reading) d.reading->insert(k.reads.begin(), k.reads.end()); } } tells{d, k};
-    const long changes = d.file ? (long)sqlite3_total_changes(d.file) : 0;
-    const bool same = k.changes == changes && k.made == doc_scripts_made(d) && k.seen == d.touched.size();
-    const auto spent = [&] { return d.live && !d.exact && !d.writing && std::chrono::steady_clock::now() - d.slice > std::chrono::milliseconds(5); };
-    if (k.at == t && same && d.held.thing < 0 && (!k.behind || spent())) { d.behind = d.behind || k.behind; return k.values; }
-    if (k.made != doc_scripts_made(d)) k.frames.clear(), k.told.clear(), k.sure = k.fresh = 0;
-    if (!same) k.solves = -1;
-    for (; k.seen < d.touched.size(); ++k.seen) if (d.touched[k.seen] < 0 || k.reads.count(d.touched[k.seen])) k.sure = 0;
-    k.at = t, k.changes = changes, k.made = doc_scripts_made(d), k.behind = false, k.values.clear();
-    DocScript* sc = doc_script_of(d, doc_word(d, by, "script"));
-    if (!sc || !sc->run || !sc->run->ok()) return k.values;
-    if (k.solves < 0) { const std::vector<double> takes = sc->run->numbers("Float64Array.of(relate.length)"); k.solves = !takes.empty() && takes[0] > 3; }
-    const Doc::Relation& rel = doc_relation_of(d, by);
-    constexpr size_t many = std::size(doc_relate_names);
-    const auto tell = [&](double at, size_t frame) {
-        std::ostringstream js;
-        js.precision(12);
-        js << "__relates([";
-        for (size_t i = 0; i < rel.members.size(); ++i) {
-            const int thing = rel.members[i];
-            if (!thing) continue;
-            const int was = rel.under.empty() ? 0 : rel.under[i];
-            js << '[';
-            double size = 1;
-            math::double3 place{0.0};
-            for (const char* name : doc_relate_names) {
-                const double own = doc_number(d, thing, name, at, !strcmp(name, "size") || !strcmp(name, "opacity") ? 1 : 0), is = was ? doc_related(d, was, thing, name, at, own) : own;
-                if (!strcmp(name, "size")) size = is;
-                if (name[0] >= 'x' && !name[1]) place[name[0] - 'x'] = is;
-                js << is << ',';
-            }
-            float2 half{0.f};
-            doc_half(d, thing, &half);
-            js << 2.0 * half.x * size << ',' << 2.0 * half.y * size << ',' << thing << ',' << doc_falloff_at(d, by, place, at) << "],";
-        }
-        js << "]," << at << ",{";
-        for (size_t i = 0; i < sc->knobs.size(); ++i) {
-            js << sc->knobs[i].name << ':';
-            if (sc->knobs[i].kind != "select") { js << doc_number(d, by, sc->names[i].c_str(), at, sc->knobs[i].usual) << ','; continue; }
-            const std::string w = doc_word(d, by, sc->names[i].c_str());
-            js << '"' << (w.empty() ? sc->knobs[i].words.substr(0, sc->knobs[i].words.find(' ')) : w) << "\",";
-        }
-        js << "}," << by << ',' << frame << ',' << (!k.solves || doc_number(d, by, "strength", at, 1) > 0 ? "true" : "false") << ')';
-        return js.str();
-    };
-    const auto told = [&](double at, size_t frame) {   // (watching what it reads, at the first)
-        std::set<int>* const outer = d.reading;
-        if (!frame) k.reads.clear(), d.reading = &k.reads;
-        const std::string js = tell(at, frame);
-        d.reading = outer;
-        return js;
-    };
-    if (k.solves) {
-        const size_t frame = (size_t)std::max(0.0, std::round(t * 60.0));
-        while (k.sure <= frame) {
-            if (spent()) { k.behind = d.behind = true; break; }
-            const std::string js = told((double)k.sure / 60.0, k.sure);
-            const size_t heard = std::hash<std::string>{}(js);
-            if (k.sure < k.fresh && k.told[k.sure] == heard) { ++k.sure; continue; }
-            std::vector<double> next = sc->run->numbers(js);
-            if (next.empty()) return k.values;
-            k.frames.resize(std::max(k.frames.size(), k.sure + 1)), k.told.resize(k.frames.size());
-            k.frames[k.sure] = std::move(next), k.told[k.sure] = heard;
-            k.fresh = ++k.sure;
-        }
-        if (k.frames.empty()) return k.values;
-    }
-    const std::vector<double> said = k.solves ? k.frames[std::min((size_t)std::max(0.0, std::round(t * 60.0)), k.frames.size() - 1)] : sc->run->numbers(told(t, 0));
-    if (said.size() != many * (rel.members.size() - (size_t)std::count(rel.members.begin(), rel.members.end(), 0))) return k.values;
-    k.values.assign(many * rel.members.size(), 0.0);
-    for (size_t i = 0, in = 0; i < rel.members.size(); ++i)
-        if (rel.members[i]) { if (many * (in + 1) <= said.size()) std::copy_n(said.begin() + (long)(many * in), many, k.values.begin() + (long)(many * i)); ++in; }
-    return k.values;
-}
+static const std::vector<double>& doc_related_all(Doc& d, int by, double t);
+static bool doc_pushes(Doc& d, int by);
+static double doc_world_value(Doc& d, int thing, size_t name, double t, double otherwise);
 // What a relation gives a value of one of its things (`own`: the thing's own value there), weighed by its strength: it
 // starts from what the relation the thing was in before gives (else its own value); an around or a row that knows where
 // the thing showed when it came in adds the step from there to its place (so a hand that moves the thing moves it), a
@@ -238,12 +155,13 @@ static double doc_related(Doc& d, int by, int thing, const char* name, double t,
     const auto leader = [&](const char* which) { const int l = (int)doc_number(d, by, which, 0, 0); return l != thing ? l : 0; };
     if (type == "relate") {
         if (d.settled) return base;
-        const std::vector<double>& all = doc_related_all(d, by, t);
+        const bool pushes = doc_pushes(d, by);
+        const std::vector<double> none, &all = pushes ? none : doc_related_all(d, by, t);
         constexpr size_t many = std::size(doc_relate_names);
-        for (size_t j = 0; j < many; ++j) if (n == doc_relate_names[j]) return many * i + j < all.size() ? base + (all[many * i + j] - base) * strength : base;
+        for (size_t j = 0; j < many; ++j) if (n == doc_relate_names[j]) return pushes ? doc_world_value(d, thing, j, t, base) : many * i + j < all.size() ? base + (all[many * i + j] - base) * strength : base;
         return base;
     }
-    const double s = strength * (doc_number(d, by, "region", 0, 0) ? doc_falloff_at(d, by, {start("x", doc_number(d, thing, "x", t, 0)), start("y", doc_number(d, thing, "y", t, 0)), start("z", doc_number(d, thing, "z", t, 0))}, t) : 1.0);   // (Cavalry's Falloff: a multiplier on its Strength; a file weighs its own, p5_stand.h's __relates)
+    const double s = strength * (doc_number(d, by, "region", 0, 0) ? doc_falloff_at(d, by, {start("x", doc_number(d, thing, "x", t, 0)), start("y", doc_number(d, thing, "y", t, 0)), start("z", doc_number(d, thing, "z", t, 0))}, t) : 1.0);   // (Cavalry's Falloff: a multiplier on its Strength; a file's is weighed where it is told: p5_stand.h's __relates, doc_world.h)
     if ((type == "around" || type == "row" || type == "group") && (n == "rotate" || n == "rotate_x" || n == "rotate_y"))   // (its own turn added to each, in turn)
         return base + doc_number(d, by, name, ti, 0) * s;
     if ((type == "around" || type == "row" || type == "group") && (n == "size" || n == "opacity"))   // (its own size and opacity as a share of each one's, in turn: 0 opacity out is gone)

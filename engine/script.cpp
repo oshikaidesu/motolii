@@ -85,7 +85,7 @@ std::vector<ScriptKnob> script_knobs(const std::string& file) {
         std::stringstream all;
         all << in.rdbuf();
         const std::string told = door_js(all.str(), door_form(all.str()));   // (a form from the net told as a sketch: door.h)
-        if (script_is_sketch(told) && told.find("function relate") == std::string::npos) {   // (a relation is p5's too, but its head says its knobs)
+        if (script_is_sketch(told) && told.find("function relate") == std::string::npos && !script_pushes(told)) {   // (a relation is p5's too, but its head says its knobs)
             if (door_form(all.str()) == "three") {   // (which part of the scene this thing is: doc_door.h)
                 ScriptKnob part;
                 part.kind = "track", part.name = "part", part.label = "Part", part.high = 9999, part.step = 1;
@@ -254,6 +254,13 @@ Script::Script(const std::string& file, const std::string& p5, const std::string
             const std::string lib = door_library_text(form, text.str());
             JS_FreeValue(own->cx, JS_Eval(own->cx, lib.c_str(), lib.size(), needs.c_str(), JS_EVAL_TYPE_GLOBAL));
         }
+        if (script_pushes(src) && src.find("d3.") != std::string::npos) for (const char* lib : {"d3-binarytree", "d3-quadtree", "d3-octree", "d3-force-3d"}) {   // (a relation that pushes with d3's forces, third_party/js; the other two it says it needs only run forceSimulation, which the world does for it: doc_world.h)
+            std::ifstream one(std::filesystem::path(p5).parent_path().parent_path() / lib / (std::string(lib) + ".min.js"));
+            std::stringstream text;
+            text << one.rdbuf();
+            const std::string read = text.str();
+            JS_FreeValue(own->cx, JS_Eval(own->cx, read.c_str(), read.size(), lib, JS_EVAL_TYPE_GLOBAL));
+        }
         for (const std::string& needs : door_needs(code.str())) {   // (a library from the net: fetched by the door, it stands beside the sketch)
             std::ifstream one(std::filesystem::path(file).parent_path() / std::filesystem::path(file).stem() / needs);
             std::stringstream text;
@@ -345,6 +352,7 @@ std::vector<int> Script::lines() const {
 }
 std::vector<double> Script::paints(int frame, int had, int pic) { return numbers("__paints(" + std::to_string(frame) + "," + std::to_string(had) + "," + std::to_string(pic) + ")"); }
 std::vector<double> Script::numbers(const std::string& js) {
+    JS_UpdateStackTop(own->rt);   // (asked on whichever thread asks: a question's isolate may work out a relation the hand's has not, as anime_ease below)
     JSValue out = JS_Eval(own->cx, js.c_str(), js.size(), "sketch", JS_EVAL_TYPE_GLOBAL);
     if (JS_IsException(out) && own->trouble.empty()) {   // (its draw() has failed: it stays as it was, and says so once)
         JSValue e = JS_GetException(own->cx);

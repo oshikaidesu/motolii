@@ -32,6 +32,7 @@
 #include "doc_kinds.h"   // (the document and the names its values go by)
 #include "doc_values.h"   // (a value read at a moment, its keys and ways)
 #include "doc_relations.h"   // (behaviours, falloffs, relations, physics)
+#include "doc_world.h"   // (relations written as files, and the world those that push share)
 #include "doc_place.h"   // (where a thing lies, its look, its effects)
 #include "doc_moment_fx.h"   // (a thing with effects of its own, told a moment)
 #include "godot_easing.h"   // (Godot's Tween's easing, for a MIDI roll's notes)

@@ -77,7 +77,10 @@ struct Doc {
     struct AbsentKept { double at = -1; long changes = -1; int seen = -1; std::vector<AbsentCopy> copies; };
     std::map<int, AbsentKept> absentKept;
     struct RelatedKept { double at = -1; long changes = -1; int made = -1, solves = -1; size_t sure = 0, fresh = 0, seen = 0; bool behind = false; std::vector<double> values; std::vector<std::vector<double>> frames; std::vector<size_t> told; std::set<int> reads; };   // (frames: a solver's, each from the one before, as Motolii's p5 keeps its own; told: what each was told; sure: so many are known good since the document changed; fresh: past so many each is left from before, shown till it is made again; reads: the things what it is told comes from; seen: of touched)
-    std::map<int, RelatedKept> relatedKept;   // (what a relation written as a file last said of all its things: doc_relations.h)
+    std::map<int, RelatedKept> relatedKept;   // (what a relation written as a file last said of all its things, and at 0 the world: doc_world.h)
+    struct World { std::vector<int> forces, things, below; std::map<int, size_t> slot; };   // (the relations that push, oldest first; every thing any is on, what each stands on under them all, and where it lies in a frame: doc_world.h)
+    World world;
+    bool walking = false;   // (the world being worked out: what it asks of itself comes from the frames it has)
     std::map<int, std::pair<std::string, std::string>> drawingKept;   // (each freehand stroke's outline as AbsentMotion's drawing effects last made it, by what they were: doc_moment)   // (each thing's copies as AbsentMotion's repeat effects lay them, at the moment last asked: doc_absent_copies)
     std::shared_ptr<struct DocScripts> scripts;   // (its scripts, each run as its file says: doc_values.h)
     std::map<int, ThingFx> thingFx;     // the things with effects of their own (thing_fx.h): each drawn alone, its effects on, laid where it lies

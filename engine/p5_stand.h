@@ -297,7 +297,7 @@ function __shaded_take(seconds) {   // (the shader that paints its stage and wha
   return JSON.stringify({ vert: __shaded._vertSrc, frag: __shaded._fragSrc, kind: __shaded_kind, width: globalThis.width, height: globalThis.height, density: pixelDensity(), told });
 }
 var __was = {};
-function __relates(all, t, k, rel, frame, awake) {   // (a relation written as a file: its relate() told all its things at once, doc_relations.h; what it leaves out stays as it was. Its Falloff weighs what it says, as Cavalry's does a Behaviour's Strength; a solver's is told as near and weighs it itself, as MASH's Python node reads getFalloff)
+function __relates(all, t, k, rel, frame, awake) {   // (a relation written as a file: its relate() told all its things at once, doc_relations.h; what it leaves out stays as it was. Its Falloff weighs what it says, as Cavalry's does a Behaviour's Strength; one that remembers is told it as near and weighs it itself, as MASH's Python node reads getFalloff)
   const names = ['x', 'y', 'z', 'size', 'rotate', 'rotate_x', 'rotate_y', 'opacity'], many = names.length, by = [], solves = relate.length > 3, kept = __was[rel] = __was[rel] || [];
   const things = all.map((v, i) => { const o = { i, w: v[many], h: v[many + 1], id: v[many + 2], near: v[many + 3] }; names.forEach((n, j) => o[n] = v[j]); return o; });
   if (awake) ((solves ? relate(things, t, k, (frame && kept[frame - 1]) || null) : relate(things, t, k)) || things).forEach((o, n) => by[o && o.i !== undefined ? o.i : n] = o);
@@ -306,6 +306,16 @@ function __relates(all, t, k, rel, frame, awake) {   // (a relation written as a
   all.forEach((v, i) => names.forEach((n, j) => { const is = by[i] && by[i][n], to = typeof is === 'number' && isFinite(is) ? is : v[j]; out[i * many + j] = solves ? to : v[j] + (to - v[j]) * v[many + 3]; }));
   return out;
 }
+function __forces(all, t, k, rel, frame, awake) {   // (a relation that pushes: its force() told its things as d3-force tells a force its nodes, each where it is and how fast; what it adds to their speed the world weighs and adds up, doc_world.h. What else it writes on a thing it finds there the next frame, as a particle's attributes, not to be changed for what is kept)
+  const names = ['x', 'y', 'z', 'size', 'rotate', 'rotate_x', 'rotate_y', 'opacity', 'vx', 'vy', 'vz'], many = names.length, kept = __was[rel] = __was[rel] || [], had = frame && kept[frame - 1];
+  const things = all.map((v, i) => { const o = Object.assign({}, had && had[i], { i, index: i, w: v[many], h: v[many + 1], id: v[many + 2], near: v[many + 3], home: { x: v[many + 4], y: v[many + 5], z: v[many + 6] } }); names.forEach((n, j) => o[n] = v[j]); return o; });
+  if (awake) force(things, t, k);
+  kept[frame] = things;
+  const out = new Float64Array(many * all.length);
+  all.forEach((v, i) => names.forEach((n, j) => { const is = things[i][n]; out[i * many + j] = typeof is === 'number' && isFinite(is) ? is : v[j]; }));
+  return out;
+}
+function __asleep(rel, frame) { (__was[rel] = __was[rel] || [])[frame] = null; return new Float64Array(1); }
 function __paints(f, had, pic) {   // (what makes frame f on a canvas holding frame `had`: all since it was last wiped, or if `had` is on that way only what came after it; first a 1 if it is to be wiped)
   __to(f);
   const q = __tex[pic], frames = q ? q.frames : __frames, from = q ? q.from : __from;

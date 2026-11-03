@@ -121,6 +121,78 @@ void main() {
     expect(await asked(1), 3, reason: 'what is told it comes through the one under it');
   });
 
+  testWidgets('relations that push work on one speed: they add up, it goes on from keys and from one to the next, and what none pushes shows what is under', (t) async {
+    final dir = Directory.systemTemp.createTempSync('relate');
+    final m = Motolii.open('${dir.path}/relate.motolii')!;
+    addTearDown(m.close);
+    final ws = Ws()..join(m);
+    final made = [for (var i = 0; i < 10; i++) m.add('shape', 'circle')];
+    ws.reread();
+    t.view.physicalSize = const Size(924, 616);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel('motolii/stage'), (_) async => -1);
+    await t.pumpWidget(WidgetsApp(
+      color: const Color(0xFF000000),
+      builder: (_, _) => WsScope(ws: ws, child: const Align(alignment: Alignment.topLeft, child: SizedBox(width: 924, height: 616, child: Row(children: [Expanded(child: WsStage()), SizedBox(width: 300, child: DeskRelations())])))),
+    ));
+    await t.pumpAndSettle();
+    Future<int> relate(String name, String body, List<int> who) async {
+      final file = File('${dir.path}/$name')..writeAsStringSync(body);
+      ws.pickMany([for (final i in who) '$i']);
+      await t.pumpAndSettle();
+      wsRelate(ws, file.path);
+      await settled(t, ws);
+      return int.parse(ws.selected!);
+    }
+
+    Future<double> shown(int thing, String name, double at) async => (await m.shownAt([(thing, name, at)])).single!;
+    const coast = 'function force(things, t, k) {}\n', push = 'function force(things, t, k) { things.forEach(a => a.vx += .01); }\n';
+    final keyed = made.sublist(0, 2), added = made.sublist(2, 4), handed = made.sublist(4, 6), kept = made.sublist(6, 8), apart = made.sublist(8, 10);
+
+    m.key(keyed[0], 'x', 0, 0);
+    m.key(keyed[0], 'x', 1, 1);
+    final wakes = await relate('wakes.js', coast, keyed);
+    m.key(wakes, 'strength', .5, 0);
+    m.key(wakes, 'strength', .5001, 1);
+    await settled(t, ws);
+    expect(await shown(keyed[0], 'x', .25), closeTo(.25, 1e-9), reason: 'none pushing: its keys');
+    expect(await shown(keyed[0], 'x', 2), closeTo(2, 1e-3), reason: 'its keys stop at 1, the speed they gave it goes on');
+    m.set(wakes, 'visible', 0);
+    await settled(t, ws);
+    expect(await shown(keyed[0], 'x', 2), closeTo(1, 1e-9), reason: 'eye shut: its keys again');
+
+    await relate('one.js', push, added);
+    await relate('two.js', push, added);
+    expect(await shown(added[0], 'x', 1), closeTo(36.6, 1e-6), reason: 'two on a thing add up: .02 more each of 60 frames');
+
+    final first = await relate('first.js', push, handed), next = await relate('next.js', coast, handed);
+    m.key(first, 'strength', 1, 1);
+    m.key(first, 'strength', 1.0001, 0);
+    m.key(next, 'strength', 1, 0);
+    m.key(next, 'strength', 1.0001, 1);
+    m.key(next, 'strength', 3, 1);
+    m.key(next, 'strength', 3.0001, 0);
+    await settled(t, ws);
+    expect(await shown(handed[0], 'x', 1), closeTo(18.3, 1e-6));
+    expect(await shown(handed[0], 'x', 2), closeTo(54.3, 1e-6), reason: 'the rule changed at 1, the speed went on');
+    expect(await shown(handed[0], 'x', 3.1), 0, reason: 'none pushing: what is under them');
+
+    await relate('kept.js', 'function force(things, t, k) { things.forEach(a => a.rotate = a.n = (a.n || 0) + 1); }\n', kept);
+    expect(await shown(kept[0], 'rotate', 1), 60, reason: 'what it wrote on a thing is there the next frame');
+    expect(await shown(kept[0], 'rotate', .5), 30, reason: 'and going back asks nothing');
+
+    m.set(apart[0], 'x', -.02);
+    m.set(apart[1], 'x', .02);
+    await settled(t, ws);
+    final file = m.relations.firstWhere((r) => r.$2.endsWith('collide.js')).$2;
+    ws.pickMany([for (final i in apart) '$i']);
+    await t.pumpAndSettle();
+    wsRelate(ws, file);
+    await settled(t, ws);
+    expect((await shown(apart[1], 'x', 1)) - (await shown(apart[0], 'x', 1)), greaterThan(.5), reason: "d3's forceCollide, as it is");
+  });
+
   testWidgets('a relation written as a file: its word makes it, named by the file, and it answers for all its things at once', (t) async {
     final m = Motolii.open('${Directory.systemTemp.createTempSync('relate').path}/relate.motolii')!;
     addTearDown(m.close);

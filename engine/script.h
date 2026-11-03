@@ -39,7 +39,8 @@ inline std::vector<std::string> script_files(const std::string& word) {
 }
 
 // A file of p5.js's own two, setup() and draw(), as sketches are written: not a recipe of ours, whose code is each().
-inline bool script_is_sketch(const std::string& src) { return src.find("function each") == std::string::npos && (src.find("function draw") != std::string::npos || src.find("function relate") != std::string::npos || src.find("function setup") != std::string::npos || src.find("createCanvas") != std::string::npos); }
+inline bool script_pushes(const std::string& src) { return src.find("function force(") != std::string::npos && src.find("function draw") == std::string::npos; }   // (a relation that pushes: doc_world.h)
+inline bool script_is_sketch(const std::string& src) { return src.find("function each") == std::string::npos && (src.find("function draw") != std::string::npos || src.find("function relate") != std::string::npos || script_pushes(src) || src.find("function setup") != std::string::npos || src.find("createCanvas") != std::string::npos); }
 // The lines of a sketch that draw: a for makes hundreds from one line and a count may grow, the line stays. Each is told
 // to the run as it comes, __L (as Processing's Tweak Mode rewrites a sketch's source to reach its numbers,
 // java/src/processing/mode/java/tweak), and is a knob of the thing, how strong that line's shapes are, named line_ and its

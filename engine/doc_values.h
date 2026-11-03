@@ -249,6 +249,7 @@ struct DocScript {
     std::vector<DocShown> shown;
     std::unique_ptr<Script> run;
     bool clears = false;   // (its copies may each be as clear as it says: its text says opacity; drawn each of its own, not in one go)
+    int pushes = -1;   // (a relation with force() and no relate(): doc_world.h; -1 not asked yet)
 };
 // Each document its own: a script runs in a QuickJS runtime of its own, and "inside a given runtime, no
 // multi-threading is supported" (QuickJS's documentation, 3.4.1 Runtime and contexts): two documents' hands (the
@@ -281,12 +282,12 @@ static char doc_thor_letter(const std::string& w) {
 static std::vector<std::filesystem::path> doc_folders(const char* folder);
 static DocScript* doc_script_of(Doc& d, const std::string& file, bool runs = true) {
     if (file.empty() || file == "none" || std::filesystem::path(file).extension() == ".mid") return nullptr;   // (a MIDI file's notes are copies, not a script: midi.h)
+    DocScript& s = doc_scripts(d)[file];
+    if (s.stamp >= 0 && s.seen == files_changed()) return &s;   // (first: what follows opens the file)
     const std::string ext = std::filesystem::path(file).extension().string();
     const bool screen = ext == ".wgsl" || ext == ".fs" || ext == ".mjs" || three_is(file) || solid_is(file) || aviutl_is(file);   // (a three.js effect: as an ISF one, three_isf.cpp; a solid's shape: its knobs named by it too, not run as a script, solid_three.cpp; an AviUtl2 script: run by its own Lua, aviutl_fx.h)
     const bool absent = ext == ".am";   // (AbsentMotion's own motion: its knobs in its head, the thing moved by AbsentMotion's C++: absent_motion.h)
     const bool lottie = ext == ".json" || ext == ".lot";   // (an After Effects file: its slots its knobs, lottie_slots.h)   // (.mjs: a PlayCanvas splat effect, its knobs its attributes: splatfx.h)   // (a whole-screen effect's knobs: named by the effect too)
-    DocScript& s = doc_scripts(d)[file];
-    if (s.stamp >= 0 && s.seen == files_changed()) return &s;
     s.seen = files_changed();
     std::error_code wrong;
     const long long stamp = (long long)std::filesystem::last_write_time(aviutl_is(file) ? aviutl_path(file) : fx_source(file), wrong).time_since_epoch().count();
