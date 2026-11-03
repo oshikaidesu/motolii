@@ -75,23 +75,23 @@ Windows 版も作る予定です。Filament、ThorVG、GStreamer、Flutter な�
 
 | できる事 | 使う形式 | いまの様子 |
 |---|---|---|
-| VJ ソフト向けに配られているエフェクトをかける | ISF（`.fs`。[ISF-Files](https://github.com/Vidvox/ISF-Files) など） | エフェクトのフォルダに置くと一覧に出ます。ISF-Files の 327 本中 318 本が動きます（`engine/check/all.sh` で数え直せます）。同梱 420 本 |
+| VJ ソフト向けに配られているエフェクトをかける | ISF（`.fs`。[ISF-Files](https://github.com/Vidvox/ISF-Files) など） | エフェクトのフォルダに置くと一覧に出ます。ISF-Files の 327 本中 318 本が動きます（`engine/check/all.sh` で数え直せます）。同梱 419 本 |
 | WebGPU のシェーダーをかける | WGSL（`.wgsl`。three.js などの画面効果を移した物を含む） | シーン全体にかかります。同梱 266 本 |
 | p5.js のスケッチを貼る | p5.js（コードをコピーして、アプリで ⌘V） | レイヤーになり、Program タブに残ります。キーフレームを打てて、Time Remap で時間の速さも変えられます。OpenProcessing の 168 作中 97 作で絵が出ました（11/1 の数え。元と見た目が一致したのは、最初の 42 作を目で見て約 16 作） |
 | Shadertoy のシェーダーを貼る | GLSL（コードをコピーして、アプリで ⌘V） | 自分で描く作品はレイヤーになり、`iChannel` を読む作品は選んだレイヤーにかかります。どちらも Program タブに残ります。API の写し 36,668 本から無作為に選んだ 300 本中 261 本で絵が出て動きました（2026-11 初めの数え）。黒かった 30 本のうち 26 本はマウスなどの入力待ち。読み込めなかったのが 9 本。Time Remap はまだ p5.js だけです |
-| AviUtl2（日本の動画編集ソフト）のスクリプトを使う | `.anm2`・`.obj2`（中の HLSL を WGSL に変換） | 同梱 180 パッケージ。10/26 の数えで、当時同梱の 594 本中 372 本が最後まで動きました（[`reports/aviutl2/catalogue.md`](reports/aviutl2/catalogue.md)）。DLL が要る物はまだ動きません |
-| ネットの TSL（three.js のシェーダー言語）の表現を使う | three.js 自身の変換器で WGSL に | Shader Lab の 19 本はエフェクト一覧にあります。ほかは WGSL への変換まで |
+| AviUtl2（日本の動画編集ソフト）のスクリプトを使う | `.anm2`・`.obj2`（中の HLSL を WGSL に変換） | 同梱 172 パッケージ。10/26 の数えで、当時同梱の 594 本中 372 本が最後まで動きました（[`reports/aviutl2/catalogue.md`](reports/aviutl2/catalogue.md)）。DLL が要る物はまだ動きません |
+| ネットの TSL（three.js のシェーダー言語）の表現を使う | three.js 自身の変換器で WGSL に | [Shader Lab](https://github.com/basementstudio/shader-lab) の 19 本はエフェクト一覧にあります。ほかは WGSL への変換まで |
 | 動画・写真・文字・図形・3D モデル・点群を置く | 動画（GStreamer）、文字と図形（ThorVG）、glTF・`.ply`（Filament） | 動きます |
 | After Effects のアニメーションを置く | Lottie の `.json`（ThorVG） | 動きます |
 | MIDI をアニメーションに使う | MIDI（`.mid`）：ピアノロール、音に合わせて値にキーフレーム | 動きます。MIDI の音はまだ鳴りません（動画の音は鳴ります） |
-| 図形を作る・出入りの動きを付ける | 自分のスクリプト（`.js`） | 置くと一覧に出ます。同梱のレシピ 101 本、出入りの動き 13 本 |
+| 図形を作る・出入りの動きを付ける | 自分のスクリプト（`.js`） | 置くと一覧に出ます。同梱のレシピ（動く作例）101 本、出入りの動き 13 本 |
 | 複数のレイヤーをまとめて動かす（並べる・追う・群れ・ばね・ぶつかり合い） | 関係のスクリプト（`.js`） | `relations/` に置くと Relations タブに出ます。同梱 9 本と、組み込み 5 つ |
 
 作品の権利は作者のものです。Shadertoy や OpenProcessing の作品には非営利の条件が付いた物が多いので、仕事に使う時は作者に確かめてください。
 
 ほかに：キーフレームとイージング（anime.js のイージングもそのまま使えます）、物理演算（Jolt）、ガラスの屈折、カメラ（焦点距離・絞り・ピント）、MP4 への書き出し。何があって、どこまで確かめたかの全部は台帳 [`ASSETS.md`](ASSETS.md) にあります（日本語）。
 
-**ビルドの確認**：GitHub の Apple Silicon の Mac（macos-15）で、この README の手順どおりに新しくビルドし、エンジンの試験（`engine/check/all.sh`）、画面の analyze と試験を走らせています（上の build の印）。
+**ビルドの確認**：GitHub の Apple Silicon の Mac（macos-15）で、この README の手順どおりに新しくビルドし、エンジンのテスト（`engine/check/all.sh`）と、画面のコードの検査（`flutter analyze`）とテストを走らせています（上の build バッジ）。
 
 **速さ**（M4、上の 8 秒の作例、1080×1920）：1 フレーム約 4 ms で、毎秒 240 フレームでも落ちません。8 秒の書き出しは約 5 秒（ffmpeg のエンコードを含む）。測り直すには、作例を作ってから `printf 'time 240\n' | engine/edit.sh ~/Movies/Motolii/mv.motolii`。
 
@@ -104,7 +104,7 @@ Windows 版も作る予定です。Filament、ThorVG、GStreamer、Flutter な�
 |---|---|
 | 動く | 上の表で「動きます」の物、自動保存と取り消し、再生（動画の音も鳴る）、MP4 への書き出し、タイムライン・インスペクタ・エフェクト一覧 |
 | 一部 | AviUtl2 のスクリプト、Alight Motion の機能（数は下の「他のソフトとの違い」） |
-| 知っている不具合 | コピーで作るレシピ（Iris・Weave など）に、コマンドでシーン全体のエフェクトをかけると絵が崩れる |
+| 知っている不具合 | コピーで作るレシピ（Iris・Weave など）のレイヤーに、画面用の `.wgsl` エフェクトをかけると絵が崩れる（シーン全体にかけるのは大丈夫） |
 | まだ | Windows、配布できる `.app`（エンジンが Homebrew の部品を読むので、ビルドした Mac の外では動かない）、MIDI の音 |
 
 ## 使ってみる
@@ -181,7 +181,7 @@ skin/book/live.sh
 ![画面の 7 つの区画に番号を付けた図](docs/media/panels.jpg)
 
 1. **上の帯**：プロジェクト名、画面サイズ、fps、長さ、取り消し・やり直し、Render（書き出し）。
-2. **[左のタブ](docs/tabs.md#左のタブ)**：Media（素材）、Effects（エフェクト）、Fonts（書体）、Colors（色）、Create（図形とレシピ）、Program（貼ったコード）、Presets（自分で保存した組み合わせ）。
+2. **[左のタブ](docs/tabs.md#左のタブ)**：Media（素材）、Effects（エフェクト）、Fonts（書体）、Colors（色）、Create（図形とレシピ）、Program（貼ったコード）、Presets（保存した組み合わせ。まだ使えません）。
 3. **[プレビュー（Stage）](docs/tabs.md#プレビューのタブ)**：見ながら置く・動かす所。左の縦の列が道具（選択・移動・図形・ペン・文字など）。上のタブで Camera View（カメラから見た仕上がり）に切り替えます。
 4. **インスペクタ**：選んだレイヤーの値（Transform・Anchor・Blend・Fill など）。上に、そのレイヤーにかかっている関係が並びます。
 5. **タイムライン**：レイヤーとキーフレーム、再生、マーカー、BPM。
@@ -197,27 +197,27 @@ skin/book/live.sh
 1. 左上のタブの 5 つ目（四角に ＋、**Create**）を押し、検索に `Iris` と打ちます。
 2. **Iris** のタイルを押し、下の **Create** を押します。プレビューに色の輪が置かれ、タイムラインにレイヤーが 1 本増えます。
    <img src="docs/media/window_step2.jpg" alt="2：レシピ Iris を置いた所" width="560">
-3. 輪を選んだまま、タブの 2 つ目（きらめき、**Effects**）に替えて `Glow` を探し、押して下の **Add** を押します。輪が光り、ボタンが **Remove**（外す）に変わります。
+3. 輪を選んだまま、タブの 2 つ目（fx、**Effects**）に替えて `Glow` を探し、押して下の **Add** を押します。輪が光り、ボタンが **Remove**（外す）に変わります。
    <img src="docs/media/window_step3.jpg" alt="3：Glow をかけた所" width="560">
 4. 右上の **Render** を押すと、書き出しの小窓が出ます。名前（例 `first`）を入れて、小窓の **Render** を押します。
    <img src="docs/media/window_step4.jpg" alt="4：書き出しの小窓" width="560">
 5. プロジェクトの隣に `first.mp4` ができ、上に `Written: first.mp4` と出ます。
    <img src="docs/media/window_step5.jpg" alt="5：書き出した所" width="560">
 
-この 5 手は試験としても走ります（`skin/book/integration_test/first_piece_test.dart`。上の絵はこの試験が撮った物）。
+この 5 手はテストとしても走ります（`skin/book/integration_test/first_piece_test.dart`。上の絵はこのテストが撮った物）。
 
 ### ネットのエフェクトを 1 本追加する
 
 Motolii の一番の使い方です。例として、[ISF-Files](https://github.com/Vidvox/ISF-Files) の `ASCII Art.fs`（Motolii には同梱していない物）を使います。
 
-1. エフェクトのファイル（`.fs`）をダウンロードします。例：ISF-Files のページで `ISF/ASCII Art.fs` を開き、Raw を右クリックして「リンク先を別名で保存」。
+1. エフェクトのファイル（`.fs`）をダウンロードします。例：ISF-Files のページで `ISF/ASCII Art.fs` を開き、右上の **Download raw file**（↓ のボタン）を押します。
 2. Finder で ⌘⇧G を押し、`~/Library/Application Support/Motolii/` と打って開きます。中に `effects` フォルダを作り（無ければ）、ファイルを入れます。
 3. Effects タブに、すぐ出ます（再起動は要りません）。サムネイル（気球の写真にそのエフェクトをかけた見本）も数秒で自動で作られ、ポインタを乗せると動きます。既定の値では見た目が変わらない物には **NO CHANGE** と出ます。レイヤーを選んで、タイルを押し、下の **Add** を押します。
    ![Effects タブに ASCII Art が出た所](docs/media/drop_shelf.jpg)
 4. プレビューでも書き出しでも、こうなります（写真に ASCII Art をかけた所）。
    ![写真に ASCII Art をかけて書き出した所](docs/media/drop_ascii.jpg)
 
-この手順は試験としても走ります（`skin/book/integration_test/drop_effect_test.dart`）。WGSL（`.wgsl`）、レシピ（`.js` を `recipes/` に）、関係（`.js` を `relations/` に）、イージング（`.way` を `ways/` に）、AviUtl2 のスクリプト（作者のフォルダごと `aviutl_scripts/` に）も同じように置けます。保存したファイル名の最後が `.fs` になっているか確かめてください（ブラウザが `.txt` を付けることがあります）。
+この手順はテストとしても走ります（`skin/book/integration_test/drop_effect_test.dart`）。WGSL（`.wgsl`）、レシピ（`.js` を `recipes/` に）、関係（`.js` を `relations/` に）、イージング（`.way` を `ways/` に）、AviUtl2 のスクリプト（作者のフォルダごと `aviutl_scripts/` に）も同じように置けます。保存したファイル名の最後が `.fs` になっているか確かめてください（ブラウザが `.txt` を付けることがあります）。
 
 p5.js と Shadertoy は、置かずに貼ります。作品のコードをコピーして、アプリで ⌘V。コードは Program タブに残ります。
 
@@ -327,7 +327,7 @@ flowchart LR
 
 ## 開発に加わる
 
-[`CONTRIBUTING.md`](CONTRIBUTING.md)（[English](CONTRIBUTING.en.md)）に、ビルド、試験の走らせ方、決まり、手を付けやすい所があります。行動規範は [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)、脆弱性の知らせ方は [`SECURITY.md`](SECURITY.md)。
+[`CONTRIBUTING.md`](CONTRIBUTING.md)（[English](CONTRIBUTING.en.md)）に、ビルド、テストの走らせ方、決まり、手を付けやすい所があります。行動規範は [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)、脆弱性の知らせ方は [`SECURITY.md`](SECURITY.md)。
 
 ### 考え方
 
@@ -344,8 +344,8 @@ flowchart LR
 | `engine/` | エンジン。入口と、今のビルドが使うファイルの一覧は [`engine/README.md`](engine/README.md) |
 | `engine/effects/`・`recipes/`・`relations/`・`animators/`・`ways/` | 同梱のエフェクト・レシピ・関係・出入りの動き・イージング（利用者のフォルダと同じ形） |
 | `engine/aviutl_scripts/` | 同梱の AviUtl2 のスクリプト（作者ごと、LICENSE と SOURCE.txt つき） |
-| `engine/check/` | エンジンの試験（`all.sh` でまとめて） |
-| `skin/book/` | アプリの画面（Flutter、macOS）。試験は `test/` と `integration_test/` |
+| `engine/check/` | エンジンのテスト（`all.sh` でまとめて） |
+| `skin/book/` | アプリの画面（Flutter、macOS）。テストは `test/` と `integration_test/` |
 | `thorvg/` | ThorVG を wgpu に載せた前の結合（前の試しのスクリプトが使う） |
 | `old/` | 前の土台の実験（今の作りからは使っていない） |
 | `docs/` | この README の絵と作例（`media/`・`examples/`）、作者の作業メモ（`notes/`） |
@@ -357,7 +357,7 @@ flowchart LR
 
 | 外向け | 作者の作業メモ（日本語、そのまま公開） |
 |---|---|
-| `README.md`・`README.en.md`・`ARCHITECTURE.md`・`CONTRIBUTING.md`・`CONTRIBUTING.en.md`・`THIRD_PARTY_NOTICES.md`・`engine/README.md` | `ASSETS.md`（在る物の台帳。コミットの見張りが読む）・`docs/notes/`（やること・採点表）・`reports/`（調べた記録。絵と動画、人の投稿を集めた物は git に入れていない）・`skin/OVERVIEW.md`・`skin/PROCESS.md`（10 月初めの記録） |
+| `README.md`・`README.en.md`・`ARCHITECTURE.md`・`CONTRIBUTING.md`・`CONTRIBUTING.en.md`・`THIRD_PARTY_NOTICES.md`・`engine/README.md` | `ASSETS.md`（在る物の台帳。コミット前の自動チェックが読む）・`docs/notes/`（やること・採点表）・`reports/`（調べた記録。絵と動画、人の投稿を集めた物は git に入れていない）・`skin/OVERVIEW.md`・`skin/PROCESS.md`（10 月初めの記録） |
 
 </details>
 

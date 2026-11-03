@@ -27,7 +27,7 @@ git config core.hooksPath .githooks
 | 窓の試験 | `cd skin/book && flutter test` | 中身を組んでいない時は、中身を使う試験が飛ばされる |
 | 窓の書き方 | `cd skin/book && flutter analyze lib test integration_test` | エラー 0（今ある注意は 100） |
 
-GitHub の Actions は、台帳の確かめを毎回走らせます（`.github/workflows/assets.yml`、知らせるだけで PR は止めない）。組み立て全部と試験は `.github/workflows/build.yml`（Apple Silicon の Mac で、README の手順どおり組んで `check/all.sh`・`flutter analyze`・`flutter test`。コードに触る PR と、Actions の画面から手で）。窓での最初の 1 本の確かめは `cd skin/book && flutter drive --profile -d macos --driver=test_driver/integration_test.dart --target=integration_test/first_piece_test.dart`（`docs/media/window_step1..4.png` を書く）。作りは [`ARCHITECTURE.md`](ARCHITECTURE.md) と [`engine/README.md`](engine/README.md)。行動規範は [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)、脆弱性は [`SECURITY.md`](SECURITY.md)。
+GitHub の Actions は、台帳の確かめを毎回走らせます（`.github/workflows/assets.yml`、知らせるだけで PR は止めない）。組み立て全部と試験は `.github/workflows/build.yml`（Apple Silicon の Mac で、README の手順どおり組んで `check/all.sh`・`flutter analyze`・`flutter test`。コードに触る PR と、Actions の画面から手で）。窓での最初の 1 本の確かめは `cd skin/book && flutter drive --profile -d macos --driver=test_driver/integration_test.dart --target=integration_test/first_piece_test.dart`（`docs/media/window_step1..5.png` を書く）。作りは [`ARCHITECTURE.md`](ARCHITECTURE.md) と [`engine/README.md`](engine/README.md)。行動規範は [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)、脆弱性は [`SECURITY.md`](SECURITY.md)。
 
 ## 決まり
 
@@ -51,7 +51,7 @@ GitHub の Actions は、台帳の確かめを毎回走らせます（`.github/w
 | 何 | どこから | 難しさ |
 |---|---|---|
 | 配れる `.app`：中身が読む Homebrew の部品（GStreamer・glib・SQLite・LuaJIT・QuickJS）を `.app` の中に入れる。[dylibbundler](https://github.com/auriamg/macdylibbundler) か GStreamer の macOS 用フレームワーク | `engine/edit.sh`、`skin/book/macos/` | 中 |
-| AviUtl2 のスクリプトで足りない呼び出し（`obj.drawpoly`、図形「円」など）を、手本（AviUtl2 の lua.txt、sashimono-edit）どおりに | `reports/aviutl2/converter_plan.md`、`engine/aviutl.cpp` | 中〜難 |
+| AviUtl2 のスクリプトで足りない呼び出し（`obj.computeshader`、本体のエフェクトなど）を、手本（AviUtl2 の lua.txt、sashimono-edit）どおりに | `reports/aviutl2/converter_plan.md`、`engine/aviutl.cpp` | 中〜難 |
 | TSL の表現を編集の棚に出す | `engine/tsl/`、`reports/tsl_collection.md` | 中 |
 | 台帳 `ASSETS.md` の見出しに英語を添える | `ASSETS.md` | 易 |
 | 窓の結合テストの出力先（いまは `reports/`）を一時フォルダに | `skin/book/integration_test/` | 易 |
@@ -59,6 +59,6 @@ GitHub の Actions は、台帳の確かめを毎回走らせます（`.github/w
 ## 知っている穴
 
 - 動くのは macOS（Apple Silicon）だけ。
-- 窓の試験（`flutter test`）は、まとめて走らせても全部通る（2026-10-28、CI の Mac で 146 本、1 本は飛ばし）。CI でも落ちたら止まる。
+- 窓の試験（`flutter test`）は CI でまとめて走らせ、1 本でも落ちたら止まる。2026-11-03 に関係の試験 1 本（`skin/book/test/relate_test.dart`）が CI の Mac でだけ落ちた（手元の Mac では通る）。
 - 中身（`libmotolii.dylib`）は Homebrew の GStreamer などを読むので、作った `.app` はそのままでは他の Mac で動きません。
 - `engine/` の直下には、今の中身と前の試しのファイルが並んでいます（前の試しのスクリプトは `engine/sdk.sh` が取る組み立て済みの Filament を使う）。

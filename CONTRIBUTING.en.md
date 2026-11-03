@@ -6,7 +6,7 @@
 
 - **Issues**: bugs, a build that stopped, or "I want to use this look" (a URL and what is good about it). There are templates. English or Japanese.
 - **Pull requests**: welcome. Motolii is dual licensed under Apache-2.0 or MIT; unless you explicitly state otherwise, what you send is under the same two licences.
-- **Authors of bundled works**: if you want the way your work is bundled changed, or it removed, open an issue and it will be done ([`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)).
+- **Authors of bundled works**: if you want the way your work is bundled changed, or it removed, open an issue and it will be done ([`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md), Japanese).
 
 Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). Security problems go to the Security tab, not to issues ([`SECURITY.md`](SECURITY.md)).
 
@@ -18,7 +18,7 @@ As in [`README.en.md`](README.en.md) ("Try it"). If you will commit, once in you
 git config core.hooksPath .githooks
 ```
 
-How the code is laid out: [`ARCHITECTURE.md`](ARCHITECTURE.md) and [`engine/README.md`](engine/README.md) (which files the current build uses; the rest are earlier probes).
+How the code is laid out: [`ARCHITECTURE.md`](ARCHITECTURE.md) and [`engine/README.md`](engine/README.md) (which files the current build uses; the rest are earlier probes). Both are in Japanese, with an English summary at the top.
 
 Words in the code and the ledger: the UI is "window" (窓), the engine "the inside" (中身), a layer "thing" (物), a project file "document" (書類), the Stage "scene" (場面), and a tab of the left panel "shelf" (棚).
 
@@ -28,9 +28,9 @@ Words in the code and the ledger: the UI is "window" (窓), the engine "the insi
 |---|---|---|
 | The ledger (rule 2 below) | `python3 .githooks/assets_check.py` | `ASSETS.md covers all … files` |
 | The engine's checks, together (their tools: `brew bundle --file=Brewfile.checks` and `python3 -m pip install --user pillow numpy`) | `engine/check/all.sh` | `all checks held` (exit 1 if any says NO); one at a time: `engine/check/*.sh` |
-| The window's tests | `cd skin/book && flutter test` | Tests that need the engine are skipped if it is not built |
-| The window's code | `cd skin/book && flutter analyze lib test integration_test` | No errors (100 notices today) |
-| The first piece in the window | `cd skin/book && flutter drive --profile -d macos --driver=test_driver/integration_test.dart --target=integration_test/first_piece_test.dart` | Writes `docs/media/window_step1..4.png` |
+| The UI's tests | `cd skin/book && flutter test` | Tests that need the engine are skipped if it is not built |
+| The UI's code | `cd skin/book && flutter analyze lib test integration_test` | No errors (100 notices today) |
+| The first piece in the UI | `cd skin/book && flutter drive --profile -d macos --driver=test_driver/integration_test.dart --target=integration_test/first_piece_test.dart` | Writes `docs/media/window_step1..5.png` |
 
 GitHub Actions runs the ledger check on every push and pull request (`.github/workflows/assets.yml`; it only reports, it does not block a pull request). The whole build and the checks run in `.github/workflows/build.yml` (on an Apple silicon Mac, built as the README says, then `check/all.sh`, `flutter analyze`, `flutter test`; on pull requests that touch the code, and by hand from the Actions tab).
 
@@ -50,14 +50,14 @@ GitHub Actions runs the ledger check on every push and pull request (`.github/wo
 | What | Where to start | Difficulty |
 |---|---|---|
 | An `.app` you can hand out: put the Homebrew libraries the engine loads (GStreamer, glib, SQLite, LuaJIT, QuickJS, and ffmpeg for writing) inside the `.app`, with [dylibbundler](https://github.com/auriamg/macdylibbundler) or GStreamer's macOS framework | `engine/edit.sh`, `skin/book/macos/` | Medium |
-| AviUtl2 calls still missing (`obj.drawpoly`, the "circle" figure, …), following the references (AviUtl2's lua.txt, sashimono-edit) | `reports/aviutl2/converter_plan.md`, `engine/aviutl.cpp` | Medium–hard |
+| AviUtl2 calls still missing (`obj.computeshader`, the built-in effects, …), following the references (AviUtl2's lua.txt, sashimono-edit) | `reports/aviutl2/converter_plan.md`, `engine/aviutl.cpp` | Medium–hard |
 | TSL looks on the editor's shelves | `engine/tsl/`, `reports/tsl_collection.md` | Medium |
 | English beside the headings of `ASSETS.md` | `ASSETS.md` | Easy |
-| The window's integration tests write into `reports/`; make them use a temporary folder | `skin/book/integration_test/` | Easy |
+| The UI's integration tests write into `reports/`; make them use a temporary folder | `skin/book/integration_test/` | Easy |
 
 ## Known gaps
 
 - macOS on Apple silicon only.
-- The window's tests (`flutter test`) all pass run together (2026-10-28, 146 on the CI Mac, one skipped). In CI a failure stops the run.
+- The UI's tests (`flutter test`) run together in CI, and one failure stops the run. On 2026-11-03 one relations test (`skin/book/test/relate_test.dart`) failed on the CI Mac only; it passes on a local Mac.
 - The engine (`libmotolii.dylib`) loads Homebrew's GStreamer and others, so a built `.app` does not run on another Mac as it is.
 - `engine/` mixes the current engine with earlier probes at one level; [`engine/README.md`](engine/README.md) lists which files the current build uses.

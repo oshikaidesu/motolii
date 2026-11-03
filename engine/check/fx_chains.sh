@@ -28,7 +28,7 @@ def draw(part):
     for i,c in enumerate(part): open_+=['say 1 fx '+' '.join(c),f'still {W}/{i}.png']
     if os.path.exists(f'{W}/d.motolii'): os.remove(f'{W}/d.motolii')
     try:
-        r=subprocess.run(['zsh','./edit.sh',f'{W}/d.motolii'],input='\n'.join(open_)+'\n',capture_output=True,text=True,timeout=60)
+        r=subprocess.run(['zsh','./edit.sh',f'{W}/d.motolii'],input='\n'.join(open_)+'\n',capture_output=True,text=True,timeout=60*len(part))   # (a minute each: slow is not still, as libFuzzer's -report_slow_units is not its -timeout; 89a16b9b3's CI Mac drew 8 chains past one minute, 20 in 4.8 s here)
     except subprocess.TimeoutExpired as e:
         subprocess.run(['pkill','-f',W])
         return 'stood still',(e.stdout or b'').decode(errors='replace')

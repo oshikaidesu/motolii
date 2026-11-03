@@ -12,7 +12,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lab_book/motolii.dart';
 import 'package:lab_book/workspace/dock.dart';
 import 'package:lab_book/workspace/create_preview.dart';
-import 'package:lab_book/workspace/dock_parts.dart' show DockIconButton, DockSearch, dockStarsAt;
+import 'package:lab_book/workspace/desk_kit.dart' show DeskChip;
+import 'package:lab_book/workspace/dock_parts.dart' show DockIconButton, DockMem, DockSearch, dockStarsAt;
 import 'package:lab_book/workspace/dock_effects.dart' show EffectTile;
 import 'package:lab_book/workspace/dock_tags.dart' show DockTags;
 import 'package:lab_book/workspace/effect_decks.dart';
@@ -181,6 +182,20 @@ void main() {
     }
     expect([for (final c in ['x', 'y', 'z']) m.value(rect, 'js_Fade_Color_color_$c', 0)], [1, 1, 1], reason: 'white: the three numbers');
     expect(t.takeException(), isNull);
+    await t.pumpWidget(const SizedBox());
+  }, skip: !insideBuilt);
+
+  testWidgets('Photo on the Colors shelf is the picture picked on Media: the shelves keep their picks apart, and it reads Media\'s', (t) async {
+    final ws = _joined(), rect = ws.inside!.add('shape', 'rect');
+    ws
+      ..reread()
+      ..select('$rect');
+    VoidCallback? photo() => t.widget<DeskChip>(find.byKey(const ValueKey('colour-photo'))).onTap;
+    await _shelf(t, ws, const Size(520, 918), 'Colors');
+    expect(photo(), isNull, reason: 'no picture picked on Media');
+    (ws.view.putIfAbsent('dock.Media', DockMem.new) as DockMem).sel['Media'] = '${ws.documentFolder}/still.jpg';
+    await _shelf(t, ws, const Size(521, 918), 'Colors');
+    expect(photo(), isNotNull, reason: 'the picture picked on Media');
     await t.pumpWidget(const SizedBox());
   }, skip: !insideBuilt);
 

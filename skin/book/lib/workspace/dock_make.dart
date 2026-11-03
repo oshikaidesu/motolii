@@ -302,9 +302,10 @@ Future<_Pal?> _paletteFrom(String path, {int count = 6}) async {
   }
 }
 
-/// The photo picked on the Media shelf, if it is one (a file of the disk that Flutter reads).
+/// The photo picked on the Media shelf, if it is one (a file of the disk that Flutter reads). Read from Media's own
+/// keeping: each shelf keeps its picks apart (dock.dart's _mem), so this shelf's own never holds Media's.
 String? _pickedPhoto(DockCtx c) {
-  final id = c.mem.sel['Media'];
+  final id = (c.ws.view['dock.Media'] as DockMem?)?.sel['Media'];
   return id != null && id.startsWith('/') && RegExp(r'\.(png|jpe?g|webp)$', caseSensitive: false).hasMatch(id) ? id : null;
 }
 

@@ -313,6 +313,7 @@ Script::~Script() {
 bool Script::ok() const { return own->trouble.empty(); }
 bool Script::sketch() const { return own->sketch; }
 static std::string script_said(JSContext* cx, const char* js) {
+    JS_UpdateStackTop(JS_GetRuntime(cx));   // (asked on whichever thread asks, as numbers() below: quickjs.h, "should be called when changing thread")
     JSValue out = JS_Eval(cx, js, strlen(js), "sketch", JS_EVAL_TYPE_GLOBAL);
     if (JS_IsException(out)) {   // (its draw() has failed where it is asked: said here, and it goes on as far as it got)
         JSValue e = JS_GetException(cx), stack = JS_GetPropertyStr(cx, e, "stack");
@@ -382,6 +383,7 @@ std::vector<ScriptCopy> Script::copies(int n, double t, const std::map<std::stri
         return all;
     }
     JSContext* cx = own->cx;
+    JS_UpdateStackTop(own->rt);
     JSValue g = JS_GetGlobalObject(cx);
     for (const auto& [name, v] : numbers) JS_SetPropertyStr(cx, g, name.c_str(), JS_NewFloat64(cx, v));
     for (const auto& [name, w] : words) JS_SetPropertyStr(cx, g, name.c_str(), JS_NewString(cx, w.c_str()));
@@ -429,6 +431,7 @@ void Script::knobs(const std::map<std::string, double>& numbers, const std::map<
 ScriptCopy Script::ask(int i, int n, double t) {   // (each(), the knobs as last told)
     ScriptCopy c;
     JSContext* cx = own->cx;
+    JS_UpdateStackTop(own->rt);
     JSValue args[4] = {JS_NewInt32(cx, i), JS_NewInt32(cx, n), JS_NewFloat64(cx, t), JS_DupValue(cx, own->knobs)};
     JSValue out = JS_Call(cx, own->each, JS_UNDEFINED, 4, args);
     JS_FreeValue(cx, args[3]);

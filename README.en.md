@@ -75,16 +75,16 @@ Each was checked at a different time under different conditions. A p5.js work th
 
 | You can | With | State |
 |---|---|---|
-| Apply effects shared for VJ software | ISF (`.fs`, from [ISF-Files](https://github.com/Vidvox/ISF-Files) and others) | Drop one into the effects folder and it appears in the list. 318 of ISF-Files' 327 run (`engine/check/all.sh` counts them again). 420 bundled |
+| Apply effects shared for VJ software | ISF (`.fs`, from [ISF-Files](https://github.com/Vidvox/ISF-Files) and others) | Drop one into the effects folder and it appears in the list. 318 of ISF-Files' 327 run (`engine/check/all.sh` counts them again). 419 bundled |
 | Apply WebGPU shaders | WGSL (`.wgsl`, including screen effects ported from three.js and others) | Applied to the whole scene. 266 bundled |
 | Paste a p5.js sketch | p5.js (copy the code, press ⌘V in the app) | It becomes a layer and stays in the Program tab. You can keyframe it and change its speed with Time Remap. Of 168 works from OpenProcessing, 97 drew a picture (counted on 1 November; checked by eye, about 16 of the first 42 looked like the original) |
 | Paste a Shadertoy shader | GLSL (copy the code, press ⌘V in the app) | A shader that draws by itself becomes a layer; one that reads `iChannel` is applied to the selected layer. Either way it stays in the Program tab. Of 300 picked at random from an API dump of 36,668, 261 drew and moved (counted in early November 2026). Of the 30 black ones, 26 wait for input such as a mouse; 9 failed to load. Time Remap is p5.js only so far |
-| Use scripts made for AviUtl2, a Japanese video editor | `.anm2`, `.obj2` (their HLSL converted to WGSL) | 180 packages bundled. Counted on 26 October: 372 of the 594 scripts bundled then ran to the end ([`reports/aviutl2/catalogue.md`](reports/aviutl2/catalogue.md)). Scripts that need a Windows DLL don't run yet |
-| Use looks written in TSL (three.js's shading language) | three.js's own compiler to WGSL | 19 from Shader Lab are in the effects list; the rest are converted to WGSL only |
+| Use scripts made for AviUtl2, a Japanese video editor | `.anm2`, `.obj2` (their HLSL converted to WGSL) | 172 packages bundled. Counted on 26 October: 372 of the 594 scripts bundled then ran to the end ([`reports/aviutl2/catalogue.md`](reports/aviutl2/catalogue.md)). Scripts that need a Windows DLL don't run yet |
+| Use looks written in TSL (three.js's shading language) | three.js's own compiler to WGSL | 19 from [Shader Lab](https://github.com/basementstudio/shader-lab) are in the effects list; the rest are converted to WGSL only |
 | Place video, photos, text, shapes, 3D models and point clouds | Video (GStreamer), text and shapes (ThorVG), glTF and `.ply` (Filament) | Works |
 | Place After Effects animations | Lottie `.json` (ThorVG) | Works |
 | Animate from MIDI | MIDI (`.mid`): a piano roll, or keyframes on values at each note | Works; MIDI isn't heard yet (a video's sound is) |
-| Make shapes, or give a layer an in/out animation | Your own scripts (`.js`) | Drop one in and it appears in the list. 101 recipes and 13 in/out animations bundled |
+| Make shapes, or give a layer an in/out animation | Your own scripts (`.js`) | Drop one in and it appears in the list. 101 recipes (ready-made animated pieces) and 13 in/out animations bundled |
 | Move many layers together (line up, follow, flock, spring, collide) | Relation scripts (`.js`) | Drop one into `relations/` and it appears in the Relations tab. 9 bundled, plus 5 built in |
 
 A work's rights stay with its author. Many works on Shadertoy and OpenProcessing carry a non-commercial licence, so ask the author before using one in paid work.
@@ -104,7 +104,7 @@ Also: keyframes and easing (anime.js eases work as they are), physics (Jolt), re
 |---|---|
 | Works | Everything marked "Works" above, autosave and undo, playback (with a video's sound), MP4 export, the timeline, inspector and effects list |
 | Partly | AviUtl2 scripts; Alight Motion's features (counts under "How it compares") |
-| Known bug | Applying a whole-scene effect by command to a recipe built from copies (Iris, Weave, …) breaks the picture |
+| Known bug | Putting a screen effect (`.wgsl`) on a recipe layer made of copies (Iris, Weave, …) breaks the picture; on the whole scene it is fine |
 | Not yet | Windows; an `.app` you can hand out (the engine loads Homebrew's libraries, so a build only runs on the Mac that built it); MIDI sound |
 
 ## Try it
@@ -181,7 +181,7 @@ Opens the app (the first time it seems to stall for 1–3 minutes while it build
 ![The app's seven areas, numbered](docs/media/panels.jpg)
 
 1. **Top bar**: project name, frame size, fps, length, undo and redo, Render (export).
-2. **[Left tabs](docs/tabs.en.md#left-tabs)**: Media, Effects, Fonts, Colors, Create (shapes and recipes), Program (pasted code), Presets (combinations you saved).
+2. **[Left tabs](docs/tabs.en.md#left-tabs)**: Media, Effects, Fonts, Colors, Create (shapes and recipes), Program (pasted code), Presets (combinations you saved; not usable yet).
 3. **[Preview (Stage)](docs/tabs.en.md#preview-tabs)**: place and move things while you watch. The tools are in the column on its left (select, move, shapes, pen, text, …). The tab above switches to Camera View, the finished picture through the camera.
 4. **Inspector**: the selected layer's values (Transform, Anchor, Blend, Fill, …). The relations acting on the layer are listed at the top.
 5. **Timeline**: layers and keyframes, playback, markers, BPM.
@@ -197,7 +197,7 @@ Each tab, with pictures and how to use it: [The tabs](docs/tabs.en.md).
 1. Press the 5th of the tabs at the top left (a square with a plus, **Create**) and type `Iris` in the search box.
 2. Press the **Iris** tile, then **Create** at the bottom. A ring of colours appears in the preview, and a layer in the timeline.
    <img src="docs/media/window_step2.jpg" alt="2: the Iris recipe placed" width="560">
-3. With the ring selected, switch to the 2nd tab (a sparkle, **Effects**), find `Glow`, press it, then **Add** at the bottom. The ring glows and the button turns into **Remove**.
+3. With the ring selected, switch to the 2nd tab (fx, **Effects**), find `Glow`, press it, then **Add** at the bottom. The ring glows and the button turns into **Remove**.
    <img src="docs/media/window_step3.jpg" alt="3: Glow applied" width="560">
 4. Press **Render** at the top right; the Render box opens. Type a name (e.g. `first`) and press the box's **Render**.
    <img src="docs/media/window_step4.jpg" alt="4: the Render box" width="560">
@@ -210,7 +210,7 @@ These five steps also run as a test (`skin/book/integration_test/first_piece_tes
 
 This is what Motolii is for. As an example, `ASCII Art.fs` from [ISF-Files](https://github.com/Vidvox/ISF-Files) (not bundled with Motolii):
 
-1. Download the effect file (`.fs`). For example, open `ISF/ASCII Art.fs` on the ISF-Files page, right-click Raw and save the link.
+1. Download the effect file (`.fs`). For example, open `ISF/ASCII Art.fs` on the ISF-Files page, press **Download raw file** (the ↓ button at the top right).
 2. In Finder press ⌘⇧G, type `~/Library/Application Support/Motolii/` and go. Make a folder named `effects` there (if there is none) and put the file in it.
 3. It appears in the Effects tab at once (no restart). Its thumbnail (a balloon photo with the effect applied) is made automatically within seconds, and plays while the pointer is over it. An effect whose default values change nothing shows **NO CHANGE**. Select a layer, press the tile, then **Add**.
    ![ASCII Art in the Effects tab](docs/media/drop_shelf.jpg)
@@ -316,7 +316,7 @@ flowchart LR
   E -- "its picture, not copied" --> W
 ```
 
-The UI only takes input; the engine (`engine/`) draws. Google's Filament is downloaded at build time. The engine's entry points are in [`engine/README.md`](engine/README.md), and the whole design in [`ARCHITECTURE.md`](ARCHITECTURE.md).
+The UI only takes input; the engine (`engine/`) draws. Google's Filament is downloaded at build time. The engine's entry points are in [`engine/README.md`](engine/README.md), and the whole design in [`ARCHITECTURE.md`](ARCHITECTURE.md) (both in Japanese, with an English summary at the top).
 
 ## Next
 
@@ -336,7 +336,7 @@ The project's stance: **code you write yourself is a debt.** Look for an existin
 
 | Folder | What |
 |---|---|
-| `engine/` | The engine; its entry points and the files the current build uses: [`engine/README.md`](engine/README.md) |
+| `engine/` | The engine; its entry points and the files the current build uses: [`engine/README.md`](engine/README.md) (Japanese) |
 | `engine/effects/`, `recipes/`, `relations/`, `animators/`, `ways/` | Bundled effects, recipes, relations, in/out animations and eases (the same layout as your own folder) |
 | `engine/aviutl_scripts/` | Bundled AviUtl2 scripts (per author, with LICENSE and SOURCE.txt) |
 | `engine/check/` | The engine's checks (`all.sh` runs them) |
