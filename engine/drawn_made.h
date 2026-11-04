@@ -388,7 +388,7 @@ static Drawn* type(Stage& s, const char* words, const char* fontFile, const mat4
         t->translate(-x + 0.5f * outline, -y + 0.5f * outline);
         *w = 2 * (int)std::ceil(0.5f * (wide + outline));
         *h = 2 * (int)std::ceil(0.5f * (tall + outline));
-        if (!fx.split && fx.wrapWidth <= 0.f && align <= 0.f && fx.rims.empty()) d->text = t, d->words = words, d->textWide = (float)*w, d->textAt = -y + 0.5f * outline;   // (its words told again in place: words_at)
+        if (!fx.split && fx.wrapWidth <= 0.f && align <= 0.f && fx.rims.empty()) d->text = t, d->words = words, d->textFont = fontFile, d->textWide = (float)*w, d->textAt = -y + 0.5f * outline;   // (its words told again in place: words_at)
         std::string line(words);   // (a last line left empty, a Return after the words, is no line: its letters are the ones before)
         while (!line.empty() && (line.back() == '\n' || line.back() == '\r')) line.pop_back();
         if (fx.split && line.find('\n') == std::string::npos && fx.wrapWidth <= 0.f) {   // (one line split into its letters: where each ends, by how wide the words up to it are set)

@@ -129,6 +129,7 @@ struct Drawn {
     DrawnFx fx;                        // its effects as last told
     tvg::Text* text = nullptr;         // a text's own words, ThorVG's (driver thread only): told again in place (words_at); none when split, wrapped or aligned
     std::string words;                 // (as last told)
+    std::string textFont;              // (the font file they are set in: words it lacks letters of are made again, in the fallback)
     float textWide = 0.f, textAt = 0.f;   // (its picture's width and where its words stand down it, in its own points)
     std::atomic<bool> outgrown{false};    // (words told since that are wider than its picture: it is to be made again)
 };
@@ -227,9 +228,11 @@ static void lit_at(Stage& s, Drawn* d, const std::vector<float>& lit, const std:
 // A text's words as they are now (AbsentMotion's text effects: doc_text_shown), drawn again in its own picture for the
 // frame that comes next, as slots_at tells a film its slots, across its middle and at the height it was set; nothing is
 // done if they are as they were. false: it has no words of its own to tell, or the last told did not fit (outgrown).
+static std::string type_lacks(const std::string& fontFile, const std::string& words);
 static bool words_at(Stage& s, Drawn* d, const std::string& words) {
     if (!d->text || d->outgrown) return false;
     if (words == d->words) return true;
+    if (!type_lacks(d->textFont, words).empty()) return false;   // (a letter its font lacks: made again, in the fallback (type))
     d->words = words;
     kept_drop(s, d);
     door::on_driver(s.engine, [d, words] {
