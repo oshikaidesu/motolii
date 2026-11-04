@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../motolii.dart' show Motolii;
@@ -39,7 +40,14 @@ class EffectsShelf extends StatefulWidget {
 
 class _EffectsShelfState extends State<EffectsShelf> {
   final _menu = GlobalKey<WsMenuState>(), _places = GlobalKey<EffectPlacesState>();
+  final _tileKeys = FocusNode(debugLabel: 'ws-fx-tiles');   // (B goes to the tiles once one is pressed, not to the stage's brush)
   DockCtx get c => widget.c;
+
+  @override
+  void dispose() {
+    _tileKeys.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -144,18 +152,23 @@ class _EffectsShelfState extends State<EffectsShelf> {
       d.toggle(e.id, e.name, found: d.words.isNotEmpty && found(d.words, e));
       effectDecksKeep();
     });
-    // (what is done to an effect is on the effect, by a right click or by the foot's three dots: one row for where it goes,
-    //  the target deck or the Favorites, however many decks there are, as Lightroom Classic's Add to Target Collection,
-    //  New at its end; Ableton's right click on an item; Go to Album)
+    // (where an effect goes by one press, however many decks there are: the target deck, else the Favorites, and a word
+    //  says where it went, as Lightroom Classic's Add to Target Collection (B), the Quick Collection until one is set)
+    final to = effectTarget(), aim = to != null && deckIds.containsKey(to) ? to : null;
+    bool aimed(_Fx e) => aim != null ? deckIds[aim]!.contains(e.id) : c.starred(e.id);
+    void target(_Fx e) {
+      final was = aimed(e);
+      aim != null ? put(aim, e) : c.star(e.id);
+      ws.notice = '${was ? 'Removed from' : 'Added to'} ${aim?.name ?? 'Favorites'}';
+    }
+    // (what is done to an effect is on the effect, by a right click or by the foot's three dots: Ableton's right click on
+    //  an item, the target's one row, New at its end; Go to Album)
     void menuOn(_Fx e, Offset at) {
-      final box = _menu.currentContext?.findRenderObject() as RenderBox?, to = effectTarget();
+      final box = _menu.currentContext?.findRenderObject() as RenderBox?;
       _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [
         if (off(e) case final o?) ...[WsMenuItem('Add Again', e.apply), WsMenuItem('Remove', o)] else WsMenuItem(e.on ? 'Remove' : 'Add', e.apply),
         const WsMenuItem.rule(),
-        if (to != null && deckIds.containsKey(to))
-          WsMenuItem('${deckIds[to]!.contains(e.id) ? 'Remove from' : 'Add to'} ${to.name}', () => put(to, e))
-        else
-          WsMenuItem(c.starred(e.id) ? 'Remove from Favorites' : 'Add to Favorites', () => c.star(e.id)),
+        WsMenuItem('${aimed(e) ? 'Remove from' : 'Add to'} ${aim == null ? 'Favorites' : 'Target Deck'}', () => target(e), keys: 'B'),
         WsMenuItem('New Deck…', () => _places.currentState?.newDeck(thing: DeckThing(e.id, e.name, effectSum(e.id)))),
         if (effectPack(e.id) case final p? when packs.containsKey(p)) ...[const WsMenuItem.rule(), WsMenuItem('Go to Pack: $p', () => c.set(() => c.mem.fxPlace = '/$p'))],
       ]);
@@ -212,8 +225,15 @@ class _EffectsShelfState extends State<EffectsShelf> {
             children: [for (var i = 0; i < (inSight.length > 5 ? 10 : 5); i++) i < inSight.length ? tile(inSight[i], true) : const SizedBox()],   // (as Alight Motion's box of two rows; one until a sixth: in the window a row with one tile stood empty over the shelf)
           ),
         Expanded(
-          child: listed.isEmpty
-              ? DockEmpty(c.query, said: c.query.isNotEmpty ? null : deck != null ? 'Drag an effect onto the deck, or right-click one' : 'Nothing here yet')
+          child: CallbackShortcuts(   // (B puts the one picked where its menu's one row would, as in Lightroom's Library grid)
+            bindings: {const SingleActivator(LogicalKeyboardKey.keyB): () => sel == null ? null : target(sel)},
+            child: Focus(
+              focusNode: _tileKeys,
+              child: Listener(
+                behavior: HitTestBehavior.translucent,
+                onPointerDown: (_) => c.mem.mapped.contains('Effects') ? null : _tileKeys.requestFocus(),   // (the map takes the keys itself)
+                child: listed.isEmpty
+              ? DockEmpty(c.query, said: c.query.isNotEmpty ? null : deck != null ? (identical(deck, aim) ? 'Drag an effect onto the deck, or right-click one' : 'Drag an effect onto the deck') : 'Nothing here yet')
               : c.mem.mapped.contains('Effects')
               ? ListenableBuilder(   // (laid out by the tiles there are, and again once all are drawn: those drawn meanwhile join it then)
                   listenable: EffectTiles.progress,
@@ -236,6 +256,9 @@ class _EffectsShelfState extends State<EffectsShelf> {
                     );
                   },
                 ),
+              ),
+            ),
+          ),
         ),
       ],
     );

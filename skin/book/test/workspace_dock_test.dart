@@ -327,7 +327,7 @@ void main() {
     final tiles = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('ws-screen-'));
     List<String> ids() => [for (final e in tiles.evaluate()) (e.widget.key as ValueKey<String>).value.substring('ws-screen-'.length)];
     final m = ws.inside!, strangers = m.effects.where((e) => !e.$1.toLowerCase().contains('blur') && !m.about(e.$2).toLowerCase().contains('blur') && !m.tags(e.$2).contains('blur')).toList();
-    final stranger = strangers[0], another = strangers[1];
+    final stranger = strangers[0], another = strangers[1], third = strangers[2];
     final search = find.descendant(of: find.byType(DockSearch), matching: find.byType(EditableText)), naming = find.descendant(of: find.byKey(const ValueKey('ws-fx-naming')), matching: find.byType(EditableText));
     Finder place(String p) => find.byKey(ValueKey('ws-fx-place-$p'));
     Future<void> press(Finder f, {int buttons = kPrimaryButton}) async {
@@ -354,12 +354,20 @@ void main() {
     expect(jsonDecode(kept.readAsStringSync())['decks'][0]['words'], 'blur', reason: 'kept, and no hand listed what it found');
     await press(place('@Soft'), buttons: kSecondaryButton);
     await press(find.byKey(const ValueKey('ws-menu-Set as Target Deck')));
-    expect([find.text('Soft +'), find.text('Favorites +')], [findsOneWidget, findsNothing], reason: 'the target marked, Lightroom\'s + after its name');
+    Finder marked(String p) => find.descendant(of: place(p), matching: find.byKey(const ValueKey('ws-fx-target')));
+    expect([marked('@Soft'), marked('★')], [findsOneWidget, findsNothing], reason: 'the target marked, Lightroom\'s + after its name');
     await press(place('All'));
     await type(search, stranger.$1);
     await press(find.byKey(ValueKey('ws-screen-${stranger.$2}')), buttons: kSecondaryButton);
     expect([find.byKey(const ValueKey('ws-menu-Add to Favorites')), find.byKey(const ValueKey('ws-menu-Soft'))], [findsNothing, findsNothing], reason: 'one row for where it goes, however many decks: the target');
-    await press(find.byKey(const ValueKey('ws-menu-Add to Soft')));
+    await press(find.byKey(const ValueKey('ws-menu-Add to Target Deck')));
+    expect(ws.notice, 'Added to Soft', reason: 'told where it went');
+    await type(search, third.$1);
+    await press(find.byKey(ValueKey('ws-screen-${third.$2}')));
+    ws.notice = null;
+    await t.sendKeyEvent(LogicalKeyboardKey.keyB);
+    await t.pumpAndSettle();
+    expect(ws.notice, 'Added to Soft', reason: 'B puts the one picked in the target, as Lightroom\'s');
     await type(search, another.$1);
     final hand = await t.startGesture(t.getCenter(find.byKey(ValueKey('ws-screen-${another.$2}'))));
     await t.pump(const Duration(milliseconds: 50));
@@ -369,22 +377,22 @@ void main() {
     await t.pumpAndSettle();
     await type(search, '');
     await press(place('@Soft'));
-    expect(ids(), containsAll([stranger.$2, another.$2]), reason: 'put in by hand, by its menu and by a drag, beside what its words find');
+    expect(ids(), containsAll([stranger.$2, third.$2, another.$2]), reason: 'put in by hand, by its menu, by B and by a drag, beside what its words find');
     await press(find.byKey(ValueKey('ws-screen-${found.first}')));
     await press(find.byKey(const ValueKey('ws-fx-more')));
-    expect(find.byKey(const ValueKey('ws-menu-Remove from Soft')), findsOneWidget, reason: 'the three dots open what a right click does');
-    await press(find.byKey(const ValueKey('ws-menu-Remove from Soft')));
+    expect(find.byKey(const ValueKey('ws-menu-Remove from Target Deck')), findsOneWidget, reason: 'the three dots open what a right click does');
+    await press(find.byKey(const ValueKey('ws-menu-Remove from Target Deck')));
     expect(ids(), isNot(contains(found.first)), reason: 'one its words find, taken out by hand, stays out');
     expect(ids(), contains(found[1]));
     effectDecksAt(kept);   // (the next time)
-    expect(effectDecks().single.things.map((e) => e.sum), [effectSum(stranger.$2), effectSum(another.$2)], reason: 'known by what it is');
+    expect(effectDecks().single.things.map((e) => e.sum), [effectSum(stranger.$2), effectSum(third.$2), effectSum(another.$2)], reason: 'known by what it is');
     expect(effectDecks().single.without, {found.first});
     expect(effectTarget()?.name, 'Soft', reason: 'the target kept');
     await press(place('Recent'));   // (the list as read again)
     await press(place('@Soft'));
     await press(place('@Soft'), buttons: kSecondaryButton);
     await press(find.byKey(const ValueKey('ws-menu-Delete')));
-    expect([place('@Soft'), find.text('Favorites +')], [findsNothing, findsOneWidget], reason: 'gone, the Favorites the target again');
+    expect([place('@Soft'), marked('★')], [findsNothing, findsOneWidget], reason: 'gone, the Favorites the target again');
     expect(ids(), isNotEmpty, reason: 'back on all');
     await t.pumpWidget(const SizedBox());
   }, skip: !insideBuilt);

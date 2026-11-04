@@ -194,8 +194,10 @@ class EffectPlacesState extends State<EffectPlaces> {
   /// [cover]: a deck's picture, its row as Spotify's library lists a playlist (its cover, its name, how many under it).
   Widget _row(String place, {int depth = 0, bool? open, VoidCallback? onTap, ValueChanged<Offset>? menu, Widget? field, bool lit = false, Widget? cover}) {
     final c = widget.c, here = c.mem.fxPlace == place || lit, to = effectTarget();
-    final (said, g, n) = _said(place);
-    final name = place == (to == null ? '★' : '@${to.name}') ? '$said +' : said;   // (the target's mark, Lightroom's + after its name)
+    final (name, g, n) = _said(place);
+    final aim = place == (to == null ? '★' : '@${to.name}');
+    // (the target's mark, Lightroom's + after its name, kept when a long name is cut short)
+    Widget named(TextStyle s) => Row(children: [Flexible(child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: s)), if (aim) Text(' +', key: const ValueKey('ws-fx-target'), style: s)]);
     return GestureDetector(
       onSecondaryTapDown: menu == null ? null : (d) => menu(d.globalPosition),
       child: DockHover(
@@ -218,12 +220,12 @@ class EffectPlacesState extends State<EffectPlaces> {
               SizedBox(width: Shape.s(6)),
               Expanded(
                 child: field ?? (cover == null
-                    ? Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(dockInk(here)).copyWith(fontWeight: here ? FontWeight.w600 : FontWeight.w400))
+                    ? named(T.name(dockInk(here)).copyWith(fontWeight: here ? FontWeight.w600 : FontWeight.w400))
                     : Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(dockInk(here)).copyWith(fontWeight: here ? FontWeight.w600 : FontWeight.w400)),
+                          named(T.name(dockInk(here)).copyWith(fontWeight: here ? FontWeight.w600 : FontWeight.w400)),
                           Text('${g == DockG.search ? 'By words · ' : ''}${n ?? 0} ${n == 1 ? 'effect' : 'effects'}', maxLines: 1, style: T.micro(dockInk(here, Grey.g56))),
                         ],
                       )),
@@ -280,7 +282,7 @@ class EffectPlacesState extends State<EffectPlaces> {
                   c.set(() => c.mem.fxListOpen = true);
                   return false;
                 },
-                builder: (context, _, _) => _row(c.mem.fxPlace, open: false, lit: true, onTap: () => c.set(() => c.mem.fxListOpen = true), menu: deck == null ? null : (at) => _deckMenu(deck, at)),
+                builder: (context, _, _) => _row(c.mem.fxPlace, open: false, lit: true, onTap: () => c.set(() => c.mem.fxListOpen = true), menu: deck != null ? (at) => _deckMenu(deck, at) : c.mem.fxPlace == '★' ? (at) => _open(at, [_aim(null)]) : null),
               )
             : ListView(
           padding: EdgeInsets.symmetric(vertical: Shape.s(2)),
