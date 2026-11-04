@@ -58,7 +58,7 @@ class Cfg {
       if (k.isAltPressed) return .1;
     } else {
       if (k.isShiftPressed) return .1;
-      if (k.isControlPressed) return 10;
+      if (k.isMetaPressed || k.isControlPressed) return 10;   // (Cmd on a Mac, Ctrl elsewhere, one key: Live's manual pairs them, as the timeline's zoom does)
     }
     return 1;
   }

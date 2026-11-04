@@ -71,9 +71,12 @@ class NumFieldState extends State<NumField> {
   }
 
   double _clamp(double v) => math.min(widget.open ? double.infinity : widget.validMax ?? widget.max ?? double.infinity, math.max(widget.open && (widget.min ?? 0) < 0 ? double.negativeInfinity : widget.validMin ?? widget.min ?? double.negativeInfinity, v));
+  // (its card let past its ends by a right click, or Option held now: PastRange)
+  bool get _pastCard => switch (PastRange.of(context)) { final f? => _x.doc.b[f] ?? false, _ => false };
+  bool get _going => _pastCard || (HardwareKeyboard.instance.isAltPressed && _x.cfg.mod == ModRule.shiftFine);   // (in the other rule Option is finer)
   // (a scrub stops at the knob's ends, or where a number typed past them already lies; an angle's goes on as far as one
-  //  typed, as After Effects' angle scrubs)
-  double _scrubbed(double v) => widget.turns || (!widget.open && widget.validMin == null && widget.validMax == null) ? _clamp(v) : math.min(math.max(widget.max ?? double.infinity, _start), math.max(math.min(widget.min ?? double.negativeInfinity, _start), v));
+  //  typed, as After Effects' angle scrubs, and so does one going past)
+  double _scrubbed(double v) => widget.turns || _going || (!widget.open && widget.validMin == null && widget.validMax == null) ? _clamp(v) : math.min(math.max(widget.max ?? double.infinity, _start), math.max(math.min(widget.min ?? double.negativeInfinity, _start), v));
   double _tidy(double v) => double.parse(v.toStringAsFixed(6));
 
   // contract: with several fields picked, typing sets them all; a scrub or nudge moves them all by the same amount.
@@ -105,6 +108,7 @@ class NumFieldState extends State<NumField> {
         final t = double.tryParse((await Clipboard.getData(Clipboard.kTextPlain))?.text?.trim() ?? '');
         if (t != null && mounted) _apply(t, same: true);
       }),
+      if (PastRange.of(context) case final f?) ('past', _pastCard ? 'Stop at Range Ends' : 'Go Past Range Ends', () => doc.flag(f, !_pastCard)),   // (its whole card)
       if (ks != null) ...[
         if (ks != KeyS.at) ('key', 'Key this frame', () => doc.setKey(id, KeyS.at)),
         if (ks == KeyS.at) ('unkey', 'Remove key', () => doc.setKey(id, KeyS.anim)),
@@ -573,7 +577,8 @@ class NumFieldState extends State<NumField> {
                 setState(() => _hover = false);
                 if (linked && x.doc.directHover == group) x.doc.setDirectHover(null);
               },
-              child: body,
+              // (past what it vouches for, or going there under the hand: drawn the other way about)
+              child: (!widget.turns && _bounded && v != null && (v < widget.min! || v > widget.max!)) || (_drag && _moved && _going && (widget.open || widget.validMin != null || widget.validMax != null)) ? ColorFiltered(colorFilter: pastInk, child: body) : body,
             ),
           ),
           ),

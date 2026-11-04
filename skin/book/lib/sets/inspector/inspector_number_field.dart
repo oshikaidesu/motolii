@@ -70,6 +70,21 @@ class NumField extends StatefulWidget {
   State<NumField> createState() => NumFieldState();
 }
 
+/// A card whose numbers may be scrubbed past their sliders' ends, put round its fields by the card: [flag], its doc
+/// flag, is set by a right click on any of them; a held Option does it for one scrub (a quasimode, Raskin's The Humane
+/// Interface). The slider's span is what the effect vouches for; past it, as far as the inside takes (Houdini's
+/// range not strict: FloatParmTemplate minIsStrict).
+class PastRange extends InheritedWidget {
+  const PastRange({super.key, required this.flag, required super.child});
+  final String flag;
+  static String? of(BuildContext c) => c.getInheritedWidgetOfExactType<PastRange>()?.flag;
+  @override
+  bool updateShouldNotify(PastRange o) => o.flag != flag;
+}
+
+/// Past what is vouched for: a number drawn the other way about, light for dark (Flutter's ColorFilter.matrix inversion).
+const pastInk = ColorFilter.matrix(<double>[-1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0]);
+
 
 /// A short list over the panel, one picked does that and closes: an effect card's ⋮, a number's right click.
 class TinyMenu extends StatelessWidget {

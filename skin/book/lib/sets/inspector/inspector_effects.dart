@@ -138,7 +138,7 @@ class ValuesCard extends StatelessWidget {
   final Widget? side; // (or a square one beside the first of them, Good Boy Ninja's Wiggle's way: its tiles to its right, the rest under both)
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), doc = x.doc, ed = Ed(x.cfg.ed), k = 'v.${card.name}', adv = doc.b['$k.adv'] ?? false;
+    final x = Ctx.of(context), doc = x.doc, ed = Ed(x.cfg.ed), k = 'v.${card.name}', adv = doc.b['$k.adv'] ?? false, past = doc.b['$k.past'] ?? false;
     final heroes = [for (final p in card.params) if (!p.advanced) p], rest = [for (final p in card.params) if (p.advanced) p];
     // (the first row, then the rest folded under the name of what they are; the fold says nothing more than its glyph)
     final at = doc.movable.indexOf(card.name);   // (one of its effects: up or down its stack, After Effects' dragging a card)
@@ -149,7 +149,13 @@ class ValuesCard extends StatelessWidget {
       trailing: (at < 0 || doc.onCardMove == null) && doc.onCardReset == null && doc.onCardCopy == null
           ? null
           : Row(mainAxisSize: MainAxisSize.min, children: [
-              if (at < 0) CardWords(card.name, [for (final p in card.params) p.id]),
+              if (past)   // (let past its ends: its range's lock open, Houdini's range lock; a press shuts it)
+                Hov(
+                  key: ValueKey('card-past:${card.name}'),
+                  onTap: () => doc.flag('$k.past', false),
+                  builder: (_, h) => Padding(padding: EdgeInsets.only(right: Shape.s(6)), child: TpGlyphView(TpGlyph.unlock, h ? Grey.g95 : Grey.g76)),
+                ),
+              if (at < 0) CardWords(card.name, [for (final p in card.params) p.id], more: [('past', past ? 'Stop at Range Ends' : 'Go Past Range Ends', () => doc.flag('$k.past', !past))]),
               if (card.name == 'Script' && doc.onCardRemove != null)   // (a script is put on as an effect is, and comes off the same way: golf_noise.md (123))
                 Hov(
                   key: const ValueKey('card-remove:Script'),
@@ -164,6 +170,7 @@ class ValuesCard extends StatelessWidget {
                     builder: (_, h) => Padding(padding: EdgeInsets.only(right: Shape.s(6)), child: TpGlyphView(doc.cardsOff.contains(card.name) ? TpGlyph.eyeOff : TpGlyph.eye, h ? Grey.g95 : Grey.g56)),
                   ),
                 CardMore(name: card.name, items: [   // (AbsentMotion's More: Effect Info, Reset to Defaults, Copy Effect, Paste Effect Values; Alight Motion's Duplicate; and a preset of it kept)
+                  ('past', past ? 'Stop at Range Ends' : 'Go Past Range Ends', () => doc.flag('$k.past', !past)),   // (as a right click on any of its numbers: PastRange)
                   if (doc.onCardInfo case final info?) ('info', 'Effect Info', () => info(card.name)),
                   if (doc.onCardReset case final reset?) ('reset', 'Reset to Defaults', () => reset([for (final p in card.params) p.id])),
                   if (doc.onCardDuplicate case final duplicate?) ('duplicate', 'Duplicate', () => duplicate(card.name)),
@@ -243,7 +250,7 @@ class ValuesCard extends StatelessWidget {
         ],
       ],
     );
-    final shown = side == null ? sect : CardOver(child: sect); // (a hand anywhere on the card plays its preview)
+    final shown = PastRange(flag: '$k.past', child: side == null ? sect : CardOver(child: sect)); // (a hand anywhere on the card plays its preview)
     if (at < 0 || doc.onCardMove == null) return shown;
     return DragTarget<String>(   // (an effect let go on this one's card takes its place; the line says on which side it lands, as the stack's own EffectCard)
       onWillAcceptWithDetails: (d) => d.data != card.name && doc.movable.contains(d.data),
