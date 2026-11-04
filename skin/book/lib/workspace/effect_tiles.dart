@@ -27,6 +27,7 @@ import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter/painting.dart' show FileImage, ResizeImage;
 
 import '../motolii.dart';
+import 'ws.dart' show wsTextFont;
 
 abstract final class EffectTiles {
   static final _asked = <String>{}, _queue = <(String, String)>[];
@@ -64,10 +65,11 @@ abstract final class EffectTiles {
   /// the effect plain to see, and where its picture is split into before (left) and after. By the effect's name in the
   /// table, the file's own `am_<name>.wgsl`; each knob as from_absent.py named it (skslc's R_ before a name WGSL keeps for
   /// itself, origin_x and the like with _ after), a vector or a colour one knob each way; a moving line's list of numbers
-  /// for one knob the stops it goes through ([sweeps]), its layer moved the sample's drift ([moves]). Null: a file the
-  /// table has not.
-  static ({Map<String, double> knobs, double? split, Map<String, List<double>> sweeps, bool moves})? showcase(String file, String head, Map<String, dynamic> table) {
-    final name = RegExp(r'/am_([a-z0-9]+)\.wgsl$').firstMatch(file)?.group(1);
+  /// for one knob the stops it goes through ([sweeps]), its layer moved the sample's drift ([moves]), the words its
+  /// text ones are shown on ([text], its "text" layout). An .am (one moved by its own motion.cpp) by its --absent: name.
+  /// Null: a file the table has not.
+  static ({Map<String, double> knobs, double? split, Map<String, List<double>> sweeps, bool moves, String? text})? showcase(String file, String head, Map<String, dynamic> table) {
+    final name = RegExp(r'/am_([a-z0-9]+)\.wgsl$').firstMatch(file)?.group(1) ?? RegExp(r'^// --absent:([a-z0-9]+)', multiLine: true).firstMatch(head)?.group(1);
     final show = name == null ? null : (table['effects'] as Map<String, dynamic>?)?[name] as Map<String, dynamic>?;
     if (show == null) return null;
     final tracks = {for (final t in RegExp(r'--track@([A-Za-z0-9_]+):').allMatches(head)) t.group(1)!};
@@ -93,7 +95,7 @@ abstract final class EffectTiles {
         if (named(p, way) case final knob?) knobs['js_${stem}_$knob'] = v;
       }
     }
-    return (knobs: knobs, split: (show['split'] as num?)?.toDouble(), sweeps: sweeps, moves: show['layout'] == 'move');
+    return (knobs: knobs, split: (show['split'] as num?)?.toDouble(), sweeps: sweeps, moves: show['layout'] == 'move', text: show['layout'] == 'text' ? '${show['text'] ?? ''}' : null);
   }
 
   /// How much moving each knob of [file] alone shows its effect, 0 to 10, as an agent that read only the effect's code
@@ -101,7 +103,46 @@ abstract final class EffectTiles {
   /// #name and all; set beside AbsentMotion's effect_showcase.json, where a hand says which knob its tile moves, its
   /// heaviest was that knob in 26 of 28), by the inside's names (doc_values.h doc_screen_knob: the file's stem before
   /// the knob's), `_time` how much letting it run shows it. Empty: not weighed (the maker's own).
-  static Map<String, double> weighed(String dir, String file) {
+  static Map<String, double> weighed(String dir, String file) => {
+    for (final MapEntry(key: k, value: w) in _entry(dir, file).entries)
+      if (w is num) k == '_time' ? k : 'js_${_stem(file)}_$k': w.toDouble(),
+  };
+
+  /// What the tile moves to show [file] best, as one who looked at each knob moved on the sample chose it (the same
+  /// file's _best): a knob by the inside's name, from and to; ('_time', 0, 0) let it run. Null: none chosen.
+  static (String, double, double)? best(String dir, String file) => switch (_entry(dir, file)['_best']) {
+    '_time' => ('_time', 0, 0),
+    [final String k, final num from, final num to] => ('js_${_stem(file)}_$k', from.toDouble(), to.toDouble()),
+    _ => null,
+  };
+
+  /// What the sample lacks for [file] to show, as the one who looked said it (its _needs: text, picture, sound, motion,
+  /// chain, shape, behind); '' nothing, or not looked at.
+  static String needs(String dir, String file) => switch (_entry(dir, file)['_needs']) {
+    final String w => w,
+    _ => '',
+  };
+
+  /// What a tile that shows nothing says, instead of passing the sample off as the effect: what the sample lacks for it,
+  /// as one who looked said it; one looked at that lacks nothing (or only text, which its tile is drawn on) is one the
+  /// inside does not draw yet (as an AviUtl2 script stops on a call not made: aviutl_fx.h's "not yet"); NO CHANGE, one
+  /// not looked at (the maker's own).
+  static String sameTag(String file) => switch (needs(motoliiDir, file)) {
+    'picture' => 'FOR 2 LAYERS',
+    'sound' => 'FOR SOUND',
+    'motion' => 'FOR VIDEO',
+    'chain' => 'PART OF A SET',
+    'shape' => 'FOR CUT-OUTS',
+    'behind' => 'NEEDS BACKDROP',
+    _ when looked(motoliiDir, file) => 'UNSUPPORTED',
+    _ => 'NO CHANGE',
+  };
+
+  /// Whether [file] was looked at (its line in the file), so a tile that shows nothing and lacks nothing is one the
+  /// inside does not draw yet.
+  static bool looked(String dir, String file) => _entry(dir, file).containsKey('_best') || _entry(dir, file).containsKey('_needs') || _entry(dir, file).containsKey('_why');
+
+  static Map<String, dynamic> _entry(String dir, String file) {
     final all = _weights ??= () {
       try {
         return jsonDecode(File('$dir/knob_weights.json').readAsStringSync()) as Map<String, dynamic>;
@@ -109,20 +150,18 @@ abstract final class EffectTiles {
         return const <String, dynamic>{};
       }
     }();
-    final stem = String.fromCharCodes([   // (byte by byte, as the inside's std::isalnum: ライ is ______)
-      for (final b in utf8.encode(file.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), ''))) (b >= 48 && b <= 57) || (b >= 65 && b <= 90) || (b >= 97 && b <= 122) || b == 95 ? b : 95,
-    ]);
-    return {
-      for (final MapEntry(key: k, value: w) in ((all[file.startsWith('$dir/') ? file.substring(dir.length + 1) : file] as Map<String, dynamic>?) ?? const {}).entries)
-        if (w is num) k == '_time' ? k : 'js_${stem}_$k': w.toDouble(),
-    };
+    return (all[file.startsWith('$dir/') ? file.substring(dir.length + 1) : file] as Map<String, dynamic>?) ?? const {};
   }
+
+  static String _stem(String file) => String.fromCharCodes([   // (byte by byte, as the inside's std::isalnum: ライ is ______)
+    for (final b in utf8.encode(file.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), ''))) (b >= 48 && b <= 57) || (b >= 65 && b <= 90) || (b >= 97 && b <= 122) || b == 95 ? b : 95,
+  ]);
 
   static Map<String, dynamic>? _weights;
 
-  /// What a tile is told when it is drawn (its .tells beside it): the weights it goes by, so one weighed anew is drawn
-  /// anew. Null: drawn before a tile was told anything.
-  static String tells(String dir, String file) => switch (weighed(dir, file)) {
+  /// What a tile is told when it is drawn (its .tells beside it): the weights it goes by, what it moves and what it
+  /// lacks, so one weighed or looked at anew is drawn anew. Null: drawn before a tile was told anything.
+  static String tells(String dir, String file) => switch ({for (final MapEntry(:key, :value) in _entry(dir, file).entries) if (key != '_why') key: value}) {
     final w when w.isEmpty => '',
     final w => jsonEncode(w),
   };
@@ -241,15 +280,18 @@ abstract final class EffectTiles {
     //  (doc_fx_file), as gl-transitions' own previews go from one photo to another (scripts/rendering/render-preview.mjs:
     //  a road among its three); on the whole screen it had nothing to go to, and went to black)
     final grid = m.add('picture', '${folder.path}/grid.png'), under = m.add('picture', '$dir/fx_sample_end.jpg'), photo = m.add('picture', '$dir/fx_sample.jpg'), card = m.add('picture', '$dir/fx_sample.jpg');
+    final words = m.add('text', wsTextFont);   // (for one that works on text: white words over the grid, as AbsentMotion's effect_thumbs.py lays its "text" layout)
     m
+      ..say(words, 'fill', 'ffffff')
+      ..set(words, 'size', 0.4)
       ..set(grid, 'size', 3.6)
       ..set(under, 'size', 3.6)
       ..set(photo, 'size', 3.6)
       ..set(card, 'size', 1.8)
       ..key(card, 'x', moments.first, -0.84)
       ..key(card, 'x', moments.last, 0.84);
-    void lay(bool moving, {bool road = false}) {
-      for (final (thing, seen) in [(grid, moving), (card, moving), (photo, !moving), (under, road)]) {
+    void lay(bool moving, {bool road = false, bool text = false}) {
+      for (final (thing, seen) in [(grid, moving || text), (card, moving), (photo, !moving && !text), (under, road), (words, text)]) {
         m.set(thing, 'opacity', seen ? 1 : 0);
       }
     }
@@ -277,28 +319,36 @@ abstract final class EffectTiles {
     lay(true);
     final moved = shoot('${folder.path}/moved.png');
     final enough = plain.length == moments.length && moved.length == moments.length;
-    final shows = table(dir), own = {for (final t in [photo, card]) ...m.values(t)};
+    final shows = table(dir), own = {for (final t in [photo, card, words]) ...m.values(t)};
     for (final (f, home) in files) {
       try {
         Directory(File(home).parent.path).createSync(recursive: true);
       } catch (_) {
         continue;
       }
-      final show = f.endsWith('.wgsl') ? showcase(f, File(f).readAsStringSync(), shows) : null;
+      final show = f.endsWith('.wgsl') || f.endsWith('.am') ? showcase(f, File(f).readAsStringSync(), shows) : null;
       final said = m.tags(f), isf = f.endsWith('.fs') ? File(f).readAsStringSync() : '', plays = RegExp(r'"PERSISTENT"\s*:\s*(true|1)').hasMatch(isf);
       final lists = [for (final l in RegExp(r'\{[^{}]*"TYPE"\s*:\s*"long"[^{}]*\}').allMatches(isf)) '_${RegExp(r'"NAME"\s*:\s*"([^"]+)"').firstMatch(l.group(0)!)?.group(1)}'];   // (ISF's "long": a choice, which the inside takes as a span)
       final weights = weighed(dir, f), time = weights['_time'] ?? 0;
-      final timed = time > 0 && weights.entries.every((w) => w.key == '_time' || w.value <= time);   // (its weights say letting it run shows it best: no knob turned, as AbsentMotion's Noise Displace)
+      final chosen = best(dir, f);   // (what one who looked at each knob moved on the sample chose to show it by)
+      final timed = chosen?.$1 == '_time' || (time > 0 && weights.entries.every((w) => w.key == '_time' || w.value <= time));   // (its weights say letting it run shows it best: no knob turned, as AbsentMotion's Noise Displace)
       final runs = said.contains('time') || said.contains('feedback') || plays || timed;
       final first = (show?.moves ?? false) || said.contains('feedback') || plays;   // (an effect of what was has something going past it to see)
       final base = home.substring(0, home.length - 4);
       var same = false, split = false, stands = true;
       var made = const <String>[];
-      for (final moving in [first, if (!first) true]) {   // (nothing seen on the whole photo: on a card going past, where what it does at an edge or to what moves shows, as AbsentMotion's "move")
-        final passes = said.contains('transition');   // (one is put on the photo, the road under it)
-        lay(moving, road: passes);
-        final whole = !moving && !passes && (f.endsWith('.fs') || f.endsWith('.wgsl') || f.endsWith('.json')) && m.say(0, 'script', f);   // (.json: Filament's own settings, laid on the stage's view: viewer_settings.h)   // (a screen effect; the stage takes an AviUtl2 script too, but draws none of it: motolii.h, a thing's)
-        final thing = moving ? card : photo, on = whole ? 0 : thing, onIt = !whole && m.say(thing, 'fx', f);   // (as a thing's: as edit.sh says it)
+      final worded = show?.text != null || needs(dir, f) == 'text';   // (one for text, as its table or one who looked says: on words alone)
+      final wordedOk = worded && () {   // (the words as they are, beside which it is seen to do something)
+        m.say(words, 'text', show?.text?.isNotEmpty ?? false ? show!.text! : 'Motolii');
+        lay(false, text: true);
+        return shoot('${folder.path}/worded.png').length == moments.length;
+      }();
+      final bare = worded ? 'worded' : 'plain';
+      for (final moving in worded ? [false] : [first, if (!first) true]) {   // (nothing seen on the whole photo: on a card going past, where what it does at an edge or to what moves shows, as AbsentMotion's "move")
+        final passes = said.contains('transition') && !worded;   // (one is put on the photo, the road under it)
+        lay(moving, road: passes, text: worded);
+        final whole = !moving && !passes && !worded && (f.endsWith('.fs') || f.endsWith('.wgsl') || f.endsWith('.json')) && m.say(0, 'script', f);   // (.json: Filament's own settings, laid on the stage's view: viewer_settings.h)   // (a screen effect; the stage takes an AviUtl2 script too, but draws none of it: motolii.h, a thing's)
+        final thing = worded ? words : moving ? card : photo, on = whole ? 0 : thing, onIt = !whole && m.say(thing, 'fx', f);   // (as a thing's: as edit.sh says it)
         final filed = <String, double>{};
         for (final MapEntry(:key, :value) in (show?.knobs ?? const <String, double>{}).entries) {
           if (m.value(on, key, 0) case final was? when !_part.hasMatch(key)) filed[key] = was;
@@ -309,10 +359,12 @@ abstract final class EffectTiles {
         final heaviest = ([for (final k in knobs) if (weights[k] case final w? when w > time) (k, w)]..sort((a, b) => b.$2.compareTo(a.$2))).firstOrNull?.$1;   // (the knob its weights say shows it most, more than letting it run)
         if (knobs.where((k) => k.endsWith('_progress')).firstOrNull case final p? when said.contains('transition')) {
           sweeps[p] = const [0, 1];   // (a transition seen going from 0 to 1 across its pictures)
+        } else if (chosen case (final k, final from, final to) when sweeps.isEmpty && knobs.contains(k)) {
+          sweeps[k] = [from, to];   // (as the one who looked chose it, ahead of the one measured)
         } else if (sweeps.isEmpty && (!runs || heaviest != null)) {   // (one that runs by the clock its heaviest knob turned as it runs, or none)
           if (_telling(m, on, knobs, filed, lists, folder.path, first: heaviest, alone: runs) case final knob?) sweeps[knob.$1] = [knob.$2, knob.$3];
         }
-        if (!moving && !runs && sweeps.isEmpty && enough && _same('${folder.path}/usual.png', '${folder.path}/sample.png')) {   // (nothing on the photo: no sixteen pictures of nothing)
+        if (!moving && !worded && !runs && sweeps.isEmpty && enough && _same('${folder.path}/usual.png', '${folder.path}/sample.png')) {   // (nothing on the photo: no sixteen pictures of nothing)
           if (whole) m.say(0, 'script', 'none');
           if (onIt) m.say(thing, 'fx', 'none');
           same = true;
@@ -327,21 +379,21 @@ abstract final class EffectTiles {
         if (whole) m.say(0, 'script', 'none');
         if (onIt) m.say(thing, 'fx', 'none');
         if (made.length < moments.length) continue;
-        same = enough && _unseen(home, '${folder.path}/${moving ? 'moved' : 'plain'}');
+        same = enough && (!worded || wordedOk) && _unseen(home, '${folder.path}/${moving ? 'moved' : bare}');
         stands = !moving && !runs && sweeps.isEmpty;
         split = stands && !said.contains('generator');
         if (!same) break;
       }
       if (made.length < moments.length || same) {   // (put on but not drawn, a script that stops, or nothing seen: the sample as it is)
         for (final (k, _) in moments.indexed) {
-          if (enough) File('${folder.path}/plain_$k.png').copySync(_drawn(home, k));
+          if (enough) File('${folder.path}/${worded && wordedOk ? bare : 'plain'}_$k.png').copySync(_drawn(home, k));
         }
         stands = true;
         if (!enough) continue;
       }
       final at = split ? '0.1+0.8*(3*pow(N/15,2)-2*pow(N/15,3))' : show?.split;   // (AbsentMotion's split, its 22 where one stands; no knob to turn, what it did is seen by the line going across: no model for that, the user's wish that no tile stand)
       if (at != null && !same && enough) {   // (before at its left, as AbsentMotion's effect_thumbs.py lays the photo over it up to there, a white line where they meet)
-        if (_ffmpeg(['-i', '${base}_%d.png', '-i', '${folder.path}/plain_%d.png', '-filter_complex', "[0:v]format=gbrp[a];[1:v]format=gbrp[b];[a][b]blend=all_expr='if(lt(abs(X-W*($at)),1),255,if(lt(X,W*($at)),B,A))'", '-start_number', '0', '${base}_%d.split.png'])) {
+        if (_ffmpeg(['-i', '${base}_%d.png', '-i', '${folder.path}/${bare}_%d.png', '-filter_complex', "[0:v]format=gbrp[a];[1:v]format=gbrp[b];[a][b]blend=all_expr='if(lt(abs(X-W*($at)),1),255,if(lt(X,W*($at)),B,A))'", '-start_number', '0', '${base}_%d.split.png'])) {
           for (final (k, _) in moments.indexed) {
             File('${base}_$k.split.png').renameSync(_drawn(home, k));
           }

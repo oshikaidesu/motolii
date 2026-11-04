@@ -107,13 +107,22 @@ void main() {
     final out = Directory.systemTemp.createTempSync('motolii_tile_test');
     final drawn = EffectTiles.draw(motoliiDir, [('$motoliiDir/effects/Fade.fs', '${out.path}/0.png')]);
     expect(drawn.single.$2, isFalse, reason: 'it changes the photo');
-    double luma(int k) {   // (ffmpeg's signalstats: the frame's mean Y, 16 black to 235 white)
-      final r = Process.runSync('ffmpeg', ['-hide_banner', '-i', EffectTiles.frame('${out.path}/0.png', k), '-vf', 'signalstats,metadata=print:key=lavfi.signalstats.YAVG', '-f', 'null', '-']);
-      return double.parse(RegExp(r'YAVG=([0-9.]+)').firstMatch('${r.stdout}${r.stderr}')!.group(1)!);
-    }
-    final first = luma(0), last = luma(EffectTiles.moments.length - 1);
+    final first = _luma(EffectTiles.frame('${out.path}/0.png', 0)), last = _luma(EffectTiles.frame('${out.path}/0.png', EffectTiles.moments.length - 1));
     expect(last, greaterThan(40), reason: 'its last picture is the road, not black (it was black: nothing under it on the whole screen)');
     expect((first - last).abs(), greaterThan(10), reason: 'the bright balloon gives way to the road at dusk');
+    out.deleteSync(recursive: true);
+  }, skip: !insideBuilt);
+  test('a tile moves the knob one who looked chose, one for text is drawn on words, and one that shows nothing says why, not NO CHANGE (the user, 11/5: what is an effect that does nothing for)', () {
+    final out = Directory.systemTemp.createTempSync('motolii_tile_test');
+    final effects = ['effects/am_countupdown.am', 'aviutl_scripts/korarei__FlowType_K/Script/FlowType_K/@FlowType_K.anm2#Motion', 'aviutl_scripts/sigma-axis__Path_S/Script/@Path_S.anm2#パス部分フィルタσここまで'];
+    final drawn = EffectTiles.draw(motoliiDir, [for (final (i, e) in effects.indexed) ('$motoliiDir/$e', '${out.path}/$i.png')]);
+    expect(drawn.map((d) => d.$2), [false, true, true], reason: 'Count Up/Down counts on words; FlowType_K stops on obj.module; σここまで alone ends nothing');
+    final first = _luma(EffectTiles.frame('${out.path}/0.png', 0)), last = _luma(EffectTiles.frame('${out.path}/0.png', EffectTiles.moments.length - 1));
+    expect(first, lessThan(70), reason: 'on white words over the dark grid, as AbsentMotion lays its text effects, not on the photo');
+    expect(last, greaterThan(first), reason: '\$0 counts up to \$12,500: more letters at its end');
+    expect([for (final e in effects.skip(1)) EffectTiles.sameTag('$motoliiDir/$e')], ['UNSUPPORTED', 'PART OF A SET']);
+    expect(EffectTiles.sameTag('/Users/someone/Library/Application Support/Motolii/effects/mine.fs'), 'NO CHANGE', reason: 'the maker\'s own, looked at by no one');
+    expect(EffectTiles.best(motoliiDir, '$motoliiDir/aviutl_scripts/CatWithNeko__ChromaticAberration/Chromatic Aberration.anm2'), ('js_Chromatic_Aberration_zoomtra', 100, 150), reason: 'its colours seen pulled apart by zoomtra, not by xtra the code reading chose');
     out.deleteSync(recursive: true);
   }, skip: !insideBuilt);
 
@@ -832,4 +841,10 @@ void main() {
     final c = t.getRect(find.byKey(const ValueKey('ws-map-Test-c'))), room = t.getRect(find.byKey(const ValueKey('ws-map-Test')));
     expect([c.width / at['c']!.width, room.contains(c.center)], [closeTo(1, .01), isTrue], reason: 'picked, the map left where it was, as a pick in Figma leaves its canvas (flown to, it dragged the view away)');
   });
+}
+
+/// A picture's mean brightness (ffmpeg's signalstats: its mean Y, 16 black to 235 white).
+double _luma(String picture) {
+  final r = Process.runSync('ffmpeg', ['-hide_banner', '-i', picture, '-vf', 'signalstats,metadata=print:key=lavfi.signalstats.YAVG', '-f', 'null', '-']);
+  return double.parse(RegExp(r'YAVG=([0-9.]+)').firstMatch('${r.stdout}${r.stderr}')!.group(1)!);
 }
