@@ -718,6 +718,15 @@ void main() {
     }
     final (a, b) = (s.take(30).reduce((p, q) => p + q) / 30, s.skip(30).reduce((p, q) => p + q) / 30);
     expect([near, [for (final (i, p) in s.indexed) ((p - a).distance < (p - b).distance) == (i < 30)].every((n) => n)], [greaterThan(2 * dockSpreadRadius * .95), isTrue], reason: 'none on another, each nearer its own heap');
+    final q = dockSpread(at, 1920 / 1080, 1);
+    var near2 = double.infinity;
+    for (final (i, p) in q.indexed) {
+      for (final o in q.skip(i + 1)) {
+        near2 = math.min(near2, (p - o).distance);
+      }
+    }
+    final (a2, b2) = (q.take(30).reduce((p, o) => p + o) / 30, q.skip(30).reduce((p, o) => p + o) / 30);
+    expect([(a2 - b2).distance / (a - b).distance, near2, [for (final (i, p) in q.indexed) ((p - a2).distance < (p - b2).distance) == (i < 30)].every((n) => n)], [lessThan(.5), greaterThan(2 * dockSpreadRadius * .95), isTrue], reason: 'squeezed (Obsidian\'s Center force): the heaps drawn together, still none on another, each nearer its own');
   });
 
   testWidgets('a map shows each tile where it lies, inside its circle so none covers another, in no colour of its own, the whole fitted to the room at one scale (FontMap\'s map); the one under the pointer is told, its pictures moving and its name; the one picked flown to', (t) async {
@@ -739,6 +748,11 @@ void main() {
     await t.pump();
     expect([find.text('Box Blur'), find.text('moving a')], [findsOneWidget, findsOneWidget], reason: 'the one under the pointer: its pictures moving and its name, by it');
     await mouse.removePointer();
+    await t.tap(find.byKey(const ValueKey('ws-map-Test-forces')));
+    await t.pump();
+    await t.drag(find.byKey(const ValueKey('ws-map-Test-center')), const Offset(400, 0));
+    await t.pump();
+    expect([find.text('Center force'), places.squeeze.value], [findsOneWidget, 1], reason: 'from its corner its Center force (Obsidian\'s graph settings), slid all the way: drawn together as far as it goes');
     await t.pumpWidget(Directionality(
       textDirection: TextDirection.ltr,
       child: Center(child: SizedBox(width: 400, height: 300, child: DockMap(places, [for (final id in ['a', 'b', 'c', 'd']) (id, const SizedBox.expand())], picked: 'c'))),

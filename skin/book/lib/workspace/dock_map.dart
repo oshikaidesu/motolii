@@ -1,6 +1,7 @@
 // A shelf's map, as XLN Audio's XO's Space: each item where what is alike lies near (laid out by the inside's t-SNE,
 // motolii_map, as XO's are), then pushed apart till none covers another, each kept near where it lay, as FontMap lays
-// its fonts (dockSpread); the shelf's chips and words narrowing which are shown, as XO's filters narrow its Space;
+// its fonts, on d3-force itself (force_graph; dockSpread), drawn together as far as asked by Obsidian's graph's Center
+// force; the shelf's chips and words narrowing which are shown, as XO's filters narrow its Space;
 // moved and zoomed by Flutter's own InteractiveViewer. Under it XO's Similarity List (Splice's Similar Sounds beside
 // its list): the nearest to the one picked, stepped along by its arrows or the left and right keys. Laid out again
 // when what the shelf holds changes (XO's Scan & Refresh, done by itself), kept between openings beside the tiles
@@ -17,8 +18,10 @@ import 'package:crypto/crypto.dart' show sha1;
 import 'package:flutter/gestures.dart' show kTouchSlop;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:force_graph/force_graph.dart' show CollideForce, Force, ForceNode, ForceSimulation;
 
 import '../motolii.dart' show Motolii, MotoliiQuestions;
+import '../sets/panels/media_parts.dart' show MiniSlider;
 import '../tokens.dart';
 import 'dock_glyphs.dart';
 import 'dock_parts.dart' show DockIconButton;
@@ -28,10 +31,16 @@ part 'dock_map_view.dart';
 /// Where one shelf's items lie on its map, by id, on a canvas the room's shape ([dockSpread]); [laying] while that is
 /// being worked out.
 class DockMapPlaces {
-  DockMapPlaces(this.name);
+  DockMapPlaces(this.name) {
+    squeeze.addListener(() => _laid.isNotEmpty ? _spread() : null);
+  }
   final String name;
   final places = ValueNotifier<Map<String, Offset>>(const {});
   final laying = ValueNotifier<bool>(false);
+
+  /// How tightly the islands are drawn together, 0 to 1 ([dockSpread]'s squeeze: Obsidian's graph's Center force);
+  /// none at first, the map as FontMap lays it.
+  final squeeze = ValueNotifier<double>(0);
   String? _for;
   Map<String, Offset> _laid = const {};   // (where t-SNE lays them, before they are pushed apart: what is alike is told by it)
   double _aspect = 1920 / 1080;   // (the room's width to its height: FontMap's canvas is the page it is shown on)
@@ -44,13 +53,15 @@ class DockMapPlaces {
     if (_laid.isNotEmpty) _spread();
   }
 
-  /// [_laid] pushed apart for the room ([dockSpread]), one at a time, again till what it was for is the last asked.
+  /// [_laid] pushed apart for the room and drawn together by [squeeze] ([dockSpread]), one at a time, again till what it
+  /// was for is the last asked.
   Future<void> _spread() => _spreading ?? (_spreading = Zone.root.run<Future<void>>(() => Future<void>(() async {
     try {
-      for (var laid = const <String, Offset>{}, a = 0.0; !identical(laid, _laid) || a != _aspect;) {
+      for (var laid = const <String, Offset>{}, a = 0.0, q = -1.0; !identical(laid, _laid) || a != _aspect || q != squeeze.value;) {
         laid = _laid;
         a = _aspect;
-        final s = laid.isEmpty ? const <Offset>[] : await _spreadAway(laid.values.toList(), a);
+        q = squeeze.value;
+        final s = laid.isEmpty ? const <Offset>[] : await _spreadAway(laid.values.toList(), a, q);
         if (identical(laid, _laid)) places.value = {for (final (i, id) in laid.keys.indexed) id: s[i]};
       }
     } finally {
@@ -147,7 +158,7 @@ void dockMapsAt(Directory d) => _mapsAt = d;
 
 /// [dockSpread] and [DockMapPlaces._joined] on an isolate of their own (Isolate.run), sent only what they are given here
 /// (a closure made inside [DockMapPlaces.need] would carry the inside's library with it).
-Future<List<Offset>> _spreadAway(List<Offset> at, double aspect) => Isolate.run(() => dockSpread(at, aspect));
+Future<List<Offset>> _spreadAway(List<Offset> at, double aspect, double squeeze) => Isolate.run(() => dockSpread(at, aspect, squeeze));
 Future<Map<String, Offset>> _joinedAway(Map<String, Offset> known, Map<String, Float32List> seen) => Isolate.run(() => DockMapPlaces._joined(known, seen));
 
 /// A tile's reach on the map: FontMap's collision radius, 13 of its canvas's pixels.
@@ -155,62 +166,55 @@ const dockSpreadRadius = 13.0;
 
 /// Places (0 to 1 each way) pushed apart till none is within two [dockSpreadRadius] of another, each kept near where it
 /// lay: FontMap's scripts/apply-overlap-removal.mjs (MIT) with its numbers (a 1920 x 1080 canvas 40 in from its edges,
-/// radius 13, 140 ticks, pulled back at 0.03), its d3 forceSimulation's tick, forceCollide (strength 1, 3 iterations)
-/// and forceX / forceY (d3-force, ISC: simulation.js, collide.js, x.js, y.js) as they are, but for the near ones found
-/// by a sweep along x (sweep and prune, Baraff 1992) in place of its quadtree; its canvas, the page it is shown on, here
-/// as many pixels in the shape of the room ([aspect] its width to its height). Where each lies on that canvas.
-List<Offset> dockSpread(List<Offset> at, [double aspect = 1920 / 1080]) {
+/// radius 13, 140 ticks, pulled back at 0.03) on d3-force itself, in Dart (force_graph, MIT: its ForceSimulation and
+/// CollideForce, strength 1, 3 iterations, with d3's own cooling); its canvas, the page it is shown on, here as many
+/// pixels in the shape of the room ([aspect] its width to its height). [squeeze] (0 to 1): each pulled to the middle as
+/// well, at most at d3's own strength for that pull (forceX's 0.1), the islands drawn together while none covers
+/// another: Obsidian's graph's Center force ("controls how compact the graph is"), as d3's disjoint force-directed graph
+/// keeps its pieces together with forceX and forceY to the middle; then the pulls let go and only the pushing apart
+/// run 40 ticks more, removing what the pull leaves, as FontMap's own drawn-together map does (src/experiments/engine/
+/// cartogram.js, relax). Where each lies on that canvas.
+List<Offset> dockSpread(List<Offset> at, [double aspect = 1920 / 1080, double squeeze = 0]) {
   const pad = 40.0, r = dockSpreadRadius, pull = 0.03;
   final w = math.sqrt(1920 * 1080 * aspect), h = 1920 * 1080 / w;
-  final n = at.length, x = Float64List(n), y = Float64List(n), vx = Float64List(n), vy = Float64List(n), ox = Float64List(n), oy = Float64List(n);
-  for (final (i, p) in at.indexed) {
-    x[i] = ox[i] = p.dx * (w - 2 * pad) + pad;
-    y[i] = oy[i] = p.dy * (h - 2 * pad) + pad;
-  }
-  final jiggle = math.Random(1), decay = 1 - math.pow(0.001, 1 / 300), order = List<int>.generate(n, (i) => i), rank = Int32List(n), sx = Float64List(n);
-  double nudge() => (jiggle.nextDouble() - .5) * 1e-6;   // (d3's jiggle: two exactly on each other told apart)
-  var alpha = 1.0;
+  final nodes = [for (final (i, p) in at.indexed) ForceNode(id: '$i')..x = p.dx * (w - 2 * pad) + pad..y = p.dy * (h - 2 * pad) + pad];
+  final collide = CollideForce(radius: (_) => r), sim = ForceSimulation(nodes)
+    ..alphaDecay = 1 - math.pow(0.001, 1 / 300).toDouble()   // (d3's, where force_graph keeps its Apeirron graph's)
+    ..alphaTarget = 0
+    ..addForce(collide)
+    ..addForce(_Toward([for (final n in nodes) Offset(n.x, n.y)], pull));
+  if (squeeze > 0) sim.addForce(_Toward(List.filled(nodes.length, Offset(w / 2, h / 2)), squeeze * .1));
   for (var tick = 0; tick < 140; tick++) {
-    alpha -= alpha * decay;
-    for (var k = 0; k < 3; k++) {
-      for (var i = 0; i < n; i++) {
-        sx[i] = x[i] + vx[i];   // (where d3's quadtree is built from)
-      }
-      order.sort((a, b) => sx[a].compareTo(sx[b]));
-      for (final (o, i) in order.indexed) {
-        rank[i] = o;
-      }
-      for (var i = 0; i < n; i++) {
-        final xi = x[i] + vx[i], yi = y[i] + vy[i];
-        void push(int j) {
-          if (j <= i) return;   // (each two once, d3's data.index > node.index)
-          var dx = xi - x[j] - vx[j], dy = yi - y[j] - vy[j], l = dx * dx + dy * dy;
-          if (l >= 4 * r * r) return;
-          if (dx == 0) l += (dx = nudge()) * dx;
-          if (dy == 0) l += (dy = nudge()) * dy;
-          l = math.sqrt(l);
-          l = (2 * r - l) / l;
-          vx[i] += dx * l / 2;   // (the same radius each: half the push each way)
-          vy[i] += dy * l / 2;
-          vx[j] -= dx * l / 2;
-          vy[j] -= dy * l / 2;
-        }
-        for (var o = rank[i] + 1; o < n && sx[order[o]] <= xi + 2 * r; o++) {
-          push(order[o]);
-        }
-        for (var o = rank[i] - 1; o >= 0 && sx[order[o]] >= xi - 2 * r; o--) {
-          push(order[o]);
-        }
-      }
-    }
-    for (var i = 0; i < n; i++) {
-      vx[i] += (ox[i] - x[i]) * pull * alpha;
-      vy[i] += (oy[i] - y[i]) * pull * alpha;
-      x[i] += vx[i] *= .6;   // (d3's velocityDecay 0.4)
-      y[i] += vy[i] *= .6;
+    sim.tick();
+  }
+  if (squeeze > 0) {
+    sim
+      ..clearForces()
+      ..addForce(collide);
+    for (var tick = 0; tick < 40; tick++) {
+      sim.tick();
     }
   }
-  return [for (var i = 0; i < n; i++) Offset(x[i], y[i])];
+  return [for (final n in nodes) Offset(n.x, n.y)];
+}
+
+/// d3-force's forceX and forceY (x.js, y.js; ISC) at once, which force_graph leaves out: each pulled toward its own
+/// point, [strength] of the way left, times the heat.
+class _Toward implements Force {
+  _Toward(this.to, this.strength);
+  final List<Offset> to;
+  final double strength;
+  var _nodes = const <ForceNode>[];
+  @override
+  void initialize(List<ForceNode> nodes, _) => _nodes = nodes;
+  @override
+  void apply(double alpha) {
+    for (final (i, n) in _nodes.indexed) {
+      n
+        ..vx += (to[i].dx - n.x) * strength * alpha
+        ..vy += (to[i].dy - n.y) * strength * alpha;
+    }
+  }
 }
 
 /// A picture's numbers: its colours made 16 points square, as Torralba, Fergus and Freeman's tiny images ("80 million

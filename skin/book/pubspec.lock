@@ -285,6 +285,15 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  force_graph:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: "8a8d868d9f83159f17d5213a61168c7d889b9250"
+      resolved-ref: "8a8d868d9f83159f17d5213a61168c7d889b9250"
+      url: "https://github.com/theiskaa/force_graph.git"
+    source: git
+    version: "0.1.0"
   fuchsia_remote_debug_protocol:
     dependency: transitive
     description: flutter

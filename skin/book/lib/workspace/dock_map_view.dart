@@ -9,7 +9,8 @@ part of 'dock_map.dart';
 /// its category colours off at first). [picked]: the one picked, its nearest under the map; [press]: one press on one
 /// of them. What the pointer is on is told by it: its [peek] (its pictures moving, as the shelf's foot shows the
 /// picked one) and its name of [names]. The one picked is flown to, in the middle four times as near, and left so when
-/// none is (FontMap's centerOnFont, its selected font's effect).
+/// none is (FontMap's centerOnFont, its selected font's effect). From its corner how compact it is laid
+/// ([DockMapPlaces.squeeze], Obsidian's graph's Center force).
 class DockMap extends StatefulWidget {
   const DockMap(this.places, this.shown, {super.key, this.aspect = 1, this.picked, this.press, this.peek, this.names = const {}});
   final DockMapPlaces places;
@@ -38,6 +39,7 @@ class _DockMapState extends State<DockMap> with SingleTickerProviderStateMixin {
   Map<String, Offset>? _atWas;
   Rect? Function(String id)? _placeOf;
   Size _roomWas = Size.zero;
+  bool _forces = false;   // (Obsidian's graph settings opened from its corner: its Forces)
 
   @override
   void initState() {
@@ -201,16 +203,50 @@ class _DockMapState extends State<DockMap> with SingleTickerProviderStateMixin {
               child: Stack(
                 children: [
                   for (final MapEntry(key: id, value: tile) in tiles.entries)
-                    if (place(id) case final at?) Positioned.fromRect(key: ValueKey('ws-map-$_name-$id'), rect: at, child: item(id, tile)),
+                    if (place(id) case final at?)
+                      AnimatedPositioned.fromRect(   // (laid out anew, each moves there: d3's transition, 250 ms, easeCubic, its defaults)
+                        key: ValueKey('ws-map-$_name-$id'),
+                        rect: at,
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeInOutCubic,
+                        child: item(id, tile),
+                      ),
                 ],
               ),
             ),
           ),
           Positioned.fill(child: IgnorePointer(child: _told(tiles, place, room))),
+          Positioned(top: Shape.s(4), right: Shape.s(4), child: _settings()),
         ],
       ),
     );
   }
+
+  /// Obsidian's graph settings, opened from the map's top right corner: its Forces' Center force, "how compact the graph
+  /// is" ([DockMapPlaces.squeeze]), on the slider the Create shelf's Colours size is set by.
+  Widget _settings() => Column(
+    crossAxisAlignment: CrossAxisAlignment.end,
+    children: [
+      DockIconButton(DockG.more, key: ValueKey('ws-map-$_name-forces'), on: _forces, onTap: () => setState(() => _forces = !_forces)),
+      if (_forces)
+        Container(
+          key: ValueKey('ws-map-$_name-forces-open'),
+          padding: EdgeInsets.all(Shape.s(6)),
+          color: WsT.card,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Center force', style: T.label(Grey.g76)),
+              ValueListenableBuilder(
+                valueListenable: widget.places.squeeze,
+                builder: (context, s, _) => MiniSlider(key: ValueKey('ws-map-$_name-center'), value: s, width: Shape.z(96), onChanged: (v) => widget.places.squeeze.value = v),
+              ),
+            ],
+          ),
+        ),
+    ],
+  );
 
   /// What the pointer is on, by it: its tile larger and its name (DataMapPlot's hover text, the Projector's label of
   /// the one hovered), kept inside the map.
