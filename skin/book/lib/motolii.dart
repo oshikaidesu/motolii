@@ -287,6 +287,7 @@ class Motolii {
   late final _brokenCount = _b.motolii_broken_count;
 
   late final _fontTags = _b.motolii_font_tags;
+  late final _fontLacks = _b.motolii_font_lacks;
   final _fontKinds = <String, Set<String>>{};
 
   late final _later = _b.motolii_later;

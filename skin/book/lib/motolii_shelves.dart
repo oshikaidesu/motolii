@@ -105,6 +105,13 @@ extension MotoliiShelves on Motolii {
   /// A font file's kinds as CoreText reads them (serif, sans, script, mono, bold, light…): the system's own, not guessed from a name.
   Set<String> fontTags(String path) => _fontKinds[path] ??= _with([path], (s) => _fontTags(s[0]).toDartString()).split(' ').where((w) => w.isNotEmpty).toSet();
 
+  /// The letters of [words] a font file has not (each once; '' none), and the font a text of them is drawn in instead
+  /// ('' none has them all): the inside's motolii_font_lacks, a font's own letters by its cmap, Noto Sans JP first.
+  (String, String) fontLacks(String font, String words) {
+    final said = _with([font, words], (s) => _fontLacks(s[0], s[1]).toDartString()).split('\t');
+    return (said.first, said.length > 1 ? said[1] : '');
+  }
+
   /// A kind's numbers as a hand takes them: each one's name, lowest and highest (none: a kind without, or one defined).
   List<(String, double, double)> wayNumbers(String kind) {
     final w = _with([kind], (s) => _wayNumbers(_m, s[0]).toDartString()).split(' ').where((x) => x.isNotEmpty).toList();

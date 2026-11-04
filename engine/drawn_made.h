@@ -1,4 +1,10 @@
 // drawn_made.h: part of drawn.h. Read only through drawn.h.
+#include <fstream>
+#include <list>
+#include <mutex>
+#define STBTT_STATIC   // (its own here: no name of it seen outside)
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "third_party/filament_src/third_party/stb/stb_truetype.h"   // (type_lacks: which letters a font has)
 // What `picture` and `type` share: something of ThorVG's (made by `paints` on Filament's own thread, which says how
 // many points wide and high it is drawn) on a canvas that draws into a texture of Filament's device, and the sheet
 // that shows it. ground below 0: clear where nothing is drawn. shown = false: made but not put in the scene (for a matte).
@@ -259,10 +265,66 @@ static tvg::Fill* ramp_of(const std::vector<float4>& given, float w, float h, bo
     return g;
 }
 
-// Whether ThorVG sets `words` in a font file: it reads the file and the words come out with a size (a font of other
-// letters gives them none). ThorVG's own loader keeps its fonts under a lock, so any thread may ask, once ThorVG is up.
+// The letters of `words` a font file has no glyph for, each once as met: its cmap read by stb_truetype (Sean Barrett's,
+// public domain, as Filament carries it), glyph 0 being .notdef, the box ThorVG draws for one it lacks (tofu); spaces,
+// controls and joiners want none. A .ttc: its first face, as ThorVG reads one (thorvg_ttc.patch). The last few files read
+// are kept (the fallback is asked again and again); one not read lacks nothing that can be told.
+static std::string type_lacks(const std::string& fontFile, const std::string& words) {
+    static std::mutex lock;
+    static std::list<std::pair<std::string, std::shared_ptr<const std::vector<unsigned char>>>> kept;
+    std::shared_ptr<const std::vector<unsigned char>> bytes;
+    {
+        std::lock_guard<std::mutex> hold(lock);
+        for (auto it = kept.begin(); it != kept.end() && !bytes; ++it)
+            if (it->first == fontFile) bytes = it->second, kept.splice(kept.begin(), kept, it);
+        if (!bytes) {
+            std::ifstream in(fontFile, std::ios::binary);
+            if (!in) return "";
+            bytes = std::make_shared<const std::vector<unsigned char>>(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+            kept.emplace_front(fontFile, bytes);
+            if (kept.size() > 6) kept.pop_back();
+        }
+    }
+    stbtt_fontinfo info;
+    const int at = stbtt_GetFontOffsetForIndex(bytes->data(), 0);
+    if (at < 0 || !stbtt_InitFont(&info, bytes->data(), at)) return "";
+    std::string lacks;
+    for (size_t i = 0; i < words.size();) {   // (UTF-8, a letter at a time)
+        const unsigned char c = (unsigned char)words[i];
+        const int n = c < 0x80 ? 1 : (c >> 5) == 6 ? 2 : (c >> 4) == 14 ? 3 : (c >> 3) == 30 ? 4 : 1;
+        uint32_t u = n == 1 ? c : c & (0x7f >> n);
+        for (int k = 1; k < n && i + k < words.size(); ++k) u = (u << 6) | ((unsigned char)words[i + k] & 0x3f);
+        const std::string letter = words.substr(i, n);
+        i += n;
+        if (u <= 0x20 || (u >= 0x7f && u <= 0xa0) || (u >= 0x200b && u <= 0x200f) || u == 0xfeff || (u >= 0xfe00 && u <= 0xfe0f)) continue;
+        if (!stbtt_FindGlyphIndex(&info, (int)u) && lacks.find(letter) == std::string::npos) lacks += letter;
+    }
+    return lacks;
+}
+static std::vector<std::filesystem::path> doc_folders(const char* folder);   // (doc_edit.h)
+// What `words` are drawn in when a font file lacks some of their letters (the user, 11/5: no tofu, Noto by default):
+// the first font in the library's fonts folder, then the maker's own (doc_folders), that has them all, as a browser goes
+// down a font-family list (CSS Fonts 4, the font fallback); there, Noto Sans JP (notofonts/noto-cjk, OFL), named for
+// "no tofu". A whole text in one font: ThorVG sets a text in one. "": it lacks none, or no font has them all.
+static std::string type_fallback(const std::string& fontFile, const std::string& words) {
+    if (type_lacks(fontFile, words).empty()) return "";
+    for (const std::filesystem::path& dir : doc_folders("fonts")) {
+        std::error_code wrong;
+        std::vector<std::filesystem::path> fonts;
+        for (const auto& e : std::filesystem::directory_iterator(dir, wrong))
+            if (const std::string x = e.path().extension().string(); x == ".otf" || x == ".ttf" || x == ".ttc" || x == ".OTF" || x == ".TTF") fonts.push_back(e.path());
+        std::sort(fonts.begin(), fonts.end());
+        for (const auto& f : fonts)
+            if (f != std::filesystem::path(fontFile) && type_lacks(f.string(), words).empty()) return f.string();
+    }
+    return "";
+}
+
+// Whether ThorVG sets `words` in a font file: it reads the file and the words come out with a size, and the font has
+// every letter of them (a box drawn for one it lacks has a size too: type_lacks). ThorVG's own loader keeps its fonts
+// under a lock, so any thread may ask, once ThorVG is up.
 static bool type_sets(const char* fontFile, const char* words) {
-    if (!std::filesystem::is_regular_file(fontFile) || tvg::Text::load(fontFile) != tvg::Result::Success) return false;
+    if (!std::filesystem::is_regular_file(fontFile) || !type_lacks(fontFile, words).empty() || tvg::Text::load(fontFile) != tvg::Result::Success) return false;
     tvg::Text* t = tvg::Text::gen();
     t->font(std::filesystem::path(fontFile).stem().string().c_str());
     t->size(100.f);
@@ -278,6 +340,8 @@ static bool type_sets(const char* fontFile, const char* words) {
 // Lines: the words may be broken by \n; align: how the lines lie one under another (ThorVG's own: 0 left, 1 right).
 static Drawn* type(Stage& s, const char* words, const char* fontFile, const mat4f& place, float high, float3 colour = float3{0.f}, const char* lay = nullptr, float4 edge = float4{0.f}, float align = 0.f, const DrawnFx& fx = {}) {
     if (!std::filesystem::is_regular_file(fontFile)) return nullptr;
+    const std::string fell = type_fallback(fontFile, words);   // (letters it lacks: all of them in the fallback, no tofu; the inspector says so, motolii_font_lacks)
+    if (!fell.empty()) fontFile = fell.c_str();
     return drawn(s, [&](Drawn* d, int* w, int* h) -> tvg::Paint* {
         if (tvg::Text::load(fontFile) != tvg::Result::Success) return nullptr;
         tvg::Text* t = tvg::Text::gen();

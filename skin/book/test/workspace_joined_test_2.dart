@@ -270,6 +270,24 @@ void _tests2() {
     await _close(t);
   }, skip: !_built);
 
+  testWidgets('a text whose font lacks some of its letters is drawn in Noto Sans JP, and its card says so under its words (the user, 11/5: no tofu, and a reason)', (t) async {
+    final ws = await _pump(t), m = ws.inside!;
+    const arial = '/System/Library/Fonts/Supplemental/Arial.ttf';
+    final words = m.add('text', arial);
+    expect(m.say(words, 'text', 'Motolii 日本語'), isTrue, reason: m.trouble);
+    ws
+      ..reread()
+      ..select('$words');
+    await t.pumpAndSettle();
+    final why = find.byKey(const ValueKey('ws-text-lacks'));
+    await seen(t, why);
+    expect((t.widget<Padding>(why).child! as Text).data, 'Not in this font: 日本語. Shown in NotoSansJP-Regular');
+    expect(m.fontLacks(arial, 'Motolii'), ('', ''), reason: 'its own letters: nothing said, nothing drawn in another');
+    expect(m.fontLacks(arial, 'Motolii 😀').$2, '', reason: 'no font of the library has an emoji and Latin both: left out, and said');
+    expect(t.takeException(), isNull);
+    await _close(t);
+  }, skip: !_built);
+
   testWidgets('Stroke in the inspector is the edge of a flat shape or a text: a colour, None, and a width', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     final rect = m.add('shape', 'rect'), cube = m.add('solid', 'cube');

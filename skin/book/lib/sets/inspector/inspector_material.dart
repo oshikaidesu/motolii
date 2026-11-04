@@ -219,6 +219,12 @@ class _TextGroupState extends State<TextGroup> {
             ),
           ),
         ),
+        if (doc.s2['lacks'] case final why? when why.isNotEmpty)   // (letters the font has not: where they went, not tofu)
+          Padding(
+            key: const ValueKey('ws-text-lacks'),
+            padding: EdgeInsets.only(left: Shape.s(8), right: Shape.s(8), bottom: Shape.s(4)),
+            child: Text(why, style: T.label(Grey.g56)),
+          ),
         PropRow(
           id: 'v_file',
           label: 'Font',

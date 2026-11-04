@@ -276,6 +276,13 @@ const char* motolii_cards_more(Motolii* m, int thing) { return by_look(m, [=] { 
 const char* motolii_fx_titles(Motolii* m, int thing) { return by_look(m, [=] { return (said_word() = doc_fx_titles(*m->d, thing)).c_str(); }); }
 const char* motolii_kind_of(const char* file) { return doc_kind_of(file); }
 int motolii_sets(const char* font, const char* words) { return type_sets(font, words) ? 1 : 0; }
+const char* motolii_font_lacks(const char* font, const char* words) {
+    thread_local std::string said;
+    if (!font || !words) return "";
+    const std::string lacks = type_lacks(font, words);
+    said = lacks.empty() ? std::string() : lacks + "\t" + type_fallback(font, words);
+    return said.c_str();
+}
 // The names of the ways a stretch may go (the nine kinds, then the ways defined in this document), with spaces between;
 // and how one of the nine goes: how far it is, from 0 at its beginning to 1 at its end, at `u` of the way through.
 // A kind's numbers as a hand takes them: each one's name, how low and how high ("seed 1 999 grain 0 0.5 ..."); none: "".

@@ -50,6 +50,7 @@ const char* motolii_trouble(Motolii* m);                           /* why the la
 
 const char* motolii_kind_of(const char* file);                     /* what kind of thing a file makes ("": none) */
 int motolii_sets(const char* font, const char* words);             /* 1 if a text in that font file can be those words (any thread, while a document is open) */
+const char* motolii_font_lacks(const char* font, const char* words);   /* the letters of those words that font file has not, each once ("": none), then a tab and the font they are all drawn in instead (a text of them is: "" none has them all); any thread, until its next call */
 int motolii_type_picture(const char* font, const char* words, int w, int h, float most, unsigned char* grey);   /* those words in that font file white on black, as large as they fit (no larger than size most, when more than 0), w * h bytes (any thread, while a document is open); 0: not drawn */
 int motolii_map(const float* points, int n, int dims, double* xy);   /* n points of dims numbers each laid on a plane, the alike near (t-SNE): 2n numbers, x and y from 0 to 1 (any thread); 0: fewer than 4 */
 int motolii_grid(const double* xy, int n, int cols, int rows, int* cell);   /* those n places (x, y from 0 to 1) each a cell of a cols x rows grid, the nearest for them all (row * cols + column; any thread); 0: not laid */

@@ -479,6 +479,30 @@ class MotoliiBindings {
         )
       >();
 
+  ffi.Pointer<pkg_ffi.Utf8> motolii_font_lacks(
+    ffi.Pointer<pkg_ffi.Utf8> font,
+    ffi.Pointer<pkg_ffi.Utf8> words,
+  ) {
+    return _motolii_font_lacks(font, words);
+  }
+
+  late final _motolii_font_lacksPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<pkg_ffi.Utf8> Function(
+            ffi.Pointer<pkg_ffi.Utf8>,
+            ffi.Pointer<pkg_ffi.Utf8>,
+          )
+        >
+      >('motolii_font_lacks');
+  late final _motolii_font_lacks = _motolii_font_lacksPtr
+      .asFunction<
+        ffi.Pointer<pkg_ffi.Utf8> Function(
+          ffi.Pointer<pkg_ffi.Utf8>,
+          ffi.Pointer<pkg_ffi.Utf8>,
+        )
+      >();
+
   ffi.Pointer<pkg_ffi.Utf8> motolii_font_tags(ffi.Pointer<pkg_ffi.Utf8> path) {
     return _motolii_font_tags(path);
   }
