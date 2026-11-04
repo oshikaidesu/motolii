@@ -1,5 +1,6 @@
 // A picture of the inspector with an effect's knobs tinted by how much moving each alone shows it (engine/knob_weights.json):
-// Electric Edges on the balloon, in the window's own picture (the system's temp folder, knob_weights/).
+// Electric Edges on the balloon (or the effect --dart-define=MOTOLII_FX names, from the library's folder), in the window's
+// own picture (the system's temp folder, knob_weights/).
 //   flutter drive --profile -d macos --driver=test_driver/integration_test.dart --target=integration_test/knob_weights_test.dart
 import 'dart:convert' show jsonDecode;
 import 'dart:io';
@@ -12,6 +13,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:lab_book/motolii.dart' show motoliiDir;
 import 'package:lab_book/sets/inspector/inspector_param_controls_tile.dart' show ParamTile;
 import 'package:lab_book/theme.dart';
+import 'package:lab_book/workspace/effect_tiles.dart' show EffectTiles;
 import 'package:lab_book/workspace/timeline.dart';
 import 'package:lab_book/workspace/workspace.dart' show Workspace;
 import 'package:lab_book/workspace/ws.dart';
@@ -34,12 +36,14 @@ void main() {
     final ws = WsScope.read(t.element(find.byType(WsTimeline))), m = ws.inside!;
     final photo = m.add('picture', '$motoliiDir/fx_sample.jpg');
     m.set(photo, 'size', 2);
-    expect(m.say(photo, 'fx', '$motoliiDir/effects/am_electricedges.wgsl'), isTrue, reason: m.trouble);
+    const fx = String.fromEnvironment('MOTOLII_FX', defaultValue: 'effects/am_electricedges.wgsl');
+    expect(m.say(photo, 'fx', '$motoliiDir/$fx'), isTrue, reason: m.trouble);
     ws
       ..reread()
       ..select('$photo');
     await t.pumpAndSettle();
-    final card = m.cards(photo).firstWhere((c) => c.$2.any((n) => n.startsWith('js_am_electricedges_'))).$1;
+    final weighed = EffectTiles.weighed(motoliiDir, '$motoliiDir/$fx');
+    final card = m.cards(photo).firstWhere((c) => c.$2.any(weighed.containsKey)).$1;
     // ignore: avoid_print
     print('card: $card');
     expect(find.text(card), findsWidgets, reason: 'its card in sight in a window this tall');

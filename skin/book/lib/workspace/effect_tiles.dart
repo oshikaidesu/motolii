@@ -96,6 +96,44 @@ abstract final class EffectTiles {
     return (knobs: knobs, split: (show['split'] as num?)?.toDouble(), sweeps: sweeps, moves: show['layout'] == 'move');
   }
 
+  /// How much moving each knob of [file] alone shows its effect, 0 to 10, as an agent that read only the effect's code
+  /// weighed it (engine/knob_weights.json, by the shelf's entry: its file from the library's folder, an AviUtl2 script's
+  /// #name and all; set beside AbsentMotion's effect_showcase.json, where a hand says which knob its tile moves, its
+  /// heaviest was that knob in 26 of 28), by the inside's names (doc_values.h doc_screen_knob: the file's stem before
+  /// the knob's), `_time` how much letting it run shows it. Empty: not weighed (the maker's own).
+  static Map<String, double> weighed(String dir, String file) {
+    final all = _weights ??= () {
+      try {
+        return jsonDecode(File('$dir/knob_weights.json').readAsStringSync()) as Map<String, dynamic>;
+      } catch (_) {
+        return const <String, dynamic>{};
+      }
+    }();
+    final stem = String.fromCharCodes([   // (byte by byte, as the inside's std::isalnum: ライ is ______)
+      for (final b in utf8.encode(file.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), ''))) (b >= 48 && b <= 57) || (b >= 65 && b <= 90) || (b >= 97 && b <= 122) || b == 95 ? b : 95,
+    ]);
+    return {
+      for (final MapEntry(key: k, value: w) in ((all[file.startsWith('$dir/') ? file.substring(dir.length + 1) : file] as Map<String, dynamic>?) ?? const {}).entries)
+        if (w is num) k == '_time' ? k : 'js_${stem}_$k': w.toDouble(),
+    };
+  }
+
+  static Map<String, dynamic>? _weights;
+
+  /// What a tile is told when it is drawn (its .tells beside it): the weights it goes by, so one weighed anew is drawn
+  /// anew. Null: drawn before a tile was told anything.
+  static String tells(String dir, String file) => switch (weighed(dir, file)) {
+    final w when w.isEmpty => '',
+    final w => jsonEncode(w),
+  };
+  static String? _toldOf(String home) {
+    try {
+      return File('$home.tells').readAsStringSync();
+    } on FileSystemException {
+      return null;
+    }
+  }
+
   /// AbsentMotion's table, read once (in each isolate that draws): empty where the library has not got it.
   static Map<String, dynamic> table(String dir) {
     try {
@@ -153,7 +191,7 @@ abstract final class EffectTiles {
     _told = changed;
     for (final (_, f) in [...m.effects]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase()))) {   // (as the shelf lists them: its top first)
       final home = m.tileHome(f);
-      final stale = home.isNotEmpty && !File('$home.tells').existsSync();   // (drawn before a tile showed what its effect does: drawn again)
+      final stale = home.isNotEmpty && _toldOf(home) != tells(motoliiDir, f);   // (drawn before a tile showed what its effect does, or by other weights: drawn again)
       if (home.isEmpty || (!stale && m.picture(f) == home)) continue;
       if (!stale && File(home).existsSync()) {
         m.tileDrawn(home, same: File('$home.same').existsSync());
@@ -245,7 +283,9 @@ abstract final class EffectTiles {
       final show = f.endsWith('.wgsl') ? showcase(f, File(f).readAsStringSync(), shows) : null;
       final said = m.tags(f), isf = f.endsWith('.fs') ? File(f).readAsStringSync() : '', plays = RegExp(r'"PERSISTENT"\s*:\s*(true|1)').hasMatch(isf);
       final lists = [for (final l in RegExp(r'\{[^{}]*"TYPE"\s*:\s*"long"[^{}]*\}').allMatches(isf)) '_${RegExp(r'"NAME"\s*:\s*"([^"]+)"').firstMatch(l.group(0)!)?.group(1)}'];   // (ISF's "long": a choice, which the inside takes as a span)
-      final runs = said.contains('time') || said.contains('feedback') || plays;
+      final weights = weighed(dir, f), time = weights['_time'] ?? 0;
+      final timed = time > 0 && weights.entries.every((w) => w.key == '_time' || w.value <= time);   // (its weights say letting it run shows it best: no knob turned, as AbsentMotion's Noise Displace)
+      final runs = said.contains('time') || said.contains('feedback') || plays || timed;
       final first = (show?.moves ?? false) || said.contains('feedback') || plays;   // (an effect of what was has something going past it to see)
       final base = home.substring(0, home.length - 4);
       var same = false, split = false, stands = true;
@@ -261,10 +301,11 @@ abstract final class EffectTiles {
         }
         final knobs = [for (final v in m.values(on)) if (v.startsWith('js_') && !own.contains(v)) v];
         final sweeps = <String, List<double>>{...?show?.sweeps};
+        final heaviest = ([for (final k in knobs) if (weights[k] case final w? when w > time) (k, w)]..sort((a, b) => b.$2.compareTo(a.$2))).firstOrNull?.$1;   // (the knob its weights say shows it most, more than letting it run)
         if (knobs.where((k) => k.endsWith('_progress')).firstOrNull case final p? when said.contains('transition')) {
           sweeps[p] = const [0, 1];   // (a transition seen going from 0 to 1 across its pictures)
-        } else if (sweeps.isEmpty && !runs) {
-          if (_telling(m, on, knobs, filed, lists, folder.path) case final knob?) sweeps[knob.$1] = [knob.$2, knob.$3];
+        } else if (sweeps.isEmpty && (!runs || heaviest != null)) {   // (one that runs by the clock its heaviest knob turned as it runs, or none)
+          if (_telling(m, on, knobs, filed, lists, folder.path, first: heaviest, alone: runs) case final knob?) sweeps[knob.$1] = [knob.$2, knob.$3];
         }
         if (!moving && !runs && sweeps.isEmpty && enough && _same('${folder.path}/usual.png', '${folder.path}/sample.png')) {   // (nothing on the photo: no sixteen pictures of nothing)
           if (whole) m.say(0, 'script', 'none');
@@ -316,7 +357,7 @@ abstract final class EffectTiles {
       try {
         same ? File('$home.same').writeAsStringSync('') : File('$home.same').deleteSync();
       } catch (_) {}
-      File('$home.tells').writeAsStringSync('');
+      File('$home.tells').writeAsStringSync(tells(dir, f));
       drawn.add((home, same));
     }
     m.close();
@@ -341,7 +382,9 @@ abstract final class EffectTiles {
   /// way to the far end of its span (all the way round, an angle's far end is where it began), at most eight, as
   /// fx_first.sh tries them and AbsentMotion's change() tells a tile that shows nothing; a turn or a progress goes that
   /// far, as the hand's, the rest as far as is plainly seen, short of wiping the picture out. Null: none shows.
-  static (String, double, double)? _telling(Motolii m, int on, List<String> knobs, Map<String, double> filed, List<String> lists, String folder) {
+  /// Before all of those, [first]: the knob its weights say shows it most ([weighed]), the user's wish (11/5) that a tile
+  /// move by the knob that stands for it; [alone], that one or none (an effect that runs by the clock is let run).
+  static (String, double, double)? _telling(Motolii m, int on, List<String> knobs, Map<String, double> filed, List<String> lists, String folder, {String? first, bool alone = false}) {
     if (!m.at(moments[still]) || !m.still('$folder/usual.png')) return null;
     bool says(RegExp words, String k) => words.hasMatch(k) || words.hasMatch(m.shown(k)?.label ?? '');
     double change(String k, double to, double back) {
@@ -370,6 +413,10 @@ abstract final class EffectTiles {
       ];
       return (k, from, (ways.where((w) => w.$2 >= _clear).firstOrNull ?? ways.reduce((a, b) => b.$2 > a.$2 ? b : a)).$1);
     }
+    if (first != null) {
+      if (turned(first) case final knob?) return knob;
+    }
+    if (alone) return null;
     for (final k in knobs.where((k) => says(_clock, k))) {
       if (turned(k) case final knob?) return knob;
     }

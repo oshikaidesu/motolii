@@ -515,11 +515,11 @@ class Ws extends ChangeNotifier {
   List<String> get screenFx {
     final t = int.tryParse(selected ?? '');
     if (t == null) return const [];
-    return [
-      for (final f in _files.allMatches(_inside?.word(t, 'fx') ?? '').map((m) => m[0]!))
-        if (f != 'none') f,
-    ];
+    return fxFiles(_inside?.word(t, 'fx') ?? '');
   }
+
+  /// The effect files a thing's fx says, in its order.
+  static List<String> fxFiles(String fx) => [for (final f in _files.allMatches(fx).map((m) => m[0]!)) if (f != 'none') f];
 
   /// Joined: all the effects and motions on anything in the document, as the shelf tells them. A document is a bundle
   /// no hand made: Suitcase's Font Sense keeps in a document the fonts it uses.
@@ -528,7 +528,7 @@ class Ws extends ChangeNotifier {
     if (m == null) return const {};
     return {
       for (final t in m.things) ...[
-        for (final f in _files.allMatches(m.word(t, 'fx')).map((f) => f[0]!)) if (f != 'none') f,
+        ...fxFiles(m.word(t, 'fx')),
         ...fxOf('$t'),
         if (m.word(t, 'script') case final s when s.isNotEmpty && s != 'none') s,
       ],

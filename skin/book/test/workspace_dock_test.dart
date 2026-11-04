@@ -73,6 +73,13 @@ void main() {
     expect(of('chromakey')?.sweeps['js_am_chromakey_tolerance'], [0, 0, .2, .2, 0], reason: 'a moving line\'s list of numbers for one knob: its keys');
     expect(of('stretchaxis')?.moves, isTrue, reason: 'its "move" layout: seen on something going past');
   });
+  test('an effect\'s knobs are weighed by the shelf\'s entry, named as the inside names them: an AviUtl2 script of a file of several by its #name, a Japanese name byte by byte', () {
+    final ao = EffectTiles.weighed(motoliiDir, '$motoliiDir/aviutl_scripts/HexBrowns__HexScript/Script/@2Dライティング_H.anm2#環境遮蔽');
+    expect(ao['js__2D___________________H_radius'], 8, reason: 'ライティング: six letters of three bytes, eighteen _ (doc_screen_knob\'s std::isalnum, as the inside\'s cards say it)');
+    expect(ao['_time'], 0);
+    expect(EffectTiles.weighed(motoliiDir, '$motoliiDir/effects/am_noisedisplace.wgsl')['_time'], greaterThan(EffectTiles.weighed(motoliiDir, '$motoliiDir/effects/am_noisedisplace.wgsl')['js_am_noisedisplace_amount']!), reason: 'the user, 11/4: Noise Displace is seen better let run');
+    expect(EffectTiles.weighed(motoliiDir, '/Users/someone/Library/Application Support/Motolii/effects/mine.fs'), isEmpty, reason: 'the maker\'s own: not weighed');
+  });
   testWidgets('the Effects shelf has a reload mark: lit, and saying how many are drawn, while the tiles are', (t) async {
     await _shelf(t, _joined(), const Size(1280, 800), 'Effects');
     expect(find.byKey(const ValueKey('ws-fx-reload')), findsOneWidget);
