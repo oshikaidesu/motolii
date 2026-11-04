@@ -206,6 +206,10 @@ String paramLabel(List<String> w) {
 bool _any(List<String> w, Set<String> set) => w.any(set.contains);
 
 const _angleW = {'angle', 'rotation', 'hue', 'phase', 'heading', 'direction', 'twist', 'spin', 'theta', 'turn'};
+
+/// Whether a knob's label names an angle: the words [infer] takes for one, and AviUtl scripts' own (角度, 回転); not
+/// how fast one turns (回転速度, spin speed: a slider, as After Effects' is).
+bool angleLabel(String label) => (_any(paramWords(label), _angleW) || RegExp('角度|回転|色相|向き|方向').hasMatch(label)) && !RegExp('速|speed|rate', caseSensitive: false).hasMatch(label);
 const _shareW = {
   'mix', 'amount', 'strength', 'opacity', 'intensity', 'blend', 'threshold', 'knee', 'falloff', 'softness', 'fade',
   'progress', 'coverage', 'density', 'wet', 'dry', 'roughness', 'tint', 'feather', 'smoothness',

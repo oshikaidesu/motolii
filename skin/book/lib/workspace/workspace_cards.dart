@@ -77,7 +77,8 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
       // (the card's span is how far it slides; a number typed goes as far as the inside takes it, as After Effects'
       //  slider range and valid range, PF_FloatSliderDef: Datamosh's From slides to 10 s and is typed to the inside's)
       final va = _shown(m, t, n, lo0), vb = _shown(m, t, n, hi0), valid = sh?.open != true && (math.min(va, vb) < lo || math.max(va, vb) > hi) ? ' @valid(${math.min(va, vb)}, ${math.max(va, vb)})' : '';
-      final ui = switch (sh?.look) {
+      final turned = sh?.look == '' && hi - lo >= 90 && angleLabel(sh!.label);   // (an effect's angle in degrees, by its label: a dial, as After Effects' PF_ADD_ANGLE)
+      final ui = switch (turned ? 'angle' : sh?.look) {
         'onoff' => '@toggle',
         'angle' => '@ui(angle)',
         'seed' => '@ui(seed)',
@@ -86,7 +87,7 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
         _ => lo < 0 && hi > 0 ? '@ui(bipolar)' : '@ui(bar)',
       };
       final whole = sh?.look == 'count' || sh?.look == 'onoff' || sh?.look == 'seed';
-      return '  /// $label $ui @range($lo, $hi)${sh?.open == true ? ' @open' : ''}$valid @unit(${sh?.unit ?? ''}) @default(${_shown(m, t, n, m.value(t, n, at) ?? lo0)})\n  $n: ${whole ? 'u32' : 'f32'},';
+      return '  /// $label $ui @range($lo, $hi)${sh?.open == true ? ' @open' : ''}$valid @unit(${turned ? '°' : sh?.unit ?? ''}) @default(${_shown(m, t, n, m.value(t, n, at) ?? lo0)})\n  $n: ${whole ? 'u32' : 'f32'},';
     }
     return '  /// $label${const ['numbers', 'colours', 'words', 'file'].contains(sh?.look) ? ' @unit(${sh!.look})' : ''}\n  $n: vec3<f32>,'; // (any word: colours, six digits each, given from the Colors shelf; or numbers, one for each copy)
   }

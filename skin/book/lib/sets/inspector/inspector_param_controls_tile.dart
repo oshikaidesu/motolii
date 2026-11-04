@@ -43,6 +43,7 @@ class ParamTile extends StatelessWidget {
         perPx: p.perPx,
         step: p.dec > 0 ? p.step * 10 : 1,
         bipolar: p.look == ParamLook.bipolar,
+        turns: p.look == ParamLook.angle,   // (counted in turns past one, as After Effects' angle: 1x 30°)
         enabled: !RowOff.offOf(context),
       ),
     );

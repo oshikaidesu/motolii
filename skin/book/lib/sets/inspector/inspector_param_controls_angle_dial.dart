@@ -18,10 +18,13 @@ class AngleDial extends StatefulWidget {
 class _AngleDialState extends State<AngleDial> {
   double? _last;
   bool _hot = false;
-  double _angle(Offset local) => math.atan2(local.dy - 11, local.dx - 11);
+  double _angle(Offset local) {
+    final o = (context.size ?? const Size(22, 22)).center(Offset.zero);   // (the middle it is drawn round: its slot may be smaller than it asks, Pop.glyph)
+    return math.atan2(local.dy - o.dy, local.dx - o.dx);
+  }
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), doc = x.doc, v = doc.get(widget.id) ?? 0;
+    final x = Ctx.of(context), doc = x.doc;
     final on = !x.cfg.locked && !RowOff.offOf(context);
     return MouseRegion(
       cursor: on ? SystemMouseCursors.grab : SystemMouseCursors.basic,
@@ -42,8 +45,12 @@ class _AngleDialState extends State<AngleDial> {
           if (d > math.pi) d -= 2 * math.pi;
           if (d < -math.pi) d += 2 * math.pi;
           _last = a;
-          final lo = widget.p.min ?? double.negativeInfinity, hi = widget.p.max ?? double.infinity;
-          doc.set(widget.id, ((doc.get(widget.id) ?? 0) + d * 180 / math.pi).clamp(lo, hi).roundToDouble());
+          // (as far as a number typed goes, not the slider's ends: After Effects' angle turns on with no end, its
+          //  revolutions counted; a closed span of a turn or more goes round again inside it, as Godot's wrapf)
+          final p = widget.p, lo = p.open && (p.min ?? 0) < 0 ? double.negativeInfinity : p.validMin ?? p.min ?? double.negativeInfinity, hi = p.open ? double.infinity : p.validMax ?? p.max ?? double.infinity;
+          var v = (doc.get(widget.id) ?? 0) + d * 180 / math.pi;
+          if (hi - lo >= 360) v = v > hi ? v - 360 * ((v - hi) / 360).ceil() : (v < lo ? v + 360 * ((lo - v) / 360).ceil() : v);
+          doc.set(widget.id, v.clamp(lo, hi).roundToDouble());
         },
         onPointerUp: (_) {
           if (_last != null) doc.endGesture();
@@ -53,7 +60,8 @@ class _AngleDialState extends State<AngleDial> {
           if (_last != null) doc.endGesture();
           _last = null;
         },
-        child: CustomPaint(size: const Size(22, 22), painter: _DialPaint(v, _hot || _last != null)),
+        // (drawn again when its number is told anew, as a field is: Doc.watch; the inspector is not built again for it)
+        child: ListenableBuilder(listenable: doc.watch(widget.id), builder: (context, _) => CustomPaint(size: const Size(22, 22), painter: _DialPaint(doc.get(widget.id) ?? 0, _hot || _last != null))),
       ),
     );
   }
