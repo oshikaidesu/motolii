@@ -237,15 +237,19 @@ abstract final class EffectTiles {
     final m = Motolii.open('${folder.path}/tiles.motolii', wide: 384, high: 384, dir: dir);   // (AbsentMotion's RENDER, its THUMB below)
     if (m == null) return drawn;
     _ffmpeg(['-f', 'lavfi', '-i', 'color=c=0x2c2c34:s=384x384,drawgrid=w=48:h=48:t=1:c=0x45454f', '-frames:v', '1', '${folder.path}/grid.png']);   // (its grid, where its "move" layout stands)
-    final grid = m.add('picture', '${folder.path}/grid.png'), photo = m.add('picture', '$dir/fx_sample.jpg'), card = m.add('picture', '$dir/fx_sample.jpg');
+    // (under the photo, the picture a transition goes to: put on a clip, one takes it away and what is under it shows
+    //  (doc_fx_file), as gl-transitions' own previews go from one photo to another (scripts/rendering/render-preview.mjs:
+    //  a road among its three); on the whole screen it had nothing to go to, and went to black)
+    final grid = m.add('picture', '${folder.path}/grid.png'), under = m.add('picture', '$dir/fx_sample_end.jpg'), photo = m.add('picture', '$dir/fx_sample.jpg'), card = m.add('picture', '$dir/fx_sample.jpg');
     m
       ..set(grid, 'size', 3.6)
+      ..set(under, 'size', 3.6)
       ..set(photo, 'size', 3.6)
       ..set(card, 'size', 1.8)
       ..key(card, 'x', moments.first, -0.84)
       ..key(card, 'x', moments.last, 0.84);
-    void lay(bool moving) {
-      for (final (thing, seen) in [(grid, moving), (card, moving), (photo, !moving)]) {
+    void lay(bool moving, {bool road = false}) {
+      for (final (thing, seen) in [(grid, moving), (card, moving), (photo, !moving), (under, road)]) {
         m.set(thing, 'opacity', seen ? 1 : 0);
       }
     }
@@ -291,8 +295,9 @@ abstract final class EffectTiles {
       var same = false, split = false, stands = true;
       var made = const <String>[];
       for (final moving in [first, if (!first) true]) {   // (nothing seen on the whole photo: on a card going past, where what it does at an edge or to what moves shows, as AbsentMotion's "move")
-        lay(moving);
-        final whole = !moving && (f.endsWith('.fs') || f.endsWith('.wgsl') || f.endsWith('.json')) && m.say(0, 'script', f);   // (.json: Filament's own settings, laid on the stage's view: viewer_settings.h)   // (a screen effect; the stage takes an AviUtl2 script too, but draws none of it: motolii.h, a thing's)
+        final passes = said.contains('transition');   // (one is put on the photo, the road under it)
+        lay(moving, road: passes);
+        final whole = !moving && !passes && (f.endsWith('.fs') || f.endsWith('.wgsl') || f.endsWith('.json')) && m.say(0, 'script', f);   // (.json: Filament's own settings, laid on the stage's view: viewer_settings.h)   // (a screen effect; the stage takes an AviUtl2 script too, but draws none of it: motolii.h, a thing's)
         final thing = moving ? card : photo, on = whole ? 0 : thing, onIt = !whole && m.say(thing, 'fx', f);   // (as a thing's: as edit.sh says it)
         final filed = <String, double>{};
         for (final MapEntry(:key, :value) in (show?.knobs ?? const <String, double>{}).entries) {

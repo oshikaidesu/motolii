@@ -103,6 +103,19 @@ void main() {
     }
     out.deleteSync(recursive: true);
   }, skip: !insideBuilt);
+  test('a transition\'s tile goes from the photo to the road under it, not to black (the user, 11/5: a second picture for transitions)', () {
+    final out = Directory.systemTemp.createTempSync('motolii_tile_test');
+    final drawn = EffectTiles.draw(motoliiDir, [('$motoliiDir/effects/Fade.fs', '${out.path}/0.png')]);
+    expect(drawn.single.$2, isFalse, reason: 'it changes the photo');
+    double luma(int k) {   // (ffmpeg's signalstats: the frame's mean Y, 16 black to 235 white)
+      final r = Process.runSync('ffmpeg', ['-hide_banner', '-i', EffectTiles.frame('${out.path}/0.png', k), '-vf', 'signalstats,metadata=print:key=lavfi.signalstats.YAVG', '-f', 'null', '-']);
+      return double.parse(RegExp(r'YAVG=([0-9.]+)').firstMatch('${r.stdout}${r.stderr}')!.group(1)!);
+    }
+    final first = luma(0), last = luma(EffectTiles.moments.length - 1);
+    expect(last, greaterThan(40), reason: 'its last picture is the road, not black (it was black: nothing under it on the whole screen)');
+    expect((first - last).abs(), greaterThan(10), reason: 'the bright balloon gives way to the road at dusk');
+    out.deleteSync(recursive: true);
+  }, skip: !insideBuilt);
 
   testWidgets('every shelf lays out at the reference size and when smaller', (t) async {
     final ws = _joined();

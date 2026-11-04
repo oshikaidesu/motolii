@@ -57,7 +57,7 @@ static std::string doc_tile(const std::string& ref, const std::filesystem::path&
     if (auto at = std::filesystem::last_write_time(file, wrong); !wrong) key += "|" + std::to_string((long long)at.time_since_epoch().count());
     if (auto at = std::filesystem::last_write_time(std::filesystem::path(file).parent_path() / "first.tsv", wrong); !wrong) key += "|first " + std::to_string((long long)at.time_since_epoch().count());   // (the values it comes with: script_first)
     wrong.clear();
-    key += "|tiles 2";   // (how the window draws them, effect_tiles.dart: made again when that changes)
+    key += "|tiles 3";   // (how the window draws them, effect_tiles.dart: made again when that changes)
     uint64_t hash = 1469598103934665603ull;
     for (unsigned char c : key) hash = (hash ^ c) * 1099511628211ull;
     const char* home = std::getenv("HOME");
