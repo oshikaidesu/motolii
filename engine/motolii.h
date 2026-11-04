@@ -186,9 +186,10 @@ const char* motolii_spent(Motolii* m);
    name" per value; asking forgets them), and the names of the values that change what cards a thing has. */
 const char* motolii_heard(Motolii* m);   /* each thing's sound as heard now: "file wanted is playing" a line (seconds in its file; -1 not heard): for checks */
 const char* motolii_shaping(Motolii* m);
-/* A change asked without waiting for the hand (say, set, carry, let_go, undo, redo, together: number is let_go's keep and
+/* A change asked without waiting for the hand (say, set, carry, duck, let_go, undo, redo, together: number is let_go's keep and
    together's begin 1 / end 0; carry: name is by and number a, as motolii_carry, or name "effect" and word an effect file, shown on
-   the held thing and not the document's until it is let go, and then not put on; thing -1: the thing the last add made; set with word "made": the number is that thing,
+   the held thing and not the document's until it is let go, and then not put on; duck: a film's volume keyed down 12 dB while
+   another film is louder than -30 dB, Audacity's Auto Duck; thing -1: the thing the last add made; set with word "made": the number is that thing,
    as a value naming a thing; relate: the things in word (numbers) put in the relation `thing` as they show now; free: the thing out of the
    relation `number`, as if at strength 0 for good: back to the relation under it, or its own value; lead: the relation `thing` led by the thing `number`, nothing moving; release: the relation
    `thing` let go, each of its things where it shows now; key: a key of `name` at the moment in word holding number): queued in order behind all others, a ticket said at once. motolii_answer: -1 not done

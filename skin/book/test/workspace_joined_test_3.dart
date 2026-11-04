@@ -2418,6 +2418,41 @@ void _tests3() {
     expect(t.takeException(), isNull);
     await _close(t);
   }, skip: !_built);
+  testWidgets('Auto Duck keys the picked film\'s volume 12 dB down while another film is heard, half a second each way, in one step; keyed already, refused (Audacity\'s Auto Duck)', (t) async {
+    final ws = await _pump(t), m = ws.inside!;
+    final music = m.add('film', '$motoliiDir/check/beats.mp4'), voice = m.add('film', '$motoliiDir/check/beats.mp4');
+    expect(m.set(voice, 'start', 2), isTrue, reason: m.trouble);
+    ws
+      ..reread()
+      ..select('$music');
+    await t.pumpAndSettle();
+    final animation = t.widget<PlatformMenuBar>(find.byType(PlatformMenuBar)).menus.whereType<PlatformMenu>().firstWhere((e) => e.label == 'Animation');
+    final duck = animation.menus.expand((e) => e is PlatformMenuItemGroup ? e.members : [e]).firstWhere((e) => e.label == 'Auto Duck');
+    duck.onSelected!();
+    for (var i = 0; i < 600 && m.keyMoments(music, 'volume').isEmpty; i++) {   // (the other film's sound read first, on another isolate)
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await t.pump();
+    }
+    await settled(t, ws);
+    final at = m.keyMoments(music, 'volume'), held = m.keyValues(music, 'volume');
+    expect(at, isNotEmpty, reason: ws.notice ?? m.trouble);
+    expect(at.first, greaterThanOrEqualTo(1.5 - 1e-6), reason: 'before the other is heard (from 2 s, half a second of fading), as it was');
+    expect(held.first, 1);
+    expect(held.reduce(math.min), closeTo(0.2512, 0.001), reason: '12 dB down while it is heard');
+    expect(m.keyMoments(voice, 'volume'), isEmpty, reason: 'what it ducks under is left as it is');
+    duck.onSelected!();
+    for (var i = 0; i < 200 && ws.notice == null; i++) {
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await t.pump();
+    }
+    expect(ws.notice, contains('keys already'));
+    expect(m.undo(), isTrue, reason: m.trouble);
+    ws.reread();
+    await settled(t, ws);
+    expect(m.keyMoments(music, 'volume'), isEmpty, reason: 'one step');
+    expect(t.takeException(), isNull);
+    await _close(t);
+  }, skip: !_built);
   testWidgets('⌘O lists the documents beside it as CapCut\'s desktop home lays them, told as Alight Motion\'s are: its picture, length, shape, resolution, size and rate, by day or by name; a copy made, the copy opened; File › Use Frame as Project Picture', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     expect(m.add('picture', '$motoliiDir/fx_sample.jpg'), isNot(0), reason: m.trouble);

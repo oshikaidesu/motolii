@@ -439,7 +439,17 @@ class _WorkspaceState extends State<Workspace> {
       'thing.backward': () => _eachPicked((t) => m.later('raise', thing: t, number: -1)),
       'arrange.flipX': () => _eachPicked((t) => m.later('flip', thing: t, word: 'x')),
       'arrange.flipY': () => _eachPicked((t) => m.later('flip', thing: t, word: 'y')),
-      'layers.sequence': () => ws.after(m.later('sequence')),   // (After Effects' Keyframe Assistant: one after another, from the top)
+      'layers.sequence': () => ws.after(m.later('sequence')),
+      'sound.duck': () async {   // (Audacity's Auto Duck: each picked film under every other one's sound, read first)
+        final m = _inside, all = _picked();
+        if (m == null || all.isEmpty) return;
+        for (final t in m.things) {
+          if (!all.contains(t)) await m.loudness(t);
+        }
+        for (final t in all) {
+          ws.after(m.later('duck', thing: t), (done, why) => done ? null : ws.notice = 'Not ducked: $why');
+        }
+      },   // (After Effects' Keyframe Assistant: one after another, from the top)
       'play.toggle': () => ws.playing = !ws.playing,
       ...wsAbletonCommands(ws),   // (Ableton Live's keys: ableton.dart)
       ...wsToolCommands(ws),   // (the stage's tools: stage.dart)
@@ -578,6 +588,7 @@ class _WorkspaceState extends State<Workspace> {
         label: 'Animation',
         menus: [
           item('Sequence Layers', 'layers.sequence'),
+          item('Auto Duck', 'sound.duck'),   // (Audacity's Effect menu name: the picked, quieter under the other sounds)
           PlatformMenuItemGroup(members: [for (final (label, how) in _times) item(label, 'time.$how')]),
           PlatformMenuItemGroup(   // (Live 42.16's Nudge Selection Left and Right, ten frames with ⇧)
             members: [item('Nudge Selection Left', 'nudge.left'), item('Nudge Selection Right', 'nudge.right'), item('Nudge Selection Left 10 Frames', 'nudge.left10'), item('Nudge Selection Right 10 Frames', 'nudge.right10')],
