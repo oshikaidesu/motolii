@@ -70,7 +70,24 @@ void main() {
     expect(said('cmd+l'), 'loop.toggle');
     expect(said('z'), 'zoom.selection');
     expect(said(','), 'frame.previous');
+    expect(said('a'), 'mark.animate', reason: 'Apple Motion\'s A, Record Animation');
   });
+
+  testWidgets('A turns Animate all on and pressed again off, as Apple Motion\'s Record Animation: on at 0.5, a value carried at 1.5 travels from where it was at 0.5', (t) async {
+    final j = _joined(), ws = j.ws, m = ws.inside!, does = wsAbletonCommands(ws);
+    await _pump(t, ws);
+    ws.frame = (.5 * Ws.fps).round();
+    await settled(t, ws);
+    does['mark.animate']!();
+    expect(ws.animating, isTrue);
+    ws.frame = (1.5 * Ws.fps).round();
+    await settled(t, ws);
+    expect(m.hold(j.ring) && m.carry('y', 2, 0) && m.letGo(true), isTrue, reason: m.trouble);
+    expect(m.keyMoments(j.ring, 'y'), [.5, 1.5]);
+    does['mark.animate']!();
+    expect(ws.animating, isFalse);
+    await t.pumpWidget(const SizedBox());
+  }, skip: !insideBuilt);
 
   testWidgets('Space plays from where it began and stops back there; Shift+Space goes on from where it stopped', (t) async {
     final j = _joined(), ws = j.ws, does = wsAbletonCommands(ws);

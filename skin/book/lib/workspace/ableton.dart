@@ -88,6 +88,7 @@ Map<String, void Function()> wsAbletonCommands(Ws ws) {
       final ids = {...ws.many, ?ws.selected};
       if (ids.isNotEmpty) ws.twirl(ids);
     },
+    'mark.animate': () => ws.animating = !ws.animating,   // (Apple Motion's A, Mark > Record Animation: the top bar's Animate, the inspector's Animate all)
     'loop.toggle': () => wsAskTimeline('loop'),   // (Live 42.16 Cmd+L: toggle loop brace)
     'zoom.in': () => wsAskTimeline('in'),   // (Live 42.9 +: zoom in time ruler)
     'zoom.out': () => wsAskTimeline('out'),   // (Live 42.9 -)

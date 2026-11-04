@@ -558,6 +558,7 @@ class _WorkspaceState extends State<Workspace> {
           PlatformMenu(label: 'Go To', menus: [item('Beginning', 'frame.first'), item('End', 'frame.last')]),
           PlatformMenu(label: 'Previous', menus: [item('Frame', 'frame.previous'), item('10 Frames', 'frame.back10'), item('Visible Item', 'frame.previousStop')]),
           PlatformMenu(label: 'Next', menus: [item('Frame', 'frame.next'), item('10 Frames', 'frame.forward10'), item('Visible Item', 'frame.nextStop')]),
+          item('Animate All', 'mark.animate'),   // (Apple Motion's Mark > Record Animation)
         ],
       ),
       PlatformMenu(
