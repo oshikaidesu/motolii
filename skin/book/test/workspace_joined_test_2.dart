@@ -133,7 +133,7 @@ void _tests2() {
     Rect inside(Rect r) => r.deflate(r.shortestSide * .05);   // (d3's forceCollide pushes apart softly: some left touching, as the heaps on a map are let within a twentieth)
     expect([dots.length, [for (final (i, a) in dots.indexed) for (final b in dots.skip(i + 1)) if (inside(a).overlaps(inside(b))) 1].length], [map.places.value.length, 0], reason: 'pushed apart (FontMap\'s overlap removal): each seen, none over another');
     String? picked() => ws.view.values.whereType<DockMem>().firstWhere((d) => d.mapped.contains('Fonts')).sel['Fonts'];   // (the dock it is a map on)
-    Future<void> whole() async {   // (the wheel out over it: the whole map again, the picked one having been flown to, FontMap's centerOnFont)
+    Future<void> whole() async {   // (the wheel out over it: the whole map again)
       final wheel = TestPointer(9, PointerDeviceKind.mouse)..hover(t.getCenter(find.byKey(const ValueKey('ws-map-Fonts'))));
       await t.sendEventToBinding(wheel.scroll(const Offset(0, 100000)));
       await t.pumpAndSettle();

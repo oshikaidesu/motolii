@@ -780,7 +780,7 @@ void main() {
     expect([(a2 - b2).distance / (a - b).distance, near2, [for (final (i, p) in q.indexed) ((p - a2).distance < (p - b2).distance) == (i < 30)].every((n) => n)], [lessThan(.5), greaterThan(2 * dockSpreadRadius * .95), isTrue], reason: 'squeezed (Obsidian\'s Center force): the heaps drawn together, still none on another, each nearer its own');
   });
 
-  testWidgets('a map shows each tile where it lies, inside its circle so none covers another, in no colour of its own, the whole fitted to the room at one scale (FontMap\'s map); the one under the pointer is told, its pictures moving and its name; the one picked flown to', (t) async {
+  testWidgets('a map shows each tile where it lies, inside its circle so none covers another, in no colour of its own, the whole fitted to the room at one scale (FontMap\'s map); the one under the pointer is told, its pictures moving and its name; a pick leaves it where it was', (t) async {
     final places = DockMapPlaces('Test')..places.value = {'a': const Offset(100, 100), 'b': const Offset(100 + 2 * dockSpreadRadius, 100), 'c': const Offset(500, 300), 'd': const Offset(900, 500)};
     await t.pumpWidget(Directionality(
       textDirection: TextDirection.ltr,
@@ -810,6 +810,6 @@ void main() {
     ));
     await t.pumpAndSettle();
     final c = t.getRect(find.byKey(const ValueKey('ws-map-Test-c'))), room = t.getRect(find.byKey(const ValueKey('ws-map-Test')));
-    expect([c.center.dx, c.center.dy, c.width / at['c']!.width], [closeTo(room.center.dx, .5), closeTo(room.center.dy, .5), closeTo(4, .01)], reason: 'the one picked flown to, in the middle four times as near (FontMap\'s centerOnFont)');
+    expect([c.width / at['c']!.width, room.contains(c.center)], [closeTo(1, .01), isTrue], reason: 'picked, the map left where it was, as a pick in Figma leaves its canvas (flown to, it dragged the view away)');
   });
 }

@@ -15,7 +15,6 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:crypto/crypto.dart' show sha1;
-import 'package:flutter/gestures.dart' show kTouchSlop;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:force_graph/force_graph.dart' show CollideForce, Force, ForceNode, ForceSimulation;
