@@ -130,7 +130,13 @@ void _tests2() {
     Rect inside(Rect r) => r.deflate(r.shortestSide * .05);   // (d3's forceCollide pushes apart softly: some left touching, as the heaps on a map are let within a twentieth)
     expect([dots.length, [for (final (i, a) in dots.indexed) for (final b in dots.skip(i + 1)) if (inside(a).overlaps(inside(b))) 1].length], [map.places.value.length, 0], reason: 'pushed apart (FontMap\'s overlap removal): each seen, none over another');
     String? picked() => ws.view.values.whereType<DockMem>().firstWhere((d) => d.mapped.contains('Fonts')).sel['Fonts'];   // (the dock it is a map on)
+    Future<void> whole() async {   // (the wheel out over it: the whole map again, the picked one having been flown to, FontMap's centerOnFont)
+      final wheel = TestPointer(9, PointerDeviceKind.mouse)..hover(t.getCenter(find.byKey(const ValueKey('ws-map-Fonts'))));
+      await t.sendEventToBinding(wheel.scroll(const Offset(0, 100000)));
+      await t.pumpAndSettle();
+    }
     const georgia = '/System/Library/Fonts/Supplemental/Georgia.ttf';
+    await whole();
     await t.tap(find.byKey(const ValueKey('ws-map-Fonts-$georgia')));
     await t.pump(const Duration(milliseconds: 400));   // (past a double press's wait)
     await t.pumpAndSettle();
@@ -156,6 +162,7 @@ void _tests2() {
     await t.pumpAndSettle();
     final andale = find.byKey(const ValueKey('ws-map-Fonts-/System/Library/Fonts/Supplemental/Andale Mono.ttf'));
     expect(andale, findsOneWidget, reason: 'the words typed leave it alone on the map');
+    await whole();
     await doubleTap(t, andale);
     await settled(t, ws);
     expect(m.word(text, 'file'), endsWith('/Andale Mono.ttf'), reason: m.trouble);

@@ -720,7 +720,7 @@ void main() {
     expect([near, [for (final (i, p) in s.indexed) ((p - a).distance < (p - b).distance) == (i < 30)].every((n) => n)], [greaterThan(2 * dockSpreadRadius * .95), isTrue], reason: 'none on another, each nearer its own heap');
   });
 
-  testWidgets('a map shows each tile where it lies, inside its circle so none covers another, in no colour of its own, the whole fitted to the room at one scale (FontMap\'s map); the one under the pointer is told, its pictures moving and its name', (t) async {
+  testWidgets('a map shows each tile where it lies, inside its circle so none covers another, in no colour of its own, the whole fitted to the room at one scale (FontMap\'s map); the one under the pointer is told, its pictures moving and its name; the one picked flown to', (t) async {
     final places = DockMapPlaces('Test')..places.value = {'a': const Offset(100, 100), 'b': const Offset(100 + 2 * dockSpreadRadius, 100), 'c': const Offset(500, 300), 'd': const Offset(900, 500)};
     await t.pumpWidget(Directionality(
       textDirection: TextDirection.ltr,
@@ -739,5 +739,12 @@ void main() {
     await t.pump();
     expect([find.text('Box Blur'), find.text('moving a')], [findsOneWidget, findsOneWidget], reason: 'the one under the pointer: its pictures moving and its name, by it');
     await mouse.removePointer();
+    await t.pumpWidget(Directionality(
+      textDirection: TextDirection.ltr,
+      child: Center(child: SizedBox(width: 400, height: 300, child: DockMap(places, [for (final id in ['a', 'b', 'c', 'd']) (id, const SizedBox.expand())], picked: 'c'))),
+    ));
+    await t.pumpAndSettle();
+    final c = t.getRect(find.byKey(const ValueKey('ws-map-Test-c'))), room = t.getRect(find.byKey(const ValueKey('ws-map-Test')));
+    expect([c.center.dx, c.center.dy, c.width / at['c']!.width], [closeTo(room.center.dx, .5), closeTo(room.center.dy, .5), closeTo(4, .01)], reason: 'the one picked flown to, in the middle four times as near (FontMap\'s centerOnFont)');
   });
 }

@@ -8,7 +8,8 @@ part of 'dock_map.dart';
 /// said while it is being laid out. No colour of their own: the pictures tell them apart (FontMap's glyphs in one ink,
 /// its category colours off at first). [picked]: the one picked, its nearest under the map; [press]: one press on one
 /// of them. What the pointer is on is told by it: its [peek] (its pictures moving, as the shelf's foot shows the
-/// picked one) and its name of [names].
+/// picked one) and its name of [names]. The one picked is flown to, in the middle four times as near, and left so when
+/// none is (FontMap's centerOnFont, its selected font's effect).
 class DockMap extends StatefulWidget {
   const DockMap(this.places, this.shown, {super.key, this.aspect = 1, this.picked, this.press, this.peek, this.names = const {}});
   final DockMapPlaces places;
@@ -22,24 +23,50 @@ class DockMap extends StatefulWidget {
   State<DockMap> createState() => _DockMapState();
 }
 
-class _DockMapState extends State<DockMap> {
+class _DockMapState extends State<DockMap> with SingleTickerProviderStateMixin {
   final _keys = FocusNode(debugLabel: 'ws-map');
   String? _from;   // (where the list of the alike was made from: the one pressed on the map, as XO's from its Space)
   final _seen = <String>[];   // (what was picked, in turn: XO's History)
   int _at = -1;
   final _view = TransformationController();   // (how near it is zoomed: what the pointer is on told at its size)
   final _over = ValueNotifier<String?>(null);   // (the one the pointer is on)
+  late final AnimationController _fly = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))..addListener(() => _view.value = _flight!.evaluate(CurvedAnimation(parent: _fly, curve: Curves.easeInOutCubic)));   // (FontMap's: 800 ms, d3's easeCubicInOut)
+  Matrix4Tween? _flight;
+  String? _aim;   // (the one to fly to once the map is laid out and no press is on it)
+  Offset? _downAt;   // (a press on the map: flown to only when it comes up where it went down, a tap, not carried away to a deck)
+  bool _moved = false;
+  Map<String, Offset>? _atWas;
+  Rect? Function(String id)? _placeOf;
+  Size _roomWas = Size.zero;
 
   @override
   void initState() {
     super.initState();
     _saw(widget.picked);
+    _aim = widget.picked;
   }
 
   @override
   void didUpdateWidget(DockMap old) {
     super.didUpdateWidget(old);
-    if (widget.picked != old.picked) _saw(widget.picked);
+    if (widget.picked != old.picked) {
+      _saw(widget.picked);
+      _aim = widget.picked;
+      _go();
+    }
+  }
+
+  /// To [_aim], four times as near, it in the middle (FontMap's centerOnFont: scale 4), kept within the map (d3-zoom's
+  /// constrain, FontMap's translateExtent the canvas). Laid out again in a room of another shape, the same one flown to
+  /// again; none picked, the whole map again.
+  void _go() {
+    final id = _aim, r = id == null ? null : _placeOf?.call(id);
+    if (_downAt != null || r == null) return;
+    _aim = null;
+    const k = 4.0;
+    final room = _roomWas, x = (room.width / 2 - r.center.dx * k).clamp(room.width * (1 - k), 0.0), y = (room.height / 2 - r.center.dy * k).clamp(room.height * (1 - k), 0.0);
+    _flight = Matrix4Tween(begin: _view.value.clone(), end: Matrix4.identity()..translateByDouble(x, y, 0, 1)..scaleByDouble(k, k, 1, 1));
+    _fly.forward(from: 0);
   }
 
   void _saw(String? id) {
@@ -60,6 +87,7 @@ class _DockMapState extends State<DockMap> {
 
   @override
   void dispose() {
+    _fly.dispose();
     _keys.dispose();
     _view.dispose();
     _over.dispose();
@@ -105,7 +133,14 @@ class _DockMapState extends State<DockMap> {
               focusNode: _keys,
               child: Listener(
                 behavior: HitTestBehavior.translucent,
-                onPointerDown: (_) => _keys.requestFocus(),   // (the keys go to the map once it is pressed, not to the stage's nudge)
+                onPointerDown: (e) {
+                  _keys.requestFocus();   // (the keys go to the map once it is pressed, not to the stage's nudge)
+                  _downAt = e.position;
+                  _moved = false;
+                },
+                onPointerMove: (e) => _moved = _moved || _downAt != null && (e.position - _downAt!).distance > kTouchSlop,   // (Flutter's tap: no further than its slop)
+                onPointerUp: (_) => _up(),
+                onPointerCancel: (_) => _up(),
                 child: Column(
                   children: [
                     Expanded(child: LayoutBuilder(builder: (context, room) => _map(at, tiles, Size(room.maxWidth, room.maxHeight)))),
@@ -120,6 +155,12 @@ class _DockMapState extends State<DockMap> {
     },
   );
 
+  void _up() {
+    final tap = !_moved;
+    _downAt = null;
+    tap ? _go() : _aim = null;
+  }
+
   Widget _map(Map<String, Offset> at, Map<String, Widget> tiles, Size room) {
     final r = dockSpreadRadius, a = widget.aspect, side = 2 * r / math.sqrt(1 + a * a);   // (a tile inside its circle)
     var box = Rect.fromCenter(center: at.values.first, width: 0, height: 0);
@@ -129,6 +170,17 @@ class _DockMapState extends State<DockMap> {
     box = box.inflate(r);
     final s = math.min(room.width / box.width, room.height / box.height) * .92, left = (room.width - box.width * s) / 2 - box.left * s, top = (room.height - box.height * s) / 2 - box.top * s;
     Rect? place(String id) => at[id] == null ? null : Rect.fromCenter(center: Offset(left + at[id]!.dx * s, top + at[id]!.dy * s), width: side * a * s, height: side * s);
+    _placeOf = place;
+    if (!identical(at, _atWas) || room != _roomWas) {   // (laid out anew, or the room another size: where it was looking is gone)
+      if (_atWas != null && _aim == null) {
+        _fly.stop();
+        _aim = widget.picked;
+        if (_aim == null) _view.value = Matrix4.identity();
+      }
+      _atWas = at;
+      _roomWas = room;
+    }
+    if (_aim != null) WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? _go() : null);
     Widget item(String id, Widget tile) => MouseRegion(
       onEnter: (_) => _over.value = id,
       onExit: (_) => _over.value == id ? _over.value = null : null,
@@ -141,6 +193,7 @@ class _DockMapState extends State<DockMap> {
           InteractiveViewer(
             key: ValueKey('ws-map-$_name'),
             transformationController: _view,
+            onInteractionStart: (_) => _fly.stop(),   // (a hand on it stops the flight, as d3's transition is interrupted)
             minScale: 1,
             maxScale: 10 / .92,
             child: SizedBox.fromSize(
