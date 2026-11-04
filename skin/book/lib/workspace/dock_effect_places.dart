@@ -127,11 +127,17 @@ class EffectPlacesState extends State<EffectPlaces> {
     ]);
   }
 
+  /// Where an effect's right click puts it, set on the row's own right click and set again to go back to the Favorites,
+  /// as Lightroom Classic's Set as Target Collection (on the Quick Collection too) and its unchecking.
+  WsMenuItem _aim(EffectDeck? d) => WsMenuItem('Set as Target Deck', () => widget.c.set(() => effectTargetSet(d?.target == true ? null : d)), keys: effectTarget() == d ? '✓' : '');
+
   /// What is done to a deck is on its row, by a right click, as Ableton's label (Rename, the colour) and Lightroom's
   /// Edit Smart Collection.
   void _deckMenu(EffectDeck d, Offset at) {
     final c = widget.c;
     _open(at, [
+      _aim(d),
+      const WsMenuItem.rule(),
       WsMenuItem('Rename…', () => naming(d)),
       WsMenuItem('Edit Search…', () => naming(d, search: true)),
       WsMenuItem('Copy Deck Code', () {
@@ -187,8 +193,9 @@ class EffectPlacesState extends State<EffectPlaces> {
   /// One row: the Media shelf's folder row (_FolderRow), a press shows what it holds.
   /// [cover]: a deck's picture, its row as Spotify's library lists a playlist (its cover, its name, how many under it).
   Widget _row(String place, {int depth = 0, bool? open, VoidCallback? onTap, ValueChanged<Offset>? menu, Widget? field, bool lit = false, Widget? cover}) {
-    final c = widget.c, here = c.mem.fxPlace == place || lit;
-    final (name, g, n) = _said(place);
+    final c = widget.c, here = c.mem.fxPlace == place || lit, to = effectTarget();
+    final (said, g, n) = _said(place);
+    final name = place == (to == null ? '★' : '@${to.name}') ? '$said +' : said;   // (the target's mark, Lightroom's + after its name)
     return GestureDetector(
       onSecondaryTapDown: menu == null ? null : (d) => menu(d.globalPosition),
       child: DockHover(
@@ -248,7 +255,7 @@ class EffectPlacesState extends State<EffectPlaces> {
     color: over ? WsT.card : WsT.body,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: widget.held.isNotEmpty ? widget.held : [Padding(padding: EdgeInsets.fromLTRB(Shape.s(4) + Shape.z(14), Shape.s(4), WsT.inset, Shape.s(6)), child: Text('Drag an effect here from the map, or right-click one', style: T.label(Grey.g63)))],
+      children: widget.held.isNotEmpty ? widget.held : [Padding(padding: EdgeInsets.fromLTRB(Shape.s(4) + Shape.z(14), Shape.s(4), WsT.inset, Shape.s(6)), child: Text(effectTarget() == d ? 'Drag an effect here from the map, or right-click one' : 'Drag an effect here from the map', style: T.label(Grey.g63)))],
     ),
   ));
 
@@ -263,7 +270,7 @@ class EffectPlacesState extends State<EffectPlaces> {
             ? Column(   // (folded to the deck on the map, what it holds under it, as the browser goes into a category and back)
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _into(deck, (over) => _row(c.mem.fxPlace, open: false, lit: true, onTap: () => c.set(() => c.mem.fxListOpen = true), menu: deck == null ? null : (at) => _deckMenu(deck, at), cover: widget.covers[c.mem.fxPlace])),
+                  _into(deck, (over) => _row(c.mem.fxPlace, open: false, lit: true, onTap: () => c.set(() => c.mem.fxListOpen = true), menu: (at) => deck == null ? _open(at, [_aim(null)]) : _deckMenu(deck, at), cover: widget.covers[c.mem.fxPlace])),
                   Expanded(child: ListView(padding: EdgeInsets.zero, children: [_held(deck)])),
                 ],
               )
@@ -280,7 +287,7 @@ class EffectPlacesState extends State<EffectPlaces> {
           children: [
             _row('All'),
             _row('Recent'),
-            _into(null, (over) => _row('★', lit: over)),
+            _into(null, (over) => _row('★', lit: over, menu: (at) => _open(at, [_aim(null)]))),
             if (widget.mapped && c.mem.fxPlace == '★') _held(null),
             _row('In video'),
             DockSection('Decks', trailing: Builder(builder: (b) => DockIconButton(DockG.plus, key: const ValueKey('ws-fx-deck-new'), onTap: () => _plus(b)))),

@@ -144,15 +144,18 @@ class _EffectsShelfState extends State<EffectsShelf> {
       d.toggle(e.id, e.name, found: d.words.isNotEmpty && found(d.words, e));
       effectDecksKeep();
     });
-    // (what is done to an effect is on the effect, by a right click or by the foot's three dots: Add to Playlist's list of
-    //  playlists with New at its end, Spotify's and YouTube's Save; Ableton's right click on an item; Go to Album)
+    // (what is done to an effect is on the effect, by a right click or by the foot's three dots: one row for where it goes,
+    //  the target deck or the Favorites, however many decks there are, as Lightroom Classic's Add to Target Collection,
+    //  New at its end; Ableton's right click on an item; Go to Album)
     void menuOn(_Fx e, Offset at) {
-      final box = _menu.currentContext?.findRenderObject() as RenderBox?;
+      final box = _menu.currentContext?.findRenderObject() as RenderBox?, to = effectTarget();
       _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [
         if (off(e) case final o?) ...[WsMenuItem('Add Again', e.apply), WsMenuItem('Remove', o)] else WsMenuItem(e.on ? 'Remove' : 'Add', e.apply),
-        WsMenuItem(c.starred(e.id) ? 'Remove from Favorites' : 'Add to Favorites', () => c.star(e.id)),
         const WsMenuItem.rule(),
-        for (final d in decks) WsMenuItem(d.name, () => put(d, e), keys: deckIds[d]!.contains(e.id) ? '✓' : ''),
+        if (to != null && deckIds.containsKey(to))
+          WsMenuItem('${deckIds[to]!.contains(e.id) ? 'Remove from' : 'Add to'} ${to.name}', () => put(to, e))
+        else
+          WsMenuItem(c.starred(e.id) ? 'Remove from Favorites' : 'Add to Favorites', () => c.star(e.id)),
         WsMenuItem('New Deck…', () => _places.currentState?.newDeck(thing: DeckThing(e.id, e.name, effectSum(e.id)))),
         if (effectPack(e.id) case final p? when packs.containsKey(p)) ...[const WsMenuItem.rule(), WsMenuItem('Go to Pack: $p', () => c.set(() => c.mem.fxPlace = '/$p'))],
       ]);

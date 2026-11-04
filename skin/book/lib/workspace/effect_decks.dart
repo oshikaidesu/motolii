@@ -53,6 +53,7 @@ class EffectDeck {
   String name, words;
   final List<DeckThing> things;
   final Set<String> without;
+  bool target = false;   // (the one an effect's right click puts in: kept in the file, never in a deck code)
   Map<String, Object> get json => {'name': name, 'words': words, 'things': [for (final t in things) t.json], 'without': without.toList()};
   static EffectDeck of(Map j) => EffectDeck('${j['name']}', words: '${j['words'] ?? ''}', things: [for (final t in j['things'] as List? ?? const []) DeckThing.of(t as Map)], without: {for (final s in j['without'] as List? ?? const []) '$s'});
 
@@ -72,7 +73,7 @@ List<EffectDeck>? _decks;
 void effectDecksAt(File f) => (_decksFile = f, _decks = null);
 List<EffectDeck> effectDecks() => _decks ??= () {
   try {
-    return [for (final d in (jsonDecode(_decksFile.readAsStringSync()) as Map)['decks'] as List) EffectDeck.of(d as Map)];
+    return [for (final d in (jsonDecode(_decksFile.readAsStringSync()) as Map)['decks'] as List) EffectDeck.of(d as Map)..target = d['target'] == true];
   } catch (_) {
     return <EffectDeck>[];
   }
@@ -80,8 +81,19 @@ List<EffectDeck> effectDecks() => _decks ??= () {
 void effectDecksKeep() {
   try {
     _decksFile.parent.createSync(recursive: true);
-    _decksFile.writeAsStringSync(jsonEncode({'decks': [for (final d in effectDecks()) d.json]}));
+    _decksFile.writeAsStringSync(jsonEncode({'decks': [for (final d in effectDecks()) {...d.json, if (d.target) 'target': true}]}));
   } catch (_) {}   // (not kept: known while the window is open)
+}
+
+/// Where an effect's right click puts it, one place however many decks there are: a deck set as the target, else the
+/// Favorites, as Lightroom Classic's Add to Target Collection (B) goes to the one collection set as the target, the
+/// Quick Collection until one is.
+EffectDeck? effectTarget() => effectDecks().where((d) => d.target).firstOrNull;
+void effectTargetSet(EffectDeck? to) {
+  for (final d in effectDecks()) {
+    d.target = identical(d, to);
+  }
+  effectDecksKeep();
 }
 
 /// A name no other deck has: the name, then the name 2, as Finder names a copy.
