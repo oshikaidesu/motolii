@@ -240,8 +240,8 @@ class FontsShelf extends StatelessWidget {
                         final kinds = [for (final f in from) _kindOf(m, f)], all = kinds.toSet().toList();
                         return dockTogether([look, [for (final k in kinds) Float32List(all.length)..[all.indexOf(k)] = 1]], const [1, 0.5]);   // (FontMap's style blended in at half: same-style fonts group together)
                       }, also: '${clip ?? ''} kinds');
-                      final byPath = {for (final f in list) ?f.path: f}, kinds = {for (final p in files) p: _kindOf(m, p)};
-                      return DockMap(map, [for (final MapEntry(key: p, value: f) in byPath.entries) (p, _FontDot(f, c))], cell: 48, aspect: _dot.$1 / _dot.$2, picked: list.where((f) => f.family == c.sel).firstOrNull?.path, kinds: kinds, hue: _kindHue(kinds.values), press: (p) {
+                      final byPath = {for (final f in list) ?f.path: f};
+                      return DockMap(map, [for (final MapEntry(key: p, value: f) in byPath.entries) (p, _FontDot(f, c))], aspect: _dot.$1 / _dot.$2, picked: list.where((f) => f.family == c.sel).firstOrNull?.path, press: (p) {
                         if (byPath[p] case final f?) {
                           c.pick(f.family);   // (one press, as on the map: XO's hot swap, the role's font when no text is picked)
                           _toRole(c, f);
@@ -392,16 +392,6 @@ Future<void> _drawAll(Motolii m, List<String> files) => _drawing ??= Zone.root.r
 String _kindOf(Motolii m, String path) {
   final t = m.fontTags(path);
   return t.contains('mono') ? 'mono' : const ['serif', 'sans', 'script', 'ornaments', 'symbols'].firstWhere(t.contains, orElse: () => '');
-}
-
-/// A kind's colour on the map, Ableton Live's clip colours (wsLabelColour) in the order of the kinds most fonts have.
-Color? Function(String) _kindHue(Iterable<String> kinds) {
-  final had = <String, int>{};
-  for (final k in kinds) {
-    if (k.isNotEmpty) had[k] = (had[k] ?? 0) + 1;
-  }
-  final order = had.keys.toList()..sort((a, b) => had[b]!.compareTo(had[a]!));
-  return (k) => order.contains(k) ? wsLabelColour(order.indexOf(k)) : null;
 }
 
 Future<List<Float32List?>> _byFontClip(Motolii m, String model, List<String> files) async {

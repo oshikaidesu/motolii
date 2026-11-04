@@ -181,8 +181,8 @@ class _EffectsShelfState extends State<EffectsShelf> {
                     final map = dockMap('Effects'), drawing = EffectTiles.progress.value != null;
                     final clip = dockModel('clip_b32');   // (by how CLIP sees each moment, once it is made; else by tiny colours)
                     final drawn = [for (final e in every) if (m.picture(e.id).isNotEmpty) e];
-                    if (!drawing || map.places.value.isEmpty) map.need(m, [for (final e in drawn) (e.id, m.picture(e.id))], (from) => _fxNumbers(m, clip, [for (final e in drawn) e.label], from), also: '${drawing ? 'drawing' : ''} ${clip ?? ''} kinds');
-                    return DockMap(map, [for (final e in listed) (e.id, tile(e, true))], picked: c.sel, press: c.pick, kinds: {for (final e in every) e.id: e.label}, hue: _kindHue(every));
+                    if (!drawing || map.places.value.isEmpty) map.need(m, [for (final e in drawn) (e.id, m.picture(e.id))], (from) => _fxNumbers(m, clip, [for (final e in drawn) e.label], from), also: '${clip ?? ''} kinds');
+                    return DockMap(map, [for (final e in listed) (e.id, tile(e, true))], picked: c.sel, press: c.pick, peek: (id) => TileMoving(m.picture(id), playing: true), names: {for (final e in every) e.id: e.name});
                   },
                 )
               : LayoutBuilder(
@@ -347,17 +347,6 @@ Future<List<Float32List?>> _fxNumbers(Motolii m, String? clip, List<String> kind
   final look = [for (final f in homes) await (clip == null ? dockTiny : (List<String> at) => dockSeen(m, clip, at))([for (final k in const [0, 7, 15]) EffectTiles.frame(f, k)])];
   final all = kinds.toSet().toList();
   return dockTogether([look, [for (final k in kinds) Float32List(all.length)..[all.indexOf(k)] = 1]], const [1, 2], even: const {0});
-}
-
-/// A kind's colour on the map, Ableton Live's clip colours (wsLabelColour) in the order of the kinds most had, as the
-/// shelf's chips stand (the first sixteen; the rest none): the same kind the same colour whatever is shown.
-Color? Function(String) _kindHue(List<_Fx> every) {
-  final had = <String, int>{};
-  for (final e in every) {
-    if (e.label.isNotEmpty) had[e.label] = (had[e.label] ?? 0) + 1;
-  }
-  final order = (had.keys.toList()..sort((a, b) => had[b]!.compareTo(had[a]!))).take(16).toList();
-  return (k) => order.contains(k) ? wsLabelColour(order.indexOf(k)) : null;
 }
 
 /// Joined: the document's value an effect is, and what the picked thing has for it now.

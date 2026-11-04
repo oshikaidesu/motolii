@@ -1,6 +1,6 @@
 // A shelf's map, as XLN Audio's XO's Space: each item where what is alike lies near (laid out by the inside's t-SNE,
-// motolii_map, as XO's are), then each given a cell of a grid so none hides another (Kyle McDonald's CloudToGrid, the
-// inside's motolii_grid); the shelf's chips and words narrowing which are shown, as XO's filters narrow its Space;
+// motolii_map, as XO's are), then pushed apart till none covers another, each kept near where it lay, as FontMap lays
+// its fonts (dockSpread); the shelf's chips and words narrowing which are shown, as XO's filters narrow its Space;
 // moved and zoomed by Flutter's own InteractiveViewer. Under it XO's Similarity List (Splice's Similar Sounds beside
 // its list): the nearest to the one picked, stepped along by its arrows or the left and right keys. Laid out again
 // when what the shelf holds changes (XO's Scan & Refresh, done by itself), kept between openings beside the tiles
@@ -8,10 +8,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:crypto/crypto.dart' show sha1;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -20,76 +22,165 @@ import '../tokens.dart';
 import 'dock_glyphs.dart';
 import 'dock_parts.dart' show DockIconButton;
 import 'ws.dart' show WsT;
+part 'dock_map_view.dart';
 
-/// Where one shelf's items lie on its map, by id, 0 to 1 each way; [laying] while that is being worked out.
+/// Where one shelf's items lie on its map, by id, on FontMap's canvas its width 1 ([dockSpread]); [laying] while that is
+/// being worked out.
 class DockMapPlaces {
-  DockMapPlaces(this.name) {
-    places.addListener(_grids.clear);
-  }
+  DockMapPlaces(this.name);
   final String name;
   final places = ValueNotifier<Map<String, Offset>>(const {});
   final laying = ValueNotifier<bool>(false);
-  /// Told when a grid is laid ([grid]).
-  final gridded = ValueNotifier<int>(0);
   String? _for;
-  Motolii? _m;
-  final _grids = <String, Map<String, int>?>{};
+  Map<String, Offset> _laid = const {};   // (where t-SNE lays them, before they are pushed apart: what is alike is told by it)
 
   File get _kept => File('${Platform.environment['HOME']}/Library/Caches/Motolii/map_$name.json');
 
   /// Laid out for these items (each its id and what it is read from), each read as numbers by [read] (null: left off the
-  /// map); only when they are not the ones laid out last, nor the ones kept from before ([also]: what else they were
-  /// laid out by, the same items read again when it changes).
+  /// map; [also]: what else they were laid out by, all laid out again when it changes). Those laid out before stay where
+  /// they lay (kept between openings); one new, or its picture changed, goes where its 25 nearest of those lie, the
+  /// middle of theirs each way: openTSNE's way of adding points to a map made (prepare_partial, initialization "median",
+  /// k 25; BSD-3), the others not moved. All laid out by t-SNE only when none lay before.
   void need(Motolii m, List<(String, String)> items, Future<List<Float32List?>> Function(List<String> from) read, {String also = ''}) {
-    _m = m;
     final key = jsonEncode([also, for (final (id, from) in items) '$id\t$from']);
     if (key == _for) return;
     _for = key;
     Zone.root.run(() async {   // (on the program's own clock, as fontsRead: a test may wait for it)
+      Future<void> show(Map<String, Offset> laid) async {   // (kept as t-SNE lays them; pushed apart each time shown, a moment's work)
+        final spread = laid.isEmpty ? const <Offset>[] : await _spreadAway(laid.values.toList());
+        if (key != _for) return;
+        _laid = laid;
+        places.value = {for (final (i, id) in laid.keys.indexed) id: spread[i]};
+      }
+      var known = <String, Offset>{};
       try {
-        final kept = jsonDecode(await _kept.readAsString()) as Map<String, dynamic>;
-        if (kept['for'] == key) {
-          places.value = {for (final MapEntry(key: id, value: at) in (kept['places'] as Map<String, dynamic>).entries) id: Offset(((at as List)[0] as num).toDouble(), (at[1] as num).toDouble())};
-          return;
+        final kept = jsonDecode(await _kept.readAsString()) as Map<String, dynamic>, was = (jsonDecode(kept['for'] as String) as List).cast<String>();
+        final same = was.skip(1).toSet(), from = {for (final (id, f) in items) id: f};
+        if (was.first.trim() == also.trim()) {
+          known = {for (final MapEntry(key: id, value: at) in (kept['places'] as Map<String, dynamic>).entries) if (same.contains('$id\t${from[id]}')) id: Offset(((at as List)[0] as num).toDouble(), (at[1] as num).toDouble())};
         }
       } catch (_) {}   // (none kept, or for others: laid out now)
-      laying.value = true;
+      if (known.length == items.length) return show(known);
+      if (known.isNotEmpty) await show(known);   // (those laid before at once; the new join them when read)
+      laying.value = known.isEmpty;
       final numbers = await read([for (final (_, from) in items) from]);
-      final ids = [for (final (i, (id, _)) in items.indexed) if (numbers[i] != null) id];
-      final laid = await m.map([for (final v in numbers) ?v]);
       if (key != _for) return;   // (asked for others meanwhile: theirs comes)
+      var at = <String, Offset>{};
+      if (known.isEmpty) {
+        final ids = [for (final (i, (id, _)) in items.indexed) if (numbers[i] != null) id];
+        final laid = await m.map([for (final v in numbers) ?v]);
+        if (laid != null) at = {for (final (i, id) in ids.indexed) id: Offset(laid[i].$1, laid[i].$2)};
+      } else {
+        final seen = {for (final (i, (id, _)) in items.indexed) id: ?numbers[i]};
+        at = {for (final (id, _) in items) id: ?known[id], ...await _joinedAway(known, seen)};
+      }
+      if (key != _for) return;
+      await show(at);
       laying.value = false;
-      places.value = laid == null ? const {} : {for (final (i, id) in ids.indexed) id: Offset(laid[i].$1, laid[i].$2)};
       try {
         _kept.parent.createSync(recursive: true);
-        await _kept.writeAsString(jsonEncode({'for': key, 'places': {for (final MapEntry(key: id, value: at) in places.value.entries) id: [at.dx, at.dy]}}));
+        await _kept.writeAsString(jsonEncode({'for': key, 'places': {for (final MapEntry(key: id, value: p) in at.entries) id: [p.dx, p.dy]}}));
       } catch (_) {}   // (not kept: laid out again next time)
     });
   }
 
-  /// Each item's cell of a [cols] x [rows] grid (row * cols + column), the nearest for them all; null while it is
-  /// being worked out (asked now, [gridded] told when done) or where it cannot be (too many: left where they lie).
-  Map<String, int>? grid(int cols, int rows) {
-    final key = '$cols x $rows', laid = places.value, m = _m;
-    if (_grids.containsKey(key) || m == null || laid.isEmpty) return _grids[key];
-    _grids[key] = null;
-    Zone.root.run(() async {
-      final cells = await m.grid([for (final p in laid.values) (p.dx, p.dy)], cols, rows);
-      if (!identical(laid, places.value)) return;   // (laid out again meanwhile: its own grid is asked)
-      _grids[key] = cells == null ? const {} : {for (final (i, id) in laid.keys.indexed) id: cells[i]};
-      gridded.value++;
-    });
-    return null;
+  /// Where each of [seen] not [known] goes: the middle each way of where its 25 nearest of the known lie (openTSNE's
+  /// initialization.median).
+  static Map<String, Offset> _joined(Map<String, Offset> known, Map<String, Float32List> seen) {
+    final base = [for (final id in known.keys) if (seen.containsKey(id)) id], out = <String, Offset>{};
+    double mid(List<double> v) => (v..sort())[v.length ~/ 2];
+    for (final MapEntry(key: id, value: v) in seen.entries) {
+      if (known.containsKey(id) || base.isEmpty) continue;
+      final far = <(String, double)>[];
+      for (final o in base) {
+        final w = seen[o]!;
+        var d = 0.0;
+        for (var i = 0; i < v.length && i < w.length; i++) {
+          d += (v[i] - w[i]) * (v[i] - w[i]);
+        }
+        far.add((o, d));
+      }
+      far.sort((a, b) => a.$2.compareTo(b.$2));
+      final near = [for (final (o, _) in far.take(25)) known[o]!];
+      out[id] = Offset(mid([for (final p in near) p.dx]), mid([for (final p in near) p.dy]));
+    }
+    return out;
   }
 
   /// [id] and the [k] - 1 nearest it on the map of [among], nearest first: XO's Similarity List ("the most similar
-  /// sounding in the XO Space").
+  /// sounding in the XO Space"), where t-SNE laid them (FontMap's similar fonts: the nearest before its overlap removal).
   List<String> alike(String id, Iterable<String> among, int k) {
-    final at = places.value, p = at[id];
+    final at = _laid.isEmpty ? places.value : _laid, p = at[id];
     if (p == null) return const [];
     final near = [for (final o in among) if (o != id) if (at[o] case final q?) (o, (q - p).distanceSquared)]..sort((a, b) => a.$2.compareTo(b.$2));
     return [id, for (final (o, _) in near.take(k - 1)) o];
   }
+}
+
+/// [dockSpread] and [DockMapPlaces._joined] on an isolate of their own (Isolate.run), sent only what they are given here
+/// (a closure made inside [DockMapPlaces.need] would carry the inside's library with it).
+Future<List<Offset>> _spreadAway(List<Offset> at) => Isolate.run(() => dockSpread(at));
+Future<Map<String, Offset>> _joinedAway(Map<String, Offset> known, Map<String, Float32List> seen) => Isolate.run(() => DockMapPlaces._joined(known, seen));
+
+/// A tile's reach on the map: FontMap's collision radius (13 of its canvas 1920 wide), the canvas's width 1.
+const dockSpreadRadius = 13 / 1920;
+
+/// Places (0 to 1 each way) pushed apart till none is within two [dockSpreadRadius] of another, each kept near where it
+/// lay: FontMap's scripts/apply-overlap-removal.mjs (MIT) with its numbers (a 1920 x 1080 canvas 40 in from its edges,
+/// radius 13, 140 ticks, pulled back at 0.03), its d3 forceSimulation's tick, forceCollide (strength 1, 3 iterations)
+/// and forceX / forceY (d3-force, ISC: simulation.js, collide.js, x.js, y.js) as they are, but for the near ones found
+/// by a sweep along x (sweep and prune, Baraff 1992) in place of its quadtree. Where each lies on that canvas, its width 1.
+List<Offset> dockSpread(List<Offset> at) {
+  const w = 1920.0, h = 1080.0, pad = 40.0, r = 13.0, pull = 0.03;
+  final n = at.length, x = Float64List(n), y = Float64List(n), vx = Float64List(n), vy = Float64List(n), ox = Float64List(n), oy = Float64List(n);
+  for (final (i, p) in at.indexed) {
+    x[i] = ox[i] = p.dx * (w - 2 * pad) + pad;
+    y[i] = oy[i] = p.dy * (h - 2 * pad) + pad;
+  }
+  final jiggle = math.Random(1), decay = 1 - math.pow(0.001, 1 / 300), order = List<int>.generate(n, (i) => i), rank = Int32List(n), sx = Float64List(n);
+  double nudge() => (jiggle.nextDouble() - .5) * 1e-6;   // (d3's jiggle: two exactly on each other told apart)
+  var alpha = 1.0;
+  for (var tick = 0; tick < 140; tick++) {
+    alpha -= alpha * decay;
+    for (var k = 0; k < 3; k++) {
+      for (var i = 0; i < n; i++) {
+        sx[i] = x[i] + vx[i];   // (where d3's quadtree is built from)
+      }
+      order.sort((a, b) => sx[a].compareTo(sx[b]));
+      for (final (o, i) in order.indexed) {
+        rank[i] = o;
+      }
+      for (var i = 0; i < n; i++) {
+        final xi = x[i] + vx[i], yi = y[i] + vy[i];
+        void push(int j) {
+          if (j <= i) return;   // (each two once, d3's data.index > node.index)
+          var dx = xi - x[j] - vx[j], dy = yi - y[j] - vy[j], l = dx * dx + dy * dy;
+          if (l >= 4 * r * r) return;
+          if (dx == 0) l += (dx = nudge()) * dx;
+          if (dy == 0) l += (dy = nudge()) * dy;
+          l = math.sqrt(l);
+          l = (2 * r - l) / l;
+          vx[i] += dx * l / 2;   // (the same radius each: half the push each way)
+          vy[i] += dy * l / 2;
+          vx[j] -= dx * l / 2;
+          vy[j] -= dy * l / 2;
+        }
+        for (var o = rank[i] + 1; o < n && sx[order[o]] <= xi + 2 * r; o++) {
+          push(order[o]);
+        }
+        for (var o = rank[i] - 1; o >= 0 && sx[order[o]] >= xi - 2 * r; o--) {
+          push(order[o]);
+        }
+      }
+    }
+    for (var i = 0; i < n; i++) {
+      vx[i] += (ox[i] - x[i]) * pull * alpha;
+      vy[i] += (oy[i] - y[i]) * pull * alpha;
+      x[i] += vx[i] *= .6;   // (d3's velocityDecay 0.4)
+      y[i] += vy[i] *= .6;
+    }
+  }
+  return [for (var i = 0; i < n; i++) Offset(x[i] / w, y[i] / w)];
 }
 
 /// A picture's numbers: its colours made 16 points square, as Torralba, Fergus and Freeman's tiny images ("80 million
@@ -134,29 +225,47 @@ String? dockModel(String name) {
 /// Pictures' numbers by a CLIP image encoder ([model]): each picture made 224 square (as CLIP's own Resize takes it),
 /// its 512 numbers, several pictures one after another, so two effects are told apart frame by frame at the same
 /// moments: ViSiL's frame-to-frame likeness (Kordopatis-Zilos et al., ICCV 2019) taken only where the frames are of
-/// one moment, the effects' tiles all drawn at the same ones. null: one of them cannot be read, or not told. Read once
-/// while the window is open.
+/// one moment, the effects' tiles all drawn at the same ones. null: one of them cannot be read, or not told. Each
+/// picture's kept once read (~/Library/Caches/Motolii/looks, by the model, the picture and when it was drawn): only a
+/// new or redrawn one is read again.
 final _clip = <String, Float32List>{};
 Future<Float32List?> dockSeen(Motolii m, String model, List<String> files) async {
   final key = '$model\n${files.join('\n')}';
   if (_clip[key] case final v?) return v;
-  final pictures = <Uint8List>[];
-  for (final f in files) {
+  final v = Float32List(512 * files.length), kept = <File>[], missing = <int>[];
+  for (final (k, f) in files.indexed) {
     try {
-      final codec = await ui.instantiateImageCodec(await File(f).readAsBytes(), targetWidth: 224, targetHeight: 224);
-      final image = (await codec.getNextFrame()).image;
-      pictures.add((await image.toByteData(format: ui.ImageByteFormat.rawRgba))!.buffer.asUint8List());
-      image.dispose();
-      codec.dispose();
+      kept.add(File('${Platform.environment['HOME']}/Library/Caches/Motolii/looks/${sha1.convert(utf8.encode('$model\n$f\n${File(f).lastModifiedSync().microsecondsSinceEpoch}'))}.f32'));
+      final had = kept[k].readAsBytesSync();
+      if (had.length != 512 * 4) throw const FormatException();
+      v.setRange(512 * k, 512 * (k + 1), had.buffer.asFloat32List());
     } catch (_) {
-      return null;
+      if (kept.length == k) return null;   // (the picture not there)
+      missing.add(k);
     }
   }
-  final told = await m.likeness(model, pictures);
-  if (told == null) return null;
-  final v = Float32List(512 * told.length);
-  for (final (k, t) in told.indexed) {
-    v.setRange(512 * k, 512 * (k + 1), t);
+  if (missing.isNotEmpty) {
+    final pictures = <Uint8List>[];
+    for (final k in missing) {
+      try {
+        final codec = await ui.instantiateImageCodec(await File(files[k]).readAsBytes(), targetWidth: 224, targetHeight: 224);
+        final image = (await codec.getNextFrame()).image;
+        pictures.add((await image.toByteData(format: ui.ImageByteFormat.rawRgba))!.buffer.asUint8List());
+        image.dispose();
+        codec.dispose();
+      } catch (_) {
+        return null;
+      }
+    }
+    final told = await m.likeness(model, pictures);
+    if (told == null) return null;
+    for (final (j, k) in missing.indexed) {
+      v.setRange(512 * k, 512 * (k + 1), told[j]);
+      try {
+        kept[k].parent.createSync(recursive: true);
+        kept[k].writeAsBytesSync(Float32List.fromList(told[j]).buffer.asUint8List());
+      } catch (_) {}   // (not kept: read again next time)
+    }
   }
   return _clip[key] = v;
 }
@@ -207,207 +316,6 @@ List<Float32List?> dockTogether(List<List<Float32List?>> parts, List<double> wei
     for (var i = 0; i < n; i++)
       if (parts.first[i] == null) null else Float32List.fromList([for (final k in made) ...k[i]]),
   ];
-}
-
-/// The map: each shown item's tile in its cell, the cells as many as the items and as large as the room allows ([aspect]
-/// a tile's width to its height; [cell] wide where they lie before the grid comes), the rest left off; what is said
-/// while it is being laid out. [picked]: the one picked, its nearest under the map; [press]: one press on one of them.
-/// [kinds]: what each is (the shelf's own word for it), each tile edged in its kind's [hue], as XO's Space colours each
-/// sound by its drum type and the Embedding Projector colours points by a column ("Color by"), and each coloured kind's
-/// name over where its tiles are, as DataMapPlot names each cluster at its middle.
-class DockMap extends StatefulWidget {
-  const DockMap(this.places, this.shown, {super.key, this.cell = 26, this.aspect = 1, this.picked, this.press, this.kinds = const {}, this.hue});
-  final DockMapPlaces places;
-  final List<(String, Widget)> shown;
-  final double cell, aspect;
-  final String? picked;
-  final void Function(String id)? press;
-  final Map<String, String> kinds;
-  final Color? Function(String kind)? hue;
-  @override
-  State<DockMap> createState() => _DockMapState();
-}
-
-class _DockMapState extends State<DockMap> {
-  final _keys = FocusNode(debugLabel: 'ws-map');
-  String? _from;   // (where the list of the alike was made from: the one pressed on the map, as XO's from its Space)
-  final _seen = <String>[];   // (what was picked, in turn: XO's History)
-  int _at = -1;
-
-  @override
-  void initState() {
-    super.initState();
-    _saw(widget.picked);
-  }
-
-  @override
-  void didUpdateWidget(DockMap old) {
-    super.didUpdateWidget(old);
-    if (widget.picked != old.picked) _saw(widget.picked);
-  }
-
-  void _saw(String? id) {
-    if (id == null || (_at >= 0 && _seen[_at] == id)) return;   // (gone to by the history itself: kept as it is)
-    _seen
-      ..removeRange(_at + 1, _seen.length)
-      ..add(id);
-    _at = _seen.length - 1;
-  }
-
-  /// XO's History: the up and down keys back and forth through what was picked.
-  void _back(int by) {
-    final i = _at + by;
-    if (i < 0 || i >= _seen.length || widget.press == null) return;
-    _at = i;
-    widget.press!(_seen[i]);
-  }
-
-  @override
-  void dispose() {
-    _keys.dispose();
-    super.dispose();
-  }
-
-  String get _name => widget.places.name;
-
-  /// XO's arrows: [by] along the list of the alike (Shift: five).
-  void _step(List<String> list, int by) {
-    final i = list.indexOf(widget.picked ?? '');
-    if (i < 0 || widget.press == null) return;
-    widget.press!(list[(i + by).clamp(0, list.length - 1)]);
-  }
-
-  @override
-  Widget build(BuildContext context) => ListenableBuilder(
-    listenable: Listenable.merge([widget.places.places, widget.places.laying, widget.places.gridded]),
-    builder: (context, _) {
-      final at = widget.places.places.value;
-      if (at.isEmpty) {
-        return Center(child: Text(widget.places.laying.value ? 'Laying out the map…' : 'Nothing on the map yet', style: T.label(Grey.g63)));
-      }
-      final tiles = {for (final (id, tile) in widget.shown) id: tile};
-      final sw = Shape.z(32) * widget.aspect, gap = Shape.s(4);
-      return LayoutBuilder(
-        builder: (context, box) {
-          final k = math.max(2, ((box.maxWidth - 3 * Shape.z(20) - 2 * gap) / (sw + gap)).floor());
-          final picked = widget.picked;
-          if (picked != null && at.containsKey(picked) && (_from == null || !widget.places.alike(_from!, tiles.keys, k).contains(picked))) _from = picked;   // (picked elsewhere: its own list)
-          final list = picked == null || _from == null || !tiles.containsKey(_from) ? const <String>[] : widget.places.alike(_from!, tiles.keys, k);
-          return CallbackShortcuts(
-            bindings: {
-              const SingleActivator(LogicalKeyboardKey.arrowLeft): () => _step(list, -1),
-              const SingleActivator(LogicalKeyboardKey.arrowRight): () => _step(list, 1),
-              const SingleActivator(LogicalKeyboardKey.arrowLeft, shift: true): () => _step(list, -5),
-              const SingleActivator(LogicalKeyboardKey.arrowRight, shift: true): () => _step(list, 5),
-              const SingleActivator(LogicalKeyboardKey.arrowUp): () => _back(-1),
-              const SingleActivator(LogicalKeyboardKey.arrowDown): () => _back(1),
-            },
-            child: Focus(
-              focusNode: _keys,
-              child: Listener(
-                behavior: HitTestBehavior.translucent,
-                onPointerDown: (_) => _keys.requestFocus(),   // (the keys go to the map once it is pressed, not to the stage's nudge)
-                child: Column(
-                  children: [
-                    Expanded(child: LayoutBuilder(builder: (context, room) => _map(at, tiles, Size(room.maxWidth, room.maxHeight)))),
-                    if (list.length > 1) _alike(list, tiles, sw, gap),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      );
-    },
-  );
-
-  Widget _map(Map<String, Offset> at, Map<String, Widget> tiles, Size room) {
-    final n = at.length, a = widget.aspect;
-    final cols = math.max(1, math.sqrt(n * room.width / (math.max(1.0, room.height) * a)).ceil()), rows = (n / cols).ceil();
-    final cw = math.min(room.width / cols, room.height * a / rows), ch = cw / a, left = (room.width - cols * cw) / 2;
-    final cells = widget.places.grid(cols, rows), w = Shape.z(widget.cell), h = w / a;
-    Rect? place(String id) => switch ((cells, at[id])) {
-      (final g?, _) when g.isNotEmpty => g[id] == null ? null : Rect.fromLTWH(left + g[id]! % cols * cw + 1, g[id]! ~/ cols * ch + 1, cw - 2, ch - 2),
-      (_, final p?) => Rect.fromLTWH(p.dx * (room.width - w), p.dy * (room.height - h), w, h),   // (before the grid comes, or too many for one: where they lie)
-      _ => null,
-    };
-    final where = <String, List<Offset>>{};
-    for (final id in tiles.keys) {
-      if ((widget.kinds[id], place(id)) case (final k?, final r?) when k.isNotEmpty) (where[k] ??= []).add(r.center);
-    }
-    Color? hue(String id) => widget.kinds[id] == null ? null : widget.hue?.call(widget.kinds[id]!);
-    return ClipRect(
-      child: InteractiveViewer(
-        key: ValueKey('ws-map-$_name'),
-        maxScale: 12,
-        boundaryMargin: EdgeInsets.all(cw),
-        child: SizedBox.fromSize(
-          size: room,
-          child: Stack(
-            children: [
-              for (final MapEntry(key: id, value: tile) in tiles.entries)
-                if (place(id) case final r?)
-                  Positioned.fromRect(
-                    key: ValueKey('ws-map-$_name-$id'),
-                    rect: r,
-                    child: Listener(   // (pressed on the map: the list made from it, as XO's Space)
-                      onPointerDown: (_) => _from = id,
-                      child: hue(id) == null ? tile : DecoratedBox(position: DecorationPosition.foreground, decoration: BoxDecoration(border: Border.all(color: hue(id)!, width: Shape.s(2))), child: tile),
-                    ),
-                  ),
-              for (final MapEntry(key: k, value: at) in where.entries)
-                if (widget.hue?.call(k) case final c?)   // (the names the colours' key: a kind with none goes unnamed)
-                  Positioned(
-                    key: ValueKey('ws-map-$_name-kind-$k'),
-                    left: at.map((p) => p.dx).reduce((a, b) => a + b) / at.length,
-                    top: at.map((p) => p.dy).reduce((a, b) => a + b) / at.length,
-                    child: IgnorePointer(
-                      child: FractionalTranslation(
-                        translation: const Offset(-0.5, -0.5),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: Shape.s(6), vertical: Shape.s(3)),
-                          color: WsT.card.withValues(alpha: 0.9),
-                          child: Text(k, style: T.title(c)),   // (read at a glance over the tiles, as a map's place names)
-                        ),
-                      ),
-                    ),
-                  ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// XO's Similarity List under the map: its arrows, the alike in a row, and its Refresh (the picked one first:
-  /// Splice's Similar Sounds run again on one of its matches).
-  Widget _alike(List<String> list, Map<String, Widget> tiles, double sw, double gap) {
-    final i = list.indexOf(widget.picked ?? '');
-    Widget arrow(String key, int by) => Transform.flip(flipX: by < 0, child: DockIconButton(DockG.chevron, key: ValueKey('ws-map-$_name-$key'), onTap: () => _step(list, by)));
-    return Container(
-      key: ValueKey('ws-alike-$_name'),
-      padding: EdgeInsets.symmetric(vertical: gap),
-      color: WsT.card,
-      child: Row(
-        children: [
-          arrow('prev', -1),
-          Expanded(
-            child: Row(
-              children: [
-                for (final id in list)
-                  Padding(
-                    padding: EdgeInsets.only(right: gap),
-                    child: SizedBox(key: ValueKey('ws-alike-$_name-$id'), width: sw, height: sw / widget.aspect, child: tiles[id]),
-                  ),
-              ],
-            ),
-          ),
-          arrow('next', 1),
-          DockIconButton(DockG.reload, key: ValueKey('ws-map-$_name-refresh'), on: i > 0, onTap: () => setState(() => _from = widget.picked)),
-        ],
-      ),
-    );
-  }
 }
 
 /// Each shelf's map, while the window is open (not the document's).

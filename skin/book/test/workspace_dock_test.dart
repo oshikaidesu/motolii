@@ -2,6 +2,7 @@
 // browser, its tree beside the contents when wide and above them when narrow, its search over where it is.
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/gestures.dart' show PointerDeviceKind, kDoubleTapTimeout, kPrimaryButton, kSecondaryButton;
@@ -15,7 +16,7 @@ import 'package:lab_book/workspace/create_preview.dart';
 import 'package:lab_book/workspace/desk_kit.dart' show DeskChip;
 import 'package:lab_book/workspace/dock_parts.dart' show DockIconButton, DockMem, DockSearch, dockStarsAt;
 import 'package:lab_book/workspace/dock_effects.dart' show EffectTile;
-import 'package:lab_book/workspace/dock_map.dart' show DockMap, DockMapPlaces, dockTogether;
+import 'package:lab_book/workspace/dock_map.dart' show DockMap, DockMapPlaces, dockSpread, dockSpreadRadius, dockTogether;
 import 'package:lab_book/workspace/dock_tags.dart' show DockTags;
 import 'package:lab_book/workspace/effect_decks.dart';
 import 'package:lab_book/workspace/effect_tiles.dart';
@@ -677,17 +678,37 @@ void main() {
     expect(dockTogether([[null, look[1]], [kind[0], kind[1]]], const [1, 2]).first, isNull, reason: 'no look: off the map');
   });
 
-  testWidgets('a map names each kind over its tiles and edges each tile in its kind\'s colour (XO\'s coloured dots, DataMapPlot\'s names)', (t) async {
-    final places = DockMapPlaces('Test')..places.value = {'a': const Offset(0.1, 0.1), 'b': const Offset(0.15, 0.1), 'c': const Offset(0.1, 0.15), 'd': const Offset(0.9, 0.9)};
-    const red = Color(0xFFFF3636);
+  test('heaps on a map pushed apart till none is within a tile of another, each heap kept together and apart (FontMap\'s overlap removal, d3\'s forceCollide)', () {
+    final at = [for (var i = 0; i < 60; i++) Offset(i < 30 ? .2 : .8, .5 + i % 30 * .001)];   // (two heaps, each all but one point)
+    final s = dockSpread(at);
+    var near = double.infinity;
+    for (final (i, p) in s.indexed) {
+      for (final q in s.skip(i + 1)) {
+        near = math.min(near, (p - q).distance);
+      }
+    }
+    final (a, b) = (s.take(30).reduce((p, q) => p + q) / 30, s.skip(30).reduce((p, q) => p + q) / 30);
+    expect([near, [for (final (i, p) in s.indexed) ((p - a).distance < (p - b).distance) == (i < 30)].every((n) => n)], [greaterThan(2 * dockSpreadRadius * .95), isTrue], reason: 'none on another, each nearer its own heap');
+  });
+
+  testWidgets('a map shows each tile where it lies, inside its circle so none covers another, in no colour of its own, the whole fitted to the room at one scale (FontMap\'s map); the one under the pointer is told, its pictures moving and its name', (t) async {
+    final places = DockMapPlaces('Test')..places.value = {'a': const Offset(.1, .1), 'b': const Offset(.1 + 2 * dockSpreadRadius, .1), 'c': const Offset(.5, .3), 'd': const Offset(.9, .5)};
     await t.pumpWidget(Directionality(
       textDirection: TextDirection.ltr,
-      child: SizedBox(width: 400, height: 300, child: DockMap(places, [for (final id in ['a', 'b', 'c', 'd']) (id, const SizedBox.expand())], kinds: const {'a': 'Blur', 'b': 'Blur', 'c': 'Blur', 'd': 'Glitch'}, hue: (k) => k == 'Blur' ? red : null)),
+      child: Center(
+        child: SizedBox(
+          width: 400,
+          height: 300,
+          child: DockMap(places, [for (final id in ['a', 'b', 'c', 'd']) (id, const SizedBox.expand())], peek: (id) => Text('moving $id'), names: const {'a': 'Box Blur'}),
+        ),
+      ),
     ));
-    expect(find.text('Blur'), findsOneWidget, reason: 'coloured: named, once over its three');
-    expect(find.text('Glitch'), findsNothing, reason: 'no colour: no name');
-    final edged = find.descendant(of: find.byKey(const ValueKey('ws-map-Test-a')), matching: find.byType(DecoratedBox));
-    expect(((t.widget<DecoratedBox>(edged.first).decoration as BoxDecoration).border! as Border).top.color, red);
-    expect(find.descendant(of: find.byKey(const ValueKey('ws-map-Test-d')), matching: find.byType(DecoratedBox)), findsNothing, reason: 'a kind with no colour: no edge');
+    final at = {for (final id in ['a', 'b', 'c', 'd']) id: t.getRect(find.byKey(ValueKey('ws-map-Test-$id')))};
+    expect([at['a']!.overlaps(at['b']!), (at['d']!.center.dx - at['a']!.center.dx) / .8 * (.8 + 2 * dockSpreadRadius), find.descendant(of: find.byKey(const ValueKey('ws-map-Test')), matching: find.byType(DecoratedBox))], [isFalse, closeTo(400 * .92, .01), findsNothing], reason: 'two a tile apart side by side, the whole framed at 0.92 of the room (FontMap\'s start), no edges');
+    final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: at['a']!.center);
+    await t.pump();
+    expect([find.text('Box Blur'), find.text('moving a')], [findsOneWidget, findsOneWidget], reason: 'the one under the pointer: its pictures moving and its name, by it');
+    await mouse.removePointer();
   });
 }
