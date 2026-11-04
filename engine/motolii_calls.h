@@ -367,6 +367,20 @@ const char* motolii_media_info(const char* file) {
     out.clear();
     gst_init(nullptr, nullptr);
     GstDiscoverer* looks = gst_discoverer_new(20 * GST_SECOND, nullptr);   // (gst-discoverer-1.0's own is 10; a busy CI Mac passed 5, here on an isolate of its own)
+    // A picture is read by a decoder of software (jpegdec, pngdec): VideoToolbox's vtdec_hw is ranked above jpegdec, and
+    // to tell a JPEG's size it opened a GL context and asked for the hardware scaler, which a CI Mac's VM has not
+    // ("IOServiceMatchingfailed for: AppleM2ScalerParavirtDriver", where the Media test has waited since 8bc43caa6). A
+    // film keeps VideoToolbox: there is no software HEVC here. uridecodebin's autoplug-select and GStreamer 1.18's
+    // HARDWARE factory type; the discoverer's uridecodebin is its source's parent at source-setup.
+    if (looks) g_signal_connect(looks, "source-setup", G_CALLBACK(+[](GstDiscoverer*, GstElement* source, gpointer) {
+        if (GstObject* bin = gst_object_get_parent(GST_OBJECT(source))) {
+            g_signal_connect(bin, "autoplug-select", G_CALLBACK(+[](GstElement*, GstPad*, GstCaps* caps, GstElementFactory* f, gpointer) -> gint {
+                const bool still = gst_caps_get_size(caps) > 0 && g_str_has_prefix(gst_structure_get_name(gst_caps_get_structure(caps, 0)), "image/");
+                return still && gst_element_factory_list_is_type(f, GST_ELEMENT_FACTORY_TYPE_HARDWARE) ? 2 : 0;   // (GST_AUTOPLUG_SELECT_SKIP, TRY: decodebin's enum)
+            }), nullptr);
+            gst_object_unref(bin);
+        }
+    }), nullptr);
     gchar* uri = gst_filename_to_uri(file, nullptr);
     GstDiscovererInfo* info = looks && uri ? gst_discoverer_discover_uri(looks, uri, nullptr) : nullptr;
     if (info && gst_discoverer_info_get_result(info) != GST_DISCOVERER_OK) g_object_unref(info), info = nullptr;   // (not there, or not media: nothing said)
