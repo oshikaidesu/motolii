@@ -300,7 +300,8 @@ class _EffectsShelfState extends State<EffectsShelf> {
 }
 
 /// One tile, whatever draws it: what it does to a sample (the picture the inside says, drawn by effect_tiles.dart and
-/// moving while the hand is on it, as Alight Motion's tiles move; or made by engine/fx_tiles.sh; without one, a thing's
+/// moving, in the grid always (11/4, the user: "keep the effect window moving"), on the map while the hand is on it, as
+/// Alight Motion's tiles move; or made by engine/fx_tiles.sh; without one, a thing's
 /// effect its small drawing, else a plain tile), its name, ON (and its place among those on the stage) when it is on,
 /// NO CHANGE when it is seen to change nothing on the sample, the star for a thing's effect.
 class EffectTile extends StatelessWidget {
@@ -333,7 +334,7 @@ class EffectTile extends StatelessWidget {
             children: [
               ColoredBox(color: WsT.card),
               if (file case final f? when f.isNotEmpty)
-                TileMoving(f, playing: h)
+                TileMoving(f, playing: h || !small)   // (in the grid always: only those in sight are built, GridView.builder's; on the map the hand's alone, 1,255 of 16 pictures about 3 GB)
               else if (look != null)
                 FittedBox(child: CustomPaint(size: const Size(18, 16), painter: look)),
               if (on case final o? when !small) Positioned(left: 3, top: 3, child: DockTag(o, hue: WsT.accent, edge: true)),
