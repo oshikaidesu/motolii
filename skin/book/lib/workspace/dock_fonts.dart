@@ -8,21 +8,23 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter/widgets.dart';
 
-import '../motolii.dart' show Motolii, MotoliiQuestions;
+import '../motolii.dart' show Motolii, MotoliiQuestions, motoliiDir;
 import '../tokens.dart';
 import 'desk_kit.dart' show DeskChip;
 import 'dock_files.dart' show dockRead;
 import 'dock_map.dart';
 import 'dock_parts.dart';
 import 'dock_tags.dart';
+import 'effect_tiles.dart' show EffectTiles;
 import 'ws.dart';
 
 // ---------------------------------------------------------------- fonts
 
 class _Font {
-  const _Font(this.family, {this.path});
+  const _Font(this.family, {this.path, this.script, this.sample});
   final String family;
   final String? path; // (the font's file)
+  final String? script, sample; // (a font of other letters than Latin: which, and its own words in them (samples.json))
 }
 
 
@@ -41,21 +43,37 @@ List<_Font> _diskFonts(Ws ws) {
 /// How many fonts the shelf offers, once they are read (joined).
 int? get fontsOffered => _disk?.length;
 
-/// The reading itself: once, on the program's own clock (a test may wait for it). Only the fonts the inside sets the
-/// shelf's own line in are offered (a font of other letters, or one ThorVG cannot read, is not).
+/// How many font files are here that the shelf does not offer: no language's letters in them the inside sets (symbols,
+/// maths, emoji), or ThorVG reads them not (joined).
+int fontsUnoffered = 0;
+
+/// The reading itself: once, on the program's own clock (a test may wait for it). A font the inside sets the shelf's
+/// own line in is offered with it; one of other letters, with words of its own script, as fonts.google.com shows one
+/// (samples.json, from Google Fonts' gflanguages: the user, 11/5, no tofu, and a reason when it shows). The library's
+/// fonts and the maker's own are offered as well (doc_folders, the fallback's).
 Future<void> fontsRead(Ws ws) => _reading ??= Zone.root.run<Future<void>>(() async {
   final files = <String>[];
-  for (final dir in ['/System/Library/Fonts', '/System/Library/Fonts/Supplemental', '/Library/Fonts', '${Platform.environment['HOME']}/Library/Fonts', ?ws.documentFolder]) {
+  for (final dir in ['/System/Library/Fonts', '/System/Library/Fonts/Supplemental', '/Library/Fonts', '${Platform.environment['HOME']}/Library/Fonts', '$motoliiDir/fonts', '${EffectTiles.own}/fonts', ?ws.documentFolder]) {
     try {
       for (final e in await Directory(dir).list().toList()) {
         if (e is File && _fontFile.hasMatch(e.path)) files.add(e.path);
       }
     } on FileSystemException catch (_) {} // (a folder that is not there, or may not be read: it has no fonts to offer)
   }
-  final sets = await ws.inside!.setting(files, _sample);
+  var scripts = const <(String, String)>[];
+  try {
+    scripts = [
+      for (final s in jsonDecode(File('$motoliiDir/fonts/samples.json').readAsStringSync()) as List)
+        for (final w in [s['sample'], s['letters']]) if (w is String && w.isNotEmpty) ('${s['script']}', w),   // (its words; else its alphabet's first letters, for one without their marks)
+    ];
+  } catch (_) {}   // (none there: only the fonts with Latin letters)
+  final first = await ws.inside!.settingFirst(files, [_sample, for (final (_, w) in scripts) w]);
   _disk = [
-    for (final f in sets) _Font(f.split('/').last.substring(0, f.split('/').last.length - 4), path: f),
+    for (final (i, f) in files.indexed)
+      if (first[i] >= 0) _Font(f.split('/').last.substring(0, f.split('/').last.length - 4), path: f, script: first[i] == 0 ? null : scripts[first[i] - 1].$1, sample: first[i] == 0 ? null : scripts[first[i] - 1].$2),
   ]..sort((a, b) => a.family.toLowerCase().compareTo(b.family.toLowerCase()));
+  fontsUnoffered = first.where((k) => k < 0).length;
+  _ownWords = {for (final f in _disk!) if ((f.path, f.sample) case (final p?, final w?)) p: w};
   dockRead.value++;
 });
 
@@ -163,6 +181,9 @@ class _Roles extends StatelessWidget {
 }
 
 const _sample = 'Motion for more relations';
+/// What a font of other letters says beside its name: set in it, Latin words are drawn in the fallback (type_fallback),
+/// and the inspector says so.
+const _noLatin = 'NO LATIN';
 
 class FontsShelf extends StatelessWidget {
   const FontsShelf(this.c, {super.key});
@@ -248,18 +269,25 @@ class FontsShelf extends StatelessWidget {
                         }
                       });
                     }
+                    final notHere = c.chip == 'All' && c.query.trim().isEmpty && fontsUnoffered > 0
+                        ? Padding(   // (the ones not offered, and why: the user, 11/5, a reason rather than a font gone without one)
+                            key: const ValueKey('ws-fonts-unoffered'),
+                            padding: EdgeInsets.fromLTRB(WsT.inset, Shape.s(8), WsT.inset, Shape.s(8)),
+                            child: Text('$fontsUnoffered fonts here are not offered: they have no letters of any language (symbols, maths, emoji), or ThorVG cannot read them', style: T.label(Grey.g56)),
+                          )
+                        : null;
                     if (box.maxWidth < 440) {
                       return ListView(
                         padding: EdgeInsets.zero,
-                        children: [for (final f in list) _FontRow(f, c, usedBy: usedBy(f))],
+                        children: [for (final f in list) _FontRow(f, c, usedBy: usedBy(f)), ?notHere],
                       );
                     }
                     final cols = wsCols(box.maxWidth, 200), w = wsCell(box.maxWidth, cols);
                     final rows = (list.length / cols).ceil();
                     return ListView.builder(   // (a row at a time: only what is shown has its file read, _own)
                       padding: EdgeInsets.zero,
-                      itemCount: rows,
-                      itemBuilder: (context, i) => Padding(
+                      itemCount: rows + (notHere == null ? 0 : 1),
+                      itemBuilder: (context, i) => i == rows ? notHere! : Padding(
                         padding: EdgeInsets.only(bottom: i == rows - 1 ? 0 : WsT.gutter),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -349,14 +377,15 @@ class _FontRow extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(_sample, maxLines: 1, style: _face(f, 17, dockInk(sel, Grey.g95)))),
+                  FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(f.sample ?? _sample, maxLines: 1, style: _face(f, 17, dockInk(sel, Grey.g95)))),
                   SizedBox(height: Shape.s(5)),
                   Row(
                     children: [
                       Flexible(
-                        child: Text('${f.family}  ·  ${DockTags.of('Fonts', f.family, f.path == null ? const <String>{} : (c.ws.inside?.fontTags(f.path!) ?? const <String>{})).take(2).join(' ')}', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(dockInk(sel, Grey.g76))),
+                        child: Text('${f.family}  ·  ${f.script ?? DockTags.of('Fonts', f.family, f.path == null ? const <String>{} : (c.ws.inside?.fontTags(f.path!) ?? const <String>{})).take(2).join(' ')}', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(dockInk(sel, Grey.g76))),
                       ),
-                      if (usedBy case final u?) ...[SizedBox(width: Shape.s(6)), DockTag(u, hue: sel ? null : WsT.toneText)],
+                      if (f.script != null) ...[SizedBox(width: Shape.s(6)), const DockTag(_noLatin)],
+                if (usedBy case final u?) ...[SizedBox(width: Shape.s(6)), DockTag(u, hue: sel ? null : WsT.toneText)],
                     ],
                   ),
                 ],
@@ -376,12 +405,33 @@ const _dot = (96, 32);
 final _drawn = <String, Uint8List?>{}, _seen = <String, ui.Image>{}, _making = <String>{};
 Future<void>? _drawing;
 Future<void> _drawAll(Motolii m, List<String> files) => _drawing ??= Zone.root.run<Future<void>>(() async {   // (once, as fontsRead)
-  final drawn = await m.typePictures(files, 'Motion', _dot.$1, _dot.$2);
-  for (final (i, f) in files.indexed) {
-    _drawn[f] = drawn[i];
+  final byWord = <String, List<String>>{};
+  for (final f in files) {
+    (byWord[_wordOf(f, 0)] ??= []).add(f);
+  }
+  for (final MapEntry(key: w, value: some) in byWord.entries) {
+    final drawn = await m.typePictures(some, w, _dot.$1, _dot.$2);
+    for (final (i, f) in some.indexed) {
+      _drawn[f] = drawn[i];
+    }
   }
   dockRead.value++;
 });
+/// A font of other letters' own words (fontsRead), by its file.
+var _ownWords = const <String, String>{};
+/// The words a font is told by on the map: its dot's (0), and FontMap's two lines for FontCLIP (1, 2). A font of other
+/// letters, by its own: its first word, and its words' halves (letters' halves, a script with no spaces between).
+String _wordOf(String path, int line) {
+  final own = _ownWords[path];
+  if (own == null) return const ['Motion', 'Hamburge', 'fonstiv'][line];
+  final words = own.split(' '), letters = own.runes.toList();
+  final some = words.length > 1 ? words : [for (final r in letters) String.fromCharCode(r)], half = (some.length / 2).ceil(), by = words.length > 1 ? ' ' : '';
+  return switch (line) {
+    0 => words.length > 1 ? words.first : some.take(6).join(),
+    1 => some.take(half).join(by),
+    _ => some.skip(half).join(by),
+  };
+}
 /// Each font as FontCLIP ([model]) sees its specimen drawn as FontMap draws it for FontCLIP (tfrere/fontmap,
 /// pipeline/render/2-generate-svgs.mjs, generateEmbeddingSVG): "Hamburge" over "fonstiv" in a 224 square, 12 round it,
 /// each line in its half no wider than 200 nor taller than 85, set at 75 and never larger, its middle at its line's;
@@ -397,14 +447,25 @@ String _kindOf(Motolii m, String path) {
 Future<List<Float32List?>> _byFontClip(Motolii m, String model, List<String> files) async {
   String key(String f) {   // (kept by the model, the font and when it was written, as the effects' pictures: only a new font is drawn and told)
     try {
-      return '$model\n$f\n${File(f).lastModifiedSync().microsecondsSinceEpoch}\nHamburge fonstiv';
+      return '$model\n$f\n${File(f).lastModifiedSync().microsecondsSinceEpoch}\n${_wordOf(f, 1)} ${_wordOf(f, 2)}';
     } catch (_) {
       return '';
     }
   }
   final out = [for (final f in files) dockLookKept(key(f))], missing = [for (final (k, f) in files.indexed) if (out[k] == null && key(f).isNotEmpty) f];
   if (missing.isEmpty) return out;
-  final lines = [for (final w in const ['Hamburge', 'fonstiv']) await m.typePictures(missing, w, 202, 87, most: 75)];
+  final lines = [for (final _ in const [1, 2]) List<Uint8List?>.filled(missing.length, null)], byWords = <(String, String), List<int>>{};
+  for (final (k, f) in missing.indexed) {
+    (byWords[(_wordOf(f, 1), _wordOf(f, 2))] ??= []).add(k);
+  }
+  for (final MapEntry(key: (a, b), value: ks) in byWords.entries) {   // (a font of other letters by its own two lines)
+    for (final (j, w) in [a, b].indexed) {
+      final drawn = await m.typePictures([for (final k in ks) missing[k]], w, 202, 87, most: 75);
+      for (final (i, k) in ks.indexed) {
+        lines[j][k] = drawn[i];
+      }
+    }
+  }
   for (var i = 0; i < missing.length; i += 32) {
     final some = [for (var k = i; k < missing.length && k < i + 32; k++) k], drawn = [for (final k in some) if (lines[0][k] != null && lines[1][k] != null) k];
     final told = drawn.isEmpty ? null : await m.likeness(model, [for (final k in drawn) _specimen(lines[0][k]!, lines[1][k]!)]);
@@ -511,13 +572,14 @@ class _FontCard extends StatelessWidget {
               ],
             ),
             const Spacer(),
-            Text('Motion', maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: _face(f, 28, dockInk(sel, Grey.g95))),
+            Text(f.sample ?? 'Motion', maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: _face(f, 28, dockInk(sel, Grey.g95))),
             const Spacer(),
             Row(
               children: [
                 Flexible(
-                  child: Text('${f.family}  ·  ${DockTags.of('Fonts', f.family, f.path == null ? const <String>{} : (c.ws.inside?.fontTags(f.path!) ?? const <String>{})).take(2).join(' ')}', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(dockInk(sel, Grey.g76))),
+                  child: Text('${f.family}  ·  ${f.script ?? DockTags.of('Fonts', f.family, f.path == null ? const <String>{} : (c.ws.inside?.fontTags(f.path!) ?? const <String>{})).take(2).join(' ')}', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(dockInk(sel, Grey.g76))),
                 ),
+                if (f.script != null) ...[SizedBox(width: Shape.s(6)), const DockTag(_noLatin)],
                 if (usedBy case final u?) ...[SizedBox(width: Shape.s(6)), DockTag(u, hue: sel ? null : WsT.toneText)],
               ],
             ),

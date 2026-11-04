@@ -72,6 +72,7 @@ void _tests2() {
       ..select('$text')
       ..shelf = 'Fonts';
     await t.pumpAndSettle();
+    final list = find.descendant(of: find.byType(FontsShelf), matching: find.byType(Scrollable)).last.evaluate().single;   // (the list's own: once a font is picked, the footer under it has another)
     final georgia = find.textContaining('Andale Mono');   // (its row says its tags beside: 'Andale Mono  ·  mono')
     await t.scrollUntilVisible(georgia, 300, scrollable: find.descendant(of: find.byType(FontsShelf), matching: find.byType(Scrollable)).last, maxScrolls: 200);
     expect(georgia, findsWidgets, reason: 'a font file of the system is on the shelf');
@@ -83,6 +84,17 @@ void _tests2() {
     expect(chips[chips.indexOf('Used') + 1], '1', reason: 'the shelf counts the one in use (its Used tag)');
     expect([chips[chips.indexOf('Recent') + 1], recent.readAsStringSync()], ['1', '["Andale Mono"]'], reason: 'and keeps it among the fonts set lately, for the next time');
     expect([m.fontTags('/System/Library/Fonts/Supplemental/AppleGothic.ttf'), m.fontTags('/System/Library/Fonts/Supplemental/Georgia.ttf')], [contains('korean'), containsAll(['serif', 'russian', 'greek'])], reason: 'its kind, and the letters beyond Latin it has, as CoreText says them');
+    final pos = ((list as StatefulElement).state as ScrollableState).position;
+    Future<void> down(Finder f) async {   // (the list moved itself: a drag on it is a row's press the double press waits on)
+      for (var y = pos.pixels; f.evaluate().isEmpty && y < pos.maxScrollExtent + 300; y += 300) {
+        pos.jumpTo(math.min(y, pos.maxScrollExtent));
+        await t.pump();
+      }
+    }
+    await down(find.text('NotoSansKannada  ·  Kannada'));
+    expect([find.text('ಇದಲ್ಲದೆ ಒಬ್ಬ ವ್ಯಕ್ತಿಗೆ').evaluate().isNotEmpty, find.text('NO LATIN').evaluate().isNotEmpty], [isTrue, isTrue], reason: 'a font of other letters only is offered in words of its own (gflanguages\' Kannada), saying it has no Latin, not dropped nor shown as tofu (the user, 11/5)');
+    await down(find.byKey(const ValueKey('ws-fonts-unoffered')));
+    expect([fontsUnoffered, find.textContaining('fonts here are not offered').evaluate().length], [inInclusiveRange(1, 80), 1], reason: 'the ones it cannot offer (symbols, maths, emoji; or unread) are counted and said why, at the end');
     expect(m.undo(), isTrue);
     expect(m.word(text, 'file'), _font);
     expect(t.takeException(), isNull);
@@ -124,7 +136,7 @@ void _tests2() {
     });
     await t.pumpAndSettle();
     expect(find.byKey(const ValueKey('ws-map-Fonts')), findsOneWidget, reason: 'the shelf is a map now');
-    expect(map.places.value.length, greaterThan(fontsOffered! * .9), reason: 'the fonts are on it: those with the word\'s letters (300 of 305 on this Mac, five Noto fonts of other letters only having none to draw)');
+    expect(map.places.value.length, greaterThan(fontsOffered! * .9), reason: 'the fonts are on it: those of other letters by words of their own');
     if (dockModel('fontclip_b32') != null) {   // (made on this machine by engine/look_models.py: the map then by FontCLIP)
       const s = '/System/Library/Fonts/Supplemental/';
       expect(map.alike('${s}Zapfino.ttf', map.places.value.keys, 5), containsAll(['${s}SnellRoundhand.ttc', '${s}Savoye LET.ttc']), reason: 'a script\'s nearest are scripts, as FontCLIP sees them (by the drawn letters alone, STIX\'s maths fonts were)');

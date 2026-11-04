@@ -2,6 +2,8 @@
 #include <fstream>
 #include <list>
 #include <mutex>
+#include <stdexcept>
+#define STBTT_assert(x) ((x) ? (void)0 : throw std::out_of_range("stb_truetype"))   // (a font past what it says of itself, a cmap whose last segment is not 0xFFFF (OpenType cmap format 4): told, not the program stopped)
 #define STBTT_STATIC   // (its own here: no name of it seen outside)
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "third_party/filament_src/third_party/stb/stb_truetype.h"   // (type_lacks: which letters a font has)
@@ -286,8 +288,19 @@ static std::string type_lacks(const std::string& fontFile, const std::string& wo
         }
     }
     stbtt_fontinfo info;
-    const int at = stbtt_GetFontOffsetForIndex(bytes->data(), 0);
-    if (at < 0 || !stbtt_InitFont(&info, bytes->data(), at)) return "";
+    try {
+        const int at = stbtt_GetFontOffsetForIndex(bytes->data(), 0);
+        if (at < 0 || !stbtt_InitFont(&info, bytes->data(), at)) return "";
+    } catch (const std::out_of_range&) {
+        return "";
+    }
+    const auto has = [&](uint32_t u) {   // (a letter past every segment of a cmap without its 0xFFFF end has no glyph: the spec's search finds none)
+        try {
+            return stbtt_FindGlyphIndex(&info, (int)u) != 0;
+        } catch (const std::out_of_range&) {
+            return false;
+        }
+    };
     std::string lacks;
     for (size_t i = 0; i < words.size();) {   // (UTF-8, a letter at a time)
         const unsigned char c = (unsigned char)words[i];
@@ -297,7 +310,7 @@ static std::string type_lacks(const std::string& fontFile, const std::string& wo
         const std::string letter = words.substr(i, n);
         i += n;
         if (u <= 0x20 || (u >= 0x7f && u <= 0xa0) || (u >= 0x200b && u <= 0x200f) || u == 0xfeff || (u >= 0xfe00 && u <= 0xfe0f)) continue;
-        if (!stbtt_FindGlyphIndex(&info, (int)u) && lacks.find(letter) == std::string::npos) lacks += letter;
+        if (!has(u) && lacks.find(letter) == std::string::npos) lacks += letter;
     }
     return lacks;
 }

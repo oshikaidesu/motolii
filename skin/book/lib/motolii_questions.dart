@@ -66,6 +66,22 @@ extension MotoliiQuestions on Motolii {
     });
   }
 
+  /// Of each font file, the first of [words] a text can be set in, by its index; -1 none (on another isolate, as [setting]).
+  Future<List<int>> settingFirst(List<String> fonts, List<String> words) {
+    final lib = libPath;
+    return Isolate.run(() {
+      final ask = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_sets;
+      final said = [for (final w in words) w.toNativeUtf8()], out = <int>[];
+      for (final f in fonts) {
+        final file = f.toNativeUtf8();
+        out.add(said.indexWhere((w) => ask(file, w) != 0));   // (one lacking a letter is told so by its cmap, before ThorVG reads it: type_sets)
+        malloc.free(file);
+      }
+      said.forEach(malloc.free);
+      return out;
+    });
+  }
+
   /// Of these font files, those a text can be [words] in (asked on another isolate: the window does not wait).
   Future<List<String>> setting(List<String> fonts, String words) {
     final lib = libPath;

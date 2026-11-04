@@ -1,0 +1,782 @@
+[
+{
+"script": "Simplified Han",
+"sample": "人人有权享有生命、自由和人身安全",
+"letters": "一丁七万丈三上下"
+},
+{
+"script": "Devanagari",
+"sample": "चूंकि अगर अन्याययुक्त",
+"letters": "ॐअआइईउऊऋ"
+},
+{
+"script": "Arabic",
+"sample": "ولما كان من",
+"letters": "ءأؤإئاآب"
+},
+{
+"script": "Bangla",
+"sample": "যেহেতু মানুষ যাতে",
+"letters": "৺অআইঈউঊঋ"
+},
+{
+"script": "Cyrillic",
+"sample": "принимая во",
+"letters": "абвгдеёж"
+},
+{
+"script": "Japanese",
+"sample": "加盟国は、国際連合と協力して",
+"letters": "々ゝヽゞヾーぁァあアぃィいイ"
+},
+{
+"script": "Telugu",
+"sample": "రాష్ట్రముల మధ్య",
+"letters": "అఆఇఈఉఊఋౠ"
+},
+{
+"script": "Traditional Han",
+"sample": "發布掰個世界人權宣言",
+"letters": ""
+},
+{
+"script": "Tamil",
+"sample": "நாடுகளிடையேயான நட்புறவை",
+"letters": "அஆஇஈஉஊஎஏ"
+},
+{
+"script": "Korean",
+"sample": "인간이 폭정과 억압에",
+"letters": "가각갂갃간갅갆갇"
+},
+{
+"script": "Gujarati",
+"sample": "કેમ કે જો માણસને",
+"letters": "ૐઅઆઇઈઉઊઋ"
+},
+{
+"script": "Thai",
+"sample": "ทุกคนมีสิทธิที่จะได",
+"letters": "ฯๆกขฃคฅฆ"
+},
+{
+"script": "Kannada",
+"sample": "ಇದಲ್ಲದೆ ಒಬ್ಬ ವ್ಯಕ್ತಿಗೆ",
+"letters": "೦೧೨೩೪೫೬೭"
+},
+{
+"script": "Malayalam",
+"sample": "ജാതി, മതം, നിറം, ഭാഷ,",
+"letters": "‌‍ഃഅആഇഈഉഊ"
+},
+{
+"script": "Odia",
+"sample": "ସବୁ ମନୁଷ୍ୟ ଜନ୍ମକାଳରୁ",
+"letters": "ଅଆଇଈଉଊଋଏ"
+},
+{
+"script": "Gurmukhi",
+"sample": "ਅਤੇ ਇਹ ਅਜਿਹੇ ਸੰਸਾਰ",
+"letters": "੦੧੨੩੪੫੬੭"
+},
+{
+"script": "Myanmar",
+"sample": "လူခပ်သိမ်းတို့သည်၊",
+"letters": "ကခဂဃငစဆဇ"
+},
+{
+"script": "Ethiopic",
+"sample": "ከዚህም፡በተቀረ፡አንድ",
+"letters": "ሀሁሂሃሄህሆለ"
+},
+{
+"script": "Sinhala",
+"sample": "දුෂ්ඨ පාලකයන්ට",
+"letters": "අආඇඈඉඊඋඌ"
+},
+{
+"script": "Khmer",
+"sample": "ដោយយល់ឃើញថា ជាការចាំបាច់",
+"letters": "កខគឃងចឆជ"
+},
+{
+"script": "Greek",
+"sample": "Όλοι οι άνθρωποι",
+"letters": "αάβγδεέζ"
+},
+{
+"script": "Hebrew",
+"sample": "גדולה מזו, לא",
+"letters": "אבגדהוזח"
+},
+{
+"script": "Yi",
+"sample": "ꊿꂷꃅꄿꐨꐥ，ꌅꅍꀂꏽꐯꒈꃅꐥꌐ",
+"letters": "ꀀꀁꀂꀃꀄꀅꀆꀇ"
+},
+{
+"script": "Tifinagh",
+"sample": "ⴷ ⵍⵍⵉⵖ ⵉⴳⴰ",
+"letters": "ⴰⴱⴳⴷⴹⴻⴼⴽ"
+},
+{
+"script": "Ol Chiki",
+"sample": "ᱡᱚᱛᱚ ᱞᱮᱠᱟᱱᱚ ᱢᱳᱱᱚ ᱟᱨᱚ",
+"letters": "ᱚᱛᱜᱝᱞᱟᱠᱡ"
+},
+{
+"script": "Armenian",
+"sample": "Քանզի անհրաժեշտ",
+"letters": "աբգդեզէը"
+},
+{
+"script": "Lao",
+"sample": "ກອງປະຊຸມໃຫຍ",
+"letters": "ໆກຂຄງຈສຊ"
+},
+{
+"script": "Mongolian",
+"sample": "ᠬᠦᠮᠦᠨ ᠪᠦᠷ ᠲᠥᠷᠥᠵᠦ",
+"letters": ""
+},
+{
+"script": "Georgian",
+"sample": "ვინაიდან, წევრმა",
+"letters": "აბგდევზთ"
+},
+{
+"script": "Tibetan",
+"sample": "རྒྱལ་ཁབ་ཁག་གི་དབར",
+"letters": "ཀཁགངཅཆཇཉ"
+},
+{
+"script": "Dogra",
+"sample": "𑠖𑠵𑠌𑠤𑠮",
+"letters": ""
+},
+{
+"script": "Fraser",
+"sample": "ꓞꓳ ꓘꓹ ꓠꓯꓹꓼ",
+"letters": ""
+},
+{
+"script": "N’Ko",
+"sample": "ߞߣߐ߫ ߛߓߍߟߌ߫ ߞߊߡߊ߬",
+"letters": ""
+},
+{
+"script": "Kirat Rai",
+"sample": "𖵌𖵣𖵝𖵣𖵄 𖵛𖵖𖵣𖵉𖵤 𖵠𖵣𖵟𖵣𖵞𖵩𖵈",
+"letters": ""
+},
+{
+"script": "Bassa Vah",
+"sample": "𖫞𖫫𖫰 𖫐𖫭𖫱𖫐𖫗𖫭𖫰𖫞𖫭𖫰",
+"letters": ""
+},
+{
+"script": "Saurashtra",
+"sample": "ꢦꢶꢪ꣄ꢫꢳꢸ",
+"letters": ""
+},
+{
+"script": "Thaana",
+"sample": "ދެންފަހެ، އަނިޔާވެރިކަމާއި",
+"letters": "އކޅބރނށހ"
+},
+{
+"script": "Beria Erfe",
+"sample": "𖺽𖻂𖻍𖻊 𖺼𖺻́𖻌𖻂𖻂",
+"letters": ""
+},
+{
+"script": "Tai Le",
+"sample": "ᥓᥣᥳ ᥞᥨᥛ ᥑᥤᥴ,",
+"letters": ""
+},
+{
+"script": "New Tai Lue",
+"sample": "ᦝᧂᦑᦸᦰ ᦍᦸᧆᦑᦲᧈᦷᦢᦆᧄ",
+"letters": ""
+},
+{
+"script": "Vai",
+"sample": "ꕪꘋ ꖷ ꕉ ꗪ ꗪꗡꕯ",
+"letters": "ꔀꔁꔂꔃꔄꔅꔆꔇ"
+},
+{
+"script": "Tangsa",
+"sample": "𖪬𖪄𖪠𖪪𖩼 𖪫𖪗",
+"letters": "𖩰𖩱𖩲𖩳𖩴𖩵𖩶𖩷"
+},
+{
+"script": "Lepcha",
+"sample": "ᰂᰦᰮᰛᰧᰶᰕᰩ",
+"letters": ""
+},
+{
+"script": "Wancho",
+"sample": "𞋙𞋞𞋩𞋛𞋔 𞋉𞋞𞋮𞋎𞋀𞋮",
+"letters": ""
+},
+{
+"script": "Sunuwar",
+"sample": "𑯘𑯖𑯄𑯃𑯘𑯃𑯇-𑯐𑯑",
+"letters": "𑯀𑯁𑯂𑯃𑯄𑯅𑯆𑯇"
+},
+{
+"script": "Cherokee",
+"sample": "ᎬᏂᏳᏉ ᎾᎢ ᎤᎵᏍᎨᏛ,",
+"letters": "ᎠᎡᎢᎣᎤᎥᎦᎧ"
+},
+{
+"script": "Unified Canadian Aboriginal Syllabics",
+"sample": "ᐃᒪᐃᒻᒪᑦ ᓲᖃᐃᒻᒪ,",
+"letters": ""
+},
+{
+"script": "Hanunoo",
+"sample": "ᜣᜩᜳᜥ ᜩᜰᜳᜧᜳᜥ ᜵",
+"letters": "ᜠᜡᜢᜣᜤᜥᜦᜧ"
+},
+{
+"script": "Nag Mundari",
+"sample": "𞓛𞓐𞓗𞓤𞓨 𞓙𞓐𞓡𞓐𞓢𞓐 𞓢𞓤 𞓧𞓕𞓨𞓣𞓕𞓔",
+"letters": ""
+},
+{
+"script": "Old Hungarian",
+"sample": "𐲪𐲢𐲙𐲔⁝𐲥𐲬𐲖𐲦𐲤𐲦𐲬𐲖⁝",
+"letters": ""
+},
+{
+"script": "Toto",
+"sample": "𞊞𞊭𞊞𞊭𞊛𞊔𞊨𞊖𞊡",
+"letters": "𞊐𞊑𞊒𞊓𞊔𞊕𞊖𞊗"
+},
+{
+"script": "Adlam",
+"sample": "𞤉 𞤼𞤵𞥅𞤺𞤢𞥄𞤣𞤫 𞤱𞤮𞤲𞤣𞤫",
+"letters": "𞤢𞤣𞤤𞤥𞤦𞤧𞤨𞤩"
+},
+{
+"script": "Nandinagari",
+"sample": "𑦠𑧍𑧠𑧇𑧑𑧞 𑦠𑧅𑧒𑦱𑧜𑧌𑦼𑧑𑧇𑧑𑧞",
+"letters": "𑧟𑦬𑦠𑦡𑦢𑦣𑦤𑦥"
+},
+{
+"script": "Tagalog",
+"sample": "ᜀᜅ᜔ ᜎᜑᜆ᜔ ᜅ᜔ ᜆᜂᜌ᜔",
+"letters": ""
+},
+{
+"script": "Makasar",
+"sample": "𑻦𑻴𑻦𑻮𑻶𑻠𑻷𑻥𑻮𑻭𑻳𑻥𑻦𑻥𑻭𑻳𑻦𑻮𑻶𑻷",
+"letters": ""
+},
+{
+"script": "Buhid",
+"sample": "ᝃᝊᝓᝌᝓᝊᝓᝌ",
+"letters": ""
+},
+{
+"script": "Meetei Mayek",
+"sample": "ꯃꯤꯑꯣꯏꯕ ꯈꯨꯗꯤꯡꯃꯛ",
+"letters": ""
+},
+{
+"script": "Balinese",
+"sample": "ᬅᬲ᭄ᬬᬵᬂ ᬅᬪᬶᬖᭀᬱᬡᬵᬬᬵᬂ",
+"letters": ""
+},
+{
+"script": "Lanna",
+"sample": "ᨾᨶᩩᩔ᩼ᨴ᩠ᨦᩢᩉᩖᩣ᩠ᨿ",
+"letters": "ᨠᨡᩉᨦᨧᨨᨬᨭ"
+},
+{
+"script": "Chorasmian",
+"sample": "𐾽𐾾 𐾿𐾲𐾲 𐾰𐾾𐾾",
+"letters": ""
+},
+{
+"script": "Todhri",
+"sample": "𐗢𐗊 𐗎𐗒𐗢𐗐𐗊 𐗙𐗉𐗝𐗊𐗬𐗒𐗢",
+"letters": ""
+},
+{
+"script": "Old Sogdian",
+"sample": "𐼍𐼏 𐼑𐼂𐼃 𐼀𐼎𐼎",
+"letters": ""
+},
+{
+"script": "Buginese",
+"sample": "ᨔᨗᨊᨗᨊ ᨑᨘᨄ ᨈᨕᨘ ᨑᨗ",
+"letters": "ᨀᨁᨂᨃᨄᨅᨆᨇ"
+},
+{
+"script": "Gothic",
+"sample": "𐌰𐌻𐌻𐌰𐌹 𐌼𐌰𐌽𐌽𐌰",
+"letters": ""
+},
+{
+"script": "Newa",
+"sample": "𑐀𑐳𑑂𑐫𑐵𑑄 𑐀𑐨𑐶𑐑𑑀𑐲𑐞𑐵𑐫𑐵𑑄",
+"letters": ""
+},
+{
+"script": "Runic",
+"sample": "ᚢᚴ᛬​ᛋᛁᛘ᛬​ᛚᛅᛁᚦ᛬​ᛅᛏ",
+"letters": ""
+},
+{
+"script": "Old Uyghur",
+"sample": "𐽰𐽱𐽶𐽾𐽷𐽰𐾁𐽶 𐽰𐽳𐽶𐾀𐽳𐽺𐽳𐽾",
+"letters": ""
+},
+{
+"script": "Carian",
+"sample": "𐊪𐊾𐊠𐊽𐊾𐊲𐊸𐊫𐊷𐋉𐋃𐊷𐊲𐊷𐊲𐊰𐊫𐋇𐊫𐊰𐊪𐊫𐊣",
+"letters": ""
+},
+{
+"script": "Inscriptional Parthian",
+"sample": "𐭌𐭍 𐭎𐭁𐭁 𐭀𐭍𐭍",
+"letters": ""
+},
+{
+"script": "Shavian",
+"sample": "·𐑢𐑺𐑨𐑟 𐑦𐑑 𐑦𐑟",
+"letters": ""
+},
+{
+"script": "Old South Arabian",
+"sample": "𐩣𐩬 𐩪𐩨𐩨 𐩱𐩬𐩬",
+"letters": ""
+},
+{
+"script": "Phoenician",
+"sample": "𐤀𐤍𐤊 𐤟 𐤌𐤔𐤏 𐤟 𐤁𐤍",
+"letters": ""
+},
+{
+"script": "Cypriot",
+"sample": "𐠀𐠜𐠍𐠚 𐠃𐠙𐠪𐠒𐠚𐄀",
+"letters": ""
+},
+{
+"script": "Sogdian",
+"sample": "𐼺𐼻 𐼼𐼱𐼱 𐼰𐼻𐼻",
+"letters": ""
+},
+{
+"script": "Pollard Phonetic",
+"sample": "𖼐𖽪𖾐 𖼞𖽪 𖼷𖽷 𖽐𖼊𖽪𖾏 𖼷𖽷",
+"letters": ""
+},
+{
+"script": "Elbasan",
+"sample": "𐔟 𐔁𐔀 𐔒𐔎𐔇𐔔 𐔏𐔇",
+"letters": ""
+},
+{
+"script": "Modi",
+"sample": "𑘕𑘿𑘧𑘰 𑘀𑘨𑘿𑘞𑘲, 𑘕𑘳𑘩𑘳𑘦",
+"letters": ""
+},
+{
+"script": "Siddham",
+"sample": "𑖀𑖭𑖿𑖧𑖯𑖽 𑖀𑖥𑖰𑖑𑖺𑖬𑖜𑖯𑖧𑖯𑖽",
+"letters": ""
+},
+{
+"script": "Khudawadi",
+"sample": "𑋝𑋗𑋛𑋙𑋠 𑊰𑋑𑋝𑋠𑋑",
+"letters": ""
+},
+{
+"script": "Hanifi Rohingya",
+"sample": "𐴀𐴞𐴕𐴐𐴝𐴦𐴕 𐴁𐴠𐴒𐴧𐴟𐴕",
+"letters": ""
+},
+{
+"script": "S-A Cuneiform",
+"sample": "𒍑𒋼𒉺𒉺𒄴𒄯𒂊𒃷𒊩",
+"letters": ""
+},
+{
+"script": "Linear B",
+"sample": "𐀴𐀪𐀡𐀆𐄀𐁁𐀐𐀄𐄀𐀐𐀩𐀯𐀍𐄀𐀸𐀐",
+"letters": ""
+},
+{
+"script": "Elymaic",
+"sample": "𐿬𐿭 𐿮𐿡𐿡 𐿠𐿭𐿭",
+"letters": ""
+},
+{
+"script": "Tirhuta",
+"sample": "𑒁𑒮𑓂𑒨𑒰𑓀 𑒁𑒦𑒱𑒒𑒼𑒭𑒝𑒰𑒨𑒰𑓀",
+"letters": ""
+},
+{
+"script": "Old North Arabian",
+"sample": "𐪋𐪁𐪁 𐪁𐪉 𐪈𐪌 𐪃𐪚",
+"letters": ""
+},
+{
+"script": "Manichaean",
+"sample": "𐫀𐫁𐫡𐫅𐫡 𐫖𐫍𐫏 𐫀𐫇𐫅",
+"letters": ""
+},
+{
+"script": "Kayah Li",
+"sample": "ꤒꤟꤢꤧ꤬ꤚꤤ꤬ꤒꤟꤢꤧ꤬ꤊꤛꤢ꤭",
+"letters": ""
+},
+{
+"script": "Avestan",
+"sample": "𐬨𐬀𐬌𐬢𐬌𐬌𐬋 𐬑𐬀𐬭𐬛",
+"letters": ""
+},
+{
+"script": "Yezidi",
+"sample": "𐺀𐺁𐺍𐺄𐺆𐺍𐺦𐺍 𐺀𐺍𐺁",
+"letters": ""
+},
+{
+"script": "Tagbanwa",
+"sample": "ᝠᝰᝬᝫ ᝠᝪᝲᝤᝳᝰᝨᝬᝫ",
+"letters": ""
+},
+{
+"script": "Syriac",
+"sample": "ܐܘ ܢܳܫܐ ܟܷܬܠܶܗ",
+"letters": ""
+},
+{
+"script": "Samaritan",
+"sample": "ࠌࠍ ࠎࠁࠁ ࠀࠍࠍ",
+"letters": ""
+},
+{
+"script": "Mro",
+"sample": "𖩏𖩖𖩔𖩆𖩊 𖩗𖩖𖩊",
+"letters": ""
+},
+{
+"script": "Han",
+"sample": "發佈呢個世界人權宣言",
+"letters": ""
+},
+{
+"script": "Egyptian hieroglyphs",
+"sample": "𓈖𓆓 𓊽𓉐𓉐 𓃾𓆓𓆓",
+"letters": ""
+},
+{
+"script": "Zanabazar",
+"sample": "𑨀𑨰𑩇𑨪𑨊𑨸 𑨀𑨡𑨁",
+"letters": ""
+},
+{
+"script": "Dives Akuru",
+"sample": "𑤭𑤱𑤟𑤾𑤜𑤥𑤱𑤞𑤌𑤾𑤫𑤽𑤚𑤥𑤱𑤟𑤽𑤎𑤸𑤘",
+"letters": ""
+},
+{
+"script": "Kharoshthi",
+"sample": "𐨀𐨯𐨿𐨩𐨌𐨎 𐨀𐨧𐨁𐨓𐨆𐨮𐨞𐨌𐨩𐨌𐨎",
+"letters": ""
+},
+{
+"script": "Kaithi",
+"sample": "𑂉𑂍 𑂃𑂠𑂧𑂷 𑂍𑂵 𑂠𑂴",
+"letters": ""
+},
+{
+"script": "Rejang",
+"sample": "ꤰꥈꤳꥎ ꤳꥈꥐ ꤾꥁꥉꥑ ꤸꥎꥑꤴꥉꤰ,",
+"letters": ""
+},
+{
+"script": "Brahmi",
+"sample": "𑀅𑀲𑁆𑀬𑀸𑀁 𑀅𑀪𑀺𑀖𑁄𑀱𑀡𑀸𑀬𑀸𑀁",
+"letters": ""
+},
+{
+"script": "Pahawh Hmong",
+"sample": "𖬑𖬦𖬰 𖬇𖬰𖬧𖬵 𖬁𖬲𖬬 𖬇𖬲𖬤",
+"letters": ""
+},
+{
+"script": "Nüshu",
+"sample": "𛇤𛅰𛈕𛅸𛇃𛆤𛈕 𛇤𛅰𛈕𛅸𛇃𛆤𛈕",
+"letters": ""
+},
+{
+"script": "Palmyrene",
+"sample": "𐡲𐡫𐡬 𐡩𐡥𐡫𐡩𐡯 𐡠𐡥𐡴𐡫𐡩𐡯",
+"letters": ""
+},
+{
+"script": "Tangut",
+"sample": "𗀔𗼘𗁅𗔔𗀄𗀇𗦲𗤶𗊴𗼑𗀂𗧍𗙏𘏫",
+"letters": ""
+},
+{
+"script": "Nabataean",
+"sample": "𐢓𐢔 𐢖𐢃𐢂 𐢁𐢕𐢕",
+"letters": ""
+},
+{
+"script": "Old Italic",
+"sample": "𐌉𐌆𐌉𐌊 𐌚𐌀𐌍𐌂𐌅𐌀𐌌",
+"letters": ""
+},
+{
+"script": "Cham",
+"sample": "ꨀꨧꨳꨩꩌ ꨀꨞꨪꨉꨯꨦꨘꨩꨢꨩꩌ ꨘꨪꩉꨕꨪꩋꨓꨩꩍ",
+"letters": ""
+},
+{
+"script": "Multani",
+"sample": "𑊔𑊂 𑊛𑊂𑊟𑊢𑊦𑊚𑊩 𑊂𑊚𑊦",
+"letters": ""
+},
+{
+"script": "Gunjala Gondi",
+"sample": "𑵠𑵸𑶐𑵺 𑶉𑶊𑵽𑶋 𑵺𑶊 𑵰𑶈𑶋!",
+"letters": ""
+},
+{
+"script": "Braille",
+"sample": "⠋⠥⠗⠞⠓⠑⠗⠍⠕⠗⠑⠂",
+"letters": ""
+},
+{
+"script": "Varang Kshiti",
+"sample": "𑢶𑣁𑣓𑣕𑣈𑣓, 𑢾𑣏𑣂𑣅𑣃 𑢶𑣁𑣓𑣁𑣙",
+"letters": ""
+},
+{
+"script": "Psalter Pahlavi",
+"sample": "𐮋𐮌 𐮍𐮁𐮁 𐮀𐮌𐮌",
+"letters": ""
+},
+{
+"script": "Mandaean",
+"sample": "ࡕࡉࡁࡉࡋ ࡓࡌࡀ ࡀࡐࡀࡓࡀ",
+"letters": ""
+},
+{
+"script": "Tai Viet",
+"sample": "ꪩꪾꪣ ꫛ ꪶꪔꪙ ꪠꪴ",
+"letters": ""
+},
+{
+"script": "Osmanya",
+"sample": "𐒛𐒆𐒖𐒒𐒖𐒔𐒖 𐒊𐒖𐒑𐒑𐒛𐒒𐒂𐒕𐒈",
+"letters": ""
+},
+{
+"script": "Anatolian Hieroglyphs",
+"sample": "𔗷𔗬𔑈𔓯𔐤𔗷𔖶𔔆𔗐𔓱𔑣𔓢𔑈𔓷𔖻𔗔𔑏𔖱𔗷𔖶𔑦𔗬𔓯𔓷",
+"letters": ""
+},
+{
+"script": "Takri",
+"sample": "𑚁𑚛𑚢𑚯𑚛𑚲",
+"letters": ""
+},
+{
+"script": "Lycian",
+"sample": "𐊁𐊂𐊚𐊑𐊏𐊚⁚𐊓𐊕𐊑𐊏𐊀𐊇𐊒⁚𐊎𐊚𐊏",
+"letters": ""
+},
+{
+"script": "Coptic",
+"sample": "ⲥⲟⲩⲙⲟⲥⲉ ⲣⲱⲙⲉ",
+"letters": ""
+},
+{
+"script": "Hiragana",
+"sample": "かめいこく は、 こくさい れんごう と",
+"letters": "あいうえおかがき"
+},
+{
+"script": "Limbu",
+"sample": "ᤁᤢᤈᤠᤏᤢᤒᤠᤖᤧᤳᤇ ᤗ᤹ᤖᤧ॥",
+"letters": ""
+},
+{
+"script": "Ahom",
+"sample": "𑜒𑜏𑜫𑜊𑜪𑜡 𑜒𑜘𑜣𑜗𑜦𑜡𑜏𑜃𑜡𑜊𑜪𑜡",
+"letters": ""
+},
+{
+"script": "Mende",
+"sample": "𞡥𞠖𞢻𞠢𞠮𞠣 𞢣𞠽 𞡅",
+"letters": ""
+},
+{
+"script": "Sharada",
+"sample": "𑆃𑆱𑇀𑆪𑆳𑆁 𑆃𑆨𑆴𑆔𑆾𑆰𑆟𑆳𑆪𑆳𑆁",
+"letters": ""
+},
+{
+"script": "Soyombo",
+"sample": "𑩐𑪁𑪙𑩻𑩛𑪖 𑩐𑩳𑩑",
+"letters": ""
+},
+{
+"script": "Chakma",
+"sample": "𑄡𑄨𑄠𑄚𑄧𑄖𑄳𑄠𑄬 𑄟𑄚𑄬𑄭 𑄡𑄳𑄠𑄬𑄚𑄴",
+"letters": "𑄃𑄄𑄅𑄆𑄇𑄈𑄉𑄊"
+},
+{
+"script": "Masaram Gondi",
+"sample": "𑴨𑴝𑴺 𑴤𑴱𑴛𑴦𑴤",
+"letters": ""
+},
+{
+"script": "Ugaritic",
+"sample": "𐎎𐎐 𐎒𐎁𐎁 𐎀𐎐𐎐",
+"letters": ""
+},
+{
+"script": "Mahajani",
+"sample": "𑅙𑅒𑅧𑅕𑅑 𑅐𑅗𑅭 𑅐𑅧𑅛𑅐𑅛𑅛𑅒𑅕𑅣",
+"letters": ""
+},
+{
+"script": "Sora Sompeng",
+"sample": "𑃣𑃑𑃔𑃨𑃑𑃤𑃝𑃤𑃟𑃑𑃖,",
+"letters": ""
+},
+{
+"script": "Glagolitic",
+"sample": "ⰲⱐⱄⰻ ⰱⱁ ⰾⱓⰴⰻⰵ",
+"letters": ""
+},
+{
+"script": "Phags-pa",
+"sample": "ꡝ ꡳꡛꡨꡖ ᠂ ꡝ ꡎꡜꡞ",
+"letters": ""
+},
+{
+"script": "Old Persian",
+"sample": "𐎡𐎫𐎭𐎫𐎡𐎼𐎡𐎣𐎫𐎶",
+"letters": ""
+},
+{
+"script": "Osage",
+"sample": "𐒻𐓲𐓣𐓤𐓪 𐓰𐓘͘𐓤𐓘",
+"letters": ""
+},
+{
+"script": "Katakana",
+"sample": "カメイコク ハ、 コクサイ レンゴウ ト",
+"letters": ""
+},
+{
+"script": "Grantha",
+"sample": "𑌅𑌸𑍍𑌯𑌾𑌂 𑌅𑌭𑌿𑌘𑍋𑌷𑌣𑌾𑌯𑌾𑌂",
+"letters": ""
+},
+{
+"script": "Kawi",
+"sample": "𑽅𑽎𑽅𑼆𑼯𑼒𑽉𑽑𑽒𑽑𑽔𑽉",
+"letters": ""
+},
+{
+"script": "Hatran",
+"sample": "𐣬𐣭 𐣮𐣡𐣡 𐣠𐣭𐣭",
+"letters": ""
+},
+{
+"script": "Batak",
+"sample": "ᯘᯮᯂᯮᯖᯉ᯲ᯉᯉ᯲ᯐᯬᯔ᯲ᯅ",
+"letters": "ᯀᯂᯅᯇᯉᯋᯍᯎ"
+},
+{
+"script": "Inscriptional Pahlavi",
+"sample": "𐭬𐭭 𐭮𐭡𐭡 𐭠𐭭𐭭",
+"letters": ""
+},
+{
+"script": "Sundanese",
+"sample": "ᮞᮊᮥᮙ᮪ᮔ ᮏᮜ᮪ᮙ ᮌᮥᮘᮢᮌ᮪",
+"letters": "ᮊᮌᮍᮎᮏᮑᮒᮓ"
+},
+{
+"script": "Vithkuqi",
+"sample": "𐖎𐖟 𐖡𐖦𐖥𐖶𐖟 𐖭𐖞𐖱𐖟𐖼𐖥𐖵",
+"letters": ""
+},
+{
+"script": "Georgian Khutsuri",
+"sample": "ႷႥႤႪႠ ႠႣႠႫႨႠႬႨ",
+"letters": ""
+},
+{
+"script": "Medefaidrin",
+"sample": "𖹀𖹦𖹻𖹧 𖹻 𖹫𖹠𖹦𖹤",
+"letters": ""
+},
+{
+"script": "Marchen",
+"sample": "𑲏𑲍𑲩𑲰𑲵 𑲏𑲀𑲮𑲱𑱴𑲮𑲴𑲌𑱽𑲰𑲉𑲰𑲵",
+"letters": ""
+},
+{
+"script": "Orkhon",
+"sample": "𐱅𐰇𐰼𐰜⁚𐰆𐰍𐰔⁚𐰋𐰏𐰠𐰼𐰃",
+"letters": ""
+},
+{
+"script": "Ogham",
+"sample": "᚛ᚌᚔᚚ ᚓ ᚈᚔᚄᚓᚇ",
+"letters": ""
+},
+{
+"script": "Khojki",
+"sample": "𑈩𑈤𑈨𑈦𑈬𑈺𑈀𑈞𑈩𑈬𑈞",
+"letters": ""
+},
+{
+"script": "Nyiakeng Puachue Hmong",
+"sample": "𞄔𞄄𞄧𞄤𞄃𞄧𞄴𞄅𞄫𞄵",
+"letters": ""
+},
+{
+"script": "Bhaiksuki",
+"sample": "𑰀𑰭𑰿𑰧𑰯𑰽𑱃𑰀𑰥𑰰𑰑𑰺𑰬𑰜𑰯𑰧𑰯𑰽𑱃𑰡",
+"letters": ""
+},
+{
+"script": "Imperial Aramaic",
+"sample": "𐡌𐡍 𐡎𐡁𐡁 𐡀𐡍𐡍",
+"letters": ""
+},
+{
+"script": "Lydian",
+"sample": "𐤠𐤨𐤯𐤦𐤫 𐤫𐤵𐤲𐤦𐤳",
+"letters": ""
+},
+{
+"script": "Javanese",
+"sample": "ꦥꦿꦚꦠꦤ꧀ꦲꦸꦩꦸꦩ꧀ꦔꦼꦤꦤ",
+"letters": "ꦄꦅꦆꦇꦈꦉꦊꦋ"
+},
+{
+"script": "Syloti Nagri",
+"sample": "ꠢꠇꠟ ꠝꠣꠘꠥꠡ ꠡꠣꠗꠤꠘꠜꠣꠛꠦ",
+"letters": ""
+},
+{
+"script": "Deseret",
+"sample": "𐐙𐐲𐑉𐑄𐐲𐑉𐑋𐐬𐑉, 𐑌𐐬",
+"letters": ""
+}
+]
