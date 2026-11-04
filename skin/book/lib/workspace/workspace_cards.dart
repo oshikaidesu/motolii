@@ -59,10 +59,27 @@ List<Fx>? _valueCards(Ws ws, String? id) {
 
 final _cardsMade = <int, (String, List<Fx>, Motolii)>{};
 
+/// How much moving each knob alone shows its effect, 0 to 10, as an agent that read only the effect's code weighed it
+/// (engine/knob_weights.json, by file; set beside AbsentMotion's effect_showcase.json, where a hand says which knob its
+/// tile moves, its heaviest was that knob in 26 of 28): by the inside's name, its file's stem before the knob's
+/// (doc_values.h doc_screen_knob).
+final Map<String, double> _weights = () {
+  try {
+    final all = jsonDecode(File('$motoliiDir/knob_weights.json').readAsStringSync()) as Map<String, dynamic>;
+    return {
+      for (final MapEntry(key: file, value: knobs) in all.entries)
+        for (final MapEntry(key: k, value: w) in (knobs as Map<String, dynamic>).entries)
+          if (w is num) 'js_${file.replaceFirst(RegExp(r'\.[^.]*$'), '').replaceAll(RegExp(r'[^A-Za-z0-9_]'), '_')}_$k': w.toDouble(),
+    };
+  } catch (_) {
+    return const <String, double>{};
+  }
+}();
+
 List<Fx> _makeCards(Ws ws, Motolii m, int t) {
   final at = _drawn(ws);   // (as the picture shown has it)
   String field(String n) {
-    final sh = m.shown(n), label = '@label(${sh?.label ?? n.replaceAll('_', ' ').replaceRange(0, 1, n[0].toUpperCase())})';
+    final sh = m.shown(n), label = '@label(${sh?.label ?? n.replaceAll('_', ' ').replaceRange(0, 1, n[0].toUpperCase())})${_weights[n] == null ? '' : ' @weight(${_weights[n]})'}';
     if (sh?.look == 'thing') {
       // (another thing, by the names the timeline shows: None, then the others; its number is the document's)
       final others = _others(ws, t), at = others.values.toList().indexOf((m.value(t, n, 0) ?? 0).round());
@@ -94,7 +111,7 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
   //  card, as After Effects' and Alight Motion's effect colour is, the Colors shelf said to it (the inside's say puts the
   //  three); golf_noise.md (83): white took three number fields)
   String? colourOf(String n, List<String> names) => n.endsWith('_x') && names.contains('${n.substring(0, n.length - 2)}_y') && names.contains('${n.substring(0, n.length - 2)}_z') && (m.shown(n)?.label ?? '').endsWith(' r') ? n.substring(0, n.length - 2) : null;
-  String colour(String base) => '  /// @label(${m.shown('${base}_x')!.label.substring(0, m.shown('${base}_x')!.label.length - 2)}) @unit(colours)\n  $base: vec3<f32>,';
+  String colour(String base) => '  /// @label(${m.shown('${base}_x')!.label.substring(0, m.shown('${base}_x')!.label.length - 2)})${_weights['${base}_x'] == null ? '' : ' @weight(${_weights['${base}_x']})'} @unit(colours)\n  $base: vec3<f32>,';
   return [
     for (final (title, names) in m.cards(t))
       if (title == 'Sound' || !wsSound(m, t))   // (a sound has its volume and no picture to place: Alight Motion's audio layer, reports/alight_ui.md 177)

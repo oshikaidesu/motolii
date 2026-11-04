@@ -81,6 +81,7 @@ class Param {
     this.validMax,
     this.toShader = 1,
     this.why = '',
+    this.weight,
   });
   final String id, label, unit, why;
   final ParamLook look;
@@ -99,6 +100,9 @@ class Param {
 
   /// [min] and [max] are how far its scrub goes; more is taken typed.
   final bool open;
+
+  /// How much moving it alone shows its effect, 0 to 10, `@weight(7)` (null: not weighed).
+  final double? weight;
 
   /// How far a number typed goes, `@valid(lo, hi)`, where it is more than [min] and [max] (NumField.validMin).
   final double? validMin, validMax;
@@ -258,6 +262,7 @@ Param infer(Decl d) {
       upIncreases: up,
       toShader: scale,
       why: why,
+      weight: _num(a['weight']?.firstOrNull),
     );
   }
 

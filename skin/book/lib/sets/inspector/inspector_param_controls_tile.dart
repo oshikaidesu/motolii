@@ -48,8 +48,37 @@ class ParamTile extends StatelessWidget {
     );
   }
 
+  /// How much moving it shows its effect (Param.weight, 0 to 10), in three steps: the user's wish, 11/4, that those be
+  /// told by colour, by degrees and not marked yes or no ("1, 2, 3"), not by one colour, and quiet enough that the rest
+  /// is still looked at (a whole block filled was "too loud"). Each step its own colour, worn as GitHub's labels wear
+  /// theirs on a dark page (Primer: the ground the colour at 0.18, the words in it): the block drawn as a duotone,
+  /// Pop.well to that ground and Grey.g95 to the colour, every grey between. The colours Japan's own, picked by the
+  /// user, 11/5, of thirty tried in the window (integration_test/knob_weights_test.dart): 青磁 seiji, 撫子 nadeshiko,
+  /// 浅黄 usuki, from nipponcolors.com, each 6:1 or more on Pop.well.
+  static int step(double? w) => w == null || w < 4 ? 0 : (w < 6 ? 1 : (w < 8 ? 2 : 3));
+  static var steps = const [Color(0xFF69B0AC), Color(0xFFDC9FB4), Color(0xFFFAD689)];   // (a picture test tries others)
+
+  static ColorFilter duotone(Color to) {
+    final lo = Pop.well, hi = Grey.g95, ground = Color.alphaBlend(to.withValues(alpha: .18), lo);
+    List<double> row(int k, double low, double high, double under, double word) {
+      final a = (word - under) / (high - low);
+      return [for (var j = 0; j < 5; j++) j == k ? a : (j == 4 ? (under - a * low) * 255 : 0)];
+    }
+    return ColorFilter.matrix([
+      ...row(0, lo.r, hi.r, ground.r, to.r),
+      ...row(1, lo.g, hi.g, ground.g, to.g),
+      ...row(2, lo.b, hi.b, ground.b, to.b),
+      0, 0, 0, 1, 0,
+    ]);
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => switch (step(p.weight)) {
+    0 => _body(context),
+    final s => ColorFiltered(colorFilter: duotone(steps[s - 1]), child: _body(context)),
+  };
+
+  Widget _body(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc, v = doc.get(id);
     final on = !x.cfg.locked && !RowOff.offOf(context);
     Widget gauge(GaugeKind k, {double? vx, double? vy}) => SizedBox.square(
