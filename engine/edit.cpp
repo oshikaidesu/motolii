@@ -17,7 +17,7 @@
 
 static const char* const calls =
     "  add film <file> | add sound <a .mp3, .wav, .m4a: heard, hidden> | add picture <an After Effects file, a .jpg, a .png> | add text <font.ttf> | add solid <file.glb>|ring|gem|cube   (say N fill glass: it is glass)\n"
-    "  pen <thing, 0: new> <x> <y> [<handle x> <handle y>] (points of the picture) | points <thing> | handles <thing> | hold <thing> | carry <by> <a> <b> | let_go 1|0 | remove <thing> | set <thing> <name> <number> | say <thing> <name> <word> | key <thing> <name> <at> <number> | unkey <thing> <name> <at>\n"
+    "  pen <thing, 0: new> <x> <y> [<handle x> <handle y>] (points of the picture) | points <thing> | handles <thing> | hold <thing> | carry <by> <a> <b> | carry effect <file> | let_go 1|0 | remove <thing> | set <thing> <name> <number> | say <thing> <name> <word> | key <thing> <name> <at> <number> | unkey <thing> <name> <at>\n"
     "  way <thing> <name> <at> <a way, and its numbers> | ways | cards <thing> | define <a way's name> <its expression> | value <thing> <name> <at>\n"
     "  make <recipe> | recipes | effect <thing> <name> | effects | shelf | look save|put <thing> <file.motolii> | looks | together on|off | undo | redo | list | at <seconds> | still <file.png> | write <file.mp4> | time [pictures]\n";
 
@@ -70,6 +70,10 @@ int main(int argc, char** argv) {
         else if (call == "points" && w.size() == 2) { const int n = thing(); double xy[256]; const int k = numbers ? motolii_points(m, n, xy, 128) : 0; for (int i = 0; i < k && i < 128; ++i) std::printf("  %.1f %.1f\n", xy[2 * i], xy[2 * i + 1]); ok = k > 0; }
         else if (call == "handles" && w.size() == 2) { const int n = thing(); double xy[256]; const int k = numbers ? motolii_handles(m, n, xy, nullptr, 128) : 0; for (int i = 0; i < k && i < 128; ++i) std::printf("  %.1f %.1f\n", xy[2 * i], xy[2 * i + 1]); ok = k > 0; }
         else if (call == "hold" && w.size() == 2) { const int n = thing(); if (numbers) ok = motolii_hold(m, n); }
+        else if (call == "carry" && w.size() >= 3 && w[1] == "effect") {   // (an effect file shown on the held thing, not kept: the shelf's tile under the hand)
+            const int ticket = motolii_later(m, "carry", 0, "effect", rest(2).c_str(), 0);
+            while ((ok = motolii_answer(m, ticket)) < 0) std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        }
         else if (call == "carry" && w.size() == 4) { const double a = number(2), b = number(3); if (numbers) ok = motolii_carry(m, w[1].c_str(), a, b); }
         else if (call == "let_go" && w.size() == 2) ok = motolii_let_go(m, w[1] != "0");
         else if (call == "say" && w.size() >= 3) { const int n = thing(); if (numbers) ok = motolii_say(m, n, w[2].c_str(), w.size() > 3 ? rest(3).c_str() : ""); }   // (a text's words are the rest of the line; none: said empty)

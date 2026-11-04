@@ -500,6 +500,17 @@ static bool doc_carry(Doc& d, const char* by, double a, double b) {
     doc_moment(d, now);
     return ok;
 }
+// An effect file carried on the held thing: drawn last of its effects, as doc_fx_file puts one on at the end, not the
+// document's and not on its cards, gone as it is let go: Final Cut Pro's effects browser shows the effect skimmed on the
+// clip selected in the viewer, DaVinci Resolve's Live Preview the one the pointer is over. A hand that puts it on lets
+// go first and puts it on as a press does (doc_fx_file: a transition's keys and all).
+static bool doc_carry_effect(Doc& d, const char* file) {
+    Doc::Held& h = d.held;
+    if (h.thing < 0) return d.trouble = "nothing is held", false;
+    if (doc_word(d, h.thing, "kind") == "camera" && std::filesystem::path(file).extension() != ".am") return d.trouble = "a camera takes motions only (it has no picture of its own)", false;   // (doc_fx_say's rule)
+    h.said[" effect"] = file;   // (' ': the hold's own, never said when it is let go)
+    return doc_match(d), doc_moment(d, d.stage->now), true;
+}
 // A thing's keys moved by so many seconds, every value's that has keys (as After Effects moves a layer's).
 static bool doc_keys_by(Doc& d, int thing, double by) {
     return doc_change(d, sqlite3_mprintf("update fact set at = at + %!.17g where thing = %d and name in (select name from fact where thing = %d group by name having count(*) > 1 or max(at) <> 0 or max(way) is not null);"

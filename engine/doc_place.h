@@ -499,6 +499,8 @@ static std::vector<std::string> doc_fx_list(Doc& d, int thing, bool off) {
     for (const std::string& w : script_files(doc_word(d, thing, "fx"))) if (w != "none" && w != "glow") said.push_back(w);   // (a glow is no step of the stack: Filament's bloom, doc_moment)
     for (const char* n : doc_thor_names) if (std::find(said.begin(), said.end(), n) == said.end() && doc_on(d, thing, n) && seen(n)) all.push_back(n);
     for (const std::string& w : said) if ((!doc_thor_letter(w) || doc_on(d, thing, w.c_str())) && seen(w)) all.push_back(w);
+    if (!off && d.held.thing == thing)   // (and the one a hand carries, as it is drawn: doc_carry_effect)
+        if (const auto e = d.held.said.find(" effect"); e != d.held.said.end() && std::find(all.begin(), all.end(), e->second) == all.end()) all.push_back(e->second);
     return all;
 }
 // Whether a thing's effects are laid on it as the camera sees it (one of them a file: then all of them, in turn, there:

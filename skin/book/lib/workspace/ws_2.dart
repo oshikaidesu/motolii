@@ -587,6 +587,21 @@ class Ws extends ChangeNotifier {
     return screenToggle('${file.substring(0, dot)}~$n${file.substring(dot)}');
   }
 
+  /// Joined: an effect file shown on the picked thing while the hand is on its tile, not the document's, gone as the
+  /// hand leaves (null), as Final Cut Pro's effects browser shows the effect skimmed on the selected clip in the viewer
+  /// and DaVinci Resolve's Live Preview the one under the pointer (the inside's carry: doc_carry_effect). Nothing picked,
+  /// nothing shown. Let go before any put, the put reading the document as it is.
+  bool _trying = false;
+  void tryOn(String? file) {
+    final m = _inside, t = int.tryParse(selected ?? '');
+    if (m == null) return;
+    if (_trying) after(m.later('let_go', number: 0));
+    _trying = file != null && t != null;
+    if (!_trying) return;
+    after(m.later('hold', thing: t!));   // (without waiting, as Align's hold: the shelf's hand never stands still for it)
+    after(m.later('carry', name: 'effect', word: file!));
+  }
+
   /// Joined: the motion the picked thing has (its script's file; '' none).
   String get motion {
     final t = int.tryParse(selected ?? '');

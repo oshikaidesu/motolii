@@ -52,6 +52,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
       final VoidCallback go = () {   // (a closure of its own, not a declaration's tear-off: what a carried tile is told by)
         DockTags.latch('Effects', c.query, id);
         if (!taken) c.set(() => effectUsed(id, words: c.query, chip: c.chip));
+        ws.tryOn(null);   // (the one shown under the hand let go first: the put reads the document as it is)
         put();
       };
       carriedEffect[go] = id;
@@ -67,7 +68,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
          tile: (small) => EffectTile(n, small: small, file: m.picture(n), look: _FxLook(n), on: on.contains(n) ? 'ON' : null, picked: c.sel == n, onTap: () => c.pick(n), onApply: chosen(n, () => ws.fxToggle(n), taken: on.contains(n)), star: small ? null : c)),
       for (final (n, f) in EffectsShelf._byName[m.effects] ??= ([...m.effects]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase()))))
         (id: f, name: n, label: m.label(n), on: screen.contains(f), apply: chosen(f, () => ws.screenPut(f)), said: m.about(f).isEmpty ? (picked ? 'On the picked thing' : 'On all under it') : m.about(f),
-         tile: (small) => EffectTile(n, key: small ? null : ValueKey('ws-screen-$f'), small: small, file: m.picture(f), same: m.tileSame(f), on: screen.contains(f) ? 'ON ${screen.indexOf(f) + 1}' : null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.screenPut(f)), star: small ? null : c, starId: f)),
+         tile: (small) => EffectTile(n, key: small ? null : ValueKey('ws-screen-$f'), small: small, file: m.picture(f), same: m.tileSame(f), on: screen.contains(f) ? 'ON ${screen.indexOf(f) + 1}' : null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.screenPut(f)), star: small ? null : c, starId: f, onHover: (h) => ws.tryOn(h ? f : null))),
       // (a look kept by its name, Save Look: given to the picked thing, its values, effects and keys)
       for (final (n, f) in m.looks)
         (id: f, name: n, label: 'Look', on: false, apply: chosen(f, () => ws.lookPut(f)), said: picked ? 'A look for the picked thing' : 'A look, on a new board',
@@ -240,7 +241,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
 /// effect its small drawing, else a plain tile), its name, ON (and its place among those on the stage) when it is on,
 /// NO CHANGE when it is seen to change nothing on the sample, the star for a thing's effect.
 class EffectTile extends StatelessWidget {
-  const EffectTile(this.name, {super.key, this.file, this.look, required this.on, required this.onTap, this.onApply, this.picked = false, this.same = false, this.star, this.starId, this.naming, this.small = false, this.lost = false});
+  const EffectTile(this.name, {super.key, this.file, this.look, required this.on, required this.onTap, this.onApply, this.picked = false, this.same = false, this.star, this.starId, this.naming, this.small = false, this.lost = false, this.onHover});
   final String name;
   final bool small;   // (its square alone, among the last put on: no name, no tags; the foot says which)
   final bool lost;   // (a deck holds it, this machine does not)
@@ -250,6 +251,7 @@ class EffectTile extends StatelessWidget {
   final bool picked, same;
   final VoidCallback onTap;
   final VoidCallback? onApply;   // (two presses: it is put on, or taken off)
+  final ValueChanged<bool>? onHover;   // (the hand on it, or off: what it does shown on the picked thing meanwhile, Ws.tryOn)
   final DockCtx? star;
   final String? starId;   // (what it is starred by: a file's effect by its file, two files may share a name)
   @override
@@ -257,6 +259,7 @@ class EffectTile extends StatelessWidget {
     onTap: onTap,
     onDoubleTap: onApply,
     picks: true,
+    onHover: onHover,
     builder: (context, h) => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

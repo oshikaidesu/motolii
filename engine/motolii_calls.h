@@ -482,7 +482,8 @@ const char* motolii_reading(Motolii* m, int thing, const char* name) {
 // undo, redo, together (number: begin 1, end 0: the end's answer is the step's), add (name: kind, word: file), make
 // (word: recipe), duplicate (the answer is the new thing), split (number: at; the answer is the part after), copy and copy_style (word: a file), paste (word: a file, number: at) and paste_style (word: a file), remove, mark (number: at, word), guide (name: axis, number: at, word "off" takes it away), work
 // (number: from, word: to), raise (number: places), sequence (number: overlap), key_here, unkey, stay (number: at), way
-// (number: at, word: way), effect (number: at), hold (a hand takes hold of it). A thing -1: the one the last add or make made.
+// (number: at, word: way), effect (number: at), hold (a hand takes hold of it), carry (name: by, number: a; name "effect": the effect file in word,
+// shown on the held thing and not kept, doc_carry_effect). A thing -1: the one the last add or make made.
 int motolii_later(Motolii* m, const char* call, int thing, const char* name, const char* word, double number) {
     const std::string c = call ? call : "", n = name ? name : "", w = word ? word : "";
     int ticket = 0;
@@ -498,6 +499,7 @@ int motolii_later(Motolii* m, const char* call, int thing, const char* name, con
             if (c == "say") ok = changes(m, (int)doc_say(doc(m), thing, n.c_str(), w.c_str()));
             else if (c == "set") ok = changes(m, (int)doc_set(doc(m), thing, n.c_str(), w == "made" ? m->made : number));   // (word "made": the number is the thing the last add made, as a value that names a thing: a behaviour connected, a leader)
             else if (c == "let_go") ok = changes(m, (int)doc_let_go(doc(m), number != 0.0));
+            else if (c == "carry") ok = (int)(n == "effect" ? doc_carry_effect(doc(m), w.c_str()) : doc_carry(doc(m), n.c_str(), number, 0.0));   // (name: by; an effect file in word)
             else if (c == "undo") ok = (int)doc_undo(doc(m));
             else if (c == "redo") ok = (int)doc_redo(doc(m));
             else if (c == "together") {
@@ -614,7 +616,7 @@ int motolii_later(Motolii* m, const char* call, int thing, const char* name, con
             else if (c == "camera_view") ok = 1, m->second = !w.empty(), m->changed = true;   // (word: the Camera View tab is open; none: it is closed)
             else if (c == "eye") ok = eye_is(m, w.c_str());   // (word: where the window's working eye stands, as eye_is; none: the camera's)
             else if (c == "hold") ok = (int)doc_hold(doc(m), thing);   // (a hand takes hold: what it carries next is this thing's)
-            else m->trouble = "a change asked later is one of: code, door, eye, camera_view, say, set, hold, let_go, undo, redo, together, add, make, pen, element, keep_element, follow_elements, fx_duplicate, duplicate, split, align, time_align, reset, fit, flip, extract_sound, freehand, brush, outline, copy, paste, copy_style, paste_style, keep_look, remove, mark, guide, work, raise, sequence, key_here, unkey, stay, way, effect, fx_file, fx_eye, fx_move, size, watch, pick, desk, live, relate, lead, free, release, setting";
+            else m->trouble = "a change asked later is one of: code, door, eye, camera_view, say, set, hold, carry, let_go, undo, redo, together, add, make, pen, element, keep_element, follow_elements, fx_duplicate, duplicate, split, align, time_align, reset, fit, flip, extract_sound, freehand, brush, outline, copy, paste, copy_style, paste_style, keep_look, remove, mark, guide, work, raise, sequence, key_here, unkey, stay, way, effect, fx_file, fx_eye, fx_move, size, watch, pick, desk, live, relate, lead, free, release, setting";
             } catch (const std::exception& e) {
                 ok = 0;
                 std::fprintf(stderr, "motolii: %s threw: %s\n", c.c_str(), e.what());

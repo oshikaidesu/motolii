@@ -2364,6 +2364,42 @@ void _tests3() {
     await expectSameAfterReopen(t);
     await _close(t);
   }, retry: 2, skip: !_built);   // (a slow CI Mac only: golf_noise.md (108))
+  testWidgets('the hand on an effect\'s tile shows it on the picked thing, not the document\'s and no ON; off the tile, as it was (Final Cut Pro\'s skimmed effect, DaVinci Resolve\'s Live Preview)', (t) async {
+    final ws = await _pump(t), m = ws.inside!;
+    final photo = m.add('picture', '$motoliiDir/fx_sample.jpg');
+    final half = m.effects.firstWhere((e) => e.$2.endsWith('/halftone.wgsl'));
+    ws
+      ..reread()
+      ..select('$photo')
+      ..shelf = 'Effects';
+    await t.pumpAndSettle();
+    await t.enterText(find.descendant(of: find.byType(DockSearch), matching: find.byType(EditableText)), half.$1);
+    await t.pumpAndSettle();
+    final row = find.byKey(ValueKey('ws-screen-${half.$2}'));
+    Future<List<int>> seen(String name) async {
+      expect(await t.runAsync(() async => m.still('${Directory.systemTemp.path}/try_$name.png')), isTrue, reason: m.trouble);
+      return File('${Directory.systemTemp.path}/try_$name.png').readAsBytesSync();
+    }
+    final before = await seen('before');
+    final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: Offset.zero);
+    await mouse.moveTo(t.getCenter(row));
+    await settled(t, ws);
+    expect(await seen('on'), isNot(before), reason: 'shown on it while the hand is on its tile');
+    expect(m.word(photo, 'fx'), isEmpty, reason: 'not the document\'s');
+    expect(find.descendant(of: row, matching: find.textContaining('ON')), findsNothing);
+    await mouse.moveTo(Offset.zero);
+    await settled(t, ws);
+    expect(await seen('off'), before, reason: 'off the tile: as it was');
+    await mouse.moveTo(t.getCenter(row));
+    await settled(t, ws);
+    await doubleTap(t, row);
+    await settled(t, ws);
+    expect(m.word(photo, 'fx'), half.$2, reason: 'two presses put it on as before, once: ${m.trouble}');
+    await mouse.removePointer();
+    expect(t.takeException(), isNull);
+    await _close(t);
+  }, skip: !_built);
   testWidgets('⌘O lists the documents beside it as CapCut\'s desktop home lays them, told as Alight Motion\'s are: its picture, length, shape, resolution, size and rate, by day or by name; a copy made, the copy opened; File › Use Frame as Project Picture', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     expect(m.add('picture', '$motoliiDir/fx_sample.jpg'), isNot(0), reason: m.trouble);

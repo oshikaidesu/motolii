@@ -97,7 +97,7 @@ class DockCtx {
 
 /// Hover + tap, nothing else: repaints only when the pointer enters or leaves.
 class DockHover extends StatefulWidget {
-  const DockHover({super.key, required this.builder, this.onTap, this.onDoubleTap, this.picks = false});
+  const DockHover({super.key, required this.builder, this.onTap, this.onDoubleTap, this.picks = false, this.onHover});
 
   /// Whether ⌘ was held as the last tile was pressed.
   static bool cmdAtPress = false;
@@ -113,6 +113,10 @@ class DockHover extends StatefulWidget {
 
   /// One press only picks it (not so a font's, which sets a role's font): told as the button goes down.
   final bool picks;
+
+  /// The pointer came onto it (true) or went off (false), told once each; gone from the window under it, off as well
+  /// (a MouseRegion unmounted under the pointer tells no exit).
+  final ValueChanged<bool>? onHover;
   @override
   State<DockHover> createState() => _DockHoverState();
 }
@@ -124,7 +128,13 @@ class _DockHoverState extends State<DockHover> {
   @override
   void dispose() {
     _second?.cancel();
+    if (_h) widget.onHover?.call(false);
     super.dispose();
+  }
+
+  void _hover(bool h) {
+    setState(() => _h = h);
+    widget.onHover?.call(h);
   }
 
   // A tile that one press picks and two act on is picked as the button goes down, as Finder picks an icon and opens it on the
@@ -151,8 +161,8 @@ class _DockHoverState extends State<DockHover> {
   @override
   Widget build(BuildContext context) => MouseRegion(
     cursor: widget.onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
-    onEnter: (_) => setState(() => _h = true),
-    onExit: (_) => setState(() => _h = false),
+    onEnter: (_) => _hover(true),
+    onExit: (_) => _hover(false),
     child: _carried(Listener(   // (the press as it comes, before the gestures settle which it is)
       onPointerDown: _down,
       onPointerUp: _up,

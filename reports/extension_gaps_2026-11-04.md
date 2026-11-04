@@ -13,7 +13,7 @@ Motolii の欄は、コードを読んで確かめた（行は各行の右）。
 | 穴 | AE で埋める物 | DAW で埋める物 | Figma で埋める物 | Motolii |
 |---|---|---|---|---|
 | A 見て探す | 動く見本付きのプリセット一覧（Animation Composer） | XO、ADSR Sample Manager | Iconify・Unsplash、色と書体を選ぶ | **有る**：地図（種類の島と色）、説明文まで探す、★（`dock_map.dart`、`dock_effects.dart:77`） |
-| B 自分の素材で試す・戻す | 乗せると再生する見本 | XO の Playground、ランダム化（Playbeat） | — | 一部：Snapshot で前と見比べるだけ。札の絵は見本の写真の上（`stage.dart:85`、`effect_tiles.dart:1`） |
+| B 自分の素材で試す・戻す | 乗せると再生する見本 | XO の Playground、ランダム化（Playbeat） | — | 一部：効果ファイルの札に乗せると選んだ物に掛かって見え、離すと戻る（11/4、`doc_paths.h` `doc_carry_effect`）。ThorVG の効果・動き・ルックはまだ。Snapshot で前と見比べる（`stage.dart:85`） |
 | C 比べる・測る | Premiere の Comparison View、スコープ | SPAN、REFERENCE | — | 一部：Snapshot と音の波形だけ（`timeline.dart:419`） |
 | D 見えない間違いを知らせる | 出典なし | （メーター） | Stark、Contrast、Design Lint | **無い** |
 | E 自動でそろえる | Premiere の Auto Ducking・Color Match | VocAlign、Vocal Rider | — | **無い**（音の大きさと打点は読める：`engine/sound.h:1`） |
