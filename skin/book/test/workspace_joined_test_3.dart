@@ -1081,6 +1081,51 @@ void _tests3() {
     await _close(t);
   }, skip: !_built);
 
+  testWidgets('a timesheet (XDTS) put on the stage: each column a level of the drawings of its name, beside it or in its folder, keyed where its cells change (OpenToonz\'s xdtsio.cpp); what is not there told', (t) async {
+    final ws = await _pump(t), m = ws.inside!, here = ws.documentFolder!;
+    Directory('$here/A').createSync();
+    for (final (f, c) in [('A/A_0001', 'red'), ('A/A_0002', 'lime'), ('B_0001', 'blue')]) {
+      expect(Process.runSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'color=c=$c:s=64x64', '-frames:v', '1', '$here/$f.png']).exitCode, 0);
+    }
+    Map<String, Object> cell(int frame, String said) => {'frame': frame, 'data': [{'id': 0, 'values': [said]}]};
+    File('$here/c001.xdts').writeAsStringSync('exchangeDigitalTimeSheet Save Data\n${jsonEncode({'version': 5, 'timeTables': [{'name': 'c001', 'duration': 6, 'timeTableHeaders': [{'fieldId': 0, 'names': ['A', 'B', 'C']}], 'fields': [{'fieldId': 0, 'tracks': [
+      {'trackNo': 0, 'frames': [cell(-1, '1'), cell(2, '2'), cell(4, 'SYMBOL_NULL_CELL'), cell(5, 'SYMBOL_HYPHEN')]},   // (below 0: from the start, as CLIP STUDIO writes it)
+      {'trackNo': 1, 'frames': [cell(3, '1'), cell(4, '3a')]},
+      {'trackNo': 2, 'frames': [cell(0, '1')]},
+    ]}]}]})}');
+    ws.shelf = 'Media';
+    await t.pumpAndSettle();
+    final folder = find.byKey(ValueKey('browser:file:$here'));
+    await t.ensureVisible(folder.first);
+    await t.tap(folder.first);
+    await t.pumpAndSettle();
+    final sheet = find.byKey(ValueKey('browser:file:$here/c001.xdts'));
+    for (var i = 0; i < 20 && sheet.evaluate().isEmpty; i++) {
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await t.pumpAndSettle();
+    }
+    await doubleTap(t, sheet.first);
+    for (var i = 0; i < 200 && !(ws.notice ?? '').startsWith('Placed'); i++) {
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
+      await t.pump();
+    }
+    await settled(t, ws);
+    ws.reread();
+    final [a, b] = m.things;
+    expect([ws.notice, m.word(a, 'name'), m.word(b, 'name'), m.keyValues(a, 'cel'), m.keyValues(b, 'cel'), m.lasts(a)], ['Placed 2 of 3 columns of c001.xdts: no drawings named C beside it; not read: 3a', 'A', 'B', [1, 2, -1], [-1, 1], closeTo(6 / 24, 1e-6)], reason: 'A from its folder, B beside the sheet, C nowhere; a hyphen and 3a keep what was before');
+    final still = '$here/still.png';
+    Future<List<int>> seen(int frame) async => (await t.runAsync(() async {
+      expect(m.at(frame / 24 + 1 / 48) && m.still(still), isTrue, reason: m.trouble);
+      final codec = await ui.instantiateImageCodec(File(still).readAsBytesSync());
+      final image = (await codec.getNextFrame()).image, px = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!.buffer.asUint8List(), i = 4 * (image.height ~/ 2 * image.width + image.width ~/ 2);
+      return [px[i], px[i + 1], px[i + 2]];
+    }))!;
+    bool most(List<int> rgb, int c) => rgb[c] > 200 && rgb.indexed.every((p) => p.$1 == c || p.$2 < 60);
+    final shown = [for (final f in [1, 2, 3, 5]) await seen(f)];
+    expect([most(shown[0], 0), most(shown[1], 1), most(shown[2], 2), most(shown[3], 2)], everyElement(isTrue), reason: 'A 1, A 2, then B above it, B alone after A\'s ×: $shown');
+    await _close(t);
+  }, skip: !_built);
+
   testWidgets('a photo placed from the Media shelf comes fitted inside the picture, in its middle, one step (Alight Motion\'s: AbsentMotion imageLayer; golf ㊱)', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     File('$motoliiDir/fx_sample.jpg').copySync('${ws.documentFolder}/photo.jpg');   // (857 x 857: a square on a wide picture)

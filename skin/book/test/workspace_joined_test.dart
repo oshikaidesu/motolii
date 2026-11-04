@@ -1,6 +1,7 @@
 // The window joined to the real inside (engine/out/libmotolii.dylib, built by engine/edit.sh), driven as a hand
 // would drive it: what a seat does reaches the document, and one act is one step back. Where the inside is not
 // built these are skipped.
+import 'dart:convert' show jsonEncode;
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:math' as math;

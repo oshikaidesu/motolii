@@ -1,6 +1,7 @@
 // The Media shelf, AEViewer 2 style: one browser for the project's files and media. A folder tree (locations, then folders only) beside
 // or above the open folder's contents, shown as thumbnails or as a list. Wide: tree | contents. Narrow: tree band (height by drag) over contents.
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -16,6 +17,7 @@ import 'dock_tags.dart';
 import 'ws.dart';
 part 'dock_files_read.dart';
 part 'dock_files_used.dart';
+part 'dock_files_sheet.dart';
 part 'dock_files_browser.dart';
 part 'dock_files_contents.dart';
 
@@ -52,5 +54,6 @@ DockG? _glyphOf(String file) => switch (_kindOfFile(file)) {
   'picture' => DockG.image,
   'solid' => DockG.shape,
   'text' => DockG.font,
+  'timesheet' => DockG.comp,   // (its columns put together: _placeSheet)
   _ => null,
 };

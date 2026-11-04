@@ -48,7 +48,8 @@ class MediaShelf extends StatelessWidget {
 
 /// The locations of a joined window: what the document is made of (its files, and the folders they are in), then the disk.
 List<FileNode> _rootsOf(DockCtx c) {
-  _kindOfFile = c.ws.inside!.kindOf;
+  final kindOf = c.ws.inside!.kindOf;
+  _kindOfFile = (f) => f.toLowerCase().endsWith('.xdts') ? 'timesheet' : kindOf(f);   // (CLIP STUDIO's, OpenToonz's timesheet: not a thing of the inside's, its columns are)
   _thumbnailAtOf = c.ws.inside!.thumbnailAt;
   final files = _used(c.ws).keys.toList()..sort();
   return [

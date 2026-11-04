@@ -77,7 +77,7 @@ Future<void> _placeAll(DockCtx c, List<String> files) async {
 
 /// The pictures picked together, when they are the drawings of one level: one folder, one name, a number at its end
 /// (OpenToonz's level, animation_0001.png, read by (\d+): tfilepath.cpp), each by its number, the lowest first.
-List<(int, String)>? _level(List<String> files) {
+List<(int, String)>? _level(List<String> files, {int least = 2}) {
   final named = RegExp(r'^(.*?)(\d+)(\.[^./]+)$'), drawings = <(int, String)>[];
   String? level;
   for (final f in files) {
@@ -85,7 +85,7 @@ List<(int, String)>? _level(List<String> files) {
     if (_kindOfFile(f) != 'picture' || m == null || (level ??= '${m[1]}${m[3]}') != '${m[1]}${m[3]}') return null;
     drawings.add((int.parse(m[2]!), f));
   }
-  return drawings.length < 2 ? null : (drawings..sort((a, b) => a.$1.compareTo(b.$1)));
+  return drawings.length < least ? null : (drawings..sort((a, b) => a.$1.compareTo(b.$1)));
 }
 
 /// A level put on the stage as one thing (OpenToonz's level, CLIP STUDIO's animation folder), its lowest drawing its
@@ -119,6 +119,7 @@ final _placing = <String>{};
 
 /// A file put on the stage as a new thing, picked. Not done: the foot of the shelf says why.
 void _place(DockCtx c, FileNode n) {
+  if (_kindOfFile(n.id) == 'timesheet') return unawaited(_placeSheet(c, n.id));
   if (!_placing.add(n.id)) return;   // (a song takes the inside a moment to read: a press in that moment is the same press; golf_noise.md (119), no source, a rule of this window's)
   final m = c.ws.inside!, still = _kindOfFile(n.id) == 'picture' && _stillSeconds > 0, cut = const ['film', 'sound'].contains(_kindOfFile(n.id)) ? _filmRanges[n.id] : null, fit = _fitted(n.id); // (the inside makes of it what the file is; without waiting, picked once made)
   if (still || cut != null || fit) m.later('together', number: 1);   // (made, fitted and given its length: one step)
