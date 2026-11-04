@@ -125,6 +125,15 @@ void main() {
     expect(EffectTiles.best(motoliiDir, '$motoliiDir/aviutl_scripts/CatWithNeko__ChromaticAberration/Chromatic Aberration.anm2'), ('js_Chromatic_Aberration_zoomtra', 100, 150), reason: 'its colours seen pulled apart by zoomtra, not by xtra the code reading chose');
     out.deleteSync(recursive: true);
   }, skip: !insideBuilt);
+  test('one that draws strokes is drawn on a sample drawing, as AbsentMotion\'s; one seen to stop says it is not drawn here yet (the user, 11/5: a path for what goes along one)', () {
+    final out = Directory.systemTemp.createTempSync('motolii_tile_test');
+    final drawn = EffectTiles.draw(motoliiDir, [('$motoliiDir/effects/am_drawingprogress.am', '${out.path}/0.png')]);
+    expect(drawn.single.$2, isFalse, reason: 'the spiral and the wave drawn stroke by stroke');
+    final whole = _luma(EffectTiles.frame('${out.path}/0.png', 0)), begun = _luma(EffectTiles.frame('${out.path}/0.png', 3));
+    expect(whole, greaterThan(begun), reason: 'its End from 0 to 1 (its table\'s): less of the yellow strokes early on than when all is drawn');
+    expect(EffectTiles.sameTag('$motoliiDir/aviutl_scripts/Suzukeh__Mathy_Su/@Mathy_Su.anm2#サイクロイド'), 'UNSUPPORTED', reason: 'it stops on obj.color: not for want of a path');
+    out.deleteSync(recursive: true);
+  }, skip: !insideBuilt);
 
   testWidgets('every shelf lays out at the reference size and when smaller', (t) async {
     final ws = _joined();

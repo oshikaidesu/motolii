@@ -22,6 +22,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter/painting.dart' show FileImage, ResizeImage;
@@ -66,9 +67,9 @@ abstract final class EffectTiles {
   /// table, the file's own `am_<name>.wgsl`; each knob as from_absent.py named it (skslc's R_ before a name WGSL keeps for
   /// itself, origin_x and the like with _ after), a vector or a colour one knob each way; a moving line's list of numbers
   /// for one knob the stops it goes through ([sweeps]), its layer moved the sample's drift ([moves]), the words its
-  /// text ones are shown on ([text], its "text" layout). An .am (one moved by its own motion.cpp) by its --absent: name.
+  /// text ones are shown on ([text], its "text" layout), its strokes drawn ([drawn], its "drawing" layout). An .am (one moved by its own motion.cpp) by its --absent: name.
   /// Null: a file the table has not.
-  static ({Map<String, double> knobs, double? split, Map<String, List<double>> sweeps, bool moves, String? text})? showcase(String file, String head, Map<String, dynamic> table) {
+  static ({Map<String, double> knobs, double? split, Map<String, List<double>> sweeps, bool moves, String? text, bool drawn})? showcase(String file, String head, Map<String, dynamic> table) {
     final name = RegExp(r'/am_([a-z0-9]+)\.wgsl$').firstMatch(file)?.group(1) ?? RegExp(r'^// --absent:([a-z0-9]+)', multiLine: true).firstMatch(head)?.group(1);
     final show = name == null ? null : (table['effects'] as Map<String, dynamic>?)?[name] as Map<String, dynamic>?;
     if (show == null) return null;
@@ -95,7 +96,7 @@ abstract final class EffectTiles {
         if (named(p, way) case final knob?) knobs['js_${stem}_$knob'] = v;
       }
     }
-    return (knobs: knobs, split: (show['split'] as num?)?.toDouble(), sweeps: sweeps, moves: show['layout'] == 'move', text: show['layout'] == 'text' ? '${show['text'] ?? ''}' : null);
+    return (knobs: knobs, split: (show['split'] as num?)?.toDouble(), sweeps: sweeps, moves: show['layout'] == 'move', text: show['layout'] == 'text' ? '${show['text'] ?? ''}' : null, drawn: show['layout'] == 'drawing');
   }
 
   /// How much moving each knob of [file] alone shows its effect, 0 to 10, as an agent that read only the effect's code
@@ -117,7 +118,8 @@ abstract final class EffectTiles {
   };
 
   /// What the sample lacks for [file] to show, as the one who looked said it (its _needs: text, picture, sound, motion,
-  /// chain, shape, behind); '' nothing, or not looked at.
+  /// chain, path, shape, behind); '' nothing, or not looked at. (_stops beside it: the call an AviUtl2 script stopped on
+  /// when it was looked at, aviutl_fx.h's "not yet".)
   static String needs(String dir, String file) => switch (_entry(dir, file)['_needs']) {
     final String w => w,
     _ => '',
@@ -127,13 +129,14 @@ abstract final class EffectTiles {
   /// as one who looked said it; one looked at that lacks nothing (or only text, which its tile is drawn on) is one the
   /// inside does not draw yet (as an AviUtl2 script stops on a call not made: aviutl_fx.h's "not yet"); NO CHANGE, one
   /// not looked at (the maker's own).
-  static String sameTag(String file) => switch (needs(motoliiDir, file)) {
+  static String sameTag(String file) => switch (_entry(motoliiDir, file).containsKey('_stops') ? '' : needs(motoliiDir, file)) {   // (one seen to stop: what it lacks is not why)
     'picture' => 'FOR 2 LAYERS',
     'sound' => 'FOR SOUND',
     'motion' => 'FOR VIDEO',
     'chain' => 'PART OF A SET',
     'shape' => 'FOR CUT-OUTS',
     'behind' => 'NEEDS BACKDROP',
+    'path' => 'FOR PATHS',
     _ when looked(motoliiDir, file) => 'UNSUPPORTED',
     _ => 'NO CHANGE',
   };
@@ -290,8 +293,32 @@ abstract final class EffectTiles {
       ..set(card, 'size', 1.8)
       ..key(card, 'x', moments.first, -0.84)
       ..key(card, 'x', moments.last, 0.84);
-    void lay(bool moving, {bool road = false, bool text = false}) {
-      for (final (thing, seen) in [(grid, moving || text), (card, moving), (photo, !moving && !text), (under, road), (words, text)]) {
+    var drawing = 0;   // (AbsentMotion's sample drawing, made the first time one asks for it; -1 not made)
+    int sketch() {   // (effect_thumbs.py sketch(): a spiral and a wave, pen strokes, as the window's brush makes them (doc_brush), its RENDER 384 as here)
+      if (drawing != 0) return drawing;
+      m.at(0);   // (a stroke is on from the stage's present moment, as a thing added is: from the first, as the tile's pictures are)
+      final made = <int>[];
+      for (final (wide, line) in [
+        (16, [for (var j = 0; j < 100; j++) (192 + math.cos(j / 9) * (14 + j * 1.1), 172 + math.sin(j / 9) * (14 + j * 1.1))]),
+        (12, [for (var j = 0; j < 41; j++) (62 + j * 6.5, 302 + math.sin(j / 3) * 18)]),
+      ]) {
+        final ticket = m.later('brush', word: '0 $wide ${[for (final (x, y) in line) '${x.toStringAsFixed(1)} ${y.toStringAsFixed(1)} 1'].join(' ')}');
+        var made1 = -1;
+        for (var n = 0; n < 2000 && (made1 = m.answer(ticket)) == -1; n++) {
+          sleep(const Duration(milliseconds: 5));
+        }
+        made.add(made1);   // (the shape it made)
+      }
+      if (made.any((t) => t <= 0)) return drawing = -1;
+      m
+        ..say(made[0], 'drawing', '${m.word(made[0], 'drawing')} ; ${m.word(made[1], 'drawing')}')   // (one drawing of both, as AbsentMotion's is one layer)
+        ..say(made[0], 'path', '${m.word(made[0], 'path')} ${m.word(made[1], 'path')}')
+        ..say(made[0], 'fill', 'ffc23d')
+        ..set(made[1], 'opacity', 0);
+      return drawing = made[0];
+    }
+    void lay(bool moving, {bool road = false, int only = 0}) {   // (only: the words or the drawing alone over the grid)
+      for (final (thing, seen) in [(grid, moving || only != 0), (card, moving), (photo, !moving && only == 0), (under, road), (words, only == words), if (drawing > 0) (drawing, only == drawing)]) {
         m.set(thing, 'opacity', seen ? 1 : 0);
       }
     }
@@ -319,7 +346,7 @@ abstract final class EffectTiles {
     lay(true);
     final moved = shoot('${folder.path}/moved.png');
     final enough = plain.length == moments.length && moved.length == moments.length;
-    final shows = table(dir), own = {for (final t in [photo, card, words]) ...m.values(t)};
+    final shows = table(dir), own = {for (final t in [photo, card, words]) ...m.values(t)};   // (a drawing's are a shape's: none of them js_)
     for (final (f, home) in files) {
       try {
         Directory(File(home).parent.path).createSync(recursive: true);
@@ -338,17 +365,18 @@ abstract final class EffectTiles {
       var same = false, split = false, stands = true;
       var made = const <String>[];
       final worded = show?.text != null || needs(dir, f) == 'text';   // (one for text, as its table or one who looked says: on words alone)
-      final wordedOk = worded && () {   // (the words as they are, beside which it is seen to do something)
-        m.say(words, 'text', show?.text?.isNotEmpty ?? false ? show!.text! : 'Motolii');
-        lay(false, text: true);
-        return shoot('${folder.path}/worded.png').length == moments.length;
+      final alone = worded ? words : (show?.drawn ?? false) || needs(dir, f) == 'path' ? math.max(sketch(), 0) : 0;   // (one for strokes or a path: on the drawing alone)
+      final aloneOk = alone != 0 && () {   // (the words or the drawing as they are, beside which it is seen to do something)
+        if (worded) m.say(words, 'text', show?.text?.isNotEmpty ?? false ? show!.text! : 'Motolii');
+        lay(false, only: alone);
+        return shoot('${folder.path}/alone.png').length == moments.length;
       }();
-      final bare = worded ? 'worded' : 'plain';
-      for (final moving in worded ? [false] : [first, if (!first) true]) {   // (nothing seen on the whole photo: on a card going past, where what it does at an edge or to what moves shows, as AbsentMotion's "move")
-        final passes = said.contains('transition') && !worded;   // (one is put on the photo, the road under it)
-        lay(moving, road: passes, text: worded);
-        final whole = !moving && !passes && !worded && (f.endsWith('.fs') || f.endsWith('.wgsl') || f.endsWith('.json')) && m.say(0, 'script', f);   // (.json: Filament's own settings, laid on the stage's view: viewer_settings.h)   // (a screen effect; the stage takes an AviUtl2 script too, but draws none of it: motolii.h, a thing's)
-        final thing = worded ? words : moving ? card : photo, on = whole ? 0 : thing, onIt = !whole && m.say(thing, 'fx', f);   // (as a thing's: as edit.sh says it)
+      final bare = alone != 0 ? 'alone' : 'plain';
+      for (final moving in alone != 0 ? [false] : [first, if (!first) true]) {   // (nothing seen on the whole photo: on a card going past, where what it does at an edge or to what moves shows, as AbsentMotion's "move")
+        final passes = said.contains('transition') && alone == 0;   // (one is put on the photo, the road under it)
+        lay(moving, road: passes, only: alone);
+        final whole = !moving && !passes && alone == 0 && (f.endsWith('.fs') || f.endsWith('.wgsl') || f.endsWith('.json')) && m.say(0, 'script', f);   // (.json: Filament's own settings, laid on the stage's view: viewer_settings.h)   // (a screen effect; the stage takes an AviUtl2 script too, but draws none of it: motolii.h, a thing's)
+        final thing = alone != 0 ? alone : moving ? card : photo, on = whole ? 0 : thing, onIt = !whole && m.say(thing, 'fx', f);   // (as a thing's: as edit.sh says it)
         final filed = <String, double>{};
         for (final MapEntry(:key, :value) in (show?.knobs ?? const <String, double>{}).entries) {
           if (m.value(on, key, 0) case final was? when !_part.hasMatch(key)) filed[key] = was;
@@ -364,7 +392,7 @@ abstract final class EffectTiles {
         } else if (sweeps.isEmpty && (!runs || heaviest != null)) {   // (one that runs by the clock its heaviest knob turned as it runs, or none)
           if (_telling(m, on, knobs, filed, lists, folder.path, first: heaviest, alone: runs) case final knob?) sweeps[knob.$1] = [knob.$2, knob.$3];
         }
-        if (!moving && !worded && !runs && sweeps.isEmpty && enough && _same('${folder.path}/usual.png', '${folder.path}/sample.png')) {   // (nothing on the photo: no sixteen pictures of nothing)
+        if (!moving && alone == 0 && !runs && sweeps.isEmpty && enough && _same('${folder.path}/usual.png', '${folder.path}/sample.png')) {   // (nothing on the photo: no sixteen pictures of nothing)
           if (whole) m.say(0, 'script', 'none');
           if (onIt) m.say(thing, 'fx', 'none');
           same = true;
@@ -379,14 +407,14 @@ abstract final class EffectTiles {
         if (whole) m.say(0, 'script', 'none');
         if (onIt) m.say(thing, 'fx', 'none');
         if (made.length < moments.length) continue;
-        same = enough && (!worded || wordedOk) && _unseen(home, '${folder.path}/${moving ? 'moved' : bare}');
+        same = enough && (alone == 0 || aloneOk) && _unseen(home, '${folder.path}/${moving ? 'moved' : bare}');
         stands = !moving && !runs && sweeps.isEmpty;
         split = stands && !said.contains('generator');
         if (!same) break;
       }
       if (made.length < moments.length || same) {   // (put on but not drawn, a script that stops, or nothing seen: the sample as it is)
         for (final (k, _) in moments.indexed) {
-          if (enough) File('${folder.path}/${worded && wordedOk ? bare : 'plain'}_$k.png').copySync(_drawn(home, k));
+          if (enough) File('${folder.path}/${aloneOk ? bare : 'plain'}_$k.png').copySync(_drawn(home, k));
         }
         stands = true;
         if (!enough) continue;
