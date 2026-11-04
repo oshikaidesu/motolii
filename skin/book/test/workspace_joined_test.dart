@@ -29,7 +29,7 @@ import 'package:lab_book/workspace/dock_fonts.dart';
 import 'package:lab_book/workspace/dock_map.dart' show dockMap, dockModel;
 import 'package:lab_book/workspace/dock_glyphs.dart' show DockG;
 import 'package:lab_book/workspace/effect_tiles.dart' show EffectTiles;
-import 'package:lab_book/workspace/keys.dart' show WsKeys;
+import 'package:lab_book/workspace/keys.dart' show WsKeys, activatorOf, defaultKeys;
 import 'package:lab_book/workspace/dock_make.dart' show ColorsShelf, CreateShelf;
 import 'package:lab_book/workspace/dock_program.dart' show programs;
 import 'package:lab_book/workspace/stage_art.dart' show WsArt;

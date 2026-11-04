@@ -19,7 +19,7 @@ Motolii の欄は、コードを読んで確かめた（行は各行の右）。
 | E 自動でそろえる | Premiere の Auto Ducking・Color Match | VocAlign、Vocal Rider | — | **無い**（音の大きさと打点は読める：`engine/sound.h:1`） |
 | F 何かで値を動かす | wiggle、音をキーに | Kickstart、LFOTool | — | 一部：振る舞い（揺れ・ノイズ・ずらし）、式。音で値を動かすのは無い（`doc_kinds.h:309`） |
 | G 最初の案を出す | 色の一覧（Pigment） | Scaler、Ozone | Image Palette、uiGradients | 一部：写真から色、グラデの見本（`dock_make.dart:280`） |
-| H 一発・名前で呼ぶ | KBar、Motion Tools | SWS、名前で呼ぶ命令 | 一押しで形（Remove BG、Autoflow） | 一部：揃え、キーの割り当て。命令を打って呼ぶ窓は無い（`keys.dart:1`、`workspace.dart:556`） |
+| H 一発・名前で呼ぶ | KBar、Motion Tools | SWS、名前で呼ぶ命令 | 一押しで形（Remove BG、Autoflow） | **有る**：Mac の Help メニューの検索（⌘⇧/）が全部のメニューを名前で探す。キーのある命令は全部メニューに（11/4、`workspace.dart` の Mark メニュー）。揃え、キーの割り当て（`keys.dart:1`） |
 | I まとめて扱う | 一括の名前変え（Global Renamer） | — | Rename It、Tokens Studio | 一部：見た目だけ貼る。番号付きの名前変え・探して置き換えは無い（`workspace.dart:337`） |
 | J 中身を流し込む | CSV・JSON を式で読む | — | Content Reel、Charts | 一部：Count Up・Timecode。CSV・声から字幕は無い（`absent_motion.h:20`） |
 | K よその形式と行き来 | Overlord | 形式の変換 | html.to.design、Image Tracer | 一部：SVG・Lottie・p5 などを読む。PSD・Lottie 書き出しは無い（`doc_edit.h:80`） |

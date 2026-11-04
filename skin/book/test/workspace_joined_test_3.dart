@@ -2400,6 +2400,24 @@ void _tests3() {
     expect(t.takeException(), isNull);
     await _close(t);
   }, skip: !_built);
+  testWidgets('every command a key says is in the menu bar with that key, where the Help menu\'s search finds it by its name (Apple\'s HIG); the stage\'s tools on its own bar', (t) async {
+    await _pump(t);
+    final shown = <SingleActivator>[];
+    void walk(List<PlatformMenuItem> items) {
+      for (final i in items) {
+        if (i is PlatformMenu) walk(i.menus);
+        if (i is PlatformMenuItemGroup) walk(i.members);
+        if (i.shortcut case final SingleActivator s) shown.add(s);
+      }
+    }
+    walk(t.widget<PlatformMenuBar>(find.byType(PlatformMenuBar)).menus);
+    bool same(SingleActivator a, SingleActivator b) => a.trigger == b.trigger && a.meta == b.meta && a.shift == b.shift && a.control == b.control && a.alt == b.alt;
+    final commands = {for (final (_, command) in defaultKeys) if (!command.startsWith('tool.')) command};   // (a command two keys say, Delete and Backspace, shows one of them)
+    final missing = [for (final c in commands) if (!defaultKeys.any((k) => k.$2 == c && shown.any((s) => same(s, activatorOf(k.$1)!)))) c];
+    expect(missing, isEmpty);
+    expect(t.takeException(), isNull);
+    await _close(t);
+  }, skip: !_built);
   testWidgets('⌘O lists the documents beside it as CapCut\'s desktop home lays them, told as Alight Motion\'s are: its picture, length, shape, resolution, size and rate, by day or by name; a copy made, the copy opened; File › Use Frame as Project Picture', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     expect(m.add('picture', '$motoliiDir/fx_sample.jpg'), isNot(0), reason: m.trouble);

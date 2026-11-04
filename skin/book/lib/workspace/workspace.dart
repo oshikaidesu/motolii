@@ -495,6 +495,8 @@ class _WorkspaceState extends State<Workspace> {
               item('Save to My Elements', 'thing.saveElement'),
               item('Select All', 'edit.selectAll'),
               item('Deselect All', 'edit.deselectAll'),
+              item('Select Previous Layer', 'layer.previous'),   // (After Effects' names for its ⌘↑ and ⌘↓)
+              item('Select Next Layer', 'layer.next'),
             ],
           ),
           PlatformMenuItemGroup(
@@ -517,6 +519,17 @@ class _WorkspaceState extends State<Workspace> {
           item('Solo', 'thing.solo'),
           item('Keyed Values', 'thing.lanes'),
           item('Deactivate', 'thing.deactivate'),
+        ],
+      ),
+      // (Final Cut Pro's Mark menu: Go To Beginning and End, Previous and Next Frame, as its guide's "Navigate within your
+      //  clips" names them; ten frames and After Effects' J and K, its previous and next visible item, beside them: every
+      //  command in the menu bar, where the Help menu's search finds it by its name, Apple's HIG)
+      PlatformMenu(
+        label: 'Mark',
+        menus: [
+          PlatformMenu(label: 'Go To', menus: [item('Beginning', 'frame.first'), item('End', 'frame.last')]),
+          PlatformMenu(label: 'Previous', menus: [item('Frame', 'frame.previous'), item('10 Frames', 'frame.back10'), item('Visible Item', 'frame.previousStop')]),
+          PlatformMenu(label: 'Next', menus: [item('Frame', 'frame.next'), item('10 Frames', 'frame.forward10'), item('Visible Item', 'frame.nextStop')]),
         ],
       ),
       PlatformMenu(
@@ -566,6 +579,9 @@ class _WorkspaceState extends State<Workspace> {
         menus: [
           item('Sequence Layers', 'layers.sequence'),
           PlatformMenuItemGroup(members: [for (final (label, how) in _times) item(label, 'time.$how')]),
+          PlatformMenuItemGroup(   // (Live 42.16's Nudge Selection Left and Right, ten frames with ⇧)
+            members: [item('Nudge Selection Left', 'nudge.left'), item('Nudge Selection Right', 'nudge.right'), item('Nudge Selection Left 10 Frames', 'nudge.left10'), item('Nudge Selection Right 10 Frames', 'nudge.right10')],
+          ),
         ],
       ),
       // (a menu titled Help: the Mac puts its search of every menu item in it (Apple's HIG, the Help menu), so a feature
