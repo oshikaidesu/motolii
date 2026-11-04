@@ -15,7 +15,7 @@ Motolii の欄は、コードを読んで確かめた（行は各行の右）。
 | A 見て探す | 動く見本付きのプリセット一覧（Animation Composer） | XO、ADSR Sample Manager | Iconify・Unsplash、色と書体を選ぶ | **有る**：地図（種類の島と色）、説明文まで探す、★（`dock_map.dart`、`dock_effects.dart:77`） |
 | B 自分の素材で試す・戻す | 乗せると再生する見本 | XO の Playground、ランダム化（Playbeat） | — | 一部：効果ファイルの札に乗せると選んだ物に掛かって見え、離すと戻る（11/4、`doc_paths.h` `doc_carry_effect`）。ThorVG の効果・動き・ルックはまだ。Snapshot で前と見比べる（`stage.dart:85`） |
 | C 比べる・測る | Premiere の Comparison View、スコープ | SPAN、REFERENCE | — | 一部：Snapshot と音の波形だけ（`timeline.dart:419`） |
-| D 見えない間違いを知らせる | 出典なし | （メーター） | Stark、Contrast、Design Lint | **無い**：借り先の IRIS は OpenCV が要る（Homebrew の opencv は依存 107 個）。OpenCV を小さく作る形を測る |
+| D 見えない間違いを知らせる | 出典なし | （メーター） | Stark、Contrast、Design Lint | **無い**：借り先の IRIS は OpenCV が要る（Homebrew の opencv は依存 107 個）。OpenCV を core・imgproc だけで作れば 44 秒・10.8 MB、IRIS はコマを 1 枚ずつ受け取れる（測った、11/4）。エンジンに入れるのはこれから |
 | E 自動でそろえる | Premiere の Auto Ducking・Color Match | VocAlign、Vocal Rider | — | 一部：Auto Duck（11/4、Audacity の説明書どおり、`motolii_calls.h` `duck`）。色を合わせる（Color Match）は無い |
 | F 何かで値を動かす | wiggle、音をキーに | Kickstart、LFOTool | — | 一部：振る舞い（揺れ・ノイズ・ずらし）、式。音で値を動かすのは無い（`doc_kinds.h:309`） |
 | G 最初の案を出す | 色の一覧（Pigment） | Scaler、Ozone | Image Palette、uiGradients | 一部：写真から色、グラデの見本（`dock_make.dart:280`） |
