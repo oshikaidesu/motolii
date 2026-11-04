@@ -58,6 +58,7 @@ int motolii_thumbnail(const char* film, const char* png, int wide);   /* a film'
 int motolii_thumbnail_at(const char* film, const char* png, int wide, double fraction);   /* the same, a picture that far along the film (0 to 1) */
 int motolii_thumbnail_seconds(const char* film, const char* png, int wide, double seconds);   /* the same, the picture so many seconds in */
 const char* motolii_media_info(const char* file);   /* what a media file is, GStreamer's discoverer: "wide high rate seconds format" ("": cannot be read; until the next call on this thread) */
+const char* motolii_flashes(const char* film, const char* folder);   /* a film's flashes and patterns that may cause seizures, as EA's IRIS tells them (flashes.cpp): the path of the result.json it wrote under that folder, its frameData.json beside it ("": not read; any thread, one at a time; until the next call on this thread) */
 const char* motolii_font_tags(const char* path);   /* a font file's kinds as CoreText reads them: serif sans script mono bold light italic symbols ornaments, and the languages beyond Latin it has (japanese korean chinese russian greek arabic hebrew thai hindi) */
 int motolii_add(Motolii* m, const char* kind, const char* file);   /* a new thing (kind "": what the file makes), on from the stage's present moment: its number (0: not made) */
 int motolii_remove(Motolii* m, int thing);
@@ -176,7 +177,7 @@ void motolii_files_changed(void);
 /* The motions a thing may be given (Cavalry's Animators: "name\tpath\tlabel", one to a line, until the next call): a thing's
    script is the path of the one it has (a text given one moves letter by letter). */
 const char* motolii_animators(Motolii* m);
-/* The relations written as files (relations/*.js): "name\tfile", one to a line, as the animators. */
+/* The relations written as files (a .js file each in relations/): "name\tfile", one to a line, as the animators. */
 const char* motolii_relations(Motolii* m);
 /* What the inside's hand has spent its time on since it was opened (a line of words, for measuring). */
 const char* motolii_spent(Motolii* m);

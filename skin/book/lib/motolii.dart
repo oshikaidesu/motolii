@@ -100,6 +100,41 @@ Future<String> mediaInfoOf(String lib, String file) async {
   ].where((s) => s.isNotEmpty).join(' · ');
 }
 
+/// Where a film fails EA's IRIS (motolii_flashes, on another isolate; its results kept in ~/Library/Caches/Motolii/flashes):
+/// the stretches, seconds from and to, of its frames that fail, more than three flashes in a second, two to three for
+/// five seconds, or a pattern (its README; FlashResult's ExtendedFail and FlashFail, PatternResult's Fail, as its
+/// frameData.json tells each frame that does not pass). Empty: it passes. null: it was not read.
+Future<List<(double, double)>?> flashesOf(String lib, String film) async {
+  final folder = '${Platform.environment['HOME']}/Library/Caches/Motolii/flashes';
+  final told = await Isolate.run(() {
+    final from = film.toNativeUtf8(), to = folder.toNativeUtf8();
+    final said = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_flashes(from, to).toDartString();
+    malloc
+      ..free(from)
+      ..free(to);
+    return said;
+  });
+  if (told.isEmpty) return null;
+  try {
+    final frames = (jsonDecode(File('${File(told).parent.path}/frameData.json').readAsStringSync()) as Map)['NonPassFrameData'] as Map;
+    List<num> of(String k) => [...(frames[k] as List? ?? const []).cast<num>()];
+    final n = of('Frame'), luminance = of('LuminanceFrameResult'), red = of('RedFrameResult'), pattern = of('PatternFrameResult');
+    final at = [for (final s in (frames['TimeStampString'] as List? ?? const []).cast<String>()) s.split(':').fold<double>(0, (a, p) => a * 60 + double.parse(p))];
+    final fails = <(double, double)>[];
+    for (var i = 0; i < n.length; i++) {
+      if (luminance[i] < 2 && red[i] < 2 && pattern[i] < 1) continue;
+      if (fails.isNotEmpty && i > 0 && n[i - 1] == n[i] - 1 && fails.last.$2 == at[i - 1]) {   // (the frame before failed too: one stretch)
+        fails.last = (fails.last.$1, at[i]);
+      } else {
+        fails.add((at[i], at[i]));
+      }
+    }
+    return fails;
+  } catch (_) {
+    return null;
+  }
+}
+
 class Motolii {
   Motolii._(this._lib, this._m, this.libPath, this.home);
   final DynamicLibrary _lib;

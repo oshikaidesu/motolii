@@ -60,6 +60,10 @@ Motolii は「ネットで見つけたかっこいい表現を、自分の動画
 | [Skia](https://skia.org/)（パスの部分だけ） | chrome/m149 | BSD-3-Clause | `engine/skia.sh` | なし |
 | [libtess2](https://github.com/memononen/libtess2) | 8dbd648 | SGI Free Software License B 2.0 | `engine/libtess2.sh` | なし |
 | [Jolt Physics](https://github.com/jrouwe/JoltPhysics) | a4b24c3 | MIT | `engine/jolt.sh` | なし |
+| [IRIS](https://github.com/electronicarts/IRIS)（書き出した動画の点滅の確かめ） | d96978a | BSD-3-Clause | `engine/iris.sh` | なし |
+| [OpenCV](https://github.com/opencv/opencv)（IRIS が読む core・imgproc・features2d・videoio だけ） | 4.12.0（49486f6） | Apache-2.0 | `engine/iris.sh` | なし |
+| [spdlog](https://github.com/gabime/spdlog)（IRIS のログ。fmt を含む） | v1.15.3（6fa3601） | MIT | `engine/iris.sh` | なし |
+| [nlohmann/json](https://github.com/nlohmann/json)（IRIS の設定と結果） | v3.12.0（55f9368） | MIT | `engine/iris.sh` | なし |
 | [PianoRollSvg.js](https://github.com/bladeSk/midi-to-piano-roll)（MIDI ビューのピアノロール） | 205854e | MIT（作者の package.json の申告。ライセンスの文書が作者の側に無いので同梱しない） | `engine/midi_roll.sh` | なし |
 | [Filament の組み立て済み SDK](https://github.com/google/filament/releases/tag/v1.77.2)（前の試しのスクリプトだけが使う） | v1.77.2 | Apache-2.0 | `engine/sdk.sh` | なし |
 | [BabylonJS/JsRuntimeHost](https://github.com/BabylonJS/JsRuntimeHost) の Node-API | 980cfb0 | MIT | `engine/tsl/jsrh_napi/build.sh` | `jsrh_qjs017_dawn.patch` |

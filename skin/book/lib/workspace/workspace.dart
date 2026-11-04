@@ -159,7 +159,23 @@ class _WorkspaceState extends State<Workspace> {
     _ws.notice = 'Writing ${mp4.split('/').last} …';
     final done = await m.write(mp4);
     if (mounted) _ws.notice = done ? 'Written: ${mp4.split('/').last}' : 'Not written: ${m.trouble}';
+    if (done && RegExp(r'\.(mp4|mov|m4v)$').hasMatch(mp4)) unawaited(_checkFlashes(m, mp4));
     return done;
+  }
+
+  /// A film just written looked over for flashes that may cause seizures, as YouTube Studio's Checks look over a video
+  /// while it uploads and say "No issues found" or what and where (EA's IRIS: flashesOf); the top bar says it.
+  Future<void> _checkFlashes(Motolii m, String film) async {
+    final written = 'Written: ${film.split('/').last}', checking = '$written · Checking flashes…';
+    _ws.notice = checking;
+    final fails = await flashesOf(m.libPath, film);
+    if (!mounted || _ws.notice != checking) return;   // (something said meanwhile stands)
+    String clock(double s) => '${s ~/ 60}:${(s % 60).toStringAsFixed(1).padLeft(4, '0')}';
+    _ws.notice = switch (fails) {
+      null => written,
+      [] => '$written · Flash check: no issues found',
+      _ => '$written · Flash check: too many flashes at ${fails.map((f) => '${clock(f.$1)}–${clock(f.$2)}').join(', ')}',
+    };
   }
 
   /// Documents of the list written out: one as AbsentMotion's list does it (opened, and its export settings asked:

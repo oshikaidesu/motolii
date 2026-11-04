@@ -455,6 +455,30 @@ class MotoliiBindings {
   late final _motolii_fits = _motolii_fitsPtr
       .asFunction<int Function(ffi.Pointer<Motolii>)>();
 
+  ffi.Pointer<pkg_ffi.Utf8> motolii_flashes(
+    ffi.Pointer<pkg_ffi.Utf8> film,
+    ffi.Pointer<pkg_ffi.Utf8> folder,
+  ) {
+    return _motolii_flashes(film, folder);
+  }
+
+  late final _motolii_flashesPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<pkg_ffi.Utf8> Function(
+            ffi.Pointer<pkg_ffi.Utf8>,
+            ffi.Pointer<pkg_ffi.Utf8>,
+          )
+        >
+      >('motolii_flashes');
+  late final _motolii_flashes = _motolii_flashesPtr
+      .asFunction<
+        ffi.Pointer<pkg_ffi.Utf8> Function(
+          ffi.Pointer<pkg_ffi.Utf8>,
+          ffi.Pointer<pkg_ffi.Utf8>,
+        )
+      >();
+
   ffi.Pointer<pkg_ffi.Utf8> motolii_font_tags(ffi.Pointer<pkg_ffi.Utf8> path) {
     return _motolii_font_tags(path);
   }

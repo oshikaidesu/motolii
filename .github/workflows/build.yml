@@ -34,6 +34,16 @@ jobs:
             engine/third_party/libtess2
             engine/third_party/ISF-Files
           key: deps-${{ runner.os }}-${{ hashFiles('engine/dawn_probe/*.patch', 'engine/dawn_probe/build.sh', 'engine/dawn_probe/tvg_on_dawn.sh', 'engine/skia.sh', 'engine/jolt.sh', 'engine/libtess2.sh', 'engine/check/isf_all.sh') }}
+      - uses: actions/cache/restore@v4   # (iris.sh's, apart: its pins change without the others built again; what is built, not OpenCV's source)
+        id: iris
+        with:
+          path: |
+            engine/third_party/iris/IRIS
+            engine/third_party/iris/spdlog
+            engine/third_party/iris/json
+            engine/third_party/iris/opencv_out
+            engine/third_party/iris/lib
+          key: iris-${{ runner.os }}-${{ hashFiles('engine/iris.sh') }}
       - run: brew bundle
       - uses: subosito/flutter-action@v2
         with:
@@ -69,3 +79,13 @@ jobs:
             engine/third_party/libtess2
             engine/third_party/ISF-Files
           key: ${{ steps.deps.outputs.cache-primary-key }}
+      - uses: actions/cache/save@v4
+        if: always() && steps.iris.outputs.cache-hit != 'true'
+        with:
+          path: |
+            engine/third_party/iris/IRIS
+            engine/third_party/iris/spdlog
+            engine/third_party/iris/json
+            engine/third_party/iris/opencv_out
+            engine/third_party/iris/lib
+          key: ${{ steps.iris.outputs.cache-primary-key }}

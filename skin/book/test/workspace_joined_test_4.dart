@@ -177,4 +177,39 @@ void _tests4() {
     expect(t.takeException(), isNull);
     await _close(t);
   }, skip: !_built);
+
+  testWidgets('a film written is looked over for flashes, as YouTube Studio\'s Checks look over an upload: a white that stays passes, one that blinks five times a second fails where it blinks (EA\'s IRIS: more than three flashes in a second)', (t) async {
+    final ws = await _pump(t), m = ws.inside!, white = m.add('shape', 'rect');
+    m
+      ..set(0, 'render_height', 180)
+      ..set(0, 'render_rate', 30)
+      ..say(white, 'fill', 'ffffff')
+      ..set(white, 'size', 20)
+      ..set(white, 'duration', 2);
+    Future<String> written() async {
+      ws.onRender!();
+      var said = '';
+      for (var i = 0; i < 6000 && !said.contains('Flash check'); i++) {   // (said for ten seconds: read as it comes)
+        await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+        await t.pump();
+        said = ws.notice ?? said;
+      }
+      return said;
+    }
+
+    expect(await written(), endsWith('Flash check: no issues found'), reason: m.trouble);
+    for (var k = 0; k < 20; k++) {   // (on and off each tenth of a second, held between)
+      m
+        ..key(white, 'opacity', k / 10, k.isEven ? 1 : 0)
+        ..key(white, 'opacity', k / 10 + 0.09, k.isEven ? 1 : 0);
+    }
+    final said = await written();
+    expect(said, contains('Flash check: too many flashes at 0:'), reason: m.trouble);
+    final from = double.parse(RegExp(r'at 0:([\d.]+)').firstMatch(said)!.group(1)!);
+    expect(from, lessThan(1.5), reason: 'where it blinks, from the first second: $said');
+    File('${ws.documentFolder}/${ws.document!.replaceFirst('.motolii', '.mp4')}').deleteSync();
+    await settled(t, ws);
+    expect(t.takeException(), isNull);
+    await _close(t);
+  }, skip: !_built);
 }
