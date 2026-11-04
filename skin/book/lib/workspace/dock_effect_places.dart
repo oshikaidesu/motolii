@@ -42,6 +42,7 @@ class EffectPlacesState extends State<EffectPlaces> {
   final _menu = GlobalKey<WsMenuState>();
   EffectDeck? _naming;   // (the deck whose name, or search, is being written in its row, as a Finder folder's)
   bool _search = false, _folded = false;   // (folded: as it was before the row was needed)
+  List<String>? _saving;   // (the Favorites going into the deck being named: emptied once it is named, as Lightroom's Save)
   final _words = TextEditingController();
   late final FocusNode _focus = FocusNode()..addListener(() => _focus.hasFocus ? null : _named());
 
@@ -77,6 +78,8 @@ class EffectPlacesState extends State<EffectPlaces> {
       _naming = null;
       if (_folded) c.mem.fxListOpen = false;
     });
+    if (_saving case final s?) c.unstar(s);
+    _saving = null;
   }
 
   /// A new deck, its name at once to write, as a new bin in Premiere or a new folder in Finder: [thing] in it (the list
@@ -131,6 +134,34 @@ class EffectPlacesState extends State<EffectPlaces> {
   /// as Lightroom Classic's Set as Target Collection (on the Quick Collection too) and its unchecking.
   WsMenuItem _aim(EffectDeck? d) => WsMenuItem('Set as Target Deck', () => widget.c.set(() => effectTargetSet(d?.target == true ? null : d)), keys: effectTarget() == d ? '✓' : '');
 
+  /// The Favorites' own right click, as Lightroom Classic's on the Quick Collection: Set as Target Collection, Save Quick
+  /// Collection… and Clear Quick Collection (Adobe's Work with photo collections; Thomas Fitzgerald's Quick Lightroom Tip:
+  /// Clear Quick Collection, 2016). Saved, the starred become a deck, its name at once to write and the deck open, as New
+  /// Deck's from the +; named, the Favorites are emptied for the next lot, as Lightroom's Clear Quick Collection After
+  /// Saving is on until unchecked (a deck here is named in its row, with no dialog to uncheck it in); Escape is the
+  /// dialog's Cancel, no deck and the Favorites as they were. The whole of the Favorites, whatever is searched, as
+  /// Lightroom's from a filtered view. Only this shelf's effects: the Fonts shelf's stars are kept in the same file.
+  void _favoritesMenu(Offset at) {
+    final c = widget.c, held = [for (final id in c.mem.starred) if (widget.known.contains(id)) id];
+    _open(at, [
+      _aim(null),
+      const WsMenuItem.rule(),
+      WsMenuItem('Save Favorites…', held.isEmpty ? null : () {
+        final d = EffectDeck(deckName('Deck'));
+        c.set(() {
+          effectDecks().add(d);
+          c.mem.fxPlace = '@${d.name}';
+        });
+        for (final id in held) {
+          widget.put(d, id);
+        }
+        _saving = held;
+        naming(d);
+      }),
+      WsMenuItem('Clear Favorites', held.isEmpty ? null : () => c.unstar(held)),
+    ]);
+  }
+
   /// What is done to a deck is on its row, by a right click, as Ableton's label (Rename, the colour) and Lightroom's
   /// Edit Smart Collection.
   void _deckMenu(EffectDeck d, Offset at) {
@@ -156,6 +187,10 @@ class EffectPlacesState extends State<EffectPlaces> {
   Widget _field(EffectDeck d) => CallbackShortcuts(
     bindings: {
       const SingleActivator(LogicalKeyboardKey.escape): () {
+        if (_saving != null) {   // (Save Favorites… let go: the dialog's Cancel)
+          widget.c.set(() => (effectDecks().remove(d), widget.c.mem.fxPlace = '★'));
+          _saving = null;
+        }
         _words.text = _search ? d.words : d.name;
         _focus.unfocus();
       },
@@ -272,7 +307,7 @@ class EffectPlacesState extends State<EffectPlaces> {
             ? Column(   // (folded to the deck on the map, what it holds under it, as the browser goes into a category and back)
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _into(deck, (over) => _row(c.mem.fxPlace, open: false, lit: true, onTap: () => c.set(() => c.mem.fxListOpen = true), menu: (at) => deck == null ? _open(at, [_aim(null)]) : _deckMenu(deck, at), cover: widget.covers[c.mem.fxPlace])),
+                  _into(deck, (over) => _row(c.mem.fxPlace, open: false, lit: true, onTap: () => c.set(() => c.mem.fxListOpen = true), menu: (at) => deck == null ? _favoritesMenu(at) : _deckMenu(deck, at), cover: widget.covers[c.mem.fxPlace])),
                   Expanded(child: ListView(padding: EdgeInsets.zero, children: [_held(deck)])),
                 ],
               )
@@ -282,14 +317,14 @@ class EffectPlacesState extends State<EffectPlaces> {
                   c.set(() => c.mem.fxListOpen = true);
                   return false;
                 },
-                builder: (context, _, _) => _row(c.mem.fxPlace, open: false, lit: true, onTap: () => c.set(() => c.mem.fxListOpen = true), menu: deck != null ? (at) => _deckMenu(deck, at) : c.mem.fxPlace == '★' ? (at) => _open(at, [_aim(null)]) : null),
+                builder: (context, _, _) => _row(c.mem.fxPlace, open: false, lit: true, onTap: () => c.set(() => c.mem.fxListOpen = true), menu: deck != null ? (at) => _deckMenu(deck, at) : c.mem.fxPlace == '★' ? (at) => _favoritesMenu(at) : null),
               )
             : ListView(
           padding: EdgeInsets.symmetric(vertical: Shape.s(2)),
           children: [
             _row('All'),
             _row('Recent'),
-            _into(null, (over) => _row('★', lit: over, menu: (at) => _open(at, [_aim(null)]))),
+            _into(null, (over) => _row('★', lit: over, menu: (at) => _favoritesMenu(at))),
             if (widget.mapped && c.mem.fxPlace == '★') _held(null),
             _row('In video'),
             DockSection('Decks', trailing: Builder(builder: (b) => DockIconButton(DockG.plus, key: const ValueKey('ws-fx-deck-new'), onTap: () => _plus(b)))),

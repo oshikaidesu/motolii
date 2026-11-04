@@ -287,6 +287,44 @@ void main() {
     await t.pumpWidget(const SizedBox());
   }, skip: !insideBuilt);
 
+  testWidgets('the Favorites\' right click, as Lightroom Classic\'s on its Quick Collection: Save Favorites… makes a deck of the starred, its name at once to write, and empties them; Clear Favorites empties them; the Fonts\' stars stay', (t) async {
+    final kept = File('${Directory.systemTemp.createTempSync('stars').path}/effect_stars.json');
+    dockStarsAt(kept);
+    final ws = _joined(), m = ws.inside!, a = m.effects[0], b = m.effects[1].$2;
+    kept.writeAsStringSync(jsonEncode([a.$2, 'Avenir Next', b]));
+    await _shelf(t, ws, const Size(600, 918), 'Effects');
+    Finder place(String p) => find.byKey(ValueKey('ws-fx-place-$p'));
+    Future<void> press(Finder f, {int buttons = kPrimaryButton}) async {
+      await t.tap(f, buttons: buttons);
+      await t.pump(kDoubleTapTimeout + const Duration(milliseconds: 50));
+      await t.pumpAndSettle();
+    }
+    await press(place('★'), buttons: kSecondaryButton);
+    await press(find.byKey(const ValueKey('ws-menu-Save Favorites…')));
+    await t.sendKeyEvent(LogicalKeyboardKey.escape);
+    await t.pumpAndSettle();
+    expect([effectDecks().length, jsonDecode(kept.readAsStringSync())], [0, [a.$2, 'Avenir Next', b]], reason: 'Escape, the dialog\'s Cancel: no deck, the Favorites as they were');
+    await press(place('★'), buttons: kSecondaryButton);
+    await press(find.byKey(const ValueKey('ws-menu-Save Favorites…')));
+    final naming = find.descendant(of: find.byKey(const ValueKey('ws-fx-naming')), matching: find.byType(EditableText));
+    expect(t.widget<EditableText>(naming).focusNode.hasFocus, isTrue, reason: 'its name at once to write, as the dialog\'s Collection Name');
+    await t.enterText(naming, 'Picks');
+    await t.testTextInput.receiveAction(TextInputAction.done);
+    await t.pumpAndSettle();
+    expect([effectDecks().single.name, ...effectDecks().single.things.map((e) => e.id)], ['Picks', a.$2, b], reason: 'the starred, a deck');
+    expect(jsonDecode(kept.readAsStringSync()), ['Avenir Next'], reason: 'emptied for the next lot (Clear Quick Collection After Saving), the Fonts\' star kept');
+    expect([find.byKey(ValueKey('ws-screen-${a.$2}')), find.byKey(ValueKey('ws-screen-${m.effects[2].$2}'))].map((f) => f.evaluate().length), [1, 0], reason: 'the deck open, as New Deck\'s from the +');
+    await press(place('All'));
+    await t.enterText(find.descendant(of: find.byType(DockSearch), matching: find.byType(EditableText)), a.$1);
+    await t.pumpAndSettle();
+    await press(find.byKey(ValueKey('ws-screen-${a.$2}')), buttons: kSecondaryButton);
+    await press(find.byKey(const ValueKey('ws-menu-Add to Favorites')));
+    await press(place('★'), buttons: kSecondaryButton);
+    await press(find.byKey(const ValueKey('ws-menu-Clear Favorites')));
+    expect([jsonDecode(kept.readAsStringSync()), effectDecks().single.things.length], [['Avenir Next'], 2], reason: 'emptied, the Fonts\' star and the deck as they were');
+    await t.pumpWidget(const SizedBox());
+  }, skip: !insideBuilt);
+
   testWidgets('an effect put on comes among the last put on: in sight over the tiles and Recent in the list, the newest first, and said in the log', (t) async {
     final kept = File('${Directory.systemTemp.createTempSync('recent').path}/effect_recent.json');
     effectRecentAt(kept);

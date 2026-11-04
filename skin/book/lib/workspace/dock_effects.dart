@@ -206,7 +206,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     }
 
     Widget list(bool narrow) => EffectPlaces(c, key: _places, narrow: narrow, known: known, packs: Map.fromEntries(packs.entries.toList()..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase()))), counts: {'All': all.length, 'Recent': recent.length, '★': all.where((e) => c.starred(e.id)).length, 'In video': all.where((e) => used.contains(e.id)).length}, decks: {for (final d in decks) d: deckIds[d]!.intersection(byId.keys.toSet()).length}, mapped: c.mem.mapped.contains('Effects'), held: [for (final e in held) strip(e)], covers: {for (final d in decks) '@${d.name}': ?cover(deckIds[d]!)}, put: (d, id) {
-      if (!deckIds[d]!.contains(id)) put(d, every.firstWhere((e) => e.id == id));
+      if (every.where((e) => e.id == id).firstOrNull case final e? when !(deckIds[d]?.contains(id) ?? false)) put(d, e);   // (a deck made a moment ago is not in the table yet: Save Favorites…)
     });
     final sel = c.foot([...all, ...lost].where((e) => e.id == c.sel).firstOrNull);
     final tiles = Column(

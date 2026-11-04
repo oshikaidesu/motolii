@@ -92,6 +92,10 @@ class DockCtx {
     _stars.contains(id) ? _stars.remove(id) : _stars.add(id);
     _starsKeep(_stars);
   });
+  void unstar(Iterable<String> ids) => set(() {
+    _stars.removeAll(ids);
+    _starsKeep(_stars);
+  });
   void toggle(Set<String> s, String id) => set(() => s.contains(id) ? s.remove(id) : s.add(id));
 }
 
