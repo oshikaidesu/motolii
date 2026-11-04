@@ -24,7 +24,7 @@ import 'dock_parts.dart' show DockIconButton;
 import 'ws.dart' show WsT;
 part 'dock_map_view.dart';
 
-/// Where one shelf's items lie on its map, by id, on FontMap's canvas its width 1 ([dockSpread]); [laying] while that is
+/// Where one shelf's items lie on its map, by id, on a canvas the room's shape ([dockSpread]); [laying] while that is
 /// being worked out.
 class DockMapPlaces {
   DockMapPlaces(this.name);
@@ -33,8 +33,31 @@ class DockMapPlaces {
   final laying = ValueNotifier<bool>(false);
   String? _for;
   Map<String, Offset> _laid = const {};   // (where t-SNE lays them, before they are pushed apart: what is alike is told by it)
+  double _aspect = 1920 / 1080;   // (the room's width to its height: FontMap's canvas is the page it is shown on)
+  Future<void>? _spreading;
 
-  File get _kept => File('${Platform.environment['HOME']}/Library/Caches/Motolii/map_$name.json');
+  /// The room the map is shown in, its width to its height: pushed apart again on a canvas of that shape.
+  void roomIs(double aspect) {
+    if (!aspect.isFinite || aspect <= 0 || aspect == _aspect) return;
+    _aspect = aspect;
+    if (_laid.isNotEmpty) _spread();
+  }
+
+  /// [_laid] pushed apart for the room ([dockSpread]), one at a time, again till what it was for is the last asked.
+  Future<void> _spread() => _spreading ?? (_spreading = Zone.root.run<Future<void>>(() => Future<void>(() async {
+    try {
+      for (var laid = const <String, Offset>{}, a = 0.0; !identical(laid, _laid) || a != _aspect;) {
+        laid = _laid;
+        a = _aspect;
+        final s = laid.isEmpty ? const <Offset>[] : await _spreadAway(laid.values.toList(), a);
+        if (identical(laid, _laid)) places.value = {for (final (i, id) in laid.keys.indexed) id: s[i]};
+      }
+    } finally {
+      _spreading = null;
+    }
+  })));
+
+  File get _kept => File('${_mapsAt.path}/map_$name.json');
 
   /// Laid out for these items (each its id and what it is read from), each read as numbers by [read] (null: left off the
   /// map; [also]: what else they were laid out by, all laid out again when it changes). Those laid out before stay where
@@ -47,10 +70,9 @@ class DockMapPlaces {
     _for = key;
     Zone.root.run(() async {   // (on the program's own clock, as fontsRead: a test may wait for it)
       Future<void> show(Map<String, Offset> laid) async {   // (kept as t-SNE lays them; pushed apart each time shown, a moment's work)
-        final spread = laid.isEmpty ? const <Offset>[] : await _spreadAway(laid.values.toList());
         if (key != _for) return;
         _laid = laid;
-        places.value = {for (final (i, id) in laid.keys.indexed) id: spread[i]};
+        await _spread();
       }
       var known = <String, Offset>{};
       try {
@@ -117,21 +139,28 @@ class DockMapPlaces {
   }
 }
 
+/// Where the maps are kept between openings (a test points it elsewhere, as the decks and the recent: the maker's own left
+/// alone).
+Directory _mapsAt = Directory('${Platform.environment['HOME']}/Library/Caches/Motolii');
+void dockMapsAt(Directory d) => _mapsAt = d;
+
 /// [dockSpread] and [DockMapPlaces._joined] on an isolate of their own (Isolate.run), sent only what they are given here
 /// (a closure made inside [DockMapPlaces.need] would carry the inside's library with it).
-Future<List<Offset>> _spreadAway(List<Offset> at) => Isolate.run(() => dockSpread(at));
+Future<List<Offset>> _spreadAway(List<Offset> at, double aspect) => Isolate.run(() => dockSpread(at, aspect));
 Future<Map<String, Offset>> _joinedAway(Map<String, Offset> known, Map<String, Float32List> seen) => Isolate.run(() => DockMapPlaces._joined(known, seen));
 
-/// A tile's reach on the map: FontMap's collision radius (13 of its canvas 1920 wide), the canvas's width 1.
-const dockSpreadRadius = 13 / 1920;
+/// A tile's reach on the map: FontMap's collision radius, 13 of its canvas's pixels.
+const dockSpreadRadius = 13.0;
 
 /// Places (0 to 1 each way) pushed apart till none is within two [dockSpreadRadius] of another, each kept near where it
 /// lay: FontMap's scripts/apply-overlap-removal.mjs (MIT) with its numbers (a 1920 x 1080 canvas 40 in from its edges,
 /// radius 13, 140 ticks, pulled back at 0.03), its d3 forceSimulation's tick, forceCollide (strength 1, 3 iterations)
 /// and forceX / forceY (d3-force, ISC: simulation.js, collide.js, x.js, y.js) as they are, but for the near ones found
-/// by a sweep along x (sweep and prune, Baraff 1992) in place of its quadtree. Where each lies on that canvas, its width 1.
-List<Offset> dockSpread(List<Offset> at) {
-  const w = 1920.0, h = 1080.0, pad = 40.0, r = 13.0, pull = 0.03;
+/// by a sweep along x (sweep and prune, Baraff 1992) in place of its quadtree; its canvas, the page it is shown on, here
+/// as many pixels in the shape of the room ([aspect] its width to its height). Where each lies on that canvas.
+List<Offset> dockSpread(List<Offset> at, [double aspect = 1920 / 1080]) {
+  const pad = 40.0, r = dockSpreadRadius, pull = 0.03;
+  final w = math.sqrt(1920 * 1080 * aspect), h = 1920 * 1080 / w;
   final n = at.length, x = Float64List(n), y = Float64List(n), vx = Float64List(n), vy = Float64List(n), ox = Float64List(n), oy = Float64List(n);
   for (final (i, p) in at.indexed) {
     x[i] = ox[i] = p.dx * (w - 2 * pad) + pad;
@@ -180,7 +209,7 @@ List<Offset> dockSpread(List<Offset> at) {
       y[i] += vy[i] *= .6;
     }
   }
-  return [for (var i = 0; i < n; i++) Offset(x[i] / w, y[i] / w)];
+  return [for (var i = 0; i < n; i++) Offset(x[i], y[i])];
 }
 
 /// A picture's numbers: its colours made 16 points square, as Torralba, Fergus and Freeman's tiny images ("80 million
@@ -226,21 +255,21 @@ String? dockModel(String name) {
 /// its 512 numbers, several pictures one after another, so two effects are told apart frame by frame at the same
 /// moments: ViSiL's frame-to-frame likeness (Kordopatis-Zilos et al., ICCV 2019) taken only where the frames are of
 /// one moment, the effects' tiles all drawn at the same ones. null: one of them cannot be read, or not told. Each
-/// picture's kept once read (~/Library/Caches/Motolii/looks, by the model, the picture and when it was drawn): only a
-/// new or redrawn one is read again.
+/// picture's kept once read ([dockLookKept]): only a new or redrawn one is read again.
 final _clip = <String, Float32List>{};
 Future<Float32List?> dockSeen(Motolii m, String model, List<String> files) async {
   final key = '$model\n${files.join('\n')}';
   if (_clip[key] case final v?) return v;
-  final v = Float32List(512 * files.length), kept = <File>[], missing = <int>[];
+  final v = Float32List(512 * files.length), keys = <String>[], missing = <int>[];
   for (final (k, f) in files.indexed) {
     try {
-      kept.add(File('${Platform.environment['HOME']}/Library/Caches/Motolii/looks/${sha1.convert(utf8.encode('$model\n$f\n${File(f).lastModifiedSync().microsecondsSinceEpoch}'))}.f32'));
-      final had = kept[k].readAsBytesSync();
-      if (had.length != 512 * 4) throw const FormatException();
-      v.setRange(512 * k, 512 * (k + 1), had.buffer.asFloat32List());
+      keys.add('$model\n$f\n${File(f).lastModifiedSync().microsecondsSinceEpoch}');
     } catch (_) {
-      if (kept.length == k) return null;   // (the picture not there)
+      return null;   // (the picture not there)
+    }
+    if (dockLookKept(keys[k]) case final had?) {
+      v.setRange(512 * k, 512 * (k + 1), had);
+    } else {
       missing.add(k);
     }
   }
@@ -261,13 +290,28 @@ Future<Float32List?> dockSeen(Motolii m, String model, List<String> files) async
     if (told == null) return null;
     for (final (j, k) in missing.indexed) {
       v.setRange(512 * k, 512 * (k + 1), told[j]);
-      try {
-        kept[k].parent.createSync(recursive: true);
-        kept[k].writeAsBytesSync(Float32List.fromList(told[j]).buffer.asUint8List());
-      } catch (_) {}   // (not kept: read again next time)
+      dockLookKeep(keys[k], told[j]);
     }
   }
   return _clip[key] = v;
+}
+
+/// A picture's numbers kept once told (~/Library/Caches/Motolii/looks, by [key]: the model, what was drawn and when),
+/// so a shelf reads again only what is new; null: none kept.
+File _look(String key) => File('${Platform.environment['HOME']}/Library/Caches/Motolii/looks/${sha1.convert(utf8.encode(key))}.f32');
+Float32List? dockLookKept(String key) {
+  try {
+    final had = _look(key).readAsBytesSync();
+    return had.isEmpty || had.length % 4 != 0 ? null : had.buffer.asFloat32List();
+  } catch (_) {
+    return null;
+  }
+}
+void dockLookKeep(String key, Float32List v) {
+  try {
+    _look(key).parent.createSync(recursive: true);
+    _look(key).writeAsBytesSync(Float32List.fromList(v).buffer.asUint8List());
+  } catch (_) {}   // (not kept: read again next time)
 }
 
 /// Items' numbers of several parts side by side, as FontMap lays fonts by FontCLIP's numbers beside their tags' and

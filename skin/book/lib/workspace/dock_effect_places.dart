@@ -23,7 +23,7 @@ const dockFxListHeight = 176.0;
 final carriedEffect = Expando<String>();
 
 class EffectPlaces extends StatefulWidget {
-  const EffectPlaces(this.c, {super.key, required this.narrow, required this.counts, required this.packs, required this.decks, required this.put, required this.known});
+  const EffectPlaces(this.c, {super.key, required this.narrow, required this.counts, required this.packs, required this.decks, required this.put, required this.known, this.mapped = false, this.held = const [], this.covers = const {}});
   final DockCtx c;
   final bool narrow;   // (over the tiles, not beside them)
   final Map<String, int> counts;   // (All, Recent, ★, In video: how many of what is found each holds)
@@ -31,6 +31,9 @@ class EffectPlaces extends StatefulWidget {
   final Map<EffectDeck, int> decks;
   final void Function(EffectDeck, String id) put;
   final Set<String> known;   // (all the shelf can tell: what a deck pasted in is settled against)
+  final bool mapped;   // (the shelf a map: the map all of it, the deck picked kept open under its row to make)
+  final List<Widget> held;   // (what the open deck holds, on the map: under its row)
+  final Map<String, Widget> covers;   // (a deck's picture: its first four, Spotify's playlist cover)
   @override
   State<EffectPlaces> createState() => EffectPlacesState();
 }
@@ -182,7 +185,8 @@ class EffectPlacesState extends State<EffectPlaces> {
   }
 
   /// One row: the Media shelf's folder row (_FolderRow), a press shows what it holds.
-  Widget _row(String place, {int depth = 0, bool? open, VoidCallback? onTap, ValueChanged<Offset>? menu, Widget? field, bool lit = false}) {
+  /// [cover]: a deck's picture, its row as Spotify's library lists a playlist (its cover, its name, how many under it).
+  Widget _row(String place, {int depth = 0, bool? open, VoidCallback? onTap, ValueChanged<Offset>? menu, Widget? field, bool lit = false, Widget? cover}) {
     final c = widget.c, here = c.mem.fxPlace == place || lit;
     final (name, g, n) = _said(place);
     return GestureDetector(
@@ -193,7 +197,7 @@ class EffectPlacesState extends State<EffectPlaces> {
         builder: (context, h) => AnimatedContainer(
           duration: Mo.dur,
           curve: Mo.ease,
-          height: Shape.z(22),
+          height: Shape.z(cover == null ? 22 : 34),
           padding: EdgeInsets.only(left: Shape.s(4) + depth * Shape.s(12.0), right: WsT.inset),
           color: dockFill(here, h),
           child: Row(
@@ -203,10 +207,21 @@ class EffectPlacesState extends State<EffectPlaces> {
                 height: Shape.z(22),
                 child: open == null ? null : AnimatedRotation(turns: open ? .25 : 0, duration: Mo.dur, curve: Mo.ease, child: DockGlyph(DockG.chevron, size: Shape.z(7), color: dockInk(here, Grey.g63))),
               ),
-              DockGlyph(g, size: Shape.z(12), color: here ? WsT.onAccent : Grey.g63),
+              if (cover != null) SizedBox.square(dimension: Shape.z(28), child: cover) else DockGlyph(g, size: Shape.z(12), color: here ? WsT.onAccent : Grey.g63),
               SizedBox(width: Shape.s(6)),
-              Expanded(child: field ?? Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(dockInk(here)).copyWith(fontWeight: here ? FontWeight.w600 : FontWeight.w400))),
-              if (n != null) Text('$n', style: T.value(dockInk(here, Grey.g56)).copyWith(fontSize: T.px(10))),
+              Expanded(
+                child: field ?? (cover == null
+                    ? Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(dockInk(here)).copyWith(fontWeight: here ? FontWeight.w600 : FontWeight.w400))
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(dockInk(here)).copyWith(fontWeight: here ? FontWeight.w600 : FontWeight.w400)),
+                          Text('${g == DockG.search ? 'By words · ' : ''}${n ?? 0} ${n == 1 ? 'effect' : 'effects'}', maxLines: 1, style: T.micro(dockInk(here, Grey.g56))),
+                        ],
+                      )),
+              ),
+              if (n != null && cover == null) Text('$n', style: T.value(dockInk(here, Grey.g56)).copyWith(fontSize: T.px(10))),
             ],
           ),
         ),
@@ -214,11 +229,28 @@ class EffectPlacesState extends State<EffectPlaces> {
     );
   }
 
-  Widget _deck(EffectDeck d) => DragTarget<VoidCallback>(
+  Widget _deck(EffectDeck d) => _into(d, (over) => _row('@${d.name}', field: _naming == d ? _field(d) : null, lit: over, menu: (at) => _deckMenu(d, at), cover: widget.covers['@${d.name}']));
+
+  /// A tile carried onto [d] goes in it; onto the Favorites ([d] null) it is starred, as a track dropped on a Spotify
+  /// playlist or on its Liked Songs.
+  Widget _into(EffectDeck? d, Widget Function(bool over) row) => DragTarget<VoidCallback>(
     onWillAcceptWithDetails: (o) => carriedEffect[o.data] != null,
-    onAcceptWithDetails: (o) => widget.put(d, carriedEffect[o.data]!),
-    builder: (context, over, _) => _row('@${d.name}', field: _naming == d ? _field(d) : null, lit: over.isNotEmpty, menu: (at) => _deckMenu(d, at)),
+    onAcceptWithDetails: (o) {
+      final id = carriedEffect[o.data]!;
+      d != null ? widget.put(d, id) : widget.c.starred(id) ? null : widget.c.star(id);
+    },
+    builder: (context, over, _) => row(over.isNotEmpty),
   );
+
+  /// What the open deck holds, under its row, on the map: Hearthstone's deck list beside its collection, an effect
+  /// carried onto it put in; said how while it holds none.
+  Widget _held(EffectDeck? d) => _into(d, (over) => ColoredBox(
+    color: over ? WsT.card : WsT.body,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: widget.held.isNotEmpty ? widget.held : [Padding(padding: EdgeInsets.fromLTRB(Shape.s(4) + Shape.z(14), Shape.s(4), WsT.inset, Shape.s(6)), child: Text('Drag an effect here from the map, or right-click one', style: T.label(Grey.g63)))],
+    ),
+  ));
 
   @override
   Widget build(BuildContext context) {
@@ -227,7 +259,15 @@ class EffectPlacesState extends State<EffectPlaces> {
       key: _menu,
       child: ColoredBox(
         color: WsT.body,
-        child: widget.narrow && !c.mem.fxListOpen
+        child: widget.narrow && !c.mem.fxListOpen && widget.mapped && (deck != null || c.mem.fxPlace == '★')
+            ? Column(   // (folded to the deck on the map, what it holds under it, as the browser goes into a category and back)
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _into(deck, (over) => _row(c.mem.fxPlace, open: false, lit: true, onTap: () => c.set(() => c.mem.fxListOpen = true), menu: deck == null ? null : (at) => _deckMenu(deck, at), cover: widget.covers[c.mem.fxPlace])),
+                  Expanded(child: ListView(padding: EdgeInsets.zero, children: [_held(deck)])),
+                ],
+              )
+            : widget.narrow && !c.mem.fxListOpen
             ? DragTarget<VoidCallback>(   // (a tile carried over it opens the list, for a deck to drop it on: Finder's spring-loaded folders)
                 onWillAcceptWithDetails: (_) {
                   c.set(() => c.mem.fxListOpen = true);
@@ -240,10 +280,11 @@ class EffectPlacesState extends State<EffectPlaces> {
           children: [
             _row('All'),
             _row('Recent'),
-            _row('★'),
+            _into(null, (over) => _row('★', lit: over)),
+            if (widget.mapped && c.mem.fxPlace == '★') _held(null),
             _row('In video'),
             DockSection('Decks', trailing: Builder(builder: (b) => DockIconButton(DockG.plus, key: const ValueKey('ws-fx-deck-new'), onTap: () => _plus(b)))),
-            for (final d in widget.decks.keys) _deck(d),
+            for (final d in widget.decks.keys) ...[_deck(d), if (widget.mapped && c.mem.fxPlace == '@${d.name}') _held(d)],
             _row('Packs', open: open, onTap: () => c.toggle(c.mem.open, 'fx:packs')),   // (what the makers bundled, as Ableton's Packs, folded)
             if (open)
               for (final p in widget.packs.keys) _row('/$p', depth: 1),

@@ -15,8 +15,8 @@ import 'package:lab_book/workspace/dock.dart';
 import 'package:lab_book/workspace/create_preview.dart';
 import 'package:lab_book/workspace/desk_kit.dart' show DeskChip;
 import 'package:lab_book/workspace/dock_parts.dart' show DockIconButton, DockMem, DockSearch, dockStarsAt;
-import 'package:lab_book/workspace/dock_effects.dart' show EffectTile;
-import 'package:lab_book/workspace/dock_map.dart' show DockMap, DockMapPlaces, dockSpread, dockSpreadRadius, dockTogether;
+import 'package:lab_book/workspace/dock_effects.dart' show EffectTile, TileMoving;
+import 'package:lab_book/workspace/dock_map.dart' show DockMap, DockMapPlaces, dockMap, dockSpread, dockSpreadRadius, dockTogether;
 import 'package:lab_book/workspace/dock_tags.dart' show DockTags;
 import 'package:lab_book/workspace/effect_decks.dart';
 import 'package:lab_book/workspace/effect_tiles.dart';
@@ -41,6 +41,7 @@ Future<void> _shelf(WidgetTester t, Ws ws, Size size, String shelf) async {
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.reset);
   await t.binding.setSurfaceSize(size);   // (the live binding lays out at its surface's size: flutter_test_config.dart)
+  addTearDown(() => t.binding.setSurfaceSize(null));   // (and back after it, as the view: the next test's own)
   await t.pumpWidget(
     WidgetsApp(
       color: const Color(0xFF000000),
@@ -437,6 +438,34 @@ void main() {
     await t.pumpWidget(const SizedBox());
   }, skip: !insideBuilt);
 
+  testWidgets('on the map a deck is made from it: the map all the shelf, the list folded to the deck picked, what it holds under its row, a press there picking one, its picture its first four (Hearthstone\'s deck list beside its collection, Spotify\'s playlist cover)', (t) async {
+    final ws = _joined();
+    final m = ws.inside!, drawn = [for (final e in m.effects) if (m.picture(e.$2).isNotEmpty) e], four = (drawn.length >= 4 ? drawn : m.effects).take(4).toList();
+    effectDecks().add(EffectDeck('Soft', things: [for (final e in four) DeckThing(e.$2, e.$1, effectSum(e.$2))]));
+    await _shelf(t, ws, const Size(300, 918), 'Effects');
+    Finder place(String p) => find.byKey(ValueKey('ws-fx-place-$p'));
+    Future<void> press(Finder f) async {
+      await t.tap(f);
+      await t.pump(kDoubleTapTimeout + const Duration(milliseconds: 50));
+      await t.pumpAndSettle();
+    }
+    await press(find.byKey(const ValueKey('ws-Effects-map')));
+    await press(place('All'));
+    await press(place('@Soft'));
+    expect([place('All').evaluate().length, for (final e in four) find.byKey(ValueKey('ws-fx-held-${e.$2}')).evaluate().length], [0, 1, 1, 1, 1], reason: 'folded to it, what it holds under its row');
+    expect(t.widget<DockMap>(find.byType(DockMap)).shown.length, greaterThan(four.length), reason: 'the map all the shelf, to make it from');
+    expect(find.descendant(of: place('@Soft'), matching: find.byType(TileMoving)), drawn.length >= 4 ? findsNWidgets(4) : anything, reason: 'its picture, its first four');
+    await press(find.byKey(ValueKey('ws-fx-held-${four[1].$2}')));
+    expect(ws.view.values.whereType<DockMem>().firstWhere((d) => d.mapped.contains('Effects')).sel['Effects'], four[1].$2, reason: 'a press picks it');   // (the dock it is a map on)
+    final map = dockMap('Effects');
+    await t.runAsync(() async {   // (the map laid out before the inside goes: its numbers are read from it)
+      for (var i = 0; i < 600 && (map.laying.value || map.places.value.isEmpty); i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      }
+    });
+    await t.pumpWidget(const SizedBox());
+  }, skip: !insideBuilt);
+
   test('the pack an effect came in, from the folder its maker named', () {
     expect(effectPack('/x/engine/aviutl_scripts/HexBrowns__HexScript/Script/A.anm2#b'), 'HexScript');
     expect(effectPack('/x/engine/effects/Bloom.fs'), isNull);
@@ -692,7 +721,7 @@ void main() {
   });
 
   testWidgets('a map shows each tile where it lies, inside its circle so none covers another, in no colour of its own, the whole fitted to the room at one scale (FontMap\'s map); the one under the pointer is told, its pictures moving and its name', (t) async {
-    final places = DockMapPlaces('Test')..places.value = {'a': const Offset(.1, .1), 'b': const Offset(.1 + 2 * dockSpreadRadius, .1), 'c': const Offset(.5, .3), 'd': const Offset(.9, .5)};
+    final places = DockMapPlaces('Test')..places.value = {'a': const Offset(100, 100), 'b': const Offset(100 + 2 * dockSpreadRadius, 100), 'c': const Offset(500, 300), 'd': const Offset(900, 500)};
     await t.pumpWidget(Directionality(
       textDirection: TextDirection.ltr,
       child: Center(
@@ -704,7 +733,7 @@ void main() {
       ),
     ));
     final at = {for (final id in ['a', 'b', 'c', 'd']) id: t.getRect(find.byKey(ValueKey('ws-map-Test-$id')))};
-    expect([at['a']!.overlaps(at['b']!), (at['d']!.center.dx - at['a']!.center.dx) / .8 * (.8 + 2 * dockSpreadRadius), find.descendant(of: find.byKey(const ValueKey('ws-map-Test')), matching: find.byType(DecoratedBox))], [isFalse, closeTo(400 * .92, .01), findsNothing], reason: 'two a tile apart side by side, the whole framed at 0.92 of the room (FontMap\'s start), no edges');
+    expect([at['a']!.overlaps(at['b']!), (at['d']!.center.dx - at['a']!.center.dx) / 800 * (800 + 2 * dockSpreadRadius), find.descendant(of: find.byKey(const ValueKey('ws-map-Test')), matching: find.byType(DecoratedBox))], [isFalse, closeTo(400 * .92, .01), findsNothing], reason: 'two a tile apart side by side, the whole framed at 0.92 of the room (FontMap\'s start), no edges');
     final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
     await mouse.addPointer(location: at['a']!.center);
     await t.pump();

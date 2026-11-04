@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lab_book/workspace/create_preview.dart' show RecipeMotions;
 import 'package:lab_book/workspace/desk_ease_shelf.dart' show easeKeptAt;
 import 'package:lab_book/workspace/dock_make.dart' show coloursAt;
+import 'package:lab_book/workspace/dock_map.dart' show dockMapsAt;
 import 'package:lab_book/workspace/effect_decks.dart' show effectDecksAt, effectRecentAt;
 
 import 'mac_fonts.dart';
@@ -20,5 +21,6 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   setUp(() => effectDecksAt(File('${Directory.systemTemp.createTempSync('decks').path}/effect_decks.json')));
   setUp(() => effectRecentAt(File('${Directory.systemTemp.createTempSync('recent').path}/effect_recent.json')));
   setUp(() => easeKeptAt(File('${Directory.systemTemp.createTempSync('kept').path}/ease_kept.json')));
+  setUp(() => dockMapsAt(Directory.systemTemp.createTempSync('maps')));
   await testMain();
 }

@@ -395,13 +395,25 @@ String _kindOf(Motolii m, String path) {
 }
 
 Future<List<Float32List?>> _byFontClip(Motolii m, String model, List<String> files) async {
-  final lines = [for (final w in const ['Hamburge', 'fonstiv']) await m.typePictures(files, w, 202, 87, most: 75)];
-  final out = <Float32List?>[];
-  for (var i = 0; i < files.length; i += 32) {
-    final some = [for (var k = i; k < files.length && k < i + 32; k++) k], drawn = [for (final k in some) if (lines[0][k] != null && lines[1][k] != null) k];
+  String key(String f) {   // (kept by the model, the font and when it was written, as the effects' pictures: only a new font is drawn and told)
+    try {
+      return '$model\n$f\n${File(f).lastModifiedSync().microsecondsSinceEpoch}\nHamburge fonstiv';
+    } catch (_) {
+      return '';
+    }
+  }
+  final out = [for (final f in files) dockLookKept(key(f))], missing = [for (final (k, f) in files.indexed) if (out[k] == null && key(f).isNotEmpty) f];
+  if (missing.isEmpty) return out;
+  final lines = [for (final w in const ['Hamburge', 'fonstiv']) await m.typePictures(missing, w, 202, 87, most: 75)];
+  for (var i = 0; i < missing.length; i += 32) {
+    final some = [for (var k = i; k < missing.length && k < i + 32; k++) k], drawn = [for (final k in some) if (lines[0][k] != null && lines[1][k] != null) k];
     final told = drawn.isEmpty ? null : await m.likeness(model, [for (final k in drawn) _specimen(lines[0][k]!, lines[1][k]!)]);
-    final by = {for (final (j, k) in drawn.indexed) k: told?[j]};
-    out.addAll([for (final k in some) by[k]]);
+    for (final (j, k) in drawn.indexed) {
+      if (told?[j] case final t?) {
+        dockLookKeep(key(missing[k]), t);
+        out[files.indexOf(missing[k])] = t;
+      }
+    }
   }
   return out;
 }

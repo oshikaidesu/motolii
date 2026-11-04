@@ -76,17 +76,18 @@ class _DockMapState extends State<DockMap> {
   }
 
   @override
-  Widget build(BuildContext context) => ListenableBuilder(
-    listenable: Listenable.merge([widget.places.places, widget.places.laying]),
-    builder: (context, _) {
-      final at = widget.places.places.value;
-      if (at.isEmpty) {
-        return Center(child: Text(widget.places.laying.value ? 'Laying out the map…' : 'Nothing on the map yet', style: T.label(Grey.g63)));
-      }
-      final tiles = {for (final (id, tile) in widget.shown) id: tile};
-      final sw = Shape.z(32) * widget.aspect, gap = Shape.s(4);
-      return LayoutBuilder(
-        builder: (context, box) {
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      widget.places.roomIs(box.maxWidth / box.maxHeight);   // (laid out on a canvas the shape of the room it is seen in)
+      return ListenableBuilder(
+        listenable: Listenable.merge([widget.places.places, widget.places.laying]),
+        builder: (context, _) {
+          final at = widget.places.places.value;
+          if (at.isEmpty) {
+            return Center(child: Text(widget.places.laying.value ? 'Laying out the map…' : 'Nothing on the map yet', style: T.label(Grey.g63)));
+          }
+          final tiles = {for (final (id, tile) in widget.shown) id: tile};
+          final sw = Shape.z(32) * widget.aspect, gap = Shape.s(4);
           final k = math.max(2, ((box.maxWidth - 3 * Shape.z(20) - 2 * gap) / (sw + gap)).floor());
           final picked = widget.picked;
           if (picked != null && at.containsKey(picked) && (_from == null || !widget.places.alike(_from!, tiles.keys, k).contains(picked))) _from = picked;   // (picked elsewhere: its own list)

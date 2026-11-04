@@ -97,8 +97,11 @@ class _EffectsShelfState extends State<EffectsShelf> {
     // (every folder, one effect in it too, as sashimono-edit's add menu gives each folder its own submenu, add_menu.py:280)
     final deck = decks.where((d) => '@${d.name}' == c.mem.fxPlace).firstOrNull;
     final place = deck != null || !c.mem.fxPlace.startsWith('@') ? c.mem.fxPlace : 'All', pack = place.startsWith('/') ? place.substring(1) : null;
+    // (on the map the map is all of them, the deck picked beside it to put in and take out: Hearthstone's Collection
+    //  Manager, the collection and the deck being made side by side; elsewhere a deck shows what it holds as the tiles)
+    final building = c.mem.mapped.contains('Effects') && (deck != null || place == '★');
     // (the last put on the newest first, the Fonts shelf's Recent, as Alight Motion keeps forty, EffectBrowser.kt:117)
-    final here = place == 'Recent' ? recent : [for (final e in all) if (switch (place) {
+    final here = place == 'Recent' ? recent : [for (final e in all) if (building || switch (place) {
       '★' => c.starred(e.id),
       'In video' => used.contains(e.id),
       _ when deck != null => deckIds[deck]!.contains(e.id),
@@ -133,7 +136,10 @@ class _EffectsShelfState extends State<EffectsShelf> {
     // (ten in sight over the tiles while nothing narrows them, as Alight Motion's effect browser opens on its last ten,
     //  EffectBrowser.kt:217: a list out of sight is not gone back to, Bergman's bookmarks, 32 of 41 by the bar always in sight)
     final inSight = place == 'All' && chip == 'All' && c.query.isEmpty && !c.mem.mapped.contains('Effects') ? recent.take(10).toList() : const <_Fx>[];   // (on the map the map alone, as XO's Space: the recent box took half the shelf)
-    final listed = [...shown, ...lost];
+    final listed = building ? shown : [...shown, ...lost];
+    // (what the deck holds, in the order put in, then what its words find; one not here last)
+    final holds = place == '★' ? {for (final id in c.mem.starred) id} : deck == null ? const <String>{} : deckIds[deck]!;
+    final held = !building ? const <_Fx>[] : [for (final id in holds) ...every.where((e) => e.id == id).take(1), ...lost];
     void put(EffectDeck d, _Fx e) => c.set(() {
       d.toggle(e.id, e.name, found: d.words.isNotEmpty && found(d.words, e));
       effectDecksKeep();
@@ -152,7 +158,38 @@ class _EffectsShelfState extends State<EffectsShelf> {
       ]);
     }
     Widget tile(_Fx e, bool small) => GestureDetector(onSecondaryTapDown: (d) => menuOn(e, d.globalPosition), child: e.tile(small));
-    Widget list(bool narrow) => EffectPlaces(c, key: _places, narrow: narrow, known: known, packs: Map.fromEntries(packs.entries.toList()..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase()))), counts: {'All': all.length, 'Recent': recent.length, '★': all.where((e) => c.starred(e.id)).length, 'In video': all.where((e) => used.contains(e.id)).length}, decks: {for (final d in decks) d: deckIds[d]!.intersection(byId.keys.toSet()).length}, put: (d, id) {
+    // (one the deck holds, under its row: Hearthstone's deck list, each card a strip of its picture and its name; a
+    //  press picks it, two put it on, carried it goes where it is let go, a right click its menu, as its tile)
+    Widget strip(_Fx e) => GestureDetector(
+      onSecondaryTapDown: e.label == 'Not here' ? null : (d) => menuOn(e, d.globalPosition),
+      child: DockHover(
+        key: ValueKey('ws-fx-held-${e.id}'),
+        onTap: () => c.pick(e.id),
+        onDoubleTap: e.apply,
+        picks: true,
+        builder: (context, h) => Container(
+          height: Shape.z(22),
+          padding: EdgeInsets.only(left: Shape.s(4) + Shape.z(14), right: WsT.inset),
+          color: dockFill(c.sel == e.id, h),
+          child: Row(
+            children: [
+              SizedBox.square(dimension: Shape.z(18), child: m.picture(e.id).isEmpty ? ColoredBox(color: WsT.card) : TileMoving(m.picture(e.id), playing: h)),
+              SizedBox(width: Shape.s(6)),
+              Expanded(child: Text(e.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(dockInk(c.sel == e.id, e.label == 'Not here' ? Grey.g56 : null)))),
+            ],
+          ),
+        ),
+      ),
+    );
+    // (a deck's picture: the pictures of its first four, two by two, or of its first alone while it holds fewer, as
+    //  Spotify makes a playlist's cover)
+    Widget? cover(Iterable<String> ids) {
+      final f = [for (final id in ids) if (m.picture(id) case final p when p.isNotEmpty) p].take(4).toList();
+      Widget one(String p) => TileMoving(p, playing: false);
+      return f.isEmpty ? null : f.length < 4 ? one(f.first) : Column(children: [for (final r in const [0, 2]) Expanded(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Expanded(child: one(f[r])), Expanded(child: one(f[r + 1]))]))]);
+    }
+
+    Widget list(bool narrow) => EffectPlaces(c, key: _places, narrow: narrow, known: known, packs: Map.fromEntries(packs.entries.toList()..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase()))), counts: {'All': all.length, 'Recent': recent.length, '★': all.where((e) => c.starred(e.id)).length, 'In video': all.where((e) => used.contains(e.id)).length}, decks: {for (final d in decks) d: deckIds[d]!.intersection(byId.keys.toSet()).length}, mapped: c.mem.mapped.contains('Effects'), held: [for (final e in held) strip(e)], covers: {for (final d in decks) '@${d.name}': ?cover(deckIds[d]!)}, put: (d, id) {
       if (!deckIds[d]!.contains(id)) put(d, every.firstWhere((e) => e.id == id));
     });
     final sel = c.foot([...all, ...lost].where((e) => e.id == c.sel).firstOrNull);
@@ -218,7 +255,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        if (c.mem.fxListOpen)
+                        if (c.mem.fxListOpen || building)   // (a deck on the map, what it holds under it, at the list's height)
                           DockResizable(height: c.mem.fxListHeight, min: 44, max: box.maxHeight - 160, reset: dockFxListHeight, gripKey: const ValueKey('ws-fx-list-grip'), onHeight: (h) => c.set(() => c.mem.fxListHeight = h), child: list(true))
                         else
                           SizedBox(height: Shape.z(22), child: list(true)),   // (the whole list over the tiles left 3.3 rows of them, 1.7 with the foot open, of the 5.4 and 3.8 before it)
