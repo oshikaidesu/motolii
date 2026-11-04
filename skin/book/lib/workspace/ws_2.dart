@@ -86,9 +86,14 @@ class Ws extends ChangeNotifier {
   String? get notice => _notice;
   Timer? _noticeEnds;
   List<int> strikes = const [];   // (the sounds' strikes, in frames, as the timeline last had them: its Beats)
+
+  /// What a click on the notice does while it is said: a time it tells is a place to go, as a time written under a
+  /// YouTube video is a link to that moment.
+  void Function()? noticeGo;
   set notice(String? said) {
     if (said == _notice) return;
     _notice = said;
+    noticeGo = null;
     _noticeEnds?.cancel();
     if (said != null && !said.endsWith('…')) _noticeEnds = Timer(const Duration(seconds: 10), () => notice = null);   // (said for a moment, Material's snackbar: four to ten seconds; what is still going on, "…", stays)
     _tell(WsAspect.notice);

@@ -245,21 +245,25 @@ String _savedAt(Ws ws) {
 class _Saved extends StatelessWidget {
   const _Saved();
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Container(
-        width: Shape.z(6),
-        height: Shape.z(6),
-        decoration: BoxDecoration(color: WsT.accent, shape: BoxShape.circle),
-      ),
-      SizedBox(width: Shape.s(6)),
-      ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: Shape.z(260)),
-        child: Text(WsScope.of(context, {WsAspect.document, WsAspect.notice}).notice ?? _savedAt(WsScope.of(context, {WsAspect.document, WsAspect.notice})), maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g63)),
-      ),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final ws = WsScope.of(context, {WsAspect.document, WsAspect.notice}), go = ws.noticeGo;
+    final said = Text(ws.notice ?? _savedAt(ws), maxLines: 1, overflow: TextOverflow.ellipsis, style: go == null ? T.label(Grey.g63) : T.label(Grey.g63).copyWith(decoration: TextDecoration.underline));   // (a link's underline: it goes somewhere)
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: Shape.z(6),
+          height: Shape.z(6),
+          decoration: BoxDecoration(color: WsT.accent, shape: BoxShape.circle),
+        ),
+        SizedBox(width: Shape.s(6)),
+        ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: Shape.z(260)),
+          child: go == null ? said : MouseRegion(cursor: SystemMouseCursors.click, child: GestureDetector(onTap: go, child: said)),
+        ),
+      ],
+    );
+  }
 }
 
 /// The one loud action: a flat lime pill with dark ink.

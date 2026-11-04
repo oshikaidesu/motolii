@@ -197,16 +197,20 @@ void _tests4() {
       return said;
     }
 
-    expect(await written(), endsWith('Flash check: no issues found'), reason: m.trouble);
+    expect(await written(), startsWith('Flash check: no issues found'), reason: m.trouble);
     for (var k = 0; k < 20; k++) {   // (on and off each tenth of a second, held between)
       m
         ..key(white, 'opacity', k / 10, k.isEven ? 1 : 0)
         ..key(white, 'opacity', k / 10 + 0.09, k.isEven ? 1 : 0);
     }
     final said = await written();
-    expect(said, contains('Flash check: too many flashes at 0:'), reason: m.trouble);
+    expect(said, startsWith('Flash check: too many flashes at 0:'), reason: m.trouble);
     final from = double.parse(RegExp(r'at 0:([\d.]+)').firstMatch(said)!.group(1)!);
     expect(from, lessThan(1.5), reason: 'where it blinks, from the first second: $said');
+    ws.frame = Ws.duration;
+    await t.tap(find.text(said));   // (the time told is a place to go: the playhead put where it blinks first)
+    await t.pump();
+    expect(ws.frame / Ws.fps, closeTo(from, 0.1), reason: said);
     File('${ws.documentFolder}/${ws.document!.replaceFirst('.motolii', '.mp4')}').deleteSync();
     await settled(t, ws);
     expect(t.takeException(), isNull);

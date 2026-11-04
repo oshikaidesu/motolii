@@ -171,11 +171,13 @@ class _WorkspaceState extends State<Workspace> {
     final fails = await flashesOf(m.libPath, film);
     if (!mounted || _ws.notice != checking) return;   // (something said meanwhile stands)
     String clock(double s) => '${s ~/ 60}:${(s % 60).toStringAsFixed(1).padLeft(4, '0')}';
+    final name = film.split('/').last;   // (what it found first, the name after: the bar's end is cut. NN/g's F-shaped reading, words that carry the news first)
     _ws.notice = switch (fails) {
       null => written,
-      [] => '$written · Flash check: no issues found',
-      _ => '$written · Flash check: too many flashes at ${fails.map((f) => '${clock(f.$1)}–${clock(f.$2)}').join(', ')}',
+      [] => 'Flash check: no issues found · $name',
+      _ => 'Flash check: too many flashes at ${fails.map((f) => '${clock(f.$1)}–${clock(f.$2)}').join(', ')} · $name',
     };
+    if (fails case [(final from, _), ...]) _ws.noticeGo = () => _ws.frame = (from * Ws.fps).floor();
   }
 
   /// Documents of the list written out: one as AbsentMotion's list does it (opened, and its export settings asked:
