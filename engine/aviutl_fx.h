@@ -338,7 +338,59 @@ static int aviutl_getaudio(lua_State* L) {
     return own ? 3 : 2;
 }
 static int aviutl_data(lua_State* L) { return lua_pushnil(L), 1; }   // (obj.data: what was kept with the object; none kept here, nil, as 波形ライン.obj2 asks it in a pcall and draws by its knobs without)
-static int aviutl_setanchor(lua_State* L) { return lua_pushinteger(L, std::max(1, (int)aviutl_num(L, 2))), 1; }   // (its points are not on the screen yet: the values stay the knobs')
+// obj.setanchor(name, num, options...) as AviUtl2's lua.txt tells it (aviutl2_modern_docs, MIT: docs/lua/index.md):
+// a table's points too few for num, its {table} option taken, else laid by AviUtl itself. Its points are not on the
+// screen here yet for a hand to move, so points all on one spot (a table's usual {0,0,...}, BezierPath's) would stay a
+// path of no length: they are laid as a hand would first draw them, across the object as "line" joins them (one
+// wave over and under), round its middle as "loop", "star" and "arm" join them or none, on a grid for "mesh". Tracks'
+// points ("track", "x,y") are their keys': one, the knobs' values, for now.
+static int aviutl_setanchor(lua_State* L) {
+    const int num = std::max(1, (int)aviutl_num(L, 2));
+    if (!lua_isstring(L, 1) || lua_isnumber(L, 1)) return lua_pushinteger(L, num), 1;   // (a table itself: only its line shown)
+    const std::string name = lua_tostring(L, 1);
+    if (name == "track" || name.find(',') != std::string::npos) return lua_pushinteger(L, num), 1;
+    int dims = 2, mesh = 0, given = 0;
+    bool along = false;   // (joined as a line; else round its middle)
+    for (int i = 3; i <= lua_gettop(L); ++i) {
+        if (lua_istable(L, i)) given = i;
+        if (lua_type(L, i) != LUA_TSTRING) continue;
+        const std::string o = lua_tostring(L, i);
+        if (o == "xyz") dims = 3;
+        else if (o == "line") along = true;
+        else if (o == "mesh" && lua_isnumber(L, i + 1)) mesh = std::max(1, (int)lua_tonumber(L, i + 1));
+    }
+    lua_getglobal(L, name.c_str());
+    if (!lua_istable(L, -1)) lua_pop(L, 1), lua_newtable(L), lua_pushvalue(L, -1), lua_setglobal(L, name.c_str());
+    const int t = lua_gettop(L), want = num * dims, had = (int)lua_objlen(L, t);
+    bool one = had == want && num > 1;   // (all its points on one spot)
+    for (int i = 1 + dims; one && i <= want; ++i) {
+        lua_rawgeti(L, t, i), lua_rawgeti(L, t, 1 + (i - 1) % dims);
+        one = lua_tonumber(L, -1) == lua_tonumber(L, -2);
+        lua_pop(L, 2);
+    }
+    if (had != want && given) {
+        for (int i = 1; i <= want; ++i) lua_rawgeti(L, given, i), lua_rawseti(L, t, i);
+    } else if (had != want || one) {
+        lua_getglobal(L, "obj");
+        double w = 0, h = 0;
+        if (lua_istable(L, -1)) lua_getfield(L, -1, "w"), lua_getfield(L, -2, "h"), w = lua_tonumber(L, -2), h = lua_tonumber(L, -1), lua_pop(L, 2);
+        lua_pop(L, 1);
+        const double r = w > 0 && h > 0 ? 0.35 * std::min(w, h) : 100;
+        for (int i = 0; i < num; ++i) {
+            const double f = num > 1 ? (double)i / (num - 1) : 0.5;
+            double x, y;
+            if (mesh) {
+                const int across = std::min(mesh, num), rows = std::max(1, (num + across - 1) / across);
+                x = across > 1 ? -r + 2 * r * (i % across) / (across - 1) : 0, y = rows > 1 ? -r + 2 * r * (i / across) / (rows - 1) : 0;
+            } else if (along) x = -r + 2 * r * f, y = num > 2 ? -0.5 * r * std::sin(2 * M_PI * f) : 0;
+            else x = r * std::cos(-M_PI / 2 + 2 * M_PI * i / num), y = r * std::sin(-M_PI / 2 + 2 * M_PI * i / num);
+            const double p[3] = {x, y, 0};
+            for (int d = 0; d < dims; ++d) lua_pushnumber(L, p[d]), lua_rawseti(L, t, i * dims + d + 1);
+        }
+    }
+    lua_pop(L, 1);
+    return lua_pushinteger(L, num), 1;
+}
 // (name, size, decoration, colour, edge colour, bold, italic): the nine of obj.getfont as sashimono-edit reads AviUtl2's
 // lua.txt (MIT, objapi.py lua_getfont), the spacings after them not read yet; defaults its own (48, white, black).
 static int aviutl_setfont(lua_State* L) {

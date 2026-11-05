@@ -116,6 +116,12 @@ void main() {
     expect([m.at(.77), m.still('${dir.path}/wound.png')], [isTrue, isTrue], reason: 'a knob\'s buffer and a mesh a draw held a handle each, its sets let go only when the driver caught up: 30,000 of them stopped it (knobs.py, effect 1023)');
     expect(_luma('${dir.path}/wound.png'), greaterThan(20), reason: 'the red spiral wound thick, over the black');
   }, skip: !insideBuilt);
+  test('an AviUtl2 path whose anchors lie on one spot (BezierPath\'s {0,0,...}, no hand to drag them here yet) is laid across the thing, and its tile shows it (the user, 11/5: a path for one that goes along one)', () {
+    final out = Directory.systemTemp.createTempSync('motolii_tile_test');
+    final drawn = EffectTiles.draw(motoliiDir, [('$motoliiDir/aviutl_scripts/NeAc__BezierPath/BezierPath.anm2', '${out.path}/0.png')]);
+    expect(drawn.single.$2, isFalse, reason: 'it was NO CHANGE: its four anchors at the middle, a path of no length');
+    out.deleteSync(recursive: true);
+  }, skip: !insideBuilt);
   test('a transition\'s tile goes from the photo to the road under it, not to black (the user, 11/5: a second picture for transitions)', () {
     final out = Directory.systemTemp.createTempSync('motolii_tile_test');
     final drawn = EffectTiles.draw(motoliiDir, [('$motoliiDir/effects/Fade.fs', '${out.path}/0.png')]);
