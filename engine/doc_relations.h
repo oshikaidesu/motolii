@@ -297,31 +297,40 @@ static int doc_members(Doc& d, int thing) {
     if (const std::vector<AbsentCopy>& copies = doc_absent_copies(d, thing, d.stage->now); !copies.empty()) return (int)copies.size();   // (as many as AbsentMotion's repeat lays)
     return std::max(1, (int)doc_literal(d, thing, "copies", 0, 1));
 }
-// How much later a thing's nth copy moves than it is said to (the past repository's order law, GSAP's stagger: the
-// stagger spread over them by their order: from the start, from the centre out, from the end, from the edges in).
-// Where a thing's nth member lies about its middle, before it moves (its copies in their rows as copy_x, copy_y and
-// copy_columns lay them at the start, in the stage's units; a split text's letters by their middles, in its own), and
-// how far the farthest member can lie from a point: what a stagger from a point and a window's picture of the order read.
-static double doc_letter_middle(Doc& d, int thing, int copy);
-static math::double2 doc_member_at(Doc& d, int thing, int nth, int n, double* farthest = nullptr, math::double2 from = {}) {
-    const auto sh = d.shown.find(thing);
-    if (sh != d.shown.end() && sh->second.drawn && !sh->second.drawn->letters.empty()) {   // (a letter: its middle along the line)
-        if (farthest) *farthest = std::max(std::fabs(doc_letter_middle(d, thing, 0) - from.x), std::fabs(doc_letter_middle(d, thing, n - 1) - from.x));
-        return {doc_letter_middle(d, thing, nth), 0.0};
-    }
+// Where a thing's nth copy is laid about the thing's own place, before it is scattered, waved or moved: along its rows
+// by copy_x, down them by copy_y (copy_columns to a row), each row a step deeper by copy_z (in one row, each copy): a
+// floor of them, Cinema 4D's Cloner, Grid Array. The one place for it: where a copy is drawn (doc_place) and where an
+// order from a point counts it from (doc_delay) read the same, so depth is not lost to the order.
+static math::double3 doc_member_laid(Doc& d, int thing, int nth, int n, double now) {
     const int columns = (int)doc_literal(d, thing, "copy_columns", 0, 0);
-    const double dx = doc_literal(d, thing, "copy_x", 0, 0), dy = doc_literal(d, thing, "copy_y", 0, 0);
     const double along = columns > 0 ? nth % columns : nth, down = columns > 0 ? nth / columns : nth;
     const double alongMid = columns > 0 ? (std::min(n, columns) - 1) * 0.5 : (n - 1) * 0.5, downMid = columns > 0 ? (std::ceil((double)n / columns) - 1) * 0.5 : (n - 1) * 0.5;
-    if (farthest) {   // (to the rows' far corners)
-        *farthest = 0.0;
-        for (int c = 0; c < 4; ++c) *farthest = std::max(*farthest, length(math::double2{(c & 1 ? alongMid : -alongMid) * dx - from.x, (c & 2 ? downMid : -downMid) * dy - from.y}));
+    return {(along - alongMid) * doc_literal(d, thing, "copy_x", now, 0), (down - downMid) * doc_literal(d, thing, "copy_y", now, 0), (down - downMid) * doc_literal(d, thing, "copy_z", now, 0)};
+}
+// Where a thing's nth member lies about its middle, before it moves (its copies as doc_member_laid lays them at the
+// start, in the stage's units; a split text's letters by their middles, in its own), and how far the farthest member
+// can lie from a point: what a stagger from a point and a window's picture of the order read. The farthest is at a
+// corner of the rows (the members lie on a box's image, and a distance is greatest at a corner of it).
+static double doc_letter_middle(Doc& d, int thing, int copy);
+static math::double3 doc_member_at(Doc& d, int thing, int nth, int n, double* farthest = nullptr, math::double3 from = {}) {
+    const auto sh = d.shown.find(thing);
+    if (sh != d.shown.end() && sh->second.drawn && !sh->second.drawn->letters.empty()) {   // (a letter: its middle along the line)
+        if (farthest) *farthest = std::max(length(math::double3{doc_letter_middle(d, thing, 0), 0.0, 0.0} - from), length(math::double3{doc_letter_middle(d, thing, n - 1), 0.0, 0.0} - from));
+        return {doc_letter_middle(d, thing, nth), 0.0, 0.0};
     }
-    return {(along - alongMid) * dx, (down - downMid) * dy};
+    if (farthest) {
+        const int columns = (int)doc_literal(d, thing, "copy_columns", 0, 0), wide = columns > 0 ? std::min(n, columns) : n, rows = columns > 0 ? (n + columns - 1) / columns : 1;
+        const int step = columns > 0 ? columns : n;
+        *farthest = 0.0;
+        for (const int corner : {0, wide - 1, (rows - 1) * step, (rows - 1) * step + wide - 1}) *farthest = std::max(*farthest, length(doc_member_laid(d, thing, corner, n, 0) - from));
+    }
+    return doc_member_laid(d, thing, nth, n, 0);
 }
 // How much later a thing's nth copy moves than it is said to (the past repository's order law, GSAP's stagger: the
 // stagger spread over them by their order: from the start, from the centre out, from the end, from the edges in; any
-// order by the thing's seed (GSAP's from: "random"); or the nearest to a point first, the farthest last (from: [x, y])).
+// order by the thing's seed (GSAP's from: "random"); or the nearest to a point first, the farthest last (from: [x, y]),
+// the point in depth too, as Cinema 4D's Plain Effector's Time Offset through a spherical field reads the clones' own
+// places).
 static double doc_delay(Doc& d, int thing, int nth) {
     const double stagger = doc_literal(d, thing, "stagger", 0, 0);
     const int n = doc_members(d, thing);
@@ -334,9 +343,9 @@ static double doc_delay(Doc& d, int thing, int nth) {
         return stagger * ((double)h / 4294967295.0);
     }
     if (from == "point") {
-        const math::double2 at{doc_literal(d, thing, "stagger_x", 0, 0), doc_literal(d, thing, "stagger_y", 0, 0)};
+        const math::double3 at{doc_literal(d, thing, "stagger_x", 0, 0), doc_literal(d, thing, "stagger_y", 0, 0), doc_literal(d, thing, "stagger_z", 0, 0)};
         double farthest = 0.0;
-        const math::double2 here = doc_member_at(d, thing, nth, n, &farthest, at);
+        const math::double3 here = doc_member_at(d, thing, nth, n, &farthest, at);
         return stagger * (farthest > 0.0 ? std::min(1.0, length(here - at) / farthest) : 0.0);
     }
     return stagger * (from == "centre" ? centre : from == "end" ? 1.0 - along : from == "edges" ? 1.0 - centre : along);

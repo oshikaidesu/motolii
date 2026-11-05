@@ -73,6 +73,7 @@ public:
     float density();   // (what pixelDensity() says: its canvas has this many pixels to each of its width)
     int height();
     std::string said(const std::string& js);   // what the sketch says to that, as words
+    std::string laid(const std::map<std::string, double>& numbers);   // a Cavalry Animator's each() as what it multiplies (cavalry_kept's __laid); '' not one
     std::vector<uint8_t> bytes(const std::string& js);   // what it leaves in __bytes on being told that
     std::vector<double> numbers(const std::string& js);   // what it answers to that, a Float64Array (empty: it failed, and says so once)
     std::vector<double> paints(int frame, int had, int pic = -1);

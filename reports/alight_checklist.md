@@ -457,6 +457,17 @@ AbsentMotion（AM の写し）の欄の要素を機械で書き出し（panels/*
 
 
 ## T. いまの順番（ここを見れば続きが分かる。上から順に）
+- [ ] コピーごとに値を変える道を 1 本にする（11/6、Fable との「cssのダサさ」と Code で話した。まだ何も消していない）：残すのは behaviour の `_by`（Cavalry から借りた物）。Cavalry は文字ごとの遅れも Stagger を Duplicator の Shape Time Offset につなぐだけで、時間専用の道は無い（https://cavalry.studio/docs/nodes/behaviours/stagger/ ）。同じ計算の組：Scatter と behaviour の random は同じハッシュ（`doc_place.h:45`、`doc_relations.h:13`）、Wave は oscillator、wave_noise は noise、Field は falloff（region）に近い。消す前に、使っているレシピを behaviour で書き直して同じ絵を出す：field_ は field_dots・spiral・weave、scatter_ は confetti・plexus、wave_ は 12 本（Fable は check だけ見て「使用ゼロ」と言った）。物差しは `engine/check/rules.sh`（Fable が書いた、未コミット）。behaviour の stagger 型は値を番号順に配る物で、`doc_delay`（時間をずらす）の代わりにならないので消さない。11/4 の「固定のつまみはレシピ用に残す」は、レシピが移れば理由が消える。時間のずれを Cavalry 式（behaviour → 時間のずれ）にするのは最後
+- [ ] グループの Inspector（11/6、ユーザーと Code で決めた考え）：「たくさんあっても、1 つの時と同じ手で動かせる。新しく覚えるのは『どの順で』だけ。それは並んでる絵を触って決める」。中身は キー × イーズ × 順番 の掛け算 1 本。イーズはキーが持つ（Texton がイーズまで抱えたのは、After Effects で文字を割ると N 枚の層と N 組のキーになるから。Motolii はグループに 1 組）。アニメーターはその掛け算の型。図はグループの Inspector の中に置く（舞台で掴めると他の掴みの邪魔、カメラの外に出ると触れない：ユーザー）。試験 `engine/check/group.sh`（手で・型に残して別の文字へ・棚の Bounce In の順番を手で変える・奥行き、の 4 つ。11/6 に 4 つとも yes）
+- [x] 順番を本物の並びから数える、奥行きも（11/6、group.sh の 4）：並びの計算を `doc_member_laid` 1 本に（`doc_place` が描く場所と `doc_delay` が数える場所が同じ物を読む。前は順番の側が並びを自分で計算し直していて、奥行きが抜けていた）。点に `stagger_z`。出典：Cinema 4D の Plain Effector の Time Offset を球の Field で（クローンの本当の場所で遅れる）、GSAP の from
+- [x] 型にキー・イーズ・順番が乗る（11/6、group.sh の 2）：Look の保存で x y z を「キーがある時だけ残す」側へ（前は置き場所として丸ごと捨てていて、y のキーも落ちていた）。After Effects の Animation Presets は Position のキーも持つ
+- [x] 棚のアニメーター 13 個を型にする（11/6、group.sh の 3）：落とすとキー 2 つ＋イーズ＋順番（`stagger`、`stagger_from`）を書く（`doc_animator_lay`。JS 側は `__laid` で「animate に何を頼んだか」を聞くだけ）。割れていない文字は文字ごとに割る（前と同じ）。入口（`say script`、棚の名前）はそのまま、古い書類の JS は今まで通り毎コマ動く（Strangler Fig）。絵は Bounce In・Fade Out・3D Swing In・Slide Out で前と 0 px。違い：Print On は 1 文字の間が「長さ÷文字数」から「長さ÷(文字数−1)」に（GSAP の stagger の amount と同じ割り方）、Random の並びは Seed の計算が別。棚の札の ON と 2 回目の押しで外すは無くなった（Look と同じ。外すのは取り消し）
+- [ ] グループの Inspector の図（後で、考えから浮かせる）：並んでいる物を Inspector の中に小さく描き、触って順番（From、点）を決める。点 `stagger_x` `stagger_y` `stagger_z` は今は窓に出ていない（Copies カードに無い）。3D の並びをどう見せて触るかは出典を先に探す（Cinema 4D の Field の表示、Cavalry の Falloff、Apple Motion の Sequence Text の Direction）
+- [ ] パスに沿った並び（`copy_on`）の順番：`doc_member_at` は行・列・奥行きの並びだけ。パス沿いの場所ではまだ数えていない
+- [ ] 棚の Motion の札を Look と同じ見せ方に（ON にならず、押しても外れない今の形に合わせる）
+- [ ] `integration_test/alight_check_test.dart` の progress（Print On）の絵を撮り直す（1 文字の間が変わった）
+- [ ] 最後のゴルフ（グループ）：打数と打率に加えて、1 手ごとに「どこを押すか分かって押したか、当てずっぽうか」と、触った感覚（迷った所、気持ち悪さ）を採点役に聞いて残す（ユーザー 11/6。golf_noise.md の決め方に足した）
+- [ ] `docs/notes/GROUP_INSPECTOR.md` の未コミットの「次：図を 1 から 200 行、doc_delay を Dart に写す」（持ち主のメモなので触っていない。図の考えは上の行）
 - [x] 平らな物にも厚い物にもランプの光と影を当てる（11/1、golf_noise (175) の残り） — 済（11/1）：After Effects の 3D レイヤーに合わせ、書類にランプがあれば 3D の物と厚い物が受ける（`doc_lit`、`flat_lit`）。影は描いた形（Filament の WebGPU が色なしの撮影で fragment を捨てていたのを `filament_webgpu_depth_fragment.patch` で止めた）。ランプが無ければ今まで通りで 0 画素差、太陽の影つきで厚い文字 8 個 60.0 枚/秒、窓で太陽を回して確かめた。
 - [x] 文字の面取りを距離から作る：Bevel（angular convex concave ogee step）と Bevel Depth。絵の縁からの距離は bevy_mod_outline の Jump Flood（MIT OR Apache-2.0）で、絵が描き直された時だけ作る。深さを文字の芯まで伸ばせば Chizzle の彫り。After Effects の Bevel Style、Easy Typography の Ogee と Step が出典。8 個で 58.7 枚/秒（無しで 59.1）、窓で深さのドラッグと 6 種の選択を確かめた
 - [ ] 面取りの残り：step は深さ 85px で下端が少し破れる。Hole Bevel Depth（After Effects）は内外の区別が要る
