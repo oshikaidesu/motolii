@@ -270,7 +270,7 @@ static const DocShown* doc_shown_of(Doc& d, const char* name) {
 // may each have a knob of one name (Posterize's gamma and Boxinator's are not one value).
 static std::string doc_screen_knob(const std::string& file, const std::string& knob) {   // (a value's name is one word: an ISF file's "Frosted Glass" says Frosted_Glass)
     std::string stem = std::filesystem::path(file).stem().string();
-    for (char& c : stem) if (!std::isalnum((unsigned char)c) && c != '_') c = '_';
+    for (char& c : stem) if (!(c >= '0' && c <= '9') && !(c >= 'A' && c <= 'Z') && !(c >= 'a' && c <= 'z') && c != '_') c = '_';   // (byte by byte, ASCII's alone: std::isalnum by the locale took a UTF-8 locale's é for 0xE9, half a letter left in the name (effect_tiles.dart _stem: ライ is ______))
     return "js_" + stem + "_" + knob;
 }
 // ThorVG's own effects by the value that puts each on, as a thing's list of effects names them, and their letters
