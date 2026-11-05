@@ -198,6 +198,16 @@ void main() {
     expect((first - last).abs(), greaterThan(10), reason: 'the bright balloon gives way to the road at dusk');
     out.deleteSync(recursive: true);
   }, skip: !insideBuilt);
+  test('the shelf lists effects, not the table obj.effect reads beside them: a .json is one when it is Filament\'s own settings', () {
+    final dir = Directory.systemTemp.createTempSync('motolii_shelf');
+    final m = Motolii.open('${dir.path}/s.motolii', wide: 64, high: 64)!;
+    addTearDown(() {
+      m.close();
+      dir.deleteSync(recursive: true);
+    });
+    final files = [for (final (_, f) in m.effects) f.split('/').last];
+    expect([files.contains('sashimono_aviutl.json'), files.contains('Filament Color Grading.json')], [false, true], reason: 'Sashimono\'s table of AviUtl\'s effects was a tile of nothing, UNSUPPORTED, on the shelf');
+  }, skip: !insideBuilt);
   test('a tile shows what one who looked said an effect needs: the road behind a pane, a card with room round it for a glass, and one left black says what would fill it (the user, 11/5: the shelf understood at a glance)', () {
     final out = Directory.systemTemp.createTempSync('motolii_tile_test');
     final effects = ['aviutl_scripts/nctype__RainOnPane/Script/RainOnPane/RainOnPane.obj2', 'aviutl_scripts/tettu0530__LiquidGlass/LiquidGlass.anm2', 'effects/FFT Spectrogram.fs'];

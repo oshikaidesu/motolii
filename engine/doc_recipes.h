@@ -98,6 +98,7 @@ static std::string doc_folder_names(const char* folder, const char* extension) {
     if (!doc_folder_moved(one.seen)) return all;
     all.clear();
     for (const auto& f : doc_folder_files(folder, extension)) {
+        if (f.extension() == ".json" && !viewer_is(f.string())) continue;   // (a .json not Filament's own settings is no effect: Sashimono's table obj.effect reads, sashimono_aviutl.json)
         const std::string read = isf_file(f.string());   // (an ISF effect: its head as made WGSL; one that cannot be is not shown)
         if (read.empty()) continue;
         std::ifstream in(read);
