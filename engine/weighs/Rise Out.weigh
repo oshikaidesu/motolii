@@ -1,4 +1,0 @@
-[
-  { "when": { "from": -0.9, "over": 0.4, "stagger": 0.5 }, "ease": "bezier 0.5 0 0.75 0", "target": "y", "op": "Add", "value": 0.25 },
-  { "when": { "from": -0.9, "over": 0.3, "stagger": 0.5 }, "target": "opacity", "op": "Set", "value": 0 }
-]

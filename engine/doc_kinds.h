@@ -75,8 +75,6 @@ struct Doc {
     std::string phys_made;              // all the world was made of, as the document said it then (made again only when that changes)
     struct Scripted { double at = -1, own = -1; int made = -1; std::vector<ScriptCopy> copies; };
     std::map<int, Scripted> scripted;
-    struct Weighed { double at = -1; int n = -1; std::string json; std::vector<weigh::Effect> stack; std::vector<ScriptCopy> copies; };   // (weigh.h's stack on a thing's copies at a moment: read again when its JSON changes, worked out again when the moment or the count does)
-    std::map<int, Weighed> weighed;
     struct AbsentKept { double at = -1; long changes = -1; int seen = -1; std::vector<AbsentCopy> copies; };
     std::map<int, AbsentKept> absentKept;
     struct RelatedKept { double at = -1; long changes = -1; int made = -1, solves = -1; size_t sure = 0, fresh = 0, seen = 0; bool behind = false; std::vector<double> values; std::vector<std::vector<double>> frames; std::vector<size_t> told; std::set<int> reads; };   // (frames: a solver's, each from the one before, as Motolii's p5 keeps its own; told: what each was told; sure: so many are known good since the document changed; fresh: past so many each is left from before, shown till it is made again; reads: the things what it is told comes from; seen: of touched)
@@ -161,9 +159,7 @@ static const DocValue doc_values[] = {
     //  how much it bounces, how it rubs; and the stage's pull down, in units of the stage a second each second)
     {"physics", doc_drawn, 0, 0, false, "none moves still"},
     // (a recipe as code: a JavaScript file that says where each copy is (script.h); its head's knobs are values of the thing, named js_ and the knob's name)
-    {"script", "picture text shape solid stage behaviour", 0, 0, false, ""},
-    // (a stack of weights × changes on its copies, as JSON (weigh.h): After Effects' text animators, Cinema 4D's Effectors, CSS's rules in one shape; added after its script's copies)
-    {"weigh", "picture text shape solid", 0, 0, false, ""},   // (the stage's: a whole-screen effect, a .wgsl file: screen.h)
+    {"script", "picture text shape solid stage behaviour", 0, 0, false, ""},   // (the stage's: a whole-screen effect, a .wgsl file: screen.h)
     // (a thing's own effects, After Effects' effects on a layer: the whole-screen ones' .wgsl files, one over another, on the thing as the camera sees it)
     //  (a camera's: AbsentMotion's motions only, its place moved by them as AbsentMotion's camera is: doc_fx_say)
     {"fx", "film picture text shape solid camera", 0, 0, false, ""},
@@ -281,7 +277,8 @@ static const DocValue doc_values[] = {
     {"copy_rotate", "picture text shape solid", -1e6, 1e6, true, nullptr}, {"copy_size", "picture text shape solid", 0.01, 100, true, nullptr},
     {"copy_columns", "picture text shape solid", 0, 100, false, nullptr},   // (so many to a row, then the next row: copy_x along it, copy_y down; 0: one row)
     {"stagger", "picture text shape solid", 0, 1e3, false, nullptr},   // (how much later the last of its copies moves than the first, in seconds: each as late as its order says)
-    {"stagger_from", "picture text shape solid", 0, 0, false, "start centre end edges"},   // (which of them moves first: the first, the middle one, the last, the outer ones)
+    {"stagger_from", "picture text shape solid", 0, 0, false, "start centre end edges random point"},   // (which of them moves first: the first, the middle one, the last, the outer ones; any, by its seed; the one nearest stagger_x stagger_y, as GSAP's from: [x, y])
+    {"stagger_x", "picture text shape solid", -1e4, 1e4, true, nullptr}, {"stagger_y", "picture text shape solid", -1e4, 1e4, true, nullptr},   // (the point a stagger from a point spreads from, about the thing's middle: the stage's units for its copies as copy_x is, a letter's for a split text)
     {"copy_fill", "picture text shape", 0, 0, false, ""},   // (its copies coloured from the first colour to the last, in their order: six digits each; one, all in it; none, not coloured each)
     {"copy_fill_way", "picture text shape", 0, 0, false, "ramp cycle"},   // (from the first to the last across them all, or one colour each in turn, round and round)
     {"copy_wide", "picture text shape solid", 0.01, 100, true, nullptr},   // (how many times as wide its last copy is as its first, those between in step: rows of waves, each with more of them)

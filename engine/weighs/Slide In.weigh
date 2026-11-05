@@ -1,6 +1,0 @@
-[
-  { "target": "opacity", "op": "Set", "value": 0 },
-  { "target": "x", "op": "Add", "value": 0.3 },
-  { "when": { "from": 0, "over": 0.5, "stagger": 0.6 }, "ease": "Back.out", "target": "x", "op": "Add", "value": -0.3 },
-  { "when": { "from": 0, "over": 0.25, "stagger": 0.6 }, "target": "opacity", "op": "Set", "value": 1 }
-]

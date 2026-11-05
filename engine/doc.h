@@ -29,7 +29,6 @@
 //            text                   a text's: what it says (to the end of the line)
 //            fill                   what its surface is: a text's colour as six digits (ff3366); a solid's: a colour, or the material glass
 // In parts, read in this order (each a piece of the one before it, none alone):
-#include "weigh.h"   // (a weight × a change on each copy: text animators, Effectors, CSS rules as one shape)
 #include "doc_kinds.h"   // (the document and the names its values go by)
 #include "doc_values.h"   // (a value read at a moment, its keys and ways)
 #include "doc_relations.h"   // (behaviours, falloffs, relations, physics)

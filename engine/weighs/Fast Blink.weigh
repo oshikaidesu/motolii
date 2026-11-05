@@ -1,8 +1,0 @@
-[
-  { "target": "opacity", "op": "Set", "value": 0 },
-  { "when": { "from": 0.00, "stagger": 0.5 }, "target": "opacity", "op": "Set", "value": 1 },
-  { "when": { "from": 0.07, "stagger": 0.5 }, "target": "opacity", "op": "Set", "value": 0 },
-  { "when": { "from": 0.14, "stagger": 0.5 }, "target": "opacity", "op": "Set", "value": 1 },
-  { "when": { "from": 0.21, "stagger": 0.5 }, "target": "opacity", "op": "Set", "value": 0 },
-  { "when": { "from": 0.28, "stagger": 0.5 }, "target": "opacity", "op": "Set", "value": 1 }
-]
