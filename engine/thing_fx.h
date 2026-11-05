@@ -19,7 +19,8 @@ static void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
         if (file == "none") continue;
         if (aviutl_is(file)) {   // (an AviUtl2 script: run each frame on its picture, the one already made kept)
             const auto kept = std::find_if(st.aviutl.begin(), st.aviutl.end(), [&](const auto& r) { return r->file == file; });
-            scripts.push_back(kept != st.aviutl.end() ? *kept : aviutl_made(s, file)), st.steps.push_back('a');
+            const auto first = !scripts.empty() ? scripts.front() : !st.aviutl.empty() ? st.aviutl.front() : nullptr;   // (one Lua for the thing's scripts: what one leaves in a global the next on it reads, as AviUtl2 runs an object's effects one after another in one Lua: CrEasy's 背景ブラー reads the ox its CrEasy set)
+            scripts.push_back(kept != st.aviutl.end() ? *kept : aviutl_made(s, file, first ? first->L : nullptr)), st.steps.push_back('a');
             st.readsBehind |= scripts.back()->behind;   // (one that reads its frame reads what is behind: the stage's behind drawn, its own sheet left out of it)
             st.wide |= scripts.back()->wide;   // (one that draws: on the whole stage, as AviUtl2 draws an object on its screen)
             continue;

@@ -19,8 +19,9 @@ struct AviutlRun {
     std::string file, own, all, trouble;
     std::vector<AviutlVar> vars;
     std::map<std::string, double> usual;            // (each knob's value as it comes)
-    lua_State* L = nullptr;
-    int chunk = LUA_NOREF;
+    lua_State* L = nullptr;                         // (the one of the thing's scripts: aviutl_made)
+    int chunk = LUA_NOREF, obj = LUA_NOREF;         // (its text made a function, and its obj, in L)
+    std::string path;                               // (where its require looks: package.path while it runs)
     std::map<std::string, AviutlBuf> bufs;
     std::map<std::string, AviutlBuf> loaded;        // (figures and picture files obj.load drew, by what was asked: aviutl_load.h)
     std::map<std::string, std::vector<uint8_t>> pixels;   // (the pixels obj.getpixeldata handed out, by buffer)
@@ -882,7 +883,7 @@ function rand1(seed, frame) return aviutl_rand(0, 4294967294, seed or 0, frame o
 
 // Made once a file: its Lua state (the libraries lua.txt leaves, require from its own folder), obj, its knobs' first
 // values, and each of its shaders made (said on stderr: one that cannot be is "not yet" when it is used).
-static std::shared_ptr<AviutlRun> aviutl_made(Stage& s, const std::string& file) {
+static std::shared_ptr<AviutlRun> aviutl_made(Stage& s, const std::string& file, lua_State* with = nullptr) {
     auto r = std::make_shared<AviutlRun>();
     r->file = file, r->s = &s;
     if (!aviutl_text(file, r->own, r->all, r->trouble)) return std::fprintf(stderr, "the AviUtl2 script %s is not taken: %s\n", file.c_str(), r->trouble.c_str()), r;
@@ -890,19 +891,20 @@ static std::shared_ptr<AviutlRun> aviutl_made(Stage& s, const std::string& file)
     r->behind = std::regex_search(r->all, std::regex(R"re(copybuffer\s*\([^)]*"(framebuffer|frm)"|getoption\s*\(\s*"drawtarget"\s*\)|load\s*\(\s*"framebuffer"|pixeloption\s*\(\s*"get"\s*,\s*"(framebuffer|frm)")re"));   // (it reads the frame: its picture there is the stage's behind it)
     r->wide = std::regex_search(r->all, std::regex(R"(obj\.draw(poly)?\s*\()"));   // (it draws the object itself: where it will on the screen)
     for (const ScriptKnob& k : aviutl_knobs(file)) r->usual[k.name] = k.usual;
-    lua_State* L = r->L = luaL_newstate();
-    luaL_openlibs(L);
-    lua_pushlightuserdata(L, r.get()), lua_setfield(L, LUA_REGISTRYINDEX, "motolii.run");   // (aviutl_late's)
-    std::string path;   // (require: its own folder, then the Script folder's others: aviutl_shared)
+    std::string& path = r->path;   // (require: its own folder, then the Script folder's others: aviutl_shared)
     for (const std::filesystem::path& dir : aviutl_shared(std::filesystem::path(file).parent_path())) path += (path.empty() ? "" : ";") + dir.string() + "/?.lua;" + dir.string() + "/?/init.lua";
-    lua_pushcfunction(L, aviutl_ticks), lua_setglobal(L, "__motolii_ticks");
-    const std::string sandbox = "os, io, debug, dofile, loadfile = nil, nil, nil, nil, nil\npackage.loaded.os, package.loaded.io, package.loaded.debug = nil, nil, nil\n"
-                                "local ffi = require('ffi'); ffi.C = nil\nlocal ticks = __motolii_ticks; __motolii_ticks = nil\n"
-                                "local clock = setmetatable({QueryPerformanceFrequency = function(p) p[0] = 10000000 return 1 end, QueryPerformanceCounter = function(p) p[0] = ticks() return 1 end},\n"
-                                "  {__index = function(_, k) error('needs Windows: kernel32 ' .. tostring(k) .. ', a Windows call', 2) end})\n"
-                                "ffi.load = function(name) if (tostring(name):lower():gsub('%.dll$', '')) == 'kernel32' then return clock end error('needs Windows: ' .. tostring(name) .. '.dll, a Windows library', 2) end\n"
-                                "package.loadlib, package.cpath = nil, ''\npackage.path = [==[" + path + "]==]\n";
-    if (luaL_dostring(L, (sandbox + aviutl_globals).c_str())) r->trouble = lua_tostring(L, -1);
+    lua_State* L = r->L = with ? with : luaL_newstate();
+    if (!with) {   // (the thing's first: its Lua made, the libraries lua.txt leaves; those after it on the thing run in this one)
+        luaL_openlibs(L);
+        lua_pushcfunction(L, aviutl_ticks), lua_setglobal(L, "__motolii_ticks");
+        const std::string sandbox = "os, io, debug, dofile, loadfile = nil, nil, nil, nil, nil\npackage.loaded.os, package.loaded.io, package.loaded.debug = nil, nil, nil\n"
+                                    "local ffi = require('ffi'); ffi.C = nil\nlocal ticks = __motolii_ticks; __motolii_ticks = nil\n"
+                                    "local clock = setmetatable({QueryPerformanceFrequency = function(p) p[0] = 10000000 return 1 end, QueryPerformanceCounter = function(p) p[0] = ticks() return 1 end},\n"
+                                    "  {__index = function(_, k) error('needs Windows: kernel32 ' .. tostring(k) .. ', a Windows call', 2) end})\n"
+                                    "ffi.load = function(name) if (tostring(name):lower():gsub('%.dll$', '')) == 'kernel32' then return clock end error('needs Windows: ' .. tostring(name) .. '.dll, a Windows library', 2) end\n"
+                                    "package.loadlib, package.cpath = nil, ''\npackage.path = [==[" + path + "]==]\n";
+        if (luaL_dostring(L, (sandbox + aviutl_globals).c_str())) r->trouble = lua_tostring(L, -1);
+    }
     lua_newtable(L);
     const std::pair<const char*, lua_CFunction> calls[] = {{"pixelshader", aviutl_pixelshader}, {"clearbuffer", aviutl_clearbuffer}, {"copybuffer", aviutl_copybuffer}, {"load", aviutl_load}, {"setoption", aviutl_setoption}, {"getoption", aviutl_getoption},
         {"getinfo", aviutl_getinfo}, {"getvalue", aviutl_getvalue}, {"setanchor", aviutl_setanchor}, {"getpixel", aviutl_getpixel}, {"setfont", aviutl_setfont}, {"draw", aviutl_draw}, {"drawpoly", aviutl_drawpoly}, {"effect", aviutl_effect},
@@ -920,6 +922,7 @@ static std::shared_ptr<AviutlRun> aviutl_made(Stage& s, const std::string& file)
     lua_setmetatable(L, -2);
     lua_setglobal(L, "obj");
     luaL_dostring(L, "obj.rand, obj.rand1, obj.interpolation = rand, rand1, aviutl_interpolation");   // (lua.txt: obj. or not)
+    lua_getglobal(L, "obj"), r->obj = luaL_ref(L, LUA_REGISTRYINDEX);
     std::string text = r->own.rfind("\xEF\xBB\xBF", 0) == 0 ? r->own.substr(3) : r->own;
     if (luaL_loadbuffer(L, text.data(), text.size(), ("@" + std::filesystem::path(file).filename().string()).c_str())) r->trouble = lua_tostring(L, -1);
     else r->chunk = luaL_ref(L, LUA_REGISTRYINDEX);
@@ -979,6 +982,9 @@ static void aviutl_draw_step(Stage& s, AviutlRun& r, Texture* from, RenderTarget
     std::string trouble = r.trouble;
     lua_State* L = r.L;
     if (trouble.empty()) {
+        lua_rawgeti(L, LUA_REGISTRYINDEX, r.obj), lua_setglobal(L, "obj");   // (its own obj, its clock (aviutl_late's) and where its require looks, in the Lua it shares)
+        lua_pushlightuserdata(L, &r), lua_setfield(L, LUA_REGISTRYINDEX, "motolii.run");
+        lua_getglobal(L, "package"), lua_pushstring(L, r.path.c_str()), lua_setfield(L, -2, "path"), lua_pop(L, 1);
         for (const AviutlVar& v : r.vars) aviutl_set(L, v, [&](const std::string& k) { return numbers(r.file, k, r.usual.count(k) ? r.usual[k] : v.usual); });
         lua_getglobal(L, "obj");
         const double frame = std::round(s.now * screen_rate(s));

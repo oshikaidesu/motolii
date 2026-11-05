@@ -165,6 +165,20 @@ void main() {
     final middle = Process.runSync('ffmpeg', ['-v', 'error', '-i', '${dir.path}/fx.png', '-vf', 'crop=1:1:192:192', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], stdoutEncoding: null).stdout as List<int>;
     expect(middle, [0, 255, 0], reason: 'the photo as it came: "not yet: obj.effect inner@two"; red: the outer\'s col left the inner\'s');
   }, skip: !insideBuilt);
+  test('the AviUtl2 scripts on one thing share one Lua: what one leaves in a global the next on it reads (CrEasy\'s 背景ブラー reads the ox its CrEasy set)', () {
+    final dir = Directory.systemTemp.createTempSync('motolii_shared');
+    final m = Motolii.open('${dir.path}/s.motolii', wide: 384, high: 384)!;
+    addTearDown(() {
+      m.close();
+      dir.deleteSync(recursive: true);
+    });
+    File('${dir.path}/@pair.anm2').writeAsStringSync('@put\nhanded = 0x00ff00\n@take\nobj.effect("単色化", "color", handed)\n');
+    final photo = m.add('picture', '$motoliiDir/fx_sample.jpg');
+    expect(m.say(photo, 'fx', '${dir.path}/@pair.anm2#put ${dir.path}/@pair.anm2#take'), isTrue, reason: m.trouble);
+    expect([m.at(1.5), m.still('${dir.path}/fx.png')], [isTrue, isTrue], reason: m.trouble);
+    final middle = Process.runSync('ffmpeg', ['-v', 'error', '-i', '${dir.path}/fx.png', '-vf', 'crop=1:1:192:192', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], stdoutEncoding: null).stdout as List<int>;
+    expect(middle, [0, 255, 0], reason: 'white: handed nil in a Lua of its own, so "color" none');
+  }, skip: !insideBuilt);
   test('an AviUtl2 path whose anchors lie on one spot (BezierPath\'s {0,0,...}, no hand to drag them here yet) is laid across the thing, and its tile shows it (the user, 11/5: a path for one that goes along one)', () {
     final out = Directory.systemTemp.createTempSync('motolii_tile_test');
     final drawn = EffectTiles.draw(motoliiDir, [('$motoliiDir/aviutl_scripts/NeAc__BezierPath/BezierPath.anm2', '${out.path}/0.png'), ('$motoliiDir/aviutl_scripts/Suzukeh__Mathy_Su/@Mathy_Su.anm2#アステロイド', '${out.path}/1.png')]);
