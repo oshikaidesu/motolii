@@ -77,6 +77,7 @@ std::vector<AviutlVar> aviutl_vars(const std::string& text) {
                 if (v.var.empty() || v.expr.empty() || v.expr == "nil") continue;
                 v.named = true;
                 const std::string label = item.substr(0, comma);
+                v.label = label.substr(0, label.find('/'));
                 if (label.find("/chk") != std::string::npos) v.kind = "check", v.usual = std::atof(v.expr.c_str()) != 0;
                 else v.kind = "value";
                 vars.push_back(v);
@@ -92,6 +93,7 @@ std::vector<AviutlVar> aviutl_vars(const std::string& text) {
         std::stringstream rest(m[4].str());
         for (std::string one; std::getline(rest, one, ',');) parts.push_back(std::regex_replace(one, std::regex(R"(^\s+|\s+$)"), ""));
         if (parts.empty()) continue;
+        v.label = parts[0].substr(0, parts[0].find('='));   // (a choice's: before its first value)
         if (v.kind == "track" && parts.size() >= 4) v.usual = std::atof(parts[3].c_str());
         else if (v.kind == "check") v.truth = parts.size() > 1 && (parts[1] == "true" || parts[1] == "false"), v.usual = parts.size() > 1 && (parts[1] == "true" || std::atof(parts[1].c_str()) != 0);
         else if (v.kind == "color") v.unset = parts.size() < 2 || parts[1] == "nil", v.usual = v.unset ? 0xffffff : std::strtod(parts[1].c_str(), nullptr);

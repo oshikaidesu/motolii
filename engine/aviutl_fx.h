@@ -14,6 +14,7 @@
 #include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/document.h"
 
 struct AviutlBuf { Texture* t = nullptr; RenderTarget* rt = nullptr; uint32_t w = 0, h = 0; };
+struct AviutlCalled { int chunk = LUA_NOREF; std::vector<AviutlVar> vars; std::map<std::string, double> usual; };   // (a script of its file it runs by name: aviutl_called)
 struct AviutlRun {
     std::string file, own, all, trouble;
     std::vector<AviutlVar> vars;
@@ -53,6 +54,7 @@ struct AviutlRun {
     ScreenStack isfStack;
     struct { std::string name; double size = 48, deco = 0, colour = 0xffffff, edge = 0; bool bold = false, italic = false; } font;   // (obj.setfont's, for obj.load "text": aviutl_load.h)
     std::set<std::string> worded;                   // (the words drawn this frame: those not drawn again let go the next, a clock's every second its own)
+    std::map<std::string, AviutlCalled> called;     // (the scripts of its file it ran by name (obj.effect), by their names)
 };
 
 // The placing shader: a picture (`size` pixels) put with its pixel `from` at `at` of the target, turned and sized by
@@ -667,6 +669,63 @@ static int aviutl_sashimono(lua_State* L, AviutlRun& r, const std::string& n, co
     aviutl_lay(r, out, r.bufs["object"].rt, object.w, object.h, 0, 0, 1, 1, 0, 1, 0, 0, -1, 1, 0, 1);   // (premultiplied again, as AviUtl2's pictures are)
     return 0;
 }
+// A knob's value made its variable (a global, or obj's for the old --track0) as its kind is told (lua.txt): from `num`
+// (a knob's value by its name), or the Lua value at `said` on the stack, as obj.effect said it.
+static void aviutl_set(lua_State* L, const AviutlVar& v, const std::function<double(const std::string&)>& num, int said = 0) {
+    if (said && v.kind == "check" && v.truth) lua_pushboolean(L, aviutl_num(L, said) != 0);
+    else if (said && v.kind == "check") lua_pushinteger(L, aviutl_num(L, said) != 0);
+    else if (said) lua_pushvalue(L, said);
+    else if (v.kind == "track") lua_pushnumber(L, num(v.var));
+    else if (v.kind == "check" && v.truth) lua_pushboolean(L, num(v.var) != 0);
+    else if (v.kind == "check") lua_pushinteger(L, num(v.var) != 0);
+    else if (v.kind == "select") lua_pushnumber(L, v.values.empty() ? 0 : v.values[(size_t)std::clamp<double>(std::round(num(v.var)), 0, (double)v.values.size() - 1)]);
+    else if (v.kind == "color" && v.unset && num(v.var + "_on") == 0) lua_pushnil(L);
+    else if (v.kind == "color") lua_pushinteger(L, ((int)num(v.var + "_r") << 16) | ((int)num(v.var + "_g") << 8) | (int)num(v.var + "_b"));
+    else if (luaL_dostring(L, ("return " + v.expr).c_str())) lua_pop(L, 1), lua_pushnil(L);
+    if (aviutl_old(v)) lua_getglobal(L, "obj"), lua_insert(L, -2), lua_setfield(L, -2, v.var.c_str()), lua_pop(L, 1);
+    else lua_setglobal(L, v.var.c_str());
+}
+// A script of this file by its name (lua.txt obj.effect: each script is an effect, "name@file" a part of an @ file, its
+// knobs said by the names they are shown by, as an alias file says them): run on the object here, in this Lua and on
+// these buffers, as AviUtl2's scripts share theirs; a knob not said as it comes, and its variable given back what it
+// held after. As σ軸's scripts hand their "PI" (a part's own text of Lua values) and Stylize_K's its Mosaic, zopty's
+// どこでもバッファ 遅延 its 入出力, noiseTe's フラクタルノイズ its パーリンノイズ. -1: no such script in this file.
+static int aviutl_called(lua_State* L, AviutlRun& r, const std::string& n) {
+    const size_t at = n.rfind('@');
+    const std::string part = at == std::string::npos ? "" : n.substr(0, at), stem = n.substr(at + 1), file = aviutl_path(r.file);
+    if (const std::string mine = std::filesystem::path(file).stem().string(); mine != stem && mine != "@" + stem) return -1;
+    AviutlCalled& c = r.called[part];
+    if (c.chunk == LUA_NOREF) {
+        std::string own, all, why;
+        const std::string path = file + (part.empty() ? "" : "#" + part);
+        c.chunk = LUA_REFNIL;
+        if (!aviutl_text(path, own, all, why) || own == r.own) return -1;
+        const std::string text = own.rfind("\xEF\xBB\xBF", 0) == 0 ? own.substr(3) : own;
+        if (luaL_loadbuffer(L, text.data(), text.size(), ("@" + n).c_str())) return lua_error(L);
+        c.chunk = luaL_ref(L, LUA_REGISTRYINDEX), c.vars = aviutl_vars(own);
+        for (const ScriptKnob& k : aviutl_knobs(path)) c.usual[k.name] = k.usual;
+    }
+    if (c.chunk == LUA_REFNIL) return -1;
+    const int top = lua_gettop(L);
+    std::vector<std::pair<const AviutlVar*, int>> held;
+    for (const AviutlVar& v : c.vars) {
+        if (aviutl_old(v)) lua_getglobal(L, "obj"), lua_pushstring(L, v.var.c_str()), lua_rawget(L, -2), lua_remove(L, -2);
+        else lua_getglobal(L, v.var.c_str());
+        held.emplace_back(&v, luaL_ref(L, LUA_REGISTRYINDEX));
+        int said = 0;
+        for (int i = 2; i < top && !said; i += 2)
+            if (const std::string k = aviutl_str(L, i); !k.empty() && (k == v.label || k == v.var)) said = i + 1;
+        aviutl_set(L, v, [&](const std::string& k) { return c.usual.count(k) ? c.usual[k] : v.usual; }, said);
+    }
+    lua_rawgeti(L, LUA_REGISTRYINDEX, c.chunk);
+    const bool fell = lua_pcall(L, 0, 0, 0) != 0;
+    for (const auto& [v, ref] : held) {
+        lua_rawgeti(L, LUA_REGISTRYINDEX, ref), luaL_unref(L, LUA_REGISTRYINDEX, ref);
+        if (aviutl_old(*v)) lua_getglobal(L, "obj"), lua_insert(L, -2), lua_setfield(L, -2, v->var.c_str()), lua_pop(L, 1);
+        else lua_setglobal(L, v->var.c_str());
+    }
+    return fell ? lua_error(L) : 0;
+}
 static int aviutl_effect(lua_State* L) {   // (a built-in effect by its name: these, as sashimono-edit makes them)
     AviutlRun& r = aviutl_of(L);
     const std::string n = aviutl_str(L, 1);
@@ -735,6 +794,7 @@ static int aviutl_effect(lua_State* L) {   // (a built-in effect by its name: th
     if (const auto made = aviutl_sashimono(L, r, n, said); made >= 0) return made;   // (one Sashimono Edit remakes)
     if (n == "オフスクリーン描画") return 0;   // (sashimono-edit objapi.py _offscreen: the effects laid up so far made into the picture; here each is made at once, so none wait)
     if (n.empty()) return 0;   // (no name: lua.txt says the filters after the script, which run after it here anyway; YMM4-LuaScript native/worker.lua and sashimono-edit objapi.py lua_effect return the same)
+    if (const int ran = aviutl_called(L, r, n); ran >= 0) return ran;
     return aviutl_no(L, "obj.effect " + n);
 }
 
@@ -919,18 +979,7 @@ static void aviutl_draw_step(Stage& s, AviutlRun& r, Texture* from, RenderTarget
     std::string trouble = r.trouble;
     lua_State* L = r.L;
     if (trouble.empty()) {
-        for (const AviutlVar& v : r.vars) {
-            const auto num = [&](const std::string& k) { return numbers(r.file, k, r.usual.count(k) ? r.usual[k] : v.usual); };
-            if (v.kind == "track") lua_pushnumber(L, num(v.var));
-            else if (v.kind == "check" && v.truth) lua_pushboolean(L, num(v.var) != 0);
-            else if (v.kind == "check") lua_pushinteger(L, num(v.var) != 0);
-            else if (v.kind == "select") lua_pushnumber(L, v.values.empty() ? 0 : v.values[(size_t)std::clamp<double>(std::round(num(v.var)), 0, (double)v.values.size() - 1)]);
-            else if (v.kind == "color" && v.unset && num(v.var + "_on") == 0) lua_pushnil(L);
-            else if (v.kind == "color") lua_pushinteger(L, ((int)num(v.var + "_r") << 16) | ((int)num(v.var + "_g") << 8) | (int)num(v.var + "_b"));
-            else if (luaL_dostring(L, ("return " + v.expr).c_str())) lua_pop(L, 1), lua_pushnil(L);
-            if (aviutl_old(v)) lua_getglobal(L, "obj"), lua_insert(L, -2), lua_setfield(L, -2, v.var.c_str()), lua_pop(L, 1);
-            else lua_setglobal(L, v.var.c_str());
-        }
+        for (const AviutlVar& v : r.vars) aviutl_set(L, v, [&](const std::string& k) { return numbers(r.file, k, r.usual.count(k) ? r.usual[k] : v.usual); });
         lua_getglobal(L, "obj");
         const double frame = std::round(s.now * screen_rate(s));
         const std::pair<const char*, double> values[] = {{"ox", 0}, {"oy", 0}, {"oz", 0}, {"rx", 0}, {"ry", 0}, {"rz", 0}, {"cx", 0}, {"cy", 0}, {"cz", 0}, {"sx", 1}, {"sy", 1}, {"sz", 1}, {"zoom", 1}, {"aspect", 0}, {"alpha", 1},
