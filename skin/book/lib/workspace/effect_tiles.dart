@@ -307,6 +307,10 @@ abstract final class EffectTiles {
     //  (doc_fx_file), as gl-transitions' own previews go from one photo to another (scripts/rendering/render-preview.mjs:
     //  a road among its three); on the whole screen it had nothing to go to, and went to black)
     final grid = m.add('picture', '${folder.path}/grid.png'), under = m.add('picture', '$dir/fx_sample_end.jpg'), photo = m.add('picture', '$dir/fx_sample.jpg'), card = m.add('picture', '$dir/fx_sample.jpg');
+    _ffmpeg(['-f', 'lavfi', '-i', "aevalsrc='0.9*sin(2*PI*(50+120*exp(-25*mod(t,1/3)))*t)*exp(-9*mod(t,1/3))+0.25*sin(2*PI*(300+850*t)*t)*(0.5+0.5*sin(6*PI*t))':s=48000:d=2", '${folder.path}/beat.wav']);   // (for one that hears: a kick three times a second under a tone rising 300 to 2000 Hz, by the same ffmpeg's lavfi as the grid)
+    final song = m.add('film', '${folder.path}/beat.wav');   // (a sound alone: heard by every AviUtl2 script (its audiobuffer: doc_sound_now), by an ISF's audio input its knob names)
+    m.set(song, 'opacity', 0);   // (its wavescope not seen: heard, as the window puts a sound in hidden (Alight Motion's sound layer has no picture))
+    var heard = false;   // (its sound read once, aside (sound.h sound_of): silence until then)
     final words = m.add('text', wsTextFont);   // (for one that works on text: white words over the grid, as AbsentMotion's effect_thumbs.py lays its "text" layout)
     m
       ..say(words, 'fill', 'ffffff')
@@ -391,11 +395,13 @@ abstract final class EffectTiles {
       final show = f.endsWith('.wgsl') || f.endsWith('.am') ? showcase(f, File(f).readAsStringSync(), shows) : null;
       final said = m.tags(f), isf = f.endsWith('.fs') ? File(f).readAsStringSync() : '', plays = RegExp(r'"PERSISTENT"\s*:\s*(true|1)').hasMatch(isf);
       final lists = [for (final l in RegExp(r'\{[^{}]*"TYPE"\s*:\s*"long"[^{}]*\}').allMatches(isf)) '_${RegExp(r'"NAME"\s*:\s*"([^"]+)"').firstMatch(l.group(0)!)?.group(1)}'];   // (ISF's "long": a choice, which the inside takes as a span)
+      final ears = [for (final l in RegExp(r'\{[^{}]*"TYPE"\s*:\s*"audio(FFT)?"[^{}]*\}').allMatches(isf)) ?RegExp(r'"NAME"\s*:\s*"([^"]+)"').firstMatch(l.group(0)!)?.group(1)];   // (ISF_Spec's audio and audioFFT inputs)
+      final hears = ears.isNotEmpty || said.contains('sound') || needs(dir, f) == 'sound';
       final weights = weighed(dir, f), time = weights['_time'] ?? 0;
       final chosen = best(dir, f);   // (what one who looked at each knob moved on the sample chose to show it by)
       final timed = chosen?.$1 == '_time' || (time > 0 && weights.entries.every((w) => w.key == '_time' || w.value <= time));   // (its weights say letting it run shows it best: no knob turned, as AbsentMotion's Noise Displace)
       final runs = said.contains('time') || said.contains('feedback') || plays || timed;
-      final first = (show?.moves ?? false) || said.contains('feedback') || plays || needs(dir, f) == 'shape';   // (an effect of what was has something going past it to see; one for cut-outs, as one who looked said, an edge with room round it: the whole photo turned black by a glass with nothing to see through is not it shown)
+      final first = ((show?.moves ?? false) || said.contains('feedback') || plays || needs(dir, f) == 'shape') && !hears;   // (an effect of what was has something going past it to see; one for cut-outs, as one who looked said, an edge with room round it: the whole photo turned black by a glass with nothing to see through is not it shown; one that hears, on the whole picture first: its sound drawn as large as it goes, not in a card's corner)
       final base = home.substring(0, home.length - 4);
       var same = false, split = false, stands = true;
       var made = const <String>[];
@@ -414,6 +420,14 @@ abstract final class EffectTiles {
         lay(moving, road: passes, only: alone);
         final whole = !moving && !passes && alone == 0 && (f.endsWith('.fs') || f.endsWith('.wgsl') || f.endsWith('.json')) && m.say(0, 'script', f);   // (.json: Filament's own settings, laid on the stage's view: viewer_settings.h)   // (a screen effect; the stage takes an AviUtl2 script too, but draws none of it: motolii.h, a thing's)
         final thing = alone != 0 ? alone : moving ? card : photo, on = whole ? 0 : thing, onIt = !whole && m.say(thing, 'fx', f);   // (as a thing's: as edit.sh says it)
+        for (final e in ears) {
+          m.set(on, 'js_${_stem(f)}_$e', song.toDouble());   // (on the beat)
+        }
+        if (hears && !heard && (whole || onIt)) {   // (asked for once, and waited for: its pictures drawn hearing it from the first)
+          if (m.at(moments.first)) m.still('${folder.path}/warm.png');
+          sleep(const Duration(seconds: 1));
+          heard = true;
+        }
         final filed = <String, double>{};
         for (final MapEntry(:key, :value) in {...?show?.knobs, ...held(dir, f)}.entries) {
           if (m.value(on, key, 0) case final was? when !_part.hasMatch(key)) filed[key] = was;

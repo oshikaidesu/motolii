@@ -281,15 +281,16 @@ void main() {
     final files = [for (final (_, f) in m.effects) f.split('/').last];
     expect([files.contains('sashimono_aviutl.json'), files.contains('Filament Color Grading.json')], [false, true], reason: 'Sashimono\'s table of AviUtl\'s effects was a tile of nothing, UNSUPPORTED, on the shelf');
   }, skip: !insideBuilt);
-  test('a tile shows what one who looked said an effect needs: the road behind a pane, a card with room round it for a glass, and one left black says what would fill it (the user, 11/5: the shelf understood at a glance)', () {
+  test('a tile shows what one who looked said an effect needs: the road behind a pane, a card with room round it for a glass, and a beat for one that hears (the user, 11/5: the shelf understood at a glance)', () {
     final out = Directory.systemTemp.createTempSync('motolii_tile_test');
     final effects = ['aviutl_scripts/nctype__RainOnPane/Script/RainOnPane/RainOnPane.obj2', 'aviutl_scripts/tettu0530__LiquidGlass/LiquidGlass.anm2', 'effects/FFT Spectrogram.fs'];
     final drawn = EffectTiles.draw(motoliiDir, [for (final (i, e) in effects.indexed) ('$motoliiDir/$e', '${out.path}/$i.png')]);
-    expect(drawn.map((d) => d.$2), [false, false, true], reason: 'the pane and the glass show something; the spectrogram, with no sound, nothing');
+    expect(drawn.map((d) => d.$2), [false, false, false], reason: 'the pane and the glass show something; the spectrogram the tile\'s beat (it was black: no sound, FOR SOUND)');
     for (final i in [0, 1]) {
       expect(_luma(EffectTiles.frame('${out.path}/$i.png', EffectTiles.still)), greaterThan(30), reason: '${effects[i]}: it was black, nothing behind it to show (its _needs: behind, shape)');
     }
-    expect([EffectTiles.sameTag('$motoliiDir/${effects[2]}'), EffectTiles.lacks('$motoliiDir/${effects[2]}')], ['FOR SOUND', isNotEmpty], reason: 'a black square, not same as the photo, so no tag: now hardly apart from the stage with nothing on it, it says what it needs');
+    expect(_luma(EffectTiles.frame('${out.path}/2.png', EffectTiles.still)), greaterThan(10), reason: 'the beat\'s lines on its dark ground (24): with no sound, all black');
+    expect([EffectTiles.sameTag('$motoliiDir/${effects[2]}'), EffectTiles.lacks('$motoliiDir/${effects[2]}')], ['FOR SOUND', isNotEmpty], reason: 'what it needs is still kept, said only where a tile shows nothing (dock_effects: the tag on a same tile)');
     out.deleteSync(recursive: true);
   }, skip: !insideBuilt);
   test('an AbsentMotion effect is given its layer\'s size and length as AbsentMotion gives them, where it has no knob of that name: Block Noise draws its blocks', () {
