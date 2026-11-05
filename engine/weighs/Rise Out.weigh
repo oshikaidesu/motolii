@@ -1,6 +1,4 @@
 [
-  { "weight": { "kind": "Remap", "way": "bezier 0.5 0 0.75 0", "in": [ { "kind": "Time", "a": -0.9, "b": 0.4, "delay": 0.5, "in": [ { "kind": "Index" } ] } ] },
-    "target": "y", "op": "Add", "value": 0.25 },
-  { "weight": { "kind": "Time", "a": -0.9, "b": 0.3, "delay": 0.5, "in": [ { "kind": "Index" } ] },
-    "target": "opacity", "op": "Set", "value": 0 }
+  { "when": { "from": -0.9, "over": 0.4, "stagger": 0.5 }, "ease": "bezier 0.5 0 0.75 0", "target": "y", "op": "Add", "value": 0.25 },
+  { "when": { "from": -0.9, "over": 0.3, "stagger": 0.5 }, "target": "opacity", "op": "Set", "value": 0 }
 ]

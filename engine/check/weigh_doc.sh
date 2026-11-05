@@ -1,12 +1,12 @@
 #!/bin/zsh
-# weigh.h in the document: a rect's 10 copies in a row, told a weigh value (JSON: Fade In, Time over Index), drawn by
+# weigh.h in the document: a rect's 10 copies in a row, told a weigh value (JSON: Fade In, a `when` staggered along the row), drawn by
 # the real stage at three moments. At 0 s none is seen; at 0.5 s the left ones are and the right ones are not; at 2 s
 # all are. Then a Distance weight lifts the middle copies and leaves the ends. Needs the inside built (edit.sh).
 #   ./check/weigh_doc.sh
 cd "$(dirname "$0")/.."
 W=$(mktemp -d "${TMPDIR:-/tmp}/weigh.XXXX"); [ -n "$KEEP" ] && W=$PWD/out/weigh_keep_doc && rm -rf $W && mkdir -p $W   # (KEEP=1: left in out/ to look at; fresh, or the last run's document would still be in it)
-fade='[{"target":"opacity","op":"Set","value":0},{"weight":{"kind":"Time","a":0,"b":0.5,"delay":1,"in":[{"kind":"Index"}]},"target":"opacity","op":"Set","value":1}]'
-lift='[{"weight":{"kind":"Distance","at":[0,0,0],"a":0.03,"b":0.13},"target":"y","op":"Add","value":0.15}]'
+fade='[{"target":"opacity","op":"Set","value":0},{"when":{"from":0,"over":0.5,"stagger":1},"target":"opacity","op":"Set","value":1}]'
+lift='[{"where":{"kind":"Distance","at":[0,0,0],"a":0.03,"b":0.13},"target":"y","op":"Add","value":0.15}]'
 printf 'add shape rect\nset 1 size 0.06\nsay 1 fill ffc850\nset 1 copies 10\nset 1 copy_x 0.09\nsay 1 weigh %s\nat 0\nstill %s/w0.png\nat 0.5\nstill %s/w1.png\nat 2\nstill %s/w2.png\nsay 1 weigh %s\nstill %s/w3.png\n' "$fade" $W $W $W "$lift" $W | ./edit.sh $W/weigh.motolii > $W/log.txt 2>&1
 python3 -c "
 from PIL import Image

@@ -1,26 +1,30 @@
 // weigh.h: one way to say how a value changes across many things at once, as After Effects' text animators (a Range
 // Selector and a property), Cinema 4D's Cloner with an Effector and a Falloff, CSS's selector and declaration, D3's
-// select().attr(), Houdini's groups and attributes all do: pick (a weight, 0 to 1, for each of n copies at a moment),
-// then change (a value's change, scaled by the weight), one over another in order. Everything is a multiplication:
-// the change times the weight, and weights times each other.
+// select().attr(), Houdini's groups and attributes all do. One line of it answers three questions:
+//   where  — which copies, how much: a weight 0 to 1 by a copy's place in the row or in space (Index, Distance,
+//            Random, Noise); several multiply. None: every copy, whole.
+//   when   — from when, over how long, and each copy how much later than the first: its order is a where of its
+//            own (the most selected goes first; Index 1→0 unless said, so the row's first copy), so a wipe along the
+//            letters, a random fade in and a ripple out from a point are one line each. None: always. `from` below 0
+//            counts from the thing's end: an Out.
+//   what   — which value, Set, Add or Mul, by how much; and an ease on the way there.
+// A copy's weight is where × when(t), eased; the change is scaled by it. Lines stack in order, later over earlier.
 //
-// The pieces are few on purpose and closed: five weights (Index, Distance, Noise, Random, Time), three ways to put
-// weights together (a Remap by one of Godot's eases, Min, Max; more than one inside any weight are multiplied), three
-// changes (Set, Add, Mul). A new motion is a new JSON file made of these, never a new kind here. What this holds is
-// checked by check/weigh.sh: After Effects' Fade In, a Cloner under a spherical Falloff, and CSS's :nth-child(odd),
-// each as JSON alone.
+// The pieces are few on purpose and closed: four where-kinds, one when, three ops, the eases Godot and interp.h
+// already have. A new motion is a new JSON line made of these, never a new kind here. What this holds is checked by
+// check/weigh.sh (After Effects' Fade In, a Cloner under a spherical Falloff, two CSS rules cascading, Texton's In and
+// Out), each as JSON alone; and in the document by check/weigh_doc.sh and check/weigh_text.sh.
 //
-// A Time weight is the one whose inner weights are not multipliers: they are its ORDER, how far along the row a copy
-// is, so each copy starts `delay` later than the first by that much. That is the whole of a text animator's moving
-// range selector (and of Cavalry's Animators, script.cpp's animate()): Time with Index inside wipes along the letters;
-// Time with Random inside is Random Fade In.
+// The three columns are also where a window touches them: where on the stage (a point, a radius, a direction), when
+// on the timeline (the copies' bars, each so much later), what in the inspector (a value and a number). The weight
+// itself is never edited by hand; it is shown, as a colour on each copy.
 //
 // Nothing here draws or reads a document: a thing's copies hand it their index, place and values (doc_place.h) and
 // take the values back.
 #pragma once
 #include "godot_easing.h"
 #include <strings.h>   // (interp.h reads strcasecmp as the Mac has it)
-#include "interp.h"   // (interp_bezier: the keys' own CSS curve, for a way said as "bezier x1 y1 x2 y2")
+#include "interp.h"   // (interp_bezier: the keys' own CSS curve, for an ease said as "bezier x1 y1 x2 y2")
 #if __has_include("third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/document.h")
 #include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/document.h"   // (the copy the engine reads, as lottie_slots.h does)
 #else
@@ -44,22 +48,29 @@ struct Element {
     int index = 0, n = 1;
     Vec3 pos;
     Props props;
-    double lasts = -1;   // (how long the thing lasts, seconds; a Time whose a is below 0 counts from there: an Out. -1: not known)
+    double lasts = -1;   // (how long the thing lasts, seconds, for a `when` that counts from its end; -1: not known)
 };
 
-// A weight, 0 to 1 for a copy at a moment.
-struct Field {
-    enum Kind { Index, Distance, Noise, Random, Time, Remap, Min, Max } kind = Index;
-    double a = 0, b = 1;   // (what they mean, by kind, in weight() below)
+// where: a weight by a copy's place.
+struct Where {
+    enum Kind { Index, Distance, Random, Noise } kind = Index;
+    double a = 0, b = 1;   // Index: the ramp from a to b along the row (a == b: a step; 1 to 0: backwards). Distance: whole within a, fading over b more.
+                           // Random: a the seed. Noise: a how wide a lump is (0: the same for all), b how fast it drifts.
     Vec3 at;               // Distance: the middle
-    double delay = 0;      // Time: how much later the last copy starts than the first
-    std::string way;       // Remap: one of Godot's eases, "Cubic.out", "Sine.in_out", "Bounce.out"...; "" is as it is
-    std::vector<Field> in; // (multiplied together; Remap/Min/Max read them; Time's are its order)
 };
 
-// A change: a value's, by this much, scaled by the weight.
+// when: from a moment, over a length, each copy so much later than the first by its order.
+struct When {
+    bool always = true;    // (no when said)
+    double from = 0, over = 0, stagger = 0;   // seconds; from below 0: that long before the thing ends; over 0: a step
+    std::vector<Where> order;                 // (the most selected by these goes first; none: the row's first copy)
+};
+
+// what: a value's change, scaled by the weight.
 struct Effect {
-    Field weight;
+    std::vector<Where> where;   // (multiplied; none: 1)
+    When when;
+    std::string ease;           // Godot's "Cubic.out", "Back.out", "Elastic.in_out"..., or "bezier x1 y1 x2 y2"; "": as it is
     std::string target;
     enum Op { Set, Add, Mul } op = Set;
     double value = 0;
@@ -96,31 +107,35 @@ static inline double ease(const std::string& way, double u) {
     return u;   // ("", "Linear", or unknown: as it is)
 }
 
-// The weight of a copy at a moment t (seconds).
-static double weight(const Field& f, const Element& e, double t) {
-    double w = 1;
-    if (f.kind != Field::Time && f.kind != Field::Min && f.kind != Field::Max) for (const Field& c : f.in) w *= weight(c, e, t);
+// where: a copy's weight by its place, at a moment t (Noise drifts).
+static double where(const Where& w, const Element& e, double t) {
     const double u = e.n > 1 ? (double)e.index / (e.n - 1) : 0;   // (how far along the row, 0 to 1)
-    switch (f.kind) {
-    case Field::Index:    return w * clamp01(f.b == f.a ? (u >= f.a ? 1 : 0) : (u - f.a) / (f.b - f.a));   // (a ramp along the row from a to b; a == b: a step)
-    case Field::Distance: {                                                                                   // (whole within radius a, fading over band b; the Field card's field_radius and field_band)
-        const double dx = e.pos.x - f.at.x, dy = e.pos.y - f.at.y, dz = e.pos.z - f.at.z, far = std::sqrt(dx * dx + dy * dy + dz * dz);
-        return w * (1 - clamp01(f.b <= 0 ? (far > f.a ? 1 : 0) : (far - f.a) / f.b));
+    switch (w.kind) {
+    case Where::Index:    return clamp01(w.b == w.a ? (u >= w.a ? 1 : 0) : (u - w.a) / (w.b - w.a));
+    case Where::Distance: { const double dx = e.pos.x - w.at.x, dy = e.pos.y - w.at.y, dz = e.pos.z - w.at.z, far = std::sqrt(dx * dx + dy * dy + dz * dz);
+                            return 1 - clamp01(w.b <= 0 ? (far > w.a ? 1 : 0) : (far - w.a) / w.b); }
+    case Where::Random:   return hash01((uint32_t)e.index, (uint32_t)w.a);
+    case Where::Noise:    return noise01({w.a > 0 ? e.pos.x / w.a : 0, w.a > 0 ? e.pos.y / w.a : 0, (w.a > 0 ? e.pos.z / w.a : 0) + t * w.b}, 0);
     }
-    case Field::Noise:    return w * noise01({f.a > 0 ? e.pos.x / f.a : 0, f.a > 0 ? e.pos.y / f.a : 0, (f.a > 0 ? e.pos.z / f.a : 0) + t * f.b}, 0);   // (a: how wide a lump is, 0 reads nothing of the place; b: how fast it drifts)
-    case Field::Random:   return w * hash01((uint32_t)e.index, (uint32_t)f.a);                                   // (a: the seed)
-    case Field::Time: {                                                                                       // (from a, over b seconds; its order inside: so much of delay later; a below 0: from the thing's end, an Out)
-        double order = 1;
-        for (const Field& c : f.in) order *= weight(c, e, t);
-        const double from = f.a < 0 && e.lasts >= 0 ? e.lasts + f.a : f.a;
-        return clamp01(f.b <= 0 ? (t >= from + f.delay * order ? 1 : 0) : (t - from - f.delay * order) / f.b);
-    }
-    case Field::Remap:    return ease(f.way, w);
-    case Field::Min: { double m = 1; for (const Field& c : f.in) m = std::min(m, weight(c, e, t)); return m; }
-    case Field::Max: { double m = 0; for (const Field& c : f.in) m = std::max(m, weight(c, e, t)); return m; }
-    }
+    return 1;
+}
+static double where(const std::vector<Where>& all, const Element& e, double t) {
+    double w = 1;
+    for (const Where& one : all) w *= where(one, e, t);
     return w;
 }
+// when: how far through its moment a copy is, 0 to 1; it starts `stagger` × its order later than the first, its order
+// how little its `order` selects it (the most selected goes first: the row's first copy for Index 1→0, the nearest
+// for a Distance, any for Random).
+static double when(const When& w, const Element& e, double t) {
+    if (w.always) return 1;
+    static const std::vector<Where> first{Where{Where::Index, 1, 0}};
+    const double order = 1 - where(w.order.empty() ? first : w.order, e, t);
+    const double from = (w.from < 0 && e.lasts >= 0 ? e.lasts + w.from : w.from) + w.stagger * order;
+    return clamp01(w.over <= 0 ? (t >= from ? 1 : 0) : (t - from) / w.over);
+}
+// The weight of a copy at a moment: where × when, eased.
+static double weight(const Effect& fx, const Element& e, double t) { return ease(fx.ease, where(fx.where, e, t) * when(fx.when, e, t)); }
 
 // A value after a change, scaled by the weight: 0 leaves it, 1 is the whole change.
 static inline double apply(const Effect& fx, double cur, double w) {
@@ -137,30 +152,42 @@ static Props resolve(const Element& e, const std::vector<Effect>& stack, double 
     Props out = e.props;
     for (const Effect& fx : stack) {
         double& v = out[fx.target];
-        v = apply(fx, v, weight(fx.weight, e, t));
+        v = apply(fx, v, weight(fx, e, t));
     }
     return out;
 }
 
-// --- As JSON: a field {"kind":"Time","a":0,"b":1,"delay":0.5,"in":[{"kind":"Index"}]}, an effect {"weight":{...},
-// "target":"opacity","op":"Set","value":1}, a stack an array of effects (or one effect alone). ---
-static Field field_of(const rapidjson::Value& j) {
-    Field f;
-    static const std::map<std::string, Field::Kind> kinds{{"Index", Field::Index}, {"Distance", Field::Distance}, {"Noise", Field::Noise}, {"Random", Field::Random}, {"Time", Field::Time}, {"Remap", Field::Remap}, {"Min", Field::Min}, {"Max", Field::Max}};
-    if (!j.IsObject()) return f;
-    if (auto k = j.FindMember("kind"); k != j.MemberEnd() && k->value.IsString()) if (auto it = kinds.find(k->value.GetString()); it != kinds.end()) f.kind = it->second;
+// --- As JSON, one line: { "where": {"kind":"Distance","at":[0,0],"a":0.1,"b":0.2} (or a list of them),
+//                          "when":  {"from":0,"over":0.5,"stagger":0.6, "order":{"kind":"Random","a":50}},
+//                          "ease":  "Back.out",
+//                          "target":"x", "op":"Add", "value":-0.3 }     A stack is a list of lines, or one alone. ---
+static Where where_of(const rapidjson::Value& j) {
+    Where w;
+    static const std::map<std::string, Where::Kind> kinds{{"Index", Where::Index}, {"Distance", Where::Distance}, {"Random", Where::Random}, {"Noise", Where::Noise}};
+    if (!j.IsObject()) return w;
+    if (auto k = j.FindMember("kind"); k != j.MemberEnd() && k->value.IsString()) if (auto it = kinds.find(k->value.GetString()); it != kinds.end()) w.kind = it->second;
     const auto num = [&](const char* name, double& into) { if (auto m = j.FindMember(name); m != j.MemberEnd() && m->value.IsNumber()) into = m->value.GetDouble(); };
-    num("a", f.a), num("b", f.b), num("delay", f.delay);
-    if (auto m = j.FindMember("at"); m != j.MemberEnd() && m->value.IsArray() && m->value.Size() >= 2) f.at = {m->value[0].GetDouble(), m->value[1].GetDouble(), m->value.Size() > 2 ? m->value[2].GetDouble() : 0.0};
-    if (auto m = j.FindMember("way"); m != j.MemberEnd() && m->value.IsString()) f.way = m->value.GetString();
-    if (auto m = j.FindMember("in"); m != j.MemberEnd() && m->value.IsArray()) for (const auto& c : m->value.GetArray()) f.in.push_back(field_of(c));
-    return f;
+    num("a", w.a), num("b", w.b);
+    if (auto m = j.FindMember("at"); m != j.MemberEnd() && m->value.IsArray() && m->value.Size() >= 2) w.at = {m->value[0].GetDouble(), m->value[1].GetDouble(), m->value.Size() > 2 ? m->value[2].GetDouble() : 0.0};
+    return w;
 }
 static Effect effect_of(const rapidjson::Value& j) {
     Effect fx;
     if (!j.IsObject()) return fx;
-    if (auto m = j.FindMember("weight"); m != j.MemberEnd()) fx.weight = field_of(m->value);
-    else fx.weight.a = fx.weight.b = 0;   // (no weight said: 1 for every copy, as a CSS rule with no selector but the element's; a step at the row's start)
+    if (auto m = j.FindMember("where"); m != j.MemberEnd()) {
+        if (m->value.IsArray()) for (const auto& one : m->value.GetArray()) fx.where.push_back(where_of(one));
+        else fx.where.push_back(where_of(m->value));
+    }
+    if (auto m = j.FindMember("when"); m != j.MemberEnd() && m->value.IsObject()) {
+        fx.when.always = false;
+        const auto num = [&](const char* name, double& into) { if (auto k = m->value.FindMember(name); k != m->value.MemberEnd() && k->value.IsNumber()) into = k->value.GetDouble(); };
+        num("from", fx.when.from), num("over", fx.when.over), num("stagger", fx.when.stagger);
+        if (auto k = m->value.FindMember("order"); k != m->value.MemberEnd()) {
+            if (k->value.IsArray()) for (const auto& one : k->value.GetArray()) fx.when.order.push_back(where_of(one));
+            else fx.when.order.push_back(where_of(k->value));
+        }
+    }
+    if (auto m = j.FindMember("ease"); m != j.MemberEnd() && m->value.IsString()) fx.ease = m->value.GetString();
     if (auto m = j.FindMember("target"); m != j.MemberEnd() && m->value.IsString()) fx.target = m->value.GetString();
     if (auto m = j.FindMember("op"); m != j.MemberEnd() && m->value.IsString()) fx.op = std::string(m->value.GetString()) == "Add" ? Effect::Add : std::string(m->value.GetString()) == "Mul" ? Effect::Mul : Effect::Set;
     if (auto m = j.FindMember("value"); m != j.MemberEnd() && m->value.IsNumber()) fx.value = m->value.GetDouble();
@@ -176,10 +203,9 @@ static std::vector<Effect> stack_of(const char* json, std::string* trouble = nul
     return stack;
 }
 
-
 // A thing's copies, each what the stack makes of it: ScriptCopy-shaped (x y z in the stage's units added, size and
 // rotate multiplied and added, opacity multiplied), so a document feeds it where its scripts' copies go (doc_place.h).
-// pos: where each copy lies before this (what a Distance weighs); t: the thing's own seconds; lasts: how long it lasts (an Out counts from there).
+// pos: where each copy lies before this (what a Distance weighs); t: the thing's own seconds; lasts: how long it lasts (a `when` from its end counts from there).
 template <class Copy>
 static std::vector<Copy> copies(const std::vector<Effect>& stack, const std::vector<Vec3>& pos, double t, double lasts = -1) {
     std::vector<Copy> out(pos.size());
