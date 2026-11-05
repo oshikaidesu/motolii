@@ -370,6 +370,16 @@ abstract final class EffectTiles {
     if (m.at(moments[still])) m.still('${folder.path}/sample.png');   // (as large as the tries set beside it)
     lay(true);
     final moved = shoot('${folder.path}/moved.png');
+    for (final moving in [false, true]) {   // (and each with the road under it, as one laid on the road is drawn: beside these it is seen whether it did anything)
+      lay(moving, road: true);
+      shoot('${folder.path}/${moving ? 'moved' : 'plain'}_road.png');
+    }
+    for (final (empty, seen) in [('none', null), ('stage', grid)]) {   // (nothing on the stage, black; the grid alone: a tile hardly apart from either shows nothing, by the same SAME; not the road alone, which rain on a pane, thin streaks over it, is hardly apart from by the mean)
+      for (final t in [grid, card, photo, under, words]) {
+        m.set(t, 'opacity', t == seen ? 1 : 0);
+      }
+      shoot('${folder.path}/$empty.png');
+    }
     final enough = plain.length == moments.length && moved.length == moments.length;
     final shows = table(dir), own = {for (final t in [photo, card, words]) ...m.values(t)};   // (a drawing's are a shape's: none of them js_)
     for (final (f, home) in files) {
@@ -385,7 +395,7 @@ abstract final class EffectTiles {
       final chosen = best(dir, f);   // (what one who looked at each knob moved on the sample chose to show it by)
       final timed = chosen?.$1 == '_time' || (time > 0 && weights.entries.every((w) => w.key == '_time' || w.value <= time));   // (its weights say letting it run shows it best: no knob turned, as AbsentMotion's Noise Displace)
       final runs = said.contains('time') || said.contains('feedback') || plays || timed;
-      final first = (show?.moves ?? false) || said.contains('feedback') || plays;   // (an effect of what was has something going past it to see)
+      final first = (show?.moves ?? false) || said.contains('feedback') || plays || needs(dir, f) == 'shape';   // (an effect of what was has something going past it to see; one for cut-outs, as one who looked said, an edge with room round it: the whole photo turned black by a glass with nothing to see through is not it shown)
       final base = home.substring(0, home.length - 4);
       var same = false, split = false, stands = true;
       var made = const <String>[];
@@ -400,7 +410,7 @@ abstract final class EffectTiles {
       small = alone == 0 && _entry(dir, f)['_lay'] == 'small';   // (one that takes the thing round a path (Mathy_Su's curves): the photo small over the grid, so the path it goes round is seen about it, not under it)
       if (small) m.set(photo, 'size', 0.6);
       for (final moving in alone != 0 ? [false] : [first, if (!first) true]) {   // (nothing seen on the whole photo: on a card going past, where what it does at an edge or to what moves shows, as AbsentMotion's "move")
-        final passes = said.contains('transition') && alone == 0;   // (one is put on the photo, the road under it)
+        final passes = (said.contains('transition') || const {'behind', 'shape'}.contains(needs(dir, f))) && alone == 0;   // (one is put on the photo, the road under it; so is one that shows what is behind, as one who looked said: rain on a pane over nothing was black; and one for cut-outs, its card over it: a glass, a shape over a background to refract)
         lay(moving, road: passes, only: alone);
         final whole = !moving && !passes && alone == 0 && (f.endsWith('.fs') || f.endsWith('.wgsl') || f.endsWith('.json')) && m.say(0, 'script', f);   // (.json: Filament's own settings, laid on the stage's view: viewer_settings.h)   // (a screen effect; the stage takes an AviUtl2 script too, but draws none of it: motolii.h, a thing's)
         final thing = alone != 0 ? alone : moving ? card : photo, on = whole ? 0 : thing, onIt = !whole && m.say(thing, 'fx', f);   // (as a thing's: as edit.sh says it)
@@ -434,7 +444,7 @@ abstract final class EffectTiles {
         if (whole) m.say(0, 'script', 'none');
         if (onIt) m.say(thing, 'fx', 'none');
         if (made.length < moments.length) continue;
-        same = enough && (alone == 0 || aloneOk) && _unseen(home, '${folder.path}/${moving ? 'moved' : bare}');
+        same = enough && (alone == 0 || aloneOk) && (['${moving ? 'moved' : bare}${passes ? '_road' : ''}', 'none', 'stage'].any((b) => _unseen(home, '${folder.path}/$b')));   // (or hardly apart from nothing, black, or the grid alone: a square a sound, a video, what it lacks would fill, said so, not left black)
         stands = !moving && !runs && sweeps.isEmpty;
         split = stands && !said.contains('generator');
         if (!same) break;
