@@ -140,6 +140,14 @@ abstract final class EffectTiles {
     _ => '',
   };
 
+  /// What the sample lacks for [file] to show, in the words of the one who looked (its _lacks: "a PSD with layers",
+  /// "the 本体 part of this particle set before it"), '' none: under the shelf beside [needs]'s one word, so a tile that
+  /// shows nothing says what to give it, not only that it lacks something.
+  static String lacks(String file) => switch (_entry(motoliiDir, file)['_lacks']) {
+    final String w => w,
+    _ => '',
+  };
+
   /// What a tile that shows nothing says, instead of passing the sample off as the effect: what the sample lacks for it,
   /// as one who looked said it; one looked at that lacks nothing (or only text, which its tile is drawn on) is one the
   /// inside does not draw yet (as an AviUtl2 script stops on a call not made: aviutl_fx.h's "not yet"); NO CHANGE, one
@@ -152,6 +160,7 @@ abstract final class EffectTiles {
     'shape' => 'FOR CUT-OUTS',
     'behind' => 'NEEDS BACKDROP',
     'path' => 'FOR PATHS',
+    'input' => 'NEEDS INPUT',   // (something the sample has not that none of the words above says: [lacks] tells what)
     _ when looked(motoliiDir, file) => 'UNSUPPORTED',
     _ => 'NO CHANGE',
   };

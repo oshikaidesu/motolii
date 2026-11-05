@@ -75,7 +75,8 @@ void main() {
   });
   test('an effect\'s knobs are weighed by the shelf\'s entry, named as the inside names them: an AviUtl2 script of a file of several by its #name, a Japanese name byte by byte', () {
     final ao = EffectTiles.weighed(motoliiDir, '$motoliiDir/aviutl_scripts/HexBrowns__HexScript/Script/@2Dライティング_H.anm2#環境遮蔽');
-    expect(ao['js__2D___________________H_radius'], 8, reason: 'ライティング: six letters of three bytes, eighteen _ (doc_screen_knob\'s std::isalnum, as the inside\'s cards say it)');
+    final told = (jsonDecode(File('$motoliiDir/knob_weights.json').readAsStringSync()) as Map)['aviutl_scripts/HexBrowns__HexScript/Script/@2Dライティング_H.anm2#環境遮蔽'] as Map;
+    expect(ao['js__2D___________________H_radius'], told['radius'], reason: 'ライティング: six letters of three bytes, eighteen _ (doc_screen_knob\'s std::isalnum, as the inside\'s cards say it)');
     expect(ao['_time'], 0);
     expect(EffectTiles.weighed(motoliiDir, '$motoliiDir/effects/am_noisedisplace.wgsl')['_time'], greaterThan(EffectTiles.weighed(motoliiDir, '$motoliiDir/effects/am_noisedisplace.wgsl')['js_am_noisedisplace_amount']!), reason: 'the user, 11/4: Noise Displace is seen better let run');
     expect(EffectTiles.weighed(motoliiDir, '/Users/someone/Library/Application Support/Motolii/effects/mine.fs'), isEmpty, reason: 'the maker\'s own: not weighed');
@@ -180,6 +181,9 @@ void main() {
     expect([EffectTiles.stopped('$motoliiDir/${effects[1]}'), EffectTiles.stopped('$motoliiDir/aviutl_scripts/Suzukeh__Mathy_Su/@Mathy_Su.anm2#サイクロイド'), EffectTiles.stopped('$motoliiDir/${effects[0]}')],
         [startsWith('needs UTF8@FlowType_K.mod2'), startsWith('not in AviUtl2: obj.color'), isEmpty], reason: 'and why, under the shelf, in the inside\'s words: the Windows module it needs; a name AviUtl2 itself has not; one that does not stop, nothing');
     expect(EffectTiles.sameTag('/Users/someone/Library/Application Support/Motolii/effects/mine.fs'), 'NO CHANGE', reason: 'the maker\'s own, looked at by no one');
+    const psd = 'aviutl_scripts/CJF__PSD_anime/Script/CJF/フェード@psd.anm2';
+    expect([EffectTiles.sameTag('$motoliiDir/$psd'), EffectTiles.lacks('$motoliiDir/$psd')], ['NEEDS INPUT', contains('PSD')],
+        reason: 'one that lacks what none of the tags says (a PSD\'s layers) was UNSUPPORTED, as if the inside could not: it says what to give it, in the words of the one who looked');
     expect(EffectTiles.best(motoliiDir, '$motoliiDir/aviutl_scripts/CatWithNeko__ChromaticAberration/Chromatic Aberration.anm2'), ('js_Chromatic_Aberration_zoomtra', 100, 150), reason: 'its colours seen pulled apart by zoomtra, not by xtra the code reading chose');
     out.deleteSync(recursive: true);
   }, skip: !insideBuilt);
