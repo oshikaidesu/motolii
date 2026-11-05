@@ -75,7 +75,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
         (id: n, name: n, label: m.label(n), on: on.contains(n), apply: chosen(n, () => ws.fxToggle(n), taken: on.contains(n)), said: _said(ws, n),
          tile: (small) => EffectTile(n, small: small, file: m.picture(n), look: _FxLook(n), on: on.contains(n) ? 'ON' : null, picked: c.sel == n, onTap: () => c.pick(n), onApply: chosen(n, () => ws.fxToggle(n), taken: on.contains(n)), star: small ? null : c)),
       for (final (n, f) in EffectsShelf._byName[m.effects] ??= ([...m.effects]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase()))))
-        (id: f, name: n, label: m.label(n), on: screen.contains(f), apply: chosen(f, () => ws.screenPut(f)), said: m.about(f).isEmpty ? (picked ? 'On the picked thing' : 'On all under it') : m.about(f),
+        (id: f, name: n, label: m.label(n), on: screen.contains(f), apply: chosen(f, () => ws.screenPut(f)), said: m.tileSame(f) && EffectTiles.stopped(f).isNotEmpty ? 'Stops here: ${EffectTiles.stopped(f)}' : m.about(f).isEmpty ? (picked ? 'On the picked thing' : 'On all under it') : m.about(f),
          tile: (small) => EffectTile(n, key: small ? null : ValueKey('ws-screen-$f'), small: small, file: m.picture(f), same: m.tileSame(f) ? EffectTiles.sameTag(f) : null, on: screen.contains(f) ? 'ON ${screen.indexOf(f) + 1}' : null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.screenPut(f)), star: small ? null : c, starId: f, onHover: (h) => ws.tryOn(h ? f : null))),
       // (a look kept by its name, Save Look: given to the picked thing, its values, effects and keys)
       for (final (n, f) in m.looks)

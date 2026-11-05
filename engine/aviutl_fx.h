@@ -189,6 +189,9 @@ static door::Screen* aviutl_door(AviutlRun& r, const std::string& name, bool cli
 }
 
 // ---- obj, as lua.txt says each (only these; any other name: not yet) ----
+// obj.module(name): lua.txt's "スクリプトモジュール（.mod2）の関数を取得します": a module is AviUtl2's own Windows
+// DLL, so here none is: the script stops saying which it wanted.
+static int aviutl_module(lua_State* L) { return luaL_error(L, "needs %s.mod2, an AviUtl2 script module (a Windows DLL)", luaL_checkstring(L, 1)); }
 static int aviutl_pixelshader(lua_State* L) {   // (name, target, {resource...}, {constant...}, blend, sampler)
     AviutlRun& r = aviutl_of(L);
     const std::string name = luaL_checkstring(L, 1), target = aviutl_name(luaL_checkstring(L, 2)), blend = lua_isstring(L, 5) ? lua_tostring(L, 5) : "copy", sampler = aviutl_str(L, 6);
@@ -798,9 +801,17 @@ static std::shared_ptr<AviutlRun> aviutl_made(Stage& s, const std::string& file)
     lua_newtable(L);
     const std::pair<const char*, lua_CFunction> calls[] = {{"pixelshader", aviutl_pixelshader}, {"clearbuffer", aviutl_clearbuffer}, {"copybuffer", aviutl_copybuffer}, {"load", aviutl_load}, {"setoption", aviutl_setoption}, {"getoption", aviutl_getoption},
         {"getinfo", aviutl_getinfo}, {"getvalue", aviutl_getvalue}, {"setanchor", aviutl_setanchor}, {"getpixel", aviutl_getpixel}, {"setfont", aviutl_setfont}, {"draw", aviutl_draw}, {"drawpoly", aviutl_drawpoly}, {"effect", aviutl_effect},
-        {"getpixeldata", aviutl_getpixeldata}, {"putpixeldata", aviutl_putpixeldata}, {"pixeloption", aviutl_pixeloption}, {"getaudio", aviutl_getaudio}, {"data", aviutl_data}};
+        {"getpixeldata", aviutl_getpixeldata}, {"putpixeldata", aviutl_putpixeldata}, {"pixeloption", aviutl_pixeloption}, {"getaudio", aviutl_getaudio}, {"data", aviutl_data}, {"module", aviutl_module}};
     for (const auto& [n, f] : calls) lua_pushlightuserdata(L, r.get()), lua_pushcclosure(L, f, 1), lua_setfield(L, -2, n);
-    luaL_dostring(L, "return { __index = function(_, k) error('not yet: obj.' .. tostring(k), 2) end }");   // (any other name of obj)
+    // (any other name of obj: one lua.txt has (every obj. name of aviutl2_modern_docs' docs/lua/index.md, MIT, and its old
+    //  form's track0 to track3 and check0) is not made here yet; one it has not is the script's own slip, stopping AviUtl2 too)
+    luaL_dostring(L, "local named = {}\n"
+        "for n in ('alpha aspect clearbuffer computeshader copybuffer copypixel cx cy cz data draw drawpoly effect effect_id effect_layer frame frame_e frame_s '\n"
+        "  .. 'framerate getaudio getfont getinfo getoption getpixel getpixeldata getpoint getvalue h id index interpolation layer load mes module multiobject num '\n"
+        "  .. 'originframe ox oy oz pixeloption pixelshader putpixel putpixeldata rand rand1 rx ry rz scene_id screen_h screen_w setanchor setfont setoption sx sy sz '\n"
+        "  .. 'time totalframe totaltime track0 track1 track2 track3 check0 w x y z zoom'):gmatch('%S+') do named[n] = true end\n"
+        "return { __index = function(_, k) if named[k] then error('not yet: obj.' .. tostring(k), 2) end\n"
+        "  error('not in AviUtl2: obj.' .. tostring(k) .. ' (its lua.txt has no such name: it stops there too)', 2) end }");
     lua_setmetatable(L, -2);
     lua_setglobal(L, "obj");
     luaL_dostring(L, "obj.rand, obj.rand1, obj.interpolation = rand, rand1, aviutl_interpolation");   // (lua.txt: obj. or not)

@@ -144,6 +144,8 @@ void main() {
     expect(first, lessThan(70), reason: 'on white words over the dark grid, as AbsentMotion lays its text effects, not on the photo');
     expect(last, greaterThan(first), reason: '\$0 counts up to \$12,500: more letters at its end');
     expect([for (final e in effects.skip(1)) EffectTiles.sameTag('$motoliiDir/$e')], ['UNSUPPORTED', 'PART OF A SET']);
+    expect([EffectTiles.stopped('$motoliiDir/${effects[1]}'), EffectTiles.stopped('$motoliiDir/aviutl_scripts/Suzukeh__Mathy_Su/@Mathy_Su.anm2#サイクロイド'), EffectTiles.stopped('$motoliiDir/${effects[0]}')],
+        [startsWith('needs UTF8@FlowType_K.mod2'), startsWith('not in AviUtl2: obj.color'), isEmpty], reason: 'and why, under the shelf, in the inside\'s words: the Windows module it needs; a name AviUtl2 itself has not; one that does not stop, nothing');
     expect(EffectTiles.sameTag('/Users/someone/Library/Application Support/Motolii/effects/mine.fs'), 'NO CHANGE', reason: 'the maker\'s own, looked at by no one');
     expect(EffectTiles.best(motoliiDir, '$motoliiDir/aviutl_scripts/CatWithNeko__ChromaticAberration/Chromatic Aberration.anm2'), ('js_Chromatic_Aberration_zoomtra', 100, 150), reason: 'its colours seen pulled apart by zoomtra, not by xtra the code reading chose');
     out.deleteSync(recursive: true);

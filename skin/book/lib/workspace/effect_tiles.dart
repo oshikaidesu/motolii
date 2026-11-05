@@ -132,6 +132,14 @@ abstract final class EffectTiles {
     _ => '',
   };
 
+  /// What the inside said when [file] stopped as the one who looked put it on (its _said, the inside's own "stops:"
+  /// words, aviutl_fx.h: a .mod2 it needs, a call not made here yet, one AviUtl2 has not), '' none: a tile that shows
+  /// nothing says why under the shelf (the user, 11/5: NO CHANGE with a reason, never left unsaid).
+  static String stopped(String file) => switch (_entry(motoliiDir, file)['_said']) {
+    final String w => w,
+    _ => '',
+  };
+
   /// What a tile that shows nothing says, instead of passing the sample off as the effect: what the sample lacks for it,
   /// as one who looked said it; one looked at that lacks nothing (or only text, which its tile is drawn on) is one the
   /// inside does not draw yet (as an AviUtl2 script stops on a call not made: aviutl_fx.h's "not yet"); NO CHANGE, one
