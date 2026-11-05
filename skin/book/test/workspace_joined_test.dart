@@ -27,7 +27,7 @@ import 'package:lab_book/sets/inspector/inspector_direct_transform_canvas.dart' 
 import 'package:lab_book/sets/inspector/inspector_direct_transform_layout.dart' show TransformLayout;
 import 'package:lab_book/sets/inspector/inspector_rows_prop_row.dart';
 import 'package:lab_book/workspace/dock_fonts.dart';
-import 'package:lab_book/workspace/dock_map.dart' show dockMap, dockModel;
+import 'package:lab_book/workspace/dock_map.dart' show dockMap, dockModel, dockPalette;
 import 'package:lab_book/workspace/dock_glyphs.dart' show DockG;
 import 'package:lab_book/workspace/effect_tiles.dart' show EffectTiles;
 import 'package:lab_book/workspace/keys.dart' show WsKeys, activatorOf, defaultKeys;

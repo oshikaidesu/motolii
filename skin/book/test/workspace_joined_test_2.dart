@@ -144,6 +144,30 @@ void _tests2() {
     final dots = [for (final e in find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('ws-map-Fonts-/')).evaluate()) t.getRect(find.byWidget(e.widget))];
     Rect inside(Rect r) => r.deflate(r.shortestSide * .05);   // (d3's forceCollide pushes apart softly: some left touching, as the heaps on a map are let within a twentieth)
     expect([dots.length, [for (final (i, a) in dots.indexed) for (final b in dots.skip(i + 1)) if (inside(a).overlaps(inside(b))) 1].length], [map.places.value.length, 0], reason: 'pushed apart (FontMap\'s overlap removal): each seen, none over another');
+    final at = map.places.value, inked = {for (final e in find.descendant(of: find.byKey(const ValueKey('ws-map-Fonts')), matching: find.byType(RawImage)).evaluate()) (e.widget as RawImage).color};
+    double hue(Color c) => HSVColor.fromColor(c).hue;
+    double apart(double a, double b) => math.min((a - b).abs(), 360 - (a - b).abs());
+    final ids = at.keys.toList(), ink = dockPalette(at), near = [for (final id in ids) map.alike(id, ids, 2)[1]];
+    double mean(List<double> v) => v.reduce((a, b) => a + b) / v.length;
+    final byNear = mean([for (final (i, id) in ids.indexed) apart(hue(ink[id]!), hue(ink[near[i]]!))]), byAll = mean([for (final (i, a) in ids.indexed) for (final b in ids.skip(i + 1)) apart(hue(ink[a]!), hue(ink[b]!))]);
+    double contrast(Color a, Color b) => (math.max(a.computeLuminance(), b.computeLuminance()) + .05) / (math.min(a.computeLuminance(), b.computeLuminance()) + .05);   // (WCAG 2.1's contrast ratio)
+    final dim = [for (final id in ids) if (contrast(ink[id]!, WsT.card) < 3) id];
+    expect([{for (final c in inked) if (c != null) hue(c) ~/ 30}.length, byNear < byAll / 3, dim], [greaterThan(8), isTrue, isEmpty], reason: 'each font inked by where it lies (DataMapPlot\'s palette_from_datamap): hues all round the map, the alike near in hue ($byNear° against $byAll°), none under 3:1 on its ground');
+    if (Platform.environment['MOTOLII_SHOT'] case final shot?) {   // (a look at it: the window as drawn now, its words given time to be made pictures)
+      for (var i = 0; i < 20; i++) {
+        await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+        await t.pump();
+      }
+      final root = t.binding.renderViews.first.layer! as OffsetLayer, size = t.view.physicalSize / t.view.devicePixelRatio;
+      final png = await t.runAsync(() async => (await root.toImage(Offset.zero & size, pixelRatio: t.view.devicePixelRatio)).toByteData(format: ui.ImageByteFormat.png));
+      File(shot).writeAsBytesSync(png!.buffer.asUint8List());
+      final room = t.getRect(find.byKey(const ValueKey('ws-map-Fonts'))), into = TestPointer(8, PointerDeviceKind.mouse)..hover(room.topLeft + Offset(room.width * .72, room.height * .7));   // (and nearer, the wheel in on an island)
+      await t.sendEventToBinding(into.scroll(const Offset(0, -250)));
+      await t.pumpAndSettle();
+      final near = await t.runAsync(() async => (await root.toImage(Offset.zero & size, pixelRatio: t.view.devicePixelRatio)).toByteData(format: ui.ImageByteFormat.png));
+      File(shot.replaceAll('.png', '_near.png')).writeAsBytesSync(near!.buffer.asUint8List());
+      File('$shot.json').writeAsStringSync(jsonEncode({for (final id in ids) id: [at[id]!.dx, at[id]!.dy, ink[id]!.toARGB32()]}));   // (and where each lies, its ink: the words not drawn in a test)
+    }
     String? picked() => ws.view.values.whereType<DockMem>().firstWhere((d) => d.mapped.contains('Fonts')).sel['Fonts'];   // (the dock it is a map on)
     Future<void> whole() async {   // (the wheel out over it: the whole map again)
       final wheel = TestPointer(9, PointerDeviceKind.mouse)..hover(t.getCenter(find.byKey(const ValueKey('ws-map-Fonts'))));

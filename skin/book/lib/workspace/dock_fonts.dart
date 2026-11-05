@@ -262,7 +262,7 @@ class FontsShelf extends StatelessWidget {
                         return dockTogether([look, [for (final k in kinds) Float32List(all.length)..[all.indexOf(k)] = 1]], const [1, 0.5]);   // (FontMap's style blended in at half: same-style fonts group together)
                       }, also: '${clip ?? ''} kinds');
                       final byPath = {for (final f in list) ?f.path: f};
-                      return DockMap(map, [for (final MapEntry(key: p, value: f) in byPath.entries) (p, _FontDot(f, c))], aspect: _dot.$1 / _dot.$2, picked: list.where((f) => f.family == c.sel).firstOrNull?.path, press: (p) {
+                      return DockMap(map, [for (final MapEntry(key: p, value: f) in byPath.entries) (p, _FontDot(f, c, map: map))], aspect: _dot.$1 / _dot.$2, picked: list.where((f) => f.family == c.sel).firstOrNull?.path, press: (p) {
                         if (byPath[p] case final f?) {
                           c.pick(f.family);   // (one press, as on the map: XO's hot swap, the role's font when no text is picked)
                           _toRole(c, f);
@@ -503,10 +503,13 @@ Float32List _halved(Uint8List g) {
   return out;
 }
 
+/// [map]: inked by where it lies on it ([dockPalette]: the user, 11/4, "文字のグラフビューは色が使えるからいい感じにジャンル別の島で
+/// グラデしたら綺麗": a word in one ink, unlike the effects' pictures, so colour tells its island; FontMap's category colours).
 class _FontDot extends StatefulWidget {
-  const _FontDot(this.f, this.c);
+  const _FontDot(this.f, this.c, {this.map});
   final _Font f;
   final DockCtx c;
+  final DockMapPlaces? map;
   @override
   State<_FontDot> createState() => _FontDotState();
 }
@@ -535,7 +538,13 @@ class _FontDotState extends State<_FontDot> {
       onDoubleTap: () => _setFont(c, f),
       builder: (context, h) => Container(
         color: dockFill(sel, h, WsT.card),
-        child: RawImage(image: _seen[f.path], color: T.ink(dockInk(sel, Grey.g95)), colorBlendMode: BlendMode.modulate, fit: BoxFit.contain),
+        child: switch (widget.map) {
+          final map? => ValueListenableBuilder(
+            valueListenable: map.places,
+            builder: (context, at, _) => RawImage(image: _seen[f.path], color: T.ink(dockInk(sel, dockPalette(at)[f.path] ?? Grey.g95)), colorBlendMode: BlendMode.modulate, fit: BoxFit.contain),
+          ),
+          null => RawImage(image: _seen[f.path], color: T.ink(dockInk(sel, Grey.g95)), colorBlendMode: BlendMode.modulate, fit: BoxFit.contain),
+        },
       ),
     );
   }

@@ -5,8 +5,8 @@ part of 'dock_map.dart';
 /// tile's width to its height), the whole fitted to the room at one scale and zoomed as one, the tiles with it, as
 /// FontMap's map (useMapRenderer: calculateMappingDimensions; useMapZoom: framed at 0.92 to start, never further out,
 /// at most 10 times, moved only within its canvas); the rest left off; what is
-/// said while it is being laid out. No colour of their own: the pictures tell them apart (FontMap's glyphs in one ink,
-/// its category colours off at first). [picked]: the one picked, its nearest under the map; [press]: one press on one
+/// said while it is being laid out. No colour of its own: the pictures tell them apart; the fonts' words, in one ink,
+/// are inked by where they lie ([dockPalette]). [picked]: the one picked, its nearest under the map; [press]: one press on one
 /// of them. What the pointer is on is told by it: its [peek] (its pictures moving, as the shelf's foot shows the
 /// picked one) and its name of [names]. A pick leaves the map where the hand left it, as a pick in Figma leaves its
 /// canvas (it moves by Zoom to Selection alone): flown to, the one picked dragged the view away (11/4, the user: "like
