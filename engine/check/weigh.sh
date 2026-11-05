@@ -7,7 +7,7 @@
 cd "$(dirname "$0")/.."
 mkdir -p out
 rj=${RAPIDJSON:-third_party/filament_src/third_party/libassimp/contrib/rapidjson/include}
-${CXX:-c++} -std=c++17 -O1 -I. -I"$rj" check/weigh_check.cpp -o out/weigh_check 2>&1 | head -20 || { echo "weigh.h builds: NO"; exit 1; }
+${CXX:-c++} -std=c++17 -O1 -Wno-deprecated-declarations -I. -I"$rj" check/weigh_check.cpp -o out/weigh_check || { echo "weigh.h builds: NO"; exit 1; }
 ./out/weigh_check
 # Not said by the five weights: a comb along the row (CSS's :nth-child(odd), every third one). Kept out until a real
 # motion needs it, so the set stays closed; when one does, it is one more weight (Index wrapped), not a new file.
