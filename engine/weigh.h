@@ -19,6 +19,8 @@
 // take the values back.
 #pragma once
 #include "godot_easing.h"
+#include <strings.h>   // (interp.h reads strcasecmp as the Mac has it)
+#include "interp.h"   // (interp_bezier: the keys' own CSS curve, for a way said as "bezier x1 y1 x2 y2")
 #if __has_include("third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/document.h")
 #include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/document.h"   // (the copy the engine reads, as lottie_slots.h does)
 #else
@@ -27,6 +29,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <map>
 #include <string>
 #include <vector>
@@ -41,6 +44,7 @@ struct Element {
     int index = 0, n = 1;
     Vec3 pos;
     Props props;
+    double lasts = -1;   // (how long the thing lasts, seconds; a Time whose a is below 0 counts from there: an Out. -1: not known)
 };
 
 // A weight, 0 to 1 for a copy at a moment.
@@ -79,9 +83,11 @@ static inline double noise01(Vec3 p, uint32_t seed) {   // (value noise on a lat
     return sum;
 }
 
-// An ease by its Godot name, "Trans.ease" (Sine.in_out, Cubic.out, Elastic.out, Bounce.out, Back.in...): u → 0..1.
+// An ease by its Godot name, "Trans.ease" (Sine.in_out, Cubic.out, Elastic.out, Bounce.out, Back.in...), or the
+// keys' own CSS curve, "bezier x1 y1 x2 y2" (Texton's easing editor, After Effects' graph editor): u → 0..1.
 static inline double ease(const std::string& way, double u) {
     u = clamp01(u);
+    if (way.rfind("bezier", 0) == 0) { double b[4] = {0.25, 0.1, 0.25, 1}; std::sscanf(way.c_str() + 6, "%lf %lf %lf %lf", &b[0], &b[1], &b[2], &b[3]); return interp_bezier(clamp01(b[0]), b[1], clamp01(b[2]), b[3], u); }
     const size_t dot = way.find('.');
     const std::string trans = way.substr(0, dot), kind = dot == std::string::npos ? "in" : way.substr(dot + 1);
 #define WEIGH_EASE(T) if (trans == #T) { if (kind == "out") return godot::T::out(u, 0, 1, 1); if (kind == "in_out") return godot::T::in_out(u, 0, 1, 1); if (kind == "out_in") return godot::T::out_in(u, 0, 1, 1); return godot::T::in(u, 0, 1, 1); }
@@ -103,10 +109,11 @@ static double weight(const Field& f, const Element& e, double t) {
     }
     case Field::Noise:    return w * noise01({f.a > 0 ? e.pos.x / f.a : 0, f.a > 0 ? e.pos.y / f.a : 0, (f.a > 0 ? e.pos.z / f.a : 0) + t * f.b}, 0);   // (a: how wide a lump is, 0 reads nothing of the place; b: how fast it drifts)
     case Field::Random:   return w * hash01((uint32_t)e.index, (uint32_t)f.a);                                   // (a: the seed)
-    case Field::Time: {                                                                                       // (from a, over b seconds; its order inside: so much of delay later)
+    case Field::Time: {                                                                                       // (from a, over b seconds; its order inside: so much of delay later; a below 0: from the thing's end, an Out)
         double order = 1;
         for (const Field& c : f.in) order *= weight(c, e, t);
-        return clamp01(f.b <= 0 ? (t >= f.a + f.delay * order ? 1 : 0) : (t - f.a - f.delay * order) / f.b);
+        const double from = f.a < 0 && e.lasts >= 0 ? e.lasts + f.a : f.a;
+        return clamp01(f.b <= 0 ? (t >= from + f.delay * order ? 1 : 0) : (t - from - f.delay * order) / f.b);
     }
     case Field::Remap:    return ease(f.way, w);
     case Field::Min: { double m = 1; for (const Field& c : f.in) m = std::min(m, weight(c, e, t)); return m; }
@@ -172,13 +179,13 @@ static std::vector<Effect> stack_of(const char* json, std::string* trouble = nul
 
 // A thing's copies, each what the stack makes of it: ScriptCopy-shaped (x y z in the stage's units added, size and
 // rotate multiplied and added, opacity multiplied), so a document feeds it where its scripts' copies go (doc_place.h).
-// pos: where each copy lies before this (what a Distance weighs); t: the thing's own seconds.
+// pos: where each copy lies before this (what a Distance weighs); t: the thing's own seconds; lasts: how long it lasts (an Out counts from there).
 template <class Copy>
-static std::vector<Copy> copies(const std::vector<Effect>& stack, const std::vector<Vec3>& pos, double t) {
+static std::vector<Copy> copies(const std::vector<Effect>& stack, const std::vector<Vec3>& pos, double t, double lasts = -1) {
     std::vector<Copy> out(pos.size());
     for (size_t i = 0; i < pos.size(); ++i) {
         Element e;
-        e.index = (int)i, e.n = (int)pos.size(), e.pos = pos[i];
+        e.index = (int)i, e.n = (int)pos.size(), e.pos = pos[i], e.lasts = lasts;
         e.props = {{"x", 0}, {"y", 0}, {"z", 0}, {"size", 1}, {"rotate", 0}, {"rotate_x", 0}, {"rotate_y", 0}, {"opacity", 1}, {"scale_x", 1}, {"scale_y", 1}, {"scale_z", 1}};
         const Props p = resolve(e, stack, t);
         Copy& c = out[i];

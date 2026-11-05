@@ -63,6 +63,14 @@ int main() {
     is("Not JSON is refused", stack_of("{ nope", &trouble).empty() && !trouble.empty(), 1);
     is("No weight said is 1 for every copy", resolve(row(9), stack_of(R"({"target":"opacity","op":"Set","value":0.25})"), 0)["opacity"], 0.25);
 
+    // Texton's shape: a CSS curve as the ease, and an Out that counts from the thing's end.
+    is("A bezier way is the keys' curve", ease("bezier 0.42 0 0.58 1", 0.5), 0.5, 1e-6);
+    is("A bezier way eases in", ease("bezier 0.42 0 1 1", 0.25) < 0.25, 1);
+    { Element e = row(0); e.lasts = 3;
+      const auto out = stack_of(R"({ "weight": { "kind":"Time", "a":-0.5, "b":0.5 }, "target":"opacity", "op":"Set", "value":1 })");
+      is("An Out has not begun at 2.4 s of 3", resolve(e, out, 2.4)["opacity"], 0);
+      is("An Out is half way at 2.75 s of 3", resolve(e, out, 2.75)["opacity"], 0.5); }
+
     std::printf("weigh.h holds: %s (%d checks)\n", bad ? "NO" : "yes", done);
     return bad ? 1 : 0;
 }
