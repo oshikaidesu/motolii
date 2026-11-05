@@ -384,7 +384,9 @@ static std::string doc_cards_of(Doc& d, int thing, std::string* more = nullptr) 
         const std::string kindNow = doc_word(d, thing, "kind");
         const std::string spaceNow = doc_word(d, thing, "space");
         if (!strcmp(card.title, "Surface") && kindNow != "solid" && spaceNow != "3d" && spaceNow != "2.5d" && !doc_on(d, thing, "scale_z")) continue;   // (a flat thing's one value of it is its Shine; in depth it has the rest, After Effects' Material Options on a 3D layer)
-        bool said = !card.added || thing == 0 || (!strcmp(card.title, "Play") && kindNow == "film");
+        const std::string splitNow = kindNow == "text" ? doc_word(d, thing, "split") : "";
+        const bool letters = !splitNow.empty() && splitNow != "none" && (!strcmp(card.title, "Copies") || !strcmp(card.title, "Wave") || !strcmp(card.title, "Scatter"));   // (a text split into its letters or words: what moves them each in turn (Delay, Wave, Scatter) unasked, as After Effects' Text Animator is under a text once its range goes by character (the user, 11/5: more of a text's expression))
+        bool said = !card.added || thing == 0 || (!strcmp(card.title, "Play") && kindNow == "film") || letters;
         for (const char* at = card.names; *at;) {
             const size_t len = strcspn(at, " ");
             const std::string n(at, len);

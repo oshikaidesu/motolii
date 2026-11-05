@@ -2139,6 +2139,9 @@ void _tests3() {
     await t.pumpAndSettle();
     await seen(t, find.descendant(of: find.byType(ValuesCard), matching: find.text('Type')));
     expect(find.descendant(of: find.byType(ValuesCard), matching: find.text('Type')), findsOneWidget);
+    expect(m.cards(text).map((c) => c.$1).contains('Wave'), isFalse, reason: 'a text whole: nothing to move each in turn');
+    expect(m.say(text, 'split', 'letters') && ['Copies', 'Wave', 'Scatter'].every(m.cards(text).map((c) => c.$1).contains), isTrue, reason: 'split into its letters: what moves them each in turn (Delay, Wave, Scatter), unasked');
+    expect(m.say(text, 'split', 'none'), isTrue, reason: m.trouble);
     expect(m.cards(text).map((c) => c.$1).contains('Gradient'), isFalse, reason: 'one colour: no ramp to turn');
     expect(m.say(text, 'fill', 'ff3366 1b2fd8') && m.moreCards(text).contains('Gradient'), isTrue, reason: 'two: its ramp, asked for by More');
     expect(m.say(text, 'fill', 'ffffff'), isTrue);
