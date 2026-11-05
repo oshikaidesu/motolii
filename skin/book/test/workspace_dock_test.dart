@@ -179,6 +179,20 @@ void main() {
     final middle = Process.runSync('ffmpeg', ['-v', 'error', '-i', '${dir.path}/fx.png', '-vf', 'crop=1:1:192:192', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], stdoutEncoding: null).stdout as List<int>;
     expect(middle, [0, 255, 0], reason: 'white: handed nil in a Lua of its own, so "color" none');
   }, skip: !insideBuilt);
+  test('an AviUtl2 shader reading more pictures than Filament\'s WebGPU takes is not made, its script stopping there, and the frame still drawn (HexScript\'s ローカルラプラシアン reads 23 at once: its t16 had been taken for s0)', () {
+    final dir = Directory.systemTemp.createTempSync('motolii_many_pictures');
+    final m = Motolii.open('${dir.path}/s.motolii', wide: 384, high: 384)!;
+    addTearDown(() {
+      m.close();
+      dir.deleteSync(recursive: true);
+    });
+    final photo = m.add('picture', '$motoliiDir/fx_sample.jpg');
+    expect(m.say(photo, 'fx', '$motoliiDir/aviutl_scripts/HexBrowns__HexScript/Script/@Filters_H.anm2#ローカルラプラシアン'), isTrue, reason: m.trouble);
+    m.set(photo, 'size', 3.6);   // (the stage filled: black round a small photo is not what is asked)
+    m.set(photo, 'js__Filters_H_detail', 50);
+    expect([m.at(1.5), m.still('${dir.path}/fx.png')], [isTrue, isTrue], reason: m.trouble);
+    expect(_luma('${dir.path}/fx.png'), greaterThan(30), reason: 'black: its pipeline void, and with it every draw of the frame (Dawn: "Binding type in the shader (texture) doesn\'t match the type in the layout (sampler)")');
+  }, skip: !insideBuilt);
   test('an AviUtl2 path whose anchors lie on one spot (BezierPath\'s {0,0,...}, no hand to drag them here yet) is laid across the thing, and its tile shows it (the user, 11/5: a path for one that goes along one)', () {
     final out = Directory.systemTemp.createTempSync('motolii_tile_test');
     final drawn = EffectTiles.draw(motoliiDir, [('$motoliiDir/aviutl_scripts/NeAc__BezierPath/BezierPath.anm2', '${out.path}/0.png'), ('$motoliiDir/aviutl_scripts/Suzukeh__Mathy_Su/@Mathy_Su.anm2#アステロイド', '${out.path}/1.png')]);

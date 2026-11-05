@@ -1,5 +1,5 @@
 // See aviutl.h. The HLSL read by glslang as glslangValidator -D does (EShSourceHlsl, the entry its registered name,
-// registers moved apart by setShiftBinding: t from 0, s from 16, b from 32), SPIR-V made WGSL by Tint (isf.cpp's way),
+// registers moved apart by setShiftBinding by D3D11's own slot counts: t from 0, s from 128, b from 144), SPIR-V made WGSL by Tint (isf.cpp's way),
 // the cbuffer's places taken from glslang's reflection (HLSL's packing) and from Tint's own layout of the struct (WGSL's).
 #include "aviutl.h"
 #include <cstring>
@@ -203,7 +203,7 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
     s.setEnvInput(glslang::EShSourceHlsl, EShLangFragment, glslang::EShClientVulkan, 100);
     s.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_1);
     s.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_3);
-    s.setShiftBinding(glslang::EResTexture, 0), s.setShiftBinding(glslang::EResSampler, 16), s.setShiftBinding(glslang::EResUbo, 32);
+    s.setShiftBinding(glslang::EResTexture, 0), s.setShiftBinding(glslang::EResSampler, 128), s.setShiftBinding(glslang::EResUbo, 144);   // (D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT 128, ..._SAMPLER_SLOT_COUNT 16: a t16 is a picture, not s0)
     s.setAutoMapBindings(true), s.setAutoMapLocations(true);
     const EShMessages msg = EShMessages(EShMsgSpvRules | EShMsgVulkanRules | EShMsgReadHlsl);
     if (!s.parse(&DefaultTBuiltInResource, 100, false, msg)) return sh.why = std::string("HLSL: ") + s.getInfoLog(), sh;
@@ -244,7 +244,7 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
     const tint::Program& p = made.Get();
     for (const auto* g : p.AST().GlobalVariables()) {   // (the constants' struct, b0, as Tint lays it)
         const auto* v = p.Sem().Get<tint::sem::GlobalVariable>(g);
-        if (!v || v->AddressSpace() != tint::core::AddressSpace::kUniform || !v->Attributes().binding_point || v->Attributes().binding_point->binding != 32) continue;
+        if (!v || v->AddressSpace() != tint::core::AddressSpace::kUniform || !v->Attributes().binding_point || v->Attributes().binding_point->binding != 144) continue;
         const auto* st = v->Type()->UnwrapRef()->As<tint::core::type::Struct>();
         sh.bytes = st ? st->Size() : 0;
         if (!st || !aviutl_place(st, 0, 0, hlslAt, sh)) return sh.why = "not yet: constants of their kind", sh;
@@ -253,20 +253,22 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
     if (wgsl != tint::Success) return sh.why = "WGSL: " + wgsl.Failure().reason, sh;
     // (another cbuffer (a global not static: $Global) is bound to nothing in AviUtl2, which reads zero in D3D11: a private
     //  variable, which WGSL begins at zero)
-    std::string code = std::regex_replace(wgsl->wgsl, std::regex(R"(@group\(0u?\) @binding\((?!32u?\))\d+u?\) var<uniform>)"), "var<private>");
+    std::string code = std::regex_replace(wgsl->wgsl, std::regex(R"(@group\(0u?\) @binding\((?!144u?\))\d+u?\) var<uniform>)"), "var<private>");
     // (the door's bindings: picture k's texture at 2k, its sampler at 2k+1, the constants after all the pictures)
     const std::regex bound(R"(@group\(0u?\) @binding\((\d+)u?\) var(<uniform>)?)");
     int most = 0;
     for (std::sregex_iterator m(code.begin(), code.end(), bound), end; m != end; ++m)
-        if (!(*m)[2].matched) most = std::max(most, std::stoi((*m)[1]) % 16 + 1);
+        if (!(*m)[2].matched) most = std::max(most, std::stoi((*m)[1]) % 128 + 1);
     sh.pictures = std::max(1, most);
+    if (sh.pictures > 16)   // (Filament asks Dawn for 16 samplers a stage (WebGPUPlatform.cpp REQUIRED_LIMITS), a picture its texture and its sampler both (WebGPUDescriptorSetLayout.cpp); one past it made the frame's every draw void)
+        return sh.why = "not yet: " + std::to_string(sh.pictures) + " pictures read at once, Filament's WebGPU takes 16", sh;
     std::string out;
     auto at = code.cbegin();
     for (std::sregex_iterator m(code.begin(), code.end(), bound), end; m != end; ++m) {
         const int b = std::stoi((*m)[1]);
-        if ((*m)[2].matched ? b != 32 : b >= 32) return sh.why = "not yet: a resource of its kind (binding " + std::to_string(b) + ")", sh;
+        if ((*m)[2].matched ? b != 144 : b >= 144) return sh.why = "not yet: a resource of its kind (binding " + std::to_string(b) + ")", sh;
         out.append(at, code.cbegin() + m->position());
-        out += "@group(0) @binding(" + std::to_string((*m)[2].matched ? 2 * sh.pictures : b < 16 ? 2 * b : 2 * (b - 16) + 1) + ") var" + (*m)[2].str();
+        out += "@group(0) @binding(" + std::to_string((*m)[2].matched ? 2 * sh.pictures : b < 128 ? 2 * b : 2 * (b - 128) + 1) + ") var" + (*m)[2].str();
         at = code.cbegin() + m->position() + m->length();
     }
     out.append(at, code.cend());
