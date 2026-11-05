@@ -19,7 +19,11 @@
 // take the values back.
 #pragma once
 #include "godot_easing.h"
-#include "rapidjson/document.h"
+#if __has_include("third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/document.h")
+#include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/document.h"   // (the copy the engine reads, as lottie_slots.h does)
+#else
+#include "rapidjson/document.h"   // (check/weigh.sh elsewhere: -I where rapidjson is)
+#endif
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -149,6 +153,7 @@ static Effect effect_of(const rapidjson::Value& j) {
     Effect fx;
     if (!j.IsObject()) return fx;
     if (auto m = j.FindMember("weight"); m != j.MemberEnd()) fx.weight = field_of(m->value);
+    else fx.weight.a = fx.weight.b = 0;   // (no weight said: 1 for every copy, as a CSS rule with no selector but the element's; a step at the row's start)
     if (auto m = j.FindMember("target"); m != j.MemberEnd() && m->value.IsString()) fx.target = m->value.GetString();
     if (auto m = j.FindMember("op"); m != j.MemberEnd() && m->value.IsString()) fx.op = std::string(m->value.GetString()) == "Add" ? Effect::Add : std::string(m->value.GetString()) == "Mul" ? Effect::Mul : Effect::Set;
     if (auto m = j.FindMember("value"); m != j.MemberEnd() && m->value.IsNumber()) fx.value = m->value.GetDouble();
@@ -162,6 +167,25 @@ static std::vector<Effect> stack_of(const char* json, std::string* trouble = nul
     if (d.IsArray()) for (const auto& one : d.GetArray()) stack.push_back(effect_of(one));
     else stack.push_back(effect_of(d));
     return stack;
+}
+
+
+// A thing's copies, each what the stack makes of it: ScriptCopy-shaped (x y z in the stage's units added, size and
+// rotate multiplied and added, opacity multiplied), so a document feeds it where its scripts' copies go (doc_place.h).
+// pos: where each copy lies before this (what a Distance weighs); t: the thing's own seconds.
+template <class Copy>
+static std::vector<Copy> copies(const std::vector<Effect>& stack, const std::vector<Vec3>& pos, double t) {
+    std::vector<Copy> out(pos.size());
+    for (size_t i = 0; i < pos.size(); ++i) {
+        Element e;
+        e.index = (int)i, e.n = (int)pos.size(), e.pos = pos[i];
+        e.props = {{"x", 0}, {"y", 0}, {"z", 0}, {"size", 1}, {"rotate", 0}, {"rotate_x", 0}, {"rotate_y", 0}, {"opacity", 1}, {"scale_x", 1}, {"scale_y", 1}, {"scale_z", 1}};
+        const Props p = resolve(e, stack, t);
+        Copy& c = out[i];
+        c.x = p.at("x"), c.y = p.at("y"), c.z = p.at("z"), c.size = p.at("size"), c.rotate = p.at("rotate"), c.rotate_x = p.at("rotate_x"), c.rotate_y = p.at("rotate_y");
+        c.opacity = clamp01(p.at("opacity")), c.scale_x = p.at("scale_x"), c.scale_y = p.at("scale_y"), c.scale_z = p.at("scale_z");
+    }
+    return out;
 }
 
 }   // namespace weigh

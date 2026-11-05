@@ -61,6 +61,7 @@ int main() {
     // Nothing weighed is nothing changed.
     is("Mul of a value not there is 0", resolve(row(0), stack_of(R"({"weight":{"kind":"Index"},"target":"size","op":"Mul","value":2})"), 0)["size"], 0);
     is("Not JSON is refused", stack_of("{ nope", &trouble).empty() && !trouble.empty(), 1);
+    is("No weight said is 1 for every copy", resolve(row(9), stack_of(R"({"target":"opacity","op":"Set","value":0.25})"), 0)["opacity"], 0.25);
 
     std::printf("weigh.h holds: %s (%d checks)\n", bad ? "NO" : "yes", done);
     return bad ? 1 : 0;
