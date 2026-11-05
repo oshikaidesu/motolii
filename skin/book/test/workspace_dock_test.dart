@@ -116,6 +116,25 @@ void main() {
     expect([m.at(.77), m.still('${dir.path}/wound.png')], [isTrue, isTrue], reason: 'a knob\'s buffer and a mesh a draw held a handle each, its sets let go only when the driver caught up: 30,000 of them stopped it (knobs.py, effect 1023)');
     expect(_luma('${dir.path}/wound.png'), greaterThan(20), reason: 'the red spiral wound thick, over the black');
   }, skip: !insideBuilt);
+  test('an AviUtl2 script finds another package\'s module and shaders in the one Script folder AviUtl2 puts them all in, and kernel32\'s clock (HexScript\'s 色差領域塗りつぶし needs σ軸\'s Region_S; its 拡張パーティクル times its frame by it)', () {
+    final dir = Directory.systemTemp.createTempSync('motolii_shared_script');
+    final m = Motolii.open('${dir.path}/shared.motolii', wide: 384, high: 384)!;
+    addTearDown(() {
+      m.close();
+      dir.deleteSync(recursive: true);
+    });
+    final photo = m.add('picture', '$motoliiDir/fx_sample.jpg');
+    expect([m.at(1.5), m.still('${dir.path}/plain.png')], [isTrue, isTrue], reason: m.trouble);
+    final hex = '$motoliiDir/aviutl_scripts/HexBrowns__HexScript/Script';
+    for (final (part, why) in [
+      ('@キーイング_H.anm2#色差領域塗りつぶし', 'the region round its seed filled white: it said Region_S was not to be read (require looked in HexScript\'s own folder only), and filled nothing'),
+      ('@拡張パーティクル_H.anm2#本体', 'the photo thrown out as particles: it stopped on ffi.load("kernel32"), its clock (Particle_H.lua M.clock)'),
+    ]) {
+      expect(m.say(photo, 'fx', '$hex/$part'), isTrue, reason: m.trouble);
+      expect([m.at(1.5), m.still('${dir.path}/fx.png')], [isTrue, isTrue], reason: m.trouble);
+      expect(_apart('${dir.path}/plain.png', '${dir.path}/fx.png'), greaterThan(100), reason: why);
+    }
+  }, skip: !insideBuilt);
   test('an AviUtl2 path whose anchors lie on one spot (BezierPath\'s {0,0,...}, no hand to drag them here yet) is laid across the thing, and its tile shows it (the user, 11/5: a path for one that goes along one)', () {
     final out = Directory.systemTemp.createTempSync('motolii_tile_test');
     final drawn = EffectTiles.draw(motoliiDir, [('$motoliiDir/aviutl_scripts/NeAc__BezierPath/BezierPath.anm2', '${out.path}/0.png'), ('$motoliiDir/aviutl_scripts/Suzukeh__Mathy_Su/@Mathy_Su.anm2#アステロイド', '${out.path}/1.png')]);
@@ -878,6 +897,11 @@ void main() {
 }
 
 /// A picture's mean brightness (ffmpeg's signalstats: its mean Y, 16 black to 235 white).
+double _apart(String a, String b) {   // (how far two pictures differ where they differ most: ffmpeg's blend difference, its brightest)
+  final r = Process.runSync('ffmpeg', ['-hide_banner', '-i', a, '-i', b, '-filter_complex', 'blend=all_mode=difference,signalstats,metadata=print:key=lavfi.signalstats.YMAX', '-f', 'null', '-']);
+  return double.parse(RegExp(r'YMAX=([0-9.]+)').firstMatch('${r.stdout}${r.stderr}')!.group(1)!);
+}
+
 double _luma(String picture) {
   final r = Process.runSync('ffmpeg', ['-hide_banner', '-i', picture, '-vf', 'signalstats,metadata=print:key=lavfi.signalstats.YAVG', '-f', 'null', '-']);
   return double.parse(RegExp(r'YAVG=([0-9.]+)').firstMatch('${r.stdout}${r.stderr}')!.group(1)!);

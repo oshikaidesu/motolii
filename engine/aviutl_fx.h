@@ -8,6 +8,7 @@
 #include "aviutl.h"
 #include <lua.hpp>
 #include <array>
+#include <mutex>
 #include <random>
 #include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/document.h"
 
@@ -24,6 +25,7 @@ struct AviutlRun {
     std::map<const void*, std::string> order;
     std::multimap<std::pair<uint32_t, uint32_t>, AviutlBuf> spare;   // (pictures let go, kept by size for the next asked: a buffer made and let go each frame takes the same ones)
     std::map<std::string, door::Screen*> doors;     // (each shader made, by its name and way of sampling)
+    std::map<std::string, std::string> hlsls;       // (each shader's text by its registered name, found once: aviutl_hlsl, asked each frame)
     std::map<door::Screen*, int> draws;             // (draws of each this frame: each its own constants, the door's pass)
     door::Screen *place = nullptr, *poly = nullptr, *blur = nullptr;
     Texture *none = nullptr, *random = nullptr;
@@ -161,21 +163,53 @@ static bool aviutl_old(const AviutlVar& v) { return !v.named && v.var.size() == 
 static int aviutl_no(lua_State* L, const std::string& what) { return luaL_error(L, "not yet: %s", what.c_str()); }
 static std::string aviutl_str(lua_State* L, int i) { return lua_type(L, i) == LUA_TSTRING ? lua_tostring(L, i) : ""; }
 static double aviutl_num(lua_State* L, int i, double otherwise = 0) { return lua_isnumber(L, i) ? lua_tonumber(L, i) : lua_isboolean(L, i) ? lua_toboolean(L, i) : otherwise; }
-static std::string aviutl_hlsl(AviutlRun& r, const std::string& name) {   // (a shader by its registered name: this script's, this file's, or "name@script" another's beside it ("name@part@file": a part of an @ file))
+// AviUtl2's one Script folder: an .au2pkg's Script/ goes into it beside every other package's (its package.ini), so a
+// script finds another package's module (require) and shaders ("name@part@file") there, as HexScript's
+// 色差領域塗りつぶし requires σ軸's Region_S.lua and calls @Region_S.anm2's shaders. Here each package keeps its own
+// folder (aviutl_scripts/<package>/Script): these are those folders, the script's own first (read again when a
+// package is put in: the folder's time).
+static std::vector<std::filesystem::path> aviutl_shared(const std::filesystem::path& dir) {
+    static std::mutex hold;
+    static std::map<std::filesystem::path, std::pair<std::filesystem::file_time_type, std::vector<std::filesystem::path>>> kept;
+    std::vector<std::filesystem::path> dirs = {dir};
+    for (std::filesystem::path p = dir; p.has_relative_path() && p != p.parent_path(); p = p.parent_path()) {
+        if (p.parent_path().filename() != "aviutl_scripts") continue;
+        std::error_code wrong;
+        const std::filesystem::path root = p.parent_path();
+        const auto when = std::filesystem::last_write_time(root, wrong);
+        std::lock_guard<std::mutex> one(hold);
+        auto& [made, all] = kept[root];
+        if (all.empty() || made != when) {
+            all.clear(), made = when;
+            for (const auto& e : std::filesystem::directory_iterator(root, wrong))
+                if (std::filesystem::is_directory(e.path() / "Script", wrong)) all.push_back(e.path() / "Script");
+            std::sort(all.begin(), all.end());
+        }
+        for (const auto& d : all) if (d != dir) dirs.push_back(d);
+        break;
+    }
+    return dirs;
+}
+static std::string aviutl_hlsl(AviutlRun& r, const std::string& name) {   // (a shader by its registered name: this script's, this file's, or "name@script" another's in the Script folder ("name@part@file": a part of an @ file))
+    if (auto kept = r.hlsls.find(name); kept != r.hlsls.end()) return kept->second;
     const size_t at = name.find('@');
     const std::string entry = name.substr(0, at), head = "--[[pixelshader@" + entry + ":";
     std::vector<std::string> texts = {r.own, r.all};
     if (at != std::string::npos) {
         const std::string other = name.substr(at + 1), part = other.substr(0, other.rfind('@') == std::string::npos ? 0 : other.rfind('@')), stem = other.substr(other.rfind('@') + 1);
-        const std::filesystem::path dir = std::filesystem::path(aviutl_path(r.file)).parent_path();
-        for (const std::string f : {stem + ".anm2", "@" + stem + ".anm2", stem + ".obj2", "@" + stem + ".obj2"}) {
-            std::string own, all, why;
-            if (aviutl_text((dir / f).string() + (part.empty() ? "" : "#" + part), own, all, why)) texts.insert(texts.begin(), own);
+        std::error_code wrong;
+        bool found = false;
+        for (const std::filesystem::path& dir : aviutl_shared(std::filesystem::path(aviutl_path(r.file)).parent_path())) {
+            for (const std::string f : {stem + ".anm2", "@" + stem + ".anm2", stem + ".obj2", "@" + stem + ".obj2"}) {
+                std::string own, all, why;
+                if (std::filesystem::exists(dir / f, wrong) && aviutl_text((dir / f).string() + (part.empty() ? "" : "#" + part), own, all, why)) texts.insert(texts.begin(), own), found = true;
+            }
+            if (found) break;
         }
     }
     for (const std::string& t : texts)
-        if (const size_t p = t.find(head); p != std::string::npos) return t.substr(p + head.size(), t.find("]]", p) - p - head.size());
-    return "";
+        if (const size_t p = t.find(head); p != std::string::npos) return r.hlsls[name] = t.substr(p + head.size(), t.find("]]", p) - p - head.size());
+    return r.hlsls[name] = "";
 }
 static door::Screen* aviutl_door(AviutlRun& r, const std::string& name, bool clip, std::string& why, const AviutlShader** made = nullptr) {
     const std::string hlsl = aviutl_hlsl(r, name), entry = name.substr(0, name.find('@'));
@@ -192,6 +226,10 @@ static door::Screen* aviutl_door(AviutlRun& r, const std::string& name, bool cli
 // obj.module(name): lua.txt's "スクリプトモジュール（.mod2）の関数を取得します": a module is AviUtl2's own Windows
 // DLL, so here none is: the script stops saying which it wanted.
 static int aviutl_module(lua_State* L) { return luaL_error(L, "needs %s.mod2, an AviUtl2 script module (a Windows DLL)", luaL_checkstring(L, 1)); }
+// ffi.load("kernel32")'s clock, as Wine gives it (dlls/ntdll/unix/sync.c NtQueryPerformanceCounter: the monotonic clock
+// counted at TICKSPERSEC, 10,000,000 a second): HexScript's Particle_H.lua times its own frame by it (M.clock). No other
+// Windows library and no other kernel32 call is here: the script stops saying which it wanted (aviutl_made's sandbox).
+static int aviutl_ticks(lua_State* L) { return lua_pushnumber(L, (double)std::chrono::duration_cast<std::chrono::duration<long long, std::ratio<1, 10000000>>>(std::chrono::steady_clock::now().time_since_epoch()).count()), 1; }
 static int aviutl_pixelshader(lua_State* L) {   // (name, target, {resource...}, {constant...}, blend, sampler)
     AviutlRun& r = aviutl_of(L);
     const std::string name = luaL_checkstring(L, 1), target = aviutl_name(luaL_checkstring(L, 2)), blend = lua_isstring(L, 5) ? lua_tostring(L, 5) : "copy", sampler = aviutl_str(L, 6);
@@ -794,9 +832,15 @@ static std::shared_ptr<AviutlRun> aviutl_made(Stage& s, const std::string& file)
     lua_State* L = r->L = luaL_newstate();
     luaL_openlibs(L);
     lua_pushlightuserdata(L, r.get()), lua_setfield(L, LUA_REGISTRYINDEX, "motolii.run");   // (aviutl_late's)
-    const std::string dir = std::filesystem::path(file).parent_path().string();
+    std::string path;   // (require: its own folder, then the Script folder's others: aviutl_shared)
+    for (const std::filesystem::path& dir : aviutl_shared(std::filesystem::path(file).parent_path())) path += (path.empty() ? "" : ";") + dir.string() + "/?.lua;" + dir.string() + "/?/init.lua";
+    lua_pushcfunction(L, aviutl_ticks), lua_setglobal(L, "__motolii_ticks");
     const std::string sandbox = "os, io, debug, dofile, loadfile = nil, nil, nil, nil, nil\npackage.loaded.os, package.loaded.io, package.loaded.debug = nil, nil, nil\n"
-                                "local ffi = require('ffi'); ffi.C, ffi.load = nil, nil\npackage.loadlib, package.cpath = nil, ''\npackage.path = [==[" + dir + "/?.lua;" + dir + "/?/init.lua]==]\n";
+                                "local ffi = require('ffi'); ffi.C = nil\nlocal ticks = __motolii_ticks; __motolii_ticks = nil\n"
+                                "local clock = setmetatable({QueryPerformanceFrequency = function(p) p[0] = 10000000 return 1 end, QueryPerformanceCounter = function(p) p[0] = ticks() return 1 end},\n"
+                                "  {__index = function(_, k) error('needs Windows: kernel32 ' .. tostring(k) .. ', a Windows call', 2) end})\n"
+                                "ffi.load = function(name) if (tostring(name):lower():gsub('%.dll$', '')) == 'kernel32' then return clock end error('needs Windows: ' .. tostring(name) .. '.dll, a Windows library', 2) end\n"
+                                "package.loadlib, package.cpath = nil, ''\npackage.path = [==[" + path + "]==]\n";
     if (luaL_dostring(L, (sandbox + aviutl_globals).c_str())) r->trouble = lua_tostring(L, -1);
     lua_newtable(L);
     const std::pair<const char*, lua_CFunction> calls[] = {{"pixelshader", aviutl_pixelshader}, {"clearbuffer", aviutl_clearbuffer}, {"copybuffer", aviutl_copybuffer}, {"load", aviutl_load}, {"setoption", aviutl_setoption}, {"getoption", aviutl_getoption},
