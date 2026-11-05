@@ -378,7 +378,7 @@ static const DocCard doc_cards[] = {
     {"Star", "points inner", "shape", "star"},   // (After Effects' Polystar: how many points, how far in between them)
     {"Polygon", "points", "shape", "polygon"},
     {"Fill", "fill fill_media stroke stroke_width"},   // (After Effects' Fill and Stroke, Cavalry's Fill and Stroke: a colour, colours down it, or the material glass; its edge and how wide)
-    {"Type", "split italic wrap wrap_at", nullptr, nullptr, true},
+    {"Type", "split italic wrap wrap_at", "kind", "text"},   // (a text's, shown unasked, as Alight Motion keeps Edit Text among a text's tiles (AbsentMotion's LayerTools.kt): its slant, its lines broken in a box or set down the page, its letters or words each its own (the user, 11/5: more of a text's expression where it is picked))
     {"Gradient", "gradient gradient_angle gradient_scale gradient_spread", "fill", "~ ", true},
     {"Copies", "copies copy_columns copy_x copy_y copy_rotate copy_rotate_x copy_rotate_y copy_turn copy_size copy_opacity_end copy_wide copy_z tall copy_tall stagger stagger_from copy_fill copy_fill_way", nullptr, nullptr, true},
     {"Wave", "wave_x wave_y wave_z wave_rotate wave_size wave_speed wave_phase wave_noise noise_scale", nullptr, nullptr, true},
@@ -400,7 +400,7 @@ static const DocCard doc_cards[] = {
     {"Path", "round bloat offset zigzag zigzag_ridges zigzag_smooth", "kind", "shape", true},   // (its path made anew: After Effects' shape operators, ThorVG's own)
     {"Edit Shape", "crop_left crop_top crop_right crop_bottom round", "kind", "picture"},   // (a photo's rect, Alight Motion's Edit Shape, AbsentMotion's Shape Options: cut in from its sides, what is left where it was, and its corners rounded; drawn as a rect its own file fills, doc_match)
     {"Deform", "warp bend twist pinch skew squash wiggle stretch bend_direction pin_tl_x pin_tl_y pin_tr_x pin_tr_y pin_bl_x pin_bl_y pin_br_x pin_br_y warp_width warp_angle warp_speed skew_axis wiggle_detail wiggle_speed", "kind", "shape", true},   // (its points moved as it is drawn: Cavalry's deformers)
-    {"Strokes", "stroke_2 stroke_2_width stroke_3 stroke_3_width", "kind", "text", true},   // (more edges, each outside the last, drawn with the words: they stand in its depth, as Multi-Border's, on its picture, do not)
+    {"Strokes", "stroke_2 stroke_2_width stroke_3 stroke_3_width", "kind", "text"},   // (shown unasked: Alight Motion's Border & Shadow is among a text's tiles)   // (more edges, each outside the last, drawn with the words: they stand in its depth, as Multi-Border's, on its picture, do not)
     {"Bevel", "bevel bevel_depth bevel_color bevel_metallic bevel_roughness", nullptr, nullptr, true},
     {"Side", "side_color side_metallic side_roughness back_color back_metallic back_roughness", nullptr, nullptr, true},   // (After Effects' Side and Back Color: a thick thing's other faces)
     {"Surface", "shading metallic roughness reflectance clear_coat clear_coat_roughness sheen anisotropy thickness emissive", "fill", "!glass", true},

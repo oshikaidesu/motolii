@@ -2137,7 +2137,6 @@ void _tests3() {
       ..reread()
       ..select('$text');
     await t.pumpAndSettle();
-    await ask(t, 'Type');
     await seen(t, find.descendant(of: find.byType(ValuesCard), matching: find.text('Type')));
     expect(find.descendant(of: find.byType(ValuesCard), matching: find.text('Type')), findsOneWidget);
     expect(m.cards(text).map((c) => c.$1).contains('Gradient'), isFalse, reason: 'one colour: no ramp to turn');
