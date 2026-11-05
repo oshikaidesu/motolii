@@ -103,6 +103,7 @@ std::vector<AviutlVar> aviutl_vars(const std::string& text) {
             for (size_t i = 1; i < parts.size(); ++i) {
                 const size_t e = parts[i].find('=');
                 v.values.push_back(e == std::string::npos ? (double)(i - 1) : std::atof(parts[i].c_str() + e + 1));
+                v.choices.push_back(parts[i].substr(0, e));   // (its name, an alias file's word for it)
                 if (v.values.back() == usual) v.usual = (double)(i - 1);
             }
         } else if (v.kind == "value") {   // (a Lua value as it is: a number, a string, a table)

@@ -221,6 +221,21 @@ void main() {
     final middle = Process.runSync('ffmpeg', ['-v', 'error', '-i', '${dir.path}/fx.png', '-vf', 'crop=1:1:192:192', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], stdoutEncoding: null).stdout as List<int>;
     expect(middle, [0, 255, 0], reason: 'red: 2.6 and 0.2512 as they were set, not 3 and 0.25');
   }, skip: !insideBuilt);
+  test('an AviUtl2 table knob and a choice said by obj.effect as an alias file writes them, its braces\' inside and its name, reach the script a table and its value (σ軸\'s ボックスリサイズσ hands リサイズσ its PI "sz = { W, H }, ...", 色温度σ(Mired) 色温度σ its "単位", "Mired")', () {
+    final dir = Directory.systemTemp.createTempSync('motolii_alias_table');
+    final m = Motolii.open('${dir.path}/s.motolii', wide: 384, high: 384)!;
+    addTearDown(() {
+      m.close();
+      dir.deleteSync(recursive: true);
+    });
+    File('${dir.path}/@pi.anm2').writeAsStringSync('@outer\nobj.effect("inner@pi", "PI", "col = 0x00ff00, n = 2", "単位", "Mired")\n'
+        '@inner\n--select@unit:単位=0,K=0,Mired=1\n--value@PI:PI,{}\nobj.effect("単色化", "color", (type(PI) == "table" and PI.n == 2 and unit == 1) and PI.col or 0xff0000)\n');
+    final photo = m.add('picture', '$motoliiDir/fx_sample.jpg');
+    expect(m.say(photo, 'fx', '${dir.path}/@pi.anm2#outer'), isTrue, reason: m.trouble);
+    expect([m.at(1.5), m.still('${dir.path}/fx.png')], [isTrue, isTrue], reason: m.trouble);
+    final middle = Process.runSync('ffmpeg', ['-v', 'error', '-i', '${dir.path}/fx.png', '-vf', 'crop=1:1:192:192', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], stdoutEncoding: null).stdout as List<int>;
+    expect(middle, [0, 255, 0], reason: 'red: PI the string as said, PI.n nil, or unit the word "Mired"');
+  }, skip: !insideBuilt);
   test('an AviUtl2 path whose anchors lie on one spot (BezierPath\'s {0,0,...}, no hand to drag them here yet) is laid across the thing, and its tile shows it (the user, 11/5: a path for one that goes along one)', () {
     final out = Directory.systemTemp.createTempSync('motolii_tile_test');
     final drawn = EffectTiles.draw(motoliiDir, [('$motoliiDir/aviutl_scripts/NeAc__BezierPath/BezierPath.anm2', '${out.path}/0.png'), ('$motoliiDir/aviutl_scripts/Suzukeh__Mathy_Su/@Mathy_Su.anm2#アステロイド', '${out.path}/1.png')]);

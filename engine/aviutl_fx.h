@@ -673,8 +673,15 @@ static int aviutl_sashimono(lua_State* L, AviutlRun& r, const std::string& n, co
 // A knob's value made its variable (a global, or obj's for the old --track0) as its kind is told (lua.txt): from `num`
 // (a knob's value by its name), or the Lua value at `said` on the stack, as obj.effect said it.
 static void aviutl_set(lua_State* L, const AviutlVar& v, const std::function<double(const std::string&)>& num, int said = 0) {
+    const size_t lead = v.expr.find_first_not_of(" \t");
+    const char kind = lead == std::string::npos ? 0 : v.expr[lead];   // (a --value's by its default: { a table, " a string, a digit a number)
     if (said && v.kind == "check" && v.truth) lua_pushboolean(L, aviutl_num(L, said) != 0);
     else if (said && v.kind == "check") lua_pushinteger(L, aviutl_num(L, said) != 0);
+    else if (said && v.kind == "value" && lua_type(L, said) == LUA_TSTRING && kind == '{') {   // (said as an alias file writes it (lua.txt obj.effect), a table its braces' inside as a string its quotes' (ペンツール's "" written empty): σ軸's "sz = { W, H }, ..." to リサイズσ's PI)
+        if (luaL_dostring(L, ("return {" + std::string(lua_tostring(L, said)) + "}").c_str())) lua_pop(L, 1), lua_pushvalue(L, said);   // (not a table's inside: as it was said)
+    } else if (said && v.kind == "select" && lua_type(L, said) == LUA_TSTRING && std::count(v.choices.begin(), v.choices.end(), lua_tostring(L, said))) {   // (a choice said by its name, as an alias file writes it (ペンツール's 進行モード=自動再生): 色温度σ(Mired)'s "単位", "Mired")
+        lua_pushnumber(L, v.values[(size_t)(std::find(v.choices.begin(), v.choices.end(), lua_tostring(L, said)) - v.choices.begin())]);
+    } else if (said && v.kind == "value" && lua_type(L, said) == LUA_TSTRING && (std::isdigit((unsigned char)kind) || kind == '-' || kind == '.') && lua_isnumber(L, said)) lua_pushnumber(L, lua_tonumber(L, said));
     else if (said) lua_pushvalue(L, said);
     else if (v.kind == "track") lua_pushnumber(L, std::round(num(v.var) / v.step) * v.step);   // (by its 移動単位, as AviUtl2 holds it (lua.txt: an integer inside): どこでもバッファ's 遅延 counts its frames by one, a 2.5 read bufs[3.5])
     else if (v.kind == "check" && v.truth) lua_pushboolean(L, num(v.var) != 0);
