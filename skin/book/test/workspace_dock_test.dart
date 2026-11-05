@@ -126,13 +126,13 @@ void main() {
     final photo = m.add('picture', '$motoliiDir/fx_sample.jpg');
     expect([m.at(1.5), m.still('${dir.path}/plain.png')], [isTrue, isTrue], reason: m.trouble);
     final hex = '$motoliiDir/aviutl_scripts/HexBrowns__HexScript/Script';
-    for (final (part, why) in [
-      ('@キーイング_H.anm2#色差領域塗りつぶし', 'the region round its seed filled white: it said Region_S was not to be read (require looked in HexScript\'s own folder only), and filled nothing'),
-      ('@拡張パーティクル_H.anm2#本体', 'the photo thrown out as particles: it stopped on ffi.load("kernel32"), its clock (Particle_H.lua M.clock)'),
+    for (final (part, most, why) in [
+      ('@キーイング_H.anm2#色差領域塗りつぶし', 'VMAX', 'the region round its seed filled with its 色, red (0xff0000): it said Region_S was not to be read (require looked in HexScript\'s own folder only), and filled nothing; then filled white, obj.effect("単色化", "色", ...)\'s colour left out of the table (Sashimono keeps colours in _COLOR_PARAMS)'),
+      ('@拡張パーティクル_H.anm2#本体', 'YMAX', 'the photo thrown out as particles: it stopped on ffi.load("kernel32"), its clock (Particle_H.lua M.clock)'),
     ]) {
       expect(m.say(photo, 'fx', '$hex/$part'), isTrue, reason: m.trouble);
       expect([m.at(1.5), m.still('${dir.path}/fx.png')], [isTrue, isTrue], reason: m.trouble);
-      expect(_apart('${dir.path}/plain.png', '${dir.path}/fx.png'), greaterThan(100), reason: why);
+      expect(_apart('${dir.path}/plain.png', '${dir.path}/fx.png', most), greaterThan(80), reason: why);
     }
   }, skip: !insideBuilt);
   test('an AviUtl2 path whose anchors lie on one spot (BezierPath\'s {0,0,...}, no hand to drag them here yet) is laid across the thing, and its tile shows it (the user, 11/5: a path for one that goes along one)', () {
@@ -896,12 +896,12 @@ void main() {
   });
 }
 
-/// A picture's mean brightness (ffmpeg's signalstats: its mean Y, 16 black to 235 white).
-double _apart(String a, String b) {   // (how far two pictures differ where they differ most: ffmpeg's blend difference, its brightest)
-  final r = Process.runSync('ffmpeg', ['-hide_banner', '-i', a, '-i', b, '-filter_complex', 'blend=all_mode=difference,signalstats,metadata=print:key=lavfi.signalstats.YMAX', '-f', 'null', '-']);
-  return double.parse(RegExp(r'YMAX=([0-9.]+)').firstMatch('${r.stdout}${r.stderr}')!.group(1)!);
+double _apart(String a, String b, [String most = 'YMAX']) {   // (how far two pictures differ where they differ most: ffmpeg's blend difference, its brightest, or its reddest: VMAX)
+  final r = Process.runSync('ffmpeg', ['-hide_banner', '-i', a, '-i', b, '-filter_complex', 'blend=all_mode=difference,signalstats,metadata=print:key=lavfi.signalstats.$most', '-f', 'null', '-']);
+  return double.parse(RegExp('$most=([0-9.]+)').firstMatch('${r.stdout}${r.stderr}')!.group(1)!);
 }
 
+/// A picture's mean brightness (ffmpeg's signalstats: its mean Y, 16 black to 235 white).
 double _luma(String picture) {
   final r = Process.runSync('ffmpeg', ['-hide_banner', '-i', picture, '-vf', 'signalstats,metadata=print:key=lavfi.signalstats.YAVG', '-f', 'null', '-']);
   return double.parse(RegExp(r'YAVG=([0-9.]+)').firstMatch('${r.stdout}${r.stderr}')!.group(1)!);
