@@ -124,8 +124,23 @@ Inspector の構成：上に**並び**（既存の Copies カード：数、間�
 エンジンは済み：`stagger_from` に random と point、`stagger_x` `stagger_y`、stagger のある物はコピーを
 1枚ずつ描く、`check/stagger_from.sh` 4項目 yes（Mac）。
 
-次：`skin/book` に図を1つ（CustomPaint + GestureDetector）。3つの触り方が上の値を書くところまで。
-その後、舞台の重み表示と十字。ガジェット15個の設計はそのとき畳む。
+次：`skin/book` に図を1枚、新しく書く（`inspector_copies.dart` の流儀を借りる：「絵は結果そのもので、手で引く」、
+`Pulled`、`tokens.dart`、`Ctx.of(context).doc`。直すと8割変わるので、1から）。
+
+```
+members_drawing.dart（仮、200行ほど）
+  読む : copies / copy_x / copy_columns（split の文字なら文字の並び）、stagger、stagger_from、stagger_x、stagger_y、seed
+  描く : メンバーを並びのまま点で。明るさ = 遅れの逆（doc_delay の式を Dart に写す。check の数列をテストに）。point なら十字。既存の＋と間隔のつまみ
+  触る : 撫でる（向きだけ：stagger_from = start / end / centre / edges、stagger が 0 なら 0.5）、
+         押して広げる（point、押した所が stagger_x stagger_y、十字は掴んで動かせる）、
+         振る（random、もう一度で seed +1）、ダブルクリック（stagger 0）
+  書く : stagger_from、stagger、stagger_x、stagger_y、seed（＋ copies、copy_x）
+  下に : 既存の stagger の数字（秒）。キーが無い時は「キーを打つと順に動く」と一行
+```
+
+値の行は `PropRow` の `rel` チップで「順に」と出すだけ（stagger は物ごと）。舞台の重み表示と十字はその後。
+同じ問題に窓の設計が3つある（`relation_parts` のガジェット15個、`cards_table` の behaviour カード、`inspector_relations`）：
+この1枚に合流させ、残りは消す。
 
 ## 10. 未決
 
