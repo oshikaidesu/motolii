@@ -204,6 +204,23 @@ void main() {
     expect(m.say(photo, 'fx', '$motoliiDir/aviutl_scripts/sigma-axis__aviutl2_script_PenroseTile_S/ペンローズタイルσ.obj2'), isTrue, reason: m.trouble);
     expect([m.at(1.5), m.still('${dir.path}/fx.png')], [isTrue, isTrue], reason: 'the program gone (SIGSEGV in FoldOpDotWithConstants)');
   }, skip: !insideBuilt);
+  test('an AviUtl2 track\'s value reaches its script by its 移動単位 (lua.txt: the value\'s least unit, 1 not said): どこでもバッファ\'s 遅延 counts frames by one, a 2.5 read a table at 3.5', () {
+    final dir = Directory.systemTemp.createTempSync('motolii_step');
+    final m = Motolii.open('${dir.path}/s.motolii', wide: 384, high: 384)!;
+    addTearDown(() {
+      m.close();
+      dir.deleteSync(recursive: true);
+    });
+    File('${dir.path}/step.anm2').writeAsStringSync('--track@n:数,1,10,1,1\n--track@f:割合,0,1,0,0.01\n'
+        'obj.effect("単色化", "color", (n == 3 and f == 0.25) and 0x00ff00 or 0xff0000)\n');
+    final photo = m.add('picture', '$motoliiDir/fx_sample.jpg');
+    expect(m.say(photo, 'fx', '${dir.path}/step.anm2'), isTrue, reason: m.trouble);
+    m.set(photo, 'js_step_n', 2.6);
+    m.set(photo, 'js_step_f', 0.2512);
+    expect([m.at(1.5), m.still('${dir.path}/fx.png')], [isTrue, isTrue], reason: m.trouble);
+    final middle = Process.runSync('ffmpeg', ['-v', 'error', '-i', '${dir.path}/fx.png', '-vf', 'crop=1:1:192:192', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], stdoutEncoding: null).stdout as List<int>;
+    expect(middle, [0, 255, 0], reason: 'red: 2.6 and 0.2512 as they were set, not 3 and 0.25');
+  }, skip: !insideBuilt);
   test('an AviUtl2 path whose anchors lie on one spot (BezierPath\'s {0,0,...}, no hand to drag them here yet) is laid across the thing, and its tile shows it (the user, 11/5: a path for one that goes along one)', () {
     final out = Directory.systemTemp.createTempSync('motolii_tile_test');
     final drawn = EffectTiles.draw(motoliiDir, [('$motoliiDir/aviutl_scripts/NeAc__BezierPath/BezierPath.anm2', '${out.path}/0.png'), ('$motoliiDir/aviutl_scripts/Suzukeh__Mathy_Su/@Mathy_Su.anm2#アステロイド', '${out.path}/1.png')]);

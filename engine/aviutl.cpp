@@ -94,7 +94,7 @@ std::vector<AviutlVar> aviutl_vars(const std::string& text) {
         for (std::string one; std::getline(rest, one, ',');) parts.push_back(std::regex_replace(one, std::regex(R"(^\s+|\s+$)"), ""));
         if (parts.empty()) continue;
         v.label = parts[0].substr(0, parts[0].find('='));   // (a choice's: before its first value)
-        if (v.kind == "track" && parts.size() >= 4) v.usual = std::atof(parts[3].c_str());
+        if (v.kind == "track" && parts.size() >= 4) v.usual = std::atof(parts[3].c_str()), v.step = parts.size() >= 5 && std::atof(parts[4].c_str()) > 0 ? std::atof(parts[4].c_str()) : 1;   // (lua.txt: 移動単位, the value's least unit, 1 not said)
         else if (v.kind == "check") v.truth = parts.size() > 1 && (parts[1] == "true" || parts[1] == "false"), v.usual = parts.size() > 1 && (parts[1] == "true" || std::atof(parts[1].c_str()) != 0);
         else if (v.kind == "color") v.unset = parts.size() < 2 || parts[1] == "nil", v.usual = v.unset ? 0xffffff : std::strtod(parts[1].c_str(), nullptr);
         else if (v.kind == "select") {   // (label=as it comes, choice=value, ...)

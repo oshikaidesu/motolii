@@ -676,7 +676,7 @@ static void aviutl_set(lua_State* L, const AviutlVar& v, const std::function<dou
     if (said && v.kind == "check" && v.truth) lua_pushboolean(L, aviutl_num(L, said) != 0);
     else if (said && v.kind == "check") lua_pushinteger(L, aviutl_num(L, said) != 0);
     else if (said) lua_pushvalue(L, said);
-    else if (v.kind == "track") lua_pushnumber(L, num(v.var));
+    else if (v.kind == "track") lua_pushnumber(L, std::round(num(v.var) / v.step) * v.step);   // (by its 移動単位, as AviUtl2 holds it (lua.txt: an integer inside): どこでもバッファ's 遅延 counts its frames by one, a 2.5 read bufs[3.5])
     else if (v.kind == "check" && v.truth) lua_pushboolean(L, num(v.var) != 0);
     else if (v.kind == "check") lua_pushinteger(L, num(v.var) != 0);
     else if (v.kind == "select") lua_pushnumber(L, v.values.empty() ? 0 : v.values[(size_t)std::clamp<double>(std::round(num(v.var)), 0, (double)v.values.size() - 1)]);
