@@ -277,7 +277,8 @@ static const DocValue doc_values[] = {
     {"copy_rotate", "picture text shape solid", -1e6, 1e6, true, nullptr}, {"copy_size", "picture text shape solid", 0.01, 100, true, nullptr},
     {"copy_columns", "picture text shape solid", 0, 100, false, nullptr},   // (so many to a row, then the next row: copy_x along it, copy_y down; 0: one row)
     {"stagger", "picture text shape solid", 0, 1e3, false, nullptr},   // (how much later the last of its copies moves than the first, in seconds: each as late as its order says)
-    {"stagger_from", "picture text shape solid", 0, 0, false, "start centre end edges"},   // (which of them moves first: the first, the middle one, the last, the outer ones)
+    {"stagger_from", "picture text shape solid", 0, 0, false, "start centre end edges random point"},   // (which of them moves first: the first, the middle one, the last, the outer ones; any, by its seed; the one nearest stagger_x stagger_y, as GSAP's from: [x, y])
+    {"stagger_x", "picture text shape solid", -1e4, 1e4, true, nullptr}, {"stagger_y", "picture text shape solid", -1e4, 1e4, true, nullptr},   // (the point a stagger from a point spreads from, about the thing's middle: the stage's units for its copies as copy_x is, a letter's for a split text)
     {"copy_fill", "picture text shape", 0, 0, false, ""},   // (its copies coloured from the first colour to the last, in their order: six digits each; one, all in it; none, not coloured each)
     {"copy_fill_way", "picture text shape", 0, 0, false, "ramp cycle"},   // (from the first to the last across them all, or one colour each in turn, round and round)
     {"copy_wide", "picture text shape solid", 0.01, 100, true, nullptr},   // (how many times as wide its last copy is as its first, those between in step: rows of waves, each with more of them)

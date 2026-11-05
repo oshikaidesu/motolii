@@ -299,12 +299,46 @@ static int doc_members(Doc& d, int thing) {
 }
 // How much later a thing's nth copy moves than it is said to (the past repository's order law, GSAP's stagger: the
 // stagger spread over them by their order: from the start, from the centre out, from the end, from the edges in).
+// Where a thing's nth member lies about its middle, before it moves (its copies in their rows as copy_x, copy_y and
+// copy_columns lay them at the start, in the stage's units; a split text's letters by their middles, in its own), and
+// how far the farthest member can lie from a point: what a stagger from a point and a window's picture of the order read.
+static double doc_letter_middle(Doc& d, int thing, int copy);
+static math::double2 doc_member_at(Doc& d, int thing, int nth, int n, double* farthest = nullptr, math::double2 from = {}) {
+    const auto sh = d.shown.find(thing);
+    if (sh != d.shown.end() && sh->second.drawn && !sh->second.drawn->letters.empty()) {   // (a letter: its middle along the line)
+        if (farthest) *farthest = std::max(std::fabs(doc_letter_middle(d, thing, 0) - from.x), std::fabs(doc_letter_middle(d, thing, n - 1) - from.x));
+        return {doc_letter_middle(d, thing, nth), 0.0};
+    }
+    const int columns = (int)doc_literal(d, thing, "copy_columns", 0, 0);
+    const double dx = doc_literal(d, thing, "copy_x", 0, 0), dy = doc_literal(d, thing, "copy_y", 0, 0);
+    const double along = columns > 0 ? nth % columns : nth, down = columns > 0 ? nth / columns : nth;
+    const double alongMid = columns > 0 ? (std::min(n, columns) - 1) * 0.5 : (n - 1) * 0.5, downMid = columns > 0 ? (std::ceil((double)n / columns) - 1) * 0.5 : (n - 1) * 0.5;
+    if (farthest) {   // (to the rows' far corners)
+        *farthest = 0.0;
+        for (int c = 0; c < 4; ++c) *farthest = std::max(*farthest, length(math::double2{(c & 1 ? alongMid : -alongMid) * dx - from.x, (c & 2 ? downMid : -downMid) * dy - from.y}));
+    }
+    return {(along - alongMid) * dx, (down - downMid) * dy};
+}
+// How much later a thing's nth copy moves than it is said to (the past repository's order law, GSAP's stagger: the
+// stagger spread over them by their order: from the start, from the centre out, from the end, from the edges in; any
+// order by the thing's seed (GSAP's from: "random"); or the nearest to a point first, the farthest last (from: [x, y])).
 static double doc_delay(Doc& d, int thing, int nth) {
     const double stagger = doc_literal(d, thing, "stagger", 0, 0);
     const int n = doc_members(d, thing);
     if (stagger <= 0.0 || n < 2) return 0.0;
     const double along = (double)nth / (double)(n - 1), centre = std::fabs(along - 0.5) * 2.0;
     const std::string& from = doc_literal_word(d, thing, "stagger_from");
+    if (from == "random") {   // (0 to 1 by the seed and the copy: doc_place's roll, the same hash)
+        uint32_t h = (uint32_t)doc_literal(d, thing, "seed", 0, 0) * 0x9E3779B9u ^ ((uint32_t)nth + 1u) * 0x85EBCA6Bu ^ 7u * 0xC2B2AE35u;
+        h ^= h >> 16, h *= 0x7FEB352Du, h ^= h >> 15, h *= 0x846CA68Bu, h ^= h >> 16;
+        return stagger * ((double)h / 4294967295.0);
+    }
+    if (from == "point") {
+        const math::double2 at{doc_literal(d, thing, "stagger_x", 0, 0), doc_literal(d, thing, "stagger_y", 0, 0)};
+        double farthest = 0.0;
+        const math::double2 here = doc_member_at(d, thing, nth, n, &farthest, at);
+        return stagger * (farthest > 0.0 ? std::min(1.0, length(here - at) / farthest) : 0.0);
+    }
     return stagger * (from == "centre" ? centre : from == "end" ? 1.0 - along : from == "edges" ? 1.0 - centre : along);
 }
 // Where the thing it goes with is (its parent's place; none, or one not there any more: as the stage is). A 2D thing
