@@ -75,6 +75,8 @@ struct Doc {
     std::string phys_made;              // all the world was made of, as the document said it then (made again only when that changes)
     struct Scripted { double at = -1, own = -1; int made = -1; std::vector<ScriptCopy> copies; };
     std::map<int, Scripted> scripted;
+    struct Weighed { double at = -1; int n = -1; std::string json; std::vector<weigh::Effect> stack; std::vector<ScriptCopy> copies; };   // (weigh.h's stack on a thing's copies at a moment: read again when its JSON changes, worked out again when the moment or the count does)
+    std::map<int, Weighed> weighed;
     struct AbsentKept { double at = -1; long changes = -1; int seen = -1; std::vector<AbsentCopy> copies; };
     std::map<int, AbsentKept> absentKept;
     struct RelatedKept { double at = -1; long changes = -1; int made = -1, solves = -1; size_t sure = 0, fresh = 0, seen = 0; bool behind = false; std::vector<double> values; std::vector<std::vector<double>> frames; std::vector<size_t> told; std::set<int> reads; };   // (frames: a solver's, each from the one before, as Motolii's p5 keeps its own; told: what each was told; sure: so many are known good since the document changed; fresh: past so many each is left from before, shown till it is made again; reads: the things what it is told comes from; seen: of touched)
@@ -159,7 +161,9 @@ static const DocValue doc_values[] = {
     //  how much it bounces, how it rubs; and the stage's pull down, in units of the stage a second each second)
     {"physics", doc_drawn, 0, 0, false, "none moves still"},
     // (a recipe as code: a JavaScript file that says where each copy is (script.h); its head's knobs are values of the thing, named js_ and the knob's name)
-    {"script", "picture text shape solid stage behaviour", 0, 0, false, ""},   // (the stage's: a whole-screen effect, a .wgsl file: screen.h)
+    {"script", "picture text shape solid stage behaviour", 0, 0, false, ""},
+    // (a stack of weights × changes on its copies, as JSON (weigh.h): After Effects' text animators, Cinema 4D's Effectors, CSS's rules in one shape; added after its script's copies)
+    {"weigh", "picture text shape solid", 0, 0, false, ""},   // (the stage's: a whole-screen effect, a .wgsl file: screen.h)
     // (a thing's own effects, After Effects' effects on a layer: the whole-screen ones' .wgsl files, one over another, on the thing as the camera sees it)
     //  (a camera's: AbsentMotion's motions only, its place moved by them as AbsentMotion's camera is: doc_fx_say)
     {"fx", "film picture text shape solid camera", 0, 0, false, ""},

@@ -486,7 +486,9 @@ static void doc_moment(Doc& d, double now) {
             const std::vector<float2>& letters = t.drawn ? t.drawn->letters : std::vector<float2>{};
             const auto scripted = d.scripted.find(thing);   // (a script's copies each as clear as it says)
             const std::vector<AbsentCopy>& absent = doc_absent_copies(d, thing, now);   // (AbsentMotion's copies each as clear as its repeat lays them: a scatter field's far ones)
+            const auto weighed = d.weighed.find(thing);   // (weigh.h's stack: each copy as clear as it says)
             const bool clears = (scripted != d.scripted.end() && std::any_of(scripted->second.copies.begin(), scripted->second.copies.end(), [](const ScriptCopy& c) { return c.opacity != 1.0; })) ||
+                                (weighed != d.weighed.end() && std::any_of(weighed->second.copies.begin(), weighed->second.copies.end(), [](const ScriptCopy& c) { return c.opacity != 1.0; })) ||
                                 std::any_of(absent.begin(), absent.end(), [](const AbsentCopy& c) { return c.alpha < 0.999; });
             const bool clearEach = doc_driven_by(d, thing, "opacity") != 0, pickEach = doc_driven_by(d, thing, "copy_fill_at") != 0;   // (given each copy by a behaviour)
             const double fadeTo = std::clamp(doc_number(d, thing, "copy_opacity_end", now, 1), 0.0, 1.0);   // (the last copy as clear as this, the first as the thing: After Effects' Repeater, End Opacity)
@@ -518,6 +520,7 @@ static void doc_moment(Doc& d, double now) {
                     } else own->setParameter("wash", t.drawn ? t.drawn->wash : float4{0.f});   // (its own: a shape cut in triangles is filled by it)
                     if ((size_t)made.nth < letters.size()) own->setParameter("window", float4{letters[(size_t)made.nth].x, letters[(size_t)made.nth].y, 1.f, 0.f});   // (its own letter)
                     const double clear = (scripted != d.scripted.end() && (size_t)made.nth < scripted->second.copies.size() ? scripted->second.copies[(size_t)made.nth].opacity : 1.0) *
+                                         (weighed != d.weighed.end() && (size_t)made.nth < weighed->second.copies.size() ? weighed->second.copies[(size_t)made.nth].opacity : 1.0) *
                                          ((size_t)made.nth < absent.size() ? absent[(size_t)made.nth].alpha : 1.0);
                     const math::double3 here{made.place[3].x, made.place[3].y, made.place[3].z};
                     const int clearBy = doc_driven_by(d, thing, "opacity");
@@ -676,7 +679,7 @@ static void doc_moment(Doc& d, double now) {
 // call for its kind), one the stage has and the document has not is taken off, one whose making is told otherwise now
 // is made again. false: a thing could not be made (d.trouble says which, and why).
 // All that a thing's making goes by: one changed, the thing is made again (doc_match), carried by a hand too (doc_carry).
-static const char* const doc_making = "'kind','file','shape','path','blend','fx','fx_off','keyed','space','begin','duration','speed','text','fill','fill_media','fill_rule','wide','points','inner','round','crop_left','crop_top','crop_right','crop_bottom','bloat','zigzag','offset','warp','clip','stroke','stroke_width','stroke_2','stroke_2_width','stroke_3','stroke_3_width','align','copies','letter_spacing','line_spacing','italic','cap','join','heads','head_size','head_shape','head_start','dash','dash_offset','metallic','roughness','reflectance','clear_coat','clear_coat_roughness','falloff','shadows','shadow_softness','contact_shadows','sheen','anisotropy','shading','thickness','light_group','script','copy_fill','gradient','gradient_angle','gradient_scale','gradient_spread','wrap','wrap_at','split','ior','dispersion','swim','dark','vivid','marker','mosh','mosh_with','mosh_at'";
+static const char* const doc_making = "'kind','file','shape','path','blend','fx','fx_off','keyed','space','begin','duration','speed','text','fill','fill_media','fill_rule','wide','points','inner','round','crop_left','crop_top','crop_right','crop_bottom','bloat','zigzag','offset','warp','clip','stroke','stroke_width','stroke_2','stroke_2_width','stroke_3','stroke_3_width','align','copies','letter_spacing','line_spacing','italic','cap','join','heads','head_size','head_shape','head_start','dash','dash_offset','metallic','roughness','reflectance','clear_coat','clear_coat_roughness','falloff','shadows','shadow_softness','contact_shadows','sheen','anisotropy','shading','thickness','light_group','script','weigh','copy_fill','gradient','gradient_angle','gradient_scale','gradient_spread','wrap','wrap_at','split','ior','dispersion','swim','dark','vivid','marker','mosh','mosh_with','mosh_at'";
 // A flat thing's effects (ThorVG's, doc_fx): told again at each moment (fx_at), never a reason to make it again. What
 // they ask of its making is only which are on and how much room round it they reach (doc_fx_room).
 static const char* const doc_fxing = "'blur','shadow','shadow_distance','shadow_angle','shadow_blur','shadow_opacity','glow','glow_blur','glow_opacity','tint','tint_black','tint_white','tritone','tritone_shadow','tritone_midtone','tritone_highlight'";

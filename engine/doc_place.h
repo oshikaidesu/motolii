@@ -122,6 +122,27 @@ static math::mat4 doc_place(Doc& d, int thing, double now, int deeper, int copy,
             own = own * math::mat4::rotation(c.rotate * (double)TAU / 360.0, math::double3{0, 0, 1}) * math::mat4::rotation(c.rotate_y * (double)TAU / 360.0, math::double3{0, 1, 0}) *
                   math::mat4::rotation(c.rotate_x * (double)TAU / 360.0, math::double3{1, 0, 0}) * math::mat4::scaling(math::double3{c.size * c.scale_x, c.size * c.scale_y, c.size * c.scale_z});
         }
+    if (member)   // (weigh.h: a stack of weights × changes on its copies, as its weigh value says in JSON; on top of its copies' values and its script's, in the stage's units; each copy weighed where it lies so far)
+        if (const std::string json = doc_literal_word(d, thing, "weigh"); !json.empty() && json != "none") {
+            Doc::Weighed& kept = d.weighed[thing];
+            if (kept.json != json) kept.json = json, kept.stack = weigh::stack_of(json.c_str(), &d.trouble), kept.at = -1;
+            if (kept.at != said || kept.n != n) {   // (every copy at once: a Distance weighs each where the others lie)
+                std::vector<weigh::Vec3> at(n);
+                for (int k = 0; k < n; ++k) {
+                    const Doc::Scripted* sc = d.scripted.count(thing) ? &d.scripted.at(thing) : nullptr;
+                    const ScriptCopy c = sc && k < (int)sc->copies.size() ? sc->copies[(size_t)k] : ScriptCopy{};
+                    const int columns = (int)doc_literal(d, thing, "copy_columns", 0, 0);
+                    const double along = columns > 0 ? k % columns : k, down = columns > 0 ? k / columns : k;
+                    const double alongMid = columns > 0 ? (std::min(n, columns) - 1) * 0.5 : (n - 1) * 0.5, downMid = columns > 0 ? (std::ceil((double)n / columns) - 1) * 0.5 : (n - 1) * 0.5;
+                    at[(size_t)k] = {(along - alongMid) * doc_literal(d, thing, "copy_x", now, 0) + c.x, (down - downMid) * doc_literal(d, thing, "copy_y", now, 0) + c.y, (columns > 0 ? down - downMid : k - (n - 1) * 0.5) * doc_literal(d, thing, "copy_z", now, 0) + c.z};
+                }
+                kept.at = said, kept.n = n, kept.copies = weigh::copies<ScriptCopy>(kept.stack, at, said - doc_literal(d, thing, "start", 0, 0), doc_literal(d, thing, "duration", 0, -1));   // (its own seconds, and how long it lasts: an Out counts from there)
+            }
+            const ScriptCopy c = copy < n ? kept.copies[(size_t)copy] : ScriptCopy{};
+            shift += math::double3{c.x, c.y, c.z};
+            own = own * math::mat4::rotation(c.rotate * (double)TAU / 360.0, math::double3{0, 0, 1}) * math::mat4::rotation(c.rotate_y * (double)TAU / 360.0, math::double3{0, 1, 0}) *
+                  math::mat4::rotation(c.rotate_x * (double)TAU / 360.0, math::double3{1, 0, 0}) * math::mat4::scaling(math::double3{c.size * c.scale_x, c.size * c.scale_y, c.size * c.scale_z});
+        }
     if (const std::vector<AbsentEffect> moving = doc_absent_on(d, thing, said); !moving.empty()) {   // (AbsentMotion's own motion, its stack in order, as AbsentMotion moves a layer: absent_motion.h)
         const double begins = doc_literal(d, thing, "start", 0, 0), lasts = doc_literal(d, thing, "duration", 0, -1);
         const AbsentMoved m = absent_motion(moving, thing, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * said);

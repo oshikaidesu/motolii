@@ -4,6 +4,7 @@
 // the same numbers in the same order, the same formulas, the same numbers refused. `interp_ease` is told u (how far
 // through the stretch, 0 to 1) and gives how far the value has gone from the one key's to the other's: 0 at the
 // start, 1 at the end (Cyclic ends where its wave is), and on the way it may pass the end and come back.
+#pragma once
 #include <cmath>
 #include <sstream>
 #include <string>
