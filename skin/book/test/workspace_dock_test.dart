@@ -193,6 +193,17 @@ void main() {
     expect([m.at(1.5), m.still('${dir.path}/fx.png')], [isTrue, isTrue], reason: m.trouble);
     expect(_luma('${dir.path}/fx.png'), greaterThan(30), reason: 'black: its pipeline void, and with it every draw of the frame (Dawn: "Binding type in the shader (texture) doesn\'t match the type in the layout (sampler)")');
   }, skip: !insideBuilt);
+  test('an AviUtl2 shader glslang makes wrong is refused before the legalization, not crashing the program (σ軸\'s ペンローズタイルσ: its float2x4 ._14_24 made an int2 of its indices, which SPIRV-Tools\' constant folding fell over)', () {
+    final dir = Directory.systemTemp.createTempSync('motolii_wrong_spirv');
+    final m = Motolii.open('${dir.path}/s.motolii', wide: 384, high: 384)!;
+    addTearDown(() {
+      m.close();
+      dir.deleteSync(recursive: true);
+    });
+    final photo = m.add('picture', '$motoliiDir/fx_sample.jpg');
+    expect(m.say(photo, 'fx', '$motoliiDir/aviutl_scripts/sigma-axis__aviutl2_script_PenroseTile_S/ペンローズタイルσ.obj2'), isTrue, reason: m.trouble);
+    expect([m.at(1.5), m.still('${dir.path}/fx.png')], [isTrue, isTrue], reason: 'the program gone (SIGSEGV in FoldOpDotWithConstants)');
+  }, skip: !insideBuilt);
   test('an AviUtl2 path whose anchors lie on one spot (BezierPath\'s {0,0,...}, no hand to drag them here yet) is laid across the thing, and its tile shows it (the user, 11/5: a path for one that goes along one)', () {
     final out = Directory.systemTemp.createTempSync('motolii_tile_test');
     final drawn = EffectTiles.draw(motoliiDir, [('$motoliiDir/aviutl_scripts/NeAc__BezierPath/BezierPath.anm2', '${out.path}/0.png'), ('$motoliiDir/aviutl_scripts/Suzukeh__Mathy_Su/@Mathy_Su.anm2#アステロイド', '${out.path}/1.png')]);

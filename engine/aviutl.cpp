@@ -212,6 +212,16 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
     if (!program.link(msg) || !program.mapIO()) return sh.why = std::string("HLSL: ") + program.getInfoLog(), sh;
     std::vector<uint32_t> spv;
     glslang::GlslangToSpv(*program.getIntermediate(EShLangFragment), spv);
+    {   // (checked first by SPIRV-Tools' own validator as spirv-val --before-hlsl-legalization checks it, the patterns the
+        //  legalization fixes let by: glslang (16.6.0 too) makes ペンローズタイルσ's float2x4 ._14_24 an int2 of its
+        //  indices, and the legalization's constant folding (FoldOpDotWithConstants) crashed the program on that OpDot)
+        spvtools::SpirvTools check(SPV_ENV_VULKAN_1_1);
+        std::string said;
+        check.SetMessageConsumer([&](spv_message_level_t, const char*, const spv_position_t&, const char* m) { if (said.empty()) said = m; });
+        spvtools::ValidatorOptions before;
+        before.SetBeforeHlslLegalization(true);
+        if (!check.Validate(spv.data(), spv.size(), before)) return sh.why = "SPIR-V: " + said.substr(0, said.find('\n')), sh;
+    }
     {   // (made legal as glslang makes HLSL's SPIR-V itself when built with spirv-opt (SPIRV/SpvTools.cpp SpirvToolsLegalize),
         //  by SPIRV-Tools' own set for it, as DXC uses: Optimizer::RegisterLegalizationPasses; Filament's glslang is built
         //  without it (tnt/CMakeLists.txt ENABLE_OPT OFF), so a texture handed to a function was stored, which Vulkan forbids;
