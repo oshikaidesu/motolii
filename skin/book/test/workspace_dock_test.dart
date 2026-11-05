@@ -169,6 +169,13 @@ void main() {
     expect((first - last).abs(), greaterThan(10), reason: 'the bright balloon gives way to the road at dusk');
     out.deleteSync(recursive: true);
   }, skip: !insideBuilt);
+  test('an AbsentMotion effect is given its layer\'s size and length as AbsentMotion gives them, where it has no knob of that name: Block Noise draws its blocks', () {
+    final out = Directory.systemTemp.createTempSync('motolii_tile_test');
+    final drawn = EffectTiles.draw(motoliiDir, [('$motoliiDir/effects/am_blocknoise.wgsl', '${out.path}/0.png')]);
+    expect(drawn.single.$2, isFalse);
+    expect(_luma(EffectTiles.frame('${out.path}/0.png', EffectTiles.still)), greaterThan(30), reason: 'black at every knob: its blocks a share of layer, which nothing filled (effects.cpp: own().width(), own().height())');
+    out.deleteSync(recursive: true);
+  }, skip: !insideBuilt);
   test('a tile moves the knob one who looked chose, one for text is drawn on words, and one that shows nothing says why, not NO CHANGE (the user, 11/5: what is an effect that does nothing for)', () {
     final out = Directory.systemTemp.createTempSync('motolii_tile_test');
     final effects = ['effects/am_countupdown.am', 'aviutl_scripts/korarei__FlowType_K/Script/FlowType_K/@FlowType_K.anm2#Motion', 'aviutl_scripts/sigma-axis__Path_S/Script/@Path_S.anm2#パス部分フィルタσここまで'];

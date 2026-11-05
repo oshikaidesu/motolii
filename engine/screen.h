@@ -299,6 +299,13 @@ static void screen_knobs(Stage& s, ScreenFx& fx, const ScreenNumbers& numbers, i
         else if (f.name == "aspect") v[0] = (float)(w / h);
         else if (f.name == "resolution") v[0] = (float)w, v[1] = (float)h;
         else if (f.name == "screen" && f.floats >= 4) v[2] = (float)w, v[3] = (float)h;   // (AbsentMotion's effects.cpp: screen is -area.left, -area.top, the scene's width and height. This picture is that scene, so a wave's reach is magnitude * min(screen.z, screen.w) * 0.01)
+        else if ((f.name == "layer" && f.floats == 2) || (f.name == "duration" && f.floats == 1) ? std::none_of(fx.knobs.begin(), fx.knobs.end(), [&](const ScriptKnob& one) { return one.name.rfind(f.name, 0) == 0; }) : false) {
+            // (AbsentMotion's effects.cpp, each only where the file has no knob of that name: layer its own width and height, at
+            //  least 1 (on a thing its rectangle on its picture, layerRect; on the whole picture the picture's), duration the
+            //  layer's length in seconds (clip_length: a thing's, or the document's). Block Noise's blocks are a share of layer)
+            if (f.name == "duration") v[0] = (float)numbers(fx.file, "clip_length", 0);
+            else v[0] = (float)std::max(1.0, numbers(fx.file, "layerRect_z", w)), v[1] = (float)std::max(1.0, numbers(fx.file, "layerRect_w", h));
+        }
         else if ((f.name == "width" || f.name == "height") && std::none_of(fx.fields.begin(), fx.fields.end(), [](const ScreenFx::Field& g) { return g.name == "resolution"; }) && !(fx.file.ends_with(".fs") && std::any_of(fx.knobs.begin(), fx.knobs.end(), [&](const ScriptKnob& one) { return one.name == f.name; })))
             v[0] = (float)(f.name == "width" ? w : h);   // (three's picture size: halftone.wgsl divides by width and height. A shader that already has resolution, or an ISF knob of this name, keeps the knob the file declares)
         else if (f.name == "frame") v[0] = (float)std::lround(s.now * screen_rate(s));   // (ISF's FRAMEINDEX: the picture's number, ISF_Spec)

@@ -177,10 +177,6 @@ static void doc_things_fx(Doc& d) {
                 const double start = doc_number(d, thing, "start", 0, 0), lasts = doc_number(d, thing, "duration", 0, -1);
                 return name == "clip_time" ? d.stage->now - start : lasts > 0 ? lasts : std::max(0.0, doc_seconds(d) - start);
             }
-            if (name == "duration") {   // (AbsentMotion's effects.cpp: the layer's length in seconds. None said: the document's, as a still that does not end)
-                const double lasts = doc_number(d, thing, "duration", 0, -1);
-                return lasts > 0 ? lasts : doc_seconds(d);
-            }
             if (name.rfind("backdropBox_", 0) == 0) {   // (the box its picture is, on the stage's: left, top, width, height, each a share of it: what is behind it read there, effects/from_absent.py)
                 const Stage& s = *d.stage;
                 const size_t i = std::string("xyzw").find(name.back());
