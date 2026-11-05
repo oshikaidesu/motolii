@@ -7,8 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lab_book/workspace/create_preview.dart' show RecipeMotions;
 import 'package:lab_book/workspace/desk_ease_shelf.dart' show easeKeptAt;
+import 'package:lab_book/workspace/dock_fonts.dart' show fontRecentAt;
 import 'package:lab_book/workspace/dock_make.dart' show coloursAt;
 import 'package:lab_book/workspace/dock_map.dart' show dockMapsAt;
+import 'package:lab_book/workspace/dock_parts.dart' show dockStarsAt;
+import 'package:lab_book/workspace/dock_tags.dart' show DockTags;
 import 'package:lab_book/workspace/effect_decks.dart' show effectDecksAt, effectRecentAt;
 
 import 'mac_fonts.dart';
@@ -22,5 +25,8 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   setUp(() => effectRecentAt(File('${Directory.systemTemp.createTempSync('recent').path}/effect_recent.json')));
   setUp(() => easeKeptAt(File('${Directory.systemTemp.createTempSync('kept').path}/ease_kept.json')));
   setUp(() => dockMapsAt(Directory.systemTemp.createTempSync('maps')));
+  setUp(() => DockTags.latchedAt(File('${Directory.systemTemp.createTempSync('latch').path}/latched.json')));   // (the words typed and what went on: the maker's own latched a 'glow', and a test's Pulse.motolii in a temp folder was latched into theirs)
+  setUp(() => dockStarsAt(File('${Directory.systemTemp.createTempSync('stars').path}/effect_stars.json')));
+  setUp(() => fontRecentAt(File('${Directory.systemTemp.createTempSync('fonts').path}/font_recent.json')));
   await testMain();
 }
