@@ -135,6 +135,20 @@ void main() {
       expect(_apart('${dir.path}/plain.png', '${dir.path}/fx.png', most), greaterThan(80), reason: why);
     }
   }, skip: !insideBuilt);
+  test('an AviUtl2 script of no knobs runs, and obj.effect\'s "color" is the colour (Sashimono\'s _SCRIPT_COLOR: tim\'s, LongShadow\'s 単色化 and グラデーション)', () {
+    final dir = Directory.systemTemp.createTempSync('motolii_no_knobs');
+    final m = Motolii.open('${dir.path}/s.motolii', wide: 384, high: 384)!;
+    addTearDown(() {
+      m.close();
+      dir.deleteSync(recursive: true);
+    });
+    File('${dir.path}/green.anm2').writeAsStringSync('--label:test\nobj.effect("単色化", "color", 0x00ff00)\n');
+    final photo = m.add('picture', '$motoliiDir/fx_sample.jpg');
+    expect(m.say(photo, 'fx', '${dir.path}/green.anm2'), isTrue, reason: m.trouble);
+    expect([m.at(1.5), m.still('${dir.path}/fx.png')], [isTrue, isTrue], reason: m.trouble);
+    final middle = Process.runSync('ffmpeg', ['-v', 'error', '-i', '${dir.path}/fx.png', '-vf', 'crop=1:1:192:192', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], stdoutEncoding: null).stdout as List<int>;
+    expect(middle, [0, 255, 0], reason: 'the photo as it came: said to take longer than 5 s, its knobs\' values (none) the same as those it last ran late with (none yet); then white, "color" not in the table');
+  }, skip: !insideBuilt);
   test('an AviUtl2 path whose anchors lie on one spot (BezierPath\'s {0,0,...}, no hand to drag them here yet) is laid across the thing, and its tile shows it (the user, 11/5: a path for one that goes along one)', () {
     final out = Directory.systemTemp.createTempSync('motolii_tile_test');
     final drawn = EffectTiles.draw(motoliiDir, [('$motoliiDir/aviutl_scripts/NeAc__BezierPath/BezierPath.anm2', '${out.path}/0.png'), ('$motoliiDir/aviutl_scripts/Suzukeh__Mathy_Su/@Mathy_Su.anm2#アステロイド', '${out.path}/1.png')]);

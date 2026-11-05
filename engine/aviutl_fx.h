@@ -9,6 +9,7 @@
 #include <lua.hpp>
 #include <array>
 #include <mutex>
+#include <optional>
 #include <random>
 #include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/document.h"
 
@@ -31,7 +32,7 @@ struct AviutlRun {
     Texture *none = nullptr, *random = nullptr;
     std::set<std::string> said;
     std::chrono::steady_clock::time_point until = std::chrono::steady_clock::time_point::max();   // (this frame's run stopped past it: aviutl_late)
-    std::string late;                               // (the knobs' values it ran past that with: not run again with them)
+    std::optional<std::string> late;                // (the knobs' values it ran past that with: not run again with them; none yet, so one of no knobs runs)
     Stage* s = nullptr;                             // (this frame's)
     std::string target, blend, sampler;
     bool drew = false;

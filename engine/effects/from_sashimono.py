@@ -181,6 +181,8 @@ if not wanted:   # (and AviUtl's built-in effects as Sashimono takes them, for A
             continue
         params = {k: [p.name, (p.convert.__name__.lstrip('_') if p.convert else ''), p.also or ''] for k, p in mapping._PARAMS.get(name, {}).items()}
         params.update({k: [c, '', ''] for k, c in mapping._COLOR_PARAMS.get(name, {}).items() if k not in params})
+        if colours := mapping._COLOR_PARAMS.get(name):   # (a script's "color", its first colour: script_filter_effects' _SCRIPT_COLOR)
+            params.setdefault(mapping._SCRIPT_COLOR, [next(iter(colours.values())), '', ''])
         table[name] = {'file': f'{title(kind)} (Sashimono).fs', 'params': params}
     with open(os.path.join(out, 'sashimono_aviutl.json'), 'w') as f:
         json.dump(table, f, ensure_ascii=False, indent=1)
