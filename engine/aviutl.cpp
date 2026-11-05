@@ -11,6 +11,7 @@
 #include <sstream>
 #include "glslang/Public/ShaderLang.h"
 #include "SPIRV/GlslangToSpv.h"
+#include "spirv-tools/optimizer.hpp"
 #include "sca/builtinResource.h"
 #include "src/tint/lang/core/ir/module.h"
 #include "src/tint/lang/core/type/array.h"
@@ -209,6 +210,17 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
     if (!program.link(msg) || !program.mapIO()) return sh.why = std::string("HLSL: ") + program.getInfoLog(), sh;
     std::vector<uint32_t> spv;
     glslang::GlslangToSpv(*program.getIntermediate(EShLangFragment), spv);
+    {   // (made legal as glslang makes HLSL's SPIR-V itself when built with spirv-opt (SPIRV/SpvTools.cpp SpirvToolsLegalize),
+        //  by SPIRV-Tools' own set for it, as DXC uses: Optimizer::RegisterLegalizationPasses; Filament's glslang is built
+        //  without it (tnt/CMakeLists.txt ENABLE_OPT OFF), so a texture handed to a function was stored, which Vulkan forbids;
+        //  not checked first, as glslang runs it (set_run_validator(false)): it is not yet legal, which is why it is run)
+        spvtools::Optimizer legal(SPV_ENV_VULKAN_1_1);
+        legal.RegisterLegalizationPasses();
+        spvtools::OptimizerOptions unchecked;
+        unchecked.set_run_validator(false);
+        std::vector<uint32_t> made;
+        if (legal.Run(spv.data(), spv.size(), &made, unchecked)) spv.swap(made);
+    }
     std::map<uint32_t, std::string> names;   // (SPIR-V read for each struct's member offsets: OpName 5, OpMemberDecorate 72 Offset 35; an empty struct (OpTypeStruct 30 of none) Tint cannot take)
     std::map<uint32_t, std::map<uint32_t, uint32_t>> offsets;
     for (size_t i = 5; i < spv.size() && spv[i] >> 16;) {
