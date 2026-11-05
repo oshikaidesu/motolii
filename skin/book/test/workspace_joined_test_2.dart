@@ -968,6 +968,43 @@ void _tests2() {
     await _close(t);
   }, skip: !_built);
 
+  testWidgets('the Pen drawn wobbly is made one smooth path, its anchors and handles few (the user, 11/5: curve-fit-nd, as Blender\'s Draw Curve); drawn round, a closed one', (t) async {
+    final ws = await _pump(t), m = ws.inside!;
+    ws
+      ..reread()
+      ..select(null);
+    await t.pumpAndSettle();
+    final stage = t.getRect(find.byKey(const ValueKey('ws-stage-comp')));
+    await t.tap(find.byKey(const ValueKey('ws-tool-4')));   // (Pen, P)
+    await t.pumpAndSettle();
+    final c = stage.center, w = stage.width * .3, h = stage.height * .12;
+    Future<int> draw(List<Offset> way) async {
+      final before = m.things.length;
+      final hand = await t.startGesture(way.first, kind: PointerDeviceKind.mouse);
+      for (final p in way.skip(1)) {
+        await hand.moveTo(p);
+        await t.pump(const Duration(milliseconds: 8));
+      }
+      await hand.up();
+      await settled(t, ws);
+      for (var i = 0; i < 200 && m.things.length == before; i++) {
+        await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
+        await t.pump();
+      }
+      expect(m.things.length, before + 1, reason: m.trouble);
+      return m.things.last;
+    }
+    final wave = await draw([for (var i = 0; i <= 120; i++) c + Offset(-w + 2 * w * i / 120, h * math.sin(i / 120 * 2 * math.pi) + (i.isEven ? 2.5 : -2.5))]);   // (one wave across, the hand shaking)
+    final path = m.word(wave, 'path');
+    expect([m.word(wave, 'shape'), ' C'.allMatches(path).length < 12, path.contains(' L'), path.endsWith('Z')], ['path', isTrue, isFalse, isFalse], reason: '121 shaking points made a few cubics, open: $path');
+    expect([m.word(wave, 'fill'), m.value(wave, 'stroke_width', 0)], ['none', 6], reason: 'an open one a line of the ink');
+    expect(m.points(wave).length, lessThan(12), reason: 'its anchors few, to be taken hold of');
+    final ring = await draw([for (var i = 0; i <= 90; i++) c + Offset(w * .5 * math.cos(i / 90 * 2 * math.pi), h * 1.5 * math.sin(i / 90 * 2 * math.pi))]);   // (round, back where it began)
+    expect(m.word(ring, 'path').endsWith(' Z'), isTrue, reason: 'back where it began: closed, ${m.word(ring, 'path')}');
+    expect(t.takeException(), isNull);
+    await _close(t);
+  }, skip: !_built);
+
   testWidgets('the inks and the strip mean the document: a colour filled with nothing picked is what is drawn next; the Move tool along X keeps y', (t) async {
     final ws = await openWorkspace(t, size: tallWindow), m = ws.inside!;
     ws

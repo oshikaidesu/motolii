@@ -609,6 +609,7 @@ int motolii_later(Motolii* m, const char* call, int thing, const char* name, con
             else if (c == "extract_sound") ok = m->made = changes(m, doc_extract_sound(doc(m), thing));   // (the answer is the copy that is heard)
             else if (c == "freehand") ok = m->made = changes(m, doc_freehand(doc(m), w.c_str()));   // (word: the outline's points of the picture, x y each; the answer is the new shape)
             else if (c == "outline") ok = changes(m, (int)doc_to_path(doc(m), thing));   // (Alight Motion's Convert to Outline: the shape a path of the outline it shows)
+            else if (c == "curve") ok = m->made = changes(m, doc_curve(doc(m), w.c_str()));   // (word: how far the curve may stray, in points of the picture, then the hand's points, x y each; the answer is the new path)
             else if (c == "brush") ok = m->made = changes(m, doc_brush(doc(m), w.c_str(), thing));   // (word: the tool (0 pen, 1 brush, 2 fill, 3 eraser: of the thing's drawing), how wide, then each point of the picture x y and its pressure; the answer is the new shape, or the one erased from)
             else if (c == "copy") ok = (int)doc_look_save(doc(m), thing, w.c_str(), true);   // (word: the file it is kept in, whole)
             else if (c == "paste") ok = m->made = changes(m, doc_look_paste(doc(m), w.c_str(), number));   // (word: that file; number: when it begins; the answer is the new thing)

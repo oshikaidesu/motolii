@@ -46,6 +46,7 @@ ninja -C $THOR/build_dawn > /dev/null
 # (bend.cpp: ThorVG's own path operators, built as ThorVG builds them; libtess2: a flat shape cut into triangles, flat_mesh)
 [ out/bend.o -nt bend.cpp ] || clang++ -c -std=c++17 -O2 -fno-rtti -fno-exceptions -DTVG_STATIC -I $THOR/build_dawn -I $THOR/inc -I $THOR/src/common -I $THOR/src/renderer -I $THOR/src/renderer/gpu_engine -I $THOR/src/renderer/gpu_engine/wg -I $THOR/src/loaders/lottie -I $SRC/third_party/dawn/include -I $SRC/out/wgpu/third_party/dawn/gen/include bend.cpp -o out/bend.o
 ./libtess2.sh
+./curve_fit_nd.sh   # (doc_curve: a hand's way made a path of cubic Béziers, as Blender's Draw Curve)
 ./jolt.sh   # (physics.cpp: Jolt, which edit.sh and build_lib.sh link)
 ./iris.sh   # (flashes.cpp: EA's IRIS and the OpenCV it reads, which edit.sh and build_lib.sh link)
 # (flashes.cpp built apart, in IRIS's own C++17: its log lines pass runtime format strings, which C++20's fmt refuses)
@@ -67,7 +68,7 @@ for f in motion scene easing textanim; do [ out/am_$f.o -nt $AM/$f.cpp ] || clan
 [ out/absent_ends.o -nt absent_ends.cpp ] && [ out/absent_ends.o -nt $AM/styles.cpp ] || clang++ -c -std=c++20 -O2 -DNDEBUG -fno-rtti -fvisibility=hidden -I $SKIA -I $AM absent_ends.cpp -o out/absent_ends.o   # (its styles.cpp read whole: absent_ends.cpp)
 (cd $SRC/out/wgpu && ninja motolii_door > /dev/null)
 clang++ -std=c++20 -fobjc-arc -O2 -I "$SDK/include" -I $THOR/inc -I $THOR/src/loaders/lottie -I $SRC/third_party/dawn/include -I $SRC/out/wgpu/third_party/dawn/gen/include ${KIT_SRC:-$n.mm} ${=KIT_EXTRA} \
-    $THOR/build_dawn/src/libthorvg-1.a out/bend.o out/skpath.o out/absent_motion.o out/absent_ends.o out/absent_drawing.o out/am_motion.o out/am_scene.o out/am_easing.o out/am_textanim.o $SKIA/out/path/libpathops.a $SKIA/out/path/libskia.a -I third_party/libtess2/Include third_party/libtess2/build/libtess2.a $SRC/out/wgpu/filament/motolii_probe/libmotolii_door.a -L "$SDK/lib/arm64" \
+    $THOR/build_dawn/src/libthorvg-1.a out/bend.o out/skpath.o out/absent_motion.o out/absent_ends.o out/absent_drawing.o out/am_motion.o out/am_scene.o out/am_easing.o out/am_textanim.o $SKIA/out/path/libpathops.a $SKIA/out/path/libskia.a -I third_party/libtess2/Include third_party/libtess2/build/libtess2.a -I third_party/curve_fit_nd/c third_party/curve_fit_nd/build/libcurve_fit_nd.a $SRC/out/wgpu/filament/motolii_probe/libmotolii_door.a -L "$SDK/lib/arm64" \
     -lfilament -lbackend -lwebgpu_dawn -lbluegl -lbluevk -lfilabridge -lfilaflat \
     -lutils -lgeometry -lsmol-v -libl -lktxreader -lstb -luberzlib -lzstd \
     -lshaders -lperfetto -labseil -lmeshoptimizer -lcamutils -limage -lbasis_transcoder -luberarchive -lmatdbg -lfilamat -lcivetweb -lviewer \

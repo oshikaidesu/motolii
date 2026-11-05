@@ -116,6 +116,43 @@ static int doc_freehand(Doc& d, const char* points) {
     if (!thing) d.act_ok = false;
     return doc_acted(d) ? thing : 0;
 }
+// A path the pen drew by hand, its wobbles let go: the hand's points (of the picture) made the fewest cubic Béziers
+// that keep within `error` points of them, its sharp turns kept as corners, as Blender's Draw Curve tool makes a curve
+// of a stroke (editcurve_paint.cc: curve_fit_cubic_to_points_refit, its corners past 70°; its error 8 of the screen's
+// points, the window's tolerance here), by curve-fit-nd (Campbell Barton, BSD-3-Clause). Ended where it began: closed.
+// Its anchors and handles then a pen path's own (M, C), moved as any. word: error, then x y each. The new shape.
+static int doc_curve(Doc& d, const char* said) {
+    std::istringstream in(said);
+    double error = 0.0;
+    in >> error;
+    std::vector<double> xy;
+    for (double x, y; in >> x >> y;)
+        if (xy.empty() || std::hypot(x - xy[xy.size() - 2], y - xy.back()) > 0.01 * error) xy.push_back(x), xy.push_back(y);   // (a hand held still: its points one, as curve-fit-nd takes no stretch of no length)
+    const unsigned n = (unsigned)(xy.size() / 2);
+    if (!(error > 0.0) || n < 3) return d.trouble = "a stroke of fewer than three points", 0;
+    const bool closed = std::hypot(xy[0] - xy[2 * n - 2], xy[1] - xy[2 * n - 1]) < 4 * error;   // (back where it began, as the hand sees it)
+    double* cubic = nullptr;
+    unsigned cubics = 0, *orig = nullptr, *corners = nullptr, cornersLen = 0;
+    if (curve_fit_cubic_to_points_refit_db(xy.data(), closed ? n - 1 : n, 2, error, CURVE_FIT_CALC_HIGH_QUALITY | (closed ? CURVE_FIT_CALC_CYCLIC : 0), nullptr, 0, 70.0 * M_PI / 180.0,
+                                           &cubic, &cubics, &orig, &corners, &cornersLen) || cubics < 2) {
+        free(cubic), free(orig), free(corners);
+        return d.trouble = "the stroke made no curve", 0;
+    }
+    doc_act(d);
+    int thing = doc_add(d, "shape", "path");
+    const DocPlane plane(d, thing, d.stage->now);
+    if (thing && !plane.seen) d.trouble = "its plane is seen edge on", thing = 0;
+    if (thing) {
+        const auto at = [&](unsigned k, int part) { const double* c = cubic + (k * 3 + part) * 2; const math::double2 p = plane.own(c[0], c[1]); char one[64]; std::snprintf(one, sizeof one, "%.4f %.4f", p.x, p.y); return std::string(one); };   // (part: 0 its handle in, 1 the anchor, 2 its handle out)
+        std::string path = "M" + at(0, 1);
+        for (unsigned k = 1; k < cubics + (closed ? 1 : 0); ++k) path += " C" + at(k - 1, 2) + " " + at(k % cubics, 0) + " " + at(k % cubics, 1);
+        if (closed) path += " Z";
+        if (!doc_say(d, thing, "path", path.c_str())) thing = 0;
+    }
+    free(cubic), free(orig), free(corners);
+    if (!thing) d.act_ok = false;
+    return doc_acted(d) ? thing : 0;
+}
 // A brush's stroke as the window drew it (perfect-freehand's points, each with the pressure its radius comes from): a
 // path shape whose stroke is kept as drawn (`drawing`: brush, how wide, each point and its pressure, in the plane's own
 // units) and whose outline AbsentMotion makes of it (absent_drawing: Alight Motion's brush, a band of round pieces, its

@@ -310,12 +310,15 @@ class _StageViewState extends State<StageView> implements StageHandles {
   // corner). Its first goes to the picked thing, the rest to the one the pen made (thing -1); the inside reckons all of
   // it (a new path begun, closed on its first point, a point put on or taken off a closed one) from where the hand is.
   bool _penning = false;
+  List<Offset>? _penWay;   // (the hand's way while the pen is down: a scribble, not a handle drawn out, is made a path of its own)
 
   void _pen(_View v, Offset down, Offset up) {
-    final ws = WsScope.read(context), m = ws.inside;
+    final ws = WsScope.read(context), m = ws.inside, way = _penWay;
     _drawFrom = null;
+    _penWay = null;
     setState(() {});
     if (m == null) return;
+    if (way != null && _scribbled(way, down, up)) return _fit(v, way);
     final a = _doc(v, down), h = _doc(v, up) - a;
     final first = !_penning;
     _penning = true;
@@ -326,6 +329,36 @@ class _StageViewState extends State<StageView> implements StageHandles {
       wsInked(ws, 'shape', 'path');
       ws.after(m.later('together'), (done, _) => done && made > 0 ? ws.select('$made') : null);
     }
+  }
+
+  /// Whether the pen's way strayed from the straight line a handle is drawn along: more than 16 points of the window off
+  /// it, the hand drew a line, not a handle.
+  static bool _scribbled(List<Offset> way, Offset down, Offset up) {
+    final d = up - down, long = d.distance;
+    return way.any((p) => (long < 1 ? (p - down).distance : ((p - down).dx * d.dy - (p - down).dy * d.dx).abs() / long) > 16);
+  }
+
+  /// The pen's scribble made one smooth path (the user, 11/5: drawn wobbly, then made right, as curve-fit-nd makes it):
+  /// within 8 points of the window of the hand's way, as Blender's Draw Curve tool fits its stroke (its error 8 of the
+  /// screen's, editcurve_paint.cc), its anchors and handles then the pen's own to move. Back where it began: closed and
+  /// filled as the pen's are; else a line of the ink.
+  void _fit(_View v, List<Offset> way) {
+    final ws = WsScope.read(context), m = ws.inside!;
+    _penning = false;   // (a path of its own: the pen's next point begins another)
+    final points = [for (final p in way) _doc(v, p)], error = (_doc(v, way.first + const Offset(8, 0)) - points.first).distance;
+    final closed = (points.first - points.last).distance < 4 * error;
+    m.later('together', number: 1);
+    var made = 0;
+    ws.after(m.later('curve', word: '$error ${[for (final p in points) '${p.dx} ${p.dy}'].join(' ')}'), (done, why) => done ? null : ws.notice = why, (t) => made = t);
+    if (closed) {
+      wsInked(ws, 'shape', 'path');
+    } else {
+      m
+        ..later('say', thing: -1, name: 'fill', word: 'none')
+        ..later('say', thing: -1, name: 'stroke', word: ws.ink.isEmpty || ws.ink.contains(' ') ? 'ffffff' : ws.ink)
+        ..later('set', thing: -1, name: 'stroke_width', number: 6);
+    }
+    ws.after(m.later('together'), (done, _) => done && made > 0 ? ws.select('$made') : null);
   }
 
   // (the Brush's way so far, in points of the window; when let go, its points as perfect-freehand (MIT, Steve Ruiz; Dart
@@ -453,6 +486,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
       return;
     }
     if (widget.make != null) {
+      if (widget.make == 'pen') _penWay = [local];
       setState(() => _drawFrom = local);
       return;
     }
@@ -701,7 +735,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
                 : _lasso != null
                 ? setState(() => _lasso!.add(d.localPosition))
                 : _drawFrom != null
-                ? setState(() => _last = d.localPosition)
+                ? setState(() => _penWay?.add(_last = d.localPosition))
                 : _pulling != null
                 ? (widget.cursor.value = v.toComp(_last = d.localPosition))
                 : _carry(v, _last = d.localPosition),
@@ -740,7 +774,9 @@ class _StageViewState extends State<StageView> implements StageHandles {
                 if (int.tryParse(widget.selected ?? '') case final picked? when WsScope.read(context).inside != null) // (the picked path's own points, to be taken hold of)
                   IgnorePointer(child: CustomPaint(size: Size.infinite, painter: _PointsPainter([for (final p in WsScope.read(context).inside!.points(picked)) v.toScreen(WsArt.toView(widget.scene, p))],
                       [for (final (h, o) in WsScope.read(context).inside!.handles(picked)) (v.toScreen(WsArt.toView(widget.scene, h)), v.toScreen(WsArt.toView(widget.scene, o)))]))),
-                if (_drawFrom case final from? when _last != null && widget.make == 'pen') // (the pen's handle being drawn out: through its point, both ways)
+                if (_drawFrom case final from? when _last != null && widget.make == 'pen' && _penWay != null && _scribbled(_penWay!, from, _last!)) // (a scribble: its way, thin, as the brush's; made a path when let go)
+                  IgnorePointer(child: CustomPaint(painter: _BrushWay(_penWay!, WsT.accent)))
+                else if (_drawFrom case final from? when _last != null && widget.make == 'pen') // (the pen's handle being drawn out: through its point, both ways)
                   IgnorePointer(child: CustomPaint(size: Size.infinite, painter: _HandlePainter(from, _last!)))
                 else if (_drawFrom case final from? when _last != null) // (what is being drawn: its box)
                   Positioned.fromRect(

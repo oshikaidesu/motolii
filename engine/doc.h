@@ -43,4 +43,7 @@
 #include "doc_recipes.h"   // (recipes)
 #include "doc_door.h"   // (code from the net)
 #include "doc_looks.h"   // (a thing's look kept and given to another)
+extern "C" {
+#include "curve_fit_nd.h"   // (doc_curve: a hand's way made cubic Béziers; curve_fit_nd.sh)
+}
 #include "doc_paths.h"   // (a path shape's plane and points)
