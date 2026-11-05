@@ -2,7 +2,11 @@
 // skill's references/api.md, gasdyueer, MIT: "object", "tempbuffer" or "cache:..."; "rgba" or "bgra"; 8 bits each, its
 // pointer, w, h), the pixels as sashimono-edit keeps them (MIT, objapi.py lua_getpixeldata and _pixel_source, native.py
 // PixelData: straight colour, rows from the top; a buffer not there nil, 0, 0; the frame not read), the values the
-// buffer's own as its shaders read them. Read: the buffer made straight again on a picture of 8 bits (the placing
+// buffer's own as its shaders read them. Handed out as a userdata of its own each call, Lua's to keep (aviutl2_modern_docs'
+// docs/lua: "画像データのポインタ（ユーザーデータ）"): zopty's どこでもバッファ 遅延 keeps a ring of them, frames back put
+// again, its OpticalFlowMotionBlur the frame before, teruyoshii's noise_Te its last; ColorJellyFish's 破線縁取り says
+// "putpixeldata requires AviUtl userdata from getpixeldata (raw ffi.new is rejected)". The way asked (rgba, bgra) kept in
+// its last byte. Read: the buffer made straight again on a picture of 8 bits (the placing
 // shader's way 2), read back by Filament's Renderer::readPixels as thing_fx.h reads a thing's picture, waited for where
 // it is asked (Engine::flushAndWait runs the callback: details/Engine.cpp, purge). Put: any w x h pixels the pointer
 // holds, as AviUtl2 takes them (sigma's Path_S hands its own, numbers packed in them for its shaders), a picture again,
@@ -36,12 +40,13 @@ static int aviutl_getpixeldata(lua_State* L) {
     const std::string target = aviutl_name(lua_isstring(L, 1) ? lua_tostring(L, 1) : "object"), order = lua_isstring(L, 2) ? lua_tostring(L, 2) : "rgba";
     if (order != "rgba" && order != "bgra") return aviutl_no(L, "obj.getpixeldata as " + order);
     if (target != "object" && target != "tempbuffer" && target.rfind("cache:", 0) != 0) return aviutl_no(L, "obj.getpixeldata of " + target);
-    std::vector<uint8_t>& p = r.pixels[target];
+    std::vector<uint8_t> p;
     uint32_t w = 0, h = 0;
     if (!aviutl_read(r, target, p, w, h)) return lua_pushnil(L), lua_pushinteger(L, 0), lua_pushinteger(L, 0), 3;
     if (order == "bgra") aviutl_swap(p);
-    r.order[p.data()] = order;
-    return lua_pushlightuserdata(L, p.data()), lua_pushinteger(L, w), lua_pushinteger(L, h), 3;
+    uint8_t* kept = (uint8_t*)lua_newuserdata(L, p.size() + 1);
+    std::copy(p.begin(), p.end(), kept), kept[p.size()] = order == "bgra";
+    return lua_pushinteger(L, w), lua_pushinteger(L, h), 3;
 }
 
 // obj.pixeloption as lua.txt has it: "get", the buffer obj.getpixel reads ("obj" or "frm"), read again once said again
@@ -74,11 +79,12 @@ static int aviutl_putpixeldata(lua_State* L) {
     AviutlRun& r = aviutl_of(L);
     const std::string target = aviutl_name(aviutl_str(L, 1));
     if (target != "object" && target != "tempbuffer" && target.rfind("cache:", 0) != 0) return aviutl_no(L, "obj.putpixeldata into " + target);
-    if (lua_type(L, 2) != LUA_TLIGHTUSERDATA) return aviutl_no(L, "obj.putpixeldata of a " + std::string(luaL_typename(L, 2)));
+    if (lua_type(L, 2) != LUA_TUSERDATA) return aviutl_no(L, "obj.putpixeldata of a " + std::string(luaL_typename(L, 2)));   // (one obj.getpixeldata handed out, as AviUtl2 takes only its own)
     const uint8_t* data = (const uint8_t*)lua_touserdata(L, 2);
+    const size_t held = lua_objlen(L, 2) - 1;
     const uint32_t w = (uint32_t)aviutl_num(L, 3), h = (uint32_t)aviutl_num(L, 4);
-    if (!data || !w || !h || w > 8192 || h > 8192) return 0;
-    const std::string order = lua_isstring(L, 5) ? lua_tostring(L, 5) : r.order.count(data) ? r.order[data] : "rgba";
+    if (!data || !w || !h || w > 8192 || h > 8192 || (size_t)w * h * 4 > held) return 0;   // (no more than it holds)
+    const std::string order = lua_isstring(L, 5) ? lua_tostring(L, 5) : data[held] ? "bgra" : "rgba";
     auto* p = new std::vector<uint8_t>(data, data + (size_t)w * h * 4);
     if (order == "bgra") aviutl_swap(*p);
     const AviutlBuf picture = aviutl_bytes(r, w, h);

@@ -236,6 +236,22 @@ void main() {
     final middle = Process.runSync('ffmpeg', ['-v', 'error', '-i', '${dir.path}/fx.png', '-vf', 'crop=1:1:192:192', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], stdoutEncoding: null).stdout as List<int>;
     expect(middle, [0, 255, 0], reason: 'red: PI the string as said, PI.n nil, or unit the word "Mired"');
   }, skip: !insideBuilt);
+  test('each obj.getpixeldata hands out pixels of its own the script keeps (docs/lua: "画像データのポインタ（ユーザーデータ）"): どこでもバッファ\'s 遅延 keeps a ring of them and puts one back frames later', () {
+    final dir = Directory.systemTemp.createTempSync('motolii_pixels_kept');
+    final m = Motolii.open('${dir.path}/s.motolii', wide: 384, high: 384)!;
+    addTearDown(() {
+      m.close();
+      dir.deleteSync(recursive: true);
+    });
+    File('${dir.path}/kept.anm2').writeAsStringSync('obj.clearbuffer("cache:a", 8, 8, 0x00ff00)\nlocal first = obj.getpixeldata("cache:a")\n'
+        'obj.clearbuffer("cache:a", 8, 8, 0xff0000)\nlocal second = obj.getpixeldata("cache:a")\nobj.putpixeldata("cache:a", first, 8, 8)\n'
+        'local p = require("ffi").cast("uint8_t*", obj.getpixeldata("cache:a"))\nobj.effect("単色化", "color", (p[0] == 0 and p[1] == 255) and 0x00ff00 or 0xff0000)\n');
+    final photo = m.add('picture', '$motoliiDir/fx_sample.jpg');
+    expect(m.say(photo, 'fx', '${dir.path}/kept.anm2'), isTrue, reason: m.trouble);
+    expect([m.at(1.5), m.still('${dir.path}/fx.png')], [isTrue, isTrue], reason: m.trouble);
+    final middle = Process.runSync('ffmpeg', ['-v', 'error', '-i', '${dir.path}/fx.png', '-vf', 'crop=1:1:192:192', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], stdoutEncoding: null).stdout as List<int>;
+    expect(middle, [0, 255, 0], reason: 'red: the first handed out was the buffer\'s one store, the second written over it (遅延 put back the frame it had just taken: no afterimage)');
+  }, skip: !insideBuilt);
   test('an AviUtl2 path whose anchors lie on one spot (BezierPath\'s {0,0,...}, no hand to drag them here yet) is laid across the thing, and its tile shows it (the user, 11/5: a path for one that goes along one)', () {
     final out = Directory.systemTemp.createTempSync('motolii_tile_test');
     final drawn = EffectTiles.draw(motoliiDir, [('$motoliiDir/aviutl_scripts/NeAc__BezierPath/BezierPath.anm2', '${out.path}/0.png'), ('$motoliiDir/aviutl_scripts/Suzukeh__Mathy_Su/@Mathy_Su.anm2#アステロイド', '${out.path}/1.png')]);

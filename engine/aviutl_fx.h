@@ -24,8 +24,6 @@ struct AviutlRun {
     std::string path;                               // (where its require looks: package.path while it runs)
     std::map<std::string, AviutlBuf> bufs;
     std::map<std::string, AviutlBuf> loaded;        // (figures and picture files obj.load drew, by what was asked: aviutl_load.h)
-    std::map<std::string, std::vector<uint8_t>> pixels;   // (the pixels obj.getpixeldata handed out, by buffer)
-    std::map<const void*, std::string> order;
     std::multimap<std::pair<uint32_t, uint32_t>, AviutlBuf> spare;   // (pictures let go, kept by size for the next asked: a buffer made and let go each frame takes the same ones)
     std::map<std::string, door::Screen*> doors;     // (each shader made, by its name and way of sampling)
     std::map<std::string, std::string> hlsls;       // (each shader's text by its registered name, found once: aviutl_hlsl, asked each frame)
