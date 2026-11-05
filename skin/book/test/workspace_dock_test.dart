@@ -118,8 +118,12 @@ void main() {
   }, skip: !insideBuilt);
   test('an AviUtl2 path whose anchors lie on one spot (BezierPath\'s {0,0,...}, no hand to drag them here yet) is laid across the thing, and its tile shows it (the user, 11/5: a path for one that goes along one)', () {
     final out = Directory.systemTemp.createTempSync('motolii_tile_test');
-    final drawn = EffectTiles.draw(motoliiDir, [('$motoliiDir/aviutl_scripts/NeAc__BezierPath/BezierPath.anm2', '${out.path}/0.png')]);
-    expect(drawn.single.$2, isFalse, reason: 'it was NO CHANGE: its four anchors at the middle, a path of no length');
+    final drawn = EffectTiles.draw(motoliiDir, [('$motoliiDir/aviutl_scripts/NeAc__BezierPath/BezierPath.anm2', '${out.path}/0.png'), ('$motoliiDir/aviutl_scripts/Suzukeh__Mathy_Su/@Mathy_Su.anm2#アステロイド', '${out.path}/1.png')]);
+    expect(drawn.first.$2, isFalse, reason: 'it was NO CHANGE: its four anchors at the middle, a path of no length');
+    expect(drawn.last.$2, isFalse, reason: 'the photo small over the grid, going once round the astroid, its line drawn (its weights\' _set, _best, _lay): it was NO CHANGE, obj.ox set before obj.draw() into the temporary buffer left out');
+    final a = _luma(EffectTiles.frame('${out.path}/1.png', 0)), b = _luma(EffectTiles.frame('${out.path}/1.png', 8));
+    expect(a, greaterThan(20), reason: 'the grid under it, not black');
+    expect(b, isNot(a), reason: 'the photo elsewhere on its curve');
     out.deleteSync(recursive: true);
   }, skip: !insideBuilt);
   test('a transition\'s tile goes from the photo to the road under it, not to black (the user, 11/5: a second picture for transitions)', () {

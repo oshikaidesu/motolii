@@ -341,8 +341,9 @@ static int aviutl_data(lua_State* L) { return lua_pushnil(L), 1; }   // (obj.dat
 // obj.setanchor(name, num, options...) as AviUtl2's lua.txt tells it (aviutl2_modern_docs, MIT: docs/lua/index.md):
 // a table's points too few for num, its {table} option taken, else laid by AviUtl itself. Its points are not on the
 // screen here yet for a hand to move, so points all on one spot (a table's usual {0,0,...}, BezierPath's) would stay a
-// path of no length: they are laid as a hand would first draw them, across the object as "line" joins them (one
-// wave over and under), round its middle as "loop", "star" and "arm" join them or none, on a grid for "mesh". Tracks'
+// path of no length: they are laid as a hand would first draw them, a screen's third from the object's middle: across
+// it as "line" joins them (one wave over and under), round it as "loop", "star" and "arm" join them or none, on a grid
+// for "mesh". Tracks'
 // points ("track", "x,y") are their keys': one, the knobs' values, for now.
 static int aviutl_setanchor(lua_State* L) {
     const int num = std::max(1, (int)aviutl_num(L, 2));
@@ -373,9 +374,9 @@ static int aviutl_setanchor(lua_State* L) {
     } else if (had != want || one) {
         lua_getglobal(L, "obj");
         double w = 0, h = 0;
-        if (lua_istable(L, -1)) lua_getfield(L, -1, "w"), lua_getfield(L, -2, "h"), w = lua_tonumber(L, -2), h = lua_tonumber(L, -1), lua_pop(L, 2);
+        if (lua_istable(L, -1)) lua_getfield(L, -1, "screen_w"), lua_getfield(L, -2, "screen_h"), w = lua_tonumber(L, -2), h = lua_tonumber(L, -1), lua_pop(L, 2);
         lua_pop(L, 1);
-        const double r = w > 0 && h > 0 ? 0.35 * std::min(w, h) : 100;
+        const double r = w > 0 && h > 0 ? 0.3 * std::min(w, h) : 100;   // (by the screen, as a thing goes round a path across it: a small thing's own size would make it a speck)
         for (int i = 0; i < num; ++i) {
             const double f = num > 1 ? (double)i / (num - 1) : 0.5;
             double x, y;
@@ -465,17 +466,21 @@ static int aviutl_draw(lua_State* L) {   // (ox, oy, oz, zoom, alpha, rx, ry, rz
     if (way < 0) return aviutl_no(L, "obj.draw blend " + r.blend);
     lua_getglobal(L, "obj");
     const auto f = [&](const char* k, double otherwise) { lua_getfield(L, -1, k); const double v = aviutl_num(L, -1, otherwise); lua_pop(L, 1); return v; };
-    const bool own = r.target == "framebuffer";   // (into the frame: as the thing stands; into the temporary buffer: by its arguments alone)
-    const double zoom = aviutl_num(L, 4, 1) * (own ? f("zoom", 1) : 1), aspect = own ? f("aspect", 0) : 0;
+    // (into the frame: as the thing stands, its x and y too; into the temporary buffer not where the thing stands (lua.txt:
+    //  "オブジェクトの持っている座標等の設定は反映せず"), but as the script has moved it since it began (obj.ox, rz, zoom,
+    //  alpha: 0 and 1 at its start here, the thing's own laid outside it): Mathy_Su moves obj.ox, obj.rz and obj.alpha
+    //  before each obj.draw() into it, its README's "配置位置でパス上の移動" and "元画像透明度" so made, and 四隅に配置 its four)
+    const bool own = r.target == "framebuffer";
+    const double zoom = aviutl_num(L, 4, 1) * f("zoom", 1), aspect = f("aspect", 0);
     const AviutlBuf& to = r.bufs[r.target];
     if (!to.t) return aviutl_no(L, "obj.draw into a temporary buffer never made");
-    const double z = aviutl_num(L, 3) + (own ? f("oz", 0) : 0), rx = aviutl_num(L, 6) + (own ? f("rx", 0) : 0), ry = aviutl_num(L, 7) + (own ? f("ry", 0) : 0);
+    const double z = aviutl_num(L, 3) + f("oz", 0), rx = aviutl_num(L, 6) + f("rx", 0), ry = aviutl_num(L, 7) + f("ry", 0);
     if (z != 0 || rx != 0 || ry != 0) {
         if (!r.poly) return aviutl_no(L, "obj.draw in depth: " + r.trouble);
-        aviutl_placed(r, r.bufs["object"], to, aviutl_num(L, 1) + (own ? f("x", 0) + f("ox", 0) : 0), aviutl_num(L, 2) + (own ? f("y", 0) + f("oy", 0) : 0), z, zoom * (aspect > 0 ? 1 - aspect : 1), zoom * (aspect < 0 ? 1 + aspect : 1), rx, ry,
-            aviutl_num(L, 8) + (own ? f("rz", 0) : 0), own ? f("cx", 0) : 0, own ? f("cy", 0) : 0, aviutl_num(L, 5, 1) * (own ? f("alpha", 1) : 1), way, aviutl_sampling(r));
-    } else aviutl_lay(r, r.bufs["object"], to.rt, to.w, to.h, aviutl_num(L, 1) + (own ? f("x", 0) + f("ox", 0) : 0), aviutl_num(L, 2) + (own ? f("y", 0) + f("oy", 0) : 0), zoom * (aspect > 0 ? 1 - aspect : 1), zoom * (aspect < 0 ? 1 + aspect : 1),
-        aviutl_num(L, 8) + (own ? f("rz", 0) : 0), aviutl_num(L, 5, 1) * (own ? f("alpha", 1) : 1), own ? f("cx", 0) : 0, own ? f("cy", 0) : 0, way, aviutl_sampling(r), r.sampler == "clamp" || r.sampler == "loop" || r.sampler == "mirror" ? 2.f : 0.f);
+        aviutl_placed(r, r.bufs["object"], to, aviutl_num(L, 1) + (own ? f("x", 0) : 0) + f("ox", 0), aviutl_num(L, 2) + (own ? f("y", 0) : 0) + f("oy", 0), z, zoom * (aspect > 0 ? 1 - aspect : 1), zoom * (aspect < 0 ? 1 + aspect : 1), rx, ry,
+            aviutl_num(L, 8) + f("rz", 0), f("cx", 0), f("cy", 0), aviutl_num(L, 5, 1) * f("alpha", 1), way, aviutl_sampling(r));
+    } else aviutl_lay(r, r.bufs["object"], to.rt, to.w, to.h, aviutl_num(L, 1) + (own ? f("x", 0) : 0) + f("ox", 0), aviutl_num(L, 2) + (own ? f("y", 0) : 0) + f("oy", 0), zoom * (aspect > 0 ? 1 - aspect : 1), zoom * (aspect < 0 ? 1 + aspect : 1),
+        aviutl_num(L, 8) + f("rz", 0), aviutl_num(L, 5, 1) * f("alpha", 1), f("cx", 0), f("cy", 0), way, aviutl_sampling(r), r.sampler == "clamp" || r.sampler == "loop" || r.sampler == "mirror" ? 2.f : 0.f);
     lua_pop(L, 1);
     if (own) r.drew = true;
     return 0;

@@ -117,6 +117,13 @@ abstract final class EffectTiles {
     _ => null,
   };
 
+  /// The knobs its tile holds while it moves the one chosen, as a hand set them beside it (the same file's _set: a curve's
+  /// line shown while the photo goes round it, Mathy_Su's 線透明度), by the inside's names. Empty: none.
+  static Map<String, double> held(String dir, String file) => switch (_entry(dir, file)['_set']) {
+    final Map<String, dynamic> set => {for (final MapEntry(:key, :value) in set.entries) if (value is num) 'js_${_stem(file)}_$key': value.toDouble()},
+    _ => const {},
+  };
+
   /// What the sample lacks for [file] to show, as the one who looked said it (its _needs: text, picture, sound, motion,
   /// chain, path, shape, behind); '' nothing, or not looked at. (_stops beside it: the call an AviUtl2 script stopped on
   /// when it was looked at, aviutl_fx.h's "not yet".)
@@ -317,8 +324,9 @@ abstract final class EffectTiles {
         ..set(made[1], 'opacity', 0);
       return drawing = made[0];
     }
+    var small = false;   // (the photo small over the grid: _lay "small")
     void lay(bool moving, {bool road = false, int only = 0}) {   // (only: the words or the drawing alone over the grid)
-      for (final (thing, seen) in [(grid, moving || only != 0), (card, moving), (photo, !moving && only == 0), (under, road), (words, only == words), if (drawing > 0) (drawing, only == drawing)]) {
+      for (final (thing, seen) in [(grid, moving || only != 0 || small), (card, moving), (photo, !moving && only == 0), (under, road), (words, only == words), if (drawing > 0) (drawing, only == drawing)]) {
         m.set(thing, 'opacity', seen ? 1 : 0);
       }
     }
@@ -372,13 +380,15 @@ abstract final class EffectTiles {
         return shoot('${folder.path}/alone.png').length == moments.length;
       }();
       final bare = alone != 0 ? 'alone' : 'plain';
+      small = alone == 0 && _entry(dir, f)['_lay'] == 'small';   // (one that takes the thing round a path (Mathy_Su's curves): the photo small over the grid, so the path it goes round is seen about it, not under it)
+      if (small) m.set(photo, 'size', 0.6);
       for (final moving in alone != 0 ? [false] : [first, if (!first) true]) {   // (nothing seen on the whole photo: on a card going past, where what it does at an edge or to what moves shows, as AbsentMotion's "move")
         final passes = said.contains('transition') && alone == 0;   // (one is put on the photo, the road under it)
         lay(moving, road: passes, only: alone);
         final whole = !moving && !passes && alone == 0 && (f.endsWith('.fs') || f.endsWith('.wgsl') || f.endsWith('.json')) && m.say(0, 'script', f);   // (.json: Filament's own settings, laid on the stage's view: viewer_settings.h)   // (a screen effect; the stage takes an AviUtl2 script too, but draws none of it: motolii.h, a thing's)
         final thing = alone != 0 ? alone : moving ? card : photo, on = whole ? 0 : thing, onIt = !whole && m.say(thing, 'fx', f);   // (as a thing's: as edit.sh says it)
         final filed = <String, double>{};
-        for (final MapEntry(:key, :value) in (show?.knobs ?? const <String, double>{}).entries) {
+        for (final MapEntry(:key, :value) in {...?show?.knobs, ...held(dir, f)}.entries) {
           if (m.value(on, key, 0) case final was? when !_part.hasMatch(key)) filed[key] = was;
           m.set(on, key, value);   // (as AbsentMotion shows it: its table's values, not the file's defaults)
         }
@@ -412,6 +422,8 @@ abstract final class EffectTiles {
         split = stands && !said.contains('generator');
         if (!same) break;
       }
+      if (small) m.set(photo, 'size', 3.6);
+      small = false;
       if (made.length < moments.length || same) {   // (put on but not drawn, a script that stops, or nothing seen: the sample as it is)
         for (final (k, _) in moments.indexed) {
           if (enough) File('${folder.path}/${aloneOk ? bare : 'plain'}_$k.png').copySync(_drawn(home, k));
