@@ -19,6 +19,7 @@
 
 #include <webgpu/webgpu.h>
 
+#include <algorithm>
 #include <chrono>
 #include <thread>
 
@@ -59,10 +60,12 @@ struct Screen {
     ProgramHandle program;
     DescriptorSetLayoutHandle layout;
     int pictures = 1;
-    std::vector<BufferObjectHandle> knobs;   // a pass's own (written several times in one frame, one buffer would show its last)
+    BufferObjectHandle knobs;   // every pass's in one, each at a place of its own (written several times in one frame, one place would show its last): Filament's own per-renderable uniforms, one buffer and an offset each (FScene's mRenderableUBO); a buffer a pass held a handle each, past the driver's handle arena for a script drawing 30,000 times a frame (tim's もじゃもじゃT)
+    uint32_t knobRoom = 0, knobStride = 0;   // (how many passes it has places for; from one's place to the next, the device's uniform offset alignment)
     uint32_t knobBytes = 0;
     struct Mesh { VertexBuffer* vb = nullptr; IndexBuffer* ib = nullptr; RenderPrimitiveHandle primitive; uint32_t room = 0; };
-    std::vector<Mesh> meshes;   // a pass's own, as its knobs
+    Mesh corners;   // every pass's corners in one, one after another as the frame's passes come (from 0 each frame), each drawn from its own (as the knobs: a mesh a pass held three handles each)
+    uint32_t cursor = 0;   // (where the next pass's go)
     bool mesh = false;
 };
 
@@ -135,9 +138,19 @@ Screen* screen(Engine* engine, const char* name, const char* fragment, uint32_t 
 }
 
 static BufferObjectHandle knobsOf(Engine* engine, Screen* s, int pass) {
-    while ((int)s->knobs.size() <= pass)
-        s->knobs.push_back(driver(engine).createBufferObject(s->knobBytes, BufferObjectBinding::UNIFORM, BufferUsage::DYNAMIC, utils::ImmutableCString{"screen"}));
-    return s->knobs[(size_t)pass];
+    DriverApi& d = driver(engine);
+    if (!s->knobStride) {
+        const uint32_t align = (uint32_t)std::max<size_t>(d.getUniformBufferOffsetAlignment(), 4);
+        s->knobStride = (s->knobBytes + align - 1) / align * align;
+    }
+    if ((uint32_t)pass >= s->knobRoom) {   // (made again, twice as roomy; the old one let go after the draws already told to read it, in the order told)
+        if (s->knobRoom) d.destroyBufferObject(s->knobs);
+        uint32_t room = std::max(s->knobRoom, 16u);
+        while (room <= (uint32_t)pass) room *= 2;
+        s->knobRoom = room;
+        s->knobs = d.createBufferObject(room * s->knobStride, BufferObjectBinding::UNIFORM, BufferUsage::DYNAMIC, utils::ImmutableCString{"screen"});
+    }
+    return s->knobs;
 }
 
 void knobs(Engine* engine, Screen* s, const void* data, uint32_t bytes, int pass) {
@@ -146,17 +159,18 @@ void knobs(Engine* engine, Screen* s, const void* data, uint32_t bytes, int pass
     bytes = bytes < s->knobBytes ? bytes : s->knobBytes;
     void* copy = std::calloc(1, s->knobBytes);
     std::memcpy(copy, data, bytes);
-    driver(engine).updateBufferObject(to, BufferDescriptor(copy, s->knobBytes, [](void* p, size_t, void*) { std::free(p); }), 0);
+    driver(engine).updateBufferObject(to, BufferDescriptor(copy, s->knobBytes, [](void* p, size_t, void*) { std::free(p); }), (uint32_t)pass * s->knobStride);
 }
 
-// A pass's mesh holding `count` corners: made again, twice as roomy, when it would not; filled with them.
-static RenderPrimitiveHandle meshOf(Engine* engine, Screen* s, int pass, const float* corners, uint32_t count) {
-    while ((int)s->meshes.size() <= pass) s->meshes.push_back({});
-    Screen::Mesh& m = s->meshes[(size_t)pass];
-    if (m.room < count) {
+// A pass's `count` corners after the passes' before it this frame (`first`, where they start): the mesh made again,
+// twice as roomy, when they would not fit, the old one let go after the draws already told to read it.
+static RenderPrimitiveHandle meshOf(Engine* engine, Screen* s, int pass, const float* corners, uint32_t count, uint32_t* first) {
+    if (pass == 0) s->cursor = 0;
+    Screen::Mesh& m = s->corners;
+    if (m.room < s->cursor + count) {
         if (m.vb) driver(engine).destroyRenderPrimitive(m.primitive), engine->destroy(m.vb), engine->destroy(m.ib);
-        m.room = 64;
-        while (m.room < count) m.room *= 2;
+        m.room = std::max(m.room, 64u);
+        while (m.room < s->cursor + count) m.room *= 2;
         m.vb = VertexBuffer::Builder().vertexCount(m.room).bufferCount(1)
                    .attribute(VertexAttribute::POSITION, 0, VertexBuffer::AttributeType::FLOAT4, 0, MESH_CORNER * sizeof(float))
                    .attribute(VertexAttribute::COLOR, 0, VertexBuffer::AttributeType::FLOAT4, 4 * sizeof(float), MESH_CORNER * sizeof(float))
@@ -169,14 +183,16 @@ static RenderPrimitiveHandle meshOf(Engine* engine, Screen* s, int pass, const f
     }
     void* copy = std::malloc(count * MESH_CORNER * sizeof(float));
     std::memcpy(copy, corners, count * MESH_CORNER * sizeof(float));
-    m.vb->setBufferAt(*engine, 0, VertexBuffer::BufferDescriptor(copy, count * MESH_CORNER * sizeof(float), [](void* p, size_t, void*) { std::free(p); }));
+    m.vb->setBufferAt(*engine, 0, VertexBuffer::BufferDescriptor(copy, count * MESH_CORNER * sizeof(float), [](void* p, size_t, void*) { std::free(p); }), s->cursor * MESH_CORNER * sizeof(float));
+    *first = s->cursor, s->cursor += count;
     return m.primitive;
 }
 
 void draw(Engine* engine, Screen* s, Texture* const* from, RenderTarget* to, uint32_t w, uint32_t h, int pass, const int* at, bool over, int blend, int sampler, const float* corners, uint32_t count) {
     DriverApi& d = driver(engine);
     if (s->mesh && (!corners || count < 3)) return;
-    const RenderPrimitiveHandle primitive = s->mesh ? meshOf(engine, s, pass, corners, count) : downcast(engine)->getFullScreenRenderPrimitive();
+    uint32_t first = 0;
+    const RenderPrimitiveHandle primitive = s->mesh ? meshOf(engine, s, pass, corners, count, &first) : downcast(engine)->getFullScreenRenderPrimitive();
     // A set of its own each time, as Filament's DescriptorSet::commitSlow makes one when what it reads has changed: a set
     // once used is not told otherwise (Filament's WebGPU keeps what it made of it), and one kept by the handles it read
     // would read another's old picture when a handle comes round (HandleAllocator.h: 4 bits of age).
@@ -185,7 +201,7 @@ void draw(Engine* engine, Screen* s, Texture* const* from, RenderTarget* to, uin
     linear.wrapS = linear.wrapT = sampler == 2 ? SamplerWrapMode::REPEAT : sampler == 3 ? SamplerWrapMode::MIRRORED_REPEAT : SamplerWrapMode::CLAMP_TO_EDGE;
     DescriptorSetHandle set = d.createDescriptorSet(s->layout, utils::ImmutableCString{"screen"});
     for (int i = 0; i < s->pictures; ++i) d.updateDescriptorSetTexture(set, descriptor_binding_t(i), downcast(from[i])->getHwHandle(), linear);
-    if (s->knobBytes) d.updateDescriptorSetBuffer(set, descriptor_binding_t(s->pictures), knobsOf(engine, s, pass), 0, s->knobBytes);
+    if (s->knobBytes) d.updateDescriptorSetBuffer(set, descriptor_binding_t(s->pictures), knobsOf(engine, s, pass), (uint32_t)pass * s->knobStride, s->knobBytes);
     RenderPassParams params{};
     params.viewport = at ? backend::Viewport{at[0], at[1], (uint32_t)at[2], (uint32_t)at[3]} : backend::Viewport{0, 0, w, h};
     params.flags.discardStart = over ? TargetBufferFlags::NONE : TargetBufferFlags::ALL;   // (laid over: what is there is kept)
@@ -209,16 +225,21 @@ void draw(Engine* engine, Screen* s, Texture* const* from, RenderTarget* to, uin
     }
     d.bindDescriptorSet(set, 0, {});
     d.beginRenderPass(to ? downcast(to)->getHwHandle() : downcast(engine)->getDefaultRenderTarget(), params);   // (none: the screen, as the frame's swap chain is)
-    d.draw(pipeline, primitive, 0, s->mesh ? count : 3, 1);
+    d.draw(pipeline, primitive, first, s->mesh ? count : 3, 1);
     d.endRenderPass();
     d.bindDescriptorSet({}, 0, {});
     d.destroyDescriptorSet(std::move(set));
+    // (a set let go is let go when the driver's thread comes to it, after the commands are handed over: a script drawing
+    // 30,000 times a frame held as many, past Filament's handle arena (HandleAllocator, 8 MB on WebGPU); handed over and
+    // caught up with every so many, Engine::flushAndWait, they are let go as they come)
+    static uint32_t since = 0;
+    if (++since >= 1024) since = 0, engine->flushAndWait();
 }
 
 void drop(Engine* engine, Screen* s) {
     DriverApi& d = driver(engine);
-    for (BufferObjectHandle k : s->knobs) d.destroyBufferObject(k);
-    for (const Screen::Mesh& m : s->meshes) if (m.vb) d.destroyRenderPrimitive(m.primitive), engine->destroy(m.vb), engine->destroy(m.ib);
+    if (s->knobRoom) d.destroyBufferObject(s->knobs);
+    if (const Screen::Mesh& m = s->corners; m.vb) d.destroyRenderPrimitive(m.primitive), engine->destroy(m.vb), engine->destroy(m.ib);
     d.destroyDescriptorSetLayout(s->layout);
     d.destroyProgram(s->program);
     delete s;

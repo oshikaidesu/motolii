@@ -103,6 +103,19 @@ void main() {
     }
     out.deleteSync(recursive: true);
   }, skip: !insideBuilt);
+  test('an AviUtl2 script drawing 30,000 times a frame (tim\'s もじゃもじゃT wound 200 times) is drawn, the program not stopped on Filament\'s handle arena (11/5)', () {
+    final dir = Directory.systemTemp.createTempSync('motolii_many_draws');
+    final m = Motolii.open('${dir.path}/many.motolii', wide: 384, high: 384)!;
+    addTearDown(() {
+      m.close();
+      dir.deleteSync(recursive: true);
+    });
+    final photo = m.add('picture', '$motoliiDir/fx_sample.jpg');
+    expect(m.say(photo, 'fx', '$motoliiDir/aviutl_scripts/sevenc-nanashi__ported_tim/Script/@tim.obj2.obj2#もじゃもじゃT'), isTrue, reason: m.trouble);
+    expect(m.set(photo, 'js__tim_obj2_track_count', 200), isTrue, reason: m.trouble);
+    expect([m.at(.77), m.still('${dir.path}/wound.png')], [isTrue, isTrue], reason: 'a knob\'s buffer and a mesh a draw held a handle each, its sets let go only when the driver caught up: 30,000 of them stopped it (knobs.py, effect 1023)');
+    expect(_luma('${dir.path}/wound.png'), greaterThan(20), reason: 'the red spiral wound thick, over the black');
+  }, skip: !insideBuilt);
   test('a transition\'s tile goes from the photo to the road under it, not to black (the user, 11/5: a second picture for transitions)', () {
     final out = Directory.systemTemp.createTempSync('motolii_tile_test');
     final drawn = EffectTiles.draw(motoliiDir, [('$motoliiDir/effects/Fade.fs', '${out.path}/0.png')]);
