@@ -285,7 +285,7 @@ static double doc_group_delay(Doc& d, int thing);
 static double doc_group_opacity(Doc& d, int thing, double now) {
     double k = 1.0;
     for (int below = thing, up = (int)doc_number(d, thing, "parent", 0, 0), n = 0; up && n < 64 && k > 0.0; below = up, up = (int)doc_number(d, up, "parent", 0, 0), ++n)
-        if (doc_word(d, up, "shape") == "null") now -= doc_group_delay(d, below), k *= doc_number(d, up, "visible", 0, 1) > 0.5 ? std::clamp(doc_number(d, up, "opacity", now, 1), 0.0, 1.0) : 0.0;   // (each group as late as its thing goes with it)
+        if (doc_word(d, up, "shape") == "null") k *= doc_number(d, up, "visible", 0, 1) > 0.5 ? std::clamp(doc_number(d, up, "opacity", now - doc_group_delay(d, below), 1), 0.0, 1.0) : 0.0;   // (each group's own as late as the one under it goes with it, not the lateness of those below added up: doc_above's way)
     return k;
 }
 // A thing's opacity as AbsentMotion's opacity effects on it leave it (a share, 1 with none: absent_motion.h).
@@ -337,7 +337,13 @@ static math::mat4 doc_above(Doc& d, int thing, double now, int deeper = 0) {
     const auto up = d.shown.find(parent), self = d.shown.find(thing);
     if (up != d.shown.end() && up->second.camera && self != d.shown.end() && self->second.space == 2) return math::mat4{};
     const bool there = up != d.shown.end() || !doc_word(d, parent, "kind").empty();   // (in the document: one just made is there before it is first drawn, as a group's new Null is when its things are put in it)
-    return parent && there && deeper < 64 ? doc_place(d, parent, now - doc_group_delay(d, thing), deeper + 1) : math::mat4{};   // (64: a document written elsewhere with a ring of parents still ends)
+    if (!parent || !there || deeper >= 64) return math::mat4{};   // (64: a document written elsewhere with a ring of parents still ends)
+    const double late = doc_group_delay(d, thing);
+    if (late <= 0.0 || !(int)doc_literal(d, parent, "parent", 0, 0)) return doc_place(d, parent, now - late, deeper + 1);
+    // (a group in a group: only its own moves read late, those above it as they are now. After Effects' delayed
+    //  parenting reads its parent's own value, parent.transform.position.valueAtTime(time - delay); read as the whole
+    //  chain late, a group moved by the one it is in could not move as one while its things went in turn, golf (g93))
+    return doc_above(d, parent, now, deeper + 1) * inverse(doc_above(d, parent, now - late, deeper + 1)) * doc_place(d, parent, now - late, deeper + 1);
 }
 // Where a split text's letter has its middle across the thing, in its own units (0: not a letter of one).
 static double doc_letter_middle(Doc& d, int thing, int copy) {
