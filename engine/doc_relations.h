@@ -298,22 +298,23 @@ static int doc_members(Doc& d, int thing) {
     if (const std::vector<AbsentCopy>& copies = doc_absent_copies(d, thing, d.stage->now); !copies.empty()) return (int)copies.size();   // (as many as AbsentMotion's repeat lays)
     return std::max(1, (int)doc_literal(d, thing, "copies", 0, 1));
 }
-// How much later a thing's nth copy moves than it is said to (the past repository's order law, GSAP's stagger: the
-// stagger spread over them by their order: from the start, from the centre out, from the end, from the edges in).
-// The same for the nth of any n (its copies, its letters, a group's things), and "random": each its own place in the
-// order by the thing's seed (GSAP's stagger from: "random"), the same each time.
+// How much later the nth of n moves than it is said to (its copies, its letters, a group's things): the stagger each,
+// as many times as it is steps from where the order starts. GSAP's stagger as a number, `stagger: 0.1`, "0.1 seconds
+// between the start of each", with its `from`: start (i), end (n-1-i), centre (|i - (n-1)/2|), edges (the nearer end),
+// random (its place in an order by the thing's seed, the same each time); anime.js's stagger(100) the same. It was the
+// whole spread from the first to the last (GSAP's `amount`), read as each by every golf player ((g4), (g34)).
 static double doc_order_delay(Doc& d, int thing, int nth, int n) {
-    const double stagger = doc_literal(d, thing, "stagger", 0, 0);
-    if (stagger <= 0.0 || n < 2) return 0.0;
+    const double each = doc_literal(d, thing, "stagger", 0, 0);
+    if (each <= 0.0 || n < 2) return 0.0;
     const std::string& from = doc_literal_word(d, thing, "stagger_from");
+    const double last = n - 1.0, mid = last / 2.0, at = nth;
     if (from == "random") {
         const auto roll = [seed = (uint32_t)doc_literal(d, thing, "seed", 0, 0)](uint32_t k) { uint32_t h = seed * 0x9E3779B9u ^ (k + 1u) * 0x85EBCA6Bu; h ^= h >> 16, h *= 0x7FEB352Du, h ^= h >> 15, h *= 0x846CA68Bu, h ^= h >> 16; return h; };
         int rank = 0;
         for (int k = 0; k < n; ++k) rank += roll((uint32_t)k) < roll((uint32_t)nth) || (roll((uint32_t)k) == roll((uint32_t)nth) && k < nth);
-        nth = rank;
+        return each * rank;
     }
-    const double along = (double)nth / (double)(n - 1), centre = std::fabs(along - 0.5) * 2.0;
-    return stagger * (from == "centre" ? centre : from == "end" ? 1.0 - along : from == "edges" ? 1.0 - centre : along);
+    return each * (from == "centre" ? std::fabs(at - mid) : from == "end" ? last - at : from == "edges" ? mid - std::fabs(at - mid) : at);
 }
 static double doc_delay(Doc& d, int thing, int nth) { return doc_order_delay(d, thing, nth, doc_members(d, thing)); }
 // How much later a group's thing goes with its group than the group goes (a Null's stagger over the things it holds

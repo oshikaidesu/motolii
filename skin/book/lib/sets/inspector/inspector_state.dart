@@ -45,7 +45,7 @@ class Cfg {
   final ResetRule reset;
   final Look look;
 
-  bool get resetDbl => reset == ResetRule.dbl || reset == ResetRule.both || reset == ResetRule.live;
+  bool get resetDbl => reset == ResetRule.dbl || reset == ResetRule.both;   // (not the window's (live): there two presses open the number to type, as Figma's, Blender's and After Effects' fields do; Delete puts it back. Three golf players pressed twice to type and lost the value or its key: golf_noise.md (g14), (g35))
   bool get resetDel => reset == ResetRule.del || reset == ResetRule.live;
   bool get typesOn => reset == ResetRule.live;   // (a digit typed on a field starts its number: Live 42.6 "Type In Value 0…9")
   bool get resetArrow => reset == ResetRule.arrow || reset == ResetRule.both;

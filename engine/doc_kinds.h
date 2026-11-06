@@ -276,7 +276,7 @@ static const DocValue doc_values[] = {
     {"copies", "picture text shape solid", 1, 1000, false, nullptr}, {"copy_x", "picture text shape solid", -1e4, 1e4, true, nullptr}, {"copy_y", "picture text shape solid", -1e4, 1e4, true, nullptr},
     {"copy_rotate", "picture text shape solid", -1e6, 1e6, true, nullptr}, {"copy_size", "picture text shape solid", 0.01, 100, true, nullptr},
     {"copy_columns", "picture text shape solid", 0, 100, false, nullptr},   // (so many to a row, then the next row: copy_x along it, copy_y down; 0: one row)
-    {"stagger", "picture text shape solid", 0, 1e3, false, nullptr},   // (how much later the last of its copies moves than the first, in seconds: each as late as its order says)
+    {"stagger", "picture text shape solid", 0, 1e3, false, nullptr},   // (how much later each of its copies (letters, a group's things) moves than the one before it in its order, in seconds: GSAP's stagger)
     {"stagger_from", "picture text shape solid", 0, 0, false, "start centre end edges random"},   // (which of them moves first: the first, the middle one, the last, the outer ones, any by its seed)
     {"copy_fill", "picture text shape", 0, 0, false, ""},   // (its copies coloured from the first colour to the last, in their order: six digits each; one, all in it; none, not coloured each)
     {"copy_fill_way", "picture text shape", 0, 0, false, "ramp cycle"},   // (from the first to the last across them all, or one colour each in turn, round and round)

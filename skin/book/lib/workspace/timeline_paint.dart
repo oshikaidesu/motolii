@@ -239,7 +239,8 @@ class WtRulerPainter extends CustomPainter {
       if (isMajor) {
         if (flags.any((m) => m.$1.inflate(3).overlaps(Rect.fromLTWH(x + 3, WtM.band + 2, 24, 12)))) continue;
         final sec = f ~/ fps, fr = (f % fps).round();
-        final t = _text(mj >= fps ? '${sec}s' : '$sec:${fr.toString().padLeft(2, '0')}', T.value(Grey.g76).copyWith(fontSize: T.px(10)));
+        // (finer than a second, still in seconds, as the whole seconds are: 0.5s, 1.5s; "0:30" for 30 frames was read as 30 seconds, golf (g41))
+        final t = _text(mj >= fps || fr == 0 ? '${sec}s' : '${(f / fps).toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '')}s', T.value(Grey.g76).copyWith(fontSize: T.px(10)));
         t.paint(c, Offset(x + 3, WtM.band + 3));
         t.dispose();
       }

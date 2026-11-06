@@ -274,20 +274,16 @@ class _WorkspaceState extends State<Workspace> {
         m.later('set', thing: t, name: 'parent', word: 'made');   // (each goes with it, where it is)
       }
       if (moveIn) {
-        // Move in, the picked row's: the group's own Transform keyed as one thing's, from a little below and clear at the
-        // playhead to where it is .6 s on, eased out; its things each a little later, the first first (its Relation's
-        // Delay: .08 s each, the copies' order law, doc_order_delay). The look the relation's Move in had (wsMakeMove's
-        // numbers), now on the one group a user makes (Alight Motion's and After Effects' text presets: keys on one layer,
-        // its parts in turn).
+        // Move in, the picked row's: the group's own Position keyed as one thing's, from 100 px below at the playhead to
+        // where it is .6 s on, eased out; its things each .08 s after the one before, the first first (its Relation's
+        // Delay, GSAP's stagger). A move only: a fade is its own (two golf players took out the fade it brought, (g23),
+        // (g37)). The look the relation's Move in had (wsMakeMove's way and lag), now on the one group a user makes
+        // (Alight Motion's and After Effects' text presets: keys on one layer, its parts in turn).
         final s = (ws.frame / Ws.fps * 10).round() / 10, y = (WsArt.centre.dy - c.dy) / m.point;
-        m.later('key', thing: -1, name: 'y', word: '$s', number: y - .15);
+        m.later('key', thing: -1, name: 'y', word: '$s', number: y - 100 / m.point);
         m.later('key', thing: -1, name: 'y', word: '${s + .6}', number: y);
-        m.later('key', thing: -1, name: 'opacity', word: '$s', number: 0);
-        m.later('key', thing: -1, name: 'opacity', word: '${s + .6}', number: 1);
-        for (final n in const ['y', 'opacity']) {
-          m.later('way', thing: -1, name: n, number: s, word: wsMoveWay(.8, 0));
-        }
-        m.later('set', thing: -1, name: 'stagger', number: .08 * (all.length - 1));
+        m.later('way', thing: -1, name: 'y', number: s, word: wsMoveWay(.8, 0));
+        m.later('set', thing: -1, name: 'stagger', number: .08);
       }
       ws.after(m.later('together'), (_, _) => ws.reread());
     }

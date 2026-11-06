@@ -165,7 +165,9 @@ void main() {
             }
             break;
           }
-          if (typing.evaluate().isNotEmpty) await t.enterText(typing.first, words);
+          // (into it as the Mac's text input gives a field what is typed (TextInputClient.updateEditingValue): this live binding
+          //  has no test text input (integration_test's registerTestTextInput is false), so enterText reached no field at all)
+          if (typing.evaluate().isNotEmpty) t.state<EditableTextState>(typing.first).updateEditingValue(TextEditingValue(text: words, selection: TextSelection.collapsed(offset: words.length)));
         case 'wait':
           await t.runAsync(() => Future<void>.delayed(Duration(milliseconds: (1000 * xs.first).round())));
       }

@@ -42,6 +42,9 @@ extension MotoliiMoment on Motolii {
     return v == null ? null : ((v[0] as num).toDouble(), v[1] as bool);
   }
 
+  /// How much later a group's thing goes than its group (its place in the group's order, seconds); 0: on time, or in none.
+  double late(int thing) => (_momentOf(thing)?['late'] as num?)?.toDouble() ?? 0;
+
   /// A camera as the working eye sees it, the inside's words (doc_gizmo); '': by the camera's own eye.
   String gizmo(int thing) => _momentOf(thing)?['gizmo'] as String? ?? '';
 

@@ -57,7 +57,7 @@ static const DocShown doc_shown[] = {
     {"copy_x", "stage", "px", "Gap X", -2, 2, nullptr},
     {"copy_y", "down", "px", "Gap Y", -2, 2, nullptr},
     {"copy_turn", "angle", "°", "Turn all", 0, 720, nullptr},
-    {"stagger", "", "s", "Delay", 0, 3, nullptr},
+    {"stagger", "", "s", "Delay", 0, 1, nullptr},   // (each one's, after the one before: GSAP's stagger)
     {"copy_fill", "colours", "", "Colours", 0, 0, nullptr},
     {"copy_z", "stage", "px", "Gap deep", -2, 2, "Each copy"},
     {"copy_rotate_x", "angle", "°", "Tilt", -180, 180, "Each copy"},

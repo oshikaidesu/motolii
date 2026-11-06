@@ -89,7 +89,7 @@ class ParamTile extends StatelessWidget {
       ),
     );
     // the same skeleton as a number block: name at the top-left, the control along the bottom, the picture top-right
-    Widget shell(Widget bottom, {VoidCallback? onTap, Widget? glyph, bool tall = false}) => Hov(
+    Widget shell(Widget bottom, {VoidCallback? onTap, Widget? glyph, bool tall = false, String? label}) => Hov(
       onTap: on ? onTap : null,
       builder: (_, h) => Container(
         height: tall ? Pop.tile * 2 + Pop.tileGap : Pop.tile,
@@ -110,7 +110,7 @@ class ParamTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(p.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(on ? Grey.g63 : Grey.g44).copyWith(height: 1.1)),
+                  Text(label ?? p.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(on ? Grey.g63 : Grey.g44).copyWith(height: 1.1)),
                   bottom,
                 ],
               ),
@@ -141,18 +141,40 @@ class ParamTile extends StatelessWidget {
             ),
           ),
         );
+      case ParamLook.choice when choiceMarks[id] != null:
+        // (drawn, each its picture; its name says the one picked, or the one a hand stops on: "From the middle")
+        final words = choiceWords[id], at = (v ?? 0).round().clamp(0, p.options.length - 1);
+        int? over;
+        return StatefulBuilder(
+          builder: (context, set) => shell(
+            label: words == null ? null : '${p.label} ${words[(over ?? at).clamp(0, words.length - 1)]}',
+            SizedBox(
+              height: Shape.z(22),
+              child: Dis(
+                key: ValueKey('choice:$id'), // (found by its value's id, as a menu of more is)
+                child: Segmented(
+                  items: p.options,
+                  index: at,
+                  expand: true,
+                  picture: (i, on) => ValueMarkGlyph(choiceMarks[id]!, i.toDouble(), ink: on ? Grey.g95 : Grey.g56),
+                  onHover: (i) => set(() => over = i),
+                  onChanged: (i) => doc.set(id, i.toDouble()),
+                ),
+              ),
+            ),
+          ),
+        );
       case ParamLook.choice:
         return shell(
           SizedBox(
             height: Shape.z(22),
-            child: p.options.length <= 4 || choiceMarks[id] != null
+            child: p.options.length <= 4
                 ? Dis(
                     key: ValueKey('choice:$id'), // (found by its value's id, as a menu of more is)
                     child: Segmented(
                       items: p.options,
                       index: (v ?? 0).round().clamp(0, p.options.length - 1),
                       expand: true,
-                      picture: choiceMarks[id] == null ? null : (i, on) => ValueMarkGlyph(choiceMarks[id]!, i.toDouble(), ink: on ? Grey.g95 : Grey.g56),
                       onChanged: (i) => doc.set(id, i.toDouble()),
                     ),
                   )
