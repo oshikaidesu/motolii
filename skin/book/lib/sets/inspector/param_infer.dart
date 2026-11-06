@@ -238,6 +238,7 @@ Param infer(Decl d) {
   int dec(double? lo, double? hi) {
     if (whole) return 0;
     if (a['step']?.firstOrNull case final s?) return s.contains('.') ? s.split('.').last.length : 0;
+    if (unit == 's' && lo != null && hi != null && hi - lo <= 4) return 2; // (a short time, a lag or an order's delay, to the hundredth: GSAP's staggers are 0.05 s, 0.1 s; one place showed .18 as 0.1, golf (g20))
     if (unit == 's' || unit == '×') return 1; // (fixed places for a unit, as Push shows them: seconds and times to one, pixels and degrees whole)
     if (unit == 'px' || unit == '°') return 0;
     final span = lo != null && hi != null ? hi - lo : 100;

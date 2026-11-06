@@ -145,13 +145,14 @@ class ParamTile extends StatelessWidget {
         return shell(
           SizedBox(
             height: Shape.z(22),
-            child: p.options.length <= 4
+            child: p.options.length <= 4 || choiceMarks[id] != null
                 ? Dis(
                     key: ValueKey('choice:$id'), // (found by its value's id, as a menu of more is)
                     child: Segmented(
                       items: p.options,
                       index: (v ?? 0).round().clamp(0, p.options.length - 1),
                       expand: true,
+                      picture: choiceMarks[id] == null ? null : (i, on) => ValueMarkGlyph(choiceMarks[id]!, i.toDouble(), ink: on ? Grey.g95 : Grey.g56),
                       onChanged: (i) => doc.set(id, i.toDouble()),
                     ),
                   )

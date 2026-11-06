@@ -73,8 +73,9 @@ class PillSwitch extends StatelessWidget {
 }
 
 class Segmented extends StatelessWidget {
-  const Segmented({super.key, required this.items, required this.index, this.onChanged, this.accent, this.expand = false});
+  const Segmented({super.key, required this.items, required this.index, this.onChanged, this.accent, this.expand = false, this.picture});
   final List<String> items;
+  final Widget Function(int i, bool on)? picture;   // (each drawn, not said: the Transform card's manner, read with no words)
   final int index;
   final Color? accent;
   final bool expand;
@@ -95,7 +96,7 @@ class Segmented extends StatelessWidget {
               borderRadius: BorderRadius.all(Shape.r(5)),
               border: Border(bottom: BorderSide(color: i == index ? (accent ?? Role.selected) : const Color(0x00000000), width: 1)),
             ),
-            child: FittedBox(fit: BoxFit.scaleDown, child: Text(items[i].toUpperCase(), maxLines: 1, softWrap: false, style: T.micro(i == index ? Grey.g95 : Grey.g63).copyWith(letterSpacing: .4))),
+            child: picture != null ? picture!(i, i == index) : FittedBox(fit: BoxFit.scaleDown, child: Text(items[i].toUpperCase(), maxLines: 1, softWrap: false, style: T.micro(i == index ? Grey.g95 : Grey.g63).copyWith(letterSpacing: .4))),
           ),
         );
     return Container(

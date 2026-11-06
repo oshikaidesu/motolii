@@ -81,7 +81,38 @@ final valueMarks = <String, ValueMark>{
     }
   },
   'v_rotate_x': (c, s, v, ink) => _tilt(c, s, v, ink), // (a camera's pitch, a thing's turn about x: a plane tilted so far)
+  'v_stagger': (c, s, v, ink) => _starts(c, s, ink, [for (var i = 0; i < 5; i++) i / 4 * ((v ?? 0) / .8).clamp(0.0, 1.0)]), // (how much later the last starts than the first: five starts, as far apart)
 };
+
+/// The drawn choices, by value id: each of a choice's words its own picture, the choice's place as v (a Segmented of
+/// pictures in place of the words). A third party's card may add its own here.
+final choiceMarks = <String, ValueMark>{
+  // (an order's From, a group's and copies': five things in their order, top to bottom, each a line starting as late
+  //  as it starts, as a timeline draws them: from the first, the middle, the last, the ends, at random. GSAP's stagger
+  //  from: start, center, end, edges, random; the same counting as doc_relations' doc_order_delay)
+  'v_stagger_from': (c, s, v, ink) {
+    const random = [2.0, 0.0, 4.0, 1.0, 3.0];
+    final at = [
+      for (var i = 0; i < 5; i++)
+        switch ((v ?? 0).round()) {
+          1 => (i - 2).abs() / 2,
+          2 => (4 - i) / 4,
+          3 => (2 - (i - 2).abs()) / 2,
+          4 => random[i] / 4,
+          _ => i / 4,
+        },
+    ];
+    _starts(c, s, ink, at);
+  },
+};
+
+void _starts(Canvas c, Size s, Color ink, List<double> at) { // (one line each, from as late as it starts, 0 to 1, to the end)
+  final w = s.width - 6;
+  for (var i = 0; i < at.length; i++) {
+    final y = 3.5 + i * (s.height - 7) / (at.length - 1);
+    c.drawLine(Offset(3 + at[i] * w * .6, y), Offset(s.width - 3, y), _line(ink)..strokeWidth = 2);
+  }
+}
 
 void _tilt(Canvas c, Size s, double? v, Color ink) {
   final a = (v ?? 0) * math.pi / 180, o = s.center(Offset.zero), d = Offset(math.cos(a), math.sin(a)) * 8;

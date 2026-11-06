@@ -279,10 +279,11 @@ static bool doc_shutter(Doc& d, int thing, double now, double* open, bool* moves
 // How a thing's groups leave it (Alight Motion's group: its opacity and whether it is shown hold for all it holds): the
 // Nulls it goes with, up to the top (a Null draws nothing of its own, so its opacity is its group's), their opacities
 // one into another; 0 if one of them is hidden. 1 with none.
+static double doc_group_delay(Doc& d, int thing);
 static double doc_group_opacity(Doc& d, int thing, double now) {
     double k = 1.0;
-    for (int up = (int)doc_number(d, thing, "parent", 0, 0), n = 0; up && n < 64 && k > 0.0; up = (int)doc_number(d, up, "parent", 0, 0), ++n)
-        if (doc_word(d, up, "shape") == "null") k *= doc_number(d, up, "visible", 0, 1) > 0.5 ? std::clamp(doc_number(d, up, "opacity", now, 1), 0.0, 1.0) : 0.0;
+    for (int below = thing, up = (int)doc_number(d, thing, "parent", 0, 0), n = 0; up && n < 64 && k > 0.0; below = up, up = (int)doc_number(d, up, "parent", 0, 0), ++n)
+        if (doc_word(d, up, "shape") == "null") now -= doc_group_delay(d, below), k *= doc_number(d, up, "visible", 0, 1) > 0.5 ? std::clamp(doc_number(d, up, "opacity", now, 1), 0.0, 1.0) : 0.0;   // (each group as late as its thing goes with it)
     return k;
 }
 // A thing's opacity as AbsentMotion's opacity effects on it leave it (a share, 1 with none: absent_motion.h).
@@ -299,13 +300,32 @@ static int doc_members(Doc& d, int thing) {
 }
 // How much later a thing's nth copy moves than it is said to (the past repository's order law, GSAP's stagger: the
 // stagger spread over them by their order: from the start, from the centre out, from the end, from the edges in).
-static double doc_delay(Doc& d, int thing, int nth) {
+// The same for the nth of any n (its copies, its letters, a group's things), and "random": each its own place in the
+// order by the thing's seed (GSAP's stagger from: "random"), the same each time.
+static double doc_order_delay(Doc& d, int thing, int nth, int n) {
     const double stagger = doc_literal(d, thing, "stagger", 0, 0);
-    const int n = doc_members(d, thing);
     if (stagger <= 0.0 || n < 2) return 0.0;
-    const double along = (double)nth / (double)(n - 1), centre = std::fabs(along - 0.5) * 2.0;
     const std::string& from = doc_literal_word(d, thing, "stagger_from");
+    if (from == "random") {
+        const auto roll = [seed = (uint32_t)doc_literal(d, thing, "seed", 0, 0)](uint32_t k) { uint32_t h = seed * 0x9E3779B9u ^ (k + 1u) * 0x85EBCA6Bu; h ^= h >> 16, h *= 0x7FEB352Du, h ^= h >> 15, h *= 0x846CA68Bu, h ^= h >> 16; return h; };
+        int rank = 0;
+        for (int k = 0; k < n; ++k) rank += roll((uint32_t)k) < roll((uint32_t)nth) || (roll((uint32_t)k) == roll((uint32_t)nth) && k < nth);
+        nth = rank;
+    }
+    const double along = (double)nth / (double)(n - 1), centre = std::fabs(along - 0.5) * 2.0;
     return stagger * (from == "centre" ? centre : from == "end" ? 1.0 - along : from == "edges" ? 1.0 - centre : along);
+}
+static double doc_delay(Doc& d, int thing, int nth) { return doc_order_delay(d, thing, nth, doc_members(d, thing)); }
+// How much later a group's thing goes with its group than the group goes (a Null's stagger over the things it holds
+// straight under it, in the order they lie, the furthest back first: its copies' order law on its things; After
+// Effects' delayed parenting, valueAtTime(time - delay * index)). 0 under anything else.
+static double doc_group_delay(Doc& d, int thing) {
+    const int group = (int)doc_number(d, thing, "parent", 0, 0);
+    if (group <= 0 || doc_word(d, group, "shape") != "null" || doc_number(d, group, "stagger", 0, 0) <= 0.0) return 0.0;
+    int nth = -1, n = 0;
+    for (const int t : doc_laid(d))
+        if ((int)doc_number(d, t, "parent", 0, 0) == group) nth = t == thing ? n : nth, ++n;
+    return nth < 0 ? 0.0 : doc_order_delay(d, group, nth, n);
 }
 // Where the thing it goes with is (its parent's place; none, or one not there any more: as the stage is). A 2D thing
 // going with the camera is as the stage is: it sticks to the camera already (doc_place), and would take its moves twice.
@@ -313,7 +333,8 @@ static math::mat4 doc_above(Doc& d, int thing, double now, int deeper = 0) {
     const int parent = (int)doc_literal(d, thing, "parent", 0, 0);
     const auto up = d.shown.find(parent), self = d.shown.find(thing);
     if (up != d.shown.end() && up->second.camera && self != d.shown.end() && self->second.space == 2) return math::mat4{};
-    return parent && up != d.shown.end() && deeper < 64 ? doc_place(d, parent, now, deeper + 1) : math::mat4{};   // (64: a document written elsewhere with a ring of parents still ends)
+    const bool there = up != d.shown.end() || !doc_word(d, parent, "kind").empty();   // (in the document: one just made is there before it is first drawn, as a group's new Null is when its things are put in it)
+    return parent && there && deeper < 64 ? doc_place(d, parent, now - doc_group_delay(d, thing), deeper + 1) : math::mat4{};   // (64: a document written elsewhere with a ring of parents still ends)
 }
 // Where a split text's letter has its middle across the thing, in its own units (0: not a letter of one).
 static double doc_letter_middle(Doc& d, int thing, int copy) {
