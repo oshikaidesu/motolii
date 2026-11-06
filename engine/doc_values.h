@@ -371,7 +371,9 @@ static std::vector<AbsentEffect> doc_absent_on(Doc& d, int thing, double now) {
 static const DocCard doc_cards[] = {
     // (in the order a hand needs them: first what every thing has, as After Effects' Properties panel keeps Layer Transform at the top for all layer types; then, Alight Motion's Opacity & Blending, how it lies on what is under it; then its own, Text and Paragraph, Shape Properties)
     {"Transform", "space parent anchor_x anchor_y anchor_z x y z scale_x scale_y scale_z rotate_x rotate_y rotate opacity", "kind", "!camera"},   // (After Effects' Transform group: where it is, how large, how turned, how seen; each its own value)
-    {"Relation", "stagger stagger_from seed", "shape", "null"},
+    // (a group's order (stagger, Delay each) has no card: it is the ▸ after each of the group's keys on the timeline, pulled
+    //  (timeline_paint.dart wtSpreadX; docs/notes/GROUP_FOCUS.md). The card held the order in words, apart from where the
+    //  moves are made; golf players 1–8 went round it (reports/golf_noise.md))
     {"Relation", "stagger stagger_from seed", "shape", "!null", true},   // (anything else with things in an order, its copies or a text split into its letters or words: the same order law, the same card, shown unasked once it has them (doc_cards_of). It lay in Copies, where a text's letters were not looked for, golf (g3))   // (a group's: its own moves, its Transform's keys and ways, given each of its things in turn, its copies' order law on its things; the motion of text animators and cloners on any group)
     {"Camera", "parent x y z rotate_x rotate_y rotate distance zoom", "kind", "camera"},
     {"Fog", "fog fog_near fog_far fog_color", "kind", "camera"},   // (the camera's own, as Alight Motion's camera has: its colour, where it begins, where it is whole; the stage's when it says none)   // (After Effects' camera: what it looks at, where it is and how turned, how far its eye is, its zoom)

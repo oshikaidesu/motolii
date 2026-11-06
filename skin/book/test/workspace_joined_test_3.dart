@@ -2004,6 +2004,58 @@ void _tests3() {
     await _close(t);
   }, skip: !_built);
 
+  testWidgets('the ▸ as the golf window met it: five things of five kinds, Auto key on, the playhead on the second key, the hand going in steps; let go, the stagger is set, not keyed (a behaviour\'s stagger moves, a group\'s does not)', (t) async {
+    final ws = await _pump(t), m = ws.inside!;
+    final home = Directory(motoliiDir).parent.path;
+    final things = <int>[];
+    for (final (kind, file, x) in [
+      ('solid', '$home/research_notes/hosts/bin-v8/examples/assets/DamagedHelmet.glb', -1.4),
+      ('solid', '$motoliiDir/out/models/pointclouds/apartment/apartment.ply', -.7),
+      ('film', '/Users/member_ottoto/Documents/Motolii-probes/refs/pv/EfCkoqafS8k/v.mp4', 0.0),
+      ('picture', '$motoliiDir/effects/chroma.png', .7),
+      ('picture', '$motoliiDir/acid_flat.svg', 1.4),
+    ]) {
+      final x0 = m.add(kind, file);
+      expect(x0, isNot(0), reason: m.trouble);
+      m.set(x0, 'x', x);
+      things.add(x0);
+    }
+    ws
+      ..reread()
+      ..pickMany([for (final x in things) '$x']);
+    await t.pumpAndSettle();
+    await t.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+    await t.sendKeyEvent(LogicalKeyboardKey.keyG);
+    await t.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+    await settled(t, ws);
+    final g = m.things.firstWhere((x) => !things.contains(x));
+    expect(m.key(g, 'y', 0, .4) && m.key(g, 'y', .68, 0), isTrue, reason: m.trouble);
+    ws
+      ..reread()
+      ..select('$g')
+      ..animating = true
+      ..frame = 41;
+    await settled(t, ws);
+    final tracks = find.byWidgetPredicate((w) => w is CustomPaint && w.painter is WtTracksPainter);
+    WtTracksPainter painter() => t.widget<CustomPaint>(tracks).painter! as WtTracksPainter;
+    int row() => painter().rows.indexWhere((r) => r.name == 'Group');
+    expect(painter().rows[row()].late, 0);
+    final box = t.getRect(tracks), v = painter().view, cy = box.top + row() * WtM.row + WtM.row / 2;
+    final n = m.things.where((c) => (m.value(c, 'parent', 0) ?? 0).round() == g).length;
+    expect(n, 5, reason: 'the window counts its things so');
+    final from = Offset(box.left + wtSpreadX(v, 0, 0) + WtM.key * .6, cy), to = Offset(box.left + v.x(Ws.fps), cy);
+    final hand = await t.startGesture(from, kind: PointerDeviceKind.mouse);
+    for (var s = 1; s <= 8; s++) {
+      await hand.moveTo(Offset.lerp(from, to, s / 8)!);
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    await hand.up();
+    await settled(t, ws);
+    expect(m.value(g, 'stagger', 0), closeTo(.25, .02), reason: 'five: the last 1 s after the first, each 0.25 s: ${m.trouble}');
+    expect(t.takeException(), isNull);
+    await _close(t);
+  }, skip: !_built);
+
   testWidgets('a layer\'s label colour chosen on the Note card: its row wears it, auto gives it back its own (Ableton Live\'s clip colours, Alight Motion\'s label colour)', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     final rect = m.add('shape', 'rect');
