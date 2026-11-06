@@ -41,11 +41,11 @@ class WsTopBar extends StatelessWidget {
             SizedBox(width: Shape.s(6)),
             GestureDetector(key: ValueKey('ws-crumb-${g.id}'), onTap: () => ws.enter(g.id), child: Text(g.name, maxLines: 1, style: T.name(Grey.g76))),
           ],
-          if (ws.layer?.id != ws.entered) ...[
+          if (ws.layer == null ? ws.entered == null : ws.layer!.id != ws.entered) ...[   // (the picked thing, unless it is the group stood inside; nothing picked and no group: the stage itself)
             SizedBox(width: Shape.s(6)),
             Text('/', style: T.name(Grey.g44)),
             SizedBox(width: Shape.s(6)),
-            Text(ws.layer?.name ?? (ws.entered == null ? 'Stage' : ''), style: T.name(Grey.g76)), // (where the hand is: the picked thing, or the stage itself)
+            Text(ws.layer?.name ?? 'Stage', style: T.name(Grey.g76)), // (where the hand is: the picked thing, or the stage itself)
           ],
           SizedBox(width: Shape.s(10)),
           const _SizeChip(),
