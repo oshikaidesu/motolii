@@ -24,6 +24,7 @@ class InspHost extends StatefulWidget {
     this.movable = const [],
     this.onCardMove,
     this.onSum,
+    this.onTry,
     this.onAddEffect,
     this.moreCards = const [],
     this.onMoreCard,
@@ -86,6 +87,7 @@ class InspHost extends StatefulWidget {
   final List<String> movable;
   final void Function(String title, int by)? onCardMove;
   final double? Function(String sum)? onSum;
+  final void Function(String id, double? to)? onTry;
   final VoidCallback? onAddEffect;
   final List<String> moreCards;
   final void Function(String title)? onMoreCard;
@@ -170,6 +172,7 @@ class _InspHostState extends State<InspHost> {
       ..movable = widget.movable
       ..onCardMove = widget.onCardMove
       ..onSum = widget.onSum
+      ..onTry = widget.onTry
       ..onAddEffect = widget.onAddEffect
       ..moreCards = widget.moreCards
       ..onMoreCard = widget.onMoreCard
@@ -330,6 +333,7 @@ class _InspHostState extends State<InspHost> {
       ..movable = widget.movable
       ..onCardMove = widget.onCardMove
       ..onSum = widget.onSum
+      ..onTry = widget.onTry
       ..onAddEffect = widget.onAddEffect
       ..moreCards = widget.moreCards
       ..onMoreCard = widget.onMoreCard

@@ -137,6 +137,10 @@ class _InspectorSeatState extends State<_InspectorSeat> {
         movable: int.tryParse(l?.id ?? '') == null ? const [] : m.fxTitles(int.parse(l!.id)), // (its effects, up or down their stack)
         onCardMove: int.tryParse(l?.id ?? '') == null ? null : (title, by) => ws.after(m.later('fx_move', thing: int.parse(l!.id), word: title, number: by.toDouble())),
         onSum: m.workOut,
+        onTry: (id, to) {   // (a choice shown, not kept: ws.tryValue; its word in that place, as a press says it, _write)
+          final t = int.tryParse(l?.id ?? ''), n = id.substring(2), ways = t == null || to == null ? const <String>[] : m.words(t, n);
+          ws.tryValue(ways.isEmpty ? null : n, ways.isEmpty ? '' : ways[to!.round().clamp(0, ways.length - 1)]);
+        },
         moreCards: int.tryParse(l?.id ?? '') == null ? const [] : [for (final c in m.moreCards(int.parse(l!.id))) if (l.kind != WsKind.audio || c == 'Play') c],   // (a sound's speed, Alight Motion's; nothing else)
         onMoreCard: int.tryParse(l?.id ?? '') == null ? null : (title) {
           m.asked.putIfAbsent(int.parse(l!.id), () => {}).add(title);

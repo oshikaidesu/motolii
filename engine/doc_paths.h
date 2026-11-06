@@ -548,6 +548,16 @@ static bool doc_carry_effect(Doc& d, const char* file) {
     h.said[" effect"] = file;   // (' ': the hold's own, never said when it is let go)
     return doc_match(d), doc_moment(d, d.stage->now), true;
 }
+// A word carried on the held thing: shown in place of the document's own (doc_literal_word), said only if let go and
+// kept, as a path's points are (h.said). A choice a hand rests on, shown before it is pressed: PowerPoint's Live Preview,
+// an order's From on the stage's marks of when each starts, golf (g73). doc_carry_effect's way, for a word.
+static bool doc_carry_word(Doc& d, const char* name, const char* word) {
+    Doc::Held& h = d.held;
+    if (h.thing < 0) return d.trouble = "nothing is held", false;
+    if (!doc_knows(d, h.thing, name, nullptr, word)) return false;
+    h.said[name] = word;
+    return doc_match(d), doc_moment(d, d.stage->now), true;
+}
 // A thing's keys moved by so many seconds, every value's that has keys (as After Effects moves a layer's).
 static bool doc_keys_by(Doc& d, int thing, double by) {
     return doc_change(d, sqlite3_mprintf("update fact set at = at + %!.17g where thing = %d and name in (select name from fact where thing = %d group by name having count(*) > 1 or max(at) <> 0 or max(way) is not null);"

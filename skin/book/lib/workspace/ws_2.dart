@@ -607,6 +607,20 @@ class Ws extends ChangeNotifier {
     after(m.later('carry', name: 'effect', word: file!));
   }
 
+  /// Joined: a word shown on the picked thing while the hand rests on one of its choices, not the document's, gone
+  /// as the hand leaves (null): tryOn's way for a value. An order's From: the stage's marks say when each would start
+  /// before it is pressed (PowerPoint's Live Preview: a gallery's effect shown on the slide under the pointer). Five
+  /// pictures read only by pressing each was a first user's complaint, golf (g73)
+  void tryValue(String? name, String word) {
+    final m = _inside, t = int.tryParse(selected ?? '');
+    if (m == null) return;
+    if (_trying) after(m.later('let_go', number: 0));
+    _trying = name != null && t != null;
+    if (!_trying) return;
+    after(m.later('hold', thing: t!));
+    after(m.later('carry', name: name!, word: word));
+  }
+
   /// Joined: the motion the picked thing has (its script's file; '' none).
   String get motion {
     final t = int.tryParse(selected ?? '');

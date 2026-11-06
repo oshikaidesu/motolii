@@ -235,6 +235,8 @@ static double doc_literal(Doc& d, int thing, const char* literal, double at, dou
     return doc_keys_at(d, *kept->second, doc_stepped(d, thing, *kept->second, at), otherwise);
 }
 static const std::string& doc_literal_word(Doc& d, int thing, const char* literal) {   // (a word so, kept the same way)
+    if (d.held.thing == thing)   // (what a hand is carrying shows in place of the document's own, as doc_number's: doc_carry_word)
+        if (const auto said = d.held.said.find(literal); said != d.held.said.end()) return said->second;
     const auto key = std::make_pair(thing, literal);
     if (const auto kept = d.heardWords.find(key); kept != d.heardWords.end()) return kept->second;
     return d.heardWords.emplace(key, doc_word(d, thing, literal)).first->second;

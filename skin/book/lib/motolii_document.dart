@@ -157,8 +157,6 @@ extension MotoliiDocument on Motolii {
   /// Points of the picture to one unit of the stage, at z 0.
   double get point => (_document['point'] as num?)?.toDouble() ?? 1;
 
-  /// How much later a group's thing goes than its group (its place in the group's order, seconds); 0: on time, or in none.
-  double late(int thing) => ((_document['late'] as Map<String, dynamic>?)?['$thing'] as num?)?.toDouble() ?? 0;
 
   /// How long the document has been worked on, in whole seconds (Alight Motion's Total Edit Time: doc_edited).
   int get edited => ((_document['edited'] as num?) ?? 0).round();

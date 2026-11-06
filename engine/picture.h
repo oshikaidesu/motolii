@@ -176,9 +176,6 @@ static void picture_update(Motolii* m) {
     w.Key("things"), w.StartArray();
     for (int i = 0; i < n; ++i) w.Int(things[i]);
     w.EndArray();
-    w.Key("late"), w.StartObject();   // (how much later each of a group's things goes than its group, doc_group_delay; none here, on time. The whole document's, not a thing's own part: its group's Delay changes it)
-    for (int i = 0; i < n; ++i) if (const double late = doc_group_delay(d, things[i]); late > 0) w.Key(std::to_string(things[i]).c_str()), w.Double(late);
-    w.EndObject();
     w.EndObject();
     std::lock_guard<std::mutex> hold(m->pictureLock);
     std::string own = {out.GetString(), out.GetSize()};
@@ -232,6 +229,9 @@ static void picture_moment(Motolii* m) {
         }
         w.EndObject();
     }
+    w.EndObject();
+    w.Key("late"), w.StartObject();   // (how much later each of a group's things goes than its group, doc_group_delay; none here, on time. Here, all of them each moment, not in the document's picture: that one is not made again while a hand carries a value, and a From rested on is carried, its marks shown before it is pressed, golf (g73))
+    for (int i = 0; i < n; ++i) if (const double late = doc_group_delay(d, things[i]); late > 0) w.Key(std::to_string(things[i]).c_str()), w.Double(late);
     w.EndObject();
     w.EndObject();
     std::lock_guard<std::mutex> hold(m->pictureLock);

@@ -560,7 +560,7 @@ int motolii_later(Motolii* m, const char* call, int thing, const char* name, con
             else if (c == "set") ok = changes(m, (int)doc_set(doc(m), thing, n.c_str(), w == "made" ? m->made : number));   // (word "made": the number is the thing the last add made, as a value that names a thing: a behaviour connected, a leader)
             else if (c == "let_go") ok = changes(m, (int)doc_let_go(doc(m), number != 0.0));
             else if (c == "duck") ok = changes(m, (int)duck(m, thing));   // (Audacity's Auto Duck: under the other sounds)
-            else if (c == "carry") ok = (int)(n == "effect" ? doc_carry_effect(doc(m), w.c_str()) : doc_carry(doc(m), n.c_str(), number, 0.0));   // (name: by; an effect file in word)
+            else if (c == "carry") ok = (int)(n == "effect" ? doc_carry_effect(doc(m), w.c_str()) : !w.empty() ? doc_carry_word(doc(m), n.c_str(), w.c_str()) : doc_carry(doc(m), n.c_str(), number, 0.0));   // (name: by; an effect file in word, or a word value's word)
             else if (c == "undo") ok = (int)doc_undo(doc(m));
             else if (c == "redo") ok = (int)doc_redo(doc(m));
             else if (c == "together") {
