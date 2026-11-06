@@ -105,6 +105,20 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     return {for (final e in late) for (final k in group.keys) k + e}.toList()..sort();
   }
 
+  // A group's row: how many frames after each of its keys its last thing comes to it (0: all at once); null: not a group.
+  // Its ▸ is drawn there (wtSpreadX) and pulled to set how far apart its things go (its stagger, Delay each).
+  int? _lateOf(Ws ws, WsLayer l) {
+    final m = ws.inside;
+    if (m == null || l.kind != WsKind.group) return null;
+    final id = int.parse(l.id);
+    return [0, for (final t in m.things) if ((m.value(t, 'parent', 0) ?? 0).round() == id) (m.late(t) * Ws.fps).round()].reduce(math.max);
+  }
+
+  // A group's ▸ held by a hand: the key it stands after, and how many steps its last thing is from its first (the
+  // stagger each goes so many times: start and end n - 1, the middle (n - 1) / 2). Carried as the group's stagger
+  // (doc_carry by a value's name), let go kept or not: one step of undo, as a bar's slide.
+  ({String id, int key, int rank, bool moved})? _spread;
+
   // A way's shape from 0 to 1, as the bar's stretches are drawn.
   List<double> _wayShape(Ws ws, String way) => way.isEmpty ? const [0, 1] : easeCurve(way, ws.inside!);
 
@@ -228,6 +242,12 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
 
   void _barMove(Offset p) {
     if (_box case (final from, _)?) return setState(() => _box = (from, p));
+    if (_spread case final sp?) {   // (the ▸ pulled: the last thing comes to the key so much later, each one in between its share of that)
+      final each = math.max(0.0, (_view.frameAt(p.dx) - sp.key) / Ws.fps / sp.rank);
+      _ws!.inside!.carry('stagger', each);
+      _spread = (id: sp.id, key: sp.key, rank: sp.rank, moved: true);
+      return;
+    }
     if (_slide case final s?) {
       final by = _rested(_view.frameAt(p.dx).round() - s.grab, [s.grab]);
       setState(() => _slide = (keys: s.keys, grab: s.grab, by: by));
@@ -255,6 +275,11 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     if (_slide case final s?) {
       _slide = null;
       if (keep) wsSlideKeys(_ws!, s.keys, s.by);
+      return;
+    }
+    if (_spread case final sp?) {
+      _spread = null;
+      if (_ws!.inside case final m?) _ws!.after(m.later('let_go', number: keep && sp.moved ? 1 : 0));
       return;
     }
     final h = _bar, ws = _ws!, m = ws.inside;
@@ -503,6 +528,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
           mix: _mixOf(ws, l.id),
           whole: _wholeOf(ws, l),
           echoes: _echoesOf(ws, l),
+          late: _lateOf(ws, l),
         ),
     ];
     return Focus(

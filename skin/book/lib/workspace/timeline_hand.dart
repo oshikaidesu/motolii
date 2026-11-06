@@ -62,6 +62,17 @@ extension _WsTimelineHand on _WsTimelineState {
     }
   }
 
+  // The key whose ▸ (a group's: where its last thing comes to it) is under the hand, right of the key itself; null: none.
+  int? _spreadAt(Ws ws, WsLayer l, Offset p) {
+    final late = _lateOf(ws, l);
+    if (late == null) return null;
+    final v = _view;
+    for (final k in l.keys) {
+      if (p.dx >= v.x(k) + WtM.key && (wtSpreadX(v, k, late) + WtM.key * .6 - p.dx).abs() <= WtM.key + 2) return k;
+    }
+    return null;
+  }
+
   bool _onPale(Ws ws, WsLayer l, Offset p) {
     final w = _wholeOf(ws, l);
     return w != null && p.dx >= _view.x(w.$1) && p.dx <= _view.x(w.$2);
@@ -77,6 +88,7 @@ extension _WsTimelineHand on _WsTimelineState {
       return at.any((k) => (v.x((k * Ws.fps).round()) - p.dx).abs() <= WtM.keyPicked + 2) || (at.isNotEmpty && f > at.first && f < at.last) ? SystemMouseCursors.click : SystemMouseCursors.precise;
     }
     if (_isLocked(ws, l.id) || p.dx < a - 6 || p.dx > b + 6) return _onPale(ws, l, p) ? SystemMouseCursors.grab : SystemMouseCursors.precise;
+    if (_spreadAt(ws, l, p) != null) return SystemMouseCursors.resizeLeftRight;
     if (l.keys.any((k) => (v.x(k) - p.dx).abs() <= WtM.keyPicked + 2)) return SystemMouseCursors.click;
     return (p.dx - a).abs() <= 6 || (p.dx - b).abs() <= 6 ? SystemMouseCursors.resizeLeftRight : SystemMouseCursors.grab;
   }
@@ -89,6 +101,17 @@ extension _WsTimelineHand on _WsTimelineState {
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);
     final off = p.dx < a - 6 || p.dx > b + 6;
     if (_isLocked(_ws!, l.id) || (off && !_onPale(ws, l, p))) return false;
+    if (_spreadAt(ws, l, p) case final k?) {   // (a group's ▸ taken: its stagger carried while the hand pulls)
+      final t = int.parse(l.id), late = _lateOf(ws, l) ?? 0, each = m.value(t, 'stagger', 0) ?? 0;
+      final n = m.things.where((c) => (m.value(c, 'parent', 0) ?? 0).round() == t).length;
+      final rank = late > 0 && each > 0 ? math.max(1, (late / Ws.fps / each).round()) : n - 1;   // (as its order lies now; none yet: from the first to the last)
+      if (rank < 1) return false;
+      m.take(t);
+      ws.select(l.id);
+      if (ws.playing) ws.playing = false;
+      _spread = (id: l.id, key: k, rank: rank, moved: false);
+      return true;
+    }
     for (final k in l.keys) {
       if ((v.x(k) - p.dx).abs() > WtM.keyPicked + 2) continue;
       final held = (layer: l.id, frame: k), all = ws.keys.contains(held) ? ws.keys.toList() : [held];

@@ -33,6 +33,11 @@ abstract final class WtM {
   static const maxZoom = 16.0;
 }
 
+/// Where a group's ▸ stands for a key at [k]: where its last thing comes to that key; all at once (late 0), just right
+/// of the key, so it is there to be pulled (Ableton's clip fade handle: always at the clip's corner, pulled to make the
+/// fade, no switch turns one on).
+double wtSpreadX(WtView v, int k, int late) => v.x(k + late) + (late == 0 ? WtM.key + 2 : 0);
+
 /// Where frames land on the track area: x = padL + (frame - scroll) * ppf.
 @immutable
 class WtView {
@@ -73,8 +78,10 @@ class WtRow {
     this.laneOn,
     this.whole,
     this.echoes = const [],
+    this.late,
   });
   final (int, int)? whole;
+  final int? late;   // (a group's: how many frames after each of its keys its last thing comes to it, its ▸ drawn there; 0 all at once; null not a group)
   final List<int> echoes;   // (the frames a group's keys come at for its things, each as late as it goes: on the group's row all, on a thing's its own)   // (a film's whole length as it lies, cut or not: the pale slip-edit bar of After Effects)
   final List<WsStretch> stretches;   // (how it goes between its keys: each stretch's way drawn between them)
 
@@ -120,6 +127,7 @@ class WtRow {
       other.locked == locked &&
       other.clipped == clipped &&
       other.whole == whole &&
+      other.late == late &&
       _listEq(other.echoes, echoes) &&
       identical(other.wave, wave) &&
       identical(other.frames, frames) &&   // (read once a change: the same list until the document changes)
@@ -407,6 +415,15 @@ class WtTracksPainter extends CustomPainter {
       if (x < -8 || x > s.width + 8) continue;
       final d = Path()..moveTo(x, cy - WtM.key)..lineTo(x + WtM.key, cy)..lineTo(x, cy + WtM.key)..lineTo(x - WtM.key, cy)..close();
       c.drawPath(d, Paint()..style = PaintingStyle.stroke..strokeWidth = 1..color = Color.lerp(fill, Grey.g100, r.dim ? .25 : .45)!);
+    }
+    if (r.late case final late?) {   // (a group's ▸ after each key: where its last thing comes to it; pulled, the group's things go in turn so far apart)
+      final h = WtM.key;
+      for (final k in r.keys) {
+        final x = wtSpreadX(view, k, late);
+        if (x < -8 || x > s.width + 8) continue;
+        final tri = Path()..moveTo(x, cy - h)..lineTo(x + h * 1.3, cy)..lineTo(x, cy + h)..close();
+        c.drawPath(tri, Paint()..color = Color.lerp(fill, Grey.g100, r.dim ? .25 : .6)!);
+      }
     }
     for (final k in r.keys) {
       final x = view.x(k);

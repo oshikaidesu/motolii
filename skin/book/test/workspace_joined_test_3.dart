@@ -1957,6 +1957,53 @@ void _tests3() {
     await _close(t);
   }, skip: !_built);
 
+  testWidgets('a group\'s ▸ after its key, pulled, its things go in turn so far apart (its stagger, carried, one step); a thing\'s own key is its own on top (Ableton\'s fade handle)', (t) async {
+    final ws = await _pump(t), m = ws.inside!;
+    final a = m.add('shape', 'circle'), b = m.add('shape', 'circle'), c = m.add('shape', 'circle');
+    expect(m.set(a, 'x', -1) && m.set(b, 'x', 0) && m.set(c, 'x', 1), isTrue, reason: m.trouble);
+    ws
+      ..reread()
+      ..pickMany(['$a', '$b', '$c']);
+    await t.pumpAndSettle();
+    await t.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+    await t.sendKeyEvent(LogicalKeyboardKey.keyG);
+    await t.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+    await settled(t, ws);
+    final g = m.things.firstWhere((x) => x != a && x != b && x != c);
+    expect(m.key(g, 'y', 0, 0) && m.key(g, 'y', 2, 1), isTrue, reason: m.trouble);   // (two keys, as a hand puts them: all three rise at once)
+    ws
+      ..reread()
+      ..select('$g');
+    await t.pumpAndSettle();
+    final tracks = find.byWidgetPredicate((w) => w is CustomPaint && w.painter is WtTracksPainter);
+    WtTracksPainter painter() => t.widget<CustomPaint>(tracks).painter! as WtTracksPainter;
+    int row() => painter().rows.indexWhere((r) => r.name == 'Group');
+    expect(row(), isNot(-1));
+    expect(painter().rows[row()].late, 0, reason: 'a group\'s row has its ▸, on its key while they go at once');
+    expect([m.late(a), m.late(b), m.late(c)], [0, 0, 0]);
+    final box = t.getRect(tracks), v = painter().view, cy = box.top + row() * WtM.row + WtM.row / 2;
+    final from = Offset(box.left + wtSpreadX(v, 0, 0) + WtM.key * .6, cy), to = Offset(box.left + v.x(Ws.fps), cy);   // (the ▸ after the first key, pulled to 1 s)
+    final hand = await t.startGesture(from);
+    await hand.moveTo(from + (to - from) / 2);
+    await t.pump();
+    await hand.moveTo(to);
+    await settled(t, ws);
+    expect([m.late(a), m.late(b), m.late(c)].reduce(math.max), closeTo(1, .02), reason: 'carried while the hand pulls (the moment\'s late, the document\'s picture not yet): the last of three 1 s after the first');
+    expect(m.value(g, 'stagger', 0) ?? 0, closeTo(0, .001), reason: 'nothing written yet');
+    await hand.up();
+    await settled(t, ws);
+    expect(m.value(g, 'stagger', 0), closeTo(.5, .02), reason: 'kept when let go: ${m.trouble}');
+    expect([m.late(a), m.late(b), m.late(c)]..sort(), [closeTo(0, .02), closeTo(.5, .02), closeTo(1, .02)], reason: 'in turn');
+    expect(painter().rows[row()].late, Ws.fps, reason: 'the ▸ now a second after each key');
+    expect(m.key(a, 'x', 1, -1.5), isTrue, reason: m.trouble);   // (one of them given a key of its own)
+    expect([m.late(a), m.value(g, 'stagger', 0)], [closeTo(m.late(a), 0), closeTo(.5, .02)], reason: 'its own key is on top of the group\'s: it still goes in its turn (doc_above)');
+    expect(m.undo(), isTrue);   // (its key)
+    expect(m.undo(), isTrue);   // (the pull: one step)
+    expect(m.value(g, 'stagger', 0) ?? 0, closeTo(0, .001), reason: 'one step back, all at once again');
+    expect(t.takeException(), isNull);
+    await _close(t);
+  }, skip: !_built);
+
   testWidgets('a layer\'s label colour chosen on the Note card: its row wears it, auto gives it back its own (Ableton Live\'s clip colours, Alight Motion\'s label colour)', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     final rect = m.add('shape', 'rect');
