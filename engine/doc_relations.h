@@ -279,13 +279,10 @@ static bool doc_shutter(Doc& d, int thing, double now, double* open, bool* moves
 // How a thing's groups leave it (Alight Motion's group: its opacity and whether it is shown hold for all it holds): the
 // Nulls it goes with, up to the top (a Null draws nothing of its own, so its opacity is its group's), their opacities
 // one into another; 0 if one of them is hidden. 1 with none.
-static double doc_delay_in(Doc& d, int thing);
 static double doc_group_opacity(Doc& d, int thing, double now) {
     double k = 1.0;
-    for (int below = thing, up = (int)doc_number(d, thing, "parent", 0, 0), n = 0; up && n < 64 && k > 0.0; below = up, up = (int)doc_number(d, up, "parent", 0, 0), ++n) {
-        now -= doc_delay_in(d, below);   // (each group as late as the one under it is in its order: as doc_above takes its place)
+    for (int up = (int)doc_number(d, thing, "parent", 0, 0), n = 0; up && n < 64 && k > 0.0; up = (int)doc_number(d, up, "parent", 0, 0), ++n)
         if (doc_word(d, up, "shape") == "null") k *= doc_number(d, up, "visible", 0, 1) > 0.5 ? std::clamp(doc_number(d, up, "opacity", now, 1), 0.0, 1.0) : 0.0;
-    }
     return k;
 }
 // A thing's opacity as AbsentMotion's opacity effects on it leave it (a share, 1 with none: absent_motion.h).
@@ -294,143 +291,21 @@ static double doc_absent_opacity(Doc& d, int thing, double now) {
     const double begins = doc_literal(d, thing, "start", 0, 0), lasts = doc_literal(d, thing, "duration", 0, -1);
     return absent_opacity(doc_absent_on(d, thing, now), thing, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * now);
 }
-// A group's members: the things it holds itself (a Null's, each with it as its parent), in the order its picture is
-// read, as a text's letters are: the top line first, each line from the left (a line a tenth of the stage high, as Move
-// in reads things picked together: doc_relate), the nearer first where they lie one behind another (the user, 11/6: a
-// group of things picked together moves in order as a split text's letters and copies do; those are numbered as they are
-// read and counted, these have no number but where they lie). None: not a group. A group in it is one of them.
-static const std::vector<int>& doc_group_members(Doc& d, int group) {
-    if (const auto kept = d.membersOf.find(group); kept != d.membersOf.end()) return kept->second;
-    std::vector<int>& all = d.membersOf[group];
-    if (doc_word(d, group, "shape") != "null") return all;
-    std::vector<std::pair<math::double3, int>> at;
-    for (const int t : doc_laid(d))
-        if (t != group && (int)doc_number(d, t, "parent", 0, 0) == group) at.push_back({math::double3{doc_literal(d, t, "x", 0, 0), doc_literal(d, t, "y", 0, 0), doc_literal(d, t, "z", 0, 0)}, t});
-    std::stable_sort(at.begin(), at.end(), [](const auto& a, const auto& b) {
-        const double la = std::round(a.first.y * 10), lb = std::round(b.first.y * 10);
-        return la != lb ? la > lb : a.first.x != b.first.x ? a.first.x < b.first.x : a.first.z > b.first.z;
-    });
-    for (const auto& one : at) all.push_back(one.second);
-    return all;
-}
 static int doc_members(Doc& d, int thing) {
     const auto t = d.shown.find(thing);
     if (t != d.shown.end() && t->second.drawn && !t->second.drawn->letters.empty()) return (int)t->second.drawn->letters.size();
     if (const std::vector<AbsentCopy>& copies = doc_absent_copies(d, thing, d.stage->now); !copies.empty()) return (int)copies.size();   // (as many as AbsentMotion's repeat lays)
     return std::max(1, (int)doc_literal(d, thing, "copies", 0, 1));
 }
-// Where a thing's nth copy is laid about the thing's own place, before it is scattered, waved or moved: along its rows
-// by copy_x, down them by copy_y (copy_columns to a row), each row a step deeper by copy_z (in one row, each copy): a
-// floor of them, Cinema 4D's Cloner, Grid Array. The one place for it: where a copy is drawn (doc_place) and where an
-// order from a point counts it from (doc_delay) read the same, so depth is not lost to the order.
-static math::double3 doc_member_laid(Doc& d, int thing, int nth, int n, double now) {
-    const int columns = (int)doc_literal(d, thing, "copy_columns", 0, 0);
-    const double along = columns > 0 ? nth % columns : nth, down = columns > 0 ? nth / columns : nth;
-    const double alongMid = columns > 0 ? (std::min(n, columns) - 1) * 0.5 : (n - 1) * 0.5, downMid = columns > 0 ? (std::ceil((double)n / columns) - 1) * 0.5 : (n - 1) * 0.5;
-    return {(along - alongMid) * doc_literal(d, thing, "copy_x", now, 0), (down - downMid) * doc_literal(d, thing, "copy_y", now, 0), (down - downMid) * doc_literal(d, thing, "copy_z", now, 0)};
-}
-static double doc_letter_middle(Doc& d, int thing, int copy);
-// Where a copy's middle comes to lie once laid: its rows, and each copy turned about the thing's anchor by Turn all and
-// Rotate each and grown by copy_size, as doc_place turns it (own about -anchor): with the anchor off the middle a ring,
-// a spiral (Cinema 4D's Cloner, Radial: the clones' places, which its effectors' fields read). Unturned, its rows alone.
-static math::double3 doc_member_middle(Doc& d, int thing, int nth, int n) {
-    const math::double3 laid = doc_member_laid(d, thing, nth, n, 0);
-    const double turn = (nth * doc_literal(d, thing, "copy_turn", 0, 0) / n + nth * doc_literal(d, thing, "copy_rotate", 0, 0)) * (double)TAU / 360.0, grow = std::pow(doc_literal(d, thing, "copy_size", 0, 1), nth);
-    if (turn == 0.0 && grow == 1.0) return laid;
-    float2 half{0.5f};
-    float deep = 0.f;
-    doc_half(d, thing, &half, &deep);
-    const math::double3 a{doc_literal(d, thing, "anchor_x", 0, 0) * half.x, doc_literal(d, thing, "anchor_y", 0, 0) * half.y, doc_literal(d, thing, "anchor_z", 0, 0) * deep};
-    const double c = std::cos(turn), s = std::sin(turn), size = doc_literal(d, thing, "size", 0, 1);
-    const math::double3 moved{a.x - grow * (c * a.x - s * a.y), a.y - grow * (s * a.x + c * a.y), a.z - grow * a.z};   // (its middle, as far from where the unturned one's is)
-    return laid + size * math::double3{doc_literal(d, thing, "scale_x", 0, 1) * moved.x, doc_literal(d, thing, "scale_y", 0, 1) * moved.y, doc_literal(d, thing, "scale_z", 0, 1) * moved.z};
-}
-// Where a thing's nth member lies about its middle, before it moves (its copies as doc_member_laid lays them at the
-// start, in the stage's units; a split text's letters by their middles, in its own; a group's things where they are in
-// it): what an order counted from a place reads, and the window's picture of the order.
-static math::double3 doc_member_at(Doc& d, int thing, int nth, int n) {
-    if (const std::vector<int>& held = doc_group_members(d, thing); !held.empty()) {   // (a group's thing: where it is in the group, as it begins)
-        const int t = held[std::min((size_t)std::max(0, nth), held.size() - 1)];
-        return {doc_literal(d, t, "x", 0, 0), doc_literal(d, t, "y", 0, 0), doc_literal(d, t, "z", 0, 0)};
-    }
-    const auto sh = d.shown.find(thing);
-    if (sh != d.shown.end() && sh->second.drawn && !sh->second.drawn->letters.empty()) return {doc_letter_middle(d, thing, nth), 0.0, 0.0};   // (a letter: its middle along the line)
-    return doc_member_middle(d, thing, nth, n);
-}
-// How near and how far a thing's n members lie from the place its order spreads from: where the first and the last to
-// move by place lie, so the first moves when it is said to and the last a stagger later, wherever the place is (GSAP's
-// distribute: each distance taken from the least, over the greatest less the least). Every member asked once, kept
-// till the next change.
-static std::pair<double, double> doc_place_reach(Doc& d, int thing, int n, math::double3 at) {
-    if (const auto kept = d.placeReach.find(thing); kept != d.placeReach.end() && kept->second[0] == n) return {kept->second[1], kept->second[2]};
-    double near = INFINITY, far = 0.0;
-    for (int i = 0; i < n; ++i) {
-        const double l = length(doc_member_at(d, thing, i, n) - at);
-        near = std::min(near, l), far = std::max(far, l);
-    }
-    d.placeReach[thing] = {(double)n, near, far};
-    return {near, far};
-}
-// How many members a thing has: a group's things, a split text's letters, its copies (1: none but itself).
-static int doc_many(Doc& d, int thing) {
-    const std::vector<int>& held = doc_group_members(d, thing);
-    return held.empty() ? doc_members(d, thing) : (int)held.size();
-}
-// Which of a thing's n members, counted in their order, its order starts from: the one nearest the place it was given
-// (stagger_x, stagger_y, stagger_z, where doc_member_at lays them), half way between two as near; the first with none
-// given (an order first given counts from the first: a text is read from its start).
-static double doc_order_from(Doc& d, int thing, int n) {
-    if (const auto kept = d.orderFrom.find(thing); kept != d.orderFrom.end() && kept->second.first == n) return kept->second.second;
-    double f = 0.0;
-    const double px = doc_literal(d, thing, "stagger_x", 0, NAN), py = doc_literal(d, thing, "stagger_y", 0, NAN), pz = doc_literal(d, thing, "stagger_z", 0, NAN);
-    if (!std::isnan(px) || !std::isnan(py) || !std::isnan(pz)) {
-        const math::double3 at{std::isnan(px) ? 0.0 : px, std::isnan(py) ? 0.0 : py, std::isnan(pz) ? 0.0 : pz};
-        double best = INFINITY;
-        for (int i = 0; i < n; ++i) {
-            const double far = length(doc_member_at(d, thing, i, n) - at);
-            if (far < best - 1e-9) best = far, f = i;
-            else if (far <= best + 1e-9 && i == (int)f + 1 && f == std::floor(f)) f += 0.5;   // (as near as the one before it: from between them, as a centre of an even count is)
-        }
-    }
-    d.orderFrom[thing] = {n, f};
-    return f;
-}
-// How much later a thing's nth member moves than it is said to: the stagger spread over them by how far each is from
-// where the order starts, the nearest first (the past repository's order law, GSAP's stagger). Counted in their own
-// order from the member at its place (from: an index), or by how far each lies from the place itself, anywhere, in depth
-// too (from: [x, y]; Cinema 4D's Plain Effector's Time Offset through a spherical field reads the clones' own places), or
-// in any order by the thing's seed (from: "random"). A stagger less than 0 turns it round: the farthest first.
+// How much later a thing's nth copy moves than it is said to (the past repository's order law, GSAP's stagger: the
+// stagger spread over them by their order: from the start, from the centre out, from the end, from the edges in).
 static double doc_delay(Doc& d, int thing, int nth) {
     const double stagger = doc_literal(d, thing, "stagger", 0, 0);
-    const int n = doc_many(d, thing);
-    if (stagger == 0.0 || n < 2) return 0.0;
+    const int n = doc_members(d, thing);
+    if (stagger <= 0.0 || n < 2) return 0.0;
+    const double along = (double)nth / (double)(n - 1), centre = std::fabs(along - 0.5) * 2.0;
     const std::string& from = doc_literal_word(d, thing, "stagger_from");
-    double late;   // (0 the first to move, 1 the last)
-    if (from == "random") {   // (0 to 1 by the seed and the copy: doc_place's roll, the same hash)
-        uint32_t h = (uint32_t)doc_literal(d, thing, "seed", 0, 0) * 0x9E3779B9u ^ ((uint32_t)nth + 1u) * 0x85EBCA6Bu ^ 7u * 0xC2B2AE35u;
-        h ^= h >> 16, h *= 0x7FEB352Du, h ^= h >> 15, h *= 0x846CA68Bu, h ^= h >> 16;
-        late = (double)h / 4294967295.0;
-    } else if (from == "place" || from == "point") {
-        const math::double3 at{doc_literal(d, thing, "stagger_x", 0, 0), doc_literal(d, thing, "stagger_y", 0, 0), doc_literal(d, thing, "stagger_z", 0, 0)};
-        const auto [near, far] = doc_place_reach(d, thing, n, at);
-        late = far - near > 1e-12 ? std::clamp((length(doc_member_at(d, thing, nth, n) - at) - near) / (far - near), 0.0, 1.0) : 0.0;
-    } else {   // (in their order: from the one at its place, or where an older word says)
-        const double f = from == "start" ? 0.0 : from == "end" ? n - 1.0 : from == "centre" || from == "edges" ? (n - 1) * 0.5 : doc_order_from(d, thing, n);
-        const double far = std::max(f, n - 1 - f);
-        late = far > 0.0 ? std::fabs(nth - f) / far : 0.0;
-        if (from == "edges") late = 1.0 - late;
-    }
-    return std::fabs(stagger) * (stagger < 0.0 ? 1.0 - late : late);
-}
-// How much later a thing in a group moves than the group is said to: as late as its place in the group's order (0: in
-// none, or in one with no order). It takes the group's place and opacity so much later (doc_above, doc_group_opacity):
-// the group keyed as one thing, its things each taking that move in turn (the user, 11/6: the same hands as one thing).
-static double doc_delay_in(Doc& d, int thing) {
-    const int group = (int)doc_number(d, thing, "parent", 0, 0);
-    if (!group || doc_literal(d, group, "stagger", 0, 0) == 0.0) return 0.0;
-    const std::vector<int>& held = doc_group_members(d, group);
-    const auto at = std::find(held.begin(), held.end(), thing);
-    return at == held.end() ? 0.0 : doc_delay(d, group, (int)(at - held.begin()));
+    return stagger * (from == "centre" ? centre : from == "end" ? 1.0 - along : from == "edges" ? 1.0 - centre : along);
 }
 // Where the thing it goes with is (its parent's place; none, or one not there any more: as the stage is). A 2D thing
 // going with the camera is as the stage is: it sticks to the camera already (doc_place), and would take its moves twice.
@@ -438,7 +313,7 @@ static math::mat4 doc_above(Doc& d, int thing, double now, int deeper = 0) {
     const int parent = (int)doc_literal(d, thing, "parent", 0, 0);
     const auto up = d.shown.find(parent), self = d.shown.find(thing);
     if (up != d.shown.end() && up->second.camera && self != d.shown.end() && self->second.space == 2) return math::mat4{};
-    return parent && up != d.shown.end() && deeper < 64 ? doc_place(d, parent, now - doc_delay_in(d, thing), deeper + 1) : math::mat4{};   // (in a group with an order: the group as it was so much earlier)   // (64: a document written elsewhere with a ring of parents still ends)
+    return parent && up != d.shown.end() && deeper < 64 ? doc_place(d, parent, now, deeper + 1) : math::mat4{};   // (64: a document written elsewhere with a ring of parents still ends)
 }
 // Where a split text's letter has its middle across the thing, in its own units (0: not a letter of one).
 static double doc_letter_middle(Doc& d, int thing, int copy) {
@@ -523,7 +398,7 @@ static bool doc_physics(Doc& d, int thing, double now, PhysPose* pose, int copy 
 // as its place in the wave says), or as itself: the stage and whoever asks how it moves (motolii_path) place it alike.
 static bool doc_staggered(Doc& d, int thing, double now) {
     if (const DocScript* sc = doc_script_of(d, doc_literal_word(d, thing, "script")); sc && sc->run && sc->run->sketch()) return true;   // (one box in a sketch is placed by the sketch all the same)
-    return doc_members(d, thing) > 1 || doc_number(d, thing, "stagger", 0, 0) != 0.0 || doc_number(d, thing, "wave_x", now, 0) != 0.0 || doc_number(d, thing, "wave_y", now, 0) != 0.0 || doc_number(d, thing, "wave_rotate", now, 0) != 0.0 || doc_number(d, thing, "wave_size", now, 0) != 0.0 || doc_number(d, thing, "field_radius", now, 0) > 0.0 || doc_number(d, thing, "scatter_x", now, 0) > 0.0 || doc_number(d, thing, "scatter_y", now, 0) > 0.0 || doc_number(d, thing, "scatter_rotate", now, 0) > 0.0 || doc_number(d, thing, "scatter_size", now, 0) > 0.0;
+    return doc_members(d, thing) > 1 || doc_number(d, thing, "stagger", 0, 0) > 0.0 || doc_number(d, thing, "wave_x", now, 0) != 0.0 || doc_number(d, thing, "wave_y", now, 0) != 0.0 || doc_number(d, thing, "wave_rotate", now, 0) != 0.0 || doc_number(d, thing, "wave_size", now, 0) != 0.0 || doc_number(d, thing, "field_radius", now, 0) > 0.0 || doc_number(d, thing, "scatter_x", now, 0) > 0.0 || doc_number(d, thing, "scatter_y", now, 0) > 0.0 || doc_number(d, thing, "scatter_rotate", now, 0) > 0.0 || doc_number(d, thing, "scatter_size", now, 0) > 0.0;
 }
 // How far a thing that turns the way it goes (orient) is turned by it at a moment, radians about z: the way its keys
 // carry it then; standing still, the way it last went or will go. 0 for any other.

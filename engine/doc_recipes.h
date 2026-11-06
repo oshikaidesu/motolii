@@ -259,7 +259,7 @@ static std::string doc_words(Doc& d, int thing, const char* name) {
         return all;
     }
     for (const DocValue& one : doc_values)
-        if (!strcmp(one.name, name) && doc_among(one.kinds, kind)) return !one.words ? "" : !strcmp(name, "stagger_from") ? "order place random" : one.words;   // (an order's older words read, not offered: doc_kinds)
+        if (!strcmp(one.name, name) && doc_among(one.kinds, kind)) return one.words ? one.words : "";
     return "";
 }
 // What a thing is called where things are listed: a text by its words, a shape by what shape it is, a file by its name.
@@ -386,13 +386,8 @@ static std::string doc_cards_of(Doc& d, int thing, std::string* more = nullptr) 
         const std::string spaceNow = doc_word(d, thing, "space");
         if (!strcmp(card.title, "Surface") && kindNow != "solid" && spaceNow != "3d" && spaceNow != "2.5d" && !doc_on(d, thing, "scale_z")) continue;   // (a flat thing's one value of it is its Shine; in depth it has the rest, After Effects' Material Options on a 3D layer)
         const std::string splitNow = kindNow == "text" ? doc_word(d, thing, "split") : "";
-        const bool letters = !splitNow.empty() && splitNow != "none" && (!strcmp(card.title, "Wave") || !strcmp(card.title, "Scatter"));   // (a text split into its letters or words: what moves them each its own way (Wave, Scatter) unasked, as After Effects' Text Animator is under a text once its range goes by character (the user, 11/5: more of a text's expression))
-        const std::string said_text = kindNow == "text" ? doc_word(d, thing, "text") : std::string();
-        const bool relation = !strcmp(card.title, "Relation");   // (its members' order: there once it has two or more, whatever they are (a group's things, letters, copies); an order is of two)
-        const bool text = kindNow == "text" && std::count_if(said_text.begin(), said_text.end(), [](unsigned char c) { return (c & 0xC0) != 0x80 && !std::isspace(c); }) >= 2, whole = text && (splitNow.empty() || splitNow == "none");   // (a text: from two letters on, its Split there before them, which makes them)
-        if (relation && !text && doc_many(d, thing) < 2) continue;
-        if (doc_word(d, thing, "shape") == "null" && (!strcmp(card.title, "Copies") || !strcmp(card.title, "Wave") || !strcmp(card.title, "Field") || !strcmp(card.title, "Scatter"))) continue;   // (a group's or a Null's: they move a thing's own copies and letters, of which it has none)
-        bool said = !card.added || thing == 0 || (!strcmp(card.title, "Play") && kindNow == "film") || letters || relation;
+        const bool letters = !splitNow.empty() && splitNow != "none" && (!strcmp(card.title, "Copies") || !strcmp(card.title, "Wave") || !strcmp(card.title, "Scatter"));   // (a text split into its letters or words: what moves them each in turn (Delay, Wave, Scatter) unasked, as After Effects' Text Animator is under a text once its range goes by character (the user, 11/5: more of a text's expression))
+        bool said = !card.added || thing == 0 || (!strcmp(card.title, "Play") && kindNow == "film") || letters;
         for (const char* at = card.names; *at;) {
             const size_t len = strcspn(at, " ");
             const std::string n(at, len);
@@ -402,7 +397,6 @@ static std::string doc_cards_of(Doc& d, int thing, std::string* more = nullptr) 
             at += len + (at[len] ? 1 : 0);
         }
         if (!names.empty() && !said && more) *more += (more->empty() ? "" : "; ") + std::string(card.title) + ": " + names;
-        if (relation && whole) names = "split";   // (a text whole: no members yet to order, only which they are to be)
         if (names.empty() || !said) continue;
         if (card.when && card.is[0] == '+' && doc_thor_letter(card.when)) effects[card.when] = std::string(card.title) + ": " + names;
         else (past ? besides : all) += ((past ? besides : all).empty() ? "" : "; ") + std::string(card.title) + ": " + names;

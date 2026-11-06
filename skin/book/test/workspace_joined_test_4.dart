@@ -2,10 +2,7 @@
 part of 'workspace_joined_test.dart';
 
 void _tests4() {
-  // (a motion is a preset of the group's multiplication, keys × way × order: a press lays it on the picked thing, as
-  //  After Effects' Animation Presets and Texton's In do, and the same hand changes it after: its keys on the timeline,
-  //  its order on the Copies card (doc_animator_lay); undone in one step)
-  testWidgets('a motion is a preset: the Effects shelf lists animators/ for the picked thing, a press lays its keys, their way and the letters\' order (a text then moves letter by letter), the order on the Relation card, one undo takes it off', (t) async {
+  testWidgets('a motion is a file: the Effects shelf lists animators/ for the picked thing, a press gives it (a text then moves letter by letter), its knobs on its card, a press takes it off', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     final text = m.add('text', '/System/Library/Fonts/Supplemental/Arial Black.ttf');
     expect(m.say(text, 'text', 'MOTOLII'), isTrue, reason: m.trouble);
@@ -21,13 +18,12 @@ void _tests4() {
     await t.pumpAndSettle();
     await doubleTap(t, row);
     await settled(t, ws);
-    expect([m.word(text, 'script'), m.word(text, 'split'), m.word(text, 'stagger_from')], ['', 'letters', 'start'], reason: m.trouble);
-    expect([m.keyMoments(text, 'y').length, m.keyValues(text, 'y').last, m.wayOf(text, 'y', 0)], [2, 0, 'SpringOut']);
-    expect(m.cards(text).firstWhere((c) => c.$1 == 'Relation').$2, containsAll(['split', 'stagger', 'stagger_from']), reason: 'its order on its Relation card, as any group\'s');
-    expect(m.undo(), isTrue, reason: m.trouble);
-    ws.reread();
+    expect(m.word(text, 'script'), spring.$2, reason: m.trouble);
+    expect(find.descendant(of: row, matching: find.text('ON')), findsOneWidget);
+    expect(m.cards(text).firstWhere((c) => c.$1 == 'Script').$2, containsAll(['js_length', 'js_delay', 'js_far']));
+    await doubleTap(t, row);
     await settled(t, ws);
-    expect([m.keyMoments(text, 'y'), m.word(text, 'split')], [isEmpty, ''], reason: 'one step');
+    expect(ws.motion, isEmpty, reason: 'taken off');
     expect(t.takeException(), isNull);
     await expectSameAfterReopen(t);
     await _close(t);

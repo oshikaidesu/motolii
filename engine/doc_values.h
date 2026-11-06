@@ -57,7 +57,7 @@ static const DocShown doc_shown[] = {
     {"copy_x", "stage", "px", "Gap X", -2, 2, nullptr},
     {"copy_y", "down", "px", "Gap Y", -2, 2, nullptr},
     {"copy_turn", "angle", "°", "Turn all", 0, 720, nullptr},
-    {"stagger", "", "s", "First to last", -3, 3, nullptr},   // (from when the first moves to when the last does: "Delay" was read as each one's own (golf (g4)))
+    {"stagger", "", "s", "Delay", 0, 3, nullptr},
     {"copy_fill", "colours", "", "Colours", 0, 0, nullptr},
     {"copy_z", "stage", "px", "Gap deep", -2, 2, "Each copy"},
     {"copy_rotate_x", "angle", "°", "Tilt", -180, 180, "Each copy"},
@@ -68,7 +68,7 @@ static const DocShown doc_shown[] = {
     {"copy_wide", "", "×", "Wider", 0.2, 5, "Each copy"},
     {"tall", "", "×", "Height", 0, 3, "Each copy"},
     {"copy_tall", "numbers", "", "Heights", 0, 0, "Each copy"},
-    {"stagger_from", "", "", "By", 0, 0, nullptr},   // (counted by their order, by place, at random: where from is the figure's place, not a word (the critique of 11/6))
+    {"stagger_from", "", "", "From", 0, 0, nullptr},
     {"copy_fill_way", "", "", "Order", 0, 0, "Each copy"},
     {"wave_y", "stage", "px", "Up/down", -1, 1, nullptr},
     {"wave_x", "stage", "px", "Sideways", -1, 1, nullptr},
@@ -371,7 +371,6 @@ static std::vector<AbsentEffect> doc_absent_on(Doc& d, int thing, double now) {
 static const DocCard doc_cards[] = {
     // (in the order a hand needs them: first what every thing has, as After Effects' Properties panel keeps Layer Transform at the top for all layer types; then, Alight Motion's Opacity & Blending, how it lies on what is under it; then its own, Text and Paragraph, Shape Properties)
     {"Transform", "space parent anchor_x anchor_y anchor_z x y z scale_x scale_y scale_z rotate_x rotate_y rotate opacity", "kind", "!camera"},   // (After Effects' Transform group: where it is, how large, how turned, how seen; each its own value)
-    {"Relation", "split stagger stagger_from", nullptr, nullptr, true},   // (in what order its members take its moves: anything with two or more, a group's things, a split text's letters, copies alike, right under the moves it orders (the user, 11/6: a group layer's inspector shows its relation; the order is not the copies' nor the text's); a text's, from two letters on, its Split first: which are its members)
     {"Camera", "parent x y z rotate_x rotate_y rotate distance zoom", "kind", "camera"},
     {"Fog", "fog fog_near fog_far fog_color", "kind", "camera"},   // (the camera's own, as Alight Motion's camera has: its colour, where it begins, where it is whole; the stage's when it says none)   // (After Effects' camera: what it looks at, where it is and how turned, how far its eye is, its zoom)
     {"Blending", "blend clip"},   // (After Effects' layer mode and its track matte, in its simplest: drawn over what lies below as it says, or only inside the one before it)
@@ -379,9 +378,9 @@ static const DocCard doc_cards[] = {
     {"Star", "points inner", "shape", "star"},   // (After Effects' Polystar: how many points, how far in between them)
     {"Polygon", "points", "shape", "polygon"},
     {"Fill", "fill fill_media stroke stroke_width"},   // (After Effects' Fill and Stroke, Cavalry's Fill and Stroke: a colour, colours down it, or the material glass; its edge and how wide)
-    {"Type", "italic wrap wrap_at", "kind", "text"},   // (a text's, shown unasked, as Alight Motion keeps Edit Text among a text's tiles (AbsentMotion's LayerTools.kt): its slant, its lines broken in a box or set down the page, its letters or words each its own (the user, 11/5: more of a text's expression where it is picked))
+    {"Type", "split italic wrap wrap_at", "kind", "text"},   // (a text's, shown unasked, as Alight Motion keeps Edit Text among a text's tiles (AbsentMotion's LayerTools.kt): its slant, its lines broken in a box or set down the page, its letters or words each its own (the user, 11/5: more of a text's expression where it is picked))
     {"Gradient", "gradient gradient_angle gradient_scale gradient_spread", "fill", "~ ", true},
-    {"Copies", "copies copy_columns copy_x copy_y copy_rotate copy_rotate_x copy_rotate_y copy_turn copy_size copy_opacity_end copy_wide copy_z tall copy_tall copy_fill copy_fill_way", nullptr, nullptr, true},
+    {"Copies", "copies copy_columns copy_x copy_y copy_rotate copy_rotate_x copy_rotate_y copy_turn copy_size copy_opacity_end copy_wide copy_z tall copy_tall stagger stagger_from copy_fill copy_fill_way", nullptr, nullptr, true},
     {"Wave", "wave_x wave_y wave_z wave_rotate wave_size wave_speed wave_phase wave_noise noise_scale", nullptr, nullptr, true},
     {"Field", "field_x field_y field_z field_radius field_band field_size field_rotate field_push", nullptr, nullptr, true},
     {"Scatter", "scatter_x scatter_y scatter_z scatter_rotate scatter_size seed drift_x drift_y", nullptr, nullptr, true},
@@ -417,8 +416,8 @@ static const DocCard doc_cards[] = {
     {"Row", "strength gap centre_x centre_y rotate rotate_y lag", "file", "row"},
     {"Follow", "strength leader lag leader_b hand", "file", "follow"},
     {"Push", "strength leader radius", "file", "push"},
-    {"Move in", "strength lag x y spread scatter rotate rotate_y size opacity", "file", "group"},   // (things in an order and nothing else: away by its own move, turn, size and opacity, each in turn)
-    {"Strength", "strength", "file", "relate"},   // (one written as a file: its own knobs come under it, as a recipe's; not called Relation, which is a thing's members' order)
+    {"Group", "strength lag x y spread scatter rotate rotate_y size opacity", "file", "group"},   // (things in an order and nothing else: away by its own move, turn, size and opacity, each in turn)
+    {"Relation", "strength", "file", "relate"},   // (one written as a file: its own knobs come under it, as a recipe's)
     {"Falloff", "region falloff_soft falloff_invert", "file", "!"},   // (any with a file: a behaviour shows only such cards, doc_cards_of)
     {"Note", "label note", nullptr, nullptr, true},   // (what a maker wrote of it: After Effects' layer comment)
     {"Trim Paths", "trim trim_begin trim_offset", "trim", "+"},
@@ -445,7 +444,7 @@ static bool doc_rows(Doc& d, char* ask, const std::function<void(sqlite3_stmt*)>
 static void doc_forget(Doc& d) {
     d.phys_stale = true, d.scripted.clear();   // (the world made again only if what it is made of changed: doc_physics)
     d.moving.clear(), d.literals.clear(), d.words.clear(), d.keyed.clear(), d.halves.clear(), d.heardWords.clear(), d.talls.clear();
-    d.named.clear(), d.tracks.clear(), d.drivers.clear(), d.connects.clear(), d.relationsOf.clear(), d.membersOf.clear(), d.orderFrom.clear(), d.placeReach.clear();
+    d.named.clear(), d.tracks.clear(), d.drivers.clear(), d.connects.clear(), d.relationsOf.clear();
     d.laid.clear();
 }
 // The things in the order they lie, the one furthest back first: by `order` where it is said, else as they were made.

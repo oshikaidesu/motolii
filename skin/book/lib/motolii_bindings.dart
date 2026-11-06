@@ -1516,31 +1516,6 @@ class MotoliiBindings {
         )
       >();
 
-  int motolii_members(
-    ffi.Pointer<Motolii> m,
-    int thing,
-    ffi.Pointer<ffi.Double> members,
-    int room,
-  ) {
-    return _motolii_members(m, thing, members, room);
-  }
-
-  late final _motolii_membersPtr =
-      _lookup<
-        ffi.NativeFunction<
-          ffi.Int Function(
-            ffi.Pointer<Motolii>,
-            ffi.Int,
-            ffi.Pointer<ffi.Double>,
-            ffi.Int,
-          )
-        >
-      >('motolii_members');
-  late final _motolii_members = _motolii_membersPtr
-      .asFunction<
-        int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<ffi.Double>, int)
-      >();
-
   int motolii_pen(
     ffi.Pointer<Motolii> m,
     int thing,

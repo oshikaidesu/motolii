@@ -6,10 +6,8 @@
 // session records, one step of undo as any other. A file it names in the library's folders or the maker's own is kept
 // as {motolii}/... or {own}/... (doc_folders), so a look made on one machine finds its effects on another (words only: a number stays a number).
 // After Effects' animation presets (.ffx: effects and their keys), Alight Motion's Save as Preset and Paste Style.
-static const char* const doc_look_kept_out = "'kind','file','text','shape','path','parent','element'";   // (what it is: a shape's own figure and drawn path too)
-// (kept only when keyed: a pulse is a look, a size is not; a move too, its keys and their ways, where it lies is not:
-//  After Effects' animation presets keep Position's keys, Texton's In keeps its rise)
-static const char* const doc_look_placed = "'x','y','z','size','scale_x','scale_y','rotate','rotate_x','rotate_y','orient'";
+static const char* const doc_look_kept_out = "'kind','file','text','shape','path','x','y','z','parent','element'";   // (what it is: a shape's own figure and drawn path too)
+static const char* const doc_look_placed = "'size','scale_x','scale_y','rotate','rotate_x','rotate_y','orient'";   // (kept only when keyed: a pulse is a look, a size is not)
 static const char* const doc_look_links = "'parent','mosh_with','copy_on','connect','connect_to','boolean_with','trail','morph_to'";   // (values that are another thing's number: doc_kinds.h)
 
 // The library's folder and the maker's own, as a look's words for them say them (doc_folders: the same order).
@@ -106,43 +104,6 @@ static bool doc_look_put(Doc& d, int thing, const char* path) {
         "insert or ignore into way select * from look.way;%s", thing, doc_look_kept_out, thing, roots.first.c_str(), roots.second.c_str(), doc_look_kept_out, carried.c_str()));
     sqlite3_exec(d.file, "detach database look", nullptr, nullptr, nullptr);
     return ok;
-}
-// A Cavalry Animator from the shelf (animators/*.js: one value of each copy from a number to another over a length, a
-// way, each copy later by its order) given as what it multiplies, so the same hand changes it after: two keys on that
-// value (about where it rests: the end of an In, the start of an Out; an opacity as a share of it), the way on the
-// first, and the order the group's own (stagger; stagger_from start, or random). An In from when the thing begins, an
-// Out to end a frame before it does, as the Animator ran (cavalry_kept's animate). After Effects' Animation Presets lay
-// their keys so; Texton's In keeps its rise, way and order as one. Print On and Off: each copy seen in turn, its key a
-// frame long, the length its order. One step; false: not an Animator, said as any script is.
-static bool doc_animator_lay(Doc& d, int thing, DocScript* sc) {
-    if (!sc || !sc->run || !sc->run->ok()) return false;
-    std::map<std::string, double> numbers;
-    for (const ScriptKnob& k : sc->knobs)
-        if (k.kind != "select") numbers[k.name] = k.usual;
-    std::istringstream said(sc->run->laid(numbers));
-    std::string what, way;
-    double from = 0, to = 1, length = 0, delay = 0;
-    int random = 0, out = 0;
-    if (!(said >> what >> from >> to >> length >> delay >> random >> out)) return false;
-    std::getline(said >> std::ws, way);
-    const bool print = what == "print", share = print || what == "opacity";
-    const char* name = doc_lasting(print ? "opacity" : what);
-    if (!doc_knows(d, thing, name, nullptr, nullptr, true)) return false;
-    if (print) from = out ? 1 : 0, to = out ? 0 : 1, delay = length, length = 1.0 / 60.0;
-    const double begins = doc_literal(d, thing, "start", 0, 0), lasts = doc_literal(d, thing, "duration", 0, -1);
-    const double ends = lasts > 0 ? begins + lasts : std::max(begins, doc_seconds(d));
-    const double at = out ? std::max(begins, ends - 1.0 / 60.0 - delay - length) : begins;
-    const double rests = doc_number(d, thing, name, out ? at : at + length, doc_usual_on(d, thing, name));
-    doc_act(d);
-    if (doc_word(d, thing, "kind") == "text" && doc_word(d, thing, "split").empty()) doc_say(d, thing, "split", "letters");   // (letter by letter, as Cavalry's Animators move a text and a text given a script was: doc_match's split)
-    doc_key(d, thing, name, at, share ? rests * from : rests + from);
-    doc_key(d, thing, name, at + length, share ? rests * to : rests + to);
-    if (!way.empty()) doc_way(d, thing, name, at, way.c_str());
-    if (random || doc_literal(d, thing, "stagger", 0, 0) == 0.0) {   // (the order the maker gave stays theirs: a preset brings its keys and their way, its own order only where none is, or where its name is an order (Random Fade In))
-        doc_set(d, thing, "stagger", delay);
-        doc_say(d, thing, "stagger_from", random ? "random" : "start");
-    }
-    return doc_acted(d);
 }
 // A copy (doc_look_save whole) made a thing again, the newest number (Edit > Paste): it begins at `now`, its keys moved
 // with it (as doc_keys_by moves a thing's), as Ableton Live pastes at the insert marker; the behaviours it carried and

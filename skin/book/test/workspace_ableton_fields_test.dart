@@ -130,7 +130,7 @@ void main() {
   testWidgets('a text\'s script comes off by the bin on its card, as an effect does (Alight Motion\'s Delete)', (t) async {
     final ws = await openWorkspace(t), m = ws.inside!;
     final a = m.add('text', '$motoliiDir/out/arial_black.ttf');
-    expect(m.say(a, 'script', '$motoliiDir/recipes/sunflower.js'), isTrue, reason: m.trouble);   // (a script that stays one: an Animator is laid as keys, doc_animator_lay)
+    expect(m.say(a, 'script', '$motoliiDir/animators/bounce_in.js'), isTrue, reason: m.trouble);
     ws
       ..reread()
       ..select('$a');

@@ -90,14 +90,6 @@ int main(int argc, char** argv) {
         else if (call == "define" && w.size() >= 3) ok = motolii_define(m, w[1].c_str(), rest(2).c_str());
         else if (call == "ways" && w.size() == 1) { std::printf("  %s\n", motolii_ways(m)); continue; }
         else if (call == "cards" && w.size() == 2) { const int n = thing(); if (numbers) std::printf("  %s\n", motolii_cards(m, n)); continue; }   // (a thing's cards as the inspector lays them: "title: names; ...")
-        else if (call == "members" && w.size() == 2) {   // (each member as its order reads it, a line each: x y z and how much later: motolii_members)
-            const int n = thing();
-            if (!numbers) continue;
-            std::vector<double> all(4 * (size_t)std::max(0, motolii_members(m, n, nullptr, 0)));
-            const int got = motolii_members(m, n, all.data(), (int)all.size() / 4);
-            for (int i = 0; i < got; ++i) std::printf("  %d %.4f %.4f %.4f %.4f\n", i, all[4 * (size_t)i], all[4 * (size_t)i + 1], all[4 * (size_t)i + 2], all[4 * (size_t)i + 3]);
-            continue;
-        }
         else if (call == "value" && w.size() == 4) { const int n = thing(); const double at = number(3); double is = 0; if (numbers && (ok = motolii_value(m, n, w[2].c_str(), at, &is))) { std::printf("  %.4f\n", is); continue; } }
         else if (call == "make" && w.size() >= 2) ok = motolii_make(m, rest(1).c_str()) != 0;
         else if (call == "effect" && w.size() >= 3) { const int n = thing(); if (numbers) ok = motolii_effect(m, n, rest(2).c_str(), motolii_now(m)); }   // (an effect's name may have spaces)

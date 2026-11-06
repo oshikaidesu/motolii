@@ -182,17 +182,6 @@ function animate(i, n, t, k, a) {
   out[a.what] = a.from + (a.to - a.from) * ease(a.way, u);
   return out;
 }
-// The same Animator as what it multiplies, asked once when it is given (doc_animator_lay lays it as keys, a way and the
-// copies' order): each() told with a stand-in animate that keeps what it was asked. Words "what from to length delay
-// random out way" (the way last: one said with numbers has spaces); '' for an each() that is not an Animator.
-function __laid(k) {
-  var asked = null, was = animate;
-  animate = function (i, n, t, kk, a) { asked = { k: kk, a: a }; return {}; };
-  try { each(0, 2, 0, k); } catch (e) {} finally { animate = was; }
-  if (!asked) return '';
-  var a = asked.a, kk = asked.k, length = kk.length || 40 / 60, delay = kk.delay === undefined ? 20 / 60 : kk.delay;
-  return [a.what, a.from, a.to, length, delay, a.random ? 1 : 0, a.out ? 1 : 0, a.way || ''].join(' ');
-}
 )";
 
 // ease(name, u): a way by its name (ways.h), the same expression as a key's stretch; not one of them: as it is.
@@ -340,14 +329,6 @@ static std::string script_said(JSContext* cx, const char* js) {
     return said;
 }
 std::string Script::said(const std::string& js) { return own->sketch && ok() ? script_said(own->cx, js.c_str()) : ""; }
-std::string Script::laid(const std::map<std::string, double>& numbers) {
-    if (own->sketch || own->whole || !ok()) return "";
-    knobs(numbers, {});
-    JSValue g = JS_GetGlobalObject(own->cx);
-    JS_SetPropertyStr(own->cx, g, "__k", JS_DupValue(own->cx, own->knobs));
-    JS_FreeValue(own->cx, g);
-    return script_said(own->cx, "__laid(__k)");
-}
 std::vector<uint8_t> Script::bytes(const std::string& js) {
     std::vector<uint8_t> out;
     if (!own->sketch || !ok()) return out;

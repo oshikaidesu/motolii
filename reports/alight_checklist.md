@@ -457,36 +457,6 @@ AbsentMotion（AM の写し）の欄の要素を機械で書き出し（panels/*
 
 
 ## T. いまの順番（ここを見れば続きが分かる。上から順に）
-- [ ] コピーごとに値を変える道を 1 本にする（11/6、Fable との「cssのダサさ」と Code で話した。まだ何も消していない）：残すのは behaviour の `_by`（Cavalry から借りた物）。Cavalry は文字ごとの遅れも Stagger を Duplicator の Shape Time Offset につなぐだけで、時間専用の道は無い（https://cavalry.studio/docs/nodes/behaviours/stagger/ ）。同じ計算の組：Scatter と behaviour の random は同じハッシュ（`doc_place.h:45`、`doc_relations.h:13`）、Wave は oscillator、wave_noise は noise、Field は falloff（region）に近い。消す前に、使っているレシピを behaviour で書き直して同じ絵を出す：field_ は field_dots・spiral・weave、scatter_ は confetti・plexus、wave_ は 12 本（Fable は check だけ見て「使用ゼロ」と言った）。物差しは `engine/check/rules.sh`（Fable が書いた、未コミット）。behaviour の stagger 型は値を番号順に配る物で、`doc_delay`（時間をずらす）の代わりにならないので消さない。11/4 の「固定のつまみはレシピ用に残す」は、レシピが移れば理由が消える。時間のずれを Cavalry 式（behaviour → 時間のずれ）にするのは最後
-- [ ] グループの Inspector（11/6、ユーザーと Code で決めた考え）：「たくさんあっても、1 つの時と同じ手で動かせる。新しく覚えるのは『どの順で』だけ。それは並んでる絵を触って決める」。中身は キー × イーズ × 順番 の掛け算 1 本。イーズはキーが持つ（Texton がイーズまで抱えたのは、After Effects で文字を割ると N 枚の層と N 組のキーになるから。Motolii はグループに 1 組）。アニメーターはその掛け算の型。図はグループの Inspector の中に置く（舞台で掴めると他の掴みの邪魔、カメラの外に出ると触れない：ユーザー）。試験 `engine/check/group.sh`（手で・型に残して別の文字へ・棚の Bounce In の順番を手で変える・奥行き、の 4 つ。11/6 に 4 つとも yes）
-- [x] 順番を本物の並びから数える、奥行きも（11/6、group.sh の 4）：並びの計算を `doc_member_laid` 1 本に（`doc_place` が描く場所と `doc_delay` が数える場所が同じ物を読む。前は順番の側が並びを自分で計算し直していて、奥行きが抜けていた）。点に `stagger_z`。出典：Cinema 4D の Plain Effector の Time Offset を球の Field で（クローンの本当の場所で遅れる）、GSAP の from
-- [x] 型にキー・イーズ・順番が乗る（11/6、group.sh の 2）：Look の保存で x y z を「キーがある時だけ残す」側へ（前は置き場所として丸ごと捨てていて、y のキーも落ちていた）。After Effects の Animation Presets は Position のキーも持つ
-- [x] 棚のアニメーター 13 個を型にする（11/6、group.sh の 3）：落とすとキー 2 つ＋イーズ＋順番（`stagger`、`stagger_from`）を書く（`doc_animator_lay`。JS 側は `__laid` で「animate に何を頼んだか」を聞くだけ）。割れていない文字は文字ごとに割る（前と同じ）。入口（`say script`、棚の名前）はそのまま、古い書類の JS は今まで通り毎コマ動く（Strangler Fig）。絵は Bounce In・Fade Out・3D Swing In・Slide Out で前と 0 px。違い：Print On は 1 文字の間が「長さ÷文字数」から「長さ÷(文字数−1)」に（GSAP の stagger の amount と同じ割り方）、Random の並びは Seed の計算が別。棚の札の ON と 2 回目の押しで外すは無くなった（Look と同じ。外すのは取り消し）
-- [x] グループの Inspector の図（11/6、`skin/book/lib/sets/inspector/inspector_order.dart`、試験 `test/workspace_order_test.dart`）：Copies カードの上に、メンバー（コピー・割った文字）を並びのまま点で描き、先に動く物ほど明るい。撫でる＝始め・終わり・真ん中から・端から、押す＝その点から（奥行きも）、十字を引いて別の点へ、振る＝ばらばら（もう一度で別の並び）、ダブルクリック＝全員いっしょ。各 1 手で取り消し 1 回。普段 24、手を乗せると 72（ノート §7）、言葉で今の順番、手の下では触り方（Blender のステータスバー）、キーが無ければ「キーを打つと順に動く」（ノート §9）。奥行きは右上へ半分の長さ（製図のキャビネット図）と x y z の軸。点の場所と遅れは中身に聞く（`motolii_members`、別の isolate で、窓の書きの後ろに並ぶ：skin/BRIDGE.md の Q）。出典：GSAP の stagger from、Apple Motion の Sequence Text の Direction、Cinema 4D の Plain Effector の Time Offset と Field、Flutter の kDoubleTapTimeout
-- [x] 順番を「関係（Relation）」の札へ（11/6 午後、ユーザー：「グループレイヤーのインスペクターに関係が出る」「テキストやクローナーのモーションを取り出し、どんな物にも掛ける」）：⌘G で作ったグループ・割った文字・コピーの 3 つとも、メンバーが 2 つ以上なら Transform のすぐ下に Relation の札（文字は 2 文字から、Split もこの札へ）。⌘G のグループのメンバーは、グループの位置と不透明度を自分の順番の分だけ遅れて受け取る（`doc_delay_in`、`engine/check/group.sh` の 6）。選んだグループは文字と同じ読む順（Move in の読み方）。物を 2 つ以上選ぶと舞台の札の列の最初に Group。図はいつも 72、押す・なぞるだけ（撫でる・振る・ダブルクリックは消した）。Delay → First to last、初めの間隔はキーの長さ。手引き `reports/group_relation_guide.md`、決め 1 つずつの理由 `reports/group_inspector_reasons.md` の R1〜R10（第三者の厳しめの批評 2 回）
-- [x] 関係の札を自由に（11/6 夕、ユーザー：「トランスフォームやアンカーのインスペクターは自由だ。なぜ関係はそれである意味がある？コピーにつられてないか？」）：つられていた（From の言葉と全体幅は 10/14 に Copies の札へ GSAP の stagger として入った物を、名前ごと移しただけ）。始まる場所は図のどこにでも置ける（メンバーと真ん中に 8 点で吸い付く：Anchor の点と同じ）、First to last はマイナスで逆向き、By は place／order／random（order は 2 行の文字・輪のコピーのため）、名前は値を読んで付く（From the first、Toward the middle、From here）。place でも最初は 0 秒（GSAP の distribute）。手を離した後に図が描き直されなかった不具合も直した（`doc.watch`）。`engine/check/group.sh` の 7、理由は `reports/group_inspector_reasons.md` の F1〜F8
-- [ ] 複数選んだだけで Relation を出すか（第三者の提案、今は退けた：持ち主の流れは選ぶ→グループ→関係）。ゴルフで「選んだまま」探す人が多ければ考え直す
-- [ ] タイムラインのバーにメンバーの遅れを描く（ゴルフ 3 回目の 1 人目は順番をバーの頭で作った：バーと関係の図を 1 つの絵に）
-- [ ] 回転と大きさを、メンバーが 1 つずつその場で（今はグループや文字全体の中心のまわりを順になぞる。コピーだけ大きさはその場）。キーの「止まっている形」（In なら最後、Out なら最初）を決めないと作れない（手引きの「まだ」）
-- [ ] Move in（選んだ物が順に入る今の札）を、グループ＋モーション＋関係に合流させる。今のモーションは 1 つの値だけで、Move in の x・y・回転・大きさ・不透明度・散らしを全部はまだ出せない
-- [ ] Around・Row・Follow・Push を関係の札に合流（持ち主のノート §9「3 つの窓の設計を 1 枚に」）。舞台右下の Relations タブも同じ言葉
-- [x] 輪に並べたコピーの順番（11/6、group.sh の 5）：Turn all（`copy_turn`）・Rotate each・copy_size はアンカーの周りで回すので、アンカーがずれていると輪や渦になる。順番はその本当の真ん中から数える（`doc_member_middle`。前は行の場所だけで、輪は 1 点に潰れて、点から広げると全員 0 秒だった）。回さない時は前と同じ数字。出典：Cinema 4D の Cloner の Radial（Field はクローンの場所を読む）
-- [x] 古い Copies の図（＋と間隔のつまみ）と順番の図を 1 枚に（ノート §9 の「既存の＋と間隔のつまみ」）。今は 2 枚が縦に並ぶ（第三者の批判 11/6） — 半分済（11/6 午後）：順番の図は Relation の札へ移り、Copies の札は Copies の図だけ。同じコピーが 2 つの札で別の絵になるのは残る
-- [ ] 振ると `seed` が変わり、Scatter と wiggle の並びも変わる（ノート §7 の「図は順番だけ」と食い違う。ノート §7 の表は `seed` と書いている。Cavalry の Stagger、Cinema 4D の Random Effector は機能ごとに seed を持つ） — 振るは消した（11/6 午後）。random の並びが Scatter と seed を分け合うのは残る（Seed を変えると両方変わる）
-- [ ] 格子の「真ん中から」「端から」が番号順（3×3 で角 2・6 が辺 1・7 より先）。GSAP は `grid` と `axis` で 2 次元の距離にする
-- [ ] 点は場所で覚える（`stagger_x/y/z`）：コピーを増やすと別のコピーの上になる、文字を直すと始まりの文字がずれる。GSAP は番号、Cinema 4D は場所。ノート §7 の表どおり場所のまま
-- [ ] 複数行の文字は図で行が重なる（`doc_member_at` は文字の y を 0 で返す）
-- [ ] Animate all が点（`stagger_x/y/z`）にキーを打つか見ていない
-- [x] 選んで作ったグループ（ノート §6 の 3 つ目）は `doc_members` が数えない — 済（11/6 午後、`doc_group_members`、group.sh の 6）
-- [x] 割った文字の Copies カードが How many 1・Gap X 0 を出す（メンバーは 7 文字） — 済（11/6 午後）：割った文字に Copies の札は出ない。順番は Relation
-- [ ] パスに沿った並び（`copy_on`）の順番：`doc_member_at` は行・列・奥行きの並びだけ。パス沿いの場所ではまだ数えていない
-- [ ] 棚の Motion の札を Look と同じ見せ方に（ON にならず、押しても外れない今の形に合わせる）
-- [ ] `integration_test/alight_check_test.dart` の progress（Print On）の絵を撮り直す（1 文字の間が変わった）
-- [x] 最後のゴルフ（グループ）：打数と打率に加えて、1 手ごとに「どこを押すか分かって押したか、当てずっぽうか」と、触った感覚を採点役に聞いて残す（ユーザー 11/6）— 済（11/6、golf_noise.md の「グループの順番」）：初見のエージェント 2 人が本物の窓で。1 回目 3 ホール 18 打（分かって 12）、届いたが図は 1 度も触られず From の選びで決めた。点の明暗と大きさ・指の矢印を直した 2 回目は 2 ホール 13 打（分かって 9）、2 ホールとも図を触って決めた（L から両側へは十字を引いて、奥から先へは奥の点を 1 回押して）。3 回目（11/6 夕、入口から、ホールは第三者）：3 つの形では 1 人目がバーをずらして解いた（ホールが入口を測っていなかった）。12 個の波紋のホールでは 2 人とも、囲んで選ぶ→Group→Relation→星の点で届いた（14 打・15 打、分かって 8・9）。迷いは不透明度の数字の打ち込み（golf_noise.md (g13)〜(g16)）
-- [ ] 文字の順番の入口（golf (g3)、2 回とも一番の迷い）：割った文字に順番があることが層・時間軸・キーのどこにも出ず、Copies（How many 1）は Inspector の下の方。ノート §6 は「上に並び（既存の Copies カード）」 — 11/6 午後：Relation の札が 2 文字から Transform のすぐ下に出て、Split もそこへ。入口はゴルフ 3 回目で測る — 11/6 夕：グループの入口は測れた（ripple の 2 人とも、囲んで選ぶ→Group→Relation が開いている、で見つけた）。文字の入口はまだ測っていない
-- [ ] 図の点に文字を描く（golf (g7)。Apple Motion の Sequence Text は文字そのもの）、閉じた 24 で奥行きの列が筋に潰れる（(g9)）、図の右上の奥行きと正面の舞台の向きの違い（(g8)） — 24 は無くした（11/6 午後、いつも 72）。(g7)(g8) は残る
-- [x] Copies の Delay は全体の幅なのに「1 つずつ」に読める（golf (g4)。GSAP は each と amount を分ける） — 済（11/6 午後）：名前を First to last に
-- [ ] `docs/notes/GROUP_INSPECTOR.md` の未コミットの「次：図を 1 から 200 行、doc_delay を Dart に写す」（持ち主のメモなので触っていない。図の考えは上の行）
 - [x] 平らな物にも厚い物にもランプの光と影を当てる（11/1、golf_noise (175) の残り） — 済（11/1）：After Effects の 3D レイヤーに合わせ、書類にランプがあれば 3D の物と厚い物が受ける（`doc_lit`、`flat_lit`）。影は描いた形（Filament の WebGPU が色なしの撮影で fragment を捨てていたのを `filament_webgpu_depth_fragment.patch` で止めた）。ランプが無ければ今まで通りで 0 画素差、太陽の影つきで厚い文字 8 個 60.0 枚/秒、窓で太陽を回して確かめた。
 - [x] 文字の面取りを距離から作る：Bevel（angular convex concave ogee step）と Bevel Depth。絵の縁からの距離は bevy_mod_outline の Jump Flood（MIT OR Apache-2.0）で、絵が描き直された時だけ作る。深さを文字の芯まで伸ばせば Chizzle の彫り。After Effects の Bevel Style、Easy Typography の Ogee と Step が出典。8 個で 58.7 枚/秒（無しで 59.1）、窓で深さのドラッグと 6 種の選択を確かめた
 - [ ] 面取りの残り：step は深さ 85px で下端が少し破れる。Hole Bevel Depth（After Effects）は内外の区別が要る
