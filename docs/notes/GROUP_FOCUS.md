@@ -125,6 +125,15 @@
   計算をして手順ごと巻き戻していた（behaviour は fact を書くだけ）。書いた直後のキャッシュが古く、手で持つ間に
   見えなかった（doc_forget）。
 
+### 窓で手引きを通した（11/6 夜、hole five）
+- 1〜3：⌘A → ⌘G → 2 度押しで中（Group の行だけ）→ Auto key → Y にキー 2 つ → ▸ を 1 秒へ：Order の行が出る
+  （engine/out/golf/round4_order_row.png）。
+- 5：Order の行を押す → Inspector に Order の札（Lag 0.26 s・From start・Seed・Strength 100 %）と Falloff。
+  パンくず golf.motolii / Group / Order（round4_order_card.png）。
+- 6：舞台で気球を押す → 気球の行が出る。X にキーを打つ → 2 キー、行は残る（round4_named_child.png）。
+- 4（値を落として行）はまだ無い。見て気づいた事：Order の行はバーが文書の長さで、キーは無い。Order を押すと舞台に
+  位置（960, 540）と枠が出る：関係の行が舞台に立つ、の土台はもうある。
+
 ### 手順（スイミー、9 手。中のビューを使う所を含む）
 1. 31 匹を囲んで ⌘G。
 2. Group の X にキーを 2 つ。全員いっせいに右へ。
