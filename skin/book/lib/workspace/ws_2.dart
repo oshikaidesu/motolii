@@ -465,7 +465,7 @@ class Ws extends ChangeNotifier {
 
   // The group the timeline stands inside: its own row on top (what moves its things: its keys, its ▸), a line, then the
   // things it holds, and nothing else of the document; entered by a second press on its row, left by the crumb above
-  // (After Effects' precomp opened, Figma's group entered; docs/notes/GROUP_FOCUS.md "グループの中の絵"). A group held in
+  // (After Effects' precomp opened, Figma's group entered; docs/notes/GROUP_FOCUS_new.md "グループの中の絵"). A group held in
   // it is one row until entered in turn. null: the whole document. (Not kept in the file.)
   String? _entered;
   String? get entered => _entered;

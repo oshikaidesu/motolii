@@ -174,7 +174,7 @@
 | 採点表と採点4回 | `docs/notes/AE_RUBRIC.md`、`reports/ae_rubric/round_0*.md`、`evidence.md`、`try.md` | — |
 | タスク表 | `docs/notes/TASKS.md` | — |
 | グループのインスペクター（オーナーのメモ） | `docs/notes/GROUP_INSPECTOR.md` | — |
-| グループは配列（机上の決め・手引き・残り） | `docs/notes/GROUP_FOCUS.md` | 書いた（11/6） |
+| グループ（ユーザーの言葉と時刻だけ・今のコードとの違い） | `docs/notes/GROUP_FOCUS_new.md` | 書いた（11/7） |
 | Motolii 自身のライセンス（Apache-2.0 か MIT を選べる、過去の倉庫 rust_ae と同じ文書） | `LICENSE-APACHE`、`LICENSE-MIT` | 決めた（10/27） |
 | 関わり方（Issue・PR・台帳と出典の決まり・知っている穴） | `CONTRIBUTING.md` | 書いた（10/27） |
 | 取ってくる物の小さなスクリプト：Filament の組み立て済み SDK（前の試しのスクリプトが使う）、MIDI ビューの PianoRollSvg.js | `engine/sdk.sh`、`engine/midi_roll.sh` | 空の所から取れることを確かめた（10/27） |

@@ -323,7 +323,7 @@ static double doc_delay(Doc& d, int thing, int nth) { return doc_order_delay(d, 
 // straight under it, in the order they lie, the furthest back first: its copies' order law on its things; After
 // Effects' delayed parenting, valueAtTime(time - delay * index)). 0 under anything else.
 // (the order is a row inside the group: a behaviour of file "order" with the group as its parent, its lag the each and its
-//  lag_from the start (docs/notes/GROUP_FOCUS.md). A group with none reads its own stagger, as documents before had it.
+//  lag_from the start (docs/notes/GROUP_FOCUS_new.md). A group with none reads its own stagger, as documents before had it.
 //  A behaviour in the group is not one of the things that go in turn, and has no turn itself.)
 static int doc_order_of(Doc& d, int group) {
     for (const int t : doc_laid(d))

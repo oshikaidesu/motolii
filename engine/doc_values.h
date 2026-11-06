@@ -373,7 +373,7 @@ static const DocCard doc_cards[] = {
     // (in the order a hand needs them: first what every thing has, as After Effects' Properties panel keeps Layer Transform at the top for all layer types; then, Alight Motion's Opacity & Blending, how it lies on what is under it; then its own, Text and Paragraph, Shape Properties)
     {"Transform", "space parent anchor_x anchor_y anchor_z x y z scale_x scale_y scale_z rotate_x rotate_y rotate opacity", "kind", "!camera"},   // (After Effects' Transform group: where it is, how large, how turned, how seen; each its own value)
     // (a group's order (stagger, Delay each) has no card: it is the ▸ after each of the group's keys on the timeline, pulled
-    //  (timeline_paint.dart wtSpreadX; docs/notes/GROUP_FOCUS.md). The card held the order in words, apart from where the
+    //  (timeline_paint.dart wtSpreadX; docs/notes/GROUP_FOCUS_new.md). The card held the order in words, apart from where the
     //  moves are made; golf players 1–8 went round it (reports/golf_noise.md))
     {"Relation", "stagger stagger_from seed", "shape", "!null", true},   // (anything else with things in an order, its copies or a text split into its letters or words: the same order law, the same card, shown unasked once it has them (doc_cards_of). It lay in Copies, where a text's letters were not looked for, golf (g3))   // (a group's: its own moves, its Transform's keys and ways, given each of its things in turn, its copies' order law on its things; the motion of text animators and cloners on any group)
     {"Camera", "parent x y z rotate_x rotate_y rotate distance zoom", "kind", "camera"},
@@ -422,7 +422,7 @@ static const DocCard doc_cards[] = {
     {"Follow", "strength leader lag leader_b hand", "file", "follow"},
     {"Push", "strength leader radius", "file", "push"},
     {"Group", "strength lag x y spread scatter rotate rotate_y size opacity", "file", "group"},
-    {"Order", "lag lag_from seed strength", "file", "order"},   // (the order a group's things go in, as a row inside the group (docs/notes/GROUP_FOCUS.md): each so much later, from which one, its roll; how much of it (keyed: its weight). The ▸ after the group's keys on the timeline pulls lag)   // (things in an order and nothing else: away by its own move, turn, size and opacity, each in turn)
+    {"Order", "lag lag_from seed strength", "file", "order"},   // (the order a group's things go in, as a row inside the group (docs/notes/GROUP_FOCUS_new.md): each so much later, from which one, its roll; how much of it (keyed: its weight). The ▸ after the group's keys on the timeline pulls lag)   // (things in an order and nothing else: away by its own move, turn, size and opacity, each in turn)
     {"Relation", "strength", "file", "relate"},   // (one written as a file: its own knobs come under it, as a recipe's)
     {"Falloff", "region falloff_soft falloff_invert", "file", "!"},   // (any with a file: a behaviour shows only such cards, doc_cards_of)
     {"Note", "label note", nullptr, nullptr, true},   // (what a maker wrote of it: After Effects' layer comment)

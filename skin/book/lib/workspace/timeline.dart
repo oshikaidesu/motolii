@@ -52,7 +52,7 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
 
   // Inside a group: its rows stand in a room of their own on top, under the ruler they share, and the whole document's
   // rows stay below (Ableton Live's Clip View: opened by a double click, sized by its edge, dragged shut to close it;
-  // docs/notes/GROUP_FOCUS.md 上からスッと出る段). _pin: how many of _order's rows are that room's (0: none open).
+  // docs/notes/GROUP_FOCUS_new.md 上からスッと出る段). _pin: how many of _order's rows are that room's (0: none open).
   int _pin = 0;
   double _pscroll = 0;   // (the room's rows scrolled, apart from the whole's)
   double? _panelWant;   // (the height the room's edge was pulled to, kept for the next time it opens; null: half the timeline, never as short as its rows (the maker, 11/6: 高さはユーザーハンドルで決める))
@@ -131,7 +131,7 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     final m = ws.inside;
     if (m == null) return const [];
     final id = int.parse(l.id), up = (m.value(id, 'parent', 0) ?? 0).round();
-    final order = m.word(id, 'kind') == 'behaviour' && m.word(id, 'file') == 'order';   // (the Order row inside a group: the group's keys as they come for each thing are drawn on it, since it is what sends them in turn (GROUP_FOCUS.md: echo は Order の行へ); the group's own row keeps its keys and ▸ only)
+    final order = m.word(id, 'kind') == 'behaviour' && m.word(id, 'file') == 'order';   // (the Order row inside a group: the group's keys as they come for each thing are drawn on it, since it is what sends them in turn (GROUP_FOCUS_new.md: echo は Order の行へ); the group's own row keeps its keys and ▸ only)
     final group = order || l.kind != WsKind.group ? (up == 0 || (!order && m.late(id) <= 0) ? null : ws.layers.where((g) => g.id == '$up' && g.kind == WsKind.group).firstOrNull) : (_orderOf(m, id) == null ? l : null);   // (a group with an Order row: none on its own row; without one (an old document's stagger): all, as before)
     if (group == null) return const [];
     final gid = int.parse(group.id);
@@ -553,10 +553,10 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     final sel = ws.selected, picks = ws.keys, lit = {...ws.many, ...wsMembersOf(ws), for (final p in [?sel, ...ws.many]) ?away[p]};   // (picked together, or moved by the relation picked, or a shut group a picked thing is in: lit with it)
     // (inside a group: its own row first, then its relations (the behaviours in it, its Order among them) and the things in
     //  it that are named: picked, or with keys of their own. The rest of what it holds goes as the relations say, and is
-    //  not here; the rest of the document neither. docs/notes/GROUP_FOCUS.md: 関係の行と、名指しで出した物の行だけ)
+    //  not here; the rest of the document neither. docs/notes/GROUP_FOCUS_new.md: 関係の行と、名指しで出した物の行だけ)
     // (inside a group, its room on top: its own row, then its relations (the behaviours in it, its Order among them) and
     //  the things in it that are named: picked, or with keys of their own; the rest of what it holds goes as the
-    //  relations say. Below it the whole document as ever, the group one row there. GROUP_FOCUS.md: 関係の行と、名指しで
+    //  relations say. Below it the whole document as ever, the group one row there. GROUP_FOCUS_new.md: 関係の行と、名指しで
     //  出した物の行だけ; 置き換えではなく上からスッと出る段)
     final entered = ws.entered, head = entered == null ? -1 : ws.layers.indexWhere((l) => l.id == entered), m = ws.inside!;
     if (entered != _wasEntered) {
