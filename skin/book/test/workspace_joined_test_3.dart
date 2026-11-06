@@ -1997,6 +1997,18 @@ void _tests3() {
     expect(m.value(g, 'stagger', 0) ?? 0, closeTo(0, .001), reason: 'the group itself holds no order any more');
     expect([m.late(a), m.late(b), m.late(c)]..sort(), [closeTo(0, .02), closeTo(.5, .02), closeTo(1, .02)], reason: 'in turn');
     expect(painter().rows[row()].late, Ws.fps, reason: 'the ▸ now a second after each key');
+    expect(painter().rows[row()].echoes, isEmpty, reason: 'the group\'s own row keeps its keys and ▸ only: the echoes are the Order row\'s, which sends them in turn');
+    ws.enter('$g');
+    await t.pumpAndSettle();
+    final inRoom = (t.widget<CustomPaint>(find.descendant(of: find.byKey(const ValueKey('ws-tl-room')), matching: tracks)).painter! as WtTracksPainter).rows;
+    expect([for (final r in inRoom) r.name], ['Group', 'Order']);
+    expect(inRoom[1].echoes.length, 4, reason: 'on the Order row: each key as it comes for the two that go later');
+    for (final (i, e) in inRoom[1].echoes.indexed) {
+      expect(e, closeTo([Ws.fps ~/ 2, Ws.fps, 2 * Ws.fps + Ws.fps ~/ 2, 3 * Ws.fps][i], 1));
+    }
+    expect(inRoom[0].echoes, isEmpty);
+    ws.enter(null);
+    await t.pumpAndSettle();
     expect(m.key(a, 'x', 1, -1.5), isTrue, reason: m.trouble);   // (one of them given a key of its own)
     expect([m.late(a), m.value(order()!, 'lag', 0)], [closeTo(m.late(a), 0), closeTo(.5, .02)], reason: 'its own key is on top of the group\'s: it still goes in its turn (doc_above)');
     expect(m.undo(), isTrue);   // (its key)

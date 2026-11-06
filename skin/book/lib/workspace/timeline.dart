@@ -131,11 +131,16 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     final m = ws.inside;
     if (m == null) return const [];
     final id = int.parse(l.id), up = (m.value(id, 'parent', 0) ?? 0).round();
-    final group = l.kind == WsKind.group ? l : (up == 0 || m.late(id) <= 0 ? null : ws.layers.where((g) => g.id == '$up' && g.kind == WsKind.group).firstOrNull);
+    final order = m.word(id, 'kind') == 'behaviour' && m.word(id, 'file') == 'order';   // (the Order row inside a group: the group's keys as they come for each thing are drawn on it, since it is what sends them in turn (GROUP_FOCUS.md: echo は Order の行へ); the group's own row keeps its keys and ▸ only)
+    final group = order || l.kind != WsKind.group ? (up == 0 || (!order && m.late(id) <= 0) ? null : ws.layers.where((g) => g.id == '$up' && g.kind == WsKind.group).firstOrNull) : (_orderOf(m, id) == null ? l : null);   // (a group with an Order row: none on its own row; without one (an old document's stagger): all, as before)
     if (group == null) return const [];
-    final late = group == l ? {for (final t in m.things) if ((m.value(t, 'parent', 0) ?? 0).round() == id && m.late(t) > 0) (m.late(t) * Ws.fps).round()} : {(m.late(id) * Ws.fps).round()};
+    final gid = int.parse(group.id);
+    final late = group == l || order ? {for (final t in m.things) if ((m.value(t, 'parent', 0) ?? 0).round() == gid && m.late(t) > 0) (m.late(t) * Ws.fps).round()} : {(m.late(id) * Ws.fps).round()};
     return {for (final e in late) for (final k in group.keys) k + e}.toList()..sort();
   }
+
+  // The Order row inside a group, if its things go in turn by one (doc_order_of).
+  int? _orderOf(Motolii m, int group) => m.things.where((c) => (m.value(c, 'parent', 0) ?? 0).round() == group && m.word(c, 'kind') == 'behaviour' && m.word(c, 'file') == 'order').firstOrNull;
 
   // A group's row: how many frames after each of its keys its last thing comes to it (0: all at once); null: not a group.
   // Its ▸ is drawn there (wtSpreadX) and pulled to set how far apart its things go (its stagger, Delay each).
@@ -725,7 +730,7 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
                             key: const ValueKey('ws-tl-room'),
                             height: _panelH,
                             child: RepaintBoundary(
-                              child: CustomPaint(painter: WtTracksPainter(rows: rows.sublist(0, _pin), view: v, fps: Ws.fps, vscroll: _pscroll, tempo: ws.beats, restAt: _restAt)),
+                              child: CustomPaint(painter: WtTracksPainter(rows: rows.sublist(0, _pin), view: v, fps: Ws.fps, vscroll: _pscroll, tempo: ws.beats, restAt: _restAt, room: true)),
                             ),
                           ),
                           _roomEdge(),

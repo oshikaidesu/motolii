@@ -74,8 +74,9 @@
 | 6 名指し | ✅ | 無し |
 | 7 文字 | ❌ | 1 文字 1 レイヤー |
 
-見え方の嘘（4 の前に消す）：段と全体が同じ地色。echo（薄い菱形）が Group の行に出ていて配っているように見える
-→ Order の行へ。
+見え方の嘘 2 つは消した（11/7 朝）：段の地色は全体の半分の暗さ（wtRoomGround）。echo（薄い菱形）は Order の行に
+出る（配っているのは Order）。Group の行はキーと ▸ だけ。Order の無い古い文書だけ前のまま。
+engine/out/golf/round6_room_dark_echo_on_order.png。
 
 ## まだ決めていない
 

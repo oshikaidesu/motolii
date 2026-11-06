@@ -290,6 +290,9 @@ class WtRulerPainter extends CustomPainter {
 
 Color wtBand(int i, bool selected) => Forms.worn.trackBand(i, selected);
 
+/// A colour of the whole's rows as the group's room wears it: half way to black (the room told from the whole by its ground).
+Color wtRoomGround(Color c) => Color.lerp(c, Grey.g00, .5)!;
+
 /// The bar's fill: the kind's hue, a step quieter when not selected; a hidden or soloed-out layer drops to grey.
 Color wtBarFill(WtRow r) => Forms.worn.trackFill(r.tone ?? wsTone(r.kind), dim: r.dim, selected: r.selected);
 
@@ -307,7 +310,8 @@ void _wayLine(Path p, List<double> way, double xa, double xb, double width, doub
 }
 
 class WtTracksPainter extends CustomPainter {
-  const WtTracksPainter({required this.rows, required this.view, required this.fps, required this.vscroll, this.tempo, this.restAt});
+  const WtTracksPainter({required this.rows, required this.view, required this.fps, required this.vscroll, this.tempo, this.restAt, this.room = false});
+  final bool room;   // (a group's room under the ruler: its ground a step darker than the whole's below, so the two are told apart at a glance, as Live's Clip View is its own pane)
   final WsBeats? tempo;
   final int? restAt;   // (where the hand has come to rest: Alight Motion's SnapLine)
   final List<WtRow> rows;
@@ -319,14 +323,15 @@ class WtTracksPainter extends CustomPainter {
   void paint(Canvas c, Size s) {
     c.clipRect(Offset.zero & s);
     final p = Paint(), end = view.x(Ws.duration);
-    c.drawRect(Offset.zero & s, p..color = WsT.body);
+    final body = room ? wtRoomGround(WsT.body) : WsT.body;
+    c.drawRect(Offset.zero & s, p..color = body);
     for (var i = 0; i < rows.length; i++) {
       final top = i * WtM.row - vscroll;
       if (top > s.height || top + WtM.row < 0) continue;
-      c.drawRect(Rect.fromLTWH(0, top, s.width, WtM.row - 1), p..color = wtBand(i, rows[i].selected));
-      c.drawRect(Rect.fromLTWH(0, top + WtM.row - 1, s.width, 1), p..color = Grey.rowLine);
+      c.drawRect(Rect.fromLTWH(0, top, s.width, WtM.row - 1), p..color = room ? wtRoomGround(wtBand(i, rows[i].selected)) : wtBand(i, rows[i].selected));
+      c.drawRect(Rect.fromLTWH(0, top + WtM.row - 1, s.width, 1), p..color = room ? wtRoomGround(Grey.rowLine) : Grey.rowLine);
     }
-    if (end < s.width) c.drawRect(Rect.fromLTRB(end, 0, s.width, s.height), p..color = WsT.body);
+    if (end < s.width) c.drawRect(Rect.fromLTRB(end, 0, s.width, s.height), p..color = body);
     _vLines(c, view, fps, math.min(s.width, end), 0, s.height, major: Grey.g20, fine: Grey.g15);
     for (var i = 0; i < rows.length; i++) {
       final top = i * WtM.row - vscroll;
@@ -501,7 +506,7 @@ class WtTracksPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(WtTracksPainter o) => o.view != view || o.fps != fps || o.vscroll != vscroll || o.restAt != restAt || !_listEq(o.rows, rows);
+  bool shouldRepaint(WtTracksPainter o) => o.view != view || o.fps != fps || o.vscroll != vscroll || o.restAt != restAt || o.room != room || !_listEq(o.rows, rows);
 }
 
 // ---------------------------------------------------------------- playhead

@@ -60,7 +60,7 @@ extension _WsTimelineRows on _WsTimelineState {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (_pin > 0) ...[
-                    SizedBox(height: _panelH, child: _labelRoom(ws, rows, 0, _pin, _pscroll)),
+                    SizedBox(height: _panelH, child: ColoredBox(color: wtRoomGround(WsT.body), child: _labelRoom(ws, rows, 0, _pin, _pscroll))),
                     GestureDetector(
                       // (the room's edge, taken here as on the tracks)
                       behavior: HitTestBehavior.opaque,
