@@ -6,7 +6,14 @@ extension _WsTimelineHand on _WsTimelineState {
 
   // The row under a height: its place, its layer, and the value whose lane it is (null: the layer's own row).
   ({int i, WsLayer l, String? value})? _rowAt(double y) {
-    final i = ((y + _vscroll) / WtM.row).floor();
+    final int i;
+    if (_pin > 0 && y < _panelH + _grip) {   // (the group's room on top, or its edge)
+      if (y >= _panelH) return null;
+      i = ((y + _pscroll) / WtM.row).floor();
+      if (i >= _pin) return null;
+    } else {
+      i = _pin + ((y - _panelH - _grip + _vscroll) / WtM.row).floor();
+    }
     if (i < 0 || i >= _order.length) return null;
     return (i: i, l: _ws!.layers[_order[i].layer], value: _order[i].value);
   }
@@ -42,7 +49,7 @@ extension _WsTimelineHand on _WsTimelineState {
     }
     if (r.value != null) return;   // (a lane: its tap is the lane's, on the hand's way up)
     final i = r.i, l = r.l;
-    final cy = i * WtM.row - _vscroll + WtM.row / 2;
+    final cy = _rowY(i) + WtM.row / 2;
     if (!_isLocked(ws, l.id) && (p.dy - cy).abs() <= WtM.bar / 2 + 2) {
       int? best;
       var bd = WtM.keyPicked + 2;
@@ -81,6 +88,7 @@ extension _WsTimelineHand on _WsTimelineState {
   }
 
   MouseCursor _cursorAt(Offset p) {
+    if (_onGrip(p.dy)) return SystemMouseCursors.resizeUpDown;
     final ws = _ws!, v = _view, r = _rowAt(p.dy);
     if (r == null) return MouseCursor.defer;
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);

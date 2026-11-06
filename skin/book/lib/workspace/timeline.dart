@@ -43,12 +43,44 @@ class WsTimeline extends StatefulWidget {
   State<WsTimeline> createState() => _WsTimelineState();
 }
 
-class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMixin, _TimelineAsked {
+class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, _TimelineAsked {
   late final Ticker _ticker = createTicker(_tick);
   late final VoidCallback _listener = _changed;   // (one closure, added and removed: an extension's method torn off is a new closure each time, never equal to the last, so removing it took nothing off)
   final _focus = FocusNode(debugLabel: 'timeline');
   Ws? _ws;
-  double _zoom = 1, _scroll = 0, _vscroll = 0, _trackW = 1000, _rowsH = 200;
+  double _zoom = 1, _scroll = 0, _vscroll = 0, _trackW = 1000, _rowsH = 200, _areaH = 200;
+
+  // Inside a group: its rows stand in a room of their own on top, under the ruler they share, and the whole document's
+  // rows stay below (Ableton Live's Clip View: opened by a double click, sized by its edge, dragged shut to close it;
+  // docs/notes/GROUP_FOCUS.md 上からスッと出る段). _pin: how many of _order's rows are that room's (0: none open).
+  int _pin = 0;
+  double _pscroll = 0;   // (the room's rows scrolled, apart from the whole's)
+  double? _panelWant;   // (the height the room's edge was pulled to, kept for the next time it opens; null: half the timeline, never as short as its rows (the maker, 11/6: 高さはユーザーハンドルで決める))
+  (double, double)? _gripFrom;   // (the edge held: where the hand took it, and the room's height then)
+  String? _wasEntered;
+  late final _opening = AnimationController(vsync: this, duration: const Duration(milliseconds: 160))..addListener(() => setState(() {}));
+
+  double get _grip => _pin == 0 ? 0 : Shape.z(8);
+  double get _panelH => _pin == 0 ? 0 : (_panelWant ?? _areaH / 2).clamp(0.0, math.max(0.0, _areaH - _grip - 2 * WtM.row)).toDouble() * Curves.easeOut.transform(_opening.value);
+
+  // A row's top on the tracks: the room's under the ruler, the whole's under the room's edge.
+  double _rowY(int i) => i < _pin ? i * WtM.row - _pscroll : _panelH + _grip + (i - _pin) * WtM.row - _vscroll;
+  bool _onGrip(double y) => _pin > 0 && y >= _panelH && y < _panelH + _grip;
+
+  void _gripTo(double y) {
+    if (_gripFrom case (final from, final h)?) setState(() => _panelWant = math.max(0, h + y - from));
+  }
+
+  // Let go: pulled almost shut, the room shuts, and the timeline is the whole document's again.
+  void _gripUp() {
+    if (_gripFrom == null) return;
+    _gripFrom = null;
+    if ((_panelWant ?? WtM.row) < WtM.row / 2) {
+      _panelWant = null;
+      _ws!.enter(null);
+    }
+    setState(() {});
+  }
   int _workIn = 12, _workOut = 228;
   int _last = -1;
 
@@ -146,6 +178,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     _ws?.on[WsAspect.playing]!.removeListener(_listener);
     _ws?.moment.removeListener(_listener);
     _ticker.dispose();
+    _opening.dispose();
     _focus.dispose();
     _stopAsks();
     _markWords.dispose();
@@ -171,20 +204,22 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
   }
 
   void _wheel(PointerSignalEvent e) {
-    if (e is PointerScrollEvent) _scrollBy(e.scrollDelta);
+    if (e is PointerScrollEvent) _scrollBy(e.scrollDelta, at: e.localPosition.dy);
   }
 
   /// A trackpad's two fingers: they carry the tracks as a wheel does, the other way (the content goes with the fingers);
   /// a pinch zooms about the frame under them (Final Cut's, Cavalry's, Theatre.js's).
-  void _fingers(Offset by, Offset _) => _scrollBy(-by);
+  void _fingers(Offset by, Offset at) => _scrollBy(-by, at: at.dy);
   void _pinch(double by, Offset at) => _setZoom(_zoom * by, anchor: _view.frameAt(at.dx).round().clamp(0, Ws.duration));
 
-  void _scrollBy(Offset d) {
+  void _scrollBy(Offset d, {double at = double.infinity}) {
     final sideways = HardwareKeyboard.instance.isShiftPressed || d.dx.abs() > d.dy.abs();
     if (HardwareKeyboard.instance.isMetaPressed || HardwareKeyboard.instance.isControlPressed) {
       _setZoom(_zoom * math.pow(1.0015, -d.dy));
     } else if (sideways) {
       setState(() => _scroll = _clampScroll(_scroll + (d.dx.abs() > d.dy.abs() ? d.dx : d.dy) / _view.ppf));
+    } else if (_pin > 0 && at < _panelH) {   // (over the group's room: its rows, not the whole's)
+      setState(() => _pscroll = (_pscroll + d.dy).clamp(0.0, math.max(0.0, _pin * WtM.row - _panelH)).toDouble());
     } else {
       setState(() => _vscroll = _vscroll + d.dy);
     }
@@ -225,6 +260,10 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
   (Offset, Offset)? _box;
 
   void _barDown(Offset p) {
+    if (_onGrip(p.dy)) {   // (the room's edge taken: Live's Clip View sized by its border)
+      _gripFrom = (p.dy, _panelH);
+      return;
+    }
     if (!_grab(p)) setState(() => _box = (p, p));
   }
 
@@ -237,7 +276,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     final keys = <WsKey>[], things = <String>[];
     for (var i = 0; i < _order.length; i++) {
       if (_order[i].value != null) continue;   // (a lane's points are not picked by a box)
-      final l = ws.layers[_order[i].layer], top = i * WtM.row - _vscroll;
+      final l = ws.layers[_order[i].layer], top = _rowY(i);
       if (top + WtM.row < r.top || top > r.bottom || _isLocked(ws, l.id)) continue;
       for (final k in l.keys) {
         if (v.x(k) >= r.left && v.x(k) <= r.right) keys.add((layer: l.id, frame: k));
@@ -253,6 +292,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
   }
 
   void _barMove(Offset p) {
+    if (_gripFrom != null) return _gripTo(p.dy);
     if (_box case (final from, _)?) return setState(() => _box = (from, p));
     if (_spread case final sp?) {   // (the ▸ pulled: the last thing comes to the key so much later, each one in between its share of that)
       final each = math.max(0.0, (_view.frameAt(p.dx) - sp.key) / Ws.fps / sp.rank);
@@ -282,6 +322,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
   }
 
   void _barUp({bool keep = true}) {
+    if (_gripFrom != null) return _gripUp();
     if (_restAt != null) setState(() => _restAt = null);
     if (_box != null) return keep ? _boxUp() : setState(() => _box = null);
     if (_slide case final s?) {
@@ -508,20 +549,38 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     // (inside a group: its own row first, then its relations (the behaviours in it, its Order among them) and the things in
     //  it that are named: picked, or with keys of their own. The rest of what it holds goes as the relations say, and is
     //  not here; the rest of the document neither. docs/notes/GROUP_FOCUS.md: 関係の行と、名指しで出した物の行だけ)
+    // (inside a group, its room on top: its own row, then its relations (the behaviours in it, its Order among them) and
+    //  the things in it that are named: picked, or with keys of their own; the rest of what it holds goes as the
+    //  relations say. Below it the whole document as ever, the group one row there. GROUP_FOCUS.md: 関係の行と、名指しで
+    //  出した物の行だけ; 置き換えではなく上からスッと出る段)
     final entered = ws.entered, head = entered == null ? -1 : ws.layers.indexWhere((l) => l.id == entered), m = ws.inside!;
+    if (entered != _wasEntered) {
+      final opened = _wasEntered == null;
+      _wasEntered = entered;
+      if (entered == null) {
+        _opening.value = 0;
+      } else if (opened) {
+        _pscroll = 0;
+        SchedulerBinding.instance.addPostFrameCallback((_) => mounted ? _opening.forward(from: 0) : null);
+      }
+    }
     bool named(WsLayer l) => m.word(int.parse(l.id), 'kind') == 'behaviour' || l.keys.isNotEmpty || l.id == sel || ws.many.contains(l.id);
-    final shown = head < 0 ? [for (final (i, l) in ws.layers.indexed) if (!away.containsKey(l.id)) i] : [head, for (final (i, l) in ws.layers.indexed) if (l.parent == entered && named(l)) i];
-    _order = [
+    final inner = head < 0 ? const <int>[] : [head, for (final (i, l) in ws.layers.indexed) if (l.parent == entered && named(l)) i];
+    final whole = [for (final (i, l) in ws.layers.indexed) if (!away.containsKey(l.id)) i];
+    List<({int layer, String? value, (String, String)? aim})> rowsOf(List<int> shown, {bool room = false}) => [
       for (final i in shown) if (ws.layers[i] case final l) ...[
         (layer: i, value: null, aim: null),
-        if (ws.aimsOpen(l.id))
+        if ((room || l.id != entered) && ws.aimsOpen(l.id))   // (the group entered: its lanes in its room, once, not again in the whole below)
           for (final a in wsTargets(ws, l.id)) (layer: i, value: '', aim: a),
-        if (ws.lanesOpen(l.id))
+        if ((room || l.id != entered) && ws.lanesOpen(l.id))
           for (final n in _moving(ws, l)) (layer: i, value: n, aim: null),
       ],
     ];
+    final room = rowsOf(inner, room: true);
+    _pin = room.length;
+    _order = [...room, ...rowsOf(whole)];
     final rows = <WtRow>[
-      for (final o in _order)
+      for (final (j, o) in _order.indexed)
         if (o.value case final n?)
           _laneRow(ws, ws.layers[o.layer], n)
         else if (ws.layers[o.layer] case final l)
@@ -550,7 +609,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
           whole: _wholeOf(ws, l),
           echoes: _echoesOf(ws, l),
           late: _lateOf(ws, l),
-          head: head >= 0 && o.layer == head,
+          head: j < _pin && o.layer == head,
         ),
     ];
     return Focus(
@@ -583,12 +642,26 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     );
   }
 
+  // The group's room's lower edge: taken and pulled it sizes the room, pulled shut it closes it (Live's Clip View).
+  Widget _roomEdge({Key? key}) => MouseRegion(
+    cursor: SystemMouseCursors.resizeUpDown,
+    child: Container(   // (a bar the room stands on, with a grip at its middle: what can be taken is seen as such, macOS's split view divider)
+      key: key,
+      height: _grip,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: Grey.g26, border: Border(bottom: BorderSide(color: Grey.g07))),
+      child: Container(width: Shape.s(28), height: 2, color: Grey.g56),
+    ),
+  );
+
   Widget _tracks(Ws ws, List<WtRow> rows) => LayoutBuilder(
     builder: (context, box) {
       _trackW = box.maxWidth;
-      _rowsH = math.max(0, box.maxHeight - WtM.ruler - WtM.overview);
+      _areaH = math.max(0, box.maxHeight - WtM.ruler - WtM.overview);
+      _rowsH = math.max(0, _areaH - _panelH - _grip);
       _scroll = _clampScroll(_scroll);
-      _vscroll = _clampV(rows.length);
+      _vscroll = _clampV(rows.length - _pin);
+      _pscroll = _pscroll.clamp(0.0, math.max(0.0, _pin * WtM.row - _panelH)).toDouble();
       final v = _view;
       return Stack(
         children: [
@@ -644,11 +717,25 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
                     onPanUpdate: (d) => _barMove(d.localPosition),
                     onPanEnd: (_) => _barUp(),
                     onPanCancel: () => _barUp(keep: false),
-                    child: RepaintBoundary(
-                      child: CustomPaint(
-                        size: Size.infinite,
-                        painter: WtTracksPainter(rows: rows, view: v, fps: Ws.fps, vscroll: _vscroll, tempo: ws.beats, restAt: _restAt),
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (_pin > 0) ...[
+                          SizedBox(
+                            key: const ValueKey('ws-tl-room'),
+                            height: _panelH,
+                            child: RepaintBoundary(
+                              child: CustomPaint(painter: WtTracksPainter(rows: rows.sublist(0, _pin), view: v, fps: Ws.fps, vscroll: _pscroll, tempo: ws.beats, restAt: _restAt)),
+                            ),
+                          ),
+                          _roomEdge(),
+                        ],
+                        Expanded(
+                          child: RepaintBoundary(
+                            child: CustomPaint(painter: WtTracksPainter(rows: rows.sublist(_pin), view: v, fps: Ws.fps, vscroll: _vscroll, tempo: ws.beats, restAt: _restAt)),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   ),

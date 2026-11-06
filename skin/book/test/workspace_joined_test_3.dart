@@ -2061,7 +2061,7 @@ void _tests3() {
     await _close(t);
   }, skip: !_built);
 
-  testWidgets('a group\'s row pressed twice: the timeline stands inside it, its own row on top with a line under, its things under that, nothing else; the crumb above leads out (After Effects\' precomp opened, Figma\'s group entered)', (t) async {
+  testWidgets('a group\'s row pressed twice: its room comes down from above under the ruler, its own row on top and what is named in it; the whole timeline stays below; its edge sizes it, pulled shut it closes; the crumb above leads out too (Ableton Live\'s Clip View, Figma\'s group entered)', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     final a = m.add('shape', 'rect'), b = m.add('shape', 'circle'), other = m.add('shape', 'star');
     expect(m.set(a, 'x', -1) && m.set(b, 'x', 1) && m.set(other, 'y', -1), isTrue, reason: m.trouble);
@@ -2074,32 +2074,52 @@ void _tests3() {
     await t.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
     await settled(t, ws);
     final g = m.things.firstWhere((x) => x != a && x != b && x != other);
-    final tracks = find.byWidgetPredicate((w) => w is CustomPaint && w.painter is WtTracksPainter);
-    List<String> names() => [for (final r in (t.widget<CustomPaint>(tracks).painter! as WtTracksPainter).rows) r.name];
-    expect(names(), ['Star', 'Group'], reason: 'the group one row, shut; the star outside it');
+    final tracks = find.byWidgetPredicate((w) => w is CustomPaint && w.painter is WtTracksPainter), room = find.byKey(const ValueKey('ws-tl-room'));
+    List<String> names(Finder f) => [for (final r in (t.widget<CustomPaint>(f).painter! as WtTracksPainter).rows) r.name];
+    List<String> inside() => names(find.descendant(of: room, matching: tracks));
+    List<String> whole() => names(tracks.last);
+    expect([whole(), room.evaluate().isEmpty], [['Star', 'Group'], true], reason: 'the group one row, shut; the star outside it; no room');
     final label = find.byKey(ValueKey('ws-tl-label-$g'));
     await t.tap(label);
     await t.pump(const Duration(milliseconds: 80));
     await t.tap(label);
-    await t.pumpAndSettle();
+    await t.pump();
     expect(ws.entered, '$g', reason: 'pressed twice: inside');
-    expect(names(), ['Group'], reason: 'its own row; what it holds goes as it says and is not here (no relation yet, nothing named)');
+    expect(t.getSize(room).height, lessThan(WtM.row), reason: 'the room coming down, not there at once');
+    await t.pumpAndSettle();
+    final opened = t.getSize(room).height, area = opened + t.getSize(find.byKey(const ValueKey('ws-tl-room-edge'))).height + t.getSize(tracks.last).height;   // (the room, its edge, the whole below: the timeline's rows)
+    expect(opened, greaterThan(WtM.row * 3), reason: 'down: a room of its own, half the timeline, not a strip as short as its one row');
+    expect(opened, closeTo(area / 2, 1), reason: 'half');
+    expect(inside(), ['Group'], reason: 'its own row; what it holds goes as it says and is not here (no relation yet, nothing named)');
+    expect(whole(), ['Star', 'Group'], reason: 'the whole timeline below, as it was');
     expect(ws.selected, '$g', reason: 'its cards in the inspector');
     ws.select('$a');
     await t.pumpAndSettle();
-    expect(names(), ['Group', 'Rect'], reason: 'one of them picked: named, its row here; the other still not');
+    expect(inside(), ['Group', 'Rect'], reason: 'one of them picked: named, its row here; the other still not');
+    expect(t.getSize(room).height, closeTo(opened, .5), reason: 'a row more, the room as tall as it was: its height is the hand\'s');
     expect(m.key(a, 'x', 1, -1.5), isTrue, reason: m.trouble);
     ws
       ..reread()
       ..select('$g');
     await t.pumpAndSettle();
-    expect(names(), ['Group', 'Rect'], reason: 'with a key of its own it stays named when not picked');
+    expect(inside(), ['Group', 'Rect'], reason: 'with a key of its own it stays named when not picked');
+    final edge = find.byKey(const ValueKey('ws-tl-room-edge'));
+    await t.drag(edge, Offset(0, WtM.row * 2), kind: PointerDeviceKind.mouse);
+    await t.pumpAndSettle();
+    expect(t.getSize(room).height, closeTo(opened + WtM.row * 2, 1), reason: 'its edge pulled down: taller');
     expect(find.byKey(ValueKey('ws-crumb-$g')), findsOneWidget, reason: 'the crumb above');
     await t.tap(find.byKey(const ValueKey('ws-crumb-document')));
     await t.pumpAndSettle();
-    expect(ws.entered, isNull, reason: 'the document\'s crumb: out');
-    expect(names(), ['Star', 'Group']);
+    expect([ws.entered, room.evaluate().isEmpty, whole()], [null, true, ['Star', 'Group']], reason: 'the document\'s crumb: out, the room gone');
     expect(find.byKey(ValueKey('ws-crumb-$g')), findsNothing);
+    await t.tap(label);
+    await t.pump(const Duration(milliseconds: 80));
+    await t.tap(label);
+    await t.pumpAndSettle();
+    expect(t.getSize(room).height, closeTo(opened + WtM.row * 2, 1), reason: 'in again: as tall as it was left (Live keeps the Clip View\'s height)');
+    await t.drag(edge, Offset(0, -(opened + WtM.row * 3)), kind: PointerDeviceKind.mouse);
+    await t.pumpAndSettle();
+    expect([ws.entered, room.evaluate().isEmpty], [null, true], reason: 'its edge pulled shut: out, as Live\'s Clip View dragged to its end');
     expect(t.takeException(), isNull);
     await _close(t);
   }, skip: !_built);
