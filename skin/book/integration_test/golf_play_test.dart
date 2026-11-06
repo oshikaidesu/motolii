@@ -79,6 +79,15 @@ void main() {
     await picture();
     final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
     await mouse.addPointer(location: Offset.zero);
+    var here = Offset.zero;
+    Future<void> glide(Offset to) async {   // (a hand goes there through the places between, as a mouse does: what it passes over feels it)
+      for (var s = 1; s <= 12; s++) {
+        await mouse.moveTo(Offset.lerp(here, to, s / 12)!);
+        await t.pump(const Duration(milliseconds: 16));
+      }
+      here = to;
+    }
+
     final end = DateTime.now().add(const Duration(minutes: 18));
     while (DateTime.now().isBefore(end)) {
       final lines = (await t.runAsync(() => strokes.readAsLines()))!.where((l) => l.trim().isNotEmpty).toList();
@@ -93,20 +102,21 @@ void main() {
       Offset at(int i) => Offset(xs[2 * i], xs[2 * i + 1]);
       switch (say) {
         case 'click' || 'double':
+          await glide(at(0));
           for (var i = 0; i < (say == 'double' ? 2 : 1); i++) {
-            await mouse.moveTo(at(0));
             await mouse.down(at(0));
             await mouse.up();
             await t.pump(const Duration(milliseconds: 60));
           }
         case 'right':
+          await glide(at(0));
           final r = await t.createGesture(kind: PointerDeviceKind.mouse, buttons: kSecondaryButton);
           await r.down(at(0));
           await r.up();
         case 'hover':
-          await mouse.moveTo(at(0));
+          await glide(at(0));
         case 'drag':   // (through each point given, in small steps, as a hand goes)
-          await mouse.moveTo(at(0));
+          await glide(at(0));
           await mouse.down(at(0));
           for (var i = 1; i < xs.length ~/ 2; i++) {
             for (var s = 1; s <= 8; s++) {
@@ -115,7 +125,9 @@ void main() {
             }
           }
           await mouse.up();
+          here = at(xs.length ~/ 2 - 1);
         case 'scroll':
+          await glide(at(0));
           await t.sendEventToBinding(PointerScrollEvent(position: at(0), scrollDelta: Offset(0, xs[2]), kind: PointerDeviceKind.mouse));
         case 'key':
           final parts = w[1].split('+'), key = _keys[parts.last];

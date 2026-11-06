@@ -37,10 +37,11 @@ const orderWords = ['start', 'centre', 'end', 'edges', 'random', 'point'];
 class _OrderDrawingState extends State<OrderDrawing> with SingleTickerProviderStateMixin {
   late final AnimationController _play = AnimationController(vsync: this);
   final _path = <Offset>[];
-  bool _pulling = false, _over = false, _down = false;
+  bool _pulling = false, _over = false, _down = false, _onCross = false;
   Timer? _single;   // (a press waits for a second one before it is a press)
   Offset? _firstPress;
   String _was = '', _asked = '';
+  Offset? _hand;   // (where the mouse is over the figure)
   int _ticket = 0;
   List<double> _all = const [];
 
@@ -102,11 +103,16 @@ class _OrderDrawingState extends State<OrderDrawing> with SingleTickerProviderSt
 
     final open = _over || _down;
     return MouseRegion(
+      cursor: _onCross ? SystemMouseCursors.grab : SystemMouseCursors.click,   // (a hand that may press here; on the cross, one that takes it: macOS's pointing and open hands, as Figma's handles)
       onEnter: (_) {
         setState(() => _over = true);
         _replay(stagger);
       },
-      onExit: (_) => setState(() => _over = false),
+      onHover: (e) => setState(() => _hand = e.localPosition),
+      onExit: (_) => setState(() {
+        _over = false;
+        _hand = null;
+      }),
       child: Padding(
         padding: EdgeInsets.only(bottom: Shape.s(6)),
         child: AnimatedContainer(
@@ -129,6 +135,8 @@ class _OrderDrawingState extends State<OrderDrawing> with SingleTickerProviderSt
               _single = Timer(kDoubleTapTimeout, () => mounted ? pointAt(f.nearest(a)) : null);
             }
 
+            final onCross = cross != null && _hand != null && (_hand! - cross).distance <= 10;
+            if (onCross != _onCross) WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? setState(() => _onCross = onCross) : null);
             return Pulled(
               takes: (_) => true,
               onDown: (p) {
@@ -291,9 +299,9 @@ class _OrderPaint extends CustomPainter {
     c.drawRRect(RRect.fromRectAndRadius(Offset.zero & s, Shape.r(8)), Paint()..color = Grey.g07);
     final r = f.dot;
     for (var i = 0; i < f.count; i++) {   // (still: the first to move the brightest; played: each lit as its moment comes)
-      final early = stagger > 0 ? 1 - (delays[i] / stagger).clamp(0.0, 1.0) : 1.0;
-      final lit = playing == null ? .3 + .7 * early : ((playing! - delays[i]) / .25).clamp(0.0, 1.0);
-      c.drawCircle(f.at(i), r * (playing == null ? 1 : .7 + .5 * lit), Paint()..color = Pop.tonePlace.withValues(alpha: .18 + .82 * lit));
+      final early = stagger > 0 ? 1 - (delays[i] / stagger).clamp(0.0, 1.0) : 1.0;   // (still: the first large and bright, the last small and faint, so an order reads at 24 high too)
+      final lit = playing == null ? early : ((playing! - delays[i]) / .25).clamp(0.0, 1.0);
+      c.drawCircle(f.at(i), r * (playing == null ? .55 + .45 * early : .7 + .5 * lit), Paint()..color = Pop.tonePlace.withValues(alpha: .12 + .88 * lit));
     }
     if (cross case final at?) {   // (the point it spreads from: a cross where it is, pulled to another)
       final ink = Paint()

@@ -475,7 +475,10 @@ AbsentMotion（AM の写し）の欄の要素を機械で書き出し（panels/*
 - [ ] パスに沿った並び（`copy_on`）の順番：`doc_member_at` は行・列・奥行きの並びだけ。パス沿いの場所ではまだ数えていない
 - [ ] 棚の Motion の札を Look と同じ見せ方に（ON にならず、押しても外れない今の形に合わせる）
 - [ ] `integration_test/alight_check_test.dart` の progress（Print On）の絵を撮り直す（1 文字の間が変わった）
-- [ ] 最後のゴルフ（グループ）：打数と打率に加えて、1 手ごとに「どこを押すか分かって押したか、当てずっぽうか」と、触った感覚（迷った所、気持ち悪さ）を採点役に聞いて残す（ユーザー 11/6。golf_noise.md の決め方に足した）
+- [x] 最後のゴルフ（グループ）：打数と打率に加えて、1 手ごとに「どこを押すか分かって押したか、当てずっぽうか」と、触った感覚を採点役に聞いて残す（ユーザー 11/6）— 済（11/6、golf_noise.md の「グループの順番」）：初見のエージェント 2 人が本物の窓で。1 回目 3 ホール 18 打（分かって 12）、届いたが図は 1 度も触られず From の選びで決めた。点の明暗と大きさ・指の矢印を直した 2 回目は 2 ホール 13 打（分かって 9）、2 ホールとも図を触って決めた（L から両側へは十字を引いて、奥から先へは奥の点を 1 回押して）
+- [ ] 文字の順番の入口（golf (g3)、2 回とも一番の迷い）：割った文字に順番があることが層・時間軸・キーのどこにも出ず、Copies（How many 1）は Inspector の下の方。ノート §6 は「上に並び（既存の Copies カード）」
+- [ ] 図の点に文字を描く（golf (g7)。Apple Motion の Sequence Text は文字そのもの）、閉じた 24 で奥行きの列が筋に潰れる（(g9)）、図の右上の奥行きと正面の舞台の向きの違い（(g8)）
+- [ ] Copies の Delay は全体の幅なのに「1 つずつ」に読める（golf (g4)。GSAP は each と amount を分ける）
 - [ ] `docs/notes/GROUP_INSPECTOR.md` の未コミットの「次：図を 1 から 200 行、doc_delay を Dart に写す」（持ち主のメモなので触っていない。図の考えは上の行）
 - [x] 平らな物にも厚い物にもランプの光と影を当てる（11/1、golf_noise (175) の残り） — 済（11/1）：After Effects の 3D レイヤーに合わせ、書類にランプがあれば 3D の物と厚い物が受ける（`doc_lit`、`flat_lit`）。影は描いた形（Filament の WebGPU が色なしの撮影で fragment を捨てていたのを `filament_webgpu_depth_fragment.patch` で止めた）。ランプが無ければ今まで通りで 0 画素差、太陽の影つきで厚い文字 8 個 60.0 枚/秒、窓で太陽を回して確かめた。
 - [x] 文字の面取りを距離から作る：Bevel（angular convex concave ogee step）と Bevel Depth。絵の縁からの距離は bevy_mod_outline の Jump Flood（MIT OR Apache-2.0）で、絵が描き直された時だけ作る。深さを文字の芯まで伸ばせば Chizzle の彫り。After Effects の Bevel Style、Easy Typography の Ogee と Step が出典。8 個で 58.7 枚/秒（無しで 59.1）、窓で深さのドラッグと 6 種の選択を確かめた
