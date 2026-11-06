@@ -95,7 +95,7 @@ static int doc_add(Doc& d, const char* kind, const char* file) {
     const bool sound = !strcmp(kind, "sound");
     if (sound) kind = "film";
     if (!doc_among(doc_kinds, kind) && strcmp(kind, "behaviour")) return d.trouble = std::string("a thing is one of: ") + doc_kinds + " behaviour", 0;
-    if (!strcmp(kind, "behaviour") && !doc_among("stagger oscillator noise random around row follow push group relate", file)) return d.trouble = "a behaviour is a stagger, an oscillator, a noise, a random, or a relation: around, row, follow, push", 0;
+    if (!strcmp(kind, "behaviour") && !doc_among("stagger oscillator noise random around row follow push group relate order", file)) return d.trouble = "a behaviour is a stagger, an oscillator, a noise, a random, an order, or a relation: around, row, follow, push", 0;
     if (!strcmp(kind, "light") && !doc_among("sun point spot", file)) return d.trouble = "a light is a sun, a point or a spot", 0;
     // (it comes on at the stage's present moment, the playhead: AbsentMotion's addAudio and addText, startTime frameStart(frame))
     if (!doc_change(d, sqlite3_mprintf("insert into thing default values; insert into fact(thing, name, at, value) values(last_insert_rowid(), 'kind', 0.0, %Q); insert into fact(thing, name, at, value) values(last_insert_rowid(), %Q, 0.0, %Q); insert into fact(thing, name, at, value) select id, 'start', 0.0, %!.17g from thing where %d order by id desc limit 1%s",
@@ -451,6 +451,10 @@ static bool doc_parent(Doc& d, int thing, double to) {
     if (!doc_knows(d, thing, "parent", &to)) return false;
     for (int up = (int)to, n = 0; up && n < 64; up = (int)doc_number(d, up, "parent", 0, 0), ++n)   // (a ring of things each going with the next goes nowhere)
         if (up == thing) return d.trouble = "it would go with itself (that one goes with it already)", false;
+    if (doc_word(d, thing, "kind") == "behaviour") {   // (a behaviour has no place on the picture to keep: it is put in the group, nothing else said. An Order put in its group by the ▸ was taking the step down with it: size and the rest refused, the step rolled back, golf 11/6)
+        if (!doc_change(d, sqlite3_mprintf("insert into fact(thing, name, at, value) values(%d, 'parent', 0.0, %!.17g) on conflict do update set value = excluded.value, way = null", thing, to))) return false;
+        return doc_forget(d), true;   // (read anew at once, within the step: the ▸ carries the Order's lag while the hand is down, and the moment reads which group it is in)
+    }
     const double now = d.stage->now;
     const auto chain = [&](int up, double* turn, double* size) {   // (how far the parents turn it, and how large they make it)
         *turn = 0.0, *size = 1.0;

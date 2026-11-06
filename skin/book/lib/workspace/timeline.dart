@@ -256,7 +256,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     if (_box case (final from, _)?) return setState(() => _box = (from, p));
     if (_spread case final sp?) {   // (the ▸ pulled: the last thing comes to the key so much later, each one in between its share of that)
       final each = math.max(0.0, (_view.frameAt(p.dx) - sp.key) / Ws.fps / sp.rank);
-      _ws!.inside!.carry('stagger', each);
+      _ws!.inside!.carry('lag', each);   // (the Order row's lag: each thing so much later than the one before)
       _spread = (id: sp.id, key: sp.key, rank: sp.rank, moved: true);
       return;
     }
@@ -291,7 +291,10 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     }
     if (_spread case final sp?) {
       _spread = null;
-      if (_ws!.inside case final m?) _ws!.after(m.later('let_go', number: keep && sp.moved ? 1 : 0));
+      if (_ws!.inside case final m?) {
+        m.later('let_go', number: keep && sp.moved ? 1 : 0);
+        _ws!.after(m.later('together'), (_, _) => _ws!.reread());   // (the step shut: the Order row is in the document, read again)
+      }
       return;
     }
     final h = _bar, ws = _ws!, m = ws.inside;
@@ -502,9 +505,12 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked, WsAspect.animating});
     final away = ws.foldedAway;
     final sel = ws.selected, picks = ws.keys, lit = {...ws.many, ...wsMembersOf(ws), for (final p in [?sel, ...ws.many]) ?away[p]};   // (picked together, or moved by the relation picked, or a shut group a picked thing is in: lit with it)
-    // (inside a group: its own row first, then the things straight under it, each a row; the rest of the document not here)
-    final entered = ws.entered, head = entered == null ? -1 : ws.layers.indexWhere((l) => l.id == entered);
-    final shown = head < 0 ? [for (final (i, l) in ws.layers.indexed) if (!away.containsKey(l.id)) i] : [head, for (final (i, l) in ws.layers.indexed) if (l.parent == entered) i];
+    // (inside a group: its own row first, then its relations (the behaviours in it, its Order among them) and the things in
+    //  it that are named: picked, or with keys of their own. The rest of what it holds goes as the relations say, and is
+    //  not here; the rest of the document neither. docs/notes/GROUP_FOCUS.md: 関係の行と、名指しで出した物の行だけ)
+    final entered = ws.entered, head = entered == null ? -1 : ws.layers.indexWhere((l) => l.id == entered), m = ws.inside!;
+    bool named(WsLayer l) => m.word(int.parse(l.id), 'kind') == 'behaviour' || l.keys.isNotEmpty || l.id == sel || ws.many.contains(l.id);
+    final shown = head < 0 ? [for (final (i, l) in ws.layers.indexed) if (!away.containsKey(l.id)) i] : [head, for (final (i, l) in ws.layers.indexed) if (l.parent == entered && named(l)) i];
     _order = [
       for (final i in shown) if (ws.layers[i] case final l) ...[
         (layer: i, value: null, aim: null),

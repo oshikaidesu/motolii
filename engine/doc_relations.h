@@ -305,10 +305,10 @@ static int doc_members(Doc& d, int thing) {
 // between the start of each", with its `from`: start (i), end (n-1-i), centre (|i - (n-1)/2|), edges (the nearer end),
 // random (its place in an order by the thing's seed, the same each time); anime.js's stagger(100) the same. It was the
 // whole spread from the first to the last (GSAP's `amount`), read as each by every golf player ((g4), (g34)).
-static double doc_order_delay(Doc& d, int thing, int nth, int n) {
-    const double each = doc_literal(d, thing, "stagger", 0, 0);
+static double doc_order_delay(Doc& d, int thing, int nth, int n, const char* eachName = "stagger", const char* fromName = "stagger_from") {
+    const double each = doc_literal(d, thing, eachName, 0, 0);
     if (each <= 0.0 || n < 2) return 0.0;
-    const std::string& from = doc_literal_word(d, thing, "stagger_from");
+    const std::string& from = doc_literal_word(d, thing, fromName);
     const double last = n - 1.0, mid = last / 2.0, at = nth;
     if (from == "random") {
         const auto roll = [seed = (uint32_t)doc_literal(d, thing, "seed", 0, 0)](uint32_t k) { uint32_t h = seed * 0x9E3779B9u ^ (k + 1u) * 0x85EBCA6Bu; h ^= h >> 16, h *= 0x7FEB352Du, h ^= h >> 15, h *= 0x846CA68Bu, h ^= h >> 16; return h; };
@@ -322,13 +322,24 @@ static double doc_delay(Doc& d, int thing, int nth) { return doc_order_delay(d, 
 // How much later a group's thing goes with its group than the group goes (a Null's stagger over the things it holds
 // straight under it, in the order they lie, the furthest back first: its copies' order law on its things; After
 // Effects' delayed parenting, valueAtTime(time - delay * index)). 0 under anything else.
+// (the order is a row inside the group: a behaviour of file "order" with the group as its parent, its lag the each and its
+//  lag_from the start (docs/notes/GROUP_FOCUS.md). A group with none reads its own stagger, as documents before had it.
+//  A behaviour in the group is not one of the things that go in turn, and has no turn itself.)
+static int doc_order_of(Doc& d, int group) {
+    for (const int t : doc_laid(d))
+        if ((int)doc_number(d, t, "parent", 0, 0) == group && doc_word(d, t, "kind") == "behaviour" && doc_word(d, t, "file") == "order") return t;
+    return 0;
+}
 static double doc_group_delay(Doc& d, int thing) {
     const int group = (int)doc_number(d, thing, "parent", 0, 0);
-    if (group <= 0 || doc_word(d, group, "shape") != "null" || doc_number(d, group, "stagger", 0, 0) <= 0.0) return 0.0;
+    if (group <= 0 || doc_word(d, group, "shape") != "null" || doc_word(d, thing, "kind") == "behaviour") return 0.0;
+    const int order = doc_order_of(d, group);
+    if (order ? doc_number(d, order, "lag", 0, 0) <= 0.0 : doc_number(d, group, "stagger", 0, 0) <= 0.0) return 0.0;
     int nth = -1, n = 0;
     for (const int t : doc_laid(d))
-        if ((int)doc_number(d, t, "parent", 0, 0) == group) nth = t == thing ? n : nth, ++n;
-    return nth < 0 ? 0.0 : doc_order_delay(d, group, nth, n);
+        if ((int)doc_number(d, t, "parent", 0, 0) == group && doc_word(d, t, "kind") != "behaviour") nth = t == thing ? n : nth, ++n;
+    if (nth < 0) return 0.0;
+    return order ? doc_order_delay(d, order, nth, n, "lag", "lag_from") : doc_order_delay(d, group, nth, n);
 }
 // Where the thing it goes with is (its parent's place; none, or one not there any more: as the stage is). A 2D thing
 // going with the camera is as the stage is: it sticks to the camera already (doc_place), and would take its moves twice.

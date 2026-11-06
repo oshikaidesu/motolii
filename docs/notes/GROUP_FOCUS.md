@@ -107,6 +107,24 @@
   - 文字 1 個の例外は最初の Texton では諦める（1 文字 1 レイヤーは打ち直しを壊す）。Texton v1 は順に出る・順にぼける・
     重ねるまで。1 文字の例外は生きた割れができてから（v2）。
 
+### 見るべき他人の実装（11/6 夜、持ち主の指摘：自分の実装を見て直すな、もうある物を見ろ）
+- anime.js の stagger()（MIT）：stagger(value, {start, from, grid, axis, ease, reversed})。番号 → 遅れの写像そのもの。
+  「誰にどれだけ」の式はこれを使う（エンジンは quickjs を持つ）。
+- GSAP の Timeline：tween をタイムラインの位置に置き、重ねられ、各 tween が自分の stagger を持つ。関係の行が
+  バーを持って重なる形の原型（形だけ。コードは借りない）。
+- lottie-web の TextSelectorProp（MIT）：After Effects の範囲セレクタ（Start/End/Offset/Shape/Ease）の実装。
+  文字に配る所の答え合わせ。
+
+### 器（11/6 夜、入れた）
+- 関係の行＝エンジンの behaviour（kind behaviour）。Order は file "order" の behaviour で、parent がグループ
+  （doc_order_of）。lag が each、lag_from が起点、seed、strength が重み（キー可）。Order の lag と lag_from は
+  設定で、Auto key でもキーにしない（doc_let_go）。グループ自身の stagger は古い文書のためだけに残る。
+- ▸ を引くと、Order が無ければ作って（add behaviour order、parent、name）、持って lag を運び、離して 1 段
+  （together）。
+- 配管で 3 つ直した：behaviour は parent を持てなかった（doc_kinds）。doc_parent が絵の無い物に「位置を保つ」
+  計算をして手順ごと巻き戻していた（behaviour は fact を書くだけ）。書いた直後のキャッシュが古く、手で持つ間に
+  見えなかった（doc_forget）。
+
 ### 手順（スイミー、9 手。中のビューを使う所を含む）
 1. 31 匹を囲んで ⌘G。
 2. Group の X にキーを 2 つ。全員いっせいに右へ。

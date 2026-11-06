@@ -69,6 +69,7 @@ static const DocShown doc_shown[] = {
     {"tall", "", "×", "Height", 0, 3, "Each copy"},
     {"copy_tall", "numbers", "", "Heights", 0, 0, "Each copy"},
     {"stagger_from", "", "", "From", 0, 0, nullptr},
+    {"lag_from", "", "", "From", 0, 0, nullptr},   // (an order's: which goes first)
     {"copy_fill_way", "", "", "Order", 0, 0, "Each copy"},
     {"wave_y", "stage", "px", "Up/down", -1, 1, nullptr},
     {"wave_x", "stage", "px", "Sideways", -1, 1, nullptr},
@@ -420,7 +421,8 @@ static const DocCard doc_cards[] = {
     {"Row", "strength gap centre_x centre_y rotate rotate_y lag", "file", "row"},
     {"Follow", "strength leader lag leader_b hand", "file", "follow"},
     {"Push", "strength leader radius", "file", "push"},
-    {"Group", "strength lag x y spread scatter rotate rotate_y size opacity", "file", "group"},   // (things in an order and nothing else: away by its own move, turn, size and opacity, each in turn)
+    {"Group", "strength lag x y spread scatter rotate rotate_y size opacity", "file", "group"},
+    {"Order", "lag lag_from seed strength", "file", "order"},   // (the order a group's things go in, as a row inside the group (docs/notes/GROUP_FOCUS.md): each so much later, from which one, its roll; how much of it (keyed: its weight). The ▸ after the group's keys on the timeline pulls lag)   // (things in an order and nothing else: away by its own move, turn, size and opacity, each in turn)
     {"Relation", "strength", "file", "relate"},   // (one written as a file: its own knobs come under it, as a recipe's)
     {"Falloff", "region falloff_soft falloff_invert", "file", "!"},   // (any with a file: a behaviour shows only such cards, doc_cards_of)
     {"Note", "label note", nullptr, nullptr, true},   // (what a maker wrote of it: After Effects' layer comment)

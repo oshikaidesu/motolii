@@ -131,8 +131,6 @@ extension _WsTimelineRows on _WsTimelineState {
                     for (var i = 0; i < rows.length; i++)
                       if (_order[i].value == null)
                         if (_renameField(i, ws.layers[_order[i].layer].id, i * WtM.row - top) case final f?) f,   // (its name written over it: Cmd+R)
-                    for (var i = 0; i < rows.length; i++)
-                      if (rows[i].head) Positioned(left: 0, right: 0, top: (i + 1) * WtM.row - top - 1, height: 1, child: ColoredBox(color: Grey.g44)),   // (the line under the group's own row: what moves them above, what moves below)
                   ],
                 );
               },

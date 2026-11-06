@@ -324,7 +324,7 @@ class WtTracksPainter extends CustomPainter {
       final top = i * WtM.row - vscroll;
       if (top > s.height || top + WtM.row < 0) continue;
       c.drawRect(Rect.fromLTWH(0, top, s.width, WtM.row - 1), p..color = wtBand(i, rows[i].selected));
-      c.drawRect(Rect.fromLTWH(0, top + WtM.row - 1, s.width, 1), p..color = rows[i].head ? Grey.g44 : Grey.rowLine);
+      c.drawRect(Rect.fromLTWH(0, top + WtM.row - 1, s.width, 1), p..color = Grey.rowLine);
     }
     if (end < s.width) c.drawRect(Rect.fromLTRB(end, 0, s.width, s.height), p..color = WsT.body);
     _vLines(c, view, fps, math.min(s.width, end), 0, s.height, major: Grey.g20, fine: Grey.g15);

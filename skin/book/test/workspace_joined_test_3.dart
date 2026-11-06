@@ -1988,18 +1988,21 @@ void _tests3() {
     await t.pump();
     await hand.moveTo(to);
     await settled(t, ws);
-    expect([m.late(a), m.late(b), m.late(c)].reduce(math.max), closeTo(1, .02), reason: 'carried while the hand pulls (the moment\'s late, the document\'s picture not yet): the last of three 1 s after the first');
-    expect(m.value(g, 'stagger', 0) ?? 0, closeTo(0, .001), reason: 'nothing written yet');
+    int? order() => m.things.where((x) => (m.value(x, 'parent', 0) ?? 0).round() == g && m.word(x, 'kind') == 'behaviour' && m.word(x, 'file') == 'order').firstOrNull;   // (the Order row inside the group, made by the first pull)
+    expect([m.late(a), m.late(b), m.late(c)].reduce(math.max), closeTo(1, .02), reason: 'carried while the hand pulls (the moment\'s late; the document\'s picture is not made again while a hand holds): the last of three 1 s after the first: ${m.trouble}');
     await hand.up();
     await settled(t, ws);
-    expect(m.value(g, 'stagger', 0), closeTo(.5, .02), reason: 'kept when let go: ${m.trouble}');
+    expect(order(), isNotNull, reason: 'the first pull made the Order row inside the group: ${m.trouble}');
+    expect(m.value(order()!, 'lag', 0), closeTo(.5, .02), reason: 'kept when let go, as the Order row\'s lag: ${m.trouble}');
+    expect(m.value(g, 'stagger', 0) ?? 0, closeTo(0, .001), reason: 'the group itself holds no order any more');
     expect([m.late(a), m.late(b), m.late(c)]..sort(), [closeTo(0, .02), closeTo(.5, .02), closeTo(1, .02)], reason: 'in turn');
     expect(painter().rows[row()].late, Ws.fps, reason: 'the ▸ now a second after each key');
     expect(m.key(a, 'x', 1, -1.5), isTrue, reason: m.trouble);   // (one of them given a key of its own)
-    expect([m.late(a), m.value(g, 'stagger', 0)], [closeTo(m.late(a), 0), closeTo(.5, .02)], reason: 'its own key is on top of the group\'s: it still goes in its turn (doc_above)');
+    expect([m.late(a), m.value(order()!, 'lag', 0)], [closeTo(m.late(a), 0), closeTo(.5, .02)], reason: 'its own key is on top of the group\'s: it still goes in its turn (doc_above)');
     expect(m.undo(), isTrue);   // (its key)
-    expect(m.undo(), isTrue);   // (the pull: one step)
-    expect(m.value(g, 'stagger', 0) ?? 0, closeTo(0, .001), reason: 'one step back, all at once again');
+    expect(m.undo(), isTrue);   // (the pull, the row with it: one step)
+    expect([m.late(a), m.late(b), m.late(c)].reduce(math.max), closeTo(0, .001), reason: 'one step back, all at once again');
+    expect(order(), isNull, reason: 'the row went with the pull');
     expect(t.takeException(), isNull);
     await _close(t);
   }, skip: !_built);
@@ -2051,7 +2054,9 @@ void _tests3() {
     }
     await hand.up();
     await settled(t, ws);
-    expect(m.value(g, 'stagger', 0), closeTo(.25, .02), reason: 'five: the last 1 s after the first, each 0.25 s: ${m.trouble}');
+    final order = m.things.where((x) => (m.value(x, 'parent', 0) ?? 0).round() == g && m.word(x, 'kind') == 'behaviour' && m.word(x, 'file') == 'order').firstOrNull;
+    expect(order, isNotNull, reason: 'the Order row inside the group');
+    expect(m.value(order!, 'lag', 0), closeTo(.25, .02), reason: 'five: the last 1 s after the first, each 0.25 s: ${m.trouble}');
     expect(t.takeException(), isNull);
     await _close(t);
   }, skip: !_built);
@@ -2078,10 +2083,17 @@ void _tests3() {
     await t.tap(label);
     await t.pumpAndSettle();
     expect(ws.entered, '$g', reason: 'pressed twice: inside');
-    expect([names().first, names().skip(1).toSet()], ['Group', {'Rect', 'Circle'}], reason: 'its own row on top, then what it holds; the star is not here');
-    final rows = (t.widget<CustomPaint>(tracks).painter! as WtTracksPainter).rows;
-    expect([rows[0].head, rows[1].head], [true, false], reason: 'the line under the group\'s own row');
+    expect(names(), ['Group'], reason: 'its own row; what it holds goes as it says and is not here (no relation yet, nothing named)');
     expect(ws.selected, '$g', reason: 'its cards in the inspector');
+    ws.select('$a');
+    await t.pumpAndSettle();
+    expect(names(), ['Group', 'Rect'], reason: 'one of them picked: named, its row here; the other still not');
+    expect(m.key(a, 'x', 1, -1.5), isTrue, reason: m.trouble);
+    ws
+      ..reread()
+      ..select('$g');
+    await t.pumpAndSettle();
+    expect(names(), ['Group', 'Rect'], reason: 'with a key of its own it stays named when not picked');
     expect(find.byKey(ValueKey('ws-crumb-$g')), findsOneWidget, reason: 'the crumb above');
     await t.tap(find.byKey(const ValueKey('ws-crumb-document')));
     await t.pumpAndSettle();
