@@ -122,6 +122,7 @@ abstract final class WsArt {
   /// The topmost layer under [p] (document px), or null. The background is locked: a click on it means "nothing".
   static String? hit(ArtScene s, Offset p) {
     for (final l in s.layers) {   // (the thing in front, of those whose real frame the point is in; the first row is the nearest thing)
+      if (l.kind == WsKind.group) continue;   // (a group is taken by what it holds, its frame round them all no thing: Figma's; between them is the stage)
       if (s.box(l.id)?.contains(p) ?? false) return l.id;
     }
     return null;

@@ -731,5 +731,11 @@ static bool doc_frame(Doc& d, int thing, double now, double* frame) {
             frame[2] = 2.0 * std::max(frame[0] - x0, x1 - frame[0]), frame[3] = 2.0 * std::max(frame[1] - y0, y1 - frame[1]), frame[4] = 0.0;   // (its middle stays the thing's own: as far each way as what it covers goes on its farther side)
         } else if (doc_covers(d, thing, now, box)) frame[2] = box[2], frame[3] = box[3], frame[4] = 0.0;
     }
+    if (doc_word(d, thing, "shape") == "null") {   // (a group: the upright box of all it holds, as Figma frames a group; it turns about its own point still. Its own small box round the middle thing was read as that thing alone, golf (g52))
+        double x0 = 1e18, y0 = 1e18, x1 = -1e18, y1 = -1e18;
+        for (const int t : doc_laid(d))
+            if ((int)doc_number(d, t, "parent", 0, 0) == thing && doc_seen_box(d, t, now, box)) x0 = std::min(x0, box[0]), y0 = std::min(y0, box[1]), x1 = std::max(x1, box[2]), y1 = std::max(y1, box[3]);
+        if (x0 <= x1) frame[0] = (x0 + x1) / 2.0, frame[1] = (y0 + y1) / 2.0, frame[2] = x1 - x0, frame[3] = y1 - y0, frame[4] = 0.0, frame[7] = 0.0;
+    }
     return true;
 }

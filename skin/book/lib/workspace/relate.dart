@@ -17,6 +17,18 @@ String wsRelationWord(String kind) {
   return name[0].toUpperCase() + name.substring(1);
 }
 
+/// What a relation does, said when a hand rests on its pill (macOS's help tags, Figma's tooltips; golf (g12), (g29): no
+/// word said what Wave or Swell was): the inside's kinds a line each, one written as a file in its maker's words (its
+/// head's --about:, as the effects' shelf says theirs).
+String wsRelationAbout(Motolii m, String kind) => switch (kind) {
+  'around' => 'Round a middle, in a ring',
+  'row' => 'In a row, evenly apart',
+  'follow' => 'Each goes after the first, a little later',
+  'push' => 'The first pushes the others away as it comes near',
+  'group' => 'Group them; the group rises 100 px from below, each a little after the one before',
+  _ => m.about(kind),
+};
+
 /// A relation's kind, or the file it is written as.
 String wsRelationOf(Motolii m, int t) => m.word(t, 'file') == 'relate' ? m.word(t, 'script') : m.word(t, 'file');
 

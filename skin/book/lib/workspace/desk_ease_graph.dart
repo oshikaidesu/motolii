@@ -281,17 +281,17 @@ class _GraphPainter extends CustomPainter {
     final numbers = T.micro(Grey.g56);
     if (from != null && to != null && to! > from!) {
       if (g.width > Shape.z(80)) {   // (too narrow, only the frame now)
-        deskText(c, '$from', Offset(g.left, bottom + 6), numbers);
-        deskText(c, '$to', Offset(g.right, bottom + 6), numbers, ax: 1);
+        deskText(c, easeSeconds(from!), Offset(g.left, bottom + 6), numbers);
+        deskText(c, easeSeconds(to!), Offset(g.right, bottom + 6), numbers, ax: 1);
       }
       if (frame >= from! && frame <= to!) {
         final u = (frame - from!) / (to! - from!), x = g.left + g.width * u, y = y0 + (y1 - y0) * (onion ?? ease).at(u), line = Paint()..color = WsT.playhead..strokeWidth = 1.5;
         c.drawLine(Offset(x, top - 8), Offset(x, bottom + 4), line);
         c.drawCircle(px(Offset(u, y)), 4.5, Paint()..color = WsT.playhead);
-        if (frame != from && frame != to) deskText(c, '$frame', Offset(x, bottom + 6), T.micro(WsT.playhead).copyWith(fontWeight: FontWeight.w700), ax: .5);
+        if (frame != from && frame != to) deskText(c, easeSeconds(frame), Offset(x, bottom + 6), T.micro(WsT.playhead).copyWith(fontWeight: FontWeight.w700), ax: .5);
       } else if (g.width > Shape.z(80)) {   // (not in this stretch: which way it lies, and where)
         final before = frame < from!;
-        deskText(c, before ? '‹ $frame' : '$frame ›', Offset(g.center.dx, bottom + 6), T.micro(WsT.playhead).copyWith(fontWeight: FontWeight.w700), ax: .5);
+        deskText(c, before ? '‹ ${easeSeconds(frame)}' : '${easeSeconds(frame)} ›', Offset(g.center.dx, bottom + 6), T.micro(WsT.playhead).copyWith(fontWeight: FontWeight.w700), ax: .5);
       }
     }
     // A way tried: where it has come to on its curve, and a ball on the bar going as a value would.
@@ -332,3 +332,7 @@ class _GraphPainter extends CustomPainter {
   bool shouldRepaint(_GraphPainter o) => o.trial != trial || o.beats != beats || o.reach != reach || o.ease != ease || o.onion != onion || o.ends != ends || o.overshoot != overshoot || o.endAt != endAt || o.jump != jump || o.from != from || o.to != to || o.frame != frame || o.active != active || o.dragging != dragging || o.ghosts.length != ghosts.length || (ghosts.isNotEmpty && o.ghosts.first.$1 != ghosts.first.$1);
 }
 
+
+/// A frame said in seconds, as the timeline's ruler says them (0.6s, 1s): the stretch's ends were frames, 0 → 36, beside a
+/// ruler in seconds, and how long a move took was not read there (golf (g57)).
+String easeSeconds(int frame) => '${(frame / Ws.fps).toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '')}s';

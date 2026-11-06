@@ -176,6 +176,9 @@ static void picture_update(Motolii* m) {
     w.Key("things"), w.StartArray();
     for (int i = 0; i < n; ++i) w.Int(things[i]);
     w.EndArray();
+    w.Key("late"), w.StartObject();   // (how much later each of a group's things goes than its group, doc_group_delay; none here, on time. The whole document's, not a thing's own part: its group's Delay changes it)
+    for (int i = 0; i < n; ++i) if (const double late = doc_group_delay(d, things[i]); late > 0) w.Key(std::to_string(things[i]).c_str()), w.Double(late);
+    w.EndObject();
     w.EndObject();
     std::lock_guard<std::mutex> hold(m->pictureLock);
     std::string own = {out.GetString(), out.GetSize()};
@@ -209,7 +212,6 @@ static void picture_moment(Motolii* m) {
         if (doc_frame(d, t, at, frame)) { w.Key("frame"), w.StartArray(); for (double f : frame) w.Double(f); w.EndArray(); }
         if (doc_seen_box(d, t, at, box)) { w.Key("seen"), w.StartArray(); for (double b : box) w.Double(b); w.EndArray(); }
         if (const std::string g = doc_gizmo(d, t, at); !g.empty()) w.Key("gizmo"), w.String(g.c_str());
-        if (const double late = doc_group_delay(d, t); late > 0) w.Key("late"), w.Double(late);   // (how much later it goes than its group: the stage numbers the group's order)
         w.Key("shows"), w.StartObject();   // (as the stage shows it: [value, driven by a relation or behaviour])
         for (const char* name : {"x", "y", "z", "rotate", "scale_x", "scale_y", "opacity"})
             if (double v = 0; const int got = motolii_shows(m, t, name, at, &v)) w.Key(name), w.StartArray(), w.Double(v), w.Bool(got == 2), w.EndArray();

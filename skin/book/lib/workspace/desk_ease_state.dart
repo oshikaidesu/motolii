@@ -348,7 +348,7 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
                           ),
                           if (span == null && ws.inside != null) Positioned(left: Shape.s(6), top: Shape.s(4), right: Shape.s(6), child: IgnorePointer(child: Text('Trying here. Pick a key to go on a stretch', key: const ValueKey('ease-no-span'), maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(Grey.g63)))),
                           if (_trouble case final why?) Positioned(left: Shape.s(4), right: Shape.s(4), top: Shape.s(2), child: Text(why, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g63))),
-                          if (span case final s?) Positioned(left: Shape.s(6), top: Shape.s(4), right: Shape.s(6), child: IgnorePointer(child: Text('${s.layer.name}  ${s.from} → ${s.to}', key: const ValueKey('ease-span'), maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(Grey.g63)))),   // (which thing, which stretch)
+                          if (span case final s?) Positioned(left: Shape.s(6), top: Shape.s(4), right: Shape.s(6), child: IgnorePointer(child: Text('${s.layer.name}  ${easeSeconds(s.from)} → ${easeSeconds(s.to)}', key: const ValueKey('ease-span'), maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(Grey.g63)))),   // (which thing, which stretch)
                           Positioned.fill(child: EaseNumbers(card: whole ? easeLaid(cards) : card, onChanged: put, overshoot: overshoot, onOvershoot: overshootSet)),
                           Positioned(left: Shape.s(2), bottom: Shape.s(2), child: EaseStep(span: span, back: true)),
                           Positioned(right: Shape.s(2), bottom: Shape.s(2), child: EaseStep(span: span, back: false)),

@@ -89,6 +89,16 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     );
   }
 
+  // A group's things, how much later each goes (its Relation's order), in frames, each once: its keys drawn again so much
+  // later, faint, as GSAP's GSDevTools lays a stagger's tweens one after the next; the last of them is where the last
+  // thing lands (golf (g53), (g56): one bar, two keys, no thing's start nor the end of them all seen).
+  List<int> _echoesOf(Ws ws, WsLayer l) {
+    final m = ws.inside;
+    if (m == null || l.kind != WsKind.group) return const [];
+    final g = int.parse(l.id);
+    return {for (final t in m.things) if ((m.value(t, 'parent', 0) ?? 0).round() == g && m.late(t) > 0) (m.late(t) * Ws.fps).round()}.toList()..sort();
+  }
+
   // A way's shape from 0 to 1, as the bar's stretches are drawn.
   List<double> _wayShape(Ws ws, String way) => way.isEmpty ? const [0, 1] : easeCurve(way, ws.inside!);
 
@@ -486,6 +496,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
           tone: l.tone,
           mix: _mixOf(ws, l.id),
           whole: _wholeOf(ws, l),
+          echoes: _echoesOf(ws, l),
         ),
     ];
     return Focus(

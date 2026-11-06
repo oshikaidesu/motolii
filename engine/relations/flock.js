@@ -1,6 +1,7 @@
 // A flock: Reynolds' Boids (1986, red3d.com/cwr/boids), as MASH's Flight. Each steers by those it can see: away from the
 // closest, along their heading, toward their middle. Steering is what it wants less what it does, as his 1999 paper
 // says. Home pulls each back to where it would be left alone, so they stay on the stage.
+// --about:They fly as a flock: apart from the nearest, the same way, toward their middle
 // --track@speed:Speed,0,6,1.6,0.01
 // --track@force:Force,0,20,5,0.01
 // --track@sight:Sight,0,4,1.2,0.01

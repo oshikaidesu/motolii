@@ -440,6 +440,9 @@ class NumFieldState extends State<NumField> {
         String unit = widget.unit ?? '';
         if (widget.turns && v != null && v.abs() >= 360 && w >= 120) unit = '° ${(v / 360).truncate()}x ${fmt(v.remainder(360), 0)}';
         final word = v == 0 && widget.zeroWord != null ? widget.zeroWord! : null;
+        // (a field holding the keys, a digit to start its number (typesOn): its number drawn as text picked, as the editor
+        //  shows it opened, so what is typed is seen to take its place; no cursor was seen, golf (g49))
+        final ready = _focus && !_editing && _x.cfg.typesOn;
         Widget valueText() {
           if (v == null) return Text(Role.grey ? 'Mixed' : '— Mixed', style: T.label(Role.of(Grey.g76, Role.info)));
           if (word != null) return Text(word, style: T.label(on ? Grey.g76 : Grey.g56));
@@ -451,11 +454,11 @@ class NumFieldState extends State<NumField> {
               children: [
                 TextSpan(
                   text: fmt(v, widget.decimals, tight: tight), // (its places fixed, as Push shows them: a number does not jump in width as it moves)
-                  style: widget.caption != null
+                  style: (widget.caption != null
                       ? blockValue(on ? Grey.g95 : Grey.g56)
                       : pop
                       ? T.value(on ? Grey.g95 : Grey.g56).copyWith(fontWeight: FontWeight.w600)
-                      : T.value(on ? Grey.g95 : Grey.g56),
+                      : T.value(on ? Grey.g95 : Grey.g56)).copyWith(backgroundColor: ready ? Role.selected.withValues(alpha: .4) : null),
                 ),
                 if (showUnit && unit.isNotEmpty) TextSpan(text: pop ? '\u2009$unit' : ' $unit', style: T.label(pop ? Grey.g44 : Grey.g56)),
               ],

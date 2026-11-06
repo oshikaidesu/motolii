@@ -1,5 +1,6 @@
 // Each goes after where it would be left alone on a spring, past it and back: Cavalry's Spring (Mass, Damping, Speed
 // Limit) and MASH's, for the moves its keys give it.
+// --about:Each goes after where it would be on a spring, past it and back
 // --track@mass:Mass,.05,10,1,0.01
 // --track@damping:Damping,0,30,4,0.01
 // --track@limit:Speed Limit,0,60,60,0.1

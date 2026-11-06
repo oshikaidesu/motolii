@@ -36,6 +36,7 @@ class _RelationMarks extends StatelessWidget {
         return ((c.dx - WsArt.comp.width / 2) / m!.point, (WsArt.comp.height / 2 - c.dy) / m.point);
       }
 
+      String? said;   // (what the pill a hand rests on does)
       final shape = <_Shape>[];
       final handles = <Widget>[];
       String? leader;
@@ -141,7 +142,9 @@ class _RelationMarks extends StatelessWidget {
               left: v.area.left,
               right: v.area.right - v.area.width,
               top: v.area.top + 8,
-              child: Center(
+              child: StatefulBuilder(builder: (context, setSaid) {   // (a hand resting on a pill: what it does, a line under the row; golf (g12), (g29))
+                void tell(String about, bool on) => setSaid(() => said = on ? about : null);
+                return Column(mainAxisSize: MainAxisSize.min, children: [Center(
                 child: Wrap(   // (as many as there are files in relations/: a narrow stage folds them)
                   alignment: WrapAlignment.center,
                   crossAxisAlignment: WrapCrossAlignment.center,
@@ -152,18 +155,19 @@ class _RelationMarks extends StatelessWidget {
                           // (first: held together as one, the group, its Relation card under its Transform; the menu's Group and
                           //  Cmd+G, said where the picked are looked at (Figma's and Alight Motion's Group): golf (g17), a first
                           //  user went from Select All to this row and never met the group)
-                          _RelateChip('group', () => Actions.maybeInvoke(context, const CommandIntent('thing.group', false)), word: 'Group', key: const ValueKey('ws-group')),
+                          _RelateChip('group', () => Actions.maybeInvoke(context, const CommandIntent('thing.group', false)), word: 'Group', onHover: (on) => tell('Hold them as one (⌘G)', on), key: const ValueKey('ws-group')),
                           for (final k in wsRelationChoices(ws))   // (Move in: that group, keyed and in order: workspace.dart's thing.moveIn)
-                            _RelateChip(k, k == 'group' ? () => Actions.maybeInvoke(context, const CommandIntent('thing.moveIn', false)) : () => wsRelate(ws, k)),
+                            _RelateChip(k, k == 'group' ? () => Actions.maybeInvoke(context, const CommandIntent('thing.moveIn', false)) : () => wsRelate(ws, k), onHover: (on) => tell(wsRelationAbout(m!, k), on)),
                         ]
                       : [
                           _Said('${wsRelationWord(wsRelationOf(m!, rel!))} · ${wsMembersOf(ws).length}'),
-                          _RelateChip('eye', () => wsSwitch(ws), glyph: (m!.value(rel!, 'visible', 0) ?? 1) > .5 ? TpGlyph.eye : TpGlyph.eyeOff, key: const ValueKey('ws-relation-switch')), // (its eye, as on its row: shut, what it is on top of shows)
+                          _RelateChip('eye', () => wsSwitch(ws), glyph: (m.value(rel, 'visible', 0) ?? 1) > .5 ? TpGlyph.eye : TpGlyph.eyeOff, key: const ValueKey('ws-relation-switch')), // (its eye, as on its row: shut, what it is on top of shows)
                           _RelateChip('bake', () => wsRelease(ws), key: const ValueKey('ws-relate-release')),
                           _RelateChip('delete', () => ws.after(m.later('remove', thing: rel), (_, _) => ws..select(null)..reread()), key: const ValueKey('ws-relate-delete')),   // (as Blender puts Apply and Delete side by side: gone, its things back to what is under it)   // (baked: kept where they show, the relation gone; × and Delete: back to what is under it)
                         ],
                 ),
-              ),
+              ), if (said case final words? when words.isNotEmpty) Padding(padding: EdgeInsets.only(top: Shape.s(4)), child: _Said(words))]);
+              }),
             ),
         ],
       );
@@ -287,14 +291,16 @@ class _Said extends StatelessWidget {
 
 /// What things picked together may do together, or a relation a thing is in (outlined): a word on a pill.
 class _RelateChip extends StatelessWidget {
-  const _RelateChip(this.kind, this.onTap, {this.outlined = false, this.glyph, this.word, super.key});
+  const _RelateChip(this.kind, this.onTap, {this.outlined = false, this.glyph, this.word, this.onHover, super.key});
   final String kind;
   final String? word;   // (said instead of its kind's word)
+  final ValueChanged<bool>? onHover;   // (a hand come onto it, or gone)
   final VoidCallback onTap;
   final bool outlined;
   final TpGlyph? glyph;   // (drawn instead of its word)
   @override
-  Widget build(BuildContext context) => GestureDetector(
+  Widget build(BuildContext context) => onHover == null ? _pill() : MouseRegion(onEnter: (_) => onHover!(true), onExit: (_) => onHover!(false), child: _pill());
+  Widget _pill() => GestureDetector(
     key: key == null ? ValueKey('ws-relate-$kind') : null,
     onTap: onTap,
     child: Container(
