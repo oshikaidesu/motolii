@@ -150,7 +150,7 @@ Alight Motion は**下限**（ここまでは揃える線）で、ゴールで�
 | [Ribbon](https://guide.alightmotion.com/effects/ribbon) | Renders a twisted, flowing ribbon of varying width in the opaque parts of the layer. | 無い |  |  |
 | [Roughen Edges](https://guide.alightmotion.com/effects/roughen-edges) | Roughens the edges of the opaque parts of the layer. | 一部 | 形の rough（形だけ） |  |
 | [Saturation / Vibrance](https://guide.alightmotion.com/effects/saturation-vibrance) | Adjusts the saturation or purity of colors in the layer. | 有る | 物の fx に ISF の Vibrance.fs（10/28、窓で写真 2 枚の片方に掛けて確かめた） | Vibrance |
-| [Scatter Repeat](https://guide.alightmotion.com/effects/scatter-repeat) | Dynamically generates multiple copies of the layer, scattered randomly around the original layer location. | 有る | copies＋scatter_x・scatter_y | Replicate Random |
+| [Scatter Repeat](https://guide.alightmotion.com/effects/scatter-repeat) | Dynamically generates multiple copies of the layer, scattered randomly around the original layer location. | 無い（11/7 実機で確認） | copies の散らしは四角、円と Range 一式は無い。上流 AbsentMotion にも無い | Replicate Random |
 | [Sharpen](https://guide.alightmotion.com/effects/sharpen) | Enhances details in the layer by increasing the contrast wherever there are abrupt differences in the luminance of nearby pixels in the layer. | 有る | 物の fx に ISF の Sharpen RGB.fs、強さ 5（10/28、窓で確かめた） | Sharpen RGB |
 | [Simple Starfield](https://guide.alightmotion.com/effects/simple-starfield) | Renders a simple parallax starfield pattern, with a depth component, in the opaque parts of the layer. | 一部 | ISF Hyperspace | Star |
 | [Smooth Bevel](https://guide.alightmotion.com/effects/smooth-bevel) | Draws a smooth curved bevel inside the edges of the opaque parts of the layer. | 無い |  |  |
