@@ -262,6 +262,13 @@ class Ws extends ChangeNotifier {
     many
       ..clear()
       ..addAll(ids);
+    if (many.isNotEmpty && !many.contains(_sel)) {   // (one of them in the Inspector, what is typed there going to them all, as a click then Shift-clicks on the layers show the first: drawn round, Select All or a box, it said Nothing selected, golf (g11)(g84))
+      _sel = many.first;
+      _aim = null;
+      _keys.clear();
+      _stretch = null;
+      deskManual = null;
+    }
     manyByHand = byHand;
     _tell(WsAspect.picked);
   }

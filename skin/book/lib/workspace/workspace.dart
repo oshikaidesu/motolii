@@ -359,12 +359,7 @@ class _WorkspaceState extends State<Workspace> {
           if (int.tryParse(id) case final t?) ws.after(m.later('paste_style', thing: t, word: _clipboard('style')));
         }
       },
-      'edit.selectAll': () {   // (no words being written: every thing, as Ableton's Cmd+A in the arrangement)
-        if (_typed(const SelectAllTextIntent(SelectionChangedCause.keyboard))) return;
-        final all = [for (final l in ws.layers) l.id];
-        if (all.isNotEmpty && !all.contains(ws.selected)) ws.select(all.first);   // (one of them in the Inspector, what is typed there going to them all, as a click and a Shift-click on the layers pick; it said Nothing selected, golf (g11))
-        ws.pickMany(all);
-      },
+      'edit.selectAll': () => _typed(const SelectAllTextIntent(SelectionChangedCause.keyboard)) ? null : ws.pickMany([for (final l in ws.layers) l.id]),   // (no words being written: every thing, as Ableton's Cmd+A in the arrangement)
       'edit.deselectAll': () => ws
         ..clearKeys()
         ..select(null),   // (nothing picked, as a click below the rows: After Effects' and Premiere Pro's Edit > Deselect All; with a thing over the whole stage, the one way back: golf_noise.md (63))

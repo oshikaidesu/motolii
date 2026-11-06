@@ -394,7 +394,8 @@ static std::string doc_cards_of(Doc& d, int thing, std::string* more = nullptr) 
             const std::string n(at, len);
             said = said || !doc_word(d, thing, n.c_str()).empty() || doc_keys(d, thing, n.c_str());
             const bool still = ((n == "animation" || n == "speed") && doc_word(d, thing, "kind") == "solid" && doc_words(d, thing, "animation").empty())   // (a solid with no movement of its own has none to play)
-                || (n == "seed" && !strcmp(card.title, "Relation") && doc_word(d, thing, "stagger_from") != "random");   // (an order's Seed only while it goes at random: the one it shuffles. Blender's Array modifier shows Count, Length or Curve by its Fit Type; golf (g68))
+                || (n == "seed" && !strcmp(card.title, "Relation") && doc_word(d, thing, "stagger_from") != "random")   // (an order's Seed only while it goes at random: the one it shuffles. Blender's Array modifier shows Count, Length or Curve by its Fit Type; golf (g68))
+                || ((n == "stagger_from" || n == "seed") && !strcmp(card.title, "Relation") && doc_number(d, thing, "stagger", 0, 0) <= 0);   // (and its From only once each goes later than the one before: with none later there is no order, a From rested on showed nothing, golf (g83). GSAP's from is a part of its stagger)
             if (has.find(" " + n + " ") != std::string::npos && !still) names += (names.empty() ? "" : " ") + n;
             at += len + (at[len] ? 1 : 0);
         }

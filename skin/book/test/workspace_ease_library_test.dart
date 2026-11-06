@@ -720,7 +720,7 @@ void main() {
       ..front('Ease');
     await t.pumpAndSettle();
     expect(easeSpan(ws), isNull);
-    expect(_in(find.byKey(const ValueKey('ease-no-span'))), findsOneWidget, reason: 'it says so');
+    expect(_in(find.byKey(const ValueKey('ease-span'))), findsNothing, reason: 'no stretch named, and no words said of it (the user, 11/6: read without words)');
     ws
       ..select('$cube')
       ..frame = 60;
