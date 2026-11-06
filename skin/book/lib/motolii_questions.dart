@@ -197,6 +197,16 @@ extension MotoliiQuestions on Motolii {
     return got > 0 ? p : null;
   }
 
+  /// A thing's members (its copies, a split text's letters) as its order reads them: four numbers each, where it lies
+  /// about the thing's middle before it moves (x, y, z) and how much later it moves (seconds) (motolii_members).
+  Future<List<double>> members(int thing) => _ask((l, m) {   // (skin/BRIDGE.md Q: in the hand's queue, after what the window threw before it)
+    final ask = c.MotoliiBindings(l).motolii_members, n = ask(m, thing, nullptr, 0);
+    if (n < 1) return const <double>[];
+    final out = malloc<Double>(4 * n), got = ask(m, thing, out, n), all = [for (var i = 0; i < 4 * (got < n ? got : n); i++) out[i]];
+    malloc.free(out);
+    return all;
+  });
+
   /// A film's sound: its loudness (dB, 0 at full) 100 times a second of its own (none: no sound, or not a film). Read
   /// on another isolate, the file decoded once: the window does not wait.
   Future<List<double>> loudness(int thing) {

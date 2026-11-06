@@ -392,6 +392,11 @@ class Doc extends ChangeNotifier {
   /// moment; null: it has none.
   Future<List<double>?> Function(double to, int n, int copy)? onPath;
 
+  /// The host's answer to where the thing's members (its copies, a split text's letters) lie about its middle and how
+  /// much later each moves, as its order reads them (see Motolii.members): four numbers each, x y z and seconds; empty:
+  /// it has none. Asked on another isolate when what makes them changes (skin/BRIDGE.md Q).
+  Future<List<double>> Function()? onMembers;   // (a question of the host's: answered later)
+
   void moveFx(String id, int by) {
     if (!(onFxMove?.call() ?? true)) return;
     final i = fxOrder.indexOf(id), j = i + by;

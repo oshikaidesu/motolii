@@ -97,6 +97,17 @@ int motolii_path3(Motolii* m, int thing, int copy, double from, double to, int n
         return n;
     });
 }
+int motolii_members(Motolii* m, int thing, double* members, int room) {   // (asked on another isolate, never the window's thread: in the hand's queue, so a change the window threw just before is in its answer)
+    return asked(m, [=] {
+        if (!doc_knows(doc(m), thing)) return 0;
+        const int n = doc_members(*m->d, thing);
+        for (int i = 0; i < room && i < n; ++i) {   // (the order's own reading: where it counts each from, and what it gives each)
+            const math::double3 at = doc_member_at(*m->d, thing, i, n);
+            members[4 * i] = at.x, members[4 * i + 1] = at.y, members[4 * i + 2] = at.z, members[4 * i + 3] = doc_delay(*m->d, thing, i);
+        }
+        return n;
+    }, false, "motolii_members");
+}
 int motolii_keying(Motolii* m, int on) {   // (on below 0: only says whether every change is keyed: a read, answered at once, not queued behind the hand's picture)
     if (on < 0) return (int)m->keying.load();
     m->keying = on != 0;   // (said at once; the document told in the hand's turn, without waiting)

@@ -312,6 +312,21 @@ static math::double3 doc_member_laid(Doc& d, int thing, int nth, int n, double n
 // can lie from a point: what a stagger from a point and a window's picture of the order read. The farthest is at a
 // corner of the rows (the members lie on a box's image, and a distance is greatest at a corner of it).
 static double doc_letter_middle(Doc& d, int thing, int copy);
+// Where a copy's middle comes to lie once laid: its rows, and each copy turned about the thing's anchor by Turn all and
+// Rotate each and grown by copy_size, as doc_place turns it (own about -anchor): with the anchor off the middle a ring,
+// a spiral (Cinema 4D's Cloner, Radial: the clones' places, which its effectors' fields read). Unturned, its rows alone.
+static math::double3 doc_member_middle(Doc& d, int thing, int nth, int n) {
+    const math::double3 laid = doc_member_laid(d, thing, nth, n, 0);
+    const double turn = (nth * doc_literal(d, thing, "copy_turn", 0, 0) / n + nth * doc_literal(d, thing, "copy_rotate", 0, 0)) * (double)TAU / 360.0, grow = std::pow(doc_literal(d, thing, "copy_size", 0, 1), nth);
+    if (turn == 0.0 && grow == 1.0) return laid;
+    float2 half{0.5f};
+    float deep = 0.f;
+    doc_half(d, thing, &half, &deep);
+    const math::double3 a{doc_literal(d, thing, "anchor_x", 0, 0) * half.x, doc_literal(d, thing, "anchor_y", 0, 0) * half.y, doc_literal(d, thing, "anchor_z", 0, 0) * deep};
+    const double c = std::cos(turn), s = std::sin(turn), size = doc_literal(d, thing, "size", 0, 1);
+    const math::double3 moved{a.x - grow * (c * a.x - s * a.y), a.y - grow * (s * a.x + c * a.y), a.z - grow * a.z};   // (its middle, as far from where the unturned one's is)
+    return laid + size * math::double3{doc_literal(d, thing, "scale_x", 0, 1) * moved.x, doc_literal(d, thing, "scale_y", 0, 1) * moved.y, doc_literal(d, thing, "scale_z", 0, 1) * moved.z};
+}
 static math::double3 doc_member_at(Doc& d, int thing, int nth, int n, double* farthest = nullptr, math::double3 from = {}) {
     const auto sh = d.shown.find(thing);
     if (sh != d.shown.end() && sh->second.drawn && !sh->second.drawn->letters.empty()) {   // (a letter: its middle along the line)
@@ -322,9 +337,23 @@ static math::double3 doc_member_at(Doc& d, int thing, int nth, int n, double* fa
         const int columns = (int)doc_literal(d, thing, "copy_columns", 0, 0), wide = columns > 0 ? std::min(n, columns) : n, rows = columns > 0 ? (n + columns - 1) / columns : 1;
         const int step = columns > 0 ? columns : n;
         *farthest = 0.0;
-        for (const int corner : {0, wide - 1, (rows - 1) * step, (rows - 1) * step + wide - 1}) *farthest = std::max(*farthest, length(doc_member_laid(d, thing, corner, n, 0) - from));
+        const bool turned = doc_literal(d, thing, "copy_turn", 0, 0) != 0.0 || doc_literal(d, thing, "copy_rotate", 0, 0) != 0.0 || doc_literal(d, thing, "copy_size", 0, 1) != 1.0;
+        if (turned) {   // (on a ring the farthest is anywhere on it: 64 of them evenly, kept while what lays them and the point stay, as every copy asks it each picture)
+            float2 half{0.5f};
+            doc_half(d, thing, &half);
+            std::vector<double> key{(double)thing, (double)n, from.x, from.y, from.z, half.x, half.y};
+            for (const char* name : {"copy_turn", "copy_rotate", "copy_size", "copy_x", "copy_y", "copy_z", "copy_columns", "anchor_x", "anchor_y", "anchor_z", "size", "scale_x", "scale_y", "scale_z"}) key.push_back(doc_literal(d, thing, name, 0, 0));
+            static thread_local std::pair<std::vector<double>, double> kept;
+            if (kept.first != key) {
+                kept = {key, 0.0};
+                const int many = std::min(n, 64);
+                for (int k = 0; k < many; ++k) kept.second = std::max(kept.second, length(doc_member_middle(d, thing, many > 1 ? (int)std::lround((double)k * (n - 1) / (many - 1)) : 0, n) - from));
+            }
+            *farthest = kept.second;
+        } else
+            for (const int corner : {0, wide - 1, (rows - 1) * step, (rows - 1) * step + wide - 1}) *farthest = std::max(*farthest, length(doc_member_laid(d, thing, corner, n, 0) - from));
     }
-    return doc_member_laid(d, thing, nth, n, 0);
+    return doc_member_middle(d, thing, nth, n);
 }
 // How much later a thing's nth copy moves than it is said to (the past repository's order law, GSAP's stagger: the
 // stagger spread over them by their order: from the start, from the centre out, from the end, from the edges in; any

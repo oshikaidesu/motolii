@@ -11,6 +11,9 @@
 #      changes its order (from the centre: the middle letters are down first).
 #   4. In depth: copies laid into the picture, the order from a point at the far end: the far ones first (Cinema 4D's
 #      Plain Effector Time Offset through a spherical field: the clones' own places, depth too).
+#   5. On a ring: eight copies turned round an anchor off their middle (Turn all 360: Cinema 4D's Cloner, Radial), the
+#      order from the first: its neighbours next, the one across the ring last, each side alike (the places the order
+#      counts from are where the copies are drawn, not where their rows would be).
 # Needs the inside built (edit.sh).
 #   ./check/group.sh            (KEEP=1 keeps the pictures in out/group_keep)
 cd "$(dirname "$0")/.."
@@ -31,6 +34,11 @@ printf 'say 1 stagger_from centre\nat 0.67\nstill %s/shelf_mid.png\nat 3\nstill 
 # 4. In depth: ten copies, each a step right and a step further in; the order from a point in the row's middle across
 #    but at its far end in depth.
 printf 'add shape rect\nset 1 space 3\nset 1 size 0.06\nsay 1 fill ffc850\nset 1 copies 10\nset 1 copy_x 0.09\nset 1 copy_z -0.15\nset 1 stagger 1\nkeys 1 opacity 0 0 0.2 1\nsay 1 stagger_from point\nset 1 stagger_z -0.675\nat 0.5\nstill %s/deep_mid.png\nat 3\nstill %s/deep_rest.png\n' $W $W | ./edit.sh $W/deep.motolii > $W/deep.txt 2>&1
+# 5. On a ring: where its first lies asked, then the order from there.
+ring='add shape rect\nset 1 size 0.05\nset 1 anchor_y 6\nset 1 copies 8\nset 1 copy_turn 360\nset 1 stagger 1\n'
+printf "$ring"'members 1\n' | ./edit.sh $W/ring.motolii > $W/ring_laid.txt 2>&1
+first=$(grep -E '^0 ' $W/ring_laid.txt | head -1)
+printf 'say 1 stagger_from point\nset 1 stagger_x %s\nset 1 stagger_y %s\nmembers 1\n' $(echo $first | cut -d' ' -f2) $(echo $first | cut -d' ' -f3) | ./edit.sh $W/ring.motolii > $W/ring.txt 2>&1
 python3 -c "
 from PIL import Image
 def load(name):
@@ -75,5 +83,13 @@ rest, mid = runs('deep_rest', yellow), runs('deep_mid', yellow)
 centre = sorted((a + b) // 2 for a, b in rest)
 ok4 = len(rest) >= 8 and 1 <= len(mid) <= 4 and min((a + b) // 2 for a, b in mid) > centre[len(centre) // 2]
 print('in depth, from a point at the far end: the far ones first: ' + ('yes' if ok4 else 'NO (lit %s of %s)' % ([(a + b) // 2 for a, b in mid], centre)))
+ring = {}
+for line in open('$W/ring.txt'):
+    w = line.split()
+    if len(w) == 5 and w[0].isdigit(): ring[int(w[0])] = [float(v) for v in w[1:]]
+d = [ring[i][3] for i in range(8)] if len(ring) == 8 else []
+spread = len({(round(ring[i][0], 3), round(ring[i][1], 3)) for i in ring}) == 8
+ok5 = len(d) == 8 and spread and d[0] == 0 and abs(d[4] - 1) < 1e-6 and all(abs(d[k] - d[8 - k]) < 1e-6 for k in range(1, 4)) and d[1] < d[2] < d[3] < d[4]
+print('on a ring, from the first: its neighbours next, the one across last, each side alike: ' + ('yes' if ok5 else 'NO (apart: %s, later: %s)' % (spread, [round(v, 3) for v in d])))
 " || { echo "group: NO (its logs:)"; tail -5 $W/*.txt; }
 [ -n "$KEEP" ] && echo $W || rm -rf $W

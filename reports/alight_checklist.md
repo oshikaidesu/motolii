@@ -462,7 +462,16 @@ AbsentMotion（AM の写し）の欄の要素を機械で書き出し（panels/*
 - [x] 順番を本物の並びから数える、奥行きも（11/6、group.sh の 4）：並びの計算を `doc_member_laid` 1 本に（`doc_place` が描く場所と `doc_delay` が数える場所が同じ物を読む。前は順番の側が並びを自分で計算し直していて、奥行きが抜けていた）。点に `stagger_z`。出典：Cinema 4D の Plain Effector の Time Offset を球の Field で（クローンの本当の場所で遅れる）、GSAP の from
 - [x] 型にキー・イーズ・順番が乗る（11/6、group.sh の 2）：Look の保存で x y z を「キーがある時だけ残す」側へ（前は置き場所として丸ごと捨てていて、y のキーも落ちていた）。After Effects の Animation Presets は Position のキーも持つ
 - [x] 棚のアニメーター 13 個を型にする（11/6、group.sh の 3）：落とすとキー 2 つ＋イーズ＋順番（`stagger`、`stagger_from`）を書く（`doc_animator_lay`。JS 側は `__laid` で「animate に何を頼んだか」を聞くだけ）。割れていない文字は文字ごとに割る（前と同じ）。入口（`say script`、棚の名前）はそのまま、古い書類の JS は今まで通り毎コマ動く（Strangler Fig）。絵は Bounce In・Fade Out・3D Swing In・Slide Out で前と 0 px。違い：Print On は 1 文字の間が「長さ÷文字数」から「長さ÷(文字数−1)」に（GSAP の stagger の amount と同じ割り方）、Random の並びは Seed の計算が別。棚の札の ON と 2 回目の押しで外すは無くなった（Look と同じ。外すのは取り消し）
-- [ ] グループの Inspector の図（後で、考えから浮かせる）：並んでいる物を Inspector の中に小さく描き、触って順番（From、点）を決める。点 `stagger_x` `stagger_y` `stagger_z` は今は窓に出ていない（Copies カードに無い）。3D の並びをどう見せて触るかは出典を先に探す（Cinema 4D の Field の表示、Cavalry の Falloff、Apple Motion の Sequence Text の Direction）
+- [x] グループの Inspector の図（11/6、`skin/book/lib/sets/inspector/inspector_order.dart`、試験 `test/workspace_order_test.dart`）：Copies カードの上に、メンバー（コピー・割った文字）を並びのまま点で描き、先に動く物ほど明るい。撫でる＝始め・終わり・真ん中から・端から、押す＝その点から（奥行きも）、十字を引いて別の点へ、振る＝ばらばら（もう一度で別の並び）、ダブルクリック＝全員いっしょ。各 1 手で取り消し 1 回。普段 24、手を乗せると 72（ノート §7）、言葉で今の順番、手の下では触り方（Blender のステータスバー）、キーが無ければ「キーを打つと順に動く」（ノート §9）。奥行きは右上へ半分の長さ（製図のキャビネット図）と x y z の軸。点の場所と遅れは中身に聞く（`motolii_members`、別の isolate で、窓の書きの後ろに並ぶ：skin/BRIDGE.md の Q）。出典：GSAP の stagger from、Apple Motion の Sequence Text の Direction、Cinema 4D の Plain Effector の Time Offset と Field、Flutter の kDoubleTapTimeout
+- [x] 輪に並べたコピーの順番（11/6、group.sh の 5）：Turn all（`copy_turn`）・Rotate each・copy_size はアンカーの周りで回すので、アンカーがずれていると輪や渦になる。順番はその本当の真ん中から数える（`doc_member_middle`。前は行の場所だけで、輪は 1 点に潰れて、点から広げると全員 0 秒だった）。回さない時は前と同じ数字。出典：Cinema 4D の Cloner の Radial（Field はクローンの場所を読む）
+- [ ] 古い Copies の図（＋と間隔のつまみ）と順番の図を 1 枚に（ノート §9 の「既存の＋と間隔のつまみ」）。今は 2 枚が縦に並ぶ（第三者の批判 11/6）
+- [ ] 振ると `seed` が変わり、Scatter と wiggle の並びも変わる（ノート §7 の「図は順番だけ」と食い違う。ノート §7 の表は `seed` と書いている。Cavalry の Stagger、Cinema 4D の Random Effector は機能ごとに seed を持つ）
+- [ ] 格子の「真ん中から」「端から」が番号順（3×3 で角 2・6 が辺 1・7 より先）。GSAP は `grid` と `axis` で 2 次元の距離にする
+- [ ] 点は場所で覚える（`stagger_x/y/z`）：コピーを増やすと別のコピーの上になる、文字を直すと始まりの文字がずれる。GSAP は番号、Cinema 4D は場所。ノート §7 の表どおり場所のまま
+- [ ] 複数行の文字は図で行が重なる（`doc_member_at` は文字の y を 0 で返す）
+- [ ] Animate all が点（`stagger_x/y/z`）にキーを打つか見ていない
+- [ ] 選んで作ったグループ（ノート §6 の 3 つ目）は `doc_members` が数えない
+- [ ] 割った文字の Copies カードが How many 1・Gap X 0 を出す（メンバーは 7 文字）
 - [ ] パスに沿った並び（`copy_on`）の順番：`doc_member_at` は行・列・奥行きの並びだけ。パス沿いの場所ではまだ数えていない
 - [ ] 棚の Motion の札を Look と同じ見せ方に（ON にならず、押しても外れない今の形に合わせる）
 - [ ] `integration_test/alight_check_test.dart` の progress（Print On）の絵を撮り直す（1 文字の間が変わった）
