@@ -496,8 +496,12 @@ class NumFieldState extends State<NumField> {
         final ks = pop ? (x.doc.keys[widget.id] ?? row?.keys) : null;
         _keyAt = ks != null && (ks != KeyS.off || x.doc.keys.containsKey(widget.id)) ? (block ? Offset(w - Pop.tilePad - 3, Pop.tile - 10) : Offset(w - 6, 6)) : null;
         _keys = ks;
-        final editor = _editing
-            ? TextHand(field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
+        // (its unit kept beside what is typed, as Flutter's own text field keeps its suffixText while it is typed in: "0.2"
+        //  alone was not read as seconds until it was entered, golf (g63))
+        final typedUnit = showUnit && (widget.unit ?? '').isNotEmpty ? widget.unit! : null;
+        final editor = !_editing
+            ? null
+            : Row(children: [Expanded(child: TextHand(field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
                 controller: _ctl,
                 focusNode: _ef,
                 style: block ? blockValue(Grey.g95) : T.value(Grey.g95),
@@ -512,8 +516,9 @@ class NumFieldState extends State<NumField> {
                 onChanged: (_) {
                   if (_err) setState(() => _err = false);
                 },
-              ))
-            : null;
+              ))),
+              if (typedUnit != null) Text(pop ? '\u2009$typedUnit' : ' $typedUnit', style: T.label(pop ? Grey.g44 : Grey.g56)),
+            ]);
         final body = paintNumber(
           context,
           NumberSpec(

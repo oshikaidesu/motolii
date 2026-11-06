@@ -19,16 +19,15 @@ class _RelationMarks extends StatelessWidget {
       final ws = WsScope.read(context), m = ws.inside;
       Offset? on(String id) => scene.box(id) == null ? null : v.toScreen(WsArt.toView(scene, scene.box(id)!.c));
       final picked = [for (final id in ws.many) if (on(id) case final p?) p];
-      final together = wsRelatable(ws);
       final rel = int.tryParse(ws.selected ?? ''), kind = rel == null || m == null ? '' : m.word(rel, 'file');
       final isRelation = rel != null && m != null && m.word(rel, 'kind') == 'behaviour' && wsRelations.contains(kind);
       final members = [for (final id in wsMembersOf(ws)) if (on(id) case final p?) (id, p)];
       final now = m?.now ?? 0;   // (the moment of the picture shown)
-      // (a group picked, its things in an order: each one's place in it on it, the same number for those that go
-      //  together; PowerPoint's animation numbers on the slide, golf (g42): From changed, nothing on the stage said so)
+      // (a group picked, its things in an order: on each, when it starts after the group (0s, 0.2s), the same for those
+      //  that go together; PowerPoint's animation numbers on the slide (golf (g42): From changed, nothing on the stage said
+      //  so), as times: a rank did not say what Delay each was, nor let a start be read, golf (g61), (g62), (g72))
       final group = rel != null && m != null && m.word(rel, 'shape') == 'null' && (m.value(rel, 'stagger', 0) ?? 0) > 0 ? rel : null;
       final kids = group == null ? const <int>[] : [for (final t in m!.things) if ((m.value(t, 'parent', 0) ?? 0).round() == group) t];
-      final steps = ({for (final t in kids) (m!.late(t) * 1000).round()}.toList()..sort());
       // (a place of the stage in its own units, on the screen; and back)
       Offset screen(double x, double y) => v.toScreen(WsArt.toView(scene, Offset(WsArt.comp.width / 2 + x * m!.point, WsArt.comp.height / 2 - y * m.point)));
       (double, double) units(Offset p) {
@@ -36,7 +35,6 @@ class _RelationMarks extends StatelessWidget {
         return ((c.dx - WsArt.comp.width / 2) / m!.point, (WsArt.comp.height / 2 - c.dy) / m.point);
       }
 
-      String? said;   // (what the pill a hand rests on does)
       final shape = <_Shape>[];
       final handles = <Widget>[];
       String? leader;
@@ -123,7 +121,7 @@ class _RelationMarks extends StatelessWidget {
           ...handles,
           for (final t in kids)
             if (scene.box('$t') case final b?)
-              Positioned(left: v.toScreen(WsArt.toView(scene, b.corners.first)).dx - 9, top: v.toScreen(WsArt.toView(scene, b.corners.first)).dy - 9, child: IgnorePointer(child: _Order(steps.indexOf((m!.late(t) * 1000).round()) + 1, key: ValueKey('ws-order-$t')))),
+              Positioned(left: v.toScreen(WsArt.toView(scene, b.corners.first)).dx - 9, top: v.toScreen(WsArt.toView(scene, b.corners.first)).dy - 9, child: IgnorePointer(child: _Order(easeSeconds((m!.late(t) * Ws.fps).round()), key: ValueKey('ws-order-$t')))),
           for (final (id, p) in members) ...[
             Positioned(left: p.dx + 12, top: p.dy - 24, child: _Badge('×', () => wsFree(ws, id), key: ValueKey('ws-free-$id'))), // (one taken out of it where it stands: the others stay)
             if ((kind == 'follow' || kind == 'push') && id != leader) Positioned(left: p.dx - 24, top: p.dy - 24, child: _Badge('crown', () => wsLead(ws, id), faint: true, key: ValueKey('ws-lead-$id'))), // (another's crown: that one leads, nothing moving)
@@ -137,37 +135,26 @@ class _RelationMarks extends StatelessWidget {
             Positioned(left: on(ws.many.first)!.dx - 24, top: on(ws.many.first)!.dy - 24, child: _Badge('crown', () {}, faint: true, key: const ValueKey('ws-leader-to-be'))),
           if (sel != null && tags.isNotEmpty) // (the relations the picked thing is in, the one on top first: a touch picks it)
             Positioned(left: sel.dx + 20, top: sel.dy + 18, child: Row(children: [for (final r in tags) _RelateChip(wsRelationOf(m!, int.parse(r)), () => ws.select(r), outlined: r != wsWinner(ws), key: ValueKey('ws-in-$r'))])),   // (filled: the one that shows; the rest under it, or switched off, outlined)
-          if (lasso == null && (together.length > 1 || isRelation)) // (along the top of the stage, never over a thing; what shows nothing at this moment counts: Motion takes what is picked in the layers or the timeline, and relate goes by values, not by the picture)
+          if (lasso == null && isRelation) // (a relation picked: along the top of the stage, never over a thing. Things picked together get no row of their
+            //  own: fifteen word pills, each to be hovered to be read, were what a first user stopped at; Figma, After Effects and
+            //  Alight Motion put none on the stage either. A group is Cmd+G, its order its Inspector's Relation (the user, 11/6))
             Positioned(
               left: v.area.left,
               right: v.area.right - v.area.width,
               top: v.area.top + 8,
-              child: StatefulBuilder(builder: (context, setSaid) {   // (a hand resting on a pill: what it does, a line under the row; golf (g12), (g29))
-                void tell(String about, bool on) => setSaid(() => said = on ? about : null);
-                return Column(mainAxisSize: MainAxisSize.min, children: [Center(
-                child: Wrap(   // (as many as there are files in relations/: a narrow stage folds them)
+              child: Center(
+                child: Wrap(
                   alignment: WrapAlignment.center,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   runSpacing: Shape.s(4),
-                  children: together.length > 1
-                      ? [
-                          _Said('${together.length} picked'),
-                          // (first: held together as one, the group, its Relation card under its Transform; the menu's Group and
-                          //  Cmd+G, said where the picked are looked at (Figma's and Alight Motion's Group): golf (g17), a first
-                          //  user went from Select All to this row and never met the group)
-                          _RelateChip('group', () => Actions.maybeInvoke(context, const CommandIntent('thing.group', false)), word: 'Group', onHover: (on) => tell('Hold them as one (⌘G)', on), key: const ValueKey('ws-group')),
-                          for (final k in wsRelationChoices(ws))   // (Move in: that group, keyed and in order: workspace.dart's thing.moveIn)
-                            _RelateChip(k, k == 'group' ? () => Actions.maybeInvoke(context, const CommandIntent('thing.moveIn', false)) : () => wsRelate(ws, k), onHover: (on) => tell(wsRelationAbout(m!, k), on)),
-                        ]
-                      : [
-                          _Said('${wsRelationWord(wsRelationOf(m!, rel!))} · ${wsMembersOf(ws).length}'),
-                          _RelateChip('eye', () => wsSwitch(ws), glyph: (m.value(rel, 'visible', 0) ?? 1) > .5 ? TpGlyph.eye : TpGlyph.eyeOff, key: const ValueKey('ws-relation-switch')), // (its eye, as on its row: shut, what it is on top of shows)
-                          _RelateChip('bake', () => wsRelease(ws), key: const ValueKey('ws-relate-release')),
-                          _RelateChip('delete', () => ws.after(m.later('remove', thing: rel), (_, _) => ws..select(null)..reread()), key: const ValueKey('ws-relate-delete')),   // (as Blender puts Apply and Delete side by side: gone, its things back to what is under it)   // (baked: kept where they show, the relation gone; × and Delete: back to what is under it)
-                        ],
+                  children: [
+                    _Said('${wsRelationWord(wsRelationOf(m, rel))} · ${wsMembersOf(ws).length}'),
+                    _RelateChip('eye', () => wsSwitch(ws), glyph: (m.value(rel, 'visible', 0) ?? 1) > .5 ? TpGlyph.eye : TpGlyph.eyeOff, key: const ValueKey('ws-relation-switch')), // (its eye, as on its row: shut, what it is on top of shows)
+                    _RelateChip('bake', () => wsRelease(ws), key: const ValueKey('ws-relate-release')),
+                    _RelateChip('delete', () => ws.after(m.later('remove', thing: rel), (_, _) => ws..select(null)..reread()), key: const ValueKey('ws-relate-delete')),   // (as Blender puts Apply and Delete side by side: gone, its things back to what is under it)   // (baked: kept where they show, the relation gone; × and Delete: back to what is under it)
+                  ],
                 ),
-              ), if (said case final words? when words.isNotEmpty) Padding(padding: EdgeInsets.only(top: Shape.s(4)), child: _Said(words))]);
-              }),
+              ),
             ),
         ],
       );
@@ -291,38 +278,35 @@ class _Said extends StatelessWidget {
 
 /// What things picked together may do together, or a relation a thing is in (outlined): a word on a pill.
 class _RelateChip extends StatelessWidget {
-  const _RelateChip(this.kind, this.onTap, {this.outlined = false, this.glyph, this.word, this.onHover, super.key});
+  const _RelateChip(this.kind, this.onTap, {this.outlined = false, this.glyph, super.key});
   final String kind;
-  final String? word;   // (said instead of its kind's word)
-  final ValueChanged<bool>? onHover;   // (a hand come onto it, or gone)
   final VoidCallback onTap;
   final bool outlined;
   final TpGlyph? glyph;   // (drawn instead of its word)
   @override
-  Widget build(BuildContext context) => onHover == null ? _pill() : MouseRegion(onEnter: (_) => onHover!(true), onExit: (_) => onHover!(false), child: _pill());
-  Widget _pill() => GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
     key: key == null ? ValueKey('ws-relate-$kind') : null,
     onTap: onTap,
     child: Container(
       margin: EdgeInsets.only(right: Shape.s(4)),
       padding: EdgeInsets.symmetric(horizontal: Shape.s(10), vertical: Shape.s(5)),
       decoration: BoxDecoration(color: outlined ? WsT.body : WsT.accent, border: outlined ? Border.all(color: WsT.accent) : null, borderRadius: BorderRadius.all(Shape.r(12))),
-      child: glyph != null ? TpGlyphView(glyph!, WsT.onAccent, size: Shape.z(12)) : Text(word ?? wsRelationWord(kind), style: T.label(outlined ? WsT.accent : WsT.onAccent)),
+      child: glyph != null ? TpGlyphView(glyph!, WsT.onAccent, size: Shape.z(12)) : Text(wsRelationWord(kind), style: T.label(outlined ? WsT.accent : WsT.onAccent)),
     ),
   );
 }
 
-/// A group's thing's place in the group's order, on its corner: 1 goes first.
+/// When a group's thing starts after its group (its place in the group's order), on its corner: 0s goes first.
 class _Order extends StatelessWidget {
-  const _Order(this.n, {super.key});
-  final int n;
+  const _Order(this.at, {super.key});
+  final String at;   // (when it starts after its group: 0s, 0.2s; the order and Delay each read off the stage, golf (g61), (g62), (g72))
   @override
   Widget build(BuildContext context) => Container(
-    width: 18,
     height: 18,
+    padding: const EdgeInsets.symmetric(horizontal: 5),
     alignment: Alignment.center,
-    decoration: BoxDecoration(color: WsT.accent, shape: BoxShape.circle),
-    child: Text('$n', style: T.label(WsT.onAccent)),
+    decoration: BoxDecoration(color: WsT.accent, borderRadius: BorderRadius.circular(9)),
+    child: Text(at, style: T.label(WsT.onAccent)),
   );
 }
 

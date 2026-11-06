@@ -92,11 +92,17 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
   // A group's things, how much later each goes (its Relation's order), in frames, each once: its keys drawn again so much
   // later, faint, as GSAP's GSDevTools lays a stagger's tweens one after the next; the last of them is where the last
   // thing lands (golf (g53), (g56): one bar, two keys, no thing's start nor the end of them all seen).
+  // (when a group's keys come for each of its things, each as late as it goes (doc_group_delay): on the group's row all
+  //  of them, on a thing's own row its own, so which goes when is read on its row; GSAP's GSDevTools lays a stagger out
+  //  as one bar per target. A thing's row had none, golf (g64))
   List<int> _echoesOf(Ws ws, WsLayer l) {
     final m = ws.inside;
-    if (m == null || l.kind != WsKind.group) return const [];
-    final g = int.parse(l.id);
-    return {for (final t in m.things) if ((m.value(t, 'parent', 0) ?? 0).round() == g && m.late(t) > 0) (m.late(t) * Ws.fps).round()}.toList()..sort();
+    if (m == null) return const [];
+    final id = int.parse(l.id), up = (m.value(id, 'parent', 0) ?? 0).round();
+    final group = l.kind == WsKind.group ? l : (up == 0 || m.late(id) <= 0 ? null : ws.layers.where((g) => g.id == '$up' && g.kind == WsKind.group).firstOrNull);
+    if (group == null) return const [];
+    final late = group == l ? {for (final t in m.things) if ((m.value(t, 'parent', 0) ?? 0).round() == id && m.late(t) > 0) (m.late(t) * Ws.fps).round()} : {(m.late(id) * Ws.fps).round()};
+    return {for (final e in late) for (final k in group.keys) k + e}.toList()..sort();
   }
 
   // A way's shape from 0 to 1, as the bar's stretches are drawn.

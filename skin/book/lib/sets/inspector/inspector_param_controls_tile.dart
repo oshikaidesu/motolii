@@ -89,7 +89,7 @@ class ParamTile extends StatelessWidget {
       ),
     );
     // the same skeleton as a number block: name at the top-left, the control along the bottom, the picture top-right
-    Widget shell(Widget bottom, {VoidCallback? onTap, Widget? glyph, bool tall = false, String? label, String? aside}) => Hov(
+    Widget shell(Widget bottom, {VoidCallback? onTap, Widget? glyph, bool tall = false, String? label}) => Hov(
       onTap: on ? onTap : null,
       builder: (_, h) => Container(
         height: tall ? Pop.tile * 2 + Pop.tileGap : Pop.tile,
@@ -110,7 +110,7 @@ class ParamTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text.rich(TextSpan(text: label ?? p.label, children: [if (aside != null) TextSpan(text: aside, style: T.micro(Grey.g44).copyWith(height: 1.1))]), maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(on ? Grey.g63 : Grey.g44).copyWith(height: 1.1)),   // (aside: what a hand resting on it would make it, fainter)
+                  Text(label ?? p.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(on ? Grey.g63 : Grey.g44).copyWith(height: 1.1)),
                   bottom,
                 ],
               ),
@@ -142,26 +142,21 @@ class ParamTile extends StatelessWidget {
           ),
         );
       case ParamLook.choice when choiceMarks[id] != null:
-        // (drawn, each its picture; its name says the one picked ("From the middle"), and fainter after it the one a hand
-        //  stops on (" → the ends"): the hovered one in its place looked picked before it was pressed, golf (g51))
+        // (drawn, each its picture; its name says the one picked ("From the middle"). Nothing said of the one a hand stops
+        //  on: what it does is read from its picture, as a Transform row's is (the user, 11/6))
         final words = choiceWords[id], at = (v ?? 0).round().clamp(0, p.options.length - 1);
-        int? over;
-        return StatefulBuilder(
-          builder: (context, set) => shell(
-            label: words == null ? null : '${p.label} ${words[at.clamp(0, words.length - 1)]}',
-            aside: words == null || over == null || over == at ? null : '  → ${words[over!.clamp(0, words.length - 1)]}',
-            SizedBox(
-              height: Shape.z(22),
-              child: Dis(
-                key: ValueKey('choice:$id'), // (found by its value's id, as a menu of more is)
-                child: Segmented(
-                  items: p.options,
-                  index: at,
-                  expand: true,
-                  picture: (i, on) => ValueMarkGlyph(choiceMarks[id]!, i.toDouble(), ink: on ? Grey.g95 : Grey.g56),
-                  onHover: (i) => set(() => over = i),
-                  onChanged: (i) => doc.set(id, i.toDouble()),
-                ),
+        return shell(
+          label: words == null ? null : '${p.label} ${words[at.clamp(0, words.length - 1)]}',
+          SizedBox(
+            height: Shape.z(22),
+            child: Dis(
+              key: ValueKey('choice:$id'), // (found by its value's id, as a menu of more is)
+              child: Segmented(
+                items: p.options,
+                index: at,
+                expand: true,
+                picture: (i, on) => FittedBox(fit: BoxFit.scaleDown, child: ValueMarkGlyph(choiceMarks[id]!, i.toDouble(), ink: on ? Grey.g95 : Grey.g56, size: Size(Shape.z(40), Shape.z(20)))),   // (as wide as its part: at 22 by 22 its five bars were two px each, alike till hovered, golf (g60))
+                onChanged: (i) => doc.set(id, i.toDouble()),
               ),
             ),
           ),

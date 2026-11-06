@@ -386,13 +386,15 @@ static std::string doc_cards_of(Doc& d, int thing, std::string* more = nullptr) 
         const std::string spaceNow = doc_word(d, thing, "space");
         if (!strcmp(card.title, "Surface") && kindNow != "solid" && spaceNow != "3d" && spaceNow != "2.5d" && !doc_on(d, thing, "scale_z")) continue;   // (a flat thing's one value of it is its Shine; in depth it has the rest, After Effects' Material Options on a 3D layer)
         const std::string splitNow = kindNow == "text" ? doc_word(d, thing, "split") : "";
-        const bool letters = !splitNow.empty() && splitNow != "none" && (!strcmp(card.title, "Copies") || !strcmp(card.title, "Wave") || !strcmp(card.title, "Scatter"));   // (a text split into its letters or words: what moves them each in turn (Delay, Wave, Scatter) unasked, as After Effects' Text Animator is under a text once its range goes by character (the user, 11/5: more of a text's expression))
+        const bool split = !splitNow.empty() && splitNow != "none";
+        const bool letters = (split && (!strcmp(card.title, "Relation") || !strcmp(card.title, "Wave") || !strcmp(card.title, "Scatter"))) || (!strcmp(card.title, "Relation") && doc_number(d, thing, "copies", 0, 1) > 1);   // (and its copies' order, once it has copies: the one Relation card, golf (g3))   // (a text split into its letters or words: what moves them each in turn (Delay, Wave, Scatter) unasked, as After Effects' Text Animator is under a text once its range goes by character (the user, 11/5: more of a text's expression))
         bool said = !card.added || thing == 0 || (!strcmp(card.title, "Play") && kindNow == "film") || letters;
         for (const char* at = card.names; *at;) {
             const size_t len = strcspn(at, " ");
             const std::string n(at, len);
             said = said || !doc_word(d, thing, n.c_str()).empty() || doc_keys(d, thing, n.c_str());
-            const bool still = (n == "animation" || n == "speed") && doc_word(d, thing, "kind") == "solid" && doc_words(d, thing, "animation").empty();   // (a solid with no movement of its own has none to play)
+            const bool still = ((n == "animation" || n == "speed") && doc_word(d, thing, "kind") == "solid" && doc_words(d, thing, "animation").empty())   // (a solid with no movement of its own has none to play)
+                || (n == "seed" && !strcmp(card.title, "Relation") && doc_word(d, thing, "stagger_from") != "random");   // (an order's Seed only while it goes at random: the one it shuffles. Blender's Array modifier shows Count, Length or Curve by its Fit Type; golf (g68))
             if (has.find(" " + n + " ") != std::string::npos && !still) names += (names.empty() ? "" : " ") + n;
             at += len + (at[len] ? 1 : 0);
         }

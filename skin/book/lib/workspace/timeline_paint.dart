@@ -75,7 +75,7 @@ class WtRow {
     this.echoes = const [],
   });
   final (int, int)? whole;
-  final List<int> echoes;   // (a group's: its keys drawn again so many frames later, faint, one for each of its things' lateness)   // (a film's whole length as it lies, cut or not: the pale slip-edit bar of After Effects)
+  final List<int> echoes;   // (the frames a group's keys come at for its things, each as late as it goes: on the group's row all, on a thing's its own)   // (a film's whole length as it lies, cut or not: the pale slip-edit bar of After Effects)
   final List<WsStretch> stretches;   // (how it goes between its keys: each stretch's way drawn between them)
 
   /// A value's own lane in place of a bar (Ableton's automation lane): each key's frame and where its value stands
@@ -402,13 +402,11 @@ class WtTracksPainter extends CustomPainter {
       _wayLine(line, st.shape, xa, xb, s.width, (v) => base - v.clamp(-.5, 1.5) * h);
       c.drawPath(line, Paint()..style = PaintingStyle.stroke..strokeWidth = 1.2..strokeJoin = StrokeJoin.round..isAntiAlias = true..color = Color.lerp(fill, Grey.g100, r.dim ? .25 : .6)!);   // (Ableton's automation line: one thin line, the bar's own colour made lighter)
     }
-    for (final e in r.echoes) {   // (a group's things' keys, as late as each goes: hollow, faint, under its own)
-      for (final k in r.keys) {
-        final x = view.x(k + e);
-        if (x < -8 || x > s.width + 8) continue;
-        final d = Path()..moveTo(x, cy - WtM.key)..lineTo(x + WtM.key, cy)..lineTo(x, cy + WtM.key)..lineTo(x - WtM.key, cy)..close();
-        c.drawPath(d, Paint()..style = PaintingStyle.stroke..strokeWidth = 1..color = Color.lerp(fill, Grey.g100, r.dim ? .25 : .45)!);
-      }
+    for (final k in r.echoes) {   // (a group's keys as they come for its things: hollow, faint, under its own)
+      final x = view.x(k);
+      if (x < -8 || x > s.width + 8) continue;
+      final d = Path()..moveTo(x, cy - WtM.key)..lineTo(x + WtM.key, cy)..lineTo(x, cy + WtM.key)..lineTo(x - WtM.key, cy)..close();
+      c.drawPath(d, Paint()..style = PaintingStyle.stroke..strokeWidth = 1..color = Color.lerp(fill, Grey.g100, r.dim ? .25 : .45)!);
     }
     for (final k in r.keys) {
       final x = view.x(k);

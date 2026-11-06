@@ -311,7 +311,7 @@ void _tests3() {
     await t.pumpAndSettle();
     await press(LogicalKeyboardKey.keyA);
     expect(ws.many, {for (final l in ws.layers) l.id}, reason: 'all the layers picked');
-    expect(find.text('${ws.layers.length} picked'), findsNWidgets(2), reason: 'the bar over the stage and the strip under it say how many, not the one picked before');
+    expect(find.text('${ws.layers.length} picked'), findsOneWidget, reason: 'the strip under the stage says how many, not the one picked before (no row over the stage: the user, 11/6)');
     ws.select('$a');
     final before = m.things.length;
     await press(LogicalKeyboardKey.keyD);
@@ -2140,7 +2140,7 @@ void _tests3() {
     await seen(t, find.descendant(of: find.byType(ValuesCard), matching: find.text('Type')));
     expect(find.descendant(of: find.byType(ValuesCard), matching: find.text('Type')), findsOneWidget);
     expect(m.cards(text).map((c) => c.$1).contains('Wave'), isFalse, reason: 'a text whole: nothing to move each in turn');
-    expect(m.say(text, 'split', 'letters') && ['Copies', 'Wave', 'Scatter'].every(m.cards(text).map((c) => c.$1).contains), isTrue, reason: 'split into its letters: what moves them each in turn (Delay, Wave, Scatter), unasked');
+    expect(m.say(text, 'split', 'letters') && ['Relation', 'Wave', 'Scatter'].every(m.cards(text).map((c) => c.$1).contains), isTrue, reason: 'split into its letters: what moves them each in turn (its order, Wave, Scatter), unasked');
     expect(m.say(text, 'split', 'none'), isTrue, reason: m.trouble);
     expect(m.cards(text).map((c) => c.$1).contains('Gradient'), isFalse, reason: 'one colour: no ramp to turn');
     expect(m.say(text, 'fill', 'ff3366 1b2fd8') && m.moreCards(text).contains('Gradient'), isTrue, reason: 'two: its ramp, asked for by More');

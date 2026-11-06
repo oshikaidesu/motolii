@@ -29,7 +29,6 @@ import 'panes.dart';
 import 'desk_kit.dart';
 import 'key_drag.dart';
 import 'keys.dart';
-import 'moves.dart' show wsMoveWay;
 import 'stage.dart';
 import 'stage_camera.dart';
 import 'stage_view.dart' show WsRelationStack;
@@ -242,7 +241,7 @@ class _WorkspaceState extends State<Workspace> {
     // The picked held together by a Null they all go with, made in their middle (Figma's group, not a box of its own; one
     // step). mask 'mask' or 'exclude': Alight Motion's Group and Mask and Group and Exclude, the top one the shape the
     // others are seen in or cut out by (the inside's group_mask, doc_moment.h; reports/alight_ui.md).
-    void group(String mask, {bool moveIn = false}) {
+    void group(String mask) {
       final m = _inside, all = _picked();
       final frames = [for (final t in all) ?m?.frame(t)];
       if (m == null || frames.isEmpty) return;
@@ -272,18 +271,6 @@ class _WorkspaceState extends State<Workspace> {
       m.later('set', thing: -1, name: 'y', number: (WsArt.centre.dy - c.dy) / m.point);
       for (final t in all) {
         m.later('set', thing: t, name: 'parent', word: 'made');   // (each goes with it, where it is)
-      }
-      if (moveIn) {
-        // Move in, the picked row's: the group's own Position keyed as one thing's, from 100 px below at the playhead to
-        // where it is .6 s on, eased out; its things each .08 s after the one before, the first first (its Relation's
-        // Delay, GSAP's stagger). A move only: a fade is its own (two golf players took out the fade it brought, (g23),
-        // (g37)). The look the relation's Move in had (wsMakeMove's way and lag), now on the one group a user makes
-        // (Alight Motion's and After Effects' text presets: keys on one layer, its parts in turn).
-        final s = (ws.frame / Ws.fps * 10).round() / 10, y = (WsArt.centre.dy - c.dy) / m.point;
-        m.later('key', thing: -1, name: 'y', word: '$s', number: y - 100 / m.point);
-        m.later('key', thing: -1, name: 'y', word: '${s + .6}', number: y);
-        m.later('way', thing: -1, name: 'y', number: s, word: wsMoveWay(.8, 0));
-        m.later('set', thing: -1, name: 'stagger', number: .08);
       }
       ws.after(m.later('together'), (_, _) => ws.reread());
     }
@@ -372,7 +359,12 @@ class _WorkspaceState extends State<Workspace> {
           if (int.tryParse(id) case final t?) ws.after(m.later('paste_style', thing: t, word: _clipboard('style')));
         }
       },
-      'edit.selectAll': () => _typed(const SelectAllTextIntent(SelectionChangedCause.keyboard)) ? null : ws.pickMany([for (final l in ws.layers) l.id]),   // (no words being written: every thing, as Ableton's Cmd+A in the arrangement)
+      'edit.selectAll': () {   // (no words being written: every thing, as Ableton's Cmd+A in the arrangement)
+        if (_typed(const SelectAllTextIntent(SelectionChangedCause.keyboard))) return;
+        final all = [for (final l in ws.layers) l.id];
+        if (all.isNotEmpty && !all.contains(ws.selected)) ws.select(all.first);   // (one of them in the Inspector, what is typed there going to them all, as a click and a Shift-click on the layers pick; it said Nothing selected, golf (g11))
+        ws.pickMany(all);
+      },
       'edit.deselectAll': () => ws
         ..clearKeys()
         ..select(null),   // (nothing picked, as a click below the rows: After Effects' and Premiere Pro's Edit > Deselect All; with a thing over the whole stage, the one way back: golf_noise.md (63))
@@ -426,7 +418,6 @@ class _WorkspaceState extends State<Workspace> {
       'thing.group': () => group(''),
       'thing.groupMask': () => group('mask'),
       'thing.groupExclude': () => group('exclude'),
-      'thing.moveIn': () => group('', moveIn: true),   // (the picked row's Move in: a group, its keys and its order, one step)
       'thing.ungroup': () {   // (the picked group's things on their own again, where they are; the Null gone; one step)
         final m = _inside, g = int.tryParse(ws.selected ?? '');
         if (m == null || g == null || m.word(g, 'shape') != 'null') return;
@@ -761,7 +752,7 @@ final _panes = [
   WsPane('Ease', DockG.time, () => const DeskEase(), minSize: 260),
   WsPane('Camera', DockG.camera, () => const DeskDepth(), minSize: WsT.lower),
   WsPane('Desk', DockG.desk, () => const WsDesk(), minSize: WsT.lower),
-  WsPane('Relations', DockG.desk, () => const DeskRelations(), minSize: WsT.lower),
+  WsPane('Map', DockG.desk, () => const DeskRelations(), minSize: WsT.lower),   // (the world from outside the camera, the relations drawn as shapes on it: named as ws.dart calls it, the Relations map. As "Relations" it was taken for the Inspector's Relation (a group's order), golf (g55)(g70))
 ];
 
 /// A pane's tab strip, added on top of the reference heights so the seats keep theirs.
@@ -778,7 +769,7 @@ DockingArea _preset(DockingItem Function(String name, {double? size, double? wei
     ]),
     DockingRow([item('Timeline'), item('Ease', size: WsT.inspector)], size: WsT.lower + _strip, minimalSize: 220),   // (the stretch between two keys, beside the keys; never lower than its seven shapes and its curve can be read: docking's own minimum, as VS Code's views say theirs)
   ]),
-  DockingColumn([extra.isEmpty ? item('Inspector') : DockingTabs([item('Inspector'), for (final p in extra) item(p.name)]), DockingTabs([item('Camera'), item('Desk'), item('Relations')], size: WsT.lower + _strip)], size: WsT.inspector, minimalSize: 340),   // (the camera, whatever is picked)
+  DockingColumn([extra.isEmpty ? item('Inspector') : DockingTabs([item('Inspector'), for (final p in extra) item(p.name)]), DockingTabs([item('Camera'), item('Desk'), item('Map')], size: WsT.lower + _strip)], size: WsT.inspector, minimalSize: 340),   // (the camera, whatever is picked)
 ]);
 
 /// The paint each layer wears on the stage, so the Inspector's Fill names the colour you see.

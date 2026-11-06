@@ -131,12 +131,13 @@ Paint _line(Color ink) => Paint()
 
 /// A value's drawn mark, as a widget of the gauge's size.
 class ValueMarkGlyph extends StatelessWidget {
-  const ValueMarkGlyph(this.mark, this.value, {super.key, this.ink = const Color(0xFFC2C2C2)});
+  const ValueMarkGlyph(this.mark, this.value, {super.key, this.ink = const Color(0xFFC2C2C2), this.size = const Size(22, 22)});
   final ValueMark mark;
   final double? value;
   final Color ink;
+  final Size size;
   @override
-  Widget build(BuildContext context) => CustomPaint(size: const Size(22, 22), painter: _MarkPaint(mark, value, ink));
+  Widget build(BuildContext context) => CustomPaint(size: size, painter: _MarkPaint(mark, value, ink));
 }
 
 class _MarkPaint extends CustomPainter {

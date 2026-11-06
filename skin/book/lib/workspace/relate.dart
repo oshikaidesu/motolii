@@ -7,27 +7,11 @@ import 'ws.dart';
 
 const wsRelations = ['around', 'row', 'follow', 'push', 'group', 'relate'];
 
-/// What can be pressed to make a relation: the kinds the inside knows, then each one written as a file (relations/*.js,
-/// the library's and the maker's: what is put there shows here).
-List<String> wsRelationChoices(Ws ws) => [for (final k in wsRelations) if (k != 'relate') k, for (final r in ws.inside?.relations ?? const <(String, String)>[]) r.$2];
-
 /// What a relation's kind is called where it is pressed.
 String wsRelationWord(String kind) {
   final name = kind == 'group' ? 'Move in' : kind.split('/').last.replaceAll('.js', '');
   return name[0].toUpperCase() + name.substring(1);
 }
-
-/// What a relation does, said when a hand rests on its pill (macOS's help tags, Figma's tooltips; golf (g12), (g29): no
-/// word said what Wave or Swell was): the inside's kinds a line each, one written as a file in its maker's words (its
-/// head's --about:, as the effects' shelf says theirs).
-String wsRelationAbout(Motolii m, String kind) => switch (kind) {
-  'around' => 'Round a middle, in a ring',
-  'row' => 'In a row, evenly apart',
-  'follow' => 'Each goes after the first, a little later',
-  'push' => 'The first pushes the others away as it comes near',
-  'group' => 'Group them; the group rises 100 px from below, each a little after the one before',
-  _ => m.about(kind),
-};
 
 /// A relation's kind, or the file it is written as.
 String wsRelationOf(Motolii m, int t) => m.word(t, 'file') == 'relate' ? m.word(t, 'script') : m.word(t, 'file');
