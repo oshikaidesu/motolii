@@ -35,6 +35,7 @@ extension _WsTimelineHand on _WsTimelineState {
     final ws = _ws!, v = _view;
     final r = _rowAt(p.dy);
     if (r == null) { // (below the rows: nothing picked, After Effects' manner; joined, the inspector is then the whole picture's)
+      if (ws.entered != null && _twice('')) return ws.enter(ws.layers.where((l) => l.id == ws.entered).firstOrNull?.parent);   // (pressed twice: out of the group, to the one it is in)
       ws.clearKeys();
       ws.select(null);
       return;
@@ -56,6 +57,7 @@ extension _WsTimelineHand on _WsTimelineState {
     }
     final f = v.frameAt(p.dx);
     if (f >= l.inF && f <= l.outF) {
+      if (l.kind == WsKind.group && l.id != ws.entered && _twice(l.id)) return ws.enter(l.id);   // (a group's bar pressed twice: into it)
       ws.select(l.id);
     } else {
       ws.clearKeys();

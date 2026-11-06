@@ -208,6 +208,18 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
   DateTime? _lanePressed;   // (when and where a lane was last pressed: a second press there is a double one)
   Offset _laneAt = Offset.zero;
 
+  // A row pressed twice (its label or its bar, within a double press's time): a group's is entered, the room under the
+  // rows' is left. Told by its own clock, as a lane's is, so a single press is not held back for a second (Flutter's
+  // onDoubleTap waits kDoubleTapTimeout before a tap is one).
+  DateTime? _rowPressed;
+  String? _rowWas;
+  bool _twice(String id) {
+    final now = DateTime.now(), yes = _rowWas == id && _rowPressed != null && now.difference(_rowPressed!) < kDoubleTapTimeout;
+    _rowPressed = yes ? null : now;
+    _rowWas = id;
+    return yes;
+  }
+
   // A box drawn over the empty room of the tracks (any direction): the keys inside it are picked, else the things whose
   // bars it touches (Ableton's and After Effects' marquee). Corners, in the tracks' own points.
   (Offset, Offset)? _box;
@@ -490,8 +502,11 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked, WsAspect.animating});
     final away = ws.foldedAway;
     final sel = ws.selected, picks = ws.keys, lit = {...ws.many, ...wsMembersOf(ws), for (final p in [?sel, ...ws.many]) ?away[p]};   // (picked together, or moved by the relation picked, or a shut group a picked thing is in: lit with it)
+    // (inside a group: its own row first, then the things straight under it, each a row; the rest of the document not here)
+    final entered = ws.entered, head = entered == null ? -1 : ws.layers.indexWhere((l) => l.id == entered);
+    final shown = head < 0 ? [for (final (i, l) in ws.layers.indexed) if (!away.containsKey(l.id)) i] : [head, for (final (i, l) in ws.layers.indexed) if (l.parent == entered) i];
     _order = [
-      for (final (i, l) in ws.layers.indexed) if (!away.containsKey(l.id)) ...[
+      for (final i in shown) if (ws.layers[i] case final l) ...[
         (layer: i, value: null, aim: null),
         if (ws.aimsOpen(l.id))
           for (final a in wsTargets(ws, l.id)) (layer: i, value: '', aim: a),
@@ -529,6 +544,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
           whole: _wholeOf(ws, l),
           echoes: _echoesOf(ws, l),
           late: _lateOf(ws, l),
+          head: head >= 0 && o.layer == head,
         ),
     ];
     return Focus(

@@ -112,7 +112,7 @@ extension _WsTimelineRows on _WsTimelineState {
                                 },
                           child: _LabelRow(
                             index: _order[i].layer,   // (its layer's number, not its row's: After Effects' # counts layers, a value's lane none; golf (61))
-                            depth: ws.depth(l),
+                            depth: ws.depth(l) - (ws.entered == null ? 0 : ws.depth(ws.layers[_order[0].layer])),   // (inside a group: its row at the left, its things set in once)
                             row: rows[i],
                             hidden: _isHidden(ws, l.id),
                             solo: _isSolo(ws, l.id),
@@ -120,7 +120,8 @@ extension _WsTimelineRows on _WsTimelineState {
                             onLanes: () => l.kind == WsKind.group ? ws.turnGroup(l.id) : ws.twirl([l.id]),
                             onSelect: () => HardwareKeyboard.instance.isShiftPressed
                                 ? wsPickRange(ws, l.id)   // (Shift: every row from the last picked to this, After Effects' manner)
-                                : HardwareKeyboard.instance.isMetaPressed ? wsPickAlso(ws, l.id) : ws.select(l.id),   // (Cmd: one more, or one less)
+                                : HardwareKeyboard.instance.isMetaPressed ? wsPickAlso(ws, l.id)   // (Cmd: one more, or one less)
+                                : l.kind == WsKind.group && l.id != ws.entered && _twice(l.id) ? ws.enter(l.id) : ws.select(l.id),   // (a group's name pressed twice: into it)
                             onEye: () => _eye(ws, l.id),
                             onSolo: () => _flag(ws, 'solo', l.id),
                             onLock: () => _flag(ws, 'lock', l.id),
@@ -130,6 +131,8 @@ extension _WsTimelineRows on _WsTimelineState {
                     for (var i = 0; i < rows.length; i++)
                       if (_order[i].value == null)
                         if (_renameField(i, ws.layers[_order[i].layer].id, i * WtM.row - top) case final f?) f,   // (its name written over it: Cmd+R)
+                    for (var i = 0; i < rows.length; i++)
+                      if (rows[i].head) Positioned(left: 0, right: 0, top: (i + 1) * WtM.row - top - 1, height: 1, child: ColoredBox(color: Grey.g44)),   // (the line under the group's own row: what moves them above, what moves below)
                   ],
                 );
               },

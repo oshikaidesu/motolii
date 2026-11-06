@@ -463,6 +463,26 @@ class Ws extends ChangeNotifier {
     _tell(WsAspect.animating);
   }
 
+  // The group the timeline stands inside: its own row on top (what moves its things: its keys, its ▸), a line, then the
+  // things it holds, and nothing else of the document; entered by a second press on its row, left by the crumb above
+  // (After Effects' precomp opened, Figma's group entered; docs/notes/GROUP_FOCUS.md "グループの中の絵"). A group held in
+  // it is one row until entered in turn. null: the whole document. (Not kept in the file.)
+  String? _entered;
+  String? get entered => _entered;
+  void enter(String? id) {
+    if (id == _entered) return;
+    _entered = id;
+    if (id != null) select(id);   // (its cards in the inspector: the row on top is the one picked)
+    _tell(WsAspect.animating);
+  }
+
+  /// The groups stood inside, from the outermost down to [entered] (none: the whole document).
+  List<WsLayer> get enteredChain {
+    final of = {for (final l in layers) l.id: l}, in_ = of[_entered];
+    if (in_ == null) return const [];
+    return [..._over(in_, of).where((p) => p.kind == WsKind.group).toList().reversed, in_];
+  }
+
   Iterable<WsLayer> _over(WsLayer l, Map<String, WsLayer> of) sync* {
     var p = of[l.parent];
     for (var n = 0; p != null && n < 64; p = of[p.parent], n++) {   // (64: as Group's walk up, stage_view_2.dart)

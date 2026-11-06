@@ -79,7 +79,9 @@ class WtRow {
     this.whole,
     this.echoes = const [],
     this.late,
+    this.head = false,
   });
+  final bool head;   // (the group the timeline stands inside, its own row on top: a line under it parts what moves them from what moves)
   final (int, int)? whole;
   final int? late;   // (a group's: how many frames after each of its keys its last thing comes to it, its ▸ drawn there; 0 all at once; null not a group)
   final List<int> echoes;   // (the frames a group's keys come at for its things, each as late as it goes: on the group's row all, on a thing's its own)   // (a film's whole length as it lies, cut or not: the pale slip-edit bar of After Effects)
@@ -128,6 +130,7 @@ class WtRow {
       other.clipped == clipped &&
       other.whole == whole &&
       other.late == late &&
+      other.head == head &&
       _listEq(other.echoes, echoes) &&
       identical(other.wave, wave) &&
       identical(other.frames, frames) &&   // (read once a change: the same list until the document changes)
@@ -321,7 +324,7 @@ class WtTracksPainter extends CustomPainter {
       final top = i * WtM.row - vscroll;
       if (top > s.height || top + WtM.row < 0) continue;
       c.drawRect(Rect.fromLTWH(0, top, s.width, WtM.row - 1), p..color = wtBand(i, rows[i].selected));
-      c.drawRect(Rect.fromLTWH(0, top + WtM.row - 1, s.width, 1), p..color = Grey.rowLine);
+      c.drawRect(Rect.fromLTWH(0, top + WtM.row - 1, s.width, 1), p..color = rows[i].head ? Grey.g44 : Grey.rowLine);
     }
     if (end < s.width) c.drawRect(Rect.fromLTRB(end, 0, s.width, s.height), p..color = WsT.body);
     _vLines(c, view, fps, math.min(s.width, end), 0, s.height, major: Grey.g20, fine: Grey.g15);

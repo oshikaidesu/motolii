@@ -2056,6 +2056,42 @@ void _tests3() {
     await _close(t);
   }, skip: !_built);
 
+  testWidgets('a group\'s row pressed twice: the timeline stands inside it, its own row on top with a line under, its things under that, nothing else; the crumb above leads out (After Effects\' precomp opened, Figma\'s group entered)', (t) async {
+    final ws = await _pump(t), m = ws.inside!;
+    final a = m.add('shape', 'rect'), b = m.add('shape', 'circle'), other = m.add('shape', 'star');
+    expect(m.set(a, 'x', -1) && m.set(b, 'x', 1) && m.set(other, 'y', -1), isTrue, reason: m.trouble);
+    ws
+      ..reread()
+      ..pickMany(['$a', '$b']);
+    await t.pumpAndSettle();
+    await t.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+    await t.sendKeyEvent(LogicalKeyboardKey.keyG);
+    await t.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+    await settled(t, ws);
+    final g = m.things.firstWhere((x) => x != a && x != b && x != other);
+    final tracks = find.byWidgetPredicate((w) => w is CustomPaint && w.painter is WtTracksPainter);
+    List<String> names() => [for (final r in (t.widget<CustomPaint>(tracks).painter! as WtTracksPainter).rows) r.name];
+    expect(names(), ['Star', 'Group'], reason: 'the group one row, shut; the star outside it');
+    final label = find.byKey(ValueKey('ws-tl-label-$g'));
+    await t.tap(label);
+    await t.pump(const Duration(milliseconds: 80));
+    await t.tap(label);
+    await t.pumpAndSettle();
+    expect(ws.entered, '$g', reason: 'pressed twice: inside');
+    expect([names().first, names().skip(1).toSet()], ['Group', {'Rect', 'Circle'}], reason: 'its own row on top, then what it holds; the star is not here');
+    final rows = (t.widget<CustomPaint>(tracks).painter! as WtTracksPainter).rows;
+    expect([rows[0].head, rows[1].head], [true, false], reason: 'the line under the group\'s own row');
+    expect(ws.selected, '$g', reason: 'its cards in the inspector');
+    expect(find.byKey(ValueKey('ws-crumb-$g')), findsOneWidget, reason: 'the crumb above');
+    await t.tap(find.byKey(const ValueKey('ws-crumb-document')));
+    await t.pumpAndSettle();
+    expect(ws.entered, isNull, reason: 'the document\'s crumb: out');
+    expect(names(), ['Star', 'Group']);
+    expect(find.byKey(ValueKey('ws-crumb-$g')), findsNothing);
+    expect(t.takeException(), isNull);
+    await _close(t);
+  }, skip: !_built);
+
   testWidgets('a layer\'s label colour chosen on the Note card: its row wears it, auto gives it back its own (Ableton Live\'s clip colours, Alight Motion\'s label colour)', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     final rect = m.add('shape', 'rect');
