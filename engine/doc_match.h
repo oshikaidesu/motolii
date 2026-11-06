@@ -210,7 +210,7 @@ static bool doc_match(Doc& d) {
             bool connected = false;   // (a value given each copy by a behaviour: each copy its own look, not drawn in one go)
             doc_rows(d, sqlite3_mprintf("select 1 from fact where thing = %d and name glob '*_by' and value <> 0 limit 1", thing), [&](sqlite3_stmt*) { connected = true; });
             const bool faded = std::any_of(repeated.begin(), repeated.end(), [](const AbsentCopy& c) { return c.alpha < 0.999; });   // (AbsentMotion's copies fading each, a scatter field's far ones: each its own)
-            const bool staggered = doc_number(d, thing, "stagger", 0, 0) > 0.0;   // (a staggered copy fades as late as it moves (doc_moment's clearLate): each as clear as its own moment, its own look; stagger is a making, so this is read again as it changes)
+            const bool staggered = doc_number(d, thing, "stagger", 0, 0) != 0.0;   // (a staggered copy fades as late as it moves (doc_moment's clearLate): each as clear as its own moment, its own look; stagger is a making, so this is read again as it changes)
             fx.together = fx.copies > 1 && (kind == "shape" || kind == "text") && colours <= 8 && !(sc && sc->clears) && !connected && !faded && !staggered;   // (eight colours at most: flat.mat's ramp)
         }
         fx.wrapWidth = (float)doc_number(d, thing, "wrap_at", 0, 0);

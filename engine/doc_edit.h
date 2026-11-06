@@ -154,7 +154,11 @@ static bool doc_set(Doc& d, int thing, const char* name, double is) {
     if (!strcmp(name, "parent")) return doc_parent(d, thing, is);
     if (!strcmp(name, "leader") && !doc_leading && is >= 1 && doc_word(d, thing, "kind") == "behaviour" && doc_among(doc_relations, doc_word(d, thing, "file")) && !doc_word(d, thing, "members").empty())   // (a relation's leader changed by any hand: as its crown changes it, nothing jumps)
         return doc_lead(d, thing, (int)is, d.stage ? d.stage->now : 0.0);
-    return doc_knows(d, thing, name, &is) && doc_change(d, sqlite3_mprintf("delete from fact where thing = %d and name = %Q and at <> 0; insert into fact(thing, name, at, value) values(%d, %Q, 0.0, %!.17g) on conflict do update set value = excluded.value, way = null", thing, name, thing, name, is));
+    // (a place given to an order an older word said where from (start, centre, end, edges): in their order from there,
+    //  as the window says it now, the place the one thing that says where from: doc_delay)
+    char also[160] = "";
+    if (!strcmp(name, "stagger_x") || !strcmp(name, "stagger_y") || !strcmp(name, "stagger_z")) snprintf(also, sizeof also, " update fact set value = 'order' where thing = %d and name = 'stagger_from' and value in ('start', 'centre', 'end', 'edges');", thing);
+    return doc_knows(d, thing, name, &is) && doc_change(d, sqlite3_mprintf("delete from fact where thing = %d and name = %Q and at <> 0; insert into fact(thing, name, at, value) values(%d, %Q, 0.0, %!.17g) on conflict do update set value = excluded.value, way = null;%s", thing, name, thing, name, is, also));
 }
 static bool doc_put(Doc& d, int thing, const char* name, double at, double is);
 static bool doc_animator_lay(Doc& d, int thing, DocScript* sc);

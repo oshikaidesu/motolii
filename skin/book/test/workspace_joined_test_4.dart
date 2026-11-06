@@ -5,7 +5,7 @@ void _tests4() {
   // (a motion is a preset of the group's multiplication, keys × way × order: a press lays it on the picked thing, as
   //  After Effects' Animation Presets and Texton's In do, and the same hand changes it after: its keys on the timeline,
   //  its order on the Copies card (doc_animator_lay); undone in one step)
-  testWidgets('a motion is a preset: the Effects shelf lists animators/ for the picked thing, a press lays its keys, their way and the letters\' order (a text then moves letter by letter), the order on the Copies card, one undo takes it off', (t) async {
+  testWidgets('a motion is a preset: the Effects shelf lists animators/ for the picked thing, a press lays its keys, their way and the letters\' order (a text then moves letter by letter), the order on the Relation card, one undo takes it off', (t) async {
     final ws = await _pump(t), m = ws.inside!;
     final text = m.add('text', '/System/Library/Fonts/Supplemental/Arial Black.ttf');
     expect(m.say(text, 'text', 'MOTOLII'), isTrue, reason: m.trouble);
@@ -23,7 +23,7 @@ void _tests4() {
     await settled(t, ws);
     expect([m.word(text, 'script'), m.word(text, 'split'), m.word(text, 'stagger_from')], ['', 'letters', 'start'], reason: m.trouble);
     expect([m.keyMoments(text, 'y').length, m.keyValues(text, 'y').last, m.wayOf(text, 'y', 0)], [2, 0, 'SpringOut']);
-    expect(m.cards(text).firstWhere((c) => c.$1 == 'Copies').$2, containsAll(['stagger', 'stagger_from']));
+    expect(m.cards(text).firstWhere((c) => c.$1 == 'Relation').$2, containsAll(['split', 'stagger', 'stagger_from']), reason: 'its order on its Relation card, as any group\'s');
     expect(m.undo(), isTrue, reason: m.trouble);
     ws.reread();
     await settled(t, ws);

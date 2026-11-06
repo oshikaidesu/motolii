@@ -21,7 +21,10 @@ final inspectorCards = <String, Widget Function(Fx card)>{
   'Fill': (_) => const FillStroke(),
   'Blending': (_) => const BlendRows(),
   'Light': (c) => ValuesCard(c, top: const LightDrawing()), // (its values as tiles, under a drawing of the light you pull)
-  'Copies': (c) => ValuesCard(c, top: const Column(mainAxisSize: MainAxisSize.min, children: [CopiesDrawing(), OrderDrawing()])), // (and the copies as they lie; under them their order, touched: inspector_order.dart)
+  'Copies': (c) => ValuesCard(c, top: const CopiesDrawing()), // (and the copies as they lie)
+  // (the members' order, touched (inspector_order.dart): the Relation of anything with two or more; a relation written as a
+  //  file has a card of that name too, its strength only, with no order to draw)
+  'Relation': (c) => c.params.any((p) => p.id == 'stagger') ? ValuesCard(c, top: const OrderDrawing()) : ValuesCard(c),
   'Wave': (c) => ValuesCard(c, side: const MotionPreview('Wave')), // (and a square moving as the thing will, while touched: Good Boy Ninja's Wiggle)
   'Physics': (c) => ValuesCard(c, side: const MotionPreview('Physics')), // (falling and bouncing)
   'Scatter': (c) => ValuesCard(c, side: const MotionPreview('Scatter')), // (drifting)

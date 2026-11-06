@@ -39,6 +39,8 @@ class InspHost extends StatefulWidget {
     this.onCardPaste,
     this.onPath,
     this.onMembers,
+    this.keySpan = 0,
+    this.held,
     this.cards,
     this.title,
     this.onRoute,
@@ -105,6 +107,9 @@ class InspHost extends StatefulWidget {
   final Future<List<double>?> Function(double to, int n, int copy)? onPath;   // (a question of the host's: answered later)
   /// Where each member of a group lies and how much later it moves (see [Doc.onMembers]).
   final Future<List<double>> Function()? onMembers;   // (a question of the host's: answered later)
+  /// How long its keys run (see [Doc.keySpan]); and what its things are as they stand, when it is a group (see [Doc.held]).
+  final double keySpan;
+  final Object? held;
 
 
   /// The host's own cards of values (see [Doc.cards]).
@@ -188,6 +193,8 @@ class _InspHostState extends State<InspHost> {
       ..onCardPaste = widget.onCardPaste
       ..onPath = widget.onPath
       ..onMembers = widget.onMembers
+      ..keySpan = widget.keySpan
+      ..held = widget.held
       ..v.addAll(widget.values)
       ..s2.addAll(widget.strs)
       ..choices.addAll(widget.choices)
@@ -348,7 +355,9 @@ class _InspHostState extends State<InspHost> {
       ..onCardCopy = widget.onCardCopy
       ..onCardPaste = widget.onCardPaste
       ..onPath = widget.onPath
-      ..onMembers = widget.onMembers;
+      ..onMembers = widget.onMembers
+      ..keySpan = widget.keySpan
+      ..held = widget.held;
     doc.choices
       ..clear()
       ..addAll(widget.choices);

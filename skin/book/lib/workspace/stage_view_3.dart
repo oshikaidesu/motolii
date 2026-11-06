@@ -139,7 +139,13 @@ class _RelationMarks extends StatelessWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   runSpacing: Shape.s(4),
                   children: together.length > 1
-                      ? [_Said('${together.length} picked'), for (final k in wsRelationChoices(ws)) _RelateChip(k, () => wsRelate(ws, k))]
+                      ? [
+                          _Said('${together.length} picked'),
+                          // (first: held together as one, its things then moved by the same hand in an order, its Relation card; the menu's
+                          //  Group and Cmd+G, said where the picked are looked at: the user, 11/6, a group is made of things picked together)
+                          _RelateChip('group', () => Actions.maybeInvoke(context, const CommandIntent('thing.group', false)), word: 'Group', key: const ValueKey('ws-group')),
+                          for (final k in wsRelationChoices(ws)) _RelateChip(k, () => wsRelate(ws, k)),
+                        ]
                       : [
                           _Said('${wsRelationWord(wsRelationOf(m!, rel!))} · ${wsMembersOf(ws).length}'),
                           _RelateChip('eye', () => wsSwitch(ws), glyph: (m!.value(rel!, 'visible', 0) ?? 1) > .5 ? TpGlyph.eye : TpGlyph.eyeOff, key: const ValueKey('ws-relation-switch')), // (its eye, as on its row: shut, what it is on top of shows)
@@ -271,8 +277,9 @@ class _Said extends StatelessWidget {
 
 /// What things picked together may do together, or a relation a thing is in (outlined): a word on a pill.
 class _RelateChip extends StatelessWidget {
-  const _RelateChip(this.kind, this.onTap, {this.outlined = false, this.glyph, super.key});
+  const _RelateChip(this.kind, this.onTap, {this.outlined = false, this.glyph, this.word, super.key});
   final String kind;
+  final String? word;   // (said instead of its kind's word)
   final VoidCallback onTap;
   final bool outlined;
   final TpGlyph? glyph;   // (drawn instead of its word)
@@ -284,7 +291,7 @@ class _RelateChip extends StatelessWidget {
       margin: EdgeInsets.only(right: Shape.s(4)),
       padding: EdgeInsets.symmetric(horizontal: Shape.s(10), vertical: Shape.s(5)),
       decoration: BoxDecoration(color: outlined ? WsT.body : WsT.accent, border: outlined ? Border.all(color: WsT.accent) : null, borderRadius: BorderRadius.all(Shape.r(12))),
-      child: glyph != null ? TpGlyphView(glyph!, WsT.onAccent, size: Shape.z(12)) : Text(wsRelationWord(kind), style: T.label(outlined ? WsT.accent : WsT.onAccent)),
+      child: glyph != null ? TpGlyphView(glyph!, WsT.onAccent, size: Shape.z(12)) : Text(word ?? wsRelationWord(kind), style: T.label(outlined ? WsT.accent : WsT.onAccent)),
     ),
   );
 }

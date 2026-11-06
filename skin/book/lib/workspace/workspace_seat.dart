@@ -133,7 +133,9 @@ class _InspectorSeatState extends State<_InspectorSeat> {
         onPath: int.tryParse(l?.id ?? '') == null
             ? null
             : (to, n, copy) => m.path(int.parse(l!.id), copy: copy, to: to, n: n).then((p) => p?.indexed.map((e) => e.$1 % 4 < 2 ? e.$2 * m.point : e.$2).toList()), // (where it is in points of the picture, as the card's numbers are) // (the wave card's preview asks once, then plays by itself)
-        onMembers: int.tryParse(l?.id ?? '') == null ? null : () => m.members(int.parse(l!.id)),   // (the order's figure on the Copies card: its members as the inside's order reads them)
+        onMembers: int.tryParse(l?.id ?? '') == null ? null : () => m.members(int.parse(l!.id)),   // (the order's figure on the Relation card: its members as the inside's order reads them)
+        keySpan: l == null || l.keys.length < 2 ? 0 : (l.keys.last - l.keys.first) / Ws.fps,
+        held: l?.kind == WsKind.group ? ws.rev : null,
         onAim: (at) => ws.aim = at.startsWith('v_') ? at.substring(2) : null, // (a colour link of a card is aimed at that value)
         movable: int.tryParse(l?.id ?? '') == null ? const [] : m.fxTitles(int.parse(l!.id)), // (its effects, up or down their stack)
         onCardMove: int.tryParse(l?.id ?? '') == null ? null : (title, by) => ws.after(m.later('fx_move', thing: int.parse(l!.id), word: title, number: by.toDouble())),

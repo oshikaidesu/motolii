@@ -138,8 +138,10 @@ static bool doc_animator_lay(Doc& d, int thing, DocScript* sc) {
     doc_key(d, thing, name, at, share ? rests * from : rests + from);
     doc_key(d, thing, name, at + length, share ? rests * to : rests + to);
     if (!way.empty()) doc_way(d, thing, name, at, way.c_str());
-    doc_set(d, thing, "stagger", delay);
-    doc_say(d, thing, "stagger_from", random ? "random" : "start");
+    if (random || doc_literal(d, thing, "stagger", 0, 0) == 0.0) {   // (the order the maker gave stays theirs: a preset brings its keys and their way, its own order only where none is, or where its name is an order (Random Fade In))
+        doc_set(d, thing, "stagger", delay);
+        doc_say(d, thing, "stagger_from", random ? "random" : "start");
+    }
     return doc_acted(d);
 }
 // A copy (doc_look_save whole) made a thing again, the newest number (Edit > Paste): it begins at `now`, its keys moved

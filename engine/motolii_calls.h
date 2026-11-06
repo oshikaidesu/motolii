@@ -100,7 +100,7 @@ int motolii_path3(Motolii* m, int thing, int copy, double from, double to, int n
 int motolii_members(Motolii* m, int thing, double* members, int room) {   // (asked on another isolate, never the window's thread: in the hand's queue, so a change the window threw just before is in its answer)
     return asked(m, [=] {
         if (!doc_knows(doc(m), thing)) return 0;
-        const int n = doc_members(*m->d, thing);
+        const int n = doc_many(*m->d, thing);
         for (int i = 0; i < room && i < n; ++i) {   // (the order's own reading: where it counts each from, and what it gives each)
             const math::double3 at = doc_member_at(*m->d, thing, i, n);
             members[4 * i] = at.x, members[4 * i + 1] = at.y, members[4 * i + 2] = at.z, members[4 * i + 3] = doc_delay(*m->d, thing, i);
