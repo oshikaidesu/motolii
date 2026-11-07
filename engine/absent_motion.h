@@ -37,3 +37,7 @@ std::string absent_drawing(const std::string& strokes, const std::vector<AbsentE
 bool absent_shutter(const std::vector<AbsentEffect>& effects, int64_t thing, double startMs, double endMs, double nowMs, int fps, double* open, bool* moves);
 struct AbsentCopy { double x = 0, y = 0, rotate = 0, scale = 1, alpha = 1; };
 std::vector<AbsentCopy> absent_copies(const std::vector<AbsentEffect>& effects, int64_t thing, double startMs, double endMs, double nowMs, float wide, float high, float atX, float atY, float reach);
+// The ith copy's own point within a radius of 1 by a seed (y up, as the document counts it): in a disc where Scatter
+// Repeat lays its ith copy at that seed (scatter_repeat at Evolution 0, the same place), or, in depth, even over a ball
+// (its height even from -1 to 1, its turn even, its distance the cube root: MathWorld, Sphere Point Picking).
+void absent_scatter_point(double seed, int i, bool ball, double* x, double* y, double* z);

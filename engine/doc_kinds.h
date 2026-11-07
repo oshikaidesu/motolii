@@ -336,6 +336,7 @@ static const DocValue doc_values[] = {
     {"leader_b", "behaviour", 0, 1e9, false, nullptr},
     {"hand", "behaviour", 0, 1, true, nullptr},
     {"lag", "behaviour", 0, 60, true, nullptr},
+    {"random", "behaviour", 0, 1e4, false, nullptr},   // (a Position row's: each member so far from its place at most, its own way by its number and the row's seed, absent_scatter_point)
     {"lag_from", "behaviour", 0, 0, false, "start centre end edges random"},   // (an order's: which of the group's things goes first, as stagger_from says it of copies)
     {"spread", "behaviour", -10, 10, true, nullptr},   // (a group's: its things as far from their middle as they were put, times this: 0 all at the middle, 2 twice as far out)
     {"scatter", "behaviour", -10, 10, true, nullptr},   // (a group's: each thing so far away in its own fixed way, as a seed scatters)

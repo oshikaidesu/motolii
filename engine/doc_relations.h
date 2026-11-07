@@ -351,10 +351,10 @@ static double doc_order_delay(Doc& d, int thing, int nth, int n, const char* eac
 static double doc_delay(Doc& d, int thing, int nth) { return doc_order_delay(d, thing, nth, doc_members(d, thing)); }
 // A thing's rows of a value: the Order rows in it (behaviours of file "order" it holds: docs/notes/GROUP_FOCUS_new.md
 // 土台 ①②, a value dropped from the inspector into its room) that hold that value, said or keyed: one member's keys of
-// it. None in a group: a group's Order row sends its things whole (doc_group_delay).
+// it. A group's too: its copies, dealt to its things (doc_dealt), read them as any thing's copies do.
 static std::vector<int> doc_rows_of(Doc& d, int thing, const char* name) {
     std::vector<int> rows;
-    if (!thing || doc_word(d, thing, "shape") == "null") return rows;
+    if (!thing) return rows;
     for (const int t : doc_laid(d))
         if ((int)doc_number(d, t, "parent", 0, 0) == thing && doc_word(d, t, "kind") == "behaviour" && doc_word(d, t, "file") == "order" && doc_number(d, t, "visible", 0, 1) > 0.5 &&
             (!doc_word(d, t, name).empty() || !doc_keys_of(d, t, name).at.empty()))
@@ -378,8 +378,9 @@ static double doc_rowed(Doc& d, const std::vector<int>& rows, const char* name, 
 //  lag_from the start (docs/notes/GROUP_FOCUS_new.md). A group with none reads its own stagger, as documents before had it.
 //  A behaviour in the group is not one of the things that go in turn, and has no turn itself.)
 static int doc_order_of(Doc& d, int group) {
+    const auto rowOfValue = [&](int t) { for (const char* n : {"x", "y", "z", "random", "opacity"}) if (!doc_word(d, t, n).empty() || !doc_keys_of(d, t, n).at.empty()) return true; return false; };   // (a row of a value (doc_rows_of) is not the order its things go in)
     for (const int t : doc_laid(d))
-        if ((int)doc_number(d, t, "parent", 0, 0) == group && doc_word(d, t, "kind") == "behaviour" && doc_word(d, t, "file") == "order") return t;
+        if ((int)doc_number(d, t, "parent", 0, 0) == group && doc_word(d, t, "kind") == "behaviour" && doc_word(d, t, "file") == "order" && !rowOfValue(t)) return t;
     return 0;
 }
 static double doc_group_delay(Doc& d, int thing) {

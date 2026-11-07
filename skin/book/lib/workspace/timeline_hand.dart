@@ -75,10 +75,10 @@ extension _WsTimelineHand on _WsTimelineState {
   // A value carried from the inspector over the room (docs/notes/GROUP_FOCUS_new.md 土台 ①): taken in the room of one
   // with copies (a group's things go whole by its Order row, doc_group_delay), a value the inside gives its members in
   // turn (doc_rowed: Opacity, as yet).
-  static const _rowable = {'opacity'};
+  static const _rowable = {'opacity', 'position'};
   bool _mayRow(Ws ws, ValueCarried v) {
     final l = ws.layers.where((l) => l.id == ws.entered).firstOrNull;
-    return l != null && l.kind != WsKind.group && _roomy(ws, l) && !_isLocked(ws, l.id) && _rowable.contains(v.id.substring(2));
+    return l != null && (l.kind != WsKind.group || v.id == 'v_position') && _roomy(ws, l) && !_isLocked(ws, l.id) && _rowable.contains(v.id.substring(2));
   }
 
   // Let go in the room: a row of the value, an Order row in the thing as the ▸ makes one in a group (_grab), named as the
@@ -89,7 +89,9 @@ extension _WsTimelineHand on _WsTimelineState {
     m.later('add', name: 'behaviour', word: 'order');
     m.later('set', thing: -1, name: 'parent', number: t.toDouble());
     m.later('say', thing: -1, name: 'name', word: v.label);
-    m.later('set', thing: -1, name: v.id.substring(2), number: 1);
+    for (final n in v.id == 'v_position' ? const ['x', 'y'] : [v.id.substring(2)]) {
+      m.later('set', thing: -1, name: n, number: n == 'opacity' ? 1 : 0);   // (said at none yet: a share of 1, a move of 0)
+    }
     ws.after(m.later('together'), (_, _) {
       ws.reread();
       final rows = [for (final c in m.things) if ((m.value(c, 'parent', 0) ?? 0).round() == t && m.word(c, 'file') == 'order') c];
@@ -160,7 +162,7 @@ extension _WsTimelineHand on _WsTimelineState {
     if (_spreadAt(ws, l, p) case final k?) {   // (a group's ▸ taken: the lag of its Order row carried while the hand pulls)
       final t = int.parse(l.id), late = _lateOf(ws, l) ?? 0;
       final held = m.things.where((c) => (m.value(c, 'parent', 0) ?? 0).round() == t).toList();
-      final order = held.where((c) => m.word(c, 'kind') == 'behaviour' && m.word(c, 'file') == 'order').firstOrNull;   // (the row inside the group that says the order: made by the first pull)
+      final order = held.where((c) => _isOrder(m, c)).firstOrNull;   // (the row inside the group that says the order: made by the first pull)
       final n = held.where((c) => m.word(c, 'kind') != 'behaviour').length, each = order != null ? m.value(order, 'lag', 0) ?? 0 : m.value(t, 'stagger', 0) ?? 0;
       final rank = late > 0 && each > 0 ? math.max(1, (late / Ws.fps / each).round()) : n - 1;   // (as its order lies now; none yet: from the first to the last)
       if (rank < 1) return false;
