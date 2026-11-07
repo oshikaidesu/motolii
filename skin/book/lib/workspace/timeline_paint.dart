@@ -38,6 +38,10 @@ abstract final class WtM {
 /// fade, no switch turns one on).
 double wtSpreadX(WtView v, int k, int late) => v.x(k + late) + (late == 0 ? WtM.key + 2 : 0);
 
+/// Where a row's band is taken to pull (its breakpoint, Ableton Live 12's Strum Position display): its last member at its
+/// last key [k], [late] frames after, at the bar's foot, below the key's diamond so the two are not one under the hand.
+Offset wtStrumGrip(WtView v, int k, int late, double cy) => Offset(v.x(k + late), cy + WtM.bar / 2 - 1);
+
 /// Where frames land on the track area: x = padL + (frame - scroll) * ppf.
 @immutable
 class WtView {
@@ -79,10 +83,12 @@ class WtRow {
     this.whole,
     this.echoes = const [],
     this.late,
+    this.strum,
     this.head = false,
   });
   final bool head;   // (the group the timeline stands inside, its own row on top: a line under it parts what moves them from what moves)
   final (int, int)? whole;
+  final (int, int)? strum;   // (a row in a thing with copies: how many frames later its first and its last member read its keys; its band drawn under them, the first along its top, the last along its bottom, as Ableton Live 12's Strum lays successive notes later; null: none)
   final int? late;   // (a group's: how many frames after each of its keys its last thing comes to it, its ▸ drawn there; 0 all at once; null not a group)
   final List<int> echoes;   // (the frames a group's keys come at for its things, each as late as it goes: on the group's row all, on a thing's its own)   // (a film's whole length as it lies, cut or not: the pale slip-edit bar of After Effects)
   final List<WsStretch> stretches;   // (how it goes between its keys: each stretch's way drawn between them)
@@ -130,6 +136,7 @@ class WtRow {
       other.clipped == clipped &&
       other.whole == whole &&
       other.late == late &&
+      other.strum == strum &&
       other.head == head &&
       _listEq(other.echoes, echoes) &&
       identical(other.wave, wave) &&
@@ -409,6 +416,14 @@ class WtTracksPainter extends CustomPainter {
           ..strokeWidth = 1.5
           ..color = Grey.g100,
       );
+    }
+    if (r.strum case (final d0, final dn)? when r.keys.isNotEmpty) {   // (its band: the first member's keys along the bar's top, the last's along its bottom, each one in between at its height; its right slant pulled sets how much later each goes, Ableton Live 12's Strum Position breakpoint)
+      final k0 = r.keys.first, kl = r.keys.last;
+      final band = Path()..moveTo(view.x(k0 + d0), bar.top)..lineTo(view.x(kl + d0), bar.top)..lineTo(view.x(kl + dn), bar.bottom)..lineTo(view.x(k0 + dn), bar.bottom)..close();
+      c.drawPath(band, Paint()..color = ink.withValues(alpha: .16));   // (in the bar's own ink, as its name: a light tint on a light bar was not seen, golf scatter_row_step4)
+      c.drawLine(Offset(view.x(k0 + d0), bar.top), Offset(view.x(k0 + dn), bar.bottom), Paint()..color = ink.withValues(alpha: .45)..strokeWidth = 1);   // (where each member starts: the first at the top, the last at the foot)
+      c.drawLine(Offset(view.x(kl + d0), bar.top), Offset(view.x(kl + dn), bar.bottom), Paint()..color = ink..strokeWidth = 1.5);
+      c.drawCircle(wtStrumGrip(view, kl, dn, cy), WtM.key * .7, Paint()..color = ink);
     }
     for (final st in r.stretches) {   // (each stretch's way, from its key to the next, as a line inside the bar: how it goes there)
       final xa = view.x(st.from), xb = view.x(st.to);

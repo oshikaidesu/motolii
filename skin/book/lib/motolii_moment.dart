@@ -19,6 +19,9 @@ extension MotoliiMoment on Motolii {
   /// How many members a thing has (its copies, its letters: doc_members); 1: one, or not known yet.
   int members(int thing) => ((_moment['members'] as Map<String, dynamic>?)?['$thing'] as num?)?.toInt() ?? 1;
 
+  /// A row in a thing with copies: how much later its first and its last member read its keys (seconds); null: not one.
+  (double, double)? strum(int row) => switch ((_moment['strum'] as Map<String, dynamic>?)?['$row']) { [final num a, final num b] => (a.toDouble(), b.toDouble()), _ => null };
+
   double get drawnAt => now;
 
   /// A value at a moment, its own (not what a relation makes of it: [shows]): one that stays, the document's; one that

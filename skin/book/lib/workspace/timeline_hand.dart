@@ -50,6 +50,7 @@ extension _WsTimelineHand on _WsTimelineState {
     if (r.value != null) return;   // (a lane: its tap is the lane's, on the hand's way up)
     final i = r.i, l = r.l;
     final cy = _rowY(i) + WtM.row / 2;
+    if (_strumAt(ws, l, p, cy) != null) return;   // (a row's band's grip: taken on the hand's way, _grab, not the key above it)
     if (!_isLocked(ws, l.id) && (p.dy - cy).abs() <= WtM.bar / 2 + 2) {
       int? best;
       var bd = WtM.keyPicked + 2;
@@ -107,6 +108,15 @@ extension _WsTimelineHand on _WsTimelineState {
     return null;
   }
 
+  // A row's band's grip under the hand (wtStrumGrip: its last member at its last key, at the bar's foot); the key it
+  // stands after, null: none there.
+  int? _strumAt(Ws ws, WsLayer l, Offset p, double cy) {
+    final st = _strumOf(ws, l);
+    if (st == null || l.keys.isEmpty || _isLocked(ws, l.id)) return null;
+    final g = wtStrumGrip(_view, l.keys.last, st.$2, cy);
+    return (p.dx - g.dx).abs() <= WtM.key + 3 && p.dy > cy && p.dy <= cy + WtM.row / 2 ? l.keys.last : null;
+  }
+
   bool _onPale(Ws ws, WsLayer l, Offset p) {
     final w = _wholeOf(ws, l);
     return w != null && p.dx >= _view.x(w.$1) && p.dx <= _view.x(w.$2);
@@ -123,7 +133,7 @@ extension _WsTimelineHand on _WsTimelineState {
       return at.any((k) => (v.x((k * Ws.fps).round()) - p.dx).abs() <= WtM.keyPicked + 2) || (at.isNotEmpty && f > at.first && f < at.last) ? SystemMouseCursors.click : SystemMouseCursors.precise;
     }
     if (_isLocked(ws, l.id) || p.dx < a - 6 || p.dx > b + 6) return _onPale(ws, l, p) ? SystemMouseCursors.grab : SystemMouseCursors.precise;
-    if (_spreadAt(ws, l, p) != null) return SystemMouseCursors.resizeLeftRight;
+    if (_spreadAt(ws, l, p) != null || _strumAt(ws, l, p, _rowY(r.i) + WtM.row / 2) != null) return SystemMouseCursors.resizeLeftRight;
     if (l.keys.any((k) => (v.x(k) - p.dx).abs() <= WtM.keyPicked + 2)) return SystemMouseCursors.click;
     return (p.dx - a).abs() <= 6 || (p.dx - b).abs() <= 6 ? SystemMouseCursors.resizeLeftRight : SystemMouseCursors.grab;
   }
@@ -134,6 +144,17 @@ extension _WsTimelineHand on _WsTimelineState {
     if (m == null || r == null) return false;
     if (r.value != null) return true;   // (a lane: nothing carried, and no box drawn from it)
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);
+    if (_strumAt(ws, l, p, _rowY(r.i) + WtM.row / 2) case final k?) {   // (a row's band taken by its grip: its lag carried while the hand pulls, as a group's ▸ below; the hand's frame is where its last member comes to its last key)
+      final t = int.parse(l.id), dn = _strumOf(ws, l)!.$2, each = m.value(t, 'lag', 0) ?? 0;
+      final rank = dn > 0 && each > 0 ? math.max(1, (dn / Ws.fps / each).round()) : m.members(int.parse(l.parent!)) - 1;   // (as its order lies now; none yet: from the first to the last)
+      if (rank < 1) return false;
+      m.later('together', number: 1);   // (the pull and its let go: one step)
+      m.take(t);
+      ws.select(l.id);
+      if (ws.playing) ws.playing = false;
+      _spread = (id: l.id, key: k, rank: rank, moved: false);
+      return true;
+    }
     final off = p.dx < a - 6 || p.dx > b + 6;
     if (_isLocked(_ws!, l.id) || (off && !_onPale(ws, l, p))) return false;
     if (_spreadAt(ws, l, p) case final k?) {   // (a group's ▸ taken: the lag of its Order row carried while the hand pulls)

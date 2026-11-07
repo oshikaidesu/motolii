@@ -156,6 +156,10 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     return [0, for (final t in m.things) if ((m.value(t, 'parent', 0) ?? 0).round() == id) (m.late(t) * Ws.fps).round()].reduce(math.max);
   }
 
+  // A row in a thing with copies (_rowOf): how many frames later its first and its last member read its keys (the
+  // inside's, doc_order_delay), its band drawn so under them; null: not one.
+  (int, int)? _strumOf(Ws ws, WsLayer l) => switch (ws.inside?.strum(int.parse(l.id))) { (final a, final b)? => ((a * Ws.fps).round(), (b * Ws.fps).round()), _ => null };
+
   // A group's ▸ held by a hand: the key it stands after, and how many steps its last thing is from its first (the
   // stagger each goes so many times: start and end n - 1, the middle (n - 1) / 2). Carried as the group's stagger
   // (doc_carry by a value's name), let go kept or not: one step of undo, as a bar's slide.
@@ -620,6 +624,7 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
           whole: _wholeOf(ws, l),
           echoes: _echoesOf(ws, l),
           late: _lateOf(ws, l),
+          strum: _strumOf(ws, l),
           head: j < _pin && o.layer == head,
         ),
     ];
