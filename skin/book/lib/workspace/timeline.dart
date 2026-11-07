@@ -19,6 +19,7 @@ import 'ableton.dart' show wsTimelineAsk, wsAskRename, wsAskTimeline, wsMarkPick
 import '../sets/panels/timeline_parts_parts.dart' show TpGlyph, TpGlyphPainter;
 import '../tokens.dart';
 import 'key_drag.dart';
+import 'desk_kit.dart' show DeskScrub;
 import 'keys.dart' show CommandIntent;
 import 'timeline_kept.dart';
 import 'timeline_paint.dart';
@@ -164,6 +165,11 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
   // stagger each goes so many times: start and end n - 1, the middle (n - 1) / 2). Carried as the group's stagger
   // (doc_carry by a value's name), let go kept or not: one step of undo, as a bar's slide.
   ({String id, int key, int rank, bool moved})? _spread;
+
+  // A group's count held while its row's field is scrubbed or typed (_countRow): as the hand has it, carried, not yet
+  // let go; null: as the document says.
+  double? _countHeld;
+  void _holdCount(double? v) => setState(() => _countHeld = v);
 
   // A way's shape from 0 to 1, as the bar's stretches are drawn.
   List<double> _wayShape(Ws ws, String way) => way.isEmpty ? const [0, 1] : easeCurve(way, ws.inside!);
@@ -585,6 +591,7 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     List<({int layer, String? value, (String, String)? aim})> rowsOf(List<int> shown, {bool room = false}) => [
       for (final i in shown) if (ws.layers[i] case final l) ...[
         (layer: i, value: null, aim: null),
+        if (room && l.id == entered && l.kind == WsKind.group) (layer: i, value: 'copies', aim: null),   // (its count, in its room from when it was made: _countRow)
         if ((room || l.id != entered) && ws.aimsOpen(l.id))   // (the group entered: its lanes in its room, once, not again in the whole below)
           for (final a in wsTargets(ws, l.id)) (layer: i, value: '', aim: a),
         if ((room || l.id != entered) && ws.lanesOpen(l.id))
