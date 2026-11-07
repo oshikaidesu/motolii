@@ -423,6 +423,7 @@ static const DocCard doc_cards[] = {
     {"Push", "strength leader radius", "file", "push"},
     {"Group", "strength lag x y spread scatter rotate rotate_y size opacity", "file", "group"},
     {"Order", "lag lag_from seed strength", "file", "order"},   // (the order a group's things go in, as a row inside the group (docs/notes/GROUP_FOCUS_new.md): each so much later, from which one, its roll; how much of it (keyed: its weight). The ▸ after the group's keys on the timeline pulls lag)   // (things in an order and nothing else: away by its own move, turn, size and opacity, each in turn)
+    {"Opacity", "opacity", "file", "order", true},   // (an Order row in a thing with copies, the row of a value dropped from its inspector (doc_rows_of): that value's keys, one member's, keyed with the usual ◇; shown once it is said)
     {"Relation", "strength", "file", "relate"},   // (one written as a file: its own knobs come under it, as a recipe's)
     {"Falloff", "region falloff_soft falloff_invert", "file", "!"},   // (any with a file: a behaviour shows only such cards, doc_cards_of)
     {"Note", "label note", nullptr, nullptr, true},   // (what a maker wrote of it: After Effects' layer comment)

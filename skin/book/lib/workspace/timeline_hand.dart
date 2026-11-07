@@ -71,6 +71,31 @@ extension _WsTimelineHand on _WsTimelineState {
     }
   }
 
+  // A value carried from the inspector over the room (docs/notes/GROUP_FOCUS_new.md 土台 ①): taken in the room of one
+  // with copies (a group's things go whole by its Order row, doc_group_delay), a value the inside gives its members in
+  // turn (doc_rowed: Opacity, as yet).
+  static const _rowable = {'opacity'};
+  bool _mayRow(Ws ws, ValueCarried v) {
+    final l = ws.layers.where((l) => l.id == ws.entered).firstOrNull;
+    return l != null && l.kind != WsKind.group && _roomy(ws, l) && !_isLocked(ws, l.id) && _rowable.contains(v.id.substring(2));
+  }
+
+  // Let go in the room: a row of the value, an Order row in the thing as the ▸ makes one in a group (_grab), named as the
+  // value and saying it at none yet (a share of 1: doc_given_on), one step; picked, so the inspector has its ◇.
+  void _rowOf(Ws ws, ValueCarried v) {
+    final m = ws.inside!, t = int.parse(ws.entered!);
+    m.later('together', number: 1);
+    m.later('add', name: 'behaviour', word: 'order');
+    m.later('set', thing: -1, name: 'parent', number: t.toDouble());
+    m.later('say', thing: -1, name: 'name', word: v.label);
+    m.later('set', thing: -1, name: v.id.substring(2), number: 1);
+    ws.after(m.later('together'), (_, _) {
+      ws.reread();
+      final rows = [for (final c in m.things) if ((m.value(c, 'parent', 0) ?? 0).round() == t && m.word(c, 'file') == 'order') c];
+      if (rows.isNotEmpty) ws.select('${rows.reduce(math.max)}');
+    });
+  }
+
   // The key whose ▸ (a group's: where its last thing comes to it) is under the hand, right of the key itself; null: none.
   int? _spreadAt(Ws ws, WsLayer l, Offset p) {
     final late = _lateOf(ws, l);

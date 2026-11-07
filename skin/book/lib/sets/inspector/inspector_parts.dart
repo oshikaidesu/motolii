@@ -30,6 +30,13 @@ export 'inspector_transform_rows.dart';
 export 'inspector_value_marks.dart';
 export 'param_infer.dart';
 
+/// A value taken by its name and carried (a row's label, PropRow): let go in a thing's room on the timeline it becomes a
+/// row of that value (docs/notes/GROUP_FOCUS_new.md 土台 ①). id: the inspector's ('v_opacity'); label: as the row says it.
+class ValueCarried {
+  const ValueCarried(this.id, this.label);
+  final String id, label;
+}
+
 // ---- 0. open values -------------------------------------------------------------------------------------------------
 // [open] a value cell's height (the lab's ValueWell is 22; rows are 24 on the 4px rhythm; B uses 22).
 double get cellH => Shape.z(22);

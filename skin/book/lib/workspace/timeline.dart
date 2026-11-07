@@ -26,6 +26,7 @@ import 'relate.dart';
 import 'ws.dart';
 import 'ws_menu.dart';
 import '../sets/foundations/text_hand.dart';
+import '../sets/inspector/inspector_parts.dart' show ValueCarried;
 part 'timeline_asked.dart';
 part 'timeline_view.dart';
 part 'timeline_hand.dart';
@@ -575,7 +576,8 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     }
     bool named(WsLayer l) => m.word(int.parse(l.id), 'kind') == 'behaviour' || l.keys.isNotEmpty || l.id == sel || ws.many.contains(l.id);
     final inner = head < 0 ? const <int>[] : [head, for (final (i, l) in ws.layers.indexed) if (l.parent == entered && named(l)) i];
-    final whole = [for (final (i, l) in ws.layers.indexed) if (!away.containsKey(l.id)) i];
+    bool roomOnly(WsLayer l) => l.parent != null && m.word(int.parse(l.id), 'file') == 'order' && ws.layers.where((p) => p.id == l.parent).firstOrNull?.kind != WsKind.group;   // (a row of a thing with copies (_rowOf): in its room, as a shut group's things are under it)
+    final whole = [for (final (i, l) in ws.layers.indexed) if (!away.containsKey(l.id) && !roomOnly(l)) i];
     List<({int layer, String? value, (String, String)? aim})> rowsOf(List<int> shown, {bool room = false}) => [
       for (final i in shown) if (ws.layers[i] case final l) ...[
         (layer: i, value: null, aim: null),
@@ -733,8 +735,16 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
                           SizedBox(
                             key: const ValueKey('ws-tl-room'),
                             height: _panelH,
-                            child: RepaintBoundary(
-                              child: CustomPaint(painter: WtTracksPainter(rows: rows.sublist(0, _pin), view: v, fps: Ws.fps, vscroll: _pscroll, tempo: ws.beats, restAt: _restAt, room: true)),
+                            child: DragTarget<ValueCarried>(   // (a value let go here from the inspector: a row of it, _rowOf; Flutter's own DragTarget, as the stage takes a shelf's tile)
+                              onWillAcceptWithDetails: (d) => _mayRow(ws, d.data),
+                              onAcceptWithDetails: (d) => _rowOf(ws, d.data),
+                              builder: (context, over, _) => DecoratedBox(
+                                position: DecorationPosition.foreground,
+                                decoration: BoxDecoration(border: over.isEmpty ? null : Border.all(color: WsT.accent)),
+                                child: RepaintBoundary(
+                                  child: CustomPaint(painter: WtTracksPainter(rows: rows.sublist(0, _pin), view: v, fps: Ws.fps, vscroll: _pscroll, tempo: ws.beats, restAt: _restAt, room: true)),
+                                ),
+                              ),
                             ),
                           ),
                           _roomEdge(),

@@ -491,7 +491,8 @@ static void doc_moment(Doc& d, double now) {
             const bool clearEach = doc_driven_by(d, thing, "opacity") != 0, pickEach = doc_driven_by(d, thing, "copy_fill_at") != 0;   // (given each copy by a behaviour)
             const double fadeTo = std::clamp(doc_number(d, thing, "copy_opacity_end", now, 1), 0.0, 1.0);   // (the last copy as clear as this, the first as the thing: After Effects' Repeater, End Opacity)
             const bool clearLate = !sheetClear && doc_number(d, thing, "stagger", 0, 0) > 0.0 && doc_key_moments(d, thing, "opacity").size() > 1;   // (a staggered copy fades as late as it moves: GSAP's stagger takes every value of a tween, After Effects' range selector an Opacity with the rest)
-            if (ramp.size() < 2 && letters.empty() && !clears && !t.drivenLooks && !clearEach && !pickEach && fadeTo == 1 && !clearLate) doc_copy_looks_off(d, m, main);
+            const std::vector<int> rows = doc_members(d, thing) > 1 ? doc_rows_of(d, thing, "opacity") : std::vector<int>{};   // (its Opacity rows, one with copies: each copy as clear as a row's keys say so much later, doc_rowed)
+            if (ramp.size() < 2 && letters.empty() && !clears && !t.drivenLooks && !clearEach && !pickEach && fadeTo == 1 && !clearLate && rows.empty()) doc_copy_looks_off(d, m, main);
             else {
                 auto& faces = s.engine->getRenderableManager();
                 const int n = doc_members(d, thing);
@@ -521,11 +522,12 @@ static void doc_moment(Doc& d, double now) {
                                          ((size_t)made.nth < absent.size() ? absent[(size_t)made.nth].alpha : 1.0);
                     const math::double3 here{made.place[3].x, made.place[3].y, made.place[3].z};
                     const int clearBy = doc_driven_by(d, thing, "opacity");
-                    const double opacity = clearLate ? ownClear / std::max(doc_number(d, thing, "opacity", now, 1), 1e-6) * doc_number(d, thing, "opacity", now - doc_delay(d, thing, made.nth), 1)
+                    const double opaque = clearLate ? ownClear / std::max(doc_number(d, thing, "opacity", now, 1), 1e-6) * doc_number(d, thing, "opacity", now - doc_delay(d, thing, made.nth), 1)
                                          : !clearEach ? ownClear
                                          : doc_among(doc_relations, doc_word(d, clearBy, "file")) ? std::clamp(doc_literal(d, thing, "opacity", now, 1), 0.0, 1.0)   // (a relation's: by the thing's place among its things)
                                          : std::clamp(doc_given(d, clearBy, made.nth, n, now, doc_number(d, thing, "opacity", now, 1), &here), 0.0, 1.0);
                     const double fade = n > 1 ? 1 + (fadeTo - 1) * (double)made.nth / (double)(n - 1) : 1.0;
+                    const double opacity = rows.empty() || made.many ? opaque : std::clamp(doc_rowed(d, rows, "opacity", made.nth, n, now, opaque), 0.0, 1.0);
                     own->setParameter("opacity", (float)(opacity * std::clamp(clear, 0.0, 1.0) * fade));
                     if (t.drawn && t.drawn->edgeLook && !made.many) {   // (its edge's own look: a frame alone (filled with nothing) coloured each as its fill would be; each as clear)
                         const auto one = faces.getInstance(made.thing);

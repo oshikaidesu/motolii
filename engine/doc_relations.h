@@ -131,6 +131,14 @@ static const std::vector<int>& doc_members_of(Doc& d, int by) { return doc_relat
 static const char* const doc_relate_names[] = {"x", "y", "z", "size", "rotate", "rotate_x", "rotate_y", "opacity"};
 static double doc_related(Doc& d, int by, int thing, const char* name, double t, double own);
 static const std::vector<double>& doc_related_all(Doc& d, int by, double t);
+// A row's own value `v` given to one it moves (`base`: that one's own), as much as `s`: a turn added, a size or an
+// opacity a share of its own (0 opacity out is gone); NaN: not one of these. Alight Motion's Range Transform the same
+// way: its Angle added, its Scale and Alpha a share (reports/alight_range.md).
+static double doc_given_on(const std::string& n, double base, double v, double s) {
+    if (n == "rotate" || n == "rotate_x" || n == "rotate_y") return base + v * s;
+    if (n == "size" || n == "opacity") return base * (1.0 + (v - 1.0) * s);
+    return std::nan("");
+}
 static bool doc_pushes(Doc& d, int by);
 static double doc_world_value(Doc& d, int thing, size_t name, double t, double otherwise);
 // What a relation gives a value of one of its things (`own`: the thing's own value there), weighed by its strength: it
@@ -162,10 +170,8 @@ static double doc_related(Doc& d, int by, int thing, const char* name, double t,
         return base;
     }
     const double s = strength * (doc_number(d, by, "region", 0, 0) ? doc_falloff_at(d, by, {start("x", doc_number(d, thing, "x", t, 0)), start("y", doc_number(d, thing, "y", t, 0)), start("z", doc_number(d, thing, "z", t, 0))}, t) : 1.0);   // (Cavalry's Falloff: a multiplier on its Strength; a file's is weighed where it is told: p5_stand.h's __relates, doc_world.h)
-    if ((type == "around" || type == "row" || type == "group") && (n == "rotate" || n == "rotate_x" || n == "rotate_y"))   // (its own turn added to each, in turn)
-        return base + doc_number(d, by, name, ti, 0) * s;
-    if ((type == "around" || type == "row" || type == "group") && (n == "size" || n == "opacity"))   // (its own size and opacity as a share of each one's, in turn: 0 opacity out is gone)
-        return base * (1.0 + (doc_number(d, by, name, ti, 1) - 1.0) * s);
+    if (type == "around" || type == "row" || type == "group")   // (its own turn added to each, its own size and opacity a share of each one's, in turn)
+        if (const double given = doc_given_on(n, base, doc_number(d, by, name, ti, n == "size" || n == "opacity" ? 1 : 0), s); !std::isnan(given)) return given;
     if (type == "group") {   // (where it was put, and away by its own move, its spread from their middle and its scatter, as much as its strength, in turn)
         if (n != "x" && n != "y") return base;
         const size_t axis = n == "x" ? 0 : 1;
@@ -319,6 +325,28 @@ static double doc_order_delay(Doc& d, int thing, int nth, int n, const char* eac
     return each * (from == "centre" ? std::fabs(at - mid) : from == "end" ? last - at : from == "edges" ? mid - std::fabs(at - mid) : at);
 }
 static double doc_delay(Doc& d, int thing, int nth) { return doc_order_delay(d, thing, nth, doc_members(d, thing)); }
+// A thing's rows of a value: the Order rows in it (behaviours of file "order" it holds: docs/notes/GROUP_FOCUS_new.md
+// 土台 ①②, a value dropped from the inspector into its room) that hold that value, said or keyed: one member's keys of
+// it. None in a group: a group's Order row sends its things whole (doc_group_delay).
+static std::vector<int> doc_rows_of(Doc& d, int thing, const char* name) {
+    std::vector<int> rows;
+    if (!thing || doc_word(d, thing, "shape") == "null") return rows;
+    for (const int t : doc_laid(d))
+        if ((int)doc_number(d, t, "parent", 0, 0) == thing && doc_word(d, t, "kind") == "behaviour" && doc_word(d, t, "file") == "order" && doc_number(d, t, "visible", 0, 1) > 0.5 &&
+            (!doc_word(d, t, name).empty() || !doc_keys_of(d, t, name).at.empty()))
+            rows.push_back(t);
+    return rows;
+}
+// What a thing's rows make of the nth of its n members' value (`base`: its own there): each row's keys read as much
+// earlier as its order says, t − lag × its place (doc_order_delay by the row's lag and lag_from: GROUP_FOCUS_new.md
+// エンジンの式, GSAP's stagger), given as a group gives its own (doc_given_on), as much as the row's strength.
+static double doc_rowed(Doc& d, const std::vector<int>& rows, const char* name, int nth, int n, double now, double base) {
+    for (const int row : rows) {
+        const double at = now - doc_order_delay(d, row, nth, n, "lag", "lag_from");
+        if (const double given = doc_given_on(name, base, doc_number(d, row, name, at, !strcmp(name, "size") || !strcmp(name, "opacity") ? 1 : 0), std::clamp(doc_number(d, row, "strength", at, 1), -1.0, 2.0)); !std::isnan(given)) base = given;
+    }
+    return base;
+}
 // How much later a group's thing goes with its group than the group goes (a Null's stagger over the things it holds
 // straight under it, in the order they lie, the furthest back first: its copies' order law on its things; After
 // Effects' delayed parenting, valueAtTime(time - delay * index)). 0 under anything else.

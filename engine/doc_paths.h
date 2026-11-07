@@ -632,7 +632,8 @@ static bool doc_let_go(Doc& d, bool keep) {
     const bool order = kind == "behaviour" && doc_word(d, h.thing, "file") == "order";   // (an Order's lag is its shape, not a motion: set, never keyed, with Auto key on too. How the things go in turn changes over time by another Order row laid over it, not by keys on this one: docs/notes/GROUP_FOCUS_new.md 裏にキーは打たない)
     for (const auto& [name, is] : h.tried) {
         bool moves = false;
-        for (const DocValue& one : doc_values) moves = moves || (!order && one.moves && name == one.name && doc_among(one.kinds, kind));   // (as this thing's own value takes keys, not another kind's of the same name: a group's stagger (Delay each, a shape's, set) carried on a group with Auto key on was put as a key, as a behaviour's stagger (one that moves) is, and refused, "stagger does not move")
+        const bool shape = order && doc_among("lag lag_from seed strength", name);   // (the Order card's own; the value an Order row is the row of (doc_rows_of: its Opacity) takes keys as any value does, its keys one member's: GROUP_FOCUS_new.md 土台 ②)
+        for (const DocValue& one : doc_values) moves = moves || (!shape && one.moves && name == one.name && doc_among(one.kinds, kind));   // (as this thing's own value takes keys, not another kind's of the same name: a group's stagger (Delay each, a shape's, set) carried on a group with Auto key on was put as a key, as a behaviour's stagger (one that moves) is, and refused, "stagger does not move")
         if (!moves && name.rfind("js_", 0) == 0)   // (a knob of one of its scripts, an effect's, as doc_knows finds it: one that takes keys as its file says, a track;
             //  else it was set, unkeyed, every key it had taken away: golf_noise.md 44)
             for (const DocScript* sc : doc_scripts_on(d, h.thing))
