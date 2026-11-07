@@ -144,7 +144,7 @@ const _rowsF = <(String, String, Map<String, Object>)>[
   ('Grid Repeat', '-', {'@size': .4, '@copies': 4, '@copy_columns': 2, '@copy_x': .45, '@copy_y': .45}),   // (a photo is 1 wide: made small, the copies a little further apart than it)
   ('Linear Repeat', '-', {'@copies': 4, '@copy_x': .15, '@copy_y': .05}),
   ('Repeat', '-', {'@copies': 3, '@copy_x': .2}),
-  ('Scatter Repeat', '-', {'@copies': 6, '@scatter_x': .3, '@scatter_y': .3}),
+  ('Scatter Repeat', 'circle+effects/scatter_repeat.am', {'count': 12}),   // (11/7: not the thing's copies and scatter_x, y, which scatter in a box: Alight Motion's own, in a disc, effects/scatter_repeat.am)
   ('Solid Color', '-', {'@tint': 1, '@tint_black': '3366ff', '@tint_white': '3366ff'}),
 ];
 // (section AM: AbsentMotion's effects that read the picture blurred, made by effects/from_absent.py's two blur passes)

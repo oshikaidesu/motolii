@@ -37,16 +37,83 @@ AbsentMoved absent_motion(const std::vector<AbsentEffect>& effects, int64_t thin
 float absent_opacity(const std::vector<AbsentEffect>& effects, int64_t thing, double startMs, double endMs, double nowMs) {
     return am::MotionOpacity(absent_layer(effects, thing, startMs, endMs), nowMs);
 }
+// Scatter Repeat: Alight Motion's own, which AbsentMotion has not converted (its docs/ALIGHT_COMPATIBILITY.md says "Not
+// converted yet"; no other implementation was found), so written here from what Alight Motion 6.2.60 shows of it
+// (reports/alight_checklist.md): the layer itself goes and Count copies of it lie in a disc of Radius about where it stood,
+// each its own way by its number and Seed (one keeps its place when Count grows), moving smoothly as Evolution changes;
+// Range Transform (Offset, Angle, Scale, Alpha) on the copies in its Range, as AbsentMotion's own Ranged does for its repeats
+// (Start, End, Phase, Random Order). Not made yet, not yet read from Alight Motion: Fill Color, Ease In, Ease Out, Overlap,
+// Shape, Invert.
+static double scatter_knob(const AbsentEffect& e, const char* name, size_t i, double usual) {
+    for (const auto& [n, v] : e.params)
+        if (n == name) return i < v.size() ? v[i] : usual;
+    return usual;
+}
+static double scatter_unit(uint64_t seed, uint64_t k) {   // (0 to 1, a hash of the seed and which: splitmix64)
+    uint64_t x = seed + (k + 1) * 0x9e3779b97f4a7c15ull;
+    x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ull, x = (x ^ (x >> 27)) * 0x94d049bb133111ebull, x ^= x >> 31;
+    return (double)(x >> 11) * (1.0 / 9007199254740992.0);
+}
+static double scatter_fold(double v) { return 1.0 - std::fabs(1.0 - std::fmod(std::fabs(v), 2.0)); }   // (back and forth inside 0 to 1: a wander never leaves the disc)
+static std::vector<am::RepeatCopy> scatter_repeat(const AbsentEffect& e) {
+    const int n = (int)std::clamp<long long>(std::llround(scatter_knob(e, "count", 0, 20)), 0, 5000);
+    const double radius = std::max(0.0, scatter_knob(e, "radius", 0, 300)), evolution = scatter_knob(e, "evolution", 0, 0);
+    const uint64_t seed = (uint64_t)std::llround(scatter_knob(e, "seed", 0, 0) * 1000.0) * 0x2545f4914f6cdd1dull + 0x51ed27ull;
+    const double phase = scatter_knob(e, "rangePhase", 0, 0);
+    const double start = scatter_knob(e, "rangeStart", 0, 0) + phase, end = scatter_knob(e, "rangeEnd", 0, 1) + phase;
+    const SkPoint offset = {(float)scatter_knob(e, "rangeOffset", 0, 0), (float)scatter_knob(e, "rangeOffset", 1, 0)};
+    const double angle = scatter_knob(e, "rangeAngle", 0, 0), scale = std::max(0.0, scatter_knob(e, "rangeScale", 0, 1)), alpha = std::clamp(scatter_knob(e, "rangeAlpha", 0, 1), 0.0, 1.0);
+    std::vector<size_t> order(n);
+    for (int i = 0; i < n; i++) order[i] = i;
+    if (scatter_knob(e, "randomOrder", 0, 0) >= 0.5 && n > 1) {   // (the order the Range reaches them in, the way AbsentMotion's Random Order sorts its spots)
+        const uint64_t rs = (uint64_t)std::llround(scatter_knob(e, "randomSeed", 0, 0) * 1000.0) * 0x9e3779b97f4a7c15ull + 0x77ull;
+        std::sort(order.begin(), order.end(), [&](size_t a, size_t b) { return scatter_unit(rs, a) < scatter_unit(rs, b); });
+    }
+    std::vector<double> reaches(n);   // (how far along the Range each copy is, 0 to 1)
+    for (int k = 0; k < n; k++) reaches[order[k]] = n > 1 ? (double)k / (n - 1) : 0.0;
+    std::vector<am::RepeatCopy> out;
+    out.reserve(n);
+    for (int i = n - 1; i >= 0; i--) {   // (the first on top, as AbsentMotion's Ranged lays its spots)
+        const double turn = 2.0 * M_PI * (scatter_unit(seed, 2 * i) + 0.5 * am::SimplexNoise2(evolution * 0.8, i * 3.17 + 0.5)), far = std::sqrt(scatter_fold(scatter_unit(seed, 2 * i + 1) + 0.5 * am::SimplexNoise2(evolution * 0.8 + 41.3, i * 3.17 + 9.1)));
+        const double u = reaches[i], w = end - start > 1e-6 ? std::clamp((u - start) / (end - start), 0.0, 1.0) : (u >= start ? 1.0 : 0.0);
+        am::RepeatCopy c;
+        c.local = SkMatrix::Translate((float)(radius * far * std::cos(turn) + offset.fX * w), (float)(radius * far * std::sin(turn) + offset.fY * w));
+        c.local.preRotate((float)(angle * w));
+        const float k = (float)(1.0 + (scale - 1.0) * w);
+        c.local.preScale(k, k);
+        c.alpha = (float)(1.0 + (alpha - 1.0) * w);
+        out.push_back(c);
+    }
+    return out;
+}
+// A repeat laid on those before it, each copy of the new by each of the old, as AbsentMotion's RepeatCopies does it.
+static std::vector<am::RepeatCopy> scatter_on(const std::vector<am::RepeatCopy>& made, const std::vector<am::RepeatCopy>& result) {
+    std::vector<am::RepeatCopy> next;
+    next.reserve(std::min<size_t>(25000, made.size() * result.size()));
+    for (const am::RepeatCopy& m : made)
+        for (const am::RepeatCopy& r : result) {
+            if (next.size() >= 25000) break;
+            am::RepeatCopy c = r;
+            c.outer = m.outer * r.outer, c.local = m.local * r.local;
+            if (!c.outer.isFinite() || !c.local.isFinite()) continue;
+            c.shiftMs = r.shiftMs + m.shiftMs, c.alpha = r.alpha * m.alpha;
+            next.push_back(c);
+        }
+    return next;
+}
 // As AbsentMotion's CopiesOf (styles.cpp) lays them: its layer's matrix where it stands (its turn and size the thing's
 // own), each copy outer by the layer by local, seen from the layer's own place.
 std::vector<AbsentCopy> absent_copies(const std::vector<AbsentEffect>& effects, int64_t thing, double startMs, double endMs, double nowMs, float wide, float high, float atX, float atY, float reach) {
-    const am::Layer l = absent_layer(effects, thing, startMs, endMs);
-    if (!am::HasRepeat(l)) return {};
+    std::vector<AbsentEffect> others, scatters;   // (Scatter Repeat is made above; the rest AbsentMotion makes)
+    for (const AbsentEffect& e : effects) (e.id == "scatterrepeat" ? scatters : others).push_back(e);
+    const am::Layer l = absent_layer(others, thing, startMs, endMs);
+    if (!am::HasRepeat(l) && scatters.empty()) return {};
     am::RepeatSpace space;
     space.width = wide, space.height = high, space.radius = reach;
     space.anchor = SkPoint{atX, atY}, space.layer = SkMatrix::Translate(atX, atY);
-    std::vector<am::RepeatCopy> copies;
-    am::RepeatCopies(l, nowMs, space, &copies);
+    std::vector<am::RepeatCopy> copies(1);
+    if (am::HasRepeat(l)) am::RepeatCopies(l, nowMs, space, &copies);
+    for (const AbsentEffect& e : scatters) copies = scatter_on(scatter_repeat(e), copies);
     std::vector<AbsentCopy> out;
     out.reserve(copies.size());
     for (const am::RepeatCopy& c : copies) {
