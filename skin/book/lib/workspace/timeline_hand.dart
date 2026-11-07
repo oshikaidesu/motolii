@@ -64,7 +64,7 @@ extension _WsTimelineHand on _WsTimelineState {
     }
     final f = v.frameAt(p.dx);
     if (f >= l.inF && f <= l.outF) {
-      if (l.kind == WsKind.group && l.id != ws.entered && _twice(l.id)) return ws.enter(l.id);   // (a group's bar pressed twice: into it)
+      if (_roomy(ws, l) && l.id != ws.entered && _twice(l.id)) return ws.enter(l.id);   // (a group's bar pressed twice, or one with copies: into it)
       ws.select(l.id);
     } else {
       ws.clearKeys();

@@ -139,6 +139,10 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     return {for (final e in late) for (final k in group.keys) k + e}.toList()..sort();
   }
 
+  // What has a room of its own, entered by a second press: a group, or anything with more than one member (its copies,
+  // its letters: Motolii.members), as a group is an array (docs/notes/GROUP_FOCUS_new.md 土台: グループもふつうのレイヤー).
+  bool _roomy(Ws ws, WsLayer l) => l.kind == WsKind.group || (ws.inside?.members(int.parse(l.id)) ?? 1) > 1;
+
   // The Order row inside a group, if its things go in turn by one (doc_order_of).
   int? _orderOf(Motolii m, int group) => m.things.where((c) => (m.value(c, 'parent', 0) ?? 0).round() == group && m.word(c, 'kind') == 'behaviour' && m.word(c, 'file') == 'order').firstOrNull;
 

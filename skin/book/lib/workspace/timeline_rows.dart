@@ -162,7 +162,7 @@ extension _WsTimelineRows on _WsTimelineState {
                       ? wsPickRange(ws, l.id) // (Shift: every row from the last picked to this, After Effects' manner)
                       : HardwareKeyboard.instance.isMetaPressed
                       ? wsPickAlso(ws, l.id) // (Cmd: one more, or one less)
-                      : l.kind == WsKind.group && l.id != ws.entered && _twice(l.id)
+                      : _roomy(ws, l) && l.id != ws.entered && _twice(l.id)
                       ? ws.enter(l.id)
                       : ws.select(l.id), // (a group's name pressed twice: into it)
                   onEye: () => _eye(ws, l.id),

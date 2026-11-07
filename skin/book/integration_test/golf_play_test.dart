@@ -97,6 +97,15 @@ void main() {
           m.set(t, 'size', .12);
           m.set(t, 'duration', 6);
         }
+      case 'scatter':   // (a small white circle with Alight Motion's Scatter Repeat on it, Count 20, Radius 300, as the check lays it (engine/check/scatter_repeat.sh): its copies to come out one by one by a row of its room)
+        final c = m.add('shape', 'circle');
+        m.set(c, 'size', .06);
+        m.set(c, 'duration', 6);
+        m.say(c, 'fill', 'ffffff');
+        m.later('fx_file', thing: c, word: '$motoliiDir/effects/scatter_repeat.am');
+        m.later('set', thing: c, name: 'js_scatter_repeat_count', number: 20);
+        m.later('set', thing: c, name: 'js_scatter_repeat_radius', number: 300);
+        await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 500)));
       default:
         throw StateError('no hole $_hole');
     }

@@ -233,6 +233,9 @@ static void picture_moment(Motolii* m) {
     w.Key("late"), w.StartObject();   // (how much later each of a group's things goes than its group, doc_group_delay; none here, on time. Here, all of them each moment, not in the document's picture: that one is not made again while a hand carries a value, and a From rested on is carried, its marks shown before it is pressed, golf (g73))
     for (int i = 0; i < n; ++i) if (const double late = doc_group_delay(d, things[i]); late > 0) w.Key(std::to_string(things[i]).c_str()), w.Double(late);
     w.EndObject();
+    w.Key("members"), w.StartObject();   // (how many each thing with more than one has: its copies, its letters (doc_members); the timeline enters it as it enters a group)
+    for (int i = 0; i < n; ++i) if (doc_word(d, things[i], "kind") != "behaviour") if (const int many = doc_members(d, things[i]); many > 1) w.Key(std::to_string(things[i]).c_str()), w.Int(many);
+    w.EndObject();
     w.EndObject();
     std::lock_guard<std::mutex> hold(m->pictureLock);
     ++m->momentVersion;
