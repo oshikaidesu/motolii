@@ -106,6 +106,20 @@ void main() {
         m.later('set', thing: c, name: 'js_scatter_repeat_count', number: 20);
         m.later('set', thing: c, name: 'js_scatter_repeat_radius', number: 300);
         await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 500)));
+      case 'copies':   // (the same, with no effect: a small white circle grouped as ⌘G groups it (workspace.dart), the group with Copies 20 and Scatter, a square as wide as Scatter Repeat's Radius 300 (.89 of the stage: 300 px); its copies each the circle (doc_dealt), to come out one by one by a row of its room)
+        final c = m.add('shape', 'circle');
+        m.set(c, 'size', .06);
+        m.set(c, 'duration', 6);
+        m.say(c, 'fill', 'ffffff');
+        final g = m.add('shape', 'null');
+        m.say(g, 'name', 'Group');
+        m.set(g, 'duration', 6);
+        m.set(g, 'element_length', 6);
+        m.set(c, 'parent', g.toDouble());
+        m.set(g, 'copies', 20);
+        m.set(g, 'scatter_x', .89);
+        m.set(g, 'scatter_y', .89);
+        await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 500)));
       default:
         throw StateError('no hole $_hole');
     }

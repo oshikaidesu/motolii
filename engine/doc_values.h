@@ -385,7 +385,7 @@ static const DocCard doc_cards[] = {
     {"Fill", "fill fill_media stroke stroke_width"},   // (After Effects' Fill and Stroke, Cavalry's Fill and Stroke: a colour, colours down it, or the material glass; its edge and how wide)
     {"Type", "split italic wrap wrap_at", "kind", "text"},   // (a text's, shown unasked, as Alight Motion keeps Edit Text among a text's tiles (AbsentMotion's LayerTools.kt): its slant, its lines broken in a box or set down the page, its letters or words each its own (the user, 11/5: more of a text's expression where it is picked))
     {"Gradient", "gradient gradient_angle gradient_scale gradient_spread", "fill", "~ ", true},
-    {"Copies", "copies copy_columns copy_x copy_y copy_rotate copy_rotate_x copy_rotate_y copy_turn copy_size copy_opacity_end copy_wide copy_z tall copy_tall copy_fill copy_fill_way", "shape", "!null", true},
+    {"Copies", "copies copy_columns copy_x copy_y copy_rotate copy_rotate_x copy_rotate_y copy_turn copy_size copy_opacity_end copy_wide copy_z tall copy_tall copy_fill copy_fill_way", nullptr, nullptr, true},   // (a group's too: its copies dealt to its things in turn, doc_dealt)
     {"Wave", "wave_x wave_y wave_z wave_rotate wave_size wave_speed wave_phase wave_noise noise_scale", nullptr, nullptr, true},
     {"Field", "field_x field_y field_z field_radius field_band field_size field_rotate field_push", nullptr, nullptr, true},
     {"Scatter", "scatter_x scatter_y scatter_z scatter_rotate scatter_size seed drift_x drift_y", nullptr, nullptr, true},

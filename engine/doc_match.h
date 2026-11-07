@@ -99,7 +99,8 @@ static bool doc_match(Doc& d) {
                 of += " written=" + std::to_string((long long)std::filesystem::last_write_time(file, wrong).time_since_epoch().count());
             }
     }
-    for (auto& [thing, of] : told) of += doc_bends(d, thing) ? " bent=1" : " bent=0";   // (bent or not: cut fine, or only round its curves)
+    for (auto& [thing, of] : told) of += doc_bends(d, thing) ? " bent=1" : " bent=0";
+    for (auto& [thing, of] : told) if (const DocDealt g = doc_dealt(d, thing); g.group) of += " dealt=" + std::to_string(g.share());   // (made again as its group's copies come, go or change in number: its share of them, doc_copies)   // (bent or not: cut fine, or only round its curves)
     for (const int row : doc_laid(d))   // (made again as an Opacity row in it comes or goes: its copies each drawn on their own, fx.together)
         if (doc_word(d, row, "file") == "order")
             if (const auto in = told.find((int)doc_number(d, row, "parent", 0, 0)); in != told.end() && in->second.find(" rowed") == std::string::npos && !doc_rows_of(d, in->first, "opacity").empty()) in->second += " rowed";
@@ -203,7 +204,7 @@ static bool doc_match(Doc& d) {
         fx.radial = doc_word(d, thing, "gradient") == "radial", fx.rampAngle = (float)doc_number(d, thing, "gradient_angle", 0, 0), fx.rampScale = (float)doc_number(d, thing, "gradient_scale", 0, 1);
         fx.spread = doc_word(d, thing, "gradient_spread") == "reflect" ? 1 : doc_word(d, thing, "gradient_spread") == "repeat" ? 2 : 0;
         const std::vector<AbsentCopy>& repeated = doc_absent_copies(d, thing, d.stage->now);
-        fx.copies = repeated.empty() ? (int)doc_number(d, thing, "copies", 0, 1) : (int)repeated.size();   // (as many as AbsentMotion's repeat lays, as doc_members says)
+        fx.copies = repeated.empty() ? doc_copies(d, thing) : (int)repeated.size();   // (as many as AbsentMotion's repeat lays, as doc_members says; in a group with copies, its share of them)
         {   // (its copies drawn in one go where none is cleared of its own (no script that says opacity) and their colours are a ramp flat.mat knows; a picture's own 3D layers neither)
             const std::string fills = doc_word(d, thing, "copy_fill"), script = doc_word(d, thing, "script");
             std::istringstream said(fills);
@@ -352,7 +353,7 @@ static bool doc_match(Doc& d) {
             else if (!shape.empty()) {
                 made.sketch = shape == "sketch";
                 made.shape = made.sketch ? sketch_mesh() : shape == "gem" ? gem(0.5f) : shape == "cube" ? cube(0.1f) : shape == "ball" ? sphere(0.5f) : torus(0.37f, 0.13f);
-                MaterialInstance* look = glass ? thick_glass(s, made.shape, {mat4f{}}) : add(s, made.shape, made.sketch ? "sketch.filamat" : model, std::vector<mat4f>((size_t)std::max(1, (int)doc_number(d, thing, "copies", 0, 1)), mat4f{}));
+                MaterialInstance* look = glass ? thick_glass(s, made.shape, {mat4f{}}) : add(s, made.shape, made.sketch ? "sketch.filamat" : model, std::vector<mat4f>((size_t)doc_copies(d, thing), mat4f{}));
                 made.look = look;
                 if (look && glass) glassy(look);
                 if (look && made.sketch) for (int i = 0; i < 6; ++i) look->setParameter(("picture" + std::to_string(i)).c_str(), white_point(s), TextureSampler());
@@ -373,7 +374,7 @@ static bool doc_match(Doc& d) {
                 made.look = look;
                 if (!look) made.shape = nullptr; else glassy(look);
             }
-            else if ((made.solid = solid(s, file.c_str(), mat4f{}, 1.f, (int)doc_number(d, thing, "copies", 0, 1))) && rgb >= 0) solid_fill(s, made.solid, colour, surface, model);
+            else if ((made.solid = solid(s, file.c_str(), mat4f{}, 1.f, doc_copies(d, thing))) && rgb >= 0) solid_fill(s, made.solid, colour, surface, model);
             if (made.solid) s.playing.erase(made.solid);   // (the document tells it its moment)
         } else why = std::string("its kind is one of: ") + doc_kinds;
         if (made.celMove && !made.drawn) {   // (a level at a ×, or at a drawing it lacks: kept, nothing shown, so that its next drawing is seen)

@@ -185,7 +185,8 @@ static math::mat4 doc_place(Doc& d, int thing, double now, int deeper, int copy,
                 }
             }
         }
-    const math::mat4 above = doc_above(d, thing, now, deeper), there = above * math::mat4::translation(math::double3{doc_literal(d, thing, "x", now, 0), doc_literal(d, thing, "y", now, 0), doc_literal(d, thing, "z", now, 0)});
+    const DocDealt dealt = member ? doc_dealt(d, thing) : DocDealt{};   // (one of its group's copies: on that copy's place, as its group's thing is on its group's, doc_above)
+    const math::mat4 above = dealt.group ? doc_place(d, dealt.group, now - doc_group_delay(d, thing), deeper + 1, dealt.nth + copy * dealt.of, true) : doc_above(d, thing, now, deeper), there = above * math::mat4::translation(math::double3{doc_literal(d, thing, "x", now, 0), doc_literal(d, thing, "y", now, 0), doc_literal(d, thing, "z", now, 0)});
     math::mat4 helped;   // (Alight Motion's Parenting Helper, as bevy_alight_motion works it (MIT/Apache-2.0, src/animation/parenthelper.rs): its parent's turn and size taken by their weights, and a wheel's roll)
     if (const double wr = doc_literal(d, thing, "parent_rotate", now, 1), ws = doc_literal(d, thing, "parent_size", now, 1); doc_literal(d, thing, "parent", 0, 0) != 0.0 && (wr != 1.0 || ws != 1.0)) {
         const math::double3 ax = above[0].xyz;

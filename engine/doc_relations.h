@@ -300,11 +300,35 @@ static double doc_absent_opacity(Doc& d, int thing, double now) {
     const double begins = doc_literal(d, thing, "start", 0, 0), lasts = doc_literal(d, thing, "duration", 0, -1);
     return absent_opacity(doc_absent_on(d, thing, now), thing, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * now);
 }
+// A thing straight in a group with copies: it draws the group's copies dealt to its things in turn, 1 2 3 1 2 3...
+// (docs/notes/GROUP_FOCUS_new.md 268: 子の順にくり返す; Cinema 4D's Cloner in Iterate mode; Blender's particles shown
+// as a Collection, Use Count): the group, its place among the group's things (counted as doc_group_delay counts them),
+// how many things, how many copies. Its jth copy is the group's (nth + j x of)th. None (group 0): in none with copies,
+// a thing with copies of its own (its own are its members), or one past the group's last copy.
+struct DocDealt {
+    int group = 0, nth = 0, of = 1, n = 1;
+    int share() const { return (n - nth + of - 1) / of; }
+};
+static DocDealt doc_dealt(Doc& d, int thing) {
+    const int group = (int)doc_number(d, thing, "parent", 0, 0);
+    if (group <= 0 || doc_word(d, group, "shape") != "null" || doc_word(d, thing, "kind") == "behaviour" || doc_literal(d, thing, "copies", 0, 1) > 1) return {};
+    const int n = (int)doc_literal(d, group, "copies", 0, 1);
+    if (n < 2) return {};
+    int nth = -1, of = 0;
+    for (const int t : doc_laid(d))
+        if ((int)doc_number(d, t, "parent", 0, 0) == group && doc_word(d, t, "kind") != "behaviour") nth = t == thing ? of : nth, ++of;
+    return nth < 0 || nth >= n ? DocDealt{} : DocDealt{group, nth, of, n};
+}
+// How many of itself a thing draws: its own copies, or its share of its group's (doc_dealt).
+static int doc_copies(Doc& d, int thing) {
+    if (const DocDealt g = doc_dealt(d, thing); g.group) return g.share();
+    return std::max(1, (int)doc_literal(d, thing, "copies", 0, 1));
+}
 static int doc_members(Doc& d, int thing) {
     const auto t = d.shown.find(thing);
     if (t != d.shown.end() && t->second.drawn && !t->second.drawn->letters.empty()) return (int)t->second.drawn->letters.size();
     if (const std::vector<AbsentCopy>& copies = doc_absent_copies(d, thing, d.stage->now); !copies.empty()) return (int)copies.size();   // (as many as AbsentMotion's repeat lays)
-    return std::max(1, (int)doc_literal(d, thing, "copies", 0, 1));
+    return doc_copies(d, thing);
 }
 // How much later the nth of n moves than it is said to (its copies, its letters, a group's things): the stagger each,
 // as many times as it is steps from where the order starts. GSAP's stagger as a number, `stagger: 0.1`, "0.1 seconds
@@ -467,7 +491,7 @@ static bool doc_physics(Doc& d, int thing, double now, PhysPose* pose, int copy 
 // as its place in the wave says), or as itself: the stage and whoever asks how it moves (motolii_path) place it alike.
 static bool doc_staggered(Doc& d, int thing, double now) {
     if (const DocScript* sc = doc_script_of(d, doc_literal_word(d, thing, "script")); sc && sc->run && sc->run->sketch()) return true;   // (one box in a sketch is placed by the sketch all the same)
-    return doc_members(d, thing) > 1 || doc_number(d, thing, "stagger", 0, 0) > 0.0 || doc_number(d, thing, "wave_x", now, 0) != 0.0 || doc_number(d, thing, "wave_y", now, 0) != 0.0 || doc_number(d, thing, "wave_rotate", now, 0) != 0.0 || doc_number(d, thing, "wave_size", now, 0) != 0.0 || doc_number(d, thing, "field_radius", now, 0) > 0.0 || doc_number(d, thing, "scatter_x", now, 0) > 0.0 || doc_number(d, thing, "scatter_y", now, 0) > 0.0 || doc_number(d, thing, "scatter_rotate", now, 0) > 0.0 || doc_number(d, thing, "scatter_size", now, 0) > 0.0;
+    return doc_members(d, thing) > 1 || doc_dealt(d, thing).group || doc_number(d, thing, "stagger", 0, 0) > 0.0 || doc_number(d, thing, "wave_x", now, 0) != 0.0 || doc_number(d, thing, "wave_y", now, 0) != 0.0 || doc_number(d, thing, "wave_rotate", now, 0) != 0.0 || doc_number(d, thing, "wave_size", now, 0) != 0.0 || doc_number(d, thing, "field_radius", now, 0) > 0.0 || doc_number(d, thing, "scatter_x", now, 0) > 0.0 || doc_number(d, thing, "scatter_y", now, 0) > 0.0 || doc_number(d, thing, "scatter_rotate", now, 0) > 0.0 || doc_number(d, thing, "scatter_size", now, 0) > 0.0;
 }
 // How far a thing that turns the way it goes (orient) is turned by it at a moment, radians about z: the way its keys
 // carry it then; standing still, the way it last went or will go. 0 for any other.
