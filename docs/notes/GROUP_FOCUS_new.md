@@ -21,6 +21,7 @@ Motolii は、グループを**違う物の配列**として扱う。1 つにま
 ![4 1 匹だけ](../media/group_op4.png)
 ![歌詞 1](../media/group_op_lyric.png)
 ![歌詞 2](../media/group_op_lyric2.png)
+![扇](../media/group_op_fan.png)
 ![札](../media/group_op_tags.png)
 ![3000 個](../media/group_op_many.png)
 ![Scatter Repeat](../media/group_op_scatter.png)
@@ -203,10 +204,10 @@ Motolii では 2 つに分ける。並べるのは Copies、動かすのはグ�
 | グループの割る（子ごと・一番中まで）、要素の ×数 | まだ無い。グループに Copies が付くかは確かめていない |
 | 文字の縦書き・ルビ | 文字のカードに無い（Font・Alignment・Line gap・Paragraph だけ） |
 | Copies のカードの `stagger`・`stagger_from` | 順番を Copies が持っている。段の行に移す |
-| 曲に合わせる | タイムラインに音の波形が無い。吸い付くのは拍とマーカーだけ |
 | 「＋ 動き」の見本 | まだ無い |
 | Scatter Repeat は Copies＋Scatter | 散らしは四角（doc_place.h `scatter_x`）。Alight は円（engine/absent_motion.cpp `scatter_repeat` は円で読む） |
 
-合っている物：段が上から下りる、縁で高さ、段の色、名指しの子が段に出る（d5384a68b・2f5a09e36）、舞台の順番の番号（d71481bdf）。
+合っている物：段が上から下りる、縁で高さ、段の色、名指しの子が段に出る（d5384a68b・2f5a09e36）、舞台の順番の番号（d71481bdf）、
+曲に合わせる：動画のバーに音の大きさが出て、拍はルーラーの目盛り（a0e252e96・1397e4da4、Alight の帯の波形）。
 使えそうな物：behaviour の file "group" は、自分の y のキーを i 番目ごとに遅らせて読み、各子に足している
 （doc_relations.h `doc_related`）。doc_order_delay は start・centre・end・edges・random を持つ。
