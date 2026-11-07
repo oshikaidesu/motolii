@@ -176,6 +176,7 @@
 | タスク表 | `docs/notes/TASKS.md` | — |
 | グループのインスペクター（オーナーのメモ） | `docs/notes/GROUP_INSPECTOR.md` | — |
 | グループの仕様（何を解くか・段の行 3 種・例・真似しない物・今のコードとの違い） | `docs/notes/GROUP_FOCUS_new.md` | 書いた（11/7） |
+| グループの疑問と文句の表（誰が・何を・仕様のどこで答えたか・済か） | `docs/notes/GROUP_QUESTIONS.md` | 書いた（11/7） |
 | Motolii 自身のライセンス（Apache-2.0 か MIT を選べる、過去の倉庫 rust_ae と同じ文書） | `LICENSE-APACHE`、`LICENSE-MIT` | 決めた（10/27） |
 | 関わり方（Issue・PR・台帳と出典の決まり・知っている穴） | `CONTRIBUTING.md` | 書いた（10/27） |
 | 取ってくる物の小さなスクリプト：Filament の組み立て済み SDK（前の試しのスクリプトが使う）、MIDI ビューの PianoRollSvg.js | `engine/sdk.sh`、`engine/midi_roll.sh` | 空の所から取れることを確かめた（10/27） |

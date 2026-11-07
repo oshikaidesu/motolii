@@ -9,6 +9,7 @@
 // and finds NN.png written after the NNth (00.png: the hole as it begins). result.txt is the hole's answer, for the one
 // who counts.
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' show ImageByteFormat;
 
 import 'package:flutter/gestures.dart' show PointerDeviceKind, PointerScrollEvent, kSecondaryButton;
@@ -62,6 +63,38 @@ void main() {
           final t = m.add(kind, file);
           m.set(t, 'x', x);
           m.set(t, 'size', size);
+          m.set(t, 'duration', 6);
+        }
+      case 'fish':   // (nine circles in a row, nothing done to them: a school to group and move one by one, GROUP_FOCUS_new.md's スイミー)
+        for (var i = 0; i < 9; i++) {
+          final t = m.add('shape', 'circle');
+          m.set(t, 'x', -1.6 + .4 * i);
+          m.set(t, 'size', .12);
+          m.set(t, 'duration', 6);
+        }
+      case 'lyric':   // (a line of lyrics, one letter a thing, as a split will make it: TextoN's way, GROUP_FOCUS_new.md「文字」)
+        const line = '君の名前を呼んだ';
+        for (var i = 0; i < line.length; i++) {
+          final t = m.add('text', '/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc');
+          m.say(t, 'text', line[i]);
+          m.set(t, 'x', -1.05 + .3 * i);
+          m.set(t, 'size', .3);
+          m.set(t, 'duration', 6);
+        }
+      case 'tags':   // (a 3D helmet and six 2.5D tags around it, standing in the world facing the camera)
+        final home = Directory(motoliiDir).parent.path;
+        final helmet = m.add('solid', '$home/research_notes/hosts/bin-v8/examples/assets/DamagedHelmet.glb');
+        m.set(helmet, 'size', .6);
+        m.set(helmet, 'duration', 6);
+        for (final (i, word) in const ['バイザー', '通気口', '顎紐', 'ヒンジ', '耳当て', '後頭部'].indexed) {
+          final t = m.add('text', '/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc');
+          m.say(t, 'text', word);
+          m.say(t, 'space', '2.5d');
+          final a = i * math.pi / 3;
+          m.set(t, 'x', .75 * math.cos(a));
+          m.set(t, 'y', .45 * math.sin(a));
+          m.set(t, 'z', .3 * math.sin(a + .7));
+          m.set(t, 'size', .12);
           m.set(t, 'duration', 6);
         }
       default:
