@@ -186,6 +186,7 @@
 | 組み立てに要る Homebrew の物の一覧（Homebrew Bundle の書き方、`brew bundle` で入る）と、試験だけが使う物 | `Brewfile`、`Brewfile.checks` | 新しいクローンで組んで確かめた（10/27） |
 | 同梱した他の人の作品の一覧と断り書き（AviUtl2 の 172、ISF・three.js・PlayCanvas の効果、取ってくる依存）。PlayCanvas の効果のライセンスの文書 | `THIRD_PARTY_NOTICES.md`、`engine/effects/playcanvas-LICENSE.txt`、`vgpu-LICENSE.txt`、`phosphor-LICENSE.txt`、`SlitScanCam-LICENSE.txt`、`three-LICENSE.txt` | 書いた（10/27） |
 | この台帳と、その見張り（コミットの前に走る） | `ASSETS.md`、`.githooks/assets_check.py`、`.githooks/pre-commit` | 今の土台で動く |
+| 依頼のたびに、仕様書 `docs/notes/GROUP_FOCUS_new.md` の頭の「いまの考え」を Claude Code に読ませるフック（UserPromptSubmit） | `.claude/settings.json`、`.claude/hooks/concept.sh` | 動く（11/8、Claude Code で確かめた） |
 | 入口の紙 | `README.md` | — |
 
 ## 7. 実験と調べ物（結果だけ使う。作り直さない）
