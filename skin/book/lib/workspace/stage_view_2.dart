@@ -735,7 +735,10 @@ class _StageViewState extends State<StageView> implements StageHandles {
                 : _lasso != null
                 ? setState(() => _lasso!.add(d.localPosition))
                 : _drawFrom != null
-                ? setState(() => _penWay?.add(_last = d.localPosition))
+                ? setState(() {
+                    _last = d.localPosition;   // (where the hand is, for every tool: inside `_penWay?.add(…)` it was skipped with the pen's list, and a rect was made where the hand came down)
+                    _penWay?.add(d.localPosition);
+                  })
                 : _pulling != null
                 ? (widget.cursor.value = v.toComp(_last = d.localPosition))
                 : _carry(v, _last = d.localPosition),
