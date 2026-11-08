@@ -194,6 +194,19 @@ extension MotoliiQuestions on Motolii {
     return all;
   });
 
+  /// A group's copies' own x, y and z as its keys and each one's share of their spread say (motolii_apart): [n] moments
+  /// from [from] to before [to], three numbers each, the values its keys hold, not where it lies on the stage. In their
+  /// order, null where there is no such thing. Its lane's curves: one where nothing is spread.
+  Future<List<List<double>?>> aparts(int thing, List<int> copies, {double from = 0, required double to, int n = 60}) => _ask((l, m) {
+    final out = malloc<Double>(3 * n), b = c.MotoliiBindings(l);
+    final all = [
+      for (final copy in copies)
+        if (b.motolii_apart(m, thing, copy, from, to, n, out) case final got when got > 0) [for (var i = 0; i < 3 * got; i++) out[i]] else null,
+    ];
+    malloc.free(out);
+    return all;
+  });
+
   /// A question of the inside (skin/BRIDGE.md Q): asked on another isolate, the window does not wait for its answer.
   Future<T> _ask<T>(T Function(DynamicLibrary lib, _P m) ask) {
     final lib = libPath, at = _m.address;

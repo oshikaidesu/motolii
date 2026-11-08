@@ -42,14 +42,15 @@ extension _WsTimelineHand on _WsTimelineState {
     ws.pickStretch(r.l.id, name, from);
   }
 
-  // A group's stretch pressed: the three modes, then the existing Ease desk. Value and time are of the array, so only here.
+  // A group's stretch pressed: three small boxes where it was pressed, each a picture of what it works (the user's
+  // drawing, 11/8: graph D's stretch, three boxes out of it; their pictures graphs A, C, B), then the existing Ease desk.
+  // Value and time are of the array, so only here.
   void _offer(Ws ws, WsLayer l, String name, int from, Offset p) {
-    setState(() => _offered = (layer: l.id, name: name, from: from));
+    _offering((layer: l.id, name: name, from: from));
+    const steps = {WsEaseMode.stretch: Offset.zero, WsEaseMode.value: Offset(0, .1), WsEaseMode.time: Offset(.1, 0)};
     _trackMenu.currentState?.show(p, [
-      WsMenuItem('区間イージング', () => ws.pickStretch(l.id, name, from)),
-      WsMenuItem('値のズレ', () => ws.pickStretch(l.id, name, from, mode: WsEaseMode.value)),
-      WsMenuItem('時間のズレ', () => ws.pickStretch(l.id, name, from, mode: WsEaseMode.time)),
-    ], shut: () => mounted ? setState(() => _offered = null) : null);
+      WsMenuItem.pictures([for (final s in steps.values) CustomPaint(painter: EaseSpreadIcon(s, Grey.g91))], (k) => ws.pickStretch(l.id, name, from, mode: steps.keys.elementAt(k))),
+    ], shut: () => mounted ? _offering(null) : null);
   }
 
   void _trackDown(Offset p) {
@@ -109,7 +110,10 @@ extension _WsTimelineHand on _WsTimelineState {
     final ws = _ws!, v = _view, m = ws.inside;
     final r = _rowAt(p.dy);
     if (m == null || r == null) return false;
-    if (r.value != null) return true;   // (a lane: nothing carried, and no box drawn from it)
+    if (r.value != null) {   // (a lane: nothing carried, and no box drawn from it; a key of a group's place, how far apart there)
+      _pullApart(ws, r, p);
+      return true;
+    }
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);
     final off = p.dx < a - 6 || p.dx > b + 6;
     if (_isLocked(_ws!, l.id) || (off && !_onPale(ws, l, p))) return false;

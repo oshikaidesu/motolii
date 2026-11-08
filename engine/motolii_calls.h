@@ -97,6 +97,25 @@ int motolii_path3(Motolii* m, int thing, int copy, double from, double to, int n
         return n;
     });
 }
+// A group's copy's own x, y and z as its place reads them (doc_apart: its keys', each copy so much later and
+// higher or lower as its share of the spread says), at n moments from `from` to before `to`: three numbers each, the
+// values its keys hold, not where it lies on the stage. All its copies alike where nothing is spread. Its lane's curves.
+int motolii_apart(Motolii* m, int thing, int copy, double from, double to, int n, double* xyz) {
+    return by_look(m, [=] {
+        if (!doc_knows(doc(m), thing) || n < 1) return 0;
+        Doc& d = *m->d;
+        const int many = doc_members(d, thing), was = d.ctxCopy, wasN = d.ctxN;
+        const bool spreads = many > 1 && doc_word(d, thing, "shape") == "null", wasHas = d.ctxHasAt;
+        d.ctxCopy = copy, d.ctxN = many, d.ctxHasAt = false;   // (which copy, as doc_place tells a behaviour: told back after)
+        for (int i = 0; i < n; ++i) {
+            const double at = from + (to - from) * i / n;
+            const math::double3 v = doc_apart3(d, thing, spreads, copy, many, at - doc_delay(d, thing, copy), at);
+            xyz[3 * i] = v.x, xyz[3 * i + 1] = v.y, xyz[3 * i + 2] = v.z;
+        }
+        d.ctxCopy = was, d.ctxN = wasN, d.ctxHasAt = wasHas;
+        return n;
+    });
+}
 int motolii_keying(Motolii* m, int on) {   // (on below 0: only says whether every change is keyed: a read, answered at once, not queued behind the hand's picture)
     if (on < 0) return (int)m->keying.load();
     m->keying = on != 0;   // (said at once; the document told in the hand's turn, without waiting)

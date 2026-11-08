@@ -85,6 +85,45 @@ class MotoliiBindings {
   late final _motolii_answer_why = _motolii_answer_whyPtr
       .asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
 
+  int motolii_apart(
+    ffi.Pointer<Motolii> m,
+    int thing,
+    int copy,
+    double from,
+    double to,
+    int n,
+    ffi.Pointer<ffi.Double> xyz,
+  ) {
+    return _motolii_apart(m, thing, copy, from, to, n, xyz);
+  }
+
+  late final _motolii_apartPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Int Function(
+            ffi.Pointer<Motolii>,
+            ffi.Int,
+            ffi.Int,
+            ffi.Double,
+            ffi.Double,
+            ffi.Int,
+            ffi.Pointer<ffi.Double>,
+          )
+        >
+      >('motolii_apart');
+  late final _motolii_apart = _motolii_apartPtr
+      .asFunction<
+        int Function(
+          ffi.Pointer<Motolii>,
+          int,
+          int,
+          double,
+          double,
+          int,
+          ffi.Pointer<ffi.Double>,
+        )
+      >();
+
   int motolii_asked(ffi.Pointer<Motolii> m) {
     return _motolii_asked(m);
   }

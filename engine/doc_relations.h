@@ -353,6 +353,15 @@ static double doc_stagger_ease(Doc& d, int thing, const char* name, double u) {
     if (interp_said(way.c_str(), &kind) == 0) return interp_ease(kind, u);
     return doc_way_named(d, way) ? doc_went_by(d, way, u, u, 1.0, 0.0, 1.0) : u;
 }
+// Where the kth of n of a group's things stands in its spread, -1 to 1: in their order, evenly, the middle one 0, on the
+// key's own line (the user, 11/8, graphs B and C: 順番に等間隔、白い線が真ん中, for now). The one place a spread is
+// dealt out (doc_place): another way of dealing it goes here, and nowhere else.
+static double doc_spread_share(int k, int n) { return n > 1 ? 2.0 * k / (n - 1) - 1.0 : 0.0; }
+// Where the kth of n stands in its time spread, 0 to 1: in their order, evenly, the first on the key's own line and
+// leaving at the key, the rest later in turn, the last the whole of it later (the user, 11/8: 先頭が白い線、あとの子は
+// 順に遅れる; GSAP's stagger, from index 0 by default, "the closer it is, the sooner it'll begin"). Centred as a spread
+// is, half would leave before the key and none could come on one after another. The one place it is dealt (doc_apart).
+static double doc_lag_share(int k, int n) { return n > 1 ? (double)k / (n - 1) : 0.0; }
 static double doc_order_delay(Doc& d, int thing, int nth, int n, const char* eachName = "stagger", const char* fromName = "stagger_from") {
     const double each = doc_literal(d, thing, eachName, 0, 0);
     if (each <= 0.0 || n < 2) return 0.0;

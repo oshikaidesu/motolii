@@ -19,6 +19,10 @@ static bool doc_knows(Doc& d, int thing, const char* name = nullptr, const doubl
         if (doc_knows(d, thing, base.c_str())) v = &looped;
         d.trouble.clear();
     }
+    static const DocValue apart{"_apart", "shape", -1e6, 1e6, true, nullptr};   // (a group's things apart, as each key of its place says: `x_spread` so much higher and lower, `x_lag` so many seconds later from the first to the last, dealt by doc_spread_share and doc_lag_share. GROUP_FOCUS_new.md いまの考え; After Effects' text animator, its Amount keyed apart from its Shape)
+    if (!v && doc_word(d, thing, "shape") == "null")
+        for (const char* end : {"_spread", "_lag"})
+            if (const size_t k = strlen(name), e = strlen(end); k > e && !strcmp(name + k - e, end) && doc_among("x y z", std::string(name, k - e))) v = &apart;
     if (!v && !strncmp(name, "js_", 3) && doc_among("film picture text shape solid stage camera behaviour", kind))   // (a knob of the thing's script; a camera's motion's, golf ㊴)
         for (const DocScript* sc : doc_scripts_on(d, thing))
             for (const DocValue& one : sc->values)

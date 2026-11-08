@@ -477,7 +477,7 @@ class WtTracksPainter extends CustomPainter {
         if (one.isEmpty) continue;
         final p = Path()..moveTo(view.x(one.first.$1), top + (1 - one.first.$2) * h);
         for (final q in one.skip(1)) {
-          p.lineTo(view.x(q.$1), (top + (1 - q.$2) * h).clamp(top - 3, top + h + 3));
+          p.lineTo(view.x(q.$1), top + (1 - q.$2) * h);   // (within the lane as it is measured; past it only while a key is pulled apart, as the hand is)
         }
         c.drawPath(p, ink);
       }

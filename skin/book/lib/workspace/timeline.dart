@@ -1,6 +1,7 @@
 // The workspace's Timeline seat: transport + timecode on top, layer labels beside the track area, a ruler with the work area, the playhead.
 // The document lives in Ws; this seat keeps only how it looks at it (zoom, scroll, loop, the row toggles, the work area).
 import 'package:lab_book/workspace/desk_ease_cards.dart' show easeCurve;
+import 'package:lab_book/workspace/desk_ease_presets.dart' show EaseSpreadIcon;
 import 'dart:async' show Timer;
 import 'dart:developer' show Timeline;
 import 'dart:math' as math;
@@ -29,6 +30,7 @@ import '../sets/foundations/text_hand.dart';
 part 'timeline_asked.dart';
 part 'timeline_view.dart';
 part 'timeline_hand.dart';
+part 'timeline_apart.dart';
 part 'timeline_rows.dart';
 part 'timeline_ruler.dart';
 part 'timeline_snap.dart';
@@ -116,25 +118,23 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
 
   // A group's stretch pressed on its lane, while what of it to work on is asked (_offer): lit as a picked one is.
   ({String layer, String name, int from})? _offered;
+  void _offering(({String layer, String name, int from})? o) => setState(() => _offered = o);
 
-  // The entered group's instances, each its own way over the group's bar as the inside places it (motolii_path: its
-  // things, the copies dealt them, each as late as it goes): asked again only when the document, or the group's keys of
-  // x and y and their ways, change, as the stage's motion path is (stage_view_2.dart _trailOf). Four numbers a moment,
-  // _crowdN moments; at most _crowdMost of them, every so many in their order.
+  // The entered group's copies, each its own curve of the values the group's keys hold as its share of their spread
+  // says (motolii_apart: so much later and higher or lower, doc_apart): the white line's own measure, so one
+  // curve where nothing is spread (GROUP_FOCUS_new.md いまの考え: 両方のズレが 0 なら 1 本), its things' own places left
+  // out. Asked again only when the document, or the group's keys and their ways, change, as the stage's motion path is
+  // (stage_view_2.dart _trailOf). Three numbers a moment, _crowdN moments; at most _crowdMost of them, every so many in
+  // their order, the last one too (the fan's far edge).
   static const _crowdMost = 128, _crowdN = 120;
   (Object?, List<List<double>>?) _crowd = (null, null);
   List<List<double>>? _instancesOf(Ws ws, WsLayer g) {
-    final m = ws.inside!, t = int.parse(g.id);
-    final key = (ws.rev, g.id, g.inF, g.outF, [for (final n in const ['x', 'y']) for (final a in m.keyMoments(t, n)) '$n $a ${m.wayOf(t, n, a)}', for (final n in const ['x', 'y']) ...m.keyValues(t, n), m.value(t, 'stagger', 0), m.wayOf(t, 'stagger', 0), for (final c in m.things) if ((m.value(c, 'parent', 0) ?? 0).round() == t) '${m.value(c, 'x', 0)} ${m.value(c, 'y', 0)}'].join(';'));
+    final m = ws.inside!, t = int.parse(g.id), n = math.max(1, m.members(t));
+    final key = (ws.rev, g.id, g.inF, g.outF, n, [for (final a in const ['x', 'y', 'z']) for (final b in const ['', '_spread', '_lag']) ...[for (final k in m.keyMoments(t, '$a$b')) '$a$b $k ${m.wayOf(t, '$a$b', k)}', ...m.keyValues(t, '$a$b')]].join(';'));
     if (_crowd.$1 != key) {
       _crowd = (key, null);
-      final who = [
-        for (final c in m.things)
-          if ((m.value(c, 'parent', 0) ?? 0).round() == t && m.word(c, 'kind') != 'behaviour')
-            for (var j = 0; j < math.max(1, m.members(c)); j++) (c, j),
-      ];
-      final every = math.max(1, (who.length / _crowdMost).ceil());
-      m.paths([for (var i = 0; i < who.length; i += every) who[i]], from: g.inF / Ws.fps, to: g.outF / Ws.fps, n: _crowdN).then((all) {
+      final every = math.max(1, (n / _crowdMost).ceil());
+      m.aparts(t, [for (var j = 0; j < n; j += every) j, if ((n - 1) % every != 0) n - 1], from: g.inF / Ws.fps, to: g.outF / Ws.fps, n: _crowdN).then((all) {
         if (mounted && _crowd.$1 == key) setState(() => _crowd = (key, [for (final p in all) ?p]));
       });
     }
@@ -148,21 +148,23 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     if (_crowdLanes[name] case (final c, final a, final b, final kept) when identical(c, crowd) && a == lo && b == hi) return kept;
     double norm(double v) => hi > lo ? (v - lo) / (hi - lo) : .5;
     final laid = [
-      for (final p in crowd) [for (var i = 0; 4 * i + axis < p.length; i++) (g.inF + (g.outF - g.inF) * i / _crowdN, norm(p[4 * i + axis]))],
+      for (final p in crowd) [for (var i = 0; 3 * i + axis < p.length; i++) (g.inF + (g.outF - g.inF) * i / _crowdN, norm(p[3 * i + axis]))],
     ];
     _crowdLanes[name] = (crowd, lo, hi, laid);
     return laid;
   }
 
   // A value's lane: its keys where they are and what they hold, read from the document's picture (nothing asked of the inside).
-  // (the entered group's x and y: its instances laid over it, as many curves as there are, the lane as tall as they all
-  //  reach; GROUP_FOCUS: グループタイムラインビュー＝配列対応グラフビュー)
+  // (the entered group's x, y and z: its copies laid over it, as many curves as there are, the lane as tall as they all
+  //  reach, held as it was while a key of it is pulled apart, so the bundle opens under the hand as on the stage;
+  //  GROUP_FOCUS: グループタイムラインビュー＝配列対応グラフビュー)
   WtRow _laneRow(Ws ws, WsLayer l, String name, {double? tall}) {
     final m = ws.inside!, t = int.parse(l.id), at = m.keyMoments(t, name), vs = m.keyValues(t, name);
-    final n = math.min(at.length, vs.length), axis = const {'x': 0, 'y': 1}[name];
+    final n = math.min(at.length, vs.length), axis = const {'x': 0, 'y': 1, 'z': 2}[name];
     final crowd = l.kind == WsKind.group && l.id == ws.entered && axis != null ? _instancesOf(ws, l) : null;
-    final all = [...vs.take(n), for (final p in crowd ?? const <List<double>>[]) for (var i = axis ?? 0; i < p.length; i += 4) p[i]];
-    final lo = all.fold(double.infinity, math.min), hi = all.fold(-double.infinity, math.max);
+    final all = [...vs.take(n), for (final p in crowd ?? const <List<double>>[]) for (var i = axis ?? 0; i < p.length; i += 3) p[i]];
+    final (lo, hi) = switch (_apart) { final a? when a.thing == t && a.name == name => a.span, _ => (all.fold(double.infinity, math.min), all.fold(-double.infinity, math.max)) };
+    _laneSpan['${l.id}:$name'] = (lo, hi);
     final on = switch (ws.stretch) { final s? when s.layer == l.id && s.name == name => s.from, _ => _offered?.layer == l.id && _offered?.name == name ? _offered!.from : null };
     return WtRow(
       name: name,
@@ -294,6 +296,13 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
   // bars it touches (Ableton's and After Effects' marquee). Corners, in the tracks' own points.
   (Offset, Offset)? _box;
 
+  // A key of the entered group's place pulled on its lane (timeline_apart.dart): which, from where, a pixel's worth of
+  // its value, the amount it pulls (none until the first pixels say which), and what that held at the key.
+  ({int thing, String name, double at, Offset from, (double, double) span, double perPx, String? amount, double was})? _apart;
+  bool _apartGoing = false;
+  double? _apartNext;
+  final _laneSpan = <String, (double, double)>{};   // (each lane's lowest and highest as last drawn: a pixel's worth of its value)
+
   void _barDown(Offset p) {
     if (_onGrip(p.dy)) {   // (the room's edge taken: Live's Clip View sized by its border)
       _gripFrom = (p.dy, _panelH);
@@ -328,6 +337,7 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
 
   void _barMove(Offset p) {
     if (_gripFrom != null) return _gripTo(p.dy);
+    if (_apart != null) return _pullApartTo(p);
     if (_box case (final from, _)?) return setState(() => _box = (from, p));
     if (_slide case final s?) {
       final by = _rested(_view.frameAt(p.dx).round() - s.grab, [s.grab]);
@@ -352,6 +362,7 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
 
   void _barUp({bool keep = true}) {
     if (_gripFrom != null) return _gripUp();
+    if (_apart != null) return _pullApartUp(keep);
     if (_restAt != null) setState(() => _restAt = null);
     if (_box != null) return keep ? _boxUp() : setState(() => _box = null);
     if (_slide case final s?) {

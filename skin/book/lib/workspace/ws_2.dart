@@ -308,11 +308,6 @@ class Ws extends ChangeNotifier {
   WsStretchPicked? get stretch => _stretch;
   WsEaseMode _easeMode = WsEaseMode.stretch;
   WsEaseMode get easeMode => _easeMode;
-  set easeMode(WsEaseMode m) {
-    if (_easeMode == m) return;
-    _easeMode = m;
-    _tell(WsAspect.picked);
-  }
   WsStretchPicked? _stretchOf(String layer, String name, int from) {
     final t = int.tryParse(layer), at = t == null ? const <double>[] : _inside?.keyMoments(t, name) ?? const <double>[];
     final i = at.indexWhere((s) => (s * Ws.fps).round() == from);
