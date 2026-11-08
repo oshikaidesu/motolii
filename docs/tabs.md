@@ -16,7 +16,7 @@
 | **Effects** | エフェクトと、Trim Paths などの機能。同梱の物と、自分で `~/Library/Application Support/Motolii/effects` に置いた物 | レイヤーを選んで、タイルを押し、下の **Add**。タイルにポインタを乗せると見本が動きます。`#time` などのタグで絞れます |
 | **Fonts** | Mac に入っている書体と、プロジェクトのフォルダに置いた書体。上の **Title** と **Body** は、見出しと本文に使う 2 つ（PowerPoint のテーマのフォントと同じ考え） | 文字のレイヤーを選んで書体を押し、**Apply**。文字のレイヤーを選んでいなければ **Place** で新しく置きます |
 | **Colors** | 選んだレイヤーの塗り（Solid・Gradient・None）、色の輪、パレット | **Sample**：画面のどこからでも色を取る（Mac のスポイト）。**Keep**：このプロジェクトで使った色を自分のパレットに。**Photo**：Media で選んだ写真から色を取る |
-| **Create** | レシピ（作例）、レイヤー（Text・Camera・Null・Adjustment）、図形、Repeater（コピー）、立体（Ring・Gem・Cube・Floor・Ball）、Glass、光（Sun・Point・Spot） | タイルを押して、下の **Create**（Glass は **Put on**）。Repeater は押すと、選んだレイヤーのコピーの数・列・曲がりがその場で出ます |
+| **Create** | レシピ（作例）、レイヤー（Text・Camera・Null・Adjustment）、図形、Repeater（コピー）、立体（Ring・Gem・Cube・Floor・Ball）、Glass、光（Sun・Point・Spot） | タイルを押して、下の **Create**（Glass は **Put on**）。Repeater は、選んだものを Repeater のレシピで並べます（コピー 5・Step X 1.3・サイズ .92）。数字は Script カードの値で変えられます |
 | **Program** | 貼ったコード（p5.js・Shadertoy のほか、GLSL Sandbox・twigl・Dwitter など） | ネットで作品のコードをコピーして、アプリで ⌘V。タイルを押すと動く見本と下の **Create**。上の `</>` でコードが出て、書き換えるとプレビューとインスペクタがすぐ追いかけます |
 | **Presets** | 自分で保存した組み合わせ | 保存はまだ出来ません（今は空） |
 

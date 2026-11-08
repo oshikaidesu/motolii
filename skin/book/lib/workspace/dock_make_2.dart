@@ -416,7 +416,7 @@ final _makes = <(String, List<_Make>)>[
   (
     'Copies',
     [
-      _Make('Repeater', DockG.copies, Pop.tonePlace, '', 'Copies of the picked thing: how many, in how many rows, how far bent round a centre'),
+      _Make('Repeater', DockG.copies, Pop.tonePlace, '', 'Lays the picked thing out in copies with the Repeater recipe: five in a row, each a little smaller; its knobs are on the Script card'),
     ],
   ),
 ];
@@ -614,8 +614,7 @@ class CreateShelf extends StatelessWidget {
                   ],
                 ),
         ),
-        if (sel != null && sel.name == 'Repeater') _CopiesPanel(c),
-        if (sel != null && sel.name != 'Repeater')
+        if (sel != null)
           DockFooter(
             preview: DockBadge(sel.g, sel.hue, size: Shape.z(34)),
             title: '${sel.name} layer',
@@ -649,7 +648,7 @@ class _MakeTile extends StatelessWidget {
         color: sel ? WsT.accent : (h ? WsT.raised : WsT.card),
         child: Stack(
           children: [
-            if (_isRecipe(c, m.name))   // (a recipe: its motion as the inside reckons it, drawn by the window, the whole list moving at once)
+            if (m.recipe && _isRecipe(c, m.name))   // (a recipe: its motion as the inside reckons it, drawn by the window, the whole list moving at once)
               Positioned.fill(child: RecipeMotionView(m.name))
             else
               Align(
@@ -676,29 +675,5 @@ class _MakeTile extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-// ---- the copies, as values (not as three kinds): how many, how many rows, how far bent round a centre. Copies are the
-// document's own number (copies) and the Repeater recipe's knobs (js_Columns, js_StepX, js_StepY, js_Rotate), with the
-// thing's anchor_y, each keyable, so a row can be bent into a ring, a grid into a row, by keys. The sliders write those
-// numbers on the picked thing, a hand's whole pull one step (the panel gives it the Repeater script first, when a pull begins).
-double _copyCount = 5, _copyColumns = 1, _copyBend = 0;
-
-void _lay(DockCtx c) {
-  final t = int.tryParse(c.ws.selected ?? ''), m = c.ws.inside;
-  if (t == null || m == null || _repeaterWhy(m, t).isNotEmpty) return;
-  final n = _copyCount.round(), cols = _copyColumns.round().clamp(1, n), bend = _copyBend, spacing = 1.3;
-  final ring = n / (2 * math.pi) * spacing;   // (the radius at which n copies a step apart lie round a centre)
-  final values = {
-    'copies': n.toDouble(),
-    'js_Columns': cols.toDouble(),
-    'js_StepX': spacing * (1 - bend),
-    'js_StepY': cols > 1 ? -spacing * (1 - bend) : 0.0,
-    'js_Rotate': bend * 360 / n,
-    'anchor_y': -bend * ring,
-  };
-  for (final e in values.entries) {
-    m.later('set', thing: t, name: e.key, number: e.value);
   }
 }

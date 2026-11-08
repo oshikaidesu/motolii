@@ -513,6 +513,7 @@ static bool doc_size_is(sqlite3* file, int wide, int high) {
 
 static std::vector<std::filesystem::path> doc_folders(const char* folder);   // (doc_edit.h)
 // The document in `path` (made if it is not there), on the stage. nullptr: the file is not a document.
+static std::string doc_recipe_code_path(const std::string& name);   // (doc_recipes.h: the file of the recipe with code that is called so; none: "")
 static Doc* doc_open(Stage& s, const char* path) {
     Doc* d = new Doc;
     if (sqlite3_open(path, &d->file) != SQLITE_OK) return nullptr;
@@ -558,6 +559,34 @@ static Doc* doc_open(Stage& s, const char* path) {
     if (real)
         sqlite3_exec(d->file, "begin; create table fact_numeric(thing integer, name text, at numeric, value, way text, primary key(thing, name, at)) without rowid;"
                               "insert into fact_numeric select thing, name, at, value, way from fact; drop table fact; alter table fact_numeric rename to fact; commit", nullptr, nullptr, nullptr);
+    // (a document from before the copy and scatter values were taken out, the Repeater recipe laying them now: a thing that had any of
+    //  them and no script of its own is given the Repeater, and its values under their new names, their keys and ways as they were;
+    //  what drove them (`<name>_by`) is dropped, nothing drives those names now. A step it started from is nothing (the recipe's own
+    //  is .3), and a scatter's seed is the recipe's own too. A thing with another script keeps its old rows, which nothing reads)
+    if (const std::string repeater = doc_recipe_code_path("Repeater"); !repeater.empty()) {
+        static const char* const moved[][2] = {{"copy_x", "js_StepX"}, {"copy_y", "js_StepY"}, {"copy_z", "js_StepZ"}, {"copy_columns", "js_Columns"}, {"copy_turn", "js_Turn"},
+                                               {"copy_rotate", "js_Rotate"}, {"copy_rotate_x", "js_RotateX"}, {"copy_rotate_y", "js_RotateY"}, {"copy_size", "js_Size"}, {"copy_wide", "js_Wide"},
+                                               {"scatter_x", "js_ScatterX"}, {"scatter_y", "js_ScatterY"}, {"scatter_z", "js_ScatterZ"}, {"scatter_rotate", "js_ScatterRotate"},
+                                               {"scatter_size", "js_ScatterSize"}, {"drift_x", "js_DriftX"}, {"drift_y", "js_DriftY"}};
+        std::string names, by, rename;
+        for (const auto& m : moved) {
+            names += std::string(names.empty() ? "" : ",") + "'" + m[0] + "'", by += std::string(by.empty() ? "" : ",") + "'" + m[0] + "_by'";
+            rename += std::string(" when '") + m[0] + "' then '" + m[1] + "'";
+        }
+        char* sql = sqlite3_mprintf(
+            "begin;"
+            "create temp table if not exists old_things(thing integer primary key); delete from old_things;"
+            "insert into old_things select distinct thing from fact where name in (%s) and thing not in (select thing from fact where name = 'script' and value not in ('', 'none'));"
+            "insert or ignore into fact(thing, name, at, value) select f.thing, 'js_Seed', 0.0, s.value from (select distinct thing from fact where name in ('scatter_x', 'scatter_y', 'scatter_z', 'scatter_rotate', 'scatter_size') and thing in (select thing from old_things)) f join fact s on s.thing = f.thing and s.name = 'seed' and s.at = 0;"
+            "insert or ignore into fact(thing, name, at, value) select thing, 'js_StepX', 0.0, 0.0 from old_things where thing not in (select thing from fact where name = 'copy_x');"
+            "update fact set name = case name%s end where thing in (select thing from old_things) and name in (%s);"
+            "delete from fact where name in (%s);"
+            "delete from fact where thing in (select thing from old_things) and name = 'script';"
+            "insert into fact(thing, name, at, value) select thing, 'script', 0.0, %Q from old_things;"
+            "drop table old_things; commit;", names.c_str(), rename.c_str(), names.c_str(), by.c_str(), repeater.c_str());
+        if (sqlite3_exec(d->file, sql, nullptr, nullptr, nullptr) != SQLITE_OK) sqlite3_exec(d->file, "rollback", nullptr, nullptr, nullptr);
+        sqlite3_free(sql);
+    }
     d->stage = &s;
     s.playing[d] = [d](double now) { doc_moment(*d, now); };
     if (!doc_match(*d)) std::printf("%s\n", d->trouble.c_str());

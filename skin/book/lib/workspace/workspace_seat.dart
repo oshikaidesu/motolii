@@ -35,7 +35,7 @@ class _InspectorSeatState extends State<_InspectorSeat> {
     final m = ws.inside, c = ws.lastChange, t = int.tryParse(ws.selected ?? '') ?? (ws.selected == null ? 0 : null);
     if (m == null || c == null || c.things || t == null || const bool.fromEnvironment('NOPOUR')) return false;
     final titles = [for (final (title, _) in m.cards(t)) title].join(';');
-    if (titles != _titles) {   // (a card put on or taken off by its values alone: Copies laid out from the Create shelf, taken off by its Reset)
+    if (titles != _titles) {   // (a card put on or taken off by its values alone: the Script card's knobs, as the Repeater is laid out from the Create shelf or taken off by its Reset)
       _titles = titles;
       return false;
     }

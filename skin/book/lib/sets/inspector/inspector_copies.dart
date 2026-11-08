@@ -78,7 +78,7 @@ class _CopiesDrawingState extends State<CopiesDrawing> {
 /// the thing's script is the Repeater: otherwise they lie in one place and there is no gap to pull).
 CopiesRow copiesRowOf(Doc doc, Size size) {
   final has = _hasGap(doc), spread = has ? ((doc.get(_gapId) ?? 0) / _gapReach).clamp(-1.0, 1.0) : 0.0; // (how far apart, -1 to 1 of the knob's span)
-  return CopiesRow(size, count: (doc.get('v_copies') ?? 1).round().clamp(1, 200), spread: spread, turn: doc.get(_turnId) ?? 0, grow: doc.get(_growId) ?? 1, hasGap: has);
+  return CopiesRow(size, count: (doc.get('v_copies') ?? 1).round().clamp(1, 200), spread: spread, turn: has ? (doc.get(_turnId) ?? 0) : 0, grow: has ? (doc.get(_growId) ?? 1) : 1, hasGap: has);
 }
 
 /// Where the copies lie in the drawing: one cell a copy, so many as fit; past that, the row says how many more.

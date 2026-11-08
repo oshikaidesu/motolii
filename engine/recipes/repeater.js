@@ -18,9 +18,9 @@
 // --track@ScatterZ:Scatter Z,0,4,0,0.01
 // --track@ScatterRotate:Scatter Rotate,0,360,0,0.1
 // --track@ScatterSize:Scatter Size,0,1,0,0.01
-// --track@Seed:Seed,0,9999,0,1
-// --track@DriftX:Flow X,-2,2,0,0.01
-// --track@DriftY:Flow Y,-2,2,0,0.01
+// --track@Seed:Scatter seed,0,9999,0,1
+// --track@DriftX:Scatter flow X,-2,2,0,0.01
+// --track@DriftY:Scatter flow Y,-2,2,0,0.01
 
 // What the document's own copy values (copy_x, copy_y, copy_z, copy_columns, copy_turn, copy_rotate, copy_rotate_x, copy_rotate_y,
 // copy_size, copy_wide and scatter_x, scatter_y, scatter_z, scatter_rotate, scatter_size, seed, drift_x, drift_y) said before,
