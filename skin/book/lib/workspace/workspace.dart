@@ -17,7 +17,9 @@ import 'ableton.dart';
 import 'package:lab_book/sets/inspector/inspector_parts_insp_host.dart';
 
 import '../sets/inspector/inspector_parts.dart';
+import '../sets/inspector/inspector_rows_sect.dart' show Sect;
 import '../theme.dart';
+import '../tokens.dart';
 import 'desk.dart';
 import 'desk_depth.dart';
 import 'desk_relations.dart';
@@ -33,6 +35,8 @@ import 'stage.dart';
 import 'stage_camera.dart';
 import 'stage_view.dart' show WsRelationStack;
 import 'timeline.dart';
+import 'timeline_paint.dart' show WtThumb;
+import 'thumbs.dart';
 import 'top_bar.dart';
 import '../motolii.dart';
 import 'relate.dart';
@@ -41,6 +45,7 @@ part 'workspace_seat.dart';
 part 'workspace_cards.dart';
 part 'workspace_values.dart';
 part 'workspace_keys.dart';
+part 'workspace_copies.dart';
 
 class Workspace extends StatefulWidget {
   const Workspace({super.key, this.document, this.extra = const [], this.tools = const [], this.view = const {}});
@@ -74,6 +79,7 @@ class _WorkspaceState extends State<Workspace> {
   @override
   void initState() {
     super.initState();
+    inspectorCards['Copies'] = (c) => WsCopiesCard(c);   // (a group's Copies card is the window's own: its things listed with their pictures and ratios, workspace_copies.dart)
     FocusManager.instance.addListener(_keepKeys);
     ColorTheme.watch(() => WidgetsBinding.instance.reassembleApplication());
     SkinParts.follow();   // (the theme's drawn parts: an SVG folder, read when the theme names it)   // (the theme file: read, and read again when written; the window built again in place)
@@ -256,6 +262,9 @@ class _WorkspaceState extends State<Workspace> {
       ws.after(m.later('add', name: 'shape', word: 'null'), null, (g) => ws.select('$g'));
       if (top + 1 < order.length) m.later('raise', thing: -1, number: (top + 1 - order.length).toDouble());
       m.later('say', thing: -1, name: 'name', word: mask.isEmpty ? 'Group' : 'Group and Mask');
+      // (its Count, on its Copies card from now: as many as it holds, each of them one of its copies (the inside's
+      //  doc_dealt); pulled up, the copies are dealt round them by their ratios. docs/notes/GROUP_FOCUS_new.md 270)
+      m.later('set', thing: -1, name: 'copies', number: all.length.toDouble());
       // (its bar over theirs, as a precomposed layer's is)
       final from = all.map((t) => m.value(t, 'start', 0) ?? 0).reduce(math.min), ends = [for (final t in all) m.lasts(t) < 0 ? double.infinity : (m.value(t, 'start', 0) ?? 0) + m.lasts(t)];
       m.later('set', thing: -1, name: 'start', number: from);

@@ -219,6 +219,7 @@ static const DocValue doc_values[] = {
     {"light_group", "light solid", 0, 7, false, nullptr},
     {"parent", "film picture text solid shape camera light behaviour", 0, 1e9, false, nullptr},   // (a behaviour's too: an Order lies in its group, as a row inside it (doc_order_of); a relation's point goes with a thing, so its middle follows it)
     {"parent_rotate", doc_kinds, 0, 2, true, nullptr}, {"parent_size", doc_kinds, 0, 2, true, nullptr},   // (how much of its parent's turn and size it takes: 1 all, 0 none, 2 twice; Alight Motion's Parenting Helper weights)
+    {"ratio", "film picture text solid shape", 1, 1000, false, nullptr},   // (one of a group's things: how many of the group's copies it takes in a turn, 赤 ×7・青 ×2・黄 ×1 で 7:2:1 (doc_dealt); Blender's particles' Use Count)
     {"scale_assist", doc_drawn, 0, 0, false, "y x both"}, {"scale_assist_amount", doc_drawn, 0, 100, true, nullptr}, {"scale_assist_damp", doc_drawn, 1, 10, true, nullptr},   // (Alight Motion's Scale Assist, as scale_x and scale_y: grown one way alone, or wider and as much thinner as a squashed ball keeps its bulk)
     {"roll", doc_kinds, 0, 0, false, "x y"}, {"roll_radius", doc_kinds, -1e3, 1e3, true, nullptr},   // (turned as a wheel rolling as it goes along x, or y; its radius half its smaller side and this more)
     {"dissolve", "solid", 0, 100, true, nullptr}, {"grain", "solid", 0.05, 20, true, nullptr},   // (a point cloud's: its grains thrown out each its own way, so far; and how large they are drawn: points.h)

@@ -3,7 +3,6 @@
 import 'package:lab_book/workspace/desk_ease_cards.dart' show easeCurve;
 import 'dart:async' show Timer;
 import 'dart:developer' show Timeline;
-import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -19,10 +18,10 @@ import 'ableton.dart' show wsTimelineAsk, wsAskRename, wsAskTimeline, wsMarkPick
 import '../sets/panels/timeline_parts_parts.dart' show TpGlyph, TpGlyphPainter;
 import '../tokens.dart';
 import 'key_drag.dart';
-import 'desk_kit.dart' show DeskScrub;
 import 'keys.dart' show CommandIntent;
 import 'timeline_kept.dart';
 import 'timeline_paint.dart';
+import 'thumbs.dart';
 import 'relate.dart';
 import 'ws.dart';
 import 'ws_menu.dart';
@@ -168,11 +167,6 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
   // stagger each goes so many times: start and end n - 1, the middle (n - 1) / 2). Carried as the group's stagger
   // (doc_carry by a value's name), let go kept or not: one step of undo, as a bar's slide.
   ({String id, int key, int rank, bool moved})? _spread;
-
-  // A group's count held while its row's field is scrubbed or typed (_countRow): as the hand has it, carried, not yet
-  // let go; null: as the document says.
-  double? _countHeld;
-  void _holdCount(double? v) => setState(() => _countHeld = v);
 
   // A way's shape from 0 to 1, as the bar's stretches are drawn.
   List<double> _wayShape(Ws ws, String way) => way.isEmpty ? const [0, 1] : easeCurve(way, ws.inside!);
@@ -481,61 +475,14 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     return _beats?.$2 ?? const [];
   }
 
+  // A thing's small picture at the head of its row (thumbs.dart: a film's pictures, a photo, a shape's form), kept
+  // there and drawn again as each comes in.
+  late final _thumbs = WsThumbs(onLoaded: () => setState(() {}), mounted: () => mounted);
+  List<ui.Image>? _framesOf(Ws ws, WsLayer l) => _thumbs.framesOf(ws, l);
+  (String, Color?, bool)? _formOf(Ws ws, WsLayer l) => _thumbs.formOf(ws, l);
+
   // A film's sound on its bar: read once on another isolate (the inside keeps it), then laid on the document's frames
   // where the film shows them, asked again only when the document changes.
-  // A film's pictures on its bar: the one it plays in the middle of each sixth of it (its begin, its speed, either way),
-  // made small by the inside (GStreamer, another isolate) and read as pictures; asked again only when the document changes.
-  final _frames = <String, (Object, List<ui.Image>?)>{};
-  final _framesAsked = <String, Object>{};
-  List<ui.Image>? _framesOf(Ws ws, WsLayer l) {
-    final m = ws.inside, t = int.tryParse(l.id);
-    if (m != null && t != null && m.word(t, 'kind') == 'picture') return _stillOf(m.whole(m.word(t, 'file')), l.id);
-    if (m == null || t == null || m.word(t, 'kind') != 'film') return null;
-    final file = m.whole(m.word(t, 'file')), begin = m.value(t, 'begin', 0) ?? 0, speed = m.value(t, 'speed', 0) ?? 1, start = m.value(t, 'start', 0) ?? 0;
-    final key = (file, begin, speed, start, l.inF, l.outF);
-    if (_frames[l.id] case (final k, final f) when k == key) return f;
-    if (_framesAsked[l.id] != key) {
-      _framesAsked[l.id] = key;
-      const n = 6;
-      final lasts = (l.outF - l.inF) / Ws.fps;
-      final seconds = [for (var i = 0; i < n; i++) begin + (speed < 0 ? lasts - (i + .5) / n * lasts : (i + .5) / n * lasts) * speed.abs()];
-      Future.wait([for (final s in seconds) m.filmFrame(file, s)]).then((pngs) async {
-        if (pngs.any((p) => p == null)) return mounted ? setState(() => _frames[l.id] = (key, null)) : null;   // (no pictures: its sound alone)
-        final read = [for (final p in pngs) (await (await ui.instantiateImageCodec(File(p!).readAsBytesSync())).getNextFrame()).image];
-        if (mounted) setState(() => _frames[l.id] = (key, read));
-      });
-    }
-    return _frames[l.id]?.$2;
-  }
-
-  // A shape's form and its fill, as the document says them: its own small picture at the row's left.
-  // (no fill: its outline in its stroke's colour)
-  (String, Color?, bool)? _formOf(Ws ws, WsLayer l) {
-    final m = ws.inside, t = int.tryParse(l.id);
-    if (m == null || t == null || m.word(t, 'kind') != 'shape') return null;
-    Color? colour(String hex) => hex.length == 6 && int.tryParse(hex, radix: 16) != null ? Color(0xFF000000 | int.parse(hex, radix: 16)) : null;
-    final outline = m.word(t, 'fill') == 'none';
-    return (m.word(t, 'shape'), colour(m.word(t, outline ? 'stroke' : 'fill')), outline);
-  }
-
-  // A photo on its bar: itself, read once small (as tall as a bar needs), laid along the bar again and again as
-  // Alight Motion's photo bar is (reports/alight_ui.md: タイムラインの絵); one Flutter cannot read: none.
-  List<ui.Image>? _stillOf(String file, String id) {
-    if (_frames[id] case (final k, final f) when k == file) return f;
-    if (_framesAsked[id] != file) {
-      _framesAsked[id] = file;
-      () async {
-        try {
-          final read = (await (await ui.instantiateImageCodec(await File(file).readAsBytes(), targetHeight: 48)).getNextFrame()).image;
-          if (mounted) setState(() => _frames[id] = (file, [read]));
-        } catch (_) {
-          if (mounted) setState(() => _frames[id] = (file, null));
-        }
-      }();
-    }
-    return _frames[id]?.$2;
-  }
-
   final _waves = <String, (int, int, int, List<double>?)>{};   // (thing: document read, from, to, loudness a frame)
   final _asked = <String>{};
   final _waveAsked = <String, (int, int, int)>{};
@@ -594,7 +541,7 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     List<({int layer, String? value, (String, String)? aim})> rowsOf(List<int> shown, {bool room = false}) => [
       for (final i in shown) if (ws.layers[i] case final l) ...[
         (layer: i, value: null, aim: null),
-        if (room && l.id == entered && l.kind == WsKind.group) (layer: i, value: 'copies', aim: null),   // (its count, in its room from when it was made: _countRow)
+        // (a group's count is on its Copies card in the inspector, as any thing's is, not a row of its room. The user, 11/8)
         if ((room || l.id != entered) && ws.aimsOpen(l.id))   // (the group entered: its lanes in its room, once, not again in the whole below)
           for (final a in wsTargets(ws, l.id)) (layer: i, value: '', aim: a),
         if ((room || l.id != entered) && ws.lanesOpen(l.id))

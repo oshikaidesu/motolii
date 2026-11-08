@@ -590,26 +590,33 @@ class WtOverviewPainter extends CustomPainter {
 /// photo or a film its picture, a shape its form in its own fill; the rest, the mark of its kind (Alight Motion's
 /// camera and sound are marks too; a text's is not seen in its pictures: its mark kept).
 class WtThumb extends StatelessWidget {
-  const WtThumb(this.row, {super.key});
-  final WtRow row;
+  WtThumb(WtRow row, {Key? key}) : this.of(key: key, kind: row.kind, frames: row.frames, form: row.form, fill: row.fill, outline: row.outline, dim: row.dim, tone: row.tone);
+  // (the same picture from its parts, for a place with no row: a group's things listed on its Copies card)
+  const WtThumb.of({super.key, required this.kind, this.frames, this.form, this.fill, this.outline = false, this.dim = false, this.tone, this.size});
+  final WsKind kind;
+  final List<ui.Image>? frames;
+  final String? form;
+  final Color? fill, tone;
+  final bool outline, dim;
+  final double? size;   // (null: as wide as a row's chip)
   @override
   Widget build(BuildContext context) {
-    final r = row;
-    if (r.frames case final f? when f.isNotEmpty) {
+    final edge = size ?? WtM.chip;
+    if (frames case final f? when f.isNotEmpty) {
       return ClipRRect(
         borderRadius: BorderRadius.all(Shape.r(3)),
-        child: SizedBox.square(dimension: WtM.chip, child: RawImage(image: f.first, fit: BoxFit.cover, opacity: AlwaysStoppedAnimation(r.dim ? .35 : 1))),
+        child: SizedBox.square(dimension: edge, child: RawImage(image: f.first, fit: BoxFit.cover, opacity: AlwaysStoppedAnimation(dim ? .35 : 1))),
       );
     }
-    if (r.form case final form? when r.kind == WsKind.shape && form != 'null') {
+    if (form case final shape? when kind == WsKind.shape && shape != 'null') {
       return Container(
-        width: WtM.chip,
-        height: WtM.chip,
+        width: edge,
+        height: edge,
         decoration: BoxDecoration(color: Grey.g20, borderRadius: BorderRadius.all(Shape.r(3))),
-        child: CustomPaint(painter: _FormPainter(form, (r.fill ?? wsTone(r.kind)).withValues(alpha: r.dim ? .35 : 1), outline: r.outline)),
+        child: CustomPaint(painter: _FormPainter(shape, (fill ?? wsTone(kind)).withValues(alpha: dim ? .35 : 1), outline: outline)),
       );
     }
-    return WtKindChip(r.kind, dim: r.dim, tone: r.tone);
+    return size == null ? WtKindChip(kind, dim: dim, tone: tone) : SizedBox.square(dimension: edge, child: FittedBox(child: WtKindChip(kind, dim: dim, tone: tone)));
   }
 }
 

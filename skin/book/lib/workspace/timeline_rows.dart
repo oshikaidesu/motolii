@@ -12,40 +12,6 @@ extension _WsTimelineRows on _WsTimelineState {
     ];
   }
 
-  // A group's count in its room (its copies, each drawing its things in turn: doc_dealt), from when it is made; x1, none
-  // more. Scrubbed sideways or typed in the timeline's own column, as After Effects' Repeater Copies is in its
-  // timeline; the field the desk's (DeskScrub). The hand's count carried, let go as one step, as a group's ▸ is (_spread).
-  Widget _countRow(Ws ws, WsLayer g) {
-    final m = ws.inside!, t = int.parse(g.id);
-    return DeskScrub(
-      label: 'Count',
-      value: _countHeld ?? (m.value(t, 'copies', 0) ?? 1),
-      min: 1,
-      max: 200,
-      perPx: .1,
-      pad: 4,
-      enabled: !_isLocked(ws, g.id),
-      format: (v) => '×${v.round()}',
-      onChanged: (v) {
-        if (_countHeld == null) {
-          m.later('together', number: 1);   // (the scrub and its let go: one step)
-          m.take(t);
-          if (ws.playing) ws.playing = false;
-        }
-        _holdCount(v);
-        m.carry('copies', v.roundToDouble());
-      },
-      onDone: () {
-        if (_countHeld == null) return;
-        m.later('let_go', number: 1);
-        ws.after(m.later('together'), (_, _) {
-          ws.reread();
-          if (mounted) _holdCount(null);
-        });
-      },
-    );
-  }
-
   // A thing by its row's number and name, as After Effects' Parent column says it (many may share the name).
   String _numbered(Ws ws, String id) {
     final i = ws.layers.indexWhere((l) => l.id == id);
@@ -141,15 +107,6 @@ extension _WsTimelineRows on _WsTimelineState {
                   ],
                 ),
               ),
-            )
-          else if (i < _pin && _order[i].value == 'copies' && ws.layers[_order[i].layer].kind == WsKind.group)
-            Positioned(
-              key: ValueKey('ws-tl-count-${ws.layers[_order[i].layer].id}'),
-              left: Shape.s(34),
-              right: Shape.s(8),
-              top: (i - from) * WtM.row - top,
-              height: WtM.row,
-              child: Center(child: _countRow(ws, ws.layers[_order[i].layer])),
             )
           else if (_order[i].value case final n?) // (a value's lane: its name, under its layer's, as Ableton names a lane by its control)
             Positioned(

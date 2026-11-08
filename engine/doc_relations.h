@@ -300,24 +300,32 @@ static double doc_absent_opacity(Doc& d, int thing, double now) {
     const double begins = doc_literal(d, thing, "start", 0, 0), lasts = doc_literal(d, thing, "duration", 0, -1);
     return absent_opacity(doc_absent_on(d, thing, now), thing, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * now);
 }
-// A thing straight in a group with copies: it draws the group's copies dealt to its things in turn, 1 2 3 1 2 3...
-// (docs/notes/GROUP_FOCUS_new.md 268: 子の順にくり返す; Cinema 4D's Cloner in Iterate mode; Blender's particles shown
-// as a Collection, Use Count): the group, its place among the group's things (counted as doc_group_delay counts them),
-// how many things, how many copies. Its jth copy is the group's (nth + j x of)th. None (group 0): in none with copies,
-// a thing with copies of its own (its own are its members), or one past the group's last copy.
+// A thing straight in a group with copies: it draws the group's copies dealt to its things in turn, each as many in a
+// turn as its ratio says, 1 1 1 2 3 1 1 1 2 3... (docs/notes/GROUP_FOCUS_new.md 264-269: 子の順にくり返す, 赤 ×7・青 ×2・
+// 黄 ×1 で 7:2:1; Cinema 4D's Cloner in Iterate mode; Blender's particles shown as a Collection, Use Count): the group,
+// where its turn begins in a round (the ratios of those before it added up), how long a round is (all the ratios added
+// up), how many copies, its ratio. Its jth copy is the group's index(j)th. None (group 0): in none with copies, a thing
+// with copies of its own (its own are its members), or one the group's copies do not reach.
 struct DocDealt {
-    int group = 0, nth = 0, of = 1, n = 1;
-    int share() const { return (n - nth + of - 1) / of; }
+    int group = 0, nth = 0, of = 1, n = 1, w = 1;
+    int index(int j) const { return (j / w) * of + nth + (j % w); }
+    int share() const { return (n / of) * w + std::clamp(n % of - nth, 0, w); }
 };
+static int doc_ratio(Doc& d, int thing) { return std::clamp((int)std::lround(doc_literal(d, thing, "ratio", 0, 1)), 1, 1000); }   // (how many of its group's copies it takes in a turn)
 static DocDealt doc_dealt(Doc& d, int thing) {
     const int group = (int)doc_number(d, thing, "parent", 0, 0);
     if (group <= 0 || doc_word(d, group, "shape") != "null" || doc_word(d, thing, "kind") == "behaviour" || doc_literal(d, thing, "copies", 0, 1) > 1) return {};
     const int n = (int)doc_literal(d, group, "copies", 0, 1);
     if (n < 2) return {};
-    int nth = -1, of = 0;
+    int nth = -1, of = 0, w = 1;
     for (const int t : doc_laid(d))
-        if ((int)doc_number(d, t, "parent", 0, 0) == group && doc_word(d, t, "kind") != "behaviour") nth = t == thing ? of : nth, ++of;
-    return nth < 0 || nth >= n ? DocDealt{} : DocDealt{group, nth, of, n};
+        if ((int)doc_number(d, t, "parent", 0, 0) == group && doc_word(d, t, "kind") != "behaviour") {
+            const int r = doc_ratio(d, t);
+            if (t == thing) nth = of, w = r;
+            of += r;
+        }
+    const DocDealt dealt{group, nth, of, n, w};
+    return nth < 0 || dealt.share() < 1 ? DocDealt{} : dealt;
 }
 // How many of itself a thing draws: its own copies, or its share of its group's (doc_dealt).
 static int doc_copies(Doc& d, int thing) {
