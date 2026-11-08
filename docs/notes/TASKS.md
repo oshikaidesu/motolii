@@ -210,6 +210,7 @@
 | 14 | 3Dレイヤーの位置まるごとのエクスプレッションが効く／プリコンプの中の3Dレイヤーが運べる | ThorVG 側が未実装。パッチでは直らなかった |
 | 33 | 掛け合わせ（multiply）の形に behaviour をつないでも、色が消えない | 10/19 通った：原因は behaviour が「描く物のない描画の組」を作り、その上の multiply が空の組の絵を下の絵として読んでいたこと。behaviour はカメラ・光と同じく組に入れない |
 | 34 | 縁取りだけの形でも、copy_fill で複製ごとに色が分かれる | 10/19 通った：塗りなしの形は複製ごとの色と透明度を縁の材質にも渡す（copyEdges） |
+| 46 | キーの間を Cavalry の Magic Easing（SlowIn・SlowOut・SlowInSlowOut・VerySlowIn・VerySlowOut・SpringOut・SmallSpringOut・BounceOut・Overshoot）で動かした値を、SQLite を通さず C++ で直接計算する。値は今と同じ | 11/9 依頼（ユーザー）。今は内蔵の9種（Hold・Linear・Bezier など、engine/interp.h）以外のイージングは、毎フレーム SQLite の式で計算している（engine/doc_values.h:468 `doc_went_by`：名前と数を文字から読み直し、SQLite の文を1回実行）。式の表は engine/ways.h の1つで、キー用（SQLite）とスクリプトの `ease(name, u)`（engine/script.cpp:191、JavaScript）が同じ文字を使い、ずれないようにしている。C++ に移す時はこの一致をどう保つかが要る。重さは未計測。文書の中で自作したイージングは対象外 |
 
 ## 通った物
 
