@@ -1,6 +1,9 @@
 // The Copies card's drawing, in the Transform card's manner (a control is a drawing of its own result, pulled by hand):
 // the thing and its copies as they lie, so many as there are, as far apart as they are, turned and grown each one more;
-// the + at the end of the row adds or takes away copies, the knob on the second one pulls them apart.
+// the + at the end of the row adds or takes away copies, the knob on the second one pulls them apart. How they lie is the
+// thing's script, the Repeater recipe (engine/recipes/repeater.js): its Step X, Rotate and Size are read here, and Step X
+// is what the second copy's knob pulls. A thing without that script has its copies in one place: the drawing says so
+// (they stand close) and has no knob to pull them apart.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -18,15 +21,22 @@ class CopiesDrawing extends StatefulWidget {
 
 enum _Knob { count, gap }
 
+/// The Repeater recipe's knobs the drawing reads, by the value's id on the thing (js_ and the knob's name in the recipe's head).
+const _gapId = 'v_js_StepX', _turnId = 'v_js_Rotate', _growId = 'v_js_Size';
+
+/// How far the second copy's knob pulls the gap, in the stage's units: the span Gap X always had (the recipe's Step X goes
+/// to 5, but a pull across a small drawing reaches the far end of this much).
+const _gapReach = 2.0;
+
+/// Whether the thing has the Repeater's Step X (its script is the Repeater recipe): the drawing's gap knob pulls it.
+bool _hasGap(Doc doc) => doc.cards.any((c) => c.params.any((p) => 'v_${p.id}' == _gapId));
+
 class _CopiesDrawingState extends State<CopiesDrawing> {
   _Knob? _held;
 
   @override
   Widget build(BuildContext context) {
     final doc = Ctx.of(context).doc;
-    final card = doc.cards.where((c) => c.name == 'Copies').firstOrNull;
-    Param? param(String id) => card?.params.where((p) => p.id == id).firstOrNull;
-
 
     return Padding(
       padding: EdgeInsets.only(bottom: Shape.s(6)),
@@ -35,7 +45,7 @@ class _CopiesDrawingState extends State<CopiesDrawing> {
         child: LayoutBuilder(
           builder: (context, box) {
             final g = copiesRowOf(doc, box.biggest), count = g.count;
-            _Knob? pick(Offset p) => (p - g.countKnob).distance <= 12 ? _Knob.count : (count > 1 && (p - g.gapKnob).distance <= 12 ? _Knob.gap : null);
+            _Knob? pick(Offset p) => (p - g.countKnob).distance <= 12 ? _Knob.count : (count > 1 && g.hasGap && (p - g.gapKnob).distance <= 12 ? _Knob.gap : null);
             return Pulled(
               takes: (at) => pick(at) != null,
               onDown: (d) {
@@ -47,7 +57,7 @@ class _CopiesDrawingState extends State<CopiesDrawing> {
                   case _Knob.count:
                     doc.set('v_copies', g.countAt(d).toDouble());
                   case _Knob.gap:
-                    if (param('copy_x')?.max case final top?) doc.set('v_copy_x', g.spreadAt(d) * top);
+                    if (g.hasGap) doc.set(_gapId, g.spreadAt(d) * _gapReach);
                   case null:
                 }
               },
@@ -64,19 +74,20 @@ class _CopiesDrawingState extends State<CopiesDrawing> {
   }
 }
 
-/// The copies as the drawing lays them out for this thing (and where its two knobs are: the + adds, the other spreads).
+/// The copies as the drawing lays them out for this thing (and where its two knobs are: the + adds, the other spreads, if
+/// the thing's script is the Repeater: otherwise they lie in one place and there is no gap to pull).
 CopiesRow copiesRowOf(Doc doc, Size size) {
-  final p = doc.cards.where((c) => c.name == 'Copies').firstOrNull?.params.where((p) => p.id == 'copy_x').firstOrNull, v = doc.get('v_copy_x') ?? 0;
-  final spread = p?.max == null || p!.max == 0 ? 0.0 : (v / p.max!).clamp(-1.0, 1.0); // (how far apart, -1 to 1 of the knob's span)
-  return CopiesRow(size, count: (doc.get('v_copies') ?? 1).round().clamp(1, 200), spread: spread, turn: doc.get('v_copy_rotate') ?? 0, grow: doc.get('v_copy_size') ?? 1);
+  final has = _hasGap(doc), spread = has ? ((doc.get(_gapId) ?? 0) / _gapReach).clamp(-1.0, 1.0) : 0.0; // (how far apart, -1 to 1 of the knob's span)
+  return CopiesRow(size, count: (doc.get('v_copies') ?? 1).round().clamp(1, 200), spread: spread, turn: doc.get(_turnId) ?? 0, grow: doc.get(_growId) ?? 1, hasGap: has);
 }
 
 /// Where the copies lie in the drawing: one cell a copy, so many as fit; past that, the row says how many more.
 class CopiesRow {
-  CopiesRow(this.size, {required this.count, required this.spread, required this.turn, required this.grow});
+  CopiesRow(this.size, {required this.count, required this.spread, required this.turn, required this.grow, this.hasGap = true});
   final Size size;
   final int count;
   final double spread, turn, grow;
+  final bool hasGap; // (the thing has a gap to pull: false, the second copy has no knob)
   static const cell = 16.0, most = 24.0; // (a copy's square; the most a copy stands from the one before)
   double get way => spread < 0 ? -1 : 1; // (copies to the right, or to the left when the gap is less than nought)
   Offset get first => Offset(spread < 0 ? size.width - 60 : 20, size.height / 2);
@@ -119,7 +130,7 @@ class _CopiesPaint extends CustomPainter {
     c.drawCircle(plus, held == _Knob.count ? 9 : 8, Paint()..color = held == _Knob.count ? Pop.accent : Grey.g26);
     c.drawLine(plus - const Offset(4, 0), plus + const Offset(4, 0), ink);
     c.drawLine(plus - const Offset(0, 4), plus + const Offset(0, 4), ink);
-    if (g.count > 1) { // (the second copy's knob: pulled, the copies stand further apart, or closer)
+    if (g.count > 1 && g.hasGap) { // (the second copy's knob: pulled, the copies stand further apart, or closer)
       final k = g.gapKnob;
       c.drawLine(k + const Offset(-8, 0), k + const Offset(8, 0), ink..color = Grey.g56);
       c.drawCircle(k, held == _Knob.gap ? 6.5 : 5, Paint()..color = held == _Knob.gap ? Pop.accent : TransformZone.lift.color);

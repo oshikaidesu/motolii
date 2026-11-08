@@ -3,7 +3,9 @@
 // say fill ffffff
 // set anchor_x -1
 // set copies 24
-// set copy_turn 360
+// say script Repeater
+// set js_StepX 0
+// set js_Turn 360
 // key size 0 0.001
 // key size 0.5 1.3
 // key size 6.5 1.3

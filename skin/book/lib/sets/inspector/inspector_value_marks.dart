@@ -74,7 +74,7 @@ final valueMarks = <String, ValueMark>{
       ..maskFilter = MaskFilter.blur(BlurStyle.normal, .4 + 3 * soft));
     c.drawRect(Rect.fromCenter(center: Offset(s.width / 2, s.height / 2 - 2), width: Shape.z(9), height: Shape.z(9)), Paint()..color = ink);
   },
-  'v_copy_columns': (c, s, v, ink) { // (copies in rows of so many)
+  'v_js_Columns': (c, s, v, ink) { // (the Repeater recipe's Columns: copies in rows of so many)
     final n = (v ?? 0).round().clamp(0, 4), cols = n == 0 ? 4 : n;
     for (var i = 0; i < 8; i++) {
       c.drawRect(Rect.fromLTWH(3 + (i % cols) * 4.5, 4 + (i ~/ cols) * 4.5, 3, 3), Paint()..color = ink.withValues(alpha: i ~/ cols < 3 ? 1 : 0));

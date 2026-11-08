@@ -4,6 +4,47 @@ static double doc_scale_z(Doc& d, int thing, double now) {
     const double z = doc_literal(d, thing, "scale_z", now, 1);
     return z == 0 && doc_word(d, thing, "kind") != "solid" ? 1e-3 : z;
 }
+// Where a recipe, or a MIDI file's notes, lay copy `copy` of `n` of a thing (by 0: neither; 1: a MIDI file's note, 2: a recipe's each()): its place, turn and size.
+// Asked first, so that what a falloff weighs and what a wave's noise reads is where the copy lies; the turn and size are put on after the wave, as they were.
+struct DocLaid { ScriptCopy c; int by = 0; };
+static DocLaid doc_laid(Doc& d, int thing, int copy, int n, double said) {
+    DocLaid out;
+    if (const std::string notes = doc_literal_word(d, thing, "script"); std::filesystem::path(notes).extension() == ".mid") {   // (a MIDI file's notes, copies: midi.h)
+        Doc::Scripted& kept = d.scripted[thing];
+        if (kept.at != said || (int)kept.copies.size() != n)   // (its speed: the file's beats faster or slower, as a film's)
+        {   // (its highest row where the roll of the same file at the same speed has it, put at the same place: midi_roll.cpp, its top row the file's highest note)
+            const double speed = doc_literal(d, thing, "speed", 0, 1);
+            std::string why;
+            double w = 0, h = 0;
+            midi_roll_box(midi_roll_file(notes, speed == 1.0 ? 0.0 : midi_bpm(notes.c_str()) * speed, why), w, h);
+            kept.at = said, kept.copies = midi_copies(midi_of(notes), n, (said - doc_literal(d, thing, "start", 0, 0)) * speed, doc_number(d, 0, "high", 0, 1080) / 1080.0 * (double)d.stage->h / std::max(1.0, doc_number(d, 0, "high", 0, 1080) * doc_point(d, thing, said)), h);
+        }
+        const ScriptCopy c = copy < n ? kept.copies[(size_t)copy] : ScriptCopy{};
+        out.c = c, out.by = 1;
+    } else   // (a recipe as code: each copy where the thing's script says, on top of what its copies' values say)
+        if (DocScript* sc = doc_script_of(d, doc_literal_word(d, thing, "script")); sc && sc->run && sc->run->ok() && doc_literal_word(d, thing, "shape") != "sketch") {   // (a sketch's own mesh has no copies to place: doc_sketch.h)
+            Doc::Scripted& kept = d.scripted[thing];
+            const double gone = doc_literal(d, thing, "begin", 0, 0), begins = doc_literal(d, thing, "start", 0, 0) - gone, clock = doc_own_time(d, thing, said, said - begins);   // (a part after a cut goes on from where it was: doc_own_clock)
+            if (kept.at != said || kept.own != clock || kept.made != doc_scripts_made(d) || (int)kept.copies.size() != n) {   // (every copy at once, the knobs read once)
+                std::map<std::string, double> numbers;
+                std::map<std::string, std::string> words;
+                for (size_t i = 0; i < sc->knobs.size(); ++i) {
+                    if (sc->knobs[i].kind == "select") {   // (not said yet: its first word)
+                        const std::string w = doc_word(d, thing, sc->names[i].c_str());
+                        words[sc->knobs[i].name] = w.empty() ? sc->knobs[i].words.substr(0, sc->knobs[i].words.find(' ')) : w;
+                    }
+                    else numbers[sc->knobs[i].name] = doc_number(d, thing, sc->names[i].c_str(), said, sc->knobs[i].usual);
+                }
+                kept.at = said, kept.own = clock, kept.made = doc_scripts_made(d);
+                numbers["duration"] = doc_literal(d, thing, "duration", 0, -1) + (doc_literal(d, thing, "duration", 0, -1) > 0.0 ? gone : 0.0);   // (how long the thing lasts: an Out ends before it)
+                numbers["round"] = d.round;   // (how long the document runs: a flow goes round a whole number of times in it, as scatter's drift did)
+                kept.copies = sc->run->copies(n, clock, numbers, words, (double)d.stage->h / std::max(1.0, doc_number(d, 0, "high", 0, 1080) * doc_point(d, thing, said)));   // (a pixel of the document, where the thing stands)
+            }
+            const ScriptCopy c = copy < n ? kept.copies[(size_t)copy] : ScriptCopy{};
+            out.c = c, out.by = 2;
+        }
+    return out;
+}
 static math::mat4 doc_place(Doc& d, int thing, double now, int deeper, int copy, bool member) {
     const double said = now;   // (the moment itself: a wave goes on at it, whatever the copy's delay)
     struct Placing { Doc& d; int copy, n; bool hasAt; math::double3 at; ~Placing() { d.ctxCopy = copy, d.ctxN = n, d.ctxHasAt = hasAt, d.ctxAt = at; } } was{d, d.ctxCopy, d.ctxN, d.ctxHasAt, d.ctxAt};   // (which copy, as it was before: told back after)
@@ -17,44 +58,21 @@ static math::mat4 doc_place(Doc& d, int thing, double now, int deeper, int copy,
     float deep = 0.f;
     doc_half(d, thing, &half, &deep);
     const math::double3 anchor{doc_literal(d, thing, "anchor_x", now, 0) * half.x, doc_literal(d, thing, "anchor_y", now, 0) * half.y, doc_literal(d, thing, "anchor_z", now, 0) * deep};
-    // A member of its copies is moved, scattered and waved in units of the stage (so a larger thing is not further
-    // apart), its copies laid about the thing's own place (its middle where the rows' middle is); then turned and sized
-    // as its copy, its scattering and its wave say, about its anchor.
+    // A member of its copies is moved and waved in units of the stage (so a larger thing is not further apart), laid where
+    // its recipe or its MIDI file's notes say (doc_laid) about the thing's own place; then turned and sized as they and its
+    // wave say, about its anchor.
     const int n = member ? doc_members(d, thing) : 1;
+    const DocLaid laid = member ? doc_laid(d, thing, copy, n, said) : DocLaid{};
     math::double3 shift{0.0};
     math::mat4 own;
     if (member) {
-        const int columns = (int)doc_literal(d, thing, "copy_columns", 0, 0);
-        const double along = columns > 0 ? copy % columns : copy, down = columns > 0 ? copy / columns : copy;
-        const double alongMid = columns > 0 ? (std::min(n, columns) - 1) * 0.5 : (n - 1) * 0.5, downMid = columns > 0 ? (std::ceil((double)n / columns) - 1) * 0.5 : (n - 1) * 0.5;
-        shift += math::double3{(along - alongMid) * doc_literal(d, thing, "copy_x", now, 0), (down - downMid) * doc_literal(d, thing, "copy_y", now, 0), (columns > 0 ? down - downMid : copy - (n - 1) * 0.5) * doc_literal(d, thing, "copy_z", now, 0)};   // (in rows, each row a step deeper: a floor of them, Cinema 4D's Cloner, Grid Array)
-        if (doc_connects(d, thing)) {   // (where this copy lies, laid out in its rows, on the stage: what a falloff weighs; its own values, unconnected)
+        shift += math::double3{laid.c.x, laid.c.y, laid.c.z};   // (where its recipe, or its MIDI file's notes, lay this copy: first, so a falloff and a wave's noise read where it lies)
+        if (doc_connects(d, thing)) {   // (where this copy lies, as its recipe lays it, on the stage: what a falloff weighs; its own values, unconnected)
             d.ctxAt = (doc_above(d, thing, now, deeper) * math::double4{doc_number(d, thing, "x", now, 0) + shift.x, doc_number(d, thing, "y", now, 0) + shift.y, doc_number(d, thing, "z", now, 0) + shift.z, 1.0}).xyz;
             d.ctxHasAt = true;
         }
-        // (each copy turned and sized more than the one before; given by a behaviour, each copy its own turn and size as it gives)
-        const bool turnsEach = doc_driven_by(d, thing, "copy_rotate"), sizesEach = doc_driven_by(d, thing, "copy_size");
-        own = math::mat4::rotation((copy * doc_literal(d, thing, "copy_turn", now, 0) / n + (turnsEach ? 1 : copy) * doc_literal(d, thing, "copy_rotate", now, 0)) * (double)TAU / 360.0, math::double3{0, 0, 1}) *
-              math::mat4::scaling(sizesEach ? doc_literal(d, thing, "copy_size", now, 1) : std::pow(doc_literal(d, thing, "copy_size", now, 1), copy)) *
-              math::mat4::scaling(math::double3{n > 1 ? std::pow(doc_literal(d, thing, "copy_wide", now, 1), (double)copy / (n - 1)) : 1.0, 1.0, 1.0});
-        if (const double ty = doc_literal(d, thing, "copy_rotate_y", now, 0), tx = doc_literal(d, thing, "copy_rotate_x", now, 0); tx != 0.0 || ty != 0.0)   // (turned out of the picture's plane too, each more than the one before)
-            own = math::mat4::rotation(copy * ty * (double)TAU / 360.0, math::double3{0, 1, 0}) * math::mat4::rotation(copy * tx * (double)TAU / 360.0, math::double3{1, 0, 0}) * own;
-        // (scattered: each copy its own way, from the seed and its number; the same each time)
-        const double sx = doc_literal(d, thing, "scatter_x", now, 0), sy = doc_literal(d, thing, "scatter_y", now, 0), sr = doc_literal(d, thing, "scatter_rotate", now, 0), ss = doc_literal(d, thing, "scatter_size", now, 0);
-        const uint32_t seed = (uint32_t)doc_literal(d, thing, "seed", 0, 0);
-        const auto roll = [&](uint32_t k) {   // (-1 to 1: a hash of the seed, the copy and which roll)
-            uint32_t h = seed * 0x9E3779B9u ^ ((uint32_t)copy + 1u) * 0x85EBCA6Bu ^ k * 0xC2B2AE35u;
-            h ^= h >> 16, h *= 0x7FEB352Du, h ^= h >> 15, h *= 0x846CA68Bu, h ^= h >> 16;
-            return (double)h / 2147483647.5 - 1.0;
-        };
-        if (const double sz = doc_literal(d, thing, "scatter_z", now, 0); sz != 0.0) shift.z += sz * roll(5);
-        if (sx != 0.0 || sy != 0.0 || sr != 0.0 || ss != 0.0) {
-            const auto round = [](double v, double edge) { return edge > 0.0 ? v - 2.0 * edge * std::floor((v + edge) / (2.0 * edge)) : v; };   // (flowing past the edge: back at the other)
-            const auto whole = [&](double drift, double edge) { const double k = edge > 0.0 ? std::round(drift * d.round / (2.0 * edge)) : 0.0; return k != 0.0 ? k * 2.0 * edge / d.round : drift; };   // (round the scattering a whole number of times in the document)
-            shift += math::double3{round(sx * roll(1) + whole(doc_literal(d, thing, "drift_x", 0, 0), sx) * now, sx), round(sy * roll(2) + whole(doc_literal(d, thing, "drift_y", 0, 0), sy) * now, sy), 0.0};
-            own = own * math::mat4::rotation(sr * roll(3) * (double)TAU / 360.0, math::double3{0, 0, 1}) * math::mat4::scaling(std::max(0.0, 1.0 + ss * roll(4)));
-        }
         // (a wave through it: each copy so far behind the one before, at its own moment, a copy staggered so much later)
+        const uint32_t seed = (uint32_t)doc_literal(d, thing, "seed", 0, 0);   // (another seed, another noise)
         const double said_speed = doc_literal(d, thing, "wave_speed", said, 1), noisy = doc_literal(d, thing, "wave_noise", said, 0);
         const double turns = std::round(said_speed * d.round), speed = turns > 0.0 ? turns / d.round : said_speed;   // (a whole number of times round in the document: its film loops)
         double w = std::sin((double)TAU * (speed * now - doc_literal(d, thing, "wave_phase", said, 0) * copy / n));
@@ -86,42 +104,10 @@ static math::mat4 doc_place(Doc& d, int thing, double now, int deeper, int copy,
         if (point > 0 && midi_roll_box(midi_roll_file(file, speed == 1.0 ? 0.0 : midi_bpm(file.c_str()) * speed, why), w, h))
             shift.x += (0.5 * w - 300.0 * (said - doc_literal(d, thing, "start", 0, 0))) / point;
     }
-    if (const std::string notes = member ? doc_literal_word(d, thing, "script") : std::string(); std::filesystem::path(notes).extension() == ".mid") {   // (a MIDI file's notes, copies: midi.h)
-        Doc::Scripted& kept = d.scripted[thing];
-        if (kept.at != said || (int)kept.copies.size() != n)   // (its speed: the file's beats faster or slower, as a film's)
-        {   // (its highest row where the roll of the same file at the same speed has it, put at the same place: midi_roll.cpp, its top row the file's highest note)
-            const double speed = doc_literal(d, thing, "speed", 0, 1);
-            std::string why;
-            double w = 0, h = 0;
-            midi_roll_box(midi_roll_file(notes, speed == 1.0 ? 0.0 : midi_bpm(notes.c_str()) * speed, why), w, h);
-            kept.at = said, kept.copies = midi_copies(midi_of(notes), n, (said - doc_literal(d, thing, "start", 0, 0)) * speed, doc_number(d, 0, "high", 0, 1080) / 1080.0 * (double)d.stage->h / std::max(1.0, doc_number(d, 0, "high", 0, 1080) * doc_point(d, thing, said)), h);
-        }
-        const ScriptCopy c = copy < n ? kept.copies[(size_t)copy] : ScriptCopy{};
-        shift += math::double3{c.x, c.y, c.z};
-        own = own * math::mat4::scaling(c.size);
-    } else if (member)   // (a recipe as code: each copy where the thing's script says, on top of what its copies' values say)
-        if (DocScript* sc = doc_script_of(d, doc_literal_word(d, thing, "script")); sc && sc->run && sc->run->ok() && doc_literal_word(d, thing, "shape") != "sketch") {   // (a sketch's own mesh has no copies to place: doc_sketch.h)
-            Doc::Scripted& kept = d.scripted[thing];
-            const double gone = doc_literal(d, thing, "begin", 0, 0), begins = doc_literal(d, thing, "start", 0, 0) - gone, clock = doc_own_time(d, thing, said, said - begins);   // (a part after a cut goes on from where it was: doc_own_clock)
-            if (kept.at != said || kept.own != clock || kept.made != doc_scripts_made(d) || (int)kept.copies.size() != n) {   // (every copy at once, the knobs read once)
-                std::map<std::string, double> numbers;
-                std::map<std::string, std::string> words;
-                for (size_t i = 0; i < sc->knobs.size(); ++i) {
-                    if (sc->knobs[i].kind == "select") {   // (not said yet: its first word)
-                        const std::string w = doc_word(d, thing, sc->names[i].c_str());
-                        words[sc->knobs[i].name] = w.empty() ? sc->knobs[i].words.substr(0, sc->knobs[i].words.find(' ')) : w;
-                    }
-                    else numbers[sc->knobs[i].name] = doc_number(d, thing, sc->names[i].c_str(), said, sc->knobs[i].usual);
-                }
-                kept.at = said, kept.own = clock, kept.made = doc_scripts_made(d);
-                numbers["duration"] = doc_literal(d, thing, "duration", 0, -1) + (doc_literal(d, thing, "duration", 0, -1) > 0.0 ? gone : 0.0);   // (how long the thing lasts: an Out ends before it)
-                kept.copies = sc->run->copies(n, clock, numbers, words, (double)d.stage->h / std::max(1.0, doc_number(d, 0, "high", 0, 1080) * doc_point(d, thing, said)));   // (a pixel of the document, where the thing stands)
-            }
-            const ScriptCopy c = copy < n ? kept.copies[(size_t)copy] : ScriptCopy{};
-            shift += math::double3{c.x, c.y, c.z};
-            own = own * math::mat4::rotation(c.rotate * (double)TAU / 360.0, math::double3{0, 0, 1}) * math::mat4::rotation(c.rotate_y * (double)TAU / 360.0, math::double3{0, 1, 0}) *
-                  math::mat4::rotation(c.rotate_x * (double)TAU / 360.0, math::double3{1, 0, 0}) * math::mat4::scaling(math::double3{c.size * c.scale_x, c.size * c.scale_y, c.size * c.scale_z});
-        }
+    if (laid.by == 1) own = own * math::mat4::scaling(laid.c.size);   // (a MIDI file's note: as large as it is told)
+    else if (laid.by == 2)   // (a recipe's copy turned and sized as its script says, on top of the wave)
+        own = own * math::mat4::rotation(laid.c.rotate * (double)TAU / 360.0, math::double3{0, 0, 1}) * math::mat4::rotation(laid.c.rotate_y * (double)TAU / 360.0, math::double3{0, 1, 0}) *
+                  math::mat4::rotation(laid.c.rotate_x * (double)TAU / 360.0, math::double3{1, 0, 0}) * math::mat4::scaling(math::double3{laid.c.size * laid.c.scale_x, laid.c.size * laid.c.scale_y, laid.c.size * laid.c.scale_z});
     if (const std::vector<AbsentEffect> moving = doc_absent_on(d, thing, said); !moving.empty()) {   // (AbsentMotion's own motion, its stack in order, as AbsentMotion moves a layer: absent_motion.h)
         const double begins = doc_literal(d, thing, "start", 0, 0), lasts = doc_literal(d, thing, "duration", 0, -1);
         const AbsentMoved m = absent_motion(moving, thing, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * said);

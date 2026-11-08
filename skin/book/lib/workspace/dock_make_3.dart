@@ -6,7 +6,8 @@ class _CopiesPanel extends StatelessWidget {
   final DockCtx c;
   @override
   Widget build(BuildContext context) {
-    final picked = int.tryParse(c.ws.selected ?? '') != null, m = c.ws.inside;
+    final thing = int.tryParse(c.ws.selected ?? ''), picked = thing != null, m = c.ws.inside;
+    final why = thing == null || m == null ? '' : _repeaterWhy(m, thing);   // (a thing with a script of its own is not laid out: the sliders would do nothing, and say so)
     Widget slide(String label, String shown, double v, ValueChanged<double> to) => Padding(
       padding: EdgeInsets.only(bottom: Shape.s(4)),
       child: Row(
@@ -23,6 +24,7 @@ class _CopiesPanel extends StatelessWidget {
                   supportedDevices: wsPressing,
                   behavior: HitTestBehavior.opaque,
                   onPanDown: (d) {
+                    if (picked && why.isEmpty) _repeaterOn(m!, thing);   // (the Repeater script first, a step of its own: its knobs are the pull's numbers)
                     if (picked) m?.later('together', number: 1);
                     at(d.localPosition);
                   },
@@ -57,7 +59,7 @@ class _CopiesPanel extends StatelessWidget {
           Row(
             children: [
               Expanded(child: Text('Repeater', style: T.name(Grey.g95).copyWith(fontWeight: FontWeight.w700))),
-              Text(picked ? 'on the picked thing, live' : 'pick a thing to lay out', style: T.label(Grey.g56)),
+              Flexible(child: Text(why.isNotEmpty ? why : picked ? 'on the picked thing, live' : 'pick a thing to lay out', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g56))),
             ],
           ),
           SizedBox(height: Shape.s(6)),

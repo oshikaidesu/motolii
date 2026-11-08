@@ -4,7 +4,9 @@
 // set points 16
 // set inner 0.78
 // set copies 30
-// set copy_size 0.9
+// say script Repeater
+// set js_StepX 0
+// set js_Size 0.9
 // say copy_fill ffffff 000000
 // say copy_fill_way cycle
 // set wave_rotate 25

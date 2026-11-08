@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:material_color_utilities/material_color_utilities.dart';
 
+import '../motolii.dart' show Motolii;
 import '../sets/inspector/inspector_parts.dart' show Pop;
 import '../sets/foundations/text_hand.dart' show TextHand, wordsPicked;
 import '../sets/panels/media_parts.dart' show MiniSlider;

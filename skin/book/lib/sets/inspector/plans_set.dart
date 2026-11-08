@@ -93,10 +93,9 @@ const _cardsA = <(String, List<String>)>[
   ('Fill', ['fill', 'stroke', 'stroke_width']),
   ('Transform', ['space', 'parent', 'anchor_x', 'anchor_y', 'anchor_z', 'x', 'y', 'z', 'scale_x', 'scale_y', 'scale_z', 'rotate_x', 'rotate_y', 'rotate', 'opacity']),
   ('Blending', ['blend', 'clip']),
-  ('Copies', ['copies', 'copy_columns', 'copy_x', 'copy_y', 'copy_rotate', 'copy_rotate_x', 'copy_rotate_y', 'copy_turn', 'copy_size', 'copy_wide', 'copy_z', 'tall', 'copy_tall', 'stagger', 'stagger_from', 'copy_fill', 'copy_fill_way']),
-  ('Wave', ['wave_x', 'wave_y', 'wave_z', 'wave_rotate', 'wave_size', 'wave_speed', 'wave_phase', 'wave_noise', 'noise_scale']),
+  ('Copies', ['copies', 'tall', 'copy_tall', 'stagger', 'stagger_from', 'copy_fill', 'copy_fill_way']),   // (where the copies lie, turn and grow is the Repeater recipe's script: its knobs are on the Script card)
+  ('Wave', ['wave_x', 'wave_y', 'wave_z', 'wave_rotate', 'wave_size', 'wave_speed', 'wave_phase', 'wave_noise', 'noise_scale', 'seed']),
   ('Field', ['field_x', 'field_y', 'field_z', 'field_radius', 'field_band', 'field_size', 'field_rotate', 'field_push']),
-  ('Scatter', ['scatter_x', 'scatter_y', 'scatter_z', 'scatter_rotate', 'scatter_size', 'seed', 'drift_x', 'drift_y']),
   ('Shine', ['emissive']),
   ('Motion', ['orient']),
   ('Play', ['marker', 'animation', 'speed']),
@@ -106,8 +105,8 @@ const _cardsA = <(String, List<String>)>[
   ('Deform', ['warp', 'bend', 'twist', 'pinch', 'skew', 'squash', 'wiggle', 'stretch', 'bend_direction', 'pin_tl_x', 'pin_tl_y', 'pin_tr_x', 'pin_tr_y', 'pin_bl_x', 'pin_bl_y', 'pin_br_x', 'pin_br_y', 'warp_width', 'warp_angle', 'warp_speed', 'skew_axis', 'wiggle_detail', 'wiggle_speed']),
 ];
 const _aKey = {
-  'copies': 'count', 'copy_x': 'radius', 'copy_rotate': 'spin', 'scale_x': 'size', 'rotate': 'turn', 'opacity': 'opacity', 'wave_y': 'waveH',
-  'wave_speed': 'waveS', 'stagger': 'delay', 'scatter_y': 'scatter', 'emissive': 'glow', 'fill': 'hue', 'round': 'round',
+  'copies': 'count', 'scale_x': 'size', 'rotate': 'turn', 'opacity': 'opacity', 'wave_y': 'waveH',
+  'wave_speed': 'waveS', 'stagger': 'delay', 'emissive': 'glow', 'fill': 'hue', 'round': 'round',
 };
 final _rowsA = _cardsA.fold<int>(0, (n, c) => n + c.$2.length);
 

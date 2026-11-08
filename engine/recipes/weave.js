@@ -3,10 +3,11 @@
 // say fill ffffff
 // set size 0.26
 // set copies 135
-// set copy_columns 15
-// set copy_rotate 90
-// set copy_x 0.36
-// set copy_y -0.36
+// say script Repeater
+// set js_Columns 15
+// set js_Rotate 90
+// set js_StepX 0.36
+// set js_StepY -0.36
 // set field_radius 1.4
 // set field_rotate 90
 // key field_x 0 -3

@@ -273,20 +273,12 @@ static const DocValue doc_values[] = {
     {"pin_bl_y", "shape", -10, 10, true, nullptr},
     {"pin_br_x", "shape", -10, 10, true, nullptr},
     {"pin_br_y", "shape", -10, 10, true, nullptr},
-    {"copies", "picture text shape solid", 1, 1000, false, nullptr}, {"copy_x", "picture text shape solid", -1e4, 1e4, true, nullptr}, {"copy_y", "picture text shape solid", -1e4, 1e4, true, nullptr},
-    {"copy_rotate", "picture text shape solid", -1e6, 1e6, true, nullptr}, {"copy_size", "picture text shape solid", 0.01, 100, true, nullptr},
-    {"copy_columns", "picture text shape solid", 0, 100, false, nullptr},   // (so many to a row, then the next row: copy_x along it, copy_y down; 0: one row)
+    {"copies", "picture text shape solid", 1, 1000, false, nullptr},   // (how many; where each lies is its script's: recipes/repeater.js lays them in rows, turns, sizes and scatters them)
     {"stagger", "picture text shape solid", 0, 1e3, false, nullptr},   // (how much later the last of its copies moves than the first, in seconds: each as late as its order says)
     {"stagger_from", "picture text shape solid", 0, 0, false, "start centre end edges"},   // (which of them moves first: the first, the middle one, the last, the outer ones)
     {"copy_fill", "picture text shape", 0, 0, false, ""},   // (its copies coloured from the first colour to the last, in their order: six digits each; one, all in it; none, not coloured each)
     {"copy_fill_way", "picture text shape", 0, 0, false, "ramp cycle"},   // (from the first to the last across them all, or one colour each in turn, round and round)
-    {"copy_wide", "picture text shape solid", 0.01, 100, true, nullptr},   // (how many times as wide its last copy is as its first, those between in step: rows of waves, each with more of them)
-    {"copy_z", "picture text shape solid", -1e4, 1e4, true, nullptr},   // (its copies so far apart towards the eye, in units of the stage: a row going into the picture)
-    {"copy_rotate_x", "picture text shape solid", -1e6, 1e6, true, nullptr},   // (each copy turned so much more than the one before about the level, towards the eye: a fan of sheets in depth)
-    {"copy_rotate_y", "picture text shape solid", -1e6, 1e6, true, nullptr},   // (and about the upright: sheets turning round like pages)
     {"wave_z", "picture text shape solid", -1e3, 1e3, true, nullptr},   // (and waved so far towards the eye and away, a quarter round after up and down: with wave_y, round and round, a helix)
-    {"scatter_z", "picture text shape solid", 0, 1e4, true, nullptr},   // (scattered so far towards the eye and away)
-    {"copy_turn", "picture text shape solid", -1e5, 1e5, true, nullptr},   // (how far its copies turn in all, spread evenly over them: 360 fills a round; copy_rotate's turn each on top)
     {"tall", "picture text shape", 0, 1e3, true, nullptr},   // (how many times as tall as it is, its anchor staying where it is: a bar growing up from its foot)
     {"copy_tall", "picture text shape solid", 0, 0, false, ""},
     {"copy_fill_at", "picture text shape", 0, 1, true, nullptr},   // (where along copy_fill each copy's colour is, given by a behaviour (copy_fill_at_by): 0 its first, 1 its last; not given, their order)   // (and its copies each so many times as tall again, in their order, going round: numbers, a bar chart's data; none: all as tall)
@@ -363,12 +355,7 @@ static const DocValue doc_values[] = {
     {"field_z", "picture text shape", -1e4, 1e4, true, nullptr},   // (where its middle is towards the eye: the field is a ball, near and far measured too)
     {"wave_noise", "picture text shape solid", 0, 1, true, nullptr},   // (how much of the wave is a noise of each copy's own instead of a sine: Cavalry's noise; 1 all noise)
     {"noise_scale", "picture text shape", 0, 1e3, true, nullptr},   // (that noise read where each copy lies, so near ones move alike: how large its blobs are, in units of the stage; 0: each copy its own)
-    // (its copies scattered, each its own way by a seed: up to so far across and up (units), so far turned (degrees), so
-    //  much larger or smaller (a share); another seed, another scattering)
-    {"scatter_x", "picture text shape solid", 0, 1e4, true, nullptr}, {"scatter_y", "picture text shape solid", 0, 1e4, true, nullptr},
-    {"scatter_rotate", "picture text shape solid", 0, 1e4, true, nullptr}, {"scatter_size", "picture text shape solid", 0, 1, true, nullptr},
-    {"seed", "picture text shape", 0, 1e6, false, nullptr},
-    {"drift_x", "picture text shape", -1e3, 1e3, true, nullptr}, {"drift_y", "picture text shape", -1e3, 1e3, true, nullptr},   // (scattered copies flowing so far a second, units of the stage: past the scattering's edge, back in at the other)
+    {"seed", "picture text shape", 0, 1e6, false, nullptr},   // (another seed, another noise of the wave)
     {"tint", "film picture text shape", 0, 1, true, nullptr}, {"tint_black", "film picture text shape", 0, 0, false, ""}, {"tint_white", "film picture text shape", 0, 0, false, ""},
     {"tritone", "film picture text shape", 0, 1, true, nullptr}, {"tritone_shadow", "film picture text shape", 0, 0, false, ""}, {"tritone_midtone", "film picture text shape", 0, 0, false, ""}, {"tritone_highlight", "film picture text shape", 0, 0, false, ""},   // (how its lines lie one under another, ThorVG's own: 0 at the left, 0.5 about the middle, 1 at the right)
     {"stroke_2", "text", 0, 0, false, ""}, {"stroke_2_width", "text", 0, 1000, false, nullptr}, {"stroke_3", "text", 0, 0, false, ""}, {"stroke_3_width", "text", 0, 1000, false, nullptr},   // (more edges, each outside the last: Alight Motion's Add Border, Illustrator's Appearance)

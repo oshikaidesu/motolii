@@ -4,8 +4,10 @@
 // set size 0.03
 // set anchor_x -30
 // set copies 170
-// set copy_turn 1800
-// set copy_size 1.006
+// say script Repeater
+// set js_StepX 0
+// set js_Turn 1800
+// set js_Size 1.006
 // key rotate 0 0
 // key rotate 8 -360
 // set field_band 0.5

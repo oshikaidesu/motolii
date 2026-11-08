@@ -8,6 +8,14 @@ extension MotoliiShelves on Motolii {
       if (line.indexOf('\t') case final at when at > 0) (line.substring(0, at), line.substring(at + 1)),
   ]);
 
+  /// The Repeater recipe (engine/recipes/repeater.js), by its name: said to a thing as its script, the inside makes the name its
+  /// file (doc_say) and the thing lays its copies out (its knobs then are the thing's values js_StepX, js_Columns, js_Rotate…).
+  String get repeaterScript => 'Repeater';
+
+  /// Whether a thing's script is the Repeater (the library's file, or a maker's own of that name, which stands over it:
+  /// doc_folders): then js_StepX and the rest of its knobs are the thing's values.
+  bool hasRepeater(int thing) => word(thing, 'script').endsWith('recipes/repeater.js');
+
   /// The whole-screen effects on the shelf: each one's name and file (the stage's script is the files of those on it).
   List<(String, String)> get effects => _folders.putIfAbsent('effects', () => _labelled(_effects(_m).toDartString()));
 

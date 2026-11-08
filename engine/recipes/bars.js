@@ -6,7 +6,8 @@
 // set y -0.9
 // set anchor_y -1
 // set copies 8
-// set copy_x 0.42
+// say script Repeater
+// set js_StepX 0.42
 // say copy_tall 1.5 3.2 2.2 4.6 3.6 5.4 4.2 6
 // key tall 0 0
 // key tall 1.2 1

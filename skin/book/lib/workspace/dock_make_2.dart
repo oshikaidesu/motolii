@@ -480,11 +480,29 @@ const _starts = <String, Map<String, double>>{
   'Sun': {'rotate_x': -60, 'rotate_y': 35},
 };
 
-/// The tiles that lay the picked thing out in copies (the document's copies, as After Effects' repeater), and
-/// what each tells it: in a row, side by side and a little smaller each time; round a centre below it.
+/// The tiles that lay the picked thing out in copies (as After Effects' repeater), and what each tells it: in a row,
+/// side by side and a little smaller each time; round a centre below it. The layout is the Repeater recipe's: a tile gives
+/// the thing that script (engine/recipes/repeater.js, Motolii.repeaterScript) and says its knobs (js_StepX, js_Size)
+/// beside the document's own copies.
 const _laid = <String, Map<String, double>>{
-  'Repeater': {'copies': 5, 'copy_x': 1.3, 'copy_size': .92},
+  'Repeater': {'copies': 5, 'js_StepX': 1.3, 'js_Size': .92},
 };
+
+/// Why the Repeater cannot be laid on thing [t] ('' it can): a thing has one script, and the Repeater is one. A thing with a
+/// script of its own (a motion, another recipe's) is not given it over that, and a shelf without the recipe has none to give.
+String _repeaterWhy(Motolii m, int t) {
+  if (m.hasRepeater(t)) return '';
+  final has = m.word(t, 'script');
+  if (has.isNotEmpty && has != 'none') return 'It has a script already: take it off first';
+  return m.recipes.any((r) => r.$1 == m.repeaterScript) ? '' : 'The Repeater recipe (recipes/repeater.js) is not on the shelf';
+}
+
+/// The Repeater given to thing [t] if it has none, asked without waiting. Asked before the step that tells its knobs, not in
+/// it: the inside knows a script's knobs (js_StepX…) once the script is said, but not in the step it was said in (a set of
+/// one there is refused: "a shape has no js_StepX"), so the script is a step of its own just before the numbers' one.
+void _repeaterOn(Motolii m, int t) {
+  if (!m.hasRepeater(t)) m.later('say', thing: t, name: 'script', word: m.repeaterScript);
+}
 
 /// A tile made on the stage as a new thing, picked; a tile of copies lays the picked thing out. Not done: the foot of
 /// the shelf says why.
@@ -504,7 +522,9 @@ void _make(DockCtx c, _Make tile) {
   if (_laid[name] case final told?) {
     final t = int.tryParse(c.ws.selected ?? '');
     if (t == null) return c.set(() => c.mem.trouble[name] = 'Pick a thing to lay out');
-    m.later('together', number: 1);   // (one step, without waiting)
+    if (_repeaterWhy(m, t) case final why when why.isNotEmpty) return c.set(() => c.mem.trouble[name] = why);
+    _repeaterOn(m, t);   // (its script first, before the step: the knobs told in it are the script's)
+    m.later('together', number: 1);   // (one step for the numbers, without waiting)
     for (final e in told.entries) {
       m.later('set', thing: t, name: e.key, number: e.value.toDouble());
     }
@@ -660,22 +680,22 @@ class _MakeTile extends StatelessWidget {
 }
 
 // ---- the copies, as values (not as three kinds): how many, how many rows, how far bent round a centre. Copies are the
-// document's own numbers (copies, copy_x, copy_y, copy_columns, copy_rotate, anchor_y), each keyable, so a row
-// can be bent into a ring, a grid into a row, by keys. The sliders write those numbers on the picked thing; a hand's
-// whole pull is one step.
+// document's own number (copies) and the Repeater recipe's knobs (js_Columns, js_StepX, js_StepY, js_Rotate), with the
+// thing's anchor_y, each keyable, so a row can be bent into a ring, a grid into a row, by keys. The sliders write those
+// numbers on the picked thing, a hand's whole pull one step (the panel gives it the Repeater script first, when a pull begins).
 double _copyCount = 5, _copyColumns = 1, _copyBend = 0;
 
 void _lay(DockCtx c) {
   final t = int.tryParse(c.ws.selected ?? ''), m = c.ws.inside;
-  if (t == null || m == null) return;
+  if (t == null || m == null || _repeaterWhy(m, t).isNotEmpty) return;
   final n = _copyCount.round(), cols = _copyColumns.round().clamp(1, n), bend = _copyBend, spacing = 1.3;
   final ring = n / (2 * math.pi) * spacing;   // (the radius at which n copies a step apart lie round a centre)
   final values = {
     'copies': n.toDouble(),
-    'copy_columns': cols.toDouble(),
-    'copy_x': spacing * (1 - bend),
-    'copy_y': cols > 1 ? -spacing * (1 - bend) : 0.0,
-    'copy_rotate': bend * 360 / n,
+    'js_Columns': cols.toDouble(),
+    'js_StepX': spacing * (1 - bend),
+    'js_StepY': cols > 1 ? -spacing * (1 - bend) : 0.0,
+    'js_Rotate': bend * 360 / n,
     'anchor_y': -bend * ring,
   };
   for (final e in values.entries) {
