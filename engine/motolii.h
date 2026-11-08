@@ -116,7 +116,6 @@ int motolii_seen(Motolii* m, int thing, double* box);   /* what of it is seen: t
    how large (a share of its own size). For a shell's small preview that plays by itself. 0: there is no such thing. */
 int motolii_path(Motolii* m, int thing, int copy, double from, double to, int n, double* path);
 int motolii_path3(Motolii* m, int thing, int copy, double from, double to, int n, double* path);   /* the same in the round: x, y, z (units of the stage) and how large */
-int motolii_apart(Motolii* m, int thing, int copy, double from, double to, int n, double* xyz);   /* a group's copy's own x, y, z as its keys and its share of their spread say: its lane's curves */
 /* A thing held by a hand, carried, and let go: the one form of everything a hand drags. What is carried shows at once
    and is not the document's until it is let go; then it is one step (keep 0: nothing happened). The reckoning is the
    inside's: a shell says where the hand is, never what the document is to hold.

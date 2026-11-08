@@ -59,11 +59,6 @@ List<Fx>? _valueCards(Ws ws, String? id) {
 
 final _cardsMade = <int, (String, List<Fx>, Motolii)>{};
 
-/// The things a group holds straight under it, as the timeline orders them (its rows, an Order or a value's, are not
-/// among them: doc_dealt counts the same); none for anything but a group. Listed on its Copies card (workspace_copies.dart).
-List<WsLayer> _membersOf(Ws ws, Motolii m, int t) =>
-    m.word(t, 'shape') != 'null' ? const [] : [for (final l in ws.layers) if (l.parent == '$t' && m.word(int.parse(l.id), 'kind') != 'behaviour') l];
-
 List<Fx> _makeCards(Ws ws, Motolii m, int t) {
   final at = _drawn(ws);   // (as the picture shown has it)
   final weights = {for (final f in Ws.fxFiles('${m.word(t, 'fx')} ${m.word(t, 'script')}')) ...EffectTiles.weighed(motoliiDir, f)};   // (how much moving each knob of its effects shows them, as their tiles move)

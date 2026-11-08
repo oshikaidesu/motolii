@@ -1,7 +1,6 @@
 // The desk's shared small things: the tool catalog (name, hue, what it acts on), each tool's painted glyph, and the round
 // touchables the desk's bodies use (chip, icon button, scrub field, readout).
 import 'package:flutter/widgets.dart';
-import 'package:flutter/services.dart' show LogicalKeyboardKey, KeyDownEvent;
 import '../parts/skin_parts.dart';
 
 import '../sets/foundations/text_hand.dart';
@@ -225,9 +224,7 @@ class DeskScrub extends StatefulWidget {
     this.tone,
     this.enabled = true,
     this.pad = 7,
-    this.onDone,
   });
-  final VoidCallback? onDone;   // (a drag let go, or a number typed: the change ends here, one step)
   final String label;
   final double value, min, max, perPx, pad;
   final ValueChanged<double> onChanged;
@@ -246,16 +243,10 @@ class _DeskScrubState extends State<DeskScrub> {
   @override
   void initState() {
     super.initState();
-    _focus.onKeyEvent = (_, e) {   // (Enter takes the number as the key comes, not only by the text input's action: the inspector's field does so, _editKey in inspector_number_field_num_field_state.dart)
-      if (e is! KeyDownEvent || (e.logicalKey != LogicalKeyboardKey.enter && e.logicalKey != LogicalKeyboardKey.numpadEnter)) return KeyEventResult.ignored;
-      _focus.unfocus();
-      return KeyEventResult.handled;
-    };
     _focus.addListener(() {
       if (_focus.hasFocus || !_typing) return;
       setState(() => _typing = false);
       if (wsNumber(_words.text) case final v?) widget.onChanged(v.clamp(widget.min, widget.max));
-      widget.onDone?.call();
     });
   }
 
@@ -288,10 +279,7 @@ class _DeskScrubState extends State<DeskScrub> {
         onTap: w.enabled && !_typing ? _write : null,
         onHorizontalDragStart: w.enabled ? (_) => setState(() => _drag = true) : null,
         onHorizontalDragUpdate: w.enabled ? (d) => w.onChanged((w.value + d.delta.dx * w.perPx).clamp(w.min, w.max)) : null,
-        onHorizontalDragEnd: w.enabled ? (_) {
-          setState(() => _drag = false);
-          w.onDone?.call();
-        } : null,
+        onHorizontalDragEnd: w.enabled ? (_) => setState(() => _drag = false) : null,
         child: Container(
           height: Shape.z(22),
           decoration: BoxDecoration(color: live && w.enabled ? WsT.raised : WsT.well, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),

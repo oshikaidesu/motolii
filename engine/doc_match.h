@@ -99,9 +99,7 @@ static bool doc_match(Doc& d) {
                 of += " written=" + std::to_string((long long)std::filesystem::last_write_time(file, wrong).time_since_epoch().count());
             }
     }
-    for (auto& [thing, of] : told) of += doc_bends(d, thing) ? " bent=1" : " bent=0";
-    for (auto& [thing, of] : told) if (doc_fades_late(d, thing)) of += " late";   // (made again as a stagger or a second Opacity key comes or goes: its copies each drawn on their own, fx.together)
-    for (auto& [thing, of] : told) if (const DocDealt g = doc_dealt(d, thing); g.group) of += " dealt=" + std::to_string(g.share());   // (made again as its group's copies come, go or change in number: its share of them, doc_copies)   // (bent or not: cut fine, or only round its curves)
+    for (auto& [thing, of] : told) of += doc_bends(d, thing) ? " bent=1" : " bent=0";   // (bent or not: cut fine, or only round its curves)
     for (auto& [thing, of] : told) {   // (its effects: which are on and the room they reach, not their numbers (doc_fxing))
         const auto on = [&](const char* name) { return std::max(doc_most(d, thing, name, 0), doc_number(d, thing, name, 0, 0)) > 0.0; };
         if (doc_on(d, thing, "mosh")) of += " moshed=" + doc_mosh(d, thing);   // (made again once its datamosh is made)
@@ -202,7 +200,7 @@ static bool doc_match(Doc& d) {
         fx.radial = doc_word(d, thing, "gradient") == "radial", fx.rampAngle = (float)doc_number(d, thing, "gradient_angle", 0, 0), fx.rampScale = (float)doc_number(d, thing, "gradient_scale", 0, 1);
         fx.spread = doc_word(d, thing, "gradient_spread") == "reflect" ? 1 : doc_word(d, thing, "gradient_spread") == "repeat" ? 2 : 0;
         const std::vector<AbsentCopy>& repeated = doc_absent_copies(d, thing, d.stage->now);
-        fx.copies = repeated.empty() ? doc_copies(d, thing) : (int)repeated.size();   // (as many as AbsentMotion's repeat lays, as doc_members says; in a group with copies, its share of them)
+        fx.copies = repeated.empty() ? (int)doc_number(d, thing, "copies", 0, 1) : (int)repeated.size();   // (as many as AbsentMotion's repeat lays, as doc_members says)
         {   // (its copies drawn in one go where none is cleared of its own (no script that says opacity) and their colours are a ramp flat.mat knows; a picture's own 3D layers neither)
             const std::string fills = doc_word(d, thing, "copy_fill"), script = doc_word(d, thing, "script");
             std::istringstream said(fills);
@@ -212,7 +210,7 @@ static bool doc_match(Doc& d) {
             bool connected = false;   // (a value given each copy by a behaviour: each copy its own look, not drawn in one go)
             doc_rows(d, sqlite3_mprintf("select 1 from fact where thing = %d and name glob '*_by' and value <> 0 limit 1", thing), [&](sqlite3_stmt*) { connected = true; });
             const bool faded = std::any_of(repeated.begin(), repeated.end(), [](const AbsentCopy& c) { return c.alpha < 0.999; });   // (AbsentMotion's copies fading each, a scatter field's far ones: each its own)
-            fx.together = fx.copies > 1 && (kind == "shape" || kind == "text") && colours <= 8 && !(sc && sc->clears) && !connected && !faded && !doc_fades_late(d, thing);   // (eight colours at most: flat.mat's ramp; none fading in turn, each as clear as its own moment)
+            fx.together = fx.copies > 1 && (kind == "shape" || kind == "text") && colours <= 8 && !(sc && sc->clears) && !connected && !faded;   // (eight colours at most: flat.mat's ramp)
         }
         fx.wrapWidth = (float)doc_number(d, thing, "wrap_at", 0, 0);
         const std::string split = doc_word(d, thing, "split"), script = doc_word(d, thing, "script");
@@ -351,7 +349,7 @@ static bool doc_match(Doc& d) {
             else if (!shape.empty()) {
                 made.sketch = shape == "sketch";
                 made.shape = made.sketch ? sketch_mesh() : shape == "gem" ? gem(0.5f) : shape == "cube" ? cube(0.1f) : shape == "ball" ? sphere(0.5f) : torus(0.37f, 0.13f);
-                MaterialInstance* look = glass ? thick_glass(s, made.shape, {mat4f{}}) : add(s, made.shape, made.sketch ? "sketch.filamat" : model, std::vector<mat4f>((size_t)doc_copies(d, thing), mat4f{}));
+                MaterialInstance* look = glass ? thick_glass(s, made.shape, {mat4f{}}) : add(s, made.shape, made.sketch ? "sketch.filamat" : model, std::vector<mat4f>((size_t)std::max(1, (int)doc_number(d, thing, "copies", 0, 1)), mat4f{}));
                 made.look = look;
                 if (look && glass) glassy(look);
                 if (look && made.sketch) for (int i = 0; i < 6; ++i) look->setParameter(("picture" + std::to_string(i)).c_str(), white_point(s), TextureSampler());
@@ -372,7 +370,7 @@ static bool doc_match(Doc& d) {
                 made.look = look;
                 if (!look) made.shape = nullptr; else glassy(look);
             }
-            else if ((made.solid = solid(s, file.c_str(), mat4f{}, 1.f, doc_copies(d, thing))) && rgb >= 0) solid_fill(s, made.solid, colour, surface, model);
+            else if ((made.solid = solid(s, file.c_str(), mat4f{}, 1.f, (int)doc_number(d, thing, "copies", 0, 1))) && rgb >= 0) solid_fill(s, made.solid, colour, surface, model);
             if (made.solid) s.playing.erase(made.solid);   // (the document tells it its moment)
         } else why = std::string("its kind is one of: ") + doc_kinds;
         if (made.celMove && !made.drawn) {   // (a level at a ×, or at a drawing it lacks: kept, nothing shown, so that its next drawing is seen)

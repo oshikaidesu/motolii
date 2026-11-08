@@ -230,9 +230,6 @@ static void picture_moment(Motolii* m) {
         w.EndObject();
     }
     w.EndObject();
-    w.Key("members"), w.StartObject();   // (how many each thing with more than one has: its copies, its letters (doc_members); the timeline enters it as it enters a group)
-    for (int i = 0; i < n; ++i) if (doc_word(d, things[i], "kind") != "behaviour") if (const int many = doc_members(d, things[i]); many > 1) w.Key(std::to_string(things[i]).c_str()), w.Int(many);
-    w.EndObject();
     w.EndObject();
     std::lock_guard<std::mutex> hold(m->pictureLock);
     ++m->momentVersion;

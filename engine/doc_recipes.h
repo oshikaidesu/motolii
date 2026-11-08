@@ -386,16 +386,13 @@ static std::string doc_cards_of(Doc& d, int thing, std::string* more = nullptr) 
         const std::string spaceNow = doc_word(d, thing, "space");
         if (!strcmp(card.title, "Surface") && kindNow != "solid" && spaceNow != "3d" && spaceNow != "2.5d" && !doc_on(d, thing, "scale_z")) continue;   // (a flat thing's one value of it is its Shine; in depth it has the rest, After Effects' Material Options on a 3D layer)
         const std::string splitNow = kindNow == "text" ? doc_word(d, thing, "split") : "";
-        const bool split = !splitNow.empty() && splitNow != "none";
-        const bool letters = (split && (!strcmp(card.title, "Relation") || !strcmp(card.title, "Wave") || !strcmp(card.title, "Scatter"))) || (!strcmp(card.title, "Relation") && doc_number(d, thing, "copies", 0, 1) > 1);   // (and its copies' order, once it has copies: the one Relation card, golf (g3))   // (a text split into its letters or words: what moves them each in turn (Delay, Wave, Scatter) unasked, as After Effects' Text Animator is under a text once its range goes by character (the user, 11/5: more of a text's expression))
+        const bool letters = !splitNow.empty() && splitNow != "none" && (!strcmp(card.title, "Copies") || !strcmp(card.title, "Wave") || !strcmp(card.title, "Scatter"));   // (a text split into its letters or words: what moves them each in turn (Delay, Wave, Scatter) unasked, as After Effects' Text Animator is under a text once its range goes by character (the user, 11/5: more of a text's expression))
         bool said = !card.added || thing == 0 || (!strcmp(card.title, "Play") && kindNow == "film") || letters;
         for (const char* at = card.names; *at;) {
             const size_t len = strcspn(at, " ");
             const std::string n(at, len);
             said = said || !doc_word(d, thing, n.c_str()).empty() || doc_keys(d, thing, n.c_str());
-            const bool still = ((n == "animation" || n == "speed") && doc_word(d, thing, "kind") == "solid" && doc_words(d, thing, "animation").empty())   // (a solid with no movement of its own has none to play)
-                || (n == "seed" && !strcmp(card.title, "Relation") && doc_word(d, thing, "stagger_from") != "random")   // (an order's Seed only while it goes at random: the one it shuffles. Blender's Array modifier shows Count, Length or Curve by its Fit Type; golf (g68))
-                || ((n == "stagger_from" || n == "seed") && !strcmp(card.title, "Relation") && doc_number(d, thing, "stagger", 0, 0) <= 0);   // (and its From only once each goes later than the one before: with none later there is no order, a From rested on showed nothing, golf (g83). GSAP's from is a part of its stagger)
+            const bool still = (n == "animation" || n == "speed") && doc_word(d, thing, "kind") == "solid" && doc_words(d, thing, "animation").empty();   // (a solid with no movement of its own has none to play)
             if (has.find(" " + n + " ") != std::string::npos && !still) names += (names.empty() ? "" : " ") + n;
             at += len + (at[len] ? 1 : 0);
         }
@@ -603,8 +600,7 @@ static std::string doc_ways(Doc& d) {
 }
 static bool doc_way(Doc& d, int thing, const char* name, double at, const char* way) {
     if (!doc_knows(d, thing, name, nullptr, nullptr, true)) return false;
-    const bool stagger = !strcmp(name, "stagger") && !doc_keys(d, thing, name, at);   // (its ease, kept on the value itself: GSAP's stagger ease, no second curve)
-    if (!stagger && !doc_keys(d, thing, name, at)) return d.trouble = std::string(name) + " has no key at that moment: a stretch begins at a key", false;
+    if (!doc_keys(d, thing, name, at)) return d.trouble = std::string(name) + " has no key at that moment: a stretch begins at a key", false;
     Interp kind;
     std::istringstream said(way);
     std::string named, more;
@@ -617,12 +613,6 @@ static bool doc_way(Doc& d, int thing, const char* name, double at, const char* 
     said.clear();
     if (of_the_nine < 0 && !doc_way_named(d, named)) return d.trouble = "a way is one of: " + doc_ways(d), false;
     if (of_the_nine < 0 && (said >> more || numbers > 4)) return d.trouble = "a way defined here is its name and up to four numbers", false;
-    if (stagger) {
-        int rows = 0;
-        doc_rows(d, sqlite3_mprintf("select count(*) from fact where thing = %d and name = 'stagger' and at = 0", thing), [&](sqlite3_stmt* row) { rows = sqlite3_column_int(row, 0); });
-        if (!rows && !doc_set(d, thing, "stagger", doc_number(d, thing, "stagger", 0, 0))) return false;
-        return doc_change(d, sqlite3_mprintf("update fact set way = %Q where thing = %d and name = 'stagger' and at = 0", way, thing));
-    }
     return doc_change(d, sqlite3_mprintf("update fact set way = %Q where thing = %d and name = %Q and at = %!.17g", way, thing, name, at));
 }
 static bool doc_define(Doc& d, const char* name, const char* expression) {
@@ -740,12 +730,6 @@ static bool doc_frame(Doc& d, int thing, double now, double* frame) {
             for (int i = 1; i < n; ++i) x0 = std::min(x0, around[2 * i]), x1 = std::max(x1, around[2 * i]), y0 = std::min(y0, around[2 * i + 1]), y1 = std::max(y1, around[2 * i + 1]);
             frame[2] = 2.0 * std::max(frame[0] - x0, x1 - frame[0]), frame[3] = 2.0 * std::max(frame[1] - y0, y1 - frame[1]), frame[4] = 0.0;   // (its middle stays the thing's own: as far each way as what it covers goes on its farther side)
         } else if (doc_covers(d, thing, now, box)) frame[2] = box[2], frame[3] = box[3], frame[4] = 0.0;
-    }
-    if (doc_word(d, thing, "shape") == "null") {   // (a group: the upright box of all it holds, as Figma frames a group; it turns about its own point still. Its own small box round the middle thing was read as that thing alone, golf (g52))
-        double x0 = 1e18, y0 = 1e18, x1 = -1e18, y1 = -1e18;
-        for (const int t : doc_laid(d))
-            if ((int)doc_number(d, t, "parent", 0, 0) == thing && doc_seen_box(d, t, now, box)) x0 = std::min(x0, box[0]), y0 = std::min(y0, box[1]), x1 = std::max(x1, box[2]), y1 = std::max(y1, box[3]);
-        if (x0 <= x1) frame[0] = (x0 + x1) / 2.0, frame[1] = (y0 + y1) / 2.0, frame[2] = x1 - x0, frame[3] = y1 - y0, frame[4] = 0.0, frame[7] = 0.0;
     }
     return true;
 }

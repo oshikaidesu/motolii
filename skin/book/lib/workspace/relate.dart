@@ -7,6 +7,10 @@ import 'ws.dart';
 
 const wsRelations = ['around', 'row', 'follow', 'push', 'group', 'relate'];
 
+/// What can be pressed to make a relation: the kinds the inside knows, then each one written as a file (relations/*.js,
+/// the library's and the maker's: what is put there shows here).
+List<String> wsRelationChoices(Ws ws) => [for (final k in wsRelations) if (k != 'relate') k, for (final r in ws.inside?.relations ?? const <(String, String)>[]) r.$2];
+
 /// What a relation's kind is called where it is pressed.
 String wsRelationWord(String kind) {
   final name = kind == 'group' ? 'Move in' : kind.split('/').last.replaceAll('.js', '');

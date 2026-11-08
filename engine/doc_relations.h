@@ -131,14 +131,6 @@ static const std::vector<int>& doc_members_of(Doc& d, int by) { return doc_relat
 static const char* const doc_relate_names[] = {"x", "y", "z", "size", "rotate", "rotate_x", "rotate_y", "opacity"};
 static double doc_related(Doc& d, int by, int thing, const char* name, double t, double own);
 static const std::vector<double>& doc_related_all(Doc& d, int by, double t);
-// A row's own value `v` given to one it moves (`base`: that one's own), as much as `s`: a turn added, a size or an
-// opacity a share of its own (0 opacity out is gone); NaN: not one of these. Alight Motion's Range Transform the same
-// way: its Angle added, its Scale and Alpha a share (reports/alight_range.md).
-static double doc_given_on(const std::string& n, double base, double v, double s) {
-    if (n == "rotate" || n == "rotate_x" || n == "rotate_y") return base + v * s;
-    if (n == "size" || n == "opacity") return base * (1.0 + (v - 1.0) * s);
-    return std::nan("");
-}
 static bool doc_pushes(Doc& d, int by);
 static double doc_world_value(Doc& d, int thing, size_t name, double t, double otherwise);
 // What a relation gives a value of one of its things (`own`: the thing's own value there), weighed by its strength: it
@@ -170,8 +162,10 @@ static double doc_related(Doc& d, int by, int thing, const char* name, double t,
         return base;
     }
     const double s = strength * (doc_number(d, by, "region", 0, 0) ? doc_falloff_at(d, by, {start("x", doc_number(d, thing, "x", t, 0)), start("y", doc_number(d, thing, "y", t, 0)), start("z", doc_number(d, thing, "z", t, 0))}, t) : 1.0);   // (Cavalry's Falloff: a multiplier on its Strength; a file's is weighed where it is told: p5_stand.h's __relates, doc_world.h)
-    if (type == "around" || type == "row" || type == "group")   // (its own turn added to each, its own size and opacity a share of each one's, in turn)
-        if (const double given = doc_given_on(n, base, doc_number(d, by, name, ti, n == "size" || n == "opacity" ? 1 : 0), s); !std::isnan(given)) return given;
+    if ((type == "around" || type == "row" || type == "group") && (n == "rotate" || n == "rotate_x" || n == "rotate_y"))   // (its own turn added to each, in turn)
+        return base + doc_number(d, by, name, ti, 0) * s;
+    if ((type == "around" || type == "row" || type == "group") && (n == "size" || n == "opacity"))   // (its own size and opacity as a share of each one's, in turn: 0 opacity out is gone)
+        return base * (1.0 + (doc_number(d, by, name, ti, 1) - 1.0) * s);
     if (type == "group") {   // (where it was put, and away by its own move, its spread from their middle and its scatter, as much as its strength, in turn)
         if (n != "x" && n != "y") return base;
         const size_t axis = n == "x" ? 0 : 1;
@@ -241,8 +235,6 @@ static double doc_literal(Doc& d, int thing, const char* literal, double at, dou
     return doc_keys_at(d, *kept->second, doc_stepped(d, thing, *kept->second, at), otherwise);
 }
 static const std::string& doc_literal_word(Doc& d, int thing, const char* literal) {   // (a word so, kept the same way)
-    if (d.held.thing == thing)   // (what a hand is carrying shows in place of the document's own, as doc_number's: doc_carry_word)
-        if (const auto said = d.held.said.find(literal); said != d.held.said.end()) return said->second;
     const auto key = std::make_pair(thing, literal);
     if (const auto kept = d.heardWords.find(key); kept != d.heardWords.end()) return kept->second;
     return d.heardWords.emplace(key, doc_word(d, thing, literal)).first->second;
@@ -299,101 +291,29 @@ static double doc_absent_opacity(Doc& d, int thing, double now) {
     const double begins = doc_literal(d, thing, "start", 0, 0), lasts = doc_literal(d, thing, "duration", 0, -1);
     return absent_opacity(doc_absent_on(d, thing, now), thing, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * now);
 }
-// A thing straight in a group with copies: it draws the group's copies dealt to its things in turn, each as many in a
-// turn as its ratio says, 1 1 1 2 3 1 1 1 2 3... (docs/notes/GROUP_FOCUS_new.md 264-269: 子の順にくり返す, 赤 ×7・青 ×2・
-// 黄 ×1 で 7:2:1; Cinema 4D's Cloner in Iterate mode; Blender's particles shown as a Collection, Use Count): the group,
-// where its turn begins in a round (the ratios of those before it added up), how long a round is (all the ratios added
-// up), how many copies, its ratio. Its jth copy is the group's index(j)th. None (group 0): in none with copies, a thing
-// with copies of its own (its own are its members), or one the group's copies do not reach.
-struct DocDealt {
-    int group = 0, nth = 0, of = 1, n = 1, w = 1;
-    int index(int j) const { return (j / w) * of + nth + (j % w); }
-    int share() const { return (n / of) * w + std::clamp(n % of - nth, 0, w); }
-};
-static int doc_ratio(Doc& d, int thing) { return std::clamp((int)std::lround(doc_literal(d, thing, "ratio", 0, 1)), 1, 1000); }   // (how many of its group's copies it takes in a turn)
-static DocDealt doc_dealt(Doc& d, int thing) {
-    const int group = (int)doc_number(d, thing, "parent", 0, 0);
-    if (group <= 0 || doc_word(d, group, "shape") != "null" || doc_word(d, thing, "kind") == "behaviour" || doc_literal(d, thing, "copies", 0, 1) > 1) return {};
-    const int n = (int)doc_literal(d, group, "copies", 0, 1);
-    if (n < 2) return {};
-    int nth = -1, of = 0, w = 1;
-    for (const int t : doc_laid(d))
-        if ((int)doc_number(d, t, "parent", 0, 0) == group && doc_word(d, t, "kind") != "behaviour") {
-            const int r = doc_ratio(d, t);
-            if (t == thing) nth = of, w = r;
-            of += r;
-        }
-    const DocDealt dealt{group, nth, of, n, w};
-    return nth < 0 || dealt.share() < 1 ? DocDealt{} : dealt;
-}
-// How many of itself a thing draws: its own copies, or its share of its group's (doc_dealt).
-static int doc_copies(Doc& d, int thing) {
-    if (const DocDealt g = doc_dealt(d, thing); g.group) return g.share();
-    return std::max(1, (int)doc_literal(d, thing, "copies", 0, 1));
-}
 static int doc_members(Doc& d, int thing) {
     const auto t = d.shown.find(thing);
     if (t != d.shown.end() && t->second.drawn && !t->second.drawn->letters.empty()) return (int)t->second.drawn->letters.size();
     if (const std::vector<AbsentCopy>& copies = doc_absent_copies(d, thing, d.stage->now); !copies.empty()) return (int)copies.size();   // (as many as AbsentMotion's repeat lays)
-    return doc_copies(d, thing);
+    return std::max(1, (int)doc_literal(d, thing, "copies", 0, 1));
 }
-// How much later the nth of n moves than it is said to (its copies, its letters, a group's things): the stagger each,
-// as many times as it is steps from where the order starts. GSAP's stagger as a number, `stagger: 0.1`, "0.1 seconds
-// between the start of each", with its `from`: start (i), end (n-1-i), centre (|i - (n-1)/2|), edges (the nearer end),
-// random (its place in an order by the thing's seed, the same each time); anime.js's stagger(100) the same. It was the
-// whole spread from the first to the last (GSAP's `amount`), read as each by every golf player ((g4), (g34)).
-// The ease already stored on the stagger (GSAP's stagger ease). Linear, or none, leaves the steps as they were.
-static double doc_stagger_ease(Doc& d, int thing, const char* name, double u) {
-    std::string way;
-    doc_rows(d, sqlite3_mprintf("select way from fact where thing = %d and name = %Q and at = 0", thing, name), [&](sqlite3_stmt* row) {
-        if (sqlite3_column_type(row, 0) == SQLITE_TEXT) way = (const char*)sqlite3_column_text(row, 0);
-    });
-    if (way.empty() || way == "Linear" || u <= 0.0 || u >= 1.0) return u;
-    Interp kind;
-    if (interp_said(way.c_str(), &kind) == 0) return interp_ease(kind, u);
-    return doc_way_named(d, way) ? doc_went_by(d, way, u, u, 1.0, 0.0, 1.0) : u;
+// How much later a thing's nth copy moves than it is said to (the past repository's order law, GSAP's stagger: the
+// stagger spread over them by their order: from the start, from the centre out, from the end, from the edges in).
+static double doc_delay(Doc& d, int thing, int nth) {
+    const double stagger = doc_literal(d, thing, "stagger", 0, 0);
+    const int n = doc_members(d, thing);
+    if (stagger <= 0.0 || n < 2) return 0.0;
+    const double along = (double)nth / (double)(n - 1), centre = std::fabs(along - 0.5) * 2.0;
+    const std::string& from = doc_literal_word(d, thing, "stagger_from");
+    return stagger * (from == "centre" ? centre : from == "end" ? 1.0 - along : from == "edges" ? 1.0 - centre : along);
 }
-// Where the kth of n of a group's things stands in its spread, -1 to 1: in their order, evenly, the middle one 0, on the
-// key's own line (the user, 11/8, graphs B and C: 順番に等間隔、白い線が真ん中, for now). The one place a spread is
-// dealt out (doc_place): another way of dealing it goes here, and nowhere else.
-static double doc_spread_share(int k, int n) { return n > 1 ? 2.0 * k / (n - 1) - 1.0 : 0.0; }
-// Where the kth of n stands in its time spread, 0 to 1: in their order, evenly, the first on the key's own line and
-// leaving at the key, the rest later in turn, the last the whole of it later (the user, 11/8: 先頭が白い線、あとの子は
-// 順に遅れる; GSAP's stagger, from index 0 by default, "the closer it is, the sooner it'll begin"). Centred as a spread
-// is, half would leave before the key and none could come on one after another. The one place it is dealt (doc_apart).
-static double doc_lag_share(int k, int n) { return n > 1 ? (double)k / (n - 1) : 0.0; }
-static double doc_order_delay(Doc& d, int thing, int nth, int n, const char* eachName = "stagger", const char* fromName = "stagger_from") {
-    const double each = doc_literal(d, thing, eachName, 0, 0);
-    if (each <= 0.0 || n < 2) return 0.0;
-    const std::string& from = doc_literal_word(d, thing, fromName);
-    const double last = n - 1.0, mid = last / 2.0, at = nth;
-    double steps = at;
-    if (from == "random") {
-        const auto roll = [seed = (uint32_t)doc_literal(d, thing, "seed", 0, 0)](uint32_t k) { uint32_t h = seed * 0x9E3779B9u ^ (k + 1u) * 0x85EBCA6Bu; h ^= h >> 16, h *= 0x7FEB352Du, h ^= h >> 15, h *= 0x846CA68Bu, h ^= h >> 16; return h; };
-        steps = 0;
-        for (int k = 0; k < n; ++k) steps += roll((uint32_t)k) < roll((uint32_t)nth) || (roll((uint32_t)k) == roll((uint32_t)nth) && k < nth);
-    } else if (from == "centre") steps = std::fabs(at - mid);
-    else if (from == "end") steps = last - at;
-    else if (from == "edges") steps = mid - std::fabs(at - mid);
-    const double most = from == "centre" ? mid : from == "edges" ? mid - (n % 2 ? 0.0 : 0.5) : last;
-    if (most <= 0.0) return 0.0;
-    return each * doc_stagger_ease(d, thing, eachName, steps / most) * most;
-}
-static double doc_delay(Doc& d, int thing, int nth) { return doc_order_delay(d, thing, nth, doc_members(d, thing)); }
-// Whether a thing's copies fade each as late as they move: a stagger, and its Opacity keyed (GSAP's stagger takes every
-// value of a tween, After Effects' range selector an Opacity with the rest). Each copy is then as clear as its own moment
-// says (doc_moment), so none is drawn with the others in one go (doc_match's together).
-static std::vector<double> doc_key_moments(Doc& d, int thing, const char* name);
-static bool doc_fades_late(Doc& d, int thing) { return doc_number(d, thing, "stagger", 0, 0) > 0.0 && doc_key_moments(d, thing, "opacity").size() > 1; }
 // Where the thing it goes with is (its parent's place; none, or one not there any more: as the stage is). A 2D thing
 // going with the camera is as the stage is: it sticks to the camera already (doc_place), and would take its moves twice.
 static math::mat4 doc_above(Doc& d, int thing, double now, int deeper = 0) {
     const int parent = (int)doc_literal(d, thing, "parent", 0, 0);
     const auto up = d.shown.find(parent), self = d.shown.find(thing);
     if (up != d.shown.end() && up->second.camera && self != d.shown.end() && self->second.space == 2) return math::mat4{};
-    const bool there = up != d.shown.end() || !doc_word(d, parent, "kind").empty();   // (in the document: one just made is there before it is first drawn, as a group's new Null is when its things are put in it)
-    if (!parent || !there || deeper >= 64) return math::mat4{};   // (64: a document written elsewhere with a ring of parents still ends)
-    return doc_place(d, parent, now, deeper + 1);
+    return parent && up != d.shown.end() && deeper < 64 ? doc_place(d, parent, now, deeper + 1) : math::mat4{};   // (64: a document written elsewhere with a ring of parents still ends)
 }
 // Where a split text's letter has its middle across the thing, in its own units (0: not a letter of one).
 static double doc_letter_middle(Doc& d, int thing, int copy) {
@@ -478,7 +398,7 @@ static bool doc_physics(Doc& d, int thing, double now, PhysPose* pose, int copy 
 // as its place in the wave says), or as itself: the stage and whoever asks how it moves (motolii_path) place it alike.
 static bool doc_staggered(Doc& d, int thing, double now) {
     if (const DocScript* sc = doc_script_of(d, doc_literal_word(d, thing, "script")); sc && sc->run && sc->run->sketch()) return true;   // (one box in a sketch is placed by the sketch all the same)
-    return doc_members(d, thing) > 1 || doc_dealt(d, thing).group || doc_number(d, thing, "stagger", 0, 0) > 0.0 || doc_number(d, thing, "wave_x", now, 0) != 0.0 || doc_number(d, thing, "wave_y", now, 0) != 0.0 || doc_number(d, thing, "wave_rotate", now, 0) != 0.0 || doc_number(d, thing, "wave_size", now, 0) != 0.0 || doc_number(d, thing, "field_radius", now, 0) > 0.0 || doc_number(d, thing, "scatter_x", now, 0) > 0.0 || doc_number(d, thing, "scatter_y", now, 0) > 0.0 || doc_number(d, thing, "scatter_rotate", now, 0) > 0.0 || doc_number(d, thing, "scatter_size", now, 0) > 0.0;
+    return doc_members(d, thing) > 1 || doc_number(d, thing, "stagger", 0, 0) > 0.0 || doc_number(d, thing, "wave_x", now, 0) != 0.0 || doc_number(d, thing, "wave_y", now, 0) != 0.0 || doc_number(d, thing, "wave_rotate", now, 0) != 0.0 || doc_number(d, thing, "wave_size", now, 0) != 0.0 || doc_number(d, thing, "field_radius", now, 0) > 0.0 || doc_number(d, thing, "scatter_x", now, 0) > 0.0 || doc_number(d, thing, "scatter_y", now, 0) > 0.0 || doc_number(d, thing, "scatter_rotate", now, 0) > 0.0 || doc_number(d, thing, "scatter_size", now, 0) > 0.0;
 }
 // How far a thing that turns the way it goes (orient) is turned by it at a moment, radians about z: the way its keys
 // carry it then; standing still, the way it last went or will go. 0 for any other.

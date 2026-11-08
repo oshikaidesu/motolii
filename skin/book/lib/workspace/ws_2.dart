@@ -262,13 +262,6 @@ class Ws extends ChangeNotifier {
     many
       ..clear()
       ..addAll(ids);
-    if (many.isNotEmpty && !many.contains(_sel)) {   // (one of them in the Inspector, what is typed there going to them all, as a click then Shift-clicks on the layers show the first: drawn round, Select All or a box, it said Nothing selected, golf (g11)(g84))
-      _sel = many.first;
-      _aim = null;
-      _keys.clear();
-      _stretch = null;
-      deskManual = null;
-    }
     manyByHand = byHand;
     _tell(WsAspect.picked);
   }
@@ -306,18 +299,15 @@ class Ws extends ChangeNotifier {
   /// (BasicKeyframeConnector.tsx, Apache-2.0): one value's, where a key is every value's there.
   WsStretchPicked? _stretch;
   WsStretchPicked? get stretch => _stretch;
-  WsEaseMode _easeMode = WsEaseMode.stretch;
-  WsEaseMode get easeMode => _easeMode;
   WsStretchPicked? _stretchOf(String layer, String name, int from) {
     final t = int.tryParse(layer), at = t == null ? const <double>[] : _inside?.keyMoments(t, name) ?? const <double>[];
     final i = at.indexWhere((s) => (s * Ws.fps).round() == from);
     return i < 0 || i + 1 >= at.length ? null : (layer: layer, name: name, at: at[i], from: from, to: (at[i + 1] * Ws.fps).round());
   }
 
-  void pickStretch(String layer, String name, int from, {WsEaseMode mode = WsEaseMode.stretch}) {
+  void pickStretch(String layer, String name, int from) {
     _keys.clear();
     _stretch = _stretchOf(layer, name, from);
-    _easeMode = mode;
     _sel = layer;
     deskManual = null;
     _tell(WsAspect.picked);
@@ -464,29 +454,6 @@ class Ws extends ChangeNotifier {
     if (!_groupsOpen.remove(id)) _groupsOpen.add(id);
     _groupsOpen.contains(id) ? _lanesOpen.add(id) : _lanesOpen.remove(id);   // (its own keys with them: one triangle to a row, Apple Motion's)
     _tell(WsAspect.animating);
-  }
-
-  // The group the timeline stands inside: its own row on top (what moves its things: its keys, its ▸), a line, then the
-  // things it holds, and nothing else of the document; entered by a second press on its row, left by the crumb above
-  // (After Effects' precomp opened, Figma's group entered; docs/notes/GROUP_FOCUS_new.md "グループの中の絵"). A group held in
-  // it is one row until entered in turn. null: the whole document. (Not kept in the file.)
-  String? _entered;
-  String? get entered => _entered;
-  void enter(String? id) {
-    if (id == _entered) return;
-    _entered = id;
-    if (id != null) {
-      select(id);   // (its cards in the inspector: the row on top is the one picked)
-      _lanesOpen.add(id);   // (its keyed values are the graph: the group's timeline is that graph)
-    }
-    _tell(WsAspect.animating);
-  }
-
-  /// The groups stood inside, from the outermost down to [entered] (none: the whole document).
-  List<WsLayer> get enteredChain {
-    final of = {for (final l in layers) l.id: l}, in_ = of[_entered];
-    if (in_ == null) return const [];
-    return [..._over(in_, of).where((p) => p.kind == WsKind.group).toList().reversed, in_];
   }
 
   Iterable<WsLayer> _over(WsLayer l, Map<String, WsLayer> of) sync* {
@@ -638,20 +605,6 @@ class Ws extends ChangeNotifier {
     if (!_trying) return;
     after(m.later('hold', thing: t!));   // (without waiting, as Align's hold: the shelf's hand never stands still for it)
     after(m.later('carry', name: 'effect', word: file!));
-  }
-
-  /// Joined: a word shown on the picked thing while the hand rests on one of its choices, not the document's, gone
-  /// as the hand leaves (null): tryOn's way for a value. An order's From: the stage's marks say when each would start
-  /// before it is pressed (PowerPoint's Live Preview: a gallery's effect shown on the slide under the pointer). Five
-  /// pictures read only by pressing each was a first user's complaint, golf (g73)
-  void tryValue(String? name, String word) {
-    final m = _inside, t = int.tryParse(selected ?? '');
-    if (m == null) return;
-    if (_trying) after(m.later('let_go', number: 0));
-    _trying = name != null && t != null;
-    if (!_trying) return;
-    after(m.later('hold', thing: t!));
-    after(m.later('carry', name: name!, word: word));
   }
 
   /// Joined: the motion the picked thing has (its script's file; '' none).

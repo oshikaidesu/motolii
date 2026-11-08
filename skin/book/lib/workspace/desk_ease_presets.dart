@@ -157,35 +157,3 @@ class EaseIcon extends CustomPainter {
   @override
   bool shouldRepaint(EaseIcon o) => o.ease != ease || o.ink != ink;
 }
-
-/// What a group's stretch is worked as, drawn as the user drew it (11/8, graphs A, C, B): one line; the same line again
-/// a little higher and lower (its values apart); a little sooner and later (its moments apart). [step] is how far each
-/// lies from the next, a share of the square; zero, the one line. In EaseIcon's square (AbsentMotion's EasingIcons.kt).
-class EaseSpreadIcon extends CustomPainter {
-  const EaseSpreadIcon(this.step, this.ink);
-  final Offset step;
-  final Color ink;
-
-  @override
-  void paint(Canvas c, Size s) {
-    c.scale(s.width / 68);
-    final square = RRect.fromRectAndRadius(const Rect.fromLTWH(3, 4, 61, 60), const Radius.circular(8));
-    c.drawRRect(square, Paint()..color = ink.withValues(alpha: .16));
-    c.drawRRect(square, Paint()..color = ink.withValues(alpha: .4)..style = PaintingStyle.stroke..strokeWidth = 3);
-    c.clipRRect(square);
-    final x = EaseIcon._x, y = EaseIcon._y, n = step == Offset.zero ? 0 : 2;
-    // (values about the line, as doc_spread_share deals them; moments after it only, the first on it, as doc_lag_share does)
-    for (final k in [for (var k = step.dx != 0 ? 1 : -n; k <= (step.dx != 0 ? 2 * n : n); k++) if (k != 0) k, 0]) {   // (the line itself last, over the others)
-      final u = step.dx * k, v = step.dy * k;
-      final path = Path()
-        ..moveTo(x(-.1 + u), y(.2 + v))
-        ..lineTo(x(.3 + u), y(.2 + v))
-        ..cubicTo(x(.5 + u), y(.2 + v), x(.5 + u), y(.8 + v), x(.7 + u), y(.8 + v))
-        ..lineTo(x(1.1 + u), y(.8 + v));
-      c.drawPath(path, Paint()..color = ink.withValues(alpha: k == 0 ? 1 : .45)..style = PaintingStyle.stroke..strokeWidth = k == 0 ? 3.8 : 2.6..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round);
-    }
-  }
-
-  @override
-  bool shouldRepaint(EaseSpreadIcon o) => o.step != step || o.ink != ink;
-}

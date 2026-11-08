@@ -217,9 +217,8 @@ static const DocValue doc_values[] = {
     {"sun_halo", "light", 0, 100, true, nullptr},
     // (Filament's light channels: a light of group 1 to 7 lights only the solids of that group; 0, as it comes: the solids of group 0 and every other)
     {"light_group", "light solid", 0, 7, false, nullptr},
-    {"parent", "film picture text solid shape camera light behaviour", 0, 1e9, false, nullptr},   // (a behaviour's too: a relation's point goes with a thing, so its middle follows it)
+    {"parent", doc_kinds, 0, 1e9, false, nullptr},
     {"parent_rotate", doc_kinds, 0, 2, true, nullptr}, {"parent_size", doc_kinds, 0, 2, true, nullptr},   // (how much of its parent's turn and size it takes: 1 all, 0 none, 2 twice; Alight Motion's Parenting Helper weights)
-    {"ratio", "film picture text solid shape", 1, 1000, false, nullptr},   // (one of a group's things: how many of the group's copies it takes in a turn, 赤 ×7・青 ×2・黄 ×1 で 7:2:1 (doc_dealt); Blender's particles' Use Count)
     {"scale_assist", doc_drawn, 0, 0, false, "y x both"}, {"scale_assist_amount", doc_drawn, 0, 100, true, nullptr}, {"scale_assist_damp", doc_drawn, 1, 10, true, nullptr},   // (Alight Motion's Scale Assist, as scale_x and scale_y: grown one way alone, or wider and as much thinner as a squashed ball keeps its bulk)
     {"roll", doc_kinds, 0, 0, false, "x y"}, {"roll_radius", doc_kinds, -1e3, 1e3, true, nullptr},   // (turned as a wheel rolling as it goes along x, or y; its radius half its smaller side and this more)
     {"dissolve", "solid", 0, 100, true, nullptr}, {"grain", "solid", 0.05, 20, true, nullptr},   // (a point cloud's: its grains thrown out each its own way, so far; and how large they are drawn: points.h)
@@ -277,8 +276,8 @@ static const DocValue doc_values[] = {
     {"copies", "picture text shape solid", 1, 1000, false, nullptr}, {"copy_x", "picture text shape solid", -1e4, 1e4, true, nullptr}, {"copy_y", "picture text shape solid", -1e4, 1e4, true, nullptr},
     {"copy_rotate", "picture text shape solid", -1e6, 1e6, true, nullptr}, {"copy_size", "picture text shape solid", 0.01, 100, true, nullptr},
     {"copy_columns", "picture text shape solid", 0, 100, false, nullptr},   // (so many to a row, then the next row: copy_x along it, copy_y down; 0: one row)
-    {"stagger", "picture text shape solid", 0, 1e3, false, nullptr},   // (how much later each of its copies (letters, a group's things) moves than the one before it in its order, in seconds: GSAP's stagger)
-    {"stagger_from", "picture text shape solid", 0, 0, false, "start centre end edges random"},   // (which of them moves first: the first, the middle one, the last, the outer ones, any by its seed)
+    {"stagger", "picture text shape solid", 0, 1e3, false, nullptr},   // (how much later the last of its copies moves than the first, in seconds: each as late as its order says)
+    {"stagger_from", "picture text shape solid", 0, 0, false, "start centre end edges"},   // (which of them moves first: the first, the middle one, the last, the outer ones)
     {"copy_fill", "picture text shape", 0, 0, false, ""},   // (its copies coloured from the first colour to the last, in their order: six digits each; one, all in it; none, not coloured each)
     {"copy_fill_way", "picture text shape", 0, 0, false, "ramp cycle"},   // (from the first to the last across them all, or one colour each in turn, round and round)
     {"copy_wide", "picture text shape solid", 0.01, 100, true, nullptr},   // (how many times as wide its last copy is as its first, those between in step: rows of waves, each with more of them)

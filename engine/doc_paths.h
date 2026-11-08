@@ -376,7 +376,7 @@ static double doc_usual(Doc& d, const char* name) {
         for (const auto& [file, sc] : doc_scripts(d))
             for (size_t i = 0; i < sc.names.size(); ++i)
                 if (sc.names[i] == name) return sc.knobs[i].usual;
-    return doc_among("parent_rotate parent_size scale_x scale_y scale_z size speed volume opacity wide tall visible distance zoom copies ratio copy_size copy_wide blur_level letter_spacing line_spacing contrast saturation vibrance environment gradient_scale wave_speed slope power strength spread", name) ? 1.0 : !strcmp(name, "duration") ? -1.0
+    return doc_among("parent_rotate parent_size scale_x scale_y scale_z size speed volume opacity wide tall visible distance zoom copies copy_size copy_wide blur_level letter_spacing line_spacing contrast saturation vibrance environment gradient_scale wave_speed slope power strength spread", name) ? 1.0 : !strcmp(name, "duration") ? -1.0
          : !strcmp(name, "radius") ? 0.5 : !strcmp(name, "gap") ? 0.2   // (a relation as it comes: what it works by when nothing is said)
          : !strcmp(name, "metallic") || doc_among("bevel_metallic side_metallic back_metallic", name) ? 0.08 : !strcmp(name, "roughness") || doc_among("bevel_roughness side_roughness back_roughness", name) ? 0.6 : !strcmp(name, "reflectance") ? 0.5 : !strcmp(name, "thickness") ? 0.5 : !strcmp(name, "sun_size") ? 1.09 : !strcmp(name, "sun_halo") ? 10.0   // (a solid's surface as it comes)
          : !strcmp(name, "intensity") ? 1.0 : !strcmp(name, "falloff") ? 10.0 : !strcmp(name, "cone") ? 30.0   // (a light as it comes)
@@ -548,16 +548,6 @@ static bool doc_carry_effect(Doc& d, const char* file) {
     h.said[" effect"] = file;   // (' ': the hold's own, never said when it is let go)
     return doc_match(d), doc_moment(d, d.stage->now), true;
 }
-// A word carried on the held thing: shown in place of the document's own (doc_literal_word), said only if let go and
-// kept, as a path's points are (h.said). A choice a hand rests on, shown before it is pressed: PowerPoint's Live Preview,
-// an order's From on the stage's marks of when each starts, golf (g73). doc_carry_effect's way, for a word.
-static bool doc_carry_word(Doc& d, const char* name, const char* word) {
-    Doc::Held& h = d.held;
-    if (h.thing < 0) return d.trouble = "nothing is held", false;
-    if (!doc_knows(d, h.thing, name, nullptr, word)) return false;
-    h.said[name] = word;
-    return doc_match(d), doc_moment(d, d.stage->now), true;
-}
 // A thing's keys moved by so many seconds, every value's that has keys (as After Effects moves a layer's).
 static bool doc_keys_by(Doc& d, int thing, double by) {
     return doc_change(d, sqlite3_mprintf("update fact set at = at + %!.17g where thing = %d and name in (select name from fact where thing = %d group by name having count(*) > 1 or max(at) <> 0 or max(way) is not null);"
@@ -628,10 +618,9 @@ static bool doc_let_go(Doc& d, bool keep) {
     if (h.thing < 0) return d.trouble = "nothing is held", false;
     if (!keep || (h.tried.empty() && h.said.empty())) return doc_match(d), doc_moment(d, d.stage->now), true;   // (made again as the document has it)
     doc_act(d);   // (all that was carried is one step: a value that takes keys by the rule of a value changed at a moment, any other as the value it is)
-    const std::string kind = doc_word(d, h.thing, "kind");
     for (const auto& [name, is] : h.tried) {
         bool moves = false;
-        for (const DocValue& one : doc_values) moves = moves || (one.moves && name == one.name && doc_among(one.kinds, kind));   // (as this thing's own value takes keys, not another kind's of the same name: a group's stagger (Delay each, a shape's, set) carried on a group with Auto key on was put as a key, as a behaviour's stagger (one that moves) is, and refused, "stagger does not move")
+        for (const DocValue& one : doc_values) moves = moves || (one.moves && name == one.name);
         if (!moves && name.rfind("js_", 0) == 0)   // (a knob of one of its scripts, an effect's, as doc_knows finds it: one that takes keys as its file says, a track;
             //  else it was set, unkeyed, every key it had taken away: golf_noise.md 44)
             for (const DocScript* sc : doc_scripts_on(d, h.thing))

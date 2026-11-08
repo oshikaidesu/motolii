@@ -13,9 +13,6 @@ extension MotoliiMoment on Motolii {
   /// The moment of the picture the stage last drew: where a playhead is while it plays.
   double get now => (_moment['now'] as num?)?.toDouble() ?? 0;
 
-  /// How many members a thing has (its copies, its letters: doc_members); 1: one, or not known yet.
-  int members(int thing) => ((_moment['members'] as Map<String, dynamic>?)?['$thing'] as num?)?.toInt() ?? 1;
-
   double get drawnAt => now;
 
   /// A value at a moment, its own (not what a relation makes of it: [shows]): one that stays, the document's; one that

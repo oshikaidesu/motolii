@@ -19,6 +19,7 @@ class _RelationMarks extends StatelessWidget {
       final ws = WsScope.read(context), m = ws.inside;
       Offset? on(String id) => scene.box(id) == null ? null : v.toScreen(WsArt.toView(scene, scene.box(id)!.c));
       final picked = [for (final id in ws.many) if (on(id) case final p?) p];
+      final together = wsRelatable(ws);
       final rel = int.tryParse(ws.selected ?? ''), kind = rel == null || m == null ? '' : m.word(rel, 'file');
       final isRelation = rel != null && m != null && m.word(rel, 'kind') == 'behaviour' && wsRelations.contains(kind);
       final members = [for (final id in wsMembersOf(ws)) if (on(id) case final p?) (id, p)];
@@ -127,24 +128,24 @@ class _RelationMarks extends StatelessWidget {
             Positioned(left: on(ws.many.first)!.dx - 24, top: on(ws.many.first)!.dy - 24, child: _Badge('crown', () {}, faint: true, key: const ValueKey('ws-leader-to-be'))),
           if (sel != null && tags.isNotEmpty) // (the relations the picked thing is in, the one on top first: a touch picks it)
             Positioned(left: sel.dx + 20, top: sel.dy + 18, child: Row(children: [for (final r in tags) _RelateChip(wsRelationOf(m!, int.parse(r)), () => ws.select(r), outlined: r != wsWinner(ws), key: ValueKey('ws-in-$r'))])),   // (filled: the one that shows; the rest under it, or switched off, outlined)
-          if (lasso == null && isRelation) // (a relation picked: along the top of the stage, never over a thing. Things picked together get no row of their
-            //  own: fifteen word pills, each to be hovered to be read, were what a first user stopped at; Figma, After Effects and
-            //  Alight Motion put none on the stage either. A group is Cmd+G, its order its Inspector's Relation (the user, 11/6))
+          if (lasso == null && (together.length > 1 || isRelation)) // (along the top of the stage, never over a thing; what shows nothing at this moment counts: Motion takes what is picked in the layers or the timeline, and relate goes by values, not by the picture)
             Positioned(
               left: v.area.left,
               right: v.area.right - v.area.width,
               top: v.area.top + 8,
               child: Center(
-                child: Wrap(
+                child: Wrap(   // (as many as there are files in relations/: a narrow stage folds them)
                   alignment: WrapAlignment.center,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   runSpacing: Shape.s(4),
-                  children: [
-                    _Said('${wsRelationWord(wsRelationOf(m, rel))} · ${wsMembersOf(ws).length}'),
-                    _RelateChip('eye', () => wsSwitch(ws), glyph: (m.value(rel, 'visible', 0) ?? 1) > .5 ? TpGlyph.eye : TpGlyph.eyeOff, key: const ValueKey('ws-relation-switch')), // (its eye, as on its row: shut, what it is on top of shows)
-                    _RelateChip('bake', () => wsRelease(ws), key: const ValueKey('ws-relate-release')),
-                    _RelateChip('delete', () => ws.after(m.later('remove', thing: rel), (_, _) => ws..select(null)..reread()), key: const ValueKey('ws-relate-delete')),   // (as Blender puts Apply and Delete side by side: gone, its things back to what is under it)   // (baked: kept where they show, the relation gone; × and Delete: back to what is under it)
-                  ],
+                  children: together.length > 1
+                      ? [_Said('${together.length} picked'), for (final k in wsRelationChoices(ws)) _RelateChip(k, () => wsRelate(ws, k))]
+                      : [
+                          _Said('${wsRelationWord(wsRelationOf(m!, rel!))} · ${wsMembersOf(ws).length}'),
+                          _RelateChip('eye', () => wsSwitch(ws), glyph: (m!.value(rel!, 'visible', 0) ?? 1) > .5 ? TpGlyph.eye : TpGlyph.eyeOff, key: const ValueKey('ws-relation-switch')), // (its eye, as on its row: shut, what it is on top of shows)
+                          _RelateChip('bake', () => wsRelease(ws), key: const ValueKey('ws-relate-release')),
+                          _RelateChip('delete', () => ws.after(m.later('remove', thing: rel), (_, _) => ws..select(null)..reread()), key: const ValueKey('ws-relate-delete')),   // (as Blender puts Apply and Delete side by side: gone, its things back to what is under it)   // (baked: kept where they show, the relation gone; × and Delete: back to what is under it)
+                        ],
                 ),
               ),
             ),

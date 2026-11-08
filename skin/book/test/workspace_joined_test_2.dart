@@ -635,7 +635,7 @@ void _tests2() {
       ..reread()
       ..select('$rect');
     await t.pumpAndSettle();
-    expect(titles(text), ['Transform', 'Blending', 'Text', 'Fill', 'Type', 'Strokes'], reason: 'Layer Transform at the top for all layer types, After Effects\' Properties panel; a text\'s Type and Strokes unasked, as Alight Motion\'s text tiles (38788c983)');
+    expect(titles(text), ['Transform', 'Blending', 'Text', 'Fill'], reason: 'Layer Transform at the top for all layer types, After Effects\' Properties panel');
     expect(titles(rect), ['Transform', 'Blending', 'Fill']);
     expect(titles(cube), ['Transform', 'Blending', 'Fill']);
     expect(m.moreCards(rect), containsAll(['Copies', 'Wave', 'Field', 'Scatter', 'Shine', 'Motion', 'Play', 'Physics', 'Note']), reason: 'none lost');
@@ -863,7 +863,7 @@ void _tests2() {
       ..reread()
       ..select('$rect');
     await t.pumpAndSettle();
-    Finder animateAll() => find.descendant(of: find.ancestor(of: find.text('Auto key'), matching: find.byType(Row)).first, matching: find.byType(OnOff));   // (said Auto key since 3f2139d69, golf (g16))
+    Finder animateAll() => find.descendant(of: find.ancestor(of: find.text('Animate all'), matching: find.byType(Row)).first, matching: find.byType(OnOff));
     await t.tap(find.descendant(of: animateAll(), matching: find.text('Off')));
     await settled(t, ws);
     expect(m.keyingNow, isTrue, reason: 'Animate all keys every change; its word is pressed as its switch (AbsentMotion\'s SwitchRow)');

@@ -138,8 +138,6 @@ static Mesh* points(Stage& s, const char* file, std::string& why, MaterialInstan
     look->setParameter("fit", fit);
     Mesh* name = new Mesh;
     name->vb = vb, name->ib = ib;
-    for (int c = 0; c < 8; ++c)   // (its box's eight corners, as it is drawn: what a hand takes hold of and its frame on the picture, doc_half and doc_outline, as a solid's is its bounding box)
-        name->pos.push_back((float3{c & 1 ? hi.x : lo.x, c & 2 ? hi.y : lo.y, c & 4 ? hi.z : lo.z} - mid) / tall);
     utils::Entity e = utils::EntityManager::get().create();
     const float3 box = 0.5f * (hi - lo) / tall + float3{0.05f};
     RenderableManager::Builder(1).boundingBox({float3{0.f}, box * 3.f}).geometry(0, RenderableManager::PrimitiveType::TRIANGLES, vb, ib, 0, idx.size())

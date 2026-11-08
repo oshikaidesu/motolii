@@ -44,7 +44,7 @@ import 'package:lab_book/workspace/top_bar.dart' show wsAskSize;
 import 'package:lab_book/workspace/desk_ease.dart';
 import 'package:lab_book/workspace/ws.dart';
 import 'package:lab_book/workspace/stage_view.dart' show StageView, StageHandles;
-import 'package:lab_book/workspace/timeline_paint.dart' show WtM, WtRulerPainter, WtTracksPainter;
+import 'package:lab_book/workspace/timeline_paint.dart' show WtRulerPainter, WtTracksPainter;
 part 'workspace_joined_test_2.dart';
 part 'workspace_joined_test_3.dart';
 part 'workspace_joined_test_4.dart';

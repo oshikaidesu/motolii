@@ -31,20 +31,15 @@ List<WsMenuItem> wsThingMenu(BuildContext context, Ws ws, WsLayer l) {
 /// One row: [go] null, it cannot be done now and [why] says why; [keys] what it is pressed with too (never the only way).
 /// A rule between groups: [WsMenuItem.rule].
 class WsMenuItem {
-  const WsMenuItem(this.label, this.go, {this.keys = '', this.why = ''}) : colours = const [], pictures = const [], picked = -1, pick = null;
-  const WsMenuItem.rule() : label = '', go = null, keys = '', why = '', colours = const [], pictures = const [], picked = -1, pick = null;
+  const WsMenuItem(this.label, this.go, {this.keys = '', this.why = ''}) : colours = const [], picked = -1, pick = null;
+  const WsMenuItem.rule() : label = '', go = null, keys = '', why = '', colours = const [], picked = -1, pick = null;
 
   /// Colours to pick one of, as Ableton Live's context menus end in the clip's or the track's colours: [picked] the one
   /// it has (-1: none), [pick] told the number of the one pressed.
-  const WsMenuItem.colours(this.colours, this.picked, this.pick) : label = '', go = null, keys = '', why = '', pictures = const [];
-
-  /// Pictures to pick one of, laid as the colours are, a little larger: drawn, not said (the user's drawing, 11/8: three
-  /// small boxes out of a group's stretch). A menu of them alone is as wide as they are.
-  const WsMenuItem.pictures(this.pictures, this.pick) : label = '', go = null, keys = '', why = '', colours = const [], picked = -1;
+  const WsMenuItem.colours(this.colours, this.picked, this.pick) : label = '', go = null, keys = '', why = '';
   final String label, keys, why;
   final VoidCallback? go;
   final List<Color> colours;
-  final List<Widget> pictures;
   final int picked;
   final void Function(int)? pick;
 }
@@ -59,46 +54,18 @@ class WsMenu extends StatefulWidget {
 class WsMenuState extends State<WsMenu> {
   final _m = MenuController();
   List<WsMenuItem> _items = const [];
-  VoidCallback? _shut;
 
-  /// Opens at [at], a place of the child, with [items]; [shut] told once it closes, a row pressed or not.
-  void show(Offset at, List<WsMenuItem> items, {VoidCallback? shut}) {
+  /// Opens at [at], a place of the child, with [items].
+  void show(Offset at, List<WsMenuItem> items) {
     setState(() => _items = items);
-    _shut = shut;
     _m.open(position: at);
   }
 
   double get _row => Shape.z(22);
   double get _swatch => Shape.z(20);
-  double get _picture => Shape.z(36);
-  double _high(WsMenuItem it) => it.pictures.isNotEmpty ? _picture + Shape.s(8) : it.colours.isNotEmpty ? (it.colours.length / 8).ceil() * (_swatch + Shape.s(4)) + Shape.s(4) : it.label.isEmpty ? Shape.s(8) + 1 : _row;
+  double _high(WsMenuItem it) => it.colours.isNotEmpty ? (it.colours.length / 8).ceil() * (_swatch + Shape.s(4)) + Shape.s(4) : it.label.isEmpty ? Shape.s(8) + 1 : _row;
 
-  Widget _one(WsMenuItem it) => it.pictures.isNotEmpty
-      ? Padding(
-          padding: EdgeInsets.all(Shape.s(4)),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: Shape.s(4),
-            children: [
-              for (var k = 0; k < it.pictures.length; k++)
-                Hov(
-                  key: ValueKey('ws-menu-picture-$k'),
-                  cursor: SystemMouseCursors.click,
-                  onTap: () {
-                    _m.close();
-                    it.pick?.call(k);
-                  },
-                  builder: (_, h) => Container(
-                    width: _picture,
-                    height: _picture,
-                    decoration: BoxDecoration(color: h ? Grey.g20 : null, borderRadius: BorderRadius.all(Shape.r(4))),
-                    child: it.pictures[k],
-                  ),
-                ),
-            ],
-          ),
-        )
-      : it.colours.isNotEmpty
+  Widget _one(WsMenuItem it) => it.colours.isNotEmpty
       ? Padding(   // (eight to a row)
           padding: EdgeInsets.all(Shape.s(4)),
           child: Wrap(
@@ -149,14 +116,8 @@ class WsMenuState extends State<WsMenu> {
   @override
   Widget build(BuildContext context) => RawMenuAnchor(
     controller: _m,
-    onClose: () {
-      final shut = _shut;
-      _shut = null;
-      shut?.call();
-    },
     overlayBuilder: (context, info) {
-      final pad = Shape.s(4), alone = _items.length == 1 && _items.first.pictures.isNotEmpty;
-      final w = alone ? _items.first.pictures.length * (_picture + Shape.s(4)) + Shape.s(4) + pad * 2 + 2 : Shape.z(220);
+      final w = Shape.z(220), pad = Shape.s(4);
       final h = math.min(info.overlaySize.height * .5, [for (final it in _items) _high(it)].fold(0.0, (a, b) => a + b)) + pad * 2;
       final at = info.anchorRect.topLeft + (info.position ?? Offset.zero);
       return Positioned(

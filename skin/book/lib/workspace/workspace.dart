@@ -17,9 +17,7 @@ import 'ableton.dart';
 import 'package:lab_book/sets/inspector/inspector_parts_insp_host.dart';
 
 import '../sets/inspector/inspector_parts.dart';
-import '../sets/inspector/inspector_rows_sect.dart' show Sect;
 import '../theme.dart';
-import '../tokens.dart';
 import 'desk.dart';
 import 'desk_depth.dart';
 import 'desk_relations.dart';
@@ -35,8 +33,6 @@ import 'stage.dart';
 import 'stage_camera.dart';
 import 'stage_view.dart' show WsRelationStack;
 import 'timeline.dart';
-import 'timeline_paint.dart' show WtThumb;
-import 'thumbs.dart';
 import 'top_bar.dart';
 import '../motolii.dart';
 import 'relate.dart';
@@ -45,7 +41,6 @@ part 'workspace_seat.dart';
 part 'workspace_cards.dart';
 part 'workspace_values.dart';
 part 'workspace_keys.dart';
-part 'workspace_copies.dart';
 
 class Workspace extends StatefulWidget {
   const Workspace({super.key, this.document, this.extra = const [], this.tools = const [], this.view = const {}});
@@ -79,7 +74,6 @@ class _WorkspaceState extends State<Workspace> {
   @override
   void initState() {
     super.initState();
-    inspectorCards['Copies'] = (c) => WsCopiesCard(c);   // (a group's Copies card is the window's own: its things listed with their pictures and ratios, workspace_copies.dart)
     FocusManager.instance.addListener(_keepKeys);
     ColorTheme.watch(() => WidgetsBinding.instance.reassembleApplication());
     SkinParts.follow();   // (the theme's drawn parts: an SVG folder, read when the theme names it)   // (the theme file: read, and read again when written; the window built again in place)
@@ -262,9 +256,6 @@ class _WorkspaceState extends State<Workspace> {
       ws.after(m.later('add', name: 'shape', word: 'null'), null, (g) => ws.select('$g'));
       if (top + 1 < order.length) m.later('raise', thing: -1, number: (top + 1 - order.length).toDouble());
       m.later('say', thing: -1, name: 'name', word: mask.isEmpty ? 'Group' : 'Group and Mask');
-      // (its Count, on its Copies card from now: as many as it holds, each of them one of its copies (the inside's
-      //  doc_dealt); pulled up, the copies are dealt round them by their ratios. docs/notes/GROUP_FOCUS_new.md 270)
-      m.later('set', thing: -1, name: 'copies', number: all.length.toDouble());
       // (its bar over theirs, as a precomposed layer's is)
       final from = all.map((t) => m.value(t, 'start', 0) ?? 0).reduce(math.min), ends = [for (final t in all) m.lasts(t) < 0 ? double.infinity : (m.value(t, 'start', 0) ?? 0) + m.lasts(t)];
       m.later('set', thing: -1, name: 'start', number: from);
@@ -756,7 +747,7 @@ final _panes = [
   WsPane('Ease', DockG.time, () => const DeskEase(), minSize: 260),
   WsPane('Camera', DockG.camera, () => const DeskDepth(), minSize: WsT.lower),
   WsPane('Desk', DockG.desk, () => const WsDesk(), minSize: WsT.lower),
-  WsPane('Map', DockG.desk, () => const DeskRelations(), minSize: WsT.lower),   // (the world from outside the camera, the relations drawn as shapes on it: named as ws.dart calls it, the Relations map. As "Relations" it was taken for the Inspector's Relation (a group's order), golf (g55)(g70))
+  WsPane('Relations', DockG.desk, () => const DeskRelations(), minSize: WsT.lower),
 ];
 
 /// A pane's tab strip, added on top of the reference heights so the seats keep theirs.
@@ -773,7 +764,7 @@ DockingArea _preset(DockingItem Function(String name, {double? size, double? wei
     ]),
     DockingRow([item('Timeline'), item('Ease', size: WsT.inspector)], size: WsT.lower + _strip, minimalSize: 220),   // (the stretch between two keys, beside the keys; never lower than its seven shapes and its curve can be read: docking's own minimum, as VS Code's views say theirs)
   ]),
-  DockingColumn([extra.isEmpty ? item('Inspector') : DockingTabs([item('Inspector'), for (final p in extra) item(p.name)]), DockingTabs([item('Camera'), item('Desk'), item('Map')], size: WsT.lower + _strip)], size: WsT.inspector, minimalSize: 340),   // (the camera, whatever is picked)
+  DockingColumn([extra.isEmpty ? item('Inspector') : DockingTabs([item('Inspector'), for (final p in extra) item(p.name)]), DockingTabs([item('Camera'), item('Desk'), item('Relations')], size: WsT.lower + _strip)], size: WsT.inspector, minimalSize: 340),   // (the camera, whatever is picked)
 ]);
 
 /// The paint each layer wears on the stage, so the Inspector's Fill names the colour you see.

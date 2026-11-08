@@ -1,5 +1,4 @@
 // All turn to face the first of them: Cavalry's Look At, Cinema 4D's Target Effector, MASH's Orient.
-// --about:All turn to face the first of them
 // --track@offset:Offset,-180,180,0,1
 function relate(things, t, k) {
   const lead = things[0];

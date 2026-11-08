@@ -97,25 +97,6 @@ int motolii_path3(Motolii* m, int thing, int copy, double from, double to, int n
         return n;
     });
 }
-// A group's copy's own x, y and z as its place reads them (doc_apart: its keys', each copy so much later and
-// higher or lower as its share of the spread says), at n moments from `from` to before `to`: three numbers each, the
-// values its keys hold, not where it lies on the stage. All its copies alike where nothing is spread. Its lane's curves.
-int motolii_apart(Motolii* m, int thing, int copy, double from, double to, int n, double* xyz) {
-    return by_look(m, [=] {
-        if (!doc_knows(doc(m), thing) || n < 1) return 0;
-        Doc& d = *m->d;
-        const int many = doc_members(d, thing), was = d.ctxCopy, wasN = d.ctxN;
-        const bool spreads = many > 1 && doc_word(d, thing, "shape") == "null", wasHas = d.ctxHasAt;
-        d.ctxCopy = copy, d.ctxN = many, d.ctxHasAt = false;   // (which copy, as doc_place tells a behaviour: told back after)
-        for (int i = 0; i < n; ++i) {
-            const double at = from + (to - from) * i / n;
-            const math::double3 v = doc_apart3(d, thing, spreads, copy, many, at - doc_delay(d, thing, copy), at);
-            xyz[3 * i] = v.x, xyz[3 * i + 1] = v.y, xyz[3 * i + 2] = v.z;
-        }
-        d.ctxCopy = was, d.ctxN = wasN, d.ctxHasAt = wasHas;
-        return n;
-    });
-}
 int motolii_keying(Motolii* m, int on) {   // (on below 0: only says whether every change is keyed: a read, answered at once, not queued behind the hand's picture)
     if (on < 0) return (int)m->keying.load();
     m->keying = on != 0;   // (said at once; the document told in the hand's turn, without waiting)
@@ -579,7 +560,7 @@ int motolii_later(Motolii* m, const char* call, int thing, const char* name, con
             else if (c == "set") ok = changes(m, (int)doc_set(doc(m), thing, n.c_str(), w == "made" ? m->made : number));   // (word "made": the number is the thing the last add made, as a value that names a thing: a behaviour connected, a leader)
             else if (c == "let_go") ok = changes(m, (int)doc_let_go(doc(m), number != 0.0));
             else if (c == "duck") ok = changes(m, (int)duck(m, thing));   // (Audacity's Auto Duck: under the other sounds)
-            else if (c == "carry") ok = (int)(n == "effect" ? doc_carry_effect(doc(m), w.c_str()) : !w.empty() ? doc_carry_word(doc(m), n.c_str(), w.c_str()) : doc_carry(doc(m), n.c_str(), number, 0.0));   // (name: by; an effect file in word, or a word value's word)
+            else if (c == "carry") ok = (int)(n == "effect" ? doc_carry_effect(doc(m), w.c_str()) : doc_carry(doc(m), n.c_str(), number, 0.0));   // (name: by; an effect file in word)
             else if (c == "undo") ok = (int)doc_undo(doc(m));
             else if (c == "redo") ok = (int)doc_redo(doc(m));
             else if (c == "together") {

@@ -1,4 +1,4 @@
-// The Map tab: the world seen from outside the camera, as the Depth tab sees its depth: every thing where it is
+// The Relations tab: the world seen from outside the camera, as the Depth tab sees its depth: every thing where it is
 // (off the camera too), the camera's frame, and each relation drawn as its shape (a ring, a row, a pusher's reach,
 // a follow's threads). Front or top, or turned by a drag; a tap picks a thing or a relation, the inspector beside it.
 import 'dart:math' as math;
@@ -71,13 +71,30 @@ class _DeskRelationsState extends State<DeskRelations> {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: Listenable.merge([WsScope.read(context).on[WsAspect.document], WsScope.read(context).on[WsAspect.picked], WsScope.read(context).seen]),   // (where things are in the picture shown)
     builder: (context, _) {
-      final ws = WsScope.read(context), world = _World.of(ws);
+      final ws = WsScope.read(context), world = _World.of(ws), together = wsRelatable(ws).length, many = together > 1;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           DeskStrip(
             left: [DeskLayerChip('Relations · ${world.relations.length}', WsT.toneGroup)],
           ),
+          ColoredBox(   // (the tab says what it is for in the words that do it, as the stage's top does; Blender's Constraints tab holds its own Add)
+            color: WsT.card,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(WsT.inset, 0, WsT.inset, Shape.s(5)),
+              child: Wrap(
+                spacing: Shape.s(4),
+                runSpacing: Shape.s(4),
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(many ? '$together picked' : 'Pick two or more', style: T.micro(Grey.g63)),
+                  for (final k in wsRelationChoices(ws))
+                    GestureDetector(key: ValueKey('ws-tab-relate-$k'), onTap: many ? () => wsRelate(ws, k) : null, child: IntrinsicWidth(child: DeskLayerChip(wsRelationWord(k), many ? WsT.accent : Grey.g38))),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: WsT.gutter),
           Expanded(
             child: ColoredBox(
               color: WsT.card,

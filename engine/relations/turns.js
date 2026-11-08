@@ -1,6 +1,5 @@
 // Word after word, in reading order: each comes up and swells past its size, and what is already there leans away
 // from the one coming in. A lyric's line, the user's word of 10/22: in turn is a relation.
-// --about:Word after word in reading order, each comes up and swells
 // --track@lag:Lag,0,1,.32,0.01
 // --track@rise:Rise,0,1.5,.5,0.01
 // --track@lean:Lean,0,.5,.14,0.01

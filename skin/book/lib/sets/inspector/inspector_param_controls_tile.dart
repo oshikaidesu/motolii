@@ -89,7 +89,7 @@ class ParamTile extends StatelessWidget {
       ),
     );
     // the same skeleton as a number block: name at the top-left, the control along the bottom, the picture top-right
-    Widget shell(Widget bottom, {VoidCallback? onTap, Widget? glyph, bool tall = false, String? label}) => Hov(
+    Widget shell(Widget bottom, {VoidCallback? onTap, Widget? glyph, bool tall = false}) => Hov(
       onTap: on ? onTap : null,
       builder: (_, h) => Container(
         height: tall ? Pop.tile * 2 + Pop.tileGap : Pop.tile,
@@ -110,7 +110,7 @@ class ParamTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(label ?? p.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(on ? Grey.g63 : Grey.g44).copyWith(height: 1.1)),
+                  Text(p.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(on ? Grey.g63 : Grey.g44).copyWith(height: 1.1)),
                   bottom,
                 ],
               ),
@@ -138,30 +138,6 @@ class ParamTile extends StatelessWidget {
                 SizedBox(width: Shape.s(6)),
                 Text(b ? 'On' : 'Off', style: T.label(on ? Grey.g76 : Grey.g56)),
               ],
-            ),
-          ),
-        );
-      case ParamLook.choice when choiceMarks[id] != null:
-        // (drawn, each its picture; its name says the one picked ("From the middle"). Nothing said of the one a hand stops
-        //  on: it is shown on the stage, the marks there saying when each would start (the user, 11/6: read without words))
-        final words = choiceWords[id], at = (v ?? 0).round().clamp(0, p.options.length - 1);
-        return shell(
-          label: words == null ? null : '${p.label} ${words[at.clamp(0, words.length - 1)]}',
-          SizedBox(
-            height: Shape.z(22),
-            child: Dis(
-              key: ValueKey('choice:$id'), // (found by its value's id, as a menu of more is)
-              child: Segmented(
-                items: p.options,
-                index: at,
-                expand: true,
-                picture: (i, on) => FittedBox(fit: BoxFit.scaleDown, child: ValueMarkGlyph(choiceMarks[id]!, i.toDouble(), ink: on ? Grey.g95 : Grey.g56, size: Size(Shape.z(40), Shape.z(20)))),   // (as wide as its part: at 22 by 22 its five bars were two px each, alike till hovered, golf (g60))
-                onHover: (i) => doc.onTry?.call(id, i?.toDouble()),   // (the one a hand rests on shown on the stage, not kept)
-                onChanged: (i) {
-                  doc.onTry?.call(id, null);   // (let go before it is put: the put reads the document as it is, as ws.tryOn's)
-                  doc.set(id, i.toDouble());
-                },
-              ),
             ),
           ),
         );

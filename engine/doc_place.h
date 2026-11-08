@@ -4,17 +4,6 @@ static double doc_scale_z(Doc& d, int thing, double now) {
     const double z = doc_literal(d, thing, "scale_z", now, 1);
     return z == 0 && doc_word(d, thing, "kind") != "solid" ? 1e-3 : z;
 }
-// A group's copy's own value of where it is (x, y or z), as its place reads it: the keys' read so many seconds later and
-// so much higher or lower, as far as the keys say at the moment itself (`said`), `x_lag` and `x_spread`, its share of
-// the one doc_lag_share's, of the other doc_spread_share's. Not spread: the keys' as they are. The names literals all:
-// doc_literal keeps them by where the name lies. Its lane's curves read the same (motolii_apart).
-static double doc_apart(Doc& d, int thing, bool spreads, int copy, int n, double now, double said, const char* name, const char* lag, const char* spread) {
-    if (!spreads) return doc_literal(d, thing, name, now, 0);
-    return doc_literal(d, thing, name, now - doc_literal(d, thing, lag, said, 0) * doc_lag_share(copy, n), 0) + doc_literal(d, thing, spread, said, 0) * doc_spread_share(copy, n);
-}
-static math::double3 doc_apart3(Doc& d, int thing, bool spreads, int copy, int n, double now, double said) {
-    return {doc_apart(d, thing, spreads, copy, n, now, said, "x", "x_lag", "x_spread"), doc_apart(d, thing, spreads, copy, n, now, said, "y", "y_lag", "y_spread"), doc_apart(d, thing, spreads, copy, n, now, said, "z", "z_lag", "z_spread")};
-}
 static math::mat4 doc_place(Doc& d, int thing, double now, int deeper, int copy, bool member) {
     const double said = now;   // (the moment itself: a wave goes on at it, whatever the copy's delay)
     struct Placing { Doc& d; int copy, n; bool hasAt; math::double3 at; ~Placing() { d.ctxCopy = copy, d.ctxN = n, d.ctxHasAt = hasAt, d.ctxAt = at; } } was{d, d.ctxCopy, d.ctxN, d.ctxHasAt, d.ctxAt};   // (which copy, as it was before: told back after)
@@ -196,9 +185,7 @@ static math::mat4 doc_place(Doc& d, int thing, double now, int deeper, int copy,
                 }
             }
         }
-    const bool spreads = member && n > 1 && doc_word(d, thing, "shape") == "null";   // (a group's copy: where its spread puts it, doc_apart)
-    const DocDealt dealt = member ? doc_dealt(d, thing) : DocDealt{};   // (one of its group's copies: on that copy's place, as its group's thing is on its group's, doc_above)
-    const math::mat4 above = dealt.group ? doc_place(d, dealt.group, now, deeper + 1, dealt.index(copy), true) : doc_above(d, thing, now, deeper), there = above * math::mat4::translation(doc_apart3(d, thing, spreads, copy, n, now, said));
+    const math::mat4 above = doc_above(d, thing, now, deeper), there = above * math::mat4::translation(math::double3{doc_literal(d, thing, "x", now, 0), doc_literal(d, thing, "y", now, 0), doc_literal(d, thing, "z", now, 0)});
     math::mat4 helped;   // (Alight Motion's Parenting Helper, as bevy_alight_motion works it (MIT/Apache-2.0, src/animation/parenthelper.rs): its parent's turn and size taken by their weights, and a wheel's roll)
     if (const double wr = doc_literal(d, thing, "parent_rotate", now, 1), ws = doc_literal(d, thing, "parent_size", now, 1); doc_literal(d, thing, "parent", 0, 0) != 0.0 && (wr != 1.0 || ws != 1.0)) {
         const math::double3 ax = above[0].xyz;

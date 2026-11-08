@@ -26,7 +26,7 @@ class _InspectorSeatState extends State<_InspectorSeat> {
   // (the moment alone moved: the values and key marks told to the inspector as it stands; anything else: built again)
   final _live = ValueNotifier<(Map<String, double>, Map<String, KeyS>)>((const {}, const {}));
   int? _frame;
-  String? _titles;   // (the picked thing's cards, titles and names, as last read)
+  String? _titles;   // (the picked thing's cards' titles as last read)
   Object _now(Ws ws) => (ws.rev, ws.selected, ws.animating);
 
   // (the reading of the document changed only numbers of what is picked, none that changes its cards: they are told
@@ -34,8 +34,8 @@ class _InspectorSeatState extends State<_InspectorSeat> {
   bool _onlyNumbers(Ws ws) {
     final m = ws.inside, c = ws.lastChange, t = int.tryParse(ws.selected ?? '') ?? (ws.selected == null ? 0 : null);
     if (m == null || c == null || c.things || t == null || const bool.fromEnvironment('NOPOUR')) return false;
-    final titles = [for (final (title, names) in m.cards(t)) '$title: ${names.join(' ')}'].join(';');
-    if (titles != _titles) {   // (a card put on or taken off by its values alone: Copies laid out from the Create shelf, taken off by its Reset; or a card's fields come or go, a group's lay once its count passes its things (doc_cards_of): the titles alone did not say so, 11/8)
+    final titles = [for (final (title, _) in m.cards(t)) title].join(';');
+    if (titles != _titles) {   // (a card put on or taken off by its values alone: Copies laid out from the Create shelf, taken off by its Reset)
       _titles = titles;
       return false;
     }
@@ -137,10 +137,6 @@ class _InspectorSeatState extends State<_InspectorSeat> {
         movable: int.tryParse(l?.id ?? '') == null ? const [] : m.fxTitles(int.parse(l!.id)), // (its effects, up or down their stack)
         onCardMove: int.tryParse(l?.id ?? '') == null ? null : (title, by) => ws.after(m.later('fx_move', thing: int.parse(l!.id), word: title, number: by.toDouble())),
         onSum: m.workOut,
-        onTry: (id, to) {   // (a choice shown, not kept: ws.tryValue; its word in that place, as a press says it, _write)
-          final t = int.tryParse(l?.id ?? ''), n = id.substring(2), ways = t == null || to == null ? const <String>[] : m.words(t, n);
-          ws.tryValue(ways.isEmpty ? null : n, ways.isEmpty ? '' : ways[to!.round().clamp(0, ways.length - 1)]);
-        },
         moreCards: int.tryParse(l?.id ?? '') == null ? const [] : [for (final c in m.moreCards(int.parse(l!.id))) if (l.kind != WsKind.audio || c == 'Play') c],   // (a sound's speed, Alight Motion's; nothing else)
         onMoreCard: int.tryParse(l?.id ?? '') == null ? null : (title) {
           m.asked.putIfAbsent(int.parse(l!.id), () => {}).add(title);

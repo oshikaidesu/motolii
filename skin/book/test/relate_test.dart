@@ -216,7 +216,7 @@ void main() {
 
     ws.pickMany([for (final i in made) '$i']);
     await t.pumpAndSettle();
-    wsRelate(ws, file);
+    await t.tap(find.byKey(ValueKey('ws-tab-relate-$file')));
     await settled(t, ws);
     final r = m.things.firstWhere((i) => !made.contains(i));
     expect((m.word(r, 'file'), m.word(r, 'script'), m.word(r, 'name')), ('relate', file, 'Swell'));
@@ -235,7 +235,7 @@ void main() {
     }
   });
 
-  testWidgets('picked with no picture at this moment: a relation is made of them all the same, one picked with them stays out', (t) async {
+  testWidgets('picked with no picture at this moment: the words on the stage and the tab make it, a relation picked with them stays out', (t) async {
     final m = Motolii.open('${Directory.systemTemp.createTempSync('relate').path}/relate.motolii')!;
     addTearDown(m.close);
     final ws = Ws()..join(m);
@@ -253,10 +253,14 @@ void main() {
       builder: (_, _) => WsScope(ws: ws, child: const Align(alignment: Alignment.topLeft, child: SizedBox(width: 924, height: 616, child: Row(children: [Expanded(child: WsStage()), SizedBox(width: 300, child: DeskRelations())])))),
     ));
     await t.pumpAndSettle();
+    expect(find.text('Pick two or more'), findsOneWidget);
+    expect(find.byKey(const ValueKey('ws-relate-row')), findsNothing);
+
     ws.pickMany([for (final i in made) '$i']);
     await t.pumpAndSettle();
     expect(m.frame(made.first), isNull, reason: 'nothing of it shows now');
-    wsRelate(ws, 'row');
+    expect(find.byKey(const ValueKey('ws-relate-row')), findsOneWidget, reason: 'on the stage all the same');
+    await t.tap(find.byKey(const ValueKey('ws-tab-relate-row')));
     await settled(t, ws);
     final row = m.things.firstWhere((i) => !made.contains(i));
     expect(m.word(row, 'file'), 'row');
@@ -264,7 +268,7 @@ void main() {
 
     ws.pickMany(['$row', for (final i in made) '$i']);
     await t.pumpAndSettle();
-    wsRelate(ws, 'around');
+    await t.tap(find.byKey(const ValueKey('ws-tab-relate-around')));
     await settled(t, ws);
     expect(m.word(int.parse(ws.selected!), 'file'), 'around');
     expect(wsMembersOf(ws), {for (final i in made) '$i'}, reason: 'the row is not one of what it moves');
@@ -302,9 +306,10 @@ void main() {
     await g.up();
     await t.pumpAndSettle();
     expect(ws.many, {for (final i in made) '$i'}, reason: 'every thing inside the line picked together');
+    expect(find.byKey(const ValueKey('ws-relate-around')), findsOneWidget);
 
     final before = m.things.length;
-    wsRelate(ws, 'around');
+    await t.tap(find.byKey(const ValueKey('ws-relate-around')));
     await settled(t, ws);
     final b = m.things.firstWhere((i) => !made.contains(i));
     expect(m.things.length, before + 1);

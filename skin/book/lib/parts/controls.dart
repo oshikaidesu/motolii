@@ -73,10 +73,8 @@ class PillSwitch extends StatelessWidget {
 }
 
 class Segmented extends StatelessWidget {
-  const Segmented({super.key, required this.items, required this.index, this.onChanged, this.accent, this.expand = false, this.picture, this.onHover});
+  const Segmented({super.key, required this.items, required this.index, this.onChanged, this.accent, this.expand = false});
   final List<String> items;
-  final Widget Function(int i, bool on)? picture;   // (each drawn, not said: the Transform card's manner, read with no words)
-  final ValueChanged<int?>? onHover;   // (which one a hand stops on, null when it leaves: its word said elsewhere)
   final int index;
   final Color? accent;
   final bool expand;
@@ -85,10 +83,7 @@ class Segmented extends StatelessWidget {
   /// One selected style across the lab: a g20 pill with g95 text and a 1px accent underline (critique 2026-10-02: four selected styles were found).
   @override
   Widget build(BuildContext context) {
-    Widget seg(int i) => MouseRegion(
-          onEnter: onHover == null ? null : (_) => onHover!(i),
-          onExit: onHover == null ? null : (_) => onHover!(null),
-          child: GestureDetector(
+    Widget seg(int i) => GestureDetector(
           onTap: () => onChanged?.call(i),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 120),
@@ -100,9 +95,9 @@ class Segmented extends StatelessWidget {
               borderRadius: BorderRadius.all(Shape.r(5)),
               border: Border(bottom: BorderSide(color: i == index ? (accent ?? Role.selected) : const Color(0x00000000), width: 1)),
             ),
-            child: picture != null ? picture!(i, i == index) : FittedBox(fit: BoxFit.scaleDown, child: Text(items[i].toUpperCase(), maxLines: 1, softWrap: false, style: T.micro(i == index ? Grey.g95 : Grey.g63).copyWith(letterSpacing: .4))),
+            child: FittedBox(fit: BoxFit.scaleDown, child: Text(items[i].toUpperCase(), maxLines: 1, softWrap: false, style: T.micro(i == index ? Grey.g95 : Grey.g63).copyWith(letterSpacing: .4))),
           ),
-        ));
+        );
     return Container(
       height: Shape.z(26),
       padding: EdgeInsets.all(Shape.s(2)),

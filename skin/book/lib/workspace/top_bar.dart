@@ -33,20 +33,11 @@ class WsTopBar extends StatelessWidget {
           SizedBox(width: Shape.s(14)),
           const _UndoRedo(),
           SizedBox(width: Shape.s(14)),
-          Flexible(child: GestureDetector(key: const ValueKey('ws-crumb-document'), onTap: () => ws.enter(null), child: Text(ws.document ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(Grey.g95).copyWith(fontWeight: FontWeight.w600)))), // (a long name gives way, not the bar)   // (pressed: out of every group, the whole document)
-          // (the groups the timeline stands inside, each a crumb that leads back out to it: After Effects' composition tabs, Figma's breadcrumb)
-          for (final g in ws.enteredChain) ...[
-            SizedBox(width: Shape.s(6)),
-            Text('/', style: T.name(Grey.g44)),
-            SizedBox(width: Shape.s(6)),
-            GestureDetector(key: ValueKey('ws-crumb-${g.id}'), onTap: () => ws.enter(g.id), child: Text(g.name, maxLines: 1, style: T.name(Grey.g76))),
-          ],
-          if (ws.layer == null ? ws.entered == null : ws.layer!.id != ws.entered) ...[   // (the picked thing, unless it is the group stood inside; nothing picked and no group: the stage itself)
-            SizedBox(width: Shape.s(6)),
-            Text('/', style: T.name(Grey.g44)),
-            SizedBox(width: Shape.s(6)),
-            Text(ws.layer?.name ?? 'Stage', style: T.name(Grey.g76)), // (where the hand is: the picked thing, or the stage itself)
-          ],
+          Flexible(child: Text(ws.document ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(Grey.g95).copyWith(fontWeight: FontWeight.w600))), // (a long name gives way, not the bar)
+          SizedBox(width: Shape.s(6)),
+          Text('/', style: T.name(Grey.g44)),
+          SizedBox(width: Shape.s(6)),
+          Text(ws.layer?.name ?? 'Stage', style: T.name(Grey.g76)), // (where the hand is: the picked thing, or the stage itself)
           SizedBox(width: Shape.s(10)),
           const _SizeChip(),
           SizedBox(width: Shape.s(4)),

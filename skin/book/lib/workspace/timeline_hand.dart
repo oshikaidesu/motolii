@@ -6,16 +6,7 @@ extension _WsTimelineHand on _WsTimelineState {
 
   // The row under a height: its place, its layer, and the value whose lane it is (null: the layer's own row).
   ({int i, WsLayer l, String? value})? _rowAt(double y) {
-    var i = 0;
-    if (_pin > 0 && y < _panelH + _grip) {   // (the group's room on top, or its edge)
-      if (y >= _panelH) return null;
-      for (var top = 0.0; i < _pin && top + _tall(i) <= y + _pscroll; i++) {
-        top += _tall(i);
-      }
-      if (i >= _pin) return null;
-    } else {
-      i = _pin + ((y - _panelH - _grip + _vscroll) / WtM.row).floor();
-    }
+    final i = ((y + _vscroll) / WtM.row).floor();
     if (i < 0 || i >= _order.length) return null;
     return (i: i, l: _ws!.layers[_order[i].layer], value: _order[i].value);
   }
@@ -36,35 +27,21 @@ extension _WsTimelineHand on _WsTimelineState {
     _laneAt = p;
     final f = v.frameAt(p.dx);
     if (twice) return ws.after(m.later('key_here', thing: t, name: name, number: f.round().clamp(0, Ws.duration) / Ws.fps));
-    final from = pts.where((q) => q.$1 <= f).lastOrNull?.$1;
-    if (from == null || !pts.any((q) => q.$1 > f)) return ws.clearKeys();
-    if (r.l.kind == WsKind.group) return _offer(ws, r.l, name, from, p);
-    ws.pickStretch(r.l.id, name, from);
-  }
-
-  // A group's stretch pressed: three small boxes where it was pressed, each a picture of what it works (the user's
-  // drawing, 11/8: graph D's stretch, three boxes out of it; their pictures graphs A, C, B), then the existing Ease desk.
-  // Value and time are of the array, so only here.
-  void _offer(Ws ws, WsLayer l, String name, int from, Offset p) {
-    _offering((layer: l.id, name: name, from: from));
-    const steps = {WsEaseMode.stretch: Offset.zero, WsEaseMode.value: Offset(0, .1), WsEaseMode.time: Offset(.1, 0)};
-    _trackMenu.currentState?.show(p, [
-      WsMenuItem.pictures([for (final s in steps.values) CustomPaint(painter: EaseSpreadIcon(s, Grey.g91))], (k) => ws.pickStretch(l.id, name, from, mode: steps.keys.elementAt(k))),
-    ], shut: () => mounted ? _offering(null) : null);
+    final from = pts.where((q) => q.$1 <= f).lastOrNull?.$1, inside = from != null && pts.any((q) => q.$1 > f);
+    inside ? ws.pickStretch(r.l.id, name, from) : ws.clearKeys();
   }
 
   void _trackDown(Offset p) {
     final ws = _ws!, v = _view;
     final r = _rowAt(p.dy);
     if (r == null) { // (below the rows: nothing picked, After Effects' manner; joined, the inspector is then the whole picture's)
-      if (ws.entered != null && _twice('')) return ws.enter(ws.layers.where((l) => l.id == ws.entered).firstOrNull?.parent);   // (pressed twice: out of the group, to the one it is in)
       ws.clearKeys();
       ws.select(null);
       return;
     }
     if (r.value != null) return;   // (a lane: its tap is the lane's, on the hand's way up)
     final i = r.i, l = r.l;
-    final cy = _rowY(i) + WtM.row / 2;
+    final cy = i * WtM.row - _vscroll + WtM.row / 2;
     if (!_isLocked(ws, l.id) && (p.dy - cy).abs() <= WtM.bar / 2 + 2) {
       int? best;
       var bd = WtM.keyPicked + 2;
@@ -79,7 +56,6 @@ extension _WsTimelineHand on _WsTimelineState {
     }
     final f = v.frameAt(p.dx);
     if (f >= l.inF && f <= l.outF) {
-      if (_roomy(ws, l) && l.id != ws.entered && _twice(l.id)) return ws.enter(l.id);   // (a group's bar pressed twice, or one with copies: into it)
       ws.select(l.id);
     } else {
       ws.clearKeys();
@@ -92,7 +68,6 @@ extension _WsTimelineHand on _WsTimelineState {
   }
 
   MouseCursor _cursorAt(Offset p) {
-    if (_onGrip(p.dy)) return SystemMouseCursors.resizeUpDown;
     final ws = _ws!, v = _view, r = _rowAt(p.dy);
     if (r == null) return MouseCursor.defer;
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);
@@ -110,10 +85,7 @@ extension _WsTimelineHand on _WsTimelineState {
     final ws = _ws!, v = _view, m = ws.inside;
     final r = _rowAt(p.dy);
     if (m == null || r == null) return false;
-    if (r.value != null) {   // (a lane: nothing carried, and no box drawn from it; a key of a group's place, how far apart there)
-      _pullApart(ws, r, p);
-      return true;
-    }
+    if (r.value != null) return true;   // (a lane: nothing carried, and no box drawn from it)
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);
     final off = p.dx < a - 6 || p.dx > b + 6;
     if (_isLocked(_ws!, l.id) || (off && !_onPale(ws, l, p))) return false;

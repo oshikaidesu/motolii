@@ -73,7 +73,7 @@ class _Header extends StatelessWidget {
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            picked > 0 ? '${layer.name}  ·  $picked key${picked == 1 ? '' : 's'}' : '${layer.name}  ·  ${layer.keys.length} key${layer.keys.length == 1 ? '' : 's'}',   // (one key, as one picked key is said; "1 keys", golf (g105))
+                            picked > 0 ? '${layer.name}  ·  $picked key${picked == 1 ? '' : 's'}' : '${layer.name}  ·  ${layer.keys.length} keys',
                             style: T.label(Grey.g76),
                             maxLines: 1,
                           ),

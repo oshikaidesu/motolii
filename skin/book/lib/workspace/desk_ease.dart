@@ -82,8 +82,7 @@ EaseSpan? easeSpan(Ws ws) {
     final layer = ws.layers.where((l) => l.id == ws.selected).firstOrNull, f = ws.frame;
     final keys = layer == null ? const <int>[] : ([...layer.keys]..sort());
     final from = keys.where((k) => k <= f).lastOrNull, to = keys.where((k) => k > f).firstOrNull, before = keys.where((k) => k < f).lastOrNull;
-    if (to == null && before != null && keys.length > 1) return (layer: layer!, from: keys[keys.length - 2], to: keys.last, picked: 0);   // (on its last key or past it: the stretch that ends there, as with that key picked below; golf_noise.md ㊵; past it the trial's Linear was read as the move's, golf (g54))
-    if (from == null && keys.length > 1) return (layer: layer!, from: keys.first, to: keys[1], picked: 0);   // (before its first key: the stretch that starts there)
+    if (from == f && to == null && before != null) return (layer: layer!, from: before, to: f, picked: 0);   // (on its last key: the stretch that ends there, as with that key picked below; golf_noise.md ㊵)
     return from == null || to == null ? null : (layer: layer!, from: from, to: to, picked: 0);
   }
   final picked = ws.keys.toList()..sort((a, b) => a.frame.compareTo(b.frame));

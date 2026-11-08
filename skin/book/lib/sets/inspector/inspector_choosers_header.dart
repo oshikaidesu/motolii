@@ -321,7 +321,7 @@ class InspHeader extends StatelessWidget {
             SizedBox(width: Shape.s(6)),
             Text((doc.kind == Kind.several ? 'Several' : word) + (x.cfg.locked ? ' · Locked' : ''), maxLines: 1, style: T.label(Grey.g56)),
             const Spacer(),
-            Text('Auto key', style: T.label(Grey.g63)),
+            Text('Animate all', style: T.label(Grey.g63)),
             SizedBox(width: Shape.s(6)),
             OnOff(
               on: doc.animateAll,
@@ -363,13 +363,12 @@ class InspHeader extends StatelessWidget {
             ),
           ),
           SizedBox(width: Shape.s(8)),
-          // contract: while on, editing an unkeyed value writes its first key at the playhead (D2). Said Auto key, as Blender's
-          // Auto Keying, Maya's and Cinema 4D's (Apple Motion's Record Animation, its key A): "Animate all" was not read, golf (g16).
+          // contract: while on, editing an unkeyed value writes its first key at the playhead (D2).
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Auto key', style: T.label(x.cfg.locked ? Grey.g56 : (doc.animateAll ? Grey.g95 : Grey.g63))),
+              Text('Animate all', style: T.label(x.cfg.locked ? Grey.g56 : (doc.animateAll ? Grey.g95 : Grey.g63))),
               SizedBox(height: Shape.s(4)),
               OnOff(
                 on: doc.animateAll,

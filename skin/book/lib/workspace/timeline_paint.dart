@@ -71,12 +71,8 @@ class WtRow {
     this.lane,
     this.laneWays,
     this.laneOn,
-    this.instances,
-    this.tall,
     this.whole,
-    this.head = false,
   });
-  final bool head;   // (the group the timeline stands inside, its own row on top: a line under it parts what moves them from what moves)
   final (int, int)? whole;   // (a film's whole length as it lies, cut or not: the pale slip-edit bar of After Effects)
   final List<WsStretch> stretches;   // (how it goes between its keys: each stretch's way drawn between them)
 
@@ -87,11 +83,6 @@ class WtRow {
   /// How the lane goes from each key to the next: its way's shape, 0 at the key and 1 at the next (as a stretch's).
   final List<List<double>>? laneWays;
   final int? laneOn;   // (the stretch picked by its line: its place among them)
-
-  /// A group's lane: each of its instances' own curve of the value as the inside places it (frame, 0 to 1 as [lane]),
-  /// laid over one another under the lane's own line; null: none.
-  final List<List<(double, double)>>? instances;
-  final double? tall;   // (a lane in the group's room: so high, the room's share; null: a row's)
   final Color? tone;   // (its label colour; none: its kind's)
   final List<Color>? mix;   // (a relation's: its things' label colours, its bar their gradient)
   final String name;
@@ -127,7 +118,6 @@ class WtRow {
       other.locked == locked &&
       other.clipped == clipped &&
       other.whole == whole &&
-      other.head == head &&
       identical(other.wave, wave) &&
       identical(other.frames, frames) &&   // (read once a change: the same list until the document changes)
       other.form == form &&
@@ -135,8 +125,6 @@ class WtRow {
       other.outline == outline &&
       listEquals(other.lane, lane) &&
       other.laneOn == laneOn &&
-      identical(other.instances, instances) &&   // (read once a change, as frames)
-      other.tall == tall &&
       other.stretches.length == stretches.length &&
       [for (var i = 0; i < stretches.length; i++) other.stretches[i].from == stretches[i].from && other.stretches[i].to == stretches[i].to && other.stretches[i].way == stretches[i].way].every((same) => same);
   @override
@@ -251,8 +239,7 @@ class WtRulerPainter extends CustomPainter {
       if (isMajor) {
         if (flags.any((m) => m.$1.inflate(3).overlaps(Rect.fromLTWH(x + 3, WtM.band + 2, 24, 12)))) continue;
         final sec = f ~/ fps, fr = (f % fps).round();
-        // (finer than a second, still in seconds, as the whole seconds are: 0.5s, 1.5s; "0:30" for 30 frames was read as 30 seconds, golf (g41))
-        final t = _text(mj >= fps || fr == 0 ? '${sec}s' : '${(f / fps).toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '')}s', T.value(Grey.g76).copyWith(fontSize: T.px(10)));
+        final t = _text(mj >= fps ? '${sec}s' : '$sec:${fr.toString().padLeft(2, '0')}', T.value(Grey.g76).copyWith(fontSize: T.px(10)));
         t.paint(c, Offset(x + 3, WtM.band + 3));
         t.dispose();
       }
@@ -288,9 +275,6 @@ class WtRulerPainter extends CustomPainter {
 
 Color wtBand(int i, bool selected) => Forms.worn.trackBand(i, selected);
 
-/// A colour of the whole's rows as the group's room wears it: half way to black (the room told from the whole by its ground).
-Color wtRoomGround(Color c) => Color.lerp(c, Grey.g00, .5)!;
-
 /// The bar's fill: the kind's hue, a step quieter when not selected; a hidden or soloed-out layer drops to grey.
 Color wtBarFill(WtRow r) => Forms.worn.trackFill(r.tone ?? wsTone(r.kind), dim: r.dim, selected: r.selected);
 
@@ -308,8 +292,7 @@ void _wayLine(Path p, List<double> way, double xa, double xb, double width, doub
 }
 
 class WtTracksPainter extends CustomPainter {
-  const WtTracksPainter({required this.rows, required this.view, required this.fps, required this.vscroll, this.tempo, this.restAt, this.room = false});
-  final bool room;   // (a group's room under the ruler: its ground a step darker than the whole's below, so the two are told apart at a glance, as Live's Clip View is its own pane)
+  const WtTracksPainter({required this.rows, required this.view, required this.fps, required this.vscroll, this.tempo, this.restAt});
   final WsBeats? tempo;
   final int? restAt;   // (where the hand has come to rest: Alight Motion's SnapLine)
   final List<WtRow> rows;
@@ -321,24 +304,19 @@ class WtTracksPainter extends CustomPainter {
   void paint(Canvas c, Size s) {
     c.clipRect(Offset.zero & s);
     final p = Paint(), end = view.x(Ws.duration);
-    final body = room ? wtRoomGround(WsT.body) : WsT.body;
-    c.drawRect(Offset.zero & s, p..color = body);
-    final tops = <double>[];
-    for (var i = 0, top = -vscroll; i < rows.length; top += rows[i].tall ?? WtM.row, i++) {
-      tops.add(top);
-    }
+    c.drawRect(Offset.zero & s, p..color = WsT.body);
     for (var i = 0; i < rows.length; i++) {
-      final top = tops[i], h = rows[i].tall ?? WtM.row;
-      if (top > s.height || top + h < 0) continue;
-      c.drawRect(Rect.fromLTWH(0, top, s.width, h - 1), p..color = room ? wtRoomGround(wtBand(i, rows[i].selected)) : wtBand(i, rows[i].selected));
-      c.drawRect(Rect.fromLTWH(0, top + h - 1, s.width, 1), p..color = room ? wtRoomGround(Grey.rowLine) : Grey.rowLine);
+      final top = i * WtM.row - vscroll;
+      if (top > s.height || top + WtM.row < 0) continue;
+      c.drawRect(Rect.fromLTWH(0, top, s.width, WtM.row - 1), p..color = wtBand(i, rows[i].selected));
+      c.drawRect(Rect.fromLTWH(0, top + WtM.row - 1, s.width, 1), p..color = Grey.rowLine);
     }
-    if (end < s.width) c.drawRect(Rect.fromLTRB(end, 0, s.width, s.height), p..color = body);
+    if (end < s.width) c.drawRect(Rect.fromLTRB(end, 0, s.width, s.height), p..color = WsT.body);
     _vLines(c, view, fps, math.min(s.width, end), 0, s.height, major: Grey.g20, fine: Grey.g15);
     for (var i = 0; i < rows.length; i++) {
-      final top = tops[i], h = rows[i].tall ?? WtM.row;
-      if (top > s.height || top + h < 0) continue;
-      _row(c, s, rows[i], top + h / 2 - .5);
+      final top = i * WtM.row - vscroll;
+      if (top > s.height || top + WtM.row < 0) continue;
+      _row(c, s, rows[i], top + WtM.row / 2 - .5);
     }
     if (restAt case final f?) c.drawRect(Rect.fromLTWH(view.x(f).roundToDouble(), 0, 1, s.height), p..color = WsT.accent);
   }
@@ -460,7 +438,7 @@ class WtTracksPainter extends CustomPainter {
   /// a line across the whole row tells nothing (the maker, 11/1; Theatre.js's connector goes from key to key); the line
   /// in the bar's colour made lighter, as the bar's own automation line (golf_noise.md ⑫: it was straight whatever the ease).
   void _lane(Canvas c, Size s, WtRow r, List<(int, double)> pts, double cy) {
-    final rh = r.tall ?? WtM.row, top = cy - rh / 2 + 4, h = rh - 9, col = Color.lerp(wtBarFill(r), Grey.g100, r.dim ? .25 : .6)!;
+    final top = cy - WtM.row / 2 + 4, h = WtM.row - 9, col = Color.lerp(wtBarFill(r), Grey.g100, r.dim ? .25 : .6)!;
     Offset at((int, double) q) => Offset(view.x(q.$1), top + (1 - q.$2) * h);
     final line = Path()..moveTo(at(pts.first).dx, at(pts.first).dy);
     for (var i = 0; i < pts.length; i++) {
@@ -470,18 +448,7 @@ class WtTracksPainter extends CustomPainter {
       final b = at(pts[i + 1]);
       _wayLine(line, way, a.dx, b.dx, s.width, (v) => (a.dy + (b.dy - a.dy) * v).clamp(top - 3, top + h + 3));   // (an overshoot kept within its own lane)
     }
-    if (r.laneOn case final i? when i + 1 < pts.length) c.drawRect(Rect.fromLTRB(at(pts[i]).dx, cy - rh / 2, at(pts[i + 1]).dx, cy + rh / 2), Paint()..color = WsT.accent.withValues(alpha: .18));   // (Theatre.js's connector, lit while it is what the curve editor holds)
-    if (r.instances case final all? when all.isNotEmpty) {   // (fainter the more there are: where they gather reads darker)
-      final ink = Paint()..style = PaintingStyle.stroke..strokeWidth = 1..isAntiAlias = true..color = col.withValues(alpha: (2 / all.length).clamp(.12, .55));
-      for (final one in all) {
-        if (one.isEmpty) continue;
-        final p = Path()..moveTo(view.x(one.first.$1), top + (1 - one.first.$2) * h);
-        for (final q in one.skip(1)) {
-          p.lineTo(view.x(q.$1), top + (1 - q.$2) * h);   // (within the lane as it is measured; past it only while a key is pulled apart, as the hand is)
-        }
-        c.drawPath(p, ink);
-      }
-    }
+    if (r.laneOn case final i? when i + 1 < pts.length) c.drawRect(Rect.fromLTRB(at(pts[i]).dx, cy - WtM.row / 2, at(pts[i + 1]).dx, cy + WtM.row / 2), Paint()..color = WsT.accent.withValues(alpha: .18));   // (Theatre.js's connector, lit while it is what the curve editor holds)
     c.drawPath(line, Paint()..style = PaintingStyle.stroke..strokeWidth = 1.2..strokeJoin = StrokeJoin.round..isAntiAlias = true..color = col);
     for (final q in pts) {
       c.drawCircle(at(q), WtM.key * .75, Paint()..color = col);
@@ -504,7 +471,7 @@ class WtTracksPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(WtTracksPainter o) => o.view != view || o.fps != fps || o.vscroll != vscroll || o.restAt != restAt || o.room != room || !_listEq(o.rows, rows);
+  bool shouldRepaint(WtTracksPainter o) => o.view != view || o.fps != fps || o.vscroll != vscroll || o.restAt != restAt || !_listEq(o.rows, rows);
 }
 
 // ---------------------------------------------------------------- playhead
@@ -573,33 +540,26 @@ class WtOverviewPainter extends CustomPainter {
 /// photo or a film its picture, a shape its form in its own fill; the rest, the mark of its kind (Alight Motion's
 /// camera and sound are marks too; a text's is not seen in its pictures: its mark kept).
 class WtThumb extends StatelessWidget {
-  WtThumb(WtRow row, {Key? key}) : this.of(key: key, kind: row.kind, frames: row.frames, form: row.form, fill: row.fill, outline: row.outline, dim: row.dim, tone: row.tone);
-  // (the same picture from its parts, for a place with no row: a group's things listed on its Copies card)
-  const WtThumb.of({super.key, required this.kind, this.frames, this.form, this.fill, this.outline = false, this.dim = false, this.tone, this.size});
-  final WsKind kind;
-  final List<ui.Image>? frames;
-  final String? form;
-  final Color? fill, tone;
-  final bool outline, dim;
-  final double? size;   // (null: as wide as a row's chip)
+  const WtThumb(this.row, {super.key});
+  final WtRow row;
   @override
   Widget build(BuildContext context) {
-    final edge = size ?? WtM.chip;
-    if (frames case final f? when f.isNotEmpty) {
+    final r = row;
+    if (r.frames case final f? when f.isNotEmpty) {
       return ClipRRect(
         borderRadius: BorderRadius.all(Shape.r(3)),
-        child: SizedBox.square(dimension: edge, child: RawImage(image: f.first, fit: BoxFit.cover, opacity: AlwaysStoppedAnimation(dim ? .35 : 1))),
+        child: SizedBox.square(dimension: WtM.chip, child: RawImage(image: f.first, fit: BoxFit.cover, opacity: AlwaysStoppedAnimation(r.dim ? .35 : 1))),
       );
     }
-    if (form case final shape? when kind == WsKind.shape && shape != 'null') {
+    if (r.form case final form? when r.kind == WsKind.shape && form != 'null') {
       return Container(
-        width: edge,
-        height: edge,
+        width: WtM.chip,
+        height: WtM.chip,
         decoration: BoxDecoration(color: Grey.g20, borderRadius: BorderRadius.all(Shape.r(3))),
-        child: CustomPaint(painter: _FormPainter(shape, (fill ?? wsTone(kind)).withValues(alpha: dim ? .35 : 1), outline: outline)),
+        child: CustomPaint(painter: _FormPainter(form, (r.fill ?? wsTone(r.kind)).withValues(alpha: r.dim ? .35 : 1), outline: r.outline)),
       );
     }
-    return size == null ? WtKindChip(kind, dim: dim, tone: tone) : SizedBox.square(dimension: edge, child: FittedBox(child: WtKindChip(kind, dim: dim, tone: tone)));
+    return WtKindChip(r.kind, dim: r.dim, tone: r.tone);
   }
 }
 

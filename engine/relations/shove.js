@@ -1,6 +1,5 @@
 // They wander, each by p5's noise, and shove each other so that none lies on another:
 // where one stands hangs on where all the others stand.
-// --about:They wander and shove each other so that none lies on another
 // --track@amount:Amount,0,4,1.6,0.01
 // --track@speed:Speed,0,3,.35,0.01
 // --track@room:Room,0,1,.06,0.01

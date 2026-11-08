@@ -440,9 +440,6 @@ class NumFieldState extends State<NumField> {
         String unit = widget.unit ?? '';
         if (widget.turns && v != null && v.abs() >= 360 && w >= 120) unit = '° ${(v / 360).truncate()}x ${fmt(v.remainder(360), 0)}';
         final word = v == 0 && widget.zeroWord != null ? widget.zeroWord! : null;
-        // (a field holding the keys, a digit to start its number (typesOn): its number drawn as text picked, as the editor
-        //  shows it opened, so what is typed is seen to take its place; no cursor was seen, golf (g49))
-        final ready = _focus && !_editing && _x.cfg.typesOn;
         Widget valueText() {
           if (v == null) return Text(Role.grey ? 'Mixed' : '— Mixed', style: T.label(Role.of(Grey.g76, Role.info)));
           if (word != null) return Text(word, style: T.label(on ? Grey.g76 : Grey.g56));
@@ -454,11 +451,11 @@ class NumFieldState extends State<NumField> {
               children: [
                 TextSpan(
                   text: fmt(v, widget.decimals, tight: tight), // (its places fixed, as Push shows them: a number does not jump in width as it moves)
-                  style: (widget.caption != null
+                  style: widget.caption != null
                       ? blockValue(on ? Grey.g95 : Grey.g56)
                       : pop
                       ? T.value(on ? Grey.g95 : Grey.g56).copyWith(fontWeight: FontWeight.w600)
-                      : T.value(on ? Grey.g95 : Grey.g56)).copyWith(backgroundColor: ready ? Role.selected.withValues(alpha: .4) : null),
+                      : T.value(on ? Grey.g95 : Grey.g56),
                 ),
                 if (showUnit && unit.isNotEmpty) TextSpan(text: pop ? '\u2009$unit' : ' $unit', style: T.label(pop ? Grey.g44 : Grey.g56)),
               ],
@@ -496,12 +493,8 @@ class NumFieldState extends State<NumField> {
         final ks = pop ? (x.doc.keys[widget.id] ?? row?.keys) : null;
         _keyAt = ks != null && (ks != KeyS.off || x.doc.keys.containsKey(widget.id)) ? (block ? Offset(w - Pop.tilePad - 3, Pop.tile - 10) : Offset(w - 6, 6)) : null;
         _keys = ks;
-        // (its unit kept beside what is typed, as Flutter's own text field keeps its suffixText while it is typed in: "0.2"
-        //  alone was not read as seconds until it was entered, golf (g63))
-        final typedUnit = showUnit && (widget.unit ?? '').isNotEmpty ? widget.unit! : null;
-        final editor = !_editing
-            ? null
-            : Row(children: [Expanded(child: TextHand(field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
+        final editor = _editing
+            ? TextHand(field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
                 controller: _ctl,
                 focusNode: _ef,
                 style: block ? blockValue(Grey.g95) : T.value(Grey.g95),
@@ -516,9 +509,8 @@ class NumFieldState extends State<NumField> {
                 onChanged: (_) {
                   if (_err) setState(() => _err = false);
                 },
-              ))),
-              if (typedUnit != null) Text(pop ? '\u2009$typedUnit' : ' $typedUnit', style: T.label(pop ? Grey.g44 : Grey.g56)),
-            ]);
+              ))
+            : null;
         final body = paintNumber(
           context,
           NumberSpec(

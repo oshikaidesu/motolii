@@ -1,9 +1,9 @@
 // The workspace's Timeline seat: transport + timecode on top, layer labels beside the track area, a ruler with the work area, the playhead.
 // The document lives in Ws; this seat keeps only how it looks at it (zoom, scroll, loop, the row toggles, the work area).
 import 'package:lab_book/workspace/desk_ease_cards.dart' show easeCurve;
-import 'package:lab_book/workspace/desk_ease_presets.dart' show EaseSpreadIcon;
 import 'dart:async' show Timer;
 import 'dart:developer' show Timeline;
+import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -22,7 +22,6 @@ import 'key_drag.dart';
 import 'keys.dart' show CommandIntent;
 import 'timeline_kept.dart';
 import 'timeline_paint.dart';
-import 'thumbs.dart';
 import 'relate.dart';
 import 'ws.dart';
 import 'ws_menu.dart';
@@ -30,7 +29,6 @@ import '../sets/foundations/text_hand.dart';
 part 'timeline_asked.dart';
 part 'timeline_view.dart';
 part 'timeline_hand.dart';
-part 'timeline_apart.dart';
 part 'timeline_rows.dart';
 part 'timeline_ruler.dart';
 part 'timeline_snap.dart';
@@ -45,58 +43,12 @@ class WsTimeline extends StatefulWidget {
   State<WsTimeline> createState() => _WsTimelineState();
 }
 
-class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, _TimelineAsked {
+class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateMixin, _TimelineAsked {
   late final Ticker _ticker = createTicker(_tick);
   late final VoidCallback _listener = _changed;   // (one closure, added and removed: an extension's method torn off is a new closure each time, never equal to the last, so removing it took nothing off)
   final _focus = FocusNode(debugLabel: 'timeline');
   Ws? _ws;
-  double _zoom = 1, _scroll = 0, _vscroll = 0, _trackW = 1000, _rowsH = 200, _areaH = 200;
-
-  // Inside a group: its rows stand in a room of their own on top, under the ruler they share, and the whole document's
-  // rows stay below (Ableton Live's Clip View: opened by a double click, sized by its edge, dragged shut to close it;
-  // docs/notes/GROUP_FOCUS_new.md 上からスッと出る段). _pin: how many of _order's rows are that room's (0: none open).
-  int _pin = 0;
-  double _pscroll = 0;   // (the room's rows scrolled, apart from the whole's)
-  double? _panelWant;   // (the height the room's edge was pulled to, kept for the next time it opens; null: half the timeline, never as short as its rows (the maker, 11/6: 高さはユーザーハンドルで決める))
-  (double, double)? _gripFrom;   // (the edge held: where the hand took it, and the room's height then)
-  String? _wasEntered;
-  late final _opening = AnimationController(vsync: this, duration: const Duration(milliseconds: 160))..addListener(() => setState(() {}));
-
-  double get _grip => _pin == 0 ? 0 : Shape.z(8);
-  double get _panelH => _pin == 0 ? 0 : (_panelWant ?? _areaH / 2).clamp(0.0, math.max(0.0, _areaH - _grip - 2 * WtM.row)).toDouble() * Curves.easeOut.transform(_opening.value);
-
-  // A row's height: a lane in the group's room shares what the room's other rows leave of it, a row at least, so the
-  // room is the group's graph, time across and value up, as tall as its edge is pulled (GROUP_FOCUS_new.md:
-  // グループタイムラインビュー＝配列対応グラフビュー); every other row a row's.
-  int _roomLanes = 0;
-  double get _laneH => math.max(WtM.row, (_panelH - (_pin - _roomLanes) * WtM.row) / math.max(1, _roomLanes));
-  double _tall(int i) => i < _pin && (_order[i].value ?? '').isNotEmpty ? _laneH : WtM.row;
-  double _roomTop(int i) {
-    var y = 0.0;
-    for (var j = 0; j < i; j++) {
-      y += _tall(j);
-    }
-    return y;
-  }
-
-  // A row's top on the tracks: the room's under the ruler, the whole's under the room's edge.
-  double _rowY(int i) => i < _pin ? _roomTop(i) - _pscroll : _panelH + _grip + (i - _pin) * WtM.row - _vscroll;
-  bool _onGrip(double y) => _pin > 0 && y >= _panelH && y < _panelH + _grip;
-
-  void _gripTo(double y) {
-    if (_gripFrom case (final from, final h)?) setState(() => _panelWant = math.max(0, h + y - from));
-  }
-
-  // Let go: pulled almost shut, the room shuts, and the timeline is the whole document's again.
-  void _gripUp() {
-    if (_gripFrom == null) return;
-    _gripFrom = null;
-    if ((_panelWant ?? WtM.row) < WtM.row / 2) {
-      _panelWant = null;
-      _ws!.enter(null);
-    }
-    setState(() {});
-  }
+  double _zoom = 1, _scroll = 0, _vscroll = 0, _trackW = 1000, _rowsH = 200;
   int _workIn = 12, _workOut = 228;
   int _last = -1;
 
@@ -116,56 +68,11 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
   // The card a lane's value stands on: the effect it is a knob of, or Transform and the like.
   String? _laneCard(Ws ws, WsLayer l, String name) => [for (final (title, names) in ws.inside!.cards(int.parse(l.id))) if (names.contains(name)) title].firstOrNull;
 
-  // A group's stretch pressed on its lane, while what of it to work on is asked (_offer): lit as a picked one is.
-  ({String layer, String name, int from})? _offered;
-  void _offering(({String layer, String name, int from})? o) => setState(() => _offered = o);
-
-  // The entered group's copies, each its own curve of the values the group's keys hold as its share of their spread
-  // says (motolii_apart: so much later and higher or lower, doc_apart): the white line's own measure, so one
-  // curve where nothing is spread (GROUP_FOCUS_new.md いまの考え: 両方のズレが 0 なら 1 本), its things' own places left
-  // out. Asked again only when the document, or the group's keys and their ways, change, as the stage's motion path is
-  // (stage_view_2.dart _trailOf). Three numbers a moment, _crowdN moments; at most _crowdMost of them, every so many in
-  // their order, the last one too (the fan's far edge).
-  static const _crowdMost = 128, _crowdN = 120;
-  (Object?, List<List<double>>?) _crowd = (null, null);
-  List<List<double>>? _instancesOf(Ws ws, WsLayer g) {
-    final m = ws.inside!, t = int.parse(g.id), n = math.max(1, m.members(t));
-    final key = (ws.rev, g.id, g.inF, g.outF, n, [for (final a in const ['x', 'y', 'z']) for (final b in const ['', '_spread', '_lag']) ...[for (final k in m.keyMoments(t, '$a$b')) '$a$b $k ${m.wayOf(t, '$a$b', k)}', ...m.keyValues(t, '$a$b')]].join(';'));
-    if (_crowd.$1 != key) {
-      _crowd = (key, null);
-      final every = math.max(1, (n / _crowdMost).ceil());
-      m.aparts(t, [for (var j = 0; j < n; j += every) j, if ((n - 1) % every != 0) n - 1], from: g.inF / Ws.fps, to: g.outF / Ws.fps, n: _crowdN).then((all) {
-        if (mounted && _crowd.$1 == key) setState(() => _crowd = (key, [for (final p in all) ?p]));
-      });
-    }
-    return _crowd.$2;
-  }
-
-  // (each lane's share of them, laid between its lowest and highest: the same lists while nothing changes, so the
-  //  painter is not asked again)
-  final _crowdLanes = <String, (Object, double, double, List<List<(double, double)>>)>{};
-  List<List<(double, double)>> _crowdLane(WsLayer g, String name, List<List<double>> crowd, int axis, double lo, double hi) {
-    if (_crowdLanes[name] case (final c, final a, final b, final kept) when identical(c, crowd) && a == lo && b == hi) return kept;
-    double norm(double v) => hi > lo ? (v - lo) / (hi - lo) : .5;
-    final laid = [
-      for (final p in crowd) [for (var i = 0; 3 * i + axis < p.length; i++) (g.inF + (g.outF - g.inF) * i / _crowdN, norm(p[3 * i + axis]))],
-    ];
-    _crowdLanes[name] = (crowd, lo, hi, laid);
-    return laid;
-  }
-
   // A value's lane: its keys where they are and what they hold, read from the document's picture (nothing asked of the inside).
-  // (the entered group's x, y and z: its copies laid over it, as many curves as there are, the lane as tall as they all
-  //  reach, held as it was while a key of it is pulled apart, so the bundle opens under the hand as on the stage;
-  //  GROUP_FOCUS: グループタイムラインビュー＝配列対応グラフビュー)
-  WtRow _laneRow(Ws ws, WsLayer l, String name, {double? tall}) {
+  WtRow _laneRow(Ws ws, WsLayer l, String name) {
     final m = ws.inside!, t = int.parse(l.id), at = m.keyMoments(t, name), vs = m.keyValues(t, name);
-    final n = math.min(at.length, vs.length), axis = const {'x': 0, 'y': 1, 'z': 2}[name];
-    final crowd = l.kind == WsKind.group && l.id == ws.entered && axis != null ? _instancesOf(ws, l) : null;
-    final all = [...vs.take(n), for (final p in crowd ?? const <List<double>>[]) for (var i = axis ?? 0; i < p.length; i += 3) p[i]];
-    final (lo, hi) = switch (_apart) { final a? when a.thing == t && a.name == name => a.span, _ => (all.fold(double.infinity, math.min), all.fold(-double.infinity, math.max)) };
-    _laneSpan['${l.id}:$name'] = (lo, hi);
-    final on = switch (ws.stretch) { final s? when s.layer == l.id && s.name == name => s.from, _ => _offered?.layer == l.id && _offered?.name == name ? _offered!.from : null };
+    final n = math.min(at.length, vs.length);
+    final lo = vs.take(n).fold(double.infinity, math.min), hi = vs.take(n).fold(-double.infinity, math.max);
     return WtRow(
       name: name,
       kind: l.kind,
@@ -178,15 +85,9 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
       locked: _isLocked(ws, l.id),
       lane: [for (var i = 0; i < n; i++) ((at[i] * Ws.fps).round(), hi > lo ? (vs[i] - lo) / (hi - lo) : .5)],
       laneWays: [for (var i = 0; i + 1 < n; i++) _wayShape(ws, m.wayOf(t, name, at[i]))],
-      laneOn: on == null ? null : [for (var i = 0; i < n; i++) (at[i] * Ws.fps).round()].indexOf(on),
-      instances: crowd == null ? null : _crowdLane(l, name, crowd, axis!, lo, hi),
-      tall: tall,
+      laneOn: switch (ws.stretch) { final s? when s.layer == l.id && s.name == name => [for (var i = 0; i < n; i++) (at[i] * Ws.fps).round()].indexOf(s.from), _ => null },
     );
   }
-
-  // What has a room of its own, entered by a second press: a group, or anything with more than one member (its copies,
-  // its letters: Motolii.members), as a group is an array (docs/notes/GROUP_FOCUS_new.md 土台: グループもふつうのレイヤー).
-  bool _roomy(Ws ws, WsLayer l) => l.kind == WsKind.group || (ws.inside?.members(int.parse(l.id)) ?? 1) > 1;
 
   // A way's shape from 0 to 1, as the bar's stretches are drawn.
   List<double> _wayShape(Ws ws, String way) => way.isEmpty ? const [0, 1] : easeCurve(way, ws.inside!);
@@ -215,7 +116,6 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     _ws?.on[WsAspect.playing]!.removeListener(_listener);
     _ws?.moment.removeListener(_listener);
     _ticker.dispose();
-    _opening.dispose();
     _focus.dispose();
     _stopAsks();
     _markWords.dispose();
@@ -241,22 +141,20 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
   }
 
   void _wheel(PointerSignalEvent e) {
-    if (e is PointerScrollEvent) _scrollBy(e.scrollDelta, at: e.localPosition.dy);
+    if (e is PointerScrollEvent) _scrollBy(e.scrollDelta);
   }
 
   /// A trackpad's two fingers: they carry the tracks as a wheel does, the other way (the content goes with the fingers);
   /// a pinch zooms about the frame under them (Final Cut's, Cavalry's, Theatre.js's).
-  void _fingers(Offset by, Offset at) => _scrollBy(-by, at: at.dy);
+  void _fingers(Offset by, Offset _) => _scrollBy(-by);
   void _pinch(double by, Offset at) => _setZoom(_zoom * by, anchor: _view.frameAt(at.dx).round().clamp(0, Ws.duration));
 
-  void _scrollBy(Offset d, {double at = double.infinity}) {
+  void _scrollBy(Offset d) {
     final sideways = HardwareKeyboard.instance.isShiftPressed || d.dx.abs() > d.dy.abs();
     if (HardwareKeyboard.instance.isMetaPressed || HardwareKeyboard.instance.isControlPressed) {
       _setZoom(_zoom * math.pow(1.0015, -d.dy));
     } else if (sideways) {
       setState(() => _scroll = _clampScroll(_scroll + (d.dx.abs() > d.dy.abs() ? d.dx : d.dy) / _view.ppf));
-    } else if (_pin > 0 && at < _panelH) {   // (over the group's room: its rows, not the whole's)
-      setState(() => _pscroll = (_pscroll + d.dy).clamp(0.0, math.max(0.0, _roomTop(_pin) - _panelH)).toDouble());
     } else {
       setState(() => _vscroll = _vscroll + d.dy);
     }
@@ -280,34 +178,11 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
   DateTime? _lanePressed;   // (when and where a lane was last pressed: a second press there is a double one)
   Offset _laneAt = Offset.zero;
 
-  // A row pressed twice (its label or its bar, within a double press's time): a group's is entered, the room under the
-  // rows' is left. Told by its own clock, as a lane's is, so a single press is not held back for a second (Flutter's
-  // onDoubleTap waits kDoubleTapTimeout before a tap is one).
-  DateTime? _rowPressed;
-  String? _rowWas;
-  bool _twice(String id) {
-    final now = DateTime.now(), yes = _rowWas == id && _rowPressed != null && now.difference(_rowPressed!) < kDoubleTapTimeout;
-    _rowPressed = yes ? null : now;
-    _rowWas = id;
-    return yes;
-  }
-
   // A box drawn over the empty room of the tracks (any direction): the keys inside it are picked, else the things whose
   // bars it touches (Ableton's and After Effects' marquee). Corners, in the tracks' own points.
   (Offset, Offset)? _box;
 
-  // A key of the entered group's place pulled on its lane (timeline_apart.dart): which, from where, a pixel's worth of
-  // its value, the amount it pulls (none until the first pixels say which), and what that held at the key.
-  ({int thing, String name, double at, Offset from, (double, double) span, double perPx, String? amount, double was})? _apart;
-  bool _apartGoing = false;
-  double? _apartNext;
-  final _laneSpan = <String, (double, double)>{};   // (each lane's lowest and highest as last drawn: a pixel's worth of its value)
-
   void _barDown(Offset p) {
-    if (_onGrip(p.dy)) {   // (the room's edge taken: Live's Clip View sized by its border)
-      _gripFrom = (p.dy, _panelH);
-      return;
-    }
     if (!_grab(p)) setState(() => _box = (p, p));
   }
 
@@ -320,7 +195,7 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     final keys = <WsKey>[], things = <String>[];
     for (var i = 0; i < _order.length; i++) {
       if (_order[i].value != null) continue;   // (a lane's points are not picked by a box)
-      final l = ws.layers[_order[i].layer], top = _rowY(i);
+      final l = ws.layers[_order[i].layer], top = i * WtM.row - _vscroll;
       if (top + WtM.row < r.top || top > r.bottom || _isLocked(ws, l.id)) continue;
       for (final k in l.keys) {
         if (v.x(k) >= r.left && v.x(k) <= r.right) keys.add((layer: l.id, frame: k));
@@ -336,8 +211,6 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
   }
 
   void _barMove(Offset p) {
-    if (_gripFrom != null) return _gripTo(p.dy);
-    if (_apart != null) return _pullApartTo(p);
     if (_box case (final from, _)?) return setState(() => _box = (from, p));
     if (_slide case final s?) {
       final by = _rested(_view.frameAt(p.dx).round() - s.grab, [s.grab]);
@@ -361,8 +234,6 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
   }
 
   void _barUp({bool keep = true}) {
-    if (_gripFrom != null) return _gripUp();
-    if (_apart != null) return _pullApartUp(keep);
     if (_restAt != null) setState(() => _restAt = null);
     if (_box != null) return keep ? _boxUp() : setState(() => _box = null);
     if (_slide case final s?) {
@@ -490,14 +361,61 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     return _beats?.$2 ?? const [];
   }
 
-  // A thing's small picture at the head of its row (thumbs.dart: a film's pictures, a photo, a shape's form), kept
-  // there and drawn again as each comes in.
-  late final _thumbs = WsThumbs(onLoaded: () => setState(() {}), mounted: () => mounted);
-  List<ui.Image>? _framesOf(Ws ws, WsLayer l) => _thumbs.framesOf(ws, l);
-  (String, Color?, bool)? _formOf(Ws ws, WsLayer l) => _thumbs.formOf(ws, l);
-
   // A film's sound on its bar: read once on another isolate (the inside keeps it), then laid on the document's frames
   // where the film shows them, asked again only when the document changes.
+  // A film's pictures on its bar: the one it plays in the middle of each sixth of it (its begin, its speed, either way),
+  // made small by the inside (GStreamer, another isolate) and read as pictures; asked again only when the document changes.
+  final _frames = <String, (Object, List<ui.Image>?)>{};
+  final _framesAsked = <String, Object>{};
+  List<ui.Image>? _framesOf(Ws ws, WsLayer l) {
+    final m = ws.inside, t = int.tryParse(l.id);
+    if (m != null && t != null && m.word(t, 'kind') == 'picture') return _stillOf(m.whole(m.word(t, 'file')), l.id);
+    if (m == null || t == null || m.word(t, 'kind') != 'film') return null;
+    final file = m.whole(m.word(t, 'file')), begin = m.value(t, 'begin', 0) ?? 0, speed = m.value(t, 'speed', 0) ?? 1, start = m.value(t, 'start', 0) ?? 0;
+    final key = (file, begin, speed, start, l.inF, l.outF);
+    if (_frames[l.id] case (final k, final f) when k == key) return f;
+    if (_framesAsked[l.id] != key) {
+      _framesAsked[l.id] = key;
+      const n = 6;
+      final lasts = (l.outF - l.inF) / Ws.fps;
+      final seconds = [for (var i = 0; i < n; i++) begin + (speed < 0 ? lasts - (i + .5) / n * lasts : (i + .5) / n * lasts) * speed.abs()];
+      Future.wait([for (final s in seconds) m.filmFrame(file, s)]).then((pngs) async {
+        if (pngs.any((p) => p == null)) return mounted ? setState(() => _frames[l.id] = (key, null)) : null;   // (no pictures: its sound alone)
+        final read = [for (final p in pngs) (await (await ui.instantiateImageCodec(File(p!).readAsBytesSync())).getNextFrame()).image];
+        if (mounted) setState(() => _frames[l.id] = (key, read));
+      });
+    }
+    return _frames[l.id]?.$2;
+  }
+
+  // A shape's form and its fill, as the document says them: its own small picture at the row's left.
+  // (no fill: its outline in its stroke's colour)
+  (String, Color?, bool)? _formOf(Ws ws, WsLayer l) {
+    final m = ws.inside, t = int.tryParse(l.id);
+    if (m == null || t == null || m.word(t, 'kind') != 'shape') return null;
+    Color? colour(String hex) => hex.length == 6 && int.tryParse(hex, radix: 16) != null ? Color(0xFF000000 | int.parse(hex, radix: 16)) : null;
+    final outline = m.word(t, 'fill') == 'none';
+    return (m.word(t, 'shape'), colour(m.word(t, outline ? 'stroke' : 'fill')), outline);
+  }
+
+  // A photo on its bar: itself, read once small (as tall as a bar needs), laid along the bar again and again as
+  // Alight Motion's photo bar is (reports/alight_ui.md: タイムラインの絵); one Flutter cannot read: none.
+  List<ui.Image>? _stillOf(String file, String id) {
+    if (_frames[id] case (final k, final f) when k == file) return f;
+    if (_framesAsked[id] != file) {
+      _framesAsked[id] = file;
+      () async {
+        try {
+          final read = (await (await ui.instantiateImageCodec(await File(file).readAsBytes(), targetHeight: 48)).getNextFrame()).image;
+          if (mounted) setState(() => _frames[id] = (file, [read]));
+        } catch (_) {
+          if (mounted) setState(() => _frames[id] = (file, null));
+        }
+      }();
+    }
+    return _frames[id]?.$2;
+  }
+
   final _waves = <String, (int, int, int, List<double>?)>{};   // (thing: document read, from, to, loudness a frame)
   final _asked = <String>{};
   final _waveAsked = <String, (int, int, int)>{};
@@ -531,45 +449,19 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked, WsAspect.animating});
     final away = ws.foldedAway;
     final sel = ws.selected, picks = ws.keys, lit = {...ws.many, ...wsMembersOf(ws), for (final p in [?sel, ...ws.many]) ?away[p]};   // (picked together, or moved by the relation picked, or a shut group a picked thing is in: lit with it)
-    // (inside a group: its own row first, then its relations (the behaviours in it) and the things in
-    //  it that are named: picked, or with keys of their own. The rest of what it holds goes as the relations say, and is
-    //  not here; the rest of the document neither. docs/notes/GROUP_FOCUS_new.md: 関係の行と、名指しで出した物の行だけ)
-    // (inside a group, its room on top: its own row, then its relations (the behaviours in it) and
-    //  the things in it that are named: picked, or with keys of their own; the rest of what it holds goes as the
-    //  relations say. Below it the whole document as ever, the group one row there. GROUP_FOCUS_new.md: 関係の行と、名指しで
-    //  出した物の行だけ; 置き換えではなく上からスッと出る段)
-    final entered = ws.entered, head = entered == null ? -1 : ws.layers.indexWhere((l) => l.id == entered), m = ws.inside!;
-    if (entered != _wasEntered) {
-      final opened = _wasEntered == null;
-      _wasEntered = entered;
-      if (entered == null) {
-        _opening.value = 0;
-      } else if (opened) {
-        _pscroll = 0;
-        SchedulerBinding.instance.addPostFrameCallback((_) => mounted ? _opening.forward(from: 0) : null);
-      }
-    }
-    bool named(WsLayer l) => m.word(int.parse(l.id), 'kind') == 'behaviour' || l.keys.isNotEmpty || l.id == sel || ws.many.contains(l.id);
-    final inner = head < 0 ? const <int>[] : [head, for (final (i, l) in ws.layers.indexed) if (l.parent == entered && named(l)) i];
-    final whole = [for (final (i, l) in ws.layers.indexed) if (!away.containsKey(l.id)) i];
-    List<({int layer, String? value, (String, String)? aim})> rowsOf(List<int> shown, {bool room = false}) => [
-      for (final i in shown) if (ws.layers[i] case final l) ...[
+    _order = [
+      for (final (i, l) in ws.layers.indexed) if (!away.containsKey(l.id)) ...[
         (layer: i, value: null, aim: null),
-        // (a group's count is on its Copies card in the inspector, as any thing's is, not a row of its room. The user, 11/8)
-        if ((room || l.id != entered) && ws.aimsOpen(l.id))   // (the group entered: its lanes in its room, once, not again in the whole below)
+        if (ws.aimsOpen(l.id))
           for (final a in wsTargets(ws, l.id)) (layer: i, value: '', aim: a),
-        if ((room || l.id != entered) && ws.lanesOpen(l.id))
+        if (ws.lanesOpen(l.id))
           for (final n in _moving(ws, l)) (layer: i, value: n, aim: null),
       ],
     ];
-    final room = rowsOf(inner, room: true);
-    _pin = room.length;
-    _roomLanes = room.where((o) => (o.value ?? '').isNotEmpty).length;
-    _order = [...room, ...rowsOf(whole)];
     final rows = <WtRow>[
-      for (final (j, o) in _order.indexed)
+      for (final o in _order)
         if (o.value case final n?)
-          _laneRow(ws, ws.layers[o.layer], n, tall: j < _pin && n.isNotEmpty ? _laneH : null)
+          _laneRow(ws, ws.layers[o.layer], n)
         else if (ws.layers[o.layer] case final l)
           WtRow(
           name: l.name,
@@ -594,7 +486,6 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
           tone: l.tone,
           mix: _mixOf(ws, l.id),
           whole: _wholeOf(ws, l),
-          head: j < _pin && o.layer == head,
         ),
     ];
     return Focus(
@@ -627,26 +518,12 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     );
   }
 
-  // The group's room's lower edge: taken and pulled it sizes the room, pulled shut it closes it (Live's Clip View).
-  Widget _roomEdge({Key? key}) => MouseRegion(
-    cursor: SystemMouseCursors.resizeUpDown,
-    child: Container(   // (a bar the room stands on, with a grip at its middle: what can be taken is seen as such, macOS's split view divider)
-      key: key,
-      height: _grip,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(color: Grey.g26, border: Border(bottom: BorderSide(color: Grey.g07))),
-      child: Container(width: Shape.s(28), height: 2, color: Grey.g56),
-    ),
-  );
-
   Widget _tracks(Ws ws, List<WtRow> rows) => LayoutBuilder(
     builder: (context, box) {
       _trackW = box.maxWidth;
-      _areaH = math.max(0, box.maxHeight - WtM.ruler - WtM.overview);
-      _rowsH = math.max(0, _areaH - _panelH - _grip);
+      _rowsH = math.max(0, box.maxHeight - WtM.ruler - WtM.overview);
       _scroll = _clampScroll(_scroll);
-      _vscroll = _clampV(rows.length - _pin);
-      _pscroll = _pscroll.clamp(0.0, math.max(0.0, _roomTop(_pin) - _panelH)).toDouble();
+      _vscroll = _clampV(rows.length);
       final v = _view;
       return Stack(
         children: [
@@ -702,25 +579,11 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
                     onPanUpdate: (d) => _barMove(d.localPosition),
                     onPanEnd: (_) => _barUp(),
                     onPanCancel: () => _barUp(keep: false),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (_pin > 0) ...[
-                          SizedBox(
-                            key: const ValueKey('ws-tl-room'),
-                            height: _panelH,
-                            child: RepaintBoundary(
-                              child: CustomPaint(painter: WtTracksPainter(rows: rows.sublist(0, _pin), view: v, fps: Ws.fps, vscroll: _pscroll, tempo: ws.beats, restAt: _restAt, room: true)),
-                            ),
-                          ),
-                          _roomEdge(),
-                        ],
-                        Expanded(
-                          child: RepaintBoundary(
-                            child: CustomPaint(painter: WtTracksPainter(rows: rows.sublist(_pin), view: v, fps: Ws.fps, vscroll: _vscroll, tempo: ws.beats, restAt: _restAt)),
-                          ),
-                        ),
-                      ],
+                    child: RepaintBoundary(
+                      child: CustomPaint(
+                        size: Size.infinite,
+                        painter: WtTracksPainter(rows: rows, view: v, fps: Ws.fps, vscroll: _vscroll, tempo: ws.beats, restAt: _restAt),
+                      ),
                     ),
                   ),
                   ),

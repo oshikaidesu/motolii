@@ -6,10 +6,7 @@ extension _WsTimelineRows on _WsTimelineState {
   List<Color>? _mixOf(Ws ws, String id) {
     final m = ws.inside, t = int.tryParse(id);
     if (m == null || t == null || m.word(t, 'kind') != 'behaviour' || !wsRelations.contains(m.word(t, 'file'))) return null;
-    return [
-      for (final s in m.word(t, 'members').split(' '))
-        if (s.isNotEmpty && s != '_') wsLabel(s),
-    ];
+    return [for (final s in m.word(t, 'members').split(' ')) if (s.isNotEmpty && s != '_') wsLabel(s)];
   }
 
   // A thing by its row's number and name, as After Effects' Parent column says it (many may share the name).
@@ -19,16 +16,11 @@ extension _WsTimelineRows on _WsTimelineState {
   }
 
   // The eye of a row. Joined: the thing is put aside in the document (visible 0) and is not on the stage; one step.
-  bool _isHidden(Ws ws, String id) => ws.layers.any((l) => l.id == id && l.hidden); // (as last read: no call to the inside while a row is built)
+  bool _isHidden(Ws ws, String id) => ws.layers.any((l) => l.id == id && l.hidden);   // (as last read: no call to the inside while a row is built)
 
   // How many things a row carried [by] rows goes past: a shut group's row is all that it holds.
-  int _places(Ws ws, WsLayer l, int by, int row) {
-    final away = ws.foldedAway, part = row < _pin ? _order.sublist(0, _pin) : _order.sublist(_pin); // (counted among the rows of its own room)
-    final seen = [
-          for (final o in part)
-            if (o.value == null) ws.layers[o.layer].id,
-        ],
-        at = seen.indexOf(l.id);
+  int _places(Ws ws, WsLayer l, int by) {
+    final away = ws.foldedAway, seen = [for (final o in _order) if (o.value == null) ws.layers[o.layer].id], at = seen.indexOf(l.id);
     final past = by > 0 ? seen.sublist(at + 1, math.min(at + 1 + by, seen.length)) : seen.sublist(math.max(0, at + by), at);
     return past.fold(0, (n, id) => n + 1 + away.values.where((g) => g == id).length);
   }
@@ -51,133 +43,102 @@ extension _WsTimelineRows on _WsTimelineState {
       _LabelHeader(count: ws.layers.length, solo: _anySolo(ws)),
       Expanded(
         child: WsMenu(
-          key: _labelMenu,
-          child: Listener(
-            onPointerSignal: _wheel,
-            child: WsTwoFingers(
-              onPan: (by, at) => _scrollBy(Offset(0, -by.dy), at: at.dy), // (the labels go up and down with the tracks' rows)
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (_pin > 0) ...[
-                    SizedBox(height: _panelH, child: ColoredBox(color: wtRoomGround(WsT.body), child: _labelRoom(ws, rows, 0, _pin, _pscroll))),
-                    GestureDetector(
-                      // (the room's edge, taken here as on the tracks)
-                      behavior: HitTestBehavior.opaque,
-                      dragStartBehavior: DragStartBehavior.down,
-                      onVerticalDragStart: (d) => _gripFrom = (d.globalPosition.dy, _panelH), // (by the window's points: the edge itself moves as it is pulled)
-                      onVerticalDragUpdate: (d) => _gripTo(d.globalPosition.dy),
-                      onVerticalDragEnd: (_) => _gripUp(),
-                      onVerticalDragCancel: _gripUp,
-                      child: _roomEdge(key: const ValueKey('ws-tl-room-edge')),
-                    ),
+        key: _labelMenu,
+        child: Listener(
+          onPointerSignal: _wheel,
+          child: WsTwoFingers(
+          onPan: (by, _) => _scrollBy(Offset(0, -by.dy)),   // (the labels go up and down with the tracks' rows)
+          child: ClipRect(
+            child: LayoutBuilder(
+              builder: (context, box) {
+                final top = _clampV(rows.length);
+                return Stack(
+                  children: [
+                    for (var i = 0; i < rows.length; i++)
+                      if (_order[i].aim case (final said, final other)?)
+                        Positioned(
+                          key: ValueKey('ws-tl-aim-${ws.layers[_order[i].layer].id}-$said-$other'),
+                          left: Shape.s(34),
+                          right: Shape.s(8),
+                          top: i * WtM.row - top,
+                          height: WtM.row,
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => ws.select(other),   // (a press goes there: Cavalry's connection list)
+                            child: Row(
+                              children: [
+                                Text(said, maxLines: 1, style: T.label(Grey.g56)),
+                                SizedBox(width: Shape.s(5)),
+                                Flexible(child: Text(_numbered(ws, other), maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g91))),
+                              ],
+                            ),
+                          ),
+                        )
+                      else if (_order[i].value case final n?)   // (a value's lane: its name, under its layer's, as Ableton names a lane by its control)
+                        Positioned(
+                          key: ValueKey('ws-tl-lane-${ws.layers[_order[i].layer].id}-$n'),
+                          left: Shape.s(34),
+                          right: Shape.s(8),
+                          top: i * WtM.row - top,
+                          height: WtM.row,
+                          // (what it aims at, by the card's name then its own: Ableton's Device and Control choosers, Logic's plug-in and parameter; an effect's knob Threshold, not js_am_rays_threshold)
+                          child: Row(
+                            children: [
+                              if (_laneCard(ws, ws.layers[_order[i].layer], n) case final card?) ...[
+                                Flexible(child: Text(card, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g56))),
+                                SizedBox(width: Shape.s(5)),
+                              ],
+                              Text(ws.inside?.shown(n)?.label ?? n, maxLines: 1, style: T.label(Grey.g76)),
+                            ],
+                          ),
+                        )
+                      else if (ws.layers[_order[i].layer] case final l)
+                      Positioned(
+                        key: ValueKey('ws-tl-label-${l.id}'),
+                        left: 0,
+                        right: 0,
+                        top: i * WtM.row - top,
+                        height: WtM.row,
+                        // Joined: a row carried up or down is the thing brought nearer or further back, by as many rows as it was carried.
+                        child: GestureDetector(
+                          supportedDevices: wsPressing,
+                          onSecondaryTapDown: (d) => _labelRight(l, d.globalPosition),
+                          dragStartBehavior: DragStartBehavior.down, // (all of the way it was carried counts, from where the hand came down)
+                          onVerticalDragStart: (_) => _lift = 0,
+                          onVerticalDragUpdate: (d) => _lift += d.delta.dy,
+                          onVerticalDragEnd: (_) {
+                                  final by = (_lift / WtM.row).round();
+                                  if (by != 0) ws.after(ws.inside!.later('raise', thing: int.parse(l.id), number: (by > 0 ? -1 : 1) * _places(ws, l, by).toDouble()));
+                                },
+                          child: _LabelRow(
+                            index: _order[i].layer,   // (its layer's number, not its row's: After Effects' # counts layers, a value's lane none; golf (61))
+                            depth: ws.depth(l),
+                            row: rows[i],
+                            hidden: _isHidden(ws, l.id),
+                            solo: _isSolo(ws, l.id),
+                            lanes: l.kind == WsKind.group ? ws.groupOpen(l.id) : l.keys.isEmpty && wsTargets(ws, l.id).isEmpty && !l.lined ? null : ws.lanesOpen(l.id),
+                            onLanes: () => l.kind == WsKind.group ? ws.turnGroup(l.id) : ws.twirl([l.id]),
+                            onSelect: () => HardwareKeyboard.instance.isShiftPressed
+                                ? wsPickRange(ws, l.id)   // (Shift: every row from the last picked to this, After Effects' manner)
+                                : HardwareKeyboard.instance.isMetaPressed ? wsPickAlso(ws, l.id) : ws.select(l.id),   // (Cmd: one more, or one less)
+                            onEye: () => _eye(ws, l.id),
+                            onSolo: () => _flag(ws, 'solo', l.id),
+                            onLock: () => _flag(ws, 'lock', l.id),
+                          ),
+                        ),
+                      ),
+                    for (var i = 0; i < rows.length; i++)
+                      if (_order[i].value == null)
+                        if (_renameField(i, ws.layers[_order[i].layer].id, i * WtM.row - top) case final f?) f,   // (its name written over it: Cmd+R)
                   ],
-                  Expanded(child: _labelRoom(ws, rows, _pin, rows.length, _clampV(rows.length - _pin))),
-                ],
-              ),
+                );
+              },
             ),
           ),
+          ),
+        ),
         ),
       ),
     ],
-  );
-
-  // A row's top among the names of its room.
-  double _labelY(int i, int from) => i < _pin ? _roomTop(i) : (i - from) * WtM.row;
-
-  // A room of names: rows [from, to) of _order, so far scrolled.
-  Widget _labelRoom(Ws ws, List<WtRow> rows, int from, int to, double top) => ClipRect(
-    child: Stack(
-      children: [
-        for (var i = from; i < to; i++)
-          if (_order[i].aim case (final said, final other)?)
-            Positioned(
-              key: ValueKey('ws-tl-aim-${ws.layers[_order[i].layer].id}-$said-$other'),
-              left: Shape.s(34),
-              right: Shape.s(8),
-              top: _labelY(i, from) - top,
-              height: WtM.row,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => ws.select(other), // (a press goes there: Cavalry's connection list)
-                child: Row(
-                  children: [
-                    Text(said, maxLines: 1, style: T.label(Grey.g56)),
-                    SizedBox(width: Shape.s(5)),
-                    Flexible(
-                      child: Text(_numbered(ws, other), maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g91)),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else if (_order[i].value case final n?) // (a value's lane: its name, under its layer's, as Ableton names a lane by its control)
-            Positioned(
-              key: ValueKey('ws-tl-lane-${ws.layers[_order[i].layer].id}-$n'),
-              left: Shape.s(34),
-              right: Shape.s(8),
-              top: _labelY(i, from) - top,
-              height: _tall(i),
-              // (what it aims at, by the card's name then its own: Ableton's Device and Control choosers, Logic's plug-in and parameter; an effect's knob Threshold, not js_am_rays_threshold)
-              child: Row(
-                children: [
-                  if (_laneCard(ws, ws.layers[_order[i].layer], n) case final card?) ...[
-                    Flexible(
-                      child: Text(card, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g56)),
-                    ),
-                    SizedBox(width: Shape.s(5)),
-                  ],
-                  Text(ws.inside?.shown(n)?.label ?? n, maxLines: 1, style: T.label(Grey.g76)),
-                ],
-              ),
-            )
-          else if (ws.layers[_order[i].layer] case final l)
-            Positioned(
-              key: ValueKey('ws-tl-label-${l.id}'),
-              left: 0,
-              right: 0,
-              top: _labelY(i, from) - top,
-              height: WtM.row,
-              // Joined: a row carried up or down is the thing brought nearer or further back, by as many rows as it was carried.
-              child: GestureDetector(
-                supportedDevices: wsPressing,
-                onSecondaryTapDown: (d) => _labelRight(l, d.globalPosition),
-                dragStartBehavior: DragStartBehavior.down, // (all of the way it was carried counts, from where the hand came down)
-                onVerticalDragStart: (_) => _lift = 0,
-                onVerticalDragUpdate: (d) => _lift += d.delta.dy,
-                onVerticalDragEnd: (_) {
-                  final by = (_lift / WtM.row).round();
-                  if (by != 0) ws.after(ws.inside!.later('raise', thing: int.parse(l.id), number: (by > 0 ? -1 : 1) * _places(ws, l, by, i).toDouble()));
-                },
-                child: _LabelRow(
-                  index: _order[i].layer, // (its layer's number, not its row's: After Effects' # counts layers, a value's lane none; golf (61))
-                  depth: ws.depth(l) - (i < _pin ? ws.depth(ws.layers[_order[0].layer]) : 0), // (in the group's room: its row at the left, its things set in once)
-                  row: rows[i],
-                  hidden: _isHidden(ws, l.id),
-                  solo: _isSolo(ws, l.id),
-                  lanes: l.kind == WsKind.group
-                      ? ws.groupOpen(l.id)
-                      : l.keys.isEmpty && wsTargets(ws, l.id).isEmpty && !l.lined
-                      ? null
-                      : ws.lanesOpen(l.id),
-                  onLanes: () => l.kind == WsKind.group ? ws.turnGroup(l.id) : ws.twirl([l.id]),
-                  onSelect: () => HardwareKeyboard.instance.isShiftPressed
-                      ? wsPickRange(ws, l.id) // (Shift: every row from the last picked to this, After Effects' manner)
-                      : HardwareKeyboard.instance.isMetaPressed
-                      ? wsPickAlso(ws, l.id) // (Cmd: one more, or one less)
-                      : _roomy(ws, l) && l.id != ws.entered && _twice(l.id)
-                      ? ws.enter(l.id)
-                      : ws.select(l.id), // (a group's name pressed twice: into it)
-                  onEye: () => _eye(ws, l.id),
-                  onSolo: () => _flag(ws, 'solo', l.id),
-                  onLock: () => _flag(ws, 'lock', l.id),
-                ),
-              ),
-            ),
-        for (var i = from; i < to; i++)
-          if (_order[i].value == null)
-            if (_renameField(i, ws.layers[_order[i].layer].id, _labelY(i, from) - top) case final f?) f, // (its name written over it: Cmd+R)
-      ],
-    ),
   );
 }

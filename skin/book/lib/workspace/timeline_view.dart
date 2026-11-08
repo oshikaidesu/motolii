@@ -45,6 +45,5 @@ extension _WsTimelineView on _WsTimelineState {
 
   double _clampScroll(double s) => s.clamp(0.0, math.max(0.0, Ws.duration - _visible)).toDouble();
 
-  double _clampV(int rows) =>   // (the whole document's rows, under the group's room when one is open)
-      _vscroll.clamp(0.0, math.max(0.0, rows * WtM.row - _rowsH)).toDouble();
+  double _clampV(int rows) => _vscroll.clamp(0.0, math.max(0.0, rows * WtM.row - _rowsH)).toDouble();
 }

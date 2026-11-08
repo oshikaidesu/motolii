@@ -43,7 +43,6 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
   Ease? _base;   // (the way as it was: while one is held the stage shows it in an open step, and nothing is kept unless it is let go there)
   bool _shelf = false, _shelfShown = false;   // (drawn out; and built, until it has slid away)
   bool _overLocked = false;   // (AbsentMotion's lockOvershoot: once it looks past 0 and 1 it stays so, a hand bringing a handle back, until the menu says or another card or stretch comes)
-  WsEaseMode? _shownMode;
 
   // (with no key picked the stretch follows the playhead: built again when it comes into another stretch, not every frame)
   Ws? _ws;
@@ -73,7 +72,7 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
   // one that ends at it, as the desk shows.
   List<(int, String, double)> _stretches(Ws ws) => [
       if (ws.stretch case final s?)
-        (int.parse(s.layer), _amountOf(ws) ?? s.name, s.at)
+        (int.parse(s.layer), s.name, s.at)
       else if (ws.keys.isEmpty)   // (none picked: the stretch the playhead is in)
         if (easeSpan(ws) case final s?)
           for (final at in keysAt(ws, s).entries) (int.parse(s.layer.id), at.key, at.value),
@@ -82,25 +81,6 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
           for (final at in keysAt(ws, (layer: l, from: l.keys.any((f) => f > k.frame) ? k.frame : (l.keys.where((f) => f < k.frame).fold<int?>(null, (a, f) => a == null || f > a ? f : a) ?? k.frame), to: k.frame, picked: k.frame)).entries)
             (int.parse(l.id), at.key, at.value),
       ];
-
-  // A group's stretch worked for its values apart or its moments apart shares this desk (GROUP_FOCUS_new.md いまの考え):
-  // its curve is how the amount each key holds goes from the one key to the next, `x_spread` or `x_lag` (the engine's
-  // doc_place, dealt by doc_spread_share), as After Effects' text animator keys its Amount apart from its Shape. Told as
-  // any stretch's way is; the things' own values never written.
-  WsEaseMode _modeOf(Ws ws, EaseSpan span) => ws.stretch?.layer == span.layer.id && span.layer.kind == WsKind.group ? ws.easeMode : WsEaseMode.stretch;
-  bool _offset(Ws ws) => switch (easeSpan(ws)) { final s? => _modeOf(ws, s) != WsEaseMode.stretch, _ => false };
-  String? _amountOf(Ws ws) => _offset(ws) ? '${ws.stretch!.name}${ws.easeMode == WsEaseMode.value ? '_spread' : '_lag'}' : null;
-
-  // (a way is on the key it starts at: an amount with no key at either end of the stretch is keyed there as it is,
-  //  key_here, the lane's own second press; in the step the curve is told in)
-  void _keyAmount(Ws ws) {
-    final s = ws.stretch, name = _amountOf(ws);
-    if (s == null || name == null) return;
-    final t = int.parse(s.layer), at = ws.inside!.keyMoments(t, s.name), i = at.indexOf(s.at);   // (the place's own moments, not a frame's: the same key)
-    for (final k in [if (i >= 0) s.at, if (i >= 0 && i + 1 < at.length) at[i + 1]]) {
-      ws.inside!.later('key_here', thing: t, name: name, number: k);
-    }
-  }
 
   // (while the hand is down: the newest ease told, one at a time; the step opened at the first)
   void _live(Ws ws, Ease e) {
@@ -113,7 +93,6 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
     if (all.isEmpty) return;
     if (!_open) {
       m.later('together', number: 1);
-      _keyAmount(ws);
       _open = true;
     }
     _going = true;
@@ -178,7 +157,6 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
     }
     if (told.isEmpty) return setState(() => _trouble = all.isEmpty ? 'No key where the stretch begins' : null);
     m.later('together', number: 1);   // (one step, without waiting)
-    _keyAmount(ws);
     _define(m, to);
     for (final (t, name, at) in told) {
       m.later('way', thing: t, name: name, number: at, word: to);
@@ -207,15 +185,7 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
     final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), span = easeSpan(ws), store = eases[ws] ??= {}, id = spanId(span);
     if ((ws.inside, span) case (final m?, final span?)) {
       final at = keysAt(ws, span);
-      final mode = _modeOf(ws, span);
-      if (_shownMode != mode) {
-        _shownMode = mode;
-        _pending = null;
-        _told = null;
-        _base = null;
-      }
-      final amount = _amountOf(ws), own = amount != null ? m.wayOf(int.parse(span.layer.id), amount, ws.stretch!.at) : at.isEmpty ? '' : m.wayOf(int.parse(span.layer.id), at.keys.first, at.values.first);
-      final inDocument = own.isEmpty ? easePreset('Linear') : heard(own);
+      final inDocument = at.isEmpty ? easePreset('Linear') : heard(m.wayOf(int.parse(span.layer.id), at.keys.first, at.values.first));
       if (_told case final t? when !ws.waiting || said(t) == said(inDocument)) _told = null;
       var ease = _pending ?? _told ?? _base ?? inDocument;
       if (easeOther(ease) && ease.drawn == null) ease = easeCard(said(ease), m);   // (no seat for this kind: its curve is the inside's own working of it, as said now)
@@ -296,7 +266,7 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
       if (overshoot && [card.p1.dy, card.p2.dy].any((y) => y < 0 || y > 1)) put(card.withHandles(Offset(card.p1.dx, card.p1.dy.clamp(0.0, 1.0)), Offset(card.p2.dx, card.p2.dy.clamp(0.0, 1.0))));
     }
 
-    Widget graph(int frame, [double? trial]) => EaseGraph(beats: beats, ease: whole ? easeLaid(cards) : card, onion: _held ?? (laid && !whole ? easeLaid(cards) : null), ends: _endsOf(ws, span), span: span, frame: frame, onChanged: put, jump: easeJump, overshoot: overshoot && !whole, onEnd: ws.inside == null || _offset(ws) ? null : (start, by) => _toEnd(ws, span, start, by, done: true), onEndMove: ws.inside == null || _offset(ws) ? null : (start, by) => _toEnd(ws, span, start, by), endSays: (start, by) => _endSays(ws, span, start, by), trial: trial);
+    Widget graph(int frame, [double? trial]) => EaseGraph(beats: beats, ease: whole ? easeLaid(cards) : card, onion: _held ?? (laid && !whole ? easeLaid(cards) : null), ends: _endsOf(ws, span), span: span, frame: frame, onChanged: put, jump: easeJump, overshoot: overshoot && !whole, onEnd: ws.inside == null ? null : (start, by) => _toEnd(ws, span, start, by, done: true), onEndMove: ws.inside == null ? null : (start, by) => _toEnd(ws, span, start, by), endSays: (start, by) => _endSays(ws, span, start, by), trial: trial);
     return LayoutBuilder(builder: (_, box) {
       // (the left column as wide as its two marks; the shapes as large as the height lets seven and a bit be, or the width
       //  leaves, the two columns round them; all the rest the graph: a pane of any size has no empty part)
@@ -318,7 +288,7 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
                 Clipboard.setData(ClipboardData(text: easeText(ease))).catchError((_) {});   // (as words: for a page, or another window)
               }),
               ('paste', 'Paste Curve', () => paste(set)),   // (what was copied here, or a cubic-bezier() or linear() from a page: easeFromText)
-              if (easeCopied != null && ws.inside != null && !_offset(ws)) ('all', 'Paste Curve to All Keyframes', () => paste((e) => _onEveryKey(ws, e))),
+              if (easeCopied != null && ws.inside != null) ('all', 'Paste Curve to All Keyframes', () => paste((e) => _onEveryKey(ws, e))),
               ('jump', easeJump ? 'Jump On' : 'Jump Off', () => setState(() => easeJump = !easeJump)),
             ],
           ),
@@ -376,8 +346,9 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
                                 ? EaseTrial(way: said(ease), builder: (trial) => graph(ws.frame, trial))
                                 : ValueListenableBuilder<int>(valueListenable: ws.moment, builder: (_, frame, _) => graph(frame)),   // (only the graph follows the playhead)
                           ),
+                          if (span == null && ws.inside != null) Positioned(left: Shape.s(6), top: Shape.s(4), right: Shape.s(6), child: IgnorePointer(child: Text('Trying here. Pick a key to go on a stretch', key: const ValueKey('ease-no-span'), maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(Grey.g63)))),
                           if (_trouble case final why?) Positioned(left: Shape.s(4), right: Shape.s(4), top: Shape.s(2), child: Text(why, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g63))),
-                          if (span case final s?) Positioned(left: Shape.s(6), top: Shape.s(4), right: Shape.s(6), child: IgnorePointer(child: Text('${s.layer.name}  ${easeSeconds(s.from)} → ${easeSeconds(s.to)}', key: const ValueKey('ease-span'), maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(Grey.g63)))),   // (which thing, which stretch)
+                          if (span case final s?) Positioned(left: Shape.s(6), top: Shape.s(4), right: Shape.s(6), child: IgnorePointer(child: Text('${s.layer.name}  ${s.from} → ${s.to}', key: const ValueKey('ease-span'), maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(Grey.g63)))),   // (which thing, which stretch)
                           Positioned.fill(child: EaseNumbers(card: whole ? easeLaid(cards) : card, onChanged: put, overshoot: overshoot, onOvershoot: overshootSet)),
                           Positioned(left: Shape.s(2), bottom: Shape.s(2), child: EaseStep(span: span, back: true)),
                           Positioned(right: Shape.s(2), bottom: Shape.s(2), child: EaseStep(span: span, back: false)),

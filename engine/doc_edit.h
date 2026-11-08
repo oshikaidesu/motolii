@@ -19,10 +19,6 @@ static bool doc_knows(Doc& d, int thing, const char* name = nullptr, const doubl
         if (doc_knows(d, thing, base.c_str())) v = &looped;
         d.trouble.clear();
     }
-    static const DocValue apart{"_apart", "shape", -1e6, 1e6, true, nullptr};   // (a group's things apart, as each key of its place says: `x_spread` so much higher and lower, `x_lag` so many seconds later from the first to the last, dealt by doc_spread_share and doc_lag_share. GROUP_FOCUS_new.md いまの考え; After Effects' text animator, its Amount keyed apart from its Shape)
-    if (!v && doc_word(d, thing, "shape") == "null")
-        for (const char* end : {"_spread", "_lag"})
-            if (const size_t k = strlen(name), e = strlen(end); k > e && !strcmp(name + k - e, end) && doc_among("x y z", std::string(name, k - e))) v = &apart;
     if (!v && !strncmp(name, "js_", 3) && doc_among("film picture text shape solid stage camera behaviour", kind))   // (a knob of the thing's script; a camera's motion's, golf ㊴)
         for (const DocScript* sc : doc_scripts_on(d, thing))
             for (const DocValue& one : sc->values)
@@ -455,10 +451,6 @@ static bool doc_parent(Doc& d, int thing, double to) {
     if (!doc_knows(d, thing, "parent", &to)) return false;
     for (int up = (int)to, n = 0; up && n < 64; up = (int)doc_number(d, up, "parent", 0, 0), ++n)   // (a ring of things each going with the next goes nowhere)
         if (up == thing) return d.trouble = "it would go with itself (that one goes with it already)", false;
-    if (doc_word(d, thing, "kind") == "behaviour") {   // (a behaviour has no place on the picture to keep: it is put in the group, nothing else said; else size and the rest are refused and the step rolled back)
-        if (!doc_change(d, sqlite3_mprintf("insert into fact(thing, name, at, value) values(%d, 'parent', 0.0, %!.17g) on conflict do update set value = excluded.value, way = null", thing, to))) return false;
-        return doc_forget(d), true;   // (read anew at once, within the step: the moment reads which group it is in)
-    }
     const double now = d.stage->now;
     const auto chain = [&](int up, double* turn, double* size) {   // (how far the parents turn it, and how large they make it)
         *turn = 0.0, *size = 1.0;

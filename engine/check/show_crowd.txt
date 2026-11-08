@@ -18,7 +18,7 @@ set 2 copy_y 0.22
 set 2 y -1.05
 set 2 wave_y 0.06
 set 2 wave_speed 1.2
-set 2 stagger 0.032
+set 2 stagger 1.5
 say 2 fx ../../effects/stuck_dots.wgsl
 add solid ring
 say 3 fill ff6a3d

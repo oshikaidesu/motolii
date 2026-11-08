@@ -24,9 +24,6 @@ extension MotoliiDocument on Motolii {
   /// A thing's word by name (kind, file, shape, blend, text, fill); '' if it has none.
   String word(int thing, String name) => ((_of(thing)['word'] as Map<String, dynamic>?)?[name] as String?) ?? '';
 
-  /// Whether a thing says a value itself, at rest or by keys (not its kind's usual: [value] gives that too).
-  bool says(int thing, String name) => ((_of(thing)['value'] as Map<String, dynamic>?)?.containsKey(name) ?? false) || keyMoments(thing, name).isNotEmpty;
-
   /// How long a thing is on, in seconds; below 0: for good.
   double lasts(int thing) => (_of(thing)['lasts'] as num?)?.toDouble() ?? -1;
 
@@ -159,7 +156,6 @@ extension MotoliiDocument on Motolii {
 
   /// Points of the picture to one unit of the stage, at z 0.
   double get point => (_document['point'] as num?)?.toDouble() ?? 1;
-
 
   /// How long the document has been worked on, in whole seconds (Alight Motion's Total Edit Time: doc_edited).
   int get edited => ((_document['edited'] as num?) ?? 0).round();

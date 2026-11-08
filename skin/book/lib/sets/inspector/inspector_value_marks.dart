@@ -81,41 +81,7 @@ final valueMarks = <String, ValueMark>{
     }
   },
   'v_rotate_x': (c, s, v, ink) => _tilt(c, s, v, ink), // (a camera's pitch, a thing's turn about x: a plane tilted so far)
-  'v_stagger': (c, s, v, ink) => _risen(c, s, ink, [for (var i = 0; i < 5; i++) i / 4 * ((v ?? 0) / .25).clamp(0.0, 1.0)]), // (five things a moment after the first starts: each the later it starts the less risen; 0, all together)
 };
-
-/// The drawn choices, by value id: each of a choice's words its own picture, the choice's place as v (a Segmented of
-/// pictures in place of the words), and the words a hand reads when it stops on one. A third party's card may add its own.
-final choiceMarks = <String, ValueMark>{
-  // (an order's From, a group's and copies': five things side by side as they lie, a moment after the first starts,
-  //  each risen as far as it has gone, the first furthest: from the first, the middle, the last, the ends, at random.
-  //  The stage's own look mid-move (golf (g33): pictures of a timeline, lines down the tile, read as a row the wrong
-  //  way). GSAP's stagger from: start, center, end, edges, random; the counting of doc_relations' doc_order_delay)
-  'v_stagger_from': (c, s, v, ink) {
-    const random = [2.0, 0.0, 4.0, 1.0, 3.0];
-    _risen(c, s, ink, [
-      for (var i = 0; i < 5; i++)
-        switch ((v ?? 0).round()) {
-          1 => (i - 2).abs() / 2,
-          2 => (4 - i) / 4,
-          3 => (2 - (i - 2).abs()) / 2,
-          4 => random[i] / 4,
-          _ => i / 4,
-        },
-    ]);
-  },
-};
-final choiceWords = <String, List<String>>{
-  'v_stagger_from': ['the first', 'the middle', 'the last', 'the ends', 'random'],
-};
-
-void _risen(Canvas c, Size s, Color ink, List<double> late) { // (one bar each, side by side, as high as it has risen: 0 the first, 1 the last)
-  final w = (s.width - 4) / late.length;
-  for (var i = 0; i < late.length; i++) {
-    final h = 3 + (s.height - 7) * (1 - .8 * late[i]);
-    c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(2 + i * w + w * .18, s.height - 2 - h, w * .64, h), const Radius.circular(1)), Paint()..color = ink);
-  }
-}
 
 void _tilt(Canvas c, Size s, double? v, Color ink) {
   final a = (v ?? 0) * math.pi / 180, o = s.center(Offset.zero), d = Offset(math.cos(a), math.sin(a)) * 8;
@@ -131,13 +97,12 @@ Paint _line(Color ink) => Paint()
 
 /// A value's drawn mark, as a widget of the gauge's size.
 class ValueMarkGlyph extends StatelessWidget {
-  const ValueMarkGlyph(this.mark, this.value, {super.key, this.ink = const Color(0xFFC2C2C2), this.size = const Size(22, 22)});
+  const ValueMarkGlyph(this.mark, this.value, {super.key, this.ink = const Color(0xFFC2C2C2)});
   final ValueMark mark;
   final double? value;
   final Color ink;
-  final Size size;
   @override
-  Widget build(BuildContext context) => CustomPaint(size: size, painter: _MarkPaint(mark, value, ink));
+  Widget build(BuildContext context) => CustomPaint(size: const Size(22, 22), painter: _MarkPaint(mark, value, ink));
 }
 
 class _MarkPaint extends CustomPainter {

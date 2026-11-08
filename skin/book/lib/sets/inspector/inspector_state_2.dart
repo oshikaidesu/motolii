@@ -378,7 +378,6 @@ class Doc extends ChangeNotifier {
   void Function(String title)? onMoreCard;
   VoidCallback? onAddEffect;   // (Alight Motion's Add Effect: the shelf of them, its search taking the keys)
   double? Function(String sum)? onSum;   // (a sum typed in a number field worked out: null, it is not one)
-  void Function(String id, double? to)? onTry;   // (a choice a hand rests on, shown on the stage and not kept; null: the hand left. PowerPoint's Live Preview)
   void Function(List<String> names)? onCardReset;
   void Function(String title)? onCardRemove;
   void Function(String title)? onCardEye;
