@@ -13,14 +13,8 @@ extension MotoliiMoment on Motolii {
   /// The moment of the picture the stage last drew: where a playhead is while it plays.
   double get now => (_moment['now'] as num?)?.toDouble() ?? 0;
 
-  /// How much later a group's thing goes than its group (its place in the group's order, seconds); 0: on time, or in none.
-  double late(int thing) => ((_moment['late'] as Map<String, dynamic>?)?['$thing'] as num?)?.toDouble() ?? 0;
-
   /// How many members a thing has (its copies, its letters: doc_members); 1: one, or not known yet.
   int members(int thing) => ((_moment['members'] as Map<String, dynamic>?)?['$thing'] as num?)?.toInt() ?? 1;
-
-  /// A row in a thing with copies: how much later its first and its last member read its keys (seconds); null: not one.
-  (double, double)? strum(int row) => switch ((_moment['strum'] as Map<String, dynamic>?)?['$row']) { [final num a, final num b] => (a.toDouble(), b.toDouble()), _ => null };
 
   double get drawnAt => now;
 

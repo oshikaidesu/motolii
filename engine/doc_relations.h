@@ -287,11 +287,10 @@ static bool doc_shutter(Doc& d, int thing, double now, double* open, bool* moves
 // How a thing's groups leave it (Alight Motion's group: its opacity and whether it is shown hold for all it holds): the
 // Nulls it goes with, up to the top (a Null draws nothing of its own, so its opacity is its group's), their opacities
 // one into another; 0 if one of them is hidden. 1 with none.
-static double doc_group_delay(Doc& d, int thing);
 static double doc_group_opacity(Doc& d, int thing, double now) {
     double k = 1.0;
-    for (int below = thing, up = (int)doc_number(d, thing, "parent", 0, 0), n = 0; up && n < 64 && k > 0.0; below = up, up = (int)doc_number(d, up, "parent", 0, 0), ++n)
-        if (doc_word(d, up, "shape") == "null") k *= doc_number(d, up, "visible", 0, 1) > 0.5 ? std::clamp(doc_number(d, up, "opacity", now - doc_group_delay(d, below), 1), 0.0, 1.0) : 0.0;   // (each group's own as late as the one under it goes with it, not the lateness of those below added up: doc_above's way)
+    for (int up = (int)doc_number(d, thing, "parent", 0, 0), n = 0; up && n < 64 && k > 0.0; up = (int)doc_number(d, up, "parent", 0, 0), ++n)
+        if (doc_word(d, up, "shape") == "null") k *= doc_number(d, up, "visible", 0, 1) > 0.5 ? std::clamp(doc_number(d, up, "opacity", now, 1), 0.0, 1.0) : 0.0;
     return k;
 }
 // A thing's opacity as AbsentMotion's opacity effects on it leave it (a share, 1 with none: absent_motion.h).
@@ -343,65 +342,35 @@ static int doc_members(Doc& d, int thing) {
 // between the start of each", with its `from`: start (i), end (n-1-i), centre (|i - (n-1)/2|), edges (the nearer end),
 // random (its place in an order by the thing's seed, the same each time); anime.js's stagger(100) the same. It was the
 // whole spread from the first to the last (GSAP's `amount`), read as each by every golf player ((g4), (g34)).
+// The ease already stored on the stagger (GSAP's stagger ease). Linear, or none, leaves the steps as they were.
+static double doc_stagger_ease(Doc& d, int thing, const char* name, double u) {
+    std::string way;
+    doc_rows(d, sqlite3_mprintf("select way from fact where thing = %d and name = %Q and at = 0", thing, name), [&](sqlite3_stmt* row) {
+        if (sqlite3_column_type(row, 0) == SQLITE_TEXT) way = (const char*)sqlite3_column_text(row, 0);
+    });
+    if (way.empty() || way == "Linear" || u <= 0.0 || u >= 1.0) return u;
+    Interp kind;
+    if (interp_said(way.c_str(), &kind) == 0) return interp_ease(kind, u);
+    return doc_way_named(d, way) ? doc_went_by(d, way, u, u, 1.0, 0.0, 1.0) : u;
+}
 static double doc_order_delay(Doc& d, int thing, int nth, int n, const char* eachName = "stagger", const char* fromName = "stagger_from") {
     const double each = doc_literal(d, thing, eachName, 0, 0);
     if (each <= 0.0 || n < 2) return 0.0;
     const std::string& from = doc_literal_word(d, thing, fromName);
     const double last = n - 1.0, mid = last / 2.0, at = nth;
+    double steps = at;
     if (from == "random") {
         const auto roll = [seed = (uint32_t)doc_literal(d, thing, "seed", 0, 0)](uint32_t k) { uint32_t h = seed * 0x9E3779B9u ^ (k + 1u) * 0x85EBCA6Bu; h ^= h >> 16, h *= 0x7FEB352Du, h ^= h >> 15, h *= 0x846CA68Bu, h ^= h >> 16; return h; };
-        int rank = 0;
-        for (int k = 0; k < n; ++k) rank += roll((uint32_t)k) < roll((uint32_t)nth) || (roll((uint32_t)k) == roll((uint32_t)nth) && k < nth);
-        return each * rank;
-    }
-    return each * (from == "centre" ? std::fabs(at - mid) : from == "end" ? last - at : from == "edges" ? mid - std::fabs(at - mid) : at);
+        steps = 0;
+        for (int k = 0; k < n; ++k) steps += roll((uint32_t)k) < roll((uint32_t)nth) || (roll((uint32_t)k) == roll((uint32_t)nth) && k < nth);
+    } else if (from == "centre") steps = std::fabs(at - mid);
+    else if (from == "end") steps = last - at;
+    else if (from == "edges") steps = mid - std::fabs(at - mid);
+    const double most = from == "centre" ? mid : from == "edges" ? mid - (n % 2 ? 0.0 : 0.5) : last;
+    if (most <= 0.0) return 0.0;
+    return each * doc_stagger_ease(d, thing, eachName, steps / most) * most;
 }
 static double doc_delay(Doc& d, int thing, int nth) { return doc_order_delay(d, thing, nth, doc_members(d, thing)); }
-// A thing's rows of a value: the Order rows in it (behaviours of file "order" it holds: docs/notes/GROUP_FOCUS_new.md
-// 土台 ①②, a value dropped from the inspector into its room) that hold that value, said or keyed: one member's keys of
-// it. A group's too: its copies, dealt to its things (doc_dealt), read them as any thing's copies do.
-static std::vector<int> doc_rows_of(Doc& d, int thing, const char* name) {
-    std::vector<int> rows;
-    if (!thing) return rows;
-    for (const int t : doc_laid(d))
-        if ((int)doc_number(d, t, "parent", 0, 0) == thing && doc_word(d, t, "kind") == "behaviour" && doc_word(d, t, "file") == "order" && doc_number(d, t, "visible", 0, 1) > 0.5 &&
-            (!doc_word(d, t, name).empty() || !doc_keys_of(d, t, name).at.empty()))
-            rows.push_back(t);
-    return rows;
-}
-// What a thing's rows make of the nth of its n members' value (`base`: its own there): each row's keys read as much
-// earlier as its order says, t − lag × its place (doc_order_delay by the row's lag and lag_from: GROUP_FOCUS_new.md
-// エンジンの式, GSAP's stagger), given as a group gives its own (doc_given_on), as much as the row's strength.
-static double doc_rowed(Doc& d, const std::vector<int>& rows, const char* name, int nth, int n, double now, double base) {
-    for (const int row : rows) {
-        const double at = now - doc_order_delay(d, row, nth, n, "lag", "lag_from");
-        if (const double given = doc_given_on(name, base, doc_number(d, row, name, at, !strcmp(name, "size") || !strcmp(name, "opacity") ? 1 : 0), std::clamp(doc_number(d, row, "strength", at, 1), -1.0, 2.0)); !std::isnan(given)) base = given;
-    }
-    return base;
-}
-// How much later a group's thing goes with its group than the group goes (a Null's stagger over the things it holds
-// straight under it, in the order they lie, the furthest back first: its copies' order law on its things; After
-// Effects' delayed parenting, valueAtTime(time - delay * index)). 0 under anything else.
-// (the order is a row inside the group: a behaviour of file "order" with the group as its parent, its lag the each and its
-//  lag_from the start (docs/notes/GROUP_FOCUS_new.md). A group with none reads its own stagger, as documents before had it.
-//  A behaviour in the group is not one of the things that go in turn, and has no turn itself.)
-static int doc_order_of(Doc& d, int group) {
-    const auto rowOfValue = [&](int t) { for (const char* n : {"x", "y", "z", "random", "opacity"}) if (!doc_word(d, t, n).empty() || !doc_keys_of(d, t, n).at.empty()) return true; return false; };   // (a row of a value (doc_rows_of) is not the order its things go in)
-    for (const int t : doc_laid(d))
-        if ((int)doc_number(d, t, "parent", 0, 0) == group && doc_word(d, t, "kind") == "behaviour" && doc_word(d, t, "file") == "order" && !rowOfValue(t)) return t;
-    return 0;
-}
-static double doc_group_delay(Doc& d, int thing) {
-    const int group = (int)doc_number(d, thing, "parent", 0, 0);
-    if (group <= 0 || doc_word(d, group, "shape") != "null" || doc_word(d, thing, "kind") == "behaviour") return 0.0;
-    const int order = doc_order_of(d, group);
-    if (order ? doc_number(d, order, "lag", 0, 0) <= 0.0 : doc_number(d, group, "stagger", 0, 0) <= 0.0) return 0.0;
-    int nth = -1, n = 0;
-    for (const int t : doc_laid(d))
-        if ((int)doc_number(d, t, "parent", 0, 0) == group && doc_word(d, t, "kind") != "behaviour") nth = t == thing ? n : nth, ++n;
-    if (nth < 0) return 0.0;
-    return order ? doc_order_delay(d, order, nth, n, "lag", "lag_from") : doc_order_delay(d, group, nth, n);
-}
 // Where the thing it goes with is (its parent's place; none, or one not there any more: as the stage is). A 2D thing
 // going with the camera is as the stage is: it sticks to the camera already (doc_place), and would take its moves twice.
 static math::mat4 doc_above(Doc& d, int thing, double now, int deeper = 0) {
@@ -410,12 +379,7 @@ static math::mat4 doc_above(Doc& d, int thing, double now, int deeper = 0) {
     if (up != d.shown.end() && up->second.camera && self != d.shown.end() && self->second.space == 2) return math::mat4{};
     const bool there = up != d.shown.end() || !doc_word(d, parent, "kind").empty();   // (in the document: one just made is there before it is first drawn, as a group's new Null is when its things are put in it)
     if (!parent || !there || deeper >= 64) return math::mat4{};   // (64: a document written elsewhere with a ring of parents still ends)
-    const double late = doc_group_delay(d, thing);
-    if (late <= 0.0 || !(int)doc_literal(d, parent, "parent", 0, 0)) return doc_place(d, parent, now - late, deeper + 1);
-    // (a group in a group: only its own moves read late, those above it as they are now. After Effects' delayed
-    //  parenting reads its parent's own value, parent.transform.position.valueAtTime(time - delay); read as the whole
-    //  chain late, a group moved by the one it is in could not move as one while its things went in turn, golf (g93))
-    return doc_above(d, parent, now, deeper + 1) * inverse(doc_above(d, parent, now - late, deeper + 1)) * doc_place(d, parent, now - late, deeper + 1);
+    return doc_place(d, parent, now, deeper + 1);
 }
 // Where a split text's letter has its middle across the thing, in its own units (0: not a letter of one).
 static double doc_letter_middle(Doc& d, int thing, int copy) {

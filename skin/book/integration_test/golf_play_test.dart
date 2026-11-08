@@ -230,7 +230,7 @@ void main() {
       lines.add('thing $x $kind name "${m.word(x, 'name')}" file "${m.word(x, 'file').split('/').last}" parent ${m.value(x, 'parent', 0)} x ${m.value(x, 'x', 0)?.toStringAsFixed(2)} y ${m.value(x, 'y', 0)?.toStringAsFixed(2)} z ${m.value(x, 'z', 0)?.toStringAsFixed(2)} keys ${keyed.join(' ')}');
       if (m.word(x, 'shape') == 'null') lines.add('  group: stagger ${m.value(x, 'stagger', 0)} stagger_from "${m.word(x, 'stagger_from')}" seed ${m.value(x, 'seed', 0)} things ${[for (final c in m.things) if ((m.value(c, 'parent', 0) ?? 0).round() == x) c]}');
       if (kind == 'behaviour') {
-        lines.add('  file ${m.word(x, 'file')} members ${m.word(x, 'members')} lag ${m.value(x, 'lag', 0)} lag_from "${m.word(x, 'lag_from')}" spread ${m.value(x, 'spread', 0)} scatter ${m.value(x, 'scatter', 0)} strength ${m.value(x, 'strength', 0)} seed ${m.value(x, 'seed', 0)}');
+        lines.add('  file ${m.word(x, 'file')} members ${m.word(x, 'members')} lag ${m.value(x, 'lag', 0)} spread ${m.value(x, 'spread', 0)} scatter ${m.value(x, 'scatter', 0)} strength ${m.value(x, 'strength', 0)} seed ${m.value(x, 'seed', 0)}');
       }
     }
     final seen = [for (final x in m.things) if (m.word(x, 'kind') != 'behaviour') x];

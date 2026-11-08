@@ -515,9 +515,8 @@ const char* motolii_reading(Motolii* m, int thing, const char* name) {
         const bool camera = doc_word(*m->d, thing, "kind") == "camera";
         const std::string n = name;
         double times = 1, from = 0;
-        const bool row = doc_word(*m->d, thing, "kind") == "behaviour" && doc_word(*m->d, thing, "file") == "order";   // (a row's x and y move each member from its place: 0 is none, not the picture's middle)
-        if (n == "x") times = p, from = row ? 0 : w / 2;
-        else if (n == "y") times = -p, from = row ? 0 : h / 2;
+        if (n == "x") times = p, from = w / 2;
+        else if (n == "y") times = -p, from = h / 2;
         else if (n == "z") times = p;
         else if (n == "scale_x" || n == "scale_y" || n == "scale_z" || n == "opacity" || n == "zoom") times = 100;
         else if (n == "rotate") times = camera ? 1 : -1;

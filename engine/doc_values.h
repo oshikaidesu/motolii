@@ -70,7 +70,6 @@ static const DocShown doc_shown[] = {
     {"tall", "", "×", "Height", 0, 3, "Each copy"},
     {"copy_tall", "numbers", "", "Heights", 0, 0, "Each copy"},
     {"stagger_from", "", "", "From", 0, 0, nullptr},
-    {"lag_from", "", "", "From", 0, 0, nullptr},   // (an order's: which goes first)
     {"copy_fill_way", "", "", "Order", 0, 0, "Each copy"},
     {"wave_y", "stage", "px", "Up/down", -1, 1, nullptr},
     {"wave_x", "stage", "px", "Sideways", -1, 1, nullptr},
@@ -97,7 +96,6 @@ static const DocShown doc_shown[] = {
     {"falloff_invert", "onoff", "", "Invert", 0, 1, nullptr},
     {"hand", "share", "%", "Handed", 0, 1, nullptr},
     {"lag", "", "s", "Lag", 0, 1, nullptr},
-    {"random", "stage", "px", "Random", 0, 2, nullptr},
     {"spread", "share", "%", "Spread", 0, 3, nullptr},
     {"scatter", "stage", "px", "Scatter", 0, 2, nullptr},
     {"field_size", "share", "%", "Grow", -1, 5, nullptr},
@@ -374,9 +372,6 @@ static std::vector<AbsentEffect> doc_absent_on(Doc& d, int thing, double now) {
 static const DocCard doc_cards[] = {
     // (in the order a hand needs them: first what every thing has, as After Effects' Properties panel keeps Layer Transform at the top for all layer types; then, Alight Motion's Opacity & Blending, how it lies on what is under it; then its own, Text and Paragraph, Shape Properties)
     {"Transform", "space parent anchor_x anchor_y anchor_z x y z scale_x scale_y scale_z rotate_x rotate_y rotate opacity", "kind", "!camera"},   // (After Effects' Transform group: where it is, how large, how turned, how seen; each its own value)
-    // (a group's order (stagger, Delay each) has no card: it is the ▸ after each of the group's keys on the timeline, pulled
-    //  (timeline_paint.dart wtSpreadX; docs/notes/GROUP_FOCUS_new.md). The card held the order in words, apart from where the
-    //  moves are made; golf players 1–8 went round it (reports/golf_noise.md))
     {"Relation", "stagger stagger_from seed", "shape", "!null", true},   // (anything else with things in an order, its copies or a text split into its letters or words: the same order law, the same card, shown unasked once it has them (doc_cards_of). It lay in Copies, where a text's letters were not looked for, golf (g3))   // (a group's: its own moves, its Transform's keys and ways, given each of its things in turn, its copies' order law on its things; the motion of text animators and cloners on any group)
     {"Camera", "parent x y z rotate_x rotate_y rotate distance zoom", "kind", "camera"},
     {"Fog", "fog fog_near fog_far fog_color", "kind", "camera"},   // (the camera's own, as Alight Motion's camera has: its colour, where it begins, where it is whole; the stage's when it says none)   // (After Effects' camera: what it looks at, where it is and how turned, how far its eye is, its zoom)
@@ -428,9 +423,6 @@ static const DocCard doc_cards[] = {
     {"Follow", "strength leader lag leader_b hand", "file", "follow"},
     {"Push", "strength leader radius", "file", "push"},
     {"Group", "strength lag x y spread scatter rotate rotate_y size opacity", "file", "group"},
-    {"Order", "lag lag_from seed strength", "file", "order"},   // (the order a group's things go in, as a row inside the group (docs/notes/GROUP_FOCUS_new.md): each so much later, from which one, its roll; how much of it (keyed: its weight). The ▸ after the group's keys on the timeline pulls lag)   // (things in an order and nothing else: away by its own move, turn, size and opacity, each in turn)
-    {"Position", "x y z random", "file", "order", true},   // (a Position row: each member moved by its keys so much later, and so far its own way within Random: a disc, a ball once it says z (doc_rows_of, doc_place))
-    {"Opacity", "opacity", "file", "order", true},   // (an Order row in a thing with copies, the row of a value dropped from its inspector (doc_rows_of): that value's keys, one member's, keyed with the usual ◇; shown once it is said)
     {"Relation", "strength", "file", "relate"},   // (one written as a file: its own knobs come under it, as a recipe's)
     {"Falloff", "region falloff_soft falloff_invert", "file", "!"},   // (any with a file: a behaviour shows only such cards, doc_cards_of)
     {"Note", "label note", nullptr, nullptr, true},   // (what a maker wrote of it: After Effects' layer comment)

@@ -74,27 +74,6 @@ class _PropRowState extends State<PropRow> {
     super.dispose();
   }
 
-  // (its name taken up and carried as the value: Flutter's Draggable, as the lab's table carries a value by its name
-  //  strip, at once, its feedback a small lifted tile (cards_table_5.dart, cards_table_6.dart _Lifted))
-  Widget _carried(bool may, Widget label) => !may
-      ? label
-      : Draggable<ValueCarried>(
-          data: ValueCarried(widget.id, widget.label),
-          dragAnchorStrategy: pointerDragAnchorStrategy,
-          feedback: Transform.translate(
-            offset: const Offset(-20, -12),
-            child: Transform.rotate(
-              angle: -.06,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: Grey.g20, borderRadius: BorderRadius.circular(6), border: Border.all(color: Pop.accent), boxShadow: const [BoxShadow(color: Color(0xAA000000), blurRadius: 16, offset: Offset(0, 10))]),
-                child: Text(widget.label, style: T.micro(Grey.g95)),
-              ),
-            ),
-          ),
-          child: MouseRegion(cursor: SystemMouseCursors.grab, child: label),
-        );
-
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), cfg = x.cfg, doc = x.doc, ed = Ed(cfg.ed);
@@ -167,9 +146,7 @@ class _PropRowState extends State<PropRow> {
                 else if (pop)
                   SizedBox(width: Shape.s(34)),
                 (unit != null ? Expanded.new : Flexible.new)(
-                  child: _carried( // (the name carries the value, as the lab's table carries one by its name strip (cards_table_5.dart): let go in a room on the timeline, a row of it)
-                    cellsOn && widget.keyable && widget.id.startsWith('v_'),
-                    FittedBox( // (a label wider than its column is drawn smaller, never cut)
+                  child: FittedBox( // (a label wider than its column is drawn smaller, never cut)
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -179,7 +156,7 @@ class _PropRowState extends State<PropRow> {
                         !cellsOn ? Grey.g56 : (changed ? Role.of(Grey.g95, Role.changed) : (mixedAny ? Role.of(Grey.g63, Role.info) : Grey.g63)),
                       ),
                     ),
-                  )),
+                  ),
                 ),
                 ?widget.trail,
                 if (unit != null) ...[

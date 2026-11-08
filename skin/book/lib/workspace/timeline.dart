@@ -26,7 +26,6 @@ import 'relate.dart';
 import 'ws.dart';
 import 'ws_menu.dart';
 import '../sets/foundations/text_hand.dart';
-import '../sets/inspector/inspector_parts.dart' show ValueCarried;
 part 'timeline_asked.dart';
 part 'timeline_view.dart';
 part 'timeline_hand.dart';
@@ -64,8 +63,22 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
   double get _grip => _pin == 0 ? 0 : Shape.z(8);
   double get _panelH => _pin == 0 ? 0 : (_panelWant ?? _areaH / 2).clamp(0.0, math.max(0.0, _areaH - _grip - 2 * WtM.row)).toDouble() * Curves.easeOut.transform(_opening.value);
 
+  // A row's height: a lane in the group's room shares what the room's other rows leave of it, a row at least, so the
+  // room is the group's graph, time across and value up, as tall as its edge is pulled (GROUP_FOCUS_new.md:
+  // グループタイムラインビュー＝配列対応グラフビュー); every other row a row's.
+  int _roomLanes = 0;
+  double get _laneH => math.max(WtM.row, (_panelH - (_pin - _roomLanes) * WtM.row) / math.max(1, _roomLanes));
+  double _tall(int i) => i < _pin && (_order[i].value ?? '').isNotEmpty ? _laneH : WtM.row;
+  double _roomTop(int i) {
+    var y = 0.0;
+    for (var j = 0; j < i; j++) {
+      y += _tall(j);
+    }
+    return y;
+  }
+
   // A row's top on the tracks: the room's under the ruler, the whole's under the room's edge.
-  double _rowY(int i) => i < _pin ? i * WtM.row - _pscroll : _panelH + _grip + (i - _pin) * WtM.row - _vscroll;
+  double _rowY(int i) => i < _pin ? _roomTop(i) - _pscroll : _panelH + _grip + (i - _pin) * WtM.row - _vscroll;
   bool _onGrip(double y) => _pin > 0 && y >= _panelH && y < _panelH + _grip;
 
   void _gripTo(double y) {
@@ -101,11 +114,56 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
   // The card a lane's value stands on: the effect it is a knob of, or Transform and the like.
   String? _laneCard(Ws ws, WsLayer l, String name) => [for (final (title, names) in ws.inside!.cards(int.parse(l.id))) if (names.contains(name)) title].firstOrNull;
 
+  // A group's stretch pressed on its lane, while what of it to work on is asked (_offer): lit as a picked one is.
+  ({String layer, String name, int from})? _offered;
+
+  // The entered group's instances, each its own way over the group's bar as the inside places it (motolii_path: its
+  // things, the copies dealt them, each as late as it goes): asked again only when the document, or the group's keys of
+  // x and y and their ways, change, as the stage's motion path is (stage_view_2.dart _trailOf). Four numbers a moment,
+  // _crowdN moments; at most _crowdMost of them, every so many in their order.
+  static const _crowdMost = 128, _crowdN = 120;
+  (Object?, List<List<double>>?) _crowd = (null, null);
+  List<List<double>>? _instancesOf(Ws ws, WsLayer g) {
+    final m = ws.inside!, t = int.parse(g.id);
+    final key = (ws.rev, g.id, g.inF, g.outF, [for (final n in const ['x', 'y']) for (final a in m.keyMoments(t, n)) '$n $a ${m.wayOf(t, n, a)}', for (final n in const ['x', 'y']) ...m.keyValues(t, n), m.value(t, 'stagger', 0), m.wayOf(t, 'stagger', 0), for (final c in m.things) if ((m.value(c, 'parent', 0) ?? 0).round() == t) '${m.value(c, 'x', 0)} ${m.value(c, 'y', 0)}'].join(';'));
+    if (_crowd.$1 != key) {
+      _crowd = (key, null);
+      final who = [
+        for (final c in m.things)
+          if ((m.value(c, 'parent', 0) ?? 0).round() == t && m.word(c, 'kind') != 'behaviour')
+            for (var j = 0; j < math.max(1, m.members(c)); j++) (c, j),
+      ];
+      final every = math.max(1, (who.length / _crowdMost).ceil());
+      m.paths([for (var i = 0; i < who.length; i += every) who[i]], from: g.inF / Ws.fps, to: g.outF / Ws.fps, n: _crowdN).then((all) {
+        if (mounted && _crowd.$1 == key) setState(() => _crowd = (key, [for (final p in all) ?p]));
+      });
+    }
+    return _crowd.$2;
+  }
+
+  // (each lane's share of them, laid between its lowest and highest: the same lists while nothing changes, so the
+  //  painter is not asked again)
+  final _crowdLanes = <String, (Object, double, double, List<List<(double, double)>>)>{};
+  List<List<(double, double)>> _crowdLane(WsLayer g, String name, List<List<double>> crowd, int axis, double lo, double hi) {
+    if (_crowdLanes[name] case (final c, final a, final b, final kept) when identical(c, crowd) && a == lo && b == hi) return kept;
+    double norm(double v) => hi > lo ? (v - lo) / (hi - lo) : .5;
+    final laid = [
+      for (final p in crowd) [for (var i = 0; 4 * i + axis < p.length; i++) (g.inF + (g.outF - g.inF) * i / _crowdN, norm(p[4 * i + axis]))],
+    ];
+    _crowdLanes[name] = (crowd, lo, hi, laid);
+    return laid;
+  }
+
   // A value's lane: its keys where they are and what they hold, read from the document's picture (nothing asked of the inside).
-  WtRow _laneRow(Ws ws, WsLayer l, String name) {
+  // (the entered group's x and y: its instances laid over it, as many curves as there are, the lane as tall as they all
+  //  reach; GROUP_FOCUS: グループタイムラインビュー＝配列対応グラフビュー)
+  WtRow _laneRow(Ws ws, WsLayer l, String name, {double? tall}) {
     final m = ws.inside!, t = int.parse(l.id), at = m.keyMoments(t, name), vs = m.keyValues(t, name);
-    final n = math.min(at.length, vs.length);
-    final lo = vs.take(n).fold(double.infinity, math.min), hi = vs.take(n).fold(-double.infinity, math.max);
+    final n = math.min(at.length, vs.length), axis = const {'x': 0, 'y': 1}[name];
+    final crowd = l.kind == WsKind.group && l.id == ws.entered && axis != null ? _instancesOf(ws, l) : null;
+    final all = [...vs.take(n), for (final p in crowd ?? const <List<double>>[]) for (var i = axis ?? 0; i < p.length; i += 4) p[i]];
+    final lo = all.fold(double.infinity, math.min), hi = all.fold(-double.infinity, math.max);
+    final on = switch (ws.stretch) { final s? when s.layer == l.id && s.name == name => s.from, _ => _offered?.layer == l.id && _offered?.name == name ? _offered!.from : null };
     return WtRow(
       name: name,
       kind: l.kind,
@@ -118,55 +176,15 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
       locked: _isLocked(ws, l.id),
       lane: [for (var i = 0; i < n; i++) ((at[i] * Ws.fps).round(), hi > lo ? (vs[i] - lo) / (hi - lo) : .5)],
       laneWays: [for (var i = 0; i + 1 < n; i++) _wayShape(ws, m.wayOf(t, name, at[i]))],
-      laneOn: switch (ws.stretch) { final s? when s.layer == l.id && s.name == name => [for (var i = 0; i < n; i++) (at[i] * Ws.fps).round()].indexOf(s.from), _ => null },
+      laneOn: on == null ? null : [for (var i = 0; i < n; i++) (at[i] * Ws.fps).round()].indexOf(on),
+      instances: crowd == null ? null : _crowdLane(l, name, crowd, axis!, lo, hi),
+      tall: tall,
     );
-  }
-
-  // A group's things, how much later each goes (its Relation's order), in frames, each once: its keys drawn again so much
-  // later, faint, as GSAP's GSDevTools lays a stagger's tweens one after the next; the last of them is where the last
-  // thing lands (golf (g53), (g56): one bar, two keys, no thing's start nor the end of them all seen).
-  // (when a group's keys come for each of its things, each as late as it goes (doc_group_delay): on the group's row all
-  //  of them, on a thing's own row its own, so which goes when is read on its row; GSAP's GSDevTools lays a stagger out
-  //  as one bar per target. A thing's row had none, golf (g64))
-  List<int> _echoesOf(Ws ws, WsLayer l) {
-    final m = ws.inside;
-    if (m == null) return const [];
-    final id = int.parse(l.id), up = (m.value(id, 'parent', 0) ?? 0).round();
-    final order = _isOrder(m, id);   // (the Order row inside a group: the group's keys as they come for each thing are drawn on it, since it is what sends them in turn (GROUP_FOCUS_new.md: echo は Order の行へ); the group's own row keeps its keys and ▸ only)
-    final group = order || l.kind != WsKind.group ? (up == 0 || (!order && m.late(id) <= 0) ? null : ws.layers.where((g) => g.id == '$up' && g.kind == WsKind.group).firstOrNull) : (_orderOf(m, id) == null ? l : null);   // (a group with an Order row: none on its own row; without one (an old document's stagger): all, as before)
-    if (group == null) return const [];
-    final gid = int.parse(group.id);
-    final late = group == l || order ? {for (final t in m.things) if ((m.value(t, 'parent', 0) ?? 0).round() == gid && m.late(t) > 0) (m.late(t) * Ws.fps).round()} : {(m.late(id) * Ws.fps).round()};
-    return {for (final e in late) for (final k in group.keys) k + e}.toList()..sort();
   }
 
   // What has a room of its own, entered by a second press: a group, or anything with more than one member (its copies,
   // its letters: Motolii.members), as a group is an array (docs/notes/GROUP_FOCUS_new.md 土台: グループもふつうのレイヤー).
   bool _roomy(Ws ws, WsLayer l) => l.kind == WsKind.group || (ws.inside?.members(int.parse(l.id)) ?? 1) > 1;
-
-  // The Order row inside a group, if its things go in turn by one (doc_order_of).
-  int? _orderOf(Motolii m, int group) => m.things.where((c) => (m.value(c, 'parent', 0) ?? 0).round() == group && _isOrder(m, c)).firstOrNull;
-
-  // An Order row that says how things go in turn, not a row of a value (_rowOf: its Opacity, its Position), as doc_order_of tells them.
-  bool _isOrder(Motolii m, int c) => m.word(c, 'kind') == 'behaviour' && m.word(c, 'file') == 'order' && !const ['x', 'y', 'z', 'random', 'opacity'].any((n) => m.says(c, n));
-
-  // A group's row: how many frames after each of its keys its last thing comes to it (0: all at once); null: not a group.
-  // Its ▸ is drawn there (wtSpreadX) and pulled to set how far apart its things go (its stagger, Delay each).
-  int? _lateOf(Ws ws, WsLayer l) {
-    final m = ws.inside;
-    if (m == null || l.kind != WsKind.group) return null;
-    final id = int.parse(l.id);
-    return [0, for (final t in m.things) if ((m.value(t, 'parent', 0) ?? 0).round() == id) (m.late(t) * Ws.fps).round()].reduce(math.max);
-  }
-
-  // A row in a thing with copies (_rowOf): how many frames later its first and its last member read its keys (the
-  // inside's, doc_order_delay), its band drawn so under them; null: not one.
-  (int, int)? _strumOf(Ws ws, WsLayer l) => switch (ws.inside?.strum(int.parse(l.id))) { (final a, final b)? => ((a * Ws.fps).round(), (b * Ws.fps).round()), _ => null };
-
-  // A group's ▸ held by a hand: the key it stands after, and how many steps its last thing is from its first (the
-  // stagger each goes so many times: start and end n - 1, the middle (n - 1) / 2). Carried as the group's stagger
-  // (doc_carry by a value's name), let go kept or not: one step of undo, as a bar's slide.
-  ({String id, int key, int rank, bool moved})? _spread;
 
   // A way's shape from 0 to 1, as the bar's stretches are drawn.
   List<double> _wayShape(Ws ws, String way) => way.isEmpty ? const [0, 1] : easeCurve(way, ws.inside!);
@@ -236,7 +254,7 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     } else if (sideways) {
       setState(() => _scroll = _clampScroll(_scroll + (d.dx.abs() > d.dy.abs() ? d.dx : d.dy) / _view.ppf));
     } else if (_pin > 0 && at < _panelH) {   // (over the group's room: its rows, not the whole's)
-      setState(() => _pscroll = (_pscroll + d.dy).clamp(0.0, math.max(0.0, _pin * WtM.row - _panelH)).toDouble());
+      setState(() => _pscroll = (_pscroll + d.dy).clamp(0.0, math.max(0.0, _roomTop(_pin) - _panelH)).toDouble());
     } else {
       setState(() => _vscroll = _vscroll + d.dy);
     }
@@ -311,12 +329,6 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
   void _barMove(Offset p) {
     if (_gripFrom != null) return _gripTo(p.dy);
     if (_box case (final from, _)?) return setState(() => _box = (from, p));
-    if (_spread case final sp?) {   // (the ▸ pulled: the last thing comes to the key so much later, each one in between its share of that)
-      final each = math.max(0.0, (_view.frameAt(p.dx) - sp.key) / Ws.fps / sp.rank);
-      _ws!.inside!.carry('lag', each);   // (the Order row's lag: each thing so much later than the one before)
-      _spread = (id: sp.id, key: sp.key, rank: sp.rank, moved: true);
-      return;
-    }
     if (_slide case final s?) {
       final by = _rested(_view.frameAt(p.dx).round() - s.grab, [s.grab]);
       setState(() => _slide = (keys: s.keys, grab: s.grab, by: by));
@@ -345,14 +357,6 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     if (_slide case final s?) {
       _slide = null;
       if (keep) wsSlideKeys(_ws!, s.keys, s.by);
-      return;
-    }
-    if (_spread case final sp?) {
-      _spread = null;
-      if (_ws!.inside case final m?) {
-        m.later('let_go', number: keep && sp.moved ? 1 : 0);
-        _ws!.after(m.later('together'), (_, _) => _ws!.reread());   // (the step shut: the Order row is in the document, read again)
-      }
       return;
     }
     final h = _bar, ws = _ws!, m = ws.inside;
@@ -516,10 +520,10 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked, WsAspect.animating});
     final away = ws.foldedAway;
     final sel = ws.selected, picks = ws.keys, lit = {...ws.many, ...wsMembersOf(ws), for (final p in [?sel, ...ws.many]) ?away[p]};   // (picked together, or moved by the relation picked, or a shut group a picked thing is in: lit with it)
-    // (inside a group: its own row first, then its relations (the behaviours in it, its Order among them) and the things in
+    // (inside a group: its own row first, then its relations (the behaviours in it) and the things in
     //  it that are named: picked, or with keys of their own. The rest of what it holds goes as the relations say, and is
     //  not here; the rest of the document neither. docs/notes/GROUP_FOCUS_new.md: 関係の行と、名指しで出した物の行だけ)
-    // (inside a group, its room on top: its own row, then its relations (the behaviours in it, its Order among them) and
+    // (inside a group, its room on top: its own row, then its relations (the behaviours in it) and
     //  the things in it that are named: picked, or with keys of their own; the rest of what it holds goes as the
     //  relations say. Below it the whole document as ever, the group one row there. GROUP_FOCUS_new.md: 関係の行と、名指しで
     //  出した物の行だけ; 置き換えではなく上からスッと出る段)
@@ -536,8 +540,7 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     }
     bool named(WsLayer l) => m.word(int.parse(l.id), 'kind') == 'behaviour' || l.keys.isNotEmpty || l.id == sel || ws.many.contains(l.id);
     final inner = head < 0 ? const <int>[] : [head, for (final (i, l) in ws.layers.indexed) if (l.parent == entered && named(l)) i];
-    bool roomOnly(WsLayer l) => l.parent != null && m.word(int.parse(l.id), 'file') == 'order' && ws.layers.where((p) => p.id == l.parent).firstOrNull?.kind != WsKind.group;   // (a row of a thing with copies (_rowOf): in its room, as a shut group's things are under it)
-    final whole = [for (final (i, l) in ws.layers.indexed) if (!away.containsKey(l.id) && !roomOnly(l)) i];
+    final whole = [for (final (i, l) in ws.layers.indexed) if (!away.containsKey(l.id)) i];
     List<({int layer, String? value, (String, String)? aim})> rowsOf(List<int> shown, {bool room = false}) => [
       for (final i in shown) if (ws.layers[i] case final l) ...[
         (layer: i, value: null, aim: null),
@@ -550,11 +553,12 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
     ];
     final room = rowsOf(inner, room: true);
     _pin = room.length;
+    _roomLanes = room.where((o) => (o.value ?? '').isNotEmpty).length;
     _order = [...room, ...rowsOf(whole)];
     final rows = <WtRow>[
       for (final (j, o) in _order.indexed)
         if (o.value case final n?)
-          _laneRow(ws, ws.layers[o.layer], n)
+          _laneRow(ws, ws.layers[o.layer], n, tall: j < _pin && n.isNotEmpty ? _laneH : null)
         else if (ws.layers[o.layer] case final l)
           WtRow(
           name: l.name,
@@ -579,9 +583,6 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
           tone: l.tone,
           mix: _mixOf(ws, l.id),
           whole: _wholeOf(ws, l),
-          echoes: _echoesOf(ws, l),
-          late: _lateOf(ws, l),
-          strum: _strumOf(ws, l),
           head: j < _pin && o.layer == head,
         ),
     ];
@@ -634,7 +635,7 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
       _rowsH = math.max(0, _areaH - _panelH - _grip);
       _scroll = _clampScroll(_scroll);
       _vscroll = _clampV(rows.length - _pin);
-      _pscroll = _pscroll.clamp(0.0, math.max(0.0, _pin * WtM.row - _panelH)).toDouble();
+      _pscroll = _pscroll.clamp(0.0, math.max(0.0, _roomTop(_pin) - _panelH)).toDouble();
       final v = _view;
       return Stack(
         children: [
@@ -697,16 +698,8 @@ class _WsTimelineState extends State<WsTimeline> with TickerProviderStateMixin, 
                           SizedBox(
                             key: const ValueKey('ws-tl-room'),
                             height: _panelH,
-                            child: DragTarget<ValueCarried>(   // (a value let go here from the inspector: a row of it, _rowOf; Flutter's own DragTarget, as the stage takes a shelf's tile)
-                              onWillAcceptWithDetails: (d) => _mayRow(ws, d.data),
-                              onAcceptWithDetails: (d) => _rowOf(ws, d.data),
-                              builder: (context, over, _) => DecoratedBox(
-                                position: DecorationPosition.foreground,
-                                decoration: BoxDecoration(border: over.isEmpty ? null : Border.all(color: WsT.accent)),
-                                child: RepaintBoundary(
-                                  child: CustomPaint(painter: WtTracksPainter(rows: rows.sublist(0, _pin), view: v, fps: Ws.fps, vscroll: _pscroll, tempo: ws.beats, restAt: _restAt, room: true)),
-                                ),
-                              ),
+                            child: RepaintBoundary(
+                              child: CustomPaint(painter: WtTracksPainter(rows: rows.sublist(0, _pin), view: v, fps: Ws.fps, vscroll: _pscroll, tempo: ws.beats, restAt: _restAt, room: true)),
                             ),
                           ),
                           _roomEdge(),

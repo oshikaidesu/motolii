@@ -54,10 +54,12 @@ class WsMenu extends StatefulWidget {
 class WsMenuState extends State<WsMenu> {
   final _m = MenuController();
   List<WsMenuItem> _items = const [];
+  VoidCallback? _shut;
 
-  /// Opens at [at], a place of the child, with [items].
-  void show(Offset at, List<WsMenuItem> items) {
+  /// Opens at [at], a place of the child, with [items]; [shut] told once it closes, a row pressed or not.
+  void show(Offset at, List<WsMenuItem> items, {VoidCallback? shut}) {
     setState(() => _items = items);
+    _shut = shut;
     _m.open(position: at);
   }
 
@@ -116,6 +118,11 @@ class WsMenuState extends State<WsMenu> {
   @override
   Widget build(BuildContext context) => RawMenuAnchor(
     controller: _m,
+    onClose: () {
+      final shut = _shut;
+      _shut = null;
+      shut?.call();
+    },
     overlayBuilder: (context, info) {
       final w = Shape.z(220), pad = Shape.s(4);
       final h = math.min(info.overlaySize.height * .5, [for (final it in _items) _high(it)].fold(0.0, (a, b) => a + b)) + pad * 2;

@@ -43,6 +43,7 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
   Ease? _base;   // (the way as it was: while one is held the stage shows it in an open step, and nothing is kept unless it is let go there)
   bool _shelf = false, _shelfShown = false;   // (drawn out; and built, until it has slid away)
   bool _overLocked = false;   // (AbsentMotion's lockOvershoot: once it looks past 0 and 1 it stays so, a hand bringing a handle back, until the menu says or another card or stretch comes)
+  WsEaseMode? _shownMode;
 
   // (with no key picked the stretch follows the playhead: built again when it comes into another stretch, not every frame)
   Ws? _ws;
@@ -82,8 +83,45 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
             (int.parse(l.id), at.key, at.value),
       ];
 
+  // A group's other two modes share this desk. The curve is the one already here; only where it is written differs.
+  bool _offset(Ws ws) => ws.stretch != null && ws.layers.where((l) => l.id == ws.stretch!.layer).firstOrNull?.kind == WsKind.group && ws.easeMode != WsEaseMode.stretch;
+  List<int> _kids(Motolii m, int g) => [for (final c in m.things) if ((m.value(c, 'parent', 0) ?? 0).round() == g && m.word(c, 'kind') != 'behaviour') c];
+  int _tellOffset(Ws ws, Ease e) {
+    final m = ws.inside!, s = ws.stretch!;
+    final g = int.parse(s.layer), kids = _kids(m, g);
+    if (ws.easeMode == WsEaseMode.time) {
+      // No spread yet: the stretch already chosen is how late the last of them is.
+      if ((m.value(g, 'stagger', 0) ?? 0) <= 0 && kids.length > 1) m.later('set', thing: g, name: 'stagger', number: (s.to - s.from) / Ws.fps / (kids.length - 1));
+      m.later('way', thing: g, name: 'stagger', number: 0, word: said(e));
+    } else if (kids.length > 1) {
+      final name = s.name, lo = m.value(kids.first, name, 0) ?? 0, hi = m.value(kids.last, name, 0) ?? 0;
+      for (var i = 1; i < kids.length - 1; i++) {
+        m.later('set', thing: kids[i], name: name, number: lo + e.at(i / (kids.length - 1)) * (hi - lo));
+      }
+    }
+    return m.later('show', thing: g);
+  }
+
   // (while the hand is down: the newest ease told, one at a time; the step opened at the first)
   void _live(Ws ws, Ease e) {
+    if (_offset(ws)) {
+      if (_going) {
+        _waiting = e;
+        return;
+      }
+      if (!_open) {
+        ws.inside!.later('together', number: 1);
+        _open = true;
+      }
+      _going = true;
+      ws.after(_tellOffset(ws, e), (_, _) {
+        _going = false;
+        final next = _waiting;
+        _waiting = null;
+        if (next != null) _live(ws, next);
+      });
+      return;
+    }
     final m = ws.inside!;
     if (_going) {
       _waiting = e;
@@ -140,6 +178,14 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
     _base = null;
     if (e == null || span == null) return;
     _told = e;
+    if (_offset(ws)) {
+      final m = ws.inside!;
+      if (!_open) m.later('together', number: 1);
+      _open = false;
+      _tellOffset(ws, e);
+      ws.after(m.later('together'), (done, why) => mounted ? setState(() => _trouble = done ? null : why) : null);
+      return;
+    }
     final m = ws.inside!, to = said(e);
     final all = _stretches(ws);
     // (as it already goes, each: nothing is told, so a way's own numbers that have no seat here are not written over;
@@ -185,11 +231,21 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
     final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), span = easeSpan(ws), store = eases[ws] ??= {}, id = spanId(span);
     if ((ws.inside, span) case (final m?, final span?)) {
       final at = keysAt(ws, span);
-      final inDocument = at.isEmpty ? easePreset('Linear') : heard(m.wayOf(int.parse(span.layer.id), at.keys.first, at.values.first));
+      final mode = span.layer.kind == WsKind.group ? ws.easeMode : WsEaseMode.stretch;
+      if (_shownMode != mode) {
+        _shownMode = mode;
+        _pending = null;
+        _told = null;
+        _base = null;
+      }
+      final modeId = '$id:${mode.name}';
+      final own = m.wayOf(int.parse(span.layer.id), mode == WsEaseMode.time ? 'stagger' : at.keys.firstOrNull ?? '', mode == WsEaseMode.time ? 0 : at.values.firstOrNull ?? 0);
+      final inDocument = mode == WsEaseMode.value ? store[modeId] ?? easePreset('Linear') : (own.isEmpty ? easePreset('Linear') : heard(own));
       if (_told case final t? when !ws.waiting || said(t) == said(inDocument)) _told = null;
       var ease = _pending ?? _told ?? _base ?? inDocument;
       if (easeOther(ease) && ease.drawn == null) ease = easeCard(said(ease), m);   // (no seat for this kind: its curve is the inside's own working of it, as said now)
       void set(Ease e) {
+        if (mode != WsEaseMode.stretch) store[modeId] = e;
         setState(() => _pending = e);
         _down ? _live(ws, e) : _settle(ws, span);
       }

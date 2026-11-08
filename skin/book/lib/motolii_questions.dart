@@ -183,6 +183,17 @@ extension MotoliiQuestions on Motolii {
     return got > 0 ? p : null;
   });
 
+  /// [path] of many at once (each a thing and which of its copies), on one isolate: in their order, null where there is no such thing.
+  Future<List<List<double>?>> paths(List<(int, int)> who, {double from = 0, required double to, int n = 60}) => _ask((l, m) {
+    final out = malloc<Double>(4 * n), b = c.MotoliiBindings(l);
+    final all = [
+      for (final (thing, copy) in who)
+        if (b.motolii_path(m, thing, copy, from, to, n, out) case final got when got > 0) [for (var i = 0; i < 4 * got; i++) out[i]] else null,
+    ];
+    malloc.free(out);
+    return all;
+  });
+
   /// A question of the inside (skin/BRIDGE.md Q): asked on another isolate, the window does not wait for its answer.
   Future<T> _ask<T>(T Function(DynamicLibrary lib, _P m) ask) {
     final lib = libPath, at = _m.address;

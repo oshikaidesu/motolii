@@ -6,10 +6,12 @@ extension _WsTimelineHand on _WsTimelineState {
 
   // The row under a height: its place, its layer, and the value whose lane it is (null: the layer's own row).
   ({int i, WsLayer l, String? value})? _rowAt(double y) {
-    final int i;
+    var i = 0;
     if (_pin > 0 && y < _panelH + _grip) {   // (the group's room on top, or its edge)
       if (y >= _panelH) return null;
-      i = ((y + _pscroll) / WtM.row).floor();
+      for (var top = 0.0; i < _pin && top + _tall(i) <= y + _pscroll; i++) {
+        top += _tall(i);
+      }
       if (i >= _pin) return null;
     } else {
       i = _pin + ((y - _panelH - _grip + _vscroll) / WtM.row).floor();
@@ -34,8 +36,20 @@ extension _WsTimelineHand on _WsTimelineState {
     _laneAt = p;
     final f = v.frameAt(p.dx);
     if (twice) return ws.after(m.later('key_here', thing: t, name: name, number: f.round().clamp(0, Ws.duration) / Ws.fps));
-    final from = pts.where((q) => q.$1 <= f).lastOrNull?.$1, inside = from != null && pts.any((q) => q.$1 > f);
-    inside ? ws.pickStretch(r.l.id, name, from) : ws.clearKeys();
+    final from = pts.where((q) => q.$1 <= f).lastOrNull?.$1;
+    if (from == null || !pts.any((q) => q.$1 > f)) return ws.clearKeys();
+    if (r.l.kind == WsKind.group) return _offer(ws, r.l, name, from, p);
+    ws.pickStretch(r.l.id, name, from);
+  }
+
+  // A group's stretch pressed: the three modes, then the existing Ease desk. Value and time are of the array, so only here.
+  void _offer(Ws ws, WsLayer l, String name, int from, Offset p) {
+    setState(() => _offered = (layer: l.id, name: name, from: from));
+    _trackMenu.currentState?.show(p, [
+      WsMenuItem('区間イージング', () => ws.pickStretch(l.id, name, from)),
+      WsMenuItem('値のズレ', () => ws.pickStretch(l.id, name, from, mode: WsEaseMode.value)),
+      WsMenuItem('時間のズレ', () => ws.pickStretch(l.id, name, from, mode: WsEaseMode.time)),
+    ], shut: () => mounted ? setState(() => _offered = null) : null);
   }
 
   void _trackDown(Offset p) {
@@ -50,7 +64,6 @@ extension _WsTimelineHand on _WsTimelineState {
     if (r.value != null) return;   // (a lane: its tap is the lane's, on the hand's way up)
     final i = r.i, l = r.l;
     final cy = _rowY(i) + WtM.row / 2;
-    if (_strumAt(ws, l, p, cy) != null) return;   // (a row's band's grip: taken on the hand's way, _grab, not the key above it)
     if (!_isLocked(ws, l.id) && (p.dy - cy).abs() <= WtM.bar / 2 + 2) {
       int? best;
       var bd = WtM.keyPicked + 2;
@@ -72,53 +85,6 @@ extension _WsTimelineHand on _WsTimelineState {
     }
   }
 
-  // A value carried from the inspector over the room (docs/notes/GROUP_FOCUS_new.md 土台 ①): taken in the room of one
-  // with copies (a group's things go whole by its Order row, doc_group_delay), a value the inside gives its members in
-  // turn (doc_rowed: Opacity, as yet).
-  static const _rowable = {'opacity', 'position'};
-  bool _mayRow(Ws ws, ValueCarried v) {
-    final l = ws.layers.where((l) => l.id == ws.entered).firstOrNull;
-    return l != null && (l.kind != WsKind.group || v.id == 'v_position') && _roomy(ws, l) && !_isLocked(ws, l.id) && _rowable.contains(v.id.substring(2));
-  }
-
-  // Let go in the room: a row of the value, an Order row in the thing as the ▸ makes one in a group (_grab), named as the
-  // value and saying it at none yet (a share of 1: doc_given_on), one step; picked, so the inspector has its ◇.
-  void _rowOf(Ws ws, ValueCarried v) {
-    final m = ws.inside!, t = int.parse(ws.entered!);
-    m.later('together', number: 1);
-    m.later('add', name: 'behaviour', word: 'order');
-    m.later('set', thing: -1, name: 'parent', number: t.toDouble());
-    m.later('say', thing: -1, name: 'name', word: v.label);
-    for (final n in v.id == 'v_position' ? const ['x', 'y'] : [v.id.substring(2)]) {
-      m.later('set', thing: -1, name: n, number: n == 'opacity' ? 1 : 0);   // (said at none yet: a share of 1, a move of 0)
-    }
-    ws.after(m.later('together'), (_, _) {
-      ws.reread();
-      final rows = [for (final c in m.things) if ((m.value(c, 'parent', 0) ?? 0).round() == t && m.word(c, 'file') == 'order') c];
-      if (rows.isNotEmpty) ws.select('${rows.reduce(math.max)}');
-    });
-  }
-
-  // The key whose ▸ (a group's: where its last thing comes to it) is under the hand, right of the key itself; null: none.
-  int? _spreadAt(Ws ws, WsLayer l, Offset p) {
-    final late = _lateOf(ws, l);
-    if (late == null) return null;
-    final v = _view;
-    for (final k in l.keys) {
-      if (p.dx >= v.x(k) + WtM.key && (wtSpreadX(v, k, late) + WtM.key * .6 - p.dx).abs() <= WtM.key + 2) return k;
-    }
-    return null;
-  }
-
-  // A row's band's grip under the hand (wtStrumGrip: its last member at its last key, at the bar's foot); the key it
-  // stands after, null: none there.
-  int? _strumAt(Ws ws, WsLayer l, Offset p, double cy) {
-    final st = _strumOf(ws, l);
-    if (st == null || l.keys.isEmpty || _isLocked(ws, l.id)) return null;
-    final g = wtStrumGrip(_view, l.keys.last, st.$2, cy);
-    return (p.dx - g.dx).abs() <= WtM.key + 3 && p.dy > cy && p.dy <= cy + WtM.row / 2 ? l.keys.last : null;
-  }
-
   bool _onPale(Ws ws, WsLayer l, Offset p) {
     final w = _wholeOf(ws, l);
     return w != null && p.dx >= _view.x(w.$1) && p.dx <= _view.x(w.$2);
@@ -135,7 +101,6 @@ extension _WsTimelineHand on _WsTimelineState {
       return at.any((k) => (v.x((k * Ws.fps).round()) - p.dx).abs() <= WtM.keyPicked + 2) || (at.isNotEmpty && f > at.first && f < at.last) ? SystemMouseCursors.click : SystemMouseCursors.precise;
     }
     if (_isLocked(ws, l.id) || p.dx < a - 6 || p.dx > b + 6) return _onPale(ws, l, p) ? SystemMouseCursors.grab : SystemMouseCursors.precise;
-    if (_spreadAt(ws, l, p) != null || _strumAt(ws, l, p, _rowY(r.i) + WtM.row / 2) != null) return SystemMouseCursors.resizeLeftRight;
     if (l.keys.any((k) => (v.x(k) - p.dx).abs() <= WtM.keyPicked + 2)) return SystemMouseCursors.click;
     return (p.dx - a).abs() <= 6 || (p.dx - b).abs() <= 6 ? SystemMouseCursors.resizeLeftRight : SystemMouseCursors.grab;
   }
@@ -146,38 +111,8 @@ extension _WsTimelineHand on _WsTimelineState {
     if (m == null || r == null) return false;
     if (r.value != null) return true;   // (a lane: nothing carried, and no box drawn from it)
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);
-    if (_strumAt(ws, l, p, _rowY(r.i) + WtM.row / 2) case final k?) {   // (a row's band taken by its grip: its lag carried while the hand pulls, as a group's ▸ below; the hand's frame is where its last member comes to its last key)
-      final t = int.parse(l.id), dn = _strumOf(ws, l)!.$2, each = m.value(t, 'lag', 0) ?? 0;
-      final rank = dn > 0 && each > 0 ? math.max(1, (dn / Ws.fps / each).round()) : m.members(int.parse(l.parent!)) - 1;   // (as its order lies now; none yet: from the first to the last)
-      if (rank < 1) return false;
-      m.later('together', number: 1);   // (the pull and its let go: one step)
-      m.take(t);
-      ws.select(l.id);
-      if (ws.playing) ws.playing = false;
-      _spread = (id: l.id, key: k, rank: rank, moved: false);
-      return true;
-    }
     final off = p.dx < a - 6 || p.dx > b + 6;
     if (_isLocked(_ws!, l.id) || (off && !_onPale(ws, l, p))) return false;
-    if (_spreadAt(ws, l, p) case final k?) {   // (a group's ▸ taken: the lag of its Order row carried while the hand pulls)
-      final t = int.parse(l.id), late = _lateOf(ws, l) ?? 0;
-      final held = m.things.where((c) => (m.value(c, 'parent', 0) ?? 0).round() == t).toList();
-      final order = held.where((c) => _isOrder(m, c)).firstOrNull;   // (the row inside the group that says the order: made by the first pull)
-      final n = held.where((c) => m.word(c, 'kind') != 'behaviour').length, each = order != null ? m.value(order, 'lag', 0) ?? 0 : m.value(t, 'stagger', 0) ?? 0;
-      final rank = late > 0 && each > 0 ? math.max(1, (late / Ws.fps / each).round()) : n - 1;   // (as its order lies now; none yet: from the first to the last)
-      if (rank < 1) return false;
-      m.later('together', number: 1);   // (the row made, the pull, let go: one step)
-      if (order == null) {
-        m.later('add', name: 'behaviour', word: 'order');
-        m.later('set', thing: -1, name: 'parent', number: t.toDouble());
-        m.later('say', thing: -1, name: 'name', word: 'Order');
-      }
-      m.take(order ?? -1);   // (-1: the one the add just made)
-      ws.select(l.id);
-      if (ws.playing) ws.playing = false;
-      _spread = (id: l.id, key: k, rank: rank, moved: false);
-      return true;
-    }
     for (final k in l.keys) {
       if ((v.x(k) - p.dx).abs() > WtM.keyPicked + 2) continue;
       final held = (layer: l.id, frame: k), all = ws.keys.contains(held) ? ws.keys.toList() : [held];

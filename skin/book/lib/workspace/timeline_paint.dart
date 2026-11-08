@@ -33,15 +33,6 @@ abstract final class WtM {
   static const maxZoom = 16.0;
 }
 
-/// Where a group's ▸ stands for a key at [k]: where its last thing comes to that key; all at once (late 0), just right
-/// of the key, so it is there to be pulled (Ableton's clip fade handle: always at the clip's corner, pulled to make the
-/// fade, no switch turns one on).
-double wtSpreadX(WtView v, int k, int late) => v.x(k + late) + (late == 0 ? WtM.key + 2 : 0);
-
-/// Where a row's band is taken to pull (its breakpoint, Ableton Live 12's Strum Position display): its last member at its
-/// last key [k], [late] frames after, at the bar's foot, below the key's diamond so the two are not one under the hand.
-Offset wtStrumGrip(WtView v, int k, int late, double cy) => Offset(v.x(k + late), cy + WtM.bar / 2 - 1);
-
 /// Where frames land on the track area: x = padL + (frame - scroll) * ppf.
 @immutable
 class WtView {
@@ -80,17 +71,13 @@ class WtRow {
     this.lane,
     this.laneWays,
     this.laneOn,
+    this.instances,
+    this.tall,
     this.whole,
-    this.echoes = const [],
-    this.late,
-    this.strum,
     this.head = false,
   });
   final bool head;   // (the group the timeline stands inside, its own row on top: a line under it parts what moves them from what moves)
-  final (int, int)? whole;
-  final (int, int)? strum;   // (a row in a thing with copies: how many frames later its first and its last member read its keys; its band drawn under them, the first along its top, the last along its bottom, as Ableton Live 12's Strum lays successive notes later; null: none)
-  final int? late;   // (a group's: how many frames after each of its keys its last thing comes to it, its ▸ drawn there; 0 all at once; null not a group)
-  final List<int> echoes;   // (the frames a group's keys come at for its things, each as late as it goes: on the group's row all, on a thing's its own)   // (a film's whole length as it lies, cut or not: the pale slip-edit bar of After Effects)
+  final (int, int)? whole;   // (a film's whole length as it lies, cut or not: the pale slip-edit bar of After Effects)
   final List<WsStretch> stretches;   // (how it goes between its keys: each stretch's way drawn between them)
 
   /// A value's own lane in place of a bar (Ableton's automation lane): each key's frame and where its value stands
@@ -100,6 +87,11 @@ class WtRow {
   /// How the lane goes from each key to the next: its way's shape, 0 at the key and 1 at the next (as a stretch's).
   final List<List<double>>? laneWays;
   final int? laneOn;   // (the stretch picked by its line: its place among them)
+
+  /// A group's lane: each of its instances' own curve of the value as the inside places it (frame, 0 to 1 as [lane]),
+  /// laid over one another under the lane's own line; null: none.
+  final List<List<(double, double)>>? instances;
+  final double? tall;   // (a lane in the group's room: so high, the room's share; null: a row's)
   final Color? tone;   // (its label colour; none: its kind's)
   final List<Color>? mix;   // (a relation's: its things' label colours, its bar their gradient)
   final String name;
@@ -135,10 +127,7 @@ class WtRow {
       other.locked == locked &&
       other.clipped == clipped &&
       other.whole == whole &&
-      other.late == late &&
-      other.strum == strum &&
       other.head == head &&
-      _listEq(other.echoes, echoes) &&
       identical(other.wave, wave) &&
       identical(other.frames, frames) &&   // (read once a change: the same list until the document changes)
       other.form == form &&
@@ -146,6 +135,8 @@ class WtRow {
       other.outline == outline &&
       listEquals(other.lane, lane) &&
       other.laneOn == laneOn &&
+      identical(other.instances, instances) &&   // (read once a change, as frames)
+      other.tall == tall &&
       other.stretches.length == stretches.length &&
       [for (var i = 0; i < stretches.length; i++) other.stretches[i].from == stretches[i].from && other.stretches[i].to == stretches[i].to && other.stretches[i].way == stretches[i].way].every((same) => same);
   @override
@@ -332,18 +323,22 @@ class WtTracksPainter extends CustomPainter {
     final p = Paint(), end = view.x(Ws.duration);
     final body = room ? wtRoomGround(WsT.body) : WsT.body;
     c.drawRect(Offset.zero & s, p..color = body);
+    final tops = <double>[];
+    for (var i = 0, top = -vscroll; i < rows.length; top += rows[i].tall ?? WtM.row, i++) {
+      tops.add(top);
+    }
     for (var i = 0; i < rows.length; i++) {
-      final top = i * WtM.row - vscroll;
-      if (top > s.height || top + WtM.row < 0) continue;
-      c.drawRect(Rect.fromLTWH(0, top, s.width, WtM.row - 1), p..color = room ? wtRoomGround(wtBand(i, rows[i].selected)) : wtBand(i, rows[i].selected));
-      c.drawRect(Rect.fromLTWH(0, top + WtM.row - 1, s.width, 1), p..color = room ? wtRoomGround(Grey.rowLine) : Grey.rowLine);
+      final top = tops[i], h = rows[i].tall ?? WtM.row;
+      if (top > s.height || top + h < 0) continue;
+      c.drawRect(Rect.fromLTWH(0, top, s.width, h - 1), p..color = room ? wtRoomGround(wtBand(i, rows[i].selected)) : wtBand(i, rows[i].selected));
+      c.drawRect(Rect.fromLTWH(0, top + h - 1, s.width, 1), p..color = room ? wtRoomGround(Grey.rowLine) : Grey.rowLine);
     }
     if (end < s.width) c.drawRect(Rect.fromLTRB(end, 0, s.width, s.height), p..color = body);
     _vLines(c, view, fps, math.min(s.width, end), 0, s.height, major: Grey.g20, fine: Grey.g15);
     for (var i = 0; i < rows.length; i++) {
-      final top = i * WtM.row - vscroll;
-      if (top > s.height || top + WtM.row < 0) continue;
-      _row(c, s, rows[i], top + WtM.row / 2 - .5);
+      final top = tops[i], h = rows[i].tall ?? WtM.row;
+      if (top > s.height || top + h < 0) continue;
+      _row(c, s, rows[i], top + h / 2 - .5);
     }
     if (restAt case final f?) c.drawRect(Rect.fromLTWH(view.x(f).roundToDouble(), 0, 1, s.height), p..color = WsT.accent);
   }
@@ -417,14 +412,6 @@ class WtTracksPainter extends CustomPainter {
           ..color = Grey.g100,
       );
     }
-    if (r.strum case (final d0, final dn)? when r.keys.isNotEmpty) {   // (its band: the first member's keys along the bar's top, the last's along its bottom, each one in between at its height; its right slant pulled sets how much later each goes, Ableton Live 12's Strum Position breakpoint)
-      final k0 = r.keys.first, kl = r.keys.last;
-      final band = Path()..moveTo(view.x(k0 + d0), bar.top)..lineTo(view.x(kl + d0), bar.top)..lineTo(view.x(kl + dn), bar.bottom)..lineTo(view.x(k0 + dn), bar.bottom)..close();
-      c.drawPath(band, Paint()..color = ink.withValues(alpha: .16));   // (in the bar's own ink, as its name: a light tint on a light bar was not seen, golf scatter_row_step4)
-      c.drawLine(Offset(view.x(k0 + d0), bar.top), Offset(view.x(k0 + dn), bar.bottom), Paint()..color = ink.withValues(alpha: .45)..strokeWidth = 1);   // (where each member starts: the first at the top, the last at the foot)
-      c.drawLine(Offset(view.x(kl + d0), bar.top), Offset(view.x(kl + dn), bar.bottom), Paint()..color = ink..strokeWidth = 1.5);
-      c.drawCircle(wtStrumGrip(view, kl, dn, cy), WtM.key * .7, Paint()..color = ink);
-    }
     for (final st in r.stretches) {   // (each stretch's way, from its key to the next, as a line inside the bar: how it goes there)
       final xa = view.x(st.from), xb = view.x(st.to);
       if (xb - xa < 6 || xb < 0 || xa > s.width) continue;
@@ -432,21 +419,6 @@ class WtTracksPainter extends CustomPainter {
       final line = Path()..moveTo(xa, base - st.shape.first.clamp(-.5, 1.5) * h);
       _wayLine(line, st.shape, xa, xb, s.width, (v) => base - v.clamp(-.5, 1.5) * h);
       c.drawPath(line, Paint()..style = PaintingStyle.stroke..strokeWidth = 1.2..strokeJoin = StrokeJoin.round..isAntiAlias = true..color = Color.lerp(fill, Grey.g100, r.dim ? .25 : .6)!);   // (Ableton's automation line: one thin line, the bar's own colour made lighter)
-    }
-    for (final k in r.echoes) {   // (a group's keys as they come for its things: hollow, faint, under its own)
-      final x = view.x(k);
-      if (x < -8 || x > s.width + 8) continue;
-      final d = Path()..moveTo(x, cy - WtM.key)..lineTo(x + WtM.key, cy)..lineTo(x, cy + WtM.key)..lineTo(x - WtM.key, cy)..close();
-      c.drawPath(d, Paint()..style = PaintingStyle.stroke..strokeWidth = 1..color = Color.lerp(fill, Grey.g100, r.dim ? .25 : .45)!);
-    }
-    if (r.late case final late?) {   // (a group's ▸ after each key: where its last thing comes to it; pulled, the group's things go in turn so far apart)
-      final h = WtM.key;
-      for (final k in r.keys) {
-        final x = wtSpreadX(view, k, late);
-        if (x < -8 || x > s.width + 8) continue;
-        final tri = Path()..moveTo(x, cy - h)..lineTo(x + h * 1.3, cy)..lineTo(x, cy + h)..close();
-        c.drawPath(tri, Paint()..color = Color.lerp(fill, Grey.g100, r.dim ? .25 : .6)!);
-      }
     }
     for (final k in r.keys) {
       final x = view.x(k);
@@ -488,7 +460,7 @@ class WtTracksPainter extends CustomPainter {
   /// a line across the whole row tells nothing (the maker, 11/1; Theatre.js's connector goes from key to key); the line
   /// in the bar's colour made lighter, as the bar's own automation line (golf_noise.md ⑫: it was straight whatever the ease).
   void _lane(Canvas c, Size s, WtRow r, List<(int, double)> pts, double cy) {
-    final top = cy - WtM.row / 2 + 4, h = WtM.row - 9, col = Color.lerp(wtBarFill(r), Grey.g100, r.dim ? .25 : .6)!;
+    final rh = r.tall ?? WtM.row, top = cy - rh / 2 + 4, h = rh - 9, col = Color.lerp(wtBarFill(r), Grey.g100, r.dim ? .25 : .6)!;
     Offset at((int, double) q) => Offset(view.x(q.$1), top + (1 - q.$2) * h);
     final line = Path()..moveTo(at(pts.first).dx, at(pts.first).dy);
     for (var i = 0; i < pts.length; i++) {
@@ -498,7 +470,18 @@ class WtTracksPainter extends CustomPainter {
       final b = at(pts[i + 1]);
       _wayLine(line, way, a.dx, b.dx, s.width, (v) => (a.dy + (b.dy - a.dy) * v).clamp(top - 3, top + h + 3));   // (an overshoot kept within its own lane)
     }
-    if (r.laneOn case final i? when i + 1 < pts.length) c.drawRect(Rect.fromLTRB(at(pts[i]).dx, cy - WtM.row / 2, at(pts[i + 1]).dx, cy + WtM.row / 2), Paint()..color = WsT.accent.withValues(alpha: .18));   // (Theatre.js's connector, lit while it is what the curve editor holds)
+    if (r.laneOn case final i? when i + 1 < pts.length) c.drawRect(Rect.fromLTRB(at(pts[i]).dx, cy - rh / 2, at(pts[i + 1]).dx, cy + rh / 2), Paint()..color = WsT.accent.withValues(alpha: .18));   // (Theatre.js's connector, lit while it is what the curve editor holds)
+    if (r.instances case final all? when all.isNotEmpty) {   // (fainter the more there are: where they gather reads darker)
+      final ink = Paint()..style = PaintingStyle.stroke..strokeWidth = 1..isAntiAlias = true..color = col.withValues(alpha: (2 / all.length).clamp(.12, .55));
+      for (final one in all) {
+        if (one.isEmpty) continue;
+        final p = Path()..moveTo(view.x(one.first.$1), top + (1 - one.first.$2) * h);
+        for (final q in one.skip(1)) {
+          p.lineTo(view.x(q.$1), (top + (1 - q.$2) * h).clamp(top - 3, top + h + 3));
+        }
+        c.drawPath(p, ink);
+      }
+    }
     c.drawPath(line, Paint()..style = PaintingStyle.stroke..strokeWidth = 1.2..strokeJoin = StrokeJoin.round..isAntiAlias = true..color = col);
     for (final q in pts) {
       c.drawCircle(at(q), WtM.key * .75, Paint()..color = col);

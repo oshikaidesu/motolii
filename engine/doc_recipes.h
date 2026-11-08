@@ -603,7 +603,8 @@ static std::string doc_ways(Doc& d) {
 }
 static bool doc_way(Doc& d, int thing, const char* name, double at, const char* way) {
     if (!doc_knows(d, thing, name, nullptr, nullptr, true)) return false;
-    if (!doc_keys(d, thing, name, at)) return d.trouble = std::string(name) + " has no key at that moment: a stretch begins at a key", false;
+    const bool stagger = !strcmp(name, "stagger") && !doc_keys(d, thing, name, at);   // (its ease, kept on the value itself: GSAP's stagger ease, no second curve)
+    if (!stagger && !doc_keys(d, thing, name, at)) return d.trouble = std::string(name) + " has no key at that moment: a stretch begins at a key", false;
     Interp kind;
     std::istringstream said(way);
     std::string named, more;
@@ -616,6 +617,12 @@ static bool doc_way(Doc& d, int thing, const char* name, double at, const char* 
     said.clear();
     if (of_the_nine < 0 && !doc_way_named(d, named)) return d.trouble = "a way is one of: " + doc_ways(d), false;
     if (of_the_nine < 0 && (said >> more || numbers > 4)) return d.trouble = "a way defined here is its name and up to four numbers", false;
+    if (stagger) {
+        int rows = 0;
+        doc_rows(d, sqlite3_mprintf("select count(*) from fact where thing = %d and name = 'stagger' and at = 0", thing), [&](sqlite3_stmt* row) { rows = sqlite3_column_int(row, 0); });
+        if (!rows && !doc_set(d, thing, "stagger", doc_number(d, thing, "stagger", 0, 0))) return false;
+        return doc_change(d, sqlite3_mprintf("update fact set way = %Q where thing = %d and name = 'stagger' and at = 0", way, thing));
+    }
     return doc_change(d, sqlite3_mprintf("update fact set way = %Q where thing = %d and name = %Q and at = %!.17g", way, thing, name, at));
 }
 static bool doc_define(Doc& d, const char* name, const char* expression) {

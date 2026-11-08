@@ -82,6 +82,9 @@ extension _WsTimelineRows on _WsTimelineState {
     ],
   );
 
+  // A row's top among the names of its room.
+  double _labelY(int i, int from) => i < _pin ? _roomTop(i) : (i - from) * WtM.row;
+
   // A room of names: rows [from, to) of _order, so far scrolled.
   Widget _labelRoom(Ws ws, List<WtRow> rows, int from, int to, double top) => ClipRect(
     child: Stack(
@@ -92,7 +95,7 @@ extension _WsTimelineRows on _WsTimelineState {
               key: ValueKey('ws-tl-aim-${ws.layers[_order[i].layer].id}-$said-$other'),
               left: Shape.s(34),
               right: Shape.s(8),
-              top: (i - from) * WtM.row - top,
+              top: _labelY(i, from) - top,
               height: WtM.row,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
@@ -113,8 +116,8 @@ extension _WsTimelineRows on _WsTimelineState {
               key: ValueKey('ws-tl-lane-${ws.layers[_order[i].layer].id}-$n'),
               left: Shape.s(34),
               right: Shape.s(8),
-              top: (i - from) * WtM.row - top,
-              height: WtM.row,
+              top: _labelY(i, from) - top,
+              height: _tall(i),
               // (what it aims at, by the card's name then its own: Ableton's Device and Control choosers, Logic's plug-in and parameter; an effect's knob Threshold, not js_am_rays_threshold)
               child: Row(
                 children: [
@@ -133,7 +136,7 @@ extension _WsTimelineRows on _WsTimelineState {
               key: ValueKey('ws-tl-label-${l.id}'),
               left: 0,
               right: 0,
-              top: (i - from) * WtM.row - top,
+              top: _labelY(i, from) - top,
               height: WtM.row,
               // Joined: a row carried up or down is the thing brought nearer or further back, by as many rows as it was carried.
               child: GestureDetector(
@@ -173,7 +176,7 @@ extension _WsTimelineRows on _WsTimelineState {
             ),
         for (var i = from; i < to; i++)
           if (_order[i].value == null)
-            if (_renameField(i, ws.layers[_order[i].layer].id, (i - from) * WtM.row - top) case final f?) f, // (its name written over it: Cmd+R)
+            if (_renameField(i, ws.layers[_order[i].layer].id, _labelY(i, from) - top) case final f?) f, // (its name written over it: Cmd+R)
       ],
     ),
   );

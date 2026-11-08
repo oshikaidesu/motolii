@@ -23,11 +23,6 @@ class _RelationMarks extends StatelessWidget {
       final isRelation = rel != null && m != null && m.word(rel, 'kind') == 'behaviour' && wsRelations.contains(kind);
       final members = [for (final id in wsMembersOf(ws)) if (on(id) case final p?) (id, p)];
       final now = m?.now ?? 0;   // (the moment of the picture shown)
-      // (a group picked, its things in an order: on each, when it starts after the group (0s, 0.2s), the same for those
-      //  that go together; PowerPoint's animation numbers on the slide (golf (g42): From changed, nothing on the stage said
-      //  so), as times: a rank did not say what Delay each was, nor let a start be read, golf (g61), (g62), (g72))
-      final group = rel != null && m != null && m.word(rel, 'shape') == 'null' && (m.value(rel, 'stagger', 0) ?? 0) > 0 ? rel : null;
-      final kids = group == null ? const <int>[] : [for (final t in m!.things) if ((m.value(t, 'parent', 0) ?? 0).round() == group) t];
       // (a place of the stage in its own units, on the screen; and back)
       Offset screen(double x, double y) => v.toScreen(WsArt.toView(scene, Offset(WsArt.comp.width / 2 + x * m!.point, WsArt.comp.height / 2 - y * m.point)));
       (double, double) units(Offset p) {
@@ -119,9 +114,6 @@ class _RelationMarks extends StatelessWidget {
         children: [
           IgnorePointer(child: CustomPaint(size: Size.infinite, painter: _MarksPainter(lasso, [...picked, for (final (_, p) in members) p], shape))),
           ...handles,
-          for (final t in kids)
-            if (scene.box('$t') case final b?)
-              Positioned(left: v.toScreen(WsArt.toView(scene, b.corners.first)).dx - 9, top: v.toScreen(WsArt.toView(scene, b.corners.first)).dy - 9, child: IgnorePointer(child: _Order(easeSeconds((m!.late(t) * Ws.fps).round()), key: ValueKey('ws-order-$t')))),
           for (final (id, p) in members) ...[
             Positioned(left: p.dx + 12, top: p.dy - 24, child: _Badge('×', () => wsFree(ws, id), key: ValueKey('ws-free-$id'))), // (one taken out of it where it stands: the others stay)
             if ((kind == 'follow' || kind == 'push') && id != leader) Positioned(left: p.dx - 24, top: p.dy - 24, child: _Badge('crown', () => wsLead(ws, id), faint: true, key: ValueKey('ws-lead-$id'))), // (another's crown: that one leads, nothing moving)
@@ -293,20 +285,6 @@ class _RelateChip extends StatelessWidget {
       decoration: BoxDecoration(color: outlined ? WsT.body : WsT.accent, border: outlined ? Border.all(color: WsT.accent) : null, borderRadius: BorderRadius.all(Shape.r(12))),
       child: glyph != null ? TpGlyphView(glyph!, WsT.onAccent, size: Shape.z(12)) : Text(wsRelationWord(kind), style: T.label(outlined ? WsT.accent : WsT.onAccent)),
     ),
-  );
-}
-
-/// When a group's thing starts after its group (its place in the group's order), on its corner: 0s goes first.
-class _Order extends StatelessWidget {
-  const _Order(this.at, {super.key});
-  final String at;   // (when it starts after its group: 0s, 0.2s; the order and Delay each read off the stage, golf (g61), (g62), (g72))
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 18,
-    padding: const EdgeInsets.symmetric(horizontal: 5),
-    alignment: Alignment.center,
-    decoration: BoxDecoration(color: WsT.accent, borderRadius: BorderRadius.circular(9)),
-    child: Text(at, style: T.label(WsT.onAccent)),
   );
 }
 

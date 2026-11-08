@@ -86,16 +86,6 @@ static std::vector<am::RepeatCopy> scatter_repeat(const AbsentEffect& e) {
     }
     return out;
 }
-void absent_scatter_point(double seed, int i, bool ball, double* x, double* y, double* z) {
-    const uint64_t s = (uint64_t)std::llround(seed * 1000.0) * 0x2545f4914f6cdd1dull + 0x51ed27ull;   // (scatter_repeat's own seed)
-    if (!ball) {   // (scatter_repeat's own turn and distance at Evolution 0, its wander's noise and all; up, as the document counts y, where Skia's goes down)
-        const double turn = 2.0 * M_PI * (scatter_unit(s, 2 * i) + 0.5 * am::SimplexNoise2(0.0, i * 3.17 + 0.5)), far = std::sqrt(scatter_fold(scatter_unit(s, 2 * i + 1) + 0.5 * am::SimplexNoise2(41.3, i * 3.17 + 9.1)));
-        *x = far * std::cos(turn), *y = -far * std::sin(turn), *z = 0.0;
-        return;
-    }
-    const double turn = 2.0 * M_PI * scatter_unit(s, 2 * (uint64_t)i), up = 2.0 * scatter_unit(s ^ 0x9e3779b97f4a7c15ull, (uint64_t)i) - 1.0, far = std::cbrt(scatter_unit(s, 2 * (uint64_t)i + 1)), across = std::sqrt(std::max(0.0, 1.0 - up * up));
-    *x = far * across * std::cos(turn), *y = far * across * std::sin(turn), *z = far * up;
-}
 // A repeat laid on those before it, each copy of the new by each of the old, as AbsentMotion's RepeatCopies does it.
 static std::vector<am::RepeatCopy> scatter_on(const std::vector<am::RepeatCopy>& made, const std::vector<am::RepeatCopy>& result) {
     std::vector<am::RepeatCopy> next;

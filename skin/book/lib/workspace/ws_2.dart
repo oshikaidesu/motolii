@@ -306,15 +306,23 @@ class Ws extends ChangeNotifier {
   /// (BasicKeyframeConnector.tsx, Apache-2.0): one value's, where a key is every value's there.
   WsStretchPicked? _stretch;
   WsStretchPicked? get stretch => _stretch;
+  WsEaseMode _easeMode = WsEaseMode.stretch;
+  WsEaseMode get easeMode => _easeMode;
+  set easeMode(WsEaseMode m) {
+    if (_easeMode == m) return;
+    _easeMode = m;
+    _tell(WsAspect.picked);
+  }
   WsStretchPicked? _stretchOf(String layer, String name, int from) {
     final t = int.tryParse(layer), at = t == null ? const <double>[] : _inside?.keyMoments(t, name) ?? const <double>[];
     final i = at.indexWhere((s) => (s * Ws.fps).round() == from);
     return i < 0 || i + 1 >= at.length ? null : (layer: layer, name: name, at: at[i], from: from, to: (at[i + 1] * Ws.fps).round());
   }
 
-  void pickStretch(String layer, String name, int from) {
+  void pickStretch(String layer, String name, int from, {WsEaseMode mode = WsEaseMode.stretch}) {
     _keys.clear();
     _stretch = _stretchOf(layer, name, from);
+    _easeMode = mode;
     _sel = layer;
     deskManual = null;
     _tell(WsAspect.picked);
@@ -472,7 +480,10 @@ class Ws extends ChangeNotifier {
   void enter(String? id) {
     if (id == _entered) return;
     _entered = id;
-    if (id != null) select(id);   // (its cards in the inspector: the row on top is the one picked)
+    if (id != null) {
+      select(id);   // (its cards in the inspector: the row on top is the one picked)
+      _lanesOpen.add(id);   // (its keyed values are the graph: the group's timeline is that graph)
+    }
     _tell(WsAspect.animating);
   }
 

@@ -230,21 +230,8 @@ static void picture_moment(Motolii* m) {
         w.EndObject();
     }
     w.EndObject();
-    w.Key("late"), w.StartObject();   // (how much later each of a group's things goes than its group, doc_group_delay; none here, on time. Here, all of them each moment, not in the document's picture: that one is not made again while a hand carries a value, and a From rested on is carried, its marks shown before it is pressed, golf (g73))
-    for (int i = 0; i < n; ++i) if (const double late = doc_group_delay(d, things[i]); late > 0) w.Key(std::to_string(things[i]).c_str()), w.Double(late);
-    w.EndObject();
     w.Key("members"), w.StartObject();   // (how many each thing with more than one has: its copies, its letters (doc_members); the timeline enters it as it enters a group)
     for (int i = 0; i < n; ++i) if (doc_word(d, things[i], "kind") != "behaviour") if (const int many = doc_members(d, things[i]); many > 1) w.Key(std::to_string(things[i]).c_str()), w.Int(many);
-    w.EndObject();
-    w.Key("strum"), w.StartObject();   // (a row in a thing with copies (an Order row, doc_rows_of): how much later its first and its last member read its keys (doc_order_delay); the timeline's band under its keys, Ableton Live 12's Strum, drawn so. Here each moment, as "late": a lag carried is seen as the hand pulls)
-    for (int i = 0; i < n; ++i)
-        if (doc_word(d, things[i], "kind") == "behaviour" && doc_word(d, things[i], "file") == "order")
-            if (const int of = (int)doc_number(d, things[i], "parent", 0, 0); of && doc_word(d, of, "shape") != "null")
-                if (const int many = doc_members(d, of); many > 1) {
-                    w.Key(std::to_string(things[i]).c_str()), w.StartArray();
-                    w.Double(doc_order_delay(d, things[i], 0, many, "lag", "lag_from")), w.Double(doc_order_delay(d, things[i], many - 1, many, "lag", "lag_from"));
-                    w.EndArray();
-                }
     w.EndObject();
     w.EndObject();
     std::lock_guard<std::mutex> hold(m->pictureLock);

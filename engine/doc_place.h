@@ -54,15 +54,6 @@ static math::mat4 doc_place(Doc& d, int thing, double now, int deeper, int copy,
             shift += math::double3{round(sx * roll(1) + whole(doc_literal(d, thing, "drift_x", 0, 0), sx) * now, sx), round(sy * roll(2) + whole(doc_literal(d, thing, "drift_y", 0, 0), sy) * now, sy), 0.0};
             own = own * math::mat4::rotation(sr * roll(3) * (double)TAU / 360.0, math::double3{0, 0, 1}) * math::mat4::scaling(std::max(0.0, 1.0 + ss * roll(4)));
         }
-        // (its Position rows (doc_rows_of): each row's keys read so much earlier for this copy (doc_order_delay by the row's lag,
-        //  GSAP's stagger), and so far its own way within the row's Random, Scatter Repeat's disc, a ball once the row says z
-        //  (absent_scatter_point); added as much as the row's strength, as a group's own move is (doc_related's "group")
-        for (const int row : doc_rows_of(d, thing, "x")) {
-            const double at = said - doc_order_delay(d, row, copy, n, "lag", "lag_from"), s = std::clamp(doc_number(d, row, "strength", at, 1), -1.0, 2.0), r = doc_literal(d, row, "random", 0, 0);
-            double px = 0, py = 0, pz = 0;
-            if (r > 0.0) absent_scatter_point(doc_literal(d, row, "seed", 0, 0), copy, !doc_word(d, row, "z").empty() || !doc_keys_of(d, row, "z").at.empty(), &px, &py, &pz);
-            shift += math::double3{doc_number(d, row, "x", at, 0) + r * px, doc_number(d, row, "y", at, 0) + r * py, doc_number(d, row, "z", at, 0) + r * pz} * s;
-        }
         // (a wave through it: each copy so far behind the one before, at its own moment, a copy staggered so much later)
         const double said_speed = doc_literal(d, thing, "wave_speed", said, 1), noisy = doc_literal(d, thing, "wave_noise", said, 0);
         const double turns = std::round(said_speed * d.round), speed = turns > 0.0 ? turns / d.round : said_speed;   // (a whole number of times round in the document: its film loops)
@@ -195,7 +186,7 @@ static math::mat4 doc_place(Doc& d, int thing, double now, int deeper, int copy,
             }
         }
     const DocDealt dealt = member ? doc_dealt(d, thing) : DocDealt{};   // (one of its group's copies: on that copy's place, as its group's thing is on its group's, doc_above)
-    const math::mat4 above = dealt.group ? doc_place(d, dealt.group, now - doc_group_delay(d, thing), deeper + 1, dealt.index(copy), true) : doc_above(d, thing, now, deeper), there = above * math::mat4::translation(math::double3{doc_literal(d, thing, "x", now, 0), doc_literal(d, thing, "y", now, 0), doc_literal(d, thing, "z", now, 0)});
+    const math::mat4 above = dealt.group ? doc_place(d, dealt.group, now, deeper + 1, dealt.index(copy), true) : doc_above(d, thing, now, deeper), there = above * math::mat4::translation(math::double3{doc_literal(d, thing, "x", now, 0), doc_literal(d, thing, "y", now, 0), doc_literal(d, thing, "z", now, 0)});
     math::mat4 helped;   // (Alight Motion's Parenting Helper, as bevy_alight_motion works it (MIT/Apache-2.0, src/animation/parenthelper.rs): its parent's turn and size taken by their weights, and a wheel's roll)
     if (const double wr = doc_literal(d, thing, "parent_rotate", now, 1), ws = doc_literal(d, thing, "parent_size", now, 1); doc_literal(d, thing, "parent", 0, 0) != 0.0 && (wr != 1.0 || ws != 1.0)) {
         const math::double3 ax = above[0].xyz;
