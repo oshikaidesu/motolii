@@ -325,6 +325,7 @@ Script::~Script() {
 }
 bool Script::ok() const { return own->trouble.empty(); }
 bool Script::sketch() const { return own->sketch; }
+bool Script::lays() const { return own->cx && !own->whole && !own->sketch; }
 static std::string script_said(JSContext* cx, const char* js) {
     JS_UpdateStackTop(JS_GetRuntime(cx));   // (asked on whichever thread asks, as numbers() below: quickjs.h, "should be called when changing thread")
     JSValue out = JS_Eval(cx, js, strlen(js), "sketch", JS_EVAL_TYPE_GLOBAL);

@@ -280,11 +280,11 @@ static DocScript* doc_script_of(Doc& d, const std::string& file, bool runs = tru
         DocScript was = std::move(s);
         s = DocScript{};
         s.viewer = lottie && viewer_is(file);
-        s.stamp = stamp, s.seen = files_changed(), s.knobs = ext == ".mjs" ? SplatEffect(file).knobs() : s.viewer ? viewer_knobs(file) : lottie ? lottie_knobs(file) : script_knobs(screen ? isf_file(file) : file);
+        s.stamp = stamp, s.seen = files_changed(), s.knobs = ext == ".mjs" ? SplatEffect(file).knobs() : s.viewer ? viewer_knobs(file) : lottie ? lottie_knobs(file) : script_knobs(screen ? isf_file(file) : fx_source(file));   // (an expression put on again, "repeater~2.js": its file's: doc_fx_duplicate)
         if (screen) script_first(file, s.knobs);   // (the values it comes with, where its own show nothing: fx_first.sh)
         std::erase_if(s.knobs, [](const ScriptKnob& k) { return k.kind == "picture" && k.name == "backdrop"; });   // (what is behind it is given, not chosen on its card: screen.h)
         doc_scripts_made(d)++;   // (what was worked out from the old one is forgotten)
-        for (const ScriptKnob& k : s.knobs) s.names.push_back(screen || lottie || absent ? doc_screen_knob(file, k.name) : "js_" + k.name);
+        for (const ScriptKnob& k : s.knobs) s.names.push_back(screen || lottie || absent || fx_source(file) != file ? doc_screen_knob(file, k.name) : "js_" + k.name);   // (one put on again: its values its own, as an effect's)
         for (size_t i = 0; i < s.knobs.size(); ++i) {   // (the names are all made first: what points into them stays put)
             const ScriptKnob& k = s.knobs[i];
             const bool open = k.kind == "track";   // (an effect's number: its author's range is what is vouched for and what its knob shows, not all it may be, Houdini's range not strict (FloatParmTemplate minIsStrict); a low of 0 or more still a floor: doc_edit.h)
@@ -298,14 +298,14 @@ static DocScript* doc_script_of(Doc& d, const std::string& file, bool runs = tru
             return &s;
         }
         if (lottie) return &s;   // (read, not run)
-        if (!screen && runs) s.run = std::make_unique<Script>(file, (doc_folders("third_party/js/p5").front() / "p5.min.js").string());   // (a .wgsl or an ISF .fs is drawn, not run: screen.h)
+        if (!screen && runs) s.run = std::make_unique<Script>(fx_source(file), (doc_folders("third_party/js/p5").front() / "p5.min.js").string());   // (a .wgsl or an ISF .fs is drawn, not run: screen.h)
         if (s.run && !s.run->ok() && was.run && was.run->ok()) {   // (code half typed: what ran stays, and says why)
             doc_scripts_kept(d).why[file] = d.trouble = s.run->trouble();
             s = std::move(was), s.stamp = stamp, s.seen = files_changed();
             return &s;
         }
         doc_scripts_kept(d).why.erase(file);
-        { std::ifstream in(screen ? isf_file(file) : file); std::stringstream text; text << in.rdbuf(); s.clears = text.str().find("opacity") != std::string::npos; }
+        { std::ifstream in(screen ? isf_file(file) : fx_source(file)); std::stringstream text; text << in.rdbuf(); s.clears = text.str().find("opacity") != std::string::npos; }
     }
     return &s;
 }

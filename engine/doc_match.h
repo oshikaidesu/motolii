@@ -210,12 +210,14 @@ static bool doc_match(Doc& d) {
             bool connected = false;   // (a value given each copy by a behaviour: each copy its own look, not drawn in one go)
             doc_rows(d, sqlite3_mprintf("select 1 from fact where thing = %d and name glob '*_by' and value <> 0 limit 1", thing), [&](sqlite3_stmt*) { connected = true; });
             const bool faded = std::any_of(repeated.begin(), repeated.end(), [](const AbsentCopy& c) { return c.alpha < 0.999; });   // (AbsentMotion's copies fading each, a scatter field's far ones: each its own)
-            fx.together = fx.copies > 1 && (kind == "shape" || kind == "text") && colours <= 8 && !(sc && sc->clears) && !connected && !faded;   // (eight colours at most: flat.mat's ramp)
+            const std::vector<DocScript*> laying = doc_expressions_fx(d, thing);   // (its expressions: each may say opacity too)
+            const bool clears = (sc && sc->clears) || std::any_of(laying.begin(), laying.end(), [](const DocScript* e) { return e->clears; });
+            fx.together = fx.copies > 1 && (kind == "shape" || kind == "text") && colours <= 8 && !clears && !connected && !faded;   // (eight colours at most: flat.mat's ramp)
         }
         fx.wrapWidth = (float)doc_number(d, thing, "wrap_at", 0, 0);
         const std::string split = doc_word(d, thing, "split"), script = doc_word(d, thing, "script");
         fx.splitWords = split == "words";
-        fx.split = split == "letters" || fx.splitWords || (split.empty() && !script.empty() && script != "none");   // (a text given a script moves letter by letter, as Cavalry's are, unless said none)
+        fx.split = split == "letters" || fx.splitWords || (split.empty() && ((!script.empty() && script != "none") || !doc_expressions_fx(d, thing).empty()));   // (a text given a script or an expression moves letter by letter, as Cavalry's are, unless said none)
         { const std::string w = doc_word(d, thing, "wrap"); fx.wrap = w == "character" || w == "vertical" ? 1 : w == "word" ? 2 : w == "smart" ? 3 : w == "ellipsis" ? 4 : fx.wrapWidth > 0.f ? 2 : 0; if (w == "vertical") fx.wrapWidth = 1.f, fx.column = true; }   // (ThorVG's TextWrap; a box said and no way: by words; vertical: a box a letter wide)
         fx.letters = (float)doc_number(d, thing, "letter_spacing", 0, 1), fx.lines = (float)doc_number(d, thing, "line_spacing", 0, 1), fx.italic = (float)doc_number(d, thing, "italic", 0, 0);
         const auto which = [&](const char* name, const char* words) { const std::string w = doc_word(d, thing, name); if (w.empty()) return -1; int n = 0; for (const char* at = words; *at; ++n) { const size_t len = strcspn(at, " "); if (w == std::string(at, len)) return n; at += len + (at[len] ? 1 : 0); } return -1; };
