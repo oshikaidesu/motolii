@@ -396,8 +396,10 @@ static bool doc_physics(Doc& d, int thing, double now, PhysPose* pose, int copy 
 }
 // Whether the stage places a thing as a member of its copies (each copy, the first too, as late as its order says, waving
 // as its place in the wave says), or as itself: the stage and whoever asks how it moves (motolii_path) place it alike.
+static std::vector<DocScript*> doc_expressions_fx(Doc& d, int thing);   // (doc_expressions.h)
 static bool doc_staggered(Doc& d, int thing, double now) {
     if (const DocScript* sc = doc_script_of(d, doc_literal_word(d, thing, "script")); sc && sc->run && sc->run->sketch()) return true;   // (one box in a sketch is placed by the sketch all the same)
+    if (!doc_expressions_fx(d, thing).empty()) return true;   // (and a thing with no copies by its expressions: itself their one copy, i 0 of n 1)
     return doc_members(d, thing) > 1 || doc_number(d, thing, "stagger", 0, 0) > 0.0 || doc_number(d, thing, "wave_x", now, 0) != 0.0 || doc_number(d, thing, "wave_y", now, 0) != 0.0 || doc_number(d, thing, "wave_rotate", now, 0) != 0.0 || doc_number(d, thing, "wave_size", now, 0) != 0.0 || doc_number(d, thing, "field_radius", now, 0) > 0.0;
 }
 // How far a thing that turns the way it goes (orient) is turned by it at a moment, radians about z: the way its keys
