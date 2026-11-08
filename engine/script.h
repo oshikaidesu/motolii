@@ -2,6 +2,7 @@
 //   // --track@count:Count,1,5000,800,1      a number: name:label,lowest,highest,as it comes,step
 //   // --check@spin:Spin,1                    on or off (1 or 0)
 //   // --select@way:Way,ring,grid,spiral      one of some words, the first as it comes
+//   // --group:Advanced                       the knobs after it folded away under that name, until a bare // --group
 // and whose body says, for each copy of the thing it is given to, where it is and how:
 //   function each(i, n, t, k) { return { x, y, z, size, rotate, rotate_x, rotate_y, opacity }; }   // i of n copies, t seconds since the thing began, k the knobs (and k.duration: how long the thing lasts)
 // (as Cavalry's JavaScript Utility gives a Duplicator its points). Behind the door: QuickJS-ng (js_bench chose it).
@@ -24,6 +25,7 @@ struct ScriptKnob {
     std::string name, label, kind;   // kind: track, check, select or picture (an effect's image read from another thing)
     double low = 0, high = 1, usual = 0, step = 0;
     std::string words;               // a select's words, with spaces between
+    std::string group;               // the group it lies in, as AviUtl2's head says (// --group:Name … // --group): its card's fold ("" none)
 };
 struct ScriptCopy { double x = 0, y = 0, z = 0, size = 1, rotate = 0, rotate_x = 0, rotate_y = 0, opacity = 1, scale_x = 1, scale_y = 1, scale_z = 1, colour = -1; };   // (colour: a solid copy's own, red green blue; -1: as the solid is)
 

@@ -103,8 +103,16 @@ std::vector<ScriptKnob> script_knobs(const std::string& file) {
         }
         in.clear(), in.seekg(0);
     }
+    std::string group;   // (AviUtl2's --group:Name[,open] gathers the knobs after it, a bare --group ends it: reports/aviutl2_converter.md)
     for (std::string line; std::getline(in, line);) {
         if (line.rfind("//", 0) != 0) { if (line.find_first_not_of(" \t\r") == std::string::npos) continue; break; }   // (the head ends where code begins)
+        if (const size_t g = line.find_first_not_of(" \t", 2); g != std::string::npos && line.compare(g, 7, "--group") == 0 && (g + 7 == line.size() || line[g + 7] == ':' || line[g + 7] == '\r')) {
+            const size_t colon = line.find(':', g);
+            group = line.substr(colon == std::string::npos ? line.size() : colon + 1);
+            group = group.substr(0, group.find(','));   // (its open or closed at first: Motolii's fold is closed at first)
+            group.erase(0, group.find_first_not_of(" \t")), group.erase(group.find_last_not_of(" \t\r") + 1);
+            continue;
+        }
         const size_t dash = line.find("--"), at = line.find('@'), colon = line.find(':');
         if (dash == std::string::npos || at == std::string::npos || colon == std::string::npos || !(dash < at && at < colon)) continue;
         ScriptKnob k;
@@ -124,6 +132,7 @@ std::vector<ScriptKnob> script_knobs(const std::string& file) {
         } else if (k.kind == "select" && said.size() >= 2) {
             for (size_t i = 1; i < said.size(); ++i) k.words += (i > 1 ? " " : "") + said[i];
         } else continue;
+        k.group = group;
         knobs.push_back(k);
     }
     return knobs;

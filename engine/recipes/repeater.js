@@ -6,8 +6,9 @@
 // --track@Columns:Columns,0,100,0,1
 // --track@StepX:Step X,-5,5,0.3,0.01
 // --track@StepY:Step Y,-5,5,0,0.01
-// --track@StepZ:Step Z,-5,5,0,0.01
 // --track@Turn:Turn,-720,720,0,1
+// --group:Advanced
+// --track@StepZ:Step Z,-5,5,0,0.01
 // --track@Rotate:Rotate,-360,360,0,0.1
 // --track@RotateX:Rotate X,-360,360,0,0.1
 // --track@RotateY:Rotate Y,-360,360,0,0.1
@@ -21,6 +22,7 @@
 // --track@Seed:Scatter seed,0,9999,0,1
 // --track@DriftX:Scatter flow X,-2,2,0,0.01
 // --track@DriftY:Scatter flow Y,-2,2,0,0.01
+// --group
 
 // What the document's own copy values (copy_x, copy_y, copy_z, copy_columns, copy_turn, copy_rotate, copy_rotate_x, copy_rotate_y,
 // copy_size, copy_wide and scatter_x, scatter_y, scatter_z, scatter_rotate, scatter_size, seed, drift_x, drift_y) said before,

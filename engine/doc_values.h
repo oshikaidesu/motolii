@@ -290,7 +290,7 @@ static DocScript* doc_script_of(Doc& d, const std::string& file, bool runs = tru
             const bool open = k.kind == "track";   // (an effect's number: its author's range is what is vouched for and what its knob shows, not all it may be, Houdini's range not strict (FloatParmTemplate minIsStrict); a low of 0 or more still a floor: doc_edit.h)
             // (a motion's knobs a camera's too: it takes AbsentMotion's motions, golf ㊴; its strength was refused on it)
             s.values.push_back(DocValue{s.names[i].c_str(), absent ? "film picture text shape solid stage camera" : "film picture text shape solid stage behaviour", k.kind == "select" ? 0.0 : k.low, k.kind == "select" ? 0.0 : k.high, k.kind == "track", k.kind == "select" ? k.words.c_str() : nullptr, open});
-            s.shown.push_back(DocShown{s.names[i].c_str(), k.kind == "check" ? "onoff" : k.kind == "picture" || k.kind == "sound" ? "thing" : "", "", k.label.c_str(), k.low, k.high, nullptr, open});
+            s.shown.push_back(DocShown{s.names[i].c_str(), k.kind == "check" ? "onoff" : k.kind == "picture" || k.kind == "sound" ? "thing" : "", "", k.label.c_str(), k.low, k.high, k.group.empty() ? nullptr : k.group.c_str(), open});   // (its group: the card's fold, script.h)
         }
         if (absent) {   // (read, not run: which of AbsentMotion's its head says)
             std::ifstream in(file);
