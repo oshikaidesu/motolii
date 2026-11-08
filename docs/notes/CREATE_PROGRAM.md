@@ -8,6 +8,7 @@
 - **物に付く JS は全部「Expression」と呼ぶ。** Repeater、AE Grid/Ring/Stagger、今「Motion」と呼んでいる Cavalry の Animator を1つにまとめる。どれも中身は「物の値を動かす JS」で、同じ種類の物。名前は AE 自身の呼び名で、AE を使う人がこの言葉で探す。
 - **Expression は Effects 棚に、選んでいる物に付くものとして並べる。** Create の「Copies」の枠はやめる。AE Grid/Ring/Stagger も、新しい丸を作るのをやめて、選んでいる物に付ける。
 - **1つの物に Expression をいくつでも付けられるようにする。** AE は1つのレイヤーに式をいくつも付けられる。使う人は「並べる」と「動かす」を同時にやりたい。
+- **Expression のカードは、エフェクトのカードと同じに扱う。** 詳細パネルでは同じ見た目なのだから、重ねる・目玉で消す・⋮メニュー・複製・並べ替えが同じにできる。今は Script のカードだけ1つしか付かず、目玉も並べ替えも無い（`skin/book/lib/sets/inspector/inspector_effects.dart:159`・`:165`）。
 
 ## 今の「レシピ」がこの線のどちらにいるか（11/9 時点のコード）
 
