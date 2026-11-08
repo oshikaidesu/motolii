@@ -104,7 +104,7 @@ extension MotoliiDocument on Motolii {
 
   static List<(String, List<String>)> _cardsIn(Object? said) => [
     for (final c in ((said as String?) ?? '').split('; '))
-      if (c.indexOf(': ') case final at when at > 0) (c.substring(0, at), c.substring(at + 2).split(' ')),
+      if (c.indexOf(': ') case final at when at > 0) (c.substring(0, at), [for (final n in c.substring(at + 2).split(' ')) if (n.isNotEmpty) n]),   // (an effect of no knobs: a card of none, doc_cards_of)
   ];
 
   /// The titles of a thing's effect cards in the order its effects are laid (motolii_fx_titles): moved with `fx_move`.

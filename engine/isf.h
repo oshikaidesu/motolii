@@ -6,6 +6,9 @@
 
 // The .wgsl to read for an effect file: itself if not ISF; for a .fs the one made of it ("" if it could not be).
 std::string isf_file(const std::string& file);
+// Why the file as it is now could not be made WGSL ("": it was, or it was not asked yet); meanwhile isf_file gives the
+// one last made of it.
+std::string isf_trouble(const std::string& file);
 
 // What an ISF effect is, read from it, nobody asked to write it (the user's Mercari: a seller is not asked, the item is
 // read; Shadertoy flags its shaders from what they define and filters by it): its tags with spaces between, of

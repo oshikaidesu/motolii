@@ -416,6 +416,7 @@ final _makes = <(String, List<_Make>)>[
   (
     'Copies',
     [
+      _Make('Empty', DockG.plus, Pop.tonePlace, '', 'An empty expression on the picked thing (nothing picked: on a new board): write or paste each() into its card\'s code'),
       _Make('Repeater', DockG.copies, Pop.tonePlace, '', 'Lays the picked thing out in copies with the Repeater recipe: five in a row, each a little smaller; its knobs are on the Script card'),
     ],
   ),
@@ -451,6 +452,7 @@ final _materials = (
   ],
 );
 const _worn = {'Glass': 'glass'};   // (the tile, and the solid's fill it gives)
+const _onPicked = {'Empty'};   // (put on the picked thing, or a new board: empty_fx.dart)
 
 final _asked = {
   'Text': ('text', wsTextFont),
@@ -512,7 +514,11 @@ void _make(DockCtx c, _Make tile) {
     c.ws.after(m.later('make', word: name), (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why), (made) => c.ws.select('$made'));   // (without waiting: picked once made)
     return;
   }
-  if (name == 'Adjustment') return c.ws.adjustment();   // (After Effects' New > Adjustment Layer)
+  if (name == 'Adjustment') return c.ws.adjustment();
+  if (name == 'Empty') {   // (an expression to write: empty_fx.dart; what went wrong before forgotten once it is taken)
+    c.set(() => c.mem.trouble.remove(name));
+    return emptyPut(c.ws, expression: true, told: (why) => c.set(() => why.isEmpty ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why));
+  }   // (After Effects' New > Adjustment Layer)
   if (_worn[name] case final fill?) {
     final t = int.tryParse(c.ws.selected ?? '');
     if (t == null || m.word(t, 'kind') != 'solid') return c.set(() => c.mem.trouble[name] = 'Pick a solid to make it ${name.toLowerCase()}');
@@ -619,8 +625,8 @@ class CreateShelf extends StatelessWidget {
             preview: DockBadge(sel.g, sel.hue, size: Shape.z(34)),
             title: '${sel.name} layer',
             meta: c.mem.trouble[sel.name] ?? 'At ${c.ws.timecode()} · ${sel.what}',
-            action: _laid.containsKey(sel.name) ? 'Lay out' : _worn.containsKey(sel.name) ? 'Put on' : 'Create',
-            fresh: !_laid.containsKey(sel.name) && !_worn.containsKey(sel.name), // (a tile makes a new thing; a tile of copies lays out the picked one, a material is put on it)
+            action: _laid.containsKey(sel.name) ? 'Lay out' : _worn.containsKey(sel.name) || _onPicked.contains(sel.name) ? 'Put on' : 'Create',
+            fresh: !_laid.containsKey(sel.name) && !_worn.containsKey(sel.name) && !_onPicked.contains(sel.name), // (a tile makes a new thing; a tile of copies lays out the picked one, a material is put on it, an empty expression too: to the picked one, a new board with nothing picked)
             onAction: () => _make(c, sel),
           ),
       ],
@@ -636,7 +642,7 @@ class _MakeTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final sel = c.sel == m.id;
     final inside = c.ws.inside;
-    final makes = inside != null && (m.recipe ? inside.recipes.any((r) => r.$1 == m.name) : _asked.containsKey(m.name) || _laid.containsKey(m.name) || _worn.containsKey(m.name) || inside.elements.any((e) => e.$1 == m.name));
+    final makes = inside != null && (m.recipe ? inside.recipes.any((r) => r.$1 == m.name) : _asked.containsKey(m.name) || _laid.containsKey(m.name) || _worn.containsKey(m.name) || _onPicked.contains(m.name) || inside.elements.any((e) => e.$1 == m.name));
     return DockHover(
       onTap: () => c.pick(m.id),
       onDoubleTap: makes ? () => _make(c, m) : null, // (two presses make it, one step)

@@ -280,15 +280,32 @@ std::string isf_tags(const std::string& file) {
     return tags;
 }
 
+// (each file's last WGSL that was made, and why it as it is now is not made: a half-typed effect keeps drawing as it
+//  last did, as a script half typed keeps what ran (doc_script_of), and its card says why: isf_trouble)
+static std::mutex isf_lock;
+static std::map<std::string, std::string> isf_good, isf_why;
+static std::string isf_kept(const std::string& file, const std::string& why) {
+    isf_why[file] = why.empty() ? std::string("it could not be made WGSL") : why;
+    const auto good = isf_good.find(file);
+    return good == isf_good.end() ? "" : good->second;
+}
+static std::string isf_made(const std::string& file, const std::string& out) {
+    isf_good[file] = out, isf_why.erase(file);
+    return out;
+}
+std::string isf_trouble(const std::string& asked) {
+    std::lock_guard<std::mutex> hold(isf_lock);
+    const auto why = isf_why.find(fx_source(asked));
+    return why == isf_why.end() ? "" : why->second;
+}
 std::string isf_file(const std::string& asked) {
     const std::string file = fx_source(asked);   // (one put on again, Glow~2.fs: Glow.fs's own, script.h)
     if (std::filesystem::path(file).extension() != ".fs" && !three_is(file)) return file;   // (a three.js effect: made ISF first, three_isf.cpp)
     struct stat st {};
     if (stat(file.c_str(), &st) != 0) return "";
     const std::string key = "isf 15|" + file + "|" + std::to_string(st.st_mtimespec.tv_sec) + "." + std::to_string(st.st_mtimespec.tv_nsec) + "|" + std::to_string(st.st_size);
-    static std::mutex lock;
-    static std::map<std::string, std::string> made;   // (what each file as it is became: "" could not be)
-    std::lock_guard<std::mutex> hold(lock);
+    static std::map<std::string, std::string> made;   // (what each file as it is became: its last made, or "", if it could not be)
+    std::lock_guard<std::mutex> hold(isf_lock);
     if (auto m = made.find(key); m != made.end()) return m->second;
     uint64_t hash = 1469598103934665603ull;
     for (unsigned char c : key) hash = (hash ^ c) * 1099511628211ull;
@@ -298,7 +315,7 @@ std::string isf_file(const std::string& asked) {
     std::snprintf(name, sizeof name, "%016llx.wgsl", (unsigned long long)hash);
     const std::string out = (dir / name).string();
     std::error_code e;
-    if (std::filesystem::exists(out, e)) return made[key] = out;
+    if (std::filesystem::exists(out, e)) return made[key] = isf_made(file, out);
     std::ifstream in(file);
     std::stringstream text;
     text << in.rdbuf();
@@ -307,7 +324,7 @@ std::string isf_file(const std::string& asked) {
         const std::string isf = three_isf(file, why);
         if (isf.empty()) {
             std::fprintf(stderr, "the three.js effect %s is not taken: %s\n", file.c_str(), why.substr(0, 600).c_str());
-            return made[key] = "";
+            return made[key] = isf_kept(file, why);
         }
         text.str(isf);
     }
@@ -317,10 +334,10 @@ std::string isf_file(const std::string& asked) {
     const std::string wgsl = isf_wgsl(door_isf(text.str()), stem, why, vertex.str());   // (Shadertoy's and GLSL Sandbox's as they come: door.h)
     if (wgsl.empty()) {
         std::fprintf(stderr, "the ISF effect %s is not taken: %s\n", file.c_str(), why.substr(0, 600).c_str());
-        return made[key] = "";
+        return made[key] = isf_kept(file, why);
     }
     std::filesystem::create_directories(dir, e);
     std::ofstream(out + ".part") << wgsl;
     std::filesystem::rename(out + ".part", out, e);
-    return made[key] = out;
+    return made[key] = isf_made(file, out);
 }

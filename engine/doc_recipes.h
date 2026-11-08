@@ -409,9 +409,10 @@ static std::string doc_cards_of(Doc& d, int thing, std::string* more = nullptr) 
         for (const std::string& w : doc_fx_list(d, thing, true)) {   // (those turned off too: their values are kept)
             std::string card;
             if (doc_thor_letter(w)) { if (const auto at = effects.find(w); at != effects.end()) card = at->second; }
-            else if (const DocScript* sc = doc_script_of(d, w)) {
-                for (const DocValue& one : sc->values) card += (card.empty() ? "" : " ") + std::string(one.name);
-                if (!card.empty()) card = doc_fx_title(w) + ": " + card;
+            else {   // (a file's, with its knobs or none: its card is where its eye, its bin and its code are reached)
+                if (const DocScript* sc = doc_script_of(d, w))
+                    for (const DocValue& one : sc->values) card += (card.empty() ? "" : " ") + std::string(one.name);
+                card = doc_fx_title(w) + ": " + card;
             }
             if (!card.empty()) all += (all.empty() ? "" : "; ") + card;
         }

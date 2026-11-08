@@ -18,6 +18,7 @@ import 'dock_resizable.dart';
 import 'dock_tags.dart';
 import 'effect_decks.dart';
 import 'effect_tiles.dart';
+import 'empty_fx.dart';
 import 'ws.dart';
 import 'ws_menu.dart';
 
@@ -71,6 +72,9 @@ class _EffectsShelfState extends State<EffectsShelf> {
     // (an effect file on the picked thing taken off by Remove, a press putting on another: Ws.screenPut)
     VoidCallback? off(_Fx e) => screen.contains(e.id) ? () => ws.screenToggle(e.id) : null;
     final every = <_Fx>[
+      // (first: an empty one, its code open on its card to paste an ISF effect into: empty_fx.dart)
+      (id: 'empty:effect', name: 'Empty', label: '', on: false, apply: chosen('empty:effect', () => emptyPut(ws, expression: false, told: (why) => why.isEmpty ? null : ws.notice = 'Not taken: $why')), said: picked ? 'An empty effect on the picked thing: paste ISF code into its card' : 'An empty effect, on a new board: paste ISF code into its card',
+       tile: (small) => EffectTile('Empty', small: small, look: const EmptyLook(), on: null, picked: c.sel == 'empty:effect', onTap: () => c.pick('empty:effect'), onApply: chosen('empty:effect', () => emptyPut(ws, expression: false, told: (why) => why.isEmpty ? null : ws.notice = 'Not taken: $why')))),
       for (final (n, _) in m.thingEffects)
         (id: n, name: n, label: m.label(n), on: on.contains(n), apply: chosen(n, () => ws.fxToggle(n), taken: on.contains(n)), said: _said(ws, n),
          tile: (small) => EffectTile(n, small: small, file: m.picture(n), look: _FxLook(n), on: on.contains(n) ? 'ON' : null, picked: c.sel == n, onTap: () => c.pick(n), onApply: chosen(n, () => ws.fxToggle(n), taken: on.contains(n)), star: small ? null : c)),

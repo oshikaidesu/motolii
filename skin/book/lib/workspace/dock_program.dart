@@ -252,9 +252,10 @@ class _ProgramShelfState extends State<ProgramShelf> {
 /// A program's code: what is typed is given to [write] a moment after the last key (the shelf writes it over its file;
 /// a thing's script on its card writes it to the thing's own copy: ScriptCode).
 class ProgramCode extends StatefulWidget {
-  const ProgramCode(this.file, this.write, {super.key});
+  const ProgramCode(this.file, this.write, {super.key, this.keep = false});
   final String file;
   final void Function(String text) write;
+  final bool keep;   // (what is typed kept as it is, the file not read back: being made, FxCode)
   @override
   State<ProgramCode> createState() => _ProgramCodeState();
 }
@@ -273,7 +274,7 @@ class _ProgramCodeState extends State<ProgramCode> {
   void didUpdateWidget(ProgramCode old) {
     super.didUpdateWidget(old);
     final now = File(widget.file).readAsStringSync();
-    if (now != _written && !(_soon?.isActive ?? false)) _text.text = _written = now;   // (written by another editor)
+    if (now != _written && !(_soon?.isActive ?? false) && !widget.keep) _text.text = _written = now;   // (written by another editor)
   }
 
   @override
@@ -288,6 +289,7 @@ class _ProgramCodeState extends State<ProgramCode> {
   Widget build(BuildContext context) => CodeEditor(
     controller: _text,
     wordWrap: true,   // (a shelf's width: a line pushed sideways is out of sight)
+    autocompleteSymbols: false,   // (exactly what is typed: re_editor puts in a closing " ] } and does not step over one typed, {"a":"b"} came out with ""} after it)
     onChanged: (_) {
       _soon?.cancel();
       _soon = Timer(const Duration(milliseconds: 400), _save);

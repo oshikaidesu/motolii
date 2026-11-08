@@ -208,5 +208,6 @@ static std::string doc_code_saved(Doc& d, const std::string& file) {
     doc_files_moved(d);
     if (ext == ".js" && !three && !shaded) doc_sketch_written(d, file);
     doc_match(d);
+    if (ext == ".fs") isf_file(file), doc_scripts_kept(d).why[file] = isf_trouble(file);   // (an ISF effect half typed: drawn as it last was made, and why said: isf.cpp; not by `why`, which doc_match may have erased: doc_script_of)
     return doc_scripts_kept(d).why[file];
 }

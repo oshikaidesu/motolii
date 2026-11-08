@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
+import '../tokens.dart';
 import 'dock_program.dart' show ProgramCode;
 import 'effect_tiles.dart' show EffectTiles;
 import 'ws.dart';
@@ -26,7 +27,8 @@ class FxCode extends StatefulWidget {
   /// cards may share one (ThorVG's Tint is called Duotone, as an ISF file may be). An effect's values, and an expression
   /// put on again's ("repeater~2.js"), are named by its file (`js_<stem>_<knob>`, doc_values.h doc_script_of): the
   /// file whose name they all begin with. An expression's first are its knobs' own (`js_<knob>`): the .js whose head
-  /// says them all. Of two that fit, the one whose head names the card, else the longer name.
+  /// says them all. Of two that fit, the one the card's title is, else the longer name. A card of no values (an effect
+  /// with no knobs: the engine gives it a card all the same, doc_cards_of) by its title alone.
   static FxCode? of(Ws ws, int thing, String title, List<String> names) {
     final word = fileOf(ws.inside!.word(thing, 'fx'), title, names);
     return word == null ? null : FxCode(ws, thing, word, key: ValueKey('fx-code-$thing-$title'));
@@ -34,19 +36,37 @@ class FxCode extends StatefulWidget {
 
   /// The word of a thing's fx ([fx]) that a card is of (null: none, or not code).
   static String? fileOf(String fx, String title, List<String> names) {
-    if (names.isEmpty) return null;
     (String, int)? best;
     for (final w in Ws.fxFiles(fx)) {
       if (!_code.hasMatch(w)) continue;
-      final file = source(w), stem = EffectTiles.knobStem(w), head = _head(file);
+      final file = source(w), stem = EffectTiles.knobStem(w), titled = titleOf(w) == title;
       if (w.endsWith('.js') && _three(file)) continue;   // (a three.js effect: saved, it is run as a scene, doc_three_saved)
-      final fits = w.endsWith('.js') && file == w ? names.every({for (final k in _knobs(head)) 'js_$k'}.contains) : names.every((n) => n.startsWith('js_${stem}_'));
+      if (names.isEmpty) {
+        if (titled) return w;
+        continue;
+      }
+      final fits = w.endsWith('.js') && file == w ? names.every({for (final k in _knobs(_head(file))) 'js_$k'}.contains) : names.every((n) => n.startsWith('js_${stem}_'));
       if (!fits) continue;
-      final named = head.isNotEmpty && RegExp(r'^// ([^:]+):').firstMatch(head.first)?[1]?.trim() == title.replaceFirst(RegExp(r' \d+$'), '');
-      final score = (named ? 1000 : 0) + stem.length;
+      final score = (titled ? 1000 : 0) + stem.length;
       if (best == null || score > best.$2) best = (w, score);
     }
     return best?.$1;
+  }
+
+  /// Its card's title, as the engine names an effect file's (doc_recipes.h doc_fx_title): one put on again ("Glow~2.fs")
+  /// its original's and its number; an ISF's its file's name (isf.cpp heads the WGSL it makes so); another's the name
+  /// its first line says ("// Repeater: …"), else its file's name, a space for each _, its first letter large.
+  static String titleOf(String w) {
+    final file = source(w), stem = w.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), '');
+    if (file != w) return '${titleOf(file)} ${stem.substring(stem.lastIndexOf('~') + 1)}';
+    if (w.endsWith('.fs')) return stem;
+    var first = '';
+    try {
+      first = File(file).readAsLinesSync().firstOrNull ?? '';
+    } catch (_) {}
+    if (first.startsWith('// ') && first.contains(':')) return first.substring(3, first.indexOf(':'));
+    final t = stem.replaceAll('_', ' ');
+    return t.isEmpty ? t : t[0].toUpperCase() + t.substring(1);
   }
 
   /// Its head: the lines before its code (script.cpp script_knobs reads its knobs there).
@@ -78,6 +98,9 @@ class FxCode extends StatefulWidget {
 
 class _FxCodeState extends State<FxCode> {
   String? _mine;   // (the copy said, until the inside has it as the thing's)
+  String _why = '';   // (why its code as it is now is not taken, said on its card; '' it is)
+  bool _making = false;   // (its copy made once as it was, before what is typed is written over it)
+  String? _typed;   // (typed meanwhile)
 
   static String get _own => '${EffectTiles.own}/programs/fx/';
 
@@ -93,27 +116,39 @@ class _FxCodeState extends State<FxCode> {
     return true;
   }
 
+  // (the copy is first made as the file it is of and taken so, then written over with what is typed: a half typed
+  //  effect or expression stays drawn as it last was taken, which a copy never taken has not: isf.cpp, doc_script_of)
   void _write(String text) {
-    final ws = widget.ws, m = ws.inside!, word = _mine ?? widget.word;
-    var file = FxCode.source(word);
-    if (!_alone(word)) {
-      final from = file, dir = '$_own${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}';
-      Directory(dir).createSync(recursive: true);
-      _beside(from, word, dir);
-      file = '$dir/${from.split('/').last}';
-      final said = '$dir/${word.split('/').last}';
-      File(file).writeAsStringSync(text);
-      _mine = said;
-      final fx = [for (final w in Ws.fxFiles(m.word(widget.thing, 'fx'))) w == word ? said : w].join(' ');   // (as doc_fx_join says it)
-      m.later('say', thing: widget.thing, name: 'fx', word: fx);
-    } else {
-      File(file).writeAsStringSync(text);
+    if (_making) {
+      _typed = text;
+      return;
     }
-    ws.after(m.later('code', word: file), (done, why) {
-      if (!done) ws.notice = why;
-      ws.reread();
+    final ws = widget.ws, m = ws.inside!, word = _mine ?? widget.word, file = FxCode.source(word);
+    if (_alone(word)) {
+      File(file).writeAsStringSync(text);
+      return _saved(file);
+    }
+    final dir = '$_own${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}', to = '$dir/${file.split('/').last}', said = '$dir/${word.split('/').last}';
+    Directory(dir).createSync(recursive: true);
+    _beside(file, word, dir);
+    File(file).copySync(to);
+    _mine = said;
+    _making = true;
+    _typed = text;
+    final fx = [for (final w in Ws.fxFiles(m.word(widget.thing, 'fx'))) w == word ? said : w].join(' ');   // (as doc_fx_join says it)
+    m.later('say', thing: widget.thing, name: 'fx', word: fx);
+    ws.after(m.later('code', word: to), (_, _) {
+      _making = false;
+      File(to).writeAsStringSync(_typed!);
+      _typed = null;
+      _saved(to);
     });
   }
+
+  void _saved(String file) => widget.ws.after(widget.ws.inside!.later('code', word: file), (done, why) {
+    if (mounted) setState(() => _why = done ? '' : why.trim());
+    widget.ws.reread();
+  });
 
   /// What the engine reads beside the file, copied beside the copy.
   static void _beside(String from, String word, String dir) {
@@ -138,6 +173,19 @@ class _FxCodeState extends State<FxCode> {
   @override
   Widget build(BuildContext context) {
     if (_mine == widget.word) _mine = null;
-    return ProgramCode(FxCode.source(_mine ?? widget.word), _write);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_why.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: Shape.s(4)),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              ErrMark(gap: Shape.s(4)),
+              Expanded(child: Text('Does not compile; the last that did is shown. $_why', maxLines: 4, overflow: TextOverflow.ellipsis, style: T.label(Role.error))),
+            ]),
+          ),
+        Expanded(child: ProgramCode(FxCode.source(_mine ?? widget.word), _write, keep: _making)),
+      ],
+    );
   }
 }
