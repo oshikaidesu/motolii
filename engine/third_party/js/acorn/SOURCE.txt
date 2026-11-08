@@ -1,0 +1,3 @@
+acorn 8.18.0, dist/acorn.js and LICENSE of the npm package acorn (https://www.npmjs.com/package/acorn/v/8.18.0), as released, unchanged.
+Source: https://github.com/acornjs/acorn. Licence: MIT (LICENSE).
+Read when a recipe says AE.compile (script.cpp, ae_expr.h): it parses an After Effects expression once, to rewrite + - * / for vectors and to find the value it ends on. Never per frame.

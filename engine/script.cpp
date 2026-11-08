@@ -5,6 +5,7 @@
 #include "p5_stand.h"
 #include "film_read.h"
 #include "ways.h"
+#include "ae_expr.h"
 #include <quickjs.h>
 #include <algorithm>
 #include <filesystem>
@@ -238,6 +239,18 @@ Script::Script(const std::string& file, const std::string& p5, const std::string
     const std::string ways = ways_kept();
     JS_FreeValue(own->cx, JS_Eval(own->cx, ways.c_str(), ways.size(), "ways", JS_EVAL_TYPE_GLOBAL));
     JS_FreeValue(own->cx, JS_Eval(own->cx, cavalry_kept, std::char_traits<char>::length(cavalry_kept), "cavalry", JS_EVAL_TYPE_GLOBAL));
+    if (src.find("AE.compile") != std::string::npos) {   // (an After Effects expression the recipe holds: read once with acorn, third_party/js/acorn, then only called: ae_expr.h)
+        const std::filesystem::path where = std::filesystem::path(p5).parent_path().parent_path() / "acorn" / "acorn.js";
+        std::ifstream lib(where);
+        std::stringstream text;
+        text << lib.rdbuf();
+        const std::string acorn = text.str();
+        if (!lib || acorn.empty()) own->trouble = "acorn is not where it is kept: " + where.string();
+        else {
+            JS_FreeValue(own->cx, JS_Eval(own->cx, acorn.c_str(), acorn.size(), "acorn.js", JS_EVAL_TYPE_GLOBAL));
+            JS_FreeValue(own->cx, JS_Eval(own->cx, ae_kept, std::char_traits<char>::length(ae_kept), "ae_expr", JS_EVAL_TYPE_GLOBAL));
+        }
+    }
     const bool sketch = own->sketch = !p5.empty() && script_is_sketch(src);
     if (sketch) {
         std::ifstream lib(p5);
@@ -379,6 +392,7 @@ std::vector<ScriptCopy> Script::copies(int n, double t, const std::map<std::stri
     if (!ok()) return all;
     if (!own->whole) {   // (the knobs told once, then each copy asked)
         knobs(numbers, words);
+        JS_SetPropertyStr(own->cx, own->knobs, "px", JS_NewFloat64(own->cx, unit));   // (k.px: a pixel of the document in the stage's units, so an expression written in After Effects' pixels says where)
         for (int i = 0; i < n; ++i) all[(size_t)i] = ask(i, n, t);
         return all;
     }

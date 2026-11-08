@@ -40,6 +40,7 @@ Motolii は「ネットで見つけたかっこいい表現を、自分の動画
 | three.js（形を作る部品） | [mrdoob/three.js](https://github.com/mrdoob/three.js) r186 | MIT | `engine/third_party/js/three/` |
 | d3-contour・d3-array | [d3](https://github.com/d3) | ISC | `engine/third_party/js/d3-contour/`、`d3-array/` |
 | anime.js v4.5.0 | [juliangarnier/anime](https://github.com/juliangarnier/anime) | MIT | `engine/third_party/anime/` |
+| acorn 8.18.0（After Effects の式を貼った時に一度だけ読む構文解析器） | [acornjs/acorn](https://github.com/acornjs/acorn) | MIT | `engine/third_party/js/acorn/`（npm 配布の `acorn.js` と `LICENSE` をそのまま。レシピが `AE.compile` と書いた時だけ読み、毎コマは読まない） |
 | p5.js 1.11.13 | [processing/p5.js](https://github.com/processing/p5.js) | LGPL-2.1 | `engine/third_party/js/p5/`（配布の `p5.min.js` と `license.txt` をそのまま、差し替えられる普通のファイルとして読む） |
 | Cube Wave（Coding Challenge 86） | [CodingTrain/Coding-Challenges](https://github.com/CodingTrain/Coding-Challenges)（Copyright (c) 2022 Coding Train） | MIT | `engine/recipes/Cube Wave.js`（1 行目に元、以下そのまま） |
 | Godot のイーズの式 | [godotengine/godot](https://github.com/godotengine/godot) の easing_equations.h（Robert Penner の式） | MIT | `engine/third_party/godot_easing/` |
