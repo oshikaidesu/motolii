@@ -21,24 +21,13 @@ static DocLaid doc_laid(Doc& d, int thing, int copy, int n, double said) {
         }
         const ScriptCopy c = copy < n ? kept.copies[(size_t)copy] : ScriptCopy{};
         out.c = c, out.by = 1;
-    } else   // (a recipe as code: each copy where the thing's script says, on top of what its copies' values say)
-        if (DocScript* sc = doc_script_of(d, doc_literal_word(d, thing, "script")); sc && sc->run && sc->run->ok() && doc_literal_word(d, thing, "shape") != "sketch") {   // (a sketch's own mesh has no copies to place: doc_sketch.h)
+    } else   // (a recipe as code: each copy where the thing's script and its expressions say, on top of what its copies' values say)
+        if (const std::vector<DocScript*> scs = doc_literal_word(d, thing, "shape") != "sketch" ? doc_expressions_on(d, thing) : std::vector<DocScript*>{}; !scs.empty()) {   // (a sketch's own mesh has no copies to place: doc_sketch.h)
             Doc::Scripted& kept = d.scripted[thing];
             const double gone = doc_literal(d, thing, "begin", 0, 0), begins = doc_literal(d, thing, "start", 0, 0) - gone, clock = doc_own_time(d, thing, said, said - begins);   // (a part after a cut goes on from where it was: doc_own_clock)
-            if (kept.at != said || kept.own != clock || kept.made != doc_scripts_made(d) || (int)kept.copies.size() != n) {   // (every copy at once, the knobs read once)
-                std::map<std::string, double> numbers;
-                std::map<std::string, std::string> words;
-                for (size_t i = 0; i < sc->knobs.size(); ++i) {
-                    if (sc->knobs[i].kind == "select") {   // (not said yet: its first word)
-                        const std::string w = doc_word(d, thing, sc->names[i].c_str());
-                        words[sc->knobs[i].name] = w.empty() ? sc->knobs[i].words.substr(0, sc->knobs[i].words.find(' ')) : w;
-                    }
-                    else numbers[sc->knobs[i].name] = doc_number(d, thing, sc->names[i].c_str(), said, sc->knobs[i].usual);
-                }
-                kept.at = said, kept.own = clock, kept.made = doc_scripts_made(d);
-                numbers["duration"] = doc_literal(d, thing, "duration", 0, -1) + (doc_literal(d, thing, "duration", 0, -1) > 0.0 ? gone : 0.0);   // (how long the thing lasts: an Out ends before it)
-                numbers["round"] = d.round;   // (how long the document runs: a flow goes round a whole number of times in it, as scatter's drift did)
-                kept.copies = sc->run->copies(n, clock, numbers, words, (double)d.stage->h / std::max(1.0, doc_number(d, 0, "high", 0, 1080) * doc_point(d, thing, said)));   // (a pixel of the document, where the thing stands)
+            if (const std::string from = doc_expressions_said(d, thing); kept.at != said || kept.own != clock || kept.made != doc_scripts_made(d) || (int)kept.copies.size() != n || kept.from != from) {   // (every copy at once, the knobs read once)
+                kept.at = said, kept.own = clock, kept.made = doc_scripts_made(d), kept.from = from;
+                kept.copies = doc_expressions_lay(d, thing, scs, n, said, clock, gone);
             }
             const ScriptCopy c = copy < n ? kept.copies[(size_t)copy] : ScriptCopy{};
             out.c = c, out.by = 2;
@@ -498,7 +487,7 @@ static bool doc_fx_files(const std::vector<std::string>& list) {
 // own Directional Blur beside it on the shelf, told how far and which way the thing goes while its shutter is open
 // (doc_moment_fx.h: AbsentMotion's quick smear, styles.cpp DrawShuttered's SmearFilter).
 static std::vector<std::string> doc_fx_steps(Doc& d, int thing) {
-    std::vector<std::string> steps = doc_fx_list(d, thing);
+    std::vector<std::string> steps = doc_fx_drawn(d, doc_fx_list(d, thing));   // (its expressions are not drawn: doc_expressions.h)
     for (std::string& w : steps)
         if (std::filesystem::path(w).extension() == ".am")
             if (const DocScript* sc = doc_script_of(d, w); sc && (sc->absent == "motionblur" || sc->absent == "shutterblur")) w = (std::filesystem::path(w).parent_path() / "am_directionalblur.wgsl").string();
@@ -540,7 +529,7 @@ static bool doc_fx(Doc& d, int thing, double at, bool most, double units, DrawnF
     if ((fx.tint = (float)num("tint", 0)) > 0.f) hue("tint_black", "1b1f5c", &fx.tints[0]), hue("tint_white", "ff8a65", &fx.tints[1]);   // (a deep blue and a warm pink, as it comes)
     if ((fx.tritone = (float)num("tritone", 0)) > 0.f) hue("tritone_shadow", "1b1f5c", &fx.tones[0]), hue("tritone_midtone", "c44569", &fx.tones[1]), hue("tritone_highlight", "ffd166", &fx.tones[2]);
     {   // (in the order its list lays them; with a file among them all are laid as the camera sees it, none in its picture)
-        const std::vector<std::string> list = doc_fx_list(d, thing);
+        const std::vector<std::string> list = doc_fx_drawn(d, doc_fx_list(d, thing));   // (its expressions lay its copies, not drawn)
         int n = 0;
         for (const std::string& w : list) {
             if (doc_thor_letter(w)) continue;

@@ -73,7 +73,7 @@ struct Doc {
     std::vector<double> phys_until;     // and till when its keys have it
     bool phys_stale = true, phys_any = false;   // (the document changed since the world was last looked at; some thing has physics)
     std::string phys_made;              // all the world was made of, as the document said it then (made again only when that changes)
-    struct Scripted { double at = -1, own = -1; int made = -1; std::vector<ScriptCopy> copies; };
+    struct Scripted { double at = -1, own = -1; int made = -1; std::string from; std::vector<ScriptCopy> copies; };   // (from: the files that laid them, doc_expressions_said)
     std::map<int, Scripted> scripted;
     struct AbsentKept { double at = -1; long changes = -1; int seen = -1; std::vector<AbsentCopy> copies; };
     std::map<int, AbsentKept> absentKept;

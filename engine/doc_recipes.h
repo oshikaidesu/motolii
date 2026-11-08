@@ -331,14 +331,14 @@ static std::string doc_fx_title(const std::string& name) {
 // An effect of the thing (by its card's title) put on it again right after it, its values as they are, keys and all:
 // Alight Motion's effect card ⋮ Duplicate (AbsentMotion's EffectsPanel: a copy of the effect with its params). Its
 // word the file's with ~n before its ending ("Glow~2.fs": read as the file, fx_source), so its values are its own
-// (a value's name is its word's: doc_screen_knob). An ISF or a .wgsl file's alone. The new word ("" none).
+// (a value's name is its word's: doc_screen_knob). An ISF or a .wgsl file's, or an expression's. The new word ("" none).
 static std::string doc_fx_duplicate(Doc& d, int thing, const std::string& title) {
     std::vector<std::string> list = script_files(doc_word(d, thing, "fx"));
     const auto at = std::find_if(list.begin(), list.end(), [&](const std::string& w) { return doc_fx_title(w) == title; });
     if (at == list.end()) return d.trouble = "no effect of that name is on it", "";
     const std::string word = *at;
     const std::filesystem::path source(fx_source(word));
-    if (source.extension() != ".fs" && source.extension() != ".wgsl") return d.trouble = "only an ISF or a .wgsl effect is put on again so far", "";
+    if (source.extension() != ".fs" && source.extension() != ".wgsl" && !doc_expression(d, word)) return d.trouble = "only an ISF or a .wgsl effect or an expression is put on again so far", "";
     std::string made;
     for (int n = 2; made.empty() || std::find(list.begin(), list.end(), made) != list.end(); ++n) made = (source.parent_path() / (source.stem().string() + "~" + std::to_string(n) + source.extension().string())).string();
     list.insert(at + 1, made);
@@ -348,8 +348,8 @@ static std::string doc_fx_duplicate(Doc& d, int thing, const std::string& title)
     doc_act(d);
     bool ok = doc_say(d, thing, "fx", fx.c_str());
     if (script)
-        for (const ScriptKnob& k : script->knobs)
-            ok = ok && doc_change(d, sqlite3_mprintf("insert or replace into fact select thing, %Q, at, value, way from fact where thing = %d and name = %Q", doc_screen_knob(made, k.name).c_str(), thing, doc_screen_knob(word, k.name).c_str()));
+        for (size_t i = 0; i < script->knobs.size(); ++i)   // (from what its values are called: an expression's first, js_<knob>)
+            ok = ok && doc_change(d, sqlite3_mprintf("insert or replace into fact select thing, %Q, at, value, way from fact where thing = %d and name = %Q", doc_screen_knob(made, script->knobs[i].name).c_str(), thing, script->names[i].c_str()));
     return doc_acted(d) && ok ? made : "";
 }
 // The titles of a thing's effect cards in the order its effects are laid ("Halftone;Gaussian Blur").

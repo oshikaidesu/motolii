@@ -68,6 +68,7 @@ public:
     bool ok() const;
     const std::string& trouble() const;
     bool sketch() const;       // a p5.js sketch, run by p5.js itself (p5_stand.h)
+    bool lays() const;         // an expression: it has its own each(), each copy asked in turn (not a sketch, not a Canvalry distribution run whole)
     int most();                // how many copies it draws at once
     std::string shape();       // and of what shape, as a solid's word
     bool flat();               // a sketch that paints on a 2D canvas
