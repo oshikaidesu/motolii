@@ -177,6 +177,7 @@
 | AEのファイル103本、AEの動き | `engine/ae_test.sh`、`ae_ref.cpp`、`motion_test.sh`、`motion_test.mm`、`motion_test.json`、`motion_test3d.json`、`motion_test3d.inc` | 今の土台で動く |
 | 採点表と採点4回 | `docs/notes/AE_RUBRIC.md`、`reports/ae_rubric/round_0*.md`、`evidence.md`、`try.md` | — |
 | タスク表 | `docs/notes/TASKS.md` | — |
+| Create と Program の線引き（ホストに頼るものとパック） | `docs/notes/CREATE_PROGRAM.md` | — |
 | Motolii 自身のライセンス（Apache-2.0 か MIT を選べる、過去の倉庫 rust_ae と同じ文書） | `LICENSE-APACHE`、`LICENSE-MIT` | 決めた（10/27） |
 | 関わり方（Issue・PR・台帳と出典の決まり・知っている穴） | `CONTRIBUTING.md` | 書いた（10/27） |
 | 取ってくる物の小さなスクリプト：Filament の組み立て済み SDK（前の試しのスクリプトが使う）、MIDI ビューの PianoRollSvg.js | `engine/sdk.sh`、`engine/midi_roll.sh` | 空の所から取れることを確かめた（10/27） |
