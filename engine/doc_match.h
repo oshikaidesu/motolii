@@ -100,6 +100,7 @@ static bool doc_match(Doc& d) {
             }
     }
     for (auto& [thing, of] : told) of += doc_bends(d, thing) ? " bent=1" : " bent=0";
+    for (auto& [thing, of] : told) if (doc_fades_late(d, thing)) of += " late";   // (made again as a stagger or a second Opacity key comes or goes: its copies each drawn on their own, fx.together)
     for (auto& [thing, of] : told) if (const DocDealt g = doc_dealt(d, thing); g.group) of += " dealt=" + std::to_string(g.share());   // (made again as its group's copies come, go or change in number: its share of them, doc_copies)   // (bent or not: cut fine, or only round its curves)
     for (auto& [thing, of] : told) {   // (its effects: which are on and the room they reach, not their numbers (doc_fxing))
         const auto on = [&](const char* name) { return std::max(doc_most(d, thing, name, 0), doc_number(d, thing, name, 0, 0)) > 0.0; };
@@ -211,7 +212,7 @@ static bool doc_match(Doc& d) {
             bool connected = false;   // (a value given each copy by a behaviour: each copy its own look, not drawn in one go)
             doc_rows(d, sqlite3_mprintf("select 1 from fact where thing = %d and name glob '*_by' and value <> 0 limit 1", thing), [&](sqlite3_stmt*) { connected = true; });
             const bool faded = std::any_of(repeated.begin(), repeated.end(), [](const AbsentCopy& c) { return c.alpha < 0.999; });   // (AbsentMotion's copies fading each, a scatter field's far ones: each its own)
-            fx.together = fx.copies > 1 && (kind == "shape" || kind == "text") && colours <= 8 && !(sc && sc->clears) && !connected && !faded;   // (eight colours at most: flat.mat's ramp)
+            fx.together = fx.copies > 1 && (kind == "shape" || kind == "text") && colours <= 8 && !(sc && sc->clears) && !connected && !faded && !doc_fades_late(d, thing);   // (eight colours at most: flat.mat's ramp; none fading in turn, each as clear as its own moment)
         }
         fx.wrapWidth = (float)doc_number(d, thing, "wrap_at", 0, 0);
         const std::string split = doc_word(d, thing, "split"), script = doc_word(d, thing, "script");

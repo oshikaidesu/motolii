@@ -158,8 +158,10 @@ void _tests3() {
     FocusManager.instance.primaryFocus?.unfocus();
     await t.pumpAndSettle();
     expect([m.word(a, 'text'), m.word(b, 'text')], ['first', 'second'], reason: 'in and out of the box writes nothing stale');
-    expect(find.byWidgetPredicate((w) => w is NumField && w.id == 'v_x'), findsOneWidget); // (the inside's Transform card)
-    await seen(t, find.text('Transform').first);   // (the text box was brought into sight: its card lies under Transform's)
+    final x = find.byWidgetPredicate((w) => w is NumField && w.id == 'v_x');
+    await seen(t, x);   // (the text box was brought into sight below Transform's card, and the inspector builds only the cards in sight)
+    expect(x, findsOneWidget); // (the inside's Transform card)
+    await seen(t, find.text('Transform').first);
     await t.tap(find.text('Transform').first);
     await t.pumpAndSettle();
     expect(find.byWidgetPredicate((w) => w is NumField && w.id == 'v_x'), findsNothing, reason: 'folded, and it stays so');

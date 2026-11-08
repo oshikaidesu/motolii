@@ -490,7 +490,7 @@ static void doc_moment(Doc& d, double now) {
                                 std::any_of(absent.begin(), absent.end(), [](const AbsentCopy& c) { return c.alpha < 0.999; });
             const bool clearEach = doc_driven_by(d, thing, "opacity") != 0, pickEach = doc_driven_by(d, thing, "copy_fill_at") != 0;   // (given each copy by a behaviour)
             const double fadeTo = std::clamp(doc_number(d, thing, "copy_opacity_end", now, 1), 0.0, 1.0);   // (the last copy as clear as this, the first as the thing: After Effects' Repeater, End Opacity)
-            const bool clearLate = !sheetClear && doc_number(d, thing, "stagger", 0, 0) > 0.0 && doc_key_moments(d, thing, "opacity").size() > 1;   // (a staggered copy fades as late as it moves: GSAP's stagger takes every value of a tween, After Effects' range selector an Opacity with the rest)
+            const bool clearLate = !sheetClear && doc_fades_late(d, thing);   // (a staggered copy fades as late as it moves)
             if (ramp.size() < 2 && letters.empty() && !clears && !t.drivenLooks && !clearEach && !pickEach && fadeTo == 1 && !clearLate) doc_copy_looks_off(d, m, main);
             else {
                 auto& faces = s.engine->getRenderableManager();

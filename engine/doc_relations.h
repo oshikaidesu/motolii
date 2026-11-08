@@ -380,6 +380,11 @@ static double doc_order_delay(Doc& d, int thing, int nth, int n, const char* eac
     return each * doc_stagger_ease(d, thing, eachName, steps / most) * most;
 }
 static double doc_delay(Doc& d, int thing, int nth) { return doc_order_delay(d, thing, nth, doc_members(d, thing)); }
+// Whether a thing's copies fade each as late as they move: a stagger, and its Opacity keyed (GSAP's stagger takes every
+// value of a tween, After Effects' range selector an Opacity with the rest). Each copy is then as clear as its own moment
+// says (doc_moment), so none is drawn with the others in one go (doc_match's together).
+static std::vector<double> doc_key_moments(Doc& d, int thing, const char* name);
+static bool doc_fades_late(Doc& d, int thing) { return doc_number(d, thing, "stagger", 0, 0) > 0.0 && doc_key_moments(d, thing, "opacity").size() > 1; }
 // Where the thing it goes with is (its parent's place; none, or one not there any more: as the stage is). A 2D thing
 // going with the camera is as the stage is: it sticks to the camera already (doc_place), and would take its moves twice.
 static math::mat4 doc_above(Doc& d, int thing, double now, int deeper = 0) {

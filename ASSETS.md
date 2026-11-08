@@ -171,6 +171,7 @@
 |---|---|---|
 | 検査を全部走らせ直して記録に書く | `engine/records.sh` → `reports/ae_rubric/records/` | 今の土台で動く（約20分） |
 | 文書（置く・取り消し・間違い35個・間の行き方・開き直し・色） | `engine/check/doc.sh`、`doc_calls.txt`、`doc_wrong.txt`、`doc_ways.txt` | 今の土台で動く |
+| 集まりの決まりを書類のデータだけで（After Effects の Fade In、Cinema 4D の Effector と Falloff、CSS の cascade）：本物の舞台で撮った写しの並びで yes / NO | `engine/check/rules.sh` | 今の土台で動く（11/8、3 つとも yes） |
 | 音、動画の色、動画の時間、C からの呼び出し、間の式の突き合わせ | `engine/check/`（`sound.sh`、`video_colour.sh`、`video_time.mm`、`api.c`、`interp_twin.sh`、`solid_probe.mm`） | 今の土台で動く |
 | AEのファイル103本、AEの動き | `engine/ae_test.sh`、`ae_ref.cpp`、`motion_test.sh`、`motion_test.mm`、`motion_test.json`、`motion_test3d.json`、`motion_test3d.inc` | 今の土台で動く |
 | 採点表と採点4回 | `docs/notes/AE_RUBRIC.md`、`reports/ae_rubric/round_0*.md`、`evidence.md`、`try.md` | — |
