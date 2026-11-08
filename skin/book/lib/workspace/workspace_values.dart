@@ -159,7 +159,7 @@ Map<String, bool> _flags(Ws ws, String? id) => {
 };
 
 bool _flag(Ws ws, String? id, Map<String, bool> changed) {
-  bool looked(String k) => k.endsWith('.open') || k.endsWith('.adv') || k.endsWith('.past') || k.startsWith('fold.');   // (.past: a card let past its ends, PastRange)
+  bool looked(String k) => k.endsWith('.open') || k.endsWith('.adv') || k.endsWith('.code') || k.endsWith('.past') || k.startsWith('fold.');   // (.past: a card let past its ends, PastRange; .code: a script's code open under its knobs, script_code.dart)
   for (final e in changed.entries) {
     if (looked(e.key)) ws.view['inspector.${e.key}'] = e.value;
   }

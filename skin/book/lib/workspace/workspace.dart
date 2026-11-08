@@ -37,6 +37,8 @@ import 'top_bar.dart';
 import '../motolii.dart';
 import 'relate.dart';
 import 'ws.dart';
+import 'script_code.dart';
+import 'fx_code.dart';
 part 'workspace_seat.dart';
 part 'workspace_cards.dart';
 part 'workspace_values.dart';

@@ -380,6 +380,7 @@ class Doc extends ChangeNotifier {
   double? Function(String sum)? onSum;   // (a sum typed in a number field worked out: null, it is not one)
   void Function(List<String> names)? onCardReset;
   void Function(String title)? onCardRemove;
+  Widget? Function(String title, List<String> names)? cardCode;   // (a card's code as the host draws it, by its title and its values' names (two cards may share a title: ThorVG's Tint and an ISF Duotone): a script's, under its knobs, as After Effects' expression under its value)
   void Function(String title)? onCardEye;
   void Function(String title, List<String> names)? onCardSave;
   void Function(String title)? onCardInfo;

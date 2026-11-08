@@ -204,7 +204,10 @@ class _ProgramShelfState extends State<ProgramShelf> {
           if (!c.mem.programCode) DockChips([('All', all.length), for (final e in forms.entries) (e.key, e.value)], active: c.chip, onPick: c.pickChip),
           Expanded(
             child: c.mem.programCode && sel != null
-                ? ProgramCode(sel, () => _saved(sel), key: ValueKey(sel.file))
+                ? ProgramCode(sel.file, (text) {
+                    File(sel.file).writeAsStringSync(text);
+                    _saved(sel);
+                  }, key: ValueKey(sel.file))
                 : shown.isEmpty
                 ? DockEmpty(c.query)
                 : SingleChildScrollView(
@@ -246,30 +249,30 @@ class _ProgramShelfState extends State<ProgramShelf> {
   }
 }
 
-/// A program's code: what is typed is written to its file a moment after the last key, and told.
+/// A program's code: what is typed is given to [write] a moment after the last key (the shelf writes it over its file;
+/// a thing's script on its card writes it to the thing's own copy: ScriptCode).
 class ProgramCode extends StatefulWidget {
-  const ProgramCode(this.p, this.saved, {super.key});
-  final Program p;
-  final VoidCallback saved;
+  const ProgramCode(this.file, this.write, {super.key});
+  final String file;
+  final void Function(String text) write;
   @override
   State<ProgramCode> createState() => _ProgramCodeState();
 }
 
 class _ProgramCodeState extends State<ProgramCode> {
-  late String _written = File(widget.p.file).readAsStringSync();
+  late String _written = File(widget.file).readAsStringSync();
   late final _text = CodeLineEditingController.fromText(_written);
   Timer? _soon;
 
   void _save() {
     if (_written == _text.text) return;
-    File(widget.p.file).writeAsStringSync(_written = _text.text);
-    widget.saved();
+    widget.write(_written = _text.text);
   }
 
   @override
   void didUpdateWidget(ProgramCode old) {
     super.didUpdateWidget(old);
-    final now = File(widget.p.file).readAsStringSync();
+    final now = File(widget.file).readAsStringSync();
     if (now != _written && !(_soon?.isActive ?? false)) _text.text = _written = now;   // (written by another editor)
   }
 
@@ -299,7 +302,7 @@ class _ProgramCodeState extends State<ProgramCode> {
       selectionColor: WsT.accent.withAlpha(90),
       cursorColor: Grey.g91,
       codeTheme: CodeHighlightTheme(
-        languages: {widget.p.file.endsWith('.fs') ? 'glsl' : 'javascript': CodeHighlightThemeMode(mode: widget.p.file.endsWith('.fs') ? langGlsl : langJavascript)},
+        languages: {widget.file.endsWith('.fs') ? 'glsl' : 'javascript': CodeHighlightThemeMode(mode: widget.file.endsWith('.fs') ? langGlsl : langJavascript)},
         theme: Grey.g07.computeLuminance() > .5 ? atomOneLightTheme : atomOneDarkTheme,
       ),
     ),

@@ -151,6 +151,7 @@ class _InspectorSeatState extends State<_InspectorSeat> {
           askDockSearch();
         },
         onCardRemove: int.tryParse(l?.id ?? '') == null ? null : (title) => ws.after(title == 'Script' ? m.later('say', thing: int.parse(l!.id), name: 'script', word: '') : m.later('fx_out', thing: int.parse(l!.id), word: title), (_, _) => ws.reread()),
+        cardCode: int.tryParse(l?.id ?? '') == null ? null : (title, names) => title == 'Script' ? (m.word(int.parse(l!.id), 'script').endsWith('.js') ? ScriptCode(ws, int.parse(l.id), key: ValueKey('script-code-${l.id}')) : null) : FxCode.of(ws, int.parse(l!.id), title, names),   // (a script's code under its knobs: script_code.dart; an effect's: fx_code.dart)
         onCardEye: int.tryParse(l?.id ?? '') == null ? null : (title) => ws.after(m.later('fx_eye', thing: int.parse(l!.id), word: title), (_, _) => ws.reread()),
         onCardDuplicate: int.tryParse(l?.id ?? '') == null ? null : (title) => ws.after(m.later('fx_duplicate', thing: int.parse(l!.id), word: title), (done, why) => done ? ws.reread() : ws.notice = why),   // (Alight Motion's ⋮ Duplicate: put on again after it, its values with it)
         onCardInfo: (title) => ws.notice = m.about(title).isEmpty ? '$title: no words of its maker\'s' : '$title: ${m.about(title)}',   // (in its maker's words, as the shelf searches them)

@@ -248,6 +248,27 @@ class ValuesCard extends StatelessWidget {
           ),
           if (adv) ParamGrid('v', rest),
         ],
+        if (doc.cardCode?.call(card.name, [for (final p in card.params) p.id]) case final code?) ...[   // (its code under its knobs, folded as Advanced is: the knobs are what is used, the code what they drive)
+          Padding(
+            padding: EdgeInsets.only(top: Shape.s(4)),
+            child: Hov(
+              key: ValueKey('card-code:${card.name}'),
+              onTap: () => doc.flag('$k.code', !(doc.b['$k.code'] ?? false)),
+              builder: (_, h) => Container(
+                height: Shape.z(24),
+                decoration: BoxDecoration(border: Border(top: BorderSide(color: ed.rule))),
+                child: Row(
+                  children: [
+                    Text('Code', style: ed.labStyle(h || (doc.b['$k.code'] ?? false) ? Grey.g95 : Grey.g63)),
+                    const Spacer(),
+                    FoldMark(open: doc.b['$k.code'] ?? false, hot: h || (doc.b['$k.code'] ?? false)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (doc.b['$k.code'] ?? false) SizedBox(height: Shape.z(360), child: code),
+        ],
       ],
     );
     final shown = PastRange(flag: '$k.past', child: side == null ? sect : CardOver(child: sect)); // (a hand anywhere on the card plays its preview)

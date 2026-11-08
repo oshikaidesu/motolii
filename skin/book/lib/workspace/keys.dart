@@ -2,6 +2,7 @@
 // table, then the maker's file over it (~/.motolii/keybindings.json, a list of {"key": "cmd+shift+z", "command":
 // "edit.redo"}; a command begun with '-' takes that key from the command). Flutter's own Shortcuts and Actions carry
 // them; the menus show the same keys. While words are being typed, a key with no cmd, ctrl or alt is the words'.
+import 'package:re_editor/re_editor.dart' show CodeEditor;
 import 'dart:convert';
 import 'dart:io';
 
@@ -142,7 +143,12 @@ class WsKeys extends StatelessWidget {
 class _Command extends Action<CommandIntent> {
   _Command(this.commands);
   final Map<String, VoidCallback> commands;
-  static bool get _typing => FocusManager.instance.primaryFocus?.context?.findAncestorStateOfType<EditableTextState>() != null;
+  // (a field's, or code's: re_editor's CodeEditor takes its keys by its own DeltaTextInputClient, no EditableText under it,
+  //  and a plain key the window answers never reaches it)
+  static bool get _typing {
+    final at = FocusManager.instance.primaryFocus?.context;
+    return at?.findAncestorStateOfType<EditableTextState>() != null || at?.findAncestorWidgetOfExactType<CodeEditor>() != null;
+  }
   @override
   bool isEnabled(CommandIntent intent) => commands.containsKey(intent.name) && !(intent.plain && _typing);
   @override

@@ -180,6 +180,9 @@ abstract final class EffectTiles {
     return (all[file.startsWith('$dir/') ? file.substring(dir.length + 1) : file] as Map<String, dynamic>?) ?? const {};
   }
 
+  /// A file's stem as its values' names say it (`js_<stem>_<knob>`: doc_screen_knob).
+  static String knobStem(String file) => _stem(file);
+
   static String _stem(String file) => String.fromCharCodes([   // (byte by byte, as the inside's std::isalnum: ライ is ______)
     for (final b in utf8.encode(file.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), ''))) (b >= 48 && b <= 57) || (b >= 65 && b <= 90) || (b >= 97 && b <= 122) || b == 95 ? b : 95,
   ]);
