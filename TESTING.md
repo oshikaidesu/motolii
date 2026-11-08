@@ -146,3 +146,24 @@ cd skin/book && flutter test --no-pub external_test/accessibility_guidelines_tes
 
 - 確認：古い書類に行を直接書き、新エンジンで開いた。物1（スクリプト無し）は、同じ値で新しく作った `Repeater` と **位置が一致（差 0、7コピー × 3時刻）**。物2（`script none`、キー付きの `copy_x`、`copy_rotate_by`）は、`js_StepX` の2つのキーと way（`linear`）が残り、`_by` の行は消えた。物3（Sunflower のスクリプトと `copy_x`）は変わらない。
 - 限界：自作の確認で、書類は1つだけ。同梱の `.motolii` 23本には、移行の対象になる行が無かった。
+
+## 決めてある試験：Expression をエフェクトのカードと同じに（2026-11-09 決めた、まだ走らせていない）
+
+設計は `docs/notes/CREATE_PROGRAM.md`。期待値は2つの外から取る。**(1) 変更前のエンジン**（コミット `ed4868cf1` を組んだ物。11/8 の画素比較と同じやり方）と、**(2) After Effects のエフェクトの扱い**（Adobe「Effects and animation presets in After Effects」 https://helpx.adobe.com/after-effects/desktop/apply-effects-and-animation-presets/effects-and-animation-presets/effects-animation-presets-overview.html 。11/9 に開いて確かめた：エフェクトはリストの上から下の順に描かれる、名前をドラッグして順を変える、Effect switch で1つだけ一時的に切る、Edit › Duplicate で複製する、消しても Undo で戻る）。
+
+実装したセッションは、この表の期待値を変えない。走らせるのは、実装の文脈を持たない別のセッション。
+
+| # | 要件 | 期待値の出所 | 何を調べるか | 状態 |
+|---|---|---|---|---|
+| E1 | Expression を `fx` の列に移しても、絵は変わらない | 変更前のエンジン | 棚のレシピ（Repeater 経由の104本）、`engine/animators/` の13本（四角1つに付ける）、AE Grid/Ring/Stagger。どれも時刻 0.0・0.7・1.9 秒で、旧（`script` に付ける）と新（`fx` に付ける）を描き、PNG を `cmp` で比べる。全組一致。AE Grid/Ring/Stagger の新は「同じ頭の値の丸を作る → その丸に付ける」で比べる。感度の確認（`js_StepX` を少し変えると画素が変わること）を最初にやる | 未実行 |
+| E2 | 古い書類（`script` に式が入っている）を開くと `fx` に移り、絵は変わらない | 変更前のエンジン | 旧エンジンで E1 の場面を書類に保存する → 新エンジンで開く → その物の `script` が空で `fx` にそのファイルがあり、ノブの値・キー・way が同じ。絵は旧エンジンと `cmp` で一致 | 未実行 |
+| E3 | 目玉で1つだけ切ると、それが無いのと同じ絵になる。戻すと元の値のまま | Adobe（Effect switch）＋ 変更前のエンジン | 四角に Repeater と Spring In を付ける。Spring In を切った絵＝旧エンジンの Repeater だけの絵。Repeater を切った絵＝旧エンジンの Spring In だけの絵。切って戻した後、ノブの値・キーが切る前と同じ | 未実行 |
+| E4 | 外すと無いのと同じ絵、Undo で戻る | Adobe（Remove、Undo）＋ 変更前のエンジン | E3 の物から1つ外す → 残った方だけの旧エンジンの絵と一致。Undo → 外す前の絵と一致、値・キーも同じ | 未実行 |
+| E5 | 複製すると、同じ値・キーの物がもう1つ付く | Adobe（Edit › Duplicate） | 複製の後、`fx` に同じファイルが2つ並び、2つのノブの値・キー・way が同じ | 未実行 |
+| E6 | 並べ替えると、描く順が新しい順に従う | Adobe（上から下の順に描く、ドラッグで順を変える） | 2つ付けた物でカードをドラッグして順を入れ替える → その絵が、最初からその順で付けた書類の絵と `cmp` で一致。**2つが重なった時の結果そのもの（どちらの出力をどちらが受けるか）の期待値は、重ね方のルールが決まってから足す** | 未実行（重ね方のルール待ち） |
+| E7 | 1つの物に Expression を2つ以上付けられる | Adobe（1つのレイヤーにエフェクトが複数並ぶ） | 実窓で、Create › Expression から四角に Repeater、続けて Spring In を付ける。「It has a script already」が出ず、カードが2枚並ぶ。2枚とも目玉・⋮・Duplicate・Remove・ドラッグがある | 未実行 |
+| E8 | Expression は Create にあり、Effects 棚には無い | `docs/notes/CREATE_PROGRAM.md`（ユーザーが決めた） | 実窓で、Create に「Expression」の枠があり、Repeater・AE Grid/Ring/Stagger・13本の動きが並ぶ。Effects 棚に「Motion」が無い。Create に「Copies」の枠が無い | 未実行 |
+| E9 | Flutter のガイドラインの失敗が増えない | 上の「要件の一覧」の実行 A（Flutter 公式） | 実行 A をそのまま流す。失敗の数が 11/8 の 65・65・47・はみ出し1件より増えない | 未実行 |
+| E10 | 静的解析にエラーが無い | flutter_lints | `cd skin/book && flutter analyze --no-pub` でエラー 0 | 未実行 |
+
+- 実窓は `--dart-define=MOTOLII_BARE=true` で組む（無いと Widgetbook になる）。背景の操作では文字がこの Flutter の窓に届かないので、打つ時は全画面の操作を頼む。詳細パネルの数の上でホイールを回さない（値が変わる）。ユーザーの書類（`skin.motolii`）では試さない。

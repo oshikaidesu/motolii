@@ -6,7 +6,7 @@
 - **Program** ＝ 中で閉じているパック。物も動きもノブも、コードの中に全部ある。p5.js、Cavalry のスクリプト。
 - **AE の式は Create 側。** AE でも式はレイヤーの値に付くもので、単体では何も描かない。物に付いた式は、その物の詳細パネル（Code）にだけある。Program タブには出さない。
 - **物に付く JS は全部「Expression」と呼ぶ。** Repeater、AE Grid/Ring/Stagger、今「Motion」と呼んでいる Cavalry の Animator を1つにまとめる。どれも中身は「物の値を動かす JS」で、同じ種類の物。名前は AE 自身の呼び名で、AE を使う人がこの言葉で探す。
-- **Expression は Effects 棚に、選んでいる物に付くものとして並べる。** Create の「Copies」の枠はやめる。AE Grid/Ring/Stagger も、新しい丸を作るのをやめて、選んでいる物に付ける。
+- **Expression は Create に、選んでいる物に付くものとして並べる。** Effects 棚は wgsl・ISF のような画素の操作の置き場で、Expression は値を動かすだけで画素に触らないから。Create の「Copies」の枠を「Expression」の枠にし、Repeater・AE Grid/Ring/Stagger・今 Effects 棚にある Motion（Cavalry の Animator）をそこに入れる。AE Grid/Ring/Stagger も、新しい丸を作るのをやめて、選んでいる物に付ける。
 - **1つの物に Expression をいくつでも付けられるようにする。** AE は1つのレイヤーに式をいくつも付けられる。使う人は「並べる」と「動かす」を同時にやりたい。
 - **Expression のカードは、エフェクトのカードと同じに扱う。** 詳細パネルでは同じ見た目なのだから、重ねる・目玉で消す・⋮メニュー・複製・並べ替えが同じにできる。今は Script のカードだけ1つしか付かず、目玉も並べ替えも無い（`skin/book/lib/sets/inspector/inspector_effects.dart:159`・`:165`）。
 
