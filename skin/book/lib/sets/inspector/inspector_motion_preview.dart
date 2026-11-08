@@ -176,7 +176,6 @@ class _MotionPreviewState extends State<MotionPreview> with SingleTickerProvider
 const _pulls = <String, ({(String, bool)? across, (String, bool)? up})>{
   'Wave': (across: ('wave_x', true), up: ('wave_rotate', false)), // (how wide it sways; how far it tips)
   'Physics': (across: ('bounce', false), up: ('y', true)), // (how much it bounces; how high it falls from)
-  'Script': (across: ('js_DriftX', true), up: ('js_DriftY', true)), // (the Repeater recipe's Flow X and Y, on its Script card: how fast its copies drift, and which way)
   'Field': (across: ('field_radius', true), up: ('field_size', false)), // (how far the field reaches; how much larger it makes them)
   'Connect': (across: ('connect_reach', true), up: null), // (how near copies must be to be joined)
 };

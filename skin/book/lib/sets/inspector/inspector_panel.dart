@@ -24,7 +24,6 @@ final inspectorCards = <String, Widget Function(Fx card)>{
   'Copies': (c) => ValuesCard(c, top: const CopiesDrawing()), // (and the copies as they lie)
   'Wave': (c) => ValuesCard(c, side: const MotionPreview('Wave')), // (and a square moving as the thing will, while touched: Good Boy Ninja's Wiggle)
   'Physics': (c) => ValuesCard(c, side: const MotionPreview('Physics')), // (falling and bouncing)
-  'Script': (c) => c.params.any((p) => p.id == 'js_DriftX') ? ValuesCard(c, side: const MotionPreview('Script')) : ValuesCard(c), // (the Repeater recipe's flow: its copies drifting; the knobs of any other script are drawn as they come)
   'Field': (c) => ValuesCard(c, side: const MotionPreview('Field')), // (its copies, grown and turned as near the field as they lie)
   'Connect': (c) => ValuesCard(c, side: const MotionPreview('Connect')), // (its copies, where they lie)
   'Drop Shadow': (c) => ValuesCard(c, top: const ShadowDrawing()), // (the shadow, taken and put where it falls)
