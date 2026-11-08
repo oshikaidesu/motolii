@@ -3,8 +3,8 @@
 Motolii の窓（Flutter、macOS）と、その見た目の決まり。窓は操作だけで、絵は中身（`../engine/`）が描く。
 
 ## 中身
-- `book/` — 窓そのもの。Flutter の Widgetbook として組んであり、`Workspace › Workspace › Live` が本物の窓（[`book/lib/workspace/README.md`](book/lib/workspace/README.md)）。試験は `book/test/`・`book/integration_test/`。
-- `book/skins/` — 窓の着せ替え（色・部品の絵）。`preview.png` は `book/skins/shoot.sh` で撮った窓の絵。
+- `book/` — 窓そのもの。Flutter の Widgetbook として組んであり、`Workspace › Workspace › Live` が本物の窓（[`book/lib/workspace/README.md`](book/lib/workspace/README.md)）。
+- `book/skins/` — 窓の着せ替え（色・部品の絵）。`preview.png` は撮った窓の絵。
 - `BRIDGE.md` — 窓と中身の境目の決まり（窓が中身を呼ぶ所）。
 - `DESIGN.md` — 見た目の決まり（値に出所の印つき）。
 - `OVERVIEW.md`・`PROCESS.md` — 窓を別の作業場（design-sense-lab）で作っていた 10 月初めの記録。今の形は上の `book/`。

@@ -43,8 +43,15 @@ def tracked_once(p):   # (git has held it at some time: a place only ever on one
         ever = set(subprocess.run(['git', 'log', '--format=', '--name-only', 'HEAD'], capture_output=True, text=True).stdout.split('\n'))
     q = p.rstrip('/')
     return any(f == q or f.startswith(q + '/') or fnmatch.fnmatch(f, q) for f in ever)
+# Taken out on purpose on 2026-11-08 (the self-written checks and tests; TESTING.md): the rows that name them are records.
+REMOVED_ON_PURPOSE = ('engine/check', 'engine/records.sh', 'engine/ae_test.sh', 'engine/beam_glass_test', 'engine/beam_test.sh',
+                      'engine/flat_pop_test', 'engine/glass_live_test', 'engine/motion_test', 'engine/extrude_check',
+                      'skin/book/test', 'skin/book/integration_test', 'skin/book/dart_test.yaml', 'skin/skins/shoot.sh',
+                      'skin/book/tool/reopen_sweep.sh', 'Brewfile.checks', '.github/test_failures.py')
 def there(p):
     if glob.glob(os.path.expanduser(p)):
+        return True
+    if p.startswith(REMOVED_ON_PURPOSE):
         return True
     if not p.startswith('~') and not tracked_once(p):
         return True   # (never in git: kept on this machine only, as bridge/ or research_notes/)

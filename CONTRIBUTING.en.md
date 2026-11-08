@@ -27,12 +27,9 @@ Words in the code and the ledger: the UI is "window" (窓), the engine "the insi
 | What | Command | When it holds |
 |---|---|---|
 | The ledger (rule 2 below) | `python3 .githooks/assets_check.py` | `ASSETS.md covers all … files` |
-| The engine's checks, together (their tools: `brew bundle --file=Brewfile.checks` and `python3 -m pip install --user pillow numpy`) | `engine/check/all.sh` | `all checks held` (exit 1 if any says NO); one at a time: `engine/check/*.sh` |
-| The UI's tests | `cd skin/book && flutter test` | Tests that need the engine are skipped if it is not built |
-| The UI's code | `cd skin/book && flutter analyze lib test integration_test` | No errors (100 notices today) |
-| The first piece in the UI | `cd skin/book && flutter drive --profile -d macos --driver=test_driver/integration_test.dart --target=integration_test/first_piece_test.dart` | Writes `docs/media/window_step1..5.png` |
+| The UI's code | `cd skin/book && flutter analyze lib` | No errors (100 notices today) |
 
-GitHub Actions runs the ledger check on every push and pull request (`.github/workflows/assets.yml`; it only reports, it does not block a pull request). The whole build and the checks run in `.github/workflows/build.yml` (on an Apple silicon Mac, built as the README says, then `check/all.sh`, `flutter analyze`, `flutter test`; on pull requests that touch the code, and by hand from the Actions tab).
+GitHub Actions runs the ledger check on every push and pull request (`.github/workflows/assets.yml`; it only reports, it does not block a pull request). The whole build runs in `.github/workflows/build.yml` (on an Apple silicon Mac, built as the README says, then `flutter analyze`; on pull requests that touch the code, and by hand from the Actions tab). There are no self-written tests (they were removed on 2026-11-08: the same hands wrote the code and the tests); the external requirements are in [`TESTING.md`](TESTING.md).
 
 ## Rules
 
@@ -53,11 +50,9 @@ GitHub Actions runs the ledger check on every push and pull request (`.github/wo
 | AviUtl2 calls still missing (`obj.computeshader`, the built-in effects, …), following the references (AviUtl2's lua.txt, sashimono-edit) | `reports/aviutl2/converter_plan.md`, `engine/aviutl.cpp` | Medium–hard |
 | TSL looks on the editor's shelves | `engine/tsl/`, `reports/tsl_collection.md` | Medium |
 | English beside the headings of `ASSETS.md` | `ASSETS.md` | Easy |
-| The UI's integration tests write into `reports/`; make them use a temporary folder | `skin/book/integration_test/` | Easy |
 
 ## Known gaps
 
 - macOS on Apple silicon only.
-- The UI's tests (`flutter test`) run together in CI, and one failure stops the run. One relations test (`skin/book/test/relate_test.dart`) failed once on the CI Mac (89a16b9b3) and held on the next run (e1e7ccf55); it holds on a local Mac. Why is not known.
 - The engine (`libmotolii.dylib`) loads Homebrew's GStreamer and others, so a built `.app` does not run on another Mac as it is.
 - `engine/` mixes the current engine with earlier probes at one level; [`engine/README.md`](engine/README.md) lists which files the current build uses.

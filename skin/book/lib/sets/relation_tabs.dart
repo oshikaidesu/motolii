@@ -30,7 +30,7 @@ final _copies = <String, String>{};
 /// A copy of the try document for one way, made once a run (kept across a hot reload, so what was done stays).
 String _fresh(String way) => _copies.putIfAbsent(way, () {
   final path = '${Directory.systemTemp.createTempSync('relation_tab').path}/try.motolii';
-  File('$motoliiDir/../skin/book/test/data/relation_try.motolii').copySync(path);
+  File('$motoliiDir/../skin/book/lib/sets/relation_tabs/relation_try.motolii').copySync(path);
   return path;
 });
 

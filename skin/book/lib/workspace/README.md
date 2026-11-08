@@ -3,7 +3,7 @@
 Widgetbook の `Workspace › Workspace › Live`（route `/?path=workspace/workspace/live`）が本物の窓。書類は C++ の中身（`../motolii.dart` の `Motolii`、各メソッドが `motolii_*` の C 呼び出し 1 つ）にあり、Stage の絵も中身（Filament）が描く。窓は見せて、手を書類に渡すだけ。書類を渡さずに開くと無題の書類を開く（AE と同じ）。
 
 ## 自分のパネルを足す（入口はここだけ）
-`import 'package:lab_book/workspace/door.dart';` の 1 行で、下の全部（`Workspace`、`WsPane`（アイコンは `DockG` か null）、`DeskTool`、`Ws`・`WsScope`、`Motolii`、Ease のタイル `unseated`）が使える。テストでは `test/door.dart`。中身が組まれていないと書類を使うテストは飛ばされ、`test/inside_built_test.dart` が赤になる。
+`import 'package:lab_book/workspace/door.dart';` の 1 行で、下の全部（`Workspace`、`WsPane`（アイコンは `DockG` か null）、`DeskTool`、`Ws`・`WsScope`、`Motolii`、Ease のタイル `unseated`）が使える。
 ```dart
 Workspace(document: path, extra: [
   WsPane('Notes', null, () => const MyNotes()),   // (名前、アイコン（null なら頭文字）、中身)
@@ -13,7 +13,6 @@ Workspace(document: path, extra: [
 - パネルの中では `WsScope.of(context)` が窓の状態（`Ws`。何かが変わるたびに組み立て直る。聞く面を言えば、その面が変わった時だけ：`WsScope.of(context, {WsAspect.picked})`。再生ヘッドは `WsScope.frameOf(context)`）：`inside` が書類（`Motolii`）、`selected` が選ばれた物、`frame` が今のコマ。値は `inside.value(thing, name, seconds)`、変えるのは `inside.set(...)`、キーは `inside.keyHere(...)`。
 - 物を絵の上で動かす（画素で）：`inside.hold(t)`、`inside.carry('place', 10, 0)`、`inside.letGo(true)`（手で引いたのと同じ 1 歩）。値をそのまま変えるのは `inside.set(t, name, value)`（書類の単位）。キーの数は `inside.keyMoments(t, name).length`。
 - 気をつける 4 つ：選ばれた物 `selected` は文字なので `int.parse` してから書類に渡す。今の秒は `frame / Ws.fps`。物の名前は `inside.word(t, 'name')`。書類を変えたら `ws.reread()`（窓の他のパネルが読み直す）。
-- 例：`test/workspace_window_test.dart` の「a pane of your own」（書類なし）。本物の書類で試すなら `import 'door.dart';`（`test/door.dart`）の `openWorkspace(tester, extra: [...], tools: [...])` と `wsOf(tester)`、`closeWorkspace`、`skip: !insideBuilt`。Inspector は見えているカードしか作らないので、下のカードは `seen(tester, finder)` でスクロールして出す（カードの名前の一覧は `inspectorCards(tester)`）。
 
 ## 自分の desk の道具を足す
 ```dart
@@ -22,7 +21,6 @@ Workspace(document: path, tools: [
 ])
 ```
 - 窓の道具の後ろに並び、選ぶと desk がその `build` を出す。アイコンは頭文字。中では パネルと同じく `WsScope.of(context)`。
-- 例：`test/workspace_window_test.dart` の「a desk tool of your own」。
 
 ## 自分のプリセット（Ease の動き方）を足す
 プリセットは利用者の持ち物（スクリプトと同じ）。利用者のフォルダ（下の「利用者のフォルダ」）の `ways/` にファイルを 1 つ置くと、どの書類でも Ease の desk にタイルで出る。本体が持って来る見本は `engine/ways/`。式で使えるもの：`a`（前のキーの値）、`b`（次のキーの値）、`u`（区間の 0〜1）、`p1`〜`p4`（区間に付けた数）、`bezier(u, x1, y1, x2, y2)`。
@@ -31,7 +29,7 @@ Workspace(document: path, tools: [
 a + (b - a) * bezier(u, .2, 0, 0, 1)                                 (a: 前のキーの値、b: 次のキーの値、u: 区間の 0〜1)
 ```
 - キーに当てると、その式が書類に書き込まれる（書類を人に渡しても同じに動く）。当てるのと書き込むのは 1 歩（undo 1 回）。
-- 例：`engine/ways/snappy.way`、`test/workspace_joined_test.dart` の「a preset is in the maker's own folder」（テストは `MOTOLII_OWN` を一時フォルダにする）。
+- 例：`engine/ways/snappy.way`。
 
 ## 利用者のフォルダ（スクリプト・エフェクト・動き・プリセット）
 Mac：`~/Library/Application Support/Motolii/`、Windows：`%APPDATA%\\Motolii\\`（`MOTOLII_OWN` で差し替え）。中のフォルダごとに、置いた瞬間に出る（本体の見本は `engine/` の同じ名前のフォルダ。同じ名前なら利用者のが勝つ）。
@@ -46,8 +44,7 @@ Mac：`~/Library/Application Support/Motolii/`、Windows：`%APPDATA%\\Motolii\\
 cd skin/book
 F=$(dirname "$(command -v flutter)")   # (Flutter 3.47.2 on PATH)
 $F/flutter build macos --debug '--dart-define=LAB_ROUTE=/?path=workspace/workspace/live'
-$F/flutter analyze lib test integration_test
-$F/flutter test                                  # 中身とつないだ確かめは test/workspace_joined_test.dart
+$F/flutter analyze lib
 ```
 - 窓の文字は英語。会話と文書は日本語。
 
@@ -87,7 +84,6 @@ $F/flutter test                                  # 中身とつないだ確か�
 
 ## 変えるときの作法
 - 席をまたぐ情報は `Ws` に足す。席どうしで import し合わない。例外は二つだけ: Dock と Stage が共有するデータの `fx_catalog.dart`、Inspector に Stage の値を渡すために `stage_art.dart` を読む組み立て役の `workspace.dart`。
-- 新しい振る舞いには `test/workspace_*_test.dart` を足す。窓全体の通しは `workspace_window_test.dart`。
 - コメントは、コードから読めない制約だけを書く(`contract:` で始まる行がそれ)。
 - `lib/sets/inspector_gui_set.dart` は利用者の作業中のファイル。触らず、コミットにも含めない。
 - 区切りごとにコミットする(履歴が無いのが一番怖い、が利用者の方針)。

@@ -26,10 +26,7 @@ Motolii の窓（Flutter、`skin/book`）の見た目は、中身（書類・動
 | `lib/forms/poster.dart` | 見本：スイスの幾何学ポスター風 |
 | `lib/forms/lighttable.dart` | 見本：フィルムのライトテーブル風（外の AI が HANDOFF だけで書いた、7/10） |
 | `skins/<名前>/` | リポジトリの見本の革（labs、paper、streets、poster、lighttable） |
-| `skins/shoot.sh` | 革のフォルダを渡すと、その革を着た窓を撮って `preview.png` を書く |
 | `live.sh` | 窓を開いたまま、`lib/` の .dart を保存した瞬間に描き直す（状態は保つ） |
-| `test/skin_names_test.dart` | ROLES.md・PARTS.md と、コードが読む名前・描く印・枠が食い違ったら落ちる |
-| `integration_test/skin_fit_test.dart` | 意地悪な革・無茶な値の革・ポスターのフォームで、文字の切れ・はみ出し・タブの消失を数える（全部0が合格） |
 
 ## 3. フォームの作り方（ヘッドレス UI）
 
@@ -79,8 +76,8 @@ Motolii の窓（Flutter、`skin/book`）の見た目は、中身（書類・動
 1. `lib/forms/<名前>.dart` に `class XForms extends Forms` を書き、5つの関数を全部書く（`poster.dart` が見本、240行）。
 2. `lib/forms/forms.dart` の `forms` に `'<名前>': XForms()` を1行足し、import する。
 3. 革のフォルダの `theme.xml` に `<Forms Value="<名前>"/>` と書く（色は同じ theme.xml で）。
-4. 見る：`./live.sh` で窓を開き、View › Skin でその革を着て、フォームのファイルを保存するたびに描き直るのを見る。窓を開かずに見るなら `skins/shoot.sh skins/<名前>`（2分ほど、`preview.png`）。shoot.sh は手を乗せた時・押した時を撮らないので、そこは live.sh の窓で手で確かめる。
-5. 確かめる：`skin_fit_test.dart` の `_skins` に `'<名前>': '<Forms Value="<名前>"/>'` を足して流す（切れ0・はみ出し0）。色は文字の収まりに効かないので、書くのはフォームと書体（と Size・TextScale を変えるならそれ）だけでよい。`flutter test` で新しい落ちが無いこと（下の「落とし穴」）。
+4. 見る：`./live.sh` で窓を開き、View › Skin でその革を着て、フォームのファイルを保存するたびに描き直るのを見る。手を乗せた時・押した時は live.sh の窓で手で確かめる。
+5. 確かめる：切れ0・はみ出し0。色は文字の収まりに効かないので、書くのはフォームと書体（と Size・TextScale を変えるならそれ）だけでよい。
 
 ### 守ること
 - 大きさは `Shape.z()`、余白は `Shape.s()`、文字は `T.name()` などの `T.*` と `T.px()` を通す（革の Size・Spacing・TextScale が効くように）。
@@ -105,20 +102,18 @@ Anthropic 公式の考え方（[frontend-design スキル](https://github.com/an
 
 **値と絵の革**（置くだけで着られる）：
 
-> `skin/book/skins/README.md` と `ROLES.md` を読んで、`~/.motolii/skins/<名前>/theme.xml` に「（欲しい見た目）」の革を書いて。`skin/book/skins/shoot.sh ~/.motolii/skins/<名前>` で撮って `preview.png` を見て、直して、また撮る。読めない文字や差し色の埋もれがなくなるまで。
+> `skin/book/skins/README.md` と `ROLES.md` を読んで、`~/.motolii/skins/<名前>/theme.xml` に「（欲しい見た目）」の革を書いて。`./live.sh` で窓を開いて見て、直して、また見る。読めない文字や差し色の埋もれがなくなるまで。
 
 **フォーム**（組み立てから変える）。届く部品は §3 の表。ドックのタブそのもの（`docking` が描く）はまだ外（§7）。
 
-> `skin/book/skins/HANDOFF.md` を読んで、`lib/forms/<名前>.dart` に「（欲しい見た目）」のフォームを書き、登録して、`skin/book/skins/<名前>/theme.xml` で着る革を作って。先に色4〜6個・書体・ASCII の配置図を書いて「ありがちな所」を直してから書くこと。§3 の表の関数を全部書く（書かない関数は窓のいつもの絵のまま）。ドックのタブはまだ届かない。`skins/shoot.sh skins/<名前>` で撮って見て直す。最後に skin_fit_test に足して流して切れ0・はみ出し0を、`flutter test` で新しい落ち0を確かめる。
+> `skin/book/skins/HANDOFF.md` を読んで、`lib/forms/<名前>.dart` に「（欲しい見た目）」のフォームを書き、登録して、`skin/book/skins/<名前>/theme.xml` で着る革を作って。先に色4〜6個・書体・ASCII の配置図を書いて「ありがちな所」を直してから書くこと。§3 の表の関数を全部書く（書かない関数は窓のいつもの絵のまま）。ドックのタブはまだ届かない。`./live.sh` で窓を開いて見て直す。最後に切れ0・はみ出し0を確かめる。
 
 ## 6. 落とし穴（踏んだ物）
 
-- **テストの受け口**：integration test の中で `FlutterError.onError` を差し替えると、テスト本体の失敗まで吸い込み、途中で止まっても「合格」と出る。失敗させる前に受け口を戻す。結果は `reports/skins/fit.txt` にも書く（flutter drive の print は消えることがある）。
 - **横に流れる行に Flexible**：スクロールする Row（例：舞台の下の DeskStrip）の子に Flexible/Expanded を入れると、窓が組めずに15件落ちた。
 - **const**：`Shape.z()` などは getter なので、`const` の中では使えない。解析器の `const_*` の指摘の所の `const` を外す。
 - **ROLES.md の書き方**：`` `名前` `` と書いた物は全部「名前」として照合される。値の例は普通の文字で書く。範囲（`Clip1`〜`Clip7`）でなく全部並べる。
-- **数の範囲**：Size 0.85〜1.5、TextScale 0.85〜1.3、Spacing 0〜2、Corner 0〜10 の外は端に収める（`skin_fit_test` で決めた。外だとタブが消える・文字が切れる）。
-- **テストの基準**：`flutter test` には前から約55件の落ちがある（スキンと無関係）。変更の前後で落ちの一覧を比べ、新しい物が0かを見る。
+- **数の範囲**：Size 0.85〜1.5、TextScale 0.85〜1.3、Spacing 0〜2、Corner 0〜10 の外は端に収める（外だとタブが消える・文字が切れる）。
 - **自動の札の色**：インスペクタの自動の札は、作った時の色を覚えていた。色は描く時に読む（`Fx.toneOf`）。
 
 ## 7. まだのこと

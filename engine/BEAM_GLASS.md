@@ -16,7 +16,6 @@ visible as a change of shape.
 | File | What it is |
 |---|---|
 | `beam_glass.h` | The light. Pure C++, no renderer. Polygon beams through a convex flat-faced solid (Heckbert and Hanrahan 1984), landed on the floor as flat polygons, brightness = flux / landed area (Sikachev et al. 2008). `trace` is the slow exact reference, `trace_fast` is what a frame uses. |
-| `beam_glass_test.cpp`, `beam_test.sh` | Desk check: energy balance, agreement with rays walked one by one, fast against reference, top-view pictures `out/beam-top-*.png`. |
 | `beam_light.mat` | Draws the landed polygons (additive, no blur) with the picture's own camera into a float buffer. |
 | `floor_beam.mat` | A lit floor that adds that buffer, read by screen position. |
 | `glass_solid.mat` | The block itself: each pixel follows its sight line through the same solid and looks at the scene without the block (`backdrop`) or at the room. |
@@ -31,7 +30,6 @@ visible as a change of shape.
 ## Build and run
 
 ```sh
-./beam_test.sh                                   # desk check, no renderer
 for m in beam_light ball_light cone_walk cone_light flat_walk flat_light outline beam_soften floor_beam glass_solid shadow_only; do third_party/filament/bin/matc -a metal -p desktop -o $m.filamat $m.mat; done
 ./build_one.sh glass_beam
 ./out/glass_beam name                            # out/glass-beam-name.png (defaults: CHAMFER 0.03, DISP 10, SUNR 0.5, IBL 900, APERTURE 4.0)
@@ -214,8 +212,7 @@ again). Light and shadow, all on the GPU from tables built once: `extrude_find.m
 wall, where along it the light changes its way (up to two places, by halving), `extrude_walk.mat` works out what
 becomes of the light at five points per stretch, `extrude_strip.mat` and `extrude_cap.mat` draw strips along the
 walls and the outline's own triangles from that. `ONLY=holes`, `EXTRUDECPU=1` for the CPU twin.
-Open: no round ring (torus); not in `beam_test.sh` (`extrude_check.cpp` compares against rays but has no pass or
-fail); a third change of way on one stretch of wall is smeared and can pop; light within about 6 degrees of total
+Open: no round ring (torus); a third change of way on one stretch of wall is smeared and can pop; light within about 6 degrees of total
 reflection is dimmed away on purpose; light that leaves the solid and meets it again across a dent flies on as if
 nothing were there; the header of `beam_extrude.h` needs a long explanation, which says it is too complicated.
 

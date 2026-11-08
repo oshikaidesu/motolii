@@ -47,7 +47,7 @@ class _InspectorSeatState extends State<_InspectorSeat> {
     return true;
   }
   static const _hears = [WsAspect.document, WsAspect.picked, WsAspect.animating];   // (what the inspector shows: the picked thing's cards, Animate all)
-  void _changed() => Timeline.timeSync('inspector at a moment', _changedNow); // (named in Flutter's timeline: frames_test TRACE)
+  void _changed() => Timeline.timeSync('inspector at a moment', _changedNow); // (named in Flutter's timeline)
   void _changedNow() {
     final ws = _ws!, now = _now(ws), was = _seen;
     if (now != _seen) {

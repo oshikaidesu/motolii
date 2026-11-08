@@ -75,7 +75,7 @@ Each was checked at a different time under different conditions. A p5.js work th
 
 | You can | With | State |
 |---|---|---|
-| Apply effects shared for VJ software | ISF (`.fs`, from [ISF-Files](https://github.com/Vidvox/ISF-Files) and others) | Drop one into the effects folder and it appears in the list. 318 of ISF-Files' 327 run (`engine/check/all.sh` counts them again). 419 bundled |
+| Apply effects shared for VJ software | ISF (`.fs`, from [ISF-Files](https://github.com/Vidvox/ISF-Files) and others) | Drop one into the effects folder and it appears in the list. 318 of ISF-Files' 327 run (the check that counted them was removed). 419 bundled |
 | Apply WebGPU shaders | WGSL (`.wgsl`, including screen effects ported from three.js and others) | Applied to the whole scene. 266 bundled |
 | Paste a p5.js sketch | p5.js (copy the code, press ⌘V in the app) | It becomes a layer and stays in the Program tab. You can keyframe it and change its speed with Time Remap. Of 168 works from OpenProcessing, 97 drew a picture (counted on 1 November; checked by eye, about 16 of the first 42 looked like the original) |
 | Paste a Shadertoy shader | GLSL (copy the code, press ⌘V in the app) | A shader that draws by itself becomes a layer; one that reads `iChannel` is applied to the selected layer. Either way it stays in the Program tab. Of 300 picked at random from an API dump of 36,668, 261 drew and moved (counted in early November 2026). Of the 30 black ones, 26 wait for input such as a mouse; 9 failed to load. Time Remap is p5.js only so far |
@@ -91,7 +91,7 @@ A work's rights stay with its author. Many works on Shadertoy and OpenProcessing
 
 Also: keyframes and easing (anime.js eases work as they are), physics (Jolt), refracting glass, a camera (focal length, aperture, focus) and MP4 export. Everything that exists, and how far it was checked, is in the author's ledger [`ASSETS.md`](ASSETS.md) (Japanese).
 
-**Build check**: on a GitHub Apple silicon Mac (macos-15) it is built fresh exactly as this README says, then the engine's checks (`engine/check/all.sh`) and the UI's analyzer and tests run (the build badge above).
+**Build check**: on a GitHub Apple silicon Mac (macos-15) it is built fresh exactly as this README says, then the UI's analyzer (`flutter analyze`) runs (the build badge above). There are no self-written tests; the external requirements are in [`TESTING.md`](TESTING.md).
 
 **Speed** (M4, the 8-second example above, 1080×1920): about 4 ms a frame, no frame dropped even at 240 frames a second. Exporting the 8 seconds takes about 5 seconds, ffmpeg's encoding included. To measure again, make the example, then `printf 'time 240\n' | engine/edit.sh ~/Movies/Motolii/mv.motolii`.
 
@@ -204,8 +204,6 @@ Each tab, with pictures and how to use it: [The tabs](docs/tabs.en.md).
 5. `first.mp4` is written beside the project, and the top bar says `Written: first.mp4`.
    <img src="docs/media/window_step5.jpg" alt="5: exported" width="560">
 
-These five steps also run as a test (`skin/book/integration_test/first_piece_test.dart`, which took the pictures above).
-
 ### Add an effect from the web
 
 This is what Motolii is for. As an example, `ASCII Art.fs` from [ISF-Files](https://github.com/Vidvox/ISF-Files) (not bundled with Motolii):
@@ -217,7 +215,7 @@ This is what Motolii is for. As an example, `ASCII Art.fs` from [ISF-Files](http
 4. In the preview and in the export it looks like this (ASCII Art on a photo).
    ![ASCII Art on a photo, exported](docs/media/drop_ascii.jpg)
 
-These steps also run as a test (`skin/book/integration_test/drop_effect_test.dart`). WGSL (`.wgsl`), recipes (`.js` in `recipes/`), relations (`.js` in `relations/`), eases (`.way` in `ways/`) and AviUtl2 scripts (the author's folder as it is, in `aviutl_scripts/`) go in the same way. Check that the saved file's name ends in `.fs` (a browser may add `.txt`).
+WGSL (`.wgsl`), recipes (`.js` in `recipes/`), relations (`.js` in `relations/`), eases (`.way` in `ways/`) and AviUtl2 scripts (the author's folder as it is, in `aviutl_scripts/`) go in the same way. Check that the saved file's name ends in `.fs` (a browser may add `.txt`).
 
 p5.js and Shadertoy are pasted, not dropped: copy the work's code and press ⌘V in the app. The code stays in the Program tab.
 
@@ -327,7 +325,7 @@ The UI only takes input; the engine (`engine/`) draws. Google's Filament is down
 
 ## Contributing
 
-See [`CONTRIBUTING.en.md`](CONTRIBUTING.en.md) (building, running the checks, the rules, good first tasks), the [Code of Conduct](CODE_OF_CONDUCT.md) and [`SECURITY.md`](SECURITY.md). Issues and pull requests in English are welcome.
+See [`CONTRIBUTING.en.md`](CONTRIBUTING.en.md) (building, the rules, good first tasks), the [Code of Conduct](CODE_OF_CONDUCT.md) and [`SECURITY.md`](SECURITY.md). Issues and pull requests in English are welcome.
 
 The project's stance: **code you write yourself is a debt.** Look for an existing implementation first and use it the way its author meant; bundle other people's work as unchanged as possible, with their licence and source beside it; keep changes to upstream code as patches applied at build time; say in each commit what was borrowed from where. A lot of Motolii is still its own code today (the Flutter UI, for one); where something can be borrowed instead, the own code goes.
 
@@ -339,8 +337,7 @@ The project's stance: **code you write yourself is a debt.** Look for an existin
 | `engine/` | The engine; its entry points and the files the current build uses: [`engine/README.md`](engine/README.md) (Japanese) |
 | `engine/effects/`, `recipes/`, `relations/`, `animators/`, `ways/` | Bundled effects, recipes, relations, in/out animations and eases (the same layout as your own folder) |
 | `engine/aviutl_scripts/` | Bundled AviUtl2 scripts (per author, with LICENSE and SOURCE.txt) |
-| `engine/check/` | The engine's checks (`all.sh` runs them) |
-| `skin/book/` | The UI (Flutter, macOS); tests in `test/` and `integration_test/` |
+| `skin/book/` | The UI (Flutter, macOS) |
 | `thorvg/`, `old/` | Earlier work, kept |
 | `docs/` | This README's pictures and examples (`media/`, `examples/`) and the author's working notes (`notes/`, Japanese) |
 

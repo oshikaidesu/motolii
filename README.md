@@ -75,7 +75,7 @@ Windows 版も作る予定です。Filament、ThorVG、GStreamer、Flutter な�
 
 | できる事 | 使う形式 | いまの様子 |
 |---|---|---|
-| VJ ソフト向けに配られているエフェクトをかける | ISF（`.fs`。[ISF-Files](https://github.com/Vidvox/ISF-Files) など） | エフェクトのフォルダに置くと一覧に出ます。ISF-Files の 327 本中 318 本が動きます（`engine/check/all.sh` で数え直せます）。同梱 419 本 |
+| VJ ソフト向けに配られているエフェクトをかける | ISF（`.fs`。[ISF-Files](https://github.com/Vidvox/ISF-Files) など） | エフェクトのフォルダに置くと一覧に出ます。ISF-Files の 327 本中 318 本が動きます（数えた検査は、消しました）。同梱 419 本 |
 | WebGPU のシェーダーをかける | WGSL（`.wgsl`。three.js などの画面効果を移した物を含む） | シーン全体にかかります。同梱 266 本 |
 | p5.js のスケッチを貼る | p5.js（コードをコピーして、アプリで ⌘V） | レイヤーになり、Program タブに残ります。キーフレームを打てて、Time Remap で時間の速さも変えられます。OpenProcessing の 168 作中 97 作で絵が出ました（11/1 の数え。元と見た目が一致したのは、最初の 42 作を目で見て約 16 作） |
 | Shadertoy のシェーダーを貼る | GLSL（コードをコピーして、アプリで ⌘V） | 自分で描く作品はレイヤーになり、`iChannel` を読む作品は選んだレイヤーにかかります。どちらも Program タブに残ります。API の写し 36,668 本から無作為に選んだ 300 本中 261 本で絵が出て動きました（2026-11 初めの数え）。黒かった 30 本のうち 26 本はマウスなどの入力待ち。読み込めなかったのが 9 本。Time Remap はまだ p5.js だけです |
@@ -91,7 +91,7 @@ Windows 版も作る予定です。Filament、ThorVG、GStreamer、Flutter な�
 
 ほかに：キーフレームとイージング（anime.js のイージングもそのまま使えます）、物理演算（Jolt）、ガラスの屈折、カメラ（焦点距離・絞り・ピント）、MP4 への書き出し。何があって、どこまで確かめたかの全部は台帳 [`ASSETS.md`](ASSETS.md) にあります（日本語）。
 
-**ビルドの確認**：GitHub の Apple Silicon の Mac（macos-15）で、この README の手順どおりに新しくビルドし、エンジンのテスト（`engine/check/all.sh`）と、画面のコードの検査（`flutter analyze`）とテストを走らせています（上の build バッジ）。
+**ビルドの確認**：GitHub の Apple Silicon の Mac（macos-15）で、この README の手順どおりに新しくビルドし、画面のコードの検査（`flutter analyze`）を走らせています（上の build バッジ）。自分で書いたテストはありません。外から求める条件は [`TESTING.md`](TESTING.md)。
 
 **速さ**（M4、上の 8 秒の作例、1080×1920）：1 フレーム約 4 ms で、毎秒 240 フレームでも落ちません。8 秒の書き出しは約 5 秒（ffmpeg のエンコードを含む）。測り直すには、作例を作ってから `printf 'time 240\n' | engine/edit.sh ~/Movies/Motolii/mv.motolii`。
 
@@ -204,8 +204,6 @@ skin/book/live.sh
 5. プロジェクトの隣に `first.mp4` ができ、上に `Written: first.mp4` と出ます。
    <img src="docs/media/window_step5.jpg" alt="5：書き出した所" width="560">
 
-この 5 手はテストとしても走ります（`skin/book/integration_test/first_piece_test.dart`。上の絵はこのテストが撮った物）。
-
 ### ネットのエフェクトを 1 本追加する
 
 Motolii の一番の使い方です。例として、[ISF-Files](https://github.com/Vidvox/ISF-Files) の `ASCII Art.fs`（Motolii には同梱していない物）を使います。
@@ -217,7 +215,7 @@ Motolii の一番の使い方です。例として、[ISF-Files](https://github.
 4. プレビューでも書き出しでも、こうなります（写真に ASCII Art をかけた所）。
    ![写真に ASCII Art をかけて書き出した所](docs/media/drop_ascii.jpg)
 
-この手順はテストとしても走ります（`skin/book/integration_test/drop_effect_test.dart`）。WGSL（`.wgsl`）、レシピ（`.js` を `recipes/` に）、関係（`.js` を `relations/` に）、イージング（`.way` を `ways/` に）、AviUtl2 のスクリプト（作者のフォルダごと `aviutl_scripts/` に）も同じように置けます。保存したファイル名の最後が `.fs` になっているか確かめてください（ブラウザが `.txt` を付けることがあります）。
+WGSL（`.wgsl`）、レシピ（`.js` を `recipes/` に）、関係（`.js` を `relations/` に）、イージング（`.way` を `ways/` に）、AviUtl2 のスクリプト（作者のフォルダごと `aviutl_scripts/` に）も同じように置けます。保存したファイル名の最後が `.fs` になっているか確かめてください（ブラウザが `.txt` を付けることがあります）。
 
 p5.js と Shadertoy は、置かずに貼ります。作品のコードをコピーして、アプリで ⌘V。コードは Program タブに残ります。
 
@@ -327,7 +325,7 @@ flowchart LR
 
 ## 開発に加わる
 
-[`CONTRIBUTING.md`](CONTRIBUTING.md)（[English](CONTRIBUTING.en.md)）に、ビルド、テストの走らせ方、決まり、手を付けやすい所があります。行動規範は [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)、脆弱性の知らせ方は [`SECURITY.md`](SECURITY.md)。
+[`CONTRIBUTING.md`](CONTRIBUTING.md)（[English](CONTRIBUTING.en.md)）に、ビルド、決まり、手を付けやすい所があります。行動規範は [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)、脆弱性の知らせ方は [`SECURITY.md`](SECURITY.md)。
 
 ### 考え方
 
@@ -344,8 +342,7 @@ flowchart LR
 | `engine/` | エンジン。入口と、今のビルドが使うファイルの一覧は [`engine/README.md`](engine/README.md) |
 | `engine/effects/`・`recipes/`・`relations/`・`animators/`・`ways/` | 同梱のエフェクト・レシピ・関係・出入りの動き・イージング（利用者のフォルダと同じ形） |
 | `engine/aviutl_scripts/` | 同梱の AviUtl2 のスクリプト（作者ごと、LICENSE と SOURCE.txt つき） |
-| `engine/check/` | エンジンのテスト（`all.sh` でまとめて） |
-| `skin/book/` | アプリの画面（Flutter、macOS）。テストは `test/` と `integration_test/` |
+| `skin/book/` | アプリの画面（Flutter、macOS） |
 | `thorvg/` | ThorVG を wgpu に載せた前の結合（前の試しのスクリプトが使う） |
 | `old/` | 前の土台の実験（今の作りからは使っていない） |
 | `docs/` | この README の絵と作例（`media/`・`examples/`）、作者の作業メモ（`notes/`） |

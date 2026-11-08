@@ -16,7 +16,7 @@ extension _WsTimelineView on _WsTimelineState {
     _follow(ws.frame);
   }
 
-  void _tick(Duration e) => Timeline.timeSync('ws tick', () => _tickNow(e)); // (named in Flutter's timeline: frames_test TRACE)
+  void _tick(Duration e) => Timeline.timeSync('ws tick', () => _tickNow(e)); // (named in Flutter's timeline)
 
   void _tickNow(Duration e) {
     final ws = _ws!;

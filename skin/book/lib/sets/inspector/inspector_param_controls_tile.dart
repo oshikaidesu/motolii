@@ -54,7 +54,7 @@ class ParamTile extends StatelessWidget {
   /// is still looked at (a whole block filled was "too loud"). Each step its own colour, worn as GitHub's labels wear
   /// theirs on a dark page (Primer: the ground the colour at 0.18, the words in it): the block drawn as a duotone,
   /// Pop.well to that ground and Grey.g95 to the colour, every grey between. The colours Japan's own, picked by the
-  /// user, 11/5, of thirty tried in the window (integration_test/knob_weights_test.dart): 青磁 seiji, 撫子 nadeshiko,
+  /// user, 11/5, of thirty tried in the window: 青磁 seiji, 撫子 nadeshiko,
   /// 浅黄 usuki, from nipponcolors.com, each 6:1 or more on Pop.well.
   static int step(double? w) => w == null || w < 4 ? 0 : (w < 6 ? 1 : (w < 8 ? 2 : 3));
   static var steps = const [Color(0xFF69B0AC), Color(0xFFDC9FB4), Color(0xFFFAD689)];   // (a picture test tries others)

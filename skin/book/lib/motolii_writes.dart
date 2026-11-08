@@ -18,7 +18,7 @@ extension MotoliiWrites on Motolii {
     later('watch', word: things.join(' '));
   }
 
-  /// The stage as it is now, as a picture (.png): for a hand that sees only pictures (test/agent_window_test.dart).
+  /// The stage as it is now, as a picture (.png): for a hand that sees only pictures.
   bool still(String png) => _with([png], (s) => _still(_m, s[0])) != 0;
 
   /// The document's own picture (at its poster_at, else now), small, kept in the document with its size and length,

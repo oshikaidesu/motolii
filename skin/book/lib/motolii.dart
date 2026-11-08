@@ -21,7 +21,7 @@ part 'motolii_shelves.dart';
 part 'motolii_watch.dart';
 
 /// Where the inside lives: --dart-define=MOTOLII_DIR=/path/to/motolii/engine, or else the engine/ found going up from
-/// where it was started (flutter test runs in skin/book) or from this program (the app is built under skin/book/build/).
+/// where it was started (run from skin/book) or from this program (the app is built under skin/book/build/).
 final String motoliiDir = () {
   const given = String.fromEnvironment('MOTOLII_DIR');
   if (given.isNotEmpty) return given;

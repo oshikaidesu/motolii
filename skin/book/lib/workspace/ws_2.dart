@@ -112,7 +112,7 @@ class Ws extends ChangeNotifier {
   static final slowest = <String, Duration>{};
   static T timed<T>(String name, T Function() does) {
     final w = Stopwatch()..start();
-    final made = Timeline.timeSync(name, does); // (named in Flutter's own timeline too: frames_test TRACE)
+    final made = Timeline.timeSync(name, does); // (named in Flutter's own timeline too)
     spent[name] = (spent[name] ?? Duration.zero) + w.elapsed;
     if (w.elapsed > (slowest[name] ?? Duration.zero)) slowest[name] = w.elapsed;
     return made;
@@ -164,7 +164,7 @@ class Ws extends ChangeNotifier {
 
   /// The document's frame rate (its `frame_rate`, the stage's own), or the inside's when it says none.
   static int _fpsOf(Motolii m) => switch ((m.value(0, 'frame_rate', 0) ?? 0).round()) { > 0 && final r => r, _ => m.rate };
-  void reread() => Timeline.timeSync('ws reread', _reread); // (named in Flutter's timeline: frames_test TRACE)
+  void reread() => Timeline.timeSync('ws reread', _reread); // (named in Flutter's timeline)
   void _reread() {
     final m = _inside;
     if (m == null) return;

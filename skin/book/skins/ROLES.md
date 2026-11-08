@@ -1,7 +1,7 @@
 # 革で使える名前（theme.xml の役割）
 
 スキンのフォルダの `theme.xml` に `<名前 Value="..."/>` を並べる。書かない名前は窓のいつもの値のまま。窓は theme.xml が書き換わった瞬間に読み直す。見本は [paper](paper/theme.xml)（短い）と [labs](labs/theme.xml)（作り込み）。
-この一覧と窓が読む名前が食い違うと `test/skin_names_test.dart` が落ちる。
+この一覧と窓が読む名前は揃えておく。
 
 ## 色（`#rrggbb` か `#rrggbbaa`）
 

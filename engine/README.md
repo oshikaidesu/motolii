@@ -33,7 +33,6 @@
 | フォルダ | 中身 |
 |---|---|
 | `dawn_probe/` | Filament を WebGPU（Dawn）で組むスクリプトと、Filament・ThorVG・Dawn に当てる差分（`*.patch`） |
-| `check/` | 中身の試験。`check/all.sh` でまとめて |
 | `effects/`・`recipes/`・`animators/`・`ways/`・`looks/`・`solids/` | 同梱の効果・レシピ・動き・イーズ・ルック・形（利用者のフォルダ `~/Library/Application Support/Motolii/` と同じ形） |
 | `aviutl_scripts/` | 同梱の AviUtl2 のスクリプト |
 | `tsl/` | TSL と shaders.com の効果を取ってきて WGSL にする道具 |
