@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
-import 'dart:isolate';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart' show debugPrint, setEquals;
@@ -47,83 +46,6 @@ String get motoliiDoc {
 
 typedef _P = Pointer<c.Motolii>;
 typedef _S = Pointer<Utf8>;
-
-/// What a media file is, as the inside's GStreamer discoverer tells it, said for a hand: its size, its rate and length
-/// (a film), its kind ('' when it cannot be read). On another isolate: the call asks nothing of a document.
-final _mediaInfos = <String, Future<List<String>>>{};
-Future<List<String>> _mediaSaid(String lib, String file) => _mediaInfos[file] ??= Isolate.run(() {
-  final from = file.toNativeUtf8();
-  final said = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_media_info(from).toDartString().split(' ');
-  malloc.free(from);
-  return said;
-});
-
-/// How long a media file plays, as the discoverer tells it (0: a still, or it cannot be read).
-Future<double> mediaSecondsOf(String lib, String file) async => switch (await _mediaSaid(lib, file)) {
-  final s when s.length >= 5 => double.parse(s[3]),
-  _ => 0,
-};
-
-/// A document read without opening it (the inside's own, on another isolate): its size and length as it last kept them
-/// (Motolii.poster) and its frames a second, its picture written to [png]; null: it kept none, or it is not one.
-Future<({int wide, int high, double seconds, double rate})?> docFactsOf(String lib, String doc, String png) => Isolate.run(() {
-  final from = doc.toNativeUtf8(), to = png.toNativeUtf8();
-  final said = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_doc_properties(from, to).toDartString().split(' ');
-  malloc
-    ..free(from)
-    ..free(to);
-  return said.length < 4 ? null : (wide: int.parse(said[0]), high: int.parse(said[1]), seconds: double.parse(said[2]), rate: double.parse(said[3]));
-});
-
-Future<String> mediaInfoOf(String lib, String file) async {
-  final said = await _mediaSaid(lib, file);
-  if (said.length < 5) return '';
-  final rate = double.parse(said[2]), seconds = double.parse(said[3]);
-  return [
-    if (said[0] != '0') '${said[0]} × ${said[1]}',
-    if (rate > 0) '${rate == rate.roundToDouble() ? rate.round() : rate.toStringAsFixed(2)} fps',
-    if (seconds > 0) '${seconds.toStringAsFixed(1)} s',
-    said.skip(4).join(' '),
-  ].where((s) => s.isNotEmpty).join(' · ');
-}
-
-/// Where a film fails EA's IRIS (motolii_flashes, on another isolate; its results kept in ~/Library/Caches/Motolii/flashes):
-/// the stretches, seconds from and to, of its frames that fail, more than three flashes in a second, two to three for
-/// five seconds, or a pattern (its README; FlashResult's ExtendedFail and FlashFail, PatternResult's Fail, as its
-/// frameData.json tells each frame that does not pass). Empty: it passes. null: it was not read.
-Future<List<(double, double)>?> flashesOf(String lib, String video) async {
-  final folder = '${Platform.environment['HOME']}/Library/Caches/Motolii/flashes';
-  final written = await Isolate.run(() {
-    final from = video.toNativeUtf8(), to = folder.toNativeUtf8();
-    final said = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_flashes(from, to).toDartString();
-    malloc
-      ..free(from)
-      ..free(to);
-    return said;
-  });
-  if (written.isEmpty) return null;
-  try {
-    final frames = (jsonDecode(File('${File(written).parent.path}/frameData.json').readAsStringSync()) as Map)['NonPassFrameData'] as Map;
-    List<num> of(String k) => [...(frames[k] as List? ?? const []).cast<num>()];
-    final n = of('Frame'), luminance = of('LuminanceFrameResult'), red = of('RedFrameResult'), pattern = of('PatternFrameResult');
-    final at = [
-      for (final s in (frames['TimeStampString'] as List? ?? const []).cast<String>()) s.split(':').fold<double>(0, (a, p) => a * 60 + double.parse(p)),
-    ];
-    final fails = <(double, double)>[];
-    for (var i = 0; i < n.length; i++) {
-      if (luminance[i] < 2 && red[i] < 2 && pattern[i] < 1) continue;
-      if (fails.isNotEmpty && i > 0 && n[i - 1] == n[i] - 1 && fails.last.$2 == at[i - 1]) {
-        // (the frame before failed too: one stretch)
-        fails.last = (fails.last.$1, at[i]);
-      } else {
-        fails.add((at[i], at[i]));
-      }
-    }
-    return fails;
-  } catch (_) {
-    return null;
-  }
-}
 
 class Motolii {
   Motolii._(this._lib, this._m, this.libPath, this.home);
@@ -194,16 +116,10 @@ class Motolii {
   late final _keying = _b.motolii_keying;
   late final _dragUpdate = _b.motolii_drag_update;
   late final _put = _b.motolii_put;
-  late final _create = _b.motolii_create;
-  late final _spent = _b.motolii_spent;
   late final _effect = _b.motolii_effect;
-  late final _easingAt = _b.motolii_easing_at;
   late final _kindOf = _b.motolii_kind_of;
   late final _together = _b.motolii_together;
-  late final _frames = _b.motolii_frames;
-  late final _cacheRuns = _b.motolii_cache;
   late final _error = _b.motolii_error;
-  late final _list = _b.motolii_list;
   late final _still = _b.motolii_still;
   late final _close = _b.motolii_close;
 
@@ -220,17 +136,7 @@ class Motolii {
   /// The names of the values that change what cards a thing has (and its name): the inside's own rule, asked once.
   late final Set<String> shaping = _shaping(_m).toDartString().split(' ').toSet();
 
-  late final _mark = _b.motolii_mark;
-
-  late final _guide = _b.motolii_guide;
-
   final _shownOf = <String, Shown?>{}; // (read out of the things' parts once a picture of the document)
-
-  /// The window's thread watched: while on, a change it waits for, or a read that waits on the document over 2 ms, is
-  /// kept; [broken] says each, one to a line ('' none). Turned on, what was kept is forgotten.
-  late final _watch = _b.motolii_watch;
-  late final _broken = _b.motolii_broken;
-  late final _brokenCount = _b.motolii_broken_count;
 
   late final _fontLacks = _b.motolii_font_lacks;
 

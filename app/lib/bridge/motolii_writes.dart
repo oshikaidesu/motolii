@@ -2,12 +2,6 @@
 part of 'motolii.dart';
 
 extension MotoliiWrites on Motolii {
-  /// The desk: the stage pane's whole picture, [w] x [h] pixels, the stage lying at [x], [y] (its top left) [scale]
-  /// pixels a point, what lies off it seen round it, the picked thing marked over it ([point]: pixels a point of the
-  /// screen) (later: desk). [w] 0: off, the stage's own picture again.
-  int desk(int w, int h, double x, double y, double scale, double point) =>
-      later('desk', word: '$w $h $x $y $scale $point'); // (a ticket: [answer] says when the desk's picture exists)
-
   /// The thing picked in the window and the one under its hand (0: none): the desk marks them (later: pick).
   void pick(int layer, int hover) => later('pick', layer: layer, number: hover.toDouble());
 
@@ -23,7 +17,7 @@ extension MotoliiWrites on Motolii {
   bool still(String png) => _with([png], (s) => _still(_m, s[0])) != 0;
 
   /// The document's own picture (at its poster_at, else now), small, kept in the document with its size and length,
-  /// for a list of documents to read without opening it (docFactsOf); written to [png] too.
+  /// written to [png] too.
   bool poster(String png) => _with([png], (s) => _b.motolii_poster(_m, s[0])) != 0;
 
   /// The document and the files its things are made of copied into [folder] (the document as [name].motolii), to be
@@ -78,13 +72,6 @@ extension MotoliiWrites on Motolii {
   /// if it has keys, else the value that stays); a key there holding what it is; its keys gone; and how it is keyed
   /// at that moment (0 no keys, 1 keys but none there, 2 a key there).
   bool put(int layer, String name, double at, double number) => _took(_with([name], (s) => _put(_m, layer, s[0], at, number)) != 0);
-
-  bool mark(double at, String word) => _took(_with([word], (s) => _mark(_m, at, s[0])) != 0);
-
-  bool guide(String axis, double at, bool on) => _took(_with([axis], (s) => _guide(_m, s[0], at, on ? 1 : 0)) != 0);
-
-  /// A recipe made at the present moment, as one step: the new thing (0: not made, [trouble] says why).
-  int create(String script) => _took(_with([script], (s) => _create(_m, s[0])));
 
   /// An effect put on a thing at a moment, or taken off if it is on (its keys too), one step.
   bool effect(int layer, String name, double at) => _took(_with([name], (s) => _effect(_m, layer, s[0], at)) != 0);

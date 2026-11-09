@@ -54,6 +54,19 @@ OWED = {
     'motolii_midi',
     'motolii_midi_bpm',
     'motolii_loop',
+    # A film's length, a document's facts, the flash check, guides, marks, a recipe, and the watch counters: nothing asks.
+    'motolii_media_info',
+    'motolii_doc_properties',
+    'motolii_flashes',
+    'motolii_cache',
+    'motolii_list',
+    'motolii_spent',
+    'motolii_watch',
+    'motolii_broken',
+    'motolii_broken_count',
+    'motolii_guide',
+    'motolii_create',
+    'motolii_mark',
 }
 SAY = 'nothing in the window reaches this; wire it to a menu/dock/card or delete it'
 IDENT = re.compile(r'[A-Za-z_$][\w$]*')

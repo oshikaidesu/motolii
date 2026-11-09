@@ -29,9 +29,6 @@ extension MotoliiDocument on Motolii {
   /// The moments of a value's keys (none if the value stays): how many keys it has is their count.
   List<double> keyTimes(int layer, String name) => Motolii._numbers((_of(layer)['keyTimes'] as Map<String, dynamic>?)?[name]);
 
-  /// What each of a value's keys holds, in the order of [keyMoments].
-  List<double> keyValues(int layer, String name) => Motolii._numbers((_of(layer)['keyValues'] as Map<String, dynamic>?)?[name]);
-
   /// What the document's steps changed since last asked (asking forgets them): whether a thing came or went, and each
   /// value changed as (thing, name), from each step's own changeset.
   ({bool layers, Set<(int, String)> values}) changes() {
@@ -60,34 +57,10 @@ extension MotoliiDocument on Motolii {
     _ => (0, 0),
   };
 
-  /// The work area, in seconds: the stretch played round and written as a film (not said: all of it); a change is a step.
-  (double, double) get work => switch (_document['work']) {
-    [final num a, final num b] => (a.toDouble(), b.toDouble()),
-    _ => (0.0, 0.0),
-  };
-
   /// The marks: moments with a name, in time; a mark said with '' is taken away.
   List<(double, String)> get marks => [
     for (final line in ((_document['marks'] as String?) ?? '').split('\n'))
       if (line.indexOf(' ') case final i when i > 0) (double.parse(line.substring(0, i)), line.substring(i + 1)),
-  ];
-
-  /// The window's choices kept with the document, not steps of it (asked later: setting): each by its name.
-  Map<String, String> get settings => {
-    for (final line in ((_document['settings'] as String?) ?? '').split('\n'))
-      if (line.indexOf(' ') case final i when i > 0) line.substring(0, i): line.substring(i + 1),
-  };
-
-  /// The marks that have a colour: the moment of each to its colour, 1 to 16 (the label colours).
-  Map<double, int> get markColors => {
-    for (final line in ((_document['markColours'] as String?) ?? '').split('\n'))
-      if (line.indexOf(' ') case final i when i > 0) double.parse(line.substring(0, i)): int.parse(line.substring(i + 1)),
-  };
-
-  /// The guides: lines across the picture, 'x' upright and 'y' level, at so many points from its left or top.
-  List<(String, double)> get guides => [
-    for (final line in ((_document['guides'] as String?) ?? '').split('\n'))
-      if (line.length > 2) (line[0], double.parse(line.substring(2))),
   ];
 
   /// Whether the stage is the size the document says now (not, after [resize] or an undo of one: open it again).
@@ -127,31 +100,6 @@ extension MotoliiDocument on Motolii {
   /// The words a value of a thing may be (a blend's): none if any word will do, or the thing has no such value.
   List<String> words(int layer, String name) => Motolii._spaced((_of(layer)['words'] as Map<String, dynamic>?)?[name]);
 
-  /// The ways a stretch may go, as the document says them: the nine kinds with their numbers, the named ones, and
-  /// each defined here ('; defined here: Snappy').
-  String get easings => (_document['easings'] as String?) ?? '';
-
-  /// The effects a thing may be given, by name, with the value that puts each on (the Effects shelf); its card shows
-  /// while it is on ([cards]).
-  List<(String, String)> get layerEffects => _labelled((_document['effectNames'] as String?) ?? '');
-
-  List<String> get easingNames => Motolii._spaced(_document['easingNames']);
-
-  double easingAt(String easing, double u) {
-    // (a way of the document's, by its curve in the picture; one said with its numbers, by the inside's own reckoning, which asks nothing of the document)
-    if ((_document['easingCurves'] as Map<String, dynamic>?)?[easing] case final List<dynamic> c when c.length > 1) {
-      final at = u.clamp(0.0, 1.0) * (c.length - 1), i = at.floor().clamp(0, c.length - 2), f = at - i;
-      return (c[i] as num).toDouble() * (1 - f) + (c[i + 1] as num).toDouble() * f;
-    }
-    return _with([easing], (s) => _easingAt(_m, s[0], u));
-  }
-
-  /// Every stretch of a thing's keyed values: from, to (seconds), its way, as the inside says them (a timeline draws how each goes).
-  List<(double, double, String)> layerStretches(int layer) => [
-    for (final l in ((_of(layer)['stretches'] as String?) ?? '').split('\n'))
-      if (l.split('\t') case [final a, final b, final w]) (double.parse(a), double.parse(b), w),
-  ];
-
   /// The way of the stretch that begins at a value's key, as it is said ('': no key there).
   String easingOf(int layer, String name, double at) {
     final keys = keyTimes(layer, name), easings = (_of(layer)['keyEasings'] as Map<String, dynamic>?)?[name] as List<dynamic>?;
@@ -165,9 +113,6 @@ extension MotoliiDocument on Motolii {
 
   /// Points of the picture to one unit of the stage, at z 0.
   double get point => (_document['point'] as num?)?.toDouble() ?? 1;
-
-  /// How long the document has been worked on, in whole seconds (Alight Motion's Total Edit Time: doc_edited).
-  int get edited => ((_document['edited'] as num?) ?? 0).round();
 
   /// How a hand reads a thing's value, as the inside says it: shown = value x times + from (places in points of the
   /// picture from its top left, shares in hundredths...). Asked once a thing and a name.

@@ -25,10 +25,4 @@ extension MotoliiShelves on Motolii {
 
   /// What kind of thing a file makes ('': none).
   String kindOf(String file) => _with([file], (s) => _kindOf(s[0]).toDartString());
-
-  /// Name and file from the inside's tab-separated list. The later columns were the shelf's labels and pictures.
-  List<(String, String)> _labelled(String lines) => [
-    for (final w in [for (final l in lines.split('\n')) l.split('\t')])
-      if (w.length >= 2 && w[0].isNotEmpty) (w[0], w[1]),
-  ];
 }

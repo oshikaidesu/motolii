@@ -36,19 +36,6 @@ double _unshown(Motolii m, int t, String n, double x) {
 //  not waited for while it tells the stage a moment the playhead has just been put at)
 double _drawn(Ws ws) => ws.inside?.renderedAt ?? ws.frame / Ws.fps;
 
-/// Joined: only where a thing is, how large and how turned (the inspector's properties), as the stage's readout shows them:
-/// not the cards' hundreds of numbers [wsTransform] reads.
-Map<String, double> wsPlace(Ws ws, String id) {
-  final m = ws.inside, t = int.tryParse(id);
-  if (m == null || t == null) return const {};
-  final at = _drawn(ws);
-  double r1(double x) => (x * 10).roundToDouble() / 10 + 0;
-  return {
-    for (final n in const ['x', 'y', 'scale_y', 'rotate'])
-      n: r1(_shown(m, t, n, (n == 'x' || n == 'y' ? m.shows(t, n, at)?.$1 : null) ?? m.value(t, n, at) ?? (n == 'scale_y' ? 1 : 0))),
-  }; // (where it shows)
-}
-
 /// The selected layer's transform as the stage draws it at this frame, in the Inspector's ids.
 Map<String, double> wsTransform(Ws ws, String? id) {
   if (ws.inside case final m?) {

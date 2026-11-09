@@ -7,7 +7,7 @@
 | 場所 | 中身 |
 |---|---|
 | `workspace.dart` | 画面の全体（`Workspace`）：上のバー、パネルの並び、プロジェクトを開く。部品（part）は `inspector_feed/` と `commands/menu_bar.dart` |
-| `state/` | どのパネルも読むアプリの状態。`state.dart` が入口（レイヤー `WsLayer`、種類の色 `wsTone`）、`window.dart` に `Ws`、`scope.dart` に `WsScope`、`picked.dart` 選ばれた物、`panel_header.dart` パネルの枠 |
+| `state/` | どのパネルも読むアプリの状態。`state.dart` が入口（レイヤー `WsLayer`）、`window.dart` に `Ws`、`scope.dart` に `WsScope`、`picked.dart` 選ばれた物、`panel_header.dart` パネルの枠 |
 | `window/` | ウィンドウの枠：`panes.dart` パネルの並び（pub の `docking`）、`zoom.dart` 画面全体の拡大、`settings_file.dart` `~/.motolii/window.xml`（倍率と着ているスキン） |
 | `commands/` | 名前の付いた操作と、それを言うキー・メニュー：`keymap.dart` キーの表（VS Code の keybindings.json の形）、`command_actions.dart` 各操作がアプリの状態にすること（キーは Ableton Live 12 の表から）、`menu_bar.dart` メニューバー |
 | `edits/` | 関係の種類 `wsRelations`（`make_relation.dart`）と、キーフレームの移動・削除・コピー（`keyframe_edits.dart`） |
@@ -68,7 +68,6 @@ $F/flutter analyze lib
 - 値は `WsT`(アプリ)と `Pop`(Inspector、`lib/inspector/inspector_parts.dart`)と `Grey` / `T`(`lib/skin/tokens.dart`)から取る。**数値を直書きしない**。
 - 箱(パネル・カード)は四角く、隙間なく並べる(間は `WsT.gutter` の暗い線)。触る物と読む物(欄・チップ・ボタン)は丸い。
 - 色は平らで不透明。アクセントはライム 1 色(`#B3C66B`、上の文字は `#15170D`)。再生ヘッドもアクセント。
-- レイヤーの種類ごとに色を 1 つ(`wsTone`)。Timeline のバー、Dock、Stage で同じ色を使う。
 
 ## カラーテーマ(Dark / Light)
 - 上のバーの半円ボタン(key `ws-shade`)で切り替える。`Grey.shade`(`ValueNotifier<Shade>`)を反転して `reassembleApplication()` でアプリ全体を建て直す。State は残るので編集中の内容は消えない。
@@ -76,7 +75,6 @@ $F/flutter analyze lib
 - `Grey` は `N` と同じ名前の段を持つ。役割(地・パネル・カード・欄・線・控えめな文字・文字)は両テーマで同じで、明るさだけが逆になる。Light ではカードが一番明るく、文字が一番暗い。
 - テーマで変わる色は `const` にできない。`static const` / トップレベルの `final` / 引数の既定値に `Grey` や `WsT.body` などを置かず、getter か `Color?` + `?? Grey.xx` にする(`final` に入れると最初の色のまま固まる)。
 - アクセントは塗りなら `WsT.accent` / `Pop.accent`。**線や文字として地の上に描くときは `accentInk`**(Light ではライムが白に溶けるので濃いオリーブ)。再生ヘッドの線は `accentInk`、頭の札は `accent`。
-- 種類の色(`tone*`)はテーマで変えない。
 - `T.name()` などの文字色の既定は `Grey` から取る。暗すぎる・薄すぎる文字の補正(`T._floor`)もテーマごとに向きが逆。
 
 ## 決まっていること(利用者の裁定)

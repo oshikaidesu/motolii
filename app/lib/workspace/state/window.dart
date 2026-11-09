@@ -112,12 +112,6 @@ class Ws extends ChangeNotifier {
     rev++;
     reads++;
     duration = Timeline.timeSync('MARK seconds', () => (m.seconds * fps).round().clamp(1, 1 << 20));
-    wsChosenLabels
-      ..clear()
-      ..addAll({
-        for (final t in m.layers)
-          if (m.words(t, 'label').indexOf(m.word(t, 'label')) case final i when i > 0) '$t': i - 1,
-      });
     final tl = TimelineTask()..start('MARK layers');
     final holding = {for (final t in m.layers) (m.value(t, 'parent', 0) ?? 0).round()}; // (who has things going with it)
     layers
@@ -143,16 +137,7 @@ class Ws extends ChangeNotifier {
               from,
               _outF(from, lasts),
               keys,
-              parent: switch ((m.value(t, 'parent', 0) ?? 0).round()) {
-                > 0 && final p => '$p',
-                _ => null,
-              },
-              lined: (kind == 'picture' || kind == 'solid') && m.values(t).any((n) => n.startsWith('js_line_')),
-              hidden: (m.value(t, 'visible', 0) ?? 1) < .5,
               solo: (m.value(t, 'solo', 0) ?? 0) > .5,
-              locked: (m.value(t, 'lock', 0) ?? 0) > .5,
-              clipped: (m.value(t, 'clip', 0) ?? 0) > .5,
-              stretches: [for (final (a, b, way) in m.layerStretches(t)) (from: (a * fps).round(), to: (b * fps).round(), way: way, shape: easeCurve(way, m))],
             );
           }(),
       ]);

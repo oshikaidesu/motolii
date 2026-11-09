@@ -4,25 +4,6 @@ part of 'motolii.dart';
 extension MotoliiWatch on Motolii {
   String get error => _error(_m).toDartString();
 
-  String get list => _list(_m).toDartString();
-
   /// How many pictures a second a film written of the document has: what a frame is.
   int get rate => _rate(_m);
-
-  int get frames => _frames(_m); // (how many pictures the live stage has drawn: motolii_frames)
-
-  /// The stage's pictures kept on disk for playing, as stretches of frames [from, to) (motolii_cache).
-  List<(int, int)> get cache {
-    final n = _cacheRuns(_m).toDartString().split(' ').where((w) => w.isNotEmpty).map(int.parse).toList();
-    return [for (var i = 0; i + 1 < n.length; i += 2) (n[i], n[i + 1])];
-  }
-
-  /// What the inside's hand has spent its time on (for measuring).
-  String get spent => _spent(_m).toDartString();
-
-  void watch(bool on) => _watch(_m, on ? 1 : 0);
-
-  String get broken => _broken(_m).toDartString();
-
-  int get brokenCount => _brokenCount(_m); // (how many times since watched: read without waiting)
 }

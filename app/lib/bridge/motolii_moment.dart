@@ -50,9 +50,6 @@ extension MotoliiMoment on Motolii {
     return v == null ? null : ((v[0] as num).toDouble(), v[1] as bool);
   }
 
-  /// A camera as the working eye sees it, the inside's words (doc_gizmo); '': by the camera's own eye.
-  String gizmo(int layer) => _momentOf(layer)?['gizmo'] as String? ?? '';
-
   /// A thing's frame on the picture at the stage's moment: its middle (x, y), how wide, how high (points of the picture,
   /// from the top left), how far it is turned (degrees, clockwise as seen), the point it turns about (x, y), and how deep
   /// it is (0: flat). null: not shown.
@@ -60,22 +57,4 @@ extension MotoliiMoment on Motolii {
     final List<dynamic> f => Motolii._numbers(f),
     _ => null,
   };
-
-  /// What of a thing is seen: the upright box of its outline on the picture (points from the top left). null: not shown.
-  Rect? seen(int layer) => switch (_momentOf(layer)?['seen']) {
-    final List<dynamic> b => Rect.fromLTRB((b[0] as num).toDouble(), (b[1] as num).toDouble(), (b[2] as num).toDouble(), (b[3] as num).toDouble()),
-    _ => null,
-  };
-
-  /// A path shape's points where the picture shows them (the picked thing's; its handles not); empty: none.
-  List<Offset> points(int layer) {
-    final p = Motolii._numbers(_momentOf(layer)?['points']);
-    return [for (var i = 0; i + 1 < p.length; i += 2) Offset(p[i], p[i + 1])];
-  }
-
-  /// Its curves' handles the same way, each with the point it is the handle of.
-  List<(Offset, Offset)> handles(int layer) {
-    final h = Motolii._numbers(_momentOf(layer)?['handles']), of = Motolii._numbers(_momentOf(layer)?['of']);
-    return [for (var i = 0; i + 1 < h.length; i += 2) (Offset(h[i], h[i + 1]), i + 1 < of.length ? Offset(of[i], of[i + 1]) : Offset(h[i], h[i + 1]))];
-  }
 }

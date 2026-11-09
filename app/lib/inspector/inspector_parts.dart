@@ -82,15 +82,8 @@ class Pop extends InheritedWidget {
   static double get tileGap => Shape.s(4);
   static double get tilePad => Shape.s(8);
 
-  /// Each card wears its kind as a colour, so a folded stack reads by hue before it reads by word.
-  /// The layer's own cards are muted; effects are saturated, since they are the ones that pile up.
+  /// A card's name, one colour.
   static Color get toneLayer => ColorTheme.of('ToneLayer', const Color(0xFF9AA4B2));
-  static Color get toneBlend => ColorTheme.of('ToneBlend', const Color(0xFF7FB8B0));
-
-  static Color get tonePlace => ColorTheme.of('TonePlace', const Color(0xFFF08A5D));
-  static Color get toneTextAnim => ColorTheme.of('ToneTextAnim', const Color(0xFFE8C76A));
-  static Color get toneTime => ColorTheme.of('ToneTime', const Color(0xFFE58FB4));
-  static Color get toneLayout => ColorTheme.of('ToneLayout', const Color(0xFF7C9CBF));
   @override
   bool updateShouldNotify(Pop old) => false;
 }

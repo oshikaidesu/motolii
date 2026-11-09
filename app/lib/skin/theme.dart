@@ -150,10 +150,4 @@ abstract final class ColorTheme {
     for (final m in RegExp(r'<(\w+)\s+Value="#([0-9a-fA-F]{6})([0-9a-fA-F]{2})?"\s*/>').allMatches(xml))
       m.group(1)!: Color(int.parse('${m.group(3) ?? 'ff'}${m.group(2)}', radix: 16)),
   };
-
-  /// A theme file of these roles (the form at the top of this file), as the window writes its own (a maker copies one and changes the colours).
-  static String write(Map<String, Color> all) {
-    String hex(Color c) => [c.r, c.g, c.b, c.a].map((v) => (v * 255).round().toRadixString(16).padLeft(2, '0')).join();
-    return '<?xml version="1.0" encoding="UTF-8"?>\n<Motolii>\n\t<Theme>\n${[for (final e in all.entries) '\t\t<${e.key} Value="#${hex(e.value)}"/>'].join('\n')}\n\t</Theme>\n</Motolii>\n';
-  }
 }
