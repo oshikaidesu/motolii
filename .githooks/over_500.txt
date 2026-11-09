@@ -3,7 +3,6 @@
 591 app/lib/inspector/controls/inspector_number_field_num_field_state.dart
 515 app/lib/workspace/dock/dock_effects.dart
 600 app/lib/workspace/dock/dock_fonts.dart
-691 app/lib/workspace/dock/dock_make_colours.dart
 605 app/lib/workspace/dock/dock_parts.dart
 649 app/lib/workspace/shelf/effect_tiles.dart
 582 app/lib/workspace/stage/stage.dart
