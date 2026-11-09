@@ -260,7 +260,9 @@ struct Script::Own {
     bool sketch = false;   // a p5.js sketch (p5_stand.h)
     FilmRead film;         // what its createCapture and createVideo see
     std::vector<SketchLine> lines;   // its lines that draw
+    JSAtom said[12] = {};  // the names each() says a copy by, made atoms once (JS_GetPropertyStr makes and frees one at every read: quickjs-ng quickjs.c)
 };
+static const char* const script_copy_names[12] = {"x", "y", "z", "size", "rotate", "rotate_x", "rotate_y", "colour", "opacity", "scale_x", "scale_y", "scale_z"};
 
 Script::Script(const std::string& file, const std::string& p5, const std::string& film) : own(new Own) {
     std::ifstream in(file);
@@ -357,6 +359,7 @@ Script::Script(const std::string& file, const std::string& p5, const std::string
 Script::~Script() {
     if (!own->cx) return;
     JS_FreeValue(own->cx, own->each), JS_FreeValue(own->cx, own->knobs);
+    for (JSAtom a : own->said) if (a != JS_ATOM_NULL) JS_FreeAtom(own->cx, a);
     JS_FreeContext(own->cx), JS_FreeRuntime(own->rt);
 }
 bool Script::ok() const { return own->trouble.empty(); }
@@ -494,12 +497,13 @@ ScriptCopy Script::ask(int i, int n, double t) {   // (each(), the knobs as last
         JS_FreeCString(cx, s), JS_FreeValue(cx, e);
         return c;
     }
-    const auto read = [&](const char* name, double& to) {
-        JSValue v = JS_GetPropertyStr(cx, out, name);
-        if (JS_IsNumber(v)) JS_ToFloat64(cx, &to, v);
+    if (own->said[0] == JS_ATOM_NULL) for (int k = 0; k < 12; ++k) own->said[k] = JS_NewAtom(cx, script_copy_names[k]);
+    double* const to[12] = {&c.x, &c.y, &c.z, &c.size, &c.rotate, &c.rotate_x, &c.rotate_y, &c.colour, &c.opacity, &c.scale_x, &c.scale_y, &c.scale_z};
+    for (int k = 0; k < 12; ++k) {
+        JSValue v = JS_GetProperty(cx, out, own->said[k]);
+        if (JS_IsNumber(v)) JS_ToFloat64(cx, to[k], v);
         JS_FreeValue(cx, v);
-    };
-    read("x", c.x), read("y", c.y), read("z", c.z), read("size", c.size), read("rotate", c.rotate), read("rotate_x", c.rotate_x), read("rotate_y", c.rotate_y), read("colour", c.colour), read("opacity", c.opacity), read("scale_x", c.scale_x), read("scale_y", c.scale_y), read("scale_z", c.scale_z);
+    }
     JS_FreeValue(cx, out);
     return c;
 }

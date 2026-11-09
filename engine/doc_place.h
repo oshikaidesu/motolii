@@ -7,6 +7,21 @@ static double doc_scale_z(Doc& d, int thing, double now) {
 // Where a recipe, or a MIDI file's notes, lay copy `copy` of `n` of a thing (by 0: neither; 1: a MIDI file's note, 2: a recipe's each()): its place, turn and size.
 // Asked first, so that what a falloff weighs and what a wave's noise reads is where the copy lies; the turn and size are put on after the wave, as they were.
 struct DocLaid { ScriptCopy c; int by = 0; };
+// What lays a thing's copies, and AbsentMotion's motions on it: the same for each copy, so while a moment is told
+// (d.telling: the document does not change meanwhile) asked once for the thing, as its talls are; else asked as it is.
+static std::vector<DocScript*> doc_placing_scs(Doc& d, int thing) {
+    const auto ask = [&] { return doc_literal_word(d, thing, "shape") != "sketch" ? doc_expressions_on(d, thing) : std::vector<DocScript*>{}; };
+    if (!d.telling) return ask();
+    Doc::Placing& kept = d.placing[thing];
+    if (!kept.laid) kept.laid = true, kept.scs = ask(), kept.from = kept.scs.empty() ? "" : doc_expressions_said(d, thing);
+    return kept.scs;
+}
+static std::vector<AbsentEffect> doc_placing_absent(Doc& d, int thing, double said) {
+    if (!d.telling) return doc_absent_on(d, thing, said);
+    Doc::Placing& kept = d.placing[thing];
+    if (kept.absentAt != said) kept.absentAt = said, kept.absent = doc_absent_on(d, thing, said);
+    return kept.absent;
+}
 static DocLaid doc_laid(Doc& d, int thing, int copy, int n, double said) {
     DocLaid out;
     if (const std::string notes = doc_literal_word(d, thing, "script"); std::filesystem::path(notes).extension() == ".mid") {   // (a MIDI file's notes, copies: midi.h)
@@ -22,10 +37,10 @@ static DocLaid doc_laid(Doc& d, int thing, int copy, int n, double said) {
         const ScriptCopy c = copy < n ? kept.copies[(size_t)copy] : ScriptCopy{};
         out.c = c, out.by = 1;
     } else   // (a recipe as code: each copy where the thing's script and its expressions say, on top of what its copies' values say)
-        if (const std::vector<DocScript*> scs = doc_literal_word(d, thing, "shape") != "sketch" ? doc_expressions_on(d, thing) : std::vector<DocScript*>{}; !scs.empty()) {   // (a sketch's own mesh has no copies to place: doc_sketch.h)
+        if (const std::vector<DocScript*> scs = doc_placing_scs(d, thing); !scs.empty()) {   // (a sketch's own mesh has no copies to place: doc_sketch.h)
             Doc::Scripted& kept = d.scripted[thing];
             const double gone = doc_literal(d, thing, "begin", 0, 0), begins = doc_literal(d, thing, "start", 0, 0) - gone, clock = doc_own_time(d, thing, said, said - begins);   // (a part after a cut goes on from where it was: doc_own_clock)
-            if (const std::string from = doc_expressions_said(d, thing); kept.at != said || kept.own != clock || kept.made != doc_scripts_made(d) || (int)kept.copies.size() != n || kept.from != from) {   // (every copy at once, the knobs read once)
+            if (const std::string from = d.telling ? d.placing[thing].from : doc_expressions_said(d, thing); kept.at != said || kept.own != clock || kept.made != doc_scripts_made(d) || (int)kept.copies.size() != n || kept.from != from) {   // (every copy at once, the knobs read once)
                 kept.at = said, kept.own = clock, kept.made = doc_scripts_made(d), kept.from = from;
                 kept.copies = doc_expressions_lay(d, thing, scs, n, said, clock, gone);
             }
@@ -97,7 +112,7 @@ static math::mat4 doc_place(Doc& d, int thing, double now, int deeper, int copy,
     else if (laid.by == 2)   // (a recipe's copy turned and sized as its script says, on top of the wave)
         own = own * math::mat4::rotation(laid.c.rotate * (double)TAU / 360.0, math::double3{0, 0, 1}) * math::mat4::rotation(laid.c.rotate_y * (double)TAU / 360.0, math::double3{0, 1, 0}) *
                   math::mat4::rotation(laid.c.rotate_x * (double)TAU / 360.0, math::double3{1, 0, 0}) * math::mat4::scaling(math::double3{laid.c.size * laid.c.scale_x, laid.c.size * laid.c.scale_y, laid.c.size * laid.c.scale_z});
-    if (const std::vector<AbsentEffect> moving = doc_absent_on(d, thing, said); !moving.empty()) {   // (AbsentMotion's own motion, its stack in order, as AbsentMotion moves a layer: absent_motion.h)
+    if (const std::vector<AbsentEffect> moving = doc_placing_absent(d, thing, said); !moving.empty()) {   // (AbsentMotion's own motion, its stack in order, as AbsentMotion moves a layer: absent_motion.h)
         const double begins = doc_literal(d, thing, "start", 0, 0), lasts = doc_literal(d, thing, "duration", 0, -1);
         const AbsentMoved m = absent_motion(moving, thing, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * said);
         const double pixel = (double)d.stage->h / std::max(1.0, doc_number(d, 0, "high", 0, 1080) * doc_point(d, thing, said));   // (a pixel of the document where the thing stands, as a script's copies are told)
