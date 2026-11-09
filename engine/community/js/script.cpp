@@ -7,6 +7,7 @@
 #include "motion/ways.h"
 #include "community/js/ae_expr.h"
 #include "community/js/script_leva.h"
+#include "community/js/solid_three.h"
 #include <quickjs.h>
 #include <algorithm>
 #include <filesystem>
@@ -89,7 +90,7 @@ std::vector<ScriptKnob> script_knobs(const std::string& file) {
         std::stringstream all;
         all << in.rdbuf();
         const std::string told = door_js(all.str(), door_form(all.str()));   // (a form from the net told as a sketch: door.h)
-        if (script_is_sketch(told) && told.find("function relate") == std::string::npos && !script_pushes(told)) {   // (a relation is p5's too, but its head says its knobs)
+        if (script_is_sketch(told) && told.find("function relate") == std::string::npos && !script_pushes(told) && !solid_is(file)) {   // (a relation is p5's too, but its head says its knobs; a solid's shape says THREE. too, but is no scene from the net: its head says its knobs, solid_three.h)
             if (door_form(all.str()) == "three") {   // (which part of the scene this thing is: doc_door.h)
                 ScriptKnob part;
                 part.kind = "track", part.name = "part", part.label = "Part", part.high = 9999, part.step = 1;
