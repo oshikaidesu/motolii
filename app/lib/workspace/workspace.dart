@@ -242,7 +242,7 @@ class _WorkspaceState extends State<Workspace> {
     final m = _inside!, ws = _ws;
     // The picked held together by a Null they all go with, made in their middle (Figma's group, not a box of its own; one
     // step). mask 'mask' or 'exclude': Alight Motion's Group and Mask and Group and Exclude, the top one the shape the
-    // others are seen in or cut out by (the inside's group_mask, doc_moment.h; docs/reports/alight_ui.md).
+    // others are seen in or cut out by (the inside's group_mask, doc_moment.h; docs/internal/reports/alight_motion/alight_ui.md).
     void group(String mask) {
       final m = _inside, all = _picked();
       final frames = [for (final t in all) ?m?.frame(t)];

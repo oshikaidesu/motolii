@@ -61,7 +61,7 @@ class _HexFieldState extends State<_HexField> {
   }
 }
 
-// ---- the Expression group: every JS that goes on a thing and moves its values (docs/notes/CREATE_PROGRAM.md), one
+// ---- the Expression group: every JS that goes on a thing and moves its values (docs/internal/notes/CREATE_PROGRAM.md), one
 //  place for them all: the recipes with each() (the Repeater, After Effects' expressions, Maze, Sunflower…), the
 //  motions (Cavalry's Animators, animators/), the maker's own (Add to shelf: shelf_add.dart). Each is put on the picked
 //  thing as a card of its own, as many as are wanted (fx_file, empty_fx.dart fxPut); nothing picked, a recipe makes
