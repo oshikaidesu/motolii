@@ -80,7 +80,7 @@ class _WaitedState extends State<_Waited> {
       link: _at,
       child: OverlayPortal(
         controller: _open,
-        overlayChildBuilder: (_) => CompositedTransformFollower(
+        overlayChildBuilder: (overlay) => CompositedTransformFollower(
           link: _at,
           targetAnchor: Alignment.bottomRight,
           followerAnchor: Alignment.topRight,
@@ -90,13 +90,16 @@ class _WaitedState extends State<_Waited> {
             child: GestureDetector(
               onTap: () => setState(_open.hide),
               child: Container(
-                width: Shape.z(420),
+                width: Shape.z(520),
+                constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(overlay).height * .7),   // (each line whole, wrapped; many: scrolled, none cut)
                 padding: EdgeInsets.all(Shape.s(10)),
                 decoration: BoxDecoration(color: WsT.card, borderRadius: BorderRadius.all(Shape.r(6)), border: Border.all(color: Grey.g26)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [for (final l in lines) Text(l, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(Grey.g76))],
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [for (final l in lines) Padding(padding: EdgeInsets.only(bottom: Shape.s(3)), child: Text(l, softWrap: true, style: T.micro(Grey.g76)))],
+                  ),
                 ),
               ),
             ),
