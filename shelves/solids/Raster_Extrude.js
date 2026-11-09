@@ -8,7 +8,7 @@
 import * as THREE from '../third_party/js/three/three.core.js';
 import '../third_party/js/d3-array/d3-array.min.js';
 import '../third_party/js/d3-contour/d3-contour.min.js';
-import { faceUV } from './face_uv.js';
+import { faceUV } from '../../engine/community/js/face_uv.js';
 export function solid(k) {
     if (!k.alpha) return new THREE.BufferGeometry();   // (its picture not read yet: nothing, till the next)
     const { width: gw, height: gh, values } = k.alpha;

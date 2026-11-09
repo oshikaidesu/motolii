@@ -5,7 +5,7 @@
 // --track@smoothing:Smoothing,0,0.2,0.03,0.005
 // --check@lit:Lit,1
 import * as THREE from '../third_party/js/three/three.core.js';
-import { faceUV } from './face_uv.js';
+import { faceUV } from '../../engine/community/js/face_uv.js';
 export function solid(k) {
     const x = 0, y = 0;   // (as the example says it, upside down: turned below, as it turns its mesh)
     const heartShape = new THREE.Shape()
