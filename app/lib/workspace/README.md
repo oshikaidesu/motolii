@@ -1,9 +1,9 @@
 # Workspace — Motolii の窓
 
-`app/lib/main.dart` が開く `Workspace`（`workspace.dart`）が窓。書類は C++ の中身（`../engine/motolii.dart` の `Motolii`、各メソッドが `motolii_*` の C 呼び出し 1 つ）にあり、Stage の絵も中身（Filament）が描く。窓は見せて、手を書類に渡すだけ。書類を渡さずに開くと無題の書類を開く（AE と同じ）。
+`app/lib/main.dart` が開く `Workspace`（`workspace.dart`）が窓。書類は C++ の中身（`../bridge/motolii.dart` の `Motolii`、各メソッドが `motolii_*` の C 呼び出し 1 つ）にあり、Stage の絵も中身（Filament）が描く。窓は見せて、手を書類に渡すだけ。書類を渡さずに開くと無題の書類を開く（AE と同じ）。
 
 ## 自分のパネルを足す（入口はここだけ）
-使う物の置き場：`Workspace`（`workspace.dart`）、`WsPane`（`panes.dart`。アイコンは `DockG` か null）、`DeskTool`（`desk/desk_kit.dart`）、`Ws`・`WsScope`（`ws_state.dart`）、`Motolii`（`../engine/motolii.dart`）、Ease のタイル `unseated`（`desk/desk_ease.dart`）。
+使う物の置き場：`Workspace`（`workspace.dart`）、`WsPane`（`panes.dart`。アイコンは `DockG` か null）、`DeskTool`（`desk/desk_kit.dart`）、`Ws`・`WsScope`（`ws_state.dart`）、`Motolii`（`../bridge/motolii.dart`）、Ease のタイル `unseated`（`desk/desk_ease.dart`）。
 ```dart
 Workspace(document: path, extra: [
   WsPane('Notes', null, () => const MyNotes()),   // (名前、アイコン（null なら頭文字）、中身)

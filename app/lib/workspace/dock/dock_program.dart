@@ -18,7 +18,7 @@ import 'package:re_highlight/languages/javascript.dart';
 import 'package:re_highlight/styles/atom-one-dark.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
 
-import '../../engine/motolii.dart';
+import '../../bridge/motolii.dart';
 import '../../parts/text_hand.dart';
 import '../../style/tokens.dart';
 import 'dock_effects.dart';

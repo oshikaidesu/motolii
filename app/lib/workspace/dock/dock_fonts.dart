@@ -8,7 +8,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter/widgets.dart';
 
-import '../../engine/motolii.dart' show Motolii, MotoliiQuestions, motoliiShelves;
+import '../../bridge/motolii.dart' show Motolii, MotoliiQuestions, motoliiShelves;
 import '../../style/tokens.dart';
 import '../desk/desk_kit.dart' show DeskChip;
 import 'dock_files.dart' show dockRead;

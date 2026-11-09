@@ -12,7 +12,7 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart' show debugPrint, setEquals;
 import 'package:flutter/services.dart';
-import 'package:motolii/engine/motolii_bindings.dart' as c; // (the inside's calls as Dart's ffigen made them: ffigen.yaml)
+import 'package:motolii/bridge/motolii_bindings.dart' as c; // (the inside's calls as Dart's ffigen made them: ffigen.yaml)
 part 'motolii_document.dart';
 part 'motolii_moment.dart';
 part 'motolii_writes.dart';

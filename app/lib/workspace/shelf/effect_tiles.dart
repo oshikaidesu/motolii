@@ -27,7 +27,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter/painting.dart' show FileImage, ResizeImage;
 
-import '../../engine/motolii.dart';
+import '../../bridge/motolii.dart';
 import '../ws.dart' show wsTextFont;
 
 part 'effect_tiles_knob.dart';

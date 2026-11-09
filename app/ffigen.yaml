@@ -2,7 +2,7 @@
 #   dart run ffigen --config ffigen.yaml
 name: MotoliiBindings
 description: The inside's C calls (engine/library/motolii.h), made by ffigen.
-output: lib/motolii_bindings.dart
+output: lib/bridge/motolii_bindings.dart
 headers:
   entry-points:
     - ../../engine/motolii.h

@@ -14,7 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../forms/forms.dart';
-import '../../engine/motolii.dart' show Motolii, mediaSecondsOf;
+import '../../bridge/motolii.dart' show Motolii, mediaSecondsOf;
 import '../two_fingers.dart';
 import '../ableton.dart' show wsTimelineAsk, wsAskRename, wsAskTimeline, wsMarkPicked;
 import '../../parts/timeline_parts.dart' show TpGlyph, TpGlyphPainter;

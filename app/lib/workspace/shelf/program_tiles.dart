@@ -11,7 +11,7 @@ import 'dart:isolate';
 
 import 'package:flutter/painting.dart' show FileImage, ResizeImage;
 
-import '../../engine/motolii.dart';
+import '../../bridge/motolii.dart';
 import 'effect_tiles.dart';
 
 abstract final class ProgramTiles {

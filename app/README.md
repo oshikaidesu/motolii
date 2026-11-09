@@ -7,7 +7,7 @@ Flutter の窓。描くのも書類を持つのも本体（[`../engine/`](../eng
 | 場所 | 中身 |
 |---|---|
 | `lib/main.dart` | 起動したら窓を開く |
-| `lib/engine/` | 本体（`libmotolii.dylib`）を呼ぶ口：書類、棚、問い合わせ、書き込み |
+| `lib/bridge/` | 窓と中身の境目（[`docs/app/BRIDGE.md`](../docs/app/BRIDGE.md)）。本体（`libmotolii.dylib`）を呼ぶ口：書類、棚、問い合わせ、書き込み |
 | `lib/workspace/` | 窓そのもの。`dock/` 左の棚、`stage/` 舞台、`timeline/` タイムライン、`desk/` 下の机、`shelf/` 棚のタイル（地図は [`lib/workspace/README.md`](lib/workspace/README.md)） |
 | `lib/inspector/` | 右の Inspector。`controls/` つまみ、`effects/` 効果のカード、`rows/` 行、`transform/` 位置と回転 |
 | `lib/parts/` | 席をまたいで使う部品。`skin_parts.dart` はスキンの `parts/*.svg`（theme.xml の `<Parts>`）を窓の印の代わりに描く |
