@@ -1,7 +1,5 @@
 // The whole window: top bar, then the panes (panes.dart) — browser shelves | Stage over Timeline, Inspector over Tool Panel, rearrangeable.
 // Each panel is its own file and reads the shared Ws.
-import 'dock/dock_widgets.dart' show askDockSearch;
-
 import 'dart:developer' show Timeline;
 import 'dart:async';
 import 'dart:io';
@@ -21,7 +19,6 @@ import 'package:motolii/inspector/inspector_parts_insp_host.dart';
 
 import '../inspector/inspector_parts.dart';
 import '../skin/theme.dart';
-import 'dock/dock.dart';
 import 'dock/dock_glyphs.dart';
 import 'window/home.dart';
 import 'window/panes.dart';
@@ -368,14 +365,13 @@ class _Window extends StatelessWidget {
       SizedBox(height: WsT.topBar, child: WsTopBar()),
       const SizedBox(height: WsT.gutter),
       Expanded(
-        child: WsPanes(panes: [..._panes, ...extra], preset: (item) => _preset(item, extra), shelves: {for (final s in dockShelves) s.$1}),
+        child: WsPanes(panes: [..._panes, ...extra], preset: (item) => _preset(item, extra)),
       ),
     ],
   );
 }
 
 final _panes = [
-  for (final (name, g, _) in dockShelves) WsPane(name, g, () => WsShelf(name), minSize: 240, iconOnly: true),
   WsPane('Stage', DockG.stage, () => const WsStage(), minSize: 320),
   WsPane('Camera View', DockG.camera, () => const WsCameraView(), minSize: 240),
   WsPane('Inspector', DockG.inspector, () => const _InspectorPanel(), minSize: 200),
@@ -394,10 +390,7 @@ const _strip = 22.0;
 /// contract: give the filling panes no weight; `multi_split_view` turns sizes into weights and would scale them against any weight given.
 DockingArea _preset(DockingItem Function(String name, {double? size, double? weight}) item, List<WsPane> extra) => DockingRow([
   DockingColumn([
-    DockingRow([
-      DockingTabs([for (final (name, _, _) in dockShelves) item(name)], size: WsT.dock),
-      DockingTabs([item('Stage'), item('Camera View')]),
-    ]),
+    DockingTabs([item('Stage'), item('Camera View')]),
     DockingRow([item('Timeline'), item('Ease', size: WsT.inspector)], size: WsT.lower + _strip, minimalSize: 220), // (the stretch between two keys, beside the keys; never lower than its seven shapes and its curve can be read: docking's own minimum, as VS Code's views say theirs)
   ]),
   DockingColumn(

@@ -13,7 +13,7 @@
 | `commands/` | 名前の付いた操作と、それを言うキー・メニュー：`keymap.dart` キーの表（VS Code の keybindings.json の形）、`command_actions.dart` 各操作がアプリの状態にすること（キーは Ableton Live 12 の表から）、`menu_bar.dart` メニューバー、`context_menu.dart` 右クリック |
 | `edits/` | 選んだ複数のレイヤーにまとめて掛ける編集：`make_relation.dart` 関係を作る、`group_moves.dart` グループの動き、`keyframe_edits.dart` キーフレームの移動・削除・コピー |
 | `inspector_feed/` | `workspace.dart` の部品：プロジェクトから Inspector（`../inspector/`）へ渡す物。`panel.dart` パネルとして読み直す時、`cards.dart` カード、`values.dart` 値の読み書き、`keyframe_marks.dart` 値の横のキーの印 |
-| `dock/` | 左の棚（Create・Effects・Media・Fonts・Colors …）のパネル |
+| `dock/` | タブの印 `DockG` と、コードを書く `ProgramCode` |
 | `shelf/` | 棚のタイル（効果・スクリプト・素材） |
 | `stage/` | プレビュー（Filament が描いた絵と、その上のドラッグ） |
 | `timeline/` | タイムライン |

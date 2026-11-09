@@ -13,7 +13,6 @@ import 'package:flutter/widgets.dart';
 import '../../bridge/motolii.dart' show motoliiShelves;
 import '../../widgets/text_gestures.dart';
 import '../../skin/tokens.dart';
-import '../dock/dock_make.dart' show createNames;
 import 'effect_tiles.dart' show EffectTiles;
 import '../state/state.dart';
 
@@ -57,8 +56,12 @@ String? _headName(String file) {
 /// The names on the shelf an effect ([expression]: an expression) is added to, the library's and the maker's: the Effects
 /// shelf's (dock_effects.dart), else Create's (dock_make.dart).
 Set<String> shelfTaken(Ws ws, {required bool expression}) {
-  if (expression) return createNames(ws);
   final m = ws.inside;
+  if (expression) {
+    return {
+      for (final (n, _) in [...?m?.createScripts, ...?m?.elements, ...?m?.animators, ...shelfExpressions()]) n,
+    };
+  }
   if (m == null) return const {};
   return {
     'Empty',
