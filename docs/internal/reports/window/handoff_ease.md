@@ -14,7 +14,7 @@
 
 ## 今の状態
 **コミット済み**
-- `8fa40d2`：SQLite の関数 `anime(式, u)`。区間の式（`define` や `shelves/ease/*.way`）から anime.js（`engine/third_party/anime/`、MIT、v4.5.0 をそのまま）のイーズを呼べる。QuickJS で動く（`engine/community/js/script.cpp` の `anime_ease`、`engine/document/doc_match.h`）。検査 `engine/check/anime_ways.sh`（yes）。これは「点で好きな形を描く `linear()`」などの道具として残す。
+- `8fa40d2`：SQLite の関数 `anime(式, u)`。区間の式（`define` や `shelves/ease/*.way`）から anime.js（`engine/third_party/anime/`、MIT、v4.5.0 をそのまま）のイーズを呼べる。QuickJS で動く（`engine/community/quickjs/script.cpp` の `anime_ease`、`engine/document/doc_match.h`）。検査 `engine/check/anime_ways.sh`（yes）。これは「点で好きな形を描く `linear()`」などの道具として残す。
 - `f8d60ad`：anime.js の見本 46 本（`shelves/ease/anime_*.way`）。**これは足してはいけない物だった**。
 
 **まだコミットしていない変更**（作業の途中。見直してから扱う）
@@ -25,7 +25,7 @@
 - `ASSETS.md` の anime の行は「見本 46 本」のまま。直す。
 
 ## 確かめ方
-- エンジン：`cd engine && ./edit.sh out/x.motolii < check/anime_ways.txt`、`./check/anime_ways.sh`。窓が使うライブラリは `./build_lib.sh`。
+- エンジン：`cd engine && ./edit.sh out/x.motolii < check/anime_ways.txt`、`./check/anime_ways.sh`。窓が使うライブラリは `./build.sh lib`。
 - 窓：`cd skin/book && flutter test test/workspace_ease_library_test.dart test/workspace_desk_test.dart`（flutter は `~/Documents/Motolii-probes/toolchains/flutter/bin/flutter`）。窓は `flutter build macos --debug`、`open -n build/macos/Build/Products/Debug/lab_book.app`（15:52 から動いている古い窓があるので `-n` で別に開く。古い窓は閉じない）。
 - 前からのずれ（今回の変更と無関係）：窓のテスト 9 本（Trim Paths ほか）、`engine/check/doc.sh` の 2 つの NO（値の一覧・動画の速さ）。
 

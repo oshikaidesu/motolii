@@ -9,7 +9,7 @@
 - `engine/stage/kit.h`（927行）、`video.h`（348）、`drawn.h`（110）、`motion.h`（137）、`doc.h`（245）、`solid.h`（69）
 - 材質：`flat.mat`、`thick_glass.mat`、`matte.mat`、`matte.glsl`、`far_look.mat`、`far_side.mat`、`studio.glsl`
 - 場面：`edit.mm`、`lay.mm`、`neko.mm`、`puppet.mm`、`mask.mm`、`wall.mm`、`ae.mm`、`led.mm`
-- つなぎ：`dawn_probe/gpu_door.h`、`gpu_door.cpp`、`CMakeLists.txt`、`kit_wgpu.sh`、`tvg_on_dawn.sh`、`edit.sh`、`records.sh`、`check/` の9個
+- つなぎ：`dawn_probe/gpu_door.h`、`gpu_door.cpp`、`CMakeLists.txt`、`filament_webgpu.sh`、`deps/thorvg.sh`、`edit.sh`、`records.sh`、`check/` の9個
 - パッチ2本：`filament_dawn_compute.patch`（375行）、`thorvg_z.patch`（362行）
 - 紙：`AE_RUBRIC.md`（3版）、`round_02_borrowed.md`、`evidence.md`（3版）
 
@@ -57,8 +57,8 @@
 2. `gpu_door.cpp:8`、`24`：Filament の内側のヘッダ `details/Engine.h`。そのために Filament のビルドの中で自分の物を作る（`CMakeLists.txt:8`、パッチ 10-13行）。**残ってる。**
 3. `video.h:114-117`：共有を「貸しっぱなし」。**変わったが、誤りは残ってる。** 片付ける時と、2秒回ってこない時には返すようになった（`video.h:64-75`、`90-92`、`300-301`）。でも、その間は Dawn に貸したままの置き場に、デコーダがまた書く。持っている絵は held・next・on の3枚だけで、`seen` に入っている残りの置き場は誰も押さえていない（`video.h:86-123` を読んだ）。Dawn の決まりは「使う間だけ BeginAccess、終わったら EndAccess」（`webgpu.h:4995`、`4997`）。
 4. `motion.h:47`、`50`：`const_cast`。`thorvg.h:1801` は `const Paint*` を返し、`thorvg.h:505` の `transform()` は const でない。**残ってる。**
-5. `tvg_on_dawn.sh:14-20`：Dawn を `wgpu_native` という偽の札で渡す。**残ってる。**
-6. `kit_wgpu.sh:31`：ビルド途中の木の中を直に読む。**残ってる。**
+5. `deps/thorvg.sh:14-20`：Dawn を `wgpu_native` という偽の札で渡す。**残ってる。**
+6. `filament_webgpu.sh:31`：ビルド途中の木の中を直に読む。**残ってる。**
 7. **【2回目が見落とした物】** `thick_glass.mat:159`、`far_look.mat:29`：`frameUniforms.iblLuminance`。Filament の材質の説明書（`docs/Materials.md.html`）に `frameUniforms` は1回も出ない。出てくるのは Filament 自身のシェーダ（`shaders/src/surface_fog.fs:64` ほか）だけ。内側の名前を直に読んでいる。
 
 半分ずつ：
@@ -108,10 +108,10 @@
 
 ### (h) 誰も呼ばないのに残ってる物：7個
 
-1. `glass_blocks`、`bubbles`、`ball`：`kit.h:254-265`、`499-516`、`478-494`。その材質 `glassbox`、`bubble` は今も毎回ビルドされる（`kit_wgpu.sh:15`）。
+1. `glass_blocks`、`bubbles`、`ball`：`kit.h:254-265`、`499-516`、`478-494`。その材質 `glassbox`、`bubble` は今も毎回ビルドされる（`filament_webgpu.sh:15`）。
 2. `box_light`：`kit.h:447-475`。`boxlight.mat` も毎回ビルド。
 3. `own_glass`：`kit.h:534-544`。`own_glass.mat` も毎回ビルド。
-4. `letters`：`kit.h:306-334`。これのためだけに SceneKit と ModelIO が全部のプログラムに付く（`kit.h:33-35`、`kit_wgpu.sh:36`）。
+4. `letters`：`kit.h:306-334`。これのためだけに SceneKit と ModelIO が全部のプログラムに付く（`kit.h:33-35`、`filament_webgpu.sh:36`）。
 5. `font`：`drawn.h:23-28`。
 6. `sun_to`：`kit.h:906-910`。
 7. 古い山：`engine/` に材質93本（今夜使うのは9本）、場面49本（今夜は8本）、ヘッダ14本（今夜は6本）。`poster`、`blade` の材質も毎回ビルドされる。
@@ -132,7 +132,7 @@
 - キーの間：`doc.h:54-55`、`60`。自前の補間は無い。ただし持ち主の本道（部品の値に結び付けて使う）ではなく、単体の計算機として使っている。公開の口なので数えない。
 - 動画の色の重みと範囲の数字：`video.h:237`、`243`。行列に組むのと掛けるのは自作（(a)3）。
 - 回転の札：`video.h:254` の `gst_video_orientation_from_tag`。ただし裏返しの札は黙って捨てる。
-- 重ね方：`flat.mat:9` と `kit_wgpu.sh:18-22`。Filament 自身の混ぜ方。
+- 重ね方：`flat.mat:9` と `filament_webgpu.sh:18-22`。Filament 自身の混ぜ方。
 - 3Dファイル：`solid.h` の全部（下の5）。
 - AEの絵の透明：`flat.mat:43`、`51` が ThorVG の透明をそのまま読む。白地は、頼んだ時だけ描く（`drawn.h:72`）。色抜きはもう通らない。
 - 音を切って混ぜる：`kit.h:797-804` に出てくる aresample、atrim、asetpts、areverse、atempo、aloop、adelay、amix、alimiter は全部 FFmpeg に有る（一覧で見た）。
@@ -274,7 +274,7 @@
 
 1. **Filament のパッチから、今夜だれも使っていない物を消す。** 計算用の口、バッファの読み戻し、SHADER_STORAGE の並び、環境変数、頂点バッファの使い道の書き換え、`mLayout` と囲い外し、待ち時間の書き換え、Float32Blendable。`compute_door.cpp` をライブラリから外す。残るのは「絵の受け取り」と「機能3つ」と「デバイスを覚える」。**約11個減る**（(e) 4〜5、(d) 6）。絵は変わらない。待ち時間を戻すので速さは測り直す。
 2. **led と、それだけが通る物を消す。** `thorvg_z.patch`、`motion.h:71-103` と `129-137`、`glasslight.mat`、`paper.mat`、`floor_shade.mat`、`paper_copy.mat`、`kit.h:336-441`、`sun_to`。影は要るなら Filament の太陽の影に返す。**約10個減る**（(d) 6、(f) 1、(g) 1、(a) 2）。`motion.h` は led しか使っていないので、丸ごと消せばあと2個（(g)7 と (c)4）。絵は変わる：AE の3Dレイヤーとカメラ、紙の上の虹が無くなる。他の7場面は同じ。
-3. **寝ている物を消す。** `kit.h` の `glass_blocks`、`bubbles`、`ball`、`box_light`、`own_glass`、`letters`（と SceneKit、ModelIO）、`drawn.h` の `font`、`kit_wgpu.sh:15` の使わない材質6本、古い材質84本・場面約40本・ヘッダ8本。**7個減る**（(h) 全部）。絵は変わらない。
+3. **寝ている物を消す。** `kit.h` の `glass_blocks`、`bubbles`、`ball`、`box_light`、`own_glass`、`letters`（と SceneKit、ModelIO）、`drawn.h` の `font`、`filament_webgpu.sh:15` の使わない材質6本、古い材質84本・場面約40本・ヘッダ8本。**7個減る**（(h) 全部）。絵は変わらない。
 4. **ガラスを Filament に返す。** `thick_glass.mat`、`far_side.mat`、`far_look.mat`、`studio.glsl`、`kit.h:518-528` と `546-603` を消し、Filament 自身の屈折（もうある `own_glass.mat`）と、もう読み込んでいる部屋の光に任せる。形は3Dファイルにして `solid.h` に任せ、手作りの形（`kit.h:222-301`）も消す。**3個減る**（(a)1、(c)7、(g)8）。絵は変わる：向こう側の面と縁の虹が無くなる。ユーザーが決める事。
 5. **動画の時刻と貸し借りを持ち主のやり方に返す。** `video.h:316-348` の「どの絵が今か」と2秒の決まり（`video.h:88-92`）を消し、時計で流す時は appsink 自身の同期、1枚ずつ作る時はコマ送りの合図に任せる。置き場は使う間だけ貸す。**2〜3個減る**（(b)1、(c)3、うまく行けば (b)2）。絵は変わらないはず。落ちとメモリは測り直す（推測。試していない）。
 

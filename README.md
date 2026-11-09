@@ -159,16 +159,10 @@ brew bundle
 `Brewfile` の物（GStreamer・SQLite・ffmpeg・cmake など）が入ります。最後に `Homebrew Bundle complete!` と出れば成功です。
 
 ```bash
-engine/gpu/build.sh
+engine/build.sh
 ```
 
-Filament（WebGPU）をダウンロードしてビルドします（M4 で約 5 分）。エラーで止まらずに終われば成功です。
-
-```bash
-engine/edit.sh build.motolii < /dev/null
-```
-
-エンジンをビルドします。ThorVG・Skia・libtess2・Jolt などは、ここで初回だけダウンロードします。`edit.sh` はプロジェクトファイルを開いて命令を待つ道具なので、`< /dev/null` で「命令なし」を渡し、ビルドして空のファイルを作ったらすぐ終わります。`engine/out/libmotolii.dylib` ができれば成功です（`build.motolii` は消してかまいません）。
+エンジンをビルドします。初回は Filament（WebGPU）をソースから組み（M4 で約 5 分）、ThorVG・Skia・libtess2・Jolt などをダウンロードします。`engine/out/libmotolii.dylib` ができれば成功です。
 
 ```bash
 app/tool/live.sh
@@ -264,8 +258,8 @@ EOF
 | `xcrun: error` や、Xcode が無いと言われる | App Store で Xcode を入れ、一度開いて追加の部品を入れ、`sudo xcodebuild -license accept` |
 | `No space left on device` | 空きを 10 GB 以上にしてから、止まったコマンドをもう一度 |
 | `git clone` や `build.sh` がネットの途中で止まった | 同じコマンドをもう一度。直らなければ `engine/third_party/` の中の止まった物のフォルダを消してからもう一度 |
-| `ld: library 'webgpu_dawn' not found` | `engine/gpu/build.sh` を先に走らせる |
-| アプリは開くがプレビューが黒い | エンジンをビルドしたか確かめる（`engine/out/libmotolii.dylib` があるか）。無ければ `engine/edit.sh build.motolii < /dev/null` |
+| `ld: library 'webgpu_dawn' not found` | `engine/build.sh` をもう一度（Filament を組む所から始まる） |
+| アプリは開くがプレビューが黒い | エンジンをビルドしたか確かめる（`engine/out/libmotolii.dylib` があるか）。無ければ `engine/build.sh` |
 
 それでも止まったら [Issue](https://github.com/oshikaidesu/motolii/issues) に、走らせたコマンドと出た文をそのまま貼ってください（ひな型があります）。使い方の質問は [Discussions](https://github.com/oshikaidesu/motolii/discussions) へ。日本語・英語のどちらでも。
 
@@ -274,7 +268,7 @@ EOF
 <details>
 <summary><b>更新する・消す</b></summary>
 
-- 更新：`git pull` の後、`engine/gpu/build.sh` と `engine/edit.sh build.motolii < /dev/null` をもう一度（変わった所だけビルドし直します）。アプリは `app/tool/live.sh` がビルドし直します。
+- 更新：`git pull` の後、`engine/build.sh` をもう一度（変わった所だけビルドし直します）。アプリは `app/tool/live.sh` がビルドし直します。
 - 消す：`motolii` のフォルダを消します（ダウンロードした物とビルドした物は全部この中）。作ったプロジェクトと動画は `~/Movies/Motolii/` に残ります（別の所に置いた物はそこに）。Flutter は `~/flutter` を消します。`brew bundle` で入れた物は `brew uninstall` で。
 
 </details>

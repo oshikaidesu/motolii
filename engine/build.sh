@@ -1,0 +1,26 @@
+#!/bin/zsh
+# The build: what the window loads (out/libmotolii.dylib) and the shell edit.sh opens a document in (out/edit_wgpu), from a
+# fresh clone on. Every other script of engine/ is either called from here (deps/: others' libraries fetched and built,
+# gpu/filament_webgpu.sh: the materials, ThorVG and the link) or run by hand for one check (engine/README.md).
+#   ./build.sh       all of it, again only if something it is made of changed since (first time: Filament from source,
+#                    deps/filament.sh, about 5 minutes on an M4)
+#   ./build.sh lib   only out/libmotolii.dylib, for a change in entry/motolii.mm; then restart the window (a native
+#                    library cannot be hot reloaded)
+cd "$(dirname "$0")"
+source tools/build_lock.sh   # (the machine's one build lock, held while this builds: tools/build_lock.sh)
+HB=${HOMEBREW_PREFIX:-$(brew --prefix)}   # (where Homebrew is: /opt/homebrew on Apple silicon)
+[ "$1" = lib ] && lib_only=1
+mkdir -p out   # (a fresh clone has none)
+# (built again only if something it is made of has changed since)
+if [ -n "$lib_only" ] || [ ! -x out/edit_wgpu ] || [ -n "$(find . \( -path ./third_party -o -path ./out -o -path ./community/three_shading_language_to_shelf -o -path ./community/web_renderer_on_dawn \) -prune -o \( -name '*.c' -o -name '*.h' -o -name '*.mm' -o -name '*.cpp' -o -name '*.mat' -o -name '*.glsl' -o -name '*.sh' \) -newer out/edit_wgpu -print | head -1)" ] || [ third_party/filament_src/out/wgpu_install/lib/arm64/libwebgpu_dawn.a -nt out/edit_wgpu ]; then
+    build_lock "$@"
+    ./deps/filament.sh || exit 1   # (Filament with its WebGPU backend, from source: once, then ninja finds nothing to do)
+    F=third_party/filament_src   # (an ISF effect turned into WGSL by Filament's own glslang and Dawn's Tint: community/isf/isf.cpp, its headers heavy, built apart)
+    [ out/isf.o -nt community/isf/isf.cpp ] && [ out/isf.o -nt community/isf/isf.h ] && [ out/isf.o -nt community/sites/adapter.h ] && [ out/isf.o -nt community/sites/adapter_shadertoy.h ] || clang++ -c -std=c++20 -O2 -I$PWD -I$F/third_party/libassimp/contrib/rapidjson/include -I$HB/opt/sqlite/include -I$F/third_party/glslang -I$F/libs/filamat/src -I$F/third_party/dawn -I$F/third_party/dawn/include -I$F/out/wgpu/third_party/dawn/gen -DTINT_BUILD_SPV_READER=1 -DTINT_BUILD_WGSL_WRITER=1 -DTINT_BUILD_WGSL_READER=1 community/isf/isf.cpp -o out/isf.o || exit 1
+    [ out/aviutl.o -nt community/aviutl/aviutl.cpp ] && [ out/aviutl.o -nt community/aviutl/aviutl.h ] && [ out/aviutl.o -nt community/quickjs/script.h ] || clang++ -c -std=c++20 -O2 -I$PWD -I$F/third_party/glslang -I$F/third_party/spirv-tools/include -I$F/libs/filamat/src -I$F/third_party/dawn -I$F/third_party/dawn/include -I$F/out/wgpu/third_party/dawn/gen -DTINT_BUILD_SPV_READER=1 -DTINT_BUILD_WGSL_WRITER=1 -DTINT_BUILD_WGSL_READER=1 -DENABLE_HLSL community/aviutl/aviutl.cpp -o out/aviutl.o || exit 1   # (an AviUtl2 script's HLSL turned into WGSL the same way, by glslang's HLSL front end: community/aviutl/aviutl.cpp)
+    ./deps/tree_sitter.sh || exit 1   # (tree-sitter and its JavaScript grammar, for community/quickjs/js_returned.cpp)
+    RENDER_EXTRA="-dynamiclib -install_name @rpath/libmotolii.dylib $(pkg-config --cflags --libs gstreamer-1.0 gstreamer-app-1.0 gstreamer-video-1.0 gstreamer-pbutils-1.0) -lgltfio -lgltfio_core -ldracodec -DSQLITE_ENABLE_SESSION -DSQLITE_ENABLE_PREUPDATE_HOOK -I$HB/opt/sqlite/include $HB/opt/sqlite/lib/libsqlite3.dylib $PWD/physics/jolt.cpp $PWD/community/quickjs/script.cpp $PWD/community/quickjs/js_returned.cpp -I$PWD/third_party/tree-sitter/lib/include $PWD/out/ts_lib.o $PWD/out/ts_js_parser.o $PWD/out/ts_js_scanner.o -I$PWD/third_party/thermion_frame/include -I$PWD/third_party/qdtsne/include -I$PWD/third_party/scipy_lsap $PWD/third_party/scipy_lsap/rectangular_lsap.cpp $PWD/third_party/thermion_frame/FrameScheduler.cpp -framework CoreVideo $PWD/community/playcanvas/splatfx.cpp $PWD/community/three/three_isf.cpp $PWD/community/three/solid_three.cpp $PWD/community/hydra/hydra_isf.cpp $PWD/media/midi_roll.cpp -lmatp $PWD/out/isf.o $PWD/out/aviutl.o -I$HB/opt/luajit/include/luajit-2.1 -L$HB/opt/luajit/lib -lluajit-5.1 -Wl,-rpath,$HB/opt/luajit/lib -I$HB/opt/quickjs-ng/include -L$HB/opt/quickjs-ng/lib -lqjs -Wl,-rpath,$HB/opt/quickjs-ng/lib -I$HB/opt/onnxruntime/include/onnxruntime -L$HB/opt/onnxruntime/lib -lonnxruntime -Wl,-rpath,$HB/opt/onnxruntime/lib -I$PWD/third_party/physics/JoltPhysics -DJPH_CROSS_PLATFORM_DETERMINISTIC -DJPH_DEBUG_RENDERER -DJPH_OBJECT_LAYER_BITS=16 -DJPH_OBJECT_STREAM -DJPH_PROFILE_ENABLED -ffp-contract=off $PWD/third_party/physics/JoltPhysics/jbuild/libJolt.a $PWD/out/flashes.o $PWD/third_party/iris/lib/libiris.a -L$PWD/third_party/iris/opencv_out/lib -lopencv_features2d -lopencv_videoio -lopencv_imgcodecs -lopencv_imgproc -lopencv_core -L$PWD/third_party/iris/opencv_out/lib/opencv4/3rdparty -ltegra_hal -lz $(pkg-config --libs libavformat libavcodec libavutil) -framework AVFoundation -framework CoreMedia -framework CoreGraphics -framework Accelerate" BUILDONLY=1 ./gpu/filament_webgpu.sh motolii || exit 1
+    mv out/motolii_wgpu out/libmotolii.dylib
+    [ -n "$lib_only" ] || clang++ -std=c++20 -O2 -I$PWD entry/edit.cpp -Lout -lmotolii -Wl,-rpath,@executable_path -o out/edit_wgpu || exit 1
+fi
+build_unlock

@@ -5,12 +5,12 @@
 # features2d for a header, videoio reading a film by the Mac's own AVFoundation), nothing else fetched or read by it;
 # spdlog 1.15.3 and nlohmann/json 3.12.0 (MIT, headers only). IRIS's own CMake finds ffmpeg through vcpkg's FindFFMPEG,
 # so its sources, the ones its CMakeLists lists, are built here as they are, against Homebrew's ffmpeg (Brewfile).
-# Out come third_party/iris/lib/libiris.a and OpenCV's in third_party/iris/opencv_out (media/video_flash_check.cpp; edit.sh and
-# build_lib.sh link them). Measured on this Mac: 44 s for OpenCV, 31 s for IRIS (docs/internal/reports/alight_motion/alight_checklist.md, 11/4).
+# Out come third_party/iris/lib/libiris.a and OpenCV's in third_party/iris/opencv_out (media/video_flash_check.cpp; build.sh
+# links them). Measured on this Mac: 44 s for OpenCV, 31 s for IRIS (docs/internal/reports/alight_motion/alight_checklist.md, 11/4).
 #   ./deps/iris.sh
 set -e
 cd "$(dirname "$0")/.."
-source deps/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: deps/build_lock.sh)
+source tools/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: tools/build_lock.sh)
 R=$PWD/third_party/iris
 fetch() { [ -d $R/$1 ] || { mkdir -p $R/$1 && git init -q $R/$1 && git -C $R/$1 -c core.hooksPath=/dev/null fetch -q --depth 1 $2 $3 && git -C $R/$1 checkout -q FETCH_HEAD; }; }
 fetch IRIS https://github.com/electronicarts/IRIS d96978ac1107f3463b77f69a9c1b1ec5d45291a0

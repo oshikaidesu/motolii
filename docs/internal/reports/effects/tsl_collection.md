@@ -91,14 +91,14 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
 
 ## 試しを直した所
 
-- `dawn_probe/tsl_on_dawn.cpp`：
+- `dawn_probe/wgsl_effect_on_dawn.cpp`：
   - 頂点の入力を、three.js の変換器の並び（`builder.attributes`）で渡すようにした。前は「0 番が UV、1 番が位置」と決め打ちしていて、模様がマスの 1/4 にしか描かれなかった。
   - サンプラーを、three.js がテクスチャに持たせている読み方のまま作るようにした。
 
 ## 何段も描く効果を正しくした：作者の render() ごと Dawn で回す（10/26）
 
 - 何段も描く効果（Bloom、ASCII、Annotations、Blob Tracking など）は、途中の絵を作る JS の部分（作者の `render()`）も要る。そこで、three.js の描く仕組み（WebGPURenderer）と Shader Lab の作者の「画面無しで描く口」（`createHeadlessRenderer`）を、そのまま Dawn の上で回した。
-- JS から Dawn を呼ぶ口は、Dawn の作者が出している組み立て済みの物（npm の `webgpu` 0.6.2 = dawn.node、MIT）。まず Node の上で確かめた（`engine/tsl/check_node/check.ts`、Node は確かめにだけ使う）。
+- JS から Dawn を呼ぶ口は、Dawn の作者が出している組み立て済みの物（npm の `webgpu` 0.6.2 = dawn.node、MIT）。まず Node の上で確かめた（`engine/tsl/compare_in_node/check.ts`、Node は確かめにだけ使う）。
 - 足した物（どれも、ブラウザなら最初からある物）：
   - Canvas 2D：`@napi-rs/canvas`（MIT、Skia）
   - 字形：作者の部品に同梱の 3 つ（Geist Sans・Geist Mono・BSMNT Grotesque）を、作者の `fonts.css` の名前で登録
@@ -143,7 +143,7 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
 ## 4 種類を誰が受け持つか（10/26）
 
 - 何段も描く 19 本の作者の JS が、three.js の描く仕組みを通してしているのは、4 種類（描き先を作る・順に描く・Canvas で絵を作る・読み戻す）。それぞれ Motolii に同じ働きの物はある。ただ、作者の JS が呼ぶのは Web の決まりの呼び出しなので、そのままでは届かない。
-  - 描き先・順に描く：Motolii の画面の効果の口（`screen_door`）は、Filament の決まり（絵とサンプラーを組にして `@group(0)`、頂点は自前、`screen_door.h:27-32`）。three.js の WGSL（テクスチャは `@group(1)`、頂点も three.js の物）は載らない。そのまま描けるのは、装置を借りて描く口（`gpu_door`、`tsl_on_dawn` で確かめ済み）。
+  - 描き先・順に描く：Motolii の画面の効果の口（`screen_door`）は、Filament の決まり（絵とサンプラーを組にして `@group(0)`、頂点は自前、`screen_door.h:27-32`）。three.js の WGSL（テクスチャは `@group(1)`、頂点も three.js の物）は載らない。そのまま描けるのは、装置を借りて描く口（`gpu_door`、`wgsl_effect_on_dawn` で確かめ済み）。
   - Canvas の絵：ThorVG は Canvas 2D の決まりを持たない（形・文字・絵の自前の部品だけ）。Shader Lab は Canvas 2D の呼び出しを 19 種類使う。ThorVG で受けると、1 つずつ訳すことになる。
   - 読み戻し：`thing_fx_cover` は Filament の物を読む口。作者の JS が呼ぶのは three.js の `readRenderTargetPixelsAsync`、その先は WebGPU の `mapAsync`。
   - 追跡の計算：`tracker.ts` は QuickJS でそのまま動く（済み）。
@@ -173,7 +173,7 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
 - Dawn 自身の JS の口（dawn.node）を、Motolii の Dawn の組み立て（Filament の `out/wgpu`）に `DAWN_BUILD_NODE_BINDINGS=ON` を足して組み立てた（`engine/tsl/dawn_node.sh`）。44 秒、13 MB。
   - 材料 3 つ（node-api-headers、node-addon-api、gpuweb の `webgpu.idl`）は、Dawn の `DEPS` が決めた版で取った。
   - Go は Homebrew の 1.27.3（Dawn の指定は 1.26.6）。
-- 確かめ：確かめの台本（`check_node`）で、npm の組み立て済みの口の代わりにこれを使った（`DAWN_NODE=<path>`）。Displaced Rings と Bloom で、絵は 1 バイトも違わない（640×360、違う画素 0）。
+- 確かめ：確かめの台本（`compare_in_node`）で、npm の組み立て済みの口の代わりにこれを使った（`DAWN_NODE=<path>`）。Displaced Rings と Bloom で、絵は 1 バイトも違わない（640×360、違う画素 0）。
 - これで、効果を描く装置が Motolii と同じ Dawn から作られる。まだ、Motolii の Filament が使っている装置そのものは渡していない（Dawn の口の `create()` は自分で装置を作る）。
 
 ## Node をやめて QuickJS の上の Node-API をもう一度試した（10/26）：途中で止めた
@@ -183,7 +183,7 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
   - 入口を NativeScript の `napi_run_script` と同じく「JS の中にいる」と数える形にしないと、Node-API の呼び出しの途中で後回しの処理が走る（`quickjs-api.c` の `js_enter`/`js_exit`）。
   - `requestDevice()` で 2 つ目の NativeScript の不具合に当たった：後片付けの関数が 2 回呼ばれる（FinalizationRegistry の後片付けと、入れ物そのものの後片付け）。AddressSanitizer で「二重に解放」と出た。同じ不具合の直しが NativeScript の Windows 版にある（NativeScript/windows af3a904、`packages/windows-quickjs/vendor/napi/quickjs/quickjs-api.c` の JSFinalizeValueCallback）。約束の不具合は NativeScript/runtimes（5b697b3、iOS/macOS 版）の方で直っている。直った所が木ごとにばらばら。
   - QuickJS-ng 0.17 のままにできるか：NativeScript の木は 3 つとも、NativeScript が手を入れた古い QuickJS-ng（0.8 か 0.11）と組む。Windows 版は 0.15 を横に置いても、Node-API の部分は 0.11 で組んでいる（`build.rs`）。0.17 の見出しで組むと誤り 19（`JS_IsArrayBuffer2` 8、`JS_WeakRef_Deref` 2、`JS_NewString16` 1、引数の数 4 など）。0.17 のままにするには書き換え（移植）が要る。
-- 止めた理由：TSL を毎コマ JS で動かす必要がないため（下の節）。作者の JS は取り込む時に 1 回だけ動かし、その時は Node の確かめの台本（`check_node`）で足りる。試しの外側（`host.c` など）と直しのファイルは消した。
+- 止めた理由：TSL を毎コマ JS で動かす必要がないため（下の節）。作者の JS は取り込む時に 1 回だけ動かし、その時は Node の確かめの台本（`compare_in_node`）で足りる。試しの外側（`host.c` など）と直しのファイルは消した。
 
 ## 取り込みは 1 回、再生は three.js なし：Dawn の記録と流し直し（10/26）
 
@@ -194,7 +194,7 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
   - 手本：Dawn の試験 `DawnTest.cpp` の Recorder（184-230 行）と `CaptureAndReplayTests.cpp`（52 個の試験）。
 - 組み立て：`engine/tsl/dawn_capture.sh` が、記録できる dawn.node を Motolii の out/wgpu とは別の場所（`out/wgpu_capture`）に組む（4 分 44 秒）。Motolii の Dawn は触らない。
   - 足したのは dawn.node の `capture=<path>` の合図だけ（`engine/tsl/dawn_capture.patch`、Dawn のコードに 2 か所、`MOTOLII_DAWN_CAPTURE` の時だけ）。アダプタの頼み方は DawnTest.cpp:708-713、記録の始め方は Recorder::CreateAndStart のとおり。
-  - 確かめの台本 `check_node/check.ts` は 3 か所だけ変えた：dawn.node の設定を `DAWN_FLAGS` で渡す、最後の描き先に名前 `motolii_out` を付ける（three.js は名前を GPU の label にそのまま渡す：three.webgpu.js 76623）、最後に装置を閉じる（記録が終わる）。
+  - 確かめの台本 `compare_in_node/check.ts` は 3 か所だけ変えた：dawn.node の設定を `DAWN_FLAGS` で渡す、最後の描き先に名前 `motolii_out` を付ける（three.js は名前を GPU の label にそのまま渡す：three.webgpu.js 76623）、最後に装置を閉じる（記録が終わる）。
 - 再生：`engine/dawn_probe/replay_on_dawn.sh <記録> motolii_out 640 360 <出力>`。Motolii の Dawn（out/wgpu）に元からある replay の部品（`libreplay.a`）で流し直し、描き先を読み戻す。three.js も JS も使わない。
 - 結果（640×360、ユーザーの写真）：
 
@@ -217,7 +217,7 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
   - 理由（Dawn のコード）：Replay の「1 コマ」の区切りは、画面に出す瞬間（`surface.Present()`、Replay.cpp:1510-1515）だけ。画面なしの記録には区切りが無い。
 - 仮に画面つきで記録して区切りを入れても、Replay は読み位置を前に進めるだけ（`PlayFrameImpl`、Replay.cpp:1594-1602）。同じコマを、時間を変えてもう一度流す口は無い。しかも各コマには、記録した時の時間を書く命令（writeBuffer）がそのまま入っている。
 - なので、時間を変えて動かすこと、毎コマの時間を測ることは、Replay ではできない。Replay は「取り込んだ一式が正しいか」を確かめる道具として使い、本番の再生には使わない。
-- Motolii が既に持っている「何段も描く・毎コマ時間を渡す」仕組みは ISF の PASSES（`engine/community/shaders/isf.cpp`：TARGET、PERSISTENT、FLOAT、大きさ。WGSL にして Motolii の画面で描く）。TSL の何段も描く効果をこの形に載せられるかは、まだ確かめていない。
+- Motolii が既に持っている「何段も描く・毎コマ時間を渡す」仕組みは ISF の PASSES（`engine/community/isf/isf.cpp`：TARGET、PERSISTENT、FLOAT、大きさ。WGSL にして Motolii の画面で描く）。TSL の何段も描く効果をこの形に載せられるかは、まだ確かめていない。
 
 ### 1 コマは何でできているか：記録を数えた（10/26）
 
@@ -263,7 +263,7 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
 |---|---|---|
 | Chainsawkitten/WebGPUReconstruct | MIT、2026-10-26 | ブラウザの WebGPU を記録してネイティブの Dawn・wgpu で流し直す。目的はデバッグと再現（README）。Motolii が既に持つ Dawn の記録・流し直しと同じ種類で、時間を変えて繰り返さない |
 | brendan-duncan/webgpu_recorder | MIT、2026-06-08 | .wgpu は JSON の `init`（1 回）・`frames`（コマごとの命令の並び）・`data`（中身）に分かれる（README の Binary Recording Format）。再生役は JS（webgpu_player.js）で、記録したコマを順に流す |
-| mrRay/ISF_Spec | MIT、2025-03-20 | 何段も描く・前のコマを残す・時間・つまみをデータで書く形式。Motolii は既に読んでいる（`engine/community/shaders/isf.cpp`） |
+| mrRay/ISF_Spec | MIT、2025-03-20 | 何段も描く・前のコマを残す・時間・つまみをデータで書く形式。Motolii は既に読んでいる（`engine/community/isf/isf.cpp`） |
 | mrRay/ISFMSLKit | GitHub では NOASSERTION（ChatGPT は BSD と言うが未確認）、2026-09-16 | ISF を Metal で動かす |
 | takahirox/tsl-node-editor | MIT、2026-10-16 | TSL のノード編集。出すのは TSL と three.js のコード |
 | dfranx/SHADERed | MIT、2023-09-22 | シェーダーの IDE、Shadertoy を取り込むプラグイン |
@@ -277,14 +277,14 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
 
 ## 何段も描く効果も棚へ：作者の render() を書き留める（11/2）
 
-繋ぐ所は `engine/tsl/shader_lab_shelf.ts` と `shelf_file.ts`（合わせて約 350 行）。作者の `render()` を、何も描かず言われた事だけ書き留める renderer で 1 回回し、材質、描き先の絵、値を段ごとに取る。段は `screen.h` の `--pass@` に、段の WGSL は three.js の変換器が書いたまま 1 本の `.wgsl` に入る。three.js も Node も遊ぶ時には要らない。
+繋ぐ所は `engine/tsl/write_shelf_shader_lab.ts` と `write_shelf_file.ts`（合わせて約 350 行）。作者の `render()` を、何も描かず言われた事だけ書き留める renderer で 1 回回し、材質、描き先の絵、値を段ごとに取る。段は `screen.h` の `--pass@` に、段の WGSL は three.js の変換器が書いたまま 1 本の `.wgsl` に入る。three.js も Node も遊ぶ時には要らない。
 
 - 作れた物：35 本。作れなかった物：particle-grid（3D の点と compute。「板 1 枚を描く」形でない）。
-- 作者のレンダラと比べた：`engine/tsl/check_node/` で、Motolii が描いた同じ 1080p の絵を渡し、同じ時刻（40/60 秒）の色の差を RMS で測った。
+- 作者のレンダラと比べた：`engine/tsl/compare_in_node/` で、Motolii が描いた同じ 1080p の絵を渡し、同じ時刻（40/60 秒）の色の差を RMS で測った。
   - 完全に同じ 5 本：dithering、posterize、shape、photographic-cells（色。透明度は違う）、outline（既定は不透明な絵を変えないので、線の絵は比べていない）。
   - 0.5% 以下が 16 本、2% 以下が 27 本、5% 以下が 33 本。一番大きいのは Ink 7.7%、次が Connected Dots 6.2%。目では見分けが付かず、差は線の縁とノイズの粒に出る。
   - Displaced Rings は絵の外が作者は不透明な黒、棚は透明。動画に重ねるので直さない。
-  - 比べて見つかった道具の誤り：表を線形で読んで Dithering の点が消えた、表の端で先頭へ折り返して Lumen Print の空が荒れた、「ある設定の時だけ描く段」の絵が残ってエンジンに断られた、Spacing で大きさが変わる表を固定の割合で取った。どれも `shelf_file.ts` か `shader_lab_shelf.ts` で直した。
+  - 比べて見つかった道具の誤り：表を線形で読んで Dithering の点が消えた、表の端で先頭へ折り返して Lumen Print の空が荒れた、「ある設定の時だけ描く段」の絵が残ってエンジンに断られた、Spacing で大きさが変わる表を固定の割合で取った。どれも `write_shelf_file.ts` か `write_shelf_shader_lab.ts` で直した。
 - つまみ：全 469 本を端の値へ動かし、絵が変わるかを `edit.sh` で見た（480×270、2 分）。397 本が変わる。72 本は既定の状態で変わらず、51 本は作者の表に `visibleWhen` がある別モード用、21 本は理由を調べていない（Glass の tint、Focus Blur の kind など）。作者の値と画素で比べたのは既定の値だけ。
 - 見つかったつまみの誤り：赤・緑・青が別々の uniform の色は赤しか繋がらず、既定値も隣の数字を拾っていた（Gradient、Halftone）。直した。
 - 重さ（この Mac、1080p、1 秒の枚数、同じ計測の 2 回目）：Pixel Sorting 16（作者のレンダラは 1 枚 53 ms）、Ink 19、Glass 22、Plotter 37、Bloom 123。段を選ぶ `if` の連なりを `switch` にして Pixel Sorting は 7 枚から上がった。
@@ -294,7 +294,7 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
 
 ## 絵を作る材質も棚へ：tsl-textures 44 本（11/2）
 
-繋ぐ所は `engine/tsl/textures_shelf.ts`（約 70 行）。作者の説明書のとおり `material.colorNode` に入れ、1 段の効果として `shelf_file.ts` で 1 本の `.wgsl` にする。絵は自分で作り、下の物の透明な所は透明のまま（ISF の生成と同じ）。
+繋ぐ所は `engine/tsl/write_shelf_tsl_textures.ts`（約 70 行）。作者の説明書のとおり `material.colorNode` に入れ、1 段の効果として `write_shelf_file.ts` で 1 本の `.wgsl` にする。絵は自分で作り、下の物の透明な所は透明のまま（ISF の生成と同じ）。
 
 - 作れた物：52 本のうち 44 本。作らない物は色の欄に入らない 7 本と、板では背景しか出ない Darth Maul。
 - 試し：`edit.sh` で全 44 本を描き、つまみ 382 本を端の値へ動かして絵が変わるかを見た（480×270、断られた行 0）。381 本が変わる。変わらないのは Bricks の奥行きの大きさ（板は z が 0）。
@@ -304,7 +304,7 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
 
 ## ノイズと爆発、three.js の見本の取捨（11/2）
 
-繋ぐ所は `engine/tsl/noise_fx_shelf.ts`（約 50 行）。互換が目的ではないので好き嫌いした。
+繋ぐ所は `engine/tsl/write_shelf_noise_and_tslfx.ts`（約 50 行）。互換が目的ではないので好き嫌いした。
 
 - 取った物：threejs-noise-functions の 9 本（Crater、Curl、Erosion、Gabor、Paper、Scratches、Stone、Wavelet、Wool）、TSLFX の Impact と Scatter。
 - 取らなかった物：blue、golden_ign、hash、hilbertBlue、value は 6 倍の座標だと升目の乱数に見える。perlin、simplex、worley は棚に同じ物がある。TSLFX の gradient、dotNoise、simplex2D・3D、template は部品か棚に同じ物があり、Shape は縦横比を持たない。
@@ -314,7 +314,7 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
 
 ## Pattern：絵の表はファイルの中に（11/2）
 
-作者の `buildPatternAtlas` は SVG を 16×16 のマスに描いてマスクにする。ブラウザの Canvas の代わりに librsvg（`rsvg-convert`）で描き、同じ閾値でマスクにして、96×16 の表として `.wgsl` に書いた（`shelf_file.ts` の `table`、Dithering の表と同じ）。magick 内蔵の SVG は透明のまま何も描かなかった。Bars、Candles、Shapes の 3 本。つまみ 72 本のうち 9 本は既定の色モードで絵が変わる。残りは別の色モード用（Color Mode の最後の選択肢は既定と同じ 0、Tint などは Monochrome と Custom の時だけ）。
+作者の `buildPatternAtlas` は SVG を 16×16 のマスに描いてマスクにする。ブラウザの Canvas の代わりに librsvg（`rsvg-convert`）で描き、同じ閾値でマスクにして、96×16 の表として `.wgsl` に書いた（`write_shelf_file.ts` の `table`、Dithering の表と同じ）。magick 内蔵の SVG は透明のまま何も描かなかった。Bars、Candles、Shapes の 3 本。つまみ 72 本のうち 9 本は既定の色モードで絵が変わる。残りは別の色モード用（Color Mode の最後の選択肢は既定と同じ 0、Tint などは Monochrome と Custom の時だけ）。
 
 ## ASCII：文字盤は横に置く絵（11/2）
 

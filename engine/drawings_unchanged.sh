@@ -10,7 +10,7 @@
 # documents are made in a temporary folder, and engine/out/skin.motolii is not opened.
 old=${1:?usage: ./drawings_unchanged.sh <old-commit>}
 cd "$(dirname "$0")"
-source deps/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: deps/build_lock.sh)
+source tools/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: tools/build_lock.sh)
 here=$PWD
 git rev-parse -q --verify "$old^{commit}" > /dev/null || { echo "no such commit: $old"; exit 1; }
 tmp=$(mktemp -d -t drawings_unchanged) || exit 1

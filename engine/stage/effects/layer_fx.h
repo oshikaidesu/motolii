@@ -5,7 +5,7 @@
 // #1818, #7676, #3784). The functions as they were before the one view (git bf0d4c2, screen_fx.h), less what laid the
 // picture over the screen.
 #pragma once
-#include "community/js/solid_three.h"
+#include "community/three/solid_three.h"
 #include "community/aviutl/aviutl_fx.h"
 static char doc_thor_letter(const std::string& w);
 static void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {

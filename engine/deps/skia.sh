@@ -5,7 +5,7 @@
 #   ./deps/skia.sh
 set -e
 cd "$(dirname "$0")/.."
-source deps/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: deps/build_lock.sh)
+source tools/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: tools/build_lock.sh)
 K=$PWD/third_party/skia_src
 [ -d $K ] || { mkdir -p $K && git init -q $K && git -C $K -c core.hooksPath=/dev/null fetch -q --depth 1 https://skia.googlesource.com/skia 9bb16a741cdbcbde46a0d4caf8ac73f4d07a89e2 && git -C $K checkout -q FETCH_HEAD; }   # (chrome/m149 as it stood when fetched)
 [ -x $K/bin/gn ] || (cd $K && python3 bin/fetch-gn > /dev/null)

@@ -44,7 +44,7 @@ GitHub の Actions で組み立て全部を走らせるのは `.github/workflows
 ### 4. 他の人の作品を入れる時
 - 作者のフォルダごと、なるべく手を入れずに置く。隣に作者のライセンスの文書（`LICENSE`）と、取ってきた所（`SOURCE.txt`：名前と作者／licence／from／page）。
 - 作者がライセンスの文書を出していない物は入れない（入れる代わりに、組み立ての時に作者の所から取る：`engine/deps/midi_roll.sh` が例）。
-- 手を入れる物は、元に当てる差分（`.patch`）に分けて、元は組み立ての時に作者の配布元から取る（差分は `engine/deps/patches/<ライブラリ>/`、`engine/gpu/tvg_on_dawn.sh` が例）。
+- 手を入れる物は、元に当てる差分（`.patch`）に分けて、元は組み立ての時に作者の配布元から取る（差分は `engine/deps/patches/<ライブラリ>/`、`engine/deps/thorvg.sh` が例）。
 - [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md) に行を足す。
 
 ## 手を付けやすい所
@@ -53,7 +53,7 @@ GitHub の Actions で組み立て全部を走らせるのは `.github/workflows
 |---|---|---|
 | 配れる `.app`：エンジンが読む Homebrew の部品（GStreamer・glib・SQLite・LuaJIT・QuickJS）を `.app` の中に入れる。[dylibbundler](https://github.com/auriamg/macdylibbundler) か GStreamer の macOS 用フレームワーク | `engine/edit.sh`、`app/macos/` | 中 |
 | AviUtl2 のスクリプトで足りない呼び出し（`obj.computeshader`、本体のエフェクトなど）を、手本（AviUtl2 の lua.txt、sashimono-edit）どおりに | `docs/internal/reports/aviutl/aviutl2/converter_plan.md`、`engine/community/aviutl/aviutl.cpp` | 中〜難 |
-| TSL の表現を編集の棚に出す | `engine/community/three_tsl/`、`docs/internal/reports/effects/tsl_collection.md` | 中 |
+| TSL の表現を編集の棚に出す | `engine/community/three_shading_language_to_shelf/`、`docs/internal/reports/effects/tsl_collection.md` | 中 |
 
 ## 知っている穴
 

@@ -1,11 +1,11 @@
 #!/bin/zsh
 # One of the renderer's pictures (ring, poster, blocks, shapes) on Filament's WebGPU (Dawn) backend, beside the usual Metal
-# build (which is not touched). Needs gpu/build.sh first (the WebGPU-enabled Filament and its matc).
-#   ./filament_webgpu.sh ring                 builds ../out/<name>_wgpu and runs it on WebGPU:  ../out/filament_webgpu/out/<name>.png
-#   BACKEND=metal ./filament_webgpu.sh ring   the same program on Metal, to compare
+# build (which is not touched). Needs deps/filament.sh first (the WebGPU-enabled Filament and its matc).
+#   ./gpu/filament_webgpu.sh ring                 builds ../out/<name>_wgpu and runs it on WebGPU:  ../out/filament_webgpu/out/<name>.png
+#   BACKEND=metal ./gpu/filament_webgpu.sh ring   the same program on Metal, to compare
 set -e
 cd "$(dirname "$0")/.."
-source deps/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: deps/build_lock.sh)
+source tools/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: tools/build_lock.sh)
 n=${1:-ring}
 SRC=third_party/filament_src
 SDK=$SRC/out/wgpu_install
@@ -44,18 +44,18 @@ for f in paper paper_copy floor_shade effected effected_world effected_solid thi
     done
     [ $f = bubble ] && { $MATC -a webgpu -a metal -p desktop -DWORN -o out/filament_webgpu/bubble_worn.filamat materials/bubble.mat > out/filament_webgpu/bubble_worn.log 2>&1 || echo "no WebGPU material: bubble_worn"; }   # (a thing wearing Bubble: stage/render/render_layers.h solid_wear)
 done
-# ThorVG here is the one built against Dawn (gpu/tvg_on_dawn.sh makes it): it can draw on Filament's own device
+# ThorVG here is the one built against Dawn (deps/thorvg.sh makes it): it can draw on Filament's own device
 # (stage/canvas/canvas.h), through the interop built inside Filament's build (gpu_interop.h).
 THOR=third_party/thorvg_src
-[ -f $THOR/build_dawn/src/libthorvg-1.a ] || ./gpu/tvg_on_dawn.sh > /dev/null
+[ -f $THOR/build_dawn/src/libthorvg-1.a ] || ./deps/thorvg.sh > /dev/null
 meson configure $THOR/build_dawn -Dengines=cpu,wg -Dextra=lottie_exp > /dev/null   # (left on: meson set up again by a changed source takes ThorVG's defaults, the CPU engine alone)
 ninja -C $THOR/build_dawn > /dev/null
 # (stage/canvas/thorvg_path_operators.cpp: ThorVG's own path operators, built as ThorVG builds them; libtess2: a flat shape cut into triangles, flat_mesh)
 [ out/bend.o -nt stage/canvas/thorvg_path_operators.cpp ] || clang++ -c -std=c++17 -I $PWD -O2 -fno-rtti -fno-exceptions -DTVG_STATIC -I $THOR/build_dawn -I $THOR/inc -I $THOR/src/common -I $THOR/src/renderer -I $THOR/src/renderer/gpu_engine -I $THOR/src/renderer/gpu_engine/wg -I $THOR/src/loaders/lottie -I $SRC/third_party/dawn/include -I $SRC/out/wgpu/third_party/dawn/gen/include stage/canvas/thorvg_path_operators.cpp -o out/bend.o
 ./deps/libtess2.sh
 ./deps/curve_fit_nd.sh   # (doc_curve: a hand's way turned into a path of cubic Béziers, as Blender's Draw Curve)
-./deps/jolt.sh   # (physics/jolt.cpp: Jolt, which edit.sh and build_lib.sh link)
-./deps/iris.sh   # (media/video_flash_check.cpp: EA's IRIS and the OpenCV it reads, which edit.sh and build_lib.sh link)
+./deps/jolt.sh   # (physics/jolt.cpp: Jolt, which build.sh links)
+./deps/iris.sh   # (media/video_flash_check.cpp: EA's IRIS and the OpenCV it reads, which build.sh links)
 # (media/video_flash_check.cpp built apart, in IRIS's own C++17: its log lines pass runtime format strings, which C++20's fmt refuses)
 I=third_party/iris
 [ out/flashes.o -nt media/video_flash_check.cpp ] && [ out/flashes.o -nt entry/motolii.h ] || clang++ -c -std=c++17 -I $PWD -O2 -I $I/IRIS/include -I $I/IRIS/utils/include -I $I/spdlog/include -I $I/json/single_include -I $I/opencv_out/include/opencv4 media/video_flash_check.cpp -o out/flashes.o

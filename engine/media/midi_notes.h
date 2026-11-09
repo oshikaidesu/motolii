@@ -5,7 +5,7 @@
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
 #include "media/gstreamer_file_source.h"
-#include "community/js/script.h"
+#include "community/quickjs/script.h"
 #include <fstream>
 #include <iterator>
 #include <cmath>

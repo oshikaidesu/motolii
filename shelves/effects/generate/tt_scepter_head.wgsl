@@ -1,4 +1,4 @@
-// Scepter head: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)
+// Scepter head: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture designs the stone and the metal rim of a scepter
 // --track@colorRim_x:Color Rim r,0,1,1,0.001

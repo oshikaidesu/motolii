@@ -5,7 +5,7 @@
 # The inside's own files reload by themselves (effects .wgsl, scripts .js). Ends when the window is closed.
 #   tool/live.sh                   (opens ~/Movies/Motolii/Untitled.motolii; MOTOLII_DOC=/path/to.motolii for another document)
 cd "$(dirname "$0")/.."   # (app/: lib/, build/ and ../engine are read from there)
-source ../engine/deps/build_lock.sh; build_lock "$@"   # (the machine's one build lock, held till the window is open, not while it runs)
+source ../engine/tools/build_lock.sh; build_lock "$@"   # (the machine's one build lock, held till the window is open, not while it runs)
 FLUTTER="${FLUTTER:-flutter}"
 pid="build/live.pid" seen="build/live.seen"
 : ${MOTOLII_DOC:=$HOME/Movies/Motolii/Untitled.motolii}   # (the document, and beside it what Render writes and File › New makes; MOTOLII_DOC=… for another)

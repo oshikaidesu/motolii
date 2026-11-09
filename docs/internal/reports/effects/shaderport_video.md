@@ -99,7 +99,7 @@ shaderport（quizzyjoy/shaderport、Apache-2.0）は、shader-effects-inc/shader
   - wgpu-compute-toy（MIT、compute のみ）、cuneus（MIT、段の組み立ては Rust のコード）、pygfx/shadertoy（BSD-2、Python、Shadertoy の決まった uniform）：どれも wgpu の上で、他人の Dawn の装置は使えない。
   - librashader（MPL-2.0、C の口あり）：受け取るのは slang（GLSL）で WGSL ではない。
   - shaders.com の効果をブラウザの外で動かす物は fframes（MIT）だけ。手で SkSL に書き直した物で、WebGPU ではない。
-- 分かった事：Motolii の Dawn の装置の上で作者の段の一式を回してくれる既存の物は無い。形として一番近いのは Wisp の段の書き方で、Motolii の ISF の段（`engine/community/shaders/isf.cpp`、`screen.h` の `// --pass@`）とも同じ考え方。
+- 分かった事：Motolii の Dawn の装置の上で作者の段の一式を回してくれる既存の物は無い。形として一番近いのは Wisp の段の書き方で、Motolii の ISF の段（`engine/community/isf/isf.cpp`、`screen.h` の `// --pass@`）とも同じ考え方。
 - Motolii の段の仕組み（screen.h → screen_door）が作者の WGSL を受け取れないのは、screen_door が Filament の描く係を通るため。入力の並びを group 0 に決めうち（vgpu の形）にしていて、入口の名前も `main` に決めうちしている。作者の並び（group 0・1・2）を受け取るには、文字の書き換え（翻訳）か、screen_door をシェーダー自身の並び（layout auto、gpu_door の道）に替えるかになる。
 
 ## screen_door を「シェーダー自身の並び」に替えられるか（10/26）：Filament の描く係の中ではできない
@@ -116,7 +116,7 @@ shaderport（quizzyjoy/shaderport、Apache-2.0）は、shader-effects-inc/shader
 
 - 作者は、他の道具と組むための口を用意していた：`createRendererFromJSON(preset, { gpu: { device, adapter } })` → `initialize(canvas)` → `renderFrame({ deltaSeconds })`（`packages/core/src/presetRenderer.ts:103-201`）。`gpu` で持ち主の装置を使い（説明：「同じ装置を使う別の WebGPU のレンダラーと一緒に」、`packages/js/src/createSharedDevice.ts`）、`deltaSeconds` で時計を持ち主に渡して 1 コマずつ描く（作者の言葉で「コマに合わせた書き出し」、`gpu/index.ts:3276-3300`）。
 - 作者の組み立て済みの配布物 `shaders@4.0.5`（npm、MIT）を丸ごと取り寄せた（`engine/tsl/package.json`）。中身の `'use gpu'` 関数は作者の組み立て（unplugin-typegpu）を通さないと空になるので、自分で組み立てない。
-- 確かめ：`engine/tsl/check_node/shaders_check.mjs`（Node と Motolii の dawn.node、確かめの台本で Motolii の一部ではない）。canvas は作者が求める物だけの代役（大きさと、テクスチャがこちらの物の WebGPU の context）、`window` は作者が読む物だけ（大きさ、画素比、イベントの口、`matchMedia`）。
+- 確かめ：`engine/tsl/compare_in_node/shaders_check.mjs`（Node と Motolii の dawn.node、確かめの台本で Motolii の一部ではない）。canvas は作者が求める物だけの代役（大きさと、テクスチャがこちらの物の WebGPU の context）、`window` は作者が読む物だけ（大きさ、画素比、イベントの口、`matchMedia`）。
 - 結果（640×360、120 コマ、子は Plasma）：
   - Glitch：1 コマ 1.77 ms（作者自身の GPU 待ちを含む）、色の帯の乱れまで出る。
   - 自作の再生役で壊れていた物が全部描けた：Crystal（屈折する水晶玉、前は白い円）5.92 ms、Surface3D（前は真っ黒）7.60 ms、Form3D（絵を 3D のリボンにねじる作りで、帯になるのが正しかった）4.07 ms、TimeTrail 4.62 ms。
@@ -143,18 +143,18 @@ shaderport（quizzyjoy/shaderport、Apache-2.0）は、shader-effects-inc/shader
 
 - Node（libnode）は止めた：作者のレンダラー 1 つのために、V8 という JS の土台をもう 1 つ（材料だけで 4.4 GB、組み立て途中で止めた）抱え込むのは大きすぎる（ユーザー）。
 - BabylonJS/JsRuntimeHost（980cfb0、MIT）の QuickJS の Node-API は、手を入れた QuickJS ではなく本家の quickjs-ng（93d3f7d、2026-06-30、0.16 と 0.17 の間）と組む作りで、すでにある JSContext に取り付ける口 `Napi::Attach(JSContext*)` を持つ（`Core/Node-API/Source/env_quickjs.cc`）。なので Motolii が script.cpp で使っている Homebrew の QuickJS-ng 0.17（libqjs）にそのまま付く。JS の土台は 1 つのまま。
-- 直しのファイル 1 枚（`engine/tsl/jsrh_napi/jsrh_qjs017_dawn.patch`、108 行）：
+- 直しのファイル 1 枚（`engine/tsl/node_api_quickjs/jsrh_qjs017_dawn.patch`、108 行）：
   - 0.17 で `JS_NewArrayBuffer` が解放の関数から realloc の関数に替わった所を、0.17 の quickjs.h の決まり（大きさ 0 なら解放して NULL）どおりに包む。0.17 で組んだときの誤りはこの 1 つだけ（NativeScript の物は 18〜19）。
   - JsRuntimeHost に無い 3 つ：`napi_add_finalizer`（JsRuntimeHost の `napi_create_external` と同じ ExternalData を、物にだけ見える Symbol で持たせる）、`napi_set_instance_data` と `napi_get_instance_data`（NativeScript と同じく env に置き場）。`napi_fatal_error` は外側（Node と同じ文言）。
   - NAPI_VERSION=8 で組む（dawn.node と同じ版。版が低いと `napi_detach_arraybuffer` などが C の名前にならない）。
-- 外側：`engine/tsl/jsrh_napi/host.cc`（QuickJS の qjs.c の形、Node の process.dlopen の形）、`build.sh`。
-- 確かめ：Motolii の dawn.node で requestAdapter・requestDevice・createBuffer・writeBuffer・mapAsync が通り、`1,2,3,4` と読み戻せた（`jsrh_napi/smoke.ts`）。dawn.node が求める Node-API 72 個は全部そろった（nm で突き合わせ）。NativeScript の土台（前の節、穴 4 つ）は消した。
+- 外側：`engine/tsl/node_api_quickjs/host.cc`（QuickJS の qjs.c の形、Node の process.dlopen の形）、`build.sh`。
+- 確かめ：Motolii の dawn.node で requestAdapter・requestDevice・createBuffer・writeBuffer・mapAsync が通り、`1,2,3,4` と読み戻せた（`node_api_quickjs/smoke.ts`）。dawn.node が求める Node-API 72 個は全部そろった（nm で突き合わせ）。NativeScript の土台（前の節、穴 4 つ）は消した。
 - dawn.node に持ち主の装置を渡す直し `engine/tsl/dawn_lend.patch`（呼び先の表を持ち主の Dawn に向ける `motolii_dawn_procs`、後回し処理を持ち主のインスタンスで回す、`wrapDevice`・`wrapTexture`、借りた装置は壊さない `Lent`）は組めたが、まだ動かして確かめていない。
 
 ## 作者のレンダラーが Motolii の QuickJS で動いた（10/26）
 
-- `engine/tsl/jsrh_napi/shaders.ts`：Node の確かめ（`check_node/shaders_check.mjs`）と同じ中身を QuickJS 用に包んだ物。作者の組み立て済み `shaders@4.0.5` を esbuild で 1 本にまとめる（`--define:process.env.NODE_ENV="production"`、配布物を束ねるときの普通のやり方。作者の配布物の `process.emit` と `getBuiltinModule` は「あれば使う」形なので、そのまま）。
-- QuickJS に無くて作者の配布物が触る物は、既存の物で埋めた（`jsrh_napi/web_globals.ts`）：URL・URLSearchParams・structuredClone（core-js）、AbortController（abort-controller 3.0.0、MIT）、TextEncoder・TextDecoder（fast-text-encoding 1.0.6、Apache-2.0、Google）、setTimeout などは QuickJS 自身の `qjs:os` の時計。
+- `engine/tsl/node_api_quickjs/shaders.ts`：Node の確かめ（`compare_in_node/shaders_check.mjs`）と同じ中身を QuickJS 用に包んだ物。作者の組み立て済み `shaders@4.0.5` を esbuild で 1 本にまとめる（`--define:process.env.NODE_ENV="production"`、配布物を束ねるときの普通のやり方。作者の配布物の `process.emit` と `getBuiltinModule` は「あれば使う」形なので、そのまま）。
+- QuickJS に無くて作者の配布物が触る物は、既存の物で埋めた（`node_api_quickjs/web_globals.ts`）：URL・URLSearchParams・structuredClone（core-js）、AbortController（abort-controller 3.0.0、MIT）、TextEncoder・TextDecoder（fast-text-encoding 1.0.6、Apache-2.0、Google）、setTimeout などは QuickJS 自身の `qjs:os` の時計。
 - 結果（Plasma の上に Glitch、640×360、Motolii の dawn.node）：
   - 60 コマ目の絵は、Node で同じく描いた絵と 1 バイトも違わない。
   - 1 コマ（作者自身の GPU 待ちを含む）：QuickJS で 5.54 ms（120 コマ）、5.31 ms（300 コマ）。Node（V8）は 1.95 ms。QuickJS は JS を機械語にせず読みながら動かすので遅いが、60fps の枠（16.7 ms）の 3 分の 1。
@@ -162,7 +162,7 @@ shaderport（quizzyjoy/shaderport、Apache-2.0）は、shader-effects-inc/shader
 
 ## 作者のレンダラーが Filament と同じ装置で描いた（10/26）
 
-- `engine/dawn_probe/js_effects.cpp`（`js_effects.sh`）：Filament のエンジンを作り、その Dawn の装置・インスタンスと描き先のテクスチャを用意し、Motolii の QuickJS に JsRuntimeHost の Node-API を付けて（`jsrh_napi/host.cc` と同じ立て方）、作者のレンダラー（`jsrh_napi/shaders.ts`）を回す。dawn.node は `dawn_lend.patch` で Filament の Dawn の呼び先の表（`motolii_dawn_procs`）を使い、Filament の装置とテクスチャを `wrapDevice`・`wrapTexture` で包む。描き終わったら外側が同じ装置で読み戻す。
+- `engine/dawn_probe/js_effects.cpp`（`js_effects.sh`）：Filament のエンジンを作り、その Dawn の装置・インスタンスと描き先のテクスチャを用意し、Motolii の QuickJS に JsRuntimeHost の Node-API を付けて（`node_api_quickjs/host.cc` と同じ立て方）、作者のレンダラー（`node_api_quickjs/shaders.ts`）を回す。dawn.node は `dawn_lend.patch` で Filament の Dawn の呼び先の表（`motolii_dawn_procs`）を使い、Filament の装置とテクスチャを `wrapDevice`・`wrapTexture` で包む。描き終わったら外側が同じ装置で読み戻す。
 - 結果（Plasma の上に Glitch、640×360、60 コマ）：PASS、Filament の装置で読み戻した絵は Node で描いた絵と 1 バイトも違わない。1 コマ 4.50 ms（作者自身の GPU 待ちを含む）。
 - これで、作者の効果を作者のレンダラーのまま、Motolii の JS の土台（QuickJS 0.17）と Motolii の装置で描ける。自作の再生役（`video_external.cpp`）が要るのは、残り「動画を入れる」所だけ（作者の VideoTexture は `device.importExternalTexture` を使い、dawn.node には無い）。
 - 注意：Filament は自分の描く糸（driver thread）で同じ装置を使う。今回は Filament の仕事を終わらせて（flushAndWait）から JS を回した。Motolii の画面の中で毎コマ回すときは、`door::on_driver`（ThorVG と同じ）で Filament の描く糸の順番に入れる必要がある。
@@ -170,9 +170,9 @@ shaderport（quizzyjoy/shaderport、Apache-2.0）は、shader-effects-inc/shader
 ## 自分で書いて使わなくなった物を捨てた（10/26）
 
 - 今の道（作者のレンダラー ＋ Motolii の QuickJS ＋ Filament の装置）に要らない自作を消した（約 900 行）：
-  - Dawn の記録の道：`dawn_probe/capture_list.cpp`・`.sh`、`dawn_probe/replay_on_dawn.cpp`・`.sh`、`tsl/dawn_capture.sh`・`.patch`、`check_node/check.ts` の記録用の足し（Dawn の木に当てていた記録の直しも外した）。Replay は本番に使えないと分かった（前の節）。
+  - Dawn の記録の道：`dawn_probe/capture_list.cpp`・`.sh`、`dawn_probe/replay_on_dawn.cpp`・`.sh`、`tsl/dawn_capture.sh`・`.patch`、`compare_in_node/check.ts` の記録用の足し（Dawn の木に当てていた記録の直しも外した）。Replay は本番に使えないと分かった（前の節）。
   - 作者の WGSL を書き出して自作の再生役で回す道：`dawn_probe/video_external.cpp`・`.sh`（自作の再生役 331 行）、`tsl/shaderport_export.sh`・`shaderport_frames.patch`、取り寄せた shaderport。作者のレンダラーに替えた。
-  - 二重：`tsl/jsrh_napi/host.cc`・`smoke.ts`（`js_effects.cpp` に同じ立て方がある）、`check_node/shaders_check.mjs`（Node での確かめ、QuickJS で同じ絵になると分かった）、`shaders.ts` の自分で装置を作る分岐。
-- 残した物：`tsl/jsrh_napi/build.sh`（直しを当てた JsRuntimeHost の Node-API を用意するだけ）、`jsrh_qjs017_dawn.patch`、`shaders.ts`、`web_globals.ts`、`tsl/dawn_lend.patch`、`dawn_probe/js_effects.cpp`・`.sh`。
+  - 二重：`tsl/node_api_quickjs/host.cc`・`smoke.ts`（`js_effects.cpp` に同じ立て方がある）、`compare_in_node/shaders_check.mjs`（Node での確かめ、QuickJS で同じ絵になると分かった）、`shaders.ts` の自分で装置を作る分岐。
+- 残した物：`tsl/node_api_quickjs/build.sh`（直しを当てた JsRuntimeHost の Node-API を用意するだけ）、`jsrh_qjs017_dawn.patch`、`shaders.ts`、`web_globals.ts`、`tsl/dawn_lend.patch`、`dawn_probe/js_effects.cpp`・`.sh`。
 - 確かめ：消した後に組み直して、Filament の装置で描いた Plasma の上の Glitch が前と 1 バイトも違わない（1 コマ 3.42 ms）。
 - 上の節に出てくる消したファイルは、その時の記録として残す（git の歴史にある）。動画を作者の効果に入れる道は、dawn.node の外部テクスチャ（Dawn 自身の TODO、crbug.com/dawn/1129）を埋めてから、作者の VideoTexture で通す。

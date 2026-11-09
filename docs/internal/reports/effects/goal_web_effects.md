@@ -16,9 +16,9 @@ shader-effects-inc/shaders（shaders.com、MIT、200 種）の効果を、Motoli
 - 作者のレンダラー（npm の組み立て済み `shaders@4.0.5` の `createRendererFromJSON`）が、Motolii の QuickJS-ng 0.17 の上で、Filament の装置を借りて描く。Plasma の上の Glitch が Node で描いた絵と 1 バイトも違わない。640×360 で 1 コマ 3.4〜4.5 ms。
   - 動かし方：`./engine/dawn_probe/js_effects.sh <preset.json> <w> <h> <frames> <out.rgba>`（preset の例：`{"components":[{"type":"Glitch","children":[{"type":"Plasma"}]}]}`）
 - 部品：
-  - `engine/tsl/jsrh_napi/build.sh` と `jsrh_qjs017_dawn.patch`：BabylonJS/JsRuntimeHost（980cfb0、MIT）の QuickJS の Node-API を、Motolii の QuickJS に `Napi::Attach` で付ける。0.17 との違い 1 か所と、足りない関数 3 つ。
+  - `engine/tsl/node_api_quickjs/build.sh` と `jsrh_qjs017_dawn.patch`：BabylonJS/JsRuntimeHost（980cfb0、MIT）の QuickJS の Node-API を、Motolii の QuickJS に `Napi::Attach` で付ける。0.17 との違い 1 か所と、足りない関数 3 つ。
   - `engine/tsl/dawn_lend.patch`：Dawn の JS の口（dawn.node）に Filament の Dawn の呼び先の表（`motolii_dawn_procs`）を使わせ、装置とテクスチャを `wrapDevice`・`wrapTexture` で包む。
-  - `engine/tsl/jsrh_napi/shaders.ts`、`web_globals.ts`：作者のレンダラーを回す包みと、QuickJS に無い Web の部品（core-js、event-target-shim、abort-controller、fast-text-encoding）。
+  - `engine/tsl/node_api_quickjs/shaders.ts`、`web_globals.ts`：作者のレンダラーを回す包みと、QuickJS に無い Web の部品（core-js、event-target-shim、abort-controller、fast-text-encoding）。
 - 経緯と数字：`docs/internal/reports/effects/shaderport_video.md`。
 
 ## 残っている穴

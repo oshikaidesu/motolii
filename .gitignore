@@ -1,7 +1,8 @@
-# build products and render output
-out/
+# build products and render output, only where AGENTS.md 構成の目標 4 lets them be: an out/ anywhere else shows in git status
+/engine/out/
+/docs/internal/**/out/
 third_party/
-# an editor's clangd: what deps/compile_commands.sh writes, and clangd's own index
+# an editor's clangd: what tools/compile_commands.sh writes, and clangd's own index
 /engine/compile_commands.json
 .cache/
 # (engine/third_party holds what the build fetches, kept out, beside a few small bundled works, kept in: a new one is let in below)
@@ -10,8 +11,10 @@ third_party/
 !/engine/third_party/anime/
 !/engine/third_party/godot_easing/
 !/engine/third_party/js/
+!/engine/third_party/leva/
 !/engine/third_party/midi_roll/
 !/engine/third_party/thermion_frame/
+!/engine/third_party/ymm4-luascript/
 !/engine/third_party/wordnet_ja/
 !/engine/third_party/noto_sans_jp/
 !/engine/third_party/gflanguages/

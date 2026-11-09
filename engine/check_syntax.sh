@@ -1,7 +1,7 @@
 #!/bin/zsh
 # The C++ checked without building (no lock, nothing written): clang++ -fsyntax-only on the library's one translation
 # unit (entry/motolii.mm, which reads every header of ours it uses) with the flags it is built with, taken from
-# compile_commands.json (deps/compile_commands.sh writes it when it is missing). Errors printed, the exit status clang's.
+# compile_commands.json (tools/compile_commands.sh writes it when it is missing). Errors printed, the exit status clang's.
 #   ./engine/check_syntax.sh                 the library      ./engine/check_syntax.sh community/aviutl/aviutl.cpp   another unit
 cd "$(dirname "$0")"
 unit=${1:-entry/motolii.mm}
@@ -19,5 +19,5 @@ if [ -f compile_commands.json ]; then
   read_args || exit 1
   stale=0; for a in $args; do p=${a#-I}; [[ $p != -* && $p == *third_party/* && ! -e $p ]] && stale=1 && break; done
 fi
-if (( stale )); then ./deps/compile_commands.sh > /dev/null || exit 1; read_args || exit 1; fi
+if (( stale )); then ./tools/compile_commands.sh > /dev/null || exit 1; read_args || exit 1; fi
 clang++ -fsyntax-only -Wno-everything ${args[@]} $unit && echo "ok: $unit"

@@ -5,7 +5,7 @@
 #   ./deps/curve_fit_nd.sh
 set -e
 cd "$(dirname "$0")/.."
-source deps/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: deps/build_lock.sh)
+source tools/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: tools/build_lock.sh)
 C=$PWD/third_party/curve_fit_nd
 [ -d $C ] || { mkdir -p $C && git init -q $C && git -C $C -c core.hooksPath=/dev/null fetch -q --depth 1 https://github.com/ideasman42/curve-fit-nd 7b8611f66c7bf029a19eb86ce9e388e55fad5e6f && git -C $C checkout -q FETCH_HEAD; }
 mkdir -p $C/build

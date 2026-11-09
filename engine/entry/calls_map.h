@@ -41,7 +41,7 @@ int motolii_grid(const double* xy, int n, int cols, int rows, int* cell) {
 }
 
 // Each of n pictures (224 points square, RGBA, one after another) told as `dims` numbers by a CLIP image encoder in an
-// ONNX file (OpenAI CLIP ViT-B/32's, or FontCLIP's, as tools/look_models.py writes them): the picture made into CLIP's
+// ONNX file (OpenAI CLIP ViT-B/32's, or FontCLIP's, as deps/likeness_models.py writes them): the picture made into CLIP's
 // own input (clip.py _transform's Normalize, its mean and spread), run by ONNX Runtime (its C++ API: Env, Session, Run),
 // each answer made one long, as FontMap keeps its FontCLIP numbers (L2-normalised). A model once opened is kept open.
 // 0: not told (no such model, or it answers otherwise).
