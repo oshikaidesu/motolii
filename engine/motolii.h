@@ -158,7 +158,7 @@ const char* motolii_cards_more(Motolii* m, int thing);   /* the cards it may be 
    document's own units; fold the name of the fold it lies in on its card (empty: not folded). */
 const char* motolii_shown(Motolii* m, const char* name);
 /* Pictures in one call: motolii_recipes says each recipe's name and what it makes ("name\twhat", one to a line, until
-   the next call); motolii_make makes one at the stage's present moment, as one step, and says the new thing (0: not). */
+   the next call; a closed pack "name\twhat\tprogram\tpath", what it was written for and its file: the Program shelf's); motolii_make makes one at the stage's present moment, as one step, and says the new thing (0: not). */
 const char* motolii_recipes(Motolii* m);
 /* A thing's look (its values, effects and keys, all but what it is, holds and where it lies) kept as a file of its
    own (motolii_look_save), given to another thing as one step (motolii_look_put); motolii_looks says the shelf's

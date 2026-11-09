@@ -277,7 +277,8 @@ String createFact(Ws ws) {
 /// Joined: the inside's recipes, pictures in one call (as Cavalry's tutorials build them), each a tile.
 (String, List<_Make>) _recipesOf(Ws ws) {
   final expressions = {for (final (name, _) in _expressionRecipes()) name};   // (not those that are expressions: their tiles are the Expression group's)
-  return ('Recipes', [for (final (name, what) in ws.inside!.recipes) if (!expressions.contains(name)) _Make(name, DockG.copies, Pop.tonePlace, '', what, recipe: true)]);
+  final packs = {for (final (name, _) in ws.inside!.packs) name};   // (nor the closed packs: the Program shelf's, dock_program.dart)
+  return ('Recipes', [for (final (name, what) in ws.inside!.recipes) if (!expressions.contains(name) && !packs.contains(name)) _Make(name, DockG.copies, Pop.tonePlace, '', what, recipe: true)]);
 }
 
 /// The elements kept (Edit › Save to My Elements), put in at the playhead linked to their file: Alight Motion's + ›

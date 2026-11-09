@@ -1,4 +1,5 @@
 // Heart Curve: Canvalry's Heart Curve Distribution as it is (MIT, Phill T, github.com/phillip-motion/Canvalry-scripts), only these head lines added (engine/recipes/from_canvalry.py)
+// --label:Cavalry
 // make shape circle
 // say fill ffbe0b
 // set size 0.03

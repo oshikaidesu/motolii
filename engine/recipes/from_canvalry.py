@@ -2,7 +2,7 @@
 # Canvalry's distributions (MIT, Phill T, github.com/phillip-motion/Canvalry-scripts) made recipes as they are: the
 # file whole, run by script.cpp's Cavalry stand-ins, with head lines added: a circle copied up to 1000 times, colours,
 # each knob (nK, its label from the file's own comment, its default from its code) a track or a check; a 3D one turns
-# round once in eight seconds, a phase goes round.
+# round once in eight seconds, a phase goes round. Labelled Cavalry: a closed pack, on the Program shelf (docs/notes/CREATE_PROGRAM.md).
 # usage: from_canvalry.py <Canvalry src/distributions> <recipes folder>
 import os, re, sys
 
@@ -43,7 +43,7 @@ for k, f in enumerate(sorted(os.listdir(src))):
     name = title.lower().replace(" ", "_")
     if os.path.exists(os.path.join(out, name + ".js")) and not open(os.path.join(out, name + ".js")).read().startswith(f"// {title}: Canvalry's"): name += "_points"
     head = [f"// {title}: Canvalry's {title} Distribution as it is (MIT, Phill T, github.com/phillip-motion/Canvalry-scripts), only these head lines added (engine/recipes/from_canvalry.py)",
-            "// make shape circle", f"// say fill {palettes[k % len(palettes)].split()[0]}", "// set size 0.03", "// set copies 1000",
+            "// --label:Cavalry", "// make shape circle", f"// say fill {palettes[k % len(palettes)].split()[0]}", "// set size 0.03", "// set copies 1000",
             f"// say copy_fill {palettes[k % len(palettes)]}"] + keys + knobs
     open(os.path.join(out, name + ".js"), "w").write("\n".join(head) + "\n\n" + body)
     made.append(name)

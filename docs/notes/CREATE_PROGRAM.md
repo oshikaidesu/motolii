@@ -22,6 +22,8 @@
 | burst・rings・tunnel など | ホストのコピーの値を決めるだけ。計算は C++（`engine/doc_kinds.h:345` 付近） | Create |
 | Repeater・AE Grid/Ring/Stagger | AE の式。ホストの物の値（コピーの位置）を動かす | Create |
 
+11/9 から、Program の行の物は Program の棚に出て、Create の Recipes には出ない。Canvalry の分は頭の行 `// --label:Cavalry`、p5 などのままの物はエンジンがそう読んだ時に、パックとして一覧に出る（`engine/doc_recipes.h` `doc_recipes_read`）。作るのは Create と同じ `make <名前>`。ファイルは動かしていない（作った物の `script` がそのパスを持っているため）。
+
 ## 今の作りとの差
 
 - 11/9 の未コミットの変更（`skin/book/lib/workspace/script_code.dart`）は、打ち直した式の写しを `programs/` に置く。そのため Program タブに出てしまい、この線の反対側にいる。

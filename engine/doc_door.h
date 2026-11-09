@@ -85,8 +85,7 @@ static int doc_door(Doc& d, const std::string& said, int picked) {
     for (unsigned char c : text) hash = (hash ^ c) * 1099511628211ull;
     char tail[16];
     std::snprintf(tail, sizeof tail, "-%04llx", (unsigned long long)(hash & 0xffff));
-    static const std::map<std::string, std::string> names = {{"", "p5.js"}, {"shadertoy", "Shadertoy"}, {"sandbox", "GLSL Sandbox"}, {"three", "three.js"}, {"hydra", "Hydra"}, {"dweet", "Dwitter"}, {"tixy", "tixy"}, {"turtle", "Turtletoy"}, {"two", "Two.js"}, {"paper", "Paper.js"}, {"canvas", "Canvas"}, {"twigl", "twigl"}, {"bonzomatic", "Bonzomatic"}};
-    const std::string name = names.at(form);
+    const std::string name = door_name(form);
     std::filesystem::create_directories(folder, wrong);
     std::filesystem::path file = folder / (name + tail + (shader ? ".fs" : ".js"));
     if (kept && !hydra) file = word;
