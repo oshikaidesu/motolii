@@ -10,7 +10,7 @@ After Effects のような映像制作を、より簡単な操作で行えるよ
 
 [English](README.en.md) ・ [質問・相談（Discussions）](https://github.com/oshikaidesu/motolii/discussions) ・ [不具合（Issues）](https://github.com/oshikaidesu/motolii/issues)　どちらも日本語・英語のどちらでも。
 
-![Motolii の画面：左に素材と棚、真ん中に場面、下にタイムライン、右に値](docs/pictures/window.jpg)
+![Motolii の画面：左に素材と棚、真ん中にプレビュー、下にタイムライン、右に値](docs/pictures/window.jpg)
 
 ## エフェクトとスクリプト
 
@@ -199,8 +199,8 @@ app/live.sh
    <img src="docs/pictures/window_step2.jpg" alt="2：レシピ Iris を置いた所" width="560">
 3. 輪を選んだまま、タブの 2 つ目（fx、**Effects**）に替えて `Glow` を探し、押して下の **Add** を押します。輪が光り、ボタンが **Remove**（外す）に変わります。
    <img src="docs/pictures/window_step3.jpg" alt="3：Glow をかけた所" width="560">
-4. 右上の **Render** を押すと、書き出しの小窓が出ます。名前（例 `first`）を入れて、小窓の **Render** を押します。
-   <img src="docs/pictures/window_step4.jpg" alt="4：書き出しの小窓" width="560">
+4. 右上の **Render** を押すと、書き出しのダイアログが出ます。名前（例 `first`）を入れて、ダイアログの **Render** を押します。
+   <img src="docs/pictures/window_step4.jpg" alt="4：書き出しのダイアログ" width="560">
 5. プロジェクトの隣に `first.mp4` ができ、上に `Written: first.mp4` と出ます。
    <img src="docs/pictures/window_step5.jpg" alt="5：書き出した所" width="560">
 

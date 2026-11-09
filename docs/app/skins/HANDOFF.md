@@ -1,6 +1,6 @@
 # Motolii の見た目：引き継ぎ（人と AI 向け）
 
-Motolii の窓（Flutter、`app`）の見た目は、中身（書類・動き・絵）に触らずに3段で変えられる。この文書は、続きを作る人や AI が、これだけ読めば手を動かせるように書いてある。スキンを作るだけなら [README.md](../../../shelves/skins/README.md) で足りる。
+Motolii のアプリ（Flutter、`app`）の見た目は、エンジンの側（プロジェクト・動き・絵）に触らずに3段で変えられる。この文書は、続きを作る人や AI が、これだけ読めば手を動かせるように書いてある。スキンを作るだけなら [README.md](../../../shelves/skins/README.md) で足りる。
 
 ## 1. 3つの段
 
@@ -28,33 +28,33 @@ Motolii の窓（Flutter、`app`）の見た目は、中身（書類・動き・
 | `lib/forms/poster.dart` | 見本：スイスの幾何学ポスター風 |
 | `lib/forms/lighttable.dart` | 見本：フィルムのライトテーブル風（外の AI が HANDOFF だけで書いた、7/10） |
 | `../shelves/skins/<名前>/` | リポジトリの見本の革（labs、paper、streets、poster、lighttable） |
-| `live.sh` | 窓を開いたまま、`lib/` の .dart を保存した瞬間に描き直す（状態は保つ） |
+| `live.sh` | アプリを開いたまま、`lib/` の .dart を保存した瞬間に描き直す（状態は保つ） |
 
 ## 3. フォームの作り方（ヘッドレス UI）
 
 ### 分け方
-- **窓が渡す**：部品の言葉・今の値・押した時にすること（下の Spec）。
+- **アプリが渡す**：部品の言葉・今の値・押した時にすること（下の Spec）。
 - **手で触った時の動き**：[naked_ui](https://pub.dev/packages/naked_ui)（BSD-3）。押す・手が乗る・選ぶ・切り替える・読み上げ。`NakedButton`、`NakedToggle`（`asSwitch: true` でスイッチ）、`NakedToggleGroup` と `NakedToggleOption`（どれか1つ）、ほかに `NakedSlider` `NakedTabs` `NakedSelect` `NakedMenu` など。builder に状態（`isHovered` `isPressed` `isSelected` `isFocused` `isDisabled`）が来る。
 - **フォームが書く**：それをどう組み立てて見せるか、だけ。**動きを自分で作り直さない**（GestureDetector を足さず naked_ui を使う）。
 
 ### 約束（`lib/forms/forms.dart`）
 
-| 関数 | 渡る物 | 窓の部品 |
+| 関数 | 渡る物 | アプリの部品 |
 |---|---|---|
 | `action(context, ActionSpec)` | `label`、`onPressed` | 上の帯の Render |
 | `tabs(context, ChoiceSpec)` | `labels`、`selected`、`onSelect`、`enabled` | 上の帯の Edit・Animate・Export |
 | `choice(context, ChoiceSpec)` | 同上＋`glyphs`（16×14 の箱に描く関数） | インスペクタの Space（2D・2.5D・3D） |
 | `onOff(context, SwitchSpec)` | `on`、`onChanged`、`enabled` | オン・オフ（Animate all など） |
-| `card(context, CardSpec)` | `title`、`tone`（札の種類の色）、`open`、`onToggle`、`trailing`、`body`（行）、`head` と `own`（窓のいつもの組み立て） | インスペクタの札1枚 |
+| `card(context, CardSpec)` | `title`、`tone`（札の種類の色）、`open`、`onToggle`、`trailing`、`body`（行）、`head` と `own`（アプリのいつもの組み立て） | インスペクタの札1枚 |
 | `segment` | `ChoiceSpec`（言葉が並ぶ。幅は言葉の分だけ） | Fit・50%・100%、Layer・Group など |
 | `flag` | `FlagSpec`（言葉、オン、印） | Snap、Safe、Grid など |
 | `chips` | `ChipsSpec` | 棚の絞り込み |
-| `track` | `TrackSpec`（名前、種類の印、目・ソロ・錠） | タイムラインの層の名前 |
-| `number` | `NumberSpec`（数の文字、打っている欄、範囲） | 数の入力欄。こすって変える動きは窓が持つ |
+| `track` | `TrackSpec`（名前、種類の印、目・ソロ・錠） | タイムラインのレイヤーの名前 |
+| `number` | `NumberSpec`（数の文字、打っている欄、範囲） | 数の入力欄。こすって変える動きはアプリが持つ |
 
 約束の細かい所：
 - `ChoiceSpec.glyphs` の関数は `(Canvas c, Paint stroke)`。**Paint はフォームが作って渡す**（色・太さ・塗りか線かはフォームが決める）。印は 16×14 の箱に描かれるので、大きく描くなら `c.scale()` してから呼ぶ。
-- `CardSpec.head`：窓のいつもの見出しの行（開閉の印・種類の印・題・キーの点・畳んだ時の要約・`trailing` が組み立て済み）。自分の見出しを作るなら捨ててよい。ただし **`title` が null でも `head` がある札**（`trailing` だけの札）がある。その時は `head` を出す。
+- `CardSpec.head`：アプリのいつもの見出しの行（開閉の印・種類の印・題・キーの点・畳んだ時の要約・`trailing` が組み立て済み）。自分の見出しを作るなら捨ててよい。ただし **`title` が null でも `head` がある札**（`trailing` だけの札）がある。その時は `head` を出す。
 - `CardSpec.own`：見出しと行を余白で包んだ、外枠なしの札の中身全部。「外枠だけ変えたい」なら `own` を自分の枠で包むだけでよい（`own.dart` がそう）。
 - 見た目の動き（`AnimatedContainer`、`TweenAnimationBuilder` など）は自由。手の受け取り（`GestureDetector`、`MouseRegion`、`Listener`）だけは書かず naked_ui に任せる。
 
@@ -66,7 +66,7 @@ Motolii の窓（Flutter、`app`）の見た目は、中身（書類・動き・
 | 文字の型 | `T.value()` | 書体は革の `FontMono`（等幅）。数と時間に |
 | 文字の大きさ | `T.px(11)` | 革の TextScale を掛けた大きさ（`.copyWith(fontSize: T.px(n))`） |
 | 書体の名前 | `T.sans` `T.mono` | 革が言う書体の名前 |
-| 色 | `Grey.g00`〜`Grey.g100`、`Grey.bandA` など | 灰色の段（どの段が窓のどこかは [ROLES.md](../../../shelves/skins/ROLES.md) の表）。革の Background・Foreground から作られる |
+| 色 | `Grey.g00`〜`Grey.g100`、`Grey.bandA` など | 灰色の段（どの段がアプリのどこかは [ROLES.md](../../../shelves/skins/ROLES.md) の表）。革の Background・Foreground から作られる |
 | 色 | `WsT.accent` `WsT.onAccent` `Pop.accentInk` | 差し色、その上の文字、地の上に線や文字で使う差し色（`lib/workspace/ws.dart`、`lib/inspector/inspector_parts.dart`） |
 | 色 | `axX` `axY` `axZ`、Spec の `tone` | 軸の色、札の種類の色 |
 | 形 | `Shape.r(n)` | 角の丸み（`Radius`、革の Corner を掛ける） |
@@ -78,7 +78,7 @@ Motolii の窓（Flutter、`app`）の見た目は、中身（書類・動き・
 1. `lib/forms/<名前>.dart` に `class XForms extends Forms` を書き、5つの関数を全部書く（`poster.dart` が見本、240行）。
 2. `lib/forms/forms.dart` の `forms` に `'<名前>': XForms()` を1行足し、import する。
 3. 革のフォルダの `theme.xml` に `<Forms Value="<名前>"/>` と書く（色は同じ theme.xml で）。
-4. 見る：`./live.sh` で窓を開き、View › Skin でその革を着て、フォームのファイルを保存するたびに描き直るのを見る。手を乗せた時・押した時は live.sh の窓で手で確かめる。
+4. 見る：`./live.sh` でアプリを開き、View › Skin でその革を着て、フォームのファイルを保存するたびに描き直るのを見る。手を乗せた時・押した時は live.sh のアプリで手で確かめる。
 5. 確かめる：切れ0・はみ出し0。色は文字の収まりに効かないので、書くのはフォームと書体（と Size・TextScale を変えるならそれ）だけでよい。
 
 ### 守ること
@@ -104,15 +104,15 @@ Anthropic 公式の考え方（[frontend-design スキル](https://github.com/an
 
 **値と絵の革**（置くだけで着られる）：
 
-> `shelves/skins/README.md` と `shelves/skins/ROLES.md` を読んで、`~/Library/Application Support/Motolii/skins/<名前>/theme.xml` に「（欲しい見た目）」の革を書いて。`./live.sh` で窓を開いて見て、直して、また見る。読めない文字や差し色の埋もれがなくなるまで。
+> `shelves/skins/README.md` と `shelves/skins/ROLES.md` を読んで、`~/Library/Application Support/Motolii/skins/<名前>/theme.xml` に「（欲しい見た目）」の革を書いて。`./live.sh` でアプリを開いて見て、直して、また見る。読めない文字や差し色の埋もれがなくなるまで。
 
 **フォーム**（組み立てから変える）。届く部品は §3 の表。ドックのタブそのもの（`docking` が描く）はまだ外（§7）。
 
-> `docs/app/skins/HANDOFF.md` を読んで、`lib/forms/<名前>.dart` に「（欲しい見た目）」のフォームを書き、登録して、`shelves/skins/<名前>/theme.xml` で着る革を作って。先に色4〜6個・書体・ASCII の配置図を書いて「ありがちな所」を直してから書くこと。§3 の表の関数を全部書く（書かない関数は窓のいつもの絵のまま）。ドックのタブはまだ届かない。`./live.sh` で窓を開いて見て直す。最後に切れ0・はみ出し0を確かめる。
+> `docs/app/skins/HANDOFF.md` を読んで、`lib/forms/<名前>.dart` に「（欲しい見た目）」のフォームを書き、登録して、`shelves/skins/<名前>/theme.xml` で着る革を作って。先に色4〜6個・書体・ASCII の配置図を書いて「ありがちな所」を直してから書くこと。§3 の表の関数を全部書く（書かない関数はアプリのいつもの絵のまま）。ドックのタブはまだ届かない。`./live.sh` でアプリを開いて見て直す。最後に切れ0・はみ出し0を確かめる。
 
 ## 6. 落とし穴（踏んだ物）
 
-- **横に流れる行に Flexible**：スクロールする Row（例：舞台の下の DeskStrip）の子に Flexible/Expanded を入れると、窓が組めずに15件落ちた。
+- **横に流れる行に Flexible**：スクロールする Row（例：プレビューの下の DeskStrip）の子に Flexible/Expanded を入れると、画面が組めずに15件落ちた。
 - **const**：`Shape.z()` などは getter なので、`const` の中では使えない。解析器の `const_*` の指摘の所の `const` を外す。
 - **ROLES.md の書き方**：`` `名前` `` と書いた物は全部「名前」として照合される。値の例は普通の文字で書く。範囲（`Clip1`〜`Clip7`）でなく全部並べる。
 - **数の範囲**：Size 0.85〜1.5、TextScale 0.85〜1.3、Spacing 0〜2、Corner 0〜10 の外は端に収める（外だとタブが消える・文字が切れる）。
@@ -123,7 +123,7 @@ Anthropic 公式の考え方（[frontend-design スキル](https://github.com/an
 - フォームを通っている部品は、Render、Edit/Animate/Export、Space、オン・オフ、札、小さな切り替え（Fit、Layer/Group、Snap、Safe、Grid）、棚の絞り込み、タイムラインの層の名前と帯、数の入力欄。帯の角と地は `trackRadius` と `trackBand`。ドックのタブそのもの（`docking` パッケージが描く）は、まだフォームの外。
 - フォームはアプリに組み込まれるので、配った人が置くだけでは着られない。
 - 細い線（1画素）の太さは革で変わらない。
-- 舞台の中（枠の外の暗い所も）は作品の絵なので、革では変わらない。
+- プレビューの中（枠の外の暗い所も）は作品の絵なので、革では変わらない。
 
 ## 8. 履歴
 

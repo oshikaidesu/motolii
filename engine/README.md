@@ -1,8 +1,8 @@
-# engine/ — Motolii の中身（エンジン）
+# engine/ — Motolii のエンジン
 
-*Motolii's engine (C++ / Objective-C++). The window (`../app/`) calls it through the C calls in `entry/motolii.h`; `entry/motolii.mm` becomes `out/libmotolii.dylib`. Start with the four commands below and the folder table; the list of files the build reads is written by a script from the compiler's own dependency output, not by hand.*
+*Motolii's engine (C++ / Objective-C++). The app (`../app/`) calls it through the C calls in `entry/motolii.h`; `entry/motolii.mm` becomes `out/libmotolii.dylib`. Start with the four commands below and the folder table; the list of files the build reads is written by a script from the compiler's own dependency output, not by hand.*
 
-窓（`../app/`）は、ここが組む `out/libmotolii.dylib` を C の呼び出しで使います。作りの全体は [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)。コードの言葉（thing・fact・way・made・drawn・kept・told・hand…）を AE・Filament の言葉に引き直す表は [その「言葉」](../docs/ARCHITECTURE.md#言葉words)。
+アプリ（`../app/`）は、ここが組む `out/libmotolii.dylib` を C の呼び出しで使います。作りの全体は [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)。
 
 ## 走らせる物
 
@@ -10,10 +10,10 @@
 
 | コマンド | 何をする |
 |---|---|
-| `./edit.sh 書類.motolii` | 中身を組み（変わった所だけ）、書類を開いて 1 行ずつ命令を受ける（`help` で一覧）。初回は依存を取ってくる |
-| `./build_lib.sh` | `out/libmotolii.dylib` だけ組み直す。`entry/motolii.mm` を直した後、窓を開き直す前に |
+| `./edit.sh プロジェクト.motolii` | エンジンを組み（変わった所だけ）、プロジェクトを開いて 1 行ずつ命令を受ける（`help` で一覧）。初回は依存を取ってくる |
+| `./build_lib.sh` | `out/libmotolii.dylib` だけ組み直す。`entry/motolii.mm` を直した後、アプリを開き直す前に |
 | `./check_syntax.sh` | 組まずに `clang++ -fsyntax-only`。錠も要らず何も書かない。`ok: entry/motolii.mm` か、誤りとその行 |
-| `./drawings_unchanged.sh <古いコミット>` | 棚のレシピと動きを、古いコミットの中身と今の中身で同じ書類に描き、絵を `cmp` で比べる（[`../docs/TESTING.md`](../docs/TESTING.md)「今ある書類の見た目が変わらない」） |
+| `./drawings_unchanged.sh <古いコミット>` | 棚のレシピと動きを、古いコミットのエンジンと今のエンジンで同じプロジェクトを描き、絵を `cmp` で比べる（[`../docs/TESTING.md`](../docs/TESTING.md)「今あるプロジェクトの見た目が変わらない」） |
 
 組む物（`edit.sh`・`build_lib.sh`・`drawings_unchanged.sh`）は、機械に 1 つのビルドの錠（`deps/build_lock.sh`）を自分で取る。
 
@@ -23,19 +23,19 @@
 
 | フォルダ | 中身 |
 |---|---|
-| `entry/` | 窓が呼ぶ入口。`motolii.h`＝C の呼び出しの全部（書類を開く・物を足す・値を変える・キー・取り消し・書き出し・絵を受け取る）、`motolii.mm`＝その実装（`libmotolii.dylib` になる）、`motolii_calls_*.h`＝呼び出しを役目で分けた部品（探す・地図・音・ファイル・時刻…）、`motolii_hand*.h`＝書類と GPU を持つスレッド 1 本、`edit.cpp`＝同じ呼び出しを 1 行ずつ打つシェル |
-| `document/` | 書類（SQLite）：`doc_*.h`。物・値・キー・取り消し（変更を SQLite の表に積む）・場面への反映 |
-| `stage/` | 描く所。`kit/`＝Filament の場面（エンジン・カメラ・光・立体・書き出し）、`drawn/`＝ThorVG が描く 2D の絵を場面の板として置く物、ほかは効果（`thing_fx.h`・`screen.h`）・窓へ渡す絵（`live.h`）・再生用の控え（`stage_kept.h`） |
+| `entry/` | アプリが呼ぶ入口。`motolii.h`＝C の呼び出しの全部（プロジェクトを開く・レイヤーを足す・値を変える・キー・取り消し・書き出し・フレームを受け取る）、`motolii.mm`＝その実装（`libmotolii.dylib` になる）、`motolii_calls_*.h`＝呼び出しを役目で分けた部品（探す・地図・音・ファイル・時刻…）、`motolii_hand*.h`＝プロジェクトと GPU を持つレンダースレッド 1 本、`edit.cpp`＝同じ呼び出しを 1 行ずつ打つシェル |
+| `document/` | プロジェクト（SQLite）：`doc_*.h`。レイヤー・値・キー・取り消し（変更を SQLite の表に積む）・プレビューへの反映 |
+| `stage/` | 描く所。`kit/`＝Filament で描く所（Engine・カメラ・光・立体・書き出し）、`drawn/`＝ThorVG のキャンバスに描いた 2D の絵をプレビューに板として置く所、ほかは効果（`thing_fx.h`・`screen.h`）・アプリへ渡すフレーム（`live.h`）・再生用のキャッシュ（`stage_kept.h`） |
 | `community/` | ネットのコードをそのまま動かす口：`aviutl/`（AviUtl2）・`shaders/`（ISF・Shadertoy）・`js/`（p5・AE 式・three.js）・`absent_motion/`・`three_tsl/`（three.js の TSL を three.js 自身の組み立て役で WGSL に） |
 | `media/` | 動画（GStreamer）・音・MIDI・点滅の検査（IRIS） |
 | `motion/` | 動き：キーの間・イーズ・物理（Jolt） |
 | `materials/` | Filament の材質（`.mat`）と、それが読む `.glsl`。組むのは `gpu/kit_wgpu.sh` が名を挙げる物 |
-| `gpu/` | Filament・ThorVG を WebGPU（Dawn）で組むスクリプト（`build.sh`・`tvg_on_dawn.sh`・`kit_wgpu.sh`）と、Filament の組み立ての中で組む口（`*_door.cpp`）。`js_effects.sh`・`tsl_on_dawn.sh` は手で走らせる試し |
+| `gpu/` | Filament・ThorVG を WebGPU（Dawn）で組むスクリプト（`build.sh`・`tvg_on_dawn.sh`・`kit_wgpu.sh`）と、Filament の組み立ての中で組む interop（`*_door.cpp`：Filament・Dawn の公開されていない内側に届く所）。`js_effects.sh`・`tsl_on_dawn.sh` は手で走らせる試し |
 | `deps/` | 外のライブラリを取ってきて組むスクリプト、ビルドの錠、エディタ用の `compile_commands.sh`、下の一覧を作る `files_in_build.sh`。`deps/patches/<ライブラリ>/` は人のコードに当てる差分（`.patch`） |
 | `third_party/` | 取ってくる依存（git の外）と、同梱の小さな物（`anime/`・`godot_easing/`・`js/`・`midi_roll/`・`qdtsne/`・`rapidfuzz/`・`scipy_lsap/`・`thermion_frame/`） |
 | `out/` | 組み立てと描いた物の出力（git の外） |
 
-**door（扉）**：人のコードとの境目を 1 か所に閉じ込めたファイル。Filament の公開されていない中身に手を入れるのは `gpu/*_door.*` だけ、ネットのコードをそのまま入れるのは `community/door*.h` と `document/doc_door.h` だけで、相手が変わったら扉だけを直す。
+**adapter と interop**：人のコードとの境目は 1 か所に閉じ込める。Filament の公開されていない内側に手を入れる interop は `gpu/*_door.*` だけ、ネットのコードを形を変えずに動かす adapter は `community/door*.h` と `document/doc_door.h` だけ。相手が変わったら、そこだけを直す。
 
 同梱の効果・レシピ・字体などの棚は、リポジトリ直下の [`../shelves/`](../shelves/) にあります。
 

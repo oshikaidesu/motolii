@@ -22,7 +22,7 @@
 | 動画の絵の受け渡し（`video.h` の13行） | 専用回路の絵（IOSurface）を Dawn の `SharedTextureMemoryIOSurface` で共有 | D3D12 か D3D11 の絵を、Dawn の `SharedTextureMemoryD3D12Resource`／`D3D11Texture2D`／`DXGISharedHandle` で共有 | Dawn に口がある事は確認（`webgpu.h` 633、634、656行の機能名、2750行の記述、`dawn/native/D3D12Backend.h`）。Filament に足した「機能を頼む」数行（パッチ 344〜348行）に Windows の機能名を足す必要がある |
 | 専用回路の絵を GStreamer から受け取る口 | 公開されていない札の並びを読んでいる | GStreamer の D3D12 用の公開ヘッダ（`gst/d3d12`）があるはず | **未確認。** この Mac の GStreamer には Windows 用のヘッダが入っていないので、名前を確かめられていない。あれば、Mac より正しい形（公開の口）になる |
 | 絵の範囲（狭い／フル） | 渡ってきた絵の形式（Mac の `420v`／`420f`）に聞く | D3D の絵は形式に範囲を持たない。GStreamer の札に聞く事になる | Mac では札と中身が食い違った。Windows で食い違うかは未確認 |
-| 絵をファイルに書く（`kit.h` の `shoot`）、メモリを読む（`soak`）、文字の立体（`letters`） | Cocoa、mach、SceneKit | 絵は Filament の `imageio`、ほかは Windows の物 | `letters` は今夜の場面は使っていない |
+| 絵をファイルに書く（`kit.h` の `shoot`）、メモリを読む（`soak`）、文字の立体（`letters`） | Cocoa、mach、SceneKit | 絵は Filament の `imageio`、ほかは Windows の物 | `letters` は今夜のプロジェクトでは使っていない |
 | ビルドの手順 | zsh のスクリプトと clang | CMake か同じ手順を別に | 手つかず |
 | `gpu_door`（Filament の描画の列に仕事を入れる口） | Filament の内側のヘッダを使う | 同じ（OS に依らない） | ThorVG を Filament の機械で描かせるのに要る |
 
@@ -35,7 +35,7 @@
 
 ## 最初の一歩（機械が来たら）
 
-動画の無い場面（マスク）を1本、Windows でビルドして同じ絵を出す。上の「そのまま行くはずの物」だけで出来ているので、ここで詰まるならビルドの手順の問題。
+動画の無いプロジェクト（マスク）を1本、Windows でビルドして同じ絵を出す。上の「そのまま行くはずの物」だけで出来ているので、ここで詰まるならビルドの手順の問題。
 
 ---
 
@@ -66,7 +66,7 @@ Mac で動いている形(`glass_live.h`、`build_live.sh`、`app/lib/sets/glass
 | スワップチェーンを自前の絵に差し替える口が公式にある。`createSwapChain` / `getSwapChainBundle` / `acquire` / `present` / `destroy` が全部 `virtual` | `third_party/filament/include/backend/platforms/VulkanPlatform.h` 195〜280行 |
 | 拡張を足してデバイスを作る口がある(`createVkDevice` が `virtual`)。Filament がデバイスを持ったままでよい | 同 534行 |
 | Windows 用の土台クラス `VulkanPlatformWindows` がある | `VulkanPlatformWindows.h` |
-| `Engine::createSwapChain(窓, flags)` に渡したポインタは、そのまま自前の `createSwapChain` に届く。幅と高さだけの版(ヘッドレス)だと `present` が呼ばれない | Filament v1.77.2 `VulkanSwapChain.cpp` |
+| `Engine::createSwapChain(ウィンドウ, flags)` に渡したポインタは、そのまま自前の `createSwapChain` に届く。幅と高さだけの版(ヘッドレス)だと `present` が呼ばれない | Filament v1.77.2 `VulkanSwapChain.cpp` |
 | `present(chain, index, finishedDrawing)` に「描き終わったら立つセマフォ」が渡される | 同上、`VulkanPlatform.h` 218行 |
 | 表示用のレイアウト変更は切れる(`Customization::transitionSwapChainImageLayoutForPresent = false`) | `VulkanPlatform.h` 165行 |
 | **Mac で使った `setFrameCompletedCallback` は Vulkan では中身が空** | Filament v1.77.2 `VulkanDriver.cpp` |
@@ -150,7 +150,7 @@ Mac との違いが1つある。Mac はスワップチェーンを3本持った�
 - **上下と色。** 絵が逆さになる、赤と青が入れ替わる、明るさがずれる、のどれかは出ると思っておく。3番の三角形で先に潰す。
 - **60 Hz の刻み。** Mac ではスレッドの優先度が低いと 45 fps まで落ちた。Windows の同じ罠はタイマーの粗さ(既定で約15 ms)。
 - **止め方。** Mac は `Engine::destroy` が落ちるので「止める = 休む」にした。Windows も同じにする。
-- **アプリとして配る形。** DLL と材質ファイルを今は絶対パスで読んでいる。見本の窓としてはそのままでよい。
+- **アプリとして配る形。** DLL と材質ファイルを今は絶対パスで読んでいる。見本のアプリとしてはそのままでよい。
 
 ## 退路
 
@@ -158,5 +158,5 @@ Mac との違いが1つある。Mac はスワップチェーンを3本持った�
 
 ## これは決定ではない
 
-- これは「Skin の窓にガラスを出す」ための扉。マスクや ThorVG と GPU を分け合う話(`motolii/melt`、`motolii/bridge`)とは別で、あちらの方式はまだ選んでいない。
+- これは「Skin のアプリにガラスを出す」ための入口。マスクや ThorVG と GPU を分け合う話(`motolii/melt`、`motolii/bridge`)とは別で、あちらの方式はまだ選んでいない。
 - Filament を Vulkan で動かすこと自体は、どの方式を選んでも Windows で必要になる。手順の1と2はそのまま使える。

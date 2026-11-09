@@ -2,8 +2,6 @@
 
 [日本語](CONTRIBUTING.md)
 
-The code's house words (thing, fact, way, film, hand, door…) mapped to After Effects and other common terms: [the Words table in `docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md#言葉words).
-
 ## What you can do
 
 - **Issues**: bugs, a build that stopped, or "I want to use this look" (a URL and what is good about it). There are templates. English or Japanese.
@@ -24,7 +22,7 @@ Without it, the same checks (500 lines, where things go, 72-character subjects) 
 
 How the code is laid out: [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) and [`engine/README.md`](../engine/README.md) (which files the current build uses; the rest are earlier probes). Both are in Japanese, with an English summary at the top.
 
-Words in the code and the ledger: the UI is "window" (窓), the engine "the inside" (中身), a layer "thing" (物), a project file "document" (書類), the Stage "scene" (場面), and a tab of the left panel "shelf" (棚).
+Words in the code and the ledger are the ones After Effects, Filament, Flutter and Blender use: app, engine, layer, project, preview (`Stage` in the code). Only the left tabs have their own name, "shelf" (棚, as in Blender's Asset Shelf). No new coinages.
 
 ## Checks
 
@@ -38,8 +36,8 @@ The whole build runs on GitHub Actions in `.github/workflows/build.yml` (on an A
 
 ## Rules
 
-1. **Look before you write.** Look at the tree (`engine/` the product, `app/` the window, `docs/` research) and existing implementations on the net. If something can be used the way its author meant, use it.
-2. **One job a file, 500 lines at most.** Split by what each part is for and name it so (a bare number like `_2` is refused). Experiments stay on your own branch; main holds only what the window uses.
+1. **Look before you write.** Look at the tree (`engine/` the product, `app/` the app, `docs/` research) and existing implementations on the net. If something can be used the way its author meant, use it.
+2. **One job a file, 500 lines at most.** Split by what each part is for and name it so (a bare number like `_2` is refused). Experiments stay on your own branch; main holds only what the app uses.
 3. **Say where things came from.** In the commit or pull request: what was borrowed from where (URL, version or commit), what was checked and what is not done yet. Example: `git show d46f69cac`. Keep the first line (the subject) to 72 characters at most and put the details after a blank line; `.githooks/commit-msg` stops a longer one, and CI (`.github/workflows/checks.yml`) fails the pull request.
 4. **Bundling other people's work.**
    - Keep the author's folder as unchanged as possible, with their licence text (`LICENSE`) and where it came from (`SOURCE.txt`: name and author / licence / from / page) beside it.

@@ -8,15 +8,15 @@ Motolii に最初から入っている表現です。フォルダの名前は、
 
 | フォルダ | アプリのどこに出るか | 置くファイル | 出る名前 |
 |---|---|---|---|
-| `effects/` | Effects タブのタイル（物の効果・画面全体の効果） | `.fs`（ISF）・`.wgsl`・`.js`（three.js）・`.mjs`・`.json`（Filament の設定） | 1 行目の `// 名前:`、無ければファイル名。`.fs` はファイル名そのまま |
+| `effects/` | Effects タブのタイル（レイヤーの効果・画面全体の効果） | `.fs`（ISF）・`.wgsl`・`.js`（three.js）・`.mjs`・`.json`（Filament の設定） | 1 行目の `// 名前:`、無ければファイル名。`.fs` はファイル名そのまま |
 | `aviutl_scripts/` | Effects タブのタイル。パッケージ名がチップになる | AviUtl2 のパッケージ（`.anm2`・`.obj2`・`@` ファイル）をフォルダごと、手を入れずに | スクリプトの名前と `--label:`。パッケージ名はフォルダの `__` の後ろ |
 | `create/` | Create タブの Recipes（1 回で絵を作る）。`function each` のある物は Expression に、`--label:Cavalry` など閉じたパックは Program タブに出る | `.js` | 1 行目の `// 名前: 何を作るか`。頭の無い p5 のスケッチはファイル名 |
-| `expressions/` | Create タブの Expression（文字や物の出入りの動き。Cavalry の Animators） | `.js`（`function each`） | 1 行目の `// 名前:` |
-| `relations/` | 舞台の上と Relations タブのチップ（たくさんの物を一度に動かす） | `.js` | 1 行目の `// 名前:`、無ければファイル名 |
-| `looks/` | Effects タブのルックのタイル（物の値・効果・キーを名前で取っておいた物） | `.motolii` ＋ タイルの絵 `.png` | ファイル名そのまま（空白も大文字も） |
-| `solids/` | 物の効果カードの 3D の形（Alight Motion の Box・Torus など）。タイルはまだ無く、書類が名指した時に出る | `.js`（three.js の BufferGeometry を返す `export function solid`） | 1 行目の `// 名前:` |
+| `expressions/` | Create タブの Expression（文字やレイヤーの出入りの動き。Cavalry の Animators） | `.js`（`function each`） | 1 行目の `// 名前:` |
+| `relations/` | プレビューの上と Relations タブのチップ（たくさんのレイヤーを一度に動かす） | `.js` | 1 行目の `// 名前:`、無ければファイル名 |
+| `looks/` | Effects タブのルックのタイル（レイヤーの値・効果・キーを名前で取っておいた物） | `.motolii` ＋ タイルの絵 `.png` | ファイル名そのまま（空白も大文字も） |
+| `solids/` | レイヤーの効果カードの 3D の形（Alight Motion の Box・Torus など）。タイルはまだ無く、プロジェクトが名指した時に出る | `.js`（three.js の BufferGeometry を返す `export function solid`） | 1 行目の `// 名前:` |
 | `ease/` | 下の Ease のタイル（キーとキーの間の動き方） | `.way`（式 1 行） | 1 行目の `// 名前:`、無ければファイル名 |
-| `skins/` | View › Skin の一覧（窓の見た目の着せ替え） | フォルダごと（`theme.xml` と、あれば絵・書体）。作り方は [`skins/README.md`](skins/README.md) | フォルダ名 |
+| `skins/` | View › Skin の一覧（アプリの見た目の着せ替え） | フォルダごと（`theme.xml` と、あれば絵・書体）。作り方は [`skins/README.md`](skins/README.md) | フォルダ名 |
 | `extensions/` | 項目としては出ない。Hydra のコードを貼る前に 1 回だけ使う | `hydra/get.sh` | — |
 
 前の名前（`recipes/`・`animators/`・`ways/`）のフォルダに置いた物も、そのまま読みます。
