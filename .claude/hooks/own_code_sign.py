@@ -72,7 +72,7 @@ def sign(top, rel, area, text, first, name):
     try:
         sys.path.insert(0, os.path.join(top, '.githooks'))
         from what_exists import nearest
-        like, count = nearest(top, text, area)
+        like, count = nearest(top, text, area, skip=rel)
     except Exception:
         pass
     if like:

@@ -9,7 +9,8 @@
 #   dart side:   Flutter's own classes (widgets, gestures, painting, rendering, services, animation) and those of the
 #                packages the app depends on, each by its name and its doc comment, found through the app's resolved
 #                packages (app/.dart_tool/package_config.json); the engine's C calls with what each says
-#                (engine/entry/motolii.h) and its cards with their values (engine/document/card_table.h)
+#                (engine/entry/motolii.h) and its cards with their values (engine/document/card_table.h); and the
+#                app's own classes (app/lib), so a part we have is found before a second one is written
 # The ranking is not ours: SQLite's FTS5 with its bm25() (sqlite.org/fts5.html, "The bm25() function"; Okapi BM25),
 # words stemmed by its porter tokenizer, a thing's name weighing four times what it says.
 # It answers a question; it does not find our copies by itself. Read over our own code 30 lines at a time it called
@@ -90,6 +91,17 @@ def index(top):
             rows += [('dart', i, shown, key, words, says) for i, shown, words, says, key in found]
     except Exception:   # (packages not resolved here: the dart side is then the engine's calls and cards alone)
         pass
+    # our own parts: every class the app already has, said or not (a part with no doc comment is listed by name alone)
+    for p in subprocess.run(['git', '-C', top, 'ls-files', 'app/lib'], capture_output=True, text=True).stdout.splitlines():
+        if not p.endswith('.dart') or 'bindings' in p:
+            continue
+        try:
+            text = open(os.path.join(top, p), encoding='utf-8', errors='replace').read()
+        except OSError:
+            continue
+        said = {name: ' '.join(l.strip().lstrip('/ ') for l in doc.split('\n')) for doc, name in CLASS.findall(text)}
+        for name in re.findall(r'^(?:abstract |final |base |sealed |interface )*(?:mixin )?class ([A-Z]\w+)', text, re.M):
+            rows.append(('dart', f'{p}: {name}', ('ours: ' + said.get(name, 'says nothing of itself'))[:120], name, ' '.join(split(name)), said.get(name, '')[:600]))
     try:
         calls = open(os.path.join(top, 'engine/entry/motolii.h'), errors='replace').read()
         for name, says in re.findall(r'\b(motolii_[a-z_0-9]+)\s*\([^;{]*\)\s*;\s*/\*(.*?)\*/', calls, re.S):
@@ -104,7 +116,7 @@ def index(top):
     return db, {s: sum(r[0] == s for r in rows) for s in ('engine', 'dart')}
 
 
-def nearest(top, text, side='engine', limit=12, words=None, least=2, made=None):
+def nearest(top, text, side='engine', limit=12, words=None, least=2, made=None, skip=''):
     """[(id, what it says of itself, the words of the text it shares)], nearest first, and how many things were asked.
     `side`: 'engine', 'dart' or '' for both. `least`: a thing is shown only when it shares that many of the text's
     words; 1 is a search by hand, every match shown. `made`: an index() already made, for many questions."""
@@ -120,7 +132,7 @@ def nearest(top, text, side='engine', limit=12, words=None, least=2, made=None):
     found = []
     for s, i, shown, key, name, says in db.execute('select side, id, shown, key, name, says from thing where thing match ? '
                                                    'order by bm25(thing, 0, 0, 0, 0, 4.0, 1.0) limit 300', (ask,)):
-        if side and s != side:
+        if (side and s != side) or (skip and i.startswith(skip + ':')):   # (`skip`: the file being written is not somewhere else to hand it)
             continue
         if least > 1 and re.search(r'(?<![A-Za-z_])' + re.escape(key) + r'(?![A-Za-z_])', text):
             continue   # (the text already names it: it is being used, not re-made)
