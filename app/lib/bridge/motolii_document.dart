@@ -139,10 +139,6 @@ extension MotoliiDocument on Motolii {
   /// The words a value of a thing may be (a blend's): none if any word will do, or the thing has no such value.
   List<String> words(int layer, String name) => Motolii._spaced((_of(layer)['words'] as Map<String, dynamic>?)?[name]);
 
-  /// The ways a stretch may go, as the document says them: the nine kinds with their numbers, the named ones, and
-  /// each defined here ('; defined here: Snappy').
-  String get easings => (_document['easings'] as String?) ?? '';
-
   /// The effects a thing may be given, by name, with the value that puts each on (the Effects shelf); its card shows
   /// while it is on ([cards]).
   List<(String, String)> get layerEffects => _labelled((_document['effectNames'] as String?) ?? '', 'thing');

@@ -106,7 +106,7 @@ class _Wordmark extends StatelessWidget {
 }
 
 class _Hover extends StatelessWidget {
-  const _Hover({super.key, required this.builder, this.onTap});
+  const _Hover({required this.builder, this.onTap});
   final Widget Function(bool hot) builder;
   final VoidCallback? onTap;
   @override

@@ -101,18 +101,18 @@ class ArtScene {
   int get hashCode => Object.hash(frame, camera, Object.hashAll(layers));
 }
 
-/// A layer's box in document px: centre, unscaled size, scale, rotation and its anchor.
+/// A layer's box in document px: centre, unscaled size, rotation and its anchor.
 class ArtBox {
-  const ArtBox(this.c, this.size, {this.scale = 1, this.rot = 0, Offset? anchor}) : anchor = anchor ?? c;
+  const ArtBox(this.c, this.size, {this.rot = 0, Offset? anchor}) : anchor = anchor ?? c;
   final Offset c, anchor;
   final Size size;
-  final double scale, rot;
-  Offset _local(double x, double y) => c + _rot(Offset(x * size.width / 2 * scale, y * size.height / 2 * scale), rot);
+  final double rot;
+  Offset _local(double x, double y) => c + _rot(Offset(x * size.width / 2, y * size.height / 2), rot);
   List<Offset> get corners => [_local(-1, -1), _local(1, -1), _local(1, 1), _local(-1, 1)];
   Offset get top => _local(0, -1);
   bool contains(Offset p, [double pad = 0]) {
     final q = _rot(p - c, -rot);
-    return q.dx.abs() <= size.width / 2 * scale + pad && q.dy.abs() <= size.height / 2 * scale + pad;
+    return q.dx.abs() <= size.width / 2 + pad && q.dy.abs() <= size.height / 2 + pad;
   }
 }
 

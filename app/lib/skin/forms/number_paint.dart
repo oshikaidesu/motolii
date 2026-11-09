@@ -28,7 +28,6 @@ class NumberSpec {
     this.on = true,
     this.hot = false,
     this.live = false,
-    this.axis,
     this.keyDot,
     this.keyEmpty = false,
     this.pad = 8,
@@ -48,7 +47,7 @@ class NumberSpec {
   final double? fill;
   final bool bipolar, block, pop, editing, glyphTall, on, hot, live;
   final Color fillColor, borderColor, rangeColor;
-  final Color? axis, keyDot;
+  final Color? keyDot;
 
   /// The key mark drawn hollow: the value takes keys and has none here (Alight Motion's diamond beside a value, empty).
   final bool keyEmpty;
@@ -77,7 +76,7 @@ void bindNumber(NumberPaint paint) => _paint = paint;
 
 Widget paintNumber(BuildContext context, NumberSpec spec) => _paint(context, spec);
 
-/// The field as the window has drawn it: a filled well, a range along the bottom, the axis as a stripe.
+/// The field as the window has drawn it: a filled well, a range along the bottom.
 Widget usualNumber(BuildContext context, NumberSpec n) {
   final shown = n.editing && n.editor != null ? n.editor! : n.value;
   return Container(
@@ -114,14 +113,6 @@ Widget usualNumber(BuildContext context, NumberSpec n) {
               right: n.block ? n.pad : 3,
               child: keyDiamond(n.keyDot!, empty: n.keyEmpty),
             ),
-          if (n.axis != null && !n.pop)
-            Positioned(
-              left: 0,
-              top: 5,
-              bottom: 5,
-              width: Shape.z(2),
-              child: ColoredBox(color: n.axis!),
-            ),
           if (n.glyph != null)
             Positioned(
               right: n.glyphTall ? 4 : n.pad - 3,
@@ -156,7 +147,7 @@ Widget usualNumber(BuildContext context, NumberSpec n) {
           else
             Positioned.fill(
               child: Padding(
-                padding: EdgeInsets.only(left: n.axis != null && !n.pop ? Shape.s(8) : Shape.s(7), right: Shape.s(6)),
+                padding: EdgeInsets.only(left: Shape.s(7), right: Shape.s(6)),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [

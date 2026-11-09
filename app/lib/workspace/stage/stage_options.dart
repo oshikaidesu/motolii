@@ -52,9 +52,9 @@ class _OptionsStrip extends StatelessWidget {
   final WsLayer? layer;
 
   Widget _seg(String key, List<String> items, {int initial = 0}) => _Seg(items: items, index: opts[key] ?? initial, onChanged: (i) => onOpt(key, i));
-  Widget _flag(String key, String label, {bool initial = false, G? glyph}) {
+  Widget _flag(String key, String label, {bool initial = false}) {
     final on = (opts[key] ?? (initial ? 1 : 0)) == 1;
-    return _Toggle(label: label, on: on, glyph: glyph, icon: glyph == null ? _Icon.safe : null, onTap: () => onOpt(key, on ? 0 : 1));
+    return _Toggle(label: label, on: on, icon: _Icon.safe, onTap: () => onOpt(key, on ? 0 : 1));
   }
 
   List<Widget> _items() {

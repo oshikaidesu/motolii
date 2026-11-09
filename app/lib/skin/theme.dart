@@ -86,9 +86,9 @@ abstract final class ColorTheme {
   static void Function()? _changed;
 
   /// The theme file read (not there, or not readable: the window's own colours and shapes).
-  static void load([String? path]) {
+  static void load(String path) {
     try {
-      final file = File(path ?? _worn);
+      final file = File(path);
       folder = file.parent.path;
       final xml = file.readAsStringSync();
       roles.value = parse(xml);
@@ -130,9 +130,9 @@ abstract final class ColorTheme {
 
   /// The theme file read now, and again whenever it is written ([changed]: the window built again in place).
   static StreamSubscription<FileSystemEvent>? _watching;
-  static void watch(void Function() changed, [String? path]) {
+  static void watch(void Function() changed) {
     _changed = changed;
-    final file = File(path ?? _worn);
+    final file = File(_worn);
     load(file.path);
     _watching?.cancel();
     if (file.path.isEmpty) return; // (the window's own: nothing to watch)
@@ -150,10 +150,4 @@ abstract final class ColorTheme {
     for (final m in RegExp(r'<(\w+)\s+Value="#([0-9a-fA-F]{6})([0-9a-fA-F]{2})?"\s*/>').allMatches(xml))
       m.group(1)!: Color(int.parse('${m.group(3) ?? 'ff'}${m.group(2)}', radix: 16)),
   };
-
-  /// A theme file of these roles (the form at the top of this file), as the window writes its own (a maker copies one and changes the colours).
-  static String write(Map<String, Color> all) {
-    String hex(Color c) => [c.r, c.g, c.b, c.a].map((v) => (v * 255).round().toRadixString(16).padLeft(2, '0')).join();
-    return '<?xml version="1.0" encoding="UTF-8"?>\n<Motolii>\n\t<Theme>\n${[for (final e in all.entries) '\t\t<${e.key} Value="#${hex(e.value)}"/>'].join('\n')}\n\t</Theme>\n</Motolii>\n';
-  }
 }

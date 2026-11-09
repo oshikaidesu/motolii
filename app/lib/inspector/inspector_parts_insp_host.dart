@@ -1,25 +1,22 @@
-// Owns the panel's values (Doc) and re-provides it whenever it changes. A different kind or count makes a new document (give it a key).
+// Owns the panel's values (Doc) and re-provides it whenever it changes. A different kind makes a new document (give it a key).
 // How it LOOKS is the lab's (DESIGN.md): hairlines, type carries hierarchy, grey levels, accent only C.mode. The old Motolii is not a source.
 
-import 'package:flutter/foundation.dart' show ValueListenable, listEquals, mapEquals, setEquals;
+import 'package:flutter/foundation.dart' show ValueListenable, listEquals, mapEquals;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 
-/// Owns the panel's values (Doc) and re-provides it whenever it changes. A different kind or count makes a new document (give it a key).
+/// Owns the panel's values (Doc) and re-provides it whenever it changes. A different kind makes a new document (give it a key).
 class InspHost extends StatefulWidget {
   const InspHost({
     super.key,
     required this.kind,
-    this.count = 1,
     this.kindWord,
-    this.properties,
     this.movable = const [],
     this.onCardMove,
     this.onSum,
     this.onAddEffect,
     this.moreCards = const [],
     this.onMoreCard,
-    this.onArrange,
     this.onCardReset,
     this.onCardRemove,
     this.cardCode,
@@ -30,7 +27,6 @@ class InspHost extends StatefulWidget {
     this.cardsOff = const [],
     this.onCardCopy,
     this.onCardPaste,
-    this.onPath,
     this.cards,
     this.title,
     this.onRoute,
@@ -46,18 +42,15 @@ class InspHost extends StatefulWidget {
     this.animating,
     this.flags = const {},
     this.onFlags,
-    this.choices = const {},
     this.together,
     this.live,
     required this.child,
   });
   final Kind kind;
-  final int count;
   final Widget child;
 
-  /// What the host calls the kind (see [Doc.kindWord]), and the values it has (see [Doc.properties]).
+  /// What the host calls the kind (see [Doc.kindWord]), and the values it has.
   final String? kindWord;
-  final Set<String>? properties;
 
   /// The values and key marks at a new moment, told without the host being built again (played, only the moment moves:
   /// the fields that show them follow, the rest of the inspector stays as it was built).
@@ -70,7 +63,6 @@ class InspHost extends StatefulWidget {
   final VoidCallback? onAddEffect;
   final List<String> moreCards;
   final void Function(String title)? onMoreCard;
-  final void Function(String how)? onArrange;
   final void Function(List<String> names)? onCardReset; // (a card's values as they come: Reset on its head)
   final void Function(String title)? onCardRemove; // (one of its effects taken off: Remove on its card's head, Alight Motion's Delete)
   final Widget? Function(String title, List<String> names)? cardCode; // (a card's code, drawn by the host: Doc.cardCode)
@@ -82,9 +74,6 @@ class InspHost extends StatefulWidget {
   final List<String> cardsOff; // (the titles of those turned off)
   final void Function(List<String> names)? onCardCopy; // (a card's values copied, to be given to another thing: Copy on its head)
   final VoidCallback? onCardPaste; // (and given: Paste)
-
-  /// How the thing moves over a while, as the host places it (see [Doc.onPath]).
-  final Future<List<double>?> Function(double to, int n, int copy)? onPath; // (a question of the host's: answered later)
 
   /// The host's own cards of values (see [Doc.cards]).
   final List<Fx>? cards;
@@ -128,9 +117,6 @@ class InspHost extends StatefulWidget {
   final Map<String, bool> flags;
   final bool Function(Map<String, bool> changed)? onFlags;
 
-  /// What a chooser may offer, by its id, where the host's document has its own words for it (a blend's).
-  final Map<String, List<String>> choices;
-
   /// What one change of the inspector tells the host (values, then key marks) is told inside this, so a host can keep it as one act.
   final void Function(VoidCallback tells)? together;
   @override
@@ -140,20 +126,18 @@ class InspHost extends StatefulWidget {
 class _InspHostState extends State<InspHost> {
   late Doc doc = _make();
   Doc _make() {
-    final d = Doc(widget.kind, count: widget.count, cards: widget.cards ?? const [])
+    final d = Doc(widget.kind, cards: widget.cards ?? const [])
       ..title = widget.title
       ..marksEdits =
           widget.onKey ==
           null // (a host told of keys keys what a hand changes itself)
       ..kindWord = widget.kindWord
-      ..properties = widget.properties
       ..movable = widget.movable
       ..onCardMove = widget.onCardMove
       ..onSum = widget.onSum
       ..onAddEffect = widget.onAddEffect
       ..moreCards = widget.moreCards
       ..onMoreCard = widget.onMoreCard
-      ..onArrange = widget.onArrange
       ..onCardReset = widget.onCardReset
       ..onCardRemove = widget.onCardRemove
       ..cardCode = widget.cardCode
@@ -164,10 +148,8 @@ class _InspHostState extends State<InspHost> {
       ..cardsOff = widget.cardsOff
       ..onCardCopy = widget.onCardCopy
       ..onCardPaste = widget.onCardPaste
-      ..onPath = widget.onPath
       ..v.addAll(widget.values)
       ..s2.addAll(widget.strs)
-      ..choices.addAll(widget.choices)
       ..b.addAll(widget.flags)
       ..keys.addAll(widget.keyMarks);
     _seen
@@ -270,7 +252,6 @@ class _InspHostState extends State<InspHost> {
       widget.live?.addListener(_atMoment);
     }
     if (o.kind != widget.kind ||
-        o.count != widget.count ||
         !listEquals(
           o.cards?.map((f) => f.name + f.wgsl.replaceAll(RegExp(r'@default\([^)]*\)'), '')).toList(),
           widget.cards?.map((f) => f.name + f.wgsl.replaceAll(RegExp(r'@default\([^)]*\)'), '')).toList(),
@@ -308,24 +289,18 @@ class _InspHostState extends State<InspHost> {
       doc.animateAll = _animating = on;
       _tick++;
     }
-    if (o.title != widget.title ||
-        o.kindWord != widget.kindWord ||
-        !setEquals(o.properties, widget.properties) ||
-        o.choices.toString() != widget.choices.toString() ||
-        !listEquals(o.cardsOff, widget.cardsOff)) {
+    if (o.title != widget.title || o.kindWord != widget.kindWord || !listEquals(o.cardsOff, widget.cardsOff)) {
       _tick++; // (an effect's eye shut or opened: its card says so)
     }
     doc
       ..title = widget.title
       ..kindWord = widget.kindWord
-      ..properties = widget.properties
       ..movable = widget.movable
       ..onCardMove = widget.onCardMove
       ..onSum = widget.onSum
       ..onAddEffect = widget.onAddEffect
       ..moreCards = widget.moreCards
       ..onMoreCard = widget.onMoreCard
-      ..onArrange = widget.onArrange
       ..onCardReset = widget.onCardReset
       ..onCardRemove = widget.onCardRemove
       ..cardCode = widget.cardCode
@@ -335,11 +310,7 @@ class _InspHostState extends State<InspHost> {
       ..onCardDuplicate = widget.onCardDuplicate
       ..cardsOff = widget.cardsOff
       ..onCardCopy = widget.onCardCopy
-      ..onCardPaste = widget.onCardPaste
-      ..onPath = widget.onPath;
-    doc.choices
-      ..clear()
-      ..addAll(widget.choices);
+      ..onCardPaste = widget.onCardPaste;
   }
 
   void _atMoment() {

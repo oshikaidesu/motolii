@@ -14,7 +14,6 @@ class NumField extends StatefulWidget {
   const NumField({
     super.key,
     required this.id,
-    this.label,
     this.unit = '',
     this.decimals = 0,
     this.min,
@@ -24,12 +23,8 @@ class NumField extends StatefulWidget {
     this.validMax,
     this.step = 1,
     this.perPx = 1,
-    this.zeroWord,
     this.enabled = true,
-    this.axis,
     this.turns = false,
-    this.onSet,
-    this.onReset,
     this.bipolar = false,
     this.caption,
     this.glyph,
@@ -37,7 +32,7 @@ class NumField extends StatefulWidget {
     this.glyphTall = false,
   });
   final String id;
-  final String? label, unit, zeroWord;
+  final String? unit;
   final int decimals;
   final double? min, max;
   final double step, perPx;
@@ -50,9 +45,6 @@ class NumField extends StatefulWidget {
   /// How far a number typed goes when it is less than [open]'s all: PF_FloatSliderDef's valid_min and valid_max, its
   /// slider_min and slider_max being [min] and [max].
   final double? validMin, validMax;
-  final Color? axis;
-  final ValueChanged<double>? onSet;
-  final VoidCallback? onReset;
 
   /// A range around zero fills out from the middle.
   final bool bipolar;

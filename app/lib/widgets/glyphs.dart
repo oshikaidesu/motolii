@@ -1,13 +1,11 @@
 // A small line-icon set, drawn: one stroke weight, one size grid, g63 idle / g95 active. Placeholders (empty squares) are what the critique flagged, so every tool and tile has a real mark.
-import 'dart:math' as math;
-
 import 'package:flutter/widgets.dart';
 
 import '../skin/svg_parts.dart';
 
 import '../skin/tokens.dart';
 
-enum G { select, move, rect, ellipse, pen, text, brush, image, camera, repeater, grid, circle, spiral, shape, effect, media }
+enum G { select, move, rect, ellipse, pen, text, brush, image, camera, grid, shape, media }
 
 class Glyph extends StatelessWidget {
   const Glyph(this.kind, {super.key, this.size = 18, this.color});
@@ -61,7 +59,7 @@ class _GlyphPainter extends CustomPainter {
         }
       case G.rect || G.shape:
         c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * .18, w * .22, w * .64, w * .56), Radius.circular(w * .08)), st);
-      case G.ellipse || G.circle:
+      case G.ellipse:
         c.drawOval(Rect.fromLTWH(w * .16, w * .2, w * .68, w * .6), st);
       case G.pen:
         c.drawPath(
@@ -108,35 +106,12 @@ class _GlyphPainter extends CustomPainter {
         c.drawLine(p(.34, .3), p(.4, .2), st);
         c.drawLine(p(.4, .2), p(.6, .2), st);
         c.drawLine(p(.6, .2), p(.66, .3), st);
-      case G.repeater:
-        for (var i = 0; i < 3; i++) {
-          for (var j = 0; j < 3; j++) {
-            c.drawCircle(p(.24 + i * .26, .24 + j * .26), w * .05, fl);
-          }
-        }
       case G.grid:
         for (var i = 0; i < 2; i++) {
           c.drawLine(p(.38 + i * .24, .16), p(.38 + i * .24, .84), st);
           c.drawLine(p(.16, .38 + i * .24), p(.84, .38 + i * .24), st);
         }
         c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * .16, w * .16, w * .68, w * .68), Radius.circular(w * .06)), st);
-      case G.spiral:
-        final path = Path()..moveTo(w * .5, w * .5);
-        for (var a = 0.0; a < 12.5; a += .2) {
-          final r = w * .04 * a / 1.6;
-          path.lineTo(w * .5 + r * (a == 0 ? 0 : 1) * math.cos(a), w * .5 + r * math.sin(a));
-        }
-        c.drawPath(path, st);
-      case G.effect:
-        c.drawCircle(p(.5, .5), w * .3, st);
-        c.drawCircle(p(.5, .5), w * .14, st);
-        for (var i = 0; i < 4; i++) {
-          c.drawLine(
-            p(.5 + (i.isEven ? 0 : (i == 1 ? .36 : -.36)), .5 + (i.isEven ? (i == 0 ? -.36 : .36) : 0)),
-            p(.5 + (i.isEven ? 0 : (i == 1 ? .44 : -.44)), .5 + (i.isEven ? (i == 0 ? -.44 : .44) : 0)),
-            st,
-          );
-        }
       case G.media:
         c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * .14, w * .2, w * .72, w * .6), Radius.circular(w * .08)), st);
         c.drawPath(

@@ -29,12 +29,12 @@ const dblParts = Duration(milliseconds: 320);
 
 /// Set by a row: its controls are off (locked, driven or disabled) and whether the panel is narrow (units go everywhere at once).
 class RowOff extends InheritedWidget {
-  const RowOff({super.key, required this.off, required this.narrow, required super.child});
-  final bool off, narrow;
+  const RowOff({super.key, required this.off, required super.child});
+  final bool off;
   static RowOff? maybe(BuildContext c) => c.dependOnInheritedWidgetOfExactType<RowOff>();
   static bool offOf(BuildContext c) => maybe(c)?.off ?? false;
   @override
-  bool updateShouldNotify(RowOff o) => o.off != off || o.narrow != narrow;
+  bool updateShouldNotify(RowOff o) => o.off != off;
 }
 
 /// For controls that cannot recolour themselves (Segmented): off = a fixed dim and no pointer.
@@ -74,7 +74,6 @@ class Pop extends InheritedWidget {
   static double get titleGap => Shape.s(4.0);
   static double get gap => Shape.s(2.0);
   static double get titleH => Shape.z(16.0);
-  static double get row => Shape.z(24.0);
   static double get cell => Shape.z(22.0);
 
   /// A parameter block: name on top, value large at the bottom, its picture in the top-right corner; text always starts at the same x.

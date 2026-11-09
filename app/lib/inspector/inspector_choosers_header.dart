@@ -7,28 +7,19 @@ import 'package:motolii/skin/theme.dart';
 import '../widgets/glyphs.dart';
 import '../skin/tokens.dart';
 import 'inspector_parts.dart';
-import '../widgets/text_gestures.dart';
 
 // ---- 6. choosers and hand-overs -------------------------------------------------------------------------------------
 /// A short list lives in a segmented control; a long one opens a searchable list (G2, G3). Never prev/next cycling (do-not-repeat 6, 7).
 class Chooser extends StatefulWidget {
-  const Chooser({super.key, required this.id, required this.options, this.searchable = false, this.enabled = true});
+  const Chooser({super.key, required this.id, required this.options});
   final String id;
   final List<String> options;
-  final bool searchable, enabled;
   @override
   State<Chooser> createState() => ChooserState();
 }
 
 class ChooserState extends State<Chooser> {
-  /// Opened from outside: a tile around it, tapped anywhere (its glyph, its name), opens its list.
-  void open() {
-    if (widget.enabled && !_open) _set(true);
-  }
-
   bool _open = false, _up = false;
-  final _q = TextEditingController();
-  late final _qf = FocusNode(debugLabel: 'chooser-q', onKeyEvent: _key);
   final _node = FocusNode(debugLabel: 'chooser');
   final _list = ScrollController();
   int _at = -1; // (the one the keys are on)
@@ -42,17 +33,12 @@ class ChooserState extends State<Chooser> {
 
   @override
   void dispose() {
-    _q.dispose();
-    _qf.dispose();
     _node.dispose();
     _list.dispose();
     super.dispose();
   }
 
-  List<String> get _hits => [
-    for (final o in widget.options)
-      if (o.toLowerCase().contains(_q.text.toLowerCase())) o,
-  ];
+  List<String> get _hits => widget.options;
 
   void _go(int to) {
     final n = _hits.length;
@@ -71,8 +57,7 @@ class ChooserState extends State<Chooser> {
     if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
     final k = e.logicalKey, down = k == LogicalKeyboardKey.arrowDown, up = k == LogicalKeyboardKey.arrowUp;
     final enter = k == LogicalKeyboardKey.enter || k == LogicalKeyboardKey.numpadEnter;
-    final letter =
-        !widget.searchable && (e.character?.trim().length ?? 0) == 1 && !HardwareKeyboard.instance.isMetaPressed && !HardwareKeyboard.instance.isControlPressed
+    final letter = (e.character?.trim().length ?? 0) == 1 && !HardwareKeyboard.instance.isMetaPressed && !HardwareKeyboard.instance.isControlPressed
         ? e.character!
         : null;
     if (!_open) {
@@ -107,18 +92,17 @@ class ChooserState extends State<Chooser> {
       final overlay = Overlay.maybeOf(context, rootOverlay: true)?.context.findRenderObject() as RenderBox?;
       if (box != null && overlay != null) {
         final bottom = box.localToGlobal(Offset(0, box.size.height), ancestor: overlay).dy;
-        final need = math.min(widget.options.length, _maxItems) * _itemH + (widget.searchable ? 24 : 0) + 12;
+        final need = math.min(widget.options.length, _maxItems) * _itemH + 12;
         _up = overlay.size.height - bottom < need && bottom - box.size.height > need;
       }
     }
     setState(() => _open = open);
-    _q.clear();
     open ? _portal.show() : _portal.hide();
     if (open) {
       _at = widget.options.indexOf(Ctx.read(context).doc.s2[widget.id] ?? widget.options.first);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        (widget.searchable ? _qf : _node).requestFocus();
+        _node.requestFocus();
         _go(_at); // (what it is now in sight, the keys on it)
       });
     }
@@ -138,33 +122,6 @@ class ChooserState extends State<Chooser> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (widget.searchable)
-            Container(
-              height: Shape.z(24),
-              margin: EdgeInsets.only(bottom: Shape.s(3)),
-              padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
-              decoration: BoxDecoration(color: Grey.g10, borderRadius: BorderRadius.all(Shape.r(5))),
-              alignment: Alignment.centerLeft,
-              child: Stack(
-                alignment: Alignment.centerLeft,
-                children: [
-                  if (_q.text.isEmpty) Text('Search', style: T.label(Grey.g56)),
-                  TextGestures(
-                    field: (k) => EditableText(
-                      key: k,
-                      rendererIgnoresPointer: true,
-                      controller: _q,
-                      focusNode: _qf,
-                      style: T.name(Grey.g95),
-                      cursorColor: Grey.g95,
-                      backgroundCursorColor: Grey.g20,
-                      maxLines: 1,
-                      onChanged: (_) => setState(() => _at = 0),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           SizedBox(
             height: math.min(math.max(hits.length, 1), _maxItems) * _itemH,
             child: hits.isEmpty
@@ -211,7 +168,7 @@ class ChooserState extends State<Chooser> {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), cur = x.doc.s2[widget.id] ?? widget.options.first;
-    final on = widget.enabled && !RowOff.offOf(context);
+    final on = !RowOff.offOf(context);
     void pick(String o) {
       x.doc.str(widget.id, o);
       _set(false);

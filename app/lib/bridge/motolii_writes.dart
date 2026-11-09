@@ -56,8 +56,6 @@ extension MotoliiWrites on Motolii {
 
   bool key(int layer, String name, double at, double number) => _took(_with([name], (s) => _key(_m, layer, s[0], at, number)) != 0);
 
-  bool easing(int layer, String name, double at, String easing) => _took(_with([name, easing], (s) => _easing(_m, layer, s[0], at, s[1])) != 0);
-
   /// A thing held by a hand, carried, and let go (motolii.h): the one form of everything a hand drags. [by] is
   /// 'place' (on the stage: how far the hand has gone, in points of the picture), 'bar', 'head' or 'tail' (its bar on
   /// the timeline: how many seconds), or a value's name (what the number is now). What is carried shows at once and
@@ -74,25 +72,13 @@ extension MotoliiWrites on Motolii {
   bool dragUpdate(String by, double a, [double b = 0]) =>
       _with([by], (s) => _dragUpdate(_m, s[0], a, b)) != 0; // (sent, not waited for: what it carries shows in the moment's picture)
 
-  /// What a hand does to a value at a moment, by the document's own rules (motolii.h): the value changed there (a key
-  /// if it has keys, else the value that stays); a key there holding what it is; its keys gone; and how it is keyed
-  /// at that moment (0 no keys, 1 keys but none there, 2 a key there).
-  bool put(int layer, String name, double at, double number) => _took(_with([name], (s) => _put(_m, layer, s[0], at, number)) != 0);
-
   /// Whether play goes round the work area (or stops at its end).
   bool get looping => _loopIs(_m, -1) != 0;
 
   set looping(bool on) => _loopIs(_m, on ? 1 : 0);
 
-  bool mark(double at, String word) => _took(_with([word], (s) => _mark(_m, at, s[0])) != 0);
-
-  bool guide(String axis, double at, bool on) => _took(_with([axis], (s) => _guide(_m, s[0], at, on ? 1 : 0)) != 0);
-
   /// A recipe made at the present moment, as one step: the new thing (0: not made, [trouble] says why).
   int create(String script) => _took(_with([script], (s) => _create(_m, s[0])));
-
-  /// An effect put on a thing at a moment, or taken off if it is on (its keys too), one step.
-  bool effect(int layer, String name, double at) => _took(_with([name], (s) => _effect(_m, layer, s[0], at)) != 0);
 
   /// One act of a hand that is several changes: they are one step of undo.
   T together<T>(T Function() changes) {

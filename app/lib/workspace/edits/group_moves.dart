@@ -92,11 +92,3 @@ void wsMakeMove(Ws ws, List<String> who, double start) {
     ws.reread();
   });
 }
-
-/// The same at any moment: a question of the inside (docs/app/BRIDGE.md Q), answered later.
-Future<({double x, double y, double size, double opacity, double flip})> wsShowsAt(Motolii m, int t, double at) async {
-  final v = await m.shownAt([
-    for (final n in const ['x', 'y', 'size', 'opacity', 'rotate_y']) (t, n, at),
-  ]);
-  return (x: v[0] ?? 0, y: v[1] ?? 0, size: v[2] ?? 1, opacity: v[3] ?? 1, flip: v[4] ?? 0);
-}

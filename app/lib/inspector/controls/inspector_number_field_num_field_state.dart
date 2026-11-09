@@ -104,12 +104,7 @@ class NumFieldState extends State<NumField> {
       doc.setMany({for (final id in doc.picked) id: id == widget.id || same ? c : (doc.get(id) ?? 0) + d});
       return;
     }
-    final f = widget.onSet;
-    if (f != null) {
-      f(c);
-    } else {
-      _x.doc.set(widget.id, c);
-    }
+    _x.doc.set(widget.id, c);
   }
 
   // (what a right click on it offers: its keys as its mark does, the rest of the row's menu on the row's own label)
@@ -143,10 +138,8 @@ class NumFieldState extends State<NumField> {
   }
 
   void _reset() {
-    final f = widget.onReset, doc = _x.doc, id = widget.id;
-    if (f != null) {
-      f();
-    } else if (id.startsWith('v_') && doc.onCardReset != null) {
+    final doc = _x.doc, id = widget.id;
+    if (id.startsWith('v_') && doc.onCardReset != null) {
       doc.onCardReset!([
         id.substring(2),
       ]); // (as it comes: what is said of it forgotten, its card's own Reset; the inspector's default is only what it was when the card was made)
@@ -431,8 +424,8 @@ class NumFieldState extends State<NumField> {
 
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), ed = const Ed();
-    final v = x.doc.get(widget.id), on = _on, narrow = RowOff.maybe(context)?.narrow ?? false;
+    final x = Ctx.of(context);
+    final v = x.doc.get(widget.id), on = _on;
     final live = _drag && _moved;
     const idle = Color(0x00000000);
     final Color edge = live ? C.mode.withValues(alpha: .8) : (_focus || _editing ? Grey.g63 : (_hover && on ? Grey.g38 : idle));
@@ -446,14 +439,12 @@ class NumFieldState extends State<NumField> {
         final w = box.maxWidth;
         _w = w;
         final row = pop ? RowInfo.of(context) : null;
-        final showUnit = w >= wUnit && !narrow && row?.unit == null, tight = w < wTight;
+        final showUnit = w >= wUnit, tight = w < wTight;
         final t = (_bounded && v != null) ? ((v - widget.min!) / (widget.max! - widget.min!)).clamp(0.0, 1.0) : 0.0;
         String unit = widget.unit ?? '';
         if (widget.turns && v != null && v.abs() >= 360 && w >= 120) unit = '° ${(v / 360).truncate()}x ${fmt(v.remainder(360), 0)}';
-        final word = v == 0 && widget.zeroWord != null ? widget.zeroWord! : null;
         Widget valueText() {
           if (v == null) return Text('Mixed', style: T.label(Grey.g76));
-          if (word != null) return Text(word, style: T.label(on ? Grey.g76 : Grey.g56));
           return FittedBox(
             // (a number wider than its field is drawn smaller, never cut)
             fit: BoxFit.scaleDown,
@@ -478,18 +469,7 @@ class NumFieldState extends State<NumField> {
           );
         }
 
-        final lead = _err && w >= 150
-            ? Text('Number required', style: T.label(Role.error))
-            : (widget.label != null
-                  ? Text(
-                      ed.lab(widget.label!),
-                      maxLines: 1,
-                      softWrap: false,
-                      style: pop && widget.axis != null
-                          ? T.label(on ? Color.lerp(widget.axis!, Grey.g100, .3)! : Grey.g56).copyWith(fontWeight: FontWeight.w700)
-                          : ed.labStyle(on ? Grey.g63 : Grey.g56),
-                    )
-                  : null);
+        final lead = _err && w >= 150 ? Text('Number required', style: T.label(Role.error)) : null;
         final block = widget.caption != null;
         // contract: animated = a dim dot, keyed at the playhead = a lit dot (the automation blip, not a column). A value
         // that takes keys shows its mark always, hollow when it has none, and a press on it keys it there (Alight Motion's
@@ -544,7 +524,6 @@ class NumFieldState extends State<NumField> {
             on: on,
             hot: _hover,
             live: live,
-            axis: widget.axis,
             keyDot: _keyAt == null ? null : (ks == KeyS.at ? Pop.keyDot : (ks == KeyS.anim ? Pop.keyDot.withValues(alpha: .5) : Grey.g56)),
             keyEmpty: ks == KeyS.off,
             pad: Pop.tilePad,

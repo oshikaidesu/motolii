@@ -22,7 +22,6 @@ import '../commands/command_actions.dart' show wsTimelineAsk, wsAskRename, wsAsk
 import '../../widgets/timeline_painters.dart' show TpGlyph, TpGlyphPainter;
 import '../../skin/tokens.dart';
 import '../edits/keyframe_edits.dart';
-import '../commands/keymap.dart' show CommandIntent;
 import 'timeline_kept.dart';
 import 'timeline_paint.dart';
 import '../edits/make_relation.dart';

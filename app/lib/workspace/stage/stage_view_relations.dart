@@ -292,13 +292,12 @@ class _RelationMarks extends StatelessWidget {
 
 /// A relation's shape on the stage: a ring (its middle, how far) or a line.
 class _Shape {
-  _Shape.ring(this.a, this.r, {this.off = false, this.squash = 1}) : b = null;
-  _Shape.line(this.a, Offset this.b, {this.off = false}) : r = 0, squash = 1;
+  _Shape.ring(this.a, this.r, {this.off = false}) : b = null;
+  _Shape.line(this.a, Offset this.b, {this.off = false}) : r = 0;
   final Offset a;
   final Offset? b;
   final double r;
   final bool off; // (its relation's eye shut: drawn faint)
-  final double squash; // (a ring's height to its width)
 }
 
 /// Drawn round: the line the hand drew; a ring round each thing picked together or moved by the relation picked; the
@@ -325,7 +324,7 @@ class _MarksPainter extends CustomPainter {
     for (final sh in shape) {
       thin.color = WsT.accent.withValues(alpha: sh.off ? .25 : .8);
       final path = sh.b == null
-          ? (Path()..addOval(Rect.fromCenter(center: sh.a, width: 2 * sh.r, height: 2 * sh.r * sh.squash.abs())))
+          ? (Path()..addOval(Rect.fromCenter(center: sh.a, width: 2 * sh.r, height: 2 * sh.r)))
           : (Path()
               ..moveTo(sh.a.dx, sh.a.dy)
               ..lineTo(sh.b!.dx, sh.b!.dy));

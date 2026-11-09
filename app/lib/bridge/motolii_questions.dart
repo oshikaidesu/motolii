@@ -87,12 +87,12 @@ extension MotoliiQuestions on Motolii {
     });
   }
 
-  /// Each picture (224 points square, RGBA) told as [dims] numbers, one long, by the CLIP image encoder in the ONNX file
+  /// Each picture (224 points square, RGBA) told as 512 numbers, one long, by the CLIP image encoder in the ONNX file
   /// [model] (motolii_likeness), on another isolate; null: not told (no such model).
-  Future<List<Float32List>?> likeness(String model, List<Uint8List> pictures, {int dims = 512}) {
+  Future<List<Float32List>?> likeness(String model, List<Uint8List> pictures) {
     final lib = libPath;
     return Isolate.run(() {
-      const side = 224 * 224 * 4;
+      const side = 224 * 224 * 4, dims = 512;
       final n = pictures.length, file = model.toNativeUtf8(), into = malloc<UnsignedChar>(n * side + 1), out = malloc<Float>(n * dims + 1);
       for (final (i, p) in pictures.indexed) {
         into.cast<Uint8>().asTypedList(n * side).setRange(i * side, (i + 1) * side, p);
@@ -124,25 +124,6 @@ extension MotoliiQuestions on Motolii {
     });
   }
 
-  /// Those [places] (0 to 1 each way) each given a cell of a [cols] x [rows] grid, the nearest for them all
-  /// (motolii_grid: CloudToGrid's way, SciPy's linear_sum_assignment): each one's cell, row * cols + column, in their
-  /// order (null: not laid), worked out on another isolate.
-  Future<List<int>?> grid(List<(double, double)> places, int cols, int rows) {
-    final lib = libPath;
-    return Isolate.run(() {
-      final n = places.length, xy = malloc<Double>(2 * n + 1), cell = malloc<Int>(n + 1);
-      for (final (i, (x, y)) in places.indexed) {
-        xy[2 * i] = x;
-        xy[2 * i + 1] = y;
-      }
-      final got = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_grid(xy, n, cols, rows, cell);
-      final laid = got == 0 ? null : [for (var i = 0; i < n; i++) cell[i]];
-      malloc.free(xy);
-      malloc.free(cell);
-      return laid;
-    });
-  }
-
   /// How a thing moves over a while, as the stage places it (its wave and all): [n] moments from [from] to before [to],
   /// four numbers each: where it is (x, y, units of the stage), how far turned (degrees), how large (a share). null: no
   /// such thing. Asked once when its values change, for a small preview that then plays by itself (motolii_path).
@@ -161,9 +142,9 @@ extension MotoliiQuestions on Motolii {
   }
 
   /// The same in the round: four numbers a moment, where it is (x, y, z, units of the stage) and how large (motolii_path3).
-  List<double>? path3(int layer, {int copy = 0, double from = 0, required double to, int n = 24}) {
+  List<double>? path3(int layer, {int copy = 0, required double to, int n = 24}) {
     final out = malloc<Double>(4 * n);
-    final got = _path3(_m, layer, copy, from, to, n, out), p = [for (var i = 0; i < 4 * got; i++) out[i]];
+    final got = _path3(_m, layer, copy, 0, to, n, out), p = [for (var i = 0; i < 4 * got; i++) out[i]];
     malloc.free(out);
     return got > 0 ? p : null;
   }
@@ -191,12 +172,12 @@ extension MotoliiQuestions on Motolii {
     return all;
   });
 
-  /// Where a film's sound strikes (grows [rise] dB louder at once): the document's moments where it shows them, or
-  /// [own] the film's own seconds. Asked once its loudness has been read ([loudness]).
-  Future<List<double>> strikes(int layer, double rise, {bool own = false}) => _ask((l, m) {
+  /// Where a film's sound strikes (grows [rise] dB louder at once): the document's moments where it shows them.
+  /// Asked once its loudness has been read ([loudness]).
+  Future<List<double>> strikes(int layer, double rise) => _ask((l, m) {
     final ask = c.MotoliiBindings(l).motolii_strikes;
-    final n = ask(m, layer, rise, own ? 1 : 0, nullptr, 0), out = malloc<Double>(n < 1 ? 1 : n);
-    final got = ask(m, layer, rise, own ? 1 : 0, out, n), all = [for (var i = 0; i < got && i < n; i++) out[i]];
+    final n = ask(m, layer, rise, 0, nullptr, 0), out = malloc<Double>(n < 1 ? 1 : n);
+    final got = ask(m, layer, rise, 0, out, n), all = [for (var i = 0; i < got && i < n; i++) out[i]];
     malloc.free(out);
     return all;
   });

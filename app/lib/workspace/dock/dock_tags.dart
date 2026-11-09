@@ -60,14 +60,13 @@ abstract final class DockTags {
     } catch (_) {} // (not kept: the latch holds while the window is open)
   }
 
-  /// Whether a thing answers a search: every word of it is in its name, among its tags, or (a colour) its code.
-  static bool hit(String query, String name, Set<String> tags, {String code = ''}) {
+  /// Whether a thing answers a search: every word of it is in its name or among its tags.
+  static bool hit(String query, String name, Set<String> tags) {
     if (query.trim().isEmpty) return true;
     final lower = name.toLowerCase();
     for (final w in query.toLowerCase().split(RegExp(r'\s+'))) {
       if (w.isEmpty) continue;
-      final bare = w.startsWith('#') ? w.substring(1) : w;
-      if (lower.contains(w) || tags.any((t) => t.contains(w)) || (code.isNotEmpty && bare.length >= 2 && code.toLowerCase().contains(bare))) continue;
+      if (lower.contains(w) || tags.any((t) => t.contains(w))) continue;
       return false;
     }
     return true;

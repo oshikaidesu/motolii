@@ -6,8 +6,7 @@ import '../inspector_parts.dart';
 /// The panels that own lists (fonts, colours, eases). The Inspector shows what is set and sends you there; it never holds the list.
 enum LinkTo {
   fonts('Browser', 'Fonts'),
-  colors('Browser', 'Colors'),
-  ease('Ease', 'Ease');
+  colors('Browser', 'Colors');
 
   const LinkTo(this.panel, this.shelf);
   final String panel, shelf;

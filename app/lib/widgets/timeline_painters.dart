@@ -27,29 +27,7 @@ double tpFine(double ppf, int fps, double major) {
 
 // ---------------------------------------------------------------- glyphs
 
-enum TpGlyph {
-  eye,
-  eyeOff,
-  solo,
-  lock,
-  unlock,
-  caretR,
-  caretD,
-  stopwatch,
-  play,
-  pause,
-  stop,
-  toStart,
-  toEnd,
-  stepBack,
-  stepFwd,
-  loop,
-  fit,
-  plus,
-  minus,
-  keyOutline,
-  keyFilled,
-}
+enum TpGlyph { eye, eyeOff, solo, lock, unlock, caretR, caretD, play, pause, toStart, stepBack, stepFwd, loop, fit, plus, minus }
 
 class TpGlyphPainter extends CustomPainter {
   const TpGlyphPainter(this.g, this.color);
@@ -109,23 +87,14 @@ class TpGlyphPainter extends CustomPainter {
         c.drawPath(tri(-2, -3.6, 2.8, 0, -2, 3.6), fill);
       case TpGlyph.caretD:
         c.drawPath(tri(-3.6, -2, 3.6, -2, 0, 2.8), fill);
-      case TpGlyph.stopwatch:
-        c.drawCircle(const Offset(0, 1), 4.2, line);
-        c.drawLine(const Offset(-1.6, -5.2), const Offset(1.6, -5.2), line);
-        c.drawLine(const Offset(0, 1), const Offset(1.9, -.8), line);
       case TpGlyph.play:
         c.drawPath(tri(-3, -4.6, 4.8, 0, -3, 4.6), fill);
       case TpGlyph.pause:
         c.drawRect(const Rect.fromLTRB(-3.6, -4.4, -1, 4.4), fill);
         c.drawRect(const Rect.fromLTRB(1, -4.4, 3.6, 4.4), fill);
-      case TpGlyph.stop:
-        c.drawRRect(RRect.fromLTRBR(-4, -4, 4, 4, Shape.r(1)), fill);
       case TpGlyph.toStart:
         c.drawRect(const Rect.fromLTRB(-5, -4.6, -3.8, 4.6), fill);
         c.drawPath(tri(5, -4.6, -2.2, 0, 5, 4.6), fill);
-      case TpGlyph.toEnd:
-        c.drawRect(const Rect.fromLTRB(3.8, -4.6, 5, 4.6), fill);
-        c.drawPath(tri(-5, -4.6, 2.2, 0, -5, 4.6), fill);
       case TpGlyph.stepBack:
         c.drawPath(tri(3, -4.2, -3, 0, 3, 4.2), fill);
       case TpGlyph.stepFwd:
@@ -150,17 +119,6 @@ class TpGlyphPainter extends CustomPainter {
         c.drawLine(const Offset(0, -4), const Offset(0, 4), line);
       case TpGlyph.minus:
         c.drawLine(const Offset(-4, 0), const Offset(4, 0), line);
-      case TpGlyph.keyOutline:
-      case TpGlyph.keyFilled:
-        c.drawPath(
-          Path()
-            ..moveTo(0, -4.4)
-            ..lineTo(4.4, 0)
-            ..lineTo(0, 4.4)
-            ..lineTo(-4.4, 0)
-            ..close(),
-          g == TpGlyph.keyFilled ? fill : line,
-        );
     }
   }
 

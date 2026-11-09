@@ -6,25 +6,6 @@ import 'package:naked_ui/naked_ui.dart';
 
 import '../skin/tokens.dart';
 
-String clock(double s) => '${s ~/ 60}:${(s % 60).floor().toString().padLeft(2, '0')}';
-
-String hexOf(Color c) {
-  String h(double v) => (v * 255).round().toRadixString(16).padLeft(2, '0').toUpperCase();
-  return '#${h(c.r)}${h(c.g)}${h(c.b)}';
-}
-
-enum Kind {
-  image('IMG', 'Image'),
-  video('VID', 'Video'),
-  audio('AUD', 'Audio'),
-  model('3D', '3D'),
-  pano('360°', '360°');
-
-  const Kind(this.badge, this.label);
-  final String badge, label;
-  bool get timed => this == video || this == audio || this == pano;
-}
-
 class Draw extends CustomPainter {
   const Draw(this.fn, [this.key]);
   final void Function(Canvas canvas, Size size) fn;
@@ -62,9 +43,8 @@ void drawStar(Canvas c, Size s, Color col, bool fill) {
 
 /// A thin horizontal slider: the track is grey, the value is the brightest thing.
 class MiniSlider extends StatelessWidget {
-  const MiniSlider({super.key, required this.value, required this.onChanged, this.min = 0, this.max = 1, this.width = 88, this.track});
+  const MiniSlider({super.key, required this.value, required this.onChanged, this.min = 0, this.max = 1, this.width = 88});
   final double value, min, max, width;
-  final Color? track; // (none: the skin's grey)
   final ValueChanged<double> onChanged;
   @override
   Widget build(BuildContext context) {
@@ -87,7 +67,7 @@ class MiniSlider extends StatelessWidget {
             children: [
               Container(
                 height: Shape.z(2),
-                decoration: BoxDecoration(color: track ?? Grey.g26, borderRadius: BorderRadius.all(Shape.r(1))),
+                decoration: BoxDecoration(color: Grey.g26, borderRadius: BorderRadius.all(Shape.r(1))),
               ),
               Container(
                 width: width * t,

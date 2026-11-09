@@ -9,7 +9,6 @@ import 'dart:developer' show Timeline, TimelineTask;
 import 'dart:io' show Platform;
 import 'dart:math' as math;
 
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/widgets.dart';
 
@@ -49,7 +48,7 @@ abstract final class WsT {
   /// Panel widths and the lower band's height, at the reference window (1600 x 960).
   static const dock = 300.0, inspector = 372.0, lower = 300.0;
   static double get topBar => Shape.z(40);
-  static const minWindow = Size(1280, 800), refWindow = Size(1600, 960);
+  static const minWindow = Size(1280, 800);
 
   /// Grounds: the gutter, a panel's body, a card or row inside it, a well (field) inside that.
   static Color get ground => Grey.g00;

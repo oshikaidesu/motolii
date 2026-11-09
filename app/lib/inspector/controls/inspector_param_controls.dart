@@ -9,10 +9,9 @@ import '../inspector_parts.dart';
 /// An effect's parameters as blocks that fill the panel's width: three across in a normal panel, more when it is widened,
 /// so thirty parameters stay a short list. Order is the shader's; a block that needs room (a point, a size, a choice) takes two.
 class ParamGrid extends StatelessWidget {
-  const ParamGrid(this.fx, this.params, {super.key, this.enabled = true});
+  const ParamGrid(this.fx, this.params, {super.key});
   final String fx;
   final List<Param> params;
-  final bool enabled;
 
   static int span(Param p) => switch (p.look) {
     ParamLook.point || ParamLook.size || ParamLook.choice => 2,
@@ -44,7 +43,7 @@ class ParamGrid extends StatelessWidget {
               if (i > 0) SizedBox(width: g),
               Expanded(
                 flex: math.min(span(ps[i]), cols),
-                child: RowOff(off: !enabled, narrow: false, child: ParamTile(fx, ps[i])),
+                child: RowOff(off: false, child: ParamTile(fx, ps[i])),
               ),
             ],
             if (last && filled < cols) ...[SizedBox(width: g), Spacer(flex: cols - filled)],

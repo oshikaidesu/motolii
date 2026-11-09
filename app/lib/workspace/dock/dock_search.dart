@@ -11,12 +11,9 @@ void askDockSearch() {
 }
 
 class DockSearch extends StatefulWidget {
-  const DockSearch({super.key, required this.controller, required this.hint, this.trailing});
+  const DockSearch({super.key, required this.controller, required this.hint});
   final TextEditingController controller;
   final String hint;
-
-  /// Sits beside the well, e.g. the filter toggle.
-  final Widget? trailing;
   @override
   State<DockSearch> createState() => _DockSearchState();
 }
@@ -106,14 +103,6 @@ class _DockSearchState extends State<DockSearch> {
         ),
       ),
     );
-    return Padding(
-      padding: EdgeInsets.fromLTRB(WsT.inset, Shape.s(6), WsT.inset, Shape.s(4)),
-      child: Row(
-        children: [
-          Expanded(child: well),
-          if (widget.trailing case final t?) ...[SizedBox(width: WsT.gap), t],
-        ],
-      ),
-    );
+    return Padding(padding: EdgeInsets.fromLTRB(WsT.inset, Shape.s(6), WsT.inset, Shape.s(4)), child: well);
   }
 }

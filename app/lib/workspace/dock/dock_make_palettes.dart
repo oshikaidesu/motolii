@@ -191,13 +191,13 @@ String _hex(Color c) {
 // ---- the mix of a gradient: CAM16-UCS (Google's, material_color_utilities), the space an eye mixes in, so the middle
 // between two colours is what it expects. The ramp the document draws mixes plainly, so the middle is given as more
 // stops, laid in that space (a few between each pair).
-List<Color> _stopsOf(List<Color> cs, bool smooth, {int per = 5}) {
+List<Color> _stopsOf(List<Color> cs, bool smooth) {
   if (!smooth || cs.length < 2) return cs;
   final out = <Color>[];
   for (var i = 0; i < cs.length - 1; i++) {
     final a = Cam16.fromInt(cs[i].toARGB32()), b = Cam16.fromInt(cs[i + 1].toARGB32());
-    for (var k = 0; k < per; k++) {
-      final t = k / per;
+    for (var k = 0; k < 5; k++) {
+      final t = k / 5;
       out.add(
         k == 0
             ? cs[i]
@@ -217,7 +217,7 @@ List<Color> _stopsOf(List<Color> cs, bool smooth, {int per = 5}) {
 /// A palette taken from a photo: the picture shrunk, its pixels sorted into colours by Google's quantizer
 /// (material_color_utilities, as Material You takes a palette from a wallpaper), each with how many pixels it has
 /// (how much of the picture it is). The photo itself is copied beside the palette and stays there.
-Future<_Pal?> _paletteFrom(String path, {int count = 6}) async {
+Future<_Pal?> _paletteFrom(String path) async {
   try {
     final codec = await ui.instantiateImageCodec(await File(path).readAsBytes(), targetWidth: 96);
     final img = (await codec.getNextFrame()).image;
@@ -228,7 +228,7 @@ Future<_Pal?> _paletteFrom(String path, {int count = 6}) async {
         if (data.getUint8(i + 3) > 200) 0xFF000000 | (data.getUint8(i) << 16) | (data.getUint8(i + 1) << 8) | data.getUint8(i + 2),
     ];
     if (pixels.isEmpty) return null;
-    final found = (await QuantizerCelebi().quantize(pixels, count)).colorToCount.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final found = (await QuantizerCelebi().quantize(pixels, 6)).colorToCount.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
     final total = found.fold<int>(0, (s, e) => s + e.value);
     final kept = Directory('${Platform.environment['HOME']}/.motolii/references')..createSync(recursive: true);
     final name = path.split('/').last, copy = '${kept.path}/${DateTime.now().millisecondsSinceEpoch}_$name';

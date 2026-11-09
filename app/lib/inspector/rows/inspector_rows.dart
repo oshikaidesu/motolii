@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 
 import '../../skin/tokens.dart';
 import '../inspector_parts.dart';
@@ -43,16 +42,10 @@ class _FoldPaint extends CustomPainter {
   bool shouldRepaint(_FoldPaint o) => o.ink != ink;
 }
 
-/// The Pop card behind [Sect]: every titled card folds (its own toggle, or a per-title flag), untitled ones never do.
-/// Folded, a card is one line that still says what it holds: its colour, its name, a key dot if anything in it is animated, and its values in brief.
-/// Folded summaries all start here, so a closed stack reads as a two-column list: what, then how much.
-const briefX = 136.0;
-
 class RowInfo extends InheritedWidget {
-  const RowInfo({super.key, required this.unit, required this.keys, required super.child});
-  final String? unit;
+  const RowInfo({super.key, required this.keys, required super.child});
   final KeyS keys;
   static RowInfo? of(BuildContext c) => c.dependOnInheritedWidgetOfExactType<RowInfo>();
   @override
-  bool updateShouldNotify(RowInfo old) => old.unit != unit || old.keys != keys;
+  bool updateShouldNotify(RowInfo old) => old.keys != keys;
 }

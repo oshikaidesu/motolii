@@ -4,41 +4,17 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook;
+import 'package:motolii/widgets/controls.dart' show Badge;
 
 /// A group: a heading and its rows, with a rule above the group after the first.
 class Sect extends StatelessWidget {
-  const Sect({
-    super.key,
-    this.title,
-    this.children = const [],
-    this.first = false,
-    this.trailing,
-    this.open = true,
-    this.onToggle,
-    this.hint,
-    this.dim = false,
-    this.sub = false,
-    this.tone,
-    this.brief = const [],
-    this.keyIds = const [],
-    this.headWrap,
-  });
-  final String? title, hint;
+  const Sect({super.key, this.title, this.children = const [], this.trailing, this.tone});
+  final String? title;
   final List<Widget> children;
-  final bool first, open, dim, sub;
   final Widget? trailing;
-  final VoidCallback? onToggle;
 
-  /// Pop only: the card's colour stripe, and the rows whose keys light the card's key dot while it is folded.
+  /// Pop only: the card's colour stripe.
   final Color? tone;
-  final List<String> keyIds;
-
-  /// Pop only: the values a folded card shows, one chip each (falls back to [hint]).
-  final List<String> brief;
-
-  /// Pop only: wraps the card's head, e.g. to make it a drag handle.
-  final Widget Function(Widget head)? headWrap;
 
   @override
   Widget build(BuildContext context) {
@@ -47,43 +23,35 @@ class Sect extends StatelessWidget {
         ? null
         : Hov(
             cursor: SystemMouseCursors.basic,
-            onTap: onToggle,
             builder: (_, _) => SizedBox(
               height: Shape.z(24),
               child: Row(
                 children: [
                   if (title != null)
                     Expanded(
-                      child: Text(sub ? title! : ed.head(title!), maxLines: 1, overflow: TextOverflow.ellipsis, style: sub ? ed.subStyle() : ed.headStyle()),
+                      child: Text(ed.head(title!), maxLines: 1, overflow: TextOverflow.ellipsis, style: ed.headStyle()),
                     )
                   else
                     const Spacer(),
-                  if (!open && hint != null)
-                    Padding(
-                      padding: EdgeInsets.only(right: Shape.s(8)),
-                      child: Text(hint!, style: T.label(Grey.g56)),
-                    ),
                   ?trailing,
                 ],
               ),
             ),
           );
-    final body = [if (open) ...children];
-    Widget col(List<Widget> kids) => Opacity(
-      opacity: dim ? .45 : 1,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: kids),
-    );
     if (Pop.on(context)) return _PopCard(this);
-    return col([
-      if (!first)
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
         Padding(
           padding: EdgeInsets.only(top: ed.gap),
           child: const Rule(),
         ),
-      SizedBox(height: first ? 0 : 4),
-      ?head,
-      ...body,
-    ]);
+        const SizedBox(height: 4),
+        ?head,
+        ...children,
+      ],
+    );
   }
 }
 
@@ -93,45 +61,28 @@ class _PopCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final doc = Ctx.of(context).doc, title = s.title, tone = s.tone;
-    final open = s.onToggle != null ? s.open : (title == null || !(doc.b['fold.$title'] ?? false));
-    final toggle =
-        s.onToggle ??
-        (title == null
-            ? null
-            : () {
-                if (!HardwareKeyboard.instance.isAltPressed) return doc.flag('fold.$title', open);
-                for (final c in doc.cards) {
-                  doc.flag('fold.${c.name}', open); // (the Mac's Option on a disclosure triangle: all of them, Finder's list; this one as they go)
-                }
-                doc.flag('fold.$title', open);
-              });
-    final keys = s.keyIds.map((i) => doc.keys[i] ?? KeyS.off).fold(KeyS.off, (a, b) => b.index > a.index ? b : a);
-    final chips = s.brief.isNotEmpty ? s.brief : [if (s.hint != null && s.hint!.isNotEmpty) s.hint!];
-    final brief = !open && chips.isNotEmpty;
+    final open = title == null || !(doc.b['fold.$title'] ?? false);
+    final toggle = (title == null
+        ? null
+        : () {
+            if (!HardwareKeyboard.instance.isAltPressed) return doc.flag('fold.$title', open);
+            for (final c in doc.cards) {
+              doc.flag('fold.${c.name}', open); // (the Mac's Option on a disclosure triangle: all of them, Finder's list; this one as they go)
+            }
+            doc.flag('fold.$title', open);
+          });
     List<Widget> lead(bool h) => [
       // the mark sits centred in its box, and the gap after it equals the card's inset, so it has the same air on both sides
       if (toggle != null) ...[FoldMark(open: open, hot: h), SizedBox(width: Pop.inset)],
-      if (tone != null) ...[
-        Badge(s.dim ? Grey.g26 : tone, size: 16, radius: const Radius.circular(16 * .32), mark: MarkPaint(s.dim ? Grey.g56 : Pop.onAccent)),
-        SizedBox(width: Shape.s(6)),
-      ],
+      if (tone != null) ...[Badge(tone, size: 16, radius: const Radius.circular(16 * .32), mark: MarkPaint(Pop.onAccent)), SizedBox(width: Shape.s(6))],
       if (title != null)
         Flexible(
           child: Text(
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: T
-                .title(s.dim ? Grey.g56 : (h && toggle != null ? Grey.g100 : Grey.g95))
-                .copyWith(fontSize: T.px(12), fontWeight: FontWeight.w700, decoration: s.dim ? TextDecoration.lineThrough : null),
+            style: T.title(h && toggle != null ? Grey.g100 : Grey.g95).copyWith(fontSize: T.px(12), fontWeight: FontWeight.w700),
           ),
-        ),
-      if (!open && keys != KeyS.off)
-        Container(
-          width: Shape.z(5),
-          height: Shape.z(5),
-          margin: EdgeInsets.only(left: Shape.s(6)),
-          decoration: BoxDecoration(color: keys == KeyS.at ? Pop.keyDot : Pop.keyDot.withValues(alpha: .5), shape: BoxShape.circle),
         ),
     ];
     final head = title == null && s.trailing == null
@@ -142,57 +93,8 @@ class _PopCard extends StatelessWidget {
               height: Pop.titleH,
               child: Row(
                 children: [
-                  if (brief)
-                    SizedBox(
-                      width: briefX,
-                      child: Row(children: lead(h)),
-                    )
-                  else
-                    ...lead(h),
-                  Expanded(
-                    child: brief
-                        ? Padding(
-                            padding: EdgeInsets.only(right: Shape.s(8)),
-                            child: LayoutBuilder(
-                              builder: (context, box) {
-                                var used = 0.0;
-                                final fit = <String>[];
-                                for (final t in chips) {
-                                  final w = Chip.width(t, ChipLook.brief()) + (fit.isEmpty ? 0 : 4);
-                                  if (used + w > box.maxWidth) break;
-                                  used += w;
-                                  fit.add(t);
-                                }
-                                if (fit.isEmpty) {
-                                  return Row(
-                                    children: [
-                                      Flexible(
-                                        child: Chip(
-                                          label: chips.first,
-                                          dot: Chip.swatch(chips.first),
-                                          look: ChipLook.brief(dim: s.dim),
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                }
-                                return Row(
-                                  children: [
-                                    for (final (i, t) in fit.indexed) ...[
-                                      if (i > 0) SizedBox(width: Shape.s(4)),
-                                      Chip(
-                                        label: t,
-                                        dot: Chip.swatch(t),
-                                        look: ChipLook.brief(dim: s.dim),
-                                      ),
-                                    ],
-                                  ],
-                                );
-                              },
-                            ),
-                          )
-                        : const SizedBox(),
-                  ),
+                  ...lead(h),
+                  const Expanded(child: SizedBox()),
                   ?s.trailing,
                 ],
               ),
@@ -205,7 +107,7 @@ class _PopCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (head != null) s.headWrap?.call(head) ?? head,
+          ?head,
           if (head != null && body.isNotEmpty) SizedBox(height: Pop.titleGap),
           ...body,
         ],

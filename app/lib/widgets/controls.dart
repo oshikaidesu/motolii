@@ -43,13 +43,16 @@ class IconPress extends StatelessWidget {
 /// A small filled tile holding one mark: how a thing says what it is before its name is read. The dock's is a square (chip radius)
 /// with a glyph; [radius] rounds it otherwise (a circle: half of [size]); given [onTap] it is a press.
 class Badge extends StatelessWidget {
-  const Badge(this.color, {super.key, this.child, this.mark, this.size = 20, this.radius, this.onTap, this.cursor = SystemMouseCursors.click})
-    : _round = false,
+  const Badge(this.color, {super.key, this.child, this.mark, this.size = 20, this.radius})
+    : onTap = null,
+      cursor = SystemMouseCursors.click,
+      _round = false,
       assert((child == null) != (mark == null));
 
   /// The stage's: a circle, 18 across, the arrow kept over it.
-  const Badge.round(this.color, {super.key, required CustomPainter this.mark, this.onTap, this.size = 18})
+  const Badge.round(this.color, {super.key, required CustomPainter this.mark, this.onTap})
     : child = null,
+      size = 18,
       radius = null,
       cursor = SystemMouseCursors.basic,
       _round = true;
@@ -94,7 +97,6 @@ class ChipLook {
     this.hoverInk,
     this.onInk,
     this.edge,
-    this.underline,
     this.dotSize = 6,
     this.dotGap = 5,
     this.softWrap = false,
@@ -109,7 +111,6 @@ class ChipLook {
   final double padX, padY, radius, dotSize, dotGap;
   final bool center, softWrap, press;
   final Color? edge; // (a 1px ring all round, while not on)
-  final Color? underline; // (a 1px line under it, in this colour while on)
   final EdgeInsets? margin;
   final MouseCursor? cursor; // (none: a hand when it can be pressed)
 
@@ -123,20 +124,6 @@ class ChipLook {
     hoverInk: Grey.g95,
     onInk: WsT.onAccent,
     text: (c) => T.micro(c),
-  );
-
-  /// The inspector's choice chip: no fill at rest, a g20 pill and a 1px accent underline when on.
-  static ChipLook get choice => ChipLook(
-    height: 20,
-    padX: 7,
-    radius: 5,
-    center: true,
-    hoverFill: Grey.g15,
-    onFill: Grey.g20,
-    ink: Grey.g63,
-    onInk: Grey.g95,
-    underline: Role.selected,
-    text: (c) => T.label(c),
   );
 
   /// A folded card's summary value: a g20 tag (g15 and quiet when [dim]), not a press.
@@ -227,9 +214,7 @@ class Chip extends StatelessWidget {
         alignment: l.center ? Alignment.center : null,
         decoration: BoxDecoration(
           color: on ? l.onFill ?? l.fill : (lit ? l.hoverFill ?? l.fill : l.fill),
-          border: l.underline != null
-              ? Border(bottom: BorderSide(color: on ? l.underline! : const Color(0x00000000)))
-              : (l.edge != null && !on ? Border.all(color: l.edge!) : null),
+          border: l.edge != null && !on ? Border.all(color: l.edge!) : null,
           borderRadius: BorderRadius.all(Shape.r(l.radius)),
         ),
         child: Row(
@@ -260,10 +245,9 @@ class Chip extends StatelessWidget {
 }
 
 class Segmented extends StatelessWidget {
-  const Segmented({super.key, required this.items, required this.index, this.onChanged, this.accent, this.expand = false});
+  const Segmented({super.key, required this.items, required this.index, this.onChanged, this.expand = false});
   final List<String> items;
   final int index;
-  final Color? accent;
   final bool expand;
   final ValueChanged<int>? onChanged;
 
@@ -282,7 +266,7 @@ class Segmented extends StatelessWidget {
         decoration: BoxDecoration(
           color: i == index ? Grey.g20 : null,
           borderRadius: BorderRadius.all(Shape.r(5)),
-          border: Border(bottom: BorderSide(color: i == index ? (accent ?? Role.selected) : const Color(0x00000000), width: 1)),
+          border: Border(bottom: BorderSide(color: i == index ? Role.selected : const Color(0x00000000), width: 1)),
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,

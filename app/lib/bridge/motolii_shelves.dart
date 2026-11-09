@@ -57,12 +57,6 @@ extension MotoliiShelves on Motolii {
   /// The relations written as files (a relation's script is the file of the one it is): each one's name and file.
   List<(String, String)> get relations => _folders.putIfAbsent('relations', () => _labelled(_relations(_m).toDartString(), 'relation'));
 
-  /// What an effect (of a thing or of the whole screen) or a motion is for, as the inside says: the shelf's kind ('' none said).
-  String label(String name) {
-    _said();
-    return _items[name]?.label ?? '';
-  }
-
   /// An effect's (or a motion's) picture for its tile, as the inside says: what it does to a sample ('' none). By its
   /// name, or by its file (a file's effect may share a name with one of the inside's own, Datamosh and datamosh.wgsl).
   String tileImage(String name) {
@@ -86,12 +80,6 @@ extension MotoliiShelves on Motolii {
   String tileHome(String name) {
     _said();
     return _items[name]?.home ?? '';
-  }
-
-  /// Whether an effect's tile is seen to change nothing on the sample (its defaults show nothing, or it is a helper of others).
-  bool tileSame(String name) {
-    _said();
-    return _items[name]?.same ?? false;
   }
 
   /// A tile drawn where [home] says: the effects it is for show it from now on (workspace/effect_tiles.dart).
@@ -165,24 +153,18 @@ extension MotoliiShelves on Motolii {
     return (said.first, said.length > 1 ? said[1] : '');
   }
 
-  /// A kind's numbers as a hand takes them: each one's name, lowest and highest (none: a kind without, or one defined).
-  List<(String, double, double)> easingNumbers(String kind) {
-    final w = _with([kind], (s) => _easingNumbers(_m, s[0]).toDartString()).split(' ').where((x) => x.isNotEmpty).toList();
-    return [for (var i = 0; i + 2 < w.length; i += 3) (w[i], double.parse(w[i + 1]), double.parse(w[i + 2]))];
-  }
-
   /// What kind of thing a file makes ('': none).
   String kindOf(String file) => _with([file], (s) => _kindOf(s[0]).toDartString());
 
-  /// The items nearest the words a hand types, best first, the best [limit] (0: 5, as RapidFuzz's extract): each its id,
+  /// The items nearest the words a hand types, best first, the best 5 (as RapidFuzz's extract): each its id,
   /// its name and label, and what it does (the inside's motolii_find: RapidFuzz, typos, parts, abbreviations). Those
   /// scored under [least] left out, as RapidFuzz's extract's score_cutoff (0: none).
-  List<String> find(String words, Iterable<(String, String, String)> items, {int limit = 0, double least = 0}) {
+  List<String> find(String words, Iterable<(String, String, String)> items, {double least = 0}) {
     final lines = [
       for (final (id, name, about) in items) [id, name, about].map((w) => w.replaceAll(RegExp(r'[\t\n]'), ' ')).join('\t'),
     ].join('\n');
     return [
-      for (final line in _with([words, lines], (s) => _find(_m, s[0], s[1], limit).toDartString()).split('\n'))
+      for (final line in _with([words, lines], (s) => _find(_m, s[0], s[1], 0).toDartString()).split('\n'))
         if (line.lastIndexOf('\t') case final i when i > 0 && (double.tryParse(line.substring(i + 1)) ?? 0) >= least) line.substring(0, i),
     ];
   }

@@ -82,12 +82,12 @@ class Keymap {
   Keymap(this.pairs);
   final List<(SingleActivator, String)> pairs;
 
-  static Keymap load([String? file]) {
+  static Keymap load() {
     final all = [
       for (final (k, c) in defaultKeys)
         if (activatorOf(k) case final a?) (a, c),
     ];
-    final path = file ?? '${Platform.environment['HOME']}/.motolii/keybindings.json';
+    final path = '${Platform.environment['HOME']}/.motolii/keybindings.json';
     try {
       final told = jsonDecode(File(path).readAsStringSync()) as List;
       for (final e in told.cast<Map>()) {

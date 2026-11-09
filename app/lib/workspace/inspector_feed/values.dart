@@ -189,17 +189,6 @@ String _lacks(Motolii m, int t) {
       : 'Not in this font: $lacks. Shown in ${instead.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), '')}';
 }
 
-/// What a card's value may be, for a hand-drawn card's chooser: its words, or another thing by name (None first).
-Map<String, List<String>> _choices(Ws ws, String? id) {
-  final m = ws.inside, t = id == null ? 0 : int.tryParse(id);
-  if (m == null || t == null) return const {};
-  return {
-    for (final (_, names) in m.cards(t))
-      for (final n in names)
-        if (m.shown(n)?.look == 'thing') 'v_$n': ['None', ..._others(ws, t).keys] else if (m.words(t, n).isNotEmpty) 'v_$n': m.words(t, n),
-  };
-}
-
 /// How the inspector is looked at (its folds, an effect's Advanced shown): the window's view, not the document's.
 Map<String, bool> _flags(Ws ws, String? id) => {
   for (final e in ws.view.entries)

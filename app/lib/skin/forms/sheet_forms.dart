@@ -40,30 +40,6 @@ class _MarkPaint extends CustomPainter {
   bool shouldRepaint(_MarkPaint o) => o.mark != mark || o.ink != ink;
 }
 
-class _GlyphPaint extends CustomPainter {
-  const _GlyphPaint(this.draw, this.ink);
-  final void Function(Canvas c, Paint stroke) draw;
-  final Color ink;
-
-  @override
-  void paint(Canvas c, Size s) {
-    c.save();
-    c.scale(s.width / 16, s.height / 14);
-    draw(
-      c,
-      Paint()
-        ..color = ink
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2
-        ..strokeCap = StrokeCap.round,
-    );
-    c.restore();
-  }
-
-  @override
-  bool shouldRepaint(_GlyphPaint o) => o.ink != ink || o.draw != draw;
-}
-
 TextStyle _word(Color c, {FontWeight w = FontWeight.w500}) => T.name(c).copyWith(fontSize: T.px(13), fontWeight: w, height: 1.15);
 
 class SheetForms extends Forms {
@@ -90,92 +66,6 @@ class SheetForms extends Forms {
         ),
       );
     },
-  );
-
-  /// Words in a row. The picked one keeps the mark's dot; the others stay on the sheet.
-  @override
-  Widget tabs(BuildContext context, ChoiceSpec c) => NakedToggleGroup<int>(
-    selectedValue: c.selected,
-    enabled: c.enabled,
-    onChanged: (v) => v == null ? null : c.onSelect(v),
-    child: SizedBox(
-      height: Shape.z(28),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (var i = 0; i < c.labels.length; i++)
-            NakedToggleOption<int>(
-              value: i,
-              semanticLabel: c.labels[i],
-              builder: (context, st, _) => Padding(
-                padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (st.isSelected) ...[
-                      SizedBox.square(
-                        dimension: Shape.z(6),
-                        child: CustomPaint(painter: _MarkPaint(_Mark.dot, Accent.key)),
-                      ),
-                      SizedBox(width: Shape.s(6)),
-                    ],
-                    Text(c.labels[i], style: _word(st.isSelected ? Grey.g100 : Grey.g56, w: st.isSelected ? FontWeight.w600 : FontWeight.w400)),
-                  ],
-                ),
-              ),
-            ),
-        ],
-      ),
-    ),
-  );
-
-  /// The picked option's glyph takes the mark while the hand is on it. Nothing behind the words is filled.
-  @override
-  Widget choice(BuildContext context, ChoiceSpec c) => NakedToggleGroup<int>(
-    selectedValue: c.selected,
-    enabled: c.enabled,
-    onChanged: (v) => v == null ? null : c.onSelect(v),
-    child: SizedBox(
-      height: Shape.z(28),
-      child: Row(
-        children: [
-          for (var i = 0; i < c.labels.length; i++)
-            Expanded(
-              child: NakedToggleOption<int>(
-                value: i,
-                semanticLabel: c.labels[i],
-                builder: (context, st, _) {
-                  final hot = st.isHovered || st.isPressed;
-                  final ink = st.isSelected ? Grey.g100 : Grey.g56;
-                  return Row(
-                    children: [
-                      SizedBox.square(
-                        dimension: Shape.z(18),
-                        child: CustomPaint(painter: _MarkPaint(st.isSelected ? _Mark.quarter : _Mark.ring, st.isSelected ? Accent.key : Grey.g38)),
-                      ),
-                      SizedBox(width: Shape.s(4)),
-                      if (i < c.glyphs.length)
-                        SizedBox(
-                          width: Shape.z(16),
-                          height: Shape.z(14),
-                          child: CustomPaint(painter: _GlyphPaint(c.glyphs[i], hot && st.isSelected ? Accent.key : ink)),
-                        ),
-                      SizedBox(width: Shape.s(4)),
-                      Flexible(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Text(c.labels[i], maxLines: 1, style: _word(ink, w: st.isSelected ? FontWeight.w600 : FontWeight.w400)),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-        ],
-      ),
-    ),
   );
 
   /// A word for the state, and a circle. Colour arrives only under the hand.
@@ -257,7 +147,6 @@ class SheetForms extends Forms {
   @override
   Widget segment(BuildContext context, ChoiceSpec c) => NakedToggleGroup<int>(
     selectedValue: c.selected,
-    enabled: c.enabled,
     onChanged: (v) => v == null ? null : c.onSelect(v),
     child: SizedBox(
       height: Shape.z(22),
@@ -400,7 +289,7 @@ class SheetForms extends Forms {
   @override
   Widget number(BuildContext context, NumberSpec n) {
     final shown = n.editing && n.editor != null ? n.editor! : n.value;
-    final shape = n.axis ?? (n.live || n.hot ? Accent.key : Grey.g95);
+    final shape = n.live || n.hot ? Accent.key : Grey.g95;
     return SizedBox(
       height: n.height,
       child: Stack(

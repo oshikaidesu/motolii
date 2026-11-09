@@ -37,7 +37,7 @@ class ToolSticker extends StatelessWidget {
 Widget Function(Color) paintInk(CustomPainter Function(Color ink) glyph) =>
     (ink) => SizedBox.expand(child: CustomPaint(painter: glyph(ink)));
 
-/// A field you scrub sideways: label left, value right, a fill bar in the field's [tone] shows where the value sits in its range.
+/// A field you scrub sideways: label left, value right, a fill bar shows where the value sits in its range.
 class ToolScrub extends StatefulWidget {
   const ToolScrub({
     super.key,
@@ -48,16 +48,11 @@ class ToolScrub extends StatefulWidget {
     required this.onChanged,
     required this.format,
     this.perPx = 1,
-    this.tone,
-    this.enabled = true,
-    this.pad = 7,
   });
   final String label;
-  final double value, min, max, perPx, pad;
+  final double value, min, max, perPx;
   final ValueChanged<double> onChanged;
   final String Function(double) format;
-  final Color? tone; // (none: the theme's ChosenDefault)
-  final bool enabled;
   @override
   State<ToolScrub> createState() => _ToolScrubState();
 }
@@ -100,42 +95,41 @@ class _ToolScrubState extends State<ToolScrub> {
     final w = widget, f = ((w.value - w.min) / (w.max - w.min)).clamp(0.0, 1.0);
     final live = _hot || _drag;
     return MouseRegion(
-      cursor: w.enabled ? SystemMouseCursors.resizeLeftRight : MouseCursor.defer,
+      cursor: SystemMouseCursors.resizeLeftRight,
       onEnter: (_) => setState(() => _hot = true),
       onExit: (_) => setState(() => _hot = false),
       child: GestureDetector(
         supportedDevices: wsPressing,
         behavior: HitTestBehavior.opaque,
-        onTap: w.enabled && !_typing ? _write : null,
-        onHorizontalDragStart: w.enabled ? (_) => setState(() => _drag = true) : null,
-        onHorizontalDragUpdate: w.enabled ? (d) => w.onChanged((w.value + d.delta.dx * w.perPx).clamp(w.min, w.max)) : null,
-        onHorizontalDragEnd: w.enabled ? (_) => setState(() => _drag = false) : null,
+        onTap: !_typing ? _write : null,
+        onHorizontalDragStart: (_) => setState(() => _drag = true),
+        onHorizontalDragUpdate: (d) => w.onChanged((w.value + d.delta.dx * w.perPx).clamp(w.min, w.max)),
+        onHorizontalDragEnd: (_) => setState(() => _drag = false),
         child: Container(
           height: Shape.z(22),
-          decoration: BoxDecoration(color: live && w.enabled ? WsT.raised : WsT.well, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
+          decoration: BoxDecoration(color: live ? WsT.raised : WsT.well, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
           clipBehavior: Clip.antiAlias,
           child: Stack(
             children: [
-              if (w.enabled)
-                Positioned(
-                  left: 4,
-                  right: 4,
-                  bottom: 2,
-                  height: Shape.z(2),
-                  child: FractionallySizedBox(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: f,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(color: _drag ? WsT.accent : w.tone ?? WsT.accent, borderRadius: BorderRadius.all(Shape.r(1))),
-                    ),
+              Positioned(
+                left: 4,
+                right: 4,
+                bottom: 2,
+                height: Shape.z(2),
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: f,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(color: _drag ? WsT.accent : WsT.accent, borderRadius: BorderRadius.all(Shape.r(1))),
                   ),
                 ),
+              ),
               Positioned.fill(
-                left: w.pad,
-                right: w.pad,
+                left: 7,
+                right: 7,
                 child: Row(
                   children: [
-                    Text(w.label, style: T.label(w.enabled ? Grey.g63 : Grey.g56)),
+                    Text(w.label, style: T.label(Grey.g63)),
                     SizedBox(width: Shape.s(4)),
                     Expanded(
                       child: FittedBox(
@@ -161,11 +155,7 @@ class _ToolScrubState extends State<ToolScrub> {
                                   ),
                                 ),
                               )
-                            : Text(
-                                w.format(w.value),
-                                maxLines: 1,
-                                style: T.value(w.enabled ? (_drag ? Grey.g100 : Grey.g91) : Grey.g56).copyWith(fontSize: T.px(10.5)),
-                              ),
+                            : Text(w.format(w.value), maxLines: 1, style: T.value(_drag ? Grey.g100 : Grey.g91).copyWith(fontSize: T.px(10.5))),
                       ),
                     ),
                   ],
@@ -206,10 +196,9 @@ class ToolStrip extends StatelessWidget {
 
 /// A big number with its unit and a quiet line under it.
 class ToolReadout extends StatelessWidget {
-  const ToolReadout({super.key, required this.value, this.unit = '', this.sub, this.ink});
+  const ToolReadout({super.key, required this.value, this.unit = '', this.sub});
   final String value, unit;
   final String? sub;
-  final Color? ink;
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -221,7 +210,7 @@ class ToolReadout extends StatelessWidget {
         children: [
           Text(
             value,
-            style: T.value(ink ?? Grey.g95).copyWith(fontSize: T.px(18), fontWeight: FontWeight.w700, letterSpacing: -.5),
+            style: T.value(Grey.g95).copyWith(fontSize: T.px(18), fontWeight: FontWeight.w700, letterSpacing: -.5),
           ),
           if (unit.isNotEmpty) ...[SizedBox(width: Shape.s(2)), Text(unit, style: T.label(Grey.g63))],
         ],

@@ -136,19 +136,8 @@ class _InspectorPanelState extends State<_InspectorPanel> {
       kind: k,
       kindWord: _kindWord(ws, l?.id),
       cards: Ws.timed('value cards', () => _valueCards(ws, l?.id)?.where((c) => own || widget.only!.contains(c.name)).toList()),
-      properties: Ws.timed(
-        'properties',
-        () => int.tryParse(l?.id ?? '') == null ? null : _propertiesOf(m.values(int.parse(l!.id)).toSet()),
-      ), // (a card of values the thing has not is not shown)
       title: l?.name,
       onRoute: ws.route,
-      onPath: int.tryParse(l?.id ?? '') == null
-          ? null
-          : (to, n, copy) => m
-                .path(int.parse(l!.id), copy: copy, to: to, n: n)
-                .then(
-                  (p) => p?.indexed.map((e) => e.$1 % 4 < 2 ? e.$2 * m.point : e.$2).toList(),
-                ), // (where it is in points of the picture, as the card's numbers are) // (the wave card's preview asks once, then plays by itself)
       onAim: (at) => ws.aim = at.startsWith('v_') ? at.substring(2) : null, // (a colour link of a card is aimed at that value)
       movable: !own || int.tryParse(l?.id ?? '') == null ? const [] : m.fxTitles(int.parse(l!.id)), // (its effects, up or down their stack)
       onCardMove: !own || int.tryParse(l?.id ?? '') == null
@@ -166,15 +155,6 @@ class _InspectorPanelState extends State<_InspectorPanel> {
           : (title) {
               m.asked.putIfAbsent(int.parse(l!.id), () => {}).add(title);
               ws.reread();
-            },
-      onArrange: int.tryParse(l?.id ?? '') == null
-          ? null
-          : (how) {
-              final t = int.parse(l!.id);
-              ws.after(
-                how.startsWith('flip') ? m.later('flip', layer: t, word: how.substring(4).toLowerCase()) : m.later('fit', layer: t, word: how),
-                (_, _) => ws.reread(),
-              );
             },
       onAddEffect: !own || int.tryParse(l?.id ?? '') == null || l?.kind == WsKind.audio || m.word(int.parse(l!.id), 'kind') == 'light'
           ? null
@@ -238,7 +218,6 @@ class _InspectorPanelState extends State<_InspectorPanel> {
                 : null,
       values: Ws.timed('transform', () => wsTransform(ws, l?.id)),
       strs: Ws.timed('words', () => _words(ws, l?.id)),
-      choices: Ws.timed('choices', () => _choices(ws, l?.id)),
       onWords: (changed) => _say(ws, l?.id, changed),
       onAnimateAll: (on) => ws.animating = on,
       animating: ws.animating,

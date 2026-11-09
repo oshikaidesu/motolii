@@ -14,8 +14,6 @@ abstract final class N {
   static const g00 = Color(0xFF000000), g07 = Color(0xFF131313), g10 = Color(0xFF191919), g13 = Color(0xFF202020), g15 = Color(0xFF262626);
   static const g20 = Color(0xFF343434), g26 = Color(0xFF424242), g38 = Color(0xFF616161), g44 = Color(0xFF717171), g56 = Color(0xFF8E8E8E);
   static const g63 = Color(0xFFA1A1A1), g76 = Color(0xFFC1C1C1), g91 = Color(0xFFE7E7E7), g95 = Color(0xFFF2F2F2), g100 = Color(0xFFFFFFFF);
-  // [decided] the timeline's two row bands and its row line
-  static const bandA = Color(0xFF1E1E1E), bandB = Color(0xFF2A2A2A), rowLine = Color(0xFF161616);
 }
 
 /// The window's colour theme. Themed parts (the Workspace and the Inspector library) read [Grey], never [N]; [N] stays the dark

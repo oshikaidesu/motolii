@@ -4,7 +4,7 @@ part of 'inspector_state.dart';
 /// The picked thing's values as the panel edits them: the host's numbers, words and switches, keyed `v_` and the
 /// value's name as its cards declare them ([Fx]). It holds no value of its own: a card's default is its declaration's.
 class Doc extends ChangeNotifier {
-  Doc(this.kind, {this.count = 1, this.cards = const []}) {
+  Doc(this.kind, {this.cards = const []}) {
     for (final f in cards) {
       for (final (i, p) in f.params.indexed) {
         paramDefaults(f.id, p).forEach((id, x) => v[id] = d[id] = x); // (the declaration's @default, until the host says the value)
@@ -15,20 +15,14 @@ class Doc extends ChangeNotifier {
   }
 
   final Kind kind;
-  final int count;
   final Map<String, double> v = {}, d = {};
-  final Map<String, List<double>> multi = {};
   final Map<String, KeyS> keys = {};
   final Map<String, String> s2 = {};
 
-  /// What a chooser may offer, where the host says so (by the chooser's id): otherwise its own list.
-  final Map<String, List<String>> choices = {};
   final Map<String, bool> b = {};
 
-  /// What the host calls the layer's kind, where the six kinds have no word for it (a film, a picture, a solid); and the
-  /// values the host has for it (a card of values it has not is not shown); null: the sample's.
+  /// What the host calls the layer's kind, where the six kinds have no word for it (a film, a picture, a solid); null: the sample's.
   String? kindWord;
-  Set<String>? properties;
 
   /// The host's own cards of values (each one's Params, its fields keyed `v_` and the value's name): what the host has
   /// beyond the sample's cards.
@@ -38,8 +32,6 @@ class Doc extends ChangeNotifier {
   /// Whether an edit marks its own key (the sample's rule, D2); off where a host owns the keys (joined: the document
   /// keys what a hand changes, and a mark told besides was a second key, made before the change, with the old value).
   bool marksEdits = true;
-
-  String query = '';
 
   @override
   void dispose() {
@@ -52,42 +44,26 @@ class Doc extends ChangeNotifier {
   /// The selected layer's own name, when a host (the workspace) knows it.
   String? title;
 
-  String get name => title ?? (kind == Kind.several ? '$count layers' : '');
+  String get name => title ?? '';
 
-  /// null = the layers differ (mixed).
-  double? get(String id) {
-    final m = multi[id];
-    if (m == null) return v[id];
-    return m.every((x) => x == m.first) ? m.first : null;
-  }
+  double? get(String id) => v[id];
 
-  bool changed(String id) {
-    final x = get(id);
-    return x == null || x != d[id];
-  }
-
-  /// A typed or reset value is absolute for every selected layer (A7).
+  /// A typed or reset value is absolute.
   void set(String id, double x) => setMany({id: x});
 
-  /// A scrub on a mixed value moves each layer by the same amount (A7).
   void delta(String id, double dx) {
-    final m = multi[id];
-    if (m != null) {
-      multi[id] = [for (final e in m) e + dx];
-    } else {
-      v[id] = (v[id] ?? 0) + dx;
-    }
+    v[id] = (v[id] ?? 0) + dx;
     _touch(id);
     notifyListeners();
   }
 
-  ({Map<String, double> values, Map<String, List<double>> mixed, Map<String, KeyS> keys})? _gesture;
+  ({Map<String, double> values, Map<String, KeyS> keys})? _gesture;
 
   /// A hand is on a value (between beginGesture and endGesture): what it shows is not settled yet.
   bool get inGesture => _gesture != null;
 
   void beginGesture() {
-    _gesture ??= (values: Map.of(v), mixed: {for (final e in multi.entries) e.key: List.of(e.value)}, keys: Map.of(keys));
+    _gesture ??= (values: Map.of(v), keys: Map.of(keys));
   }
 
   void endGesture() {
@@ -136,7 +112,6 @@ class Doc extends ChangeNotifier {
   void setMany(Map<String, double> xs) {
     for (final e in xs.entries) {
       v[e.key] = e.value;
-      if (multi.containsKey(e.key)) multi[e.key] = List.filled(count, e.value);
       _touch(e.key);
     }
     notifyListeners();
@@ -147,7 +122,6 @@ class Doc extends ChangeNotifier {
     for (final i in ids) {
       final dv = d[i] ?? 0;
       v[i] = dv;
-      if (multi.containsKey(i)) multi[i] = List.filled(count, dv);
       final p = propOf(i);
       if (animateAll || (keys[p] ?? KeyS.off) != KeyS.off) keys[p] = KeyS.at;
     }
@@ -177,17 +151,6 @@ class Doc extends ChangeNotifier {
   }
 
   void poke() => notifyListeners();
-
-  /// A card's own defaults, written once (absent ids only, no notify), so a card can bring its values without the constructor knowing it.
-  void seed(Map<String, double> nums, {Map<String, String> strs = const {}, Map<String, bool> flags = const {}}) {
-    nums.forEach((id, x) {
-      if (v.containsKey(id)) return;
-      v[id] = x;
-      d[id] = x;
-    });
-    strs.forEach((id, x) => s2.putIfAbsent(id, () => x));
-    flags.forEach((id, x) => b.putIfAbsent(id, () => x));
-  }
 
   /// Fields picked together; Shift-click spans a rectangle of [_grid] (a card a row, its fields in their order) like a spreadsheet.
   final Set<String> picked = {};
@@ -233,7 +196,6 @@ class Doc extends ChangeNotifier {
   /// The host's cards that may be moved up or down (its effects, by their titles), and what moves one so many places.
   List<String> movable = const [];
   void Function(String title, int by)? onCardMove;
-  void Function(String how)? onArrange; // (flipX, flipY, fit, fill, stretch: Alight Motion's ⋯ on Move & Transform)
   List<String> moreCards = const []; // (the cards it may be given and is not shown)
   void Function(String title)? onMoreCard;
   VoidCallback? onAddEffect; // (Alight Motion's Add Effect: the shelf of them, its search taking the keys)
@@ -248,8 +210,4 @@ class Doc extends ChangeNotifier {
   List<String> cardsOff = const [];
   void Function(List<String> names)? onCardCopy;
   VoidCallback? onCardPaste;
-
-  /// The host's answer to how the thing (its copy, the first is 0) moves over a while (see Motolii.path): four numbers a
-  /// moment; null: it has none.
-  Future<List<double>?> Function(double to, int n, int copy)? onPath;
 }

@@ -217,28 +217,21 @@ class Motolii {
   late final _set = _b.motolii_set;
   late final _say = _b.motolii_say;
   late final _key = _b.motolii_key;
-  late final _easing = _b.motolii_easing;
   late final _path3 = _b.motolii_path3;
   late final _keying = _b.motolii_keying;
   late final _dragUpdate = _b.motolii_drag_update;
-  late final _put = _b.motolii_put;
   late final _createScripts = _b.motolii_create_scripts;
   late final _create = _b.motolii_create;
   late final _effects = _b.motolii_effects;
   late final _presets = _b.motolii_presets;
   late final _animators = _b.motolii_animators;
   late final _relations = _b.motolii_relations;
-  late final _spent = _b.motolii_spent;
-  late final _easingNumbers = _b.motolii_easing_numbers;
-  late final _effect = _b.motolii_effect;
   late final _easingAt = _b.motolii_easing_at;
   late final _kindOf = _b.motolii_kind_of;
   late final _find = _b.motolii_find;
   late final _together = _b.motolii_together;
-  late final _frames = _b.motolii_frames;
   late final _cacheRuns = _b.motolii_cache;
   late final _error = _b.motolii_error;
-  late final _list = _b.motolii_list;
   late final _still = _b.motolii_still;
   late final _close = _b.motolii_close;
 
@@ -257,11 +250,7 @@ class Motolii {
   /// The names of the values that change what cards a thing has (and its name): the inside's own rule, asked once.
   late final Set<String> shaping = _shaping(_m).toDartString().split(' ').toSet();
 
-  late final _mark = _b.motolii_mark;
-
   late final _loopIs = _b.motolii_loop;
-
-  late final _guide = _b.motolii_guide;
 
   final _items = <String, ShelfItem>{}; // (by name and by file)
   final _listed = <String, List<ShelfItem>>{}; // (by listing: screen, thing, look, motion, relation)
@@ -280,9 +269,7 @@ class Motolii {
     _listed.clear();
   }
 
-  /// The window's thread watched: while on, a change it waits for, or a read that waits on the document over 2 ms, is
-  /// kept; [broken] says each, one to a line ('' none). Turned on, what was kept is forgotten.
-  late final _watch = _b.motolii_watch;
+  /// The window's thread watched: [broken] says each change it waited for, or read that waited on the document over 2 ms, one to a line ('' none).
   late final _broken = _b.motolii_broken;
   late final _brokenCount = _b.motolii_broken_count;
 

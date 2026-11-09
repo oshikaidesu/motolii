@@ -25,7 +25,7 @@ theme.xml に `<Parts Value="フォルダ"/>` を書くと、そのフォルダ�
 |---|---|
 | `glyph.select` | 選ぶ（矢印） |
 | `glyph.move` | 動かす（十字の矢印） |
-| `glyph.rect` `glyph.ellipse` `glyph.circle` `glyph.shape` | 四角・楕円・円・形を描く |
+| `glyph.rect` `glyph.ellipse` `glyph.shape` | 四角・楕円・形を描く |
 | `glyph.pen` | ペン |
 | `glyph.text` | 文字 |
 | `glyph.brush` | ブラシ（手描き） |
@@ -42,7 +42,6 @@ theme.xml に `<Parts Value="フォルダ"/>` を書くと、そのフォルダ�
 | `tp.solo` | 層の行の「これだけ見る」 |
 | `tp.lock` `tp.unlock` | 層の行の「触れない・触れる」 |
 | `tp.caretR` `tp.caretD` | 層の行の三角：閉じている・開いている |
-| `tp.keyFilled` | キーの印 |
 
 ## ドック（dock.）：パネルの見出しの印、作る棚・効果の棚の印（名前が中身のまま：`dock.media` はメディアのパネル、`dock.star` は星の形を作る）
 `dock.media` `dock.effects` `dock.fonts` `dock.colors` `dock.create` `dock.program` `dock.search` `dock.close` `dock.reload` `dock.chevron` `dock.grid` `dock.list` `dock.particles` `dock.plus` `dock.light` `dock.copies` `dock.text` `dock.time` `dock.shape` `dock.camera` `dock.nullObj` `dock.rect` `dock.ellipse` `dock.polygon` `dock.star` `dock.line` `dock.radial` `dock.folder` `dock.files` `dock.comp` `dock.image` `dock.audio` `dock.video` `dock.font` `dock.link` `dock.stage` `dock.inspector` `dock.timeline` `dock.toolPanel` `dock.more`

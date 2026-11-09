@@ -24,14 +24,12 @@ class ActionSpec {
   final VoidCallback? onPressed;
 }
 
-/// One of a few (2D · 2.5D · 3D): each option a word and, if it has one, a glyph drawn in a 16 x 14 box.
+/// One of a few (Fit · 50% · 100%): each option a word.
 class ChoiceSpec {
-  const ChoiceSpec({required this.labels, required this.selected, required this.onSelect, this.glyphs = const [], this.enabled = true});
+  const ChoiceSpec({required this.labels, required this.selected, required this.onSelect});
   final List<String> labels;
   final int selected;
   final ValueChanged<int> onSelect;
-  final List<void Function(Canvas c, Paint stroke)> glyphs;
-  final bool enabled;
 }
 
 /// On or off.
@@ -104,10 +102,6 @@ abstract class Forms {
   static Forms get worn => _numbersBound ? (forms[ColorTheme.word('Forms', 'own')] ?? const OwnForms()) : const OwnForms();
 
   Widget action(BuildContext context, ActionSpec a);
-  Widget choice(BuildContext context, ChoiceSpec c);
-
-  /// Where one is (Edit · Animate · Export): words only, one lit.
-  Widget tabs(BuildContext context, ChoiceSpec c);
   Widget onOff(BuildContext context, SwitchSpec s);
   Widget card(BuildContext context, CardSpec c);
 

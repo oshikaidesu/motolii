@@ -28,47 +28,6 @@ class OwnForms extends Forms {
     ),
   );
 
-  /// Plates side by side, each its glyph and word, the one picked lit.
-  @override
-  Widget choice(BuildContext context, ChoiceSpec c) => Row(
-    children: [
-      for (var i = 0; i < c.labels.length; i++) ...[
-        if (i > 0) SizedBox(width: Shape.s(4)),
-        Expanded(
-          child: GlyphPlate(c.labels[i], i < c.glyphs.length ? c.glyphs[i] : (_, _) {}, on: i == c.selected, onTap: () => c.onSelect(i)),
-        ),
-      ],
-    ],
-  );
-
-  /// Words in a well, the one picked lit in the accent.
-  @override
-  Widget tabs(BuildContext context, ChoiceSpec c) => Container(
-    height: Shape.z(26),
-    padding: EdgeInsets.all(Shape.s(2)),
-    decoration: BoxDecoration(color: WsT.well, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final (i, s) in c.labels.indexed)
-          Hov(
-            onTap: () => c.onSelect(i),
-            builder: (_, h) => Container(
-              width: Shape.z(76),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(color: i == c.selected ? WsT.accent : (h ? WsT.raised : null), borderRadius: BorderRadius.all(Shape.r(WsT.radius - 2))),
-              child: Text(
-                s,
-                style: T
-                    .name(i == c.selected ? WsT.onAccent : (h ? Grey.g95 : Grey.g76))
-                    .copyWith(fontWeight: i == c.selected ? FontWeight.w700 : FontWeight.w500),
-              ),
-            ),
-          ),
-      ],
-    ),
-  );
-
   /// The word and a switch: the state is a word, never colour alone. The word is pressed as the switch is, the two one
   /// control, as AbsentMotion's SwitchRow (SettingsDrawer.kt: the whole row toggleable, its label with it).
   @override

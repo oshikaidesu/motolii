@@ -55,9 +55,6 @@ abstract final class SkinParts {
     WidgetsBinding.instance.reassembleApplication();
   }
 
-  /// How many pictures the skin brought (read).
-  static int get count => _pics.length;
-
   /// Draws the skin's picture for [name] filling [s] in [color] and says so; false: the skin has none, the caller draws its own.
   static bool draw(Canvas c, Size s, String name, Color color) {
     final p = _pics[name];
@@ -100,17 +97,17 @@ abstract final class SkinParts {
   }
 }
 
-/// A part's frame from the skin: `frame.<name>.svg` (`.hover` while a hand is on it, `.on` while it is on, when the skin
-/// brings them) stretched around the part; none, the part's own [usual] decoration.
+/// A part's frame from the skin: `frame.<name>.svg` (`.hover` while a hand is on it, when the skin
+/// brings it) stretched around the part; none, the part's own [usual] decoration.
 class SkinFrame extends StatelessWidget {
-  const SkinFrame(this.name, {super.key, this.hover = false, this.on = false, required this.usual, required this.child});
+  const SkinFrame(this.name, {super.key, this.hover = false, required this.usual, required this.child});
   final String name;
-  final bool hover, on;
+  final bool hover;
   final Decoration usual;
   final Widget child;
   @override
   Widget build(BuildContext context) {
-    final n = [if (on) 'frame.$name.on', if (hover) 'frame.$name.hover', 'frame.$name'].where(SkinParts.has).firstOrNull;
+    final n = [if (hover) 'frame.$name.hover', 'frame.$name'].where(SkinParts.has).firstOrNull;
     return n == null ? DecoratedBox(decoration: usual, child: child) : CustomPaint(painter: _Frame(n), child: child);
   }
 }
