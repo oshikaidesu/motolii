@@ -1,0 +1,472 @@
+// timeline_header.dart: the row above the tracks: the document's name, the transport, the time, the zoom.
+part of 'timeline.dart';
+
+class _Header extends StatelessWidget {
+  const _Header({
+    required this.ws,
+    required this.loop,
+    required this.zoom,
+    required this.onToggle,
+    required this.onStep,
+    required this.onLoop,
+    required this.onZoom,
+    required this.onMark,
+  });
+  final Ws ws;
+  final bool loop;
+  final double zoom;
+  final VoidCallback onToggle, onLoop, onMark;
+  final ValueChanged<int> onStep;
+  final void Function(double z, {int? anchor}) onZoom;
+
+  @override
+  Widget build(BuildContext context) {
+    final big = T.value(Grey.g76).copyWith(fontSize: T.px(14), fontWeight: FontWeight.w500, fontFeatures: const [FontFeature.tabularFigures()]);
+    final picked = ws.keys.length, layer = ws.layer;
+    return Container(
+      height: WtM.header,
+      padding: EdgeInsets.symmetric(horizontal: WsT.inset),
+      decoration: BoxDecoration(
+        color: WsT.body,
+        border: Border(bottom: BorderSide(color: WsT.line)),
+      ),
+      child: LayoutBuilder(
+        builder: (context, box) {
+          final roomy = box.maxWidth >= 1000,
+              mid = box.maxWidth >= 820,
+              slide = box.maxWidth >= 600; // (narrower: the zoom by its buttons alone, as the document's name and length go)
+          return Row(
+            children: [
+              if (mid) ...[
+                _Chip(ws.document?.replaceFirst(RegExp(r'\.motolii$'), '') ?? 'Main', mono: false),
+                SizedBox(width: Shape.s(12)),
+              ], // (joined: the document's name)
+              _Btn(TpGlyph.toStart, key: const ValueKey('ws-tl-start'), onTap: () => onStep(-ws.frame)),
+              SizedBox(width: Shape.s(2)),
+              _Btn(TpGlyph.stepBack, key: const ValueKey('ws-tl-back'), onTap: () => onStep(-1)),
+              SizedBox(width: Shape.s(2)),
+              ValueListenableBuilder<int>(
+                // (only the button follows play: the rows are not built again)
+                valueListenable: ws.on[WsAspect.playing]!,
+                builder: (_, _, _) => _Btn(
+                  ws.playing ? TpGlyph.pause : TpGlyph.play,
+                  key: const ValueKey('ws-tl-play'),
+                  width: Shape.z(34),
+                  on: ws.playing,
+                  rest: WsT.accent,
+                  onTap: onToggle,
+                ),
+              ),
+              SizedBox(width: Shape.s(2)),
+              _Btn(TpGlyph.stepFwd, key: const ValueKey('ws-tl-fwd'), onTap: () => onStep(1)),
+              SizedBox(width: Shape.s(2)),
+              _Btn(TpGlyph.loop, key: const ValueKey('ws-tl-loop'), on: loop, onTap: onLoop),
+              SizedBox(width: Shape.s(2)),
+              ValueListenableBuilder<int>(
+                // (Live's Set button, 6.4: a marker where the playhead is; on one, it takes it away)
+                valueListenable: ws.moment,
+                builder: (_, _, _) => _Btn(
+                  ws.marks.any((k) => (k.$1 * Ws.fps).round() == ws.frame) ? TpGlyph.minus : TpGlyph.plus,
+                  key: const ValueKey('ws-tl-mark'),
+                  width: Shape.z(66),
+                  label: 'Marker',
+                  onTap: onMark,
+                ),
+              ),
+              SizedBox(width: Shape.s(12)),
+              _TimeTyped(ws: ws, style: big, onStep: onStep), // (one number, one weight: not three colours)
+              SizedBox(width: Shape.s(8)),
+              if (roomy) ...[Text('/ ${ws.timecode(Ws.duration)}', style: T.value(Grey.g56)), SizedBox(width: Shape.s(10))],
+              _Chip('${Ws.fps} fps'),
+              SizedBox(width: Shape.s(4)),
+              _Tempo(ws: ws),
+              SizedBox(width: Shape.s(12)),
+              if (mid && layer != null)
+                Flexible(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      WtKindChip(layer.kind, tone: layer.tone),
+                      SizedBox(width: Shape.s(6)),
+                      Flexible(
+                        child: FittedBox(
+                          // (drawn smaller, never cut)
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            picked > 0 ? '${layer.name}  ·  $picked key${picked == 1 ? '' : 's'}' : '${layer.name}  ·  ${layer.keys.length} keys',
+                            style: T.label(Grey.g76),
+                            maxLines: 1,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              const Spacer(),
+              _Btn(TpGlyph.minus, key: const ValueKey('ws-tl-zoom-out'), size: Shape.z(22), onTap: () => onZoom(zoom / 1.5)),
+              SizedBox(width: Shape.s(4)),
+              if (slide) ...[_ZoomSlider(zoom: zoom, onZoom: onZoom), SizedBox(width: Shape.s(4))],
+              _Btn(TpGlyph.plus, key: const ValueKey('ws-tl-zoom-in'), size: Shape.z(22), onTap: () => onZoom(zoom * 1.5)),
+              SizedBox(width: Shape.s(4)),
+              _Btn(
+                TpGlyph.fit,
+                key: const ValueKey('ws-tl-fit'),
+                size: Shape.z(22),
+                width: Shape.z(46),
+                label: 'Fit',
+                lit: zoom <= 1.001,
+                onTap: () => onZoom(1),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// What a typed time says, as Premiere Pro's timecode reads it: the digits from the right are frames, seconds, minutes
+/// (852, 8:52 and 8.52 are 8 seconds 52 frames); begun with + or -, so far from where the playhead is (+30: 30 frames
+/// on). Null: not a time.
+int? wtTimeOf(String said, int now, int fps) {
+  final m = RegExp(r'^\s*([+-]?)([\d:.;]+)\s*$').firstMatch(halfWidth(said));
+  if (m == null) return null;
+  final parts = m[2]!.split(RegExp(r'[:.;]'));
+  final fields = parts.length > 1
+      ? [for (final p in parts.reversed) int.tryParse(p) ?? 0]
+      : [
+          for (var s = parts.single; s.isNotEmpty; s = s.length > 2 ? s.substring(0, s.length - 2) : '')
+            int.parse(s.length > 2 ? s.substring(s.length - 2) : s),
+        ];
+  final f = fields[0] + (fields.length > 1 ? fields[1] * fps : 0) + (fields.length > 2 ? fields[2] * 60 * fps : 0);
+  return switch (m[1]) {
+    '+' => now + f,
+    '-' => now - f,
+    _ => f,
+  };
+}
+
+/// The playhead's time: pressed, it is typed (Premiere Pro's and After Effects' current time display: click it and
+/// type); Return goes there, Esc or a press elsewhere leaves the playhead where it was (golf_noise.md ㊺).
+class _TimeTyped extends StatefulWidget {
+  const _TimeTyped({required this.ws, required this.style, required this.onStep});
+  final Ws ws;
+  final TextStyle style;
+  final ValueChanged<int> onStep;
+  @override
+  State<_TimeTyped> createState() => _TimeTypedState();
+}
+
+class _TimeTypedState extends State<_TimeTyped> {
+  final _words = TextEditingController();
+  final _focus = FocusNode();
+  bool _typing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(() {
+      if (!_focus.hasFocus && _typing) setState(() => _typing = false);
+    });
+  }
+
+  @override
+  void dispose() {
+    _words.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  void _begin() {
+    final now = widget.ws.timecode();
+    _words.value = TextEditingValue(
+      text: now,
+      selection: TextSelection(baseOffset: 0, extentOffset: now.length),
+    ); // (all of it picked: what is typed takes its place)
+    setState(() => _typing = true);
+    _focus.requestFocus();
+  }
+
+  void _go(String said) {
+    final ws = widget.ws;
+    if (wtTimeOf(said, ws.frame, Ws.fps) case final to?) widget.onStep(to.clamp(0, Ws.duration) - ws.frame);
+    _focus.unfocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ws = widget.ws;
+    if (!_typing) {
+      return MouseRegion(
+        cursor: SystemMouseCursors.text,
+        child: GestureDetector(
+          key: const ValueKey('ws-tl-time'),
+          behavior: HitTestBehavior.opaque,
+          onTap: _begin,
+          child: ValueListenableBuilder<int>(
+            valueListenable: ws.moment,
+            builder: (_, _, _) => Text(ws.timecode(), style: widget.style),
+          ),
+        ),
+      );
+    }
+    return SizedBox(
+      width: Shape.z(72),
+      child: CallbackShortcuts(
+        bindings: {const SingleActivator(LogicalKeyboardKey.escape): _focus.unfocus},
+        child: TextGestures(
+          key: const ValueKey('ws-tl-time-words'),
+          field: (k) => EditableText(
+            key: k,
+            rendererIgnoresPointer: true,
+            controller: _words,
+            focusNode: _focus,
+            style: widget.style.copyWith(color: Grey.g100),
+            cursorColor: Grey.g100,
+            backgroundCursorColor: Grey.g38,
+            selectionColor: WsT.accent.withValues(alpha: .35),
+            maxLines: 1,
+            onSubmitted: _go,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A round touchable: a well that lights on hover; [on] fills it with the accent, [lit] raises it in grey.
+class _Btn extends StatefulWidget {
+  const _Btn(this.g, {super.key, this.onTap, this.on = false, this.lit = false, this.size = 24, this.width, this.rest, this.label});
+  final TpGlyph g;
+  final VoidCallback? onTap;
+  final bool on, lit;
+  final double size;
+  final double? width;
+  final Color? rest;
+  final String? label;
+  @override
+  State<_Btn> createState() => _BtnState();
+}
+
+class _BtnState extends State<_Btn> {
+  bool _h = false, _d = false;
+  @override
+  Widget build(BuildContext context) {
+    final on = widget.on;
+    final bg = on
+        ? WsT.accent
+        : (_d || widget.lit ? Grey.g26 : (_h ? WsT.raised : const Color(0x00000000))); // (flat at rest: a button shows itself when the hand is on it)
+    final ink = on ? WsT.onAccent : (_h || widget.lit ? Grey.g100 : (widget.rest ?? Grey.g56));
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _h = true),
+      onExit: (_) => setState(() => _h = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => setState(() => _d = true),
+        onTapUp: (_) => setState(() => _d = false),
+        onTapCancel: () => setState(() => _d = false),
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: Mo.dur,
+          curve: Mo.ease,
+          width: widget.width ?? widget.size,
+          height: widget.size,
+          decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CustomPaint(size: const Size.square(11), painter: TpGlyphPainter(widget.g, ink)),
+              if (widget.label case final l?) ...[SizedBox(width: Shape.s(4)), Text(l, style: T.micro(ink).copyWith(fontWeight: FontWeight.w700))],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The document's tempo, beside its frame rate as Live's is in its Control Bar: pressed, it is written, and Tap goes by the
+/// hand, one press a beat, the more the truer (Live's manual, 9.1.2 Tapping the Tempo). None written: no beats.
+class _Tempo extends StatefulWidget {
+  const _Tempo({required this.ws});
+  final Ws ws;
+  @override
+  State<_Tempo> createState() => _TempoState();
+}
+
+class _TempoState extends State<_Tempo> {
+  final _words = TextEditingController();
+  final _focus = FocusNode();
+  final _taps = <DateTime>[];
+  bool _typing = false, _kept = false;
+  bool _tapping = false; // (a hand on Tap takes the keyboard from the field: it stays while the beats go on)
+  Timer? _tapped;
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(_left);
+  }
+
+  // (left, it is said, as a marker's name is; Esc: as it was)
+  void _left() {
+    if (_focus.hasFocus || !_typing || _tapping) return;
+    setState(() => _typing = false);
+    final bpm = wsNumber(_words.text) ?? 0; // (nothing written: no tempo)
+    if (!_kept && bpm != widget.ws.bpm) _set(bpm);
+    _kept = false;
+  }
+
+  @override
+  void dispose() {
+    _tapped?.cancel();
+    _words.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  static String _said(double bpm) => bpm == bpm.roundToDouble() ? '${bpm.round()}' : bpm.toStringAsFixed(1);
+
+  void _set(double bpm) {
+    final ws = widget.ws;
+    ws.after(ws.inside!.later('set', layer: 0, name: 'bpm', number: bpm.clamp(0, 999)), (_, _) => ws.reread());
+  }
+
+  void _tap() {
+    final now = DateTime.now();
+    _tapped?.cancel();
+    _tapped = Timer(const Duration(milliseconds: 2500), () {
+      _tapping = false;
+      if (mounted && !_focus.hasFocus) setState(() => _typing = false);
+    });
+    if (_taps.isNotEmpty && now.difference(_taps.last).inMilliseconds > 2000) _taps.clear();
+    _taps.add(now);
+    if (_taps.length < 2) return;
+    final bpm = (60000 * (_taps.length - 1) / now.difference(_taps.first).inMilliseconds).clamp(20.0, 999.0);
+    _words.text = _said((bpm * 10).roundToDouble() / 10);
+    _set((bpm * 10).roundToDouble() / 10);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ws = widget.ws, bpm = ws.bpm;
+    if (ws.inside == null) return const SizedBox.shrink();
+    if (!_typing) {
+      return MouseRegion(
+        cursor: SystemMouseCursors.text,
+        child: GestureDetector(
+          key: const ValueKey('ws-tl-bpm'),
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            final now = bpm > 0 ? _said(bpm) : '';
+            _words.value = TextEditingValue(
+              text: now,
+              selection: TextSelection(baseOffset: 0, extentOffset: now.length),
+            );
+            _taps.clear();
+            setState(() => _typing = true);
+            _focus.requestFocus();
+          },
+          child: _Chip(bpm > 0 ? '${_said(bpm)} BPM' : 'BPM'),
+        ),
+      );
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: Shape.z(42),
+          child: CallbackShortcuts(
+            bindings: {
+              const SingleActivator(LogicalKeyboardKey.escape): () {
+                _kept = true;
+                _focus.unfocus();
+              },
+            },
+            child: TextGestures(
+              key: const ValueKey('ws-tl-bpm-words'),
+              field: (k) => EditableText(
+                key: k,
+                rendererIgnoresPointer: true,
+                controller: _words,
+                focusNode: _focus,
+                style: T.value(Grey.g95).copyWith(fontSize: T.px(10.5)),
+                cursorColor: WsT.accent,
+                backgroundCursorColor: Grey.g38,
+                selectionColor: WsT.accent.withValues(alpha: .3),
+                maxLines: 1,
+                onSubmitted: (_) => _focus.unfocus(),
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: Shape.s(4)),
+        Listener(
+          onPointerDown: (_) => _tapping = true,
+          child: GestureDetector(key: const ValueKey('ws-tl-bpm-tap'), behavior: HitTestBehavior.opaque, onTap: _tap, child: const _Chip('Tap', mono: false)),
+        ),
+      ],
+    );
+  }
+}
+
+class _Chip extends StatelessWidget {
+  const _Chip(this.text, {this.mono = true});
+  final String text;
+  final bool mono;
+  @override
+  Widget build(BuildContext context) => Container(
+    height: Shape.z(20),
+    padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
+    alignment: Alignment.center,
+    decoration: BoxDecoration(color: WsT.well, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
+    child: Text(
+      text,
+      style: mono ? T.value(Grey.g91).copyWith(fontSize: T.px(10.5)) : T.micro(Grey.g91).copyWith(fontWeight: FontWeight.w600),
+    ),
+  );
+}
+
+class _ZoomSlider extends StatelessWidget {
+  const _ZoomSlider({required this.zoom, required this.onZoom});
+  final double zoom;
+  final void Function(double z, {int? anchor}) onZoom;
+  static double get w => Shape.z(96.0);
+  @override
+  Widget build(BuildContext context) {
+    final t = math.log(zoom) / math.log(WtM.maxZoom);
+    void at(Offset p) => onZoom(math.pow(WtM.maxZoom, ((p.dx - 6) / (w - 12)).clamp(0.0, 1.0)).toDouble());
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeLeftRight,
+      child: GestureDetector(
+        supportedDevices: wsPressing,
+        key: const ValueKey('ws-tl-zoom'),
+        behavior: HitTestBehavior.opaque,
+        onPanDown: (d) => at(d.localPosition),
+        onPanUpdate: (d) => at(d.localPosition),
+        child: SizedBox(
+          width: w,
+          height: Shape.z(22),
+          child: CustomPaint(painter: _ZoomTrack(t)),
+        ),
+      ),
+    );
+  }
+}
+
+class _ZoomTrack extends CustomPainter {
+  const _ZoomTrack(this.t);
+  final double t;
+  @override
+  void paint(Canvas c, Size s) {
+    final cy = s.height / 2, x = 6 + (s.width - 12) * t, p = Paint();
+    c.drawRRect(RRect.fromLTRBR(0, cy - 3, s.width, cy + 3, Shape.r(3)), p..color = WsT.well);
+    c.drawRRect(RRect.fromLTRBR(0, cy - 3, x, cy + 3, Shape.r(3)), p..color = Grey.g44);
+    c.drawCircle(Offset(x, cy), 6, p..color = Grey.g91);
+  }
+
+  @override
+  bool shouldRepaint(_ZoomTrack o) => o.t != t;
+}

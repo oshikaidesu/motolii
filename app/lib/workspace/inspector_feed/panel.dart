@@ -33,7 +33,7 @@ class _InspectorPanelState extends State<_InspectorPanel> {
   //  to the fields that show them, as a moment's are; anything else, or not known: the inspector built again)
   bool _onlyNumbers(Ws ws) {
     final m = ws.inside, c = ws.lastChange, t = int.tryParse(ws.selected ?? '') ?? (ws.selected == null ? 0 : null);
-    if (m == null || c == null || c.layers || t == null) return false;
+    if (m == null || c == null || c.layers || t == null || const bool.fromEnvironment('NOPOUR')) return false;
     final titles = [for (final (title, _) in m.cards(t)) title].join(';');
     if (titles != _titles) {
       // (a card put on or taken off by its values alone: the Script card's knobs, as the Repeater is laid out from the Create shelf or taken off by its Reset)
@@ -51,20 +51,21 @@ class _InspectorPanelState extends State<_InspectorPanel> {
   }
 
   static const _hears = [WsAspect.document, WsAspect.picked, WsAspect.animating]; // (what the inspector shows: the picked thing's cards, Animate all)
-  void _changed() {
+  void _changed() => Timeline.timeSync('inspector at a moment', _changedNow); // (named in Flutter's timeline)
+  void _changedNow() {
     final ws = _ws!, now = _now(ws), was = _seen;
     if (now != _seen) {
       _seen = now;
       _frame = ws.frame;
       if (was is (int, String?, bool) && was.$2 == ws.selected && was.$3 == ws.animating && _onlyNumbers(ws)) {
-        _live.value = (wsTransform(ws, ws.layer?.id), _keyMarks(ws, ws.layer?.id));
+        _live.value = (Ws.timed('transform', () => wsTransform(ws, ws.layer?.id)), Ws.timed('key marks', () => _keyMarks(ws, ws.layer?.id)));
         return;
       }
       if (mounted) setState(() {});
     } else if (ws.frame != _frame) {
       _frame = ws.frame;
       if (!_keyed(ws)) return;
-      _live.value = (wsTransform(ws, ws.layer?.id), _keyMarks(ws, ws.layer?.id));
+      _live.value = (Ws.timed('transform', () => wsTransform(ws, ws.layer?.id)), Ws.timed('key marks', () => _keyMarks(ws, ws.layer?.id)));
       _settle?.cancel();
       _settle = Timer(
         const Duration(milliseconds: 150),
@@ -80,7 +81,15 @@ class _InspectorPanelState extends State<_InspectorPanel> {
   void _seenNow() {
     final ws = _ws!;
     if (_now(ws) != _seen || ws.selected == null || ws.playing) return; // (played: the moment's own reading above)
-    _live.value = (wsTransform(ws, ws.layer?.id), _keyMarks(ws, ws.layer?.id));
+    _live.value = (Ws.timed('transform', () => wsTransform(ws, ws.layer?.id)), Ws.timed('key marks', () => _keyMarks(ws, ws.layer?.id)));
+  }
+
+  // (the panel itself, made once a size: a new one each build would build its whole tree again, whatever changed)
+  (Size, InspectorPanel)? _panel;
+  InspectorPanel _panelOf(BoxConstraints box) {
+    final size = Size(box.maxWidth, box.maxHeight);
+    if (_panel?.$1 != size) _panel = (size, InspectorPanel(width: box.maxWidth, height: box.maxHeight));
+    return _panel!.$2;
   }
 
   @override
@@ -117,28 +126,136 @@ class _InspectorPanelState extends State<_InspectorPanel> {
   @override
   Widget build(BuildContext context) {
     final ws = WsScope.read(context), l = ws.layer, k = _kindOf(l), m = ws.inside!;
-    return InspHost(
+    return Column(
+      children: [
+        const WsRelationStack(),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, box) => InspHost(
               key: ValueKey(k),
+              cfg: const Cfg(
+                mod: ModRule.shiftFine,
+                reset: ResetRule.live,
+              ), // (Ableton Live's: Shift finer while dragging, Delete or double-click back to the default, a digit starts the number: its manual 42.6)
               kind: k,
               kindWord: _kindWord(ws, l?.id),
-              cards: _valueCards(ws, l?.id),
+              cards: Ws.timed('value cards', () => _valueCards(ws, l?.id)),
+              properties: Ws.timed(
+                'properties',
+                () => int.tryParse(l?.id ?? '') == null ? null : _propertiesOf(m.values(int.parse(l!.id)).toSet()),
+              ), // (a card of values the thing has not is not shown)
               title: l?.name,
+              onRoute: ws.route,
+              onPath: int.tryParse(l?.id ?? '') == null
+                  ? null
+                  : (to, n, copy) => m
+                        .path(int.parse(l!.id), copy: copy, to: to, n: n)
+                        .then(
+                          (p) => p?.indexed.map((e) => e.$1 % 4 < 2 ? e.$2 * m.point : e.$2).toList(),
+                        ), // (where it is in points of the picture, as the card's numbers are) // (the wave card's preview asks once, then plays by itself)
+              onAim: (at) => ws.aim = at.startsWith('v_') ? at.substring(2) : null, // (a colour link of a card is aimed at that value)
+              movable: int.tryParse(l?.id ?? '') == null ? const [] : m.fxTitles(int.parse(l!.id)), // (its effects, up or down their stack)
+              onCardMove: int.tryParse(l?.id ?? '') == null
+                  ? null
+                  : (title, by) => ws.after(m.later('fx_move', layer: int.parse(l!.id), word: title, number: by.toDouble())),
               onSum: m.workOut,
+              moreCards: int.tryParse(l?.id ?? '') == null
+                  ? const []
+                  : [
+                      for (final c in m.moreCards(int.parse(l!.id)))
+                        if (l.kind != WsKind.audio || c == 'Play') c,
+                    ], // (a sound's speed, Alight Motion's; nothing else)
+              onMoreCard: int.tryParse(l?.id ?? '') == null
+                  ? null
+                  : (title) {
+                      m.asked.putIfAbsent(int.parse(l!.id), () => {}).add(title);
+                      ws.reread();
+                    },
+              onArrange: int.tryParse(l?.id ?? '') == null
+                  ? null
+                  : (how) {
+                      final t = int.parse(l!.id);
+                      ws.after(
+                        how.startsWith('flip') ? m.later('flip', layer: t, word: how.substring(4).toLowerCase()) : m.later('fit', layer: t, word: how),
+                        (_, _) => ws.reread(),
+                      );
+                    },
+              onAddEffect: int.tryParse(l?.id ?? '') == null || l?.kind == WsKind.audio || m.word(int.parse(l!.id), 'kind') == 'light'
+                  ? null
+                  : () {
+                      // (a light takes none: the inside's fx is a film's, a picture's, a text's, a shape's, a solid's, a camera's)
+                      ws.shelf = 'Effects';
+                      askDockSearch();
+                    },
+              onCardRemove: int.tryParse(l?.id ?? '') == null
+                  ? null
+                  : (title) => ws.after(
+                      title == 'Script'
+                          ? m.later('say', layer: int.parse(l!.id), name: 'script', word: '')
+                          : m.later('fx_out', layer: int.parse(l!.id), word: title),
+                      (_, _) => ws.reread(),
+                    ),
+              cardCode: int.tryParse(l?.id ?? '') == null
+                  ? null
+                  : (title, names) => title == 'Script'
+                        ? (m.word(int.parse(l!.id), 'script').endsWith('.js') ? ScriptCode(ws, int.parse(l.id), key: ValueKey('script-code-${l.id}')) : null)
+                        : FxCode.of(ws, int.parse(l!.id), title, names), // (a script's code under its knobs: script_code.dart; an effect's: fx_code.dart)
+              onCardEye: int.tryParse(l?.id ?? '') == null
+                  ? null
+                  : (title) => ws.after(m.later('fx_visible', layer: int.parse(l!.id), word: title), (_, _) => ws.reread()),
+              onCardDuplicate: int.tryParse(l?.id ?? '') == null
+                  ? null
+                  : (title) => ws.after(
+                      m.later('fx_duplicate', layer: int.parse(l!.id), word: title),
+                      (done, why) => done ? ws.reread() : ws.notice = why,
+                    ), // (Alight Motion's ⋮ Duplicate: put on again after it, its values with it)
+              onCardInfo: (title) => ws.notice = m.about(title).isEmpty
+                  ? '$title: no words of its maker\'s'
+                  : '$title: ${m.about(title)}', // (in its maker's words, as the shelf searches them)
+              onCardSave: int.tryParse(l?.id ?? '') == null
+                  ? null
+                  : (title, names) => ws.after(m.later('keep_preset', layer: int.parse(l!.id), name: names.join(' '), word: title), (done, why) {
+                      // (that effect's values and keys a look on the Effects shelf, by its name and a number the inside gives it)
+                      m.forgetFolders();
+                      ws.notice = done ? 'Preset kept: $title' : 'Not kept: $why';
+                      ws.reread();
+                    }),
+              cardsOff: int.tryParse(l?.id ?? '') == null
+                  ? const []
+                  : [
+                      for (final t in m.word(int.parse(l!.id), 'fx_off').split(';'))
+                        if (t.isNotEmpty) t,
+                    ],
               onCardReset: int.tryParse(l?.id ?? '') == null
                   ? null
                   : (names) => ws.after(m.later('reset', layer: int.parse(l!.id), word: names.join(' ')), (_, _) => ws.reread()),
-              values: wsTransform(ws, l?.id),
-              strs: _words(ws, l?.id),
-              choices: _choices(ws, l?.id),
+              onCardCopy: int.tryParse(l?.id ?? '') == null
+                  ? null
+                  : (names) => m.later(
+                      'copy_style',
+                      layer: int.parse(l!.id),
+                      name: names.join(' '),
+                      word: _WorkspaceState._clipboard('card'),
+                    ), // (that card's values alone: Alight Motion's copy of one effect)
+              onCardPaste: int.tryParse(l?.id ?? '') == null
+                  ? null
+                  : () => File(_WorkspaceState._clipboard('card')).existsSync()
+                        ? ws.after(m.later('paste_style', layer: int.parse(l!.id), word: _WorkspaceState._clipboard('card')), (_, _) => ws.reread())
+                        : null,
+              values: Ws.timed('transform', () => wsTransform(ws, l?.id)),
+              strs: Ws.timed('words', () => _words(ws, l?.id)),
+              choices: Ws.timed('choices', () => _choices(ws, l?.id)),
               onWords: (changed) => _say(ws, l?.id, changed),
               onAnimateAll: (on) => ws.animating = on,
               animating: ws.animating,
-              flags: _flags(ws),
-              onFlags: (changed) => _flag(ws, changed),
-              keyMarks: _keyMarks(ws, l?.id),
+              flags: Ws.timed('flags', () => _flags(ws, l?.id)),
+              onFlags: (changed) => _flag(ws, l?.id, changed),
+              keyMarks: Ws.timed('key marks', () => _keyMarks(ws, l?.id)),
               onValues: (changed, {required live}) => _write(ws, l?.id, changed, live: live),
               onDrop: () => ws.after(m.later('drag_end')), // (put down unchanged, without waiting)
               onKey: (prop, mark) => _mark(ws, l?.id, prop, mark),
+              onMidi: (prop, file, kind, channel, bpm) => _midi(ws, l?.id, prop, file, kind, channel, bpm),
+              midiBpm: m.midiBpm,
               together: (tells) {
                 // (one step, asked without waiting: begun and ended in the inside's queue around what is told)
                 m.later('together', number: 1);
@@ -146,7 +263,11 @@ class _InspectorPanelState extends State<_InspectorPanel> {
                 ws.after(m.later('together'));
               },
               live: _live,
-              child: const InspectorPanel(),
-            );
+              child: _panelOf(box), // (the same panel while the pane keeps its size: built again only by what it reads, Ctx)
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

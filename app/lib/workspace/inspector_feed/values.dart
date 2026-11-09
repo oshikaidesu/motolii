@@ -34,16 +34,39 @@ double _unshown(Motolii m, int t, String n, double x) {
 
 // (the moment of the picture on the stage, at a frame: what is read there was set down by the inside as it drew it,
 //  not waited for while it tells the stage a moment the playhead has just been put at)
-double _drawn(Ws ws) => ws.inside?.now ?? ws.frame / Ws.fps;
+double _drawn(Ws ws) => ws.inside?.renderedAt ?? ws.frame / Ws.fps;
+
+/// Joined: only where a thing is, how large and how turned (the inspector's properties), as the stage's readout shows them:
+/// not the cards' hundreds of numbers [wsTransform] reads.
+Map<String, double> wsPlace(Ws ws, String id) {
+  final m = ws.inside, t = int.tryParse(id);
+  if (m == null || t == null) return const {};
+  final at = _drawn(ws);
+  double r1(double x) => (x * 10).roundToDouble() / 10 + 0;
+  return {
+    for (final n in const ['x', 'y', 'scale_y', 'rotate'])
+      n: r1(_shown(m, t, n, (n == 'x' || n == 'y' ? m.shows(t, n, at)?.$1 : null) ?? m.value(t, n, at) ?? (n == 'scale_y' ? 1 : 0))),
+  }; // (where it shows)
+}
 
 /// The selected layer's transform as the stage draws it at this frame, in the Inspector's ids.
 Map<String, double> wsTransform(Ws ws, String? id) {
   if (ws.inside case final m?) {
-    // (the document's own values, as the inspector counts them; nothing picked: the stage's own, thing 0)
-    final t = id == null ? 0 : int.tryParse(id);
+    // (the document's own values, as the inspector counts them)
+    final t = int.tryParse(id ?? '');
+    if (id == null) {
+      // (nothing picked: the stage's own cards, thing 0)
+      final at = _drawn(ws);
+      return {
+        for (final (_, names) in m.cards(0))
+          for (final n in names) 'v_$n': _onCard(ws, m, 0, n, at),
+      };
+    }
     if (t == null) return const {};
     final at = _drawn(ws);
+    double r1(double x) => (x * 10).roundToDouble() / 10 + 0; // (+ 0: no minus nought)
     return {
+      'depth': r1(m.bounds(t)?[7] ?? 0), // (how deep it is in points of the picture: a flat thing is Flat)
       for (final (_, names) in m.cards(t))
         for (final n in names) 'v_$n': _onCard(ws, m, t, n, at),
     };
@@ -65,9 +88,11 @@ void _write(Ws ws, String? id, Map<String, double> changed, {required bool live}
     m.later('together', number: 1); // (one step, without waiting)
     for (final e in said.entries) {
       final ways = m.words(t!, e.key.substring(2));
-      m.later('say', layer: t, name: e.key.substring(2), word: ways[e.value.round().clamp(0, ways.length - 1)]);
+      for (final o in [t, ..._withIt(ws, t)]) {
+        m.later('say', layer: o, name: e.key.substring(2), word: ways[e.value.round().clamp(0, ways.length - 1)]);
+      }
     }
-    ws.after(m.later('together'));
+    ws.after(m.later('together'), (done, why) => _told(ws, done ? null : why));
     changed = {
       for (final e in changed.entries)
         if (!said.containsKey(e.key)) e.key: e.value,
@@ -81,24 +106,55 @@ void _write(Ws ws, String? id, Map<String, double> changed, {required bool live}
     if (!live) {
       ws.after(
         m.later('time_stretch', layer: t, number: speed, word: '${m.word(t, 'speed_hold').isEmpty ? 'start' : m.word(t, 'speed_hold')} ${ws.frame / Ws.fps}'),
-        (done, _) => done ? ws.reread() : null,
+        (done, why) => done ? ws.reread() : _told(ws, why),
       );
     }
     if (changed.isEmpty) return;
   }
-  final dragged = _dragged == t;
-  if (!dragged) m.take(t); // (held once a hand: each step after only carries)
+  final now = ws.frame / Ws.fps, dragged = _dragged == t;
+  if (!dragged) {
+    m.take(t); // (held once a hand: each step after only carries)
+    _found.clear();
+  }
   _dragged = live ? t : null;
+  String? why;
+  final carried = <String, double>{};
   for (final e in changed.entries) {
     final to = _asDocument(ws, e.key, e.value);
-    if (to != null) m.dragUpdate(to.$1, to.$2);
+    if (to != null) _found[to.$1] ??= m.value(t, to.$1, now) ?? to.$2;
+    if (to != null && !m.dragUpdate(to.$1, to.$2)) why ??= m.error;
+    if (to != null) carried[to.$1] = to.$2;
+    if (to == null) why ??= 'the document has no ${e.key}: '; // (a property the document has no value for says so, rather than keep the number)
   }
   if (live) {
     if (ws.playing) ws.playing = false; // (a hand on a value stops the play: what is changed is changed at one moment)
+    if (why != null) _told(ws, why);
   } else {
-    ws.after(m.later('drag_end', number: 1)); // (the hand let go: the window does not wait for the step)
+    final also = _withIt(ws, t);
+    if (also.isNotEmpty) m.later('together', number: 1);
+    var kept = m.later('drag_end', number: 1);
+    for (final o in also) {
+      // (After Effects' and Figma's: a value changed with many picked is changed on them all that have it, a number dragged by as much, one typed to it)
+      m.take(o);
+      for (final e in carried.entries) {
+        m.dragUpdate(e.key, dragged ? (m.value(o, e.key, now) ?? e.value) + e.value - _found[e.key]! : e.value);
+      }
+      m.later('drag_end', number: 1);
+    }
+    if (also.isNotEmpty) kept = m.later('together');
+    ws.after(kept, (done, no) => _told(ws, why ?? (done ? null : no))); // (the hand let go: the window does not wait for the step)
   }
 }
+
+final _found = <String, double>{}; // (the values as the hand found them)
+
+/// What else is picked with [t].
+List<int> _withIt(Ws ws, int t) => ws.many.contains('$t')
+    ? [
+        for (final id in ws.many)
+          if (int.tryParse(id) case final o? when o != t) o,
+      ]
+    : const [];
 
 /// Joined: the picked thing's words in the inspector's ids (a text's content; how it lies on what is behind), and a change of them told to the document.
 Map<String, String> _words(Ws ws, String? id) {
@@ -106,6 +162,8 @@ Map<String, String> _words(Ws ws, String? id) {
   if (m == null || t == null) return const {};
   return {
     ..._cardColors(m, t, _drawn(ws)),
+    if (m.word(t, 'kind') == 'light') 'light': m.word(t, 'file'), // (which light it is: a sun, a point, a spot; the Light card draws it so)
+    if (m.word(t, 'kind') == 'text') 'lacks': _lacks(m, t), // (letters its font has not: drawn in another, said under its words)
     for (final (_, names) in m.cards(t))
       for (final n in names)
         if (m.shown(n)?.look == 'thing')
@@ -115,6 +173,20 @@ Map<String, String> _words(Ws ws, String? id) {
         else if (m.words(t, n).isNotEmpty)
           'v_$n': m.word(t, n).isEmpty ? m.words(t, n).first : m.word(t, n), // (one of its words; none said: the first, as it comes)
   };
+}
+
+/// What a text's font lacks of its words, as the Text card says it under them ('' nothing): the letters, and the font
+/// all of it is drawn in instead (the user, 11/5: no tofu, and a reason where it is not as asked).
+String _lacks(Motolii m, int t) {
+  final file = m.whole(m.word(t, 'file')), words = m.word(t, 'text');
+  final (lacks, instead) = m.fontLacks(
+    file,
+    words.isEmpty ? file.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), '') : words,
+  ); // (no words: the font's own name, as the inside sets it)
+  if (lacks.isEmpty) return '';
+  return instead.isEmpty
+      ? 'Not in this font: $lacks. No font here has them all: they are left out'
+      : 'Not in this font: $lacks. Shown in ${instead.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), '')}';
 }
 
 /// What a card's value may be, for a hand-drawn card's chooser: its words, or another thing by name (None first).
@@ -129,21 +201,25 @@ Map<String, List<String>> _choices(Ws ws, String? id) {
 }
 
 /// How the inspector is looked at (its folds, an effect's Advanced shown): the window's view, not the document's.
-Map<String, bool> _flags(Ws ws) => {
+Map<String, bool> _flags(Ws ws, String? id) => {
   for (final e in ws.view.entries)
     if (e.key.startsWith('inspector.') && e.value is bool) e.key.substring(10): e.value as bool,
 };
 
-bool _flag(Ws ws, Map<String, bool> changed) {
+bool _flag(Ws ws, String? id, Map<String, bool> changed) {
   bool looked(String k) =>
       k.endsWith('.open') ||
       k.endsWith('.adv') ||
+      k.endsWith('.code') ||
       k.endsWith('.past') ||
-      k.startsWith('fold.'); // (.past: a card let past its ends, PastRange)
+      k.startsWith('fold.'); // (.past: a card let past its ends, PastRange; .code: a script's code open under its knobs, script_code.dart)
   for (final e in changed.entries) {
     if (looked(e.key)) ws.view['inspector.${e.key}'] = e.value;
   }
-  return changed.keys.every(looked);
+  final other = changed.keys.where((k) => !looked(k)).firstOrNull;
+  if (other == null) return true;
+  _told(ws, 'the document has no ${other.endsWith('.on') ? 'bypass' : other}: '); // (an effect switched off and kept)
+  return false;
 }
 
 bool _say(Ws ws, String? id, Map<String, String> changed) {
@@ -159,7 +235,7 @@ bool _say(Ws ws, String? id, Map<String, String> changed) {
         ? m.later('set', layer: t, name: n, number: (_others(ws, t)[e.value] ?? 0).toDouble()) // (another thing, told by its name: it goes with that one)
         : m.later('say', layer: t, name: n, word: e.value); // (a card's value of that name)
   }
-  ws.after(m.later('together'));
+  ws.after(m.later('together'), (done, no) => _told(ws, done ? null : no));
   return true;
 }
 
@@ -171,3 +247,12 @@ Map<String, int> _others(Ws ws, int t) {
   }; // (as After Effects' parent list: the row's number on the timeline, then the name)
 }
 
+/// Joined: a change the document did not take is said in the top bar, by the inside's own reason (its first clause,
+/// read as it was refused: every call of the inside forgets the last reason); the next one it takes clears it.
+void _told(Ws ws, String? why) {
+  if (why != null && why.isNotEmpty) {
+    ws.notice = 'Not taken: ${why.split(':').first}';
+  } else if (why == null && (ws.notice?.startsWith('Not taken') ?? false)) {
+    ws.notice = null;
+  }
+}

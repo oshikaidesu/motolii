@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 # The hand-written window has one budget: the newline count of app/lib/**/*.dart. A file whose first lines contain
 # ffigen's "AUTO GENERATED FILE" is not part of it (app/lib/bridge/motolii_bindings.dart). The number in
-# dart_lines.txt is that count for the tree being committed. It may fall. It may not rise, and it may not sit above
-# the count: spare lines would fill back up.
+# dart_lines.txt is that count for the tree being committed: the number is kept true, neither above the count (spare
+# lines would fill back up) nor below it. Whether it may rise is no longer decided here: a file of ours that gets
+# longer pays in the commit message (.githooks/own_code_check.py), which a count of lines could not ask. (The rule
+# "it may not rise" of 2026-11-10 01:09 was met by deleting the stage, the timeline and the shelves; the owner had
+# them put back the same day.)
 #   dart_budget.py              the index (pre-commit)
-#   dart_budget.py --all [BASE] HEAD; against BASE the number may only fall (CI, .github/workflows/checks.yml)
+#   dart_budget.py --all [BASE] HEAD (CI, .github/workflows/checks.yml)
 import subprocess, sys
 
 LEDGER = '.githooks/dart_lines.txt'
@@ -72,14 +75,12 @@ if now is None:
 elif now == 'bad':
     bad.append(f'{LEDGER}: one number, the newline count')
 else:
-    if was not in (None, 'bad') and now > was:
-        bad.append(f'{LEDGER} raised {was} -> {now}; the ledger only falls')
     if have > now:
         bad.append(f'{have} newlines in app/lib (a generated binding aside); {LEDGER} says {now}')
     elif have < now:
         bad.append(f'{LEDGER} says {now} but the tree has {have}; write {have}, spare lines would fill back up')
 
 if bad:
-    print('dart budget refused this commit (rule: hand-written Dart only shrinks, .githooks/README.md):\n  '
+    print('dart budget refused this commit (rule: the count of hand-written Dart is kept true, .githooks/README.md):\n  '
           + '\n  '.join(bad), file=sys.stderr)
     sys.exit(1)

@@ -56,12 +56,12 @@
 | `app/lib/bridge/motolii_moment.dart` | `MotoliiMoment.isNow` | Dart の呼び口。アプリのどこからも呼ばれない（呼ぶ側が先に消えたか、`later(...)` に置き換わった） | 2 |
 | `app/lib/workspace/inspector_feed/keyframe_marks.dart` | `wsKeyMarks` | アプリの部品だが、main() から名前でたどって一度も出てこない | 3 |
 | `app/lib/workspace/state/effects.dart` | `WsFx.motionToggle` | アプリの部品だが、main() から名前でたどって一度も出てこない | 9 |
-| `group_moves.dart` | `wsMoveSet`・`wsMoveHold`・`wsMoveTime`・`wsMoveTurn`・`wsMoveEase`・`wsShows`・`_poses`・`_posesOf`・`wsPosesTold`・`wsValue`・`_values` | アプリの部品だが、main() から名前でたどって一度も出てこない | 92 |
+| `app/lib/workspace/edits/group_moves.dart` | `wsMoveSet`・`wsMoveHold`・`wsMoveTime`・`wsMoveTurn`・`wsMoveEase`・`wsShows`・`_poses`・`_posesOf`・`wsPosesTold`・`wsValue`・`_values` | アプリの部品だが、main() から名前でたどって一度も出てこない | 92 |
 | `app/lib/workspace/stage/stage_art.dart` | `ArtInk`・`WsArt.cameraBox` | アプリの部品だが、main() から名前でたどって一度も出てこない | 7 |
 | `app/lib/workspace/timeline/timeline_paint.dart` | `WtM.barRadius` | アプリの部品だが、main() から名前でたどって一度も出てこない | 1 |
 | `app/lib/workspace/dock/dock_tags.dart` | `DockTags.ofColor`・`DockTags._ofColor`・`DockTags._tagsOf` | アプリの部品だが、main() から名前でたどって一度も出てこない | 25 |
 | `app/lib/skin/tokens.dart` | `N.glaze9,glaze15`・`Grey.glaze9`・`Grey.glaze15`・`Role.keyEdge`・`Role.disabled`・`TL`・`Dose`・`Gui`・`OkMark`・`_OkMarkPainter` | 色・寸法の定義だが、どの部品も読まない | 148 |
-| `timeline_painters.dart` | `tpAccent`・`tpTime`・`tpGrid`・`TpHit`・`_TpHitState`・`TpValue`・`_TpValueState`・`TpIconButton`・`TpKey`・`TpInterp`・`tpKey`・`tpLink`・`tpSeg`・`TpBar`・`tpBarColor`・`tpBar`・`TpLanePainter`・`tpHead` | Widgetbook 時代の見本部品（media_set / timeline_set）。アプリのどの部品も組み立てない | 364 |
+| `app/lib/widgets/timeline_painters.dart` | `tpAccent`・`tpTime`・`tpGrid`・`TpHit`・`_TpHitState`・`TpValue`・`_TpValueState`・`TpIconButton`・`TpKey`・`TpInterp`・`tpKey`・`tpLink`・`tpSeg`・`TpBar`・`tpBarColor`・`tpBar`・`TpLanePainter`・`tpHead` | Widgetbook 時代の見本部品（media_set / timeline_set）。アプリのどの部品も組み立てない | 364 |
 | `app/lib/widgets/media.dart` | `kFast`・`kEase`・`ArtStyle`・`Asset`・`sampleAssets`・`ArtPainter`・`Art`・`TypeBadge`・`TimePill`・`Press`・`_PressState`・`Hold`・`_HoldState`・`drawFolder`・`StarButton`・`DashedBox`・`Pill`・`QuietButton`・`Tick` | Widgetbook 時代の見本部品（media_set / timeline_set）。アプリのどの部品も組み立てない | 347 |
 | `app/lib/widgets/controls.dart` | `ValueWell`・`Tool` | Widgetbook 時代の見本部品（media_set / timeline_set）。アプリのどの部品も組み立てない | 100 |
 | `app/lib/widgets/relations.dart` | `FamIcon`・`RelationTile`・`RelationCard`・`_Icon` | Widgetbook 時代の見本部品（media_set / timeline_set）。アプリのどの部品も組み立てない | 168 |
@@ -91,6 +91,7 @@
 - `motolii_now`：`edit.cpp` の `effect` が使い、`docs/using/make_intro_movie.md` が回す。
 - `stage/snapshot.h` の中で使う `motolii_*`（cards・things・values・words など）：Dart は直接呼ばないが、アプリに渡す絵の JSON を作る。
 - `motolii_front`・`motolii_frames`・`motolii_solo_front`・`motolii_finished`（Swift）、`motolii_desk_front`・`motolii_desk_frames`（文字列で渡す）。
+- テストの継ぎ目（`easeKeptAt`・`fontRecentAt`・`dockMapsAt`・`dockStarsAt`・`effectRecentAt`・`effectDecksAt`・`coloursAt`・`latchedAt`）：`test/` が使う。
 - `workspace/commands/command_actions.dart`（キーボードの近道、メニューから結ぶ）、`skin/forms/*`（`shelves/skins` の皮が名前で選ぶ）。
 - `three_shading_language_to_shelf` の `run.sh`・`fetch.sh`・`check.sh` と変換器：棚の `.wgsl` を作る。
 - 読み取り器の誤り（ジェネリック関数・レコード拡張）で死んで見えた `_listEq`・`DockCtx.foot`/`footOpen`・`stage_view` のレコード拡張。

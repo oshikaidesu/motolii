@@ -9,17 +9,18 @@
 
 | スキン | 見た目 |
 |---|---|
-| `labs` | 白地に黒文字、丸いピル、淡い印。灰色を 1 段ずつ書いた見本 |
+| `labs` | 白地に黒文字、丸いピル、淡い印。灰色を 1 段ずつ書き、印の絵も差し替えた作り込みの見本 |
 | `lighttable` | 光るライトテーブルの上のフィルム。乳白の地、黒い帯、グリースペンシルの橙は触る所だけ |
 | `paper` | 3 色と角 0 だけの、いちばん短い見本 |
 | `poster` | スイスの幾何学ポスター。平たい赤・黄・青・緑・桃、太いグロテスク体 |
 | `sheet` | 紙 1 枚の地と墨の線。赤は今いる所（モード・キー）だけ |
-| `streets` | 黒い箱・白文字・お金の緑・角は四角 |
+| `streets` | 黒い箱・白文字・お金の緑・角は四角。Render ボタンとカードに専用の枠（`parts/frame.*.svg`） |
 
 
 ```
 <利用者のフォルダ>/skins/my_skin/
   theme.xml      ← 色・形・書体（これだけでも革になる）
+  parts/*.svg    ← 印の絵（なくてもよい）
   *.otf / *.ttf  ← 書体ファイル（なくてもよい）
   preview.png    ← 撮ったアプリの画面
 ```
@@ -40,7 +41,7 @@
 </Motolii>
 ```
 
-これが見本の [paper](./paper/theme.xml)。作り込んだ見本は [labs](./labs/theme.xml)（灰色を1段ずつ書いている）。
+これが見本の [paper](./paper/theme.xml)。作り込んだ見本は [labs](./labs/theme.xml)（灰色を1段ずつ書いて、印の絵も差し替えている）。
 
 ## 2. 着る・直す・見る
 
@@ -92,11 +93,46 @@ Mac に入っている書体なら名前だけでよい。幅の広い書体（M
 <FontSansFile Value="Inter.ttf"/>
 ```
 
-## 6. フォーム
+## 6. 印の絵（SVG）
 
-アプリが革に聞くのは、オン・オフだけ。数値の絵はフォームを通さない。theme.xml の `<Forms Value="own"/>`。知らない名前は own。動きは [naked_ui](https://pub.dev/packages/naked_ui)。`parts/` の SVG は読まない。
+```xml
+<Parts Value="parts"/>
+```
 
-新しいフォームはアプリの `lib/skin/forms/` に足し、`forms.dart` の表に1行足し、theme.xml に `<Forms Value="<名前>"/>` と書く。置くだけでは着られない。
+と書くと、そのフォルダの `名前.svg` がアプリの印の代わりに描かれる。名前の全部は [PARTS.md](PARTS.md) にある（再生ボタンは `tp.play.svg`、道具の選択は `glyph.select.svg`…）。
+
+- 枠は `viewBox="0 0 24 24"` で描く。
+- 色はアプリがその場所の色で塗り直すので、形だけ描けばよい（色は何でもよい）。
+- 無い名前は、アプリのいつもの絵のまま。1枚だけ差し替えるのもあり。
+- 場所は theme.xml から見た相対・`~/`・絶対のどれでもよい。相対にしておくと、フォルダごと配れる。
+
+### 枠：部品の形を変える
+
+`parts/frame.render.svg`（Render ボタン）や `parts/frame.card.svg`（インスペクタの札）を置くと、その部品の形がまるごと変わる。四隅はそのまま、辺はのばして、どんな大きさの部品にもはまる。色は描いたまま。書き方は [PARTS.md](PARTS.md) の「枠」。
+
+## 6½. フォーム：部品の組み立てそのものを変える（ヘッドレス UI）
+
+色・数・印・枠は見た目の差し替えまで。ボタンが何の形をしているか、選択肢がどう並ぶか、札がどう組まれるかまで変えるのがフォーム。React Aria や Radix の「ヘッドレス UI」と同じ分け方で、
+
+- **アプリが渡すもの**：部品の言葉・今の値・押した時にすること（`lib/skin/forms/forms.dart` の `ActionSpec` `ChoiceSpec` `SwitchSpec` `CardSpec`）
+- **手で触った時の動き**：[naked_ui](https://pub.dev/packages/naked_ui)（押す・手が乗る・選ぶ・切り替える、読み上げも）
+- **フォームが書くもの**：それをどう組み立てて見せるか、だけ
+
+フォームは Dart のクラス1つ（`lib/skin/forms/poster_forms.dart` が見本）。部品の種類ごとに1つずつ書く：
+
+| フォームの関数 | アプリの部品 |
+|---|---|
+| `action` | Render ボタン |
+| `tabs` | 上の帯の Edit・Animate・Export |
+| `choice` | インスペクタの Space（2D・2.5D・3D） |
+| `onOff` | オン・オフ（Animate all など） |
+| `card` | インスペクタの札1枚 |
+
+新しいフォームは、`lib/skin/forms/<名前>_forms.dart` に `Forms` を継いだクラスを書き、`lib/skin/forms/forms.dart` の `forms` に1行足し、革の theme.xml に `<Forms Value="<名前>"/>` と書く。
+
+**すぐ試す**：`app/tool/live.sh` でアプリを開いておけば、フォームのファイルを保存した瞬間に開いたアプリが描き直る（状態はそのまま）。
+
+フォームはアプリに組み込まれるので、配った人が置くだけでは着られない（色・数・印・枠は置くだけで着られる）。
 
 ## 7. 革に入らないもの
 

@@ -2,7 +2,21 @@
 // www.ableton.com/en/manual/live-keyboard-shortcuts/), each said beside the section it comes from; where Live has no
 // such key, the tool that has one is named. The commands here are what each does to the window's state; keymap.dart
 // says which key says which, and the maker's keybindings.json may say otherwise.
+import 'package:flutter/foundation.dart' show ValueNotifier;
+
+import '../edits/keyframe_edits.dart';
 import '../state/state.dart';
+
+/// What the timeline is asked to do with how it looks at the document (its zoom, its loop): it keeps those itself.
+final wsTimelineAsk = ValueNotifier<(String, int)>(('', 0));
+void wsAskTimeline(String what) => wsTimelineAsk.value = (what, wsTimelineAsk.value.$2 + 1);
+
+/// The picked thing's name asked for, in its row (Live: Cmd+R renames, 42.5 and 42.19).
+final wsAskRename = ValueNotifier<int>(0);
+
+/// The mark (locator) picked by a click on its flag: Cmd+R names it, Delete takes it away (Live 6.4: a locator is
+/// selected, then renamed or deleted like anything else).
+final wsMarkPicked = ValueNotifier<(double, String)?>(null);
 
 /// Where playing began (Live 42.20: Space plays from the start marker and stops back there; Shift+Space goes on from
 /// where it stopped).
@@ -20,10 +34,16 @@ Map<String, void Function()> wsAbletonCommands(Ws ws) {
     if (all.isNotEmpty) step((way > 0 ? all.first : all.last) - ws.frame);
   }
 
-  /// The picked thing's bar carried [by] frames (Live 42.16: Nudge Selection Left/Right); with nothing picked, the playhead.
+  /// The picked keys, else the picked thing's bar, carried [by] frames (Live 42.16: Nudge Selection Left/Right); with
+  /// nothing picked, the playhead (Live moves its insert marker so).
   void nudge(int by) {
     final m = ws.inside;
     if (m == null) return;
+    if (ws.keys.isNotEmpty) {
+      wsSlideKeys(ws, ws.keys.toList(), by);
+      ws.pickKeys([for (final k in ws.keys) (layer: k.layer, frame: (k.frame + by).clamp(0, Ws.duration))]); // (still picked, where they now are)
+      return;
+    }
     final t = int.tryParse(ws.selected ?? '');
     if (t == null) return step(by);
     m.take(t);
@@ -54,13 +74,37 @@ Map<String, void Function()> wsAbletonCommands(Ws ws) {
       _playFrom = null;
       ws.playing = !ws.playing;
     },
-    for (final (n, by) in [('left', -1), ('right', 1), ('left10', -10), ('right10', 10)]) 'nudge.$n': () => nudge(by),
-    for (final (n, by) in [('previous', -1), ('next', 1)]) 'layer.$n': () => row(by),
-    'mark.animate': () => ws.animating = !ws.animating, // (Apple Motion's A: Record Animation, the inspector's Animate all)
-    for (final (n, by) in [('previous', -1), ('next', 1)]) 'frame.$n': () => step(by), // (Live has no frame step; Rive's and Jitter's , and .)
-    for (final (n, by) in [('previousStop', -1), ('nextStop', 1)]) 'frame.$n': () => hop(by),
-    for (final (n, by) in [('back10', -10), ('forward10', 10)]) 'frame.$n': () => step(by),
-    'frame.first': () => step(-ws.frame),
-    'frame.last': () => step(Ws.duration - ws.frame),
+    'nudge.left': () => nudge(-1),
+    'nudge.right': () => nudge(1),
+    'nudge.left10': () => nudge(-10),
+    'nudge.right10': () => nudge(10),
+    'layer.previous': () => row(-1),
+    'layer.next': () => row(1),
+    'thing.rename': () =>
+        ws.selected == null && wsMarkPicked.value == null ? null : wsAskRename.value++, // (Live 42.5/42.19 Cmd+R: the picked track, or the picked locator)
+    'thing.solo': () {
+      // (Live 42.15/42.19 S: solo selected tracks)
+      final t = int.tryParse(ws.selected ?? ''), m = ws.inside;
+      if (t == null || m == null) return;
+      ws.after(m.later('set', layer: t, name: 'solo', number: ws.layer?.solo == true ? 0 : 1));
+    },
+    'thing.lanes': () {
+      // (After Effects' U: the picked layers' keyed properties shown, pressed again gone)
+      final ids = {...ws.many, ?ws.selected};
+      if (ids.isNotEmpty) ws.twirl(ids);
+    },
+    'mark.animate': () => ws.animating = !ws.animating, // (Apple Motion's A, Mark > Record Animation: the top bar's Animate, the inspector's Animate all)
+    'loop.toggle': () => wsAskTimeline('loop'), // (Live 42.16 Cmd+L: toggle loop brace)
+    'zoom.in': () => wsAskTimeline('in'), // (Live 42.9 +: zoom in time ruler)
+    'zoom.out': () => wsAskTimeline('out'), // (Live 42.9 -)
+    'zoom.selection': () => wsAskTimeline('selection'), // (Live 42.16 Z: zoom to arrangement time selection)
+    'zoom.back': () => wsAskTimeline('back'), // (Live 42.16 X: zoom back)
+    'zoom.width': () => wsAskTimeline('fit'), // (Live 42.16 W: optimize arrangement width)
+    'frame.previous': () => step(-1), // (Live has no frame step; Rive's and Jitter's , and .)
+    'frame.next': () => step(1),
+    'frame.previousStop': () => hop(-1),
+    'frame.nextStop': () => hop(1),
+    'frame.back10': () => step(-10),
+    'frame.forward10': () => step(10),
   };
 }

@@ -4,18 +4,30 @@ import 'package:material_color_utilities/hct/hct.dart';
 
 import 'theme.dart';
 
+/// The one motion of the book: 120 ms, ease-out, started the moment the input lands. Every state change (hover, select, drop) uses this and nothing else.
+abstract final class Mo {
+  static const dur = Duration(milliseconds: 120);
+  static const ease = Curves.easeOut;
+}
+
 abstract final class N {
   static const g00 = Color(0xFF000000), g07 = Color(0xFF131313), g10 = Color(0xFF191919), g13 = Color(0xFF202020), g15 = Color(0xFF262626);
   static const g20 = Color(0xFF343434), g26 = Color(0xFF424242), g38 = Color(0xFF616161), g44 = Color(0xFF717171), g56 = Color(0xFF8E8E8E);
   static const g63 = Color(0xFFA1A1A1), g76 = Color(0xFFC1C1C1), g91 = Color(0xFFE7E7E7), g95 = Color(0xFFF2F2F2), g100 = Color(0xFFFFFFFF);
+  // [decided] the timeline's two row bands and its row line
+  static const bandA = Color(0xFF1E1E1E), bandB = Color(0xFF2A2A2A), rowLine = Color(0xFF161616);
 }
 
 /// The window's colour theme. Themed parts (the Workspace and the Inspector library) read [Grey], never [N]; [N] stays the dark
 /// ramp of the older studies, which are dark only.
-/// The grey ramp, with [N]'s names. A skin's Shade word picks light; otherwise it is dark, which is exactly [N].
-/// In light, cards are the brightest and text the darkest.
+enum Shade { dark, light }
+
+/// The grey ramp that follows [Grey.shade], with [N]'s names. Each step keeps its role in both shades — ground (the gutter),
+/// body, card, well, raised, lines, quiet text, text, strong text — only the lightness turns around: in light, cards are the
+/// brightest and text the darkest. Dark is exactly [N].
 abstract final class Grey {
-  static bool get light => ColorTheme.shadeSaid.value ?? false;
+  static final shade = ValueNotifier<Shade>(Shade.dark);
+  static bool get light => ColorTheme.shadeSaid.value ?? shade.value == Shade.light; // (a skin that names its shade has it)
   static Color _p(String role, Color dark, Color light) => ColorTheme.of(role, _made(Grey.light ? light : dark)); // (the theme file's, else the shade's own)
 
   /// A step of the shade's own ramp moved onto the skin's `Background` and `Foreground` (neither said: as it is), so a skin
@@ -55,11 +67,75 @@ abstract final class Grey {
   static Color get g91 => _p('Grey91', N.g91, const Color(0xFF22232A));
   static Color get g95 => _p('Grey95', N.g95, const Color(0xFF121318));
   static Color get g100 => _p('Grey100', N.g100, const Color(0xFF000000));
+  static Color get bandA => ColorTheme.of('BandA', g10); // (the timeline's rows, in turn, and the line between them)
+  static Color get bandB => ColorTheme.of('BandB', g13);
+  static Color get rowLine => ColorTheme.of('RowLine', g10);
 }
 
-/// The window's role colour.
+/// A relation family: the colour a relation carries everywhere. [code] identity.dart
+class Fam {
+  const Fam(this.name, this.jp, this.c);
+  final String name, jp;
+  final Color c;
+  static const scatter = Fam('Scatter', '散らす', Color(0xFFE974AB));
+  static const along = Fam('Along Path', 'パスに沿って', Color(0xFF7DD5B1));
+  static const stagger = Fam('Stagger', 'ずらす', Color(0xFF4781E5));
+  static const face = Fam('Face', '向かせる', Color(0xFFEFCB4E));
+  static const follow = Fam('Follow', '追従', Color(0xFFF69260));
+  static const attach = Fam('Attach', 'くっつける', Color(0xFFA889E9));
+  static const all = [scatter, along, stagger, face, follow, attach];
+}
+
+abstract final class C {
+  /// [open] Error and destructive actions. Delegates to [Role.error] (Grey keeps #E5584B).
+  static Color get danger => Role.error;
+  static const playhead = Color(0xFF6EA6DB), play = Color(0xFF7BCC9E), record = Color(0xFFF03C8A);
+
+  /// The accent / mode colour. Delegates to [Role.mode] (Grey keeps #7A87E3).
+  static Color get mode => Role.mode;
+}
+
+/// Colour palettes of research/color-ud.md: Grey is today's look; A is CUDO-derived, B is Okabe-Ito-derived.
+enum Palette { grey, a, b }
+
+/// Colour-vision simulation (Machado 2009, severity 1.0) applied by the lab chrome around a use case. It is a lens, never part of the product.
+enum Cvd { none, deut, prot, trit }
+
+/// The ONE place of role colours. A part reads `Role.xxx` and never types a hue. Policy P1: colour only on state marks, small chips,
+/// 1 px edges / underlines and the changed value text; no large fills, no stroke over 2 px, at most 2 role colours per row; a non-colour cue is always kept.
 abstract final class Role {
-  static const selected = Color(0xFF7A87E3);
+  static final palette = ValueNotifier<Palette>(Palette.grey);
+  static final cvd = ValueNotifier<Cvd>(Cvd.none);
+
+  /// Fires when either knob moves.
+  static final Listenable changes = Listenable.merge([palette, cvd]);
+
+  static Color _pick(Color grey, Color a, Color b) => switch (palette.value) {
+    Palette.grey => grey,
+    Palette.a => a,
+    Palette.b => b,
+  };
+  static bool get grey => palette.value == Palette.grey;
+
+  static Color get changed => _pick(N.g95, const Color(0xFF66CCFF), const Color(0xFF56B4E9));
+  static Color get key => _pick(N.g95, const Color(0xFFFAF500), const Color(0xFFF0E442));
+  static Color get linked => _pick(N.g95, const Color(0xFFC77DD8), const Color(0xFFCC79A7));
+
+  /// A relation's own family colour when one is known (it is already CVD-checked); Grey and unknown family fall back to [linked].
+  static Color linkedFor(Fam? f) => f == null ? linked : f.c;
+  static Color get selected => _pick(const Color(0xFF7A87E3), const Color(0xFF5C8DFF), const Color(0xFF4A8FE0));
+
+  /// A still row with no key yet (hollow diamond): neutral cool grey-blue in A and B, today's grey in Grey. Never the mode hue.
+  static Color get still => _pick(N.g95, const Color(0xFF8A98B8), const Color(0xFF8A98B8));
+
+  static Color get mode => _pick(const Color(0xFF7A87E3), const Color(0xFFAE9CFF), const Color(0xFF8F9BEA));
+  static Color get ok => _pick(const Color(0xFF7BCC9E), const Color(0xFF3DBE82), const Color(0xFF1FB98C));
+  static Color get warning => _pick(const Color(0xFFF69260), const Color(0xFFFF9900), const Color(0xFFE69F00));
+  static Color get error => _pick(const Color(0xFFE5584B), const Color(0xFFFF4B3A), const Color(0xFFE5484D));
+
+  /// Grey returns the colour the part has today ([today]); a palette returns the role colour. One call keeps Grey pixel-identical.
+  static Color of(Color today, Color role) => grey ? today : role;
+  static Color get info => N.g63;
 }
 
 /// The window's one accent, from the skin (the theme's roles: Ableton's names, the key mark Blender's): a fill, the ink drawn on
@@ -98,9 +174,11 @@ abstract final class T {
 
   /// No text is dimmer than g56 nor smaller than 10 px (precedents: Adobe Spectrum's smallest UI text is 10 px; critique 2026-10-02: 87 of 126 use cases had 9 px / g44 captions).
   /// Only DIM text on a dark ground is lifted (luminance between g26 and g56); in the light shade, text paler than Grey.g56 is darkened to it. Dark INK (g00..g20, the text on a light fill such as the playhead head) is left alone: lifting it to g56 made it unreadable (critique pass 3).
+  /// Test tool, 'Words' addon: when true every T.* text is fully transparent (layout unchanged), so a reviewer can ask "can I tell what this does without reading?".
+  static final hidden = ValueNotifier<bool>(false);
 
-  /// The ink of a text, held to that floor.
-  static Color ink(Color c) => _floor(c);
+  /// The ink of a text: the floor, or nothing while the Words addon says Hidden. Direct TextStyles in the lab use this too.
+  static Color ink(Color c) => hidden.value ? const Color(0x00000000) : _floor(c);
   static Color _floor(Color c) {
     if (c.a < .5) return c;
     final l = c.computeLuminance();
@@ -108,22 +186,82 @@ abstract final class T {
     return l >= N.g56.computeLuminance() || l < .04 ? c : N.g56;
   }
 
-  static TextStyle _style(double size, Color usual, Color? c, {FontWeight? weight, double height = 1, double tracking = 0, bool mono = false}) =>
-      TextStyle(
-        fontFamily: mono ? T.mono : sans,
-        fontFamilyFallback: mono ? null : const ['.AppleSystemUIFont'],
-        fontSize: px(size),
-        fontWeight: weight,
-        color: ink(c ?? usual),
-        height: height,
-        letterSpacing: tracking == 0 ? null : tracking,
-        decoration: TextDecoration.none,
-      );
-  static TextStyle name([Color? c]) => _style(11, Grey.g91, c, tracking: .05);
-  static TextStyle label([Color? c]) => _style(10, Grey.g63, c, tracking: .1);
-  static TextStyle micro([Color? c]) => _style(10, Grey.g63, c, weight: FontWeight.w500, tracking: .15);
-  static TextStyle value([Color? c]) => _style(11, Grey.g91, c, mono: true);
-  static TextStyle title([Color? c]) => _style(13, Grey.g95, c, weight: FontWeight.w600, height: 1.1);
+  static TextStyle name([Color? c]) => TextStyle(
+    fontFamily: sans,
+    fontFamilyFallback: const ['.AppleSystemUIFont'],
+    fontSize: px(11),
+    color: ink(c ?? Grey.g91),
+    height: 1,
+    letterSpacing: .05,
+    decoration: TextDecoration.none,
+  );
+  static TextStyle label([Color? c]) => TextStyle(
+    fontFamily: sans,
+    fontFamilyFallback: const ['.AppleSystemUIFont'],
+    fontSize: px(10),
+    color: ink(c ?? Grey.g63),
+    height: 1,
+    letterSpacing: .1,
+    decoration: TextDecoration.none,
+  );
+  static TextStyle micro([Color? c]) => TextStyle(
+    fontFamily: sans,
+    fontFamilyFallback: const ['.AppleSystemUIFont'],
+    fontSize: px(10),
+    fontWeight: FontWeight.w500,
+    color: ink(c ?? Grey.g63),
+    height: 1,
+    letterSpacing: .15,
+    decoration: TextDecoration.none,
+  );
+  static TextStyle value([Color? c]) => TextStyle(fontFamily: mono, fontSize: px(11), color: ink(c ?? Grey.g91), height: 1, decoration: TextDecoration.none);
+  static TextStyle title([Color? c]) => TextStyle(
+    fontFamily: sans,
+    fontFamilyFallback: const ['.AppleSystemUIFont'],
+    fontSize: px(13),
+    fontWeight: FontWeight.w600,
+    color: ink(c ?? Grey.g95),
+    height: 1.1,
+    decoration: TextDecoration.none,
+  );
+}
+
+/// The non-colour half of every error: a small "!" in a 1 px ring. Anything drawn in [Role.error] carries one (policy P1: never colour only).
+class ErrMark extends StatelessWidget {
+  const ErrMark({super.key, this.size = 11, this.gap = 0, this.lead = 0, this.color});
+  final double size, gap, lead;
+  final Color? color;
+
+  /// Grey keeps today's look exactly, so the mark (and its gaps) is not there in Grey.
+  @override
+  Widget build(BuildContext context) => Role.grey
+      ? const SizedBox.shrink()
+      : Padding(
+          padding: EdgeInsets.only(left: lead, right: gap),
+          child: SizedBox.square(
+            dimension: size,
+            child: CustomPaint(painter: _ErrMarkPainter(color ?? Role.error)),
+          ),
+        );
+}
+
+class _ErrMarkPainter extends CustomPainter {
+  const _ErrMarkPainter(this.c);
+  final Color c;
+  @override
+  void paint(Canvas cv, Size s) {
+    final m = s.center(Offset.zero), r = s.width / 2 - .5;
+    final st = Paint()
+      ..color = c
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    cv.drawCircle(m, r, st);
+    cv.drawLine(Offset(m.dx, m.dy - r * .52), Offset(m.dx, m.dy + r * .12), st);
+    cv.drawCircle(Offset(m.dx, m.dy + r * .5), .6, Paint()..color = c);
+  }
+
+  @override
+  bool shouldRepaint(_ErrMarkPainter o) => o.c != c;
 }
 
 /// What was typed, a Japanese input method's wide letters and digits as plain ones (１２８：３０ is 128:30).

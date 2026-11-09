@@ -4,14 +4,28 @@ import 'package:motolii/skin/forms/forms.dart';
 import 'package:naked_ui/naked_ui.dart';
 
 import '../skin/tokens.dart';
+import 'inspector_parts.dart';
 
 // ---- 3. small things ------------------------------------------------------------------------------------------------
+/// A contract written as a 10px caption under a control.
+class Cap extends StatelessWidget {
+  const Cap(this.text, {super.key, this.color});
+  final String text;
+  final Color? color;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(top: Shape.s(6)),
+    child: Text(text, style: T.label(color ?? Grey.g56).copyWith(height: 1.3)),
+  );
+}
+
 /// What floats over the window goes when anything else is touched, by either button, and on Esc (Flutter's TapRegion; a
-/// Mac's menu, Windows' too): [keep] a press it leaves alone, the one that opens it again.
+/// Mac's menu, Windows' too): [keep] a press it leaves alone, the one that opens it again; [group] what counts as inside.
 class FloatShut extends StatefulWidget {
-  const FloatShut({super.key, required this.shut, required this.child, this.keep});
+  const FloatShut({super.key, required this.shut, required this.child, this.group, this.keep});
   final VoidCallback shut;
   final Widget child;
+  final Object? group;
   final bool Function(PointerDownEvent)? keep;
   @override
   State<FloatShut> createState() => _FloatShutState();
@@ -36,6 +50,7 @@ class _FloatShutState extends State<FloatShut> {
 
   @override
   Widget build(BuildContext context) => TapRegion(
+    groupId: widget.group,
     onTapOutside: (e) {
       if (!(widget.keep?.call(e) ?? false)) widget.shut();
     },
@@ -52,17 +67,27 @@ class _FloatShutState extends State<FloatShut> {
 }
 
 class Hov extends StatelessWidget {
-  const Hov({super.key, required this.builder, this.onTap});
+  const Hov({super.key, required this.builder, this.cursor = SystemMouseCursors.click, this.onTap, this.excludeSemantics = false});
   final Widget Function(BuildContext, bool) builder;
+  final MouseCursor cursor;
   final VoidCallback? onTap;
+
+  /// A Semantics node above already names this control.
+  final bool excludeSemantics;
   @override
   Widget build(BuildContext context) => NakedButton(
     onPressed: onTap,
-    mouseCursor: SystemMouseCursors.click,
+    mouseCursor: cursor,
     enableFeedback: false,
+    excludeSemantics: excludeSemantics,
     builder: (context, st, _) => builder(context, st.isHovered),
   );
 }
+
+String trimZeros(String s) => s.contains('.') ? s.replaceFirst(RegExp(r'\.?0+$'), '') : s;
+
+/// A value as a folded card shows it: short, trailing zeros dropped, — when mixed.
+String brief(double? v, [int dec = 1]) => v == null ? '—' : trimZeros(v.toStringAsFixed(dec));
 
 String fmt(double v, int dec, {bool tight = false}) {
   var d = tight ? 0 : dec;
@@ -74,16 +99,137 @@ String fmt(double v, int dec, {bool tight = false}) {
   return s == '-0' ? '0' : s;
 }
 
+/// The key mark. Three states differ by SHAPE, not by tone alone (D1, do-not-repeat 11): off = hollow diamond; animated = diamond with its link line; keyed here = filled playhead diamond.
+class KeyMark extends StatelessWidget {
+  const KeyMark({super.key, required this.state, this.onTap, this.enabled = true});
+  final KeyS state;
+  final VoidCallback? onTap;
+  final bool enabled;
+  @override
+  Widget build(BuildContext context) => Hov(
+    onTap: enabled ? onTap : null,
+    builder: (_, h) => SizedBox(
+      width: keyW,
+      height: keyW,
+      child: CustomPaint(painter: _KeyPaint(state, h && enabled, enabled)),
+    ),
+  );
+}
+
+class _KeyPaint extends CustomPainter {
+  const _KeyPaint(this.s, this.hover, this.enabled);
+  final KeyS s;
+  final bool hover, enabled;
+  @override
+  void paint(Canvas c, Size z) {
+    final o = Offset(z.width / 2, z.height / 2), r = s == KeyS.at ? 4.6 : 3.8;
+    final dia = Path()
+      ..moveTo(o.dx, o.dy - r)
+      ..lineTo(o.dx + r, o.dy)
+      ..lineTo(o.dx, o.dy + r)
+      ..lineTo(o.dx - r, o.dy)
+      ..close();
+    final a = enabled ? 1.0 : .4;
+    Paint line(Color col, double w) => Paint()
+      ..color = col.withValues(alpha: col.a * a)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w;
+    switch (s) {
+      case KeyS.off:
+        c.drawPath(dia, line(hover ? Role.of(Grey.g76, Role.still) : Role.of(Grey.g44, Role.still), 1));
+      case KeyS.anim:
+        c.drawPath(dia, line(hover ? Role.of(Grey.g95, Role.key) : Role.of(Grey.g91, Role.key), 1));
+        c.drawLine(Offset(o.dx - r - 4, o.dy), Offset(o.dx - r, o.dy), line(Role.of(Grey.g91, Role.key), 1));
+        c.drawLine(Offset(o.dx + r, o.dy), Offset(o.dx + r + 4, o.dy), line(Role.of(Grey.g91, Role.key), 1));
+      case KeyS.at:
+        c.drawPath(dia, Paint()..color = C.playhead.withValues(alpha: a));
+        c.drawPath(dia, line(Grey.g100, 1.5));
+    }
+  }
+
+  @override
+  bool shouldRepaint(_KeyPaint o) => o.s != s || o.hover != hover || o.enabled != enabled;
+}
+
+/// The reset mark: appears only when the value differs (C7, E4). [open] the arrow is a text character, not a new glyph.
+class ResetMark extends StatelessWidget {
+  const ResetMark({super.key, required this.show, this.onTap});
+  final bool show;
+  final VoidCallback? onTap;
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: resetW,
+    child: show
+        ? Hov(
+            onTap: onTap,
+            builder: (_, h) => Center(
+              child: Text('↺', style: T.label(h ? Grey.g95 : Grey.g56).copyWith(fontSize: T.px(12))),
+            ),
+          )
+        : null,
+  );
+}
+
+/// The link between two fields: closed chain = linked, broken chain = free. Shape carries the state, not tone alone.
+class LinkMark extends StatelessWidget {
+  const LinkMark({super.key, required this.on, this.onTap, this.enabled = true});
+  final bool on, enabled;
+  final VoidCallback? onTap;
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    toggled: on,
+    label: 'Link',
+    child: Hov(
+      onTap: enabled ? onTap : null,
+      excludeSemantics: true,
+      builder: (_, h) => SizedBox(
+        width: Shape.z(18),
+        height: cellH,
+        child: CustomPaint(painter: _LinkPaint(on, h && enabled, enabled)),
+      ),
+    ),
+  );
+}
+
+class _LinkPaint extends CustomPainter {
+  const _LinkPaint(this.on, this.hover, this.enabled);
+  final bool on, hover, enabled;
+  @override
+  void paint(Canvas c, Size s) {
+    final o = s.center(Offset.zero);
+    final ink = !enabled ? Grey.g38 : (on ? (hover ? Grey.g100 : Grey.g91) : (hover ? Grey.g76 : Grey.g44));
+    final st = Paint()
+      ..color = ink
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+    final gap = on ? 0.0 : 1.5;
+    const link = Size(7, 4.5);
+    for (final dir in const [-1.0, 1.0]) {
+      final r = Rect.fromCenter(center: o + Offset(dir * (link.width / 2 - 1.2 + gap), 0), width: link.width, height: link.height);
+      c.drawRRect(RRect.fromRectAndRadius(r, Shape.r(2.25)), st);
+    }
+    if (!on) {
+      c.drawLine(o + const Offset(-1, -4.5), o + const Offset(0, -3), st);
+      c.drawLine(o + const Offset(1, 4.5), o + const Offset(0, 3), st);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_LinkPaint o) => o.on != on || o.hover != hover || o.enabled != enabled;
+}
+
 /// The word-and-switch for On/Off (G2): the state is a word, never colour alone.
 class OnOff extends StatelessWidget {
-  const OnOff({super.key, required this.on, required this.onChanged});
-  final bool on;
+  const OnOff({super.key, required this.on, required this.onChanged, this.enabled = true});
+  final bool on, enabled;
   final ValueChanged<bool> onChanged;
   @override
-  Widget build(BuildContext context) => Forms.worn.onOff(
-    context,
-    SwitchSpec(on: on, onChanged: onChanged),
-  ); // (as the skin's forms draw it)
+  Widget build(BuildContext context) {
+    final live = enabled && !RowOff.offOf(context) && !Ctx.of(context).cfg.locked;
+    return Forms.worn.onOff(context, SwitchSpec(on: on, onChanged: onChanged, enabled: live)); // (as the skin's forms draw it)
+  }
 }
 
 class PopSwitch extends StatelessWidget {
@@ -97,11 +243,105 @@ class PopSwitch extends StatelessWidget {
     height: Shape.z(16),
     padding: EdgeInsets.all(Shape.s(2)),
     alignment: on ? Alignment.centerRight : Alignment.centerLeft,
-    decoration: BoxDecoration(color: on ? Accent.fill : Grey.g26, borderRadius: BorderRadius.all(Shape.r(8))),
+    decoration: BoxDecoration(color: on ? Pop.accent : Grey.g26, borderRadius: BorderRadius.all(Shape.r(8))),
     child: Container(
       width: Shape.z(12),
       height: Shape.z(12),
-      decoration: BoxDecoration(color: on ? Accent.on : Grey.g63, shape: BoxShape.circle),
+      decoration: BoxDecoration(color: on ? Pop.onAccent : Grey.g63, shape: BoxShape.circle),
     ),
   );
+}
+
+/// A choice chip in the lab's choice-control style: a g20 pill, g95 text, a 1px accent underline.
+class Chip extends StatelessWidget {
+  const Chip(this.text, {super.key, required this.on, this.onTap, this.enabled = true});
+  final String text;
+  final bool on, enabled;
+  final VoidCallback? onTap;
+  @override
+  Widget build(BuildContext context) => Hov(
+    onTap: enabled ? onTap : null,
+    builder: (_, h) => Opacity(
+      opacity: enabled ? 1 : .4,
+      child: Container(
+        height: Shape.z(20),
+        padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: on ? Grey.g20 : (h ? Grey.g15 : null),
+          borderRadius: BorderRadius.all(Shape.r(5)),
+          border: Border(bottom: BorderSide(color: on ? Role.selected : const Color(0x00000000))),
+        ),
+        child: Text(text, style: T.label(on ? Grey.g95 : Grey.g63)),
+      ),
+    ),
+  );
+}
+
+/// A choice drawn as a small picture and its word (a plate of a row of them).
+class GlyphPlate extends StatelessWidget {
+  const GlyphPlate(this.label, this.glyph, {super.key, required this.on, required this.onTap});
+  final String label;
+  final void Function(Canvas c, Paint stroke) glyph; // (drawn in a 16 x 14 box)
+  final bool on;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    selected: on,
+    label: label,
+    child: Hov(
+      onTap: onTap,
+      excludeSemantics: true,
+      builder: (_, h) {
+        final pop = Pop.on(context);
+        final ink = on ? (pop ? Pop.onAccent : Grey.g95) : (h ? Grey.g76 : Grey.g56);
+        return Container(
+          height: pop ? 22 : 26,
+          decoration: pop
+              ? BoxDecoration(color: on ? Pop.accent : (h ? Grey.g20 : Pop.well), borderRadius: BorderRadius.all(Shape.r(11)))
+              : BoxDecoration(
+                  color: on ? Grey.g20 : (h ? Grey.g15 : Grey.g13),
+                  borderRadius: BorderRadius.all(Shape.r(5)),
+                  border: Border(bottom: BorderSide(color: on ? Role.selected : const Color(0x00000000))),
+                ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CustomPaint(size: const Size(16, 14), painter: _GlyphPaint(glyph, ink)),
+              SizedBox(width: Shape.s(6)),
+              Flexible(
+                // (narrow, the word gives way; the glyph stays)
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.clip,
+                  softWrap: false,
+                  style: pop ? T.micro(on ? Pop.onAccent : Grey.g76).copyWith(fontWeight: FontWeight.w700) : T.label(on ? Grey.g95 : Grey.g63),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    ),
+  );
+}
+
+class _GlyphPaint extends CustomPainter {
+  const _GlyphPaint(this.glyph, this.ink);
+  final void Function(Canvas c, Paint stroke) glyph;
+  final Color ink;
+  @override
+  void paint(Canvas c, Size s) => glyph(
+    c,
+    Paint()
+      ..color = ink
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round,
+  );
+  @override
+  bool shouldRepaint(_GlyphPaint o) => o.ink != ink || o.glyph != glyph;
 }

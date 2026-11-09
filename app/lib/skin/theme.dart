@@ -1,5 +1,16 @@
-// Reads a skin's theme.xml, as shelves/skins/README.md says: roles are colours or words, and a role the file does not
-// say is the window's own. A Font...File role loads that file under the family its Font... role names.
+// The window's colour theme in Ableton Live's manner (its .ask files): a flat list of roles, each a colour,
+//   <Motolii><Theme>
+//     <ChosenDefault Value="#b3c66b"/>
+//     <Grey07 Value="#131313"/>
+//   </Theme></Motolii>
+// read from the skin the window wears (skins/<name>/theme.xml, the maker's own folder's or shelves/', the name kept in window.xml); a role the file does not say is the window's own (VS Code's manner). The meaning
+// roles keep Ableton's names (ChosenDefault, ChosenPlay, ChosenRecord, Alert, SelectionBackground, ControlOnForeground,
+// Clip1-16), the key mark Blender's (Keyframe); the grey ramp keeps the window's own step names (Grey00 ... Grey100),
+// each step a role in both shades (ground, body, card, well, raised, lines, quiet text, text, strong text).
+// A role may also be a number or a word (AviUtl2's style.conf, Obsidian's variables): the skin's shapes and type,
+//     <Shade Value="light"/>  <Corner Value="3"/>  <TextScale Value="1.1"/>  <FontSans Value="Space Grotesk"/>
+//     <FontSansFile Value="~/.motolii/fonts/SpaceGrotesk.ttf"/>
+// a file named for a font is loaded under that name when the theme is read.
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data' show ByteData;
@@ -139,4 +150,10 @@ abstract final class ColorTheme {
     for (final m in RegExp(r'<(\w+)\s+Value="#([0-9a-fA-F]{6})([0-9a-fA-F]{2})?"\s*/>').allMatches(xml))
       m.group(1)!: Color(int.parse('${m.group(3) ?? 'ff'}${m.group(2)}', radix: 16)),
   };
+
+  /// A theme file of these roles (the form at the top of this file), as the window writes its own (a maker copies one and changes the colours).
+  static String write(Map<String, Color> all) {
+    String hex(Color c) => [c.r, c.g, c.b, c.a].map((v) => (v * 255).round().toRadixString(16).padLeft(2, '0')).join();
+    return '<?xml version="1.0" encoding="UTF-8"?>\n<Motolii>\n\t<Theme>\n${[for (final e in all.entries) '\t\t<${e.key} Value="#${hex(e.value)}"/>'].join('\n')}\n\t</Theme>\n</Motolii>\n';
+  }
 }

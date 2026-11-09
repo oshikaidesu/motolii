@@ -87,16 +87,16 @@ flowchart TB
 
 | フォルダ | エンジン | アプリ（`app/lib/`） |
 |---|---|---|
-| `effects/` | `document/recipes.h` `doc_folder_names` | — |
-| `aviutl_scripts/` | `document/recipes.h` `doc_aviutl_names` | — |
-| `create/` | `document/recipes.h` `doc_recipes_read` | — |
-| `expressions/` | `entry/calls.h` `motolii_animators` | — |
-| `relations/` | `entry/calls.h` `motolii_relations` | `workspace/inspector_feed/cards.dart` `wsRelations` |
+| `effects/` | `document/recipes.h` `doc_folder_names` | `workspace/shelf/effect_tiles.dart` |
+| `aviutl_scripts/` | `document/recipes.h` `doc_aviutl_names` | `workspace/shelf/effect_decks.dart` `effectPack` |
+| `create/` | `document/recipes.h` `doc_recipes_read` | `workspace/dock/dock_make_expressions.dart` `_expressionRecipes`、`dock_make_create.dart` |
+| `expressions/` | `entry/calls.h` `motolii_animators` | `workspace/dock/dock_make_expressions.dart` `_expressionsOf`、`workspace/shelf/shelf_add.dart`（Add to shelf の書き込み先） |
+| `relations/` | `entry/calls.h` `motolii_relations` | `workspace/edits/make_relation.dart` |
 | `looks/` | `document/presets.h` `doc_look_names` | `bridge/motolii_shelves.dart` `looks` |
 | `solids/` | `community/three/solid_three.cpp`、`document/moment_fx.h` | — |
-| `ease/` | `document/recipes.h` `doc_own_ways` | — |
+| `ease/` | `document/recipes.h` `doc_own_ways` | `workspace/tool_panel/tool_panel_ease_shelf.dart` |
 | `skins/` | — | `skin/theme.dart` `ColorTheme.skinNames`（前の置き場 `~/.motolii/skins/` も読む） |
 | `extensions/hydra/` | `document/adapter.h`、`community/hydra/hydra_isf.cpp` | — |
 | （棚でない）`engine/third_party/wordnet_ja/` | `entry/calls_find.h` `find_english`（`doc_folders("words")`） | — |
-| （棚でない）`engine/third_party/noto_sans_jp/` | `stage/canvas/canvas_renderables.h` `type_fallback`（`doc_folders("fonts")`） | — |
-| （棚でない）`engine/third_party/gflanguages/` | — | — |
+| （棚でない）`engine/third_party/noto_sans_jp/` | `stage/canvas/canvas_renderables.h` `type_fallback`（`doc_folders("fonts")`） | `workspace/dock/dock_fonts.dart` |
+| （棚でない）`engine/third_party/gflanguages/` | — | `workspace/dock/dock_fonts.dart`（`samples.json`） |
