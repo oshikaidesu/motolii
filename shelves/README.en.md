@@ -2,7 +2,7 @@
 
 [日本語](README.md)
 
-What Motolii has from the start. One folder per shelf. Make a folder of the same name in your own folder (`~/Library/Application Support/Motolii/` on a Mac, `%APPDATA%\Motolii\` on Windows, or `MOTOLII_OWN`) and put a file in it: it is on the same shelf at once, no restart. A file of the same name there wins over the one here (`doc_folders` in `engine/document/doc_edit.h`).
+What Motolii has from the start. One folder per shelf. Make a folder of the same name in your own folder (`~/Library/Application Support/Motolii/` on a Mac, `%APPDATA%\Motolii\` on Windows, or `MOTOLII_OWN`) and put a file in it: it is on the same shelf at once, no restart. A file of the same name there wins over the one here (`doc_folders` in `engine/document/doc_folders.h`).
 
 | Shelf | What you see in the app | Files | Where its shown name comes from | Read by |
 |---|---|---|---|---|

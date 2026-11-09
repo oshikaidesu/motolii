@@ -1,5 +1,5 @@
 // doc_steps.h: part of doc.h (the document's file opened; each change kept as one step, undone and done again). Read only through doc.h.
-static std::vector<std::filesystem::path> doc_folders(const char* folder);   // (doc_edit.h)
+static std::vector<std::filesystem::path> doc_folders(const char* folder);   // (doc_folders.h)
 // The document in `path` (made if it is not there), on the stage. nullptr: the file is not a document.
 static std::string doc_recipe_code_path(const std::string& name);   // (doc_recipes.h: the file of the recipe with code that is called so; none: "")
 static Doc* doc_open(Stage& s, const char* path) {

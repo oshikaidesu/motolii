@@ -6,7 +6,7 @@
 # one only one side has is named and not compared. A call either side refuses, or a picture not made, stops the count
 # from standing: it says which and ends with 2 (1: some differ; 0: all matched).
 #   ./s2_check.sh ed4868cf1          (S2_LIMIT=2 ./s2_check.sh ed4868cf1: the first two of each only)
-# Nothing of the maker's own is read or written: MOTOLII_OWN is an empty folder of its own (document/doc_edit.h doc_folders), the
+# Nothing of the maker's own is read or written: MOTOLII_OWN is an empty folder of its own (document/doc_folders.h doc_folders), the
 # documents are made in a temporary folder, and engine/out/skin.motolii is not opened.
 old=${1:?usage: ./s2_check.sh <old-commit>}
 cd "$(dirname "$0")"
