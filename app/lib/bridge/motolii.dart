@@ -77,8 +77,6 @@ class Motolii {
   // What the window reads of the document is the inside's two pictures, set down by its hand: the document's, made
   // again where it changes, and the moment's, made with each picture. The inside tells which is new through one
   // listener; nothing here asks the document itself, and nothing waits for the hand.
-  late final _snapshot = _b.motolii_snapshot;
-  late final _addListener = _b.motolii_add_listener;
   NativeCallable<Void Function(Int)>? _listenerCallable;
   Map<String, dynamic> _document = const {}; // (the document's own part)
   final _layer = <int, Map<String, dynamic>>{}; // (each thing's part, as of the version it came with)
@@ -96,40 +94,17 @@ class Motolii {
   ];
   static List<double> _numbers(Object? said) => [for (final n in (said as List<dynamic>?) ?? const []) (n as num).toDouble()];
 
-  late final _play = _b.motolii_play;
-  late final _at = _b.motolii_at;
-  late final _workOut = _b.motolii_work_out;
-
-  late final _add = _b.motolii_add;
-  late final _set = _b.motolii_set;
-  late final _keying = _b.motolii_keying;
-  late final _dragUpdate = _b.motolii_drag_update;
-  late final _kindOf = _b.motolii_kind_of;
-  late final _still = _b.motolii_still;
-  late final _close = _b.motolii_close;
-
   static const _channel = MethodChannel('motolii/stage');
-
   Set<int> _watched = const {};
 
-  late final _rate = _b.motolii_rate;
-
-  late final _shaping = _b.motolii_shaping;
-
   /// The names of the values that change what cards a thing has (and its name): the inside's own rule, asked once.
-  late final Set<String> shaping = _shaping(_m).toDartString().split(' ').toSet();
-
+  late final Set<String> shaping = _b.motolii_shaping(_m).toDartString().split(' ').toSet();
   final _shownOf = <String, Shown?>{}; // (read out of the things' parts once a picture of the document)
-
-  late final _later = _b.motolii_later;
-  late final _answer = _b.motolii_answer;
-  late final _answerWhy = _b.motolii_answer_why;
-
   final _waiting = <int, Completer<(int, String)>>{};
 
   void _listen() {
     _listenerCallable = NativeCallable<Void Function(Int)>.listener(_take);
-    _addListener(_m, _listenerCallable!.nativeFunction);
+    _b.motolii_add_listener(_m, _listenerCallable!.nativeFunction);
     _take(7);
   }
 
@@ -137,7 +112,7 @@ class Motolii {
     if (which & 8 != 0) which |= 3; // (the answers looked at are all there are by now, later ones than the one told: heard late, a step's end comes with what the step made, as answer() takes them)
     final version = malloc<Long>();
     if (which & 1 != 0) {
-      final p = _snapshot(_m, 1, _documentAt, version), all = jsonDecode(p.toDartString()) as Map<String, dynamic>;
+      final p = _b.motolii_snapshot(_m, 1, _documentAt, version), all = jsonDecode(p.toDartString()) as Map<String, dynamic>;
       malloc.free(p);
       if (version.value == _documentAt) which &= ~1; // (asked again, not new: nothing told)
       _documentAt = version.value;
@@ -148,7 +123,7 @@ class Motolii {
       _shownOf.clear();
     }
     if (which & 2 != 0) {
-      final p = _snapshot(_m, 2, 0, version);
+      final p = _b.motolii_snapshot(_m, 2, 0, version);
       if (version.value == _momentAt) {
         which &= ~2; // (asked again, not new)
       } else {
@@ -161,7 +136,7 @@ class Motolii {
     if (which & 8 != 0) {
       // (an answer is there: the changes waited for, each looked at once)
       for (final t in [..._waiting.keys]) {
-        final a = _answer(_m, t);
+        final a = _b.motolii_answer(_m, t);
         if (a >= 0) _waiting.remove(t)!.complete((a, a >= 1 ? '' : answerWhy));
       }
     }
@@ -179,9 +154,9 @@ class Motolii {
       using((a) => call([for (final w in words) w.toNativeUtf8(allocator: a)])); // (package:ffi's Arena: all let go when the call is done)
 
   void close() {
-    _addListener(_m, nullptr);
+    _b.motolii_add_listener(_m, nullptr);
     _listenerCallable?.close();
-    _close(_m);
+    _b.motolii_close(_m);
   }
 }
 

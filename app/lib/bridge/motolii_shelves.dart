@@ -17,5 +17,5 @@ extension MotoliiShelves on Motolii {
   });
 
   /// What kind of thing a file makes ('': none).
-  String kindOf(String file) => _with([file], (s) => _kindOf(s[0]).toDartString());
+  String kindOf(String file) => _with([file], (s) => _b.motolii_kind_of(s[0]).toDartString());
 }

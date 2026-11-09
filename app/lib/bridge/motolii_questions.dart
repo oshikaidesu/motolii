@@ -19,10 +19,10 @@ extension MotoliiQuestions on Motolii {
 
   /// A ticket's answer: -1 not done yet, 0 refused ([answerWhy] says why), 1 done; said once.
   int answer(int ticket) {
-    final a = _answer(_m, ticket);
+    final a = _b.motolii_answer(_m, ticket);
     if (a >= 0) _take(3); // (done: the pictures as the inside made them before it answered)
     return a;
   }
 
-  String get answerWhy => _answerWhy(_m).toDartString();
+  String get answerWhy => _b.motolii_answer_why(_m).toDartString();
 }
