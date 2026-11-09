@@ -10,7 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:material_color_utilities/material_color_utilities.dart';
 
-import '../motolii.dart' show Motolii, motoliiDir;
+import '../motolii.dart' show motoliiDir;
 import '../sets/inspector/inspector_parts.dart' show Pop;
 import '../sets/foundations/text_hand.dart' show TextHand, wordsPicked;
 import '../sets/panels/media_parts.dart' show MiniSlider;
@@ -24,6 +24,7 @@ import 'ws_menu.dart';
 import 'copies_tiles.dart';
 import 'create_preview.dart';
 import 'dock_effects.dart' show TileMoving;
+import 'effect_tiles.dart' show EffectTiles;
 import 'empty_fx.dart';
 import 'shelf_add.dart';
 import 'ws.dart';
@@ -270,12 +271,15 @@ Map<String, Color> usedColours(Ws ws) {
 
 /// How many of the Create shelf's tiles make or lay out something of the document, of all it shows.
 String createFact(Ws ws) {
-  final recipes = ws.inside!.recipes.where((r) => r.$1 != ws.inside!.repeaterScript).length;   // (the Repeater recipe is the Copies tile, not a tile of its own)
-  return '${_asked.length + _laid.length + _worn.length + recipes} ready'; // (the shelf shows only these)
+  final recipes = _recipesOf(ws).$2.length, expressions = _expressionsOf(ws).length;   // (the recipes that are expressions are tiles of the Expression group's)
+  return '${_asked.length + _worn.length + recipes + expressions} ready'; // (the shelf shows only these)
 }
 
 /// Joined: the inside's recipes, pictures in one call (as Cavalry's tutorials build them), each a tile.
-(String, List<_Make>) _recipesOf(Ws ws) => ('Recipes', [for (final (name, what) in ws.inside!.recipes) if (name != ws.inside!.repeaterScript) _Make(name, DockG.copies, Pop.tonePlace, '', what, recipe: true)]);   // (not the Repeater: its tile is the Copies group's, which lays out the picked thing)
+(String, List<_Make>) _recipesOf(Ws ws) {
+  final expressions = {for (final (name, _) in _expressionRecipes()) name};   // (not those that are expressions: their tiles are the Expression group's)
+  return ('Recipes', [for (final (name, what) in ws.inside!.recipes) if (!expressions.contains(name)) _Make(name, DockG.copies, Pop.tonePlace, '', what, recipe: true)]);
+}
 
 /// The elements kept (Edit › Save to My Elements), put in at the playhead linked to their file: Alight Motion's + ›
 /// Object / Element › Element, AbsentMotion's ElementPicker (ElementUi.kt).

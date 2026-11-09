@@ -96,9 +96,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
       for (final (n, f) in m.looks)
         (id: f, name: n, label: 'Look', on: false, apply: chosen(f, () => ws.lookPut(f)), said: picked ? 'A look for the picked thing' : 'A look, on a new board',
          tile: (small) => EffectTile(n, key: small ? null : ValueKey('ws-look-$n'), small: small, file: m.picture(f), on: null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.lookPut(f)), star: small ? null : c, starId: f)),
-      for (final (n, f) in m.animators)
-        (id: f, name: n, label: 'Motion', on: ws.motion == f, apply: chosen(f, () => ws.motionToggle(f), taken: ws.motion == f), said: picked ? 'A motion for the picked thing' : 'A motion, on a new board',
-         tile: (small) => EffectTile(n, key: small ? null : ValueKey('ws-motion-$n'), small: small, on: ws.motion == f ? 'ON' : null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.motionToggle(f), taken: ws.motion == f))),
+      // (no motions: they are expressions, on Create's Expression group: dock_make_3.dart)
     ];
     // (by its name, or by what it does in its maker's words, as Alight Motion's search reads the descriptions; when that
     //  finds nothing, a word typed wrong or in part, the nearest five by RapidFuzz (the inside's find, the user's choice),
@@ -205,7 +203,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
           color: dockFill(c.sel == e.id, h),
           child: Row(
             children: [
-              SizedBox.square(dimension: Shape.z(18), child: m.picture(e.id).isEmpty ? ColoredBox(color: WsT.card) : TileMoving(m.picture(e.id), playing: h)),
+              SizedBox.square(dimension: Shape.z(18), child: m.picture(e.id).isEmpty ? ColoredBox(color: WsT.card) : TileMoving(m.picture(e.id), playing: true)),   // (played while in sight: TileMoving's own)
               SizedBox(width: Shape.s(6)),
               Expanded(child: Text(e.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(dockInk(c.sel == e.id, e.label == 'Not here' ? Grey.g56 : null)))),
             ],
@@ -351,7 +349,7 @@ class EffectTile extends StatelessWidget {
             children: [
               ColoredBox(color: WsT.card),
               if (file case final f? when f.isNotEmpty)
-                TileMoving(f, playing: h || !small)   // (in the grid always: only those in sight are built, GridView.builder's; on the map the hand's alone, 1,255 of 16 pictures about 3 GB)
+                TileMoving(f, playing: h || !small)   // (in the grid always: played while in sight, TileMoving's own; on the map the hand's alone, 1,255 of 16 pictures about 3 GB)
               else if (look != null)
                 FittedBox(child: CustomPaint(size: const Size(18, 16), painter: look)),
               if (on case final o? when !small) Positioned(left: 3, top: 3, child: DockTag(o, hue: WsT.accent, edge: true)),
@@ -389,18 +387,36 @@ class TileMovingState extends State<TileMoving> {
   static final _way = [for (var k = 0; k < EffectTiles.moments.length; k++) k, for (var k = EffectTiles.moments.length - 2; k > 0; k--) k];
   int? _step;
   Timer? _clock;
+  bool _awake = true;   // (its tab, its page shown: TickerMode, as an AnimationController's)
 
   void _follow() {
-    final go = widget.playing && File(EffectTiles.frame(widget.file, EffectTiles.moments.length - 1)).existsSync();   // (the last: one drawn with fewer stands until it is drawn again)
+    final go = widget.playing && _awake && File(EffectTiles.frame(widget.file, EffectTiles.moments.length - 1)).existsSync();   // (the last: one drawn with fewer stands until it is drawn again)
     if (go == (_clock != null)) return;
     _clock?.cancel();
-    _clock = go ? Timer.periodic(const Duration(microseconds: 41667), (_) => mounted ? setState(() => _step = ((_step ?? EffectTiles.still) + 1) % _way.length) : null) : null;
+    _clock = go ? Timer.periodic(const Duration(microseconds: 41667), (_) => mounted && _inSight() ? setState(() => _step = ((_step ?? EffectTiles.still) + 1) % _way.length) : null) : null;
     if (!go) _step = null;
+  }
+
+  /// Whether some of it is in sight: within the shelf it scrolls in, and the window (a long shelf's tiles out of it stand still).
+  bool _inSight() {
+    final box = context.findRenderObject();
+    if (box is! RenderBox || !box.attached || !box.hasSize) return false;
+    var r = box.localToGlobal(Offset.zero) & box.size;
+    if (Scrollable.maybeOf(context)?.context.findRenderObject() case final RenderBox view when view.attached && view.hasSize) r = r.intersect(view.localToGlobal(Offset.zero) & view.size);
+    r = r.intersect(Offset.zero & MediaQuery.sizeOf(context));
+    return r.width > 0 && r.height > 0;
   }
 
   @override
   void initState() {
     super.initState();
+    _follow();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _awake = TickerMode.valuesOf(context).enabled;
     _follow();
   }
 
