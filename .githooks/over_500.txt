@@ -2,7 +2,6 @@
 # shrink but never grow; a count may be lowered or a line removed, never raised or added (.githooks/size_check.py).
 591 app/lib/inspector/controls/inspector_number_field_num_field_state.dart
 515 app/lib/workspace/dock/dock_effects.dart
-649 app/lib/workspace/shelf/effect_tiles.dart
 582 app/lib/workspace/stage/stage.dart
 845 app/lib/workspace/stage/stage_view_state.dart
 652 app/lib/workspace/timeline/timeline.dart
