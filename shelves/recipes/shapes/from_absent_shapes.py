@@ -19,7 +19,7 @@ for s in shapes:
     path = s.find('path')
     contours = [path] if path is not None and path.get('d') else (path.findall('contour') if path is not None else [])
     d = drawn.get(name) or ' '.join(c.get('d') for c in contours)
-    lines = [f"// {name}: AbsentMotion's {name} shape (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), made by engine/absent_shapes.sh",
+    lines = [f"// {name}: AbsentMotion's {name} shape (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), made by shelves/recipes/shapes/absent_shapes.sh",
              '// make shape path', '// here', f'// say path {small(d)}']
     if any(c.get('exclude') == 'true' for c in contours):
         lines.append('// say fill_rule evenodd')

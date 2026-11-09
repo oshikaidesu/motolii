@@ -1,6 +1,6 @@
 // What AbsentMotion's shapes.cpp reads of its scene (its scene.h's Layer), and no more: a layer that is a shape, its
 // values by name (as the shape's properties in its shapes.xml say them), no text, no stroke. The shapes.cpp beside it
-// is AbsentMotion's own, read as it is (engine/absent_shapes.sh).
+// is AbsentMotion's own, read as it is (shelves/recipes/shapes/absent_shapes.sh).
 #pragma once
 #include <map>
 #include <string>
