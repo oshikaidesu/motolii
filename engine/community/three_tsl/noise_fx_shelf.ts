@@ -12,7 +12,7 @@ import * as N from "../../third_party/tsl/bandinopla__threejs-noise-functions/sr
 import { impact, scatter } from "../../third_party/tsl/verekia__tslfx/src/shaders/index"
 import { madeText } from "./shelf_file"
 
-const dir = "../../effects"
+const dir = "../../../shelves/effects/generate"   // (its --label:Generate)
 const write = (file: string, title: string, by: string, material: any, lines: [any, string][], fields: Map<string, string>, of: Map<any, string[]>) => {
   const made = madeText(material, [`// ${title}: ${by}, by three.js's own builder (engine/community/three_tsl/noise_fx_shelf.ts)`, "// --label:Generate"], lines, fields, of)
   std.open(`${dir}/${file}.wgsl`, "w").puts(made.text)

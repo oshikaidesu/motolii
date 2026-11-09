@@ -10,7 +10,7 @@ import { uniform, uv } from "three/tsl"
 import * as T from "../../third_party/tsl/boytchev__tsl-textures/src/tsl-textures.js"
 import { madeText } from "./shelf_file"
 
-const root = "../../third_party/tsl/boytchev__tsl-textures/", dir = "../../effects"
+const root = "../../third_party/tsl/boytchev__tsl-textures/", dir = "../../../shelves/effects/generate"   // (its --label:Generate)
 const pages = (std.popen(`ls ${root}docs`, "r").readAsString() ?? "").split("\n").filter(f => f.endsWith(".md")).map(p => std.loadFile(`${root}docs/${p}`) ?? "")
 const only = scriptArgs.slice(1)
 const axes = "xyz"

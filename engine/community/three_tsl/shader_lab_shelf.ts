@@ -26,7 +26,8 @@ const types = only.length ? only : ["bloom", "chromatic-aberration", "circuit-be
   ...["light", "dense", "boxes", "hex", "binary"].map(set => `ascii:${set}`)]
 const taken = new Set(["time", "frame", "aspect", "resolution", "width", "height", "screen", "passindex", "frameRect", "passRect"])   // (names screen.h fills itself: screen_knobs)
 const manager: any = { renderer: null, onRuntimeError: () => {} }
-const dir = "../../effects", W = 2048, H = 1024   // (each level of a pyramid an exact share of it)
+const W = 2048, H = 1024   // (each level of a pyramid an exact share of it)
+let dir = ""   // (the shelf's folder of the effect being made: shelves/effects/distort or stylize, as its --label says)
 
 // a x + c through what was seen, or none.
 function fit(xs: number[], ys: number[]): [number, number] | null {
@@ -116,6 +117,7 @@ for (const word of types) try {
   const [type, preset] = word.split(":")
   if (type === "ascii") Object.assign(globalThis, { document: canvases, getComputedStyle: () => ({ getPropertyValue: () => "" }) })
   const definition = getLayerDefinition(type as any), about = LAYER_CATALOG[type as keyof typeof LAYER_CATALOG]
+  dir = `../../../shelves/effects/${about.category === "distort" ? "distort" : "stylize"}`
   const params = buildParameterValues(definition.params)
   if (preset) params[type === "ascii" ? "charset" : "preset"] = preset
   const layer = { assetId: null, blendMode: "normal", compositeMode: "filter", hue: 0, id: type, kind: definition.kind,
