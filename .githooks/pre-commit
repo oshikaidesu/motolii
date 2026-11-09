@@ -3,10 +3,11 @@
 # Then: does the tree still keep the layout of AGENTS.md 「構成の目標」? (.githooks/layout_check.py)
 # Then: does every path a shelf file names still lead somewhere? (.githooks/path_check.py)
 # Then: is every staged Dart file as `dart format` leaves it? (.githooks/format_check.py; skipped without dart)
+# Then: do the added lines use a dropped house word? (.githooks/word_check.py; report only until its FAIL switch is on)
 # Set up once with:  git config core.hooksPath .githooks        To commit all the same:  git commit --no-verify
 # A check this worktree does not have yet (a branch cut before it was added) is skipped, not a crash.
 hooks="$(git rev-parse --show-toplevel)/.githooks"
-for check in size_check.py layout_check.py path_check.py format_check.py; do
+for check in size_check.py layout_check.py path_check.py format_check.py word_check.py; do
     [ -f "$hooks/$check" ] || continue
     python3 "$hooks/$check" || exit 1
 done
