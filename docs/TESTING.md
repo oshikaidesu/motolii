@@ -149,7 +149,7 @@ cd app && flutter test --no-pub external_test/accessibility_guidelines_test.dart
 
 ## 決めてある試験：script を fx のように重ねる（2026-11-09 決めた、まだ走らせていない）
 
-目的は1つ：1つの物に script を2つ以上重ねて、両方が効くこと（`docs/notes/CREATE_PROGRAM.md`）。走らせるのは、実装の文脈を持たない別のセッション。実窓は `--dart-define=MOTOLII_BARE=true` で組み、ユーザーの書類（`skin.motolii`）では試さない。
+目的は1つ：1つの物に script を2つ以上重ねて、両方が効くこと（`docs/internal/notes/CREATE_PROGRAM.md`）。走らせるのは、実装の文脈を持たない別のセッション。実窓は `--dart-define=MOTOLII_BARE=true` で組み、ユーザーの書類（`skin.motolii`）では試さない。
 
 | # | 要件 | 何を調べるか | 状態 |
 |---|---|---|---|

@@ -1,4 +1,4 @@
-// Every value here is read from ../DESIGN.md (the tag in the comment says where it came from). A part names a token; it never picks a number.
+// Every value here is read from docs/app/DESIGN.md (the tag in the comment says where it came from). A part names a token; it never picks a number.
 import 'package:flutter/widgets.dart';
 import 'package:material_color_utilities/hct/hct.dart';
 

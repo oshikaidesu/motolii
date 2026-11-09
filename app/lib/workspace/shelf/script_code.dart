@@ -1,5 +1,5 @@
 // A thing's script on its Script card, under its knobs: After Effects shows an expression under the value it drives, and
-// the Repeater and the AE recipes are expressions (docs/reports/ae_expression_drawbacks_2026-11-08.md). The code view is the
+// the Repeater and the AE recipes are expressions (docs/internal/reports/ae_expression_drawbacks_2026-11-08.md). The code view is the
 // Program shelf's (re_editor's CodeEditor, MIT). What is typed is this thing's alone, as an AE expression is one
 // property's: the file it came from is never written over; the first typing copies it to a folder of its own in the
 // maker's programs (programs/script/<stamp>/, as an effect's code: fx_code.dart), where the Program shelf does not list

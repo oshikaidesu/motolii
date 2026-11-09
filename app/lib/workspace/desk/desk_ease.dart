@@ -78,7 +78,7 @@ EaseSpan? easeSpan(Ws ws) {
   if (ws.stretch case final s?) {
     if (ws.layers.where((l) => l.id == s.layer).firstOrNull case final l?) return (layer: l, from: s.from, to: s.to, picked: 1);
   }
-  if (ws.keys.isEmpty) {   // (no key picked: the stretch the playhead is in, of the picked thing, as Alight Motion opens its ease when the playhead is between two keys: docs/reports/alight_ui.md, イーズ)
+  if (ws.keys.isEmpty) {   // (no key picked: the stretch the playhead is in, of the picked thing, as Alight Motion opens its ease when the playhead is between two keys: docs/internal/reports/alight_ui.md, イーズ)
     final layer = ws.layers.where((l) => l.id == ws.selected).firstOrNull, f = ws.frame;
     final keys = layer == null ? const <int>[] : ([...layer.keys]..sort());
     final from = keys.where((k) => k <= f).lastOrNull, to = keys.where((k) => k > f).firstOrNull, before = keys.where((k) => k < f).lastOrNull;

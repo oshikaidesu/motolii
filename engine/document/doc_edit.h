@@ -96,7 +96,7 @@ static int doc_add(Doc& d, const char* kind, const char* file) {
     if (!*kind) kind = doc_kind_of(file);   // (not said: what the file makes)
     if (!*kind) return d.trouble = std::string("no kind of thing is made from ") + file, 0;
     // (a sound comes in a film that is heard, hidden: Alight Motion's audio layer has no picture, only its wave on the
-    //  timeline (docs/reports/alight_ui.md 177), as Extract Sound's copy (doc_extract_sound) is a hidden film heard; its eye
+    //  timeline (docs/internal/reports/alight_ui.md 177), as Extract Sound's copy (doc_extract_sound) is a hidden film heard; its eye
     //  shows its wave, video.h)
     const bool sound = !strcmp(kind, "sound");
     if (sound) kind = "film";
@@ -169,7 +169,7 @@ static bool doc_say(Doc& d, int thing, const char* name, const char* word) {
     if (!strcmp(name, "script") && word && *word && !strchr(word, '/')) {   // (a script said by the name of a recipe: its file, so a preset or a tile says "Repeater" and no path)
         if (const std::string file = doc_recipe_code_path(word); !file.empty()) return doc_say(d, thing, name, file.c_str());
     }
-    if (!strcmp(name, "script") && word && thing != 0 && doc_among("picture text shape solid", doc_word(d, thing, "kind")) && doc_expression(d, word)) {   // (an expression: put among its effects after those it has, as many as it is given (docs/notes/CREATE_PROGRAM.md); there already: as it is)
+    if (!strcmp(name, "script") && word && thing != 0 && doc_among("picture text shape solid", doc_word(d, thing, "kind")) && doc_expression(d, word)) {   // (an expression: put among its effects after those it has, as many as it is given (docs/internal/notes/CREATE_PROGRAM.md); there already: as it is)
         std::vector<std::string> list = doc_fx_list(d, thing, true);
         if (std::find(list.begin(), list.end(), word) != list.end()) return true;
         list.push_back(word);
