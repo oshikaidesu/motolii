@@ -13,4 +13,4 @@ brew "quickjs-ng"
 brew "onnxruntime"
 # What the editor runs: writing a film (ffmpeg makes the mp4, kit_draw.h's film)
 brew "ffmpeg"
-# (not the build: shelves/effects/from_three.py, which makes effects from three.js shaders, wants naga on PATH: brew install naga-cli)
+# (not the build: shelves/effects/sources/from_three.py, which makes effects from three.js shaders, wants naga on PATH: brew install naga-cli)

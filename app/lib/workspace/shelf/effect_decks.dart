@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart' show sha256;
 
+import '../../engine/motolii.dart' show motoliiShelves;
+
 /// Where the effects put on lately are kept, the newest first, forty, as Alight Motion's effect browser keeps them
 /// (EffectBrowser.kt:117), in the Fonts shelf's way (font_recent.json; a test points it elsewhere: [effectRecentAt]).
 File _recentFile = File('${Platform.environment['HOME']}/.motolii/effect_recent.json');
@@ -120,9 +122,8 @@ String effectSum(String id) {
 /// null for one that came alone.
 String? effectPack(String id) => RegExp(r'/aviutl_scripts/(?:[^/]*?__)?([^/]+)/').firstMatch(id)?[1];
 
-/// An effect's place under what ships with the window: the same on any machine (shelves/…; a code from before the
-/// shelves left engine/ says engine/…, found by its fingerprint).
-String _place(String id) => id.contains('/shelves/') ? id.substring(id.lastIndexOf('/shelves/') + 1) : id;
+/// An effect's place under what ships with the window: the same on any machine.
+String _place(String id) => id.startsWith('$motoliiShelves/') ? id.substring(motoliiShelves.length + 1) : id;
 
 /// A deck as words to hand on, a line that goes wherever words go, as a Hearthstone deck code is pasted from a forum or
 /// a video's description: a list, names and fingerprints, the effects not in it, as every set handed on holds its
