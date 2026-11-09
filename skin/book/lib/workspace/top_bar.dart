@@ -2,7 +2,11 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:ui' show FramePhase, FrameTiming;
 
+import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/gestures.dart' show GestureBinding, PointerEvent, PointerPanZoomUpdateEvent, PointerScrollEvent;
+import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import '../forms/forms.dart';
@@ -635,8 +639,9 @@ class _SizeChipState extends State<_SizeChip> {
   }
 }
 
-/// How many times the window waited on the inside (the rule: never), a red dot and the count only when it did; a tap
-/// lists each, named and timed.
+/// How many times Motolii missed 60 fps while something moved (a frame of the window's or a picture of the inside's
+/// over 1/60 s), and how many times the window waited on the inside (the rule: never): a red dot and the count only
+/// when it did; a tap lists the latest, each with its clock time and the part that was slow.
 class _Waited extends StatefulWidget {
   const _Waited();
   @override

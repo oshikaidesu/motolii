@@ -87,6 +87,20 @@ struct Motolii {
     long keptTold = 0;                                       // (what of the kept pictures the window was last told of)
     void (*told)(int) = nullptr;                             // (the window's one listener)
 };
+// What was late or waited, kept for the window's red dot (asked_lock held): its clock time first, so the window lays
+// the inside's and its own in one order. A picture has 1/60 s (the beat): more is a missed beat.
+static constexpr double BEAT_MS = 1000.0 / 60.0;
+static void broke_one(Motolii* m, const char* why) {
+    const auto now = std::chrono::system_clock::now();
+    const std::time_t at = std::chrono::system_clock::to_time_t(now);
+    std::tm tm{};
+    localtime_r(&at, &tm);
+    char line[240];
+    std::snprintf(line, sizeof line, "%02d:%02d:%02d.%03d %s", tm.tm_hour, tm.tm_min, tm.tm_sec, (int)(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() % 1000), why);
+    m->broke.push_back(line);
+    if (m->broke.size() > 200) m->broke.pop_front();
+    m->broken++;
+}
 // The stage's pictures of this beat: with the Camera View tab open, the stage's own picture is the camera's, whichever
 // eye the desk has (After Effects' 2 Views, one comp seen by two eyes): the world told its moment by that eye, drawn again.
 static void live_camera(Motolii* m) {
@@ -156,7 +170,7 @@ template <class Does> static auto asked(Motolii* m, Does does, bool changes, con
     why_asked = why;
     const double round = std::chrono::duration<double>(std::chrono::steady_clock::now() - sent).count();   // (the shell waited this long for the hand: in the queue and at work)
     { std::lock_guard<std::mutex> hold(m->asked_lock); auto& r = m->rounds[who]; r.first = std::max(r.first, round), r.second += round > 0.004;
-      if (pthread_main_np() && m->watching) { char why[160]; std::snprintf(why, sizeof why, "%s waited %.1f ms for the hand (a change the window may only send: motolii_later)", who, 1e3 * round); m->broke.push_back(why); if (m->broke.size() > 200) m->broke.pop_front(); m->broken++; }
+      if (pthread_main_np() && m->watching) { char why[160]; std::snprintf(why, sizeof why, "%s waited %.1f ms for the hand (a change the window may only send: motolii_later)", who, 1e3 * round); broke_one(m, why); }
       if (pthread_main_np()) { auto& w = m->window[who]; w[0]++, w[1] += round, w[2] = std::max(w[2], round), w[3] += round; } }
     return out;
 }
@@ -217,7 +231,7 @@ template <class Does> static auto by_look(Motolii* m, Does does, const char* who
     auto& door = m->by_door[who];
     door.first++, door.second += took, m->worst[who] = std::max(m->worst[who], took);
     if (pthread_main_np()) { auto& w = m->window[who]; w[0]++, w[1] += waited, w[2] = std::max(w[2], waited), w[3] += took; }
-    if (pthread_main_np() && m->watching && waited > 0.002) { char why[160]; std::snprintf(why, sizeof why, "%s waited %.1f ms for the document", who, 1e3 * waited); std::lock_guard<std::mutex> h(m->asked_lock); m->broke.push_back(why); if (m->broke.size() > 200) m->broke.pop_front(); m->broken++; }
+    if (pthread_main_np() && m->watching && waited > 0.002) { char why[160]; std::snprintf(why, sizeof why, "%s waited %.1f ms for the document", who, 1e3 * waited); std::lock_guard<std::mutex> h(m->asked_lock); broke_one(m, why); }
     return out;
 }
 
@@ -243,6 +257,10 @@ static void motolii_hand(Motolii* m, std::string document, int wide, int high, s
     opened->set_value(ok);
     if (!ok) return;
     auto last = std::chrono::steady_clock::now();
+    const auto opened_at = last;   // (the opening's first pictures, its materials made: not a document moving, not judged)
+    const auto moving = [m, opened_at](uint64_t drew_before, uint64_t beat) {   // (while something moves: played, or drawn again within two beats, as a hand dragging or scrubbing sends a change each beat; not the opening's first two seconds)
+        return m->watching && std::chrono::steady_clock::now() - opened_at > std::chrono::seconds(2) && (m->playing || (drew_before && beat - drew_before <= 2));
+    };
     m->beat.reset(thermion::FrameScheduler::create(RATE));
     m->beat->setTargetFps(RATE);
     m->beat->start([](uint64_t, void* p) {
@@ -269,6 +287,7 @@ static void motolii_hand(Motolii* m, std::string document, int wide, int high, s
             m->seen_beat = beat;
         }
         auto lap_at = std::chrono::steady_clock::now();
+        const auto round_at = lap_at;   // (the round's start: a picture drawn in it took from here, for the red dot)
         const auto lap = [&](int i) { const auto n = std::chrono::steady_clock::now(); const double ms = 1e3 * std::chrono::duration<double>(n - lap_at).count(); m->part_ms[i] += ms; m->part_most[i] = std::max(m->part_most[i], ms); lap_at = n; };
         if (todo.empty() && m->live && ((!m->playing && !m->changed) || m->files_seen != files_changed())) {   // (playing too, once the window says a file changed)
             std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
@@ -322,7 +341,17 @@ static void motolii_hand(Motolii* m, std::string document, int wide, int high, s
         }
         lap(4);
         if (m->live && !m->playing && m->scale != 1.0 && !std::getenv("MOTOLII_SCALE")) stage_scale(m), m->changed = true;   // (stopped: the last picture drawn again full size, for looking)
-        if (m->live && beat != m->drew_at && (m->playing || m->changed) && !ready && beat != m->busy_at) m->busy_at = beat, ++m->beats_gpu_busy;
+        if (m->live && beat != m->drew_at && (m->playing || m->changed) && !ready && beat != m->busy_at) {
+            m->busy_at = beat, ++m->beats_gpu_busy;
+            if (moving(m->drew_at, beat)) {   // (a beat a picture was wanted on, the GPU not done with the last: a missed 60 fps on the GPU)
+                const auto last = m->s->renderer->getFrameInfoHistory(1);   // (Filament's own: its last finished frame, as the judge below reads them)
+                const double gpu = !last.empty() && last[0].gpuFrameComplete > 0 ? (double)(last[0].gpuFrameComplete - last[0].backendBeginFrame) / 1e6 : 0.0;
+                char why[160];
+                std::snprintf(why, sizeof why, "the inside's picture on the GPU: not done at the beat (its last took %.1f ms)", gpu);
+                std::lock_guard<std::mutex> hold(m->asked_lock);
+                broke_one(m, why);
+            }
+        }
         if (m->live && beat != m->drew_at && !m->playing && !m->changed && beat != m->still_at) m->still_at = beat, ++m->beats_still;   // (a beat with nothing new to draw)
         if (!m->live || beat == m->drew_at || !(m->playing || m->changed) || !ready) { last = m->playing || !ready ? last : t; continue; }   // (not ready: no other picture is begun till it is)
         if (m->playing) {   // (time goes on by the clock, and round again at the document's end)
@@ -334,6 +363,7 @@ static void motolii_hand(Motolii* m, std::string document, int wide, int high, s
             else m->now = on >= to || on < from ? from : on;
         }
         last = t;
+        const uint64_t drew_before = m->drew_at;
         { std::lock_guard<std::mutex> hold(m->asked_lock); m->drew_at = beat; }
         ++m->beats_drawn;
         if (m->writes_on_beat > 1) ++m->beats_two;   // (more than one change came for this picture: one of them never seen)
@@ -392,6 +422,13 @@ static void motolii_hand(Motolii* m, std::string document, int wide, int high, s
         }
         m->spent[2] += std::chrono::duration<double>(told - t).count(), m->many[2]++;
         m->spent[3] += std::chrono::duration<double>(drawn - told).count(), m->many[3]++;
+        const auto ms = [](auto a, auto b) { return 1e3 * std::chrono::duration<double>(b - a).count(); };
+        if (ms(round_at, drawn) > BEAT_MS && moving(drew_before, beat)) {   // (a picture the hand took longer than a beat to make: the next beat came while it was busy, a missed 60 fps, named by its part)
+            char why[200];
+            std::snprintf(why, sizeof why, "the inside's picture %.1f ms (changes %.1f, the moment %.1f, drawing %.1f)", ms(round_at, drawn), ms(round_at, t), ms(t, told), ms(told, drawn));
+            std::lock_guard<std::mutex> hold(m->asked_lock);
+            broke_one(m, why);
+        }
         m->changed = again;
         } catch (const std::exception& e) {
         std::fprintf(stderr, "motolii: the hand's round threw while %s: %s\n", m->step.load(), e.what());
