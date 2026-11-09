@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import '../../parts/skin_parts.dart';
+import '../../skin/svg_parts.dart';
 
 enum DockG {
   media,

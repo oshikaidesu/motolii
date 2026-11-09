@@ -4,7 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 
-import '../style/tokens.dart';
+import '../skin/tokens.dart';
 import 'transform/inspector_direct_transform.dart';
 import 'inspector_parts.dart';
 

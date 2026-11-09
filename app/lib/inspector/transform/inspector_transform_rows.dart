@@ -1,10 +1,10 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
-import 'package:motolii/forms/forms.dart';
+import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/inspector/rows/inspector_rows_prop_row.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 import 'inspector_direct_transform.dart';
 import '../inspector_parts.dart';
 

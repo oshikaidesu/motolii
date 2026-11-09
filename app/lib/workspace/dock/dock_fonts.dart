@@ -9,14 +9,14 @@ import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter/widgets.dart';
 
 import '../../bridge/motolii.dart' show Motolii, MotoliiQuestions, motoliiDir;
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 import '../tool_panel/tool_panel_widgets.dart' show ToolChip;
 import 'dock_files.dart' show dockRead;
 import 'dock_map.dart';
-import 'dock_parts.dart';
+import 'dock_widgets.dart';
 import 'dock_tags.dart';
 import '../shelf/effect_tiles.dart' show EffectTiles;
-import '../ws.dart';
+import '../state/state.dart';
 
 part 'dock_font_map.dart';
 

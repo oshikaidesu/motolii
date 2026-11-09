@@ -3,10 +3,10 @@ import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../style/tokens.dart';
-import 'dock_parts.dart';
-import '../ws.dart';
-import '../two_fingers.dart';
+import '../../skin/tokens.dart';
+import 'dock_widgets.dart';
+import '../state/state.dart';
+import '../../widgets/two_fingers.dart';
 
 /// A band whose height the user sets: the grip on its lower edge drags it up or down (clamped to [min]..[max]);
 /// a double-click on the grip returns to the default.

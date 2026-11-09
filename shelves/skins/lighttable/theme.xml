@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Light table: film looked at on a lit opal table. Cool milky ground, black film between the panels, graphite words,
      grease-pencil orange only where a hand touches or what is picked; times and numbers in a mono face.
-     How each control is put together is lib/forms/lighttable.dart. -->
+     How each control is put together is app/lib/skin/forms/lighttable_forms.dart. -->
 <Motolii>
 	<Theme>
 		<Forms Value="lighttable"/>

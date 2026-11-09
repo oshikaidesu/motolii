@@ -147,7 +147,7 @@ class _OptionsStrip extends StatelessWidget {
             ),
             SizedBox(width: WsT.inset),
             ConstrainedBox(
-              // (as wide as it is, the tools before it given the rest; wider than the whole strip, drawn smaller, never cut, as dock_parts.dart's trailing)
+              // (as wide as it is, the tools before it given the rest; wider than the whole strip, drawn smaller, never cut, as dock_widgets.dart's trailing)
               constraints: BoxConstraints(maxWidth: (box.maxWidth - 2 * WsT.inset).clamp(0, double.infinity)),
               child: FittedBox(
                 fit: BoxFit.scaleDown,

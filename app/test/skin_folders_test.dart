@@ -6,7 +6,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/bridge/motolii.dart' show motoliiOwn, motoliiShelves;
-import 'package:motolii/style/theme.dart';
+import 'package:motolii/skin/theme.dart';
 
 void main() {
   test('the library\'s skins (shelves/skins) are in View › Skin', () {

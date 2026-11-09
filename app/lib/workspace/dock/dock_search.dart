@@ -1,5 +1,5 @@
-// Part of dock_parts.dart: the shelf's search well, and the search asked for from elsewhere.
-part of 'dock_parts.dart';
+// Part of dock_widgets.dart: the shelf's search well, and the search asked for from elsewhere.
+part of 'dock_widgets.dart';
 
 /// The search well under the header: magnifier, editable text, clear.
 /// The shelf's search asked for from elsewhere (the Inspector's Add Effect): the field in sight takes the keys, or the

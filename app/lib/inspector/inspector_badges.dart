@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import '../style/tokens.dart';
+import '../skin/tokens.dart';
 import 'inspector_parts.dart';
 
 /// What a card holds, as one bold shape: the card reads by its sticker before its word.

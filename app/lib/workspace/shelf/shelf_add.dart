@@ -11,11 +11,11 @@ import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 
 import '../../bridge/motolii.dart' show motoliiShelves;
-import '../../parts/text_gestures.dart';
-import '../../style/tokens.dart';
+import '../../widgets/text_gestures.dart';
+import '../../skin/tokens.dart';
 import '../dock/dock_make.dart' show createNames;
 import 'effect_tiles.dart' show EffectTiles;
-import '../ws.dart';
+import '../state/state.dart';
 
 String get _ownEffects => '${EffectTiles.own}/effects';
 String get _ownExpressions => '${EffectTiles.own}/expressions';

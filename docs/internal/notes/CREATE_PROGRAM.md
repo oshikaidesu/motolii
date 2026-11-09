@@ -28,9 +28,9 @@
 
 - 11/9 の未コミットの変更（`app/lib/workspace/shelf/script_code.dart`）は、打ち直した式の写しを `programs/` に置く。そのため Program タブに出てしまい、この線の反対側にいる。
 - 同じ変更の「Add to Create」（式のプリセットを `recipes/` に書く、`dock_make_4.dart`）は、レシピの書き方をさらに増やしている。取り下げる方向で、まだ決めていない。
-- 物の `script` にはファイルが1つしか入らない（`engine/document/doc_values.h:321`）。Effects の Motion も Repeater もこの1つを書き換えるので、同時に付けられない（`app/lib/workspace/ws_state.dart:624`、`dock_make_2.dart:496` の「It has a script already」）。例外はステージ（物番号0）で、複数入る（`doc_values.h:329`）。
+- 物の `script` にはファイルが1つしか入らない（`engine/document/doc_values.h:321`）。Effects の Motion も Repeater もこの1つを書き換えるので、同時に付けられない（`app/lib/workspace/state/window.dart:624`、`dock_make_2.dart:496` の「It has a script already」）。例外はステージ（物番号0）で、複数入る（`doc_values.h:329`）。
 - 物の `fx`（エフェクトの列）にはファイルをいくつでも順に並べられ、AbsentMotion の動き（`.am`）はもう複数重なる（`doc_values.h:322`・`:333`）。Expression をこの列に入れられれば、並べ替え・目玉・外す・複製もエフェクトのカードの操作のまま使える。ただし、fx の列に入れた JS がコピーの並べ方（`each()`）まで動くかは、まだ確かめていない。
-- Create の Copies の枠は、Repeater 1つだけの特別な枠（`app/lib/workspace/dock/dock_make_colours.dart:416`）。
+- Create の Copies の枠は、Repeater 1つだけの特別な枠（`app/lib/workspace/dock/dock_make_colors.dart:416`）。
 - Glass（Materials の枠）も「選んでいる固体を変える」ので、同じ理由で Create にいるのは筋が通らない。どこへ置くかはまだ決めていない。
 
 ## 出典

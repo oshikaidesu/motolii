@@ -3,11 +3,11 @@
 // the picture, let go: one step), so the inside reckons it into its own units, through its parent's turn.
 import 'package:flutter/widgets.dart';
 
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 
 import 'tool_panel_widgets.dart';
 import '../stage/stage_art.dart' show WsArt;
-import '../ws.dart';
+import '../state/state.dart';
 
 class AlignTool extends StatelessWidget {
   const AlignTool({super.key});

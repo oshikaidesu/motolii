@@ -6,12 +6,12 @@ import 'dart:math' as math;
 import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/widgets.dart';
 
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 import 'tool_panel_widgets.dart';
-import '../relate.dart';
+import '../edits/make_relation.dart';
 import '../stage/stage_art.dart';
-import '../two_fingers.dart';
-import '../ws.dart';
+import '../../widgets/two_fingers.dart';
+import '../state/state.dart';
 
 class RelationsTool extends StatefulWidget {
   const RelationsTool({super.key});

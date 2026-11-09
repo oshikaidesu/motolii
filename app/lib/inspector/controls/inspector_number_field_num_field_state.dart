@@ -5,12 +5,12 @@ import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:motolii/forms/number_paint.dart';
-import 'package:motolii/parts/controls.dart';
+import 'package:motolii/skin/forms/number_paint.dart';
+import 'package:motolii/widgets/controls.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/style/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 
-import '../../parts/text_gestures.dart';
+import '../../widgets/text_gestures.dart';
 
 class NumFieldState extends State<NumField> {
   final _node = FocusNode(debugLabel: 'num');

@@ -21,11 +21,11 @@ import 'package:force_graph/force_graph.dart' show CollideForce, Force, ForceNod
 import 'package:material_color_utilities/material_color_utilities.dart' show Cam16;
 
 import '../../bridge/motolii.dart' show Motolii, MotoliiQuestions;
-import '../../parts/media_parts.dart' show MiniSlider;
-import '../../style/tokens.dart';
+import '../../widgets/media.dart' show MiniSlider;
+import '../../skin/tokens.dart';
 import 'dock_glyphs.dart';
-import 'dock_parts.dart' show DockIconButton;
-import '../ws.dart' show WsT;
+import 'dock_widgets.dart' show DockIconButton;
+import '../state/state.dart' show WsT;
 part 'dock_map_view.dart';
 
 /// Where one shelf's items lie on its map, by id, on a canvas the room's shape ([dockSpread]); [laying] while that is

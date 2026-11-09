@@ -9,19 +9,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../bridge/motolii.dart' show Motolii;
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 import 'dock_effect_places.dart';
 import 'dock_glyphs.dart';
 import 'dock_map.dart';
-import 'dock_parts.dart';
+import 'dock_widgets.dart';
 import 'dock_resizable.dart';
 import 'dock_tags.dart';
 import '../shelf/effect_decks.dart';
 import '../shelf/effect_tiles.dart';
 import '../shelf/empty_fx.dart';
 import '../shelf/shelf_add.dart';
-import '../ws.dart';
-import '../ws_menu.dart';
+import '../state/state.dart';
+import '../commands/context_menu.dart';
 
 // (each: what it is told by (a thing's own by its name; a file's by its file: two files may share a name, Halftone's
 //  three.js .wgsl and an AviUtl2 script), its name, what it is for, its tile, whether it is on, what two presses do

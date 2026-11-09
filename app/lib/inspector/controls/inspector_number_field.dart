@@ -6,7 +6,7 @@ import 'package:motolii/inspector/controls/inspector_number_field_num_field_stat
 
 import 'package:motolii/inspector/inspector_small.dart' show FloatShut, Hov;
 
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 
 TextStyle blockValue(Color c) => T.value(c).copyWith(fontSize: T.px(14), fontWeight: FontWeight.w600, height: 1.1);
 

@@ -1,6 +1,6 @@
 // The whole window: top bar, then the panes (panes.dart) — browser shelves | Stage over Timeline, Inspector over Tool Panel, rearrangeable.
 // Each panel is its own file and reads the shared Ws.
-import 'dock/dock_parts.dart' show askDockSearch;
+import 'dock/dock_widgets.dart' show askDockSearch;
 
 import 'dart:developer' show Timeline;
 import 'dart:async';
@@ -11,42 +11,42 @@ import 'package:docking/docking.dart';
 import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter/widgets.dart';
 
-import '../parts/skin_parts.dart';
+import '../skin/svg_parts.dart';
 import 'stage/stage_art.dart' show WsArt;
-import 'zoom.dart';
+import 'window/zoom.dart';
 import 'shelf/effect_tiles.dart';
-import 'ableton.dart';
+import 'commands/command_actions.dart';
 
 import 'package:motolii/inspector/inspector_parts_insp_host.dart';
 
 import '../inspector/inspector_parts.dart';
-import '../style/theme.dart';
+import '../skin/theme.dart';
 import 'tool_panel/tool_panel.dart';
 import 'tool_panel/tool_panel_depth.dart';
 import 'tool_panel/tool_panel_relations.dart';
 import 'tool_panel/tool_panel_ease.dart';
 import 'dock/dock.dart';
 import 'dock/dock_glyphs.dart';
-import 'home.dart';
-import 'panes.dart';
+import 'window/home.dart';
+import 'window/panes.dart';
 import 'tool_panel/tool_panel_widgets.dart';
-import 'key_drag.dart';
-import 'keys.dart';
+import 'edits/keyframe_edits.dart';
+import 'commands/keymap.dart';
 import 'stage/stage.dart';
 import 'stage/stage_camera.dart';
 import 'stage/stage_view.dart' show WsRelationStack;
 import 'timeline/timeline.dart';
-import 'top_bar.dart';
+import 'top_bar/top_bar.dart';
 import '../bridge/motolii.dart';
-import 'relate.dart';
-import 'ws.dart';
+import 'edits/make_relation.dart';
+import 'state/state.dart';
 import 'shelf/script_code.dart';
 import 'shelf/fx_code.dart';
-part 'workspace_panel.dart';
-part 'workspace_cards.dart';
-part 'workspace_values.dart';
-part 'workspace_keys.dart';
-part 'workspace_menus.dart';
+part 'inspector_feed/panel.dart';
+part 'inspector_feed/cards.dart';
+part 'inspector_feed/values.dart';
+part 'inspector_feed/keyframe_marks.dart';
+part 'commands/menu_bar.dart';
 
 class Workspace extends StatefulWidget {
   const Workspace({super.key, this.document, this.extra = const [], this.tools = const [], this.view = const {}});
@@ -248,7 +248,7 @@ class _WorkspaceState extends State<Workspace> {
     );
   }
 
-  /// The window's commands by name (keys.dart: the keys that say them, the window's own and the maker's file).
+  /// The window's commands by name (keymap.dart: the keys that say them, the window's own and the maker's file).
   late final _keymap = Keymap.load();
   Future<void> _join(String doc) async {
     final inside = Motolii.open(doc);

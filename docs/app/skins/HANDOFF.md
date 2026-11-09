@@ -10,7 +10,7 @@ Motolii のアプリ（Flutter、`app`）の見た目は、エンジンの側（
 |---|---|---|---|
 | ① 値 | 色・明暗・角・余白・大きさ・文字の大きさ・書体 | `theme.xml`（名前と値を並べるだけ） | フォルダを置くだけ |
 | ② 絵 | 印（アイコン）と、部品の枠 | `parts/*.svg` | フォルダを置くだけ |
-| ③ フォーム | 部品の**組み立てそのもの**（ボタンが何の形か、選択肢がどう並ぶか、札がどう組まれるか） | Dart のクラス1つ（`lib/forms/<名前>.dart`） | アプリに組み込む |
+| ③ フォーム | 部品の**組み立てそのもの**（ボタンが何の形か、選択肢がどう並ぶか、札がどう組まれるか） | Dart のクラス1つ（`lib/skin/forms/<名前>_forms.dart`） | アプリに組み込む |
 
 ①②は [README.md](../../../shelves/skins/README.md)・[ROLES.md](../../../shelves/skins/ROLES.md)・[PARTS.md](../../../shelves/skins/PARTS.md) に全部ある。外の LLM 3人に README だけで作らせて 6 → 7 → 8 点（10点満点）、指摘は直した。
 ③はヘッドレス UI（React Aria・Radix と同じ分け方）。ここから下は主に③の話。
@@ -21,16 +21,16 @@ Motolii のアプリ（Flutter、`app`）の見た目は、エンジンの側（
 
 | 場所 | 中身 |
 |---|---|
-| `lib/style/theme.dart` | theme.xml を読む・見張る（`ColorTheme`）。着ている革は `~/.motolii/window.xml` の `Skin` |
-| `lib/style/tokens.dart` | 色の段（`Grey`、Background/Foreground から HCT で作る）、`Shape.r/s/z`（角・余白・大きさ）、`T.px`（文字）。数の効く範囲もここ |
-| `lib/workspace/window_file.dart` | `~/.motolii/window.xml` の読み書き（倍率と着ている革） |
-| `lib/parts/skin_parts.dart` | 印の SVG（`SkinParts.draw`）と枠（`SkinFrame`、9分割） |
-| `lib/forms/forms.dart` | **フォームの約束**：渡す物（Spec）と、フォームが書く関数、登録表 `forms` |
-| `lib/forms/own.dart` | いつもの見た目のフォーム（前からの見た目をそのまま移した） |
-| `lib/forms/poster.dart` | 見本：スイスの幾何学ポスター風 |
-| `lib/forms/lighttable.dart` | 見本：フィルムのライトテーブル風（外の AI が HANDOFF だけで書いた、7/10） |
+| `lib/skin/theme.dart` | theme.xml を読む・見張る（`ColorTheme`）。着ている革は `~/.motolii/window.xml` の `Skin` |
+| `lib/skin/tokens.dart` | 色の段（`Grey`、Background/Foreground から HCT で作る）、`Shape.r/s/z`（角・余白・大きさ）、`T.px`（文字）。数の効く範囲もここ |
+| `lib/workspace/window/settings_file.dart` | `~/.motolii/window.xml` の読み書き（倍率と着ている革） |
+| `lib/skin/svg_parts.dart` | 印の SVG（`SkinParts.draw`）と枠（`SkinFrame`、9分割） |
+| `lib/skin/forms/forms.dart` | **フォームの約束**：渡す物（Spec）と、フォームが書く関数、登録表 `forms` |
+| `lib/skin/forms/own_forms.dart` | いつもの見た目のフォーム（前からの見た目をそのまま移した） |
+| `lib/skin/forms/poster_forms.dart` | 見本：スイスの幾何学ポスター風 |
+| `lib/skin/forms/lighttable_forms.dart` | 見本：フィルムのライトテーブル風（外の AI が HANDOFF だけで書いた、7/10） |
 | `../shelves/skins/<名前>/` | リポジトリの見本の革（labs、paper、streets、poster、lighttable） |
-| `live.sh` | アプリを開いたまま、`lib/` の .dart を保存した瞬間に描き直す（状態は保つ） |
+| `tool/live.sh` | アプリを開いたまま、`lib/` の .dart を保存した瞬間に描き直す（状態は保つ） |
 
 ## 3. フォームの作り方（ヘッドレス UI）
 
@@ -39,7 +39,7 @@ Motolii のアプリ（Flutter、`app`）の見た目は、エンジンの側（
 - **手で触った時の動き**：[naked_ui](https://pub.dev/packages/naked_ui)（BSD-3）。押す・手が乗る・選ぶ・切り替える・読み上げ。`NakedButton`、`NakedToggle`（`asSwitch: true` でスイッチ）、`NakedToggleGroup` と `NakedToggleOption`（どれか1つ）、ほかに `NakedSlider` `NakedTabs` `NakedSelect` `NakedMenu` など。builder に状態（`isHovered` `isPressed` `isSelected` `isFocused` `isDisabled`）が来る。
 - **フォームが書く**：それをどう組み立てて見せるか、だけ。**動きを自分で作り直さない**（GestureDetector を足さず naked_ui を使う）。
 
-### 約束（`lib/forms/forms.dart`）
+### 約束（`lib/skin/forms/forms.dart`）
 
 | 関数 | 渡る物 | アプリの部品 |
 |---|---|---|
@@ -57,7 +57,7 @@ Motolii のアプリ（Flutter、`app`）の見た目は、エンジンの側（
 約束の細かい所：
 - `ChoiceSpec.glyphs` の関数は `(Canvas c, Paint stroke)`。**Paint はフォームが作って渡す**（色・太さ・塗りか線かはフォームが決める）。印は 16×14 の箱に描かれるので、大きく描くなら `c.scale()` してから呼ぶ。
 - `CardSpec.head`：アプリのいつもの見出しの行（開閉の印・種類の印・題・キーの点・畳んだ時の要約・`trailing` が組み立て済み）。自分の見出しを作るなら捨ててよい。ただし **`title` が null でも `head` がある札**（`trailing` だけの札）がある。その時は `head` を出す。
-- `CardSpec.own`：見出しと行を余白で包んだ、外枠なしの札の中身全部。「外枠だけ変えたい」なら `own` を自分の枠で包むだけでよい（`own.dart` がそう）。
+- `CardSpec.own`：見出しと行を余白で包んだ、外枠なしの札の中身全部。「外枠だけ変えたい」なら `own` を自分の枠で包むだけでよい（`own_forms.dart` がそう）。
 - 見た目の動き（`AnimatedContainer`、`TweenAnimationBuilder` など）は自由。手の受け取り（`GestureDetector`、`MouseRegion`、`Listener`）だけは書かず naked_ui に任せる。
 
 ### 使える材料
@@ -69,24 +69,24 @@ Motolii のアプリ（Flutter、`app`）の見た目は、エンジンの側（
 | 文字の大きさ | `T.px(11)` | 革の TextScale を掛けた大きさ（`.copyWith(fontSize: T.px(n))`） |
 | 書体の名前 | `T.sans` `T.mono` | 革が言う書体の名前 |
 | 色 | `Grey.g00`〜`Grey.g100`、`Grey.bandA` など | 灰色の段（どの段がアプリのどこかは [ROLES.md](../../../shelves/skins/ROLES.md) の表）。革の Background・Foreground から作られる |
-| 色 | `WsT.accent` `WsT.onAccent` `Pop.accentInk` | 差し色、その上の文字、地の上に線や文字で使う差し色（`lib/workspace/ws.dart`、`lib/inspector/inspector_parts.dart`） |
+| 色 | `WsT.accent` `WsT.onAccent` `Pop.accentInk` | 差し色、その上の文字、地の上に線や文字で使う差し色（`lib/workspace/state/state.dart`、`lib/inspector/inspector_parts.dart`） |
 | 色 | `axX` `axY` `axZ`、Spec の `tone` | 軸の色、札の種類の色 |
 | 形 | `Shape.r(n)` | 角の丸み（`Radius`、革の Corner を掛ける） |
 | 形 | `Shape.s(n)` `Shape.z(n)` | 余白・大きさ（革の Spacing・Size を掛ける） |
 
-フォームが自分の色を持つのも自由（`poster.dart` は自分の色の定数を持つ）。革の色に合わせたい所だけ上の材料を使う。
+フォームが自分の色を持つのも自由（`poster_forms.dart` は自分の色の定数を持つ）。革の色に合わせたい所だけ上の材料を使う。
 
 ### 手順
-1. `lib/forms/<名前>.dart` に `class XForms extends Forms` を書き、5つの関数を全部書く（`poster.dart` が見本、240行）。
-2. `lib/forms/forms.dart` の `forms` に `'<名前>': XForms()` を1行足し、import する。
+1. `lib/skin/forms/<名前>_forms.dart` に `class XForms extends Forms` を書き、5つの関数を全部書く（`poster_forms.dart` が見本、240行）。
+2. `lib/skin/forms/forms.dart` の `forms` に `'<名前>': XForms()` を1行足し、import する。
 3. 革のフォルダの `theme.xml` に `<Forms Value="<名前>"/>` と書く（色は同じ theme.xml で）。
-4. 見る：`./live.sh` でアプリを開き、View › Skin でその革を着て、フォームのファイルを保存するたびに描き直るのを見る。手を乗せた時・押した時は live.sh のアプリで手で確かめる。
+4. 見る：`app/tool/live.sh` でアプリを開き、View › Skin でその革を着て、フォームのファイルを保存するたびに描き直るのを見る。手を乗せた時・押した時は live.sh のアプリで手で確かめる。
 5. 確かめる：切れ0・はみ出し0。色は文字の収まりに効かないので、書くのはフォームと書体（と Size・TextScale を変えるならそれ）だけでよい。
 
 ### 守ること
 - 大きさは `Shape.z()`、余白は `Shape.s()`、文字は `T.name()` などの `T.*` と `T.px()` を通す（革の Size・Spacing・TextScale が効くように）。
 - 文字は切らない。箱より広い時は `FittedBox(fit: BoxFit.scaleDown)` で縮める（長い名前は auto_size_text で2行まで）。
-- `own.dart` は「いつもの見た目」の正本。触る時は見た目を1画素も変えない。
+- `own_forms.dart` は「いつもの見た目」の正本。触る時は見た目を1画素も変えない。
 
 ## 4. デザインの方針
 
@@ -100,17 +100,17 @@ Anthropic 公式の考え方（[frontend-design スキル](https://github.com/an
 - **動き**：触った結果、何が変わったかを見せる動きだけ。
 - **作り方は2回**：まず色4〜6個・書体・ASCII の配置図を書き、依頼と照らして直してから、コードを書く。撮って自分で講評する。
 
-今の方向：ユーザーはスイスの幾何学ポスター（Posterlad の Checkers、Xavito deVito のライブのポスター）に寄せたい。候補を絵で並べた時の推しは「ポスター（静かめ）」：色は種類の意味だけ、派手なのは選択と Render だけ、行の密度はミキサー卓のように詰める。今の `poster.dart` はまだ「名前から色」「大文字」「全部の札が派手」が残っている（直す対象）。
+今の方向：ユーザーはスイスの幾何学ポスター（Posterlad の Checkers、Xavito deVito のライブのポスター）に寄せたい。候補を絵で並べた時の推しは「ポスター（静かめ）」：色は種類の意味だけ、派手なのは選択と Render だけ、行の密度はミキサー卓のように詰める。今の `poster_forms.dart` はまだ「名前から色」「大文字」「全部の札が派手」が残っている（直す対象）。
 
 ## 5. AI に頼む時の文
 
 **値と絵の革**（置くだけで着られる）：
 
-> `shelves/skins/README.md` と `shelves/skins/ROLES.md` を読んで、`~/Library/Application Support/Motolii/skins/<名前>/theme.xml` に「（欲しい見た目）」の革を書いて。`./live.sh` でアプリを開いて見て、直して、また見る。読めない文字や差し色の埋もれがなくなるまで。
+> `shelves/skins/README.md` と `shelves/skins/ROLES.md` を読んで、`~/Library/Application Support/Motolii/skins/<名前>/theme.xml` に「（欲しい見た目）」の革を書いて。`app/tool/live.sh` でアプリを開いて見て、直して、また見る。読めない文字や差し色の埋もれがなくなるまで。
 
 **フォーム**（組み立てから変える）。届く部品は §3 の表。ドックのタブそのもの（`docking` が描く）はまだ外（§7）。
 
-> `docs/app/skins/HANDOFF.md` を読んで、`lib/forms/<名前>.dart` に「（欲しい見た目）」のフォームを書き、登録して、`shelves/skins/<名前>/theme.xml` で着る革を作って。先に色4〜6個・書体・ASCII の配置図を書いて「ありがちな所」を直してから書くこと。§3 の表の関数を全部書く（書かない関数はアプリのいつもの絵のまま）。ドックのタブはまだ届かない。`./live.sh` でアプリを開いて見て直す。最後に切れ0・はみ出し0を確かめる。
+> `docs/app/skins/HANDOFF.md` を読んで、`lib/skin/forms/<名前>_forms.dart` に「（欲しい見た目）」のフォームを書き、登録して、`shelves/skins/<名前>/theme.xml` で着る革を作って。先に色4〜6個・書体・ASCII の配置図を書いて「ありがちな所」を直してから書くこと。§3 の表の関数を全部書く（書かない関数はアプリのいつもの絵のまま）。ドックのタブはまだ届かない。`app/tool/live.sh` でアプリを開いて見て直す。最後に切れ0・はみ出し0を確かめる。
 
 ## 6. 落とし穴（踏んだ物）
 

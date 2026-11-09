@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/controls/inspector_param_controls_tile.dart';
 
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 import '../inspector_parts.dart';
 
 /// An effect's parameters as blocks that fill the panel's width: three across in a normal panel, more when it is widened,

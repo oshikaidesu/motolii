@@ -7,10 +7,10 @@ import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/foundation.dart' show listEquals, mapEquals, ValueListenable;
 import 'package:flutter/widgets.dart';
 
-import '../../forms/forms.dart';
-import '../../parts/timeline_parts.dart' show tpFine, tpMajor;
-import '../../style/tokens.dart';
-import '../ws.dart';
+import '../../skin/forms/forms.dart';
+import '../../widgets/timeline_painters.dart' show tpFine, tpMajor;
+import '../../skin/tokens.dart';
+import '../state/state.dart';
 
 part 'timeline_tracks_paint.dart';
 

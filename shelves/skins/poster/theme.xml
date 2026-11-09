@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Poster: a Swiss geometric poster (flat red, yellow, blue, green, pink on paper; circles, halves, quarters, triangles,
-     stripes; heavy grotesque words). The colours are this file's; how each control is put together is lib/forms/poster.dart. -->
+     stripes; heavy grotesque words). The colours are this file's; how each control is put together is app/lib/skin/forms/poster_forms.dart. -->
 <Motolii>
 	<Theme>
 		<Forms Value="poster"/>

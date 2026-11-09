@@ -9,12 +9,12 @@ import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/inspector/inspector_parts.dart' show Hov;
-import 'package:motolii/style/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_easing_presets.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_side.dart' show EaseChevron;
-import 'package:motolii/workspace/ws.dart';
+import 'package:motolii/workspace/state/state.dart';
 
 /// What a hand kept, each as it is said (a curve, a card, all the cards), as a device carried to Live's browser by its title
 /// bar is saved (Live's manual, 23.2.5 Saving Presets). In ~/.motolii, as the colours are in colors.json.

@@ -66,7 +66,7 @@
 ## 言葉
 `FontMono` `FontSans` `Forms` `Parts` `Shade`
 
-- Forms: 部品の形の組み立て方の名前（own＝いつもの、poster＝ポスター風）。中身は `lib/forms/<名前>.dart`（README の「フォーム」）
+- Forms: 部品の形の組み立て方の名前（own＝いつもの、poster＝ポスター風）。中身は `lib/skin/forms/<名前>_forms.dart`（README の「フォーム」）
 - Shade: `light` か `dark`。Background を書けば要らない
 - FontSans / FontMono: 書体の名前。`FontSansFile` / `FontMonoFile` に書体ファイルの場所を書くと、その名前で読み込む
 - Parts: 絵の部品のフォルダ（名前は PARTS.md）。場所は theme.xml から見た相対・`~/`・絶対のどれでもよい

@@ -9,18 +9,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/bridge/motolii.dart' show motoliiDir;
-import 'package:motolii/style/theme.dart' show ColorTheme;
+import 'package:motolii/skin/theme.dart' show ColorTheme;
 import 'package:motolii/workspace/shelf/create_preview.dart' show RecipeMotions;
 import 'package:motolii/workspace/dock/dock_fonts.dart' show fontRecentAt;
 import 'package:motolii/workspace/dock/dock_make.dart' show coloursAt;
 import 'package:motolii/workspace/dock/dock_map.dart' show dockMapsAt;
-import 'package:motolii/workspace/dock/dock_parts.dart' show dockStarsAt;
+import 'package:motolii/workspace/dock/dock_widgets.dart' show dockStarsAt;
 import 'package:motolii/workspace/dock/dock_tags.dart' show DockTags;
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_shelf.dart' show easeKeptAt;
 import 'package:motolii/workspace/shelf/effect_decks.dart' show effectDecksAt, effectRecentAt;
 import 'package:motolii/workspace/timeline/timeline.dart' show WsTimeline;
 import 'package:motolii/workspace/workspace.dart' show Workspace;
-import 'package:motolii/workspace/zoom.dart' show WsZoom;
+import 'package:motolii/workspace/window/zoom.dart' show WsZoom;
 
 final _built = File('$motoliiDir/out/libmotolii.dylib').existsSync();
 

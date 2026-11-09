@@ -4,11 +4,11 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/effects/inspector_effects_effect_card.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 import '../inspector_motion_preview.dart' show CardOver;
 import '../inspector_parts.dart';
-import '../../parts/timeline_parts.dart' show TpGlyph, TpGlyphView;
-import '../../parts/text_gestures.dart';
+import '../../widgets/timeline_painters.dart' show TpGlyph, TpGlyphView;
+import '../../widgets/text_gestures.dart';
 
 // ---- 10. effects ------------------------------------------------------------------------------------------------------
 /// An effect as a plugin ships it: a name and a WGSL uniform struct. Its rows are whatever [readParams] makes of the struct.

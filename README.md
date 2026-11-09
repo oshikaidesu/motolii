@@ -171,10 +171,10 @@ engine/edit.sh build.motolii < /dev/null
 エンジンをビルドします。ThorVG・Skia・libtess2・Jolt などは、ここで初回だけダウンロードします。`edit.sh` はプロジェクトファイルを開いて命令を待つ道具なので、`< /dev/null` で「命令なし」を渡し、ビルドして空のファイルを作ったらすぐ終わります。`engine/out/libmotolii.dylib` ができれば成功です（`build.motolii` は消してかまいません）。
 
 ```bash
-app/live.sh
+app/tool/live.sh
 ```
 
-アプリが開きます（初回はビルドで 1〜3 分止まって見えます。ターミナルに流れる文字は気にしなくてかまいません）。プロジェクトファイルは `~/Movies/Motolii/Untitled.motolii`（自動で保存）、書き出した動画もその隣にできます。ウィンドウを閉じると終わり、ターミナルを閉じてもウィンドウは閉じます。次からは、新しいターミナルで `cd ~/motolii && app/live.sh`（ホームのフォルダで `git clone` した時）。
+アプリが開きます（初回はビルドで 1〜3 分止まって見えます。ターミナルに流れる文字は気にしなくてかまいません）。プロジェクトファイルは `~/Movies/Motolii/Untitled.motolii`（自動で保存）、書き出した動画もその隣にできます。ウィンドウを閉じると終わり、ターミナルを閉じてもウィンドウは閉じます。次からは、新しいターミナルで `cd ~/motolii && app/tool/live.sh`（ホームのフォルダで `git clone` した時）。
 
 ### 画面の見方
 
@@ -259,7 +259,7 @@ EOF
 
 | 出た事 | 直し方 |
 |---|---|
-| `flutter: command not found` | 上の「Flutter を入れる」の 2 行目をもう一度。別の場所なら `FLUTTER=/path/to/flutter app/live.sh` |
+| `flutter: command not found` | 上の「Flutter を入れる」の 2 行目をもう一度。別の場所なら `FLUTTER=/path/to/flutter app/tool/live.sh` |
 | `brew: command not found` | [brew.sh](https://brew.sh/ja/) の 1 行で Homebrew を入れる |
 | `xcrun: error` や、Xcode が無いと言われる | App Store で Xcode を入れ、一度開いて追加の部品を入れ、`sudo xcodebuild -license accept` |
 | `No space left on device` | 空きを 10 GB 以上にしてから、止まったコマンドをもう一度 |
@@ -274,7 +274,7 @@ EOF
 <details>
 <summary><b>更新する・消す</b></summary>
 
-- 更新：`git pull` の後、`engine/gpu/build.sh` と `engine/edit.sh build.motolii < /dev/null` をもう一度（変わった所だけビルドし直します）。アプリは `app/live.sh` がビルドし直します。
+- 更新：`git pull` の後、`engine/gpu/build.sh` と `engine/edit.sh build.motolii < /dev/null` をもう一度（変わった所だけビルドし直します）。アプリは `app/tool/live.sh` がビルドし直します。
 - 消す：`motolii` のフォルダを消します（ダウンロードした物とビルドした物は全部この中）。作ったプロジェクトと動画は `~/Movies/Motolii/` に残ります（別の所に置いた物はそこに）。Flutter は `~/flutter` を消します。`brew bundle` で入れた物は `brew uninstall` で。
 
 </details>

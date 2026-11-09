@@ -1,4 +1,4 @@
-// timeline_asked.dart: what the window's keys ask of how the timeline looks (ableton.dart: Ableton Live's zoom,
+// timeline_asked.dart: what the window's keys ask of how the timeline looks (command_actions.dart: Ableton Live's zoom,
 // loop and rename), which the timeline keeps itself; and the ruler as Live's scrub area and locators (Live 12 manual,
 // chapter 6 "Arrangement View": 6.3 and 6.4).
 part of 'timeline.dart';

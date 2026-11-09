@@ -4,9 +4,9 @@
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/style/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 
-import '../../parts/text_gestures.dart';
+import '../../widgets/text_gestures.dart';
 
 /// om_midi's kinds of keys, by the inside's names (midi_notes.h: midi_keys), in its panel's words.
 const midiKinds = [('velocity', 'Velocity'), ('pitch', 'Pitch'), ('count', 'Count'), ('on', 'Note on'), ('bool', 'Bool')];

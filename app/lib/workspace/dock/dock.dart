@@ -3,17 +3,17 @@
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 import 'dock_effects.dart';
 import 'dock_files.dart';
 import 'dock_fonts.dart';
 import 'dock_glyphs.dart';
 import 'dock_make.dart';
-import 'dock_parts.dart';
+import 'dock_widgets.dart';
 import 'dock_tags.dart';
 import 'dock_program.dart';
 import '../shelf/effect_tiles.dart';
-import '../ws.dart';
+import '../state/state.dart';
 
 /// The shelves: name (also the pane's id and [Ws.shelf]), the mark on its tab, the search hint.
 const dockShelves = <(String, DockG, String)>[

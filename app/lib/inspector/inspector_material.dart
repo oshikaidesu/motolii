@@ -5,10 +5,10 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/rows/inspector_rows_prop_row.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 
-import '../parts/controls.dart';
-import '../style/tokens.dart';
+import '../widgets/controls.dart';
+import '../skin/tokens.dart';
 import 'inspector_parts.dart';
-import '../parts/text_gestures.dart';
+import '../widgets/text_gestures.dart';
 
 // ---- 9. material -------------------------------------------------------------------------------------------------------
 const _blends = ['Normal', 'Add', 'Multiply', 'Screen', 'Overlay', 'Soft light', 'Hard light', 'Difference'];

@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 import '../inspector_parts.dart';
 
 // ---- 5. sections and rows -------------------------------------------------------------------------------------------

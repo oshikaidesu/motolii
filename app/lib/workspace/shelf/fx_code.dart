@@ -8,11 +8,11 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 import '../dock/dock_program.dart' show ProgramCode;
 import 'effect_tiles.dart' show EffectTiles;
 import 'shelf_add.dart';
-import '../ws.dart';
+import '../state/state.dart';
 
 class FxCode extends StatefulWidget {
   const FxCode(this.ws, this.thing, this.word, {super.key});
