@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart' show ValueListenable, listEquals, mapEq
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 
+String _bare(Fx f) => f.name + f.wgsl.replaceAll(RegExp(r'@default\([^)]*\)'), '');
+
 /// Owns the panel's values (Doc) and re-provides it whenever it changes. A different kind makes a new document (give it a key).
 class InspHost extends StatefulWidget {
   const InspHost({
@@ -173,6 +175,12 @@ class _InspHostState extends State<InspHost> {
     }
   }
 
+  void _take<T>(Map<String, T> from, Map<String, T> into, Map<String, T> seen) {
+    if (from.entries.any((e) => into[e.key] != e.value)) _tick++;
+    into.addAll(from);
+    seen.addAll(from);
+  }
+
   void _r() {
     _tell();
     // (while a hand is on a value the whole inspector is not built again each step: the field under the hand shows its
@@ -187,11 +195,7 @@ class _InspHostState extends State<InspHost> {
       o.live.removeListener(_atMoment);
       widget.live.addListener(_atMoment);
     }
-    if (o.kind != widget.kind ||
-        !listEquals(
-          o.cards?.map((f) => f.name + f.wgsl.replaceAll(RegExp(r'@default\([^)]*\)'), '')).toList(),
-          widget.cards?.map((f) => f.name + f.wgsl.replaceAll(RegExp(r'@default\([^)]*\)'), '')).toList(),
-        )) {
+    if (o.kind != widget.kind || !listEquals(o.cards?.map(_bare).toList(), widget.cards?.map(_bare).toList())) {
       doc.dispose();
       doc = _make();
       _tick++;
@@ -203,12 +207,8 @@ class _InspHostState extends State<InspHost> {
         if (doc.showAt(widget.values, const {})) _tick++; // (a value no field watches changed: shown by building again)
         _seen.addAll(widget.values);
       }
-      if (widget.flags.entries.any((e) => doc.b[e.key] != e.value)) _tick++;
-      doc.b.addAll(widget.flags);
-      _seenFlags.addAll(widget.flags);
-      if (widget.strs.entries.any((e) => doc.s2[e.key] != e.value)) _tick++;
-      doc.s2.addAll(widget.strs);
-      _seenWords.addAll(widget.strs);
+      _take(widget.flags, doc.b, _seenFlags);
+      _take(widget.strs, doc.s2, _seenWords);
       // (and where what is shown is not what the document says: a key mark pressed shows lit at once, and an undo that
       //  takes the key away leaves the document's marks as they were before the press, so only the shown one differs)
       if (!mapEquals(o.keyMarks, widget.keyMarks) || widget.keyMarks.entries.any((e) => doc.keys[e.key] != e.value)) {

@@ -87,15 +87,14 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
       return '  /// $label @enum(${words.join(', ')}) @default(${math.max(0, words.indexOf(m.word(t, n)))})\n  $n: u32,';
     }
     if (m.range(t, n) case (final lo0, final hi0)) {
-      final a = _shown(m, t, n, sh != null && sh.high > sh.low ? sh.low : lo0),
-          b = _shown(m, t, n, sh != null && sh.high > sh.low ? sh.high : hi0),
-          lo = math.min(a, b),
-          hi = math.max(a, b);
+      double shown(double x) => _shown(m, t, n, x);
+      (double, double) span(double x, double y) => x < y ? (x, y) : (y, x);
+      final ends = sh != null && sh.high > sh.low;
+      final (lo, hi) = span(shown(ends ? sh.low : lo0), shown(ends ? sh.high : hi0));
       // (the card's span is how far it slides; a number typed goes as far as the inside takes it, as After Effects'
       //  slider range and valid range, PF_FloatSliderDef: Datamosh's From slides to 10 s and is typed to the inside's)
-      final va = _shown(m, t, n, lo0),
-          vb = _shown(m, t, n, hi0),
-          valid = sh?.open != true && (math.min(va, vb) < lo || math.max(va, vb) > hi) ? ' @valid(${math.min(va, vb)}, ${math.max(va, vb)})' : '';
+      final (va, vb) = span(shown(lo0), shown(hi0));
+      final valid = sh?.open != true && (va < lo || vb > hi) ? ' @valid($va, $vb)' : '';
       final turned =
           sh?.look == '' && hi - lo >= 90 && angleLabel(sh!.label); // (an effect's angle in degrees, by its label: a dial, as After Effects' PF_ADD_ANGLE)
       final ui = switch (turned ? 'angle' : sh?.look) {
@@ -105,7 +104,7 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
         _ => lo < 0 && hi > 0 ? '@ui(bipolar)' : '',
       };
       final whole = sh?.look == 'count' || sh?.look == 'onoff' || sh?.look == 'seed';
-      return '  /// $label $ui @range($lo, $hi)${sh?.open == true ? ' @open' : ''}$valid @unit(${turned ? '°' : sh?.unit ?? ''}) @default(${_shown(m, t, n, m.value(t, n, at) ?? lo0)})\n  $n: ${whole ? 'u32' : 'f32'},';
+      return '  /// $label $ui @range($lo, $hi)${sh?.open == true ? ' @open' : ''}$valid @unit(${turned ? '°' : sh?.unit ?? ''}) @default(${shown(m.value(t, n, at) ?? lo0)})\n  $n: ${whole ? 'u32' : 'f32'},';
     }
     return '  /// $label${const ['numbers', 'colours', 'words', 'file'].contains(sh?.look) ? ' @unit(${sh!.look})' : ''}\n  $n: vec3<f32>,'; // (any word: colours, six digits each, given from the Colors shelf; or numbers, one for each copy)
   }
