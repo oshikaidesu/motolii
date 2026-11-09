@@ -192,8 +192,8 @@ std::vector<uint8_t> splat_effect_look(const std::string& mat, const std::string
     const std::filesystem::path dir = std::filesystem::path(home ? home : "/tmp") / "Library/Caches/Motolii/splatfx";
     char name[40];
     std::snprintf(name, sizeof name, "%016llx.filamat", (unsigned long long)hash);
-    const std::filesystem::path kept = dir / name;
-    if (std::ifstream in(kept, std::ios::binary); in) return std::vector<uint8_t>(std::istreambuf_iterator<char>(in), {});
+    const std::filesystem::path cached = dir / name;
+    if (std::ifstream in(cached, std::ios::binary); in) return std::vector<uint8_t>(std::istreambuf_iterator<char>(in), {});
     // (its uniforms said as the look's parameters, read through their own names; the rest of its text as it is)
     std::string params, names, code;
     std::istringstream lines(glsl);
@@ -228,6 +228,6 @@ std::vector<uint8_t> splat_effect_look(const std::string& mat, const std::string
     std::vector<uint8_t> bytes((const uint8_t*)package.getData(), (const uint8_t*)package.getData() + package.getSize());
     std::error_code e;
     std::filesystem::create_directories(dir, e);
-    std::ofstream(kept, std::ios::binary).write((const char*)bytes.data(), (std::streamsize)bytes.size());
+    std::ofstream(cached, std::ios::binary).write((const char*)bytes.data(), (std::streamsize)bytes.size());
     return bytes;
 }

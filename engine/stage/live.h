@@ -170,8 +170,8 @@ static void live_draw(Stage& s, Live* l) {
     const bool placed = desk && (s.over || !s.before.empty());
     s.out = desk && !placed ? desk->target[desk->next] : l->target[l->next];
     if (desk && !placed) desk_lay(s, true);
-    Texture* const wasInto = s.drawnInto;   // (the picture the views draw into, for one that reads what is under: render.h)
-    if (!s.over) s.drawnInto = desk && !placed ? desk->seen[desk->next] : l->seen[l->next];
+    Texture* const wasInto = s.drawTarget;   // (the picture the views draw into, for one that reads what is under: render.h)
+    if (!s.over) s.drawTarget = desk && !placed ? desk->seen[desk->next] : l->seen[l->next];
     if (placed) {
         const int i = l->next, j = desk->next;
         const int at[4] = {(int)std::lround(s.desk.x), (int)std::lround((double)s.desk.h - s.desk.y - s.h * s.desk.scale), (int)std::lround(s.w * s.desk.scale), (int)std::lround(s.h * s.desk.scale)};
@@ -182,7 +182,7 @@ static void live_draw(Stage& s, Live* l) {
     }
     draw(s, nullptr, false);
     s.lastly = nullptr;
-    s.drawnInto = wasInto;
+    s.drawTarget = wasInto;
     if (desk) desk_marks(s, desk, desk->next);
     if (desk) {
         if (!placed) desk_lay(s, false);

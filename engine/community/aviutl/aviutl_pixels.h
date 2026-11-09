@@ -44,8 +44,8 @@ static int aviutl_getpixeldata(lua_State* L) {
     uint32_t w = 0, h = 0;
     if (!aviutl_read(r, target, p, w, h)) return lua_pushnil(L), lua_pushinteger(L, 0), lua_pushinteger(L, 0), 3;
     if (order == "bgra") aviutl_swap(p);
-    uint8_t* kept = (uint8_t*)lua_newuserdata(L, p.size() + 1);
-    std::copy(p.begin(), p.end(), kept), kept[p.size()] = order == "bgra";
+    uint8_t* copy = (uint8_t*)lua_newuserdata(L, p.size() + 1);
+    std::copy(p.begin(), p.end(), copy), copy[p.size()] = order == "bgra";
     return lua_pushinteger(L, w), lua_pushinteger(L, h), 3;
 }
 

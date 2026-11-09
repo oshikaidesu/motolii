@@ -18,9 +18,9 @@ static void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
     for (const std::string& file : script_files(files)) {
         if (file == "none") continue;
         if (aviutl_is(file)) {   // (an AviUtl2 script: run each frame on its picture, the one already made kept)
-            const auto kept = std::find_if(st.aviutl.begin(), st.aviutl.end(), [&](const auto& r) { return r->file == file; });
+            const auto found = std::find_if(st.aviutl.begin(), st.aviutl.end(), [&](const auto& r) { return r->file == file; });
             const auto first = !scripts.empty() ? scripts.front() : !st.aviutl.empty() ? st.aviutl.front() : nullptr;   // (one Lua for the thing's scripts: what one leaves in a global the next on it reads, as AviUtl2 runs an object's effects one after another in one Lua: CrEasy's 背景ブラー reads the ox its CrEasy set)
-            scripts.push_back(kept != st.aviutl.end() ? *kept : aviutl_made(s, file, first ? first->L : nullptr)), st.steps.push_back('a');
+            scripts.push_back(found != st.aviutl.end() ? *found : aviutl_made(s, file, first ? first->L : nullptr)), st.steps.push_back('a');
             st.readsBehind |= scripts.back()->behind;   // (one that reads its frame reads what is behind: the stage's behind drawn, its own sheet left out of it)
             st.wide |= scripts.back()->wide;   // (one that draws: on the whole stage, as AviUtl2 draws an object on its screen)
             continue;
@@ -51,7 +51,7 @@ static void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
 // One of ThorVG's own effects as a step (k: its letter), on the picture `from` (the device's) drawn into picture
 // between `into` (0 or 1): a picture of the one before put in a scene of ThorVG's, the effect on the scene, drawn on the
 // driver thread in line with Filament's pictures. Its lengths are points of the stage, `ppp` pixels each.
-static void thing_thor(Stage& s, ScreenStack& st, char k, void* from, int into, uint32_t w, uint32_t h, const DrawnFx& fx, float ppp) {
+static void thing_thor(Stage& s, ScreenStack& st, char k, void* from, int into, uint32_t w, uint32_t h, const Canvas2DFx& fx, float ppp) {
     interop::submit(s.engine);   // (what Filament drew into `from` on the GPU's queue first: ThorVG hands its own drawing over at once)
     interop::on_driver(s.engine, [&s, &st, k, from, into, w, h, fx, ppp] {
         tvg::WgCanvas*& c = st.thor[into];
@@ -107,7 +107,7 @@ static void thing_fx_pictures(Stage& s, ScreenStack& st, View* v) {
 }
 // The picture its effects leave (the last one drawn into; its own, with none): what its sheet or solid shows.
 static Texture* thing_fx_seen(const ScreenStack& st) { return st.steps.empty() ? st.shot : st.between[st.steps.size() % 2]; }   // (the last made back in linear light: thing_effects_draw)
-static void thing_effects_draw(Stage& s, ScreenStack& st, View* v, const ScreenNumbers& numbers, const std::function<DrawnFx()>& thorFx = nullptr, const ScreenPictures& pictures = nullptr) {
+static void thing_effects_draw(Stage& s, ScreenStack& st, View* v, const ScreenNumbers& numbers, const std::function<Canvas2DFx()>& thorFx = nullptr, const ScreenPictures& pictures = nullptr) {
     thing_fx_pictures(s, st, v);   // (made already when it was aimed: a thing's; the stage's own others made here)
     const Viewport vp = v->getViewport();
     const uint32_t w = (uint32_t)std::max(1, vp.left + (int)vp.width), h = (uint32_t)std::max(1, vp.bottom + (int)vp.height);
@@ -123,7 +123,7 @@ static void thing_effects_draw(Stage& s, ScreenStack& st, View* v, const ScreenN
     st.seen = st.shot;
     if (st.steps.empty()) return;   // (quiet with no effects: only its picture, for another's)
     const float ppp = (float)s.view->getViewport().width / (float)std::max(1, s.w);   // (pixels of its picture a point of the stage, as the stage's view draws: the desk's are fewer)
-    const DrawnFx thor = thorFx && std::any_of(st.steps.begin(), st.steps.end(), [](char k) { return k != 0 && k != 'a'; }) ? thorFx() : DrawnFx{};
+    const Canvas2DFx thor = thorFx && std::any_of(st.steps.begin(), st.steps.end(), [](char k) { return k != 0 && k != 'a'; }) ? thorFx() : Canvas2DFx{};
     screen_tone(s, st.shot, st.betweenTarget[1], w, h, true);   // (its picture as its colours are said, sRGB, for the effects: screen_fx.h screen_tone)
     for (size_t i = 0, f = 0, a = 0; i < st.steps.size(); ++i) {   // (each into a picture between: the effects take the whole picture as theirs, and fill what is clear)
         Texture* from = i == 0 ? st.between[1] : st.between[(i - 1) % 2];

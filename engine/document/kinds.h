@@ -60,7 +60,7 @@ struct Doc {
     float roomLight = 0.f;              // the room's own light, as the stage was opened with it
     std::string roomIs;                 // which room lights it now (doc_look)
     Skybox* sky = nullptr;              // the room behind everything, once it is said
-    Drawn* backdrop = nullptr;          // the colour behind everything: a flat colour as large as the stage, drawn before all else in the stage's own view
+    Canvas2D* backdrop = nullptr;          // the colour behind everything: a flat colour as large as the stage, drawn before all else in the stage's own view
     std::string backdropIs;             // (the colour it was made in)
     bool keying = false;                // every value a hand changes gets a key at that moment (a shell's "animate all")
     double keying_from = 0.0;           // the stage's moment at which that was turned on: a value's first key later than it travels from it
@@ -115,8 +115,8 @@ struct Doc {
     std::map<std::pair<int, std::string>, std::string> words;   // a value's word, the same way
     std::map<std::pair<int, std::string>, std::vector<double>> keyed;   // the moments of a value's keys, the same way
     std::map<std::string, sqlite3_stmt*> named, expression_statements;     // a way by its name, and by its expression: made ready once (SQLite works it out)
-    struct Shown { std::string of; Video* video = nullptr; Drawn* drawn = nullptr; Solid* solid = nullptr; Mesh* shape = nullptr; bool in = true, clipped = false, camera = false, drivenLooks = false, behaviour = false, grains = false; std::shared_ptr<SplatEffect> splatFx; std::string splatFxFile; MaterialInstance* splatPlain = nullptr; bool splatDone = false; int run = -1, lies = -1;
-                   bool sketch = false; int sketchFrame = -1; int sketchMade = -1; float3 sketchEye{}; std::map<int, float> sketchStrong; std::vector<SketchShape> sketchShapes; std::vector<Drawn*> sketchPics; std::vector<SketchPaint> sketchPaints; size_t sketchParts = 1;   // (a p5.js sketch's mesh and what it was last made from: sketch.h)
+    struct Shown { std::string of; Video* video = nullptr; Canvas2D* drawn = nullptr; Solid* solid = nullptr; Mesh* shape = nullptr; bool in = true, clipped = false, camera = false, drivenLooks = false, behaviour = false, grains = false; std::shared_ptr<SplatEffect> splatFx; std::string splatFxFile; MaterialInstance* splatPlain = nullptr; bool splatDone = false; int run = -1, lies = -1;
+                   bool sketch = false; int sketchFrame = -1; int sketchMade = -1; float3 sketchEye{}; std::map<int, float> sketchStrong; std::vector<SketchShape> sketchShapes; std::vector<Canvas2D*> sketchPics; std::vector<SketchPaint> sketchPaints; size_t sketchParts = 1;   // (a p5.js sketch's mesh and what it was last made from: sketch.h)
                    utils::Entity light;   // (a light, Filament's own: in every scene of the stage while it is on)
                    double units = 1.0;    // (a flat layer's: points of the picture to a unit of the stage as it was made, which its effects are counted in)
                    int space = 3;
@@ -124,7 +124,7 @@ struct Doc {
                    double cel = -2; bool celMove = false;   // (a level's drawing as made, and whether its keys change it as time goes)
                    Scene* scene = nullptr; int channel = -1;
                    MaterialInstance* look = nullptr;   // (a solid's own look, made by the kit: what a matte cuts)
-                   struct Deep { uint32_t id; Drawn* sheet; float4 box; };   // (an After Effects picture's 3D layer: a sheet of its own where it is)
+                   struct Deep { uint32_t id; Canvas2D* sheet; float4 box; };   // (an After Effects picture's 3D layer: a sheet of its own where it is)
                    std::vector<Deep> deep;
                    std::shared_ptr<Motion> motion; };   // (what says where they are: the same file, read for its poses only)   // (the scene it is in: none said, the stage's own, where it was made; and its channel there)   // (read as it is made: 2 a flat layer on the camera, 25 one in the world, 3 a solid layer or a camera)
     // The camera of the moment, against the stage's own (from 6 units in front, 30 degrees high): how the world is
@@ -133,7 +133,7 @@ struct Doc {
     bool blurred = false;   // its lens blurs what is off its focus (solid layers and layers in the world only)
     // A layer clipped by the flat layer before it: the kit's matte it is cut by (its own), cut by which layer's picture,
     // and which of its own looks were told of it.
-    struct Cut { int matte = -1, from = 0; const Drawn* by = nullptr; MaterialInstance* look = nullptr; std::string how; };   // (how: by its clearness or its light, the other way about, how soft: as last cut)
+    struct Cut { int matte = -1, from = 0; const Canvas2D* by = nullptr; MaterialInstance* look = nullptr; std::string how; };   // (how: by its clearness or its light, the other way about, how soft: as last cut)
     std::map<int, Cut> cuts;
     std::map<int, Shown> shown;   // the layers as they are on the stage, and what each was made of
     struct Along { double at = -1.0, key = 0.0; const void* of = nullptr; std::vector<float> each; };   // (a layer's copies laid on another's outline: where, worked out once a moment)
@@ -143,7 +143,7 @@ struct Doc {
 // What a layer may be told, by name: which kinds of layer have it, a number between which two (or one of which
 // words), and whether it can move (take keys).
 static const char* const doc_kinds = "video image text solid shape camera light";   // (the kinds of layer)
-static const char* const doc_drawn = "video image text solid shape";          // (those that are seen)
+static const char* const doc_visible_kinds = "video image text solid shape";          // (those that are seen)
 static const char* const doc_relations = "around row follow push group relate";   // (the kinds of relation: a group is the plainest, layers in an order and nothing else)
 static const char* const doc_shapes = "ring gem cube ball sketch";             // (the kit's own shapes a solid may be)
 // (whether a value is keyed, in SQLite's words: see doc_key)
@@ -156,30 +156,30 @@ static const DocValue doc_values[] = {
     // (how many times as wide, as high and as deep as its size makes it, each on its own as After Effects' Scale: below 0
     //  turned over; a flat layer's scale_z is its thickness: none said, flat; said, its sheet is a box its picture is pushed
     //  through (deep.glsl), as After Effects' Extrusion Depth and Apple Motion's Depth make a flat text solid; 0: shut, a sheet)
-    {"scale_x", doc_drawn, -1e4, 1e4, true, nullptr},
-    {"scale_y", doc_drawn, -1e4, 1e4, true, nullptr},
+    {"scale_x", doc_visible_kinds, -1e4, 1e4, true, nullptr},
+    {"scale_y", doc_visible_kinds, -1e4, 1e4, true, nullptr},
     {"scale_z", "solid text shape image", -1e4, 1e4, true, nullptr},
     // (falls and strikes others: moves, the world has it from its last key on; still, a wall where the document puts it;
     //  how much it bounces, how it rubs; and the stage's pull down, in units of the stage a second each second)
-    {"physics", doc_drawn, 0, 0, false, "none moves still"},
+    {"physics", doc_visible_kinds, 0, 0, false, "none moves still"},
     // (a recipe as code: a JavaScript file that says where each copy is (script.h); its head's knobs are values of the layer, named js_ and the knob's name)
     {"script", "image text shape solid stage behaviour", 0, 0, false, ""},   // (the stage's: a whole-screen effect, a .wgsl file: screen_fx.h)
     // (a layer's own effects, After Effects' effects on a layer: the whole-screen ones' .wgsl files, one over another, on the layer as the camera sees it)
     //  (a camera's: AbsentMotion's motions only, its place moved by them as AbsentMotion's camera is: doc_fx_say)
     {"fx", "video image text shape solid camera", 0, 0, false, ""},
     {"fx_off", "video image text shape solid camera", 0, 0, false, ""},   // (its effects turned off, the titles of their cards with ; between: Alight Motion's eye on an effect; their values kept)
-    {"bounce", doc_drawn, 0, 1, false, nullptr},
-    {"friction", doc_drawn, 0, 2, false, nullptr},
+    {"bounce", doc_visible_kinds, 0, 1, false, nullptr},
+    {"friction", doc_visible_kinds, 0, 2, false, nullptr},
     {"gravity", "stage", -100, 100, false, nullptr},
     {"follow", "stage", 0, 1e9, false, nullptr},
     // (the layer the stage's effects follow in place of a mouse: their pointer, center, mouse or point knobs are where it is on the picture; 0: none)
-    {"size", "video image text solid shape behaviour", 1e-3, 1e4, true, nullptr}, {"anchor_x", doc_drawn, -100, 100, true, nullptr}, {"anchor_y", doc_drawn, -100, 100, true, nullptr}, {"anchor_z", doc_drawn, -100, 100, true, nullptr},
+    {"size", "video image text solid shape behaviour", 1e-3, 1e4, true, nullptr}, {"anchor_x", doc_visible_kinds, -100, 100, true, nullptr}, {"anchor_y", doc_visible_kinds, -100, 100, true, nullptr}, {"anchor_z", doc_visible_kinds, -100, 100, true, nullptr},
     // (a camera, the past repository's: it looks at where it is, from round about it as it is turned, so far away, so near)
     {"distance", "camera", 0.01, 100, true, nullptr}, {"zoom", "camera", 0.01, 100, true, nullptr},
     // (and its lens: how far off from it layers are sharp, 0 being where it looks; the f-number, 0: all sharp)
     {"focus", "camera", 0, 1e4, true, nullptr}, {"aperture", "camera", 0, 64, true, nullptr}, {"blur_level", "camera", 0, 100, true, nullptr},   // (After Effects' blur level: how many times the lens's own blur)
     {"opacity", "video image text shape behaviour", 0, 1, true, nullptr},
-    {"clip", doc_drawn, 0, 1, false, nullptr},
+    {"clip", doc_visible_kinds, 0, 1, false, nullptr},
     // (clipped by a flat layer before it, the kit's matte: by how clear that is or how light (After Effects' alpha and
     //  luma mattes), the other way about (inverted), its edge so soft, in points of the screen)
     {"group_mask", "shape", 0, 0, false, "none mask exclude"},   // (a group made to mask: its top layer the shape the others in it are seen in, or cut out by: Alight Motion's Group and Mask, Group and Exclude, docs/internal/reports/alight_motion/alight_ui.md)
@@ -223,7 +223,7 @@ static const DocValue doc_values[] = {
     {"light_group", "light solid", 0, 7, false, nullptr},
     {"parent", doc_kinds, 0, 1e9, false, nullptr},
     {"parent_rotate", doc_kinds, 0, 2, true, nullptr}, {"parent_size", doc_kinds, 0, 2, true, nullptr},   // (how much of its parent's turn and size it takes: 1 all, 0 none, 2 twice; Alight Motion's Parenting Helper weights)
-    {"scale_assist", doc_drawn, 0, 0, false, "y x both"}, {"scale_assist_amount", doc_drawn, 0, 100, true, nullptr}, {"scale_assist_damp", doc_drawn, 1, 10, true, nullptr},   // (Alight Motion's Scale Assist, as scale_x and scale_y: grown one way alone, or wider and as much thinner as a squashed ball keeps its bulk)
+    {"scale_assist", doc_visible_kinds, 0, 0, false, "y x both"}, {"scale_assist_amount", doc_visible_kinds, 0, 100, true, nullptr}, {"scale_assist_damp", doc_visible_kinds, 1, 10, true, nullptr},   // (Alight Motion's Scale Assist, as scale_x and scale_y: grown one way alone, or wider and as much thinner as a squashed ball keeps its bulk)
     {"roll", doc_kinds, 0, 0, false, "x y"}, {"roll_radius", doc_kinds, -1e3, 1e3, true, nullptr},   // (turned as a wheel rolling as it goes along x, or y; its radius half its smaller side and this more)
     {"dissolve", "solid", 0, 100, true, nullptr}, {"grain", "solid", 0.05, 20, true, nullptr},   // (a point cloud's: its grains thrown out each its own way, so far; and how large they are drawn: point_cloud.h)
     {"mosh", "video", 0, 1, false, nullptr}, {"mosh_with", "video", 0, 1e9, false, nullptr}, {"mosh_at", "video", 0, 1e6, false, nullptr},   // (a real datamosh: from that moment of its film, the other's motion poured into its last picture: video_datamosh.h)   // (the layer it goes with: it is moved, turned and sized as that one is, then as it is itself; 0: none)

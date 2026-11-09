@@ -76,8 +76,8 @@ static std::string isf_wgsl(const std::string& text, const std::string& name, st
             if (!size(p, "WIDTH", "WIDTH", w) || !size(p, "HEIGHT", "HEIGHT", h)) return why = "a pass's size it cannot say", "";
             if (!t.empty() && std::find(targets.begin(), targets.end(), t) == targets.end()) targets.push_back(t);
             if (!t.empty()) setSize[t] = {w.rfind("a", 0) == 0, h.rfind("a", 0) == 0};
-            const bool kept = p.HasMember("PERSISTENT") && num(p["PERSISTENT"], 0), fine = p.HasMember("FLOAT") && num(p["FLOAT"], 0);
-            passLines.push_back("// --pass@" + t + ":" + (kept ? "1" : "0") + "," + (fine ? "1" : "0") + "," + w + "," + h);
+            const bool persistent = p.HasMember("PERSISTENT") && num(p["PERSISTENT"], 0), fine = p.HasMember("FLOAT") && num(p["FLOAT"], 0);
+            passLines.push_back("// --pass@" + t + ":" + (persistent ? "1" : "0") + "," + (fine ? "1" : "0") + "," + w + "," + h);
         }
 
     const rapidjson::Value none(rapidjson::kArrayType);
@@ -284,7 +284,7 @@ std::string isf_tags(const std::string& file) {
 //  last did, as a script half typed keeps what ran (doc_script_of), and its card says why: isf_trouble)
 static std::mutex isf_lock;
 static std::map<std::string, std::string> isf_good, isf_why;
-static std::string isf_kept(const std::string& file, const std::string& why) {
+static std::string isf_fallback(const std::string& file, const std::string& why) {
     isf_why[file] = why.empty() ? std::string("it could not be made WGSL") : why;
     const auto good = isf_good.find(file);
     return good == isf_good.end() ? "" : good->second;
@@ -324,7 +324,7 @@ std::string isf_file(const std::string& asked) {
         const std::string isf = three_isf(file, why);
         if (isf.empty()) {
             std::fprintf(stderr, "the three.js effect %s is not taken: %s\n", file.c_str(), why.substr(0, 600).c_str());
-            return made[key] = isf_kept(file, why);
+            return made[key] = isf_fallback(file, why);
         }
         text.str(isf);
     }
@@ -334,7 +334,7 @@ std::string isf_file(const std::string& asked) {
     const std::string wgsl = isf_wgsl(adapter_isf(text.str()), stem, why, vertex.str());   // (Shadertoy's and GLSL Sandbox's as they come: adapter.h)
     if (wgsl.empty()) {
         std::fprintf(stderr, "the ISF effect %s is not taken: %s\n", file.c_str(), why.substr(0, 600).c_str());
-        return made[key] = isf_kept(file, why);
+        return made[key] = isf_fallback(file, why);
     }
     std::filesystem::create_directories(dir, e);
     std::ofstream(out + ".part") << wgsl;

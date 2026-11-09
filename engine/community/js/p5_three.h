@@ -47,7 +47,7 @@ function __three_render(scene, camera) {
     const sx = Math.hypot(e[0], e[1], e[2]) || 1, sy = Math.hypot(e[4], e[5], e[6]) || 1, sz = Math.hypot(e[8], e[9], e[10]) || 1;
     if (q.frame !== __T) q.frame = __T, q.now = 0;
     q.most = Math.max(q.most, ++q.now);
-    __drawn.push(e[12] * s, e[13] * s, (e[14] + __three.d) * s, sx * s, sy * s, sz * s, Math.atan2(e[1] / sx, e[0] / sx) * deg, Math.asin(Math.max(-1, Math.min(1, -e[2] / sx))) * deg, Math.atan2(e[6] / sy, e[10] / sz) * deg, p, -1);
+    __placed.push(e[12] * s, e[13] * s, (e[14] + __three.d) * s, sx * s, sy * s, sz * s, Math.atan2(e[1] / sx, e[0] / sx) * deg, Math.asin(Math.max(-1, Math.min(1, -e[2] / sx))) * deg, Math.atan2(e[6] / sy, e[10] / sz) * deg, p, -1);
   };
   scene.traverseVisible(o => {
     if (!o.isMesh || !o.geometry || !o.geometry.attributes.position) return;

@@ -21,9 +21,9 @@
 
 // The file's text, read again only after the window says a file changed (files_changed).
 static const std::string& viewer_text(const std::string& file) {
-    struct Kept { int seen = -1; std::string text; };
-    static std::map<std::string, Kept> kept;
-    Kept& one = kept[file];
+    struct CachedSettings { int seen = -1; std::string text; };
+    static std::map<std::string, CachedSettings> cache;
+    CachedSettings& one = cache[file];
     if (one.seen != files_changed()) {
         std::ifstream in(file);
         std::stringstream text;

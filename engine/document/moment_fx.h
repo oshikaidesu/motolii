@@ -100,7 +100,7 @@ static bool doc_fx_frame(Doc& d, int layer, const ThingFx& e, double* frame) {
     std::copy(e.own, e.own + 4, frame), frame[4] = 0;
     return true;
 }
-static void doc_layer_solid(Doc& d, int layer, ThingFx& e, const ScreenNumbers& numbers, const std::function<DrawnFx()>& thorFx) {   // (in the frame)
+static void doc_layer_solid(Doc& d, int layer, ThingFx& e, const ScreenNumbers& numbers, const std::function<Canvas2DFx()>& thorFx) {   // (in the frame)
     Stage& s = *d.stage;
     thing_effects_draw(s, e.st, e.view, numbers, thorFx);
     if (solid_reads(e.solidFile)) thing_fx_cover(s, e, (int)(e.parameters.count("precision") ? e.parameters["precision"] : 160)), thing_fx_solid(s, e, true);
@@ -211,7 +211,7 @@ static void doc_layers_fx(Doc& d) {
         };
         const auto thorFx = [&d, layer = layer, &e = e] {   // (ThorVG's own among its steps, as they are now: lengths in points of the stage)
             std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
-            DrawnFx fx;
+            Canvas2DFx fx;
             std::string why;
             doc_fx(d, layer, d.stage->now, false, 1.0, fx, why, true);
             double frame[8];

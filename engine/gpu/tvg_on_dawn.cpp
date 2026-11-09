@@ -46,8 +46,8 @@ int main() {
     disc->appendCircle(128, 128, 80, 80);
     disc->fill(255, 0, 0, 255);
     canvas->add(disc);
-    const bool drawn = canvas->update() == tvg::Result::Success && canvas->draw(true) == tvg::Result::Success && canvas->sync() == tvg::Result::Success;
-    if (!drawn) { std::printf("FAIL draw\n"); return 1; }
+    const bool rendered = canvas->update() == tvg::Result::Success && canvas->draw(true) == tvg::Result::Success && canvas->sync() == tvg::Result::Success;
+    if (!rendered) { std::printf("FAIL draw\n"); return 1; }
 
     // read the texture back
     wgpu::BufferDescriptor room{};

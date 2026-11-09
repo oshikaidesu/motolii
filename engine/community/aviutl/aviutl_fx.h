@@ -133,7 +133,7 @@ static AviutlBuf& aviutl_buf(AviutlRun& r, const std::string& name, uint32_t w =
     w = std::clamp<uint32_t>(w ? w : b.w, 1, 8192), h = std::clamp<uint32_t>(h ? h : b.h, 1, 8192);
     if (b.t && b.w == w && b.h == h) return b;
     if (b.t) r.spare.insert({{b.w, b.h}, b});
-    if (const auto kept = r.spare.find({w, h}); kept != r.spare.end()) return b = kept->second, r.spare.erase(kept), b;
+    if (const auto cached = r.spare.find({w, h}); cached != r.spare.end()) return b = cached->second, r.spare.erase(cached), b;
     b.w = w, b.h = h;
     b.t = Texture::Builder().width(w).height(h).levels(1).format(Texture::InternalFormat::RGBA16F).usage(Texture::Usage::COLOR_ATTACHMENT | Texture::Usage::SAMPLEABLE).build(*r.s->engine);
     b.rt = RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, b.t).build(*r.s->engine);
@@ -172,7 +172,7 @@ static double aviutl_num(lua_State* L, int i, double otherwise = 0) { return lua
 // package is put in: the folder's time).
 static std::vector<std::filesystem::path> aviutl_shared(const std::filesystem::path& dir) {
     static std::mutex hold;
-    static std::map<std::filesystem::path, std::pair<std::filesystem::file_time_type, std::vector<std::filesystem::path>>> kept;
+    static std::map<std::filesystem::path, std::pair<std::filesystem::file_time_type, std::vector<std::filesystem::path>>> cached;
     std::vector<std::filesystem::path> dirs = {dir};
     for (std::filesystem::path p = dir; p.has_relative_path() && p != p.parent_path(); p = p.parent_path()) {
         if (p.parent_path().filename() != "aviutl_scripts") continue;
@@ -180,7 +180,7 @@ static std::vector<std::filesystem::path> aviutl_shared(const std::filesystem::p
         const std::filesystem::path root = p.parent_path();
         const auto when = std::filesystem::last_write_time(root, wrong);
         std::lock_guard<std::mutex> one(hold);
-        auto& [made, all] = kept[root];
+        auto& [made, all] = cached[root];
         if (all.empty() || made != when) {
             all.clear(), made = when;
             for (const auto& e : std::filesystem::directory_iterator(root, wrong))
@@ -193,7 +193,7 @@ static std::vector<std::filesystem::path> aviutl_shared(const std::filesystem::p
     return dirs;
 }
 static std::string aviutl_hlsl(AviutlRun& r, const std::string& name) {   // (a shader by its registered name: this script's, this file's, or "name@script" another's in the Script folder ("name@part@file": a part of an @ file))
-    if (auto kept = r.hlsls.find(name); kept != r.hlsls.end()) return kept->second;
+    if (auto cached = r.hlsls.find(name); cached != r.hlsls.end()) return cached->second;
     const size_t at = name.find('@');
     const std::string entry = name.substr(0, at), head = "--[[pixelshader@" + entry + ":";
     std::vector<std::string> texts = {r.own, r.all};

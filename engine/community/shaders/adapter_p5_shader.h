@@ -62,8 +62,8 @@ inline bool adapter_p5_shader(const std::string& json, std::string& fs, std::str
     };
     bool reads = false;
     static const std::set<std::string> taken = {"time", "resolution", "frame", "passindex", "clip_time", "clip_length", "frameRect", "passRect"};   // (isf.cpp's parameters)
-    for (const auto& [name, kept] : names) {
-        const auto& [type, row] = kept;
+    for (const auto& [name, info] : names) {
+        const auto& [type, row] = info;
         if (type.rfind("sampler", 0) == 0) {   // (the first picture is what it is put on, a film as much as anything; p5's rows start at the top)
             const std::regex read(R"(\b(?:texture2D|texture)\s*\(\s*)" + name + R"(\s*,)");
             for (std::string* t : {&vert, &frag}) *t = std::regex_replace(*t, read, reads ? "adapter_none(" : "adapter_read(");

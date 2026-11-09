@@ -18,7 +18,7 @@
 #include <string>
 
 // leva's folder() (packages/leva/src/helpers/folder.ts): only marks the object as a fold. Global in a recipe's runtime too.
-static const char* leva_kept = "function folder(schema, settings) { return { __folder: true, schema: schema, settings: settings || {} }; }";
+static const char* leva_prelude = "function folder(schema, settings) { return { __folder: true, schema: schema, settings: settings || {} }; }";
 
 // (the object told as head lines: a fold its key, a colour three numbers _x _y _z of 0 to 1 labelled r g b as an ISF colour
 //  is, which the card shows as one colour; the step none written as leva's Number plugin's normalize() makes it)
@@ -103,7 +103,7 @@ inline std::string leva_head(const std::string& src, std::string* trouble = null
         else if (c == '}' && --deep == 0) break;
     }
     if (close >= src.size()) return "";
-    const std::string js = std::string(leva_kept) + ";\n" + leva_told + "(" + src.substr(open, close - open + 1) + ")";
+    const std::string js = std::string(leva_prelude) + ";\n" + leva_told + "(" + src.substr(open, close - open + 1) + ")";
     JSRuntime* rt = JS_NewRuntime();
     JSContext* cx = JS_NewContext(rt);
     JSValue out = JS_Eval(cx, js.c_str(), js.size(), "knobs", JS_EVAL_TYPE_GLOBAL);

@@ -100,8 +100,8 @@ static void render_thread_run(Motolii* m, std::string document, int wide, int hi
             if (begun) m->s->engine->flush();
             m->ahead = begun > 0;
             if (t - m->stirred > std::chrono::seconds(5) && !std::getenv("MOTOLII_KEEP_NONE")) {   // (and, five seconds on as Final Cut Pro's background render, the work area's pictures that would be late, kept on disk)
-                stage_kept_fresh(m->cache, *m->d, *m->s, m->revision.load(), RATE);
-                m->ahead = stage_kept_one(m->cache, *m->d, *m->s, RATE, m->budget) || m->ahead;
+                stage_cache_fresh(m->cache, *m->d, *m->s, m->revision.load(), RATE);
+                m->ahead = stage_cache_one(m->cache, *m->d, *m->s, RATE, m->budget) || m->ahead;
             }
         }
         lap(4);
@@ -168,10 +168,10 @@ static void render_thread_run(Motolii* m, std::string document, int wide, int hi
         const auto evaluated = std::chrono::steady_clock::now();
         {
             std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
-            stage_kept_fresh(m->cache, *m->d, *m->s, m->revision.load(), RATE);
+            stage_cache_fresh(m->cache, *m->d, *m->s, m->revision.load(), RATE);
         }
         m->status = "drawing";
-        if (!m->playing || m->d->viewCameraAsked || m->second || !stage_kept_show(m->cache, *m->s, m->live, m->now, RATE)) live_camera(m);   // (played: a picture kept is put on the stage, not drawn; kept pictures are the camera's and the desk's alone)
+        if (!m->playing || m->d->viewCameraAsked || m->second || !stage_cache_show(m->cache, *m->s, m->live, m->now, RATE)) live_camera(m);   // (played: a picture kept is put on the stage, not drawn; kept pictures are the camera's and the desk's alone)
         const auto rendered = std::chrono::steady_clock::now();
         lap(5);
         if (++m->judged % 30 == 0) {   // (how long the GPU took for its last pictures, against the time each may have)

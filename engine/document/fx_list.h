@@ -46,7 +46,7 @@ static double doc_most(Doc& d, int layer, const char* name, double otherwise) {
 // The effects of a flat layer at a moment (or, `most`, as far as each reaches at its most), ThorVG's own: in shares of
 // its height from points of the picture (`units` to a unit of the stage, as it was made). false: a colour is not
 // six digits (why says which).
-static bool doc_fx(Doc& d, int layer, double at, bool most, double units, DrawnFx& fx, std::string& why, bool camera = false) {
+static bool doc_fx(Doc& d, int layer, double at, bool most, double units, Canvas2DFx& fx, std::string& why, bool camera = false) {
     const auto num = [&](const char* name, double otherwise) { return most ? doc_most(d, layer, name, otherwise) : doc_number(d, layer, name, at, otherwise); };
     bool ok = true;
     const auto hue = [&](const char* name, const char* otherwise, float3* to) {   // (a colour said as six digits; not said: as it comes)

@@ -48,7 +48,7 @@ struct PhysWorld::Own {
     std::vector<BodyID> bodies;
     std::vector<bool> handed;                      // (a keyed thing the world has taken over)
     PhysKeyed keyed;
-    std::vector<std::vector<PhysPose>> kept;       // (picture by picture, every thing)
+    std::vector<std::vector<PhysPose>> poses;       // (picture by picture, every thing)
 };
 
 PhysWorld::PhysWorld(const std::vector<PhysThing>& things, float gravity, PhysKeyed keyed) : own((once(), new Own)) {   // (Jolt made ready before anything of it is made)
@@ -71,8 +71,8 @@ PhysWorld::PhysWorld(const std::vector<PhysThing>& things, float gravity, PhysKe
         o.bodies.push_back(bi.CreateAndAddBody(s, EActivation::Activate));
         o.handed.push_back(!keyedNow);
     }
-    o.kept.push_back({});
-    for (BodyID id : o.bodies) o.kept.back().push_back(read(bi, id));
+    o.poses.push_back({});
+    for (BodyID id : o.bodies) o.poses.back().push_back(read(bi, id));
 }
 PhysWorld::~PhysWorld() = default;
 
@@ -82,8 +82,8 @@ PhysPose PhysWorld::pose(int index, int picture) {
     if (index < 0 || index >= (int)o.bodies.size()) return {};
     BodyInterface& bi = o.ps.GetBodyInterface();
     const float dt = 1.f / 60.f;
-    while ((int)o.kept.size() <= picture) {
-        const double at = (double)o.kept.size() / 60.0;   // (the moment this step ends)
+    while ((int)o.poses.size() <= picture) {
+        const double at = (double)o.poses.size() / 60.0;   // (the moment this step ends)
         for (size_t i = 0; i < o.bodies.size(); ++i) {
             const PhysThing& t = o.things[i];
             if (o.handed[i]) continue;
@@ -98,8 +98,8 @@ PhysPose PhysWorld::pose(int index, int picture) {
             bi.MoveKinematic(o.bodies[i], RVec3(p.at[0], p.at[1], p.at[2]), Quat(p.turn[0], p.turn[1], p.turn[2], p.turn[3]).Normalized(), dt);
         }
         o.ps.Update(dt, 1, &o.temp, &o.jobs);
-        o.kept.push_back({});
-        for (BodyID id : o.bodies) o.kept.back().push_back(read(bi, id));
+        o.poses.push_back({});
+        for (BodyID id : o.bodies) o.poses.back().push_back(read(bi, id));
     }
-    return o.kept[(size_t)picture][(size_t)index];
+    return o.poses[(size_t)picture][(size_t)index];
 }

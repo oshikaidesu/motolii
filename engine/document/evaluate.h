@@ -192,7 +192,7 @@ static void doc_evaluate(Doc& d, double now) {
             else video_at(s, t.video, (float)lies[i].since);
         }
         if (t.video && t.video->look) {   // (its own look, in its material, as ThorVG's effects give a picture its: blurred (in points of the film), tinted, tritoned)
-            DrawnFx fx;
+            Canvas2DFx fx;
             std::string why;
             doc_fx(d, layer, now, false, 1.0, fx, why);
             const std::string way = doc_word(d, layer, "blur_direction");
@@ -236,7 +236,7 @@ static void doc_evaluate(Doc& d, double now) {
                 if (const auto own = d.copyLooks.find(made.thing.getId()); made.of == t.drawn->sheet && own != d.copyLooks.end()) own->second->setParameter("deep", box), own->second->setDepthCulling(lies[i].solid), own->second->setDepthWrite(lies[i].solid);
         }
         if (t.drawn && t.drawn->edge[0]) {   // (its bevel as it is now, in the box's lengths; as far across as through in the world. 12 points as it comes: no source, After Effects' 2 is hardly seen on a title)
-            Drawn& drawn = *t.drawn;
+            Canvas2D& drawn = *t.drawn;
             const float told = (float)(doc_number(d, layer, "bevel_depth", now, 12) / t.units), z = (float)doc_literal(d, layer, "scale_z", now, 1);
             const float wide = (float)doc_literal(d, layer, "scale_x", now, 1), through = z != 0.f ? told * wide / std::fabs(z) : 0.f;
             const bool banded = doc_bevel(d, layer) == 5 && drawn.bands.w > 0.f;   // (Step on a word with strokes: a stair to each, as wide as it is; Bevel Depth how high)
@@ -290,11 +290,11 @@ static void doc_evaluate(Doc& d, double now) {
                 const double is = doc_number(d, layer, ("js_line_" + std::to_string(line)).c_str(), now, 1);
                 moved = moved || is != strong, strong = is;
             }
-            if (moved) kept_drop(s, t.drawn), t.drawn->shownAt = t.drawn->sketchAt = -1;
+            if (moved) cache_drop(s, t.drawn), t.drawn->shownAt = t.drawn->sketchAt = -1;
         }
         if (t.drawn && t.drawn->seconds > 0.f) picture_at(s, t.drawn, std::fmod((float)doc_own_time(d, layer, now, lies[i].since), t.drawn->seconds));
         if (t.drawn && !t.drawn->effects.empty()) {   // (its effects as they are now: those that move are drawn again)
-            DrawnFx fx;
+            Canvas2DFx fx;
             std::string why;
             if (doc_fx(d, layer, now, false, t.units, fx, why)) fx_at(s, t.drawn, fx);
         }
@@ -340,10 +340,10 @@ static void doc_evaluate(Doc& d, double now) {
             if (t.drawn->edgeLook) t.drawn->edgeLook->setParameter("bends", bends, 8);
             // (another shape's path as it is now, where it lies, in this one's points: as shape_cut lays them; and each of its copies, `all`)
             const auto other = [&](int with, bool all) {
-                Drawn::Other o;
+                Canvas2D::Other o;
                 const auto found = d.shown.find(with);
                 if (with == layer || found == d.shown.end() || !found->second.drawn || !found->second.drawn->cut) return o;
-                const Drawn* a = t.drawn; const Drawn* b = found->second.drawn;
+                const Canvas2D* a = t.drawn; const Canvas2D* b = found->second.drawn;
                 const math::mat4 back = inverse(doc_place(d, layer, now));
                 const tvg::PathCommand* cmds; const tvg::Point* pts; uint32_t cmdsCnt = 0, ptsCnt = 0;
                 b->outline->path(&cmds, &cmdsCnt, &pts, &ptsCnt);
@@ -358,17 +358,17 @@ static void doc_evaluate(Doc& d, double now) {
                 }
                 return o;
             };
-            Drawn::Other join, morph;   // (put together with another, Skia's op in skia_path_operations.cpp's order; turned into another, so far)
+            Canvas2D::Other join, morph;   // (put together with another, Skia's op in skia_path_operations.cpp's order; turned into another, so far)
             const std::string how = doc_word(d, layer, "boolean");
             for (int k = 0; k < 4; ++k)
                 if (how == std::array<const char*, 4>{"subtract", "intersect", "union", "exclude"}[(size_t)k]) join = other((int)doc_number(d, layer, "boolean_with", 0, 0), true), join.how = k;
             if (const float much = num("morph", 0); much > 0.f) morph = other((int)doc_number(d, layer, "morph_to", 0, 0), false), morph.much = much;
             if (const int steps = (int)doc_number(d, layer, "morph_steps", 0, 0); steps > 1) morph = other((int)doc_number(d, layer, "morph_to", 0, 0), false), morph.much = 1.f, morph.how = std::min(steps, 64);   // (a blend: every step at once)
-            Drawn::Other trace;   // (another's track over the last so many seconds, its middle where it was, as Cavalry's Trails: this one's path)
+            Canvas2D::Other trace;   // (another's track over the last so many seconds, its middle where it was, as Cavalry's Trails: this one's path)
             if (const int with = (int)doc_number(d, layer, "trail", 0, 0); with && with != layer && d.shown.count(with)) {
                 const math::mat4 back = inverse(doc_place(d, layer, now));
                 const double length = std::max(1e-3, doc_number(d, layer, "trail_length", now, 1));
-                const Drawn* a = t.drawn;
+                const Canvas2D* a = t.drawn;
                 // (on a grid of 64 ticks over its length, fixed in time: a tick worked out once is kept, so a moment only works out
                 //  the ticks new since; its ends where the other was then and is now)
                 const double step = length / 64.0, last = std::floor(now / step);
@@ -402,7 +402,7 @@ static void doc_evaluate(Doc& d, double now) {
                 std::vector<tvg::PathCommand> c;
                 std::vector<tvg::Point> p;
                 if (!on.empty() && sk_svg(kept.second.c_str(), c, p)) {
-                    const Drawn* a = t.drawn;
+                    const Canvas2D* a = t.drawn;
                     for (tvg::Point& at : p) at = {0.5f * a->cutW + at.x * a->plainHigh, 0.5f * a->plainHigh + at.y * a->plainHigh};
                     trace.by = std::move(c), trace.at = std::move(p);
                 }

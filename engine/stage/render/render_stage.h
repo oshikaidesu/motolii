@@ -149,7 +149,7 @@ struct Stage {
     std::vector<std::function<void()>> before;   // drawn before the stage's own view, each into a picture of its own (a thing with effects of its own: layer_fx.h)
     std::vector<std::function<void()>> aim;      // told before each frame begins, what those pictures and the looks that show them are (Filament sends a look's parameters on as a frame begins: FRenderer::beginFrame, FEngine::prepare)
     std::function<void()> lastly;   // and after everything, in the same frame (the desk: its stage's picture placed on it, live.h)
-    Texture* drawnInto = nullptr;   // the picture the views draw into (live.h, screen_fx.h); none: the screen
+    Texture* drawTarget = nullptr;   // the picture the views draw into (live.h, screen_fx.h); none: the screen
     RenderTarget* out = nullptr;   // where the picture goes at last (none: the screen; the window's live picture: live.h)
 };
 
@@ -217,10 +217,10 @@ static void desk_lay(Stage& s, bool on) {
 
 // The room the glass mirrors and is lit by: one of the studios that come with Filament, made into a .ktx by cmgen.
 static bool room(Stage& s, const char* ktx, float intensity) {
-    static std::vector<std::vector<uint8_t>> kept;
-    kept.push_back(load_file(ktx));
-    if (kept.back().empty()) return false;
-    auto* bundle = new image::Ktx1Bundle(kept.back().data(), (uint32_t)kept.back().size());
+    static std::vector<std::vector<uint8_t>> ktxs;
+    ktxs.push_back(load_file(ktx));
+    if (ktxs.back().empty()) return false;
+    auto* bundle = new image::Ktx1Bundle(ktxs.back().data(), (uint32_t)ktxs.back().size());
     float3 sh[9];
     if (!bundle->getSphericalHarmonics(sh)) return false;
     Texture* tex = ktxreader::Ktx1Reader::createTexture(s.engine, bundle, false);

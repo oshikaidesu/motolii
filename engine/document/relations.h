@@ -49,7 +49,7 @@ static double doc_falloff_at(Doc& d, int by, math::double3 at, double t) {
     const int f = (int)doc_number(d, by, "region", 0, 0);
     if (!f) return 1.0;
     const auto found = d.shown.find(f);
-    const Drawn* b = found == d.shown.end() ? nullptr : found->second.drawn;
+    const Canvas2D* b = found == d.shown.end() ? nullptr : found->second.drawn;
     if (!b || !b->cut || !b->outline) return 1.0;
     const math::mat4 place = doc_place(d, f, t, 0, 0, false);
     const math::double4 on = inverse(place) * math::double4{at, 1.0};

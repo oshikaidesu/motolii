@@ -113,7 +113,7 @@ static void clock(Stage& s, int pictures, const std::function<void(float)>& pose
     // And by the clock, as a screen asks for them: on every tick Filament is asked once whether it will draw (it says
     // no when it is behind), nothing is waited for. Pictures drawn and pictures left out, at 60, 120 and 240 a second.
     for (int rate : {60, 120, 240}) {
-        int drawn = 0, left_out = 0, late = 0;   // (late: begun a whole tick after its time, the moment's own work too slow; Filament does not count those)
+        int rendered = 0, left_out = 0, late = 0;   // (late: begun a whole tick after its time, the moment's own work too slow; Filament does not count those)
         const auto start = std::chrono::steady_clock::now();
         for (int i = 0; i < 2 * rate; ++i) {   // two seconds
             const auto due = start + std::chrono::microseconds((long long)i * 1000000 / rate);
@@ -124,11 +124,11 @@ static void clock(Stage& s, int pictures, const std::function<void(float)>& pose
             if (!begins(s)) { ++left_out; continue; }
             pictures_of(s);
             s.renderer->endFrame();
-            ++drawn;
+            ++rendered;
         }
         const auto asked = std::chrono::steady_clock::now();
         s.engine->flushAndWait();
-        std::printf("at %d a second: %d drawn, %d left out, %d late; the last was done %.1f ms after it was asked for, the two seconds took %.2f\n", rate, drawn, left_out, late,
+        std::printf("at %d a second: %d drawn, %d left out, %d late; the last was done %.1f ms after it was asked for, the two seconds took %.2f\n", rate, rendered, left_out, late,
                     std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - asked).count(), std::chrono::duration<double>(asked - start).count());
         for (const auto& word : s.said_after) word();
     }
@@ -141,7 +141,7 @@ static void soak(Stage& s, double seconds, int pictures, const std::function<voi
     s.by_clock = true;
     const auto start = std::chrono::steady_clock::now();
     const long ticks = (long)(seconds * 60.0);
-    int drawn = 0, left_out = 0, all_drawn = 0, all_left = 0;
+    int rendered = 0, left_out = 0, all_rendered = 0, all_left = 0;
     double longest = 0.0;
     for (long i = 0; i < ticks; ++i) {
         std::this_thread::sleep_until(start + std::chrono::microseconds(i * 1000000 / 60));
@@ -151,23 +151,23 @@ static void soak(Stage& s, double seconds, int pictures, const std::function<voi
         if (begins(s)) {
             pictures_of(s);
             s.renderer->endFrame();
-            ++drawn;
+            ++rendered;
         } else ++left_out;
         longest = std::max(longest, std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - began).count());
         if ((i + 1) % 3600 == 0 || i + 1 == ticks) {
             mach_task_basic_info_data_t info;
             mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
             task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &count);
-            std::printf("minute %2ld: %d drawn, %d left out; longest %.1f ms; memory %.0f MB\n", (i + 1 + 3599) / 3600, drawn, left_out, longest, (double)info.resident_size / 1048576.0);
+            std::printf("minute %2ld: %d drawn, %d left out; longest %.1f ms; memory %.0f MB\n", (i + 1 + 3599) / 3600, rendered, left_out, longest, (double)info.resident_size / 1048576.0);
             std::fflush(stdout);
             for (const auto& word : s.said_after) word();
-            all_drawn += drawn; all_left += left_out;
-            drawn = left_out = 0;
+            all_rendered += rendered; all_left += left_out;
+            rendered = left_out = 0;
             longest = 0.0;
         }
     }
     s.engine->flushAndWait();
-    std::printf("in all: %d drawn, %d left out, over %.0f seconds\n", all_drawn, all_left, seconds);
+    std::printf("in all: %d drawn, %d left out, over %.0f seconds\n", all_rendered, all_left, seconds);
 }
 
 static bool shoot(Stage& s, const char* path) {

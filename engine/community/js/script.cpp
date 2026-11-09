@@ -190,7 +190,7 @@ void script_first(const std::string& file, std::vector<ScriptParameter>& paramet
 }
 
 // What a Canvalry distribution asks of Cavalry's JavaScript (the four names its 26 files use), so one runs as it is.
-static const char* cavalry_kept = R"(
+static const char* cavalry_prelude = R"(
 var cavalry = {
   Point: function (x, y) { this.x = x; this.y = y; },
   PointCloud: function () { this.points = []; this.sizes = []; },
@@ -222,7 +222,7 @@ function animate(i, n, t, k, a) {
 )";
 
 // ease(name, u): a way by its name (easing_names.h), the same expression as a key's stretch; not one of them: as it is.
-static std::string ways_kept() {
+static std::string ways_prelude() {
     std::string js = "var ease = (function () { var pow = Math.pow, exp = Math.exp, cos = Math.cos, abs = Math.abs, pi = function () { return Math.PI; }; var w = {";
     for (const auto& one : named_ways) js += std::string(one.name) + ": function (u) { return " + one.goes + "; }, ";
     return js + "}; return function (name, u) { u = Math.min(1, Math.max(0, u)); return w[name] ? w[name](u) : u; }; })();\n";
@@ -274,10 +274,10 @@ Script::Script(const std::string& file, const std::string& p5, const std::string
     JS_SetMemoryLimit(own->rt, 2ull << 30);   // (a sketch keeps its frames: 100,000 rectangles a frame are 1.5 GB a second. It stops with an error, not with the machine)
     own->cx = JS_NewContext(own->rt);
     own->file = file, own->src = src;
-    const std::string ways = ways_kept();
+    const std::string ways = ways_prelude();
     JS_FreeValue(own->cx, JS_Eval(own->cx, ways.c_str(), ways.size(), "ways", JS_EVAL_TYPE_GLOBAL));
-    JS_FreeValue(own->cx, JS_Eval(own->cx, cavalry_kept, std::char_traits<char>::length(cavalry_kept), "cavalry", JS_EVAL_TYPE_GLOBAL));
-    JS_FreeValue(own->cx, JS_Eval(own->cx, leva_kept, strlen(leva_kept), "leva", JS_EVAL_TYPE_GLOBAL));   // (folder(), as its parameters object says its folds: script_leva.h)
+    JS_FreeValue(own->cx, JS_Eval(own->cx, cavalry_prelude, std::char_traits<char>::length(cavalry_prelude), "cavalry", JS_EVAL_TYPE_GLOBAL));
+    JS_FreeValue(own->cx, JS_Eval(own->cx, leva_prelude, strlen(leva_prelude), "leva", JS_EVAL_TYPE_GLOBAL));   // (folder(), as its parameters object says its folds: script_leva.h)
     if (src.find("AE.compile") != std::string::npos) {   // (an After Effects expression the recipe holds: read once with acorn, third_party/js/acorn, then only called: ae_expr.h)
         const std::filesystem::path where = std::filesystem::path(p5).parent_path().parent_path() / "acorn" / "acorn.js";
         std::ifstream lib(where);
@@ -287,7 +287,7 @@ Script::Script(const std::string& file, const std::string& p5, const std::string
         if (!lib || acorn.empty()) own->trouble = "acorn is not where it is kept: " + where.string();
         else {
             JS_FreeValue(own->cx, JS_Eval(own->cx, acorn.c_str(), acorn.size(), "acorn.js", JS_EVAL_TYPE_GLOBAL));
-            JS_FreeValue(own->cx, JS_Eval(own->cx, ae_kept, std::char_traits<char>::length(ae_kept), "ae_expr", JS_EVAL_TYPE_GLOBAL));
+            JS_FreeValue(own->cx, JS_Eval(own->cx, ae_prelude, std::char_traits<char>::length(ae_prelude), "ae_expr", JS_EVAL_TYPE_GLOBAL));
         }
     }
     const bool sketch = own->sketch = !p5.empty() && script_is_sketch(src);
@@ -513,16 +513,16 @@ ScriptCopy Script::ask(int i, int n, double t) {   // (each(), the parameters as
 // read once from where the library keeps it, and each ease said made once and kept by what it says. irregular() draws
 // its points with Math.random: while an ease is made, anime.js's own seeded one stands in, its seed from the words, so
 // the same words give the same curve every time.
-static const char anime_kept[] = R"(
+static const char anime_prelude[] = R"(
 var __eases = {};
 function __ease(said) {
   var made = __eases[said];
   if (made) return made;
   var seed = 0;
   for (var i = 0; i < said.length; i++) seed = (seed * 31 + said.charCodeAt(i)) | 0;
-  var r = anime.utils.createSeededRandom(seed), kept = Math.random;
+  var r = anime.utils.createSeededRandom(seed), ownRandom = Math.random;
   Math.random = function () { return r(0, 1, 6); };
-  try { with (anime.eases) { with (anime) { made = eval('(' + said + ')'); } } } finally { Math.random = kept; }   // (anime's own linear(), steps()... before eases.linear)
+  try { with (anime.eases) { with (anime) { made = eval('(' + said + ')'); } } } finally { Math.random = ownRandom; }   // (anime's own linear(), steps()... before eases.linear)
   if (made && typeof made.ease === 'function') made = made.ease;   // (a spring: its ease)
   if (typeof made !== 'function') throw new Error(said + ': not an ease of anime.js');
   return __eases[said] = made;
@@ -540,7 +540,7 @@ double anime_ease(const std::string& bundle, const std::string& said, double u, 
         rt = JS_NewRuntime(), cx = JS_NewContext(rt);
         std::ifstream in(bundle);
         std::stringstream code;
-        code << "globalThis.setImmediate = function () { return 0; }; globalThis.clearImmediate = function () {};\n" << in.rdbuf() << anime_kept;
+        code << "globalThis.setImmediate = function () { return 0; }; globalThis.clearImmediate = function () {};\n" << in.rdbuf() << anime_prelude;
         const std::string src = code.str();
         JSValue ran = JS_Eval(cx, src.c_str(), src.size(), "anime", JS_EVAL_TYPE_GLOBAL);
         if (!in || JS_IsException(ran)) why = "anime.js is not where it is kept: " + bundle;

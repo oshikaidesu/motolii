@@ -4,7 +4,7 @@
 // docs/internal/reports/effects/shaderlab_origins.md), and drawn here the plain WebGPU way, with the shaders' own layout ("auto"), as Dawn's
 // samples/HelloTriangle.cpp draws. Device and reading back as tvg_on_dawn.cpp.
 //   ./gpu/tsl_on_dawn.sh <folder> <width> <height>   (folder: vert.wgsl frag.wgsl bindings.txt g*b*.bin
-//   position.f32 uv.f32 index.u16 picture.rgba; writes drawn.rgba there)
+//   position.f32 uv.f32 index.u16 picture.rgba; writes rendered.rgba there)
 #include <dawn/webgpu_cpp.h>
 #include <cstdio>
 #include <fstream>
@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
     const wgpu::Extent3D all{W, H, 1};
     queue.WriteTexture(&into, pixels.data(), pixels.size(), &rows, &all);
     like.usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::CopySrc;
-    wgpu::Texture drawn = device.CreateTexture(&like);
+    wgpu::Texture rendered = device.CreateTexture(&like);
 
     const auto buffer = [&](const std::string& bytes, wgpu::BufferUsage usage) {
         wgpu::BufferDescriptor room{};
@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
     }
 
     wgpu::RenderPassColorAttachment color{};
-    color.view = drawn.CreateView();
+    color.view = rendered.CreateView();
     color.loadOp = wgpu::LoadOp::Clear;
     color.storeOp = wgpu::StoreOp::Store;
     color.clearValue = {0, 0, 0, 1};
@@ -181,7 +181,7 @@ int main(int argc, char** argv) {
     room.usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead;
     wgpu::Buffer back = device.CreateBuffer(&room);
     wgpu::TexelCopyTextureInfo from{};
-    from.texture = drawn;
+    from.texture = rendered;
     wgpu::TexelCopyBufferInfo to{};
     to.buffer = back;
     to.layout.bytesPerRow = stride;
@@ -194,8 +194,8 @@ int main(int argc, char** argv) {
                              [&](wgpu::MapAsyncStatus how, wgpu::StringView) { mapped = how == wgpu::MapAsyncStatus::Success; }), UINT64_MAX);
     if (!mapped) { std::printf("FAIL read back\n"); return 1; }
     const char* got = (const char*)back.GetConstMappedRange(0, room.size);
-    std::ofstream drawn_file(dir + "drawn.rgba", std::ios::binary);
-    for (uint32_t y = 0; y < H; ++y) drawn_file.write(got + (size_t)y * stride, W * 4);
+    std::ofstream rendered_file(dir + "rendered.rgba", std::ios::binary);
+    for (uint32_t y = 0; y < H; ++y) rendered_file.write(got + (size_t)y * stride, W * 4);
     std::printf("%s: %u x %u drawn, device errors %d\n", errors ? "FAIL" : "PASS", W, H, errors);
     return errors ? 1 : 0;
 }

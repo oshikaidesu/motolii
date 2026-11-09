@@ -109,7 +109,7 @@ static void doc_sketch_mesh(Doc& d, int layer, Doc::Shown& t, double now) {
         const std::vector<uint8_t> said = sc->run->bytes("__mesh_pic(" + std::to_string(i) + ")");
         if (said.size() < 4 * sizeof(float)) break;
         const float* p = (const float*)said.data();
-        Drawn* pic = sketch_texture(s, sc->run.get(), (doc_engine("third_party/filament_src/assets/fonts") / "Roboto-Medium.ttf").string(), (int)i, (int)p[0], (int)p[1]);
+        Canvas2D* pic = sketch_texture(s, sc->run.get(), (doc_engine("third_party/filament_src/assets/fonts") / "Roboto-Medium.ttf").string(), (int)i, (int)p[0], (int)p[1]);
         t.sketchPics.push_back(pic);
         if (!pic) continue;
         constexpr TextureSampler::WrapMode wraps[] = {TextureSampler::WrapMode::CLAMP_TO_EDGE, TextureSampler::WrapMode::REPEAT, TextureSampler::WrapMode::MIRRORED_REPEAT};
@@ -117,7 +117,7 @@ static void doc_sketch_mesh(Doc& d, int layer, Doc::Shown& t, double now) {
         read.setWrapModeS(wraps[(int)p[2]]), read.setWrapModeT(wraps[(int)p[3]]);
         t.look->setParameter(("picture" + std::to_string(i)).c_str(), pic->texture, read);
     }
-    for (Drawn* pic : t.sketchPics) if (pic) picture_at(s, pic, (float)frame / 60.f);
+    for (Canvas2D* pic : t.sketchPics) if (pic) picture_at(s, pic, (float)frame / 60.f);
     Mesh& m = *t.shape;
     m.pos.clear(), m.nrm.clear(), m.uv.clear(), m.uv1.clear(), m.color.clear(), m.idx.clear();
     std::vector<std::vector<uint32_t>> parts(worn.size() + 1);   // (0: sketch.mat's. Each way a part of its own, so that each wears what it was told)

@@ -200,7 +200,7 @@ static bool doc_to_path(Doc& d, int layer) {
     const bool line = form == "line", wave = form == "wave";
     const double high = line ? 0.04 : wave ? 0.3 : 1.0, wide = doc_number(d, layer, "wide", 0, line ? 25 : wave ? 10 : 1);   // (as doc_match makes it)
     const int h = 1024, w = std::max(2, (int)std::lround(1024.0 * wide));
-    Drawn made;
+    Canvas2D made;
     tvg::Shape* shape = tvg::Shape::gen();
     flat_path(&made, shape, form.c_str(), w, h, 0.f, (int)doc_number(d, layer, "points", 0, form == "star" ? 5 : form == "arc" ? 270 : form == "squircle" ? 4 : form == "cog" ? 12 : form == "spiral" ? 3 : wave ? 4 : 6),
               (float)doc_number(d, layer, "inner", 0, form == "cog" ? 0.2 : form == "arc" ? 0.3 : form == "spiral" ? 0.1 : form == "chamfer" ? 0.3 : 0.5), 0.f, 0.f);

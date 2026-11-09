@@ -108,11 +108,11 @@ inline std::string adapter_shader_files(const std::string& text, const std::file
 }
 
 // The pictures a sketch loads, from beside it to a folder named as what is kept: a script has no files of its own (video_frames_for_scripts.h's beside).
-inline void adapter_pictures(const std::string& text, const std::filesystem::path& beside, const std::filesystem::path& kept) {
+inline void adapter_pictures(const std::string& text, const std::filesystem::path& beside, const std::filesystem::path& saved) {
     static const std::regex load(R"re(\bloadImage\s*\(\s*['"`]([^'"`]+)['"`])re");
     std::error_code wrong;
     for (std::sregex_iterator m(text.begin(), text.end(), load), end; m != end; ++m) {
-        const std::filesystem::path from = beside / (*m)[1].str(), to = kept.parent_path() / kept.stem();
+        const std::filesystem::path from = beside / (*m)[1].str(), to = saved.parent_path() / saved.stem();
         if (!std::filesystem::is_regular_file(from, wrong)) continue;
         std::filesystem::create_directories(to, wrong);
         std::filesystem::copy_file(from, to / from.filename(), std::filesystem::copy_options::overwrite_existing, wrong);
@@ -174,11 +174,11 @@ inline std::string adapter_js(const std::string& src, const std::string& form) {
 inline std::string adapter_called(const std::string& name, std::string body, const std::string& last, const std::string& before, const std::string& start, const std::string& done) {
     static const std::regex hasMain(R"(\bvoid\s+main\s*\(\s*(void)?\s*\))");
     const std::regex past(R"(\b(?:texture|texture2D)\s*\(\s*(?:)" + last + R"()\s*,)");
-    const bool kept = std::regex_search(body, past);
+    const bool persistent = std::regex_search(body, past);
     body = std::regex_replace(body, past, "texture(isf_img_adapter_last,");
     body = std::regex_search(body, hasMain) ? std::regex_replace(body, hasMain, "void adapter_main()") : "void adapter_main(){\n" + body + "\n}";
-    return "/*{\"ISFVSN\":\"2\",\"DESCRIPTION\":\"" + name + "\",\"CATEGORIES\":[\"Shadertoy\"],\"INPUTS\":[]" + (kept ? ",\"PASSES\":[{\"TARGET\":\"adapter_last\",\"PERSISTENT\":true},{}]" : "") + "}*/\n" + before + body +
-           "\nvoid main(){" + (kept ? "if(PASSINDEX==1){gl_FragColor=IMG_NORM_PIXEL(adapter_last,gl_FragCoord.xy/RENDERSIZE);return;}" : "") + start + "adapter_main();" + done + "}\n";
+    return "/*{\"ISFVSN\":\"2\",\"DESCRIPTION\":\"" + name + "\",\"CATEGORIES\":[\"Shadertoy\"],\"INPUTS\":[]" + (persistent ? ",\"PASSES\":[{\"TARGET\":\"adapter_last\",\"PERSISTENT\":true},{}]" : "") + "}*/\n" + before + body +
+           "\nvoid main(){" + (persistent ? "if(PASSINDEX==1){gl_FragColor=IMG_NORM_PIXEL(adapter_last,gl_FragCoord.xy/RENDERSIZE);return;}" : "") + start + "adapter_main();" + done + "}\n";
 }
 
 inline std::string adapter_isf(const std::string& text) {

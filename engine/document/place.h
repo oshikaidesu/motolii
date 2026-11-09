@@ -153,7 +153,7 @@ static math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
     if (member)   // (laid on another shape's outline, evenly, each turned the way it goes there, as Cavalry's Duplicator on a shape)
         if (const int on = (int)doc_literal(d, layer, "copy_on", 0, 0); on && on != layer && doc_number(d, on, "copy_on", 0, 0) == 0.0) {
             const auto found = d.shown.find(on);
-            const Drawn* b = found == d.shown.end() ? nullptr : found->second.drawn;
+            const Canvas2D* b = found == d.shown.end() ? nullptr : found->second.drawn;
             if (b && b->cut && b->outline) {
                 const tvg::PathCommand* cmds; const tvg::Point* pts; uint32_t cmdsCnt = 0, ptsCnt = 0;
                 b->outline->path(&cmds, &cmdsCnt, &pts, &ptsCnt);

@@ -21,7 +21,7 @@ function __any(name) {
     apply() { return __any(name + '()'); }, construct() { return __any('new ' + name); },
   });
 }
-// A canvas with no pixels, as a 2D sketch paints on it: what the WHATWG canvas context is told, kept as numbers for ThorVG
+// A canvas with no pixels, as a 2D sketch paints on it: what the WHATWG canvas context is told, cached as numbers for ThorVG
 // (canvas_sketch.h), each paint its kind (1 fill, 2 stroke, 3 words), colour, blend, line, how many numbers follow of its path
 // (0 move, 1 line, 2 curve, 3 close) and of its gradient and the sketch's line that drew it, its points turned by the matrix as they are told, as the spec says. svgcanvas, which writes the same calls as SVG, took
 // 45 ms a frame in QuickJS for 1161 shapes and this 6, and has no globalCompositeOperation.
@@ -167,7 +167,7 @@ function __element(tag) {
   return e;
 }
 // The clock is the sketch's, not the wall's: Date, setTimeout and setInterval as timesnap has them (lib/overwrite-time.js), its
-// frames stepped by hand; what waits on them comes when the frames reach them. The wall's is kept for how long to wait for a sketch.
+// frames stepped by hand; what waits on them comes when the frames reach them. The wall's is cached for how long to wait for a sketch.
 const __wall = Date.now, __began = __wall(), __WallDate = Date;
 globalThis.Date = class extends __WallDate { constructor(...a) { if (a.length) super(...a); else super(__began + __T); } static now() { return __began + __T; } };
 var __timers = [], __timer = 0;
@@ -247,7 +247,7 @@ p5.prototype.loadImage = function (path, ok) {   // (a picture that came with it
 };
 p5.prototype.createCapture = p5.prototype.createVideo = function () { const f = __film_open(), ready = [...arguments].find(a => typeof a === 'function'); if (ready) ready(f); return f; };
 const __packed = c => c ? Math.round(c[0] * 255) << 16 | Math.round(c[1] * 255) << 8 | Math.round(c[2] * 255) : -1;   // (a copy's colour, red green blue; -1: its own solid's)
-var __drawn = [], __kinds = {}, __U = 0.01;   // (a pixel of the sketch in the world's unit: as tall as the stage as it comes, new p5() below)
+var __placed = [], __kinds = {}, __U = 0.01;   // (a pixel of the sketch in the world's unit: as tall as the stage as it comes, new p5() below)
 globalThis.flex = () => {};   // (p5.flex, how a canvas sits on its page: there is no page)
 // OpenProcessing's configurator, by its README (github.com/msawired/OPC, MIT): each call makes a global of that name, at its first value.
 var OPC = new Proxy({}, { get(t, k) {
@@ -269,7 +269,7 @@ function __to(f) {
   if (!__frames.length) __U = 3.2154 / (globalThis.height || 400), p5.instance._lastTargetFrameTime = -Infinity;   // (here, not after new p5(): an async setup() has its size only by now. p5's _draw waits a frame's time after setup, and at frameRate(30) that is a first frame with nothing on it)
   while (__frames.length <= f) {
     const was = globalThis.frameCount, q = __Q, last = __frames[__frames.length - 1];
-    if (q.length) __drawn = [];
+    if (q.length) __placed = [];
     if (__film) __film_step();
     __T += 1000 / 60, __Q = [];
     __timers_due();
@@ -278,7 +278,7 @@ function __to(f) {
     if (__2d) {   // (2D: what each frame adds to the one before, as its canvas keeps what was painted; __from: the frame it was last wiped at)
       const [wiped, o] = __canvas.take();
       __from.push(wiped || !__frames.length ? __frames.length : __from[__from.length - 1]), __frames.push(o);
-    } else __frames.push(last && globalThis.frameCount === was ? last : Float64Array.from(__drawn)), __mesh_done();   // (a noLoop(), a frameRate(30): as it was)
+    } else __frames.push(last && globalThis.frameCount === was ? last : Float64Array.from(__placed)), __mesh_done();   // (a noLoop(), a frameRate(30): as it was)
   }
 }
 function __shaded_take(seconds) {   // (the shader that paints its stage and what the sketch tells it every 0.1 second, a few seconds of waiting at most: "" none)
@@ -298,19 +298,19 @@ function __shaded_take(seconds) {   // (the shader that paints its stage and wha
 }
 var __was = {};
 function __relates(all, t, k, rel, frame, awake) {   // (a relation written as a file: its relate() told all its things at once, document/relations.h; what it leaves out stays as it was. Its Falloff weighs what it says, as Cavalry's does a Behaviour's Strength; one that remembers is told it as near and weighs it itself, as MASH's Python node reads getFalloff)
-  const names = ['x', 'y', 'z', 'size', 'rotate', 'rotate_x', 'rotate_y', 'opacity'], many = names.length, by = [], solves = relate.length > 3, kept = __was[rel] = __was[rel] || [];
+  const names = ['x', 'y', 'z', 'size', 'rotate', 'rotate_x', 'rotate_y', 'opacity'], many = names.length, by = [], solves = relate.length > 3, cached = __was[rel] = __was[rel] || [];
   const things = all.map((v, i) => { const o = { i, w: v[many], h: v[many + 1], id: v[many + 2], near: v[many + 3] }; names.forEach((n, j) => o[n] = v[j]); return o; });
-  if (awake) ((solves ? relate(things, t, k, (frame && kept[frame - 1]) || null) : relate(things, t, k)) || things).forEach((o, n) => by[o && o.i !== undefined ? o.i : n] = o);
-  if (solves) kept[frame] = awake ? by : null;
+  if (awake) ((solves ? relate(things, t, k, (frame && cached[frame - 1]) || null) : relate(things, t, k)) || things).forEach((o, n) => by[o && o.i !== undefined ? o.i : n] = o);
+  if (solves) cached[frame] = awake ? by : null;
   const out = new Float64Array(many * all.length);
   all.forEach((v, i) => names.forEach((n, j) => { const is = by[i] && by[i][n], to = typeof is === 'number' && isFinite(is) ? is : v[j]; out[i * many + j] = solves ? to : v[j] + (to - v[j]) * v[many + 3]; }));
   return out;
 }
-function __forces(all, t, k, rel, frame, awake) {   // (a relation that pushes: its force() told its things as d3-force tells a force its nodes, each where it is and how fast; what it adds to their speed the world weighs and adds up, document/world.h. What else it writes on a thing it finds there the next frame, as a particle's attributes, not to be changed for what is kept)
-  const names = ['x', 'y', 'z', 'size', 'rotate', 'rotate_x', 'rotate_y', 'opacity', 'vx', 'vy', 'vz'], many = names.length, kept = __was[rel] = __was[rel] || [], had = frame && kept[frame - 1];
+function __forces(all, t, k, rel, frame, awake) {   // (a relation that pushes: its force() told its things as d3-force tells a force its nodes, each where it is and how fast; what it adds to their speed the world weighs and adds up, document/world.h. What else it writes on a thing it finds there the next frame, as a particle's attributes, not to be changed for what is cached)
+  const names = ['x', 'y', 'z', 'size', 'rotate', 'rotate_x', 'rotate_y', 'opacity', 'vx', 'vy', 'vz'], many = names.length, cached = __was[rel] = __was[rel] || [], had = frame && cached[frame - 1];
   const things = all.map((v, i) => { const o = Object.assign({}, had && had[i], { i, index: i, w: v[many], h: v[many + 1], id: v[many + 2], near: v[many + 3], home: { x: v[many + 4], y: v[many + 5], z: v[many + 6] } }); names.forEach((n, j) => o[n] = v[j]); return o; });
   if (awake) force(things, t, k);
-  kept[frame] = things;
+  cached[frame] = things;
   const out = new Float64Array(many * all.length);
   all.forEach((v, i) => names.forEach((n, j) => { const is = things[i][n]; out[i * many + j] = typeof is === 'number' && isFinite(is) ? is : v[j]; }));
   return out;

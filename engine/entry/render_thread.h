@@ -74,7 +74,7 @@ struct Motolii {
     long judged = 0;
     double gpu_ms = 0.0, gpu_most = 0.0;   // (the GPU's middle time for the last pictures, and the most it was)
     double scale = 1.0;   // (how large the stage's views are drawn now: stage_scale)
-    StageKept cache;      // (the stage's pictures kept on disk for playing: stage_cache.h)
+    StageCache cache;      // (the stage's pictures kept on disk for playing: stage_cache.h)
     double spent[4] = {0, 0, 0, 0};   // (seconds the hand spent: asked to change, asked to read, telling the moment, drawing)
     long many[4] = {0, 0, 0, 0};
     // The window's pictures of the document (snapshot.h, docs/app/BRIDGE.md), set down by the hand, read under their own lock.

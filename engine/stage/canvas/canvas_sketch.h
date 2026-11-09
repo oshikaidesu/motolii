@@ -13,7 +13,7 @@ static tvg::Fill* sketch_ramp(const double* g, size_t many) {   // (a canvas gra
     out->colorStops(stops.data(), (uint32_t)stops.size());
     return out;
 }
-static tvg::Paint* sketch_words(Drawn* d, const double* p, const double* q, const double* end) {
+static tvg::Paint* sketch_words(Canvas2D* d, const double* p, const double* q, const double* end) {
     std::string words;   // (its letters, as UTF-8)
     for (const double* c = q + 6; c < end; ++c) {
         const uint32_t u = (uint32_t)*c;
@@ -38,7 +38,7 @@ static tvg::Paint* sketch_words(Drawn* d, const double* p, const double* q, cons
     return t;
 }
 // A whole picture, p5_stand.h's kind 4: its matrix, its number in __bitmaps, its size, the part of it shown, whether it is smoothed.
-static tvg::Paint* sketch_bitmap(Drawn* d, const double* p, const double* q, std::vector<std::shared_ptr<std::vector<uint8_t>>>& held) {
+static tvg::Paint* sketch_bitmap(Canvas2D* d, const double* p, const double* q, std::vector<std::shared_ptr<std::vector<uint8_t>>>& held) {
     std::lock_guard<std::mutex> hold(d->sketchPicsLock);
     const auto pic = d->sketchPics.find((int)q[6]);
     const uint32_t w = (uint32_t)q[7], h = (uint32_t)q[8];
@@ -89,7 +89,7 @@ static tvg::Paint* sketch_conic(tvg::Shape* shape, const double* g, size_t many,
     out->clip(shape);
     return out;
 }
-static void sketch_bitmaps(Drawn* d, Script* run, const std::vector<double>& o) {   // (the pictures a frame paints, while its script may be asked)
+static void sketch_bitmaps(Canvas2D* d, Script* run, const std::vector<double>& o) {   // (the pictures a frame paints, while its script may be asked)
     for (size_t i = 1; i + 12 <= o.size(); i += 12 + (size_t)o[i + 9] + (size_t)o[i + 10]) {
         if (o[i] != 4.0) continue;
         const int id = (int)o[i + 18];
@@ -100,7 +100,7 @@ static void sketch_bitmaps(Drawn* d, Script* run, const std::vector<double>& o) 
         d->sketchPics[id] = std::move(pic);
     }
 }
-static void sketch_draw(Drawn* d, const std::vector<double>& o) {
+static void sketch_draw(Canvas2D* d, const std::vector<double>& o) {
     if (o.empty()) return;
     d->sketchScene->remove();
     bool wipe = o[0] != 0.0;
@@ -153,10 +153,10 @@ static void sketch_draw(Drawn* d, const std::vector<double>& o) {
     out_now();
 }
 // As a film with no end in sight: its own 60 frames a second, as p5_stand.h's clock, ten minutes of them.
-static Drawn* sketch_picture(Stage& s, std::shared_ptr<Script> run, const std::string& fontFile, float high, const char* lay, const DrawnFx& fx) {
+static Canvas2D* sketch_picture(Stage& s, std::shared_ptr<Script> run, const std::string& fontFile, float high, const char* lay, const Canvas2DFx& fx) {
     const int fw = run->width(), fh = run->height();
     if (fw <= 0 || fh <= 0) return nullptr;
-    return drawn(s, [&](Drawn* d, int* w, int* h) -> tvg::Paint* {
+    return place_canvas(s, [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {
         const float fit = (float)std::max(s.w, s.h) / (float)std::max(fw, fh);   // (as finely as the stage is, as picture() draws an SVG)
         *w = 2 * (int)std::lround(0.5f * (float)fw * fit), *h = 2 * (int)std::lround(0.5f * (float)fh * fit);
         if (tvg::Text::load(fontFile.c_str()) == tvg::Result::Success) d->sketchFont = std::filesystem::path(fontFile).stem().string();   // (a sketch's font, any: the one Filament brings)
@@ -183,8 +183,8 @@ static Drawn* sketch_picture(Stage& s, std::shared_ptr<Script> run, const std::s
     }, mat4f{}, high, float3{-1.f}, true, lay, fx);
 }
 // A picture a WEBGL sketch draws with (a createGraphics): the same canvas at its own size, shown only as sketch.mat reads it (document/sketch.h).
-static Drawn* sketch_texture(Stage& s, Script* run, const std::string& fontFile, int pic, int wide, int high) {
-    Drawn* made = drawn(s, [&](Drawn* d, int* w, int* h) -> tvg::Paint* {
+static Canvas2D* sketch_texture(Stage& s, Script* run, const std::string& fontFile, int pic, int wide, int high) {
+    Canvas2D* made = place_canvas(s, [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {
         *w = wide, *h = high;
         if (tvg::Text::load(fontFile.c_str()) == tvg::Result::Success) d->sketchFont = std::filesystem::path(fontFile).stem().string();
         d->sketchScene = tvg::Scene::gen();

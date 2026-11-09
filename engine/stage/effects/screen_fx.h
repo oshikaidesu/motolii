@@ -32,7 +32,7 @@ struct ScreenFx {
     bool alpha = false;   // its head says // --alpha: on a thing, its own see-through is what it lays (grains), not the thing's shape   // its head says // --spill: on a thing, what it makes where the thing is not is light laid on what is under (rays, trails, a shifted copy)
     // ISF's passes, drawn in turn (parameter `pass`): into a target of the effect's own (kept, its last picture read the
     // next frame, when persistent; finer when float; a share of the stage's size or so many points), or, the last, out.
-    struct Target { std::string name; bool kept = false, fine = false; double share[2] = {1, 1}; int points[2] = {0, 0}; Texture* picture[2] = {nullptr, nullptr}; RenderTarget* into[2] = {nullptr, nullptr}; int front = 0; uint32_t w = 0, h = 0; };
+    struct Target { std::string name; bool persistent = false, fine = false; double share[2] = {1, 1}; int points[2] = {0, 0}; Texture* picture[2] = {nullptr, nullptr}; RenderTarget* into[2] = {nullptr, nullptr}; int front = 0; uint32_t w = 0, h = 0; };
     std::vector<Target> targets;
     std::vector<int> passes;   // each pass's target (-1: out)
     // The stage's past frames, when its head asks for them (// --history@frames:share): an array of layers, the frame
@@ -151,7 +151,7 @@ static bool screen_read(ScreenFx& fx, std::string& code) {
             for (size_t k = 0; k < fx.targets.size(); ++k) if (fx.targets[k].name == name) target = (int)k;
             if (target < 0) {
                 ScreenFx::Target t;
-                t.name = name, t.kept = said[0] == "1", t.fine = said[1] == "1";
+                t.name = name, t.persistent = said[0] == "1", t.fine = said[1] == "1";
                 for (int side = 0; side < 2; ++side) {
                     const std::string& w = said[(size_t)side + 2];
                     if (!w.empty() && w[0] == 'a') t.points[side] = std::max(1, std::atoi(w.c_str() + 1)), t.share[side] = 0;
@@ -225,7 +225,7 @@ struct ScreenStack {
     RenderTarget* betweenTarget[2] = {nullptr, nullptr};
     interop::Screen* copy = nullptr;   // a picture put out as it is (an effect whose last pass draws into its own picture)
     // A thing's effects as steps in turn, After Effects' stack (thing_effects): 0 the next of `fx` (a file's, drawn by
-    // Filament), else one of ThorVG's own by its letter (DrawnFx::order), drawn by ThorVG reading the picture the step
+    // Filament), else one of ThorVG's own by its letter (Canvas2DFx::order), drawn by ThorVG reading the picture the step
     // before made. So the pictures are the device's own, given to both: Filament draws into them, ThorVG reads and draws.
     std::vector<char> steps;
     std::vector<std::shared_ptr<struct AviutlRun>> aviutl;   // (its AviUtl2 scripts in turn, step 'a': aviutl_fx.h)
@@ -487,7 +487,7 @@ static void screen_effects(Stage& s, ScreenStack& st, const std::string& files, 
     if (st.files == files) return;
     st.files = files;
     s.over = nullptr;   // (what there was let go: the stage draws to the screen again)
-    s.drawnInto = nullptr;
+    s.drawTarget = nullptr;
     s.view->setRenderTarget(nullptr);
     st.fx.clear();
     for (const std::string& file : script_files(files)) {
@@ -513,7 +513,7 @@ static void screen_effects(Stage& s, ScreenStack& st, const std::string& files, 
     for (int k = 0; k < 2 && st.fx.size() > 1; ++k)
         if (!st.between[k]) st.between[k] = screen_picture(s), st.betweenTarget[k] = RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, st.between[k]).build(*s.engine);
     s.view->setRenderTarget(st.target);
-    s.drawnInto = st.shot;   // (what lies under a picture that reads it is copied from here)
+    s.drawTarget = st.shot;   // (what lies under a picture that reads it is copied from here)
     s.over = [&s, &st, numbers] {
         for (size_t i = 0; i < st.fx.size(); ++i) {
             screen_fresh(s, *st.fx[i]);

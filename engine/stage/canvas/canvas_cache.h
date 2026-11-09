@@ -18,7 +18,7 @@
 
 // tint: how much its darks and lights are made two colours (0: not at all); tritone: how much its darks, middles and
 // lights are made three (0: not at all).
-struct DrawnFx { bool split = false;   // (a text's letters each a copy of their own)
+struct Canvas2DFx { bool split = false;   // (a text's letters each a copy of their own)
     bool splitWords = false;   // (its words, not its letters: After Effects' Based On Words, Alight Motion's Text Transform)
     bool together = false;   // (its copies drawn in one go, each an instance of one thing: none coloured or cleared each of its own, render.h add_parts)
     bool thick = false;    // (it has depth: its sheet a box, its picture pushed through it, deep.glsl)
@@ -41,24 +41,24 @@ struct DrawnFx { bool split = false;   // (a text's letters each a copy of their
                  float room = 0.f;      // (how far its effects may reach round it, made room for (doc_fx_room), a share of its height: changed within it, drawn again without being made again)
                  char order[5] = "trsb";   // (its effects in the order they are laid, as the thing's list says (doc_fx_list): t(int) r (tritone) s(hadow) b(lur))
                  bool radial = false; float rampAngle = 0.f, rampScale = 1.f; int spread = 0;   // (or from its middle out, ThorVG's radial gradient; turned so far, clockwise; so long, as a share of its reach; past its ends padded, reflected or repeated)
-                 DrawnFx over(float high) const {   // (the same for a thing `high` units high: its lengths as shares of that)
-                     DrawnFx f = *this;
+                 Canvas2DFx over(float high) const {   // (the same for a thing `high` units high: its lengths as shares of that)
+                     Canvas2DFx f = *this;
                      f.blur /= high, f.fall /= high, f.soft /= high, f.room /= high, f.overHigh = high;
                      return f;
                  } };
 
-struct Drawn {
+struct Canvas2D {
     tvg::WgCanvas* canvas = nullptr;   // (touched on the driver thread only)
-    WGPUTexture made = nullptr;        // (the texture it draws into, which a frame kept is copied from; the same)
+    WGPUTexture target = nullptr;        // (the texture it draws into, which a frame kept is copied from; the same)
     // A film's frames as drawn, kept on the GPU, so that a frame drawn once is shown again, not drawn again (After
-    // Effects' RAM preview, a layer's own; kept_drop throws them away when what it draws changes): by frame (main
+    // Effects' RAM preview, a layer's own; cache_drop throws them away when what it draws changes): by frame (main
     // thread), and the copies just made (the driver thread puts them in `keeping`, the main thread takes them)
-    std::map<int, Texture*> kept;
-    std::vector<WGPUTexture> keptMade;   // (each kept frame's own texture, let go of when they are thrown away: Filament takes it later, on its thread)
+    std::map<int, Texture*> cached;
+    std::vector<WGPUTexture> cachedTextures;   // (each kept frame's own texture, let go of when they are thrown away: Filament takes it later, on its thread)
     std::mutex keepingLock;
     std::vector<std::pair<int, WGPUTexture>> keeping;
     int shownAt = -1;
-    int madeAt = -1;                   // (the frame its own texture holds; driver thread only)
+    int targetAt = -1;                   // (the frame its own texture holds; driver thread only)
     std::set<int> ahead;               // (frames being put onto disk only, while the hand rests: picture_ahead; main thread)
     std::string keyBase;               // (what its frames are known by on disk: its file as it is; none, not kept on disk)
     std::string slots;                 // (an After Effects file's slots as last told: lottie_slots.h)
@@ -127,7 +127,7 @@ struct Drawn {
     std::vector<tvg::Scene*> effects;  // ThorVG's scene its effects are on (driver thread only)
     float tall = 0.f;                  // how high it was drawn, in its own points: what its effects' lengths are shares of
     float tallBy = 1.f;                // a text's lines: how many times as tall as one of them, whose height its size says
-    DrawnFx fx;                        // its effects as last told
+    Canvas2DFx fx;                        // its effects as last told
     tvg::Text* text = nullptr;         // a text's own words, ThorVG's (driver thread only): told again in place (words_at); none when split, wrapped or aligned
     std::string words;                 // (as last told)
     std::string textFont;              // (the font file they are set in: words it lacks letters of are made again, in the fallback)
@@ -135,10 +135,10 @@ struct Drawn {
     std::atomic<bool> outgrown{false};    // (words told since that are wider than its picture: it is to be made again)
 };
 
-static void kept_drop(Stage& s, Drawn* d);
+static void cache_drop(Stage& s, Canvas2D* d);
 
-// One of ThorVG's own effects on a scene (k: a letter of DrawnFx::order), lengths as shares of `tall` points.
-static void effect_on(tvg::Scene* on, char k, const DrawnFx& fx, float tall) {
+// One of ThorVG's own effects on a scene (k: a letter of Canvas2DFx::order), lengths as shares of `tall` points.
+static void effect_on(tvg::Scene* on, char k, const Canvas2DFx& fx, float tall) {
     const auto c = [](float v) { return (int)std::lround(255.f * v); };
     if (k == 't' && fx.tint > 0.f) on->add(tvg::SceneEffect::Tint, c(fx.tints[0].x), c(fx.tints[0].y), c(fx.tints[0].z), c(fx.tints[1].x), c(fx.tints[1].y), c(fx.tints[1].z), (double)(100.f * fx.tint));
     if (k == 'r' && fx.tritone > 0.f)
@@ -147,7 +147,7 @@ static void effect_on(tvg::Scene* on, char k, const DrawnFx& fx, float tall) {
     if (k == 'b' && fx.blur > 0.f) on->add(tvg::SceneEffect::GaussianBlur, (double)(fx.blur * tall), fx.blurWay, 0, 75);   // (its way: both, across, up and down)
 }
 // ThorVG's own effects on its scene, in the order the thing's list lays them; lengths as shares of `tall` points.
-static void effects_on(const std::vector<tvg::Scene*>& chain, const DrawnFx& fx, float tall) {
+static void effects_on(const std::vector<tvg::Scene*>& chain, const Canvas2DFx& fx, float tall) {
     tvg::Scene* on = chain[0];
     on->add(tvg::SceneEffect::Clear);
     for (const char* k = fx.order; *k; ++k) effect_on(on, *k, fx, tall);
@@ -156,11 +156,11 @@ static void effects_on(const std::vector<tvg::Scene*>& chain, const DrawnFx& fx,
 // A flat shape with so much of its path cut off the end and so much off its beginning, the part left slid along it by
 // `offset` of the way round (ThorVG's own trimpath, which goes round past either end: After Effects' trim paths),
 // drawn again for the frame that comes next; nothing is done if it is cut as it was.
-static void trim_at(Stage& s, Drawn* d, float cut, float begin = 0.f, float offset = 0.f) {
+static void trim_at(Stage& s, Canvas2D* d, float cut, float begin = 0.f, float offset = 0.f) {
     const float3 is{cut, begin, offset};
     if (!d->shape || (is == d->trimmed)) return;
     d->trimmed = is;
-    kept_drop(s, d);
+    cache_drop(s, d);
     interop::on_driver(s.engine, [d, cut, begin, offset] {
         d->shape->trimpath(std::clamp(begin, 0.f, 1.f) + offset, 1.f - std::clamp(cut, 0.f, 1.f) + offset);
         d->canvas->update();
@@ -174,11 +174,11 @@ static void trim_at(Stage& s, Drawn* d, float cut, float begin = 0.f, float offs
 // or sharp), offset out or in (a share of its height); drawn again for the frame that comes next, if it is bent anew.
 void tvg_bend(tvg::Shape* shape, const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, uint32_t ptsCnt,
               float round, float bloat, float zigzag, int ridges, bool smooth, float offset, float fine);
-static void bend_at(Stage& s, Drawn* d, float round, float bloat, float zigzag, float ridges, float smooth, float offset) {
+static void bend_at(Stage& s, Canvas2D* d, float round, float bloat, float zigzag, float ridges, float smooth, float offset) {
     const std::array<float, 10> is{round, bloat, zigzag, ridges, smooth, offset, 0.f, 0.f, 0.f, 0.f};
     if (!d->shape || d->plain.empty() || is == d->bent) return;
     d->bent = is;
-    kept_drop(s, d);
+    cache_drop(s, d);
     interop::on_driver(s.engine, [d, is] {
         const float high = d->plainHigh, side = d->plainSide;
         tvg_bend(d->shape, d->plain.data(), (uint32_t)d->plain.size(), d->plainAt.data(), (uint32_t)d->plainAt.size(), std::clamp(is[0], 0.f, 0.5f) * side,
@@ -195,24 +195,24 @@ static void bend_at(Stage& s, Drawn* d, float round, float bloat, float zigzag, 
 
 // An After Effects file's slots as they are now (lottie_slots_json), drawn again for the frame that comes next, as fx_at
 // does for its effects; nothing is done if they are as they were. ThorVG's own way: the slots made, then applied.
-static void slots_at(Stage& s, Drawn* d, const std::string& slots) {
+static void slots_at(Stage& s, Canvas2D* d, const std::string& slots) {
     if (!d->lottie || slots == d->slots) return;
     d->slots = slots;
-    kept_drop(s, d);
+    cache_drop(s, d);
     interop::on_driver(s.engine, [d, slots] {
         if (d->slotsId) d->lottie->del(d->slotsId), d->slotsId = 0;
         if (!slots.empty() && (d->slotsId = d->lottie->gen(slots.c_str()))) d->lottie->apply(d->slotsId);
-        d->madeAt = -1;   // (its frame drawn again)
+        d->targetAt = -1;   // (its frame drawn again)
     });
 }
 // A MIDI roll's notes as they are now, each lit (0 its colour, 1 ALMaMPlayer's +0.3 of it: note.gd's modulate) and
 // moved (`moves`: its own matrix, grown and dipped as note.gd's tweens do), drawn again for the frame that comes next,
 // as slots_at does; nothing is done if they are as they were. Note i is the SVG's "note<i>" (midi_roll.cpp), found by
 // ThorVG's own id of it (Accessor::id).
-static void lit_at(Stage& s, Drawn* d, const std::vector<float>& lit, const std::vector<tvg::Matrix>& moves, float3 colour) {
+static void lit_at(Stage& s, Canvas2D* d, const std::vector<float>& lit, const std::vector<tvg::Matrix>& moves, float3 colour) {
     if (!d->film || (lit == d->lit && moves.size() == d->moves.size() && std::equal(moves.begin(), moves.end(), d->moves.begin(), [](const tvg::Matrix& a, const tvg::Matrix& b) { return !std::memcmp(&a, &b, sizeof a); }))) return;
     d->lit = lit, d->moves = moves;
-    kept_drop(s, d);
+    cache_drop(s, d);
     interop::on_driver(s.engine, [d, lit, moves, colour] {
         for (size_t i = 0; i < lit.size(); ++i)
             if (auto* note = const_cast<tvg::Paint*>(d->film->picture()->paint(tvg::Accessor::id(("note" + std::to_string(i)).c_str()))); note && note->type() == tvg::Type::Shape) {
@@ -230,12 +230,12 @@ static void lit_at(Stage& s, Drawn* d, const std::vector<float>& lit, const std:
 // frame that comes next, as slots_at tells a film its slots, across its middle and at the height it was set; nothing is
 // done if they are as they were. false: it has no words of its own to tell, or the last told did not fit (outgrown).
 static std::string type_lacks(const std::string& fontFile, const std::string& words);
-static bool words_at(Stage& s, Drawn* d, const std::string& words) {
+static bool words_at(Stage& s, Canvas2D* d, const std::string& words) {
     if (!d->text || d->outgrown) return false;
     if (words == d->words) return true;
     if (!type_lacks(d->textFont, words).empty()) return false;   // (a letter its font lacks: made again, in the fallback (type))
     d->words = words;
-    kept_drop(s, d);
+    cache_drop(s, d);
     interop::on_driver(s.engine, [d, words] {
         d->text->translate(0.f, 0.f);
         d->text->text(words.c_str());
@@ -251,15 +251,15 @@ static bool words_at(Stage& s, Drawn* d, const std::string& words) {
 }
 // A flat thing's effects as they are now (lengths in shares of its height, as it was made), drawn again for the frame
 // that comes next; nothing is done if they are as they were. They reach no further than they did at their most.
-static void fx_at(Stage& s, Drawn* d, const DrawnFx& told) {
+static void fx_at(Stage& s, Canvas2D* d, const Canvas2DFx& told) {
     if (d->effects.empty()) return;
-    const DrawnFx fx = told.over(d->fx.overHigh);
-    const DrawnFx& was = d->fx;
+    const Canvas2DFx fx = told.over(d->fx.overHigh);
+    const Canvas2DFx& was = d->fx;
     if (fx.blur == was.blur && fx.blurWay == was.blurWay && (fx.shadow == was.shadow) && fx.fall == was.fall && fx.way == was.way && fx.soft == was.soft && fx.tint == was.tint && fx.tritone == was.tritone
         && !strcmp(fx.order, was.order) && (fx.tints[0] == was.tints[0]) && (fx.tints[1] == was.tints[1]) && (fx.tones[0] == was.tones[0]) && (fx.tones[1] == was.tones[1]) && (fx.tones[2] == was.tones[2]))
         return;
     d->fx = fx;
-    kept_drop(s, d);
+    cache_drop(s, d);
     interop::on_driver(s.engine, [d, fx] {
         effects_on(d->effects, fx, d->tall);
         d->canvas->update();
@@ -280,7 +280,7 @@ static void font(Stage& s, const char* path) {
 // before without drawing them: compressed by zstd (as Filament builds it), a file a frame, named by a hash of what made
 // it (its file as it is, how large it is drawn, its effects, its stretch, the frame), as Nuke names its cache by what goes
 // in; past 20 GB the oldest files go, as the folder is first used.
-static const std::filesystem::path& kept_dir() {
+static const std::filesystem::path& cache_dir() {
     static const std::filesystem::path dir = [] {
         const char* home = std::getenv("HOME");
         const std::filesystem::path p = std::filesystem::path(home ? home : "/tmp") / "Library/Caches/Motolii/frames";
@@ -303,12 +303,12 @@ static const std::filesystem::path& kept_dir() {
     }();
     return dir;
 }
-static std::filesystem::path kept_file(const Drawn* d, int at) {
-    if (d->keyBase.empty() || !d->made) return {};
+static std::filesystem::path cache_file(const Canvas2D* d, int at) {
+    if (d->keyBase.empty() || !d->target) return {};
     std::string all = d->keyBase;
     const auto add = [&](float v) { all += "|" + std::to_string(v); };
-    const DrawnFx& f = d->fx;
-    add((float)wgpuTextureGetWidth(d->made)), add((float)wgpuTextureGetHeight(d->made));
+    const Canvas2DFx& f = d->fx;
+    add((float)wgpuTextureGetWidth(d->target)), add((float)wgpuTextureGetHeight(d->target));
     for (float v : {f.blur, (float)f.blurWay, f.shadow.x, f.shadow.y, f.shadow.z, f.shadow.w, f.fall, f.way, f.soft, f.tint, f.tritone, d->fromFrame, d->toFrame}) add(v);
     for (const float3& c : f.tints) add(c.x), add(c.y), add(c.z);
     for (const float3& c : f.tones) add(c.x), add(c.y), add(c.z);
@@ -318,25 +318,25 @@ static std::filesystem::path kept_file(const Drawn* d, int at) {
     for (unsigned char c : all) hash = (hash ^ c) * 1099511628211ull;
     char name[64];
     std::snprintf(name, sizeof name, "%016llx_%05d.zst", (unsigned long long)hash, at);
-    return kept_dir() / name;
+    return cache_dir() / name;
 }
-static std::mutex kept_writing_lock;
-static std::condition_variable kept_writing_wake;
-static std::deque<std::pair<std::filesystem::path, std::vector<uint8_t>>> kept_writing;
-static std::atomic<int> kept_unwritten{0};   // (frames on their way to disk: read back or waiting to be written)
-static void kept_write(std::filesystem::path file, std::vector<uint8_t> pixels) {   // (on a thread of its own: compressed, written, then named)
+static std::mutex cache_writing_lock;
+static std::condition_variable cache_writing_wake;
+static std::deque<std::pair<std::filesystem::path, std::vector<uint8_t>>> cache_writing;
+static std::atomic<int> cache_unwritten{0};   // (frames on their way to disk: read back or waiting to be written)
+static void cache_write(std::filesystem::path file, std::vector<uint8_t> pixels) {   // (on a thread of its own: compressed, written, then named)
     static std::once_flag started;
     std::call_once(started, [] {
         std::thread([] {
             for (;;) {
-                std::unique_lock<std::mutex> hold(kept_writing_lock);
-                kept_writing_wake.wait(hold, [] { return !kept_writing.empty(); });
-                auto job = std::move(kept_writing.front());
-                kept_writing.pop_front();
+                std::unique_lock<std::mutex> hold(cache_writing_lock);
+                cache_writing_wake.wait(hold, [] { return !cache_writing.empty(); });
+                auto job = std::move(cache_writing.front());
+                cache_writing.pop_front();
                 hold.unlock();
                 std::vector<uint8_t> packed(ZSTD_compressBound(job.second.size()));
                 const size_t n = ZSTD_compress(packed.data(), packed.size(), job.second.data(), job.second.size(), 1);
-                if (ZSTD_isError(n)) { --kept_unwritten; continue; }
+                if (ZSTD_isError(n)) { --cache_unwritten; continue; }
                 std::filesystem::path part = job.first;
                 part += ".part";
                 if (FILE* f = std::fopen(part.c_str(), "wb")) {
@@ -346,20 +346,20 @@ static void kept_write(std::filesystem::path file, std::vector<uint8_t> pixels) 
                     if (whole) std::filesystem::rename(part, job.first, e);
                     else std::filesystem::remove(part, e);
                 }
-                --kept_unwritten;
+                --cache_unwritten;
             }
         }).detach();
         std::atexit([] {   // (what is on its way is written before the program ends, for at most ten seconds)
-            for (int i = 0; i < 1000 && kept_unwritten > 0; ++i) std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            for (int i = 0; i < 1000 && cache_unwritten > 0; ++i) std::this_thread::sleep_for(std::chrono::milliseconds(10));
         });
     });
     {
-        std::lock_guard<std::mutex> hold(kept_writing_lock);
-        kept_writing.push_back({std::move(file), std::move(pixels)});
+        std::lock_guard<std::mutex> hold(cache_writing_lock);
+        cache_writing.push_back({std::move(file), std::move(pixels)});
     }
-    kept_writing_wake.notify_one();
+    cache_writing_wake.notify_one();
 }
-static bool kept_read(const std::filesystem::path& file, std::vector<uint8_t>& pixels, size_t size) {
+static bool cache_read(const std::filesystem::path& file, std::vector<uint8_t>& pixels, size_t size) {
     FILE* f = file.empty() ? nullptr : std::fopen(file.c_str(), "rb");
     if (!f) return false;
     std::fseek(f, 0, SEEK_END);
@@ -372,8 +372,8 @@ static bool kept_read(const std::filesystem::path& file, std::vector<uint8_t>& p
     return whole && !ZSTD_isError(n) && n == size;
 }
 // A kept frame's texture read back to the CPU (as the GPU finishes it: Dawn's MapAsync) and written to disk.
-struct KeptReadBack { WGPUBuffer buffer; uint32_t w, h, row; std::filesystem::path file; };
-static KeptReadBack* kept_read_back(WGPUDevice device, WGPUCommandEncoder encoder, WGPUTexture texture, std::filesystem::path file) {
+struct CacheReadBack { WGPUBuffer buffer; uint32_t w, h, row; std::filesystem::path file; };
+static CacheReadBack* cache_read_back(WGPUDevice device, WGPUCommandEncoder encoder, WGPUTexture texture, std::filesystem::path file) {
     const uint32_t w = wgpuTextureGetWidth(texture), h = wgpuTextureGetHeight(texture), row = (4 * w + 255) / 256 * 256;
     WGPUBufferDescriptor like{};
     like.size = (uint64_t)row * h;
@@ -386,24 +386,24 @@ static KeptReadBack* kept_read_back(WGPUDevice device, WGPUCommandEncoder encode
     to.layout.bytesPerRow = row, to.layout.rowsPerImage = h;
     const WGPUExtent3D size{w, h, 1};
     wgpuCommandEncoderCopyTextureToBuffer(encoder, &from, &to, &size);
-    ++kept_unwritten;
-    return new KeptReadBack{buffer, w, h, row, std::move(file)};
+    ++cache_unwritten;
+    return new CacheReadBack{buffer, w, h, row, std::move(file)};
 }
-static void kept_map(KeptReadBack* job) {   // (once the encoder that copies it is submitted)
+static void cache_map(CacheReadBack* job) {   // (once the encoder that copies it is submitted)
     WGPUBufferMapCallbackInfo done{};
     done.mode = WGPUCallbackMode_AllowSpontaneous;
     done.callback = [](WGPUMapAsyncStatus status, WGPUStringView, void* one, void*) {
-        auto* job = (KeptReadBack*)one;
+        auto* job = (CacheReadBack*)one;
         if (status == WGPUMapAsyncStatus_Success) {
             const auto* at = (const uint8_t*)wgpuBufferGetConstMappedRange(job->buffer, 0, (size_t)job->row * job->h);
             std::vector<uint8_t> pixels((size_t)4 * job->w * job->h);
             if (at)
                 for (uint32_t y = 0; y < job->h; ++y) std::memcpy(pixels.data() + (size_t)4 * job->w * y, at + (size_t)job->row * y, (size_t)4 * job->w);
             wgpuBufferUnmap(job->buffer);
-            if (at) kept_write(std::move(job->file), std::move(pixels));
-            else --kept_unwritten;
+            if (at) cache_write(std::move(job->file), std::move(pixels));
+            else --cache_unwritten;
         } else {
-            --kept_unwritten;
+            --cache_unwritten;
         }
         wgpuBufferRelease(job->buffer);
         delete job;
@@ -413,47 +413,47 @@ static void kept_map(KeptReadBack* job) {   // (once the encoder that copies it 
 }
 
 // The frames a film keeps, thrown away (what it draws has changed); all films' kept frames are held to so many bytes.
-static std::atomic<size_t> kept_bytes{0};
-static constexpr size_t kept_most = size_t(2) << 30;   // (2 GB)
-static size_t kept_one(const Drawn* d) { return d->made ? 4 * (size_t)wgpuTextureGetWidth(d->made) * wgpuTextureGetHeight(d->made) : 0; }
-static void kept_drop(Stage& s, Drawn* d) {
+static std::atomic<size_t> cache_bytes{0};
+static constexpr size_t cache_most = size_t(2) << 30;   // (2 GB)
+static size_t cache_one(const Canvas2D* d) { return d->target ? 4 * (size_t)wgpuTextureGetWidth(d->target) * wgpuTextureGetHeight(d->target) : 0; }
+static void cache_drop(Stage& s, Canvas2D* d) {
     {
         std::lock_guard<std::mutex> hold(d->keepingLock);
-        for (auto& [at, made] : d->keeping) d->kept[at] = nullptr, wgpuTextureRelease(made);
+        for (auto& [at, made] : d->keeping) d->cached[at] = nullptr, wgpuTextureRelease(made);
         d->keeping.clear();
     }
-    const size_t one = d->made ? 4 * (size_t)wgpuTextureGetWidth(d->made) * wgpuTextureGetHeight(d->made) : 0;
-    for (auto& [at, texture] : d->kept) {
+    const size_t one = d->target ? 4 * (size_t)wgpuTextureGetWidth(d->target) * wgpuTextureGetHeight(d->target) : 0;
+    for (auto& [at, texture] : d->cached) {
         if (texture) s.engine->destroy(texture);
-        kept_bytes -= one;
+        cache_bytes -= one;
     }
-    d->kept.clear();
+    d->cached.clear();
     d->ahead.clear();
-    interop::on_driver(s.engine, [made = std::move(d->keptMade)] { for (WGPUTexture t : made) wgpuTextureRelease(t); });   // (after Filament has taken and let go of them)
-    d->keptMade.clear();
+    interop::on_driver(s.engine, [made = std::move(d->cachedTextures)] { for (WGPUTexture t : made) wgpuTextureRelease(t); });   // (after Filament has taken and let go of them)
+    d->cachedTextures.clear();
     d->shownAt = -1;
     ++d->keepAge;
     if (d->look) d->look->setParameter("picture", d->texture, TextureSampler(TextureSampler::MinFilter::LINEAR, TextureSampler::MagFilter::LINEAR));
 }
 
 // The kept frames the driver thread has made since, taken as Filament's (main thread).
-static void kept_take(Stage& s, Drawn* d) {
+static void cache_take(Stage& s, Canvas2D* d) {
     std::lock_guard<std::mutex> hold(d->keepingLock);
     for (auto& [frame, made] : d->keeping) {
-        d->kept[frame] = Texture::Builder().width(wgpuTextureGetWidth(made)).height(wgpuTextureGetHeight(made)).levels(1).sampler(Texture::Sampler::SAMPLER_2D)
+        d->cached[frame] = Texture::Builder().width(wgpuTextureGetWidth(made)).height(wgpuTextureGetHeight(made)).levels(1).sampler(Texture::Sampler::SAMPLER_2D)
                              .format(Texture::InternalFormat::RGBA8).usage(Texture::Usage::SAMPLEABLE).import((intptr_t)made).build(*s.engine);
-        d->keptMade.push_back(made);
+        d->cachedTextures.push_back(made);
     }
     d->keeping.clear();
 }
 // A frame read from disk put up (driver thread): into the texture it draws into (`shown`: it is what is seen now) and,
 // if `keep`, into one of its own that keeps it.
-static void kept_put(Stage& s, Drawn* d, int at, const std::vector<uint8_t>& pixels, bool shown, bool keep, int age) {
-    const uint32_t w = wgpuTextureGetWidth(d->made), h = wgpuTextureGetHeight(d->made);
+static void cache_put(Stage& s, Canvas2D* d, int at, const std::vector<uint8_t>& pixels, bool shown, bool keep, int age) {
+    const uint32_t w = wgpuTextureGetWidth(d->target), h = wgpuTextureGetHeight(d->target);
     const WGPUDevice device = (WGPUDevice)interop::device(s.engine);
     WGPUTextureDescriptor like{};
     like.size = {w, h, 1};
-    like.format = wgpuTextureGetFormat(d->made);
+    like.format = wgpuTextureGetFormat(d->target);
     like.usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst | WGPUTextureUsage_CopySrc;
     like.dimension = WGPUTextureDimension_2D;
     like.mipLevelCount = 1;
@@ -461,13 +461,13 @@ static void kept_put(Stage& s, Drawn* d, int at, const std::vector<uint8_t>& pix
     const WGPUTexture copy = keep ? wgpuDeviceCreateTexture(device, &like) : nullptr;
     WGPUTexelCopyBufferLayout rows{};
     rows.bytesPerRow = 4 * w, rows.rowsPerImage = h;
-    for (WGPUTexture t : {shown ? d->made : nullptr, copy}) {
+    for (WGPUTexture t : {shown ? d->target : nullptr, copy}) {
         if (!t) continue;
         WGPUTexelCopyTextureInfo to{};
         to.texture = t;
         wgpuQueueWriteTexture(wgpuDeviceGetQueue(device), &to, pixels.data(), pixels.size(), &rows, &like.size);
     }
-    if (shown) d->madeAt = at;
+    if (shown) d->targetAt = at;
     if (!copy) return;
     std::lock_guard<std::mutex> hold(d->keepingLock);
     if (age == d->keepAge) d->keeping.push_back({at, copy});
@@ -475,16 +475,16 @@ static void kept_put(Stage& s, Drawn* d, int at, const std::vector<uint8_t>& pix
 }
 // A frame drawn by ThorVG into the texture it draws into (driver thread), and, if `keep`, copied on the GPU to a
 // texture of its own that keeps it; and onto disk, once, if `file` is not there yet.
-static void sketch_draw(Drawn* d, const std::vector<double>& paints);
-static void kept_draw(Stage& s, Drawn* d, int at, bool keep, const std::filesystem::path& file, int age, const std::vector<double>* paints = nullptr) {
-    if (paints) sketch_draw(d, *paints), d->madeAt = at;
-    else if (d->film->frame(d->fromFrame + (float)at) == tvg::Result::Success || d->madeAt != at) {
+static void sketch_draw(Canvas2D* d, const std::vector<double>& paints);
+static void cache_draw(Stage& s, Canvas2D* d, int at, bool keep, const std::filesystem::path& file, int age, const std::vector<double>* paints = nullptr) {
+    if (paints) sketch_draw(d, *paints), d->targetAt = at;
+    else if (d->film->frame(d->fromFrame + (float)at) == tvg::Result::Success || d->targetAt != at) {
         for (uint32_t id : d->deep)   // (its 3D layers are sheets of their own: not drawn flat here)
             if (const tvg::Paint* one = d->film->picture()->paint(id)) const_cast<tvg::Paint*>(one)->visible(false);
         d->canvas->update();
         d->canvas->draw(true), d->stale = true;
         d->canvas->sync();
-        d->madeAt = at;
+        d->targetAt = at;
     }
     std::error_code e;
     const bool toDisk = d->look && !file.empty() && !std::filesystem::exists(file, e);
@@ -494,23 +494,23 @@ static void kept_draw(Stage& s, Drawn* d, int at, bool keep, const std::filesyst
     WGPUTexture copy = nullptr;
     if (keep) {
         WGPUTextureDescriptor like{};
-        like.size = {wgpuTextureGetWidth(d->made), wgpuTextureGetHeight(d->made), 1};
-        like.format = wgpuTextureGetFormat(d->made);
+        like.size = {wgpuTextureGetWidth(d->target), wgpuTextureGetHeight(d->target), 1};
+        like.format = wgpuTextureGetFormat(d->target);
         like.usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst | WGPUTextureUsage_CopySrc;
         like.dimension = WGPUTextureDimension_2D;
         like.mipLevelCount = 1;
         like.sampleCount = 1;
         copy = wgpuDeviceCreateTexture(device, &like);
         WGPUTexelCopyTextureInfo from{}, to{};
-        from.texture = d->made, to.texture = copy;
+        from.texture = d->target, to.texture = copy;
         wgpuCommandEncoderCopyTextureToTexture(encoder, &from, &to, &like.size);
     }
-    KeptReadBack* back = toDisk ? kept_read_back(device, encoder, copy ? copy : d->made, file) : nullptr;
+    CacheReadBack* back = toDisk ? cache_read_back(device, encoder, copy ? copy : d->target, file) : nullptr;
     WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, nullptr);
     wgpuQueueSubmit(wgpuDeviceGetQueue(device), 1, &commands);
     wgpuCommandBufferRelease(commands);
     wgpuCommandEncoderRelease(encoder);
-    if (back) kept_map(back);
+    if (back) cache_map(back);
     if (!copy) return;
     std::lock_guard<std::mutex> hold(d->keepingLock);
     if (age == d->keepAge) d->keeping.push_back({at, copy});
@@ -521,29 +521,29 @@ static void kept_draw(Stage& s, Drawn* d, int at, bool keep, const std::filesyst
 // at its own frames, as After Effects plays it, so that a moment within the frame already drawn draws nothing again
 // (ThorVG's frame() says when the frame is the same; the ThorVG author's own advice for Lottie on a GPU, Godot #91580).
 // A frame drawn once is shown again from where it was kept, on the GPU or on disk.
-static std::atomic<long> films_kept{0}, films_disk{0}, films_drawn{0};   // (how each film's frame was shown: for the inside's spent line)
-static void picture_at(Stage& s, Drawn* d, float seconds) {
+static std::atomic<long> films_cached{0}, films_disk{0}, films_rendered{0};   // (how each film's frame was shown: for the inside's spent line)
+static void picture_at(Stage& s, Canvas2D* d, float seconds) {
     const int at = (int)std::floor(std::min(seconds / d->seconds * d->frames, d->frames - 1.f) + 1e-3f);
     if (at == d->shownAt) return;
     d->shownAt = at;
     const TextureSampler smooth(TextureSampler::MinFilter::LINEAR, TextureSampler::MagFilter::LINEAR);
-    kept_take(s, d);
-    if (const auto k = d->kept.find(at); k != d->kept.end() && k->second) {   // (drawn before: shown as kept)
+    cache_take(s, d);
+    if (const auto k = d->cached.find(at); k != d->cached.end() && k->second) {   // (drawn before: shown as kept)
         if (d->look) d->look->setParameter("picture", k->second, smooth);
-        ++films_kept;
+        ++films_cached;
         return;
     }
     if (d->look) d->look->setParameter("picture", d->texture, smooth);
-    const bool keep = d->look && d->kept.find(at) == d->kept.end() && kept_bytes < kept_most;
-    if (keep) d->kept[at] = nullptr, kept_bytes += kept_one(d);   // (being kept)
-    const std::filesystem::path file = kept_file(d, at);
+    const bool keep = d->look && d->cached.find(at) == d->cached.end() && cache_bytes < cache_most;
+    if (keep) d->cached[at] = nullptr, cache_bytes += cache_one(d);   // (being kept)
+    const std::filesystem::path file = cache_file(d, at);
     auto pixels = std::make_shared<std::vector<uint8_t>>();
-    if (d->look && kept_read(file, *pixels, kept_one(d)))   // (drawn before, on disk: put up as it is, not drawn)
-        ++films_disk, interop::on_driver(s.engine, [&s, d, at, pixels, keep, age = d->keepAge.load()] { kept_put(s, d, at, *pixels, true, keep, age); });
+    if (d->look && cache_read(file, *pixels, cache_one(d)))   // (drawn before, on disk: put up as it is, not drawn)
+        ++films_disk, interop::on_driver(s.engine, [&s, d, at, pixels, keep, age = d->keepAge.load()] { cache_put(s, d, at, *pixels, true, keep, age); });
     else {
         std::shared_ptr<std::vector<double>> paints;
         if (d->sketch) paints = std::make_shared<std::vector<double>>(d->sketch(at, d->sketchAt)), d->sketchAt = at;
-        ++films_drawn, interop::on_driver(s.engine, [&s, d, at, keep, file, paints, age = d->keepAge.load()] { kept_draw(s, d, at, keep, file, age, paints.get()); });
+        ++films_rendered, interop::on_driver(s.engine, [&s, d, at, keep, file, paints, age = d->keepAge.load()] { cache_draw(s, d, at, keep, file, age, paints.get()); });
     }
 }
 
@@ -551,29 +551,29 @@ static void picture_at(Stage& s, Drawn* d, float seconds) {
 // Pro renders once the hand stops, Resolve's smart cache, After Effects' Cache Frames When Idle): read from disk if
 // there, else drawn into the texture it draws into (free while the frame shown is shown from a kept one). How many were
 // begun (0: nothing more can be done for it now).
-static int picture_ahead(Stage& s, Drawn* d, int many) {
-    if (!d->look || !d->film || d->frames <= 1.f || d->shownAt < 0 || !d->made) return 0;
-    kept_take(s, d);
-    const auto now = d->kept.find(d->shownAt);
-    if (now == d->kept.end() || !now->second) return 0;   // (the frame shown is not yet shown from a kept one: the texture it draws into is in use)
+static int picture_ahead(Stage& s, Canvas2D* d, int many) {
+    if (!d->look || !d->film || d->frames <= 1.f || d->shownAt < 0 || !d->target) return 0;
+    cache_take(s, d);
+    const auto now = d->cached.find(d->shownAt);
+    if (now == d->cached.end() || !now->second) return 0;   // (the frame shown is not yet shown from a kept one: the texture it draws into is in use)
     d->look->setParameter("picture", now->second, TextureSampler(TextureSampler::MinFilter::LINEAR, TextureSampler::MagFilter::LINEAR));
     const int frames = (int)d->frames;
     int begun = 0;
     std::error_code e;
     for (int i = 1; i < frames && begun < many; ++i) {
         const int at = (d->shownAt + i) % frames;
-        if (d->kept.count(at) || d->ahead.count(at)) continue;
-        const std::filesystem::path file = kept_file(d, at);
-        const bool keep = kept_bytes + kept_one(d) <= kept_most;
+        if (d->cached.count(at) || d->ahead.count(at)) continue;
+        const std::filesystem::path file = cache_file(d, at);
+        const bool keep = cache_bytes + cache_one(d) <= cache_most;
         const bool onDisk = !file.empty() && std::filesystem::exists(file, e);
         if (!keep && (onDisk || file.empty())) continue;   // (no room on the GPU, and on disk already: nothing to do)
-        if (keep) d->kept[at] = nullptr, kept_bytes += kept_one(d);
+        if (keep) d->cached[at] = nullptr, cache_bytes += cache_one(d);
         else d->ahead.insert(at);   // (only onto disk: not asked again while it is written)
         auto pixels = std::make_shared<std::vector<uint8_t>>();
-        if (onDisk && kept_read(file, *pixels, kept_one(d)))
-            interop::on_driver(s.engine, [&s, d, at, pixels, age = d->keepAge.load()] { kept_put(s, d, at, *pixels, false, true, age); });
+        if (onDisk && cache_read(file, *pixels, cache_one(d)))
+            interop::on_driver(s.engine, [&s, d, at, pixels, age = d->keepAge.load()] { cache_put(s, d, at, *pixels, false, true, age); });
         else
-            interop::on_driver(s.engine, [&s, d, at, keep, file, age = d->keepAge.load()] { kept_draw(s, d, at, keep, file, age); });
+            interop::on_driver(s.engine, [&s, d, at, keep, file, age = d->keepAge.load()] { cache_draw(s, d, at, keep, file, age); });
         ++begun;
     }
     return begun;

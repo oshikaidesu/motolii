@@ -32,7 +32,7 @@ import Generator from './generator-factory.js'
 import arrayUtils from './lib/array-utils.js'
 import utility from './glsl/utility-functions.js'
 try {
-  const outs = {}, kept = [], names = ['o0', 'o1', 'o2', 'o3'];
+  const outs = {}, cached = [], names = ['o0', 'o1', 'o2', 'o3'];
   const output = n => ({ name: n, precision: 'highp', getTexture() { return this; }, render(p) { outs[n] = p[0]; } });
   const source = n => { const s = { name: n, getTexture() { return this; } }; for (const k of ['initCam', 'initImage', 'initVideo', 'initScreen', 'initStream', 'init', 'clear']) s[k] = () => s; return s; };
   const g = globalThis, o = names.map(output);
@@ -65,7 +65,7 @@ try {
         if (first && first.getTexture) {
           const t = first.name[0] === 's' ? (reads = true, 'inputImage') : first.name;
           body = body.replace(new RegExp('\\bsrc\\(\\s*([^,]+?),\\s*' + name + '\\s*\\)', 'g'), 'IMG_NORM_PIXEL(' + t + ',fract($1))');   // (a sampler is not passed in ISF: read where it is named)
-          if (t !== 'inputImage' && !kept.includes(t)) kept.push(t);
+          if (t !== 'inputImage' && !cached.includes(t)) cached.push(t);
           continue;
         }
         const all = sampled(value), low = Math.min(...all), high = Math.max(...all);
@@ -78,7 +78,7 @@ try {
   }
   fns.delete('src');
   head = Object.values(utility).map(t => t.glsl).join('\n') + [...fns].map(k => synth.glslTransforms[k].glsl).join('\n');
-  const passes = made.length > 1 || kept.length ? made.map(n => n).concat(kept.filter(n => !made.includes(n))) : [];
+  const passes = made.length > 1 || cached.length ? made.map(n => n).concat(cached.filter(n => !made.includes(n))) : [];
   const isf = { ISFVSN: '2', DESCRIPTION: 'Hydra', CATEGORIES: ['Hydra'], INPUTS: (reads ? [{ NAME: 'inputImage', TYPE: 'image' }] : []).concat(inputs) };
   if (passes.length) isf.PASSES = passes.map(n => ({ TARGET: n, PERSISTENT: true })).concat([{}]);
   let main = '';

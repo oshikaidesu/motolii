@@ -181,7 +181,7 @@ static bool doc_match(Doc& d) {
         const float4 edge = edgeRgb < 0 ? float4{0.f} : float4{float3{(float)((edgeRgb >> 16) & 255), (float)((edgeRgb >> 8) & 255), (float)(edgeRgb & 255)} / 255.f, (float)(doc_number(d, layer, "stroke_width", 0, 0) / (0.5 * s.h * up.y / up.w))};
         if (!stroke.empty() && edgeRgb < 0) why = "a stroke is six digits, as ff3366";
         const double units = 0.5 * s.h * up.y / up.w;   // (points of the picture to one unit of the stage, where layers stand at first)
-        DrawnFx fx;
+        Canvas2DFx fx;
         fx.thick = doc_on(d, layer, "scale_z"), fx.lit = doc_lit(d, layer), fx.bevel = doc_bevel(d, layer) > 0;
         fx.wear = doc_sheet_material(d, layer);   // (a material it wears: its sheet flat.mat's own for it, in Filament's light (glass reads what is behind, unlit))
         if (!fx.wear.empty() && fx.wear != "glass") fx.lit = true;
@@ -294,7 +294,7 @@ static bool doc_match(Doc& d) {
                 if (!run->flat()) why = run->ok() ? "not a 2D sketch: " + file : run->trouble();
                 else if (fxOk && (made.drawn = sketch_picture(s, run, (doc_engine("third_party/filament_src/assets/fonts") / "Roboto-Medium.ttf").string(), 1.f, lay, fx))) s.playing.erase(made.drawn);
             } else if (fxOk && aspect > 0.f) {   // (a photo with an edge, round corners or cut in: a rect as wide as it is, its own file its fill, as a shape filled with media is (Alight Motion's media layers take a border as its shapes do))
-                DrawnFx own = fx;
+                Canvas2DFx own = fx;
                 own.media = file;
                 char cut[256];   // (cut in: the rect it shows a path of its own within the whole photo, in its height from its middle, so what is left stays where it was)
                 std::snprintf(cut, sizeof cut, "M%.5f %.5f L%.5f %.5f L%.5f %.5f L%.5f %.5f Z", aspect * (cl - 0.5), ct - 0.5, aspect * (0.5 - std::min(cr, 0.95 - cl)), ct - 0.5,
@@ -306,7 +306,7 @@ static bool doc_match(Doc& d) {
                 if (motion_open(*made.motion, file.c_str()))
                     for (uint32_t id : made.drawn->deep) {
                         float4 box;
-                        if (Drawn* own = layer_picture(s, file.c_str(), id, 1.f / made.motion->h, &box)) made.deep.push_back({id, own, box});
+                        if (Canvas2D* own = layer_picture(s, file.c_str(), id, 1.f / made.motion->h, &box)) made.deep.push_back({id, own, box});
                     }
             }
         } else if (kind == "text") {   // (words in a font: said by `say N text ...`; until then, the font's own name)

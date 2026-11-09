@@ -74,10 +74,10 @@ static const char* const edge_length_wgsl = R"(
     for (var y = 0; y < 7; y++) {
         for (var x = 0; x < 7; x++) {
             let p = vec2i(frag.xy) + 2 * vec2i(x - 3, y - 3);
-            let kept = clamp(p, vec2i(0), last);
-            let seen = textureLoad(picture, clamp(2 * kept - p, vec2i(0), last), 0);
+            let clamped = clamp(p, vec2i(0), last);
+            let seen = textureLoad(picture, clamp(2 * clamped - p, vec2i(0), last), 0);
             var length_at = length(seen.xy) - length(seen.zw);
-            if (any(p != kept)) { length_at = -length_at; }   // (past the picture's rim, its own turned over: it still comes down to 0 there)
+            if (any(p != clamped)) { length_at = -length_at; }   // (past the picture's rim, its own turned over: it still comes down to 0 there)
             r += w[x] * w[y] * length_at;
         }
     }
@@ -86,19 +86,19 @@ static const char* const edge_length_wgsl = R"(
 )";
 
 // Its pictures, as large as it is: two the flood goes between, one the look reads.
-static void edge_make(Stage& s, Drawn* d, uint32_t w, uint32_t h) {
+static void edge_make(Stage& s, Canvas2D* d, uint32_t w, uint32_t h) {
     for (int k = 0; k < 3; k++) {
         d->edge[k] = Texture::Builder().width(w).height(h).levels(1).format(Texture::InternalFormat::RGBA16F).usage(Texture::Usage::COLOR_ATTACHMENT | Texture::Usage::SAMPLEABLE).build(*s.engine);
         d->edgeInto[k] = RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, d->edge[k]).build(*s.engine);
     }
     d->edgeW = w, d->edgeH = h;
 }
-static void edge_off(Stage& s, Drawn* d) {
+static void edge_off(Stage& s, Canvas2D* d) {
     s.once.erase(d);
     for (int k = 0; k < 3; k++) if (d->edge[k]) s.engine->destroy(d->edgeInto[k]), s.engine->destroy(d->edge[k]), d->edge[k] = nullptr;
 }
 // Flooded as far as `reach` points, the steps halving from the power of two at or past it, once in the next frame.
-static void edge_ask(Stage& s, Drawn* d, int reach) {
+static void edge_ask(Stage& s, Canvas2D* d, int reach) {
     d->stale = false;
     s.once[d] = [&s, d, reach] {
         static std::map<Engine*, std::array<interop::Screen*, 3>> interops;

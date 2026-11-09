@@ -13,7 +13,7 @@
 // Not done: the property names bare (position, opacity), loopOut, + - * / on a vector in -x and +=, toWorld, footage().
 // wiggle and random are not After Effects' own sequences: a value that depends on the very numbers will not match.
 #pragma once
-static const char ae_kept[] = R"AEJS(
+static const char ae_prelude[] = R"AEJS(
 (function (G) {
   const val = (x) => (x !== null && typeof x === 'object' && !Array.isArray(x) && 'value' in x) ? x.value : x;
   const lift = (f) => function (a, b) {
