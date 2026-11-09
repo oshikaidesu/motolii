@@ -3,6 +3,7 @@ import FlutterMacOS
 
 class MainFlutterWindow: NSWindow {
   override func awakeFromNib() {
+    PlatformViewReadd.guardAgainst()
     let flutterViewController = FlutterViewController()
     self.contentViewController = flutterViewController
     // the window opens filling the screen, all but the menu bar and the Dock (NSScreen.visibleFrame), as a desktop
@@ -18,6 +19,32 @@ class MainFlutterWindow: NSWindow {
     super.awakeFromNib()
     // after the xib has restored its own frame
     self.setFrame(screen, display: true)
+  }
+}
+
+/// A web view in the window (an Expression card's Block mode, block_code.dart) put back in its place at every Flutter
+/// frame: the macOS engine adds a platform view's holder to the view it is already in on each frame
+/// (FlutterMutatorView.mm applyFlutterLayer: addSubview: of its container and of its clip views), and AppKit, so
+/// asked, orders the views again and runs their tracking areas again; WebKit then takes the mouse where the window has
+/// it, not where the web view has it, so a click or a drag lands as far off as the web view is from the window's
+/// corner (seen and measured: DimitriSky/flutter_macos_patches, webview_hover_guard, its README and root cause; its
+/// code is not used, it has no licence). As there: addSubview: of a view already in that view does nothing, on those
+/// two engine classes only (each given one of its own, so NSView's own is not changed); a view moved from elsewhere
+/// is added as before. Should the engine's classes be named otherwise one day, nothing is changed.
+enum PlatformViewReadd {
+  static func guardAgainst() {
+    let add = #selector(NSView.addSubview(_:))
+    for name in ["FlutterMutatorView", "FlutterPathClipView"] {
+      guard let kind = NSClassFromString(name), let had = class_getInstanceMethod(kind, add) else { continue }
+      typealias Add = @convention(c) (NSView, Selector, NSView) -> Void
+      let before = unsafeBitCast(method_getImplementation(had), to: Add.self)
+      let added: @convention(block) (NSView, NSView) -> Void = { me, view in
+        if view.superview === me { return }
+        before(me, add, view)
+      }
+      let mine = imp_implementationWithBlock(added)
+      if !class_addMethod(kind, add, mine, method_getTypeEncoding(had)) { method_setImplementation(had, mine) }
+    }
   }
 }
 

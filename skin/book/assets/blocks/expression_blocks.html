@@ -68,6 +68,7 @@ const toolbox = {
 const ws = Blockly.inject('blocks', {
   toolbox, media: 'blockly/media/', sounds: false, trashcan: false, renderer: 'thrasos',
   horizontalLayout: true, toolboxPosition: 'start',   // (the categories along the top: a card is narrow, Blockly's own layout option)
+  modalInputs: false,   // (a number edited in place: Blockly takes a Mac with a touch point for an iPad and asks by window.prompt, which the window does not answer)
   theme: Blockly.Theme.defineTheme('motolii_dark', {base: Blockly.Themes.Classic, componentStyles: {
     workspaceBackgroundColour: '#1e1f22', toolboxBackgroundColour: '#2b2d31', toolboxForegroundColour: '#d8d8d8',
     flyoutBackgroundColour: '#2b2d31', flyoutForegroundColour: '#d8d8d8', scrollbarColour: '#555', insertionMarkerColour: '#fff',
@@ -101,6 +102,14 @@ function motoliiLoad(state) {
   });
 }
 addEventListener('resize', () => Blockly.svgResize(ws));
+// A key the page does not use is passed on by WebKit to the window (macOS: the view under it, then Flutter), which takes
+// it as one of its own shortcuts (flutter/flutter#184557). So a plain key is the page's while it has it: taken (default
+// prevented) once Blockly has had it, unless it is being typed into a field. A key with ⌘ or ctrl goes on to the menus.
+addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey) return;
+  const typing = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target.isContentEditable;
+  if (!typing || ['Enter', 'Escape', 'Tab'].includes(e.key)) e.preventDefault();
+});
 </script>
 </body>
 </html>
