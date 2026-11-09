@@ -1,6 +1,6 @@
 // Each swells as Focus comes near, and those beside it move away by as much as it grew, so the gaps stay as they were.
 // One thing's place hangs on all the others: After Effects' expressions cannot say that without text layers working it
-// out first (Creative Cow, 2023, reports/relation_precedents_2026-11-03.md).
+// out first (Creative Cow, 2023, reports/window/relation_precedents_2026-11-03.md).
 // --track@focus:Focus,-3,3,0,0.01
 // --track@reach:Reach,0.1,3,0.6,0.01
 // --track@grow:Grow,1,5,2.2,0.01

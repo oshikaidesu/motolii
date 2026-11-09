@@ -107,7 +107,7 @@ std::vector<ScriptKnob> script_knobs(const std::string& file) {
         in.clear(), in.seekg(0);
         if (const std::string head = leva_head(all.str()); !head.empty()) told_head.str(head), from = &told_head;   // (leva's object at its top: script_leva.h)
     }
-    std::string group;   // (AviUtl2's --group:Name[,open] gathers the knobs after it, a bare --group ends it: docs/internal/reports/aviutl2_converter.md)
+    std::string group;   // (AviUtl2's --group:Name[,open] gathers the knobs after it, a bare --group ends it: docs/internal/reports/aviutl/aviutl2_converter.md)
     for (std::string line; std::getline(*from, line);) {
         if (line.rfind("//", 0) != 0) { if (line.find_first_not_of(" \t\r") == std::string::npos) continue; break; }   // (the head ends where code begins)
         if (const size_t g = line.find_first_not_of(" \t", 2); g != std::string::npos && line.compare(g, 7, "--group") == 0 && (g + 7 == line.size() || line[g + 7] == ':' || line[g + 7] == '\r')) {

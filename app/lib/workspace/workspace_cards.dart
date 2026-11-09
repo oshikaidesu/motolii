@@ -99,7 +99,7 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
   String colour(String base) => '  /// @label(${m.shown('${base}_x')!.label.substring(0, m.shown('${base}_x')!.label.length - 2)})${weights['${base}_x'] == null ? '' : ' @weight(${weights['${base}_x']})'} @unit(colours)\n  $base: vec3<f32>,';
   return [
     for (final (title, names) in m.cards(t))
-      if (title == 'Sound' || !wsSound(m, t))   // (a sound has its volume and no picture to place: Alight Motion's audio layer, docs/internal/reports/alight_ui.md 177)
+      if (title == 'Sound' || !wsSound(m, t))   // (a sound has its volume and no picture to place: Alight Motion's audio layer, docs/internal/reports/alight_motion/alight_ui.md 177)
       Fx('v', title, 'struct Params {\n${[
         for (final n in names)
           if (m.shown(n)?.fold == null)
