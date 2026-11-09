@@ -1,4 +1,4 @@
-// Posterize: AbsentMotion's posterize (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Posterize: AbsentMotion's posterize (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Cuts each color channel into a number of flat Steps, so smooth gradients turn into bands. Offset moves where the band edges fall.
 // --track@levels:Steps,2,255,10.0,1

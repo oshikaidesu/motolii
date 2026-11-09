@@ -1,5 +1,5 @@
 /*{
- "DESCRIPTION": "Sashimono Edit's 網点の輪郭ぼかし (halftone_border, 形; MIT, src/sashimono/effects/builtin.py), made an ISF effect by shelves/effects/from_sashimono.py",
+ "DESCRIPTION": "Sashimono Edit's 網点の輪郭ぼかし (halftone_border, 形; MIT, src/sashimono/effects/builtin.py), made an ISF effect by shelves/effects/sources/from_sashimono.py",
  "CREDIT": "Sashimono Edit (MIT)",
  "CATEGORIES": [
   "Shape"

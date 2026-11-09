@@ -1,4 +1,4 @@
-// Rays: AbsentMotion's rays (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Rays: AbsentMotion's rays (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Shines rays of light out from the bright parts of the layer, away from a center point.
 // --track@R_center_x:Center x,-1,2,0.5,0.01

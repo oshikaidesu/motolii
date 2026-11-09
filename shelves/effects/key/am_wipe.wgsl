@@ -1,4 +1,4 @@
-// Wipe: AbsentMotion's wipe (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Wipe: AbsentMotion's wipe (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Key
 // --about:Hides the layer from two opposite sides. Animate Start or End for a wipe transition.
 // --track@start:Start,-0.5,1.5,0.0,0.001

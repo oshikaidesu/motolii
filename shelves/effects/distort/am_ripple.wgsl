@@ -1,4 +1,4 @@
-// Ripple: AbsentMotion's ripple (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Ripple: AbsentMotion's ripple (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Concentric ripples radiating from a center point with configurable amplitude, wavelength, and speed.
 // --track@R_center_x:Center x,0,1,0.5,0.01

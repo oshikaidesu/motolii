@@ -1,4 +1,4 @@
-// DotScreen: three.js's DotScreenShader.js (MIT, Copyright (c) 2010-2026 three.js authors, github.com/mrdoob/three.js), its GLSL made WGSL by naga (shelves/effects/from_three.py)
+// DotScreen: three.js's DotScreenShader.js (MIT, Copyright (c) 2010-2026 three.js authors, github.com/mrdoob/three.js), its GLSL made WGSL by naga (shelves/effects/sources/from_three.py)
 // --label:Stylize
 // --track@center_x:center_x,0.0,2.0,0.5,0.001
 // --track@center_y:center_y,0.0,2.0,0.5,0.001

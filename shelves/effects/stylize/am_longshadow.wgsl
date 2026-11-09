@@ -1,4 +1,4 @@
-// Long Shadow: AbsentMotion's longshadow (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Long Shadow: AbsentMotion's longshadow (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Casts long, parallel shadows from the opaque parts of the layer.
 // --track@angle:Angle,-3600,3600,45.0,0.5

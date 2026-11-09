@@ -1,4 +1,4 @@
-// Pinch/Bulge: AbsentMotion's bulge (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Pinch/Bulge: AbsentMotion's bulge (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Bulges the layer out like a lens (positive Strength) or pinches it in toward Center (negative) inside a circle of Radius, a share of the layer size.
 // --track@R_center_x:Center x,0,1,0.5,0.01

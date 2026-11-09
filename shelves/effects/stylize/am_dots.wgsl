@@ -1,4 +1,4 @@
-// Dots: AbsentMotion's dots (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Dots: AbsentMotion's dots (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Draws a random but even pattern of soft dots over the layer, or uses the layer only as a mask for the dots.
 // --track@scale:Scale,0.01,100,1.0,0.01

@@ -49,7 +49,7 @@ with tempfile.TemporaryDirectory() as d:
     wgsl = open(w).read()
 
 name = os.path.basename(src).replace("Shader.js", "").replace(".js", "")
-head = f"// {name}: three.js's {os.path.basename(src)} (MIT, Copyright (c) 2010-2026 three.js authors, github.com/mrdoob/three.js), its GLSL made WGSL by naga (shelves/effects/from_three.py)\n"
+head = f"// {name}: three.js's {os.path.basename(src)} (MIT, Copyright (c) 2010-2026 three.js authors, github.com/mrdoob/three.js), its GLSL made WGSL by naga (shelves/effects/sources/from_three.py)\n"
 if len(sys.argv) > 3:
     head += f"// {sys.argv[3]}\n"
 for t, n in loose:

@@ -1,4 +1,4 @@
-// Channel Remap (HSV): AbsentMotion's channelremaphsv (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Channel Remap (HSV): AbsentMotion's channelremaphsv (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Rebuilds hue, saturation, value and alpha from other channels of the layer.
 // --track@h:H,0,1,0.0,0.01

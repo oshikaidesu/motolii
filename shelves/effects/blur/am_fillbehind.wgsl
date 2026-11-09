@@ -1,4 +1,4 @@
-// Fill Behind: AbsentMotion's fillbehind (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Fill Behind: AbsentMotion's fillbehind (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Blur
 // --pass@h:0,1,s1,s1
 // --pass@blurPicture:0,1,s1,s1

@@ -1,4 +1,4 @@
-// Mosaic: AbsentMotion's mosaic (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Mosaic: AbsentMotion's mosaic (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Divides the layer into squares and fills each one with its average color.
 // --track@count:Count,1,500,20.0,1

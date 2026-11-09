@@ -1,4 +1,4 @@
-// Auto-Shake: AbsentMotion's autoshake (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), moved by its own motion.cpp (engine/community/absent_motion.cpp)
+// Auto-Shake: AbsentMotion's autoshake (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), moved by its own motion.cpp (engine/community/absent_motion/absent_motion.cpp)
 // --label:Move
 // --absent:autoshake
 // --about:Moves the layer randomly over time within the set limits.

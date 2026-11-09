@@ -1,4 +1,4 @@
-// Magnify Background: AbsentMotion's magnifybackground (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Magnify Background: AbsentMotion's magnifybackground (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --picture@backdrop:Behind
 // --about:Makes the layer a magnifying glass: its shape shows the layers behind it enlarged around its center.

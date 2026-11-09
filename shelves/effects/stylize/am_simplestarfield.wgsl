@@ -1,4 +1,4 @@
-// Simple Starfield: AbsentMotion's simplestarfield (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Simple Starfield: AbsentMotion's simplestarfield (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Scatters small stars in layers of depth over the opaque parts of the layer. Position moves the field with parallax, Depth flies through it, Scale zooms it, Size and Feather shape each star and Amount sets how many there are.
 // --track@R_position_x:Position x,-100000,100000,0,1

@@ -1,4 +1,4 @@
-// Spot Color: AbsentMotion's spotcolor (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Spot Color: AbsentMotion's spotcolor (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Keeps one color and takes the saturation out of every other color in the layer.
 // --track@color_x:Color R,0,1,1,0.01

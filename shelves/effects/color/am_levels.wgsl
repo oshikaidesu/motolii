@@ -1,4 +1,4 @@
-// Levels: AbsentMotion's levels (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Levels: AbsentMotion's levels (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Adjusts the levels of the image with input black/white points, gamma, and output black/white points.
 // --track@inBlack:Input Black,0.0,1.0,0.1,0.01

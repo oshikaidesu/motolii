@@ -1,4 +1,4 @@
-// Scatter Field: AbsentMotion's scatterfield (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), moved by its own motion.cpp (engine/community/absent_motion.cpp)
+// Scatter Field: AbsentMotion's scatterfield (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), moved by its own motion.cpp (engine/community/absent_motion/absent_motion.cpp)
 // --label:Repeat
 // --absent:scatterfield
 // --about:Scatters copies of the layer within an infinite 3D field while hiding the original layer, and allows simulated motion within the field in three dimensions through keyframe animation.

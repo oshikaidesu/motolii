@@ -1,4 +1,4 @@
-// CMYK Halftone Dots: AbsentMotion's cmykhalftone (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// CMYK Halftone Dots: AbsentMotion's cmykhalftone (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Redraws the layer like a magazine print: cyan, magenta, yellow and black dots on four rotated screens.
 // --track@amount:Amount,0,500,100.0,0.1

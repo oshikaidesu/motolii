@@ -1,4 +1,4 @@
-// Unsharp Mask: AbsentMotion's unsharpmask (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Unsharp Mask: AbsentMotion's unsharpmask (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Sharpens by adding back the difference between the layer and a blurred copy of it. Strength sets how wide the blur is, Amount how much is added back, and Threshold above 50% leaves small differences alone.
 // --track@radius:Strength,0.0,2.0,0.02,0.01

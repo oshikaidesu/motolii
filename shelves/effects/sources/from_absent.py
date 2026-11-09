@@ -116,7 +116,7 @@ wgsl = open(out + '.raw.wgsl').read()
 fields = re.findall(r'^\s*(\w+)\s*:', re.search(r'struct Knobs\s*\{([^}]*)\}', wgsl).group(1), re.M)
 named = {re.sub(r'^R_', '', n): n for n in fields}
 named.update({r: r + '_' for r in reserved if r + '_' in fields})   # (its own param by that name, as its JSON says it)   # (skslc's R_ before a name WGSL keeps for itself: center)
-lines = [f"// {SHELF_NAMES.get(d['id'], d['name'])}: AbsentMotion's {d['id']} (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)"]
+lines = [f"// {SHELF_NAMES.get(d['id'], d['name'])}: AbsentMotion's {d['id']} (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)"]
 lines.append(f"// --label:{d.get('category', '').capitalize()}")
 if blur:
     lines += [f'// --pass@{across}:0,1,s1,s1', '// --pass@blurPicture:0,1,s1,s1', '// --pass@:0,0,s1,s1']   # (across, down, then the effect itself)

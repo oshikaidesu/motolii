@@ -1,4 +1,4 @@
-// Turbulence: AbsentMotion's turbulence (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Turbulence: AbsentMotion's turbulence (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Noise
 // --about:Fills the opaque parts of the layer with smooth fractal noise, for clouds, smoke or a brightness map.
 // --track@parallax_x:Parallax x,-5000,5000,0,1

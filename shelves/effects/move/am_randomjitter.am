@@ -1,4 +1,4 @@
-// Random Jitter: AbsentMotion's randomjitter (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), moved by its own motion.cpp (engine/community/absent_motion.cpp)
+// Random Jitter: AbsentMotion's randomjitter (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), moved by its own motion.cpp (engine/community/absent_motion/absent_motion.cpp)
 // --label:Move
 // --absent:randomjitter
 // --about:Makes the layer jump back and forth at random along an angle.

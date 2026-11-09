@@ -1,4 +1,4 @@
-// Mask Blur: AbsentMotion's maskblur (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Mask Blur: AbsentMotion's maskblur (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Blur
 // --picture@backdrop:Behind
 // --about:Blurs the layers behind this one inside its shape; brighter parts of the layer blur more, so a gradient makes a tilt-shift.

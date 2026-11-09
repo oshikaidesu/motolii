@@ -1,4 +1,4 @@
-// Radial Shadow: AbsentMotion's radialshadow (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Radial Shadow: AbsentMotion's radialshadow (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Casts long shadows from the opaque parts of the layer, spreading out away from a light point.
 // --track@light_x:Light x,-2,3,0.3,0.01

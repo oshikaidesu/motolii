@@ -1,4 +1,4 @@
-// Directional Blur: AbsentMotion's directionalblur (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Directional Blur: AbsentMotion's directionalblur (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Blur
 // --about:Motion blur by averaging samples along a directional angle.
 // --track@blurLength:Length,0,2000,20.0,1

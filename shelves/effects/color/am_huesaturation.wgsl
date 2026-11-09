@@ -1,4 +1,4 @@
-// Hue & Saturation: AbsentMotion's huesaturation (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Hue & Saturation: AbsentMotion's huesaturation (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Turns colors around the color wheel and makes them stronger or weaker; vibrance strengthens the duller colors most.
 // --track@hue:Hue,-360,360,60.0,1

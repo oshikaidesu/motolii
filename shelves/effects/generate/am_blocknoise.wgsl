@@ -1,4 +1,4 @@
-// Block Noise: AbsentMotion's blocknoise (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Block Noise: AbsentMotion's blocknoise (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Noise
 // --about:Flickers random blocks of noise over the layer. Multiply modulates the existing colors; Add adds noise to them. Freeze holds the pattern still.
 // --track@blockSize:Size,1,999,20.0,0.1

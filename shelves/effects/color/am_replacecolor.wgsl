@@ -1,4 +1,4 @@
-// Replace Color: AbsentMotion's replacecolor (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Replace Color: AbsentMotion's replacecolor (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Replaces one color with another. Alpha controls the replacement strength; Lock Luminance keeps the light and shade of the original.
 // --track@source_x:Replace Color R,0,1,1,0.01
