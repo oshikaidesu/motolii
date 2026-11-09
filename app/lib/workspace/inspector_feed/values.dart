@@ -34,7 +34,7 @@ double _unshown(Motolii m, int t, String n, double x) {
 
 // (the moment of the picture on the stage, at a frame: what is read there was set down by the inside as it drew it,
 //  not waited for while it tells the stage a moment the playhead has just been put at)
-double _drawn(Ws ws) => ws.inside?.renderedAt ?? ws.frame / Ws.fps;
+double _drawn(Ws ws) => ws.inside?.now ?? ws.frame / Ws.fps;
 
 /// The selected layer's transform as the stage draws it at this frame, in the Inspector's ids.
 Map<String, double> wsTransform(Ws ws, String? id) {
@@ -51,9 +51,7 @@ Map<String, double> wsTransform(Ws ws, String? id) {
     }
     if (t == null) return const {};
     final at = _drawn(ws);
-    double r1(double x) => (x * 10).roundToDouble() / 10 + 0; // (+ 0: no minus nought)
     return {
-      'depth': r1(m.bounds(t)?[7] ?? 0), // (how deep it is in points of the picture: a flat thing is Flat)
       for (final (_, names) in m.cards(t))
         for (final n in names) 'v_$n': _onCard(ws, m, t, n, at),
     };
@@ -116,8 +114,6 @@ Map<String, String> _words(Ws ws, String? id) {
   if (m == null || t == null) return const {};
   return {
     ..._cardColors(m, t, _drawn(ws)),
-    if (m.word(t, 'kind') == 'light') 'light': m.word(t, 'file'), // (which light it is: a sun, a point, a spot; the Light card draws it so)
-    if (m.word(t, 'kind') == 'text') 'lacks': _lacks(m, t), // (letters its font has not: drawn in another, said under its words)
     for (final (_, names) in m.cards(t))
       for (final n in names)
         if (m.shown(n)?.look == 'thing')
@@ -127,20 +123,6 @@ Map<String, String> _words(Ws ws, String? id) {
         else if (m.words(t, n).isNotEmpty)
           'v_$n': m.word(t, n).isEmpty ? m.words(t, n).first : m.word(t, n), // (one of its words; none said: the first, as it comes)
   };
-}
-
-/// What a text's font lacks of its words, as the Text card says it under them ('' nothing): the letters, and the font
-/// all of it is drawn in instead (the user, 11/5: no tofu, and a reason where it is not as asked).
-String _lacks(Motolii m, int t) {
-  final file = m.whole(m.word(t, 'file')), words = m.word(t, 'text');
-  final (lacks, instead) = m.fontLacks(
-    file,
-    words.isEmpty ? file.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), '') : words,
-  ); // (no words: the font's own name, as the inside sets it)
-  if (lacks.isEmpty) return '';
-  return instead.isEmpty
-      ? 'Not in this font: $lacks. No font here has them all: they are left out'
-      : 'Not in this font: $lacks. Shown in ${instead.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), '')}';
 }
 
 /// What a card's value may be, for a hand-drawn card's chooser: its words, or another thing by name (None first).
@@ -164,9 +146,8 @@ bool _flag(Ws ws, String? id, Map<String, bool> changed) {
   bool looked(String k) =>
       k.endsWith('.open') ||
       k.endsWith('.adv') ||
-      k.endsWith('.code') ||
       k.endsWith('.past') ||
-      k.startsWith('fold.'); // (.past: a card let past its ends, PastRange; .code: a script's code open under its knobs, script_code.dart)
+      k.startsWith('fold.'); // (.past: a card let past its ends, PastRange)
   for (final e in changed.entries) {
     if (looked(e.key)) ws.view['inspector.${e.key}'] = e.value;
   }

@@ -67,6 +67,9 @@ OWED = {
     'motolii_guide',
     'motolii_create',
     'motolii_mark',
+    # A font's missing letters, and why the last call was refused: nothing in the window paints them.
+    'motolii_font_lacks',
+    'motolii_error',
     # The window queues these through later(); nothing calls the direct wrappers.
     'motolii_say',
     'motolii_key',

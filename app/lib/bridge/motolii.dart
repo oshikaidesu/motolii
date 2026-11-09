@@ -48,14 +48,11 @@ typedef _P = Pointer<c.Motolii>;
 typedef _S = Pointer<Utf8>;
 
 class Motolii {
-  Motolii._(this._lib, this._m, this.libPath, this.home);
+  Motolii._(this._lib, this._m, this.libPath);
   final DynamicLibrary _lib;
   late final _b = c.MotoliiBindings(_lib); // (the inside's calls, made by Dart's ffigen from motolii.h: ffigen.yaml)
   final _P _m;
   final String libPath;
-
-  /// The folder the document's file words are read from (a word that is not a whole path starts here).
-  final String home;
 
   /// The document at [document] (made if it is not there), on a stage [wide] by [high]. null: it could not be opened.
   static Motolii? open(String document, {int wide = 1920, int high = 1080, String? dir}) {
@@ -74,7 +71,7 @@ class Motolii {
       ..free(home)
       ..free(doc);
     if (m == nullptr) return null;
-    return Motolii._(lib, m, path, '$dir/out/filament_webgpu').._listen();
+    return Motolii._(lib, m, path).._listen();
   }
 
   // ------------------------------------------------------------------ the pictures (docs/app/BRIDGE.md)
@@ -110,7 +107,6 @@ class Motolii {
   late final _keying = _b.motolii_keying;
   late final _dragUpdate = _b.motolii_drag_update;
   late final _kindOf = _b.motolii_kind_of;
-  late final _error = _b.motolii_error;
   late final _still = _b.motolii_still;
   late final _close = _b.motolii_close;
 
@@ -129,16 +125,11 @@ class Motolii {
 
   final _shownOf = <String, Shown?>{}; // (read out of the things' parts once a picture of the document)
 
-  late final _fontLacks = _b.motolii_font_lacks;
-
   late final _later = _b.motolii_later;
   late final _answer = _b.motolii_answer;
   late final _answerWhy = _b.motolii_answer_why;
 
   final _waiting = <int, Completer<(int, String)>>{};
-
-  /// A file word of the document as a whole path.
-  String whole(String file) => Uri.directory(home).resolveUri(Uri.file(file)).toFilePath();
 
   void _listen() {
     _listenerCallable = NativeCallable<Void Function(Int)>.listener(_take);

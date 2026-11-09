@@ -1,4 +1,4 @@
-// What the window still asks of the shelves: how a value is shown, a font's missing letters, what kind of thing a file is.
+// What the window still asks of the shelves: how a value is shown, and what kind of thing a file is.
 part of 'motolii.dart';
 
 extension MotoliiShelves on Motolii {
@@ -15,13 +15,6 @@ extension MotoliiShelves on Motolii {
     }
     return null;
   });
-
-  /// The letters of [words] a font file has not (each once; '' none), and the font a text of them is drawn in instead
-  /// ('' none has them all): the inside's motolii_font_lacks, a font's own letters by its cmap, Noto Sans JP first.
-  (String, String) fontLacks(String font, String words) {
-    final said = _with([font, words], (s) => _fontLacks(s[0], s[1]).toDartString()).split('\t');
-    return (said.first, said.length > 1 ? said[1] : '');
-  }
 
   /// What kind of thing a file makes ('': none).
   String kindOf(String file) => _with([file], (s) => _kindOf(s[0]).toDartString());

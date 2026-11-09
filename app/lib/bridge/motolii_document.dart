@@ -51,12 +51,6 @@ extension MotoliiDocument on Motolii {
         : 1;
   }
 
-  /// The size of the stage the document is open on; and the size it is to be when it is next opened (close, open again).
-  (int, int) get size => switch (_document['size']) {
-    [final int w, final int h] => (w, h),
-    _ => (0, 0),
-  };
-
   /// The marks: moments with a name, in time; a mark said with '' is taken away.
   List<(double, String)> get marks => [
     for (final line in ((_document['marks'] as String?) ?? '').split('\n'))

@@ -156,7 +156,7 @@ class _InspHostState extends State<InspHost> {
     }
     final words = {
       for (final e in doc.s2.entries)
-        if (e.key != 'route' && e.key != 'route.at' && _seenWords[e.key] != e.value) e.key: e.value,
+        if (_seenWords[e.key] != e.value) e.key: e.value,
     };
     if (widget.onFlags case final tell?) {
       final flags = {

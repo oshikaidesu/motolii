@@ -10,8 +10,6 @@ extension MotoliiMoment on Motolii {
   /// The moment of the picture the stage last drew: where a playhead is while it plays.
   double get now => (_moment['now'] as num?)?.toDouble() ?? 0;
 
-  double get renderedAt => now;
-
   /// A value at a moment, its own (not what a relation makes of it: [shows]): one that stays, the document's; one that
   /// moves, the picked thing's at the moment's picture's moment.
   double? value(int layer, String name, double at) {
@@ -49,12 +47,4 @@ extension MotoliiMoment on Motolii {
     final v = (_momentOf(layer)?['shows'] as Map<String, dynamic>?)?[name] as List<dynamic>?;
     return v == null ? null : ((v[0] as num).toDouble(), v[1] as bool);
   }
-
-  /// A thing's frame on the picture at the stage's moment: its middle (x, y), how wide, how high (points of the picture,
-  /// from the top left), how far it is turned (degrees, clockwise as seen), the point it turns about (x, y), and how deep
-  /// it is (0: flat). null: not shown.
-  List<double>? bounds(int layer) => switch (_momentOf(layer)?['bounds']) {
-    final List<dynamic> f => Motolii._numbers(f),
-    _ => null,
-  };
 }
