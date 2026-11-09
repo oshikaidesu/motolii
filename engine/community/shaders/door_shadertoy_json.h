@@ -1,4 +1,4 @@
-// door_shadertoy_json.h: part of doc_door.h. A Shadertoy shader as the site keeps it, all its tabs, read into door_tabs_isf
+// door_shadertoy_json.h: part of document/adapter.h. A Shadertoy shader as the site keeps it, all its tabs, read into door_tabs_isf
 // (door_shadertoy.h): rust_ae's isf_from_shadertoy_project, by the JSON's own words.
 #pragma once
 #include <rapidjson/document.h>

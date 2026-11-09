@@ -1,7 +1,7 @@
 #!/bin/zsh
 # ThorVG's WebGPU engine on the Dawn that Filament's WebGPU backend is built with (gpu/build.sh first).
 # ThorVG: its official source at the commit of its main we use, fetched once into third_party/thorvg_src, with deps/patches/thorvg/: thorvg_z.patch
-# (a 3D layer's third number kept and said: LottieAnimation::pose, for motion/motion.h; nothing drawn changes) and
+# (a 3D layer's third number kept and said: LottieAnimation::pose, for motion/lottie_motion.h; nothing drawn changes) and
 # thorvg_over.patch (a texture target of type 2 is drawn over, not replaced: the desk's marks on its picture, stage/live.h) and
 # thorvg_matte_clip.patch (an alpha matte of one opaque shape is a clipper, as ThorVG makes a single mask one) and
 # thorvg_texture.patch (Picture::load of a texture already on the device, read as it is: a thing's effects in any order,

@@ -1,7 +1,7 @@
 #!/bin/zsh
 # Jolt Physics (Jorrit Rouwe, MIT): the official source at the commit we use, fetched once into third_party/physics/JoltPhysics,
 # built by its own CMake (Build/) as a static library, the same everywhere (CROSS_PLATFORM_DETERMINISTIC), without its tests,
-# samples and viewer. Out comes third_party/physics/JoltPhysics/jbuild/libJolt.a (motion/physics.cpp; edit.sh and build_lib.sh link it).
+# samples and viewer. Out comes third_party/physics/JoltPhysics/jbuild/libJolt.a (physics/jolt.cpp; edit.sh and build_lib.sh link it).
 #   ./deps/jolt.sh
 set -e
 cd "$(dirname "$0")/.."

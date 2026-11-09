@@ -1,11 +1,11 @@
 // An ISF effect (Vidvox's Interactive Shader Format: a GLSL fragment shader with a JSON head of its knobs) dropped in an
-// effects folder works as a .wgsl does: made one in vgpu's manner (screen.h) inside Motolii, by the parts Filament's
+// effects folder works as a .wgsl does: made one in vgpu's manner (screen_fx.h) inside Motolii, by the parts Filament's
 // build already has (glslang to SPIR-V, Tint from SPIR-V to WGSL, as Dawn itself reads SPIR-V), its head read by
 // rapidjson (as Filament's assimp has it). The shader's own lines are kept; around them ISF's words (IMG_NORM_PIXEL, IMG_THIS_PIXEL,
 // isf_FragNormCoord, TIME, RENDERSIZE...) are said in plain GLSL, each picture split into a texture and a sampler, the
 // knobs gathered into one struct and written in the head (script.h: // --track@...), its passes too (// --pass@...).
 // Made once into ~/Library/Caches/Motolii/isf/<hash>.wgsl, named by the file as it is. Its other images are
-// other things' pictures (screen.h others), its audio inputs other things' sound; its own vertex shader is worked out at each pixel.
+// other things' pictures (screen_fx.h others), its audio inputs other things' sound; its own vertex shader is worked out at each pixel.
 #include "community/shaders/isf.h"
 #include "community/door.h"
 #include "community/shaders/three_isf.h"
@@ -101,7 +101,7 @@ static std::string isf_wgsl(const std::string& text, const std::string& name, st
         glsl += "layout(set = 0, binding = " + std::to_string(2 * k) + ") uniform texture2D isf_tex_" + read[k] + ";\nlayout(set = 0, binding = " + std::to_string(2 * k + 1) + ") uniform sampler isf_smp_" + read[k] + ";\n";
     for (size_t k = 0; k < others.size(); ++k)
         glsl += "layout(set = 0, binding = " + std::to_string(2 * (read.size() + k)) + ") uniform texture2D isf_tex_" + others[k] + ";\nlayout(set = 0, binding = " + std::to_string(2 * (read.size() + k) + 1) + ") uniform sampler isf_smp_" + others[k] + ";\n";
-    glsl += "layout(set = 0, binding = " + std::to_string(2 * (read.size() + others.size())) + ") uniform Knobs {\n  float time;\n  vec2 resolution;\n  float frame;\n  float isf_rate;\n  float passindex;\n  float clip_time;\n  float clip_length;\n  vec4 frameRect;\n  vec4 passRect;\n";   // (and a thing's own: how far into it, how long it lasts, seconds, doc_moment_fx.h; the stage's: none)
+    glsl += "layout(set = 0, binding = " + std::to_string(2 * (read.size() + others.size())) + ") uniform Knobs {\n  float time;\n  vec2 resolution;\n  float frame;\n  float isf_rate;\n  float passindex;\n  float clip_time;\n  float clip_length;\n  vec4 frameRect;\n  vec4 passRect;\n";   // (and a thing's own: how far into it, how long it lasts, seconds, document/moment_fx.h; the stage's: none)
     std::vector<std::string> switches;   // (an on/off knob: an int, as WGSL keeps no bool in a uniform, read as a bool where the shader names it, not where a colour's .r is)
     std::string lines;
     for (const auto& k : inputs.GetArray()) {

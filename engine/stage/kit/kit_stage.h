@@ -52,7 +52,7 @@ using namespace filament::math;
 
 static const float TAU = 6.2831853f;
 
-struct SketchShape { std::vector<float3> pos, nrm; std::vector<float2> uv; std::vector<uint32_t> idx, edges; };   // (a shape a p5.js sketch draws, as it has it: doc_sketch.h)
+struct SketchShape { std::vector<float3> pos, nrm; std::vector<float2> uv; std::vector<uint32_t> idx, edges; };   // (a shape a p5.js sketch draws, as it has it: document/sketch.h)
 struct SketchTold { std::string name, type; int count = 1, size = 1; };   // (and what its shader() is told, by name)
 struct SketchPaint { Material* material = nullptr; std::vector<SketchTold> told; int size = 0; std::vector<MaterialInstance*> looks; };
 struct Mesh {
@@ -136,7 +136,7 @@ struct Stage {
     Texture* white = nullptr;    // a white point: the matte of a thing that nothing cuts
     // (what is made once for this stage's engine and kept: a stage opened after another in the same program has its own)
     std::map<std::string, Material*> materials;    // each material file, read and built once
-    void* solids = nullptr; void* solidPictures = nullptr;   // Filament's reader of 3D files and its reader of their pictures (solid.h)
+    void* solids = nullptr; void* solidPictures = nullptr;   // Filament's reader of 3D files and its reader of their pictures (gltf_model.h)
     std::vector<Made> made;   // every thing put on the stage: of which mesh, at which of that mesh's places (a film moves them: `move`)
     // The desk: the editing window's whole stage pane (w, h pixels: 0, none), the picture there as on the stage but seen
     // further back, the stage's own lying at x, y (its top left) so many pixels a point; what lies off it is seen too.
@@ -144,12 +144,12 @@ struct Stage {
     // doc_frame gives them) and of the one under the hand; `point`: desk pixels a point of the screen the marks are sized in.
     struct { uint32_t w = 0, h = 0; double x = 0, y = 0, scale = 1, point = 2; math::mat4 was, wasCulled;
              bool picked = false, hovered = false, knob = true; double pick[8] = {}, hover[8] = {}; } desk;
-    std::function<void()> over;   // drawn last, over all of them (a whole-screen effect: screen.h)
+    std::function<void()> over;   // drawn last, over all of them (a whole-screen effect: screen_fx.h)
     std::map<const void*, std::function<void()>> once;   // to do once before the next picture, by whose it is (a picture's distances from its edge: drawn_edge.h)
-    std::vector<std::function<void()>> before;   // drawn before the stage's own view, each into a picture of its own (a thing with effects of its own: thing_fx.h)
+    std::vector<std::function<void()>> before;   // drawn before the stage's own view, each into a picture of its own (a thing with effects of its own: layer_fx.h)
     std::vector<std::function<void()>> aim;      // told before each frame begins, what those pictures and the looks that show them are (Filament sends a look's parameters on as a frame begins: FRenderer::beginFrame, FEngine::prepare)
     std::function<void()> lastly;   // and after everything, in the same frame (the desk: its stage's picture placed on it, live.h)
-    Texture* drawnInto = nullptr;   // the picture the views draw into (live.h, screen.h); none: the screen
+    Texture* drawnInto = nullptr;   // the picture the views draw into (live.h, screen_fx.h); none: the screen
     RenderTarget* out = nullptr;   // where the picture goes at last (none: the screen; the window's live picture: live.h)
 };
 
@@ -276,7 +276,7 @@ static void mesh_points(Stage& s, const Mesh& m, VertexBuffer* vb, size_t n) {
     vb->setBufferAt(*s.engine, 2, copied(m.uv.data(), n * sizeof(float2)));
     if (!m.color.empty()) vb->setBufferAt(*s.engine, 3, copied(m.color.data(), n * sizeof(float4))), vb->setBufferAt(*s.engine, 4, copied(m.uv1.data(), n * sizeof(float2)));
 }
-static Mesh* sketch_mesh() {   // (nothing yet: doc_sketch.h makes it again each frame)
+static Mesh* sketch_mesh() {   // (nothing yet: document/sketch.h makes it again each frame)
     Mesh* m = new Mesh;
     m->pos.assign(3, float3{0.f}), m->nrm.assign(3, float3{0.f, 0.f, 1.f}), m->uv.assign(3, float2{0.f}), m->color.assign(3, float4{0.f}), m->uv1.assign(3, float2{0.f}), m->idx = {0, 1, 2};
     return m;
@@ -303,7 +303,7 @@ static std::vector<MaterialInstance*> add_parts(Stage& s, Mesh* m, const char* f
         if (mat->hasParameter("matteUse")) {   // (a material that can be cut: by nothing, until `matted` says so)
             for (const char* name : {"matte0", "matte1", "matte2", "matte3"}) mi->setParameter(name, white_point(s), TextureSampler());
             for (const char* name : {"matteEye0", "matteEye1", "matteEye2", "matteEye3"}) mi->setParameter(name, mat4f{});
-            if (mat->hasParameter("colours")) mi->setParameter("colours", white_point(s), TextureSampler());   // (a film's second plane: video.h)
+            if (mat->hasParameter("colours")) mi->setParameter("colours", white_point(s), TextureSampler());   // (a film's second plane: video_layer.h)
             mi->setParameter("matteUse", float4{0.f});
             mi->setParameter("matteSoft", float4{0.f});
         }

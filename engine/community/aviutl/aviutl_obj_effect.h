@@ -1,7 +1,7 @@
 // aviutl_obj_effect.h: part of aviutl_fx.h. Read only through aviutl_fx.h. obj.effect: AviUtl's built-in effects as Sashimono Edit remakes them, and this file's own scripts called by name.
 // AviUtl's built-in effects as Sashimono Edit remakes them (MIT): their ISF files and how their params are said
 // (effects/sources/sashimono_aviutl.json, written by from_sashimono.py from Sashimono's own compat/aviutl/mapping.py), read once.
-static std::vector<std::filesystem::path> doc_folders(const char* folder);   // (doc_edit.h)
+static std::vector<std::filesystem::path> doc_folders(const char* folder);   // (document/layer_edit.h)
 struct AviutlRemade { std::string file; std::map<std::string, std::array<std::string, 3>> params; };   // (each param: its name there, how its number is said again, a second name it also goes to)
 static const std::map<std::string, AviutlRemade>& aviutl_remakes() {
     static const std::map<std::string, AviutlRemade> all = [] {
@@ -21,7 +21,7 @@ static const std::map<std::string, AviutlRemade>& aviutl_remakes() {
     }();
     return all;
 }
-// One of them on the object, as a thing's ISF effect is drawn (screen.h screen_draw): its knobs the params said (each
+// One of them on the object, as a thing's ISF effect is drawn (screen_fx.h screen_draw): its knobs the params said (each
 // said again as Sashimono says it; a check its _on, a colour its parts), the rest as its file says; the object made
 // straight for it and premultiplied again after, as the thing's picture is given to its effects. -1: none of them.
 static int aviutl_sashimono(lua_State* L, AviutlRun& r, const std::string& n, const std::map<std::string, double>& said) {

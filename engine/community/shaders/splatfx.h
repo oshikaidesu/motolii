@@ -1,7 +1,7 @@
 // A PlayCanvas Gaussian splat shader effect (playcanvas/engine scripts/esm/gsplat: reveal-radial.mjs, reveal-rain.mjs,
 // shader-effect-dissolve.mjs ...; MIT) as it is: its module run by QuickJS-ng with what it takes from PlayCanvas said
 // small (Vec3, Color, its GSplatShaderEffect base: uniforms kept by name, the effect's time); its GLSL handed to the
-// point cloud's look (points.h, points.mat), its attributes the knobs, its updateEffect asked each moment.
+// point cloud's look (point_cloud.h, points.mat), its attributes the knobs, its updateEffect asked each moment.
 #pragma once
 #include <functional>
 #include <memory>

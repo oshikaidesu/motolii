@@ -31,7 +31,7 @@ material {
         { type : float4, name : key },       // a colour of the picture that is to be clear (a green screen), and how near to it counts (0: none)
         { type : float2, name : keySoft },   // how wide the edge of that is, and how far from it the key's colour is taken out of what stays
         { type : float, name : filmed },       // 1: the picture is a film's as its decoder left it, light in `picture` and colour in `colours`
-        { type : mat4, name : filmRule },      // from a film's own three numbers (and a one) to red, green, blue: the rule the file names (video.h)
+        { type : mat4, name : filmRule },      // from a film's own three numbers (and a one) to red, green, blue: the rule the file names (video_layer.h)
         { type : sampler2d, name : colours },
         { type : sampler2d, name : picture },
         // a flat shape in triangles bent as it is drawn (drawn.h flat_mesh; all 0: not), in shares of its height:
@@ -47,7 +47,7 @@ material {
         // [3] [4] [5] the three (tritone: shadow, middle, highlight). All 0: as it is.
         { type : float4[6], name : grade },
         // a thing with depth (deep.glsl): half its box across, up and through, in its own lengths (all 0: a sheet), and 1: its box open (0: Z 0, shut, a sheet);
-        // how its box's corners turn into its picture's (a film on its side: video.h)
+        // how its box's corners turn into its picture's (a film on its side: video_layer.h)
         { type : float4, name : deep },
         { type : float4, name : deepTurn },
         // its bevel (deep.glsl): how far in across, how far in through, in the box's lengths, and its way (0 none); how far each point of its picture is from its edge (drawn_edge.h)
@@ -59,7 +59,7 @@ material {
         { type : float4[3], name : partColour },
         { type : float4[3], name : partSurface },
         { type : sampler2d, name : edge },
-        // a material it wears (doc_wear.h doc_material; flat_<material>, kit_wgpu.sh): clear coat, its roughness, sheen,
+        // a material it wears (document/material.h doc_material; flat_<material>, kit_wgpu.sh): clear coat, its roughness, sheen,
         // anisotropy (of glass: how vivid what is seen through it is, first); how thick, of cloth and subsurface (second),
         // and of glass its bend (ior), how far its colours part, how much its face swims; how dark its colour makes what
         // is seen through glass, or how strong a bubble's rim is

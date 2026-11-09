@@ -1,5 +1,5 @@
 // An empty effect, or an empty expression, put on the picked thing with its code open on its card: somewhere to paste
-// code found on the net (an ISF effect; a .js with each(), doc_expressions.h). Written once a press, in the maker's
+// code found on the net (an ISF effect; a .js with each(), document/expressions.h). Written once a press, in the maker's
 // programs where a thing's own copy is (fx_code.dart): the thing's alone from the first, so what is typed is its.
 import 'dart:io';
 

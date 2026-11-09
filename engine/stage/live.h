@@ -1,7 +1,7 @@
 // live.h: the stage's picture as it is drawn, handed to a shell on a screen without a copy. The main view draws into
 // one of three pixel buffers that the GPU and the shell share (CVPixelBuffers on IOSurfaces: made as glass_door_mac.mm
 // makes them, which did this on Filament's Metal backend). Here each buffer is shown to Dawn as a texture (the call
-// video.h reads films by, used the other way round) and made a render target of Filament's through the door the
+// video_layer.h reads films by, used the other way round) and made a render target of Filament's through the door the
 // patch already has (Texture::Builder::import). "Finished" is a Filament fence put after it signalled. macOS only.
 #include <CoreVideo/CoreVideo.h>
 #include <IOSurface/IOSurface.h>
@@ -177,7 +177,7 @@ static void live_draw(Stage& s, Live* l) {
         const int at[4] = {(int)std::lround(s.desk.x), (int)std::lround((double)s.desk.h - s.desk.y - s.h * s.desk.scale), (int)std::lround(s.w * s.desk.scale), (int)std::lround(s.h * s.desk.scale)};
         s.lastly = [&s, l, desk, i, j, at] { screen_place(s, l->seen[i], desk->target[j], s.desk.w, s.desk.h, at); };
     }
-    if (!s.over) {   // (with a whole-screen effect the stage draws to its own picture and the effect to this one: screen.h)
+    if (!s.over) {   // (with a whole-screen effect the stage draws to its own picture and the effect to this one: screen_fx.h)
         s.view->setRenderTarget(s.out);
     }
     draw(s, nullptr, false);

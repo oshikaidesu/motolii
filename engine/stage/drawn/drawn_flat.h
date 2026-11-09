@@ -170,8 +170,8 @@ bool sk_op(int op, const tvg::PathCommand* ac, uint32_t acn, const tvg::Point* a
            std::vector<tvg::PathCommand>& cmds, std::vector<tvg::Point>& pts);
 
 // A flat shape in triangles cut anew for the frame that comes next, if its path is told otherwise: After Effects' trim
-// paths on its edge (off its end, off its beginning, slid along), its operators (round, bloat, zig zag, offset: bend.cpp),
-// then put together with another shape's path (`join`: Skia's path operation, skpath.cpp; -1 none; `by`/`at` that path
+// paths on its edge (off its end, off its beginning, slid along), its operators (round, bloat, zig zag, offset: thorvg_path_operators.cpp),
+// then put together with another shape's path (`join`: Skia's path operation, skia_path_operations.cpp; -1 none; `by`/`at` that path
 // in this one's points), as Cavalry's Boolean.
 static std::atomic<size_t> cuts_held{0};
 static constexpr size_t cuts_most = 256ull << 20;
@@ -276,7 +276,7 @@ static void cut_at(Stage& s, Drawn* d, float3 trim, const std::array<float, 10>&
 }
 
 // One layer of an After Effects file drawn alone, in its own space: its place and turn left out (they are its sheet's,
-// put in the scene by its pose: motion.h), on a sheet of its own `pixel` units a point of the composition. A 3D layer's
+// put in the scene by its pose: lottie_motion.h), on a sheet of its own `pixel` units a point of the composition. A 3D layer's
 // picture where it is. `box`: where its sheet lies in the layer's own space (x, y, w, h, in points of the composition).
 static Drawn* layer_picture(Stage& s, const char* file, uint32_t id, float pixel, float4* box) {
     if (!door::device(s.engine)) return nullptr;

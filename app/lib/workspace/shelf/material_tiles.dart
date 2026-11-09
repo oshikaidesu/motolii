@@ -19,7 +19,7 @@ abstract final class MaterialTiles {
   /// Told once some are drawn: the tiles look again.
   static final drawn = ValueNotifier<int>(0);
 
-  /// The compiled material a ball wearing [wears] is drawn with (doc_match.h: surface_model, thick_glass, solid_wear).
+  /// The compiled material a ball wearing [wears] is drawn with (document/match.h: surface_model, thick_glass, solid_wear).
   static const _filamat = {
     'lit': 'floor_lit',
     'cloth': 'solid_cloth',

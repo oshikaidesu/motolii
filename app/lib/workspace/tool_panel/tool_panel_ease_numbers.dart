@@ -16,7 +16,7 @@ import 'package:motolii/workspace/ws.dart';
 typedef _Number = ({String name, int at, double lo, double hi, bool many});
 _Number _n(String name, int at, double lo, double hi, {bool many = false}) => (name: name, at: at, lo: lo, hi: hi, many: many);
 
-// (each kind's numbers as engine/motion/interp.h has them, how far a hand takes each, and what they are when the way says none)
+// (each kind's numbers as engine/motion/easing_curves.h has them, how far a hand takes each, and what they are when the way says none)
 final _kinds = <String, (List<double>, List<_Number>)>{
   'Bezier': (const [0, 0, 1, 1], [_n('X1', 0, 0, 1), _n('Y1', 1, -2, 3), _n('X2', 2, 0, 1), _n('Y2', 3, -2, 3)]),
   'Bounce': (const [.3, .8], [_n('Length', 0, .02, 1), _n('Bounce', 1, 0, .95)]),

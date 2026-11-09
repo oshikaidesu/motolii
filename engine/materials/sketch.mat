@@ -1,4 +1,4 @@
-// sketch.mat: what a p5.js sketch draws in WEBGL, one mesh remade each frame (doc_sketch.h). Its colours are each point's,
+// sketch.mat: what a p5.js sketch draws in WEBGL, one mesh remade each frame (document/sketch.h). Its colours are each point's,
 // as p5 keeps them, in the sketch's own sRGB (p5's own shaders do no sum to them either), so they are turned to light here
 // and go on through the triangle as p5's do. uv.x: 1 what the sketch draws with no lights, as flat as the sketch has it,
 // and every line (p5's line shader takes no light); 0 what the world's own lights light; 2 and on what the sketch lights

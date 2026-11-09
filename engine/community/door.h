@@ -19,7 +19,7 @@
 inline bool door_has(const std::string& t, const char* word) { return t.find(word) != std::string::npos; }
 #include "community/shaders/door_shadertoy.h"
 
-// What a form is called where it is written for: its programs' files are named so (doc_door.h), the Program shelf's chips.
+// What a form is called where it is written for: its programs' files are named so (document/adapter.h), the Program shelf's chips.
 inline std::string door_name(const std::string& form) {
     static const std::map<std::string, std::string> names = {{"", "p5.js"}, {"shadertoy", "Shadertoy"}, {"sandbox", "GLSL Sandbox"}, {"three", "three.js"}, {"hydra", "Hydra"}, {"dweet", "Dwitter"}, {"tixy", "tixy"}, {"turtle", "Turtletoy"}, {"two", "Two.js"}, {"paper", "Paper.js"}, {"canvas", "Canvas"}, {"twigl", "twigl"}, {"bonzomatic", "Bonzomatic"}};
     const auto at = names.find(form);
@@ -107,7 +107,7 @@ inline std::string door_shader_files(const std::string& text, const std::filesys
     return out + text.substr(at);
 }
 
-// The pictures a sketch loads, from beside it to a folder named as what is kept: a script has no files of its own (film_read.h's beside).
+// The pictures a sketch loads, from beside it to a folder named as what is kept: a script has no files of its own (video_frames_for_scripts.h's beside).
 inline void door_pictures(const std::string& text, const std::filesystem::path& beside, const std::filesystem::path& kept) {
     static const std::regex load(R"re(\bloadImage\s*\(\s*['"`]([^'"`]+)['"`])re");
     std::error_code wrong;

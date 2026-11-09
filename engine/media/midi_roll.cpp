@@ -1,13 +1,13 @@
 // midi_roll.cpp: a MIDI file's piano roll as an SVG, made by bladeSk's PianoRollSvg.js as it is
 // (third_party/midi_roll, MIT), run in QuickJS as three_isf.cpp runs three.js. Its MIDI reader (midi-parser-js) is
-// GPL-3 and not here: it is handed the notes GStreamer's midiparse reads (midi.h), in that reader's shape
+// GPL-3 and not here: it is handed the notes GStreamer's midiparse reads (midi_notes.h), in that reader's shape
 // (MidiParser.parse: timeDivision, formatType, track[].event[] of deltaTime, type 9 on / 8 off, channel, data).
 // Its look is ALMaMPlayer's (github.com/almam72/ALMAMPlayer, its numbers only): a whole song a row, 300 points a
 // second (GlobalVariables.speed), a row 688 / the notes' range (main_interface.gd), notes 18 high with round ends
 // (note_texture.png, 20 x 18: a row's rect, its rx half of it, drawn in from its edge by a stroke of the ground's
 // colour: a round-ended bar drawn in is one still), its colour on black.
 #include "media/midi_roll.h"
-#include "media/midi.h"
+#include "media/midi_notes.h"
 #include <quickjs.h>
 #include <thorvg.h>
 #include <cmath>
@@ -19,7 +19,7 @@
 std::string midi_roll(const std::string& file, double bpm, std::string& why, std::string* notes) {
     std::vector<MidiEvent> events = midi_events(file.c_str());
     if (events.empty()) return why = "no notes in " + file, "";
-    const double by = bpm > 0 ? midi_bpm(file.c_str()) / bpm : 1.0;   // (the file's beats at another tempo: midi.h)
+    const double by = bpm > 0 ? midi_bpm(file.c_str()) / bpm : 1.0;   // (the file's beats at another tempo: midi_notes.h)
     std::ostringstream song;   // (a tick a millisecond: timeDivision 1000 ticks a "beat" of a second)
     song << "{\"timeDivision\":1000,\"formatType\":0,\"track\":[{\"event\":[";
     double was = 0, end = 0;
@@ -71,7 +71,7 @@ std::string midi_roll(const std::string& file, double bpm, std::string& why, std
     return out;
 }
 
-std::string midi_roll_file(const std::string& file, double bpm, std::string& why) {   // (named by what goes in, as mosh.h names its films)
+std::string midi_roll_file(const std::string& file, double bpm, std::string& why) {   // (named by what goes in, as video_datamosh.h names its films)
     std::string key = file + "|" + std::to_string(bpm);
     std::error_code e;
     if (auto at = std::filesystem::last_write_time(file, e); !e) key += "|" + std::to_string((long long)at.time_since_epoch().count());

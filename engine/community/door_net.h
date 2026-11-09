@@ -1,4 +1,4 @@
-// door_net.h: part of doc_door.h. What a thing from the net comes with. curl fetches it, as extensions/hydra/get.sh does,
+// door_net.h: part of document/adapter.h. What a thing from the net comes with. curl fetches it, as extensions/hydra/get.sh does,
 // with no shell between. A work on OpenProcessing, named by its address, is what the site's public API says it is
 // (openprocessing.org/api: its tabs, libraries, files, license), laid out in a folder as a saved page is, so the door reads it
 // as it reads any page. The site answers 40 asks a minute; a work is 3 and one for each of its files.

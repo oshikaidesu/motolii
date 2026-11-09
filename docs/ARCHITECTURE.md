@@ -14,10 +14,10 @@ flowchart TB
   end
   subgraph Inside["エンジン（engine/、libmotolii.dylib）"]
     API["motolii.h：C の呼び出し"]
-    Hand["motolii_hand.h：プロジェクトと GPU を持つレンダースレッド 1 本"]
+    Hand["entry/render_thread.h：プロジェクトと GPU を持つレンダースレッド 1 本"]
     Doc["doc*.h：プロジェクト（SQLite）、取り消し"]
     Kit["kit*.h・drawn*.h：フレームを描く"]
-    FX["isf.cpp・aviutl*.h・thing_fx.h：効果"]
+    FX["isf.cpp・aviutl*.h・layer_fx.h：効果"]
     Script["script.cpp：QuickJS-ng（レシピ・three.js）、LuaJIT（AviUtl2）"]
   end
   subgraph Libs["借りている物"]
@@ -47,7 +47,7 @@ flowchart TB
 |---|---|---|
 | アプリの入口 | `app/lib/main.dart` → `app/lib/workspace/workspace.dart`（`Workspace`：アプリの画面全体、プロジェクトを開く、メニュー）。アプリの状態は `app/lib/workspace/ws_state.dart`（`Ws`） | アプリのファイルの地図は [`app/README.md`](../app/README.md)。パネルを足すのは `Workspace` の `extra`（`WsPane` の並び） |
 | アプリ → エンジン | `engine/entry/motolii.h`（約 260 行）、Dart 側は `app/lib/bridge/motolii.dart` と ffigen が作る `motolii_bindings.dart` | アプリは値を持たない。読むのも変えるのも C の呼び出しで、プロジェクトが正（アプリとエンジンの境目の決まりは [`docs/app/BRIDGE.md`](../docs/app/BRIDGE.md)） |
-| エンジンの中 | `engine/entry/motolii_hand.h` | プロジェクトと GPU に触るのはレンダースレッド 1 本だけ。アプリはこのスレッドを待たない：書きは列に積んで戻り、読むのはこのスレッドが作ったスナップショット（[`docs/app/BRIDGE.md`](app/BRIDGE.md) の決まり 1・3・6）。待つ呼び出し（`by_hand`）は試験と C の確かめの道具だけ |
+| エンジンの中 | `engine/entry/render_thread.h` | プロジェクトと GPU に触るのはレンダースレッド 1 本だけ。アプリはこのスレッドを待たない：書きは列に積んで戻り、読むのはこのスレッドが作ったスナップショット（[`docs/app/BRIDGE.md`](app/BRIDGE.md) の決まり 1・3・6）。待つ呼び出し（`by_hand`）は試験と C の確かめの道具だけ |
 | エンジン → アプリ（フレーム） | `engine/stage/live.h` | プレビューは IOSurface の上の CVPixelBuffer 3 枚に描き、それを Dawn のテクスチャとして Filament の描き先にする。アプリ（Flutter の外部テクスチャ、`app/macos/Runner/MainFlutterWindow.swift`）は同じ物を読む |
 | 借りた物 | `engine/deps/patches/<ライブラリ>/` | 人のコードは直接いじらず、版を固定して取ってきて差分を当てる（[`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md) の 2 節） |
 
@@ -63,7 +63,7 @@ flowchart TB
 | 置く物 | 道 | どこ |
 |---|---|---|
 | ISF（`.fs`、GLSL） | glslang → SPIR-V → Tint → WGSL。Filament の組み立てに入っている物をそのまま使う | `engine/community/shaders/isf.cpp` |
-| WGSL（`.wgsl`） | そのまま。頭に AviUtl2 式のパラメーターの行。横に置いた絵は `--image@名前:ファイル` で ThorVG が 1 回読む | `engine/stage/screen.h`、`thing_fx.h` |
+| WGSL（`.wgsl`） | そのまま。頭に AviUtl2 式のパラメーターの行。横に置いた絵は `--image@名前:ファイル` で ThorVG が 1 回読む | `engine/stage/effects/screen_fx.h`、`layer_fx.h` |
 | AviUtl2（`.anm2`・`.obj2`） | Lua は LuaJIT（AviUtl2 と同じ）で走らせ、`obj` の呼び出しをエンジンの関数で受ける。中の HLSL は glslang の HLSL の読み手 → SPIR-V → Tint → WGSL | `engine/community/aviutl/aviutl.cpp`、`aviutl_fx.h` |
 | three.js の形（`shelves/solids/*.js`） | QuickJS-ng で three.js を動かし、BufferGeometry を受け取る | `engine/community/js/solid_three.cpp` |
 | レシピ（`shelves/create/*/*.js`） | QuickJS-ng。1 回でレイヤーと値を作る | `engine/community/js/script.cpp` |
@@ -72,31 +72,31 @@ flowchart TB
 ## プロジェクト
 
 - 1 つの `.motolii` は SQLite のファイル。レイヤー・値・キー・キーの間のイージング（式、SQLite の関数 `bezier()`・`anime()`）を表に持つ（`engine/document/doc*.h`）。
-- 取り消しは、変更を `step` の表に積む（`doc_steps.h`）。
+- 取り消しは、変更を `step` の表に積む（`document/undo.h`）。
 - レイヤーの種類：video・image・text・solid・shape・camera・light・behaviour（`edit.cpp` の `help`）。
 
 ## 動画・音・書き出し
 
-- 動画は **GStreamer** が読み（何の形式でも、GStreamer が部品を選ぶ）、絵を板に貼る（`engine/media/video.h`、`gst_read.h`）。
-- 作業中の音は GStreamer の playbin（`sound.h`）。
+- 動画は **GStreamer** が読み（何の形式でも、GStreamer が部品を選ぶ）、絵を板に貼る（`engine/media/video_layer.h`、`gstreamer_file_source.h`）。
+- 作業中の音は GStreamer の playbin（`sound_playback.h`）。
 - 書き出しは、1 秒 60 フレーム描いて **ffmpeg** に渡し、レイヤーの音も ffmpeg で混ぜる（`engine/stage/kit/kit_draw.h` の `film`）。
 
 ## 棚を読む所
 
-`shelves/` のフォルダ（と利用者のフォルダの同じ名前のフォルダ）を、どのコードが読むか。場所を決めるのは `engine/document/doc_folders.h` の `doc_folders` 1 つで、アプリの側は `app/lib/bridge/motolii.dart` の `motoliiShelves`・`motoliiOwn`。前の名前（`recipes/`・`animators/`・`ways/`）の利用者のフォルダも `doc_folders` が読み、プロジェクトに残る古い道は `script.h` の `script_shelf_file` が今の棚へ引き直す。
+`shelves/` のフォルダ（と利用者のフォルダの同じ名前のフォルダ）を、どのコードが読むか。場所を決めるのは `engine/document/folders.h` の `doc_folders` 1 つで、アプリの側は `app/lib/bridge/motolii.dart` の `motoliiShelves`・`motoliiOwn`。前の名前（`recipes/`・`animators/`・`ways/`）の利用者のフォルダも `doc_folders` が読み、プロジェクトに残る古い道は `script.h` の `script_shelf_file` が今の棚へ引き直す。
 
 | フォルダ | エンジン | アプリ（`app/lib/`） |
 |---|---|---|
-| `effects/` | `doc_recipes.h` `doc_folder_names` | `workspace/shelf/effect_tiles.dart` |
-| `aviutl_scripts/` | `doc_recipes.h` `doc_aviutl_names` | `workspace/shelf/effect_decks.dart` `effectPack` |
-| `create/` | `doc_recipes.h` `doc_recipes_read` | `workspace/dock/dock_make_expressions.dart` `_expressionRecipes`、`dock_make_create.dart` |
-| `expressions/` | `motolii_calls.h` `motolii_animators` | `workspace/dock/dock_make_expressions.dart` `_expressionsOf`、`workspace/shelf/shelf_add.dart`（Add to shelf の書き込み先） |
-| `relations/` | `motolii_calls.h` `motolii_relations` | `workspace/relate.dart` |
-| `looks/` | `doc_looks.h` `doc_look_names` | `bridge/motolii_shelves.dart` `looks` |
-| `solids/` | `community/js/solid_three.cpp`、`doc_moment_fx.h` | — |
-| `ease/` | `doc_recipes.h` `doc_own_ways` | `workspace/tool_panel/tool_panel_ease_shelf.dart` |
+| `effects/` | `document/recipes.h` `doc_folder_names` | `workspace/shelf/effect_tiles.dart` |
+| `aviutl_scripts/` | `document/recipes.h` `doc_aviutl_names` | `workspace/shelf/effect_decks.dart` `effectPack` |
+| `create/` | `document/recipes.h` `doc_recipes_read` | `workspace/dock/dock_make_expressions.dart` `_expressionRecipes`、`dock_make_create.dart` |
+| `expressions/` | `entry/calls.h` `motolii_animators` | `workspace/dock/dock_make_expressions.dart` `_expressionsOf`、`workspace/shelf/shelf_add.dart`（Add to shelf の書き込み先） |
+| `relations/` | `entry/calls.h` `motolii_relations` | `workspace/relate.dart` |
+| `looks/` | `document/presets.h` `doc_look_names` | `bridge/motolii_shelves.dart` `looks` |
+| `solids/` | `community/js/solid_three.cpp`、`document/moment_fx.h` | — |
+| `ease/` | `document/recipes.h` `doc_own_ways` | `workspace/tool_panel/tool_panel_ease_shelf.dart` |
 | `skins/` | — | `style/theme.dart` `ColorTheme.skinNames`（前の置き場 `~/.motolii/skins/` も読む） |
-| `extensions/hydra/` | `doc_door.h`、`community/shaders/hydra_isf.cpp` | — |
-| （棚でない）`engine/third_party/wordnet_ja/` | `entry/motolii_calls_find.h` `find_english`（`doc_folders("words")`） | — |
+| `extensions/hydra/` | `document/adapter.h`、`community/shaders/hydra_isf.cpp` | — |
+| （棚でない）`engine/third_party/wordnet_ja/` | `entry/calls_find.h` `find_english`（`doc_folders("words")`） | — |
 | （棚でない）`engine/third_party/noto_sans_jp/` | `stage/drawn/drawn_made.h` `type_fallback`（`doc_folders("fonts")`） | `workspace/dock/dock_fonts.dart` |
 | （棚でない）`engine/third_party/gflanguages/` | — | `workspace/dock/dock_fonts.dart`（`samples.json`） |

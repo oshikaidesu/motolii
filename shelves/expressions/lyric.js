@@ -3,7 +3,7 @@
 // Y, a length, an offset a letter, both ways, alternate, an In and an Out each with its ease, scale, rotation and opacity
 // besides. Texton is closed jsxbin: none of its code was seen; this is written from that list alone. Order's words are
 // GSAP's stagger `from` (start, end, center, edges, random: https://gsap.com/docs/v3/Staggers); Cavalry's Stagger has no
-// such list. The ease names are Motolii's own (ways.h): Overshoot goes past and comes back)
+// such list. The ease names are Motolii's own (engine/motion/easing_names.h): Overshoot goes past and comes back)
 // The knobs in leva's object form (pmndrs/leva: https://github.com/pmndrs/leva; read by script_leva.h): the kind from the
 // value, folder() a fold. min and max are only how far a knob goes: a number typed past them is taken
 const knobs = {

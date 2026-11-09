@@ -40,7 +40,7 @@ Mac：`~/Library/Application Support/Motolii/`、Windows：`%APPDATA%\\Motolii\\
 - `effects/*.wgsl`：画面全体のエフェクト（Effects 棚）。`expressions/*.js`：物に付ける動き（Create の Expression）。
 - `ease/*.way`：Ease のプリセット（上）。
 - `skins/<名前>/`：アプリのスキン（`shelves/skins/README.md`）。
-- 前の名前のフォルダ（`recipes/`・`animators/`・`ways/`）も、そのまま読む（`engine/document/doc_folders.h`）。
+- 前の名前のフォルダ（`recipes/`・`animators/`・`ways/`）も、そのまま読む（`engine/document/folders.h`）。
 - どれも本家のファイルは 1 行も変えない。カードの名前を自分で付ける（例：Wobble）のはまだできない（Script と出る）。
 
 ## 開き方・確かめ方

@@ -31,7 +31,7 @@ FOREIGN = {
 # A name under another library's namespace is that library's (§2 a, b, e): tvg::Picture, filament::View, ui.Picture.
 QUALIFIED = re.compile(r'\b(?:tvg|filament|utils|math)::\w+(?:::\w+)*|\bui\.\w+')
 # Exact lines that must keep an old name on purpose (§3: `way()` stays callable, 'film'/'picture' accepted on input,
-# the `fact` fallback of doc_marks.h). (path, the line stripped, why) — added by the batch that writes the line.
+# the `fact` fallback of document/marks.h). (path, the line stripped, why) — added by the batch that writes the line.
 ALIAS_LINES = set()
 # The Japanese words of rows 33–35, as they appear in our .md. 物 and 中身 are everyday words ("作った物",
 # "中身が分かる"), so only their quoted use as a term is the house word.

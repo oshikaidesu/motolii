@@ -3,8 +3,8 @@
 #include "community/door.h"
 #include "community/aviutl/aviutl.h"
 #include "community/js/p5_stand.h"
-#include "media/film_read.h"
-#include "motion/ways.h"
+#include "media/video_frames_for_scripts.h"
+#include "motion/easing_names.h"
 #include "community/js/ae_expr.h"
 #include "community/js/script_leva.h"
 #include "community/js/solid_three.h"
@@ -91,7 +91,7 @@ std::vector<ScriptKnob> script_knobs(const std::string& file) {
         all << in.rdbuf();
         const std::string told = door_js(all.str(), door_form(all.str()));   // (a form from the net told as a sketch: door.h)
         if (script_is_sketch(told) && told.find("function relate") == std::string::npos && !script_pushes(told) && !solid_is(file)) {   // (a relation is p5's too, but its head says its knobs; a solid's shape says THREE. too, but is no scene from the net: its head says its knobs, solid_three.h)
-            if (door_form(all.str()) == "three") {   // (which part of the scene this thing is: doc_door.h)
+            if (door_form(all.str()) == "three") {   // (which part of the scene this thing is: document/adapter.h)
                 ScriptKnob part;
                 part.kind = "track", part.name = "part", part.label = "Part", part.high = 9999, part.step = 1;
                 return {part};
@@ -221,7 +221,7 @@ function animate(i, n, t, k, a) {
 }
 )";
 
-// ease(name, u): a way by its name (ways.h), the same expression as a key's stretch; not one of them: as it is.
+// ease(name, u): a way by its name (easing_names.h), the same expression as a key's stretch; not one of them: as it is.
 static std::string ways_kept() {
     std::string js = "var ease = (function () { var pow = Math.pow, exp = Math.exp, cos = Math.cos, abs = Math.abs, pi = function () { return Math.PI; }; var w = {";
     for (const auto& one : named_ways) js += std::string(one.name) + ": function (u) { return " + one.goes + "; }, ";
@@ -306,7 +306,7 @@ Script::Script(const std::string& file, const std::string& p5, const std::string
             const std::string lib = door_library_text(form, text.str());
             JS_FreeValue(own->cx, JS_Eval(own->cx, lib.c_str(), lib.size(), needs.c_str(), JS_EVAL_TYPE_GLOBAL));
         }
-        if (script_pushes(src) && src.find("d3.") != std::string::npos) for (const char* lib : {"d3-binarytree", "d3-quadtree", "d3-octree", "d3-force-3d"}) {   // (a relation that pushes with d3's forces, third_party/js; the other two it says it needs only run forceSimulation, which the world does for it: doc_world.h)
+        if (script_pushes(src) && src.find("d3.") != std::string::npos) for (const char* lib : {"d3-binarytree", "d3-quadtree", "d3-octree", "d3-force-3d"}) {   // (a relation that pushes with d3's forces, third_party/js; the other two it says it needs only run forceSimulation, which the world does for it: document/world.h)
             std::ifstream one(std::filesystem::path(p5).parent_path().parent_path() / lib / (std::string(lib) + ".min.js"));
             std::stringstream text;
             text << one.rdbuf();

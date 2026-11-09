@@ -1,7 +1,7 @@
 // Every effect on the shelf has a tile that shows what it does, as Alight Motion's do (docs/internal/reports/alight_motion/alight_ui.md, 71 and 72).
 // AbsentMotion shows each of its effects by a table written beforehand (tools/effect_showcase.json); here a tile is told
 // the same things by the effect itself, so a file put in by its maker needs no line and no developer. Read from it
-// (doc_recipes.h, isf_tags): a transition's progress goes from 0 to 1, what runs by the clock or keeps its frame before is
+// (document/recipes.h, isf_tags): a transition's progress goes from 0 to 1, what runs by the clock or keeps its frame before is
 // left to run. Measured (AbsentMotion's change(), docs/internal/reports/engine/sketch_import_2026-11-01.md): the sample stands still, so what
 // moves is the effect; the knob that stands for it goes between two values ([_telling]); nothing seen on the whole photo,
 // it goes on a card going past on AbsentMotion's grid (its "move" layout), where what it does at an edge or to what moves
@@ -10,7 +10,7 @@
 // tiles, played there and back at 24 a second, so nothing steps or jumps where it starts again. The sample is the balloon
 // fx_tiles.sh draws on (shelves/effects/sources/fx_sample.jpg). Drawn on a
 // document of its own in another isolate (as create_preview.dart reckons the recipes), where the inside says one drawn
-// for it goes (its home in ~/Library/Caches/Motolii/tiles, named by the file and when it was written: doc_recipes.h
+// for it goes (its home in ~/Library/Caches/Motolii/tiles, named by the file and when it was written: document/recipes.h
 // doc_tile), then shown at once. Put on as fx_tiles.sh and edit.sh say it: a screen effect (.fs, .wgsl) on the whole
 // picture; else on the photo, as a thing's (an AviUtl2 script). Made small with sips (192 px), the moving ones JPEG by
 // ffmpeg, one run a tile. Then set beside the sample's own pictures with ffmpeg's psnr (the tool the inside writes films
@@ -69,7 +69,7 @@ abstract final class EffectTiles {
   /// How much moving each knob of [file] alone shows its effect, 0 to 10, as an agent that read only the effect's code
   /// weighed it (knob_weights.json beside this file, by the shelf's entry: its file from the library's folder, an AviUtl2 script's
   /// #name and all; set beside AbsentMotion's effect_showcase.json, where a hand says which knob its tile moves, its
-  /// heaviest was that knob in 26 of 28), by the inside's names (doc_scripts.h doc_screen_knob: the file's stem before
+  /// heaviest was that knob in 26 of 28), by the inside's names (document/scripts.h doc_screen_knob: the file's stem before
   /// the knob's), `_time` how much letting it run shows it. Empty: not weighed (the maker's own).
   static Map<String, double> weighed(String dir, String file) => {
     for (final MapEntry(key: k, value: w) in _entry(dir, file).entries)
@@ -313,7 +313,7 @@ abstract final class EffectTiles {
       '${folder.path}/beat.wav',
     ); // (a sound alone: heard by every AviUtl2 script (its audiobuffer: doc_sound_now), by an ISF's audio input its knob names)
     m.set(song, 'opacity', 0); // (its wavescope not seen: heard, as the window puts a sound in hidden (Alight Motion's sound layer has no picture))
-    var heard = false; // (its sound read once, aside (sound.h sound_of): silence until then)
+    var heard = false; // (its sound read once, aside (sound_level.h sound_of): silence until then)
     final words = m.add(
       'text',
       wsTextFont,

@@ -40,7 +40,7 @@ struct AviutlRun {
     double box[4] = {0, 0, 0, 0};                   // (where the thing is seen, points of the stage: its frame is that of the stage's)
     int ground = -1;                                // (the stage's colour behind everything, 0xRRGGBB; -1 none)
     bool wide = false;                              // (it draws the object (obj.draw, drawpoly): its frame the stage's, the object the thing's own picture where it is seen)
-    const ScreenNumbers* numbers = nullptr;         // (this frame's: what it asks of the other things, the document's answers (doc_moment_fx.h doc_aviutl_asked))
+    const ScreenNumbers* numbers = nullptr;         // (this frame's: what it asks of the other things, the document's answers (document/moment_fx.h doc_aviutl_asked))
     const std::function<std::vector<float>(const std::string&, const std::string&, bool, int)>* sounds = nullptr;   // (the thing's: the sound heard now, ScreenStack's sounds)
     std::vector<std::string> chain;                 // (the effects on the thing in their order, by name, and which is this one: obj.getoption "script_name")
     std::string pixelFrom = "object", pixelType = "col";   // (what obj.getpixel reads, and how it tells a pixel: obj.pixeloption)

@@ -182,7 +182,7 @@ static Drawn* sketch_picture(Stage& s, std::shared_ptr<Script> run, const std::s
         return d->sketchScene;
     }, mat4f{}, high, float3{-1.f}, true, lay, fx);
 }
-// A picture a WEBGL sketch draws with (a createGraphics): the same canvas at its own size, shown only as sketch.mat reads it (doc_sketch.h).
+// A picture a WEBGL sketch draws with (a createGraphics): the same canvas at its own size, shown only as sketch.mat reads it (document/sketch.h).
 static Drawn* sketch_texture(Stage& s, Script* run, const std::string& fontFile, int pic, int wide, int high) {
     Drawn* made = drawn(s, [&](Drawn* d, int* w, int* h) -> tvg::Paint* {
         *w = wide, *h = high;

@@ -115,7 +115,7 @@ class _WorkspaceState extends State<Workspace> {
   }
 
   /// A text box has the keys: the act is its own, by Flutter's own text actions (true: it was given it).
-  /// Where a copied thing, or a copied look, is kept between windows (the inside's own document of it: doc_looks.h).
+  /// Where a copied thing, or a copied look, is kept between windows (the inside's own document of it: document/presets.h).
   static String _clipboard(String what) {
     final dir = Directory('${Platform.environment['HOME']}/Library/Caches/Motolii')..createSync(recursive: true);
     return '${dir.path}/clipboard_$what.motolii';

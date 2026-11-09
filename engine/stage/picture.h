@@ -55,7 +55,7 @@ static void picture_thing(Motolii* m, int thing, PictureWriter& w) {
     for (const std::string& n : names) if (const std::string s = motolii_word(m, thing, n.c_str()); !s.empty()) w.Key(n.c_str()), w.String(s.c_str());
     w.EndObject();
     w.Key("value"), w.StartObject();   // (at rest: what it is at its first moment; one not here is as it comes, the document's "usual", if its kind knows it)
-    for (const std::string& n : names) if (double v = 0; doc_value(*m->d, thing, n.c_str(), 0, &v)) doc_macro_over(*m->d, thing, n.c_str(), 0, &v), w.Key(n.c_str()), w.Double(v);   // (a knob a macro turns: as the macro makes it, doc_expressions.h)
+    for (const std::string& n : names) if (double v = 0; doc_value(*m->d, thing, n.c_str(), 0, &v)) doc_macro_over(*m->d, thing, n.c_str(), 0, &v), w.Key(n.c_str()), w.Double(v);   // (a knob a macro turns: as the macro makes it, document/expressions.h)
     w.EndObject();
     w.Key("range"), w.StartObject();
     for (const std::string& n : names) if (double lo = 0, hi = 0; motolii_range(m, thing, n.c_str(), &lo, &hi)) w.Key(n.c_str()), w.StartArray(), w.Double(lo), w.Double(hi), w.EndArray();

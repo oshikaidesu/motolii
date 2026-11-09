@@ -7,7 +7,7 @@
 // again, its OpticalFlowMotionBlur the frame before, teruyoshii's noise_Te its last; ColorJellyFish's 破線縁取り says
 // "putpixeldata requires AviUtl userdata from getpixeldata (raw ffi.new is rejected)". The way asked (rgba, bgra) kept in
 // its last byte. Read: the buffer made straight again on a picture of 8 bits (the placing
-// shader's way 2), read back by Filament's Renderer::readPixels as thing_fx.h reads a thing's picture, waited for where
+// shader's way 2), read back by Filament's Renderer::readPixels as layer_fx.h reads a thing's picture, waited for where
 // it is asked (Engine::flushAndWait runs the callback: details/Engine.cpp, purge). Put: any w x h pixels the pointer
 // holds, as AviUtl2 takes them (sigma's Path_S hands its own, numbers packed in them for its shaders), a picture again,
 // made premultiplied (way 1) in the buffer's place.

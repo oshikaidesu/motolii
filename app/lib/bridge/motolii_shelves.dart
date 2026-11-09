@@ -38,7 +38,7 @@ extension MotoliiShelves on Motolii {
   /// The whole-screen effects on the shelf: each one's name and file (the stage's script is the files of those on it).
   List<(String, String)> get effects => _folders.putIfAbsent('effects', () => _labelled(_effects(_m).toDartString()));
 
-  /// The looks on the shelf (a thing's values, effects and keys kept by a name: doc_looks.h): each one's name and file.
+  /// The looks on the shelf (a thing's values, effects and keys kept by a name: document/presets.h): each one's name and file.
   List<(String, String)> get looks => [
     for (final l in _kept)
       if (_labels[l.$1] != 'Element') l,
