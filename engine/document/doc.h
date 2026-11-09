@@ -52,3 +52,6 @@ extern "C" {
 #include "curve_fit_nd.h"   // (doc_curve: a hand's way made cubic Béziers; curve_fit_nd.sh)
 }
 #include "document/doc_paths.h"   // (a path shape's plane and points)
+#include "document/doc_arrange.h"   // (a thing moved, lined up and fitted on the picture; a value as it comes)
+#include "document/doc_hold.h"   // (a thing held by a hand, carried and let go)
+#include "document/doc_time_edit.h"   // (a thing's time edited: keys moved, cut, taken out, laid in turn, stretched; reset, undo)
