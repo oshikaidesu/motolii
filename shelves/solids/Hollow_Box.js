@@ -5,9 +5,9 @@
 // --select@cutout:Cutout,none,circle,square
 // --track@progress:Progress,0,0.95,0.5,0.01
 // --check@lit:Lit,1
-import * as THREE from '../third_party/js/three/three.core.js';
-import { mergeGeometries } from '../third_party/js/three/BufferGeometryUtils.js';
-import { faceUV } from './face_uv.js';
+import * as THREE from '../../engine/third_party/js/three/three.core.js';
+import { mergeGeometries } from '../../engine/third_party/js/three/BufferGeometryUtils.js';
+import { faceUV } from '../../engine/community/js/face_uv.js';
 export function solid(k) {
     const a = k.h, t = k.thickness * a, c = k.progress * a / 2;
     const plate = new THREE.Shape().moveTo(-a / 2, -a / 2).lineTo(a / 2, -a / 2).lineTo(a / 2, a / 2).lineTo(-a / 2, a / 2).lineTo(-a / 2, -a / 2);

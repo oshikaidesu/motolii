@@ -14,7 +14,7 @@ static void doc_door_keys(Doc& d, int thing, const std::string& fx, const std::v
 }
 // A p5 sketch's shader as an effect beside its code, its .fs's text (""; `why` when it has one that cannot come).
 static std::string doc_p5_shaded(const std::filesystem::path& file, std::vector<HydraKnob>& moving, std::string& why) {
-    Script run(file.string(), (doc_folders("third_party/js/p5").front() / "p5.min.js").string());
+    Script run(file.string(), (doc_engine("third_party/js/p5") / "p5.min.js").string());
     const std::string got = run.said("__shaded_take(30)");
     std::string fs, vs;
     if (!run.ok()) return why = run.trouble(), "";
@@ -108,7 +108,7 @@ static int doc_door(Doc& d, const std::string& said, int picked) {
     } else if (effect) {
         if ((thing = doc_add(d, "shape", "rect")) && doc_say(d, thing, "name", name.c_str()) && doc_fx_file(d, thing, fx.c_str(), d.stage->now)) doc_fit(d, thing, "stretch");
     } else if (form == "three") {   // (each pair of a shape and a material a solid of its own, under a group: stood in the world, not a picture of it)
-        Script run(file.string(), (doc_folders("third_party/js/p5").front() / "p5.min.js").string());
+        Script run(file.string(), (doc_engine("third_party/js/p5") / "p5.min.js").string());
         const int parts = std::atoi(run.said("__three_parts()").c_str());
         if (!run.ok()) return d.trouble = run.trouble(), d.act_ok = false, doc_acted(d), 0;
         if (!parts) return d.trouble = "this three.js scene drew no meshes", d.act_ok = false, doc_acted(d), 0;
@@ -135,7 +135,7 @@ static int doc_door(Doc& d, const std::string& said, int picked) {
 }
 // A three.js scene's code saved: its parts made again, as many as it has now, each scene that stands from it.
 static std::string doc_three_saved(Doc& d, const std::filesystem::path& file) {
-    Script run(file.string(), (doc_folders("third_party/js/p5").front() / "p5.min.js").string());
+    Script run(file.string(), (doc_engine("third_party/js/p5") / "p5.min.js").string());
     const int parts = std::atoi(run.said("__three_parts()").c_str());
     if (!run.ok()) return run.trouble();
     if (!parts) return "this three.js scene drew no meshes";
