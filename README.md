@@ -237,7 +237,7 @@ p5.js と Shadertoy は、置かずに貼ります。作品のコードをコピ
 engine/edit.sh $HOME/Movies/Motolii/first_cmd.motolii <<EOF
 make Weave
 effect 1 Glow
-say 0 script $PWD/engine/effects/rgbshift.wgsl
+say 0 script $PWD/shelves/effects/glitch/rgbshift.wgsl
 write $HOME/Movies/Motolii/first_cmd.mp4
 EOF
 ```
