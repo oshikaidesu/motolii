@@ -138,7 +138,6 @@ class _InspectorPanelState extends State<_InspectorPanel> {
                 reset: ResetRule.live,
               ), // (Ableton Live's: Shift finer while dragging, Delete or double-click back to the default, a digit starts the number: its manual 42.6)
               kind: k,
-              fx: const [], // (an effect is one of the inside's cards, shown while it is on)
               kindWord: _kindWord(ws, l?.id),
               cards: Ws.timed('value cards', () => _valueCards(ws, l?.id)),
               properties: Ws.timed(

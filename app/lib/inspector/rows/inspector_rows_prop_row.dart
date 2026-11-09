@@ -3,7 +3,6 @@ import 'package:motolii/inspector/controls/inspector_number_field_num_field_stat
 import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/inspector_value_marks.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/inspector/rows/inspector_rows_midi.dart';
 import 'package:motolii/skin/tokens.dart';
@@ -87,8 +86,7 @@ class _PropRowState extends State<PropRow> {
         mixedAny = ids.any((i) => doc.get(i) == null),
         ks = doc.keys[widget.id] ?? KeyS.off;
     final active = doc.directHover == widget.id;
-    final mark =
-        widget.lead ?? RowMark.of(context, widget.id) ?? (valueMarks[widget.id] == null ? null : ValueMarkGlyph(valueMarks[widget.id]!, doc.get(widget.id)));
+    final mark = widget.lead ?? RowMark.of(context, widget.id);
     final pop = Pop.on(context);
     final units = widget.cells.whereType<NumField>().map((f) => f.unit).toSet();
     final shared = pop && units.length == 1 ? units.single : null;

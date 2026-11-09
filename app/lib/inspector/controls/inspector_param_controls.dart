@@ -69,12 +69,12 @@ Color? hexControls(String? s) => s != null && RegExp(r'^#[0-9A-Fa-f]{6}$').hasMa
 /// The default value of every id a parameter owns, for a fresh layer and for Reset.
 Map<String, double> paramDefaults(String fx, Param p) => switch (p.look) {
   ParamLook.point || ParamLook.size => {'${fx}_${p.id}.x': p.def, '${fx}_${p.id}.y': p.defY},
-  ParamLook.colour => const {},
+  ParamLook.color => const {},
   _ => {'${fx}_${p.id}': p.def},
 };
 
 /// A colour parameter's default as #RRGGBB, from its 0–1 components.
-String paramColour(Decl d) {
+String paramColor(Decl d) {
   final c = [for (final s in d.attrs['default'] ?? const <String>[]) double.tryParse(s) ?? 1];
   int ch(int i) => ((c.elementAtOrNull(i) ?? 1) * 255).round().clamp(0, 255);
   return '#${[ch(0), ch(1), ch(2)].map((e) => e.toRadixString(16).padLeft(2, '0')).join().toUpperCase()}';

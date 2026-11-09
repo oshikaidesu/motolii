@@ -8,12 +8,13 @@
 
 | ファイル | 何を断るか | 直し方 |
 |---|---|---|
-| [pre-commit](pre-commit) | 下の 4 つを順に回し、断った物の名前を出す。最初に負債の数（`debt: …`）を出すが、断りではない | 断った検査の行を見る |
+| [pre-commit](pre-commit) | 下の検査を順に回し、断った物の名前を出す。最初に負債の数（`debt: …`）を出すが、断りではない | 断った検査の行を見る |
 | [pre-merge-commit](pre-merge-commit) | マージのコミットにも pre-commit と同じ検査 | 同上 |
 | [commit-msg](commit-msg) | 件名の検査を回す | 同上 |
 | [size_check.py](size_check.py) | 自前のファイル（`.dart` `.h` `.cpp` `.mm` `.js`）が 500 行を超える。新しいファイルに `name_2.dart` のような番号の名前 | 役目で分ける。名前を中身にする |
 | [layout_check.py](layout_check.py) | [AGENTS.md](../AGENTS.md)「構成の目標」1・2・4・5・6：直下の余計な物、入口の README の表に無いフォルダ、git に入った `out/` `build/`、番号や「文字＋数字」の名前、1 フォルダ 40 本超え。もう 1 つ、[docs/README.md](../docs/README.md)「日本語と英語」：入口 4 つに `.en.md` が無い、日本語で書いた自前の `.md` の題の下に英語の要約が無い（`language:`） | 各行の `rule N:`・`language:` の後ろのとおり。フォルダを作ったら入口の README に 1 行 |
 | [path_check.py](path_check.py) | 棚のファイルと自前の `.md` が書いている道（import・画像・リンク）の先が無い | 書いている所を直すか、動いたファイルを追う |
+| [card_check.py](card_check.py) | Inspector のカードを Dart で手描きする二本目の道：値の鍵を文字列で書く（`'v_shadow_distance'`、`app/lib` 全体）、値の名前を文字列で書く（`'intensity'`、`app/lib/inspector`）、`Sect` を `inspector_card.dart` の外で作る。値の名前は `engine/document/card_table.h` から読む | 「declare it like an effect; the inspector reads it」：カードはエンジンの `card_table.h` に宣言し、`ValuesCard` が描く。ホストが値を手で読むのを今すぐ消せない時だけ、`OWED` に理由つきで 1 行 |
 | [format_check.py](format_check.py) | `dart format` のままでない Dart（`dart` が無ければ飛ばす） | 表示されたコマンドを打つ |
 | [subject_check.py](subject_check.py) | コミットの件名が 72 字を超える | 1 行目を短く。中身は空行の後の本文へ。書いた文は `git commit -e -F` で戻る |
 | [over_500.txt](over_500.txt) | 負債の帳簿：2026-11-09 に既に 500 行を超えていたファイルと、その時の行数。増やす・足すと size_check.py が断る | 分けて小さくし、数を下げるか行を消す |

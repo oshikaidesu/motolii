@@ -1,7 +1,7 @@
 // What stands beside the graph, as AbsentMotion's EasingPanel.kt lays it, Apache-2.0: LeftColumn (reverse and ⋯) and a
 // narrow row of shapes, none named. Its layout and its moves, in this window's own colours.
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/effects/inspector_effects.dart' show CardMore;
+import 'package:motolii/inspector/inspector_card.dart' show CardMore;
 import 'package:motolii/inspector/inspector_parts.dart' show Hov;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';

@@ -1,14 +1,18 @@
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier, listEquals, mapEquals, setEquals;
+import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/effects/inspector_effects_k_effects.dart';
 
 import '../widgets/controls.dart';
 import '../skin/tokens.dart';
 import 'inspector_parts.dart';
-part 'inspector_mock_doc.dart';
+part 'inspector_values.dart';
+
+/// Said by the stage as it places a text: the words field next built for it holds the keys, its words all picked, so
+/// what is typed at once is the text's (AbsentMotion's addText opens its EditText panel; Figma's text tool types where
+/// it was placed).
+bool textToType = false;
 
 enum Editorial { a, b, c }
 
@@ -19,16 +23,6 @@ enum ResetRule { dbl, del, arrow, both, live } // (live: Ableton Live's, Delete 
 enum KeyS { off, anim, at }
 
 enum Kind { shape, text, camera, group, several, none }
-
-enum Space { d2, d25, d3 }
-
-const pickGrid = [
-  ['v_x', 'v_y', 'v_z'],
-  ['v_scale_x', 'v_scale_y', 'v_scale_z'],
-  ['v_rotate_x', 'v_rotate_y', 'v_rotate'],
-  ['v_opacity'],
-  ['depth'],
-];
 
 class Cfg {
   const Cfg({

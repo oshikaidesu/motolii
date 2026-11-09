@@ -1,4 +1,4 @@
-// Owns the mock document and re-provides it whenever it changes. A different kind or count makes a new document (give it a key).
+// Owns the panel's values (Doc) and re-provides it whenever it changes. A different kind or count makes a new document (give it a key).
 // How it LOOKS is the lab's (DESIGN.md): hairlines, type carries hierarchy, grey levels, accent only C.mode. The old Motolii is not a source.
 // Open questions are Cfg fields (knobs in inspector_set.dart); every behaviour below follows them.
 
@@ -6,21 +6,17 @@ import 'package:flutter/foundation.dart' show ValueListenable, listEquals, mapEq
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 
-/// Owns the mock document and re-provides it whenever it changes. A different kind or count makes a new document (give it a key).
+/// Owns the panel's values (Doc) and re-provides it whenever it changes. A different kind or count makes a new document (give it a key).
 class InspHost extends StatefulWidget {
   const InspHost({
     super.key,
     required this.cfg,
     required this.kind,
     this.count = 1,
-    this.effects = 2,
-    this.fx,
     this.kindWord,
     this.properties,
-    this.onFxRemove,
     this.onMidi,
     this.midiBpm,
-    this.onFxMove,
     this.movable = const [],
     this.onCardMove,
     this.onSum,
@@ -61,11 +57,8 @@ class InspHost extends StatefulWidget {
   });
   final Cfg cfg;
   final Kind kind;
-  final int count, effects;
+  final int count;
   final Widget child;
-
-  /// The effects on the layer, as the host has them (each one's card from its Params); null: the sample's first [effects].
-  final List<Fx>? fx;
 
   /// What the host calls the kind (see [Doc.kindWord]), and the values it has (see [Doc.properties]).
   final String? kindWord;
@@ -75,13 +68,9 @@ class InspHost extends StatefulWidget {
   /// the fields that show them follow, the rest of the inspector stays as it was built).
   final ValueListenable<(Map<String, double>, Map<String, KeyS>)>? live;
 
-  /// The host's say on an effect taken off, and on their order (see [Doc.onFxRemove]).
-  final bool Function(String id)? onFxRemove;
-
   /// The host's MIDI keys and a file's BPM (see [Doc.onMidi]).
   final bool Function(String prop, String file, String kind, int channel, double bpm)? onMidi;
   final double Function(String file)? midiBpm;
-  final bool Function()? onFxMove;
 
   /// The host's effects as cards that move up or down its stack (see [Doc.movable]).
   final List<String> movable;
@@ -160,17 +149,15 @@ class InspHost extends StatefulWidget {
 class _InspHostState extends State<InspHost> {
   late Doc doc = _make();
   Doc _make() {
-    final d = Doc(widget.kind, count: widget.count, effects: widget.effects, fx: widget.fx, cards: widget.cards ?? const [])
+    final d = Doc(widget.kind, count: widget.count, cards: widget.cards ?? const [])
       ..title = widget.title
       ..marksEdits =
           widget.onKey ==
           null // (a host told of keys keys what a hand changes itself)
       ..kindWord = widget.kindWord
       ..properties = widget.properties
-      ..onFxRemove = widget.onFxRemove
       ..onMidi = widget.onMidi
       ..midiBpm = widget.midiBpm
-      ..onFxMove = widget.onFxMove
       ..movable = widget.movable
       ..onCardMove = widget.onCardMove
       ..onSum = widget.onSum
@@ -295,8 +282,6 @@ class _InspHostState extends State<InspHost> {
     }
     if (o.kind != widget.kind ||
         o.count != widget.count ||
-        o.effects != widget.effects ||
-        !listEquals(o.fx?.map((f) => f.wgsl).toList(), widget.fx?.map((f) => f.wgsl).toList()) ||
         !listEquals(
           o.cards?.map((f) => f.name + f.wgsl.replaceAll(RegExp(r'@default\([^)]*\)'), '')).toList(),
           widget.cards?.map((f) => f.name + f.wgsl.replaceAll(RegExp(r'@default\([^)]*\)'), '')).toList(),
@@ -345,10 +330,8 @@ class _InspHostState extends State<InspHost> {
       ..title = widget.title
       ..kindWord = widget.kindWord
       ..properties = widget.properties
-      ..onFxRemove = widget.onFxRemove
       ..onMidi = widget.onMidi
       ..midiBpm = widget.midiBpm
-      ..onFxMove = widget.onFxMove
       ..movable = widget.movable
       ..onCardMove = widget.onCardMove
       ..onSum = widget.onSum

@@ -1,17 +1,15 @@
 // One parameter as a block: the name on top, the number large under it, a picture of the value in the top-right corner.
 import 'dart:math' as math;
 
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/widgets/controls.dart';
 import 'package:motolii/inspector/controls/inspector_param_controls_angle_dial.dart';
 import 'package:motolii/inspector/controls/inspector_param_controls_gauge.dart';
+import 'package:motolii/inspector/controls/inspector_param_controls_words.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/inspector/inspector_value_marks.dart';
 import 'package:motolii/skin/tokens.dart';
 
 import '../../widgets/two_fingers.dart';
-import '../../widgets/text_gestures.dart';
 
 /// One parameter as a block: the name on top, the number large under it, a picture of the value in the top-right corner.
 /// contract: every block still shows the number and takes typing, scrubbing and the sideways slide; the picture is added, never a replacement.
@@ -31,9 +29,7 @@ class ParamTile extends StatelessWidget {
       child: NumField(
         id: fid,
         caption: caption ?? p.label,
-        glyph: valueMarks[id] == null
-            ? glyph
-            : ValueMarkGlyph(valueMarks[id]!, Ctx.of(context).doc.get(id)), // (a value the window knows: drawn as what it does)
+        glyph: glyph,
         glyphOwnsPointer: owns,
         glyphTall: tall,
         unit: p.unit,
@@ -166,10 +162,10 @@ class ParamTile extends StatelessWidget {
                 : _ChoiceField(id: id, options: p.options),
           ),
         );
-      case ParamLook.colour when p.unit == 'words':
+      case ParamLook.color when p.unit == 'words':
         // any words, typed (lines too): said when the hand leaves the field; Esc puts them back (Cavalry's string attribute)
-        return shell(_Words(id: id, on: on), tall: true);
-      case ParamLook.colour when p.unit == 'file':
+        return shell(ParamWords(id: id, on: on), tall: true);
+      case ParamLook.color when p.unit == 'file':
         // a file, given from a shelf (the text's font: the Fonts shelf), as a colour is given from the Colors shelf
         return shell(
           Padding(
@@ -177,10 +173,10 @@ class ParamTile extends StatelessWidget {
             child: LinkLine(to: LinkTo.fonts, value: doc.s2[id] ?? '—', id: id),
           ),
         );
-      case ParamLook.colour when p.unit == 'numbers':
+      case ParamLook.color when p.unit == 'numbers':
         // numbers, one for each in their order (a bar chart's heights): bars a hand drags up and down, said when let go
         return shell(_Heights(id: id, on: on));
-      case ParamLook.colour:
+      case ParamLook.color:
         final all = (doc.s2[id] ?? '—').split(' ').where((c) => hexControls(c) != null).toList();
         return shell(
           glyph: all.length > 1 ? _Ramp(all) : Swatch(doc.s2[id]),
@@ -430,71 +426,5 @@ class _ChoiceSync extends StatelessWidget {
       WidgetsBinding.instance.addPostFrameCallback((_) => doc.set(id, i.toDouble()));
     }
     return child;
-  }
-}
-
-/// Any words, typed (two lines shown): said to the host when the hand leaves; Esc puts back what was there.
-class _Words extends StatefulWidget {
-  const _Words({required this.id, required this.on});
-  final String id;
-  final bool on;
-  @override
-  State<_Words> createState() => _WordsState();
-}
-
-class _WordsState extends State<_Words> {
-  final _c = TextEditingController();
-  late final FocusNode _f = FocusNode(
-    debugLabel: 'words',
-    onKeyEvent: (n, e) {
-      if (e is! KeyDownEvent || e.logicalKey != LogicalKeyboardKey.escape) return KeyEventResult.ignored;
-      _c.text = _was;
-      _f.unfocus();
-      return KeyEventResult.handled;
-    },
-  );
-  String _was = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _f.addListener(() {
-      if (_f.hasFocus) {
-        _was = _c.text;
-      } else if (_c.text != _was) {
-        Ctx.read(context).doc.str(widget.id, _c.text);
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _f.dispose();
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final now = Ctx.of(context).doc.s2[widget.id] ?? '';
-    if (!_f.hasFocus && _c.text != now) _c.text = now; // (out of the field it is what the host has now: another thing picked, an undo)
-    return IgnorePointer(
-      ignoring: !widget.on,
-      child: TextGestures(
-        key: ValueKey('words:${widget.id}'),
-        field: (k) => EditableText(
-          key: k,
-          rendererIgnoresPointer: true,
-          controller: _c,
-          focusNode: _f,
-          style: T.name(widget.on ? Grey.g95 : Grey.g44).copyWith(fontWeight: FontWeight.w400),
-          cursorColor: Grey.g95,
-          backgroundCursorColor: Grey.g20,
-          minLines: 2,
-          maxLines: 2,
-          selectionColor: Role.selected.withValues(alpha: .4),
-        ),
-      ),
-    );
   }
 }
