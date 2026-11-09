@@ -22,7 +22,7 @@ for path in staged:
         bad.append(path)
 
 if bad:
-    print('format check refused this commit: not as `dart format` leaves it:\n  ' + '\n  '.join(bad)
+    print('format check refused this commit (rule: Dart as `dart format` leaves it; .githooks/README.md):\n  ' + '\n  '.join(bad)
           + '\n  fix:  (cd app && dart format ' + ' '.join(p[len('app/'):] for p in bad) + ') && git add ' + ' '.join(bad),
           file=sys.stderr)
     sys.exit(1)

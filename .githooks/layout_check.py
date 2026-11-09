@@ -122,5 +122,5 @@ for folder, n in sorted(per_folder.items()):
         bad.append(f'rule 6: {folder}/: {n} own files (at most {LIMIT}); split them into folders by job')
 
 if bad:
-    print('layout check refused this commit (AGENTS.md 構成の目標):\n  ' + '\n  '.join(bad), file=sys.stderr)
+    print('layout check refused this commit (rule: AGENTS.md 構成の目標, numbered as below; .githooks/README.md):\n  ' + '\n  '.join(bad), file=sys.stderr)
     sys.exit(1)

@@ -69,9 +69,9 @@ now = ledger(git('show', f'{new}:{LEDGER}')) or before
 bad = []
 for path, n in now.items():
     if path not in before and before:
-        bad.append(f'{LEDGER}: {path} was added; the ledger only shrinks')
+        bad.append(f'{LEDGER}: {path} was added; the ledger only shrinks: drop that line and split the file by job')
     elif before and n > before[path]:
-        bad.append(f'{LEDGER}: {path} raised {before[path]} -> {n}; the ledger only shrinks')
+        bad.append(f'{LEDGER}: {path} raised {before[path]} -> {n}; the ledger only shrinks: put {before[path]} back')
 
 own = [(status, path) for status, path in changed if OWN.match(path)]
 for (status, path), text in zip(own, blobs([f'{new}:{path}' for _, path in own])):
@@ -85,5 +85,5 @@ for (status, path), text in zip(own, blobs([f'{new}:{path}' for _, path in own])
         bad.append(f'{path}: a number is not a name. Name the new file after the one job it does.')
 
 if bad:
-    print('size check refused this commit:\n  ' + '\n  '.join(bad), file=sys.stderr)
+    print('size check refused this commit (rule: a file of our own does one job, 500 lines at most; .githooks/README.md):\n  ' + '\n  '.join(bad), file=sys.stderr)
     sys.exit(1)
