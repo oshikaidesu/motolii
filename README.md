@@ -345,7 +345,7 @@ flowchart LR
 | `app/` | アプリの画面（Flutter、macOS） |
 | `thorvg/` | ThorVG を wgpu に載せた前の結合（前の試しのスクリプトが使う） |
 | `old/` | 前の土台の実験（今の作りからは使っていない） |
-| `docs/` | 読む人ごとの文書：使い方（`using/`）・窓（`app/`）・中身（`engine/`）、この README の絵（`pictures/`）、作者の作業メモ（`internal/`）。表は [`docs/README.md`](docs/README.md) |
+| `docs/` | 読む人ごとの文書：使い方（`using/`）・アプリ（`app/`）・エンジン（`engine/`）、この README の絵（`pictures/`）、作者の作業メモ（`internal/`）。表は [`docs/README.md`](docs/README.md) |
 
 </details>
 
