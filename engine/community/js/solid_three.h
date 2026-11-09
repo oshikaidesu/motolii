@@ -1,4 +1,4 @@
-// A solid's shape made by three.js (solids/*.js, solid_three.cpp): a thing's picture laid on its faces (thing_fx.h).
+// A solid's shape made by three.js (solids/*.js, solid_three.cpp): a thing's picture laid on its faces (layer_fx.h).
 #pragma once
 #include <cstdint>
 #include <map>

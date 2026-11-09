@@ -1,4 +1,4 @@
-// skpath.cpp: Skia's own path operations on a flat shape's path (Cavalry draws its shapes' paths with the same):
+// skia_path_operations.cpp: Skia's own path operations on a flat shape's path (Cavalry draws its shapes' paths with the same):
 // union, difference, intersection, exclusion of two paths (SkPathOps, its Boolean), and a path read from SVG's path
 // data (SkParsePath), a path roughened (SkDiscretePathEffect), a path's points moved. Apart from the rest because Skia's headers bring its names in; out come its calls (drawn.h).
 // Built by skia.sh.

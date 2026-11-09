@@ -1,8 +1,8 @@
-// thing_fx.h: a thing's own effects (its fx: .wgsl and ISF files, ThorVG's own among them), as Filament's makers say
+// layer_fx.h: a thing's own effects (its fx: .wgsl and ISF files, ThorVG's own among them), as Filament's makers say
 // to do one's own effect: the thing drawn alone into a texture offscreen (samples/rendertarget.cpp: a view of its own,
 // its post-processing off), the effects run on that texture one after another (Friction's and After Effects' way: a
 // layer's picture, then its effects), and the picture made laid where the thing lies (effected.mat; google/filament
-// #1818, #7676, #3784). The functions as they were before the one view (git bf0d4c2, screen.h), less what laid the
+// #1818, #7676, #3784). The functions as they were before the one view (git bf0d4c2, screen_fx.h), less what laid the
 // picture over the screen.
 #pragma once
 #include "community/js/solid_three.h"
@@ -26,7 +26,7 @@ static void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
             continue;
         }
         if (const char k = doc_thor_letter(file)) { st.steps.push_back(k); continue; }   // (one of ThorVG's own: drawn by ThorVG, in its place)
-        if (std::filesystem::path(file).extension() == ".mjs") continue;   // (a splat effect: in the cloud's own look, points.h)
+        if (std::filesystem::path(file).extension() == ".mjs") continue;   // (a splat effect: in the cloud's own look, point_cloud.h)
         if (const std::string ext = std::filesystem::path(file).extension().string(); ext == ".am" || ext == ".json") continue;   // (AbsentMotion's own motion, the thing moved: absent_motion.h; Filament's own settings, the stage's: viewer_settings.h)
         if (solid_is(file)) continue;   // (a solid's shape: its picture laid on it, not an effect on its picture: thing_fx_solid)
         ScreenFx*& made = st.made[file];
@@ -40,7 +40,7 @@ static void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
             made->stamp = screen_stamp(file);
         }
         if (made->door) st.fx.push_back(made), st.steps.push_back(0);
-        if (made->door && std::find(made->others.begin(), made->others.end(), "backdrop") != made->others.end()) st.readsBehind = true;   // (AbsentMotion's backdrop: the stage's behind, screen.h)
+        if (made->door && std::find(made->others.begin(), made->others.end(), "backdrop") != made->others.end()) st.readsBehind = true;   // (AbsentMotion's backdrop: the stage's behind, screen_fx.h)
     }
     const auto nameOf = [](const std::string& file) { const size_t hash = file.rfind('#'); return hash != std::string::npos ? aviutl_unword(file.substr(hash + 1)) : std::filesystem::path(file).stem().string(); };   // (one of an @ file: its name after #)
     std::vector<std::string> names;   // (the effects in their order, by name: what a script asks of its fellows, obj.getoption "script_name")
@@ -124,7 +124,7 @@ static void thing_effects_draw(Stage& s, ScreenStack& st, View* v, const ScreenN
     if (st.steps.empty()) return;   // (quiet with no effects: only its picture, for another's)
     const float ppp = (float)s.view->getViewport().width / (float)std::max(1, s.w);   // (pixels of its picture a point of the stage, as the stage's view draws: the desk's are fewer)
     const DrawnFx thor = thorFx && std::any_of(st.steps.begin(), st.steps.end(), [](char k) { return k != 0 && k != 'a'; }) ? thorFx() : DrawnFx{};
-    screen_tone(s, st.shot, st.betweenTarget[1], w, h, true);   // (its picture as its colours are said, sRGB, for the effects: screen.h screen_tone)
+    screen_tone(s, st.shot, st.betweenTarget[1], w, h, true);   // (its picture as its colours are said, sRGB, for the effects: screen_fx.h screen_tone)
     for (size_t i = 0, f = 0, a = 0; i < st.steps.size(); ++i) {   // (each into a picture between: the effects take the whole picture as theirs, and fill what is clear)
         Texture* from = i == 0 ? st.between[1] : st.between[(i - 1) % 2];
         if (st.steps[i] == 'a') { std::copy(st.box, st.box + 4, st.aviutl[a]->box), std::copy(st.thingSeen, st.thingSeen + 4, st.aviutl[a]->seen), st.aviutl[a]->ground = st.ground, st.aviutl[a]->sounds = &st.sounds; aviutl_draw_step(s, *st.aviutl[a++], from, st.betweenTarget[i % 2], numbers, w, h); continue; }   // (an AviUtl2 script, told where the thing is seen)

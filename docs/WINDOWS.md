@@ -10,7 +10,7 @@
 | Filament の WebGPU 版 | Windows 用の土台がある。Dawn の Vulkan か D3D12 を選ぶ | `filament_src/filament/backend/src/webgpu/platform/WebGPUPlatformWindows.cpp` 39、42行 |
 | 材質（`flat.mat`、`thick_glass.mat`、`matte.mat`）、型、重ね方 | WebGPU 用にビルドした物をそのまま使う。Mac 専用の行は無い | 材質のファイル |
 | ThorVG（AEの絵、写真、文字） | Dawn の上で描かせている。Dawn は Windows にある。ビルドは meson | `gpu/tvg_on_dawn.sh` |
-| 3Dファイル（gltfio） | Filament の部品。OS 専用の行は `solid.h` に無い | `solid.h` |
+| 3Dファイル（gltfio） | Filament の部品。OS 専用の行は `gltf_model.h` に無い | `gltf_model.h` |
 | 文書（SQLite）、キー（GStreamer の controller）、編集の口（`motolii.h`） | どれも C。OS 専用の行は `doc.h`、`motolii.h` に無い | `doc.h`、`motolii.h` |
 | 動画を読む（GStreamer の decodebin3、切り出し・速さ・逆再生） | GStreamer の口だけ。Windows では専用回路の部品が D3D12／D3D11 の物に替わる（GStreamer が自分で選ぶ） | `video_layer.h` 160〜260行 |
 | 音と書き出し（FFmpeg） | コマンドを呼ぶだけ | `kit.h` の `film` |

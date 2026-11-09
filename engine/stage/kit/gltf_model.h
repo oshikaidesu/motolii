@@ -1,4 +1,4 @@
-// solid.h: a 3D file (glTF: .glb, .gltf) in the scene. All of it is Filament's own: its loader (gltfio) reads the
+// gltf_model.h: a 3D file (glTF: .glb, .gltf) in the scene. All of it is Filament's own: its loader (gltfio) reads the
 // file, its ready-made materials for glTF give the looks the file names (lit by the stage's room), and the file's own
 // movement, if it has one, goes on as the stage's time does (gltfio's Animator).
 #include <filament/Color.h>

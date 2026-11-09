@@ -103,7 +103,7 @@ static void doc_moment(Doc& d, double now) {
         if (runOf[i] < 0) continue;
         const int run = runOf[i];
         Doc::Shown& t = *lies[i].shown;
-        const bool own = doc_own_fx(d, lies[i].thing);   // (with effects of its own: drawn alone, its picture laid here: thing_fx.h)
+        const bool own = doc_own_fx(d, lies[i].thing);   // (with effects of its own: drawn alone, its picture laid here: layer_fx.h)
         const bool shows = own && doc_thing_shows(d, lies[i].thing, d.thingFx[lies[i].thing]);   // (a solid that shows its picture itself stays in the stage's scene, and is filmed by its view too, the stage's lights with it)
         Scene* const above = holder(lies[i].thing);
         Scene* into = own ? made(lies[i].thing, shows).view->getScene() : above;
@@ -358,7 +358,7 @@ static void doc_moment(Doc& d, double now) {
                 }
                 return o;
             };
-            Drawn::Other join, morph;   // (put together with another, Skia's op in skpath.cpp's order; turned into another, so far)
+            Drawn::Other join, morph;   // (put together with another, Skia's op in skia_path_operations.cpp's order; turned into another, so far)
             const std::string how = doc_word(d, thing, "boolean");
             for (int k = 0; k < 4; ++k)
                 if (how == std::array<const char*, 4>{"subtract", "intersect", "union", "exclude"}[(size_t)k]) join = other((int)doc_number(d, thing, "boolean_with", 0, 0), true), join.how = k;

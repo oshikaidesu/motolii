@@ -109,7 +109,7 @@ struct Drawn {
     tvg::LottieAnimation* lottie = nullptr;   // (its film, when it is an After Effects file: what says its layers' poses)
     std::vector<uint32_t> deep;   // (an After Effects file's 3D layers: not drawn in its own picture, each a sheet of its own where it is: picture_deep)
     std::array<float, 10> bent{};   // (as last bent: round, bloat, zigzag, ridges, smooth, offset; roughened: how far, how fine; walked again at so many points; in squares so large)
-    // Another shape's path in this one's points, and what is done with it: put together (how: skpath.cpp's op; -1 none),
+    // Another shape's path in this one's points, and what is done with it: put together (how: skia_path_operations.cpp's op; -1 none),
     // or turned into (much: how far, 0 not; how above 1: so many steps from itself to it, all at once, a blend).
     struct Other {
         int how = -1; float much = 0.f; std::vector<tvg::PathCommand> by; std::vector<tvg::Point> at;
@@ -169,7 +169,7 @@ static void trim_at(Stage& s, Drawn* d, float cut, float begin = 0.f, float offs
     });
 }
 
-// After Effects' path operators, ThorVG's own (bend.cpp): its corners rounded (round: a share of its shorter side),
+// After Effects' path operators, ThorVG's own (thorvg_path_operators.cpp): its corners rounded (round: a share of its shorter side),
 // pucked in or bloated out (bloat, -1 to 1), zig-zagged (so high, a share of its height; so many ridges a side; smooth
 // or sharp), offset out or in (a share of its height); drawn again for the frame that comes next, if it is bent anew.
 void tvg_bend(tvg::Shape* shape, const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, uint32_t ptsCnt,

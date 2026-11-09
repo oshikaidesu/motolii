@@ -628,4 +628,4 @@ static Drawn* flat(Stage& s, const char* form, float wide, const mat4f& place, f
 }
 
 void tvg_edge(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, uint32_t ptsCnt, float width, int cap, int join, float dash, float dashFrom,
-              float from, float to, std::vector<float>& xy, std::vector<uint32_t>& idx);   // (bend.cpp)
+              float from, float to, std::vector<float>& xy, std::vector<uint32_t>& idx);   // (thorvg_path_operators.cpp)

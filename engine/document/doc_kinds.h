@@ -10,21 +10,21 @@
 #include "community/door.h"
 #include "community/shaders/hydra_isf.h"
 #include "community/js/lottie_slots.h"
-#include "stage/viewer_settings.h"
+#include "stage/effects/viewer_settings.h"
 #include "community/absent_motion/absent_motion.h"
 #include "community/shaders/isf.h"
 #include "community/shaders/three_isf.h"
 #include "media/midi_roll.h"
 #include "motion/easing_names.h"
-#include "stage/screen.h"
-#include "stage/thing_fx.h"
+#include "stage/effects/screen_fx.h"
+#include "stage/effects/layer_fx.h"
 #include "media/video_datamosh.h"
-#include "stage/points.h"
+#include "stage/kit/point_cloud.h"
 #include <filesystem>
 #include <mutex>
 #include <dlfcn.h>
 #include <fstream>
-#include "stage/solid.h"
+#include "stage/kit/gltf_model.h"
 #include "media/video_layer.h"
 #include "media/sound_level.h"
 #include "media/midi_notes.h"
@@ -85,11 +85,11 @@ struct Doc {
     bool walking = false;   // (the world being worked out: what it asks of itself comes from the frames it has)
     std::map<int, std::pair<std::string, std::string>> drawingKept;   // (each freehand stroke's outline as AbsentMotion's drawing effects last made it, by what they were: doc_moment)   // (each thing's copies as AbsentMotion's repeat effects lay them, at the moment last asked: doc_absent_copies)
     std::shared_ptr<struct DocScripts> scripts;   // (its scripts, each run as its file says: doc_scripts.h)
-    std::map<int, ThingFx> thingFx;     // the things with effects of their own (thing_fx.h): each drawn alone, its effects on, laid where it lies
+    std::map<int, ThingFx> thingFx;     // the things with effects of their own (layer_fx.h): each drawn alone, its effects on, laid where it lies
     struct Read { Texture* seen = nullptr; RenderTarget* into = nullptr; };
     std::map<int, Read> reads;          // the things that read what is under them, each with its picture of it (doc_things_read)
     std::vector<int> beforeOf;          // whose each of the stage's `before` is
-    ScreenStack screen;                 // the stage's whole-screen effects, its script .wgsl files one over another (screen.h)   // each thing's copies as its script said them, at one moment (worked out once a picture)
+    ScreenStack screen;                 // the stage's whole-screen effects, its script .wgsl files one over another (screen_fx.h)   // each thing's copies as its script said them, at one moment (worked out once a picture)
     bool phys_keyed = false;            // reading where a thing's keys put it (not where the world has it)
     bool writing = false;               // it is being written as a film: it is read, not changed, until that is done
     bool eyeAsked = false;              // the window looks by its working eye (After Effects' working 3D views, Alight Motion's view without the camera): never in the document
@@ -163,7 +163,7 @@ static const DocValue doc_values[] = {
     //  how much it bounces, how it rubs; and the stage's pull down, in units of the stage a second each second)
     {"physics", doc_drawn, 0, 0, false, "none moves still"},
     // (a recipe as code: a JavaScript file that says where each copy is (script.h); its head's knobs are values of the thing, named js_ and the knob's name)
-    {"script", "picture text shape solid stage behaviour", 0, 0, false, ""},   // (the stage's: a whole-screen effect, a .wgsl file: screen.h)
+    {"script", "picture text shape solid stage behaviour", 0, 0, false, ""},   // (the stage's: a whole-screen effect, a .wgsl file: screen_fx.h)
     // (a thing's own effects, After Effects' effects on a layer: the whole-screen ones' .wgsl files, one over another, on the thing as the camera sees it)
     //  (a camera's: AbsentMotion's motions only, its place moved by them as AbsentMotion's camera is: doc_fx_say)
     {"fx", "film picture text shape solid camera", 0, 0, false, ""},
@@ -225,7 +225,7 @@ static const DocValue doc_values[] = {
     {"parent_rotate", doc_kinds, 0, 2, true, nullptr}, {"parent_size", doc_kinds, 0, 2, true, nullptr},   // (how much of its parent's turn and size it takes: 1 all, 0 none, 2 twice; Alight Motion's Parenting Helper weights)
     {"scale_assist", doc_drawn, 0, 0, false, "y x both"}, {"scale_assist_amount", doc_drawn, 0, 100, true, nullptr}, {"scale_assist_damp", doc_drawn, 1, 10, true, nullptr},   // (Alight Motion's Scale Assist, as scale_x and scale_y: grown one way alone, or wider and as much thinner as a squashed ball keeps its bulk)
     {"roll", doc_kinds, 0, 0, false, "x y"}, {"roll_radius", doc_kinds, -1e3, 1e3, true, nullptr},   // (turned as a wheel rolling as it goes along x, or y; its radius half its smaller side and this more)
-    {"dissolve", "solid", 0, 100, true, nullptr}, {"grain", "solid", 0.05, 20, true, nullptr},   // (a point cloud's: its grains thrown out each its own way, so far; and how large they are drawn: points.h)
+    {"dissolve", "solid", 0, 100, true, nullptr}, {"grain", "solid", 0.05, 20, true, nullptr},   // (a point cloud's: its grains thrown out each its own way, so far; and how large they are drawn: point_cloud.h)
     {"mosh", "film", 0, 1, false, nullptr}, {"mosh_with", "film", 0, 1e9, false, nullptr}, {"mosh_at", "film", 0, 1e6, false, nullptr},   // (a real datamosh: from that moment of its film, the other's motion poured into its last picture: video_datamosh.h)   // (the thing it goes with: it is moved, turned and sized as that one is, then as it is itself; 0: none)
     {"space", "film picture text shape", 0, 0, false, "2d 2.5d 3d"},   // (the past repository's three tags: 2d is not in the world and lies by the order alone; 2.5d is a sheet in the world, before or behind by depth, always facing the eye; 3d is filmed as it is, the camera turning round it, as a solid is)
     {"align", "text", 0, 1, false, nullptr},

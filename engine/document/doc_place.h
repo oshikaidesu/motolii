@@ -282,7 +282,7 @@ static void doc_unshape(Stage& s, const std::function<bool(const Stage::Made&)>&
 // otherwise; the glow, flare, darkened corners and fog on the stage's own view; the room's light and the colour behind.
 static bool doc_knows(Doc& d, int thing, const char* name, const double* number, const char* word, bool key);
 static bool doc_frame(Doc& d, int thing, double now, double* frame);
-// An ISF audio input's values now (screen.h sounds): the sound of the thing its knob names (by number, on the card as
+// An ISF audio input's values now (screen_fx.h sounds): the sound of the thing its knob names (by number, on the card as
 // a picture's is), at that thing's own moment as its film shows it (from its start, from where it begins, at its
 // speed: motolii_loudness_over's way), read once aside (sound_level.h); none named, or not read yet: none (silence).
 static std::vector<float> doc_sound_now(Doc& d, int thing, const std::string& file, const std::string& name, bool fft, int wide) {

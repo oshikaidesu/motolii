@@ -3,7 +3,7 @@
 // programs (programs/fx/<stamp>/) under the same file name, and this thing's fx says the copy in its place. The same
 // name keeps what hangs on it: its values' names (js_<stem>_<knob>, doc_screen_knob), its card's title (doc_fx_title),
 // so its eye, place and values stay. Beside it go what the engine reads from the file's folder: an ISF's .vs (isf.cpp),
-// its line of first.tsv (script_first), the images its head names (--image@, screen.h).
+// its line of first.tsv (script_first), the images its head names (--image@, screen_fx.h).
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';

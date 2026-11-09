@@ -20,7 +20,7 @@
 510 engine/stage/kit/kit_stage.h
 514 engine/stage/kit/kit_things.h
 529 shelves/create/on_film/Blob Track.js
-531 engine/stage/screen.h
+531 engine/stage/effects/screen_fx.h
 565 engine/community/js/script.cpp
 6342 engine/third_party/js/acorn/acorn.js
 1501 engine/third_party/js/three/BufferGeometryUtils.js

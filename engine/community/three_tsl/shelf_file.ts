@@ -1,4 +1,4 @@
-// three's shaders as one file of the effects shelf, the shape screen.h screen_read takes, the shape engine/community/isf.cpp makes of
+// three's shaders as one file of the effects shelf, the shape screen_fx.h screen_read takes, the shape engine/community/isf.cpp makes of
 // ISF's PASSES: the stage's picture at binding 0, each target's after it, one struct of knobs, one entry that goes by
 // `passindex`; every step's fragment shader kept as three's builder wrote it, its names apart.
 import * as THREE from "three/webgpu"
@@ -42,10 +42,10 @@ export function stepOf(made: Map<any, any>, mesh: any, camera: any, scene: any, 
     pictures: one.nodes.map(([name, node]: any) => [name, node.value]), target }
 }
 
-// three works in linear light on colours not premultiplied, the shelf's effects in sRGB on premultiplied ones (screen.h
+// three works in linear light on colours not premultiplied, the shelf's effects in sRGB on premultiplied ones (screen_fx.h
 // screen_tone, whose lines these are). What is read goes through the frame as isf.cpp's `texture` does; a target's is as
 // three drew it.
-// (a picture beside the file, screen.h's --image@: read whole, no frame on it)
+// (a picture beside the file, screen_fx.h's --image@: read whole, no frame on it)
 const whole = `fn image_read(t: texture_2d<f32>, s: sampler, uv: vec2f) -> vec4f { return textureSampleLevel(t, s, uv, 0.0); }
 fn image_read_level(t: texture_2d<f32>, s: sampler, uv: vec2f, level: f32) -> vec4f { return textureSampleLevel(t, s, uv, level); }
 fn image_load(t: texture_2d<f32>, p: vec2i, level: u32) -> vec4f { return textureLoad(t, p, level); }

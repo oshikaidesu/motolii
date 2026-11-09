@@ -25,9 +25,9 @@
 |---|---|
 | `entry/` | アプリが呼ぶ入口。`motolii.h`＝C の呼び出しの全部（プロジェクトを開く・レイヤーを足す・値を変える・キー・取り消し・書き出し・フレームを受け取る）、`motolii.mm`＝その実装（`libmotolii.dylib` になる）、`motolii_calls_*.h`＝呼び出しを役目で分けた部品（探す・地図・音・ファイル・時刻…）、`motolii_hand*.h`＝プロジェクトと GPU を持つレンダースレッド 1 本、`edit.cpp`＝同じ呼び出しを 1 行ずつ打つシェル |
 | `document/` | プロジェクト（SQLite）：`doc_*.h`。レイヤー・値・キー・取り消し（変更を SQLite の表に積む）・プレビューへの反映 |
-| `stage/` | 描く所。`kit/`＝Filament で描く所（Engine・カメラ・光・立体・書き出し）、`drawn/`＝ThorVG のキャンバスに描いた 2D の絵をプレビューに板として置く所、ほかは効果（`thing_fx.h`・`screen.h`）・アプリへ渡すフレーム（`live.h`）・再生用のキャッシュ（`stage_kept.h`） |
+| `stage/` | 描く所。`kit/`＝Filament で描く所（Engine・カメラ・光・書き出し、3D ファイル `gltf_model.h`・点群 `point_cloud.h`）、`drawn/`＝ThorVG のキャンバスに描いた 2D の絵をプレビューに板として置く所（パスの演算：`thorvg_path_operators.cpp`・`skia_path_operations.cpp`）、`effects/`＝効果（レイヤーごと `layer_fx.h`・画面全体 `screen_fx.h`・Filament の設定ファイル `viewer_settings.h`）。直下はプレビューから外へ出す物だけ：アプリへ渡すフレーム（`live.h`）・アプリが読むプロジェクトの写し（`picture.h`）・再生用のキャッシュ（`stage_kept.h`） |
 | `community/` | ネットのコードをそのまま動かす口：`aviutl/`（AviUtl2）・`shaders/`（ISF・Shadertoy）・`js/`（p5・AE 式・three.js）・`absent_motion/`・`three_tsl/`（three.js の TSL を three.js 自身の組み立て役で WGSL に） |
-| `media/` | GStreamer で読む物。名前の頭で分かれる：`video_*`＝動画（`video_layer.h`＝場面に置く動画の物、GPU で解く・`video_frames_for_scripts.h`＝スケッチが CPU で読む小さな絵・`video_datamosh.h`・`video_flash_check.cpp`＝点滅の検査（IRIS））、`sound_*`＝音（`sound_level.h`＝大きさ・`sound_playback.h`＝再生中に鳴らす）、`midi_*`＝MIDI、`gstreamer_file_source.h`＝ファイルを渡す口 |
+| `media/` | GStreamer で読む物。名前の頭で分かれる：`video_*`＝動画（`video_layer.h`＝プレビューに置く動画のレイヤー、GPU で解く・`video_frames_for_scripts.h`＝スケッチが CPU で読む小さなフレーム・`video_datamosh.h`・`video_flash_check.cpp`＝点滅の検査（IRIS））、`sound_*`＝音（`sound_level.h`＝大きさ・`sound_playback.h`＝再生中に鳴らす）、`midi_*`＝MIDI、`gstreamer_file_source.h`＝ファイルを渡す口 |
 | `motion/` | 動き：イーズは `easing_*.h` だけ（`easing_curves.h`＝キーの間の 9 種・`easing_names.h`＝名前で呼ぶイーズ・`easing_godot.h`）、`lottie_motion.h`＝Lottie の動きを ThorVG が解く |
 | `physics/` | 物理：`physics.h`＝口、`jolt.cpp`＝その裏の Jolt |
 | `materials/` | Filament の材質（`.mat`）と、それが読む `.glsl`。組むのは `gpu/kit_wgpu.sh` が名を挙げる物 |

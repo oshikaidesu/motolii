@@ -1,11 +1,11 @@
 // An ISF effect (Vidvox's Interactive Shader Format: a GLSL fragment shader with a JSON head of its knobs) dropped in an
-// effects folder works as a .wgsl does: made one in vgpu's manner (screen.h) inside Motolii, by the parts Filament's
+// effects folder works as a .wgsl does: made one in vgpu's manner (screen_fx.h) inside Motolii, by the parts Filament's
 // build already has (glslang to SPIR-V, Tint from SPIR-V to WGSL, as Dawn itself reads SPIR-V), its head read by
 // rapidjson (as Filament's assimp has it). The shader's own lines are kept; around them ISF's words (IMG_NORM_PIXEL, IMG_THIS_PIXEL,
 // isf_FragNormCoord, TIME, RENDERSIZE...) are said in plain GLSL, each picture split into a texture and a sampler, the
 // knobs gathered into one struct and written in the head (script.h: // --track@...), its passes too (// --pass@...).
 // Made once into ~/Library/Caches/Motolii/isf/<hash>.wgsl, named by the file as it is. Its other images are
-// other things' pictures (screen.h others), its audio inputs other things' sound; its own vertex shader is worked out at each pixel.
+// other things' pictures (screen_fx.h others), its audio inputs other things' sound; its own vertex shader is worked out at each pixel.
 #include "community/shaders/isf.h"
 #include "community/door.h"
 #include "community/shaders/three_isf.h"

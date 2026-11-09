@@ -19,7 +19,7 @@ static std::vector<std::string> doc_fx_list(Doc& d, int thing, bool off) {
     return all;
 }
 // Whether a thing's effects are laid on it as the camera sees it (one of them a file: then all of them, in turn, there:
-// screen.h thing_effects_draw), not in its own picture as ThorVG draws it.
+// screen_fx.h thing_effects_draw), not in its own picture as ThorVG draws it.
 static bool doc_fx_files(const std::vector<std::string>& list) {
     return std::any_of(list.begin(), list.end(), [](const std::string& w) { const std::string ext = std::filesystem::path(w).extension().string(); return !doc_thor_letter(w) && ext != ".mjs" && ext != ".am" && ext != ".json"; });   // (a splat effect is in the cloud's own look; AbsentMotion's motion moves the thing, absent_motion.h; Filament's own settings are the stage's)
 }
@@ -79,7 +79,7 @@ static bool doc_fx(Doc& d, int thing, double at, bool most, double units, DrawnF
         if (!doc_fx_files(list))
             for (const std::string& w : list) if (const char k = doc_thor_letter(w); k && n < 5) fx.order[n++] = k;
         fx.order[n] = 0;
-        if (!n && !camera) fx.blur = 0.f, fx.shadow.w = 0.f, fx.tint = 0.f, fx.tritone = 0.f;   // (camera: as a step of its stack lays them, screen.h thing_thor)
+        if (!n && !camera) fx.blur = 0.f, fx.shadow.w = 0.f, fx.tint = 0.f, fx.tritone = 0.f;   // (camera: as a step of its stack lays them, screen_fx.h thing_thor)
     }
     fx.reach = (float)(std::max(0.0, num("offset", 0)) + std::fabs(num("zigzag", 0)) + 0.5 * std::max(0.0, num("bloat", 0)) + std::fabs(num("warp", 0)));
     return ok;

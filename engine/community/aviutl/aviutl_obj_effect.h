@@ -21,7 +21,7 @@ static const std::map<std::string, AviutlRemade>& aviutl_remakes() {
     }();
     return all;
 }
-// One of them on the object, as a thing's ISF effect is drawn (screen.h screen_draw): its knobs the params said (each
+// One of them on the object, as a thing's ISF effect is drawn (screen_fx.h screen_draw): its knobs the params said (each
 // said again as Sashimono says it; a check its _on, a colour its parts), the rest as its file says; the object made
 // straight for it and premultiplied again after, as the thing's picture is given to its effects. -1: none of them.
 static int aviutl_sashimono(lua_State* L, AviutlRun& r, const std::string& n, const std::map<std::string, double>& said) {

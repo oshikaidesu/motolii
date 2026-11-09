@@ -5,7 +5,7 @@
 # against what is staged (or a commit's tree), never the disk:
 #   import / export from / import() / require   from the file's folder (QuickJS's way; a .ts also as esbuild: .ts, .js,
 #                                               /index.ts); a bare name: the package.json beside a .ts, or the allowlist
-#   // --image@name:file, ISF "PATH": "file"    beside the effect (screen.h)
+#   // --image@name:file, ISF "PATH": "file"    beside the effect (screen_fx.h)
 #   {motolii}/...  in a look (.motolii)         from shelves/ (doc_looks.h doc_look_roots)
 #   './' '../' in quotes                        a .sh: from where its `cd "$(dirname "$0")..."` went; a .ts: its folder
 #   shelves/... engine/... app/... docs/...     from the repository's root (a head saying where it was made from)

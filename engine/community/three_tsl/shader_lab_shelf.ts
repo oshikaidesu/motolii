@@ -16,7 +16,7 @@ import { renderer } from "./convert"
 import { fileText, parts, stepOf, type Said, type Step, type Target } from "./shelf_file"
 import * as std from "qjs:std"
 
-renderer.backend.hasFeature = (f: string) => f === "float32-filterable"   // (the shelf's pictures can be filtered. screen.h frames what is sampled, not what is loaded)
+renderer.backend.hasFeature = (f: string) => f === "float32-filterable"   // (the shelf's pictures can be filtered. screen_fx.h frames what is sampled, not what is loaded)
 BlurPyramid.prototype.needsLevels = () => true   // (drawn always: whether its levels are read is a knob's to say, as the file plays)
 
 const only = scriptArgs.slice(1)
@@ -24,7 +24,7 @@ const types = only.length ? only : ["bloom", "chromatic-aberration", "circuit-be
   "dot-grid", "edge-detect", "erosion", "flares", "fluted-glass", "focus-blur", "glass", "gradient-map", "gradient", "halftone", "ink", "lumen-print", "outline",
   "particle-grid", "pattern:bars", "pattern:candles", "pattern:shapes", "photocopy", "photographic-cells", "pixel-sorting", "pixelation", "plotter", "posterize", "relief", "shape", "signal-rot", "slice", "smear", "threshold", "voxel",
   ...["light", "dense", "boxes", "hex", "binary"].map(set => `ascii:${set}`)]
-const taken = new Set(["time", "frame", "aspect", "resolution", "width", "height", "screen", "passindex", "frameRect", "passRect"])   // (names screen.h fills itself: screen_knobs)
+const taken = new Set(["time", "frame", "aspect", "resolution", "width", "height", "screen", "passindex", "frameRect", "passRect"])   // (names screen_fx.h fills itself: screen_knobs)
 const manager: any = { renderer: null, onRuntimeError: () => {} }
 const W = 2048, H = 1024   // (each level of a pyramid an exact share of it)
 let dir = ""   // (the shelf's folder of the effect being made: shelves/effects/distort or stylize, as its --label says)

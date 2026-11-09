@@ -17,7 +17,7 @@ flowchart TB
     Hand["motolii_hand.h：プロジェクトと GPU を持つレンダースレッド 1 本"]
     Doc["doc*.h：プロジェクト（SQLite）、取り消し"]
     Kit["kit*.h・drawn*.h：フレームを描く"]
-    FX["isf.cpp・aviutl*.h・thing_fx.h：効果"]
+    FX["isf.cpp・aviutl*.h・layer_fx.h：効果"]
     Script["script.cpp：QuickJS-ng（レシピ・three.js）、LuaJIT（AviUtl2）"]
   end
   subgraph Libs["借りている物"]
@@ -63,7 +63,7 @@ flowchart TB
 | 置く物 | 道 | どこ |
 |---|---|---|
 | ISF（`.fs`、GLSL） | glslang → SPIR-V → Tint → WGSL。Filament の組み立てに入っている物をそのまま使う | `engine/community/shaders/isf.cpp` |
-| WGSL（`.wgsl`） | そのまま。頭に AviUtl2 式のパラメーターの行。横に置いた絵は `--image@名前:ファイル` で ThorVG が 1 回読む | `engine/stage/screen.h`、`thing_fx.h` |
+| WGSL（`.wgsl`） | そのまま。頭に AviUtl2 式のパラメーターの行。横に置いた絵は `--image@名前:ファイル` で ThorVG が 1 回読む | `engine/stage/effects/screen_fx.h`、`layer_fx.h` |
 | AviUtl2（`.anm2`・`.obj2`） | Lua は LuaJIT（AviUtl2 と同じ）で走らせ、`obj` の呼び出しをエンジンの関数で受ける。中の HLSL は glslang の HLSL の読み手 → SPIR-V → Tint → WGSL | `engine/community/aviutl/aviutl.cpp`、`aviutl_fx.h` |
 | three.js の形（`shelves/solids/*.js`） | QuickJS-ng で three.js を動かし、BufferGeometry を受け取る | `engine/community/js/solid_three.cpp` |
 | レシピ（`shelves/create/*/*.js`） | QuickJS-ng。1 回でレイヤーと値を作る | `engine/community/js/script.cpp` |

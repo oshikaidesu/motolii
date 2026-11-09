@@ -177,7 +177,7 @@ static void live_draw(Stage& s, Live* l) {
         const int at[4] = {(int)std::lround(s.desk.x), (int)std::lround((double)s.desk.h - s.desk.y - s.h * s.desk.scale), (int)std::lround(s.w * s.desk.scale), (int)std::lround(s.h * s.desk.scale)};
         s.lastly = [&s, l, desk, i, j, at] { screen_place(s, l->seen[i], desk->target[j], s.desk.w, s.desk.h, at); };
     }
-    if (!s.over) {   // (with a whole-screen effect the stage draws to its own picture and the effect to this one: screen.h)
+    if (!s.over) {   // (with a whole-screen effect the stage draws to its own picture and the effect to this one: screen_fx.h)
         s.view->setRenderTarget(s.out);
     }
     draw(s, nullptr, false);

@@ -69,7 +69,7 @@ static std::string doc_tile(const std::string& ref, const std::filesystem::path&
     return "\t" + picture + "\t" + drawn + "\t" + (std::filesystem::exists(drawn + ".same", wrong) ? "same" : "");
 }
 // What a WGSL effect is, read from it as isf_tags reads an ISF file (the user's Mercari: read, not asked; Shadertoy's
-// filters, golf (92)): from its head, Motolii's own lines (screen.h): its passes (--pass@; more than one: multipass;
+// filters, golf (92)): from its head, Motolii's own lines (screen_fx.h): its passes (--pass@; more than one: multipass;
 // one kept from frame to frame, its first flag 1, or --history@: feedback), another picture (--picture@: image); from
 // its body, the stage's clock read (.time, .frame: time).
 static std::string doc_wgsl_tags(const std::filesystem::path& file) {

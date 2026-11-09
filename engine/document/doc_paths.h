@@ -65,7 +65,7 @@ static int doc_pen(Doc& d, int thing, double x, double y, double hx, double hy) 
         const math::double2 p = own(x, y), in = own(x - hx, y - hy);
         float first_x = 0.f, first_y = 0.f;
         int stretches = 0;
-        const int last = sk_svg_ends(path.c_str(), first_x, first_y, stretches);   // (Skia's reading of it: skpath.cpp)
+        const int last = sk_svg_ends(path.c_str(), first_x, first_y, stretches);   // (Skia's reading of it: skia_path_operations.cpp)
         const double fx = first_x, fy = first_y;
         const bool smooth = last == 3, handle = hx != 0.0 || hy != 0.0;
         const bool closes = stretches > 0 && last != 4 && length(o + ex * fx - ey * fy - math::double2{x, y}) < 8.0;   // (back on its first point, as the hand sees it)

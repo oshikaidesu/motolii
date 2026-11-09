@@ -136,7 +136,7 @@ struct Stage {
     Texture* white = nullptr;    // a white point: the matte of a thing that nothing cuts
     // (what is made once for this stage's engine and kept: a stage opened after another in the same program has its own)
     std::map<std::string, Material*> materials;    // each material file, read and built once
-    void* solids = nullptr; void* solidPictures = nullptr;   // Filament's reader of 3D files and its reader of their pictures (solid.h)
+    void* solids = nullptr; void* solidPictures = nullptr;   // Filament's reader of 3D files and its reader of their pictures (gltf_model.h)
     std::vector<Made> made;   // every thing put on the stage: of which mesh, at which of that mesh's places (a film moves them: `move`)
     // The desk: the editing window's whole stage pane (w, h pixels: 0, none), the picture there as on the stage but seen
     // further back, the stage's own lying at x, y (its top left) so many pixels a point; what lies off it is seen too.
@@ -144,12 +144,12 @@ struct Stage {
     // doc_frame gives them) and of the one under the hand; `point`: desk pixels a point of the screen the marks are sized in.
     struct { uint32_t w = 0, h = 0; double x = 0, y = 0, scale = 1, point = 2; math::mat4 was, wasCulled;
              bool picked = false, hovered = false, knob = true; double pick[8] = {}, hover[8] = {}; } desk;
-    std::function<void()> over;   // drawn last, over all of them (a whole-screen effect: screen.h)
+    std::function<void()> over;   // drawn last, over all of them (a whole-screen effect: screen_fx.h)
     std::map<const void*, std::function<void()>> once;   // to do once before the next picture, by whose it is (a picture's distances from its edge: drawn_edge.h)
-    std::vector<std::function<void()>> before;   // drawn before the stage's own view, each into a picture of its own (a thing with effects of its own: thing_fx.h)
+    std::vector<std::function<void()>> before;   // drawn before the stage's own view, each into a picture of its own (a thing with effects of its own: layer_fx.h)
     std::vector<std::function<void()>> aim;      // told before each frame begins, what those pictures and the looks that show them are (Filament sends a look's parameters on as a frame begins: FRenderer::beginFrame, FEngine::prepare)
     std::function<void()> lastly;   // and after everything, in the same frame (the desk: its stage's picture placed on it, live.h)
-    Texture* drawnInto = nullptr;   // the picture the views draw into (live.h, screen.h); none: the screen
+    Texture* drawnInto = nullptr;   // the picture the views draw into (live.h, screen_fx.h); none: the screen
     RenderTarget* out = nullptr;   // where the picture goes at last (none: the screen; the window's live picture: live.h)
 };
 

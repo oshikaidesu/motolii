@@ -147,7 +147,7 @@ static bool doc_match(Doc& d) {
         if (d.shown.count(thing)) continue;
         Doc::Shown made{of};
         const std::string kind = doc_word(d, thing, "kind"), file = doc_word(d, thing, "file"), laid = doc_word(d, thing, "blend"), shape = doc_word(d, thing, "shape");
-        const bool effected = doc_fx_files(doc_fx_steps(d, thing));   // (with effects of its own: drawn alone as normal, its way of lying on what is under taken once they are on: screen.h)
+        const bool effected = doc_fx_files(doc_fx_steps(d, thing));   // (with effects of its own: drawn alone as normal, its way of lying on what is under taken once they are on: screen_fx.h)
         const char* lay = effected || laid.empty() || laid == "normal" || doc_blend_way(laid) ? nullptr : laid.c_str();   // (one that reads what is under: drawn as normal, flat.mat mixes it)
         std::string why = "it could not be read";
         const std::string fill = doc_word(d, thing, "fill");
@@ -364,7 +364,7 @@ static bool doc_match(Doc& d) {
                 if (look && made.sketch) for (int i = 0; i < 6; ++i) look->setParameter(("picture" + std::to_string(i)).c_str(), white_point(s), TextureSampler());
                 if (!look) made.shape = nullptr;
                 else if (!glass && !(own && !made.sketch)) plain(look, coloured ? colour : made.sketch ? float3{1.f} : float3{0xd9, 0xd2, 0xc3} / 255.f, surface);
-            } else if (std::filesystem::path(file).extension() == ".ply") {   // (a point cloud: its grains, one buffer, points.h)
+            } else if (std::filesystem::path(file).extension() == ".ply") {   // (a point cloud: its grains, one buffer, point_cloud.h)
                 for (const std::string& w : doc_fx_list(d, thing)) if (std::filesystem::path(w).extension() == ".mjs") made.splatFxFile = w;   // (a PlayCanvas splat effect on it: its look made with it)
                 std::string effectWhy;
                 Material* with = made.splatFxFile.empty() ? nullptr : points_effect(s, made.splatFxFile, made.splatFx, effectWhy);

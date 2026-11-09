@@ -1,4 +1,4 @@
-// points.mat: a point cloud's splats (points.h) as antimatter15/splat draws them (MIT, Copyright (c) 2023 Kevin Kwok):
+// points.mat: a point cloud's splats (point_cloud.h) as antimatter15/splat draws them (MIT, Copyright (c) 2023 Kevin Kwok):
 // a square a slot; the slot's splat read from the order table, its data from the splat texture; its spread laid on the
 // screen through the eye's turn and the projection's slope (J W S W^T J^T), the square stretched along the 2x2's two
 // axes, faded out by exp(-r^2) times how much it is seen; laid from the farthest with Filament's see-through blending.
@@ -25,7 +25,7 @@ vertex {
     // PlayCanvas's helpers for its splat effects (engine shader chunk gsplatHelpers, MIT, Copyright (c) 2011-2026 PlayCanvas Ltd.)
     void gsplatMakeSpherical(inout vec3 scale, float size) { scale = vec3(size); }
     float gsplatGetSizeFromScale(vec3 scale) { return sqrt((scale.x * scale.x + scale.y * scale.y + scale.z * scale.z) / 3.0); }
-    //@effect (a PlayCanvas splat effect's GLSL goes here as it is: points.h)
+    //@effect (a PlayCanvas splat effect's GLSL goes here as it is: point_cloud.h)
 #ifndef SPLAT_EFFECT
     void modifySplatCenter(inout vec3 center) {}
     void modifySplatRotationScale(vec3 originalCenter, vec3 modifiedCenter, inout vec4 rotation, inout vec3 scale) {}

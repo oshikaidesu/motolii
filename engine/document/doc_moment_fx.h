@@ -1,4 +1,4 @@
-// doc_moment_fx.h: part of doc.h (a thing with effects of its own, told a moment: thing_fx.h). Read only through doc.h.
+// doc_moment_fx.h: part of doc.h (a thing with effects of its own, told a moment: layer_fx.h). Read only through doc.h.
 // Each drawn alone into a picture of the box it is seen in, its effects run on it, before the stage's own view.
 // One whose fx names a solid's shape (solids/*.js, Alight Motion's Box, Torus...): drawn alone square to its own face,
 // its effects run on that, and the picture laid on the solid's faces where it lies; its sheet not seen.
@@ -152,11 +152,11 @@ static void doc_things_fx(Doc& d) {
         order.emplace_back(-deep, thing);
     }
     std::stable_sort(order.begin(), order.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
-    for (const auto& [deep, thing] : order) {   // (each drawn alone into a picture, its effects run on it, before the stage's own view: thing_fx.h)
+    for (const auto& [deep, thing] : order) {   // (each drawn alone into a picture, its effects run on it, before the stage's own view: layer_fx.h)
         ThingFx& e = d.thingFx.at(thing);
         thing_effects(s, e.st, doc_fx_join(doc_fx_steps(d, thing)));
         e.solidFile.clear();
-        for (const std::string& w : doc_fx_list(d, thing)) if (solid_is(w)) e.solidFile = w;   // (a solid's shape among them: its picture laid on that, thing_fx.h; the last named)
+        for (const std::string& w : doc_fx_list(d, thing)) if (solid_is(w)) e.solidFile = w;   // (a solid's shape among them: its picture laid on that, layer_fx.h; the last named)
         if (const DocScript* sc = e.solidFile.empty() ? nullptr : doc_script_of(d, e.solidFile)) {   // (its knobs as the document says them now, by their own names; the solid made with them, before the frame)
             e.knobs.clear(), e.words.clear();
             for (size_t i = 0; i < sc->knobs.size(); ++i) {

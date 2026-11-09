@@ -371,7 +371,7 @@ static void screen_place(Stage& s, Texture* from, RenderTarget* to, uint32_t w, 
 }
 // A picture's colours said again from linear light to sRGB, or back (IEC 61966-2-1's transfer, on colours not
 // premultiplied, premultiplied again): a thing's own picture is drawn in linear light (its view's post-processing off,
-// thing_fx.h), and the effects laid on it are written for sRGB, as their makers' hosts give them (Skia's for AbsentMotion,
+// layer_fx.h), and the effects laid on it are written for sRGB, as their makers' hosts give them (Skia's for AbsentMotion,
 // ISF's, ThorVG's, AviUtl2's); the stage's own whole-screen ones are drawn after its post-processing, sRGB already.
 static void screen_tone(Stage& s, Texture* from, RenderTarget* to, uint32_t w, uint32_t h, bool toSrgb) {
     static std::map<Engine*, door::Screen*> doors[2];

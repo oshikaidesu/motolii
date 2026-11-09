@@ -170,8 +170,8 @@ bool sk_op(int op, const tvg::PathCommand* ac, uint32_t acn, const tvg::Point* a
            std::vector<tvg::PathCommand>& cmds, std::vector<tvg::Point>& pts);
 
 // A flat shape in triangles cut anew for the frame that comes next, if its path is told otherwise: After Effects' trim
-// paths on its edge (off its end, off its beginning, slid along), its operators (round, bloat, zig zag, offset: bend.cpp),
-// then put together with another shape's path (`join`: Skia's path operation, skpath.cpp; -1 none; `by`/`at` that path
+// paths on its edge (off its end, off its beginning, slid along), its operators (round, bloat, zig zag, offset: thorvg_path_operators.cpp),
+// then put together with another shape's path (`join`: Skia's path operation, skia_path_operations.cpp; -1 none; `by`/`at` that path
 // in this one's points), as Cavalry's Boolean.
 static std::atomic<size_t> cuts_held{0};
 static constexpr size_t cuts_most = 256ull << 20;

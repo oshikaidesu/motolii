@@ -452,7 +452,7 @@ static void time_is(Stage& s, double seconds) {
 // as a frame begins, so each matte's eye is told just before: where it is now, a pose handed over, nothing more.
 static bool begins(Stage& s) {
     static const char* const eyes[] = {"matteEye0", "matteEye1", "matteEye2", "matteEye3"};
-    for (const auto& one : s.aim) one();   // (the things with effects of their own aimed, their looks told: thing_fx.h; as samples/rendertarget.cpp aims its offscreen camera before the frame)
+    for (const auto& one : s.aim) one();   // (the things with effects of their own aimed, their looks told: layer_fx.h; as samples/rendertarget.cpp aims its offscreen camera before the frame)
     for (const Stage::Cut& c : s.cuts) {
         const Camera* eye = s.mattes[(size_t)c.matte].eye;
         c.look->setParameter(eyes[c.slot], mat4f(eye->getProjectionMatrix() * eye->getViewMatrix()));
@@ -463,10 +463,10 @@ static bool begins(Stage& s) {
 // All the pictures of one frame, the helper pictures first (between Filament's beginFrame and endFrame). Every way
 // of drawing the stage goes through here.
 static void pictures_of(Stage& s) {
-    if (s.backdropRead) s.renderer->render(s.view_behind);   // (what is behind, for an effect that reads it (screen.h's backdrop): drawn before the effects, those things' own sheets left out of it)
+    if (s.backdropRead) s.renderer->render(s.view_behind);   // (what is behind, for an effect that reads it (screen_fx.h's backdrop): drawn before the effects, those things' own sheets left out of it)
     for (const auto& [of, one] : s.once) one();
     s.once.clear();
-    for (const auto& one : s.before) one();   // (the things with effects of their own, each drawn alone first, as FilamentApp draws its offscreen views before every other: thing_fx.h)
+    for (const auto& one : s.before) one();   // (the things with effects of their own, each drawn alone first, as FilamentApp draws its offscreen views before every other: layer_fx.h)
     for (Stage::Matte& m : s.mattes) {
         s.renderer->render(m.view);
         if (m.soft) m.picture->generateMipmaps(*s.engine);

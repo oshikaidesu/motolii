@@ -50,8 +50,8 @@ THOR=third_party/thorvg_src
 [ -f $THOR/build_dawn/src/libthorvg-1.a ] || ./gpu/tvg_on_dawn.sh > /dev/null
 meson configure $THOR/build_dawn -Dengines=cpu,wg -Dextra=lottie_exp > /dev/null   # (kept on: meson set up again by a changed source takes ThorVG's defaults, the CPU engine alone)
 ninja -C $THOR/build_dawn > /dev/null
-# (stage/bend.cpp: ThorVG's own path operators, built as ThorVG builds them; libtess2: a flat shape cut into triangles, flat_mesh)
-[ out/bend.o -nt stage/bend.cpp ] || clang++ -c -std=c++17 -I $PWD -O2 -fno-rtti -fno-exceptions -DTVG_STATIC -I $THOR/build_dawn -I $THOR/inc -I $THOR/src/common -I $THOR/src/renderer -I $THOR/src/renderer/gpu_engine -I $THOR/src/renderer/gpu_engine/wg -I $THOR/src/loaders/lottie -I $SRC/third_party/dawn/include -I $SRC/out/wgpu/third_party/dawn/gen/include stage/bend.cpp -o out/bend.o
+# (stage/drawn/thorvg_path_operators.cpp: ThorVG's own path operators, built as ThorVG builds them; libtess2: a flat shape cut into triangles, flat_mesh)
+[ out/bend.o -nt stage/drawn/thorvg_path_operators.cpp ] || clang++ -c -std=c++17 -I $PWD -O2 -fno-rtti -fno-exceptions -DTVG_STATIC -I $THOR/build_dawn -I $THOR/inc -I $THOR/src/common -I $THOR/src/renderer -I $THOR/src/renderer/gpu_engine -I $THOR/src/renderer/gpu_engine/wg -I $THOR/src/loaders/lottie -I $SRC/third_party/dawn/include -I $SRC/out/wgpu/third_party/dawn/gen/include stage/drawn/thorvg_path_operators.cpp -o out/bend.o
 ./deps/libtess2.sh
 ./deps/curve_fit_nd.sh   # (doc_curve: a hand's way made a path of cubic Béziers, as Blender's Draw Curve)
 ./deps/jolt.sh   # (physics/jolt.cpp: Jolt, which edit.sh and build_lib.sh link)
@@ -60,10 +60,10 @@ ninja -C $THOR/build_dawn > /dev/null
 I=third_party/iris
 [ out/flashes.o -nt media/video_flash_check.cpp ] && [ out/flashes.o -nt entry/motolii.h ] || clang++ -c -std=c++17 -I $PWD -O2 -I $I/IRIS/include -I $I/IRIS/utils/include -I $I/spdlog/include -I $I/json/single_include -I $I/opencv_out/include/opencv4 media/video_flash_check.cpp -o out/flashes.o
 ./deps/midi_roll.sh   # (media/midi_roll.cpp: bladeSk's PianoRollSvg.js, read as the MIDI view is drawn)
-# (stage/skpath.cpp: Skia's own path operations, its Boolean: deps/skia.sh builds it)
+# (stage/drawn/skia_path_operations.cpp: Skia's own path operations, its Boolean: deps/skia.sh builds it)
 SKIA=third_party/skia_src
 [ -f $SKIA/out/path/libpathops.a ] || ./deps/skia.sh
-[ out/skpath.o -nt stage/skpath.cpp ] || clang++ -c -std=c++20 -I $PWD -O2 -DNDEBUG -fno-rtti -fno-exceptions -I $SKIA -I $THOR/inc stage/skpath.cpp -o out/skpath.o
+[ out/skpath.o -nt stage/drawn/skia_path_operations.cpp ] || clang++ -c -std=c++20 -I $PWD -O2 -DNDEBUG -fno-rtti -fno-exceptions -I $SKIA -I $THOR/inc stage/drawn/skia_path_operations.cpp -o out/skpath.o
 AM_SRC=third_party/AbsentMotion   # (AbsentMotion, Apache-2.0: pinned as deps/skia.sh pins Skia; a checkout that never had it, CI's, fetches it here)
 [ -d $AM_SRC ] || { mkdir -p $AM_SRC && git init -q $AM_SRC && git -C $AM_SRC -c core.hooksPath=/dev/null fetch -q --depth 1 https://github.com/Comett1225/AbsentMotion.git 0f5d891b7e6fd7260ca6191b4eafef23141230c8 && git -C $AM_SRC checkout -q FETCH_HEAD; } || exit 1
 # (community/absent_motion/absent_motion.cpp: AbsentMotion's own motion and text effects, its motion.cpp, scene.cpp, easing.cpp and textanim.cpp as they are, with
