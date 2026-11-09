@@ -47,7 +47,7 @@ flowchart TB
 | 窓 → 中身 | `engine/library/motolii.h`（約 230 行）、Dart 側は `app/lib/engine/motolii.dart` と ffigen が作る `motolii_bindings.dart` | 窓は値を持たない。読むのも変えるのも C の呼び出しで、書類が正（窓と中身の境目の決まりは [`docs/app/BRIDGE.md`](../docs/app/BRIDGE.md)） |
 | 中身の中 | `engine/library/motolii_hand.h` | 書類と GPU に触るのは 1 本のスレッドだけ。呼び出しはそのスレッドに頼んで待つ（`by_hand`） |
 | 中身 → 窓（絵） | `engine/stage/live.h` | 場面は IOSurface の上の CVPixelBuffer 3 枚に描き、それを Dawn のテクスチャとして Filament の描き先にする。窓（Flutter の外部テクスチャ、`app/macos/Runner/MainFlutterWindow.swift`）は同じ物を読む |
-| 借りた物 | `engine/gpu/*.patch`、`engine/community/three_tsl/*.patch` | 人のコードは直接いじらず、版を固定して取ってきて差分を当てる（[`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md) の 2 節） |
+| 借りた物 | `engine/deps/patches/<ライブラリ>/` | 人のコードは直接いじらず、版を固定して取ってきて差分を当てる（[`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md) の 2 節） |
 
 ## 描く
 

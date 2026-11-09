@@ -58,8 +58,8 @@ Motolii は「ネットで見つけたかっこいい表現を、自分の動画
 
 | 物 | 版 | ライセンス | 取ってくるスクリプト | Motolii の差分 |
 |---|---|---|---|---|
-| [Filament](https://github.com/google/filament)（Dawn・glslang を含む） | v1.77.2 | Apache-2.0 ほか | `engine/gpu/build.sh` | `engine/gpu/filament_dawn_compute.patch`、`glslang_hlsl.patch`、`engine/community/three_tsl/dawn_lend.patch` |
-| [ThorVG](https://github.com/thorvg/thorvg) | 9203245 | MIT | `engine/gpu/tvg_on_dawn.sh` | `engine/gpu/thorvg_*.patch` |
+| [Filament](https://github.com/google/filament)（Dawn・glslang を含む） | v1.77.2 | Apache-2.0 ほか | `engine/gpu/build.sh` | `engine/deps/patches/filament/`、`glslang/`、`tint/`、`dawn/` |
+| [ThorVG](https://github.com/thorvg/thorvg) | 9203245 | MIT | `engine/gpu/tvg_on_dawn.sh` | `engine/deps/patches/thorvg/` |
 | [Skia](https://skia.org/)（パスの部分だけ） | chrome/m149 | BSD-3-Clause | `engine/deps/skia.sh` | なし |
 | [libtess2](https://github.com/memononen/libtess2) | 8dbd648 | SGI Free Software License B 2.0 | `engine/deps/libtess2.sh` | なし |
 | [Jolt Physics](https://github.com/jrouwe/JoltPhysics) | a4b24c3 | MIT | `engine/deps/jolt.sh` | なし |
@@ -69,8 +69,8 @@ Motolii は「ネットで見つけたかっこいい表現を、自分の動画
 | [nlohmann/json](https://github.com/nlohmann/json)（IRIS の設定と結果） | v3.12.0（55f9368） | MIT | `engine/deps/iris.sh` | なし |
 | [PianoRollSvg.js](https://github.com/bladeSk/midi-to-piano-roll)（MIDI ビューのピアノロール） | 205854e | MIT（作者の package.json の申告。ライセンスの文書が作者の側に無いので同梱しない） | `engine/deps/midi_roll.sh` | なし |
 | [Filament の組み立て済み SDK](https://github.com/google/filament/releases/tag/v1.77.2)（前の試しのスクリプトだけが使う） | v1.77.2 | Apache-2.0 | `engine/sdk.sh` | なし |
-| [BabylonJS/JsRuntimeHost](https://github.com/BabylonJS/JsRuntimeHost) の Node-API | 980cfb0 | MIT | `engine/community/three_tsl/jsrh_napi/build.sh` | `jsrh_qjs017_dawn.patch` |
-| TSL の表現 48 か所 | `engine/community/three_tsl/sources.tsv` のとおり | 各作者 | `engine/community/three_tsl/fetch.sh` | `engine/community/three_tsl/*_target.patch`、`ics_tilt.patch` |
+| [BabylonJS/JsRuntimeHost](https://github.com/BabylonJS/JsRuntimeHost) の Node-API | 980cfb0 | MIT | `engine/community/three_tsl/jsrh_napi/build.sh` | `engine/deps/patches/jsruntimehost/` |
+| TSL の表現 48 か所 | `engine/community/three_tsl/sources.tsv` のとおり | 各作者 | `engine/community/three_tsl/fetch.sh` | `engine/deps/patches/shader-lab/`、`ics-creative/` |
 | [perfect_freehand](https://pub.dev/packages/perfect_freehand)（Brush の筆跡の輪郭。元は Steve Ruiz の perfect-freehand） | 2.5.2+1 | MIT（Copyright (c) 2021 Stephen Ruiz、2023 Adil Hanney） | `app/pubspec.yaml`（flutter pub get） | なし |
 | [AbsentMotion](https://github.com/Comett1225/AbsentMotion)（効果を WGSL にする元） | 0f5d891 | Apache-2.0 | `engine/absent.sh` | なし |
 | [OpenAI CLIP](https://github.com/openai/CLIP) ViT-B/32 の絵の読み手（棚の地図：効果のコマ）。ONNX にして `~/Library/Caches/Motolii/models/clip_b32.onnx` に置く | open_clip の `openai` の重み（ViT-B-32.pt） | MIT | `engine/deps/look_models.py`（読み込みは [open_clip](https://github.com/mlfoundations/open_clip)、MIT。書き出しは [PyTorch](https://github.com/pytorch/pytorch) の torch.onnx.export、BSD-3-Clause） | なし |

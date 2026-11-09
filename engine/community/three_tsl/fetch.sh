@@ -1,7 +1,7 @@
 #!/bin/zsh
 # The TSL collections in sources.tsv (name, repository, commit, licence, size), each fetched whole at its commit into
 # engine/third_party/tsl/<name>, as tvg_on_dawn.sh fetches ThorVG: git init, fetch that one commit, check it out.
-# Nothing in them is changed by the fetch. The host seams are applied after, from community/three_tsl/*.patch.
+# Nothing in them is changed by the fetch. The host seams are applied after, from deps/patches/<collection>/.
 #   ./community/three_tsl/fetch.sh            all of them        ./community/three_tsl/fetch.sh <name>   one
 set -e
 cd "$(dirname "$0")/../.."
@@ -16,9 +16,9 @@ done < community/three_tsl/sources.tsv
 # A host's point where the browser had a mouse, and tilt-shift's mix taken off the cube scene.
 # -N: already applied is fine.
 for spec in \
-  "basementstudio__shader-lab|community/three_tsl/slab_target.patch" \
-  "ics-creative__250916_threejs_fluids|community/three_tsl/ics_target.patch" \
-  "ics-creative__250423_vite_threejs_tsl|community/three_tsl/ics_tilt.patch"
+  "basementstudio__shader-lab|deps/patches/shader-lab/slab_target.patch" \
+  "ics-creative__250916_threejs_fluids|deps/patches/ics-creative/ics_target.patch" \
+  "ics-creative__250423_vite_threejs_tsl|deps/patches/ics-creative/ics_tilt.patch"
 do
   dir=${spec%%|*}
   p=${spec#*|}

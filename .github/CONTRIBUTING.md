@@ -41,7 +41,7 @@ GitHub の Actions は、台帳の確かめを毎回走らせます（`.github/w
 ### 4. 他の人の作品を入れる時
 - 作者のフォルダごと、なるべく手を入れずに置く。隣に作者のライセンスの文書（`LICENSE`）と、取ってきた所（`SOURCE.txt`：名前と作者／licence／from／page）。
 - 作者がライセンスの文書を出していない物は入れない（入れる代わりに、組み立ての時に作者の所から取る：`engine/deps/midi_roll.sh` が例）。
-- 手を入れる物は、元に当てる差分（`.patch`）に分けて、元は組み立ての時に作者の配布元から取る（`engine/gpu/tvg_on_dawn.sh` が例）。
+- 手を入れる物は、元に当てる差分（`.patch`）に分けて、元は組み立ての時に作者の配布元から取る（差分は `engine/deps/patches/<ライブラリ>/`、`engine/gpu/tvg_on_dawn.sh` が例）。
 - [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md) に行を足す。
 
 ## 手を付けやすい所

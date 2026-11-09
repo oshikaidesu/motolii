@@ -229,7 +229,7 @@
 | 60本以上の動画を同時に出せる：機械の読み係に空きが無い（M4 で59本）時は CPU の読み係（decodebin が vtdec を飛ばす）で読み、絵を毎コマ上げる。70本で1コマ 8.3 ms（60本は 5.4）、追加はどれも0.5秒未満。色の試験14本 yes。旧19番 | 10/16 | docs/reports/screen/films70.png |
 | AEの動き・AEの絵・マスク・ガラス・動画が、1本の書類の1つの場面で同時に動く（AE の星で動画を抜き、ガラスが回り、AE のアニメが動く）。旧5番 | 10/16 | docs/reports/show/together5.mp4 |
 | 普通の立体とガラスの立体も、型（AE の絵）で抜かれる側になれる（立体は抜かれる時だけ masked の材質 floor_lit_matte）。旧7番 | 10/16 | docs/reports/screen/matte_on_solids.png |
-| 曲がった道をゆっくり長く動く2Dレイヤーが道の長さどおりに進む：ThorVG の平面の道を3Dと同じ150本の弦で測る（4961px のアーチで 17px → 0.06px、なぞり計算）。AE の物差しは97本のまま。旧15番 | 10/16 | engine/gpu/thorvg_z.patch |
+| 曲がった道をゆっくり長く動く2Dレイヤーが道の長さどおりに進む：ThorVG の平面の道を3Dと同じ150本の弦で測る（4961px のアーチで 17px → 0.06px、なぞり計算）。AE の物差しは97本のまま。旧15番 | 10/16 | engine/deps/patches/thorvg/thorvg_z.patch |
 | 素材の音が絵と合って鳴り、書き出した動画にも入る（作業中は2〜14 ms のずれ、書き出しは5 ms以内）。旧21番 | 10/15 | engine/check/heard.sh、check/sound.sh |
 | 画面（見本の窓）の上で物を置いて、動かして、キーを打って、保存して、開き直せる。窓だけで手本の画が組める | 10/14 | docs/reports/skin_run/target2_puppet_from_the_window.jpg、窓の試験113本 |
 | Cavalry の定番の絵が2回押しで出る（15個、全部ループ、1000写しで60コマ毎秒） | 10/14 | docs/reports/skin_run/recipes15_reel.mp4 |

@@ -1,6 +1,6 @@
 #!/bin/zsh
 # A web effect's own renderer inside this process on Filament's Dawn device (js_effects.cpp): Motolii's QuickJS with
-# JsRuntimeHost's Node-API (community/three_tsl/jsrh_napi/build.sh made its sources), Dawn's dawn.node with dawn_lend.patch (out/wgpu).
+# JsRuntimeHost's Node-API (community/three_tsl/jsrh_napi/build.sh made its sources), Dawn's dawn.node with deps/patches/dawn/dawn_lend.patch (out/wgpu).
 # (libraries: the list gpu/kit_wgpu.sh links)
 #   ./gpu/js_effects.sh <preset.json> <w> <h> <frames> <out.rgba>
 set -e

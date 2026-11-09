@@ -39,7 +39,7 @@ GitHub Actions runs the ledger check on every push and pull request (`.github/wo
 4. **Bundling other people's work.**
    - Keep the author's folder as unchanged as possible, with their licence text (`LICENSE`) and where it came from (`SOURCE.txt`: name and author / licence / from / page) beside it.
    - Work whose author publishes no licence text is not bundled; fetch it from the author at build time instead (`engine/deps/midi_roll.sh` is an example).
-   - Changes to upstream code are kept as patches, applied to a pinned upstream at build time (`engine/gpu/tvg_on_dawn.sh` is an example).
+   - Changes to upstream code are kept as patches, applied to a pinned upstream at build time (patches in `engine/deps/patches/<library>/`; `engine/gpu/tvg_on_dawn.sh` is an example).
    - Add a row to [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md).
 
 ## Good first tasks
