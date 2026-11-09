@@ -13,6 +13,11 @@ NOT_IN_TABLE = {'app/macos'}                 # Flutter's own platform folder (`f
 NOT_COUNTED = ('shelves/', 'engine/third_party/')   # shelf contents and others' code (rule 6 counts own files only)
 NUMBERED = re.compile(r'_\d+\.[^/.]+$')
 SIZE_CHECK_EXT = re.compile(r'\.(dart|h|cpp|mm|js)$')  # size_check.py already refuses numbered names of these
+# a letter and a number for a name's head (s2_check.sh: "S2" of a table in docs/TESTING.md), which says nothing to one
+# who has not read that table; others' own names are theirs (p5: p5.js, p5js.org)
+LETTER_NUMBER = re.compile(r'^[A-Za-z]\d+(?=[_.-]|$)')
+OTHERS_NAMES = {'p5'}
+NOT_OURS = NOT_COUNTED + ('engine/out/', 'app/build/')
 LIMIT = 40
 
 
@@ -82,6 +87,17 @@ for p in added:
         continue
     if NUMBERED.search(p):
         bad.append(f'rule 5: {p}: a number is not a name; name the file after what is in it')
+
+# rule 5: a letter and a number is not a name either (every own file and folder, not only new ones)
+for p in files:
+    if p.startswith(NOT_OURS):
+        continue
+    for seg in p.split('/'):
+        m = LETTER_NUMBER.match(seg)
+        if m and m.group(0).lower() not in OTHERS_NAMES:
+            bad.append(f'rule 5: {p}: "{m.group(0)}" is a number in a list somewhere, not a name;'
+                       f' name it after what it does')
+            break
 
 # rule 6: at most 40 own files directly in one folder
 per_folder = Counter(p.rsplit('/', 1)[0] for p in files if '/' in p and not p.startswith(NOT_COUNTED))
