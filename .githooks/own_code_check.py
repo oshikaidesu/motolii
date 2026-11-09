@@ -27,6 +27,12 @@
 #      Now-done-by: PATH | NAME | nothing: WHY     where a person gets it now (a file here, a linked library), or why not
 #    (On 2026-11-10 a ledger of lines was met by deleting the stage, the timeline and the shelves' panels.)
 #
+# 0. THE SKETCH FIRST. Before a file of ours grows, the lines to be added are written as one wishes they could be
+#    (they need not run) and given to .githooks/what_exists.py --sketch SIDE FILE, which answers for every name they
+#    call (exists, something near, nothing) and keeps the answer. A file that got longer with no sketch asked is
+#    refused here, as the door (.claude/hooks/own_code_sign.py) refuses the edit. Only at a commit on this machine: CI
+#    cannot see what was asked.
+#
 # 3. THE LEAD'S WORD, for a worker. A session working in a worktree under .claude/worktrees/ may not leave a file of
 #    ours longer than it found it unless the lead has granted that file to that worktree. Asking is a round trip in
 #    which nothing of the worker's moves, and the lead refuses what could have been handed over; the free way asks no
@@ -277,6 +283,20 @@ with open(sys.argv[1], encoding='utf-8', errors='replace') as f:
 net = own_lines(git('diff', '--cached', '--numstat', '-M'), '')
 deleted = [l.split('\t', 1)[1] for l in git('diff', '--cached', '--name-status', '-M', '--diff-filter=D').splitlines() if '\t' in l]
 gone = taken_away('HEAD', '', deleted)
+def sketched(path):
+    """Was a sketch asked for this file (what_exists.py --sketch SIDE FILE keeps its answer in the shared git folder)?"""
+    kept = os.path.join(os.path.dirname(grants_file()), 'motolii-sketches', path.replace('/', '__'))
+    return os.path.exists(kept)
+
+
+unsketched = [p for p in LONGER if not sketched(p)]
+if unsketched:
+    print('own code check refused (rule: before a file of ours grows, a sketch is asked; .githooks/README.md):\n  '
+          + '\n  '.join(f'{p}: longer than it was, and no sketch was asked for it' for p in unsketched) +
+          '\nWrite the added lines as you wish they could be (they need not run) and ask what exists, a file at a time:\n'
+          '    python3 .githooks/what_exists.py --sketch dart|engine PATH < SKETCH\n'
+          'Use what exists or is near; only what comes back as nothing is ours to write. Then commit again.', file=sys.stderr)
+    sys.exit(1)
 ungranted = [p for p in LONGER if not granted(worker(), p)] if worker() else []
 if ungranted:
     print('own code check refused (rule: a worker lengthens a file of ours only on the lead\'s word; .githooks/README.md):\n  '
