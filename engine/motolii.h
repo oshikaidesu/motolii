@@ -49,6 +49,10 @@ int motolii_work_out(Motolii* m, const char* sum, double* is);     /* a sum type
 const char* motolii_trouble(Motolii* m);                           /* why the last call that was not done was not */
 
 const char* motolii_kind_of(const char* file);                     /* what kind of thing a file makes ("": none) */
+/* What an expression's each() returns, as places in its code (js_returned.cpp): a line for each property of the object it
+   returns, "name<TAB>start<TAB>end<TAB>numbers", start and end the bytes of its value (UTF-8, from 0, end past it),
+   numbers "start:end" for each number in that value, with spaces between. "": no each() returning an object. Any thread. */
+const char* motolii_js_returned(const char* src);
 int motolii_sets(const char* font, const char* words);             /* 1 if a text in that font file can be those words (any thread, while a document is open) */
 const char* motolii_font_lacks(const char* font, const char* words);   /* the letters of those words that font file has not, each once ("": none), then a tab and the font they are all drawn in instead (a text of them is: "" none has them all); any thread, until its next call */
 int motolii_type_picture(const char* font, const char* words, int w, int h, float most, unsigned char* grey);   /* those words in that font file white on black, as large as they fit (no larger than size most, when more than 0), w * h bytes (any thread, while a document is open); 0: not drawn */
