@@ -6,7 +6,7 @@
 // --track@depth:Depth,0.01,2,0.3,0.01
 // --track@smoothing:Smoothing,0,0.2,0,0.005
 // --check@lit:Lit,1
-import * as THREE from '../third_party/js/three/three.core.js';
+import * as THREE from '../../engine/third_party/js/three/three.core.js';
 import { faceUV } from '../../engine/community/js/face_uv.js';
 export function solid(k) {
     const pts2 = [], numPts = Math.round(k.points), r = k.size * k.h / 2;

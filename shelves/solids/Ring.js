@@ -4,7 +4,7 @@
 // --track@width:Width,0.05,0.95,0.35,0.01
 // --track@length:Length,0.05,2,0.28,0.01
 // --check@lit:Lit,1
-import * as THREE from '../third_party/js/three/three.core.js';
+import * as THREE from '../../engine/third_party/js/three/three.core.js';
 export function solid(k) {
     const outer = k.radius * k.h / 2;
     const inner = Math.max(outer * (1 - k.width), 0.01);
