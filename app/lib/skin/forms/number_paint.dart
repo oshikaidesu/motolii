@@ -18,7 +18,6 @@ class NumberSpec {
     this.fill,
     this.zeroAt = 0,
     this.bipolar = false,
-    this.editing = false,
     this.keyDot,
     this.keyEmpty = false,
     this.pad = 8,
@@ -34,7 +33,7 @@ class NumberSpec {
 
   /// 0..1 along a bounded field. Null: the field has no range, so no mark travels.
   final double? fill;
-  final bool bipolar, editing;
+  final bool bipolar;
   final Color fillColor, borderColor, rangeColor;
   final Color? keyDot;
 
@@ -57,8 +56,8 @@ Widget keyDiamond(Color colour, {bool empty = false}) => Transform.rotate(
 );
 
 /// The field as the window has drawn it: a filled well, a range along the bottom, the axis as a stripe.
-Widget usualNumber(BuildContext context, NumberSpec n) {
-  final shown = n.editing && n.editor != null ? n.editor! : n.value;
+Widget usualNumber(NumberSpec n) {
+  final shown = n.editor ?? n.value;
   return Container(
     height: n.height,
     decoration: BoxDecoration(

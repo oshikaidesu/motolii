@@ -91,7 +91,7 @@ flowchart TB
 | `aviutl_scripts/` | `document/recipes.h` `doc_aviutl_names` | — |
 | `create/` | `document/recipes.h` `doc_recipes_read` | — |
 | `expressions/` | `entry/calls.h` `motolii_animators` | — |
-| `relations/` | `entry/calls.h` `motolii_relations` | `workspace/edits/make_relation.dart` |
+| `relations/` | `entry/calls.h` `motolii_relations` | `workspace/inspector_feed/cards.dart` `wsRelations` |
 | `looks/` | `document/presets.h` `doc_look_names` | `bridge/motolii_shelves.dart` `looks` |
 | `solids/` | `community/three/solid_three.cpp`、`document/moment_fx.h` | — |
 | `ease/` | `document/recipes.h` `doc_own_ways` | — |

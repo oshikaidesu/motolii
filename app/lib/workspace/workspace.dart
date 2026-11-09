@@ -13,7 +13,6 @@ import '../inspector/inspector_parts.dart';
 import '../skin/theme.dart';
 import 'commands/keymap.dart';
 import '../bridge/motolii.dart';
-import 'edits/make_relation.dart';
 import 'state/state.dart';
 part 'inspector_feed/panel.dart';
 part 'inspector_feed/cards.dart';

@@ -54,8 +54,7 @@ extension MotoliiWrites on Motolii {
   /// A hand takes hold, without waiting (the window's way: refused, its let go says why).
   void take(int layer) => later('drag_start', layer: layer);
 
-  bool dragUpdate(String by, double a, [double b = 0]) =>
-      _with([by], (s) => _dragUpdate(_m, s[0], a, b)) != 0; // (sent, not waited for: what it carries shows in the moment's picture)
+  bool dragUpdate(String by, double a) => _with([by], (s) => _dragUpdate(_m, s[0], a, 0)) != 0; // (sent, not waited for: what it carries shows in the moment's picture)
 
   /// A change asked without waiting for the inside's hand (say, set, let_go, undo, redo, together): queued in order behind
   /// every other, its ticket said at once ([answer] says when it is done).

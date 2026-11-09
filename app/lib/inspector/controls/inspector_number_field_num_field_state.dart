@@ -464,7 +464,6 @@ class NumFieldState extends State<NumField> implements TextSelectionGestureDetec
               )
             : null;
         final body = usualNumber(
-          context,
           NumberSpec(
             value: valueText(),
             editor: editor,
@@ -477,7 +476,6 @@ class NumFieldState extends State<NumField> implements TextSelectionGestureDetec
             fill: _bounded && v != null ? t : null,
             zeroAt: _zeroAt,
             bipolar: _bounded && widget.bipolar,
-            editing: _editing,
             keyDot: _keyAt == null ? null : (ks == KeyS.at ? Accent.key : (ks == KeyS.anim ? Accent.key.withValues(alpha: .5) : Grey.g56)),
             keyEmpty: ks == KeyS.off,
             pad: Pop.tilePad,

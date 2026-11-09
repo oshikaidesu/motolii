@@ -41,4 +41,4 @@ class WsLayer {
 
 /// The window's state: the document's things (read again from the inside), what is picked, the moment.
 /// What of the window changed. [WsAspect.document]: the inside's picture of the document was read again.
-enum WsAspect { document, picked, playing, animating }
+enum WsAspect { document, picked, animating }

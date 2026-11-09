@@ -10,8 +10,7 @@
 | `state/` | どのパネルも読むアプリの状態。`state.dart` が入口（レイヤー `WsLayer`）、`window.dart` に `Ws`、`scope.dart` に `WsScope`、`picked.dart` 選ばれた物、`panel_header.dart` パネルの枠 |
 | `window/` | ウィンドウの枠：`zoom.dart` 画面全体の拡大、`settings_file.dart` `~/.motolii/window.xml`（倍率と着ているスキン） |
 | `commands/` | 名前の付いた操作と、それを言うキー・メニュー：`keymap.dart` キーの表（VS Code の keybindings.json の形）、`command_actions.dart` 各操作がアプリの状態にすること（キーは Ableton Live 12 の表から）、`menu_bar.dart` メニューバー |
-| `edits/` | 関係の種類 `wsRelations`（`make_relation.dart`） |
-| `inspector_feed/` | `workspace.dart` の部品：プロジェクトから Inspector（`../inspector/`）へ渡す物。`panel.dart` パネルとして読み直す時、`cards.dart` カード、`values.dart` 値の読み書き、`keyframe_marks.dart` 値の横のキーの印 |
+| `inspector_feed/` | `workspace.dart` の部品：プロジェクトから Inspector（`../inspector/`）へ渡す物。`panel.dart` パネルとして読み直す時、`cards.dart` カード（関係の種類 `wsRelations` もここ）、`values.dart` 値の読み書き、`keyframe_marks.dart` 値の横のキーの印 |
 
 ## 自分のプリセット（Ease の動き方）を足す
 プリセットは利用者の持ち物（スクリプトと同じ）。利用者のフォルダ（下の「利用者のフォルダ」）の `ease/` にファイルを 1 つ置くと、どのプロジェクトでも Ease のツールパネルにタイルで出る。Motolii が持って来る見本は `shelves/ease/`。式で使えるもの：`a`（前のキーの値）、`b`（次のキーの値）、`u`（区間の 0〜1）、`p1`〜`p4`（区間に付けた数）、`bezier(u, x1, y1, x2, y2)`。

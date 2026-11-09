@@ -136,7 +136,6 @@ class Ws {
     if (p) _inside?.at(frame / fps);
     _inside?.play(p); // (the inside keeps the clock; the playhead follows its moment)
     if (!p) _inside?.at(frame / fps); // (its clock runs ahead of a stage that is late with its pictures: stopped, it stands where the hand sees it)
-    _tell(WsAspect.playing);
   }
 
   /// How the window looks, by name ('fold.Transform'...): what a pane keeps of itself that is not the document's.

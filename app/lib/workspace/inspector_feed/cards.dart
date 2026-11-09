@@ -1,6 +1,9 @@
 // cards.dart: the inspector's cards, made from what the inside says a thing has (its cards, their values' ranges and looks, the kind's word).
 part of '../workspace.dart';
 
+/// Kinds of behaviour the engine treats as a relation. The inspector names one of these "Relation".
+const wsRelations = ['around', 'row', 'follow', 'push', 'group', 'relate'];
+
 /// Joined: the document's word for what a thing is, where the inspector's kinds have none (film, picture, solid).
 String? _kindWord(Ws ws, String? id) {
   final t = int.tryParse(id ?? ''), w = t == null ? '' : ws.inside?.word(t, 'kind') ?? '';
