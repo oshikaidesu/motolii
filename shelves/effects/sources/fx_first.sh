@@ -6,7 +6,7 @@
 # its own value toward its highest in tenths, and the first that is plainly seen (under 30 dB) is written to
 # first.tsv beside the effect, in its shelf folder (script.h script_first lays it over the file's own). A transition (a knob named progress, ISF's
 # way of saying one) is left as it is: its tile shows it going.   shelves/effects/sources/fx_first.sh   (Pillow and numpy)
-# Run by hand when effects are added; nothing builds it. (engine/fx_first.sh until 416fced3a.)
+# Run by hand when effects are added; nothing builds it. (in engine/ until 416fced3a.)
 cd "$(dirname "$0")/../../../engine"
 dir=$(mktemp -d)
 rm -f ../shelves/effects/*/first.tsv(N)   # (measured from the files' own values)

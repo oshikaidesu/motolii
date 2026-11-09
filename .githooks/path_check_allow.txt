@@ -1,0 +1,12 @@
+# What path_check.py lets resolve nowhere in the tree, on purpose: each a pattern (fnmatch, matched against the path as
+# resolved from the repository's root, or a bare module name as written) and, after #, why it is not in the tree.
+# Add one only for what is fetched or made at build time, or given by Motolii itself; never to quiet a moved file.
+playcanvas                    # given by engine/community/shaders/splatfx.cpp (splatfx_playcanvas), not a file
+*/gsplat-shader-effect.mjs     # given by engine/community/shaders/splatfx.cpp (splatfx_base), beside the effect that names it
+engine/third_party/tsl/*      # fetched by engine/community/three_tsl/fetch.sh; engine/.gitignore keeps third_party/* out
+engine/out/*                  # what the builder writes while it runs (AGENTS.md 構成の目標 4)
+qjs:*                         # QuickJS's own modules (qjs:std, qjs:os), in the runner, not files
+engine/third_party/AbsentMotion*   # fetched by engine/gpu/kit_wgpu.sh (and absent.sh); engine/.gitignore keeps third_party/* out
+engine/third_party/skia_src*  # fetched by engine/deps/skia.sh; engine/.gitignore keeps third_party/* out
+app/src/main/*                # inside AbsentMotion's checkout (an Android app/), named by heads as where a file was made from
+docs/ALIGHT_COMPATIBILITY.md  # inside AbsentMotion's checkout, named by scatter_repeat.am's head

@@ -4,7 +4,7 @@
 # from engine/third_party/skia_src (deps/skia.sh's checkout, a build of its own: out/sksl); each of its SkSL effects made
 # an effect file am_<id>.wgsl (or am_<id>.am, its knobs alone) by from_absent.py beside this. Each goes back into the
 # folder its last one was in; a new one into effects/ itself, printed, to be sorted by hand as f8925af9c sorted them.
-# Prints how many were made and why the rest were not. Run by hand; nothing builds it. (engine/absent.sh until 416fced3a.)
+# Prints how many were made and why the rest were not. Run by hand; nothing builds it. (in engine/ until 416fced3a.)
 #   shelves/effects/sources/absent.sh   (ninja from Homebrew: Tint's build asks ninja for -t inputs)
 cd "$(dirname "$0")/../../../engine"
 A=third_party/AbsentMotion K=third_party/skia_src E=${PWD:h}/shelves/effects W=$(mktemp -d)   # (W: its steps on the way)
