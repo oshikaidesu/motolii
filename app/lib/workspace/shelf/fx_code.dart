@@ -54,7 +54,7 @@ class FxCode extends StatefulWidget {
     return best?.$1;
   }
 
-  /// Its card's title, as the engine names an effect file's (doc_recipes.h doc_fx_title): one put on again ("Glow~2.fs")
+  /// Its card's title, as the engine names an effect file's (doc_cards.h doc_fx_title): one put on again ("Glow~2.fs")
   /// its original's and its number; an ISF's its file's name (isf.cpp heads the WGSL it makes so); another's the name
   /// its first line says ("// Repeater: …"), else its file's name, a space for each _, its first letter large.
   static String titleOf(String w) {

@@ -164,7 +164,7 @@ static bool doc_set(Doc& d, int thing, const char* name, double is) {
 }
 static bool doc_put(Doc& d, int thing, const char* name, double at, double is);
 static std::string doc_recipe_code_path(const std::string& name);   // (doc_recipes.h: the file of the recipe with code that is called so; none: "")
-static bool doc_fx_say(Doc& d, int thing, const std::vector<std::string>& list);   // (doc_recipes.h: its effects said in this order)
+static bool doc_fx_say(Doc& d, int thing, const std::vector<std::string>& list);   // (doc_fx_put.h: its effects said in this order)
 static bool doc_say(Doc& d, int thing, const char* name, const char* word) {
     if (!strcmp(name, "script") && word && *word && !strchr(word, '/')) {   // (a script said by the name of a recipe: its file, so a preset or a tile says "Repeater" and no path)
         if (const std::string file = doc_recipe_code_path(word); !file.empty()) return doc_say(d, thing, name, file.c_str());

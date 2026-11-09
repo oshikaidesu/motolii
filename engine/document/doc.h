@@ -42,6 +42,10 @@
 #include "document/doc_match.h"   // (the stage made again as the document says; its file opened, changed, undone)
 #include "document/doc_edit.h"   // (things added, freed, related, led; keys and values put)
 #include "document/doc_recipes.h"   // (recipes)
+#include "document/doc_cards.h"   // (a thing's values as a shell lists them: names, words, ranges, cards)
+#include "document/doc_fx_put.h"   // (effects put on a thing, moved in its list, taken off)
+#include "document/doc_ways_put.h"   // (a key taken off, and the ways from a key to the next)
+#include "document/doc_shown.h"   // (what a shell reads to draw its lists, and where a thing is seen on the picture)
 #include "document/doc_door.h"   // (code from the net)
 #include "document/doc_looks.h"   // (a thing's look kept and given to another)
 extern "C" {
