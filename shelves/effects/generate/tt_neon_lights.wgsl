@@ -1,4 +1,4 @@
-// Neon Lights: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/tsl/textures_shelf.ts)
+// Neon Lights: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)
 // --label:Generate
 // --about:This texture generates plasma-like neon ligts. It overlaps
 // --track@mode:Mode,0,1,0,1

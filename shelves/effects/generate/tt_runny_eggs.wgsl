@@ -1,4 +1,4 @@
-// Runny eggs: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/tsl/textures_shelf.ts)
+// Runny eggs: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)
 // --label:Generate
 // --about:This texture imitates runny eggs. The calculation of this texture is heavy,
 // --track@colorYolk_x:Color Yolk r,0,1,1,0.001

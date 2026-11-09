@@ -32,7 +32,7 @@ static SketchPaint doc_sketch_paint(Stage& s, const std::string& text, const std
     const std::string stem = (made / std::to_string(std::hash<std::string>{}(text))).string();
     if (!std::filesystem::exists(stem + ".filamat")) {
         std::ofstream(stem + ".mat") << text;
-        const std::string matc = (doc_folders("third_party/filament_src/out/wgpu_install/bin").front() / "matc").string();
+        const std::string matc = (doc_engine("third_party/filament_src/out/wgpu_install/bin") / "matc").string();
         if (std::system(("'" + matc + "' -a webgpu -a metal -p desktop -o '" + stem + ".filamat' '" + stem + ".mat' > '" + stem + ".log' 2>&1").c_str()) != 0) {
             std::ifstream log(stem + ".log");
             std::fprintf(stderr, "a sketch's shader did not compile: %s\n", std::string(std::istreambuf_iterator<char>(log), {}).c_str());
@@ -109,7 +109,7 @@ static void doc_sketch_mesh(Doc& d, int thing, Doc::Shown& t, double now) {
         const std::vector<uint8_t> said = sc->run->bytes("__mesh_pic(" + std::to_string(i) + ")");
         if (said.size() < 4 * sizeof(float)) break;
         const float* p = (const float*)said.data();
-        Drawn* pic = sketch_texture(s, sc->run.get(), (doc_folders("third_party/filament_src/assets/fonts").front() / "Roboto-Medium.ttf").string(), (int)i, (int)p[0], (int)p[1]);
+        Drawn* pic = sketch_texture(s, sc->run.get(), (doc_engine("third_party/filament_src/assets/fonts") / "Roboto-Medium.ttf").string(), (int)i, (int)p[0], (int)p[1]);
         t.sketchPics.push_back(pic);
         if (!pic) continue;
         constexpr TextureSampler::WrapMode wraps[] = {TextureSampler::WrapMode::CLAMP_TO_EDGE, TextureSampler::WrapMode::REPEAT, TextureSampler::WrapMode::MIRRORED_REPEAT};

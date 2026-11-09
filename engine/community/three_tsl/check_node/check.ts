@@ -24,14 +24,14 @@ Object.assign(globalThis, {
   getComputedStyle: () => ({ getPropertyValue: (v: string) => ({ "--geist-sans": '"Geist Sans"', "--geist-mono": '"Geist Mono"', "--bsmnt-grotesque": '"BSMNT Grotesque"' } as any)[v] ?? "" }),
 })
 {
-  const fonts = "../../third_party/tsl/basementstudio__shader-lab/packages/shader-lab-react/assets/fonts/"
+  const fonts = "../../../third_party/tsl/basementstudio__shader-lab/packages/shader-lab-react/assets/fonts/"
   for (const [file, family] of [["Geist-Sans-VF.woff2", "Geist Sans"], ["Geist-Mono.woff2", "Geist Mono"], ["BasementGrotesqueVF.woff2", "BSMNT Grotesque"]])
     NapiCanvas.GlobalFonts.registerFromPath(fonts + file, family)
 }
 const THREE: any = await import("three/webgpu")
 const TSL: any = await import("three/tsl")
-const { createHeadlessRenderer } = await import("../../third_party/tsl/basementstudio__shader-lab/packages/shader-lab-react/src/renderer/create-headless-renderer")
-const { buildRendererFrame } = await import("../../third_party/tsl/basementstudio__shader-lab/packages/shader-lab-react/src/renderer/contracts")
+const { createHeadlessRenderer } = await import("../../../third_party/tsl/basementstudio__shader-lab/packages/shader-lab-react/src/renderer/create-headless-renderer")
+const { buildRendererFrame } = await import("../../../third_party/tsl/basementstudio__shader-lab/packages/shader-lab-react/src/renderer/contracts")
 import * as fs from "node:fs"
 
 const [layersFile, pictureFile, W, H, outFile] = process.argv.slice(2)
@@ -62,7 +62,7 @@ picture.needsUpdate = true
 // ICS tilt-shift (webgpu-tiltshift.ts tiltShiftColor): their mix, fed this picture instead of the cube scene.
 // TARGET's y is the sharp line.
 if (layersFile === "tilt-shift") {
-  const { tiltShiftColor } = await import("../../third_party/tsl/ics-creative__250423_vite_threejs_tsl/src/tilt-shift-color.ts")
+  const { tiltShiftColor } = await import("../../../third_party/tsl/ics-creative__250423_vite_threejs_tsl/src/tilt-shift-color.ts")
   const focus = process.env.TARGET ? +process.env.TARGET.split(",")[1] : 0.5
   const target = new THREE.RenderTarget(w, h, { type: THREE.UnsignedByteType })
   const material = new THREE.MeshBasicNodeMaterial()
@@ -82,8 +82,8 @@ if (layersFile === "tilt-shift") {
 }
 
 // a list of types ("bloom,ascii") makes each a new layer with its definition's own defaults, as createLayer does
-const { getLayerDefinition } = await import("../../third_party/tsl/basementstudio__shader-lab/src/lib/editor/config/layer-registry")
-const { buildParameterValues } = await import("../../third_party/tsl/basementstudio__shader-lab/src/lib/editor/parameter-schema")
+const { getLayerDefinition } = await import("../../../third_party/tsl/basementstudio__shader-lab/src/lib/editor/config/layer-registry")
+const { buildParameterValues } = await import("../../../third_party/tsl/basementstudio__shader-lab/src/lib/editor/parameter-schema")
 const layers = layersFile.endsWith(".json") ? JSON.parse(fs.readFileSync(layersFile, "utf8")) : layersFile.split(",").map((type: string) => {
   const d: any = getLayerDefinition(type as any)
   // (KNOB=key=value: one of its values moved; a list's by its place in the list, as the shelf's whole-number knob says it)

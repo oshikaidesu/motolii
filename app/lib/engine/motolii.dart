@@ -346,7 +346,7 @@ class Motolii {
     if (which & 7 != 0) told?.call(document: which & 1 != 0, moment: which & 2 != 0, kept: which & 4 != 0);
   }
 
-  /// A change the window waited for (docs/app/BRIDGE.md C3, going): its pictures taken at once, as the inside made them
+  /// A change the window waited for (docs/internal/reports/window/bridge_rework_2026-10-24.md C3, going): its pictures taken at once, as the inside made them
   /// before it answered.
   T _took<T>(T answer) {
     _take(3);

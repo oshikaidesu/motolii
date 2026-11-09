@@ -22,10 +22,10 @@
 561 engine/document/doc_place.h
 754 engine/document/doc_recipes.h
 674 engine/document/doc_values.h
-580 engine/stage/drawn_kept.h
-631 engine/stage/drawn_made.h
-510 engine/stage/kit_stage.h
-514 engine/stage/kit_things.h
+580 engine/stage/drawn/drawn_kept.h
+631 engine/stage/drawn/drawn_made.h
+510 engine/stage/kit/kit_stage.h
+514 engine/stage/kit/kit_things.h
 793 engine/library/motolii_calls.h
 615 engine/library/motolii_hand.h
 529 shelves/recipes/on_film/Blob Track.js

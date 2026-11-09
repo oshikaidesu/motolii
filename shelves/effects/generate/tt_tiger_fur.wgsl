@@ -1,4 +1,4 @@
-// Tiger fur: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/tsl/textures_shelf.ts)
+// Tiger fur: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)
 // --label:Generate
 // --track@scale:Scale,0,4,2,0.04
 // --track@lengths:Lengths,0,20,4,0.1

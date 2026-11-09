@@ -5,20 +5,20 @@ A design-system document for a coding agent, in the nine-section format of
 Scope is **one panel: the Timeline** of Motolii (a dark, dense motion-graphics editor, Flutter, desktop).
 
 How to read the values below. Each is tagged:
-- `[code]` read from Motolii's source (`motolii/ui/lib/theme/metrics.dart`, `neutral.dart`, `identity.dart`, `timeline/timeline.dart`)
+- `[code]` read from the old Motolii's source, not this repository (`motolii/ui/lib/theme/metrics.dart`, `neutral.dart`, `identity.dart`, `timeline/timeline.dart`)
 - `[concept]` measured on Motolii's concept art (`north-star-dark.png`, 1536 px wide; 1 art px = 1 logical px) and kept because it holds across the whole picture
 - `[decided]` chosen by the owner in review on 2026-10-01/02
 - `[open]` not decided. Do not invent a value: show 2-3 options and ask.
+
+`research/…` below is the design-sense-lab's folder; it is not in this repository.
 
 Concept art has generation noise (a line that is dark here and light there, a key that is blurred). **Never copy a detail that is inconsistent within the art.** Copy only what holds everywhere.
 
 ---
 
-## 0. Goal `[decided]` (owner, 2026-10-02)
+## 0. Where the values live
 
-Discover, and prove by real operation in the Widgetbook, a Motolii production experience in which a person can try an idea as an image and turn it into a work by the shortest path, without being blocked by searching or by UI operation. Not a recreation of existing tools, not a completion of the old Motolii, not 'a finished Browser'. The users' habitual motions (手癖, muscle memory from AE/Ableton/Blender etc.) are respected: the Browser/Inspector/Stage/Timeline split is NOT to be broken on principle (owner withdrew that stance on 2026-10-02 as too strong); a change to it needs strong evidence from real operation. AE extensions, Ableton, Blender, Cavalry, Figma etc. are material for finding real problems and proven solutions.
-Done when representative production workflows can be run start to finish in the Widgetbook alone and, in real operation (not stills): things are found fast; trying before/after placing is quick; the next operation on a selection is reachable fast; values can be touched directly without remembering numbers; many things are handled together; animation / relation / difference / state are never hidden; part of a thing can be copied, reused or applied; it holds with very many assets/effects/properties; results are predictable and trying then undoing is not scary; first-time discoverable and faster with practice. Deliverable: an interactive prototype that shows how to make work in Motolii. Porting to production is a separate later phase.
-Decision order: the user's convenience, real production workflows, good precedents, consistency across Motolii. The old Motolii is only a source of problems noticed; implementation cost does not decide UX.
+These are the default (Dark) look of today's window. The code is `app/lib/style/tokens.dart`: `N` the fixed greys, `Grey` the same greys as the skin sets them, `Fam` the family colours, `C.playhead`, `T` the type styles and `Shape` the sizes (the names `H`, `Dn` and `Surface` below are the lab's; they became `C`, `T` and `Shape`). A skin can change any of them: [skins/README.md](skins/README.md). The goal the lab worked to (2026-10-02, a Widgetbook prototype) is kept in [the lab's record](../internal/reports/window/design_lab_overview_2026-10-02.md).
 
 ## 1. Visual Theme & Atmosphere
 
@@ -95,7 +95,7 @@ Relation families (bar colour = family `.t`, the Timeline tone) `[code]`
 - Tiles and thumbnails: a 1px accent outline.
 - Text never goes below 10px; dim text on a dark ground is lifted to g56 at the least, but dark ink on a light fill (the playhead head, a flag) is left alone.
 
-**Symbols are few (owner, 2026-10-02) `[decided]`.** More symbols make the screen cluttered. The lab keeps one small, fixed set of line glyphs (`book/lib/parts/glyphs.dart`, 15 now). A new glyph needs a reason that no existing glyph, a word, or a position/colour change can carry. State is shown by position, grey level or a word before it is shown by a new mark. Motolii's 49 glyphs are NOT the target: they are folded into this small set (several into one), and some become plain words.
+**Symbols are few (owner, 2026-10-02) `[decided]`.** More symbols make the screen cluttered. The lab keeps one small, fixed set of line glyphs (`app/lib/parts/glyphs.dart`, 15 now). A new glyph needs a reason that no existing glyph, a word, or a position/colour change can carry. State is shown by position, grey level or a word before it is shown by a new mark. Motolii's 49 glyphs are NOT the target: they are folded into this small set (several into one), and some become plain words.
 
 **The old Motolii is a counter-example, not a source (owner, 2026-10-02) `[decided]`.** Nothing of the old Motolii's UI is imported, and its UX is not copied either. It is studied only to learn what NOT to do (`research/old-motolii-complaints.md`, `research/anti-patterns.md`). This design (the lab) is the only reference for how Motolii looks and feels. What the product must be able to do (capabilities) comes from the product's purpose and from shipped precedents (After Effects, Ableton), never from how the old UI happened to do it.
 

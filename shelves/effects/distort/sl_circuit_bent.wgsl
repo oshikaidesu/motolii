@@ -1,4 +1,4 @@
-// Circuit Bent: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/tsl/shader_lab_shelf.ts)
+// Circuit Bent: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_tsl/shader_lab_shelf.ts)
 // --label:Distort
 // --about:Turns the image into scanlines and bends them around a point that pulls or pushes.
 // --check@colorMode:Color Mode,0

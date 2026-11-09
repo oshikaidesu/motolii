@@ -1,6 +1,6 @@
 // motolii_hand.h: part of motolii.mm. Read only through motolii.mm.
 #include <CoreText/CoreText.h>
-#include "stage/kit.h"
+#include "stage/kit/kit.h"
 #include "document/doc.h"
 #include "stage/live.h"
 #include "stage/stage_kept.h"

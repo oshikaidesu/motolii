@@ -1,4 +1,4 @@
-// Wood: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/tsl/textures_shelf.ts)
+// Wood: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)
 // --label:Generate
 // --about:This texture attempts imitate the pattern of wood. Click on
 // --track@scale:Scale,1,4,2.5,0.03

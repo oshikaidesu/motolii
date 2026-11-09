@@ -1,4 +1,4 @@
-// Erosion: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/tsl/shader_lab_shelf.ts)
+// Erosion: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_tsl/shader_lab_shelf.ts)
 // --label:Distort
 // --about:Crumbles the image into speckle along edges, tones or a cutout's border, throwing fragments outward.
 // --track@mode:Erode From,0,3,0,1

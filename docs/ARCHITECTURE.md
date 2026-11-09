@@ -43,11 +43,11 @@ flowchart TB
 
 | 境目 | どこ | 決まり |
 |---|---|---|
-| 窓の入口 | `app/lib/main.dart`（Widgetbook。`--dart-define=LAB_ROUTE=/?path=workspace/workspace/live` で本物の窓）→ `app/lib/workspace/workspace.dart`（`Workspace`：窓の全体、書類を開く、メニュー）。窓の状態は `lib/workspace/ws.dart`（`Ws`） | パネルを足す入口は `lib/workspace/door.dart`（[`app/lib/workspace/README.md`](../app/lib/workspace/README.md)） |
-| 窓 → 中身 | `engine/library/motolii.h`（約 230 行）、Dart 側は `app/lib/engine/motolii.dart` と ffigen が作る `motolii_bindings.dart` | 窓は値を持たない。読むのも変えるのも C の呼び出しで、書類が正（窓と中身の境目の決まりは [`docs/app/BRIDGE.md`](../docs/app/BRIDGE.md)） |
-| 中身の中 | `engine/library/motolii_hand.h` | 書類と GPU に触るのは 1 本のスレッドだけ。呼び出しはそのスレッドに頼んで待つ（`by_hand`） |
+| 窓の入口 | `app/lib/main.dart` → `app/lib/workspace/workspace.dart`（`Workspace`：窓の全体、書類を開く、メニュー）。窓の状態は `app/lib/workspace/ws_state.dart`（`Ws`） | 窓のファイルの地図は [`app/README.md`](../app/README.md)。パネルを足すのは `Workspace` の `extra`（`WsPane` の並び） |
+| 窓 → 中身 | `engine/library/motolii.h`（約 260 行）、Dart 側は `app/lib/engine/motolii.dart` と ffigen が作る `motolii_bindings.dart` | 窓は値を持たない。読むのも変えるのも C の呼び出しで、書類が正（窓と中身の境目の決まりは [`docs/app/BRIDGE.md`](../docs/app/BRIDGE.md)） |
+| 中身の中 | `engine/library/motolii_hand.h` | 書類と GPU に触るのは 1 本のスレッドだけ。窓はこのスレッドを待たない：書きは列に積んで戻り、読むのはこのスレッドが作った写し（[`docs/app/BRIDGE.md`](app/BRIDGE.md) の決まり 1・3・6）。待つ呼び出し（`by_hand`）は試験と C の確かめの道具だけ |
 | 中身 → 窓（絵） | `engine/stage/live.h` | 場面は IOSurface の上の CVPixelBuffer 3 枚に描き、それを Dawn のテクスチャとして Filament の描き先にする。窓（Flutter の外部テクスチャ、`app/macos/Runner/MainFlutterWindow.swift`）は同じ物を読む |
-| 借りた物 | `engine/gpu/*.patch`、`engine/tsl/*.patch` | 人のコードは直接いじらず、版を固定して取ってきて差分を当てる（[`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md) の 2 節） |
+| 借りた物 | `engine/deps/patches/<ライブラリ>/` | 人のコードは直接いじらず、版を固定して取ってきて差分を当てる（[`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md) の 2 節） |
 
 ## 描く
 
@@ -63,13 +63,13 @@ flowchart TB
 | ISF（`.fs`、GLSL） | glslang → SPIR-V → Tint → WGSL。Filament の組み立てに入っている物をそのまま使う | `engine/community/shaders/isf.cpp` |
 | WGSL（`.wgsl`） | そのまま。頭に AviUtl2 式のつまみの行。横に置いた絵は `--image@名前:ファイル` で ThorVG が 1 回読む | `engine/stage/screen.h`、`thing_fx.h` |
 | AviUtl2（`.anm2`・`.obj2`） | Lua は LuaJIT（AviUtl2 と同じ）で走らせ、`obj` の呼び出しを中身の物で受ける。中の HLSL は glslang の HLSL の読み手 → SPIR-V → Tint → WGSL | `engine/community/aviutl/aviutl.cpp`、`aviutl_fx.h` |
-| three.js の形（`solids/*.js`） | QuickJS-ng で three.js を動かし、BufferGeometry を受け取る | `engine/community/js/solid_three.cpp` |
-| レシピ（`recipes/*.js`） | QuickJS-ng。1 回で物と値を作る | `engine/community/js/script.cpp` |
-| TSL | three.js 自身の WGSLNodeBuilder を QuickJS で（道具。棚に載せるのは出来上がった `.wgsl` だけ） | `engine/tsl/`、`shelves/effects/sl_*.wgsl`、`tt_*.wgsl`、`nf_*.wgsl`、`tf_*.wgsl` |
+| three.js の形（`shelves/solids/*.js`） | QuickJS-ng で three.js を動かし、BufferGeometry を受け取る | `engine/community/js/solid_three.cpp` |
+| レシピ（`shelves/recipes/*/*.js`） | QuickJS-ng。1 回で物と値を作る | `engine/community/js/script.cpp` |
+| TSL | three.js 自身の WGSLNodeBuilder を QuickJS で（道具。棚に載せるのは出来上がった `.wgsl` だけ） | `engine/community/three_tsl/`、`shelves/effects/<傾向>/` の `sl_*.wgsl`・`tt_*.wgsl`・`nf_*.wgsl`・`tf_*.wgsl` |
 
 ## 書類
 
-- 1 つの `.motolii` は SQLite のファイル。物・値・キー・キーの間の動き方（式、SQLite の関数 `bezier()`・`anime()`）を表に持つ（`engine/doc*.h`）。
+- 1 つの `.motolii` は SQLite のファイル。物・値・キー・キーの間の動き方（式、SQLite の関数 `bezier()`・`anime()`）を表に持つ（`engine/document/doc*.h`）。
 - 取り消しは、変更を `step` の表に積む（`doc_match.h`）。
 - 物の種類：film・picture・text・solid・shape・camera・light・behaviour（`edit.cpp` の `help`）。
 
@@ -77,7 +77,7 @@ flowchart TB
 
 - 動画は **GStreamer** が読み（何の形式でも、GStreamer が部品を選ぶ）、絵を板に貼る（`engine/media/video.h`、`gst_read.h`）。
 - 作業中の音は GStreamer の playbin（`sound.h`）。
-- 書き出しは、場面を 1 秒 60 枚描いて **ffmpeg** に渡し、物の音も ffmpeg で混ぜる（`engine/stage/kit_draw.h` の `film`）。
+- 書き出しは、場面を 1 秒 60 枚描いて **ffmpeg** に渡し、物の音も ffmpeg で混ぜる（`engine/stage/kit/kit_draw.h` の `film`）。
 
 ## 言葉
 

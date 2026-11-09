@@ -1,4 +1,4 @@
-// Protozoa: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/tsl/textures_shelf.ts)
+// Protozoa: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)
 // --label:Generate
 // --about:This texture generates a pool full of [protozoa organisms](https://en.wikipedia.org/wiki/Protozoa).
 // --track@scale:Scale,0,4,1.5,0.04

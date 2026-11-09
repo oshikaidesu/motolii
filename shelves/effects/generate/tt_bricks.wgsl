@@ -1,4 +1,4 @@
-// Bricks: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/tsl/textures_shelf.ts)
+// Bricks: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)
 // --label:Generate
 // --about:This texture recreates various bricks wall &ndash; mossy bricks, Manchester red
 // --track@scale:Scale,0,4,2,0.04

@@ -1,4 +1,4 @@
-// Perlin noise: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/tsl/textures_shelf.ts)
+// Perlin noise: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)
 // --label:Generate
 // --about:This texture renders [Perlin noise](https://en.wikipedia.org/wiki/Perlin_noise)
 // --track@scale:Scale,0,4,2,0.04
