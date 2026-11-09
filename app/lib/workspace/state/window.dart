@@ -40,8 +40,6 @@ class Ws extends ChangeNotifier {
     _ink = kept['ink'] ?? '';
     _edge = kept['edge'] ?? '';
     _inkBlend = kept['ink_blend'] ?? '';
-    _titleFont = kept['title_font'] ?? '';
-    _bodyFont = kept['body_font'] ?? '';
   }
 
   /// Joined: the document's name, and how the window is told to open it again at another size (the host does it).
@@ -71,17 +69,6 @@ class Ws extends ChangeNotifier {
     if (now != was) _inside?.later('setting', name: name, word: now);
     return now;
   }
-
-  /// The fonts a title and a body text are set in as they are added, and which of the two the Fonts shelf sets now:
-  /// PowerPoint's theme fonts (Headings and Body, a text box in Body), Canva's brand fonts (a heading's, a body's).
-  /// '': the usual one (golf_noise.md ㉚). Kept with the document, as a PowerPoint file keeps its theme's fonts (golf (90)).
-  String _titleFont = '', _bodyFont = '', fontRole = 'title';
-  String get titleFont => _titleFont;
-  set titleFont(String v) => _titleFont = _kept('title_font', _titleFont, v);
-  String get bodyFont => _bodyFont;
-  set bodyFont(String v) => _bodyFont = _kept('body_font', _bodyFont, v);
-  String get bodyFace => bodyFont.isEmpty ? wsTextFont : bodyFont;
-  String get titleFace => titleFont.isEmpty ? bodyFace : titleFont;
 
   String? _notice;
   String? get notice => _notice;
@@ -127,15 +114,6 @@ class Ws extends ChangeNotifier {
 
   /// Where a bar ends, in frames: a thing on for good runs to the document's end.
   static int _outF(int from, double lasts) => lasts < 0 ? duration : (from + (lasts * fps).round()).clamp(from + 1, duration);
-
-  /// One thing's bar read again from the inside (while a hand carries it: what the inside says is what is drawn).
-  void respan(String id) {
-    final m = _inside, l = layers.where((l) => l.id == id).firstOrNull, t = int.tryParse(id);
-    if (m == null || l == null || t == null) return;
-    l.inF = ((m.value(t, 'start', 0) ?? 0) * fps).round();
-    l.outF = _outF(l.inF, m.lasts(t));
-    shown();
-  }
 
   bool _gone = false;
   final seen = ValueNotifier<int>(0);
@@ -454,14 +432,7 @@ class Ws extends ChangeNotifier {
   /// and DaVinci Resolve's Live Preview the one under the pointer (the inside's carry: doc_carry_effect). Nothing picked,
   /// nothing shown. Let go before any put, the put reading the document as it is.
   bool _trying = false;
-  String timecode([int? f]) {
-    final v = f ?? frame, s = v ~/ fps, fr = v % fps;
-    return '${(s ~/ 60).toString().padLeft(2, '0')}:${(s % 60).toString().padLeft(2, '0')}:${fr.toString().padLeft(2, '0')}';
-  }
 }
-
-/// The font a new text is set in, a font every machine of its kind has (one place: the Create shelf and the stage's tool).
-final wsTextFont = Platform.isWindows ? 'C:/Windows/Fonts/arial.ttf' : '/System/Library/Fonts/Supplemental/Arial Unicode.ttf';
 
 /// The chosen inks said to the thing just added (thing -1), wherever it was added from (P03: put after the key colours
 /// are chosen, it comes in them; the stage's drawing gave them, the Fonts and Create shelves did not: golf_noise.md ㉛).

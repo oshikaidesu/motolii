@@ -1,17 +1,9 @@
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 
 import '../../skin/tokens.dart';
 import '../inspector_parts.dart';
 
-// ---- 5. sections and rows -------------------------------------------------------------------------------------------
-class Rule extends StatelessWidget {
-  const Rule({super.key});
-  @override
-  Widget build(BuildContext context) => Container(height: 1, color: const Ed().rule);
-}
-
-/// A card's fold mark: points right when folded, down when open, so a card that can fold says so before it is touched.
+/// A card's fold mark: points right when folded, down when open.
 class FoldMark extends StatelessWidget {
   const FoldMark({super.key, required this.open, this.hot = false});
   final bool open, hot;
@@ -43,11 +35,6 @@ class _FoldPaint extends CustomPainter {
   bool shouldRepaint(_FoldPaint o) => o.ink != ink;
 }
 
-/// The Pop card behind [Sect]: every titled card folds (its own toggle, or a per-title flag), untitled ones never do.
-/// Folded, a card is one line that still says what it holds: its colour, its name, a key dot if anything in it is animated, and its values in brief.
-/// Folded summaries all start here, so a closed stack reads as a two-column list: what, then how much.
-const briefX = 136.0;
-
 class RowInfo extends InheritedWidget {
   const RowInfo({super.key, required this.unit, required this.keys, required super.child});
   final String? unit;
@@ -56,4 +43,3 @@ class RowInfo extends InheritedWidget {
   @override
   bool updateShouldNotify(RowInfo old) => old.unit != unit || old.keys != keys;
 }
-

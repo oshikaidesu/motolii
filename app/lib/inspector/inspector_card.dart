@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 
 import '../skin/tokens.dart';
 import 'inspector_parts.dart';
@@ -27,10 +26,13 @@ class ValuesCard extends StatelessWidget {
     final rest = [for (final p in card.params) if (p.advanced) p];
     return PastRange(
       flag: '$k.past',
-      child: Sect(
-        title: card.name,
-        tone: card.tone,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Padding(
+            padding: EdgeInsets.only(bottom: Shape.s(4)),
+            child: Text(card.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(card.tone)),
+          ),
           ParamGrid('v', heroes),
           if (rest.isNotEmpty) ...[
             Hov(

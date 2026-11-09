@@ -4,7 +4,6 @@
 // what you touch or read round, colour flat and opaque, one lime accent, each kind of thing wearing its own hue.
 import 'dart:async' show Timer;
 import 'dart:developer' show Timeline, TimelineTask;
-import 'dart:io' show Platform;
 import 'dart:math' as math;
 
 import 'package:flutter/scheduler.dart';

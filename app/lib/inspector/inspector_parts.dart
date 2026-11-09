@@ -7,7 +7,6 @@ import '../skin/theme.dart';
 import '../skin/tokens.dart';
 import 'inspector_state.dart';
 
-export 'inspector_badges.dart';
 export 'inspector_choosers_header.dart';
 export 'inspector_card.dart';
 export 'controls/inspector_number_field.dart';
