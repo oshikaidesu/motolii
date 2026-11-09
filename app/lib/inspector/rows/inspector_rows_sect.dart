@@ -1,4 +1,4 @@
-// A group: a heading and its rows. How groups are told apart is the Editorial knob: A a rule above, B a grey step, C a rule under a large heading.
+// A group: a heading and its rows, with a rule above the group after the first.
 import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/forms/forms.dart';
@@ -6,7 +6,7 @@ import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook;
 
-/// A group: a heading and its rows. How groups are told apart is the Editorial knob: A a rule above, B a grey step, C a rule under a large heading.
+/// A group: a heading and its rows, with a rule above the group after the first.
 class Sect extends StatelessWidget {
   const Sect({
     super.key,
@@ -20,7 +20,6 @@ class Sect extends StatelessWidget {
     this.dim = false,
     this.sub = false,
     this.tone,
-    this.mark,
     this.brief = const [],
     this.keyIds = const [],
     this.headWrap,
@@ -33,7 +32,6 @@ class Sect extends StatelessWidget {
 
   /// Pop only: the card's colour stripe, and the rows whose keys light the card's key dot while it is folded.
   final Color? tone;
-  final CardMark? mark;
   final List<String> keyIds;
 
   /// Pop only: the values a folded card shows, one chip each (falls back to [hint]).
@@ -44,7 +42,7 @@ class Sect extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ed = Ed(Ctx.of(context).cfg.ed);
+    final ed = const Ed();
     final head = (title == null && trailing == null)
         ? null
         : Hov(
@@ -76,36 +74,16 @@ class Sect extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: kids),
     );
     if (Pop.on(context)) return _PopCard(this);
-    switch (ed.e) {
-      case Editorial.a:
-        return col([
-          if (!first)
-            Padding(
-              padding: EdgeInsets.only(top: ed.gap),
-              child: const Rule(),
-            ),
-          SizedBox(height: first ? 0 : 4),
-          ?head,
-          ...body,
-        ]);
-      case Editorial.b:
-        return Padding(
-          padding: EdgeInsets.only(bottom: ed.gap),
-          child: Container(
-            padding: EdgeInsets.fromLTRB(Shape.s(8), Shape.s(4), Shape.s(8), Shape.s(6)),
-            decoration: BoxDecoration(color: Grey.g13, borderRadius: BorderRadius.all(Shape.r(6))),
-            child: col([?head, ...body]),
-          ),
-        );
-      case Editorial.c:
-        return Padding(
-          padding: EdgeInsets.only(top: first ? Shape.s(0) : ed.gap),
-          child: col([
-            if (head != null) ...[head, SizedBox(height: Shape.s(2)), const Rule(), SizedBox(height: Shape.s(6))],
-            ...body,
-          ]),
-        );
-    }
+    return col([
+      if (!first)
+        Padding(
+          padding: EdgeInsets.only(top: ed.gap),
+          child: const Rule(),
+        ),
+      SizedBox(height: first ? 0 : 4),
+      ?head,
+      ...body,
+    ]);
   }
 }
 
@@ -133,8 +111,8 @@ class _PopCard extends StatelessWidget {
     List<Widget> lead(bool h) => [
       // the mark sits centred in its box, and the gap after it equals the card's inset, so it has the same air on both sides
       if (toggle != null) ...[FoldMark(open: open, hot: h), SizedBox(width: Pop.inset)],
-      if (s.mark != null && tone != null) ...[
-        Badge(s.dim ? Grey.g26 : tone, size: 16, radius: const Radius.circular(16 * .32), mark: MarkPaint(s.mark!, s.dim ? Grey.g56 : Pop.onAccent)),
+      if (tone != null) ...[
+        Badge(s.dim ? Grey.g26 : tone, size: 16, radius: const Radius.circular(16 * .32), mark: MarkPaint(s.dim ? Grey.g56 : Pop.onAccent)),
         SizedBox(width: Shape.s(6)),
       ],
       if (title != null)

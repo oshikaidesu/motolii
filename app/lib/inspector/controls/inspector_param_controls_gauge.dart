@@ -78,13 +78,6 @@ class _GaugePaint extends CustomPainter {
           c.drawLine(tip, tip + Offset(-d * 3, -3), line);
           c.drawLine(tip, tip + Offset(-d * 3, 3), line);
         }
-      case GaugeKind.count:
-        final n = ((p?.max ?? 1) - (p?.min ?? 0)).round() + 1, k = ((v ?? 0) - (p?.min ?? 0)).round();
-        final cols = math.min(n, 4), rows = (n / cols).ceil().clamp(1, 3);
-        for (var i = 0; i < math.min(n, cols * rows); i++) {
-          final cx = o.dx + (i % cols - (cols - 1) / 2) * 4.6, cy = o.dy + (i ~/ cols - (rows - 1) / 2) * 4.6;
-          c.drawCircle(Offset(cx, cy), 1.6, i <= k ? lit : dim);
-        }
       case GaugeKind.point:
         final box = Rect.fromCenter(center: o, width: Shape.z(18), height: Shape.z(18));
         c.drawRRect(RRect.fromRectAndRadius(box, Shape.r(3)), dim);

@@ -339,6 +339,3 @@ Param infer(Decl d) {
   }
   return p(ParamLook.scrub, 'no range');
 }
-
-/// Parse and infer in one go.
-List<Param> readParams(String wgsl) => [for (final d in parseWgsl(wgsl)) infer(d)];

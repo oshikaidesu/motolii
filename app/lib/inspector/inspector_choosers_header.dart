@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/theme.dart';
 
-import '../widgets/controls.dart';
 import '../widgets/glyphs.dart';
 import '../skin/tokens.dart';
 import 'inspector_parts.dart';
@@ -211,7 +210,7 @@ class ChooserState extends State<Chooser> {
 
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), ed = Ed(x.cfg.ed), cur = x.doc.s2[widget.id] ?? widget.options.first;
+    final x = Ctx.of(context), cur = x.doc.s2[widget.id] ?? widget.options.first;
     final on = widget.enabled && !x.cfg.locked && !RowOff.offOf(context);
     void pick(String o) {
       x.doc.str(widget.id, o);
@@ -231,11 +230,9 @@ class ChooserState extends State<Chooser> {
                 border: Border.all(color: _open ? Grey.g63 : const Color(0x00000000)),
               )
             : BoxDecoration(
-                color: !on ? Grey.g10 : (x.cfg.look == Look.quiet ? Grey.g13 : Grey.g07),
+                color: !on ? Grey.g10 : Grey.g13,
                 borderRadius: BorderRadius.all(Shape.r(4)),
-                border: Border.all(
-                  color: _open ? Grey.g63 : (h && on ? Grey.g38 : (x.cfg.look == Look.quiet && x.cfg.ed == Editorial.a ? const Color(0x00000000) : ed.rule)),
-                ),
+                border: Border.all(color: _open ? Grey.g63 : (h && on ? Grey.g38 : const Color(0x00000000))),
               ),
         // (a menu says so by its mark, not a word)
         child: Row(
@@ -295,7 +292,7 @@ class InspHeader extends StatelessWidget {
   const InspHeader({super.key});
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), doc = x.doc, ed = Ed(x.cfg.ed);
+    final x = Ctx.of(context), doc = x.doc, ed = const Ed();
     final w = doc.kindWord; // (what the host calls it, where the kinds have no word)
     final (word, glyph) = switch (doc.kind) {
       Kind.shape when w != null => (
@@ -369,7 +366,7 @@ class InspHeader extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  ed.kick(doc.kind == Kind.several ? 'Several selected' : word) + (x.cfg.locked ? (ed.e == Editorial.b ? ' · Locked' : ' · LOCKED') : ''),
+                  ed.kick(doc.kind == Kind.several ? 'Several selected' : word) + (x.cfg.locked ? ' · LOCKED' : ''),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: ed.kickStyle(Grey.g56),
@@ -412,7 +409,7 @@ class EmptyState extends StatelessWidget {
   const EmptyState({super.key});
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), ed = Ed(x.cfg.ed);
+    final x = Ctx.of(context), ed = const Ed();
     // contract: one plain muted line, no controls, no stale values (A6). With the maybe-knob on, the composition's own settings take its place.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -25,20 +25,6 @@ export 'controls/param_infer.dart';
 double get cellH => Shape.z(22);
 // [open] one narrowing rule for the whole panel (H1): a cell narrower than _wUnit drops its unit, narrower than _wTight drops decimals (never to a false 0).
 const wUnit = 72.0, wTight = 60.0;
-// [open] a third value stacks under the first two when a cell would be narrower than this.
-const stack3 = 72.0;
-// [open] the label column (wide / narrow panel).
-double get labelW => Shape.z(88);
-double get labelWNarrow => Shape.z(76);
-double get labelWPop => Shape.z(104);
-// [open] the width of the key mark's and reset mark's columns.
-double get keyW => Shape.z(22);
-double get resetW => Shape.z(18);
-// [open] axis colours: X / Y / Z ticks reuse relation-family hues (the only hue outside relations).
-Color get axX => ColorTheme.of('AxisX', const Color(0xFFE974AB)); // (the skin's axis colours: Blender's names)
-Color get axY => ColorTheme.of('AxisY', const Color(0xFF7DD5B1));
-Color get axZ => ColorTheme.of('AxisZ', const Color(0xFF4781E5));
-List<Color> get axesParts => [axX, axY, axZ];
 // [open] two clicks within this are a double click.
 const dblParts = Duration(milliseconds: 320);
 

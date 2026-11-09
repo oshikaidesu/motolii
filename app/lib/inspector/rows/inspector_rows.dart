@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 
@@ -9,7 +8,7 @@ import '../inspector_parts.dart';
 class Rule extends StatelessWidget {
   const Rule({super.key});
   @override
-  Widget build(BuildContext context) => Container(height: 1, color: Ed(Ctx.of(context).cfg.ed).rule);
+  Widget build(BuildContext context) => Container(height: 1, color: const Ed().rule);
 }
 
 /// A card's fold mark: points right when folded, down when open, so a card that can fold says so before it is touched.
@@ -56,22 +55,4 @@ class RowInfo extends InheritedWidget {
   static RowInfo? of(BuildContext c) => c.dependOnInheritedWidgetOfExactType<RowInfo>();
   @override
   bool updateShouldNotify(RowInfo old) => old.unit != unit || old.keys != keys;
-}
-
-/// Under it, coordinate fields drop their axis letters: one header names the columns.
-class AxisColumns extends InheritedWidget {
-  const AxisColumns({super.key, required super.child});
-  static bool on(BuildContext c) => c.getInheritedWidgetOfExactType<AxisColumns>() != null;
-  @override
-  bool updateShouldNotify(AxisColumns old) => false;
-}
-
-/// A small picture of a row's value, drawn before its label, so the value reads as a shape before it reads as a number.
-class RowMark extends InheritedWidget {
-  const RowMark({super.key, required this.marks, required super.child});
-  final Map<String, Widget> marks;
-  static Widget? of(BuildContext context, String id) => context.dependOnInheritedWidgetOfExactType<RowMark>()?.marks[id];
-  static bool has(BuildContext context, String id) => context.getInheritedWidgetOfExactType<RowMark>()?.marks.containsKey(id) ?? false;
-  @override
-  bool updateShouldNotify(RowMark old) => !mapEquals(old.marks, marks);
 }

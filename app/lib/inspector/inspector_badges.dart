@@ -1,14 +1,8 @@
 import 'package:flutter/widgets.dart';
 
-/// What a card holds, as one bold shape: the card reads by its sticker before its word.
-enum CardMark {
-  layer, // (every card: the inside declares no mark of its own yet)
-}
-
-/// The mark of a card knocked out in [ink], for a [Badge]'s child (the badge is 16 square: its radius is .32 of that).
+/// The layer mark knocked out in [ink], for a [Badge]'s child (the badge is 16 square: its radius is .32 of that).
 class MarkPaint extends CustomPainter {
-  const MarkPaint(this.mark, this.ink);
-  final CardMark mark;
+  const MarkPaint(this.ink);
   final Color ink;
 
   @override
@@ -22,19 +16,16 @@ class MarkPaint extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
     Offset p(double x, double y) => o + Offset(x, y) * u;
-    switch (mark) {
-      case CardMark.layer:
-        Path dia(double y) => Path()
-          ..moveTo(p(0, y - 3.2).dx, p(0, y - 3.2).dy)
-          ..lineTo(p(6, y).dx, p(6, y).dy)
-          ..lineTo(p(0, y + 3.2).dx, p(0, y + 3.2).dy)
-          ..lineTo(p(-6, y).dx, p(-6, y).dy)
-          ..close();
-        c.drawPath(dia(2.2), stroke(1.5));
-        c.drawPath(dia(-1.8), fill);
-    }
+    Path dia(double y) => Path()
+      ..moveTo(p(0, y - 3.2).dx, p(0, y - 3.2).dy)
+      ..lineTo(p(6, y).dx, p(6, y).dy)
+      ..lineTo(p(0, y + 3.2).dx, p(0, y + 3.2).dy)
+      ..lineTo(p(-6, y).dx, p(-6, y).dy)
+      ..close();
+    c.drawPath(dia(2.2), stroke(1.5));
+    c.drawPath(dia(-1.8), fill);
   }
 
   @override
-  bool shouldRepaint(MarkPaint o) => o.mark != mark || o.ink != ink;
+  bool shouldRepaint(MarkPaint o) => o.ink != ink;
 }

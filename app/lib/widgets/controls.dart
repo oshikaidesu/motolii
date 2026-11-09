@@ -6,9 +6,6 @@ import '../inspector/inspector_small.dart' show Hov;
 import '../skin/tokens.dart';
 import '../workspace/state/state.dart' show WsT;
 
-/// The three looks an open design question is shown in; the owner picks one in the real window (DESIGN.md section 9).
-enum Look { concept, quiet, glow }
-
 /// A small square press holding one glyph; [glyph] is given the ink for the moment (resting, hovered, on). The default look is the dock's
 /// header button: raised when on, a step up on hover, no fill at rest, 20 wide, faded. Given [rest] and [ink] it is the tool panel's and the
 /// stage's tile: accent when on, [rest] fill and [ink] at rest, WsT.radius corners, no margin, no fade.

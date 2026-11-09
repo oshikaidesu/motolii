@@ -1,7 +1,7 @@
 // context_menu.dart: the window's right-click menu: what can be done to what is under the hand, there, so the mouse alone
 // finishes it (Ableton Live's context menus, everywhere; Figma's right-click on a thing). Flutter's own RawMenuAnchor
-// opens it where the hand is and shuts it on a click outside; its rows are the Inspector's right-click rows
-// (inspector_rows_prop_row.dart: a word, and why when it cannot be done), floating as the design's context menu does
+// opens it where the hand is and shuts it on a click outside; a row is a word, and why when it cannot be done,
+// floating as the design's context menu does
 // (sets/foundations/navigation_2.dart: the keys it is pressed with too, dim on the right).
 import 'dart:math' as math;
 

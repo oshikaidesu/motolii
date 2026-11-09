@@ -87,55 +87,23 @@ class Fam {
 }
 
 abstract final class C {
-  /// [open] Error and destructive actions. Delegates to [Role.error] (Grey keeps #E5584B).
-  static Color get danger => Role.error;
-  static const playhead = Color(0xFF6EA6DB), play = Color(0xFF7BCC9E), record = Color(0xFFF03C8A);
-
-  /// The accent / mode colour. Delegates to [Role.mode] (Grey keeps #7A87E3).
+  /// The accent. Delegates to [Role.mode].
   static Color get mode => Role.mode;
 }
 
-/// Colour palettes of research/color-ud.md: Grey is today's look; A is CUDO-derived, B is Okabe-Ito-derived.
-enum Palette { grey, a, b }
-
-/// Colour-vision simulation (Machado 2009, severity 1.0) applied by the lab chrome around a use case. It is a lens, never part of the product.
-enum Cvd { none, deut, prot, trit }
-
-/// The ONE place of role colours. A part reads `Role.xxx` and never types a hue. Policy P1: colour only on state marks, small chips,
-/// 1 px edges / underlines and the changed value text; no large fills, no stroke over 2 px, at most 2 role colours per row; a non-colour cue is always kept.
+/// The window's role colours. One palette is set, so each name is that colour.
 abstract final class Role {
-  static final palette = ValueNotifier<Palette>(Palette.grey);
-  static final cvd = ValueNotifier<Cvd>(Cvd.none);
+  /// Always true: one palette. Only [ErrMark] still asks (its caller in workspace/shelf/fx_code.dart goes first).
+  static const grey = true;
 
-  /// Fires when either knob moves.
-  static final Listenable changes = Listenable.merge([palette, cvd]);
+  static Color get linked => N.g95;
 
-  static Color _pick(Color grey, Color a, Color b) => switch (palette.value) {
-    Palette.grey => grey,
-    Palette.a => a,
-    Palette.b => b,
-  };
-  static bool get grey => palette.value == Palette.grey;
-
-  static Color get changed => _pick(N.g95, const Color(0xFF66CCFF), const Color(0xFF56B4E9));
-  static Color get key => _pick(N.g95, const Color(0xFFFAF500), const Color(0xFFF0E442));
-  static Color get linked => _pick(N.g95, const Color(0xFFC77DD8), const Color(0xFFCC79A7));
-
-  /// A relation's own family colour when one is known (it is already CVD-checked); Grey and unknown family fall back to [linked].
+  /// A relation's own family colour when one is known; an unknown family falls back to [linked].
   static Color linkedFor(Fam? f) => f == null ? linked : f.c;
-  static Color get selected => _pick(const Color(0xFF7A87E3), const Color(0xFF5C8DFF), const Color(0xFF4A8FE0));
-
-  /// A still row with no key yet (hollow diamond): neutral cool grey-blue in A and B, today's grey in Grey. Never the mode hue.
-  static Color get still => _pick(N.g95, const Color(0xFF8A98B8), const Color(0xFF8A98B8));
-
-  static Color get mode => _pick(const Color(0xFF7A87E3), const Color(0xFFAE9CFF), const Color(0xFF8F9BEA));
-  static Color get ok => _pick(const Color(0xFF7BCC9E), const Color(0xFF3DBE82), const Color(0xFF1FB98C));
-  static Color get warning => _pick(const Color(0xFFF69260), const Color(0xFFFF9900), const Color(0xFFE69F00));
-  static Color get error => _pick(const Color(0xFFE5584B), const Color(0xFFFF4B3A), const Color(0xFFE5484D));
-
-  /// Grey returns the colour the part has today ([today]); a palette returns the role colour. One call keeps Grey pixel-identical.
-  static Color of(Color today, Color role) => grey ? today : role;
-  static Color get info => N.g63;
+  static const selected = Color(0xFF7A87E3);
+  static const mode = Color(0xFF7A87E3);
+  static const warning = Color(0xFFF69260);
+  static const error = Color(0xFFE5584B);
 }
 
 /// The window's one accent, from the skin (the theme's roles: Ableton's names, the key mark Blender's): a fill, the ink drawn on
@@ -174,11 +142,9 @@ abstract final class T {
 
   /// No text is dimmer than g56 nor smaller than 10 px (precedents: Adobe Spectrum's smallest UI text is 10 px; critique 2026-10-02: 87 of 126 use cases had 9 px / g44 captions).
   /// Only DIM text on a dark ground is lifted (luminance between g26 and g56); in the light shade, text paler than Grey.g56 is darkened to it. Dark INK (g00..g20, the text on a light fill such as the playhead head) is left alone: lifting it to g56 made it unreadable (critique pass 3).
-  /// Test tool, 'Words' addon: when true every T.* text is fully transparent (layout unchanged), so a reviewer can ask "can I tell what this does without reading?".
-  static final hidden = ValueNotifier<bool>(false);
 
-  /// The ink of a text: the floor, or nothing while the Words addon says Hidden. Direct TextStyles in the lab use this too.
-  static Color ink(Color c) => hidden.value ? const Color(0x00000000) : _floor(c);
+  /// The ink of a text, held to that floor.
+  static Color ink(Color c) => _floor(c);
   static Color _floor(Color c) {
     if (c.a < .5) return c;
     final l = c.computeLuminance();
