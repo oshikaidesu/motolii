@@ -4,6 +4,7 @@ import FlutterMacOS
 class MainFlutterWindow: NSWindow {
   override func awakeFromNib() {
     PlatformViewReadd.guardAgainst()
+    InputLog.startIfAsked()
     let flutterViewController = FlutterViewController()
     self.contentViewController = flutterViewController
     // the window opens filling the screen, all but the menu bar and the Dock (NSScreen.visibleFrame), as a desktop
@@ -44,6 +45,27 @@ enum PlatformViewReadd {
       }
       let mine = imp_implementationWithBlock(added)
       if !class_addMethod(kind, add, mine, method_getTypeEncoding(had)) { method_setImplementation(had, mine) }
+    }
+  }
+}
+
+/// What the window is given, told on stderr when MOTOLII_INPUT_LOG=1 (the binary started from a shell): each press,
+/// drag, release and key, and a move with a button held (a drag sent as a plain move), with whether the window takes
+/// keys, who has them (its first responder) and the view under the pointer. To see where Block's clicks and keys go;
+/// nothing is changed.
+enum InputLog {
+  static func startIfAsked() {
+    guard ProcessInfo.processInfo.environment["MOTOLII_INPUT_LOG"] == "1" else { return }
+    let kinds: NSEvent.EventTypeMask = [.leftMouseDown, .leftMouseDragged, .leftMouseUp, .mouseMoved, .keyDown]
+    NSEvent.addLocalMonitorForEvents(matching: kinds) { event in
+      if event.type == .mouseMoved && NSEvent.pressedMouseButtons == 0 { return event }
+      let window = event.window, content = window?.contentView
+      let at = content?.superview?.convert(event.locationInWindow, from: nil) ?? event.locationInWindow
+      let under = event.type == .keyDown ? "-" : content?.hitTest(at).map { String(describing: type(of: $0)) } ?? "none"
+      let who = window?.firstResponder.map { String(describing: type(of: $0)) } ?? "none"
+      let line = "input \(event.type == .mouseMoved ? "moved-with-button-held" : String(describing: event.type)) key-window \(window?.isKeyWindow ?? false) app-active \(NSApp.isActive) first-responder \(who) under \(under)\n"
+      FileHandle.standardError.write(line.data(using: .utf8)!)
+      return event
     }
   }
 }
