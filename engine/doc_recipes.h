@@ -373,6 +373,11 @@ static std::string doc_cards_of(Doc& d, int thing, std::string* more = nullptr) 
         if (behaviour && !(card.when && !strcmp(card.when, "file"))) continue;   // (a behaviour: only its own card, not those of things that happen to share a name with its knobs)
         if (card.when && card.is[0] == '+') {   // (an effect's card while it is on: doc_on)
             if (!doc_on(d, thing, card.when)) continue;
+        } else if (card.when && card.is[0] == '@') {   // (a material's card while it wears one of those: doc_material; a solid unsaid, or a flat thing in depth, Filament's lit surface)
+            std::string m = doc_material(d, thing);
+            const std::string sp = doc_word(d, thing, "space");
+            if (m.empty() && (doc_word(d, thing, "kind") == "solid" || sp == "3d" || sp == "2.5d" || doc_on(d, thing, "scale_z"))) m = "lit";
+            if (m.empty() || !doc_among(card.is + 1, m)) continue;
         } else if (card.when && card.is[0] == '~') {   // (a ramp's card while the fill has more colours than one)
             if (doc_word(d, thing, card.when).find(card.is + 1) == std::string::npos) continue;
         } else if (card.when) {   // (a card for one fill and not another, or while it is clipped)
@@ -387,8 +392,6 @@ static std::string doc_cards_of(Doc& d, int thing, std::string* more = nullptr) 
         //  Color & Fill, Blending, Transform, its Edit, Effects; a video's Speed), the rest asked for by More. The stage's own
         //  are asked for as a whole, by Stage settings)
         const std::string kindNow = doc_word(d, thing, "kind");
-        const std::string spaceNow = doc_word(d, thing, "space");
-        if (!strcmp(card.title, "Surface") && kindNow != "solid" && spaceNow != "3d" && spaceNow != "2.5d" && !doc_on(d, thing, "scale_z")) continue;   // (a flat thing's one value of it is its Shine; in depth it has the rest, After Effects' Material Options on a 3D layer)
         const std::string splitNow = kindNow == "text" ? doc_word(d, thing, "split") : "";
         const bool letters = !splitNow.empty() && splitNow != "none" && (!strcmp(card.title, "Copies") || !strcmp(card.title, "Wave") || !strcmp(card.title, "Scatter"));   // (a text split into its letters or words: what moves them each in turn (Delay, Wave, Scatter) unasked, as After Effects' Text Animator is under a text once its range goes by character (the user, 11/5: more of a text's expression))
         bool said = !card.added || thing == 0 || (!strcmp(card.title, "Play") && kindNow == "film") || letters;

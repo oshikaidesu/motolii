@@ -254,6 +254,21 @@ static void doc_moment(Doc& d, double now) {
             for (const Stage::Made& made : s.made)
                 if (const auto own = d.copyLooks.find(made.thing.getId()); made.of == t.drawn->sheet && own != d.copyLooks.end()) own->second->setParameter("surface", surface);
         }
+        if (const std::string wear = t.drawn || t.film ? doc_sheet_wear(d, thing) : ""; !wear.empty()) {   // (the material its sheet wears, its knobs as they are now: flat.mat's wear, doc_sheet_wear)
+            const auto at = [&](const char* name, double usual) { return (float)doc_number(d, thing, name, now, usual); };
+            const float vivid = at("vivid", 1.3);
+            const float4 coat{wear == "glass" ? vivid : at("clear_coat", 0), at("clear_coat_roughness", 0), at("sheen", 0), at("anisotropy", 0)};
+            const float4 glass{at("ior", 1.5), at("thickness", 0.5), at("dispersion", 0.1), at("swim", 0.5)};
+            const float dark = wear == "bubble" ? vivid : at("dark", 4);
+            const float3 surface{at("metallic", 0.08), at("roughness", 0.6), at("reflectance", 0.5)};
+            doc_parts(s, t, [&](RenderableManager& faces, RenderableManager::Instance one) {
+                for (size_t part = 0; part < faces.getPrimitiveCount(one); ++part)
+                    if (MaterialInstance* look = faces.getMaterialInstanceAt(one, part); look->getMaterial()->hasParameter("wearGlass")) {
+                        look->setParameter("wear", coat), look->setParameter("wearGlass", glass), look->setParameter("wearDark", dark);
+                        if (t.film) look->setParameter("surface", surface);   // (a film's own, as a drawn sheet's is told above)
+                    }
+            });
+        }
         if (t.drawn && t.drawn->boxed.z > 0.f) {   // (After Effects' Bevel, Side and Back Color and their Metal; a part told nothing is as the front is)
             float4 colour[3], surface[3];
             const float3 front{(float)doc_number(d, thing, "metallic", now, 0.08), (float)doc_number(d, thing, "roughness", now, 0.6), (float)doc_number(d, thing, "reflectance", now, 0.5)};

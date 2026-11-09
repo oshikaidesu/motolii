@@ -385,17 +385,19 @@ static const DocValue doc_values[] = {
     {"dash", "shape", 0, 1000, false, nullptr}, {"dash_offset", "shape", -1e4, 1e4, false, nullptr},
     // (Filament's own surface of a solid in a colour: how metal, how rough, how much it reflects, a clear coat over it
     //  and how rough that is, and how much it lights itself: 1 its colour itself on the picture, more brighter still)
-    {"metallic", "solid text shape picture", 0, 1, false, nullptr}, {"roughness", "solid text shape picture", 0, 1, false, nullptr}, {"reflectance", "solid text shape picture", 0, 1, false, nullptr},
+    {"metallic", "solid text shape picture film", 0, 1, false, nullptr}, {"roughness", "solid text shape picture film", 0, 1, false, nullptr}, {"reflectance", "solid text shape picture film", 0, 1, false, nullptr},
     // (a solid filled with glass, the kit's own: how much it bends light (index of refraction), how far its colours part,
     //  how much what is behind it swims, how fast a long way through it goes dark, how vivid what is seen through it is)
-    {"ior", "solid", 1, 3, false, nullptr}, {"dispersion", "solid", 0, 0.5, false, nullptr}, {"swim", "solid", 0, 1, false, nullptr}, {"dark", "solid", 0, 20, false, nullptr}, {"vivid", "solid", 0, 3, false, nullptr},
-    {"clear_coat", "solid", 0, 1, false, nullptr}, {"clear_coat_roughness", "solid", 0, 1, false, nullptr}, {"emissive", "film picture text shape solid", 0, 20, true, nullptr},
+    {"ior", "film picture text shape solid", 1, 3, false, nullptr}, {"dispersion", "film picture text shape solid", 0, 0.5, false, nullptr}, {"swim", "film picture text shape solid", 0, 1, false, nullptr}, {"dark", "film picture text shape solid", 0, 20, false, nullptr}, {"vivid", "film picture text shape solid", 0, 3, false, nullptr},
+    {"clear_coat", "film picture text shape solid", 0, 1, false, nullptr}, {"clear_coat_roughness", "film picture text shape solid", 0, 1, false, nullptr}, {"emissive", "film picture text shape solid", 0, 20, true, nullptr},
     // (Filament's velvet sheen at its rim, in its own colour; its highlights drawn out as on brushed metal, -1 to 1 the other way)
-    {"sheen", "solid", 0, 1, false, nullptr},
-    // (Filament's shading model: lit, cloth (soft, no sharp highlight) or subsurface (light goes in, as in skin or wax); how thick it is to the light going through)
-    {"shading", "solid", 0, 0, false, "lit cloth subsurface"},
-    {"thickness", "solid", 0, 1, false, nullptr},
-    {"anisotropy", "solid", -1, 1, false, nullptr},
+    {"sheen", "film picture text shape solid", 0, 1, false, nullptr},
+    // (the material it wears, any thing that is seen (Create's Material group, doc_material): Filament's shading models, lit,
+    //  cloth (soft, no sharp highlight) or subsurface (light goes in, as in skin or wax); the kit's thick glass (thick_glass.mat),
+    //  Filament's own glass (own_glass.mat), lacquer (blade.mat), a bubble (bubble.mat); how thick it is to the light going through)
+    {"shading", "film picture text shape solid", 0, 0, false, "lit cloth subsurface glass filament_glass lacquer bubble"},
+    {"thickness", "film picture text shape solid", 0, 1, false, nullptr},
+    {"anisotropy", "film picture text shape solid", -1, 1, false, nullptr},
     // (the stage's, thing 0: the whole picture, Filament's own. Its grade, on every picture laid: a tone mapper, an
     //  exposure in stops, contrast, saturation, vibrance, how warm; its glow round bright parts and its lens flare, a
     //  darkening at the corners and a fog in a colour, on the stage's own view; the room's light, how bright and turned

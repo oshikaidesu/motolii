@@ -166,7 +166,7 @@ static const DocShown doc_shown[] = {
     {"clear_coat", "share", "%", "Varnish", 0, 1, nullptr},
     {"clear_coat_roughness", "share", "%", "Haze", 0, 1, nullptr},
     {"sheen", "share", "%", "Sheen", 0, 1, nullptr},
-    {"shading", "", "", "Model", 0, 0, nullptr},
+    {"shading", "", "", "Material", 0, 0, nullptr},
     {"thickness", "share", "%", "Thick", 0, 1, nullptr},
     {"anisotropy", "", "", "Brushed", -1, 1, nullptr},
     {"ior", "", "", "Bend", 1, 3, nullptr},
@@ -385,8 +385,11 @@ static const DocCard doc_cards[] = {
     {"Strokes", "stroke_2 stroke_2_width stroke_3 stroke_3_width", "kind", "text"},   // (shown unasked: Alight Motion's Border & Shadow is among a text's tiles)   // (more edges, each outside the last, drawn with the words: they stand in its depth, as Multi-Border's, on its picture, do not)
     {"Bevel", "bevel bevel_depth bevel_color bevel_metallic bevel_roughness", nullptr, nullptr, true},
     {"Side", "side_color side_metallic side_roughness back_color back_metallic back_roughness", nullptr, nullptr, true},   // (After Effects' Side and Back Color: a thick thing's other faces)
-    {"Surface", "shading metallic roughness reflectance clear_coat clear_coat_roughness sheen anisotropy thickness emissive", "fill", "!glass", true},
-    {"Glass", "ior dispersion swim dark vivid", "fill", "glass"},
+    // (the material it wears, and its own knobs: Create's Material group; a card for each, shown for its own: doc_material)
+    {"Surface", "shading metallic roughness reflectance clear_coat clear_coat_roughness sheen anisotropy thickness emissive", "shading", "@lit cloth subsurface", true},
+    {"Glass", "shading ior dispersion swim dark vivid", "shading", "@glass filament_glass"},
+    {"Lacquer", "shading metallic", "shading", "@lacquer"},
+    {"Bubble", "shading vivid", "shading", "@bubble"},
     {"Lit", "light_group", "kind", "solid", true},   // (which lights reach it)
     {"Light", "intensity falloff cone shadows shadow_softness contact_shadows light_group sun_size sun_halo", "kind", "light"},
     {"Projection", "projection shift_x shift_y"},
@@ -603,6 +606,20 @@ static std::string doc_word(Doc& d, int thing, const char* name) {
     doc_rows(d, sqlite3_mprintf("select value from fact where thing = %d and name = %Q", thing, name), [&](sqlite3_stmt* row) { is = (const char*)sqlite3_column_text(row, 0); });
     d.words.emplace(std::make_pair(thing, std::string(name)), is);
     return is;
+}
+// The material a thing wears (Create's Material group: any thing wears one, one at a time): its shading as said; a solid
+// filled with glass, as documents before it said glass, glass. "" none: a solid Filament's lit surface, a flat thing as drawn.
+static std::string doc_material(Doc& d, int thing) {
+    const std::string said = doc_word(d, thing, "shading");
+    if (!said.empty()) return said;
+    return doc_word(d, thing, "kind") == "solid" && doc_word(d, thing, "fill") == "glass" ? "glass" : "";
+}
+// The sheet a flat thing (a film, a picture, a text, a shape) wears its material as: flat.mat's own for it (kit_wgpu.sh),
+// its picture its colour. "" none: as it is drawn. Of glass, the stage behind it is read (doc_things_read).
+static std::string doc_sheet_wear(Doc& d, int thing) {
+    if (!doc_among("film picture text shape", doc_word(d, thing, "kind"))) return "";
+    const std::string m = doc_material(d, thing);
+    return m == "lit" ? "wear" : m == "glass" || m == "filament_glass" ? "glass" : doc_among("cloth subsurface lacquer bubble", m) ? m : "";
 }
 
 // Every look of a thing as it is on the stage (a sheet's one; a kit shape's, as many as it is drawn by; every face of a 3D file).

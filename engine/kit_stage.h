@@ -239,7 +239,8 @@ static Texture* white_point(Stage& s) {
 
 // The flat sheet's material for a way of lying on what is behind it: nullptr (over it, as usual), or "add", "multiply",
 // "screen": Filament's own blending, flat.mat built once for each.
-static std::string flat_laid(const char* lay, bool lit = false) {
+static std::string flat_laid(const char* lay, bool lit = false, const std::string& wear = "") {
+    if (!wear.empty()) return "flat_" + wear + ".filamat";   // (a material it wears, its own way of lying: doc_sheet_wear)
     if (lit) return std::string("flat_lit_") + (lay ? lay : "transparent") + ".filamat";
     return lay ? std::string("flat_") + lay + ".filamat" : "flat.filamat";
 }

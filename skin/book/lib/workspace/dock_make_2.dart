@@ -445,15 +445,24 @@ final _lights = (
     _Make('Spot', DockG.light, WsT.toneCamera, '', 'A cone of light'),
   ],
 );
-/// What a solid is made of, a material: put on the picked solid, as Repeater lays the picked thing out (a material is
-/// made in Create, not chosen among colours: the user, 10/29, "マテリアルなら普通クリエイトに入れるべき").
+/// What a thing is made of, a material: put on the picked thing, any that is seen (a flat one wears it on its own plane,
+/// its picture its colour), one at a time; nothing picked, a ball wearing it (a material is made in Create, not chosen
+/// among colours: the user, 10/29, "マテリアルなら普通クリエイトに入れるべき"). Filament's own and the kit's, by their names to a
+/// user; the inside's word for each (shading: doc.h doc_material). Each tile a ball wearing it: material_tiles.dart.
 final _materials = (
-  'Materials',
+  'Material',
   [
-    _Make('Glass', DockG.radial, WsT.toneShape, '', 'Thick glass: bends and tints what lies behind it. Put on the picked solid'),
+    _Make('Lit', DockG.ellipse, WsT.toneShape, '', 'Filament\'s lit surface: its colour, metal, rough, a clear coat'),
+    _Make('Cloth', DockG.ellipse, WsT.toneShape, '', 'Soft, no sharp highlight, a sheen at its rim'),
+    _Make('Subsurface', DockG.ellipse, WsT.toneShape, '', 'Light goes into it and comes out, as in wax or skin'),
+    _Make('Glass', DockG.radial, WsT.toneShape, '', 'Thick glass: bends and tints what lies behind it'),
+    _Make('Filament glass', DockG.radial, WsT.toneShape, '', 'Filament\'s own glass: bends what is behind, a thin film\'s rainbow'),
+    _Make('Lacquer', DockG.ellipse, WsT.toneShape, '', 'Its colour under a hard clear coat'),
+    _Make('Bubble', DockG.radial, WsT.toneShape, '', 'Nearly clear, a bright rim'),
   ],
 );
-const _worn = {'Glass': 'glass'};   // (the tile, and the solid's fill it gives)
+const _worn = {'Lit': 'lit', 'Cloth': 'cloth', 'Subsurface': 'subsurface', 'Glass': 'glass', 'Filament glass': 'filament_glass', 'Lacquer': 'lacquer', 'Bubble': 'bubble'};   // (the tile, and the shading it gives)
+const _wears = {'film', 'picture', 'text', 'shape', 'solid'};   // (the kinds of thing that are seen, and so wear one)
 const _onPicked = {'Empty'};   // (put on the picked thing, or a new board: empty_fx.dart)
 
 final _asked = {
@@ -504,10 +513,19 @@ void _make(DockCtx c, _Make tile) {
     c.set(() => c.mem.trouble.remove(name));
     return emptyPut(c.ws, expression: true, told: (why) => c.set(() => why.isEmpty ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why));
   }   // (After Effects' New > Adjustment Layer)
-  if (_worn[name] case final fill?) {
+  if (_worn[name] case final wears?) {   // (on the picked thing, in place of the one it wore; nothing picked, a ball wearing it, picked)
     final t = int.tryParse(c.ws.selected ?? '');
-    if (t == null || m.word(t, 'kind') != 'solid') return c.set(() => c.mem.trouble[name] = 'Pick a solid to make it ${name.toLowerCase()}');
-    c.ws.after(m.later('say', thing: t, name: 'fill', word: fill), (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why));
+    void told(bool done, String why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why);
+    if (t != null) {
+      if (!_wears.contains(m.word(t, 'kind'))) return c.set(() => c.mem.trouble[name] = 'A camera, a light or a null wears nothing: pick a thing that is seen');
+      c.ws.after(m.later('say', thing: t, name: 'shading', word: wears), told);
+      return;
+    }
+    m.later('together', number: 1);   // (one step: the ball and what it wears)
+    c.ws.after(m.later('add', name: 'solid', word: 'ball'), null, (made) => c.ws.select('$made'));
+    wsInked(c.ws, 'solid', 'ball');
+    m.later('say', thing: -1, name: 'shading', word: wears);
+    c.ws.after(m.later('together'), told);
     return;
   }
   if (!_asked.containsKey(name)) {
@@ -598,8 +616,8 @@ class CreateShelf extends StatelessWidget {
             preview: DockBadge(sel.g, sel.hue, size: Shape.z(34)),
             title: '${sel.name} layer',
             meta: c.mem.trouble[sel.name] ?? 'At ${c.ws.timecode()} · ${sel.what}',
-            action: _worn.containsKey(sel.name) || sel.onPicked ? 'Put on' : 'Create',
-            fresh: !_worn.containsKey(sel.name) && !sel.onPicked, // (a tile makes a new thing; a tile of copies lays out the picked one, a material is put on it, an empty expression too: to the picked one, a new board with nothing picked)
+            action: sel.onPicked || (_worn.containsKey(sel.name) && c.ws.selected != null) ? 'Put on' : 'Create',
+            fresh: !sel.onPicked && !(_worn.containsKey(sel.name) && c.ws.selected != null), // (a tile makes a new thing; a tile of copies lays out the picked one, a material is put on it, an empty expression too: to the picked one, a new board with nothing picked)
             onAction: () => _make(c, sel),
           ),
       ],
@@ -634,6 +652,11 @@ class _MakeTile extends StatelessWidget {
               Positioned.fill(child: ValueListenableBuilder(valueListenable: CopiesTiles.drawn, builder: (_, _, _) => switch (CopiesTiles.of(f)) {
                 '' => Align(alignment: Alignment.topLeft, child: DockGlyph(m.g, size: Shape.z(26), color: sel ? WsT.onAccent : m.hue)),
                 final p => TileMoving(p, playing: true),   // (played while in sight: TileMoving's own)
+              }))
+            else if (_worn[m.name] case final w?)   // (a material: a ball wearing it, drawn by the inside: material_tiles.dart)
+              Positioned.fill(child: ValueListenableBuilder(valueListenable: MaterialTiles.drawn, builder: (_, _, _) => switch (MaterialTiles.of(w)) {
+                '' => Align(alignment: Alignment.topLeft, child: DockGlyph(m.g, size: Shape.z(26), color: sel ? WsT.onAccent : m.hue)),
+                final p => TileMoving(p, playing: false),
               }))
             else
               Align(

@@ -22,6 +22,7 @@ import '../theme.dart' show ColorTheme;
 import 'colour_wheel.dart';
 import 'ws_menu.dart';
 import 'copies_tiles.dart';
+import 'material_tiles.dart';
 import 'create_preview.dart';
 import 'dock_effects.dart' show TileMoving;
 import 'effect_tiles.dart' show EffectTiles;
@@ -219,16 +220,14 @@ void _fill(DockCtx c, String word) {
     if (_lettersPicked(c, t) case final at?) return _fillLetters(c, t!, at, word.toLowerCase());
   }
   // (a colour given to a thing is also what the next thing drawn comes in: its fill the ink, its outline the edge, as
-  //  CLIP STUDIO PAINT has one drawing colour that every tool draws in, its text too, the last one chosen; glass fills
-  //  a solid alone, so it is not kept)
+  //  CLIP STUDIO PAINT has one drawing colour that every tool draws in, its text too, the last one chosen)
   void keep(String name) {
-    if (word == 'glass') return;
     if (name == 'fill') c.ws.ink = word;
     if (name == 'stroke') c.ws.edge = word;
   }
   if (t == null && (c.ws.aim == 'fill' || c.ws.aim == 'stroke')) { // (the tool strip's ink or edge aimed it, nothing picked: what a thing drawn next comes in, stage.dart _Swatches)
     c.set(() {
-      word == 'glass' ? c.mem.trouble['fill'] = 'Glass fills a solid thing: pick one' : c.mem.trouble.remove('fill');
+      c.mem.trouble.remove('fill');
       keep(c.ws.aim!);
     });
     c.ws.reread();
@@ -248,7 +247,7 @@ void _fill(DockCtx c, String word) {
     return;
   }
   if (t == null) { // (nothing picked: the drawing tools' ink, what a thing drawn next is filled with)
-    c.set(() => word == 'glass' ? c.mem.trouble['fill'] = 'Glass fills a solid thing: pick one' : (c.ws.ink = word, c.mem.trouble.remove('fill')));
+    c.set(() => (c.ws.ink = word, c.mem.trouble.remove('fill')));
     c.ws.reread();
     return;
   }

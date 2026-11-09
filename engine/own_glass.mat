@@ -16,7 +16,8 @@ material {
     requires : [ uv0 ],
     parameters : [ { type : float, name : thickness }, { type : float, name : lean }, { type : float3, name : absorb },
                    { type : float, name : film },         // how much thin film lies on the glass (0: none, 1: all)
-                   { type : float, name : split } ]       // how far the colours part in the glass (Filament's dispersion)
+                   { type : float, name : split },        // how far the colours part in the glass (Filament's dispersion)
+                   { type : float, name : ior } ]         // how much it bends light (0: not said, 1.5 as glass)
 }
 
 fragment {
@@ -40,7 +41,7 @@ fragment {
         }
         material.absorption = absorb;
         material.transmission = 1.0;
-        material.ior = 1.5;
+        material.ior = materialParams.ior > 0.0 ? materialParams.ior : 1.5;
         // (seen square on, the way through a solid is short and it is clear; towards its rim the way is long and it is dark)
         float rim = 1.0 - abs(dot(getWorldNormalVector(), getWorldViewVector()));
         deep *= 1.5 + 3.0 * rim * rim;
