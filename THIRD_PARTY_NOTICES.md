@@ -36,7 +36,8 @@ Motolii は「ネットで見つけたかっこいい表現を、自分の動画
 | CRT の仕上げ（WGSL に改変） | [vercel-labs/vgpu](https://github.com/vercel-labs/vgpu) の post.wgsl | MIT | `shelves/effects/stylize/crt_finish.wgsl`、`vgpu-LICENSE.txt` |
 | データモッシュ（WGSL に改変） | [newomp4/phosphor](https://github.com/newomp4/phosphor) | MIT | `shelves/effects/glitch/datamosh.wgsl`、`phosphor-LICENSE.txt` |
 | 時間のずらし（WGSL に改変） | [keijiro/SlitScanCam](https://github.com/keijiro/SlitScanCam) | Unlicense | `shelves/effects/glitch/time_displacement.wgsl`、`SlitScanCam-LICENSE.txt` |
-| 効果の見本の写真（熱気球） | Wikimedia Commons「Mid-Hudson balloon festival 15」（Juliancolton 撮影） | パブリックドメイン（PD-self） | `engine/fx_sample.jpg`（正方形に切った物）、効果の見本 `shelves/effects/*.png` はこれに掛けた物 |
+| 効果の見本の写真（熱気球） | Wikimedia Commons「Mid-Hudson balloon festival 15」（Juliancolton 撮影） | パブリックドメイン（PD-self） | `shelves/effects/sources/fx_sample.jpg`（正方形に切った物）、効果の見本 `shelves/effects/*.png` はこれに掛けた物 |
+| 効果の見本の写真（道、トランジションの行き先） | Wikimedia Commons「Road through Mojave National Preserve」（NPS / Emily Hassell、Joshua Tree National Park の Flickr） | パブリックドメイン（米国政府の著作物） | `shelves/effects/sources/fx_sample_end.jpg`（正方形に切った物） |
 | 点群の効果 4 本 | [playcanvas/engine](https://github.com/playcanvas/engine) の scripts/esm/gsplat | MIT | `shelves/effects/*.mjs`、`playcanvas-LICENSE.txt` |
 | three.js（形を作る部品） | [mrdoob/three.js](https://github.com/mrdoob/three.js) r186 | MIT | `engine/third_party/js/three/` |
 | d3-contour・d3-array | [d3](https://github.com/d3) | ISC | `engine/third_party/js/d3-contour/`、`d3-array/` |
