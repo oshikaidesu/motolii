@@ -18,15 +18,8 @@ node_modules/
 *.o
 *.dSYM/
 .DS_Store
-# these have their own git history
-/bridge/
-/melt/
-# compiled test program without an extension
-/engine*/prism
-# collected reference pictures and clips (280 MB, not source); add later if wanted
-/research_notes/
 
-# made from their sources by lottie3d.py (engine/led.sh, engine/motion_test.sh)
+# Python's bytecode, from the scripts under shelves/ and .githooks/
 __pycache__/
 # Kept on this machine only, not in git: the reports' pictures and films (many show other people's apps or footage),
 # Windows binaries inside the AviUtl2 packages (Motolii runs on macOS), and packages whose author gives no licence text.
@@ -53,4 +46,5 @@ __pycache__/
 /build.motolii
 /docs/internal/reports/window/user_panels/
 /docs/internal/reports/window/skin_run/*.motolii
-/docs/media/*.png   # (what the window tests shoot; the pictures the READMEs show are .jpg made from them)
+# what the window tests shoot; the pictures the READMEs show are .jpg made from them
+/docs/media/*.png

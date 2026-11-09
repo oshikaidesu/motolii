@@ -29,7 +29,7 @@ Words in the code and the ledger: the UI is "window" (窓), the engine "the insi
 | 500 lines a file (rule 2 below) | `python3 .githooks/size_check.py` | silent means it passed |
 | The UI's code | `cd app && flutter analyze lib` | No errors (100 notices today) |
 
-GitHub Actions runs the ledger check on every push and pull request (`.github/workflows/assets.yml`; it only reports, it does not block a pull request). The whole build runs in `.github/workflows/build.yml` (on an Apple silicon Mac, built as the README says, then `flutter analyze`; on pull requests that touch the code, and by hand from the Actions tab). There are no self-written tests (they were removed on 2026-11-08: the same hands wrote the code and the tests); the external requirements are in [`docs/TESTING.md`](../docs/TESTING.md).
+The whole build runs on GitHub Actions in `.github/workflows/build.yml` (on an Apple silicon Mac, built as the README says, then `flutter analyze`; on pull requests that touch the code, and by hand from the Actions tab). There are no self-written tests (they were removed on 2026-11-08: the same hands wrote the code and the tests); the external requirements are in [`docs/TESTING.md`](../docs/TESTING.md).
 
 ## Rules
 
@@ -54,4 +54,3 @@ GitHub Actions runs the ledger check on every push and pull request (`.github/wo
 
 - macOS on Apple silicon only.
 - The engine (`libmotolii.dylib`) loads Homebrew's GStreamer and others, so a built `.app` does not run on another Mac as it is.
-- `engine/` mixes the current engine with earlier probes at one level; [`engine/README.md`](../engine/README.md) lists which files the current build uses.
