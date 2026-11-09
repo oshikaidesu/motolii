@@ -5,7 +5,7 @@
 - 試験の「期待値」は、試験される側のコードの外にある（Flutter 公式のガイドライン、W3C の基準、標準規格）。
 - 自作の試験は使い捨て。自作の期待値を守る試験は残さない（旧 `app/test` `integration_test` `test_driver` `engine/check` は削除）。
 - 失敗は UI を直す合図ではなく情報として記録する。ここでは通すために UI を変えていない。
-- 置き場：`app/external_test/`。
+- 置き場：Flutter の決まりどおり、ウィジェットの試験は `app/test/`（docs.flutter.dev/cookbook/testing/widget/introduction）、実機の窓で動かす試験は `app/integration_test/` と `app/test_driver/`（docs.flutter.dev/testing/integration-tests）。試験が書く物は `app/build/test_output/`。
 
 ## 要件の一覧
 
@@ -23,10 +23,10 @@
 実行 A：
 
 ```
-cd app && flutter test --no-pub external_test/accessibility_guidelines_test.dart
+cd app && flutter test --no-pub test/accessibility_guidelines_test.dart
 ```
 
-`external_test/` ごと流すと、別担当のフレーム時間の試験ファイルも拾う。あれは `flutter drive` 用なので `flutter test` では失敗する。
+フレーム時間の試験は `flutter drive` 用なので `integration_test/` に分けてあり、`flutter test test/` では拾わない。
 
 ## 実行結果（2026-11-08、macOS、窓なし）
 
@@ -42,7 +42,7 @@ cd app && flutter test --no-pub external_test/accessibility_guidelines_test.dart
 
 | Requirement | Verified source | What it checks | How to run | Status |
 |---|---|---|---|---|
-| Flutter's frame budget (about 16 ms a frame, 60 fps) while the Workspace timeline is scrolled | https://docs.flutter.dev/cookbook/testing/integration/profiling ("Measure performance with an integration test") | `traceAction` + `TimelineSummary` over 120 mouse-wheel notches on the timeline (40 shapes, vertical and sideways); fails if any frame misses the build or raster budget, or none were drawn (`app/external_test/frame_timing_test.dart`, `frame_timing_driver.dart`) | `cd app && flutter drive --profile -d macos --driver=external_test/frame_timing_driver.dart --target=external_test/frame_timing_test.dart` | FAIL on build budget (ran 2026-11-08, 2 runs; raster budget met) |
+| Flutter's frame budget (about 16 ms a frame, 60 fps) while the Workspace timeline is scrolled | https://docs.flutter.dev/cookbook/testing/integration/profiling ("Measure performance with an integration test") | `traceAction` + `TimelineSummary` over 120 mouse-wheel notches on the timeline (40 shapes, vertical and sideways); fails if any frame misses the build or raster budget, or none were drawn (`app/integration_test/frame_timing_test.dart`, `app/test_driver/frame_timing_driver.dart`) | `cd app && FLUTTER_TEST_OUTPUTS_DIR=build/test_output flutter drive --profile -d macos --driver=test_driver/frame_timing_driver.dart --target=integration_test/frame_timing_test.dart` | FAIL on build budget (ran 2026-11-08, 2 runs; raster budget met) |
 
 結果（2026-11-08、Apple M4、macOS profile ビルドの実窓、2 回流した。`flutter drive` は両回とも exit 1）：テスト本体は通過（期待値を持たない）、ドライバーの予算判定が落ちた。build（UI スレッド）が 16 ms を超えたコマがある。raster は両回とも 0 コマ超過。
 
@@ -56,7 +56,7 @@ cd app && flutter test --no-pub external_test/accessibility_guidelines_test.dart
 | worst_frame_rasterizer_time_millis | 5.03 | 5.00 |
 | missed_frame_rasterizer_budget_count | 0 | 0 |
 
-- 平均の build が 13.5〜15.4 ms で、予算 16 ms すれすれ。余裕がなく、超過の回数は回ごとにばらつく（11 と 3）。数値は `app/build/frame_timing.timeline_summary.json`（毎回上書き）。
+- 平均の build が 13.5〜15.4 ms で、予算 16 ms すれすれ。余裕がなく、超過の回数は回ごとにばらつく（11 と 3）。数値は `app/build/test_output/frame_timing.timeline_summary.json`（毎回上書き）。
 - 注意：ホイール 120 ノッチに対して記録されたコマは 29〜30（1 コマに約 4 回分）。スクロールで実際に画面が動いたかは、試験が確かめていない（期待値なし）。ログに `integration_test plugin was not detected` の警告が出るが、結果は `responseDataCallback` に届いた。
 - 試験ファイル・`lib/`・エンジンは変更していない。
 
