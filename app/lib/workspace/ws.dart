@@ -13,8 +13,8 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/widgets.dart';
 
-import '../engine/motolii.dart';
-export '../engine/motolii.dart'
+import '../bridge/motolii.dart';
+export '../bridge/motolii.dart'
     show
         MotoliiDocument,
         MotoliiMoment,

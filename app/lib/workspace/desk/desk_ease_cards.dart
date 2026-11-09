@@ -8,7 +8,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
-import 'package:motolii/engine/motolii.dart';
+import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/inspector/inspector_parts.dart' show Hov;
 import 'package:motolii/style/tokens.dart';
 import 'package:motolii/workspace/desk/desk_ease.dart';

@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart' show sha256;
 
-import '../../engine/motolii.dart' show motoliiShelves;
+import '../../bridge/motolii.dart' show motoliiShelves;
 
 /// Where the effects put on lately are kept, the newest first, forty, as Alight Motion's effect browser keeps them
 /// (EffectBrowser.kt:117), in the Fonts shelf's way (font_recent.json; a test points it elsewhere: [effectRecentAt]).

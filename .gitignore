@@ -50,4 +50,4 @@ __pycache__/
 /docs/internal/reports/window/user_panels/
 /docs/internal/reports/window/skin_run/*.motolii
 # what the window tests shoot; the pictures the READMEs show are .jpg made from them
-/docs/media/*.png
+/docs/pictures/*.png

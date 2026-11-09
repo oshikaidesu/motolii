@@ -10,7 +10,7 @@ It is being built so that the kind of work done in After Effects takes simpler h
 
 [日本語](README.md) · [Questions (Discussions)](https://github.com/oshikaidesu/motolii/discussions) · [Bugs (Issues)](https://github.com/oshikaidesu/motolii/issues) — English or Japanese.
 
-![The Motolii UI: media and shelves on the left, the composition in the middle, the timeline below, values on the right](docs/media/window.jpg)
+![The Motolii UI: media and shelves on the left, the composition in the middle, the timeline below, values on the right](docs/pictures/window.jpg)
 
 ## Effects and scripts
 
@@ -24,7 +24,7 @@ A preview is generated automatically for each newly added effect, so you can cho
 
 Note: not all code in a supported format runs correctly. The test results are further down.
 
-![Eight shared ISF effects on a photo and text](docs/media/effects.jpg)
+![Eight shared ISF effects on a photo and text](docs/pictures/effects.jpg)
 
 *Eight ISF effects as their authors share them, on a public-domain photo and text.*
 
@@ -46,9 +46,9 @@ Video and audio import, Lottie animations, animation from MIDI and physics are s
 
 A finished video can be written out as an MP4.
 
-![Glowing text, a spinning pink ring, a pattern of lines, split colours](docs/media/mv.gif)
+![Glowing text, a spinning pink ring, a pattern of lines, split colours](docs/pictures/mv.gif)
 
-*8 seconds made with Motolii. Once built, `docs/examples/mv.sh` makes the same as `~/Movies/Motolii/mv.mp4` in one line.*
+*8 seconds made with Motolii. Once built, the calls in [`docs/guide/readme_movie.md`](docs/guide/readme_movie.md), pasted, make the same as `~/Movies/Motolii/mv.mp4`.*
 
 ## Requirements
 
@@ -178,7 +178,7 @@ Opens the app (the first time it seems to stall for 1–3 minutes while it build
 
 ### The screen
 
-![The app's seven areas, numbered](docs/media/panels.jpg)
+![The app's seven areas, numbered](docs/pictures/panels.jpg)
 
 1. **Top bar**: project name, frame size, fps, length, undo and redo, Render (export).
 2. **[Left tabs](docs/guide/tabs.en.md#left-tabs)**: Media, Effects, Fonts, Colors, Create (shapes and recipes), Program (pasted code), Presets (combinations you saved; not usable yet).
@@ -192,17 +192,17 @@ Each tab, with pictures and how to use it: [The tabs](docs/guide/tabs.en.md).
 
 ### Your first piece (in the app)
 
-<img src="docs/media/window_step1.jpg" alt="1: an empty project" width="560">
+<img src="docs/pictures/window_step1.jpg" alt="1: an empty project" width="560">
 
 1. Press the 5th of the tabs at the top left (a square with a plus, **Create**) and type `Iris` in the search box.
 2. Press the **Iris** tile, then **Create** at the bottom. A ring of colours appears in the preview, and a layer in the timeline.
-   <img src="docs/media/window_step2.jpg" alt="2: the Iris recipe placed" width="560">
+   <img src="docs/pictures/window_step2.jpg" alt="2: the Iris recipe placed" width="560">
 3. With the ring selected, switch to the 2nd tab (fx, **Effects**), find `Glow`, press it, then **Add** at the bottom. The ring glows and the button turns into **Remove**.
-   <img src="docs/media/window_step3.jpg" alt="3: Glow applied" width="560">
+   <img src="docs/pictures/window_step3.jpg" alt="3: Glow applied" width="560">
 4. Press **Render** at the top right; the Render box opens. Type a name (e.g. `first`) and press the box's **Render**.
-   <img src="docs/media/window_step4.jpg" alt="4: the Render box" width="560">
+   <img src="docs/pictures/window_step4.jpg" alt="4: the Render box" width="560">
 5. `first.mp4` is written beside the project, and the top bar says `Written: first.mp4`.
-   <img src="docs/media/window_step5.jpg" alt="5: exported" width="560">
+   <img src="docs/pictures/window_step5.jpg" alt="5: exported" width="560">
 
 ### Add an effect from the web
 
@@ -211,9 +211,9 @@ This is what Motolii is for. As an example, `ASCII Art.fs` from [ISF-Files](http
 1. Download the effect file (`.fs`). For example, open `ISF/ASCII Art.fs` on the ISF-Files page, press **Download raw file** (the ↓ button at the top right).
 2. In Finder press ⌘⇧G, type `~/Library/Application Support/Motolii/` and go. Make a folder named `effects` there (if there is none) and put the file in it.
 3. It appears in the Effects tab at once (no restart). Its thumbnail (a balloon photo with the effect applied) is made automatically within seconds, and plays while the pointer is over it. An effect whose default values change nothing shows **NO CHANGE**. Select a layer, press the tile, then **Add**.
-   ![ASCII Art in the Effects tab](docs/media/drop_shelf.jpg)
+   ![ASCII Art in the Effects tab](docs/pictures/drop_shelf.jpg)
 4. In the preview and in the export it looks like this (ASCII Art on a photo).
-   ![ASCII Art on a photo, exported](docs/media/drop_ascii.jpg)
+   ![ASCII Art on a photo, exported](docs/pictures/drop_ascii.jpg)
 
 WGSL (`.wgsl`), recipes (`.js` in `recipes/`), relations (`.js` in `relations/`), eases (`.way` in `ways/`) and AviUtl2 scripts (the author's folder as it is, in `aviutl_scripts/`) go in the same way. Check that the saved file's name ends in `.fs` (a browser may add `.txt`).
 
@@ -242,7 +242,7 @@ write $HOME/Movies/Motolii/first_cmd.mp4
 EOF
 ```
 
-![Your first piece: a pattern of lines waving, its colours split](docs/media/first.gif)
+![Your first piece: a pattern of lines waving, its colours split](docs/pictures/first.gif)
 
 - `make Weave`: makes layer 1 from the recipe "Weave" (`recipes` lists them).
 - `effect 1 Glow`: applies an effect to layer 1 (`effects` lists them).
@@ -250,7 +250,7 @@ EOF
 - `write …`: exports the MP4.
 - Running the same commands again adds another layer to the same project; to start over, `rm ~/Movies/Motolii/first_cmd.motolii` first.
 
-The 8-second example at the top is `docs/examples/mv.sh` (its commands are in `docs/examples/mv.txt`).
+The calls of the 8-second example at the top are in [`docs/guide/readme_movie.md`](docs/guide/readme_movie.md).
 
 </details>
 
@@ -339,7 +339,7 @@ The project's stance: **code you write yourself is a debt.** Look for an existin
 | `shelves/aviutl_scripts/` | Bundled AviUtl2 scripts (per author, with LICENSE and SOURCE.txt) |
 | `app/` | The UI (Flutter, macOS) |
 | `thorvg/`, `old/` | Earlier work, kept |
-| `docs/` | This README's pictures and examples (`media/`, `examples/`) and the author's working notes (`notes/`, Japanese) |
+| `docs/` | This README's pictures (`pictures/`) and examples (`guide/`) and the author's working notes (`notes/`, Japanese) |
 
 </details>
 

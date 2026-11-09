@@ -37,7 +37,7 @@ import 'stage/stage_camera.dart';
 import 'stage/stage_view.dart' show WsRelationStack;
 import 'timeline/timeline.dart';
 import 'top_bar.dart';
-import '../engine/motolii.dart';
+import '../bridge/motolii.dart';
 import 'relate.dart';
 import 'ws.dart';
 import 'shelf/script_code.dart';

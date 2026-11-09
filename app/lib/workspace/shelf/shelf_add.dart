@@ -11,7 +11,7 @@ import 'dart:io';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 
-import '../../engine/motolii.dart' show motoliiShelves;
+import '../../bridge/motolii.dart' show motoliiShelves;
 import '../../parts/text_hand.dart';
 import '../../style/tokens.dart';
 import '../dock/dock_make.dart' show createNames;

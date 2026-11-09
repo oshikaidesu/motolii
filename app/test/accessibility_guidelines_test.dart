@@ -8,7 +8,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motolii/engine/motolii.dart' show motoliiDir;
+import 'package:motolii/bridge/motolii.dart' show motoliiDir;
 import 'package:motolii/style/theme.dart' show ColorTheme;
 import 'package:motolii/workspace/shelf/create_preview.dart' show RecipeMotions;
 import 'package:motolii/workspace/dock/dock_fonts.dart' show fontRecentAt;

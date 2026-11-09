@@ -1,7 +1,7 @@
 // Joined: a relation made of the things picked together (Ws.many): a behaviour of that kind (the inside's around, row,
 // follow or push) and the things put in it as they show now (the inside's relate: their order, its middle and size,
 // a leader, what each was in before), one step, picked once made.
-import '../engine/motolii.dart';
+import '../bridge/motolii.dart';
 import 'moves.dart';
 import 'ws.dart';
 

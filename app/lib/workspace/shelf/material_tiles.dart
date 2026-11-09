@@ -9,7 +9,7 @@ import 'dart:isolate';
 import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter/painting.dart' show FileImage, ResizeImage;
 
-import '../../engine/motolii.dart';
+import '../../bridge/motolii.dart';
 import 'effect_tiles.dart' show EffectTiles;
 
 abstract final class MaterialTiles {

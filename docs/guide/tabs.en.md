@@ -6,7 +6,7 @@ The pictures show the app on 2026-11-03.
 
 ## Left tabs
 
-![The seven left tabs](../media/tabs_left.jpg)
+![The seven left tabs](../pictures/tabs_left.jpg)
 
 Switch with the small icons at the top left (left to right, as in the picture). Every tab has a search box at the top.
 
@@ -22,7 +22,7 @@ Switch with the small icons at the top left (left to right, as in the picture). 
 
 ## Preview tabs
 
-![Stage and Camera View](../media/tabs_preview.jpg)
+![Stage and Camera View](../pictures/tabs_preview.jpg)
 
 | Tab | What you see |
 |---|---|
@@ -31,7 +31,7 @@ Switch with the small icons at the top left (left to right, as in the picture). 
 
 ## Bottom-right tabs
 
-![Camera, Desk and Relations](../media/tabs_right.jpg)
+![Camera, Desk and Relations](../pictures/tabs_right.jpg)
 
 | Tab | What it holds | How to use it |
 |---|---|---|

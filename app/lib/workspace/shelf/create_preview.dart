@@ -15,7 +15,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vector_math/vector_math_64.dart' show Matrix4, Vector3;
 
-import '../../engine/motolii.dart';
+import '../../bridge/motolii.dart';
 
 /// Each moving part of a recipe: its colour, per copy its places (n moments, x y z size), and a path shape's outline
 /// as its path says it ('' another kind), taken out even-odd or drawn by its edge alone as it says.

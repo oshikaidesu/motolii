@@ -8,7 +8,7 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../engine/motolii.dart' show Motolii;
+import '../../bridge/motolii.dart' show Motolii;
 import '../../style/tokens.dart';
 import 'dock_effect_places.dart';
 import 'dock_glyphs.dart';

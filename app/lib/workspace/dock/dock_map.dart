@@ -20,7 +20,7 @@ import 'package:flutter/widgets.dart';
 import 'package:force_graph/force_graph.dart' show CollideForce, Force, ForceNode, ForceSimulation;
 import 'package:material_color_utilities/material_color_utilities.dart' show Cam16;
 
-import '../../engine/motolii.dart' show Motolii, MotoliiQuestions;
+import '../../bridge/motolii.dart' show Motolii, MotoliiQuestions;
 import '../../parts/media_parts.dart' show MiniSlider;
 import '../../style/tokens.dart';
 import 'dock_glyphs.dart';
