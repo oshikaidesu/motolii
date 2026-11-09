@@ -1,6 +1,5 @@
 // Owns the panel's values (Doc) and re-provides it whenever it changes. A different kind or count makes a new document (give it a key).
 // How it LOOKS is the lab's (DESIGN.md): hairlines, type carries hierarchy, grey levels, accent only C.mode. The old Motolii is not a source.
-// Open questions are Cfg fields (knobs in inspector_set.dart); every behaviour below follows them.
 
 import 'package:flutter/foundation.dart' show ValueListenable, listEquals, mapEquals, setEquals;
 import 'package:flutter/widgets.dart';
@@ -10,7 +9,6 @@ import 'package:motolii/inspector/inspector_parts.dart';
 class InspHost extends StatefulWidget {
   const InspHost({
     super.key,
-    required this.cfg,
     required this.kind,
     this.count = 1,
     this.kindWord,
@@ -55,7 +53,6 @@ class InspHost extends StatefulWidget {
     this.live,
     required this.child,
   });
-  final Cfg cfg;
   final Kind kind;
   final int count;
   final Widget child;
@@ -378,5 +375,5 @@ class _InspHostState extends State<InspHost> {
 
   int _tick = 0;
   @override
-  Widget build(BuildContext context) => Ctx(cfg: widget.cfg, doc: doc, tick: _tick, child: widget.child);
+  Widget build(BuildContext context) => Ctx(doc: doc, tick: _tick, child: widget.child);
 }

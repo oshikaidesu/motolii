@@ -211,7 +211,7 @@ class ChooserState extends State<Chooser> {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), cur = x.doc.s2[widget.id] ?? widget.options.first;
-    final on = widget.enabled && !x.cfg.locked && !RowOff.offOf(context);
+    final on = widget.enabled && !RowOff.offOf(context);
     void pick(String o) {
       x.doc.str(widget.id, o);
       _set(false);
@@ -323,8 +323,8 @@ class InspHeader extends StatelessWidget {
               width: Shape.z(22),
               height: Shape.z(22),
               alignment: Alignment.center,
-              decoration: BoxDecoration(color: x.cfg.locked ? Grey.g26 : Pop.accent, borderRadius: BorderRadius.all(Shape.r(6))),
-              child: glyph == null ? null : Glyph(glyph, size: Shape.z(13), color: x.cfg.locked ? Grey.g76 : Pop.onAccent),
+              decoration: BoxDecoration(color: Pop.accent, borderRadius: BorderRadius.all(Shape.r(6))),
+              child: glyph == null ? null : Glyph(glyph, size: Shape.z(13), color: Pop.onAccent),
             ),
             SizedBox(width: Shape.s(8)),
             Flexible(
@@ -335,18 +335,17 @@ class InspHeader extends StatelessWidget {
                 child: Text(
                   doc.name,
                   maxLines: 1,
-                  style: T.title(x.cfg.locked ? Grey.g76 : Grey.g100).copyWith(fontSize: T.px(13), fontWeight: FontWeight.w700, height: 1),
+                  style: T.title(Grey.g100).copyWith(fontSize: T.px(13), fontWeight: FontWeight.w700, height: 1),
                 ),
               ),
             ),
             SizedBox(width: Shape.s(6)),
-            Text((doc.kind == Kind.several ? 'Several' : word) + (x.cfg.locked ? ' · Locked' : ''), maxLines: 1, style: T.label(Grey.g56)),
+            Text(doc.kind == Kind.several ? 'Several' : word, maxLines: 1, style: T.label(Grey.g56)),
             const Spacer(),
             Text('Animate all', style: T.label(Grey.g63)),
             SizedBox(width: Shape.s(6)),
             OnOff(
               on: doc.animateAll,
-              enabled: !x.cfg.locked,
               onChanged: (v) {
                 doc.animateAll = v;
                 doc.poke();
@@ -368,7 +367,7 @@ class InspHeader extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  ed.kick(doc.kind == Kind.several ? 'Several selected' : word) + (x.cfg.locked ? ' · LOCKED' : ''),
+                  ed.kick(doc.kind == Kind.several ? 'Several selected' : word),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: ed.kickStyle(Grey.g56),
@@ -378,7 +377,7 @@ class InspHeader extends StatelessWidget {
                   doc.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: ed.nameStyle().copyWith(color: x.cfg.locked ? Grey.g76 : null),
+                  style: ed.nameStyle(),
                 ),
               ],
             ),
@@ -389,11 +388,10 @@ class InspHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Animate all', style: T.label(x.cfg.locked ? Grey.g56 : (doc.animateAll ? Grey.g95 : Grey.g63))),
+              Text('Animate all', style: T.label(doc.animateAll ? Grey.g95 : Grey.g63)),
               SizedBox(height: Shape.s(4)),
               OnOff(
                 on: doc.animateAll,
-                enabled: !x.cfg.locked,
                 onChanged: (v) {
                   doc.animateAll = v;
                   doc.poke();
@@ -412,7 +410,7 @@ class EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), ed = const Ed();
-    // contract: one plain muted line, no controls, no stale values (A6). With the maybe-knob on, the composition's own settings take its place.
+    // contract: one plain muted line, no controls, no stale values (A6).
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -437,7 +435,7 @@ class EmptyState extends StatelessWidget {
         if (x.doc.b['stage.open'] ?? false)
           for (final c in x.doc.cards) ValuesCard(c), // (the host's own: the whole picture's values)
         SizedBox(height: Shape.s(1)),
-        if (!x.cfg.maybe) Container(height: 1, color: ed.rule),
+        Container(height: 1, color: ed.rule),
       ],
     );
   }

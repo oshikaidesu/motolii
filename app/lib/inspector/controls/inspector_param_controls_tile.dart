@@ -85,7 +85,7 @@ class ParamTile extends StatelessWidget {
 
   Widget _body(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc, v = doc.get(id);
-    final on = !x.cfg.locked && !RowOff.offOf(context);
+    final on = !RowOff.offOf(context);
     Widget gauge(GaugeKind k, {double? vx, double? vy}) => SizedBox.square(
       dimension: Pop.glyph,
       child: FittedBox(
@@ -276,7 +276,7 @@ class _PadGlyphState extends State<_PadGlyph> {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc, p = widget.p;
-    final on = !x.cfg.locked && !RowOff.offOf(context);
+    final on = !RowOff.offOf(context);
     final ix = '${widget.id}.x', iy = '${widget.id}.y';
     final lo = p.min ?? double.negativeInfinity, hi = p.max ?? double.infinity;
     double step(double v, double d) => double.parse((v + d * p.perPx).clamp(lo, hi).toStringAsFixed(math.max(p.dec, 2)));

@@ -21,28 +21,25 @@ class LinkLine extends StatelessWidget {
   final String value, id;
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), off = x.cfg.locked;
+    final x = Ctx.of(context);
     return Hov(
       key: ValueKey('link:${to.name}:$id'),
-      cursor: off ? SystemMouseCursors.basic : SystemMouseCursors.click,
-      onTap: off
-          ? null
-          : () {
-              x.doc.s2['route.at'] = id; // (the slot it is aimed at: the host may say the panel's pick to it)
-              x.doc.str('route', to.route);
-            },
+      onTap: () {
+        x.doc.s2['route.at'] = id; // (the slot it is aimed at: the host may say the panel's pick to it)
+        x.doc.str('route', to.route);
+      },
       builder: (_, h) => SizedBox(
         height: Shape.z(18),
         child: Row(
           children: [
             Expanded(
-              child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: blockValue(off ? Grey.g56 : Grey.g95)),
+              child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: blockValue(Grey.g95)),
             ),
             Flexible(
-              child: Text(to.shelf, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(h && !off ? Grey.g95 : Grey.g56)),
+              child: Text(to.shelf, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(h ? Grey.g95 : Grey.g56)),
             ), // (a narrow tile: cut short as its value is, never over the edge)
             SizedBox(width: Shape.s(2)),
-            CustomPaint(size: const Size(7, 7), painter: _LinkArrowPaint(h && !off ? Grey.g95 : Grey.g56)),
+            CustomPaint(size: const Size(7, 7), painter: _LinkArrowPaint(h ? Grey.g95 : Grey.g56)),
           ],
         ),
       ),

@@ -107,7 +107,7 @@ class Steps extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc, v = doc.get(id) ?? p.def;
-    final on = !x.cfg.locked && !RowOff.offOf(context);
+    final on = !RowOff.offOf(context);
     Widget btn(String s, double by) {
       final ok = on && (by < 0 ? v > (p.min ?? -1e9) : v < (p.max ?? 1e9));
       return Hov(
@@ -141,7 +141,7 @@ class Dice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc;
-    final on = !x.cfg.locked && !RowOff.offOf(context);
+    final on = !RowOff.offOf(context);
     return Hov(
       onTap: on
           ? () {

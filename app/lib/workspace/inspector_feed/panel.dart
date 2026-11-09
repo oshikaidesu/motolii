@@ -133,10 +133,6 @@ class _InspectorPanelState extends State<_InspectorPanel> {
           child: LayoutBuilder(
             builder: (context, box) => InspHost(
               key: ValueKey(k),
-              cfg: const Cfg(
-                mod: ModRule.shiftFine,
-                reset: ResetRule.live,
-              ), // (Ableton Live's: Shift finer while dragging, Delete or double-click back to the default, a digit starts the number: its manual 42.6)
               kind: k,
               kindWord: _kindWord(ws, l?.id),
               cards: Ws.timed('value cards', () => _valueCards(ws, l?.id)),

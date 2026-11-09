@@ -1,6 +1,5 @@
-// Inspector parts. What the Inspector must DO comes from research/intents/inspector.md (Yes cards built, Maybe cards behind cfg.maybe).
+// Inspector parts.
 // How it LOOKS is the lab's (DESIGN.md): hairlines, type carries hierarchy, grey levels, accent only C.mode. The old Motolii is not a source.
-// Open questions are Cfg fields (knobs in inspector_set.dart); every behaviour below follows them.
 
 import 'package:flutter/widgets.dart';
 
@@ -44,7 +43,7 @@ class Dis extends StatelessWidget {
   final Widget child;
   @override
   Widget build(BuildContext context) {
-    final off = RowOff.offOf(context) || Ctx.of(context).cfg.locked;
+    final off = RowOff.offOf(context);
     return IgnorePointer(
       ignoring: off,
       child: Opacity(opacity: off ? .6 : 1, child: child),
@@ -110,8 +109,7 @@ class Pop extends InheritedWidget {
 }
 
 class Ctx extends InheritedWidget {
-  const Ctx({super.key, required this.cfg, required this.doc, this.tick, required super.child});
-  final Cfg cfg;
+  const Ctx({super.key, required this.doc, this.tick, required super.child});
   final Doc doc;
 
   /// Bumped by the host when more than numbers changed (its shape, its words, a pick): only then is everything that
@@ -120,5 +118,5 @@ class Ctx extends InheritedWidget {
   static Ctx of(BuildContext c) => c.dependOnInheritedWidgetOfExactType<Ctx>()!;
   static Ctx read(BuildContext c) => c.getInheritedWidgetOfExactType<Ctx>()!;
   @override
-  bool updateShouldNotify(Ctx old) => tick == null || old.tick != tick || old.doc != doc || old.cfg != cfg;
+  bool updateShouldNotify(Ctx old) => tick == null || old.tick != tick || old.doc != doc;
 }
