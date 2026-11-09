@@ -1,4 +1,4 @@
-// motolii_calls_moment.h: part of motolii.mm. Read only through motolii.mm. The document's moment, its own picture (poster, still) and facts read without opening it, and the window's thread watched.
+// calls_time.h: part of motolii.mm. Read only through motolii.mm. The document's moment, its own picture (poster, still) and facts read without opening it, and the window's thread watched.
 double motolii_seconds(Motolii* m) { return by_look(m, [m] { return doc_seconds(*m->d); }); }
 int motolii_at(Motolii* m, double seconds) {
     // (sent, not waited for: the window reads what was drawn, at the moment it was drawn (the moment's picture, picture.h),

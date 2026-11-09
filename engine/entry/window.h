@@ -1,4 +1,4 @@
-// motolii_window.h: part of motolii.mm. Read only through motolii.mm. A document opened and closed, what a call answers with
+// window.h: part of motolii.mm. Read only through motolii.mm. A document opened and closed, what a call answers with
 // (said_word, doc, changes), and the window's live side: the stage's picture, the desk, pick, play, what is heard and spent.
 void motolii_home(const char* folder) { if (chdir(folder)) std::printf("motolii_home: %s is not a folder\n", folder); }
 Motolii* motolii_open(const char* document, int wide, int high) {

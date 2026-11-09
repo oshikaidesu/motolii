@@ -1,4 +1,4 @@
-// motolii_calls_later.h: part of motolii.mm. Read only through motolii.mm. Changes asked without waiting: queued behind the hand, a ticket said at once, answered later (motolii_later, motolii_answer); undo, redo.
+// calls_later.h: part of motolii.mm. Read only through motolii.mm. Changes asked without waiting: queued behind the hand, a ticket said at once, answered later (motolii_later, motolii_answer); undo, redo.
 // A change asked without waiting (a shell's hand that must not stand still while the hand works it): queued in order
 // behind every other, a ticket said at once; motolii_answer says whether it is done (-1 not yet, 0 refused: then
 // motolii_answer_why says why, 1 done; for add and make, the new thing). The calls: say, set, let_go (number: keep),

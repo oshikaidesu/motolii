@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# look_models.py: the two picture readers the shelves' maps tell likeness by (motolii_likeness, motolii_calls_map.h), written as
+# look_models.py: the two picture readers the shelves' maps tell likeness by (motolii_likeness, entry/calls_map.h), written as
 # ONNX files into ~/Library/Caches/Motolii/models, outside the repository:
 #   clip_b32.onnx      OpenAI CLIP ViT-B/32's image encoder (the effects' frames)
 #   fontclip_b32.onnx  FontCLIP's (the fonts' specimens: Tatsukawa et al., Eurographics 2024; its weights MIT, as its

@@ -1,4 +1,4 @@
-// motolii_calls.h: part of motolii.mm. Read only through motolii.mm. The open document's things, values, keys, ways, marks
+// calls.h: part of motolii.mm. Read only through motolii.mm. The open document's things, values, keys, ways, marks
 // and shelves, read and changed at once (by_look, by_hand); the rest of motolii.h's calls in the parts motolii.mm reads after this.
 int motolii_add(Motolii* m, const char* kind, const char* file) { return by_hand(m, [=] { return changes(m, (int)(doc_add(doc(m), kind, file))); }); }
 int motolii_remove(Motolii* m, int thing) { return by_hand(m, [=] { return changes(m, (int)(doc_remove(doc(m), thing))); }); }

@@ -258,7 +258,7 @@ static const std::vector<AbsentCopy>& doc_absent_copies(Doc& d, int thing, doubl
     return k.copies;
 }
 // A text's words as they are seen at a moment: as typed, or as AbsentMotion's text effects on it change them (Count
-// Up/Down, Timecode, Text Randomizer: absent_motion.h), at the stage's 60 frames a second (motolii_hand.h's RATE).
+// Up/Down, Timecode, Text Randomizer: absent_motion.h), at the stage's 60 frames a second (entry/render_thread.h's RATE).
 static std::string doc_text_shown(Doc& d, int thing, double now, bool* moves = nullptr) {
     const std::string typed = doc_word(d, thing, "text");
     if (moves) *moves = false;

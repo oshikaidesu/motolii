@@ -1,4 +1,4 @@
-// motolii_calls_sound.h: part of motolii.mm. Read only through motolii.mm. A film's sound: how loud it is (read once a file), over a stretch, ducked under the others (Audacity's Auto Duck), and where it strikes.
+// calls_sound.h: part of motolii.mm. Read only through motolii.mm. A film's sound: how loud it is (read once a file), over a stretch, ducked under the others (Audacity's Auto Duck), and where it strikes.
 // A film's sound: how loud it is, 100 times a second of its own (read once a file, as fast as it decodes), and the
 // moments of the document it strikes (grows `rise` dB louder at once), where its film shows them.
 static const std::vector<float>* loudness_of(const std::string& file, bool read_it = true) {   // (not read_it: only if read already)

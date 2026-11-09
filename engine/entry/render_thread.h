@@ -1,5 +1,5 @@
-// motolii_hand.h: part of motolii.mm. Read only through motolii.mm. The one hand (Motolii) and how it is asked: by_hand,
-// by_look, posted; what was late kept for the window. Its loop is motolii_hand_loop.h, the window's calls motolii_window.h.
+// render_thread.h: part of motolii.mm. Read only through motolii.mm. The one hand (Motolii) and how it is asked: by_hand,
+// by_look, posted; what was late kept for the window. Its loop is render_thread_loop.h, the window's calls window.h.
 #include <CoreText/CoreText.h>
 #include "stage/kit/kit.h"
 #include "document/doc.h"

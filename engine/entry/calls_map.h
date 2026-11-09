@@ -1,4 +1,4 @@
-// motolii_calls_map.h: part of motolii.mm, read before motolii_calls.h. The shelves' maps: what is alike lies near, as XLN Audio's
+// calls_map.h: part of motolii.mm, read before calls.h. The shelves' maps: what is alike lies near, as XLN Audio's
 // XO lays its samples out by how alike they sound, by t-SNE (its head of software design to Computer Music, 2019), here
 // qdtsne's (MIT, third_party/qdtsne), its quick start as it is; and a font's letters drawn small to be told by, as IDEO's
 // Font Map laid fonts out by their drawn letters.

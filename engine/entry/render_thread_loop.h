@@ -1,5 +1,5 @@
-// motolii_hand_loop.h: part of motolii.mm. Read only through motolii.mm. The hand itself: it opens the stage, runs each call
-// as it comes, and draws a picture whenever something has changed or time is going on (motolii_hand.h asks it).
+// render_thread_loop.h: part of motolii.mm. Read only through motolii.mm. The hand itself: it opens the stage, runs each call
+// as it comes, and draws a picture whenever something has changed or time is going on (render_thread.h asks it).
 static void motolii_hand(Motolii* m, std::string document, int wide, int high, std::promise<bool>* opened) {
     pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);   // (the hand makes the pictures a window shows: macOS's own word for that, on its fast cores)
     const bool says = doc_size(document.c_str(), &wide, &high);   // (a document that says its own size is opened at it)

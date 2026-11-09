@@ -1,4 +1,4 @@
-// motolii_calls_files.h: part of motolii.mm. Read only through motolii.mm. Files read with no document: a film's small pictures, what a media file is (GStreamer's discoverer), a font's kinds (CoreText).
+// calls_files.h: part of motolii.mm. Read only through motolii.mm. Files read with no document: a film's small pictures, what a media file is (GStreamer's discoverer), a font's kinds (CoreText).
 // A film's first picture as a small .png: GStreamer's own line for it (decode, scale, into a .png), held at its first
 // picture, which is taken and written. It asks nothing of a stage, so a shell may call it from another thread.
 // (fraction: where in the film, 0 to 1; a picture there, not the first: a hand moving over a tile looks along the film;

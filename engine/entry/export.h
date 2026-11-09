@@ -1,4 +1,4 @@
-// motolii_write.h: part of motolii.mm. Read only through motolii.mm.
+// export.h: part of motolii.mm. Read only through motolii.mm.
 int motolii_write(Motolii* m, const char* mp4) {
     return by_hand(m, [m, mp4] {
         doc(m);

@@ -173,7 +173,7 @@ static std::string doc_aviutl_names() {
 // is opened. The maker's own of a name goes before the library's.
 // One for the whole program, read by every document's hand and every window's look: held by a lock, given as a copy.
 static std::mutex& doc_own_ways_lock() { static std::mutex one; return one; }
-static std::atomic<int>& doc_own_ways_made() { static std::atomic<int> made{0}; return made; }   // (how many times what was read was not what was before: the window's picture made again, motolii_hand.h)
+static std::atomic<int>& doc_own_ways_made() { static std::atomic<int> made{0}; return made; }   // (how many times what was read was not what was before: the window's picture made again, entry/render_thread.h)
 static std::map<std::string, std::string> doc_own_ways() {
     std::lock_guard<std::mutex> hold(doc_own_ways_lock());
     static std::map<std::string, std::string> kept;
