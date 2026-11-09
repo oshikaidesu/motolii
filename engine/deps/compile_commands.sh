@@ -6,13 +6,25 @@
 #   ./deps/compile_commands.sh
 set -e
 cd "$(dirname "$0")/.."
+# (third_party/ is fetched, not kept in git: a git worktree has only the few folders git keeps. What is missing here is
+# read from the main checkout's engine/third_party/, found through git rev-parse --git-common-dir, where it was fetched)
+TP=third_party
+if [ ! -d $TP/filament_src ]; then
+  TP="$(cd "$(git rev-parse --git-common-dir 2>/dev/null)/.." && pwd)/engine/third_party"
+  [ -d $TP/filament_src ] || { echo "${0:t}: third_party が無い：先に ./engine/edit.sh を 1 回走らせろ（deps/・gpu/build.sh が取ってきて組む）" >&2; exit 1; }
+fi
 HB=${HOMEBREW_PREFIX:-$(brew --prefix)}
 eval "$(grep -m1 '^    KIT_EXTRA=' edit.sh | sed 's/ BUILDONLY=1.*//; s/^ *//')"   # (edit.sh's own flags, as it builds the library)
-SRC=third_party/filament_src; SDK=$SRC/out/wgpu_install; THOR=third_party/thorvg_src; SKIA=third_party/skia_src
+SRC=$TP/filament_src; SDK=$SRC/out/wgpu_install; THOR=$TP/thorvg_src; SKIA=$TP/skia_src
 flags=(-std=c++20 -fobjc-arc -I $SDK/include -I $THOR/inc -I $THOR/src/loaders/lottie -I $SRC/third_party/dawn/include
-       -I $SRC/out/wgpu/third_party/dawn/gen/include -I $PWD -I third_party/libtess2/Include -I third_party/curve_fit_nd/c
-       -I $SKIA -I third_party/AbsentMotion/app/src/main/cpp)   # (gpu/kit_wgpu.sh's, and the -I its .o files are built with)
-for t in ${=KIT_EXTRA}; do case $t in -I*|-D*|-F*) flags+=$t;; esac; done
+       -I $SRC/out/wgpu/third_party/dawn/gen/include -I $PWD -I $TP/libtess2/Include -I $TP/curve_fit_nd/c
+       -I $SKIA -I $TP/AbsentMotion/app/src/main/cpp)   # (gpu/kit_wgpu.sh's, and the -I its .o files are built with)
+if [ $TP != third_party ]; then   # (our #include "third_party/filament_src/..." read after -I $PWD, so a file of ours is never the main checkout's)
+  mkdir -p out/fetched && ln -sfn $TP out/fetched/third_party && flags+=(-I $PWD/out/fetched)
+fi
+for t in ${=KIT_EXTRA}; do   # (edit.sh's $PWD/third_party/<x>: kept here if git keeps it, else the fetched one)
+  case $t in -I*|-D*|-F*) [[ $t == -?$PWD/third_party/* && ! -e ${t[3,-1]} ]] && t=${t[1,2]}$TP/${t#-?$PWD/third_party/}; flags+=$t;; esac
+done
 python3 - "$PWD" ${flags[@]} > compile_commands.json <<'PY'
 import json, subprocess, sys
 root, flags = sys.argv[1], sys.argv[2:]
