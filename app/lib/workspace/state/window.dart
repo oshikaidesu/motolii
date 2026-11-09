@@ -4,13 +4,12 @@ part of 'state.dart';
 /// A sound: a film whose file has no picture, hidden and heard (doc_add), Alight Motion's audio layer: docs/internal/reports/alight_motion/alight_ui.md 177.
 bool wsSound(Motolii m, int t) => m.word(t, 'kind') == 'film' && m.kindOf(m.word(t, 'file')) == 'sound';
 
-class Ws extends ChangeNotifier {
+class Ws {
   /// Each aspect told on its own (a Flutter ValueNotifier: what listens to one hears only it).
   late final on = {for (final a in WsAspect.values) a: ValueNotifier<int>(0)};
   void _tell(WsAspect a) {
     if (a == WsAspect.picked || a == WsAspect.document) _watch(); // (what the inside puts in the moment's picture follows what is picked)
     on[a]!.value++;
-    notifyListeners(); // (WsScope's own: it says which aspects to the parts below)
   }
 
   final layers = <WsLayer>[];
@@ -48,7 +47,6 @@ class Ws extends ChangeNotifier {
   bool _gone = false;
   final seen = ValueNotifier<int>(0);
 
-  @override
   void dispose() {
     _gone = true;
     seen.dispose();
@@ -56,7 +54,6 @@ class Ws extends ChangeNotifier {
     for (final n in on.values) {
       n.dispose();
     }
-    super.dispose();
   }
 
   /// The document read again, after any change to it: what the panels list is what the document holds.
