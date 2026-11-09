@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 
 import '../skin/tokens.dart';
-import '../widgets/glyphs.dart';
 import 'inspector_parts.dart';
 
 class InspHeader extends StatelessWidget {
@@ -10,21 +9,14 @@ class InspHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc, ed = const Ed();
     final w = doc.kindWord; // (what the host calls it, where the kinds have no word)
-    final (word, glyph) = switch (doc.kind) {
-      Kind.shape when w != null => (
-        w,
-        w == 'Film' || w == 'Picture'
-            ? G.image
-            : w == 'Sound'
-            ? G.media
-            : G.shape,
-      ),
-      Kind.shape => ('Shape', G.shape),
-      Kind.text => ('Text', G.text),
-      Kind.camera => ('Camera', G.camera),
-      Kind.group => ('Group', G.grid),
-      Kind.several => ('Layers', null),
-      Kind.none => ('', null),
+    final word = switch (doc.kind) {
+      Kind.shape when w != null => w,
+      Kind.shape => 'Shape',
+      Kind.text => 'Text',
+      Kind.camera => 'Camera',
+      Kind.group => 'Group',
+      Kind.several => 'Layers',
+      Kind.none => '',
     };
     if (Pop.on(context)) {
       return Container(
@@ -33,14 +25,6 @@ class InspHeader extends StatelessWidget {
         color: Pop.card,
         child: Row(
           children: [
-            Container(
-              width: Shape.z(22),
-              height: Shape.z(22),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(color: Pop.accent, borderRadius: BorderRadius.all(Shape.r(6))),
-              child: glyph == null ? null : Glyph(glyph, size: Shape.z(13), color: Pop.onAccent),
-            ),
-            SizedBox(width: Shape.s(8)),
             Flexible(
               child: FittedBox(
                 // (drawn smaller, never cut)
@@ -74,7 +58,6 @@ class InspHeader extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (glyph != null) ...[Glyph(glyph, size: Shape.z(16), color: Grey.g76), SizedBox(width: Shape.s(8))],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

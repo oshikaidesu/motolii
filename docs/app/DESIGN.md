@@ -95,7 +95,7 @@ Relation families (bar colour = family `.t`, the Timeline tone) `[code]`
 - Tiles and thumbnails: a 1px accent outline.
 - Text never goes below 10px; dim text on a dark ground is lifted to g56 at the least, but dark ink on a light fill (the playhead head, a flag) is left alone.
 
-**Symbols are few (owner, 2026-10-02) `[decided]`.** More symbols make the screen cluttered. The lab keeps one small, fixed set of line glyphs (`app/lib/widgets/glyphs.dart`, 15 now). A new glyph needs a reason that no existing glyph, a word, or a position/colour change can carry. State is shown by position, grey level or a word before it is shown by a new mark. Motolii's 49 glyphs are NOT the target: they are folded into this small set (several into one), and some become plain words.
+**Symbols are few (owner, 2026-10-02) `[decided]`.** More symbols make the screen cluttered. A mark is a word, a position, or a grey. A new drawn mark needs a reason that a word cannot carry.
 
 **The old Motolii is a counter-example, not a source (owner, 2026-10-02) `[decided]`.** Nothing of the old Motolii's UI is imported, and its UX is not copied either. It is studied only to learn what NOT to do (`research/old-motolii-complaints.md`, `research/anti-patterns.md`). This design (the lab) is the only reference for how Motolii looks and feels. What the product must be able to do (capabilities) comes from the product's purpose and from shipped precedents (After Effects, Ableton), never from how the old UI happened to do it.
 

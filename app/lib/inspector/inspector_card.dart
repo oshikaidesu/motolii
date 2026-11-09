@@ -4,8 +4,6 @@ import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 import '../skin/theme.dart';
 import '../skin/tokens.dart';
 import 'inspector_parts.dart';
-import '../widgets/timeline_painters.dart' show TpGlyph, TpGlyphView;
-
 // ---- 10. a card ------------------------------------------------------------------------------------------------------
 /// A card as the inside declares it, an effect's and a thing's own alike: a name and a WGSL uniform struct
 /// (workspace/inspector_feed/cards.dart writes it from motolii_cards, card_table.h). Its fields are whatever [infer] makes of it.
@@ -82,7 +80,7 @@ class ValuesCard extends StatelessWidget {
                     onTap: () => doc.flag('$k.past', false),
                     builder: (_, h) => Padding(
                       padding: EdgeInsets.only(right: Shape.s(6)),
-                      child: TpGlyphView(TpGlyph.unlock, h ? Grey.g95 : Grey.g76),
+                      child: Text('Range', style: T.micro(h ? Grey.g95 : Grey.g76)),
                     ),
                   ),
                 if (at < 0)
@@ -108,7 +106,7 @@ class ValuesCard extends StatelessWidget {
                       onTap: () => doc.onCardEye!(card.name),
                       builder: (_, h) => Padding(
                         padding: EdgeInsets.only(right: Shape.s(6)),
-                        child: TpGlyphView(doc.cardsOff.contains(card.name) ? TpGlyph.eyeOff : TpGlyph.eye, h ? Grey.g95 : Grey.g56),
+                        child: Text(doc.cardsOff.contains(card.name) ? 'Show' : 'Hide', style: T.micro(h ? Grey.g95 : Grey.g56)),
                       ),
                     ),
                   CardMore(
