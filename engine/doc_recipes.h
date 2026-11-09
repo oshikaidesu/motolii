@@ -9,7 +9,7 @@ static std::vector<DocRecipe> doc_recipes_read() {
         text << in.rdbuf();
         const std::string form = door_form(text.str()), told = door_js(text.str(), form);   // (a form from the net told as a sketch: door.h)
         if (text.str().find("\n// make ") == std::string::npos && script_is_sketch(told)) {   // (a sketch of p5.js as it comes, no head of ours: a solid given it)
-            r.name = f.stem().string(), r.what = form.empty() ? "A p5.js sketch" : "A sketch from the net", r.code = told.find("WEBGL") != std::string::npos;
+            r.name = f.stem().string(), r.what = form.empty() ? "A p5.js sketch" : "A sketch from the net", r.code = told.find("WEBGL") != std::string::npos, r.program = door_name(form);   // (its things and motion all its own: docs/notes/CREATE_PROGRAM.md)
             r.lines = {r.code ? "make solid cube" : "make picture " + r.path};   // (in 3D its solids stand in the world; in 2D what it paints is a picture)
             if (!r.code) r.lines.push_back("fit fit");   // (as large as the picture: doc_fit, After Effects' Fit to Comp)
             all.push_back(r);
@@ -19,6 +19,7 @@ static std::vector<DocRecipe> doc_recipes_read() {
         for (std::string line; std::getline(in, line);) {
             if (line.rfind("//", 0) != 0) { if (line.find_first_not_of(" \t\r") != std::string::npos) { r.code = true; break; } continue; }
             line.erase(0, line.find_first_not_of("/ "));
+            if (line.rfind("--label:", 0) == 0) { r.program = line.substr(8, line.find_last_not_of(" \r") - 7); continue; }   // (a closed pack, what it was written for: a whole Cavalry script's "// --label:Cavalry")
             if (line.rfind("--", 0) == 0) continue;   // (a knob)
             if (r.name.empty()) { const size_t colon = line.find(':'); r.name = line.substr(0, colon); r.what = colon == std::string::npos ? "" : line.substr(line.find_first_not_of(' ', colon + 1)); }
             else if (!line.empty()) r.lines.push_back(line);
@@ -29,7 +30,7 @@ static std::vector<DocRecipe> doc_recipes_read() {
 }
 static std::string doc_recipe_names() {
     std::string all;
-    for (const DocRecipe& r : doc_recipes()) all += (all.empty() ? "" : "\n") + r.name + "\t" + r.what;
+    for (const DocRecipe& r : doc_recipes()) all += (all.empty() ? "" : "\n") + r.name + "\t" + r.what + (r.program.empty() ? "" : "\t" + r.program + "\t" + r.path);   // (a pack: the Program shelf's)
     return all;
 }
 // Whether a file the document's pictures are made from (the stage's effects, the things' scripts) has been written

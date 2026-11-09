@@ -3,10 +3,16 @@ part of 'motolii.dart';
 
 extension MotoliiShelves on Motolii {
   /// Pictures in one call: each recipe's name and what it makes.
-  List<(String, String)> get recipes => _folders.putIfAbsent('recipes', () => [
+  List<(String, String)> get recipes => _folders.putIfAbsent('recipes', () => [for (final l in _recipeLines) (l[0], l[1])]);
+
+  /// The closed packs among them, the Program shelf's and not Create's (docs/notes/CREATE_PROGRAM.md): each one's name
+  /// and file, and what it was written for ([packKinds]: Cavalry, p5.js…), as the inside says.
+  List<(String, String)> get packs => _folders.putIfAbsent('packs', () => [for (final l in _recipeLines) if (l.length > 3) (l[0], l[3])]);
+  List<(String, String)> get packKinds => _folders.putIfAbsent('packKinds', () => [for (final l in _recipeLines) if (l.length > 3) (l[0], l[2])]);
+  List<List<String>> get _recipeLines => [
     for (final line in _recipes(_m).toDartString().split('\n'))
-      if (line.indexOf('\t') case final at when at > 0) (line.substring(0, at), line.substring(at + 1)),
-  ]);
+      if (line.split('\t') case final l when l.length > 1 && l[0].isNotEmpty) l,
+  ];
 
   /// The Repeater recipe (engine/recipes/repeater.js), by its name: said to a thing as its script, the inside makes the name its
   /// file (doc_say) and the thing lays its copies out (its knobs then are the thing's values js_StepX, js_Columns, js_Rotate…).

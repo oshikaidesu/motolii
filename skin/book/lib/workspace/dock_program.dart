@@ -18,9 +18,11 @@ import 'package:re_highlight/languages/javascript.dart';
 import 'package:re_highlight/styles/atom-one-dark.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
 
+import '../motolii.dart';
 import '../sets/foundations/text_hand.dart';
 import '../tokens.dart';
 import 'dock_effects.dart';
+import 'create_preview.dart';
 import 'dock_glyphs.dart';
 import 'dock_parts.dart';
 import 'effect_tiles.dart';
@@ -30,10 +32,14 @@ import 'ws_menu.dart';
 
 /// One program on the shelf: its file, what it was written for, and the hash that tells it from the others of those.
 class Program {
-  Program(this.file);
+  Program(this.file, {this.recipe, this.kind});
   final String file;
+
+  /// A closed pack of the library's recipes (a whole Cavalry script, a p5.js sketch as it came: CREATE_PROGRAM.md): made
+  /// by its name as Create made it (doc_make), what it was written for as the inside says; its file not written over.
+  final String? recipe, kind;
   String get stem => file.substring(file.lastIndexOf('/') + 1, file.lastIndexOf('.'));
-  String get form => stem.contains('-') ? stem.substring(0, stem.lastIndexOf('-')) : stem;
+  String get form => kind ?? (stem.contains('-') ? stem.substring(0, stem.lastIndexOf('-')) : stem);
   String get tail => stem.contains('-') ? stem.substring(stem.lastIndexOf('-') + 1) : '';
   File get _named => File('${file.substring(0, file.lastIndexOf('.'))}.name');
 
@@ -43,6 +49,7 @@ class Program {
   /// What it is called: its maker's word, or what it says of itself (the site's title door_net.h wrote at its head, a
   /// file of many tabs' description).
   String get name {
+    if (recipe case final r?) return r;
     try {
       if (_named.existsSync()) return _named.readAsStringSync().trim();
       final lines = File(file).readAsLinesSync();
@@ -82,6 +89,12 @@ List<Program> programs() {
   return [for (final f in kept) Program(f.path)];
 }
 
+/// The maker's programs, then the library's packs not among them (one put in from the net and kept there too: once).
+List<Program> programsAndPacks(Motolii? m) {
+  final own = programs(), stems = {for (final p in own) p.stem}, kinds = {for (final (name, kind) in m?.packKinds ?? const <(String, String)>[]) name: kind};
+  return [...own, for (final (name, file) in m?.packs ?? const <(String, String)>[]) if (!stems.contains(name)) Program(file, recipe: name, kind: kinds[name])];
+}
+
 class ProgramShelf extends StatefulWidget {
   const ProgramShelf(this.c, {super.key});
   final DockCtx c;
@@ -106,6 +119,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
 
   void _put(Program p) {
     final m = c.ws.inside!;
+    if (p.recipe case final r?) return c.ws.after(m.later('make', word: r), (done, why) => _told(p, done, why), (made) => c.ws.select('$made'));   // (as Create's tile made it: dock_make_2.dart _make)
     c.ws.after(m.later('door', thing: int.tryParse(c.ws.selected ?? '') ?? 0, word: p.file), (done, why) => _told(p, done, why), (made) {
       if (made <= 0) return;
       if (p.name != p.plain) c.ws.after(m.later('say', thing: made, name: 'name', word: p.name));
@@ -156,7 +170,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
     final box = _menu.currentContext?.findRenderObject() as RenderBox?;
     _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [
       WsMenuItem('Create', () => _put(p)),
-      WsMenuItem('Rename…', () => _rename(p)),
+      if (p.recipe == null) WsMenuItem('Rename…', () => _rename(p)),
       const WsMenuItem.rule(),
       WsMenuItem(Platform.isWindows ? 'Show in Explorer' : 'Show in Finder', () => Platform.isWindows ? Process.run('explorer', ['/select,${p.file.replaceAll('/', r'\')}']) : Process.run('open', ['-R', p.file])),
     ]);
@@ -182,16 +196,18 @@ class _ProgramShelfState extends State<ProgramShelf> {
 
   @override
   Widget build(BuildContext context) {
-    final all = programs();
+    final all = programsAndPacks(c.ws.inside);
     final forms = <String, int>{};
     for (final p in all) {
       forms[p.form] = (forms[p.form] ?? 0) + 1;
     }
     final shown = all.where((p) => (c.chip == 'All' || c.chip == p.form) && (c.hit(p.name) || c.hit(p.stem) || c.hit(p.first))).toList();
     final sel = c.foot((c.mem.programCode ? _stood(all) : null) ?? all.where((p) => p.file == c.sel).firstOrNull);
+    final m = c.ws.inside;
+    if (m != null && all.any((p) => p.recipe != null)) RecipeMotions.ask(File(m.libPath).parent.parent.path, [for (final r in m.recipes) r.$1]);   // (a pack's tile: its motion as Create drew it, dock_make_3.dart _isRecipe)
     if (all.isEmpty) return Padding(padding: EdgeInsets.all(Shape.s(24)), child: Text('Copy code from the web, then Paste', textAlign: TextAlign.center, style: T.label(Grey.g63)));
     if (!c.mem.programCode) {
-      ProgramTiles.ask(all.map((p) => p.file), () {
+      ProgramTiles.ask(all.where((p) => p.recipe == null).map((p) => p.file), () {
         if (mounted) setState(() {});
       });
     }
@@ -203,7 +219,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
         children: [
           if (!c.mem.programCode) DockChips([('All', all.length), for (final e in forms.entries) (e.key, e.value)], active: c.chip, onPick: c.pickChip),
           Expanded(
-            child: c.mem.programCode && sel != null
+            child: c.mem.programCode && sel != null && sel.recipe == null   // (a pack's file is the library's: not written over here)
                 ? ProgramCode(sel.file, (text) {
                     File(sel.file).writeAsStringSync(text);
                     _saved(sel);
@@ -223,7 +239,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
                                 width: w,
                                 child: GestureDetector(
                                   onSecondaryTapDown: (d) => _menuOn(p, d.globalPosition),
-                                  child: EffectTile(p.name, key: ValueKey('ws-program-${p.stem}-${tile(p).isEmpty ? 0 : File(tile(p)).lastModifiedSync().millisecondsSinceEpoch}'), file: tile(p), on: null, onTap: () => c.pick(p.file), onApply: () => _put(p), picked: c.sel == p.file, naming: _renaming == p.file ? _naming(p) : null),   // (two presses make it, as on Create; drawn again under the same name, an Image with the same file goes on showing the first: the date in its key)
+                                  child: EffectTile(p.name, key: ValueKey('ws-program-${p.stem}-${tile(p).isEmpty ? 0 : File(tile(p)).lastModifiedSync().millisecondsSinceEpoch}'), file: tile(p), picture: p.recipe == null ? null : RecipeMotionView(p.recipe!), on: null, onTap: () => c.pick(p.file), onApply: () => _put(p), picked: c.sel == p.file, naming: _renaming == p.file ? _naming(p) : null),   // (two presses make it, as on Create; drawn again under the same name, an Image with the same file goes on showing the first: the date in its key)
                                 ),
                               ),
                           ],

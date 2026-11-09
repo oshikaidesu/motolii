@@ -542,7 +542,7 @@ static bool doc_raise(Doc& d, int thing, int places) {
 // "// Name: what it makes", "// make kind file", then a thing's values, one to a line: "set name number",
 // "say name words", "key name seconds number", "then kind file" for another thing; its knobs as script.h says.
 // Code below the head is the first thing's script.
-struct DocRecipe { std::string name, what, path; std::vector<std::string> lines; bool code = false; };
+struct DocRecipe { std::string name, what, path, program; std::vector<std::string> lines; bool code = false; };   // (program: what a closed pack was written for, listed on the Program shelf, not Create; "" one of Create's)
 static std::vector<DocRecipe> doc_recipes_read();
 // The folders a kind of file is read from: the library's own (beside the out/ this library is in), then the maker's
 // own, as a maker's scripts and presets are theirs (MOTOLII_OWN, or %APPDATA%/Motolii on Windows, or

@@ -1,4 +1,5 @@
 // Galaxy Spiral: Canvalry's Galaxy Spiral Distribution as it is (MIT, Phill T, github.com/phillip-motion/Canvalry-scripts), only these head lines added (engine/recipes/from_canvalry.py)
+// --label:Cavalry
 // make shape circle
 // say fill 00f5d4
 // set size 0.03

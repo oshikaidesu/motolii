@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <map>
 #include <regex>
 #include <sstream>
 #include <string>
@@ -18,6 +19,12 @@
 inline bool door_has(const std::string& t, const char* word) { return t.find(word) != std::string::npos; }
 #include "door_shadertoy.h"
 
+// What a form is called where it is written for: its programs' files are named so (doc_door.h), the Program shelf's chips.
+inline std::string door_name(const std::string& form) {
+    static const std::map<std::string, std::string> names = {{"", "p5.js"}, {"shadertoy", "Shadertoy"}, {"sandbox", "GLSL Sandbox"}, {"three", "three.js"}, {"hydra", "Hydra"}, {"dweet", "Dwitter"}, {"tixy", "tixy"}, {"turtle", "Turtletoy"}, {"two", "Two.js"}, {"paper", "Paper.js"}, {"canvas", "Canvas"}, {"twigl", "twigl"}, {"bonzomatic", "Bonzomatic"}};
+    const auto at = names.find(form);
+    return at == names.end() ? form : at->second;
+}
 // "" as it is (ISF, a p5.js sketch, a recipe of ours, or not code); or shadertoy sandbox hydra two paper turtle canvas dweet tixy.
 inline std::string door_form(const std::string& t) {
     static const std::regex twigl(R"(\bFC\b|\buniform\s+vec2\s+r\s*;)"), sandbox(R"(\buniform\s+\w+\s+(u_)?(time|resolution)\b)"), hydra(R"(\b(osc|noise|voronoi|shape|gradient|solid|src)\s*\()"), member(R"(\b[xc]\.\w|\bwith\s*\(\s*x\s*\))"), tixy(R"(\b[tixy]\b)"), paper(R"(\bnew\s+(Path|Point|Group|Raster|PointText|Layer|Size)\b|\bview\.|\bfunction\s+onFrame\b|\bproject\.)");

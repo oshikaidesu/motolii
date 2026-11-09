@@ -321,12 +321,13 @@ class _EffectsShelfState extends State<EffectsShelf> {
 /// effect its small drawing, else a plain tile), its name, ON (and its place among those on the stage) when it is on,
 /// why it is seen to change nothing on the sample when it is (FOR SOUND, UNSUPPORTED…), the star for a thing's effect.
 class EffectTile extends StatelessWidget {
-  const EffectTile(this.name, {super.key, this.file, this.look, required this.on, required this.onTap, this.onApply, this.picked = false, this.same, this.star, this.starId, this.naming, this.small = false, this.lost = false, this.onHover});
+  const EffectTile(this.name, {super.key, this.file, this.picture, this.look, required this.on, required this.onTap, this.onApply, this.picked = false, this.same, this.star, this.starId, this.naming, this.small = false, this.lost = false, this.onHover});
   final String name;
   final bool small;   // (its square alone, among the last put on: no name, no tags; the foot says which)
   final bool lost;   // (a deck holds it, this machine does not)
   final Widget? naming;   // (where its name is being written, in its place)
   final String? file, on;
+  final Widget? picture;   // (drawn by other than a file: a pack's motion on the Program shelf, RecipeMotionView)
   final CustomPainter? look;
   final bool picked;
   final String? same;   // (seen to change nothing on the sample: why, EffectTiles.sameTag)
@@ -352,6 +353,8 @@ class EffectTile extends StatelessWidget {
               ColoredBox(color: WsT.card),
               if (file case final f? when f.isNotEmpty)
                 TileMoving(f, playing: h || !small)   // (in the grid always: only those in sight are built, GridView.builder's; on the map the hand's alone, 1,255 of 16 pictures about 3 GB)
+              else if (picture != null)
+                picture!
               else if (look != null)
                 FittedBox(child: CustomPaint(size: const Size(18, 16), painter: look)),
               if (on case final o? when !small) Positioned(left: 3, top: 3, child: DockTag(o, hue: WsT.accent, edge: true)),
