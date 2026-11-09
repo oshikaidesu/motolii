@@ -1,22 +1,22 @@
 // export.h: part of motolii.mm. Read only through motolii.mm.
-int motolii_write(Motolii* m, const char* mp4) {
-    return by_hand(m, [m, mp4] {
+int motolii_export(Motolii* m, const char* mp4) {
+    return on_render_thread(m, [m, mp4] {
         doc(m);
-        if (!told(m, ends(mp4, ".mp4") || ends(mp4, ".mov") || ends(mp4, ".gif") || ends(mp4, ".png") || ends(mp4, ".jpg"), "a film is written as an .mp4, .mov (HEVC), .gif, .png or .jpg (a picture each)") || !told(m, placed(mp4), "there is no such folder") || !told(m, !m->d->writing, "it is being written already")) return 0;
+        if (!checked(m, ends(mp4, ".mp4") || ends(mp4, ".mov") || ends(mp4, ".gif") || ends(mp4, ".png") || ends(mp4, ".jpg"), "a film is written as an .mp4, .mov (HEVC), .gif, .png or .jpg (a picture each)") || !checked(m, placed(mp4), "there is no such folder") || !checked(m, !m->d->writing, "it is being written already")) return 0;
         double from = 0.0, to = 0.0;
         doc_work(*m->d, &from, &to);   // (the work area is what is written)
-        const int pictures = (int)std::lround((to - from) * RATE);
+        const int frames = (int)std::lround((to - from) * RATE);
         m->d->writing = true;
         m->d->written_from = from;
         // (between two pictures the hand does what it was asked meanwhile, so a shell that asks does not stand still;
         //  the document is read then, not changed, and the picture being written is told its moment again after)
         m->d->lock.unlock();   // (held by the hand that asked this: let go while each picture is drawn, as when it is live)
-        const int ok = told(m, film(*m->s, mp4, pictures, [m, pictures, from](double done) {
+        const int ok = checked(m, film(*m->s, mp4, frames, [m, frames, from](double done) {
             std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
             std::deque<std::function<void()>> todo;
             { std::lock_guard<std::mutex> hold(m->asked_lock); todo.swap(m->asked); }
             for (auto& does : todo) does();
-            const double at = done * pictures;   // (in pictures: a whole one, or a moment between for a blur)
+            const double at = done * frames;   // (in pictures: a whole one, or a moment between for a blur)
             time_is(*m->s, from + (std::fabs(at - std::round(at)) < 1e-6 ? std::round(at) : at) / RATE);   // (the picture's moment: from the work area's start)
         }, FilmWay{(int)doc_number(*m->d, 0, "render_height", 0, 0), (int)(doc_number(*m->d, 0, "render_rate", 0, 0) > 0 ? doc_number(*m->d, 0, "render_rate", 0, 0) : doc_number(*m->d, 0, "frame_rate", 0, 0)), doc_number(*m->d, 0, "render_mbps", 0, 0), (int)doc_number(*m->d, 0, "render_blur", 0, 0), doc_number(*m->d, 0, "render_alpha", 0, 0) > 0.5}), "the file could not be written");
         m->d->lock.lock();
@@ -34,21 +34,21 @@ const char* motolii_list(Motolii* m) {
     return m->listed.c_str();
     });
 }
-void motolii_timed(Motolii* m, int pictures) { by_hand(m, [m, pictures] { clock(*m->s, pictures, [](float) {}); return 0; }); }
+void motolii_timed(Motolii* m, int frames) { on_render_thread(m, [m, frames] { clock(*m->s, frames, [](float) {}); return 0; }); }
 
-#include "stage/picture.h"
+#include "stage/snapshot.h"
 // The window's pictures of the document (docs/app/BRIDGE.md), read without the document: 1 the document's (its own part,
 // and each thing's part newer than `since`), 2 the moment's. A copy as JSON, freed by the asker; *version: as of which.
-char* motolii_picture(Motolii* m, int which, long since, long* version) {
-    std::lock_guard<std::mutex> hold(m->pictureLock);
-    if (which == 2) return *version = m->momentVersion, strdup(m->momentPicture.c_str());
-    std::string all = "{\"document\":" + (m->pictureAll.empty() ? std::string("null") : m->pictureAll) + ",\"thing\":{";
+char* motolii_snapshot(Motolii* m, int which, long since, long* version) {
+    std::lock_guard<std::mutex> hold(m->snapshotLock);
+    if (which == 2) return *version = m->timeVersion, strdup(m->timeSnapshot.c_str());
+    std::string all = "{\"document\":" + (m->snapshotAll.empty() ? std::string("null") : m->snapshotAll) + ",\"thing\":{";
     bool first = true;
-    for (const auto& [thing, part] : m->pictured)
-        if (part.first > since) all += (first ? "\"" : ",\"") + std::to_string(thing) + "\":" + part.second, first = false;
-    *version = m->pictureVersion;
+    for (const auto& [layer, part] : m->snapshotLayers)
+        if (part.first > since) all += (first ? "\"" : ",\"") + std::to_string(layer) + "\":" + part.second, first = false;
+    *version = m->snapshotVersion;
     return strdup((all + "}}").c_str());
 }
-void motolii_tell(Motolii* m, void (*told)(int which)) { m->told = told; }
-const char* motolii_hand_step(Motolii* m) { return m->step.load(); }   // (no lock: asked while the hand may be busy)
+void motolii_add_listener(Motolii* m, void (*listener)(int which)) { m->listener = listener; }
+const char* motolii_render_thread_status(Motolii* m) { return m->status.load(); }   // (no lock: asked while the hand may be busy)
 int motolii_asked(Motolii* m) { std::lock_guard<std::mutex> hold(m->asked_lock); return (int)m->asked.size(); }   // (the window's one listener: which pictures are new)

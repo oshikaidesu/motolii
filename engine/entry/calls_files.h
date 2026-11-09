@@ -3,26 +3,26 @@
 // picture, which is taken and written. It asks nothing of a stage, so a shell may call it from another thread.
 // (fraction: where in the film, 0 to 1; a picture there, not the first: a hand moving over a tile looks along the film;
 //  or, seconds given (0 or more), so many seconds in: a bar on the timeline shows the pictures it plays)
-static int thumbnail_at(const char* film, const char* png, int wide, double fraction, double seconds = -1.0) {
+static int thumbnail_at(const char* video, const char* png, int wide, double fraction, double seconds = -1.0) {
     gst_init(nullptr, nullptr);
-    gchar* uri = gst_filename_to_uri(film, nullptr);
+    gchar* uri = gst_filename_to_uri(video, nullptr);
     if (!uri) return 0;
     gchar* line = g_strdup_printf("uridecodebin uri=\"%s\" ! videoconvert ! videoscale ! video/x-raw,width=%d,pixel-aspect-ratio=1/1 ! pngenc ! appsink name=out", uri, wide);
-    GstElement* made = gst_parse_launch(line, nullptr);
+    GstElement* pipeline = gst_parse_launch(line, nullptr);
     g_free(line), g_free(uri);
-    if (!made) return 0;
-    GstElement* out = gst_bin_get_by_name(GST_BIN(made), "out");
-    gst_element_set_state(made, GST_STATE_PAUSED);
+    if (!pipeline) return 0;
+    GstElement* out = gst_bin_get_by_name(GST_BIN(pipeline), "out");
+    gst_element_set_state(pipeline, GST_STATE_PAUSED);
     GstSample* first = gst_app_sink_try_pull_preroll(GST_APP_SINK(out), 4 * GST_SECOND);
     if (first && seconds > 0.0) {
         gst_sample_unref(first);
-        gst_element_seek_simple(made, GST_FORMAT_TIME, (GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_ACCURATE), (gint64)(seconds * (double)GST_SECOND));
+        gst_element_seek_simple(pipeline, GST_FORMAT_TIME, (GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_ACCURATE), (gint64)(seconds * (double)GST_SECOND));
         first = gst_app_sink_try_pull_preroll(GST_APP_SINK(out), 4 * GST_SECOND);
     } else if (first && fraction > 0.0) {
         gint64 length = 0;
-        if (gst_element_query_duration(made, GST_FORMAT_TIME, &length) && length > 0) {
+        if (gst_element_query_duration(pipeline, GST_FORMAT_TIME, &length) && length > 0) {
             gst_sample_unref(first);
-            gst_element_seek_simple(made, GST_FORMAT_TIME, (GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_ACCURATE), (gint64)(std::min(fraction, 0.98) * (double)length));
+            gst_element_seek_simple(pipeline, GST_FORMAT_TIME, (GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_ACCURATE), (gint64)(std::min(fraction, 0.98) * (double)length));
             first = gst_app_sink_try_pull_preroll(GST_APP_SINK(out), 4 * GST_SECOND);
         }
     }
@@ -33,14 +33,14 @@ static int thumbnail_at(const char* film, const char* png, int wide, double frac
         gst_buffer_unmap(gst_sample_get_buffer(first), &bytes);
     }
     if (first) gst_sample_unref(first);
-    gst_element_set_state(made, GST_STATE_NULL);
+    gst_element_set_state(pipeline, GST_STATE_NULL);
     gst_object_unref(out);
-    gst_object_unref(made);
+    gst_object_unref(pipeline);
     return done;
 }
-int motolii_thumbnail(const char* film, const char* png, int wide) { return thumbnail_at(film, png, wide, 0.0); }
-int motolii_thumbnail_at(const char* film, const char* png, int wide, double fraction) { return thumbnail_at(film, png, wide, fraction); }
-int motolii_thumbnail_seconds(const char* film, const char* png, int wide, double seconds) { return thumbnail_at(film, png, wide, 0.0, seconds); }
+int motolii_thumbnail(const char* video, const char* png, int wide) { return thumbnail_at(video, png, wide, 0.0); }
+int motolii_thumbnail_at(const char* video, const char* png, int wide, double fraction) { return thumbnail_at(video, png, wide, fraction); }
+int motolii_thumbnail_seconds(const char* video, const char* png, int wide, double seconds) { return thumbnail_at(video, png, wide, 0.0, seconds); }
 // What a media file is, as GStreamer's discoverer tells it (gst-discoverer-1.0's own): "wide high rate seconds format",
 // its first picture's size, pictures a second (0: a still), how long (0: a still), its container or kind as GStreamer
 // names it; "" when it cannot be read. Asks nothing of a document.
@@ -48,13 +48,13 @@ const char* motolii_media_info(const char* file) {
     static thread_local std::string out;
     out.clear();
     gst_init(nullptr, nullptr);
-    GstDiscoverer* looks = gst_discoverer_new(20 * GST_SECOND, nullptr);   // (gst-discoverer-1.0's own is 10; a busy CI Mac passed 5, here on an isolate of its own)
+    GstDiscoverer* discoverer = gst_discoverer_new(20 * GST_SECOND, nullptr);   // (gst-discoverer-1.0's own is 10; a busy CI Mac passed 5, here on an isolate of its own)
     // A picture is read by a decoder of software (jpegdec, pngdec): VideoToolbox's vtdec_hw is ranked above jpegdec, and
     // to tell a JPEG's size it opened a GL context and asked for the hardware scaler, which a CI Mac's VM has not
     // ("IOServiceMatchingfailed for: AppleM2ScalerParavirtDriver", where the Media test has waited since 8bc43caa6). A
     // film keeps VideoToolbox: there is no software HEVC here. uridecodebin's autoplug-select and GStreamer 1.18's
     // HARDWARE factory type; the discoverer's uridecodebin is its source's parent at source-setup.
-    if (looks) g_signal_connect(looks, "source-setup", G_CALLBACK(+[](GstDiscoverer*, GstElement* source, gpointer) {
+    if (discoverer) g_signal_connect(discoverer, "source-setup", G_CALLBACK(+[](GstDiscoverer*, GstElement* source, gpointer) {
         if (GstObject* bin = gst_object_get_parent(GST_OBJECT(source))) {
             g_signal_connect(bin, "autoplug-select", G_CALLBACK(+[](GstElement*, GstPad*, GstCaps* caps, GstElementFactory* f, gpointer) -> gint {
                 const bool still = gst_caps_get_size(caps) > 0 && g_str_has_prefix(gst_structure_get_name(gst_caps_get_structure(caps, 0)), "image/");
@@ -64,13 +64,13 @@ const char* motolii_media_info(const char* file) {
         }
     }), nullptr);
     gchar* uri = gst_filename_to_uri(file, nullptr);
-    GstDiscovererInfo* info = looks && uri ? gst_discoverer_discover_uri(looks, uri, nullptr) : nullptr;
+    GstDiscovererInfo* info = discoverer && uri ? gst_discoverer_discover_uri(discoverer, uri, nullptr) : nullptr;
     if (info && gst_discoverer_info_get_result(info) != GST_DISCOVERER_OK) g_object_unref(info), info = nullptr;   // (not there, or not media: nothing said)
     if (info) {
         unsigned wide = 0, high = 0, num = 0, den = 1;
-        GList* pictures = gst_discoverer_info_get_video_streams(info);
-        if (pictures) {
-            GstDiscovererVideoInfo* v = (GstDiscovererVideoInfo*)pictures->data;
+        GList* streams = gst_discoverer_info_get_video_streams(info);
+        if (streams) {
+            GstDiscovererVideoInfo* v = (GstDiscovererVideoInfo*)streams->data;
             wide = gst_discoverer_video_info_get_width(v), high = gst_discoverer_video_info_get_height(v);
             if (!gst_discoverer_video_info_is_image(v)) num = gst_discoverer_video_info_get_framerate_num(v), den = std::max(1u, gst_discoverer_video_info_get_framerate_denom(v));
         }
@@ -86,10 +86,10 @@ const char* motolii_media_info(const char* file) {
         char line[512];
         std::snprintf(line, sizeof line, "%u %u %g %g %s", wide, high, (double)num / den, (double)gst_discoverer_info_get_duration(info) / GST_SECOND, kind.c_str());
         out = line;
-        gst_discoverer_stream_info_list_free(pictures), g_object_unref(info);
+        gst_discoverer_stream_info_list_free(streams), g_object_unref(info);
     }
     g_free(uri);
-    if (looks) g_object_unref(looks);
+    if (discoverer) g_object_unref(discoverer);
     return out.c_str();
 }
 // A font file's kinds, as CoreText reads them (its own: the file's family class and traits): serif, sans, script,

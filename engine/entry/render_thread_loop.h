@@ -1,6 +1,6 @@
 // render_thread_loop.h: part of motolii.mm. Read only through motolii.mm. The hand itself: it opens the stage, runs each call
 // as it comes, and draws a picture whenever something has changed or time is going on (render_thread.h asks it).
-static void motolii_hand(Motolii* m, std::string document, int wide, int high, std::promise<bool>* opened) {
+static void render_thread_run(Motolii* m, std::string document, int wide, int high, std::promise<bool>* opened) {
     pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);   // (the hand makes the pictures a window shows: macOS's own word for that, on its fast cores)
     const bool says = doc_size(document.c_str(), &wide, &high);   // (a document that says its own size is opened at it)
     m->s = new Stage(open_stage(wide, high));
@@ -17,7 +17,7 @@ static void motolii_hand(Motolii* m, std::string document, int wide, int high, s
     if (ok && !says) doc_size_is(m->d->file, wide, high), doc_forget(*m->d);   // (a new one is the size it was first opened at; what was read before is read again)
     if (ok) {   // (the window's first pictures of it)
         std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
-        picture_update(m), picture_moment(m);
+        snapshot_update(m), snapshot_time(m);
     }
     opened->set_value(ok);
     if (!ok) return;
@@ -39,11 +39,11 @@ static void motolii_hand(Motolii* m, std::string document, int wide, int high, s
         std::deque<std::function<void()>> todo;
         uint64_t beat;
         {
-            m->step = "waiting for a change or a beat";
+            m->status = "waiting for a change or a beat";
             std::unique_lock<std::mutex> hold(m->asked_lock);
-            const bool goes = m->live && (m->playing || m->changed), begun = m->live && m->live->pending;   // (begun: a picture the GPU has not finished)
+            const bool running = m->live && (m->playing || m->changed), begun = m->live && m->live->pending;   // (begun: a picture the GPU has not finished)
             if (begun) m->asked_now.wait_for(hold, std::chrono::milliseconds(1), [m] { return !m->asked.empty() || m->closing; });   // (looked at again a moment later)
-            else if (goes) m->asked_now.wait(hold, [m] { return !m->asked.empty() || m->closing || m->beats != m->drew_at; });
+            else if (running) m->asked_now.wait(hold, [m] { return !m->asked.empty() || m->closing || m->beats != m->drew_at; });
             else m->asked_now.wait_for(hold, std::chrono::milliseconds(m->ahead ? 15 : 500), [m] { return !m->asked.empty() || m->closing || (m->live && (m->playing || m->changed)); });   // (twice a second: a file written over; often, while frames ahead are kept)
             if (m->closing) break;
             todo.swap(m->asked);
@@ -60,7 +60,7 @@ static void motolii_hand(Motolii* m, std::string document, int wide, int high, s
             if (doc_files_moved(*m->d)) doc_match(*m->d), m->changed = true;
         }   // (a shader or a script saved: drawn again)
         lap(0);
-        m->step = "doing the changes asked";
+        m->status = "doing the changes asked";
         {
             std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
             const long rows = sqlite3_total_changes(m->d->file);
@@ -68,10 +68,10 @@ static void motolii_hand(Motolii* m, std::string document, int wide, int high, s
             for (auto& does : todo) does();
             if (!todo.empty()) ++m->writes_on_beat;
             lap(6);
-            if (doc_own_easings(), doc_own_easings_made() != m->picturedWays) m->picturedWays = doc_own_easings_made(), picture_update(m);   // (a way put in the maker's folder: a tile of the Ease desk at once)
-            else if (sqlite3_total_changes(m->d->file) != m->picturedRows) picture_update(m);   // (the window's picture of the document, where it changed since it was last made: a call that made it already is not made again, its list of what changed kept)
+            if (doc_own_easings(), doc_own_easings_made() != m->snapshotEasings) m->snapshotEasings = doc_own_easings_made(), snapshot_update(m);   // (a way put in the maker's folder: a tile of the Ease desk at once)
+            else if (sqlite3_total_changes(m->d->file) != m->snapshotRows) snapshot_update(m);   // (the window's picture of the document, where it changed since it was last made: a call that made it already is not made again, its list of what changed kept)
             if (sqlite3_total_changes(m->d->file) != rows || m->d->held.tried != held)
-                (sqlite3_total_changes(m->d->file) != rows ? m->revision : m->carried).fetch_add(1, std::memory_order_release);   // (the document changed, or only what a hand carries: the kept pictures go by these)
+                (sqlite3_total_changes(m->d->file) != rows ? m->revision : m->dragged).fetch_add(1, std::memory_order_release);   // (the document changed, or only what a hand carries: the kept pictures go by these)
         }
         lap(1);
         if (mosh_done.exchange(false)) {   // (a datamosh made meanwhile: the thing made again with it)
@@ -79,29 +79,29 @@ static void motolii_hand(Motolii* m, std::string document, int wide, int high, s
             doc_match(*m->d);
             m->changed = true;
         }
-        m->step = "telling the window";
-        picture_tell(m);   // (the document let go: the window told what is new)
+        m->status = "telling the window";
+        snapshot_notify(m);   // (the document let go: the window told what is new)
         if (!m->playing) for (auto& [who, h] : m->heard) if (h.on) gst_element_set_state(h.bin, GST_STATE_PAUSED), h.on = false;   // (the stage stopped: so does its sound)
         lap(2);
         const auto finished = [m] { return m->live ? m->live->frames.load() + (m->live->desk ? m->live->desk->frames.load() : 0) : 0ull; };
         const auto had = finished();
         const bool ready = !m->live || live_ready(*m->s, m->live);   // (the picture begun before, offered once the GPU has finished it)
-        if (finished() != had) if (auto tell = m->shown.load()) tell(m->shown_with.load());   // (and Flutter told: Thermion's markTextureFrameAvailable)
+        if (finished() != had) if (auto listener = m->shown.load()) listener(m->shown_with.load());   // (and Flutter told: Thermion's markTextureFrameAvailable)
         lap(3);
-        m->step = "keeping pictures ahead";
+        m->status = "keeping pictures ahead";
         const auto t = std::chrono::steady_clock::now();
         if (!todo.empty() || m->playing || m->changed) m->stirred = t;
         m->ahead = false;
         if (m->live && ready && todo.empty() && !m->playing && !m->changed && t - m->stirred > std::chrono::milliseconds(300)) {   // (the hand rests: a few of each film's frames ahead kept, as Final Cut Pro renders once the hand stops)
             std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
             int begun = 0;
-            for (auto& [thing, shown] : m->d->shown)
+            for (auto& [layer, shown] : m->d->shown)
                 if (shown.drawn) begun += picture_ahead(*m->s, shown.drawn, 2);
             if (begun) m->s->engine->flush();
             m->ahead = begun > 0;
             if (t - m->stirred > std::chrono::seconds(5) && !std::getenv("MOTOLII_KEEP_NONE")) {   // (and, five seconds on as Final Cut Pro's background render, the work area's pictures that would be late, kept on disk)
-                stage_kept_fresh(m->kept, *m->d, *m->s, m->revision.load(), RATE);
-                m->ahead = stage_kept_one(m->kept, *m->d, *m->s, RATE, m->budget) || m->ahead;
+                stage_kept_fresh(m->cache, *m->d, *m->s, m->revision.load(), RATE);
+                m->ahead = stage_kept_one(m->cache, *m->d, *m->s, RATE, m->budget) || m->ahead;
             }
         }
         lap(4);
@@ -130,18 +130,18 @@ static void motolii_hand(Motolii* m, std::string document, int wide, int high, s
         last = t;
         const uint64_t drew_before = m->drew_at;
         { std::lock_guard<std::mutex> hold(m->asked_lock); m->drew_at = beat; }
-        ++m->beats_drawn;
+        ++m->beats_rendered;
         if (m->writes_on_beat > 1) ++m->beats_two;   // (more than one change came for this picture: one of them never seen)
         m->writes_on_beat = 0;
         m->s->by_clock = m->playing;
-        std::vector<std::function<void()>> films;   // (what the moment asks of the films: done once the document is let go)
+        std::vector<std::function<void()>> videos;   // (what the moment asks of the films: done once the document is let go)
         std::map<const void*, Stage::Sound> sounds;
         bool behind = false;   // (a relation that remembers has not caught up: drawn again next beat, as a film without its picture)
         {
             std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
-            m->telling = true;
+            m->evaluating = true;
             m->d->live = true, m->d->slice = std::chrono::steady_clock::now();
-            m->s->later = &films;
+            m->s->later = &videos;
             time_is(*m->s, m->now);
             m->s->later = nullptr;
             if (m->s->desk.w) {   // (the marks on the desk: where the picked thing and the one under the hand are now, as drawn)
@@ -150,29 +150,29 @@ static void motolii_hand(Motolii* m, std::string document, int wide, int high, s
                 k.hovered = m->hover > 0 && m->hover != m->pick && doc_frame(*m->d, m->hover, m->now, k.hover);
                 k.knob = doc_word(*m->d, m->pick, "kind") != "camera";
             }
-            picture_moment(m);   // (the window's picture of this moment)
-            m->telling = false;
+            snapshot_time(m);   // (the window's picture of this moment)
+            m->evaluating = false;
             behind = std::exchange(m->d->behind, false);
             sounds = heard_told(*m->s);   // (where each sound is to be: read of the document)
         }
-        picture_tell(m);
-        const auto films_from = std::chrono::steady_clock::now();
-        const long films_late = video_late;
-        m->step = "putting the films at the moment";
-        for (const auto& now : films) now();
-        const bool again = (!m->playing && video_late != films_late) || behind;   // (a film without its picture for now yet, a seek under way: drawn again next beat, as a video sink shows its picture once it comes)
+        snapshot_notify(m);
+        const auto videos_from = std::chrono::steady_clock::now();
+        const long late_before = video_late;
+        m->status = "putting the films at the moment";
+        for (const auto& now : videos) now();
+        const bool again = (!m->playing && video_late != late_before) || behind;   // (a film without its picture for now yet, a seek under way: drawn again next beat, as a video sink shows its picture once it comes)
 
-        { const double ms = 1e3 * std::chrono::duration<double>(std::chrono::steady_clock::now() - films_from).count(); m->films_ms += ms; m->films_most = std::max(m->films_most, ms); }   // (films put back or stepped on, while the shell reads the document)
-        m->step = "putting the sounds at the moment";
+        { const double ms = 1e3 * std::chrono::duration<double>(std::chrono::steady_clock::now() - videos_from).count(); m->videos_ms += ms; m->videos_most = std::max(m->videos_most, ms); }   // (films put back or stepped on, while the shell reads the document)
+        m->status = "putting the sounds at the moment";
         heard(sounds, m->heard, m->now, m->playing);   // (and their sound sought and played so)
-        const auto told = std::chrono::steady_clock::now();
+        const auto evaluated = std::chrono::steady_clock::now();
         {
             std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
-            stage_kept_fresh(m->kept, *m->d, *m->s, m->revision.load(), RATE);
+            stage_kept_fresh(m->cache, *m->d, *m->s, m->revision.load(), RATE);
         }
-        m->step = "drawing";
-        if (!m->playing || m->d->viewCameraAsked || m->second || !stage_kept_show(m->kept, *m->s, m->live, m->now, RATE)) live_camera(m);   // (played: a picture kept is put on the stage, not drawn; kept pictures are the camera's and the desk's alone)
-        const auto drawn = std::chrono::steady_clock::now();
+        m->status = "drawing";
+        if (!m->playing || m->d->viewCameraAsked || m->second || !stage_kept_show(m->cache, *m->s, m->live, m->now, RATE)) live_camera(m);   // (played: a picture kept is put on the stage, not drawn; kept pictures are the camera's and the desk's alone)
+        const auto rendered = std::chrono::steady_clock::now();
         lap(5);
         if (++m->judged % 30 == 0) {   // (how long the GPU took for its last pictures, against the time each may have)
             std::vector<int64_t> took;
@@ -185,21 +185,21 @@ static void motolii_hand(Motolii* m, std::string document, int wide, int high, s
             }
             stage_scale(m);
         }
-        m->spent[2] += std::chrono::duration<double>(told - t).count(), m->many[2]++;
-        m->spent[3] += std::chrono::duration<double>(drawn - told).count(), m->many[3]++;
+        m->spent[2] += std::chrono::duration<double>(evaluated - t).count(), m->many[2]++;
+        m->spent[3] += std::chrono::duration<double>(rendered - evaluated).count(), m->many[3]++;
         const auto ms = [](auto a, auto b) { return 1e3 * std::chrono::duration<double>(b - a).count(); };
-        if (ms(round_at, drawn) > BEAT_MS && moving(drew_before, beat)) {   // (a picture the hand took longer than a beat to make: the next beat came while it was busy, a missed 60 fps, named by its part)
+        if (ms(round_at, rendered) > BEAT_MS && moving(drew_before, beat)) {   // (a picture the hand took longer than a beat to make: the next beat came while it was busy, a missed 60 fps, named by its part)
             char why[200];
-            std::snprintf(why, sizeof why, "the inside's picture %.1f ms (changes %.1f, the moment %.1f, drawing %.1f)", ms(round_at, drawn), ms(round_at, t), ms(t, told), ms(told, drawn));
+            std::snprintf(why, sizeof why, "the inside's picture %.1f ms (changes %.1f, the moment %.1f, drawing %.1f)", ms(round_at, rendered), ms(round_at, t), ms(t, evaluated), ms(evaluated, rendered));
             std::lock_guard<std::mutex> hold(m->asked_lock);
             broke_one(m, why);
         }
         m->changed = again;
         } catch (const std::exception& e) {
-        std::fprintf(stderr, "motolii: the hand's round threw while %s: %s\n", m->step.load(), e.what());
-        m->trouble = std::string("the hand's round threw: ") + e.what();
+        std::fprintf(stderr, "motolii: the hand's round threw while %s: %s\n", m->status.load(), e.what());
+        m->error = std::string("the hand's round threw: ") + e.what();
         ++m->rounds_threw;   // (the trouble goes with the next call; this stays, told in motolii_spent)
-        m->telling = false;
+        m->evaluating = false;
         m->changed = false;
         m->playing = false;
     }

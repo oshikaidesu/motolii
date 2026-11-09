@@ -55,9 +55,9 @@ int motolii_likeness(const char* model, const unsigned char* rgba, int n, int di
         Ort::Session* s = nullptr;
         {
             std::lock_guard<std::mutex> one(opening);
-            auto& kept = open[model];
-            if (!kept) kept = std::make_unique<Ort::Session>(env, model, Ort::SessionOptions{});
-            s = kept.get();
+            auto& session = open[model];
+            if (!session) session = std::make_unique<Ort::Session>(env, model, Ort::SessionOptions{});
+            s = session.get();
         }
         const float mean[3] = {0.48145466f, 0.4578275f, 0.40821073f}, spread[3] = {0.26862954f, 0.26130258f, 0.27577711f};
         std::vector<float> in((size_t)n * 3 * area);
@@ -91,7 +91,7 @@ int motolii_likeness(const char* model, const unsigned char* rgba, int n, int di
 // `most`, when it is more than 0), a byte a point (how much is covered): ThorVG's own CPU canvas, as aviutl_load.h
 // draws a script's words; the font let go again after, as type_sets does (a font only asked about leaves memory).
 // 0: not drawn.
-int motolii_type_picture(const char* font, const char* words, int w, int h, float most, unsigned char* grey) {
+int motolii_type_frame(const char* font, const char* words, int w, int h, float most, unsigned char* grey) {
     if (!font || !words || !grey || w < 3 || h < 3 || w > 1024 || h > 1024 || !std::filesystem::is_regular_file(font)) return 0;
     tvg::Initializer::init(0);   // (ThorVG makes no canvas when it is not started: aviutl_drawn)
     if (tvg::Text::load(font) != tvg::Result::Success) return 0;
