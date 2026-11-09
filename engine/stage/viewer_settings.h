@@ -2,7 +2,7 @@
 // (viewer/Settings.h: {"view": {"colorGrading": {...}, "bloom": {...}, "fog": {...}, ...}}, what gltf_viewer saves and
 // reads); its numbers and on-offs are knobs on its card, as an After Effects file's slots are (lottie_slots.h, and by its
 // rule for a range none says), and the values as they are now are read back by Filament's own JsonSerializer and laid
-// on the stage's view over what the stage's own values make (doc_place.h doc_look): a part the file does not name stays
+// on the stage's view over what the stage's own values make (doc_eye.h doc_look): a part the file does not name stays
 // as the stage has it. Its words (enum names: a tone mapping, a custom LUT) are not knobs: the file says them.
 #pragma once
 #include "community/js/script.h"

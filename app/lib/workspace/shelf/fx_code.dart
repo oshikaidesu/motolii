@@ -26,7 +26,7 @@ class FxCode extends StatefulWidget {
 
   /// The code of a thing's effect card (null: not one of its code effects), by its values, not its title alone: two
   /// cards may share one (ThorVG's Tint is called Duotone, as an ISF file may be). An effect's values, and an expression
-  /// put on again's ("repeater~2.js"), are named by its file (`js_<stem>_<knob>`, doc_values.h doc_script_of): the
+  /// put on again's ("repeater~2.js"), are named by its file (`js_<stem>_<knob>`, doc_scripts.h doc_script_of): the
   /// file whose name they all begin with. An expression's first are its knobs' own (`js_<knob>`): the .js whose head
   /// says them all. Of two that fit, the one the card's title is, else the longer name. A card of no values (an effect
   /// with no knobs: the engine gives it a card all the same, doc_cards_of) by its title alone.
@@ -54,7 +54,7 @@ class FxCode extends StatefulWidget {
     return best?.$1;
   }
 
-  /// Its card's title, as the engine names an effect file's (doc_recipes.h doc_fx_title): one put on again ("Glow~2.fs")
+  /// Its card's title, as the engine names an effect file's (doc_cards.h doc_fx_title): one put on again ("Glow~2.fs")
   /// its original's and its number; an ISF's its file's name (isf.cpp heads the WGSL it makes so); another's the name
   /// its first line says ("// Repeater: …"), else its file's name, a space for each _, its first letter large.
   static String titleOf(String w) {

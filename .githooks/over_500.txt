@@ -14,13 +14,7 @@
 649 app/lib/workspace/top_bar.dart
 772 app/lib/workspace/workspace.dart
 751 app/lib/workspace/ws_state.dart
-589 engine/document/doc_edit.h
-726 engine/document/doc_match.h
 708 engine/document/doc_moment.h
-731 engine/document/doc_paths.h
-561 engine/document/doc_place.h
-754 engine/document/doc_recipes.h
-674 engine/document/doc_values.h
 580 engine/stage/drawn/drawn_kept.h
 631 engine/stage/drawn/drawn_made.h
 510 engine/stage/kit/kit_stage.h

@@ -2,7 +2,7 @@
 
 [English](README.en.md)
 
-Motolii に最初から入っている表現です。棚ごとにフォルダが 1 つあり、利用者のフォルダ（Mac は `~/Library/Application Support/Motolii/`、Windows は `%APPDATA%\Motolii\`、`MOTOLII_OWN` で変更可）に同じ名前のフォルダを作ってファイルを置くと、再起動なしで同じ棚に並びます。同じ名前のファイルは利用者の物が勝ちます（`engine/document/doc_edit.h` の `doc_folders`）。
+Motolii に最初から入っている表現です。棚ごとにフォルダが 1 つあり、利用者のフォルダ（Mac は `~/Library/Application Support/Motolii/`、Windows は `%APPDATA%\Motolii\`、`MOTOLII_OWN` で変更可）に同じ名前のフォルダを作ってファイルを置くと、再起動なしで同じ棚に並びます。同じ名前のファイルは利用者の物が勝ちます（`engine/document/doc_folders.h` の `doc_folders`）。
 
 | 棚 | アプリでの見え方 | ファイル | 表示名はどこから | 読む所 |
 |---|---|---|---|---|

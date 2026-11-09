@@ -70,7 +70,7 @@ flowchart TB
 ## 書類
 
 - 1 つの `.motolii` は SQLite のファイル。物・値・キー・キーの間の動き方（式、SQLite の関数 `bezier()`・`anime()`）を表に持つ（`engine/document/doc*.h`）。
-- 取り消しは、変更を `step` の表に積む（`doc_match.h`）。
+- 取り消しは、変更を `step` の表に積む（`doc_steps.h`）。
 - 物の種類：film・picture・text・solid・shape・camera・light・behaviour（`edit.cpp` の `help`）。
 
 ## 動画・音・書き出し
