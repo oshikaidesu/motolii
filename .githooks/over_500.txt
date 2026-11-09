@@ -25,7 +25,6 @@
 631 engine/stage/drawn/drawn_made.h
 510 engine/stage/kit/kit_stage.h
 514 engine/stage/kit/kit_things.h
-615 engine/library/motolii_hand.h
 529 shelves/recipes/on_film/Blob Track.js
 531 engine/stage/screen.h
 565 engine/community/js/script.cpp

@@ -1,5 +1,41 @@
 // motolii_calls.h: part of motolii.mm. Read only through motolii.mm. The open document's things, values, keys, ways, marks
 // and shelves, read and changed at once (by_look, by_hand); the rest of motolii.h's calls in the parts motolii.mm reads after this.
+int motolii_add(Motolii* m, const char* kind, const char* file) { return by_hand(m, [=] { return changes(m, (int)(doc_add(doc(m), kind, file))); }); }
+int motolii_remove(Motolii* m, int thing) { return by_hand(m, [=] { return changes(m, (int)(doc_remove(doc(m), thing))); }); }
+int motolii_set(Motolii* m, int thing, const char* name, double number) { return by_hand(m, [=] { return changes(m, (int)(doc_set(doc(m), thing, name, doc_macro_own(doc(m), thing, name, doc(m).stage ? doc(m).stage->now : 0.0, number)))); }); }   // (the value the hand sees: one a macro turns made its own, doc_expressions.h)
+int motolii_points(Motolii* m, int thing, double* xy, int room) { return by_look(m, [=] { return doc_points(*m->d, thing, m->d->stage->now, xy, room); }); }
+int motolii_handles(Motolii* m, int thing, double* xy, double* of, int room) { return by_look(m, [=] { return doc_points(*m->d, thing, m->d->stage->now, xy, room, true, of); }); }
+int motolii_pen(Motolii* m, int thing, double x, double y, double hx, double hy) { return by_hand(m, [=] { return changes(m, doc_pen(doc(m), thing, x, y, hx, hy)); }); }
+int motolii_say(Motolii* m, int thing, const char* name, const char* word) { return by_hand(m, [=] { return changes(m, (int)(doc_say(doc(m), thing, name, word))); }); }
+int motolii_key(Motolii* m, int thing, const char* name, double at, double number) { return by_hand(m, [=] { return changes(m, (int)(doc_key(doc(m), thing, name, at, doc_macro_own(doc(m), thing, name, at, number)))); }); }
+// Many keys of one value in one call and one step (a world's motion baked into keys, a film's beats...): asked of the
+// hand once, made one act, the stage made again once at its end.
+int motolii_key_many(Motolii* m, int thing, const char* name, int n, const double* at, const double* number) {
+    return by_hand(m, [=] {
+        return changes(m, (int)doc_key_many(doc(m), thing, name, n, at, number));
+    });
+}
+// A MIDI file's notes made keys of a value, as om_midi makes them in After Effects (midi.h: midi_keys), each held; one step.
+int motolii_midi(Motolii* m, int thing, const char* name, const char* file, const char* kind, int channel, double bpm) {
+    std::vector<MidiEvent> events = midi_events(file);
+    if (bpm > 0) {   // (the file's beats at another tempo, as om_midi's BPM box: a time is its beats times 60 / BPM)
+        const double by = midi_bpm(file) / bpm;
+        for (MidiEvent& e : events) e.at *= by;
+    }
+    const std::map<double, double> keys = midi_keys(events, kind, channel);
+    std::vector<double> at, is;
+    for (const auto& [t, v] : keys) at.push_back(t), is.push_back(v);
+    if (at.empty()) return by_hand(m, [=, said = std::string(kind)] { return (doc(m).trouble = "no " + said + " keys of notes in " + file + " (kinds: velocity pitch count on bool)", 0); });
+    return by_hand(m, [=] {   // (the keys it had go first: made again from the file, as om_midi makes a new null object each time; together, one step)
+        Doc& d = doc(m);
+        doc_act(d);
+        const bool ok = doc_stay(d, thing, name, 0.0) && doc_key_many(d, thing, name, (int)at.size(), at.data(), is.data(), "Hold");
+        return changes(m, (int)(doc_acted(d) && ok));
+    });
+}
+double motolii_midi_bpm(const char* file) { return midi_bpm(file); }
+int motolii_unkey(Motolii* m, int thing, const char* name, double at) { return by_hand(m, [=] { return changes(m, (int)(doc_unkey(doc(m), thing, name, at))); }); }
+int motolii_keys(Motolii* m, int thing, const char* name) { return by_look(m, [=] { return (int)(doc_keys(doc(m), thing, name)); }); }
 static int way_is(Motolii* m, int thing, const char* name, double at, const char* way) {   // (on the hand)
     Doc& d = doc(m);
     bool here = false;
