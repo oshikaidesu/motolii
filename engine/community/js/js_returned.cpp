@@ -6,7 +6,7 @@
 // in those, each once; a knob is k.Name or k["Name"], k being each()'s fourth parameter. What cannot be followed is left
 // out, never refused. Read by tree-sitter and its JavaScript grammar (tree_sitter.sh, MIT): it gives each part of the
 // code its bytes, and a tree even for code half typed. QuickJS, which runs the code, makes no tree to ask.
-#include "library/motolii.h"
+#include "entry/motolii.h"
 #include <tree_sitter/api.h>
 #include <algorithm>
 #include <cstring>

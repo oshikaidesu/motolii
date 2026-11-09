@@ -1,19 +1,19 @@
 #!/bin/zsh
-# docs/TESTING.md S2: what has one script draws as it did. The engine at <old-commit> (built in a place of its own) and the
-# engine of this checkout each draw every recipe of the Create shelf (make <name>) and every motion of the Effects shelf
+# Every shelf item draws as it did at an older commit (docs/TESTING.md, 今ある書類の見た目が変わらない). The engine at
+# <old-commit> (built in a place of its own) and the engine of this checkout each draw every recipe of the Create shelf (make <name>) and every motion of the Effects shelf
 # (a text MOTOLII in a font, given it as its script) on a fresh document, at 0.0, 0.7 and 1.9 seconds; each pair of
 # pictures is compared with cmp, as the 11/8 old-and-new comparison was. Prints each that differs and how many matched;
 # one only one side has is named and not compared. A call either side refuses, or a picture not made, stops the count
 # from standing: it says which and ends with 2 (1: some differ; 0: all matched).
-#   ./s2_check.sh ed4868cf1          (S2_LIMIT=2 ./s2_check.sh ed4868cf1: the first two of each only)
+#   ./drawings_unchanged.sh ed4868cf1          (DRAWINGS_LIMIT=2 ./drawings_unchanged.sh ed4868cf1: the first two of each only)
 # Nothing of the maker's own is read or written: MOTOLII_OWN is an empty folder of its own (document/doc_folders.h doc_folders), the
 # documents are made in a temporary folder, and engine/out/skin.motolii is not opened.
-old=${1:?usage: ./s2_check.sh <old-commit>}
+old=${1:?usage: ./drawings_unchanged.sh <old-commit>}
 cd "$(dirname "$0")"
 source deps/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: deps/build_lock.sh)
 here=$PWD
 git rev-parse -q --verify "$old^{commit}" > /dev/null || { echo "no such commit: $old"; exit 1; }
-tmp=$(mktemp -d -t s2_check) || exit 1
+tmp=$(mktemp -d -t drawings_unchanged) || exit 1
 oldtree=$tmp/old
 trap 'git -C "$here" worktree remove --force "$oldtree" 2> /dev/null; rm -rf "$tmp"' EXIT INT TERM
 mkdir -p $tmp/own $tmp/docs $tmp/frames
@@ -47,7 +47,7 @@ recipes=("${(@f)$(for k in ${(k)has}; do [[ $k = ?:recipe:* ]] && print -r -- ${
 motions=("${(@f)$(for k in ${(k)has}; do [[ $k = ?:motion:* ]] && print -r -- ${k#?:motion:}; done | sort -u)}")
 keys=(${(k)has})
 for side in 1 2; do listed=(${(M)keys:#${side}:recipe:*}); [ ${#listed} -gt 0 ] || { echo "the engine at $engines[$side] listed no recipes"; exit 2; }; done
-[ -n "$S2_LIMIT" ] && recipes=(${recipes[1,$S2_LIMIT]}) motions=(${motions[1,$S2_LIMIT]})   # (S2_LIMIT=2: the first so many of each, to see that it runs)
+[ -n "$DRAWINGS_LIMIT" ] && recipes=(${recipes[1,$DRAWINGS_LIMIT]}) motions=(${motions[1,$DRAWINGS_LIMIT]})   # (DRAWINGS_LIMIT=2: the first so many of each, to see that it runs)
 
 # A motion is given to a text of letters the engine draws (a font, then its words), split by letter as its script
 # splits it: "add text MOTOLII" alone is a file of that name, refused, and both sides drew nothing (11/9: 351 of 351

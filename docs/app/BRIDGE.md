@@ -1,6 +1,6 @@
 # 窓と中身の境目（2026-10-24 から）
 
-窓（Flutter、`app`）と中身（C++、`engine/library/motolii.mm`）の間の決まり。仲間の作りに揃える：Lumit（`docs/17-BRIDGE-CONTRACT.md`）、
+窓（Flutter、`app`）と中身（C++、`engine/entry/motolii.mm`）の間の決まり。仲間の作りに揃える：Lumit（`docs/17-BRIDGE-CONTRACT.md`）、
 AppFlowy（「誰の何が変わったか」を1本で流す）、Rive の CommandQueue（書きは記録して戻る、問い合わせは後で届く）、Anthem（毎コマ変わる物は購読）、
 Thermion（描けは前が終わるまで捨てる）。調べた記録は `research_notes/flutter_native_kin.md`。GPL・AGPL の物は考え方だけ借りる。
 

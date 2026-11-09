@@ -58,7 +58,7 @@ ninja -C $THOR/build_dawn > /dev/null
 ./deps/iris.sh   # (media/flashes.cpp: EA's IRIS and the OpenCV it reads, which edit.sh and build_lib.sh link)
 # (media/flashes.cpp built apart, in IRIS's own C++17: its log lines pass runtime format strings, which C++20's fmt refuses)
 I=third_party/iris
-[ out/flashes.o -nt media/flashes.cpp ] && [ out/flashes.o -nt library/motolii.h ] || clang++ -c -std=c++17 -I $PWD -O2 -I $I/IRIS/include -I $I/IRIS/utils/include -I $I/spdlog/include -I $I/json/single_include -I $I/opencv_out/include/opencv4 media/flashes.cpp -o out/flashes.o
+[ out/flashes.o -nt media/flashes.cpp ] && [ out/flashes.o -nt entry/motolii.h ] || clang++ -c -std=c++17 -I $PWD -O2 -I $I/IRIS/include -I $I/IRIS/utils/include -I $I/spdlog/include -I $I/json/single_include -I $I/opencv_out/include/opencv4 media/flashes.cpp -o out/flashes.o
 ./deps/midi_roll.sh   # (media/midi_roll.cpp: bladeSk's PianoRollSvg.js, read as the MIDI view is drawn)
 # (stage/skpath.cpp: Skia's own path operations, its Boolean: deps/skia.sh builds it)
 SKIA=third_party/skia_src
@@ -74,7 +74,7 @@ for f in motion scene easing textanim; do [ out/am_$f.o -nt $AM/$f.cpp ] || clan
 [ out/absent_drawing.o -nt community/absent_motion/absent_drawing.cpp ] && [ out/absent_drawing.o -nt $AM/drawing.cpp ] || clang++ -c -std=c++20 -I $PWD -O2 -DNDEBUG -fno-rtti -fvisibility=hidden -I $SKIA -I $AM community/absent_motion/absent_drawing.cpp -o out/absent_drawing.o   # (its drawing.cpp read whole: community/absent_motion/absent_drawing.cpp)
 [ out/absent_ends.o -nt community/absent_motion/absent_ends.cpp ] && [ out/absent_ends.o -nt $AM/styles.cpp ] || clang++ -c -std=c++20 -I $PWD -O2 -DNDEBUG -fno-rtti -fvisibility=hidden -I $SKIA -I $AM community/absent_motion/absent_ends.cpp -o out/absent_ends.o   # (its styles.cpp read whole: community/absent_motion/absent_ends.cpp)
 (cd $SRC/out/wgpu && ninja motolii_door > /dev/null)
-clang++ -std=c++20 -fobjc-arc -O2 -I "$SDK/include" -I $THOR/inc -I $THOR/src/loaders/lottie -I $SRC/third_party/dawn/include -I $SRC/out/wgpu/third_party/dawn/gen/include -I $PWD ${KIT_SRC:-library/$n.mm} ${=KIT_EXTRA} \
+clang++ -std=c++20 -fobjc-arc -O2 -I "$SDK/include" -I $THOR/inc -I $THOR/src/loaders/lottie -I $SRC/third_party/dawn/include -I $SRC/out/wgpu/third_party/dawn/gen/include -I $PWD ${KIT_SRC:-entry/$n.mm} ${=KIT_EXTRA} \
     $THOR/build_dawn/src/libthorvg-1.a out/bend.o out/skpath.o out/absent_motion.o out/absent_ends.o out/absent_drawing.o out/am_motion.o out/am_scene.o out/am_easing.o out/am_textanim.o $SKIA/out/path/libpathops.a $SKIA/out/path/libskia.a -I third_party/libtess2/Include third_party/libtess2/build/libtess2.a -I third_party/curve_fit_nd/c third_party/curve_fit_nd/build/libcurve_fit_nd.a $SRC/out/wgpu/filament/motolii_probe/libmotolii_door.a -L "$SDK/lib/arm64" \
     -lfilament -lbackend -lwebgpu_dawn -lbluegl -lbluevk -lfilabridge -lfilaflat \
     -lutils -lgeometry -lsmol-v -libl -lktxreader -lstb -luberzlib -lzstd \
