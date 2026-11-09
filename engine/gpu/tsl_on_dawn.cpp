@@ -1,7 +1,7 @@
 // tsl_on_dawn.cpp: does a three.js TSL effect, turned to WGSL by three.js's own builder, draw on Dawn (the Dawn that
 // Filament's WebGPU backend is built with)? Everything three.js would give the GPU is read from a folder written by
 // three.js's own code (WGSLNodeBuilder's shaders, each bind group's uniforms as three packs them, the plane's arrays:
-// docs/reports/effects/shaderlab_origins.md), and drawn here the plain WebGPU way, with the shaders' own layout ("auto"), as Dawn's
+// docs/internal/reports/effects/shaderlab_origins.md), and drawn here the plain WebGPU way, with the shaders' own layout ("auto"), as Dawn's
 // samples/HelloTriangle.cpp draws. Device and reading back as tvg_on_dawn.cpp.
 //   ./gpu/tsl_on_dawn.sh <folder> <width> <height>   (folder: vert.wgsl frag.wgsl bindings.txt g*b*.bin
 //   position.f32 uv.f32 index.u16 picture.rgba; writes drawn.rgba there)

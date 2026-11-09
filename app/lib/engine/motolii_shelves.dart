@@ -5,7 +5,7 @@ extension MotoliiShelves on Motolii {
   /// Pictures in one call: each recipe's name and what it makes.
   List<(String, String)> get recipes => _folders.putIfAbsent('recipes', () => [for (final l in _recipeLines) (l[0], l[1])]);
 
-  /// The closed packs among them, the Program shelf's and not Create's (docs/notes/CREATE_PROGRAM.md): each one's name
+  /// The closed packs among them, the Program shelf's and not Create's (docs/internal/notes/CREATE_PROGRAM.md): each one's name
   /// and file, and what it was written for ([packKinds]: Cavalry, p5.js…), as the inside says.
   List<(String, String)> get packs => _folders.putIfAbsent('packs', () => [for (final l in _recipeLines) if (l.length > 3) (l[0], l[3])]);
   List<(String, String)> get packKinds => _folders.putIfAbsent('packKinds', () => [for (final l in _recipeLines) if (l.length > 3) (l[0], l[2])]);

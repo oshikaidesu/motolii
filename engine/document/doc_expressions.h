@@ -1,6 +1,6 @@
 // doc_expressions.h: part of doc.h (a thing's expressions). Read only through doc.h.
 // An expression: a .js file with its own each(i, n, t, k) that says where each copy of a thing lies, how turned, how
-// large, how clear (the Repeater, AE Grid/Ring/Stagger, Cavalry's Animators: docs/notes/CREATE_PROGRAM.md). A thing holds
+// large, how clear (the Repeater, AE Grid/Ring/Stagger, Cavalry's Animators: docs/internal/notes/CREATE_PROGRAM.md). A thing holds
 // any number among its effects (fx), as it holds effects: put on, turned off, moved, put on again and taken off the
 // same way, laid in their order after its script (which still lays its copies as it did).
 static bool doc_expression(Doc& d, const std::string& file) {

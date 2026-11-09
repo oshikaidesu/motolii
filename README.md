@@ -69,7 +69,7 @@ Windows 版も作る予定です。Filament、ThorVG、GStreamer、Flutter な�
 | p5.js | 168 作中 97 作で絵が出た |
 | AviUtl2 | 594 本中 372 本が最後まで動いた |
 
-※ 検証時点・条件はそれぞれ異なります。p5.js は表示できても元作品と見た目が一致するとは限りません。詳しい条件と制限は[検証記録](docs/reports/engine/sketch_import_2026-11-01.md)に記載します。
+※ 検証時点・条件はそれぞれ異なります。p5.js は表示できても元作品と見た目が一致するとは限りません。詳しい条件と制限は[検証記録](docs/internal/reports/engine/sketch_import_2026-11-01.md)に記載します。
 
 ### 形式ごとの詳しい様子
 
@@ -79,7 +79,7 @@ Windows 版も作る予定です。Filament、ThorVG、GStreamer、Flutter な�
 | WebGPU のシェーダーをかける | WGSL（`.wgsl`。three.js などの画面効果を移した物を含む） | シーン全体にかかります。同梱 266 本 |
 | p5.js のスケッチを貼る | p5.js（コードをコピーして、アプリで ⌘V） | レイヤーになり、Program タブに残ります。キーフレームを打てて、Time Remap で時間の速さも変えられます。OpenProcessing の 168 作中 97 作で絵が出ました（11/1 の数え。元と見た目が一致したのは、最初の 42 作を目で見て約 16 作） |
 | Shadertoy のシェーダーを貼る | GLSL（コードをコピーして、アプリで ⌘V） | 自分で描く作品はレイヤーになり、`iChannel` を読む作品は選んだレイヤーにかかります。どちらも Program タブに残ります。API の写し 36,668 本から無作為に選んだ 300 本中 261 本で絵が出て動きました（2026-11 初めの数え）。黒かった 30 本のうち 26 本はマウスなどの入力待ち。読み込めなかったのが 9 本。Time Remap はまだ p5.js だけです |
-| AviUtl2（日本の動画編集ソフト）のスクリプトを使う | `.anm2`・`.obj2`（中の HLSL を WGSL に変換） | 同梱 172 パッケージ。10/26 の数えで、当時同梱の 594 本中 372 本が最後まで動きました（[`docs/reports/aviutl/aviutl2/catalogue.md`](docs/reports/aviutl/aviutl2/catalogue.md)）。DLL が要る物はまだ動きません |
+| AviUtl2（日本の動画編集ソフト）のスクリプトを使う | `.anm2`・`.obj2`（中の HLSL を WGSL に変換） | 同梱 172 パッケージ。10/26 の数えで、当時同梱の 594 本中 372 本が最後まで動きました（[`docs/internal/reports/aviutl/aviutl2/catalogue.md`](docs/internal/reports/aviutl/aviutl2/catalogue.md)）。DLL が要る物はまだ動きません |
 | ネットの TSL（three.js のシェーダー言語）の表現を使う | three.js 自身の変換器で WGSL に | [Shader Lab](https://github.com/basementstudio/shader-lab) の 19 本はエフェクト一覧にあります。ほかは WGSL への変換まで |
 | 動画・写真・文字・図形・3D モデル・点群を置く | 動画（GStreamer）、文字と図形（ThorVG）、glTF・`.ply`（Filament） | 動きます |
 | After Effects のアニメーションを置く | Lottie の `.json`（ThorVG） | 動きます |
@@ -181,14 +181,14 @@ app/live.sh
 ![画面の 7 つの区画に番号を付けた図](docs/media/panels.jpg)
 
 1. **上の帯**：プロジェクト名、画面サイズ、fps、長さ、取り消し・やり直し、Render（書き出し）。
-2. **[左のタブ](docs/tabs.md#左のタブ)**：Media（素材）、Effects（エフェクト）、Fonts（書体）、Colors（色）、Create（図形とレシピ）、Program（貼ったコード）、Presets（保存した組み合わせ。まだ使えません）。
-3. **[プレビュー（Stage）](docs/tabs.md#プレビューのタブ)**：見ながら置く・動かす所。左の縦の列が道具（選択・移動・図形・ペン・文字など）。上のタブで Camera View（カメラから見た仕上がり）に切り替えます。
+2. **[左のタブ](docs/guide/tabs.md#左のタブ)**：Media（素材）、Effects（エフェクト）、Fonts（書体）、Colors（色）、Create（図形とレシピ）、Program（貼ったコード）、Presets（保存した組み合わせ。まだ使えません）。
+3. **[プレビュー（Stage）](docs/guide/tabs.md#プレビューのタブ)**：見ながら置く・動かす所。左の縦の列が道具（選択・移動・図形・ペン・文字など）。上のタブで Camera View（カメラから見た仕上がり）に切り替えます。
 4. **インスペクタ**：選んだレイヤーの値（Transform・Anchor・Blend・Fill など）。上に、そのレイヤーにかかっている関係が並びます。
 5. **タイムライン**：レイヤーとキーフレーム、再生、マーカー、BPM。
 6. **Ease**：キーフレームの間の動き方。右の列が曲線の見本です。
-7. **[右下のタブ](docs/tabs.md#右下のタブ)**：Camera（レンズとピント）、Desk（道具）、Relations（複数のレイヤーをまとめて動かす）。
+7. **[右下のタブ](docs/guide/tabs.md#右下のタブ)**：Camera（レンズとピント）、Desk（道具）、Relations（複数のレイヤーをまとめて動かす）。
 
-タブごとの絵と使い方は [タブの紹介](docs/tabs.md) にあります。
+タブごとの絵と使い方は [タブの紹介](docs/guide/tabs.md) にあります。
 
 ### 最初の 1 本（画面で）
 
@@ -298,7 +298,7 @@ EOF
 
 **まだできない事**：ソフトとしての安定と機能の数は、これからです。配布できるアプリが無い事、Windows で動かない事、ライブで演奏する使い方は考えていない事。
 
-**操作の手本が Alight Motion な訳**：スマホで MV を作る人が慣れている触り方を、まず全部なぞってから、その先へ行くためです。Alight Motion の効果 169 と機能 32 のうち、Motolii に有るのは 101、一部が 37、無いのが 62、未確認が 1 です（10 月末の数え、[`docs/reports/alight_motion/alight_map.md`](docs/reports/alight_motion/alight_map.md)）。
+**操作の手本が Alight Motion な訳**：スマホで MV を作る人が慣れている触り方を、まず全部なぞってから、その先へ行くためです。Alight Motion の効果 169 と機能 32 のうち、Motolii に有るのは 101、一部が 37、無いのが 62、未確認が 1 です（10 月末の数え、[`docs/internal/reports/alight_motion/alight_map.md`](docs/internal/reports/alight_motion/alight_map.md)）。
 
 ## 作り
 
@@ -354,7 +354,7 @@ flowchart LR
 
 | 外向け | 作者の作業メモ（日本語、そのまま公開） |
 |---|---|
-| `README.md`・`README.en.md`・`docs/ARCHITECTURE.md`・`.github/CONTRIBUTING.md`・`.github/CONTRIBUTING.en.md`・`THIRD_PARTY_NOTICES.md`・`engine/README.md` | `docs/notes/`（やること・採点表）・`docs/reports/`（調べた記録。絵と動画、人の投稿を集めた物は git に入れていない）・`docs/app/OVERVIEW.md`・`docs/app/PROCESS.md`（10 月初めの記録） |
+| `README.md`・`README.en.md`・[`docs/README.md`](docs/README.md)（docs の地図）・`docs/ARCHITECTURE.md`・`.github/CONTRIBUTING.md`・`.github/CONTRIBUTING.en.md`・`THIRD_PARTY_NOTICES.md`・`engine/README.md` | `docs/internal/notes/`（やること・採点表）・`docs/internal/reports/`（調べた記録。絵と動画、人の投稿を集めた物は git に入れていない）・`docs/app/OVERVIEW.md`・`docs/app/PROCESS.md`（10 月初めの記録） |
 
 </details>
 

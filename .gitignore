@@ -30,12 +30,12 @@ node_modules/
 __pycache__/
 # Kept on this machine only, not in git: the reports' pictures and films (many show other people's apps or footage),
 # Windows binaries inside the AviUtl2 packages (Motolii runs on macOS), and packages whose author gives no licence text.
-/docs/reports/**/*.png
-/docs/reports/**/*.jpg
-/docs/reports/**/*.jpeg
-/docs/reports/**/*.mp4
-/docs/reports/**/*.gif
-/docs/reports/**/*.webm
+/docs/internal/reports/**/*.png
+/docs/internal/reports/**/*.jpg
+/docs/internal/reports/**/*.jpeg
+/docs/internal/reports/**/*.mp4
+/docs/internal/reports/**/*.gif
+/docs/internal/reports/**/*.webm
 /shelves/aviutl_scripts/**/*.mod2
 /shelves/aviutl_scripts/**/*.aux2
 /shelves/aviutl_scripts/**/*.exe
@@ -49,8 +49,8 @@ __pycache__/
 /shelves/aviutl_scripts/もも猫__スカラップ円/
 /shelves/aviutl_scripts/もも猫__ルーローの多角形/
 /shelves/aviutl_scripts/暘_弥涼__SliceGlitch/
-/docs/reports/window/user_panels/sheets/youtube/
+/docs/internal/reports/window/user_panels/sheets/youtube/
 /build.motolii
-/docs/reports/window/user_panels/
-/docs/reports/window/skin_run/*.motolii
+/docs/internal/reports/window/user_panels/
+/docs/internal/reports/window/skin_run/*.motolii
 /docs/media/*.png   # (what the window tests shoot; the pictures the READMEs show are .jpg made from them)
