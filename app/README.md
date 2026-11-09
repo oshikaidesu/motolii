@@ -46,7 +46,6 @@ FLUTTER_TEST_OUTPUTS_DIR=build/test_output flutter drive --profile -d macos --dr
 | [`BRIDGE.md`](../docs/app/BRIDGE.md) | 窓と中身の境目の決まり（窓が中身を呼ぶ所） |
 | [`DESIGN.md`](../docs/app/DESIGN.md) | 見た目の決まり（値に出所の印つき。`lib/style/tokens.dart` の値はここから） |
 | [`skins/README.md`](../docs/app/skins/README.md) | スキンの作り方。名前の一覧は [`ROLES.md`](../docs/app/skins/ROLES.md)（色・形）と [`PARTS.md`](../docs/app/skins/PARTS.md)（絵）、続きを作る人向けは [`HANDOFF.md`](../docs/app/skins/HANDOFF.md) |
-| [`OVERVIEW.md`](../docs/app/OVERVIEW.md)・[`PROCESS.md`](../docs/app/PROCESS.md) | 10 月初め、窓を別の作業場で作っていた頃の記録（今の形ではない） |
 
 ## 作り方の決まり
 - 新しく作る前に、リポジトリとネットで既存を探す。見つからない時だけ作る。
