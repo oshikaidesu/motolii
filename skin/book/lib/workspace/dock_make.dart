@@ -10,7 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:material_color_utilities/material_color_utilities.dart';
 
-import '../motolii.dart' show Motolii;
+import '../motolii.dart' show Motolii, motoliiDir;
 import '../sets/inspector/inspector_parts.dart' show Pop;
 import '../sets/foundations/text_hand.dart' show TextHand, wordsPicked;
 import '../sets/panels/media_parts.dart' show MiniSlider;
@@ -21,7 +21,9 @@ import 'dock_parts.dart';
 import '../theme.dart' show ColorTheme;
 import 'colour_wheel.dart';
 import 'ws_menu.dart';
+import 'copies_tiles.dart';
 import 'create_preview.dart';
+import 'dock_effects.dart' show TileMoving;
 import 'empty_fx.dart';
 import 'shelf_add.dart';
 import 'ws.dart';

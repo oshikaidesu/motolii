@@ -660,6 +660,11 @@ class _MakeTile extends StatelessWidget {
           children: [
             if (m.recipe && _isRecipe(c, m.name))   // (a recipe: its motion as the inside reckons it, drawn by the window, the whole list moving at once)
               Positioned.fill(child: RecipeMotionView(m.name))
+            else if (_copiesTile(m) case final f?)   // (an expression: copies it lays out, drawn by the inside as an effect's tile, played under the hand: copies_tiles.dart)
+              Positioned.fill(child: ValueListenableBuilder(valueListenable: CopiesTiles.drawn, builder: (_, _, _) => switch (CopiesTiles.of(f)) {
+                '' => Align(alignment: Alignment.topLeft, child: DockGlyph(m.g, size: Shape.z(26), color: sel ? WsT.onAccent : m.hue)),
+                final p => TileMoving(p, playing: h),
+              }))
             else
               Align(
                 alignment: Alignment.topLeft,

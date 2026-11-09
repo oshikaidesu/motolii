@@ -113,3 +113,7 @@ class _OwnTileState extends State<_OwnTile> {
     ),
   );
 }
+
+/// The expression a Copies tile is drawn by (copies_tiles.dart): the Repeater's recipe, one the maker added; null, a
+/// glyph (Empty keeps its "+").
+String? _copiesTile(_Make m) => m.file ?? (m.name == 'Repeater' && !m.recipe ? '$motoliiDir/recipes/repeater.js' : null);
