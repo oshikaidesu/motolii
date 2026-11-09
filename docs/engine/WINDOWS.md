@@ -26,7 +26,7 @@
 | 絵の範囲（狭い／フル） | 渡ってきた絵の形式（Mac の `420v`／`420f`）に聞く | D3D の絵は形式に範囲を持たない。GStreamer の札に聞く事になる | Mac では札と中身が食い違った。Windows で食い違うかは未確認 |
 | 絵をファイルに書く（`render.h` の `shoot`）、メモリを読む（`soak`）、文字の立体（`letters`） | Cocoa、mach、SceneKit | 絵は Filament の `imageio`、ほかは Windows の物 | `letters` は今夜のプロジェクトでは使っていない |
 | ビルドの手順 | zsh のスクリプトと clang | CMake か同じ手順を別に | 手つかず |
-| `gpu_door`（Filament の描画の列に仕事を入れる口） | Filament の内側のヘッダを使う | 同じ（OS に依らない） | ThorVG を Filament の機械で描かせるのに要る |
+| `gpu_interop`（Filament の描画の列に仕事を入れる口） | Filament の内側のヘッダを使う | 同じ（OS に依らない） | ThorVG を Filament の機械で描かせるのに要る |
 
 ## 分からない事
 
