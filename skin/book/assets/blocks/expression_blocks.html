@@ -66,12 +66,14 @@ const toolbox = {
   ],
 };
 const ws = Blockly.inject('blocks', {
-  toolbox, media: 'blockly/media/', sounds: false, trashcan: true, renderer: 'thrasos',
+  toolbox, media: 'blockly/media/', sounds: false, trashcan: false, renderer: 'thrasos',
+  horizontalLayout: true, toolboxPosition: 'start',   // (the categories along the top: a card is narrow, Blockly's own layout option)
   theme: Blockly.Theme.defineTheme('motolii_dark', {base: Blockly.Themes.Classic, componentStyles: {
     workspaceBackgroundColour: '#1e1f22', toolboxBackgroundColour: '#2b2d31', toolboxForegroundColour: '#d8d8d8',
     flyoutBackgroundColour: '#2b2d31', flyoutForegroundColour: '#d8d8d8', scrollbarColour: '#555', insertionMarkerColour: '#fff',
   }}),
-  zoom: {controls: true, wheel: true, startScale: 0.9},
+  zoom: {controls: false, wheel: true, startScale: 0.8},
+  move: {scrollbars: true, drag: true, wheel: false},
 });
 // The code: each() of the first "copy" block, the generator's own definitions (its variables, its helper functions) in it.
 function code() {
