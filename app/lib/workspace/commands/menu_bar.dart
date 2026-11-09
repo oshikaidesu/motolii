@@ -5,11 +5,6 @@ part of '../workspace.dart';
 extension _WorkspaceMenus on _WorkspaceState {
   Map<String, VoidCallback> _commands() {
     final m = _inside!, ws = _ws;
-    void step(int by) {
-      ws.playing = false;
-      ws.frame = ws.frame + by;
-    }
-
     return {
       'file.new': () => _open(_fresh()),
       'file.exportFrame': _exportFrame,
@@ -18,8 +13,6 @@ extension _WorkspaceMenus on _WorkspaceState {
       'edit.undo': () => _typed(const UndoTextIntent(SelectionChangedCause.keyboard)) ? null : ws.after(m.later('undo')),
       'edit.redo': () => _typed(const RedoTextIntent(SelectionChangedCause.keyboard)) ? null : ws.after(m.later('redo')),
       ...wsAbletonCommands(ws),
-      'frame.first': () => step(-ws.frame),
-      'frame.last': () => step(Ws.duration - ws.frame),
     };
   }
 

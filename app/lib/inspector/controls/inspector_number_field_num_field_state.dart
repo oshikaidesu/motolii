@@ -256,8 +256,7 @@ class NumFieldState extends State<NumField> implements TextSelectionGestureDetec
     if (d.dx.abs() > d.dy.abs()) _slide(d.dx);
   }
 
-  void _slide(double right) {
-    final d = right * widget.perPx * _mult();
+  void _step(double d) {
     final cur = _x.doc.get(widget.id);
     if (cur == null) {
       _x.doc.delta(widget.id, d);
@@ -266,15 +265,9 @@ class NumFieldState extends State<NumField> implements TextSelectionGestureDetec
     }
   }
 
-  void _nudge(int dir) {
-    final d = dir * widget.step * _mult();
-    final cur = _x.doc.get(widget.id);
-    if (cur == null) {
-      _x.doc.delta(widget.id, d);
-    } else {
-      _apply(_tidy(cur + d));
-    }
-  }
+  void _slide(double right) => _step(right * widget.perPx * _mult());
+
+  void _nudge(int dir) => _step(dir * widget.step * _mult());
 
   KeyEventResult _key(FocusNode n, KeyEvent e) {
     if (_editing && !_ef.hasFocus) {

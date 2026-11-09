@@ -70,20 +70,12 @@ Widget usualNumber(BuildContext context, NumberSpec n) {
       borderRadius: BorderRadius.circular(5),
       child: Stack(
         children: [
-          if (n.fill != null && n.bipolar)
+          if (n.fill != null)
             Positioned(
-              left: (n.width - 2) * (n.fill! < n.zeroAt ? n.fill! : n.zeroAt),
+              left: n.bipolar ? (n.width - 2) * (n.fill! < n.zeroAt ? n.fill! : n.zeroAt) : 0,
               bottom: 0,
               height: Shape.z(2),
-              width: math.max(1, (n.width - 2) * (n.fill! - n.zeroAt).abs()),
-              child: ColoredBox(color: n.rangeColor),
-            )
-          else if (n.fill != null)
-            Positioned(
-              left: 0,
-              bottom: 0,
-              height: Shape.z(2),
-              width: (n.width - 2) * n.fill!,
+              width: n.bipolar ? math.max(1, (n.width - 2) * (n.fill! - n.zeroAt).abs()) : (n.width - 2) * n.fill!,
               child: ColoredBox(color: n.rangeColor),
             ),
           if (n.keyDot != null)

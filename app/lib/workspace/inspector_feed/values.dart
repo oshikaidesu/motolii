@@ -39,16 +39,8 @@ double _drawn(Ws ws) => ws.inside?.now ?? ws.frame / Ws.fps;
 /// The selected layer's transform as the stage draws it at this frame, in the Inspector's ids.
 Map<String, double> wsTransform(Ws ws, String? id) {
   if (ws.inside case final m?) {
-    // (the document's own values, as the inspector counts them)
-    final t = int.tryParse(id ?? '');
-    if (id == null) {
-      // (nothing picked: the stage's own cards, thing 0)
-      final at = _drawn(ws);
-      return {
-        for (final (_, names) in m.cards(0))
-          for (final n in names) 'v_$n': _onCard(ws, m, 0, n, at),
-      };
-    }
+    // (the document's own values, as the inspector counts them; nothing picked: the stage's own, thing 0)
+    final t = id == null ? 0 : int.tryParse(id);
     if (t == null) return const {};
     final at = _drawn(ws);
     return {

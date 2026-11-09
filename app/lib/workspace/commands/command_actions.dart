@@ -67,5 +67,7 @@ Map<String, void Function()> wsAbletonCommands(Ws ws) {
     'frame.nextStop': () => hop(1),
     'frame.back10': () => step(-10),
     'frame.forward10': () => step(10),
+    'frame.first': () => step(-ws.frame),
+    'frame.last': () => step(Ws.duration - ws.frame),
   };
 }
