@@ -1,7 +1,7 @@
 // aviutl_obj_effect.h: part of aviutl_fx.h. Read only through aviutl_fx.h. obj.effect: AviUtl's built-in effects as Sashimono Edit remakes them, and this file's own scripts called by name.
 // AviUtl's built-in effects as Sashimono Edit remakes them (MIT): their ISF files and how their params are said
 // (effects/sources/sashimono_aviutl.json, written by from_sashimono.py from Sashimono's own compat/aviutl/mapping.py), read once.
-static std::vector<std::filesystem::path> doc_folders(const char* folder);   // (doc_edit.h)
+static std::vector<std::filesystem::path> doc_folders(const char* folder);   // (document/layer_edit.h)
 struct AviutlRemade { std::string file; std::map<std::string, std::array<std::string, 3>> params; };   // (each param: its name there, how its number is said again, a second name it also goes to)
 static const std::map<std::string, AviutlRemade>& aviutl_remakes() {
     static const std::map<std::string, AviutlRemade> all = [] {

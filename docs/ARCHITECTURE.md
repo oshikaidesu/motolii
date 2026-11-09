@@ -72,7 +72,7 @@ flowchart TB
 ## プロジェクト
 
 - 1 つの `.motolii` は SQLite のファイル。レイヤー・値・キー・キーの間のイージング（式、SQLite の関数 `bezier()`・`anime()`）を表に持つ（`engine/document/doc*.h`）。
-- 取り消しは、変更を `step` の表に積む（`doc_steps.h`）。
+- 取り消しは、変更を `step` の表に積む（`document/undo.h`）。
 - レイヤーの種類：video・image・text・solid・shape・camera・light・behaviour（`edit.cpp` の `help`）。
 
 ## 動画・音・書き出し
@@ -83,20 +83,20 @@ flowchart TB
 
 ## 棚を読む所
 
-`shelves/` のフォルダ（と利用者のフォルダの同じ名前のフォルダ）を、どのコードが読むか。場所を決めるのは `engine/document/doc_folders.h` の `doc_folders` 1 つで、アプリの側は `app/lib/bridge/motolii.dart` の `motoliiShelves`・`motoliiOwn`。前の名前（`recipes/`・`animators/`・`ways/`）の利用者のフォルダも `doc_folders` が読み、プロジェクトに残る古い道は `script.h` の `script_shelf_file` が今の棚へ引き直す。
+`shelves/` のフォルダ（と利用者のフォルダの同じ名前のフォルダ）を、どのコードが読むか。場所を決めるのは `engine/document/folders.h` の `doc_folders` 1 つで、アプリの側は `app/lib/bridge/motolii.dart` の `motoliiShelves`・`motoliiOwn`。前の名前（`recipes/`・`animators/`・`ways/`）の利用者のフォルダも `doc_folders` が読み、プロジェクトに残る古い道は `script.h` の `script_shelf_file` が今の棚へ引き直す。
 
 | フォルダ | エンジン | アプリ（`app/lib/`） |
 |---|---|---|
-| `effects/` | `doc_recipes.h` `doc_folder_names` | `workspace/shelf/effect_tiles.dart` |
-| `aviutl_scripts/` | `doc_recipes.h` `doc_aviutl_names` | `workspace/shelf/effect_decks.dart` `effectPack` |
-| `create/` | `doc_recipes.h` `doc_recipes_read` | `workspace/dock/dock_make_expressions.dart` `_expressionRecipes`、`dock_make_create.dart` |
+| `effects/` | `document/recipes.h` `doc_folder_names` | `workspace/shelf/effect_tiles.dart` |
+| `aviutl_scripts/` | `document/recipes.h` `doc_aviutl_names` | `workspace/shelf/effect_decks.dart` `effectPack` |
+| `create/` | `document/recipes.h` `doc_recipes_read` | `workspace/dock/dock_make_expressions.dart` `_expressionRecipes`、`dock_make_create.dart` |
 | `expressions/` | `motolii_calls.h` `motolii_animators` | `workspace/dock/dock_make_expressions.dart` `_expressionsOf`、`workspace/shelf/shelf_add.dart`（Add to shelf の書き込み先） |
 | `relations/` | `motolii_calls.h` `motolii_relations` | `workspace/relate.dart` |
-| `looks/` | `doc_looks.h` `doc_look_names` | `bridge/motolii_shelves.dart` `looks` |
-| `solids/` | `community/js/solid_three.cpp`、`doc_moment_fx.h` | — |
-| `ease/` | `doc_recipes.h` `doc_own_ways` | `workspace/desk/desk_ease_shelf.dart` |
+| `looks/` | `document/presets.h` `doc_look_names` | `bridge/motolii_shelves.dart` `looks` |
+| `solids/` | `community/js/solid_three.cpp`、`document/moment_fx.h` | — |
+| `ease/` | `document/recipes.h` `doc_own_ways` | `workspace/desk/desk_ease_shelf.dart` |
 | `skins/` | — | `style/theme.dart` `ColorTheme.skinNames`（前の置き場 `~/.motolii/skins/` も読む） |
-| `extensions/hydra/` | `doc_door.h`、`community/shaders/hydra_isf.cpp` | — |
+| `extensions/hydra/` | `document/adapter.h`、`community/shaders/hydra_isf.cpp` | — |
 | （棚でない）`engine/third_party/wordnet_ja/` | `entry/motolii_calls_find.h` `find_english`（`doc_folders("words")`） | — |
 | （棚でない）`engine/third_party/noto_sans_jp/` | `stage/drawn/drawn_made.h` `type_fallback`（`doc_folders("fonts")`） | `workspace/dock/dock_fonts.dart` |
 | （棚でない）`engine/third_party/gflanguages/` | — | `workspace/dock/dock_fonts.dart`（`samples.json`） |

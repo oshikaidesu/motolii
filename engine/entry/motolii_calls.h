@@ -2,7 +2,7 @@
 // and shelves, read and changed at once (by_look, by_hand); the rest of motolii.h's calls in the parts motolii.mm reads after this.
 int motolii_add(Motolii* m, const char* kind, const char* file) { return by_hand(m, [=] { return changes(m, (int)(doc_add(doc(m), kind, file))); }); }
 int motolii_remove(Motolii* m, int thing) { return by_hand(m, [=] { return changes(m, (int)(doc_remove(doc(m), thing))); }); }
-int motolii_set(Motolii* m, int thing, const char* name, double number) { return by_hand(m, [=] { return changes(m, (int)(doc_set(doc(m), thing, name, doc_macro_own(doc(m), thing, name, doc(m).stage ? doc(m).stage->now : 0.0, number)))); }); }   // (the value the hand sees: one a macro turns made its own, doc_expressions.h)
+int motolii_set(Motolii* m, int thing, const char* name, double number) { return by_hand(m, [=] { return changes(m, (int)(doc_set(doc(m), thing, name, doc_macro_own(doc(m), thing, name, doc(m).stage ? doc(m).stage->now : 0.0, number)))); }); }   // (the value the hand sees: one a macro turns made its own, document/expressions.h)
 int motolii_points(Motolii* m, int thing, double* xy, int room) { return by_look(m, [=] { return doc_points(*m->d, thing, m->d->stage->now, xy, room); }); }
 int motolii_handles(Motolii* m, int thing, double* xy, double* of, int room) { return by_look(m, [=] { return doc_points(*m->d, thing, m->d->stage->now, xy, room, true, of); }); }
 int motolii_pen(Motolii* m, int thing, double x, double y, double hx, double hy) { return by_hand(m, [=] { return changes(m, doc_pen(doc(m), thing, x, y, hx, hy)); }); }

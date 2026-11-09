@@ -112,7 +112,7 @@ class DirectTransform extends StatelessWidget {
                     RotRow(),
                     if (doc.seat('v_opacity')) const OpacityRow(),
                     const ParentRow(),
-                  ], // (After Effects' Transform, in its order, its Anchor Point in the card below; Parent with them, as in the table of doc_values.h)
+                  ], // (After Effects' Transform, in its order, its Anchor Point in the card below; Parent with them, as in the table of document/values.h)
                 ),
               ),
             ],

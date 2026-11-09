@@ -270,7 +270,7 @@ static void thing_fx_face(Stage& s, ThingFx& e, const math::mat4& place, float2 
 // pixels as the eye sees of it when it is near (`seen`: points of the stage a unit of the world where it is), so that it
 // is as sharp as it is without them. Its sheet lies where it lies.
 static void thing_fx_stand(Stage& s, ThingFx& e, const math::mat4& place, float2 half, double seen) {
-    const double ppp = (double)s.view->getViewport().width / std::max(1, s.w), usual = s.h / (12.0 * std::tan(15.0 * M_PI / 180.0));   // (points a unit of the world, by the stage's own eye: doc_moment.h)
+    const double ppp = (double)s.view->getViewport().width / std::max(1, s.w), usual = s.h / (12.0 * std::tan(15.0 * M_PI / 180.0));   // (points a unit of the world, by the stage's own eye: document/evaluate.h)
     const double room = 128.0 / usual, sx = length(place[0].xyz), sy = length(place[1].xyz), wide = half.x * sx + room, high = half.y * sy + room;
     const double c[4] = {std::max(wide, e.sides[0]), std::max(wide, e.sides[1]), std::max(high, e.sides[2]), std::max(high, e.sides[3])}, across = c[0] + c[1], tall = c[2] + c[3];
     const double point = std::min(std::max(usual, seen), 4096.0 / (ppp * std::max(across, tall)));   // (4096 pixels at the most)

@@ -77,7 +77,7 @@ int motolii_later(Motolii* m, const char* call, int thing, const char* name, con
             else if (c == "brush") ok = m->made = changes(m, doc_brush(doc(m), w.c_str(), thing));   // (word: the tool (0 pen, 1 brush, 2 fill, 3 eraser: of the thing's drawing), how wide, then each point of the picture x y and its pressure; the answer is the new shape, or the one erased from)
             else if (c == "copy") ok = (int)doc_look_save(doc(m), thing, w.c_str(), true);   // (word: the file it is kept in, whole)
             else if (c == "paste") ok = m->made = changes(m, doc_look_paste(doc(m), w.c_str(), number));   // (word: that file; number: when it begins; the answer is the new thing)
-            else if (c == "copy_style") ok = (int)doc_look_save(doc(m), thing, w.c_str(), false, n);   // (its look: doc_looks.h; name: only these values, a card's)
+            else if (c == "copy_style") ok = (int)doc_look_save(doc(m), thing, w.c_str(), false, n);   // (its look: document/presets.h; name: only these values, a card's)
             else if (c == "keep_look") ok = (int)doc_look_keep(doc(m), thing, w, n);   // (word: its name on the shelf; name: only these values, a card's)
             else if (c == "keep_element") ok = (int)doc_element_keep(doc(m), thing, w);   // (word: its name among the elements)
             else if (c == "fx_duplicate") ok = changes(m, (int)!doc_fx_duplicate(doc(m), thing, w).empty());   // (word: the effect's card's title: it put on again after it, its values with it)
@@ -112,7 +112,7 @@ int motolii_later(Motolii* m, const char* call, int thing, const char* name, con
             else if (c == "stay") ok = changes(m, (int)doc_stay(doc(m), thing, n.c_str(), number));
             else if (c == "way") ok = way_is(m, thing, n.c_str(), number, w.c_str());
             else if (c == "define") ok = define_is(m, n.c_str(), w.c_str());   // (name: the way; word: how it goes)
-            else if (c == "show") {   // (what the open step has made so far, on the stage while a hand is still down: as doc_paths.h shows a picture placed, within its step)
+            else if (c == "show") {   // (what the open step has made so far, on the stage while a hand is still down: as document/paths.h shows a picture placed, within its step)
                 Doc& d = doc(m);
                 ok = 1;
                 if (d.act && d.act_unmatched) d.act_unmatched = false, doc_forget(d), ok = changes(m, (int)doc_match(d));

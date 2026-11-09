@@ -394,6 +394,6 @@ class Shown {
   /// The fold it lies in on its card, named by what the fold holds (null: on the card's first row).
   final String? fold;
 
-  /// [low] and [high] are how far its knob goes; more is taken typed (the inside's doc_edit.h).
+  /// [low] and [high] are how far its knob goes; more is taken typed (the inside's document/layer_edit.h).
   final bool open;
 }

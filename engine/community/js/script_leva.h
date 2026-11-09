@@ -3,7 +3,7 @@
 //                   spread: { value: 0.5, min: 0, max: 2, step: 0.01 }, Advanced: folder({ ... }, { collapsed: true }) };
 // the kind from the value as leva's own plugins tell it (a number a slider, a boolean a check, "#rrggbb" a colour, options a
 // choice). Told as the AviUtl2 head lines script.cpp already reads (as isf.cpp tells an ISF's JSON), so the card is the same.
-// min and max are how far its knob goes, not how far a hand may (doc_edit.h); none written: Houdini's FloatParmTemplate's
+// min and max are how far its knob goes, not how far a hand may (document/layer_edit.h); none written: Houdini's FloatParmTemplate's
 // own, 0 to 10, min_is_strict False, widened to reach its value (Motolii's own: a knob at its end could not be dragged to it). The values reach each() flat, k.name, as leva's useControls returns them.
 // Its label: leva's { label } as written, else the key as Godot's inspector shows one (String::capitalize, MIT, godotengine/godot
 // at c51ff06e8836: "ease_in" Ease In, "scaleFrom" Scale From).

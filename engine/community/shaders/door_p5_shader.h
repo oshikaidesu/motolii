@@ -1,4 +1,4 @@
-// door_p5_shader.h: part of doc_door.h. A p5.js sketch that paints its stage with shader(): its GLSL as an ISF effect (with
+// door_p5_shader.h: part of document/adapter.h. A p5.js sketch that paints its stage with shader(): its GLSL as an ISF effect (with
 // its vertex shader as ISF's own .vs, isf.cpp), what the sketch tells it each frame (p5_stand.h's __shaded_take) as knobs,
 // keyed where it moves, as Hydra's are (hydra_isf.h). A shape's own vertices do not come: what reaches a pixel is what its
 // place across a flat rect, plane or quad gives, the same, being straight in the place.

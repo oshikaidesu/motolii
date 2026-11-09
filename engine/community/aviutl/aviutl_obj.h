@@ -135,7 +135,7 @@ static int aviutl_getvalue(lua_State* L) {   // (target): its own tracks, and th
     return aviutl_no(L, "obj.getvalue " + n);
 }
 // obj.getaudio(buffer, "audiobuffer"[, kind[, count]]) as YMM4-LuaScript's LuaScript.ja-jp.txt tells it (routersys,
-// MIT): the scene's sound now (the document's films heard, doc_place.h doc_sound_now), "pcm" its wave at 16 bits'
+// MIT): the scene's sound now (the document's films heard, document/place.h doc_sound_now), "pcm" its wave at 16 bits'
 // scale, "spectrum" count bands (32; at most 512) of 0 to 32768, "fourier" (1024) of 0 to 1, as Motolii reads a
 // sound for ISF (sound_level.h: GStreamer's spectrum made the Web's AnalyserNode, 512 bands, the wave 1024 samples at
 // 24000); ".l" and ".r" as both. Into buffer[1..n], or a table of its own as the third; none heard, 0. Any other

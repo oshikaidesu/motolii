@@ -6,7 +6,7 @@
 #   import / export from / import() / require   from the file's folder (QuickJS's way; a .ts also as esbuild: .ts, .js,
 #                                               /index.ts); a bare name: the package.json beside a .ts, or the allowlist
 #   // --image@name:file, ISF "PATH": "file"    beside the effect (screen_fx.h)
-#   {motolii}/...  in a look (.motolii)         from shelves/ (doc_looks.h doc_look_roots)
+#   {motolii}/...  in a look (.motolii)         from shelves/ (document/presets.h doc_look_roots)
 #   './' '../' in quotes                        a .sh: from where its `cd "$(dirname "$0")..."` went; a .ts: its folder
 #   shelves/... engine/... app/... docs/...     from the repository's root (a head saying where it was made from)
 # And every .md of our own (not in an aviutl_scripts/ nor engine/third_party/: their authors'): [text](path),

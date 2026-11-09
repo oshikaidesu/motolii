@@ -79,11 +79,11 @@ struct Drawn {
     RenderTarget* edgeInto[3] = {};
     uint32_t edgeW = 0, edgeH = 0;
     float4 bands{0.f};   // (where each stroke ends, in points from its outside; w: how many: a Step bevel's stairs, deep.glsl)
-    bool inLight = false;              // (flat_lit: its surface is told each moment, doc_moment.h)
+    bool inLight = false;              // (flat_lit: its surface is told each moment, document/evaluate.h)
     int edgeReach = 0;                 // (how far that is known, in points)
     std::atomic<bool> stale{true};     // (drawn again since that was worked out: set on the driver thread)
     Mesh* sheet = nullptr;             // the thing in the scene: moved like any other (kit.h: move)
-    float3 boxed{0.f};                 // (half its box across, up and through, when it has depth; its box is open: doc_moment.h)
+    float3 boxed{0.f};                 // (half its box across, up and through, when it has depth; its box is open: document/evaluate.h)
     bool open = false;
     MaterialInstance* look = nullptr;  // its look (none if it is not shown)
     float seconds = 0.f, frames = 0.f; // a film's length (a still: 0)

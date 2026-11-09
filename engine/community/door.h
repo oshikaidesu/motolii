@@ -19,7 +19,7 @@
 inline bool door_has(const std::string& t, const char* word) { return t.find(word) != std::string::npos; }
 #include "community/shaders/door_shadertoy.h"
 
-// What a form is called where it is written for: its programs' files are named so (doc_door.h), the Program shelf's chips.
+// What a form is called where it is written for: its programs' files are named so (document/adapter.h), the Program shelf's chips.
 inline std::string door_name(const std::string& form) {
     static const std::map<std::string, std::string> names = {{"", "p5.js"}, {"shadertoy", "Shadertoy"}, {"sandbox", "GLSL Sandbox"}, {"three", "three.js"}, {"hydra", "Hydra"}, {"dweet", "Dwitter"}, {"tixy", "tixy"}, {"turtle", "Turtletoy"}, {"two", "Two.js"}, {"paper", "Paper.js"}, {"canvas", "Canvas"}, {"twigl", "twigl"}, {"bonzomatic", "Bonzomatic"}};
     const auto at = names.find(form);

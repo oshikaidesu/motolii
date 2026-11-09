@@ -10,7 +10,7 @@
 //                                             Advanced, "← Spread" after its name, and may still be set by hand: the macro adds
 //                                             to its own value what it turns away from where it comes, (max - min) x (macro -
 //                                             as it comes), as an After Effects expression "value + ..." keeps the hand's value
-//                                             (doc_expressions.h doc_macro_adds)
+//                                             (document/expressions.h doc_macro_adds)
 // or, in place of those lines, leva's object form at its top, const knobs = { distance: 2, Advanced: folder({ ... }) } (script_leva.h);
 // and whose body says, for each copy of the thing it is given to, where it is and how:
 //   function each(i, n, t, k) { return { x, y, z, size, rotate, rotate_x, rotate_y, opacity }; }   // i of n copies, t seconds since the thing began, k the knobs (and k.duration: how long the thing lasts)
@@ -80,7 +80,7 @@ inline std::vector<std::string> script_files(const std::string& word) {
 }
 
 // A file of p5.js's own two, setup() and draw(), as sketches are written: not a recipe of ours, whose code is each().
-inline bool script_pushes(const std::string& src) { return src.find("function force(") != std::string::npos && src.find("function draw") == std::string::npos; }   // (a relation that pushes: doc_world.h)
+inline bool script_pushes(const std::string& src) { return src.find("function force(") != std::string::npos && src.find("function draw") == std::string::npos; }   // (a relation that pushes: document/world.h)
 inline bool script_is_sketch(const std::string& src) { return src.find("function each") == std::string::npos && (src.find("function draw") != std::string::npos || src.find("function relate") != std::string::npos || script_pushes(src) || src.find("function setup") != std::string::npos || src.find("createCanvas") != std::string::npos); }
 // The lines of a sketch that draw: a for makes hundreds from one line and a count may grow, the line stays. Each is told
 // to the run as it comes, __L (as Processing's Tweak Mode rewrites a sketch's source to reach its numbers,

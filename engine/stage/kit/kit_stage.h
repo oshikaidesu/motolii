@@ -52,7 +52,7 @@ using namespace filament::math;
 
 static const float TAU = 6.2831853f;
 
-struct SketchShape { std::vector<float3> pos, nrm; std::vector<float2> uv; std::vector<uint32_t> idx, edges; };   // (a shape a p5.js sketch draws, as it has it: doc_sketch.h)
+struct SketchShape { std::vector<float3> pos, nrm; std::vector<float2> uv; std::vector<uint32_t> idx, edges; };   // (a shape a p5.js sketch draws, as it has it: document/sketch.h)
 struct SketchTold { std::string name, type; int count = 1, size = 1; };   // (and what its shader() is told, by name)
 struct SketchPaint { Material* material = nullptr; std::vector<SketchTold> told; int size = 0; std::vector<MaterialInstance*> looks; };
 struct Mesh {
@@ -276,7 +276,7 @@ static void mesh_points(Stage& s, const Mesh& m, VertexBuffer* vb, size_t n) {
     vb->setBufferAt(*s.engine, 2, copied(m.uv.data(), n * sizeof(float2)));
     if (!m.color.empty()) vb->setBufferAt(*s.engine, 3, copied(m.color.data(), n * sizeof(float4))), vb->setBufferAt(*s.engine, 4, copied(m.uv1.data(), n * sizeof(float2)));
 }
-static Mesh* sketch_mesh() {   // (nothing yet: doc_sketch.h makes it again each frame)
+static Mesh* sketch_mesh() {   // (nothing yet: document/sketch.h makes it again each frame)
     Mesh* m = new Mesh;
     m->pos.assign(3, float3{0.f}), m->nrm.assign(3, float3{0.f, 0.f, 1.f}), m->uv.assign(3, float2{0.f}), m->color.assign(3, float4{0.f}), m->uv1.assign(3, float2{0.f}), m->idx = {0, 1, 2};
     return m;

@@ -59,7 +59,7 @@ material {
         { type : float4[3], name : partColour },
         { type : float4[3], name : partSurface },
         { type : sampler2d, name : edge },
-        // a material it wears (doc_wear.h doc_material; flat_<material>, kit_wgpu.sh): clear coat, its roughness, sheen,
+        // a material it wears (document/material.h doc_material; flat_<material>, kit_wgpu.sh): clear coat, its roughness, sheen,
         // anisotropy (of glass: how vivid what is seen through it is, first); how thick, of cloth and subsurface (second),
         // and of glass its bend (ior), how far its colours part, how much its face swims; how dark its colour makes what
         // is seen through glass, or how strong a bubble's rim is

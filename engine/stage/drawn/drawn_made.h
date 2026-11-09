@@ -314,7 +314,7 @@ static std::string type_lacks(const std::string& fontFile, const std::string& wo
     }
     return lacks;
 }
-static std::vector<std::filesystem::path> doc_folders(const char* folder);   // (doc_folders.h)
+static std::vector<std::filesystem::path> doc_folders(const char* folder);   // (document/folders.h)
 // What `words` are drawn in when a font file lacks some of their letters (the user, 11/5: no tofu, Noto by default):
 // the first font in the library's (third_party/noto_sans_jp), then the maker's own fonts/ (doc_folders), that has them all, as a browser goes
 // down a font-family list (CSS Fonts 4, the font fallback); there, Noto Sans JP (notofonts/noto-cjk, OFL), named for

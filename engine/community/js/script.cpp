@@ -91,7 +91,7 @@ std::vector<ScriptKnob> script_knobs(const std::string& file) {
         all << in.rdbuf();
         const std::string told = door_js(all.str(), door_form(all.str()));   // (a form from the net told as a sketch: door.h)
         if (script_is_sketch(told) && told.find("function relate") == std::string::npos && !script_pushes(told) && !solid_is(file)) {   // (a relation is p5's too, but its head says its knobs; a solid's shape says THREE. too, but is no scene from the net: its head says its knobs, solid_three.h)
-            if (door_form(all.str()) == "three") {   // (which part of the scene this thing is: doc_door.h)
+            if (door_form(all.str()) == "three") {   // (which part of the scene this thing is: document/adapter.h)
                 ScriptKnob part;
                 part.kind = "track", part.name = "part", part.label = "Part", part.high = 9999, part.step = 1;
                 return {part};
@@ -306,7 +306,7 @@ Script::Script(const std::string& file, const std::string& p5, const std::string
             const std::string lib = door_library_text(form, text.str());
             JS_FreeValue(own->cx, JS_Eval(own->cx, lib.c_str(), lib.size(), needs.c_str(), JS_EVAL_TYPE_GLOBAL));
         }
-        if (script_pushes(src) && src.find("d3.") != std::string::npos) for (const char* lib : {"d3-binarytree", "d3-quadtree", "d3-octree", "d3-force-3d"}) {   // (a relation that pushes with d3's forces, third_party/js; the other two it says it needs only run forceSimulation, which the world does for it: doc_world.h)
+        if (script_pushes(src) && src.find("d3.") != std::string::npos) for (const char* lib : {"d3-binarytree", "d3-quadtree", "d3-octree", "d3-force-3d"}) {   // (a relation that pushes with d3's forces, third_party/js; the other two it says it needs only run forceSimulation, which the world does for it: document/world.h)
             std::ifstream one(std::filesystem::path(p5).parent_path().parent_path() / lib / (std::string(lib) + ".min.js"));
             std::stringstream text;
             text << one.rdbuf();
