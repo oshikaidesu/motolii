@@ -1,21 +1,18 @@
 // The window's controls, headless (React Aria's and Radix's manner): the window says what a control is and does (its
 // words, its value, what a press does) and a skin's Forms says how it looks and how it is put together, as Dart. What a
 // hand does to it (press, hover, focus, pick) is naked_ui's, so a form draws and never re-makes behaviour.
-// A skin names its forms in theme.xml (<Forms Value="poster"/>); a new form is a file in lib/forms and a line in [forms].
+// A skin names its forms in theme.xml (<Forms Value="own"/>). One the window does not know is [OwnForms].
 // Saved while the window runs through live.sh, it shows at once.
 import 'package:flutter/widgets.dart';
 
 import '../theme.dart';
 import '../tokens.dart';
-import 'lighttable_forms.dart';
 import 'number_paint.dart';
 import 'own_forms.dart';
-import 'poster_forms.dart';
-import 'sheet_forms.dart';
 import 'base_controls.dart';
 
-/// Every form the window knows, by the name a skin says.
-const forms = <String, Forms>{'own': OwnForms(), 'poster': PosterForms(), 'lighttable': LightTableForms(), 'sheet': SheetForms()};
+/// Every form the window knows. A skin that names another gets [OwnForms].
+const forms = <String, Forms>{'own': OwnForms()};
 
 /// One loud action (Render).
 class ActionSpec {
