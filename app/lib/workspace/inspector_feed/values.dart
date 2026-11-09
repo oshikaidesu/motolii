@@ -137,12 +137,12 @@ Map<String, List<String>> _choices(Ws ws, String? id) {
 }
 
 /// How the inspector is looked at (its folds, an effect's Advanced shown): the window's view, not the document's.
-Map<String, bool> _flags(Ws ws, String? id) => {
+Map<String, bool> _flags(Ws ws) => {
   for (final e in ws.view.entries)
     if (e.key.startsWith('inspector.') && e.value is bool) e.key.substring(10): e.value as bool,
 };
 
-bool _flag(Ws ws, String? id, Map<String, bool> changed) {
+bool _flag(Ws ws, Map<String, bool> changed) {
   bool looked(String k) =>
       k.endsWith('.open') ||
       k.endsWith('.adv') ||

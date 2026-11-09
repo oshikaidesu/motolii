@@ -31,10 +31,6 @@ class Doc extends ChangeNotifier {
   final List<Fx> cards;
   bool animateAll = false;
 
-  /// Whether an edit marks its own key (the sample's rule, D2); off where a host owns the keys (joined: the document
-  /// keys what a hand changes, and a mark told besides was a second key, made before the change, with the old value).
-  bool marksEdits = true;
-
   @override
   void dispose() {
     for (final w in _watched.values) {
@@ -56,7 +52,6 @@ class Doc extends ChangeNotifier {
   /// A scrub moves the value by [dx].
   void delta(String id, double dx) {
     v[id] = (v[id] ?? 0) + dx;
-    _touch(id);
     notifyListeners();
   }
 
@@ -115,7 +110,6 @@ class Doc extends ChangeNotifier {
   void setMany(Map<String, double> xs) {
     for (final e in xs.entries) {
       v[e.key] = e.value;
-      _touch(e.key);
     }
     notifyListeners();
   }
@@ -129,12 +123,6 @@ class Doc extends ChangeNotifier {
       if (animateAll || (keys[p] ?? KeyS.off) != KeyS.off) keys[p] = KeyS.at;
     }
     notifyListeners();
-  }
-
-  /// D2: while Animate all is on (or the property is animated), an edit writes a key at the playhead.
-  void _touch(String id) {
-    final p = propOf(id);
-    if (marksEdits && (animateAll || (keys[p] ?? KeyS.off) != KeyS.off)) keys[p] = KeyS.at;
   }
 
   void setKey(String prop, KeyS s) {

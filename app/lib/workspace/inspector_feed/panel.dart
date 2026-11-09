@@ -133,8 +133,8 @@ class _InspectorPanelState extends State<_InspectorPanel> {
               onWords: (changed) => _say(ws, l?.id, changed),
               onAnimateAll: (on) => ws.animating = on,
               animating: ws.animating,
-              flags: _flags(ws, l?.id),
-              onFlags: (changed) => _flag(ws, l?.id, changed),
+              flags: _flags(ws),
+              onFlags: (changed) => _flag(ws, changed),
               keyMarks: _keyMarks(ws, l?.id),
               onValues: (changed, {required live}) => _write(ws, l?.id, changed, live: live),
               onDrop: () => ws.after(m.later('drag_end')), // (put down unchanged, without waiting)

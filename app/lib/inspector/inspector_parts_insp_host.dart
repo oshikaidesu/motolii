@@ -18,17 +18,17 @@ class InspHost extends StatefulWidget {
     this.values = const {},
     this.strs = const {},
     this.keyMarks = const {},
-    this.onValues,
-    this.onDrop,
-    this.onKey,
-    this.onWords,
-    this.onAnimateAll,
-    this.animating,
+    required this.onValues,
+    required this.onDrop,
+    required this.onKey,
+    required this.onWords,
+    required this.onAnimateAll,
+    required this.animating,
     this.flags = const {},
-    this.onFlags,
+    required this.onFlags,
     this.choices = const {},
-    this.together,
-    this.live,
+    required this.together,
+    required this.live,
     required this.child,
   });
   final Kind kind;
@@ -39,7 +39,7 @@ class InspHost extends StatefulWidget {
 
   /// The values and key marks at a new moment, told without the host being built again (played, only the moment moves:
   /// the fields that show them follow, the rest of the inspector stays as it was built).
-  final ValueListenable<(Map<String, double>, Map<String, KeyS>)>? live;
+  final ValueListenable<(Map<String, double>, Map<String, KeyS>)> live;
 
   final double? Function(String sum)? onSum;
   final void Function(List<String> names)? onCardReset;
@@ -58,33 +58,33 @@ class InspHost extends StatefulWidget {
   final Map<String, KeyS> keyMarks;
 
   /// Values changed in the inspector: [live] while a hand is still on them (not settled), then once more when it lets go.
-  final void Function(Map<String, double> changed, {required bool live})? onValues;
+  final void Function(Map<String, double> changed, {required bool live}) onValues;
 
   /// A hand let go without keeping what it did (Esc): what it showed is to be dropped.
-  final VoidCallback? onDrop;
+  final VoidCallback onDrop;
 
   /// A property's key mark was changed in the inspector.
-  final void Function(String prop, KeyS mark)? onKey;
+  final void Function(String prop, KeyS mark) onKey;
 
   /// Words changed in the inspector (a text's content, a chooser's choice). false: the host did not take them, and they go back to what they were.
-  final bool Function(Map<String, String> changed)? onWords;
+  final bool Function(Map<String, String> changed) onWords;
 
   /// Animate all was turned on or off (the host's document may key whatever a hand changes, wherever the hand is).
-  final ValueChanged<bool>? onAnimateAll;
+  final ValueChanged<bool> onAnimateAll;
 
-  /// The host's own Animate all (null: the inspector keeps its own): shown as it is, never reset by a new kind.
-  final bool? animating;
+  /// The host's own Animate all, shown as it is.
+  final bool animating;
 
   /// The on/off properties the host owns (Clip to below ...), and a change of them told to it. false: the host did not
   /// take it (nothing is behind that switch), and the switch goes back.
   final Map<String, bool> flags;
-  final bool Function(Map<String, bool> changed)? onFlags;
+  final bool Function(Map<String, bool> changed) onFlags;
 
   /// What a chooser may offer, by its id, where the host's document has its own words for it (a blend's).
   final Map<String, List<String>> choices;
 
   /// What one change of the inspector tells the host (values, then key marks) is told inside this, so a host can keep it as one act.
-  final void Function(VoidCallback tells)? together;
+  final void Function(VoidCallback tells) together;
   @override
   State<InspHost> createState() => _InspHostState();
 }
@@ -94,9 +94,6 @@ class _InspHostState extends State<InspHost> {
   Doc _make() {
     final d = Doc(widget.kind, cards: widget.cards ?? const [])
       ..title = widget.title
-      ..marksEdits =
-          widget.onKey ==
-          null // (a host told of keys keys what a hand changes itself)
       ..kindWord = widget.kindWord
       ..onSum = widget.onSum
       ..onCardReset = widget.onCardReset
@@ -117,11 +114,7 @@ class _InspHostState extends State<InspHost> {
     _seenFlags
       ..clear()
       ..addAll(d.b);
-    if (widget.animating case final on?) {
-      d.animateAll = _animating = on; // (the host's: the inspector shows it)
-    } else {
-      widget.onAnimateAll?.call(_animating = d.animateAll); // (a new document of the inspector begins with it off: the host is told)
-    }
+    d.animateAll = _animating = widget.animating; // (the host's: the inspector shows it)
     return d..addListener(_r);
   }
 
@@ -131,12 +124,10 @@ class _InspHostState extends State<InspHost> {
   final _seenWords = <String, String>{};
   final _seenFlags = <String, bool>{};
   bool _live = false;
-  void _tell() => widget.together == null || doc.inGesture
-      ? _tells()
-      : widget.together!(_tells); // (under a hand only where it is is told, nothing settled: no step to make one of)
+  void _tell() => doc.inGesture ? _tells() : widget.together(_tells); // (under a hand only where it is is told, nothing settled: no step to make one of)
   bool _animating = false;
   void _tells() {
-    if (doc.animateAll != _animating) widget.onAnimateAll?.call(_animating = doc.animateAll);
+    if (doc.animateAll != _animating) widget.onAnimateAll(_animating = doc.animateAll);
     final live = doc.inGesture,
         changed = {
           for (final e in doc.v.entries)
@@ -144,38 +135,36 @@ class _InspHostState extends State<InspHost> {
         };
     if (changed.isNotEmpty) {
       if (!live) _seen.addAll(changed);
-      widget.onValues?.call(changed, live: live);
+      widget.onValues(changed, live: live);
     } else if (_live && !live) {
-      widget.onDrop?.call();
+      widget.onDrop();
     }
     _live = live;
     for (final e in doc.keys.entries.toList()) {
       if (live || _seenKeys[e.key] == e.value) continue; // (while a hand is on it nothing is settled: told when it lets go)
       _seenKeys[e.key] = e.value;
-      widget.onKey?.call(e.key, e.value);
+      widget.onKey(e.key, e.value);
     }
     final words = {
       for (final e in doc.s2.entries)
         if (_seenWords[e.key] != e.value) e.key: e.value,
     };
-    if (widget.onFlags case final tell?) {
-      final flags = {
-        for (final e in doc.b.entries)
-          if ((_seenFlags[e.key] ?? e.key.endsWith('.open')) != e.value)
-            e.key: e.value, // (a card is open until it is folded: its first fold is news too, or it opens again at the next reading)
-      };
-      if (flags.isNotEmpty) {
-        if (tell(flags)) {
-          _seenFlags.addAll(flags);
-        } else {
-          for (final id in flags.keys) {
-            doc.b[id] = _seenFlags[id] ?? false;
-          }
+    final flags = {
+      for (final e in doc.b.entries)
+        if ((_seenFlags[e.key] ?? e.key.endsWith('.open')) != e.value)
+          e.key: e.value, // (a card is open until it is folded: its first fold is news too, or it opens again at the next reading)
+    };
+    if (flags.isNotEmpty) {
+      if (widget.onFlags(flags)) {
+        _seenFlags.addAll(flags);
+      } else {
+        for (final id in flags.keys) {
+          doc.b[id] = _seenFlags[id] ?? false;
         }
       }
     }
     if (words.isEmpty) return;
-    if (widget.onWords?.call(words) ?? true) {
+    if (widget.onWords(words)) {
       _seenWords.addAll(words);
     } else {
       for (final id in words.keys) {
@@ -195,8 +184,8 @@ class _InspHostState extends State<InspHost> {
   void didUpdateWidget(InspHost o) {
     super.didUpdateWidget(o);
     if (o.live != widget.live) {
-      o.live?.removeListener(_atMoment);
-      widget.live?.addListener(_atMoment);
+      o.live.removeListener(_atMoment);
+      widget.live.addListener(_atMoment);
     }
     if (o.kind != widget.kind ||
         !listEquals(
@@ -210,21 +199,16 @@ class _InspHostState extends State<InspHost> {
       // A host that is told of changes owns the values: whatever it did not take goes back to what it says, as soon
       // as no hand is on them (never under a hand: a value being dragged is not written over, even while it plays).
       // (numbers and key marks: told to the fields that show them; words, flags, choices and the rest: everything again)
-      final owned = widget.onValues != null;
-      if (owned ? !doc.inGesture : !mapEquals(o.values, widget.values)) {
+      if (!doc.inGesture) {
         if (doc.showAt(widget.values, const {})) _tick++; // (a value no field watches changed: shown by building again)
         _seen.addAll(widget.values);
       }
-      if (widget.onFlags != null) {
-        if (widget.flags.entries.any((e) => doc.b[e.key] != e.value)) _tick++;
-        doc.b.addAll(widget.flags);
-        _seenFlags.addAll(widget.flags);
-      }
-      if (widget.onWords != null || !mapEquals(o.strs, widget.strs)) {
-        if (widget.strs.entries.any((e) => doc.s2[e.key] != e.value)) _tick++;
-        doc.s2.addAll(widget.strs);
-        _seenWords.addAll(widget.strs);
-      }
+      if (widget.flags.entries.any((e) => doc.b[e.key] != e.value)) _tick++;
+      doc.b.addAll(widget.flags);
+      _seenFlags.addAll(widget.flags);
+      if (widget.strs.entries.any((e) => doc.s2[e.key] != e.value)) _tick++;
+      doc.s2.addAll(widget.strs);
+      _seenWords.addAll(widget.strs);
       // (and where what is shown is not what the document says: a key mark pressed shows lit at once, and an undo that
       //  takes the key away leaves the document's marks as they were before the press, so only the shown one differs)
       if (!mapEquals(o.keyMarks, widget.keyMarks) || widget.keyMarks.entries.any((e) => doc.keys[e.key] != e.value)) {
@@ -232,8 +216,8 @@ class _InspHostState extends State<InspHost> {
         _seenKeys.addAll(widget.keyMarks);
       }
     }
-    if (widget.animating case final on? when on != _animating) {
-      doc.animateAll = _animating = on;
+    if (widget.animating != _animating) {
+      doc.animateAll = _animating = widget.animating;
       _tick++;
     }
     if (o.title != widget.title || o.kindWord != widget.kindWord || o.choices.toString() != widget.choices.toString()) {
@@ -250,7 +234,7 @@ class _InspHostState extends State<InspHost> {
   }
 
   void _atMoment() {
-    final (values, marks) = widget.live!.value;
+    final (values, marks) = widget.live.value;
     if (doc.inGesture) return; // (never under a hand)
     _seen.addAll(values);
     _seenKeys.addAll(marks);
@@ -260,12 +244,12 @@ class _InspHostState extends State<InspHost> {
   @override
   void initState() {
     super.initState();
-    widget.live?.addListener(_atMoment);
+    widget.live.addListener(_atMoment);
   }
 
   @override
   void dispose() {
-    widget.live?.removeListener(_atMoment);
+    widget.live.removeListener(_atMoment);
     doc.dispose();
     super.dispose();
   }
