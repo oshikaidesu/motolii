@@ -277,7 +277,7 @@ static const DocValue doc_values[] = {
     {"pin_bl_y", "shape", -10, 10, true, nullptr},
     {"pin_br_x", "shape", -10, 10, true, nullptr},
     {"pin_br_y", "shape", -10, 10, true, nullptr},
-    {"copies", "picture text shape solid", 1, 1000, false, nullptr},   // (how many; where each lies is its script's: create/copies/repeater.js lays them in rows, turns, sizes and scatters them)
+    {"copies", "picture text shape solid", 1, 1000, false, nullptr},   // (how many; where each lies is its script's: create/repeats/repeater.js lays them in rows, turns, sizes and scatters them)
     {"stagger", "picture text shape solid", 0, 1e3, false, nullptr},   // (how much later the last of its copies moves than the first, in seconds: each as late as its order says)
     {"stagger_from", "picture text shape solid", 0, 0, false, "start centre end edges"},   // (which of them moves first: the first, the middle one, the last, the outer ones)
     {"copy_fill", "picture text shape", 0, 0, false, ""},   // (its copies coloured from the first colour to the last, in their order: six digits each; one, all in it; none, not coloured each)
