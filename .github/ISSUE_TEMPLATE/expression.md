@@ -1,7 +1,7 @@
 ---
-name: この表現を使いたい / A look I want to use
-about: ネットで見つけた表現を Motolii で使いたい / A look found on the net you want in Motolii
-labels: look
+name: この表現を使いたい / An expression I want to use
+about: ネットで見つけた表現を Motolii で使いたい / An expression found on the net you want in Motolii
+labels: expression
 ---
 
 **どこで見つけたか / Where**（URL）：
