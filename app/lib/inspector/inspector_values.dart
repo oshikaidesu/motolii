@@ -232,31 +232,7 @@ class Doc extends ChangeNotifier {
     return null;
   }
 
-  /// The host's MIDI keys (om_midi's panel, a row's menu): a property keyed from a file's notes (false: not taken), and
-  /// the BPM a file says. Null: the menu has no MIDI.
-  bool Function(String prop, String file, String kind, int channel, double bpm)? onMidi;
-  double Function(String file)? midiBpm;
-
-  /// The host's cards that may be moved up or down (its effects, by their titles), and what moves one so many places.
-  List<String> movable = const [];
-  void Function(String title, int by)? onCardMove;
-  void Function(String how)? onArrange; // (flipX, flipY, fit, fill, stretch: Alight Motion's ⋯ on Move & Transform)
-  List<String> moreCards = const []; // (the cards it may be given and is not shown)
-  void Function(String title)? onMoreCard;
-  VoidCallback? onAddEffect; // (Alight Motion's Add Effect: the shelf of them, its search taking the keys)
-  double? Function(String sum)? onSum; // (a sum typed in a number field worked out: null, it is not one)
+  /// A sum typed in a number field, worked out. Null: it is not one.
+  double? Function(String sum)? onSum;
   void Function(List<String> names)? onCardReset;
-  void Function(String title)? onCardRemove;
-  Widget? Function(String title, List<String> names)? cardCode; // (a card's code as the host draws it, by its title and its values' names (two cards may share a title: ThorVG's Tint and an ISF Duotone): a script's, under its knobs, as After Effects' expression under its value)
-  void Function(String title)? onCardEye;
-  void Function(String title, List<String> names)? onCardSave;
-  void Function(String title)? onCardInfo;
-  void Function(String title)? onCardDuplicate;
-  List<String> cardsOff = const [];
-  void Function(List<String> names)? onCardCopy;
-  VoidCallback? onCardPaste;
-
-  /// The host's answer to how the thing (its copy, the first is 0) moves over a while (see Motolii.path): four numbers a
-  /// moment; null: it has none.
-  Future<List<double>?> Function(double to, int n, int copy)? onPath;
 }

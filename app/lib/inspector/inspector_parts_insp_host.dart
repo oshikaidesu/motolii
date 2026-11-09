@@ -13,30 +13,10 @@ class InspHost extends StatefulWidget {
     this.count = 1,
     this.kindWord,
     this.properties,
-    this.onMidi,
-    this.midiBpm,
-    this.movable = const [],
-    this.onCardMove,
     this.onSum,
-    this.onAddEffect,
-    this.moreCards = const [],
-    this.onMoreCard,
-    this.onArrange,
     this.onCardReset,
-    this.onCardRemove,
-    this.cardCode,
-    this.onCardEye,
-    this.onCardSave,
-    this.onCardInfo,
-    this.onCardDuplicate,
-    this.cardsOff = const [],
-    this.onCardCopy,
-    this.onCardPaste,
-    this.onPath,
     this.cards,
     this.title,
-    this.onRoute,
-    this.onAim,
     this.values = const {},
     this.strs = const {},
     this.keyMarks = const {},
@@ -65,44 +45,14 @@ class InspHost extends StatefulWidget {
   /// the fields that show them follow, the rest of the inspector stays as it was built).
   final ValueListenable<(Map<String, double>, Map<String, KeyS>)>? live;
 
-  /// The host's MIDI keys and a file's BPM (see [Doc.onMidi]).
-  final bool Function(String prop, String file, String kind, int channel, double bpm)? onMidi;
-  final double Function(String file)? midiBpm;
-
-  /// The host's effects as cards that move up or down its stack (see [Doc.movable]).
-  final List<String> movable;
-  final void Function(String title, int by)? onCardMove;
   final double? Function(String sum)? onSum;
-  final VoidCallback? onAddEffect;
-  final List<String> moreCards;
-  final void Function(String title)? onMoreCard;
-  final void Function(String how)? onArrange;
-  final void Function(List<String> names)? onCardReset; // (a card's values as they come: Reset on its head)
-  final void Function(String title)? onCardRemove; // (one of its effects taken off: Remove on its card's head, Alight Motion's Delete)
-  final Widget? Function(String title, List<String> names)? cardCode; // (a card's code, drawn by the host: Doc.cardCode)
-  final void Function(String title)? onCardEye; // (one of its effects turned off or on again, its values kept: Alight Motion's eye on an effect)
-  final void Function(String title, List<String> names)?
-  onCardSave; // (an effect's values, keys and all, kept on the shelf: Alight Motion's preset of one effect)
-  final void Function(String title)? onCardInfo; // (what an effect does, in its maker's words: AbsentMotion's Effect Info)
-  final void Function(String title)? onCardDuplicate; // (the effect put on again after it, its values with it: Alight Motion's Duplicate)
-  final List<String> cardsOff; // (the titles of those turned off)
-  final void Function(List<String> names)? onCardCopy; // (a card's values copied, to be given to another thing: Copy on its head)
-  final VoidCallback? onCardPaste; // (and given: Paste)
-
-  /// How the thing moves over a while, as the host places it (see [Doc.onPath]).
-  final Future<List<double>?> Function(double to, int n, int copy)? onPath; // (a question of the host's: answered later)
+  final void Function(List<String> names)? onCardReset;
 
   /// The host's own cards of values (see [Doc.cards]).
   final List<Fx>? cards;
 
   /// The selected layer's name, when the host knows it.
   final String? title;
-
-  /// A panel link asked for a panel (`Browser › Fonts`, `Ease`); the host opens it.
-  final ValueChanged<String>? onRoute;
-
-  /// The slot a panel link was aimed at when it asked for its panel ('' : none), told just before [onRoute].
-  final ValueChanged<String>? onAim;
 
   /// Values the host owns (the layer's transform at this frame): written in silently when they change, so edits made here last until then.
   final Map<String, double> values;
@@ -153,26 +103,8 @@ class _InspHostState extends State<InspHost> {
           null // (a host told of keys keys what a hand changes itself)
       ..kindWord = widget.kindWord
       ..properties = widget.properties
-      ..onMidi = widget.onMidi
-      ..midiBpm = widget.midiBpm
-      ..movable = widget.movable
-      ..onCardMove = widget.onCardMove
       ..onSum = widget.onSum
-      ..onAddEffect = widget.onAddEffect
-      ..moreCards = widget.moreCards
-      ..onMoreCard = widget.onMoreCard
-      ..onArrange = widget.onArrange
       ..onCardReset = widget.onCardReset
-      ..onCardRemove = widget.onCardRemove
-      ..cardCode = widget.cardCode
-      ..onCardEye = widget.onCardEye
-      ..onCardSave = widget.onCardSave
-      ..onCardInfo = widget.onCardInfo
-      ..onCardDuplicate = widget.onCardDuplicate
-      ..cardsOff = widget.cardsOff
-      ..onCardCopy = widget.onCardCopy
-      ..onCardPaste = widget.onCardPaste
-      ..onPath = widget.onPath
       ..v.addAll(widget.values)
       ..s2.addAll(widget.strs)
       ..choices.addAll(widget.choices)
@@ -259,12 +191,6 @@ class _InspHostState extends State<InspHost> {
 
   void _r() {
     _tell();
-    final r = doc.s2['route'], go = widget.onRoute;
-    if (r != null && go != null) {
-      doc.s2.remove('route');
-      widget.onAim?.call(doc.s2.remove('route.at') ?? '');
-      go(r);
-    }
     // (while a hand is on a value the whole inspector is not built again each step: the field under the hand shows its
     //  own number and the stage follows what the host is told; everything is built once when the hand lets go)
     if (mounted && !doc.inGesture && !doc.ending) setState(() => _tick++);
@@ -319,34 +245,15 @@ class _InspHostState extends State<InspHost> {
     if (o.title != widget.title ||
         o.kindWord != widget.kindWord ||
         !setEquals(o.properties, widget.properties) ||
-        o.choices.toString() != widget.choices.toString() ||
-        !listEquals(o.cardsOff, widget.cardsOff)) {
-      _tick++; // (an effect's eye shut or opened: its card says so)
+        o.choices.toString() != widget.choices.toString()) {
+      _tick++;
     }
     doc
       ..title = widget.title
       ..kindWord = widget.kindWord
       ..properties = widget.properties
-      ..onMidi = widget.onMidi
-      ..midiBpm = widget.midiBpm
-      ..movable = widget.movable
-      ..onCardMove = widget.onCardMove
       ..onSum = widget.onSum
-      ..onAddEffect = widget.onAddEffect
-      ..moreCards = widget.moreCards
-      ..onMoreCard = widget.onMoreCard
-      ..onArrange = widget.onArrange
-      ..onCardReset = widget.onCardReset
-      ..onCardRemove = widget.onCardRemove
-      ..cardCode = widget.cardCode
-      ..onCardEye = widget.onCardEye
-      ..onCardSave = widget.onCardSave
-      ..onCardInfo = widget.onCardInfo
-      ..onCardDuplicate = widget.onCardDuplicate
-      ..cardsOff = widget.cardsOff
-      ..onCardCopy = widget.onCardCopy
-      ..onCardPaste = widget.onCardPaste
-      ..onPath = widget.onPath;
+      ..onCardReset = widget.onCardReset;
     doc.choices
       ..clear()
       ..addAll(widget.choices);

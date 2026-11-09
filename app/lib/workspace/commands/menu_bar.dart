@@ -371,7 +371,6 @@ extension _WorkspaceMenus on _WorkspaceState {
             ],
           ),
           item('Solo', 'thing.solo'),
-          item('Keyed Values', 'thing.lanes'),
           item('Deactivate', 'thing.deactivate'),
         ],
       ),

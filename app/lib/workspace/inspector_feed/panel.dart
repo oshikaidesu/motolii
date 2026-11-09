@@ -140,98 +140,10 @@ class _InspectorPanelState extends State<_InspectorPanel> {
                 () => int.tryParse(l?.id ?? '') == null ? null : _propertiesOf(m.values(int.parse(l!.id)).toSet()),
               ), // (a card of values the thing has not is not shown)
               title: l?.name,
-              onRoute: ws.route,
-              onPath: int.tryParse(l?.id ?? '') == null
-                  ? null
-                  : (to, n, copy) => m
-                        .path(int.parse(l!.id), copy: copy, to: to, n: n)
-                        .then(
-                          (p) => p?.indexed.map((e) => e.$1 % 4 < 2 ? e.$2 * m.point : e.$2).toList(),
-                        ), // (where it is in points of the picture, as the card's numbers are) // (the wave card's preview asks once, then plays by itself)
-              onAim: (at) => ws.aim = at.startsWith('v_') ? at.substring(2) : null, // (a colour link of a card is aimed at that value)
-              movable: int.tryParse(l?.id ?? '') == null ? const [] : m.fxTitles(int.parse(l!.id)), // (its effects, up or down their stack)
-              onCardMove: int.tryParse(l?.id ?? '') == null
-                  ? null
-                  : (title, by) => ws.after(m.later('fx_move', layer: int.parse(l!.id), word: title, number: by.toDouble())),
               onSum: m.workOut,
-              moreCards: int.tryParse(l?.id ?? '') == null
-                  ? const []
-                  : [
-                      for (final c in m.moreCards(int.parse(l!.id)))
-                        if (l.kind != WsKind.audio || c == 'Play') c,
-                    ], // (a sound's speed, Alight Motion's; nothing else)
-              onMoreCard: int.tryParse(l?.id ?? '') == null
-                  ? null
-                  : (title) {
-                      m.asked.putIfAbsent(int.parse(l!.id), () => {}).add(title);
-                      ws.reread();
-                    },
-              onArrange: int.tryParse(l?.id ?? '') == null
-                  ? null
-                  : (how) {
-                      final t = int.parse(l!.id);
-                      ws.after(
-                        how.startsWith('flip') ? m.later('flip', layer: t, word: how.substring(4).toLowerCase()) : m.later('fit', layer: t, word: how),
-                        (_, _) => ws.reread(),
-                      );
-                    },
-              onAddEffect: int.tryParse(l?.id ?? '') == null || l?.kind == WsKind.audio || m.word(int.parse(l!.id), 'kind') == 'light'
-                  ? null
-                  : () {
-                      // (a light takes none: the inside's fx is a film's, a picture's, a text's, a shape's, a solid's, a camera's)
-                      ws.shelf = 'Effects';
-                    },
-              onCardRemove: int.tryParse(l?.id ?? '') == null
-                  ? null
-                  : (title) => ws.after(
-                      title == 'Script'
-                          ? m.later('say', layer: int.parse(l!.id), name: 'script', word: '')
-                          : m.later('fx_out', layer: int.parse(l!.id), word: title),
-                      (_, _) => ws.reread(),
-                    ),
-              cardCode: null,
-              onCardEye: int.tryParse(l?.id ?? '') == null
-                  ? null
-                  : (title) => ws.after(m.later('fx_visible', layer: int.parse(l!.id), word: title), (_, _) => ws.reread()),
-              onCardDuplicate: int.tryParse(l?.id ?? '') == null
-                  ? null
-                  : (title) => ws.after(
-                      m.later('fx_duplicate', layer: int.parse(l!.id), word: title),
-                      (done, why) => done ? ws.reread() : ws.notice = why,
-                    ), // (Alight Motion's ⋮ Duplicate: put on again after it, its values with it)
-              onCardInfo: (title) => ws.notice = m.about(title).isEmpty
-                  ? '$title: no words of its maker\'s'
-                  : '$title: ${m.about(title)}', // (in its maker's words, as the shelf searches them)
-              onCardSave: int.tryParse(l?.id ?? '') == null
-                  ? null
-                  : (title, names) => ws.after(m.later('keep_preset', layer: int.parse(l!.id), name: names.join(' '), word: title), (done, why) {
-                      // (that effect's values and keys a look on the Effects shelf, by its name and a number the inside gives it)
-                      m.forgetFolders();
-                      ws.notice = done ? 'Preset kept: $title' : 'Not kept: $why';
-                      ws.reread();
-                    }),
-              cardsOff: int.tryParse(l?.id ?? '') == null
-                  ? const []
-                  : [
-                      for (final t in m.word(int.parse(l!.id), 'fx_off').split(';'))
-                        if (t.isNotEmpty) t,
-                    ],
               onCardReset: int.tryParse(l?.id ?? '') == null
                   ? null
                   : (names) => ws.after(m.later('reset', layer: int.parse(l!.id), word: names.join(' ')), (_, _) => ws.reread()),
-              onCardCopy: int.tryParse(l?.id ?? '') == null
-                  ? null
-                  : (names) => m.later(
-                      'copy_style',
-                      layer: int.parse(l!.id),
-                      name: names.join(' '),
-                      word: _WorkspaceState._clipboard('card'),
-                    ), // (that card's values alone: Alight Motion's copy of one effect)
-              onCardPaste: int.tryParse(l?.id ?? '') == null
-                  ? null
-                  : () => File(_WorkspaceState._clipboard('card')).existsSync()
-                        ? ws.after(m.later('paste_style', layer: int.parse(l!.id), word: _WorkspaceState._clipboard('card')), (_, _) => ws.reread())
-                        : null,
               values: Ws.timed('transform', () => wsTransform(ws, l?.id)),
               strs: Ws.timed('words', () => _words(ws, l?.id)),
               choices: Ws.timed('choices', () => _choices(ws, l?.id)),
@@ -244,8 +156,6 @@ class _InspectorPanelState extends State<_InspectorPanel> {
               onValues: (changed, {required live}) => _write(ws, l?.id, changed, live: live),
               onDrop: () => ws.after(m.later('drag_end')), // (put down unchanged, without waiting)
               onKey: (prop, mark) => _mark(ws, l?.id, prop, mark),
-              onMidi: (prop, file, kind, channel, bpm) => _midi(ws, l?.id, prop, file, kind, channel, bpm),
-              midiBpm: m.midiBpm,
               together: (tells) {
                 // (one step, asked without waiting: begun and ended in the inside's queue around what is told)
                 m.later('together', number: 1);

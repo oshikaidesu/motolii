@@ -9,7 +9,6 @@ extension WsPick on Ws {
     _aim = null;
     _keys.clear();
     _stretch = null;
-    toolPanelManual = null;
     _tell(WsAspect.picked);
   }
 
@@ -26,7 +25,6 @@ extension WsPick on Ws {
     _keys.add(k);
     _stretch = null;
     _sel = k.layer;
-    toolPanelManual = null;
     _tell(WsAspect.picked);
   }
 
@@ -37,7 +35,6 @@ extension WsPick on Ws {
       ..addAll(ks);
     _stretch = null;
     if (_keys.isNotEmpty) _sel = _keys.first.layer;
-    toolPanelManual = null;
     _tell(WsAspect.picked);
   }
 
@@ -58,7 +55,6 @@ extension WsPick on Ws {
     _keys.clear();
     _stretch = _stretchOf(layer, name, from);
     _sel = layer;
-    toolPanelManual = null;
     _tell(WsAspect.picked);
     if (_stretch != null) front('Ease');
   }

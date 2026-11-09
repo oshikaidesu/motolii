@@ -332,15 +332,8 @@ class Ws extends ChangeNotifier {
   /// Where the working eye stands round the world's middle: about, over, how far.
   List<double> get eye => viewOf('stage.eye', const [0.0, 0.0, 1.0]);
 
-  /// What the user opened in the tool panel by hand; null lets the tool panel follow the selection.
-  String? toolPanelManual;
-
   /// The tool panel's tools: the window's own, then any of your own (Workspace(tools:)).
   List<PanelTool> tools = panelTools;
-  void openToolPanel(String? name) {
-    toolPanelManual = name;
-    front('Tool Panel');
-  }
 
   /// A pane brought to the front of its tabs (the panes follow: panes.dart).
   void front(String pane) {
@@ -349,12 +342,6 @@ class Ws extends ChangeNotifier {
   }
 
   (String, int)? fronted;
-
-  /// The tool panel follows the selection (the old Motolii's panels/desk.dart): keys picked -> Ease, a camera -> Depth, else Tools.
-  String get toolPanel => toolPanelManual ?? toolPanelAuto;
-
-  /// What the selection alone would put on the tool panel: keys picked, Ease; a camera, Depth; else the Tools catalog.
-  String get toolPanelAuto => 'Tools'; // (Ease and Camera are panes of their own now)
 
   /// Joined: the value of the picked thing (or of the stage, with nothing picked) a colour picked on the Colors shelf is
   /// said to, when a card's colour link or the tool strip's ink or edge aimed it there; null: the fill. Told as a pick
@@ -406,30 +393,6 @@ class Ws extends ChangeNotifier {
   List<(String, double)> get guides => _inside!.guides;
   set animating(bool on) {
     _inside?.keying(on);
-    if (!on) _lanesShut.clear();
-    _tell(WsAspect.animating);
-  }
-
-  // Which things' keyed values stand in lanes under their rows: opened by hand (After Effects' twirl, Ableton's track
-  // unfolded), or, with Animate on, every thing's (golf ③), and then what is kept is the ones shut by hand.
-  final _lanesOpen = <String>{}, _lanesShut = <String>{};
-  bool lanesOpen(String id) => animating ? !_lanesShut.contains(id) : _lanesOpen.contains(id);
-  bool aimsOpen(String id) =>
-      _lanesOpen.contains(id) && !_lanesShut.contains(id); // (what it aims at, opened by hand: Animate lays out keys, not every relation's things)
-  void twirl(Iterable<String> ids) {
-    final open = ids.any(lanesOpen), s = animating ? _lanesShut : _lanesOpen;
-    open == animating ? s.addAll(ids) : s.removeAll(ids);
-    _tell(WsAspect.animating);
-  }
-
-  // The groups stood open. A group is one row until it is opened, as a precomposed layer, a nest, a compound clip and
-  // Alight Motion's group are, so what holds 200 things is one row; the triangle is Apple Motion's and Cavalry's, whose
-  // tree folds rows and changes nothing else. Only the rows fold: the document does not know. (Not kept in the file.)
-  final _groupsOpen = <String>{};
-  bool groupOpen(String id) => _groupsOpen.contains(id);
-  void turnGroup(String id) {
-    if (!_groupsOpen.remove(id)) _groupsOpen.add(id);
-    _groupsOpen.contains(id) ? _lanesOpen.add(id) : _lanesOpen.remove(id); // (its own keys with them: one triangle to a row, Apple Motion's)
     _tell(WsAspect.animating);
   }
 
@@ -439,17 +402,6 @@ class Ws extends ChangeNotifier {
       // (64: as Group's walk up, stage_view_2.dart)
       yield p;
     }
-  }
-
-  /// Each thing folded away, with the row that stands for it: the outermost shut group over it (Cavalry marks that row).
-  Map<String, String> get foldedAway {
-    final of = {for (final l in layers) l.id: l}, away = <String, String>{};
-    for (final l in layers) {
-      for (final p in _over(l, of)) {
-        if (p.kind == WsKind.group && !groupOpen(p.id)) away[l.id] = p.id;
-      }
-    }
-    return away;
   }
 
   /// What a group holds, however deep (nothing, for any other thing: the inside's doc_under).

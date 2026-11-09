@@ -4,69 +4,6 @@ import 'package:flutter/widgets.dart';
 import '../skin/tokens.dart';
 import 'inspector_parts.dart';
 
-// ---- 13. the whole panel ----------------------------------------------------------------------------------------------
-// contract: one rule for every card. A card is what the inside declares (card_table.h, sent by motolii_cards and
-// written as a WGSL uniform struct by workspace/inspector_feed/cards.dart), drawn by [ValuesCard] as an effect is: no card is named here.
-
-// (under its effects, as Alight Motion's list ends: after the last card the host says is an effect (doc_cards_of lays
-//  them before what it may do besides); none on it, at the end)
-int _addAt(Doc doc) {
-  final at = doc.cards.lastIndexWhere((c) => doc.movable.contains(c.name)) + 1;
-  return at > 0 ? at : doc.cards.length;
-}
-
-/// Alight Motion's Add Effect, under a thing's effects: the shelf of them, ready to be searched.
-class AddEffectRow extends StatelessWidget {
-  const AddEffectRow({super.key});
-  @override
-  Widget build(BuildContext context) {
-    final doc = Ctx.of(context).doc;
-    final names = [
-      'fx',
-      'fx_off',
-      for (final c in doc.cards)
-        if (doc.movable.contains(c.name))
-          for (final p in c.params) p.id,
-    ];
-    Widget word(String key, String word, VoidCallback? does) => Hov(
-      key: ValueKey(key),
-      onTap: does,
-      builder: (_, h) => Padding(
-        padding: EdgeInsets.only(left: Shape.s(10)),
-        child: Text(word, style: T.label(h ? Grey.g95 : Grey.g56)),
-      ),
-    );
-    return Padding(
-      padding: EdgeInsets.only(bottom: Pop.gap),
-      child: Row(
-        children: [
-          Expanded(
-            child: Hov(
-              key: const ValueKey('add-effect'),
-              onTap: doc.onAddEffect,
-              builder: (_, h) => Container(
-                height: Pop.cell,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(color: h ? Grey.g20 : Pop.well, borderRadius: BorderRadius.all(Shape.r(6))),
-                child: Text('+ Add Effect', style: T.label(h ? Grey.g95 : Grey.g76)),
-              ),
-            ),
-          ),
-          // (Alight Motion's Copy Effects and Paste Effects: its whole stack, the knobs with it)
-          if (doc.movable.isNotEmpty)
-            if (doc.onCardCopy case final copy?) word('effects-copy', 'Copy all', () => copy(names)),
-          if (doc.onCardPaste case final paste?) word('effects-paste', 'Paste', paste),
-          if (doc.moreCards.isNotEmpty && doc.onMoreCard != null) ...[
-            // (what Alight Motion shows for its kind is all that is there unasked: the rest by name)
-            SizedBox(width: Shape.s(10)),
-            CardMore(name: 'More', word: 'More', items: [for (final title in doc.moreCards) (title, title, () => doc.onMoreCard!(title))]),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
 /// The Inspector: one scrolling stack of the host's cards. Needs an InspHost above it.
 class InspectorPanel extends StatefulWidget {
   const InspectorPanel({super.key, this.width = 372, this.height = 720});
@@ -94,8 +31,7 @@ class _InspectorPanelState extends State<InspectorPanel> {
         const EmptyState()
       else ...[
         // contract: one stack: the host's cards, Transform first, then the effects on it, then what it may do besides (Premiere Pro's Effect Controls: the effects put on under Motion and Opacity); every titled card folds on its own.
-        for (final (i, c) in doc.cards.indexed) ...[if (doc.onAddEffect != null && i == _addAt(doc)) const AddEffectRow(), ValuesCard(c)],
-        if (doc.onAddEffect != null && _addAt(doc) >= doc.cards.length) const AddEffectRow(),
+        for (final c in doc.cards) ValuesCard(c),
       ],
     ];
     final panel = Focus(
