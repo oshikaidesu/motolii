@@ -7,8 +7,10 @@
 //                                             one knob, 0 to 1 (as it comes: 0.5), turning others: each is its min + (max - min) x
 //                                             the macro, Min above Max the other way (Ableton's Rack Macro Controls, Live 12
 //                                             manual 25.7.1 Map Mode). On its card it stands first; what it turns is folded into
-//                                             Advanced, "← Spread" after its name. It turns them once a document says it (a
-//                                             value or a key): until then theirs stand, as a recipe set them (weave.js, confetti.js)
+//                                             Advanced, "← Spread" after its name, and may still be set by hand: the macro adds
+//                                             to its own value what it turns away from where it comes, (max - min) x (macro -
+//                                             as it comes), as an After Effects expression "value + ..." keeps the hand's value
+//                                             (doc_expressions.h doc_macro_adds)
 // and whose body says, for each copy of the thing it is given to, where it is and how:
 //   function each(i, n, t, k) { return { x, y, z, size, rotate, rotate_x, rotate_y, opacity }; }   // i of n copies, t seconds since the thing began, k the knobs (and k.duration: how long the thing lasts)
 // (as Cavalry's JavaScript Utility gives a Duplicator its points). Behind the door: QuickJS-ng (js_bench chose it).

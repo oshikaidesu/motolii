@@ -542,12 +542,12 @@ double motolii_now(Motolii* m) { return m->now; }
 
 int motolii_add(Motolii* m, const char* kind, const char* file) { return by_hand(m, [=] { return changes(m, (int)(doc_add(doc(m), kind, file))); }); }
 int motolii_remove(Motolii* m, int thing) { return by_hand(m, [=] { return changes(m, (int)(doc_remove(doc(m), thing))); }); }
-int motolii_set(Motolii* m, int thing, const char* name, double number) { return by_hand(m, [=] { return changes(m, (int)(doc_set(doc(m), thing, name, number))); }); }
+int motolii_set(Motolii* m, int thing, const char* name, double number) { return by_hand(m, [=] { return changes(m, (int)(doc_set(doc(m), thing, name, doc_macro_own(doc(m), thing, name, doc(m).stage ? doc(m).stage->now : 0.0, number)))); }); }   // (the value the hand sees: one a macro turns made its own, doc_expressions.h)
 int motolii_points(Motolii* m, int thing, double* xy, int room) { return by_look(m, [=] { return doc_points(*m->d, thing, m->d->stage->now, xy, room); }); }
 int motolii_handles(Motolii* m, int thing, double* xy, double* of, int room) { return by_look(m, [=] { return doc_points(*m->d, thing, m->d->stage->now, xy, room, true, of); }); }
 int motolii_pen(Motolii* m, int thing, double x, double y, double hx, double hy) { return by_hand(m, [=] { return changes(m, doc_pen(doc(m), thing, x, y, hx, hy)); }); }
 int motolii_say(Motolii* m, int thing, const char* name, const char* word) { return by_hand(m, [=] { return changes(m, (int)(doc_say(doc(m), thing, name, word))); }); }
-int motolii_key(Motolii* m, int thing, const char* name, double at, double number) { return by_hand(m, [=] { return changes(m, (int)(doc_key(doc(m), thing, name, at, number))); }); }
+int motolii_key(Motolii* m, int thing, const char* name, double at, double number) { return by_hand(m, [=] { return changes(m, (int)(doc_key(doc(m), thing, name, at, doc_macro_own(doc(m), thing, name, at, number)))); }); }
 // Many keys of one value in one call and one step (a world's motion baked into keys, a film's beats...): asked of the
 // hand once, made one act, the stage made again once at its end.
 int motolii_key_many(Motolii* m, int thing, const char* name, int n, const double* at, const double* number) {

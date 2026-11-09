@@ -105,7 +105,7 @@ int motolii_keying(Motolii* m, int on) {   // (on below 0: only says whether eve
 int motolii_hold(Motolii* m, int thing) { return by_hand(m, [=] { return (int)doc_hold(doc(m), thing); }); }
 int motolii_carry(Motolii* m, const char* by, double a, double b) { return posted(m, std::string("carry ") + by, [m, by = std::string(by), a, b] { doc_carry(doc(m), by.c_str(), a, b); }); }   // (refused: said when it is let go)
 int motolii_let_go(Motolii* m, int keep) { return by_hand(m, [=] { return changes(m, (int)doc_let_go(doc(m), keep != 0)); }); }
-int motolii_put(Motolii* m, int thing, const char* name, double at, double number) { return by_hand(m, [=] { return changes(m, (int)doc_put(doc(m), thing, name, at, number)); }); }
+int motolii_put(Motolii* m, int thing, const char* name, double at, double number) { return by_hand(m, [=] { return changes(m, (int)doc_put(doc(m), thing, name, at, doc_macro_own(doc(m), thing, name, at, number))); }); }   // (as the hand sees it: doc_macro_own)
 int motolii_key_here(Motolii* m, int thing, const char* name, double at) { return by_hand(m, [=] { return changes(m, (int)doc_key_here(doc(m), thing, name, at)); }); }
 int motolii_size(Motolii* m, int wide, int high) {
     return by_hand(m, [=] {
@@ -557,7 +557,7 @@ int motolii_later(Motolii* m, const char* call, int thing, const char* name, con
             int ok = 0;
             try {   // (a call that throws is refused with its words, not the end of the hand: the window waits on its ticket)
             if (c == "say") ok = changes(m, (int)doc_say(doc(m), thing, n.c_str(), w.c_str()));
-            else if (c == "set") ok = changes(m, (int)doc_set(doc(m), thing, n.c_str(), w == "made" ? m->made : number));   // (word "made": the number is the thing the last add made, as a value that names a thing: a behaviour connected, a leader)
+            else if (c == "set") ok = changes(m, (int)doc_set(doc(m), thing, n.c_str(), w == "made" ? m->made : doc_macro_own(doc(m), thing, n.c_str(), doc(m).stage ? doc(m).stage->now : 0.0, number)));   // (word "made": the number is the thing the last add made, as a value that names a thing: a behaviour connected, a leader)
             else if (c == "let_go") ok = changes(m, (int)doc_let_go(doc(m), number != 0.0));
             else if (c == "duck") ok = changes(m, (int)duck(m, thing));   // (Audacity's Auto Duck: under the other sounds)
             else if (c == "carry") ok = (int)(n == "effect" ? doc_carry_effect(doc(m), w.c_str()) : doc_carry(doc(m), n.c_str(), number, 0.0));   // (name: by; an effect file in word)
@@ -643,7 +643,7 @@ int motolii_later(Motolii* m, const char* call, int thing, const char* name, con
             else if (c == "raise") ok = changes(m, (int)doc_raise(doc(m), thing, (int)number));
             else if (c == "sequence") ok = changes(m, (int)doc_sequence(doc(m), number, RATE));
             else if (c == "key_here") ok = changes(m, (int)doc_key_here(doc(m), thing, n.c_str(), number));
-            else if (c == "key") ok = changes(m, (int)doc_key(doc(m), thing, n.c_str(), std::atof(w.c_str()), number));   // (word: the moment; number: what the key holds)
+            else if (c == "key") ok = changes(m, (int)doc_key(doc(m), thing, n.c_str(), std::atof(w.c_str()), doc_macro_own(doc(m), thing, n.c_str(), std::atof(w.c_str()), number)));   // (word: the moment; number: what the key holds)
             else if (c == "unkey") ok = changes(m, (int)doc_unkey(doc(m), thing, n.c_str(), number));
             else if (c == "stay") ok = changes(m, (int)doc_stay(doc(m), thing, n.c_str(), number));
             else if (c == "way") ok = way_is(m, thing, n.c_str(), number, w.c_str());

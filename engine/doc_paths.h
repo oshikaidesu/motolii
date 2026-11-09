@@ -438,10 +438,7 @@ static bool doc_carry(Doc& d, const char* by, double a, double b) {
         if (found == h.from.end()) found = h.from.emplace(name, doc_number(d, h.thing, name, now, doc_usual(d, name))).first;
         return found->second;
     };
-    const auto tries = [&](const char* name, double is) {
-        if (double turned = 0; !doc_macro_over(d, h.thing, name, now, &turned).empty()) return d.trouble = "a macro turns it: move the macro", false;   // (doc_set's)
-        return doc_knows(d, h.thing, name, &is) && (h.tried[name] = is, true);
-    };
+    const auto tries = [&](const char* name, double is) { return doc_knows(d, h.thing, name, &is) && (h.tried[name] = is, true); };
     bool ok = true;
     if (!strcmp(by, "place")) {
         // (by the working eye the hand's travel is that eye's, the way After Effects' working views move a 3D layer)
@@ -533,7 +530,7 @@ static bool doc_carry(Doc& d, const char* by, double a, double b) {
         ok = tries("duration", std::max(1e-3, (lasts > 0.0 ? lasts : doc_seconds(d) - start) + a));
     } else {
         was(by);   // (as it was: whether it comes on or goes off, carried)
-        ok = tries(by, a);
+        ok = tries(by, doc_macro_own(d, h.thing, by, now, a));   // (the value the hand sees: one a macro turns made its own, doc_expressions.h)
         if (ok && strstr(doc_making, ("'" + std::string(by) + "'").c_str())) ok = doc_match(d);   // (a value it is made by: made again with it now, not when let go)
         else if (ok && strstr(doc_fxing, ("'" + std::string(by) + "'").c_str())) ok = doc_match(d);   // (an effect's: made again only if it now reaches past its room)
     }

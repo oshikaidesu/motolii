@@ -29,20 +29,34 @@ static std::vector<DocScript*> doc_expressions_on(Doc& d, int thing) {
     for (DocScript* sc : doc_expressions_fx(d, thing)) all.push_back(sc);
     return all;
 }
-// A knob a macro of its expression turns (script.h // --macro@), once the document says the macro: what the macro makes
-// of it at that moment, and the macro's label; "" where none turns it (its own value stands, and may be changed).
-static std::string doc_macro_over(Doc& d, int thing, const char* name, double at, double* is) {
+// A knob a macro of its expression turns (script.h // --macro@): what the macro adds to the knob's own value at that
+// moment, its Min + (Max - Min) x the macro less what it is at the macro's own place as it comes (there the knob is its
+// own value; After Effects' "value + ...": the hand's value stands, the expression adds to it), and the macro's label;
+// "" where none turns it.
+static std::string doc_macro_adds(Doc& d, int thing, const char* name, double at, double* adds) {
+    *adds = 0;
     for (DocScript* sc : doc_expressions_on(d, thing))
         for (size_t i = 0; i < sc->knobs.size(); ++i)
             if (sc->names[i] == name && !sc->knobs[i].by.empty())
                 for (size_t j = 0; j < sc->knobs.size(); ++j)
                     if (sc->knobs[j].name == sc->knobs[i].by) {
-                        const double v = doc_number(d, thing, sc->names[j].c_str(), at, std::nan(""));
-                        if (std::isnan(v)) return "";
-                        for (const ScriptKnob::Turned& t : sc->knobs[j].turns) if (t.name == sc->knobs[i].name) *is = t.low + (t.high - t.low) * v;
-                        return sc->knobs[j].label;
+                        const ScriptKnob& macro = sc->knobs[j];
+                        const double v = doc_number(d, thing, sc->names[j].c_str(), at, macro.usual);
+                        for (const ScriptKnob::Turned& t : macro.turns) if (t.name == sc->knobs[i].name) *adds = (t.high - t.low) * (v - macro.usual);
+                        return macro.label;
                     }
     return "";
+}
+// A knob as the macro that turns it makes it (its own value and what the macro adds), and the macro's label ("" none).
+static std::string doc_macro_over(Doc& d, int thing, const char* name, double at, double* is) {
+    double adds = 0;
+    const std::string by = doc_macro_adds(d, thing, name, at, &adds);
+    return *is += adds, by;
+}
+// What a hand gives a knob a macro turns (the value it sees: doc_macro_over) made its own: less what the macro adds.
+static double doc_macro_own(Doc& d, int thing, const char* name, double at, double is) {
+    double adds = 0;
+    return doc_macro_adds(d, thing, name, at, &adds), is - adds;
 }
 // A copy taken further by the next one, as the thing's own place takes its script's copy (doc_place: moved by it, then
 // turned and sized by it): moved further, turned further, sized and made clear again; a colour the last one says.
@@ -64,9 +78,9 @@ static std::vector<ScriptCopy> doc_expressions_lay(Doc& d, int thing, const std:
             }
             else numbers[sc->knobs[i].name] = doc_number(d, thing, sc->names[i].c_str(), said, sc->knobs[i].usual);
         }
-        for (size_t i = 0; i < sc->knobs.size(); ++i) {   // (a macro the document says turns its knobs, Ableton's Min + (Max - Min) x it: script.h)
-            const double v = doc_number(d, thing, sc->names[i].c_str(), said, std::nan(""));
-            if (!std::isnan(v)) for (const ScriptKnob::Turned& t : sc->knobs[i].turns) numbers[t.name] = t.low + (t.high - t.low) * v;
+        for (size_t i = 0; i < sc->knobs.size(); ++i) {   // (a macro adds to the knobs it turns, Ableton's Min + (Max - Min) x it, less where it comes: doc_macro_adds)
+            const double v = doc_number(d, thing, sc->names[i].c_str(), said, sc->knobs[i].usual);
+            for (const ScriptKnob::Turned& t : sc->knobs[i].turns) numbers[t.name] += (t.high - t.low) * (v - sc->knobs[i].usual);
         }
         numbers["duration"] = doc_literal(d, thing, "duration", 0, -1) + (doc_literal(d, thing, "duration", 0, -1) > 0.0 ? gone : 0.0);   // (how long the thing lasts: an Out ends before it)
         numbers["round"] = d.round;   // (how long the document runs: a flow goes round a whole number of times in it, as scatter's drift did)
