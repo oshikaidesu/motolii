@@ -6,15 +6,13 @@ import 'package:flutter/widgets.dart';
 
 import '../../skin/forms/forms.dart';
 import '../../skin/tokens.dart';
-import '../dock/dock_glyphs.dart';
 import '../state/state.dart';
 
-/// One pane: its name (also its id), the mark on its tab, and how to build its body.
-/// [iconOnly] tabs show the mark alone: for panes whose body already names them in its header, so a strip of many stays narrow.
+/// One pane: its name (also its id) and how to build its body.
+/// [iconOnly] tabs show the first letter alone.
 class WsPane {
-  const WsPane(this.name, this.glyph, this.build, {this.minSize = 160, this.iconOnly = false});
+  const WsPane(this.name, this.build, {this.minSize = 160, this.iconOnly = false});
   final String name;
-  final DockG? glyph; // (none: the pane's first letter)
   final Widget Function() build;
   final double minSize;
   final bool iconOnly;
@@ -100,9 +98,7 @@ class _WsPanesState extends State<WsPanes> {
           child: Forms.worn.paneMark(
             context,
             selected: status == TabStatus.selected,
-            mark: p.glyph == null
-                ? Text(p.name.characters.first, style: T.micro(status == TabStatus.selected ? Grey.g95 : Grey.g56))
-                : DockGlyph(p.glyph!, size: Shape.z(12), color: status == TabStatus.selected ? Grey.g95 : Grey.g56),
+            mark: Text(p.name.characters.first, style: T.micro(status == TabStatus.selected ? Grey.g95 : Grey.g56)),
           ),
         ),
       ),

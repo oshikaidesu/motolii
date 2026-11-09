@@ -18,8 +18,6 @@ import 'package:motolii/inspector/inspector_parts_insp_host.dart';
 
 import '../inspector/inspector_parts.dart';
 import '../skin/theme.dart';
-import 'dock/dock_glyphs.dart';
-import 'window/home.dart';
 import 'window/panes.dart';
 import 'tool_panel/tool_panel_widgets.dart';
 import 'edits/keyframe_edits.dart';
@@ -85,9 +83,6 @@ class _WorkspaceState extends State<Workspace> {
   /// keeps a project's as its editor is closed for its home: MainActivity.kt saveThumbnail), at its playhead or at the
   /// moment it was told (file.poster). Not as another is opened in its place: its last asks would go unanswered.
   void _keepPoster() => _inside?.poster('${Directory.systemTemp.path}/motolii_poster_$pid.png');
-
-  /// The documents beside the open one listed over the window (AbsentMotion's home: home.dart).
-  bool _home = false;
 
   /// The documents beside the open one (read as one is opened), and a place for a new one there.
   List<String> _beside = const [];
@@ -175,27 +170,7 @@ class _WorkspaceState extends State<Workspace> {
     if (fails case [(final from, _), ...]) _ws.noticeGo = () => _ws.frame = (from * Ws.fps).floor();
   }
 
-  /// Documents of the list written out: one as AbsentMotion's list does it (opened, and its export settings asked:
-  /// MainActivity.kt exportFromList); more, each beside itself at its own settings, one after another as DaVinci Resolve's
-  /// Render Queue goes through other projects' jobs (opening each in turn), and the one that was open opened again.
-  Future<void> _exportFrom(List<String> docs) async {
-    setState(() => _home = false);
-    if (docs.length == 1) {
-      if (docs.first != _doc) await _open(docs.first);
-      return;
-    }
-    final back = _doc;
-    var written = 0;
-    for (final d in docs) {
-      if (d != _doc) await _open(d);
-      if (mounted && _doc == d && await _render()) written++;
-    }
-    if (back != null && back != _doc) await _open(back);
-    if (mounted) _ws.notice = 'Written: $written of ${docs.length} films, each beside its document';
-  }
-
-  /// The document and its media gathered into "<name> package" beside it, to be taken elsewhere whole (Alight Motion's
-  /// project package, After Effects' Collect Files); the top bar says so.
+  /// The document and its media gathered into "<name> package" beside it (Alight Motion's project package).
   void _package() {
     final m = _inside, doc = _doc;
     if (m == null || doc == null) return;
@@ -300,24 +275,6 @@ class _WorkspaceState extends State<Workspace> {
           child: Stack(
             children: [
               Overlay(initialEntries: [_entry]),
-              if (_home && _doc != null && _ws.inside != null)
-                Positioned.fill(
-                  child: WsHome(
-                    folder: File(_doc!).parent.path,
-                    lib: _ws.inside!.libPath,
-                    open: _doc!,
-                    onOpen: (d) {
-                      setState(() => _home = false);
-                      if (d != _doc) _open(d);
-                    },
-                    onExport: _exportFrom,
-                    onNew: () {
-                      setState(() => _home = false);
-                      _commands()['file.new']!();
-                    },
-                    onClose: () => setState(() => _home = false),
-                  ),
-                ),
             ],
           ),
         ),
@@ -352,14 +309,14 @@ class _Window extends StatelessWidget {
 }
 
 final _panes = [
-  WsPane('Stage', DockG.stage, () => const SizedBox.shrink(), minSize: 320),
-  WsPane('Camera View', DockG.camera, () => const SizedBox.shrink(), minSize: 240),
-  WsPane('Inspector', DockG.inspector, () => const _InspectorPanel(), minSize: 200),
-  WsPane('Timeline', DockG.timeline, () => const WsTimeline(), minSize: 160),
-  WsPane('Ease', DockG.time, () => const SizedBox.shrink(), minSize: 260),
-  WsPane('Camera', DockG.camera, () => const SizedBox.shrink(), minSize: WsT.lower),
-  WsPane('Tool Panel', DockG.toolPanel, () => const SizedBox.shrink(), minSize: WsT.lower),
-  WsPane('Relations', DockG.toolPanel, () => const SizedBox.shrink(), minSize: WsT.lower),
+  WsPane('Stage', () => const SizedBox.shrink(), minSize: 320),
+  WsPane('Camera View', () => const SizedBox.shrink(), minSize: 240),
+  WsPane('Inspector', () => const _InspectorPanel(), minSize: 200),
+  WsPane('Timeline', () => const WsTimeline(), minSize: 160),
+  WsPane('Ease', () => const SizedBox.shrink(), minSize: 260),
+  WsPane('Camera', () => const SizedBox.shrink(), minSize: WsT.lower),
+  WsPane('Tool Panel', () => const SizedBox.shrink(), minSize: WsT.lower),
+  WsPane('Relations', () => const SizedBox.shrink(), minSize: WsT.lower),
 ];
 
 /// A pane's tab strip, added on top of the reference heights so the panels keep theirs.

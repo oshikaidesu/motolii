@@ -75,11 +75,7 @@ extension _WorkspaceMenus on _WorkspaceState {
       'file.new': () => _open(_fresh()),
       'file.render': () {},
       'file.exportFrame': _exportFrame,
-      'file.home': () => setState(() {
-        // (its own picture kept first: its card shows it as it is)
-        _keepPoster();
-        _home = true;
-      }),
+      'file.home': () {},
       'file.poster': () {
         // (the moment its picture is drawn at from now on: Alight Motion's Set Project Thumbnail)
         if (m.set(0, 'poster_at', ws.frame / 60)) _ws.notice = 'Project picture: ${ws.frame}'; // (the playhead as it is seen: sixty frames a second)
