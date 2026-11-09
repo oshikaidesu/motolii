@@ -8,7 +8,9 @@
 #    hands the work to what exists and lengthens no file of ours is asked nothing.
 #      Own-lines: +N                  N as this check measured it
 #      Looked-in-repo: PATH           a file of others' code here (shelves/ or engine/community/), in the tree; when
-#                                     .githooks/what_exists.py finds files like the added lines, one of those
+#                                     .githooks/what_exists.py finds things like the added lines (a shelf file, or for
+#                                     Dart a class of Flutter or a package, a call or a card of the engine), one of
+#                                     those, written as it shows it
 #      Repo-falls-short: ...          why that file does not do it
 #      Looked-in-library: NAME        a library already linked or depended on (engine/deps/*.sh, engine/third_party/,
 #                                     app/pubspec.yaml, Brewfile)
@@ -157,7 +159,10 @@ def judge(message, net, gone, like, rev):
         if said.get('Own-lines') and said['Own-lines'][0].lstrip('+') != str(net):
             wrong.append(f"Own-lines: says {said['Own-lines'][0]}, the commit adds +{net}")
         looked = said.get('Looked-in-repo', [])
+        shown = {p for p, _, _ in like}
         for path in looked:
+            if path in shown:   # (a class of Flutter or a package, a call or a card of the engine: named as the search shows it)
+                continue
             if not path.startswith(OTHERS_HERE):
                 wrong.append(f'Looked-in-repo: {path} is not under {" or ".join(OTHERS_HERE)}')
             elif not in_tree(rev, path):
@@ -210,13 +215,20 @@ def added_text(diff):
     return '\n'.join(l[1:] for l in diff.splitlines() if l.startswith('+') and not l.startswith('+++'))
 
 
-def like_these(diff):
+def like_these(diff_of):
+    """What exists that is like the added lines: the engine's against the shelves, the Dart against Flutter, the
+    packages and the engine's calls. `diff_of(path)`: the -U0 diff under that path."""
     if nearest is None:
         return []
-    try:
-        return nearest(git('rev-parse', '--show-toplevel').strip(), added_text(diff), limit=8)[0]
-    except Exception:
-        return []
+    top = git('rev-parse', '--show-toplevel').strip()
+    found = []
+    for side, path in (('engine', 'engine'), ('dart', 'app/lib')):
+        try:
+            if text := added_text(diff_of(path)):
+                found += nearest(top, text, side, limit=8)[0]
+        except Exception:
+            pass
+    return found
 
 
 if sys.argv[1:2] == ['--grants']:
@@ -252,7 +264,7 @@ if sys.argv[1:2] == ['--range']:
         gone = taken_away(f'{h}^', h, deleted)
         if net <= 0 and not gone:
             continue
-        like = like_these(git('show', '-U0', '--format=', h, '--', 'app/lib', 'engine')) if net > 0 else []
+        like = like_these(lambda path: git('show', '-U0', '--format=', h, '--', path)) if net > 0 else []
         if wrong := judge(git('log', '-1', '--format=%B', h), net, gone, like, h):
             refuse(h[:9], net, gone, wrong, 'Reword it (git rebase -i, `reword`) and push again.')
             failed = True
@@ -275,7 +287,7 @@ if ungranted:
           ' The lead grants it or tells you which file to hand the work to.', file=sys.stderr)
     sys.exit(1)
 if net > 0 or gone:
-    like = like_these(git('diff', '--cached', '-U0', '--', 'app/lib', 'engine')) if net > 0 else []
+    like = like_these(lambda path: git('diff', '--cached', '-U0', '--', path)) if net > 0 else []
     if wrong := judge(message, net, gone, like, ''):
         refuse('this commit', net, gone, wrong, f'Your message is kept: git commit -e -F {sys.argv[1]}')
         sys.exit(1)

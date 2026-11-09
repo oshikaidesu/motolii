@@ -68,20 +68,21 @@ def sign(top, rel, area, text, first, name):
     """The sign at the door, as lines. `first`: its opening, for the lead or for a worker; `name`: the worker's worktree, '' the lead."""
     out = [first, '',
            'THE FREE WAY: what already exists is run, not re-made. Nothing is asked, of anyone, when the work is handed over and no file of ours gets longer.']
+    like, count = [], 0
+    try:
+        sys.path.insert(0, os.path.join(top, '.githooks'))
+        from what_exists import nearest
+        like, count = nearest(top, text, area)
+    except Exception:
+        pass
+    if like:
+        where = 'files that run on the shelves and in the adapters' if area == 'engine' else 'classes of Flutter and the packages depended on, and calls and cards of the engine'
+        out.append(f'  Already here and like the lines you are writing (of {count} {where}):')
+        out += [f'    {i}   — {shown}' for i, shown, _ in like]
+    else:
+        out.append('  Nothing that exists is named like the words of this edit. Ask in your own words before writing:')
+    out.append('    python3 .githooks/what_exists.py WORD...')
     if area == 'engine':
-        like, count = [], 0
-        try:
-            sys.path.insert(0, os.path.join(top, '.githooks'))
-            from what_exists import nearest
-            like, count = nearest(top, text)
-        except Exception:
-            pass
-        if like:
-            out.append(f'  Already here and like the lines you are writing (of {count} files that run on the shelves and in the adapters):')
-            out += [f'    {p}   — {shown}' for p, shown, _ in like]
-        else:
-            out.append('  Nothing on the shelves is named like the words of this edit. Ask in your own words before writing:')
-        out.append('    python3 .githooks/what_exists.py WORD...')
         third = os.path.join(top, 'engine/third_party')
         linked = sorted({os.path.basename(p)[:-3] for p in git(top, 'ls-files', 'engine/deps').split() if p.endswith('.sh')}
                         | {d for d in (os.listdir(third) if os.path.isdir(third) else []) if os.path.isdir(os.path.join(third, d))})
