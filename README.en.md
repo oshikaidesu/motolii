@@ -91,7 +91,7 @@ A work's rights stay with its author. Many works on Shadertoy and OpenProcessing
 
 Also: keyframes and easing (anime.js eases work as they are), physics (Jolt), refracting glass, a camera (focal length, aperture, focus) and MP4 export. Everything that exists, and how far it was checked, is in the author's ledger [`ASSETS.md`](ASSETS.md) (Japanese).
 
-**Build check**: on a GitHub Apple silicon Mac (macos-15) it is built fresh exactly as this README says, then the UI's analyzer (`flutter analyze`) runs (the build badge above). There are no self-written tests; the external requirements are in [`TESTING.md`](TESTING.md).
+**Build check**: on a GitHub Apple silicon Mac (macos-15) it is built fresh exactly as this README says, then the UI's analyzer (`flutter analyze`) runs (the build badge above). There are no self-written tests; the external requirements are in [`docs/TESTING.md`](docs/TESTING.md).
 
 **Speed** (M4, the 8-second example above, 1080×1920): about 4 ms a frame, no frame dropped even at 240 frames a second. Exporting the 8 seconds takes about 5 seconds, ffmpeg's encoding included. To measure again, make the example, then `printf 'time 240\n' | engine/edit.sh ~/Movies/Motolii/mv.motolii`.
 
@@ -314,7 +314,7 @@ flowchart LR
   E -- "its picture, not copied" --> W
 ```
 
-The UI only takes input; the engine (`engine/`) draws. Google's Filament is downloaded at build time. The engine's entry points are in [`engine/README.md`](engine/README.md), and the whole design in [`ARCHITECTURE.md`](ARCHITECTURE.md) (both in Japanese, with an English summary at the top).
+The UI only takes input; the engine (`engine/`) draws. Google's Filament is downloaded at build time. The engine's entry points are in [`engine/README.md`](engine/README.md), and the whole design in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (both in Japanese, with an English summary at the top).
 
 ## Next
 
@@ -325,7 +325,7 @@ The UI only takes input; the engine (`engine/`) draws. Google's Filament is down
 
 ## Contributing
 
-See [`CONTRIBUTING.en.md`](CONTRIBUTING.en.md) (building, the rules, good first tasks), the [Code of Conduct](CODE_OF_CONDUCT.md) and [`SECURITY.md`](SECURITY.md). Issues and pull requests in English are welcome.
+See [`.github/CONTRIBUTING.en.md`](.github/CONTRIBUTING.en.md) (building, the rules, good first tasks), the [Code of Conduct](.github/CODE_OF_CONDUCT.md) and [`.github/SECURITY.md`](.github/SECURITY.md). Issues and pull requests in English are welcome.
 
 The project's stance: **code you write yourself is a debt.** Look for an existing implementation first and use it the way its author meant; bundle other people's work as unchanged as possible, with their licence and source beside it; keep changes to upstream code as patches applied at build time; say in each commit what was borrowed from where. A lot of Motolii is still its own code today (the Flutter UI, for one); where something can be borrowed instead, the own code goes.
 

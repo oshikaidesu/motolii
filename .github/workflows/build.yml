@@ -1,6 +1,6 @@
 # The whole build on a GitHub Apple silicon Mac, as README.md's "Build and open" does it, then the window's code read by
 # flutter analyze (errors stop the run; notices and warnings only tell). There are no self-written tests or checks here; the
-# external requirements are in TESTING.md.
+# external requirements are in docs/TESTING.md.
 # Run on each push to main and each pull request that touch the code, and by hand (Actions › build › Run workflow). A push
 # made while one runs waits for it, the latest only (Continuous Delivery ch. 5: what came in meanwhile goes through the
 # slow stage together; GitHub's concurrency).

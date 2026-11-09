@@ -2,7 +2,7 @@
 
 *Motolii's engine (C++ / Objective-C++). Google's Filament is fetched into `third_party/` at build time. The entry points are `motolii.h` (the C calls the window uses), `motolii_hand.h` (the thread that owns the document and draws) and `edit.cpp` (a shell that takes one call per line). Of the ~300 files at this level, 63 are what the current build reaches (listed below); the rest are earlier probes kept as they were.*
 
-窓（`../skin/book/`）は、ここが組む `out/libmotolii.dylib` を C の呼び出しで使います。作りの全体は [`../ARCHITECTURE.md`](../ARCHITECTURE.md)。
+窓（`../skin/book/`）は、ここが組む `out/libmotolii.dylib` を C の呼び出しで使います。作りの全体は [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)。
 
 ## 入口
 

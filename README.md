@@ -91,7 +91,7 @@ Windows 版も作る予定です。Filament、ThorVG、GStreamer、Flutter な�
 
 ほかに：キーフレームとイージング（anime.js のイージングもそのまま使えます）、物理演算（Jolt）、ガラスの屈折、カメラ（焦点距離・絞り・ピント）、MP4 への書き出し。何があって、どこまで確かめたかの全部は台帳 [`ASSETS.md`](ASSETS.md) にあります（日本語）。
 
-**ビルドの確認**：GitHub の Apple Silicon の Mac（macos-15）で、この README の手順どおりに新しくビルドし、画面のコードの検査（`flutter analyze`）を走らせています（上の build バッジ）。自分で書いたテストはありません。外から求める条件は [`TESTING.md`](TESTING.md)。
+**ビルドの確認**：GitHub の Apple Silicon の Mac（macos-15）で、この README の手順どおりに新しくビルドし、画面のコードの検査（`flutter analyze`）を走らせています（上の build バッジ）。自分で書いたテストはありません。外から求める条件は [`docs/TESTING.md`](docs/TESTING.md)。
 
 **速さ**（M4、上の 8 秒の作例、1080×1920）：1 フレーム約 4 ms で、毎秒 240 フレームでも落ちません。8 秒の書き出しは約 5 秒（ffmpeg のエンコードを含む）。測り直すには、作例を作ってから `printf 'time 240\n' | engine/edit.sh ~/Movies/Motolii/mv.motolii`。
 
@@ -314,7 +314,7 @@ flowchart LR
   E -- "描いた絵をコピーせずに" --> W
 ```
 
-画面は操作だけで、絵はエンジン（`engine/`）が描きます。Google の Filament はビルドの時にダウンロードします。エンジンの入口は [`engine/README.md`](engine/README.md)、全体の作りは [`ARCHITECTURE.md`](ARCHITECTURE.md) にあります。
+画面は操作だけで、絵はエンジン（`engine/`）が描きます。Google の Filament はビルドの時にダウンロードします。エンジンの入口は [`engine/README.md`](engine/README.md)、全体の作りは [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) にあります。
 
 ## これから
 
@@ -325,7 +325,7 @@ flowchart LR
 
 ## 開発に加わる
 
-[`CONTRIBUTING.md`](CONTRIBUTING.md)（[English](CONTRIBUTING.en.md)）に、ビルド、決まり、手を付けやすい所があります。行動規範は [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)、脆弱性の知らせ方は [`SECURITY.md`](SECURITY.md)。
+[`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md)（[English](.github/CONTRIBUTING.en.md)）に、ビルド、決まり、手を付けやすい所があります。行動規範は [`.github/CODE_OF_CONDUCT.md`](.github/CODE_OF_CONDUCT.md)、脆弱性の知らせ方は [`.github/SECURITY.md`](.github/SECURITY.md)。
 
 ### 考え方
 
@@ -354,7 +354,7 @@ flowchart LR
 
 | 外向け | 作者の作業メモ（日本語、そのまま公開） |
 |---|---|
-| `README.md`・`README.en.md`・`ARCHITECTURE.md`・`CONTRIBUTING.md`・`CONTRIBUTING.en.md`・`THIRD_PARTY_NOTICES.md`・`engine/README.md` | `ASSETS.md`（在る物の台帳。コミット前の自動チェックが読む）・`docs/notes/`（やること・採点表）・`reports/`（調べた記録。絵と動画、人の投稿を集めた物は git に入れていない）・`skin/OVERVIEW.md`・`skin/PROCESS.md`（10 月初めの記録） |
+| `README.md`・`README.en.md`・`docs/ARCHITECTURE.md`・`.github/CONTRIBUTING.md`・`.github/CONTRIBUTING.en.md`・`THIRD_PARTY_NOTICES.md`・`engine/README.md` | `ASSETS.md`（在る物の台帳。コミット前の自動チェックが読む）・`docs/notes/`（やること・採点表）・`reports/`（調べた記録。絵と動画、人の投稿を集めた物は git に入れていない）・`skin/OVERVIEW.md`・`skin/PROCESS.md`（10 月初めの記録） |
 
 </details>
 

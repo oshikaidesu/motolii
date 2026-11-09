@@ -1,5 +1,5 @@
 #!/bin/zsh
-# TESTING.md S2: what has one script draws as it did. The engine at <old-commit> (built in a place of its own) and the
+# docs/TESTING.md S2: what has one script draws as it did. The engine at <old-commit> (built in a place of its own) and the
 # engine of this checkout each draw every recipe of the Create shelf (make <name>) and every motion of the Effects shelf
 # (a text MOTOLII in a font, given it as its script) on a fresh document, at 0.0, 0.7 and 1.9 seconds; each pair of
 # pictures is compared with cmp, as the 11/8 old-and-new comparison was. Prints each that differs and how many matched;

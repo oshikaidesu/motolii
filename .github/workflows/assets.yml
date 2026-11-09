@@ -1,10 +1,10 @@
-# The ledger check of every commit (CONTRIBUTING.md, rule 2), the same one the pre-commit hook runs.
+# The ledger check of every commit (.github/CONTRIBUTING.md, rule 2), the same one the pre-commit hook runs.
 name: ledger
 on: [push, pull_request]
 jobs:
   assets:
     runs-on: ubuntu-latest
-    continue-on-error: true   # (it tells; a contributor's pull request is not stopped by it: CONTRIBUTING.md rule 2)
+    continue-on-error: true   # (it tells; a contributor's pull request is not stopped by it: .github/CONTRIBUTING.md rule 2)
     steps:
       - uses: actions/checkout@v4
         with:

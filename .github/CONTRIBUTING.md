@@ -1,16 +1,16 @@
 # 関わり方
 
-*English version: [CONTRIBUTING.en.md](CONTRIBUTING.en.md). English is fine for issues and pull requests. Contributions are dual licensed under Apache-2.0 or MIT, as the project is. Short version: build with the README, run the checks below, and say in your pull request what you borrowed from where. If adding a line to ASSETS.md is too much, say so in the pull request and the maintainer will add it.*
+*English version: [.github/CONTRIBUTING.en.md](CONTRIBUTING.en.md). English is fine for issues and pull requests. Contributions are dual licensed under Apache-2.0 or MIT, as the project is. Short version: build with the README, run the checks below, and say in your pull request what you borrowed from where. If adding a line to ASSETS.md is too much, say so in the pull request and the maintainer will add it.*
 
 ## できること
 
 - **Issue**：不具合、組み立てで止まった所、「この表現を使いたい」という見本（URL と、何が良いのか）。ひな型があります。
 - **Pull Request**：受けます。Motolii は Apache-2.0 と MIT のダブルライセンスで、送ってもらった物も、特に断りが無ければ同じ二つのライセンスで受けます。
-- **同梱した作品の作者の方**：載せ方の直し・外してほしい時は Issue で。すぐ直すか外します（[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)）。
+- **同梱した作品の作者の方**：載せ方の直し・外してほしい時は Issue で。すぐ直すか外します（[`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md)）。
 
 ## 組み立て
 
-[`README.md`](README.md) の「使ってみる」のとおり。コミットする人は、クローンした所で一度だけ：
+[`README.md`](../README.md) の「使ってみる」のとおり。コミットする人は、クローンした所で一度だけ：
 
 ```bash
 git config core.hooksPath .githooks
@@ -25,12 +25,12 @@ git config core.hooksPath .githooks
 | 台帳（下の決まり 2） | `python3 .githooks/assets_check.py` | `ASSETS.md covers all … files` |
 | 窓の書き方 | `cd skin/book && flutter analyze lib` | エラー 0（今ある注意は 100） |
 
-GitHub の Actions は、台帳の確かめを毎回走らせます（`.github/workflows/assets.yml`、知らせるだけで PR は止めない）。組み立て全部は `.github/workflows/build.yml`（Apple Silicon の Mac で、README の手順どおり組んで `flutter analyze`。コードに触る PR と、Actions の画面から手で）。自分で書いた試験はありません（コードと試験を同じ手が書いていたので、2026-11-08 に全部消しました）。外から求める条件は [`TESTING.md`](TESTING.md)。作りは [`ARCHITECTURE.md`](ARCHITECTURE.md) と [`engine/README.md`](engine/README.md)。行動規範は [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)、脆弱性は [`SECURITY.md`](SECURITY.md)。
+GitHub の Actions は、台帳の確かめを毎回走らせます（`.github/workflows/assets.yml`、知らせるだけで PR は止めない）。組み立て全部は `.github/workflows/build.yml`（Apple Silicon の Mac で、README の手順どおり組んで `flutter analyze`。コードに触る PR と、Actions の画面から手で）。自分で書いた試験はありません（コードと試験を同じ手が書いていたので、2026-11-08 に全部消しました）。外から求める条件は [`docs/TESTING.md`](../docs/TESTING.md)。作りは [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) と [`engine/README.md`](../engine/README.md)。行動規範は [`.github/CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)、脆弱性は [`.github/SECURITY.md`](SECURITY.md)。
 
 ## 決まり
 
 ### 1. 作る前に探す
-新しく書く前に、[`ASSETS.md`](ASSETS.md)（手元に在る物の台帳）と、ネットの既存の実装を探してください。作者のやり方のまま使える物があれば、それを使います。
+新しく書く前に、[`ASSETS.md`](../ASSETS.md)（手元に在る物の台帳）と、ネットの既存の実装を探してください。作者のやり方のまま使える物があれば、それを使います。
 
 ### 2. 新しいファイルは台帳に 1 行
 `ASSETS.md` は「何が在って、どこまで確かめたか」の表です。コミットの前に `.githooks/assets_check.py` が走り、台帳に場所の無いファイルがあると止まります。新しい物は行を足すか、在る行に場所を足してください（場所は `` ` `` で囲む。フォルダを書けば中身は全部）。**難しければ `git commit --no-verify` で進めて、PR にそう書いてください。取り込む時に足します。**
@@ -42,7 +42,7 @@ GitHub の Actions は、台帳の確かめを毎回走らせます（`.github/w
 - 作者のフォルダごと、なるべく手を入れずに置く。隣に作者のライセンスの文書（`LICENSE`）と、取ってきた所（`SOURCE.txt`：名前と作者／licence／from／page）。
 - 作者がライセンスの文書を出していない物は入れない（入れる代わりに、組み立ての時に作者の所から取る：`engine/midi_roll.sh` が例）。
 - 手を入れる物は、元に当てる差分（`.patch`）に分けて、元は組み立ての時に作者の配布元から取る（`engine/dawn_probe/tvg_on_dawn.sh` が例）。
-- [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) に行を足す。
+- [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md) に行を足す。
 
 ## 手を付けやすい所
 
