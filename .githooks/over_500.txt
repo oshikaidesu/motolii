@@ -18,7 +18,6 @@
 589 engine/document/doc_edit.h
 708 engine/document/doc_moment.h
 561 engine/document/doc_place.h
-674 engine/document/doc_values.h
 580 engine/stage/drawn/drawn_kept.h
 631 engine/stage/drawn/drawn_made.h
 510 engine/stage/kit/kit_stage.h

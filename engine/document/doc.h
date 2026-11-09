@@ -30,7 +30,11 @@
 //            fill                   what its surface is: a text's colour as six digits (ff3366); a solid's: a colour, or the material glass
 // In parts, read in this order (each a piece of the one before it, none alone):
 #include "document/doc_kinds.h"   // (the document and the names its values go by)
-#include "document/doc_values.h"   // (a value read at a moment, its keys and ways)
+#include "document/doc_values.h"   // (the values a thing may have, and how each is shown)
+#include "document/doc_scripts.h"   // (a thing's scripts, their knobs as its values)
+#include "document/doc_card_table.h"   // (the cards a thing's values are gathered in)
+#include "document/doc_value_at.h"   // (a value read at a moment: its keys and ways, an element's and a program's own clock)
+#include "document/doc_wear.h"   // (the material a thing wears; its looks and drawn parts on the stage)
 #include "document/doc_relations.h"   // (behaviours, falloffs, relations, physics)
 #include "document/doc_world.h"   // (relations written as files, and the world those that push share)
 #include "document/doc_expressions.h"   // (a thing's expressions: what lays its copies, as many as its effects)

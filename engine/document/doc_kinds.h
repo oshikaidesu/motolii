@@ -84,7 +84,7 @@ struct Doc {
     World world;
     bool walking = false;   // (the world being worked out: what it asks of itself comes from the frames it has)
     std::map<int, std::pair<std::string, std::string>> drawingKept;   // (each freehand stroke's outline as AbsentMotion's drawing effects last made it, by what they were: doc_moment)   // (each thing's copies as AbsentMotion's repeat effects lay them, at the moment last asked: doc_absent_copies)
-    std::shared_ptr<struct DocScripts> scripts;   // (its scripts, each run as its file says: doc_values.h)
+    std::shared_ptr<struct DocScripts> scripts;   // (its scripts, each run as its file says: doc_scripts.h)
     std::map<int, ThingFx> thingFx;     // the things with effects of their own (thing_fx.h): each drawn alone, its effects on, laid where it lies
     struct Read { Texture* seen = nullptr; RenderTarget* into = nullptr; };
     std::map<int, Read> reads;          // the things that read what is under them, each with its picture of it (doc_things_read)
