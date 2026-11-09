@@ -24,7 +24,7 @@
 
 読む人は 2 人いる。表現を持ち込む人は `shelves/` だけを見る。コードを直す人は `app/`・`engine/` を見る。どちらも 3 分で迷わないこと。
 
-1. 直下に置くのは、入口 4 つ（`shelves/`・`app/`・`engine/`・`docs/`）と決まった文書（README・AGENTS・LICENSE・THIRD_PARTY_NOTICES・Brewfile）だけ。
+1. 直下に置くのは、入口 4 つ（`shelves/`・`app/`・`engine/`・`docs/`）と決まった文書（`README.md`・`README.en.md`・`AGENTS.md`・`LICENSE-APACHE`・`LICENSE-MIT`・`THIRD_PARTY_NOTICES.md`・`Brewfile`）と、git と GitHub が読む `.` で始まる物（`.github/`・`.githooks/`・`.gitignore` など）だけ。
 2. 入口ごとに README を 1 枚置き、その表に 2 段目のフォルダを全部 1 行ずつ載せる（`app/` は `lib/` の中まで）。表に無いフォルダは、無いのと同じ。
 3. 他人のコードは、場所で見分けがつくようにする。そのまま持ち込んだ物は `shelves/`・`engine/third_party/`、それへの手直しは `engine/deps/patches/<lib>/`、動かすための口は `engine/community/` に置く。それ以外は全部自前。
 4. 作った物（組み立て・テストの出力、調査の絵）は、`engine/out/`・`app/build/`・`docs/internal/` の外に出さない。
