@@ -17,42 +17,41 @@ Kind _kindOf(WsLayer? l) => switch (l?.kind) {
   _ => Kind.shape,
 };
 
-/// Joined: the colours on the inside's own cards, as the inspector writes a colour (none said: a dash).
-Map<String, String> _cardColors(Motolii m, int t, [double at = 0]) => {
-  for (final (_, names) in m.cards(t)) // (an effect's colour, three numbers shown as one: _makeCards; at the moment drawn, as the card's numbers are)
-    for (final n in names)
-      if (n.endsWith('_x') &&
-          names.contains('${n.substring(0, n.length - 2)}_y') &&
-          names.contains('${n.substring(0, n.length - 2)}_z') &&
-          (m.shown(n)?.label ?? '').endsWith(' r'))
-        'v_${n.substring(0, n.length - 2)}':
-            '#${[for (final c in 'xyz'.split('')) ((m.value(t, '${n.substring(0, n.length - 2)}_$c', at) ?? 0).clamp(0, 1) * 255).round().toRadixString(16).padLeft(2, '0')].join().toUpperCase()}',
-  for (final (_, names) in m.cards(t))
-    for (final n in names)
-      if (m.words(t, n).isEmpty && m.range(t, n) == null)
-        'v_$n': m.shown(n)?.look == 'words'
-            ? m.word(t, n) // (words as they are, to be typed over)
-            : m.word(t, n).isEmpty || m.word(t, n) == 'none'
-            ? '—'
-            : m.shown(n)?.look == 'file'
-            ? m
-                  .word(t, n)
-                  .split('/')
-                  .last // (a file by its name)
-            : m.shown(n)?.look == 'numbers'
-            ? m.word(t, n) // (numbers, one for each copy, as they are)
-            : m
-                  .word(t, n)
-                  .split(' ')
-                  .where((c) => c.isNotEmpty)
-                  .map((w) => w.split('@').first)
-                  .map(
-                    (c) => int.tryParse(c, radix: 16) != null && (c.length == 6 || c.length == 8)
-                        ? '#${c.toUpperCase()}'
-                        : c.replaceRange(0, 1, c[0].toUpperCase()),
-                  )
-                  .join(' '), // (a gradient's stop said by its colour, where it stands left out) // (a colour, or colours in their order; a word that is not one, a material, as it is: Glass)
-};
+/// An effect's colour: three numbers (_x _y _z) whose red channel's label ends in " r" (one colour on the card).
+String? _colourBase(Motolii m, String n, List<String> names) {
+  if (!n.endsWith('_x')) return null;
+  final base = n.substring(0, n.length - 2);
+  return names.contains('${base}_y') && names.contains('${base}_z') && (m.shown(n)?.label ?? '').endsWith(' r') ? base : null;
+}
+
+String _hex(Motolii m, int t, String base, double at) => [
+  for (final c in ['x', 'y', 'z']) ((m.value(t, '${base}_$c', at) ?? 0).clamp(0, 1) * 255).round().toRadixString(16).padLeft(2, '0'),
+].join().toUpperCase();
+
+/// A word the card shows. None said: a dash. Words as typed, a file by its name, numbers as they are, a colour or a gradient's stops.
+String _asShown(Motolii m, int t, String n) {
+  final look = m.shown(n)?.look, w = m.word(t, n);
+  if (look == 'words') return w;
+  if (w.isEmpty || w == 'none') return '—';
+  if (look == 'file') return w.split('/').last;
+  if (look == 'numbers') return w;
+  return [
+    for (final c in w.split(' ').where((c) => c.isNotEmpty).map((c) => c.split('@').first))
+      int.tryParse(c, radix: 16) != null && (c.length == 6 || c.length == 8) ? '#${c.toUpperCase()}' : c.replaceRange(0, 1, c[0].toUpperCase()),
+  ].join(' ');
+}
+
+/// Joined: the colours and words on the inside's own cards, as the inspector writes them.
+Map<String, String> _cardColors(Motolii m, int t, double at) {
+  final out = <String, String>{};
+  for (final (_, names) in m.cards(t)) {
+    for (final n in names) {
+      if (_colourBase(m, n, names) case final base?) out['v_$base'] = '#${_hex(m, t, base, at)}';
+      if (m.words(t, n).isEmpty && m.range(t, n) == null) out['v_$n'] = _asShown(m, t, n);
+    }
+  }
+  return out;
+}
 
 /// Joined: the cards the inside shows a thing's values on beyond the sample's (motolii_cards), each as Params in the
 /// effects' manner: a number its range and what it is now, a word the words it may be. Nothing of them is typed here.
@@ -108,18 +107,10 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
     return '  /// $label${const ['numbers', 'colours', 'words', 'file'].contains(sh?.look) ? ' @unit(${sh!.look})' : ''}\n  $n: vec3<f32>,'; // (any word: colours, six digits each, given from the Colors shelf; or numbers, one for each copy)
   }
 
-  // (an effect's colour, ISF's one input the inside holds as three numbers (_x _y _z) and an alpha: one colour on its
-  //  card, as After Effects' and Alight Motion's effect colour is, the Colors shelf said to it (the inside's say puts the
-  //  three); golf_noise.md (83): white took three number fields)
-  String? colorOf(String n, List<String> names) =>
-      n.endsWith('_x') &&
-          names.contains('${n.substring(0, n.length - 2)}_y') &&
-          names.contains('${n.substring(0, n.length - 2)}_z') &&
-          (m.shown(n)?.label ?? '').endsWith(' r')
-      ? n.substring(0, n.length - 2)
-      : null;
-  String colour(String base) =>
-      '  /// @label(${m.shown('${base}_x')!.label.substring(0, m.shown('${base}_x')!.label.length - 2)}) @unit(colours)\n  $base: vec3<f32>,';
+  String colour(String base) {
+    final label = m.shown('${base}_x')!.label;
+    return '  /// @label(${label.substring(0, label.length - 2)}) @unit(colours)\n  $base: vec3<f32>,';
+  }
   return [
     for (final (title, names) in m.cards(t))
       if (title == 'Sound' ||
@@ -130,9 +121,9 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
           'struct Params {\n${[
             for (final n in names)
               if (m.shown(n)?.fold == null)
-                if (colorOf(n, names) case final base?) colour(base) else if (!{
+                if (_colourBase(m, n, names) case final base?) colour(base) else if (!{
                   for (final x in names)
-                    if (colorOf(x, names) case final b?) ...['${b}_y', '${b}_z'],
+                    if (_colourBase(m, x, names) case final b?) ...['${b}_y', '${b}_z'],
                 }.contains(n)) field(n),
             for (final fold in {for (final n in names) ?m.shown(n)?.fold}) ...['  // @advanced($fold)', for (final n in names)
               if (m.shown(n)?.fold == fold) field(n)],
