@@ -1,10 +1,10 @@
 // camera.h: part of doc.h (where a camera looks from; the stage's eye, light and backdrop as the document says). Read only through doc.h.
 // Where a camera looks from (none: the stage's own eye): it looks at where it is, from round about it as it is turned
 // (y: about, x: up and down, z: its lean), `distance` times the stage's own way off, `zoom` times as near.
-struct DocEye { math::mat4 round; math::double3 look, eye, up; double far, fov; };
-static DocEye doc_camera_eye(Doc& d, int camera, double now) {
+struct DocViewCamera { math::mat4 round; math::double3 look, eye, up; double far, fov; };
+static DocViewCamera doc_view_camera_of(Doc& d, int camera, double now) {
     const auto turned = [&](const char* name, math::double3 about) { return camera ? math::mat4::rotation(doc_number(d, camera, name, now, 0) * (double)TAU / 360.0, about) : math::mat4{}; };
-    DocEye e;
+    DocViewCamera e;
     e.round = turned("rotate_y", {0, 1, 0}) * turned("rotate_x", {1, 0, 0}) * turned("rotate", {0, 0, 1});
     e.look = camera ? (doc_place(d, camera, now) * math::double4{0, 0, 0, 1}).xyz : math::double3{0.0};
     e.far = camera ? doc_number(d, camera, "distance", now, 1) : 1.0;
@@ -21,9 +21,9 @@ static void doc_look(Doc& d) {
     std::snprintf(grade, sizeof grade, "%s %g %g %g %g %g %g %g %g", mapper.c_str(), doc_number(d, 0, "exposure", 0, 0), doc_number(d, 0, "contrast", 0, 1), doc_number(d, 0, "saturation", 0, 1), doc_number(d, 0, "vibrance", 0, 1), doc_number(d, 0, "temperature", 0, 0), slope, offset, power);
     const auto tint = [&](const char* name) { const float3 c = hex(name, float3{1.f}); std::strncat(grade, (" " + doc_word(d, 0, name)).c_str(), 20); return float4{Color::toLinear<ACCURATE>(sRGBColor{c}), 0.f}; };
     const float4 low = tint("shadows_color"), mid = tint("midtones_color"), high = tint("highlights_color");
-    std::vector<std::string> told;   // (Filament's own settings files, their knobs' values put in: viewer_settings.h; the whole view's, on the stage or on any thing's effects, as the shelf puts them)
+    std::vector<std::string> told;   // (Filament's own settings files, their knobs' values put in: viewer_settings.h; the whole view's, on the stage or on any layer's effects, as the shelf puts them)
     std::vector<int> holders{0};
-    doc_rows(d, sqlite3_mprintf("select distinct thing from fact where name = 'fx' and value like '%%.json%%'"), [&](sqlite3_stmt* row) { holders.push_back(sqlite3_column_int(row, 0)); });
+    doc_rows(d, sqlite3_mprintf("select distinct layer from keyframe where name = 'fx' and value like '%%.json%%'"), [&](sqlite3_stmt* row) { holders.push_back(sqlite3_column_int(row, 0)); });
     for (const int h : holders)
         for (const std::string& file : script_files(doc_word(d, h, h == 0 ? "script" : "fx")))
             if (DocScript* sc = doc_script_of(d, file); sc && sc->viewer)
@@ -110,7 +110,7 @@ static void doc_look(Doc& d) {
     d.screen.sounds = [&d](const std::string& file, const std::string& name, bool fft, int wide) { return doc_sound_now(d, 0, file, name, fft, wide); };
     screen_effects(s, d.screen, doc_word(d, 0, "script"), [&d](const std::string& file, const std::string& name, double usual) {
         std::lock_guard<std::recursive_timed_mutex> hold(d.lock);   // (asked while the picture is drawn, when the hand does not hold it)
-        // (a mouse's knob, where the followed thing is on the picture: pointer as the web says it, -1 to 1 and up; the
+        // (a mouse's knob, where the followed layer is on the picture: pointer as the web says it, -1 to 1 and up; the
         //  others from the top left, 0 to 1, as the effects' own uv)
         static const char* const mice[] = {"pointer", "center", "mouse", "point"};
         if (const int t = (int)doc_number(d, 0, "follow", 0, 0); t > 0 && name.size() > 2 && name[name.size() - 2] == '_')
@@ -141,15 +141,15 @@ static void doc_look(Doc& d) {
         s.scene->setSkybox(sky);
     } else s.scene->setSkybox(nullptr);
     // A colour behind everything: a flat colour as large as the stage, stuck to the eye, drawn first in the stage's own
-    // view and writing no depth, so every thing is drawn over it (Filament's sky is drawn after the things it holds, and
-    // a flat thing writes no depth, so a sky painted over them). It is opaque: Filament draws blended sheets after every
-    // solid thing whatever their priority, so a blended backdrop was painted over the solids.
+    // view and writing no depth, so every layer is drawn over it (Filament's sky is drawn after the layers it holds, and
+    // a flat layer writes no depth, so a sky painted over them). It is opaque: Filament draws blended sheets after every
+    // solid layer whatever their priority, so a blended backdrop was painted over the solids.
     const std::string colour = doc_word(d, 0, "behind") == "room" ? "" : behind;
     if (colour != d.backdropIs) {
         if (d.backdrop) picture_off(s, d.backdrop), d.backdrop = nullptr;
         if (!colour.empty()) {
             const math::double4 up = s.camera->getProjectionMatrix() * s.camera->getViewMatrix() * math::double4{0, 1, 0, 1};
-            if ((d.backdrop = flat(s, "rect", (float)s.w / (float)s.h, mat4f{}, (float)(2.0 * up.w / up.y), hex("background", float3{0.f}), "opaque"))) {   // (opaque: Filament draws it with the solid things, first by its priority, not over them with the sheets)
+            if ((d.backdrop = flat(s, "rect", (float)s.w / (float)s.h, mat4f{}, (float)(2.0 * up.w / up.y), hex("background", float3{0.f}), "opaque"))) {   // (opaque: Filament draws it with the solid layers, first by its priority, not over them with the sheets)
                 auto& faces = s.engine->getRenderableManager();
                 for (const Stage::Made& made : s.made)
                     if (made.of == d.backdrop->sheet) faces.setPriority(faces.getInstance(made.thing), 0), faces.setChannel(faces.getInstance(made.thing), 0);

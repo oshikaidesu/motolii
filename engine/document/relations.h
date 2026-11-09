@@ -26,23 +26,23 @@ static double doc_behaviour_at(Doc& d, int by, int copy, int n, double t) {
     const double step = knob("step", 0), v = lo + (hi - lo) * u;
     return step > 0.0 ? std::round(v / step) * step : v;
 }
-// The behaviour a value of a thing is connected to (`<name>_by`), 0 none.
-static bool doc_connects(Doc& d, int thing) {
-    if (const auto known = d.connects.find(thing); known != d.connects.end()) return known->second;
+// The behaviour a value of a layer is connected to (`<name>_by`), 0 none.
+static bool doc_connects(Doc& d, int layer) {
+    if (const auto known = d.connects.find(layer); known != d.connects.end()) return known->second;
     bool any = false;
-    doc_rows(d, sqlite3_mprintf("select 1 from fact where thing = %d and name glob '*_by' and value <> 0 limit 1", thing), [&](sqlite3_stmt*) { any = true; });
-    return d.connects.emplace(thing, any).first->second;
+    doc_rows(d, sqlite3_mprintf("select 1 from keyframe where layer = %d and name glob '*_by' and value <> 0 limit 1", layer), [&](sqlite3_stmt*) { any = true; });
+    return d.connects.emplace(layer, any).first->second;
 }
-static int doc_driven_by(Doc& d, int thing, const char* name) {
-    if (!doc_connects(d, thing)) return 0;
-    const auto key = std::make_pair(thing, std::string(name));
+static int doc_driven_by(Doc& d, int layer, const char* name) {
+    if (!doc_connects(d, layer)) return 0;
+    const auto key = std::make_pair(layer, std::string(name));
     if (const auto known = d.drivers.find(key); known != d.drivers.end()) return known->second;
-    int by = (int)doc_number(d, thing, (std::string(name) + "_by").c_str(), 0, 0);
+    int by = (int)doc_number(d, layer, (std::string(name) + "_by").c_str(), 0, 0);
     if (by && doc_word(d, by, "kind") != "behaviour") by = 0;
     return d.drivers.emplace(key, by).first->second;
 }
 bool sk_inside(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, float x, float y, float* far);
-static math::mat4 doc_place(Doc& d, int thing, double now, int deeper, int copy, bool member);
+static math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy, bool member);
 // How much of a behaviour works at a place on the stage: its falloff's shape (where it lies now, as shape_cut lays its
 // outline), all inside, none outside past falloff_soft; 1 with no falloff.
 static double doc_falloff_at(Doc& d, int by, math::double3 at, double t) {
@@ -79,7 +79,7 @@ static void doc_copy_looks_off(Doc& d, const Mesh* m, MaterialInstance* main) {
         if (main) faces.setMaterialInstanceAt(faces.getInstance(made.thing), 0, main);
         s.engine->destroy(found->second);
         d.copyLooks.erase(found);
-        if (const auto edge = d.copyEdges.find(made.thing.getId()); edge != d.copyEdges.end()) {   // (its edge's own too, back to the thing's edge look)
+        if (const auto edge = d.copyEdges.find(made.thing.getId()); edge != d.copyEdges.end()) {   // (its edge's own too, back to the layer's edge look)
             const Doc::Shown* t = nullptr;
             for (const auto& [id, one] : d.shown) if (one.drawn && one.drawn->sheet == m) t = &one;
             if (t && t->drawn->edgeLook) faces.setMaterialInstanceAt(faces.getInstance(made.thing), 1, t->drawn->edgeLook);
@@ -88,12 +88,12 @@ static void doc_copy_looks_off(Doc& d, const Mesh* m, MaterialInstance* main) {
         }
     }
 }
-// How many members a thing has in their order: a text split into letters, a letter each; else its copies.
+// How many members a layer has in their order: a text split into letters, a letter each; else its copies.
 // A value doc_place reads, by a name written in the program (a literal: its place in memory says which name, ever):
 // where its keys are is found once and held until the document changes (as Beutl and Skottie hold a property), each
 // moment reckoned from them; a value with no keys or one is its number at once. Not while a hand carries it.
-static double doc_literal(Doc& d, int thing, const char* literal, double at, double otherwise);
-// A relation's things (any of their values `<name>_by` = it, or = a relation that starts from it for them), in the order
+static double doc_literal(Doc& d, int layer, const char* literal, double at, double otherwise);
+// A relation's layers (any of their values `<name>_by` = it, or = a relation that starts from it for them), in the order
 // its members word says (0 where one was taken out, its place kept), else in the order they were made; with what each
 // was in before and where it showed when it came in (under and from: as many as members, else none).
 static const Doc::Relation& doc_relation_of(Doc& d, int by) {
@@ -102,7 +102,7 @@ static const Doc::Relation& doc_relation_of(Doc& d, int by) {
     struct Deeper { Deeper() { ++depth; } ~Deeper() { --depth; } } deeper;
     Doc::Relation r;
     std::vector<int> connected;
-    doc_rows(d, sqlite3_mprintf("select distinct thing from fact where name glob '*_by' and value = %d order by thing", by), [&](sqlite3_stmt* q) { connected.push_back(sqlite3_column_int(q, 0)); });
+    doc_rows(d, sqlite3_mprintf("select distinct layer from keyframe where name glob '*_by' and value = %d order by layer", by), [&](sqlite3_stmt* q) { connected.push_back(sqlite3_column_int(q, 0)); });
     const auto words = [&](const char* name) { std::vector<std::string> all; std::istringstream said(doc_word(d, by, name)); for (std::string one; said >> one;) all.push_back(one); return all; };
     const std::vector<std::string> members = words("members"), under = words("under"), from = words("from");
     const auto reaches = [&](int t) {   // (in it through a relation that starts from it)
@@ -127,41 +127,41 @@ static const Doc::Relation& doc_relation_of(Doc& d, int by) {
     return d.relationsOf.emplace(by, std::move(r)).first->second;
 }
 static const std::vector<int>& doc_members_of(Doc& d, int by) { return doc_relation_of(d, by).members; }
-// What a relation written as a file says of all its things (world.h), and what those that push say of a thing's value.
+// What a relation written as a file says of all its layers (world.h), and what those that push say of a layer's value.
 static const char* const doc_relate_names[] = {"x", "y", "z", "size", "rotate", "rotate_x", "rotate_y", "opacity"};
-static double doc_related(Doc& d, int by, int thing, const char* name, double t, double own);
+static double doc_related(Doc& d, int by, int layer, const char* name, double t, double own);
 static const std::vector<double>& doc_related_all(Doc& d, int by, double t);
 static bool doc_pushes(Doc& d, int by);
-static double doc_world_value(Doc& d, int thing, size_t name, double t, double otherwise);
-// What a relation gives a value of one of its things (`own`: the thing's own value there), weighed by its strength: it
-// starts from what the relation the thing was in before gives (else its own value); an around or a row that knows where
-// the thing showed when it came in adds the step from there to its place (so a hand that moves the thing moves it), a
+static double doc_world_value(Doc& d, int layer, size_t name, double t, double otherwise);
+// What a relation gives a value of one of its layers (`own`: the layer's own value there), weighed by its strength: it
+// starts from what the relation the layer was in before gives (else its own value); an around or a row that knows where
+// the layer showed when it came in adds the step from there to its place (so a hand that moves the layer moves it), a
 // follow that knows adds how far its leader has gone since (else each puts it at its place, or at its leader's).
-static double doc_related(Doc& d, int by, int thing, const char* name, double t, double own) {
+static double doc_related(Doc& d, int by, int layer, const char* name, double t, double own) {
     static int depth = 0;   // (a leader in a relation that leads back: so deep at most)
     struct Deeper { Deeper() { ++depth; } ~Deeper() { --depth; } } deeper;
     if (depth > 6) return own;
     const std::string type = doc_word(d, by, "file"), n = name;
     const Doc::Relation& rel = doc_relation_of(d, by);
-    const auto found = std::find(rel.members.begin(), rel.members.end(), thing);
+    const auto found = std::find(rel.members.begin(), rel.members.end(), layer);
     if (found == rel.members.end()) return own;
     const size_t i = (size_t)(found - rel.members.begin());
     const int many = std::max(1, (int)rel.members.size()), was = rel.under.empty() ? 0 : rel.under[i];
-    const auto start = [&](const char* what, double mine) { return was ? doc_related(d, was, thing, what, t, mine) : mine; };
+    const auto start = [&](const char* what, double mine) { return was ? doc_related(d, was, layer, what, t, mine) : mine; };
     const double ti = type == "follow" ? t : t - doc_number(d, by, "lag", t, 0) * (double)i;   // (in turn: each so much later than the one before, as Cavalry's stagger; a follow's lag is its own)
     const double base = start(name, own), strength = std::clamp(doc_number(d, by, "strength", ti, 1), -1.0, 2.0);   // (past 1 and below 0 as an ease overshoots: a Back or an Elastic between two keys shows; held within twice)
     if (doc_number(d, by, "visible", 0, 1) <= 0.5) return base;   // (switched off, its eye shut: what it is on top of shows, its strength kept)
     const double came = rel.from.empty() || (n != "x" && n != "y") ? std::nan("") : rel.from[2 * i + (n == "y" ? 1 : 0)];   // (where it showed when it came in: across and up only)
-    const auto leader = [&](const char* which) { const int l = (int)doc_number(d, by, which, 0, 0); return l != thing ? l : 0; };
+    const auto leader = [&](const char* which) { const int l = (int)doc_number(d, by, which, 0, 0); return l != layer ? l : 0; };
     if (type == "relate") {
         if (d.settled) return base;
         const bool pushes = doc_pushes(d, by);
         const std::vector<double> none, &all = pushes ? none : doc_related_all(d, by, t);
         constexpr size_t many = std::size(doc_relate_names);
-        for (size_t j = 0; j < many; ++j) if (n == doc_relate_names[j]) return pushes ? doc_world_value(d, thing, j, t, base) : many * i + j < all.size() ? base + (all[many * i + j] - base) * strength : base;
+        for (size_t j = 0; j < many; ++j) if (n == doc_relate_names[j]) return pushes ? doc_world_value(d, layer, j, t, base) : many * i + j < all.size() ? base + (all[many * i + j] - base) * strength : base;
         return base;
     }
-    const double s = strength * (doc_number(d, by, "region", 0, 0) ? doc_falloff_at(d, by, {start("x", doc_number(d, thing, "x", t, 0)), start("y", doc_number(d, thing, "y", t, 0)), start("z", doc_number(d, thing, "z", t, 0))}, t) : 1.0);   // (Cavalry's Falloff: a multiplier on its Strength; a file's is weighed where it is told: p5_stand.h's __relates, world.h)
+    const double s = strength * (doc_number(d, by, "region", 0, 0) ? doc_falloff_at(d, by, {start("x", doc_number(d, layer, "x", t, 0)), start("y", doc_number(d, layer, "y", t, 0)), start("z", doc_number(d, layer, "z", t, 0))}, t) : 1.0);   // (Cavalry's Falloff: a multiplier on its Strength; a file's is weighed where it is told: p5_stand.h's __relates, world.h)
     if ((type == "around" || type == "row" || type == "group") && (n == "rotate" || n == "rotate_x" || n == "rotate_y"))   // (its own turn added to each, in turn)
         return base + doc_number(d, by, name, ti, 0) * s;
     if ((type == "around" || type == "row" || type == "group") && (n == "size" || n == "opacity"))   // (its own size and opacity as a share of each one's, in turn: 0 opacity out is gone)
@@ -207,7 +207,7 @@ static double doc_related(Doc& d, int by, int thing, const char* name, double t,
     if (type == "push") {   // (out of its leader's way: within radius pressed towards its edge, the nearer still nearer; further off as it is)
         const int l = leader("leader");
         if (!l || (n != "x" && n != "y")) return base;
-        const double bx = n == "x" ? base : start("x", doc_keys_at(d, doc_keys_of(d, thing, "x"), t, 0)), by_ = n == "y" ? base : start("y", doc_keys_at(d, doc_keys_of(d, thing, "y"), t, 0));
+        const double bx = n == "x" ? base : start("x", doc_keys_at(d, doc_keys_of(d, layer, "x"), t, 0)), by_ = n == "y" ? base : start("y", doc_keys_at(d, doc_keys_of(d, layer, "y"), t, 0));
         const double lx = doc_literal(d, l, "x", t, 0), ly = doc_literal(d, l, "y", t, 0), r = doc_number(d, by, "radius", t, 0.5);
         double dx = bx - lx, dy = by_ - ly, far = std::hypot(dx, dy);
         if (far >= r || r <= 0.0) return base;
@@ -217,129 +217,129 @@ static double doc_related(Doc& d, int by, int thing, const char* name, double t,
     }
     return base;
 }
-static double doc_literal(Doc& d, int thing, const char* literal, double at, double otherwise) {
-    if (d.held.thing == thing) {   // (carried by a hand: what it carries; in a relation, still in it, the hand moving its own value)
-        const double own = doc_number(d, thing, literal, at, otherwise);
-        const int by = doc_driven_by(d, thing, literal);
-        return by && doc_among(doc_relations, doc_word(d, by, "file")) ? doc_related(d, by, thing, literal, at, own) : own;
+static double doc_literal(Doc& d, int layer, const char* literal, double at, double otherwise) {
+    if (d.held.layer == layer) {   // (carried by a hand: what it carries; in a relation, still in it, the hand moving its own value)
+        const double own = doc_number(d, layer, literal, at, otherwise);
+        const int by = doc_driven_by(d, layer, literal);
+        return by && doc_among(doc_relations, doc_word(d, by, "file")) ? doc_related(d, by, layer, literal, at, own) : own;
     }
-    if (const int by = doc_driven_by(d, thing, literal)) {   // (given by a behaviour: the copy being placed's own, where it lies weighed by its falloff)
-        const Doc::Keys& k = doc_keys_of(d, thing, literal);
-        const double own = doc_keys_at(d, k, doc_stepped(d, thing, k, at), otherwise);
-        if (doc_among(doc_relations, doc_word(d, by, "file"))) return doc_related(d, by, thing, literal, at, own);   // (a relation: by the thing's place among its things, not a copy's)
+    if (const int by = doc_driven_by(d, layer, literal)) {   // (given by a behaviour: the copy being placed's own, where it lies weighed by its falloff)
+        const Doc::Keys& k = doc_keys_of(d, layer, literal);
+        const double own = doc_keys_at(d, k, doc_stepped(d, layer, k, at), otherwise);
+        if (doc_among(doc_relations, doc_word(d, by, "file"))) return doc_related(d, by, layer, literal, at, own);   // (a relation: by the layer's place among its layers, not a copy's)
         return doc_given(d, by, d.ctxCopy, d.ctxN, at, own, d.ctxHasAt ? &d.ctxAt : nullptr);
     }
-    const auto key = std::make_pair(thing, literal);
+    const auto key = std::make_pair(layer, literal);
     auto kept = d.literals.find(key);
-    if (kept == d.literals.end()) kept = d.literals.emplace(key, &doc_keys_of(d, thing, literal)).first;
-    return doc_keys_at(d, *kept->second, doc_stepped(d, thing, *kept->second, at), otherwise);
+    if (kept == d.literals.end()) kept = d.literals.emplace(key, &doc_keys_of(d, layer, literal)).first;
+    return doc_keys_at(d, *kept->second, doc_stepped(d, layer, *kept->second, at), otherwise);
 }
-static const std::string& doc_literal_word(Doc& d, int thing, const char* literal) {   // (a word so, kept the same way)
-    const auto key = std::make_pair(thing, literal);
+static const std::string& doc_literal_word(Doc& d, int layer, const char* literal) {   // (a word so, kept the same way)
+    const auto key = std::make_pair(layer, literal);
     if (const auto kept = d.heardWords.find(key); kept != d.heardWords.end()) return kept->second;
-    return d.heardWords.emplace(key, doc_word(d, thing, literal)).first->second;
+    return d.heardWords.emplace(key, doc_word(d, layer, literal)).first->second;
 }
-// A thing's copies as AbsentMotion's repeat effects on it lay them (absent_motion.h), at a moment: made again only when
+// A layer's copies as AbsentMotion's repeat effects on it lay them (absent_motion.h), at a moment: made again only when
 // the moment, the document or a file has changed. None: no repeat effect on it.
-static const std::vector<AbsentCopy>& doc_absent_copies(Doc& d, int thing, double now) {
-    Doc::AbsentKept& k = d.absentKept[thing];
+static const std::vector<AbsentCopy>& doc_absent_copies(Doc& d, int layer, double now) {
+    Doc::AbsentKept& k = d.absentKept[layer];
     const long changes = d.file ? (long)sqlite3_total_changes(d.file) : 0;
     if (k.at == now && k.changes == changes && k.seen == files_changed()) return k.copies;
     k.at = now, k.changes = changes, k.seen = files_changed();
     k.copies.clear();
-    if (doc_word(d, thing, "fx").find(".am") == std::string::npos) return k.copies;
-    const double begins = doc_literal(d, thing, "start", 0, 0), lasts = doc_literal(d, thing, "duration", 0, -1);
+    if (doc_word(d, layer, "fx").find(".am") == std::string::npos) return k.copies;
+    const double begins = doc_literal(d, layer, "start", 0, 0), lasts = doc_literal(d, layer, "duration", 0, -1);
     const double high = doc_number(d, 0, "high", 0, 1080), k2 = high / std::max(1, d.stage->h);   // (a point of the picture in the document's pixels)
-    const math::double2 at = doc_seen(d, (doc_above(d, thing, now, 0) * math::double4{doc_literal(d, thing, "x", now, 0), doc_literal(d, thing, "y", now, 0), doc_literal(d, thing, "z", now, 0), 1.0}).xyz) * k2;
+    const math::double2 at = doc_seen(d, (doc_above(d, layer, now, 0) * math::double4{doc_literal(d, layer, "x", now, 0), doc_literal(d, layer, "y", now, 0), doc_literal(d, layer, "z", now, 0), 1.0}).xyz) * k2;
     float2 half{0.5f};
-    doc_half(d, thing, &half);
-    const double reach = std::max(half.x, half.y) * doc_literal(d, thing, "size", now, 1) * doc_point(d, thing, now) * k2 * 1.415;   // (as CopiesOf: its box's farthest from where it stands, by 1.415)
-    k.copies = absent_copies(doc_absent_on(d, thing, now), thing, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * now, (float)(d.stage->w * k2), (float)high, (float)at.x, (float)at.y, (float)reach);
+    doc_half(d, layer, &half);
+    const double reach = std::max(half.x, half.y) * doc_literal(d, layer, "size", now, 1) * doc_point(d, layer, now) * k2 * 1.415;   // (as CopiesOf: its box's farthest from where it stands, by 1.415)
+    k.copies = absent_copies(doc_absent_on(d, layer, now), layer, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * now, (float)(d.stage->w * k2), (float)high, (float)at.x, (float)at.y, (float)reach);
     return k.copies;
 }
 // A text's words as they are seen at a moment: as typed, or as AbsentMotion's text effects on it change them (Count
 // Up/Down, Timecode, Text Randomizer: absent_motion.h), at the stage's 60 frames a second (entry/render_thread.h's RATE).
-static std::string doc_text_shown(Doc& d, int thing, double now, bool* moves = nullptr) {
-    const std::string typed = doc_word(d, thing, "text");
+static std::string doc_text_shown(Doc& d, int layer, double now, bool* moves = nullptr) {
+    const std::string typed = doc_word(d, layer, "text");
     if (moves) *moves = false;
-    if (doc_word(d, thing, "fx").find(".am") == std::string::npos) return typed;
-    const std::vector<AbsentEffect> on = doc_absent_on(d, thing, now);
+    if (doc_word(d, layer, "fx").find(".am") == std::string::npos) return typed;
+    const std::vector<AbsentEffect> on = doc_absent_on(d, layer, now);
     if (!absent_text_on(on)) return typed;
     if (moves) *moves = true;
-    const double begins = doc_literal(d, thing, "start", 0, 0), lasts = doc_literal(d, thing, "duration", 0, -1);
-    return absent_text(on, thing, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * now, 60, typed);
+    const double begins = doc_literal(d, layer, "start", 0, 0), lasts = doc_literal(d, layer, "duration", 0, -1);
+    return absent_text(on, layer, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * now, 60, typed);
 }
-// How long a thing's shutter is open (AbsentMotion's Motion Blur or Shutter Blur on it: absent_shutter), seconds at the
+// How long a layer's shutter is open (AbsentMotion's Motion Blur or Shutter Blur on it: absent_shutter), seconds at the
 // stage's 60 a second, and whether its way is smeared; false: none is on it.
-static bool doc_shutter(Doc& d, int thing, double now, double* open, bool* moves) {
-    if (doc_word(d, thing, "fx").find(".am") == std::string::npos) return false;
-    const double begins = doc_literal(d, thing, "start", 0, 0), lasts = doc_literal(d, thing, "duration", 0, -1);
-    return absent_shutter(doc_absent_on(d, thing, now), thing, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * now, 60, open, moves);
+static bool doc_shutter(Doc& d, int layer, double now, double* open, bool* moves) {
+    if (doc_word(d, layer, "fx").find(".am") == std::string::npos) return false;
+    const double begins = doc_literal(d, layer, "start", 0, 0), lasts = doc_literal(d, layer, "duration", 0, -1);
+    return absent_shutter(doc_absent_on(d, layer, now), layer, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * now, 60, open, moves);
 }
-// How a thing's groups leave it (Alight Motion's group: its opacity and whether it is shown hold for all it holds): the
+// How a layer's groups leave it (Alight Motion's group: its opacity and whether it is shown hold for all it holds): the
 // Nulls it goes with, up to the top (a Null draws nothing of its own, so its opacity is its group's), their opacities
 // one into another; 0 if one of them is hidden. 1 with none.
-static double doc_group_opacity(Doc& d, int thing, double now) {
+static double doc_group_opacity(Doc& d, int layer, double now) {
     double k = 1.0;
-    for (int up = (int)doc_number(d, thing, "parent", 0, 0), n = 0; up && n < 64 && k > 0.0; up = (int)doc_number(d, up, "parent", 0, 0), ++n)
+    for (int up = (int)doc_number(d, layer, "parent", 0, 0), n = 0; up && n < 64 && k > 0.0; up = (int)doc_number(d, up, "parent", 0, 0), ++n)
         if (doc_word(d, up, "shape") == "null") k *= doc_number(d, up, "visible", 0, 1) > 0.5 ? std::clamp(doc_number(d, up, "opacity", now, 1), 0.0, 1.0) : 0.0;
     return k;
 }
-// A thing's opacity as AbsentMotion's opacity effects on it leave it (a share, 1 with none: absent_motion.h).
-static double doc_absent_opacity(Doc& d, int thing, double now) {
-    if (doc_word(d, thing, "fx").find(".am") == std::string::npos) return 1.0;
-    const double begins = doc_literal(d, thing, "start", 0, 0), lasts = doc_literal(d, thing, "duration", 0, -1);
-    return absent_opacity(doc_absent_on(d, thing, now), thing, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * now);
+// A layer's opacity as AbsentMotion's opacity effects on it leave it (a share, 1 with none: absent_motion.h).
+static double doc_absent_opacity(Doc& d, int layer, double now) {
+    if (doc_word(d, layer, "fx").find(".am") == std::string::npos) return 1.0;
+    const double begins = doc_literal(d, layer, "start", 0, 0), lasts = doc_literal(d, layer, "duration", 0, -1);
+    return absent_opacity(doc_absent_on(d, layer, now), layer, 1000.0 * begins, 1000.0 * (begins + (lasts > 0 ? lasts : doc_seconds(d))), 1000.0 * now);
 }
-static int doc_members(Doc& d, int thing) {
-    const auto t = d.shown.find(thing);
+static int doc_members(Doc& d, int layer) {
+    const auto t = d.shown.find(layer);
     if (t != d.shown.end() && t->second.drawn && !t->second.drawn->letters.empty()) return (int)t->second.drawn->letters.size();
-    if (const std::vector<AbsentCopy>& copies = doc_absent_copies(d, thing, d.stage->now); !copies.empty()) return (int)copies.size();   // (as many as AbsentMotion's repeat lays)
-    return std::max(1, (int)doc_literal(d, thing, "copies", 0, 1));
+    if (const std::vector<AbsentCopy>& copies = doc_absent_copies(d, layer, d.stage->now); !copies.empty()) return (int)copies.size();   // (as many as AbsentMotion's repeat lays)
+    return std::max(1, (int)doc_literal(d, layer, "copies", 0, 1));
 }
-// How much later a thing's nth copy moves than it is said to (the past repository's order law, GSAP's stagger: the
+// How much later a layer's nth copy moves than it is said to (the past repository's order law, GSAP's stagger: the
 // stagger spread over them by their order: from the start, from the centre out, from the end, from the edges in).
-static double doc_delay(Doc& d, int thing, int nth) {
-    const double stagger = doc_literal(d, thing, "stagger", 0, 0);
-    const int n = doc_members(d, thing);
+static double doc_delay(Doc& d, int layer, int nth) {
+    const double stagger = doc_literal(d, layer, "stagger", 0, 0);
+    const int n = doc_members(d, layer);
     if (stagger <= 0.0 || n < 2) return 0.0;
     const double along = (double)nth / (double)(n - 1), centre = std::fabs(along - 0.5) * 2.0;
-    const std::string& from = doc_literal_word(d, thing, "stagger_from");
+    const std::string& from = doc_literal_word(d, layer, "stagger_from");
     return stagger * (from == "centre" ? centre : from == "end" ? 1.0 - along : from == "edges" ? 1.0 - centre : along);
 }
-// Where the thing it goes with is (its parent's place; none, or one not there any more: as the stage is). A 2D thing
+// Where the layer it goes with is (its parent's place; none, or one not there any more: as the stage is). A 2D layer
 // going with the camera is as the stage is: it sticks to the camera already (doc_place), and would take its moves twice.
-static math::mat4 doc_above(Doc& d, int thing, double now, int deeper = 0) {
-    const int parent = (int)doc_literal(d, thing, "parent", 0, 0);
-    const auto up = d.shown.find(parent), self = d.shown.find(thing);
+static math::mat4 doc_above(Doc& d, int layer, double now, int deeper = 0) {
+    const int parent = (int)doc_literal(d, layer, "parent", 0, 0);
+    const auto up = d.shown.find(parent), self = d.shown.find(layer);
     if (up != d.shown.end() && up->second.camera && self != d.shown.end() && self->second.space == 2) return math::mat4{};
     return parent && up != d.shown.end() && deeper < 64 ? doc_place(d, parent, now, deeper + 1) : math::mat4{};   // (64: a document written elsewhere with a ring of parents still ends)
 }
-// Where a split text's letter has its middle across the thing, in its own units (0: not a letter of one).
-static double doc_letter_middle(Doc& d, int thing, int copy) {
-    const auto sh = d.shown.find(thing);
+// Where a split text's letter has its middle across the layer, in its own units (0: not a letter of one).
+static double doc_letter_middle(Doc& d, int layer, int copy) {
+    const auto sh = d.shown.find(layer);
     if (copy < 0 || sh == d.shown.end() || !sh->second.drawn || copy >= (int)sh->second.drawn->letters.size()) return 0.0;
     float2 half{0.5f};
     float deep = 0.f;
-    doc_half(d, thing, &half, &deep);
+    doc_half(d, layer, &half, &deep);
     const float2 l = sh->second.drawn->letters[(size_t)copy];
     return ((double)(l.x + l.y) * 0.5 - 0.5) * 2.0 * half.x;
 }
-// The world of the things that fall and strike, made from the document when first asked: each one's shape (a box as
-// large as it is, a ball for a ball, flat things held to their plane), what it bounces and rubs, where its keys put
+// The world of the layers that fall and strike, made from the document when first asked: each one's shape (a box as
+// large as it is, a ball for a ball, flat layers held to their plane), what it bounces and rubs, where its keys put
 // it. Where the world has one at a moment (false: the world does not have it then, its keys do).
-static bool doc_physics(Doc& d, int thing, double now, PhysPose* pose, int copy = -1) {
-    if (d.phys_stale) {   // (all the world is made of: every value and key of the things with physics, and the pull down)
+static bool doc_physics(Doc& d, int layer, double now, PhysPose* pose, int copy = -1) {
+    if (d.phys_stale) {   // (all the world is made of: every value and key of the layers with physics, and the pull down)
         d.phys_stale = false;
         std::string made;
-        doc_rows(d, sqlite3_mprintf("select group_concat(thing || ' ' || name || ' ' || at || ' ' || quote(value) || ' ' || coalesce(way, ''), ';') from (select * from fact where thing in "
-                                    "(select thing from fact where name = 'physics' and value in ('moves', 'still')) or (thing = 0 and name = 'gravity') order by thing, name, at)"),
+        doc_rows(d, sqlite3_mprintf("select group_concat(layer || ' ' || name || ' ' || at || ' ' || quote(value) || ' ' || coalesce(easing, ''), ';') from (select * from keyframe where layer in "
+                                    "(select layer from keyframe where name = 'physics' and value in ('moves', 'still')) or (layer = 0 and name = 'gravity') order by layer, name, at)"),
                  [&](sqlite3_stmt* row) { if (sqlite3_column_type(row, 0) == SQLITE_TEXT) made = (const char*)sqlite3_column_text(row, 0); });
         if (made != d.phys_made) d.phys.reset(), d.phys_of.clear(), d.phys_copy.clear(), d.phys_until.clear(), d.phys_made = made;
         d.phys_any = made.find(" physics ") != std::string::npos;
     }
-    if (!d.phys_any) return false;   // (no thing has physics: nothing asked of the document at every place)
-    const std::string mine = doc_word(d, thing, "physics");
+    if (!d.phys_any) return false;   // (no layer has physics: nothing asked of the document at every place)
+    const std::string mine = doc_word(d, layer, "physics");
     if (mine != "moves") return false;
     if (!d.phys) {
         std::vector<PhysThing> made;
@@ -359,7 +359,7 @@ static bool doc_physics(Doc& d, int thing, double now, PhysPose* pose, int copy 
             one.half[2] = one.flat ? 0.05f : (float)(deep * size * std::fabs(doc_number(d, t, "scale_z", 0, 1)));
             one.bounce = (float)doc_number(d, t, "bounce", 0, 0.3), one.friction = (float)doc_number(d, t, "friction", 0, 0.5);
             for (const char* name : {"x", "y", "z", "rotate", "rotate_x", "rotate_y"}) {   // (its keys hold it till the last of them)
-                doc_rows(d, sqlite3_mprintf("select max(at) from fact where thing = %d and name = %Q and " DOC_KEYED, t, name, t, name), [&](sqlite3_stmt* row) {
+                doc_rows(d, sqlite3_mprintf("select max(at) from keyframe where layer = %d and name = %Q and " DOC_KEYED, t, name, t, name), [&](sqlite3_stmt* row) {
                     if (sqlite3_column_type(row, 0) != SQLITE_NULL) one.until = std::max(one.until, sqlite3_column_double(row, 0));
                 });
             }
@@ -388,34 +388,34 @@ static bool doc_physics(Doc& d, int thing, double now, PhysPose* pose, int copy 
         d.phys = std::make_unique<PhysWorld>(made, (float)doc_number(d, 0, "gravity", 0, 9.81), keyed);
     }
     size_t index = d.phys_of.size();
-    for (size_t i = 0; i < d.phys_of.size(); ++i) if (d.phys_of[i] == thing && d.phys_copy[i] == copy) { index = i; break; }   // (a thing's copies that are not letters keep to their keys)
+    for (size_t i = 0; i < d.phys_of.size(); ++i) if (d.phys_of[i] == layer && d.phys_copy[i] == copy) { index = i; break; }   // (a layer's copies that are not letters keep to their keys)
     if (index == d.phys_of.size()) return false;
     if (now <= d.phys_until[index]) return false;   // (its keys have it still)
     *pose = d.phys->pose((int)index, (int)std::lround(now * 60.0));
     return true;
 }
-// Whether the stage places a thing as a member of its copies (each copy, the first too, as late as its order says, waving
+// Whether the stage places a layer as a member of its copies (each copy, the first too, as late as its order says, waving
 // as its place in the wave says), or as itself: the stage and whoever asks how it moves (motolii_path) place it alike.
-static std::vector<DocScript*> doc_expressions_fx(Doc& d, int thing);   // (expressions.h)
-static bool doc_staggered(Doc& d, int thing, double now) {
-    if (const DocScript* sc = doc_script_of(d, doc_literal_word(d, thing, "script")); sc && sc->run && sc->run->sketch()) return true;   // (one box in a sketch is placed by the sketch all the same)
-    if (!doc_expressions_fx(d, thing).empty()) return true;   // (and a thing with no copies by its expressions: itself their one copy, i 0 of n 1)
-    return doc_members(d, thing) > 1 || doc_number(d, thing, "stagger", 0, 0) > 0.0 || doc_number(d, thing, "wave_x", now, 0) != 0.0 || doc_number(d, thing, "wave_y", now, 0) != 0.0 || doc_number(d, thing, "wave_rotate", now, 0) != 0.0 || doc_number(d, thing, "wave_size", now, 0) != 0.0 || doc_number(d, thing, "field_radius", now, 0) > 0.0;
+static std::vector<DocScript*> doc_expressions_fx(Doc& d, int layer);   // (expressions.h)
+static bool doc_staggered(Doc& d, int layer, double now) {
+    if (const DocScript* sc = doc_script_of(d, doc_literal_word(d, layer, "script")); sc && sc->run && sc->run->sketch()) return true;   // (one box in a sketch is placed by the sketch all the same)
+    if (!doc_expressions_fx(d, layer).empty()) return true;   // (and a layer with no copies by its expressions: itself their one copy, i 0 of n 1)
+    return doc_members(d, layer) > 1 || doc_number(d, layer, "stagger", 0, 0) > 0.0 || doc_number(d, layer, "wave_x", now, 0) != 0.0 || doc_number(d, layer, "wave_y", now, 0) != 0.0 || doc_number(d, layer, "wave_rotate", now, 0) != 0.0 || doc_number(d, layer, "wave_size", now, 0) != 0.0 || doc_number(d, layer, "field_radius", now, 0) > 0.0;
 }
-// How far a thing that turns the way it goes (orient) is turned by it at a moment, radians about z: the way its keys
+// How far a layer that turns the way it goes (orient) is turned by it at a moment, radians about z: the way its keys
 // carry it then; standing still, the way it last went or will go. 0 for any other.
-static std::vector<double> doc_key_moments(Doc& d, int thing, const char* name);
-static double doc_heading(Doc& d, int thing, double now) {
-    if (doc_literal(d, thing, "orient", 0, 0) <= 0.5) return 0.0;
+static std::vector<double> doc_key_times(Doc& d, int layer, const char* name);
+static double doc_heading(Doc& d, int layer, double now) {
+    if (doc_literal(d, layer, "orient", 0, 0) <= 0.5) return 0.0;
     const auto going = [&](double from, double to, double* heading) {
-        const double ax = doc_literal(d, thing, "x", from, 0), ay = doc_literal(d, thing, "y", from, 0), bx = doc_literal(d, thing, "x", to, 0), by = doc_literal(d, thing, "y", to, 0);
+        const double ax = doc_literal(d, layer, "x", from, 0), ay = doc_literal(d, layer, "y", from, 0), bx = doc_literal(d, layer, "x", to, 0), by = doc_literal(d, layer, "y", to, 0);
         return std::hypot(bx - ax, by - ay) > 1e-6 && (*heading = std::atan2(by - ay, bx - ax), true);
     };
     double heading = 0.0;
     for (const double step : {1.0 / 240.0, 1.0 / 30.0})
         if (going(now - step, now + step, &heading)) return heading;
     // (standing still: the way it went as it came to the last key before, else the way it will go from the first after)
-    std::vector<double> keys = doc_key_moments(d, thing, "x"), more = doc_key_moments(d, thing, "y");
+    std::vector<double> keys = doc_key_times(d, layer, "x"), more = doc_key_times(d, layer, "y");
     keys.insert(keys.end(), more.begin(), more.end());
     std::sort(keys.begin(), keys.end());
     for (auto k = keys.rbegin(); k != keys.rend(); ++k)

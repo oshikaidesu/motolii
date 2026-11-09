@@ -68,7 +68,7 @@ static void motolii_hand(Motolii* m, std::string document, int wide, int high, s
             for (auto& does : todo) does();
             if (!todo.empty()) ++m->writes_on_beat;
             lap(6);
-            if (doc_own_ways(), doc_own_ways_made() != m->picturedWays) m->picturedWays = doc_own_ways_made(), picture_update(m);   // (a way put in the maker's folder: a tile of the Ease desk at once)
+            if (doc_own_easings(), doc_own_easings_made() != m->picturedWays) m->picturedWays = doc_own_easings_made(), picture_update(m);   // (a way put in the maker's folder: a tile of the Ease desk at once)
             else if (sqlite3_total_changes(m->d->file) != m->picturedRows) picture_update(m);   // (the window's picture of the document, where it changed since it was last made: a call that made it already is not made again, its list of what changed kept)
             if (sqlite3_total_changes(m->d->file) != rows || m->d->held.tried != held)
                 (sqlite3_total_changes(m->d->file) != rows ? m->revision : m->carried).fetch_add(1, std::memory_order_release);   // (the document changed, or only what a hand carries: the kept pictures go by these)
@@ -171,7 +171,7 @@ static void motolii_hand(Motolii* m, std::string document, int wide, int high, s
             stage_kept_fresh(m->kept, *m->d, *m->s, m->revision.load(), RATE);
         }
         m->step = "drawing";
-        if (!m->playing || m->d->eyeAsked || m->second || !stage_kept_show(m->kept, *m->s, m->live, m->now, RATE)) live_camera(m);   // (played: a picture kept is put on the stage, not drawn; kept pictures are the camera's and the desk's alone)
+        if (!m->playing || m->d->viewCameraAsked || m->second || !stage_kept_show(m->kept, *m->s, m->live, m->now, RATE)) live_camera(m);   // (played: a picture kept is put on the stage, not drawn; kept pictures are the camera's and the desk's alone)
         const auto drawn = std::chrono::steady_clock::now();
         lap(5);
         if (++m->judged % 30 == 0) {   // (how long the GPU took for its last pictures, against the time each may have)

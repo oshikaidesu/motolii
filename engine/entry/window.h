@@ -23,10 +23,10 @@ void motolii_close(Motolii* m) {
 // A word a call answers with, kept till that same thread asks again: each asker its own (the hand, the window, a question
 // on another isolate), as motolii_kept keeps its runs; one kept for all was written over while another still read it.
 static std::string& said_word() { static thread_local std::string w; return w; }
-static const char* motolii_why(Motolii* m) { return m->trouble.empty() ? m->d->trouble.c_str() : m->trouble.c_str(); }
+static const char* motolii_why(Motolii* m) { return m->trouble.empty() ? m->d->error.c_str() : m->trouble.c_str(); }
 const char* motolii_trouble(Motolii* m) { return why_asked.empty() ? motolii_why(m) : why_asked.c_str(); }
 static int told(Motolii* m, bool ok, const char* otherwise = nullptr) { if (!ok && otherwise) m->trouble = otherwise; return ok ? 1 : 0; }
-static Doc& doc(Motolii* m) { m->trouble.clear(); m->d->trouble.clear(); return *m->d; }
+static Doc& doc(Motolii* m) { m->trouble.clear(); m->d->error.clear(); return *m->d; }
 // What a call that changes the document answers. Refused within an act, at whatever door (a number out of its range
 // is refused before anything is changed), the act it is part of is not made.
 static int changes(Motolii* m, int done) {
@@ -62,7 +62,7 @@ static int desk_is(Motolii* m, int w, int h, double x, double y, double scale, d
 }
 static int eye_is(Motolii* m, const char* word) {   // ("about over far": the window's working eye; nothing said: the camera's)
     Doc& d = doc(m);
-    d.eyeAsked = std::sscanf(word, "%lf %lf %lf", &d.eyeIs[0], &d.eyeIs[1], &d.eyeIs[2]) == 3;
+    d.viewCameraAsked = std::sscanf(word, "%lf %lf %lf", &d.viewCameraIs[0], &d.viewCameraIs[1], &d.viewCameraIs[2]) == 3;
     time_is(*m->s, m->now);
     picture_moment(m);
     m->changed = true;

@@ -103,10 +103,10 @@ struct Stage {
     Camera* film;        // the film's own camera: the same, unless another eye looks (god_view); mattes in the film's picture are taken by it
     Camera* god = nullptr;   // that other eye, once it has been asked for
     View* view_behind;   // the same scene without the glass (layer 2), drawn first into `behind`: what a block shows
-    Texture* behindDepth = nullptr;   // its depth, as it draws into a picture of its own for a thing that reads what is under (doc_things_read)
+    Texture* behindDepth = nullptr;   // its depth, as it draws into a picture of its own for a thing that reads what is under (doc_layers_read)
     Texture* behind;
     bool behindRead = false;   // whether anything reads `behind` (glass, the paper): until then it is not drawn
-    std::vector<std::function<void()>> after;   // (once the picture is drawn: a solid's own looks back, doc_thing_shell)
+    std::vector<std::function<void()>> after;   // (once the picture is drawn: a solid's own looks back, doc_layer_shell)
     bool backdropRead = false;   // whether a thing's effect reads `behind` (AbsentMotion's backdrop): then it is drawn before the things' effects too
     View* view_through = nullptr; // the glass's far faces alone (layer 8), drawn second into `through`: which way they face (far_side.mat)
     Texture* through = nullptr;
@@ -240,7 +240,7 @@ static Texture* white_point(Stage& s) {
 // The flat sheet's material for a way of lying on what is behind it: nullptr (over it, as usual), or "add", "multiply",
 // "screen": Filament's own blending, flat.mat built once for each.
 static std::string flat_laid(const char* lay, bool lit = false, const std::string& wear = "") {
-    if (!wear.empty()) return "flat_" + wear + ".filamat";   // (a material it wears, its own way of lying: doc_sheet_wear)
+    if (!wear.empty()) return "flat_" + wear + ".filamat";   // (a material it wears, its own way of lying: doc_sheet_material)
     if (lit) return std::string("flat_lit_") + (lay ? lay : "transparent") + ".filamat";
     return lay ? std::string("flat_") + lay + ".filamat" : "flat.filamat";
 }

@@ -6,7 +6,7 @@
 #   import / export from / import() / require   from the file's folder (QuickJS's way; a .ts also as esbuild: .ts, .js,
 #                                               /index.ts); a bare name: the package.json beside a .ts, or the allowlist
 #   // --image@name:file, ISF "PATH": "file"    beside the effect (screen_fx.h)
-#   {motolii}/...  in a look (.motolii)         from shelves/ (document/presets.h doc_look_roots)
+#   {motolii}/...  in a preset (.motolii)       from shelves/ (document/presets.h doc_preset_roots)
 #   './' '../' in quotes                        a .sh: from where its `cd "$(dirname "$0")..."` went; a .ts: its folder
 #   shelves/... engine/... app/... docs/...     from the repository's root (a head saying where it was made from)
 # And every .md of our own (not in an aviutl_scripts/ nor engine/third_party/: their authors'): [text](path),
@@ -155,24 +155,26 @@ def check_relative(where, line, base, written, ts=False):
 
 for path, blob in blobs(look):
     folder = posixpath.dirname(path)
-    if path.endswith('.motolii'):   # (a look: SQLite; its words that name a file of the library's shelves)
+    if path.endswith('.motolii'):   # (a preset: SQLite; its words that name a file of the library's shelves)
         with tempfile.NamedTemporaryFile(suffix='.motolii') as t:
             t.write(blob)
             t.flush()
             try:
                 db = sqlite3.connect(f'file:{t.name}?mode=ro', uri=True)
-                rows = db.execute("select thing, name, value from fact where typeof(value) = 'text' and value like '%{motolii}/%'").fetchall()
+                old = db.execute("select 1 from sqlite_master where name = 'fact'").fetchall()   # (one from before 2026-11-09: doc_upgrade)
+                rows = db.execute("select thing, name, value from fact where typeof(value) = 'text' and value like '%{motolii}/%'" if old else
+                                  "select layer, name, value from keyframe where typeof(value) = 'text' and value like '%{motolii}/%'").fetchall()
                 db.close()
             except sqlite3.Error as e:
-                refuse(path, 'fact', '(the look)', f'not read: {e}')
+                refuse(path, 'keyframe', '(the preset)', f'not read: {e}')
                 rows = []
-        for thing, name, value in rows:
+        for layer, name, value in rows:
             for one in fx_words(value):
                 if not one.startswith('{motolii}/'):
                     continue
                 resolved = posixpath.normpath('shelves/' + one[len('{motolii}/'):])
                 if not there(resolved) and not allowed(one, resolved):
-                    refuse(path, f'thing {thing} {name}', resolved)
+                    refuse(path, f'layer {layer} {name}', resolved)
         continue
     text = blob.decode('utf-8', 'replace')
     if path.endswith('.md'):

@@ -80,7 +80,7 @@ struct Motolii {
     // The window's pictures of the document (picture.h, docs/app/BRIDGE.md), set down by the hand, read under their own lock.
     std::mutex pictureLock;
     std::map<int, std::pair<long, std::string>> pictured;   // (each thing's part of the document's picture, and the version it was made at)
-    int picturedWays = -1;                                       // (the maker's own ways as they were read when it was last made: doc_own_ways_made)
+    int picturedWays = -1;                                       // (the maker's own ways as they were read when it was last made: doc_own_easings_made)
     long picturedRows = -1;                                      // (the document's changes, by SQLite's count, the document's picture was last made after)
     std::string pictureAll, momentPicture;                  // (the document's own part; the moment's picture)
     long pictureVersion = 0, momentVersion = 0;
@@ -116,11 +116,11 @@ static void live_camera(Motolii* m) {
     }
     std::lock_guard<std::recursive_timed_mutex> holding(d.lock);
     const uint32_t w = s.desk.w;
-    if (eye) d.eyeAsked = false, time_is(s, m->now);
+    if (eye) d.viewCameraAsked = false, time_is(s, m->now);
     s.desk.w = 0;
     live_draw(s, m->live);
     s.desk.w = w;
-    if (eye) d.eyeAsked = true, time_is(s, m->now);
+    if (eye) d.viewCameraAsked = true, time_is(s, m->now);
 }
 static void picture_update(Motolii* m);
 static void picture_moment(Motolii* m);

@@ -1,9 +1,9 @@
 // folders.h: part of doc.h (a recipe's form, and the folders the shelves are read from). Read only through doc.h.
 // Pictures in one call (what Cavalry's tutorials build from a shape, a duplicator and a behaviour or two, each named):
 // a file each in create/ (doc_folders: the library's, the maker's own; a file put there is on the shelf at once). Its head:
-// "// Name: what it makes", "// make kind file", then a thing's values, one to a line: "set name number",
-// "say name words", "key name seconds number", "then kind file" for another thing; its knobs as script.h says.
-// Code below the head is the first thing's script.
+// "// Name: what it makes", "// make kind file", then a layer's values, one to a line: "set name number",
+// "say name words", "key name seconds number", "then kind file" for another layer; its knobs as script.h says.
+// Code below the head is the first layer's script.
 struct DocRecipe { std::string name, what, path, program; std::vector<std::string> lines; bool code = false; };   // (program: what a closed pack was written for, listed on the Program shelf, not Create; "" one of Create's)
 static std::vector<DocRecipe> doc_recipes_read();
 // A part of the engine itself, not a shelf (third_party/'s p5.js, anime.js, Filament's fonts and matc): engine/<part>, where this library's out/ is.

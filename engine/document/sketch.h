@@ -56,7 +56,7 @@ static void doc_sketch_told(MaterialInstance* look, const SketchTold& one, const
     else if (one.type == "mat3") look->setParameter(name, mat3f{float3{v[0], v[1], v[2]}, float3{v[3], v[4], v[5]}, float3{v[6], v[7], v[8]}});
     else if (one.type == "mat4") { mat4f m; std::memcpy(&m, v, sizeof m); look->setParameter(name, m); }
 }
-static void doc_sketch_mesh(Doc& d, int thing, Doc::Shown& t, double now) {
+static void doc_sketch_mesh(Doc& d, int layer, Doc::Shown& t, double now) {
     // (p5_mesh.h's __mesh_at: how many of each, its unit, its size, what it clears with, how many pictures, how long the table of what
     //  it lights is; then each shape it stands: which, its 16, fill, flat -1 none, its line, stroke, weight, picture; each corner of a
     //  triangle: x y z, normal, colour, flat, line, where it reads its picture, which; each line: two ends, colour, weight, line; then
@@ -64,17 +64,17 @@ static void doc_sketch_mesh(Doc& d, int thing, Doc::Shown& t, double now) {
     //  pictures the rest as white, past WAYS ways the rest flat)
     constexpr size_t HEAD = 15, RET = 29, TRI = 15, SEG = 12, TOLD = 720, MOST = 3000000, PICTURES = 6, WAYS = 4096;
     Stage& s = *d.stage;
-    DocScript* sc = doc_script_of(d, doc_literal_word(d, thing, "script"));
+    DocScript* sc = doc_script_of(d, doc_literal_word(d, layer, "script"));
     if (!sc || !sc->run || !sc->run->ok()) return;
-    const double gone = doc_literal(d, thing, "begin", 0, 0), begins = doc_literal(d, thing, "start", 0, 0) - gone;
-    const int frame = (int)std::lround(doc_own_time(d, thing, now, now - begins) * 60.0);
-    const auto shown = doc_shown_at(d, thing, now);
+    const double gone = doc_literal(d, layer, "begin", 0, 0), begins = doc_literal(d, layer, "start", 0, 0) - gone;
+    const int frame = (int)std::lround(doc_own_time(d, layer, now, now - begins) * 60.0);
+    const auto shown = doc_shown_at(d, layer, now);
     const math::double4 from = inverse(shown) * math::double4{s.camera->getPosition(), 1.0};
     const float3 eye = float3{(float)(from.x / from.w), (float)(from.y / from.w), (float)(from.z / from.w)};
     t.look->setParameter("eye", eye), t.look->setParameter("fromSketch", math::mat3f(shown.upperLeft()));   // (what it lights itself it lights where it stands now)
     std::map<int, float> strong;
     for (size_t i = 0; i < sc->knobs.size(); ++i)
-        if (const std::string& k = sc->knobs[i].name; k.rfind("line_", 0) == 0) strong[std::atoi(k.c_str() + 5)] = (float)doc_number(d, thing, sc->names[i].c_str(), now, sc->knobs[i].usual);
+        if (const std::string& k = sc->knobs[i].name; k.rfind("line_", 0) == 0) strong[std::atoi(k.c_str() + 5)] = (float)doc_number(d, layer, sc->names[i].c_str(), now, sc->knobs[i].usual);
     if (t.sketchFrame == frame && t.sketchMade == doc_scripts_made(d) && length(t.sketchEye - eye) < 1e-4f && t.sketchStrong == strong) return;
     if (t.sketchMade != doc_scripts_made(d)) t.sketchShapes.clear(), t.sketchPics.clear(), t.sketchPaints.clear();
     t.sketchFrame = frame, t.sketchMade = doc_scripts_made(d), t.sketchEye = eye, t.sketchStrong = strong;

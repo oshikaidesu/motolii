@@ -23,7 +23,7 @@ struct DrawnFx { bool split = false;   // (a text's letters each a copy of their
     bool together = false;   // (its copies drawn in one go, each an instance of one thing: none coloured or cleared each of its own, kit.h add_parts)
     bool thick = false;    // (it has depth: its sheet a box, its picture pushed through it, deep.glsl)
     bool lit = false;      // (in the lamps' light: flat.mat's flat_lit, doc_lit)
-    std::string wear;      // (a material it wears, its picture its colour: flat.mat's flat_<wear>, doc_sheet_wear; "" none)
+    std::string wear;      // (a material it wears, its picture its colour: flat.mat's flat_<wear>, doc_sheet_material; "" none)
     bool bevel = false;    // (its box's edges cut as its doc says: deep.glsl, drawn_edge.h)
     std::vector<float4> rims;   // (more outlines, each outside the last: its colour; w: how wide, a share of its height: type)
     bool column = false;   // (its letters one under another, a letter's height from each to the next)

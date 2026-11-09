@@ -25,7 +25,7 @@ int motolii_midi(Motolii* m, int thing, const char* name, const char* file, cons
     const std::map<double, double> keys = midi_keys(events, kind, channel);
     std::vector<double> at, is;
     for (const auto& [t, v] : keys) at.push_back(t), is.push_back(v);
-    if (at.empty()) return by_hand(m, [=, said = std::string(kind)] { return (doc(m).trouble = "no " + said + " keys of notes in " + file + " (kinds: velocity pitch count on bool)", 0); });
+    if (at.empty()) return by_hand(m, [=, said = std::string(kind)] { return (doc(m).error = "no " + said + " keys of notes in " + file + " (kinds: velocity pitch count on bool)", 0); });
     return by_hand(m, [=] {   // (the keys it had go first: made again from the file, as om_midi makes a new null object each time; together, one step)
         Doc& d = doc(m);
         doc_act(d);
@@ -39,33 +39,33 @@ int motolii_keys(Motolii* m, int thing, const char* name) { return by_look(m, [=
 static int way_is(Motolii* m, int thing, const char* name, double at, const char* way) {   // (on the hand)
     Doc& d = doc(m);
     bool here = false;
-    doc_rows(d, sqlite3_mprintf("select 1 from way where name = %Q", way), [&](sqlite3_stmt*) { here = true; });
-    const auto ways = doc_own_ways();
+    doc_rows(d, sqlite3_mprintf("select 1 from easing where name = %Q", way), [&](sqlite3_stmt*) { here = true; });
+    const auto ways = doc_own_easings();
     const auto own = ways.find(way);
-    if (here || own == ways.end()) return changes(m, (int)(doc_way(d, thing, name, at, way)));
+    if (here || own == ways.end()) return changes(m, (int)(doc_easing(d, thing, name, at, way)));
     doc_act(d);   // (the maker's own way: written into the document and put on the key, one step)
-    if (!doc_define(d, way, own->second.c_str()) || !doc_way(d, thing, name, at, way)) d.act_ok = false;
+    if (!doc_define(d, way, own->second.c_str()) || !doc_easing(d, thing, name, at, way)) d.act_ok = false;
     return changes(m, (int)doc_acted(d));
 }
 int motolii_way(Motolii* m, int thing, const char* name, double at, const char* way) { return by_hand(m, [=] { return way_is(m, thing, name, at, way); }); }
 static int define_is(Motolii* m, const char* way, const char* expression) {   // (on the hand)
     Doc& d = doc(m);
     doc_act(d);
-    for (const auto& [name, goes] : doc_own_ways()) {   // (the maker's own among the ways it asks for: written into the document too, as way_is writes one put on a key)
+    for (const auto& [name, goes] : doc_own_easings()) {   // (the maker's own among the ways it asks for: written into the document too, as way_is writes one put on a key)
         if (!strstr(expression, ("way('" + name).c_str())) continue;
         bool here = false;
-        doc_rows(d, sqlite3_mprintf("select 1 from way where name = %Q", name.c_str()), [&](sqlite3_stmt*) { here = true; });
+        doc_rows(d, sqlite3_mprintf("select 1 from easing where name = %Q", name.c_str()), [&](sqlite3_stmt*) { here = true; });
         if (!here && !doc_define(d, name.c_str(), goes.c_str())) d.act_ok = false;
     }
     if (!doc_define(d, way, expression)) d.act_ok = false;
     // (ways laid or turned that nothing goes by any more, nor any other way asks for: the window makes one at each step of a hand)
-    if (d.act_ok && !doc_change(d, sqlite3_mprintf("delete from way where (name glob '*×*' or name glob 'Reverse:*') and name <> %Q and name not in (select way from fact where way is not null) and not exists (select 1 from way o where o.name <> way.name and o.goes like '%%''' || way.name || '%%')", way))) d.act_ok = false;
+    if (d.act_ok && !doc_change(d, sqlite3_mprintf("delete from easing where (name glob '*×*' or name glob 'Reverse:*') and name <> %Q and name not in (select easing from keyframe where easing is not null) and not exists (select 1 from easing o where o.name <> easing.name and o.expression like '%%''' || easing.name || '%%')", way))) d.act_ok = false;
     return changes(m, (int)doc_acted(d));
 }
 const char* motolii_effect_names(Motolii* m) { return by_look(m, [m] { return (m->listed = doc_effect_names()).c_str(); }); }
 int motolii_effect(Motolii* m, int thing, const char* name, double at) { return by_hand(m, [=] { return changes(m, (int)(doc_effect(doc(m), thing, name, at))); }); }
 int motolii_define(Motolii* m, const char* way, const char* expression) { return by_hand(m, [=] { return define_is(m, way, expression); }); }
-const char* motolii_ways(Motolii* m) { return by_look(m, [m] { return (m->listed = doc_ways(*m->d)).c_str(); }); }
+const char* motolii_ways(Motolii* m) { return by_look(m, [m] { return (m->listed = doc_easings(*m->d)).c_str(); }); }
 int motolii_work_out(Motolii* m, const char* sum, double* is) {
     const std::string said(sum);
     if (said.find_first_not_of("0123456789.+-*/()eE ") != std::string::npos) return 0;   // (a sum and nothing else: what is asked of SQLite is only ever that)
@@ -95,12 +95,12 @@ int motolii_shows(Motolii* m, int thing, const char* name, double at, double* is
     });
 }
 int motolii_things(Motolii* m, int* things, int room) {
-    return by_look(m, [=] { const std::vector<int> all = doc_things(*m->d); for (int i = 0; i < room && i < (int)all.size(); ++i) things[i] = all[(size_t)i]; return (int)all.size(); });
+    return by_look(m, [=] { const std::vector<int> all = doc_layers(*m->d); for (int i = 0; i < room && i < (int)all.size(); ++i) things[i] = all[(size_t)i]; return (int)all.size(); });
 }
 const char* motolii_word(Motolii* m, int thing, const char* name) { return by_look(m, [=] { return (said_word() = !strcmp(name, "name") ? doc_name(*m->d, thing) : doc_word(*m->d, thing, name)).c_str(); }); }
 double motolii_lasts(Motolii* m, int thing) { return by_look(m, [=] { return doc_lasts(*m->d, thing); }); }
 int motolii_key_moments(Motolii* m, int thing, const char* name, double* at, int room) {
-    return by_look(m, [=] { const std::vector<double> all = doc_key_moments(*m->d, thing, name); for (int i = 0; i < room && i < (int)all.size(); ++i) at[i] = all[(size_t)i]; return (int)all.size(); });
+    return by_look(m, [=] { const std::vector<double> all = doc_key_times(*m->d, thing, name); for (int i = 0; i < room && i < (int)all.size(); ++i) at[i] = all[(size_t)i]; return (int)all.size(); });
 }
 // A thing's frame on the picture at the stage's moment, as the stage's own eye sees it: its middle, how wide and how
 // high (points of the picture, from the top left), and how far it is turned (degrees, clockwise as seen).
@@ -147,7 +147,7 @@ int motolii_key_here(Motolii* m, int thing, const char* name, double at) { retur
 int motolii_size(Motolii* m, int wide, int high) {
     return by_hand(m, [=] {
         char* say = doc_size_words(wide, high);
-        return say ? changes(m, (int)doc_change(*m->d, say)) : (m->d->trouble = "a stage is from 16 to 8192 points each way, an even number of them", 0);
+        return say ? changes(m, (int)doc_change(*m->d, say)) : (m->d->error = "a stage is from 16 to 8192 points each way, an even number of them", 0);
     });
 }
 int motolii_work(Motolii* m, double from, double to) { return by_hand(m, [=] { return changes(m, (int)doc_work_is(doc(m), from, to)); }); }
@@ -161,7 +161,7 @@ const char* motolii_settings(Motolii* m) { return by_look(m, [=] { return (said_
 int motolii_fits(Motolii* m) {
     return by_look(m, [=] {   // (a read: the document's size against the stage's)
         int wide = m->s->w, high = m->s->h;
-        doc_rows(*m->d, sqlite3_mprintf("select name, value from fact where thing = 0 and name in ('wide', 'high')"),
+        doc_rows(*m->d, sqlite3_mprintf("select name, value from keyframe where layer = 0 and name in ('wide', 'high')"),
                  [&](sqlite3_stmt* row) { (strcmp((const char*)sqlite3_column_text(row, 0), "wide") ? high : wide) = sqlite3_column_int(row, 1); });
         return (int)(wide == m->s->w && high == m->s->h);
     });
@@ -178,7 +178,7 @@ const char* motolii_words(Motolii* m, int thing, const char* name) { return by_l
 int motolii_thing_key_moments(Motolii* m, int thing, double* at, int room) {
     return by_look(m, [=] {   // (one question to SQLite: the moments of the values of it that have keys, as DOC_KEYED says one has)
         int i = 0;
-        doc_rows(*m->d, sqlite3_mprintf("select distinct at from fact where thing = %d and name in (select name from fact where thing = %d group by name having count(*) > 1 or max(at) <> 0 or max(way) is not null) order by at", thing, thing), [&](sqlite3_stmt* row) {
+        doc_rows(*m->d, sqlite3_mprintf("select distinct at from keyframe where layer = %d and name in (select name from keyframe where layer = %d group by name having count(*) > 1 or max(at) <> 0 or max(easing) is not null) order by at", thing, thing), [&](sqlite3_stmt* row) {
             if (i < room) at[i] = sqlite3_column_double(row, 0);
             ++i;
         });
@@ -196,9 +196,9 @@ const char* motolii_effects(Motolii* m) {   // (the effects folder's, then AviUt
     });
 }
 void motolii_files_changed(void) { ++files_changed(); }
-int motolii_look_save(Motolii* m, int thing, const char* path) { return by_look(m, [=] { return (int)doc_look_save(*m->d, thing, path); }); }
-int motolii_look_put(Motolii* m, int thing, const char* path) { return by_hand(m, [=] { return changes(m, doc_look_put(doc(m), thing, path)); }); }
-const char* motolii_looks(Motolii* m) { return by_look(m, [=] { return (said_word() = doc_look_names()).c_str(); }); }
+int motolii_look_save(Motolii* m, int thing, const char* path) { return by_look(m, [=] { return (int)doc_preset_save(*m->d, thing, path); }); }
+int motolii_look_put(Motolii* m, int thing, const char* path) { return by_hand(m, [=] { return changes(m, doc_preset_put(doc(m), thing, path)); }); }
+const char* motolii_looks(Motolii* m) { return by_look(m, [=] { return (said_word() = doc_preset_names()).c_str(); }); }
 const char* motolii_animators(Motolii* m) { return by_look(m, [=] { return (said_word() = doc_folder_names("expressions", ".js")).c_str(); }); }
 const char* motolii_relations(Motolii* m) { return by_look(m, [=] { return (said_word() = doc_folder_names("relations", ".js")).c_str(); }); }
 int motolii_make(Motolii* m, const char* recipe) { return by_hand(m, [=] { return changes(m, doc_make(doc(m), recipe)); }); }
@@ -242,8 +242,8 @@ const char* motolii_way_names(Motolii* m) {
         said_word().clear();
         for (const auto& kind : interp_kinds) said_word() += std::string(said_word().empty() ? "" : " ") + kind.name;
         std::set<std::string> here;
-        doc_rows(*m->d, sqlite3_mprintf("select name from way order by name"), [&](sqlite3_stmt* row) { here.insert((const char*)sqlite3_column_text(row, 0)); said_word() += std::string(" ") + (const char*)sqlite3_column_text(row, 0); });
-        for (const auto& [name, goes] : doc_own_ways()) if (!here.count(name)) said_word() += " " + name;   // (then the maker's own, not yet in this document)
+        doc_rows(*m->d, sqlite3_mprintf("select name from easing order by name"), [&](sqlite3_stmt* row) { here.insert((const char*)sqlite3_column_text(row, 0)); said_word() += std::string(" ") + (const char*)sqlite3_column_text(row, 0); });
+        for (const auto& [name, goes] : doc_own_easings()) if (!here.count(name)) said_word() += " " + name;   // (then the maker's own, not yet in this document)
         return said_word().c_str();
     });
 }
@@ -252,12 +252,12 @@ double motolii_way_at(Motolii* m, const char* way, double u) {
     if (interp_said(way, &kind) == 0) return interp_ease(kind, u);
     return by_look(m, [=] {
         bool here = false;
-        doc_rows(*m->d, sqlite3_mprintf("select 1 from way where name = %Q", way), [&](sqlite3_stmt*) { here = true; });
-        const auto ways = doc_own_ways();
+        doc_rows(*m->d, sqlite3_mprintf("select 1 from easing where name = %Q", way), [&](sqlite3_stmt*) { here = true; });
+        const auto ways = doc_own_easings();
         const auto own = ways.find(way);
         if (!here && own != ways.end()) {   // (the maker's own, not yet in this document: as its file says it)
             const double p[4] = {1, 1, 1, 1};
-            sqlite3_stmt* goes = doc_goes(*m->d, own->second);
+            sqlite3_stmt* goes = doc_expression_statement(*m->d, own->second);
             return goes ? doc_went(goes, u, u, 1.0, 0.0, 1.0, p) : u;
         }
         return doc_went_by(*m->d, way, u, u, 1.0, 0.0, 1.0);   // (one defined in the document: as between a key of 0 and a key of 1, a second apart)
@@ -277,7 +277,7 @@ int motolii_together(Motolii* m, int on) {
 const char* motolii_thing_stretches(Motolii* m, int thing) {
     return by_look(m, [=] {
         std::string all;
-        doc_rows(*m->d, sqlite3_mprintf("select at, next, way from (select at, lead(at) over (partition by name order by at) as next, coalesce(way, 'Linear') as way from fact where thing = %d and name in (select name from fact where thing = %d group by name having count(*) > 1 or max(at) <> 0 or max(way) is not null)) where next is not null order by at", thing, thing), [&](sqlite3_stmt* row) {
+        doc_rows(*m->d, sqlite3_mprintf("select at, next, easing from (select at, lead(at) over (partition by name order by at) as next, coalesce(easing, 'Linear') as easing from keyframe where layer = %d and name in (select name from keyframe where layer = %d group by name having count(*) > 1 or max(at) <> 0 or max(easing) is not null)) where next is not null order by at", thing, thing), [&](sqlite3_stmt* row) {
             std::string way = (const char*)sqlite3_column_text(row, 2);
             Interp kind;
             if (interp_said(way, &kind) == 0) way = interp_words(kind);
@@ -288,7 +288,7 @@ const char* motolii_thing_stretches(Motolii* m, int thing) {
         return (said_word() = all).c_str();
     });
 }
-const char* motolii_way_of(Motolii* m, int thing, const char* name, double at) { return by_look(m, [=] { return (said_word() = doc_way_of(*m->d, thing, name, at)).c_str(); }); }
+const char* motolii_way_of(Motolii* m, int thing, const char* name, double at) { return by_look(m, [=] { return (said_word() = doc_easing_of(*m->d, thing, name, at)).c_str(); }); }
 // How many points of the picture one unit of the stage is, where things stand when their z is 0.
 static double point_of(Motolii* m) {   // (points of the picture to one unit of the stage, at its middle, as the stage's own eye sees it:
     // 6 units off with 30 degrees up and down (motolii_open): the document's scale, whatever camera the stage looks through now)

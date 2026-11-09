@@ -30,7 +30,7 @@ static std::vector<std::string> picture_names(Motolii* m, int thing) {
         all.insert(n);
     }
     for (const char* n : {"kind", "name", "file", "fill", "blend", "text", "shape", "path", "parent", "space", "stroke", "fx", "script", "mosh"}) all.insert(n);
-    doc_rows(*m->d, sqlite3_mprintf("select distinct name from fact where thing = %d", thing), [&](sqlite3_stmt* row) { all.insert((const char*)sqlite3_column_text(row, 0)); });   // (and every fact it has: a relation's own, x_by)
+    doc_rows(*m->d, sqlite3_mprintf("select distinct name from keyframe where layer = %d", thing), [&](sqlite3_stmt* row) { all.insert((const char*)sqlite3_column_text(row, 0)); });   // (and every fact it has: a relation's own, x_by)
     return {all.begin(), all.end()};
 }
 
@@ -107,8 +107,8 @@ static void picture_thing(Motolii* m, int thing, PictureWriter& w) {
 // back however they end (C++'s scope guard, RAII).
 struct PictureKeepsWhy {
     Doc& d;
-    std::string why = d.trouble;
-    ~PictureKeepsWhy() { d.trouble = why; }
+    std::string why = d.error;
+    ~PictureKeepsWhy() { d.error = why; }
 };
 // The document's picture made again where it changed (on the hand, the document held): the things whose facts changed
 // (all of them when a thing came or went, or one was named again: a name is a choice of others' cards), and the
@@ -117,14 +117,14 @@ static void picture_update(Motolii* m) {
     Doc& d = *m->d;
     const PictureKeepsWhy keep{d};
     std::set<int> again;
-    bool all = d.things_changed || m->pictured.empty();
-    std::string changes = d.things_changed ? "things\n" : "";
+    bool all = d.layers_changed || m->pictured.empty();
+    std::string changes = d.layers_changed ? "things\n" : "";
     for (const auto& [thing, name] : d.changed) {
         changes += std::to_string(thing) + " " + name + "\n";
         if (name == "name") all = true;
         again.insert(thing);
     }
-    d.changed.clear(), d.things_changed = false;
+    d.changed.clear(), d.layers_changed = false;
     m->picturedRows = sqlite3_total_changes(d.file);
     int things[1024];
     const int n = std::min(motolii_things(m, things, 1024), 1024);
@@ -166,7 +166,7 @@ static void picture_update(Motolii* m) {
     for (const DocValue& v : doc_values) if (!v.words) w.Key(v.name), w.Double(doc_usual(*m->d, v.name)), w.Key((std::string(v.name) + "_by").c_str()), w.Double(0);
     w.EndObject();
     w.Key("knows"), w.StartObject();   // (the values each kind of thing has, said or not: as doc_knows answers)
-    for (const char* kind : {"film", "picture", "text", "solid", "shape", "camera", "light", "behaviour", "stage"}) {
+    for (const char* kind : {"video", "image", "text", "solid", "shape", "camera", "light", "behaviour", "stage"}) {
         std::string all;
         for (const DocValue& v : doc_values)
             if (doc_among(v.kinds, kind)) all += std::string(all.empty() ? "" : " ") + v.name + (v.words || !strcmp(kind, "stage") ? "" : std::string(" ") + v.name + "_by");   // (a value connected to a behaviour: not the stage's)

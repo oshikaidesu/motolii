@@ -5,7 +5,7 @@ int motolii_at(Motolii* m, double seconds) {
     //  so it need not wait for the hand to tell this one; a later one still waiting replaces it. Past the document's
     //  ends it is refused there, and said in the trouble)
     return posted(m, "at", [m, seconds] {
-        if (!(seconds >= 0.0 && seconds <= doc_seconds(*m->d))) { char runs[80]; std::snprintf(runs, sizeof runs, "the document runs from 0 to %.2f seconds", doc_seconds(*m->d)); m->d->trouble = runs; return; }
+        if (!(seconds >= 0.0 && seconds <= doc_seconds(*m->d))) { char runs[80]; std::snprintf(runs, sizeof runs, "the document runs from 0 to %.2f seconds", doc_seconds(*m->d)); m->d->error = runs; return; }
         m->now = seconds;   // (told to the stage in the hand's round, the films put there after the document is let go: not here, under its lock)
         if (m->d->stage) m->d->stage->now = seconds;   // (what is asked after this is made at this moment: a round busy with a sketch's frames has not come yet)
     });
