@@ -53,11 +53,6 @@ class _WorkspaceState extends State<Workspace> {
     return _join(doc);
   }
 
-  /// The open document's own picture kept in it as it is left for the list of them, and as the window closes (AbsentMotion
-  /// keeps a project's as its editor is closed for its home: MainActivity.kt saveThumbnail), at its playhead or at the
-  /// moment it was told (file.poster). Not as another is opened in its place: its last asks would go unanswered.
-  void _keepPoster() => _inside?.poster('${Directory.systemTemp.path}/motolii_poster_$pid.png');
-
   /// The documents beside the open one (read as one is opened), and a place for a new one there.
   List<String> _beside = const [];
   List<String> _documents() {
@@ -143,7 +138,7 @@ class _WorkspaceState extends State<Workspace> {
 
   @override
   void dispose() {
-    _keepPoster();
+    _inside?.poster('${Directory.systemTemp.path}/motolii_poster_$pid.png'); // (as the window closes; not as another is opened in its place)
     FocusManager.instance.removeListener(_keepKeys);
     _windowFocus.dispose();
     _inside?.close();

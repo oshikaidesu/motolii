@@ -22,14 +22,8 @@ class _InspectorPanelState extends State<InspectorPanel> {
   @override
   Widget build(BuildContext context) {
     final doc = Ctx.of(context).doc, k = doc.kind;
-    final body = <Widget>[
-      if (k == Kind.none)
-        const EmptyState()
-      else ...[
-        // contract: one stack: the host's cards, Transform first, then the effects on it, then what it may do besides (Premiere Pro's Effect Controls: the effects put on under Motion and Opacity); every titled card folds on its own.
-        for (final c in doc.cards) ValuesCard(c),
-      ],
-    ];
+    // contract: one stack: the host's cards, Transform first, then the effects on it (Premiere Pro's Effect Controls).
+    final body = [if (k == Kind.none) const EmptyState() else for (final c in doc.cards) ValuesCard(c)];
     final panel = Focus(
       focusNode: _node,
       child: Listener(

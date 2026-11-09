@@ -45,19 +45,17 @@ class NumFieldState extends State<NumField> implements TextSelectionGestureDetec
     if (mounted) setState(() {});
   }
 
+  ValueListenable<int> _hear(ValueListenable<int>? was, ValueListenable<int> now) {
+    if (was == now) return now;
+    was?.removeListener(_retold);
+    return now..addListener(_retold);
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final w = _x.doc.watch(widget.id),
-        k = _x.doc.watch('key:${widget.id}'); // (and its key mark's news: showAt tells it, so the mark is drawn as the document says it, not a step behind)
-    if (w != _watch) {
-      _watch?.removeListener(_retold);
-      _watch = w..addListener(_retold);
-    }
-    if (k != _keyWatch) {
-      _keyWatch?.removeListener(_retold);
-      _keyWatch = k..addListener(_retold);
-    }
+    _watch = _hear(_watch, _x.doc.watch(widget.id));
+    _keyWatch = _hear(_keyWatch, _x.doc.watch('key:${widget.id}')); // (its key mark's news too: the mark is drawn as the document says it)
   }
 
   ValueListenable<int>? _keyWatch;
