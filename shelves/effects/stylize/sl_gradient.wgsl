@@ -1,4 +1,4 @@
-// Mesh Gradient: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/tsl/shader_lab_shelf.ts)
+// Mesh Gradient: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_tsl/shader_lab_shelf.ts)
 // --label:Stylize
 // --track@activePoints:Active Points,2,5,5,1
 // --track@point1Color_x:Point 1 Color r,0,1,1,0.001

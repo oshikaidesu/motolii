@@ -1,4 +1,4 @@
-// Planet: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/tsl/textures_shelf.ts)
+// Planet: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)
 // --label:Generate
 // --about:This texture generates the surface colors of a planet. There
 diagnostic(off, derivative_uniformity);

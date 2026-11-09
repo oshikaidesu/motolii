@@ -2,7 +2,7 @@
 # Every converted effect that left what it needs to draw (out/<collection>/<name>/) drawn on Dawn by
 # gpu/tsl_on_dawn.cpp over one picture, and each collection's pictures put on one sheet: out/<collection>.jpg
 # (8 across, in the order of out/<collection>.names.txt).
-#   ./tsl/draw.sh <picture> [size]
+#   ./community/three_tsl/draw.sh <picture> [size]
 cd "$(dirname "$0")"
 P=$1; N=${2:-256}
 for c in out/*/(/); do
@@ -11,7 +11,7 @@ for c in out/*/(/); do
   for d in $c*/(/); do
     [ -f $d/frag.wgsl ] || continue
     ffmpeg -v error -y -i $P -vf "scale=$N:$N:force_original_aspect_ratio=increase,crop=$N:$N" -pix_fmt rgba -f rawvideo $d/picture.rgba
-    if ../out/tsl_on_dawn $d $N $N 2>/dev/null | grep -q PASS; then
+    if ../../out/tsl_on_dawn $d $N $N 2>/dev/null | grep -q PASS; then
       ffmpeg -v error -y -f lavfi -i color=black:s=${N}x$N -f rawvideo -pixel_format rgba -video_size ${N}x$N -i $d/drawn.rgba \
         -filter_complex "[0][1]overlay=format=auto" -frames:v 1 $c/_shots/$(basename $d).png && drawn=$((drawn+1))
     else failed=$((failed+1)); echo "$(basename $c)/$(basename $d)" >> out/draw_fail.txt; fi

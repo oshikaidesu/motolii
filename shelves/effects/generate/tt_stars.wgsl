@@ -1,4 +1,4 @@
-// Stars: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/tsl/textures_shelf.ts)
+// Stars: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)
 // --label:Generate
 // --about:This texture renders a sky with stars. Click on a snapshot
 // --track@scale:Scale,0,4,2,0.04

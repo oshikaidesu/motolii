@@ -1,4 +1,4 @@
-// Cork: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/tsl/textures_shelf.ts)
+// Cork: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)
 // --label:Generate
 // --about:This texture generates a [cork](https://en.wikipedia.org/wiki/Cork_(material))
 // --track@scale:Scale,0,4,1,0.04

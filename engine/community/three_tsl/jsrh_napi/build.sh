@@ -3,7 +3,7 @@
 # with jsrh_qjs017_dawn.patch applied to a copy, for Motolii's QuickJS-ng 0.17 (Homebrew's libqjs): gpu/js_effects.sh builds it in.
 set -e
 cd "$(dirname "$0")"
-R=../../third_party/napi/jsruntimehost
+R=../../../third_party/napi/jsruntimehost
 if [ ! -d $R/.git ]; then
   git init -q $R && git -C $R remote add origin https://github.com/BabylonJS/JsRuntimeHost.git
   git -C $R sparse-checkout set --no-cone 'Core/Node-API/' LICENSE.md

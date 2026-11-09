@@ -6,12 +6,12 @@
 import "core-js/actual/url"   // (first: its modules use URL as they load)
 import "core-js/actual/structured-clone"
 import * as THREE from "three/webgpu"
-import { getLayerDefinition } from "../third_party/tsl/basementstudio__shader-lab/src/lib/editor/config/layer-registry"
-import { LAYER_CATALOG } from "../third_party/tsl/basementstudio__shader-lab/src/lib/editor/config/layer-catalog"
-import { buildParameterValues } from "../third_party/tsl/basementstudio__shader-lab/src/lib/editor/parameter-schema"
-import { DEFAULT_MASK_CONFIG } from "../third_party/tsl/basementstudio__shader-lab/src/types/editor"
-import { PipelineManager } from "../third_party/tsl/basementstudio__shader-lab/packages/shader-lab-react/src/renderer/pipeline-manager"
-import { BlurPyramid } from "../third_party/tsl/basementstudio__shader-lab/packages/shader-lab-react/src/renderer/blur-pyramid"
+import { getLayerDefinition } from "../../third_party/tsl/basementstudio__shader-lab/src/lib/editor/config/layer-registry"
+import { LAYER_CATALOG } from "../../third_party/tsl/basementstudio__shader-lab/src/lib/editor/config/layer-catalog"
+import { buildParameterValues } from "../../third_party/tsl/basementstudio__shader-lab/src/lib/editor/parameter-schema"
+import { DEFAULT_MASK_CONFIG } from "../../third_party/tsl/basementstudio__shader-lab/src/types/editor"
+import { PipelineManager } from "../../third_party/tsl/basementstudio__shader-lab/packages/shader-lab-react/src/renderer/pipeline-manager"
+import { BlurPyramid } from "../../third_party/tsl/basementstudio__shader-lab/packages/shader-lab-react/src/renderer/blur-pyramid"
 import { renderer } from "./convert"
 import { fileText, parts, stepOf, type Said, type Step, type Target } from "./shelf_file"
 import * as std from "qjs:std"
@@ -26,7 +26,7 @@ const types = only.length ? only : ["bloom", "chromatic-aberration", "circuit-be
   ...["light", "dense", "boxes", "hex", "binary"].map(set => `ascii:${set}`)]
 const taken = new Set(["time", "frame", "aspect", "resolution", "width", "height", "screen", "passindex", "frameRect", "passRect"])   // (names screen.h fills itself: screen_knobs)
 const manager: any = { renderer: null, onRuntimeError: () => {} }
-const dir = "../effects", W = 2048, H = 1024   // (each level of a pyramid an exact share of it)
+const dir = "../../effects", W = 2048, H = 1024   // (each level of a pyramid an exact share of it)
 
 // a x + c through what was seen, or none.
 function fit(xs: number[], ys: number[]): [number, number] | null {
@@ -68,7 +68,7 @@ function drawn(pass: any, input: any, output: any, time: number, step: (scene: a
 
 // What buildPatternAtlas draws on its canvas and how it turns that to a mask (pattern-atlas.ts), its SVGs drawn by librsvg.
 function atlas(preset: string, cell = 16): any {
-  const from = `../third_party/tsl/basementstudio__shader-lab/public/assets/patterns/${preset}`, raw = "out/atlas.rgba"
+  const from = `../../third_party/tsl/basementstudio__shader-lab/public/assets/patterns/${preset}`, raw = "out/atlas.rgba"
   const files = (std.popen(`ls ${from}`, "r").readAsString() ?? "").split("\n").filter(f => f.endsWith(".svg"))
   const data = new Uint8Array(files.length * cell * cell * 4), one = new Uint8Array(cell * cell * 4)
   files.forEach((f, i) => {
@@ -85,7 +85,7 @@ function atlas(preset: string, cell = 16): any {
 // A Canvas for buildAsciiAtlas (ascii-atlas.ts): the author's Geist Mono at its 51 px drawn by magick where fillText asks, a
 // letter's numbers where getImageData does, the font's own measures (-debug annotate) where measureText does.
 const canvases = { documentElement: {}, createElement: () => {
-  const font = "../third_party/tsl/basementstudio__shader-lab/public/fonts/geist/Geist-Mono.woff2", raw = "out/glyph.rgba", drawn = new Map<string, Uint8Array>()
+  const font = "../../third_party/tsl/basementstudio__shader-lab/public/fonts/geist/Geist-Mono.woff2", raw = "out/glyph.rgba", drawn = new Map<string, Uint8Array>()
   let data = new Uint8Array(4)
   const canvas: any = { width: 1, height: 1, getContext: () => context }
   const context = { clearRect: () => { data = new Uint8Array(canvas.width * canvas.height * 4) },
@@ -241,7 +241,7 @@ for (const word of types) try {
     })
     return got
   }
-  const lines = [`// ${about.label}${preset ? ` ${preset[0].toUpperCase() + preset.slice(1)}` : ""}: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/tsl/shader_lab_shelf.ts)`,
+  const lines = [`// ${about.label}${preset ? ` ${preset[0].toUpperCase() + preset.slice(1)}` : ""}: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_tsl/shader_lab_shelf.ts)`,
     `// --label:${about.category === "distort" ? "Distort" : "Stylize"}`]
   if (about.description) lines.push(`// --about:${about.description}`)
   for (const s of steps) { const t = targets.find(x => x.name === nameOf(s.target)); passes.push(`// --pass@${s.target ? t!.name : ""}:${t?.kept ? 1 : 0},${t?.fine ? 1 : 0},s${t?.share[0] ?? 1},s${t?.share[1] ?? 1}`) }

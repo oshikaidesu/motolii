@@ -1,4 +1,4 @@
-// Polka dots: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/tsl/textures_shelf.ts)
+// Polka dots: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)
 // --label:Generate
 // --about:This texture arranges dots similar to the [Polka dots](https://en.wikipedia.org/wiki/Polka_dot)
 // --track@count:Count,1,4,2,0.03

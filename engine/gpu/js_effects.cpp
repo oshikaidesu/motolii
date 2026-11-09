@@ -1,8 +1,8 @@
 // js_effects.cpp: a web effect's own renderer (shader-effects-inc/shaders, npm shaders 4.0.5) drawing inside this
 // process on Filament's own Dawn device. JS runs on Motolii's QuickJS (QuickJS-ng 0.17, Homebrew's libqjs) with
-// BabylonJS/JsRuntimeHost's Node-API attached (Napi::Attach; tsl/jsrh_napi/build.sh); Dawn's JS binding (dawn.node with dawn_lend.patch) is given Filament's Dawn proc
+// BabylonJS/JsRuntimeHost's Node-API attached (Napi::Attach; community/three_tsl/jsrh_napi/build.sh); Dawn's JS binding (dawn.node with dawn_lend.patch) is given Filament's Dawn proc
 // table (motolii_dawn_procs) and lent Filament's device and a texture of it (wrapDevice, wrapTexture); the effect is
-// drawn by tsl/jsrh_napi/shaders.ts. After it, the texture is read back here, on the same device.
+// drawn by community/three_tsl/jsrh_napi/shaders.ts. After it, the texture is read back here, on the same device.
 //   ./gpu/js_effects.sh <preset.json> <w> <h> <frames> <out.rgba>
 #include "gpu_door.h"
 #include <filament/Engine.h>

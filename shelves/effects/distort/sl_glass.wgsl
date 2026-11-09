@@ -1,4 +1,4 @@
-// Glass: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/tsl/shader_lab_shelf.ts)
+// Glass: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_tsl/shader_lab_shelf.ts)
 // --label:Distort
 // --about:Textured glass in front of the image: reeded, hammered, pyramid, hex or frosted. Every cell acts as a small lens.
 // --pass@t0:0,1,s0.5,s0.5

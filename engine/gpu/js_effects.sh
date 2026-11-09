@@ -1,6 +1,6 @@
 #!/bin/zsh
 # A web effect's own renderer inside this process on Filament's Dawn device (js_effects.cpp): Motolii's QuickJS with
-# JsRuntimeHost's Node-API (tsl/jsrh_napi/build.sh made its sources), Dawn's dawn.node with dawn_lend.patch (out/wgpu).
+# JsRuntimeHost's Node-API (community/three_tsl/jsrh_napi/build.sh made its sources), Dawn's dawn.node with dawn_lend.patch (out/wgpu).
 # (libraries: the list gpu/kit_wgpu.sh links)
 #   ./gpu/js_effects.sh <preset.json> <w> <h> <frames> <out.rgba>
 set -e
@@ -8,11 +8,11 @@ cd "$(dirname "$0")/.."
 HB=${HOMEBREW_PREFIX:-$(brew --prefix)}   # (where Homebrew is: /opt/homebrew on Apple silicon)
 SRC=third_party/filament_src
 SDK=$SRC/out/wgpu_install
-J=tsl/out/jsrh_napi/src/Node-API
+J=community/three_tsl/out/jsrh_napi/src/Node-API
 Q=$HB/opt/quickjs-ng
 (cd $SRC/out/wgpu && ninja motolii_door third_party/dawn/dawn.node > /dev/null)
-[ -d $J ] || ./tsl/jsrh_napi/build.sh > /dev/null
-(cd tsl && npx esbuild jsrh_napi/shaders.ts --bundle --format=esm --platform=neutral '--external:qjs:*' --main-fields=module,main \
+[ -d $J ] || ./community/three_tsl/jsrh_napi/build.sh > /dev/null
+(cd community/three_tsl && npx esbuild jsrh_napi/shaders.ts --bundle --format=esm --platform=neutral '--external:qjs:*' --main-fields=module,main \
     '--define:process.env.NODE_ENV="production"' --outfile=out/jsrh_napi/shaders.mjs --log-level=warning)   # (the authors' built package, as it is)
 clang++ -std=c++20 -O2 -w -DNAPI_VERSION=8 -I "$SDK/include" -I $SRC/third_party/dawn/include -I $SRC/out/wgpu/third_party/dawn/gen/include \
     -I $Q/include -I $J/Include/Shared -I $J/Include/Engine/QuickJS -I $J/Source -I gpu gpu/js_effects.cpp \
@@ -22,4 +22,4 @@ clang++ -std=c++20 -O2 -w -DNAPI_VERSION=8 -I "$SDK/include" -I $SRC/third_party
     -lutils -lgeometry -lsmol-v -libl -lktxreader -lstb -luberzlib -lzstd \
     -lshaders -lperfetto -labseil -lmeshoptimizer -lcamutils -limage -lbasis_transcoder -luberarchive -lmatdbg -lfilamat -lcivetweb \
     -framework Cocoa -framework Metal -framework CoreVideo -framework QuartzCore -framework IOSurface -framework IOKit -lz -o out/js_effects
-DAWN_NODE=$PWD/$SRC/out/wgpu/third_party/dawn/dawn.node EFFECT_JS=$PWD/tsl/out/jsrh_napi/shaders.mjs ./out/js_effects "$@"
+DAWN_NODE=$PWD/$SRC/out/wgpu/third_party/dawn/dawn.node EFFECT_JS=$PWD/community/three_tsl/out/jsrh_napi/shaders.mjs ./out/js_effects "$@"

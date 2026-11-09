@@ -1,4 +1,4 @@
-// Ink: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/tsl/shader_lab_shelf.ts)
+// Ink: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_tsl/shader_lab_shelf.ts)
 // --label:Stylize
 // --about:Smeared glow and fluid bleed for neon, ink-like edges.
 // --pass@t0:0,1,s1,s1
