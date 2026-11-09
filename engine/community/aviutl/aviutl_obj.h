@@ -19,7 +19,7 @@ static int aviutl_pixelshader(lua_State* L) {   // (name, target, {resource...},
     std::vector<std::string> res;
     if (lua_istable(L, 3)) for (int i = 1; i <= (int)lua_objlen(L, 3); ++i) lua_rawgeti(L, 3, i), res.push_back(aviutl_name(aviutl_str(L, -1))), lua_pop(L, 1);
     else if (lua_isstring(L, 3)) res.push_back(aviutl_name(lua_tostring(L, 3)));
-    std::vector<Texture*> read((size_t)sh->pictures, r.none);
+    std::vector<Texture*> read((size_t)sh->textureCount, r.none);
     for (size_t i = 0; i < res.size() && i < read.size(); ++i) {
         if (res[i] == "random") { read[i] = r.random; continue; }
         if ((res[i] == "framebuffer" && !r.behind) || !r.bufs.count(res[i])) return aviutl_no(L, "obj.pixelshader reading " + res[i]);
@@ -53,10 +53,10 @@ static int aviutl_copybuffer(lua_State* L) {   // (dst, src; src "image:" a pict
     AviutlRun& r = aviutl_of(L);
     const std::string to = aviutl_name(luaL_checkstring(L, 1)), from = aviutl_name(luaL_checkstring(L, 2));
     if (from.rfind("image:", 0) == 0 && to != "framebuffer") {
-        const AviutlBuf* const picture = aviutl_image(r, from.substr(6));
-        if (!picture) return lua_pushboolean(L, 0), 1;
-        const AviutlBuf& t = aviutl_buf(r, to, picture->w, picture->h);
-        aviutl_lay(r, *picture, t.rt, t.w, t.h, 0, 0, 1, 1, 0, 1, 0, 0, -1, 1);
+        const AviutlBuf* const img = aviutl_image(r, from.substr(6));
+        if (!img) return lua_pushboolean(L, 0), 1;
+        const AviutlBuf& t = aviutl_buf(r, to, img->w, img->h);
+        aviutl_lay(r, *img, t.rt, t.w, t.h, 0, 0, 1, 1, 0, 1, 0, 0, -1, 1);
         return lua_pushboolean(L, 1), 1;
     }
     if ((from == "framebuffer" || to == "framebuffer") && !r.behind) return aviutl_no(L, "obj.copybuffer " + to + " from " + from);

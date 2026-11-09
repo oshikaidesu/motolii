@@ -146,7 +146,7 @@ static void doc_look(Doc& d) {
     // solid layer whatever their priority, so a blended backdrop was painted over the solids.
     const std::string colour = doc_word(d, 0, "behind") == "room" ? "" : behind;
     if (colour != d.backdropIs) {
-        if (d.backdrop) picture_off(s, d.backdrop), d.backdrop = nullptr;
+        if (d.backdrop) canvas_off(s, d.backdrop), d.backdrop = nullptr;
         if (!colour.empty()) {
             const math::double4 up = s.camera->getProjectionMatrix() * s.camera->getViewMatrix() * math::double4{0, 1, 0, 1};
             if ((d.backdrop = flat(s, "rect", (float)s.w / (float)s.h, mat4f{}, (float)(2.0 * up.w / up.y), hex("background", float3{0.f}), "opaque"))) {   // (opaque: Filament draws it with the solid layers, first by its priority, not over them with the sheets)

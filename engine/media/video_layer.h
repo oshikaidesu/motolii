@@ -60,8 +60,8 @@ static bool video_counted = false;
 static long video_asked = 0, video_late = 0;   // how often a film was asked for a moment, and how often it could not yet tell its picture for it
 
 // When a picture is due, in seconds of the film's run: its own time stamp, on through the film's repeats.
-static double video_due(GstSample* picture) {
-    const GstClockTime at = gst_segment_to_running_time(gst_sample_get_segment(picture), GST_FORMAT_TIME, GST_BUFFER_PTS(gst_sample_get_buffer(picture)));
+static double video_due(GstSample* sample) {
+    const GstClockTime at = gst_segment_to_running_time(gst_sample_get_segment(sample), GST_FORMAT_TIME, GST_BUFFER_PTS(gst_sample_get_buffer(sample)));
     return GST_CLOCK_TIME_IS_VALID(at) ? (double)at / (double)GST_SECOND : 0.0;
 }
 
@@ -83,19 +83,19 @@ static void video_give_back(Stage& s, Video::Planes& planes) {
     });
 }
 
-static CVPixelBufferRef video_surface(GstSample* picture) {
+static CVPixelBufferRef video_surface(GstSample* sample) {
     const GType api = g_type_from_name("GstCoreVideoMetaAPI");
-    VideoCoreVideoMeta* meta = api ? (VideoCoreVideoMeta*)gst_buffer_get_meta(gst_sample_get_buffer(picture), api) : nullptr;
+    VideoCoreVideoMeta* meta = api ? (VideoCoreVideoMeta*)gst_buffer_get_meta(gst_sample_get_buffer(sample), api) : nullptr;
     return meta ? meta->pixbuf : nullptr;
 }
 // A film's ground: the colour its picture has in all four corners, if they are one strong colour (a green screen, of
 // whatever green; a blue one). Read once, from its first picture: four small patches, through GStreamer's own view of
 // a picture's planes (gst_video_frame_map: the same on every system).
-static bool video_ground(Video* v, GstSample* picture, float3* ground, float* strong) {
+static bool video_ground(Video* v, GstSample* sample, float3* ground, float* strong) {
     GstVideoInfo info;
     GstVideoFrame planes;
-    if (!gst_video_info_from_caps(&info, gst_sample_get_caps(picture)) || GST_VIDEO_INFO_FORMAT(&info) != GST_VIDEO_FORMAT_NV12) return false;   // (light, and the two colour numbers side by side at half the size)
-    if (!gst_video_frame_map(&planes, &info, gst_sample_get_buffer(picture), GST_MAP_READ)) return false;
+    if (!gst_video_info_from_caps(&info, gst_sample_get_caps(sample)) || GST_VIDEO_INFO_FORMAT(&info) != GST_VIDEO_FORMAT_NV12) return false;   // (light, and the two colour numbers side by side at half the size)
+    if (!gst_video_frame_map(&planes, &info, gst_sample_get_buffer(sample), GST_MAP_READ)) return false;
     const uint8_t* light = (const uint8_t*)GST_VIDEO_FRAME_PLANE_DATA(&planes, 0);
     const uint8_t* colours = (const uint8_t*)GST_VIDEO_FRAME_PLANE_DATA(&planes, 1);
     const size_t lightRow = (size_t)GST_VIDEO_FRAME_PLANE_STRIDE(&planes, 0), coloursRow = (size_t)GST_VIDEO_FRAME_PLANE_STRIDE(&planes, 1);
@@ -121,10 +121,10 @@ static bool video_ground(Video* v, GstSample* picture, float3* ground, float* st
     return apart < 0.05f && *strong > 0.15f;
 }
 // The key of a film that is keyed by its own ground, worked out from the picture it has now.
-static void video_own_key(Video* v, GstSample* picture) {
+static void video_own_key(Video* v, GstSample* sample) {
     float3 ground{0.f, 1.f, 0.f};
     float strong = 0.6f;   // (pure green's)
-    const bool has = picture && video_ground(v, picture, &ground, &strong);
+    const bool has = sample && video_ground(v, sample, &ground, &strong);
     if (!has) ground = float3{0.f, 1.f, 0.f}, strong = 0.6f;
     // (how near counts as the screen, how wide its edge, how far its colour is taken out: render.h's numbers for pure green, in
     //  proportion to how far this ground is from grey: a dark green's greys are nearer to it)
@@ -298,11 +298,11 @@ static Video* video(Stage& s, const char* file, const mat4f& place, float high, 
         GstDiscoverer* looks = gst_discoverer_new(5 * GST_SECOND, nullptr);
         gchar* uri = gst_filename_to_uri(file, nullptr);
         if (GstDiscovererInfo* info = looks && uri ? gst_discoverer_discover_uri(looks, uri, nullptr) : nullptr) {
-            GList* pictures = gst_discoverer_info_get_video_streams(info), *sounds = gst_discoverer_info_get_audio_streams(info);
+            GList* videoStreams = gst_discoverer_info_get_video_streams(info), *sounds = gst_discoverer_info_get_audio_streams(info);
             bool moving = false;
-            for (GList* p = pictures; p; p = p->next) moving = moving || !gst_discoverer_video_info_is_image((GstDiscovererVideoInfo*)p->data);
+            for (GList* p = videoStreams; p; p = p->next) moving = moving || !gst_discoverer_video_info_is_image((GstDiscovererVideoInfo*)p->data);
             v->heard = sounds && !moving;
-            gst_discoverer_stream_info_list_free(pictures), gst_discoverer_stream_info_list_free(sounds), g_object_unref(info);
+            gst_discoverer_stream_info_list_free(videoStreams), gst_discoverer_stream_info_list_free(sounds), g_object_unref(info);
         }
         g_free(uri);
         if (looks) g_object_unref(looks);
@@ -357,9 +357,9 @@ static Video* video(Stage& s, const char* file, const mat4f& place, float high, 
         gst_element_set_state(v->reader, GST_STATE_PLAYING);
         if ((v->held = gst_app_sink_try_pull_sample(v->out, (cpu ? 5 : 2) * GST_SECOND))) break;   // (its first picture says how large it is)
     }
-    if (!v->held) return video_trouble = "no picture came within 5 seconds", nullptr;
+    if (!v->held) return video_trouble = "no frame came within 5 seconds", nullptr;
     const GstStructure* said = gst_caps_get_structure(gst_sample_get_caps(v->held), 0);
-    if (!gst_structure_get_int(said, "width", &v->w) || !gst_structure_get_int(said, "height", &v->h)) return video_trouble = "the picture does not say its size", nullptr;
+    if (!gst_structure_get_int(said, "width", &v->w) || !gst_structure_get_int(said, "height", &v->h)) return video_trouble = "the frame does not say its size", nullptr;
     // the film's own rule for its colours, as GStreamer read it from the file: which two weights (BT.601, BT.709,
     // BT.2020: Kr, Kb), and where black, white and no-colour lie in its numbers (the narrow range or the full one)
     GstVideoInfo told;

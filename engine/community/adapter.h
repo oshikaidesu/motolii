@@ -108,7 +108,7 @@ inline std::string adapter_shader_files(const std::string& text, const std::file
 }
 
 // The pictures a sketch loads, from beside it to a folder named as what is kept: a script has no files of its own (video_frames_for_scripts.h's beside).
-inline void adapter_pictures(const std::string& text, const std::filesystem::path& beside, const std::filesystem::path& saved) {
+inline void adapter_images(const std::string& text, const std::filesystem::path& beside, const std::filesystem::path& saved) {
     static const std::regex load(R"re(\bloadImage\s*\(\s*['"`]([^'"`]+)['"`])re");
     std::error_code wrong;
     for (std::sregex_iterator m(text.begin(), text.end(), load), end; m != end; ++m) {
@@ -194,11 +194,11 @@ inline std::string adapter_isf(const std::string& text) {
         static const std::regex output(R"(\blayout\s*\([^)]*\)\s*out\s+vec4\s+(\w+)\s*;)");
         std::smatch said;
         const std::string out = std::regex_search(text, said, output) ? said[1].str() : "out_color";
-        static const std::regex picture(R"(\buniform\s+sampler[12]D\s+(\w+)\s*;)");
+        static const std::regex samplerUniform(R"(\buniform\s+sampler[12]D\s+(\w+)\s*;)");
         std::string none = "texFFT\\w*";   // (its sound and its pictures, whatever their names: none here)
-        for (std::sregex_iterator at(text.begin(), text.end(), picture), end; at != end; ++at) if ((*at)[1] != "texPreviousFrame") none += "|" + (*at)[1].str();
+        for (std::sregex_iterator at(text.begin(), text.end(), samplerUniform), end; at != end; ++at) if ((*at)[1] != "texPreviousFrame") none += "|" + (*at)[1].str();
         std::string body = std::regex_replace(text, std::regex(R"(#version[^\n]*|\buniform\s+\w+\s+(?:fGlobalTime|fFrameTime|v2Resolution)\s*;)"), "");
-        body = std::regex_replace(std::regex_replace(body, output, ""), picture, "");
+        body = std::regex_replace(std::regex_replace(body, output, ""), samplerUniform, "");
         body = std::regex_replace(body, std::regex(R"(\b(?:texture|texture2D|texture1D|textureLod|texelFetch)\s*\(\s*(?:)" + none + R"()\s*,)"), "adapter_none(");
         return adapter_called("Bonzomatic", body, "texPreviousFrame", "float fGlobalTime,fFrameTime;vec2 v2Resolution;float adapter_now(){return TIME;}vec2 adapter_size(){return RENDERSIZE;}\nvec4 " + out + ";\nvec4 adapter_none(float a){return vec4(0.);}\nvec4 adapter_none(float a,float b){return vec4(0.);}\nvec4 adapter_none(vec2 a){return vec4(0.);}\nvec4 adapter_none(vec2 a,float b){return vec4(0.);}\n", "fGlobalTime=adapter_now();v2Resolution=adapter_size();fFrameTime=1./60.;", "gl_FragColor=vec4(" + out + ".rgb,1.);");   // (values, not words: `#define time fGlobalTime` is its usual first line)
     }

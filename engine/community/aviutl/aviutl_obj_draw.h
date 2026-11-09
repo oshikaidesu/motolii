@@ -22,8 +22,8 @@ static void aviutl_mesh(AviutlRun& r, const AviutlBuf& from, const AviutlBuf& to
     const float k[4] = {(float)fade, 0, 0, 0};
     const int pass = r.draws[r.poly]++;
     interop::parameters(r.s->engine, r.poly, k, sizeof k, pass);
-    Texture* picture = from.t ? from.t : r.none;
-    interop::draw(r.s->engine, r.poly, &picture, to.rt, to.w, to.h, pass, nullptr, true, way, sampler, corners.data(), (uint32_t)(corners.size() / interop::MESH_CORNER));
+    Texture* texture = from.t ? from.t : r.none;
+    interop::draw(r.s->engine, r.poly, &texture, to.rt, to.w, to.h, pass, nullptr, true, way, sampler, corners.data(), (uint32_t)(corners.size() / interop::MESH_CORNER));
 }
 // obj.setoption "blend" as the interop lays it (screen_interop.h's blend), as lua.txt's words are read by sashimono-edit
 // (MIT, compat/aviutl/raster.py _over): the buffers premultiplied, so "alpha_add" (colours weighed by their alphas,
@@ -71,7 +71,7 @@ static int aviutl_draw(lua_State* L) {   // (ox, oy, oz, zoom, alpha, rx, ry, rz
     const bool own = r.target == "framebuffer";
     const double zoom = aviutl_num(L, 4, 1) * f("zoom", 1), aspect = f("aspect", 0);
     const AviutlBuf& to = r.bufs[r.target];
-    if (!to.t) return aviutl_no(L, "obj.draw into a temporary buffer never made");
+    if (!to.t) return aviutl_no(L, "obj.draw into a temporary buffer never created");
     const double z = aviutl_num(L, 3) + f("oz", 0), rx = aviutl_num(L, 6) + f("rx", 0), ry = aviutl_num(L, 7) + f("ry", 0);
     if (z != 0 || rx != 0 || ry != 0) {
         if (!r.poly) return aviutl_no(L, "obj.draw in depth: " + r.trouble);
@@ -147,7 +147,7 @@ static int aviutl_drawpoly(lua_State* L) {
     const int way = aviutl_way(r.blend);
     if (way < 0) return aviutl_no(L, "obj.drawpoly blend " + r.blend);
     const AviutlBuf& to = r.bufs[r.target];
-    if (!to.t) return aviutl_no(L, "obj.drawpoly into a temporary buffer never made");
+    if (!to.t) return aviutl_no(L, "obj.drawpoly into a temporary buffer never created");
     if (!r.poly) return aviutl_no(L, "obj.drawpoly: " + r.trouble);
     const bool own = r.target == "framebuffer";
     lua_getglobal(L, "obj");

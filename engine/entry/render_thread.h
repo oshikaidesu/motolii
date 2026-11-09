@@ -54,7 +54,7 @@ struct Motolii {
     std::atomic<bool> playing{false};
     bool second = false;   // the Camera View tab is open (live_camera)
     std::chrono::steady_clock::time_point stirred{};   // (the hand's last stir: something asked, or playing, or changed)
-    bool ahead = false;                                  // (films' frames ahead being kept while the hand rests: picture_ahead)
+    bool ahead = false;                                  // (films' frames ahead being kept while the hand rests: frames_ahead)
     std::atomic<bool> loop{true};   // (play goes round the work area; not: it stops at its end. Atomic: asked without the document)
     std::atomic<bool> keying{false};   // (the document's own, mirrored: asked each picture without waiting for the document)
     std::atomic<bool> evaluating{false};  // (the hand is telling the stage a moment, the document held: a shell reading now would wait)

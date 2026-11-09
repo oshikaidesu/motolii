@@ -62,7 +62,7 @@ struct AviutlRun {
 // and made premultiplied (a thing's picture, straight as Motolii's effects keep it: effected.mat), 2: made straight again.
 static const char* const aviutl_placing = R"(
 struct K { m: vec4f, at: vec2f, src: vec2f, size: vec2f, alpha: f32, way: f32, colour: vec4f }
-@group(0) @binding(0) var picture: texture_2d<f32>;
+@group(0) @binding(0) var sourceTexture: texture_2d<f32>;
 @group(0) @binding(1) var near: sampler;
 @group(0) @binding(2) var<uniform> k: K;
 @fragment fn main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f {
@@ -70,7 +70,7 @@ struct K { m: vec4f, at: vec2f, src: vec2f, size: vec2f, alpha: f32, way: f32, c
   let d = frag.xy - k.at;
   let c = (vec2f(dot(k.m.xy, d), dot(k.m.zw, d)) + k.src) / k.size;
   let w = clamp(c * k.size + 0.5, vec2f(0.0), vec2f(1.0)) * clamp((1.0 - c) * k.size + 0.5, vec2f(0.0), vec2f(1.0));
-  var s = textureSampleLevel(picture, near, c, 0.0);
+  var s = textureSampleLevel(sourceTexture, near, c, 0.0);
   if (k.colour.x == 1.0) { s = vec4f(s.rgb * s.a, s.a); }
   s = s * (k.alpha * select(w.x * w.y, 1.0, k.way == 2.0));
   if (k.colour.x == 2.0 && s.a > 0.0) { s = vec4f(s.rgb / s.a, s.a); }
@@ -80,31 +80,31 @@ struct K { m: vec4f, at: vec2f, src: vec2f, size: vec2f, alpha: f32, way: f32, c
 // obj.drawpoly's: the picture on triangles (the interop's mesh), at each corner's uv, or each corner's colour, faded by alpha.
 static const char* const aviutl_poly = R"(
 struct K { alpha: f32 }
-@group(0) @binding(0) var picture: texture_2d<f32>;
+@group(0) @binding(0) var sourceTexture: texture_2d<f32>;
 @group(0) @binding(1) var near: sampler;
 @group(0) @binding(2) var<uniform> k: K;
 @fragment fn main(@location(0) uv: vec2f, @location(1) colour: vec4f) -> @location(0) vec4f {
-  let seen = textureSampleLevel(picture, near, uv, 0.0);
-  return select(seen, vec4f(1.0), uv.x < -1.0) * colour * k.alpha;   // (a coloured face: its uv off the picture, its colour alone)
+  let seen = textureSampleLevel(sourceTexture, near, uv, 0.0);
+  return select(seen, vec4f(1.0), uv.x < -1.0) * colour * k.alpha;   // (a coloured face: its uv off the sourceTexture, its colour alone)
 }
 )";
 // obj.effect ぼかし's: sashimono-edit's blur1d (MIT, effects/builtin.py), one way a pass: the pixel and `radius` either
 // side (96 at most) weighed by a Gaussian of half the radius; the buffer premultiplied already, as its premul makes it.
 static const char* const aviutl_blur = R"(
 struct K { step: vec2f, radius: f32, unused: f32 }
-@group(0) @binding(0) var picture: texture_2d<f32>;
+@group(0) @binding(0) var sourceTexture: texture_2d<f32>;
 @group(0) @binding(1) var near: sampler;
 @group(0) @binding(2) var<uniform> k: K;
 @fragment fn main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f {
-  let at = frag.xy / vec2f(textureDimensions(picture));
+  let at = frag.xy / vec2f(textureDimensions(sourceTexture));
   let sigma = max(k.radius * 0.5, 0.5);
-  var sum = textureSampleLevel(picture, near, at, 0.0);
+  var sum = textureSampleLevel(sourceTexture, near, at, 0.0);
   var total = 1.0;
   let taps = i32(min(k.radius, 96.0));
   for (var i = 1; i <= taps; i++) {
     let o = f32(i);
     let w = exp(-0.5 * o * o / (sigma * sigma));
-    sum += (textureSampleLevel(picture, near, at + k.step * o, 0.0) + textureSampleLevel(picture, near, at - k.step * o, 0.0)) * w;
+    sum += (textureSampleLevel(sourceTexture, near, at + k.step * o, 0.0) + textureSampleLevel(sourceTexture, near, at - k.step * o, 0.0)) * w;
     total += 2.0 * w;
   }
   return sum / total;
@@ -220,7 +220,7 @@ static interop::Screen* aviutl_interop(AviutlRun& r, const std::string& name, bo
     if (built) *built = &sh;
     interop::Screen*& d = r.interops[name + (clip ? "|clip" : "")];
     if (!d && sh.wgsl.empty()) return why = sh.why, nullptr;
-    if (!d) d = interop::screen(r.s->engine, entry.c_str(), sh.wgsl.c_str(), sh.bytes, &why, sh.pictures);
+    if (!d) d = interop::screen(r.s->engine, entry.c_str(), sh.wgsl.c_str(), sh.bytes, &why, sh.textureCount);
     return d;
 }
 

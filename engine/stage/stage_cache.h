@@ -58,9 +58,9 @@ static uint64_t stage_cache_key(Doc& d, int w, int h) {
     return hash;
 }
 
-static std::filesystem::path stage_cache_file(const StageCache& k, int picture) {
+static std::filesystem::path stage_cache_file(const StageCache& k, int frameIndex) {
     char name[64];
-    std::snprintf(name, sizeof name, "stage_%016llx_%05d.zst", (unsigned long long)k.key, picture);
+    std::snprintf(name, sizeof name, "stage_%016llx_%05d.zst", (unsigned long long)k.key, frameIndex);
     return cache_dir() / name;
 }
 
@@ -124,7 +124,7 @@ static bool stage_cache_one(StageCache& k, Doc& d, Stage& s, int rate, double bu
     }
     auto* pixels = new std::vector<uint8_t>((size_t)s.w * s.h * 4);
     while (!begins(s)) {}
-    pictures_of(s);
+    textures_of(s);
     s.renderer->readPixels(k.target, 0, 0, (uint32_t)s.w, (uint32_t)s.h,
                            backend::PixelBufferDescriptor(pixels->data(), pixels->size(), backend::PixelDataFormat::RGBA, backend::PixelDataType::UBYTE));
     s.renderer->endFrame();

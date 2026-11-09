@@ -278,7 +278,7 @@ static void cut_at(Stage& s, Canvas2D* d, float3 trim, const std::array<float, 1
 // One layer of an After Effects file drawn alone, in its own space: its place and turn left out (they are its sheet's,
 // put in the scene by its pose: lottie_motion.h), on a sheet of its own `pixel` units a point of the composition. A 3D layer's
 // picture where it is. `box`: where its sheet lies in the layer's own space (x, y, w, h, in points of the composition).
-static Canvas2D* layer_picture(Stage& s, const char* file, uint32_t id, float pixel, float4* box) {
+static Canvas2D* layer_canvas(Stage& s, const char* file, uint32_t id, float pixel, float4* box) {
     if (!interop::device(s.engine)) return nullptr;
     float4 found{0.f};
     interop::on_driver(s.engine, [&] {   // (how large it is, at its first moment: ThorVG's own bounds of it alone)
@@ -309,11 +309,11 @@ static Canvas2D* layer_picture(Stage& s, const char* file, uint32_t id, float pi
     }, mat4f{}, found.w * pixel, float3{-1.f}, true, nullptr);
 }
 
-static Canvas2D* layer_picture(Stage& s, const char* file, const char* layer, float pixel, float4* box) { return layer_picture(s, file, tvg::Accessor::id(layer), pixel, box); }
+static Canvas2D* layer_canvas(Stage& s, const char* file, const char* layer, float pixel, float4* box) { return layer_canvas(s, file, tvg::Accessor::id(layer), pixel, box); }
 
 // An After Effects picture's 3D layers (ThorVG says each layer's pose and whether it is 3D): from now on not drawn in
-// its own picture, each to be a sheet of its own where it is (layer_picture). Their ids.
-static std::vector<uint32_t> picture_deep(Stage& s, Canvas2D* d) {
+// its own picture, each to be a sheet of its own where it is (layer_canvas). Their ids.
+static std::vector<uint32_t> canvas_deep(Stage& s, Canvas2D* d) {
     std::vector<uint32_t> ids;
     tvg::LottieAnimation* film = d ? d->lottie : nullptr;
     if (!film) return ids;
@@ -353,7 +353,7 @@ static void layer_at(Stage& s, Canvas2D* d, float frame) {
 // A picture taken off the stage for good.
 // Nothing waits for it (as Filament's own destroy): what ThorVG holds, and the picture itself, go on the driver thread
 // after every frame sent before that may still draw it, since that thread runs what it is given in turn.
-static void picture_off(Stage& s, Canvas2D* d) {
+static void canvas_off(Stage& s, Canvas2D* d) {
     s.playing.erase(d);
     edge_off(s, d);
     take_off(s, d->sheet);

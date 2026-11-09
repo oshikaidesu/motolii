@@ -46,7 +46,7 @@ static Canvas2D* place_canvas(Stage& s, const std::function<tvg::Paint*(Canvas2D
             high *= (float)(h + 2 * room) / (float)h;   // (the thing itself stays as large)
             w += 2 * room, h += 2 * room;
         }
-        d->pictureHigh = (float)h;
+        d->canvasHigh = (float)h;
         if (const float most = (float)std::max(w, h); most > 4096.f) {   // (no larger than a picture the device takes, with room to spare: the whole drawn smaller, its sheet as large)
             tvg::Scene* smaller = tvg::Scene::gen();
             smaller->add(p);
@@ -98,7 +98,7 @@ static Canvas2D* place_canvas(Stage& s, const std::function<tvg::Paint*(Canvas2D
     d->sheet->idx = {0, 1, 2, 0, 2, 3};
     if (fx.thick) sheet_deep(d->sheet, 0.1f * own), d->boxed = float3{d->sheet->pos[1].x, d->sheet->pos[2].y, 0.1f * own};   // (a fifth of its height through: the depth Raster_Extrude.js gives at Scale Z 1)
     if (d->frames > 1.f)   // (a film: it goes on by itself as the stage's time does, round and round)
-        s.playing[d] = [&s, d](double now) { picture_at(s, d, std::fmod((float)now + d->starts, d->seconds)); };
+        s.playing[d] = [&s, d](double now) { canvas_at(s, d, std::fmod((float)now + d->starts, d->seconds)); };
     if (!shown) return d;
     d->inLight = fx.lit;
     d->look = add(s, d->sheet, flat_laid(lay, fx.lit, fx.wear).c_str(), std::vector<mat4f>((size_t)std::max(1, d->letters.empty() ? fx.copies : (int)d->letters.size()), place), 1, fx.lit, 1, 4, fx.together && d->letters.empty());   // (split into letters: a copy each)
@@ -134,7 +134,7 @@ static float lottie_in(const char* file) {
 }
 
 // marker: a named stretch of an After Effects file it plays, over and over (ThorVG's Lottie markers; none: all of it).
-static Canvas2D* picture(Stage& s, const char* file, const mat4f& place, float high, float3 ground = float3{-1.f}, bool shown = true, const char* lay = nullptr, const Canvas2DFx& fx = {}, const char* marker = "") {
+static Canvas2D* image_canvas(Stage& s, const char* file, const mat4f& place, float high, float3 ground = float3{-1.f}, bool shown = true, const char* lay = nullptr, const Canvas2DFx& fx = {}, const char* marker = "") {
     if (!std::filesystem::is_regular_file(file)) return nullptr;   // (ThorVG ends the program on a folder)
     const std::string ext = std::filesystem::path(file).extension().string();
     const bool lottie = ext == ".json" || ext == ".lot";
@@ -573,7 +573,7 @@ static void flat_path(Canvas2D* d, tvg::Shape* shape, const char* form, int w, i
 // inner points at `inner` of the way out), line (a long rect, round at its ends), null (nothing to see: a thing to
 // go with); all drawn by ThorVG's own Shape.
 // How wide a picture's file is to its height, as ThorVG reads it (0: it cannot): on the driver thread, as drawn() makes one.
-static float picture_aspect(Stage& s, const char* file) {
+static float canvas_aspect(Stage& s, const char* file) {
     float pw = 0.f, ph = 0.f;
     interop::on_driver(s.engine, [&] {
         tvg::Initializer::init(0);

@@ -142,9 +142,9 @@ static std::shared_ptr<AviutlRun> aviutl_open(Stage& s, const std::string& file,
     for (std::sregex_iterator m(r->all.begin(), r->all.end(), shader), end; m != end; ++m, ++all) {
         std::string why;
         if (aviutl_interop(*r, (*m)[1], false, why) && (aviutl_interop(*r, (*m)[1], true, why) || true)) ++built;   // (and the way it samples "clip", made now: not inside a frame)
-        else std::fprintf(stderr, "the AviUtl2 shader %s of %s is not made: %s\n", (*m)[1].str().c_str(), file.c_str(), why.substr(0, 400).c_str());
+        else std::fprintf(stderr, "the AviUtl2 shader %s of %s is not built: %s\n", (*m)[1].str().c_str(), file.c_str(), why.substr(0, 400).c_str());
     }
-    std::fprintf(stderr, "AviUtl2 script %s: %d of %d shaders made%s%s\n", file.c_str(), built, all, r->trouble.empty() ? "" : ", not taken: ", r->trouble.substr(0, 300).c_str());
+    std::fprintf(stderr, "AviUtl2 script %s: %d of %d shaders built%s%s\n", file.c_str(), built, all, r->trouble.empty() ? "" : ", not taken: ", r->trouble.substr(0, 300).c_str());
     return r;
 }
 

@@ -90,7 +90,7 @@ static int doc_door(Doc& d, const std::string& said, int picked) {
     std::filesystem::path file = folder / (name + tail + (shader ? ".fs" : ".js"));
     if (kept && !hydra) file = word;
     else if (!std::filesystem::exists(file, wrong)) std::ofstream(file) << text;
-    if (word != came && !kept) adapter_pictures(text, std::filesystem::path(word).parent_path(), file);
+    if (word != came && !kept) adapter_images(text, std::filesystem::path(word).parent_path(), file);
     for (const auto& [name, from] : libraries) {   // (it needs them beside it, as its pictures)
         const std::filesystem::path to = file.parent_path() / file.stem();
         std::filesystem::create_directories(to, wrong);

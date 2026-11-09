@@ -63,7 +63,7 @@ static std::string mosh_file(const std::string& film, double at, const std::stri
             "mv out.mp4 " + mosh_quoted(out);
         const bool ok = std::system(("/bin/zsh -c " + mosh_quoted(cmd)).c_str()) == 0;
         std::filesystem::remove_all(work, e);
-        if (!ok) std::fprintf(stderr, "the datamosh of %s could not be made\n", film.c_str());
+        if (!ok) std::fprintf(stderr, "the datamosh of %s could not be built\n", film.c_str());
         mosh_done = true;
     }).detach();
     return "";

@@ -76,13 +76,13 @@ PhysWorld::PhysWorld(const std::vector<PhysThing>& things, float gravity, PhysKe
 }
 PhysWorld::~PhysWorld() = default;
 
-PhysPose PhysWorld::pose(int index, int picture) {
+PhysPose PhysWorld::pose(int index, int frameIndex) {
     Own& o = *own;
-    picture = std::max(picture, 0);
+    frameIndex = std::max(frameIndex, 0);
     if (index < 0 || index >= (int)o.bodies.size()) return {};
     BodyInterface& bi = o.ps.GetBodyInterface();
     const float dt = 1.f / 60.f;
-    while ((int)o.poses.size() <= picture) {
+    while ((int)o.poses.size() <= frameIndex) {
         const double at = (double)o.poses.size() / 60.0;   // (the moment this step ends)
         for (size_t i = 0; i < o.bodies.size(); ++i) {
             const PhysThing& t = o.things[i];
@@ -101,5 +101,5 @@ PhysPose PhysWorld::pose(int index, int picture) {
         o.poses.push_back({});
         for (BodyID id : o.bodies) o.poses.back().push_back(read(bi, id));
     }
-    return o.poses[(size_t)picture][(size_t)index];
+    return o.poses[(size_t)frameIndex][(size_t)index];
 }

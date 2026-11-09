@@ -6,16 +6,16 @@
 // reads smoothly between points where the way to the edge turns round, and at the edge itself comes down to 0 as it was
 // (a round bevel stands straight up there: an unsmoothed length's least step shows as a saw).
 static const char* const edge_seeds_wgsl = R"(
-@group(0) @binding(0) var picture: texture_2d<f32>;
+@group(0) @binding(0) var sourceTexture: texture_2d<f32>;
 @group(0) @binding(1) var near: sampler;
 fn sample(p: vec2i) -> f32 {
-    if (any(p < vec2i(0)) || any(p >= vec2i(textureDimensions(picture)))) { return 1.0; }
-    return 1.0 - textureLoad(picture, p, 0).a;
+    if (any(p < vec2i(0)) || any(p >= vec2i(textureDimensions(sourceTexture)))) { return 1.0; }
+    return 1.0 - textureLoad(sourceTexture, p, 0).a;
 }
 @fragment fn main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f {
     let pos = vec2i(frag.xy);
     let coverage = sample(pos);
-    let last = vec2i(textureDimensions(picture)) - vec2i(1);
+    let last = vec2i(textureDimensions(sourceTexture)) - vec2i(1);
     let tl = sample(pos + vec2i(-1, -1)); let tc = sample(pos + vec2i(0, -1)); let tr = sample(pos + vec2i(1, -1));
     let ml = sample(pos + vec2i(-1, 0)); let mr = sample(pos + vec2i(1, 0));
     let bl = sample(pos + vec2i(-1, 1)); let bc = sample(pos + vec2i(0, 1)); let br = sample(pos + vec2i(1, 1));
@@ -23,7 +23,7 @@ fn sample(p: vec2i) -> f32 {
     var delta = vec2f(0.0);
     if (length(g) > 1e-4) { delta = -g / length(g) * (coverage - 0.5); }
     var inward = delta;
-    if (coverage <= 0.1) {   // (bevy's is 0, no seam in its outlines; a glyph's own, a hair under full, is not its edge. A picture's rim is: it stops there)
+    if (coverage <= 0.1) {   // (bevy's is 0, no seam in its outlines; a glyph's own, a hair under full, is not its edge. A sourceTexture's rim is: it stops there)
         inward = vec2f(4096.0);
         if (any(pos == vec2i(0)) || any(pos == last)) { inward = vec2f(0.0); }
     }
@@ -65,19 +65,19 @@ struct Parameters { step_length: f32, a: f32, b: f32, c: f32 };
 }
 )";
 static const char* const edge_length_wgsl = R"(
-@group(0) @binding(0) var picture: texture_2d<f32>;
+@group(0) @binding(0) var sourceTexture: texture_2d<f32>;
 @group(0) @binding(1) var near: sampler;
 @fragment fn main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f {
-    let last = vec2i(textureDimensions(picture)) - vec2i(1);
+    let last = vec2i(textureDimensions(sourceTexture)) - vec2i(1);
     let w = array<f32, 7>(1.0, 6.0, 15.0, 20.0, 15.0, 6.0, 1.0);   // (a Gaussian across 13 points, every other one: the way to a slanted edge turns in steps, and a mirror shows every one)
     var r = 0.0;
     for (var y = 0; y < 7; y++) {
         for (var x = 0; x < 7; x++) {
             let p = vec2i(frag.xy) + 2 * vec2i(x - 3, y - 3);
             let clamped = clamp(p, vec2i(0), last);
-            let seen = textureLoad(picture, clamp(2 * clamped - p, vec2i(0), last), 0);
+            let seen = textureLoad(sourceTexture, clamp(2 * clamped - p, vec2i(0), last), 0);
             var length_at = length(seen.xy) - length(seen.zw);
-            if (any(p != clamped)) { length_at = -length_at; }   // (past the picture's rim, its own turned over: it still comes down to 0 there)
+            if (any(p != clamped)) { length_at = -length_at; }   // (past the sourceTexture's rim, its own turned over: it still comes down to 0 there)
             r += w[x] * w[y] * length_at;
         }
     }

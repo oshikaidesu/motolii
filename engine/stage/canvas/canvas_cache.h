@@ -59,7 +59,7 @@ struct Canvas2D {
     std::vector<std::pair<int, WGPUTexture>> keeping;
     int shownAt = -1;
     int targetAt = -1;                   // (the frame its own texture holds; driver thread only)
-    std::set<int> ahead;               // (frames being put onto disk only, while the hand rests: picture_ahead; main thread)
+    std::set<int> ahead;               // (frames being put onto disk only, while the hand rests: frames_ahead; main thread)
     std::string keyBase;               // (what its frames are known by on disk: its file as it is; none, not kept on disk)
     std::string slots;                 // (an After Effects file's slots as last told: lottie_slots.h)
     std::vector<float> lit;            // (a MIDI roll's notes, how lit each is as last told: midi_roll.cpp)
@@ -92,7 +92,7 @@ struct Canvas2D {
     float3 trimmed{0.f};   // (as last cut: off the end, off the beginning, slid along)
     std::vector<tvg::PathCommand> plain; std::vector<tvg::Point> plainAt;   // (its path as made, before it is bent (bend_at))
     float plainHigh = 0.f, plainSide = 0.f;   // (and how high it was drawn and its shorter side, in its own points)
-    float pictureHigh = 0.f;   // (how high its picture is, room and all, in the same points)
+    float canvasHigh = 0.f;   // (how high its picture is, room and all, in the same points)
     float fine = 0.f;          // (its lines cut in pieces no longer than so many points)
     bool cut = false;          // (a flat shape drawn by Filament as its own triangles (flat_mesh): no picture, no canvas; bent in its look)
     float4 wash{0.f};          // (its own colour laid over its look, as a copy's is: a shape cut in triangles is filled so)
@@ -102,12 +102,12 @@ struct Canvas2D {
     bool hollow = false;
     uint32_t fillPoints = 0, fillEnd = 0;   // (where its fill's points and triangles end in its sheet: its edge comes after)
     MaterialInstance* edgeLook = nullptr;   // (its edge's own look: the second part of its triangles)
-    tvg::Animation* source = nullptr;   // (one layer of an After Effects file drawn alone, layer_picture: the file, the layer, where it is held, how it is fitted)
+    tvg::Animation* source = nullptr;   // (one layer of an After Effects file drawn alone, layer_canvas: the file, the layer, where it is held, how it is fitted)
     uint32_t layerId = 0;
     tvg::Scene* holder = nullptr;
     tvg::Matrix fit{1, 0, 0, 0, 1, 0, 0, 0, 1};
     tvg::LottieAnimation* lottie = nullptr;   // (its film, when it is an After Effects file: what says its layers' poses)
-    std::vector<uint32_t> deep;   // (an After Effects file's 3D layers: not drawn in its own picture, each a sheet of its own where it is: picture_deep)
+    std::vector<uint32_t> deep;   // (an After Effects file's 3D layers: not drawn in its own picture, each a sheet of its own where it is: canvas_deep)
     std::array<float, 10> bent{};   // (as last bent: round, bloat, zigzag, ridges, smooth, offset; roughened: how far, how fine; walked again at so many points; in squares so large)
     // Another shape's path in this one's points, and what is done with it: put together (how: skia_path_operations.cpp's op; -1 none),
     // or turned into (much: how far, 0 not; how above 1: so many steps from itself to it, all at once, a blend).
@@ -186,7 +186,7 @@ static void bend_at(Stage& s, Canvas2D* d, float round, float bloat, float zigza
         // (a shape bent to more than sixty-four times its picture is not drawn: none of it would be seen, and ThorVG's own
         //  measuring, dashing and staging of so much once took the window down)
         float x = 0.f, y = 0.f, w = 0.f, h = 0.f;
-        if (d->shape->bounds(&x, &y, &w, &h) == tvg::Result::Success && !(std::max(w, h) < 64.f * std::max(1.f, d->pictureHigh))) d->shape->reset();
+        if (d->shape->bounds(&x, &y, &w, &h) == tvg::Result::Success && !(std::max(w, h) < 64.f * std::max(1.f, d->canvasHigh))) d->shape->reset();
         d->canvas->update();
         d->canvas->draw(true), d->stale = true;
         d->canvas->sync();
@@ -522,7 +522,7 @@ static void cache_draw(Stage& s, Canvas2D* d, int at, bool keep, const std::file
 // (ThorVG's frame() says when the frame is the same; the ThorVG author's own advice for Lottie on a GPU, Godot #91580).
 // A frame drawn once is shown again from where it was kept, on the GPU or on disk.
 static std::atomic<long> films_cached{0}, films_disk{0}, films_rendered{0};   // (how each film's frame was shown: for the inside's spent line)
-static void picture_at(Stage& s, Canvas2D* d, float seconds) {
+static void canvas_at(Stage& s, Canvas2D* d, float seconds) {
     const int at = (int)std::floor(std::min(seconds / d->seconds * d->frames, d->frames - 1.f) + 1e-3f);
     if (at == d->shownAt) return;
     d->shownAt = at;
@@ -551,7 +551,7 @@ static void picture_at(Stage& s, Canvas2D* d, float seconds) {
 // Pro renders once the hand stops, Resolve's smart cache, After Effects' Cache Frames When Idle): read from disk if
 // there, else drawn into the texture it draws into (free while the frame shown is shown from a kept one). How many were
 // begun (0: nothing more can be done for it now).
-static int picture_ahead(Stage& s, Canvas2D* d, int many) {
+static int frames_ahead(Stage& s, Canvas2D* d, int many) {
     if (!d->look || !d->film || d->frames <= 1.f || d->shownAt < 0 || !d->target) return 0;
     cache_take(s, d);
     const auto now = d->cached.find(d->shownAt);

@@ -59,7 +59,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) uv: vec2f, @locati
 struct Screen {
     ProgramHandle program;
     DescriptorSetLayoutHandle layout;
-    int pictures = 1;
+    int textureCount = 1;
     BufferObjectHandle parameters;   // every pass's in one, each at a place of its own (written several times in one frame, one place would show its last): Filament's own per-renderable uniforms, one buffer and an offset each (FScene's mRenderableUBO); a buffer a pass held a handle each, past the driver's handle arena for a script drawing 30,000 times a frame (tim's もじゃもじゃT)
     uint32_t parameterRoom = 0, parameterStride = 0;   // (how many passes it has places for; from one's place to the next, the device's uniform offset alignment)
     uint32_t parameterBytes = 0;
@@ -105,31 +105,31 @@ static bool takes(Engine* engine, const char* fragment, std::string* why) {
     return said.ok;
 }
 
-Screen* screen(Engine* engine, const char* name, const char* fragment, uint32_t parameterBytes, std::string* why, int pictures, unsigned layered, bool mesh) {
+Screen* screen(Engine* engine, const char* name, const char* fragment, uint32_t parameterBytes, std::string* why, int textureCount, unsigned layered, bool mesh) {
     if (!takes(engine, fragment, why)) return nullptr;
     DriverApi& d = driver(engine);
     auto* s = new Screen;
     s->parameterBytes = (parameterBytes + 15u) & ~15u;
-    s->pictures = pictures < 1 ? 1 : pictures;
+    s->textureCount = textureCount < 1 ? 1 : textureCount;
     s->mesh = mesh;
     backend::Program p;
     p.shaderLanguage(ShaderLanguage::WGSL);
     p.diagnostics(utils::CString(name), [](utils::CString const&, utils::io::ostream& out) -> utils::io::ostream& { return out; });
     p.shader(ShaderStage::VERTEX, mesh ? sMeshVertex : sVertex, std::strlen(mesh ? sMeshVertex : sVertex) + 1);
     p.shader(ShaderStage::FRAGMENT, fragment, std::strlen(fragment) + 1);
-    const size_t n = (size_t)s->pictures + 1;
+    const size_t n = (size_t)s->textureCount + 1;
     backend::Program::DescriptorBindingsInfo bindings = backend::Program::DescriptorBindingsInfo::with_capacity(n);
     backend::DescriptorSetLayout layout;
     layout.label = utils::CString(name);
     layout.descriptors = utils::FixedCapacityVector<DescriptorSetLayoutDescriptor>::with_capacity(n);
-    for (int i = 0; i < s->pictures; ++i) {
+    for (int i = 0; i < s->textureCount; ++i) {
         const DescriptorType kind = (layered >> i) & 1u ? DescriptorType::SAMPLER_2D_ARRAY_FLOAT : DescriptorType::SAMPLER_2D_FLOAT;
         bindings.push_back({utils::CString("picture"), kind, descriptor_binding_t(i)});
         layout.descriptors.push_back({kind, ShaderStageFlags::FRAGMENT, descriptor_binding_t(i)});
     }
     if (s->parameterBytes) {
-        bindings.push_back({utils::CString("knobs"), DescriptorType::UNIFORM_BUFFER, descriptor_binding_t(s->pictures)});
-        layout.descriptors.push_back({DescriptorType::UNIFORM_BUFFER, ShaderStageFlags::FRAGMENT, descriptor_binding_t(s->pictures)});
+        bindings.push_back({utils::CString("knobs"), DescriptorType::UNIFORM_BUFFER, descriptor_binding_t(s->textureCount)});
+        layout.descriptors.push_back({DescriptorType::UNIFORM_BUFFER, ShaderStageFlags::FRAGMENT, descriptor_binding_t(s->textureCount)});
     }
     p.descriptorBindings(0, std::move(bindings));
     s->program = d.createProgram(std::move(p), utils::ImmutableCString{name});
@@ -200,8 +200,8 @@ void draw(Engine* engine, Screen* s, Texture* const* from, RenderTarget* to, uin
     linear.filterMag = sampler == 1 ? SamplerMagFilter::NEAREST : SamplerMagFilter::LINEAR, linear.filterMin = sampler == 1 ? SamplerMinFilter::NEAREST : SamplerMinFilter::LINEAR;
     linear.wrapS = linear.wrapT = sampler == 2 ? SamplerWrapMode::REPEAT : sampler == 3 ? SamplerWrapMode::MIRRORED_REPEAT : SamplerWrapMode::CLAMP_TO_EDGE;
     DescriptorSetHandle set = d.createDescriptorSet(s->layout, utils::ImmutableCString{"screen"});
-    for (int i = 0; i < s->pictures; ++i) d.updateDescriptorSetTexture(set, descriptor_binding_t(i), downcast(from[i])->getHwHandle(), linear);
-    if (s->parameterBytes) d.updateDescriptorSetBuffer(set, descriptor_binding_t(s->pictures), parametersOf(engine, s, pass), (uint32_t)pass * s->parameterStride, s->parameterBytes);
+    for (int i = 0; i < s->textureCount; ++i) d.updateDescriptorSetTexture(set, descriptor_binding_t(i), downcast(from[i])->getHwHandle(), linear);
+    if (s->parameterBytes) d.updateDescriptorSetBuffer(set, descriptor_binding_t(s->textureCount), parametersOf(engine, s, pass), (uint32_t)pass * s->parameterStride, s->parameterBytes);
     RenderPassParams params{};
     params.viewport = at ? backend::Viewport{at[0], at[1], (uint32_t)at[2], (uint32_t)at[3]} : backend::Viewport{0, 0, w, h};
     params.flags.discardStart = over ? TargetBufferFlags::NONE : TargetBufferFlags::ALL;   // (laid over: what is there is kept)

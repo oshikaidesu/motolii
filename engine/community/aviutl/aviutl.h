@@ -36,7 +36,7 @@ std::vector<ScriptParameter> aviutl_parameters(const std::string& file);
 // them (floats in HLSL's cbuffer packing) moved where WGSL lays them: `count` floats from byte `from` to byte `to`.
 struct AviutlShader {
     std::string wgsl, why;
-    int pictures = 1;
+    int textureCount = 1;
     uint32_t bytes = 0;
     std::vector<uint32_t> from, to, count;
 };

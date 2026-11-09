@@ -153,7 +153,7 @@ static void sketch_draw(Canvas2D* d, const std::vector<double>& o) {
     out_now();
 }
 // As a film with no end in sight: its own 60 frames a second, as p5_stand.h's clock, ten minutes of them.
-static Canvas2D* sketch_picture(Stage& s, std::shared_ptr<Script> run, const std::string& fontFile, float high, const char* lay, const Canvas2DFx& fx) {
+static Canvas2D* sketch_canvas(Stage& s, std::shared_ptr<Script> run, const std::string& fontFile, float high, const char* lay, const Canvas2DFx& fx) {
     const int fw = run->width(), fh = run->height();
     if (fw <= 0 || fh <= 0) return nullptr;
     return place_canvas(s, [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {

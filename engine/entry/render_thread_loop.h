@@ -96,7 +96,7 @@ static void render_thread_run(Motolii* m, std::string document, int wide, int hi
             std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
             int begun = 0;
             for (auto& [layer, shown] : m->d->shown)
-                if (shown.drawn) begun += picture_ahead(*m->s, shown.drawn, 2);
+                if (shown.drawn) begun += frames_ahead(*m->s, shown.drawn, 2);
             if (begun) m->s->engine->flush();
             m->ahead = begun > 0;
             if (t - m->stirred > std::chrono::seconds(5) && !std::getenv("MOTOLII_KEEP_NONE")) {   // (and, five seconds on as Final Cut Pro's background render, the work area's pictures that would be late, kept on disk)

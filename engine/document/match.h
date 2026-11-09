@@ -132,8 +132,8 @@ static bool doc_match(Doc& d) {
         if (const Mesh* m = it->second.video ? it->second.video->sheet : it->second.drawn ? it->second.drawn->sheet : it->second.shape)   // (and the shape it cuts a matte by: done away with first)
             doc_unshape(s, [m](const Stage::Renderable& made) { return made.of == m; });
         if (it->second.video) video_off(s, it->second.video);
-        if (it->second.drawn) picture_off(s, it->second.drawn);
-        for (const auto& deep : it->second.deep) picture_off(s, deep.sheet);
+        if (it->second.drawn) canvas_off(s, it->second.drawn);
+        for (const auto& deep : it->second.deep) canvas_off(s, deep.sheet);
         if (it->second.solid) solid_off(s, it->second.solid);
         if (!it->second.light.isNull()) {   // (out of every scene, and done away with)
             s.scene->remove(it->second.light);
@@ -285,14 +285,14 @@ static bool doc_match(Doc& d) {
             const std::string ext = std::filesystem::path(file).extension().string();
             const double cl = doc_number(d, layer, "crop_left", 0, 0), ct = doc_number(d, layer, "crop_top", 0, 0), cr = doc_number(d, layer, "crop_right", 0, 0), cb = doc_number(d, layer, "crop_bottom", 0, 0);
             const bool cropped = cl + ct + cr + cb > 0.0;
-            const float aspect = doc_among(".jpg .jpeg .png .webp .bmp .JPG .JPEG .PNG", ext) && (edge.w > 0.f || doc_number(d, layer, "round", 0, 0) > 0.0 || cropped) ? picture_aspect(s, file.c_str()) : 0.f;
+            const float aspect = doc_among(".jpg .jpeg .png .webp .bmp .JPG .JPEG .PNG", ext) && (edge.w > 0.f || doc_number(d, layer, "round", 0, 0) > 0.0 || cropped) ? canvas_aspect(s, file.c_str()) : 0.f;
             if (ext == ".js") {   // (a p5.js sketch that paints in 2D, what it paints ThorVG's: canvas_sketch.h)
                 std::string under;   // (the film under it: what its createCapture and createVideo see)
                 for (int t : doc_laid(d)) { if (t == layer) break; if (doc_word(d, t, "kind") == "video") under = doc_word(d, t, "file"); }
                 std::shared_ptr<Script>& ready = doc_scripts_kept(d).sketches[file].ready;   // (what was run to see it runs, where no film is under it)
                 auto run = ready && under.empty() ? std::exchange(ready, nullptr) : std::make_shared<Script>(file, (doc_engine("third_party/js/p5") / "p5.min.js").string(), under);
                 if (!run->flat()) why = run->ok() ? "not a 2D sketch: " + file : run->trouble();
-                else if (fxOk && (made.drawn = sketch_picture(s, run, (doc_engine("third_party/filament_src/assets/fonts") / "Roboto-Medium.ttf").string(), 1.f, lay, fx))) s.playing.erase(made.drawn);
+                else if (fxOk && (made.drawn = sketch_canvas(s, run, (doc_engine("third_party/filament_src/assets/fonts") / "Roboto-Medium.ttf").string(), 1.f, lay, fx))) s.playing.erase(made.drawn);
             } else if (fxOk && aspect > 0.f) {   // (a photo with an edge, round corners or cut in: a rect as wide as it is, its own file its fill, as a shape filled with media is (Alight Motion's media layers take a border as its shapes do))
                 Canvas2DFx own = fx;
                 own.media = file;
@@ -301,12 +301,12 @@ static bool doc_match(Doc& d) {
                               aspect * (0.5 - std::min(cr, 0.95 - cl)), 0.5 - std::min(cb, 0.95 - ct), aspect * (cl - 0.5), 0.5 - std::min(cb, 0.95 - ct));
                 made.drawn = flat(s, cropped ? cut : "rect", aspect, mat4f{}, 1.f, float3{1.f}, lay, edge, own.over(1.f), 4, 0.5f, (float)doc_number(d, layer, "round", 0, 0));
             } else if (fxOk && !shown.empty() && (made.drawn = picture(s, shown.c_str(), mat4f{}, rollHigh, float3{-1.f}, true, lay, fx, doc_word(d, layer, "marker").c_str()))) s.playing.erase(made.drawn);
-            if (made.drawn && made.drawn->lottie && !picture_deep(s, made.drawn).empty()) {   // (its 3D layers stood up where they are, as After Effects shows them)
+            if (made.drawn && made.drawn->lottie && !canvas_deep(s, made.drawn).empty()) {   // (its 3D layers stood up where they are, as After Effects shows them)
                 made.motion = std::make_shared<Motion>();
                 if (motion_open(*made.motion, file.c_str()))
                     for (uint32_t id : made.drawn->deep) {
                         float4 box;
-                        if (Canvas2D* own = layer_picture(s, file.c_str(), id, 1.f / made.motion->h, &box)) made.deep.push_back({id, own, box});
+                        if (Canvas2D* own = layer_canvas(s, file.c_str(), id, 1.f / made.motion->h, &box)) made.deep.push_back({id, own, box});
                     }
             }
         } else if (kind == "text") {   // (words in a font: said by `say N text ...`; until then, the font's own name)

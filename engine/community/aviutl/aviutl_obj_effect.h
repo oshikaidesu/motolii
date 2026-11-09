@@ -32,7 +32,7 @@ static int aviutl_sashimono(lua_State* L, AviutlRun& r, const std::string& n, co
         fx = new ScreenFx;
         fx->file = found->second.file;
         std::string code;
-        if (screen_read(*fx, code)) fx->interop = interop::screen(r.s->engine, fx->file.c_str(), code.c_str(), fx->bytes, &fx->trouble, fx->pictures, fx->layered);
+        if (screen_read(*fx, code)) fx->interop = interop::screen(r.s->engine, fx->file.c_str(), code.c_str(), fx->bytes, &fx->trouble, fx->textureCount, fx->layered);
     }
     if (!fx->interop) return aviutl_no(L, "obj.effect " + n + ": " + fx->trouble.substr(0, 300));
     std::map<std::string, double> v;
@@ -152,8 +152,8 @@ static int aviutl_effect(lua_State* L) {   // (a built-in effect by its name: th
             const float k[4] = {x ? 1.f / from.w : 0.f, x ? 0.f : 1.f / from.h, (float)radius, 0};
             const int pass = r.draws[r.blur]++;
             interop::parameters(r.s->engine, r.blur, k, sizeof k, pass);
-            Texture* picture = from.t;
-            interop::draw(r.s->engine, r.blur, &picture, to.rt, to.w, to.h, pass);
+            Texture* texture = from.t;
+            interop::draw(r.s->engine, r.blur, &texture, to.rt, to.w, to.h, pass);
         }
         return 0;
     }

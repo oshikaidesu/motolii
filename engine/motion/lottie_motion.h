@@ -19,7 +19,7 @@
 
 struct Motion {
     tvg::LottieAnimation* film = nullptr;
-    tvg::Picture* picture = nullptr;
+    tvg::Picture* image = nullptr;
     float w = 0.f, h = 0.f, frames = 0.f, seconds = 0.f;
 };
 
@@ -27,9 +27,9 @@ static bool motion_open(Motion& m, const char* lottie) {
     static const bool started = tvg::Initializer::init(0) == tvg::Result::Success;   // (no threads of its own: a moment is worked out when it is asked for)
     if (!started) return false;
     m.film = tvg::LottieAnimation::gen();
-    m.picture = m.film->picture();
-    if (m.picture->load(lottie) != tvg::Result::Success) return false;
-    m.picture->size(&m.w, &m.h);
+    m.image = m.film->picture();
+    if (m.image->load(lottie) != tvg::Result::Success) return false;
+    m.image->size(&m.w, &m.h);
     m.frames = m.film->totalFrame();
     m.seconds = m.film->duration();
     return m.frames > 0.f;
@@ -42,7 +42,7 @@ static void motion_at(Motion& m, float frame) { m.film->frame(frame); }
 // under the precompositions it lies in (the scenes above it), and how opaque it is under them. false while the layer
 // is not there (before its in point, after its out point).
 static bool motion_flat(Motion& m, uint32_t id, tvg::Matrix* place, float* opacity = nullptr) {
-    const tvg::Paint* p = m.picture->paint(id);   // (found by walking the layers; `Picture::accessible`, ThorVG's index by name, finds nothing in a Lottie in 1.1.2)
+    const tvg::Paint* p = m.image->paint(id);   // (found by walking the layers; `Picture::accessible`, ThorVG's index by name, finds nothing in a Lottie in 1.1.2)
     if (!p) return false;
     tvg::Matrix all = const_cast<tvg::Paint*>(p)->transform();
     float seen = (float)p->opacity() / 255.f;

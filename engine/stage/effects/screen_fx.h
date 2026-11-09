@@ -18,7 +18,7 @@
 
 // A parameter's value now, asked by the effect's file and the parameter's name (two effects may each have a parameter of one name).
 using ScreenNumbers = std::function<double(const std::string& file, const std::string& parameter, double usual)>;
-using ScreenPictures = std::function<Texture*(const std::string& file, const std::string& name)>;   // (another thing's picture an effect reads as one of its images, by the parameter that names it)
+using ScreenTextures = std::function<Texture*(const std::string& file, const std::string& name)>;   // (another thing's picture an effect reads as one of its images, by the parameter that names it)
 
 struct ScreenFx {
     std::string file, trouble;
@@ -27,12 +27,12 @@ struct ScreenFx {
     std::vector<Field> fields;   // the parameters' struct as WGSL lays a uniform out
     uint32_t bytes = 0;
     interop::Screen* interop = nullptr;
-    int pictures = 1;   // the stage's picture, then each target's (ISF's passes)
+    int textureCount = 1;   // the stage's picture, then each target's (ISF's passes)
     bool spill = false;
     bool alpha = false;   // its head says // --alpha: on a thing, its own see-through is what it lays (grains), not the thing's shape   // its head says // --spill: on a thing, what it makes where the thing is not is light laid on what is under (rays, trails, a shifted copy)
     // ISF's passes, drawn in turn (parameter `pass`): into a target of the effect's own (kept, its last picture read the
     // next frame, when persistent; finer when float; a share of the stage's size or so many points), or, the last, out.
-    struct Target { std::string name; bool persistent = false, fine = false; double share[2] = {1, 1}; int points[2] = {0, 0}; Texture* picture[2] = {nullptr, nullptr}; RenderTarget* into[2] = {nullptr, nullptr}; int front = 0; uint32_t w = 0, h = 0; };
+    struct Target { std::string name; bool persistent = false, fine = false; double share[2] = {1, 1}; int points[2] = {0, 0}; Texture* textures[2] = {nullptr, nullptr}; RenderTarget* into[2] = {nullptr, nullptr}; int front = 0; uint32_t w = 0, h = 0; };
     std::vector<Target> targets;
     std::vector<int> passes;   // each pass's target (-1: out)
     // The stage's past frames, when its head asks for them (// --history@frames:share): an array of layers, the frame
@@ -49,13 +49,13 @@ struct ScreenFx {
     std::vector<bool> othersOwn;       // (whether each is its own picture, this time)
     // Those that are a picture file beside it (// --image@name:file, ISF's IMPORTED): each one's file, none for the rest.
     std::vector<std::string> images;
-    std::vector<Texture*> imagesMade;
+    std::vector<Texture*> imagesBuilt;
     bool source = false;   // (ISF's source, a generator: isf_tags)
     double frame[4] = {0, 0, 1, 1}, pass[4] = {0, 0, 1, 1};   // (the frame on the picture (ScreenStack), and on the picture this pass draws: a pass of a set size has none of it, on that side)
     // Its audio inputs (// --sound@name: ISF's audio and audioFFT), among the others in their places: each another
     // thing's sound at this moment, a row of `wide` values (ISF_Spec: an image a row a channel), half floats as the spec
     // asks for high precision (32- or 16-bit float textures; a 16-bit one is filtered by WebGPU as it is).
-    struct Sound { bool is = false, fft = false; int wide = 0; Texture* picture = nullptr; };
+    struct Sound { bool is = false, fft = false; int wide = 0; Texture* texture = nullptr; };
     std::vector<Sound> sounds;
     uint32_t hw = 0, hh = 0;
     std::filesystem::file_time_type stamp{};       // (the file's time when it was made: written over, it is made again)
@@ -92,7 +92,7 @@ static void screen_framed(std::string& code) {
 static bool screen_read(ScreenFx& fx, std::string& code) {
     const std::string file = isf_file(fx.file);   // (an ISF effect: the WGSL made of it)
     fx.source = isf_tags(fx_source(fx.file)).find("generator") != std::string::npos;
-    if (file.empty()) return fx.trouble = "the ISF effect could not be made WGSL: " + fx.file, false;
+    if (file.empty()) return fx.trouble = "the ISF effect could not be turned into WGSL: " + fx.file, false;
     std::ifstream in(file);
     if (!in) return fx.trouble = "there is no such file: " + fx.file, false;
     std::stringstream all;
@@ -109,12 +109,12 @@ static bool screen_read(ScreenFx& fx, std::string& code) {
     std::stable_sort(order.begin(), order.end(), [&](size_t a, size_t b) { return number(said[a]) < number(said[b]); });
     std::vector<int> given(said.size(), -1);
     std::string out, parametersType;
-    int pictures = 0, samplers = 0, uniforms = 0;
+    int textureCount = 0, samplers = 0, uniforms = 0;
     for (size_t i : order) {
         const std::string type = said[i][3];
         int& binding = given[i];
-        if (type.rfind("texture_2d_array", 0) == 0) fx.layered |= 1u << pictures, binding = 2 * pictures++;
-        else if (type.rfind("texture_2d", 0) == 0) binding = 2 * pictures++;
+        if (type.rfind("texture_2d_array", 0) == 0) fx.layered |= 1u << textureCount, binding = 2 * textureCount++;
+        else if (type.rfind("texture_2d", 0) == 0) binding = 2 * textureCount++;
         else if (type == "sampler") binding = 2 * samplers++ + 1;
         else if (said[i][1].matched) binding = 2 * reads, ++uniforms, parametersType = type;
         if (binding < 0) return fx.trouble = "the effect has a binding of a kind it cannot be given: " + type, false;
@@ -128,8 +128,8 @@ static bool screen_read(ScreenFx& fx, std::string& code) {
         at = code.cbegin() + m.position() + m.length();
     }
     out.append(at, code.cend());
-    if (pictures < 1 || samplers > pictures || uniforms > 1) return fx.trouble = "an effect reads a picture or more, a sampler for each at most, and one struct of knobs at most", false;
-    fx.pictures = pictures;
+    if (textureCount < 1 || samplers > textureCount || uniforms > 1) return fx.trouble = "an effect reads a texture or more, a sampler for each at most, and one struct of parameters at most", false;
+    fx.textureCount = textureCount;
     std::istringstream lines(code);   // (its passes, as the head says them: // --pass@target:kept,fine,width,height)
     for (std::string line; std::getline(lines, line) && line.rfind("//", 0) == 0;) {
         if (const size_t h = line.find("--history@"); h != std::string::npos) {   // (--history@frames:share)
@@ -178,7 +178,7 @@ static bool screen_read(ScreenFx& fx, std::string& code) {
         fx.others.push_back(line.substr(h + 8, colon - h - 8)), fx.sounds.push_back({});
         fx.images.push_back((std::filesystem::path(file).parent_path() / line.substr(colon + 1)).string());
     }
-    if ((!fx.targets.empty() || !fx.others.empty()) && (int)fx.targets.size() + 1 + (int)__builtin_popcount(fx.layered) + (int)fx.others.size() != pictures) return fx.trouble = "its passes' pictures, its other images and the pictures it reads do not agree", false;
+    if ((!fx.targets.empty() || !fx.others.empty()) && (int)fx.targets.size() + 1 + (int)__builtin_popcount(fx.layered) + (int)fx.others.size() != textureCount) return fx.trouble = "its passes' textures, its other images and the textures it reads do not agree", false;
     if (fx.layered && !fx.historyFrames) return fx.trouble = "it reads an array of past frames and its head does not ask for them (--history@frames:share)", false;
     code = std::regex_replace(out, std::regex(R"(\bfn\s+fs_main\s*\()"), "fn main(");
     if (!parametersType.empty()) {   // (WGSL's own rule: each as far on as its size, rounded up; vec3 as far as a vec4)
@@ -190,7 +190,7 @@ static bool screen_read(ScreenFx& fx, std::string& code) {
         for (std::sregex_iterator f(inside.begin(), inside.end(), field), stop; f != stop; ++f) {
             const std::string t = (*f)[2];
             const uint32_t n = t == "f32" || t == "i32" || t == "u32" ? 1 : t.find("vec2") == 0 ? 2 : t.find("vec3") == 0 ? 3 : t.find("vec4") == 0 ? 4 : 0;
-            if (!n) return fx.trouble = "a knob of a kind an effect cannot be given: " + t, false;
+            if (!n) return fx.trouble = "a parameter of a kind an effect cannot be given: " + t, false;
             const uint32_t align = n == 1 ? 4 : n == 2 ? 8 : 16;
             end = (end + align - 1) / align * align;
             fx.fields.push_back({(*f)[1], end, n, t == "i32" || t == "u32"});
@@ -256,26 +256,26 @@ static Texture* screen_image(Stage& s, const std::string& file) {
 // values handed over to be let go of when sent, Filament's PixelBufferDescriptor callback).
 static void screen_sounds(Stage& s, ScreenStack& st, ScreenFx& fx) {
     fx.othersNow.resize(fx.others.size(), nullptr);
-    fx.imagesMade.resize(fx.others.size(), nullptr);
+    fx.imagesBuilt.resize(fx.others.size(), nullptr);
     for (size_t k = 0; k < fx.images.size(); ++k) {
         if (fx.images[k].empty()) continue;
-        if (!fx.imagesMade[k] && !(fx.imagesMade[k] = screen_image(s, fx.images[k]))) { fx.trouble = "its picture " + fx.images[k] + " is not read", fx.images[k].clear(); continue; }
-        fx.othersNow[k] = fx.imagesMade[k];
+        if (!fx.imagesBuilt[k] && !(fx.imagesBuilt[k] = screen_image(s, fx.images[k]))) { fx.trouble = "its image " + fx.images[k] + " is not read", fx.images[k].clear(); continue; }
+        fx.othersNow[k] = fx.imagesBuilt[k];
     }
     for (size_t k = 0; k < fx.sounds.size(); ++k) {
         ScreenFx::Sound& one = fx.sounds[k];
         if (!one.is) continue;
         std::vector<float> v = st.sounds ? st.sounds(fx.file, fx.others[k], one.fft, one.wide) : std::vector<float>();
         if (v.empty()) v.assign((size_t)std::max(one.wide, 1), one.fft ? 0.f : 0.5f);
-        if (one.picture && one.picture->getWidth() != v.size()) s.engine->destroy(one.picture), one.picture = nullptr;
-        if (!one.picture) one.picture = Texture::Builder().width((uint32_t)v.size()).height(1).levels(1).format(Texture::InternalFormat::R16F).build(*s.engine);
+        if (one.texture && one.texture->getWidth() != v.size()) s.engine->destroy(one.texture), one.texture = nullptr;
+        if (!one.texture) one.texture = Texture::Builder().width((uint32_t)v.size()).height(1).levels(1).format(Texture::InternalFormat::R16F).build(*s.engine);
         auto* halves = new std::vector<math::half>(v.begin(), v.end());
-        one.picture->setImage(*s.engine, 0, backend::PixelBufferDescriptor(halves->data(), halves->size() * sizeof(math::half), backend::PixelDataFormat::R, backend::PixelDataType::HALF,
+        one.texture->setImage(*s.engine, 0, backend::PixelBufferDescriptor(halves->data(), halves->size() * sizeof(math::half), backend::PixelDataFormat::R, backend::PixelDataType::HALF,
             [](void*, size_t, void* user) { delete (std::vector<math::half>*)user; }, halves));
-        fx.othersNow[k] = one.picture;
+        fx.othersNow[k] = one.texture;
     }
 }
-static Texture* screen_picture(Stage& s) {
+static Texture* screen_texture(Stage& s) {
     return Texture::Builder().width((uint32_t)s.w).height((uint32_t)s.h).levels(1).format(Texture::InternalFormat::RGBA8)
         .usage(Texture::Usage::COLOR_ATTACHMENT | Texture::Usage::SAMPLEABLE).build(*s.engine);
 }
@@ -335,22 +335,22 @@ static void screen_targets(Stage& s, ScreenFx& fx, bool drop = false, uint32_t p
         for (int k = 0; k < 2; ++k) {
             const uint32_t w = t.points[0] ? (uint32_t)t.points[0] : (uint32_t)std::max(1L, std::lround(W * t.share[0]));
             const uint32_t h = t.points[1] ? (uint32_t)t.points[1] : (uint32_t)std::max(1L, std::lround(H * t.share[1]));
-            if (drop || (t.picture[k] && (t.w != w || t.h != h))) {   // (dropped, or the picture it is for is another size now: made again)
+            if (drop || (t.textures[k] && (t.w != w || t.h != h))) {   // (dropped, or the picture it is for is another size now: made again)
                 if (t.into[k]) s.engine->destroy(t.into[k]), t.into[k] = nullptr;
-                if (t.picture[k]) s.engine->destroy(t.picture[k]), t.picture[k] = nullptr;
+                if (t.textures[k]) s.engine->destroy(t.textures[k]), t.textures[k] = nullptr;
                 if (drop) continue;
             }
-            if (t.picture[k]) continue;
+            if (t.textures[k]) continue;
             t.w = w, t.h = h;
-            t.picture[k] = Texture::Builder().width(t.w).height(t.h).levels(1).format(t.fine ? Texture::InternalFormat::RGBA16F : Texture::InternalFormat::RGBA8)
+            t.textures[k] = Texture::Builder().width(t.w).height(t.h).levels(1).format(t.fine ? Texture::InternalFormat::RGBA16F : Texture::InternalFormat::RGBA8)
                                .usage(Texture::Usage::COLOR_ATTACHMENT | Texture::Usage::SAMPLEABLE).build(*s.engine);
-            t.into[k] = RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, t.picture[k]).build(*s.engine);
+            t.into[k] = RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, t.textures[k]).build(*s.engine);
         }
 }
 static interop::Screen* screen_copy(Stage& s, ScreenStack& st) {   // (a picture put out as it is)
     if (!st.copy) {
-        static const char* const same = "@group(0) @binding(0) var picture: texture_2d<f32>;\n@group(0) @binding(1) var near: sampler;\n"
-                                        "@fragment fn main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f { return textureSampleLevel(picture, near, uv, 0.0); }\n";
+        static const char* const same = "@group(0) @binding(0) var source: texture_2d<f32>;\n@group(0) @binding(1) var near: sampler;\n"
+                                        "@fragment fn main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f { return textureSampleLevel(source, near, uv, 0.0); }\n";
         st.copy = interop::screen(s.engine, "copy", same, 0);
     }
     return st.copy;
@@ -363,8 +363,8 @@ static void screen_place(Stage& s, Texture* from, RenderTarget* to, uint32_t w, 
     static std::map<Engine*, interop::Screen*> copies;
     interop::Screen*& copy = copies[s.engine];
     if (!copy) {
-        static const char* const same = "@group(0) @binding(0) var picture: texture_2d<f32>;\n@group(0) @binding(1) var near: sampler;\n"
-                                        "@fragment fn main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f { return textureSampleLevel(picture, near, uv, 0.0); }\n";
+        static const char* const same = "@group(0) @binding(0) var source: texture_2d<f32>;\n@group(0) @binding(1) var near: sampler;\n"
+                                        "@fragment fn main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f { return textureSampleLevel(source, near, uv, 0.0); }\n";
         copy = interop::screen(s.engine, "place", same, 0);
     }
     if (copy) interop::draw(s.engine, copy, from, to, w, h, at);
@@ -377,11 +377,11 @@ static void screen_tone(Stage& s, Texture* from, RenderTarget* to, uint32_t w, u
     static std::map<Engine*, interop::Screen*> interops[2];
     interop::Screen*& one = interops[toSrgb ? 1 : 0][s.engine];
     if (!one) {
-        const std::string code = std::string("@group(0) @binding(0) var picture: texture_2d<f32>;\n@group(0) @binding(1) var near: sampler;\n") +
+        const std::string code = std::string("@group(0) @binding(0) var source: texture_2d<f32>;\n@group(0) @binding(1) var near: sampler;\n") +
             (toSrgb ? "fn tone(c: vec3f) -> vec3f { return select(1.055 * pow(c, vec3f(1.0 / 2.4)) - 0.055, c * 12.92, c <= vec3f(0.0031308)); }\n"
                     : "fn tone(c: vec3f) -> vec3f { return select(pow((c + 0.055) / 1.055, vec3f(2.4)), c / 12.92, c <= vec3f(0.04045)); }\n") +
             "@fragment fn main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f {\n"
-            "  let p = textureSampleLevel(picture, near, uv, 0.0);\n  if (p.a <= 0.0) { return vec4f(0.0); }\n"
+            "  let p = textureSampleLevel(source, near, uv, 0.0);\n  if (p.a <= 0.0) { return vec4f(0.0); }\n"
             "  return vec4f(tone(clamp(p.rgb / p.a, vec3f(0.0), vec3f(1.0))) * p.a, p.a);\n}\n";
         one = interop::screen(s.engine, toSrgb ? "to sRGB" : "to linear", code.c_str(), 0);
     }
@@ -419,12 +419,12 @@ static void screen_draw(Stage& s, ScreenStack& st, ScreenFx& fx, Texture* from, 
         interop::draw(s.engine, screen_copy(s, st), from, fx.historyInto[(size_t)fx.head], fx.hw, fx.hh);
     }
     screen_sounds(s, st, fx);
-    std::vector<Texture*> read((size_t)fx.pictures, from);
+    std::vector<Texture*> read((size_t)fx.textureCount, from);
     const auto gather = [&] {
         size_t target = 0;
         const size_t own = read.size() - fx.others.size();
         for (size_t k = 1; k < own; ++k)
-            read[k] = (fx.layered >> k) & 1u ? fx.history : target < fx.targets.size() ? fx.targets[target].picture[fx.targets[target].front] : from, target += !((fx.layered >> k) & 1u);
+            read[k] = (fx.layered >> k) & 1u ? fx.history : target < fx.targets.size() ? fx.targets[target].textures[fx.targets[target].front] : from, target += !((fx.layered >> k) & 1u);
         for (size_t k = own; k < read.size(); ++k) {   // (another thing's picture; none chosen yet, its own, but a transition's end nothing (ISF_Spec: a transition's endImage))
             if (fx.others[k - own] == "backdrop" && s.behind) { read[k] = s.behind; continue; }   // (what is behind the thing: the stage's picture without it, render_layers.h; AbsentMotion's backdrop)
             const bool end = fx.others[k - own] == "endImage";
@@ -456,7 +456,7 @@ static void screen_draw(Stage& s, ScreenStack& st, ScreenFx& fx, Texture* from, 
     }
     if (fx.passes.back() >= 0) {   // (its last pass drew into its own picture: that is what it shows)
         const ScreenFx::Target& last = fx.targets[(size_t)fx.passes.back()];
-        interop::draw(s.engine, screen_copy(s, st), &last.picture[last.front], to, w, h, 0, nullptr, over);
+        interop::draw(s.engine, screen_copy(s, st), &last.textures[last.front], to, w, h, 0, nullptr, over);
     }
 }
 // An effect whose file was written over made again where it stands (asked when the window says a file changed): a shader
@@ -471,12 +471,12 @@ static void screen_fresh(Stage& s, ScreenFx& fx) {
     again.file = fx.file;
     std::string code;
     if (!screen_read(again, code)) { std::fprintf(stderr, "%s\n", again.trouble.c_str()); return; }
-    interop::Screen* built = interop::screen(s.engine, fx.file.c_str(), code.c_str(), again.bytes, &again.trouble, again.pictures, again.layered);
+    interop::Screen* built = interop::screen(s.engine, fx.file.c_str(), code.c_str(), again.bytes, &again.trouble, again.textureCount, again.layered);
     if (!built) { std::fprintf(stderr, "the effect %s as written now is not taken (the one before stays): %s\n", fx.file.c_str(), again.trouble.c_str()); return; }
     interop::drop(s.engine, fx.interop);
     screen_targets(s, fx, true);
     fx.parameters = again.parameters, fx.fields = again.fields, fx.bytes = again.bytes, fx.interop = built;
-    fx.pictures = again.pictures, fx.targets = again.targets, fx.passes = again.passes, fx.layered = again.layered, fx.spill = again.spill, fx.alpha = again.alpha;   // (the past frames kept as they are if their count stays)
+    fx.textureCount = again.textureCount, fx.targets = again.targets, fx.passes = again.passes, fx.layered = again.layered, fx.spill = again.spill, fx.alpha = again.alpha;   // (the past frames kept as they are if their count stays)
 }
 // Whether a file of the stage's effects has been written over since it was made (what wakes a stage that is not drawing).
 static bool screen_moved(const ScreenStack& st) {
@@ -498,7 +498,7 @@ static void screen_effects(Stage& s, ScreenStack& st, const std::string& files, 
             built->file = file;
             std::string code;
             if (!screen_read(*built, code)) { std::fprintf(stderr, "%s\n", built->trouble.c_str()); continue; }   // (kept as not made: not read again each time)
-            built->interop = interop::screen(s.engine, file.c_str(), code.c_str(), built->bytes, &built->trouble, built->pictures, built->layered);
+            built->interop = interop::screen(s.engine, file.c_str(), code.c_str(), built->bytes, &built->trouble, built->textureCount, built->layered);
             if (!built->interop) std::fprintf(stderr, "the effect %s is not taken: %s\n", file.c_str(), built->trouble.c_str());
             built->stamp = screen_stamp(file);
         }
@@ -506,12 +506,12 @@ static void screen_effects(Stage& s, ScreenStack& st, const std::string& files, 
     }
     if (st.fx.empty()) return;
     if (!st.shot) {   // (the pictures between them made once, kept while the stage is)
-        st.shot = screen_picture(s);
+        st.shot = screen_texture(s);
         st.depth = Texture::Builder().width((uint32_t)s.w).height((uint32_t)s.h).levels(1).usage(Texture::Usage::DEPTH_ATTACHMENT).format(Texture::InternalFormat::DEPTH24).build(*s.engine);
         st.target = RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, st.shot).texture(RenderTarget::AttachmentPoint::DEPTH, st.depth).build(*s.engine);
     }
     for (int k = 0; k < 2 && st.fx.size() > 1; ++k)
-        if (!st.between[k]) st.between[k] = screen_picture(s), st.betweenTarget[k] = RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, st.between[k]).build(*s.engine);
+        if (!st.between[k]) st.between[k] = screen_texture(s), st.betweenTarget[k] = RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, st.between[k]).build(*s.engine);
     s.view->setRenderTarget(st.target);
     s.drawTarget = st.shot;   // (what lies under a picture that reads it is copied from here)
     s.over = [&s, &st, numbers] {

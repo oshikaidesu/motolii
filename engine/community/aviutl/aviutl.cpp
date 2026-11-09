@@ -270,16 +270,16 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
     int most = 0;
     for (std::sregex_iterator m(code.begin(), code.end(), bound), end; m != end; ++m)
         if (!(*m)[2].matched) most = std::max(most, std::stoi((*m)[1]) % 128 + 1);
-    sh.pictures = std::max(1, most);
-    if (sh.pictures > 16)   // (Filament asks Dawn for 16 samplers a stage (WebGPUPlatform.cpp REQUIRED_LIMITS), a picture its texture and its sampler both (WebGPUDescriptorSetLayout.cpp); one past it made the frame's every draw void)
-        return sh.why = "not yet: " + std::to_string(sh.pictures) + " pictures read at once, Filament's WebGPU takes 16", sh;
+    sh.textureCount = std::max(1, most);
+    if (sh.textureCount > 16)   // (Filament asks Dawn for 16 samplers a stage (WebGPUPlatform.cpp REQUIRED_LIMITS), a picture its texture and its sampler both (WebGPUDescriptorSetLayout.cpp); one past it made the frame's every draw void)
+        return sh.why = "not yet: " + std::to_string(sh.textureCount) + " textures read at once, Filament's WebGPU takes 16", sh;
     std::string out;
     auto at = code.cbegin();
     for (std::sregex_iterator m(code.begin(), code.end(), bound), end; m != end; ++m) {
         const int b = std::stoi((*m)[1]);
         if ((*m)[2].matched ? b != 144 : b >= 144) return sh.why = "not yet: a resource of its kind (binding " + std::to_string(b) + ")", sh;
         out.append(at, code.cbegin() + m->position());
-        out += "@group(0) @binding(" + std::to_string((*m)[2].matched ? 2 * sh.pictures : b < 128 ? 2 * b : 2 * (b - 128) + 1) + ") var" + (*m)[2].str();
+        out += "@group(0) @binding(" + std::to_string((*m)[2].matched ? 2 * sh.textureCount : b < 128 ? 2 * b : 2 * (b - 128) + 1) + ") var" + (*m)[2].str();
         at = code.cbegin() + m->position() + m->length();
     }
     out.append(at, code.cend());

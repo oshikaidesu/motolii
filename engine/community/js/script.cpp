@@ -284,7 +284,7 @@ Script::Script(const std::string& file, const std::string& p5, const std::string
         std::stringstream text;
         text << lib.rdbuf();
         const std::string acorn = text.str();
-        if (!lib || acorn.empty()) own->trouble = "acorn is not where it is kept: " + where.string();
+        if (!lib || acorn.empty()) own->trouble = "acorn is not where it is stored: " + where.string();
         else {
             JS_FreeValue(own->cx, JS_Eval(own->cx, acorn.c_str(), acorn.size(), "acorn.js", JS_EVAL_TYPE_GLOBAL));
             JS_FreeValue(own->cx, JS_Eval(own->cx, ae_prelude, std::char_traits<char>::length(ae_prelude), "ae_expr", JS_EVAL_TYPE_GLOBAL));
@@ -543,7 +543,7 @@ double anime_ease(const std::string& bundle, const std::string& said, double u, 
         code << "globalThis.setImmediate = function () { return 0; }; globalThis.clearImmediate = function () {};\n" << in.rdbuf() << anime_prelude;
         const std::string src = code.str();
         JSValue ran = JS_Eval(cx, src.c_str(), src.size(), "anime", JS_EVAL_TYPE_GLOBAL);
-        if (!in || JS_IsException(ran)) why = "anime.js is not where it is kept: " + bundle;
+        if (!in || JS_IsException(ran)) why = "anime.js is not where it is stored: " + bundle;
         JS_FreeValue(cx, ran);
         JSValue g = JS_GetGlobalObject(cx);
         at = JS_GetPropertyStr(cx, g, "__ease_at");

@@ -60,7 +60,7 @@ std::string midi_roll(const std::string& file, double bpm, std::string& why, std
     }
     JS_FreeValue(cx, ran);
     JS_FreeContext(cx), JS_FreeRuntime(rt);
-    if (out.empty()) return why.empty() ? why = "PianoRollSvg.js made nothing" : why, "";
+    if (out.empty()) return why.empty() ? why = "PianoRollSvg.js returned nothing" : why, "";
     // ALMaMPlayer's look, said after its own style (ThorVG takes a <style> only before what it styles, the later rule
     // winning, as CSS does), and the round ends as each note's rx (ThorVG's CSS reads no rx).
     const std::string look = "<style>.line { display: none; } .blackRow { display: none; } .octaveText { display: none; } "

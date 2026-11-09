@@ -28,11 +28,11 @@ inline std::string adapter_shadertoy(const std::string& json, std::string& why) 
     }
     if (!image) return why = "this Shadertoy file has no Image tab", "";
     std::sort(passes.begin(), passes.end(), [&](const rapidjson::Value* a, const rapidjson::Value* b) { return text(*a, "name") < text(*b, "name"); });   // (A to D, the order the site draws them)
-    std::map<std::string, int> picture;   // (each buffer's number, by its output's id and by the picture that stood for it: the API's older word, /media/previz/buffer00.png)
+    std::map<std::string, int> bufferIndex;   // (each buffer's number, by its output's id and by the picture that stood for it: the API's older word, /media/previz/buffer00.png)
     for (size_t k = 0; k < passes.size(); ++k) {
         const rapidjson::Value& out = (*passes[k])["outputs"];
-        if (out.IsArray()) for (const auto& o : out.GetArray()) picture[id(o)] = (int)k + 1;
-        picture["buffer0" + std::to_string(k)] = (int)k + 1;
+        if (out.IsArray()) for (const auto& o : out.GetArray()) bufferIndex[id(o)] = (int)k + 1;
+        bufferIndex["buffer0" + std::to_string(k)] = (int)k + 1;
     }
     passes.push_back(image);
     bool film = false;
@@ -49,9 +49,9 @@ inline std::string adapter_shadertoy(const std::string& json, std::string& why) 
                 const size_t at = src.find("buffer0");
                 int read = -1;
                 if (type == "buffer") {
-                    auto found = picture.find(id(in));
-                    if (found == picture.end() && at != std::string::npos) found = picture.find(src.substr(at, 8));
-                    if (found != picture.end()) read = found->second;
+                    auto found = bufferIndex.find(id(in));
+                    if (found == bufferIndex.end() && at != std::string::npos) found = bufferIndex.find(src.substr(at, 8));
+                    if (found != bufferIndex.end()) read = found->second;
                 } else if (type == "texture" || type == "video" || type == "webcam") film = true, read = 0;   // (the picture it is put on: a film as much as anything)
                 const bool repeats = in.HasMember("sampler") && text(in["sampler"], "wrap") == "repeat";
                 tab.channel[n] = read + (read >= 0 && repeats ? 16 : 0);

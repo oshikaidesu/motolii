@@ -202,13 +202,13 @@ static void live_draw(Stage& s, Live* l) {
 
 // A picture made before (stage_cache.h) put on the stage as it is, instead of drawing it: on the desk where the stage
 // lies (what lies off it is not in the picture), its marks over it as live_draw puts them.
-static void live_show(Stage& s, Live* l, Texture* picture) {
+static void live_show(Stage& s, Live* l, Texture* frameTexture) {
     Live* desk = l->desk && s.desk.w ? l->desk : nullptr;
     while (!begins(s)) {}
     if (desk) {
         const int at[4] = {(int)std::lround(s.desk.x), (int)std::lround((double)s.desk.h - s.desk.y - s.h * s.desk.scale), (int)std::lround(s.w * s.desk.scale), (int)std::lround(s.h * s.desk.scale)};
-        screen_place(s, picture, desk->target[desk->next], s.desk.w, s.desk.h, at);
-    } else screen_place(s, picture, l->target[l->next], (uint32_t)s.w, (uint32_t)s.h, nullptr);
+        screen_place(s, frameTexture, desk->target[desk->next], s.desk.w, s.desk.h, at);
+    } else screen_place(s, frameTexture, l->target[l->next], (uint32_t)s.w, (uint32_t)s.h, nullptr);
     s.renderer->endFrame();
     if (desk) {
         desk_marks(s, desk, desk->next);

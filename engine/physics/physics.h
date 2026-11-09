@@ -24,7 +24,7 @@ public:
     PhysWorld(const std::vector<PhysThing>& things, float gravity, PhysKeyed keyed);
     ~PhysWorld();
     // Each thing at picture n (n / 60 s from the beginning): stepped there once, then kept.
-    PhysPose pose(int index, int picture);
+    PhysPose pose(int index, int frameIndex);
 private:
     struct Own;
     std::unique_ptr<Own> own;

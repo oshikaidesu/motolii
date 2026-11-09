@@ -117,7 +117,7 @@ static void doc_sketch_mesh(Doc& d, int layer, Doc::Shown& t, double now) {
         read.setWrapModeS(wraps[(int)p[2]]), read.setWrapModeT(wraps[(int)p[3]]);
         t.look->setParameter(("picture" + std::to_string(i)).c_str(), pic->texture, read);
     }
-    for (Canvas2D* pic : t.sketchPics) if (pic) picture_at(s, pic, (float)frame / 60.f);
+    for (Canvas2D* pic : t.sketchPics) if (pic) canvas_at(s, pic, (float)frame / 60.f);
     Mesh& m = *t.shape;
     m.pos.clear(), m.nrm.clear(), m.uv.clear(), m.uv1.clear(), m.color.clear(), m.idx.clear();
     std::vector<std::vector<uint32_t>> parts(worn.size() + 1);   // (0: sketch.mat's. Each way a part of its own, so that each wears what it was told)

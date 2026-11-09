@@ -35,7 +35,7 @@ static void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
             built->file = file;
             std::string code;
             if (!screen_read(*built, code)) { std::fprintf(stderr, "%s\n", built->trouble.c_str()); continue; }
-            built->interop = interop::screen(s.engine, file.c_str(), code.c_str(), built->bytes, &built->trouble, built->pictures, built->layered);
+            built->interop = interop::screen(s.engine, file.c_str(), code.c_str(), built->bytes, &built->trouble, built->textureCount, built->layered);
             if (!built->interop) std::fprintf(stderr, "the effect %s is not taken: %s\n", file.c_str(), built->trouble.c_str());
             built->stamp = screen_stamp(file);
         }
@@ -61,10 +61,10 @@ static void thing_thor(Stage& s, ScreenStack& st, char k, void* from, int into, 
             if (c->target(interop::device(s.engine), interop::instance(s.engine), st.device[into + 1], w, h, tvg::ColorSpace::ABGR8888S, 1) != tvg::Result::Success) return;
         }
         c->remove();
-        tvg::Picture* picture = tvg::Picture::gen();
-        if (picture->load(from, w, h) != tvg::Result::Success) return tvg::Paint::rel(picture);
+        tvg::Picture* image = tvg::Picture::gen();
+        if (image->load(from, w, h) != tvg::Result::Success) return tvg::Paint::rel(image);
         tvg::Scene* scene = tvg::Scene::gen();
-        scene->add(picture);
+        scene->add(image);
         scene->add(tvg::SceneEffect::Clear);
         effect_on(scene, k, fx, ppp);
         c->add(scene);
@@ -75,7 +75,7 @@ static void thing_thor(Stage& s, ScreenStack& st, char k, void* from, int into, 
 }
 // Its pictures, as large as the view draws (made again when that moves): made before the frame, as the look that shows
 // one is told it then (thing_fx_seen).
-static void thing_fx_pictures(Stage& s, ScreenStack& st, View* v) {
+static void thing_fx_textures(Stage& s, ScreenStack& st, View* v) {
     const Viewport vp = v->getViewport();
     const uint32_t w = (uint32_t)std::max(1, vp.left + (int)vp.width), h = (uint32_t)std::max(1, vp.bottom + (int)vp.height);
     if (!st.shot || st.shot->getWidth() != w || st.shot->getHeight() != h) {   // (its pictures as large as the view draws; made again when that moves)
@@ -87,7 +87,7 @@ static void thing_fx_pictures(Stage& s, ScreenStack& st, View* v) {
         });
         st.thor[0] = st.thor[1] = nullptr;
         int n = 0;
-        const auto picture = [&] {   // (the device's own, so ThorVG reads and draws it too; Filament's by import)
+        const auto newTexture = [&] {   // (the device's own, so ThorVG reads and draws it too; Filament's by import)
             WGPUTextureDescriptor like{};
             like.size = {w, h, 1};
             like.format = WGPUTextureFormat_BGRA8Unorm;   // (what ThorVG's last step writes, as a picture of its own is: canvas.h)
@@ -99,16 +99,16 @@ static void thing_fx_pictures(Stage& s, ScreenStack& st, View* v) {
             void* built = st.device[n++] = wgpuDeviceCreateTexture((WGPUDevice)interop::device(s.engine), &like);
             return Texture::Builder().width(w).height(h).levels(1).format(Texture::InternalFormat::RGBA8).usage(Texture::Usage::COLOR_ATTACHMENT | Texture::Usage::SAMPLEABLE | Texture::Usage::BLIT_SRC).import((intptr_t)built).build(*s.engine);
         };
-        st.shot = picture();
+        st.shot = newTexture();
         st.depth = Texture::Builder().width(w).height(h).levels(1).usage(Texture::Usage::DEPTH_ATTACHMENT).format(Texture::InternalFormat::DEPTH24).build(*s.engine);
         st.target = RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, st.shot).texture(RenderTarget::AttachmentPoint::DEPTH, st.depth).build(*s.engine);
-        for (int k = 0; k < 2; ++k) st.between[k] = picture(), st.betweenTarget[k] = RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, st.between[k]).build(*s.engine);
+        for (int k = 0; k < 2; ++k) st.between[k] = newTexture(), st.betweenTarget[k] = RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, st.between[k]).build(*s.engine);
     }
 }
 // The picture its effects leave (the last one drawn into; its own, with none): what its sheet or solid shows.
 static Texture* thing_fx_seen(const ScreenStack& st) { return st.steps.empty() ? st.shot : st.between[st.steps.size() % 2]; }   // (the last made back in linear light: thing_effects_draw)
-static void thing_effects_draw(Stage& s, ScreenStack& st, View* v, const ScreenNumbers& numbers, const std::function<Canvas2DFx()>& thorFx = nullptr, const ScreenPictures& pictures = nullptr) {
-    thing_fx_pictures(s, st, v);   // (made already when it was aimed: a thing's; the stage's own others made here)
+static void thing_effects_draw(Stage& s, ScreenStack& st, View* v, const ScreenNumbers& numbers, const std::function<Canvas2DFx()>& thorFx = nullptr, const ScreenTextures& textures = nullptr) {
+    thing_fx_textures(s, st, v);   // (made already when it was aimed: a thing's; the stage's own others made here)
     const Viewport vp = v->getViewport();
     const uint32_t w = (uint32_t)std::max(1, vp.left + (int)vp.width), h = (uint32_t)std::max(1, vp.bottom + (int)vp.height);
     RenderTarget* const was = v->getRenderTarget();
@@ -132,7 +132,7 @@ static void thing_effects_draw(Stage& s, ScreenStack& st, View* v, const ScreenN
         screen_fresh(s, *st.fx[f]);
         ScreenFx& one = *st.fx[f++];
         one.othersNow.clear();
-        for (const std::string& n : one.others) one.othersNow.push_back(pictures ? pictures(one.file, n) : nullptr);
+        for (const std::string& n : one.others) one.othersNow.push_back(textures ? textures(one.file, n) : nullptr);
         screen_draw(s, st, one, from, st.betweenTarget[i % 2], numbers, w, h);
     }
     screen_tone(s, st.between[(st.steps.size() - 1) % 2], st.betweenTarget[st.steps.size() % 2], w, h, false);   // (back in linear light, as the stage takes it)
@@ -299,7 +299,7 @@ static void thing_fx_solid(Stage& s, ThingFx& e, bool inFrame) {
     if (said == e.solidSaid || (anew && inFrame)) return;
     SolidMesh built;
     std::string why;
-    if (!solid_three(e.solidFile, e.parameters, e.words, e.size.x, e.size.y, e.cover->a, e.cover->w, e.cover->h, built, why)) std::fprintf(stderr, "the solid %s is not made: %s\n", e.solidFile.c_str(), why.substr(0, 600).c_str());
+    if (!solid_three(e.solidFile, e.parameters, e.words, e.size.x, e.size.y, e.cover->a, e.cover->w, e.cover->h, built, why)) std::fprintf(stderr, "the solid %s is not built: %s\n", e.solidFile.c_str(), why.substr(0, 600).c_str());
     if (built.idx.empty() || built.pos.size() != built.nrm.size() || built.uv.size() * 3 != built.pos.size() * 2) built = SolidMesh{{0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 1, 0, 0, 1, 0, 0, 1}, {0, 0, 0, 0, 0, 0}, {0, 1, 2}};   // (none yet, Raster Extrude's before its picture is read: a point, its look ready)
     e.solidSaid = said;
     if (anew && e.solid) take_off(s, e.solid), delete e.solid, e.solid = nullptr;

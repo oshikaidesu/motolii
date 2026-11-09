@@ -129,14 +129,14 @@ struct Stage {
                   InstanceBuffer* many = nullptr; int count = 1; };   // (all its places drawn in one go, Filament's own instancing: each place an instance of the one thing; `move` tells them all at once)
     utils::Entity sun;                     // the sun, where there is one (paper_and_sun), and all that goes by its direction: `sun_to`
     std::vector<MaterialInstance*> by_sun;
-    struct Matte { Scene* scene; View* view; Texture* picture; bool soft; Camera* eye; utils::Entity on; mat4f onPlace; };
+    struct Matte { Scene* scene; View* view; Texture* frameTexture; bool soft; Camera* eye; utils::Entity on; mat4f onPlace; };
     std::vector<Matte> mattes;   // the mattes: each a picture taken by its own eye, drawn before all else (matte); soft: some thing reads it blurred
     struct Cut { MaterialInstance* look; int slot, matte; float use, soft; };
     std::vector<Cut> cuts;       // which look reads which matte (matted): told where the matte's eye is before every picture
     Texture* white = nullptr;    // a white point: the matte of a thing that nothing cuts
     // (what is made once for this stage's engine and kept: a stage opened after another in the same program has its own)
     std::map<std::string, Material*> materials;    // each material file, read and built once
-    void* solids = nullptr; void* solidPictures = nullptr;   // Filament's reader of 3D files and its reader of their pictures (gltf_model.h)
+    void* solids = nullptr; void* solidTextures = nullptr;   // Filament's reader of 3D files and its reader of their pictures (gltf_model.h)
     std::vector<Renderable> renderables;   // every thing put on the stage: of which mesh, at which of that mesh's places (a film moves them: `move`)
     // The desk: the editing window's whole stage pane (w, h pixels: 0, none), the picture there as on the stage but seen
     // further back, the stage's own lying at x, y (its top left) so many pixels a point; what lies off it is seen too.

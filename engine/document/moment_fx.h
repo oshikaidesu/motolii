@@ -11,7 +11,7 @@ static void doc_layer_solid_aim(Doc& d, int layer, ThingFx& e) {   // (before th
         place = doc_place(d, layer, d.stage->now), doc_half(d, layer, &half);
     }
     thing_fx_face(s, e, place, half);
-    thing_fx_pictures(s, e.st, e.view);
+    thing_fx_textures(s, e.st, e.view);
     e.look->setParameter("place", mat4f::scaling(float3{0.f}));   // (its sheet: nowhere)
     if (!e.solid || !e.solidLook) return;
     move(s, e.solid, [&](int, const mat4f&) { return mat4f(place); });
@@ -255,7 +255,7 @@ static void doc_layers_fx(Doc& d) {
             e.st.ground = d.backdropIs.size() == 6 ? (int)std::strtol(d.backdropIs.c_str(), nullptr, 16) : -1;   // (the colour behind everything: what an effect reading the frame finds where nothing is drawn)
             if (e.world) doc_layer_stand(d, layer, e);
             else thing_fx_aim(s, e, box);
-            thing_fx_pictures(s, e.st, e.view);
+            thing_fx_textures(s, e.st, e.view);
             if (e.look) e.look->setParameter("image", thing_fx_seen(e.st), e.shell ? TextureSampler(TextureSampler::MinFilter::NEAREST, TextureSampler::MagFilter::NEAREST) : TextureSampler(TextureSampler::MinFilter::LINEAR, TextureSampler::MagFilter::LINEAR));
             if (e.look) {   // (its glow over what its effects made: the stage's bloom, as a layer without effects glows (doc_evaluate))
                 std::lock_guard<std::recursive_timed_mutex> hold(d.lock);

@@ -137,10 +137,10 @@ std::string three_isf(const std::string& file, std::string& why) {
                 if (i < 2) w.EndObject();
             }   // (the last closed below, as every other)
             defines += "#define " + n + " vec3(" + n + "_" + fields[0] + ", " + n + "_" + fields[1] + ", " + n + "_" + fields[2] + ")\n";
-        } else { w.EndObject(), w.EndArray(), w.EndObject(); return why = "a uniform of a kind ISF has no knob for: " + type + " " + n, ""; }
+        } else { w.EndObject(), w.EndArray(), w.EndObject(); return why = "a uniform of a kind ISF has no parameter for: " + type + " " + n, ""; }
         w.EndObject();
     }
-    if (first) return why = "it reads no picture: not an effect", "";
+    if (first) return why = "it reads no image: not an effect", "";
     w.EndArray(), w.EndObject();
     frag = std::regex_replace(frag, uniform, "");
     std::smatch at;

@@ -62,11 +62,11 @@ int main(int argc, char** argv) {
     like.size = {W, H, 1};
     like.format = wgpu::TextureFormat::RGBA8Unorm;
     like.usage = wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopyDst;
-    wgpu::Texture picture = device.CreateTexture(&like);
+    wgpu::Texture frameTexture = device.CreateTexture(&like);
     const std::string pixels = slurp(dir + "picture.rgba");
     if (pixels.size() != (size_t)W * H * 4) { std::printf("FAIL picture.rgba is %zu bytes, not %u x %u x 4\n", pixels.size(), W, H); return 1; }
     wgpu::TexelCopyTextureInfo into{};
-    into.texture = picture;
+    into.texture = frameTexture;
     wgpu::TexelCopyBufferLayout rows{};
     rows.bytesPerRow = W * 4;
     rows.rowsPerImage = H;
@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
             keep.push_back(buffer(slurp(dir + "g" + std::to_string(g) + "b" + std::to_string(b) + ".bin"), wgpu::BufferUsage::Uniform));
             e.buffer = keep.back();
         } else if (kind == "texture") {
-            e.textureView = picture.CreateView();
+            e.textureView = frameTexture.CreateView();
         } else if (kind == "sampler") {   // "<mag> <min> <wrapS> <wrapT>" as three.js's constants: 1003 nearest, 1006 linear; 1000 repeat, 1001 clamp, 1002 mirror
             int mag, min, ws, wt;
             plan >> mag >> min >> ws >> wt;
@@ -196,6 +196,6 @@ int main(int argc, char** argv) {
     const char* got = (const char*)back.GetConstMappedRange(0, room.size);
     std::ofstream rendered_file(dir + "rendered.rgba", std::ios::binary);
     for (uint32_t y = 0; y < H; ++y) rendered_file.write(got + (size_t)y * stride, W * 4);
-    std::printf("%s: %u x %u drawn, device errors %d\n", errors ? "FAIL" : "PASS", W, H, errors);
+    std::printf("%s: %u x %u rendered, device errors %d\n", errors ? "FAIL" : "PASS", W, H, errors);
     return errors ? 1 : 0;
 }

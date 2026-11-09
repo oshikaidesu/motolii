@@ -20,7 +20,7 @@ material {
         { type : float, name : opacity },    // how much of it is there at all (ThorVG's word): 1 all, 0 none
         { type : float, name : glowing },    // how much brighter than itself it shines (0: as it is; past 1 the stage's bloom takes it up)
         { type : float4, name : wash },      // a colour laid over it where it is drawn, and how much (a copy's own, from a ramp along the copies; 0: none)
-        { type : sampler2d, name : backdrop },   // what lies under it as drawn so far, when its way of lying reads it (render.h pictures_of)
+        { type : sampler2d, name : backdrop },   // what lies under it as drawn so far, when its way of lying reads it (render.h textures_of)
         { type : float, name : blendWay },       // that way (doc.h doc_blend_way: 1 darken ... 13 luminosity; 0: the GPU's own blending)
         { type : float, name : behind },         // 1: its fill is what is behind it, as it is (doc.h: fill behind, a copy of the background; then its blend as said)
         { type : mat4, name : behindEye },       // where the stage's eye sees a point of the world: where in that picture a point of it is, on the stage or on a sheet of its own (matte.glsl's matteEye)

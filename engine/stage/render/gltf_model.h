@@ -51,18 +51,18 @@ static Solid* solid(Stage& s, const char* file, const mat4f& place, float high, 
     std::vector<gltfio::FilamentInstance*> ones((size_t)std::max(1, many));
     d->asset = bytes.empty() ? nullptr : solid_loader(s)->createInstancedAsset(bytes.data(), (uint32_t)bytes.size(), ones.data(), ones.size());
     if (!d->asset) return nullptr;
-    gltfio::ResourceLoader pictures({.engine = s.engine, .gltfPath = file, .normalizeSkinningWeights = true});   // (where a .gltf's parts are: Filament's gltf_viewer tells it so)
+    gltfio::ResourceLoader resources({.engine = s.engine, .gltfPath = file, .normalizeSkinningWeights = true});   // (where a .gltf's parts are: Filament's gltf_viewer tells it so)
     std::vector<std::vector<uint8_t>> beside(d->asset->getResourceUriCount());   // (a .gltf's parts in files beside it: read and handed over, as gltfio asks)
     for (size_t i = 0; i < beside.size(); ++i) {
         const char* part = d->asset->getResourceUris()[i];
         beside[i] = load_file((std::filesystem::path(file).parent_path() / part).string().c_str());
-        pictures.addResourceData(part, gltfio::ResourceLoader::BufferDescriptor(beside[i].data(), beside[i].size()));
+        resources.addResourceData(part, gltfio::ResourceLoader::BufferDescriptor(beside[i].data(), beside[i].size()));
     }
-    if (!s.solidPictures) s.solidPictures = gltfio::createStbProvider(s.engine);
-    gltfio::TextureProvider* reader = (gltfio::TextureProvider*)s.solidPictures;
-    pictures.addTextureProvider("image/png", reader);
-    pictures.addTextureProvider("image/jpeg", reader);
-    if (!pictures.loadResources(d->asset)) return nullptr;
+    if (!s.solidTextures) s.solidTextures = gltfio::createStbProvider(s.engine);
+    gltfio::TextureProvider* reader = (gltfio::TextureProvider*)s.solidTextures;
+    resources.addTextureProvider("image/png", reader);
+    resources.addTextureProvider("image/jpeg", reader);
+    if (!resources.loadResources(d->asset)) return nullptr;
     d->asset->releaseSourceData();
     const Aabb box = d->asset->getBoundingBox();
     d->fit = mat4f::scaling(high / std::max(box.max.y - box.min.y, 1e-6f)) * mat4f::translation(-0.5f * (box.min + box.max));

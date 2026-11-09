@@ -344,7 +344,7 @@ static void key_out(MaterialInstance* look, float3 colour = float3{0.f, 1.f, 0.f
 // What comes back names the matte. Each matte is a picture of its own, taken before all else (`draw`) by its own eye,
 // the film's camera or one riding on the thing, with nothing but its shapes in it; the things it cuts look themselves
 // up in it by that eye (matte.glsl), so they are cut the same whichever eye looks at the stage.
-static int matte(Stage& s, Mesh* m, std::vector<mat4f> places, Texture* picture = nullptr, bool byLight = false, float strength = 1.f, int into = -1, const Mesh* on = nullptr) {
+static int matte(Stage& s, Mesh* m, std::vector<mat4f> places, Texture* frameTexture = nullptr, bool byLight = false, float strength = 1.f, int into = -1, const Mesh* on = nullptr) {
     auto& tm = s.engine->getTransformManager();
     if (into < 0) {
         Stage::Matte built{};
@@ -369,14 +369,14 @@ static int matte(Stage& s, Mesh* m, std::vector<mat4f> places, Texture* picture 
         }
         uint8_t levels = 1;
         while ((std::max(w, h) >> levels) > 0) ++levels;
-        built.picture = Texture::Builder().width(w).height(h).levels(levels).format(Texture::InternalFormat::R8)
+        built.frameTexture = Texture::Builder().width(w).height(h).levels(levels).format(Texture::InternalFormat::R8)
                            .usage(Texture::Usage::COLOR_ATTACHMENT | Texture::Usage::SAMPLEABLE | Texture::Usage::GEN_MIPMAPPABLE).build(*s.engine);
         built.scene = s.engine->createScene();
         built.view = s.engine->createView();
         built.view->setScene(built.scene);
         built.view->setCamera(built.eye);
         built.view->setViewport({0, 0, w, h});
-        built.view->setRenderTarget(RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, built.picture).build(*s.engine));
+        built.view->setRenderTarget(RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, built.frameTexture).build(*s.engine));
         built.view->setPostProcessingEnabled(false);
         s.mattes.push_back(built);
         into = (int)s.mattes.size() - 1;
@@ -393,10 +393,10 @@ static int matte(Stage& s, Mesh* m, std::vector<mat4f> places, Texture* picture 
         tm.setParent(tm.getInstance(s.renderables[i].thing), tm.getInstance(to.on));
         tm.setTransform(tm.getInstance(s.renderables[i].thing), s.renderables[i].place);
     }
-    shape->setParameter("picture", picture ? picture : white_point(s), TextureSampler(TextureSampler::MinFilter::LINEAR, TextureSampler::MagFilter::LINEAR));
+    shape->setParameter("picture", frameTexture ? frameTexture : white_point(s), TextureSampler(TextureSampler::MinFilter::LINEAR, TextureSampler::MagFilter::LINEAR));
     shape->setParameter("byLight", byLight ? 1.f : 0.f);
     shape->setParameter("strength", strength);
-    if (!picture) shape->setCullingMode(backend::CullingMode::BACK);   // (a solid: its near faces only, so that it covers once)
+    if (!frameTexture) shape->setCullingMode(backend::CullingMode::BACK);   // (a solid: its near faces only, so that it covers once)
     return into;
 }
 
@@ -410,7 +410,7 @@ static bool matted(Stage& s, MaterialInstance* look, int matte, bool inside = tr
     for (const Stage::Cut& c : s.cuts)
         if (c.look == look) use[c.slot] = c.use, softs[c.slot] = c.soft, ++n;
     if (n == 4 || !look->getMaterial()->hasParameter("matteUse")) return false;
-    look->setParameter(names[n], s.mattes[(size_t)matte].picture,
+    look->setParameter(names[n], s.mattes[(size_t)matte].frameTexture,
                        TextureSampler(TextureSampler::MinFilter::LINEAR_MIPMAP_LINEAR, TextureSampler::MagFilter::LINEAR, TextureSampler::WrapMode::CLAMP_TO_EDGE));
     use[n] = inside ? 1.f : -1.f;
     softs[n] = std::log2(1.f + 2.f * std::max(soft, 0.f));   // (a level of the matte's picture: each is twice as coarse as the one before)
@@ -462,14 +462,14 @@ static bool begins(Stage& s) {
 
 // All the pictures of one frame, the helper pictures first (between Filament's beginFrame and endFrame). Every way
 // of drawing the stage goes through here.
-static void pictures_of(Stage& s) {
+static void textures_of(Stage& s) {
     if (s.backdropRead) s.renderer->render(s.view_behind);   // (what is behind, for an effect that reads it (screen_fx.h's backdrop): drawn before the effects, those things' own sheets left out of it)
     for (const auto& [of, one] : s.once) one();
     s.once.clear();
     for (const auto& one : s.before) one();   // (the things with effects of their own, each drawn alone first, as FilamentApp draws its offscreen views before every other: layer_fx.h)
     for (Stage::Matte& m : s.mattes) {
         s.renderer->render(m.view);
-        if (m.soft) m.picture->generateMipmaps(*s.engine);
+        if (m.soft) m.frameTexture->generateMipmaps(*s.engine);
     }
     if (s.view_floor) s.renderer->render(s.view_floor);
     if (s.behindRead) s.renderer->render(s.view_behind);   // (the picture of what is behind: only once glass or the paper reads it; a whole pass of every thing's points)
@@ -482,7 +482,7 @@ static void pictures_of(Stage& s) {
 
 static void draw(Stage& s, std::vector<uint8_t>* pic = nullptr, bool wait = true) {
     while (!begins(s)) {}
-    pictures_of(s);
+    textures_of(s);
     if (pic)
         s.renderer->readPixels(0, 0, (uint32_t)s.w, (uint32_t)s.h,
                                backend::PixelBufferDescriptor(pic->data(), pic->size(), backend::PixelDataFormat::RGBA, backend::PixelDataType::UBYTE));
