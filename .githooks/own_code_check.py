@@ -25,6 +25,16 @@
 #      Now-done-by: PATH | NAME | nothing: WHY     where a person gets it now (a file here, a linked library), or why not
 #    (On 2026-11-10 a ledger of lines was met by deleting the stage, the timeline and the shelves' panels.)
 #
+# 3. THE LEAD'S WORD, for a worker. A session working in a worktree under .claude/worktrees/ may not leave a file of
+#    ours longer than it found it unless the lead has granted that file to that worktree. Asking is a round trip in
+#    which nothing of the worker's moves, and the lead refuses what could have been handed over; the free way asks no
+#    one. The door (.claude/hooks/own_code_sign.py) holds the same line before the first edit; here it holds for
+#    lines written any other way (a shell, a script).
+#      own_code_check.py --grant WORKTREE PATH WHY...   the lead grants PATH (a file, or a folder ending in /) to WORKTREE
+#      own_code_check.py --grants                       what is granted
+#    Grants are kept in the repository's own git folder (git rev-parse --git-common-dir), which every worktree shares
+#    and no commit carries.
+#
 #   own_code_check.py MESSAGE_FILE   the commit-msg hook (.githooks/commit-msg): what is staged, the message being written
 #   own_code_check.py --range A..B   CI (.github/workflows/checks.yml): every commit made since this rule came in
 # A merge is not asked: the commits it brings were.
@@ -49,10 +59,31 @@ DECLARED = [('a card', 'engine/document/card_table.h', r'\{"([^"]+)",\s*"[^"]*"'
             ('a window command', 'app/lib/workspace/commands/keymap.dart', r"'([a-z]+\.[A-Za-z]+)'"),
             ('a menu item', 'app/lib/workspace/commands/menu_bar.dart', r"item\('([^']+)'")]
 SELF = '.githooks/own_code_check.py'
+LONGER = []   # (the files of ours the commit last measured leaves longer: own_lines)
 
 
 def git(*a, data=None):
     return subprocess.run(['git', *a], input=data, capture_output=True).stdout.decode('utf-8', 'replace')
+
+
+def worker():
+    """The name of the worktree this is, when it is a worker's (.claude/worktrees/NAME); '' in the lead's checkout."""
+    top = git('rev-parse', '--show-toplevel').strip()
+    return top.rsplit('/.claude/worktrees/', 1)[1].split('/')[0] if '/.claude/worktrees/' in top else ''
+
+
+def grants_file():
+    common = git('rev-parse', '--path-format=absolute', '--git-common-dir').strip()
+    return os.path.join(common, 'motolii-own-grants')
+
+
+def granted(name, path):
+    """Has the lead granted `path` to the worktree `name`?"""
+    try:
+        rows = [l.rstrip('\n').split('\t') for l in open(grants_file(), encoding='utf-8')]
+    except OSError:
+        return False
+    return any(len(r) >= 2 and r[0] == name and (path == r[1] or (r[1].endswith('/') and path.startswith(r[1]))) for r in rows)
 
 
 def generated(rev, path):
@@ -63,14 +94,16 @@ def generated(rev, path):
 def own_lines(numstat, rev):
     """Lines of our own the commit adds: for each file of ours, added minus deleted where that is more than nothing.
     From `--numstat -M`; `rev`: where to read a file's head ('' the index)."""
-    total = 0
+    total, longer = 0, []
     for line in numstat.splitlines():
         parts = line.split('\t')
         if len(parts) < 3 or parts[0] == '-':
             continue
         path = re.sub(r'\{[^{}]* => ([^{}]*)\}', r'\1', parts[2]).replace('//', '/').split(' => ')[-1]
-        if OWN.match(path) and not generated(rev, path):
-            total += max(0, int(parts[0]) - int(parts[1]))
+        if OWN.match(path) and not generated(rev, path) and int(parts[0]) > int(parts[1]):
+            total += int(parts[0]) - int(parts[1])
+            longer.append(path)
+    LONGER[:] = longer
     return total
 
 
@@ -186,6 +219,29 @@ def like_these(diff):
         return []
 
 
+if sys.argv[1:2] == ['--grants']:
+    try:
+        sys.stdout.write(open(grants_file(), encoding='utf-8').read())
+    except OSError:
+        pass
+    sys.exit(0)
+
+if sys.argv[1:2] == ['--grant']:
+    import time
+    if worker():
+        sys.exit('own code check: a grant is the lead\'s to give, from the main checkout; a worker asks for it in its report')
+    if len(sys.argv) < 5:
+        sys.exit('own code check: --grant WORKTREE PATH WHY...   (PATH a file of ours, or a folder ending in /)')
+    name, path, why = sys.argv[2], sys.argv[3], ' '.join(sys.argv[4:])
+    if not os.path.isdir(os.path.join(git('rev-parse', '--show-toplevel').strip(), '.claude/worktrees', name)):
+        sys.exit(f'own code check: no worktree .claude/worktrees/{name}')
+    if not (OWN.match(path) or (path.endswith('/') and path.startswith(('app/lib/', 'engine/')))):
+        sys.exit(f'own code check: {path} is not a file of ours (app/lib Dart, engine C++ and materials) or a folder of them ending in /')
+    with open(grants_file(), 'a', encoding='utf-8') as f:
+        f.write('\t'.join([name, path, time.strftime('%Y-%m-%d %H:%M'), why.replace('\t', ' ').replace('\n', ' ')]) + '\n')
+    print(f'granted to {name}: {path}   ({why})')
+    sys.exit(0)
+
 if sys.argv[1:2] == ['--range']:
     failed = False
     for h in git('log', '--no-merges', '--format=%H', sys.argv[2]).split():
@@ -209,6 +265,15 @@ with open(sys.argv[1], encoding='utf-8', errors='replace') as f:
 net = own_lines(git('diff', '--cached', '--numstat', '-M'), '')
 deleted = [l.split('\t', 1)[1] for l in git('diff', '--cached', '--name-status', '-M', '--diff-filter=D').splitlines() if '\t' in l]
 gone = taken_away('HEAD', '', deleted)
+ungranted = [p for p in LONGER if not granted(worker(), p)] if worker() else []
+if ungranted:
+    print('own code check refused (rule: a worker lengthens a file of ours only on the lead\'s word; .githooks/README.md):\n  '
+          + '\n  '.join(f'{p}: longer than it was, and not granted to {worker()}' for p in ungranted) +
+          '\nThe free way: hand the work to what exists and leave these files no longer; no one is asked. Search it:'
+          ' python3 .githooks/what_exists.py WORD...\nThe dear way starts with a round trip in which nothing of yours moves:'
+          ' ask the lead in your report (the file, what the lines do, the files what_exists finds and why none of them does it).'
+          ' The lead grants it or tells you which file to hand the work to.', file=sys.stderr)
+    sys.exit(1)
 if net > 0 or gone:
     like = like_these(git('diff', '--cached', '-U0', '--', 'app/lib', 'engine')) if net > 0 else []
     if wrong := judge(message, net, gone, like, ''):
