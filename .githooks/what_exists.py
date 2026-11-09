@@ -2,6 +2,9 @@
 # What is already here that does this? Asked in words, on both sides of the app.
 #   what_exists.py WORD...          by hand, both sides:  python3 .githooks/what_exists.py wave copies noise
 #   what_exists.py --text SIDE      the words of a text on stdin (an edit, a diff): what it is most about. SIDE: engine | dart
+#   what_exists.py --sketch SIDE    a sketch on stdin: code written as one wishes it could be, before anything is looked
+#                                   up (it need not run). Each name it calls is asked for: exists, something near, or
+#                                   nothing. What is left as nothing is all that would be ours to write.
 #   nearest(top, text, side)        the same from Python (.claude/hooks/own_code_sign.py, .githooks/own_code_check.py)
 # What is asked, read at its head each time (nothing is kept, so nothing goes stale):
 #   engine side: every file that is a behaviour to run on the shelves and in the adapters (shelves/, engine/community/):
@@ -147,8 +150,44 @@ def nearest(top, text, side='engine', limit=12, words=None, least=2, made=None, 
     return found, count
 
 
+# Names of the languages' own libraries: they exist, and say nothing of what is being made.
+CORE = set('String int double bool num List Map Set Future Stream Object Duration Function Iterable Widget BuildContext Key Color Offset Size '
+           'Rect print setState super override main vector string map set function array size_t uint32_t int64_t'.split())
+
+
+def sketch(top, text, side):
+    """A sketch is code written as one wishes it could be, before anything is looked up: it need not run. Every name it
+    calls or constructs is asked for: [(name, 'is' | 'like' | 'nothing', [(id, shown)])]. What comes back 'nothing' is
+    all that would be ours to write."""
+    made = index(top)
+    db = made[0]
+    names = []
+    for n in re.findall(r'(?<![A-Za-z_.])([A-Za-z_][A-Za-z0-9_]*)\s*(?:<[^<>()]*>)?\(', text):
+        if n not in names and n not in CORE and n.lower() not in LANGUAGE and n not in ('if', 'for', 'while', 'switch', 'return', 'catch', 'assert'):
+            names.append(n)
+    out = []
+    for n in names:
+        exact = [(i, shown) for s, i, shown in db.execute('select side, id, shown from thing where key = ?', (n,)) if not side or s == side]
+        if exact:
+            out.append((n, 'is', exact[:2]))
+            continue
+        words = [w for w in split(n) if w not in LANGUAGE]
+        like = nearest(top, n, side, limit=3, words=words, least=1, made=made)[0] if words else []
+        out.append((n, 'like' if like else 'nothing', [(i, shown) for i, shown, _ in like]))
+    return out
+
+
 if __name__ == '__main__':
     top = subprocess.run(['git', 'rev-parse', '--show-toplevel'], capture_output=True, text=True).stdout.strip()
+    if sys.argv[1:2] == ['--sketch']:
+        found = sketch(top, sys.stdin.read(), sys.argv[2] if len(sys.argv) > 2 else 'dart')
+        for name, how, things in found:
+            print(f'{name}: {"exists" if how == "is" else "nothing is called this; the nearest" if how == "like" else "nothing here does this"}')
+            for i, shown in things:
+                print(f'    {i}   — {shown}')
+        counts = {h: sum(1 for _, how, _ in found if how == h) for h in ('is', 'like', 'nothing')}
+        print(f'{len(found)} names: {counts["is"]} exist, {counts["like"]} have something near, {counts["nothing"]} would be ours to write', file=sys.stderr)
+        sys.exit(0)
     if sys.argv[1:2] == ['--text']:
         found, count = nearest(top, sys.stdin.read(), sys.argv[2] if len(sys.argv) > 2 else 'engine')
     else:
