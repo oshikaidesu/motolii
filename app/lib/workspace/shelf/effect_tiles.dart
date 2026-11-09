@@ -8,7 +8,7 @@
 // shows; with no knob to turn, the line between before and after goes across it. No tile stands but one that shows nothing.
 // AbsentMotion's own effects keep their line of the table. Sixteen pictures a twelfth of a second apart, as its moving
 // tiles, played there and back at 24 a second, so nothing steps or jumps where it starts again. The sample is the balloon
-// fx_tiles.sh draws on (fx_sample.jpg). Drawn on a
+// fx_tiles.sh draws on (shelves/effects/sources/fx_sample.jpg). Drawn on a
 // document of its own in another isolate (as create_preview.dart reckons the recipes), where the inside says one drawn
 // for it goes (its home in ~/Library/Caches/Motolii/tiles, named by the file and when it was written: doc_recipes.h
 // doc_tile), then shown at once. Put on as fx_tiles.sh and edit.sh say it: a screen effect (.fs, .wgsl) on the whole
