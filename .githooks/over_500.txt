@@ -7,7 +7,6 @@
 691 app/lib/workspace/dock/dock_make_colours.dart
 605 app/lib/workspace/dock/dock_parts.dart
 649 app/lib/workspace/shelf/effect_tiles.dart
-1028 engine/community/aviutl/aviutl_fx.h
 589 engine/document/doc_edit.h
 726 engine/document/doc_match.h
 708 engine/document/doc_moment.h
@@ -19,8 +18,6 @@
 631 engine/stage/drawn/drawn_made.h
 510 engine/stage/kit/kit_stage.h
 514 engine/stage/kit/kit_things.h
-793 engine/library/motolii_calls.h
-615 engine/library/motolii_hand.h
 529 shelves/recipes/on_film/Blob Track.js
 531 engine/stage/screen.h
 565 engine/community/js/script.cpp
