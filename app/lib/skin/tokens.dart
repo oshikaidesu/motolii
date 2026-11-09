@@ -4,12 +4,6 @@ import 'package:material_color_utilities/hct/hct.dart';
 
 import 'theme.dart';
 
-/// The one motion of the book: 120 ms, ease-out, started the moment the input lands. Every state change (hover, select, drop) uses this and nothing else.
-abstract final class Mo {
-  static const dur = Duration(milliseconds: 120);
-  static const ease = Curves.easeOut;
-}
-
 abstract final class N {
   static const g00 = Color(0xFF000000), g07 = Color(0xFF131313), g10 = Color(0xFF191919), g13 = Color(0xFF202020), g15 = Color(0xFF262626);
   static const g20 = Color(0xFF343434), g26 = Color(0xFF424242), g38 = Color(0xFF616161), g44 = Color(0xFF717171), g56 = Color(0xFF8E8E8E);

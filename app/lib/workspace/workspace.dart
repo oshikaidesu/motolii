@@ -8,7 +8,6 @@ import 'dart:math' as math;
 import 'package:docking/docking.dart';
 import 'package:flutter/widgets.dart';
 
-import '../skin/svg_parts.dart';
 import 'window/zoom.dart';
 import 'commands/command_actions.dart';
 import 'package:motolii/inspector/inspector_parts_insp_host.dart';
@@ -61,7 +60,6 @@ class _WorkspaceState extends State<Workspace> {
     super.initState();
     FocusManager.instance.addListener(_keepKeys);
     ColorTheme.watch(() => WidgetsBinding.instance.reassembleApplication());
-    SkinParts.follow(); // (the theme's drawn parts: an SVG folder, read when the theme names it)   // (the theme file: read, and read again when written; the window built again in place)
     _join(
       widget.document ?? '${Directory.systemTemp.createTempSync('motolii').path}/Untitled.motolii',
     ); // (no document given: a new one, as After Effects opens an untitled project)
