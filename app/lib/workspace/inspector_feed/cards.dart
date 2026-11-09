@@ -160,7 +160,7 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
 double _onCard(Ws ws, Motolii m, int t, String n, double at) {
   final seen = const {'x', 'y', 'z', 'rotate', 'scale_x', 'scale_y', 'opacity'}.contains(n)
       ? m.shows(t, n, at)
-      : null; // (the values the moment's copy carries as the stage shows them: picture.h)
+      : null; // (the values the moment's copy carries as the stage shows them: snapshot.h)
   if (seen != null) {
     return _shown(m, t, n, seen.$1); // (where it shows: a hand carrying it, a relation moving it, as After Effects shows a value an expression drives)
   }

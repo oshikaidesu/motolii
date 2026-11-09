@@ -143,7 +143,7 @@ final _keysAtOf = Expando<(int, String, int, Map<String, double>)>();
 Map<String, double> _keysAt(Motolii m, int t, EaseSpan span) {
   return {
     for (final name in m.moving(t))
-      for (final s in m.keyMoments(t, name))
+      for (final s in m.keyTimes(t, name))
         if ((s * Ws.fps).round() == span.from) name: s,
   };
 }
@@ -156,11 +156,11 @@ List<Ease> easingsWithoutTile(Ws ws) {
   final m = ws.inside;
   if (m == null) return const [];
   if (_untiledOf[m] case (final was, final tiles) when was == '${ws.reads}') return tiles; // (the ways asked again only when the document is read again)
-  final names = m.wayNames, said = '${ws.reads}';
+  final names = m.easingNames, said = '${ws.reads}';
   final tiles = [
     for (final name in names)
       if (name != 'Bezier' && !easeIsLaid(name) && !easeIsTurned(name) && easingPresets.every((p) => p.name != name))
-        Ease(EaseKind.bezier, Offset.zero, const Offset(1, 1), name, [for (var i = 0; i <= 32; i++) m.wayAt(name, i / 32)]),
+        Ease(EaseKind.bezier, Offset.zero, const Offset(1, 1), name, [for (var i = 0; i <= 32; i++) m.easingAt(name, i / 32)]),
   ];
   _untiledOf[m] = (said, tiles);
   return tiles;

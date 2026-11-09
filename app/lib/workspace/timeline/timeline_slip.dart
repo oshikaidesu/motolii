@@ -28,7 +28,7 @@ extension _WsTimelineSlip on _WsTimelineState {
     final whole = _barWhole, m = ws.inside!;
     if (whole == null) return;
     final to = by.clamp(math.min(0, _barOut - whole.$2), math.max(0, _barIn - whole.$1));
-    m.carry('begin', (_barIn - whole.$1 - to) * _speedOf(m, t) / Ws.fps);
+    m.dragUpdate('begin', (_barIn - whole.$1 - to) * _speedOf(m, t) / Ws.fps);
     setState(() {});
   }
 }

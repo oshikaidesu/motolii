@@ -30,7 +30,7 @@ extension _StageViewDraw on _StageViewState {
     final x = ((kind == 'text' || tiny ? a.dx : mid.dx) - c.width / 2) / p, y = (c.height / 2 - (kind == 'text' || tiny ? a.dy : mid.dy)) / p;
     final cut = widget.mask ? int.tryParse(ws.selected ?? '') : null;
     // (one step, asked without waiting: the new thing is the one the add made (thing -1), picked once it is there)
-    final before = m.things.length;
+    final before = m.layers.length;
     m.later('together', number: 1);
     var made = 0;
     ws.after(
@@ -39,32 +39,32 @@ extension _StageViewDraw on _StageViewState {
       (t) => made = t,
     ); // (a text in the body's font, as a text box is in PowerPoint's Body font)
     m
-      ..later('set', thing: -1, name: 'x', number: x)
-      ..later('set', thing: -1, name: 'y', number: y);
+      ..later('set', layer: -1, name: 'x', number: x)
+      ..later('set', layer: -1, name: 'y', number: y);
     wsInked(ws, kind == 'text' ? 'text' : 'shape', kind); // (the drawing inks)
     if (kind == 'text') {
-      m.later('set', thing: -1, name: 'anchor_x', number: -1); // (the words begin where the hand came down: After Effects' point text, Figma's, Illustrator's)
+      m.later('set', layer: -1, name: 'anchor_x', number: -1); // (the words begin where the hand came down: After Effects' point text, Figma's, Illustrator's)
     }
     if (cut != null) {
       // (Mask: it lies just behind the picked thing, and that one is clipped by it; not seen itself: it only cuts, as After Effects' matte)
-      final all = m.things;
+      final all = m.layers;
       if (all.contains(cut)) {
         m
-          ..later('raise', thing: -1, number: (all.indexOf(cut) - before).toDouble())
-          ..later('set', thing: cut, name: 'clip', number: 1)
-          ..later('set', thing: -1, name: 'opacity', number: 0);
+          ..later('raise', layer: -1, number: (all.indexOf(cut) - before).toDouble())
+          ..later('set', layer: cut, name: 'clip', number: 1)
+          ..later('set', layer: -1, name: 'opacity', number: 0);
       }
     }
     if (!tiny && kind != 'text') {
       if (kind == 'line') {
         // (a line is a twenty-fifth of a unit thick: as long as drawn, turned as drawn)
         m
-          ..later('set', thing: -1, name: 'wide', number: d.distance / p / .04)
-          ..later('set', thing: -1, name: 'rotate', number: math.atan2(d.dy, d.dx) * 180 / math.pi);
+          ..later('set', layer: -1, name: 'wide', number: d.distance / p / .04)
+          ..later('set', layer: -1, name: 'rotate', number: math.atan2(d.dy, d.dx) * 180 / math.pi);
       } else {
         m
-          ..later('set', thing: -1, name: 'size', number: d.dy.abs() / p)
-          ..later('set', thing: -1, name: 'wide', number: d.dx.abs() / math.max(d.dy.abs(), 1e-3));
+          ..later('set', layer: -1, name: 'size', number: d.dy.abs() / p)
+          ..later('set', layer: -1, name: 'wide', number: d.dx.abs() / math.max(d.dy.abs(), 1e-3));
       }
     }
     ws.after(m.later('together'), (done, _) {
@@ -95,9 +95,9 @@ extension _StageViewDraw on _StageViewState {
       wsInked(ws, 'shape', 'path');
     } else {
       m
-        ..later('say', thing: -1, name: 'fill', word: 'none')
-        ..later('say', thing: -1, name: 'stroke', word: ws.ink.isEmpty || ws.ink.contains(' ') ? 'ffffff' : ws.ink)
-        ..later('set', thing: -1, name: 'stroke_width', number: 6);
+        ..later('say', layer: -1, name: 'fill', word: 'none')
+        ..later('say', layer: -1, name: 'stroke', word: ws.ink.isEmpty || ws.ink.contains(' ') ? 'ffffff' : ws.ink)
+        ..later('set', layer: -1, name: 'stroke_width', number: 6);
     }
     ws.after(m.later('together'), (done, _) => done && made > 0 ? ws.select('$made') : null);
   }
@@ -120,7 +120,7 @@ extension _StageViewDraw on _StageViewState {
         ws.notice = 'Pick a drawing to erase from';
         return;
       }
-      ws.after(m.later('brush', thing: into, word: '3 ${options.size} ${said.join(' ')}'), (done, why) {
+      ws.after(m.later('brush', layer: into, word: '3 ${options.size} ${said.join(' ')}'), (done, why) {
         if (!done) ws.notice = why;
       });
       return;
@@ -130,7 +130,7 @@ extension _StageViewDraw on _StageViewState {
     ws.after(m.later('brush', word: '${widget.brushTool} ${options.size} ${said.join(' ')}'), null, (t) => made = t);
     m.later(
       'say',
-      thing: -1,
+      layer: -1,
       name: 'fill',
       word: ws.ink.isEmpty ? 'ffffff' : ws.ink,
     ); // (an outline with no fill shows nothing: white, as a drawing app's brush begins, when no ink is chosen)

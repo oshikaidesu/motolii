@@ -42,12 +42,12 @@ WsMove? wsMoveOf(Motolii m, int by) {
   if (m.word(by, 'kind') != 'behaviour' || m.word(by, 'file') != 'group') return null;
   final who = [
     for (final w in m.word(by, 'members').split(' '))
-      if (int.tryParse(w) case final t? when m.things.contains(t)) t,
+      if (int.tryParse(w) case final t? when m.layers.contains(t)) t,
   ];
-  final keys = m.keyMoments(by, 'strength');
+  final keys = m.keyTimes(by, 'strength');
   final start = keys.isEmpty ? 0.0 : keys.first, end = keys.length > 1 ? keys[1] : start + .6;
   final coming = keys.length < 2 || (m.value(by, 'strength', start) ?? 1) >= (m.value(by, 'strength', end) ?? 0);
-  final way = m.wayOf(by, 'strength', start).split(' ');
+  final way = m.easingOf(by, 'strength', start).split(' ');
   final bez = way.first == 'Bezier' && way.length == 5 ? [for (final w in way.skip(1)) double.tryParse(w) ?? 0] : null;
   return WsMove(
     by,
@@ -80,15 +80,15 @@ void wsMakeMove(Ws ws, List<String> who, double start) {
   final coming = !wsMoves(ws).any((o) => o.who.any((t) => who.contains('$t')));
   m.later('together', number: 1);
   ws.after(m.later('add', name: 'behaviour', word: 'group'), null, (b) => ws.select('$b'));
-  m.later('set', thing: -1, name: 'strength', number: 1);
-  m.later('say', thing: -1, name: 'name', word: wsMoveName(ws, who, coming));
-  m.later('relate', thing: -1, word: who.join(' '));
-  m.later('set', thing: -1, name: 'lag', number: .08);
-  m.later('set', thing: -1, name: 'y', number: -.15);
-  m.later('set', thing: -1, name: 'opacity', number: 0);
-  m.later('key', thing: -1, name: 'strength', word: '$start', number: coming ? 1 : 0);
-  m.later('key', thing: -1, name: 'strength', word: '${start + .6}', number: coming ? 0 : 1);
-  m.later('way', thing: -1, name: 'strength', number: start, word: wsMoveWay(.8, 0));
+  m.later('set', layer: -1, name: 'strength', number: 1);
+  m.later('say', layer: -1, name: 'name', word: wsMoveName(ws, who, coming));
+  m.later('relate', layer: -1, word: who.join(' '));
+  m.later('set', layer: -1, name: 'lag', number: .08);
+  m.later('set', layer: -1, name: 'y', number: -.15);
+  m.later('set', layer: -1, name: 'opacity', number: 0);
+  m.later('key', layer: -1, name: 'strength', word: '$start', number: coming ? 1 : 0);
+  m.later('key', layer: -1, name: 'strength', word: '${start + .6}', number: coming ? 0 : 1);
+  m.later('easing', layer: -1, name: 'strength', number: start, word: wsMoveWay(.8, 0));
   ws.after(m.later('together'), (done, why) {
     if (!done) ws.notice = 'No move made: $why'; // (the step undone as a whole: why, on the top bar)
     ws.reread();
@@ -97,7 +97,7 @@ void wsMakeMove(Ws ws, List<String> who, double start) {
 
 /// One of the other end's values (or the lag) told; a hand's drag is one step when begun and ended with [wsMoveHold].
 void wsMoveSet(Ws ws, int by, String name, double v) {
-  if (ws.inside case final m?) ws.after(m.later('set', thing: by, name: name, number: v), (_, _) => ws.reread());
+  if (ws.inside case final m?) ws.after(m.later('set', layer: by, name: name, number: v), (_, _) => ws.reread());
 }
 
 /// A hand's changes from its press to its letting go: one step.
@@ -110,12 +110,12 @@ void wsMoveTime(Ws ws, WsMove mv, double start, double length) {
   start = math.max(0, start);
   length = math.max(.05, length);
   m.later('together', number: 1);
-  for (final k in m.keyMoments(mv.by, 'strength')) {
-    m.later('unkey', thing: mv.by, name: 'strength', number: k);
+  for (final k in m.keyTimes(mv.by, 'strength')) {
+    m.later('unkey', layer: mv.by, name: 'strength', number: k);
   }
-  m.later('key', thing: mv.by, name: 'strength', word: '$start', number: mv.coming ? 1 : 0);
-  m.later('key', thing: mv.by, name: 'strength', word: '${start + length}', number: mv.coming ? 0 : 1);
-  m.later('way', thing: mv.by, name: 'strength', number: start, word: wsMoveWay(mv.out, mv.over));
+  m.later('key', layer: mv.by, name: 'strength', word: '$start', number: mv.coming ? 1 : 0);
+  m.later('key', layer: mv.by, name: 'strength', word: '${start + length}', number: mv.coming ? 0 : 1);
+  m.later('easing', layer: mv.by, name: 'strength', number: start, word: wsMoveWay(mv.out, mv.over));
   ws.after(m.later('together'), (_, _) => ws.reread());
 }
 
@@ -124,16 +124,16 @@ void wsMoveTurn(Ws ws, WsMove mv) {
   final m = ws.inside;
   if (m == null) return;
   m.later('together', number: 1);
-  m.later('key', thing: mv.by, name: 'strength', word: '${mv.start}', number: mv.coming ? 0 : 1);
-  m.later('key', thing: mv.by, name: 'strength', word: '${mv.start + mv.length}', number: mv.coming ? 1 : 0);
-  if (mv.by > 0) m.later('say', thing: mv.by, name: 'name', word: wsMoveName(ws, [for (final t in mv.who) '$t'], !mv.coming));
+  m.later('key', layer: mv.by, name: 'strength', word: '${mv.start}', number: mv.coming ? 0 : 1);
+  m.later('key', layer: mv.by, name: 'strength', word: '${mv.start + mv.length}', number: mv.coming ? 1 : 0);
+  if (mv.by > 0) m.later('say', layer: mv.by, name: 'name', word: wsMoveName(ws, [for (final t in mv.who) '$t'], !mv.coming));
   ws.after(m.later('together'), (_, _) => ws.reread());
 }
 
 /// How the move eases.
 void wsMoveEase(Ws ws, WsMove mv, double out, double over) {
   if (ws.inside case final m?) {
-    ws.after(m.later('way', thing: mv.by, name: 'strength', number: mv.start, word: wsMoveWay(out.clamp(0, 1), over.clamp(0, .6))), (_, _) => ws.reread());
+    ws.after(m.later('easing', layer: mv.by, name: 'strength', number: mv.start, word: wsMoveWay(out.clamp(0, 1), over.clamp(0, .6))), (_, _) => ws.reread());
   }
 }
 
@@ -171,7 +171,7 @@ final wsPosesTold = ValueNotifier<int>(0);
 /// A thing's own value at a moment, as the document says it (its own place, not where a relation shows it): from the copies
 /// when they hold it, another moment asked ([Motolii.valuesAt]) and kept as [wsShows] keeps where it shows.
 double wsValue(Motolii m, int t, String n, double at, double or) {
-  if (!m.moving(t).contains(n) || at == 0 || m.keyMoments(t, n).any((k) => (k - at).abs() < .5 / m.rate)) {
+  if (!m.moving(t).contains(n) || at == 0 || m.keyTimes(t, n).any((k) => (k - at).abs() < .5 / m.rate)) {
     return m.value(t, n, at) ?? or; // (the document's copy holds it: as it stays, at its first moment, at a key)
   }
   if (m.isNow(at)) {

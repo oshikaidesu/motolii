@@ -34,7 +34,7 @@ double _unshown(Motolii m, int t, String n, double x) {
 
 // (the moment of the picture on the stage, at a frame: what is read there was set down by the inside as it drew it,
 //  not waited for while it tells the stage a moment the playhead has just been put at)
-double _drawn(Ws ws) => ws.inside?.drawnAt ?? ws.frame / Ws.fps;
+double _drawn(Ws ws) => ws.inside?.renderedAt ?? ws.frame / Ws.fps;
 
 /// Joined: only where a thing is, how large and how turned (the inspector's properties), as the stage's readout shows them:
 /// not the cards' hundreds of numbers [wsTransform] reads.
@@ -66,7 +66,7 @@ Map<String, double> wsTransform(Ws ws, String? id) {
     final at = _drawn(ws);
     double r1(double x) => (x * 10).roundToDouble() / 10 + 0; // (+ 0: no minus nought)
     return {
-      'depth': r1(m.frame(t)?[7] ?? 0), // (how deep it is in points of the picture: a flat thing is Flat)
+      'depth': r1(m.bounds(t)?[7] ?? 0), // (how deep it is in points of the picture: a flat thing is Flat)
       for (final (_, names) in m.cards(t))
         for (final n in names) 'v_$n': _onCard(ws, m, t, n, at),
     };
@@ -89,7 +89,7 @@ void _write(Ws ws, String? id, Map<String, double> changed, {required bool live}
     for (final e in said.entries) {
       final ways = m.words(t!, e.key.substring(2));
       for (final o in [t, ..._withIt(ws, t)]) {
-        m.later('say', thing: o, name: e.key.substring(2), word: ways[e.value.round().clamp(0, ways.length - 1)]);
+        m.later('say', layer: o, name: e.key.substring(2), word: ways[e.value.round().clamp(0, ways.length - 1)]);
       }
     }
     ws.after(m.later('together'), (done, why) => _told(ws, done ? null : why));
@@ -105,7 +105,7 @@ void _write(Ws ws, String? id, Map<String, double> changed, {required bool live}
     changed = {...changed}..remove('v_speed');
     if (!live) {
       ws.after(
-        m.later('time_stretch', thing: t, number: speed, word: '${m.word(t, 'speed_hold').isEmpty ? 'start' : m.word(t, 'speed_hold')} ${ws.frame / Ws.fps}'),
+        m.later('time_stretch', layer: t, number: speed, word: '${m.word(t, 'speed_hold').isEmpty ? 'start' : m.word(t, 'speed_hold')} ${ws.frame / Ws.fps}'),
         (done, why) => done ? ws.reread() : _told(ws, why),
       );
     }
@@ -122,7 +122,7 @@ void _write(Ws ws, String? id, Map<String, double> changed, {required bool live}
   for (final e in changed.entries) {
     final to = _asDocument(ws, e.key, e.value);
     if (to != null) _found[to.$1] ??= m.value(t, to.$1, now) ?? to.$2;
-    if (to != null && !m.carry(to.$1, to.$2)) why ??= m.trouble;
+    if (to != null && !m.dragUpdate(to.$1, to.$2)) why ??= m.error;
     if (to != null) carried[to.$1] = to.$2;
     if (to == null) why ??= 'the document has no ${e.key}: '; // (a property the document has no value for says so, rather than keep the number)
   }
@@ -132,14 +132,14 @@ void _write(Ws ws, String? id, Map<String, double> changed, {required bool live}
   } else {
     final also = _withIt(ws, t);
     if (also.isNotEmpty) m.later('together', number: 1);
-    var kept = m.later('let_go', number: 1);
+    var kept = m.later('drag_end', number: 1);
     for (final o in also) {
       // (After Effects' and Figma's: a value changed with many picked is changed on them all that have it, a number dragged by as much, one typed to it)
       m.take(o);
       for (final e in carried.entries) {
-        m.carry(e.key, dragged ? (m.value(o, e.key, now) ?? e.value) + e.value - _found[e.key]! : e.value);
+        m.dragUpdate(e.key, dragged ? (m.value(o, e.key, now) ?? e.value) + e.value - _found[e.key]! : e.value);
       }
-      m.later('let_go', number: 1);
+      m.later('drag_end', number: 1);
     }
     if (also.isNotEmpty) kept = m.later('together');
     ws.after(kept, (done, no) => _told(ws, why ?? (done ? null : no))); // (the hand let go: the window does not wait for the step)
@@ -232,8 +232,8 @@ bool _say(Ws ws, String? id, Map<String, String> changed) {
     if (!e.key.startsWith('v_')) continue;
     final n = e.key.substring(2);
     m.shown(n)?.look == 'thing'
-        ? m.later('set', thing: t, name: n, number: (_others(ws, t)[e.value] ?? 0).toDouble()) // (another thing, told by its name: it goes with that one)
-        : m.later('say', thing: t, name: n, word: e.value); // (a card's value of that name)
+        ? m.later('set', layer: t, name: n, number: (_others(ws, t)[e.value] ?? 0).toDouble()) // (another thing, told by its name: it goes with that one)
+        : m.later('say', layer: t, name: n, word: e.value); // (a card's value of that name)
   }
   ws.after(m.later('together'), (done, no) => _told(ws, done ? null : no));
   return true;

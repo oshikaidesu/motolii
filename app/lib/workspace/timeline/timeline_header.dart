@@ -331,7 +331,7 @@ class _TempoState extends State<_Tempo> {
 
   void _set(double bpm) {
     final ws = widget.ws;
-    ws.after(ws.inside!.later('set', thing: 0, name: 'bpm', number: bpm.clamp(0, 999)), (_, _) => ws.reread());
+    ws.after(ws.inside!.later('set', layer: 0, name: 'bpm', number: bpm.clamp(0, 999)), (_, _) => ws.reread());
   }
 
   void _tap() {

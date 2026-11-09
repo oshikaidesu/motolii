@@ -19,14 +19,14 @@ extension _WsTimelineDrag on _WsTimelineState {
     if (m == null || r == null || r.value == null || _isLocked(ws, r.l.id)) return;
     final t = int.parse(r.l.id), name = r.value!, row = _laneRow(ws, r.l, name), pts = row.lane ?? const [];
     if (pts.isEmpty) return;
-    for (final k in m.keyMoments(t, name)) {
-      if ((v.x((k * Ws.fps).round()) - p.dx).abs() <= WtM.keyPicked + 2) return ws.after(m.later('unkey', thing: t, name: name, number: k));
+    for (final k in m.keyTimes(t, name)) {
+      if ((v.x((k * Ws.fps).round()) - p.dx).abs() <= WtM.keyPicked + 2) return ws.after(m.later('unkey', layer: t, name: name, number: k));
     }
     final now = DateTime.now(), twice = _lanePressed != null && now.difference(_lanePressed!) < kDoubleTapTimeout && (p - _laneAt).distance < kDoubleTapSlop;
     _lanePressed = twice ? null : now;
     _laneAt = p;
     final f = v.frameAt(p.dx);
-    if (twice) return ws.after(m.later('key_here', thing: t, name: name, number: f.round().clamp(0, Ws.duration) / Ws.fps));
+    if (twice) return ws.after(m.later('key_here', layer: t, name: name, number: f.round().clamp(0, Ws.duration) / Ws.fps));
     final from = pts.where((q) => q.$1 <= f).lastOrNull?.$1, inside = from != null && pts.any((q) => q.$1 > f);
     inside ? ws.pickStretch(r.l.id, name, from) : ws.clearKeys();
   }
@@ -75,7 +75,7 @@ extension _WsTimelineDrag on _WsTimelineState {
     if (r.value case final n?) {
       // (a lane: over a breakpoint, it is taken by a click)
       final t = int.parse(l.id);
-      final at = ws.inside!.keyMoments(t, n), f = v.frameAt(p.dx) / Ws.fps;
+      final at = ws.inside!.keyTimes(t, n), f = v.frameAt(p.dx) / Ws.fps;
       return at.any((k) => (v.x((k * Ws.fps).round()) - p.dx).abs() <= WtM.keyPicked + 2) || (at.isNotEmpty && f > at.first && f < at.last)
           ? SystemMouseCursors.click
           : SystemMouseCursors.precise;

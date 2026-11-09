@@ -42,7 +42,7 @@ class _ScriptCodeState extends State<ScriptCode> {
     File(to).writeAsStringSync(text);
     if (to != said) {
       _mine = to;
-      m.later('say', thing: widget.thing, name: 'script', word: to);
+      m.later('say', layer: widget.thing, name: 'script', word: to);
     }
     ws.after(m.later('code', word: to), (done, why) {
       if (!done) ws.notice = why; // (half typed: what ran stays, doc_script_of)

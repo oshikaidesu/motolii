@@ -102,7 +102,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
           onApply: chosen('empty:effect', () => emptyPut(ws, expression: false, told: (why) => why.isEmpty ? null : ws.notice = 'Not taken: $why')),
         ),
       ),
-      for (final (n, _) in m.thingEffects)
+      for (final (n, _) in m.layerEffects)
         (
           id: n,
           name: n,
@@ -113,7 +113,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
           tile: (small) => EffectTile(
             n,
             small: small,
-            file: m.picture(n),
+            file: m.tileImage(n),
             look: _FxLook(n),
             on: on.contains(n) ? 'ON' : null,
             picked: c.sel == n,
@@ -143,7 +143,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
             n,
             key: small ? null : ValueKey('ws-screen-$f'),
             small: small,
-            file: m.picture(f),
+            file: m.tileImage(f),
             same: m.tileSame(f) ? EffectTiles.sameTag(f) : null,
             on: screen.contains(f) ? 'ON ${screen.indexOf(f) + 1}' : null,
             picked: c.sel == f,
@@ -156,7 +156,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
           ),
         ),
       // (a look kept by its name, Save Look: given to the picked thing, its values, effects and keys)
-      for (final (n, f) in m.looks)
+      for (final (n, f) in m.presets)
         (
           id: f,
           name: n,
@@ -168,7 +168,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
             n,
             key: small ? null : ValueKey('ws-look-$n'),
             small: small,
-            file: m.picture(f),
+            file: m.tileImage(f),
             on: null,
             picked: c.sel == f,
             onTap: () => c.pick(f),
@@ -264,7 +264,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
         if (chip == 'All' || (chip.startsWith('#') ? tagsOf(e.id).contains(chip.substring(1)) : e.label == chip)) e,
     ];
     // (one a deck holds and the shelf does not: its name kept, marked; not an effect of a thing, which waits for a thing)
-    final known = {...every.map((e) => e.id), ...m.thingEffects.map((e) => e.$1), ...m.looks.map((e) => e.$2), ...m.animators.map((e) => e.$2)};
+    final known = {...every.map((e) => e.id), ...m.layerEffects.map((e) => e.$1), ...m.presets.map((e) => e.$2), ...m.animators.map((e) => e.$2)};
     if (deck != null && deck.things.any((t) => !known.contains(t.id))) deckSettle(deck, known);
     final lost = <_Fx>[
       if (deck != null && c.query.isEmpty)
@@ -345,7 +345,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
             children: [
               SizedBox.square(
                 dimension: Shape.z(18),
-                child: m.picture(e.id).isEmpty ? ColoredBox(color: WsT.card) : TileMoving(m.picture(e.id), playing: true),
+                child: m.tileImage(e.id).isEmpty ? ColoredBox(color: WsT.card) : TileMoving(m.tileImage(e.id), playing: true),
               ), // (played while in sight: TileMoving's own)
               SizedBox(width: Shape.s(6)),
               Expanded(
@@ -366,7 +366,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     Widget? cover(Iterable<String> ids) {
       final f = [
         for (final id in ids)
-          if (m.picture(id) case final p when p.isNotEmpty) p,
+          if (m.tileImage(id) case final p when p.isNotEmpty) p,
       ].take(4).toList();
       Widget one(String p) => TileMoving(p, playing: false);
       return f.isEmpty
@@ -464,12 +464,12 @@ class _EffectsShelfState extends State<EffectsShelf> {
                           final clip = dockModel('clip_b32'); // (by how CLIP sees each moment, once it is made; else by tiny colours)
                           final drawn = [
                             for (final e in every)
-                              if (m.picture(e.id).isNotEmpty) e,
+                              if (m.tileImage(e.id).isNotEmpty) e,
                           ];
                           if (!drawing || map.places.value.isEmpty) {
                             map.need(
                               m,
-                              [for (final e in drawn) (e.id, m.picture(e.id))],
+                              [for (final e in drawn) (e.id, m.tileImage(e.id))],
                               (from) => _fxNumbers(m, clip, [for (final e in drawn) e.label], from),
                               also: '${clip ?? ''} kinds',
                             );
@@ -479,7 +479,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
                             [for (final e in listed) (e.id, tile(e, true))],
                             picked: c.sel,
                             press: c.pick,
-                            peek: (id) => TileMoving(m.picture(id), playing: true),
+                            peek: (id) => TileMoving(m.tileImage(id), playing: true),
                             names: {for (final e in every) e.id: e.name},
                           );
                         },
@@ -551,8 +551,8 @@ class _EffectsShelfState extends State<EffectsShelf> {
             ),
           ),
           if (sel != null &&
-              m.picture(sel.id).isNotEmpty) // (its pictures large and moving, as Alight Motion's effect browser opens a large moving sample of the one pressed)
-            SizedBox(key: const ValueKey('ws-fx-preview'), height: Shape.z(140), child: TileMoving(m.picture(sel.id), playing: true)),
+              m.tileImage(sel.id).isNotEmpty) // (large and moving, as Alight Motion's effect browser opens a large moving sample of the one pressed)
+            SizedBox(key: const ValueKey('ws-fx-preview'), height: Shape.z(140), child: TileMoving(m.tileImage(sel.id), playing: true)),
           if (sel != null)
             _FxFooter(
               sel.name,
@@ -785,7 +785,7 @@ Future<List<Float32List?>> _fxNumbers(Motolii m, String? clip, List<String> kind
 /// Joined: the document's value an effect is, and what the picked thing has for it now.
 String _said(Ws ws, String name) {
   final m = ws.inside!,
-      v = m.thingEffects.firstWhere((e) => e.$1 == name).$2,
+      v = m.layerEffects.firstWhere((e) => e.$1 == name).$2,
       t = int.tryParse(ws.selected ?? ''); // (the shelf shows only what the inside does)
   final now = t == null ? '' : m.word(t, v);
   return now.isEmpty ? '$v · none on it' : '$v · $now';

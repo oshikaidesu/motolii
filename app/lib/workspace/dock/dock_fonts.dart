@@ -124,7 +124,7 @@ void _setFont(DockCtx c, _Font f) {
   _used(f.family);
   final m = c.ws.inside!, t = int.tryParse(c.ws.selected ?? '');
   void told(bool done, String why) => c.set(() => done ? c.mem.trouble.remove(f.family) : c.mem.trouble[f.family] = why);
-  if (t != null && m.word(t, 'kind') == 'text') return c.ws.after(m.later('say', thing: t, name: 'file', word: f.path!), told); // (without waiting)
+  if (t != null && m.word(t, 'kind') == 'text') return c.ws.after(m.later('say', layer: t, name: 'file', word: f.path!), told); // (without waiting)
   m.later('together', number: 1); // (one step: the text and its inks)
   c.ws.after(m.later('add', name: 'text', word: f.path!), null, (made) => c.ws.select('$made'));
   wsInked(c.ws, 'text', '');
@@ -166,7 +166,7 @@ class _Roles extends StatelessWidget {
       return Expanded(
         child: DockHover(
           key: ValueKey('font-role-$r'),
-          onTap: () => onText ? c.ws.after(m.later('say', thing: t, name: 'file', word: face)) : c.set(() => c.ws.fontRole = r),
+          onTap: () => onText ? c.ws.after(m.later('say', layer: t, name: 'file', word: face)) : c.set(() => c.ws.fontRole = r),
           builder: (context, h) => Container(
             height: Shape.z(46),
             padding: EdgeInsets.only(left: Shape.s(8), right: Shape.s(4)),

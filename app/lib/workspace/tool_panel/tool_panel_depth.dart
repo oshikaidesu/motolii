@@ -54,9 +54,9 @@ void _updateLens(Ws ws, int camera, _Lens lens) {
   final m = ws.inside!, p = m.point;
   m.take(camera);
   m
-    ..carry('zoom', lens.focal / _filmMm)
-    ..carry('aperture', lens.fstop)
-    ..carry('focus', lens.focus / p);
+    ..dragUpdate('zoom', lens.focal / _filmMm)
+    ..dragUpdate('aperture', lens.fstop)
+    ..dragUpdate('focus', lens.focus / p);
 }
 
 typedef _Slab = ({String id, String name, Color tone, double x, double z, double w});
@@ -73,7 +73,7 @@ List<_Slab> _slabsOf(Ws ws) {
           tone: wsTone(l.kind),
           x: (m.value(int.parse(l.id), 'x', 0) ?? 0) * m.point,
           z: eye - (m.value(int.parse(l.id), 'z', 0) ?? 0) * m.point,
-          w: m.frame(int.parse(l.id))?[2] ?? 200,
+          w: m.bounds(int.parse(l.id))?[2] ?? 200,
         ),
   ];
 }
@@ -108,7 +108,7 @@ class _DepthToolState extends State<DepthTool> {
       onPointerUp: joined == null
           ? null
           : (_) {
-              ws.after(ws.inside!.later('let_go', number: 1)); // (without waiting)
+              ws.after(ws.inside!.later('drag_end', number: 1)); // (without waiting)
             },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

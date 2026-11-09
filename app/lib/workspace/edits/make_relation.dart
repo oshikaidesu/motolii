@@ -40,14 +40,14 @@ void wsRelate(Ws ws, String kind) {
   final file = kind.endsWith('.js');
   ws.after(m.later('add', name: 'behaviour', word: file ? 'relate' : kind), null, (b) => ws.select('$b')); // (picked as soon as it is there: its card, its row)
   if (file) {
-    m.later('say', thing: -1, name: 'script', word: kind);
-    m.later('say', thing: -1, name: 'name', word: wsRelationWord(kind)); // (its row and its card say which it is)
+    m.later('say', layer: -1, name: 'script', word: kind);
+    m.later('say', layer: -1, name: 'name', word: wsRelationWord(kind)); // (its row and its card say which it is)
   }
-  m.later('set', thing: -1, name: 'strength', number: 1); // (said, so its card shows it as it works)
+  m.later('set', layer: -1, name: 'strength', number: 1); // (said, so its card shows it as it works)
   if ((kind == 'follow' || kind == 'push') && ws.manyInOrder) {
-    m.later('set', thing: -1, name: 'leader', number: double.parse(who.first)); // (picked one by one: the first leads, as it was picked first)
+    m.later('set', layer: -1, name: 'leader', number: double.parse(who.first)); // (picked one by one: the first leads, as it was picked first)
   }
-  m.later('relate', thing: -1, word: who.join(' '));
+  m.later('relate', layer: -1, word: who.join(' '));
   ws.after(m.later('together'), (_, _) => ws.reread()); // (made or not, the window shows what the document is)
 }
 
@@ -58,7 +58,7 @@ Set<String> wsMembersOf(Ws ws) {
   if (m == null || sel == null || m.word(sel, 'kind') != 'behaviour' || !wsRelations.contains(m.word(sel, 'file'))) return const {};
   return {
     for (final w in m.word(sel, 'members').split(' '))
-      if (int.tryParse(w) case final t? when m.things.contains(t)) '$t',
+      if (int.tryParse(w) case final t? when m.layers.contains(t)) '$t',
   }; // (its own list, in its order: one it moves through another relation counted too)
 }
 
@@ -71,10 +71,10 @@ List<(String, String)> wsTargets(Ws ws, String id) {
   return [
     for (final n in m.values(t))
       if (m.shown(n) case final s? when s.look == 'thing')
-        if ((m.value(t, n, 0) ?? 0).round() case final o when m.things.contains(o)) (s.label, '$o'),
+        if ((m.value(t, n, 0) ?? 0).round() case final o when m.layers.contains(o)) (s.label, '$o'),
     if (m.word(t, 'kind') == 'behaviour' && wsRelations.contains(m.word(t, 'file')))
       for (final s in m.word(t, 'members').split(' '))
-        if (int.tryParse(s) case final o? when m.things.contains(o)) ('Moves', '$o'),
+        if (int.tryParse(s) case final o? when m.layers.contains(o)) ('Moves', '$o'),
   ];
 }
 
@@ -82,7 +82,7 @@ List<(String, String)> wsTargets(Ws ws, String id) {
 void wsLead(Ws ws, String id) {
   final m = ws.inside, by = int.tryParse(ws.selected ?? ''), t = int.tryParse(id);
   if (m == null || by == null || t == null) return;
-  ws.after(m.later('lead', thing: by, number: t.toDouble()), (_, _) => ws.reread());
+  ws.after(m.later('lead', layer: by, number: t.toDouble()), (_, _) => ws.reread());
 }
 
 /// A thing added to those picked together (Shift or Cmd with a click): the one picked alone goes in with it.
@@ -107,14 +107,14 @@ void wsPickRange(Ws ws, String id) {
 void wsFree(Ws ws, String id) {
   final m = ws.inside, by = int.tryParse(ws.selected ?? ''), t = int.tryParse(id);
   if (m == null || by == null || t == null) return;
-  ws.after(m.later('free', thing: t, number: by.toDouble()), (done, _) => done ? ws.reread() : null);
+  ws.after(m.later('free', layer: t, number: by.toDouble()), (done, _) => done ? ws.reread() : null);
 }
 
 /// The picked relation let go: each of its things where it shows now, the relation gone.
 void wsRelease(Ws ws) {
   final m = ws.inside, by = int.tryParse(ws.selected ?? '');
   if (m == null || by == null) return;
-  ws.after(m.later('release', thing: by), (done, _) {
+  ws.after(m.later('release', layer: by), (done, _) {
     if (!done) return;
     ws.reread();
     ws.select(null);
@@ -139,7 +139,7 @@ List<String> wsRelationsOf(Ws ws) {
   final m = ws.inside, t = int.tryParse(ws.selected ?? '');
   if (m == null || t == null || m.word(t, 'kind') == 'behaviour') return const [];
   final all = <String>[
-    for (final r in m.things) // (those it leads)
+    for (final r in m.layers) // (those it leads)
       if (m.word(r, 'kind') == 'behaviour' && wsRelations.contains(m.word(r, 'file')) && (m.value(r, 'leader', 0) ?? 0).round() == t) '$r',
   ];
   for (var r = (m.value(t, 'x_by', 0) ?? 0).round(); r > 0 && all.length < 8 && !all.contains('$r') && wsRelations.contains(m.word(r, 'file'));) {
@@ -156,5 +156,5 @@ void wsSwitch(Ws ws) {
   final m = ws.inside, by = int.tryParse(ws.selected ?? '');
   if (m == null || by == null) return;
   final on = (m.value(by, 'visible', 0) ?? 1) > .5; // (its eye, as a row's: its strength as it was)
-  ws.after(m.later('set', thing: by, name: 'visible', number: on ? 0 : 1), (_, _) => ws.reread());
+  ws.after(m.later('set', layer: by, name: 'visible', number: on ? 0 : 1), (_, _) => ws.reread());
 }

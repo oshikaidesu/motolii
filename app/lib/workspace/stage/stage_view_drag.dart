@@ -157,7 +157,7 @@ extension _StageViewDrag on _StageViewState {
       if (by != null) {
         m.take(picked);
         final at = _doc(v, local); // (points of the picture, as the inside counts them)
-        m.carry('grip', at.dx, at.dy);
+        m.dragUpdate('grip', at.dx, at.dy);
         if (ws.playing) ws.playing = false;
         _drag = (from: local, moved: false, by: by);
         if (grip != _grip) setState(() => _grip = grip);
@@ -191,7 +191,7 @@ extension _StageViewDrag on _StageViewState {
     if (_grip != null) setState(() => _grip = null);
     if (_met != (null, null)) setState(() => _met = (null, null));
     if (h == null || m == null || free) return;
-    ws.after(m.later('let_go', number: keep && h.moved ? 1 : 0)); // (let go without waiting: the document read again once the inside has it)
+    ws.after(m.later('drag_end', number: keep && h.moved ? 1 : 0)); // (let go without waiting: the document read again once the inside has it)
   }
 
   /// The picked thing's parent, by its id (null: none).
@@ -205,7 +205,7 @@ extension _StageViewDrag on _StageViewState {
   /// high, how far turned, or where it turns about (points of the picture, degrees clockwise as seen).
   String? _heldSays(String? by) {
     final m = WsScope.read(context).inside, t = int.tryParse(widget.selected ?? '');
-    final f = m == null || t == null ? null : m.frame(t);
+    final f = m == null || t == null ? null : m.bounds(t);
     if (f == null) return null;
     return switch (by) {
       null => '${f[0].round()}, ${f[1].round()}',

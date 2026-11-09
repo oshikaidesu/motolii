@@ -12,8 +12,8 @@ static const std::vector<float>* loudness_of(const std::string& file, bool read_
     }
     return &found->second;
 }
-int motolii_loudness(Motolii* m, int thing, float* db, int room) {
-    const std::string file = by_look(m, [=] { return doc_knows(doc(m), thing) && doc_word(*m->d, thing, "kind") == "video" ? doc_word(*m->d, thing, "file") : std::string(); });
+int motolii_loudness(Motolii* m, int layer, float* db, int room) {
+    const std::string file = by_look(m, [=] { return doc_knows(doc(m), layer) && doc_word(*m->d, layer, "kind") == "video" ? doc_word(*m->d, layer, "file") : std::string(); });
     if (file.empty()) return 0;
     const std::vector<float>& all = *loudness_of(file);
     for (int i = 0; i < room && i < (int)all.size(); ++i) db[i] = all[(size_t)i];
@@ -21,15 +21,15 @@ int motolii_loudness(Motolii* m, int thing, float* db, int room) {
 }
 // How loud a film's sound is at n moments of the document from `from` to before `to`, where its film shows them (dB;
 // -100 where it is silent or not shown). -1: its sound is not read yet (motolii_loudness reads it), 0: no sound.
-int motolii_loudness_over(Motolii* m, int thing, double from, double to, int n, float* db) {
-    const std::string file = by_look(m, [=] { return doc_knows(doc(m), thing) && doc_word(*m->d, thing, "kind") == "video" ? doc_word(*m->d, thing, "file") : std::string(); });
+int motolii_loudness_over(Motolii* m, int layer, double from, double to, int n, float* db) {
+    const std::string file = by_look(m, [=] { return doc_knows(doc(m), layer) && doc_word(*m->d, layer, "kind") == "video" ? doc_word(*m->d, layer, "file") : std::string(); });
     if (file.empty()) return 0;
     const std::vector<float>* all = loudness_of(file, false);
     if (!all) return -1;
     if (all->empty()) return 0;
     return by_look(m, [&] {   // (the document's moment to the film's own: from its start, from where it begins, at its speed)
         Doc& d = *m->d;
-        const double start = doc_number(d, thing, "start", 0, 0), begin = doc_number(d, thing, "begin", 0, 0), speed = doc_number(d, thing, "speed", 0, 1), lasts = doc_number(d, thing, "duration", 0, -1);
+        const double start = doc_number(d, layer, "start", 0, 0), begin = doc_number(d, layer, "begin", 0, 0), speed = doc_number(d, layer, "speed", 0, 1), lasts = doc_number(d, layer, "duration", 0, -1);
         for (int i = 0; i < n; ++i) {
             const double s = from + (to - from) * i / n, own = begin + (s - start) * speed;
             const long k = std::lround(own * 100.0);
@@ -41,15 +41,15 @@ int motolii_loudness_over(Motolii* m, int thing, double from, double to, int n, 
 // Audacity's Auto Duck (its manual): a film's volume keyed down 12 dB while any other film's sound is louder than -30 dB,
 // fading down over the half second before and up over the half second after, a pause shorter than a second not let up.
 // One step. Refused while another's sound is not read yet (motolii_loudness reads it) or its volume has keys already.
-static bool duck(Motolii* m, int thing) {
+static bool duck(Motolii* m, int layer) {
     Doc& d = *m->d;
-    if (!doc_knows(d, thing) || doc_word(d, thing, "kind") != "video") return d.error = "a film or a sound is ducked", false;
-    if (doc_keys(d, thing, "volume")) return d.error = "its volume has keys already", false;
-    const double rate = 100.0, from = doc_number(d, thing, "start", 0, 0), lasts = doc_number(d, thing, "duration", 0, -1), to = lasts > 0.0 ? from + lasts : doc_seconds(d);
+    if (!doc_knows(d, layer) || doc_word(d, layer, "kind") != "video") return d.error = "a film or a sound is ducked", false;
+    if (doc_keys(d, layer, "volume")) return d.error = "its volume has keys already", false;
+    const double rate = 100.0, from = doc_number(d, layer, "start", 0, 0), lasts = doc_number(d, layer, "duration", 0, -1), to = lasts > 0.0 ? from + lasts : doc_seconds(d);
     std::vector<char> loud((size_t)std::max(0.0, std::ceil((to - from) * rate)), 0);
     bool any = false;
     for (const int t : doc_layers(d)) {
-        if (t == thing || doc_word(d, t, "kind") != "video") continue;
+        if (t == layer || doc_word(d, t, "kind") != "video") continue;
         const std::vector<float>* all = loudness_of(doc_word(d, t, "file"), false);
         if (!all) return d.error = "the other sounds are not read yet", false;
         const double start = doc_number(d, t, "start", 0, 0), begin = doc_number(d, t, "begin", 0, 0), speed = doc_number(d, t, "speed", 0, 1), its = doc_number(d, t, "duration", 0, -1);
@@ -70,14 +70,14 @@ static bool duck(Motolii* m, int thing) {
         else runs.push_back({a, b});
         i = j;
     }
-    const double was = doc_number(d, thing, "volume", 0, 1), low = was * std::pow(10.0, -12.0 / 20.0);
+    const double was = doc_number(d, layer, "volume", 0, 1), low = was * std::pow(10.0, -12.0 / 20.0);
     doc_act(d);
     for (const auto& [a, b] : runs)
-        if (!(doc_key(d, thing, "volume", std::max(from, a - 0.5), was) && doc_key(d, thing, "volume", a, low) && doc_key(d, thing, "volume", b, low) && doc_key(d, thing, "volume", std::min(to, b + 0.5), was))) d.act_ok = false;
+        if (!(doc_key(d, layer, "volume", std::max(from, a - 0.5), was) && doc_key(d, layer, "volume", a, low) && doc_key(d, layer, "volume", b, low) && doc_key(d, layer, "volume", std::min(to, b + 0.5), was))) d.act_ok = false;
     return doc_acted(d);
 }
-int motolii_strikes(Motolii* m, int thing, double rise, int own, double* at, int room) {
-    const std::string file = by_look(m, [=] { return doc_knows(doc(m), thing) && doc_word(*m->d, thing, "kind") == "video" ? doc_word(*m->d, thing, "file") : std::string(); });
+int motolii_strikes(Motolii* m, int layer, double rise, int own, double* at, int room) {
+    const std::string file = by_look(m, [=] { return doc_knows(doc(m), layer) && doc_word(*m->d, layer, "kind") == "video" ? doc_word(*m->d, layer, "file") : std::string(); });
     if (file.empty()) return 0;
     const std::vector<double> struck = sound_strikes(*loudness_of(file), 100.0, rise);
     if (own) {   // (in the film's own seconds, as its loudness is counted)
@@ -86,7 +86,7 @@ int motolii_strikes(Motolii* m, int thing, double rise, int own, double* at, int
     }
     return by_look(m, [&] {   // (the film's own seconds to the document's: from its start, from where it begins, at its speed, while it lasts)
         Doc& d = *m->d;
-        const double start = doc_number(d, thing, "start", 0, 0), begin = doc_number(d, thing, "begin", 0, 0), speed = doc_number(d, thing, "speed", 0, 1), lasts = doc_number(d, thing, "duration", 0, -1);
+        const double start = doc_number(d, layer, "start", 0, 0), begin = doc_number(d, layer, "begin", 0, 0), speed = doc_number(d, layer, "speed", 0, 1), lasts = doc_number(d, layer, "duration", 0, -1);
         int n = 0;
         for (const double t : struck) {
             const double when = speed == 0.0 ? -1.0 : start + (t - begin) / speed;

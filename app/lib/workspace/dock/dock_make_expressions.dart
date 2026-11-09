@@ -4,8 +4,8 @@ part of 'dock_make.dart';
 // ---- a recipe's motion: asked of the inside once (create_preview.dart), on a document of its own.
 bool _isRecipe(DockCtx c, String name) {
   final m = c.ws.inside;
-  if (m == null || !m.recipes.any((r) => r.$1 == name)) return false;
-  RecipeMotions.ask(File(m.libPath).parent.parent.path, [for (final r in m.recipes) r.$1]);
+  if (m == null || !m.createScripts.any((r) => r.$1 == name)) return false;
+  RecipeMotions.ask(File(m.libPath).parent.parent.path, [for (final r in m.createScripts) r.$1]);
   return true;
 }
 
@@ -114,7 +114,7 @@ void _expressionPut(DockCtx c, _Make tile) {
   void told(String why) => c.set(() => why.isEmpty ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why);
   c.set(() => c.mem.trouble.remove(name));
   if (t == null && tile.made) {
-    return c.ws.after(m.later('make', word: name), (done, why) => told(done ? '' : why), (made) => c.ws.select('$made')); // (as a recipe's tile makes it)
+    return c.ws.after(m.later('create', word: name), (done, why) => told(done ? '' : why), (made) => c.ws.select('$made')); // (as a recipe's tile makes it)
   }
   final first = t != null && !Ws.fxFiles(m.word(t, 'fx')).contains(file);
   fxPut(c.ws, file, expression: true, told: told);
@@ -123,11 +123,11 @@ void _expressionPut(DockCtx c, _Make tile) {
   //  first knobs as its tile laid a thing out: _laid)
   final head = File(file).readAsLinesSync().takeWhile((l) => l.startsWith('//'));
   if (head.map((l) => RegExp(r'^// set copies (\d+)').firstMatch(l)?[1]).nonNulls.firstOrNull case final n? when (m.value(t, 'copies', 0) ?? 1) <= 1) {
-    m.later('set', thing: t, name: 'copies', number: double.parse(n));
+    m.later('set', layer: t, name: 'copies', number: double.parse(n));
   }
   if (first) {
     for (final e in (_laid[name] ?? const <String, double>{}).entries) {
-      m.later('set', thing: t, name: e.key, number: e.value);
+      m.later('set', layer: t, name: e.key, number: e.value);
     }
   }
 }

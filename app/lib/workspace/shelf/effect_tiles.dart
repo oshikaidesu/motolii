@@ -238,9 +238,9 @@ abstract final class EffectTiles {
       final home = m.tileHome(f);
       final stale =
           home.isNotEmpty && _toldOf(home) != tells(motoliiDir, f); // (drawn before a tile showed what its effect does, or by other weights: drawn again)
-      if (home.isEmpty || (!stale && m.picture(f) == home)) continue;
+      if (home.isEmpty || (!stale && m.tileImage(f) == home)) continue;
       if (!stale && File(home).existsSync()) {
-        m.tileDrawn(home, same: File('$home.same').existsSync());
+        m.tileRendered(home, same: File('$home.same').existsSync());
         shown = true;
       } else if (_asked.add(home)) {
         (f.startsWith(own) ? mine : theirs).add((f, home));
@@ -270,7 +270,7 @@ abstract final class EffectTiles {
           for (final p in [home, for (final (k, _) in moments.indexed) frame(home, k)]) {
             ResizeImage(FileImage(File(p)), width: readWide).evict();
           }
-          m.tileDrawn(home, same: same);
+          m.tileRendered(home, same: same);
         }
         changed();
       }

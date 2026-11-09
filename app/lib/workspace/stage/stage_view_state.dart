@@ -202,7 +202,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
     if (first) m.later('together', number: 1);
     var made = 0;
     ws.after(
-      m.later('pen', thing: first ? int.tryParse(widget.selected ?? '') ?? 0 : -1, word: '${a.dx} ${a.dy} ${h.dx} ${h.dy}'),
+      m.later('pen', layer: first ? int.tryParse(widget.selected ?? '') ?? 0 : -1, word: '${a.dx} ${a.dy} ${h.dx} ${h.dy}'),
       null,
       (t) => made = t,
     ); // (first on the picked thing: a closed path gains or loses a point, anything else begins a new one)
@@ -237,15 +237,15 @@ class _StageViewState extends State<StageView> implements StageHandles {
     if (h.by == 'gizmo orbit' && _orbitFrom != null) {
       // (it goes the way the hand does)
       final d = (local - h.from) * _orbitRate, o = _orbitFrom!;
-      m.carry('rotate_y', o.y + d.dx);
-      m.carry('rotate_x', (o.x + d.dy).clamp(-89.0, 89.0));
+      m.dragUpdate('rotate_y', o.y + d.dx);
+      m.dragUpdate('rotate_x', (o.x + d.dy).clamp(-89.0, 89.0));
       _drag = (from: h.from, moved: true, by: h.by);
       return;
     }
     if (h.by == 'gizmo lens' && _lensFrom != null) {
       // (as far from the middle as the hand now is, against where it took hold: a larger frame, a wider lens)
       final l = _lensFrom!;
-      m.carry('zoom', (l.zoom * l.reach / math.max((local - l.middle).distance, 1)).clamp(.01, 100.0));
+      m.dragUpdate('zoom', (l.zoom * l.reach / math.max((local - l.middle).distance, 1)).clamp(.01, 100.0));
       _drag = (from: h.from, moved: true, by: h.by);
       return;
     }
@@ -253,8 +253,8 @@ class _StageViewState extends State<StageView> implements StageHandles {
       // (sideways round it, up and down over it: a quarter of a degree a pixel)
       final d = local - h.from, o = _orbitFrom!;
       if (ws.freeEye) return ws.setView('stage.eye', [o.y - d.dx * .25, (o.x - d.dy * .25).clamp(-89.0, 89.0), ws.eye[2]]);
-      m.carry('rotate_y', o.y - d.dx * .25);
-      m.carry('rotate_x', (o.x - d.dy * .25).clamp(-89.0, 89.0));
+      m.dragUpdate('rotate_y', o.y - d.dx * .25);
+      m.dragUpdate('rotate_x', (o.x - d.dy * .25).clamp(-89.0, 89.0));
       _drag = (from: h.from, moved: true, by: 'orbit');
       setState(() {});
       return;
@@ -265,7 +265,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
       final side = int.parse(way.substring(5)), c = [for (var i = 0; i < 4; i++) handles['corner $i'] ?? Offset.zero], crop = _cropOf();
       final across = side.isEven ? c[1] - c[0] : c[3] - c[0], len = math.max(1.0, across.distance), dir = across / len * (side < 2 ? 1.0 : -1.0);
       final at = handles[way] ?? h.from, inBy = ((local - at).dx * dir.dx + (local - at).dy * dir.dy) / len;
-      if (crop.length == 4) m.carry(_crops[side], (crop[side] + inBy).clamp(0.0, .95 - crop[(side + 2) % 4]));
+      if (crop.length == 4) m.dragUpdate(_crops[side], (crop[side] + inBy).clamp(0.0, .95 - crop[(side + 2) % 4]));
       _drag = (from: h.from, moved: true, by: way);
       setState(() {});
       return;
@@ -273,9 +273,9 @@ class _StageViewState extends State<StageView> implements StageHandles {
     if (h.by case final way? when way == 'round' || way == 'points') {
       // (a shape's own: its corners' roundness, or its points, as far as the hand goes)
       final c = [for (var i = 0; i < 4; i++) handles['corner $i'] ?? Offset.zero], g = _gripOf(c), t = int.tryParse(widget.selected ?? '');
-      if (way == 'round') m.carry('round', g.roundOf(local));
+      if (way == 'round') m.dragUpdate('round', g.roundOf(local));
       if (way == 'points' && t != null) {
-        m.carry(
+        m.dragUpdate(
           'points',
           ((m.value(t, 'points', 0) ?? 5) + (((local - h.from).dx * g.u.dx + (local - h.from).dy * g.u.dy) / 24).round()).clamp(3, 64).toDouble(),
         );
@@ -296,7 +296,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
           gone = n * (gone.dx * n.dx + gone.dy * n.dy);
         }
       }
-      m.carry('$even${sized ? (keys.isAltPressed ? 'scale' : 'side') : way}', gone.dx, gone.dy);
+      m.dragUpdate('$even${sized ? (keys.isAltPressed ? 'scale' : 'side') : way}', gone.dx, gone.dy);
       _drag = (from: h.from, moved: true, by: way);
       setState(() {});
       return;
@@ -308,7 +308,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
       2 => Offset(0, all.dy),
       _ => all,
     }, v.s);
-    m.carry('place', by.dx, by.dy);
+    m.dragUpdate('place', by.dx, by.dy);
     _drag = (from: h.from, moved: true, by: null);
     setState(() {});
   }

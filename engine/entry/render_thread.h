@@ -1,4 +1,4 @@
-// render_thread.h: part of motolii.mm. Read only through motolii.mm. The one hand (Motolii) and how it is asked: by_hand,
+// render_thread.h: part of motolii.mm. Read only through motolii.mm. The one hand (Motolii) and how it is asked: on_render_thread,
 // by_look, posted; what was late kept for the window. Its loop is render_thread_loop.h, the window's calls window.h.
 #include <CoreText/CoreText.h>
 #include "stage/kit/kit.h"
@@ -34,14 +34,14 @@ struct Motolii {
     int pick = 0, hover = 0;   // the thing picked in the window and the one under its hand: marked on the desk (motolii_pick)
     std::set<int> watched;     // the things the window shows the moving values of (later "watch", Anthem's subscription): in the moment's picture
     std::map<const void*, Heard> heard;   // the things' sound heard as the live stage plays (sound_playback.h)
-    std::string trouble, listed;
-    std::thread hand;
-    std::atomic<const char*> step{"opening"};   // (where the hand is in its round: said by motolii_hand_step, so a shell that waits long can tell why)
+    std::string error, listed;
+    std::thread render_thread;
+    std::atomic<const char*> status{"opening"};   // (where the hand is in its round: said by motolii_render_thread_status, so a shell that waits long can tell why)
     std::mutex asked_lock;
     std::condition_variable asked_now;
     std::unique_ptr<thermion::FrameScheduler> beat;   // (the screen's beat, Thermion's: a picture is drawn on each; CVDisplayLink, DXGI on Windows)
     uint64_t beats = 0, drew_at = 0;                  // (beats come, and the one the last picture was drawn on: under asked_lock)
-    long rounds_threw = 0, beats_drawn = 0, beats_gpu_busy = 0, beats_still = 0, writes_on_beat = 0, beats_two = 0, beats_unseen = 0; uint64_t busy_at = 0, still_at = 0, seen_beat = 0; int files_seen = -1; double films_ms = 0, films_most = 0, part_ms[7] = {}, part_most[7] = {};   // (the hand's round in parts: files looked at, changes, telling, GPU asked, ahead, the rest)   // (beats a picture was drawn on, and beats the GPU had not finished the last: for the spent line)
+    long rounds_threw = 0, beats_rendered = 0, beats_gpu_busy = 0, beats_still = 0, writes_on_beat = 0, beats_two = 0, beats_unseen = 0; uint64_t busy_at = 0, still_at = 0, seen_beat = 0; int files_seen = -1; double videos_ms = 0, videos_most = 0, part_ms[7] = {}, part_most[7] = {};   // (the hand's round in parts: files looked at, changes, telling, GPU asked, ahead, the rest)   // (beats a picture was drawn on, and beats the GPU had not finished the last: for the spent line)
     std::atomic<void (*)(void*)> shown{nullptr};      // (motolii_finished: told when a picture is finished, to tell Flutter)
     std::atomic<void*> shown_with{nullptr};
     std::deque<std::function<void()>> asked;
@@ -57,13 +57,13 @@ struct Motolii {
     bool ahead = false;                                  // (films' frames ahead being kept while the hand rests: picture_ahead)
     std::atomic<bool> loop{true};   // (play goes round the work area; not: it stops at its end. Atomic: asked without the document)
     std::atomic<bool> keying{false};   // (the document's own, mirrored: asked each picture without waiting for the document)
-    std::atomic<bool> telling{false};  // (the hand is telling the stage a moment, the document held: a shell reading now would wait)
+    std::atomic<bool> evaluating{false};  // (the hand is telling the stage a moment, the document held: a shell reading now would wait)
     std::atomic<double> now{0.0};
-    std::map<std::string, std::pair<long, double>> by_door;   // (what each call has cost, by its name: for measuring)
+    std::map<std::string, std::pair<long, double>> by_call;   // (what each call has cost, by its name: for measuring)
     std::map<std::string, double> worst;                      // (and its slowest once)
-    int made = 0;   // (the thing the last add or make asked later made: a later call for thing -1 means it)
+    int last_added = 0;   // (the thing the last add or make asked later made: a later call for thing -1 means it)
     std::atomic<long> revision{0};   // (how many times the document has changed: read by anyone, without the document's lock)
-    std::atomic<long> carried{0};
+    std::atomic<long> dragged{0};
     std::atomic<bool> watching{true};   // (motolii_watch: the window's thread may not wait on the hand; what did is kept in `broke`, the last 200; watched from the start)
     std::deque<std::string> broke;
     std::atomic<long> broken{0};   // (how many times, since watched)    // (and how many times what a hand carries has: values a window shows while a hand is on them)
@@ -74,19 +74,19 @@ struct Motolii {
     long judged = 0;
     double gpu_ms = 0.0, gpu_most = 0.0;   // (the GPU's middle time for the last pictures, and the most it was)
     double scale = 1.0;   // (how large the stage's views are drawn now: stage_scale)
-    StageKept kept;       // (the stage's pictures kept on disk for playing: stage_kept.h)
+    StageKept cache;      // (the stage's pictures kept on disk for playing: stage_kept.h)
     double spent[4] = {0, 0, 0, 0};   // (seconds the hand spent: asked to change, asked to read, telling the moment, drawing)
     long many[4] = {0, 0, 0, 0};
-    // The window's pictures of the document (picture.h, docs/app/BRIDGE.md), set down by the hand, read under their own lock.
-    std::mutex pictureLock;
-    std::map<int, std::pair<long, std::string>> pictured;   // (each thing's part of the document's picture, and the version it was made at)
-    int picturedWays = -1;                                       // (the maker's own ways as they were read when it was last made: doc_own_easings_made)
-    long picturedRows = -1;                                      // (the document's changes, by SQLite's count, the document's picture was last made after)
-    std::string pictureAll, momentPicture;                  // (the document's own part; the moment's picture)
-    long pictureVersion = 0, momentVersion = 0;
-    int pictureTold = 0;                                     // (which are new since the window was told: 1 the document's, 2 the moment's)
-    long keptTold = 0;                                       // (what of the kept pictures the window was last told of)
-    void (*told)(int) = nullptr;                             // (the window's one listener)
+    // The window's pictures of the document (snapshot.h, docs/app/BRIDGE.md), set down by the hand, read under their own lock.
+    std::mutex snapshotLock;
+    std::map<int, std::pair<long, std::string>> snapshotLayers;   // (each thing's part of the document's picture, and the version it was made at)
+    int snapshotEasings = -1;                                       // (the maker's own ways as they were read when it was last made: doc_own_easings_made)
+    long snapshotRows = -1;                                      // (the document's changes, by SQLite's count, the document's picture was last made after)
+    std::string snapshotAll, timeSnapshot;                  // (the document's own part; the moment's picture)
+    long snapshotVersion = 0, timeVersion = 0;
+    int snapshotPending = 0;                                     // (which are new since the window was told: 1 the document's, 2 the moment's)
+    long cacheNotified = 0;                                       // (what of the kept pictures the window was last told of)
+    void (*listener)(int) = nullptr;                            // (the window's one listener)
 };
 // What was late or waited, kept for the window's red dot (asked_lock held): its clock time first, so the window lays
 // the inside's and its own in one order. A picture has 1/60 s (the beat): more is a missed beat.
@@ -108,31 +108,31 @@ static void live_camera(Motolii* m) {
     Stage& s = *m->s;
     Doc& d = *m->d;
     if (!m->second) return live_draw(s, m->live);
-    const bool desk = m->live->desk && s.desk.w, eye = d.working;
+    const bool desk = m->live->desk && s.desk.w, camera = d.working;
     if (desk) {
         live_draw(s, m->live);
-        if (!eye && (s.over || !s.before.empty())) return;   // (the stage's own picture is the camera's already)
+        if (!camera && (s.over || !s.before.empty())) return;   // (the stage's own picture is the camera's already)
         s.engine->destroy(m->live->pending), m->live->pending = nullptr;
     }
     std::lock_guard<std::recursive_timed_mutex> holding(d.lock);
     const uint32_t w = s.desk.w;
-    if (eye) d.viewCameraAsked = false, time_is(s, m->now);
+    if (camera) d.viewCameraAsked = false, time_is(s, m->now);
     s.desk.w = 0;
     live_draw(s, m->live);
     s.desk.w = w;
-    if (eye) d.viewCameraAsked = true, time_is(s, m->now);
+    if (camera) d.viewCameraAsked = true, time_is(s, m->now);
 }
-static void picture_update(Motolii* m);
-static void picture_moment(Motolii* m);
-static void picture_tell(Motolii* m);
+static void snapshot_update(Motolii* m);
+static void snapshot_time(Motolii* m);
+static void snapshot_notify(Motolii* m);
 
 // While it plays and the GPU takes longer than it may, the stage's views are drawn smaller and made large again (as
 // Filament's own dynamic resolution does; its own reckoning needs timer queries Dawn's backend has not, so the scale is
 // set here from the pictures' own times); at rest, full size, for looking. MOTOLII_SCALE: a scale kept, to measure.
 static void stage_scale(Motolii* m) {
-    static const double kept = std::getenv("MOTOLII_SCALE") ? std::atof(std::getenv("MOTOLII_SCALE")) : 0.0;
+    static const double fixed = std::getenv("MOTOLII_SCALE") ? std::atof(std::getenv("MOTOLII_SCALE")) : 0.0;
     double want = 1.0;
-    if (kept > 0.0) want = kept;
+    if (fixed > 0.0) want = fixed;
     else if (m->playing && m->gpu_ms > 0.0) want = std::clamp(m->scale * std::sqrt(m->budget / m->gpu_ms), 0.5, 1.0);   // (the GPU's time goes with the pixels drawn: as many fewer as it is over)
     if (std::fabs(want - m->scale) < 0.05 && !(want == 1.0 && m->scale != 1.0)) return;
     m->scale = want;
@@ -161,8 +161,8 @@ template <class Does> static auto asked(Motolii* m, Does does, bool changes, con
             if (changes) m->changed = true;
             const double took = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
             m->spent[changes ? 0 : 1] += took, m->many[changes ? 0 : 1]++;
-            auto& door = m->by_door[who];
-            door.first++, door.second += took, m->worst[who] = std::max(m->worst[who], took);
+            auto& call = m->by_call[who];
+            call.first++, call.second += took, m->worst[who] = std::max(m->worst[who], took);
         });
     }
     m->asked_now.notify_one();
@@ -175,16 +175,16 @@ template <class Does> static auto asked(Motolii* m, Does does, bool changes, con
       if (pthread_main_np()) { auto& w = m->window[who]; w[0]++, w[1] += round, w[2] = std::max(w[2], round), w[3] += round; } }
     return out;
 }
-// Asked of the hand: by_hand for what may change what is seen (the stage is drawn again after), by_look for what only
+// Asked of the hand: on_render_thread for what may change what is seen (the stage is drawn again after), by_look for what only
 // reads (nothing drawn again: a shell that reads its cards a hundred times a picture never waits on a hundred pictures).
-template <class Does> static auto by_hand(Motolii* m, Does does, const char* who = __builtin_FUNCTION()) -> decltype(does()) {
+template <class Does> static auto on_render_thread(Motolii* m, Does does, const char* who = __builtin_FUNCTION()) -> decltype(does()) {
     return asked(m, [m, does] {   // (the document changed: its revision counted before the asker hears the answer, so a copy it keeps is never read stale)
         const auto now = [m] { return m->d ? (long)sqlite3_total_changes(m->d->file) : 0L; };
         const long rows = now();
         auto out = does();
-        if (now() != rows) {   // (the pictures new before the asker hears the answer: they leave why it was refused as it was, picture.h)
+        if (now() != rows) {   // (the pictures new before the asker hears the answer: they leave why it was refused as it was, snapshot.h)
             m->revision.fetch_add(1, std::memory_order_release);
-            if (!m->d->act) picture_update(m), picture_moment(m);   // (within motolii_together's act, made once when it ends, as the stage is)
+            if (!m->d->act) snapshot_update(m), snapshot_time(m);   // (within motolii_together's act, made once when it ends, as the stage is)
         }
         return out;
     }, true, who);
@@ -218,7 +218,7 @@ static int posted(Motolii* m, const std::string& kind, std::function<void()> doe
     return 1;
 }
 // A read of the document, done on the asker's thread while it holds the document: the hand's own (making the window's
-// pictures, picture.h), a question asked on another isolate, a check. The window's thread asks none (docs/app/BRIDGE.md).
+// pictures, snapshot.h), a question asked on another isolate, a check. The window's thread asks none (docs/app/BRIDGE.md).
 template <class Does> static auto by_look(Motolii* m, Does does, const char* who = __builtin_FUNCTION()) -> decltype(does()) {
     const auto asked = std::chrono::steady_clock::now();
     std::unique_lock<std::recursive_timed_mutex> hold(m->d->lock);
@@ -229,8 +229,8 @@ template <class Does> static auto by_look(Motolii* m, Does does, const char* who
     why_asked = motolii_why(m);
     const double took = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
     m->spent[1] += took, m->many[1]++;
-    auto& door = m->by_door[who];
-    door.first++, door.second += took, m->worst[who] = std::max(m->worst[who], took);
+    auto& call = m->by_call[who];
+    call.first++, call.second += took, m->worst[who] = std::max(m->worst[who], took);
     if (pthread_main_np()) { auto& w = m->window[who]; w[0]++, w[1] += waited, w[2] = std::max(w[2], waited), w[3] += took; }
     if (pthread_main_np() && m->watching && waited > 0.002) { char why[160]; std::snprintf(why, sizeof why, "%s waited %.1f ms for the document", who, 1e3 * waited); std::lock_guard<std::mutex> h(m->asked_lock); broke_one(m, why); }
     return out;

@@ -25,10 +25,10 @@ class Ws extends ChangeNotifier {
   void join(Motolii inside) {
     _inside = inside;
     inside.shaping; // (read once, at the opening: what a card is made by)
-    inside.told = ({required document, required moment, required kept}) {
+    inside.listener = ({required document, required moment, required cache}) {
       // (the inside's pictures are new: docs/app/BRIDGE.md)
       if (_gone) return;
-      if (kept) this.kept.value = inside.kept;
+      if (cache) this.kept.value = inside.cache;
       if (document) reread();
       if (moment) seen.value++;
     };
@@ -192,20 +192,20 @@ class Ws extends ChangeNotifier {
     wsChosenLabels
       ..clear()
       ..addAll({
-        for (final t in m.things)
+        for (final t in m.layers)
           if (m.words(t, 'label').indexOf(m.word(t, 'label')) case final i when i > 0) '$t': i - 1,
       });
     final tl = TimelineTask()..start('MARK layers');
-    final holding = {for (final t in m.things) (m.value(t, 'parent', 0) ?? 0).round()}; // (who has things going with it)
+    final holding = {for (final t in m.layers) (m.value(t, 'parent', 0) ?? 0).round()}; // (who has things going with it)
     layers
       ..clear()
       ..addAll([
-        for (final t in m.things.reversed) // (the sample's manner: the nearest thing is the top row)
+        for (final t in m.layers.reversed) // (the sample's manner: the nearest thing is the top row)
           () {
             final kind = m.word(t, 'kind'), from = ((m.value(t, 'start', 0) ?? 0) * fps).round(), lasts = m.lasts(t);
             final name = m.word(t, 'name'); // (what it is called is the inside's to say)
             // (a key on any value of it that takes keys is a key on its bar: the inside says which those are)
-            final keys = <int>{for (final s in m.thingKeyMoments(t)) (s * fps).round()}.toList()..sort();
+            final keys = <int>{for (final s in m.layerKeyTimes(t)) (s * fps).round()}.toList()..sort();
             return WsLayer(
               '$t',
               name,
@@ -229,7 +229,7 @@ class Ws extends ChangeNotifier {
               solo: (m.value(t, 'solo', 0) ?? 0) > .5,
               locked: (m.value(t, 'lock', 0) ?? 0) > .5,
               clipped: (m.value(t, 'clip', 0) ?? 0) > .5,
-              stretches: [for (final (a, b, way) in m.thingStretches(t)) (from: (a * fps).round(), to: (b * fps).round(), way: way, shape: easeCurve(way, m))],
+              stretches: [for (final (a, b, way) in m.layerStretches(t)) (from: (a * fps).round(), to: (b * fps).round(), way: way, shape: easeCurve(way, m))],
             );
           }(),
       ]);
@@ -382,7 +382,7 @@ class Ws extends ChangeNotifier {
     if (m == null || t == null) return const [];
     final shown = {for (final (title, _) in m.cards(t)) title};
     return [
-      for (final (name, _) in m.thingEffects)
+      for (final (name, _) in m.layerEffects)
         if (shown.contains(name)) name,
     ];
   }
@@ -469,7 +469,7 @@ class Ws extends ChangeNotifier {
   /// the document read again and [then] told (done or not, and why not). The window never stands still for the inside.
   /// Joined: what the steps changed that the last reading of the document took in (null: not known, as after a hand's
   /// carry): a panel that shows only some values builds itself again only when they are among these.
-  ({bool things, Set<(int, String)> values})? lastChange;
+  ({bool layers, Set<(int, String)> values})? lastChange;
 
   int _afters = 0; // (tickets still looked at: the document is read again once, when the last of them is done)
 
@@ -518,19 +518,19 @@ void wsInked(Ws ws, String kind, String shape) {
   final m = ws.inside;
   if (m == null || !(kind == 'text' || kind == 'shape' && shape != 'null')) return;
   final line = shape == 'line';
-  if (ws.ink.isNotEmpty) m.later('say', thing: -1, name: 'fill', word: ws.ink);
+  if (ws.ink.isNotEmpty) m.later('say', layer: -1, name: 'fill', word: ws.ink);
   // (no ink chosen: a shape comes in a colour of its own, as Alight Motion's does: AbsentMotion's addShape, randomColor,
   //  any hue, saturation 0.3 to 0.8, value 0.55 to 1; said, so the Inspector and the Colors shelf show it: golf (85))
   if (ws.ink.isEmpty && kind == 'shape') {
     final r = math.Random(), c = HSVColor.fromAHSV(1, r.nextDouble() * 360, .3 + r.nextDouble() * .5, .55 + r.nextDouble() * .45).toColor();
-    m.later('say', thing: -1, name: 'fill', word: [c.r, c.g, c.b].map((v) => (v * 255).round().toRadixString(16).padLeft(2, '0')).join());
+    m.later('say', layer: -1, name: 'fill', word: [c.r, c.g, c.b].map((v) => (v * 255).round().toRadixString(16).padLeft(2, '0')).join());
   }
   if (ws.ink.contains(' ') && ws.inkBlend.isNotEmpty && !line) {
-    m.later('say', thing: -1, name: 'gradient_blend', word: ws.inkBlend); // (a gradient ink, mixed as it was chosen)
+    m.later('say', layer: -1, name: 'gradient_blend', word: ws.inkBlend); // (a gradient ink, mixed as it was chosen)
   }
   if (ws.edge.isNotEmpty && !line) {
     m
-      ..later('say', thing: -1, name: 'stroke', word: ws.edge)
-      ..later('set', thing: -1, name: 'stroke_width', number: 6);
+      ..later('say', layer: -1, name: 'stroke', word: ws.edge)
+      ..later('set', layer: -1, name: 'stroke_width', number: 6);
   }
 }

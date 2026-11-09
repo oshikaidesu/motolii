@@ -13,18 +13,18 @@ void wsSlideKeys(Ws ws, Iterable<WsKey> keys, int by) {
     if (t == null) continue;
     final at = k.frame / Ws.fps, to = (k.frame + by).clamp(0, Ws.duration) / Ws.fps;
     for (final n in m.moving(t)) {
-      if (!m.keyMoments(t, n).any((s) => (s - at).abs() < .5 / Ws.fps)) continue;
-      moves.add((t, n, at, to, m.value(t, n, at) ?? 0, m.wayOf(t, n, at)));
+      if (!m.keyTimes(t, n).any((s) => (s - at).abs() < .5 / Ws.fps)) continue;
+      moves.add((t, n, at, to, m.value(t, n, at) ?? 0, m.easingOf(t, n, at)));
     }
   }
   if (moves.isEmpty) return;
   m.later('together', number: 1);
   for (final (t, n, at, _, _, _) in moves) {
-    m.later('unkey', thing: t, name: n, number: at); // (all taken up first: one slid onto another's old moment is not lost)
+    m.later('unkey', layer: t, name: n, number: at); // (all taken up first: one slid onto another's old moment is not lost)
   }
   for (final (t, n, _, to, v, way) in moves) {
-    m.later('key', thing: t, name: n, word: '$to', number: v);
-    if (way.isNotEmpty) m.later('way', thing: t, name: n, number: to, word: way);
+    m.later('key', layer: t, name: n, word: '$to', number: v);
+    if (way.isNotEmpty) m.later('easing', layer: t, name: n, number: to, word: way);
   }
   ws.after(m.later('together'), (_, _) => ws.reread());
 }
@@ -39,7 +39,7 @@ void wsRemoveKeys(Ws ws, Iterable<WsKey> keys) {
     if (t == null) continue;
     final at = k.frame / Ws.fps;
     for (final n in m.moving(t)) {
-      if (m.keyMoments(t, n).any((s) => (s - at).abs() < .5 / Ws.fps)) m.later('unkey', thing: t, name: n, number: at);
+      if (m.keyTimes(t, n).any((s) => (s - at).abs() < .5 / Ws.fps)) m.later('unkey', layer: t, name: n, number: at);
     }
   }
   ws.clearKeys();
@@ -58,8 +58,8 @@ void wsCopyKeys(Ws ws, Iterable<WsKey> keys) {
     for (final k in keys)
       if (int.tryParse(k.layer) case final t?)
         for (final n in m.moving(t))
-          if (m.keyMoments(t, n).any((s) => (s - k.frame / Ws.fps).abs() < .5 / Ws.fps))
-            (n, k.frame - first, m.value(t, n, k.frame / Ws.fps) ?? 0, m.wayOf(t, n, k.frame / Ws.fps)),
+          if (m.keyTimes(t, n).any((s) => (s - k.frame / Ws.fps).abs() < .5 / Ws.fps))
+            (n, k.frame - first, m.value(t, n, k.frame / Ws.fps) ?? 0, m.easingOf(t, n, k.frame / Ws.fps)),
   ];
 }
 
@@ -70,8 +70,8 @@ void wsPasteKeys(Ws ws) {
   m.later('together', number: 1);
   for (final (n, after, v, way) in wsKeysKept) {
     final at = (ws.frame + after) / Ws.fps;
-    m.later('key', thing: t, name: n, word: '$at', number: v);
-    if (way.isNotEmpty) m.later('way', thing: t, name: n, number: at, word: way);
+    m.later('key', layer: t, name: n, word: '$at', number: v);
+    if (way.isNotEmpty) m.later('easing', layer: t, name: n, number: at, word: way);
   }
   final pasted = [
     for (final f in {for (final k in wsKeysKept) ws.frame + k.$2}) (layer: '$t', frame: f),

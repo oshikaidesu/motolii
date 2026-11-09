@@ -73,7 +73,7 @@ abstract final class CopiesTiles {
       if (m == null) continue;
       try {
         Directory(File(home).parent.path).createSync(recursive: true);
-        final on = make != null ? _answer(m, m.later('make', word: make)) >= 1 : _put(m, f); // (a pack: made by its name, as the Program shelf makes it)
+        final on = make != null ? _answer(m, m.later('create', word: make)) >= 1 : _put(m, f); // (a pack: made by its name, as the Program shelf makes it)
         final pictures = [
           if (on)
             for (final (k, at) in EffectTiles.moments.indexed)
@@ -127,7 +127,7 @@ abstract final class CopiesTiles {
     }
     if (shape == 'line') m.set(t, 'tall', (_head(f, 'tall') ?? 1) * 4); // (a line as thick as it is seen at 192 px)
     // (put on, then taken by the inside as code is, or not: its SyntaxError, FxCode's "does not compile")
-    return _answered(m, m.later('fx_file', thing: t, word: f)) && _answered(m, m.later('code', word: f));
+    return _answered(m, m.later('fx_file', layer: t, word: f)) && _answered(m, m.later('code', word: f));
   }
 
   /// A value its head sets its own thing to ("// set size 0.03"; null none).

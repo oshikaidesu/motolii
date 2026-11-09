@@ -6,12 +6,12 @@ extension MotoliiDocument on Motolii {
   /// holds while it is the same one (identical).
   Object get documentNow => _document;
 
-  Map<String, dynamic> _of(int thing) => _thing[thing] ?? const {};
+  Map<String, dynamic> _of(int layer) => _layer[layer] ?? const {};
 
   /// A value said nowhere: as it comes, if the thing's kind has it (the inside's tables: its `doc_usual`, `doc_knows`).
-  double? _usual(int thing, String name) {
-    if (!_thing.containsKey(thing)) return null;
-    final kind = thing == 0 ? 'stage' : word(thing, 'kind');
+  double? _usual(int layer, String name) {
+    if (!_layer.containsKey(layer)) return null;
+    final kind = layer == 0 ? 'stage' : word(layer, 'kind');
     final knows = _knows.putIfAbsent(kind, () => Motolii._spaced((_document['knows'] as Map<String, dynamic>?)?[kind]).toSet());
     return knows.contains(name) ? ((_document['usual'] as Map<String, dynamic>?)?[name] as num?)?.toDouble() : null;
   }
@@ -19,29 +19,29 @@ extension MotoliiDocument on Motolii {
   double get seconds => (_document['seconds'] as num?)?.toDouble() ?? 0;
 
   /// The numbers of the things there are.
-  List<int> get things => [for (final t in (_document['things'] as List<dynamic>?) ?? const []) t as int];
+  List<int> get layers => [for (final t in (_document['layers'] as List<dynamic>?) ?? const []) t as int];
 
   /// A thing's word by name (kind, file, shape, blend, text, fill); '' if it has none.
-  String word(int thing, String name) => ((_of(thing)['word'] as Map<String, dynamic>?)?[name] as String?) ?? '';
+  String word(int layer, String name) => ((_of(layer)['word'] as Map<String, dynamic>?)?[name] as String?) ?? '';
 
   /// How long a thing is on, in seconds; below 0: for good.
-  double lasts(int thing) => (_of(thing)['lasts'] as num?)?.toDouble() ?? -1;
+  double lasts(int layer) => (_of(layer)['lasts'] as num?)?.toDouble() ?? -1;
 
   /// Every moment a key of any of a thing's values stands at, each once, in time: a timeline bar's marks.
-  List<double> thingKeyMoments(int thing) => Motolii._numbers(_of(thing)['keys']);
+  List<double> layerKeyTimes(int layer) => Motolii._numbers(_of(layer)['keys']);
 
   /// The moments of a value's keys (none if the value stays): how many keys it has is their count.
-  List<double> keyMoments(int thing, String name) => Motolii._numbers((_of(thing)['keyMoments'] as Map<String, dynamic>?)?[name]);
+  List<double> keyTimes(int layer, String name) => Motolii._numbers((_of(layer)['keyTimes'] as Map<String, dynamic>?)?[name]);
 
   /// What each of a value's keys holds, in the order of [keyMoments].
-  List<double> keyValues(int thing, String name) => Motolii._numbers((_of(thing)['keyValues'] as Map<String, dynamic>?)?[name]);
+  List<double> keyValues(int layer, String name) => Motolii._numbers((_of(layer)['keyValues'] as Map<String, dynamic>?)?[name]);
 
   /// What the document's steps changed since last asked (asking forgets them): whether a thing came or went, and each
   /// value changed as (thing, name), from each step's own changeset.
-  ({bool things, Set<(int, String)> values}) changes() {
+  ({bool layers, Set<(int, String)> values}) changes() {
     final lines = ((_document['changes'] as String?) ?? '').split('\n');
     return (
-      things: lines.contains('things'),
+      layers: lines.contains('layers'),
       values: {
         for (final l in lines)
           if (l.indexOf(' ') case final i when i > 0) (int.parse(l.substring(0, i)), l.substring(i + 1)),
@@ -49,8 +49,8 @@ extension MotoliiDocument on Motolii {
     );
   }
 
-  int keyed(int thing, String name, double at) {
-    final keys = keyMoments(thing, name);
+  int keyed(int layer, String name, double at) {
+    final keys = keyTimes(layer, name);
     return keys.isEmpty
         ? 0
         : keys.any((k) => (k - at).abs() < .5 / rate)
@@ -98,22 +98,22 @@ extension MotoliiDocument on Motolii {
   bool get fits => (_document['fits'] as bool?) ?? true;
 
   /// The names of a thing's values that take keys.
-  List<String> moving(int thing) => Motolii._spaced(_of(thing)['moving']);
+  List<String> moving(int layer) => Motolii._spaced(_of(layer)['moving']);
 
   /// The names of all a thing's values.
-  List<String> values(int thing) => Motolii._spaced(_of(thing)['values']);
+  List<String> values(int layer) => Motolii._spaced(_of(layer)['values']);
 
   /// The cards a maker sees a thing's values on, besides where it is and its fill: each a title and the values on it.
-  List<(String, List<String>)> cards(int thing) => [
-    ..._cardsIn(_of(thing)['cards']),
-    for (final c in _cardsIn(_of(thing)['more']))
-      if (asked[thing]?.contains(c.$1) ?? false) c,
+  List<(String, List<String>)> cards(int layer) => [
+    ..._cardsIn(_of(layer)['cards']),
+    for (final c in _cardsIn(_of(layer)['more']))
+      if (asked[layer]?.contains(c.$1) ?? false) c,
   ];
 
   /// The titles of the cards it may be given and is not shown, as the shelf of More: not there unasked.
-  List<String> moreCards(int thing) => [
-    for (final (title, _) in _cardsIn(_of(thing)['more']))
-      if (!(asked[thing]?.contains(title) ?? false)) title,
+  List<String> moreCards(int layer) => [
+    for (final (title, _) in _cardsIn(_of(layer)['more']))
+      if (!(asked[layer]?.contains(title) ?? false)) title,
   ];
 
   static List<(String, List<String>)> _cardsIn(Object? said) => [
@@ -129,57 +129,57 @@ extension MotoliiDocument on Motolii {
   ];
 
   /// The titles of a thing's effect cards in the order its effects are laid (motolii_fx_titles): moved with `fx_move`.
-  List<String> fxTitles(int thing) => [
-    for (final t in ((_of(thing)['fx'] as String?) ?? '').split(';'))
+  List<String> fxTitles(int layer) => [
+    for (final t in ((_of(layer)['fx'] as String?) ?? '').split(';'))
       if (t.isNotEmpty) t,
   ];
 
   /// A number value's lowest and highest (null: the thing has no such number).
-  (double, double)? range(int thing, String name) => switch ((_of(thing)['range'] as Map<String, dynamic>?)?[name]) {
+  (double, double)? range(int layer, String name) => switch ((_of(layer)['range'] as Map<String, dynamic>?)?[name]) {
     [final num lo, final num hi] => (lo.toDouble(), hi.toDouble()),
     _ => null,
   };
 
   /// The words a value of a thing may be (a blend's): none if any word will do, or the thing has no such value.
-  List<String> words(int thing, String name) => Motolii._spaced((_of(thing)['words'] as Map<String, dynamic>?)?[name]);
+  List<String> words(int layer, String name) => Motolii._spaced((_of(layer)['words'] as Map<String, dynamic>?)?[name]);
 
   /// The ways a stretch may go, as the document says them: the nine kinds with their numbers, the named ones, and
   /// each defined here ('; defined here: Snappy').
-  String get ways => (_document['ways'] as String?) ?? '';
+  String get easings => (_document['easings'] as String?) ?? '';
 
   /// The effects a thing may be given, by name, with the value that puts each on (the Effects shelf); its card shows
   /// while it is on ([cards]).
-  List<(String, String)> get thingEffects => _labelled((_document['effectNames'] as String?) ?? '');
+  List<(String, String)> get layerEffects => _labelled((_document['effectNames'] as String?) ?? '');
 
-  List<String> get wayNames => Motolii._spaced(_document['wayNames']);
+  List<String> get easingNames => Motolii._spaced(_document['easingNames']);
 
-  double wayAt(String way, double u) {
+  double easingAt(String easing, double u) {
     // (a way of the document's, by its curve in the picture; one said with its numbers, by the inside's own reckoning, which asks nothing of the document)
-    if ((_document['wayCurves'] as Map<String, dynamic>?)?[way] case final List<dynamic> c when c.length > 1) {
+    if ((_document['easingCurves'] as Map<String, dynamic>?)?[easing] case final List<dynamic> c when c.length > 1) {
       final at = u.clamp(0.0, 1.0) * (c.length - 1), i = at.floor().clamp(0, c.length - 2), f = at - i;
       return (c[i] as num).toDouble() * (1 - f) + (c[i + 1] as num).toDouble() * f;
     }
-    return _with([way], (s) => _wayAt(_m, s[0], u));
+    return _with([easing], (s) => _easingAt(_m, s[0], u));
   }
 
   /// A way as the inside works it out, not as the picture's few steps say it: for a curve drawn large.
-  double wayExact(String way, double u) => _with([way], (s) => _wayAt(_m, s[0], u));
+  double easingExact(String easing, double u) => _with([easing], (s) => _easingAt(_m, s[0], u));
 
   /// Every stretch of a thing's keyed values: from, to (seconds), its way, as the inside says them (a timeline draws how each goes).
-  List<(double, double, String)> thingStretches(int thing) => [
-    for (final l in ((_of(thing)['stretches'] as String?) ?? '').split('\n'))
+  List<(double, double, String)> layerStretches(int layer) => [
+    for (final l in ((_of(layer)['stretches'] as String?) ?? '').split('\n'))
       if (l.split('\t') case [final a, final b, final w]) (double.parse(a), double.parse(b), w),
   ];
 
   /// The way of the stretch that begins at a value's key, as it is said ('': no key there).
-  String wayOf(int thing, String name, double at) {
-    final keys = keyMoments(thing, name), ways = (_of(thing)['keyWays'] as Map<String, dynamic>?)?[name] as List<dynamic>?;
+  String easingOf(int layer, String name, double at) {
+    final keys = keyTimes(layer, name), easings = (_of(layer)['keyEasings'] as Map<String, dynamic>?)?[name] as List<dynamic>?;
     var i = -1; // (the nearest within half a frame: two keys may lie in one frame, a stretched bar leaving them off its grid)
     var near = .5 / rate;
     for (final (k, s) in keys.indexed) {
       if ((s - at).abs() < near) (i, near) = (k, (s - at).abs());
     }
-    return i < 0 || ways == null || i >= ways.length ? '' : ways[i] as String;
+    return i < 0 || easings == null || i >= easings.length ? '' : easings[i] as String;
   }
 
   /// Points of the picture to one unit of the stage, at z 0.
@@ -190,8 +190,8 @@ extension MotoliiDocument on Motolii {
 
   /// How a hand reads a thing's value, as the inside says it: shown = value x times + from (places in points of the
   /// picture from its top left, shares in hundredths...). Asked once a thing and a name.
-  (double, double) reading(int thing, String name) {
-    final f = (((_of(thing)['reading'] as Map<String, dynamic>?)?[name] as String?) ?? '').split(' ');
+  (double, double) reading(int layer, String name) {
+    final f = (((_of(layer)['reading'] as Map<String, dynamic>?)?[name] as String?) ?? '').split(' ');
     return f.length < 2 ? (1.0, 0.0) : (double.parse(f[0]), double.parse(f[1]));
   }
 }

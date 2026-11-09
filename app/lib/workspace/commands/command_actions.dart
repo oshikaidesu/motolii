@@ -47,8 +47,8 @@ Map<String, void Function()> wsAbletonCommands(Ws ws) {
     final t = int.tryParse(ws.selected ?? '');
     if (t == null) return step(by);
     m.take(t);
-    m.carry('bar', by / Ws.fps);
-    ws.after(m.later('let_go', number: 1));
+    m.dragUpdate('bar', by / Ws.fps);
+    ws.after(m.later('drag_end', number: 1));
   }
 
   /// The row above or below the picked one picked (Live 42.15/42.16: the arrow keys move between tracks).
@@ -86,7 +86,7 @@ Map<String, void Function()> wsAbletonCommands(Ws ws) {
       // (Live 42.15/42.19 S: solo selected tracks)
       final t = int.tryParse(ws.selected ?? ''), m = ws.inside;
       if (t == null || m == null) return;
-      ws.after(m.later('set', thing: t, name: 'solo', number: ws.layer?.solo == true ? 0 : 1));
+      ws.after(m.later('set', layer: t, name: 'solo', number: ws.layer?.solo == true ? 0 : 1));
     },
     'thing.lanes': () {
       // (After Effects' U: the picked layers' keyed properties shown, pressed again gone)

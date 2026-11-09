@@ -24,7 +24,7 @@ bool _inUse(FileNode n, DockCtx c) => _layerOf(n, c) != null;
 
 /// Every thing that shows [file] (whole path), by the word that says so: its own file, or a shape filled with it.
 List<(int, String)> _showing(Motolii m, String file) => [
-  for (final t in m.things)
+  for (final t in m.layers)
     for (final w in const ['file', 'fill_media'])
       if (m.word(t, w) case final f when f.isNotEmpty && m.whole(f) == file) (t, w),
 ];
@@ -36,7 +36,7 @@ void _replaceAll(DockCtx c, List<(int, String)> all, String file) {
   final m = c.ws.inside!;
   m.later('together', number: 1);
   for (final (t, w) in all) {
-    c.ws.after(m.later('say', thing: t, name: w, word: file), (done, why) {
+    c.ws.after(m.later('say', layer: t, name: w, word: file), (done, why) {
       if (!done) c.ws.notice = 'Not replaced: $why';
     });
   }
@@ -66,8 +66,8 @@ Future<void> _placeAll(DockCtx c, List<String> files) async {
       c.set(() => c.mem.trouble[f] = why);
       asked.complete(0);
     }, asked.complete);
-    if (_fitted(f)) m.later('fit', thing: -1, word: 'fit');
-    if (lengths[i] > 0) m.later('set', thing: -1, name: 'duration', number: lengths[i]); // (the one just added)
+    if (_fitted(f)) m.later('fit', layer: -1, word: 'fit');
+    if (lengths[i] > 0) m.later('set', layer: -1, name: 'duration', number: lengths[i]); // (the one just added)
     made.add(asked.future);
   }
   c.ws.after(m.later('together'));
@@ -107,12 +107,12 @@ void _placeLevel(DockCtx c, List<(int, String)> drawings) {
   c.ws.after(m.later('add', word: drawings.first.$2), (done, why) {
     if (!done) c.set(() => c.mem.trouble[drawings.first.$2] = why);
   }, (made) => c.ws.select('$made'));
-  m.later('fit', thing: -1, word: 'fit');
-  m.later('set', thing: -1, name: 'duration', number: (drawings.last.$1 - first + 1) / 24);
+  m.later('fit', layer: -1, word: 'fit');
+  m.later('set', layer: -1, name: 'duration', number: (drawings.last.$1 - first + 1) / 24);
   for (final (n, _) in drawings) {
     final at = '${from + (n - first) / 24}';
-    m.later('key', thing: -1, name: 'cel', word: at, number: n.toDouble());
-    m.later('way', thing: -1, name: 'cel', number: double.parse(at), word: 'hold');
+    m.later('key', layer: -1, name: 'cel', word: at, number: n.toDouble());
+    m.later('easing', layer: -1, name: 'cel', number: double.parse(at), word: 'hold');
   }
   c.ws.after(m.later('together'), (_, _) => c.ws.reread());
   _filesPicked.clear();
@@ -140,13 +140,13 @@ void _place(DockCtx c, FileNode n) {
     _placing.remove(n.id);
     c.set(() => done ? c.mem.trouble.remove(n.id) : c.mem.trouble[n.id] = why);
   }, (made) => c.ws.select('$made'));
-  if (fit) m.later('fit', thing: -1, word: 'fit');
-  if (still) m.later('set', thing: -1, name: 'duration', number: _stillSeconds); // (the one just added: as long as chosen under it)
+  if (fit) m.later('fit', layer: -1, word: 'fit');
+  if (still) m.later('set', layer: -1, name: 'duration', number: _stillSeconds); // (the one just added: as long as chosen under it)
   if (cut case (final a, final b)) {
     mediaSecondsOf(m.libPath, n.id).then((len) {
       // (known already: the band drew it)
-      m.later('set', thing: -1, name: 'begin', number: a * len); // (from where the band's left end is in the film)
-      m.later('set', thing: -1, name: 'duration', number: (b - a) * len);
+      m.later('set', layer: -1, name: 'begin', number: a * len); // (from where the band's left end is in the film)
+      m.later('set', layer: -1, name: 'duration', number: (b - a) * len);
       c.ws.after(m.later('together'), (_, _) => c.ws.reread());
     });
   } else if (still || fit) {

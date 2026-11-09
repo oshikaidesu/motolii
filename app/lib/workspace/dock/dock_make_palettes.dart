@@ -72,7 +72,7 @@ void _putGradient(DockCtx c, List<Color> cs, String blend, [List<double>? at]) {
   }
   m.later('together', number: 1);
   _fill(c, word);
-  m.later('say', thing: t, name: 'gradient_blend', word: blend);
+  m.later('say', layer: t, name: 'gradient_blend', word: blend);
   c.ws.after(m.later('together'));
 }
 

@@ -143,7 +143,7 @@ class _WorkspaceState extends State<Workspace> {
   void _copy(String call, String what) {
     Clipboard.getData(Clipboard.kTextPlain).then((said) => _textWhenCopied = said?.text);
     final t = int.tryParse(_ws.selected ?? '');
-    if (_inside != null && t != null) _inside!.later(call, thing: t, word: _clipboard(what));
+    if (_inside != null && t != null) _inside!.later(call, layer: t, word: _clipboard(what));
   }
 
   bool _typed<T extends Intent>(T act) {
@@ -167,8 +167,8 @@ class _WorkspaceState extends State<Workspace> {
     final mp4 = _ws.renderTo ?? '${doc.substring(0, doc.lastIndexOf('.'))}.mp4';
     _ws.renderTo = null;
     _ws.notice = 'Writing ${mp4.split('/').last} …';
-    final done = await m.write(mp4);
-    if (mounted) _ws.notice = done ? 'Written: ${mp4.split('/').last}' : 'Not written: ${m.trouble}';
+    final done = await m.exportVideo(mp4);
+    if (mounted) _ws.notice = done ? 'Written: ${mp4.split('/').last}' : 'Not written: ${m.error}';
     if (done && RegExp(r'\.(mp4|mov|m4v)$').hasMatch(mp4)) unawaited(_checkFlashes(m, mp4));
     return done;
   }
@@ -217,7 +217,7 @@ class _WorkspaceState extends State<Workspace> {
     if (m == null || doc == null) return;
     final name = doc.split('/').last.replaceFirst(RegExp(r'\.motolii$'), ''), folder = '${File(doc).parent.path}/$name package';
     final n = m.pack(folder, name);
-    _ws.notice = n < 0 ? 'Not packaged: ${m.trouble}' : 'Packaged with $n ${n == 1 ? 'file' : 'files'}: $name package';
+    _ws.notice = n < 0 ? 'Not packaged: ${m.error}' : 'Packaged with $n ${n == 1 ? 'file' : 'files'}: $name package';
   }
 
   /// The picture at the playhead written beside the document (Premiere Pro's Export Frame); the top bar says so.
@@ -225,7 +225,7 @@ class _WorkspaceState extends State<Workspace> {
     final m = _inside, doc = _doc;
     if (m == null || doc == null) return;
     final png = '${doc.substring(0, doc.lastIndexOf('.'))}_${_ws.frame}.png';
-    _ws.notice = m.still(png) ? 'Written: ${png.split('/').last}' : 'Not written: ${m.trouble}';
+    _ws.notice = m.still(png) ? 'Written: ${png.split('/').last}' : 'Not written: ${m.error}';
   }
 
   /// The window's menus, in the system's own menu bar: what the sample window has no panel for (a new document,

@@ -118,7 +118,7 @@ class _FxCodeState extends State<FxCode> {
   bool _alone(String word) {
     final m = widget.ws.inside!, file = FxCode.source(word);
     if (!file.startsWith(_own)) return false;
-    for (final t in m.things) {
+    for (final t in m.layers) {
       for (final w in Ws.fxFiles(m.word(t, 'fx'))) {
         if (!(t == widget.thing && w == word) && FxCode.source(w) == file) return false;
       }
@@ -146,7 +146,7 @@ class _FxCodeState extends State<FxCode> {
     _making = true;
     _typed = text;
     final fx = [for (final w in Ws.fxFiles(m.word(widget.thing, 'fx'))) w == word ? said : w].join(' '); // (as doc_fx_join says it)
-    m.later('say', thing: widget.thing, name: 'fx', word: fx);
+    m.later('say', layer: widget.thing, name: 'fx', word: fx);
     ws.after(m.later('code', word: to), (_, _) {
       _making = false;
       File(to).writeAsStringSync(_typed!);

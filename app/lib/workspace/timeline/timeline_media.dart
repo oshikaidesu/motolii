@@ -56,7 +56,7 @@ extension _WsTimelineMedia on _WsTimelineState {
       const n = 6;
       final lasts = (l.outF - l.inF) / Ws.fps;
       final seconds = [for (var i = 0; i < n; i++) begin + (speed < 0 ? lasts - (i + .5) / n * lasts : (i + .5) / n * lasts) * speed.abs()];
-      Future.wait([for (final s in seconds) m.filmFrame(file, s)]).then((pngs) async {
+      Future.wait([for (final s in seconds) m.videoFrame(file, s)]).then((pngs) async {
         if (pngs.any((p) => p == null)) return mounted ? setState(() => _frames[l.id] = (key, null)) : null; // (no pictures: its sound alone)
         final read = [for (final p in pngs) (await (await ui.instantiateImageCodec(File(p!).readAsBytesSync())).getNextFrame()).image];
         if (mounted) setState(() => _frames[l.id] = (key, read));

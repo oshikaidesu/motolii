@@ -31,11 +31,11 @@ extension _StageViewCamera on _StageViewState {
       _dollyAt = m.value(cam, 'distance', ws.frame / Ws.fps) ?? 1;
     }
     _dollyAt = (_dollyAt! * math.exp(by * .002)).clamp(.01, 100.0);
-    m.carry('distance', _dollyAt!);
+    m.dragUpdate('distance', _dollyAt!);
     _dollyRest?.cancel();
     _dollyRest = Timer(const Duration(milliseconds: 300), () {
       _dollyAt = null;
-      ws.after(m.later('let_go', number: 1));
+      ws.after(m.later('drag_end', number: 1));
     });
   }
 

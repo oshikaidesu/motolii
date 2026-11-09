@@ -18,7 +18,7 @@ mixin _EaseEnds on State<EaseTool> {
     final m = ws.inside!, t = int.parse(span.layer.id), from = _from(ws, span);
     for (final name in m.moving(t)) {
       if (ws.stretch case final s? when s.name != name) continue; // (a line picked: that value's ends alone)
-      final at = [for (final s in m.keyMoments(t, name)) (s * Ws.fps).round()], vs = m.keyValues(t, name);
+      final at = [for (final s in m.keyTimes(t, name)) (s * Ws.fps).round()], vs = m.keyValues(t, name);
       final i = at.indexOf(span.from), j = at.indexOf(span.to), k = start ? i : j;
       if (i < 0 || j < 0 || k >= vs.length || j >= vs.length) continue;
       final shown = m.shown(name), lo = shown?.low ?? -double.infinity, hi = shown?.high ?? double.infinity;
@@ -71,7 +71,7 @@ mixin _EaseEnds on State<EaseTool> {
         if (easeJump && outside >= 0 && !at.contains(outside)) {
           m.later(
             'key',
-            thing: t,
+            layer: t,
             name: name,
             word: '${outside / Ws.fps}',
             number: vs[k],
@@ -80,7 +80,7 @@ mixin _EaseEnds on State<EaseTool> {
       }
     }
     for (final (name, _, vs, k, _) in _pull!) {
-      m.later('key', thing: t, name: name, word: '${key / Ws.fps}', number: _toward(m, span, ws, name, vs[k], by));
+      m.later('key', layer: t, name: name, word: '${key / Ws.fps}', number: _toward(m, span, ws, name, vs[k], by));
     }
     if (done) {
       final told = _pull!.length;
@@ -89,7 +89,7 @@ mixin _EaseEnds on State<EaseTool> {
       return;
     }
     _pullGoing = true;
-    ws.after(m.later('show', thing: t), (_, _) {
+    ws.after(m.later('show', layer: t), (_, _) {
       _pullGoing = false;
       final next = _pullNext, last = _pullDone;
       _pullNext = null;

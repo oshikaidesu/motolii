@@ -65,7 +65,7 @@ class _RelationMarks extends StatelessWidget {
               final box = context.findRenderObject() as RenderBox?;
               if (box != null) dragUpdate(units(box.globalToLocal(d.globalPosition)));
             },
-            onPanEnd: (_) => ws.after(m.later('let_go', number: 1), (_, _) => ws.reread()),
+            onPanEnd: (_) => ws.after(m.later('drag_end', number: 1), (_, _) => ws.reread()),
             child: Container(
               width: 16,
               height: 16,
@@ -95,15 +95,15 @@ class _RelationMarks extends StatelessWidget {
                   'centre',
                   mid,
                   (u) => m
-                    ..carry('centre_x', u.$1 - lx)
-                    ..carry('centre_y', u.$2 - ly),
+                    ..dragUpdate('centre_x', u.$1 - lx)
+                    ..dragUpdate('centre_y', u.$2 - ly),
                 ),
             ]) // (a leader is its middle: no handle over it, the leader itself is held)
             ..add(
               handle(
                 'size',
                 screen(cx + r * math.sin(turn * 2 * math.pi), cy + r * math.cos(turn * 2 * math.pi) * math.cos(tilt)),
-                (u) => m.carry('radius', math.sqrt(math.pow(u.$1 - cx, 2) + math.pow((u.$2 - cy) / math.max(.2, math.cos(tilt).abs()), 2))),
+                (u) => m.dragUpdate('radius', math.sqrt(math.pow(u.$1 - cx, 2) + math.pow((u.$2 - cy) / math.max(.2, math.cos(tilt).abs()), 2))),
               ),
             );
         } else if (kind == 'row') {
@@ -117,12 +117,12 @@ class _RelationMarks extends StatelessWidget {
                   final (_, lift) = units(above);
                   final (_, zero) = units(Offset.zero);
                   m
-                    ..carry('centre_x', u.$1 - lx)
-                    ..carry('centre_y', u.$2 - (lift - zero) - ly);
+                    ..dragUpdate('centre_x', u.$1 - lx)
+                    ..dragUpdate('centre_y', u.$2 - (lift - zero) - ly);
                 }),
             ])
             ..add(
-              handle('size', screen(cx + half, cy) + above, (u) => m.carry('gap', math.max(0, u.$1 - cx) * 2 / math.max(1, n - 1))),
+              handle('size', screen(cx + half, cy) + above, (u) => m.dragUpdate('gap', math.max(0, u.$1 - cx) * 2 / math.max(1, n - 1))),
             ); // (its right end out: wider both ways)
         } else if (kind == 'push' && leader != null && on(leader) != null) {
           final l = on(leader)!, r = val('radius', .5);
@@ -130,7 +130,7 @@ class _RelationMarks extends StatelessWidget {
           handles.add(
             handle('size', l + Offset(r * px, 0), (u) {
               final (lx, ly) = units(l);
-              m.carry('radius', math.sqrt(math.pow(u.$1 - lx, 2) + math.pow(u.$2 - ly, 2)));
+              m.dragUpdate('radius', math.sqrt(math.pow(u.$1 - lx, 2) + math.pow(u.$2 - ly, 2)));
             }),
           );
         }
@@ -198,7 +198,7 @@ class _RelationMarks extends StatelessWidget {
                   top: on(l.id)!.dy - 24,
                   child: _Badge(
                     'crown',
-                    () => ws.after(m.later('set', thing: rel, name: 'leader', number: double.parse(l.id)), (_, _) => ws.reread()),
+                    () => ws.after(m.later('set', layer: rel, name: 'leader', number: double.parse(l.id)), (_, _) => ws.reread()),
                     faint: true,
                     key: ValueKey('ws-lead-${l.id}'),
                   ),
@@ -247,7 +247,7 @@ class _RelationMarks extends StatelessWidget {
                           _RelateChip(
                             'delete',
                             () => ws.after(
-                              m.later('remove', thing: rel),
+                              m.later('remove', layer: rel),
                               (_, _) => ws
                                 ..select(null)
                                 ..reread(),
@@ -377,7 +377,7 @@ class WsRelationStack extends StatelessWidget {
                       if (!leads)
                         GestureDetector(
                           key: ValueKey('ws-stack-free-$r'),
-                          onTap: () => ws.after(m.later('free', thing: int.parse(t), number: id.toDouble()), (_, _) => ws.reread()),
+                          onTap: () => ws.after(m.later('free', layer: int.parse(t), number: id.toDouble()), (_, _) => ws.reread()),
                           child: Text('×', style: T.label(Grey.g56)),
                         ),
                     ],

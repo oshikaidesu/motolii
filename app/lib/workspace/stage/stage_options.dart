@@ -105,8 +105,8 @@ class _OptionsStrip extends StatelessWidget {
           if (t == null || m == null) return;
           m
             ..later('together', number: 1)
-            ..later('set', thing: t, name: 'align', number: i / 2)
-            ..later('set', thing: t, name: 'anchor_x', number: i - 1.0); // (round where it stands: After Effects' point text)
+            ..later('set', layer: t, name: 'align', number: i / 2)
+            ..later('set', layer: t, name: 'anchor_x', number: i - 1.0); // (round where it stands: After Effects' point text)
           ws.after(m.later('together')); // (without waiting)
         },
       ),

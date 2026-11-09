@@ -1,7 +1,7 @@
 // calls_time.h: part of motolii.mm. Read only through motolii.mm. The document's moment, its own picture (poster, still) and facts read without opening it, and the window's thread watched.
 double motolii_seconds(Motolii* m) { return by_look(m, [m] { return doc_seconds(*m->d); }); }
 int motolii_at(Motolii* m, double seconds) {
-    // (sent, not waited for: the window reads what was drawn, at the moment it was drawn (the moment's picture, picture.h),
+    // (sent, not waited for: the window reads what was drawn, at the moment it was drawn (the moment's picture, snapshot.h),
     //  so it need not wait for the hand to tell this one; a later one still waiting replaces it. Past the document's
     //  ends it is refused there, and said in the trouble)
     return posted(m, "at", [m, seconds] {
@@ -16,11 +16,11 @@ static bool placed(const char* name) { return std::filesystem::is_directory(std:
 // a still 256 on its longer side, drawn as the editor is closed at where its playhead is): drawn at the stage's
 // poster_at if it is said (Alight Motion's Set Project Thumbnail), else now, made small (thumbnail_at, GStreamer's
 // own scaling, reading a .png as it reads a film), and kept in the document with its size and length (table poster,
-// not one the undo records: the session is on fact and way), for motolii_doc_facts to read without opening it.
+// not one the undo records: the session is on fact and way), for motolii_doc_properties to read without opening it.
 int motolii_poster(Motolii* m, const char* png) {
-    return by_hand(m, [m, png] {
+    return on_render_thread(m, [m, png] {
         Doc& d = doc(m);
-        if (!told(m, ends(png, ".png"), "a picture is a .png") || !told(m, placed(png), "there is no such folder")) return 0;
+        if (!checked(m, ends(png, ".png"), "a picture is a .png") || !checked(m, placed(png), "there is no such folder")) return 0;
         const std::string whole = (std::filesystem::temp_directory_path() / ("motolii_poster_whole_" + std::to_string(getpid()) + ".png")).string();
         const double at = doc_number(d, 0, "poster_at", 0, -1);
         time_is(*m->s, at >= 0 ? at : (double)m->now);
@@ -29,23 +29,23 @@ int motolii_poster(Motolii* m, const char* png) {
         const int wide = std::max(1, 256 * m->s->w / std::max({m->s->w, m->s->h, 1}));
         const bool small = shot && thumbnail_at(whole.c_str(), png, wide, 0.0);
         std::remove(whole.c_str());
-        if (!told(m, small, "the picture could not be drawn")) return 0;
+        if (!checked(m, small, "the picture could not be drawn")) return 0;
         std::ifstream in(png, std::ios::binary);
         const std::vector<char> bytes((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-        if (!told(m, !bytes.empty(), "the picture could not be read back")) return 0;
+        if (!checked(m, !bytes.empty(), "the picture could not be read back")) return 0;
         sqlite3_exec(d.file, "create table if not exists poster(id integer primary key check (id = 1), png blob, wide integer, high integer, seconds real, rate real)", nullptr, nullptr, nullptr);
         sqlite3_stmt* keep = nullptr;
         sqlite3_prepare_v2(d.file, "insert or replace into poster(id, png, wide, high, seconds, rate) values(1, ?, ?, ?, ?, ?)", -1, &keep, nullptr);
         sqlite3_bind_blob(keep, 1, bytes.data(), (int)bytes.size(), SQLITE_TRANSIENT);
         sqlite3_bind_int(keep, 2, m->s->w), sqlite3_bind_int(keep, 3, m->s->h), sqlite3_bind_double(keep, 4, doc_seconds(d)), sqlite3_bind_double(keep, 5, doc_number(d, 0, "frame_rate", 0, 60));   // (its frames a second, the size box's frame_rate)
-        const bool kept = sqlite3_step(keep) == SQLITE_DONE;
+        const bool saved = sqlite3_step(keep) == SQLITE_DONE;
         sqlite3_finalize(keep);
-        return told(m, kept, "the document could not keep it");
+        return checked(m, saved, "the document could not keep it");
     });
 }
 // What a document is, read without opening it (asks nothing of an open one: any thread): "wide high seconds rate" as it
 // was last kept (motolii_poster), its picture written to `png` (null: not); "" when it has kept none or is not one.
-const char* motolii_doc_facts(const char* path, const char* png) {
+const char* motolii_doc_properties(const char* path, const char* png) {
     static thread_local std::string out;
     out.clear();
     sqlite3* file = nullptr;
@@ -63,12 +63,12 @@ const char* motolii_doc_facts(const char* path, const char* png) {
     return out.c_str();
 }
 int motolii_still(Motolii* m, const char* png) {
-    return by_hand(m, [m, png] {
+    return on_render_thread(m, [m, png] {
         doc(m);
-        if (!told(m, ends(png, ".png"), "a still is a .png") || !told(m, placed(png), "there is no such folder")) return 0;
+        if (!checked(m, ends(png, ".png"), "a still is a .png") || !checked(m, placed(png), "there is no such folder")) return 0;
         const DocExact exact(doc(m));
         time_is(*m->s, m->now);
-        return told(m, shoot(*m->s, png), "the file could not be written");
+        return checked(m, shoot(*m->s, png), "the file could not be written");
     });
 }
 int motolii_rate(Motolii*) { return RATE; }

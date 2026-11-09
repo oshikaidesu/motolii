@@ -67,7 +67,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     final moving = m.moving(t).toSet();
     return [
       for (final n in m.values(t))
-        if (n.startsWith('js_line_') || moving.contains(n) && m.keyMoments(t, n).isNotEmpty) n,
+        if (n.startsWith('js_line_') || moving.contains(n) && m.keyTimes(t, n).isNotEmpty) n,
     ];
   }
 
@@ -79,7 +79,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
 
   // A value's lane: its keys where they are and what they hold, read from the document's picture (nothing asked of the inside).
   WtRow _laneRow(Ws ws, WsLayer l, String name) {
-    final m = ws.inside!, t = int.parse(l.id), at = m.keyMoments(t, name), vs = m.keyValues(t, name);
+    final m = ws.inside!, t = int.parse(l.id), at = m.keyTimes(t, name), vs = m.keyValues(t, name);
     final n = math.min(at.length, vs.length);
     final lo = vs.take(n).fold(double.infinity, math.min), hi = vs.take(n).fold(-double.infinity, math.max);
     return WtRow(
@@ -93,7 +93,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
       dim: _isHidden(ws, l.id) || (_anySolo(ws) && !_isSolo(ws, l.id)),
       locked: _isLocked(ws, l.id),
       lane: [for (var i = 0; i < n; i++) ((at[i] * Ws.fps).round(), hi > lo ? (vs[i] - lo) / (hi - lo) : .5)],
-      laneWays: [for (var i = 0; i + 1 < n; i++) _wayShape(ws, m.wayOf(t, name, at[i]))],
+      laneWays: [for (var i = 0; i + 1 < n; i++) _wayShape(ws, m.easingOf(t, name, at[i]))],
       laneOn: switch (ws.stretch) {
         final s? when s.layer == l.id && s.name == name => [for (var i = 0; i < n; i++) (at[i] * Ws.fps).round()].indexOf(s.from),
         _ => null,
@@ -240,7 +240,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     by = _rested(by, [if (h.part != 'tail') _barIn, if (h.part != 'head') _barOut]);
     if (h.part == 'tail') by = math.max(by, _barIn + 1 - _barOut);
     if (h.part == 'head') by = math.min(by, _barOut - 1 - _barIn);
-    m.carry(h.part, by / Ws.fps);
+    m.dragUpdate(h.part, by / Ws.fps);
     _bar = (id: h.id, part: h.part, grab: h.grab, moved: true);
     ws.respan(h.id);
   }
@@ -256,7 +256,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     final h = _bar, ws = _ws!, m = ws.inside;
     _bar = null;
     if (h == null || m == null) return;
-    ws.after(m.later('let_go', number: keep && h.moved ? 1 : 0)); // (let go without waiting)
+    ws.after(m.later('drag_end', number: keep && h.moved ? 1 : 0)); // (let go without waiting)
   }
 
   double _lift = 0; // how far a label row has been carried up or down

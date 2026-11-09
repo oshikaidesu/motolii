@@ -52,12 +52,12 @@ typedef _S = Pointer<Utf8>;
 /// A film's thumbnail, made by the inside's own call on another isolate (nothing of a document is handed over: the
 /// call asks nothing of one). Kept in the system's temp folder under the film's place and when it was last changed.
 final _thumbnails = <String, Future<String?>>{};
-Future<String?> _thumbnail(String lib, String film, [int step = 0, int steps = 1, double? seconds]) async {
+Future<String?> _thumbnail(String lib, String video, [int step = 0, int steps = 1, double? seconds]) async {
   final folder = Directory('${Directory.systemTemp.path}/motolii_thumbnails')..createSync(recursive: true);
   // (named by the film's own place, so it is found again in another run, and by when the film was last changed)
-  final named = film.replaceAll(RegExp(r'[^A-Za-z0-9]'), '_');
+  final named = video.replaceAll(RegExp(r'[^A-Za-z0-9]'), '_');
   final png =
-      '${folder.path}/${named.length > 150 ? named.substring(named.length - 150) : named}_${File(film).statSync().modified.millisecondsSinceEpoch}${seconds != null
+      '${folder.path}/${named.length > 150 ? named.substring(named.length - 150) : named}_${File(video).statSync().modified.millisecondsSinceEpoch}${seconds != null
           ? '_s${(seconds * 10).round()}'
           : step == 0
           ? ''
@@ -65,7 +65,7 @@ Future<String?> _thumbnail(String lib, String film, [int step = 0, int steps = 1
   if (File(png).existsSync()) return png;
   final made = await Isolate.run(() {
     final b = c.MotoliiBindings(DynamicLibrary.open(lib));
-    final from = film.toNativeUtf8(), to = png.toNativeUtf8();
+    final from = video.toNativeUtf8(), to = png.toNativeUtf8();
     final done = (seconds != null ? b.motolii_thumbnail_seconds(from, to, 160, seconds) : b.motolii_thumbnail_at(from, to, 240, step / steps)) != 0;
     malloc
       ..free(from)
@@ -95,7 +95,7 @@ Future<double> mediaSecondsOf(String lib, String file) async => switch (await _m
 /// (Motolii.poster) and its frames a second, its picture written to [png]; null: it kept none, or it is not one.
 Future<({int wide, int high, double seconds, double rate})?> docFactsOf(String lib, String doc, String png) => Isolate.run(() {
   final from = doc.toNativeUtf8(), to = png.toNativeUtf8();
-  final said = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_doc_facts(from, to).toDartString().split(' ');
+  final said = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_doc_properties(from, to).toDartString().split(' ');
   malloc
     ..free(from)
     ..free(to);
@@ -118,19 +118,19 @@ Future<String> mediaInfoOf(String lib, String file) async {
 /// the stretches, seconds from and to, of its frames that fail, more than three flashes in a second, two to three for
 /// five seconds, or a pattern (its README; FlashResult's ExtendedFail and FlashFail, PatternResult's Fail, as its
 /// frameData.json tells each frame that does not pass). Empty: it passes. null: it was not read.
-Future<List<(double, double)>?> flashesOf(String lib, String film) async {
+Future<List<(double, double)>?> flashesOf(String lib, String video) async {
   final folder = '${Platform.environment['HOME']}/Library/Caches/Motolii/flashes';
-  final told = await Isolate.run(() {
-    final from = film.toNativeUtf8(), to = folder.toNativeUtf8();
+  final written = await Isolate.run(() {
+    final from = video.toNativeUtf8(), to = folder.toNativeUtf8();
     final said = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_flashes(from, to).toDartString();
     malloc
       ..free(from)
       ..free(to);
     return said;
   });
-  if (told.isEmpty) return null;
+  if (written.isEmpty) return null;
   try {
-    final frames = (jsonDecode(File('${File(told).parent.path}/frameData.json').readAsStringSync()) as Map)['NonPassFrameData'] as Map;
+    final frames = (jsonDecode(File('${File(written).parent.path}/frameData.json').readAsStringSync()) as Map)['NonPassFrameData'] as Map;
     List<num> of(String k) => [...(frames[k] as List? ?? const []).cast<num>()];
     final n = of('Frame'), luminance = of('LuminanceFrameResult'), red = of('RedFrameResult'), pattern = of('PatternFrameResult');
     final at = [
@@ -186,17 +186,17 @@ class Motolii {
   // What the window reads of the document is the inside's two pictures, set down by its hand: the document's, made
   // again where it changes, and the moment's, made with each picture. The inside tells which is new through one
   // listener; nothing here asks the document itself, and nothing waits for the hand.
-  late final _picture = _b.motolii_picture;
-  late final _tell = _b.motolii_tell;
-  NativeCallable<Void Function(Int)>? _told;
+  late final _snapshot = _b.motolii_snapshot;
+  late final _addListener = _b.motolii_add_listener;
+  NativeCallable<Void Function(Int)>? _listenerCallable;
   Map<String, dynamic> _document = const {}; // (the document's own part)
-  final _thing = <int, Map<String, dynamic>>{}; // (each thing's part, as of the version it came with)
-  Map<String, dynamic> _moment = const {'thing': {}};
+  final _layer = <int, Map<String, dynamic>>{}; // (each thing's part, as of the version it came with)
+  Map<String, dynamic> _moment = const {'layer': {}};
   int _documentAt = -1, _momentAt = -1;
 
   /// What the window does when the inside's pictures are new: [document] the document's (and which things changed in
   /// it), [moment] the moment's, [kept] the stretches of the stage's pictures kept on disk.
-  void Function({required bool document, required bool moment, required bool kept})? told;
+  void Function({required bool document, required bool moment, required bool cache})? listener;
 
   final _knows = <String, Set<String>>{}; // (the maker's tables, the same for every document: read once)
   static List<String> _spaced(Object? said) => [
@@ -218,36 +218,36 @@ class Motolii {
   late final _say = _b.motolii_say;
   late final _key = _b.motolii_key;
   late final _unkey = _b.motolii_unkey;
-  late final _way = _b.motolii_way;
+  late final _easing = _b.motolii_easing;
   late final _path3 = _b.motolii_path3;
   late final _keying = _b.motolii_keying;
-  late final _hold = _b.motolii_hold;
-  late final _carry = _b.motolii_carry;
-  late final _letGo = _b.motolii_let_go;
+  late final _dragStart = _b.motolii_drag_start;
+  late final _dragUpdate = _b.motolii_drag_update;
+  late final _dragEnd = _b.motolii_drag_end;
   late final _put = _b.motolii_put;
   late final _keyHere = _b.motolii_key_here;
   late final _size = _b.motolii_size;
   late final _raise = _b.motolii_raise;
   late final _stay = _b.motolii_stay;
-  late final _recipes = _b.motolii_recipes;
-  late final _make = _b.motolii_make;
+  late final _createScripts = _b.motolii_create_scripts;
+  late final _create = _b.motolii_create;
   late final _effects = _b.motolii_effects;
-  late final _looks = _b.motolii_looks;
+  late final _presets = _b.motolii_presets;
   late final _animators = _b.motolii_animators;
   late final _relations = _b.motolii_relations;
   late final _spent = _b.motolii_spent;
   late final _define = _b.motolii_define;
-  late final _wayNumbers = _b.motolii_way_numbers;
+  late final _easingNumbers = _b.motolii_easing_numbers;
   late final _effect = _b.motolii_effect;
-  late final _wayAt = _b.motolii_way_at;
+  late final _easingAt = _b.motolii_easing_at;
   late final _kindOf = _b.motolii_kind_of;
   late final _find = _b.motolii_find;
   late final _together = _b.motolii_together;
   late final _frames = _b.motolii_frames;
-  late final _keptRuns = _b.motolii_kept;
+  late final _cacheRuns = _b.motolii_cache;
   late final _undo = _b.motolii_undo;
   late final _redo = _b.motolii_redo;
-  late final _trouble = _b.motolii_trouble;
+  late final _error = _b.motolii_error;
   late final _list = _b.motolii_list;
   late final _still = _b.motolii_still;
   late final _close = _b.motolii_close;
@@ -281,7 +281,7 @@ class Motolii {
   late final _guide = _b.motolii_guide;
 
   final _labels = <String, String>{},
-      _pictures = <String, String>{},
+      _tileImages = <String, String>{},
       _homes = <String, String>{},
       _abouts = <String, String>{},
       _tags = <String, Set<String>>{};
@@ -298,7 +298,7 @@ class Motolii {
     _b.motolii_files_changed();
     _folders.clear();
     _labels.clear();
-    _pictures.clear();
+    _tileImages.clear();
     _abouts.clear();
     _homes.clear();
     _same.clear();
@@ -322,14 +322,14 @@ class Motolii {
 
   /// Where the inside's hand is in its round, and how many changes wait for it: read without waiting (a shell that has
   /// waited long says why).
-  String get handStep => '${_b.motolii_hand_step(_m).toDartString()}, ${_b.motolii_asked(_m)} asked and not begun';
+  String get renderThreadStatus => '${_b.motolii_render_thread_status(_m).toDartString()}, ${_b.motolii_asked(_m)} asked and not begun';
 
   /// A file word of the document as a whole path.
   String whole(String file) => Uri.directory(home).resolveUri(Uri.file(file)).toFilePath();
 
   void _listen() {
-    _told = NativeCallable<Void Function(Int)>.listener(_take);
-    _tell(_m, _told!.nativeFunction);
+    _listenerCallable = NativeCallable<Void Function(Int)>.listener(_take);
+    _addListener(_m, _listenerCallable!.nativeFunction);
     _take(7);
   }
 
@@ -337,18 +337,18 @@ class Motolii {
     if (which & 8 != 0) which |= 3; // (the answers looked at are all there are by now, later ones than the one told: heard late, a step's end comes with what the step made, as answer() takes them)
     final version = malloc<Long>();
     if (which & 1 != 0) {
-      final p = _picture(_m, 1, _documentAt, version), all = jsonDecode(p.toDartString()) as Map<String, dynamic>;
+      final p = _snapshot(_m, 1, _documentAt, version), all = jsonDecode(p.toDartString()) as Map<String, dynamic>;
       malloc.free(p);
       if (version.value == _documentAt) which &= ~1; // (asked again, not new: nothing told)
       _documentAt = version.value;
       if (all['document'] case final Map<String, dynamic> d) _document = d;
-      (all['thing'] as Map<String, dynamic>).forEach((t, part) => _thing[int.parse(t)] = part as Map<String, dynamic>);
-      final are = {0, ...things};
-      _thing.removeWhere((t, _) => !are.contains(t));
+      (all['layer'] as Map<String, dynamic>).forEach((t, part) => _layer[int.parse(t)] = part as Map<String, dynamic>);
+      final are = {0, ...layers};
+      _layer.removeWhere((t, _) => !are.contains(t));
       _shownOf.clear();
     }
     if (which & 2 != 0) {
-      final p = _picture(_m, 2, 0, version);
+      final p = _snapshot(_m, 2, 0, version);
       if (version.value == _momentAt) {
         which &= ~2; // (asked again, not new)
       } else {
@@ -365,7 +365,7 @@ class Motolii {
         if (a >= 0) _waiting.remove(t)!.complete((a, a >= 1 ? '' : answerWhy));
       }
     }
-    if (which & 7 != 0) told?.call(document: which & 1 != 0, moment: which & 2 != 0, kept: which & 4 != 0);
+    if (which & 7 != 0) listener?.call(document: which & 1 != 0, moment: which & 2 != 0, cache: which & 4 != 0);
   }
 
   /// A change the window waited for (docs/internal/reports/window/bridge_rework_2026-10-24.md C3, going): its pictures taken at once, as the inside made them
@@ -379,8 +379,8 @@ class Motolii {
       using((a) => call([for (final w in words) w.toNativeUtf8(allocator: a)])); // (package:ffi's Arena: all let go when the call is done)
 
   void close() {
-    _tell(_m, nullptr);
-    _told?.close();
+    _addListener(_m, nullptr);
+    _listenerCallable?.close();
     _close(_m);
   }
 }
