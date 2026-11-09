@@ -6,21 +6,17 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:docking/docking.dart';
-import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter/widgets.dart';
 
 import '../skin/svg_parts.dart';
-import 'stage/stage_art.dart' show WsArt;
 import 'window/zoom.dart';
 import 'commands/command_actions.dart';
-
 import 'package:motolii/inspector/inspector_parts_insp_host.dart';
 
 import '../inspector/inspector_parts.dart';
 import '../skin/theme.dart';
 import 'window/panes.dart';
 import 'tool_panel/tool_panel_widgets.dart';
-import 'edits/keyframe_edits.dart';
 import 'commands/keymap.dart';
 import 'timeline/timeline.dart';
 import '../bridge/motolii.dart';
@@ -95,37 +91,6 @@ class _WorkspaceState extends State<Workspace> {
   }
 
   /// A text box has the keys: the act is its own, by Flutter's own text actions (true: it was given it).
-  /// Where a copied thing, or a copied look, is kept between windows (the inside's own document of it: document/presets.h).
-  static String _clipboard(String what) {
-    final dir = Directory('${Platform.environment['HOME']}/Library/Caches/Motolii')..createSync(recursive: true);
-    return '${dir.path}/clipboard_$what.motolii';
-  }
-
-  /// The things picked: together if more than one is, else the one.
-  List<int> _picked() => [
-    for (final id in _ws.many.isNotEmpty ? _ws.many : {?_ws.selected}) ?int.tryParse(id),
-  ];
-
-  /// One step for each picked thing told so, all of it one step to undo.
-  void _eachPicked(int Function(int) tell) {
-    final m = _inside, all = _picked();
-    if (m == null || all.isEmpty) return;
-    m.later('together', number: 1);
-    for (final t in all) {
-      tell(t);
-    }
-    _ws.after(m.later('together'));
-  }
-
-  /// The text the machine's clipboard held when something was last copied here: what was copied last is what is pasted.
-  String? _textWhenCopied;
-
-  void _copy(String call, String what) {
-    Clipboard.getData(Clipboard.kTextPlain).then((said) => _textWhenCopied = said?.text);
-    final t = int.tryParse(_ws.selected ?? '');
-    if (_inside != null && t != null) _inside!.later(call, layer: t, word: _clipboard(what));
-  }
-
   bool _typed<T extends Intent>(T act) {
     final box = primaryFocus?.context;
     if (box == null || Actions.maybeFind<T>(box, intent: act) == null) return false;
@@ -138,36 +103,6 @@ class _WorkspaceState extends State<Workspace> {
     for (var n = 1; ; n++) {
       if (!File('$here/untitled_$n.motolii').existsSync()) return '$here/untitled_$n.motolii';
     }
-  }
-
-  /// The document written as a film beside itself; the top bar says how it went.
-  Future<bool> _render() async {
-    final m = _inside, doc = _doc;
-    if (m == null || doc == null) return false;
-    final mp4 = _ws.renderTo ?? '${doc.substring(0, doc.lastIndexOf('.'))}.mp4';
-    _ws.renderTo = null;
-    _ws.notice = 'Writing ${mp4.split('/').last} …';
-    final done = await m.exportVideo(mp4);
-    if (mounted) _ws.notice = done ? 'Written: ${mp4.split('/').last}' : 'Not written: ${m.error}';
-    if (done && RegExp(r'\.(mp4|mov|m4v)$').hasMatch(mp4)) unawaited(_checkFlashes(m, mp4));
-    return done;
-  }
-
-  /// A film just written looked over for flashes that may cause seizures, as YouTube Studio's Checks look over a video
-  /// while it uploads and say "No issues found" or what and where (EA's IRIS: flashesOf); the top bar says it.
-  Future<void> _checkFlashes(Motolii m, String film) async {
-    final written = 'Written: ${film.split('/').last}', checking = '$written · Checking flashes…';
-    _ws.notice = checking;
-    final fails = await flashesOf(m.libPath, film);
-    if (!mounted || _ws.notice != checking) return; // (something said meanwhile stands)
-    String clock(double s) => '${s ~/ 60}:${(s % 60).toStringAsFixed(1).padLeft(4, '0')}';
-    final name = film.split('/').last; // (what it found first, the name after: the bar's end is cut. NN/g's F-shaped reading, words that carry the news first)
-    _ws.notice = switch (fails) {
-      null => written,
-      [] => 'Flash check: no issues found · $name',
-      _ => 'Flash check: too many flashes at ${fails.map((f) => '${clock(f.$1)}–${clock(f.$2)}').join(', ')} · $name',
-    };
-    if (fails case [(final from, _), ...]) _ws.noticeGo = () => _ws.frame = (from * Ws.fps).floor();
   }
 
   /// The document and its media gathered into "<name> package" beside it (Alight Motion's project package).
@@ -223,7 +158,6 @@ class _WorkspaceState extends State<Workspace> {
       ..document = doc.split('/').last
       ..documentFolder = File(doc).parent.path
       ..notice = null
-      ..onRender = _render
       ..onSize = (wide, high) {
         _ws.after(inside.later('size', word: '$wide $high')); // (without waiting: the document's picture then says it does not fit, and it is opened again)
       }

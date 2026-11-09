@@ -48,13 +48,6 @@ class Ws extends ChangeNotifier {
   void Function(int wide, int high)? onSize;
   VoidCallback? refit;
 
-  /// Joined: how the document is written as a film (the host does it), and what the window has to say about the
-  /// document just now (it is being written, where it was written, why something was not done); null: nothing.
-  VoidCallback? onRender;
-
-  /// Where the next film is written (set by the settings window; the window's own default when null).
-  String? renderTo;
-
   /// Joined: the inks the drawing tools give a new thing (a fill word, a stroke colour; '': the document's own), and how
   /// the ink's colours are mixed when it is a gradient (gradient_blend; '': sRGB). Kept with the document, not steps
   /// of it, as a PowerPoint file keeps its theme's colours (the inside's setting: golf_noise.md (90), engine_needs.md E4).
