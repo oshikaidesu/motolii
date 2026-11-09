@@ -162,28 +162,12 @@ class Doc extends ChangeNotifier {
     notifyListeners();
   }
 
-  void str(String id, String x) {
-    s2[id] = x;
-    notifyListeners();
-  }
-
   void flag(String id, bool x) {
     b[id] = x;
     notifyListeners();
   }
 
   void poke() => notifyListeners();
-
-  /// A card's own defaults, written once (absent ids only, no notify), so a card can bring its values without the constructor knowing it.
-  void seed(Map<String, double> nums, {Map<String, String> strs = const {}, Map<String, bool> flags = const {}}) {
-    nums.forEach((id, x) {
-      if (v.containsKey(id)) return;
-      v[id] = x;
-      d[id] = x;
-    });
-    strs.forEach((id, x) => s2.putIfAbsent(id, () => x));
-    flags.forEach((id, x) => b.putIfAbsent(id, () => x));
-  }
 
   /// Fields picked together; Shift-click spans a rectangle of [_grid] (a card a row, its fields in their order) like a spreadsheet.
   final Set<String> picked = {};

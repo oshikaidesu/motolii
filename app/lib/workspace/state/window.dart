@@ -64,13 +64,6 @@ class Ws extends ChangeNotifier {
     super.dispose();
   }
 
-  /// What the inside shows changed without the document changing (a thing held and carried): the panels look again.
-  void shown() {
-    lastChange = null; // (not a step of the document: what it changed is not known)
-    rev++;
-    _tell(WsAspect.document);
-  }
-
   /// The document read again, after any change to it: what the panels list is what the document holds.
   /// The document's frame rate (its `frame_rate`, the stage's own), or the inside's when it says none.
   static int _fpsOf(Motolii m) => switch ((m.value(0, 'frame_rate', 0) ?? 0).round()) {

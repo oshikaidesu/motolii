@@ -10,14 +10,6 @@ abstract final class WsZoom {
   static const usual = .88;
 
   static final value = ValueNotifier<double>((double.tryParse(WindowFile.get('Zoom') ?? '') ?? usual).clamp(.5, 2.0));
-
-  /// The zoom set (to the nearest 1%, 50% to 200%) and, unless [keep] is false, kept for the next time.
-  static void set(double z, {bool keep = true}) {
-    value.value = ((z * 100).round() / 100).clamp(.5, 2.0);
-    if (keep) WindowFile.set('Zoom', value.value.toStringAsFixed(2));
-  }
-
-  static void by(int percent) => set(value.value + percent / 100);
 }
 
 /// [child] drawn at [WsZoom.value].

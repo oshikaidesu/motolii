@@ -107,15 +107,9 @@ class Motolii {
   late final _add = _b.motolii_add;
   late final _remove = _b.motolii_remove;
   late final _set = _b.motolii_set;
-  late final _say = _b.motolii_say;
-  late final _key = _b.motolii_key;
-  late final _easing = _b.motolii_easing;
   late final _keying = _b.motolii_keying;
   late final _dragUpdate = _b.motolii_drag_update;
-  late final _put = _b.motolii_put;
-  late final _effect = _b.motolii_effect;
   late final _kindOf = _b.motolii_kind_of;
-  late final _together = _b.motolii_together;
   late final _error = _b.motolii_error;
   late final _still = _b.motolii_still;
   late final _close = _b.motolii_close;

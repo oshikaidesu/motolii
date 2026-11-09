@@ -67,6 +67,13 @@ OWED = {
     'motolii_guide',
     'motolii_create',
     'motolii_mark',
+    # The window queues these through later(); nothing calls the direct wrappers.
+    'motolii_say',
+    'motolii_key',
+    'motolii_easing',
+    'motolii_put',
+    'motolii_effect',
+    'motolii_together',
 }
 SAY = 'nothing in the window reaches this; wire it to a menu/dock/card or delete it'
 IDENT = re.compile(r'[A-Za-z_$][\w$]*')

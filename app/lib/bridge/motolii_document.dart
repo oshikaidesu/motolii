@@ -96,20 +96,6 @@ extension MotoliiDocument on Motolii {
   /// The words a value of a thing may be (a blend's): none if any word will do, or the thing has no such value.
   List<String> words(int layer, String name) => Motolii._spaced((_of(layer)['words'] as Map<String, dynamic>?)?[name]);
 
-  /// The way of the stretch that begins at a value's key, as it is said ('': no key there).
-  String easingOf(int layer, String name, double at) {
-    final keys = keyTimes(layer, name), easings = (_of(layer)['keyEasings'] as Map<String, dynamic>?)?[name] as List<dynamic>?;
-    var i = -1; // (the nearest within half a frame: two keys may lie in one frame, a stretched bar leaving them off its grid)
-    var near = .5 / rate;
-    for (final (k, s) in keys.indexed) {
-      if ((s - at).abs() < near) (i, near) = (k, (s - at).abs());
-    }
-    return i < 0 || easings == null || i >= easings.length ? '' : easings[i] as String;
-  }
-
-  /// Points of the picture to one unit of the stage, at z 0.
-  double get point => (_document['point'] as num?)?.toDouble() ?? 1;
-
   /// How a hand reads a thing's value, as the inside says it: shown = value x times + from (places in points of the
   /// picture from its top left, shares in hundredths...). Asked once a thing and a name.
   (double, double) reading(int layer, String name) {
