@@ -56,20 +56,6 @@ extension MotoliiWrites on Motolii {
 
   bool key(int layer, String name, double at, double number) => _took(_with([name], (s) => _key(_m, layer, s[0], at, number)) != 0);
 
-  /// Many keys of one value in one call and one step (a baked motion, beats): [at] and [numbers] side by side.
-  bool keyMany(int layer, String name, List<double> at, List<double> numbers) {
-    final n = at.length < numbers.length ? at.length : numbers.length, a = malloc<Double>(n < 1 ? 1 : n), v = malloc<Double>(n < 1 ? 1 : n);
-    for (var i = 0; i < n; i++) {
-      a[i] = at[i];
-      v[i] = numbers[i];
-    }
-    final ok = _with([name], (s) => _keyMany(_m, layer, s[0], n, a, v)) != 0;
-    malloc
-      ..free(a)
-      ..free(v);
-    return _took(ok);
-  }
-
   /// A MIDI file's notes as keys of a value, as om_midi keys them (motolii.h): [kind] velocity, pitch, count, on or
   /// bool; [channel] -1 any; [bpm] the file's beats played at it (0: the file's own). Its keys before go; one step.
   bool midi(int layer, String name, String file, String kind, int channel, double bpm) =>
@@ -77,8 +63,6 @@ extension MotoliiWrites on Motolii {
 
   /// The BPM a MIDI file says (120 if it says none): om_midi's BPM box as it first is.
   double midiBpm(String file) => _with([file], (s) => _midiBpm(s[0]));
-
-  bool unkey(int layer, String name, double at) => _took(_with([name], (s) => _unkey(_m, layer, s[0], at)) != 0);
 
   bool easing(int layer, String name, double at, String easing) => _took(_with([name, easing], (s) => _easing(_m, layer, s[0], at, s[1])) != 0);
 
@@ -100,24 +84,10 @@ extension MotoliiWrites on Motolii {
   bool dragUpdate(String by, double a, [double b = 0]) =>
       _with([by], (s) => _dragUpdate(_m, s[0], a, b)) != 0; // (sent, not waited for: what it carries shows in the moment's picture)
 
-  bool dragEnd(bool keep) => _took(_dragEnd(_m, keep ? 1 : 0) != 0);
-
   /// What a hand does to a value at a moment, by the document's own rules (motolii.h): the value changed there (a key
   /// if it has keys, else the value that stays); a key there holding what it is; its keys gone; and how it is keyed
   /// at that moment (0 no keys, 1 keys but none there, 2 a key there).
   bool put(int layer, String name, double at, double number) => _took(_with([name], (s) => _put(_m, layer, s[0], at, number)) != 0);
-
-  bool keyHere(int layer, String name, double at) => _took(_with([name], (s) => _keyHere(_m, layer, s[0], at)) != 0);
-
-  bool stay(int layer, String name, double at) => _took(_with([name], (s) => _stay(_m, layer, s[0], at)) != 0);
-
-  bool resize(int wide, int high) => _took(_size(_m, wide, high) != 0);
-
-  /// Sequence Layers: the things that have a length and stand on their own, from the front, one after another
-  /// ([overlap] seconds over each other), on frames, their keys with them; one step ([trouble] says why not).
-  bool sequence(double overlap) => _took(_sequence(_m, overlap) != 0);
-
-  bool setWork(double from, double to) => _took(_work(_m, from, to) != 0);
 
   /// Whether play goes round the work area (or stops at its end).
   bool get looping => _loopIs(_m, -1) != 0;
@@ -128,17 +98,8 @@ extension MotoliiWrites on Motolii {
 
   bool guide(String axis, double at, bool on) => _took(_with([axis], (s) => _guide(_m, s[0], at, on ? 1 : 0)) != 0);
 
-  /// A thing brought [places] places nearer among the things (below 0: further back).
-  bool raise(int layer, int places) => _took(_raise(_m, layer, places) != 0);
-
   /// A recipe made at the present moment, as one step: the new thing (0: not made, [trouble] says why).
   int create(String script) => _took(_with([script], (s) => _create(_m, s[0])));
-
-  /// The names of the ways a stretch may go, and how one of the nine kinds goes at [u] of the way through (0 to 1).
-  /// A way of this document's own, by name: how far it is (`a` the one key's value, `b` the next's, `u` from 0 to 1
-  /// through the stretch, `p1`..`p4` its numbers; `bezier(u, x1, y1, x2, y2)` an ease by its two handles). It is then
-  /// one of [wayNames], a tile of the Ease desk, and saved with the document.
-  bool define(String easing, String expression) => _took(_with([easing, expression], (s) => _define(_m, s[0], s[1])) != 0);
 
   /// An effect put on a thing at a moment, or taken off if it is on (its keys too), one step.
   bool effect(int layer, String name, double at) => _took(_with([name], (s) => _effect(_m, layer, s[0], at)) != 0);
@@ -159,6 +120,4 @@ extension MotoliiWrites on Motolii {
       _with([call, name, word], (s) => _later(_m, s[0], layer, s[1], s[2], number));
 
   bool undo() => _took(_undo(_m) != 0);
-
-  bool redo() => _took(_redo(_m) != 0);
 }

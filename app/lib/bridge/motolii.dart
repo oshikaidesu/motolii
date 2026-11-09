@@ -217,18 +217,12 @@ class Motolii {
   late final _set = _b.motolii_set;
   late final _say = _b.motolii_say;
   late final _key = _b.motolii_key;
-  late final _unkey = _b.motolii_unkey;
   late final _easing = _b.motolii_easing;
   late final _path3 = _b.motolii_path3;
   late final _keying = _b.motolii_keying;
   late final _dragStart = _b.motolii_drag_start;
   late final _dragUpdate = _b.motolii_drag_update;
-  late final _dragEnd = _b.motolii_drag_end;
   late final _put = _b.motolii_put;
-  late final _keyHere = _b.motolii_key_here;
-  late final _size = _b.motolii_size;
-  late final _raise = _b.motolii_raise;
-  late final _stay = _b.motolii_stay;
   late final _createScripts = _b.motolii_create_scripts;
   late final _create = _b.motolii_create;
   late final _effects = _b.motolii_effects;
@@ -236,7 +230,6 @@ class Motolii {
   late final _animators = _b.motolii_animators;
   late final _relations = _b.motolii_relations;
   late final _spent = _b.motolii_spent;
-  late final _define = _b.motolii_define;
   late final _easingNumbers = _b.motolii_easing_numbers;
   late final _effect = _b.motolii_effect;
   late final _easingAt = _b.motolii_easing_at;
@@ -246,7 +239,6 @@ class Motolii {
   late final _frames = _b.motolii_frames;
   late final _cacheRuns = _b.motolii_cache;
   late final _undo = _b.motolii_undo;
-  late final _redo = _b.motolii_redo;
   late final _error = _b.motolii_error;
   late final _list = _b.motolii_list;
   late final _still = _b.motolii_still;
@@ -260,8 +252,6 @@ class Motolii {
 
   late final _rate = _b.motolii_rate;
 
-  late final _keyMany = _b.motolii_key_many;
-
   late final _midi = _b.motolii_midi;
   late final _midiBpm = _b.motolii_midi_bpm;
 
@@ -272,9 +262,7 @@ class Motolii {
   /// The names of the values that change what cards a thing has (and its name): the inside's own rule, asked once.
   late final Set<String> shaping = _shaping(_m).toDartString().split(' ').toSet();
 
-  late final _work = _b.motolii_work;
   late final _mark = _b.motolii_mark;
-  late final _sequence = _b.motolii_sequence;
 
   late final _loopIs = _b.motolii_loop;
 
@@ -319,10 +307,6 @@ class Motolii {
   late final _answerWhy = _b.motolii_answer_why;
 
   final _waiting = <int, Completer<(int, String)>>{};
-
-  /// Where the inside's hand is in its round, and how many changes wait for it: read without waiting (a shell that has
-  /// waited long says why).
-  String get renderThreadStatus => '${_b.motolii_render_thread_status(_m).toDartString()}, ${_b.motolii_asked(_m)} asked and not begun';
 
   /// A file word of the document as a whole path.
   String whole(String file) => Uri.directory(home).resolveUri(Uri.file(file)).toFilePath();

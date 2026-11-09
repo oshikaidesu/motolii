@@ -99,18 +99,9 @@ extension WsFx on Ws {
     return w == 'none' ? '' : w;
   }
 
-  /// Joined: a motion given to the picked thing in place of the one it had, or taken off (one step either way). Nothing
-  /// picked: a new board as large as the picture with it, as After Effects' applyPreset puts a preset on a new solid
-  /// layer when no layer is selected (its scripting guide, Layer.applyPreset).
-  void motionToggle(String file) {
-    final m = _inside, t = int.tryParse(selected ?? '');
-    if (m == null) return;
-    if (t == null) return whole('rect', (m) => m.later('say', layer: -1, name: 'script', word: file));
-    after(m.later('say', layer: t, name: 'script', word: motion == file ? 'none' : file)); // (without waiting)
-  }
-
   /// Joined: an effect of the shelf put on the picked thing as it comes, or taken off (one step either way). Nothing
-  /// picked: a new board with it, as [motionToggle] (a board whose fill is what is behind it takes ThorVG's own effects
+  /// picked: a new board as large as the picture with it, as After Effects' applyPreset puts a preset on a new solid layer
+  /// when no layer is selected (its scripting guide, Layer.applyPreset) (a board whose fill is what is behind it takes ThorVG's own effects
   /// on no picture: a blur on one changed nothing, 11/3).
   void fxToggle(String name) {
     final m = _inside, t = int.tryParse(selected ?? '');

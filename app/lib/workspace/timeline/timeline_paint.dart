@@ -27,7 +27,6 @@ abstract final class WtM {
   static double get band => Shape.z(12.0);
   static double get padL => Shape.s(10.0);
   static double get padR => Shape.s(14.0);
-  static const barRadius = 4.0;
   static double get bar => Shape.z(18.0);
   static double get key => Shape.z(4.5);
   static double get keyPicked => Shape.z(6.0);

@@ -5,9 +5,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/painting.dart';
-import 'package:material_color_utilities/material_color_utilities.dart';
-
 abstract final class DockTags {
   static final _own = <String, Set<String>>{};
   static bool _read = false;
@@ -92,31 +89,5 @@ abstract final class DockTags {
   static String complete(String query, String tag) {
     final i = query.lastIndexOf(RegExp(r'\s'));
     return '${i < 0 ? '' : query.substring(0, i + 1)}$tag ';
-  }
-
-  /// A colour's tags, from Google's HCT and colour temperature (material_color_utilities): warm or cool (its temperature
-  /// among all the hues), light or dark (its tone), vivid or muted (its chroma).
-  static Set<String> ofColor(Color c) => _ofColor.putIfAbsent(c.toARGB32(), () => _tagsOf(c)); // (a colour's tags never change: worked out once)
-  static final _ofColor = <int, Set<String>>{};
-  static Set<String> _tagsOf(Color c) {
-    final hct = Hct.fromInt(c.toARGB32());
-    final tags = <String>{
-      hct.tone > 65
-          ? 'light'
-          : hct.tone < 35
-          ? 'dark'
-          : 'mid',
-    };
-    if (hct.chroma < 10) {
-      tags.add('grey');
-    } else {
-      final warm = TemperatureCache(hct).inputRelativeTemperature >= .5;
-      tags
-        ..add(warm ? 'warm' : 'cool')
-        ..add(warm ? 'hot' : 'cold')
-        ..add(hct.chroma > 60 ? 'vivid' : 'muted');
-      if (hct.tone > 75 && hct.chroma < 50) tags.add('pastel');
-    }
-    return tags;
   }
 }

@@ -14,7 +14,7 @@ import 'package:flutter/widgets.dart';
 import '../../skin/tokens.dart';
 import 'stage_art.dart';
 import '../../widgets/two_fingers.dart';
-import '../../bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiMoment, MotoliiWrites, MotoliiQuestions, MotoliiShelves, MotoliiWatch;
+import '../../bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiMoment, MotoliiWrites, MotoliiQuestions;
 import '../../widgets/timeline_painters.dart' show TpGlyph, TpGlyphView;
 import '../../inspector/inspector_state.dart' show textToType;
 import '../edits/make_relation.dart';

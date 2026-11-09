@@ -2,10 +2,6 @@
 part of 'motolii.dart';
 
 extension MotoliiDocument on Motolii {
-  /// The document's copy as now (BRIDGE.md rule 3: replaced whole when the document changes): an answer kept for it
-  /// holds while it is the same one (identical).
-  Object get documentNow => _document;
-
   Map<String, dynamic> _of(int layer) => _layer[layer] ?? const {};
 
   /// A value said nowhere: as it comes, if the thing's kind has it (the inside's tables: its `doc_usual`, `doc_knows`).
