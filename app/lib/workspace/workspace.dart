@@ -69,7 +69,6 @@ class _WorkspaceState extends State<Workspace> {
 
   /// Another document in place of the open one (made, if there is none at that place).
   Future<void> _open(String doc) {
-    _ws.stageTexture = null;
     _inside?.close();
     _inside = null;
     return _join(doc);
@@ -151,9 +150,8 @@ class _WorkspaceState extends State<Workspace> {
     _ws.after(inside.later('follow_elements')); // (as the document is opened: AbsentMotion's elements followed as a project is loaded)
     _doc = doc;
     _beside = _documents();
-    final id = await inside.texture();
+    await inside.texture();
     if (!mounted) return;
-    if (id >= 0) _ws.stageTexture = id;
     _ws
       ..document = doc.split('/').last
       ..documentFolder = File(doc).parent.path

@@ -6,17 +6,15 @@ extension WsPick on Ws {
     if (id == _sel && many.isEmpty) return;
     _sel = id;
     many.clear();
-    _aim = null;
     _keys.clear();
     _stretch = null;
     _tell(WsAspect.picked);
   }
 
-  void pickMany(Iterable<String> ids, {bool inOrder = false}) {
+  void pickMany(Iterable<String> ids) {
     many
       ..clear()
       ..addAll(ids);
-    manyInOrder = inOrder;
     _tell(WsAspect.picked);
   }
 

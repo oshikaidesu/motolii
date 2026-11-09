@@ -28,7 +28,6 @@ class Ws extends ChangeNotifier {
     inside.listener = ({required document, required moment, required cache}) {
       // (the inside's pictures are new: docs/app/BRIDGE.md)
       if (_gone) return;
-      if (cache) this.kept.value = inside.cache;
       if (document) reread();
       if (moment) seen.value++;
     };
@@ -66,15 +65,9 @@ class Ws extends ChangeNotifier {
   String? _notice;
   String? get notice => _notice;
   Timer? _noticeEnds;
-  List<int> strikes = const []; // (the sounds' strikes, in frames, as the timeline last had them: its Beats)
-
-  /// What a click on the notice does while it is said: a time it tells is a place to go, as a time written under a
-  /// YouTube video is a link to that moment.
-  void Function()? noticeGo;
   set notice(String? said) {
     if (said == _notice) return;
     _notice = said;
-    noticeGo = null;
     _noticeEnds?.cancel();
     if (said != null && !said.endsWith('…')) {
       _noticeEnds = Timer(
@@ -111,16 +104,11 @@ class Ws extends ChangeNotifier {
   bool _gone = false;
   final seen = ValueNotifier<int>(0);
 
-  /// The stage's pictures kept on disk for playing, as stretches of frames (the timeline marks them, as After Effects'
-  /// green line): told again by the inside when they change.
-  final kept = ValueNotifier<List<(int, int)>>(const []);
-
   @override
   void dispose() {
     _gone = true;
     _noticeEnds?.cancel();
     seen.dispose();
-    kept.dispose();
     moment.dispose();
     for (final n in on.values) {
       n.dispose();
@@ -136,10 +124,6 @@ class Ws extends ChangeNotifier {
   }
 
   /// The document read again, after any change to it: what the panels list is what the document holds.
-  /// The document's tempo, beats a minute (0: none), and its beats.
-  double get bpm => _inside?.value(0, 'bpm', 0) ?? 0;
-  WsBeats? get beats => WsBeats.of(bpm, _inside?.value(0, 'bpm_from', 0) ?? 0, Ws.fps);
-
   /// The document's frame rate (its `frame_rate`, the stage's own), or the inside's when it says none.
   static int _fpsOf(Motolii m) => switch ((m.value(0, 'frame_rate', 0) ?? 0).round()) {
     > 0 && final r => r,
@@ -213,15 +197,6 @@ class Ws extends ChangeNotifier {
     _tell(WsAspect.document);
   }
 
-  /// The inside's own picture of the stage, as a Flutter texture, when the window is joined to it (null: the stand-in art).
-  int? _stageTexture;
-  int? get stageTexture => _stageTexture;
-  set stageTexture(int? id) {
-    if (id == _stageTexture) return;
-    _stageTexture = id;
-    _tell(WsAspect.stage);
-  }
-
   /// The things whose moving values the window shows (told the inside: Motolii.subscribe): the picked one and those picked
   /// with it, the cameras (the Depth tool panel's lens), the relations (the Relations tool panel's map), and a picked relation's things.
   void _watch() {
@@ -245,9 +220,8 @@ class Ws extends ChangeNotifier {
   String? get selected => _sel;
   WsLayer? get layer => layers.where((l) => l.id == _sel).firstOrNull;
 
-  /// The things picked together (drawn round on the stage): what a relation is made of. Picking one alone clears them.
+  /// The things picked together: what a relation is made of. Picking one alone clears them.
   final many = <String>{};
-  bool manyInOrder = false; // (picked one by one, in that order: the first leads; drawn round, they have no order)
   final _keys = <WsKey>{};
   Set<WsKey> get keys => _keys;
 
@@ -287,21 +261,8 @@ class Ws extends ChangeNotifier {
     _tell(WsAspect.shelf);
   }
 
-  /// How the window looks, by name ('stage.tool', 'fold.Transform'...): what a pane keeps of itself that is not the
-  /// document's. Any pane may read it; the window opened again on the same document at the same view shows the same.
+  /// How the window looks, by name ('fold.Transform'...): what a pane keeps of itself that is not the document's.
   final view = <String, Object?>{};
-  T viewOf<T>(String name, T otherwise) => view[name] as T? ?? otherwise;
-  void setView(String name, Object? value) {
-    if (view[name] == value) return;
-    view[name] = value;
-    _tell(WsAspect.view);
-  }
-
-  /// Whether the stage is seen by the working eye, not the camera (AbsentMotion's cameraMode off): only a document with a camera has two eyes.
-  bool get freeEye => !viewOf('stage.camera', false) && layers.any((l) => l.kind == WsKind.camera);
-
-  /// Where the working eye stands round the world's middle: about, over, how far.
-  List<double> get eye => viewOf('stage.eye', const [0.0, 0.0, 1.0]);
 
   /// The tool panel's tools: the window's own, then any of your own (Workspace(tools:)).
   List<PanelTool> tools = panelTools;
@@ -314,26 +275,6 @@ class Ws extends ChangeNotifier {
 
   (String, int)? fronted;
 
-  /// Joined: the value of the picked thing (or of the stage, with nothing picked) a colour picked on the Colors shelf is
-  /// said to, when a card's colour link or the tool strip's ink or edge aimed it there; null: the fill. Told as a pick
-  /// (the strip rings the one aimed, the shelf's foot says where its colour goes).
-  String? _aim;
-  String? get aim => _aim;
-  set aim(String? to) {
-    if (to == _aim) return;
-    _aim = to;
-    _tell(WsAspect.picked);
-  }
-
-  /// A panel link elsewhere asked for a panel (fonts, colours, ease): the dock or tool panel shows it.
-  void route(String to) {
-    switch (to) {
-      case final s when s.startsWith('Browser'):
-        shelf = s.split('›').last.trim(); // (told as any shelf named is: the panes bring it to the front)
-    }
-    _tell(WsAspect.route);
-  }
-
   /// The shelf's effects on the thing: those whose card the inside shows (an effect's card shows while it is on).
   List<String> fxOf(String? id) {
     final m = _inside, t = int.tryParse(id ?? '');
@@ -345,48 +286,20 @@ class Ws extends ChangeNotifier {
     ];
   }
 
-  /// Joined: whether every change a hand makes is keyed (the top bar's Animate, the inspector's Animate all: one truth, the inside's).
+  /// Joined: whether every change a hand makes is keyed (the inspector's Animate all: one truth, the inside's).
   bool get animating => _inside?.keyingNow ?? false;
 
-  /// Joined: the work area, the marks, the guides: the document's picture's.
-  (double, double) get work => _inside!.work;
+  /// Where the hand comes to rest and J and K go: the marks and the other things' ends and keys.
   List<(double, String)> get marks => _inside!.marks;
-
-  /// Where the hand comes to rest and J and K go: Alight Motion's snapTargets, the marks and the other things' ends and
-  /// keys; and a sound's strikes, the beat marks CapCut's bars snap to.
   Set<int> stops({Set<String> skip = const {}}) => {
     for (final (at, _) in marks) (at * fps).round(),
     for (final l in layers)
       if (!skip.contains(l.id)) ...[l.inF, l.outF, ...l.keys],
-    ...strikes,
   };
-  Map<double, int> get markColors => _inside!.markColors;
-  List<(String, double)> get guides => _inside!.guides;
   set animating(bool on) {
     _inside?.keying(on);
     _tell(WsAspect.animating);
   }
-
-  Iterable<WsLayer> _over(WsLayer l, Map<String, WsLayer> of) sync* {
-    var p = of[l.parent];
-    for (var n = 0; p != null && n < 64; p = of[p.parent], n++) {
-      // (64: as Group's walk up, stage_view_2.dart)
-      yield p;
-    }
-  }
-
-  /// What a group holds, however deep (nothing, for any other thing: the inside's doc_under).
-  List<String> under(String id) {
-    final of = {for (final l in layers) l.id: l};
-    if (of[id]?.kind != WsKind.group) return const [];
-    return [
-      for (final l in layers)
-        if (_over(l, of).any((p) => p.id == id)) l.id,
-    ];
-  }
-
-  /// How many groups a thing stands in: its row is set in by so many.
-  int depth(WsLayer l) => _over(l, {for (final x in layers) x.id: x}).where((p) => p.kind == WsKind.group).length;
 
   /// Joined: a change asked without waiting ([Motolii.later]): looked at once a picture till the inside has done it, then
   /// the document read again and [then] told (done or not, and why not). The window never stands still for the inside.

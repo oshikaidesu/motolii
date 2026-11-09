@@ -7,7 +7,7 @@
 | 場所 | 中身 |
 |---|---|
 | `workspace.dart` | 画面の全体（`Workspace`）：上のバー、パネルの並び、プロジェクトを開く。部品（part）は `inspector_feed/` と `commands/menu_bar.dart` |
-| `state/` | どのパネルも読むアプリの状態。`state.dart` が入口（レイヤー `WsLayer`、種類の色 `wsTone`）、`window.dart` に `Ws`、`scope.dart` に `WsScope`、`picked.dart` 選ばれた物、`effects.dart` 掛かった効果、`panel_header.dart` パネルの枠、`beats.dart` テンポの格子 |
+| `state/` | どのパネルも読むアプリの状態。`state.dart` が入口（レイヤー `WsLayer`、種類の色 `wsTone`）、`window.dart` に `Ws`、`scope.dart` に `WsScope`、`picked.dart` 選ばれた物、`effects.dart` 掛かった効果、`panel_header.dart` パネルの枠 |
 | `window/` | ウィンドウの枠：`panes.dart` パネルの並び（pub の `docking`）、`zoom.dart` 画面全体の拡大、`settings_file.dart` `~/.motolii/window.xml`（倍率と着ているスキン） |
 | `commands/` | 名前の付いた操作と、それを言うキー・メニュー：`keymap.dart` キーの表（VS Code の keybindings.json の形）、`command_actions.dart` 各操作がアプリの状態にすること（キーは Ableton Live 12 の表から）、`menu_bar.dart` メニューバー |
 | `edits/` | 関係の種類 `wsRelations`（`make_relation.dart`）と、キーフレームの移動・削除・コピー（`keyframe_edits.dart`） |
@@ -90,7 +90,6 @@ $F/flutter analyze lib
   - Effects はフィルター帯を開いていて 560px 以上なら、帯を一覧の横に縦いっぱいで立てる。狭いと上の帯。
   - **Inspector は縦積みのまま**(カードを横に並べない)。カードの中身を、Effects のパラメーターと同じブロックの格子(`Pop.tileMin` ごとに列が増える)にする。
 - **Inspector は今の値を見せる。** 数値は `NumField`、選択肢は `Segmented`。言葉・ファイル・色は、プロジェクトが持っている文字を出す。
-- **Inspector の値は Stage と一致させる。** 位置・倍率・回転・塗りは `WsArt.boxOf` と絵の色から渡す(`InspHost(values:, strs:)`)。
 - **パスの操作は同じものを何度でも重ねられる**(パンク膨張の後にまたパンク膨張)。UI 側で数を絞らない。
 - **シードなど普段触らない値も、隠さずに Advanced に置く**(宣言の `@advanced`、`ValuesCard` が畳む)。
 - **テキストは普通に**: 入力欄、その下にサイズ・太さ・色。
@@ -99,7 +98,7 @@ $F/flutter analyze lib
 - **フィルター帯は Motolii 本体の草案に合わせる**: グループ同士は AND、グループ内は OR。クリックで 1 つ、Cmd/Ctrl-クリックで追加・解除。残る件数を札に出し、0 件になる札は押せない。件数と Clear は帯の一番下。**帯の高さは利用者が決める**(下端のグリップを上下にドラッグ、ダブルクリックで 168px に戻る)。
 
 ## 変えるときの作法
-- パネルをまたぐ情報は `Ws` に足す。パネルどうしで import し合わない。例外は一つだけ: Inspector に Stage の値を渡すために `stage/stage_art.dart` を読む組み立て役の `workspace.dart`。
+- パネルをまたぐ情報は `Ws` に足す。パネルどうしで import し合わない。コンポジションの寸法は `state.dart` が `stage/stage_art.dart` の `WsArt` を読む。
 - コメントは、コードから読めない制約だけを書く(`contract:` で始まる行がそれ)。
 - 区切りごとにコミットする(履歴が無いのが一番怖い、が利用者の方針)。
 

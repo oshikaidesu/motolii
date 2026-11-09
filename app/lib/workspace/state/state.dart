@@ -22,9 +22,7 @@ export '../../bridge/motolii.dart'
 import '../../skin/theme.dart';
 import '../../skin/tokens.dart';
 import '../tool_panel/tool_panel_widgets.dart' show PanelTool, panelTools;
-import 'beats.dart';
 import '../stage/stage_art.dart' show WsArt;
-export 'beats.dart';
 
 part 'window.dart';
 part 'effects.dart';

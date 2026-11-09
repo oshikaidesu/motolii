@@ -10,8 +10,8 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-/// The window's own keys: Ableton Live 12's (its manual, chapter 42; command_actions.dart says where each comes from), the
-/// standard Mac ones (New, Undo, Cut, Copy, Paste, Select All), and the stage's tools.
+/// The window's own keys: Ableton Live 12's (its manual, chapter 42; command_actions.dart says where each comes from)
+/// and the standard Mac ones (New, Undo).
 const defaultKeys = <(String, String)>[
   ('cmd+n', 'file.new'),
   ('cmd+o', 'file.home'), // (the documents listed: the Mac's own Open, as Alight Motion's home lists its projects)
@@ -19,30 +19,8 @@ const defaultKeys = <(String, String)>[
   ('shift+e', 'file.exportFrame'), // (Premiere Pro's Export Frame)
   ('cmd+z', 'edit.undo'),
   ('cmd+shift+z', 'edit.redo'),
-  ('cmd+x', 'edit.cut'),
-  ('cmd+c', 'edit.copy'),
-  ('cmd+v', 'edit.paste'),
-  ('cmd+alt+c', 'edit.copyStyle'), // (the Mac's own: Pages, Keynote, TextEdit)
-  ('cmd+alt+v', 'edit.pasteStyle'),
-  ('cmd+a', 'edit.selectAll'),
-  ('cmd+shift+a', 'edit.deselectAll'), // (After Effects', Premiere Pro's: Deselect All)
-  ('cmd+alt+b', 'edit.workToPicked'), // (After Effects': the work area to the selected layers, else the whole)
-  ('cmd+d', 'thing.duplicate'), // (Live 42.5)
-  ('cmd+g', 'thing.group'), // (Figma's, Keynote's: Group)
-  ('cmd+shift+g', 'thing.ungroup'),
-  ('cmd+]', 'thing.forward'), // (After Effects', Figma's, Illustrator's: Bring Forward, Send Backward)
-  ('cmd+[', 'thing.backward'),
-  ('cmd+e', 'thing.split'), // (Live 42.5: Split)
-  ('[', 'time.playhead'), // (After Effects': Move Layer In Point to current time, Out Point)
-  (']', 'time.playhead_end'),
-  ('alt+[', 'time.extend'), // (Final Cut Pro: Trim Start, Trim End)
-  ('alt+]', 'time.trim_end'),
-  ('cmd+r', 'thing.rename'), // (Live 42.5, 42.19)
-  ('0', 'thing.deactivate'), // (Live 42.15/42.16/42.19: 0 switches a clip off and on; here the eye)
   ('s', 'thing.solo'), // (Live 42.15/42.19)
   ('a', 'mark.animate'), // (Apple Motion's A: Record Animation, every change keyed, pressed again off)
-  ('backspace', 'thing.remove'),
-  ('delete', 'thing.remove'),
   ('space', 'play.fromStart'), // (Live 42.20)
   ('shift+space', 'play.continue'), // (Live 42.20)
   ('left', 'nudge.left'), // (Live 42.16: nudge selection)
@@ -51,13 +29,6 @@ const defaultKeys = <(String, String)>[
   ('shift+right', 'nudge.right10'),
   ('up', 'layer.previous'), // (Live: the arrow keys go between tracks)
   ('down', 'layer.next'),
-  ('cmd+l', 'loop.toggle'), // (Live 42.16)
-  ('=', 'zoom.in'), // (Live 42.9: + and -, the + without shift)
-  ('shift+=', 'zoom.in'),
-  ('-', 'zoom.out'),
-  ('z', 'zoom.selection'), // (Live 42.16)
-  ('x', 'zoom.back'),
-  ('w', 'zoom.width'),
   (',', 'frame.previous'), // (Live has none: Rive's and Jitter's)
   ('.', 'frame.next'),
   ('j', 'frame.previousStop'), // (After Effects': J and K, the previous and next visible item in the time ruler)
@@ -66,14 +37,6 @@ const defaultKeys = <(String, String)>[
   ('shift+.', 'frame.forward10'),
   ('home', 'frame.first'), // (Live 42.20: move insert marker to beginning)
   ('end', 'frame.last'),
-  ('v', 'tool.select'), // (the stage's tools, their letters as stage.dart lists them: After Effects', Photoshop's)
-  ('m', 'tool.move'),
-  ('r', 'tool.rectangle'),
-  ('e', 'tool.ellipse'),
-  ('p', 'tool.pen'),
-  ('t', 'tool.text'),
-  ('b', 'tool.brush'),
-  ('c', 'tool.camera'),
 ];
 
 /// The keys in use: the window's own, the maker's file over them.
