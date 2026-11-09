@@ -34,7 +34,6 @@ const char* motolii_list(Motolii* m) {
     return m->listed.c_str();
     });
 }
-void motolii_timed(Motolii* m, int frames) { on_render_thread(m, [m, frames] { clock(*m->s, frames, [](float) {}); return 0; }); }
 
 #include "stage/snapshot.h"
 // The window's pictures of the document (docs/app/BRIDGE.md), read without the document: 1 the document's (its own part,
@@ -50,5 +49,3 @@ char* motolii_snapshot(Motolii* m, int which, long since, long* version) {
     return strdup((all + "}}").c_str());
 }
 void motolii_add_listener(Motolii* m, void (*listener)(int which)) { m->listener = listener; }
-const char* motolii_render_thread_status(Motolii* m) { return m->status.load(); }   // (no lock: asked while the hand may be busy)
-int motolii_asked(Motolii* m) { std::lock_guard<std::mutex> hold(m->asked_lock); return (int)m->asked.size(); }   // (the window's one listener: which pictures are new)

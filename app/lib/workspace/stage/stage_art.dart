@@ -5,14 +5,8 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiMoment, MotoliiWrites, MotoliiQuestions, MotoliiShelves, MotoliiWatch;
+import '../../bridge/motolii.dart' show Motolii, MotoliiMoment;
 import '../state/state.dart';
-
-/// The poster's own inks: flat, saturated, opaque. They belong to the picture, never to the chrome.
-abstract final class ArtInk {
-  static const blue = Color(0xFF2A52E4), deep = Color(0xFF1D3BBE), sky = Color(0xFF4C79FF), navy = Color(0xFF0E1A4A);
-  static const cream = Color(0xFFF6EFDD), orange = Color(0xFFFF7A3C), pink = Color(0xFFF06BAA), lime = Color(0xFFCBE057), ink = Color(0xFF15170D);
-}
 
 /// One layer as the picture needs it: a frozen copy, so a scene can be compared with the last one.
 @immutable
@@ -132,9 +126,6 @@ abstract final class WsArt {
   /// Document px to the px the viewer sees, and back (the stage's eye is the inside's: no camera of the window's own).
   static Offset toView(ArtScene s, Offset p) => p;
   static Offset toDoc(ArtScene s, Offset p) => p;
-
-  /// Where the camera frames, in document px: the whole picture.
-  static ArtBox cameraBox(ArtScene s) => ArtBox(centre, comp);
 
   /// The box the stage frames when [id] is selected, or null when the layer has no picture at this frame (the inside
   /// gives a frame only to what it shows: whether it is on is its, not counted again here in frames).

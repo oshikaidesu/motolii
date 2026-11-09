@@ -1,10 +1,6 @@
 // keyframe_marks.dart: the key marks beside a value (none, keyed, a key here), read and put.
 part of '../workspace.dart';
 
-/// Joined: a property's key mark as the document has it at the playhead (the most keyed of its values).
-/// Joined: the key marks the inspector shows (for the checks: the same the inspector is given).
-Map<String, KeyS> wsKeyMarks(Ws ws, String? id) => _keyMarks(ws, id);
-
 Map<String, KeyS> _keyMarks(Ws ws, String? id) {
   final m = ws.inside, t = id == null ? 0 : int.tryParse(id);
   if (m == null || t == null) return const {};

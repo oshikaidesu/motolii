@@ -1,6 +1,6 @@
 // studio.glsl: the room glass carries with it, the same wherever the glass is put: grey walls, three bright strip
 // lamps, three black flags, a soft lamp overhead. Clear glass reads as glass only by what is around it (bright fields,
-// black lines), so the glass brings its surroundings and the scene has no say. Used by glassbox.mat and thick_glass.mat.
+// black lines), so the glass brings its surroundings and the scene has no say. Used by thick_glass.mat.
 float band(float x, float centre, float halfWidth, float soft) {
     float d = abs(x - centre);
     d = min(d, 6.2831853 - d);

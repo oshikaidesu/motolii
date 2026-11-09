@@ -1,6 +1,6 @@
 // spectrum.glsl: a colour of light as a number (its wavelength in nm): how hard glass bends it, and what colour it
-// shows as. Shared by glassbox.mat (what a block shows) and boxlight.mat (the light a block throws).
-// From Saqoosha/Spectral-Glass `cauchyIor`, `cieXyz`, `xyzToSrgb` (MIT, (c) 2026 Saqoosha); see third_party/NOTICE-glassbox.md.
+// shows as. Read by thick_glass.mat.
+// From Saqoosha/Spectral-Glass `cauchyIor`, `cieXyz`, `xyzToSrgb` (MIT, (c) 2026 Saqoosha).
 // --- Spectral-Glass: Cauchy + Abbe number (glTF KHR_materials_dispersion formulation)
 float cauchyIor(float lambda, float n_d, float V_d) {
     return max(n_d + (n_d - 1.0) / V_d * (523655.0 / (lambda * lambda) - 1.5168), 1.0);

@@ -14,17 +14,15 @@ typedef struct Motolii Motolii;
 
 void motolii_home(const char* folder);                             /* where the inside's own files are (its materials, its room): said once, before a document is opened */
 /* The document on a stage (0: not a document). A document says its own size: one that is there is opened at it; a
-   new one is made `wide` by `high` points. motolii_size: the document says another size (a step of undo); the stage it
-   is open on stays the size it was opened at. motolii_size_of: the size of that stage. motolii_fits: 1 if the stage
-   is the size the document says now; 0 (after motolii_size, or an undo or redo of one): close it and open it again. */
+   new one is made `wide` by `high` points. motolii_size_of: the size of the stage it is open on. motolii_fits: 1 if
+   the stage is the size the document says now; 0 (after the document says another size, or an undo or redo of one):
+   close it and open it again. */
 Motolii* motolii_open(const char* document, int wide, int high);
-int motolii_size(Motolii* m, int wide, int high);
 int motolii_size_of(Motolii* m, int* wide, int* high);
 int motolii_fits(Motolii* m);
 /* The work area: the stretch played round and written as a video (not said: all of it); a change is a step. The marks:
    moments with a name; motolii_mark with "" takes the one there away; motolii_marks: a line each, in time, "moment name"
    (until the next call). */
-int motolii_work(Motolii* m, double from, double to);
 int motolii_loop(Motolii* m, int on);   /* play goes round the work area (1, as a document is opened) or stops at its end (0); below 0: only asks */
 int motolii_work_of(Motolii* m, double* from, double* to);
 int motolii_mark(Motolii* m, double at, const char* word);
@@ -49,19 +47,12 @@ int motolii_work_out(Motolii* m, const char* sum, double* is);     /* a sum type
 const char* motolii_error(Motolii* m);                           /* why the last call that was not done was not */
 
 const char* motolii_kind_of(const char* file);                     /* what kind of layer a file makes ("": none) */
-/* What an expression's each() returns, as places in its code (js_returned.cpp): a line for each property of the object it
-   returns, "name<TAB>start<TAB>end<TAB>parts", start and end the bytes of its value (UTF-8, from 0, end past it), parts
-   what makes that value, in the order they stand, with spaces between: "n:start:end" a number, "k:Name:start:end" a knob
-   (k.Name or k["Name"]). A name in the value is followed to what each() says of it (const/let/var x = …, x = …, x += …)
-   and on, each name once, so a part may lie outside the value. "": no each() returning an object. Any thread. */
-const char* motolii_js_returned(const char* src);
 int motolii_sets(const char* font, const char* words);             /* 1 if a text in that font file can be those words (any thread, while a document is open) */
 const char* motolii_font_lacks(const char* font, const char* words);   /* the letters of those words that font file has not, each once ("": none), then a tab and the font they are all drawn in instead (a text of them is: "" none has them all); any thread, until its next call */
 int motolii_type_frame(const char* font, const char* words, int w, int h, float most, unsigned char* grey);   /* those words in that font file white on black, as large as they fit (no larger than size most, when more than 0), w * h bytes (any thread, while a document is open); 0: not drawn */
 int motolii_map(const float* points, int n, int dims, double* xy);   /* n points of dims numbers each laid on a plane, the alike near (t-SNE): 2n numbers, x and y from 0 to 1 (any thread); 0: fewer than 4 */
 int motolii_grid(const double* xy, int n, int cols, int rows, int* cell);   /* those n places (x, y from 0 to 1) each a cell of a cols x rows grid, the nearest for them all (row * cols + column; any thread); 0: not laid */
 int motolii_likeness(const char* model, const unsigned char* rgba, int n, int dims, float* out);   /* n pictures (224 square, RGBA) each told as dims numbers, one long, by a CLIP image encoder in an ONNX file (any thread); 0: not told */
-int motolii_thumbnail(const char* video, const char* png, int wide);   /* a video's first picture written small, as a .png (asks nothing of a document: callable from any thread) */
 int motolii_thumbnail_at(const char* video, const char* png, int wide, double fraction);   /* the same, a picture that far along the video (0 to 1) */
 int motolii_thumbnail_seconds(const char* video, const char* png, int wide, double seconds);   /* the same, the picture so many seconds in */
 const char* motolii_media_info(const char* file);   /* what a media file is, GStreamer's discoverer: "wide high rate seconds format" ("": cannot be read; until the next call on this thread) */
@@ -71,26 +62,14 @@ int motolii_add(Motolii* m, const char* kind, const char* file);   /* a new laye
 int motolii_remove(Motolii* m, int layer);
 int motolii_set(Motolii* m, int layer, const char* name, double number);          /* a value that stays */
 int motolii_say(Motolii* m, int layer, const char* name, const char* word);
-/* A pen: a point where the hand is (points of the picture from the top left), its handle drawn out by hx, hy (0, 0: a
-   corner), on a path shape's path; on its first point again, closed (the next point begins another). layer 0: a new path shape begun there. Its number (0: not). */
-int motolii_pen(Motolii* m, int layer, double x, double y, double hx, double hy);
-/* A path shape's points where the picture shows them (xy[2i], xy[2i+1]: points from the top left; its handles not), as
-   many as there are (room: how many xy holds). One is dragged: motolii_drag_start, drag_update "grip" where the drag began,
-   drag_update "point" by how far it has gone, motolii_drag_end. */
-int motolii_points(Motolii* m, int layer, double* xy, int room);
-int motolii_handles(Motolii* m, int layer, double* xy, double* of, int room);   /* and its curves' handles, the same way, of: the point each is the handle of (may be null); drag_update "point" takes whichever lies nearest */       /* a word */
 int motolii_key(Motolii* m, int layer, const char* name, double at, double number);   /* a key at a moment */
-int motolii_key_many(Motolii* m, int layer, const char* name, int n, const double* at, const double* number);   /* n keys of one value in one call and one step (at[i], number[i]) */
 int motolii_midi(Motolii* m, int layer, const char* name, const char* file, const char* kind, int channel, double bpm);   /* a MIDI file's notes as keys of a value, held, as om_midi keys them: kind velocity (0..1), pitch, count, on (1/0) or bool; channel -1: any; bpm: the file's beats played at it (0: the file's own) */
 double motolii_midi_bpm(const char* file);   /* the BPM a MIDI file says (120 if it says none: om_midi's BPM box at first) */
-int motolii_unkey(Motolii* m, int layer, const char* name, double at);
-int motolii_keys(Motolii* m, int layer, const char* name);         /* how many keys a value has */
 /* The stretch from the key at a moment to the next key is itself defined: how the value goes there. An easing is a name
    and up to four numbers ("smooth", "hold", "wiggle 3 0.2"). An easing of one's own is an expression (SQLite's) in u (how
    far through the stretch, 0 to 1), t (seconds into it), d (its length), a and b (the two keys' values), p1 to p4
    (the numbers said with it); it is taken only if it begins at a and ends at b. */
 int motolii_easing(Motolii* m, int layer, const char* name, double at, const char* easing);
-int motolii_define(Motolii* m, const char* easing, const char* expression);
 /* The effects a layer may be given, "name\tvalue\tlabel" one to a line (label: what it is for, the shelf's kind) (until the next call); one put on a layer at a moment,
    or taken off if it is on (its keys too), one step. Its card shows while it is on (motolii_cards). */
 const char* motolii_effect_names(Motolii* m);
@@ -101,7 +80,6 @@ const char* motolii_easings(Motolii* m);
 const char* motolii_easing_names(Motolii* m);                         /* the names alone, with spaces between: the nine kinds, then the easings defined here (until the next call) */
 const char* motolii_easing_numbers(Motolii* m, const char* kind);   /* a kind's numbers as a hand takes them: name, lowest, highest for each ("seed 1 999 grain 0 0.5 ..."); "" for a kind with none or an easing defined in the document */
 double motolii_easing_at(Motolii* m, const char* easing, double u);      /* how an easing goes, one of the nine kinds or one defined in the document: how far (0 at its beginning, 1 at its end) at u of the way through */                              /* the names of the easings the document knows (until the next call) */
-int motolii_value(Motolii* m, int layer, const char* name, double at, double* is);   /* a value at a moment, as the stage is told it */
 int motolii_shows(Motolii* m, int layer, const char* name, double at, double* is);   /* as the stage shows it: 2 driven (by a relation, a behaviour), 1 its own, 0 none */
 /* What a shell reads to draw its lists. motolii_layers: the numbers of the layers there are (as many as there is room
    for; it returns how many there are). motolii_word: a layer's word by name (kind, file, shape, blend, text, fill; ""
@@ -113,10 +91,6 @@ const char* motolii_word(Motolii* m, int layer, const char* name);
 double motolii_lasts(Motolii* m, int layer);
 int motolii_key_times(Motolii* m, int layer, const char* name, double* at, int room);
 int motolii_layer_key_times(Motolii* m, int layer, double* at, int room);   /* every key moment of any of a layer's values, each once, in time (as many as there are; room: how many at holds) */
-/* A layer's frame on the picture at the stage's moment: frame[0..4] = its middle (x, y), how wide, how high (points
-   of the picture, from the top left), how far it is turned (degrees, clockwise as seen); frame[5..6] = the point it turns about (x, y); frame[7] = how deep it is (0: flat). 0: there is no such layer. */
-int motolii_bounds(Motolii* m, int layer, double* frame);
-int motolii_seen(Motolii* m, int layer, double* box);   /* what of it is seen: the upright box of its outline on the picture, box[0..3] = left, top, right, bottom (points from the top left). 0: not shown */
 /* How a layer moves over a while, as its copy is placed (its wave, scattering, copies' rows and keys all told), n moments
    from `from` to before `to`: path[4i..4i+3] = where it is (x, y, units of the stage), how far it is turned (degrees) and
    how large (a share of its own size). For a shell's small preview that plays by itself. 0: there is no such layer. */
@@ -135,21 +109,13 @@ int motolii_path3(Motolii* m, int layer, int copy, double from, double to, int n
    motolii_drag_start on the layer already dragged goes on with the same drag. */
 int motolii_drag_start(Motolii* m, int layer);
 int motolii_drag_update(Motolii* m, const char* by, double a, double b);
-int motolii_drag_end(Motolii* m, int keep);
 double motolii_point(Motolii* m);                                  /* points of the picture to one unit of the stage, at z 0 */
 const char* motolii_reading(Motolii* m, int layer, const char* name);  /* how a hand reads a value: "times from" (shown = value x times + from) */
 /* What a hand does to a value at a moment, by the document's own rules. motolii_put: the value changed there (see
-   motolii_keying for what that is to a value with keys and to one without). motolii_key_here: a key at that moment holding
-   what the value is there. motolii_stay: its keys go, it stays what it is at that moment. motolii_keyed: 0 the value has no keys, 1 keys but none at that moment, 2 a key at that
-   moment. motolii_moving: the names of a layer's values that take keys, with spaces between (until the next call). */
+   motolii_keying for what that is to a value with keys and to one without). motolii_moving: the names of a layer's
+   values that take keys, with spaces between (until the next call). */
 int motolii_put(Motolii* m, int layer, const char* name, double at, double number);
 int motolii_keying(Motolii* m, int on);                            /* on: every value a hand changes or carries gets a key at that moment, and its first key, if later than the moment this was turned on, leaves what it was as a key there, so it travels from there; off (as a document is opened): a value with keys gets a key where it is changed, one without stays as it is changed; below 0: only asks. Returns whether it is on now */
-int motolii_key_here(Motolii* m, int layer, const char* name, double at);
-int motolii_stay(Motolii* m, int layer, const char* name, double at);
-/* A layer brought `places` places nearer among the layers (below 0: further back). motolii_layers lists them in the
-   order they lie, the one furthest back first; at the same depth a nearer layer is seen in front. */
-int motolii_raise(Motolii* m, int layer, int places);
-int motolii_keyed(Motolii* m, int layer, const char* name, double at);
 const char* motolii_moving(Motolii* m, int layer);
 /* motolii_values: the names of all a layer's values, with spaces between (until the next call). motolii_range: a number
    value's lowest and highest (0: it has no such number). */
@@ -167,11 +133,8 @@ const char* motolii_shown(Motolii* m, const char* name);
 /* Pictures in one call: motolii_create_scripts says each create script's name and what it makes ("name\twhat", one to a line, until
    the next call; a closed pack "name\twhat\tprogram\tpath", what it was written for and its file: the Program shelf's); motolii_create makes one at the stage's present moment, as one step, and says the new layer (0: not). */
 const char* motolii_create_scripts(Motolii* m);
-/* A layer's preset (its values, effects and keys, all but what it is, holds and where it lies) kept as a file of its
-   own (motolii_preset_save), given to another layer as one step (motolii_preset_apply); motolii_presets says the shelf's
-   ("name\tpath\tlabel\tpicture", one to a line, until the next call). */
-int motolii_preset_save(Motolii* m, int layer, const char* path);
-int motolii_preset_apply(Motolii* m, int layer, const char* path);
+/* The shelf's presets (a layer's values, effects and keys, all but what it is, holds and where it lies, kept as a
+   file of its own): "name\tpath\tlabel\tpicture", one to a line, until the next call. */
 const char* motolii_presets(Motolii* m);
 int motolii_create(Motolii* m, const char* script);
 /* The whole-screen effects on the shelf ("name\tpath\tlabel\tpicture\thome\tsame\tabout\ttags", one to a line, tags what it is read from it (isf.h isf_tags), label as the file's "// --label:" says;
@@ -193,7 +156,6 @@ const char* motolii_spent(Motolii* m);
    leave this picture's reading out rather than wait (it is asked without the document, at once). */
 /* What the document's steps changed since last asked, a line each ("layers" when a layer came or went, then "layer
    name" per value; asking forgets them), and the names of the values that change what cards a layer has. */
-const char* motolii_heard(Motolii* m);   /* each layer's sound as heard now: "file wanted is playing" a line (seconds in its file; -1 not heard): for checks */
 const char* motolii_shaping(Motolii* m);
 /* A change asked without waiting for the hand (say, set, drag_start, drag_update, duck, drag_end, undo, redo, together: number is drag_end's keep and
    together's begin 1 / end 0; drag_update: name is by and number a, as motolii_drag_update, or name "effect" and word an effect file, shown on
@@ -212,7 +174,6 @@ const char* motolii_words(Motolii* m, int layer, const char* name);   /* the wor
    Acts may lie one within another: the outermost is the step. */
 int motolii_together(Motolii* m, int on);
 int motolii_undo(Motolii* m);
-int motolii_redo(Motolii* m);
 
 double motolii_seconds(Motolii* m);                                /* how long the document runs */
 int motolii_at(Motolii* m, double seconds);                        /* the stage's moment: sent, not waited for (a later one replaces it); what was drawn, and when, motolii_drawn_at */
@@ -224,25 +185,19 @@ int motolii_export(Motolii* m, const char* mp4);                    /* the whole
 int motolii_rate(Motolii* m);                                      /* how many pictures a second that video has (a shell that counts in frames counts in these) */
 char* motolii_snapshot(Motolii* m, int which, long since, long* version);   /* the window's pictures of the document (docs/app/BRIDGE.md), read without the document: 1 the document's (its own part and each layer's part newer than since), 2 the moment's; JSON, a copy freed with free(); *version: as of which */
 void motolii_add_listener(Motolii* m, void (*listener)(int which));   /* the window's one listener, called (from the hand) when pictures are new: 1 the document's, 2 the moment's, 4 the cached frames (motolii_cache), 8 an answer to a change asked later (motolii_answer), or'd */
-const char* motolii_render_thread_status(Motolii* m);   /* where the inside's hand is in its round now ("waiting for a change or a beat", "doing the changes asked", "drawing", "putting the videos at the moment"...), read without waiting: why a shell waits long */
-int motolii_asked(Motolii* m);   /* how many changes asked later are not begun yet */
 void motolii_watch(Motolii* m, int on);   /* on from the opening; while on, the window's (main) thread may not wait on the hand: a change it waits for, or a read waiting on the document over 2 ms, is kept */
 const char* motolii_broken(Motolii* m);   /* what was kept since motolii_watch(1): one to a line, its clock time (hh:mm:ss.mmm) first, named and timed; "" none */
 long motolii_broken_count(Motolii* m);   /* how many times the window's thread waited, or the inside took over 1/60 s for a picture (by its own clock or the GPU's), since it was watched (from the opening), read without waiting */
-int motolii_sequence(Motolii* m, double overlap);   /* Sequence Layers: the layers that have a length and stand on their own, from the front, one after another (less `overlap` seconds), on frames, keys moved with them; one step */
 const char* motolii_list(Motolii* m);                              /* every fact of the document, a line each (until the next call) */
 /* The stage's picture as it is drawn, for a shell to show without a copy. The inside keeps its own clock: it draws
    when something has changed or time is going on, and the shell asks only for the last finished picture.
    motolii_front: a CVPixelBufferRef on macOS, held for the caller (who lets it go); it and motolii_frames (how many
    pictures have been finished) may be called from any thread. */
-int motolii_live(Motolii* m);
 void* motolii_front(Motolii* m);
 /* The desk: the editing window's whole stage pane, w x h pixels, the picture drawn there instead of on the stage's own
    buffer (motolii_front keeps its last), the stage lying with its top left at x, y, `scale` pixels a point of it, and
    what lies off the stage seen round it, the picked layer marked over it (`point`: pixels a point of the screen the
    marks are sized in). w 0: off. Made again when its size changes. 1: on. */
-int motolii_desk(Motolii* m, int w, int h, double x, double y, double scale, double point);
-int motolii_pick(Motolii* m, int layer, int hover);   /* the layer picked in the window (0: none) and the one under its hand: marked on the desk */
 void* motolii_desk_front(Motolii* m);
 unsigned long long motolii_desk_frames(Motolii* m);
 unsigned long long motolii_frames(Motolii* m);
@@ -257,7 +212,6 @@ const char* motolii_cache(Motolii* m);
 const char* motolii_fx_titles(Motolii* m, int layer);
 int motolii_play(Motolii* m, int playing);                         /* time goes on by the clock (and round again at the end), or stands */
 double motolii_now(Motolii* m);                                    /* the stage's moment */
-void motolii_timed(Motolii* m, int frames);                      /* played by the clock for that many pictures: says on its output what it cost and what was left out */
 #ifdef __cplusplus
 }
 #endif

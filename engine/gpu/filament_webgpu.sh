@@ -16,7 +16,7 @@ mkdir -p out/filament_webgpu/out
 [ -f out/small_studio/small_studio_ibl.ktx ] || $SRC/out/wgpu/tools/cmgen/cmgen -q -x out/small_studio --format=ktx --size=512 $SRC/third_party/environments/studio_small_02_2k.hdr
 [ -f out/lightroom/lightroom_ibl.ktx ] || $SRC/out/wgpu/tools/cmgen/cmgen -q -x out/lightroom --format=ktx --size=512 $SRC/third_party/environments/lightroom_14b.hdr
 for d in lightroom small_studio graffiti_shelter_2k studio_small_02_2k venetian_crossroads_2k parking_garage_2k pillars_2k; do [ -d out/$d ] && ln -sfn ../../$d out/filament_webgpu/out/$d 2> /dev/null; done; true
-for f in paper paper_copy floor_shade effected effected_world effected_solid thick_glass far_side far_look glasslight glassbox boxlight bubble poster own_glass flat blade matte floor_lit solid_cloth solid_subsurface shape points solid_image sketch; do
+for f in effected effected_world effected_solid thick_glass far_side far_look bubble poster own_glass flat blade matte floor_lit solid_cloth solid_subsurface shape points solid_image sketch; do
     [ -f materials/$f.mat ] || continue
     [ out/filament_webgpu/$f.filamat -nt materials/$f.mat ] && [ out/filament_webgpu/$f.filamat -nt materials/studio.glsl ] && [ out/filament_webgpu/$f.filamat -nt materials/spectrum.glsl ] && [ out/filament_webgpu/$f.filamat -nt materials/matte.glsl ] && [ out/filament_webgpu/$f.filamat -nt materials/blend_way.glsl ] && [ out/filament_webgpu/$f.filamat -nt materials/deep.glsl ] && [ out/filament_webgpu/$f.filamat -nt materials/deep_vertex.glsl ] && continue
     shade=lit; [ $f = flat ] && shade=unlit

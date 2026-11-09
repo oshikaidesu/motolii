@@ -28,7 +28,7 @@ Workspace(document: path, extra: [
 ```
 - 足したパネルは Inspector の横にタブで並ぶ。本家のファイルは 1 行も変えない。
 - パネルの中では `WsScope.of(context)` がアプリの状態（`Ws`。何かが変わるたびに組み立て直る。聞く面を言えば、その面が変わった時だけ：`WsScope.of(context, {WsAspect.picked})`。再生ヘッドは `WsScope.frameOf(context)`）：`inside` がプロジェクト（`Motolii`）、`selected` が選ばれたレイヤー、`frame` が今のコマ。値は `inside.value(thing, name, seconds)`、変えるのは `inside.set(...)`、キーは `inside.keyHere(...)`。
-- レイヤーをプレビューの上で動かす（画素で）：`inside.hold(t)`、`inside.carry('place', 10, 0)`、`inside.letGo(true)`（ドラッグしたのと同じ undo 1 回）。値をそのまま変えるのは `inside.set(t, name, value)`（プロジェクトの単位）。キーの数は `inside.keyMoments(t, name).length`。
+- レイヤーをプレビューの上で動かす（画素で）：`inside.dragStart(t)`、`inside.dragUpdate('place', 10, 0)`、`inside.later('drag_end', number: 1)`（ドラッグしたのと同じ undo 1 回）。値をそのまま変えるのは `inside.set(t, name, value)`（プロジェクトの単位）。キーの数は `inside.keyTimes(t, name).length`。
 - 気をつける 4 つ：選ばれたレイヤー `selected` は文字なので `int.parse` してからエンジンに渡す。今の秒は `frame / Ws.fps`。レイヤーの名前は `inside.word(t, 'name')`。プロジェクトを変えたら `ws.reread()`（アプリの他のパネルが読み直す）。
 
 ## 自分のツールパネルの道具を足す
@@ -79,7 +79,7 @@ $F/flutter analyze lib
 - `Grey` は `N` と同じ名前の段を持つ。役割(地・パネル・カード・欄・線・控えめな文字・文字)は両テーマで同じで、明るさだけが逆になる。Light ではカードが一番明るく、文字が一番暗い。
 - テーマで変わる色は `const` にできない。`static const` / トップレベルの `final` / 引数の既定値に `Grey` や `WsT.body` などを置かず、getter か `Color?` + `?? Grey.xx` にする(`final` に入れると最初の色のまま固まる)。
 - アクセントは塗りなら `WsT.accent` / `Pop.accent`。**線や文字として地の上に描くときは `accentInk`**(Light ではライムが白に溶けるので濃いオリーブ)。再生ヘッドの線は `accentInk`、頭の札は `accent`。
-- 種類の色(`tone*`)と Stage の絵(`ArtInk`)はテーマで変えない。
+- 種類の色(`tone*`)はテーマで変えない。
 - `T.name()` などの文字色の既定は `Grey` から取る。暗すぎる・薄すぎる文字の補正(`T._floor`)もテーマごとに向きが逆。
 
 ## 決まっていること(利用者の裁定)

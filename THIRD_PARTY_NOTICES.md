@@ -75,7 +75,6 @@ Motolii は「ネットで見つけたかっこいい表現を、自分の動画
 | [nlohmann/json](https://github.com/nlohmann/json)（IRIS の設定と結果） | v3.12.0（55f9368） | MIT | `engine/deps/iris.sh` | なし |
 | [PianoRollSvg.js](https://github.com/bladeSk/midi-to-piano-roll)（MIDI ビューのピアノロール） | 205854e | MIT（作者の package.json の申告。ライセンスの文書が作者の側に無いので同梱しない） | `engine/deps/midi_roll.sh` | なし |
 | [Filament の組み立て済み SDK](https://github.com/google/filament/releases/tag/v1.77.2)（前の試しのスクリプトだけが使う） | v1.77.2 | Apache-2.0 | `engine/sdk.sh` | なし |
-| [BabylonJS/JsRuntimeHost](https://github.com/BabylonJS/JsRuntimeHost) の Node-API | 980cfb0 | MIT | `engine/community/web_renderer_on_dawn/node_api_quickjs/build.sh` | `engine/deps/patches/jsruntimehost/` |
 | TSL の表現 48 か所 | `engine/community/three_shading_language_to_shelf/sources.tsv` のとおり | 各作者 | `engine/community/three_shading_language_to_shelf/fetch.sh` | `engine/deps/patches/shader-lab/`、`ics-creative/` |
 | [perfect_freehand](https://pub.dev/packages/perfect_freehand)（Brush の筆跡の輪郭。元は Steve Ruiz の perfect-freehand） | 2.5.2+1 | MIT（Copyright (c) 2021 Stephen Ruiz、2023 Adil Hanney） | `app/pubspec.yaml`（flutter pub get） | なし |
 | [AbsentMotion](https://github.com/Comett1225/AbsentMotion)（効果を WGSL にする元） | 0f5d891 | Apache-2.0 | `shelves/effects/sources/absent.sh` | なし |

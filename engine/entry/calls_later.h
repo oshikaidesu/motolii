@@ -133,7 +133,7 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name, con
                 snapshot_time(m);   // (their values at once, not with the next picture)
                 ok = 1, m->changed = true;
             }
-            else if (c == "desk") {   // (word: "w h x y scale point", as motolii_desk; answer 1 once the desk's picture exists)
+            else if (c == "desk") {   // (word: "w h x y scale point": the desk's size, its middle, its scale and the point; answer 1 once the desk's picture exists)
                 int dw = 0, dh = 0;
                 double x = 0.0, y = 0.0, sc = 0.0, pt = 0.0;
                 std::sscanf(w.c_str(), "%d %d %lf %lf %lf %lf", &dw, &dh, &x, &y, &sc, &pt);
@@ -168,5 +168,4 @@ int motolii_answer(Motolii* m, int ticket) {
 }
 const char* motolii_answer_why(Motolii* m) { return m->answered_why.c_str(); }
 int motolii_undo(Motolii* m) { return on_render_thread(m, [=] { return (int)(doc_undo(doc(m))); }); }
-int motolii_redo(Motolii* m) { return on_render_thread(m, [=] { return (int)(doc_redo(doc(m))); }); }
 

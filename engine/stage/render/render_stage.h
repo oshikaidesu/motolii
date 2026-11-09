@@ -87,11 +87,6 @@ static std::vector<uint8_t> load_file(const char* path) {
     return std::vector<uint8_t>((std::istreambuf_iterator<char>(in)), {});
 }
 
-static int fail(const char* msg) {
-    std::printf("FAIL %s\n", msg);
-    return 1;
-}
-
 struct Stage {
     int w, h;
     Engine* engine;
@@ -111,8 +106,6 @@ struct Stage {
     View* view_through = nullptr; // the glass's far faces alone (layer 8), drawn second into `through`: which way they face (far_side.mat)
     Texture* through = nullptr;
     Texture* through_depth = nullptr;   // how far away those far faces are: thick_glass.mat's near faces measure the glass by it
-    View* view_floor = nullptr;   // the floor from straight above (layer 4 only), drawn before all into `sunlight` (paper_and_sun)
-    Texture* sunlight = nullptr;
     double now = 0.0;        // the stage's time, in seconds
     double frames = 0.0;     // so many frames a second its time is seen at (a document's own frame rate); 0: as smooth as it is drawn
     bool by_clock = false;   // true: played as the clock goes (nothing is waited for); false: picture by picture (each one exact)
@@ -124,11 +117,9 @@ struct Stage {
     struct Sound { std::string file; double from, to, speed, into, on, lasts; double gain = 1.0; std::vector<float> loud = {}; };   // (gain: as loud as that, 1 as it comes; loud: keyed, how loud each 1/30 s from when it comes on)
     std::map<const void*, std::function<Sound()>> sounding;   // what is heard, each under its own thing: asked when a film is written
     std::map<const void*, std::function<void(double)>> playing;   // what goes on by itself as the stage's time does (films, pictures), each under its own thing
-    std::vector<std::function<void()>> said_after;      // a word of their own after each line of `clock` and `soak`
+    std::vector<std::function<void()>> said_after;      // a word of their own after each line of `clock`
     struct Renderable { utils::Entity thing; const Mesh* of; int nth; mat4f place; bool matte = false;   // (matte: the shape a matte is cut by, in that matte's own scene)
                   InstanceBuffer* many = nullptr; int count = 1; };   // (all its places drawn in one go, Filament's own instancing: each place an instance of the one thing; `move` tells them all at once)
-    utils::Entity sun;                     // the sun, where there is one (paper_and_sun), and all that goes by its direction: `sun_to`
-    std::vector<MaterialInstance*> by_sun;
     struct Matte { Scene* scene; View* view; Texture* frameTexture; bool soft; Camera* eye; utils::Entity on; mat4f onPlace; };
     std::vector<Matte> mattes;   // the mattes: each a picture taken by its own eye, drawn before all else (matte); soft: some thing reads it blurred
     struct Cut { MaterialInstance* look; int slot, matte; float use, soft; };
@@ -246,7 +237,7 @@ static std::string flat_laid(const char* lay, bool lit = false, const std::strin
 }
 
 // A mesh on the stage, once per place. layer 2: left out of the picture of what is behind (all the glass);
-// layer 4: only in the floor's picture of sunlight; layer 8: only in the picture of the glass's far faces. order: among things of a kind, lower is drawn first.
+// layer 8: only in the picture of the glass's far faces. order: among things of a kind, lower is drawn first.
 // copies: how many times each is drawn in one go (a material that asks for its instance index tells them apart).
 // A material by its file: read and built once (every thing of it has its own look). nullptr: there is no such file.
 static Material* material(Stage& s, const char* filamat) {
@@ -407,9 +398,7 @@ static void reshape(Stage& s, Mesh* m, const std::vector<uint32_t>& ends) {
 }
 
 // One glass block, edge 1, as real ones are: the edges a little round (a tenth of half the edge), the faces flat.
-// glassbox.mat draws it: the sight line goes in, through the block's real far faces, mirrors inside where it cannot
-// leave, and shows what lies behind where it comes out.
-static Mesh* cube(float ROUND, int flat = 1) {   // flat: how many times a flat is cut across (boxlight.mat wants it fine)
+static Mesh* cube(float ROUND, int flat = 1) {   // flat: how many times a flat is cut across
     Mesh* m = new Mesh;
     std::vector<float> line;   // (where a face is cut: finely across the rounding, once across the flat)
     for (int k = 0; k <= 4; ++k) line.push_back(-1.f + ROUND * (float)k / 4.f);
@@ -436,23 +425,6 @@ static Mesh* cube(float ROUND, int flat = 1) {   // flat: how many times a flat 
             }
     }
     return m;
-}
-
-// The glass blocks: the round-edged block at each place, drawn by glassbox.mat over the picture of what is behind.
-// What differs from picture to picture (the studio's brightness, the colour split, the lean of the faces) is the
-// caller's to set on what this returns.
-static MaterialInstance* glass_blocks(Stage& s, std::vector<mat4f> places, float round, bool shadows = false) {
-    MaterialInstance* mi = add(s, cube(round), "glassbox.filamat", places, 2, shadows);
-    if (!mi) return nullptr;
-    mi->setParameter("backdrop", s.behind, TextureSampler(TextureSampler::MinFilter::LINEAR, TextureSampler::MagFilter::LINEAR, TextureSampler::WrapMode::CLAMP_TO_EDGE));
-    s.behindRead = true;
-    mi->setParameter("ior", 1.5f);
-    mi->setParameter("reach", 0.5f);
-    mi->setParameter("sceneMix", 1.f);
-    mi->setParameter("absorption", float3{0.10f, 0.04f, 0.06f});
-    mi->setParameter("round", round);
-    mi->setParameter("bySize", 1.f);
-    return mi;
 }
 
 // A ring of round section, lying in the plane of x and y.

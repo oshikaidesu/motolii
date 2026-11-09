@@ -5,8 +5,6 @@
 // inside (where it shows while the strength is whole), never worked out here.
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart' show ValueNotifier;
-
 import '../../bridge/motolii.dart';
 import '../state/state.dart';
 
@@ -94,107 +92,6 @@ void wsMakeMove(Ws ws, List<String> who, double start) {
     ws.reread();
   });
 }
-
-/// One of the other end's values (or the lag) told; a hand's drag is one step when begun and ended with [wsMoveHold].
-void wsMoveSet(Ws ws, int by, String name, double v) {
-  if (ws.inside case final m?) ws.after(m.later('set', layer: by, name: name, number: v), (_, _) => ws.reread());
-}
-
-/// A hand's changes from its press to its letting go: one step.
-void wsMoveHold(Ws ws, bool on) => ws.inside?.later('together', number: on ? 1 : 0);
-
-/// The move put at another moment, or made longer or shorter; its way kept.
-void wsMoveTime(Ws ws, WsMove mv, double start, double length) {
-  final m = ws.inside;
-  if (m == null) return;
-  start = math.max(0, start);
-  length = math.max(.05, length);
-  m.later('together', number: 1);
-  for (final k in m.keyTimes(mv.by, 'strength')) {
-    m.later('unkey', layer: mv.by, name: 'strength', number: k);
-  }
-  m.later('key', layer: mv.by, name: 'strength', word: '$start', number: mv.coming ? 1 : 0);
-  m.later('key', layer: mv.by, name: 'strength', word: '${start + length}', number: mv.coming ? 0 : 1);
-  m.later('easing', layer: mv.by, name: 'strength', number: start, word: wsMoveWay(mv.out, mv.over));
-  ws.after(m.later('together'), (_, _) => ws.reread());
-}
-
-/// Coming in turned to going out, or back.
-void wsMoveTurn(Ws ws, WsMove mv) {
-  final m = ws.inside;
-  if (m == null) return;
-  m.later('together', number: 1);
-  m.later('key', layer: mv.by, name: 'strength', word: '${mv.start}', number: mv.coming ? 0 : 1);
-  m.later('key', layer: mv.by, name: 'strength', word: '${mv.start + mv.length}', number: mv.coming ? 1 : 0);
-  if (mv.by > 0) m.later('say', layer: mv.by, name: 'name', word: wsMoveName(ws, [for (final t in mv.who) '$t'], !mv.coming));
-  ws.after(m.later('together'), (_, _) => ws.reread());
-}
-
-/// How the move eases.
-void wsMoveEase(Ws ws, WsMove mv, double out, double over) {
-  if (ws.inside case final m?) {
-    ws.after(m.later('easing', layer: mv.by, name: 'strength', number: mv.start, word: wsMoveWay(out.clamp(0, 1), over.clamp(0, .6))), (_, _) => ws.reread());
-  }
-}
-
-/// Where a thing shows at a moment (x, y, z, size, opacity, turned round), as the inside says: the picture's moment from
-/// the pictures (Widgetbook's relation studies, `sets/relation_tabs`, read it so); another moment asked of the inside
-/// ([wsShowsAt]) and kept while the document stays, as it is until told (docs/app/BRIDGE.md rule 7: a question, never
-/// waited for; [wsPosesTold] ticks when one is told, for what draws it to draw again).
-({double x, double y, double size, double opacity, double flip}) wsShows(Motolii m, int t, double at) {
-  if (!m.isNow(at)) {
-    // (not the picture's moment)
-    if (!identical(_posesOf, m.documentNow)) {
-      _poses.clear();
-      _values.clear();
-      _posesOf = m.documentNow;
-    }
-    if (!_poses.containsKey((m, t, at))) {
-      _poses[(m, t, at)] = null;
-      final of = _posesOf;
-      wsShowsAt(m, t, at).then((p) {
-        if (!identical(of, _posesOf)) return;
-        _poses[(m, t, at)] = p;
-        wsPosesTold.value++;
-      });
-    }
-    return _poses[(m, t, at)] ?? (x: 0, y: 0, size: 1, opacity: 1, flip: 0); // (as it is until told)
-  }
-  double v(String n, double or) => m.shows(t, n, at)?.$1 ?? m.value(t, n, at) ?? or;
-  return (x: v('x', 0), y: v('y', 0), size: v('size', 1), opacity: v('opacity', 1), flip: v('rotate_y', 0));
-}
-
-final _poses = <(Motolii, int, double), ({double x, double y, double size, double opacity, double flip})?>{};
-Object? _posesOf;
-final wsPosesTold = ValueNotifier<int>(0);
-
-/// A thing's own value at a moment, as the document says it (its own place, not where a relation shows it): from the copies
-/// when they hold it, another moment asked ([Motolii.valuesAt]) and kept as [wsShows] keeps where it shows.
-double wsValue(Motolii m, int t, String n, double at, double or) {
-  if (!m.moving(t).contains(n) || at == 0 || m.keyTimes(t, n).any((k) => (k - at).abs() < .5 / m.rate)) {
-    return m.value(t, n, at) ?? or; // (the document's copy holds it: as it stays, at its first moment, at a key)
-  }
-  if (m.isNow(at)) {
-    if (m.value(t, n, at) case final v?) return v; // (the moment's copy: a thing the window watches)
-  }
-  if (!identical(_posesOf, m.documentNow)) {
-    _poses.clear();
-    _values.clear();
-    _posesOf = m.documentNow;
-  }
-  if (!_values.containsKey((m, t, n, at))) {
-    _values[(m, t, n, at)] = null;
-    final of = _posesOf;
-    m.valuesAt([(t, n, at)]).then((v) {
-      if (!identical(of, _posesOf)) return;
-      _values[(m, t, n, at)] = v.single;
-      wsPosesTold.value++;
-    });
-  }
-  return _values[(m, t, n, at)] ?? or; // (as it is until told)
-}
-
-final _values = <(Motolii, int, String, double), double?>{};
 
 /// The same at any moment: a question of the inside (docs/app/BRIDGE.md Q), answered later.
 Future<({double x, double y, double size, double opacity, double flip})> wsShowsAt(Motolii m, int t, double at) async {

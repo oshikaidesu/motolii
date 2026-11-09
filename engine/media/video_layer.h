@@ -438,14 +438,6 @@ static void video_off(Stage& s, Video* v) {
     delete v;
 }
 
-// A colour of the film made clear (render.h: key_out), green by default: a green screen. Until the film's first picture is
-// on the sheet the sheet stays all clear.
-static void key_out(Video* v, float3 colour = float3{0.f, 1.f, 0.f}, float near = 0.12f, float soft = 0.3f, float spill = 0.9f) {
-    v->key = float4{colour, near};
-    v->keySoft = float2{soft, spill};
-    if (v->on) key_out(v->look, colour, near, soft, spill);
-}
-
 // The film keyed by its own ground (the colour its four corners share in its first picture): a green screen of
 // whatever colour, without being told which. always: keyed even if it has no such ground (then as a green screen).
 static void key_own(Video* v, bool always) {

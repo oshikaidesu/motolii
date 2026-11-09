@@ -53,29 +53,7 @@ extension MotoliiQuestions on Motolii {
     });
   }
 
-  /// Each thing's own value at each moment asked, as the document says it (not what a relation makes of it; null: it
-
-  /// has none): another moment than the picture's, a question (docs/app/BRIDGE.md Q), asked on another isolate as [shownAt].
-  Future<List<double?>> valuesAt(List<(int, String, double)> asks) {
-    final lib = libPath, at = _m.address;
-    return Isolate.run(() {
-      final l = DynamicLibrary.open(lib), m = _P.fromAddress(at);
-      final value = c.MotoliiBindings(l).motolii_value;
-      final out = malloc<Double>();
-      final all = [
-        for (final (t, n, moment) in asks)
-          () {
-            final name = n.toNativeUtf8(), got = value(m, t, name, moment, out);
-            malloc.free(name);
-            return got == 0 ? null : out.value;
-          }(),
-      ];
-      malloc.free(out);
-      return all;
-    });
-  }
-
-  /// Of each font file, the first of [words] a text can be set in, by its index; -1 none (on another isolate, as [setting]).
+  /// Of each font file, the first of [words] a text can be set in, by its index; -1 none (on another isolate).
   Future<List<int>> settingFirst(List<String> fonts, List<String> words) {
     final lib = libPath;
     return Isolate.run(() {
@@ -87,22 +65,6 @@ extension MotoliiQuestions on Motolii {
         malloc.free(file);
       }
       said.forEach(malloc.free);
-      return out;
-    });
-  }
-
-  /// Of these font files, those a text can be [words] in (asked on another isolate: the window does not wait).
-  Future<List<String>> setting(List<String> fonts, String words) {
-    final lib = libPath;
-    return Isolate.run(() {
-      final ask = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_sets;
-      final said = words.toNativeUtf8(), out = <String>[];
-      for (final f in fonts) {
-        final file = f.toNativeUtf8();
-        if (ask(file, said) != 0) out.add(f);
-        malloc.free(file);
-      }
-      malloc.free(said);
       return out;
     });
   }

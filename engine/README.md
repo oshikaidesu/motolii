@@ -31,7 +31,7 @@
 | `motion/` | 動き：イーズは `easing_*.h` だけ（`easing_curves.h`＝キーの間の 9 種・`easing_names.h`＝名前で呼ぶイーズ・`easing_godot.h`）、`lottie_motion.h`＝Lottie の動きを ThorVG が解く |
 | `physics/` | 物理：`physics.h`＝口、`jolt.cpp`＝その裏の Jolt |
 | `materials/` | Filament の材質（`.mat`）と、それが `#include` する `.glsl`。組むのは `gpu/filament_webgpu.sh` が名を挙げる物。`.glsl` を別のフォルダに分けないのは Filament 自身の置き方（`filament/src/materials/ssao/` は `sao.mat` の隣に `saoImpl.fs`） |
-| `gpu/` | Filament の WebGPU（Dawn）の上の自前：`filament_webgpu.sh`＝材質・ThorVG・リンク（`build.sh` が呼ぶ。手で打たない）、`CMakeLists.txt` と `*_interop.cpp`＝Filament の組み立ての中で組む interop（Filament・Dawn の公開されていない内側に届く所）、`thorvg_on_dawn.cpp`（`deps/thorvg.sh` が組んで走らせる確かめ）、`wgsl_effect_on_dawn.sh`（変換した TSL の効果を Dawn で 1 つ描く、手で走らせる試し） |
+| `gpu/` | Filament の WebGPU（Dawn）の上の自前：`filament_webgpu.sh`＝材質・ThorVG・リンク（`build.sh` が呼ぶ。手で打たない）、`CMakeLists.txt` と `*_interop.cpp`＝Filament の組み立ての中で組む interop（Filament・Dawn の公開されていない内側に届く所）、`thorvg_on_dawn.cpp`（`deps/thorvg.sh` が組んで走らせる確かめ） |
 | `deps/` | 他人の物を取ってきて組む・取り込むスクリプト。1 ライブラリ 1 本（`filament.sh`・`thorvg.sh`・`skia.sh`・`jolt.sh`…、全部 `build.sh` から）と、手で 1 回走らせる物（`likeness_models.py`＝棚の地図の絵の読み手 CLIP・FontCLIP を ONNX に、`wnja_export.py`・`from_gflanguages.py`＝日本語 WordNet と Google Fonts の見本を `third_party/` の形に）。`deps/patches/<ライブラリ>/` は人のコードに当てる差分（`.patch`） |
 | `tools/` | 何も取ってこない自前の道具：ビルドの錠 `build_lock.sh`（組むスクリプトが全部読む）、エディタ用の `compile_commands.sh`・`clangd_context.py`、下の一覧を書く `files_in_build.sh` |
 | `third_party/` | 取ってくる依存（git の外）と、同梱の小さな物（`anime/`・`godot_easing/`・`js/`・`leva/`・`midi_roll/`・`qdtsne/`・`rapidfuzz/`・`scipy_lsap/`・`thermion_frame/`・`ymm4-luascript/` ほか）。`leva/`・`ymm4-luascript/` は、自前のヘッダーにそのまま貼った他人のコード（`community/quickjs/script_leva.h`・`community/aviutl/aviutl_fx.h`）のライセンス文書 |
@@ -45,7 +45,7 @@ C++ の口は、動かす相手ごとに 1 フォルダ。どれも相手のコ�
 
 | フォルダ | 動かす物 |
 |---|---|
-| `quickjs/` | 棚の JavaScript（レシピ・式・関係）を QuickJS-ng で動かす土台：頭のパラメーター（AviUtl2 の書き方と leva の書き方）、`each()`、返した値の場所（`js_returned.cpp`）。下の p5・three.js・AE 式もこの上で動く |
+| `quickjs/` | 棚の JavaScript（レシピ・式・関係）を QuickJS-ng で動かす土台：頭のパラメーター（AviUtl2 の書き方と leva の書き方）、`each()`下の p5・three.js・AE 式もこの上で動く |
 | `after_effects/` | AE の式（`ae_expr.h`）と、AE から書き出した Lottie の slots（`lottie_slots.h`） |
 | `p5/` | p5.js のスケッチを p5.js 自身でページ無しに動かす物と、`shader()` で塗るスケッチを ISF にする `adapter_p5_shader.h` |
 | `three/` | three.js：立体の形（`solid_three.cpp`、棚の `solids/` が読む部品 `face_uv.js`）と、画面の効果を ISF にする `three_isf.cpp` |
@@ -56,7 +56,6 @@ C++ の口は、動かす相手ごとに 1 フォルダ。どれも相手のコ�
 | `aviutl/` | AviUtl2 のスクリプト（Lua と HLSL） |
 | `absent_motion/` | AbsentMotion の動きと文字の効果（C++ のまま） |
 | `three_shading_language_to_shelf/` | **C++ ではない Node の道具**（`package.json`）。ネットの TSL（three.js Shading Language）の作品集を `fetch.sh` で取り、three.js 自身の変換器で WGSL にし（`convert.ts`）、`write_shelf_*.ts` が `shelves/effects/` のファイルに書く。組み立ては読まない |
-| `web_renderer_on_dawn/` | ウェブの効果を作者自身の描き手（npm `shaders`）のまま、Motolii の QuickJS で Filament の Dawn の上に描く試し（`js_effects.sh`、Node-API は `node_api_quickjs/`）。組み立ては読まない |
 
 同梱の効果・レシピ・字体などの棚は、リポジトリ直下の [`../shelves/`](../shelves/) にあります。
 
@@ -65,7 +64,7 @@ C++ の口は、動かす相手ごとに 1 フォルダ。どれも相手のコ�
 `build.sh` から呼ばれるスクリプトを辿り、そこに名前が出る `.cpp`/`.mm` を `clang++ -MM` にかけて、読むヘッダーを全部数えた物。手で書き換えず、ファイルを足したり消したりしたら `./tools/files_in_build.sh --write` で書き直す。
 
 <!-- files_in_build.sh -->
-129 files of ours (22 units and the headers they read), of the 131 .h/.cpp/.mm git keeps here outside third_party/. Scripts followed: `build.sh`、`deps/curve_fit_nd.sh`、`deps/filament.sh`、`deps/iris.sh`、`deps/jolt.sh`、`deps/libtess2.sh`、`deps/midi_roll.sh`、`deps/skia.sh`、`deps/thorvg.sh`、`deps/tree_sitter.sh`、`gpu/CMakeLists.txt`、`gpu/filament_webgpu.sh`、`tools/build_lock.sh`. Made by `./tools/files_in_build.sh --write`.
+128 files of ours (21 units and the headers they read), of the 128 .h/.cpp/.mm git keeps here outside third_party/. Scripts followed: `build.sh`、`deps/curve_fit_nd.sh`、`deps/filament.sh`、`deps/iris.sh`、`deps/jolt.sh`、`deps/libtess2.sh`、`deps/midi_roll.sh`、`deps/skia.sh`、`deps/thorvg.sh`、`gpu/CMakeLists.txt`、`gpu/filament_webgpu.sh`、`tools/build_lock.sh`. Made by `./tools/files_in_build.sh --write`.
 
 - `community/absent_motion/` (4): `absent_drawing.cpp`、`absent_ends.cpp`、`absent_motion.cpp`、`absent_motion.h`
 - `community/after_effects/` (2): `ae_expr.h`、`lottie_slots.h`
@@ -74,7 +73,7 @@ C++ の口は、動かす相手ごとに 1 フォルダ。どれも相手のコ�
 - `community/isf/` (2): `isf.cpp`、`isf.h`
 - `community/p5/` (4): `adapter_p5_shader.h`、`p5_mesh.h`、`p5_stand.h`、`p5_three.h`
 - `community/playcanvas/` (2): `splatfx.cpp`、`splatfx.h`
-- `community/quickjs/` (4): `js_returned.cpp`、`script.cpp`、`script.h`、`script_leva.h`
+- `community/quickjs/` (3): `script.cpp`、`script.h`、`script_leva.h`
 - `community/sites/` (4): `adapter.h`、`adapter_net.h`、`adapter_shadertoy.h`、`adapter_shadertoy_json.h`
 - `community/three/` (4): `solid_three.cpp`、`solid_three.h`、`three_isf.cpp`、`three_isf.h`
 - `document/` (35): `adapter.h`、`arrange.h`、`camera.h`、`card_table.h`、`cards.h`、`doc.h`、`easings_put.h`、`evaluate.h`、`expressions.h`、`folders.h`、`fx_list.h`、`fx_put.h`、`hold.h`、`keys_put.h`、`kinds.h`、`layer_edit.h`、`marks.h`、`match.h`、`material.h`、`moment_fx.h`、`parent.h`、`paths.h`、`place.h`、`presets.h`、`recipes.h`、`relate.h`、`relations.h`、`scripts.h`、`shown.h`、`sketch.h`、`time_edit.h`、`undo.h`、`value_at.h`、`values.h`、`world.h`
@@ -88,7 +87,6 @@ C++ の口は、動かす相手ごとに 1 フォルダ。どれも相手のコ�
 - `stage/effects/` (3): `layer_fx.h`、`screen_fx.h`、`viewer_settings.h`
 - `stage/render/` (6): `gltf_model.h`、`point_cloud.h`、`render.h`、`render_draw.h`、`render_layers.h`、`render_stage.h`
 
-Not read by the build (2): `community/web_renderer_on_dawn/js_effects.cpp`、`gpu/wgsl_effect_on_dawn.cpp`
 <!-- /files_in_build.sh -->
 
-本体が使わない試し（ガラスや光、Dawn、プローブ、Widgetbook など）は main から外しました。履歴はタグ `lab-archive-2026-11-09` に残っています（`git show lab-archive-2026-11-09:lab/`）。
+本体が使わない試し（ガラスや光、Dawn、プローブ、Widgetbook など）は main から外しました。履歴はタグ `lab-archive-2026-11-09` に残っています（`git show lab-archive-2026-11-09:lab/`）。アプリから届かない C 関数・部品・スクリプトは、切る前の main をタグ `noise-archive-2026-11-09` に残して外しました（一覧は [`../docs/internal/notes/noise_cut.md`](../docs/internal/notes/noise_cut.md)）。

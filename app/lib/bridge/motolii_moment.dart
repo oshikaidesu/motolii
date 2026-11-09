@@ -2,9 +2,6 @@
 part of 'motolii.dart';
 
 extension MotoliiMoment on Motolii {
-  /// Whether [at] is the moment of the picture shown (what the moment's copy holds).
-  bool isNow(double at) => _isNow(at);
-
   Map<String, dynamic>? _momentOf(int layer) => (_moment['layer'] as Map<String, dynamic>)['$layer'] as Map<String, dynamic>?;
 
   /// Whether [at] is the moment the moment's picture is of (to a frame).

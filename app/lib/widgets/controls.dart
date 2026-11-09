@@ -6,82 +6,6 @@ import '../skin/tokens.dart';
 /// The three looks an open design question is shown in; the owner picks one in the real window (DESIGN.md section 9).
 enum Look { concept, quiet, glow }
 
-/// A bounded value as a well filled up to the value, left-anchored, in its family's colour; the number sits on the right.
-class ValueWell extends StatelessWidget {
-  const ValueWell({super.key, required this.label, required this.value, this.min = 0, this.max = 1, this.fam = Fam.scatter, this.decimals = 2, this.onChanged});
-  final String label;
-  final double value, min, max;
-  final Fam fam;
-  final int decimals;
-  final ValueChanged<double>? onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = ((value - min) / (max - min)).clamp(0.0, 1.0);
-    return LayoutBuilder(
-      builder: (context, box) {
-        void set(Offset p) => onChanged?.call(min + (max - min) * (p.dx / box.maxWidth).clamp(0.0, 1.0));
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onPanDown: (d) => set(d.localPosition),
-          onPanUpdate: (d) => set(d.localPosition),
-          child: SizedBox(
-            height: Shape.z(22),
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Grey.g07,
-                      borderRadius: BorderRadius.all(Shape.r(4)),
-                      border: Border.all(color: Grey.g20),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: box.maxWidth * t,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [fam.c.withValues(alpha: .28), fam.c.withValues(alpha: .55)]),
-                      borderRadius: BorderRadius.all(Shape.r(4)),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: 0,
-                  top: 4,
-                  bottom: 4,
-                  width: Shape.z(2),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(color: fam.c, borderRadius: BorderRadius.all(Shape.r(1))),
-                  ),
-                ),
-                Positioned.fill(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: Shape.s(9)),
-                    child: Flex(
-                      direction: Axis.horizontal,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(label, style: T.label(Grey.g76)),
-                        const Spacer(),
-                        Text(value.toStringAsFixed(decimals), style: T.value(Grey.g95)),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
 class PillSwitch extends StatelessWidget {
   const PillSwitch({super.key, required this.on, this.fam = Fam.scatter, this.onChanged});
   final bool on;
@@ -153,30 +77,4 @@ class Segmented extends StatelessWidget {
       ),
     );
   }
-}
-
-/// A small round or square button, the kind the transport uses.
-class Tool extends StatelessWidget {
-  const Tool({super.key, required this.child, this.fill, this.size = 28, this.round = false, this.on = false, this.onTap});
-  final Widget child;
-  final Color? fill;
-  final double size;
-  final bool round, on;
-  final VoidCallback? onTap;
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: fill ?? (on ? Grey.g20 : Grey.g13),
-        shape: round ? BoxShape.circle : BoxShape.rectangle,
-        borderRadius: round ? null : BorderRadius.all(Shape.r(6)),
-        border: Border.all(color: on ? Grey.g44 : Grey.g20, width: 1),
-      ),
-      child: child,
-    ),
-  );
 }
