@@ -148,7 +148,6 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
               if (m.shown(n)?.fold == fold) field(n)],
           ].join('\n')}\n}',
           toneOf: () => Pop.toneLayer,
-          mark: CardMark.layer,
         ),
   ];
 }

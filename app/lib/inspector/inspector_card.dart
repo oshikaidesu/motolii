@@ -10,13 +10,12 @@ import '../widgets/timeline_painters.dart' show TpGlyph, TpGlyphView;
 /// A card as the inside declares it, an effect's and a thing's own alike: a name and a WGSL uniform struct
 /// (workspace/inspector_feed/cards.dart writes it from motolii_cards, card_table.h). Its fields are whatever [infer] makes of it.
 class Fx {
-  Fx(this.id, this.name, this.wgsl, {Color? tone, Color Function()? toneOf, required this.mark, this.vendor}) : _tone = tone, _toneOf = toneOf;
+  Fx(this.id, this.name, this.wgsl, {Color? tone, Color Function()? toneOf, this.vendor}) : _tone = tone, _toneOf = toneOf;
   final String id, name, wgsl;
   final String? vendor;
   final Color? _tone;
   final Color Function()? _toneOf; // (a skin's colour: read when drawn, so a card made before the skin changed wears the new one)
   Color get tone => _toneOf?.call() ?? _tone!;
-  final CardMark mark;
   late final List<Decl> decls = parseWgsl(wgsl);
   late final List<Param> params = [for (final d in decls) infer(d)];
 }
@@ -72,7 +71,6 @@ class ValuesCard extends StatelessWidget {
     final sect = Sect(
       title: card.name,
       tone: card.tone,
-      mark: card.mark,
       trailing: (at < 0 || doc.onCardMove == null) && doc.onCardReset == null && doc.onCardCopy == null
           ? null
           : Row(
@@ -372,7 +370,7 @@ class FxDragGhost extends StatelessWidget {
     ),
     child: Row(
       children: [
-        ToneBadge(fx.mark, fx.tone),
+        ToneBadge(fx.tone),
         SizedBox(width: Shape.s(6)),
         Text(
           fx.name,

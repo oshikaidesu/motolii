@@ -3,15 +3,9 @@ import 'package:flutter/widgets.dart';
 import '../skin/tokens.dart';
 import 'inspector_parts.dart';
 
-/// What a card holds, as one bold shape: the card reads by its sticker before its word.
-enum CardMark {
-  layer, // (every card: the inside declares no mark of its own yet)
-}
-
-/// A solid tone tile with a dark mark knocked onto it, sticker style.
+/// A solid tone tile with the layer mark knocked onto it.
 class ToneBadge extends StatelessWidget {
-  const ToneBadge(this.mark, this.tone, {super.key, this.dim = false, this.size = 16});
-  final CardMark mark;
+  const ToneBadge(this.tone, {super.key, this.dim = false, this.size = 16});
   final Color tone;
   final bool dim;
   final double size;
@@ -20,13 +14,12 @@ class ToneBadge extends StatelessWidget {
     width: size,
     height: size,
     decoration: BoxDecoration(color: dim ? Grey.g26 : tone, borderRadius: BorderRadius.circular(size * .32)),
-    child: CustomPaint(painter: _MarkPaint(mark, dim ? Grey.g56 : Pop.onAccent)),
+    child: CustomPaint(painter: _MarkPaint(dim ? Grey.g56 : Pop.onAccent)),
   );
 }
 
 class _MarkPaint extends CustomPainter {
-  const _MarkPaint(this.mark, this.ink);
-  final CardMark mark;
+  const _MarkPaint(this.ink);
   final Color ink;
 
   @override
@@ -40,21 +33,18 @@ class _MarkPaint extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
     Offset p(double x, double y) => o + Offset(x, y) * u;
-    switch (mark) {
-      case CardMark.layer:
-        Path dia(double y) => Path()
-          ..moveTo(p(0, y - 3.2).dx, p(0, y - 3.2).dy)
-          ..lineTo(p(6, y).dx, p(6, y).dy)
-          ..lineTo(p(0, y + 3.2).dx, p(0, y + 3.2).dy)
-          ..lineTo(p(-6, y).dx, p(-6, y).dy)
-          ..close();
-        c.drawPath(dia(2.2), stroke(1.5));
-        c.drawPath(dia(-1.8), fill);
-    }
+    Path dia(double y) => Path()
+      ..moveTo(p(0, y - 3.2).dx, p(0, y - 3.2).dy)
+      ..lineTo(p(6, y).dx, p(6, y).dy)
+      ..lineTo(p(0, y + 3.2).dx, p(0, y + 3.2).dy)
+      ..lineTo(p(-6, y).dx, p(-6, y).dy)
+      ..close();
+    c.drawPath(dia(2.2), stroke(1.5));
+    c.drawPath(dia(-1.8), fill);
   }
 
   @override
-  bool shouldRepaint(_MarkPaint o) => o.mark != mark || o.ink != ink;
+  bool shouldRepaint(_MarkPaint o) => o.ink != ink;
 }
 
 /// One summary value as a tag, so a folded card reads as a row of chips rather than a sentence. A colour value brings its swatch.

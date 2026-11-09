@@ -19,7 +19,6 @@ class Sect extends StatelessWidget {
     this.dim = false,
     this.sub = false,
     this.tone,
-    this.mark,
     this.brief = const [],
     this.keyIds = const [],
     this.headWrap,
@@ -32,7 +31,6 @@ class Sect extends StatelessWidget {
 
   /// Pop only: the card's colour stripe, and the rows whose keys light the card's key dot while it is folded.
   final Color? tone;
-  final CardMark? mark;
   final List<String> keyIds;
 
   /// Pop only: the values a folded card shows, one chip each (falls back to [hint]).
@@ -112,7 +110,7 @@ class _PopCard extends StatelessWidget {
     List<Widget> lead(bool h) => [
       // the mark sits centred in its box, and the gap after it equals the card's inset, so it has the same air on both sides
       if (toggle != null) ...[FoldMark(open: open, hot: h), SizedBox(width: Pop.inset)],
-      if (s.mark != null && tone != null) ...[ToneBadge(s.mark!, tone, dim: s.dim), SizedBox(width: Shape.s(6))],
+      if (tone != null) ...[ToneBadge(tone, dim: s.dim), SizedBox(width: Shape.s(6))],
       if (title != null)
         Flexible(
           child: Text(

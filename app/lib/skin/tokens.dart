@@ -73,11 +73,7 @@ abstract final class Grey {
 }
 
 abstract final class C {
-  /// [open] Error and destructive actions. Delegates to [Role.error] (Grey keeps #E5584B).
-  static Color get danger => Role.error;
-  static const playhead = Color(0xFF6EA6DB), play = Color(0xFF7BCC9E), record = Color(0xFFF03C8A);
-
-  /// The accent / mode colour. Delegates to [Role.mode] (Grey keeps #7A87E3).
+  /// The accent. Delegates to [Role.mode].
   static Color get mode => Role.mode;
 }
 
@@ -125,11 +121,9 @@ abstract final class T {
 
   /// No text is dimmer than g56 nor smaller than 10 px (precedents: Adobe Spectrum's smallest UI text is 10 px; critique 2026-10-02: 87 of 126 use cases had 9 px / g44 captions).
   /// Only DIM text on a dark ground is lifted (luminance between g26 and g56); in the light shade, text paler than Grey.g56 is darkened to it. Dark INK (g00..g20, the text on a light fill such as the playhead head) is left alone: lifting it to g56 made it unreadable (critique pass 3).
-  /// Test tool, 'Words' addon: when true every T.* text is fully transparent (layout unchanged), so a reviewer can ask "can I tell what this does without reading?".
-  static final hidden = ValueNotifier<bool>(false);
 
-  /// The ink of a text: the floor, or nothing while the Words addon says Hidden. Direct TextStyles in the lab use this too.
-  static Color ink(Color c) => hidden.value ? const Color(0x00000000) : _floor(c);
+  /// The ink of a text, held to that floor.
+  static Color ink(Color c) => _floor(c);
   static Color _floor(Color c) {
     if (c.a < .5) return c;
     final l = c.computeLuminance();

@@ -97,7 +97,7 @@ class Swatch extends StatelessWidget {
   );
 }
 
-enum GaugeKind { pie, up, down, across, centre, ramp, free, count, point, box }
+enum GaugeKind { pie, up, down, across, centre, ramp, free, point, box }
 
 /// A small whole number's plus and minus, stacked to stay one block tall; the count itself is the field beside them.
 class Steps extends StatelessWidget {
