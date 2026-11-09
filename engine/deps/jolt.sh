@@ -5,6 +5,7 @@
 #   ./deps/jolt.sh
 set -e
 cd "$(dirname "$0")/.."
+source deps/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: deps/build_lock.sh)
 J=$PWD/third_party/physics/JoltPhysics
 [ -d $J ] || { mkdir -p $J && git init -q $J && git -C $J -c core.hooksPath=/dev/null fetch -q --depth 1 https://github.com/jrouwe/JoltPhysics a4b24c3fadd7eade0435f27e9d6a07564273eb5f && git -C $J checkout -q FETCH_HEAD; }
 [ -f $J/jbuild/Makefile ] || cmake -S $J/Build -B $J/jbuild -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCROSS_PLATFORM_DETERMINISTIC=ON \
