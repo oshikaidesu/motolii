@@ -381,7 +381,7 @@ class _Grad extends StatelessWidget {
 // ---------------------------------------------------------------- create
 
 class _Make {
-  const _Make(this.name, this.g, this.hue, this.key, this.what, {this.recipe = false, this.file});
+  const _Make(this.name, this.g, this.hue, this.key, this.what, {this.recipe = false, this.file, this.made = false});
   final String name, key, what;
   final DockG g;
   final Color hue;
@@ -390,7 +390,8 @@ class _Make {
   /// Rectangle, Star, Cube, Sun beside Motolii's shape, solid and light of those names (the shelf's own were made as
   /// the recipe while it was asked first).
   final bool recipe;
-  final String? file;   // (an expression the maker added to the shelf: shelf_add.dart)
+  final String? file;   // (an expression: its file, put on the picked thing as a card of its own)
+  final bool made;   // (an expression whose head makes its thing (a recipe's "// make"): nothing picked, that is made)
   String get id => file ?? (recipe ? 'recipe:$name' : name);
   bool get onPicked => file != null || _onPicked.contains(name);   // (put on the picked thing, or a new board)
 }
@@ -416,10 +417,9 @@ final _makes = <(String, List<_Make>)>[
     ],
   ),
   (
-    'Copies',
+    'Expression',   // (every JS that goes on a thing and moves its values, after Empty: dock_make_3.dart _expressionsOf)
     [
       _Make('Empty', DockG.plus, Pop.tonePlace, '', 'An empty expression on the picked thing (nothing picked: on a new board): write or paste each() into its card\'s code'),
-      _Make('Repeater', DockG.copies, Pop.tonePlace, '', 'Lays the picked thing out in copies with the Repeater recipe: five in a row, each a little smaller; its knobs are on the Script card'),
     ],
   ),
 ];
@@ -445,15 +445,24 @@ final _lights = (
     _Make('Spot', DockG.light, WsT.toneCamera, '', 'A cone of light'),
   ],
 );
-/// What a solid is made of, a material: put on the picked solid, as Repeater lays the picked thing out (a material is
-/// made in Create, not chosen among colours: the user, 10/29, "マテリアルなら普通クリエイトに入れるべき").
+/// What a thing is made of, a material: put on the picked thing, any that is seen (a flat one wears it on its own plane,
+/// its picture its colour), one at a time; nothing picked, a ball wearing it (a material is made in Create, not chosen
+/// among colours: the user, 10/29, "マテリアルなら普通クリエイトに入れるべき"). Filament's own and the kit's, by their names to a
+/// user; the inside's word for each (shading: doc.h doc_material). Each tile a ball wearing it: material_tiles.dart.
 final _materials = (
-  'Materials',
+  'Material',
   [
-    _Make('Glass', DockG.radial, WsT.toneShape, '', 'Thick glass: bends and tints what lies behind it. Put on the picked solid'),
+    _Make('Lit', DockG.ellipse, WsT.toneShape, '', 'Filament\'s lit surface: its colour, metal, rough, a clear coat'),
+    _Make('Cloth', DockG.ellipse, WsT.toneShape, '', 'Soft, no sharp highlight, a sheen at its rim'),
+    _Make('Subsurface', DockG.ellipse, WsT.toneShape, '', 'Light goes into it and comes out, as in wax or skin'),
+    _Make('Glass', DockG.radial, WsT.toneShape, '', 'Thick glass: bends and tints what lies behind it'),
+    _Make('Filament glass', DockG.radial, WsT.toneShape, '', 'Filament\'s own glass: bends what is behind, a thin film\'s rainbow'),
+    _Make('Lacquer', DockG.ellipse, WsT.toneShape, '', 'Its colour under a hard clear coat'),
+    _Make('Bubble', DockG.radial, WsT.toneShape, '', 'Nearly clear, a bright rim'),
   ],
 );
-const _worn = {'Glass': 'glass'};   // (the tile, and the solid's fill it gives)
+const _worn = {'Lit': 'lit', 'Cloth': 'cloth', 'Subsurface': 'subsurface', 'Glass': 'glass', 'Filament glass': 'filament_glass', 'Lacquer': 'lacquer', 'Bubble': 'bubble'};   // (the tile, and the shading it gives)
+const _wears = {'film', 'picture', 'text', 'shape', 'solid'};   // (the kinds of thing that are seen, and so wear one)
 const _onPicked = {'Empty'};   // (put on the picked thing, or a new board: empty_fx.dart)
 
 final _asked = {
@@ -484,29 +493,11 @@ const _starts = <String, Map<String, double>>{
   'Sun': {'rotate_x': -60, 'rotate_y': 35},
 };
 
-/// The tiles that lay the picked thing out in copies (as After Effects' repeater), and what each tells it: in a row,
-/// side by side and a little smaller each time; round a centre below it. The layout is the Repeater recipe's: a tile gives
-/// the thing that script (engine/recipes/repeater.js, Motolii.repeaterScript) and says its knobs (js_StepX, js_Size)
-/// beside the document's own copies.
+/// What the Repeater tells the picked thing as it is first put on it (its knobs: js_StepX, js_Size), as its tile laid
+/// the thing out before it was an expression: in a row, side by side and a little smaller each time.
 const _laid = <String, Map<String, double>>{
-  'Repeater': {'copies': 5, 'js_StepX': 1.3, 'js_Size': .92},
+  'Repeater': {'js_StepX': 1.3, 'js_Size': .92},
 };
-
-/// Why the Repeater cannot be laid on thing [t] ('' it can): a thing has one script, and the Repeater is one. A thing with a
-/// script of its own (a motion, another recipe's) is not given it over that, and a shelf without the recipe has none to give.
-String _repeaterWhy(Motolii m, int t) {
-  if (m.hasRepeater(t)) return '';
-  final has = m.word(t, 'script');
-  if (has.isNotEmpty && has != 'none') return 'It has a script already: take it off first';
-  return m.recipes.any((r) => r.$1 == m.repeaterScript) ? '' : 'The Repeater recipe (recipes/repeater.js) is not on the shelf';
-}
-
-/// The Repeater given to thing [t] if it has none, asked without waiting. Asked before the step that tells its knobs, not in
-/// it: the inside knows a script's knobs (js_StepX…) once the script is said, but not in the step it was said in (a set of
-/// one there is refused: "a shape has no js_StepX"), so the script is a step of its own just before the numbers' one.
-void _repeaterOn(Motolii m, int t) {
-  if (!m.hasRepeater(t)) m.later('say', thing: t, name: 'script', word: m.repeaterScript);
-}
 
 /// A tile made on the stage as a new thing, picked; a tile of copies lays the picked thing out. Not done: the foot of
 /// the shelf says why.
@@ -516,28 +507,25 @@ void _make(DockCtx c, _Make tile) {
     c.ws.after(m.later('make', word: name), (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why), (made) => c.ws.select('$made'));   // (without waiting: picked once made)
     return;
   }
-  if (tile.file case final f?) return _ownPut(c, tile.name, f);
+  if (tile.file != null) return _expressionPut(c, tile);
   if (name == 'Adjustment') return c.ws.adjustment();
   if (name == 'Empty') {   // (an expression to write: empty_fx.dart; what went wrong before forgotten once it is taken)
     c.set(() => c.mem.trouble.remove(name));
     return emptyPut(c.ws, expression: true, told: (why) => c.set(() => why.isEmpty ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why));
   }   // (After Effects' New > Adjustment Layer)
-  if (_worn[name] case final fill?) {
+  if (_worn[name] case final wears?) {   // (on the picked thing, in place of the one it wore; nothing picked, a ball wearing it, picked)
     final t = int.tryParse(c.ws.selected ?? '');
-    if (t == null || m.word(t, 'kind') != 'solid') return c.set(() => c.mem.trouble[name] = 'Pick a solid to make it ${name.toLowerCase()}');
-    c.ws.after(m.later('say', thing: t, name: 'fill', word: fill), (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why));
-    return;
-  }
-  if (_laid[name] case final told?) {
-    final t = int.tryParse(c.ws.selected ?? '');
-    if (t == null) return c.set(() => c.mem.trouble[name] = 'Pick a thing to lay out');
-    if (_repeaterWhy(m, t) case final why when why.isNotEmpty) return c.set(() => c.mem.trouble[name] = why);
-    _repeaterOn(m, t);   // (its script first, before the step: the knobs told in it are the script's)
-    m.later('together', number: 1);   // (one step for the numbers, without waiting)
-    for (final e in told.entries) {
-      m.later('set', thing: t, name: e.key, number: e.value.toDouble());
+    void told(bool done, String why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why);
+    if (t != null) {
+      if (!_wears.contains(m.word(t, 'kind'))) return c.set(() => c.mem.trouble[name] = 'A camera, a light or a null wears nothing: pick a thing that is seen');
+      c.ws.after(m.later('say', thing: t, name: 'shading', word: wears), told);
+      return;
     }
-    c.ws.after(m.later('together'), (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why));
+    m.later('together', number: 1);   // (one step: the ball and what it wears)
+    c.ws.after(m.later('add', name: 'solid', word: 'ball'), null, (made) => c.ws.select('$made'));
+    wsInked(c.ws, 'solid', 'ball');
+    m.later('say', thing: -1, name: 'shading', word: wears);
+    c.ws.after(m.later('together'), told);
     return;
   }
   if (!_asked.containsKey(name)) {
@@ -565,7 +553,7 @@ class CreateShelf extends StatelessWidget {
       _recipesOf(c.ws),
       _makes.first,
       _elementsOf(c.ws),
-      for (final (g, items) in _makes.skip(1)) g == 'Copies' ? (g, [...items, ..._ownExpressions()]) : (g, items),
+      for (final (g, items) in _makes.skip(1)) g == 'Expression' ? (g, [...items, ..._expressionsOf(c.ws)]) : (g, items),
       _solids,
       _materials,
       _lights,
@@ -612,7 +600,7 @@ class CreateShelf extends StatelessWidget {
                                 return Wrap(
                                   spacing: WsT.gutter,
                                   runSpacing: WsT.gutter,
-                                  children: [for (final m in items) SizedBox(width: w, height: Shape.z(70), child: m.file != null ? _OwnTile(m, c, key: ValueKey('ws-own-${m.file}')) : _MakeTile(m, c))],
+                                  children: [for (final m in items) SizedBox(width: w, height: Shape.z(70), child: m.file != null && shelfAdded(m.file!) ? _OwnTile(m, c, key: ValueKey('ws-own-${m.file}')) : _MakeTile(m, c))],
                                 );
                               },
                             ),
@@ -628,8 +616,8 @@ class CreateShelf extends StatelessWidget {
             preview: DockBadge(sel.g, sel.hue, size: Shape.z(34)),
             title: '${sel.name} layer',
             meta: c.mem.trouble[sel.name] ?? 'At ${c.ws.timecode()} · ${sel.what}',
-            action: _laid.containsKey(sel.name) ? 'Lay out' : _worn.containsKey(sel.name) || sel.onPicked ? 'Put on' : 'Create',
-            fresh: !_laid.containsKey(sel.name) && !_worn.containsKey(sel.name) && !sel.onPicked, // (a tile makes a new thing; a tile of copies lays out the picked one, a material is put on it, an empty expression too: to the picked one, a new board with nothing picked)
+            action: sel.onPicked || (_worn.containsKey(sel.name) && c.ws.selected != null) ? 'Put on' : 'Create',
+            fresh: !sel.onPicked && !(_worn.containsKey(sel.name) && c.ws.selected != null), // (a tile makes a new thing; a tile of copies lays out the picked one, a material is put on it, an empty expression too: to the picked one, a new board with nothing picked)
             onAction: () => _make(c, sel),
           ),
       ],
@@ -646,7 +634,7 @@ class _MakeTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final sel = c.sel == m.id;
     final inside = c.ws.inside;
-    final makes = inside != null && (m.recipe ? inside.recipes.any((r) => r.$1 == m.name) : _asked.containsKey(m.name) || _laid.containsKey(m.name) || _worn.containsKey(m.name) || m.onPicked || inside.elements.any((e) => e.$1 == m.name));
+    final makes = inside != null && (m.recipe ? inside.recipes.any((r) => r.$1 == m.name) : _asked.containsKey(m.name) || _worn.containsKey(m.name) || m.onPicked || inside.elements.any((e) => e.$1 == m.name));
     return DockHover(
       onTap: () => c.pick(m.id),
       onDoubleTap: makes ? () => _make(c, m) : null, // (two presses make it, one step)
@@ -660,10 +648,15 @@ class _MakeTile extends StatelessWidget {
           children: [
             if (m.recipe && _isRecipe(c, m.name))   // (a recipe: its motion as the inside reckons it, drawn by the window, the whole list moving at once)
               Positioned.fill(child: RecipeMotionView(m.name))
-            else if (_copiesTile(m) case final f?)   // (an expression: copies it lays out, drawn by the inside as an effect's tile, played under the hand: copies_tiles.dart)
+            else if (m.file case final f?)   // (an expression: copies it lays out, drawn by the inside as an effect's tile, played while in sight: copies_tiles.dart)
               Positioned.fill(child: ValueListenableBuilder(valueListenable: CopiesTiles.drawn, builder: (_, _, _) => switch (CopiesTiles.of(f)) {
                 '' => Align(alignment: Alignment.topLeft, child: DockGlyph(m.g, size: Shape.z(26), color: sel ? WsT.onAccent : m.hue)),
-                final p => TileMoving(p, playing: h),
+                final p => TileMoving(p, playing: true),   // (played while in sight: TileMoving's own)
+              }))
+            else if (_worn[m.name] case final w?)   // (a material: a ball wearing it, drawn by the inside: material_tiles.dart)
+              Positioned.fill(child: ValueListenableBuilder(valueListenable: MaterialTiles.drawn, builder: (_, _, _) => switch (MaterialTiles.of(w)) {
+                '' => Align(alignment: Alignment.topLeft, child: DockGlyph(m.g, size: Shape.z(26), color: sel ? WsT.onAccent : m.hue)),
+                final p => TileMoving(p, playing: false),
               }))
             else
               Align(

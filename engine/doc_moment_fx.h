@@ -296,7 +296,7 @@ static void doc_sheet_reads(Doc& d, int thing, float way, Texture* picture) {
 // same view the glass is drawn over; Filament's layers leave the rest out for that one picture.
 static void doc_things_read(Doc& d, const std::vector<std::pair<int, Doc::Shown*>>& laid) {
     Stage& s = *d.stage;
-    const auto reads = [&](int thing) { return doc_blend_way(doc_word(d, thing, "blend")) || doc_word(d, thing, "fill") == "behind"; };
+    const auto reads = [&](int thing) { return doc_blend_way(doc_word(d, thing, "blend")) || doc_word(d, thing, "fill") == "behind" || doc_sheet_wear(d, thing) == "glass"; };   // (a flat thing of glass sees what is behind it through itself: flat.mat)
     for (auto r = d.reads.begin(); r != d.reads.end();) {   // (no longer reading, or gone: let go)
         if (d.shown.count(r->first) && reads(r->first)) { ++r; continue; }
         if (const auto t = d.shown.find(r->first); t != d.shown.end()) doc_reading(s, t->second, 0.f, 0.f, white_point(s));

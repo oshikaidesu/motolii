@@ -61,7 +61,7 @@ Set<String> shelfTaken(Ws ws, {required bool expression}) {
   if (expression) return createNames(ws);
   final m = ws.inside;
   if (m == null) return const {};
-  return {'Empty', for (final l in [m.thingEffects, m.looks, m.animators]) ...l.map((e) => e.$1), for (final (n, f) in m.effects) shelfNamed(f) ?? n};
+  return {'Empty', for (final l in [m.thingEffects, m.looks]) ...l.map((e) => e.$1), for (final (n, f) in m.effects) shelfNamed(f) ?? n};
 }
 
 /// Why a name cannot be one on a shelf whose names are [taken] ('' it can): it is a file's name too.

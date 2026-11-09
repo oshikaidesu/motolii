@@ -243,6 +243,27 @@ static MaterialInstance* own_glass(Stage& s, Mesh* m, std::vector<mat4f> places,
     return mi;
 }
 
+// A solid worn by one of the kit's materials of its own (Create's Material group, doc.h doc_material): Filament's own
+// glass (own_glass, above: ior its bend, split how far its colours part, swim how far its faces lean, vivid its thin
+// film's rainbow, dark how deep its colour), lacquer (blade.mat: its colour dark at the root, as it is at the tip, under
+// a hard clear coat; metal 0 lacquer, 1 steel) or a bubble (bubble.mat: vivid how bright its rim). tone: its colour.
+static MaterialInstance* solid_wear(Stage& s, Mesh* m, std::vector<mat4f> places, const std::string& wears, float3 tone, float ior, float split, float swim, float dark, float vivid, float metal) {
+    MaterialInstance* mi = nullptr;
+    if (wears == "filament_glass") {
+        const float3 left = float3{std::pow(tone.x, 0.25f * dark), std::pow(tone.y, 0.25f * dark), std::pow(tone.z, 0.25f * dark)};   // (dark 4: its colour itself)
+        if (!(mi = own_glass(s, m, places, left, 0.06f * swim))) return nullptr;
+        mi->setParameter("ior", ior), mi->setParameter("split", split), mi->setParameter("film", std::clamp(vivid / 3.f, 0.f, 1.f));
+    } else if (wears == "lacquer") {
+        if (!(mi = add(s, m, "blade.filamat", places))) return nullptr;
+        const float3 own = Color::toLinear<ACCURATE>(sRGBColor{tone});
+        mi->setParameter("dark", own * 0.3f), mi->setParameter("light", own), mi->setParameter("metal", metal), mi->setParameter("hatch", 0.f);
+    } else if (wears == "bubble") {
+        if (!(mi = add(s, m, "bubble_worn.filamat", places))) return nullptr;
+        mi->setParameter("strength", vivid);
+    }
+    return mi;
+}
+
 // Glass seen through both of its sides (thick_glass.mat): the mesh at its places, drawn three times. Its far faces go
 // into a picture of their own, which way they face and how far away they are (far_side.mat; nothing else is in that
 // picture), and as they look from within over the picture of the scene without the glass (far_look.mat);

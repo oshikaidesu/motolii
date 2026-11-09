@@ -183,6 +183,8 @@ static bool doc_match(Doc& d) {
         const double units = 0.5 * s.h * up.y / up.w;   // (points of the picture to one unit of the stage, where things stand at first)
         DrawnFx fx;
         fx.thick = doc_on(d, thing, "scale_z"), fx.lit = doc_lit(d, thing), fx.bevel = doc_bevel(d, thing) > 0;
+        fx.wear = doc_sheet_wear(d, thing);   // (a material it wears: its sheet flat.mat's own for it, in Filament's light (glass reads what is behind, unlit))
+        if (!fx.wear.empty() && fx.wear != "glass") fx.lit = true;
         for (const std::string rim : {"stroke_2", "stroke_3"})
             if (const std::string word = doc_word(d, thing, rim.c_str()); word.size() == 6) {
                 const long hex = std::strtol(word.c_str(), nullptr, 16);
@@ -254,7 +256,7 @@ static bool doc_match(Doc& d) {
         else if (kind == "film") {
             const std::string moshed = doc_mosh(d, thing);   // (its datamosh, once made: played in its place, from its start)
             const double from = moshed.empty() ? doc_number(d, thing, "begin", 0, 0) : 0.0, length = doc_number(d, thing, "duration", 0, -1), speed = doc_number(d, thing, "speed", 0, 1);
-            made.film = video(s, (moshed.empty() ? file : moshed).c_str(), mat4f{}, 1.f, (float)from, length < 0 ? -1.f : (float)(from + length * std::fabs(speed)), (float)speed, lay, doc_lit(d, thing));
+            made.film = video(s, (moshed.empty() ? file : moshed).c_str(), mat4f{}, 1.f, (float)from, length < 0 ? -1.f : (float)(from + length * std::fabs(speed)), (float)speed, lay, fx.lit, fx.wear);
             if (!made.film) why = video_trouble;
             else if (const double keyed = doc_number(d, thing, "keyed", 0, -1); keyed != 0.0) key_own(made.film, keyed > 0.5);   // (not said: keyed if it has a ground of its own)
             if (made.film) s.playing.erase(made.film);   // (the document tells it its moment, and when its sound comes on)
@@ -336,7 +338,8 @@ static bool doc_match(Doc& d) {
                                   (int)doc_number(d, thing, "points", 0, shape == "star" ? 5 : shape == "arc" ? 270 : shape == "squircle" ? 4 : shape == "cog" ? 12 : shape == "spiral" ? 3 : wave ? 4 : 6), (float)doc_number(d, thing, "inner", 0, shape == "cog" ? 0.2 : shape == "arc" ? 0.3 : shape == "spiral" ? 0.1 : shape == "chamfer" ? 0.3 : 0.5), (float)doc_number(d, thing, "round", 0, 0));
             }
         } else if (kind == "solid") {   // (one of the kit's shapes, or a file; its fill is its surface: a colour, or the material glass)
-            const bool glass = fill == "glass";
+            const std::string wears = doc_material(d, thing);   // (its material: Create's Material group, or a fill of glass as before)
+            const bool glass = wears == "glass", coloured = !fill.empty() && fill != "glass";
             const auto glassy = [&](MaterialInstance* look) {   // (the kit's glass as the document says it; not said, as it comes)
                 look->setParameter("ior", (float)doc_number(d, thing, "ior", 0, 1.5)), look->setParameter("split", (float)doc_number(d, thing, "dispersion", 0, 0.1));
                 look->setParameter("swim", (float)doc_number(d, thing, "swim", 0, 0.5)), look->setParameter("dark", (float)doc_number(d, thing, "dark", 0, 4));
@@ -347,16 +350,20 @@ static bool doc_match(Doc& d) {
                                   (float)doc_number(d, thing, "sheen", 0, 0), (float)doc_number(d, thing, "anisotropy", 0, 0), (float)doc_number(d, thing, "thickness", 0, 0.5)};
             const std::string shading = doc_word(d, thing, "shading");
             const char* model = doc_number(d, thing, "clip", 0, 0) > 0.5 && (shading.empty() || shading == "lit") ? "floor_lit_matte.filamat" : surface_model(shading);   // (clipped: one a matte can cut)
-            if (!fill.empty() && !glass && (rgb < 0 || ramp.size() > 1)) why = "a solid's fill is six digits, as ff3366, or glass";
+            const bool own = doc_among("filament_glass lacquer bubble", wears);   // (worn by a kit material of its own, not Filament's lit surface: solid_wear)
+            const float3 tone = coloured ? colour : float3{0xd9, 0xd2, 0xc3} / 255.f;
+            const auto wear = [&](Mesh* m, int copies) { return solid_wear(s, m, std::vector<mat4f>((size_t)std::max(1, copies), mat4f{}), wears, wears == "filament_glass" && !coloured ? float3{1.f} : tone, (float)doc_number(d, thing, "ior", 0, 1.5), (float)doc_number(d, thing, "dispersion", 0, 0.1),
+                                                                         (float)doc_number(d, thing, "swim", 0, 0.5), (float)doc_number(d, thing, "dark", 0, 4), (float)doc_number(d, thing, "vivid", 0, 1.3), (float)doc_number(d, thing, "metallic", 0, 0.08)); };
+            if (coloured && (rgb < 0 || ramp.size() > 1)) why = "a solid's fill is six digits, as ff3366, or glass";
             else if (!shape.empty()) {
                 made.sketch = shape == "sketch";
                 made.shape = made.sketch ? sketch_mesh() : shape == "gem" ? gem(0.5f) : shape == "cube" ? cube(0.1f) : shape == "ball" ? sphere(0.5f) : torus(0.37f, 0.13f);
-                MaterialInstance* look = glass ? thick_glass(s, made.shape, {mat4f{}}) : add(s, made.shape, made.sketch ? "sketch.filamat" : model, std::vector<mat4f>((size_t)std::max(1, (int)doc_number(d, thing, "copies", 0, 1)), mat4f{}));
+                MaterialInstance* look = glass ? thick_glass(s, made.shape, {mat4f{}}) : own && !made.sketch ? wear(made.shape, (int)doc_number(d, thing, "copies", 0, 1)) : add(s, made.shape, made.sketch ? "sketch.filamat" : model, std::vector<mat4f>((size_t)std::max(1, (int)doc_number(d, thing, "copies", 0, 1)), mat4f{}));
                 made.look = look;
                 if (look && glass) glassy(look);
                 if (look && made.sketch) for (int i = 0; i < 6; ++i) look->setParameter(("picture" + std::to_string(i)).c_str(), white_point(s), TextureSampler());
                 if (!look) made.shape = nullptr;
-                else if (!glass) plain(look, !fill.empty() ? colour : made.sketch ? float3{1.f} : float3{0xd9, 0xd2, 0xc3} / 255.f, surface);
+                else if (!glass && !(own && !made.sketch)) plain(look, coloured ? colour : made.sketch ? float3{1.f} : float3{0xd9, 0xd2, 0xc3} / 255.f, surface);
             } else if (std::filesystem::path(file).extension() == ".ply") {   // (a point cloud: its grains, one buffer, points.h)
                 for (const std::string& w : doc_fx_list(d, thing)) if (std::filesystem::path(w).extension() == ".mjs") made.splatFxFile = w;   // (a PlayCanvas splat effect on it: its look made with it)
                 std::string effectWhy;
@@ -367,12 +374,12 @@ static bool doc_match(Doc& d) {
                 if (made.splatFx)   // (a PlayCanvas effect's box, as it comes: the cloud's own)
                     for (int c = 0; c < 3; ++c) made.splatFx->usual(std::string("aabbMin_") + "xyz"[c], box[0][c]), made.splatFx->usual(std::string("aabbMax_") + "xyz"[c], box[1][c]);
                 made.grains = made.shape != nullptr;
-            } else if (glass) {   // (a file's shape as glass: its triangles alone, for the kit's glass, which draws a shape three times)
-                MaterialInstance* look = (made.shape = solid_mesh(file.c_str())) ? thick_glass(s, made.shape, {mat4f{}}) : nullptr;
+            } else if (glass || own) {   // (a file's shape as glass, or worn by a kit material of its own: its triangles alone, for the kit's glass, which draws a shape three times)
+                MaterialInstance* look = (made.shape = solid_mesh(file.c_str())) ? glass ? thick_glass(s, made.shape, {mat4f{}}) : wear(made.shape, (int)doc_number(d, thing, "copies", 0, 1)) : nullptr;
                 made.look = look;
-                if (!look) made.shape = nullptr; else glassy(look);
+                if (!look) made.shape = nullptr; else if (glass) glassy(look);
             }
-            else if ((made.solid = solid(s, file.c_str(), mat4f{}, 1.f, (int)doc_number(d, thing, "copies", 0, 1))) && rgb >= 0) solid_fill(s, made.solid, colour, surface, model);
+            else if ((made.solid = solid(s, file.c_str(), mat4f{}, 1.f, (int)doc_number(d, thing, "copies", 0, 1))) && (rgb >= 0 || !shading.empty())) solid_fill(s, made.solid, coloured ? colour : float3{0xd9, 0xd2, 0xc3} / 255.f, surface, model);   // (its own look, unless it is coloured or wears a material)
             if (made.solid) s.playing.erase(made.solid);   // (the document tells it its moment)
         } else why = std::string("its kind is one of: ") + doc_kinds;
         if (made.celMove && !made.drawn) {   // (a level at a ×, or at a drawing it lacks: kept, nothing shown, so that its next drawing is seen)

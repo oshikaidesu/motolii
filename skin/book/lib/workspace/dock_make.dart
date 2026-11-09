@@ -10,7 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:material_color_utilities/material_color_utilities.dart';
 
-import '../motolii.dart' show Motolii, motoliiDir;
+import '../motolii.dart' show motoliiDir;
 import '../sets/inspector/inspector_parts.dart' show Pop;
 import '../sets/foundations/text_hand.dart' show TextHand, wordsPicked;
 import '../sets/panels/media_parts.dart' show MiniSlider;
@@ -22,8 +22,10 @@ import '../theme.dart' show ColorTheme;
 import 'colour_wheel.dart';
 import 'ws_menu.dart';
 import 'copies_tiles.dart';
+import 'material_tiles.dart';
 import 'create_preview.dart';
 import 'dock_effects.dart' show TileMoving;
+import 'effect_tiles.dart' show EffectTiles;
 import 'empty_fx.dart';
 import 'shelf_add.dart';
 import 'ws.dart';
@@ -218,16 +220,14 @@ void _fill(DockCtx c, String word) {
     if (_lettersPicked(c, t) case final at?) return _fillLetters(c, t!, at, word.toLowerCase());
   }
   // (a colour given to a thing is also what the next thing drawn comes in: its fill the ink, its outline the edge, as
-  //  CLIP STUDIO PAINT has one drawing colour that every tool draws in, its text too, the last one chosen; glass fills
-  //  a solid alone, so it is not kept)
+  //  CLIP STUDIO PAINT has one drawing colour that every tool draws in, its text too, the last one chosen)
   void keep(String name) {
-    if (word == 'glass') return;
     if (name == 'fill') c.ws.ink = word;
     if (name == 'stroke') c.ws.edge = word;
   }
   if (t == null && (c.ws.aim == 'fill' || c.ws.aim == 'stroke')) { // (the tool strip's ink or edge aimed it, nothing picked: what a thing drawn next comes in, stage.dart _Swatches)
     c.set(() {
-      word == 'glass' ? c.mem.trouble['fill'] = 'Glass fills a solid thing: pick one' : c.mem.trouble.remove('fill');
+      c.mem.trouble.remove('fill');
       keep(c.ws.aim!);
     });
     c.ws.reread();
@@ -247,7 +247,7 @@ void _fill(DockCtx c, String word) {
     return;
   }
   if (t == null) { // (nothing picked: the drawing tools' ink, what a thing drawn next is filled with)
-    c.set(() => word == 'glass' ? c.mem.trouble['fill'] = 'Glass fills a solid thing: pick one' : (c.ws.ink = word, c.mem.trouble.remove('fill')));
+    c.set(() => (c.ws.ink = word, c.mem.trouble.remove('fill')));
     c.ws.reread();
     return;
   }
@@ -270,17 +270,15 @@ Map<String, Color> usedColours(Ws ws) {
 
 /// How many of the Create shelf's tiles make or lay out something of the document, of all it shows.
 String createFact(Ws ws) {
-  final recipes = _createRecipes(ws).length;
-  return '${_asked.length + _laid.length + _worn.length + recipes} ready'; // (the shelf shows only these)
+  final recipes = _recipesOf(ws).$2.length, expressions = _expressionsOf(ws).length;   // (the recipes that are expressions are tiles of the Expression group's)
+  return '${_asked.length + _worn.length + recipes + expressions} ready'; // (the shelf shows only these)
 }
 
 /// Joined: the inside's recipes, pictures in one call (as Cavalry's tutorials build them), each a tile.
-(String, List<_Make>) _recipesOf(Ws ws) => ('Recipes', [for (final (name, what) in _createRecipes(ws)) _Make(name, DockG.copies, Pop.tonePlace, '', what, recipe: true)]);
-
-/// Not the Repeater (its tile is the Copies group's, which lays out the picked thing), nor a closed pack (the Program shelf's: dock_program.dart).
-Iterable<(String, String)> _createRecipes(Ws ws) {
-  final m = ws.inside!, packs = {for (final (name, _) in m.packs) name};
-  return m.recipes.where((r) => r.$1 != m.repeaterScript && !packs.contains(r.$1));
+(String, List<_Make>) _recipesOf(Ws ws) {
+  final expressions = {for (final (name, _) in _expressionRecipes()) name};   // (not those that are expressions: their tiles are the Expression group's)
+  final packs = {for (final (name, _) in ws.inside!.packs) name};   // (nor the closed packs: the Program shelf's, dock_program.dart)
+  return ('Recipes', [for (final (name, what) in ws.inside!.recipes) if (!expressions.contains(name) && !packs.contains(name)) _Make(name, DockG.copies, Pop.tonePlace, '', what, recipe: true)]);
 }
 
 /// The elements kept (Edit › Save to My Elements), put in at the playhead linked to their file: Alight Motion's + ›

@@ -289,7 +289,7 @@ static gint64 video_discovered(const char* file) {
     g_free(uri);
     return length;
 }
-static Video* video(Stage& s, const char* file, const mat4f& place, float high, float from = 0.f, float to = -1.f, float speed = 1.f, const char* lay = nullptr, bool lit = false) {
+static Video* video(Stage& s, const char* file, const mat4f& place, float high, float from = 0.f, float to = -1.f, float speed = 1.f, const char* lay = nullptr, bool lit = false, const std::string& wear = "") {
     if (!door::device(s.engine)) return video_trouble = "not the WebGPU backend", nullptr;   // (another backend)
     static const bool started = (gst_init(nullptr, nullptr), true);
     (void)started;
@@ -399,7 +399,7 @@ static Video* video(Stage& s, const char* file, const mat4f& place, float high, 
         v->sheet->uv.push_back(of * 0.5f + 0.5f);   // (a film's first row is its top: Filament turns a sheet's v over itself)
     }
     v->sheet->idx = {0, 1, 2, 0, 2, 3};
-    v->look = add(s, v->sheet, flat_laid(lay, lit).c_str(), {place}, 1, lit);
+    v->look = add(s, v->sheet, flat_laid(lay, lit, wear).c_str(), {place}, 1, lit);   // (wear: a material it wears, doc_sheet_wear)
     if (lit) v->look->setParameter("surface", float3{0.08f, 0.6f, 0.5f});   // (a solid's as it comes)
     if (!v->look) return video_trouble = "flat.filamat", nullptr;
     v->look->setParameter("filmed", 1.f);

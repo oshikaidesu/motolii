@@ -46,7 +46,7 @@ int motolii_work_out(Motolii* m, const char* sum, double* is) {
     });
 }
 int motolii_value(Motolii* m, int thing, const char* name, double at, double* is) {
-    return by_look(m, [=] { return (int)(doc_value(doc(m), thing, name, at, is)); });
+    return by_look(m, [=] { return (int)(doc_value(doc(m), thing, name, at, is) && (doc_macro_over(doc(m), thing, name, at, is), true)); });   // (a knob a macro turns: as the macro makes it)
 }
 // A value as the stage shows it: what what drives it (a relation, a behaviour) makes of it, 2; its own, 1; none, 0.
 int motolii_shows(Motolii* m, int thing, const char* name, double at, double* is) {

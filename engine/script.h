@@ -3,6 +3,12 @@
 //   // --check@spin:Spin,1                    on or off (1 or 0)
 //   // --select@way:Way,ring,grid,spiral      one of some words, the first as it comes
 //   // --group:Advanced                       the knobs after it folded away under that name, until a bare // --group
+//   // --macro@Spread:Spread,0.5 -> StepX 0 0.6, ScatterX 0 2
+//                                             one knob, 0 to 1 (as it comes: 0.5), turning others: each is its min + (max - min) x
+//                                             the macro, Min above Max the other way (Ableton's Rack Macro Controls, Live 12
+//                                             manual 25.7.1 Map Mode). On its card it stands first; what it turns is folded into
+//                                             Advanced, "← Spread" after its name. It turns them once a document says it (a
+//                                             value or a key): until then theirs stand, as a recipe set them (weave.js, confetti.js)
 // and whose body says, for each copy of the thing it is given to, where it is and how:
 //   function each(i, n, t, k) { return { x, y, z, size, rotate, rotate_x, rotate_y, opacity }; }   // i of n copies, t seconds since the thing began, k the knobs (and k.duration: how long the thing lasts)
 // (as Cavalry's JavaScript Utility gives a Duplicator its points). Behind the door: QuickJS-ng (js_bench chose it).
@@ -26,6 +32,9 @@ struct ScriptKnob {
     double low = 0, high = 1, usual = 0, step = 0;
     std::string words;               // a select's words, with spaces between
     std::string group;               // the group it lies in, as AviUtl2's head says (// --group:Name … // --group): its card's fold ("" none)
+    struct Turned { std::string name; double low, high; };
+    std::vector<Turned> turns;       // a macro's (// --macro@): the knobs it turns and over what span; a macro is a track of 0 to 1
+    std::string by;                  // the macro that turns this one ("" none)
 };
 struct ScriptCopy { double x = 0, y = 0, z = 0, size = 1, rotate = 0, rotate_x = 0, rotate_y = 0, opacity = 1, scale_x = 1, scale_y = 1, scale_z = 1, colour = -1; };   // (colour: a solid copy's own, red green blue; -1: as the solid is)
 

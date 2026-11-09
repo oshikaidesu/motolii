@@ -154,6 +154,7 @@ static bool doc_set(Doc& d, int thing, const char* name, double is) {
     if (!strcmp(name, "parent")) return doc_parent(d, thing, is);
     if (!strcmp(name, "leader") && !doc_leading && is >= 1 && doc_word(d, thing, "kind") == "behaviour" && doc_among(doc_relations, doc_word(d, thing, "file")) && !doc_word(d, thing, "members").empty())   // (a relation's leader changed by any hand: as its crown changes it, nothing jumps)
         return doc_lead(d, thing, (int)is, d.stage ? d.stage->now : 0.0);
+    if (double turned = 0; !doc_macro_over(d, thing, name, d.stage ? d.stage->now : 0.0, &turned).empty()) return d.trouble = "a macro turns it: move the macro", false;   // (Ableton's mapped knob, not its own: script.h)
     return doc_knows(d, thing, name, &is) && doc_change(d, sqlite3_mprintf("delete from fact where thing = %d and name = %Q and at <> 0; insert into fact(thing, name, at, value) values(%d, %Q, 0.0, %!.17g) on conflict do update set value = excluded.value, way = null", thing, name, thing, name, is));
 }
 static bool doc_put(Doc& d, int thing, const char* name, double at, double is);
@@ -386,6 +387,7 @@ static int doc_keys(Doc& d, int thing, const char* name, double at);
 static bool doc_key(Doc& d, int thing, const char* name, double at, double is) {
     if (!(at >= 0.0 && at <= 1e6)) return d.trouble = "a key is at a moment of the stage: from 0 to 1000000 seconds", false;
     if (!doc_knows(d, thing, name, &is, nullptr, true)) return false;
+    if (double turned = 0; !doc_macro_over(d, thing, name, at, &turned).empty()) return d.trouble = "a macro turns it: move the macro", false;
     const bool stayed = !doc_keys(d, thing, name, -1.0) && at != 0.0;   // (the value that stayed goes: the key holds the place now)
     return doc_change(d, sqlite3_mprintf("%z insert into fact(thing, name, at, value, way) values(%d, %Q, %!.17g, %!.17g, %s) on conflict do update set value = excluded.value, way = coalesce(way, excluded.way)",
                                          stayed ? sqlite3_mprintf("delete from fact where thing = %d and name = %Q;", thing, name) : sqlite3_mprintf(""), thing, name, at, is, at == 0.0 ? "'Linear'" : "null"), true);

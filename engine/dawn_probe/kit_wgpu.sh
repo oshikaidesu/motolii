@@ -36,6 +36,12 @@ for f in paper paper_copy floor_shade effected effected_world effected_solid thi
         blend=$way; [ $way = transparent ] && blend=fade
         $MATC -a webgpu -a metal -p desktop -TBLENDING=$blend -TSHADE=lit -DLIT -DLAY_$way -o out/wgpu_kit/flat_lit_$way.filamat flat.mat > out/wgpu_kit/flat_lit_$way.log 2>&1 || echo "no WebGPU material: flat_lit_$way"
     done
+    [ $f = flat ] && for wear in wear:lit:WEAR:fade cloth:cloth:CLOTH:fade subsurface:subsurface:SUBSURFACE:fade lacquer:lit:LACQUER:fade bubble:lit:BUBBLE:transparent glass:unlit:GLASS:transparent; do   # (a material a flat thing wears, its picture its colour: doc_match.h doc_material, kit_stage.h flat_laid)
+        parts=(${(s.:.)wear})
+        lit=-DLIT; [ $parts[2] = unlit ] && lit=
+        $MATC -a webgpu -a metal -p desktop -TBLENDING=$parts[4] -TSHADE=$parts[2] $lit -D$parts[3] -o out/wgpu_kit/flat_$parts[1].filamat flat.mat > out/wgpu_kit/flat_$parts[1].log 2>&1 || echo "no WebGPU material: flat_$parts[1] (out/wgpu_kit/flat_$parts[1].log)"
+    done
+    [ $f = bubble ] && { $MATC -a webgpu -a metal -p desktop -DWORN -o out/wgpu_kit/bubble_worn.filamat bubble.mat > out/wgpu_kit/bubble_worn.log 2>&1 || echo "no WebGPU material: bubble_worn"; }   # (a thing wearing Bubble: kit_things.h solid_wear)
 done
 # ThorVG here is the one built against Dawn (dawn_probe/tvg_on_dawn.sh makes it): it can draw on Filament's own device
 # (drawn.h), through the door built inside Filament's build (gpu_door.h).

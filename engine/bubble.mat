@@ -12,6 +12,9 @@ fragment {
         prepareMaterial(material);
         float rim = 1.0 - abs(dot(getWorldNormalVector(), getWorldViewVector()));
         material.baseColor = vec4(vec3(1.0), saturate(materialParams.strength * (0.03 + rim * rim * rim * 1.8)));
+#if defined(WORN)   // (bubble_worn, kit_wgpu.sh: a thing wearing Bubble, kit_things.h solid_wear: its white with its clearness already in, as Filament's fade takes it; else a ball of it is white all over)
+        material.baseColor.rgb *= material.baseColor.a;
+#endif
         material.roughness = 0.08;
         material.metallic = 0.0;
         material.reflectance = 1.0;
