@@ -54,19 +54,18 @@ class Motolii {
   final _P _m;
   final String libPath;
 
-  /// The document at [document] (made if it is not there), on a stage [wide] by [high]. null: it could not be opened.
-  static Motolii? open(String document, {int wide = 1920, int high = 1080, String? dir}) {
-    dir ??= motoliiDir;
-    final path = '$dir/out/libmotolii.dylib';
+  /// The document at [document] (made if it is not there), on a stage 1920 by 1080. null: it could not be opened.
+  static Motolii? open(String document) {
+    final path = '$motoliiDir/out/libmotolii.dylib';
     final DynamicLibrary lib;
     try {
       lib = DynamicLibrary.open(path);
     } catch (_) {
       return null;
     }
-    final home = '$dir/out/filament_webgpu'.toNativeUtf8(), doc = document.toNativeUtf8();
+    final home = '$motoliiDir/out/filament_webgpu'.toNativeUtf8(), doc = document.toNativeUtf8();
     c.MotoliiBindings(lib).motolii_home(home);
-    final m = c.MotoliiBindings(lib).motolii_open(doc, wide, high);
+    final m = c.MotoliiBindings(lib).motolii_open(doc, 1920, 1080);
     malloc
       ..free(home)
       ..free(doc);

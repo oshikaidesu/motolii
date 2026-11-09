@@ -1,5 +1,5 @@
 // Owns the panel's values (Doc) and re-provides it whenever it changes. A different kind makes a new document (give it a key).
-// How it LOOKS is the lab's (DESIGN.md): hairlines, type carries hierarchy, grey levels, accent only C.mode. The old Motolii is not a source.
+// How it LOOKS is the lab's (DESIGN.md): hairlines, type carries hierarchy, grey levels, accent only Role.selected. The old Motolii is not a source.
 
 import 'package:flutter/foundation.dart' show ValueListenable, listEquals, mapEquals;
 import 'package:flutter/widgets.dart';

@@ -12,14 +12,10 @@ abstract final class N {
 
 /// The window's colour theme. Themed parts (the Workspace and the Inspector library) read [Grey], never [N]; [N] stays the dark
 /// ramp of the older studies, which are dark only.
-enum Shade { dark, light }
-
-/// The grey ramp that follows [Grey.shade], with [N]'s names. Each step keeps its role in both shades — ground (the gutter),
-/// body, card, well, raised, lines, quiet text, text, strong text — only the lightness turns around: in light, cards are the
-/// brightest and text the darkest. Dark is exactly [N].
+/// The grey ramp, with [N]'s names. A skin's Shade word picks light; otherwise it is dark, which is exactly [N].
+/// In light, cards are the brightest and text the darkest.
 abstract final class Grey {
-  static final shade = ValueNotifier<Shade>(Shade.dark);
-  static bool get light => ColorTheme.shadeSaid.value ?? shade.value == Shade.light; // (a skin that names its shade has it)
+  static bool get light => ColorTheme.shadeSaid.value ?? false;
   static Color _p(String role, Color dark, Color light) => ColorTheme.of(role, _made(Grey.light ? light : dark)); // (the theme file's, else the shade's own)
 
   /// A step of the shade's own ramp moved onto the skin's `Background` and `Foreground` (neither said: as it is), so a skin
@@ -61,15 +57,9 @@ abstract final class Grey {
   static Color get g100 => _p('Grey100', N.g100, const Color(0xFF000000));
 }
 
-abstract final class C {
-  /// The accent. Delegates to [Role.mode].
-  static Color get mode => Role.mode;
-}
-
-/// The window's role colours. One palette is set, so each name is that colour.
+/// The window's role colour.
 abstract final class Role {
   static const selected = Color(0xFF7A87E3);
-  static const mode = Color(0xFF7A87E3);
 }
 
 /// The window's one accent, from the skin (the theme's roles: Ableton's names, the key mark Blender's): a fill, the ink drawn on

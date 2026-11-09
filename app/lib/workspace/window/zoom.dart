@@ -9,7 +9,7 @@ abstract final class WsZoom {
   /// The zoom a window opens at: at 100% the parts read too large (user, 2026-10-20).
   static const usual = .88;
 
-  static final value = ValueNotifier<double>((double.tryParse(WindowFile.get('Zoom') ?? '') ?? usual).clamp(.5, 2.0));
+  static final value = (double.tryParse(WindowFile.get('Zoom') ?? '') ?? usual).clamp(.5, 2.0);
 }
 
 /// [child] drawn at [WsZoom.value].
@@ -17,9 +17,9 @@ class WsZoomed extends StatelessWidget {
   const WsZoomed({super.key, required this.child});
   final Widget child;
   @override
-  Widget build(BuildContext context) => ValueListenableBuilder<double>(
-    valueListenable: WsZoom.value,
-    builder: (context, z, _) => LayoutBuilder(
+  Widget build(BuildContext context) {
+    final z = WsZoom.value;
+    return LayoutBuilder(
       builder: (context, box) {
         final mq = MediaQuery.of(context), size = Size(box.maxWidth / z, box.maxHeight / z);
         return ClipRect(
@@ -40,6 +40,6 @@ class WsZoomed extends StatelessWidget {
           ),
         );
       },
-    ),
-  );
+    );
+  }
 }

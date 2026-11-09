@@ -406,7 +406,7 @@ class NumFieldState extends State<NumField> {
     final live = _drag && _moved;
     const idle = Color(0x00000000);
     final Color edge = live
-        ? C.mode.withValues(alpha: .8)
+        ? Role.selected.withValues(alpha: .8)
         : (_focus || _editing ? Grey.g63 : (_hover && on ? Grey.g38 : idle));
     final picked = x.doc.isPicked(widget.id);
     final fillC = !on ? Grey.g10 : (picked ? Color.alphaBlend(Pop.accent.withValues(alpha: .14), Pop.well) : (_hover || live ? Grey.g20 : Pop.well));

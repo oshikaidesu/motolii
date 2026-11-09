@@ -47,7 +47,7 @@ $F/flutter analyze lib
 - 色は平らで不透明。アクセントはライム 1 色(`#B3C66B`、上の文字は `#15170D`)。再生ヘッドもアクセント。
 
 ## カラーテーマ(Dark / Light)
-- 上のバーの半円ボタン(key `ws-shade`)で切り替える。`Grey.shade`(`ValueNotifier<Shade>`)を反転して `reassembleApplication()` でアプリ全体を建て直す。State は残るので編集中の内容は消えない。
+- 明暗は革が `Shade` で言う（light / dark）。言わなければ暗い。革のファイルが変わると描き直す。
 - **Workspace と Inspector(`lib/inspector/`)では灰色を `Grey.g07` などで取る。`N.g07` は使わない。** `N` は古い研究ページ用の暗い段で、テーマに追従しない(そのページは Dark のみ)。
 - `Grey` は `N` と同じ名前の段を持つ。役割(地・パネル・カード・欄・線・控えめな文字・文字)は両テーマで同じで、明るさだけが逆になる。Light ではカードが一番明るく、文字が一番暗い。
 - テーマで変わる色は `const` にできない。`static const` / トップレベルの `final` / 引数の既定値に `Grey` や `WsT.body` などを置かず、getter か `Color?` + `?? Grey.xx` にする(`final` に入れると最初の色のまま固まる)。
