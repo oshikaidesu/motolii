@@ -5,7 +5,7 @@
 // --track@length:Length,0.1,40,8,0.1
 // --track@repeat:Repeat,1,40,6,1
 // --check@lit:Lit,0
-import * as THREE from '../third_party/js/three/three.core.js';
+import * as THREE from '../../engine/third_party/js/three/three.core.js';
 export function solid(k) {
     const r = k.radius * k.h / 2, long = k.length * k.h;
     const g = new THREE.CylinderGeometry(r, r, long, 64, 1, true).rotateX(-Math.PI / 2).translate(0, 0, -long / 2);   // (its mouth on the thing)
