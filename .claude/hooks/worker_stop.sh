@@ -5,6 +5,11 @@
 # is told by a macOS notification, so no stop goes unseen. The main checkout (the lead) is left alone.
 # Source: code.claude.com/docs/en/hooks (Stop: {"decision":"block","reason":…}, stop_hook_active), osascript(1).
 input=$(cat)
+# The same hook may also sit in the user's own settings (for sessions started before this file existed): the first of
+# the two to arrive for one session and event handles it, the other leaves (mkdir is atomic).
+once="${TMPDIR:-/tmp}/motolii-hook-$(printf '%s' "$input" | jq -r '(.session_id // "x") + "-" + (.hook_event_name // "Stop") + "-" + ((.stop_hook_active // false)|tostring)')"
+find "${TMPDIR:-/tmp}" -maxdepth 1 -name 'motolii-hook-*' -mmin +1 -exec rmdir {} + 2>/dev/null
+mkdir "$once" 2>/dev/null || exit 0
 dir=$(printf '%s' "$input" | jq -r '.cwd // empty')
 [ -n "$dir" ] || dir=$PWD
 top=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null) || exit 0
