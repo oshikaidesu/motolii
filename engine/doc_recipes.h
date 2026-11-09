@@ -370,7 +370,7 @@ static std::string doc_cards_of(Doc& d, int thing, std::string* more = nullptr) 
     const bool behaviour = doc_word(d, thing, "kind") == "behaviour";
     bool past = false;
     for (const DocCard& card : doc_cards) {
-        past = past || !strcmp(card.title, "Copies");
+        past = past || !strcmp(card.title, "Wave");
         if (behaviour && !(card.when && !strcmp(card.when, "file"))) continue;   // (a behaviour: only its own card, not those of things that happen to share a name with its knobs)
         if (card.when && card.is[0] == '+') {   // (an effect's card while it is on: doc_on)
             if (!doc_on(d, thing, card.when)) continue;
@@ -409,6 +409,12 @@ static std::string doc_cards_of(Doc& d, int thing, std::string* more = nullptr) 
         if (card.when && card.is[0] == '+' && doc_thor_letter(card.when)) effects[card.when] = std::string(card.title) + ": " + names;
         else (past ? besides : all) += ((past ? besides : all).empty() ? "" : "; ") + std::string(card.title) + ": " + names;
     }
+    // (how many copies: first on the first expression's card, as After Effects' Repeater has its Copies and Cavalry's
+    //  Duplicator its Count; the n of its each(i, n, t, k))
+    bool copies = has.find(" copies ") == std::string::npos;
+    std::string copied;   // (and the copies' own values, folded at its end: doc_shown's "Copies")
+    for (const char* n : {"stagger", "stagger_from", "copy_fill", "copy_fill_way", "copy_opacity_end", "tall", "copy_tall"})
+        if (has.find(" " + std::string(n) + " ") != std::string::npos) copied += std::string(" ") + n;
     if (thing != 0)   // (its effects, a card each, in the order they are laid: ThorVG's own and the files' alike)
         for (const std::string& w : doc_fx_list(d, thing, true)) {   // (those turned off too: their values are kept)
             std::string card;
@@ -416,6 +422,7 @@ static std::string doc_cards_of(Doc& d, int thing, std::string* more = nullptr) 
             else {   // (a file's, with its knobs or none: its card is where its eye, its bin and its code are reached)
                 if (const DocScript* sc = doc_script_of(d, w))
                     for (const DocValue& one : sc->values) card += (card.empty() ? "" : " ") + std::string(one.name);
+                if (!copies && doc_expression(d, w)) card = "copies" + std::string(card.empty() ? "" : " ") + card + copied, copies = true;
                 card = doc_fx_title(w) + ": " + card;
             }
             if (!card.empty()) all += (all.empty() ? "" : "; ") + card;
@@ -424,10 +431,13 @@ static std::string doc_cards_of(Doc& d, int thing, std::string* more = nullptr) 
     if (doc_among("picture text shape solid stage behaviour", doc_word(d, thing, "kind")))   // (its script's own card: the knobs its head declares)
         if (const std::vector<DocScript*> scs = doc_scripts_on(d, thing); !scs.empty()) {
             std::string names = thing == 0 ? "script follow" : "script";
+            bool script_copied = false;
+            if (const DocScript* own = doc_script_of(d, doc_word(d, thing, "script")); !copies && own && own->run && !own->run->sketch()) names += " copies", copies = true, script_copied = true;   // (its script lays its copies, each() or a Canvalry distribution, said by a name too ("Repeater"): how many on its card; a sketch paints, it lays none)
             for (const DocScript* sc : scs)
                 if (thing == 0 || sc == doc_script_of(d, doc_word(d, thing, "script")) || (std::filesystem::path(doc_word(d, thing, "file")).extension() == ".js" && sc == doc_script_of(d, doc_word(d, thing, "file"), false)))   // (a thing's effect files have cards of their own, above; a sketch's lines that draw are its picture's)
                 for (const DocValue& one : sc->values)
                     if ((" " + names + " ").find(" " + std::string(one.name) + " ") == std::string::npos) names += std::string(" ") + one.name;   // (a knob two effects share is one)
+            if (script_copied) names += copied;   // (at its end, after its own knobs)
             if (names != "script") all += (all.empty() ? "" : "; ") + std::string("Script: ") + names;   // (none of them with knobs: no card)
         }
     return all;

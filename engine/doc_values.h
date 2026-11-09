@@ -53,13 +53,13 @@ static const DocShown doc_shown[] = {
     {"gradient_scale", "", "×", "Stretch", 0.1, 4, nullptr},
     {"gradient_spread", "", "", "Past end", 0, 0, nullptr},
     {"copies", "count", "", "How many", 1, 200, nullptr},
-    {"stagger", "", "s", "Delay", 0, 3, nullptr},
-    {"copy_fill", "colours", "", "Colours", 0, 0, nullptr},
-    {"copy_opacity_end", "", "", "Last opacity", 0, 1, "Each copy"},
-    {"tall", "", "×", "Height", 0, 3, "Each copy"},
-    {"copy_tall", "numbers", "", "Heights", 0, 0, "Each copy"},
-    {"stagger_from", "", "", "From", 0, 0, nullptr},
-    {"copy_fill_way", "", "", "Order", 0, 0, "Each copy"},
+    {"stagger", "", "s", "Delay", 0, 3, "Copies"},
+    {"copy_fill", "colours", "", "Colours", 0, 0, "Copies"},
+    {"copy_opacity_end", "", "", "Last opacity", 0, 1, "Copies"},
+    {"tall", "", "×", "Height", 0, 3, "Copies"},
+    {"copy_tall", "numbers", "", "Heights", 0, 0, "Copies"},
+    {"stagger_from", "", "", "From", 0, 0, "Copies"},
+    {"copy_fill_way", "", "", "Order", 0, 0, "Copies"},
     {"wave_y", "stage", "px", "Up/down", -1, 1, nullptr},
     {"wave_x", "stage", "px", "Sideways", -1, 1, nullptr},
     {"wave_z", "stage", "px", "In/out", -1, 1, nullptr},
@@ -363,7 +363,8 @@ static const DocCard doc_cards[] = {
     {"Fill", "fill fill_media stroke stroke_width"},   // (After Effects' Fill and Stroke, Cavalry's Fill and Stroke: a colour, colours down it, or the material glass; its edge and how wide)
     {"Type", "split italic wrap wrap_at", "kind", "text"},   // (a text's, shown unasked, as Alight Motion keeps Edit Text among a text's tiles (AbsentMotion's LayerTools.kt): its slant, its lines broken in a box or set down the page, its letters or words each its own (the user, 11/5: more of a text's expression where it is picked))
     {"Gradient", "gradient gradient_angle gradient_scale gradient_spread", "fill", "~ ", true},
-    {"Copies", "copies copy_opacity_end tall copy_tall stagger stagger_from copy_fill copy_fill_way", nullptr, nullptr, true},
+    // (no Copies card: how many and the copies' own values are on the first expression's card (doc_cards_of), as
+    //  After Effects' Repeater keeps its Copies, Offset and Transform (Start/End Opacity) within it)
     {"Wave", "wave_x wave_y wave_z wave_rotate wave_size wave_speed wave_phase wave_noise noise_scale seed", nullptr, nullptr, true},
     {"Field", "field_x field_y field_z field_radius field_band field_size field_rotate field_push", nullptr, nullptr, true},
     {"Shine", "emissive", "kind", "!solid", true},   // (a flat thing lit from within: past 1, the stage's bloom takes it up where it lies in the stage's own view; laid over a solid thing, a picture of its own is clear round it and keeps no halo: ThorVG's glow does that)

@@ -45,7 +45,7 @@ static bool doc_knows(Doc& d, int thing, const char* name = nullptr, const doubl
     }
     if (word && *word && !strcmp(name, "copy_tall") && strcmp(word, "none")) {   // (numbers, one for each copy in their order)
         std::istringstream all(word);
-        for (std::string one; all >> one;) { char* end = nullptr; const double is = std::strtod(one.c_str(), &end); if (*end || !std::isfinite(is) || is < 0.0 || is > 1e3) return d.trouble = "copy_tall is numbers from 0 to 1000, one for each copy, as 1 2.5 0.8", false; }
+        for (std::string one; all >> one;) { char* end = nullptr; const double is = std::strtod(one.c_str(), &end); if (*end || !std::isfinite(is)) return d.trouble = "copy_tall is numbers, one for each copy, as 1 2.5 0.8", false; }
     }
     if (word && *word && !strcmp(name, "copy_fill") && strcmp(word, "none")) {   // (colours, six digits each; none: not coloured each)
         std::istringstream all(word);
@@ -56,8 +56,14 @@ static bool doc_knows(Doc& d, int thing, const char* name = nullptr, const doubl
     }
     if (word && *word && (doc_among("vignette_color fog_color background bevel_color side_color back_color stroke_2 stroke_3", name) || (!strcmp(name, "fill") && kind == "light")))   // (one colour: six digits)
         if (strlen(word) != 6 || strspn(word, "0123456789abcdefABCDEF") != 6) return d.trouble = std::string(name) + " is six digits, as ff3366", false;
-    if (number && (!std::isfinite(*number) || (*number < v->low && !(v->open && v->low < 0)) || (*number > v->high && !v->open) || (doc_among("keyed clip visible solo lock shadows clip_invert", name) && *number != 0.0 && *number != 1.0)))
-        return std::snprintf(range, sizeof range, doc_among("keyed clip visible solo lock shadows clip_invert", name) ? " is 0 or 1" : " is from %g to %g", v->low, v->high), d.trouble = name + std::string(range), false;
+    // (low and high are how far its knob goes, not how far a hand may: a number typed, keyed or set past them is taken,
+    //  as After Effects' Slider Control takes past its Slider Range and Cavalry past its slider. Held to them only where
+    //  a named source holds the same value so: a switch is on or off (After Effects' layer switches: Video, Solo, Lock,
+    //  each a box ticked or not); an opacity is from none to whole (After Effects' Opacity, 0 to 100%; its Drop Shadow's
+    //  and Repeater's End Opacity alike; an alpha is 0 to 1 in Porter and Duff's compositing, 1984))
+    const bool flag = doc_among("keyed clip visible solo lock shadows clip_invert", name), held = doc_among("opacity shadow_opacity glow_opacity copy_opacity_end", name);
+    if (number && (!std::isfinite(*number) || (flag && *number != 0.0 && *number != 1.0) || (held && (*number < v->low || *number > v->high))))
+        return std::snprintf(range, sizeof range, flag ? " is 0 or 1" : !std::isfinite(*number) ? " is a number" : " is from %g to %g", v->low, v->high), d.trouble = name + std::string(range), false;
     if (key && !v->moves) { const std::string moving = said(true); return d.trouble = std::string(name) + " does not move: " + (moving.empty() ? std::string("nothing of it does") : "keys go on " + moving), false; }
     if ((number || word || key) && strcmp(name, "lock") && doc_number(d, thing, "lock", 0, 0) > 0.5) return d.trouble = "it is locked", false;
     if (number && (!strcmp(name, "connect") || !strcmp(name, "connect_to")) && *number != 0.0 && (*number != std::floor(*number) || (int)*number == thing || doc_word(d, (int)*number, "kind").empty()))

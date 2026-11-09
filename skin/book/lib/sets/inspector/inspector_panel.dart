@@ -3,7 +3,6 @@ import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/widgets.dart';
 import '../../tokens.dart';
 import 'inspector_direct_transform.dart';
-import 'inspector_copies.dart';
 import 'inspector_light.dart';
 import 'inspector_parts.dart';
 import 'inspector_motion_preview.dart';
@@ -21,7 +20,6 @@ final inspectorCards = <String, Widget Function(Fx card)>{
   'Fill': (_) => const FillStroke(),
   'Blending': (_) => const BlendRows(),
   'Light': (c) => ValuesCard(c, top: const LightDrawing()), // (its values as tiles, under a drawing of the light you pull)
-  'Copies': (c) => ValuesCard(c, top: const CopiesDrawing()), // (and the copies as they lie)
   'Wave': (c) => ValuesCard(c, side: const MotionPreview('Wave')), // (and a square moving as the thing will, while touched: Good Boy Ninja's Wiggle)
   'Physics': (c) => ValuesCard(c, side: const MotionPreview('Physics')), // (falling and bouncing)
   'Field': (c) => ValuesCard(c, side: const MotionPreview('Field')), // (its copies, grown and turned as near the field as they lie)
@@ -32,7 +30,7 @@ final inspectorCards = <String, Widget Function(Fx card)>{
 
 // (under its effects, as Alight Motion's list ends: before the first card of what it may do besides, doc_cards_of's order)
 int _addAt(Doc doc) {
-  final at = doc.cards.indexWhere((c) => const {'Copies', 'Wave', 'Field', 'Shine', 'Motion', 'Play'}.contains(c.name));
+  final at = doc.cards.indexWhere((c) => const {'Wave', 'Field', 'Shine', 'Motion', 'Play'}.contains(c.name));
   return at < 0 ? doc.cards.length : at;
 }
 
