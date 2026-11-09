@@ -16,6 +16,8 @@
 | [path_check.py](path_check.py) | 棚のファイルと自前の `.md` が書いている道（import・画像・リンク）の先が無い | 書いている所を直すか、動いたファイルを追う |
 | [card_check.py](card_check.py) | Inspector のカードを Dart で手描きする二本目の道：値の鍵を文字列で書く（`'v_shadow_distance'`、`app/lib` 全体）、値の名前を文字列で書く（`'intensity'`、`app/lib/inspector`）、`Sect` を `inspector_card.dart` の外で作る。値の名前は `engine/document/card_table.h` から読む | 「declare it like an effect; the inspector reads it」：カードはエンジンの `card_table.h` に宣言し、`ValuesCard` が描く。ホストが値を手で読むのを今すぐ消せない時だけ、`OWED` に理由つきで 1 行 |
 | [reach_check.py](reach_check.py) | アプリが届かない物：`engine/entry/motolii.h` の `motolii_*` で、アプリ（`app/` の Dart と Swift の実行部、`engine/stage/snapshot.h`）のどこも呼ばない物。`app/lib` の公開クラス・mixin・enum で、自分の宣言の外のどこからも呼ばれない物（コメントと文字列は数えない） | 「nothing in the window reaches this; wire it to a menu/dock/card or delete it」：メニュー・ドック・カードにつなぐか消す。消した前例と物差しは [noise_cut.md](../docs/internal/notes/noise_cut.md)。今すぐ消せない時だけ、`OWED` に理由つきで 1 行 |
+| [dart_budget.py](dart_budget.py) | 手で書いた `app/lib` の Dart の改行数。先頭に `AUTO GENERATED FILE` とあるファイル（ffigen）は数えない。[dart_lines.txt](dart_lines.txt) の数を上げる、その数を超える、数より少ないまま残す | 減らした同じコミットで `dart_lines.txt` をその改行数に書き換える。足すなら、同じ行数をどこかから消す |
+| [dart_lines.txt](dart_lines.txt) | 負債の帳簿：手で書いた Dart の改行数。上げると dart_budget.py が断る | 減らした数を書く |
 | [format_check.py](format_check.py) | `dart format` のままでない Dart（`dart` が無ければ飛ばす） | 表示されたコマンドを打つ |
 | [subject_check.py](subject_check.py) | コミットの件名が 72 字を超える | 1 行目を短く。中身は空行の後の本文へ。書いた文は `git commit -e -F` で戻る |
 | [over_500.txt](over_500.txt) | 負債の帳簿：2026-11-09 に既に 500 行を超えていたファイルと、その時の行数。増やす・足すと size_check.py が断る | 分けて小さくし、数を下げるか行を消す |
