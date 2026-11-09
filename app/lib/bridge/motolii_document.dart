@@ -29,18 +29,18 @@ extension MotoliiDocument on Motolii {
   /// The moments of a value's keys (none if the value stays): how many keys it has is their count.
   List<double> keyTimes(int layer, String name) => Motolii._numbers((_of(layer)['keyTimes'] as Map<String, dynamic>?)?[name]);
 
+  /// A line of `left right` as the two sides (a line with no space is not one).
+  static List<(String, String)> _pairs(Object? said) => [
+    for (final line in ((said as String?) ?? '').split('\n'))
+      if (line.indexOf(' ') case final i when i > 0) (line.substring(0, i), line.substring(i + 1)),
+  ];
+
   /// What the document's steps changed since last asked (asking forgets them): whether a thing came or went, and each
   /// value changed as (thing, name), from each step's own changeset.
-  ({bool layers, Set<(int, String)> values}) changes() {
-    final lines = ((_document['changes'] as String?) ?? '').split('\n');
-    return (
-      layers: lines.contains('layers'),
-      values: {
-        for (final l in lines)
-          if (l.indexOf(' ') case final i when i > 0) (int.parse(l.substring(0, i)), l.substring(i + 1)),
-      },
-    );
-  }
+  ({bool layers, Set<(int, String)> values}) changes() => (
+    layers: ((_document['changes'] as String?) ?? '').split('\n').contains('layers'),
+    values: {for (final (a, b) in _pairs(_document['changes'])) (int.parse(a), b)},
+  );
 
   int keyed(int layer, String name, double at) {
     final keys = keyTimes(layer, name);
@@ -52,10 +52,7 @@ extension MotoliiDocument on Motolii {
   }
 
   /// The marks: moments with a name, in time; a mark said with '' is taken away.
-  List<(double, String)> get marks => [
-    for (final line in ((_document['marks'] as String?) ?? '').split('\n'))
-      if (line.indexOf(' ') case final i when i > 0) (double.parse(line.substring(0, i)), line.substring(i + 1)),
-  ];
+  List<(double, String)> get marks => [for (final (a, b) in _pairs(_document['marks'])) (double.parse(a), b)];
 
   /// Whether the stage is the size the document says now (not, after [resize] or an undo of one: open it again).
   bool get fits => (_document['fits'] as bool?) ?? true;
