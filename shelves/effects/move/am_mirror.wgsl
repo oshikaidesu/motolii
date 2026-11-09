@@ -1,4 +1,4 @@
-// Mirror: AbsentMotion's mirror (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Mirror: AbsentMotion's mirror (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Repeat
 // --about:Reflects one half of the image across a mirror line defined by an angle and a center point.
 // --track@angle:Angle,0,360,90.0,1

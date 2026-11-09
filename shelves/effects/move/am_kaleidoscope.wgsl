@@ -1,4 +1,4 @@
-// Kaleidoscope: AbsentMotion's kaleidoscope (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Kaleidoscope: AbsentMotion's kaleidoscope (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Repeat
 // --about:Mirrored slices around a point.
 // --track@R_center_x:Center x,-1,2,0.5,0.01

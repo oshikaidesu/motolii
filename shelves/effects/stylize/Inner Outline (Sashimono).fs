@@ -1,5 +1,5 @@
 /*{
- "DESCRIPTION": "Sashimono Edit's 内側の縁取り (inner_outline, 装飾; MIT, src/sashimono/effects/builtin.py), made an ISF effect by shelves/effects/from_sashimono.py",
+ "DESCRIPTION": "Sashimono Edit's 内側の縁取り (inner_outline, 装飾; MIT, src/sashimono/effects/builtin.py), made an ISF effect by shelves/effects/sources/from_sashimono.py",
  "CREDIT": "Sashimono Edit (MIT)",
  "CATEGORIES": [
   "Stylize"

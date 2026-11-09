@@ -1,5 +1,5 @@
 /*{
- "DESCRIPTION": "Sashimono Edit's 反復透明度 (repeat_opacity, 動き; MIT, src/sashimono/effects/builtin.py), made an ISF effect by shelves/effects/from_sashimono.py",
+ "DESCRIPTION": "Sashimono Edit's 反復透明度 (repeat_opacity, 動き; MIT, src/sashimono/effects/builtin.py), made an ISF effect by shelves/effects/sources/from_sashimono.py",
  "CREDIT": "Sashimono Edit (MIT)",
  "CATEGORIES": [
   "Move"

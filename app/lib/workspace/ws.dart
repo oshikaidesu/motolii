@@ -21,6 +21,9 @@ import 'stage/stage_art.dart' show WsArt;
 export 'ws_beats.dart';
 
 part 'ws_state.dart';
+part 'ws_fx.dart';
+part 'ws_pick.dart';
+part 'ws_scope.dart';
 part 'ws_header.dart';
 
 /// The window's own sizes and colours. A seat names one of these; it never types a number that is the window's business.

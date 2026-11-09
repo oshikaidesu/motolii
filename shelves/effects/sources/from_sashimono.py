@@ -157,7 +157,7 @@ for d in definition.registry.all():
     if said is None or d.audio_process or d.pieces or d.scopes_following or not d.fragment_shader:
         refused.append(d.kind)
         continue
-    head = {'DESCRIPTION': f"Sashimono Edit's {d.label} ({d.kind}, {d.category}; MIT, src/sashimono/effects/builtin.py), made an ISF effect by shelves/effects/from_sashimono.py", 'CREDIT': 'Sashimono Edit (MIT)', 'CATEGORIES': [shelf.get(d.category, d.category)], 'ISFVSN': '2', 'INPUTS': said}
+    head = {'DESCRIPTION': f"Sashimono Edit's {d.label} ({d.kind}, {d.category}; MIT, src/sashimono/effects/builtin.py), made an ISF effect by shelves/effects/sources/from_sashimono.py", 'CREDIT': 'Sashimono Edit (MIT)', 'CATEGORIES': [shelf.get(d.category, d.category)], 'ISFVSN': '2', 'INPUTS': said}
     body = d.fragment_shader[len(PRELUDE):] if d.fragment_shader.startswith(PRELUDE) else d.fragment_shader
     body = re.sub(r'^[ \t]*uniform[ \t]+\w+[ \t]+\w+[ \t]*;.*$', '', body, flags=re.M)   # (its params: ISF's inputs, declared by the door)
     body = re.sub(r'^([ \t]*)uniform[ \t]+(\w+[ \t]+\w+[ \t]*\[)', r'\1\2', body, flags=re.M)   # (a row of them, a gradient's stops: its own, never read with none)

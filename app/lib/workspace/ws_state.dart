@@ -244,76 +244,15 @@ class Ws extends ChangeNotifier {
   String? _sel; // (nothing picked, as a document opens)
   String? get selected => _sel;
   WsLayer? get layer => layers.where((l) => l.id == _sel).firstOrNull;
-  void select(String? id) {
-    if (id == _sel && many.isEmpty) return;
-    _sel = id;
-    many.clear();
-    _aim = null;
-    _keys.clear();
-    _stretch = null;
-    deskManual = null;
-    _tell(WsAspect.picked);
-  }
-
   /// The things picked together (drawn round on the stage): what a relation is made of. Picking one alone clears them.
   final many = <String>{};
   bool manyByHand = false;   // (picked one by one, in that order: the first leads; drawn round, they have no order)
-  void pickMany(Iterable<String> ids, {bool byHand = false}) {
-    many
-      ..clear()
-      ..addAll(ids);
-    manyByHand = byHand;
-    _tell(WsAspect.picked);
-  }
-
   final _keys = <WsKey>{};
   Set<WsKey> get keys => _keys;
-  void pickKey(WsKey k, {bool add = false}) {
-    if (!add) _keys.clear();
-    _keys.add(k);
-    _stretch = null;
-    _sel = k.layer;
-    deskManual = null;
-    _tell(WsAspect.picked);
-  }
-
-  /// Keys picked together (a box drawn round them): these and no others.
-  void pickKeys(Iterable<WsKey> ks) {
-    _keys
-      ..clear()
-      ..addAll(ks);
-    _stretch = null;
-    if (_keys.isNotEmpty) _sel = _keys.first.layer;
-    deskManual = null;
-    _tell(WsAspect.picked);
-  }
-
-  void clearKeys() {
-    if (_keys.isEmpty && _stretch == null) return;
-    _keys.clear();
-    _stretch = null;
-    _tell(WsAspect.picked);
-  }
-
   /// The stretch picked by its line, as Theatre.js's connector between two keyframes is pressed to edit its curve
   /// (BasicKeyframeConnector.tsx, Apache-2.0): one value's, where a key is every value's there.
   WsStretchPicked? _stretch;
   WsStretchPicked? get stretch => _stretch;
-  WsStretchPicked? _stretchOf(String layer, String name, int from) {
-    final t = int.tryParse(layer), at = t == null ? const <double>[] : _inside?.keyMoments(t, name) ?? const <double>[];
-    final i = at.indexWhere((s) => (s * Ws.fps).round() == from);
-    return i < 0 || i + 1 >= at.length ? null : (layer: layer, name: name, at: at[i], from: from, to: (at[i + 1] * Ws.fps).round());
-  }
-
-  void pickStretch(String layer, String name, int from) {
-    _keys.clear();
-    _stretch = _stretchOf(layer, name, from);
-    _sel = layer;
-    deskManual = null;
-    _tell(WsAspect.picked);
-    if (_stretch != null) front('Ease');
-  }
-
   /// The playhead, told on its own (Flutter's ValueNotifier): only what shows the moment listens ([WsScope.frameOf]),
   /// the rest of the window is not built again as it moves.
   final moment = WsMomentNow(112);
@@ -508,141 +447,15 @@ class Ws extends ChangeNotifier {
   }
 
 
-  /// Joined: the effects on the picked thing (its fx: as the camera sees it, After Effects' effects on a layer), nearest
-  /// the picture first. Effects are always a thing's: there is no stage-wide one (a whole picture's is a 2D plate showing
-  /// what is behind it, as a lens, with the effect on the plate).
   static final _files = RegExp(r'/.*?\.(?:(?:wgsl|fs|js|mjs|json|am)(?= |$)|(?:anm2|obj2)[^ ]*)|[^ ]+'); // (as the inside reads the list: a path, spaces and all, to its extension: script.h script_files)
-  List<String> get screenFx {
-    final t = int.tryParse(selected ?? '');
-    if (t == null) return const [];
-    return fxFiles(_inside?.word(t, 'fx') ?? '');
-  }
-
   /// The effect files a thing's fx says, in its order.
   static List<String> fxFiles(String fx) => [for (final f in _files.allMatches(fx).map((m) => m[0]!)) if (f != 'none') f];
-
-  /// Joined: all the effects and motions on anything in the document, as the shelf tells them. A document is a bundle
-  /// no hand made: Suitcase's Font Sense keeps in a document the fonts it uses.
-  Set<String> get fxUsed {
-    final m = _inside;
-    if (m == null) return const {};
-    return {
-      for (final t in m.things) ...[
-        ...fxFiles(m.word(t, 'fx')),
-        ...fxOf('$t'),
-        if (m.word(t, 'script') case final s when s.isNotEmpty && s != 'none') s,
-      ],
-    };
-  }
-
-  /// A shape as large as the picture, picked, one step with what [also] says to it.
-  void whole(String kind, [void Function(Motolii m)? also]) {
-    final m = _inside;
-    if (m == null) return;
-    m.later('together', number: 1);
-    var made = 0;
-    after(m.later('add', name: 'shape', word: kind), null, (t) => made = t);
-    m
-      ..later('set', thing: -1, name: 'size', number: WsArt.comp.height / m.point)
-      ..later('set', thing: -1, name: 'wide', number: WsArt.comp.width / WsArt.comp.height);
-    wsInked(this, 'shape', kind);
-    also?.call(m);
-    after(m.later('together'), (done, _) {
-      if (done && made > 0) select('$made');
-    });
-  }
-
-  /// A board as large as the picture whose fill is what is behind it: what is on it works on all under it (After Effects'
-  /// Adjustment Layer).
-  void adjustment([String? file]) => whole('rect', (m) {
-    m
-      ..later('say', thing: -1, name: 'fill', word: 'behind')
-      ..later('say', thing: -1, name: 'name', word: 'Adjustment');
-    if (file != null) m.later('fx_file', thing: -1, word: file);
-  });
-
-  /// Joined: an effect put over the others on the picked thing, or taken off (one step either way). Nothing picked: a new
-  /// adjustment layer with it (Photoshop's Adjustments panel: a press there adds a layer over the rest).
-  bool screenToggle(String file) {
-    final m = _inside, t = int.tryParse(selected ?? '');
-    if (m == null) return false;
-    if (t == null) {
-      adjustment(file);
-      return true;
-    }
-    // (at the end of its effects or out, by the inside's rule for its list; not taken, said why: a camera takes motions only)
-    after(m.later('fx_file', thing: t, word: file), (done, why) => done || why.isEmpty ? null : notice = 'Not taken: ${why.split(':').first}');
-    return true;
-  }
-
-  /// Joined: an effect put over the others on the picked thing, one more of it when it is on already, as After Effects'
-  /// Effects & Presets panel puts on another each time (Gaussian Blur 2), its values as they come. The next is named as
-  /// the inside's Duplicate names one ("Glow~2.fs", doc_fx_duplicate), which reads an ISF or a .wgsl file's alone.
-  bool screenPut(String file) {
-    final had = screenFx, dot = file.lastIndexOf('.');
-    if (!had.contains(file)) return screenToggle(file);
-    if (!file.endsWith('.fs') && !file.endsWith('.wgsl')) {
-      notice = 'Not taken: only an ISF or a .wgsl effect is put on again so far';   // (the inside's words, doc_fx_duplicate)
-      return false;
-    }
-    var n = 2;
-    while (had.contains('${file.substring(0, dot)}~$n${file.substring(dot)}')) {
-      n++;
-    }
-    return screenToggle('${file.substring(0, dot)}~$n${file.substring(dot)}');
-  }
 
   /// Joined: an effect file shown on the picked thing while the hand is on its tile, not the document's, gone as the
   /// hand leaves (null), as Final Cut Pro's effects browser shows the effect skimmed on the selected clip in the viewer
   /// and DaVinci Resolve's Live Preview the one under the pointer (the inside's carry: doc_carry_effect). Nothing picked,
   /// nothing shown. Let go before any put, the put reading the document as it is.
   bool _trying = false;
-  void tryOn(String? file) {
-    final m = _inside, t = int.tryParse(selected ?? '');
-    if (m == null) return;
-    if (_trying) after(m.later('let_go', number: 0));
-    _trying = file != null && t != null;
-    if (!_trying) return;
-    after(m.later('hold', thing: t!));   // (without waiting, as Align's hold: the shelf's hand never stands still for it)
-    after(m.later('carry', name: 'effect', word: file!));
-  }
-
-  /// Joined: the motion the picked thing has (its script's file; '' none).
-  String get motion {
-    final t = int.tryParse(selected ?? '');
-    final w = t == null ? '' : (_inside?.word(t, 'script') ?? '');
-    return w == 'none' ? '' : w;
-  }
-
-  /// Joined: a motion given to the picked thing in place of the one it had, or taken off (one step either way). Nothing
-  /// picked: a new board as large as the picture with it, as After Effects' applyPreset puts a preset on a new solid
-  /// layer when no layer is selected (its scripting guide, Layer.applyPreset).
-  void motionToggle(String file) {
-    final m = _inside, t = int.tryParse(selected ?? '');
-    if (m == null) return;
-    if (t == null) return whole('rect', (m) => m.later('say', thing: -1, name: 'script', word: file));
-    after(m.later('say', thing: t, name: 'script', word: motion == file ? 'none' : file));   // (without waiting)
-  }
-
-  /// Joined: an effect of the shelf put on the picked thing as it comes, or taken off (one step either way). Nothing
-  /// picked: a new board with it, as [motionToggle] (a board whose fill is what is behind it takes ThorVG's own effects
-  /// on no picture: a blur on one changed nothing, 11/3).
-  void fxToggle(String name) {
-    final m = _inside, t = int.tryParse(selected ?? '');
-    if (m == null) return;
-    if (t == null) return whole('rect', (m) => m.later('effect', thing: -1, name: name, number: frame / fps));
-    after(m.later('effect', thing: t, name: name, number: frame / fps));   // (without waiting)
-  }
-
-  /// Joined: a look kept by its name given to the picked thing; nothing picked, to a new board, as [motionToggle].
-  void lookPut(String file) {
-    final m = _inside, t = int.tryParse(selected ?? '');
-    if (m == null) return;
-    if (t == null) return whole('rect', (m) => m.later('paste_style', thing: -1, word: file));
-    after(m.later('paste_style', thing: t, word: file));
-  }
-
-
   String timecode([int? f]) {
     final v = f ?? frame, s = v ~/ fps, fr = v % fps;
     return '${(s ~/ 60).toString().padLeft(2, '0')}:${(s % 60).toString().padLeft(2, '0')}:${fr.toString().padLeft(2, '0')}';
@@ -673,79 +486,4 @@ void wsInked(Ws ws, String kind, String shape) {
       ..later('say', thing: -1, name: 'stroke', word: ws.edge)
       ..later('set', thing: -1, name: 'stroke_width', number: 6);
   }
-}
-
-/// The window's state to the parts below (Flutter's InheritedModel): a part says which aspects it reads
-/// ([WsScope.of]) and is built again only when one of those changed.
-class WsScope extends StatefulWidget {
-  const WsScope({super.key, required this.ws, required this.child});
-  final Ws ws;
-  final Widget child;
-  /// The window's state, the part built again when one of [aspects] changes (none said: any, as a pane of your own
-  /// may: the window's own parts each say theirs).
-  static Ws of(BuildContext c, [Set<WsAspect>? aspects]) {
-    for (final a in aspects ?? WsAspect.values) {
-      InheritedModel.inheritFrom<_WsAll>(c, aspect: a);
-    }
-    return read(c);
-  }
-  static Ws read(BuildContext c) => c.getInheritedWidgetOfExactType<_WsAll>()!.ws;
-  /// The playhead, and built again when it moves (nothing else of the window does that).
-  static int frameOf(BuildContext c) => c.dependOnInheritedWidgetOfExactType<WsMoment>()!.notifier!.value;
-  /// The inside's moment's picture: built again when a new one comes (what shows values at the moment shown).
-  static int pictureOf(BuildContext c) => c.dependOnInheritedWidgetOfExactType<_WsPicture>()!.notifier!.value;
-  @override
-  State<WsScope> createState() => _WsScopeState();
-}
-
-class _WsScopeState extends State<WsScope> {
-  late Map<WsAspect, int> _told = _now();
-  Map<WsAspect, int> _now() => {for (final MapEntry(:key, :value) in widget.ws.on.entries) key: value.value};
-  @override
-  void initState() {
-    super.initState();
-    widget.ws.addListener(_changed);
-  }
-  @override
-  void didUpdateWidget(WsScope old) {
-    super.didUpdateWidget(old);
-    if (old.ws != widget.ws) {
-      old.ws.removeListener(_changed);
-      widget.ws.addListener(_changed);
-      _told = _now();
-    }
-  }
-  @override
-  void dispose() {
-    widget.ws.removeListener(_changed);
-    super.dispose();
-  }
-  void _changed() => setState(() => _told = _now());
-  @override
-  Widget build(BuildContext context) => _WsAll(ws: widget.ws, told: _told, child: WsMoment(notifier: widget.ws.moment, child: _WsPicture(notifier: widget.ws.seen, child: widget.child)));
-}
-
-class _WsPicture extends InheritedNotifier<ValueNotifier<int>> {
-  const _WsPicture({required super.notifier, required super.child});
-}
-
-class _WsAll extends InheritedModel<WsAspect> {
-  const _WsAll({required this.ws, required this.told, required super.child});
-  final Ws ws;
-  final Map<WsAspect, int> told;   // (how many times each aspect was told, as of this build)
-  @override
-  bool updateShouldNotify(_WsAll old) => !mapEquals(told, old.told) || ws != old.ws;
-  @override
-  bool updateShouldNotifyDependent(_WsAll old, Set<WsAspect> dependencies) => ws != old.ws || dependencies.any((a) => told[a] != old.told[a]);
-}
-
-/// The playhead: told when it moves, and again when what was read at it was put off (the inside busy).
-class WsMomentNow extends ValueNotifier<int> {
-  WsMomentNow(super.value);
-  void again() => notifyListeners();
-}
-
-/// The playhead's own scope, under [WsScope]: [WsScope.frameOf].
-class WsMoment extends InheritedNotifier<ValueNotifier<int>> {
-  const WsMoment({super.key, required super.notifier, required super.child});
 }

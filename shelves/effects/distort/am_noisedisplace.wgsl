@@ -1,4 +1,4 @@
-// Noise Displace: AbsentMotion's noisedisplace (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Noise Displace: AbsentMotion's noisedisplace (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Displaces pixels using smooth value noise that animates over time.
 // --track@amount:Amount,0,100,30.0,1

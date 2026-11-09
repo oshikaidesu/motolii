@@ -1,4 +1,4 @@
-// Starfield: AbsentMotion's starfield (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Starfield: AbsentMotion's starfield (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Fills the opaque parts of the layer with a deep field of stars. Offset moves through the field, with nearby stars moving farther than distant stars.
 // --track@offset_x:Offset x,-100000,100000,0,1

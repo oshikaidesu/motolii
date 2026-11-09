@@ -36,7 +36,7 @@ cd app && flutter test --no-pub test/accessibility_guidelines_test.dart
 - iOS 44x44：65 ノード（同じノードが並ぶ）。
 - ラベル：47 ノード。最初は `#2` と `#3`（上と同じ 24x24 の押せる所）。`expected tappable node to have semantic label, but none was found`。
 - コントラスト：通過。ただし文字は試験用の Ahem 書体の塗りつぶしで描かれ（Mac の書体を読み込んでいない）、最初の画面だけで、ポップアップやホバーは開いていない。通過は「見た範囲では違反なし」。
-- はみ出し：`A RenderFlex overflowed by 9.9 pixels on the right.` `lib/workspace/timeline_header.dart:228`（幅 66.0 の Row）。
+- はみ出し：`A RenderFlex overflowed by 9.9 pixels on the right.` `app/lib/workspace/timeline/timeline_header.dart:228`（2026-11-08 の時の行）（幅 66.0 の Row）。
 
 ## フレーム時間（窓が要る：2026-11-08 実行、不通過）
 

@@ -1,4 +1,4 @@
-// Scatter Repeat: Alight Motion's own, which AbsentMotion has not converted (its docs/ALIGHT_COMPATIBILITY.md: "Not converted yet"); made in engine/community/absent_motion.cpp (scatter_repeat), beside AbsentMotion's own repeats and as its Range block lays them. Its knobs as Alight Motion 6.2.60 shows them (reports/alight_checklist.md); not made yet: Fill Color, Ease In, Ease Out, Overlap, Shape, Invert. Written by hand: absent.sh makes the am_ files and clears them, not this one.
+// Scatter Repeat: Alight Motion's own, which AbsentMotion has not converted (its docs/ALIGHT_COMPATIBILITY.md: "Not converted yet"); made in engine/community/absent_motion/absent_motion.cpp (scatter_repeat), beside AbsentMotion's own repeats and as its Range block lays them. Its knobs as Alight Motion 6.2.60 shows them (reports/alight_checklist.md); not made yet: Fill Color, Ease In, Ease Out, Overlap, Shape, Invert. Written by hand: absent.sh makes the am_ files and clears them, not this one.
 // --label:Repeat
 // --absent:scatterrepeat
 // --about:Dynamically generates multiple copies of the layer, scattered randomly around the original layer location.

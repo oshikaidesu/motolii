@@ -1,4 +1,4 @@
-// Hollow Box: AbsentMotion's hollowbox (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Hollow Box: AbsentMotion's hollowbox (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:3d
 // --about:A box with open top and bottom: the layer covers the outside and the inside takes the interior color.
 // --track@rotX:Rotation X,-3600,3600,-28.0,0.1

@@ -32,6 +32,26 @@
 6. 1 つのフォルダに置く自前のファイルは 40 本まで。超えたら役目で分ける（棚の中身は数えない）。
 7. 言語の決まった置き場に従う（Flutter は `test/`・`integration_test/`・`tool/`、CMake はソースの外で組み立てる）。
 
+## 働き方
+
+来た人も AI も、最初の 3 分でこれだけ読めば動ける。
+
+- 始める前に `git config core.hooksPath .githooks`。コミットのたびに、500 行の決まりと構成の目標が測られる。
+- 言葉：コードの中では、アプリを「窓」、エンジンを「中身」、レイヤーを「物」、プロジェクトを「書類」、プレビューを「場面」、左のタブを「棚」と呼ぶ（[CONTRIBUTING](.github/CONTRIBUTING.md)）。
+- 確かめるときは、錠の要らない静的な検査から始める。
+  - Dart：`cd app && dart analyze lib`
+  - C++：`engine/gpu/kit_wgpu.sh` の指定で `clang++ -fsyntax-only engine/library/motolii.mm`
+  - そのほか：`python3 .githooks/size_check.py`・`python3 .githooks/layout_check.py`
+- 組み立て（`engine/build_lib.sh`・`edit.sh`・`flutter build`）は、全員で 1 つの錠を使う：`until mkdir /tmp/motolii-build.lock 2>/dev/null; do sleep 5; done; trap 'rmdir /tmp/motolii-build.lock' EXIT; <組み立て>`。数分を超えるときは、始める前に言う。テストの手順は [docs/TESTING.md](docs/TESTING.md)。
+- 終わったと言えるのは、使う人に見える物（絵・画面・書き出したファイル）で示せた時だけ。そして、その検査が直す前には落ちるのを見た時だけ。
+
+作者が決めた原則。破る変更は、理由が正しくても入れない。
+
+1. ネットの表現は翻訳しない。貼られたコード（AE の式・Cavalry・p5.js・シェーダー）は、そのまま 1 回組んで動かす。同じ動きを C++ で真似して作らない（2026-11-08）。
+2. 値を、出典なしに固定しない。灰色にもしない、拒みもしない。スライダーの範囲は表示のためで、入力を限らない。限るときは、同じ値を限っている出典を書く（2026-11-09）。
+3. 窓の中に Web ページを埋めない。見た目の編集はコードから読み取り、編集をコードへ書き戻す。コードの写しを別に持たない（2026-11-09）。
+4. 小さい頼みは、Motolii に既にある仕組みでそのまま済ませて止める。外の調べ物は、Motolii に何も無い時だけ（2026-11-09）。
+
 ## 後始末
 
 初めて来た人が 3 分で読めない物は、置いた者の負債。どれも実際に起きた散らかしから決めた。

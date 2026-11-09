@@ -1,4 +1,4 @@
-// Fade In/Out: AbsentMotion's fade (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Fade In/Out: AbsentMotion's fade (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Fades the layer in at its start and out again at its end, over the times you set.
 // --track@fadeIn:In,0,10,0.5,0.01

@@ -20,9 +20,9 @@
 
 ## 今の組み立てが使う物
 
-`edit.sh` → `gpu/kit_wgpu.sh` が組む物。`#include` を辿ると、この階層では次の 63 本です。
+`edit.sh` → `gpu/kit_wgpu.sh` が組む物。`#include` を辿ると、この階層では次の 86 本です。
 
-- 書類：`doc.h`、`doc_edit.h`、`doc_kinds.h`、`doc_looks.h`、`doc_match.h`、`doc_moment.h`、`doc_moment_fx.h`、`doc_paths.h`、`doc_place.h`、`doc_recipes.h`、`doc_relations.h`、`doc_values.h`、`interp.h`、`ways.h`
+- 書類：`doc.h`、`doc_arrange.h`、`doc_card_table.h`、`doc_cards.h`、`doc_door.h`、`doc_edit.h`、`doc_expressions.h`、`doc_eye.h`、`doc_folders.h`、`doc_fx_list.h`、`doc_fx_put.h`、`doc_hold.h`、`doc_keys_put.h`、`doc_kinds.h`、`doc_looks.h`、`doc_marks.h`、`doc_match.h`、`doc_moment.h`、`doc_moment_fx.h`、`doc_parent.h`、`doc_paths.h`、`doc_place.h`、`doc_recipes.h`、`doc_relate.h`、`doc_relations.h`、`doc_scripts.h`、`doc_shown.h`、`doc_sketch.h`、`doc_steps.h`、`doc_time_edit.h`、`doc_value_at.h`、`doc_values.h`、`doc_ways_put.h`、`doc_wear.h`、`doc_world.h`、`interp.h`、`ways.h`
 - 描く：`kit.h`、`kit_draw.h`、`kit_stage.h`、`kit_things.h`、`drawn.h`、`drawn_flat.h`、`drawn_kept.h`、`drawn_made.h`、`screen.h`、`stage_kept.h`、`picture.h`、`points.h`、`solid.h`、`live.h`、`lottie_slots.h`、`bend.cpp`、`skpath.cpp`
 - 効果：`thing_fx.h`、`isf.cpp`・`isf.h`（ISF）、`aviutl.cpp`・`aviutl.h`・`aviutl_fx.h`（AviUtl2）、`splatfx.cpp`・`splatfx.h`（点群）、`three_isf.cpp`・`three_isf.h`、`solid_three.cpp`・`solid_three.h`（three.js の形）、`mosh.h`
 - 動き・音・動画：`motion.h`、`physics.cpp`・`physics.h`（Jolt）、`script.cpp`・`script.h`（QuickJS のレシピ）、`godot_easing.h`、`video.h`、`gst_read.h`、`sound.h`、`heard.h`、`midi.h`、`midi_roll.cpp`・`midi_roll.h`

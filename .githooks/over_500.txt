@@ -2,25 +2,7 @@
 # shrink but never grow; a count may be lowered or a line removed, never raised or added (.githooks/size_check.py).
 591 app/lib/inspector/controls/inspector_number_field_num_field_state.dart
 515 app/lib/workspace/dock/dock_effects.dart
-600 app/lib/workspace/dock/dock_fonts.dart
-610 app/lib/workspace/dock/dock_make.dart
-691 app/lib/workspace/dock/dock_make_colours.dart
-605 app/lib/workspace/dock/dock_parts.dart
-649 app/lib/workspace/shelf/effect_tiles.dart
-582 app/lib/workspace/stage/stage.dart
-845 app/lib/workspace/stage/stage_view_state.dart
-652 app/lib/workspace/timeline/timeline.dart
-674 app/lib/workspace/timeline/timeline_paint.dart
-649 app/lib/workspace/top_bar.dart
-772 app/lib/workspace/workspace.dart
-751 app/lib/workspace/ws_state.dart
-589 engine/document/doc_edit.h
-726 engine/document/doc_match.h
 708 engine/document/doc_moment.h
-731 engine/document/doc_paths.h
-561 engine/document/doc_place.h
-754 engine/document/doc_recipes.h
-674 engine/document/doc_values.h
 580 engine/stage/drawn/drawn_kept.h
 631 engine/stage/drawn/drawn_made.h
 510 engine/stage/kit/kit_stage.h

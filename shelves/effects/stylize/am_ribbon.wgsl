@@ -1,4 +1,4 @@
-// Ribbon: AbsentMotion's ribbon (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Ribbon: AbsentMotion's ribbon (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Draws a twisting ribbon of changing width across the opaque parts of the layer; animate Phase to make it flow, or punch it out of the layer.
 // --track@magnitude:Magnitude,0,1,0.2,0.001

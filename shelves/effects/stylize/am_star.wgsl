@@ -1,4 +1,4 @@
-// Star: AbsentMotion's star (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Star: AbsentMotion's star (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Draws one glowing star on the layer.
 // --track@R_position_x:Position x,-1,2,0.5,0.01

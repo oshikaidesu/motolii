@@ -15,6 +15,9 @@ import 'dock_glyphs.dart';
 import '../ws.dart';
 import '../../parts/text_hand.dart';
 
+part 'dock_search.dart';
+part 'dock_stars.dart';
+
 const dockFilterHeight = 168.0;
 
 /// What the dock remembers per shelf while you hop between shelves (selection, chip, folds). Lives in the dock's state, never in [Ws].
@@ -408,115 +411,6 @@ class DockFooter extends StatelessWidget {
   }
 }
 
-/// The search well under the header: magnifier, editable text, clear.
-/// The shelf's search asked for from elsewhere (the Inspector's Add Effect): the field in sight takes the keys, or the
-/// next one to come.
-final _searchAsked = ValueNotifier(0);
-bool _searchAwaited = false;
-void askDockSearch() {
-  _searchAwaited = true;
-  _searchAsked.value++;
-}
-
-class DockSearch extends StatefulWidget {
-  const DockSearch({super.key, required this.controller, required this.hint, this.trailing});
-  final TextEditingController controller;
-  final String hint;
-
-  /// Sits beside the well, e.g. the filter toggle.
-  final Widget? trailing;
-  @override
-  State<DockSearch> createState() => _DockSearchState();
-}
-
-class _DockSearchState extends State<DockSearch> {
-  final _focus = FocusNode();
-  @override
-  void initState() {
-    super.initState();
-    _focus.addListener(_r);
-    _searchAsked.addListener(_asked);
-    if (_searchAwaited) WidgetsBinding.instance.addPostFrameCallback((_) => _asked());
-  }
-
-  void _r() => setState(() {});
-
-  void _asked() {
-    if (!mounted) return;
-    _searchAwaited = false;
-    _focus.requestFocus();
-    WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? _focus.requestFocus() : null);   // (the press that asked gives the panel it came from the keys, a frame on: inspector_panel.dart)
-    WidgetsBinding.instance.scheduleFrame();
-    widget.controller.selection = TextSelection(baseOffset: 0, extentOffset: widget.controller.text.length);
-  }
-
-  @override
-  void dispose() {
-    _searchAsked.removeListener(_asked);
-    _focus.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final c = widget.controller;
-    final well = GestureDetector(
-      onTap: _focus.requestFocus,
-      child: AnimatedContainer(
-        duration: Mo.dur,
-        curve: Mo.ease,
-        height: Shape.z(24),
-        padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
-        decoration: BoxDecoration(
-          color: WsT.well,
-          borderRadius: BorderRadius.all(Shape.r(WsT.radius)),
-          border: Border.all(color: _focus.hasFocus ? WsT.accentInk : WsT.well),
-        ),
-        child: Row(
-          children: [
-            DockGlyph(DockG.search, size: Shape.z(11), color: _focus.hasFocus ? WsT.accentInk : Grey.g56),
-            SizedBox(width: Shape.s(6)),
-            Expanded(
-              child: Stack(
-                alignment: Alignment.centerLeft,
-                children: [
-                  if (c.text.isEmpty)
-                    IgnorePointer(
-                      child: Text(widget.hint, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(Grey.g56)),
-                    ),
-                  TextHand(field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
-                    controller: c,
-                    focusNode: _focus,
-                    style: T.name(Grey.g95),
-                    cursorColor: WsT.accent,
-                    backgroundCursorColor: Grey.g44,
-                    selectionColor: Grey.g38,
-                    cursorWidth: 1.5,
-                    maxLines: 1,
-                  )),
-                ],
-              ),
-            ),
-            if (c.text.isNotEmpty)
-              DockHover(
-                onTap: c.clear,
-                builder: (context, h) => DockGlyph(DockG.close, size: Shape.z(10), color: h ? Grey.g95 : Grey.g63),
-              ),
-          ],
-        ),
-      ),
-    );
-    return Padding(
-      padding: EdgeInsets.fromLTRB(WsT.inset, Shape.s(6), WsT.inset, Shape.s(4)),
-      child: Row(
-        children: [
-          Expanded(child: well),
-          if (widget.trailing case final t?) ...[SizedBox(width: WsT.gap), t],
-        ],
-      ),
-    );
-  }
-}
 
 /// What a shelf shows when the search finds nothing.
 class DockEmpty extends StatelessWidget {
@@ -530,21 +424,6 @@ class DockEmpty extends StatelessWidget {
   );
 }
 
-/// The star that keeps an item in Starred; shown on hover, on the picked row, or when set.
-class DockStar extends StatelessWidget {
-  const DockStar({super.key, required this.on, required this.onTap, this.ink});
-  final bool on;
-  final VoidCallback onTap;
-  final Color? ink;
-  @override
-  Widget build(BuildContext context) => DockHover(
-    onTap: onTap,
-    builder: (context, h) {
-      final col = ink ?? (on ? Pop.keyDot : (h ? Grey.g91 : Grey.g56));
-      return SizedBox(width: Shape.z(20), height: Shape.z(20), child: Center(child: glyph(11, (cv, s) => drawStar(cv, s, col, on), [col, on])));
-    },
-  );
-}
 
 /// A shelf's sections as cards: one column while the shelf is narrow; as it widens, columns of at least [minColumn] px stand side by side
 /// and each section goes to the shortest column so far ([weights] estimate the heights, in rows). A shelf made wider shows more at once.
@@ -585,21 +464,4 @@ class DockMasonry extends StatelessWidget {
       );
     },
   );
-}
-
-/// Where the starred effects are kept (a test points it elsewhere: [dockStarsAt]), in the Ease desk's way (ease_stars.json).
-File _starsFile = File('${Platform.environment['HOME']}/.motolii/effect_stars.json');
-void dockStarsAt(File f) => _starsFile = f;
-Set<String> _starsRead() {
-  try {
-    return {for (final s in jsonDecode(_starsFile.readAsStringSync()) as List) '$s'};
-  } catch (_) {
-    return {};
-  }
-}
-void _starsKeep(Set<String> all) {
-  try {
-    _starsFile.parent.createSync(recursive: true);
-    _starsFile.writeAsStringSync(jsonEncode(all.toList()));
-  } catch (_) {}
 }

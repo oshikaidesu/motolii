@@ -1,4 +1,4 @@
-// Linear Repeat: AbsentMotion's linearrepeat (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), moved by its own motion.cpp (engine/community/absent_motion.cpp)
+// Linear Repeat: AbsentMotion's linearrepeat (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), moved by its own motion.cpp (engine/community/absent_motion/absent_motion.cpp)
 // --label:Repeat
 // --absent:linearrepeat
 // --about:Dynamically generates multiple copies of the layer, arranged along a line.

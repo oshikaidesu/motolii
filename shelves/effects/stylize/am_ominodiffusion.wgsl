@@ -1,4 +1,4 @@
-// Omino Diffusion+: AbsentMotion's ominodiffusion (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Omino Diffusion+: AbsentMotion's ominodiffusion (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Redraws the layer in a small palette and drags the rounding error along a direction, for a glitchy dithered look that comes alive in motion.
 // --track@angle:Angle,0,3600,0.0,0.5

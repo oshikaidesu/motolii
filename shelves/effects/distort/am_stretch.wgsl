@@ -1,4 +1,4 @@
-// Stretch Segment: AbsentMotion's stretch (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Stretch Segment: AbsentMotion's stretch (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Cuts the layer along a line and pulls the two halves apart, stretching the pixels on the line into the gap.
 // --track@angle:Angle,-360,360,0.0,1

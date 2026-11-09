@@ -1,5 +1,5 @@
 /*{
- "DESCRIPTION": "Sashimono Edit's 特定色域変換 (color_range_shift, 色; MIT, src/sashimono/effects/builtin.py), made an ISF effect by shelves/effects/from_sashimono.py",
+ "DESCRIPTION": "Sashimono Edit's 特定色域変換 (color_range_shift, 色; MIT, src/sashimono/effects/builtin.py), made an ISF effect by shelves/effects/sources/from_sashimono.py",
  "CREDIT": "Sashimono Edit (MIT)",
  "CATEGORIES": [
   "Color"

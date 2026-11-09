@@ -1,4 +1,4 @@
-// Dissolve: AbsentMotion's dissolve (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Dissolve: AbsentMotion's dissolve (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Noise
 // --about:Removes random pixels or blocks from the layer. Animate Strength for a dissolve transition; Seed chooses the pattern and Size sets the size of each speck.
 // --track@progress:Strength,0,1,0.75,0.01

@@ -1,5 +1,5 @@
 /*{
- "DESCRIPTION": "Sashimono Edit's ワイプで登場 (inout_wipe, 登場・退場; MIT, src/sashimono/effects/builtin.py), made an ISF effect by shelves/effects/from_sashimono.py",
+ "DESCRIPTION": "Sashimono Edit's ワイプで登場 (inout_wipe, 登場・退場; MIT, src/sashimono/effects/builtin.py), made an ISF effect by shelves/effects/sources/from_sashimono.py",
  "CREDIT": "Sashimono Edit (MIT)",
  "CATEGORIES": [
   "In & Out"

@@ -1,4 +1,4 @@
-// Radial Repeat: AbsentMotion's radialrepeat (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), moved by its own motion.cpp (engine/community/absent_motion.cpp)
+// Radial Repeat: AbsentMotion's radialrepeat (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), moved by its own motion.cpp (engine/community/absent_motion/absent_motion.cpp)
 // --label:Repeat
 // --absent:radialrepeat
 // --about:Dynamically generates multiple copies of the layer, arranged in a circular pattern.

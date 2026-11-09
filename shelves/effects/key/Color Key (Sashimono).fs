@@ -1,5 +1,5 @@
 /*{
- "DESCRIPTION": "Sashimono Edit's 色で抜く (color_key, 合成; MIT, src/sashimono/effects/builtin.py), made an ISF effect by shelves/effects/from_sashimono.py",
+ "DESCRIPTION": "Sashimono Edit's 色で抜く (color_key, 合成; MIT, src/sashimono/effects/builtin.py), made an ISF effect by shelves/effects/sources/from_sashimono.py",
  "CREDIT": "Sashimono Edit (MIT)",
  "CATEGORIES": [
   "Key"

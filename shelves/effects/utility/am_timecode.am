@@ -1,4 +1,4 @@
-// Timecode: AbsentMotion's timecode (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), moved by its own motion.cpp (engine/community/absent_motion.cpp)
+// Timecode: AbsentMotion's timecode (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), moved by its own motion.cpp (engine/community/absent_motion/absent_motion.cpp)
 // --label:Text
 // --absent:timecode
 // --about:Replaces the text of a layer with a running clock of the layer or project time. Start At and a negative Speed make a countdown.

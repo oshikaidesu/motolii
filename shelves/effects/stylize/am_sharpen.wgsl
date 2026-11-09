@@ -1,4 +1,4 @@
-// Sharpen: AbsentMotion's sharpen (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Sharpen: AbsentMotion's sharpen (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Applies an unsharp mask using a 3x3 neighborhood to enhance fine details.
 // --track@amount:Strength,0.0,20,1.0,0.1

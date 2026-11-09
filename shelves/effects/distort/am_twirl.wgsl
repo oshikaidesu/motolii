@@ -1,4 +1,4 @@
-// Swirl: AbsentMotion's twirl (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Swirl: AbsentMotion's twirl (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Twists the layer around Center like a whirlpool, strongest in the middle and fading out at Radius (a share of the layer size). Negative Strength twists the other way.
 // --track@R_center_x:Center x,0,1,0.5,0.01
