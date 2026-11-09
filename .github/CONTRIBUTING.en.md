@@ -2,6 +2,8 @@
 
 [日本語](CONTRIBUTING.md)
 
+The code's house words (thing, fact, way, film, hand, door…) mapped to After Effects and other common terms: [the Words table in `docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md#言葉words).
+
 ## What you can do
 
 - **Issues**: bugs, a build that stopped, or "I want to use this look" (a URL and what is good about it). There are templates. English or Japanese.

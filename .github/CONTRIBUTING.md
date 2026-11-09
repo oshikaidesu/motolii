@@ -2,6 +2,8 @@
 
 *English version: [.github/CONTRIBUTING.en.md](CONTRIBUTING.en.md). English is fine for issues and pull requests. Contributions are dual licensed under Apache-2.0 or MIT, as the project is. Short version: build with the README, run the checks below, and say in your pull request what you borrowed from where.*
 
+コードの言葉（thing・fact・way・film・hand・door…）を After Effects などの言葉に引き直す表：[`docs/ARCHITECTURE.md` の「言葉」](../docs/ARCHITECTURE.md#言葉words)。
+
 ## できること
 
 - **Issue**：不具合、組み立てで止まった所、「この表現を使いたい」という見本（URL と、何が良いのか）。ひな型があります。

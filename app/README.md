@@ -2,6 +2,8 @@
 
 Flutter の窓。描くのも書類を持つのも本体（[`../engine/`](../engine/)）で、窓はそれを呼んで見せて操るだけ。開くのは `./live.sh`（保存すると開いた窓にすぐ出る）、組むのは `flutter build macos --profile`。
 
+コードの言葉（thing と layer、fact、picture、seat、kit…）を AE・Flutter の言葉に引き直す表は [`../docs/ARCHITECTURE.md` の「言葉」](../docs/ARCHITECTURE.md#言葉words)。
+
 | 場所 | 中身 |
 |---|---|
 | `lib/main.dart` | 起動したら窓を開く |
