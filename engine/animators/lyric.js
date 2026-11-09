@@ -4,21 +4,25 @@
 // besides. Texton is closed jsxbin: none of its code was seen; this is written from that list alone. Order's words are
 // GSAP's stagger `from` (start, end, center, edges, random: https://gsap.com/docs/v3/Staggers); Cavalry's Stagger has no
 // such list. The ease names are Motolii's own (ways.h): Overshoot goes past and comes back)
-// --track@distance:Distance,-20,20,2,0.01
-// --select@axis:Axis,X,Y
-// --track@length:Length,0.05,4,0.5,0.01
-// --track@delay:Delay,0,1,0.05,0.01
-// --select@order:Order,Start,End,Centre,Edges,Random
-// --check@alternate:Alternate,0
-// --check@both:Both ways,0
-// --select@ease_in:In ease,VerySlowOut,SlowOut,Overshoot,SpringOut,SmallSpringOut,BounceOut,SlowInSlowOut,SlowIn,VerySlowIn,Linear
-// --select@ease_out:Out ease,SlowIn,VerySlowIn,SlowInSlowOut,SlowOut,VerySlowOut,Overshoot,Linear
-// --check@out:Out,1
-// --group:Advanced
-// --track@scale_from:Scale from,0,4,1,0.01
-// --track@rotate_from:Rotate from,-360,360,0,1
-// --track@opacity_from:Opacity from,0,1,0,0.01
-// --group
+// The knobs in leva's object form (pmndrs/leva: https://github.com/pmndrs/leva; read by script_leva.h): the kind from the
+// value, folder() a fold. min and max are only how far a knob goes: a number typed past them is taken
+const knobs = {
+  distance: { value: 2, min: -20, max: 20, step: 0.01 },
+  axis: { value: "X", options: ["X", "Y"] },
+  length: { value: 0.5, min: 0.05, max: 4, step: 0.01 },
+  delay: { value: 0.05, min: 0, max: 1, step: 0.01 },
+  order: { value: "Start", options: ["Start", "End", "Centre", "Edges", "Random"] },
+  alternate: false,
+  both: false,
+  ease_in: { value: "VerySlowOut", options: ["VerySlowOut", "SlowOut", "Overshoot", "SpringOut", "SmallSpringOut", "BounceOut", "SlowInSlowOut", "SlowIn", "VerySlowIn", "Linear"] },
+  ease_out: { value: "SlowIn", options: ["SlowIn", "VerySlowIn", "SlowInSlowOut", "SlowOut", "VerySlowOut", "Overshoot", "Linear"] },
+  out: true,
+  Advanced: folder({
+    scale_from: { value: 1, min: 0, max: 4, step: 0.01 },
+    rotate_from: { value: 0, min: -360, max: 360, step: 1 },
+    opacity_from: { value: 0, min: 0, max: 1, step: 0.01 },
+  }, { collapsed: true }),
+};
 
 function each(i, n, t, k) {
   var mid = (n - 1) / 2;

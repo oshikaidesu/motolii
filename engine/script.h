@@ -11,6 +11,7 @@
 //                                             to its own value what it turns away from where it comes, (max - min) x (macro -
 //                                             as it comes), as an After Effects expression "value + ..." keeps the hand's value
 //                                             (doc_expressions.h doc_macro_adds)
+// or, in place of those lines, leva's object form at its top, const knobs = { distance: 2, Advanced: folder({ ... }) } (script_leva.h);
 // and whose body says, for each copy of the thing it is given to, where it is and how:
 //   function each(i, n, t, k) { return { x, y, z, size, rotate, rotate_x, rotate_y, opacity }; }   // i of n copies, t seconds since the thing began, k the knobs (and k.duration: how long the thing lasts)
 // (as Cavalry's JavaScript Utility gives a Duplicator its points). Behind the door: QuickJS-ng (js_bench chose it).
