@@ -112,6 +112,7 @@ class Doc extends ChangeNotifier {
   /// Whether an edit marks its own key (the sample's rule, D2); off where a host owns the keys (joined: the document
   /// keys what a hand changes, and a mark told besides was a second key, made before the change, with the old value).
   bool marksEdits = true;
+
   /// The layer's space, kept as a word with the others so that a host is told of it (d2, d25, d3).
   Space get space => _spaceWords.entries.where((e) => e.value == s2['v_space']).firstOrNull?.key ?? Space.d3; // (no word: a solid, 3D only)
   set space(Space s) => s2['v_space'] = _spaceWords[s]!;
@@ -281,8 +282,9 @@ class Doc extends ChangeNotifier {
   void setKey(String prop, KeyS s) {
     _undo.clear();
     keys[prop] = s;
-    _watched['key:$prop']?.value++;   // (the field whose mark it is draws it now)
-    if (link && (prop == 'v_scale_x' || prop == 'v_scale_y')) {   // (linked, Scale is one value with one key: After Effects' stopwatch on Scale; the link undone, each its own: Separate Dimensions)
+    _watched['key:$prop']?.value++; // (the field whose mark it is draws it now)
+    if (link && (prop == 'v_scale_x' || prop == 'v_scale_y')) {
+      // (linked, Scale is one value with one key: After Effects' stopwatch on Scale; the link undone, each its own: Separate Dimensions)
       final other = prop == 'v_scale_x' ? 'v_scale_y' : 'v_scale_x';
       keys[other] = s;
       _watched['key:$other']?.value++;
@@ -312,8 +314,6 @@ class Doc extends ChangeNotifier {
     strs.forEach((id, x) => s2.putIfAbsent(id, () => x));
     flags.forEach((id, x) => b.putIfAbsent(id, () => x));
   }
-
-
 
   /// Fields picked together; Shift-click spans a rectangle on [pickGrid] like a spreadsheet.
   final Set<String> picked = {};
@@ -373,14 +373,14 @@ class Doc extends ChangeNotifier {
   /// The host's cards that may be moved up or down (its effects, by their titles), and what moves one so many places.
   List<String> movable = const [];
   void Function(String title, int by)? onCardMove;
-  void Function(String how)? onArrange;   // (flipX, flipY, fit, fill, stretch: Alight Motion's ⋯ on Move & Transform)
-  List<String> moreCards = const [];   // (the cards it may be given and is not shown)
+  void Function(String how)? onArrange; // (flipX, flipY, fit, fill, stretch: Alight Motion's ⋯ on Move & Transform)
+  List<String> moreCards = const []; // (the cards it may be given and is not shown)
   void Function(String title)? onMoreCard;
-  VoidCallback? onAddEffect;   // (Alight Motion's Add Effect: the shelf of them, its search taking the keys)
-  double? Function(String sum)? onSum;   // (a sum typed in a number field worked out: null, it is not one)
+  VoidCallback? onAddEffect; // (Alight Motion's Add Effect: the shelf of them, its search taking the keys)
+  double? Function(String sum)? onSum; // (a sum typed in a number field worked out: null, it is not one)
   void Function(List<String> names)? onCardReset;
   void Function(String title)? onCardRemove;
-  Widget? Function(String title, List<String> names)? cardCode;   // (a card's code as the host draws it, by its title and its values' names (two cards may share a title: ThorVG's Tint and an ISF Duotone): a script's, under its knobs, as After Effects' expression under its value)
+  Widget? Function(String title, List<String> names)? cardCode; // (a card's code as the host draws it, by its title and its values' names (two cards may share a title: ThorVG's Tint and an ISF Duotone): a script's, under its knobs, as After Effects' expression under its value)
   void Function(String title)? onCardEye;
   void Function(String title, List<String> names)? onCardSave;
   void Function(String title)? onCardInfo;

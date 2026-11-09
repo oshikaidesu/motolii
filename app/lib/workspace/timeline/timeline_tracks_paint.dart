@@ -23,7 +23,7 @@ void _wayLine(Path p, List<double> way, double xa, double xb, double width, doub
 class WtTracksPainter extends CustomPainter {
   const WtTracksPainter({required this.rows, required this.view, required this.fps, required this.vscroll, this.tempo, this.restAt});
   final WsBeats? tempo;
-  final int? restAt;   // (where the hand has come to rest: Alight Motion's SnapLine)
+  final int? restAt; // (where the hand has come to rest: Alight Motion's SnapLine)
   final List<WtRow> rows;
   final WtView view;
   final int fps;
@@ -51,31 +51,46 @@ class WtTracksPainter extends CustomPainter {
   }
 
   void _row(Canvas c, Size s, WtRow r, double cy) {
-    if (r.lane case final pts?) return pts.isEmpty ? null : _lane(c, s, r, pts, cy);   // (empty: a row that only says what it aims at)
+    if (r.lane case final pts?) return pts.isEmpty ? null : _lane(c, s, r, pts, cy); // (empty: a row that only says what it aims at)
     final p = Paint(), x0 = view.x(r.inF), x1 = math.max(view.x(r.outF), x0 + 4), h = Forms.worn.trackBar(selected: r.selected);
-    if (r.whole case (final a, final b)?) c.drawRect(Rect.fromLTRB(view.x(a), cy - h / 2, view.x(b), cy + h / 2), p..color = wtBarFill(r).withValues(alpha: .18));
+    if (r.whole case (final a, final b)?) {
+      c.drawRect(Rect.fromLTRB(view.x(a), cy - h / 2, view.x(b), cy + h / 2), p..color = wtBarFill(r).withValues(alpha: .18));
+    }
     if (x1 < 0 || x0 > s.width) return;
     final bar = Rect.fromLTRB(x0, cy - h / 2, x1, cy + h / 2), rr = RRect.fromRectAndRadius(bar, Radius.circular(Forms.worn.trackRadius));
     final fill = wtBarFill(r), ink = r.dim ? Grey.g56 : WsT.onAccent, grip = Color.lerp(fill, Grey.g00, .28)!;
     final mix = r.mix;
-    if (mix != null && mix.length > 1 && !r.dim) {   // (a relation: its things' colours side by side, blended)
-      c.drawRRect(rr, Paint()..shader = LinearGradient(colors: [for (final m in mix) r.selected ? Color.lerp(m, const Color(0xFFFFFFFF), .18)! : m]).createShader(bar));
+    if (mix != null && mix.length > 1 && !r.dim) {
+      // (a relation: its things' colours side by side, blended)
+      c.drawRRect(
+        rr,
+        Paint()..shader = LinearGradient(colors: [for (final m in mix) r.selected ? Color.lerp(m, const Color(0xFFFFFFFF), .18)! : m]).createShader(bar),
+      );
     } else {
       c.drawRRect(rr, p..color = fill);
     }
     c.save();
     c.clipRRect(rr);
-    c.drawRect(Rect.fromLTWH(x0, bar.top, 5, bar.height), p..color = grip);   // (the ends a hand cuts the bar by: wide, with a light notch)
+    c.drawRect(Rect.fromLTWH(x0, bar.top, 5, bar.height), p..color = grip); // (the ends a hand cuts the bar by: wide, with a light notch)
     c.drawRect(Rect.fromLTWH(x1 - 5, bar.top, 5, bar.height), p..color = grip);
     final notch = ink.withAlpha(r.selected ? 200 : 120);
     c.drawRect(Rect.fromLTWH(x0 + 2, bar.top + 4, 1.5, bar.height - 8), p..color = notch);
     c.drawRect(Rect.fromLTWH(x1 - 3.5, bar.top + 4, 1.5, bar.height - 8), p..color = notch);
-    if (r.frames case final f? when f.length == 1) {   // (a photo: itself again and again along the bar at its own shape, as Alight Motion's photo bar)
+    if (r.frames case final f? when f.length == 1) {
+      // (a photo: itself again and again along the bar at its own shape, as Alight Motion's photo bar)
       final im = f.single, step = math.max(4.0, bar.height * im.width / math.max(1, im.height));
       for (var x = bar.left + 5; x < bar.right - 5; x += step) {
-        paintImage(canvas: c, rect: Rect.fromLTWH(x, bar.top, step, bar.height), image: im, fit: BoxFit.cover, opacity: r.dim ? .35 : .8, filterQuality: FilterQuality.low);
+        paintImage(
+          canvas: c,
+          rect: Rect.fromLTWH(x, bar.top, step, bar.height),
+          image: im,
+          fit: BoxFit.cover,
+          opacity: r.dim ? .35 : .8,
+          filterQuality: FilterQuality.low,
+        );
       }
-    } else if (r.frames case final f? when f.isNotEmpty) {   // (each picture filling its part of the bar, its middle kept: a strip of frames, as Alight Motion's)
+    } else if (r.frames case final f? when f.isNotEmpty) {
+      // (each picture filling its part of the bar, its middle kept: a strip of frames, as Alight Motion's)
       final step = (bar.width - 10) / f.length;
       for (final (i, im) in f.indexed) {
         final at = Rect.fromLTWH(bar.left + 5 + i * step, bar.top, step, bar.height);
@@ -83,15 +98,32 @@ class WtTracksPainter extends CustomPainter {
       }
     }
     if (r.wave case final w?) _wave(c, bar, ink, fill, r.inF, w);
-    if (r.clipped) {   // (↘: cut to the one under it)
-      final at = Offset(math.max(x0 + 8, 6.0), cy - 4), arrow = Paint()..color = ink..strokeWidth = 1.4..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
+    if (r.clipped) {
+      // (↘: cut to the one under it)
+      final at = Offset(math.max(x0 + 8, 6.0), cy - 4),
+          arrow = Paint()
+            ..color = ink
+            ..strokeWidth = 1.4
+            ..style = PaintingStyle.stroke
+            ..strokeCap = StrokeCap.round;
       c.drawLine(at, at + const Offset(7, 7), arrow);
-      c.drawPath(Path()..moveTo(at.dx + 7, at.dy + 3)..lineTo(at.dx + 7, at.dy + 7)..lineTo(at.dx + 3, at.dy + 7), arrow);
+      c.drawPath(
+        Path()
+          ..moveTo(at.dx + 7, at.dy + 3)
+          ..lineTo(at.dx + 7, at.dy + 7)
+          ..lineTo(at.dx + 3, at.dy + 7),
+        arrow,
+      );
     }
     final nameX = math.max(x0 + 8, 6.0) + (r.clipped ? 12 : 0);
     final t = _text(r.name, T.name(ink).copyWith(fontWeight: FontWeight.w700));
     if (nameX + 20 < x1) {
-      if (r.wave != null || r.frames != null) c.drawRRect(RRect.fromLTRBR(nameX - 4, cy - 6.5, nameX + t.width + 4, cy + 6.5, Shape.r(3)), p..color = fill);   // (its name on its own ground, over its sound or its pictures)
+      if (r.wave != null || r.frames != null) {
+        c.drawRRect(
+          RRect.fromLTRBR(nameX - 4, cy - 6.5, nameX + t.width + 4, cy + 6.5, Shape.r(3)),
+          p..color = fill,
+        ); // (its name on its own ground, over its sound or its pictures)
+      }
       c.save();
       c.clipRect(Rect.fromLTRB(nameX, bar.top, x1 - 6, bar.bottom));
       t.paint(c, Offset(nameX, cy - t.height / 2));
@@ -119,13 +151,22 @@ class WtTracksPainter extends CustomPainter {
           ..color = Grey.g100,
       );
     }
-    for (final st in r.stretches) {   // (each stretch's way, from its key to the next, as a line inside the bar: how it goes there)
+    for (final st in r.stretches) {
+      // (each stretch's way, from its key to the next, as a line inside the bar: how it goes there)
       final xa = view.x(st.from), xb = view.x(st.to);
       if (xb - xa < 6 || xb < 0 || xa > s.width) continue;
       final h = bar.height * .62, base = cy + h / 2;
       final line = Path()..moveTo(xa, base - st.shape.first.clamp(-.5, 1.5) * h);
       _wayLine(line, st.shape, xa, xb, s.width, (v) => base - v.clamp(-.5, 1.5) * h);
-      c.drawPath(line, Paint()..style = PaintingStyle.stroke..strokeWidth = 1.2..strokeJoin = StrokeJoin.round..isAntiAlias = true..color = Color.lerp(fill, Grey.g100, r.dim ? .25 : .6)!);   // (Ableton's automation line: one thin line, the bar's own colour made lighter)
+      c.drawPath(
+        line,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2
+          ..strokeJoin = StrokeJoin.round
+          ..isAntiAlias = true
+          ..color = Color.lerp(fill, Grey.g100, r.dim ? .25 : .6)!,
+      ); // (Ableton's automation line: one thin line, the bar's own colour made lighter)
     }
     for (final k in r.keys) {
       final x = view.x(k);
@@ -175,10 +216,23 @@ class WtTracksPainter extends CustomPainter {
       line.lineTo(a.dx, a.dy);
       if (way == null) continue;
       final b = at(pts[i + 1]);
-      _wayLine(line, way, a.dx, b.dx, s.width, (v) => (a.dy + (b.dy - a.dy) * v).clamp(top - 3, top + h + 3));   // (an overshoot kept within its own lane)
+      _wayLine(line, way, a.dx, b.dx, s.width, (v) => (a.dy + (b.dy - a.dy) * v).clamp(top - 3, top + h + 3)); // (an overshoot kept within its own lane)
     }
-    if (r.laneOn case final i? when i + 1 < pts.length) c.drawRect(Rect.fromLTRB(at(pts[i]).dx, cy - WtM.row / 2, at(pts[i + 1]).dx, cy + WtM.row / 2), Paint()..color = WsT.accent.withValues(alpha: .18));   // (Theatre.js's connector, lit while it is what the curve editor holds)
-    c.drawPath(line, Paint()..style = PaintingStyle.stroke..strokeWidth = 1.2..strokeJoin = StrokeJoin.round..isAntiAlias = true..color = col);
+    if (r.laneOn case final i? when i + 1 < pts.length) {
+      c.drawRect(
+        Rect.fromLTRB(at(pts[i]).dx, cy - WtM.row / 2, at(pts[i + 1]).dx, cy + WtM.row / 2),
+        Paint()..color = WsT.accent.withValues(alpha: .18),
+      ); // (Theatre.js's connector, lit while it is what the curve editor holds)
+    }
+    c.drawPath(
+      line,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2
+        ..strokeJoin = StrokeJoin.round
+        ..isAntiAlias = true
+        ..color = col,
+    );
     for (final q in pts) {
       c.drawCircle(at(q), WtM.key * .75, Paint()..color = col);
     }

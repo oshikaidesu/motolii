@@ -22,7 +22,9 @@ abstract final class WindowFile {
     value == null ? all.remove(name) : all[name] = value;
     try {
       _file.parent.createSync(recursive: true);
-      _file.writeAsStringSync('<?xml version="1.0" encoding="UTF-8"?>\n<Motolii>\n\t<Window>\n${[for (final e in all.entries) '\t\t<${e.key} Value="${e.value}"/>'].join('\n')}\n\t</Window>\n</Motolii>\n');
+      _file.writeAsStringSync(
+        '<?xml version="1.0" encoding="UTF-8"?>\n<Motolii>\n\t<Window>\n${[for (final e in all.entries) '\t\t<${e.key} Value="${e.value}"/>'].join('\n')}\n\t</Window>\n</Motolii>\n',
+      );
     } catch (_) {}
   }
 }

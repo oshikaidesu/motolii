@@ -63,10 +63,15 @@ class WsMenuState extends State<WsMenu> {
 
   double get _row => Shape.z(22);
   double get _swatch => Shape.z(20);
-  double _high(WsMenuItem it) => it.colours.isNotEmpty ? (it.colours.length / 8).ceil() * (_swatch + Shape.s(4)) + Shape.s(4) : it.label.isEmpty ? Shape.s(8) + 1 : _row;
+  double _high(WsMenuItem it) => it.colours.isNotEmpty
+      ? (it.colours.length / 8).ceil() * (_swatch + Shape.s(4)) + Shape.s(4)
+      : it.label.isEmpty
+      ? Shape.s(8) + 1
+      : _row;
 
   Widget _one(WsMenuItem it) => it.colours.isNotEmpty
-      ? Padding(   // (eight to a row)
+      ? Padding(
+          // (eight to a row)
           padding: EdgeInsets.all(Shape.s(4)),
           child: Wrap(
             spacing: Shape.s(4),
@@ -83,14 +88,21 @@ class WsMenuState extends State<WsMenu> {
                   builder: (_, h) => Container(
                     width: _swatch,
                     height: _swatch,
-                    decoration: BoxDecoration(color: it.colours[k], borderRadius: BorderRadius.all(Shape.r(3)), border: Border.all(color: k == it.picked || h ? Grey.g95 : const Color(0x00000000), width: 2)),
+                    decoration: BoxDecoration(
+                      color: it.colours[k],
+                      borderRadius: BorderRadius.all(Shape.r(3)),
+                      border: Border.all(color: k == it.picked || h ? Grey.g95 : const Color(0x00000000), width: 2),
+                    ),
                   ),
                 ),
             ],
           ),
         )
       : it.label.isEmpty
-      ? Padding(padding: EdgeInsets.symmetric(vertical: Shape.s(4)), child: SizedBox(height: 1, child: ColoredBox(color: Grey.g20)))
+      ? Padding(
+          padding: EdgeInsets.symmetric(vertical: Shape.s(4)),
+          child: SizedBox(height: 1, child: ColoredBox(color: Grey.g20)),
+        )
       : Hov(
           key: ValueKey('ws-menu-${it.label}'),
           cursor: it.go != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
@@ -106,8 +118,13 @@ class WsMenuState extends State<WsMenu> {
             decoration: BoxDecoration(color: h && it.go != null ? Grey.g20 : null, borderRadius: BorderRadius.all(Shape.r(4))),
             child: Row(
               children: [
-                Expanded(child: Text(it.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(it.go != null ? Grey.g91 : Grey.g56))),
-                if (it.go == null && it.why.isNotEmpty) Text(it.why, maxLines: 1, style: T.label(Grey.g56)) else if (it.keys.isNotEmpty) Text(it.keys, maxLines: 1, style: T.label(Grey.g56)),
+                Expanded(
+                  child: Text(it.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(it.go != null ? Grey.g91 : Grey.g56)),
+                ),
+                if (it.go == null && it.why.isNotEmpty)
+                  Text(it.why, maxLines: 1, style: T.label(Grey.g56))
+                else if (it.keys.isNotEmpty)
+                  Text(it.keys, maxLines: 1, style: T.label(Grey.g56)),
               ],
             ),
           ),
@@ -122,8 +139,9 @@ class WsMenuState extends State<WsMenu> {
       final at = info.anchorRect.topLeft + (info.position ?? Offset.zero);
       return Positioned(
         left: math.max(0.0, math.min(at.dx, info.overlaySize.width - w)),
-        top: at.dy + h <= info.overlaySize.height ? at.dy : math.max(0.0, at.dy - h),   // (down from the hand, or up where there is no room)
-        child: FloatShut(   // (the anchor shuts it on a left press outside and no more: every press, and Esc, as all that floats)
+        top: at.dy + h <= info.overlaySize.height ? at.dy : math.max(0.0, at.dy - h), // (down from the hand, or up where there is no room)
+        child: FloatShut(
+          // (the anchor shuts it on a left press outside and no more: every press, and Esc, as all that floats)
           group: info.tapRegionGroupId,
           shut: _m.close,
           child: Container(
@@ -136,9 +154,12 @@ class WsMenuState extends State<WsMenu> {
               border: Border.all(color: Grey.g26),
               boxShadow: [BoxShadow(color: const Color(0x80000000), blurRadius: 24, offset: const Offset(0, 8))],
             ),
-            child: ConstrainedBox(   // (a long one, as many palettes as are kept, scrolls within half the window)
+            child: ConstrainedBox(
+              // (a long one, as many palettes as are kept, scrolls within half the window)
               constraints: BoxConstraints(maxHeight: info.overlaySize.height * .5),
-              child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [for (final it in _items) _one(it)])),
+              child: SingleChildScrollView(
+                child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [for (final it in _items) _one(it)]),
+              ),
             ),
           ),
         ),

@@ -15,8 +15,8 @@ import 'package:motolii/workspace/desk/desk_ease.dart';
 import 'package:motolii/workspace/desk/desk_ease_presets.dart';
 import 'package:motolii/workspace/ws.dart';
 
-const _over = '×', _space = '~', _turned = 'Reverse:';   // (a way defined in a document is one word)
-const _all = -1;   // (what the tile at the foot of the flow carries: all the cards, EaseShapes.onKeep)
+const _over = '×', _space = '~', _turned = 'Reverse:'; // (a way defined in a document is one word)
+const _all = -1; // (what the tile at the foot of the flow carries: all the cards, EaseShapes.onKeep)
 
 /// The ways a way is laid from, each as it is said; one not laid: itself.
 List<String> easeCards(String said) => [for (final w in said.split(_over)) w.startsWith(_turned) || easeIsPoints(w) ? w : w.replaceAll(_space, ' ')];
@@ -63,13 +63,17 @@ String _quoted(String word) => word.replaceAll("'", "''");
 List<(String, String)> easeDefines(String word) => [
   for (final c in easeCards(word)) ...[
     if (easeIsTurned(c)) (c, "a + (b - a) * (1 - way('${easeTurn(c).replaceAll("'", "''")}', 1 - u))"),
-    if (easeIsPoints(c)) (c, "a + (b - a) * anime('${c.replaceAllMapped(RegExp('[^(,)]*$_space[^(,)]*'), (stop) => '"${stop[0]!.replaceAll(_space, ' ')}"')}', u)"),   // (a stop with its place is a string to anime.js's linear())
+    if (easeIsPoints(c))
+      (
+        c,
+        "a + (b - a) * anime('${c.replaceAllMapped(RegExp('[^(,)]*$_space[^(,)]*'), (stop) => '"${stop[0]!.replaceAll(_space, ' ')}"')}', u)",
+      ), // (a stop with its place is a string to anime.js's linear())
   ],
   if (easeIsLaid(word)) (word, 'a + (b - a) * (${_goes(easeCards(word))})'),
 ];
 
-const _steps = 192;   // (a curve drawn large, its peaks whole)
-final _worked = <String, List<double>>{};   // (a card's curve, worked out once: all but the one a hand moves stay as they were)
+const _steps = 192; // (a curve drawn large, its peaks whole)
+final _worked = <String, List<double>>{}; // (a card's curve, worked out once: all but the one a hand moves stay as they were)
 
 /// A card, as the way it says.
 Ease easeCard(String word, Motolii? m) {
@@ -80,7 +84,7 @@ Ease easeCard(String word, Motolii? m) {
   }
   final e = heard(word);
   if (!easeOther(e) || m == null) return e;
-  if (easeIsPoints(word) && !_worked.containsKey(word) && m.wayExact(word, 1) < .5) return e;   // (not defined yet, so it ends nowhere: drawn when it is)
+  if (easeIsPoints(word) && !_worked.containsKey(word) && m.wayExact(word, 1) < .5) return e; // (not defined yet, so it ends nowhere: drawn when it is)
   if (_worked.length > 256) _worked.clear();
   return Ease(e.kind, e.p1, e.p2, e.name, _worked[word] ??= [for (var i = 0; i <= _steps; i++) m.wayExact(word, i / _steps)]);
 }
@@ -109,7 +113,7 @@ double _went(List<Ease> cards, double u) {
   var went = cards.first.at(u);
   for (final c in cards.skip(1)) {
     went = switch (_by(said(c))) {
-      _By.through => went <= 0 || went >= 1 ? went : c.at(went),   // (past its ends as it was: an overshoot above it stays one)
+      _By.through => went <= 0 || went >= 1 ? went : c.at(went), // (past its ends as it was: an overshoot above it stays one)
       _By.times => went * c.at(u),
       _By.plus => went + c.at(u) - u,
     };
@@ -134,14 +138,17 @@ Ease? easeFromText(String? text, Motolii? m) {
   final t = (text ?? '').trim();
   if (RegExp(r'cubic-bezier\(([^)]*)\)').firstMatch(t) case final b?) {
     final n = [for (final x in b[1]!.split(',')) double.tryParse(x.trim())];
-    if (n.length != 4 || n.contains(null) || n[0]! < 0 || n[0]! > 1 || n[2]! < 0 || n[2]! > 1) return null;   // (CSS's own rule: time goes only forward)
+    if (n.length != 4 || n.contains(null) || n[0]! < 0 || n[0]! > 1 || n[2]! < 0 || n[2]! > 1) return null; // (CSS's own rule: time goes only forward)
     return Ease(EaseKind.bezier, Offset(n[0]!, n[1]!), Offset(n[2]!, n[3]!));
   }
   if (RegExp(r'linear\(([^)]*)\)').firstMatch(t) case final l?) {
     final stops = [for (final s in l[1]!.split(',')) s.trim().replaceAll(RegExp(r'\s+'), _space)];
     return stops.length < 2 ? null : heard('linear(${stops.join(',')})');
   }
-  return const {'Linear', 'Hold', 'Bezier', 'Bounce', 'Elastic', 'Cyclic', 'Random', 'Steps', 'ElasticSteps'}.contains(t.split(RegExp('[ ~×]')).first) || easeIsTurned(t) ? easeCard(t, m) : null;
+  return const {'Linear', 'Hold', 'Bezier', 'Bounce', 'Elastic', 'Cyclic', 'Random', 'Steps', 'ElasticSteps'}.contains(t.split(RegExp('[ ~×]')).first) ||
+          easeIsTurned(t)
+      ? easeCard(t, m)
+      : null;
 }
 
 /// The flow: the ways laid, top to bottom, each acting on what is above it (the maker's arrows, 10/31; Blender's stack); an
@@ -150,10 +157,25 @@ Ease? easeFromText(String? text, Motolii? m) {
 /// always, the whole has no handles); that at the foot pressed, the graph shows the whole. A card carried up or down it takes that place, a shape let go on a card goes in
 /// before it, and one carried off the flow comes off.
 class EaseCards extends StatelessWidget {
-  const EaseCards({super.key, this.adding = false, this.onSlot, required this.cards, required this.now, required this.whole, required this.onWhole, required this.onPress, required this.onOff, required this.onMove, required this.onLay, required this.onHold, required this.side, this.across = false});
+  const EaseCards({
+    super.key,
+    this.adding = false,
+    this.onSlot,
+    required this.cards,
+    required this.now,
+    required this.whole,
+    required this.onWhole,
+    required this.onPress,
+    required this.onOff,
+    required this.onMove,
+    required this.onLay,
+    required this.onHold,
+    required this.side,
+    this.across = false,
+  });
   final double side;
-  final bool across;   // (laid across, under the graph, in a tall pane)
-  final bool adding;   // (the empty frame pressed: it waits for what is picked next)
+  final bool across; // (laid across, under the graph, in a tall pane)
+  final bool adding; // (the empty frame pressed: it waits for what is picked next)
   final VoidCallback? onSlot;
   final List<Ease> cards;
   final int now;
@@ -162,18 +184,26 @@ class EaseCards extends StatelessWidget {
   final ValueChanged<int> onPress, onOff;
   final void Function(int from, int to) onMove;
   final void Function(Ease shape, int at) onLay;
-  final void Function(Ease? shape, int at) onHold;   // (a shape held over a card: seen before it is let go)
+  final void Function(Ease? shape, int at) onHold; // (a shape held over a card: seen before it is let go)
 
   @override
   Widget build(BuildContext context) {
     final side = Size.square(this.side);
-    Widget card(int i, Ease c) => Hov(   // (under the hand, its × : as Cavalry's, Bitwig's and Serum's rows take a modulation off)
+    Widget card(int i, Ease c) => Hov(
+      // (under the hand, its × : as Cavalry's, Bitwig's and Serum's rows take a modulation off)
       builder: (_, h) => Stack(
         clipBehavior: Clip.none,
         children: [
-          SizedBox.fromSize(size: side, child: PresetTile(c, on: i == now, side: this.side, onTap: () => onPress(i), carried: false)),
+          SizedBox.fromSize(
+            size: side,
+            child: PresetTile(c, on: i == now, side: this.side, onTap: () => onPress(i), carried: false),
+          ),
           if (h && (cards.length > 1 || c != easePreset('Linear')))
-            Positioned(right: -Shape.s(4), top: -Shape.s(3), child: EaseOff(key: ValueKey('ease.off.$i'), onTap: () => onOff(i))),
+            Positioned(
+              right: -Shape.s(4),
+              top: -Shape.s(3),
+              child: EaseOff(key: ValueKey('ease.off.$i'), onTap: () => onOff(i)),
+            ),
         ],
       ),
     );
@@ -189,7 +219,10 @@ class EaseCards extends StatelessWidget {
       },
       builder: (_, hot, _) => DecoratedBox(
         position: DecorationPosition.foreground,
-        decoration: BoxDecoration(borderRadius: BorderRadius.all(Shape.r(5)), border: hot.isEmpty ? null : Border.all(color: WsT.accent, width: 2)),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.all(Shape.r(5)),
+          border: hot.isEmpty ? null : Border.all(color: WsT.accent, width: 2),
+        ),
         child: child,
       ),
     );
@@ -199,15 +232,22 @@ class EaseCards extends StatelessWidget {
       dragAnchorStrategy: pointerDragAnchorStrategy,
       feedback: easeHeld(card(i, c), this.side),
       childWhenDragging: Opacity(opacity: .3, child: card(i, c)),
-      onDraggableCanceled: (_, _) => onOff(i),   // (let go on the flow or the graph it is accepted there, and stays; on the shapes it is kept, and stays)
+      onDraggableCanceled: (_, _) => onOff(i), // (let go on the flow or the graph it is accepted there, and stays; on the shapes it is kept, and stays)
       child: card(i, c),
     );
     final axis = across ? Axis.horizontal : Axis.vertical;
     final gap = across ? Size(this.side * .4, side.height) : Size(side.width, this.side * .4);
     Widget arrow() => CustomPaint(size: gap, painter: _Arrow(Grey.g56, across));
-    Widget by(int i) => switch (_by(said(cards[i]))) {   // (how it takes what is above it)
+    Widget by(int i) => switch (_by(said(cards[i]))) {
+      // (how it takes what is above it)
       _By.through => arrow(),
-      final how => SizedBox.fromSize(key: ValueKey('ease.by.$i'), size: gap, child: Center(child: Text(how == _By.times ? '×' : '+', style: T.micro(Grey.g76).copyWith(fontWeight: FontWeight.w700, height: 1)))),
+      final how => SizedBox.fromSize(
+        key: ValueKey('ease.by.$i'),
+        size: gap,
+        child: Center(
+          child: Text(how == _By.times ? '×' : '+', style: T.micro(Grey.g76).copyWith(fontWeight: FontWeight.w700, height: 1)),
+        ),
+      ),
     };
     return ColoredBox(
       color: WsT.card,
@@ -222,25 +262,45 @@ class EaseCards extends StatelessWidget {
                 direction: axis,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-            for (final (i, c) in cards.indexed) ...[
-              if (i > 0) by(i),
-              if (cards.length > 1) place(i, carried(i, c)) else if (c == easePreset('Linear')) card(i, c) else carried(i, c),   // (a straight line alone: nothing to carry)
-            ],
-            arrow(),
-            Hov(key: const ValueKey('ease.slot'), onTap: onSlot, builder: (_, h) => EaseSlot(side: this.side, ink: adding ? WsT.accent : h ? Grey.g76 : Grey.g38)),
+                  for (final (i, c) in cards.indexed) ...[
+                    if (i > 0) by(i),
+                    if (cards.length > 1)
+                      place(i, carried(i, c))
+                    else if (c == easePreset('Linear'))
+                      card(i, c)
+                    else
+                      carried(i, c), // (a straight line alone: nothing to carry)
+                  ],
+                  arrow(),
+                  Hov(
+                    key: const ValueKey('ease.slot'),
+                    onTap: onSlot,
+                    builder: (_, h) => EaseSlot(
+                      side: this.side,
+                      ink: adding
+                          ? WsT.accent
+                          : h
+                          ? Grey.g76
+                          : Grey.g38,
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
-          if (whole case final w?) Padding(
-            padding: across ? EdgeInsets.only(left: Shape.s(4), right: Shape.s(6)) : EdgeInsets.only(top: Shape.s(4), bottom: Shape.s(6)),
-            child: Draggable<int>(
-              data: _all,
-              dragAnchorStrategy: pointerDragAnchorStrategy,
-              feedback: easeHeld(PresetTile(w, on: false, side: this.side, onTap: () {}, carried: false), this.side),
-              child: SizedBox.fromSize(size: side, child: PresetTile(w, key: const ValueKey('ease.whole'), on: now < 0, side: this.side, onTap: onWhole, carried: false)),
+          if (whole case final w?)
+            Padding(
+              padding: across ? EdgeInsets.only(left: Shape.s(4), right: Shape.s(6)) : EdgeInsets.only(top: Shape.s(4), bottom: Shape.s(6)),
+              child: Draggable<int>(
+                data: _all,
+                dragAnchorStrategy: pointerDragAnchorStrategy,
+                feedback: easeHeld(PresetTile(w, on: false, side: this.side, onTap: () {}, carried: false), this.side),
+                child: SizedBox.fromSize(
+                  size: side,
+                  child: PresetTile(w, key: const ValueKey('ease.whole'), on: now < 0, side: this.side, onTap: onWhole, carried: false),
+                ),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -270,14 +330,27 @@ class _Arrow extends CustomPainter {
   final bool across;
   @override
   void paint(Canvas c, Size s) {
-    if (across) {   // (the same arrow, turned to point along the row)
+    if (across) {
+      // (the same arrow, turned to point along the row)
       c.translate(0, s.height);
       c.rotate(-math.pi / 2);
       s = Size(s.height, s.width);
     }
-    final x = s.width / 2, p = Paint()..color = ink..strokeWidth = 1.4..style = PaintingStyle.stroke..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round;
+    final x = s.width / 2,
+        p = Paint()
+          ..color = ink
+          ..strokeWidth = 1.4
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round;
     c.drawLine(Offset(x, 1), Offset(x, s.height - 2), p);
-    c.drawPath(Path()..moveTo(x - 3, s.height - 5)..lineTo(x, s.height - 2)..lineTo(x + 3, s.height - 5), p);
+    c.drawPath(
+      Path()
+        ..moveTo(x - 3, s.height - 5)
+        ..lineTo(x, s.height - 2)
+        ..lineTo(x + 3, s.height - 5),
+      p,
+    );
   }
 
   @override
@@ -299,7 +372,10 @@ class _Slot extends CustomPainter {
   @override
   void paint(Canvas c, Size s) {
     final k = s.width / 68, box = RRect.fromRectAndRadius(Rect.fromLTWH(3 * k, 4 * k, 61 * k, 60 * k), Radius.circular(8 * k));
-    final line = Paint()..color = ink..strokeWidth = 1.2..style = PaintingStyle.stroke;
+    final line = Paint()
+      ..color = ink
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
     for (final m in (Path()..addRRect(box)).computeMetrics()) {
       for (var d = 0.0; d < m.length; d += 7) {
         c.drawPath(m.extractPath(d, d + 4), line);

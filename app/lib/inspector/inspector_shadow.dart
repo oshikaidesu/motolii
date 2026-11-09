@@ -25,8 +25,11 @@ class _ShadowDrawingState extends State<ShadowDrawing> {
   @override
   Widget build(BuildContext context) {
     final doc = Ctx.of(context).doc;
-    return ListenableBuilder( // (drawn again when one of its numbers is told anew, by its tiles or the inside)
-      listenable: Listenable.merge([for (final id in const ['v_shadow_distance', 'v_shadow_angle', 'v_shadow_blur', 'v_shadow_opacity']) doc.watch(id)]),
+    return ListenableBuilder(
+      // (drawn again when one of its numbers is told anew, by its tiles or the inside)
+      listenable: Listenable.merge([
+        for (final id in const ['v_shadow_distance', 'v_shadow_angle', 'v_shadow_blur', 'v_shadow_opacity']) doc.watch(id),
+      ]),
       builder: (context, _) => _drawing(doc),
     );
   }
@@ -38,8 +41,14 @@ class _ShadowDrawingState extends State<ShadowDrawing> {
         height: ShadowDrawing.height,
         child: LayoutBuilder(
           builder: (context, box) {
-            final g = _Shadow(box.biggest, distance: doc.get('v_shadow_distance') ?? 0, angle: doc.get('v_shadow_angle') ?? 135, blur: doc.get('v_shadow_blur') ?? 0,
-                opacity: doc.get('v_shadow_opacity') ?? 1, colour: _colour(doc.s2['shadow']));
+            final g = _Shadow(
+              box.biggest,
+              distance: doc.get('v_shadow_distance') ?? 0,
+              angle: doc.get('v_shadow_angle') ?? 135,
+              blur: doc.get('v_shadow_blur') ?? 0,
+              opacity: doc.get('v_shadow_opacity') ?? 1,
+              colour: _colour(doc.s2['shadow']),
+            );
             _Knob? pick(Offset p) => (p - g.softKnob).distance <= 10 ? _Knob.soft : (g.shadow.inflate(4).contains(p) ? _Knob.fall : null);
             return Pulled(
               takes: (at) => pick(at) != null,
@@ -108,15 +117,32 @@ class _ShadowPaint extends CustomPainter {
   @override
   void paint(Canvas c, Size s) {
     c.drawRRect(RRect.fromRectAndRadius(Offset.zero & s, Shape.r(8)), Paint()..color = Grey.g07);
-    c.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: g.middle, width: g.reach * 2 + _Shadow.side + 8, height: s.height - 8), Shape.r(6)), Paint()..color = Grey.g63); // (a ground a dark shadow and a light one both show on)
+    c.drawRRect(
+      RRect.fromRectAndRadius(Rect.fromCenter(center: g.middle, width: g.reach * 2 + _Shadow.side + 8, height: s.height - 8), Shape.r(6)),
+      Paint()..color = Grey.g63,
+    ); // (a ground a dark shadow and a light one both show on)
     final shade = Paint()..color = g.colour.withValues(alpha: g.opacity.clamp(0.0, 1.0) * .9);
     if (g.softDrawn > 0) shade.maskFilter = MaskFilter.blur(BlurStyle.normal, g.softDrawn / 2);
     c.drawRRect(RRect.fromRectAndRadius(g.shadow, Shape.r(3)), shade);
-    if (held == _Knob.fall) c.drawLine(g.middle, g.shadow.center, Paint()..color = Grey.g56..strokeWidth = 1);
+    if (held == _Knob.fall) {
+      c.drawLine(
+        g.middle,
+        g.shadow.center,
+        Paint()
+          ..color = Grey.g56
+          ..strokeWidth = 1,
+      );
+    }
     c.drawRRect(RRect.fromRectAndRadius(g.thing, Shape.r(3)), Paint()..color = Grey.g95);
     // (the knob: out from the shadow's edge as far as it is soft)
     final k = g.softKnob;
-    c.drawLine(g.shadow.centerRight + const Offset(2, 0), k, Paint()..color = Grey.g44..strokeWidth = 1);
+    c.drawLine(
+      g.shadow.centerRight + const Offset(2, 0),
+      k,
+      Paint()
+        ..color = Grey.g44
+        ..strokeWidth = 1,
+    );
     c.drawCircle(k, held == _Knob.soft ? 6.5 : 5, Paint()..color = held == _Knob.soft ? Pop.accent : TransformZone.lift.color);
   }
 

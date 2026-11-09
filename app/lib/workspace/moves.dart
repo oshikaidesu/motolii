@@ -18,11 +18,11 @@ class WsMove {
   final int by;
   final List<int> who;
   final double start, length, lag;
-  final bool coming;   // (from the other end to the seats; else from the seats out to it)
+  final bool coming; // (from the other end to the seats; else from the seats out to it)
   final Map<String, double> end;
-  final double out, over;   // (how it eases: 0 even, 1 slowing hard at the end; past the seat and back, 0 none)
+  final double out, over; // (how it eases: 0 even, 1 slowing hard at the end; past the seat and back, 0 none)
 
-  double get last => start + length + lag * math.max(0, who.length - 1);   // (when the last of them is there)
+  double get last => start + length + lag * math.max(0, who.length - 1); // (when the last of them is there)
 
   /// A moment the strength is whole for every one of them: they all show at the other end.
   double get away => coming ? start - 1e-3 : last + 1e-3;
@@ -32,19 +32,34 @@ class WsMove {
 List<WsMove> wsMoves(Ws ws) {
   final m = ws.inside;
   if (m == null) return const [];
-  return [for (final l in ws.layers) if (int.tryParse(l.id) case final t? when wsMoveOf(m, t) != null) wsMoveOf(m, t)!];
+  return [
+    for (final l in ws.layers)
+      if (int.tryParse(l.id) case final t? when wsMoveOf(m, t) != null) wsMoveOf(m, t)!,
+  ];
 }
 
 WsMove? wsMoveOf(Motolii m, int by) {
   if (m.word(by, 'kind') != 'behaviour' || m.word(by, 'file') != 'group') return null;
-  final who = [for (final w in m.word(by, 'members').split(' ')) if (int.tryParse(w) case final t? when m.things.contains(t)) t];
+  final who = [
+    for (final w in m.word(by, 'members').split(' '))
+      if (int.tryParse(w) case final t? when m.things.contains(t)) t,
+  ];
   final keys = m.keyMoments(by, 'strength');
   final start = keys.isEmpty ? 0.0 : keys.first, end = keys.length > 1 ? keys[1] : start + .6;
   final coming = keys.length < 2 || (m.value(by, 'strength', start) ?? 1) >= (m.value(by, 'strength', end) ?? 0);
   final way = m.wayOf(by, 'strength', start).split(' ');
   final bez = way.first == 'Bezier' && way.length == 5 ? [for (final w in way.skip(1)) double.tryParse(w) ?? 0] : null;
-  return WsMove(by, who, start, end - start, coming, m.value(by, 'lag', 0) ?? 0, {for (final e in wsMoveEnd.entries) e.key: m.value(by, e.key, 0) ?? e.value},
-      bez == null ? .5 : ((.6 - bez[0]) / .5).clamp(0.0, 1.0), bez == null ? 0 : (bez[3] - 1).clamp(0.0, .6));
+  return WsMove(
+    by,
+    who,
+    start,
+    end - start,
+    coming,
+    m.value(by, 'lag', 0) ?? 0,
+    {for (final e in wsMoveEnd.entries) e.key: m.value(by, e.key, 0) ?? e.value},
+    bez == null ? .5 : ((.6 - bez[0]) / .5).clamp(0.0, 1.0),
+    bez == null ? 0 : (bez[3] - 1).clamp(0.0, .6),
+  );
 }
 
 /// What a move is called on its row: which way and its things ('in · TURN IN TIME').
@@ -75,7 +90,7 @@ void wsMakeMove(Ws ws, List<String> who, double start) {
   m.later('key', thing: -1, name: 'strength', word: '${start + .6}', number: coming ? 0 : 1);
   m.later('way', thing: -1, name: 'strength', number: start, word: wsMoveWay(.8, 0));
   ws.after(m.later('together'), (done, why) {
-    if (!done) ws.notice = 'No move made: $why';   // (the step undone as a whole: why, on the top bar)
+    if (!done) ws.notice = 'No move made: $why'; // (the step undone as a whole: why, on the top bar)
     ws.reread();
   });
 }
@@ -117,7 +132,9 @@ void wsMoveTurn(Ws ws, WsMove mv) {
 
 /// How the move eases.
 void wsMoveEase(Ws ws, WsMove mv, double out, double over) {
-  if (ws.inside case final m?) ws.after(m.later('way', thing: mv.by, name: 'strength', number: mv.start, word: wsMoveWay(out.clamp(0, 1), over.clamp(0, .6))), (_, _) => ws.reread());
+  if (ws.inside case final m?) {
+    ws.after(m.later('way', thing: mv.by, name: 'strength', number: mv.start, word: wsMoveWay(out.clamp(0, 1), over.clamp(0, .6))), (_, _) => ws.reread());
+  }
 }
 
 /// Where a thing shows at a moment (x, y, z, size, opacity, turned round), as the inside says: the picture's moment from
@@ -125,7 +142,8 @@ void wsMoveEase(Ws ws, WsMove mv, double out, double over) {
 /// ([wsShowsAt]) and kept while the document stays, as it is until told (docs/app/BRIDGE.md rule 7: a question, never
 /// waited for; [wsPosesTold] ticks when one is told, for what draws it to draw again).
 ({double x, double y, double size, double opacity, double flip}) wsShows(Motolii m, int t, double at) {
-  if (!m.isNow(at)) {   // (not the picture's moment)
+  if (!m.isNow(at)) {
+    // (not the picture's moment)
     if (!identical(_posesOf, m.documentNow)) {
       _poses.clear();
       _values.clear();
@@ -140,11 +158,12 @@ void wsMoveEase(Ws ws, WsMove mv, double out, double over) {
         wsPosesTold.value++;
       });
     }
-    return _poses[(m, t, at)] ?? (x: 0, y: 0, size: 1, opacity: 1, flip: 0);   // (as it is until told)
+    return _poses[(m, t, at)] ?? (x: 0, y: 0, size: 1, opacity: 1, flip: 0); // (as it is until told)
   }
   double v(String n, double or) => m.shows(t, n, at)?.$1 ?? m.value(t, n, at) ?? or;
   return (x: v('x', 0), y: v('y', 0), size: v('size', 1), opacity: v('opacity', 1), flip: v('rotate_y', 0));
 }
+
 final _poses = <(Motolii, int, double), ({double x, double y, double size, double opacity, double flip})?>{};
 Object? _posesOf;
 final wsPosesTold = ValueNotifier<int>(0);
@@ -152,9 +171,11 @@ final wsPosesTold = ValueNotifier<int>(0);
 /// A thing's own value at a moment, as the document says it (its seat, not where a relation shows it): from the copies
 /// when they hold it, another moment asked ([Motolii.valuesAt]) and kept as [wsShows] keeps where it shows.
 double wsValue(Motolii m, int t, String n, double at, double or) {
-  if (!m.moving(t).contains(n) || at == 0 || m.keyMoments(t, n).any((k) => (k - at).abs() < .5 / m.rate)) return m.value(t, n, at) ?? or;   // (the document's copy holds it: as it stays, at its first moment, at a key)
+  if (!m.moving(t).contains(n) || at == 0 || m.keyMoments(t, n).any((k) => (k - at).abs() < .5 / m.rate)) {
+    return m.value(t, n, at) ?? or; // (the document's copy holds it: as it stays, at its first moment, at a key)
+  }
   if (m.isNow(at)) {
-    if (m.value(t, n, at) case final v?) return v;   // (the moment's copy: a thing the window watches)
+    if (m.value(t, n, at) case final v?) return v; // (the moment's copy: a thing the window watches)
   }
   if (!identical(_posesOf, m.documentNow)) {
     _poses.clear();
@@ -170,12 +191,15 @@ double wsValue(Motolii m, int t, String n, double at, double or) {
       wsPosesTold.value++;
     });
   }
-  return _values[(m, t, n, at)] ?? or;   // (as it is until told)
+  return _values[(m, t, n, at)] ?? or; // (as it is until told)
 }
+
 final _values = <(Motolii, int, String, double), double?>{};
 
 /// The same at any moment: a question of the inside (docs/app/BRIDGE.md Q), answered later.
 Future<({double x, double y, double size, double opacity, double flip})> wsShowsAt(Motolii m, int t, double at) async {
-  final v = await m.shownAt([for (final n in const ['x', 'y', 'size', 'opacity', 'rotate_y']) (t, n, at)]);
+  final v = await m.shownAt([
+    for (final n in const ['x', 'y', 'size', 'opacity', 'rotate_y']) (t, n, at),
+  ]);
   return (x: v[0] ?? 0, y: v[1] ?? 0, size: v[2] ?? 1, opacity: v[3] ?? 1, flip: v[4] ?? 0);
 }

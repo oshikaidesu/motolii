@@ -7,7 +7,7 @@ import 'ws.dart';
 void wsSlideKeys(Ws ws, Iterable<WsKey> keys, int by) {
   final m = ws.inside;
   if (m == null || by == 0 || keys.isEmpty) return;
-  final moves = <(int, String, double, double, double, String)>[];   // (thing, value, from, to, what it holds, its way)
+  final moves = <(int, String, double, double, double, String)>[]; // (thing, value, from, to, what it holds, its way)
   for (final k in keys) {
     final t = int.tryParse(k.layer);
     if (t == null) continue;
@@ -20,7 +20,7 @@ void wsSlideKeys(Ws ws, Iterable<WsKey> keys, int by) {
   if (moves.isEmpty) return;
   m.later('together', number: 1);
   for (final (t, n, at, _, _, _) in moves) {
-    m.later('unkey', thing: t, name: n, number: at);   // (all taken up first: one slid onto another's old moment is not lost)
+    m.later('unkey', thing: t, name: n, number: at); // (all taken up first: one slid onto another's old moment is not lost)
   }
   for (final (t, n, _, to, v, way) in moves) {
     m.later('key', thing: t, name: n, word: '$to', number: v);
@@ -73,7 +73,9 @@ void wsPasteKeys(Ws ws) {
     m.later('key', thing: t, name: n, word: '$at', number: v);
     if (way.isNotEmpty) m.later('way', thing: t, name: n, number: at, word: way);
   }
-  final pasted = [for (final f in {for (final k in wsKeysKept) ws.frame + k.$2}) (layer: '$t', frame: f)];
+  final pasted = [
+    for (final f in {for (final k in wsKeysKept) ws.frame + k.$2}) (layer: '$t', frame: f),
+  ];
   ws.after(m.later('together'), (_, _) {
     ws
       ..reread()

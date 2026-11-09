@@ -8,6 +8,7 @@ class WsScope extends StatefulWidget {
   const WsScope({super.key, required this.ws, required this.child});
   final Ws ws;
   final Widget child;
+
   /// The window's state, the part built again when one of [aspects] changes (none said: any, as a pane of your own
   /// may: the window's own parts each say theirs).
   static Ws of(BuildContext c, [Set<WsAspect>? aspects]) {
@@ -16,9 +17,12 @@ class WsScope extends StatefulWidget {
     }
     return read(c);
   }
+
   static Ws read(BuildContext c) => c.getInheritedWidgetOfExactType<_WsAll>()!.ws;
+
   /// The playhead, and built again when it moves (nothing else of the window does that).
   static int frameOf(BuildContext c) => c.dependOnInheritedWidgetOfExactType<WsMoment>()!.notifier!.value;
+
   /// The inside's moment's picture: built again when a new one comes (what shows values at the moment shown).
   static int pictureOf(BuildContext c) => c.dependOnInheritedWidgetOfExactType<_WsPicture>()!.notifier!.value;
   @override
@@ -33,6 +37,7 @@ class _WsScopeState extends State<WsScope> {
     super.initState();
     widget.ws.addListener(_changed);
   }
+
   @override
   void didUpdateWidget(WsScope old) {
     super.didUpdateWidget(old);
@@ -42,14 +47,23 @@ class _WsScopeState extends State<WsScope> {
       _told = _now();
     }
   }
+
   @override
   void dispose() {
     widget.ws.removeListener(_changed);
     super.dispose();
   }
+
   void _changed() => setState(() => _told = _now());
   @override
-  Widget build(BuildContext context) => _WsAll(ws: widget.ws, told: _told, child: WsMoment(notifier: widget.ws.moment, child: _WsPicture(notifier: widget.ws.seen, child: widget.child)));
+  Widget build(BuildContext context) => _WsAll(
+    ws: widget.ws,
+    told: _told,
+    child: WsMoment(
+      notifier: widget.ws.moment,
+      child: _WsPicture(notifier: widget.ws.seen, child: widget.child),
+    ),
+  );
 }
 
 class _WsPicture extends InheritedNotifier<ValueNotifier<int>> {
@@ -59,7 +73,7 @@ class _WsPicture extends InheritedNotifier<ValueNotifier<int>> {
 class _WsAll extends InheritedModel<WsAspect> {
   const _WsAll({required this.ws, required this.told, required super.child});
   final Ws ws;
-  final Map<WsAspect, int> told;   // (how many times each aspect was told, as of this build)
+  final Map<WsAspect, int> told; // (how many times each aspect was told, as of this build)
   @override
   bool updateShouldNotify(_WsAll old) => !mapEquals(told, old.told) || ws != old.ws;
   @override

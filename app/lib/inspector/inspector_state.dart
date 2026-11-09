@@ -1,8 +1,10 @@
 import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier, listEquals, mapEquals, setEquals;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/effects/inspector_effects_k_effects.dart';
+
 import '../parts/controls.dart';
 import '../style/tokens.dart';
 import 'inspector_parts.dart';
@@ -12,7 +14,7 @@ enum Editorial { a, b, c }
 
 enum ModRule { shiftBig, shiftFine }
 
-enum ResetRule { dbl, del, arrow, both, live }   // (live: Ableton Live's, Delete or double-click: its manual 42.4, 42.6)
+enum ResetRule { dbl, del, arrow, both, live } // (live: Ableton Live's, Delete or double-click: its manual 42.4, 42.6)
 
 enum KeyS { off, anim, at }
 
@@ -47,7 +49,7 @@ class Cfg {
 
   bool get resetDbl => reset == ResetRule.dbl || reset == ResetRule.both || reset == ResetRule.live;
   bool get resetDel => reset == ResetRule.del || reset == ResetRule.live;
-  bool get typesOn => reset == ResetRule.live;   // (a digit typed on a field starts its number: Live 42.6 "Type In Value 0…9")
+  bool get typesOn => reset == ResetRule.live; // (a digit typed on a field starts its number: Live 42.6 "Type In Value 0…9")
   bool get resetArrow => reset == ResetRule.arrow || reset == ResetRule.both;
 
   /// One rule for scrub, wheel and arrows (C4): the same keys mean the same thing in every control.
@@ -58,7 +60,7 @@ class Cfg {
       if (k.isAltPressed) return .1;
     } else {
       if (k.isShiftPressed) return .1;
-      if (k.isMetaPressed || k.isControlPressed) return 10;   // (Cmd on a Mac, Ctrl elsewhere, one key: Live's manual pairs them, as the timeline's zoom does)
+      if (k.isMetaPressed || k.isControlPressed) return 10; // (Cmd on a Mac, Ctrl elsewhere, one key: Live's manual pairs them, as the timeline's zoom does)
     }
     return 1;
   }
@@ -105,4 +107,4 @@ class Ed {
 /// The property a value is part of, whose key mark is theirs together: a document's x, y, z are its position; its
 /// scale_x .. scale_z its scale, rotate_x, rotate_y and rotate its rotation, anchor_x .. anchor_z its anchor.
 String propOf(String id) => _place.hasMatch(id) ? 'v_position' : _axis.firstMatch(id)?.group(1) ?? id;
-final _place = RegExp(r'^v_[xyz]$'), _axis = RegExp(r'^(v_\w+?)_[xyz]$');   // (made once: asked hundreds of times a picture)
+final _place = RegExp(r'^v_[xyz]$'), _axis = RegExp(r'^(v_\w+?)_[xyz]$'); // (made once: asked hundreds of times a picture)

@@ -113,7 +113,11 @@ class PosterForms extends Forms {
                           child: CustomPaint(painter: GeoPaint(Geo.values[i % 4], on ? _ink : _ink.withValues(alpha: .18))),
                         ),
                         Flexible(
-                          child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(c.labels[i], maxLines: 1, style: _word(_ink, 13))),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(c.labels[i], maxLines: 1, style: _word(_ink, 13)),
+                          ),
                         ),
                       ],
                     ),
@@ -151,7 +155,13 @@ class PosterForms extends Forms {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (st.isSelected) ...[SizedBox.square(dimension: Shape.z(12), child: const CustomPaint(painter: GeoPaint(Geo.circle, _ink))), SizedBox(width: Shape.s(4))],
+                    if (st.isSelected) ...[
+                      SizedBox.square(
+                        dimension: Shape.z(12),
+                        child: const CustomPaint(painter: GeoPaint(Geo.circle, _ink)),
+                      ),
+                      SizedBox(width: Shape.s(4)),
+                    ],
                     Text(c.labels[i].toUpperCase(), style: _word(_ink, 13)),
                   ],
                 ),
@@ -209,7 +219,11 @@ class PosterForms extends Forms {
         child: Row(
           children: [
             Expanded(
-              child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(title, maxLines: 1, style: _word(_ink, 18))),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(title, maxLines: 1, style: _word(_ink, 18)),
+              ),
             ),
             ?c.trailing,
             SizedBox.square(
@@ -221,7 +235,10 @@ class PosterForms extends Forms {
       ),
     );
     return Container(
-      decoration: BoxDecoration(color: _paper, border: Border.all(color: _ink, width: 2)),
+      decoration: BoxDecoration(
+        color: _paper,
+        border: Border.all(color: _ink, width: 2),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,

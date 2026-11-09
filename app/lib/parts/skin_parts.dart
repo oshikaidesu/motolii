@@ -90,7 +90,12 @@ abstract final class SkinParts {
     final sl = (_slices[name] ?? (p.size.shortestSide / 3)).clamp(0.0, p.size.shortestSide / 2 - .5);
     c.save();
     c.scale(1 / k);
-    c.drawImageNine(img, Rect.fromLTRB(sl * k, sl * k, (p.size.width - sl) * k, (p.size.height - sl) * k), Rect.fromLTRB(r.left * k, r.top * k, r.right * k, r.bottom * k), Paint()..filterQuality = FilterQuality.medium);
+    c.drawImageNine(
+      img,
+      Rect.fromLTRB(sl * k, sl * k, (p.size.width - sl) * k, (p.size.height - sl) * k),
+      Rect.fromLTRB(r.left * k, r.top * k, r.right * k, r.bottom * k),
+      Paint()..filterQuality = FilterQuality.medium,
+    );
     c.restore();
   }
 }

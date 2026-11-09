@@ -31,7 +31,17 @@ enum Kind {
 enum ArtStyle { sky, gradient, abstract, wave, solid }
 
 class Asset {
-  const Asset(this.name, this.kind, this.seed, {this.style = ArtStyle.sky, this.dur = 0, this.tags = const [], this.aspect = .625, this.dims = '1920×1080', this.size = '4.2 MB'});
+  const Asset(
+    this.name,
+    this.kind,
+    this.seed, {
+    this.style = ArtStyle.sky,
+    this.dur = 0,
+    this.tags = const [],
+    this.aspect = .625,
+    this.dims = '1920×1080',
+    this.size = '4.2 MB',
+  });
   final String name;
   final Kind kind;
   final int seed;
@@ -71,29 +81,78 @@ class ArtPainter extends CustomPainter {
     canvas.drawRect(r, Paint()..shader = LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Grey.g10, Grey.g13]).createShader(r));
     switch (style) {
       case ArtStyle.sky:
-        canvas.drawRect(r, Paint()..shader = LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [a.withValues(alpha: .3), b.withValues(alpha: .35), Grey.g13.withValues(alpha: 0)], stops: const [0, .62, 1]).createShader(r));
-        canvas.drawCircle(Offset(w * (.25 + .5 * rnd.nextDouble()), h * .5), h * .13, Paint()..color = Grey.g95.withValues(alpha: .85)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5));
+        canvas.drawRect(
+          r,
+          Paint()
+            ..shader = LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [a.withValues(alpha: .3), b.withValues(alpha: .35), Grey.g13.withValues(alpha: 0)],
+              stops: const [0, .62, 1],
+            ).createShader(r),
+        );
+        canvas.drawCircle(
+          Offset(w * (.25 + .5 * rnd.nextDouble()), h * .5),
+          h * .13,
+          Paint()
+            ..color = Grey.g95.withValues(alpha: .85)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5),
+        );
         for (var layer = 0; layer < 2; layer++) {
           final p = Path()..moveTo(0, h);
           const n = 9;
           for (var i = 0; i <= n; i++) {
             p.lineTo(w * i / n, h * (.72 - .16 * rnd.nextDouble() - layer * .1 + (layer == 0 ? .08 : 0)));
           }
-          p..lineTo(w, h)..close();
+          p
+            ..lineTo(w, h)
+            ..close();
           canvas.drawPath(p, Paint()..color = (layer == 0 ? Grey.g10 : Grey.g07).withValues(alpha: .92));
         }
       case ArtStyle.gradient:
-        canvas.drawRect(r, Paint()..shader = LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [a.withValues(alpha: .35), b.withValues(alpha: .25)]).createShader(r));
-        canvas.drawRect(r, Paint()..shader = LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [Grey.g00.withValues(alpha: .35), Grey.g00.withValues(alpha: 0)]).createShader(r));
+        canvas.drawRect(
+          r,
+          Paint()
+            ..shader = LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [a.withValues(alpha: .35), b.withValues(alpha: .25)],
+            ).createShader(r),
+        );
+        canvas.drawRect(
+          r,
+          Paint()
+            ..shader = LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [Grey.g00.withValues(alpha: .35), Grey.g00.withValues(alpha: 0)],
+            ).createShader(r),
+        );
       case ArtStyle.abstract:
         for (var i = 0; i < 4; i++) {
           final c = Fam.all[(seed + i * 2) % 6].c;
-          canvas.drawCircle(Offset(w * rnd.nextDouble(), h * rnd.nextDouble()), math.min(w, h) * (.22 + .22 * rnd.nextDouble()), Paint()..color = c.withValues(alpha: .3)..maskFilter = MaskFilter.blur(BlurStyle.normal, math.min(w, h) * .18));
+          canvas.drawCircle(
+            Offset(w * rnd.nextDouble(), h * rnd.nextDouble()),
+            math.min(w, h) * (.22 + .22 * rnd.nextDouble()),
+            Paint()
+              ..color = c.withValues(alpha: .3)
+              ..maskFilter = MaskFilter.blur(BlurStyle.normal, math.min(w, h) * .18),
+          );
         }
       case ArtStyle.wave:
-        canvas.drawRect(r, Paint()..shader = LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, colors: [a.withValues(alpha: .25), b.withValues(alpha: .25)]).createShader(r));
+        canvas.drawRect(
+          r,
+          Paint()
+            ..shader = LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [a.withValues(alpha: .25), b.withValues(alpha: .25)],
+            ).createShader(r),
+        );
         final bars = math.max(8, (w / 3).floor());
-        final p = Paint()..color = Grey.g91.withValues(alpha: .8)..strokeWidth = 1.2;
+        final p = Paint()
+          ..color = Grey.g91.withValues(alpha: .8)
+          ..strokeWidth = 1.2;
         for (var i = 0; i < bars; i++) {
           final x = w * (i + .5) / bars;
           final env = math.sin(math.pi * i / bars);
@@ -102,12 +161,36 @@ class ArtPainter extends CustomPainter {
         }
       case ArtStyle.solid:
         final c = Offset(w / 2, h / 2), rad = math.min(w, h) * .3;
-        canvas.drawCircle(c, rad * 1.5, Paint()..color = a.withValues(alpha: .2)..maskFilter = MaskFilter.blur(BlurStyle.normal, rad * .6));
-        canvas.drawCircle(c, rad, Paint()..shader = RadialGradient(center: const Alignment(-.4, -.45), radius: 1, colors: [Grey.g95.withValues(alpha: .85), b.withValues(alpha: .35), Grey.g07]).createShader(Rect.fromCircle(center: c, radius: rad)));
-        canvas.drawOval(Rect.fromCenter(center: c, width: rad * 3, height: rad * .7), Paint()..style = PaintingStyle.stroke..strokeWidth = 1..color = Grey.g76.withValues(alpha: .5));
+        canvas.drawCircle(
+          c,
+          rad * 1.5,
+          Paint()
+            ..color = a.withValues(alpha: .2)
+            ..maskFilter = MaskFilter.blur(BlurStyle.normal, rad * .6),
+        );
+        canvas.drawCircle(
+          c,
+          rad,
+          Paint()
+            ..shader = RadialGradient(
+              center: const Alignment(-.4, -.45),
+              radius: 1,
+              colors: [Grey.g95.withValues(alpha: .85), b.withValues(alpha: .35), Grey.g07],
+            ).createShader(Rect.fromCircle(center: c, radius: rad)),
+        );
+        canvas.drawOval(
+          Rect.fromCenter(center: c, width: rad * 3, height: rad * .7),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1
+            ..color = Grey.g76.withValues(alpha: .5),
+        );
     }
     if (style == ArtStyle.wave) return;
-    canvas.drawRect(r, Paint()..shader = ui.Gradient.radial(Offset(w / 2, h / 2), math.max(w, h) * .8, [Grey.g00.withValues(alpha: 0), Grey.g00.withValues(alpha: .25)]));
+    canvas.drawRect(
+      r,
+      Paint()..shader = ui.Gradient.radial(Offset(w / 2, h / 2), math.max(w, h) * .8, [Grey.g00.withValues(alpha: 0), Grey.g00.withValues(alpha: .25)]),
+    );
   }
 
   @override
@@ -118,7 +201,9 @@ class Art extends StatelessWidget {
   const Art(this.asset, {super.key});
   final Asset asset;
   @override
-  Widget build(BuildContext context) => RepaintBoundary(child: CustomPaint(painter: ArtPainter(asset.seed, asset.art), size: Size.infinite));
+  Widget build(BuildContext context) => RepaintBoundary(
+    child: CustomPaint(painter: ArtPainter(asset.seed, asset.art), size: Size.infinite),
+  );
 }
 
 class TypeBadge extends StatelessWidget {
@@ -126,10 +211,10 @@ class TypeBadge extends StatelessWidget {
   final Kind kind;
   @override
   Widget build(BuildContext context) => Container(
-        padding: EdgeInsets.symmetric(horizontal: Shape.s(4), vertical: Shape.s(3)),
-        decoration: BoxDecoration(color: Grey.g00.withValues(alpha: .6), borderRadius: BorderRadius.all(Shape.r(3))),
-        child: Text(kind.badge, style: T.micro(Grey.g91).copyWith(letterSpacing: .4)),
-      );
+    padding: EdgeInsets.symmetric(horizontal: Shape.s(4), vertical: Shape.s(3)),
+    decoration: BoxDecoration(color: Grey.g00.withValues(alpha: .6), borderRadius: BorderRadius.all(Shape.r(3))),
+    child: Text(kind.badge, style: T.micro(Grey.g91).copyWith(letterSpacing: .4)),
+  );
 }
 
 class TimePill extends StatelessWidget {
@@ -137,10 +222,10 @@ class TimePill extends StatelessWidget {
   final String text;
   @override
   Widget build(BuildContext context) => Container(
-        padding: EdgeInsets.symmetric(horizontal: Shape.s(4), vertical: Shape.s(3)),
-        decoration: BoxDecoration(color: Grey.g00.withValues(alpha: .6), borderRadius: BorderRadius.all(Shape.r(3))),
-        child: Text(text, style: T.value(Grey.g91).copyWith(fontSize: T.px(10))),
-      );
+    padding: EdgeInsets.symmetric(horizontal: Shape.s(4), vertical: Shape.s(3)),
+    decoration: BoxDecoration(color: Grey.g00.withValues(alpha: .6), borderRadius: BorderRadius.all(Shape.r(3))),
+    child: Text(text, style: T.value(Grey.g91).copyWith(fontSize: T.px(10))),
+  );
 }
 
 /// Hover + focus + tap + local pointer position, in one shell.
@@ -158,19 +243,23 @@ class _PressState extends State<Press> {
   Offset? _p;
   @override
   Widget build(BuildContext context) => FocusableActionDetector(
-        onShowHoverHighlight: (v) => setState(() => _h = v),
-        onShowFocusHighlight: (v) => setState(() => _f = v),
-        mouseCursor: widget.cursor,
-        actions: {ActivateIntent: CallbackAction<ActivateIntent>(onInvoke: (_) {
+    onShowHoverHighlight: (v) => setState(() => _h = v),
+    onShowFocusHighlight: (v) => setState(() => _f = v),
+    mouseCursor: widget.cursor,
+    actions: {
+      ActivateIntent: CallbackAction<ActivateIntent>(
+        onInvoke: (_) {
           widget.onTap?.call();
           return null;
-        })},
-        child: MouseRegion(
-          onHover: (e) => setState(() => _p = e.localPosition),
-          onExit: (_) => setState(() => _p = null),
-          child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onTap, child: widget.builder(context, _h, _f, _p)),
-        ),
-      );
+        },
+      ),
+    },
+    child: MouseRegion(
+      onHover: (e) => setState(() => _p = e.localPosition),
+      onExit: (_) => setState(() => _p = null),
+      child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onTap, child: widget.builder(context, _h, _f, _p)),
+    ),
+  );
 }
 
 /// A little state holder so use cases can be interactive without a class each.
@@ -198,7 +287,11 @@ class Draw extends CustomPainter {
   bool shouldRepaint(Draw o) => o.key != key;
 }
 
-Widget glyph(double size, void Function(Canvas, Size) fn, [Object? key]) => SizedBox(width: size, height: size, child: CustomPaint(painter: Draw(fn, key)));
+Widget glyph(double size, void Function(Canvas, Size) fn, [Object? key]) => SizedBox(
+  width: size,
+  height: size,
+  child: CustomPaint(painter: Draw(fn, key)),
+);
 
 void drawFolder(Canvas c, Size s, Color col, {bool fill = false}) {
   final w = s.width, h = s.height;
@@ -210,7 +303,14 @@ void drawFolder(Canvas c, Size s, Color col, {bool fill = false}) {
     ..lineTo(w * .92, h * .8)
     ..lineTo(w * .08, h * .8)
     ..close();
-  c.drawPath(p, Paint()..color = col..style = fill ? PaintingStyle.fill : PaintingStyle.stroke..strokeWidth = 1.2..strokeJoin = StrokeJoin.round);
+  c.drawPath(
+    p,
+    Paint()
+      ..color = col
+      ..style = fill ? PaintingStyle.fill : PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeJoin = StrokeJoin.round,
+  );
 }
 
 void drawStar(Canvas c, Size s, Color col, bool fill) {
@@ -222,7 +322,14 @@ void drawStar(Canvas c, Size s, Color col, bool fill) {
     i == 0 ? p.moveTo(pt.dx, pt.dy) : p.lineTo(pt.dx, pt.dy);
   }
   p.close();
-  c.drawPath(p, Paint()..color = col..style = fill ? PaintingStyle.fill : PaintingStyle.stroke..strokeWidth = 1.2..strokeJoin = StrokeJoin.round);
+  c.drawPath(
+    p,
+    Paint()
+      ..color = col
+      ..style = fill ? PaintingStyle.fill : PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeJoin = StrokeJoin.round,
+  );
 }
 
 class StarButton extends StatelessWidget {
@@ -232,9 +339,13 @@ class StarButton extends StatelessWidget {
   final ValueChanged<bool>? onChanged;
   @override
   Widget build(BuildContext context) => Press(
-        onTap: () => onChanged?.call(!on),
-        builder: (context, hover, focus, _) => SizedBox(width: Shape.z(24), height: Shape.z(24), child: Center(child: glyph(size, (c, s) => drawStar(c, s, on ? Grey.g95 : (hover || focus ? Grey.g76 : Grey.g44), on), [on, hover, focus]))),
-      );
+    onTap: () => onChanged?.call(!on),
+    builder: (context, hover, focus, _) => SizedBox(
+      width: Shape.z(24),
+      height: Shape.z(24),
+      child: Center(child: glyph(size, (c, s) => drawStar(c, s, on ? Grey.g95 : (hover || focus ? Grey.g76 : Grey.g44), on), [on, hover, focus])),
+    ),
+  );
 }
 
 class DashedBox extends CustomPainter {
@@ -244,7 +355,10 @@ class DashedBox extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final path = Path()..addRRect(RRect.fromRectAndRadius((Offset.zero & size).deflate(width / 2), Radius.circular(radius)));
-    final p = Paint()..color = color..style = PaintingStyle.stroke..strokeWidth = width;
+    final p = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = width;
     for (final m in path.computeMetrics()) {
       for (var d = 0.0; d < m.length; d += dash + gap) {
         canvas.drawPath(m.extractPath(d, math.min(d + dash, m.length)), p);
@@ -272,11 +386,32 @@ class MiniSlider extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onPanDown: (d) => set(d.localPosition),
         onPanUpdate: (d) => set(d.localPosition),
-        child: SizedBox(width: width, height: Shape.z(20), child: Stack(alignment: Alignment.centerLeft, children: [
-          Container(height: Shape.z(2), decoration: BoxDecoration(color: track ?? Grey.g26, borderRadius: BorderRadius.all(Shape.r(1)))),
-          Container(width: width * t, height: Shape.z(2), decoration: BoxDecoration(color: Grey.g56, borderRadius: BorderRadius.all(Shape.r(1)))),
-          Positioned(left: (width - 10) * t, child: Container(width: Shape.z(10), height: Shape.z(10), decoration: BoxDecoration(color: Grey.g95, shape: BoxShape.circle))),
-        ])),
+        child: SizedBox(
+          width: width,
+          height: Shape.z(20),
+          child: Stack(
+            alignment: Alignment.centerLeft,
+            children: [
+              Container(
+                height: Shape.z(2),
+                decoration: BoxDecoration(color: track ?? Grey.g26, borderRadius: BorderRadius.all(Shape.r(1))),
+              ),
+              Container(
+                width: width * t,
+                height: Shape.z(2),
+                decoration: BoxDecoration(color: Grey.g56, borderRadius: BorderRadius.all(Shape.r(1))),
+              ),
+              Positioned(
+                left: (width - 10) * t,
+                child: Container(
+                  width: Shape.z(10),
+                  height: Shape.z(10),
+                  decoration: BoxDecoration(color: Grey.g95, shape: BoxShape.circle),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -288,10 +423,10 @@ class Pill extends StatelessWidget {
   final Color? fill; // (none: the skin's grey)
   @override
   Widget build(BuildContext context) => Container(
-        padding: EdgeInsets.symmetric(horizontal: Shape.s(6), vertical: Shape.s(3)),
-        decoration: BoxDecoration(color: fill ?? Grey.g20, borderRadius: BorderRadius.all(Shape.r(6))),
-        child: Text(text, style: T.micro(Grey.g76)),
-      );
+    padding: EdgeInsets.symmetric(horizontal: Shape.s(6), vertical: Shape.s(3)),
+    decoration: BoxDecoration(color: fill ?? Grey.g20, borderRadius: BorderRadius.all(Shape.r(6))),
+    child: Text(text, style: T.micro(Grey.g76)),
+  );
 }
 
 /// A quiet text button: g13 at rest, g15 on hover, g20 pressed-ish focus.
@@ -302,16 +437,23 @@ class QuietButton extends StatelessWidget {
   final VoidCallback? onTap;
   @override
   Widget build(BuildContext context) => Press(
-        onTap: onTap,
-        builder: (context, hover, focus, _) => AnimatedContainer(
-          duration: kFast,
-          curve: kEase,
-          height: Shape.z(24),
-          padding: EdgeInsets.symmetric(horizontal: Shape.s(12)),
-          decoration: BoxDecoration(color: primary ? (hover ? Grey.g26 : Grey.g20) : (hover ? Grey.g20 : Grey.g13), borderRadius: BorderRadius.all(Shape.r(4)), border: Border.all(color: focus ? Grey.g56 : (primary ? Grey.g26 : Grey.g20))),
-          child: Center(widthFactor: 1, child: Text(text, style: T.label(Grey.g91).copyWith(fontWeight: FontWeight.w500))),
-        ),
-      );
+    onTap: onTap,
+    builder: (context, hover, focus, _) => AnimatedContainer(
+      duration: kFast,
+      curve: kEase,
+      height: Shape.z(24),
+      padding: EdgeInsets.symmetric(horizontal: Shape.s(12)),
+      decoration: BoxDecoration(
+        color: primary ? (hover ? Grey.g26 : Grey.g20) : (hover ? Grey.g20 : Grey.g13),
+        borderRadius: BorderRadius.all(Shape.r(4)),
+        border: Border.all(color: focus ? Grey.g56 : (primary ? Grey.g26 : Grey.g20)),
+      ),
+      child: Center(
+        widthFactor: 1,
+        child: Text(text, style: T.label(Grey.g91).copyWith(fontWeight: FontWeight.w500)),
+      ),
+    ),
+  );
 }
 
 /// DESIGN.md: a selected row carries a 2px g95 tick on its left.
@@ -320,5 +462,12 @@ class Tick extends StatelessWidget {
   final bool on;
   final double height;
   @override
-  Widget build(BuildContext context) => AnimatedContainer(duration: kFast, curve: kEase, width: Shape.z(2), height: height, margin: EdgeInsets.only(right: Shape.s(4)), decoration: BoxDecoration(color: on ? Grey.g95 : const Color(0x00000000), borderRadius: BorderRadius.all(Shape.r(1))));
+  Widget build(BuildContext context) => AnimatedContainer(
+    duration: kFast,
+    curve: kEase,
+    width: Shape.z(2),
+    height: height,
+    margin: EdgeInsets.only(right: Shape.s(4)),
+    decoration: BoxDecoration(color: on ? Grey.g95 : const Color(0x00000000), borderRadius: BorderRadius.all(Shape.r(1))),
+  );
 }

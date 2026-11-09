@@ -9,6 +9,7 @@ import 'package:flutter/gestures.dart' show GestureBinding, PointerEvent, Pointe
 import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
+
 import '../forms/forms.dart';
 import '../parts/skin_parts.dart';
 import 'zoom.dart';
@@ -38,7 +39,14 @@ class WsTopBar extends StatelessWidget {
           SizedBox(width: Shape.s(14)),
           const _UndoRedo(),
           SizedBox(width: Shape.s(14)),
-          Flexible(child: Text(ws.document ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(Grey.g95).copyWith(fontWeight: FontWeight.w600))), // (a long name gives way, not the bar)
+          Flexible(
+            child: Text(
+              ws.document ?? '',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: T.name(Grey.g95).copyWith(fontWeight: FontWeight.w600),
+            ),
+          ), // (a long name gives way, not the bar)
           SizedBox(width: Shape.s(6)),
           Text('/', style: T.name(Grey.g44)),
           SizedBox(width: Shape.s(6)),
@@ -75,10 +83,16 @@ class _Wordmark extends StatelessWidget {
         height: Shape.z(22),
         alignment: Alignment.center,
         color: WsT.accent,
-        child: Text('M', style: T.title(WsT.onAccent).copyWith(fontSize: T.px(14), fontWeight: FontWeight.w900, height: 1)),
+        child: Text(
+          'M',
+          style: T.title(WsT.onAccent).copyWith(fontSize: T.px(14), fontWeight: FontWeight.w900, height: 1),
+        ),
       ),
       SizedBox(width: Shape.s(8)),
-      Text('Motolii', style: T.title(Grey.g95).copyWith(fontSize: T.px(14), fontWeight: FontWeight.w800, letterSpacing: -.2)),
+      Text(
+        'Motolii',
+        style: T.title(Grey.g95).copyWith(fontSize: T.px(14), fontWeight: FontWeight.w800, letterSpacing: -.2),
+      ),
     ],
   );
 }
@@ -143,7 +157,10 @@ class _UndoRedo extends StatelessWidget {
           onTap: () {
             final ws = WsScope.read(context), m = ws.inside;
             if (m == null) return;
-            ws.after(m.later(flip ? 'redo' : 'undo'), (done, why) => ws.notice = done ? wsStepSaid(ws, flip ? 'Redone' : 'Undone') : why); // (the window does not wait for the step)
+            ws.after(
+              m.later(flip ? 'redo' : 'undo'),
+              (done, why) => ws.notice = done ? wsStepSaid(ws, flip ? 'Redone' : 'Undone') : why,
+            ); // (the window does not wait for the step)
           },
           builder: (h) => Container(
             width: Shape.z(24),
@@ -252,7 +269,12 @@ class _Saved extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ws = WsScope.of(context, {WsAspect.document, WsAspect.notice}), go = ws.noticeGo;
-    final said = Text(ws.notice ?? _savedAt(ws), maxLines: 1, overflow: TextOverflow.ellipsis, style: go == null ? T.label(Grey.g63) : T.label(Grey.g63).copyWith(decoration: TextDecoration.underline));   // (a link's underline: it goes somewhere)
+    final said = Text(
+      ws.notice ?? _savedAt(ws),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: go == null ? T.label(Grey.g63) : T.label(Grey.g63).copyWith(decoration: TextDecoration.underline),
+    ); // (a link's underline: it goes somewhere)
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -264,7 +286,12 @@ class _Saved extends StatelessWidget {
         SizedBox(width: Shape.s(6)),
         ConstrainedBox(
           constraints: BoxConstraints(maxWidth: Shape.z(260)),
-          child: go == null ? said : MouseRegion(cursor: SystemMouseCursors.click, child: GestureDetector(onTap: go, child: said)),
+          child: go == null
+              ? said
+              : MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(onTap: go, child: said),
+                ),
         ),
       ],
     );
@@ -297,7 +324,7 @@ class _RenderState extends State<_Render> {
     super.dispose();
   }
 
-  String _free = '';   // (the folder's room, read as the dialog opens)
+  String _free = ''; // (the folder's room, read as the dialog opens)
 
   /// How much room the folder's disk has, as the Mac's df says it (its Available, in 1024-byte blocks).
   static String _room(String? folder) {
@@ -319,9 +346,16 @@ class _RenderState extends State<_Render> {
   }
 
   // (the kinds the inside writes, by the file's ending: kit_draw.h; Alight Motion's own four)
-  static const _formats = [('MP4', '.mp4', "H.264, with the films' sound"), ('HEVC', '.mov', "HEVC by the Mac's own encoder, with the films' sound"), ('GIF', '.gif', '15 frames a second, no sound'), ('PNG', '.png', 'a picture each, name_0001.png on'), ('JPEG', '.jpg', 'a JPEG each, name_0001.jpg on')];
+  static const _formats = [
+    ('MP4', '.mp4', "H.264, with the films' sound"),
+    ('HEVC', '.mov', "HEVC by the Mac's own encoder, with the films' sound"),
+    ('GIF', '.gif', '15 frames a second, no sound'),
+    ('PNG', '.png', 'a picture each, name_0001.png on'),
+    ('JPEG', '.jpg', 'a JPEG each, name_0001.jpg on'),
+  ];
   String get _ending => _formats.map((f) => f.$2).firstWhere((e) => _name.text.trim().toLowerCase().endsWith(e), orElse: () => '.mp4');
-  void _as(String ending) => setState(() => _name.text = '${_name.text.trim().replaceFirst(RegExp(r'\.(mp4|mov|gif|png|jpg)$', caseSensitive: false), '')}$ending');
+  void _as(String ending) =>
+      setState(() => _name.text = '${_name.text.trim().replaceFirst(RegExp(r'\.(mp4|mov|gif|png|jpg)$', caseSensitive: false), '')}$ending');
 
   void _go(Ws ws) {
     var name = _name.text.trim();
@@ -343,87 +377,188 @@ class _RenderState extends State<_Render> {
         String t(double s) => '${s.toStringAsFixed(2)} s';
         Widget row(String k, Widget v) => Padding(
           padding: EdgeInsets.only(bottom: Shape.s(8)),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [SizedBox(width: Shape.z(70), child: Text(k, style: T.label(Grey.g56))), Expanded(child: v)]),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: Shape.z(70),
+                child: Text(k, style: T.label(Grey.g56)),
+              ),
+              Expanded(child: v),
+            ],
+          ),
         );
         Text fact(String v) => Text(v, style: T.value(Grey.g91));
         // (Esc and ⌘. cancel, as a Mac dialog's Cancel does: Apple's; the keys reach here from the name field it holds)
         return CallbackShortcuts(
           bindings: {const SingleActivator(LogicalKeyboardKey.escape): _open.hide, const SingleActivator(LogicalKeyboardKey.period, meta: true): _open.hide},
           child: Stack(
-          children: [
-            Positioned.fill(child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: _open.hide, child: const ColoredBox(color: Color(0x88000000)))),
-            Center(
-              child: Container(
-                width: Shape.z(380),
-                padding: EdgeInsets.all(Shape.s(16)),
-                decoration: BoxDecoration(color: WsT.card, borderRadius: BorderRadius.all(Shape.r(8)), border: Border.all(color: WsT.line)),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.only(bottom: Shape.s(12)),
-                      child: Text('Render', style: T.title(Grey.g95).copyWith(fontWeight: FontWeight.w700)),
-                    ),
-                    row(
-                      'File',
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: Shape.s(8), vertical: Shape.s(5)),
-                        decoration: BoxDecoration(color: WsT.well, borderRadius: BorderRadius.all(Shape.r(4))),
-                        child: TextHand(field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
-                          controller: _name,
-                          focusNode: _focus,
-                          style: T.value(Grey.g95),
-                          cursorColor: WsT.accent,
-                          backgroundCursorColor: Grey.g38,
-                          maxLines: 1,
-                          onSubmitted: (_) => _go(ws),
-                        )),
-                      ),
-                    ),
-                    row('Folder', Text('${ws.documentFolder ?? ''}${_free.isEmpty ? '' : '  ·  $_free'}', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g76))),
-                    row('Range', fact('Work area  ${t(from)} – ${t(to)}  ·  $frames frames')),
-                    row('Size', fact('${WsArt.comp.width.round()} × ${WsArt.comp.height.round()}')),
-                    // (how it is written, the document's own and kept with it: Alight Motion's export rows; 0 as the stage is)
-                    for (final (label, name, choices) in [
-                      ('Resolution', 'render_height', [(0, 'Full'), for (final p in sizeResolutions) if (p < math.min(WsArt.comp.width, WsArt.comp.height)) (p, '${p}p')]),
-                      ('Rate', 'render_rate', [(0, '${Ws.fps}'), for (final r in const [30, 24, 15]) if (r < Ws.fps) (r, '$r')]),
-                      ('Quality', 'render_mbps', [(0, 'Auto'), for (final b in const [4, 8, 16, 32]) (b, '$b Mbps')]),
-                      ('Motion blur', 'render_blur', const [(0, 'Off'), (8, 'On')]),   // (After Effects' 180° shutter: eight moments laid on each picture)
-                      ('Background', 'render_alpha', const [(0, 'Solid'), (1, 'Clear')]),   // (clear where nothing is drawn: kept by PNG, GIF and a .mov's HEVC, kit_draw.h film)
-                    ])
-                      row(label, StatefulBuilder(builder: (context, again) {
-                        final m = ws.inside, now = (m?.value(0, name, 0) ?? 0).round();
-                        return Wrap(spacing: Shape.s(6), runSpacing: Shape.s(4), crossAxisAlignment: WrapCrossAlignment.center, children: [
-                          for (final (v, said) in choices)
-                            DeskChip(key: ValueKey('render-$name-$v'), label: said, on: now == v, onTap: m == null ? null : () => ws.after(m.later('set', thing: 0, name: name, number: v.toDouble()), (_, _) => mounted ? again(() {}) : null)),
-                          if (name == 'render_mbps' && now > 0) Text('about ${(now * (to - from) / 8).toStringAsFixed(1)} MB', key: const ValueKey('render-estimate'), style: T.label(Grey.g76)),   // (megabits a second over its seconds, as Alight Motion estimates it)
-                        ]);
-                      })),
-                    row('Format', StatefulBuilder(builder: (context, again) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Wrap(spacing: Shape.s(6), runSpacing: Shape.s(4), children: [
-                        for (final (label, ending, _) in _formats) DeskChip(key: ValueKey('render-$label'), label: label, on: _ending == ending, onTap: () => again(() => _as(ending))),
-                      ]),
-                      SizedBox(height: Shape.s(4)),
-                      Text(_formats.firstWhere((f) => f.$2 == _ending).$3, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g76)),   // (under them, one line: five chips leave no room beside)
-                    ]))),
-                    SizedBox(height: Shape.s(4)),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        GestureDetector(
-                          onTap: _open.hide,
-                          child: Padding(padding: EdgeInsets.symmetric(horizontal: Shape.s(12), vertical: Shape.s(6)), child: Text('Cancel', style: T.name(Grey.g76))),
-                        ),
-                        SizedBox(width: Shape.s(6)),
-                        Forms.worn.action(context, ActionSpec('Render', () => _go(ws))),
-                      ],
-                    ),
-                  ],
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _open.hide,
+                  child: const ColoredBox(color: Color(0x88000000)),
                 ),
               ),
-            ),
-          ],
+              Center(
+                child: Container(
+                  width: Shape.z(380),
+                  padding: EdgeInsets.all(Shape.s(16)),
+                  decoration: BoxDecoration(
+                    color: WsT.card,
+                    borderRadius: BorderRadius.all(Shape.r(8)),
+                    border: Border.all(color: WsT.line),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(bottom: Shape.s(12)),
+                        child: Text('Render', style: T.title(Grey.g95).copyWith(fontWeight: FontWeight.w700)),
+                      ),
+                      row(
+                        'File',
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: Shape.s(8), vertical: Shape.s(5)),
+                          decoration: BoxDecoration(color: WsT.well, borderRadius: BorderRadius.all(Shape.r(4))),
+                          child: TextHand(
+                            field: (k) => EditableText(
+                              key: k,
+                              rendererIgnoresPointer: true,
+                              controller: _name,
+                              focusNode: _focus,
+                              style: T.value(Grey.g95),
+                              cursorColor: WsT.accent,
+                              backgroundCursorColor: Grey.g38,
+                              maxLines: 1,
+                              onSubmitted: (_) => _go(ws),
+                            ),
+                          ),
+                        ),
+                      ),
+                      row(
+                        'Folder',
+                        Text(
+                          '${ws.documentFolder ?? ''}${_free.isEmpty ? '' : '  ·  $_free'}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: T.label(Grey.g76),
+                        ),
+                      ),
+                      row('Range', fact('Work area  ${t(from)} – ${t(to)}  ·  $frames frames')),
+                      row('Size', fact('${WsArt.comp.width.round()} × ${WsArt.comp.height.round()}')),
+                      // (how it is written, the document's own and kept with it: Alight Motion's export rows; 0 as the stage is)
+                      for (final (label, name, choices) in [
+                        (
+                          'Resolution',
+                          'render_height',
+                          [
+                            (0, 'Full'),
+                            for (final p in sizeResolutions)
+                              if (p < math.min(WsArt.comp.width, WsArt.comp.height)) (p, '${p}p'),
+                          ],
+                        ),
+                        (
+                          'Rate',
+                          'render_rate',
+                          [
+                            (0, '${Ws.fps}'),
+                            for (final r in const [30, 24, 15])
+                              if (r < Ws.fps) (r, '$r'),
+                          ],
+                        ),
+                        (
+                          'Quality',
+                          'render_mbps',
+                          [
+                            (0, 'Auto'),
+                            for (final b in const [4, 8, 16, 32]) (b, '$b Mbps'),
+                          ],
+                        ),
+                        ('Motion blur', 'render_blur', const [(0, 'Off'), (8, 'On')]), // (After Effects' 180° shutter: eight moments laid on each picture)
+                        (
+                          'Background',
+                          'render_alpha',
+                          const [(0, 'Solid'), (1, 'Clear')],
+                        ), // (clear where nothing is drawn: kept by PNG, GIF and a .mov's HEVC, kit_draw.h film)
+                      ])
+                        row(
+                          label,
+                          StatefulBuilder(
+                            builder: (context, again) {
+                              final m = ws.inside, now = (m?.value(0, name, 0) ?? 0).round();
+                              return Wrap(
+                                spacing: Shape.s(6),
+                                runSpacing: Shape.s(4),
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  for (final (v, said) in choices)
+                                    DeskChip(
+                                      key: ValueKey('render-$name-$v'),
+                                      label: said,
+                                      on: now == v,
+                                      onTap: m == null
+                                          ? null
+                                          : () => ws.after(m.later('set', thing: 0, name: name, number: v.toDouble()), (_, _) => mounted ? again(() {}) : null),
+                                    ),
+                                  if (name == 'render_mbps' && now > 0)
+                                    Text(
+                                      'about ${(now * (to - from) / 8).toStringAsFixed(1)} MB',
+                                      key: const ValueKey('render-estimate'),
+                                      style: T.label(Grey.g76),
+                                    ), // (megabits a second over its seconds, as Alight Motion estimates it)
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                      row(
+                        'Format',
+                        StatefulBuilder(
+                          builder: (context, again) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(
+                                spacing: Shape.s(6),
+                                runSpacing: Shape.s(4),
+                                children: [
+                                  for (final (label, ending, _) in _formats)
+                                    DeskChip(key: ValueKey('render-$label'), label: label, on: _ending == ending, onTap: () => again(() => _as(ending))),
+                                ],
+                              ),
+                              SizedBox(height: Shape.s(4)),
+                              Text(
+                                _formats.firstWhere((f) => f.$2 == _ending).$3,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: T.label(Grey.g76),
+                              ), // (under them, one line: five chips leave no room beside)
+                            ],
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: Shape.s(4)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          GestureDetector(
+                            onTap: _open.hide,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: Shape.s(12), vertical: Shape.s(6)),
+                              child: Text('Cancel', style: T.name(Grey.g76)),
+                            ),
+                          ),
+                          SizedBox(width: Shape.s(6)),
+                          Forms.worn.action(context, ActionSpec('Render', () => _go(ws))),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       },

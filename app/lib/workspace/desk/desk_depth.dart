@@ -9,7 +9,6 @@ import 'desk_kit.dart';
 import '../ws.dart';
 import '../two_fingers.dart';
 
-
 const _zMax = 3000.0;
 
 /// The lens, kept per document so leaving the desk and coming back keeps it.
@@ -43,7 +42,9 @@ const _filmMm = 12 / 0.2679491924311227;
   final stop = m.value(t, 'aperture', at) ?? 0, focus = m.value(t, 'focus', at) ?? 0;
   lens
     ..focal = (m.value(t, 'zoom', at) ?? 1) * _filmMm
-    ..fstop = stop > 0 ? stop : 22 // (nought, all sharp: the desk's narrowest)
+    ..fstop = stop > 0
+        ? stop
+        : 22 // (nought, all sharp: the desk's narrowest)
     ..focus = focus > 0 ? focus * p : eye;
   return (camera: t, eye: eye);
 }
@@ -66,7 +67,14 @@ List<_Slab> _slabsOf(Ws ws) {
   return [
     for (final l in ws.layers)
       if (eye != null && l.kind != WsKind.camera)
-        (id: l.id, name: l.name, tone: wsTone(l.kind), x: (m.value(int.parse(l.id), 'x', 0) ?? 0) * m.point, z: eye - (m.value(int.parse(l.id), 'z', 0) ?? 0) * m.point, w: m.frame(int.parse(l.id))?[2] ?? 200)
+        (
+          id: l.id,
+          name: l.name,
+          tone: wsTone(l.kind),
+          x: (m.value(int.parse(l.id), 'x', 0) ?? 0) * m.point,
+          z: eye - (m.value(int.parse(l.id), 'z', 0) ?? 0) * m.point,
+          w: m.frame(int.parse(l.id))?[2] ?? 200,
+        ),
   ];
 }
 
@@ -79,7 +87,7 @@ class DeskDepth extends StatefulWidget {
 class _DeskDepthState extends State<DeskDepth> {
   @override
   Widget build(BuildContext context) {
-    WsScope.pictureOf(context);   // (the lens as it is in the picture shown)
+    WsScope.pictureOf(context); // (the lens as it is in the picture shown)
     final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), lens = _lenses[ws] ??= _Lens(), joined = _lensOf(ws, lens);
     void edit(void Function() f) {
       setState(f);
@@ -87,8 +95,11 @@ class _DeskDepthState extends State<DeskDepth> {
     }
 
     final cam = ws.layers.where((l) => l.kind == WsKind.camera).firstOrNull;
-    if (joined != null) { // (joined: the thing the focus is on is the one nearest it of those it holds sharp, by the document's values)
-      final d = lens.dof, sharp = _slabsOf(ws).where((s) => s.z >= d.near && s.z <= d.far).toList()..sort((a, b) => (a.z - lens.focus).abs().compareTo((b.z - lens.focus).abs()));
+    if (joined != null) {
+      // (joined: the thing the focus is on is the one nearest it of those it holds sharp, by the document's values)
+      final d = lens.dof,
+          sharp = _slabsOf(ws).where((s) => s.z >= d.near && s.z <= d.far).toList()
+            ..sort((a, b) => (a.z - lens.focus).abs().compareTo((b.z - lens.focus).abs()));
       lens.target = sharp.firstOrNull?.id;
     }
     final target = ws.layers.where((l) => l.id == lens.target).firstOrNull;
@@ -97,51 +108,52 @@ class _DeskDepthState extends State<DeskDepth> {
       onPointerUp: joined == null
           ? null
           : (_) {
-              ws.after(ws.inside!.later('let_go', number: 1));   // (without waiting)
+              ws.after(ws.inside!.later('let_go', number: 1)); // (without waiting)
             },
       child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        DeskStrip(
-          left: [
-            DeskLayerChip(cam?.name ?? 'Camera', WsT.toneCamera),
-            SizedBox(width: Shape.s(8)),
-            Text('${lens.focal.round()} mm', style: T.value(Grey.g91)),
-            SizedBox(width: Shape.s(8)),
-            Text('f/${lens.fstop.toStringAsFixed(1)}', style: T.value(Grey.g91)),
-            SizedBox(width: Shape.s(8)),
-            Text('${(lens.fov * 180 / math.pi).toStringAsFixed(1)}° view', style: T.label(Grey.g56)),
-          ],
-          right: [DeskChip(label: target == null ? 'Focus free' : 'On ${target.name}', dot: target == null ? Grey.g56 : wsTone(target.kind))],
-        ),
-        const SizedBox(height: WsT.gutter),
-        Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: ColoredBox(
-                  color: WsT.card,
-                  child: _Diagram(
-                    lens: lens,
-                    onFocus: (z, id) => edit(() {
-                      lens.focus = z.clamp(100.0, _zMax);
-                      lens.target = id;
-                    }),
-                    onFocal: (f) => edit(() => lens.focal = f.clamp(8.0, 600.0)), // (the cone's edge pulled: a narrower view is a longer lens)
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DeskStrip(
+            left: [
+              DeskLayerChip(cam?.name ?? 'Camera', WsT.toneCamera),
+              SizedBox(width: Shape.s(8)),
+              Text('${lens.focal.round()} mm', style: T.value(Grey.g91)),
+              SizedBox(width: Shape.s(8)),
+              Text('f/${lens.fstop.toStringAsFixed(1)}', style: T.value(Grey.g91)),
+              SizedBox(width: Shape.s(8)),
+              Text('${(lens.fov * 180 / math.pi).toStringAsFixed(1)}° view', style: T.label(Grey.g56)),
+            ],
+            right: [DeskChip(label: target == null ? 'Focus free' : 'On ${target.name}', dot: target == null ? Grey.g56 : wsTone(target.kind))],
+          ),
+          const SizedBox(height: WsT.gutter),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: ColoredBox(
+                    color: WsT.card,
+                    child: _Diagram(
+                      lens: lens,
+                      onFocus: (z, id) => edit(() {
+                        lens.focus = z.clamp(100.0, _zMax);
+                        lens.target = id;
+                      }),
+                      onFocal: (f) => edit(() => lens.focal = f.clamp(8.0, 600.0)), // (the cone's edge pulled: a narrower view is a longer lens)
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: WsT.gutter),
-              SizedBox(
-                width: Shape.z(128),
-                child: _LensNumbers(lens: lens, onEdit: edit),
-              ),
-            ],
+                const SizedBox(width: WsT.gutter),
+                SizedBox(
+                  width: Shape.z(128),
+                  child: _LensNumbers(lens: lens, onEdit: edit),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
-    ));
+        ],
+      ),
+    );
   }
 }
 
@@ -349,10 +361,14 @@ class _DepthPainter extends CustomPainter {
     // (a knob on the cone's edge: pulled across, it opens or closes the view)
     final knobZ = _zMax * .45, knob = m.at(knobZ * math.tan(half), knobZ);
     c.drawCircle(knob, 6, Paint()..color = WsT.toneCamera);
-    c.drawCircle(knob, 6, Paint()
-      ..color = WsT.card
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5);
+    c.drawCircle(
+      knob,
+      6,
+      Paint()
+        ..color = WsT.card
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
     c.restore();
     // The focus line and its tag.
     final y = m.at(0, focus).dy;

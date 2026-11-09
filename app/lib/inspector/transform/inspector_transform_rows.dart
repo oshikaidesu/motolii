@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/forms/forms.dart';
 import 'package:motolii/inspector/rows/inspector_rows_prop_row.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
+
 import '../../style/tokens.dart';
 import 'inspector_direct_transform.dart';
 import '../inspector_parts.dart';
@@ -17,14 +18,18 @@ class SpaceRow extends StatelessWidget {
     // (only the spaces the document takes for it, by its words: a flat thing's 2d and 2.5d; offered 3D, it was refused
     //  and the plate stayed lit as if taken: golf P05)
     final words = doc.choices['v_space'] ?? const <String>[];
-    final offered = [for (final s in Space.values) if (words.isEmpty || words.contains(const {Space.d2: '2d', Space.d25: '2.5d', Space.d3: '3d'}[s])) s];
+    final offered = [
+      for (final s in Space.values)
+        if (words.isEmpty || words.contains(const {Space.d2: '2d', Space.d25: '2.5d', Space.d3: '3d'}[s])) s,
+    ];
     return PropRow(
       id: 'v_space',
       label: 'Space',
       keyable: false,
       enabled: !x.cfg.locked,
       cells: [
-        Forms.worn.choice( // (as the skin's forms draw one of a few)
+        Forms.worn.choice(
+          // (as the skin's forms draw one of a few)
           context,
           ChoiceSpec(
             labels: [for (final s in offered) spaceNames[s]!],
@@ -74,8 +79,15 @@ class GlyphPlate extends StatelessWidget {
             children: [
               CustomPaint(size: const Size(16, 14), painter: _GlyphPaint(glyph, ink)),
               SizedBox(width: Shape.s(6)),
-              Flexible( // (narrow, the word gives way; the glyph stays)
-                child: Text(label, maxLines: 1, overflow: TextOverflow.clip, softWrap: false, style: pop ? T.micro(on ? Pop.onAccent : Grey.g76).copyWith(fontWeight: FontWeight.w700) : T.label(on ? Grey.g95 : Grey.g63)),
+              Flexible(
+                // (narrow, the word gives way; the glyph stays)
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.clip,
+                  softWrap: false,
+                  style: pop ? T.micro(on ? Pop.onAccent : Grey.g76).copyWith(fontWeight: FontWeight.w700) : T.label(on ? Grey.g95 : Grey.g63),
+                ),
               ),
             ],
           ),
@@ -165,13 +177,22 @@ class ScaleRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc;
-    final flat = doc.space == Space.d2 && doc.kindWord != 'Solid' && (doc.get('v_scale_z') ?? 100) == 100;   // (a 2D layer's Scale has no Z, After Effects'; given a thickness already, it shows)
-    final axes = [for (final a in const ['x', 'y', 'z']) if (doc.seat('v_scale_$a') && !(flat && a == 'z')) a]; // (only the axes the thing has: a light none, a film no depth)
+    final flat =
+        doc.space == Space.d2 &&
+        doc.kindWord != 'Solid' &&
+        (doc.get('v_scale_z') ?? 100) == 100; // (a 2D layer's Scale has no Z, After Effects'; given a thickness already, it shows)
+    final axes = [
+      for (final a in const ['x', 'y', 'z'])
+        if (doc.seat('v_scale_$a') && !(flat && a == 'z')) a,
+    ]; // (only the axes the thing has: a light none, a film no depth)
     if (axes.isEmpty) return const SizedBox.shrink();
     // contract: with the link on, a factor applies to every axis (2:3, X=4 gives 4:6); unlinked writes only the touched axis; a zero axis gets the typed value (E1). Toggling the link changes nothing.
     void set(String a, double v) {
       final id = 'v_scale_$a';
-      final linked = [for (final o in axes) if (o != 'z' || doc.kindWord == 'Solid') o];   // (a flat thing's Z is its thickness, no part of its size)
+      final linked = [
+        for (final o in axes)
+          if (o != 'z' || doc.kindWord == 'Solid') o,
+      ]; // (a flat thing's Z is its thickness, no part of its size)
       if (!doc.link || !linked.contains(a)) {
         doc.set(id, v);
         return;
@@ -210,7 +231,11 @@ class RotRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // contract: rotation keeps its turns, typed 450 stays 450 and reads "1x 90" (B5).
-    final doc = Ctx.of(context).doc, flat = doc.space == Space.d2 && (doc.get('v_rotate_x') ?? 0) == 0 && (doc.get('v_rotate_y') ?? 0) == 0;   // (a 2D layer's one Rotation, After Effects'; tilted already, its own two stay in sight)
+    final doc = Ctx.of(context).doc,
+        flat =
+            doc.space == Space.d2 &&
+            (doc.get('v_rotate_x') ?? 0) == 0 &&
+            (doc.get('v_rotate_y') ?? 0) == 0; // (a 2D layer's one Rotation, After Effects'; tilted already, its own two stay in sight)
     return PropRow(
       id: 'v_rotate',
       label: 'Rotation',

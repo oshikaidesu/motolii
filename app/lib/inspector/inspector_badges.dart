@@ -1,5 +1,7 @@
 import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
+
 import '../style/tokens.dart';
 import 'inspector_parts.dart';
 
@@ -189,7 +191,10 @@ class _MarkPaint extends CustomPainter {
         c.drawRRect(RRect.fromRectAndRadius(Rect.fromPoints(p(1, -1), p(6, 1.6)), Radius.circular(.8 * u)), Paint()..color = ink.withValues(alpha: .5));
         c.drawRRect(RRect.fromRectAndRadius(Rect.fromPoints(p(2.2, -1), p(4.8, 6)), Radius.circular(.8 * u)), Paint()..color = ink.withValues(alpha: .5));
       case CardMark.mask:
-        c.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: o, width: Shape.z(13) * u, height: Shape.z(13) * u), Radius.circular(2.4 * u)), stroke(1.4));
+        c.drawRRect(
+          RRect.fromRectAndRadius(Rect.fromCenter(center: o, width: Shape.z(13) * u, height: Shape.z(13) * u), Radius.circular(2.4 * u)),
+          stroke(1.4),
+        );
         c.drawCircle(o, 3.6 * u, fill);
       case CardMark.clock:
         c.drawCircle(o, 6 * u, stroke(1.6));
@@ -228,8 +233,14 @@ class _MarkPaint extends CustomPainter {
         c.drawRRect(RRect.fromRectAndRadius(Rect.fromPoints(p(-6, -6), p(2, 2)), Radius.circular(1.4 * u)), stroke(1.4));
         c.drawRRect(RRect.fromRectAndRadius(Rect.fromPoints(p(-2, -2), p(6, 6)), Radius.circular(1.4 * u)), fill);
       case CardMark.link:
-        c.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: p(-2.6, 0), width: Shape.z(8) * u, height: Shape.z(5) * u), Radius.circular(2.5 * u)), stroke(1.6));
-        c.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: p(2.6, 0), width: Shape.z(8) * u, height: Shape.z(5) * u), Radius.circular(2.5 * u)), stroke(1.6));
+        c.drawRRect(
+          RRect.fromRectAndRadius(Rect.fromCenter(center: p(-2.6, 0), width: Shape.z(8) * u, height: Shape.z(5) * u), Radius.circular(2.5 * u)),
+          stroke(1.6),
+        );
+        c.drawRRect(
+          RRect.fromRectAndRadius(Rect.fromCenter(center: p(2.6, 0), width: Shape.z(8) * u, height: Shape.z(5) * u), Radius.circular(2.5 * u)),
+          stroke(1.6),
+        );
     }
   }
 

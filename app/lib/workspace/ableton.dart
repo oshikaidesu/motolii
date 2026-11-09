@@ -41,7 +41,7 @@ Map<String, void Function()> wsAbletonCommands(Ws ws) {
     if (m == null) return;
     if (ws.keys.isNotEmpty) {
       wsSlideKeys(ws, ws.keys.toList(), by);
-      ws.pickKeys([for (final k in ws.keys) (layer: k.layer, frame: (k.frame + by).clamp(0, Ws.duration))]);   // (still picked, where they now are)
+      ws.pickKeys([for (final k in ws.keys) (layer: k.layer, frame: (k.frame + by).clamp(0, Ws.duration))]); // (still picked, where they now are)
       return;
     }
     final t = int.tryParse(ws.selected ?? '');
@@ -59,7 +59,8 @@ Map<String, void Function()> wsAbletonCommands(Ws ws) {
   }
 
   return {
-    'play.fromStart': () {   // (Live 42.20 Space: play from the start marker / stop, back at it)
+    'play.fromStart': () {
+      // (Live 42.20 Space: play from the start marker / stop, back at it)
       if (ws.playing) {
         ws.playing = false;
         if (_playFrom case final f?) ws.frame = f;
@@ -68,7 +69,8 @@ Map<String, void Function()> wsAbletonCommands(Ws ws) {
         ws.playing = true;
       }
     },
-    'play.continue': () {   // (Live 42.20 Shift+Space: continue play from the stop point)
+    'play.continue': () {
+      // (Live 42.20 Shift+Space: continue play from the stop point)
       _playFrom = null;
       ws.playing = !ws.playing;
     },
@@ -78,24 +80,27 @@ Map<String, void Function()> wsAbletonCommands(Ws ws) {
     'nudge.right10': () => nudge(10),
     'layer.previous': () => row(-1),
     'layer.next': () => row(1),
-    'thing.rename': () => ws.selected == null && wsMarkPicked.value == null ? null : wsAskRename.value++,   // (Live 42.5/42.19 Cmd+R: the picked track, or the picked locator)
-    'thing.solo': () {   // (Live 42.15/42.19 S: solo selected tracks)
+    'thing.rename': () =>
+        ws.selected == null && wsMarkPicked.value == null ? null : wsAskRename.value++, // (Live 42.5/42.19 Cmd+R: the picked track, or the picked locator)
+    'thing.solo': () {
+      // (Live 42.15/42.19 S: solo selected tracks)
       final t = int.tryParse(ws.selected ?? ''), m = ws.inside;
       if (t == null || m == null) return;
       ws.after(m.later('set', thing: t, name: 'solo', number: ws.layer?.solo == true ? 0 : 1));
     },
-    'thing.lanes': () {   // (After Effects' U: the picked layers' keyed properties shown, pressed again gone)
+    'thing.lanes': () {
+      // (After Effects' U: the picked layers' keyed properties shown, pressed again gone)
       final ids = {...ws.many, ?ws.selected};
       if (ids.isNotEmpty) ws.twirl(ids);
     },
-    'mark.animate': () => ws.animating = !ws.animating,   // (Apple Motion's A, Mark > Record Animation: the top bar's Animate, the inspector's Animate all)
-    'loop.toggle': () => wsAskTimeline('loop'),   // (Live 42.16 Cmd+L: toggle loop brace)
-    'zoom.in': () => wsAskTimeline('in'),   // (Live 42.9 +: zoom in time ruler)
-    'zoom.out': () => wsAskTimeline('out'),   // (Live 42.9 -)
-    'zoom.selection': () => wsAskTimeline('selection'),   // (Live 42.16 Z: zoom to arrangement time selection)
-    'zoom.back': () => wsAskTimeline('back'),   // (Live 42.16 X: zoom back)
-    'zoom.width': () => wsAskTimeline('fit'),   // (Live 42.16 W: optimize arrangement width)
-    'frame.previous': () => step(-1),   // (Live has no frame step; Rive's and Jitter's , and .)
+    'mark.animate': () => ws.animating = !ws.animating, // (Apple Motion's A, Mark > Record Animation: the top bar's Animate, the inspector's Animate all)
+    'loop.toggle': () => wsAskTimeline('loop'), // (Live 42.16 Cmd+L: toggle loop brace)
+    'zoom.in': () => wsAskTimeline('in'), // (Live 42.9 +: zoom in time ruler)
+    'zoom.out': () => wsAskTimeline('out'), // (Live 42.9 -)
+    'zoom.selection': () => wsAskTimeline('selection'), // (Live 42.16 Z: zoom to arrangement time selection)
+    'zoom.back': () => wsAskTimeline('back'), // (Live 42.16 X: zoom back)
+    'zoom.width': () => wsAskTimeline('fit'), // (Live 42.16 W: optimize arrangement width)
+    'frame.previous': () => step(-1), // (Live has no frame step; Rive's and Jitter's , and .)
     'frame.next': () => step(1),
     'frame.previousStop': () => hop(-1),
     'frame.nextStop': () => hop(1),

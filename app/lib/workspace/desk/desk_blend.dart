@@ -49,7 +49,11 @@ class _RowState extends State<_Row> {
       decoration: BoxDecoration(color: widget.picked ? WsT.well : null, borderRadius: BorderRadius.all(Shape.r(5))),
       child: Row(
         children: [
-          Container(width: Shape.z(4), height: Shape.z(18), decoration: BoxDecoration(color: wsTone(l.kind), borderRadius: BorderRadius.all(Shape.r(2)))),
+          Container(
+            width: Shape.z(4),
+            height: Shape.z(18),
+            decoration: BoxDecoration(color: wsTone(l.kind), borderRadius: BorderRadius.all(Shape.r(2))),
+          ),
           SizedBox(width: Shape.s(8)),
           Expanded(
             child: GestureDetector(
@@ -59,22 +63,53 @@ class _RowState extends State<_Row> {
             ),
           ),
           if (ways.isNotEmpty) ...[
-            SizedBox(width: Shape.z(74), child: Text(now.replaceAll('_', ' '), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: T.micro(now == 'normal' ? Grey.g56 : Grey.g91))),   // (its way, named: two ways can look alike small)
+            SizedBox(
+              width: Shape.z(74),
+              child: Text(
+                now.replaceAll('_', ' '),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+                style: T.micro(now == 'normal' ? Grey.g56 : Grey.g91),
+              ),
+            ), // (its way, named: two ways can look alike small)
             SizedBox(width: Shape.s(4)),
-            DeskIconButton(key: ValueKey('blend.${l.id}'), size: Shape.z(24), on: _open, glyph: (ink) => _Way(now, ink), onTap: () => setState(() => _open = !_open)),
+            DeskIconButton(
+              key: ValueKey('blend.${l.id}'),
+              size: Shape.z(24),
+              on: _open,
+              glyph: (ink) => _Way(now, ink),
+              onTap: () => setState(() => _open = !_open),
+            ),
             SizedBox(width: Shape.s(8)),
-            SizedBox(width: Shape.z(64), height: Shape.z(18), child: _Opacity(key: ValueKey('opacity.${l.id}'), thing: t!, value: opacity)),
+            SizedBox(
+              width: Shape.z(64),
+              height: Shape.z(18),
+              child: _Opacity(key: ValueKey('opacity.${l.id}'), thing: t!, value: opacity),
+            ),
             SizedBox(width: Shape.s(6)),
-            if (l == ws.layers.last) SizedBox(width: Shape.s(24))   // (the back-most: nothing under it to clip to)
+            if (l == ws.layers.last)
+              SizedBox(width: Shape.s(24)) // (the back-most: nothing under it to clip to)
             else
-              DeskIconButton(key: ValueKey('clip.${l.id}'), size: Shape.z(24), on: clip, glyph: (ink) => _Clip(ink), onTap: () {
-                ws.after(m!.later('set', thing: t, name: 'clip', number: clip ? 0 : 1));
-              }),
+              DeskIconButton(
+                key: ValueKey('clip.${l.id}'),
+                size: Shape.z(24),
+                on: clip,
+                glyph: (ink) => _Clip(ink),
+                onTap: () {
+                  ws.after(m!.later('set', thing: t, name: 'clip', number: clip ? 0 : 1));
+                },
+              ),
           ],
         ],
       ),
     );
-    if (!_open || ways.isEmpty) return Padding(padding: EdgeInsets.only(bottom: Shape.s(3)), child: row);
+    if (!_open || ways.isEmpty) {
+      return Padding(
+        padding: EdgeInsets.only(bottom: Shape.s(3)),
+        child: row,
+      );
+    }
     // (every way, in After Effects' groups: normal; darker; lighter; contrast; difference; colour. The way under the
     //  hand, or the one it lies, named once under them)
     final groups = <List<String>>[[], [], [], [], [], []];
@@ -104,7 +139,13 @@ class _RowState extends State<_Row> {
                       MouseRegion(
                         onEnter: (_) => setState(() => _hover = w),
                         onExit: (_) => setState(() => _hover = null),
-                        child: DeskIconButton(key: ValueKey('blend.${l.id}.$w'), size: Shape.z(26), on: w == now, glyph: (ink) => _Way(w, ink), onTap: () => say('blend', w)),
+                        child: DeskIconButton(
+                          key: ValueKey('blend.${l.id}.$w'),
+                          size: Shape.z(26),
+                          on: w == now,
+                          glyph: (ink) => _Way(w, ink),
+                          onTap: () => say('blend', w),
+                        ),
                       ),
                   ],
               ],
@@ -164,7 +205,7 @@ class _OpacityState extends State<_Opacity> {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) => Listener(
       onPointerDown: (e) => e.buttons == kPrimaryButton ? _to(e.localPosition.dx, box.maxWidth) : null,
-      onPointerMove: (e) => _held != null ? _to(e.localPosition.dx, box.maxWidth) : null,   // (only a drag that began with the first button)
+      onPointerMove: (e) => _held != null ? _to(e.localPosition.dx, box.maxWidth) : null, // (only a drag that began with the first button)
       onPointerUp: (_) => _letGo(),
       onPointerCancel: (_) => _letGo(),
       child: CustomPaint(painter: _Bar(_held ?? widget.value)),
@@ -197,19 +238,42 @@ class _Way extends CustomPainter {
   final Color ink;
   static const _under = Color(0xFFCC4D33), _over = Color(0xFF3380E6);
   static const _meets = <String, Color>{
-    'normal': Color(0xFF3380E6), 'add': Color(0xFFD193EA), 'multiply': Color(0xFF27222D), 'screen': Color(0xFFCE8FE7),
-    'darken': Color(0xFF334D33), 'lighten': Color(0xFFCC80E6), 'overlay': Color(0xFFAD4D5C), 'soft_light': Color(0xFFB34D66),
-    'hard_light': Color(0xFF524ED7), 'color_dodge': Color(0xFFFF9BFF), 'color_burn': Color(0xFF00001D), 'difference': Color(0xFF9933B3),
-    'exclusion': Color(0xFFAD80BD), 'hue': Color(0xFF397AD2), 'saturation': Color(0xFFDC4729), 'color': Color(0xFF2F7CE2), 'luminosity': Color(0xFFD05137),
-    'linear_burn': Color(0xFF00001A), 'linear_light': Color(0xFF334EFF), 'vivid_light': Color(0xFF804DFF), 'pin_light': Color(0xFF664DCD),
-    'darker_color': Color(0xFFCC4D33), 'lighter_color': Color(0xFF3380E6), 'subtract': Color(0xFF990000), 'divide': Color(0xFFFF9939),
+    'normal': Color(0xFF3380E6),
+    'add': Color(0xFFD193EA),
+    'multiply': Color(0xFF27222D),
+    'screen': Color(0xFFCE8FE7),
+    'darken': Color(0xFF334D33),
+    'lighten': Color(0xFFCC80E6),
+    'overlay': Color(0xFFAD4D5C),
+    'soft_light': Color(0xFFB34D66),
+    'hard_light': Color(0xFF524ED7),
+    'color_dodge': Color(0xFFFF9BFF),
+    'color_burn': Color(0xFF00001D),
+    'difference': Color(0xFF9933B3),
+    'exclusion': Color(0xFFAD80BD),
+    'hue': Color(0xFF397AD2),
+    'saturation': Color(0xFFDC4729),
+    'color': Color(0xFF2F7CE2),
+    'luminosity': Color(0xFFD05137),
+    'linear_burn': Color(0xFF00001A),
+    'linear_light': Color(0xFF334EFF),
+    'vivid_light': Color(0xFF804DFF),
+    'pin_light': Color(0xFF664DCD),
+    'darker_color': Color(0xFFCC4D33),
+    'lighter_color': Color(0xFF3380E6),
+    'subtract': Color(0xFF990000),
+    'divide': Color(0xFFFF9939),
   };
   @override
   void paint(Canvas c, Size s) {
     final r = s.shortestSide * .27, a = Offset(s.width * .38, s.height / 2), b = Offset(s.width * .62, s.height / 2);
     c.drawCircle(a, r, Paint()..color = _under);
     c.drawCircle(b, r, Paint()..color = _over);
-    final lens = Path.combine(PathOperation.intersect, Path()..addOval(Rect.fromCircle(center: a, radius: r)), Path()..addOval(Rect.fromCircle(center: b, radius: r)));
+    final lens = Path.combine(
+      PathOperation.intersect,
+      Path()..addOval(Rect.fromCircle(center: a, radius: r)),
+      Path()..addOval(Rect.fromCircle(center: b, radius: r)),
+    );
     c.drawPath(lens, Paint()..color = _meets[way] ?? _over);
   }
 
@@ -224,10 +288,13 @@ class _Clip extends CustomPainter {
   @override
   void paint(Canvas c, Size s) {
     final box = Rect.fromCenter(center: s.center(Offset.zero), width: s.width * .46, height: s.height * .46);
-    c.drawRect(box, Paint()
-      ..color = ink.withValues(alpha: .5)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1);
+    c.drawRect(
+      box,
+      Paint()
+        ..color = ink.withValues(alpha: .5)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
     c.save();
     c.clipRect(box);
     c.drawCircle(box.topRight, box.width * .7, Paint()..color = ink);

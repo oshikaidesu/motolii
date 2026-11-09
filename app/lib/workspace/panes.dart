@@ -14,7 +14,7 @@ import 'ws.dart';
 class WsPane {
   const WsPane(this.name, this.glyph, this.build, {this.minSize = 160, this.iconOnly = false});
   final String name;
-  final DockG? glyph;   // (none: the pane's first letter)
+  final DockG? glyph; // (none: the pane's first letter)
   final Widget Function() build;
   final double minSize;
   final bool iconOnly;
@@ -46,7 +46,9 @@ class _WsPanesState extends State<WsPanes> {
     if (ws == _ws) return;
     _ws?.on[WsAspect.fronted]!.removeListener(_follow);
     _ws?.on[WsAspect.shelf]!.removeListener(_follow);
-    _ws = ws..on[WsAspect.fronted]!.addListener(_follow)..on[WsAspect.shelf]!.addListener(_follow);   // (a shelf named by anyone, not only a tab: brought to the front)
+    _ws = ws
+      ..on[WsAspect.fronted]!.addListener(_follow)
+      ..on[WsAspect.shelf]!.addListener(_follow); // (a shelf named by anyone, not only a tab: brought to the front)
     _shelf = ws.shelf;
   }
 
@@ -59,7 +61,8 @@ class _WsPanesState extends State<WsPanes> {
 
   (String, int)? _fronted;
   void _follow() {
-    if (_ws!.fronted case final f? when f != _fronted) {   // (a pane asked to the front)
+    if (_ws!.fronted case final f? when f != _fronted) {
+      // (a pane asked to the front)
       _fronted = f;
       _toFront(f.$1);
     }
@@ -142,7 +145,13 @@ TabbedViewThemeData _tabs() {
     ..normalButtonColor = Grey.g56
     ..hoverButtonColor = Grey.g91;
   t.tab
-    ..padding = EdgeInsets.fromLTRB(Shape.s(plain ? 4 : 8), Shape.s(5), Shape.s(plain ? 4 : 8), Shape.s(5))   // (seven shelf tabs fit a dock squeezed to 229 by a 1280 window)
+    ..padding =
+        EdgeInsets.fromLTRB(
+          Shape.s(plain ? 4 : 8),
+          Shape.s(5),
+          Shape.s(plain ? 4 : 8),
+          Shape.s(5),
+        ) // (seven shelf tabs fit a dock squeezed to 229 by a 1280 window)
     ..margin = EdgeInsets.zero
     ..innerBottomBorder = null
     ..innerTopBorder = null

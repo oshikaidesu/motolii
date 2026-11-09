@@ -3,7 +3,7 @@
 part of 'ws.dart';
 
 extension WsFx on Ws {
-  static List<String> fxFiles(String fx) => Ws.fxFiles(fx);   // (the class's own statics, named as these name them)
+  static List<String> fxFiles(String fx) => Ws.fxFiles(fx); // (the class's own statics, named as these name them)
   static int get fps => Ws.fps;
 
   /// Joined: the effects on the picked thing (its fx: as the camera sees it, After Effects' effects on a layer), nearest
@@ -21,11 +21,7 @@ extension WsFx on Ws {
     final m = _inside;
     if (m == null) return const {};
     return {
-      for (final t in m.things) ...[
-        ...fxFiles(m.word(t, 'fx')),
-        ...fxOf('$t'),
-        if (m.word(t, 'script') case final s when s.isNotEmpty && s != 'none') s,
-      ],
+      for (final t in m.things) ...[...fxFiles(m.word(t, 'fx')), ...fxOf('$t'), if (m.word(t, 'script') case final s when s.isNotEmpty && s != 'none') s],
     };
   }
 
@@ -76,7 +72,7 @@ extension WsFx on Ws {
     final had = screenFx, dot = file.lastIndexOf('.');
     if (!had.contains(file)) return screenToggle(file);
     if (!file.endsWith('.fs') && !file.endsWith('.wgsl')) {
-      notice = 'Not taken: only an ISF or a .wgsl effect is put on again so far';   // (the inside's words, doc_fx_duplicate)
+      notice = 'Not taken: only an ISF or a .wgsl effect is put on again so far'; // (the inside's words, doc_fx_duplicate)
       return false;
     }
     var n = 2;
@@ -92,7 +88,7 @@ extension WsFx on Ws {
     if (_trying) after(m.later('let_go', number: 0));
     _trying = file != null && t != null;
     if (!_trying) return;
-    after(m.later('hold', thing: t!));   // (without waiting, as Align's hold: the shelf's hand never stands still for it)
+    after(m.later('hold', thing: t!)); // (without waiting, as Align's hold: the shelf's hand never stands still for it)
     after(m.later('carry', name: 'effect', word: file!));
   }
 
@@ -110,7 +106,7 @@ extension WsFx on Ws {
     final m = _inside, t = int.tryParse(selected ?? '');
     if (m == null) return;
     if (t == null) return whole('rect', (m) => m.later('say', thing: -1, name: 'script', word: file));
-    after(m.later('say', thing: t, name: 'script', word: motion == file ? 'none' : file));   // (without waiting)
+    after(m.later('say', thing: t, name: 'script', word: motion == file ? 'none' : file)); // (without waiting)
   }
 
   /// Joined: an effect of the shelf put on the picked thing as it comes, or taken off (one step either way). Nothing
@@ -120,7 +116,7 @@ extension WsFx on Ws {
     final m = _inside, t = int.tryParse(selected ?? '');
     if (m == null) return;
     if (t == null) return whole('rect', (m) => m.later('effect', thing: -1, name: name, number: frame / fps));
-    after(m.later('effect', thing: t, name: name, number: frame / fps));   // (without waiting)
+    after(m.later('effect', thing: t, name: name, number: frame / fps)); // (without waiting)
   }
 
   /// Joined: a look kept by its name given to the picked thing; nothing picked, to a new board, as [motionToggle].

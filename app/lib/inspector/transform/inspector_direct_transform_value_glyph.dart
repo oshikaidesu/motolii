@@ -96,7 +96,10 @@ class _GlyphPaint extends CustomPainter {
             c.drawRect(Rect.fromLTWH(r.left + x * cell, r.top + y * cell, cell, cell), Paint()..color = (x + y).isEven ? Grey.g26 : Grey.g15);
           }
         }
-        c.drawRect(r, Paint()..color = ink.withValues(alpha: .1 + .7 * (v[0] / 100).clamp(0, 1))); // (the checks always show through a little: the mark of how much is seen)
+        c.drawRect(
+          r,
+          Paint()..color = ink.withValues(alpha: .1 + .7 * (v[0] / 100).clamp(0, 1)),
+        ); // (the checks always show through a little: the mark of how much is seen)
         c.drawRect(r, rim);
       case ValueShape.depth:
         final off = (v[0] / 25).clamp(0.0, 5.0);

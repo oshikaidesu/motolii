@@ -12,9 +12,18 @@ class _Box {
   final _Gradient? grad;
 }
 
-int _dice = 0;   // (the dice's last throw: the boxes' shapes)
-const _rainbow = [Color(0xFFFF3B30), Color(0xFFFF9500), Color(0xFFFFCC00), Color(0xFF34C759), Color(0xFF00C7BE), Color(0xFF007AFF), Color(0xFFAF52DE), Color(0xFFFF3B30)];
-final _hovered = ValueNotifier<String?>(null);   // (the group of the box the hand is on)
+int _dice = 0; // (the dice's last throw: the boxes' shapes)
+const _rainbow = [
+  Color(0xFFFF3B30),
+  Color(0xFFFF9500),
+  Color(0xFFFFCC00),
+  Color(0xFF34C759),
+  Color(0xFF00C7BE),
+  Color(0xFF007AFF),
+  Color(0xFFAF52DE),
+  Color(0xFFFF3B30),
+];
+final _hovered = ValueNotifier<String?>(null); // (the group of the box the hand is on)
 
 /// Where each box lies, in cells: its shape thrown by the dice (a colour that is more of the picture, a larger box; a
 /// gradient wide), then each put where it first fits from the top left and the gaps filled by later ones (CSS Grid's
@@ -31,17 +40,27 @@ List<(int, int, int, int)> _packed(List<_Box> boxes, int cols, int seed) {
     }
     return true;
   }
+
   for (final b in boxes) {
-    var thrown = 0;   // (the last throw that took this box up)
+    var thrown = 0; // (the last throw that took this box up)
     for (var d = 1; d <= seed; d++) {
       if (math.Random(Object.hash(d, b.group, b.i, 7)).nextDouble() < .35) thrown = d;
     }
     final r = math.Random(Object.hash(thrown, b.group, b.i));
-    final shapes = b.grad != null ? const [(2, 1), (3, 1), (2, 2)] : b.weight >= 1.6 ? const [(2, 2), (3, 2), (2, 3), (3, 3)] : b.weight >= .9 ? const [(2, 1), (1, 2), (2, 2), (1, 1)] : const [(1, 1), (1, 1), (1, 2), (2, 1)];
+    final shapes = b.grad != null
+        ? const [(2, 1), (3, 1), (2, 2)]
+        : b.weight >= 1.6
+        ? const [(2, 2), (3, 2), (2, 3), (3, 3)]
+        : b.weight >= .9
+        ? const [(2, 1), (1, 2), (2, 2), (1, 1)]
+        : const [(1, 1), (1, 1), (1, 2), (2, 1)];
     final (w0, h) = shapes[r.nextInt(shapes.length)];
     final w = math.min(w0, cols);
-    for (var y = 0;; y++) {
-      final x = [for (var x = 0; x < cols; x++) if (free(x, y, w, h)) x].firstOrNull;
+    for (var y = 0; ; y++) {
+      final x = [
+        for (var x = 0; x < cols; x++)
+          if (free(x, y, w, h)) x,
+      ].firstOrNull;
       if (x == null) continue;
       for (var j = y; j < y + h; j++) {
         taken.putIfAbsent(j, () => {}).addAll([for (var i = x; i < x + w; i++) i]);
@@ -54,7 +73,7 @@ List<(int, int, int, int)> _packed(List<_Box> boxes, int cols, int seed) {
 }
 
 final _boxMenu = GlobalKey<WsMenuState>();
-(String, List<(int, int, int, int)>)? _bentoLaid;   // (the last laying out, by what it was laid for)
+(String, List<(int, int, int, int)>)? _bentoLaid; // (the last laying out, by what it was laid for)
 
 /// How large a box is, any size the maker likes (the user: not a few steps, "任意で数値を"): a size slider over the
 /// grid, as the Browser study's (sets/studies/panel_browser_b_8.dart, "size"), Finder's icon size, Photoshop's
@@ -126,20 +145,30 @@ class _ColourBox extends StatelessWidget {
         onSecondaryTapDown: (d) {
           final items = [
             if (own) ...[
-              WsMenuItem('Replace with ${_hex(_wheel.toColor())}', () => c.set(() {
-                _mineColours[b.i] = _wheel.toColor();
-                _keepMine();
-              })),
-              WsMenuItem('Delete', () => c.set(() {
-                _mineColours.removeAt(b.i);
-                _keepMine();
-              })),
+              WsMenuItem(
+                'Replace with ${_hex(_wheel.toColor())}',
+                () => c.set(() {
+                  _mineColours[b.i] = _wheel.toColor();
+                  _keepMine();
+                }),
+              ),
+              WsMenuItem(
+                'Delete',
+                () => c.set(() {
+                  _mineColours.removeAt(b.i);
+                  _keepMine();
+                }),
+              ),
             ],
-            if (pal != null && pal.saved) WsMenuItem('Delete this palette', () => c.set(() {
-              _minePals.remove(pal);
-              _named.value = _pressed = null;
-              _keepMine();
-            })),
+            if (pal != null && pal.saved)
+              WsMenuItem(
+                'Delete this palette',
+                () => c.set(() {
+                  _minePals.remove(pal);
+                  _named.value = _pressed = null;
+                  _keepMine();
+                }),
+              ),
           ];
           if (items.isEmpty) return;
           final box = _boxMenu.currentContext?.findRenderObject() as RenderBox?;
@@ -153,7 +182,8 @@ class _ColourBox extends StatelessWidget {
           },
           builder: (context, h) => ValueListenableBuilder<String?>(
             valueListenable: _hovered,
-            builder: (context, over, _) {   // (the hand on a box: a rainbow rim round each box of its palette, so a palette is seen whole with no gap kept round it: the user, a rim, not the others darkened)
+            builder: (context, over, _) {
+              // (the hand on a box: a rainbow rim round each box of its palette, so a palette is seen whole with no gap kept round it: the user, a rim, not the others darkened)
               final box = Container(
                 decoration: BoxDecoration(
                   color: col,
@@ -166,7 +196,10 @@ class _ColourBox extends StatelessWidget {
                   : Container(
                       key: const ValueKey('colour-rim'),
                       padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(borderRadius: BorderRadius.all(Shape.r(5)), gradient: const SweepGradient(colors: _rainbow)),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.all(Shape.r(5)),
+                        gradient: const SweepGradient(colors: _rainbow),
+                      ),
                       child: box,
                     );
             },
@@ -182,8 +215,11 @@ class _ColourBox extends StatelessWidget {
 void _keepNow(DockCtx c) {
   final stops = _stopsIn(_paintNow(c));
   stops.length > 1
-      ? _mineGrads.insert(0, _Gradient('Gradient ${_mineGrads.length + 1}', [for (final s in stops) s.$1], at: [for (final s in stops) s.$2], blend: _blendNow(c), saved: true))
-      : _mineColours.insert(0, _wheel.toColor());   // (at the top, as the newest)
+      ? _mineGrads.insert(
+          0,
+          _Gradient('Gradient ${_mineGrads.length + 1}', [for (final s in stops) s.$1], at: [for (final s in stops) s.$2], blend: _blendNow(c), saved: true),
+        )
+      : _mineColours.insert(0, _wheel.toColor()); // (at the top, as the newest)
   _keepMine();
 }
 
@@ -228,17 +264,22 @@ List<(Color, double)> _stopsIn(String word) {
   for (final (i, w) in parts.indexed) {
     final hex = w.split('@').first, v = int.tryParse(hex, radix: 16);
     if (v == null || (hex.length != 6 && hex.length != 8)) return const [];
-    out.add((hex.length == 8 ? Color(((v & 0xFF) << 24) | (v >> 8)) : Color(0xFF000000 | v), w.contains('@') ? (double.tryParse(w.split('@').last) ?? 0).clamp(0.0, 1.0) : i / (parts.length - 1)));
+    out.add((
+      hex.length == 8 ? Color(((v & 0xFF) << 24) | (v >> 8)) : Color(0xFF000000 | v),
+      w.contains('@') ? (double.tryParse(w.split('@').last) ?? 0).clamp(0.0, 1.0) : i / (parts.length - 1),
+    ));
   }
   return out;
 }
 
 String _wordOfStops(List<(Color, double)> stops) {
   String hex8(Color c) => _hex(c).substring(1).toLowerCase() + (c.a < 1 ? (c.a * 255).round().toRadixString(16).padLeft(2, '0') : '');
-  return [for (final (col, at) in [...stops]..sort((a, b) => a.$2.compareTo(b.$2))) '${hex8(col)}@${at.toStringAsFixed(3)}'].join(' ');
+  return [
+    for (final (col, at) in [...stops]..sort((a, b) => a.$2.compareTo(b.$2))) '${hex8(col)}@${at.toStringAsFixed(3)}',
+  ].join(' ');
 }
 
-int _stop = 0;   // (the stop the picker colours)
+int _stop = 0; // (the stop the picker colours)
 
 /// The gradient being coloured, its bar and its stops beneath (Figma's and Canva's gradient editors): a press on the
 /// bar puts a stop there in the colour the bar has there; a stop pressed is the one the square above colours; a stop
@@ -248,13 +289,13 @@ class _Stops extends StatefulWidget {
   final List<(Color, double)> stops;
   final ValueChanged<List<(Color, double)>> onChanged;
   final ValueChanged<int> onPick;
-  final ValueChanged<bool>? onHand;   // (a hand down on it, and up: one step)
+  final ValueChanged<bool>? onHand; // (a hand down on it, and up: one step)
   @override
   State<_Stops> createState() => _StopsState();
 }
 
 class _StopsState extends State<_Stops> {
-  List<(Color, double)>? _held;   // (while a stop is carried: where the hand has it)
+  List<(Color, double)>? _held; // (while a stop is carried: where the hand has it)
 
   Color _at(List<(Color, double)> s, double x) {
     final sorted = [...s]..sort((a, b) => a.$2.compareTo(b.$2));
@@ -286,7 +327,7 @@ class _StopsState extends State<_Stops> {
                   onTapUp: (d) {
                     final x = (d.localPosition.dx / w).clamp(0.0, 1.0);
                     widget.onChanged([...s, (_at(s, x), x)]);
-                    widget.onPick(s.where((e) => e.$2 <= x).length);   // (where it stands among them: the document keeps them in order)
+                    widget.onPick(s.where((e) => e.$2 <= x).length); // (where it stands among them: the document keeps them in order)
                   },
                   child: DecoratedBox(
                     decoration: BoxDecoration(
@@ -318,7 +359,7 @@ class _StopsState extends State<_Stops> {
                     },
                     onHorizontalDragEnd: (_) {
                       final held = _held!, at = held[i].$2;
-                      widget.onPick(held.where((e) => e.$2 < at).length);   // (carried past another, it is picked where it now stands)
+                      widget.onPick(held.where((e) => e.$2 < at).length); // (carried past another, it is picked where it now stands)
                       setState(() => _held = null);
                       widget.onHand?.call(false);
                     },
@@ -353,26 +394,32 @@ class _Grad extends StatelessWidget {
     return Semantics(
       label: g.name,
       child: GestureDetector(
-        onSecondaryTapDown: !g.saved ? null : (d) {   // (one's own gradient's menu: deleted, as one's own colour)
-          final box = _boxMenu.currentContext?.findRenderObject() as RenderBox?;
-          _boxMenu.currentState?.show(box?.globalToLocal(d.globalPosition) ?? Offset.zero, [
-            WsMenuItem('Delete this gradient', () => c.set(() {
-              _mineGrads.remove(g);
-              _keepMine();
-            })),
-          ]);
-        },
+        onSecondaryTapDown: !g.saved
+            ? null
+            : (d) {
+                // (one's own gradient's menu: deleted, as one's own colour)
+                final box = _boxMenu.currentContext?.findRenderObject() as RenderBox?;
+                _boxMenu.currentState?.show(box?.globalToLocal(d.globalPosition) ?? Offset.zero, [
+                  WsMenuItem(
+                    'Delete this gradient',
+                    () => c.set(() {
+                      _mineGrads.remove(g);
+                      _keepMine();
+                    }),
+                  ),
+                ]);
+              },
         child: DockHover(
-        key: ValueKey('colour-$id'),
-        onTap: () => _putGradient(c, g.colors, g.blend, g.at),   // (a press puts it on, where its colours stand and mixed as it was kept)
-        builder: (context, h) => Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: look, stops: at),
-            borderRadius: BorderRadius.all(Shape.r(5)),
-            border: _wheelFrom == word ? Border.all(color: Grey.g95, width: 2) : (h ? Border.all(color: Grey.g76) : null),
+          key: ValueKey('colour-$id'),
+          onTap: () => _putGradient(c, g.colors, g.blend, g.at), // (a press puts it on, where its colours stand and mixed as it was kept)
+          builder: (context, h) => Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: look, stops: at),
+              borderRadius: BorderRadius.all(Shape.r(5)),
+              border: _wheelFrom == word ? Border.all(color: Grey.g95, width: 2) : (h ? Border.all(color: Grey.g76) : null),
+            ),
           ),
         ),
-      ),
       ),
     );
   }

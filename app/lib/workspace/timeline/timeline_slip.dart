@@ -19,7 +19,10 @@ extension _WsTimelineSlip on _WsTimelineState {
     return (from.round(), (from + seconds * rate).round());
   }
 
-  double _speedOf(Motolii m, int t) => switch ((m.value(t, 'speed', 0) ?? 1).abs()) { 0 => 1, final s => s };
+  double _speedOf(Motolii m, int t) => switch ((m.value(t, 'speed', 0) ?? 1).abs()) {
+    0 => 1,
+    final s => s,
+  };
 
   void _slip(Ws ws, int t, int by) {
     final whole = _barWhole, m = ws.inside!;

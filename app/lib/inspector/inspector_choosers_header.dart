@@ -1,9 +1,11 @@
 import 'dart:math' as math;
+
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/style/theme.dart';
 import 'package:motolii/inspector/rows/inspector_rows_prop_row.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
+
 import '../parts/controls.dart';
 import '../parts/glyphs.dart';
 import '../style/tokens.dart';
@@ -32,8 +34,8 @@ class ChooserState extends State<Chooser> {
   late final _qf = FocusNode(debugLabel: 'chooser-q', onKeyEvent: _key);
   final _node = FocusNode(debugLabel: 'chooser');
   final _list = ScrollController();
-  int _at = -1;   // (the one the keys are on)
-  String _typed = '';   // (what has been typed to go to one, and when: a pause starts it again)
+  int _at = -1; // (the one the keys are on)
+  String _typed = ''; // (what has been typed to go to one, and when: a pause starts it again)
   DateTime _typedAt = DateTime(0);
   void Function(String)? _pick;
   final _link = LayerLink();
@@ -72,15 +74,21 @@ class ChooserState extends State<Chooser> {
     if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
     final k = e.logicalKey, down = k == LogicalKeyboardKey.arrowDown, up = k == LogicalKeyboardKey.arrowUp;
     final enter = k == LogicalKeyboardKey.enter || k == LogicalKeyboardKey.numpadEnter;
-    final letter = !widget.searchable && (e.character?.trim().length ?? 0) == 1 && !HardwareKeyboard.instance.isMetaPressed && !HardwareKeyboard.instance.isControlPressed ? e.character! : null;
+    final letter =
+        !widget.searchable && (e.character?.trim().length ?? 0) == 1 && !HardwareKeyboard.instance.isMetaPressed && !HardwareKeyboard.instance.isControlPressed
+        ? e.character!
+        : null;
     if (!_open) {
       if (!down && !up && !enter && k != LogicalKeyboardKey.space && letter == null) return KeyEventResult.ignored;
       _set(true);
       if (letter == null) return KeyEventResult.handled;
     }
-    if (k == LogicalKeyboardKey.escape) _set(false);
-    else if (down) _go(_at + 1);
-    else if (up) _go(_at - 1);
+    if (k == LogicalKeyboardKey.escape) {
+      _set(false);
+    } else if (down)
+      _go(_at + 1);
+    else if (up)
+      _go(_at - 1);
     else if (enter) {
       if (_at >= 0 && _at < _hits.length) _pick?.call(_hits[_at]);
     } else if (letter != null) {
@@ -114,7 +122,7 @@ class ChooserState extends State<Chooser> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         (widget.searchable ? _qf : _node).requestFocus();
-        _go(_at);   // (what it is now in sight, the keys on it)
+        _go(_at); // (what it is now in sight, the keys on it)
       });
     }
   }
@@ -144,15 +152,19 @@ class ChooserState extends State<Chooser> {
                 alignment: Alignment.centerLeft,
                 children: [
                   if (_q.text.isEmpty) Text('Search', style: T.label(Grey.g56)),
-                  TextHand(field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
-                    controller: _q,
-                    focusNode: _qf,
-                    style: T.name(Grey.g95),
-                    cursorColor: Grey.g95,
-                    backgroundCursorColor: Grey.g20,
-                    maxLines: 1,
-                    onChanged: (_) => setState(() => _at = 0),
-                  )),
+                  TextHand(
+                    field: (k) => EditableText(
+                      key: k,
+                      rendererIgnoresPointer: true,
+                      controller: _q,
+                      focusNode: _qf,
+                      style: T.name(Grey.g95),
+                      cursorColor: Grey.g95,
+                      backgroundCursorColor: Grey.g20,
+                      maxLines: 1,
+                      onChanged: (_) => setState(() => _at = 0),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -262,13 +274,17 @@ class ChooserState extends State<Chooser> {
                     offset: Offset(0, _up ? -4 : 4),
                     child: Align(
                       alignment: _up ? Alignment.bottomLeft : Alignment.topLeft,
-                      child: TapRegion(groupId: _link, onTapOutside: (_) => _set(false), child: SizedBox(width: math.max(w, 160), child: _menu(context, cur, pick))),
+                      child: TapRegion(
+                        groupId: _link,
+                        onTapOutside: (_) => _set(false),
+                        child: SizedBox(width: math.max(w, 160), child: _menu(context, cur, pick)),
+                      ),
                     ),
                   ),
                 ],
               );
             },
-            child: TapRegion(groupId: _link, child: field),   // (a press on it shuts the list by its own tap, not shut and opened again)
+            child: TapRegion(groupId: _link, child: field), // (a press on it shuts the list by its own tap, not shut and opened again)
           ),
         ),
       ),
@@ -284,7 +300,14 @@ class InspHeader extends StatelessWidget {
     final x = Ctx.of(context), doc = x.doc, ed = Ed(x.cfg.ed);
     final w = doc.kindWord; // (what the host calls it, where the kinds have no word)
     final (word, glyph) = switch (doc.kind) {
-      Kind.shape when w != null => (w, w == 'Film' || w == 'Picture' ? G.image : w == 'Sound' ? G.media : G.shape),
+      Kind.shape when w != null => (
+        w,
+        w == 'Film' || w == 'Picture'
+            ? G.image
+            : w == 'Sound'
+            ? G.media
+            : G.shape,
+      ),
       Kind.shape => ('Shape', G.shape),
       Kind.text => ('Text', G.text),
       Kind.camera => ('Camera', G.camera),
@@ -308,7 +331,8 @@ class InspHeader extends StatelessWidget {
             ),
             SizedBox(width: Shape.s(8)),
             Flexible(
-              child: FittedBox( // (drawn smaller, never cut)
+              child: FittedBox(
+                // (drawn smaller, never cut)
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
                 child: Text(

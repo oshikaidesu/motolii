@@ -8,11 +8,10 @@ class Ws extends ChangeNotifier {
   /// Each aspect told on its own (a Flutter ValueNotifier: what listens to one hears only it).
   late final on = {for (final a in WsAspect.values) a: ValueNotifier<int>(0)};
   void _tell(WsAspect a) {
-    if (a == WsAspect.picked || a == WsAspect.document) _watch();   // (what the inside puts in the moment's picture follows what is picked)
+    if (a == WsAspect.picked || a == WsAspect.document) _watch(); // (what the inside puts in the moment's picture follows what is picked)
     on[a]!.value++;
-    notifyListeners();   // (WsScope's own: it says which aspects to the parts below)
+    notifyListeners(); // (WsScope's own: it says which aspects to the parts below)
   }
-
 
   final layers = <WsLayer>[];
 
@@ -25,8 +24,9 @@ class Ws extends ChangeNotifier {
   Motolii? get inside => _inside;
   void join(Motolii inside) {
     _inside = inside;
-    inside.shaping;   // (read once, at the opening: what a card is made by)
-    inside.told = ({required document, required moment, required kept}) {   // (the inside's pictures are new: docs/app/BRIDGE.md)
+    inside.shaping; // (read once, at the opening: what a card is made by)
+    inside.told = ({required document, required moment, required kept}) {
+      // (the inside's pictures are new: docs/app/BRIDGE.md)
       if (_gone) return;
       if (kept) this.kept.value = inside.kept;
       if (document) reread();
@@ -36,7 +36,7 @@ class Ws extends ChangeNotifier {
     WsArt.comp = Size(inside.size.$1.toDouble(), inside.size.$2.toDouble());
     moment.value = (inside.now * fps).round(); // (the playhead is the inside's moment from the first)
     reread();
-    final kept = inside.settings;   // (the choices kept with the document: its inks and fonts, golf (90))
+    final kept = inside.settings; // (the choices kept with the document: its inks and fonts, golf (90))
     _ink = kept['ink'] ?? '';
     _edge = kept['edge'] ?? '';
     _inkBlend = kept['ink_blend'] ?? '';
@@ -56,6 +56,7 @@ class Ws extends ChangeNotifier {
 
   /// Where the next film is written (set by the settings window; the window's own default when null).
   String? renderTo;
+
   /// Joined: the inks the drawing tools give a new thing (a fill word, a stroke colour; '': the document's own), and how
   /// the ink's colours are mixed when it is a gradient (gradient_blend; '': sRGB). Kept with the document, not steps
   /// of it, as a PowerPoint file keeps its theme's colours (the inside's setting: golf_noise.md (90), engine_needs.md E4).
@@ -85,7 +86,7 @@ class Ws extends ChangeNotifier {
   String? _notice;
   String? get notice => _notice;
   Timer? _noticeEnds;
-  List<int> strikes = const [];   // (the sounds' strikes, in frames, as the timeline last had them: its Beats)
+  List<int> strikes = const []; // (the sounds' strikes, in frames, as the timeline last had them: its Beats)
 
   /// What a click on the notice does while it is said: a time it tells is a place to go, as a time written under a
   /// YouTube video is a link to that moment.
@@ -95,7 +96,12 @@ class Ws extends ChangeNotifier {
     _notice = said;
     noticeGo = null;
     _noticeEnds?.cancel();
-    if (said != null && !said.endsWith('…')) _noticeEnds = Timer(const Duration(seconds: 10), () => notice = null);   // (said for a moment, Material's snackbar: four to ten seconds; what is still going on, "…", stays)
+    if (said != null && !said.endsWith('…')) {
+      _noticeEnds = Timer(
+        const Duration(seconds: 10),
+        () => notice = null,
+      ); // (said for a moment, Material's snackbar: four to ten seconds; what is still going on, "…", stays)
+    }
     _tell(WsAspect.notice);
   }
 
@@ -108,6 +114,7 @@ class Ws extends ChangeNotifier {
 
   /// Where the window's building spends its time (for the rampage's report): a name and the time it took, summed.
   static final spent = <String, Duration>{};
+
   /// The longest each named part took at once.
   static final slowest = <String, Duration>{};
   static T timed<T>(String name, T Function() does) {
@@ -163,14 +170,18 @@ class Ws extends ChangeNotifier {
   WsBeats? get beats => WsBeats.of(bpm, _inside?.value(0, 'bpm_from', 0) ?? 0, Ws.fps);
 
   /// The document's frame rate (its `frame_rate`, the stage's own), or the inside's when it says none.
-  static int _fpsOf(Motolii m) => switch ((m.value(0, 'frame_rate', 0) ?? 0).round()) { > 0 && final r => r, _ => m.rate };
+  static int _fpsOf(Motolii m) => switch ((m.value(0, 'frame_rate', 0) ?? 0).round()) {
+    > 0 && final r => r,
+    _ => m.rate,
+  };
   void reread() => Timeline.timeSync('ws reread', _reread); // (named in Flutter's timeline)
   void _reread() {
     final m = _inside;
     if (m == null) return;
     if (!m.fits && refit != null) return refit!(); // (the document says another size, by a hand or by undo: the host opens it again, and that reads it)
     lastChange = m.changes();
-    if (_fpsOf(m) != fps) {   // (the document's frame rate said again: the playhead kept where it is in time)
+    if (_fpsOf(m) != fps) {
+      // (the document's frame rate said again: the playhead kept where it is in time)
       final at = moment.value / fps;
       fps = _fpsOf(m);
       moment.value = (at * fps).round();
@@ -180,9 +191,12 @@ class Ws extends ChangeNotifier {
     duration = Timeline.timeSync('MARK seconds', () => (m.seconds * fps).round().clamp(1, 1 << 20));
     wsChosenLabels
       ..clear()
-      ..addAll({for (final t in m.things) if (m.words(t, 'label').indexOf(m.word(t, 'label')) case final i when i > 0) '$t': i - 1});
+      ..addAll({
+        for (final t in m.things)
+          if (m.words(t, 'label').indexOf(m.word(t, 'label')) case final i when i > 0) '$t': i - 1,
+      });
     final tl = TimelineTask()..start('MARK layers');
-    final holding = {for (final t in m.things) (m.value(t, 'parent', 0) ?? 0).round()};   // (who has things going with it)
+    final holding = {for (final t in m.things) (m.value(t, 'parent', 0) ?? 0).round()}; // (who has things going with it)
     layers
       ..clear()
       ..addAll([
@@ -192,26 +206,38 @@ class Ws extends ChangeNotifier {
             final name = m.word(t, 'name'); // (what it is called is the inside's to say)
             // (a key on any value of it that takes keys is a key on its bar: the inside says which those are)
             final keys = <int>{for (final s in m.thingKeyMoments(t)) (s * fps).round()}.toList()..sort();
-            return WsLayer('$t', name, switch (kind) {
-              'text' => WsKind.text,
-              'camera' => WsKind.camera,
-              'film' when wsSound(m, t) => WsKind.audio,
-              'film' || 'picture' => WsKind.image,
-              'shape' when m.word(t, 'shape') == 'null' && holding.contains(t) => WsKind.group,
-              _ => WsKind.shape,
-            }, from, _outF(from, lasts), keys,
-                parent: switch ((m.value(t, 'parent', 0) ?? 0).round()) { > 0 && final p => '$p', _ => null },
-                lined: (kind == 'picture' || kind == 'solid') && m.values(t).any((n) => n.startsWith('js_line_')),
-                hidden: (m.value(t, 'visible', 0) ?? 1) < .5, solo: (m.value(t, 'solo', 0) ?? 0) > .5, locked: (m.value(t, 'lock', 0) ?? 0) > .5, clipped: (m.value(t, 'clip', 0) ?? 0) > .5,
-                stretches: [
-                  for (final (a, b, way) in m.thingStretches(t))
-                    (from: (a * fps).round(), to: (b * fps).round(), way: way, shape: easeCurve(way, m)),
-                ]);
+            return WsLayer(
+              '$t',
+              name,
+              switch (kind) {
+                'text' => WsKind.text,
+                'camera' => WsKind.camera,
+                'film' when wsSound(m, t) => WsKind.audio,
+                'film' || 'picture' => WsKind.image,
+                'shape' when m.word(t, 'shape') == 'null' && holding.contains(t) => WsKind.group,
+                _ => WsKind.shape,
+              },
+              from,
+              _outF(from, lasts),
+              keys,
+              parent: switch ((m.value(t, 'parent', 0) ?? 0).round()) {
+                > 0 && final p => '$p',
+                _ => null,
+              },
+              lined: (kind == 'picture' || kind == 'solid') && m.values(t).any((n) => n.startsWith('js_line_')),
+              hidden: (m.value(t, 'visible', 0) ?? 1) < .5,
+              solo: (m.value(t, 'solo', 0) ?? 0) > .5,
+              locked: (m.value(t, 'lock', 0) ?? 0) > .5,
+              clipped: (m.value(t, 'clip', 0) ?? 0) > .5,
+              stretches: [for (final (a, b, way) in m.thingStretches(t)) (from: (a * fps).round(), to: (b * fps).round(), way: way, shape: easeCurve(way, m))],
+            );
           }(),
       ]);
-    if (_sel != null && layers.every((l) => l.id != _sel)) _sel = layers.firstOrNull?.id; // (a picked thing gone: the first; nothing picked stays so, the stage's)
+    if (_sel != null && layers.every((l) => l.id != _sel)) {
+      _sel = layers.firstOrNull?.id; // (a picked thing gone: the first; nothing picked stays so, the stage's)
+    }
     _keys.removeWhere((k) => !layers.any((l) => l.id == k.layer && l.keys.contains(k.frame))); // (a picked key stays picked while it is still there)
-    if (_stretch case final s?) _stretch = _stretchOf(s.layer, s.name, s.from);   // (and a picked stretch: to where that value's next key now is)
+    if (_stretch case final s?) _stretch = _stretchOf(s.layer, s.name, s.from); // (and a picked stretch: to where that value's next key now is)
     tl.finish();
     _tell(WsAspect.document);
   }
@@ -234,25 +260,31 @@ class Ws extends ChangeNotifier {
     m.subscribe({
       ?sel,
       for (final id in many) ?int.tryParse(id),
-      for (final l in layers) if (l.kind == WsKind.camera) ?int.tryParse(l.id),
-      for (final l in layers) if (int.tryParse(l.id) case final t? when m.word(t, 'kind') == 'behaviour') t,   // (the relations: the Relations desk draws each by its knobs, at the moment)
-      if (sel != null && m.word(sel, 'kind') == 'behaviour') for (final w in m.word(sel, 'members').split(' ')) ?int.tryParse(w),
+      for (final l in layers)
+        if (l.kind == WsKind.camera) ?int.tryParse(l.id),
+      for (final l in layers)
+        if (int.tryParse(l.id) case final t? when m.word(t, 'kind') == 'behaviour')
+          t, // (the relations: the Relations desk draws each by its knobs, at the moment)
+      if (sel != null && m.word(sel, 'kind') == 'behaviour')
+        for (final w in m.word(sel, 'members').split(' ')) ?int.tryParse(w),
     });
   }
-
 
   String? _sel; // (nothing picked, as a document opens)
   String? get selected => _sel;
   WsLayer? get layer => layers.where((l) => l.id == _sel).firstOrNull;
+
   /// The things picked together (drawn round on the stage): what a relation is made of. Picking one alone clears them.
   final many = <String>{};
-  bool manyByHand = false;   // (picked one by one, in that order: the first leads; drawn round, they have no order)
+  bool manyByHand = false; // (picked one by one, in that order: the first leads; drawn round, they have no order)
   final _keys = <WsKey>{};
   Set<WsKey> get keys => _keys;
+
   /// The stretch picked by its line, as Theatre.js's connector between two keyframes is pressed to edit its curve
   /// (BasicKeyframeConnector.tsx, Apache-2.0): one value's, where a key is every value's there.
   WsStretchPicked? _stretch;
   WsStretchPicked? get stretch => _stretch;
+
   /// The playhead, told on its own (Flutter's ValueNotifier): only what shows the moment listens ([WsScope.frameOf]),
   /// the rest of the window is not built again as it moves.
   final moment = WsMomentNow(112);
@@ -261,7 +293,7 @@ class Ws extends ChangeNotifier {
     final v = f.clamp(0, duration);
     if (v == moment.value) return;
     moment.value = v;
-    if (!_playing) _inside?.at(v / fps);   // (standing: the stage goes to the moment the playhead is put at)
+    if (!_playing) _inside?.at(v / fps); // (standing: the stage goes to the moment the playhead is put at)
   }
 
   bool _playing = false;
@@ -270,8 +302,8 @@ class Ws extends ChangeNotifier {
     if (p == _playing) return;
     _playing = p;
     if (p) _inside?.at(frame / fps);
-    _inside?.play(p);   // (the inside keeps the clock; the playhead follows its moment: timeline.dart)
-    if (!p) _inside?.at(frame / fps);   // (its clock runs ahead of a stage that is late with its pictures: stopped, it stands where the hand sees it)
+    _inside?.play(p); // (the inside keeps the clock; the playhead follows its moment: timeline.dart)
+    if (!p) _inside?.at(frame / fps); // (its clock runs ahead of a stage that is late with its pictures: stopped, it stands where the hand sees it)
     _tell(WsAspect.playing);
   }
 
@@ -315,13 +347,14 @@ class Ws extends ChangeNotifier {
     fronted = (pane, (fronted?.$2 ?? 0) + 1);
     _tell(WsAspect.fronted);
   }
+
   (String, int)? fronted;
 
   /// The desk follows the selection (Motolii panels/desk.dart): keys picked -> Ease, a camera -> Depth, else Tools.
   String get desk => deskManual ?? deskAuto;
 
   /// What the selection alone would put on the desk: keys picked, Ease; a camera, Depth; else the Tools catalog.
-  String get deskAuto => 'Tools';   // (Ease and Camera are panes of their own now)
+  String get deskAuto => 'Tools'; // (Ease and Camera are panes of their own now)
 
   /// Joined: the value of the picked thing (or of the stage, with nothing picked) a colour picked on the Colors shelf is
   /// said to, when a card's colour link or the tool strip's ink or edge aimed it there; null: the fill. Told as a pick
@@ -338,7 +371,7 @@ class Ws extends ChangeNotifier {
   void route(String to) {
     switch (to) {
       case final s when s.startsWith('Browser'):
-        shelf = s.split('›').last.trim();   // (told as any shelf named is: the panes bring it to the front)
+        shelf = s.split('›').last.trim(); // (told as any shelf named is: the panes bring it to the front)
     }
     _tell(WsAspect.route);
   }
@@ -348,7 +381,10 @@ class Ws extends ChangeNotifier {
     final m = _inside, t = int.tryParse(id ?? '');
     if (m == null || t == null) return const [];
     final shown = {for (final (title, _) in m.cards(t)) title};
-    return [for (final (name, _) in m.thingEffects) if (shown.contains(name)) name];
+    return [
+      for (final (name, _) in m.thingEffects)
+        if (shown.contains(name)) name,
+    ];
   }
 
   /// Joined: whether every change a hand makes is keyed (the top bar's Animate, the inspector's Animate all: one truth, the inside's).
@@ -362,7 +398,8 @@ class Ws extends ChangeNotifier {
   /// keys; and a sound's strikes, the beat marks CapCut's bars snap to.
   Set<int> stops({Set<String> skip = const {}}) => {
     for (final (at, _) in marks) (at * fps).round(),
-    for (final l in layers) if (!skip.contains(l.id)) ...[l.inF, l.outF, ...l.keys],
+    for (final l in layers)
+      if (!skip.contains(l.id)) ...[l.inF, l.outF, ...l.keys],
     ...strikes,
   };
   Map<double, int> get markColours => _inside!.markColours;
@@ -377,7 +414,8 @@ class Ws extends ChangeNotifier {
   // unfolded), or, with Animate on, every thing's (golf ③), and then what is kept is the ones shut by hand.
   final _lanesOpen = <String>{}, _lanesShut = <String>{};
   bool lanesOpen(String id) => animating ? !_lanesShut.contains(id) : _lanesOpen.contains(id);
-  bool aimsOpen(String id) => _lanesOpen.contains(id) && !_lanesShut.contains(id);   // (what it aims at, opened by hand: Animate lays out keys, not every relation's things)
+  bool aimsOpen(String id) =>
+      _lanesOpen.contains(id) && !_lanesShut.contains(id); // (what it aims at, opened by hand: Animate lays out keys, not every relation's things)
   void twirl(Iterable<String> ids) {
     final open = ids.any(lanesOpen), s = animating ? _lanesShut : _lanesOpen;
     open == animating ? s.addAll(ids) : s.removeAll(ids);
@@ -391,13 +429,14 @@ class Ws extends ChangeNotifier {
   bool groupOpen(String id) => _groupsOpen.contains(id);
   void turnGroup(String id) {
     if (!_groupsOpen.remove(id)) _groupsOpen.add(id);
-    _groupsOpen.contains(id) ? _lanesOpen.add(id) : _lanesOpen.remove(id);   // (its own keys with them: one triangle to a row, Apple Motion's)
+    _groupsOpen.contains(id) ? _lanesOpen.add(id) : _lanesOpen.remove(id); // (its own keys with them: one triangle to a row, Apple Motion's)
     _tell(WsAspect.animating);
   }
 
   Iterable<WsLayer> _over(WsLayer l, Map<String, WsLayer> of) sync* {
     var p = of[l.parent];
-    for (var n = 0; p != null && n < 64; p = of[p.parent], n++) {   // (64: as Group's walk up, stage_view_2.dart)
+    for (var n = 0; p != null && n < 64; p = of[p.parent], n++) {
+      // (64: as Group's walk up, stage_view_2.dart)
       yield p;
     }
   }
@@ -417,12 +456,14 @@ class Ws extends ChangeNotifier {
   List<String> under(String id) {
     final of = {for (final l in layers) l.id: l};
     if (of[id]?.kind != WsKind.group) return const [];
-    return [for (final l in layers) if (_over(l, of).any((p) => p.id == id)) l.id];
+    return [
+      for (final l in layers)
+        if (_over(l, of).any((p) => p.id == id)) l.id,
+    ];
   }
 
   /// How many groups a thing stands in: its row is set in by so many.
   int depth(WsLayer l) => _over(l, {for (final x in layers) x.id: x}).where((p) => p.kind == WsKind.group).length;
-
 
   /// Joined: a change asked without waiting ([Motolii.later]): looked at once a picture till the inside has done it, then
   /// the document read again and [then] told (done or not, and why not). The window never stands still for the inside.
@@ -438,18 +479,23 @@ class Ws extends ChangeNotifier {
     final m = _inside;
     if (m == null) return;
     _afters++;
-    m.answered(ticket).then((r) {   // (told by the inside when it is done: nothing looked at each picture)
+    m.answered(ticket).then((r) {
+      // (told by the inside when it is done: nothing looked at each picture)
       final (a, why) = r;
       then?.call(a >= 1, why);
-      if (a >= 1) got?.call(a);   // (an add's or a make's answer: the new thing)
-      _afters--;   // (what it changed comes with the inside's next picture of the document)
+      if (a >= 1) got?.call(a); // (an add's or a make's answer: the new thing)
+      _afters--; // (what it changed comes with the inside's next picture of the document)
     });
   }
 
-
-  static final _files = RegExp(r'/.*?\.(?:(?:wgsl|fs|js|mjs|json|am)(?= |$)|(?:anm2|obj2)[^ ]*)|[^ ]+'); // (as the inside reads the list: a path, spaces and all, to its extension: script.h script_files)
+  static final _files = RegExp(
+    r'/.*?\.(?:(?:wgsl|fs|js|mjs|json|am)(?= |$)|(?:anm2|obj2)[^ ]*)|[^ ]+',
+  ); // (as the inside reads the list: a path, spaces and all, to its extension: script.h script_files)
   /// The effect files a thing's fx says, in its order.
-  static List<String> fxFiles(String fx) => [for (final f in _files.allMatches(fx).map((m) => m[0]!)) if (f != 'none') f];
+  static List<String> fxFiles(String fx) => [
+    for (final f in _files.allMatches(fx).map((m) => m[0]!))
+      if (f != 'none') f,
+  ];
 
   /// Joined: an effect file shown on the picked thing while the hand is on its tile, not the document's, gone as the
   /// hand leaves (null), as Final Cut Pro's effects browser shows the effect skimmed on the selected clip in the viewer
@@ -461,7 +507,6 @@ class Ws extends ChangeNotifier {
     return '${(s ~/ 60).toString().padLeft(2, '0')}:${(s % 60).toString().padLeft(2, '0')}:${fr.toString().padLeft(2, '0')}';
   }
 }
-
 
 /// The font a new text is set in, a font every machine of its kind has (one place: the Create shelf and the stage's tool).
 final wsTextFont = Platform.isWindows ? 'C:/Windows/Fonts/arial.ttf' : '/System/Library/Fonts/Supplemental/Arial Unicode.ttf';
@@ -480,7 +525,9 @@ void wsInked(Ws ws, String kind, String shape) {
     final r = math.Random(), c = HSVColor.fromAHSV(1, r.nextDouble() * 360, .3 + r.nextDouble() * .5, .55 + r.nextDouble() * .45).toColor();
     m.later('say', thing: -1, name: 'fill', word: [c.r, c.g, c.b].map((v) => (v * 255).round().toRadixString(16).padLeft(2, '0')).join());
   }
-  if (ws.ink.contains(' ') && ws.inkBlend.isNotEmpty && !line) m.later('say', thing: -1, name: 'gradient_blend', word: ws.inkBlend);   // (a gradient ink, mixed as it was chosen)
+  if (ws.ink.contains(' ') && ws.inkBlend.isNotEmpty && !line) {
+    m.later('say', thing: -1, name: 'gradient_blend', word: ws.inkBlend); // (a gradient ink, mixed as it was chosen)
+  }
   if (ws.edge.isNotEmpty && !line) {
     m
       ..later('say', thing: -1, name: 'stroke', word: ws.edge)

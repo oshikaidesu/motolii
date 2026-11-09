@@ -59,7 +59,9 @@ class OwnForms extends Forms {
               decoration: BoxDecoration(color: i == c.selected ? WsT.accent : (h ? WsT.raised : null), borderRadius: BorderRadius.all(Shape.r(WsT.radius - 2))),
               child: Text(
                 s,
-                style: T.name(i == c.selected ? WsT.onAccent : (h ? Grey.g95 : Grey.g76)).copyWith(fontWeight: i == c.selected ? FontWeight.w700 : FontWeight.w500),
+                style: T
+                    .name(i == c.selected ? WsT.onAccent : (h ? Grey.g95 : Grey.g76))
+                    .copyWith(fontWeight: i == c.selected ? FontWeight.w700 : FontWeight.w500),
               ),
             ),
           ),
@@ -76,23 +78,27 @@ class OwnForms extends Forms {
       behavior: HitTestBehavior.opaque,
       onTap: () => s.onChanged(!s.on),
       child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: Shape.z(20),
-          child: Text(s.on ? 'On' : 'Off', textAlign: TextAlign.right, style: T.label(s.enabled && s.on ? Grey.g95 : Grey.g56)),
-        ),
-        SizedBox(width: Shape.s(8)),
-        Opacity(
-          opacity: s.enabled ? 1 : .5,
-          child: Pop.on(context) ? PopSwitch(on: s.on, onChanged: s.onChanged) : PillSwitch(on: s.on, onChanged: s.onChanged),
-        ),
-      ],
-    ),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: Shape.z(20),
+            child: Text(s.on ? 'On' : 'Off', textAlign: TextAlign.right, style: T.label(s.enabled && s.on ? Grey.g95 : Grey.g56)),
+          ),
+          SizedBox(width: Shape.s(8)),
+          Opacity(
+            opacity: s.enabled ? 1 : .5,
+            child: Pop.on(context) ? PopSwitch(on: s.on, onChanged: s.onChanged) : PillSwitch(on: s.on, onChanged: s.onChanged),
+          ),
+        ],
+      ),
     ),
   );
 
   /// A flat card (or the skin's frame for it).
   @override
-  Widget card(BuildContext context, CardSpec c) => SkinFrame('card', usual: BoxDecoration(color: Pop.card), child: c.own);
+  Widget card(BuildContext context, CardSpec c) => SkinFrame(
+    'card',
+    usual: BoxDecoration(color: Pop.card),
+    child: c.own,
+  );
 }

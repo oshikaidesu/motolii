@@ -5,7 +5,8 @@ extension MotoliiWrites on Motolii {
   /// The desk: the stage pane's whole picture, [w] x [h] pixels, the stage lying at [x], [y] (its top left) [scale]
   /// pixels a point, what lies off it seen round it, the picked thing marked over it ([point]: pixels a point of the
   /// screen) (later: desk). [w] 0: off, the stage's own picture again.
-  int desk(int w, int h, double x, double y, double scale, double point) => later('desk', word: '$w $h $x $y $scale $point');   // (a ticket: [answer] says when the desk's picture exists)
+  int desk(int w, int h, double x, double y, double scale, double point) =>
+      later('desk', word: '$w $h $x $y $scale $point'); // (a ticket: [answer] says when the desk's picture exists)
 
   /// The thing picked in the window and the one under its hand (0: none): the desk marks them (later: pick).
   void pick(int thing, int hover) => later('pick', thing: thing, number: hover.toDouble());
@@ -96,7 +97,8 @@ extension MotoliiWrites on Motolii {
   /// A hand takes hold, without waiting (the window's way: refused, its let go says why).
   void take(int thing) => later('hold', thing: thing);
 
-  bool carry(String by, double a, [double b = 0]) => _with([by], (s) => _carry(_m, s[0], a, b)) != 0;   // (sent, not waited for: what it carries shows in the moment's picture)
+  bool carry(String by, double a, [double b = 0]) =>
+      _with([by], (s) => _carry(_m, s[0], a, b)) != 0; // (sent, not waited for: what it carries shows in the moment's picture)
 
   bool letGo(bool keep) => _took(_letGo(_m, keep ? 1 : 0) != 0);
 
@@ -153,7 +155,8 @@ extension MotoliiWrites on Motolii {
 
   /// A change asked without waiting for the inside's hand (say, set, let_go, undo, redo, together): queued in order behind
   /// every other, its ticket said at once ([answer] says when it is done).
-  int later(String call, {int thing = 0, String name = '', String word = '', double number = 0}) => _with([call, name, word], (s) => _later(_m, s[0], thing, s[1], s[2], number));
+  int later(String call, {int thing = 0, String name = '', String word = '', double number = 0}) =>
+      _with([call, name, word], (s) => _later(_m, s[0], thing, s[1], s[2], number));
 
   bool undo() => _took(_undo(_m) != 0);
 

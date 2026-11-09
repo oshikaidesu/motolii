@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/rows/inspector_rows_prop_row.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
+
 import '../parts/relations.dart';
 import '../style/tokens.dart';
 import 'inspector_parts.dart';
@@ -80,7 +81,10 @@ class _RelationsBlockState extends State<RelationsBlock> {
                   padding: EdgeInsets.only(top: Shape.s(6)),
                   child: Opacity(
                     opacity: on[f.name]! && !locked ? 1 : .5,
-                    child: Align(alignment: Alignment.centerLeft, child: Gadget(f, size: Shape.z(72))),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Gadget(f, size: Shape.z(72)),
+                    ),
                   ),
                 ),
               ],

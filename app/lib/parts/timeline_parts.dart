@@ -2,6 +2,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
+
 import 'skin_parts.dart';
 
 import 'controls.dart' show Look;
@@ -43,7 +44,29 @@ void tpGrid(Canvas c, Size s, double ppf, int fps) {
 
 // ---------------------------------------------------------------- glyphs
 
-enum TpGlyph { eye, eyeOff, solo, lock, unlock, caretR, caretD, stopwatch, play, pause, stop, toStart, toEnd, stepBack, stepFwd, loop, fit, plus, minus, keyOutline, keyFilled }
+enum TpGlyph {
+  eye,
+  eyeOff,
+  solo,
+  lock,
+  unlock,
+  caretR,
+  caretD,
+  stopwatch,
+  play,
+  pause,
+  stop,
+  toStart,
+  toEnd,
+  stepBack,
+  stepFwd,
+  loop,
+  fit,
+  plus,
+  minus,
+  keyOutline,
+  keyFilled,
+}
 
 class TpGlyphPainter extends CustomPainter {
   const TpGlyphPainter(this.g, this.color);
@@ -55,15 +78,35 @@ class TpGlyphPainter extends CustomPainter {
     if (SkinParts.draw(c, s, 'tp.${g.name}', color)) return; // (the skin's own picture, if it brings one)
     c.translate(s.width / 2, s.height / 2);
     c.scale(s.shortestSide / 12);
-    final line = Paint()..style = PaintingStyle.stroke..strokeWidth = 1.2..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round..color = color;
+    final line = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..color = color;
     final fill = Paint()..color = color;
-    Path tri(double x0, double y0, double x1, double y1, double x2, double y2) => Path()..moveTo(x0, y0)..lineTo(x1, y1)..lineTo(x2, y2)..close();
+    Path tri(double x0, double y0, double x1, double y1, double x2, double y2) => Path()
+      ..moveTo(x0, y0)
+      ..lineTo(x1, y1)
+      ..lineTo(x2, y2)
+      ..close();
     switch (g) {
       case TpGlyph.eye:
-        c.drawPath(Path()..moveTo(-5.5, 0)..quadraticBezierTo(0, -6, 5.5, 0)..quadraticBezierTo(0, 6, -5.5, 0), line);
+        c.drawPath(
+          Path()
+            ..moveTo(-5.5, 0)
+            ..quadraticBezierTo(0, -6, 5.5, 0)
+            ..quadraticBezierTo(0, 6, -5.5, 0),
+          line,
+        );
         c.drawCircle(Offset.zero, 1.7, fill);
       case TpGlyph.eyeOff:
-        c.drawPath(Path()..moveTo(-5.5, -1)..quadraticBezierTo(0, 4, 5.5, -1), line);
+        c.drawPath(
+          Path()
+            ..moveTo(-5.5, -1)
+            ..quadraticBezierTo(0, 4, 5.5, -1),
+          line,
+        );
         c.drawLine(const Offset(-3, 2), const Offset(-4, 3.6), line);
         c.drawLine(const Offset(0, 3), const Offset(0, 4.8), line);
         c.drawLine(const Offset(3, 2), const Offset(4, 3.6), line);
@@ -73,7 +116,10 @@ class TpGlyphPainter extends CustomPainter {
       case TpGlyph.lock:
       case TpGlyph.unlock:
         c.drawRRect(RRect.fromLTRBR(-3.6, 0, 3.6, 5.2, Shape.r(1.2)), line);
-        final sh = Path()..moveTo(-2.3, 0)..lineTo(-2.3, -1.8)..arcTo(Rect.fromCircle(center: const Offset(0, -1.8), radius: 2.3), math.pi, math.pi, false);
+        final sh = Path()
+          ..moveTo(-2.3, 0)
+          ..lineTo(-2.3, -1.8)
+          ..arcTo(Rect.fromCircle(center: const Offset(0, -1.8), radius: 2.3), math.pi, math.pi, false);
         if (g == TpGlyph.lock) sh.lineTo(2.3, 0);
         c.drawPath(sh, line);
       case TpGlyph.caretR:
@@ -107,7 +153,13 @@ class TpGlyphPainter extends CustomPainter {
       case TpGlyph.fit:
         for (final sx in const [-1.0, 1.0]) {
           for (final sy in const [-1.0, 1.0]) {
-            c.drawPath(Path()..moveTo(sx * 5, sy * 1.8)..lineTo(sx * 5, sy * 5)..lineTo(sx * 1.8, sy * 5), line);
+            c.drawPath(
+              Path()
+                ..moveTo(sx * 5, sy * 1.8)
+                ..lineTo(sx * 5, sy * 5)
+                ..lineTo(sx * 1.8, sy * 5),
+              line,
+            );
           }
         }
       case TpGlyph.plus:
@@ -117,7 +169,15 @@ class TpGlyphPainter extends CustomPainter {
         c.drawLine(const Offset(-4, 0), const Offset(4, 0), line);
       case TpGlyph.keyOutline:
       case TpGlyph.keyFilled:
-        c.drawPath(Path()..moveTo(0, -4.4)..lineTo(4.4, 0)..lineTo(0, 4.4)..lineTo(-4.4, 0)..close(), g == TpGlyph.keyFilled ? fill : line);
+        c.drawPath(
+          Path()
+            ..moveTo(0, -4.4)
+            ..lineTo(4.4, 0)
+            ..lineTo(0, 4.4)
+            ..lineTo(-4.4, 0)
+            ..close(),
+          g == TpGlyph.keyFilled ? fill : line,
+        );
     }
   }
 
@@ -132,11 +192,11 @@ class TpGlyphView extends StatelessWidget {
   final double size;
   @override
   Widget build(BuildContext context) => TweenAnimationBuilder<Color?>(
-        tween: ColorTween(end: color),
-        duration: tpFast,
-        curve: Curves.easeOut,
-        builder: (_, v, __) => CustomPaint(size: Size.square(size), painter: TpGlyphPainter(g, v ?? color)),
-      );
+    tween: ColorTween(end: color),
+    duration: tpFast,
+    curve: Curves.easeOut,
+    builder: (_, v, __) => CustomPaint(size: Size.square(size), painter: TpGlyphPainter(g, v ?? color)),
+  );
 }
 
 // ---------------------------------------------------------------- interaction shells
@@ -155,18 +215,18 @@ class _TpHitState extends State<TpHit> {
   bool _h = false, _d = false;
   @override
   Widget build(BuildContext context) => MouseRegion(
-        cursor: widget.cursor,
-        onEnter: (_) => setState(() => _h = true),
-        onExit: (_) => setState(() => _h = false),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTapDown: (_) => setState(() => _d = true),
-          onTapUp: (_) => setState(() => _d = false),
-          onTapCancel: () => setState(() => _d = false),
-          onTap: widget.onTap,
-          child: widget.builder(context, _h, _d),
-        ),
-      );
+    cursor: widget.cursor,
+    onEnter: (_) => setState(() => _h = true),
+    onExit: (_) => setState(() => _h = false),
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => setState(() => _d = true),
+      onTapUp: (_) => setState(() => _d = false),
+      onTapCancel: () => setState(() => _d = false),
+      onTap: widget.onTap,
+      child: widget.builder(context, _h, _d),
+    ),
+  );
 }
 
 /// Local state seeded from a knob. Give it a ValueKey of the knob values so a knob change reseeds it.
@@ -185,7 +245,18 @@ class _TpValueState<V> extends State<TpValue<V>> {
 }
 
 class TpIconButton extends StatelessWidget {
-  const TpIconButton(this.g, {super.key, this.onTap, this.on = false, this.onColor, this.size = 16, this.glyph = 12, this.forceHover = false, this.dim = false, this.rest});
+  const TpIconButton(
+    this.g, {
+    super.key,
+    this.onTap,
+    this.on = false,
+    this.onColor,
+    this.size = 16,
+    this.glyph = 12,
+    this.forceHover = false,
+    this.dim = false,
+    this.rest,
+  });
   final TpGlyph g;
   final VoidCallback? onTap;
   final bool on, forceHover, dim;
@@ -194,21 +265,29 @@ class TpIconButton extends StatelessWidget {
   final double size, glyph;
   @override
   Widget build(BuildContext context) => TpHit(
-        onTap: onTap,
-        builder: (_, h, d) {
-          final hot = h || forceHover;
-          final ink = on ? (onColor ?? tpAccent) : d ? Grey.g100 : hot ? Grey.g95 : dim ? Grey.g38 : (rest ?? Grey.g56);
-          return AnimatedContainer(
-            duration: tpFast,
-            curve: Curves.easeOut,
-            width: size,
-            height: size,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: d ? Grey.g20 : (h ? Grey.g15 : const Color(0x00262626)), borderRadius: BorderRadius.all(Shape.r(3))),
-            child: TpGlyphView(g, ink, size: glyph),
-          );
-        },
+    onTap: onTap,
+    builder: (_, h, d) {
+      final hot = h || forceHover;
+      final ink = on
+          ? (onColor ?? tpAccent)
+          : d
+          ? Grey.g100
+          : hot
+          ? Grey.g95
+          : dim
+          ? Grey.g38
+          : (rest ?? Grey.g56);
+      return AnimatedContainer(
+        duration: tpFast,
+        curve: Curves.easeOut,
+        width: size,
+        height: size,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: d ? Grey.g20 : (h ? Grey.g15 : const Color(0x00262626)), borderRadius: BorderRadius.all(Shape.r(3))),
+        child: TpGlyphView(g, ink, size: glyph),
       );
+    },
+  );
 }
 
 // ---------------------------------------------------------------- keys
@@ -222,10 +301,18 @@ enum TpInterp { linear, hold, eased, bezier }
 /// r is the half-width of a normal key (TL.key / 2 at row scale). Edge widths stay at row scale so a large key keeps the same line.
 void tpKey(Canvas c, Offset p, double r, TpKey k) {
   final big = k == TpKey.atHead ? r * 1.2 : r;
-  final path = Path()..moveTo(p.dx, p.dy - big)..lineTo(p.dx + big, p.dy)..lineTo(p.dx, p.dy + big)..lineTo(p.dx - big, p.dy)..close();
+  final path = Path()
+    ..moveTo(p.dx, p.dy - big)
+    ..lineTo(p.dx + big, p.dy)
+    ..lineTo(p.dx, p.dy + big)
+    ..lineTo(p.dx - big, p.dy)
+    ..close();
   if (k == TpKey.ghost) {
     // a dashed dim ring: visible on any bar, never mistaken for a real key
-    final ring = Paint()..style = PaintingStyle.stroke..strokeWidth = 1..color = Grey.g76.withValues(alpha: .6);
+    final ring = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = Grey.g76.withValues(alpha: .6);
     for (final m in path.computeMetrics()) {
       for (var d = 0.0; d < m.length; d += 4) {
         c.drawPath(m.extractPath(d, math.min(d + 2, m.length)), ring);
@@ -233,8 +320,30 @@ void tpKey(Canvas c, Offset p, double r, TpKey k) {
     }
     return;
   }
-  c.drawPath(path, Paint()..color = k == TpKey.atHead ? C.playhead : k == TpKey.selected ? Grey.g100 : Role.of(Grey.g95, Role.key).withValues(alpha: .9));
-  c.drawPath(path, Paint()..style = PaintingStyle.stroke..strokeWidth = k == TpKey.selected ? 2 : k == TpKey.atHead ? 1.5 : .75..color = k == TpKey.selected ? Role.selected : k == TpKey.atHead ? Grey.g100 : (Role.keyEdge ?? Grey.g100.withValues(alpha: .6)));
+  c.drawPath(
+    path,
+    Paint()
+      ..color = k == TpKey.atHead
+          ? C.playhead
+          : k == TpKey.selected
+          ? Grey.g100
+          : Role.of(Grey.g95, Role.key).withValues(alpha: .9),
+  );
+  c.drawPath(
+    path,
+    Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = k == TpKey.selected
+          ? 2
+          : k == TpKey.atHead
+          ? 1.5
+          : .75
+      ..color = k == TpKey.selected
+          ? Role.selected
+          : k == TpKey.atHead
+          ? Grey.g100
+          : (Role.keyEdge ?? Grey.g100.withValues(alpha: .6)),
+  );
 }
 
 /// The link line between keys, cut where a ghost key sits so it does not show through.
@@ -253,11 +362,19 @@ void tpSeg(Canvas c, Offset m, TpInterp k, [double sc = 1]) {
   c.translate(m.dx, m.dy);
   c.scale(sc);
   c.drawRRect(RRect.fromLTRBR(-6, -5, 6, 5, Shape.r(2)), Paint()..color = Grey.g07.withValues(alpha: .92));
-  final l = Paint()..style = PaintingStyle.stroke..strokeWidth = 1..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round..color = Grey.g95;
+  final l = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1
+    ..strokeCap = StrokeCap.round
+    ..strokeJoin = StrokeJoin.round
+    ..color = Grey.g95;
   final path = Path()..moveTo(-3.5, 2.5);
   switch (k) {
     case TpInterp.hold:
-      path..lineTo(0, 2.5)..lineTo(0, -2.5)..lineTo(3.5, -2.5);
+      path
+        ..lineTo(0, 2.5)
+        ..lineTo(0, -2.5)
+        ..lineTo(3.5, -2.5);
     case TpInterp.eased:
       path.cubicTo(0, 2.5, 0, -2.5, 3.5, -2.5);
     case TpInterp.bezier:
@@ -298,7 +415,13 @@ void tpBar(Canvas c, Rect r, Fam f, TpBar kind, {bool hover = false, Look look =
   switch (kind) {
     case TpBar.ghost:
       c.drawRRect(rr, p..color = f.c.withValues(alpha: hover ? .26 : .18));
-      c.drawRRect(rr.deflate(.5), Paint()..style = PaintingStyle.stroke..strokeWidth = 1..color = f.c.withValues(alpha: .55));
+      c.drawRRect(
+        rr.deflate(.5),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = f.c.withValues(alpha: .55),
+      );
     case TpBar.group:
       final top = Rect.fromLTRB(r.left, r.top, r.right, r.top + r.height * .5);
       c.drawRRect(RRect.fromRectAndRadius(top, Shape.r(TL.radius)), p..color = tpBarColor(f, hover: hover, look: look));
@@ -332,10 +455,23 @@ void tpBar(Canvas c, Rect r, Fam f, TpBar kind, {bool hover = false, Look look =
       }
       final sel = kind == TpBar.selected;
       if (sel && look == Look.glow) {
-        c.drawRRect(rr.inflate(1), Paint()..color = f.c.withValues(alpha: .55)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5));
+        c.drawRRect(
+          rr.inflate(1),
+          Paint()
+            ..color = f.c.withValues(alpha: .55)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+        );
       }
       c.drawRRect(rr, p..color = tpBarColor(f, selected: sel, hover: hover, look: look));
-      if (sel) c.drawRRect(rr.deflate(.5), Paint()..style = PaintingStyle.stroke..strokeWidth = 1..color = Grey.g95.withValues(alpha: .55));
+      if (sel) {
+        c.drawRRect(
+          rr.deflate(.5),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1
+            ..color = Grey.g95.withValues(alpha: .55),
+        );
+      }
       c.save();
       c.clipRRect(rr);
       if (edges) rim(r);
@@ -350,7 +486,23 @@ void tpBar(Canvas c, Rect r, Fam f, TpBar kind, {bool hover = false, Look look =
 // ---------------------------------------------------------------- lane (grid + bar + keys + link line + playhead line)
 
 class TpLanePainter extends CustomPainter {
-  const TpLanePainter({required this.fam, this.kind = TpBar.normal, this.start = 10, this.end = 90, this.keys = const [], this.keyKinds = const [], this.head, this.ppf = 6, this.fps = 30, this.hover = false, this.look = Look.concept, this.grid = true, this.link = true, this.interps = const [], this.showBar = true});
+  const TpLanePainter({
+    required this.fam,
+    this.kind = TpBar.normal,
+    this.start = 10,
+    this.end = 90,
+    this.keys = const [],
+    this.keyKinds = const [],
+    this.head,
+    this.ppf = 6,
+    this.fps = 30,
+    this.hover = false,
+    this.look = Look.concept,
+    this.grid = true,
+    this.link = true,
+    this.interps = const [],
+    this.showBar = true,
+  });
   final Fam fam;
   final TpBar kind;
   final double start, end, ppf;
@@ -371,7 +523,19 @@ class TpLanePainter extends CustomPainter {
     final bar = Rect.fromLTRB(start * ppf, cy - TL.bar / 2, math.max(end * ppf, start * ppf + 3), cy + TL.bar / 2);
     if (showBar) tpBar(c, bar, fam, kind, hover: hover, look: look);
     if (kind != TpBar.audio && keys.isNotEmpty) {
-      if (link && keys.length > 1) tpLink(c, [for (final k in keys) k * ppf], cy, {for (var i = 0; i < keyKinds.length && i < keys.length; i++) if (keyKinds[i] == TpKey.ghost) i}, TL.key / 2, kind == TpBar.selected ? .9 : .7);
+      if (link && keys.length > 1) {
+        tpLink(
+          c,
+          [for (final k in keys) k * ppf],
+          cy,
+          {
+            for (var i = 0; i < keyKinds.length && i < keys.length; i++)
+              if (keyKinds[i] == TpKey.ghost) i,
+          },
+          TL.key / 2,
+          kind == TpBar.selected ? .9 : .7,
+        );
+      }
       for (var i = 0; i < keys.length - 1 && i < interps.length; i++) {
         if ((keys[i + 1] - keys[i]) * ppf > 24) tpSeg(c, Offset((keys[i] + keys[i + 1]) / 2 * ppf, cy), interps[i]);
       }
@@ -389,8 +553,21 @@ class TpLanePainter extends CustomPainter {
 
 /// The playhead's head handle: a shield, top-centred on x. 11 x 13.
 void tpHead(Canvas c, double x, {bool lit = false}) {
-  final path = Path()..moveTo(x - 5.5, 0)..lineTo(x + 5.5, 0)..lineTo(x + 5.5, 7.5)..lineTo(x, 13)..lineTo(x - 5.5, 7.5)..close();
+  final path = Path()
+    ..moveTo(x - 5.5, 0)
+    ..lineTo(x + 5.5, 0)
+    ..lineTo(x + 5.5, 7.5)
+    ..lineTo(x, 13)
+    ..lineTo(x - 5.5, 7.5)
+    ..close();
   c.drawPath(path, Paint()..color = C.playhead);
-  c.drawPath(path, Paint()..style = PaintingStyle.stroke..strokeWidth = 1.5..strokeJoin = StrokeJoin.round..color = lit ? Grey.g100 : C.playhead);
+  c.drawPath(
+    path,
+    Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
+      ..strokeJoin = StrokeJoin.round
+      ..color = lit ? Grey.g100 : C.playhead,
+  );
   c.drawRect(Rect.fromLTWH(x - 3, 3, 6, 1), Paint()..color = Grey.g100.withValues(alpha: .45));
 }

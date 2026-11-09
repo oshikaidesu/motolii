@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/style/tokens.dart';
 import 'package:motolii/inspector/rows/inspector_rows_prop_row.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
+
 import '../parts/controls.dart';
 import 'inspector_parts.dart';
 
@@ -17,8 +18,7 @@ class GroupKey extends StatelessWidget {
   Widget build(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc;
     if (!x.cfg.maybe) return const SizedBox.shrink();
-    final all = members.every((m) => doc.keys[m] == KeyS.at),
-        any = members.any((m) => (doc.keys[m] ?? KeyS.off) != KeyS.off);
+    final all = members.every((m) => doc.keys[m] == KeyS.at), any = members.any((m) => (doc.keys[m] ?? KeyS.off) != KeyS.off);
     return KeyMark(
       state: all ? KeyS.at : (any ? KeyS.anim : KeyS.off),
       enabled: !x.cfg.locked,
@@ -37,8 +37,7 @@ class CameraGroup extends StatelessWidget {
   final bool first;
   @override
   Widget build(BuildContext context) {
-    final doc = Ctx.of(context).doc,
-        driven = (doc.s2['v_parent'] ?? 'None') != 'None';
+    final doc = Ctx.of(context).doc, driven = (doc.s2['v_parent'] ?? 'None') != 'None';
     // contract: Target / Orbit / Framing / Roll. When a target layer drives the target its fields are disabled and say why (A4).
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -54,7 +53,11 @@ class CameraGroup extends StatelessWidget {
               label: 'Layer',
               keyable: false,
               cells: [
-                Chooser(id: 'v_parent', options: doc.choices['v_parent'] ?? layers, searchable: true),   // (the document's layers, as the Parent row's: the samples only where there is no document)
+                Chooser(
+                  id: 'v_parent',
+                  options: doc.choices['v_parent'] ?? layers,
+                  searchable: true,
+                ), // (the document's layers, as the Parent row's: the samples only where there is no document)
               ],
             ),
             PropRow(
@@ -63,27 +66,9 @@ class CameraGroup extends StatelessWidget {
               enabled: !driven,
               ids: const ['v_x', 'v_y', 'v_z'],
               cells: [
-                NumField(
-                  id: 'v_x',
-                  label: 'X',
-                  axis: axX,
-                  unit: 'px',
-                  enabled: !driven,
-                ),
-                NumField(
-                  id: 'v_y',
-                  label: 'Y',
-                  axis: axY,
-                  unit: 'px',
-                  enabled: !driven,
-                ),
-                NumField(
-                  id: 'v_z',
-                  label: 'Z',
-                  axis: axZ,
-                  unit: 'px',
-                  enabled: !driven,
-                ),
+                NumField(id: 'v_x', label: 'X', axis: axX, unit: 'px', enabled: !driven),
+                NumField(id: 'v_y', label: 'Y', axis: axY, unit: 'px', enabled: !driven),
+                NumField(id: 'v_z', label: 'Z', axis: axZ, unit: 'px', enabled: !driven),
               ],
             ),
           ],
@@ -95,23 +80,12 @@ class CameraGroup extends StatelessWidget {
             PropRow(
               id: 'v_rotate_x',
               label: 'Pitch',
-              cells: [
-                NumField(
-                  id: 'v_rotate_x',
-                  unit: '°',
-                  decimals: 1,
-                  min: -90,
-                  max: 90,
-                  perPx: .5,
-                ),
-              ],
+              cells: [NumField(id: 'v_rotate_x', unit: '°', decimals: 1, min: -90, max: 90, perPx: .5)],
             ),
             PropRow(
               id: 'v_rotate_y',
               label: 'Yaw',
-              cells: [
-                NumField(id: 'v_rotate_y', unit: '°', decimals: 1, perPx: .5),
-              ],
+              cells: [NumField(id: 'v_rotate_y', unit: '°', decimals: 1, perPx: .5)],
             ),
           ],
         ),
@@ -122,30 +96,13 @@ class CameraGroup extends StatelessWidget {
               id: 'v_distance',
               label: 'Distance',
               lead: _CamGlyph(zoom: false),
-              cells: [
-                NumField(
-                  id: 'v_distance',
-                  unit: 'px',
-                  min: 10,
-                  max: 10000,
-                  perPx: 5,
-                  step: 10,
-                ),
-              ],
+              cells: [NumField(id: 'v_distance', unit: 'px', min: 10, max: 10000, perPx: 5, step: 10)],
             ),
             PropRow(
               id: 'v_zoom',
               label: 'Zoom',
               lead: _CamGlyph(zoom: true),
-              cells: [
-                NumField(
-                  id: 'v_zoom',
-                  unit: '%',
-                  min: 10,
-                  max: 1000,
-                  perPx: .5,
-                ),
-              ],
+              cells: [NumField(id: 'v_zoom', unit: '%', min: 10, max: 1000, perPx: .5)],
             ),
           ],
         ),
@@ -155,15 +112,7 @@ class CameraGroup extends StatelessWidget {
             PropRow(
               id: 'v_rotate',
               label: 'Roll',
-              cells: [
-                NumField(
-                  id: 'v_rotate',
-                  unit: '°',
-                  decimals: 1,
-                  perPx: .5,
-                  turns: true,
-                ),
-              ],
+              cells: [NumField(id: 'v_rotate', unit: '°', decimals: 1, perPx: .5, turns: true)],
             ),
           ],
         ),
@@ -177,10 +126,7 @@ class LayoutGroup extends StatelessWidget {
   final bool first;
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context),
-        doc = x.doc,
-        on = doc.b['lay.on'] ?? true,
-        fixed = (doc.s2['size'] ?? 'Hug') == 'Fixed';
+    final x = Ctx.of(context), doc = x.doc, on = doc.b['lay.on'] ?? true, fixed = (doc.s2['size'] ?? 'Hug') == 'Fixed';
     const sizes = ['Hug', 'Fill', 'Fixed'];
     // contract (A5, maybe): turning Layout off dims everything but its switch; the size number counts only when the size mode is Fixed; a child can opt out.
     return Column(
@@ -203,35 +149,22 @@ class LayoutGroup extends StatelessWidget {
                     const PropRow(
                       id: 'lay.cols',
                       label: 'Columns',
-                      cells: [
-                        NumField(id: 'lay.cols', min: 1, max: 12, unit: ''),
-                      ],
+                      cells: [NumField(id: 'lay.cols', min: 1, max: 12, unit: '')],
                     ),
                     const PropRow(
                       id: 'lay.rows',
                       label: 'Rows',
-                      cells: [
-                        NumField(
-                          id: 'lay.rows',
-                          min: 1,
-                          max: 12,
-                          zeroWord: null,
-                        ),
-                      ],
+                      cells: [NumField(id: 'lay.rows', min: 1, max: 12, zeroWord: null)],
                     ),
                     const PropRow(
                       id: 'lay.gap',
                       label: 'Gap',
-                      cells: [
-                        NumField(id: 'lay.gap', unit: 'px', min: 0, max: 200),
-                      ],
+                      cells: [NumField(id: 'lay.gap', unit: 'px', min: 0, max: 200)],
                     ),
                     const PropRow(
                       id: 'lay.pad',
                       label: 'Padding',
-                      cells: [
-                        NumField(id: 'lay.pad', unit: 'px', min: 0, max: 200),
-                      ],
+                      cells: [NumField(id: 'lay.pad', unit: 'px', min: 0, max: 200)],
                     ),
                     PropRow(
                       id: 'size',
@@ -252,15 +185,7 @@ class LayoutGroup extends StatelessWidget {
                       id: 'lay.w',
                       label: 'Width',
                       enabled: fixed,
-                      cells: [
-                        NumField(
-                          id: 'lay.w',
-                          unit: 'px',
-                          min: 0,
-                          max: 8000,
-                          enabled: fixed,
-                        ),
-                      ],
+                      cells: [NumField(id: 'lay.w', unit: 'px', min: 0, max: 8000, enabled: fixed)],
                     ),
                   ],
                 ),
@@ -278,10 +203,7 @@ class LayoutGroup extends StatelessWidget {
               cells: [
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: OnOff(
-                    on: doc.b['lay.ignore'] ?? false,
-                    onChanged: (v) => doc.flag('lay.ignore', v),
-                  ),
+                  child: OnOff(on: doc.b['lay.ignore'] ?? false, onChanged: (v) => doc.flag('lay.ignore', v)),
                 ),
               ],
             ),
@@ -323,7 +245,8 @@ class _CamPaint extends CustomPainter {
       c.drawLine(eye, eye + Offset(d.dx, -d.dy), ink);
       c.drawLine(eye, eye + d, ink);
     } else {
-      final far = 6 + 14 * ((math.log((v ?? 600).clamp(10, 10000)) - math.log(10)) / (math.log(10000) - math.log(10))); // (further: the point it looks at further off)
+      final far =
+          6 + 14 * ((math.log((v ?? 600).clamp(10, 10000)) - math.log(10)) / (math.log(10000) - math.log(10))); // (further: the point it looks at further off)
       c.drawLine(eye, eye + Offset(far, 0), ink..strokeWidth = 1);
       c.drawCircle(eye + Offset(far, 0), 2.2, Paint()..color = Grey.g76);
     }

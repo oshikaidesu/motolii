@@ -22,7 +22,10 @@ final _kinds = <String, (List<double>, List<_Number>)>{
   'Bounce': (const [.3, .8], [_n('Length', 0, .02, 1), _n('Bounce', 1, 0, .95)]),
   'Elastic': (const [.25, 1, .5, 1], [_n('Half', 0, .02, .98), _n('Decay', 2, 0, 1), _n('Strength', 3, 0, 1)]),
   'Cyclic': (const [2 / 7, 0, .5, 0, 0], [_n('Waves', 0, 1, 50, many: true), _n('Sharp', 1, 0, 1), _n('Crest', 2, .02, .98), _n('Floor', 3, 0, 1)]),
-  'Random': (const [.5, .5, .5, .5, .5, 0], [_n('Rate', 0, 0, 1), _n('Size', 1, 0, 1), _n('Seed', 2, 0, 1), _n('Fade', 3, 0, 1), _n('Warp', 4, 0, 1), _n('Tilt', 5, 0, 1)]),
+  'Random': (
+    const [.5, .5, .5, .5, .5, 0],
+    [_n('Rate', 0, 0, 1), _n('Size', 1, 0, 1), _n('Seed', 2, 0, 1), _n('Fade', 3, 0, 1), _n('Warp', 4, 0, 1), _n('Tilt', 5, 0, 1)],
+  ),
   'Steps': (const [.25, 0], [_n('Steps', 0, 1, 50, many: true), _n('Smooth', 1, 0, 1)]),
   'ElasticSteps': (const [.2, .5], [_n('Steps', 0, 1, 20, many: true), _n('Over', 1, 0, 1)]),
 };
@@ -33,15 +36,15 @@ bool easeNumbersOpen = false;
 /// Whether a way goes by its kind's usual numbers: a tile then draws what the kind does, and otherwise its own curve.
 bool easeIsUsual(String said) {
   final w = said.split(' '), usual = _kinds[w.first]?.$1;
-  if (usual == null || w.length == 1 || w.first == 'Bezier') return true;   // (a bezier's tile draws its own numbers already)
+  if (usual == null || w.length == 1 || w.first == 'Bezier') return true; // (a bezier's tile draws its own numbers already)
   return [for (final (i, x) in w.skip(1).indexed) (double.tryParse(x) ?? 0) - (i < usual.length ? usual[i] : 0)].every((d) => d.abs() < 1e-6);
 }
 
 class EaseNumbers extends StatefulWidget {
   const EaseNumbers({super.key, required this.card, required this.onChanged, this.overshoot = false, this.onOvershoot});
-  final Ease card;   // (the card in hand, or the whole: a whole has a name, and no numbers)
+  final Ease card; // (the card in hand, or the whole: a whole has a name, and no numbers)
   final ValueChanged<Ease> onChanged;
-  final bool overshoot;   // (a bezier's: Alight Motion's Enable Overshoot)
+  final bool overshoot; // (a bezier's: Alight Motion's Enable Overshoot)
   final VoidCallback? onOvershoot;
   @override
   State<EaseNumbers> createState() => _EaseNumbersState();
@@ -87,21 +90,28 @@ class _EaseNumbersState extends State<EaseNumbers> {
                     runSpacing: Shape.s(3),
                     children: [
                       for (final n in kind.$2)
-                        if ((n.name.startsWith('Y') && !widget.overshoot ? 0.0 : n.lo, n.name.startsWith('Y') && !widget.overshoot ? 1.0 : n.hi) case (final lo, final hi))
+                        if ((n.name.startsWith('Y') && !widget.overshoot ? 0.0 : n.lo, n.name.startsWith('Y') && !widget.overshoot ? 1.0 : n.hi) case (
+                          final lo,
+                          final hi,
+                        ))
+                          SizedBox(
+                            width: each,
+                            child: DeskScrub(
+                              key: ValueKey('ease-number-${n.name}'),
+                              label: n.name,
+                              value: n.many ? 1 / now[n.at] : now[n.at],
+                              min: lo,
+                              max: hi,
+                              perPx: n.many ? .05 : (hi - lo) / 200,
+                              format: (v) => n.many ? v.toStringAsFixed(v == v.roundToDouble() ? 0 : 2) : v.toStringAsFixed(2),
+                              onChanged: (v) => change(n.at, n.many ? 1 / v : v),
+                            ),
+                          ),
+                      if (bezier)
                         SizedBox(
                           width: each,
-                          child: DeskScrub(
-                            key: ValueKey('ease-number-${n.name}'),
-                            label: n.name,
-                            value: n.many ? 1 / now[n.at] : now[n.at],
-                            min: lo,
-                            max: hi,
-                            perPx: n.many ? .05 : (hi - lo) / 200,
-                            format: (v) => n.many ? v.toStringAsFixed(v == v.roundToDouble() ? 0 : 2) : v.toStringAsFixed(2),
-                            onChanged: (v) => change(n.at, n.many ? 1 / v : v),
-                          ),
+                          child: DeskChip(key: const ValueKey('ease-overshoot'), label: 'Overshoot', on: widget.overshoot, onTap: widget.onOvershoot),
                         ),
-                      if (bezier) SizedBox(width: each, child: DeskChip(key: const ValueKey('ease-overshoot'), label: 'Overshoot', on: widget.overshoot, onTap: widget.onOvershoot)),
                     ],
                   );
                 },

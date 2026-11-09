@@ -73,7 +73,7 @@ abstract final class CopiesTiles {
       if (m == null) continue;
       try {
         Directory(File(home).parent.path).createSync(recursive: true);
-        final on = make != null ? _answer(m, m.later('make', word: make)) >= 1 : _put(m, f);   // (a pack: made by its name, as the Program shelf makes it)
+        final on = make != null ? _answer(m, m.later('make', word: make)) >= 1 : _put(m, f); // (a pack: made by its name, as the Program shelf makes it)
         final pictures = [
           if (on)
             for (final (k, at) in EffectTiles.moments.indexed)
@@ -114,10 +114,10 @@ abstract final class CopiesTiles {
 
   /// An expression's: a shape as its head says, the expression put on it, taken by the inside as code is, or not.
   static bool _put(Motolii m, String f) {
-    final shape = _said(f, 'make shape') ?? 'circle', t = m.add('shape', shape);   // (its head's shape: a maze's lines)
+    final shape = _said(f, 'make shape') ?? 'circle', t = m.add('shape', shape); // (its head's shape: a maze's lines)
     m
       ..say(t, 'fill', 'ff3366')
-      ..set(t, 'size', (_head(f, 'size') ?? 0.1) * 2.5)   // (larger than its own, its place as it says: seen at 192 px)
+      ..set(t, 'size', (_head(f, 'size') ?? 0.1) * 2.5) // (larger than its own, its place as it says: seen at 192 px)
       ..set(t, 'copies', _head(f, 'copies') ?? 5);
     // (the rest its head says of its thing, as the recipe makes it: a maze's white, a row's height)
     for (final l in File(f).readAsLinesSync().takeWhile((l) => l.startsWith('//') && !l.startsWith('// then '))) {
@@ -125,7 +125,7 @@ abstract final class CopiesTiles {
         w[1] == 'say' ? m.say(t, w[2]!, w[3]!) : m.set(t, w[2]!, double.tryParse(w[3]!) ?? 0);
       }
     }
-    if (shape == 'line') m.set(t, 'tall', (_head(f, 'tall') ?? 1) * 4);   // (a line as thick as it is seen at 192 px)
+    if (shape == 'line') m.set(t, 'tall', (_head(f, 'tall') ?? 1) * 4); // (a line as thick as it is seen at 192 px)
     // (put on, then taken by the inside as code is, or not: its SyntaxError, FxCode's "does not compile")
     return _answered(m, m.later('fx_file', thing: t, word: f)) && _answered(m, m.later('code', word: f));
   }

@@ -18,8 +18,11 @@ import '../../engine/motolii.dart' show Motolii, MotoliiDocument, MotoliiMoment,
 import '../../parts/timeline_parts.dart' show TpGlyph, TpGlyphView;
 import '../../inspector/inspector_material.dart' show textToType;
 import '../relate.dart';
+
 import 'package:perfect_freehand/perfect_freehand.dart' show getStrokeOutlinePoints, getStrokePoints, PointVector, StrokeOptions;
-import 'package:perfect_freehand/src/get_stroke_radius.dart' show getStrokeRadius;   // (how wide its pressure makes a point: kept private by the package, read as it is)
+import 'package:perfect_freehand/src/get_stroke_radius.dart'
+    show getStrokeRadius; // (how wide its pressure makes a point: kept private by the package, read as it is)
+
 import '../ws.dart';
 import '../ws_menu.dart';
 part 'stage_view_state.dart';
@@ -50,7 +53,6 @@ abstract final class _V {
   static Color get guide => WsT.toneAudio;
   static const overlay = Color(0x40FFFFFF), safe = Color(0x99F6EFDD);
 }
-
 
 /// Composition px to screen px: the composition's top-left at [o], [s] screen px per composition px, inside [area].
 @immutable
@@ -93,7 +95,7 @@ class StageView extends StatefulWidget {
 
   /// Joined: how wide the Brush draws, in points of the picture (perfect-freehand's size).
   final double brushSize;
-  final int brushTool;   // (AbsentMotion's: 0 a pen, 1 a brush, 2 a fill: doc_brush)
+  final int brushTool; // (AbsentMotion's: 0 a pen, 1 a brush, 2 a fill: doc_brush)
 
   /// Joined: the Move tool's way (0 free, 1 along x only, 2 along y only), and whether an ellipse is drawn out from its middle.
   final int axis;
@@ -141,12 +143,20 @@ abstract interface class StageHandles {
 /// middle of its right side.
 /// A photo's crop (its left, top, right and bottom cut in, shares of its width or height): a bar on each side where it is
 /// cut, in place of its sides' handles, while it is cropped (pressed twice).
-Map<String, Offset> _handles(Offset Function(Offset doc) scr, ArtBox b, {required bool knob, String form = '', double round = 0, List<double> crop = const []}) {
+Map<String, Offset> _handles(
+  Offset Function(Offset doc) scr,
+  ArtBox b, {
+  required bool knob,
+  String form = '',
+  double round = 0,
+  List<double> crop = const [],
+}) {
   final top = scr(b.top), dir = top - scr(b.c), n = dir.distance < 1 ? const Offset(0, -1) : dir / dir.distance;
   final c = [for (final p in b.corners) scr(p)];
   return {
     for (final (i, p) in c.indexed) 'corner $i': p,
-    if (knob && crop.length != 4) ...{   // (its sides' middles, one way only: Figma's, Alight Motion's, Keynote's; left, top, right, bottom)
+    if (knob && crop.length != 4) ...{
+      // (its sides' middles, one way only: Figma's, Alight Motion's, Keynote's; left, top, right, bottom)
       'side 0': (c[0] + c[3]) / 2,
       'side 1': (c[0] + c[1]) / 2,
       'side 2': (c[1] + c[2]) / 2,
@@ -170,13 +180,20 @@ Map<String, Offset> _handles(Offset Function(Offset doc) scr, ArtBox b, {require
 /// its shorter side, in points of the window.
 ({Offset c0, Offset u, Offset w, double short}) _gripOf(List<Offset> c) {
   final top = c[1] - c[0], side = c[3] - c[0];
-  return (c0: c[0], u: top.distance < 1e-6 ? const Offset(1, 0) : top / top.distance, w: side.distance < 1e-6 ? const Offset(0, 1) : side / side.distance, short: math.max(1.0, math.min(top.distance, side.distance)));
+  return (
+    c0: c[0],
+    u: top.distance < 1e-6 ? const Offset(1, 0) : top / top.distance,
+    w: side.distance < 1e-6 ? const Offset(0, 1) : side / side.distance,
+    short: math.max(1.0, math.min(top.distance, side.distance)),
+  );
 }
 
 extension on ({Offset c0, Offset u, Offset w, double short}) {
   /// The roundness handle: in along the diagonal as far as the corners are round, never on the corner itself.
   Offset roundAt(double round) => c0 + (u + w) * math.max(round.clamp(0.0, .5) * short, 12.0);
+
   /// How round a hand at `at` makes the corners: how far in along the diagonal, a share of the shorter side.
   double roundOf(Offset at) => (((at - c0).dx * (u + w).dx + (at - c0).dy * (u + w).dy) / 2 / short).clamp(0.0, .5);
 }
+
 ({Offset c0, Offset u, Offset w, double short}) _shapeGrip(List<Offset> c) => _gripOf(c);

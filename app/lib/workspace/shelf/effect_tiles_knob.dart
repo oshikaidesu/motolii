@@ -18,7 +18,16 @@ double _along(List<double> stops, double t) {
 /// far, as the hand's, the rest as far as is plainly seen, short of wiping the picture out. Null: none shows.
 /// Before all of those, [first]: the knob its weights say shows it most ([weighed]), the user's wish (11/5) that a tile
 /// move by the knob that stands for it; [alone], that one or none (an effect that runs by the clock is let run).
-(String, double, double)? _telling(Motolii m, int on, List<String> knobs, Map<String, double> filed, List<String> lists, String folder, {String? first, bool alone = false}) {
+(String, double, double)? _telling(
+  Motolii m,
+  int on,
+  List<String> knobs,
+  Map<String, double> filed,
+  List<String> lists,
+  String folder, {
+  String? first,
+  bool alone = false,
+}) {
   if (!m.at(EffectTiles.moments[EffectTiles.still]) || !m.still('$folder/usual.png')) return null;
   bool says(RegExp words, String k) => words.hasMatch(k) || words.hasMatch(m.shown(k)?.label ?? '');
   double change(String k, double to, double back) {
@@ -27,26 +36,41 @@ double _along(List<double> stops, double t) {
     m.set(on, k, back);
     return _changes(folder).firstOrNull?.$2 ?? 0;
   }
+
   var tried = 0;
   (String, double, double)? turned(String k) {
     final span = m.shown(k), range = m.range(on, k), from = m.value(on, k, 0);
-    if (_faint.hasMatch(k) || range == null || from == null || const ['onoff', 'seed'].contains(span?.look) || m.words(on, k).isNotEmpty || lists.any(k.endsWith) || tried++ == 8) return null;
+    if (_faint.hasMatch(k) ||
+        range == null ||
+        from == null ||
+        const ['onoff', 'seed'].contains(span?.look) ||
+        m.words(on, k).isNotEmpty ||
+        lists.any(k.endsWith) ||
+        tried++ == 8) {
+      return null;
+    }
     final (low, high) = span != null && span.high > span.low ? (span.low, span.high) : range;
     final half = from + (((high - from).abs() >= (from - low).abs() ? high : low) - from) / 2;
     if (change(k, half, from) <= _plain) return null;
     if (says(_whole, k)) return (k, from, half);
-    final steps = [if (says(_clock, k)) ...[1 / 512, 1 / 128], 1 / 32, 1 / 8, 1 / 2, 1.0, 2.0];   // (spans go to 4000 in an AviUtl2 script: what shows is often far short of half way; a phase's to 2000, the hand's goes to 3)
+    final steps = [
+      if (says(_clock, k)) ...[1 / 512, 1 / 128],
+      1 / 32,
+      1 / 8,
+      1 / 2,
+      1.0,
+      2.0,
+    ]; // (spans go to 4000 in an AviUtl2 script: what shows is often far short of half way; a phase's to 2000, the hand's goes to 3)
     final at = [for (final s in steps) from + (half - from) * s];
     for (final (i, v) in at.indexed) {
       m.set(on, k, v);
       m.still('$folder/try_$i.png');
     }
     m.set(on, k, from);
-    final fine = _changes(folder), ways = [
-      for (final (i, v) in at.indexed) (v, fine.elementAtOrNull(i)?.$2 ?? 0),
-    ];
+    final fine = _changes(folder), ways = [for (final (i, v) in at.indexed) (v, fine.elementAtOrNull(i)?.$2 ?? 0)];
     return (k, from, (ways.where((w) => w.$2 >= _clear).firstOrNull ?? ways.reduce((a, b) => b.$2 > a.$2 ? b : a)).$1);
   }
+
   if (first != null) {
     if (turned(first) case final knob?) return knob;
   }

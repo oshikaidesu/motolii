@@ -41,8 +41,10 @@ extension _WsTimelineRuler on _WsTimelineState {
   List<(int, String)> _marksOf(Ws ws) {
     return [
       for (final (at, name) in _ws!.marks)
-        if ((at, name) != _markHeld) ((at * Ws.fps).round(), name)
-        else if (!_markOff) (_markTo, name),   // (the one carried: where the hand has it; off the ruler, gone)
+        if ((at, name) != _markHeld)
+          ((at * Ws.fps).round(), name)
+        else if (!_markOff)
+          (_markTo, name), // (the one carried: where the hand has it; off the ruler, gone)
     ];
   }
 

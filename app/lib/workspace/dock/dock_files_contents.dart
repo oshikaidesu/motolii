@@ -16,16 +16,21 @@ class _Contents extends StatelessWidget {
         for (final k in n.kids) {
           if (k.folder) {
             if (depth < 4) walk(k, depth + 1);
-          } else if (DockTags.hit(c.query, k.name, DockTags.of('Media', k.id, {_kindOf(k).toLowerCase(), if (k.id.contains('.')) k.id.split('.').last.toLowerCase()}))) {
+          } else if (DockTags.hit(
+            c.query,
+            k.name,
+            DockTags.of('Media', k.id, {_kindOf(k).toLowerCase(), if (k.id.contains('.')) k.id.split('.').last.toLowerCase()}),
+          )) {
             found.add(k);
           }
         }
       }
 
       walk(root, 0);
-      items = {for (final n in found) n.id: n}.values.toList();   // (a file in use is in the project twice over: once)
+      items = {for (final n in found) n.id: n}.values.toList(); // (a file in use is in the project twice over: once)
     } else {
-      if (c.mem.mediaDeep) {   // (the folder and every folder below it, their files together: a folder looked at as one pile)
+      if (c.mem.mediaDeep) {
+        // (the folder and every folder below it, their files together: a folder looked at as one pile)
         final all = <FileNode>[];
         void below(FileNode f, int depth) {
           if (f.disk && !f.listed && depth > 0) _read(f.id);
@@ -90,34 +95,55 @@ class _Contents extends StatelessWidget {
 class _Art extends StatelessWidget {
   const _Art(this.n, {this.step = 0});
   final FileNode n;
-  final int step;   // (a film: the picture this far along it, of eight)
+  final int step; // (a film: the picture this far along it, of eight)
   @override
   Widget build(BuildContext context) {
     if (n.disk && (n.g == DockG.video || n.g == DockG.image)) {
       // A file of the disk shows its own picture: a film its first one (the inside makes it), a photo itself (Flutter
       // reads it); what has none to show (a vector picture, until it is made) is a flat tile with its kind's mark.
-      final flat = Container(color: WsT.well, alignment: Alignment.center, child: DockBadge(n.g, Grey.g63, size: Shape.z(26)));
+      final flat = Container(
+        color: WsT.well,
+        alignment: Alignment.center,
+        child: DockBadge(n.g, Grey.g63, size: Shape.z(26)),
+      );
       if (n.g == DockG.video) {
         return FutureBuilder<String?>(
           future: _thumbnailAtOf?.call(n.id, step, 8),
-          builder: (context, made) => made.data == null ? flat : ColoredBox(color: WsT.well, child: Image.file(File(made.data!), fit: BoxFit.contain, gaplessPlayback: true)),   // (the whole picture, not cut to a square)
+          builder: (context, made) => made.data == null
+              ? flat
+              : ColoredBox(
+                  color: WsT.well,
+                  child: Image.file(File(made.data!), fit: BoxFit.contain, gaplessPlayback: true),
+                ), // (the whole picture, not cut to a square)
         );
       }
       final photo = RegExp(r'\.(png|jpe?g|webp)$', caseSensitive: false).hasMatch(n.id);
-      return photo ? ColoredBox(color: WsT.well, child: Image.file(File(n.id), fit: BoxFit.contain, cacheWidth: 240, errorBuilder: (_, _, _) => flat)) : flat;
+      return photo
+          ? ColoredBox(
+              color: WsT.well,
+              child: Image.file(File(n.id), fit: BoxFit.contain, cacheWidth: 240, errorBuilder: (_, _, _) => flat),
+            )
+          : flat;
     }
     return switch (n.g) {
       DockG.font => Container(
         color: WsT.toneText,
         alignment: Alignment.center,
-        child: Text('Aa', style: T.title(WsT.onAccent).copyWith(fontSize: T.px(18), fontWeight: FontWeight.w700)),
+        child: Text(
+          'Aa',
+          style: T.title(WsT.onAccent).copyWith(fontSize: T.px(18), fontWeight: FontWeight.w700),
+        ),
       ),
       DockG.folder => Container(
         color: WsT.well,
         alignment: Alignment.center,
         child: DockGlyph(DockG.folder, size: Shape.z(26), color: WsT.accentInk),
       ),
-      _ => Container(color: WsT.well, alignment: Alignment.center, child: DockBadge(n.g, n.g == DockG.comp ? WsT.accent : Grey.g63, size: Shape.z(26))),
+      _ => Container(
+        color: WsT.well,
+        alignment: Alignment.center,
+        child: DockBadge(n.g, n.g == DockG.comp ? WsT.accent : Grey.g63, size: Shape.z(26)),
+      ),
     };
   }
 }
@@ -166,18 +192,20 @@ class _TileState extends State<_Tile> {
     return DockHover(
       key: ValueKey('browser:file:${n.id}'),
       onTap: () => _open(n, c),
-      onDoubleTap: can && !n.folder ? () => _place(c, n) : null,   // (two presses place it; carried to the stage it does the same)
+      onDoubleTap: can && !n.folder ? () => _place(c, n) : null, // (two presses place it; carried to the stage it does the same)
       picks: true,
       builder: (context, h) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AspectRatio(
-            aspectRatio: 16 / 9,   // (a film's own shape: the whole of it seen, not a square cut out of it)
+            aspectRatio: 16 / 9, // (a film's own shape: the whole of it seen, not a square cut out of it)
             child: MouseRegion(
-              onHover: !_film || _playing ? null : (e) {
-                final w = (context.size?.width ?? 1) * 1.0, k = (e.localPosition.dx / math.max(1, w) * 8).floor().clamp(0, 7);
-                if (k != _step) setState(() => _step = k);
-              },
+              onHover: !_film || _playing
+                  ? null
+                  : (e) {
+                      final w = (context.size?.width ?? 1) * 1.0, k = (e.localPosition.dx / math.max(1, w) * 8).floor().clamp(0, 7);
+                      if (k != _step) setState(() => _step = k);
+                    },
               onExit: (_) => !_film || _playing || _step == 0 ? null : setState(() => _step = 0),
               child: Stack(
                 fit: StackFit.expand,
@@ -193,14 +221,24 @@ class _TileState extends State<_Tile> {
                           width: Shape.z(16),
                           height: Shape.z(16),
                           decoration: BoxDecoration(color: const Color(0xAA000000), borderRadius: BorderRadius.all(Shape.r(8))),
-                          child: Center(child: Text(_playing ? '■' : '▶', style: TextStyle(fontSize: Shape.z(8), height: 1, color: const Color(0xFFFFFFFF)))),
+                          child: Center(
+                            child: Text(
+                              _playing ? '■' : '▶',
+                              style: TextStyle(fontSize: Shape.z(8), height: 1, color: const Color(0xFFFFFFFF)),
+                            ),
+                          ),
                         ),
                       ),
                     )
                   else if (t != null && (h || sel))
                     Positioned(left: 3, top: 3, child: DockTag(_badge(t), hue: t.hue, edge: true)),
                   if (_film && (h || sel) && t != null) Positioned(right: 3, top: 3, child: DockTag(_badge(t), hue: t.hue, edge: true)),
-                  if (n.folder && n.listed) Positioned(right: 4, bottom: 3, child: Text('${n.kids.length}', style: T.value(Grey.g63).copyWith(fontSize: T.px(10)))),
+                  if (n.folder && n.listed)
+                    Positioned(
+                      right: 4,
+                      bottom: 3,
+                      child: Text('${n.kids.length}', style: T.value(Grey.g63).copyWith(fontSize: T.px(10))),
+                    ),
                   if (_inUse(n, c)) const Positioned(right: 3, bottom: 3, child: _InUse()),
                   if (sel || h)
                     DecoratedBox(
@@ -219,7 +257,8 @@ class _TileState extends State<_Tile> {
             padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
             alignment: Alignment.centerLeft,
             color: dockFill(sel, h, WsT.card),
-            child: FittedBox( // (a name wider than its tile is drawn smaller, never cut)
+            child: FittedBox(
+              // (a name wider than its tile is drawn smaller, never cut)
               fit: BoxFit.scaleDown,
               child: Text(
                 n.name,
@@ -298,50 +337,83 @@ class _Footer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // A file the inside can show is placed (as often as wanted, each a new thing from the present moment); one in use says so.
-    if (_filesPicked.length > 1) {   // (several picked: placed together)
-      return DockFooter(title: '${_filesPicked.length} files', meta: 'Placed one after another, in the order picked', action: 'Place ${_filesPicked.length}', fresh: true, onAction: () => _placeAll(c, _filesPicked.toList()));
+    if (_filesPicked.length > 1) {
+      // (several picked: placed together)
+      return DockFooter(
+        title: '${_filesPicked.length} files',
+        meta: 'Placed one after another, in the order picked',
+        action: 'Place ${_filesPicked.length}',
+        fresh: true,
+        onAction: () => _placeAll(c, _filesPicked.toList()),
+      );
     }
     final layer = _layerOf(n, c), can = _kindOfFile(n.id).isNotEmpty, m = c.ws.inside;
     // (a shape picked and a still chosen: it fills that shape, Alight Motion's Fill > Media; the button says so)
-    final shape = int.tryParse(c.ws.selected ?? ''), fills = m != null && shape != null && _kindOfFile(n.id) == 'picture' && m.word(shape, 'kind') == 'shape' && m.word(shape, 'shape') != 'null';
+    final shape = int.tryParse(c.ws.selected ?? ''),
+        fills = m != null && shape != null && _kindOfFile(n.id) == 'picture' && m.word(shape, 'kind') == 'shape' && m.word(shape, 'shape') != 'null';
     // (a picture or a film picked and another of its kind chosen: it shows that one instead, its place, size, keys and
     //  effects as they are: After Effects' Replace Layer Source, Premiere Pro's Replace With Clip; P17)
-    final swaps = m != null && shape != null && !fills && layer != '$shape' && const {'picture', 'film'}.contains(m.word(shape, 'kind')) && _kindOfFile(n.id) == m.word(shape, 'kind');
+    final swaps =
+        m != null &&
+        shape != null &&
+        !fills &&
+        layer != '$shape' &&
+        const {'picture', 'film'}.contains(m.word(shape, 'kind')) &&
+        _kindOfFile(n.id) == m.word(shape, 'kind');
     // (its file shown by others too: all of them at once beside it, _replaceAll)
     final all = swaps ? _showing(m, m.whole(m.word(shape, 'file'))) : const <(int, String)>[];
-    return FutureBuilder<String>(   // (what the media is, as GStreamer's discoverer tells it: Alight Motion's Media Info; its file's kind and size until then)
-      key: ValueKey(n.id),   // (a file of its own: what was told of the last one is not carried over till this one's comes)
+    return FutureBuilder<String>(
+      // (what the media is, as GStreamer's discoverer tells it: Alight Motion's Media Info; its file's kind and size until then)
+      key: ValueKey(n.id), // (a file of its own: what was told of the last one is not carried over till this one's comes)
       future: can && m != null ? mediaInfoOf(m.libPath, n.id) : null,
       builder: (context, info) => DockFooter(
-      preview: n.disk && (n.g == DockG.audio || n.g == DockG.video && (info.data ?? '×').isNotEmpty && !(info.data ?? '×').contains('×')) ? _Listen(n) : _Art(n),   // (sound alone, no picture in it: heard before it is placed)
-      title: n.name,
-      meta: c.mem.trouble[n.id] ?? [if (layer != null) 'In use', if (info.data case final i? when i.isNotEmpty) i, _metaOf(n)].join(' · '),
-      action: fills ? 'Fill shape' : swaps ? 'Replace' : can ? 'Place' : 'Select',
-      done: !can && layer == null,
-      doneLabel: 'Folder', // (the shelf lists only folders and files the inside can place: what cannot be placed is a folder)
-      fresh: can && !fills && !swaps, // (placed, it is a new thing; filling or replacing, the picked one)
-      more: all.length > 1
-          ? DockHover(
-              key: const ValueKey('files-replace-all'),
-              onTap: () => _replaceAll(c, all, n.id),
-              builder: (context, h) => Container(
-                height: Shape.z(24),
-                margin: EdgeInsets.only(right: Shape.s(6)),
-                padding: EdgeInsets.symmetric(horizontal: Shape.s(10)),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(color: WsT.raised, borderRadius: BorderRadius.all(Shape.r(WsT.radius)), border: Border.all(color: h ? Grey.g95 : const Color(0x00000000))),
-                child: Text('All ${all.length}', style: T.name(Grey.g91).copyWith(fontWeight: FontWeight.w700)),
-              ),
-            )
-          : null,
-      lasts: fills || swaps ? null : switch (_kindOfFile(n.id)) { 'picture' => _StillSeconds(c), 'film' || 'sound' when m != null => _FilmRange(c, n.id, mediaSecondsOf(m.libPath, n.id)), _ => null },
-      onAction: () => fills
-          ? c.ws.after(m.later('say', thing: shape, name: 'fill_media', word: n.id))
-          : swaps
-              ? c.ws.after(m.later('say', thing: shape, name: 'file', word: n.id), (done, why) => done ? c.ws.reread() : c.ws.notice = 'Not replaced: $why')
-              : can
-                  ? _place(c, n)
-                  : c.ws.select(layer),
+        preview: n.disk && (n.g == DockG.audio || n.g == DockG.video && (info.data ?? '×').isNotEmpty && !(info.data ?? '×').contains('×'))
+            ? _Listen(n)
+            : _Art(n), // (sound alone, no picture in it: heard before it is placed)
+        title: n.name,
+        meta: c.mem.trouble[n.id] ?? [if (layer != null) 'In use', if (info.data case final i? when i.isNotEmpty) i, _metaOf(n)].join(' · '),
+        action: fills
+            ? 'Fill shape'
+            : swaps
+            ? 'Replace'
+            : can
+            ? 'Place'
+            : 'Select',
+        done: !can && layer == null,
+        doneLabel: 'Folder', // (the shelf lists only folders and files the inside can place: what cannot be placed is a folder)
+        fresh: can && !fills && !swaps, // (placed, it is a new thing; filling or replacing, the picked one)
+        more: all.length > 1
+            ? DockHover(
+                key: const ValueKey('files-replace-all'),
+                onTap: () => _replaceAll(c, all, n.id),
+                builder: (context, h) => Container(
+                  height: Shape.z(24),
+                  margin: EdgeInsets.only(right: Shape.s(6)),
+                  padding: EdgeInsets.symmetric(horizontal: Shape.s(10)),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: WsT.raised,
+                    borderRadius: BorderRadius.all(Shape.r(WsT.radius)),
+                    border: Border.all(color: h ? Grey.g95 : const Color(0x00000000)),
+                  ),
+                  child: Text('All ${all.length}', style: T.name(Grey.g91).copyWith(fontWeight: FontWeight.w700)),
+                ),
+              )
+            : null,
+        lasts: fills || swaps
+            ? null
+            : switch (_kindOfFile(n.id)) {
+                'picture' => _StillSeconds(c),
+                'film' || 'sound' when m != null => _FilmRange(c, n.id, mediaSecondsOf(m.libPath, n.id)),
+                _ => null,
+              },
+        onAction: () => fills
+            ? c.ws.after(m.later('say', thing: shape, name: 'fill_media', word: n.id))
+            : swaps
+            ? c.ws.after(m.later('say', thing: shape, name: 'file', word: n.id), (done, why) => done ? c.ws.reread() : c.ws.notice = 'Not replaced: $why')
+            : can
+            ? _place(c, n)
+            : c.ws.select(layer),
       ),
     );
   }
@@ -358,14 +430,20 @@ class _StillSeconds extends StatelessWidget {
     Widget step(String word, int by) => DockHover(
       key: ValueKey('media-still-$word'),
       onTap: at + by < 0 || at + by >= _stillSteps.length ? null : () => c.set(() => _stillSeconds = _stillSteps[at + by]),
-      builder: (_, h) => Padding(padding: EdgeInsets.symmetric(horizontal: Shape.s(3)), child: Text(word == 'less' ? '−' : '+', style: T.label(h ? Grey.g95 : Grey.g63))),
+      builder: (_, h) => Padding(
+        padding: EdgeInsets.symmetric(horizontal: Shape.s(3)),
+        child: Text(word == 'less' ? '−' : '+', style: T.label(h ? Grey.g95 : Grey.g63)),
+      ),
     );
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Text('for', style: T.label(Grey.g56)),
-      step('less', -1),
-      Text(s == 0 ? 'End' : '${s % 1 == 0 ? s.round() : s} s', key: const ValueKey('media-still-seconds'), style: T.label(Grey.g91)),
-      step('more', 1),
-    ]);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('for', style: T.label(Grey.g56)),
+        step('less', -1),
+        Text(s == 0 ? 'End' : '${s % 1 == 0 ? s.round() : s} s', key: const ValueKey('media-still-seconds'), style: T.label(Grey.g91)),
+        step('more', 1),
+      ],
+    );
   }
 }
 
@@ -381,28 +459,32 @@ class _FilmRange extends StatelessWidget {
     future: seconds,
     builder: (context, got) {
       final len = got.data ?? 0;
-      if (len <= 0) return const SizedBox.shrink();   // (a length not known: all of it, as before)
+      if (len <= 0) return const SizedBox.shrink(); // (a length not known: all of it, as before)
       final (a, b) = _filmRanges[file] ?? (0.0, 1.0);
       final w = Shape.z(84);
       String t(double f) => '${(f * len ~/ 60)}:${(f * len % 60).toStringAsFixed(1).padLeft(4, '0')}';
-      int? end;   // (the end a drag holds: the nearer when it began)
+      int? end; // (the end a drag holds: the nearer when it began)
       void to(double x) {
         final f = (x / w).clamp(0.0, 1.0);
         final (p, q) = _filmRanges[file] ?? (0.0, 1.0);
         c.set(() => _filmRanges[file] = end == 0 ? (math.min(f, q - .01), q) : (p, math.max(f, p + .01)));
       }
-      return Row(mainAxisSize: MainAxisSize.min, children: [
-        Text('use', style: T.label(Grey.g56)),
-        SizedBox(width: Shape.s(4)),
-        GestureDetector(
-          key: const ValueKey('media-film-range'),
-          onHorizontalDragStart: (d) => end = ((d.localPosition.dx / w) - a).abs() <= ((d.localPosition.dx / w) - b).abs() ? 0 : 1,
-          onHorizontalDragUpdate: (d) => to(d.localPosition.dx),
-          child: CustomPaint(size: Size(w, Shape.z(10)), painter: _RangePaint(a, b)),
-        ),
-        SizedBox(width: Shape.s(4)),
-        Text('${t(a)}–${t(b)}', key: const ValueKey('media-film-said'), style: T.label(Grey.g91)),
-      ]);
+
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('use', style: T.label(Grey.g56)),
+          SizedBox(width: Shape.s(4)),
+          GestureDetector(
+            key: const ValueKey('media-film-range'),
+            onHorizontalDragStart: (d) => end = ((d.localPosition.dx / w) - a).abs() <= ((d.localPosition.dx / w) - b).abs() ? 0 : 1,
+            onHorizontalDragUpdate: (d) => to(d.localPosition.dx),
+            child: CustomPaint(size: Size(w, Shape.z(10)), painter: _RangePaint(a, b)),
+          ),
+          SizedBox(width: Shape.s(4)),
+          Text('${t(a)}–${t(b)}', key: const ValueKey('media-film-said'), style: T.label(Grey.g91)),
+        ],
+      );
     },
   );
 }
@@ -420,13 +502,14 @@ class _RangePaint extends CustomPainter {
       c.drawRRect(RRect.fromLTRBR(f * s.width - 1.5, 0, f * s.width + 1.5, s.height, const Radius.circular(1)), p..color = Grey.g95);
     }
   }
+
   @override
   bool shouldRepaint(_RangePaint o) => o.a != a || o.b != b;
 }
 
 final _filmRanges = <String, (double, double)>{};
 
-const _stillSteps = [0.5, 1.0, 2.0, 3.0, 5.0, 10.0, 0.0];   // (0: to the document's end)
+const _stillSteps = [0.5, 1.0, 2.0, 3.0, 5.0, 10.0, 0.0]; // (0: to the document's end)
 var _stillSeconds = 2.0;
 
 /// A sound file heard before it is placed (Alight Motion plays a song before it is added): pressed, the Mac's own
@@ -452,7 +535,7 @@ class _ListenState extends State<_Listen> {
       return;
     }
     setState(() => _playing = p);
-    p.exitCode.then((_) => mounted && identical(_playing, p) ? setState(() => _playing = null) : null);   // (to its end: still again)
+    p.exitCode.then((_) => mounted && identical(_playing, p) ? setState(() => _playing = null) : null); // (to its end: still again)
   }
 
   @override
@@ -471,9 +554,12 @@ class _ListenState extends State<_Listen> {
   Widget build(BuildContext context) => GestureDetector(
     key: const ValueKey('media-listen'),
     onTap: _toggle,
-    child: Stack(fit: StackFit.expand, children: [
-      _Art(widget.n),
-      Center(child: Text(_playing == null ? '▶' : '■', style: T.name(Grey.g95))),
-    ]),
+    child: Stack(
+      fit: StackFit.expand,
+      children: [
+        _Art(widget.n),
+        Center(child: Text(_playing == null ? '▶' : '■', style: T.name(Grey.g95))),
+      ],
+    ),
   );
 }

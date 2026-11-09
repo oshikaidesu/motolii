@@ -51,14 +51,24 @@ extension MotoliiDocument on Motolii {
 
   int keyed(int thing, String name, double at) {
     final keys = keyMoments(thing, name);
-    return keys.isEmpty ? 0 : keys.any((k) => (k - at).abs() < .5 / rate) ? 2 : 1;
+    return keys.isEmpty
+        ? 0
+        : keys.any((k) => (k - at).abs() < .5 / rate)
+        ? 2
+        : 1;
   }
 
   /// The size of the stage the document is open on; and the size it is to be when it is next opened (close, open again).
-  (int, int) get size => switch (_document['size']) { [final int w, final int h] => (w, h), _ => (0, 0) };
+  (int, int) get size => switch (_document['size']) {
+    [final int w, final int h] => (w, h),
+    _ => (0, 0),
+  };
 
   /// The work area, in seconds: the stretch played round and written as a film (not said: all of it); a change is a step.
-  (double, double) get work => switch (_document['work']) { [final num a, final num b] => (a.toDouble(), b.toDouble()), _ => (0.0, 0.0) };
+  (double, double) get work => switch (_document['work']) {
+    [final num a, final num b] => (a.toDouble(), b.toDouble()),
+    _ => (0.0, 0.0),
+  };
 
   /// The marks: moments with a name, in time; a mark said with '' is taken away.
   List<(double, String)> get marks => [
@@ -96,22 +106,39 @@ extension MotoliiDocument on Motolii {
   /// The cards a maker sees a thing's values on, besides where it is and its fill: each a title and the values on it.
   List<(String, List<String>)> cards(int thing) => [
     ..._cardsIn(_of(thing)['cards']),
-    for (final c in _cardsIn(_of(thing)['more'])) if (asked[thing]?.contains(c.$1) ?? false) c,
+    for (final c in _cardsIn(_of(thing)['more']))
+      if (asked[thing]?.contains(c.$1) ?? false) c,
   ];
 
   /// The titles of the cards it may be given and is not shown, as the shelf of More: not there unasked.
-  List<String> moreCards(int thing) => [for (final (title, _) in _cardsIn(_of(thing)['more'])) if (!(asked[thing]?.contains(title) ?? false)) title];
+  List<String> moreCards(int thing) => [
+    for (final (title, _) in _cardsIn(_of(thing)['more']))
+      if (!(asked[thing]?.contains(title) ?? false)) title,
+  ];
 
   static List<(String, List<String>)> _cardsIn(Object? said) => [
     for (final c in ((said as String?) ?? '').split('; '))
-      if (c.indexOf(': ') case final at when at > 0) (c.substring(0, at), [for (final n in c.substring(at + 2).split(' ')) if (n.isNotEmpty) n]),   // (an effect of no knobs: a card of none, doc_cards_of)
+      if (c.indexOf(': ') case final at when at > 0)
+        (
+          c.substring(0, at),
+          [
+            for (final n in c.substring(at + 2).split(' '))
+              if (n.isNotEmpty) n,
+          ],
+        ), // (an effect of no knobs: a card of none, doc_cards_of)
   ];
 
   /// The titles of a thing's effect cards in the order its effects are laid (motolii_fx_titles): moved with `fx_move`.
-  List<String> fxTitles(int thing) => [for (final t in ((_of(thing)['fx'] as String?) ?? '').split(';')) if (t.isNotEmpty) t];
+  List<String> fxTitles(int thing) => [
+    for (final t in ((_of(thing)['fx'] as String?) ?? '').split(';'))
+      if (t.isNotEmpty) t,
+  ];
 
   /// A number value's lowest and highest (null: the thing has no such number).
-  (double, double)? range(int thing, String name) => switch ((_of(thing)['range'] as Map<String, dynamic>?)?[name]) { [final num lo, final num hi] => (lo.toDouble(), hi.toDouble()), _ => null };
+  (double, double)? range(int thing, String name) => switch ((_of(thing)['range'] as Map<String, dynamic>?)?[name]) {
+    [final num lo, final num hi] => (lo.toDouble(), hi.toDouble()),
+    _ => null,
+  };
 
   /// The words a value of a thing may be (a blend's): none if any word will do, or the thing has no such value.
   List<String> words(int thing, String name) => Motolii._spaced((_of(thing)['words'] as Map<String, dynamic>?)?[name]);
@@ -126,7 +153,8 @@ extension MotoliiDocument on Motolii {
 
   List<String> get wayNames => Motolii._spaced(_document['wayNames']);
 
-  double wayAt(String way, double u) {   // (a way of the document's, by its curve in the picture; one said with its numbers, by the inside's own reckoning, which asks nothing of the document)
+  double wayAt(String way, double u) {
+    // (a way of the document's, by its curve in the picture; one said with its numbers, by the inside's own reckoning, which asks nothing of the document)
     if ((_document['wayCurves'] as Map<String, dynamic>?)?[way] case final List<dynamic> c when c.length > 1) {
       final at = u.clamp(0.0, 1.0) * (c.length - 1), i = at.floor().clamp(0, c.length - 2), f = at - i;
       return (c[i] as num).toDouble() * (1 - f) + (c[i + 1] as num).toDouble() * f;
@@ -139,14 +167,14 @@ extension MotoliiDocument on Motolii {
 
   /// Every stretch of a thing's keyed values: from, to (seconds), its way, as the inside says them (a timeline draws how each goes).
   List<(double, double, String)> thingStretches(int thing) => [
-        for (final l in ((_of(thing)['stretches'] as String?) ?? '').split('\n'))
-          if (l.split('\t') case [final a, final b, final w]) (double.parse(a), double.parse(b), w),
-      ];
+    for (final l in ((_of(thing)['stretches'] as String?) ?? '').split('\n'))
+      if (l.split('\t') case [final a, final b, final w]) (double.parse(a), double.parse(b), w),
+  ];
 
   /// The way of the stretch that begins at a value's key, as it is said ('': no key there).
   String wayOf(int thing, String name, double at) {
     final keys = keyMoments(thing, name), ways = (_of(thing)['keyWays'] as Map<String, dynamic>?)?[name] as List<dynamic>?;
-    var i = -1;   // (the nearest within half a frame: two keys may lie in one frame, a stretched bar leaving them off its grid)
+    var i = -1; // (the nearest within half a frame: two keys may lie in one frame, a stretched bar leaving them off its grid)
     var near = .5 / rate;
     for (final (k, s) in keys.indexed) {
       if ((s - at).abs() < near) (i, near) = (k, (s - at).abs());

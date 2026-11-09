@@ -61,7 +61,11 @@ Set<String> shelfTaken(Ws ws, {required bool expression}) {
   if (expression) return createNames(ws);
   final m = ws.inside;
   if (m == null) return const {};
-  return {'Empty', for (final l in [m.thingEffects, m.looks]) ...l.map((e) => e.$1), for (final (n, f) in m.effects) shelfNamed(f) ?? n};
+  return {
+    'Empty',
+    for (final l in [m.thingEffects, m.looks]) ...l.map((e) => e.$1),
+    for (final (n, f) in m.effects) shelfNamed(f) ?? n,
+  };
 }
 
 /// Why a name cannot be one on a shelf whose names are [taken] ('' it can): it is a file's name too.
@@ -80,7 +84,7 @@ String shelfAdd(Ws ws, String from, String code, String name, Iterable<String> t
   final ext = from.substring(from.lastIndexOf('.')), expression = shelfIsExpression(from);
   final dir = expression ? _ownExpressions : _ownEffects, file = '$dir/$name$ext';
   // (the maker's file of a name stands over the library's (doc_folder_files): neither is written over)
-  final library = Directory('$motoliiShelves/effects');   // (a folder for what each does: blur/, color/…, read through)
+  final library = Directory('$motoliiShelves/effects'); // (a folder for what each does: blur/, color/…, read through)
   if (File(file).existsSync() || (!expression && library.existsSync() && library.listSync(recursive: true).any((e) => e.path.endsWith('/$name$ext')))) {
     return '"$name$ext" is already there';
   }
@@ -109,7 +113,10 @@ void _beside(String from, String to, String dir) {
   }
   final first = File('$home/first.tsv');
   if (first.existsSync()) {
-    final lines = [for (final l in first.readAsLinesSync()) if (l.split('\t').first == name) [to, ...l.split('\t').skip(1)].join('\t')];
+    final lines = [
+      for (final l in first.readAsLinesSync())
+        if (l.split('\t').first == name) [to, ...l.split('\t').skip(1)].join('\t'),
+    ];
     if (lines.isNotEmpty) File('$dir/first.tsv').writeAsStringSync('${lines.join('\n')}\n', mode: FileMode.append);
   }
   for (final l in File(from).readAsLinesSync()) {
@@ -136,7 +143,7 @@ class ShelfNameField extends StatefulWidget {
   const ShelfNameField(this.name, this.done, {super.key, this.small = true});
   final String name;
   final void Function(String? name) done;
-  final bool small;   // (a tile's name; else a card's)
+  final bool small; // (a tile's name; else a card's)
   @override
   State<ShelfNameField> createState() => _ShelfNameFieldState();
 }
@@ -172,16 +179,20 @@ class _ShelfNameFieldState extends State<ShelfNameField> {
       color: Grey.g91,
       padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
       alignment: Alignment.centerLeft,
-      child: TextHand(field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
-        controller: _words,
-        focusNode: _focus,
-        style: widget.small ? T.micro(Grey.g13) : T.name(Grey.g13),
-        cursorColor: Grey.g13,
-        backgroundCursorColor: Grey.g38,
-        selectionColor: Grey.g63,
-        maxLines: 1,
-        onSubmitted: (_) => _say(_words.text),
-      )),
+      child: TextHand(
+        field: (k) => EditableText(
+          key: k,
+          rendererIgnoresPointer: true,
+          controller: _words,
+          focusNode: _focus,
+          style: widget.small ? T.micro(Grey.g13) : T.name(Grey.g13),
+          cursorColor: Grey.g13,
+          backgroundCursorColor: Grey.g38,
+          selectionColor: Grey.g63,
+          maxLines: 1,
+          onSubmitted: (_) => _say(_words.text),
+        ),
+      ),
     ),
   );
 }
