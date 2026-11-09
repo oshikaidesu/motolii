@@ -120,8 +120,9 @@ String effectSum(String id) {
 /// null for one that came alone.
 String? effectPack(String id) => RegExp(r'/aviutl_scripts/(?:[^/]*?__)?([^/]+)/').firstMatch(id)?[1];
 
-/// An effect's place under what ships with the window: the same on any machine.
-String _place(String id) => id.contains('/engine/') ? id.substring(id.lastIndexOf('/engine/') + 1) : id;
+/// An effect's place under what ships with the window: the same on any machine (shelves/…; a code from before the
+/// shelves left engine/ says engine/…, found by its fingerprint).
+String _place(String id) => id.contains('/shelves/') ? id.substring(id.lastIndexOf('/shelves/') + 1) : id;
 
 /// A deck as words to hand on, a line that goes wherever words go, as a Hearthstone deck code is pasted from a forum or
 /// a video's description: a list, names and fingerprints, the effects not in it, as every set handed on holds its
