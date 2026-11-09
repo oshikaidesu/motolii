@@ -8,7 +8,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter/widgets.dart';
 
-import '../../bridge/motolii.dart' show Motolii, MotoliiQuestions, motoliiShelves;
+import '../../bridge/motolii.dart' show Motolii, MotoliiQuestions, motoliiDir;
 import '../../style/tokens.dart';
 import '../desk/desk_kit.dart' show DeskChip;
 import 'dock_files.dart' show dockRead;
@@ -59,7 +59,7 @@ Future<void> fontsRead(Ws ws) => _reading ??= Zone.root.run<Future<void>>(() asy
     '/System/Library/Fonts/Supplemental',
     '/Library/Fonts',
     '${Platform.environment['HOME']}/Library/Fonts',
-    '$motoliiShelves/fonts',
+    '$motoliiDir/third_party/noto_sans_jp', // (the library's: the fallback the inside draws in, doc_folders)
     '${EffectTiles.own}/fonts',
     ?ws.documentFolder,
   ]) {
@@ -72,7 +72,7 @@ Future<void> fontsRead(Ws ws) => _reading ??= Zone.root.run<Future<void>>(() asy
   var scripts = const <(String, String)>[];
   try {
     scripts = [
-      for (final s in jsonDecode(File('$motoliiShelves/fonts/samples.json').readAsStringSync()) as List)
+      for (final s in jsonDecode(File('$motoliiDir/third_party/gflanguages/samples.json').readAsStringSync()) as List)
         for (final w in [s['sample'], s['letters']])
           if (w is String && w.isNotEmpty) ('${s['script']}', w), // (its words; else its alphabet's first letters, for one without their marks)
     ];

@@ -66,7 +66,7 @@ class EaseGrip extends StatelessWidget {
 }
 
 /// The shelf: what a hand kept, with an empty frame for the next, and under a line the ways of the maker's folder and the
-/// library's (a file put in shelves/ways is one more). A press puts a tile on the stretch whole, in place of all that is
+/// library's (a file put in shelves/ease is one more). A press puts a tile on the stretch whole, in place of all that is
 /// there, so one after another can be tried (a carried one is laid on what is there, as a shape is). A card let go on it is
 /// kept, what all the cards make too (the maker, 10/31: "easeの組み合わせの結果も保存できるように"), and so is what is on
 /// the stretch when the empty frame is pressed, as an empty part of Photoshop's Swatches panel takes the colour now. A

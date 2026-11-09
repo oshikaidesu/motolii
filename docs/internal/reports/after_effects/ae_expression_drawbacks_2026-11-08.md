@@ -55,7 +55,7 @@
 - 道具が弱い（3 個）：5・6・7。
 - AE の方言（8 個）：12〜19。貼った文面をそのまま通す以上、方言の翻訳は通す側の負担（engine/community/js/ae_expr.h が 12・13・15 の一部を受け持つ。17・18 は未対応か別物）。
 
-先例：Cavalry の JavaScript layer は、式が自分の層で、接続が実物（https://cavalry.studio/docs/nodes/general/javascript-layers/ ）。Motolii のレシピは先頭の `--track@名前:...` で読むつまみを書いている（shelves/recipes/copies/ae_ring.js）が、AE の文面からは手で書いている。
+先例：Cavalry の JavaScript layer は、式が自分の層で、接続が実物（https://cavalry.studio/docs/nodes/general/javascript-layers/ ）。Motolii のレシピは先頭の `--track@名前:...` で読むつまみを書いている（shelves/create/copies/ae_ring.js）が、AE の文面からは手で書いている。
 
 ## 要件（ユーザの言葉のまま、2026-11-09）
 
@@ -68,7 +68,7 @@
 
 ### 今の画面との差（2026-11-09 時点のコード）
 
-- Create の Repeater タイルは、物に `shelves/recipes/copies/repeater.js` を付けて、ノブ（js_StepX・js_Size）を渡すだけ（skin/book/lib/workspace/dock_make_2.dart:419, 488, 503）。
+- Create の Repeater タイルは、物に `shelves/create/copies/repeater.js` を付けて、ノブ（js_StepX・js_Size）を渡すだけ（skin/book/lib/workspace/dock_make_2.dart:419, 488, 503）。
 - Inspector に出るのは「Script」カードで、ノブの列だけ（skin/book/lib/sets/inspector/inspector_panel.dart:27 の `ValuesCard`）。中のコードは出ない。
 - 「ブロック」と「コード」の2つのモードは、どちらも無い。
 - アプリのどこにも、レシピのコードの文字を出す所が無い。Program の棚（skin/book/lib/workspace/dock_program.dart）は、ファイルの一覧・物への付け外し・名前の変更だけ。

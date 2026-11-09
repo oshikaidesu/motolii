@@ -3,7 +3,7 @@
 //     <ChosenDefault Value="#b3c66b"/>
 //     <Grey07 Value="#131313"/>
 //   </Theme></Motolii>
-// read from the skin the window wears (~/.motolii/skins/<name>/theme.xml, the name kept in window.xml); a role the file does not say is the window's own (VS Code's manner). The meaning
+// read from the skin the window wears (skins/<name>/theme.xml, the maker's own folder's or shelves/', the name kept in window.xml); a role the file does not say is the window's own (VS Code's manner). The meaning
 // roles keep Ableton's names (ChosenDefault, ChosenPlay, ChosenRecord, Alert, SelectionBackground, ControlOnForeground,
 // Clip1-16), the key mark Blender's (Keyframe); the grey ramp keeps the window's own step names (Grey00 ... Grey100),
 // each step a role in both shades (ground, body, card, well, raised, lines, quiet text, text, strong text).
@@ -18,6 +18,7 @@ import 'dart:typed_data' show ByteData;
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter/widgets.dart';
 
+import '../bridge/motolii.dart' show motoliiOwn, motoliiShelves;
 import '../workspace/window_file.dart';
 
 abstract final class ColorTheme {
@@ -43,20 +44,29 @@ abstract final class ColorTheme {
   /// A role's word: the theme's, else [usual].
   static String word(String role, String usual) => words.value[role] ?? usual;
 
-  /// The skins: each a folder in ~/.motolii/skins with its theme.xml beside what it brings (pictures, fonts).
-  static String get skins => '${Platform.environment['HOME']}/.motolii/skins';
+  /// The maker's skins: each a folder in skins/ of their own folder (as every shelf: doc_folders), its theme.xml beside
+  /// what it brings (pictures, fonts).
+  static String get skins => '$motoliiOwn/skins';
+
+  /// Where skins are read, the maker's of a name standing over the library's (shelves/skins). ~/.motolii/skins: where a
+  /// skin was put before 2026-11-09 (the guide said so), read so one worn there is not lost.
+  static List<String> get _skinFolders => ['$motoliiShelves/skins', '${Platform.environment['HOME']}/.motolii/skins', skins];
+
+  /// Each skin there, by name: its folder.
+  static Map<String, String> _skinsByName() {
+    final by = <String, String>{};
+    for (final at in _skinFolders) {
+      try {
+        for (final d in Directory(at).listSync().whereType<Directory>()) {
+          if (File('${d.path}/theme.xml').existsSync()) by[d.uri.pathSegments[d.uri.pathSegments.length - 2]] = d.path;
+        }
+      } catch (_) {} // (a folder not there: none from it)
+    }
+    return by;
+  }
 
   /// The skins there, by name.
-  static List<String> skinNames() {
-    try {
-      return [
-        for (final d in Directory(skins).listSync().whereType<Directory>())
-          if (File('${d.path}/theme.xml').existsSync()) d.uri.pathSegments[d.uri.pathSegments.length - 2],
-      ]..sort();
-    } catch (_) {
-      return [];
-    }
-  }
+  static List<String> skinNames() => _skinsByName().keys.toList()..sort();
 
   /// The skin worn (none: the window's own).
   static String? get skin => switch (WindowFile.get('Skin')) {
@@ -64,7 +74,7 @@ abstract final class ColorTheme {
     _ => null,
   };
 
-  static String get _worn => at ?? (skin == null ? '' : '$skins/$skin/theme.xml');
+  static String get _worn => at ?? (skin == null ? '' : '${_skinsByName()[skin] ?? '$skins/$skin'}/theme.xml');
 
   /// Another skin worn (none: the window's own), kept for the next time.
   static void wear(String? name) {

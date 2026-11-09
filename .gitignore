@@ -12,6 +12,9 @@ third_party/
 !/engine/third_party/js/
 !/engine/third_party/midi_roll/
 !/engine/third_party/thermion_frame/
+!/engine/third_party/wordnet_ja/
+!/engine/third_party/noto_sans_jp/
+!/engine/third_party/gflanguages/
 /engine/third_party/js/hermes/
 /engine/third_party/midi_roll/PianoRollSvg.js
 target/

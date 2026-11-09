@@ -80,7 +80,7 @@ Alight Motion の効果のうち、[alight_checklist.md](alight_checklist.md) �
 - **Starfield**：2 次元で動かせる視差のある星空 — 借りる先：小さな丸に `copies`＋`scatter_z` ほか散らす値、カメラを動かす（本当の視差）。今の `Hyperspace.fs` も — 入れ方：置くだけ（今ある仕組み）
 - **Stretch Segment**：角度に沿って切り、離した間を画素を引き伸ばして埋める — 借りる先：`Rotate.fs` → `Edge Blowout.fs`（insideBleed）→ `Rotate.fs`（MIT）— 入れ方：置くだけ（近い。切れ目の両側が離れて動くのは無い）
 - **Stroke Taper**：手描きの線の始めと終わりを細く — 借りる先：perfect-freehand（taper・easing・thinning）（MIT）— 入れ方：エンジン。QuickJS で回し、出た輪郭を libtess2 で塗る
-- **Text Progress**：文字を 1 字ずつ途中まで見せる — 借りる先：今ある文字の split＋出来合いの動き（`shelves/animators/*.js` の「出る数」）。動きの見本は AE のテキストアニメーターの範囲セレクター — 入れ方：置くだけ（今ある仕組み）
+- **Text Progress**：文字を 1 字ずつ途中まで見せる — 借りる先：今ある文字の split＋出来合いの動き（`shelves/expressions/*.js` の「出る数」）。動きの見本は AE のテキストアニメーターの範囲セレクター — 入れ方：置くだけ（今ある仕組み）
 - **Tile Shift**：格子に分け、升ごとに中身をでたらめな向きにずらす — 借りる先：ちょうど同じ物は見つからない（近いのは今の `Pixel Shifter.fs` と `Glitch Shifter.fs`）— 入れ方：—
 - **Time Quantization**：この物だけ時間を段々に進める — 借りる先：動きの見本は AE の Posterize Time（フレームレートのつまみ）。キーだけなら今の anime.js の `steps(n)` — 入れ方：エンジン（小さい）。物の時間を `floor(t×fps)/fps` にして、動画・Lottie・キー・ふるまいに渡す
 - **Zoom Streaks**：1 点の周りに拡大した写しを重ねた放射の筋 — 借りる先：今ある `copies`＋`copy_size`（anchor を中心に）、重ね方 lighten。画素なら `God Rays.fs`（MIT）か ossia の `linear/Radial Blur.fs`（Zoom）— 入れ方：置くだけ（今ある仕組み）

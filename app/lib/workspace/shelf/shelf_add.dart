@@ -1,9 +1,8 @@
 // A thing's effect or expression added to the shelf under a name of the maker's (Add to shelf, on its card's code:
 // fx_code.dart), and one added so renamed by its tile's menu. What is added is the maker's: in their own folder
 // (EffectTiles.own), never the library's (engine/). An effect (.fs, .wgsl) goes in effects/, where the Effects shelf
-// reads the maker's effects (doc_folders); an expression (.js with each()) in expressions/, which no shelf of the inside
-// reads: not programs/ (the Program shelf's), not effects/ or animators/ (they read a .js as an effect, a motion), so
-// Create lists it in its Copies (dock_make_3.dart). Nothing is written over: a name the shelf has, or a file there of
+// reads the maker's effects (doc_folders); an expression (.js with each()) in expressions/, the Expression group's
+// folder (the inside reads it as a motion too: Create shows it once, as the maker's, dock_make_expressions.dart). Nothing is written over: a name the shelf has, or a file there of
 // that name, is refused. A rename writes the name beside the file (<file>.name, as the Program shelf's: dock_program.dart
 // Program.rename): the file stays where it is, so the documents that use it still find it.
 import 'dart:io';

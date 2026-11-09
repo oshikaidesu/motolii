@@ -23,20 +23,22 @@ Workspace(document: path, tools: [
 - 窓の道具の後ろに並び、選ぶと desk がその `build` を出す。アイコンは頭文字。中では パネルと同じく `WsScope.of(context)`。
 
 ## 自分のプリセット（Ease の動き方）を足す
-プリセットは利用者の持ち物（スクリプトと同じ）。利用者のフォルダ（下の「利用者のフォルダ」）の `ways/` にファイルを 1 つ置くと、どの書類でも Ease の desk にタイルで出る。本体が持って来る見本は `shelves/ways/`。式で使えるもの：`a`（前のキーの値）、`b`（次のキーの値）、`u`（区間の 0〜1）、`p1`〜`p4`（区間に付けた数）、`bezier(u, x1, y1, x2, y2)`。
+プリセットは利用者の持ち物（スクリプトと同じ）。利用者のフォルダ（下の「利用者のフォルダ」）の `ease/` にファイルを 1 つ置くと、どの書類でも Ease の desk にタイルで出る。本体が持って来る見本は `shelves/ease/`。式で使えるもの：`a`（前のキーの値）、`b`（次のキーの値）、`u`（区間の 0〜1）、`p1`〜`p4`（区間に付けた数）、`bezier(u, x1, y1, x2, y2)`。
 ```
 // Snappy: fast away from the first key, a long soft landing          (1 行目：名前、コロンの後は説明)
 a + (b - a) * bezier(u, .2, 0, 0, 1)                                 (a: 前のキーの値、b: 次のキーの値、u: 区間の 0〜1)
 ```
 - キーに当てると、その式が書類に書き込まれる（書類を人に渡しても同じに動く）。当てるのと書き込むのは 1 歩（undo 1 回）。
-- 例：`shelves/ways/snappy.way`。
+- 例：`shelves/ease/snappy.way`。
 
 ## 利用者のフォルダ（スクリプト・エフェクト・動き・プリセット）
 Mac：`~/Library/Application Support/Motolii/`、Windows：`%APPDATA%\\Motolii\\`（`MOTOLII_OWN` で差し替え）。中のフォルダごとに、置いた瞬間に出る（本体の見本は `shelves/` の同じ名前のフォルダ。同じ名前なら利用者のが勝つ）。
-- `recipes/*.js`：1 回で絵を作るスクリプト。Create 棚にタイルで出て、つまみは物の **Script** カードに出る。頭の書き方は `engine/community/js/script.h` の先頭（AviUtl2 と同じ `// --track@名前:ラベル,最小,最大,初め,刻み`、`--check@`、`--select@`）、例は `shelves/recipes/`。
+- `create/*.js`：1 回で絵を作るスクリプト。Create 棚にタイルで出て、つまみは物の **Script** カードに出る。頭の書き方は `engine/community/js/script.h` の先頭（AviUtl2 と同じ `// --track@名前:ラベル,最小,最大,初め,刻み`、`--check@`、`--select@`）、例は `shelves/create/`。
 - `relations/*.js`：たくさんの物を一度に動かす関係。舞台の上と関係タブにチップで出て、つまみは関係の **Script** カードに出る。頭の書き方はレシピと同じ。本体は `relate(things, t, k)` 1 つで、全員を受けて変える物だけ返す（返さない値はそのまま）。`things` の 1 個は `i`（元の順番）、`x`、`y`、`z`、`size`、`rotate`、`rotate_x`、`rotate_y`、`opacity`、`w`、`h`、`id`。`near` は Falloff の形に覆われている割合で、普通の関係はこの分だけ自動で弱まる。p5 の `noise`、`createVector`、`constrain` などと `ease` が使える。4 つ目の引数を取ると `relate(things, t, k, was)` になり、前のコマに返した物を `was[a.i]` で受ける（最初のコマは `null`。返した物の好きな値を覚えられる）。`was` の中身は書き換えない。戻って計算し直す時に使う。Strength が 0 の間は呼ばれず、0 を超えた最初のコマが `null` で始まる。この形は自分で `near` を読む。動かす関係は `force(things, t, k)` で書く。`things` の 1 個は 1 つの粒で、`x`、`y`、`z` は今いる場所、`vx`、`vy`、`vz` はコマごとの速さ、`home` は放っておいた時の場所。d3-force と同じく、速さに足すだけでよい。乗っている全部の力が同じ速さに足され、Strength と Falloff の分だけ効き、最後に 1 度だけ動く。だからルールが替わっても速さが続く。物に書いた値は次のコマにもある（`a.n = ...`）。頭に `d3.` があれば `d3.forceCollide` などが使える。どの力も押していない物は、下にある場所に戻る。例は `shelves/relations/`。ファイルを置くか書き換えると、再起動なしで効く。
-- `effects/*.wgsl`：画面全体のエフェクト（Effects 棚）。`animators/*.js`：物に付ける動き。
-- `ways/*.way`：Ease のプリセット（上）。
+- `effects/*.wgsl`：画面全体のエフェクト（Effects 棚）。`expressions/*.js`：物に付ける動き（Create の Expression）。
+- `ease/*.way`：Ease のプリセット（上）。
+- `skins/<名前>/`：窓のスキン（`shelves/skins/README.md`）。
+- 前の名前のフォルダ（`recipes/`・`animators/`・`ways/`）も、そのまま読む（`engine/document/doc_folders.h`）。
 - どれも本家のファイルは 1 行も変えない。カードの名前を自分で付ける（例：Wobble）のはまだできない（Script と出る）。
 
 ## 開き方・確かめ方

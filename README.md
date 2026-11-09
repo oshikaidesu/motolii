@@ -215,7 +215,7 @@ Motolii の一番の使い方です。例として、[ISF-Files](https://github.
 4. プレビューでも書き出しでも、こうなります（写真に ASCII Art をかけた所）。
    ![写真に ASCII Art をかけて書き出した所](docs/pictures/drop_ascii.jpg)
 
-WGSL（`.wgsl`）、レシピ（`.js` を `recipes/` に）、関係（`.js` を `relations/` に）、イージング（`.way` を `ways/` に）、AviUtl2 のスクリプト（作者のフォルダごと `aviutl_scripts/` に）も同じように置けます。保存したファイル名の最後が `.fs` になっているか確かめてください（ブラウザが `.txt` を付けることがあります）。
+WGSL（`.wgsl`）、Create のタイル（`.js` を `create/` に）、Expression のタイル（`.js` を `expressions/` に）、関係（`.js` を `relations/` に）、Ease のプリセット（`.way` を `ease/` に）、スキン（フォルダごと `skins/` に）、AviUtl2 のスクリプト（作者のフォルダごと `aviutl_scripts/` に）も同じように置けます。保存したファイル名の最後が `.fs` になっているか確かめてください（ブラウザが `.txt` を付けることがあります）。
 
 p5.js と Shadertoy は、置かずに貼ります。作品のコードをコピーして、アプリで ⌘V。コードは Program タブに残ります。
 

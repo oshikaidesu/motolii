@@ -185,12 +185,12 @@ abstract final class EffectTiles {
   static String frame(String home, int k) => '${home.substring(0, home.length - 4)}_$k.jpg';
   static String _drawn(String home, int k) => '${home.substring(0, home.length - 4)}_$k.png'; // (as the inside draws it, before it is made small)
 
-  /// The maker's own folder: MOTOLII_OWN, or ~/Library/Application Support/Motolii (as the inside's doc_folders).
-  static String get own => Platform.environment['MOTOLII_OWN'] ?? '${Platform.environment['HOME']}/Library/Application Support/Motolii';
+  /// The maker's own folder (motoliiOwn).
+  static String get own => motoliiOwn;
 
   /// The library's own folders beside the maker's (as the inside's doc_folders: the folder above its out/).
   static List<String> get library => [
-    for (final f in const ['effects', 'aviutl_scripts', 'recipes', 'animators', 'relations']) '$motoliiShelves/$f',
+    for (final f in const ['effects', 'aviutl_scripts', 'create', 'expressions', 'relations']) '$motoliiShelves/$f',
   ];
 
   /// Watched until the subscription is cancelled; [changed] is told after the folders are read again and after tiles are drawn.

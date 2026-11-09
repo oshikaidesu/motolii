@@ -53,16 +53,17 @@ inline std::string script_shelf_file(const std::string& file) {
     static std::map<std::string, std::map<std::string, std::string>> by;   // (a kind's files by their name)
     for (std::filesystem::path p = std::filesystem::path(file).parent_path(); !p.empty() && p != p.parent_path(); p = p.parent_path()) {
         const std::string kind = p.filename().string();
-        if (kind != "effects" && kind != "recipes" && kind != "relations" && kind != "animators" && kind != "solids" && kind != "looks") continue;
-        if (!by.count(kind)) {
+        if (kind != "effects" && kind != "create" && kind != "relations" && kind != "expressions" && kind != "solids" && kind != "looks" && kind != "recipes" && kind != "animators") continue;
+        const std::string now = kind == "recipes" ? "create" : kind == "animators" ? "expressions" : kind;   // (a document saved before 2026-11-09 names the shelf's old folder)
+        if (!by.count(now)) {
             Dl_info lib{};
             dladdr((const void*)&script_shelf_file, &lib);
-            const auto shelf = std::filesystem::weakly_canonical(lib.dli_fname ? lib.dli_fname : ".", wrong).parent_path().parent_path().parent_path() / "shelves" / kind;
-            auto& names = by[kind];
+            const auto shelf = std::filesystem::weakly_canonical(lib.dli_fname ? lib.dli_fname : ".", wrong).parent_path().parent_path().parent_path() / "shelves" / now;
+            auto& names = by[now];
             for (const auto& e : std::filesystem::recursive_directory_iterator(shelf, wrong)) names.emplace(e.path().filename().string(), e.path().string());
         }
-        const auto at = by[kind].find(std::filesystem::path(file).filename().string());
-        return at == by[kind].end() ? file : at->second;
+        const auto at = by[now].find(std::filesystem::path(file).filename().string());
+        return at == by[now].end() ? file : at->second;
     }
     return file;
 }

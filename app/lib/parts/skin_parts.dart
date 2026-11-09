@@ -1,7 +1,7 @@
 // A skin's drawn parts (KDE Plasma's and Kvantum's manner): the theme's `Parts` role names a folder, and an SVG there named for a
 // part (`tp.eye.svg`, `glyph.select.svg`, `undo.svg` ...) is drawn in its place, in the colour the window gives that part; a
 // `frame.<part>.svg` is stretched around that part in its own colours (SkinFrame). A part
-// the folder does not have is the window's own drawing, so a skin may bring one picture or all of them. The names: docs/app/skins/PARTS.md.
+// the folder does not have is the window's own drawing, so a skin may bring one picture or all of them. The names: shelves/skins/PARTS.md.
 import 'dart:io';
 import 'dart:ui' as ui;
 

@@ -1,6 +1,6 @@
 // doc_folders.h: part of doc.h (a recipe's form, and the folders the shelves are read from). Read only through doc.h.
 // Pictures in one call (what Cavalry's tutorials build from a shape, a duplicator and a behaviour or two, each named):
-// a file each in recipes/ (doc_folders: the library's, the maker's own; a file put there is on the shelf at once). Its head:
+// a file each in create/ (doc_folders: the library's, the maker's own; a file put there is on the shelf at once). Its head:
 // "// Name: what it makes", "// make kind file", then a thing's values, one to a line: "set name number",
 // "say name words", "key name seconds number", "then kind file" for another thing; its knobs as script.h says.
 // Code below the head is the first thing's script.
@@ -11,19 +11,30 @@ static std::filesystem::path doc_engine(const char* part) { Dl_info lib{}; dladd
 // The folders a kind of file is read from: the library's own (shelves/, beside the engine/ whose out/ this library is in), then the maker's
 // own, as a maker's scripts and presets are theirs (MOTOLII_OWN, or %APPDATA%/Motolii on Windows, or
 // ~/Library/Application Support/Motolii on a Mac), each with a folder of that kind in it. The maker's of a name stands.
+// A shelf is named as the window shows it (Create, Expression, Ease); a maker's folder of the name it had before 2026-11-09
+// is read too, before the new one (whose file of a name stands), so what they put there stays on the shelf.
+// Not a shelf (nothing brought: data the engine reads), the library's copy is in engine/third_party/ with its licence;
+// the maker's own folder of that name still adds to it.
 static std::vector<std::filesystem::path> doc_folders(const char* folder) {
-    std::vector<std::filesystem::path> at{(doc_engine("..") / "shelves" / folder).lexically_normal()};
-    if (const char* own = std::getenv("MOTOLII_OWN")) at.push_back(std::filesystem::path(own) / folder);
-    else if (const char* app = std::getenv("APPDATA")) at.push_back(std::filesystem::path(app) / "Motolii" / folder);
-    else if (const char* home = std::getenv("HOME")) at.push_back(std::filesystem::path(home) / "Library" / "Application Support" / "Motolii" / folder);
+    static const std::map<std::string, const char*> before{{"create", "recipes"}, {"expressions", "animators"}, {"ease", "ways"}};
+    static const std::map<std::string, const char*> engine_kept{{"words", "third_party/wordnet_ja"}, {"fonts", "third_party/noto_sans_jp"}};
+    const auto kept = engine_kept.find(folder);
+    std::vector<std::filesystem::path> at{kept != engine_kept.end() ? doc_engine(kept->second) : (doc_engine("..") / "shelves" / folder).lexically_normal()};
+    std::filesystem::path own;
+    if (const char* o = std::getenv("MOTOLII_OWN")) own = o;
+    else if (const char* app = std::getenv("APPDATA")) own = std::filesystem::path(app) / "Motolii";
+    else if (const char* home = std::getenv("HOME")) own = std::filesystem::path(home) / "Library" / "Application Support" / "Motolii";
+    if (own.empty()) return at;
+    if (const auto old = before.find(folder); old != before.end()) at.push_back(own / old->second);
+    at.push_back(own / folder);
     return at;
 }
 // The files of that kind in those folders, by their name (the maker's after the library's: theirs of a name stands).
 static std::vector<std::filesystem::path> doc_folder_files(const char* folder, const char* extension) {
     std::map<std::string, std::filesystem::path> by; std::error_code wrong;   // (a folder not there, `wrong`: none from it)
     const auto take = [&](const std::filesystem::path& p) { if ((" " + std::string(extension) + " ").find(" " + p.extension().string() + " ") != std::string::npos && p.has_extension()) by[p.filename().string()] = p; };   // (extensions: one, or a few with spaces between)
-    for (const auto& dir : doc_folders(folder))   // (effects/ and recipes/ a folder for what each does or comes from: blur/, shapes/…, read through)
-        if (std::string(folder) == "effects" || std::string(folder) == "recipes") for (const auto& e : std::filesystem::recursive_directory_iterator(dir, wrong)) take(e.path());
+    for (const auto& dir : doc_folders(folder))   // (effects/ and create/ a folder for what each does or comes from: blur/, shapes/…, read through)
+        if (std::string(folder) == "effects" || std::string(folder) == "create") for (const auto& e : std::filesystem::recursive_directory_iterator(dir, wrong)) take(e.path());
         else for (const auto& e : std::filesystem::directory_iterator(dir, wrong)) take(e.path());
     std::vector<std::filesystem::path> files;
     for (const auto& [_, f] : by) files.push_back(f);

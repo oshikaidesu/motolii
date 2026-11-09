@@ -14,11 +14,11 @@
 
 ## 今の状態
 **コミット済み**
-- `8fa40d2`：SQLite の関数 `anime(式, u)`。区間の式（`define` や `shelves/ways/*.way`）から anime.js（`engine/third_party/anime/`、MIT、v4.5.0 をそのまま）のイーズを呼べる。QuickJS で動く（`engine/community/js/script.cpp` の `anime_ease`、`engine/document/doc_match.h`）。検査 `engine/check/anime_ways.sh`（yes）。これは「点で好きな形を描く `linear()`」などの道具として残す。
-- `f8d60ad`：anime.js の見本 46 本（`shelves/ways/anime_*.way`）。**これは足してはいけない物だった**。
+- `8fa40d2`：SQLite の関数 `anime(式, u)`。区間の式（`define` や `shelves/ease/*.way`）から anime.js（`engine/third_party/anime/`、MIT、v4.5.0 をそのまま）のイーズを呼べる。QuickJS で動く（`engine/community/js/script.cpp` の `anime_ease`、`engine/document/doc_match.h`）。検査 `engine/check/anime_ways.sh`（yes）。これは「点で好きな形を描く `linear()`」などの道具として残す。
+- `f8d60ad`：anime.js の見本 46 本（`shelves/ease/anime_*.way`）。**これは足してはいけない物だった**。
 
 **まだコミットしていない変更**（作業の途中。見直してから扱う）
-- `shelves/ways/anime_*.way` 46 本を消した（上の誤りを戻す）。
+- `shelves/ease/anime_*.way` 46 本を消した（上の誤りを戻す）。
 - `skin/book/lib/workspace/desk_ease_library.dart`（新規）：机の下の段。表（All / ★）、横スクロールの札、並びは固定、最近使った 4 本を頭に区切って出す、星は ★ の表に集める、星はカーソルを乗せた時だけ見せる。星と最近は `~/.motolii/ease_stars.json`。
 - `skin/book/lib/workspace/desk_ease_presets.dart`：下の段を `EaseLibrary` に替えた。`PresetTile` を公開し、`label` を足した。
 - `skin/book/test/workspace_ease_library_test.dart`（新規）：**anime.js の表がある前の形のまま。今の作りに合わせて書き直す必要がある**。

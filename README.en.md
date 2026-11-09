@@ -215,7 +215,7 @@ This is what Motolii is for. As an example, `ASCII Art.fs` from [ISF-Files](http
 4. In the preview and in the export it looks like this (ASCII Art on a photo).
    ![ASCII Art on a photo, exported](docs/pictures/drop_ascii.jpg)
 
-WGSL (`.wgsl`), recipes (`.js` in `recipes/`), relations (`.js` in `relations/`), eases (`.way` in `ways/`) and AviUtl2 scripts (the author's folder as it is, in `aviutl_scripts/`) go in the same way. Check that the saved file's name ends in `.fs` (a browser may add `.txt`).
+WGSL (`.wgsl`), Create tiles (`.js` in `create/`), Expression tiles (`.js` in `expressions/`), relations (`.js` in `relations/`), Ease presets (`.way` in `ease/`), skins (the folder, in `skins/`) and AviUtl2 scripts (the author's folder as it is, in `aviutl_scripts/`) go in the same way. Check that the saved file's name ends in `.fs` (a browser may add `.txt`).
 
 p5.js and Shadertoy are pasted, not dropped: copy the work's code and press ⌘V in the app. The code stays in the Program tab.
 

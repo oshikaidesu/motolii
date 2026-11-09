@@ -2,7 +2,7 @@
 // shelf's are (effect_tiles.dart): on a document of its own in another isolate, by the inside, sixteen moments of
 // EffectTiles.moments, made small with sips and the moving ones JPEG by ffmpeg, where the effect tiles go
 // (~/Library/Caches/Motolii/tiles, named by the file and when it was written), played under the hand by TileMoving. What
-// is drawn is what the Repeater recipe's head makes to show itself (recipes/copies/repeater.js: a circle, five copies), its
+// is drawn is what the Repeater recipe's head makes to show itself (create/copies/repeater.js: a circle, five copies), its
 // shape, size and copies as the file's own head says them (// make shape, // set size, // set copies: After Effects' expressions are in a
 // comp's pixels, on a 1080 square), the expression put on it (fx_file). One the inside does not take (code: a SyntaxError) is marked and keeps its glyph.
 // A closed pack on the Program shelf (dock_program.dart) the same way, but made by its name as the shelf makes it (make).
