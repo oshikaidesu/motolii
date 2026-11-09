@@ -565,11 +565,11 @@ static std::vector<std::filesystem::path> doc_folders(const char* folder) {
 }
 // The files of that kind in those folders, by their name (the maker's after the library's: theirs of a name stands).
 static std::vector<std::filesystem::path> doc_folder_files(const char* folder, const char* extension) {
-    std::map<std::string, std::filesystem::path> by;
-    std::error_code wrong;
-    for (const auto& dir : doc_folders(folder))
-        for (const auto& e : std::filesystem::directory_iterator(dir, wrong))   // (extensions: one, or a few with spaces between)
-            if ((" " + std::string(extension) + " ").find(" " + e.path().extension().string() + " ") != std::string::npos && e.path().has_extension()) by[e.path().filename().string()] = e.path();
+    std::map<std::string, std::filesystem::path> by; std::error_code wrong;   // (a folder not there, `wrong`: none from it)
+    const auto take = [&](const std::filesystem::path& p) { if ((" " + std::string(extension) + " ").find(" " + p.extension().string() + " ") != std::string::npos && p.has_extension()) by[p.filename().string()] = p; };   // (extensions: one, or a few with spaces between)
+    for (const auto& dir : doc_folders(folder))   // (effects/ a folder for what each does, as the shelf's own kinds: blur/, color/, distort/…, read through)
+        if (std::string(folder) == "effects") for (const auto& e : std::filesystem::recursive_directory_iterator(dir, wrong)) take(e.path());
+        else for (const auto& e : std::filesystem::directory_iterator(dir, wrong)) take(e.path());
     std::vector<std::filesystem::path> files;
     for (const auto& [_, f] : by) files.push_back(f);
     return files;

@@ -1,12 +1,12 @@
 // script.h's door: the head read for knobs, QuickJS-ng behind each().
-#include "community/script.h"
+#include "community/js/script.h"
 #include "community/door.h"
-#include "community/aviutl.h"
-#include "community/p5_stand.h"
+#include "community/aviutl/aviutl.h"
+#include "community/js/p5_stand.h"
 #include "media/film_read.h"
 #include "motion/ways.h"
-#include "community/ae_expr.h"
-#include "community/script_leva.h"
+#include "community/js/ae_expr.h"
+#include "community/js/script_leva.h"
 #include <quickjs.h>
 #include <algorithm>
 #include <filesystem>

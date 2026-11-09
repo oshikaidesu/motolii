@@ -14,7 +14,7 @@
 649 app/lib/workspace/top_bar.dart
 772 app/lib/workspace/workspace.dart
 751 app/lib/workspace/ws_2.dart
-1028 engine/community/aviutl_fx.h
+1028 engine/community/aviutl/aviutl_fx.h
 589 engine/document/doc_edit.h
 726 engine/document/doc_match.h
 708 engine/document/doc_moment.h
@@ -30,7 +30,7 @@
 615 engine/library/motolii_hand.h
 529 shelves/recipes/Blob Track.js
 531 engine/stage/screen.h
-565 engine/community/script.cpp
+565 engine/community/js/script.cpp
 6342 engine/third_party/js/acorn/acorn.js
 1501 engine/third_party/js/three/BufferGeometryUtils.js
 60586 engine/third_party/js/three/three.core.js

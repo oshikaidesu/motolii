@@ -1,0 +1,12 @@
+# fx_first.sh: the values these come with, where their own show nothing (file, knob, value)
+Chroma Zoom.fs	master_zoom	1.1
+Color Controls.fs	bright	0.1
+Color Replacement.fs	threshold	0.75
+Gamma Correction.fs	gamma	0.55
+LGG.fs	saturation	1.3
+Multi Hue Shift.fs	shiftLow	0.1
+Vibrance.fs	vibrance	0.42
+am_channelremap.wgsl	r	0.5
+am_channelremaphsv.wgsl	h	0.5
+am_highlightshadow.wgsl	highlights	1.4
+am_replacecolor.wgsl	source_x	0.9

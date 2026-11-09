@@ -5,7 +5,7 @@
 #pragma once
 #include <rapidjson/document.h>
 #include "community/door.h"
-#include "community/hydra_isf.h"
+#include "community/shaders/hydra_isf.h"
 
 // A value that goes as a straight line: two keys say it, and it goes on as far as a video does (HYDRA_STEP apart it stops at 30 s).
 inline constexpr double DOOR_LINE_ENDS = 600.0;

@@ -5,7 +5,7 @@
 // by the door (screen_door.h), obj.draw by one placing shader. What it asks for that is not here stops it with
 // "not yet: obj.X" (said once, its picture left as it came): never a picture silently other than the script's.
 #pragma once
-#include "community/aviutl.h"
+#include "community/aviutl/aviutl.h"
 #include <lua.hpp>
 #include <array>
 #include <mutex>
@@ -288,8 +288,8 @@ static int aviutl_copybuffer(lua_State* L) {   // (dst, src; src "image:" a pict
     aviutl_copy(r, to, from);
     return lua_pushboolean(L, 1), 1;
 }
-#include "community/aviutl_load.h"   // (obj.load: a buffer, a figure, a picture file)
-#include "community/aviutl_pixels.h"   // (obj.getpixeldata, obj.putpixeldata)
+#include "community/aviutl/aviutl_load.h"   // (obj.load: a buffer, a figure, a picture file)
+#include "community/aviutl/aviutl_pixels.h"   // (obj.getpixeldata, obj.putpixeldata)
 static int aviutl_setoption(lua_State* L) {
     AviutlRun& r = aviutl_of(L);
     const std::string n = luaL_checkstring(L, 1);
@@ -604,21 +604,21 @@ static int aviutl_drawpoly(lua_State* L) {
     return 0;
 }
 // AviUtl's built-in effects as Sashimono Edit remakes them (MIT): their ISF files and how their params are said
-// (effects/sashimono_aviutl.json, written by from_sashimono.py from Sashimono's own compat/aviutl/mapping.py), read once.
+// (effects/sources/sashimono_aviutl.json, written by from_sashimono.py from Sashimono's own compat/aviutl/mapping.py), read once.
 static std::vector<std::filesystem::path> doc_folders(const char* folder);   // (doc_edit.h)
 struct AviutlRemade { std::string file; std::map<std::string, std::array<std::string, 3>> params; };   // (each param: its name there, how its number is said again, a second name it also goes to)
 static const std::map<std::string, AviutlRemade>& aviutl_remakes() {
     static const std::map<std::string, AviutlRemade> all = [] {
         std::map<std::string, AviutlRemade> read;
         const std::filesystem::path dir = doc_folders("effects").front();
-        std::ifstream in(dir / "sashimono_aviutl.json");
+        std::ifstream in(dir / "sources" / "sashimono_aviutl.json");
         std::stringstream text;
         text << in.rdbuf();
         rapidjson::Document d;
         if (d.Parse(text.str().c_str()).HasParseError() || !d.IsObject()) return read;
         for (const auto& e : d.GetObject()) {
             AviutlRemade& one = read[e.name.GetString()];
-            one.file = (dir / e.value["file"].GetString()).string();
+            one.file = script_shelf_file((dir / e.value["file"].GetString()).string());   // (in the folder of what it does: effects/blur/, effects/color/…)
             for (const auto& p : e.value["params"].GetObject()) one.params[p.name.GetString()] = {p.value[0].GetString(), p.value[1].GetString(), p.value[2].GetString()};
         }
         return read;

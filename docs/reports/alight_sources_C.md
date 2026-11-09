@@ -21,7 +21,7 @@
 - Smoothing（角を丸く）：形ごとに下に書く。
 
 **触るファイルと大きさ（目安）**：
-- 新しく `engine/community/solid_three.cpp`（+ `.h`）：QuickJS で three.js を読み、形のファイルを走らせ、配列を `Mesh` に写す。150 行ほど（`three_isf.cpp` と同じ大きさ）。
+- 新しく `engine/community/js/solid_three.cpp`（+ `.h`）：QuickJS で three.js を読み、形のファイルを走らせ、配列を `Mesh` に写す。150 行ほど（`three_isf.cpp` と同じ大きさ）。
 - 新しく `shelves/solids/*.js`：1 種 1 ファイル、5〜20 行。頭に AviUtl2 式のつまみ（レシピ `script.h` と同じ書き方）、下で three.js の形を呼ぶだけ。
 - 新しく `engine/materials/solid_image.mat`（50 行ほど）と unlit の版。
 - `engine/document/doc_moment_fx.h`：物の fx の中に形の .js があれば、絵の板（`effected.mat`）の代わりにその形を物の場所に置き、毎コマ `image` に `st.seen` を渡す（20〜30 行）。Alight と同じく「効果の 1 つ」として扱える。

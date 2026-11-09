@@ -6,9 +6,9 @@
 // knobs gathered into one struct and written in the head (script.h: // --track@...), its passes too (// --pass@...).
 // Made once into ~/Library/Caches/Motolii/isf/<hash>.wgsl, named by the file as it is. Its other images are
 // other things' pictures (screen.h others), its audio inputs other things' sound; its own vertex shader is worked out at each pixel.
-#include "community/isf.h"
+#include "community/shaders/isf.h"
 #include "community/door.h"
-#include "community/three_isf.h"
+#include "community/shaders/three_isf.h"
 #include <sys/stat.h>
 #include <cstdio>
 #include <filesystem>

@@ -3,7 +3,7 @@
 // the file read (one script of an @ file, "@Stylize_K.anm2#Mosaic"), its head's knobs, and each shader made WGSL by
 // glslang's own HLSL front end and Tint, as isf.cpp makes an ISF file's (built apart: aviutl.cpp, its headers heavy).
 #pragma once
-#include "community/script.h"
+#include "community/js/script.h"
 #include <cstdint>
 #include <string>
 #include <utility>

@@ -3,7 +3,7 @@
 // AbsentMotion authors). Its styles.cpp is read whole into this file as it is, so that its own drawing of an end, kept
 // to that file, is called from here; what else of it is not reached is stripped (gpu/kit_wgpu.sh, -dead_strip).
 #include "styles.cpp"
-#include "community/absent_motion.h"
+#include "community/absent_motion/absent_motion.h"
 #include "include/utils/SkParsePath.h"
 
 std::string absent_line_end(float x, float y, float dx, float dy, float r, float width, int cap, int join, const char* style) {

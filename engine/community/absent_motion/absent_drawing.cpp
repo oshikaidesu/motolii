@@ -4,7 +4,7 @@
 // making of a stroke, kept to that file, is called from here; its pieces put together into one outline by Skia's own
 // union (SkPathOps) when it is to be kept, else laid beside one another, to be filled as one (libtess2's nonzero, drawn_flat.h).
 #include "drawing.cpp"
-#include "community/absent_motion.h"
+#include "community/absent_motion/absent_motion.h"
 #include "include/pathops/SkPathOps.h"
 #include "include/utils/SkParsePath.h"
 #include <sstream>

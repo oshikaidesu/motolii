@@ -5,7 +5,7 @@
 // (docs.isf.video, chapter 9: the uniforms to INPUTS, their declarations taken out; texture2D as it is): tDiffuse is
 // ISF's inputImage, three's vUv ISF's isf_FragNormCoord, its time ISF's TIME. A knob's range as from_three.py made it
 // (from 0, or four times below, to four times its value, at least 1). Not taken: three's own #include pieces.
-#include "community/three_isf.h"
+#include "community/shaders/three_isf.h"
 #include <quickjs.h>
 #include <filesystem>
 #include <fstream>

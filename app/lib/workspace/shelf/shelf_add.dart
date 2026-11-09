@@ -80,8 +80,9 @@ String shelfAdd(Ws ws, String from, String code, String name, Iterable<String> t
   final ext = from.substring(from.lastIndexOf('.')), expression = shelfIsExpression(from);
   final dir = expression ? _ownExpressions : _ownEffects, file = '$dir/$name$ext';
   // (the maker's file of a name stands over the library's (doc_folder_files): neither is written over)
-  for (final f in [file, if (!expression) '$motoliiShelves/effects/$name$ext']) {
-    if (File(f).existsSync()) return '"$name$ext" is already there';
+  final library = Directory('$motoliiShelves/effects');   // (a folder for what each does: blur/, color/…, read through)
+  if (File(file).existsSync() || (!expression && library.existsSync() && library.listSync(recursive: true).any((e) => e.path.endsWith('/$name$ext')))) {
+    return '"$name$ext" is already there';
   }
   Directory(dir).createSync(recursive: true);
   // (its card's title and its shelf name: an ISF's its file's (isf.cpp), another's its first line's (doc_fx_title))

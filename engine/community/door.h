@@ -17,7 +17,7 @@
 #include "third_party/js/twigl/noise.h"
 
 inline bool door_has(const std::string& t, const char* word) { return t.find(word) != std::string::npos; }
-#include "community/door_shadertoy.h"
+#include "community/shaders/door_shadertoy.h"
 
 // What a form is called where it is written for: its programs' files are named so (doc_door.h), the Program shelf's chips.
 inline std::string door_name(const std::string& form) {

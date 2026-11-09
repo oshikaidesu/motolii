@@ -99,7 +99,7 @@ shaderport（quizzyjoy/shaderport、Apache-2.0）は、shader-effects-inc/shader
   - wgpu-compute-toy（MIT、compute のみ）、cuneus（MIT、段の組み立ては Rust のコード）、pygfx/shadertoy（BSD-2、Python、Shadertoy の決まった uniform）：どれも wgpu の上で、他人の Dawn の装置は使えない。
   - librashader（MPL-2.0、C の口あり）：受け取るのは slang（GLSL）で WGSL ではない。
   - shaders.com の効果をブラウザの外で動かす物は fframes（MIT）だけ。手で SkSL に書き直した物で、WebGPU ではない。
-- 分かった事：Motolii の Dawn の装置の上で作者の段の一式を回してくれる既存の物は無い。形として一番近いのは Wisp の段の書き方で、Motolii の ISF の段（`engine/community/isf.cpp`、`screen.h` の `// --pass@`）とも同じ考え方。
+- 分かった事：Motolii の Dawn の装置の上で作者の段の一式を回してくれる既存の物は無い。形として一番近いのは Wisp の段の書き方で、Motolii の ISF の段（`engine/community/shaders/isf.cpp`、`screen.h` の `// --pass@`）とも同じ考え方。
 - Motolii の段の仕組み（screen.h → screen_door）が作者の WGSL を受け取れないのは、screen_door が Filament の描く係を通るため。入力の並びを group 0 に決めうち（vgpu の形）にしていて、入口の名前も `main` に決めうちしている。作者の並び（group 0・1・2）を受け取るには、文字の書き換え（翻訳）か、screen_door をシェーダー自身の並び（layout auto、gpu_door の道）に替えるかになる。
 
 ## screen_door を「シェーダー自身の並び」に替えられるか（10/26）：Filament の描く係の中ではできない

@@ -1,0 +1,5 @@
+# fx_first.sh: the values these come with, where their own show nothing (file, knob, value)
+Diagonal Blur.fs	width	0.1
+Dilate.fs	intensity	0.4
+Erode.fs	intensity	0.4
+am_fillbehind.wgsl	fgAlpha	0.8

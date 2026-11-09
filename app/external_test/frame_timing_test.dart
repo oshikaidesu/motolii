@@ -9,7 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:motolii/workspace/timeline.dart';
+import 'package:motolii/workspace/timeline/timeline.dart';
 import 'package:motolii/workspace/workspace.dart' show Workspace;
 import 'package:motolii/workspace/ws.dart';
 

@@ -8,7 +8,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "community/script.h"
+#include "community/js/script.h"
 
 class SplatEffect {
 public:

@@ -3,7 +3,7 @@
 // a recipe's, script.h; `export function solid(k)` giving a BufferGeometry) run as it is in QuickJS, as three_isf.cpp
 // runs a three.js effect; the geometry's own typed arrays copied out. One QuickJS kept for all (three.core.js read once:
 // 24 ms), the modules it has read kept by their names.
-#include "community/solid_three.h"
+#include "community/js/solid_three.h"
 #include <quickjs.h>
 #include <filesystem>
 #include <fstream>

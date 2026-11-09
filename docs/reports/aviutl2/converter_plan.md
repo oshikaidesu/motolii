@@ -1,6 +1,6 @@
 # AviUtl 変換器の次の手（10/26、自分たちで決めた）
 
-変換器（`engine/community/aviutl.cpp`・`aviutl_fx.h`）に足す物は、どれも「借りた決まり ＋ Motolii がもう持っている借り物」へ写すだけにする。自分で効果や 3D の描き方は書かない。
+変換器（`engine/community/aviutl/aviutl.cpp`・`aviutl_fx.h`）に足す物は、どれも「借りた決まり ＋ Motolii がもう持っている借り物」へ写すだけにする。自分で効果や 3D の描き方は書かない。
 
 ## お手本（どちらも MIT）
 | 物 | 何を借りるか | 何を借りないか |

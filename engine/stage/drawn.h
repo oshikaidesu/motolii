@@ -10,5 +10,5 @@
 #include "stage/drawn_edge.h"
 #include "stage/drawn_made.h"
 #include "stage/drawn_sketch.h"
-#include "community/absent_motion.h"   // (an open edge's ends as AbsentMotion draws them: drawn_flat.h)
+#include "community/absent_motion/absent_motion.h"   // (an open edge's ends as AbsentMotion draws them: drawn_flat.h)
 #include "stage/drawn_flat.h"

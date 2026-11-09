@@ -14,7 +14,7 @@
 | 同 | 作者が切り上げる格子の数（103 列で 104）を直線に乗らないとして捨て、80 のまま固めていた（確） | 1 以内で直線に乗る整数として受ける。作者の `Math.ceil((1 - originX) / cellUvWidth)` |
 | 同 | 格子の絵の大きさを、描かずに測っていた（作者は描く時に決める） | 作者の render() を回してから測る。場所で読むだけの絵（作者の `(cell + 0.5) / grid`）は舞台と同じ大きさにする。点の番号で読む絵（Connected Dots、textureLoad）は今のまま |
 | `engine/stage/screen.h` `screen_image` | 効果の横に置く絵（`--image@`、ASCII の字の絵）を ThorVG を始める前に読み、動画だけの書類では字の絵が全部 0 になって真っ黒（確） | 読む前に `tvg::Initializer::init`。ThorVG の `tvgTaskScheduler.cpp` TaskScheduler::request は始まる前の仕事を捨てる |
-| `engine/community/aviutl_load.h` `aviutl_drawn` | 同じく ThorVG を始めずに canvas を作っていた | 同。ThorVG の `tvgCanvas.cpp` SwCanvas::gen は始まる前は何も作らない |
+| `engine/community/aviutl/aviutl_load.h` `aviutl_drawn` | 同じく ThorVG を始めずに canvas を作っていた | 同。ThorVG の `tvgCanvas.cpp` SwCanvas::gen は始まる前は何も作らない |
 | `workspace/workspace_cards.dart`、`sets/inspector/inspector_number_field*.dart` | 打った数を表示の幅で止めていた（Datamosh の From 0–10 秒、Trim ±100%） | 表示の幅は滑らせる幅、打つ数はエンジンの幅まで（`@valid`）。After Effects の slider range と valid range（PF_FloatSliderDef の slider_min/max と valid_min/max） |
 | `workspace/dock/dock_effects.dart` | 1 本しか無いパックを Packs に出さなかった | 全部出す。sashimono-edit の追加メニューはフォルダごとにサブメニューを作る（`add_menu.py:280-285`） |
 | `engine/document/doc_moment.h`、`doc_moment_fx.h`、`thing_fx.h` | グループ（Null）に効果を付けても何も起きなかった（絵を持たないので）（確：万華鏡を付けても絵が同じ） | グループに効果があれば、中の物をまとめて舞台と同じ大きさの 1 枚に描き、効果をそれに掛けて、グループの場所に置く。内蔵の効果（ぼかし等）も効く。Alight Motion のグループは舞台と同じ大きさの入れ子（AbsentMotion の `StructureActions.kt` grouped：embedScene の幅・高さは舞台のもの）、After Effects はプリコンプの層に掛けた効果が中の層まとめてに効く。測った：赤と青の境目の一番暗い所が、グループにぼかしで 107.7（ぼかし無し 106.7）、1 つずつぼかしで 57.7（黒い筋） |
@@ -65,12 +65,12 @@
 | `engine/tsl/shader_lab_shelf.ts:197-227`、ASSETS.md:114 | vec2 のつまみ、文字の欄、作り直しが要るつまみ（crtMode、dithering の preset）、色のアルファは作者の既定のまま | vec2 13 個（7 本）、文字 6 本 |
 | `engine/tsl/shader_lab_shelf.ts:23-26,118` | 作っていない：annotations、blob-tracking、blur、custom-shader、grain。fluid、magnify-lens、pixel-trail はマウスで動かす（tsl_collection.md 132 行）。particle-grid は板 1 枚より多く描くので断る。ASCII の Blocks・Shades・Hatching は字体に字が無い | 9 種＋ 3 組 |
 | `engine/tsl/shelf_file.ts:60,66` | 色を 0..1 に切って入れて出す（1 を超える明るさが消える） | TSL の 98 本 |
-| `shelves/effects/from_sashimono.py:27` | 線形の計算を sRGB のまま（to_linear が何もしない） | 16 本 |
-| `shelves/effects/from_sashimono.py:34-41,157` | クリップの枠は絵全体、60 コマ、拡大 1。11 本は断る | 95 本の共通部分、11 本 |
-| `shelves/effects/from_absent.py:32-36,129` | SkSL の選ぶつまみは 0..1、刻み 0.01 | 22 本・43 個（am_channelremap の既定 2.0 が幅の外） |
-| `shelves/effects/from_absent.py:100-101` | ぼかしは ±96 画素まで（3σ は出典あり、96 は無し） | 18 本 |
-| `shelves/effects/from_absent.py:19-23,46-48,63-64` | ネイティブの効果、道に沿う動き、二枚目の絵は作らない | 14 本程 |
-| `shelves/effects/from_three.py:11-12,58-66` | つまみの幅は既定値の 4 倍。式で書かれた既定値は 0。Halftone の幅と高さは 1 | 10 本 |
+| `shelves/effects/sources/from_sashimono.py:27` | 線形の計算を sRGB のまま（to_linear が何もしない） | 16 本 |
+| `shelves/effects/sources/from_sashimono.py:34-41,157` | クリップの枠は絵全体、60 コマ、拡大 1。11 本は断る | 95 本の共通部分、11 本 |
+| `shelves/effects/sources/from_absent.py:32-36,129` | SkSL の選ぶつまみは 0..1、刻み 0.01 | 22 本・43 個（am_channelremap の既定 2.0 が幅の外） |
+| `shelves/effects/sources/from_absent.py:100-101` | ぼかしは ±96 画素まで（3σ は出典あり、96 は無し） | 18 本 |
+| `shelves/effects/sources/from_absent.py:19-23,46-48,63-64` | ネイティブの効果、道に沿う動き、二枚目の絵は作らない | 14 本程 |
+| `shelves/effects/sources/from_three.py:11-12,58-66` | つまみの幅は既定値の 4 倍。式で書かれた既定値は 0。Halftone の幅と高さは 1 | 10 本 |
 | `engine/tsl/noise_fx_shelf.ts:22-27`、`textures_shelf.ts:21-22,30,42` | 入力を +3、Scale・Pace の幅、色以外の slot を外す、equirectangular を切る | 9 本＋ 9 本 |
 | `engine/check/fx_chains.sh:2-3,55`、`engine/fx_first.sh:2-8,47,65` | 確かめる側：枠のまわり 128 点（checklist 668 行が出典なしと書く）、40 dB・30 dB、1.4 秒、512² | 判定の 588 本、既定を差し替えた 35 本 |
 | `engine/tsl/check_node/check.ts:104-117` | 作者の描画と比べたのは 1 つの時刻、既定のつまみだけ。比べていないものもある | Shader Lab 43 本、tt・nf・tf は比べていない |
@@ -84,7 +84,7 @@
 | `workspace/dock/dock_effects.dart:72`（確） | 動きのタイルに絵を渡していない | 動きのタイルが全部空 |
 | `engine/document/doc_values.h:306`、`sets/inspector/inspector_number_field_num_field_state.dart:73` | 幅の外まで打てるのは .wgsl・.fs の連続のつまみだけ | AviUtl2 のつまみは最大で止まる |
 | `engine/document/doc_values.h:308`、`workspace/workspace_keys.dart:27` | キーは数のつまみだけ | スイッチや選択にキーが打てない |
-| `engine/community/isf.cpp:122-129`、`aviutl.cpp:122,146,149`、`workspace/workspace_cards.dart:93` | 選択肢は数字に、`--color` は 0–255 の 3 本に、`--value`・`--file` はつまみ無し | 名前でなく数字、色見本でなく 3 本 |
+| `engine/community/shaders/isf.cpp:122-129`、`aviutl.cpp:122,146,149`、`workspace/workspace_cards.dart:93` | 選択肢は数字に、`--color` は 0–255 の 3 本に、`--value`・`--file` はつまみ無し | 名前でなく数字、色見本でなく 3 本 |
 | `workspace/dock.dart:26,192-194` | Presets は空 | 空のタブ |
 | `workspace/effect_tiles.dart:60,180,199,229,237,414-420` | タイルの絵は 12 本ずつ作る。ffmpeg・sips が無いと静止画だけで NO CHANGE も無し | 絵がまとめて出る。ffmpeg 無しだと動かない |
 | `workspace/effect_tiles.dart:140,144`、`workspace_seat.dart:66`、`dock_effects.dart:173,196,214`、`ws_3.dart:41`、`dock_parts.dart:346` | 待ち時間と大きさ：300 ms、150 ms、タイル 84 画素以上、8 列まで、説明は 2 行で切る | 長い説明が切れる |
@@ -94,14 +94,14 @@
 | どこ | 決め打ち | 出典 |
 |---|---|---|
 | `engine/document/doc_moment_fx.h:217-220`（確） | 効果の余白 128 画素、舞台で切る | sashimono-edit の BAKE_MARGIN、AbsentMotion は場面で切る |
-| `engine/community/aviutl_fx.h:97` | ぼかしのタップ 96 | sashimono-edit `builtin.py:191` の `min(radius, 96.0)` |
-| `engine/community/aviutl_load.h:20,115`、`aviutl_fx.h:598` | 図形と Resize は 4096、線 4000 で塗り | sashimono-edit の MAX_FIGURE_SIZE、FILLED_LINE |
-| `engine/community/aviutl_fx.h:263-265,349` | カメラの距離 1024、カメラの後ろの面は捨てる | sashimono-edit の CAMERA_DISTANCE、`projection.py` |
+| `engine/community/aviutl/aviutl_fx.h:97` | ぼかしのタップ 96 | sashimono-edit `builtin.py:191` の `min(radius, 96.0)` |
+| `engine/community/aviutl/aviutl_load.h:20,115`、`aviutl_fx.h:598` | 図形と Resize は 4096、線 4000 で塗り | sashimono-edit の MAX_FIGURE_SIZE、FILLED_LINE |
+| `engine/community/aviutl/aviutl_fx.h:263-265,349` | カメラの距離 1024、カメラの後ろの面は捨てる | sashimono-edit の CAMERA_DISTANCE、`projection.py` |
 | `engine/media/sound.h:72-77` | ISF の音は 512 帯、1024 標本 | VVISF-GL の AudioController |
-| `engine/community/door_shadertoy.h:118` | Shadertoy のバッファは PERSISTENT・FLOAT | rust_ae の `shadertoy.rs` |
+| `engine/community/shaders/door_shadertoy.h:118` | Shadertoy のバッファは PERSISTENT・FLOAT | rust_ae の `shadertoy.rs` |
 | `engine/document/doc_recipes.h:479-501` | トランジションのキーは 1 秒 | Premiere Pro の既定、Final Cut Pro の 30 コマ |
 | `engine/document/doc_recipes.h:472` | カメラは `.am` の動きだけ | AbsentMotion のカメラは自分の動きで置く |
-| `engine/community/isf.cpp:192-193,201` | 生成する効果は物のアルファを掛ける、`#ifndef GL_ES` を外す | After Effects の Preserve Underlying Transparency、Vidvox の ISF-JS-Renderer |
+| `engine/community/shaders/isf.cpp:192-193,201` | 生成する効果は物のアルファを掛ける、`#ifndef GL_ES` を外す | After Effects の Preserve Underlying Transparency、Vidvox の ISF-JS-Renderer |
 | `workspace/dock/dock_effects.dart:129,166`、`effect_decks.dart:27` | Recent は 10 個、40 個まで覚える | Alight Motion の `EffectBrowser.kt:117,217` |
 | `motolii_shelves.dart:117-119` | 「もしかして」は 5 つ | RapidFuzz の extract |
 | `workspace/effect_tiles.dart` | タイルの絵 16 コマ、384 画素で描き 192 画素で持つ | AbsentMotion |

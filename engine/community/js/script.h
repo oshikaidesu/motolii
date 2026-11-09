@@ -22,6 +22,8 @@
 #include <map>
 #include <memory>
 #include <cstring>
+#include <dlfcn.h>
+#include <filesystem>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -43,6 +45,27 @@ struct ScriptCopy { double x = 0, y = 0, z = 0, size = 1, rotate = 0, rotate_x =
 
 // The files a word names in turn, with spaces between (an effect's list, the stage's): a path (a word with a "/" in it) is one to
 // its .wgsl, .fs, .js, .mjs, .json (Filament's own settings), .am (AbsentMotion's own motion) or AviUtl2 script (.anm2, .obj2, "#name" after an @ file's), spaces and all ("Application Support", an ISF effect's "Bad TV.fs"); any other word stands alone.
+// A shelf file a document names where it no longer is (the shelves moved: engine/effects/, then shelves/effects/<source>/):
+// the one of that name in that kind's shelf now (shelves/ beside engine/, as doc_folders finds it), read through.
+inline std::string script_shelf_file(const std::string& file) {
+    std::error_code wrong;
+    if (file.find('/') == std::string::npos || std::filesystem::exists(file, wrong)) return file;
+    static std::map<std::string, std::map<std::string, std::string>> by;   // (a kind's files by their name)
+    for (std::filesystem::path p = std::filesystem::path(file).parent_path(); !p.empty() && p != p.parent_path(); p = p.parent_path()) {
+        const std::string kind = p.filename().string();
+        if (kind != "effects" && kind != "recipes" && kind != "relations" && kind != "animators" && kind != "solids" && kind != "looks") continue;
+        if (!by.count(kind)) {
+            Dl_info lib{};
+            dladdr((const void*)&script_shelf_file, &lib);
+            const auto shelf = std::filesystem::weakly_canonical(lib.dli_fname ? lib.dli_fname : ".", wrong).parent_path().parent_path().parent_path() / "shelves" / kind;
+            auto& names = by[kind];
+            for (const auto& e : std::filesystem::recursive_directory_iterator(shelf, wrong)) names.emplace(e.path().filename().string(), e.path().string());
+        }
+        const auto at = by[kind].find(std::filesystem::path(file).filename().string());
+        return at == by[kind].end() ? file : at->second;
+    }
+    return file;
+}
 inline std::vector<std::string> script_files(const std::string& word) {
     std::vector<std::string> all;
     std::istringstream each(word);
@@ -51,6 +74,7 @@ inline std::vector<std::string> script_files(const std::string& word) {
         if (!all.empty() && all.back().find('/') != std::string::npos && !ends(all.back())) all.back() += " " + w;
         else all.push_back(w);
     }
+    for (std::string& f : all) f = script_shelf_file(f);
     return all;
 }
 

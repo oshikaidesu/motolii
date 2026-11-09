@@ -73,6 +73,6 @@ set 1 js_Box_lit 0
 set 2 js_Box_lit 0
 still out/c_Box_flat.png
 set 1 js_Box_lit 1
-say 1 fx ../../effects/Bad TV.fs ../../solids/Box.js
+say 1 fx ../../effects/glitch/Bad TV.fs ../../solids/Box.js
 still out/c_Box_badtv.png
 time 60

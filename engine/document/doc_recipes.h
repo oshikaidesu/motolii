@@ -479,7 +479,7 @@ static std::string doc_effect_names() {
     std::error_code wrong;
     for (const DocEffect& e : doc_effects) {
         if (!*e.label) continue;
-        const std::filesystem::path picture = doc_folders("effects").front() / ("thing_" + std::string(e.value) + ".png");
+        const std::filesystem::path picture = script_shelf_file((doc_folders("effects").front() / ("thing_" + std::string(e.value) + ".png")).string());
         all += (all.empty() ? "" : "\n") + std::string(e.name) + "\t" + e.value + "\t" + e.label + "\t" + (std::filesystem::exists(picture, wrong) ? picture.string() : "") + "\t\t\t" + e.about;
     }
     return all;

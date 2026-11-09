@@ -46,7 +46,7 @@ def knob_lines(named, numbers):   # (each param a knob or more, by the name the 
 if 'sksl' not in d:
     if not d.get('native') or d['id'] not in moves:
         sys.exit(f"{src}: drawn by AbsentMotion's own C++, no shader")
-    head = [f"// {d['name']}: AbsentMotion's {d['id']} (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), moved by its own motion.cpp (engine/community/absent_motion.cpp)",
+    head = [f"// {d['name']}: AbsentMotion's {d['id']} (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), moved by its own motion.cpp (engine/community/absent_motion/absent_motion.cpp)",
             f"// --label:{d.get('category', '').capitalize()}", f"// --absent:{d['id']}"]
     if d.get('description'):
         head.append(f"// --about:{' '.join(d['description'].split())}")

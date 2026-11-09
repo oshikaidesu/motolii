@@ -1,0 +1,8 @@
+# fx_first.sh: the values these come with, where their own show nothing (file, knob, value)
+Bloom.fs	intensity	0.4
+Gloom.fs	intensity	0.4
+am_contourgradient.wgsl	fill	0.9
+am_contourlines.wgsl	fill	0
+am_electricedges.wgsl	fill	0
+am_simplestarfield.wgsl	starSize	1.85
+am_unsharpmask.wgsl	radius	0.614

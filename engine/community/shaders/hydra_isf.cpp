@@ -3,7 +3,7 @@
 // the code and giving back text. Its own generator-factory.js writes the GLSL, with no WebGL and no page. Every number of a
 // chain is passed as a function, so Hydra makes it a uniform and it is a knob here; what is moving in the code (a function
 // of time, an array) is read every 0.1 second by Hydra's own code and is that knob's keys, to be edited as any keys are.
-#include "community/hydra_isf.h"
+#include "community/shaders/hydra_isf.h"
 #include <quickjs.h>
 #include <filesystem>
 #include <fstream>

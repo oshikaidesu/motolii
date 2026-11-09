@@ -1,5 +1,5 @@
 // (splatfx.h says what this is)
-#include "community/splatfx.h"
+#include "community/shaders/splatfx.h"
 #include <quickjs.h>
 #include <filesystem>
 #include <fstream>

@@ -6,8 +6,8 @@
 // back is reading. Frames are its own 60 a second, as requestAnimationFrame and a clock stepped by hand (timesnap's way).
 #pragma once
 
-#include "community/p5_three.h"
-#include "community/p5_mesh.h"
+#include "community/js/p5_three.h"
+#include "community/js/p5_mesh.h"
 
 static const char* const p5_before = R"(
 var __T = 0, __Q = [], __seed = 12345, __L = 0;   // (__L: the line of the sketch that draws now: script.h sketch_marked)

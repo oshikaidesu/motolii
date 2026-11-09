@@ -1,8 +1,8 @@
 // doc_door.h: part of doc.h. Code taken from the net, read as what it is (door.h), kept in the maker's own folder as it
 // came (so it is on the shelf too) and put on the stage. word: the code, or a file of it. A shader that reads a picture
 // goes on the picked thing, as an effect; one that makes its own fills the stage; a sketch is a picture, in 3D a solid.
-#include "community/door_shadertoy_json.h"
-#include "community/door_p5_shader.h"
+#include "community/shaders/door_shadertoy_json.h"
+#include "community/shaders/door_p5_shader.h"
 #include "community/door_net.h"
 // What moved in a program's code as keys on what wears its effect `fx`, where they can be edited: a straight line two of them.
 static void doc_door_keys(Doc& d, int thing, const std::string& fx, const std::vector<HydraKnob>& moving) {

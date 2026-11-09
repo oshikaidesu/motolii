@@ -67,7 +67,7 @@ After Effects の文字アニメーターと同じやり方。キーの打ち方
   - Alight では、時間は「範囲にキー」、配り方は「Shape と Ease」で、別々のつまみ。
   - Motolii の仕様では、時間は stagger の行のキー、配り方は Min・Max と区間イージング。
   - 「区間イージングが配る曲線」と書いた所は、Alight と同じ物を指していない。Alight の Ease は時間ではなく、コピーの並びに沿った坂の曲げ方。
-- **Scatter Repeat（engine/community/absent_motion.cpp の scatter_repeat）は Alight と違う**
+- **Scatter Repeat（engine/community/absent_motion/absent_motion.cpp の scatter_repeat）は Alight と違う**
   - 住所は k / (n − 1)。先頭の空きが無い。
   - 坂は RAMP だけ。Shape・Ease・Overlap・Invert は無い。
   - この表の式で埋められる。AbsentMotion の `Ranged()`（Linear・Grid・Radial が使う）も同じく RAMP と単純なイーズだけ。

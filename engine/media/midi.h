@@ -5,7 +5,7 @@
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
 #include "media/gst_read.h"
-#include "community/script.h"
+#include "community/js/script.h"
 #include <fstream>
 #include <iterator>
 #include <cmath>

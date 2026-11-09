@@ -307,7 +307,7 @@ static std::vector<MaterialInstance*> add_parts(Stage& s, Mesh* m, const char* f
             mi->setParameter("matteUse", float4{0.f});
             mi->setParameter("matteSoft", float4{0.f});
         }
-        if (mat->hasParameter("backdrop")) mi->setParameter("backdrop", white_point(s), TextureSampler());   // (none read until doc.h says which)
+        for (const char* name : {"backdrop", "edge"}) if (mat->hasParameter(name)) mi->setParameter(name, white_point(s), TextureSampler());   // (none read until doc.h says which, no bevel until drawn_made.h makes one: Filament refuses a sampler left unset)
         looks.push_back(mi);
     }
     float3 low = n ? m->pos[0] : float3{0.f}, high = low;   // (Filament wants a thing's rough size if it casts or takes shadows)

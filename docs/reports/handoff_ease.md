@@ -14,7 +14,7 @@
 
 ## 今の状態
 **コミット済み**
-- `8fa40d2`：SQLite の関数 `anime(式, u)`。区間の式（`define` や `shelves/ways/*.way`）から anime.js（`engine/third_party/anime/`、MIT、v4.5.0 をそのまま）のイーズを呼べる。QuickJS で動く（`engine/community/script.cpp` の `anime_ease`、`engine/document/doc_match.h`）。検査 `engine/check/anime_ways.sh`（yes）。これは「点で好きな形を描く `linear()`」などの道具として残す。
+- `8fa40d2`：SQLite の関数 `anime(式, u)`。区間の式（`define` や `shelves/ways/*.way`）から anime.js（`engine/third_party/anime/`、MIT、v4.5.0 をそのまま）のイーズを呼べる。QuickJS で動く（`engine/community/js/script.cpp` の `anime_ease`、`engine/document/doc_match.h`）。検査 `engine/check/anime_ways.sh`（yes）。これは「点で好きな形を描く `linear()`」などの道具として残す。
 - `f8d60ad`：anime.js の見本 46 本（`shelves/ways/anime_*.way`）。**これは足してはいけない物だった**。
 
 **まだコミットしていない変更**（作業の途中。見直してから扱う）

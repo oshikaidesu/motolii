@@ -1,7 +1,7 @@
 // See aviutl.h. The HLSL read by glslang as glslangValidator -D does (EShSourceHlsl, the entry its registered name,
 // registers moved apart by setShiftBinding by D3D11's own slot counts: t from 0, s from 128, b from 144), SPIR-V made WGSL by Tint (isf.cpp's way),
 // the cbuffer's places taken from glslang's reflection (HLSL's packing) and from Tint's own layout of the struct (WGSL's).
-#include "community/aviutl.h"
+#include "community/aviutl/aviutl.h"
 #include <cstring>
 #include <filesystem>
 #include <fstream>

@@ -171,8 +171,7 @@ static void soak(Stage& s, double seconds, int pictures, const std::function<voi
 }
 
 static bool shoot(Stage& s, const char* path) {
-    static std::vector<uint8_t> pic;
-    pic.resize((size_t)s.w * s.h * 4);
+    std::vector<uint8_t> pic((size_t)s.w * s.h * 4);   // (its own: stages of other sizes shoot on other threads at once, the window's tiles; draw waits for the read)
     for (int i = 0; i < 3; ++i) draw(s, i == 2 ? &pic : nullptr);
     uint8_t* plane = pic.data();
     NSBitmapImageRep* rep = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:&plane pixelsWide:s.w pixelsHigh:s.h bitsPerSample:8 samplesPerPixel:4

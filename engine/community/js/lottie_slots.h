@@ -4,7 +4,7 @@
 // A number is one knob, two numbers x and y, three or four colour (0 to 1). Lottie says no range: a number's is from 0
 // (or four times below it, when below 0) to four times itself (at least 1). Text and picture slots are not knobs.
 #pragma once
-#include "community/script.h"
+#include "community/js/script.h"
 #include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/document.h"
 #include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/stringbuffer.h"
 #include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/writer.h"

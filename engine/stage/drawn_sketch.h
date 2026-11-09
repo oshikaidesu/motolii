@@ -2,7 +2,7 @@
 // A p5.js sketch that paints in 2D, run with no page (p5_stand.h): each frame what it paints is ThorVG's shapes on the
 // picture's canvas, which keeps what it held (Canvas::draw(false): WgCompositor loads what is there), as a sketch's canvas
 // does, so a sketch that never wipes builds up its painting and a frame costs what it adds.
-#include "community/script.h"
+#include "community/js/script.h"
 static tvg::Fill* sketch_ramp(const double* g, size_t many) {   // (a canvas gradient's numbers, p5_stand.h's ramp)
     std::vector<tvg::Fill::ColorStop> stops;
     for (size_t i = 7; i + 5 <= many; i += 5)

@@ -3,7 +3,7 @@
 // runs them: a layer of its own (scene.h) given the thing's time and its effects in order, its placement begun where
 // nothing is moved. Built apart (gpu/kit_wgpu.sh), beside AbsentMotion's motion.cpp, scene.cpp and easing.cpp as
 // they are (what of scene.cpp draws or reads a scene is not reached: the library is linked dead-stripped).
-#include "community/absent_motion.h"
+#include "community/absent_motion/absent_motion.h"
 #include "scene.h"
 #include "textanim.h"
 #include <algorithm>

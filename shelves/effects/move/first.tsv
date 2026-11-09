@@ -1,0 +1,4 @@
+# fx_first.sh: the values these come with, where their own show nothing (file, knob, value)
+am_offset.wgsl	offset_x	500
+am_rastertransform.wgsl	scale	5.9
+am_stretchaxis.wgsl	scale	5.9
