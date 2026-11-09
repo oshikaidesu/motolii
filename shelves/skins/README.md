@@ -94,7 +94,7 @@ Mac に入っている書体なら名前だけでよい。幅の広い書体（M
 
 ## 6. フォーム
 
-アプリが革に聞くのは、オン・オフと数値の絵だけ。theme.xml の `<Forms Value="own"/>`。知らない名前は own。動きは [naked_ui](https://pub.dev/packages/naked_ui)。`parts/` の SVG は読まない。
+アプリが革に聞くのは、オン・オフだけ。数値の絵はフォームを通さない。theme.xml の `<Forms Value="own"/>`。知らない名前は own。動きは [naked_ui](https://pub.dev/packages/naked_ui)。`parts/` の SVG は読まない。
 
 新しいフォームはアプリの `lib/skin/forms/` に足し、`forms.dart` の表に1行足し、theme.xml に `<Forms Value="<名前>"/>` と書く。置くだけでは着られない。
 

@@ -1,5 +1,4 @@
-// The number field's picture, kept out of the field's own file: that file is pulled in by the inspector, and the inspector
-// is pulled in by the forms, so the field cannot import the forms back. [bindNumber] is set when the forms load.
+// The number field's picture.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -57,15 +56,6 @@ Widget keyDiamond(Color colour, {bool empty = false}) => Transform.rotate(
     ),
   ),
 );
-
-typedef NumberPaint = Widget Function(BuildContext context, NumberSpec spec);
-
-NumberPaint _paint = usualNumber;
-
-/// A form's [Forms.number], installed as the forms library loads.
-void bindNumber(NumberPaint paint) => _paint = paint;
-
-Widget paintNumber(BuildContext context, NumberSpec spec) => _paint(context, spec);
 
 /// The field as the window has drawn it: a filled well, a range along the bottom, the axis as a stripe.
 Widget usualNumber(BuildContext context, NumberSpec n) {

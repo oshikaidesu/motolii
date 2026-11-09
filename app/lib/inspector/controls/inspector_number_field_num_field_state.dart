@@ -465,7 +465,7 @@ class NumFieldState extends State<NumField> {
                 ),
               )
             : null;
-        final body = paintNumber(
+        final body = usualNumber(
           context,
           NumberSpec(
             value: valueText(),

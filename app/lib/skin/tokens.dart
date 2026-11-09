@@ -118,44 +118,22 @@ abstract final class T {
     return l >= N.g56.computeLuminance() || l < .04 ? c : N.g56;
   }
 
-  static TextStyle name([Color? c]) => TextStyle(
-    fontFamily: sans,
-    fontFamilyFallback: const ['.AppleSystemUIFont'],
-    fontSize: px(11),
-    color: ink(c ?? Grey.g91),
-    height: 1,
-    letterSpacing: .05,
-    decoration: TextDecoration.none,
-  );
-  static TextStyle label([Color? c]) => TextStyle(
-    fontFamily: sans,
-    fontFamilyFallback: const ['.AppleSystemUIFont'],
-    fontSize: px(10),
-    color: ink(c ?? Grey.g63),
-    height: 1,
-    letterSpacing: .1,
-    decoration: TextDecoration.none,
-  );
-  static TextStyle micro([Color? c]) => TextStyle(
-    fontFamily: sans,
-    fontFamilyFallback: const ['.AppleSystemUIFont'],
-    fontSize: px(10),
-    fontWeight: FontWeight.w500,
-    color: ink(c ?? Grey.g63),
-    height: 1,
-    letterSpacing: .15,
-    decoration: TextDecoration.none,
-  );
-  static TextStyle value([Color? c]) => TextStyle(fontFamily: mono, fontSize: px(11), color: ink(c ?? Grey.g91), height: 1, decoration: TextDecoration.none);
-  static TextStyle title([Color? c]) => TextStyle(
-    fontFamily: sans,
-    fontFamilyFallback: const ['.AppleSystemUIFont'],
-    fontSize: px(13),
-    fontWeight: FontWeight.w600,
-    color: ink(c ?? Grey.g95),
-    height: 1.1,
-    decoration: TextDecoration.none,
-  );
+  static TextStyle _style(double size, Color usual, Color? c, {FontWeight? weight, double height = 1, double tracking = 0, bool mono = false}) =>
+      TextStyle(
+        fontFamily: mono ? T.mono : sans,
+        fontFamilyFallback: mono ? null : const ['.AppleSystemUIFont'],
+        fontSize: px(size),
+        fontWeight: weight,
+        color: ink(c ?? usual),
+        height: height,
+        letterSpacing: tracking == 0 ? null : tracking,
+        decoration: TextDecoration.none,
+      );
+  static TextStyle name([Color? c]) => _style(11, Grey.g91, c, tracking: .05);
+  static TextStyle label([Color? c]) => _style(10, Grey.g63, c, tracking: .1);
+  static TextStyle micro([Color? c]) => _style(10, Grey.g63, c, weight: FontWeight.w500, tracking: .15);
+  static TextStyle value([Color? c]) => _style(11, Grey.g91, c, mono: true);
+  static TextStyle title([Color? c]) => _style(13, Grey.g95, c, weight: FontWeight.w600, height: 1.1);
 }
 
 /// What was typed, a Japanese input method's wide letters and digits as plain ones (１２８：３０ is 128:30).

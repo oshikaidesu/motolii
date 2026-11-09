@@ -41,9 +41,8 @@ Motolii のアプリ（Flutter、`app`）の見た目は、エンジンの側（
 | 関数 | 渡る物 | アプリの部品 |
 |---|---|---|
 | `onOff(context, SwitchSpec)` | `on`、`onChanged`、`enabled` | オン・オフ（Animate all など） |
-| `number` | `NumberSpec`（数の文字、打っている欄、範囲） | 数の入力欄。こすって変える動きはアプリが持つ |
 
-`number` は書かなければいつもの絵のまま。見た目の動き（`AnimatedContainer`、`TweenAnimationBuilder` など）は自由。手の受け取り（`GestureDetector`、`MouseRegion`、`Listener`）だけは書かず naked_ui に任せる。
+数値の絵は `number_paint.dart` の一つ。見た目の動き（`AnimatedContainer`、`TweenAnimationBuilder` など）は自由。手の受け取り（`GestureDetector`、`MouseRegion`、`Listener`）だけは書かず naked_ui に任せる。
 
 ### 使える材料
 
@@ -62,7 +61,7 @@ Motolii のアプリ（Flutter、`app`）の見た目は、エンジンの側（
 フォームが自分の色を持つのも自由。革の色に合わせたい所だけ上の材料を使う。
 
 ### 手順
-1. `lib/skin/forms/<名前>_forms.dart` に `class XForms extends Forms` を書き、`onOff` を書く（ほかは書かなければいつもの絵）。見本は `own_forms.dart`。
+1. `lib/skin/forms/<名前>_forms.dart` に `class XForms extends Forms` を書き、`onOff` を書く。見本は `own_forms.dart`。
 2. `lib/skin/forms/forms.dart` の `forms` に `'<名前>': XForms()` を1行足し、import する。
 3. 革のフォルダの `theme.xml` に `<Forms Value="<名前>"/>` と書く（色は同じ theme.xml で）。
 4. 見る：`app/tool/live.sh` でアプリを開き、View › Skin でその革を着て、フォームのファイルを保存するたびに描き直るのを見る。手を乗せた時・押した時は live.sh のアプリで手で確かめる。
