@@ -8,7 +8,7 @@
 // shows; with no knob to turn, the line between before and after goes across it. No tile stands but one that shows nothing.
 // AbsentMotion's own effects keep their line of the table. Sixteen pictures a twelfth of a second apart, as its moving
 // tiles, played there and back at 24 a second, so nothing steps or jumps where it starts again. The sample is the balloon
-// fx_tiles.sh draws on (fx_sample.jpg). Drawn on a
+// fx_tiles.sh draws on (shelves/effects/sources/fx_sample.jpg). Drawn on a
 // document of its own in another isolate (as create_preview.dart reckons the recipes), where the inside says one drawn
 // for it goes (its home in ~/Library/Caches/Motolii/tiles, named by the file and when it was written: doc_recipes.h
 // doc_tile), then shown at once. Put on as fx_tiles.sh and edit.sh say it: a screen effect (.fs, .wgsl) on the whole
@@ -302,14 +302,14 @@ abstract final class EffectTiles {
   }
 
   static List<(String, bool)> draw(String dir, List<(String, String)> files) {
-    final folder = Directory.systemTemp.createTempSync('motolii_tiles'), drawn = <(String, bool)>[];
+    final folder = Directory.systemTemp.createTempSync('motolii_tiles'), drawn = <(String, bool)>[], sample = '${Directory(dir).absolute.parent.path}/shelves/effects/sources';   // (the balloon photos the shelf's tiles are drawn on)
     final m = Motolii.open('${folder.path}/tiles.motolii', wide: 384, high: 384, dir: dir);   // (AbsentMotion's RENDER, its THUMB below)
     if (m == null) return drawn;
     _ffmpeg(['-f', 'lavfi', '-i', 'color=c=0x2c2c34:s=384x384,drawgrid=w=48:h=48:t=1:c=0x45454f', '-frames:v', '1', '${folder.path}/grid.png']);   // (its grid, where its "move" layout stands)
     // (under the photo, the picture a transition goes to: put on a clip, one takes it away and what is under it shows
     //  (doc_fx_file), as gl-transitions' own previews go from one photo to another (scripts/rendering/render-preview.mjs:
     //  a road among its three); on the whole screen it had nothing to go to, and went to black)
-    final grid = m.add('picture', '${folder.path}/grid.png'), under = m.add('picture', '$dir/fx_sample_end.jpg'), photo = m.add('picture', '$dir/fx_sample.jpg'), card = m.add('picture', '$dir/fx_sample.jpg');
+    final grid = m.add('picture', '${folder.path}/grid.png'), under = m.add('picture', '$sample/fx_sample_end.jpg'), photo = m.add('picture', '$sample/fx_sample.jpg'), card = m.add('picture', '$sample/fx_sample.jpg');
     _ffmpeg(['-f', 'lavfi', '-i', "aevalsrc='0.9*sin(2*PI*(50+120*exp(-25*mod(t,1/3)))*t)*exp(-9*mod(t,1/3))+0.25*sin(2*PI*(300+850*t)*t)*(0.5+0.5*sin(6*PI*t))':s=48000:d=2", '${folder.path}/beat.wav']);   // (for one that hears: a kick three times a second under a tone rising 300 to 2000 Hz, by the same ffmpeg's lavfi as the grid)
     final song = m.add('film', '${folder.path}/beat.wav');   // (a sound alone: heard by every AviUtl2 script (its audiobuffer: doc_sound_now), by an ISF's audio input its knob names)
     m.set(song, 'opacity', 0);   // (its wavescope not seen: heard, as the window puts a sound in hidden (Alight Motion's sound layer has no picture))
