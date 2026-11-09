@@ -54,8 +54,8 @@ KEYS = ['Own-lines', 'Looked-in-repo', 'Repo-falls-short', 'Looked-in-library', 
         'Looked-on-web', 'Web-falls-short', 'Fails-without']
 TRAILER = re.compile(r'^(' + '|'.join(KEYS + ['Removes', 'Now-done-by']) + r'):[ \t]*(.*\S)[ \t]*$', re.M)
 # Where a name a person uses is declared, and how it is written there.
-DECLARED = [('a card', 'engine/document/card_table.h', r'\{"([^"]+)",\s*"[^"]*"'),
-            ('a value', 'engine/document/kinds.h', r'\{"([a-z_0-9]+)",\s*"'),
+DECLARED = [('a card', 'engine/document/card_table.h', r'\{\s*"([^"]+)",\s*"[^"]*"'),
+            ('a value', 'engine/document/kinds.h', r'\{\s*"([a-z_0-9]+)",\s*"'),
             ('a command', 'engine/entry/calls_later.h', r'\bc == "([a-z_]+)"'),
             ('a call', 'engine/entry/motolii.h', r'\b(motolii_[a-z_0-9]+)\s*\('),
             ('a window command', 'app/lib/workspace/commands/keymap.dart', r"'([a-z]+\.[A-Za-z]+)'"),

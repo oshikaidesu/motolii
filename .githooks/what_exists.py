@@ -108,7 +108,7 @@ def index(top):
             says = ' '.join(says.split())
             rows.append(('dart', f'engine/entry/motolii.h: {name}', says[:120], name, ' '.join(split(name.replace('motolii_', ''))), says[:600]))
         cards = open(os.path.join(top, 'engine/document/card_table.h'), errors='replace').read()
-        for title, values in re.findall(r'\{"([^"]+)",\s*"([^"]*)"', cards):
+        for title, values in re.findall(r'\{\s*"([^"]+)",\s*"([^"]*)"', cards):
             rows.append(('dart', f'engine/document/card_table.h: the {title} card', f'a card the engine declares: {values}'[:120], title, ' '.join(split(title)), values))
     except OSError:
         pass

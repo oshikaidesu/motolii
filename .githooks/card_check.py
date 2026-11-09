@@ -12,7 +12,7 @@
 import re, subprocess, sys
 
 TABLE = 'engine/document/card_table.h'
-CARD = re.compile(r'\{"([^"]+)",\s*"([^"]*)"')   # {"Drop Shadow", "shadow shadow_distance ...", ...}
+CARD = re.compile(r'\{\s*"([^"]+)",\s*"([^"]*)"')   # (with or without the space clang-format puts after the brace)   # {"Drop Shadow", "shadow shadow_distance ...", ...}
 # The words of the declaration's own form, not values: the @unit words workspace_cards.dart writes for a value that is
 # not a number ('numbers', 'colours', 'words', 'file'), and the sub-fields of a point or a size (param_infer.dart).
 FORM_WORDS = {'numbers', 'colours', 'words', 'file', 'x', 'y', 'z'}
