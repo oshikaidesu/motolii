@@ -60,3 +60,56 @@ class _HexFieldState extends State<_HexField> {
     ));
   }
 }
+
+// ---- the expressions the maker added to the shelf (Add to shelf on a card's code: shelf_add.dart), in the Copies
+//  after the library's: put on the picked thing, or a new board, as Empty is; renamed by their menu, as the Program
+//  shelf's (dock_program.dart).
+List<_Make> _ownExpressions() => [
+  for (final (name, file) in shelfExpressions()) _Make(name, DockG.copies, Pop.tonePlace, '', 'Your expression, on the picked thing (nothing picked: on a new board); its knobs are on its card', file: file),
+];
+
+void _ownPut(DockCtx c, String name, String file) {
+  c.set(() => c.mem.trouble.remove(name));
+  fxPut(c.ws, file, expression: true, told: (why) => c.set(() => why.isEmpty ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why));
+}
+
+/// The names on Create, the library's and the maker's (an expression is not added under one: shelf_add.dart).
+Set<String> createNames(Ws ws) => {
+  for (final (_, items) in [if (ws.inside != null) ...[_recipesOf(ws), _elementsOf(ws)], ..._makes, _solids, _materials, _lights]) ...items.map((m) => m.name),
+  for (final (name, _) in shelfExpressions()) name,
+};
+
+/// One the maker added: its tile, with Rename… on its menu (a library tile has none). The name is written beside its
+/// file, never the file (shelf_add.dart shelfRename).
+class _OwnTile extends StatefulWidget {
+  const _OwnTile(this.m, this.c, {super.key});
+  final _Make m;
+  final DockCtx c;
+  @override
+  State<_OwnTile> createState() => _OwnTileState();
+}
+
+class _OwnTileState extends State<_OwnTile> {
+  final _menu = GlobalKey<WsMenuState>();
+  bool _naming = false;
+
+  void _renamed(String? to) {
+    setState(() => _naming = false);
+    final m = widget.m, ws = widget.c.ws;
+    if (to == null || to.trim() == m.name) return;
+    final why = shelfRename(ws, m.file!, to, createNames(ws).difference({m.name}));
+    if (why.isNotEmpty) ws.notice = 'Not renamed: $why';
+  }
+
+  @override
+  Widget build(BuildContext context) => WsMenu(
+    key: _menu,
+    child: GestureDetector(
+      onSecondaryTapDown: (d) {
+        final box = _menu.currentContext?.findRenderObject() as RenderBox?;
+        _menu.currentState?.show(box?.globalToLocal(d.globalPosition) ?? Offset.zero, [WsMenuItem('Rename…', () => setState(() => _naming = true))]);
+      },
+      child: _MakeTile(widget.m, widget.c, naming: _naming ? ShelfNameField(widget.m.name, _renamed) : null),
+    ),
+  );
+}

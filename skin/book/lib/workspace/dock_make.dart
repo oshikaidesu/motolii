@@ -23,6 +23,7 @@ import 'colour_wheel.dart';
 import 'ws_menu.dart';
 import 'create_preview.dart';
 import 'empty_fx.dart';
+import 'shelf_add.dart';
 import 'ws.dart';
 part 'dock_make_2.dart';
 part 'dock_make_3.dart';

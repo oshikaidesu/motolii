@@ -11,6 +11,7 @@ import 'package:flutter/widgets.dart';
 import '../tokens.dart';
 import 'dock_program.dart' show ProgramCode;
 import 'effect_tiles.dart' show EffectTiles;
+import 'shelf_add.dart';
 import 'ws.dart';
 
 class FxCode extends StatefulWidget {
@@ -101,6 +102,9 @@ class _FxCodeState extends State<FxCode> {
   String _why = '';   // (why its code as it is now is not taken, said on its card; '' it is)
   bool _making = false;   // (its copy made once as it was, before what is typed is written over it)
   String? _typed;   // (typed meanwhile)
+  String? _adding;   // (the name being written to add it to the shelf by)
+  String _added = '';   // (what came of the last Add to shelf: why not, or where it went)
+  bool _addedOk = false;
 
   static String get _own => '${EffectTiles.own}/programs/fx/';
 
@@ -170,6 +174,37 @@ class _FxCodeState extends State<FxCode> {
     }
   }
 
+  // (its code as the card has it, under the name written: an effect on the Effects shelf, an expression in Create's
+  //  Copies, shelf_add.dart; written in place of its title, as Finder's Rename)
+  void _add(String? name) {
+    setState(() => _adding = null);
+    if (name == null) return;
+    final word = _mine ?? widget.word, file = FxCode.source(word), expression = shelfIsExpression(file);
+    final why = _why.isNotEmpty ? 'It does not compile: fix it first' : shelfAdd(widget.ws, file, _typed ?? File(file).readAsStringSync(), name, shelfTaken(widget.ws, expression: expression));
+    setState(() {
+      _addedOk = why.isEmpty;
+      _added = why.isEmpty ? 'Added to ${expression ? 'Create, Copies' : 'Effects'} as ${name.trim()}' : why;
+    });
+  }
+
+  Widget _shelf() {
+    if (_adding case final name?) return SizedBox(height: Shape.s(18), child: ShelfNameField(name, _add, small: false));
+    return Row(children: [
+      GestureDetector(
+        onTap: () => setState(() {
+          _adding = FxCode.titleOf(_mine ?? widget.word);
+          _added = '';
+        }),
+        child: MouseRegion(cursor: SystemMouseCursors.click, child: Text('Add to shelf', style: T.label(Grey.g76))),
+      ),
+      if (_added.isNotEmpty) ...[
+        SizedBox(width: Shape.s(8)),
+        if (!_addedOk) ErrMark(gap: Shape.s(4)),
+        Expanded(child: Text(_added, maxLines: 2, overflow: TextOverflow.ellipsis, style: T.label(_addedOk ? Grey.g56 : Role.error))),
+      ],
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_mine == widget.word) _mine = null;
@@ -185,6 +220,7 @@ class _FxCodeState extends State<FxCode> {
             ]),
           ),
         Expanded(child: ProgramCode(FxCode.source(_mine ?? widget.word), _write, keep: _making)),
+        Padding(padding: EdgeInsets.only(top: Shape.s(4)), child: _shelf()),
       ],
     );
   }

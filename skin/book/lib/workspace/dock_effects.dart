@@ -19,6 +19,7 @@ import 'dock_tags.dart';
 import 'effect_decks.dart';
 import 'effect_tiles.dart';
 import 'empty_fx.dart';
+import 'shelf_add.dart';
 import 'ws.dart';
 import 'ws_menu.dart';
 
@@ -33,7 +34,7 @@ class EffectsShelf extends StatefulWidget {
 
   /// The files' effects by their names, as After Effects' Effects & Presets lists each kind: the inside gives them by
   /// file, so VIDVOX's capitals came before AbsentMotion's am_ files, two runs of A to Z (golf_noise.md ㊾). Once a shelf.
-  static final _byName = Expando<List<(String, String)>>();
+  static final _byName = Expando<List<(String, String, String)>>();   // (as shown, file, as the inside names it)
 
   @override
   State<EffectsShelf> createState() => _EffectsShelfState();
@@ -43,6 +44,15 @@ class _EffectsShelfState extends State<EffectsShelf> {
   final _menu = GlobalKey<WsMenuState>(), _places = GlobalKey<EffectPlacesState>();
   final _tileKeys = FocusNode(debugLabel: 'ws-fx-tiles');   // (B goes to the tiles once one is pressed, not to the stage's brush)
   DockCtx get c => widget.c;
+  String? _renaming;   // (the file, added by the maker, whose name is being written in its tile: shelf_add.dart)
+
+  // (its name written beside it, never its file: one of the library's has no Rename)
+  void _renamed(String file, String was, String? to) {
+    setState(() => _renaming = null);
+    if (to == null || to.trim() == was) return;
+    final why = shelfRename(c.ws, file, to, shelfTaken(c.ws, expression: false).difference({was}));
+    if (why.isNotEmpty) c.ws.notice = 'Not renamed: $why';
+  }
 
   @override
   void dispose() {
@@ -78,9 +88,10 @@ class _EffectsShelfState extends State<EffectsShelf> {
       for (final (n, _) in m.thingEffects)
         (id: n, name: n, label: m.label(n), on: on.contains(n), apply: chosen(n, () => ws.fxToggle(n), taken: on.contains(n)), said: _said(ws, n),
          tile: (small) => EffectTile(n, small: small, file: m.picture(n), look: _FxLook(n), on: on.contains(n) ? 'ON' : null, picked: c.sel == n, onTap: () => c.pick(n), onApply: chosen(n, () => ws.fxToggle(n), taken: on.contains(n)), star: small ? null : c)),
-      for (final (n, f) in EffectsShelf._byName[m.effects] ??= ([...m.effects]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase()))))
-        (id: f, name: n, label: m.label(n), on: screen.contains(f), apply: chosen(f, () => ws.screenPut(f)), said: m.tileSame(f) && EffectTiles.stopped(f).isNotEmpty ? 'Stops here: ${EffectTiles.stopped(f)}' : m.tileSame(f) && EffectTiles.lacks(f).isNotEmpty ? 'Needs: ${EffectTiles.lacks(f)}' : m.about(f).isEmpty ? (picked ? 'On the picked thing' : 'On all under it') : m.about(f),
-         tile: (small) => EffectTile(n, key: small ? null : ValueKey('ws-screen-$f'), small: small, file: m.picture(f), same: m.tileSame(f) ? EffectTiles.sameTag(f) : null, on: screen.contains(f) ? 'ON ${screen.indexOf(f) + 1}' : null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.screenPut(f)), star: small ? null : c, starId: f, onHover: (h) => ws.tryOn(h ? f : null))),
+      // (one the maker added and renamed by the name written beside it, shelf_add.dart)
+      for (final (n, f, said) in EffectsShelf._byName[m.effects] ??= ([for (final (n, f) in m.effects) (shelfNamed(f) ?? n, f, n)]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase()))))
+        (id: f, name: n, label: m.label(said), on: screen.contains(f), apply: chosen(f, () => ws.screenPut(f)), said: m.tileSame(f) && EffectTiles.stopped(f).isNotEmpty ? 'Stops here: ${EffectTiles.stopped(f)}' : m.tileSame(f) && EffectTiles.lacks(f).isNotEmpty ? 'Needs: ${EffectTiles.lacks(f)}' : m.about(f).isEmpty ? (picked ? 'On the picked thing' : 'On all under it') : m.about(f),
+         tile: (small) => EffectTile(n, key: small ? null : ValueKey('ws-screen-$f'), small: small, file: m.picture(f), same: m.tileSame(f) ? EffectTiles.sameTag(f) : null, on: screen.contains(f) ? 'ON ${screen.indexOf(f) + 1}' : null, picked: c.sel == f, onTap: () => c.pick(f), onApply: chosen(f, () => ws.screenPut(f)), star: small ? null : c, starId: f, onHover: (h) => ws.tryOn(h ? f : null), naming: _renaming == f ? ShelfNameField(n, (to) => _renamed(f, n, to)) : null)),
       // (a look kept by its name, Save Look: given to the picked thing, its values, effects and keys)
       for (final (n, f) in m.looks)
         (id: f, name: n, label: 'Look', on: false, apply: chosen(f, () => ws.lookPut(f)), said: picked ? 'A look for the picked thing' : 'A look, on a new board',
@@ -174,6 +185,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
         const WsMenuItem.rule(),
         WsMenuItem('${aimed(e) ? 'Remove from' : 'Add to'} ${aim == null ? 'Favorites' : 'Target Deck'}', () => target(e), keys: 'B'),
         WsMenuItem('New Deck…', () => _places.currentState?.newDeck(thing: DeckThing(e.id, e.name, effectSum(e.id)))),
+        if (shelfAdded(e.id)) ...[const WsMenuItem.rule(), WsMenuItem('Rename…', () => setState(() => _renaming = e.id))],
         if (effectPack(e.id) case final p? when packs.containsKey(p)) ...[const WsMenuItem.rule(), WsMenuItem('Go to Pack: $p', () => c.set(() => c.mem.fxPlace = '/$p'))],
       ]);
     }

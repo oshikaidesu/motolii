@@ -381,7 +381,7 @@ class _Grad extends StatelessWidget {
 // ---------------------------------------------------------------- create
 
 class _Make {
-  const _Make(this.name, this.g, this.hue, this.key, this.what, {this.recipe = false});
+  const _Make(this.name, this.g, this.hue, this.key, this.what, {this.recipe = false, this.file});
   final String name, key, what;
   final DockG g;
   final Color hue;
@@ -390,7 +390,9 @@ class _Make {
   /// Rectangle, Star, Cube, Sun beside Motolii's shape, solid and light of those names (the shelf's own were made as
   /// the recipe while it was asked first).
   final bool recipe;
-  String get id => recipe ? 'recipe:$name' : name;
+  final String? file;   // (an expression the maker added to the shelf: shelf_add.dart)
+  String get id => file ?? (recipe ? 'recipe:$name' : name);
+  bool get onPicked => file != null || _onPicked.contains(name);   // (put on the picked thing, or a new board)
 }
 
 final _makes = <(String, List<_Make>)>[
@@ -514,6 +516,7 @@ void _make(DockCtx c, _Make tile) {
     c.ws.after(m.later('make', word: name), (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why), (made) => c.ws.select('$made'));   // (without waiting: picked once made)
     return;
   }
+  if (tile.file case final f?) return _ownPut(c, tile.name, f);
   if (name == 'Adjustment') return c.ws.adjustment();
   if (name == 'Empty') {   // (an expression to write: empty_fx.dart; what went wrong before forgotten once it is taken)
     c.set(() => c.mem.trouble.remove(name));
@@ -562,7 +565,7 @@ class CreateShelf extends StatelessWidget {
       _recipesOf(c.ws),
       _makes.first,
       _elementsOf(c.ws),
-      ..._makes.skip(1),
+      for (final (g, items) in _makes.skip(1)) g == 'Copies' ? (g, [...items, ..._ownExpressions()]) : (g, items),
       _solids,
       _materials,
       _lights,
@@ -609,7 +612,7 @@ class CreateShelf extends StatelessWidget {
                                 return Wrap(
                                   spacing: WsT.gutter,
                                   runSpacing: WsT.gutter,
-                                  children: [for (final m in items) SizedBox(width: w, height: Shape.z(70), child: _MakeTile(m, c))],
+                                  children: [for (final m in items) SizedBox(width: w, height: Shape.z(70), child: m.file != null ? _OwnTile(m, c, key: ValueKey('ws-own-${m.file}')) : _MakeTile(m, c))],
                                 );
                               },
                             ),
@@ -625,8 +628,8 @@ class CreateShelf extends StatelessWidget {
             preview: DockBadge(sel.g, sel.hue, size: Shape.z(34)),
             title: '${sel.name} layer',
             meta: c.mem.trouble[sel.name] ?? 'At ${c.ws.timecode()} · ${sel.what}',
-            action: _laid.containsKey(sel.name) ? 'Lay out' : _worn.containsKey(sel.name) || _onPicked.contains(sel.name) ? 'Put on' : 'Create',
-            fresh: !_laid.containsKey(sel.name) && !_worn.containsKey(sel.name) && !_onPicked.contains(sel.name), // (a tile makes a new thing; a tile of copies lays out the picked one, a material is put on it, an empty expression too: to the picked one, a new board with nothing picked)
+            action: _laid.containsKey(sel.name) ? 'Lay out' : _worn.containsKey(sel.name) || sel.onPicked ? 'Put on' : 'Create',
+            fresh: !_laid.containsKey(sel.name) && !_worn.containsKey(sel.name) && !sel.onPicked, // (a tile makes a new thing; a tile of copies lays out the picked one, a material is put on it, an empty expression too: to the picked one, a new board with nothing picked)
             onAction: () => _make(c, sel),
           ),
       ],
@@ -635,14 +638,15 @@ class CreateShelf extends StatelessWidget {
 }
 
 class _MakeTile extends StatelessWidget {
-  const _MakeTile(this.m, this.c);
+  const _MakeTile(this.m, this.c, {this.naming});
   final _Make m;
   final DockCtx c;
+  final Widget? naming;   // (where its name is being written, in its place)
   @override
   Widget build(BuildContext context) {
     final sel = c.sel == m.id;
     final inside = c.ws.inside;
-    final makes = inside != null && (m.recipe ? inside.recipes.any((r) => r.$1 == m.name) : _asked.containsKey(m.name) || _laid.containsKey(m.name) || _worn.containsKey(m.name) || _onPicked.contains(m.name) || inside.elements.any((e) => e.$1 == m.name));
+    final makes = inside != null && (m.recipe ? inside.recipes.any((r) => r.$1 == m.name) : _asked.containsKey(m.name) || _laid.containsKey(m.name) || _worn.containsKey(m.name) || m.onPicked || inside.elements.any((e) => e.$1 == m.name));
     return DockHover(
       onTap: () => c.pick(m.id),
       onDoubleTap: makes ? () => _make(c, m) : null, // (two presses make it, one step)
@@ -668,7 +672,7 @@ class _MakeTile extends StatelessWidget {
               ),
             Align(
               alignment: Alignment.bottomLeft,
-              child: AutoSizeText( // (a long name on two lines of whole words, as Finder's icons have it; smaller rather than a word broken)
+              child: naming ?? AutoSizeText( // (a long name on two lines of whole words, as Finder's icons have it; smaller rather than a word broken)
                 m.name,
                 maxLines: 2,
                 wrapWords: false,
