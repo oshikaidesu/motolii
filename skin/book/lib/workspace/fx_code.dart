@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
+import '../sets/inspector/inspector_effects.dart' show CodeOwnHeight;
 import '../tokens.dart';
 import 'block_code.dart';
 import 'dock_program.dart' show ProgramCode;
@@ -15,7 +16,7 @@ import 'effect_tiles.dart' show EffectTiles;
 import 'shelf_add.dart';
 import 'ws.dart';
 
-class FxCode extends StatefulWidget {
+class FxCode extends StatefulWidget implements CodeOwnHeight {
   const FxCode(this.ws, this.thing, this.word, {super.key});
   final Ws ws;
   final int thing;
@@ -232,7 +233,7 @@ class _FxCodeState extends State<FxCode> {
   @override
   Widget build(BuildContext context) {
     if (_mine == widget.word) _mine = null;
-    return Column(
+    return SizedBox(height: Shape.z(_blocks ? 560 : 360), child: Column(   // (the blocks taller than the code: a card is narrow, they grow down)
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (_why.isNotEmpty)
@@ -251,6 +252,6 @@ class _FxCodeState extends State<FxCode> {
         ),
         Padding(padding: EdgeInsets.only(top: Shape.s(4)), child: _shelf()),
       ],
-    );
+    ));
   }
 }

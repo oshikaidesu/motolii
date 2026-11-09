@@ -11,6 +11,10 @@ import '../foundations/text_hand.dart';
 
 // ---- 10. effects ------------------------------------------------------------------------------------------------------
 /// An effect as a plugin ships it: a name and a WGSL uniform struct. Its rows are whatever [readParams] makes of the struct.
+/// A card's code that sets its own height (an expression's Block mode is taller than its Code: fx_code.dart);
+/// another's is given the fold's own.
+abstract interface class CodeOwnHeight {}
+
 class Fx {
   Fx(this.id, this.name, this.wgsl, {Color? tone, Color Function()? toneOf, required this.mark, this.vendor}) : _tone = tone, _toneOf = toneOf;
   final String id, name, wgsl;
@@ -267,7 +271,7 @@ class ValuesCard extends StatelessWidget {
               ),
             ),
           ),
-          if (doc.b['$k.code'] ?? false) SizedBox(height: Shape.z(360), child: code),
+          if (doc.b['$k.code'] ?? false) code is CodeOwnHeight ? code : SizedBox(height: Shape.z(360), child: code),
         ],
       ],
     );
