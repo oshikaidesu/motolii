@@ -40,3 +40,10 @@ Motolii(Flutter 製のモーショングラフィックス編集ツール)の「
 2. 操作を伴う部品(ドラッグ・モード切り替え)を、静止画でなく動きで検証する、現実的な方法。
 3. 「数値を意図の GUI にする」ことの先例(Figma、Blender、Ableton、Cavalry、After Effects、Apple Motion)で、数値と図の主従をどう決めているか。
 4. 判定者(LLM)が見落としやすい観点の補い方。
+
+## DESIGN.md §0 の目標（2026-10-02、Widgetbook の頃。docs/app/DESIGN.md から移した）
+
+
+Discover, and prove by real operation in the Widgetbook, a Motolii production experience in which a person can try an idea as an image and turn it into a work by the shortest path, without being blocked by searching or by UI operation. Not a recreation of existing tools, not a completion of the old Motolii, not 'a finished Browser'. The users' habitual motions (手癖, muscle memory from AE/Ableton/Blender etc.) are respected: the Browser/Inspector/Stage/Timeline split is NOT to be broken on principle (owner withdrew that stance on 2026-10-02 as too strong); a change to it needs strong evidence from real operation. AE extensions, Ableton, Blender, Cavalry, Figma etc. are material for finding real problems and proven solutions.
+Done when representative production workflows can be run start to finish in the Widgetbook alone and, in real operation (not stills): things are found fast; trying before/after placing is quick; the next operation on a selection is reachable fast; values can be touched directly without remembering numbers; many things are handled together; animation / relation / difference / state are never hidden; part of a thing can be copied, reused or applied; it holds with very many assets/effects/properties; results are predictable and trying then undoing is not scary; first-time discoverable and faster with practice. Deliverable: an interactive prototype that shows how to make work in Motolii. Porting to production is a separate later phase.
+Decision order: the user's convenience, real production workflows, good precedents, consistency across Motolii. The old Motolii is only a source of problems noticed; implementation cost does not decide UX.
