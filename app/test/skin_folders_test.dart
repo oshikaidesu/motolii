@@ -1,5 +1,5 @@
 // View › Skin lists the skins of shelves/skins and of skins/ in the maker's own folder, as every shelf is read
-// (engine/document/doc_folders.h doc_folders). Run from app/:
+// (engine/document/folders.h doc_folders). Run from app/:
 //   MOTOLII_OWN=$(mktemp -d) flutter test --no-pub test/skin_folders_test.dart
 // (without MOTOLII_OWN the own-folder case is skipped: the test writes nothing into a real maker's folder)
 import 'dart:io';

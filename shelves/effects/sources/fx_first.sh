@@ -27,7 +27,7 @@ def knobs(f):   # (its numbers as the inside reads them: an ISF file's INPUTS, a
                 for i in j.get('INPUTS', []) if i.get('TYPE') == 'float' and 'MIN' in i and 'MAX' in i]
     return [(n, float(u), float(lo), float(hi)) for n, lo, hi, u in re.findall(r'^// --track@(\w+):[^,]*,([-\d.]+),([-\d.]+),([-\d.]+)', t, re.M)]
 
-def name(f, k):   # (doc_values.h doc_screen_knob)
+def name(f, k):   # (engine/document/values.h doc_screen_knob)
     return 'js_' + re.sub(r'[^A-Za-z0-9_]', '_', os.path.splitext(os.path.basename(f))[0]) + '_' + k
 
 def draw(lines):
