@@ -10,7 +10,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/bridge/motolii.dart' show motoliiDir;
 import 'package:motolii/skin/theme.dart' show ColorTheme;
-import 'package:motolii/workspace/timeline/timeline.dart' show WsTimeline;
+import 'package:motolii/workspace/state/state.dart' show WsPanel;
 import 'package:motolii/workspace/workspace.dart' show Workspace;
 import 'package:motolii/workspace/window/zoom.dart' show WsZoom;
 
@@ -32,7 +32,7 @@ Future<void> _open(WidgetTester t) async {
       builder: (c, _) => Workspace(document: doc),
     ),
   );
-  for (var i = 0; i < 1500 && find.byType(WsTimeline).evaluate().isEmpty; i++) {
+  for (var i = 0; i < 1500 && find.byType(WsPanel).evaluate().isEmpty; i++) {
     // (the engine answers in real time)
     await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
     await t.pump();
@@ -51,7 +51,7 @@ void main() {
     testWidgets('the real window meets $name', (t) async {
       final SemanticsHandle semantics = t.ensureSemantics();
       await _open(t);
-      expect(find.byType(WsTimeline), findsOneWidget, reason: 'the real window opened');
+      expect(find.byType(WsPanel), findsOneWidget, reason: 'the real window opened');
       t.takeException(); // (a layout overflow on opening is its own test below, not counted against each guideline)
       await expectLater(t, meetsGuideline(guideline));
       t.takeException();

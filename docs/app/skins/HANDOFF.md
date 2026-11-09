@@ -42,10 +42,8 @@ Motolii のアプリ（Flutter、`app`）の見た目は、エンジンの側（
 |---|---|---|
 | `onOff(context, SwitchSpec)` | `on`、`onChanged`、`enabled` | オン・オフ（Animate all など） |
 | `number` | `NumberSpec`（数の文字、打っている欄、範囲） | 数の入力欄。こすって変える動きはアプリが持つ |
-| `paneMark` | 選ばれているか、いつもの印 | ペインのタブの印。書かなければいつもの印 |
-| `plainTabs` | なし | タブの地を空けるか |
 
-`number`、`paneMark`、`plainTabs` は書かなければいつもの絵のまま。見た目の動き（`AnimatedContainer`、`TweenAnimationBuilder` など）は自由。手の受け取り（`GestureDetector`、`MouseRegion`、`Listener`）だけは書かず naked_ui に任せる。
+`number` は書かなければいつもの絵のまま。見た目の動き（`AnimatedContainer`、`TweenAnimationBuilder` など）は自由。手の受け取り（`GestureDetector`、`MouseRegion`、`Listener`）だけは書かず naked_ui に任せる。
 
 ### 使える材料
 
@@ -95,7 +93,7 @@ Anthropic 公式の考え方（[frontend-design スキル](https://github.com/an
 
 > `shelves/skins/README.md` と `shelves/skins/ROLES.md` を読んで、`~/Library/Application Support/Motolii/skins/<名前>/theme.xml` に「（欲しい見た目）」の革を書いて。`app/tool/live.sh` でアプリを開いて見て、直して、また見る。読めない文字や差し色の埋もれがなくなるまで。
 
-**フォーム**（組み立てから変える）。届く部品は §3 の表。ドックのタブそのもの（`docking` が描く）はまだ外（§7）。
+**フォーム**（組み立てから変える）。届く部品は §3 の表。
 
 > `docs/app/skins/HANDOFF.md` を読んで、`lib/skin/forms/<名前>_forms.dart` に「（欲しい見た目）」のフォームを書き、登録して、`shelves/skins/<名前>/theme.xml` で着る革を作って。先に色4〜6個・書体・ASCII の配置図を書いて「ありがちな所」を直してから書くこと。§3 の表の関数を全部書く（書かない関数はアプリのいつもの絵のまま）。ドックのタブはまだ届かない。`app/tool/live.sh` でアプリを開いて見て直す。最後に切れ0・はみ出し0を確かめる。
 
@@ -109,7 +107,7 @@ Anthropic 公式の考え方（[frontend-design スキル](https://github.com/an
 
 ## 7. まだのこと
 
-- フォームを通っている部品は、Render、Edit/Animate/Export、Space、オン・オフ、札、小さな切り替え（Fit、Layer/Group、Snap、Safe、Grid）、棚の絞り込み、タイムラインの層の名前と帯、数の入力欄。帯の角と地は `trackRadius` と `trackBand`。ドックのタブそのもの（`docking` パッケージが描く）は、まだフォームの外。
+- フォームを通っている部品は、オン・オフと、数の絵。
 - フォームはアプリに組み込まれるので、配った人が置くだけでは着られない。
 - 細い線（1画素）の太さは革で変わらない。
 - プレビューの中（枠の外の暗い所も）は作品の絵なので、革では変わらない。

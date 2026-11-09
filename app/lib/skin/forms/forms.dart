@@ -28,12 +28,6 @@ abstract class Forms {
 
   /// A number's picture. The field calls [paintNumber], which was bound to this when the forms loaded.
   Widget number(BuildContext context, NumberSpec n) => usualNumber(context, n);
-
-  /// The mark at the front of a pane's tab. The window's own mark, unless a form puts a shape there.
-  Widget paneMark(BuildContext context, {required bool selected, required Widget mark}) => mark;
-
-  /// The tab strip keeps the package's cards. A form that returns true clears them, so the mark is the tab.
-  bool get plainTabs => false;
 }
 
 /// Installed as this library loads, so a number field can ask the worn form without importing it back.

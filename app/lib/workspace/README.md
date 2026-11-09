@@ -1,40 +1,18 @@
 # Workspace — Motolii のアプリの画面
 
-*The app's own code: `Workspace` (opened by `app/lib/main.dart`) and its panes. The project lives in the C++ engine, reached through `../bridge/motolii.dart`; this folder shows it and hands every edit back. Start here to add a panel of your own.*
+*The app's own code: `Workspace` (opened by `app/lib/main.dart`). The project lives in the C++ engine, reached through `../bridge/motolii.dart`; this folder shows it and hands every edit back.*
 
 `app/lib/main.dart` が開く `Workspace`（`workspace.dart`）がアプリの画面。プロジェクトは C++ のエンジン（`../bridge/motolii.dart` の `Motolii`、各メソッドが `motolii_*` の C 呼び出し 1 つ）にあり、Stage の絵もエンジン（Filament）が描く。アプリは見せて、ポインタの操作をプロジェクトに渡すだけ。プロジェクトを渡さずに開くと無題のプロジェクトを開く（AE と同じ）。
 
 | 場所 | 中身 |
 |---|---|
-| `workspace.dart` | 画面の全体（`Workspace`）：上のバー、パネルの並び、プロジェクトを開く。部品（part）は `inspector_feed/` と `commands/menu_bar.dart` |
+| `workspace.dart` | 画面の全体（`Workspace`）：Inspector と、プロジェクトを開くこと。部品（part）は `inspector_feed/` と `commands/menu_bar.dart` |
 | `state/` | どのパネルも読むアプリの状態。`state.dart` が入口（レイヤー `WsLayer`）、`window.dart` に `Ws`、`scope.dart` に `WsScope`、`picked.dart` 選ばれた物、`panel_header.dart` パネルの枠 |
-| `window/` | ウィンドウの枠：`panes.dart` パネルの並び（pub の `docking`）、`zoom.dart` 画面全体の拡大、`settings_file.dart` `~/.motolii/window.xml`（倍率と着ているスキン） |
+| `window/` | ウィンドウの枠：`zoom.dart` 画面全体の拡大、`settings_file.dart` `~/.motolii/window.xml`（倍率と着ているスキン） |
 | `commands/` | 名前の付いた操作と、それを言うキー・メニュー：`keymap.dart` キーの表（VS Code の keybindings.json の形）、`command_actions.dart` 各操作がアプリの状態にすること（キーは Ableton Live 12 の表から）、`menu_bar.dart` メニューバー |
 | `edits/` | 関係の種類 `wsRelations`（`make_relation.dart`）と、キーフレームの移動・削除・コピー（`keyframe_edits.dart`） |
 | `inspector_feed/` | `workspace.dart` の部品：プロジェクトから Inspector（`../inspector/`）へ渡す物。`panel.dart` パネルとして読み直す時、`cards.dart` カード、`values.dart` 値の読み書き、`keyframe_marks.dart` 値の横のキーの印 |
 | `stage/` | コンポジションの寸法 `WsArt` |
-| `timeline/` | タイムラインのペイン（中身は空） |
-| `tool_panel/` | 自分の `PanelTool` |
-
-## 自分のパネルを足す（入口はここだけ）
-使う物の置き場：`Workspace`（`workspace.dart`）、`WsPane`（`window/panes.dart`。タブは名前の頭文字）、`PanelTool`（`tool_panel/tool_panel_widgets.dart`）、`Ws`・`WsScope`（`state/window.dart`・`state/scope.dart`）、`Motolii`（`../bridge/motolii.dart`）。
-```dart
-Workspace(document: path, extra: [
-  WsPane('Notes', () => const MyNotes()),
-])
-```
-- 足したパネルは Inspector の横にタブで並ぶ。本家のファイルは 1 行も変えない。
-- パネルの中では `WsScope.of(context)` がアプリの状態（`Ws`。何かが変わるたびに組み立て直る。聞く面を言えば、その面が変わった時だけ：`WsScope.of(context, {WsAspect.picked})`。再生ヘッドは `WsScope.frameOf(context)`）：`inside` がプロジェクト（`Motolii`）、`selected` が選ばれたレイヤー、`frame` が今のコマ。値は `inside.value(thing, name, seconds)`、変えるのは `inside.set(...)`、キーは `inside.keyHere(...)`。
-- レイヤーをプレビューの上で動かす（画素で）：`inside.dragStart(t)`、`inside.dragUpdate('place', 10, 0)`、`inside.later('drag_end', number: 1)`（ドラッグしたのと同じ undo 1 回）。値をそのまま変えるのは `inside.set(t, name, value)`（プロジェクトの単位）。キーの数は `inside.keyTimes(t, name).length`。
-- 気をつける 4 つ：選ばれたレイヤー `selected` は文字なので `int.parse` してからエンジンに渡す。今の秒は `frame / Ws.fps`。レイヤーの名前は `inside.word(t, 'name')`。プロジェクトを変えたら `ws.reread()`（アプリの他のパネルが読み直す）。
-
-## 自分のツールパネルの道具を足す
-```dart
-Workspace(document: path, tools: [
-  PanelTool('Snap', Color(0xFF55AA88), 'Picked thing', build: MySnap.new),   // (名前、色、何に効くか、中身)
-])
-```
-- アプリの道具の後ろに並び、選ぶとツールパネルがその `build` を出す。アイコンは頭文字。中では パネルと同じく `WsScope.of(context)`。
 
 ## 自分のプリセット（Ease の動き方）を足す
 プリセットは利用者の持ち物（スクリプトと同じ）。利用者のフォルダ（下の「利用者のフォルダ」）の `ease/` にファイルを 1 つ置くと、どのプロジェクトでも Ease のツールパネルにタイルで出る。Motolii が持って来る見本は `shelves/ease/`。式で使えるもの：`a`（前のキーの値）、`b`（次のキーの値）、`u`（区間の 0〜1）、`p1`〜`p4`（区間に付けた数）、`bezier(u, x1, y1, x2, y2)`。
@@ -79,14 +57,7 @@ $F/flutter analyze lib
 
 ## 決まっていること(利用者の裁定)
 - **Media と Files は一つの棚(Media)。** AEViewer 2 型: 左(狭い時は上)に場所(Project / Home / Desktop / Downloads)とフォルダだけの木、右に開いているフォルダの中身をサムネイルかリストで。フォルダのタイルを押すとそのフォルダを開く。パンくずの各段も押せる。検索は今いる場所の中を全部探し、結果に入っているフォルダ名を添える。サムネイルの格子は捨てない。
-- **アプリの画面はドックパネル。** Motolii 本体と同じ pub の `docking`(旧 Motolii の `ui/lib/workspace/dock_workspace.dart` を書き直したもの。この repo には無い)。ブラウザも棚ごとにペインに分けた(rail は無い)。**タブは記号で示す**: 棚のタブは記号だけ(中の見出しが名前を言う、5 枚並んでも細い)、Stage / Inspector / Timeline / Tool Panel は記号 + 名前(パネルの中の見出しに同じ名前を重ねない)。前に出ている棚が `Ws.shelf`(タブを押すと変わり、`Ws.route` で棚のタブが前に出る)。別ウィンドウに出す Detach は native のウィンドウが要るので lab には無い。ペインは閉じられない(開き直す手段がまだ無い)。
-- **初期配置**: 棚のタブの列・Inspector・Timeline・Tool Panel は基準の px で始め、Stage が残りを取る。`multi_split_view` は size を weight に直して足し合わせるので、残りを取るペインには weight を付けない。
-- **ペインは広げたら得をする。** 列を固定して引き伸ばさない。
-  - 格子は `wsCols(幅, セルの幅)` で列数を決め、`wsCell` でセルの幅を割り出す(Create のタイル、Colors の色見本、Tool Panel の道具)。
-  - 一覧の区切り(Create の群、Colors の Used / Palettes / Gradients / Swatches、Effects の族)は `DockMasonry` のカードにする。1 列は 260〜300px 以上、最大 4 列、短い列から詰める。
-  - Fonts は 440px 以上で見本の大きいカード、狭いと行。Media は 440px 以上で木が左、狭いと上。
-  - Effects はフィルター帯を開いていて 560px 以上なら、帯を一覧の横に縦いっぱいで立てる。狭いと上の帯。
-  - **Inspector は縦積みのまま**(カードを横に並べない)。カードの中身を、Effects のパラメーターと同じブロックの格子(`Pop.tileMin` ごとに列が増える)にする。
+- **Inspector は縦積みのまま**(カードを横に並べない)。カードの中身を、Effects のパラメーターと同じブロックの格子(`Pop.tileMin` ごとに列が増える)にする。
 - **Inspector は今の値を見せる。** 数値は `NumField`、選択肢は `Segmented`。言葉・ファイル・色は、プロジェクトが持っている文字を出す。
 - **パスの操作は同じものを何度でも重ねられる**(パンク膨張の後にまたパンク膨張)。UI 側で数を絞らない。
 - **シードなど普段触らない値も、隠さずに Advanced に置く**(宣言の `@advanced`、`ValuesCard` が畳む)。

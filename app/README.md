@@ -8,7 +8,7 @@ Flutter で書いたアプリ。描くのもプロジェクトを持つのもエ
 |---|---|
 | `lib/main.dart` | 起動したらアプリのウィンドウを開く |
 | `lib/bridge/` | アプリとエンジンの境目（[`docs/app/BRIDGE.md`](../docs/app/BRIDGE.md)）。エンジン（`libmotolii.dylib`）を呼ぶ口：プロジェクト、棚、問い合わせ、書き込み |
-| `lib/workspace/` | アプリの画面そのもの。`state/` 画面の状態、`window/` ウィンドウの枠、`top_bar/` 上のバー、`commands/` キーとメニュー、`edits/` まとめて掛ける編集、`inspector_feed/` Inspector へ渡す物、`dock/` 左の棚、`stage/` プレビュー、`timeline/` タイムライン、`tool_panel/` 下のツールパネル、`shelf/` 棚のタイル（地図は [`lib/workspace/README.md`](lib/workspace/README.md)） |
+| `lib/workspace/` | アプリの画面そのもの。`state/` 画面の状態、`window/` ウィンドウの枠、`top_bar/` 上のバー、`commands/` キーとメニュー、`edits/` まとめて掛ける編集、`inspector_feed/` Inspector へ渡す物、`dock/` 左の棚、`stage/` プレビュー、`shelf/` 棚のタイル（地図は [`lib/workspace/README.md`](lib/workspace/README.md)） |
 | `lib/inspector/` | 右の Inspector。カードは全部エンジンの宣言（`engine/document/card_table.h` → `lib/workspace/inspector_feed/` の cards が WGSL の構造体に）で、効果もそれ以外も `inspector_card.dart` の `ValuesCard` 1 つが描く。カードごとの Dart は置かない。`controls/` 値の種類ごとの操作部品（数・角度・色・文字・リンク）、`rows/` 行とカードの枠 |
 | `lib/widgets/` | パネルをまたいで使うウィジェット（Flutter の言葉）：操作部品（`controls.dart`）、文字をドラッグする動き（`text_gestures.dart`） |
 | `lib/skin/` | 見た目：既定の値と、着ているスキンが差し替える物。`tokens.dart` 色の段と寸法（`docs/app/DESIGN.md` から）、`theme.dart` スキンの theme.xml の色、`forms/` オン・オフと数値の絵（`own_forms.dart`、数値は `number_paint.dart`） |

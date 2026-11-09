@@ -1,11 +1,9 @@
-// The whole window: top bar, then the panes (panes.dart) — browser shelves | Stage over Timeline, Inspector over Tool Panel, rearrangeable.
-// Each panel is its own file and reads the shared Ws.
+// The whole window: the inspector, under the menu.
 import 'dart:developer' show Timeline;
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:docking/docking.dart';
 import 'package:flutter/widgets.dart';
 
 import 'window/zoom.dart';
@@ -14,10 +12,7 @@ import 'package:motolii/inspector/inspector_parts_insp_host.dart';
 
 import '../inspector/inspector_parts.dart';
 import '../skin/theme.dart';
-import 'window/panes.dart';
-import 'tool_panel/tool_panel_widgets.dart';
 import 'commands/keymap.dart';
-import 'timeline/timeline.dart';
 import '../bridge/motolii.dart';
 import 'edits/make_relation.dart';
 import 'state/state.dart';
@@ -28,18 +23,11 @@ part 'inspector_feed/keyframe_marks.dart';
 part 'commands/menu_bar.dart';
 
 class Workspace extends StatefulWidget {
-  const Workspace({super.key, this.document, this.extra = const [], this.tools = const [], this.view = const {}});
+  const Workspace({super.key, this.document, this.view = const {}});
 
   /// A document of the inside (motolii.dart) to join the window to: its stage is then the inside's own picture.
   /// null: the sample, with its stand-in art.
   final String? document;
-
-  /// Panes of your own, beside the window's: each joins the Inspector's tabs. A pane reads and changes the document
-  /// through [WsScope.of] (its `inside` is the document, `selected` the picked thing, `frame` the moment).
-  final List<WsPane> extra;
-
-  /// Tool Panel tools of your own, after the window's (a PanelTool with its `build`).
-  final List<PanelTool> tools;
 
   /// How the window looks when it opens (Ws.view: as it was left, say).
   final Map<String, Object?> view;
@@ -48,9 +36,7 @@ class Workspace extends StatefulWidget {
 }
 
 class _WorkspaceState extends State<Workspace> {
-  late final _ws = Ws()
-    ..tools = [...panelTools, ...widget.tools]
-    ..view.addAll(widget.view);
+  late final _ws = Ws()..view.addAll(widget.view);
   Motolii? _inside;
 
   String? _doc; // (the document that is open: the one the window was given, or one made or opened from the menu)
@@ -183,7 +169,7 @@ class _WorkspaceState extends State<Workspace> {
     maintainState: true,
     builder: (context) => LayoutBuilder(
       builder: (context, box) {
-        final window = _built != null && _built!.extra == widget.extra ? _built! : _built = _Window(widget.extra);
+        final window = _built ??= const _Window();
         if (box.maxWidth >= WsT.minWindow.width && box.maxHeight >= WsT.minWindow.height) return window;
         return FittedBox(
           // (laid out no smaller than the least window, shrunk only as far as that needs: a zoomed window stays zoomed)
@@ -223,51 +209,13 @@ class _WorkspaceState extends State<Workspace> {
 }
 
 class _Window extends StatelessWidget {
-  const _Window(this.extra);
-  final List<WsPane> extra;
+  const _Window();
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => const Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      SizedBox(height: WsT.topBar),
-      const SizedBox(height: WsT.gutter),
-      Expanded(
-        child: WsPanes(panes: [..._panes, ...extra], preset: (item) => _preset(item, extra)),
-      ),
+      SizedBox(height: WsT.gutter),
+      Expanded(child: WsPanel(child: _InspectorPanel())),
     ],
   );
 }
-
-final _panes = [
-  WsPane('Stage', () => const SizedBox.shrink(), minSize: 320),
-  WsPane('Camera View', () => const SizedBox.shrink(), minSize: 240),
-  WsPane('Inspector', () => const _InspectorPanel(), minSize: 200),
-  WsPane('Timeline', () => const WsTimeline(), minSize: 160),
-  WsPane('Ease', () => const SizedBox.shrink(), minSize: 260),
-  WsPane('Camera', () => const SizedBox.shrink(), minSize: WsT.lower),
-  WsPane('Tool Panel', () => const SizedBox.shrink(), minSize: WsT.lower),
-  WsPane('Relations', () => const SizedBox.shrink(), minSize: WsT.lower),
-];
-
-/// A pane's tab strip, added on top of the reference heights so the panels keep theirs.
-const _strip = 22.0;
-
-/// The reference arrangement: the browser shelves (one strip of tabs) | Stage over Timeline and Ease on the left, Inspector over Camera on the right.
-/// Side and lower panes start at their reference sizes in px and the panes without one share what is left.
-/// contract: give the filling panes no weight; `multi_split_view` turns sizes into weights and would scale them against any weight given.
-DockingArea _preset(DockingItem Function(String name, {double? size, double? weight}) item, List<WsPane> extra) => DockingRow([
-  DockingColumn([
-    DockingTabs([item('Stage'), item('Camera View')]),
-    DockingRow([item('Timeline'), item('Ease', size: WsT.inspector)], size: WsT.lower + _strip, minimalSize: 220), // (the stretch between two keys, beside the keys; never lower than its seven shapes and its curve can be read: docking's own minimum, as VS Code's views say theirs)
-  ]),
-  DockingColumn(
-    [
-      extra.isEmpty ? item('Inspector') : DockingTabs([item('Inspector'), for (final p in extra) item(p.name)]),
-      DockingTabs([item('Camera'), item('Tool Panel'), item('Relations')], size: WsT.lower + _strip),
-    ],
-    size: WsT.inspector,
-    minimalSize: 340,
-  ), // (the camera, whatever is picked)
-]);
-
-/// The paint each layer wears on the stage, so the Inspector's Fill names the colour you see.

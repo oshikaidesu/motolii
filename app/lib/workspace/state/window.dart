@@ -200,33 +200,13 @@ class Ws extends ChangeNotifier {
     if (p == _playing) return;
     _playing = p;
     if (p) _inside?.at(frame / fps);
-    _inside?.play(p); // (the inside keeps the clock; the playhead follows its moment: timeline.dart)
+    _inside?.play(p); // (the inside keeps the clock; the playhead follows its moment)
     if (!p) _inside?.at(frame / fps); // (its clock runs ahead of a stage that is late with its pictures: stopped, it stands where the hand sees it)
     _tell(WsAspect.playing);
   }
 
-  /// The browser shelf in front: Media, Effects, Fonts, Colors, Create (Motolii's Browser shelves, each a pane of its own).
-  String _shelf = 'Media';
-  String get shelf => _shelf;
-  set shelf(String s) {
-    if (s == _shelf) return;
-    _shelf = s;
-    _tell(WsAspect.shelf);
-  }
-
   /// How the window looks, by name ('fold.Transform'...): what a pane keeps of itself that is not the document's.
   final view = <String, Object?>{};
-
-  /// The tool panel's tools: the window's own, then any of your own (Workspace(tools:)).
-  List<PanelTool> tools = panelTools;
-
-  /// A pane brought to the front of its tabs (the panes follow: panes.dart).
-  void front(String pane) {
-    fronted = (pane, (fronted?.$2 ?? 0) + 1);
-    _tell(WsAspect.fronted);
-  }
-
-  (String, int)? fronted;
 
   /// Joined: whether every change a hand makes is keyed (the inspector's Animate all: one truth, the inside's).
   bool get animating => _inside?.keyingNow ?? false;

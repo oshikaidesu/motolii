@@ -17,7 +17,6 @@ export '../../bridge/motolii.dart'
         MotoliiShelves,
         MotoliiWatch; // (the inside's reads, an extension of Motolii: whoever holds the window's Ws.inside can call them)
 import '../../skin/tokens.dart';
-import '../tool_panel/tool_panel_widgets.dart' show PanelTool, panelTools;
 import '../stage/stage_art.dart' show WsArt;
 
 part 'window.dart';
@@ -30,9 +29,6 @@ abstract final class WsT {
   /// The gutter between panels: the dark you see between tiles.
   static const gutter = 2.0;
 
-  /// Panel widths and the lower band's height.
-  static const inspector = 372.0, lower = 300.0;
-  static double get topBar => Shape.z(40);
   static const minWindow = Size(1280, 800);
 
   /// Grounds: the gutter, a panel's body, a card or row inside it.
@@ -71,4 +67,4 @@ typedef WsStretchPicked = ({String layer, String name, double at, int from, int 
 /// contract: changes notify once per user action; nothing here ticks while idle (play advances only while [playing]).
 /// What of the window changed: a part of it is built again only when one it reads did (Flutter's InheritedModel
 /// aspects: [WsScope.of]). [WsAspect.document]: the inside's picture of the document was read again.
-enum WsAspect { document, picked, playing, shelf, view, fronted, route, animating, notice, stage }
+enum WsAspect { document, picked, playing, view, route, animating, notice, stage }
