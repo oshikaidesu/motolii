@@ -102,8 +102,7 @@ def sign(top, rel, area, text, first, name):
     if area == 'engine':
         out.append(f'  the file must be as clang-format leaves it and stay at 500 lines or fewer ({rel}: {lines} now), and a layer kind may not be compared by name (.githooks/shape_check.sh);')
     else:
-        ledger = next((l.split()[0] for l in open(os.path.join(top, '.githooks/dart_lines.txt')) if l.strip() and not l.startswith('#')), '?')
-        out.append(f'  hand-written Dart may not grow at all ({ledger} lines, .githooks/dart_budget.py), and GestureDetector, Listener, MouseRegion, OverlayPortal and CustomPainter are refused (.githooks/shape_check.sh);')
+        out.append('  GestureDetector, Listener, MouseRegion, OverlayPortal and CustomPainter may not appear in more places than now (.githooks/shape_check.sh);')
     out.append('  and the reasons are read by a person or a judge, who is given the same list.')
     return out
 

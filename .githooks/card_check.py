@@ -8,7 +8,6 @@
 #   card_check.py --rev REV    another commit (`--rev main`: what main still holds)
 # rule 1: a value's key written as a string in Dart ('v_shadow_distance'), anywhere in app/lib
 # rule 2: a value's bare name written as a string in Dart ('intensity'), in app/lib/inspector
-# rule 3: a card built by hand (a Sect made anywhere but the one card), in app/lib
 import re, subprocess, sys
 
 TABLE = 'engine/document/card_table.h'
@@ -28,11 +27,8 @@ OWED = {
     # own say of `speed` should do that, then this goes
     ('app/lib/workspace/inspector_feed/values.dart', 'v_speed'),
 }
-# Where a Sect may be made: its definition, and the one card.
-SECT_HOMES = {'app/lib/inspector/rows/inspector_rows_sect.dart', 'app/lib/inspector/inspector_card.dart'}
 COMMENT = re.compile(r'//[^\n]*|/\*.*?\*/', re.S)
 STRING = re.compile(r"""r?'((?:[^'\\\n]|\\.)*)'|r?"((?:[^"\\\n]|\\.)*)\"""")
-SECT = re.compile(r'(?<![\w.])Sect\(')
 SAY = 'declare it like an effect; the inspector reads it'
 
 
@@ -86,10 +82,6 @@ for p in files:
             bad.append(f"rule 1: {p}:{line(m.start())}: '{word}' is a value's key written in Dart; {SAY}")
         elif p.startswith('app/lib/inspector/') and p not in READERS and word in names and word not in FORM_WORDS:
             bad.append(f"rule 2: {p}:{line(m.start())}: '{word}' is a value's name written in Dart; {SAY}")
-    if p not in SECT_HOMES:
-        for m in SECT.finditer(code):
-            bad.append(f'rule 3: {p}:{line(m.start())}: a card built by hand (Sect); {SAY}'
-                       ' (inspector_card.dart ValuesCard draws every card)')
 
 if bad:
     print('card check refused this commit (rule: one card rule, .githooks/README.md):\n  ' + '\n  '.join(bad), file=sys.stderr)

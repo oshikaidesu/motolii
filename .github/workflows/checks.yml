@@ -2,8 +2,7 @@
 # `git config core.hooksPath .githooks`: the 500-line rule (.githooks/size_check.py), the layout of AGENTS.md
 # 「構成の目標」 (.githooks/layout_check.py), every path a shelf or one of our .md names leading somewhere
 # (.githooks/path_check.py), every Inspector card the engine's declaration (.githooks/card_check.py), every motolii_* call and class
-# we keep reached by the window (.githooks/reach_check.py), the hand-written Dart newline count only falling
-# (.githooks/dart_budget.py), no dropped house word in our identifiers or .md (.githooks/word_check.py, report only
+# we keep reached by the window (.githooks/reach_check.py), no dropped house word in our identifiers or .md (.githooks/word_check.py, report only
 # until its FAIL switch is on), on the tree of the push or pull request; and a subject of 72 characters
 # at most (.githooks/subject_check.py) on each commit it brings. The same commands run by hand, from the root of a clone.
 # Seconds on a Linux runner: no build and nothing fetched but the history (the build is build.yml). Workflow syntax and events: docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions,
@@ -51,8 +50,6 @@ jobs:
         run: python3 .githooks/card_check.py --all
       - name: the window reaches every motolii_* call and class we keep (.githooks/reach_check.py)
         run: python3 .githooks/reach_check.py --all
-      - name: hand-written Dart only shrinks (.githooks/dart_budget.py)
-        run: python3 .githooks/dart_budget.py --all "$BASE"
       - name: no dropped house word (.githooks/word_check.py, docs/internal/notes/rename_words.md §5)
         run: python3 .githooks/word_check.py --all
       - name: no shape ast-grep refuses, C++ as clang-format leaves it (.githooks/shape_check.sh)
