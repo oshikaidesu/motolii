@@ -1,5 +1,7 @@
 # 革の絵の部品の名前
 
+*The names of the pictures a skin can replace: `<Parts Value="folder"/>` in `theme.xml`, then `name.svg` in that folder is drawn instead, recoloured with the colour the app uses there.*
+
 theme.xml に `<Parts Value="フォルダ"/>` を書くと、そのフォルダにある `名前.svg` が、アプリのその絵の代わりに描かれる（フォルダは theme.xml から見た場所でも、~/ からでも、絶対の場所でもよい）。
 色は、アプリがその場所で使っている色に塗り直される（SVG の形だけが使われる）。無い名前は、アプリのいつもの絵のまま。
 

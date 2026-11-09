@@ -1,5 +1,7 @@
 # Workspace — Motolii のアプリの画面
 
+*The app's own code: `Workspace` (opened by `app/lib/main.dart`) and its panes. The project lives in the C++ engine, reached through `../bridge/motolii.dart`; this folder shows it and hands every edit back. Start here to add a panel of your own.*
+
 `app/lib/main.dart` が開く `Workspace`（`workspace.dart`）がアプリの画面。プロジェクトは C++ のエンジン（`../bridge/motolii.dart` の `Motolii`、各メソッドが `motolii_*` の C 呼び出し 1 つ）にあり、Stage の絵もエンジン（Filament）が描く。アプリは見せて、ポインタの操作をプロジェクトに渡すだけ。プロジェクトを渡さずに開くと無題のプロジェクトを開く（AE と同じ）。
 
 ## 自分のパネルを足す（入口はここだけ）

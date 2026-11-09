@@ -1,5 +1,7 @@
 # TESTING：外から来る要件だけを試験にする
 
+*How Motolii is tested: every expected value comes from outside the code under test (Flutter's guidelines, W3C, published standards), never from Motolii itself. Where the tests live, how to run them, and the latest results.*
+
 ## 原則
 
 - 試験の「期待値」は、試験される側のコードの外にある（Flutter 公式のガイドライン、W3C の基準、標準規格）。

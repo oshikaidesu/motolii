@@ -1,5 +1,7 @@
 # アプリとエンジンの境目（2026-10-24 から）
 
+*The contract between the app (Flutter) and the engine (C++, `engine/entry/motolii.mm`): writes are recorded and come back, questions are answered later, what changes every frame is subscribed to. Each rule names the open-source app it was taken from.*
+
 アプリ（Flutter、`app`）とエンジン（C++、`engine/entry/motolii.mm`）の間の決まり。仲間の作りに揃える：Lumit（`docs/17-BRIDGE-CONTRACT.md`）、
 AppFlowy（「誰の何が変わったか」を1本で流す）、Rive の CommandQueue（書きは記録して戻る、問い合わせは後で届く）、Anthem（毎フレーム変わる物は購読）、
 Thermion（描けは前が終わるまで捨てる）。調べた記録は `research_notes/flutter_native_kin.md`。GPL・AGPL の物は考え方だけ借りる。

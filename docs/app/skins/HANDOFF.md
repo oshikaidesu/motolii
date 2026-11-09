@@ -1,5 +1,7 @@
 # Motolii の見た目：引き継ぎ（人と AI 向け）
 
+*Hand-over for people and AI who carry on the app's look: the three layers that change it without touching projects, motion or pictures, and where each is written. To only make a skin, read `shelves/skins/README.md`.*
+
 Motolii のアプリ（Flutter、`app`）の見た目は、エンジンの側（プロジェクト・動き・絵）に触らずに3段で変えられる。この文書は、続きを作る人や AI が、これだけ読めば手を動かせるように書いてある。スキンを作るだけなら [README.md](../../../shelves/skins/README.md) で足りる。
 
 ## 1. 3つの段

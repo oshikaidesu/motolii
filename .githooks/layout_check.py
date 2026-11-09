@@ -121,6 +121,26 @@ for folder, n in sorted(per_folder.items()):
     if n > LIMIT:
         bad.append(f'rule 6: {folder}/: {n} own files (at most {LIMIT}); split them into folders by job')
 
+# Japanese and English (docs/README.md 「日本語と英語」): the entrances people using or bringing open first are two
+# files, X.md and X.en.md; every other own document written in Japanese is one, its English summary in italics under
+# the title (a newcomer reading only English learns where they are; a second copy drifts once one side is edited)
+BOTH = ('README.md', 'shelves/README.md', '.github/CONTRIBUTING.md', 'docs/using/screen_tour.md')
+NOT_OWN_TEXT = ('engine/third_party/', 'engine/out/', 'app/build/', 'shelves/aviutl_scripts/', 'engine/deps/patches/', 'docs/internal/', '.github/')
+JAPANESE = re.compile(r'[぀-ヿ一-鿿]')
+for p in BOTH:
+    if p in files and p[:-3] + '.en.md' not in files:
+        bad.append(f'language: {p}: an entrance people using or bringing open first; write {p[:-3]}.en.md beside it')
+for p in files:
+    if not p.endswith('.md') or p.endswith('.en.md') or p.startswith(NOT_OWN_TEXT) or p[:-3] + '.en.md' in files:
+        continue
+    lines = git('show', f'{tree}:{p}').split('\n')
+    body = [l for l in lines[1:] if l.strip()]
+    if not body or sum(bool(JAPANESE.search(l)) for l in body) * 10 < len(body) * 3:
+        continue   # (written in English, or a few Japanese words in it)
+    if not (body[0].startswith('*') and not body[0].startswith('**')):
+        bad.append(f'language: {p}: written in Japanese with no English summary; put one paragraph in *italics*'
+                   f' right under the title saying what it is and who reads it')
+
 if bad:
     print('layout check refused this commit (rule: AGENTS.md 構成の目標, numbered as below; .githooks/README.md):\n  ' + '\n  '.join(bad), file=sys.stderr)
     sys.exit(1)

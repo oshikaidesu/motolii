@@ -1,5 +1,7 @@
 # 革（スキン）の作り方
 
+*How to make a skin: one folder (`theme.xml`, and pictures or fonts if any) that changes only how the app looks. Put it in your own folder's `skins/` and it appears under View › Skin.*
+
 革は、アプリの見た目だけを着せ替えるもの。エンジンの側（プロジェクト・動き・絵）は何も変わらない。
 革は1つのフォルダで、利用者のフォルダ（Mac は `~/Library/Application Support/Motolii/`、Windows は `%APPDATA%\Motolii\`、`MOTOLII_OWN` で変更可。ほかの棚と同じ）の `skins/` に置く。同じ名前なら利用者の物が勝つ。前の置き場 `~/.motolii/skins/` に置いた革も、そのまま読む。
 

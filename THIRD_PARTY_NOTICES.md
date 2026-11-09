@@ -1,5 +1,7 @@
 # 同梱した他の人の作品（Third-party notices）
 
+*Other people's work shipped with Motolii, each under its own licence (Motolii's licence does not cover it): who made it, where it came from, its licence, and where it sits in this repository. Changes we make are kept apart as patches.*
+
 Motolii は「ネットで見つけたかっこいい表現を、自分の動画にすぐ使う」ための道具です。そのために、多くの作者が公開してくれた作品を同梱し、なるべく作者の作り方のまま動かしています。作者のみなさんに感謝します。
 
 - 同梱した物はそれぞれの作者の物で、それぞれのライセンスに従います。Motolii のリポジトリのライセンスはこれらには掛かりません。
