@@ -65,8 +65,7 @@ class Ws extends ChangeNotifier {
     > 0 && final r => r,
     _ => m.rate,
   };
-  void reread() => Timeline.timeSync('ws reread', _reread); // (named in Flutter's timeline)
-  void _reread() {
+  void reread() {
     final m = _inside;
     if (m == null) return;
     if (!m.fits && refit != null) return refit!(); // (the document says another size, by a hand or by undo: the host opens it again, and that reads it)
@@ -78,8 +77,7 @@ class Ws extends ChangeNotifier {
       moment.value = (at * fps).round();
     }
     rev++;
-    duration = Timeline.timeSync('MARK seconds', () => (m.seconds * fps).round().clamp(1, 1 << 20));
-    final tl = TimelineTask()..start('MARK layers');
+    duration = (m.seconds * fps).round().clamp(1, 1 << 20);
     final holding = {for (final t in m.layers) (m.value(t, 'parent', 0) ?? 0).round()}; // (who has things going with it)
     layers
       ..clear()
@@ -110,7 +108,6 @@ class Ws extends ChangeNotifier {
     if (_sel != null && layers.every((l) => l.id != _sel)) {
       _sel = layers.firstOrNull?.id; // (a picked thing gone: the first; nothing picked stays so, the stage's)
     }
-    tl.finish();
     _tell(WsAspect.document);
   }
 

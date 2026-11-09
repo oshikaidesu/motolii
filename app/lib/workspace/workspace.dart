@@ -1,5 +1,4 @@
 // The whole window: the inspector, under the menu.
-import 'dart:developer' show Timeline;
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;

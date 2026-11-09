@@ -18,13 +18,12 @@ class Decl {
   final String? fold;
 }
 
-/// What the Inspector needs to draw one parameter. Values are kept in display units (degrees, percent); [toShader] maps back.
+/// What the Inspector needs to draw one parameter. Values are kept in display units (degrees, percent).
 class Param {
   const Param({
     required this.id,
     required this.label,
     required this.look,
-    required this.type,
     this.min,
     this.max,
     this.def = 0,
@@ -37,13 +36,11 @@ class Param {
     this.open = false,
     this.validMin,
     this.validMax,
-    this.toShader = 1,
   });
   final String id, label, unit;
   final ParamLook look;
-  final WType type;
   final double? min, max;
-  final double def, defY, toShader;
+  final double def, defY;
   final int dec;
   final List<String> options;
   final bool advanced;
@@ -213,7 +210,6 @@ Param infer(Decl d) {
       id: d.name,
       label: lab,
       look: look,
-      type: d.type,
       min: l,
       max: h,
       def: d0 / scale,
@@ -226,7 +222,6 @@ Param infer(Decl d) {
       validMin: _num(a['valid']?.elementAtOrNull(0)),
       validMax: _num(a['valid']?.elementAtOrNull(1)),
       fold: d.fold,
-      toShader: scale,
     );
   }
 

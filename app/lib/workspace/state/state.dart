@@ -1,7 +1,5 @@
 // The workspace: one window that gathers the lab's panels (browser dock, stage, inspector, timeline, tool panel).
 // This file is what every panel shares: the mock document they all read (Ws), and the window's own tokens (WsT).
-import 'dart:developer' show Timeline, TimelineTask;
-
 import 'package:flutter/widgets.dart';
 
 import '../../bridge/motolii.dart';

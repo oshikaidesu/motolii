@@ -51,8 +51,7 @@ class _InspectorPanelState extends State<_InspectorPanel> {
   }
 
   static const _hears = [WsAspect.document, WsAspect.picked, WsAspect.animating]; // (what the inspector shows: the picked thing's cards, Animate all)
-  void _changed() => Timeline.timeSync('inspector at a moment', _changedNow); // (named in Flutter's timeline)
-  void _changedNow() {
+  void _changed() {
     final ws = _ws!, now = _now(ws), was = _seen;
     if (now != _seen) {
       _seen = now;
@@ -82,14 +81,6 @@ class _InspectorPanelState extends State<_InspectorPanel> {
     final ws = _ws!;
     if (_now(ws) != _seen || ws.selected == null || ws.playing) return; // (played: the moment's own reading above)
     _live.value = (wsTransform(ws, ws.layer?.id), _keyMarks(ws, ws.layer?.id));
-  }
-
-  // (the panel itself, made once a size: a new one each build would build its whole tree again, whatever changed)
-  (Size, InspectorPanel)? _panel;
-  InspectorPanel _panelOf(BoxConstraints box) {
-    final size = Size(box.maxWidth, box.maxHeight);
-    if (_panel?.$1 != size) _panel = (size, InspectorPanel(width: box.maxWidth, height: box.maxHeight));
-    return _panel!.$2;
   }
 
   @override
@@ -126,11 +117,7 @@ class _InspectorPanelState extends State<_InspectorPanel> {
   @override
   Widget build(BuildContext context) {
     final ws = WsScope.read(context), l = ws.layer, k = _kindOf(l), m = ws.inside!;
-    return Column(
-      children: [
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, box) => InspHost(
+    return InspHost(
               key: ValueKey(k),
               kind: k,
               kindWord: _kindWord(ws, l?.id),
@@ -159,11 +146,7 @@ class _InspectorPanelState extends State<_InspectorPanel> {
                 ws.after(m.later('together'));
               },
               live: _live,
-              child: _panelOf(box), // (the same panel while the pane keeps its size: built again only by what it reads, Ctx)
-            ),
-          ),
-        ),
-      ],
-    );
+              child: const InspectorPanel(),
+            );
   }
 }

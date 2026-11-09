@@ -5,9 +5,8 @@ import 'inspector_parts.dart';
 
 /// A card as the inside declares it: a name and a WGSL uniform struct. Its fields are whatever [infer] makes of them.
 class Fx {
-  Fx(this.id, this.name, this.wgsl, {Color? tone, Color Function()? toneOf, this.vendor}) : _tone = tone, _toneOf = toneOf;
+  Fx(this.id, this.name, this.wgsl, {Color? tone, Color Function()? toneOf}) : _tone = tone, _toneOf = toneOf;
   final String id, name, wgsl;
-  final String? vendor;
   final Color? _tone;
   final Color Function()? _toneOf; // (a skin's colour: read when drawn, so a card made before the skin changed wears the new one)
   Color get tone => _toneOf?.call() ?? _tone!;
