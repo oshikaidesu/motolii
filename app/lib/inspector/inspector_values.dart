@@ -29,7 +29,6 @@ class Doc extends ChangeNotifier {
   /// values the host has for it (a card of values it has not is not shown); null: the sample's.
   String? kindWord;
   Set<String>? properties;
-  bool hasProperty(String id) => properties?.contains(id) ?? true;
 
   /// The host's own cards of values (each one's Params, its fields keyed `v_` and the value's name): what the host has
   /// beyond the sample's cards.
@@ -40,7 +39,6 @@ class Doc extends ChangeNotifier {
   /// keys what a hand changes, and a mark told besides was a second key, made before the change, with the old value).
   bool marksEdits = true;
 
-  String? directHover;
   String query = '';
 
   @override
@@ -84,8 +82,6 @@ class Doc extends ChangeNotifier {
   }
 
   ({Map<String, double> values, Map<String, List<double>> mixed, Map<String, KeyS> keys})? _gesture;
-  final _undo = <({Map<String, double> values, Map<String, List<double>> mixed, Map<String, KeyS> keys})>[];
-  int get undoSteps => _undo.length;
 
   /// A hand is on a value (between beginGesture and endGesture): what it shows is not settled yet.
   bool get inGesture => _gesture != null;
@@ -97,9 +93,6 @@ class Doc extends ChangeNotifier {
   void endGesture() {
     final before = _gesture;
     _gesture = null;
-    if (before != null && before.values.entries.any((e) => v[e.key] != e.value)) {
-      _undo.add(before);
-    }
     // (a hand let go: the host is told, but the inspector is not built again for it: the field under the hand already
     //  shows its number, the rows of what moved are told alone, and the host's reading of the document follows)
     ending = true;
@@ -112,30 +105,6 @@ class Doc extends ChangeNotifier {
 
   /// A hand letting go is being told (see [endGesture]).
   bool ending = false;
-
-  void _restore(({Map<String, double> values, Map<String, List<double>> mixed, Map<String, KeyS> keys}) before) {
-    v
-      ..clear()
-      ..addAll(before.values);
-    multi
-      ..clear()
-      ..addAll(before.mixed);
-    keys
-      ..clear()
-      ..addAll(before.keys);
-    notifyListeners();
-  }
-
-  void cancelGesture() {
-    final before = _gesture;
-    _gesture = null;
-    if (before != null) _restore(before);
-  }
-
-  void undoGesture() {
-    if (_gesture != null || _undo.isEmpty) return;
-    _restore(_undo.removeLast());
-  }
 
   /// What the host has at a new moment, shown as it is (not a hand's change: no key, no undo step): only the fields
   /// whose number or key mark moved are told (each watches its own), the inspector is not built again.
@@ -175,7 +144,6 @@ class Doc extends ChangeNotifier {
 
   /// Reset writes the default value. On an animated row it also writes a key at the playhead (so the arrow drops: value == default).
   void resetIds(Iterable<String> ids) {
-    _undo.clear();
     for (final i in ids) {
       final dv = d[i] ?? 0;
       v[i] = dv;
@@ -188,13 +156,11 @@ class Doc extends ChangeNotifier {
 
   /// D2: while Animate all is on (or the property is animated), an edit writes a key at the playhead.
   void _touch(String id) {
-    if (_gesture == null) _undo.clear();
     final p = propOf(id);
     if (marksEdits && (animateAll || (keys[p] ?? KeyS.off) != KeyS.off)) keys[p] = KeyS.at;
   }
 
   void setKey(String prop, KeyS s) {
-    _undo.clear();
     keys[prop] = s;
     _watched['key:$prop']?.value++; // (the field whose mark it is draws it now)
     notifyListeners();
@@ -226,12 +192,10 @@ class Doc extends ChangeNotifier {
   /// Fields picked together; Shift-click spans a rectangle of [_grid] (a card a row, its fields in their order) like a spreadsheet.
   final Set<String> picked = {};
   String? _pickFrom;
-  int pickGen = 0;
   bool isPicked(String id) => picked.length > 1 && picked.contains(id);
 
   void pick(String id, {bool span = false}) {
     final from = _pickFrom, a = from == null ? null : _cell(from), b = _cell(id), shown = picked.length > 1;
-    pickGen++;
     picked.clear();
     if (span && a != null && b != null) {
       for (var r = math.min(a.$1, b.$1); r <= math.max(a.$1, b.$1); r++) {
@@ -265,17 +229,6 @@ class Doc extends ChangeNotifier {
     }
     return null;
   }
-
-  void setDirectHover(String? prop) {
-    if (directHover == prop) return;
-    directHover = prop;
-    notifyListeners();
-  }
-
-  /// The host's MIDI keys (om_midi's panel, a row's menu): a property keyed from a file's notes (false: not taken), and
-  /// the BPM a file says. Null: the menu has no MIDI.
-  bool Function(String prop, String file, String kind, int channel, double bpm)? onMidi;
-  double Function(String file)? midiBpm;
 
   /// The host's cards that may be moved up or down (its effects, by their titles), and what moves one so many places.
   List<String> movable = const [];

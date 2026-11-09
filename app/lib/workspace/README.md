@@ -28,7 +28,7 @@ Workspace(document: path, extra: [
 ```
 - 足したパネルは Inspector の横にタブで並ぶ。本家のファイルは 1 行も変えない。
 - パネルの中では `WsScope.of(context)` がアプリの状態（`Ws`。何かが変わるたびに組み立て直る。聞く面を言えば、その面が変わった時だけ：`WsScope.of(context, {WsAspect.picked})`。再生ヘッドは `WsScope.frameOf(context)`）：`inside` がプロジェクト（`Motolii`）、`selected` が選ばれたレイヤー、`frame` が今のコマ。値は `inside.value(thing, name, seconds)`、変えるのは `inside.set(...)`、キーは `inside.keyHere(...)`。
-- レイヤーをプレビューの上で動かす（画素で）：`inside.dragStart(t)`、`inside.dragUpdate('place', 10, 0)`、`inside.later('drag_end', number: 1)`（ドラッグしたのと同じ undo 1 回）。値をそのまま変えるのは `inside.set(t, name, value)`（プロジェクトの単位）。キーの数は `inside.keyTimes(t, name).length`。
+- レイヤーをプレビューの上で動かす（画素で）：`inside.take(t)`、`inside.dragUpdate('place', 10, 0)`、`inside.later('drag_end', number: 1)`（ドラッグしたのと同じ undo 1 回）。値をそのまま変えるのは `inside.set(t, name, value)`（プロジェクトの単位）。キーの数は `inside.keyTimes(t, name).length`。
 - 気をつける 4 つ：選ばれたレイヤー `selected` は文字なので `int.parse` してからエンジンに渡す。今の秒は `frame / Ws.fps`。レイヤーの名前は `inside.word(t, 'name')`。プロジェクトを変えたら `ws.reread()`（アプリの他のパネルが読み直す）。
 
 ## 自分のツールパネルの道具を足す

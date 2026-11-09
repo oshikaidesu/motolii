@@ -72,20 +72,6 @@ abstract final class Grey {
   static Color get rowLine => ColorTheme.of('RowLine', g10);
 }
 
-/// A relation family: the colour a relation carries everywhere. [code] identity.dart
-class Fam {
-  const Fam(this.name, this.jp, this.c);
-  final String name, jp;
-  final Color c;
-  static const scatter = Fam('Scatter', '散らす', Color(0xFFE974AB));
-  static const along = Fam('Along Path', 'パスに沿って', Color(0xFF7DD5B1));
-  static const stagger = Fam('Stagger', 'ずらす', Color(0xFF4781E5));
-  static const face = Fam('Face', '向かせる', Color(0xFFEFCB4E));
-  static const follow = Fam('Follow', '追従', Color(0xFFF69260));
-  static const attach = Fam('Attach', 'くっつける', Color(0xFFA889E9));
-  static const all = [scatter, along, stagger, face, follow, attach];
-}
-
 abstract final class C {
   /// The accent. Delegates to [Role.mode].
   static Color get mode => Role.mode;
@@ -93,13 +79,6 @@ abstract final class C {
 
 /// The window's role colours. One palette is set, so each name is that colour.
 abstract final class Role {
-  /// Always true: one palette. Only [ErrMark] still asks (its caller in workspace/shelf/fx_code.dart goes first).
-  static const grey = true;
-
-  static Color get linked => N.g95;
-
-  /// A relation's own family colour when one is known; an unknown family falls back to [linked].
-  static Color linkedFor(Fam? f) => f == null ? linked : f.c;
   static const selected = Color(0xFF7A87E3);
   static const mode = Color(0xFF7A87E3);
   static const warning = Color(0xFFF69260);
@@ -190,44 +169,6 @@ abstract final class T {
     height: 1.1,
     decoration: TextDecoration.none,
   );
-}
-
-/// The non-colour half of every error: a small "!" in a 1 px ring. Anything drawn in [Role.error] carries one (policy P1: never colour only).
-class ErrMark extends StatelessWidget {
-  const ErrMark({super.key, this.size = 11, this.gap = 0, this.lead = 0, this.color});
-  final double size, gap, lead;
-  final Color? color;
-
-  /// Grey keeps today's look exactly, so the mark (and its gaps) is not there in Grey.
-  @override
-  Widget build(BuildContext context) => Role.grey
-      ? const SizedBox.shrink()
-      : Padding(
-          padding: EdgeInsets.only(left: lead, right: gap),
-          child: SizedBox.square(
-            dimension: size,
-            child: CustomPaint(painter: _ErrMarkPainter(color ?? Role.error)),
-          ),
-        );
-}
-
-class _ErrMarkPainter extends CustomPainter {
-  const _ErrMarkPainter(this.c);
-  final Color c;
-  @override
-  void paint(Canvas cv, Size s) {
-    final m = s.center(Offset.zero), r = s.width / 2 - .5;
-    final st = Paint()
-      ..color = c
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    cv.drawCircle(m, r, st);
-    cv.drawLine(Offset(m.dx, m.dy - r * .52), Offset(m.dx, m.dy + r * .12), st);
-    cv.drawCircle(Offset(m.dx, m.dy + r * .5), .6, Paint()..color = c);
-  }
-
-  @override
-  bool shouldRepaint(_ErrMarkPainter o) => o.c != c;
 }
 
 /// What was typed, a Japanese input method's wide letters and digits as plain ones (１２８：３０ is 128:30).

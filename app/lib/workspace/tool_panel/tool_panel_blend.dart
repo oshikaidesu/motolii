@@ -1,8 +1,6 @@
 // The tool panel's Blend tool: the layer stack, the front first. Each layer that lies on what is under it: how (its blend: the ways the
-// inside names, each drawn as two discs and what their overlap becomes), how much of it is there (its opacity, a bar pulled across), and
-// whether it shows only where the layer under it is (clip). A tap on a name picks it. The ways are the inside's (motolii_words); the window draws each.
-import 'package:flutter/gestures.dart' show kPrimaryButton;
-
+// inside names, each drawn as two discs and what their overlap becomes). A tap on a name picks it; an opened row shows the inside's Blending
+// card (blend, clip). The ways are the inside's (motolii_words); the window draws each.
 import '../../widgets/controls.dart' show IconPress;
 
 import 'package:flutter/widgets.dart';
@@ -12,6 +10,7 @@ import '../../inspector/inspector_small.dart' show Hov;
 import '../../skin/tokens.dart';
 import 'tool_panel_widgets.dart';
 import '../state/state.dart';
+import '../workspace.dart' show LayerCards;
 
 class BlendTool extends StatelessWidget {
   const BlendTool({super.key});
@@ -41,8 +40,6 @@ class _RowState extends State<_Row> {
     final l = widget.l, ws = WsScope.of(context, {WsAspect.document}), m = ws.inside, t = int.tryParse(l.id);
     final ways = m == null || t == null ? const <String>[] : m.words(t, 'blend');
     final now = ways.isEmpty ? '' : (m!.word(t!, 'blend').isEmpty ? ways.first : m.word(t, 'blend'));
-    final clip = ways.isNotEmpty && (m!.value(t!, 'clip', 0) ?? 0) > 0.5;
-    final opacity = ways.isEmpty ? 1.0 : (m!.value(t!, 'opacity', m.now) ?? 1).clamp(0.0, 1.0);
     void say(String name, String word) {
       if (m != null && t != null) ws.after(m.later('say', layer: t, name: name, word: word));
     }
@@ -87,27 +84,6 @@ class _RowState extends State<_Row> {
               on: _open,
               onTap: () => setState(() => _open = !_open),
             ),
-            SizedBox(width: Shape.s(8)),
-            SizedBox(
-              width: Shape.z(64),
-              height: Shape.z(18),
-              child: _Opacity(key: ValueKey('opacity.${l.id}'), thing: t!, value: opacity),
-            ),
-            SizedBox(width: Shape.s(6)),
-            if (l == ws.layers.last)
-              SizedBox(width: Shape.s(24)) // (the back-most: nothing under it to clip to)
-            else
-              IconPress(
-                paintInk((ink) => _Clip(ink)),
-                rest: WsT.well,
-                ink: Grey.g76,
-                key: ValueKey('clip.${l.id}'),
-                size: Shape.z(24),
-                on: clip,
-                onTap: () {
-                  ws.after(m!.later('set', layer: t, name: 'clip', number: clip ? 0 : 1));
-                },
-              ),
           ],
         ],
       ),
@@ -164,6 +140,10 @@ class _RowState extends State<_Row> {
             padding: EdgeInsets.fromLTRB(Shape.s(20), Shape.s(2), Shape.s(6), Shape.s(4)),
             child: Text((_hover ?? now).replaceAll('_', ' '), style: T.micro(Grey.g76)),
           ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(Shape.s(18), 0, Shape.s(6), Shape.s(2)),
+            child: LayerCards(layer: l.id, only: const ['Blending']),
+          ),
         ],
       ),
     );
@@ -182,62 +162,6 @@ const _order = [
   ['difference', 'exclusion', 'subtract', 'divide'],
   ['hue', 'saturation', 'color', 'luminosity'],
 ];
-
-/// How much of it is there: a bar filled so far, pulled across (held and carried while pulled, one step when let go).
-class _Opacity extends StatefulWidget {
-  const _Opacity({super.key, required this.thing, required this.value});
-  final int thing;
-  final double value;
-  @override
-  State<_Opacity> createState() => _OpacityState();
-}
-
-class _OpacityState extends State<_Opacity> {
-  double? _held;
-  void _to(double x, double wide) {
-    final m = WsScope.read(context).inside;
-    if (m == null) return;
-    final v = (x / wide).clamp(0.0, 1.0);
-    if (_held == null) m.take(widget.thing);
-    setState(() => _held = v);
-    m.dragUpdate('opacity', v);
-  }
-
-  void _dragEnd() {
-    final ws = WsScope.read(context);
-    if (_held == null) return;
-    _held = null;
-    if (ws.inside case final m?) ws.after(m.later('drag_end', number: 1));
-  }
-
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, box) => Listener(
-      onPointerDown: (e) => e.buttons == kPrimaryButton ? _to(e.localPosition.dx, box.maxWidth) : null,
-      onPointerMove: (e) => _held != null ? _to(e.localPosition.dx, box.maxWidth) : null, // (only a drag that began with the first button)
-      onPointerUp: (_) => _dragEnd(),
-      onPointerCancel: (_) => _dragEnd(),
-      child: CustomPaint(painter: _Bar(_held ?? widget.value)),
-    ),
-  );
-}
-
-class _Bar extends CustomPainter {
-  _Bar(this.v);
-  final double v;
-  @override
-  void paint(Canvas c, Size s) {
-    final r = RRect.fromRectAndRadius(Offset.zero & s, Shape.r(4));
-    c.drawRRect(r, Paint()..color = WsT.well);
-    c.save();
-    c.clipRRect(r);
-    c.drawRect(Rect.fromLTWH(0, 0, s.width * v, s.height), Paint()..color = Grey.g56);
-    c.restore();
-  }
-
-  @override
-  bool shouldRepaint(_Bar o) => o.v != v;
-}
 
 /// A way of lying on what is under, drawn as what it does: a warm disc under, a cool one over, where they meet the
 /// colour the inside draws for that way (check/blend_ways: the same two colours, as drawn).
@@ -288,28 +212,4 @@ class _Way extends CustomPainter {
 
   @override
   bool shouldRepaint(_Way o) => o.way != way || o.ink != ink;
-}
-
-/// Shows only where the one under it is: a disc cut to a square under it.
-class _Clip extends CustomPainter {
-  _Clip(this.ink);
-  final Color ink;
-  @override
-  void paint(Canvas c, Size s) {
-    final box = Rect.fromCenter(center: s.center(Offset.zero), width: s.width * .46, height: s.height * .46);
-    c.drawRect(
-      box,
-      Paint()
-        ..color = ink.withValues(alpha: .5)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1,
-    );
-    c.save();
-    c.clipRect(box);
-    c.drawCircle(box.topRight, box.width * .7, Paint()..color = ink);
-    c.restore();
-  }
-
-  @override
-  bool shouldRepaint(_Clip o) => o.ink != ink;
 }

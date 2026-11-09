@@ -8,6 +8,7 @@ import '../../skin/tokens.dart';
 import 'tool_panel_widgets.dart';
 import '../../widgets/controls.dart' show Chip, ChipLook;
 import '../state/state.dart';
+import '../workspace.dart' show LayerCards;
 import '../../widgets/two_fingers.dart';
 
 const _zMax = 3000.0;
@@ -50,16 +51,6 @@ const _filmMm = 12 / 0.2679491924311227;
   return (camera: t, eye: eye);
 }
 
-/// Joined: the lens as the tool panel now has it, carried on the camera (shown at once; the document's when the hand lets go).
-void _updateLens(Ws ws, int camera, _Lens lens) {
-  final m = ws.inside!, p = m.point;
-  m.take(camera);
-  m
-    ..dragUpdate('zoom', lens.focal / _filmMm)
-    ..dragUpdate('aperture', lens.fstop)
-    ..dragUpdate('focus', lens.focus / p);
-}
-
 typedef _Slab = ({String id, String name, Color tone, double x, double z, double w});
 
 /// Each thing seen from above: where it is (across, and how far from the eye).
@@ -90,9 +81,14 @@ class _DepthToolState extends State<DepthTool> {
   Widget build(BuildContext context) {
     WsScope.pictureOf(context); // (the lens as it is in the picture shown)
     final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), lens = _lenses[ws] ??= _Lens(), joined = _lensOf(ws, lens);
-    void edit(void Function() f) {
+    // (the one value the hand moves, carried as a hand on the stage carries it)
+    void edit(void Function() f, String name, double value) {
       setState(f);
-      if (joined != null) _updateLens(ws, joined.camera, lens);
+      if (joined != null) {
+        ws.inside!
+          ..take(joined.camera)
+          ..dragUpdate(name, value);
+      }
     }
 
     final cam = ws.layers.where((l) => l.kind == WsKind.camera).firstOrNull;
@@ -104,64 +100,67 @@ class _DepthToolState extends State<DepthTool> {
       lens.target = sharp.firstOrNull?.id;
     }
     final target = ws.layers.where((l) => l.id == lens.target).firstOrNull;
-    return Listener(
-      // (joined: a hand let go is one step of the document)
-      onPointerUp: joined == null
-          ? null
-          : (_) {
-              ws.after(ws.inside!.later('drag_end', number: 1)); // (without waiting)
-            },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ToolStrip(
-            left: [
-              Chip(label: cam?.name ?? 'Camera', look: ChipLook.flat(WsT.toneCamera)),
-              SizedBox(width: Shape.s(8)),
-              Text('${lens.focal.round()} mm', style: T.value(Grey.g91)),
-              SizedBox(width: Shape.s(8)),
-              Text('f/${lens.fstop.toStringAsFixed(1)}', style: T.value(Grey.g91)),
-              SizedBox(width: Shape.s(8)),
-              Text('${(lens.fov * 180 / math.pi).toStringAsFixed(1)}° view', style: T.label(Grey.g56)),
-            ],
-            right: [Chip(label: target == null ? 'Focus free' : 'On ${target.name}', dot: target == null ? Grey.g56 : wsTone(target.kind))],
-          ),
-          const SizedBox(height: WsT.gutter),
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: ColoredBox(
-                    color: WsT.card,
-                    child: _Diagram(
-                      lens: lens,
-                      onFocus: (z, id) => edit(() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ToolStrip(
+          left: [
+            Chip(label: cam?.name ?? 'Camera', look: ChipLook.flat(WsT.toneCamera)),
+            SizedBox(width: Shape.s(8)),
+            Text('${lens.focal.round()} mm', style: T.value(Grey.g91)),
+            SizedBox(width: Shape.s(8)),
+            Text('f/${lens.fstop.toStringAsFixed(1)}', style: T.value(Grey.g91)),
+            SizedBox(width: Shape.s(8)),
+            Text('${(lens.fov * 180 / math.pi).toStringAsFixed(1)}° view', style: T.label(Grey.g56)),
+          ],
+          right: [Chip(label: target == null ? 'Focus free' : 'On ${target.name}', dot: target == null ? Grey.g56 : wsTone(target.kind))],
+        ),
+        const SizedBox(height: WsT.gutter),
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: ColoredBox(
+                  color: WsT.card,
+                  child: _Diagram(
+                    lens: lens,
+                    onFocus: (z, id) => edit(
+                      () {
                         lens.focus = z.clamp(100.0, _zMax);
                         lens.target = id;
-                      }),
-                      onFocal: (f) => edit(() => lens.focal = f.clamp(8.0, 600.0)), // (the cone's edge pulled: a narrower view is a longer lens)
+                      },
+                      'focus',
+                      z.clamp(100.0, _zMax) / (ws.inside?.point ?? 1),
                     ),
+                    onFocal: (f) => edit(
+                      () => lens.focal = f.clamp(8.0, 600.0),
+                      'zoom',
+                      f.clamp(8.0, 600.0) / _filmMm,
+                    ), // (the cone's edge pulled: a narrower view is a longer lens)
+                    onDone: () {
+                      if (joined != null) ws.after(ws.inside!.later('drag_end', number: 1)); // (a hand let go is one step of the document)
+                    },
                   ),
                 ),
-                const SizedBox(width: WsT.gutter),
-                SizedBox(
-                  width: Shape.z(128),
-                  child: _LensNumbers(lens: lens, onEdit: edit),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: WsT.gutter),
+              SizedBox(
+                width: Shape.z(128),
+                child: _LensNumbers(lens: lens, camera: joined == null ? null : cam?.id),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
 class _LensNumbers extends StatelessWidget {
-  const _LensNumbers({required this.lens, required this.onEdit});
+  const _LensNumbers({required this.lens, required this.camera});
   final _Lens lens;
-  final void Function(void Function()) onEdit;
+  final String? camera;
   @override
   Widget build(BuildContext context) {
     final d = lens.dof;
@@ -174,56 +173,25 @@ class _LensNumbers extends StatelessWidget {
     );
     return ColoredBox(
       color: WsT.card,
-      child: LayoutBuilder(
-        builder: (context, box) => SingleChildScrollView(
-          physics: const NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(WsT.inset, Shape.s(7), WsT.inset, WsT.inset),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ToolCaption('Lens', tone: WsT.toneCamera),
-              SizedBox(height: Shape.s(4)),
-              ToolScrub(
-                label: 'Focal',
-                value: lens.focal,
-                min: 15,
-                max: 200,
-                perPx: .5,
-                tone: WsT.toneCamera,
-                format: (v) => '${v.round()} mm',
-                onChanged: (v) => onEdit(() => lens.focal = v),
-              ),
-              SizedBox(height: Shape.s(2)),
-              ToolScrub(
-                label: 'Aperture',
-                value: lens.fstop,
-                min: 1.4,
-                max: 22,
-                perPx: .05,
-                tone: WsT.toneCamera,
-                format: (v) => 'f/${v.toStringAsFixed(1)}',
-                onChanged: (v) => onEdit(() => lens.fstop = v),
-              ),
-              SizedBox(height: Shape.s(10)),
-              ToolCaption('Focus', tone: WsT.accent),
-              SizedBox(height: Shape.s(4)),
-              ToolScrub(
-                label: 'Dist',
-                value: lens.focus,
-                min: 100,
-                max: _zMax,
-                perPx: 5,
-                format: (v) => '${v.round()} px',
-                onChanged: (v) => onEdit(() {
-                  lens.focus = v;
-                  lens.target = null;
-                }),
-              ),
-              if (box.maxHeight >= 170) ...[SizedBox(height: Shape.s(6)), ToolReadout(value: far(d.far - d.near), unit: 'px', sub: 'depth of field')],
-              if (box.maxHeight >= 214) ...[SizedBox(height: Shape.s(7)), pair('Near', far(d.near)), SizedBox(height: Shape.s(4)), pair('Far', far(d.far))],
-            ],
+      child: ListView(
+        padding: EdgeInsets.only(top: Shape.s(7), bottom: WsT.inset),
+        children: [
+          if (camera case final id?) LayerCards(layer: id, only: const ['Camera Options']),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: WsT.inset),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(height: Shape.s(6)),
+                ToolReadout(value: far(d.far - d.near), unit: 'px', sub: 'depth of field'),
+                SizedBox(height: Shape.s(7)),
+                pair('Near', far(d.near)),
+                SizedBox(height: Shape.s(4)),
+                pair('Far', far(d.far)),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -231,10 +199,11 @@ class _LensNumbers extends StatelessWidget {
 
 /// The top view. Drag the focus line up and down, or tap a slab to focus on that layer.
 class _Diagram extends StatefulWidget {
-  const _Diagram({required this.lens, required this.onFocus, required this.onFocal});
+  const _Diagram({required this.lens, required this.onFocus, required this.onFocal, required this.onDone});
   final _Lens lens;
   final void Function(double z, String? id) onFocus;
   final void Function(double focal) onFocal;
+  final VoidCallback onDone;
   @override
   State<_Diagram> createState() => _DiagramState();
 }
@@ -272,7 +241,9 @@ class _DiagramState extends State<_Diagram> {
             behavior: HitTestBehavior.opaque,
             onTapUp: (e) {
               final id = hit(e.localPosition);
-              if (id != null) widget.onFocus(slabs.firstWhere((s) => s.id == id).z, id); // (focus on that thing, where it is)
+              if (id == null) return;
+              widget.onFocus(slabs.firstWhere((s) => s.id == id).z, id); // (focus on that thing, where it is)
+              widget.onDone();
             },
             onVerticalDragStart: (e) {
               if (nearFocus(e.localPosition)) setState(() => _drag = true);
@@ -280,7 +251,11 @@ class _DiagramState extends State<_Diagram> {
             onVerticalDragUpdate: (e) {
               if (_drag) widget.onFocus(m.z(e.localPosition.dy), null);
             },
-            onVerticalDragEnd: (_) => setState(() => _drag = false),
+            onVerticalDragEnd: (_) {
+              if (_drag) widget.onDone();
+              setState(() => _drag = false);
+            },
+            onHorizontalDragEnd: (_) => widget.onDone(),
             // (the cone's edge, pulled across, opens or closes the view: the lens's own length, Transform's manner)
             onHorizontalDragUpdate: (e) {
               final d = e.localPosition - m.eye;

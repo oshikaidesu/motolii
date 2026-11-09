@@ -1,6 +1,5 @@
 // Owns the panel's values (Doc) and re-provides it whenever it changes. A different kind or count makes a new document (give it a key).
 // How it LOOKS is the lab's (DESIGN.md): hairlines, type carries hierarchy, grey levels, accent only C.mode. The old Motolii is not a source.
-// Open questions are Cfg fields (knobs in inspector_set.dart); every behaviour below follows them.
 
 import 'package:flutter/foundation.dart' show ValueListenable, listEquals, mapEquals, setEquals;
 import 'package:flutter/widgets.dart';
@@ -10,13 +9,10 @@ import 'package:motolii/inspector/inspector_parts.dart';
 class InspHost extends StatefulWidget {
   const InspHost({
     super.key,
-    required this.cfg,
     required this.kind,
     this.count = 1,
     this.kindWord,
     this.properties,
-    this.onMidi,
-    this.midiBpm,
     this.movable = const [],
     this.onCardMove,
     this.onSum,
@@ -55,7 +51,6 @@ class InspHost extends StatefulWidget {
     this.live,
     required this.child,
   });
-  final Cfg cfg;
   final Kind kind;
   final int count;
   final Widget child;
@@ -67,10 +62,6 @@ class InspHost extends StatefulWidget {
   /// The values and key marks at a new moment, told without the host being built again (played, only the moment moves:
   /// the fields that show them follow, the rest of the inspector stays as it was built).
   final ValueListenable<(Map<String, double>, Map<String, KeyS>)>? live;
-
-  /// The host's MIDI keys and a file's BPM (see [Doc.onMidi]).
-  final bool Function(String prop, String file, String kind, int channel, double bpm)? onMidi;
-  final double Function(String file)? midiBpm;
 
   /// The host's effects as cards that move up or down its stack (see [Doc.movable]).
   final List<String> movable;
@@ -156,8 +147,6 @@ class _InspHostState extends State<InspHost> {
           null // (a host told of keys keys what a hand changes itself)
       ..kindWord = widget.kindWord
       ..properties = widget.properties
-      ..onMidi = widget.onMidi
-      ..midiBpm = widget.midiBpm
       ..movable = widget.movable
       ..onCardMove = widget.onCardMove
       ..onSum = widget.onSum
@@ -330,8 +319,6 @@ class _InspHostState extends State<InspHost> {
       ..title = widget.title
       ..kindWord = widget.kindWord
       ..properties = widget.properties
-      ..onMidi = widget.onMidi
-      ..midiBpm = widget.midiBpm
       ..movable = widget.movable
       ..onCardMove = widget.onCardMove
       ..onSum = widget.onSum
@@ -378,5 +365,5 @@ class _InspHostState extends State<InspHost> {
 
   int _tick = 0;
   @override
-  Widget build(BuildContext context) => Ctx(cfg: widget.cfg, doc: doc, tick: _tick, child: widget.child);
+  Widget build(BuildContext context) => Ctx(doc: doc, tick: _tick, child: widget.child);
 }

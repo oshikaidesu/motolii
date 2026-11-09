@@ -56,14 +56,6 @@ extension MotoliiWrites on Motolii {
 
   bool key(int layer, String name, double at, double number) => _took(_with([name], (s) => _key(_m, layer, s[0], at, number)) != 0);
 
-  /// A MIDI file's notes as keys of a value, as om_midi keys them (motolii.h): [kind] velocity, pitch, count, on or
-  /// bool; [channel] -1 any; [bpm] the file's beats played at it (0: the file's own). Its keys before go; one step.
-  bool midi(int layer, String name, String file, String kind, int channel, double bpm) =>
-      _took(_with([name, file, kind], (s) => _midi(_m, layer, s[0], s[1], s[2], channel, bpm)) != 0);
-
-  /// The BPM a MIDI file says (120 if it says none): om_midi's BPM box as it first is.
-  double midiBpm(String file) => _with([file], (s) => _midiBpm(s[0]));
-
   bool easing(int layer, String name, double at, String easing) => _took(_with([name, easing], (s) => _easing(_m, layer, s[0], at, s[1])) != 0);
 
   /// A thing held by a hand, carried, and let go (motolii.h): the one form of everything a hand drags. [by] is
@@ -75,8 +67,6 @@ extension MotoliiWrites on Motolii {
 
   /// Whether every change a hand makes is keyed now (Animate all).
   bool get keyingNow => _keying(_m, -1) != 0;
-
-  bool dragStart(int layer) => _took(_dragStart(_m, layer) != 0);
 
   /// A hand takes hold, without waiting (the window's way: refused, its let go says why).
   void take(int layer) => later('drag_start', layer: layer);
@@ -118,6 +108,4 @@ extension MotoliiWrites on Motolii {
   /// every other, its ticket said at once ([answer] says when it is done).
   int later(String call, {int layer = 0, String name = '', String word = '', double number = 0}) =>
       _with([call, name, word], (s) => _later(_m, s[0], layer, s[1], s[2], number));
-
-  bool undo() => _took(_undo(_m) != 0);
 }

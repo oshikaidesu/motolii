@@ -14,13 +14,13 @@ double _unshown(Motolii m, int t, String n, double x) {
   return (x - f) / k;
 }
 
-(String, double)? _asDocument(Ws ws, String id, double x) {
+(String, double)? _asDocument(Ws ws, int t, String id, double x) {
   if (id.startsWith('v_') && ws.inside!.shown(id.substring(2))?.look == 'thing') {
     // (another thing: None, then the others by their place)
-    final others = _others(ws, int.tryParse(ws.selected ?? '') ?? 0).values.toList(), i = x.round();
+    final others = _others(ws, t).values.toList(), i = x.round();
     return (id.substring(2), i >= 1 && i <= others.length ? others[i - 1].toDouble() : 0);
   }
-  final m = ws.inside!, t = int.tryParse(ws.selected ?? '') ?? 0, n = id.substring(2);
+  final m = ws.inside!, n = id.substring(2);
   final seen = id.startsWith('v_') && (n == 'x' || n == 'y') ? m.shows(t, n, _drawn(ws)) : null;
   if (seen != null && seen.$2) {
     return (
@@ -120,7 +120,7 @@ void _write(Ws ws, String? id, Map<String, double> changed, {required bool live}
   String? why;
   final carried = <String, double>{};
   for (final e in changed.entries) {
-    final to = _asDocument(ws, e.key, e.value);
+    final to = _asDocument(ws, t, e.key, e.value);
     if (to != null) _found[to.$1] ??= m.value(t, to.$1, now) ?? to.$2;
     if (to != null && !m.dragUpdate(to.$1, to.$2)) why ??= m.error;
     if (to != null) carried[to.$1] = to.$2;

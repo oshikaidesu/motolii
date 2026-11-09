@@ -204,32 +204,6 @@ class ToolStrip extends StatelessWidget {
   );
 }
 
-/// A caption over a section of the tool panel's side column.
-class ToolCaption extends StatelessWidget {
-  const ToolCaption(this.text, {super.key, this.tone, this.trailing});
-  final String text;
-  final Color? tone;
-  final String? trailing;
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    height: Shape.z(14),
-    child: Row(
-      children: [
-        if (tone != null) ...[Container(width: Shape.z(3), height: Shape.z(10), color: tone), SizedBox(width: Shape.s(5))],
-        Text(text.toUpperCase(), style: T.micro(Grey.g76).copyWith(letterSpacing: 1, fontWeight: FontWeight.w700)),
-        SizedBox(width: Shape.s(6)),
-        Expanded(
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerRight,
-            child: Text(trailing ?? '', maxLines: 1, style: T.value(Grey.g56).copyWith(fontSize: T.px(10))),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
 /// A big number with its unit and a quiet line under it.
 class ToolReadout extends StatelessWidget {
   const ToolReadout({super.key, required this.value, this.unit = '', this.sub, this.ink});

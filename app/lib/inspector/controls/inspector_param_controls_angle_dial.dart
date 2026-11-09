@@ -26,7 +26,7 @@ class _AngleDialState extends State<AngleDial> {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc;
-    final on = !x.cfg.locked && !RowOff.offOf(context);
+    final on = !RowOff.offOf(context);
     return MouseRegion(
       cursor: on ? SystemMouseCursors.grab : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _hot = true),
