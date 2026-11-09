@@ -20,8 +20,14 @@ function each(i, n, t, k) {
   };
 }
 EOF
-out/js_returned_check $tmp/row.js x 0.3 0.6 $tmp/row6.js || exit 1
 bad=0
+# The Repeater itself (recipes/repeater.js), whose x is a name: followed to its let and its +=, its knobs found there
+echo "recipes/repeater.js:"
+out/js_returned_check recipes/repeater.js | tee $tmp/repeater.txt
+xs=$(awk '/^  x: /{on=1; next} /^  [a-z_]+: /{on=0} on' $tmp/repeater.txt)
+for k in StepX ScatterX DriftX; do echo "$xs" | grep -q "k:$k:" || { echo "x: no k:$k"; bad=1; }; done
+[ $bad = 0 ] && echo "x: k:StepX, k:ScatterX and k:DriftX found"
+out/js_returned_check $tmp/row.js x 0.3 0.6 $tmp/row6.js || exit 1
 changed=$(cmp -l $tmp/row.js $tmp/row6.js | wc -l | tr -d ' ')
 [ $(wc -c < $tmp/row.js) -eq $(wc -c < $tmp/row6.js) ] && [ "$changed" = 1 ] && [ "$(cmp -l $tmp/row.js $tmp/row6.js | awk '{print $1}')" = $(( $(grep -bo '0\.3' $tmp/row.js | head -1 | cut -d: -f1) + 3 )) ] \
     && echo "the file: one byte changed, the 3 of x's 0.3" || { echo "the file: changed elsewhere too"; diff $tmp/row.js $tmp/row6.js; bad=1; }

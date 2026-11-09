@@ -50,8 +50,10 @@ const char* motolii_trouble(Motolii* m);                           /* why the la
 
 const char* motolii_kind_of(const char* file);                     /* what kind of thing a file makes ("": none) */
 /* What an expression's each() returns, as places in its code (js_returned.cpp): a line for each property of the object it
-   returns, "name<TAB>start<TAB>end<TAB>numbers", start and end the bytes of its value (UTF-8, from 0, end past it),
-   numbers "start:end" for each number in that value, with spaces between. "": no each() returning an object. Any thread. */
+   returns, "name<TAB>start<TAB>end<TAB>parts", start and end the bytes of its value (UTF-8, from 0, end past it), parts
+   what makes that value, in the order they stand, with spaces between: "n:start:end" a number, "k:Name:start:end" a knob
+   (k.Name or k["Name"]). A name in the value is followed to what each() says of it (const/let/var x = …, x = …, x += …)
+   and on, each name once, so a part may lie outside the value. "": no each() returning an object. Any thread. */
 const char* motolii_js_returned(const char* src);
 int motolii_sets(const char* font, const char* words);             /* 1 if a text in that font file can be those words (any thread, while a document is open) */
 const char* motolii_font_lacks(const char* font, const char* words);   /* the letters of those words that font file has not, each once ("": none), then a tab and the font they are all drawn in instead (a text of them is: "" none has them all); any thread, until its next call */
