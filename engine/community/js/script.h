@@ -90,7 +90,7 @@ std::string sketch_marked(const std::string& src, std::vector<SketchLine>* lines
 // The knobs a file declares (read from its head, a sketch's its lines that draw; empty if it has none or cannot be read).
 std::vector<ScriptKnob> script_knobs(const std::string& file);
 // The values an effect comes with where its own show nothing on a picture (Alight Motion's rule: an effect is seen as it
-// is put on, docs/reports/alight_ui.md "最初の値"): first.tsv beside it, "file<TAB>knob<TAB>value" a line, measured by
+// is put on, docs/internal/reports/alight_motion/alight_ui.md "最初の値"): first.tsv beside it, "file<TAB>knob<TAB>value" a line, measured by
 // fx_first.sh, laid over its knobs' usual values. The author's file is left as it is.
 void script_first(const std::string& file, std::vector<ScriptKnob>& knobs);
 

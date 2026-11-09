@@ -1,6 +1,6 @@
 #!/bin/zsh
 # A three.js TSL effect, turned to WGSL by three.js's own builder, drawn on the Dawn that Filament's WebGPU backend is built
-# with (gpu/build.sh first). The folder is written by three.js's own code (docs/reports/shaderlab_origins.md).
+# with (gpu/build.sh first). The folder is written by three.js's own code (docs/internal/reports/effects/shaderlab_origins.md).
 #   ./gpu/tsl_on_dawn.sh <folder> <width> <height>
 set -e
 cd "$(dirname "$0")/.."

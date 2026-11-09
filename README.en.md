@@ -69,7 +69,7 @@ How each format runs, known bugs and the build steps are below.
 | p5.js | 97 of 168 drew a picture |
 | AviUtl2 | 372 of 594 ran to the end |
 
-Each was checked at a different time under different conditions. A p5.js work that draws may not match the original. The detailed conditions and limits are in the [test record](docs/reports/sketch_import_2026-11-01.md) (Japanese).
+Each was checked at a different time under different conditions. A p5.js work that draws may not match the original. The detailed conditions and limits are in the [test record](docs/internal/reports/engine/sketch_import_2026-11-01.md) (Japanese).
 
 ### Each format in detail
 
@@ -79,7 +79,7 @@ Each was checked at a different time under different conditions. A p5.js work th
 | Apply WebGPU shaders | WGSL (`.wgsl`, including screen effects ported from three.js and others) | Applied to the whole scene. 266 bundled |
 | Paste a p5.js sketch | p5.js (copy the code, press ⌘V in the app) | It becomes a layer and stays in the Program tab. You can keyframe it and change its speed with Time Remap. Of 168 works from OpenProcessing, 97 drew a picture (counted on 1 November; checked by eye, about 16 of the first 42 looked like the original) |
 | Paste a Shadertoy shader | GLSL (copy the code, press ⌘V in the app) | A shader that draws by itself becomes a layer; one that reads `iChannel` is applied to the selected layer. Either way it stays in the Program tab. Of 300 picked at random from an API dump of 36,668, 261 drew and moved (counted in early November 2026). Of the 30 black ones, 26 wait for input such as a mouse; 9 failed to load. Time Remap is p5.js only so far |
-| Use scripts made for AviUtl2, a Japanese video editor | `.anm2`, `.obj2` (their HLSL converted to WGSL) | 172 packages bundled. Counted on 26 October: 372 of the 594 scripts bundled then ran to the end ([`docs/reports/aviutl2/catalogue.md`](docs/reports/aviutl2/catalogue.md)). Scripts that need a Windows DLL don't run yet |
+| Use scripts made for AviUtl2, a Japanese video editor | `.anm2`, `.obj2` (their HLSL converted to WGSL) | 172 packages bundled. Counted on 26 October: 372 of the 594 scripts bundled then ran to the end ([`docs/internal/reports/aviutl/aviutl2/catalogue.md`](docs/internal/reports/aviutl/aviutl2/catalogue.md)). Scripts that need a Windows DLL don't run yet |
 | Use looks written in TSL (three.js's shading language) | three.js's own compiler to WGSL | 19 from [Shader Lab](https://github.com/basementstudio/shader-lab) are in the effects list; the rest are converted to WGSL only |
 | Place video, photos, text, shapes, 3D models and point clouds | Video (GStreamer), text and shapes (ThorVG), glTF and `.ply` (Filament) | Works |
 | Place After Effects animations | Lottie `.json` (ThorVG) | Works |
@@ -181,14 +181,14 @@ Opens the app (the first time it seems to stall for 1–3 minutes while it build
 ![The app's seven areas, numbered](docs/media/panels.jpg)
 
 1. **Top bar**: project name, frame size, fps, length, undo and redo, Render (export).
-2. **[Left tabs](docs/tabs.en.md#left-tabs)**: Media, Effects, Fonts, Colors, Create (shapes and recipes), Program (pasted code), Presets (combinations you saved; not usable yet).
-3. **[Preview (Stage)](docs/tabs.en.md#preview-tabs)**: place and move things while you watch. The tools are in the column on its left (select, move, shapes, pen, text, …). The tab above switches to Camera View, the finished picture through the camera.
+2. **[Left tabs](docs/guide/tabs.en.md#left-tabs)**: Media, Effects, Fonts, Colors, Create (shapes and recipes), Program (pasted code), Presets (combinations you saved; not usable yet).
+3. **[Preview (Stage)](docs/guide/tabs.en.md#preview-tabs)**: place and move things while you watch. The tools are in the column on its left (select, move, shapes, pen, text, …). The tab above switches to Camera View, the finished picture through the camera.
 4. **Inspector**: the selected layer's values (Transform, Anchor, Blend, Fill, …). The relations acting on the layer are listed at the top.
 5. **Timeline**: layers and keyframes, playback, markers, BPM.
 6. **Ease**: how a value moves between keyframes; the column on the right holds ready-made curves.
-7. **[Bottom-right tabs](docs/tabs.en.md#bottom-right-tabs)**: Camera (lens and focus), Desk (tools), Relations (move many layers together).
+7. **[Bottom-right tabs](docs/guide/tabs.en.md#bottom-right-tabs)**: Camera (lens and focus), Desk (tools), Relations (move many layers together).
 
-Each tab, with pictures and how to use it: [The tabs](docs/tabs.en.md).
+Each tab, with pictures and how to use it: [The tabs](docs/guide/tabs.en.md).
 
 ### Your first piece (in the app)
 
@@ -298,7 +298,7 @@ Still stuck? Open an [issue](https://github.com/oshikaidesu/motolii/issues) with
 
 **What it can't do yet**: stability and breadth of features as a finished tool are still to come. No app to hand out, no Windows, and no thought yet for performing live.
 
-**Why Alight Motion is the model for its handling**: people who make MVs on their phones already know how it feels; Motolii copies all of it first, then goes further. Of Alight Motion's 169 effects and 32 other features, Motolii has 101, 37 in part, 62 not yet, and 1 unchecked (counted at the end of October, [`docs/reports/alight_map.md`](docs/reports/alight_map.md)).
+**Why Alight Motion is the model for its handling**: people who make MVs on their phones already know how it feels; Motolii copies all of it first, then goes further. Of Alight Motion's 169 effects and 32 other features, Motolii has 101, 37 in part, 62 not yet, and 1 unchecked (counted at the end of October, [`docs/internal/reports/alight_motion/alight_map.md`](docs/internal/reports/alight_motion/alight_map.md)).
 
 ## How it is built
 

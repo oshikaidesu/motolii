@@ -11,7 +11,7 @@ Flutter の窓。描くのも書類を持つのも本体（[`../engine/`](../eng
 | `lib/parts/` | 席をまたいで使う部品 |
 | `lib/forms/` | 窓の形（スキン）ごとの並べ方 |
 | `lib/style/` | 色と寸法 |
-| `skins/` | 見本のスキン。`~/.motolii/skins/` に写して View › Skin で着る（作り方は [`skins/README.md`](skins/README.md)、部品の名前は `skins/PARTS.md`） |
+| `skins/` | 見本のスキン。`~/.motolii/skins/` に写して View › Skin で着る（作り方は [`docs/app/skins/README.md`](../docs/app/skins/README.md)、部品の名前は [`PARTS.md`](../docs/app/skins/PARTS.md)） |
 | `test/` | ウィジェットの試験（`flutter test`）。`accessibility_guidelines_test.dart`：本物の窓が Flutter のアクセシビリティの指針を満たすか |
 | `integration_test/`、`test_driver/` | 実機の Mac の窓で動かす試験（`flutter drive`）。`frame_timing_test.dart`：タイムラインを回して 1 コマ 16 ms に収まるか |
 | `build/test_output/` | 試験が書く物（タイムライン、ドライバーの記録）。`build/` の残りは Flutter の作業場 |
@@ -39,4 +39,15 @@ flutter test --no-pub test/
 FLUTTER_TEST_OUTPUTS_DIR=build/test_output flutter drive --profile -d macos --driver=test_driver/frame_timing_driver.dart --target=integration_test/frame_timing_test.dart
 ```
 
-見た目の決まりは [`DESIGN.md`](DESIGN.md)。
+## 長い文書（[`docs/app/`](../docs/app/)）
+
+| 文書 | 中身 |
+|---|---|
+| [`BRIDGE.md`](../docs/app/BRIDGE.md) | 窓と中身の境目の決まり（窓が中身を呼ぶ所） |
+| [`DESIGN.md`](../docs/app/DESIGN.md) | 見た目の決まり（値に出所の印つき。`lib/style/tokens.dart` の値はここから） |
+| [`skins/README.md`](../docs/app/skins/README.md) | スキンの作り方。名前の一覧は [`ROLES.md`](../docs/app/skins/ROLES.md)（色・形）と [`PARTS.md`](../docs/app/skins/PARTS.md)（絵）、続きを作る人向けは [`HANDOFF.md`](../docs/app/skins/HANDOFF.md) |
+| [`OVERVIEW.md`](../docs/app/OVERVIEW.md)・[`PROCESS.md`](../docs/app/PROCESS.md) | 10 月初め、窓を別の作業場で作っていた頃の記録（今の形ではない） |
+
+## 作り方の決まり
+- 新しく作る前に、リポジトリとネットで既存を探す。見つからない時だけ作る。
+- 値は `lib/style/tokens.dart`（`DESIGN.md` から）。部品は数値を直書きしない。

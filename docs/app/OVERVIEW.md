@@ -1,4 +1,4 @@
-> 記録（2026-10-02）：窓を別の作業場 design-sense-lab で作っていた頃の要約。今の窓は `book/`（[`README.md`](README.md)）。
+> 記録（2026-10-02）：窓を別の作業場 design-sense-lab で作っていた頃の要約。今の窓は `app/`（[`app/README.md`](../../app/README.md)）。
 
 # design-sense-lab 概要(他の LLM に相談するための要約、2026-10-02)
 
