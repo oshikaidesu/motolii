@@ -72,11 +72,6 @@ class Hov extends StatelessWidget {
   );
 }
 
-String trimZeros(String s) => s.contains('.') ? s.replaceFirst(RegExp(r'\.?0+$'), '') : s;
-
-/// A value as a folded card shows it: short, trailing zeros dropped, — when mixed.
-String brief(double? v, [int dec = 1]) => v == null ? '—' : trimZeros(v.toStringAsFixed(dec));
-
 String fmt(double v, int dec, {bool tight = false}) {
   var d = tight ? 0 : dec;
   var s = v.toStringAsFixed(d);

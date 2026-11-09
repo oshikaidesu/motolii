@@ -73,11 +73,7 @@ extension MotoliiDocument on Motolii {
   List<String> values(int layer) => Motolii._spaced(_of(layer)['values']);
 
   /// The cards a maker sees a thing's values on, besides where it is and its fill: each a title and the values on it.
-  List<(String, List<String>)> cards(int layer) => [
-    ..._cardsIn(_of(layer)['cards']),
-    for (final c in _cardsIn(_of(layer)['more']))
-      if (asked[layer]?.contains(c.$1) ?? false) c,
-  ];
+  List<(String, List<String>)> cards(int layer) => _cardsIn(_of(layer)['cards']);
 
   static List<(String, List<String>)> _cardsIn(Object? said) => [
     for (final c in ((said as String?) ?? '').split('; '))

@@ -75,11 +75,9 @@ void _write(Ws ws, String? id, Map<String, double> changed, {required bool live}
     m.later('together', number: 1); // (one step, without waiting)
     for (final e in said.entries) {
       final ways = m.words(t!, e.key.substring(2));
-      for (final o in [t, ..._withIt(ws, t)]) {
-        m.later('say', layer: o, name: e.key.substring(2), word: ways[e.value.round().clamp(0, ways.length - 1)]);
-      }
+      m.later('say', layer: t, name: e.key.substring(2), word: ways[e.value.round().clamp(0, ways.length - 1)]);
     }
-    ws.after(m.later('together'), (done, why) => _told(ws, done ? null : why));
+    ws.after(m.later('together'));
     changed = {
       for (final e in changed.entries)
         if (!said.containsKey(e.key)) e.key: e.value,
@@ -93,55 +91,24 @@ void _write(Ws ws, String? id, Map<String, double> changed, {required bool live}
     if (!live) {
       ws.after(
         m.later('time_stretch', layer: t, number: speed, word: '${m.word(t, 'speed_hold').isEmpty ? 'start' : m.word(t, 'speed_hold')} ${ws.frame / Ws.fps}'),
-        (done, why) => done ? ws.reread() : _told(ws, why),
+        (done, _) => done ? ws.reread() : null,
       );
     }
     if (changed.isEmpty) return;
   }
-  final now = ws.frame / Ws.fps, dragged = _dragged == t;
-  if (!dragged) {
-    m.take(t); // (held once a hand: each step after only carries)
-    _found.clear();
-  }
+  final dragged = _dragged == t;
+  if (!dragged) m.take(t); // (held once a hand: each step after only carries)
   _dragged = live ? t : null;
-  String? why;
-  final carried = <String, double>{};
   for (final e in changed.entries) {
     final to = _asDocument(ws, e.key, e.value);
-    if (to != null) _found[to.$1] ??= m.value(t, to.$1, now) ?? to.$2;
-    if (to != null && !m.dragUpdate(to.$1, to.$2)) why ??= m.error;
-    if (to != null) carried[to.$1] = to.$2;
-    if (to == null) why ??= 'the document has no ${e.key}: '; // (a property the document has no value for says so, rather than keep the number)
+    if (to != null) m.dragUpdate(to.$1, to.$2);
   }
   if (live) {
     if (ws.playing) ws.playing = false; // (a hand on a value stops the play: what is changed is changed at one moment)
-    if (why != null) _told(ws, why);
   } else {
-    final also = _withIt(ws, t);
-    if (also.isNotEmpty) m.later('together', number: 1);
-    var kept = m.later('drag_end', number: 1);
-    for (final o in also) {
-      // (After Effects' and Figma's: a value changed with many picked is changed on them all that have it, a number dragged by as much, one typed to it)
-      m.take(o);
-      for (final e in carried.entries) {
-        m.dragUpdate(e.key, dragged ? (m.value(o, e.key, now) ?? e.value) + e.value - _found[e.key]! : e.value);
-      }
-      m.later('drag_end', number: 1);
-    }
-    if (also.isNotEmpty) kept = m.later('together');
-    ws.after(kept, (done, no) => _told(ws, why ?? (done ? null : no))); // (the hand let go: the window does not wait for the step)
+    ws.after(m.later('drag_end', number: 1)); // (the hand let go: the window does not wait for the step)
   }
 }
-
-final _found = <String, double>{}; // (the values as the hand found them)
-
-/// What else is picked with [t].
-List<int> _withIt(Ws ws, int t) => ws.many.contains('$t')
-    ? [
-        for (final id in ws.many)
-          if (int.tryParse(id) case final o? when o != t) o,
-      ]
-    : const [];
 
 /// Joined: the picked thing's words in the inspector's ids (a text's content; how it lies on what is behind), and a change of them told to the document.
 Map<String, String> _words(Ws ws, String? id) {
@@ -203,10 +170,7 @@ bool _flag(Ws ws, String? id, Map<String, bool> changed) {
   for (final e in changed.entries) {
     if (looked(e.key)) ws.view['inspector.${e.key}'] = e.value;
   }
-  final other = changed.keys.where((k) => !looked(k)).firstOrNull;
-  if (other == null) return true;
-  _told(ws, 'the document has no ${other.endsWith('.on') ? 'bypass' : other}: '); // (an effect switched off and kept)
-  return false;
+  return changed.keys.every(looked);
 }
 
 bool _say(Ws ws, String? id, Map<String, String> changed) {
@@ -222,7 +186,7 @@ bool _say(Ws ws, String? id, Map<String, String> changed) {
         ? m.later('set', layer: t, name: n, number: (_others(ws, t)[e.value] ?? 0).toDouble()) // (another thing, told by its name: it goes with that one)
         : m.later('say', layer: t, name: n, word: e.value); // (a card's value of that name)
   }
-  ws.after(m.later('together'), (done, no) => _told(ws, done ? null : no));
+  ws.after(m.later('together'));
   return true;
 }
 
@@ -234,12 +198,3 @@ Map<String, int> _others(Ws ws, int t) {
   }; // (as After Effects' parent list: the row's number on the timeline, then the name)
 }
 
-/// Joined: a change the document did not take is said in the top bar, by the inside's own reason (its first clause,
-/// read as it was refused: every call of the inside forgets the last reason); the next one it takes clears it.
-void _told(Ws ws, String? why) {
-  if (why != null && why.isNotEmpty) {
-    ws.notice = 'Not taken: ${why.split(':').first}';
-  } else if (why == null && (ws.notice?.startsWith('Not taken') ?? false)) {
-    ws.notice = null;
-  }
-}

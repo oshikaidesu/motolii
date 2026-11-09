@@ -43,22 +43,6 @@ class Ws extends ChangeNotifier {
   void Function(int wide, int high)? onSize;
   VoidCallback? refit;
 
-  String? _notice;
-  String? get notice => _notice;
-  Timer? _noticeEnds;
-  set notice(String? said) {
-    if (said == _notice) return;
-    _notice = said;
-    _noticeEnds?.cancel();
-    if (said != null && !said.endsWith('…')) {
-      _noticeEnds = Timer(
-        const Duration(seconds: 10),
-        () => notice = null,
-      ); // (said for a moment, Material's snackbar: four to ten seconds; what is still going on, "…", stays)
-    }
-    _tell(WsAspect.notice);
-  }
-
   /// How many times the document has been read again.
   int rev = 0;
 
@@ -75,7 +59,6 @@ class Ws extends ChangeNotifier {
   @override
   void dispose() {
     _gone = true;
-    _noticeEnds?.cancel();
     seen.dispose();
     moment.dispose();
     for (final n in on.values) {
@@ -145,43 +128,24 @@ class Ws extends ChangeNotifier {
       _sel = layers.firstOrNull?.id; // (a picked thing gone: the first; nothing picked stays so, the stage's)
     }
     _keys.removeWhere((k) => !layers.any((l) => l.id == k.layer && l.keys.contains(k.frame))); // (a picked key stays picked while it is still there)
-    if (_stretch case final s?) _stretch = _stretchOf(s.layer, s.name, s.from); // (and a picked stretch: to where that value's next key now is)
     tl.finish();
     _tell(WsAspect.document);
   }
 
-  /// The things whose moving values the window shows (told the inside: Motolii.subscribe): the picked one and those picked
-  /// with it, the cameras (the Depth tool panel's lens), the relations (the Relations tool panel's map), and a picked relation's things.
+  /// The picked thing's moving values, told to the inside (Motolii.subscribe) so the moment's picture holds them.
   void _watch() {
     final m = _inside;
     if (m == null) return;
     final sel = int.tryParse(_sel ?? '');
-    m.subscribe({
-      ?sel,
-      for (final id in many) ?int.tryParse(id),
-      for (final l in layers)
-        if (l.kind == WsKind.camera) ?int.tryParse(l.id),
-      for (final l in layers)
-        if (int.tryParse(l.id) case final t? when m.word(t, 'kind') == 'behaviour')
-          t, // (the relations: the Relations tool panel draws each by its knobs, at the moment)
-      if (sel != null && m.word(sel, 'kind') == 'behaviour')
-        for (final w in m.word(sel, 'members').split(' ')) ?int.tryParse(w),
-    });
+    m.subscribe({?sel});
   }
 
   String? _sel; // (nothing picked, as a document opens)
   String? get selected => _sel;
   WsLayer? get layer => layers.where((l) => l.id == _sel).firstOrNull;
 
-  /// The things picked together: what a relation is made of. Picking one alone clears them.
-  final many = <String>{};
   final _keys = <WsKey>{};
   Set<WsKey> get keys => _keys;
-
-  /// The stretch picked by its line, as Theatre.js's connector between two keyframes is pressed to edit its curve
-  /// (BasicKeyframeConnector.tsx, Apache-2.0): one value's, where a key is every value's there.
-  WsStretchPicked? _stretch;
-  WsStretchPicked? get stretch => _stretch;
 
   /// The playhead, told on its own (Flutter's ValueNotifier): only what shows the moment listens ([WsScope.frameOf]),
   /// the rest of the window is not built again as it moves.

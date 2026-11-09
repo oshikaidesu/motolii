@@ -1,6 +1,5 @@
 // The workspace: one window that gathers the lab's panels (browser dock, stage, inspector, timeline, tool panel).
 // This file is what every panel shares: the mock document they all read (Ws), and the window's own tokens (WsT).
-import 'dart:async' show Timer;
 import 'dart:developer' show Timeline, TimelineTask;
 
 import 'package:flutter/scheduler.dart';
@@ -59,12 +58,9 @@ class WsLayer {
 /// A key the user picked: which layer, which frame.
 typedef WsKey = ({String layer, int frame});
 
-/// A stretch of one value picked by its line in the timeline: from a key, [at] seconds, to the next of that value (frames).
-typedef WsStretchPicked = ({String layer, String name, double at, int from, int to});
-
 /// The window's state: the document's things as rows (read again from the inside), what is picked, the moment, the
 /// view. Every panel listens to this and nothing else; a panel never keeps a copy of what is here.
 /// contract: changes notify once per user action; nothing here ticks while idle (play advances only while [playing]).
 /// What of the window changed: a part of it is built again only when one it reads did (Flutter's InheritedModel
 /// aspects: [WsScope.of]). [WsAspect.document]: the inside's picture of the document was read again.
-enum WsAspect { document, picked, playing, view, route, animating, notice, stage }
+enum WsAspect { document, picked, playing, view, route, animating, stage }

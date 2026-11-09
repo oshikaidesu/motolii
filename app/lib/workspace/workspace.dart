@@ -93,16 +93,15 @@ class _WorkspaceState extends State<Workspace> {
     final m = _inside, doc = _doc;
     if (m == null || doc == null) return;
     final name = doc.split('/').last.replaceFirst(RegExp(r'\.motolii$'), ''), folder = '${File(doc).parent.path}/$name package';
-    final n = m.pack(folder, name);
-    _ws.notice = n < 0 ? 'Not packaged: ${m.error}' : 'Packaged with $n ${n == 1 ? 'file' : 'files'}: $name package';
+    m.pack(folder, name);
   }
 
-  /// The picture at the playhead written beside the document (Premiere Pro's Export Frame); the top bar says so.
+  /// The picture at the playhead written beside the document (Premiere Pro's Export Frame).
   void _exportFrame() {
     final m = _inside, doc = _doc;
     if (m == null || doc == null) return;
     final png = '${doc.substring(0, doc.lastIndexOf('.'))}_${_ws.frame}.png';
-    _ws.notice = m.still(png) ? 'Written: ${png.split('/').last}' : 'Not written: ${m.error}';
+    m.still(png);
   }
 
   /// The window's menus, in the system's own menu bar: what the sample window has no panel for (a new document,
@@ -139,7 +138,6 @@ class _WorkspaceState extends State<Workspace> {
     _ws
       ..document = doc.split('/').last
       ..documentFolder = File(doc).parent.path
-      ..notice = null
       ..onSize = (wide, high) {
         _ws.after(inside.later('size', word: '$wide $high')); // (without waiting: the document's picture then says it does not fit, and it is opened again)
       }

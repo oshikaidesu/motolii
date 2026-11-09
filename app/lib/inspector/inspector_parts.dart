@@ -62,17 +62,9 @@ class Pop extends InheritedWidget {
   static Color get card => Grey.g13;
   static Color get well => Grey.g15;
 
-  /// The one spacing rule: cards are inset [inset] at the sides and [insetY] top and bottom,
-  /// a card's title sits [titleGap] above its content, and cards stand [gap] apart and from the panel edge.
-  /// Tight on purpose: the panel is read as a list, so more rows on screen beats air.
-  /// Shape carries meaning: containers (cards, the canvas) are square and tile edge to edge; what you touch or read (fields, chips, badges, switches) is round.
-  /// Colour is flat and opaque, never a tint laid over grey.
+  /// Cards are inset [inset] at the sides, and stand [gap] apart and from the panel edge.
   static double get inset => Shape.s(8.0);
-  static double get insetY => Shape.s(6.0);
-  static double get titleGap => Shape.s(4.0);
   static double get gap => Shape.s(2.0);
-  static double get titleH => Shape.z(16.0);
-  static double get row => Shape.z(24.0);
   static double get cell => Shape.z(22.0);
 
   /// A parameter block: name on top, value large at the bottom, its picture in the top-right corner; text always starts at the same x.

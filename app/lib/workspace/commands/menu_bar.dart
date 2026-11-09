@@ -15,9 +15,7 @@ extension _WorkspaceMenus on _WorkspaceState {
       'file.render': () {},
       'file.exportFrame': _exportFrame,
       'file.home': () {},
-      'file.poster': () {
-        if (m.set(0, 'poster_at', ws.frame / 60)) _ws.notice = 'Project picture: ${ws.frame}';
-      },
+      'file.poster': () => m.set(0, 'poster_at', ws.frame / 60),
       'file.package': _package,
       'edit.undo': () => _typed(const UndoTextIntent(SelectionChangedCause.keyboard)) ? null : ws.after(m.later('undo')),
       'edit.redo': () => _typed(const RedoTextIntent(SelectionChangedCause.keyboard)) ? null : ws.after(m.later('redo')),

@@ -22,9 +22,6 @@ class WsScope extends StatefulWidget {
 
   /// The playhead, and built again when it moves (nothing else of the window does that).
   static int frameOf(BuildContext c) => c.dependOnInheritedWidgetOfExactType<WsMoment>()!.notifier!.value;
-
-  /// The inside's moment's picture: built again when a new one comes (what shows values at the moment shown).
-  static int pictureOf(BuildContext c) => c.dependOnInheritedWidgetOfExactType<_WsPicture>()!.notifier!.value;
   @override
   State<WsScope> createState() => _WsScopeState();
 }
@@ -59,15 +56,8 @@ class _WsScopeState extends State<WsScope> {
   Widget build(BuildContext context) => _WsAll(
     ws: widget.ws,
     told: _told,
-    child: WsMoment(
-      notifier: widget.ws.moment,
-      child: _WsPicture(notifier: widget.ws.seen, child: widget.child),
-    ),
+    child: WsMoment(notifier: widget.ws.moment, child: widget.child),
   );
-}
-
-class _WsPicture extends InheritedNotifier<ValueNotifier<int>> {
-  const _WsPicture({required super.notifier, required super.child});
 }
 
 class _WsAll extends InheritedModel<WsAspect> {
