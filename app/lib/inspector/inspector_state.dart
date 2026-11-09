@@ -17,7 +17,6 @@ class Ed {
   double get hair => .12;
   Color get rule => Color.fromRGBO(255, 255, 255, hair);
 
-  String lab(String s) => s;
   TextStyle labStyle(Color c) => T.label(c);
 }
 

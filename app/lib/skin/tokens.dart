@@ -70,7 +70,6 @@ abstract final class C {
 abstract final class Role {
   static const selected = Color(0xFF7A87E3);
   static const mode = Color(0xFF7A87E3);
-  static const error = Color(0xFFE5584B);
 }
 
 /// The window's one accent, from the skin (the theme's roles: Ableton's names, the key mark Blender's): a fill, the ink drawn on

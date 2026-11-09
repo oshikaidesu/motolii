@@ -62,7 +62,6 @@ class ParamTile extends StatelessWidget {
           child: Segmented(
             items: p.options,
             index: (doc.get(id) ?? 0).round().clamp(0, n - 1),
-            expand: true,
             onChanged: (i) => doc.set(id, i.toDouble()),
           ),
         );

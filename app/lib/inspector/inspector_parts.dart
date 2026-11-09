@@ -47,10 +47,8 @@ class Dis extends StatelessWidget {
   }
 }
 
-/// The bold skin of the direct-manipulation prototype: rounded cards, filled badges, one lime fill for "selected".
-class Pop extends InheritedWidget {
-  const Pop({super.key, required super.child});
-  static bool on(BuildContext c) => c.getInheritedWidgetOfExactType<Pop>() != null;
+/// The inspector's colours and measures, from the skin.
+abstract final class Pop {
   static Color get accent => Accent.fill; // (the skin's: one accent for the window)
   static Color get onAccent => Accent.on;
   static Color get keyDot => Accent.key;
@@ -73,8 +71,6 @@ class Pop extends InheritedWidget {
 
   /// A card's name, one colour.
   static Color get toneLayer => ColorTheme.of('ToneLayer', const Color(0xFF9AA4B2));
-  @override
-  bool updateShouldNotify(Pop old) => false;
 }
 
 class Ctx extends InheritedWidget {

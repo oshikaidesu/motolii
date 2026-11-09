@@ -8,12 +8,11 @@ import 'inspector_parts.dart';
 
 // ---- 3. small things ------------------------------------------------------------------------------------------------
 /// What floats over the window goes when anything else is touched, by either button, and on Esc (Flutter's TapRegion; a
-/// Mac's menu, Windows' too): [keep] a press it leaves alone, the one that opens it again; [group] what counts as inside.
+/// Mac's menu, Windows' too): [keep] a press it leaves alone, the one that opens it again.
 class FloatShut extends StatefulWidget {
-  const FloatShut({super.key, required this.shut, required this.child, this.group, this.keep});
+  const FloatShut({super.key, required this.shut, required this.child, this.keep});
   final VoidCallback shut;
   final Widget child;
-  final Object? group;
   final bool Function(PointerDownEvent)? keep;
   @override
   State<FloatShut> createState() => _FloatShutState();
@@ -38,7 +37,6 @@ class _FloatShutState extends State<FloatShut> {
 
   @override
   Widget build(BuildContext context) => TapRegion(
-    groupId: widget.group,
     onTapOutside: (e) {
       if (!(widget.keep?.call(e) ?? false)) widget.shut();
     },
@@ -55,19 +53,14 @@ class _FloatShutState extends State<FloatShut> {
 }
 
 class Hov extends StatelessWidget {
-  const Hov({super.key, required this.builder, this.cursor = SystemMouseCursors.click, this.onTap, this.excludeSemantics = false});
+  const Hov({super.key, required this.builder, this.onTap});
   final Widget Function(BuildContext, bool) builder;
-  final MouseCursor cursor;
   final VoidCallback? onTap;
-
-  /// A Semantics node above already names this control.
-  final bool excludeSemantics;
   @override
   Widget build(BuildContext context) => NakedButton(
     onPressed: onTap,
-    mouseCursor: cursor,
+    mouseCursor: SystemMouseCursors.click,
     enableFeedback: false,
-    excludeSemantics: excludeSemantics,
     builder: (context, st, _) => builder(context, st.isHovered),
   );
 }
@@ -84,14 +77,14 @@ String fmt(double v, int dec, {bool tight = false}) {
 
 /// The word-and-switch for On/Off (G2): the state is a word, never colour alone.
 class OnOff extends StatelessWidget {
-  const OnOff({super.key, required this.on, required this.onChanged, this.enabled = true});
-  final bool on, enabled;
+  const OnOff({super.key, required this.on, required this.onChanged});
+  final bool on;
   final ValueChanged<bool> onChanged;
   @override
-  Widget build(BuildContext context) {
-    final live = enabled && !RowOff.offOf(context);
-    return Forms.worn.onOff(context, SwitchSpec(on: on, onChanged: onChanged, enabled: live)); // (as the skin's forms draw it)
-  }
+  Widget build(BuildContext context) => Forms.worn.onOff(
+    context,
+    SwitchSpec(on: on, onChanged: onChanged, enabled: !RowOff.offOf(context)),
+  ); // (as the skin's forms draw it)
 }
 
 class PopSwitch extends StatelessWidget {
