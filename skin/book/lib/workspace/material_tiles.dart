@@ -22,11 +22,22 @@ abstract final class MaterialTiles {
   /// The compiled material a ball wearing [wears] is drawn with (doc_match.h: surface_model, thick_glass, solid_wear).
   static const _filamat = {'lit': 'floor_lit', 'cloth': 'solid_cloth', 'subsurface': 'solid_subsurface', 'glass': 'thick_glass', 'filament_glass': 'own_glass', 'lacquer': 'blade', 'bubble': 'bubble_worn'};
 
-  /// Where [wears]'s tile goes: by the material and when its compiled material was written.
+  /// What a ball wearing [wears] is given besides, to show what it is: its colour, its own numbers, and a sun from
+  /// behind (turned round, Y degrees, how strong) where light through it or a rim is the material. Without, Lit, Cloth
+  /// and Subsurface are the same pale ball (the default colour, d9d2c3). Lit: red, glossy (its sharp highlights);
+  /// Cloth: blue, rough, its sheen (Filament's cloth: no highlight, a soft rim); Subsurface: orange, thin, lit from
+  /// behind (Filament's subsurface: the light through it glows at its edge and fills its shadow warm).
+  static const _shows = <String, (String, Map<String, double>, (double, double)?)>{
+    'lit': ('e8452c', {'roughness': .25}, null),
+    'cloth': ('2a3fa8', {'roughness': 1, 'sheen': 1}, (150, 1.5)),
+    'subsurface': ('ff5a2a', {'thickness': .02, 'roughness': .7}, (180, 1.5)),
+  };
+
+  /// Where [wears]'s tile goes: by the material, how it is shown and when its compiled material was written.
   static String home(String wears) {
     final f = File('$motoliiDir/out/wgpu_kit/${_filamat[wears] ?? wears}.filamat');
     var hash = 1469598103934665603;
-    for (final c in 'material|$wears|${f.existsSync() ? f.lastModifiedSync().microsecondsSinceEpoch : 0}'.codeUnits) {
+    for (final c in 'material|$wears|${_shows[wears]}|${f.existsSync() ? f.lastModifiedSync().microsecondsSinceEpoch : 0}'.codeUnits) {
       hash = (hash ^ c) * 1099511628211;
     }
     return '${Platform.environment['HOME']}/Library/Caches/Motolii/tiles/material_${(hash & 0x7fffffffffffffff).toRadixString(16)}.png';
@@ -81,6 +92,18 @@ abstract final class MaterialTiles {
           ..set(ball, 'scale_x', 1.4)
           ..set(ball, 'scale_y', 1.4)
           ..set(ball, 'scale_z', 1.4);
+        if (_shows[wears] case (final fill, final numbers, final sun)) {
+          m.say(ball, 'fill', fill);
+          for (final e in numbers.entries) {
+            m.set(ball, e.key, e.value);
+          }
+          if (sun != null) {
+            final light = m.add('light', 'sun');
+            m
+              ..set(light, 'rotate_y', sun.$1)
+              ..set(light, 'intensity', sun.$2);
+          }
+        }
         final still = '${home.substring(0, home.length - 4)}_still.png';
         if (!m.at(0) || !m.still(still)) {
           File('$home.none').writeAsStringSync('');

@@ -563,7 +563,11 @@ class CreateShelf extends StatelessWidget {
         if (c.chip == 'All' || c.chip == g) (g, items.where((m) => c.hit(m.name)).toList()),
     ].where((e) => e.$2.isNotEmpty).toList();
     if (groups.isEmpty && c.query.trim().isNotEmpty) {   // (nothing has the words as typed: the nearest five, each in its own group, golf (97))
-      final near = c.near([for (final (g, items) in makes) for (final m in items) (m.id, '${m.name} $g', '')]);
+      // (by the tile's name alone, and only those near it: with its group's name, "Material" drew every material up
+      //  for any word, Butterfly's or Empty's. RapidFuzz's WRatio of a word typed wrong to its tile is 77 or more
+      //  (bubbel Bubble 83, lacker Lacquer 77, clth Cloth 89), of a word to a tile it is not 72 or less (butterfly
+      //  Bubble 49, empty Gem 72). A Japanese word is found by what it means (WordNet, its own scores): all kept)
+      final near = c.near([for (final (_, items) in makes) for (final m in items) (m.id, m.name, '')], least: c.query.runes.every((r) => r < 128) ? 75 : 0);
       groups = [
         for (final (g, items) in makes)
           if (c.chip == 'All' || c.chip == g) (g, [for (final id in near) ...items.where((m) => m.id == id)]),

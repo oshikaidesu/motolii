@@ -137,12 +137,13 @@ extension MotoliiShelves on Motolii {
   String kindOf(String file) => _with([file], (s) => _kindOf(s[0]).toDartString());
 
   /// The items nearest the words a hand types, best first, the best [limit] (0: 5, as RapidFuzz's extract): each its id,
-  /// its name and label, and what it does (the inside's motolii_find: RapidFuzz, typos, parts, abbreviations).
-  List<String> find(String words, Iterable<(String, String, String)> items, {int limit = 0}) {
+  /// its name and label, and what it does (the inside's motolii_find: RapidFuzz, typos, parts, abbreviations). Those
+  /// scored under [least] left out, as RapidFuzz's extract's score_cutoff (0: none).
+  List<String> find(String words, Iterable<(String, String, String)> items, {int limit = 0, double least = 0}) {
     final lines = [for (final (id, name, about) in items) [id, name, about].map((w) => w.replaceAll(RegExp(r'[\t\n]'), ' ')).join('\t')].join('\n');
     return [
       for (final line in _with([words, lines], (s) => _find(_m, s[0], s[1], limit).toDartString()).split('\n'))
-        if (line.lastIndexOf('\t') case final i when i > 0) line.substring(0, i),
+        if (line.lastIndexOf('\t') case final i when i > 0 && (double.tryParse(line.substring(i + 1)) ?? 0) >= least) line.substring(0, i),
     ];
   }
 }
