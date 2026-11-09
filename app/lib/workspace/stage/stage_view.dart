@@ -23,6 +23,9 @@ import 'package:perfect_freehand/src/get_stroke_radius.dart' show getStrokeRadiu
 import '../ws.dart';
 import '../ws_menu.dart';
 part 'stage_view_state.dart';
+part 'stage_view_hand.dart';
+part 'stage_view_draw.dart';
+part 'stage_view_camera.dart';
 part 'stage_view_relations.dart';
 part 'stage_view_painter.dart';
 
