@@ -14,6 +14,7 @@ Flutter の窓。描くのも書類を持つのも本体（[`../engine/`](../eng
 | `skins/` | 同梱のスキン（`theme.xml` と部品の絵。名前は `skins/PARTS.md`） |
 | `test/` | ウィジェットの試験（`flutter test`）。`accessibility_guidelines_test.dart`：本物の窓が Flutter のアクセシビリティの指針を満たすか |
 | `integration_test/`、`test_driver/` | 実機の Mac の窓で動かす試験（`flutter drive`）。`frame_timing_test.dart`：タイムラインを回して 1 コマ 16 ms に収まるか |
+| `build/test_output/` | 試験が書く物（タイムライン、ドライバーの記録）。`build/` の残りは Flutter の作業場 |
 | `tool/flicker.py` | 画面の録画から、ちらついたコマを探す |
 
 試験の走らせ方（どちらも `app/` で）：
@@ -23,7 +24,7 @@ flutter test --no-pub test/
 ```
 
 ```bash
-flutter drive --profile -d macos --driver=test_driver/frame_timing_driver.dart --target=integration_test/frame_timing_test.dart
+FLUTTER_TEST_OUTPUTS_DIR=build/test_output flutter drive --profile -d macos --driver=test_driver/frame_timing_driver.dart --target=integration_test/frame_timing_test.dart
 ```
 
 見た目の決まりは [`DESIGN.md`](DESIGN.md)。

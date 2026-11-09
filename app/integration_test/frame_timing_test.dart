@@ -1,7 +1,7 @@
 // External requirement: the window's timeline scrolled with a mouse wheel stays inside Flutter's frame budget
 // (about 16 ms a frame, 60 fps). Pattern: https://docs.flutter.dev/cookbook/testing/integration/profiling
 // The app is the Workspace window of lib/main.dart, over a document of 40 shapes.
-//   cd app && flutter drive --profile -d macos --driver=test_driver/frame_timing_driver.dart --target=integration_test/frame_timing_test.dart
+//   cd app && FLUTTER_TEST_OUTPUTS_DIR=build/test_output flutter drive --profile -d macos --driver=test_driver/frame_timing_driver.dart --target=integration_test/frame_timing_test.dart
 import 'dart:io';
 
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
