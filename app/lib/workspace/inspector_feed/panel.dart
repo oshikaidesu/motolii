@@ -135,7 +135,6 @@ class _InspectorPanelState extends State<_InspectorPanel> {
               kind: k,
               kindWord: _kindWord(ws, l?.id),
               cards: _valueCards(ws, l?.id),
-              properties: int.tryParse(l?.id ?? '') == null ? null : _propertiesOf(m.values(int.parse(l!.id)).toSet()), // (a card of values the thing has not is not shown)
               title: l?.name,
               onSum: m.workOut,
               onCardReset: int.tryParse(l?.id ?? '') == null

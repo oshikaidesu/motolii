@@ -25,10 +25,8 @@ class Doc extends ChangeNotifier {
   final Map<String, List<String>> choices = {};
   final Map<String, bool> b = {};
 
-  /// What the host calls the layer's kind, where the six kinds have no word for it (a film, a picture, a solid); and the
-  /// values the host has for it (a card of values it has not is not shown); null: the sample's.
+  /// What the host calls the layer's kind, where the six kinds have no word for it (a film, a picture, a solid); null: the sample's.
   String? kindWord;
-  Set<String>? properties;
 
   /// The host's own cards of values (each one's Params, its fields keyed `v_` and the value's name): what the host has
   /// beyond the sample's cards.
@@ -38,8 +36,6 @@ class Doc extends ChangeNotifier {
   /// Whether an edit marks its own key (the sample's rule, D2); off where a host owns the keys (joined: the document
   /// keys what a hand changes, and a mark told besides was a second key, made before the change, with the old value).
   bool marksEdits = true;
-
-  String query = '';
 
   @override
   void dispose() {

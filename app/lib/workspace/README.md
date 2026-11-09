@@ -10,7 +10,7 @@
 | `state/` | どのパネルも読むアプリの状態。`state.dart` が入口（レイヤー `WsLayer`）、`window.dart` に `Ws`、`scope.dart` に `WsScope`、`picked.dart` 選ばれた物、`panel_header.dart` パネルの枠 |
 | `window/` | ウィンドウの枠：`zoom.dart` 画面全体の拡大、`settings_file.dart` `~/.motolii/window.xml`（倍率と着ているスキン） |
 | `commands/` | 名前の付いた操作と、それを言うキー・メニュー：`keymap.dart` キーの表（VS Code の keybindings.json の形）、`command_actions.dart` 各操作がアプリの状態にすること（キーは Ableton Live 12 の表から）、`menu_bar.dart` メニューバー |
-| `edits/` | 関係の種類 `wsRelations`（`make_relation.dart`）と、キーフレームの移動（`keyframe_edits.dart`） |
+| `edits/` | 関係の種類 `wsRelations`（`make_relation.dart`） |
 | `inspector_feed/` | `workspace.dart` の部品：プロジェクトから Inspector（`../inspector/`）へ渡す物。`panel.dart` パネルとして読み直す時、`cards.dart` カード、`values.dart` 値の読み書き、`keyframe_marks.dart` 値の横のキーの印 |
 | `stage/` | コンポジションの寸法 `WsArt` |
 
@@ -52,7 +52,7 @@ $F/flutter analyze lib
 - **Workspace と Inspector(`lib/inspector/`)では灰色を `Grey.g07` などで取る。`N.g07` は使わない。** `N` は古い研究ページ用の暗い段で、テーマに追従しない(そのページは Dark のみ)。
 - `Grey` は `N` と同じ名前の段を持つ。役割(地・パネル・カード・欄・線・控えめな文字・文字)は両テーマで同じで、明るさだけが逆になる。Light ではカードが一番明るく、文字が一番暗い。
 - テーマで変わる色は `const` にできない。`static const` / トップレベルの `final` / 引数の既定値に `Grey` や `WsT.body` などを置かず、getter か `Color?` + `?? Grey.xx` にする(`final` に入れると最初の色のまま固まる)。
-- アクセントは塗りなら `WsT.accent` / `Pop.accent`。**線や文字として地の上に描くときは `accentInk`**(Light ではライムが白に溶けるので濃いオリーブ)。再生ヘッドの線は `accentInk`、頭の札は `accent`。
+- アクセントは塗りなら `Pop.accent`。**線や文字として地の上に描くときは `Accent.ink`**(Light ではライムが白に溶けるので濃いオリーブ)。
 - `T.name()` などの文字色の既定は `Grey` から取る。暗すぎる・薄すぎる文字の補正(`T._floor`)もテーマごとに向きが逆。
 
 ## 決まっていること(利用者の裁定)

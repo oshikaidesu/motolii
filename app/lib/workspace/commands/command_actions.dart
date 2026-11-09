@@ -2,7 +2,6 @@
 // www.ableton.com/en/manual/live-keyboard-shortcuts/), each said beside the section it comes from; where Live has no
 // such key, the tool that has one is named. The commands here are what each does to the window's state; keymap.dart
 // says which key says which, and the maker's keybindings.json may say otherwise.
-import '../edits/keyframe_edits.dart';
 import '../state/state.dart';
 
 /// Where playing began (Live 42.20: Space plays from the start marker and stops back there; Shift+Space goes on from
@@ -21,16 +20,10 @@ Map<String, void Function()> wsAbletonCommands(Ws ws) {
     if (all.isNotEmpty) step((way > 0 ? all.first : all.last) - ws.frame);
   }
 
-  /// The picked keys, else the picked thing's bar, carried [by] frames (Live 42.16: Nudge Selection Left/Right); with
-  /// nothing picked, the playhead (Live moves its insert marker so).
+  /// The picked thing's bar carried [by] frames (Live 42.16: Nudge Selection Left/Right); with nothing picked, the playhead.
   void nudge(int by) {
     final m = ws.inside;
     if (m == null) return;
-    if (ws.keys.isNotEmpty) {
-      wsSlideKeys(ws, ws.keys.toList(), by);
-      ws.pickKeys([for (final k in ws.keys) (layer: k.layer, frame: (k.frame + by).clamp(0, Ws.duration))]); // (still picked, where they now are)
-      return;
-    }
     final t = int.tryParse(ws.selected ?? '');
     if (t == null) return step(by);
     m.take(t);

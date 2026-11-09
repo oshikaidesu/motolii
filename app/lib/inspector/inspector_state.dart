@@ -16,22 +16,14 @@ enum KeyS { off, anim, at }
 
 enum Kind { shape, text, camera, group, several, none }
 
-/// The inspector's type: a 12% hairline, caps on headings, and a rule above a group.
+/// The inspector's type: a 12% hairline, and a rule above a group.
 class Ed {
   const Ed();
   double get hair => .12;
   Color get rule => Color.fromRGBO(255, 255, 255, hair);
-  double get row => 24;
-  double get gap => 12;
 
-  String head(String s) => s.toUpperCase();
   String lab(String s) => s;
-  String kick(String s) => s.toUpperCase();
-  TextStyle kickStyle(Color c) => T.micro(c).copyWith(letterSpacing: .8);
-  TextStyle subStyle() => T.name(Grey.g91);
-  TextStyle headStyle() => T.micro(Grey.g56).copyWith(letterSpacing: 1.0);
   TextStyle labStyle(Color c) => T.label(c);
-  TextStyle nameStyle() => T.title().copyWith(fontSize: T.px(14), fontWeight: FontWeight.w500);
 }
 
 /// The property a value is part of, whose key mark is theirs together: a document's x, y, z are its position; its

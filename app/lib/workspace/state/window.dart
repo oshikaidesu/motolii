@@ -37,10 +37,7 @@ class Ws extends ChangeNotifier {
     reread();
   }
 
-  /// Joined: the document's name, and how the window is told to open it again at another size (the host does it).
-  String? document;
-  String? documentFolder; // (where the document's file is: the dock offers it, so a new document is one step from its footage)
-  void Function(int wide, int high)? onSize;
+  /// Joined: the host opens the document again at another size.
   VoidCallback? refit;
 
   /// How many times the document has been read again.
@@ -127,7 +124,6 @@ class Ws extends ChangeNotifier {
     if (_sel != null && layers.every((l) => l.id != _sel)) {
       _sel = layers.firstOrNull?.id; // (a picked thing gone: the first; nothing picked stays so, the stage's)
     }
-    _keys.removeWhere((k) => !layers.any((l) => l.id == k.layer && l.keys.contains(k.frame))); // (a picked key stays picked while it is still there)
     tl.finish();
     _tell(WsAspect.document);
   }
@@ -144,12 +140,8 @@ class Ws extends ChangeNotifier {
   String? get selected => _sel;
   WsLayer? get layer => layers.where((l) => l.id == _sel).firstOrNull;
 
-  final _keys = <WsKey>{};
-  Set<WsKey> get keys => _keys;
-
-  /// The playhead, told on its own (Flutter's ValueNotifier): only what shows the moment listens ([WsScope.frameOf]),
-  /// the rest of the window is not built again as it moves.
-  final moment = WsMomentNow(112);
+  /// The playhead (Flutter's ValueNotifier): the inspector listens, and the rest of the window is not built again as it moves.
+  final moment = ValueNotifier<int>(112);
   int get frame => moment.value;
   set frame(int f) {
     final v = f.clamp(0, duration);
@@ -193,20 +185,14 @@ class Ws extends ChangeNotifier {
   /// carry): a panel that shows only some values builds itself again only when they are among these.
   ({bool layers, Set<(int, String)> values})? lastChange;
 
-  int _afters = 0; // (tickets still looked at: the document is read again once, when the last of them is done)
-
-  /// Whether changes told to the inside are not all done yet (the window shows them before the document has them).
-  bool get waiting => _afters > 0;
   void after(int ticket, [void Function(bool done, String why)? then, void Function(int answer)? got]) {
     final m = _inside;
     if (m == null) return;
-    _afters++;
     m.answered(ticket).then((r) {
       // (told by the inside when it is done: nothing looked at each picture)
       final (a, why) = r;
       then?.call(a >= 1, why);
       if (a >= 1) got?.call(a); // (an add's or a make's answer: the new thing)
-      _afters--; // (what it changed comes with the inside's next picture of the document)
     });
   }
 

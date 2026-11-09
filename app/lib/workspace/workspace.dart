@@ -136,11 +136,6 @@ class _WorkspaceState extends State<Workspace> {
     await inside.texture();
     if (!mounted) return;
     _ws
-      ..document = doc.split('/').last
-      ..documentFolder = File(doc).parent.path
-      ..onSize = (wide, high) {
-        _ws.after(inside.later('size', word: '$wide $high')); // (without waiting: the document's picture then says it does not fit, and it is opened again)
-      }
       ..refit = () {
         // (a stage is opened at a size: the document closed and opened again, at the moment it was at)
         final at = inside.now;
@@ -161,22 +156,6 @@ class _WorkspaceState extends State<Workspace> {
     super.dispose();
   }
 
-  /// The panes drag their tabs on an overlay; the window brings its own so it works under any host.
-  _Window? _built; // (one widget, kept: a card or a tab carried is a change of the overlay, and the whole window, every shelf's tiles, was built again for it: 18,358 widgets, 90 ms, each time one was taken up or let go)
-  late final _entry = OverlayEntry(
-    maintainState: true,
-    builder: (context) => LayoutBuilder(
-      builder: (context, box) {
-        final window = _built ??= const _Window();
-        if (box.maxWidth >= WsT.minWindow.width && box.maxHeight >= WsT.minWindow.height) return window;
-        return FittedBox(
-          // (laid out no smaller than the least window, shrunk only as far as that needs: a zoomed window stays zoomed)
-          child: SizedBox(width: math.max(box.maxWidth, WsT.minWindow.width), height: math.max(box.maxHeight, WsT.minWindow.height), child: window),
-        );
-      },
-    ),
-  );
-
   @override
   Widget build(BuildContext context) {
     final window = WsScope(
@@ -184,14 +163,7 @@ class _WorkspaceState extends State<Workspace> {
       child: Focus(
         focusNode: _windowFocus,
         autofocus: true,
-        child: ColoredBox(
-          color: WsT.ground,
-          child: Stack(
-            children: [
-              Overlay(initialEntries: [_entry]),
-            ],
-          ),
-        ),
+        child: ColoredBox(color: WsT.ground, child: const _Window()),
       ),
     );
     if (_ws.inside == null) return ColoredBox(color: WsT.ground); // (the document still opening: no panel is built on nothing)

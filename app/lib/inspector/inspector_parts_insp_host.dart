@@ -1,7 +1,7 @@
 // Owns the panel's values (Doc) and re-provides it whenever it changes. A different kind or count makes a new document (give it a key).
 // How it LOOKS is the lab's (DESIGN.md): hairlines, type carries hierarchy, grey levels, accent only C.mode. The old Motolii is not a source.
 
-import 'package:flutter/foundation.dart' show ValueListenable, listEquals, mapEquals, setEquals;
+import 'package:flutter/foundation.dart' show ValueListenable, listEquals, mapEquals;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 
@@ -12,7 +12,6 @@ class InspHost extends StatefulWidget {
     required this.kind,
     this.count = 1,
     this.kindWord,
-    this.properties,
     this.onSum,
     this.onCardReset,
     this.cards,
@@ -37,9 +36,8 @@ class InspHost extends StatefulWidget {
   final int count;
   final Widget child;
 
-  /// What the host calls the kind (see [Doc.kindWord]), and the values it has (see [Doc.properties]).
+  /// What the host calls the kind (see [Doc.kindWord]).
   final String? kindWord;
-  final Set<String>? properties;
 
   /// The values and key marks at a new moment, told without the host being built again (played, only the moment moves:
   /// the fields that show them follow, the rest of the inspector stays as it was built).
@@ -102,7 +100,6 @@ class _InspHostState extends State<InspHost> {
           widget.onKey ==
           null // (a host told of keys keys what a hand changes itself)
       ..kindWord = widget.kindWord
-      ..properties = widget.properties
       ..onSum = widget.onSum
       ..onCardReset = widget.onCardReset
       ..v.addAll(widget.values)
@@ -242,16 +239,12 @@ class _InspHostState extends State<InspHost> {
       doc.animateAll = _animating = on;
       _tick++;
     }
-    if (o.title != widget.title ||
-        o.kindWord != widget.kindWord ||
-        !setEquals(o.properties, widget.properties) ||
-        o.choices.toString() != widget.choices.toString()) {
+    if (o.title != widget.title || o.kindWord != widget.kindWord || o.choices.toString() != widget.choices.toString()) {
       _tick++;
     }
     doc
       ..title = widget.title
       ..kindWord = widget.kindWord
-      ..properties = widget.properties
       ..onSum = widget.onSum
       ..onCardReset = widget.onCardReset;
     doc.choices
