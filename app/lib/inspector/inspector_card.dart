@@ -58,7 +58,7 @@ class ValuesCard extends StatelessWidget {
   final Fx card;
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), doc = x.doc, ed = Ed(x.cfg.ed), k = 'v.${card.name}', adv = doc.b['$k.adv'] ?? false, past = doc.b['$k.past'] ?? false;
+    final x = Ctx.of(context), doc = x.doc, ed = const Ed(), k = 'v.${card.name}', adv = doc.b['$k.adv'] ?? false, past = doc.b['$k.past'] ?? false;
     final heroes = [
           for (final p in card.params)
             if (!p.advanced) p,

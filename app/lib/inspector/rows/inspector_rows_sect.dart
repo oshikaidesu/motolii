@@ -1,11 +1,11 @@
-// A group: a heading and its rows. How groups are told apart is the Editorial knob: A a rule above, B a grey step, C a rule under a large heading.
+// A group: a heading and its rows, with a rule above the group after the first.
 import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 
-/// A group: a heading and its rows. How groups are told apart is the Editorial knob: A a rule above, B a grey step, C a rule under a large heading.
+/// A group: a heading and its rows, with a rule above the group after the first.
 class Sect extends StatelessWidget {
   const Sect({
     super.key,
@@ -43,7 +43,7 @@ class Sect extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ed = Ed(Ctx.of(context).cfg.ed);
+    final ed = const Ed();
     final head = (title == null && trailing == null)
         ? null
         : GestureDetector(
@@ -75,36 +75,16 @@ class Sect extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: kids),
     );
     if (Pop.on(context)) return _PopCard(this);
-    switch (ed.e) {
-      case Editorial.a:
-        return col([
-          if (!first)
-            Padding(
-              padding: EdgeInsets.only(top: ed.gap),
-              child: const Rule(),
-            ),
-          SizedBox(height: first ? 0 : 4),
-          ?head,
-          ...body,
-        ]);
-      case Editorial.b:
-        return Padding(
-          padding: EdgeInsets.only(bottom: ed.gap),
-          child: Container(
-            padding: EdgeInsets.fromLTRB(Shape.s(8), Shape.s(4), Shape.s(8), Shape.s(6)),
-            decoration: BoxDecoration(color: Grey.g13, borderRadius: BorderRadius.all(Shape.r(6))),
-            child: col([?head, ...body]),
-          ),
-        );
-      case Editorial.c:
-        return Padding(
-          padding: EdgeInsets.only(top: first ? Shape.s(0) : ed.gap),
-          child: col([
-            if (head != null) ...[head, SizedBox(height: Shape.s(2)), const Rule(), SizedBox(height: Shape.s(6))],
-            ...body,
-          ]),
-        );
-    }
+    return col([
+      if (!first)
+        Padding(
+          padding: EdgeInsets.only(top: ed.gap),
+          child: const Rule(),
+        ),
+      SizedBox(height: first ? 0 : 4),
+      ?head,
+      ...body,
+    ]);
   }
 }
 

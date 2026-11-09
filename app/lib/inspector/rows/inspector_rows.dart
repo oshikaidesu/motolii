@@ -8,7 +8,7 @@ import '../inspector_parts.dart';
 class Rule extends StatelessWidget {
   const Rule({super.key});
   @override
-  Widget build(BuildContext context) => Container(height: 1, color: Ed(Ctx.of(context).cfg.ed).rule);
+  Widget build(BuildContext context) => Container(height: 1, color: const Ed().rule);
 }
 
 /// A card's fold mark: points right when folded, down when open, so a card that can fold says so before it is touched.

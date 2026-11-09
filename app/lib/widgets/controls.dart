@@ -4,9 +4,6 @@ import 'package:naked_ui/naked_ui.dart';
 
 import '../skin/tokens.dart';
 
-/// The three looks an open design question is shown in; the owner picks one in the real window (DESIGN.md section 9).
-enum Look { concept, quiet, glow }
-
 class PillSwitch extends StatelessWidget {
   const PillSwitch({super.key, required this.on, this.fam = Fam.scatter});
   final bool on;

@@ -6,7 +6,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/forms/number_paint.dart';
-import 'package:motolii/widgets/controls.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 
@@ -445,21 +444,18 @@ class NumFieldState extends State<NumField> {
 
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), cfg = x.cfg, ed = Ed(cfg.ed), look = cfg.look;
+    final x = Ctx.of(context), cfg = x.cfg, ed = const Ed();
     final v = x.doc.get(widget.id), on = _on, narrow = RowOff.maybe(context)?.narrow ?? false;
     final live = _drag && _moved;
-    final Color idle = switch (look) {
-      Look.concept || Look.glow => ed.rule,
-      Look.quiet => cfg.ed == Editorial.a ? const Color(0x00000000) : ed.rule,
-    };
+    const idle = Color(0x00000000);
     final Color edge = live
         ? C.mode.withValues(alpha: .8)
-        : (_focus || _editing ? (look == Look.glow ? C.mode.withValues(alpha: .6) : Grey.g63) : (_hover && on ? Grey.g38 : idle));
+        : (_focus || _editing ? Grey.g63 : (_hover && on ? Grey.g38 : idle));
     final pop = Pop.on(context);
     final picked = pop && x.doc.isPicked(widget.id);
     final fillC = pop
         ? (!on ? Grey.g10 : (picked ? Color.alphaBlend(Pop.accent.withValues(alpha: .14), Pop.well) : (_hover || live ? Grey.g20 : Pop.well)))
-        : (!on ? Grey.g10 : (look == Look.quiet ? Grey.g13 : Grey.g07));
+        : (!on ? Grey.g10 : Grey.g13);
     return LayoutBuilder(
       builder: (context, box) {
         final w = box.maxWidth;
@@ -560,7 +556,7 @@ class NumFieldState extends State<NumField> {
             height: block ? Pop.tile : (pop ? Pop.cell : cellH),
             fillColor: fillC,
             borderColor: picked ? Pop.accentInk.withValues(alpha: .7) : (pop && !(_focus || _editing || live) ? const Color(0x00000000) : edge),
-            rangeColor: _bounded && widget.bipolar ? (on ? Grey.g56 : Grey.g44) : (look == Look.glow ? Role.selected : (on ? Grey.g56 : Grey.g44)),
+            rangeColor: on ? Grey.g56 : Grey.g44,
             fill: _bounded && v != null ? t : null,
             zeroAt: _zeroAt,
             bipolar: _bounded && widget.bipolar,
