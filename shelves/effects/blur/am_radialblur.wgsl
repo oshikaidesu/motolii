@@ -1,4 +1,4 @@
-// Zoom Blur: AbsentMotion's radialblur (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Zoom Blur: AbsentMotion's radialblur (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Blur
 // --about:Applies a radial zoom blur by averaging samples along rays from a center point with adjustable strength.
 // --track@R_center_x:Center x,0,1,0.5,0.01

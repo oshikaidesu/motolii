@@ -1,4 +1,4 @@
-// Lift Gamma Gain: AbsentMotion's colorwheels (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Lift Gamma Gain: AbsentMotion's colorwheels (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Color wheels for the shadows (lift), midtones (gamma) and highlights (gain): a hue, how far to push it, and a level.
 // --track@liftHue:Lift Hue,0,360,210.0,1

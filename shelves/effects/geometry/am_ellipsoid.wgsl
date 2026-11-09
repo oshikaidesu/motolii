@@ -1,4 +1,4 @@
-// Ellipsoid: AbsentMotion's ellipsoid (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Ellipsoid: AbsentMotion's ellipsoid (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:3d
 // --about:Wraps the layer around a sphere that you can squeeze and flatten.
 // --track@rotX:Rotation X,-3600,3600,-15.0,0.1

@@ -1,4 +1,4 @@
-// Gradient Overlay: AbsentMotion's gradientoverlay (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Gradient Overlay: AbsentMotion's gradientoverlay (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Lays a two-color gradient over the layer with a choice of shapes and blend modes.
 // --track@color1_x:Color 1 R,0,1,0.2275,0.01

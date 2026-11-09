@@ -1,4 +1,4 @@
-// Hexagon Tile Shift: AbsentMotion's hexagontileshift (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Hexagon Tile Shift: AbsentMotion's hexagontileshift (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Divides the layer into hexagonal tiles and slides the picture inside every tile in a random direction.
 // --track@strength:Strength,0,1,0.1,0.001

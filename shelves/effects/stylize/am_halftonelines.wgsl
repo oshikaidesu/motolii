@@ -1,4 +1,4 @@
-// Halftone Lines: AbsentMotion's halftonelines (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Halftone Lines: AbsentMotion's halftonelines (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Redraws the layer as printed lines that get thicker in dark areas and thinner in light ones.
 // --track@amount:Amount,0,500,100.0,0.1

@@ -1,4 +1,4 @@
-// Tile Rotate: AbsentMotion's tilerotate (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Tile Rotate: AbsentMotion's tilerotate (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Divides the layer into a grid of tiles and turns the picture inside every tile on its own.
 // --track@rotation:Rotation,-3600,3600,45.0,0.5

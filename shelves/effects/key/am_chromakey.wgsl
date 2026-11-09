@@ -1,4 +1,4 @@
-// Chroma Key: AbsentMotion's chromakey (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Chroma Key: AbsentMotion's chromakey (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Key
 // --about:Removes one color, such as a green screen.
 // --track@key_x:Key Color R,0,1,0,0.01

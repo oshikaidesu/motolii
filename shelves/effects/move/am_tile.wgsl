@@ -1,4 +1,4 @@
-// Tile: AbsentMotion's tile (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Tile: AbsentMotion's tile (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Repeat
 // --about:Repeats the picture in a grid.
 // --track@scale:Scale,0.02,1,0.5,0.01

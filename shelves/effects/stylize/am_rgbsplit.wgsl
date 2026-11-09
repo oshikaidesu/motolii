@@ -1,4 +1,4 @@
-// RGB Split: AbsentMotion's rgbsplit (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// RGB Split: AbsentMotion's rgbsplit (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Splits the red, green and blue channels: the Center channel stays put and the other two shift in opposite directions along Angle. Light adds the shifted colors, Dark keeps them solid, Mask keeps only where all three overlap and Luma makes the fringes as opaque as they are bright.
 // --track@strength:Strength,-8,8,0.15,0.01

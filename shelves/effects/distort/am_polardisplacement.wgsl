@@ -1,4 +1,4 @@
-// Polar Displacement Map: AbsentMotion's polardisplacement (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Polar Displacement Map: AbsentMotion's polardisplacement (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --picture@backdrop:Behind
 // --about:Turns and pulls the layers behind this one around a center point by the layer's colors, then hides the layer.

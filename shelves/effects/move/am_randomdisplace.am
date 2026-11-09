@@ -1,4 +1,4 @@
-// Random Displacement: AbsentMotion's randomdisplace (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), moved by its own motion.cpp (engine/community/absent_motion.cpp)
+// Random Displacement: AbsentMotion's randomdisplace (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), moved by its own motion.cpp (engine/community/absent_motion/absent_motion.cpp)
 // --label:Move
 // --absent:randomdisplace
 // --about:Automatically moves the layer smoothly but randomly over time. Seed picks a different movement, Speed sets how fast it wanders and Evolution shifts the pattern.

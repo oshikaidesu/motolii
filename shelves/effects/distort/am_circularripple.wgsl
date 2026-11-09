@@ -1,4 +1,4 @@
-// Circular Ripple: AbsentMotion's circularripple (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Circular Ripple: AbsentMotion's circularripple (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Makes circular ripples spread out from a point, like a drop falling into water.
 // --track@R_center_x:Center x,-1,2,0.5,0.01

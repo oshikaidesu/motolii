@@ -1,4 +1,4 @@
-// Datamosh: AbsentMotion's datamosh (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Datamosh: AbsentMotion's datamosh (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Between the start and end times, in seconds from the beginning of the layer, the picture stops refreshing and is dragged around by the motion that follows, as if a key frame were missing. Video layers are smeared by their real motion, other layers by moving blocks.
 // --track@start:Start,0,3600,0.0,0.01

@@ -1,4 +1,4 @@
-// Threshold: AbsentMotion's threshold (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Threshold: AbsentMotion's threshold (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Pure black and white, split at a brightness.
 // --track@level:Threshold,0,1,0.4,0.01

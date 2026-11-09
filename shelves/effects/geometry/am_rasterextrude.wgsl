@@ -1,4 +1,4 @@
-// Raster Extrude: AbsentMotion's rasterextrude (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Raster Extrude: AbsentMotion's rasterextrude (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:3d
 // --about:Pushes the layer's picture out into a solid block; the sides take the interior color.
 // --track@rotX:Rotation X,-3600,3600,-20.0,0.1

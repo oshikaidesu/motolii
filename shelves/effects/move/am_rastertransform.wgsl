@@ -1,4 +1,4 @@
-// Raster Transform: AbsentMotion's rastertransform (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Raster Transform: AbsentMotion's rastertransform (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Move
 // --about:Scales, turns and moves the finished picture of the layer, after the effects above it, so their result can be transformed too. Fill keeps some of the original underneath and Mask To Layer keeps the result inside the original shape.
 // --track@scale:Scale,0.01,50,1.0,0.01

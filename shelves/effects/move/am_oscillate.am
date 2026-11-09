@@ -1,4 +1,4 @@
-// Oscillate: AbsentMotion's oscillate (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), moved by its own motion.cpp (engine/community/absent_motion.cpp)
+// Oscillate: AbsentMotion's oscillate (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), moved by its own motion.cpp (engine/community/absent_motion/absent_motion.cpp)
 // --label:Move
 // --absent:oscillate
 // --about:Moves the layer back and forth along an angle, in depth or round in an orbit.

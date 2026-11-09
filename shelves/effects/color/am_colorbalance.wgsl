@@ -1,4 +1,4 @@
-// Color Balance: AbsentMotion's colorbalance (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Color Balance: AbsentMotion's colorbalance (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Pushes the shadows, midtones and highlights towards their own colors (gray leaves a range unchanged).
 // --track@shadows_x:Shadows R,0,1,0.1882,0.01

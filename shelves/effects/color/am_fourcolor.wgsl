@@ -1,4 +1,4 @@
-// Four-Color Gradient: AbsentMotion's fourcolor (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Four-Color Gradient: AbsentMotion's fourcolor (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Color
 // --about:Blends four colors placed at four points (in pixels from the layer's center) over the layer.
 // --track@color1_x:Color 1 R,0,1,1,0.01

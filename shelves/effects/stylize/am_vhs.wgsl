@@ -1,4 +1,4 @@
-// VHS: AbsentMotion's vhs (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// VHS: AbsentMotion's vhs (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Looks like an old video tape: color bleed, smeared lines, scanlines, tape noise and rolling tracking bands.
 // --track@chroma:Color Bleed,0,40,4.0,0.1

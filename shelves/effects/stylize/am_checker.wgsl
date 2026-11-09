@@ -1,4 +1,4 @@
-// Checker: AbsentMotion's checker (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Checker: AbsentMotion's checker (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Draws a checkerboard over the opaque parts of the layer, or punches the checkers out of it.
 // --track@offset_x:Offset x,-5000,5000,0,1

@@ -1,4 +1,4 @@
-// Hexagon Tiling: AbsentMotion's hexagontiling (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Hexagon Tiling: AbsentMotion's hexagontiling (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Distort
 // --about:Repeats the middle of the layer in hexagonal tiles that fill the screen.
 // --track@scale:Scale,0.05,10,1.0,0.01

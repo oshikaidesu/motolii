@@ -1,4 +1,4 @@
-// Lightning: AbsentMotion's lightning (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/from_absent.py)
+// Lightning: AbsentMotion's lightning (Apache-2.0, Copyright 2026 The AbsentMotion authors, github.com/Comett1225/AbsentMotion), its SkSL made WGSL by Skia's skslc (shelves/effects/sources/from_absent.py)
 // --label:Stylize
 // --about:Draws a forked bolt of lightning between two points on the layer.
 // --track@R_from_x:Start x,-1,2,0.5,0.01
