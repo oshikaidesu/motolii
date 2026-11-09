@@ -578,7 +578,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
 
 /// One tile, whatever draws it: what it does to a sample (the picture the inside says, drawn by effect_tiles.dart and
 /// moving, in the grid always (11/4, the user: "keep the effect window moving"), on the map while the hand is on it, as
-/// Alight Motion's tiles move; or made by engine/fx_tiles.sh; without one, a thing's
+/// Alight Motion's tiles move; or made by shelves/effects/sources/fx_tiles.sh; without one, a thing's
 /// effect its small drawing, else a plain tile), its name, ON (and its place among those on the stage) when it is on,
 /// why it is seen to change nothing on the sample when it is (FOR SOUND, UNSUPPORTED…), the star for a thing's effect.
 class EffectTile extends StatelessWidget {

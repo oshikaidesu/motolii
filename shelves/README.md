@@ -43,3 +43,4 @@ Motolii に最初から入っている表現です。棚ごとにフォルダが
 
 - 効果のつまみの重み（`knob_weights.json`）は棚ではなく、Effects ドックのタイルが読む表なので、読む `effect_tiles.dart` の隣（`app/lib/workspace/shelf/`）に置いています。
 - Make ドックの Elements（Alight Motion の My Elements）は利用者のフォルダの `elements/` だけにあり、同梱の物はありません（`doc_looks.h`）。
+- 棚の中身を作る脚本は品物ではないので、作る物の隣、`effects/sources/`（`absent.sh`・`fx_first.sh`・`fx_tiles.sh`・`from_*.py`）と `recipes/shapes/absent_shapes.sh` にあります。手で走らせる物で、組み立ては呼びません。
