@@ -1,0 +1,9 @@
+# The same press, one level down: a gesture recognizer of our own (Flutter's gesture arena, flutter/gestures.dart).
+id: hand-recognizer
+language: dart
+severity: error
+message: a gesture recognizer written by hand in Dart
+note: hand the press to naked_ui or to Flutter's own widget
+rule:
+  kind: superclass
+  regex: GestureRecognizer

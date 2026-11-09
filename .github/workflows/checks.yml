@@ -55,5 +55,11 @@ jobs:
         run: python3 .githooks/dart_budget.py --all "$BASE"
       - name: no dropped house word (.githooks/word_check.py, docs/internal/notes/rename_words.md §5)
         run: python3 .githooks/word_check.py --all
+      - name: no shape ast-grep refuses, C++ as clang-format leaves it (.githooks/shape_check.sh)
+        # (ast-grep from npm, the version the rules were seen failing with; clang-format is the runner's own, so a
+        #  file one version formats another way can differ from a Mac's verdict)
+        run: |
+          npm install --global @ast-grep/cli@0.45.3
+          .githooks/shape_check.sh --all
       - name: subjects of 72 characters at most (.githooks/subject_check.py)
         run: python3 .githooks/subject_check.py --range "$BASE..$HEAD_SHA"

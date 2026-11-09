@@ -1,0 +1,5 @@
+# ast-grep's project file (ast-grep.github.io/reference/sgconfig.html): the rules in rules/, one YAML each.
+#   ast-grep scan -c .githooks/sgconfig.yml app/lib engine        every finding; exits 1 when a rule of severity error matches
+ruleDirs: [rules]
+languageGlobs:
+  cpp: ['*.h', '*.mm', '*.cpp']

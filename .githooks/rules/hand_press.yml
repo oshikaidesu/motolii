@@ -1,0 +1,12 @@
+# AGENTS.md principle 5: Dart holds the looks. A press, a hover and what floats over the window belong to naked_ui
+# (NakedButton, NakedToggle, NakedSlider, NakedTextField, NakedMenu, NakedPopover) or to Flutter's own widgets.
+# Seen failing: 211 matches on app/lib of 2cca45574 (before the cut), 6 on c57338193.
+id: hand-press
+language: dart
+severity: error
+message: a press, hover or overlay written by hand in Dart
+note: hand it to naked_ui (already a dependency) or to Flutter's own widget; Dart keeps the colours, sizes and words
+ignores: ['**/motolii_bindings.dart']
+rule:
+  kind: identifier
+  regex: ^(GestureDetector|RawGestureDetector|Listener|MouseRegion|OverlayPortal|OverlayPortalController|OverlayEntry)$

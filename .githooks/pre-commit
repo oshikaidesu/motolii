@@ -7,6 +7,7 @@
 # Then: is every staged Dart file as `dart format` leaves it? (.githooks/format_check.py; skipped without dart)
 # Then: did the hand-written Dart grow, or did spare lines get left above the count? (.githooks/dart_budget.py)
 # Then: do the added lines use a dropped house word? (.githooks/word_check.py; report only until its FAIL switch is on)
+# Last: do the staged files hold a shape ast-grep refuses, or C++ clang-format would change? (.githooks/shape_check.sh)
 # Set up once with:  git config core.hooksPath .githooks        To commit all the same:  git commit --no-verify
 # A check this worktree does not have yet (a branch cut before it was added) is skipped, not a crash.
 # First, never a refusal: how much the rules still let stand (the two lists below), so the debt is seen shrinking.
@@ -19,3 +20,4 @@ for check in size_check.py layout_check.py path_check.py card_check.py reach_che
     [ -f "$hooks/$check" ] || continue
     python3 "$hooks/$check" || { echo "refused by .githooks/$check: what it refuses and how to fix it, .githooks/README.md" >&2; exit 1; }
 done
+[ ! -f "$hooks/shape_check.sh" ] || "$hooks/shape_check.sh" || { echo "refused by .githooks/shape_check.sh: what it refuses and how to fix it, .githooks/README.md" >&2; exit 1; }
