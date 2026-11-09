@@ -110,6 +110,41 @@ addEventListener('keydown', (e) => {
   const typing = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target.isContentEditable;
   if (!typing || ['Enter', 'Escape', 'Tab'].includes(e.key)) e.preventDefault();
 });
+// What the page is given, told to the window when it asks (MOTOLII_INPUT_LOG=1: block_code.dart), each line with how
+// many animation frames have run (Blockly renders and tells its changes on them) and who has the page's focus: the
+// pointer from a press to its release, keys, focus coming and going, a field's editor opened and closed.
+let frames = 0;
+(function frame() { frames++; requestAnimationFrame(frame); })();
+let logging = false;
+function motoliiLog() {
+  if (logging) return;
+  logging = true;
+  const name = (el) => !el ? 'none' : (el.getAttribute && el.getAttribute('class')) || el.tagName || String(el);
+  const tell = (what) => Motolii.postMessage(JSON.stringify({say: what + ' | raf ' + frames + ' page-focus ' + document.hasFocus() + ' active ' + name(document.activeElement)}));
+  let down = false;
+  for (const t of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']) {
+    addEventListener(t, (e) => {
+      if (t === 'pointerdown') down = true;
+      if (t === 'pointermove' && !down) return;
+      if (t === 'pointerup' || t === 'pointercancel') down = false;
+      tell(t + ' ' + e.pointerType + ' buttons ' + e.buttons + ' at ' + Math.round(e.clientX) + ',' + Math.round(e.clientY) + ' on ' + name(e.target) + ' dragging ' + ws.isDragging());
+    }, true);
+  }
+  addEventListener('keydown', (e) => tell('keydown ' + e.key + ' on ' + name(e.target)), true);
+  document.addEventListener('focusin', (e) => tell('focusin ' + name(e.target)), true);
+  document.addEventListener('focusout', (e) => tell('focusout ' + name(e.target) + ' to ' + name(e.relatedTarget)), true);
+  addEventListener('focus', () => tell('window focus'));
+  addEventListener('blur', () => tell('window blur'));
+  new MutationObserver((changes) => {
+    for (const c of changes) {
+      for (const n of c.addedNodes) if (n.classList && n.classList.contains('blocklyHtmlInput')) tell('editor open');
+      for (const n of c.removedNodes) if (n.classList && n.classList.contains('blocklyHtmlInput')) tell('editor close');
+    }
+  }).observe(document.body, {childList: true, subtree: true});
+  ws.addChangeListener((e) => tell('blockly ' + e.type));
+  setInterval(() => tell('alive'), 3000);
+  tell('log on');
+}
 </script>
 </body>
 </html>

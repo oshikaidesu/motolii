@@ -4,9 +4,12 @@
 // change back on the Motolii channel as {state, code}: the workspace, and the each() Blockly's JavaScript generator
 // writes from it. Going from code back to blocks is not done: the blocks are the source, the code is made from them.
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/widgets.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart' show WebKitWebViewController;
 
 class BlockCode extends StatefulWidget {
   const BlockCode(this.state, this.changed, {super.key});
@@ -20,8 +23,17 @@ class _BlockCodeState extends State<BlockCode> {
   late final WebViewController _web = WebViewController()
     ..setJavaScriptMode(JavaScriptMode.unrestricted)
     ..addJavaScriptChannel('Motolii', onMessageReceived: _told)
-    ..setNavigationDelegate(NavigationDelegate(onPageFinished: (_) => _web.runJavaScript('motoliiLoad(${_kept()})')))
+    ..setNavigationDelegate(NavigationDelegate(onPageFinished: (_) => _web.runJavaScript('motoliiLoad(${_kept()})${_log ? '; motoliiLog()' : ''}')))
     ..loadFlutterAsset('assets/blocks/expression_blocks.html');
+
+  // (what the page is given, on stderr beside the window's own (MainFlutterWindow.swift InputLog), when asked)
+  static final _log = Platform.environment['MOTOLII_INPUT_LOG'] == '1';
+
+  @override
+  void initState() {
+    super.initState();
+    if (_web.platform case final WebKitWebViewController web when kDebugMode) web.setInspectable(true);   // (Safari's Develop menu reaches it)
+  }
 
   String _kept() {   // (as a JavaScript value; a kept workspace that is not JSON is as none)
     try {
@@ -33,6 +45,7 @@ class _BlockCodeState extends State<BlockCode> {
 
   void _told(JavaScriptMessage m) {
     final said = jsonDecode(m.message) as Map<String, dynamic>;
+    if (said['say'] case final String say) return stderr.writeln('page $say');
     widget.changed(jsonEncode(said['state']), said['code'] as String);
   }
 
