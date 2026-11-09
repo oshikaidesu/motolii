@@ -8,7 +8,6 @@
 605 app/lib/workspace/dock/dock_parts.dart
 649 app/lib/workspace/shelf/effect_tiles.dart
 582 app/lib/workspace/stage/stage.dart
-649 app/lib/workspace/top_bar.dart
 1028 engine/community/aviutl/aviutl_fx.h
 589 engine/document/doc_edit.h
 726 engine/document/doc_match.h
