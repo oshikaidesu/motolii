@@ -4,6 +4,8 @@
 
 窓（`../app/`）は、ここが組む `out/libmotolii.dylib` を C の呼び出しで使います。作りの全体は [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)。
 
+コードの言葉（thing・fact・way・made・drawn・kept・told・hand…）を AE・Filament の言葉に引き直す表は [`../docs/ARCHITECTURE.md` の「言葉」](../docs/ARCHITECTURE.md#言葉words)。
+
 **door（扉）**：人のコードとの境目を 1 か所に閉じ込めたファイル。Filament の公開されていない中身に手を入れるのは `gpu/*_door.*` だけ、ネットのコードをそのまま入れるのは `community/door*.h` と `document/doc_door.h` だけで、相手が変わったら扉だけを直す。
 
 ## 入口
