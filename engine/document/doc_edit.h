@@ -96,7 +96,7 @@ static int doc_add(Doc& d, const char* kind, const char* file) {
     if (!*kind) kind = doc_kind_of(file);   // (not said: what the file makes)
     if (!*kind) return d.trouble = std::string("no kind of thing is made from ") + file, 0;
     // (a sound comes in a film that is heard, hidden: Alight Motion's audio layer has no picture, only its wave on the
-    //  timeline (docs/reports/alight_ui.md 177), as Extract Sound's copy (doc_extract_sound) is a hidden film heard; its eye
+    //  timeline (docs/reports/alight_motion/alight_ui.md 177), as Extract Sound's copy (doc_extract_sound) is a hidden film heard; its eye
     //  shows its wave, video.h)
     const bool sound = !strcmp(kind, "sound");
     if (sound) kind = "film";

@@ -399,7 +399,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
   }
 
   // A photo on its bar: itself, read once small (as tall as a bar needs), laid along the bar again and again as
-  // Alight Motion's photo bar is (docs/reports/alight_ui.md: タイムラインの絵); one Flutter cannot read: none.
+  // Alight Motion's photo bar is (docs/reports/alight_motion/alight_ui.md: タイムラインの絵); one Flutter cannot read: none.
   List<ui.Image>? _stillOf(String file, String id) {
     if (_frames[id] case (final k, final f) when k == file) return f;
     if (_framesAsked[id] != file) {

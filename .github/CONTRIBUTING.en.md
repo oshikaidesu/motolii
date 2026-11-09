@@ -47,8 +47,8 @@ GitHub Actions runs the ledger check on every push and pull request (`.github/wo
 | What | Where to start | Difficulty |
 |---|---|---|
 | An `.app` you can hand out: put the Homebrew libraries the engine loads (GStreamer, glib, SQLite, LuaJIT, QuickJS, and ffmpeg for writing) inside the `.app`, with [dylibbundler](https://github.com/auriamg/macdylibbundler) or GStreamer's macOS framework | `engine/edit.sh`, `app/macos/` | Medium |
-| AviUtl2 calls still missing (`obj.computeshader`, the built-in effects, …), following the references (AviUtl2's lua.txt, sashimono-edit) | `docs/reports/aviutl2/converter_plan.md`, `engine/community/aviutl/aviutl.cpp` | Medium–hard |
-| TSL looks on the editor's shelves | `engine/tsl/`, `docs/reports/tsl_collection.md` | Medium |
+| AviUtl2 calls still missing (`obj.computeshader`, the built-in effects, …), following the references (AviUtl2's lua.txt, sashimono-edit) | `docs/reports/aviutl/aviutl2/converter_plan.md`, `engine/community/aviutl/aviutl.cpp` | Medium–hard |
+| TSL looks on the editor's shelves | `engine/tsl/`, `docs/reports/effects/tsl_collection.md` | Medium |
 
 ## Known gaps
 

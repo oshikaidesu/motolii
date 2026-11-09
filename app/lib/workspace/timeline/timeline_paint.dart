@@ -536,7 +536,7 @@ class WtOverviewPainter extends CustomPainter {
 // ---------------------------------------------------------------- kind chip
 
 /// A layer's kind: a small square of its hue with the kind drawn in the dark ink.
-/// A row's own small picture, as Alight Motion shows one at the left of each row (docs/reports/alight_ui/95 and 106): a
+/// A row's own small picture, as Alight Motion shows one at the left of each row (docs/reports/alight_motion/alight_ui/95 and 106): a
 /// photo or a film its picture, a shape its form in its own fill; the rest, the mark of its kind (Alight Motion's
 /// camera and sound are marks too; a text's is not seen in its pictures: its mark kept).
 class WtThumb extends StatelessWidget {

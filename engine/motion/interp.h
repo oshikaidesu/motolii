@@ -26,7 +26,7 @@ static const struct { const char* name; int numbers; const char* names; double u
     {"Elastic", 4, "a b c d", {0.25, 1, 0.5, 1}, {0, 0, 0, 0}, {1, 2, 2, 2}},   // (as AbsentMotion's: its easing.cpp reads a, c, d)
     {"Cyclic", 5, "a b c d e", {2.0 / 7.0, 0, 0.5, 0, 0}, {0.01, 0, 0, 0, 0}, {1, 1, 1, 1, 1}},   // (as AbsentMotion's)
     {"Random", 6, "a b c d e f", {0.5, 0.5, 0.5, 0.5, 0.5, 0}, {0, 0, 0, 0, 0, 0}, {1, 1, 1, 1, 1, 1}},   // (as AbsentMotion's)
-    {"Steps", 2, "length smoothing", {0.25, 0.0}, {0.02, 0}, {1, 1}},   // (as AbsentMotion's: four steps, the last to 1 at the end, docs/reports/alight_ui/135_ease_steps.jpg; the past repository's 0.178 made six)
+    {"Steps", 2, "length smoothing", {0.25, 0.0}, {0.02, 0}, {1, 1}},   // (as AbsentMotion's: four steps, the last to 1 at the end, docs/reports/alight_motion/alight_ui/135_ease_steps.jpg; the past repository's 0.178 made six)
     {"ElasticSteps", 2, "length magnitude", {0.2, 0.5}, {0.05, 0}, {1, 1}},   // (as AbsentMotion's)
 };
 

@@ -1,7 +1,7 @@
 // Part of ws.dart: the workspace state every seat reads (Ws).
 part of 'ws.dart';
 
-/// A sound: a film whose file has no picture, hidden and heard (doc_add), Alight Motion's audio layer: docs/reports/alight_ui.md 177.
+/// A sound: a film whose file has no picture, hidden and heard (doc_add), Alight Motion's audio layer: docs/reports/alight_motion/alight_ui.md 177.
 bool wsSound(Motolii m, int t) => m.word(t, 'kind') == 'film' && m.kindOf(m.word(t, 'file')) == 'sound';
 
 class Ws extends ChangeNotifier {
