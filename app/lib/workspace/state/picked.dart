@@ -11,21 +11,6 @@ extension WsPick on Ws {
     _tell(WsAspect.picked);
   }
 
-  void pickMany(Iterable<String> ids) {
-    many
-      ..clear()
-      ..addAll(ids);
-    _tell(WsAspect.picked);
-  }
-
-  void pickKey(WsKey k, {bool add = false}) {
-    if (!add) _keys.clear();
-    _keys.add(k);
-    _stretch = null;
-    _sel = k.layer;
-    _tell(WsAspect.picked);
-  }
-
   /// Keys picked together (a box drawn round them): these and no others.
   void pickKeys(Iterable<WsKey> ks) {
     _keys
@@ -49,11 +34,4 @@ extension WsPick on Ws {
     return i < 0 || i + 1 >= at.length ? null : (layer: layer, name: name, at: at[i], from: from, to: (at[i + 1] * Ws.fps).round());
   }
 
-  void pickStretch(String layer, String name, int from) {
-    _keys.clear();
-    _stretch = _stretchOf(layer, name, from);
-    _sel = layer;
-    _tell(WsAspect.picked);
-    if (_stretch != null) front('Ease');
-  }
 }

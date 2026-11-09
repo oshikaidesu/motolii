@@ -106,12 +106,6 @@ extension MotoliiDocument on Motolii {
       if (asked[layer]?.contains(c.$1) ?? false) c,
   ];
 
-  /// The titles of the cards it may be given and is not shown, as the shelf of More: not there unasked.
-  List<String> moreCards(int layer) => [
-    for (final (title, _) in _cardsIn(_of(layer)['more']))
-      if (!(asked[layer]?.contains(title) ?? false)) title,
-  ];
-
   static List<(String, List<String>)> _cardsIn(Object? said) => [
     for (final c in ((said as String?) ?? '').split('; '))
       if (c.indexOf(': ') case final at when at > 0)
@@ -122,12 +116,6 @@ extension MotoliiDocument on Motolii {
               if (n.isNotEmpty) n,
           ],
         ), // (an effect of no knobs: a card of none, doc_cards_of)
-  ];
-
-  /// The titles of a thing's effect cards in the order its effects are laid (motolii_fx_titles): moved with `fx_move`.
-  List<String> fxTitles(int layer) => [
-    for (final t in ((_of(layer)['fx'] as String?) ?? '').split(';'))
-      if (t.isNotEmpty) t,
   ];
 
   /// A number value's lowest and highest (null: the thing has no such number).
@@ -157,9 +145,6 @@ extension MotoliiDocument on Motolii {
     }
     return _with([easing], (s) => _easingAt(_m, s[0], u));
   }
-
-  /// A way as the inside works it out, not as the picture's few steps say it: for a curve drawn large.
-  double easingExact(String easing, double u) => _with([easing], (s) => _easingAt(_m, s[0], u));
 
   /// Every stretch of a thing's keyed values: from, to (seconds), its way, as the inside says them (a timeline draws how each goes).
   List<(double, double, String)> layerStretches(int layer) => [

@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
-import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart' show debugPrint, setEquals;
@@ -48,32 +47,6 @@ String get motoliiDoc {
 
 typedef _P = Pointer<c.Motolii>;
 typedef _S = Pointer<Utf8>;
-
-/// A film's thumbnail, made by the inside's own call on another isolate (nothing of a document is handed over: the
-/// call asks nothing of one). Kept in the system's temp folder under the film's place and when it was last changed.
-final _thumbnails = <String, Future<String?>>{};
-Future<String?> _thumbnail(String lib, String video, [int step = 0, int steps = 1, double? seconds]) async {
-  final folder = Directory('${Directory.systemTemp.path}/motolii_thumbnails')..createSync(recursive: true);
-  // (named by the film's own place, so it is found again in another run, and by when the film was last changed)
-  final named = video.replaceAll(RegExp(r'[^A-Za-z0-9]'), '_');
-  final png =
-      '${folder.path}/${named.length > 150 ? named.substring(named.length - 150) : named}_${File(video).statSync().modified.millisecondsSinceEpoch}${seconds != null
-          ? '_s${(seconds * 10).round()}'
-          : step == 0
-          ? ''
-          : '_$step'}.png';
-  if (File(png).existsSync()) return png;
-  final made = await Isolate.run(() {
-    final b = c.MotoliiBindings(DynamicLibrary.open(lib));
-    final from = video.toNativeUtf8(), to = png.toNativeUtf8();
-    final done = (seconds != null ? b.motolii_thumbnail_seconds(from, to, 160, seconds) : b.motolii_thumbnail_at(from, to, 240, step / steps)) != 0;
-    malloc
-      ..free(from)
-      ..free(to);
-    return done;
-  });
-  return made ? png : null;
-}
 
 /// What a media file is, as the inside's GStreamer discoverer tells it, said for a hand: its size, its rate and length
 /// (a film), its kind ('' when it cannot be read). On another isolate: the call asks nothing of a document.
@@ -218,22 +191,14 @@ class Motolii {
   late final _say = _b.motolii_say;
   late final _key = _b.motolii_key;
   late final _easing = _b.motolii_easing;
-  late final _path3 = _b.motolii_path3;
   late final _keying = _b.motolii_keying;
   late final _dragUpdate = _b.motolii_drag_update;
   late final _put = _b.motolii_put;
-  late final _createScripts = _b.motolii_create_scripts;
   late final _create = _b.motolii_create;
-  late final _effects = _b.motolii_effects;
-  late final _presets = _b.motolii_presets;
-  late final _animators = _b.motolii_animators;
-  late final _relations = _b.motolii_relations;
   late final _spent = _b.motolii_spent;
-  late final _easingNumbers = _b.motolii_easing_numbers;
   late final _effect = _b.motolii_effect;
   late final _easingAt = _b.motolii_easing_at;
   late final _kindOf = _b.motolii_kind_of;
-  late final _find = _b.motolii_find;
   late final _together = _b.motolii_together;
   late final _frames = _b.motolii_frames;
   late final _cacheRuns = _b.motolii_cache;
@@ -246,12 +211,7 @@ class Motolii {
 
   Set<int> _watched = const {};
 
-  int? _deskId;
-
   late final _rate = _b.motolii_rate;
-
-  late final _midi = _b.motolii_midi;
-  late final _midiBpm = _b.motolii_midi_bpm;
 
   final _unaskedSaid = <String>{};
 
@@ -262,33 +222,9 @@ class Motolii {
 
   late final _mark = _b.motolii_mark;
 
-  late final _loopIs = _b.motolii_loop;
-
   late final _guide = _b.motolii_guide;
 
-  final _labels = <String, String>{},
-      _tileImages = <String, String>{},
-      _homes = <String, String>{},
-      _abouts = <String, String>{},
-      _tags = <String, Set<String>>{};
-  final _same = <String>{};
-
   final _shownOf = <String, Shown?>{}; // (read out of the things' parts once a picture of the document)
-
-  /// What the folders hold (recipes, effects, animators): not the document's, read once, and again after [forgetFolders].
-  final _folders = <String, List<(String, String)>>{};
-
-  /// The folders read again at the next ask (a file put in, taken out or written over in a watched folder:
-  /// workspace/effect_tiles.dart); the inside asks its files again too (motolii_files_changed), and not before.
-  void forgetFolders() {
-    _b.motolii_files_changed();
-    _folders.clear();
-    _labels.clear();
-    _tileImages.clear();
-    _abouts.clear();
-    _homes.clear();
-    _same.clear();
-  }
 
   /// The window's thread watched: while on, a change it waits for, or a read that waits on the document over 2 ms, is
   /// kept; [broken] says each, one to a line ('' none). Turned on, what was kept is forgotten.
@@ -296,9 +232,7 @@ class Motolii {
   late final _broken = _b.motolii_broken;
   late final _brokenCount = _b.motolii_broken_count;
 
-  late final _fontTags = _b.motolii_font_tags;
   late final _fontLacks = _b.motolii_font_lacks;
-  final _fontKinds = <String, Set<String>>{};
 
   late final _later = _b.motolii_later;
   late final _answer = _b.motolii_answer;
