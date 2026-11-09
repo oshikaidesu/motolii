@@ -304,7 +304,6 @@ extension _WorkspaceMenus on _WorkspaceState {
       }, // (After Effects' Keyframe Assistant: one after another, from the top)
       'play.toggle': () => ws.playing = !ws.playing,
       ...wsAbletonCommands(ws), // (Ableton Live's keys: command_actions.dart)
-      ...wsToolCommands(ws), // (the stage's tools: stage.dart)
       'frame.first': () => step(-ws.frame),
       'frame.last': () => step(Ws.duration - ws.frame),
     };

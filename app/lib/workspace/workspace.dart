@@ -25,9 +25,6 @@ import 'window/panes.dart';
 import 'tool_panel/tool_panel_widgets.dart';
 import 'edits/keyframe_edits.dart';
 import 'commands/keymap.dart';
-import 'stage/stage.dart';
-import 'stage/stage_camera.dart';
-import 'stage/stage_view.dart' show WsRelationStack;
 import 'timeline/timeline.dart';
 import 'top_bar/top_bar.dart';
 import '../bridge/motolii.dart';
@@ -372,8 +369,8 @@ class _Window extends StatelessWidget {
 }
 
 final _panes = [
-  WsPane('Stage', DockG.stage, () => const WsStage(), minSize: 320),
-  WsPane('Camera View', DockG.camera, () => const WsCameraView(), minSize: 240),
+  WsPane('Stage', DockG.stage, () => const SizedBox.shrink(), minSize: 320),
+  WsPane('Camera View', DockG.camera, () => const SizedBox.shrink(), minSize: 240),
   WsPane('Inspector', DockG.inspector, () => const _InspectorPanel(), minSize: 200),
   WsPane('Timeline', DockG.timeline, () => const WsTimeline(), minSize: 160),
   WsPane('Ease', DockG.time, () => const SizedBox.shrink(), minSize: 260),

@@ -128,7 +128,6 @@ class _InspectorPanelState extends State<_InspectorPanel> {
     final ws = WsScope.read(context), l = ws.layer, k = _kindOf(l), m = ws.inside!;
     return Column(
       children: [
-        const WsRelationStack(),
         Expanded(
           child: LayoutBuilder(
             builder: (context, box) => InspHost(
