@@ -1,6 +1,6 @@
 #!/bin/zsh
 # out/jsrh_napi/src: BabylonJS/JsRuntimeHost's Node-API for QuickJS (fetched at 980cfb0 into third_party/napi/jsruntimehost)
-# with jsrh_qjs017_dawn.patch applied to a copy, for Motolii's QuickJS-ng 0.17 (Homebrew's libqjs): dawn_probe/js_effects.sh builds it in.
+# with jsrh_qjs017_dawn.patch applied to a copy, for Motolii's QuickJS-ng 0.17 (Homebrew's libqjs): gpu/js_effects.sh builds it in.
 set -e
 cd "$(dirname "$0")"
 R=../../third_party/napi/jsruntimehost

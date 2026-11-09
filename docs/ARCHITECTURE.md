@@ -47,12 +47,12 @@ flowchart TB
 | 窓 → 中身 | `engine/motolii.h`（約 230 行）、Dart 側は `skin/book/lib/motolii.dart` と ffigen が作る `motolii_bindings.dart` | 窓は値を持たない。読むのも変えるのも C の呼び出しで、書類が正（窓と中身の境目の決まりは [`skin/BRIDGE.md`](../skin/BRIDGE.md)） |
 | 中身の中 | `engine/motolii_hand.h` | 書類と GPU に触るのは 1 本のスレッドだけ。呼び出しはそのスレッドに頼んで待つ（`by_hand`） |
 | 中身 → 窓（絵） | `engine/live.h` | 場面は IOSurface の上の CVPixelBuffer 3 枚に描き、それを Dawn のテクスチャとして Filament の描き先にする。窓（Flutter の外部テクスチャ、`skin/book/macos/Runner/MainFlutterWindow.swift`）は同じ物を読む |
-| 借りた物 | `engine/dawn_probe/*.patch`、`engine/tsl/*.patch` | 人のコードは直接いじらず、版を固定して取ってきて差分を当てる（[`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md) の 2 節） |
+| 借りた物 | `engine/gpu/*.patch`、`engine/tsl/*.patch` | 人のコードは直接いじらず、版を固定して取ってきて差分を当てる（[`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md) の 2 節） |
 
 ## 描く
 
-- **Filament** を v1.77.2 のソースから WebGPU（Dawn）の口で組む（`engine/dawn_probe/build.sh`）。配られている SDK には WebGPU が無いため。当てる差分：計算（compute）の口、Dawn の装置を外に貸す口、外のテクスチャを受ける `Texture::Builder::import`（`filament_dawn_compute.patch`）、AviUtl2 の HLSL のために glslang の HLSL の読み手を入れる（`glslang_hlsl.patch`）。
-- **ThorVG** は WebGPU のエンジンを、Filament と同じ Dawn の装置の上で動かす（`engine/dawn_probe/tvg_on_dawn.sh`、`drawn.h`）。描いた絵は Filament の場面の中の板になる（切り抜き・ガラス越し・キーが効く）。
+- **Filament** を v1.77.2 のソースから WebGPU（Dawn）の口で組む（`engine/gpu/build.sh`）。配られている SDK には WebGPU が無いため。当てる差分：計算（compute）の口、Dawn の装置を外に貸す口、外のテクスチャを受ける `Texture::Builder::import`（`filament_dawn_compute.patch`）、AviUtl2 の HLSL のために glslang の HLSL の読み手を入れる（`glslang_hlsl.patch`）。
+- **ThorVG** は WebGPU のエンジンを、Filament と同じ Dawn の装置の上で動かす（`engine/gpu/tvg_on_dawn.sh`、`drawn.h`）。描いた絵は Filament の場面の中の板になる（切り抜き・ガラス越し・キーが効く）。
 - 形の足し引きは **Skia** のパスの部分だけ（`engine/skia.sh`）、平らな形の三角形分けは **libtess2**。
 - 画面の拍子は Thermion の FrameScheduler（CVDisplayLink、`engine/third_party/thermion_frame/`）。
 
@@ -90,5 +90,4 @@ flowchart TB
 | 書類 | プロジェクトファイル（`.motolii`） |
 | 棚 | 効果・レシピなどの一覧（Create・Effects） |
 | レシピ | 1 回で絵を作るスクリプト |
-| 台帳 | `ASSETS.md`（在る物とどこまで確かめたか） |
 | 手（hand） | 書類と GPU を持つスレッド |

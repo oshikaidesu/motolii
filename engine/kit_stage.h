@@ -155,7 +155,7 @@ struct Stage {
 
 static Stage open_stage(int w, int h) {
     Stage s{w, h};
-    // (BACKEND=webgpu: Filament's WebGPU backend, Dawn, which is the way to Windows; it needs the Filament built from source, see dawn_probe/kit_wgpu.sh)
+    // (BACKEND=webgpu: Filament's WebGPU backend, Dawn, which is the way to Windows; it needs the Filament built from source, see gpu/kit_wgpu.sh)
     const char* backend = getenv("BACKEND");
     s.engine = Engine::Builder().backend(backend && !strcmp(backend, "webgpu") ? Engine::Backend::WEBGPU : Engine::Backend::METAL).build();
     // (a picture that does nothing to its colours gets them through exactly: Filament may then take its one fine row of

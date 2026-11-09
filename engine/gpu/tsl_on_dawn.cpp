@@ -3,7 +3,7 @@
 // three.js's own code (WGSLNodeBuilder's shaders, each bind group's uniforms as three packs them, the plane's arrays:
 // docs/reports/shaderlab_origins.md), and drawn here the plain WebGPU way, with the shaders' own layout ("auto"), as Dawn's
 // samples/HelloTriangle.cpp draws. Device and reading back as tvg_on_dawn.cpp.
-//   ./dawn_probe/tsl_on_dawn.sh <folder> <width> <height>   (folder: vert.wgsl frag.wgsl bindings.txt g*b*.bin
+//   ./gpu/tsl_on_dawn.sh <folder> <width> <height>   (folder: vert.wgsl frag.wgsl bindings.txt g*b*.bin
 //   position.f32 uv.f32 index.u16 picture.rgba; writes drawn.rgba there)
 #include <dawn/webgpu_cpp.h>
 #include <cstdio>

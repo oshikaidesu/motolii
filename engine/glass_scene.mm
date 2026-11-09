@@ -23,7 +23,7 @@
 #include "beam_split.h"
 #include "beam_spectrum.h"   // SPEC=1
 #ifdef GLASS_COMPUTE_DOOR
-#include "cbeam.h"   // CBEAMS=1: the beams as compute (needs Filament's WebGPU backend; dawn_probe/glass_wgpu.sh builds with it)
+#include "cbeam.h"   // CBEAMS=1: the beams as compute (needs Filament's WebGPU backend; lab/dawn/glass_wgpu.sh builds with it)
 #include <filament/BufferObject.h>
 #endif
 
@@ -262,7 +262,7 @@ int main(int argc, char** argv) {
     };
 
     // BACKEND=webgpu (trial): Filament's WebGPU backend (Dawn). Needs a Filament built with it and materials compiled
-    // for it (dawn_probe/build.sh, dawn_probe/glass_wgpu.sh); the prebuilt SDK has neither.
+    // for it (gpu/build.sh, lab/dawn/glass_wgpu.sh); the prebuilt SDK has neither.
     const char* via = std::getenv("BACKEND");
     const bool viaDawn = via && std::string(via) == "webgpu";
 #ifdef GLASS_LIB

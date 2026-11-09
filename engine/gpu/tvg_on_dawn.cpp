@@ -1,7 +1,7 @@
 // tvg_on_dawn.cpp: does ThorVG's WebGPU engine run on Dawn (the Dawn that Filament's WebGPU backend is built with)?
 // A Dawn device is made, ThorVG is given that device and a texture of it, draws a red disc on clear, and the texture is
 // read back and looked at. ThorVG here is its own source (third_party/thorvg_src, v1.1.2, unchanged) built against
-// Dawn's webgpu.h instead of wgpu-native's (dawn_probe/tvg_on_dawn.sh).   ./dawn_probe/tvg_on_dawn.sh
+// Dawn's webgpu.h instead of wgpu-native's (gpu/tvg_on_dawn.sh).   ./gpu/tvg_on_dawn.sh
 #include <dawn/webgpu_cpp.h>
 #include <thorvg.h>
 #include <cstdio>

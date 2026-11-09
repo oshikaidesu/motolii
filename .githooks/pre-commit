@@ -1,6 +1,4 @@
 #!/bin/sh
-# Before every commit: is ASSETS.md (the ledger of what is at hand) still true? (.githooks/assets_check.py)
-# Is every file of our own still one job, 500 lines at most? (.githooks/size_check.py)
+# Before every commit: is every file of our own still one job, 500 lines at most? (.githooks/size_check.py)
 # Set up once with:  git config core.hooksPath .githooks        To commit all the same:  git commit --no-verify
-top="$(git rev-parse --show-toplevel)"
-"$top/.githooks/assets_check.py" && "$top/.githooks/size_check.py"
+exec "$(git rev-parse --show-toplevel)/.githooks/size_check.py"

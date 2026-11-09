@@ -1,6 +1,6 @@
 #!/bin/zsh
 # One of the kit's pictures (ring, poster, blocks, shapes) on Filament's WebGPU (Dawn) backend, beside the usual Metal
-# build (which is not touched). Needs dawn_probe/build.sh first (the WebGPU-enabled Filament and its matc).
+# build (which is not touched). Needs gpu/build.sh first (the WebGPU-enabled Filament and its matc).
 #   ./kit_wgpu.sh ring                 builds ../out/<name>_wgpu and runs it on WebGPU:  ../out/wgpu_kit/out/<name>.png
 #   BACKEND=metal ./kit_wgpu.sh ring   the same program on Metal, to compare
 set -e
@@ -43,10 +43,10 @@ for f in paper paper_copy floor_shade effected effected_world effected_solid thi
     done
     [ $f = bubble ] && { $MATC -a webgpu -a metal -p desktop -DWORN -o out/wgpu_kit/bubble_worn.filamat bubble.mat > out/wgpu_kit/bubble_worn.log 2>&1 || echo "no WebGPU material: bubble_worn"; }   # (a thing wearing Bubble: kit_things.h solid_wear)
 done
-# ThorVG here is the one built against Dawn (dawn_probe/tvg_on_dawn.sh makes it): it can draw on Filament's own device
+# ThorVG here is the one built against Dawn (gpu/tvg_on_dawn.sh makes it): it can draw on Filament's own device
 # (drawn.h), through the door built inside Filament's build (gpu_door.h).
 THOR=third_party/thorvg_src
-[ -f $THOR/build_dawn/src/libthorvg-1.a ] || ./dawn_probe/tvg_on_dawn.sh > /dev/null
+[ -f $THOR/build_dawn/src/libthorvg-1.a ] || ./gpu/tvg_on_dawn.sh > /dev/null
 meson configure $THOR/build_dawn -Dengines=cpu,wg -Dextra=lottie_exp > /dev/null   # (kept on: meson set up again by a changed source takes ThorVG's defaults, the CPU engine alone)
 ninja -C $THOR/build_dawn > /dev/null
 # (bend.cpp: ThorVG's own path operators, built as ThorVG builds them; libtess2: a flat shape cut into triangles, flat_mesh)

@@ -16,7 +16,7 @@
 
 ## 今の組み立てが使う物
 
-`edit.sh` → `dawn_probe/kit_wgpu.sh` が組む物。`#include` を辿ると、この階層では次の 63 本です。
+`edit.sh` → `gpu/kit_wgpu.sh` が組む物。`#include` を辿ると、この階層では次の 63 本です。
 
 - 書類：`doc.h`、`doc_edit.h`、`doc_kinds.h`、`doc_looks.h`、`doc_match.h`、`doc_moment.h`、`doc_moment_fx.h`、`doc_paths.h`、`doc_place.h`、`doc_recipes.h`、`doc_relations.h`、`doc_values.h`、`interp.h`、`ways.h`
 - 描く：`kit.h`、`kit_draw.h`、`kit_stage.h`、`kit_things.h`、`drawn.h`、`drawn_flat.h`、`drawn_kept.h`、`drawn_made.h`、`screen.h`、`stage_kept.h`、`picture.h`、`points.h`、`solid.h`、`live.h`、`lottie_slots.h`、`bend.cpp`、`skpath.cpp`
@@ -28,11 +28,11 @@
 
 ## それ以外
 
-この階層の残り（`ring.mm`・`poster.mm`・`neko.mm`・`beam_glass_*.h`・`glass_scene_*.inc` など）は、前の試し（Metal の Filament の SDK を使った物、ガラスや光の試し）です。消さずに置いてあり、`ring.sh` などで今も動かせます（組み立て済みの SDK は `sdk.sh` が取る）。何がどこまで動いたかは [`../ASSETS.md`](../ASSETS.md)。
+本体が使わない試し（ガラスや光、Dawn、プローブなど）は [`../lab/`](../lab/) に移しました。ここに残っている `ring.mm`・`poster.mm`・`neko.mm`・`beam_glass_*.h` などは、本体の組み立てか窓のコードがまだ名前で呼んでいる物です。
 
 | フォルダ | 中身 |
 |---|---|
-| `dawn_probe/` | Filament を WebGPU（Dawn）で組むスクリプトと、Filament・ThorVG・Dawn に当てる差分（`*.patch`） |
+| `gpu/` | Filament を WebGPU（Dawn）で組むスクリプトと、Filament・ThorVG・Dawn に当てる差分（`*.patch`） |
 | `effects/`・`recipes/`・`animators/`・`ways/`・`looks/`・`solids/` | 同梱の効果・レシピ・動き・イーズ・ルック・形（利用者のフォルダ `~/Library/Application Support/Motolii/` と同じ形） |
 | `aviutl_scripts/` | 同梱の AviUtl2 のスクリプト |
 | `tsl/` | TSL と shaders.com の効果を取ってきて WGSL にする道具 |

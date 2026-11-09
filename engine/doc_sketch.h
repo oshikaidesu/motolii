@@ -22,7 +22,7 @@ static const SketchShape* doc_sketch_shape(std::vector<SketchShape>& shapes, Scr
     return &shapes[i];
 }
 // A shader of a sketch's as a Filament material: what p5_mesh.h's __shader_text made of it, compiled by Filament's own matc as the kit's
-// are (dawn_probe/kit_wgpu.sh), a third of a second for a real one, kept by what it says. What cannot be made says why and paints nothing.
+// are (gpu/kit_wgpu.sh), a third of a second for a real one, kept by what it says. What cannot be made says why and paints nothing.
 static SketchPaint doc_sketch_paint(Stage& s, const std::string& text, const std::string& names) {
     SketchPaint paint;
     std::istringstream lines(names);

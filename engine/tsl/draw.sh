@@ -1,6 +1,6 @@
 #!/bin/zsh
 # Every converted effect that left what it needs to draw (out/<collection>/<name>/) drawn on Dawn by
-# dawn_probe/tsl_on_dawn.cpp over one picture, and each collection's pictures put on one sheet: out/<collection>.jpg
+# gpu/tsl_on_dawn.cpp over one picture, and each collection's pictures put on one sheet: out/<collection>.jpg
 # (8 across, in the order of out/<collection>.names.txt).
 #   ./tsl/draw.sh <picture> [size]
 cd "$(dirname "$0")"

@@ -3,7 +3,7 @@
 // BabylonJS/JsRuntimeHost's Node-API attached (Napi::Attach; tsl/jsrh_napi/build.sh); Dawn's JS binding (dawn.node with dawn_lend.patch) is given Filament's Dawn proc
 // table (motolii_dawn_procs) and lent Filament's device and a texture of it (wrapDevice, wrapTexture); the effect is
 // drawn by tsl/jsrh_napi/shaders.ts. After it, the texture is read back here, on the same device.
-//   ./dawn_probe/js_effects.sh <preset.json> <w> <h> <frames> <out.rgba>
+//   ./gpu/js_effects.sh <preset.json> <w> <h> <frames> <out.rgba>
 #include "gpu_door.h"
 #include <filament/Engine.h>
 #include <dawn/native/DawnNative.h>

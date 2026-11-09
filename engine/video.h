@@ -6,9 +6,9 @@
 // SharedTextureMemory): its light and its colour are two planes of one texture, turned to red, green and blue in
 // flat.mat. Nothing of a picture goes through the CPU. A picture is chosen by the time the film gives it (a phone's
 // film does not keep an even pace), and a film that says it is to be turned (shot upright) is turned.
-// Only on the WebGPU backend (BACKEND=webgpu, dawn_probe/kit_wgpu.sh with KIT_EXTRA: see puppet.sh), with Filament
+// Only on the WebGPU backend (BACKEND=webgpu, gpu/kit_wgpu.sh with KIT_EXTRA: see puppet.sh), with Filament
 // asking its device for the sharing (filament_dawn_compute.patch). The Mac's door only, so far.
-#include "dawn_probe/gpu_door.h"
+#include "gpu/gpu_door.h"
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
 #include <gst/pbutils/pbutils.h>

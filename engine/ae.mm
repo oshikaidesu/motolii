@@ -3,7 +3,7 @@
 // (drawn.h), onto a sheet that fills the picture. The stage is the composition's size (no more than 1920 the long
 // way) and nothing bends the colours, so what comes out is the film and nothing else: ae_test.sh checks it against
 // ThorVG drawing alone. WebGPU backend only.
-//   BUILDONLY=1 ./dawn_probe/kit_wgpu.sh ae    then, in out/wgpu_kit:
+//   BUILDONLY=1 ./gpu/kit_wgpu.sh ae    then, in out/wgpu_kit:
 //   ../ae_wgpu <file.json>                         ->  out/ae.png   (the film's middle)
 //   ../ae_wgpu <file.json> film                    ->  out/ae.mp4   (once through, at its own speed)
 //   ../ae_wgpu <file.json> time                    how many pictures a second

@@ -1,9 +1,9 @@
-// CBEAMS=1: beam_split.h on the GPU (cbeam.wgsl), through Filament's WebGPU backend (dawn_probe/compute_door.h).
+// CBEAMS=1: beam_split.h on the GPU (cbeam.wgsl), through Filament's WebGPU backend (gpu/compute_door.h).
 // Here: the table of shapes the shader reads (made once), the programs and buffers, and what a frame sends and runs.
 // Per frame the CPU sends the poses, the sun and the colour steps; nothing comes back (check() is for tests).
 #pragma once
 #include "beam_split.h"
-#include "dawn_probe/compute_door.h"
+#include "gpu/compute_door.h"
 
 #include <filament/BufferObject.h>
 #include <filament/Engine.h>

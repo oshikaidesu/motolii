@@ -1,7 +1,7 @@
 // shader-effects-inc/shaders (npm shaders 4.0.5) drawn by its authors' own renderer (createRendererFromJSON:
 // our device through `gpu`, renderFrame({deltaSeconds}) frame-locked) in Motolii's QuickJS (jsrh_napi) on Motolii's
 // Dawn (dawn.node). As check_node/shaders_check.mjs does it in Node: the canvas only what the renderer asks of one,
-// `window` only what it reads.   (run by dawn_probe/js_effects.sh)
+// `window` only what it reads.   (run by gpu/js_effects.sh)
 import "./web_globals"
 import * as std from "qjs:std"
 import * as os from "qjs:os"
@@ -18,7 +18,7 @@ Object.assign(globalThis, {
 Object.assign(globalThis, { window: Object.assign(globalThis, { innerWidth: w, innerHeight: h, devicePixelRatio: 1, addEventListener() {}, removeEventListener() {},
   matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }) }) })
 
-// Filament's own device and a texture of it (dawn_probe/js_effects.cpp sets globalThis.motolii), lent to Dawn's binding
+// Filament's own device and a texture of it (gpu/js_effects.cpp sets globalThis.motolii), lent to Dawn's binding
 // (dawn_lend.patch: wrapDevice, wrapTexture)
 const lent = (globalThis as any).motolii
 const device = dawn.wrapDevice(lent.device, lent.instance)

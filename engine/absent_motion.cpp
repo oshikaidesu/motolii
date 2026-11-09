@@ -1,7 +1,7 @@
 // absent_motion.cpp: AbsentMotion's own motion effects (Auto Shake, Random Displace, Random Jitter, Oscillate, Swing,
 // Spin, Pulse Size: its motion.cpp ApplyMotion; Apache-2.0, Copyright 2026 The AbsentMotion authors), run as AbsentMotion
 // runs them: a layer of its own (scene.h) given the thing's time and its effects in order, its placement begun where
-// nothing is moved. Built apart (dawn_probe/kit_wgpu.sh), beside AbsentMotion's motion.cpp, scene.cpp and easing.cpp as
+// nothing is moved. Built apart (gpu/kit_wgpu.sh), beside AbsentMotion's motion.cpp, scene.cpp and easing.cpp as
 // they are (what of scene.cpp draws or reads a scene is not reached: the library is linked dead-stripped).
 #include "absent_motion.h"
 #include "scene.h"

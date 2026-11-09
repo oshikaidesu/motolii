@@ -89,7 +89,7 @@ Each was checked at a different time under different conditions. A p5.js work th
 
 A work's rights stay with its author. Many works on Shadertoy and OpenProcessing carry a non-commercial licence, so ask the author before using one in paid work.
 
-Also: keyframes and easing (anime.js eases work as they are), physics (Jolt), refracting glass, a camera (focal length, aperture, focus) and MP4 export. Everything that exists, and how far it was checked, is in the author's ledger [`ASSETS.md`](ASSETS.md) (Japanese).
+Also: keyframes and easing (anime.js eases work as they are), physics (Jolt), refracting glass, a camera (focal length, aperture, focus) and MP4 export.
 
 **Build check**: on a GitHub Apple silicon Mac (macos-15) it is built fresh exactly as this README says, then the UI's analyzer (`flutter analyze`) runs (the build badge above). There are no self-written tests; the external requirements are in [`docs/TESTING.md`](docs/TESTING.md).
 
@@ -159,10 +159,10 @@ brew bundle
 Installs what the `Brewfile` lists (GStreamer, SQLite, ffmpeg, cmake, …). `Homebrew Bundle complete!` at the end means it worked.
 
 ```bash
-engine/dawn_probe/build.sh
+engine/gpu/build.sh
 ```
 
-Downloads and builds Filament with its WebGPU backend (~5 minutes on an M4). A last line `dawn_probe: 4096 triangles …` with numbers means it worked.
+Downloads and builds Filament with its WebGPU backend (~5 minutes on an M4). It worked if it ends without an error.
 
 ```bash
 engine/edit.sh build.motolii < /dev/null
@@ -264,7 +264,7 @@ The 8-second example at the top is `docs/examples/mv.sh` (its commands are in `d
 | `xcrun: error`, or Xcode missing | Install Xcode from the App Store, open it once to add its components, then `sudo xcodebuild -license accept` |
 | `No space left on device` | Free 10 GB or more, then run the command that stopped again |
 | `git clone` or `build.sh` stopped on the network | Run the same command again; if it still stops, delete the half-downloaded folder in `engine/third_party/` and run it again |
-| `ld: library 'webgpu_dawn' not found` | Run `engine/dawn_probe/build.sh` first |
+| `ld: library 'webgpu_dawn' not found` | Run `engine/gpu/build.sh` first |
 | The app opens but the preview is black | Check the engine is built (`engine/out/libmotolii.dylib`); if not, `engine/edit.sh build.motolii < /dev/null` |
 
 Still stuck? Open an [issue](https://github.com/oshikaidesu/motolii/issues) with the command you ran and what it printed (there is a template). Questions about using it go to [Discussions](https://github.com/oshikaidesu/motolii/discussions). English or Japanese.
@@ -274,7 +274,7 @@ Still stuck? Open an [issue](https://github.com/oshikaidesu/motolii/issues) with
 <details>
 <summary><b>Updating and removing</b></summary>
 
-- Update: `git pull`, then run `engine/dawn_probe/build.sh` and `engine/edit.sh build.motolii < /dev/null` again (only what changed is rebuilt); `skin/book/live.sh` rebuilds the app.
+- Update: `git pull`, then run `engine/gpu/build.sh` and `engine/edit.sh build.motolii < /dev/null` again (only what changed is rebuilt); `skin/book/live.sh` rebuilds the app.
 - Remove: delete the `motolii` folder (everything downloaded and built is inside it). Your projects and videos stay in `~/Movies/Motolii/` (or wherever else you put them). Flutter: delete `~/flutter`. What `brew bundle` installed goes with `brew uninstall`.
 
 </details>

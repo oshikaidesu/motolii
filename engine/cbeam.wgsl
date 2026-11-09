@@ -1,4 +1,4 @@
-// CBEAMS=1: beam_split.h on the GPU, as compute (Filament's WebGPU backend, Dawn; see dawn_probe/compute_door.h).
+// CBEAMS=1: beam_split.h on the GPU, as compute (Filament's WebGPU backend, Dawn; see gpu/compute_door.h).
 // The same splitting, cut for cut: a beam is a flat polygon of light and its one direction; the faces of its cell
 // that lie ahead cut it along their outlines; a piece that leaves the glass is written, as triangles, straight into
 // the vertex buffer the floor light is drawn from; a piece that goes on inside is put down for the next level.

@@ -1,7 +1,7 @@
 #!/bin/zsh
 # Filament's own prebuilt SDK for macOS (Apache-2.0), v1.77.2 as Google releases it, unpacked once into third_party/filament:
 # the Metal build the earlier probes use (ring.sh, poster.sh, blocks.sh, ... and its matc and cmgen). The editor builds
-# Filament from source with its WebGPU backend instead (dawn_probe/build.sh).
+# Filament from source with its WebGPU backend instead (gpu/build.sh).
 #   ./sdk.sh
 set -e
 cd "$(dirname "$0")"

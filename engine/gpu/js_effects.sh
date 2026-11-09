@@ -1,8 +1,8 @@
 #!/bin/zsh
 # A web effect's own renderer inside this process on Filament's Dawn device (js_effects.cpp): Motolii's QuickJS with
 # JsRuntimeHost's Node-API (tsl/jsrh_napi/build.sh made its sources), Dawn's dawn.node with dawn_lend.patch (out/wgpu).
-# (libraries: the list dawn_probe/kit_wgpu.sh links)
-#   ./dawn_probe/js_effects.sh <preset.json> <w> <h> <frames> <out.rgba>
+# (libraries: the list gpu/kit_wgpu.sh links)
+#   ./gpu/js_effects.sh <preset.json> <w> <h> <frames> <out.rgba>
 set -e
 cd "$(dirname "$0")/.."
 HB=${HOMEBREW_PREFIX:-$(brew --prefix)}   # (where Homebrew is: /opt/homebrew on Apple silicon)
@@ -15,7 +15,7 @@ Q=$HB/opt/quickjs-ng
 (cd tsl && npx esbuild jsrh_napi/shaders.ts --bundle --format=esm --platform=neutral '--external:qjs:*' --main-fields=module,main \
     '--define:process.env.NODE_ENV="production"' --outfile=out/jsrh_napi/shaders.mjs --log-level=warning)   # (the authors' built package, as it is)
 clang++ -std=c++20 -O2 -w -DNAPI_VERSION=8 -I "$SDK/include" -I $SRC/third_party/dawn/include -I $SRC/out/wgpu/third_party/dawn/gen/include \
-    -I $Q/include -I $J/Include/Shared -I $J/Include/Engine/QuickJS -I $J/Source -I dawn_probe dawn_probe/js_effects.cpp \
+    -I $Q/include -I $J/Include/Shared -I $J/Include/Engine/QuickJS -I $J/Source -I gpu gpu/js_effects.cpp \
     $J/Source/js_native_api_quickjs.cc $J/Source/js_native_api_shared.cc $J/Source/env_quickjs.cc -L $Q/lib -lqjs -Wl,-rpath,$Q/lib \
     $SRC/out/wgpu/filament/motolii_probe/libmotolii_door.a -Wl,-export_dynamic -L "$SDK/lib/arm64" \
     -lfilament -lbackend -lwebgpu_dawn -lbluegl -lbluevk -lfilabridge -lfilaflat \

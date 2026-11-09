@@ -2,7 +2,7 @@
 // of ThorVG's examples, fetched: third_party/thorvg_example), played by ThorVG with all it holds (shapes, masks,
 // precompositions) and drawn by ThorVG on Filament's own device (drawn.h); the wall is a sheet that shows that
 // picture, and the glass bends it like anything else behind it. WebGPU backend only.
-//   ./dawn_probe/kit_wgpu.sh wall          ->  out/wgpu_kit/out/wall.png       (then: cd out/wgpu_kit && ../wall_wgpu film)
+//   ./gpu/kit_wgpu.sh wall          ->  out/wgpu_kit/out/wall.png       (then: cd out/wgpu_kit && ../wall_wgpu film)
 #include "kit.h"
 #include "drawn.h"
 

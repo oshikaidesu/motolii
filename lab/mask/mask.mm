@@ -12,7 +12,7 @@
 // the mattes stay the film camera's and the things' own, so the things are cut just the same; a small gem marks
 // where the film's camera is.
 // The films are After Effects' files, ThorVG's examples (third_party/thorvg_example). WebGPU backend only.
-//   ./dawn_probe/kit_wgpu.sh mask          ->  out/wgpu_kit/out/mask.png       (then: cd out/wgpu_kit && ../mask_wgpu film)
+//   ./gpu/kit_wgpu.sh mask          ->  out/wgpu_kit/out/mask.png       (then: cd out/wgpu_kit && ../mask_wgpu film)
 #include "kit.h"
 #include "drawn.h"
 

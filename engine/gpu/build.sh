@@ -1,5 +1,5 @@
 #!/bin/zsh
-# dawn_probe: Filament 1.77.2 built from source WITH its WebGPU (Dawn) backend, plus filament_dawn_compute.patch
+# engine/gpu/build.sh: Filament 1.77.2 built from source WITH its WebGPU (Dawn) backend, plus filament_dawn_compute.patch
 # (compute; a shorter wait; the device lent out and Texture::Builder::import filled in, for drawn.h).
 # The prebuilt SDK in ../third_party/filament has no WebGPU backend; this builds a second Filament beside it and
 # leaves that one alone. First build: about 5 minutes on an M4 (4 min 55 s from a fresh clone, 10/27; Dawn is most of it).
@@ -22,8 +22,6 @@ mkdir -p "$SRC/out/wgpu" out/shots
 cd "$SRC/out/wgpu"
 [ -f build.ninja ] || cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DFILAMENT_SUPPORTS_WEBGPU=ON -DFILAMENT_SKIP_SAMPLES=ON \
     -DFILAMENT_BUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=../wgpu_install -DMOTOLII_PROBE_DIR="$HERE" ../..
-ninja matc dawn_probe
+ninja matc
 ninja install > /dev/null   # (the headers and libraries the kit builds against: ../wgpu_install, CMAKE_INSTALL_PREFIX above)
 cd "$HERE"
-"$SRC/out/wgpu/tools/matc/matc" -a webgpu -p desktop -o out/dawn_probe.filamat dawn_probe.mat
-"$SRC/out/wgpu/filament/motolii_probe/dawn_probe" out/dawn_probe.filamat out/shots 2>&1 | grep -v "FrameInfo's circular queue\|libvulkan\|BackendVk"

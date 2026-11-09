@@ -8,7 +8,7 @@
 // (kit.h: read before this, as doc.h does)
 #include "script.h"
 #include "isf.h"
-#include "dawn_probe/screen_door.h"
+#include "gpu/screen_door.h"
 #include <math/half.h>
 #include <thorvg.h>
 #include <filesystem>

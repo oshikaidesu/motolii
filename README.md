@@ -89,7 +89,7 @@ Windows 版も作る予定です。Filament、ThorVG、GStreamer、Flutter な�
 
 作品の権利は作者のものです。Shadertoy や OpenProcessing の作品には非営利の条件が付いた物が多いので、仕事に使う時は作者に確かめてください。
 
-ほかに：キーフレームとイージング（anime.js のイージングもそのまま使えます）、物理演算（Jolt）、ガラスの屈折、カメラ（焦点距離・絞り・ピント）、MP4 への書き出し。何があって、どこまで確かめたかの全部は台帳 [`ASSETS.md`](ASSETS.md) にあります（日本語）。
+ほかに：キーフレームとイージング（anime.js のイージングもそのまま使えます）、物理演算（Jolt）、ガラスの屈折、カメラ（焦点距離・絞り・ピント）、MP4 への書き出し。
 
 **ビルドの確認**：GitHub の Apple Silicon の Mac（macos-15）で、この README の手順どおりに新しくビルドし、画面のコードの検査（`flutter analyze`）を走らせています（上の build バッジ）。自分で書いたテストはありません。外から求める条件は [`docs/TESTING.md`](docs/TESTING.md)。
 
@@ -159,10 +159,10 @@ brew bundle
 `Brewfile` の物（GStreamer・SQLite・ffmpeg・cmake など）が入ります。最後に `Homebrew Bundle complete!` と出れば成功です。
 
 ```bash
-engine/dawn_probe/build.sh
+engine/gpu/build.sh
 ```
 
-Filament（WebGPU）をダウンロードしてビルドします（M4 で約 5 分）。最後に `dawn_probe: 4096 triangles …` と数字の行が出れば成功です。
+Filament（WebGPU）をダウンロードしてビルドします（M4 で約 5 分）。エラーで止まらずに終われば成功です。
 
 ```bash
 engine/edit.sh build.motolii < /dev/null
@@ -264,7 +264,7 @@ EOF
 | `xcrun: error` や、Xcode が無いと言われる | App Store で Xcode を入れ、一度開いて追加の部品を入れ、`sudo xcodebuild -license accept` |
 | `No space left on device` | 空きを 10 GB 以上にしてから、止まったコマンドをもう一度 |
 | `git clone` や `build.sh` がネットの途中で止まった | 同じコマンドをもう一度。直らなければ `engine/third_party/` の中の止まった物のフォルダを消してからもう一度 |
-| `ld: library 'webgpu_dawn' not found` | `engine/dawn_probe/build.sh` を先に走らせる |
+| `ld: library 'webgpu_dawn' not found` | `engine/gpu/build.sh` を先に走らせる |
 | アプリは開くがプレビューが黒い | エンジンをビルドしたか確かめる（`engine/out/libmotolii.dylib` があるか）。無ければ `engine/edit.sh build.motolii < /dev/null` |
 
 それでも止まったら [Issue](https://github.com/oshikaidesu/motolii/issues) に、走らせたコマンドと出た文をそのまま貼ってください（ひな型があります）。使い方の質問は [Discussions](https://github.com/oshikaidesu/motolii/discussions) へ。日本語・英語のどちらでも。
@@ -274,7 +274,7 @@ EOF
 <details>
 <summary><b>更新する・消す</b></summary>
 
-- 更新：`git pull` の後、`engine/dawn_probe/build.sh` と `engine/edit.sh build.motolii < /dev/null` をもう一度（変わった所だけビルドし直します）。アプリは `skin/book/live.sh` がビルドし直します。
+- 更新：`git pull` の後、`engine/gpu/build.sh` と `engine/edit.sh build.motolii < /dev/null` をもう一度（変わった所だけビルドし直します）。アプリは `skin/book/live.sh` がビルドし直します。
 - 消す：`motolii` のフォルダを消します（ダウンロードした物とビルドした物は全部この中）。作ったプロジェクトと動画は `~/Movies/Motolii/` に残ります（別の所に置いた物はそこに）。Flutter は `~/flutter` を消します。`brew bundle` で入れた物は `brew uninstall` で。
 
 </details>
@@ -354,7 +354,7 @@ flowchart LR
 
 | 外向け | 作者の作業メモ（日本語、そのまま公開） |
 |---|---|
-| `README.md`・`README.en.md`・`docs/ARCHITECTURE.md`・`.github/CONTRIBUTING.md`・`.github/CONTRIBUTING.en.md`・`THIRD_PARTY_NOTICES.md`・`engine/README.md` | `ASSETS.md`（在る物の台帳。コミット前の自動チェックが読む）・`docs/notes/`（やること・採点表）・`docs/reports/`（調べた記録。絵と動画、人の投稿を集めた物は git に入れていない）・`skin/OVERVIEW.md`・`skin/PROCESS.md`（10 月初めの記録） |
+| `README.md`・`README.en.md`・`docs/ARCHITECTURE.md`・`.github/CONTRIBUTING.md`・`.github/CONTRIBUTING.en.md`・`THIRD_PARTY_NOTICES.md`・`engine/README.md` | `docs/notes/`（やること・採点表）・`docs/reports/`（調べた記録。絵と動画、人の投稿を集めた物は git に入れていない）・`skin/OVERVIEW.md`・`skin/PROCESS.md`（10 月初めの記録） |
 
 </details>
 

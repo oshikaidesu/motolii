@@ -34,7 +34,7 @@ export function wgsl(object: any, material: any, camera?: any, scene?: any, draw
   return [b.vertexShader, b.fragmentShader]
 }
 
-// What dawn_probe/tsl_on_dawn.cpp needs to draw it, all from three's own code: each bind group's uniforms as three packs
+// What gpu/tsl_on_dawn.cpp needs to draw it, all from three's own code: each bind group's uniforms as three packs
 // them (binding.update -> binding.buffer, three.webgpu.js 32983-32987) after its NodeFrame update (55980-55995,
 // 56124-56134), and the mesh's arrays.
 function writeDrawable(dir: string, b: any, object: any, material: any, camera: any, scene: any) {

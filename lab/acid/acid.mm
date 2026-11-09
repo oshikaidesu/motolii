@@ -3,7 +3,7 @@
 // SVG, acid_flat.svg, drawn by ThorVG on Filament's own device, drawn.h) on a sheet; and the burst, one solid of glass
 // made by one call and put down as it comes (Filament's own glass, kit.h: it bends and takes the colours of the flat
 // picture behind it). WebGPU backend only.
-//   ./dawn_probe/kit_wgpu.sh acid          ->  out/wgpu_kit/out/acid.png
+//   ./gpu/kit_wgpu.sh acid          ->  out/wgpu_kit/out/acid.png
 #include "kit.h"
 #include "drawn.h"
 

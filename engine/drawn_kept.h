@@ -1,5 +1,5 @@
 // drawn_kept.h: part of drawn.h. Read only through drawn.h.
-#include "dawn_probe/gpu_door.h"
+#include "gpu/gpu_door.h"
 #include <thorvg.h>
 #include <thorvg_lottie.h>
 #include <tesselator.h>

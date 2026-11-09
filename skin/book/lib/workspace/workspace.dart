@@ -620,7 +620,7 @@ class _WorkspaceState extends State<Workspace> {
       //  forgotten is found by its name; and Motolii's ledger of what it has, as a Help menu's own help: golf (98))
       PlatformMenu(
         label: 'Help',
-        menus: [PlatformMenuItem(label: 'Motolii Features (ASSETS.md)', onSelected: () => Process.run('open', ['${File(motoliiDir).parent.path}/ASSETS.md']))],
+        menus: [PlatformMenuItem(label: 'Motolii (README)', onSelected: () => Process.run('open', ['${File(motoliiDir).parent.path}/README.md']))],
       ),
     ];
   }

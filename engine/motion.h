@@ -5,7 +5,7 @@
 // for this.
 // Flat layers and 3D layers are one world: every place is a 4x4 in the composition's own space, which is After
 // Effects': pixels, x to the right, y down, z away from the eye. ThorVG draws only what is flat of a 3D layer, but
-// (with dawn_probe/thorvg_z.patch) keeps its numbers whole and says them (LottieAnimation::pose); here the layer
+// (with gpu/thorvg_z.patch) keeps its numbers whole and says them (LottieAnimation::pose); here the layer
 // is put together from them, in After Effects' order (checked against
 // lottie-web's own answers, motion_test.mm):  place = position · turn x · turn y · turn z · skew · size · anchor back,
 // with the orientation turned before the three turns (and, before that, the turn to face its way along its path, if

@@ -6,4 +6,3 @@
 
 **まだの事 / Not done yet**
 
-- [ ] `ASSETS.md` に行を足した（難しければ空けたまま。取り込む時に足します / leave unticked and the maintainer will add it）
