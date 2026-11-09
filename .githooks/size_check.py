@@ -5,7 +5,7 @@
 # for a name) is refused: it cuts by line count, not by job. Run by the pre-commit hook; or by hand.
 import re, subprocess, sys
 
-OWN = re.compile(r'^(engine/[^/]+\.(h|cpp|mm)|engine/.+\.js|skin/book/lib/.+\.dart)$')
+OWN = re.compile(r'^(engine/[^/]+\.(h|cpp|mm)|engine/.+\.js|app/lib/.+\.dart)$')
 NUMBERED = re.compile(r'_\d+\.(dart|h|cpp|mm|js)$')
 LIMIT = 500
 LEDGER = '.githooks/over_500.txt'

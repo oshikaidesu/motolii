@@ -43,7 +43,7 @@
 
 2026-10-12 に書いた。**Windows では何もビルドしていないし、動かしてもいない。** ここにあるのは、ヘッダと公式ソースを読んで決めた道順と、実機で最初に確かめる項目。
 
-Mac で動いている形(`glass_live.h`、`build_live.sh`、`skin/book/lib/sets/glass_live.dart`)と同じ絵、同じ操作、コピーなしを Windows で通すのが目的。
+Mac で動いている形(`glass_live.h`、`build_live.sh`、`app/lib/sets/glass_live.dart`)と同じ絵、同じ操作、コピーなしを Windows で通すのが目的。
 
 ## ひとことで
 
@@ -124,7 +124,7 @@ Mac との違いが1つある。Mac はスワップチェーンを3本持った�
 
 ### 4. Skin 側
 
-- `skin/book` に Windows の入れ物がまだ無い。`flutter create --platforms=windows .` で作る。
+- `app` に Windows の入れ物がまだ無い。`flutter create --platforms=windows .` で作る。
 - `windows/runner/flutter_window.cpp` に、Mac の `GlassTexture`(`macos/Runner/MainFlutterWindow.swift` の末尾、約70行)と同じものを C++ で書く。
   - チャンネル `motolii/glass` の `start {lib, base, width, height, env}`。`LoadLibrary` で DLL を開いて `glass_env` / `glass_start` を呼ぶ。
   - `GpuSurfaceTexture` を登録。コールバックで `glass_front()` のハンドルを `FlutterDesktopGpuSurfaceDescriptor` に入れて返す。

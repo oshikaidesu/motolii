@@ -138,7 +138,7 @@ echo 'export PATH="$HOME/flutter/bin:$PATH"' >> ~/.zprofile && source ~/.zprofil
 flutter doctor
 ```
 
-`Xcode` と `macOS` の行に ✓ が付けば成功です（Android や Chrome の行は ✗ でかまいません）。FVM を使う人は `skin/book/.fvmrc` に版が書いてあります。
+`Xcode` と `macOS` の行に ✓ が付けば成功です（Android や Chrome の行は ✗ でかまいません）。FVM を使う人は `app/.fvmrc` に版が書いてあります。
 
 ### ビルドして開く
 
@@ -171,10 +171,10 @@ engine/edit.sh build.motolii < /dev/null
 エンジンをビルドします。ThorVG・Skia・libtess2・Jolt などは、ここで初回だけダウンロードします。`edit.sh` はプロジェクトファイルを開いて命令を待つ道具なので、`< /dev/null` で「命令なし」を渡し、ビルドして空のファイルを作ったらすぐ終わります。`engine/out/libmotolii.dylib` ができれば成功です（`build.motolii` は消してかまいません）。
 
 ```bash
-skin/book/live.sh
+app/live.sh
 ```
 
-アプリが開きます（初回はビルドで 1〜3 分止まって見えます。ターミナルに流れる文字は気にしなくてかまいません）。プロジェクトファイルは `~/Movies/Motolii/Untitled.motolii`（自動で保存）、書き出した動画もその隣にできます。ウィンドウを閉じると終わり、ターミナルを閉じてもウィンドウは閉じます。次からは、新しいターミナルで `cd ~/motolii && skin/book/live.sh`（ホームのフォルダで `git clone` した時）。
+アプリが開きます（初回はビルドで 1〜3 分止まって見えます。ターミナルに流れる文字は気にしなくてかまいません）。プロジェクトファイルは `~/Movies/Motolii/Untitled.motolii`（自動で保存）、書き出した動画もその隣にできます。ウィンドウを閉じると終わり、ターミナルを閉じてもウィンドウは閉じます。次からは、新しいターミナルで `cd ~/motolii && app/live.sh`（ホームのフォルダで `git clone` した時）。
 
 ### 画面の見方
 
@@ -259,7 +259,7 @@ EOF
 
 | 出た事 | 直し方 |
 |---|---|
-| `flutter: command not found` | 上の「Flutter を入れる」の 2 行目をもう一度。別の場所なら `FLUTTER=/path/to/flutter skin/book/live.sh` |
+| `flutter: command not found` | 上の「Flutter を入れる」の 2 行目をもう一度。別の場所なら `FLUTTER=/path/to/flutter app/live.sh` |
 | `brew: command not found` | [brew.sh](https://brew.sh/ja/) の 1 行で Homebrew を入れる |
 | `xcrun: error` や、Xcode が無いと言われる | App Store で Xcode を入れ、一度開いて追加の部品を入れ、`sudo xcodebuild -license accept` |
 | `No space left on device` | 空きを 10 GB 以上にしてから、止まったコマンドをもう一度 |
@@ -274,7 +274,7 @@ EOF
 <details>
 <summary><b>更新する・消す</b></summary>
 
-- 更新：`git pull` の後、`engine/gpu/build.sh` と `engine/edit.sh build.motolii < /dev/null` をもう一度（変わった所だけビルドし直します）。アプリは `skin/book/live.sh` がビルドし直します。
+- 更新：`git pull` の後、`engine/gpu/build.sh` と `engine/edit.sh build.motolii < /dev/null` をもう一度（変わった所だけビルドし直します）。アプリは `app/live.sh` がビルドし直します。
 - 消す：`motolii` のフォルダを消します（ダウンロードした物とビルドした物は全部この中）。作ったプロジェクトと動画は `~/Movies/Motolii/` に残ります（別の所に置いた物はそこに）。Flutter は `~/flutter` を消します。`brew bundle` で入れた物は `brew uninstall` で。
 
 </details>
@@ -304,7 +304,7 @@ EOF
 
 ```mermaid
 flowchart LR
-  W["アプリの画面<br/>Flutter（skin/book）"] -- "C の呼び出し<br/>motolii.h" --> E["エンジン libmotolii.dylib<br/>（engine/）"]
+  W["アプリの画面<br/>Flutter（app）"] -- "C の呼び出し<br/>motolii.h" --> E["エンジン libmotolii.dylib<br/>（engine/）"]
   E --> F["Filament<br/>3D・最後の合成"]
   E --> T["ThorVG<br/>2D・文字"]
   E --> G["GStreamer・ffmpeg<br/>動画の読み込み・書き出し"]
@@ -342,7 +342,7 @@ flowchart LR
 | `engine/` | エンジン。入口と、今のビルドが使うファイルの一覧は [`engine/README.md`](engine/README.md) |
 | `engine/effects/`・`recipes/`・`relations/`・`animators/`・`ways/` | 同梱のエフェクト・レシピ・関係・出入りの動き・イージング（利用者のフォルダと同じ形） |
 | `engine/aviutl_scripts/` | 同梱の AviUtl2 のスクリプト（作者ごと、LICENSE と SOURCE.txt つき） |
-| `skin/book/` | アプリの画面（Flutter、macOS） |
+| `app/` | アプリの画面（Flutter、macOS） |
 | `thorvg/` | ThorVG を wgpu に載せた前の結合（前の試しのスクリプトが使う） |
 | `old/` | 前の土台の実験（今の作りからは使っていない） |
 | `docs/` | この README の絵と作例（`media/`・`examples/`）、作者の作業メモ（`notes/`） |
@@ -354,7 +354,7 @@ flowchart LR
 
 | 外向け | 作者の作業メモ（日本語、そのまま公開） |
 |---|---|
-| `README.md`・`README.en.md`・`docs/ARCHITECTURE.md`・`.github/CONTRIBUTING.md`・`.github/CONTRIBUTING.en.md`・`THIRD_PARTY_NOTICES.md`・`engine/README.md` | `docs/notes/`（やること・採点表）・`docs/reports/`（調べた記録。絵と動画、人の投稿を集めた物は git に入れていない）・`skin/OVERVIEW.md`・`skin/PROCESS.md`（10 月初めの記録） |
+| `README.md`・`README.en.md`・`docs/ARCHITECTURE.md`・`.github/CONTRIBUTING.md`・`.github/CONTRIBUTING.en.md`・`THIRD_PARTY_NOTICES.md`・`engine/README.md` | `docs/notes/`（やること・採点表）・`docs/reports/`（調べた記録。絵と動画、人の投稿を集めた物は git に入れていない）・`docs/app/OVERVIEW.md`・`docs/app/PROCESS.md`（10 月初めの記録） |
 
 </details>
 

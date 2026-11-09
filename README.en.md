@@ -138,7 +138,7 @@ echo 'export PATH="$HOME/flutter/bin:$PATH"' >> ~/.zprofile && source ~/.zprofil
 flutter doctor
 ```
 
-Ticks on the `Xcode` and `macOS` lines mean it worked (crosses on Android or Chrome are fine). With FVM, `skin/book/.fvmrc` names the version.
+Ticks on the `Xcode` and `macOS` lines mean it worked (crosses on Android or Chrome are fine). With FVM, `app/.fvmrc` names the version.
 
 ### Build and open
 
@@ -171,10 +171,10 @@ engine/edit.sh build.motolii < /dev/null
 Builds the engine, downloading ThorVG, Skia, libtess2 and Jolt the first time. `edit.sh` opens a project file and waits for commands; `< /dev/null` gives it none, so it builds, makes an empty file and exits. `engine/out/libmotolii.dylib` existing means it worked (`build.motolii` can be deleted).
 
 ```bash
-skin/book/live.sh
+app/live.sh
 ```
 
-Opens the app (the first time it seems to stall for 1–3 minutes while it builds; the text scrolling in the terminal can be ignored). The project file is `~/Movies/Motolii/Untitled.motolii` (saved automatically), and exported videos go beside it. Closing the window quits, and closing the terminal closes the window. Next time, in a new terminal: `cd ~/motolii && skin/book/live.sh` (if you cloned in your home folder).
+Opens the app (the first time it seems to stall for 1–3 minutes while it builds; the text scrolling in the terminal can be ignored). The project file is `~/Movies/Motolii/Untitled.motolii` (saved automatically), and exported videos go beside it. Closing the window quits, and closing the terminal closes the window. Next time, in a new terminal: `cd ~/motolii && app/live.sh` (if you cloned in your home folder).
 
 ### The screen
 
@@ -259,7 +259,7 @@ The 8-second example at the top is `docs/examples/mv.sh` (its commands are in `d
 
 | You see | Do |
 |---|---|
-| `flutter: command not found` | Run the second line of "Get Flutter" again, or `FLUTTER=/path/to/flutter skin/book/live.sh` |
+| `flutter: command not found` | Run the second line of "Get Flutter" again, or `FLUTTER=/path/to/flutter app/live.sh` |
 | `brew: command not found` | Install Homebrew with the one line on [brew.sh](https://brew.sh/) |
 | `xcrun: error`, or Xcode missing | Install Xcode from the App Store, open it once to add its components, then `sudo xcodebuild -license accept` |
 | `No space left on device` | Free 10 GB or more, then run the command that stopped again |
@@ -274,7 +274,7 @@ Still stuck? Open an [issue](https://github.com/oshikaidesu/motolii/issues) with
 <details>
 <summary><b>Updating and removing</b></summary>
 
-- Update: `git pull`, then run `engine/gpu/build.sh` and `engine/edit.sh build.motolii < /dev/null` again (only what changed is rebuilt); `skin/book/live.sh` rebuilds the app.
+- Update: `git pull`, then run `engine/gpu/build.sh` and `engine/edit.sh build.motolii < /dev/null` again (only what changed is rebuilt); `app/live.sh` rebuilds the app.
 - Remove: delete the `motolii` folder (everything downloaded and built is inside it). Your projects and videos stay in `~/Movies/Motolii/` (or wherever else you put them). Flutter: delete `~/flutter`. What `brew bundle` installed goes with `brew uninstall`.
 
 </details>
@@ -304,7 +304,7 @@ Still stuck? Open an [issue](https://github.com/oshikaidesu/motolii/issues) with
 
 ```mermaid
 flowchart LR
-  W["The app's UI<br/>Flutter (skin/book)"] -- "C calls<br/>motolii.h" --> E["Engine, libmotolii.dylib<br/>(engine/)"]
+  W["The app's UI<br/>Flutter (app)"] -- "C calls<br/>motolii.h" --> E["Engine, libmotolii.dylib<br/>(engine/)"]
   E --> F["Filament<br/>3D, final compositing"]
   E --> T["ThorVG<br/>2D, text"]
   E --> G["GStreamer, ffmpeg<br/>reading and writing video"]
@@ -337,7 +337,7 @@ The project's stance: **code you write yourself is a debt.** Look for an existin
 | `engine/` | The engine; its entry points and the files the current build uses: [`engine/README.md`](engine/README.md) (Japanese) |
 | `engine/effects/`, `recipes/`, `relations/`, `animators/`, `ways/` | Bundled effects, recipes, relations, in/out animations and eases (the same layout as your own folder) |
 | `engine/aviutl_scripts/` | Bundled AviUtl2 scripts (per author, with LICENSE and SOURCE.txt) |
-| `skin/book/` | The UI (Flutter, macOS) |
+| `app/` | The UI (Flutter, macOS) |
 | `thorvg/`, `old/` | Earlier work, kept |
 | `docs/` | This README's pictures and examples (`media/`, `examples/`) and the author's working notes (`notes/`, Japanese) |
 

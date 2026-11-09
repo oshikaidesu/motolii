@@ -1,0 +1,445 @@
+// The desk's shared small things: the tool catalog (name, hue, what it acts on), each tool's painted glyph, and the round
+// touchables the desk's bodies use (chip, icon button, scrub field, readout).
+import 'package:flutter/widgets.dart';
+import '../parts/skin_parts.dart';
+
+import '../parts/text_hand.dart';
+import '../inspector/inspector_parts.dart' show Hov, Pop;
+import '../tokens.dart';
+import 'desk_align.dart';
+import 'desk_blend.dart';
+import 'ws.dart';
+import 'two_fingers.dart';
+
+/// One tool the desk can hold. [acts] is what it works on, said in two words.
+/// A tool of the desk: its name, its hue, what it acts on, and what the desk holds while it is open (none yet: a card
+/// that says what it will act on). Tools of your own: Workspace(tools: [DeskTool(...)]).
+class DeskTool {
+  const DeskTool(this.name, this.tone, this.acts, {this.build});
+  final String name, acts;
+  final Color tone;
+  final Widget Function()? build;
+}
+
+final deskTools = [
+  DeskTool('Blend', Pop.toneBlend, 'Layer stack', build: DeskBlend.new),
+  DeskTool('Align', Pop.toneLayout, 'Selection', build: DeskAlign.new),
+];
+
+DeskTool deskTool(Ws ws, String name) => ws.tools.firstWhere((t) => t.name == name, orElse: () => DeskTool(name, Grey.g63, ''));
+
+
+/// A tool's sticker: a flat tile of its hue with the glyph knocked out in dark ink.
+class DeskSticker extends StatelessWidget {
+  const DeskSticker(this.name, {super.key, this.size = 16});
+  final String name;
+  final double size;
+  @override
+  Widget build(BuildContext context) {
+    final tone = name == 'Tools' ? Grey.g76 : deskTool(WsScope.read(context), name).tone, own = name != 'Tools' && deskTools.every((t) => t.name != name);
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(color: tone, borderRadius: BorderRadius.circular(size * .3)),
+      child: own ? Center(child: Text(name.characters.first, style: T.micro(WsT.onAccent))) : CustomPaint(painter: DeskGlyph(name, WsT.onAccent)), // (a tool of your own: its first letter)
+    );
+  }
+}
+
+/// Each tool drawn as one bold shape on a 20-unit grid.
+class DeskGlyph extends CustomPainter {
+  const DeskGlyph(this.name, this.ink);
+  final String name;
+  final Color ink;
+
+  @override
+  void paint(Canvas c, Size s) {
+    if (SkinParts.draw(c, s, 'desk.${name.toLowerCase().replaceAll(' ', '-')}', ink)) return; // (the skin's own picture, if it brings one)
+    final u = s.width / 20;
+    Offset p(double x, double y) => Offset(x * u, y * u);
+    final fill = Paint()..color = ink;
+    final line = Paint()
+      ..color = ink
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8 * u
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    RRect bar(double x, double y, double w, double h) => RRect.fromRectAndRadius(Rect.fromLTWH(x * u, y * u, w * u, h * u), Radius.circular(u));
+    switch (name) {
+      case 'Ease':
+        c.drawPath(
+          Path()
+            ..moveTo(4 * u, 15 * u)
+            ..cubicTo(11 * u, 15 * u, 9 * u, 5 * u, 16 * u, 5 * u),
+          line,
+        );
+        c.drawCircle(p(4, 15), 2 * u, fill);
+        c.drawCircle(p(16, 5), 2 * u, fill);
+      case 'Depth':
+        c.drawPath(
+          Path()
+            ..moveTo(10 * u, 16 * u)
+            ..lineTo(4 * u, 4 * u)
+            ..lineTo(16 * u, 4 * u)
+            ..close(),
+          line..strokeWidth = 1.4 * u,
+        );
+        c.drawRRect(bar(6, 6.5, 8, 2), fill);
+        c.drawRRect(bar(7.5, 10.5, 5, 2), fill);
+      case 'Blend':
+        c.drawCircle(p(8, 10), 4.5 * u, fill);
+        c.drawCircle(p(12.5, 10), 4.5 * u, line..strokeWidth = 1.5 * u);
+      case 'Align':
+        c.drawLine(p(4.5, 3.5), p(4.5, 16.5), line);
+        c.drawRRect(bar(6.5, 5, 9, 3), fill);
+        c.drawRRect(bar(6.5, 11.5, 6, 3), fill);
+      case 'Sequence':
+        for (var i = 0; i < 3; i++) {
+          c.drawRRect(bar(3.5 + i * 3.5, 4 + i * 4.3, 8, 3), fill);
+        }
+      case 'Path':
+        c.drawPath(
+          Path()
+            ..moveTo(4 * u, 15 * u)
+            ..quadraticBezierTo(4 * u, 5 * u, 10 * u, 9 * u)
+            ..quadraticBezierTo(16 * u, 13 * u, 16 * u, 4 * u),
+          line..strokeWidth = 1.5 * u,
+        );
+        c.drawCircle(p(4, 15), 2 * u, fill);
+        c.drawRRect(bar(14, 2.5, 4, 4), fill);
+      case 'Color':
+        c.drawCircle(p(7, 7.5), 3.2 * u, fill);
+        c.drawCircle(p(13, 7.5), 3.2 * u, line..strokeWidth = 1.4 * u);
+        c.drawCircle(p(10, 13), 3.2 * u, fill);
+      case 'Audio':
+        const hs = <double>[4, 8, 12, 7, 10, 5];
+        for (final (i, h) in hs.indexed) {
+          c.drawRRect(bar(3 + i * 2.5, 10 - h / 2, 1.6, h), fill);
+        }
+      case 'Markers':
+        c.drawLine(p(3, 15), p(17, 15), line..strokeWidth = 1.4 * u);
+        for (final x in [5.0, 13.0]) {
+          c.drawPath(
+            Path()
+              ..moveTo(x * u, 12 * u)
+              ..lineTo((x - 2.5) * u, 9 * u)
+              ..lineTo((x - 2.5) * u, 4 * u)
+              ..lineTo((x + 2.5) * u, 4 * u)
+              ..lineTo((x + 2.5) * u, 9 * u)
+              ..close(),
+            fill,
+          );
+        }
+      case 'Notes':
+        c.drawRRect(bar(4, 3.5, 12, 13), line..strokeWidth = 1.4 * u);
+        c.drawRRect(bar(6.5, 7, 7, 1.6), fill);
+        c.drawRRect(bar(6.5, 10.5, 5, 1.6), fill);
+      case 'Links':
+        c.drawRRect(bar(2.5, 7, 9, 6), line..strokeWidth = 1.5 * u);
+        c.drawRRect(bar(8.5, 7, 9, 6), line);
+      case 'Tools':
+        for (var i = 0; i < 4; i++) {
+          c.drawRRect(bar(4 + (i % 2) * 6.5, 4 + (i ~/ 2) * 6.5, 5.5, 5.5), fill);
+        }
+      default:
+        c.drawCircle(p(10, 10), 3 * u, fill);
+    }
+  }
+
+  @override
+  bool shouldRepaint(DeskGlyph o) => o.name != name || o.ink != ink;
+}
+
+/// A round header chip: a mark and a word. [onTap] makes it a button.
+class DeskChip extends StatelessWidget {
+  const DeskChip({super.key, required this.label, this.dot, this.onTap, this.on = false});
+  final String label;
+  final Color? dot;
+  final VoidCallback? onTap;
+  final bool on;
+  @override
+  Widget build(BuildContext context) => Hov(
+    onTap: onTap,
+    cursor: onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
+    builder: (_, h) => Container(
+      height: Shape.z(18),
+      padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
+      decoration: BoxDecoration(color: on ? WsT.accent : (h && onTap != null ? WsT.raised : WsT.well), borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius))),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (dot != null) ...[
+            Container(
+              width: Shape.z(6),
+              height: Shape.z(6),
+              decoration: BoxDecoration(color: on ? WsT.onAccent : dot, shape: BoxShape.circle),
+            ),
+            SizedBox(width: Shape.s(5)),
+          ],
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              style: T.micro(on ? WsT.onAccent : (h && onTap != null ? Grey.g95 : Grey.g76)),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// A square-ish round button holding one glyph.
+class DeskIconButton extends StatelessWidget {
+  const DeskIconButton({super.key, required this.glyph, required this.onTap, this.on = false, this.size = 20});
+  final CustomPainter Function(Color ink) glyph;
+  final VoidCallback onTap;
+  final bool on;
+  final double size;
+  @override
+  Widget build(BuildContext context) => Hov(
+    onTap: onTap,
+    builder: (_, h) => Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(color: on ? WsT.accent : (h ? WsT.raised : WsT.well), borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
+      child: CustomPaint(painter: glyph(on ? WsT.onAccent : (h ? Grey.g95 : Grey.g76))),
+    ),
+  );
+}
+
+/// A field you scrub sideways: label left, value right, a fill bar in the field's [tone] shows where the value sits in its range.
+class DeskScrub extends StatefulWidget {
+  const DeskScrub({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.onChanged,
+    required this.format,
+    this.perPx = 1,
+    this.tone,
+    this.enabled = true,
+    this.pad = 7,
+  });
+  final String label;
+  final double value, min, max, perPx, pad;
+  final ValueChanged<double> onChanged;
+  final String Function(double) format;
+  final Color? tone;   // (none: the theme's ChosenDefault)
+  final bool enabled;
+  @override
+  State<DeskScrub> createState() => _DeskScrubState();
+}
+
+class _DeskScrubState extends State<DeskScrub> {
+  bool _hot = false, _drag = false, _typing = false;
+  final _words = TextEditingController();
+  final _focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(() {
+      if (_focus.hasFocus || !_typing) return;
+      setState(() => _typing = false);
+      if (wsNumber(_words.text) case final v?) widget.onChanged(v.clamp(widget.min, widget.max));
+    });
+  }
+
+  @override
+  void dispose() {
+    _words.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  // (pressed, it is written: as the window's other numbers. Its number alone, all of it picked: what is typed takes its place)
+  void _write() {
+    final now = RegExp(r'-?[\d.]+').stringMatch(widget.format(widget.value)) ?? '';
+    _words.value = TextEditingValue(text: now, selection: TextSelection(baseOffset: 0, extentOffset: now.length));
+    setState(() => _typing = true);
+    _focus.requestFocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final w = widget, f = ((w.value - w.min) / (w.max - w.min)).clamp(0.0, 1.0);
+    final live = _hot || _drag;
+    return MouseRegion(
+      cursor: w.enabled ? SystemMouseCursors.resizeLeftRight : MouseCursor.defer,
+      onEnter: (_) => setState(() => _hot = true),
+      onExit: (_) => setState(() => _hot = false),
+      child: GestureDetector(
+        supportedDevices: wsPressing,
+        behavior: HitTestBehavior.opaque,
+        onTap: w.enabled && !_typing ? _write : null,
+        onHorizontalDragStart: w.enabled ? (_) => setState(() => _drag = true) : null,
+        onHorizontalDragUpdate: w.enabled ? (d) => w.onChanged((w.value + d.delta.dx * w.perPx).clamp(w.min, w.max)) : null,
+        onHorizontalDragEnd: w.enabled ? (_) => setState(() => _drag = false) : null,
+        child: Container(
+          height: Shape.z(22),
+          decoration: BoxDecoration(color: live && w.enabled ? WsT.raised : WsT.well, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              if (w.enabled)
+                Positioned(
+                  left: 4,
+                  right: 4,
+                  bottom: 2,
+                  height: Shape.z(2),
+                  child: FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: f,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(color: _drag ? WsT.accent : w.tone ?? WsT.accent, borderRadius: BorderRadius.all(Shape.r(1))),
+                    ),
+                  ),
+                ),
+              Positioned.fill(
+                left: w.pad,
+                right: w.pad,
+                child: Row(
+                  children: [
+                    Text(w.label, style: T.label(w.enabled ? Grey.g63 : Grey.g56)),
+                    SizedBox(width: Shape.s(4)),
+                    Expanded(
+                      child: FittedBox( // (a number wider than its field is drawn smaller, never cut)
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerRight,
+                        child: _typing
+                            ? SizedBox(
+                                width: Shape.z(44),
+                                child: TextHand(field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
+                                  controller: _words,
+                                  focusNode: _focus,
+                                  style: T.value(Grey.g100).copyWith(fontSize: T.px(10.5)),
+                                  cursorColor: WsT.accent,
+                                  backgroundCursorColor: Grey.g38,
+                                  selectionColor: WsT.accent.withValues(alpha: .3),
+                                  textAlign: TextAlign.right,
+                                  maxLines: 1,
+                                  onSubmitted: (_) => _focus.unfocus(),
+                                )),
+                              )
+                            : Text(
+                                w.format(w.value),
+                                maxLines: 1,
+                                style: T.value(w.enabled ? (_drag ? Grey.g100 : Grey.g91) : Grey.g56).copyWith(fontSize: T.px(10.5)),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The strip over a tool's body: what it works on at the left (cut off, never wrapped, when narrow), actions at the right.
+class DeskStrip extends StatelessWidget {
+  const DeskStrip({super.key, required this.left, this.right = const []});
+  final List<Widget> left, right;
+  @override
+  Widget build(BuildContext context) => Container(
+    height: Shape.z(26),
+    color: WsT.card,
+    padding: EdgeInsets.symmetric(horizontal: WsT.inset),
+    child: Row(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const NeverScrollableScrollPhysics(),
+            child: Row(children: left),
+          ),
+        ),
+        if (right.isNotEmpty) SizedBox(width: WsT.gap),
+        ...right,
+      ],
+    ),
+  );
+}
+
+/// A flat chip in a layer's hue with its name in dark ink.
+class DeskLayerChip extends StatelessWidget {
+  const DeskLayerChip(this.name, this.tone, {super.key});
+  final String name;
+  final Color tone;
+  @override
+  Widget build(BuildContext context) => Container(
+    height: Shape.z(16),
+    padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
+    alignment: Alignment.center,
+    decoration: BoxDecoration(color: tone, borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius))),
+    child: Text(name, style: T.micro(WsT.onAccent).copyWith(fontWeight: FontWeight.w700)),
+  );
+}
+
+/// A caption over a section of the desk's side column.
+class DeskCaption extends StatelessWidget {
+  const DeskCaption(this.text, {super.key, this.tone, this.trailing});
+  final String text;
+  final Color? tone;
+  final String? trailing;
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: Shape.z(14),
+    child: Row(
+      children: [
+        if (tone != null) ...[Container(width: Shape.z(3), height: Shape.z(10), color: tone), SizedBox(width: Shape.s(5))],
+        Text(text.toUpperCase(), style: T.micro(Grey.g76).copyWith(letterSpacing: 1, fontWeight: FontWeight.w700)),
+        SizedBox(width: Shape.s(6)),
+        Expanded(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(trailing ?? '', maxLines: 1, style: T.value(Grey.g56).copyWith(fontSize: T.px(10))),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// A big number with its unit and a quiet line under it.
+class DeskReadout extends StatelessWidget {
+  const DeskReadout({super.key, required this.value, this.unit = '', this.sub, this.ink});
+  final String value, unit;
+  final String? sub;
+  final Color? ink;
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Text(value, style: T.value(ink ?? Grey.g95).copyWith(fontSize: T.px(18), fontWeight: FontWeight.w700, letterSpacing: -.5)),
+          if (unit.isNotEmpty) ...[SizedBox(width: Shape.s(2)), Text(unit, style: T.label(Grey.g63))],
+        ],
+      ),
+      if (sub != null) ...[SizedBox(height: Shape.s(3)), Text(sub!, style: T.label(Grey.g56))],
+    ],
+  );
+}
+
+/// Draws a line of text in a painter, anchored by [ax] / [ay] (0 left/top, 1 right/bottom).
+void deskText(Canvas c, String s, Offset at, TextStyle st, {double ax = 0, double ay = 0}) {
+  final tp = TextPainter(
+    text: TextSpan(text: s, style: st),
+    textDirection: TextDirection.ltr,
+  )..layout();
+  tp.paint(c, at - Offset(tp.width * ax, tp.height * ay));
+  tp.dispose();
+}

@@ -27,13 +27,13 @@ Words in the code and the ledger: the UI is "window" (窓), the engine "the insi
 | What | Command | When it holds |
 |---|---|---|
 | 500 lines a file (rule 2 below) | `python3 .githooks/size_check.py` | silent means it passed |
-| The UI's code | `cd skin/book && flutter analyze lib` | No errors (100 notices today) |
+| The UI's code | `cd app && flutter analyze lib` | No errors (100 notices today) |
 
 GitHub Actions runs the ledger check on every push and pull request (`.github/workflows/assets.yml`; it only reports, it does not block a pull request). The whole build runs in `.github/workflows/build.yml` (on an Apple silicon Mac, built as the README says, then `flutter analyze`; on pull requests that touch the code, and by hand from the Actions tab). There are no self-written tests (they were removed on 2026-11-08: the same hands wrote the code and the tests); the external requirements are in [`docs/TESTING.md`](../docs/TESTING.md).
 
 ## Rules
 
-1. **Look before you write.** Look at the tree (`engine/` the product, `lab/` experiments, `skin/` the window, `docs/` research) and existing implementations on the net. If something can be used the way its author meant, use it.
+1. **Look before you write.** Look at the tree (`engine/` the product, `lab/` experiments, `app/` the window, `docs/` research) and existing implementations on the net. If something can be used the way its author meant, use it.
 2. **One job a file, 500 lines at most.** Split by what each part is for and name it so (a bare number like `_2` is refused). Experiments go in `lab/`, not `engine/`.
 3. **Say where things came from.** In the commit or pull request: what was borrowed from where (URL, version or commit), what was checked and what is not done yet. Example: `git show d46f69cac`. Keep the first line (the subject) to about 72 characters and put the details after a blank line (git's convention; much of the history so far has long subjects, but from now on).
 4. **Bundling other people's work.**
@@ -46,7 +46,7 @@ GitHub Actions runs the ledger check on every push and pull request (`.github/wo
 
 | What | Where to start | Difficulty |
 |---|---|---|
-| An `.app` you can hand out: put the Homebrew libraries the engine loads (GStreamer, glib, SQLite, LuaJIT, QuickJS, and ffmpeg for writing) inside the `.app`, with [dylibbundler](https://github.com/auriamg/macdylibbundler) or GStreamer's macOS framework | `engine/edit.sh`, `skin/book/macos/` | Medium |
+| An `.app` you can hand out: put the Homebrew libraries the engine loads (GStreamer, glib, SQLite, LuaJIT, QuickJS, and ffmpeg for writing) inside the `.app`, with [dylibbundler](https://github.com/auriamg/macdylibbundler) or GStreamer's macOS framework | `engine/edit.sh`, `app/macos/` | Medium |
 | AviUtl2 calls still missing (`obj.computeshader`, the built-in effects, …), following the references (AviUtl2's lua.txt, sashimono-edit) | `docs/reports/aviutl2/converter_plan.md`, `engine/aviutl.cpp` | Medium–hard |
 | TSL looks on the editor's shelves | `engine/tsl/`, `docs/reports/tsl_collection.md` | Medium |
 

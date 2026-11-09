@@ -8,7 +8,7 @@
 - **物に付く JS は全部「Expression」と呼ぶ。** Repeater、AE Grid/Ring/Stagger、今「Motion」と呼んでいる Cavalry の Animator を1つにまとめる。どれも中身は「物の値を動かす JS」で、同じ種類の物。名前は AE 自身の呼び名で、AE を使う人がこの言葉で探す。
 - **Expression は Create に、選んでいる物に付くものとして並べる。** Effects 棚は wgsl・ISF のような画素の操作の置き場で、Expression は値を動かすだけで画素に触らないから。Create の「Copies」の枠を「Expression」の枠にし、Repeater・AE Grid/Ring/Stagger・今 Effects 棚にある Motion（Cavalry の Animator）をそこに入れる。AE Grid/Ring/Stagger も、新しい丸を作るのをやめて、選んでいる物に付ける。
 - **1つの物に Expression をいくつでも付けられるようにする。** AE は1つのレイヤーに式をいくつも付けられる。使う人は「並べる」と「動かす」を同時にやりたい。
-- **Expression のカードは、エフェクトのカードと同じに扱う。** 詳細パネルでは同じ見た目なのだから、重ねる・目玉で消す・⋮メニュー・複製・並べ替えが同じにできる。今は Script のカードだけ1つしか付かず、目玉も並べ替えも無い（`skin/book/lib/sets/inspector/inspector_effects.dart:159`・`:165`）。
+- **Expression のカードは、エフェクトのカードと同じに扱う。** 詳細パネルでは同じ見た目なのだから、重ねる・目玉で消す・⋮メニュー・複製・並べ替えが同じにできる。今は Script のカードだけ1つしか付かず、目玉も並べ替えも無い（`app/lib/inspector/inspector_effects.dart:159`・`:165`）。
 
 ## 今の「レシピ」がこの線のどちらにいるか（11/9 時点のコード）
 
@@ -26,11 +26,11 @@
 
 ## 今の作りとの差
 
-- 11/9 の未コミットの変更（`skin/book/lib/workspace/script_code.dart`）は、打ち直した式の写しを `programs/` に置く。そのため Program タブに出てしまい、この線の反対側にいる。
+- 11/9 の未コミットの変更（`app/lib/workspace/script_code.dart`）は、打ち直した式の写しを `programs/` に置く。そのため Program タブに出てしまい、この線の反対側にいる。
 - 同じ変更の「Add to Create」（式のプリセットを `recipes/` に書く、`dock_make_4.dart`）は、レシピの書き方をさらに増やしている。取り下げる方向で、まだ決めていない。
-- 物の `script` にはファイルが1つしか入らない（`engine/doc_values.h:321`）。Effects の Motion も Repeater もこの1つを書き換えるので、同時に付けられない（`skin/book/lib/workspace/ws_2.dart:624`、`dock_make_2.dart:496` の「It has a script already」）。例外はステージ（物番号0）で、複数入る（`doc_values.h:329`）。
+- 物の `script` にはファイルが1つしか入らない（`engine/doc_values.h:321`）。Effects の Motion も Repeater もこの1つを書き換えるので、同時に付けられない（`app/lib/workspace/ws_2.dart:624`、`dock_make_2.dart:496` の「It has a script already」）。例外はステージ（物番号0）で、複数入る（`doc_values.h:329`）。
 - 物の `fx`（エフェクトの列）にはファイルをいくつでも順に並べられ、AbsentMotion の動き（`.am`）はもう複数重なる（`doc_values.h:322`・`:333`）。Expression をこの列に入れられれば、並べ替え・目玉・外す・複製もエフェクトのカードの操作のまま使える。ただし、fx の列に入れた JS がコピーの並べ方（`each()`）まで動くかは、まだ確かめていない。
-- Create の Copies の枠は、Repeater 1つだけの特別な枠（`skin/book/lib/workspace/dock_make_2.dart:416`）。
+- Create の Copies の枠は、Repeater 1つだけの特別な枠（`app/lib/workspace/dock_make_2.dart:416`）。
 - Glass（Materials の枠）も「選んでいる固体を変える」ので、同じ理由で Create にいるのは筋が通らない。どこへ置くかはまだ決めていない。
 
 ## 出典

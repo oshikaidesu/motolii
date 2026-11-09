@@ -3,9 +3,9 @@
 ## 原則
 
 - 試験の「期待値」は、試験される側のコードの外にある（Flutter 公式のガイドライン、W3C の基準、標準規格）。
-- 自作の試験は使い捨て。自作の期待値を守る試験は残さない（旧 `skin/book/test` `integration_test` `test_driver` `engine/check` は削除）。
+- 自作の試験は使い捨て。自作の期待値を守る試験は残さない（旧 `app/test` `integration_test` `test_driver` `engine/check` は削除）。
 - 失敗は UI を直す合図ではなく情報として記録する。ここでは通すために UI を変えていない。
-- 置き場：`skin/book/external_test/`。
+- 置き場：`app/external_test/`。
 
 ## 要件の一覧
 
@@ -18,12 +18,12 @@
 | 窓を開いたとき、描画の例外（レイアウトのはみ出し等）が出ない | 同上（フレームワーク自身の assertion を `takeException` で拾う） | 例外が 0 件 | 下記 A | 窓なしで実行済み：**失敗** 1 件 |
 | WCAG 2.2 SC 1.4.3 Contrast (Minimum)：通常文字 4.5:1、大きい文字 3:1 | https://www.w3.org/TR/WCAG22/#contrast-minimum | 参照のみ。実行できる道具はまだ無い（`textContrastGuideline` の閾値が同じかは未確認） | — | 参照のみ（未実装） |
 | WCAG 2.2 SC 2.5.8 Target Size (Minimum)：24x24 CSS px（例外あり） | https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html | 参照のみ。上の 48/44 は携帯の指向けで、マウス操作の desktop アプリにはこちらの 24 が近い | — | 参照のみ（未実装） |
-| 静的解析：flutter_lints | https://pub.dev/packages/flutter_lints （flutter.dev 発行、6.0.0、`analysis_options.yaml` が include 済み） | 規約違反の lint | `cd skin/book && flutter analyze --no-pub` | このセッションでは未実行 |
+| 静的解析：flutter_lints | https://pub.dev/packages/flutter_lints （flutter.dev 発行、6.0.0、`analysis_options.yaml` が include 済み） | 規約違反の lint | `cd app && flutter analyze --no-pub` | このセッションでは未実行 |
 
 実行 A：
 
 ```
-cd skin/book && flutter test --no-pub external_test/accessibility_guidelines_test.dart
+cd app && flutter test --no-pub external_test/accessibility_guidelines_test.dart
 ```
 
 `external_test/` ごと流すと、別担当のフレーム時間の試験ファイルも拾う。あれは `flutter drive` 用なので `flutter test` では失敗する。
@@ -42,7 +42,7 @@ cd skin/book && flutter test --no-pub external_test/accessibility_guidelines_tes
 
 | Requirement | Verified source | What it checks | How to run | Status |
 |---|---|---|---|---|
-| Flutter's frame budget (about 16 ms a frame, 60 fps) while the Workspace timeline is scrolled | https://docs.flutter.dev/cookbook/testing/integration/profiling ("Measure performance with an integration test") | `traceAction` + `TimelineSummary` over 120 mouse-wheel notches on the timeline (40 shapes, vertical and sideways); fails if any frame misses the build or raster budget, or none were drawn (`skin/book/external_test/frame_timing_test.dart`, `frame_timing_driver.dart`) | `cd skin/book && flutter drive --profile -d macos --driver=external_test/frame_timing_driver.dart --target=external_test/frame_timing_test.dart` | FAIL on build budget (ran 2026-11-08, 2 runs; raster budget met) |
+| Flutter's frame budget (about 16 ms a frame, 60 fps) while the Workspace timeline is scrolled | https://docs.flutter.dev/cookbook/testing/integration/profiling ("Measure performance with an integration test") | `traceAction` + `TimelineSummary` over 120 mouse-wheel notches on the timeline (40 shapes, vertical and sideways); fails if any frame misses the build or raster budget, or none were drawn (`app/external_test/frame_timing_test.dart`, `frame_timing_driver.dart`) | `cd app && flutter drive --profile -d macos --driver=external_test/frame_timing_driver.dart --target=external_test/frame_timing_test.dart` | FAIL on build budget (ran 2026-11-08, 2 runs; raster budget met) |
 
 結果（2026-11-08、Apple M4、macOS profile ビルドの実窓、2 回流した。`flutter drive` は両回とも exit 1）：テスト本体は通過（期待値を持たない）、ドライバーの予算判定が落ちた。build（UI スレッド）が 16 ms を超えたコマがある。raster は両回とも 0 コマ超過。
 
@@ -56,7 +56,7 @@ cd skin/book && flutter test --no-pub external_test/accessibility_guidelines_tes
 | worst_frame_rasterizer_time_millis | 5.03 | 5.00 |
 | missed_frame_rasterizer_budget_count | 0 | 0 |
 
-- 平均の build が 13.5〜15.4 ms で、予算 16 ms すれすれ。余裕がなく、超過の回数は回ごとにばらつく（11 と 3）。数値は `skin/book/build/frame_timing.timeline_summary.json`（毎回上書き）。
+- 平均の build が 13.5〜15.4 ms で、予算 16 ms すれすれ。余裕がなく、超過の回数は回ごとにばらつく（11 と 3）。数値は `app/build/frame_timing.timeline_summary.json`（毎回上書き）。
 - 注意：ホイール 120 ノッチに対して記録されたコマは 29〜30（1 コマに約 4 回分）。スクロールで実際に画面が動いたかは、試験が確かめていない（期待値なし）。ログに `integration_test plugin was not detected` の警告が出るが、結果は `responseDataCallback` に届いた。
 - 試験ファイル・`lib/`・エンジンは変更していない。
 

@@ -37,7 +37,7 @@ const char* motolii_list(Motolii* m) {
 void motolii_timed(Motolii* m, int pictures) { by_hand(m, [m, pictures] { clock(*m->s, pictures, [](float) {}); return 0; }); }
 
 #include "picture.h"
-// The window's pictures of the document (skin/BRIDGE.md), read without the document: 1 the document's (its own part,
+// The window's pictures of the document (docs/app/BRIDGE.md), read without the document: 1 the document's (its own part,
 // and each thing's part newer than `since`), 2 the moment's. A copy as JSON, freed by the asker; *version: as of which.
 char* motolii_picture(Motolii* m, int which, long since, long* version) {
     std::lock_guard<std::mutex> hold(m->pictureLock);

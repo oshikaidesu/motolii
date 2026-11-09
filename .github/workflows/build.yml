@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['engine/**', 'skin/**', 'Brewfile', '.github/workflows/build.yml']
+    paths: ['engine/**', 'app/**', 'Brewfile', '.github/workflows/build.yml']
   pull_request:
-    paths: ['engine/**', 'skin/**', 'Brewfile', '.github/workflows/build.yml']
+    paths: ['engine/**', 'app/**', 'Brewfile', '.github/workflows/build.yml']
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: false
@@ -48,7 +48,7 @@ jobs:
           channel: stable
       - run: engine/gpu/build.sh
       - run: engine/edit.sh build.motolii < /dev/null
-      - run: cd skin/book && flutter analyze lib --no-fatal-infos --no-fatal-warnings
+      - run: cd app && flutter analyze lib --no-fatal-infos --no-fatal-warnings
       - uses: actions/cache/save@v4   # (kept even when a step before failed)
         if: always() && steps.deps.outputs.cache-hit != 'true'
         with:

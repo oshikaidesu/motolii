@@ -76,7 +76,7 @@ struct Motolii {
     StageKept kept;       // (the stage's pictures kept on disk for playing: stage_kept.h)
     double spent[4] = {0, 0, 0, 0};   // (seconds the hand spent: asked to change, asked to read, telling the moment, drawing)
     long many[4] = {0, 0, 0, 0};
-    // The window's pictures of the document (picture.h, skin/BRIDGE.md), set down by the hand, read under their own lock.
+    // The window's pictures of the document (picture.h, docs/app/BRIDGE.md), set down by the hand, read under their own lock.
     std::mutex pictureLock;
     std::map<int, std::pair<long, std::string>> pictured;   // (each thing's part of the document's picture, and the version it was made at)
     int picturedWays = -1;                                       // (the maker's own ways as they were read when it was last made: doc_own_ways_made)
@@ -217,7 +217,7 @@ static int posted(Motolii* m, const std::string& kind, std::function<void()> doe
     return 1;
 }
 // A read of the document, done on the asker's thread while it holds the document: the hand's own (making the window's
-// pictures, picture.h), a question asked on another isolate, a check. The window's thread asks none (skin/BRIDGE.md).
+// pictures, picture.h), a question asked on another isolate, a check. The window's thread asks none (docs/app/BRIDGE.md).
 template <class Does> static auto by_look(Motolii* m, Does does, const char* who = __builtin_FUNCTION()) -> decltype(does()) {
     const auto asked = std::chrono::steady_clock::now();
     std::unique_lock<std::recursive_timed_mutex> hold(m->d->lock);

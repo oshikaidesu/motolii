@@ -1,4 +1,4 @@
-// The window's two pictures of the document (skin/BRIDGE.md): what it shows is read from these, never from the
+// The window's two pictures of the document (docs/app/BRIDGE.md): what it shows is read from these, never from the
 // document while it builds. Made by the hand, while it holds the document, as JSON (rapidjson, the copy Filament's assimp
 // brings); set down whole, and the window told by its one listener which picture is new.
 //   the document's (1): made again when the document changes; every thing's words, numbers at rest, ranges, keys...

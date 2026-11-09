@@ -1,0 +1,44 @@
+name: motolii
+description: "Motolii: the window (macOS)."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.2
+
+dependencies:
+  auto_size_text: ^3.0.0
+  docking: ^1.16.2
+  crypto: ^3.0.0
+  ffi: ^2.1.0
+  file_selector: ^1.1.0
+  flutter:
+    sdk: flutter
+  flutter_colorpicker: ^1.1.0
+  flutter_svg: ^2.3.0
+  force_graph:   # (d3-force as it is, in Dart: the maps' tiles pushed apart, as FontMap's are by d3; not on pub.dev)
+    git:
+      url: https://github.com/theiskaa/force_graph.git
+      ref: 8a8d868d9f83159f17d5213a61168c7d889b9250
+  material_color_utilities: any   # (Google's HCT colours, already in Flutter: a skin's greys made from its Background and Foreground)
+  naked_ui: ^1.2.1
+  perfect_freehand: ^2.5.2+1
+  re_editor: ^0.10.0
+  re_highlight: ^0.0.3
+  vector_math: ^2.4.3
+  widgetbook: ^3.25.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_driver:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  ffigen: ^23.0.0
+  file_selector_platform_interface: ^2.7.0
+  plugin_platform_interface: ^2.1.8
+
+flutter:
+  uses-material-design: true

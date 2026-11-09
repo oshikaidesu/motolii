@@ -1,9 +1,23 @@
 # Own source files already over 500 lines on 2026-11-09, with the count they had then. A file listed here may
 # shrink but never grow; a count may be lowered or a line removed, never raised or added (.githooks/size_check.py).
+591 app/lib/inspector/inspector_number_field_num_field_state.dart
+515 app/lib/workspace/dock_effects.dart
+600 app/lib/workspace/dock_fonts.dart
+610 app/lib/workspace/dock_make.dart
+691 app/lib/workspace/dock_make_2.dart
+605 app/lib/workspace/dock_parts.dart
+649 app/lib/workspace/effect_tiles.dart
+582 app/lib/workspace/stage.dart
+845 app/lib/workspace/stage_view_2.dart
+652 app/lib/workspace/timeline.dart
+674 app/lib/workspace/timeline_paint.dart
+649 app/lib/workspace/top_bar.dart
+772 app/lib/workspace/workspace.dart
+751 app/lib/workspace/ws_2.dart
 1028 engine/aviutl_fx.h
 589 engine/doc_edit.h
 726 engine/doc_match.h
-711 engine/doc_moment.h
+708 engine/doc_moment.h
 731 engine/doc_paths.h
 561 engine/doc_place.h
 754 engine/doc_recipes.h
@@ -21,20 +35,3 @@
 1501 engine/third_party/js/three/BufferGeometryUtils.js
 60586 engine/third_party/js/three/three.core.js
 503 engine/video.h
-591 skin/book/lib/sets/inspector/inspector_number_field_num_field_state.dart
-539 skin/book/lib/sets/studies/pop_02_falloff.dart
-671 skin/book/lib/sets/tour/a_mosaic.dart
-504 skin/book/lib/sets/tour/h_diagram.dart
-515 skin/book/lib/workspace/dock_effects.dart
-600 skin/book/lib/workspace/dock_fonts.dart
-610 skin/book/lib/workspace/dock_make.dart
-707 skin/book/lib/workspace/dock_make_2.dart
-605 skin/book/lib/workspace/dock_parts.dart
-649 skin/book/lib/workspace/effect_tiles.dart
-582 skin/book/lib/workspace/stage.dart
-845 skin/book/lib/workspace/stage_view_2.dart
-652 skin/book/lib/workspace/timeline.dart
-674 skin/book/lib/workspace/timeline_paint.dart
-649 skin/book/lib/workspace/top_bar.dart
-772 skin/book/lib/workspace/workspace.dart
-751 skin/book/lib/workspace/ws_2.dart
