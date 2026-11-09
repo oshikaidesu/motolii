@@ -191,6 +191,7 @@
 | 組み立てに要る Homebrew の物の一覧（Homebrew Bundle の書き方、`brew bundle` で入る）と、試験だけが使う物 | `Brewfile`、`Brewfile.checks` | 新しいクローンで組んで確かめた（10/27） |
 | 同梱した他の人の作品の一覧と断り書き（AviUtl2 の 172、ISF・three.js・PlayCanvas の効果、取ってくる依存）。PlayCanvas の効果のライセンスの文書 | `THIRD_PARTY_NOTICES.md`、`engine/effects/playcanvas-LICENSE.txt`、`vgpu-LICENSE.txt`、`phosphor-LICENSE.txt`、`SlitScanCam-LICENSE.txt`、`three-LICENSE.txt` | 書いた（10/27） |
 | この台帳と、その見張り（コミットの前に走る） | `ASSETS.md`、`.githooks/assets_check.py`、`.githooks/pre-commit` | 今の土台で動く |
+| 1 ファイル 500 行までの見張りと、すでに超えている物の減る方にしか動かない台帳（コミットの前に走る） | `.githooks/size_check.py`、`.githooks/over_500.txt` | 今の土台で動く |
 | 入口の紙 | `README.md` | — |
 
 ## 7. 実験と調べ物（結果だけ使う。作り直さない）
