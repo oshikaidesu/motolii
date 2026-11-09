@@ -9,7 +9,7 @@
 #include "media/sound.h"
 #include "media/midi.h"
 #include <CoreText/CoreText.h>
-#include "library/motolii.h"
+#include "entry/motolii.h"
 #include "rendering/FrameScheduler.hpp"   // (third_party/thermion_frame: the screen's own beat)
 #include <set>
 #include <sstream>

@@ -1,8 +1,8 @@
 #!/bin/zsh
 # A document edited by calls, a line each on its input.   ./edit.sh out/first.motolii < calls.txt
-# Two parts: the editing inside as a library with C calls (library/motolii.h, library/motolii.mm: films by GStreamer, the document's
+# Two parts: the editing inside as a library with C calls (entry/motolii.h, entry/motolii.mm: films by GStreamer, the document's
 # file, its undo and the working out of a stretch between keys by SQLite, 3D files by Filament's gltfio), and a shell that calls it
-# (library/edit.cpp), as a shell on a screen would.
+# (entry/edit.cpp), as a shell on a screen would.
 doc=${1:a}; shift   # (the document's place as the caller said it, before this goes into engine/)
 cd "$(dirname "$0")"
 source deps/build_lock.sh   # (the machine's one build lock, held while this builds, not while it edits)
@@ -17,7 +17,7 @@ if [ ! -x out/edit_wgpu ] || [ -n "$(find . \( -path ./third_party -o -path ./ou
     ./deps/tree_sitter.sh || exit 1   # (tree-sitter and its JavaScript grammar, for community/js/js_returned.cpp)
     KIT_EXTRA="-dynamiclib -install_name @rpath/libmotolii.dylib $(pkg-config --cflags --libs gstreamer-1.0 gstreamer-app-1.0 gstreamer-video-1.0 gstreamer-pbutils-1.0) -lgltfio -lgltfio_core -ldracodec -DSQLITE_ENABLE_SESSION -DSQLITE_ENABLE_PREUPDATE_HOOK -I$HB/opt/sqlite/include $HB/opt/sqlite/lib/libsqlite3.dylib $PWD/motion/physics.cpp $PWD/community/js/script.cpp $PWD/community/js/js_returned.cpp -I$PWD/third_party/tree-sitter/lib/include $PWD/out/ts_lib.o $PWD/out/ts_js_parser.o $PWD/out/ts_js_scanner.o -I$PWD/third_party/thermion_frame/include -I$PWD/third_party/qdtsne/include -I$PWD/third_party/scipy_lsap $PWD/third_party/scipy_lsap/rectangular_lsap.cpp $PWD/third_party/thermion_frame/FrameScheduler.cpp -framework CoreVideo $PWD/community/shaders/splatfx.cpp $PWD/community/shaders/three_isf.cpp $PWD/community/js/solid_three.cpp $PWD/community/shaders/hydra_isf.cpp $PWD/media/midi_roll.cpp -lmatp $PWD/out/isf.o $PWD/out/aviutl.o -I$HB/opt/luajit/include/luajit-2.1 -L$HB/opt/luajit/lib -lluajit-5.1 -Wl,-rpath,$HB/opt/luajit/lib -I$HB/opt/quickjs-ng/include -L$HB/opt/quickjs-ng/lib -lqjs -Wl,-rpath,$HB/opt/quickjs-ng/lib -I$HB/opt/onnxruntime/include/onnxruntime -L$HB/opt/onnxruntime/lib -lonnxruntime -Wl,-rpath,$HB/opt/onnxruntime/lib -I$PWD/third_party/physics/JoltPhysics -DJPH_CROSS_PLATFORM_DETERMINISTIC -DJPH_DEBUG_RENDERER -DJPH_OBJECT_LAYER_BITS=16 -DJPH_OBJECT_STREAM -DJPH_PROFILE_ENABLED -ffp-contract=off $PWD/third_party/physics/JoltPhysics/jbuild/libJolt.a $PWD/out/flashes.o $PWD/third_party/iris/lib/libiris.a -L$PWD/third_party/iris/opencv_out/lib -lopencv_features2d -lopencv_videoio -lopencv_imgcodecs -lopencv_imgproc -lopencv_core -L$PWD/third_party/iris/opencv_out/lib/opencv4/3rdparty -ltegra_hal -lz $(pkg-config --libs libavformat libavcodec libavutil) -framework AVFoundation -framework CoreMedia -framework CoreGraphics -framework Accelerate" BUILDONLY=1 ./gpu/kit_wgpu.sh motolii || exit 1
     mv out/motolii_wgpu out/libmotolii.dylib
-    clang++ -std=c++20 -O2 -I$PWD library/edit.cpp -Lout -lmotolii -Wl,-rpath,@executable_path -o out/edit_wgpu || exit 1
+    clang++ -std=c++20 -O2 -I$PWD entry/edit.cpp -Lout -lmotolii -Wl,-rpath,@executable_path -o out/edit_wgpu || exit 1
 fi
 build_unlock
 cd out/wgpu_kit && BACKEND="${BACKEND:-webgpu}" ../edit_wgpu $doc "$@" 2>&1 | grep -v "FrameInfo's circular queue\|libvulkan\|BackendVk\|FEngine\|WebGPU adapter\|Backend feature"

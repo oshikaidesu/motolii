@@ -1,6 +1,6 @@
 #!/bin/zsh
 # engine/compile_commands.json for an editor's clangd (clangd.llvm.org/installation#project-setup): the library's one
-# translation unit, library/motolii.mm, with the flags gpu/kit_wgpu.sh and edit.sh build it with, and each other .cpp
+# translation unit, entry/motolii.mm, with the flags gpu/kit_wgpu.sh and edit.sh build it with, and each other .cpp
 # of ours with the same; then each header the context its unit reads it in (deps/clangd_context.py). Nothing is
 # built. Run after the dependencies are fetched (edit.sh once), from anywhere:
 #   ./deps/compile_commands.sh

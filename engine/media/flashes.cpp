@@ -1,6 +1,6 @@
 // motolii_flashes: a film's flashes and patterns that may cause seizures, as EA's IRIS tells them (iris.sh): its own
 // AnalyseVideo with its JSON written, as its example app runs it, by its own settings (config/appsettings.json).
-#include "library/motolii.h"
+#include "entry/motolii.h"
 #include "iris/Configuration.h"
 #include "iris/Log.h"
 #include "iris/VideoAnalyser.h"

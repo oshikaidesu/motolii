@@ -11,7 +11,7 @@ import json, os, re, subprocess
 root = os.getcwd()
 units = json.load(open('compile_commands.json'))
 units = [u for u in units if not u['file'].endswith('.h')]
-units.sort(key=lambda u: u['file'] != 'library/motolii.mm')   # (the library's own unit first: most headers are its)
+units.sort(key=lambda u: u['file'] != 'entry/motolii.mm')   # (the library's own unit first: most headers are its)
 own = set(subprocess.run(['git', 'ls-files', '*.h'], capture_output=True, text=True).stdout.split())
 own = {f for f in own if not f.startswith('third_party/')}
 done, entries = set(), []

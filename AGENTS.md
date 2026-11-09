@@ -40,7 +40,7 @@
 - 言葉：コードの中では、アプリを「窓」、エンジンを「中身」、レイヤーを「物」、プロジェクトを「書類」、プレビューを「場面」、左のタブを「棚」と呼ぶ（[CONTRIBUTING](.github/CONTRIBUTING.md)）。
 - 確かめるときは、錠の要らない静的な検査から始める。
   - Dart：`cd app && dart analyze lib`
-  - C++：`./engine/check_syntax.sh`（組み立てと同じ指定で `clang++ -fsyntax-only`。何も書かない。`ok: library/motolii.mm` か、誤りとその行）
+  - C++：`./engine/check_syntax.sh`（組み立てと同じ指定で `clang++ -fsyntax-only`。何も書かない。`ok: entry/motolii.mm` か、誤りとその行）
   - そのほか：`python3 .githooks/size_check.py`・`python3 .githooks/layout_check.py`
 - テストの手順は [docs/TESTING.md](docs/TESTING.md)。
 - 終わったと言えるのは、使う人に見える物（絵・画面・書き出したファイル）で示せた時だけ。そして、その検査が直す前には落ちるのを見た時だけ。

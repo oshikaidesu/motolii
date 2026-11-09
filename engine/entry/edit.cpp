@@ -2,7 +2,7 @@
 // calls motolii.h and nothing else: one program for every document, never built again for a scene.
 //   ./edit.sh out/first.motolii       then a call a line (`help` lists them)
 // A call that is not done says why, and leaves the document as it was.
-#include "library/motolii.h"
+#include "entry/motolii.h"
 #include <algorithm>
 #include <chrono>
 #include <thread>
