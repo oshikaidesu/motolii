@@ -27,6 +27,7 @@ dependencies:
   re_highlight: ^0.0.3
   vector_math: ^2.4.3
   webview_flutter: ^4.14.1   # (Google's Blockly as it is, in the system's web view: an Expression card's Block mode, block_code.dart)
+  webview_flutter_wkwebview: ^3.26.0   # (its macOS controller: the web view made inspectable from Safari while debugging, block_code.dart)
   widgetbook: ^3.25.0
 
 dev_dependencies:
