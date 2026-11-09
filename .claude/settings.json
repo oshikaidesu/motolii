@@ -4,21 +4,43 @@
       {
         "matcher": "Edit|Write|Bash",
         "hooks": [
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/own_code_sign.py\"", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/own_code_sign.py\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/heavy_ops.py\"",
+            "timeout": 10
+          }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/worker_stop.sh\"", "timeout": 15 }
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/worker_stop.sh\"",
+            "timeout": 15
+          }
         ]
       }
     ],
     "StopFailure": [
       {
         "hooks": [
-          { "type": "command", "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/worker_stop.sh\"", "timeout": 15 }
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/worker_stop.sh\"",
+            "timeout": 15
+          }
         ]
       }
     ],
@@ -26,7 +48,23 @@
       {
         "matcher": "permission_prompt|idle_prompt|elicitation_dialog",
         "hooks": [
-          { "type": "command", "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/worker_waits.sh\"", "timeout": 15 }
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/worker_waits.sh\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/heavy_ops.py\"",
+            "timeout": 10
+          }
         ]
       }
     ]
