@@ -3,8 +3,6 @@ import FlutterMacOS
 
 class MainFlutterWindow: NSWindow {
   override func awakeFromNib() {
-    PlatformViewReadd.guardAgainst()
-    InputLog.startIfAsked()
     let flutterViewController = FlutterViewController()
     self.contentViewController = flutterViewController
     // the window opens filling the screen, all but the menu bar and the Dock (NSScreen.visibleFrame), as a desktop
@@ -20,53 +18,6 @@ class MainFlutterWindow: NSWindow {
     super.awakeFromNib()
     // after the xib has restored its own frame
     self.setFrame(screen, display: true)
-  }
-}
-
-/// A web view in the window (an Expression card's Block mode, block_code.dart) put back in its place at every Flutter
-/// frame: the macOS engine adds a platform view's holder to the view it is already in on each frame
-/// (FlutterMutatorView.mm applyFlutterLayer: addSubview: of its container and of its clip views), and AppKit, so
-/// asked, orders the views again and runs their tracking areas again; WebKit then takes the mouse where the window has
-/// it, not where the web view has it, so a click or a drag lands as far off as the web view is from the window's
-/// corner (seen and measured: DimitriSky/flutter_macos_patches, webview_hover_guard, its README and root cause; its
-/// code is not used, it has no licence). As there: addSubview: of a view already in that view does nothing, on those
-/// two engine classes only (each given one of its own, so NSView's own is not changed); a view moved from elsewhere
-/// is added as before. Should the engine's classes be named otherwise one day, nothing is changed.
-enum PlatformViewReadd {
-  static func guardAgainst() {
-    let add = #selector(NSView.addSubview(_:))
-    for name in ["FlutterMutatorView", "FlutterPathClipView"] {
-      guard let kind = NSClassFromString(name), let had = class_getInstanceMethod(kind, add) else { continue }
-      typealias Add = @convention(c) (NSView, Selector, NSView) -> Void
-      let before = unsafeBitCast(method_getImplementation(had), to: Add.self)
-      let added: @convention(block) (NSView, NSView) -> Void = { me, view in
-        if view.superview === me { return }
-        before(me, add, view)
-      }
-      let mine = imp_implementationWithBlock(added)
-      if !class_addMethod(kind, add, mine, method_getTypeEncoding(had)) { method_setImplementation(had, mine) }
-    }
-  }
-}
-
-/// What the window is given, told on stderr when MOTOLII_INPUT_LOG=1 (the binary started from a shell): each press,
-/// drag, release and key, and a move with a button held (a drag sent as a plain move), with whether the window takes
-/// keys, who has them (its first responder) and the view under the pointer. To see where Block's clicks and keys go;
-/// nothing is changed.
-enum InputLog {
-  static func startIfAsked() {
-    guard ProcessInfo.processInfo.environment["MOTOLII_INPUT_LOG"] == "1" else { return }
-    let kinds: NSEvent.EventTypeMask = [.leftMouseDown, .leftMouseDragged, .leftMouseUp, .mouseMoved, .keyDown]
-    NSEvent.addLocalMonitorForEvents(matching: kinds) { event in
-      if event.type == .mouseMoved && NSEvent.pressedMouseButtons == 0 { return event }
-      let window = event.window, content = window?.contentView
-      let at = content?.superview?.convert(event.locationInWindow, from: nil) ?? event.locationInWindow
-      let under = event.type == .keyDown ? "-" : content?.hitTest(at).map { String(describing: type(of: $0)) } ?? "none"
-      let who = window?.firstResponder.map { String(describing: type(of: $0)) } ?? "none"
-      let line = "input \(event.type == .mouseMoved ? "moved-with-button-held" : String(describing: event.type)) key-window \(window?.isKeyWindow ?? false) app-active \(NSApp.isActive) first-responder \(who) under \(under)\n"
-      FileHandle.standardError.write(line.data(using: .utf8)!)
-      return event
-    }
   }
 }
 
