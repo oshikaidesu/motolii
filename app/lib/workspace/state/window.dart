@@ -35,10 +35,6 @@ class Ws extends ChangeNotifier {
     WsArt.comp = Size(inside.size.$1.toDouble(), inside.size.$2.toDouble());
     moment.value = (inside.now * fps).round(); // (the playhead is the inside's moment from the first)
     reread();
-    final kept = inside.settings; // (the choices kept with the document: its inks and fonts, golf (90))
-    _ink = kept['ink'] ?? '';
-    _edge = kept['edge'] ?? '';
-    _inkBlend = kept['ink_blend'] ?? '';
   }
 
   /// Joined: the document's name, and how the window is told to open it again at another size (the host does it).
@@ -46,21 +42,6 @@ class Ws extends ChangeNotifier {
   String? documentFolder; // (where the document's file is: the dock offers it, so a new document is one step from its footage)
   void Function(int wide, int high)? onSize;
   VoidCallback? refit;
-
-  /// Joined: the inks the drawing tools give a new thing (a fill word, a stroke colour; '': the document's own), and how
-  /// the ink's colours are mixed when it is a gradient (gradient_blend; '': sRGB). Kept with the document, not steps
-  /// of it, as a PowerPoint file keeps its theme's colours (the inside's setting: golf_noise.md (90), engine_needs.md E4).
-  String _ink = '', _edge = '', _inkBlend = '';
-  String get ink => _ink;
-  set ink(String v) => _ink = _kept('ink', _ink, v);
-  String get edge => _edge;
-  set edge(String v) => _edge = _kept('edge', _edge, v);
-  String get inkBlend => _inkBlend;
-  set inkBlend(String v) => _inkBlend = _kept('ink_blend', _inkBlend, v);
-  String _kept(String name, String was, String now) {
-    if (now != was) _inside?.later('setting', name: name, word: now);
-    return now;
-  }
 
   String? _notice;
   String? get notice => _notice;
@@ -275,17 +256,6 @@ class Ws extends ChangeNotifier {
 
   (String, int)? fronted;
 
-  /// The shelf's effects on the thing: those whose card the inside shows (an effect's card shows while it is on).
-  List<String> fxOf(String? id) {
-    final m = _inside, t = int.tryParse(id ?? '');
-    if (m == null || t == null) return const [];
-    final shown = {for (final (title, _) in m.cards(t)) title};
-    return [
-      for (final (name, _) in m.layerEffects)
-        if (shown.contains(name)) name,
-    ];
-  }
-
   /// Joined: whether every change a hand makes is keyed (the inspector's Animate all: one truth, the inside's).
   bool get animating => _inside?.keyingNow ?? false;
 
@@ -324,42 +294,4 @@ class Ws extends ChangeNotifier {
     });
   }
 
-  static final _files = RegExp(
-    r'/.*?\.(?:(?:wgsl|fs|js|mjs|json|am)(?= |$)|(?:anm2|obj2)[^ ]*)|[^ ]+',
-  ); // (as the inside reads the list: a path, spaces and all, to its extension: script.h script_files)
-  /// The effect files a thing's fx says, in its order.
-  static List<String> fxFiles(String fx) => [
-    for (final f in _files.allMatches(fx).map((m) => m[0]!))
-      if (f != 'none') f,
-  ];
-
-  /// Joined: an effect file shown on the picked thing while the hand is on its tile, not the document's, gone as the
-  /// hand leaves (null), as Final Cut Pro's effects browser shows the effect skimmed on the selected clip in the viewer
-  /// and DaVinci Resolve's Live Preview the one under the pointer (the inside's carry: doc_carry_effect). Nothing picked,
-  /// nothing shown. Let go before any put, the put reading the document as it is.
-  bool _trying = false;
-}
-
-/// The chosen inks said to the thing just added (thing -1), wherever it was added from (P03: put after the key colours
-/// are chosen, it comes in them; the stage's drawing gave them, the Fonts and Create shelves did not: golf_noise.md ㉛).
-/// A text or a flat shape takes them, as the stage draws only those; a line its colour alone.
-void wsInked(Ws ws, String kind, String shape) {
-  final m = ws.inside;
-  if (m == null || !(kind == 'text' || kind == 'shape' && shape != 'null')) return;
-  final line = shape == 'line';
-  if (ws.ink.isNotEmpty) m.later('say', layer: -1, name: 'fill', word: ws.ink);
-  // (no ink chosen: a shape comes in a colour of its own, as Alight Motion's does: AbsentMotion's addShape, randomColor,
-  //  any hue, saturation 0.3 to 0.8, value 0.55 to 1; said, so the Inspector and the Colors shelf show it: golf (85))
-  if (ws.ink.isEmpty && kind == 'shape') {
-    final r = math.Random(), c = HSVColor.fromAHSV(1, r.nextDouble() * 360, .3 + r.nextDouble() * .5, .55 + r.nextDouble() * .45).toColor();
-    m.later('say', layer: -1, name: 'fill', word: [c.r, c.g, c.b].map((v) => (v * 255).round().toRadixString(16).padLeft(2, '0')).join());
-  }
-  if (ws.ink.contains(' ') && ws.inkBlend.isNotEmpty && !line) {
-    m.later('say', layer: -1, name: 'gradient_blend', word: ws.inkBlend); // (a gradient ink, mixed as it was chosen)
-  }
-  if (ws.edge.isNotEmpty && !line) {
-    m
-      ..later('say', layer: -1, name: 'stroke', word: ws.edge)
-      ..later('set', layer: -1, name: 'stroke_width', number: 6);
-  }
 }
