@@ -72,8 +72,8 @@ c. **Words already taken in our own code**:
    - `frame` already names a layer's box (`motolii_frame`, a layer's box on the picture). Rename that one to
      `bounds` first (same batch as row 10), then picture(2) may become `frame`.
    - `preset` already names the easing presets of the app (`desk_ease_presets`, `easePreset`). Rows 15 and 31 cannot
-     both be `preset`: looks → `preset` (AE's `.ffx` is exactly a layer's values saved and applied); recipes keep their
-     name until the shelves-names session decides (`shelves/recipes/` is its folder); easing presets → `EasingPreset`.
+     both be `preset`: looks → `preset` (AE's `.ffx` is exactly a layer's values saved and applied); recipes are named for the Create tab
+     they show in (the shelves-names session, 2026-11-09: `shelves/create/`); easing presets → `EasingPreset`.
    - `layer` already appears 365× in engine: AviUtl's layer number (same meaning) and `am::Layer` (Alight Motion's
      own reader, leave it). `video` already names the `Video*` reader: row 7 then reads naturally.
    - `camera` is also a layer kind: row 29 must stay `view_camera` where both are in scope.
@@ -133,10 +133,10 @@ commit;
 Also, in the same batch:
 - `user_version > 1` → `doc_open` refuses with "made by a newer Motolii" (today an older build would silently create an
   empty `fact` and show an empty project; that cannot be fixed for builds already out, only from here on).
-- The SQL function `way()` stays registered under `way` **and** `easing`: users' own expressions and `shelves/ways/*.way`
+- The SQL function `way()` stays registered under `way` **and** `easing`: users' own expressions and `shelves/ease/*.way`
   call `way('Cyclic', u)`.
 - Kind names `film`/`picture` stay accepted on input (`motolii_add`, p5's `createVideo('film')` in
-  `shelves/recipes/on_film/Blob Track.js`), written as `video`/`image`.
+  `shelves/create/on_film/Blob Track.js`), written as `video`/`image`.
 - Look files are attached, not opened: the same rename runs on `look.` when the version is 0, and the 22
   `shelves/looks/*.motolii` are converted once in the batch (they have `fact/thing/way`, no `step`).
 - `doc_marks.h:105` opens read-only and cannot migrate: it reads `keyframe`, falling back to `fact` if that fails.
