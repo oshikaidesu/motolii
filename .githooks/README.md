@@ -10,7 +10,7 @@
 |---|---|---|
 | [pre-commit](pre-commit) | 下の検査を順に回し、断った物の名前を出す。最初に負債の数（`debt: …`）を出すが、断りではない | 断った検査の行を見る |
 | [pre-merge-commit](pre-merge-commit) | マージのコミットにも pre-commit と同じ検査 | 同上 |
-| [commit-msg](commit-msg) | 件名の検査を回す | 同上 |
+| [commit-msg](commit-msg) | 件名の検査と、自前の行の検査を回す | 同上 |
 | [size_check.py](size_check.py) | 自前のファイル（`.dart` `.h` `.cpp` `.mm` `.js`）が 500 行を超える。新しいファイルに `name_2.dart` のような番号の名前 | 役目で分ける。名前を中身にする |
 | [layout_check.py](layout_check.py) | [AGENTS.md](../AGENTS.md)「構成の目標」1・2・4・5・6：直下の余計な物、入口の README の表に無いフォルダ、git に入った `out/` `build/`、番号や「文字＋数字」の名前、1 フォルダ 40 本超え。もう 1 つ、[docs/README.md](../docs/README.md)「日本語と英語」：入口 4 つに `.en.md` が無い、日本語で書いた自前の `.md` の題の下に英語の要約が無い（`language:`） | 各行の `rule N:`・`language:` の後ろのとおり。フォルダを作ったら入口の README に 1 行 |
 | [path_check.py](path_check.py) | 棚のファイルと自前の `.md` が書いている道（import・画像・リンク）の先が無い | 書いている所を直すか、動いたファイルを追う |
@@ -21,6 +21,7 @@
 | [dart_budget.py](dart_budget.py) | 手で書いた `app/lib` の Dart の改行数。先頭に `AUTO GENERATED FILE` とあるファイル（ffigen）は数えない。[dart_lines.txt](dart_lines.txt) の数を上げる、その数を超える、数より少ないまま残す | 減らした同じコミットで `dart_lines.txt` をその改行数に書き換える。足すなら、同じ行数をどこかから消す |
 | [dart_lines.txt](dart_lines.txt) | 負債の帳簿：手で書いた Dart の改行数。上げると dart_budget.py が断る | 減らした数を書く |
 | [format_check.py](format_check.py) | `dart format` のままでない Dart（`dart` が無ければ飛ばす） | 表示されたコマンドを打つ |
+| [own_code_check.py](own_code_check.py) | 自前の行（`app/lib` の Dart、エンジンの C++ と材質）を、足した数が消した数より多いコミット。その文に 8 行が無い・合わない：`Own-lines: +N`（検査が測った数）、`Looked-in-repo:`（`shelves/` か `engine/community/` に実在する道）と `Repo-falls-short:`、`Looked-in-library:`（`engine/deps/*.sh`・`pubspec.yaml`・`Brewfile` にある名前）と `Library-falls-short:`、`Looked-on-web:`（https の実装）と `Web-falls-short:`、`Fails-without:`。3 つの理由が同じ文なら断る。マージは問わない | 安い道：既にある物（棚・`community/`・繋いである依存）に渡し、足した分だけ消す。それなら何も問われない。高い道：断りに出る 8 行を、どれも本当のことで埋める |
 | [subject_check.py](subject_check.py) | コミットの件名が 72 字を超える | 1 行目を短く。中身は空行の後の本文へ。書いた文は `git commit -e -F` で戻る |
 | [over_500.txt](over_500.txt) | 負債の帳簿：2026-11-09 に既に 500 行を超えていたファイルと、その時の行数。増やす・足すと size_check.py が断る | 分けて小さくし、数を下げるか行を消す |
 | [path_check_allow.txt](path_check_allow.txt) | 負債の帳簿：木に無くても通す道（組み立て時に取ってくる物・作る物）。それぞれ理由つき | 動いたファイルを隠すために足さない。取ってくる物が無くなったら消す |
