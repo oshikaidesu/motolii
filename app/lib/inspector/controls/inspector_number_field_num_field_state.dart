@@ -9,11 +9,16 @@ import 'package:motolii/skin/forms/number_paint.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 
-import '../../widgets/text_gestures.dart';
-
-class NumFieldState extends State<NumField> {
+class NumFieldState extends State<NumField> implements TextSelectionGestureDetectorBuilderDelegate {
   final _node = FocusNode(debugLabel: 'num');
   late final FocusNode _ef = FocusNode(debugLabel: 'num-edit', onKeyEvent: _editKey);
+  @override
+  final editableTextKey = GlobalKey<EditableTextState>();
+  @override
+  bool get forcePressEnabled => false;
+  @override
+  bool get selectionEnabled => true;
+  late final _gestures = TextSelectionGestureDetectorBuilder(delegate: this);
   final _menu = OverlayPortalController();
   Offset _menuAt = Offset.zero;
   static int rightAt = -1; // (the press a field took for its menu: the row round it leaves it)
@@ -447,9 +452,10 @@ class NumFieldState extends State<NumField> {
         _keyAt = ks != null && (ks != KeyS.off || x.doc.keys.containsKey(widget.id)) ? Offset(w - Pop.tilePad - 3, Pop.tile - 10) : null;
         _keys = ks;
         final editor = _editing
-            ? TextGestures(
-                field: (k) => EditableText(
-                  key: k,
+            ? _gestures.buildGestureDetector(
+                behavior: HitTestBehavior.translucent,
+                child: EditableText(
+                  key: editableTextKey,
                   rendererIgnoresPointer: true,
                   controller: _ctl,
                   focusNode: _ef,
