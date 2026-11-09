@@ -3,6 +3,8 @@ static int doc_bevel(Doc& d, int thing);
 static void doc_moment(Doc& d, double now) {
     Stage& s = *d.stage;
     d.halves.clear(), d.talls.clear();   // (made again since: a flat thing's sheet is as large as its picture now)
+    d.placing.clear(), d.telling = true;   // (nothing in the document changes while the stage is told a moment: what a thing's copies each ask, asked once)
+    struct Told { Doc& d; ~Told() { d.telling = false, d.placing.clear(); } } told{d};
     if (now == s.now)   // (a text whose words AbsentMotion's text effects change as time goes, its Timecode or Count Up: told them in its own picture (words_at),
         for (auto& [thing, t] : d.shown)   //  or, wider than it, made again as they read now, it alone (doc_match), then seen)
             if (t.wordsMove)

@@ -33,6 +33,7 @@
 #include <sstream>
 #include <sqlite3.h>
 
+struct DocScript;
 struct Doc {
     std::recursive_timed_mutex lock;   // held by whoever reads or changes it: a shell's reads need not wait for a picture being drawn (motolii.mm)
     sqlite3* file = nullptr;
@@ -107,6 +108,9 @@ struct Doc {
     std::unordered_map<std::pair<int, const char*>, std::string, HeardWordHash> heardWords;   // (and its words so, and a thing's copy_tall as numbers)
     std::unordered_map<std::pair<int, const char*>, const Keys*, HeardWordHash> literals;   // where doc_place's own values have their keys, by thing and the name's place in the program (a literal: it never says another name): found once, forgotten at every change
     std::unordered_map<int, std::vector<double>> talls;
+    struct Placing { bool laid = false; std::vector<DocScript*> scs; std::string from; double absentAt = -1e300; std::vector<AbsentEffect> absent; };
+    std::unordered_map<int, Placing> placing;   // what doc_place asks of a thing's effects, the same for each of its copies: asked once a thing while a moment is told (telling), as talls
+    bool telling = false;
     std::map<int, std::pair<float2, float>> halves;   // a thing's half size and depth (doc_half), worked out once a moment: its copies all ask it
     std::map<std::pair<int, std::string>, std::string> words;   // a value's word, the same way
     std::map<std::pair<int, std::string>, std::vector<double>> keyed;   // the moments of a value's keys, the same way
