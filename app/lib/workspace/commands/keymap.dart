@@ -17,7 +17,6 @@ const defaultKeys = <(String, String)>[
   ('shift+e', 'file.exportFrame'), // (Premiere Pro's Export Frame)
   ('cmd+z', 'edit.undo'),
   ('cmd+shift+z', 'edit.redo'),
-  ('s', 'thing.solo'), // (Live 42.15/42.19)
   ('a', 'mark.animate'), // (Apple Motion's A: Record Animation, every change keyed, pressed again off)
   ('space', 'play.fromStart'), // (Live 42.20)
   ('shift+space', 'play.continue'), // (Live 42.20)

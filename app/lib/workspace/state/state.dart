@@ -14,7 +14,6 @@ export '../../bridge/motolii.dart'
         MotoliiShelves,
         MotoliiWatch; // (the inside's reads, an extension of Motolii: whoever holds the window's Ws.inside can call them)
 import '../../skin/tokens.dart';
-import '../stage/stage_art.dart' show WsArt;
 
 part 'window.dart';
 part 'picked.dart';
@@ -35,12 +34,11 @@ enum WsKind { shape, text, image, camera, group, audio }
 
 /// One layer of the mock composition: where it lives in time, and where its keys are (frames).
 class WsLayer {
-  WsLayer(this.id, this.name, this.kind, this.inF, this.outF, this.keys, {this.solo = false});
+  WsLayer(this.id, this.name, this.kind, this.inF, this.outF, this.keys);
   final String id, name;
   final WsKind kind;
   int inF, outF;
   final List<int> keys;
-  final bool solo;
 }
 
 /// The window's state: the document's things (read again from the inside), what is picked, the moment.

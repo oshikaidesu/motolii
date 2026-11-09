@@ -1,4 +1,3 @@
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/widgets.dart';
 
 import '../skin/tokens.dart';
@@ -54,7 +53,6 @@ class _InspectorPanelState extends State<InspectorPanel> {
                 child: ListView(
                   controller: _scroll,
                   padding: EdgeInsets.all(Pop.gap),
-                  scrollCacheExtent: textToType ? const ScrollCacheExtent.pixels(4000) : null,
                   children: body,
                 ),
               ),

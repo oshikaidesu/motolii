@@ -60,12 +60,6 @@ Map<String, void Function()> wsAbletonCommands(Ws ws) {
     'nudge.right10': () => nudge(10),
     'layer.previous': () => row(-1),
     'layer.next': () => row(1),
-    'thing.solo': () {
-      // (Live 42.15/42.19 S: solo selected tracks)
-      final t = int.tryParse(ws.selected ?? ''), m = ws.inside;
-      if (t == null || m == null) return;
-      ws.after(m.later('set', layer: t, name: 'solo', number: ws.layer?.solo == true ? 0 : 1));
-    },
     'mark.animate': () => ws.animating = !ws.animating, // (Apple Motion's A: Record Animation, the inspector's Animate all)
     'frame.previous': () => step(-1), // (Live has no frame step; Rive's and Jitter's , and .)
     'frame.next': () => step(1),

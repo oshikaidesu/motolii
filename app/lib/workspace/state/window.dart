@@ -32,7 +32,6 @@ class Ws extends ChangeNotifier {
       if (moment) seen.value++;
     };
     fps = _fpsOf(inside); // (a frame is the document's: the timeline counts what a written film has)
-    WsArt.comp = Size(inside.size.$1.toDouble(), inside.size.$2.toDouble());
     moment.value = (inside.now * fps).round(); // (the playhead is the inside's moment from the first)
     reread();
   }
@@ -42,10 +41,6 @@ class Ws extends ChangeNotifier {
 
   /// How many times the document has been read again.
   int rev = 0;
-
-  /// How many times the document has been read again (not counting what a hand only carries): what is made from its
-  /// shape (the cards) is made again when this moves.
-  int reads = 0;
 
   /// Where a bar ends, in frames: a thing on for good runs to the document's end.
   static int _outF(int from, double lasts) => lasts < 0 ? duration : (from + (lasts * fps).round()).clamp(from + 1, duration);
@@ -83,7 +78,6 @@ class Ws extends ChangeNotifier {
       moment.value = (at * fps).round();
     }
     rev++;
-    reads++;
     duration = Timeline.timeSync('MARK seconds', () => (m.seconds * fps).round().clamp(1, 1 << 20));
     final tl = TimelineTask()..start('MARK layers');
     final holding = {for (final t in m.layers) (m.value(t, 'parent', 0) ?? 0).round()}; // (who has things going with it)
@@ -110,7 +104,6 @@ class Ws extends ChangeNotifier {
               from,
               _outF(from, lasts),
               keys,
-              solo: (m.value(t, 'solo', 0) ?? 0) > .5,
             );
           }(),
       ]);

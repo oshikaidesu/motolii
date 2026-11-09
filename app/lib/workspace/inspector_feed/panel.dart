@@ -33,7 +33,7 @@ class _InspectorPanelState extends State<_InspectorPanel> {
   //  to the fields that show them, as a moment's are; anything else, or not known: the inspector built again)
   bool _onlyNumbers(Ws ws) {
     final m = ws.inside, c = ws.lastChange, t = int.tryParse(ws.selected ?? '') ?? (ws.selected == null ? 0 : null);
-    if (m == null || c == null || c.layers || t == null || const bool.fromEnvironment('NOPOUR')) return false;
+    if (m == null || c == null || c.layers || t == null) return false;
     final titles = [for (final (title, _) in m.cards(t)) title].join(';');
     if (titles != _titles) {
       // (a card put on or taken off by its values alone: the Script card's knobs, as the Repeater is laid out from the Create shelf or taken off by its Reset)

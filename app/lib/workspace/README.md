@@ -12,7 +12,6 @@
 | `commands/` | 名前の付いた操作と、それを言うキー・メニュー：`keymap.dart` キーの表（VS Code の keybindings.json の形）、`command_actions.dart` 各操作がアプリの状態にすること（キーは Ableton Live 12 の表から）、`menu_bar.dart` メニューバー |
 | `edits/` | 関係の種類 `wsRelations`（`make_relation.dart`） |
 | `inspector_feed/` | `workspace.dart` の部品：プロジェクトから Inspector（`../inspector/`）へ渡す物。`panel.dart` パネルとして読み直す時、`cards.dart` カード、`values.dart` 値の読み書き、`keyframe_marks.dart` 値の横のキーの印 |
-| `stage/` | コンポジションの寸法 `WsArt` |
 
 ## 自分のプリセット（Ease の動き方）を足す
 プリセットは利用者の持ち物（スクリプトと同じ）。利用者のフォルダ（下の「利用者のフォルダ」）の `ease/` にファイルを 1 つ置くと、どのプロジェクトでも Ease のツールパネルにタイルで出る。Motolii が持って来る見本は `shelves/ease/`。式で使えるもの：`a`（前のキーの値）、`b`（次のキーの値）、`u`（区間の 0〜1）、`p1`〜`p4`（区間に付けた数）、`bezier(u, x1, y1, x2, y2)`。
@@ -67,7 +66,7 @@ $F/flutter analyze lib
 - **フィルター帯は Motolii 本体の草案に合わせる**: グループ同士は AND、グループ内は OR。クリックで 1 つ、Cmd/Ctrl-クリックで追加・解除。残る件数を札に出し、0 件になる札は押せない。件数と Clear は帯の一番下。**帯の高さは利用者が決める**(下端のグリップを上下にドラッグ、ダブルクリックで 168px に戻る)。
 
 ## 変えるときの作法
-- パネルをまたぐ情報は `Ws` に足す。パネルどうしで import し合わない。コンポジションの寸法は `state.dart` が `stage/stage_art.dart` の `WsArt` を読む。
+- パネルをまたぐ情報は `Ws` に足す。パネルどうしで import し合わない。
 - コメントは、コードから読めない制約だけを書く(`contract:` で始まる行がそれ)。
 - 区切りごとにコミットする(履歴が無いのが一番怖い、が利用者の方針)。
 

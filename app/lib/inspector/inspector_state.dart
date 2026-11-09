@@ -7,11 +7,6 @@ import '../skin/tokens.dart';
 import 'inspector_parts.dart';
 part 'inspector_values.dart';
 
-/// Said by the stage as it places a text: the words field next built for it holds the keys, its words all picked, so
-/// what is typed at once is the text's (AbsentMotion's addText opens its EditText panel; Figma's text tool types where
-/// it was placed).
-bool textToType = false;
-
 enum KeyS { off, anim, at }
 
 enum Kind { shape, text, camera, group, none }
