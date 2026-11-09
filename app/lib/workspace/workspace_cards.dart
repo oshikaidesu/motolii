@@ -61,7 +61,7 @@ final _cardsMade = <int, (String, List<Fx>, Motolii)>{};
 
 List<Fx> _makeCards(Ws ws, Motolii m, int t) {
   final at = _drawn(ws);   // (as the picture shown has it)
-  final weights = {for (final f in Ws.fxFiles('${m.word(t, 'fx')} ${m.word(t, 'script')}')) ...EffectTiles.weighed(motoliiDir, f)};   // (how much moving each knob of its effects shows them, as their tiles move)
+  final weights = {for (final f in Ws.fxFiles('${m.word(t, 'fx')} ${m.word(t, 'script')}')) ...EffectTiles.weighed(motoliiShelves, f)};   // (how much moving each knob of its effects shows them, as their tiles move)
   String field(String n) {
     final sh = m.shown(n), label = '@label(${sh?.label ?? n.replaceAll('_', ' ').replaceRange(0, 1, n[0].toUpperCase())})${weights[n] == null ? '' : ' @weight(${weights[n]})'}';
     if (sh?.look == 'thing') {

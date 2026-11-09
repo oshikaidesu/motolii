@@ -1,4 +1,4 @@
-// three's shaders as one file of the effects shelf, the shape screen.h screen_read takes, the shape engine/isf.cpp makes of
+// three's shaders as one file of the effects shelf, the shape screen.h screen_read takes, the shape engine/community/isf.cpp makes of
 // ISF's PASSES: the stage's picture at binding 0, each target's after it, one struct of knobs, one entry that goes by
 // `passindex`; every step's fragment shader kept as three's builder wrote it, its names apart.
 import * as THREE from "three/webgpu"

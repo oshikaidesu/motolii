@@ -6,7 +6,7 @@
 # one only one side has is named and not compared. A call either side refuses, or a picture not made, stops the count
 # from standing: it says which and ends with 2 (1: some differ; 0: all matched).
 #   ./s2_check.sh ed4868cf1          (S2_LIMIT=2 ./s2_check.sh ed4868cf1: the first two of each only)
-# Nothing of the maker's own is read or written: MOTOLII_OWN is an empty folder of its own (doc_edit.h doc_folders), the
+# Nothing of the maker's own is read or written: MOTOLII_OWN is an empty folder of its own (document/doc_edit.h doc_folders), the
 # documents are made in a temporary folder, and engine/out/skin.motolii is not opened.
 old=${1:?usage: ./s2_check.sh <old-commit>}
 cd "$(dirname "$0")"
@@ -40,7 +40,7 @@ names() { echo recipes | (cd $engines[$1] && ./edit.sh $tmp/docs/names_$1.motoli
 typeset -A has   # (side and name: 1 where that side has it)
 for side in 1 2; do
     for r in "${(@f)$(names $side)}"; do [ -n "$r" ] && has[${side}:recipe:${r}]=1; done
-    for f in $engines[$side]/animators/*.js(N:t); do has[${side}:motion:${f}]=1; done
+    for f in $engines[$side]/animators/*.js(N:t) $engines[$side]/../shelves/animators/*.js(N:t); do has[${side}:motion:${f}]=1; done
 done
 recipes=("${(@f)$(for k in ${(k)has}; do [[ $k = ?:recipe:* ]] && print -r -- ${k#?:recipe:}; done | sort -u)}")
 motions=("${(@f)$(for k in ${(k)has}; do [[ $k = ?:motion:* ]] && print -r -- ${k#?:motion:}; done | sort -u)}")
@@ -88,7 +88,7 @@ for f in $motions; do
     alone motion $f && continue
     for side in 1 2; do draw $side m$n "add text $font
 say 1 text MOTOLII
-say 1 script $engines[$side]/animators/$f" "motion ${f:r}"; done
+say 1 script $(ls $engines[$side]/animators/$f $engines[$side]/../shelves/animators/$f 2> /dev/null | head -1)" "motion ${f:r}"; done
     compare m$n "motion ${f:r}"
     compared=$((compared + 1))
 done

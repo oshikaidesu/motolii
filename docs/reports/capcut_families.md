@@ -16,12 +16,12 @@ CapCut のファイル（シェーダー・Lua・絵・色の表）は取らな�
 
 ## 印の読み方
 
-- **◎ 動く**：今の Motolii（`engine/effects/`・animators・キー・ふるまい）で、同じしくみが出る。足りないのは型だけ。
+- **◎ 動く**：今の Motolii（`shelves/effects/`・animators・キー・ふるまい）で、同じしくみが出る。足りないのは型だけ。
 - **○ 部品はある**：部品は入っている。組み合わせるか、手元の ISF を足せば出る。
 - **△ 入れていない**：借りる先は手元にあるか、はっきりしている。まだ Motolii に入れていない。
 - **✕ 無い**：大きな仕組みが要る（人の切り抜き）か、開いた見本が見つかっていない。
 - 「手元」＝ `research_notes/isf/ISF-Files/ISF`（MIT、371 本）か `research_notes/threejs_shaders`（MIT）にある物。
-- 「入っている」＝ `engine/effects/` にある物。`docs/reports/alight_isf/abd_sheet.png`・`docs/reports/capcut_try/vhs_sheet.png` で写真に掛けて効いた物も含む。
+- 「入っている」＝ `shelves/effects/` にある物。`docs/reports/alight_isf/abd_sheet.png`・`docs/reports/capcut_try/vhs_sheet.png` で写真に掛けて効いた物も含む。
 
 ## 表（CapCut の数が多い順）
 
@@ -605,4 +605,4 @@ CapCut のファイル（シェーダー・Lua・絵・色の表）は取らな�
 - 言葉に決まりを当てて族を決めた（例：色ずれ・RGB ずれ・プリズム → 25）。上から順に当て、最初に当たった族に入れた。
 - 3,412 本は名前の言葉で入った。679 本は言葉が当たらず、CapCut の組（光・グリッチ…）だけで入れた（当て方：低）。フィルター 454 本は全部 LUT なので組で入れた。名前だけでは分からない物は 224 本。
 - 中身を絵で見たのではない。「名前からの当て」なので、型を作る時に絵で確かめる。
-- 「Motolii で今動くか」は `engine/effects/` の中身と、`capcut_map.md` の「いま」の欄から決めた。
+- 「Motolii で今動くか」は `shelves/effects/` の中身と、`capcut_map.md` の「いま」の欄から決めた。

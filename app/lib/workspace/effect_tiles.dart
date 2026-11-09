@@ -100,7 +100,7 @@ abstract final class EffectTiles {
   }
 
   /// How much moving each knob of [file] alone shows its effect, 0 to 10, as an agent that read only the effect's code
-  /// weighed it (engine/knob_weights.json, by the shelf's entry: its file from the library's folder, an AviUtl2 script's
+  /// weighed it (shelves/knob_weights.json, by the shelf's entry: its file from the library's folder, an AviUtl2 script's
   /// #name and all; set beside AbsentMotion's effect_showcase.json, where a hand says which knob its tile moves, its
   /// heaviest was that knob in 26 of 28), by the inside's names (doc_values.h doc_screen_knob: the file's stem before
   /// the knob's), `_time` how much letting it run shows it. Empty: not weighed (the maker's own).
@@ -172,12 +172,12 @@ abstract final class EffectTiles {
   static Map<String, dynamic> _entry(String dir, String file) {
     final all = _weights ??= () {
       try {
-        return jsonDecode(File('$dir/knob_weights.json').readAsStringSync()) as Map<String, dynamic>;
+        return jsonDecode(File('$motoliiShelves/knob_weights.json').readAsStringSync()) as Map<String, dynamic>;
       } catch (_) {
         return const <String, dynamic>{};
       }
     }();
-    return (all[file.startsWith('$dir/') ? file.substring(dir.length + 1) : file] as Map<String, dynamic>?) ?? const {};
+    return (all[file.startsWith('$motoliiShelves/') ? file.substring(motoliiShelves.length + 1) : file] as Map<String, dynamic>?) ?? const {};
   }
 
   /// A file's stem as its values' names say it (`js_<stem>_<knob>`: doc_screen_knob).
@@ -220,7 +220,7 @@ abstract final class EffectTiles {
   static String get own => Platform.environment['MOTOLII_OWN'] ?? '${Platform.environment['HOME']}/Library/Application Support/Motolii';
 
   /// The library's own folders beside the maker's (as the inside's doc_folders: the folder above its out/).
-  static List<String> get library => [for (final f in const ['effects', 'aviutl_scripts', 'recipes', 'animators', 'relations']) '$motoliiDir/$f'];
+  static List<String> get library => [for (final f in const ['effects', 'aviutl_scripts', 'recipes', 'animators', 'relations']) '$motoliiShelves/$f'];
 
   /// Watched until the subscription is cancelled; [changed] is told after the folders are read again and after tiles are drawn.
   static StreamSubscription<FileSystemEvent>? watch(Motolii m, void Function() changed, {void Function(String file)? program}) {

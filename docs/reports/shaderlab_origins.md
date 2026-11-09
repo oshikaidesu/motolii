@@ -4,7 +4,7 @@ Shader Lab（basementstudio/shader-lab、Apache-2.0）の効果を、外にあ�
 「TSL を根本から殺したら何を失うか」を量るため。
 
 - 照らした先：
-  - Motolii に入っている 295 本（`engine/effects`、ISF・three.js・vgpu）
+  - Motolii に入っている 295 本（`shelves/effects`、ISF・three.js・vgpu）
   - Noisemaker（MIT、`shaders/effects/*/*/wgsl`、WGSL と GLSL の両方あり、約 230 本）
   - EffectCraft（Apache-2.0／MIT、`docs/effects.md`、AE の効果の写し、GPU 280 本）
   - Paper Shaders（Apache-2.0）

@@ -14,7 +14,7 @@ extension MotoliiShelves on Motolii {
       if (line.split('\t') case final l when l.length > 1 && l[0].isNotEmpty) l,
   ];
 
-  /// The Repeater recipe (engine/recipes/repeater.js), by its name: said to a thing as its script, the inside makes the name its
+  /// The Repeater recipe (shelves/recipes/repeater.js), by its name: said to a thing as its script, the inside makes the name its
   /// file (doc_say) and the thing lays its copies out (its knobs then are the thing's values js_StepX, js_Columns, js_Rotate…).
   String get repeaterScript => 'Repeater';
 

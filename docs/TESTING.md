@@ -107,7 +107,7 @@ cd app && flutter test --no-pub external_test/accessibility_guidelines_test.dart
 
 | corpus | source URL | files | loaded | failed | notes |
 |---|---|---|---|---|---|
-| `engine/effects/*.fs` のうち Vidvox ISF-Files（全数） | https://github.com/Vidvox/ISF-Files | 318 | 318 | 拒否 0・落ち 0 | 318 本とも、効果なしの絵と画素が変わる。空白は 10 本 |
+| `shelves/effects/*.fs` のうち Vidvox ISF-Files（全数） | https://github.com/Vidvox/ISF-Files | 318 | 318 | 拒否 0・落ち 0 | 318 本とも、効果なしの絵と画素が変わる。空白は 10 本 |
 
 - 対象の決め方：git で追跡している `.fs` 419 本から、`CREDIT` が Sashimono（95）・ossia score（3）・pixi-filters（1）・gl-chromakey（1）・IMIMOT（1）の計 101 本を外した 318 本。未追跡の `Color Balance.fs`（GPUImage）も外した。つまり「Vidvox の ISF-Files そのもの」を元のリポジトリと突き合わせた集合ではなく、`CREDIT` で出所を分けた近似（gl-transitions 由来の 13 本は ISF-Files が ISF にした物として含む）。
 - 最初は 5 並列で全数を走らせ、4 分を超えそうだったので 3 本おきの 106 本に切り替えたが、2 回目以降は速かったので残り 212 本も走らせ、全数 318 本になった。
@@ -154,4 +154,4 @@ cd app && flutter test --no-pub external_test/accessibility_guidelines_test.dart
 | # | 要件 | 何を調べるか | 状態 |
 |---|---|---|---|
 | S1 | 重ねたら両方効く | 実窓で、四角1つに Repeater と Spring In を付ける。断られず（「It has a script already」が出ない）、コピーが並び、かつそれぞれが Spring In の動きをする。時刻 0.0・0.5・1.0 秒の絵を撮り、Repeater だけ・Spring In だけの絵と並べて見せる | 未実行 |
-| S2 | 今ある書類の見た目が変わらない | 変更前のエンジン（コミット `ed4868cf1`）で描いた絵を正解役に、script を1つ持つ物（棚のレシピ104本と `engine/animators/` の Motion、時刻 0.0・0.7・1.9 秒）を新エンジンで開いて描き、PNG を `cmp` で比べる（11/8 の新旧比較と同じやり方）。Motion はフォントで作った文字 MOTOLII に付ける。どちらかの側で置く呼び出しが断られる・エンジンが答えない・絵が出来ないときは数を認めず終了コード 2。片側にしか無い物は名前を出して比べない。全組一致 | 11/9：351 of 351（レシピ104本＋Motion 13本。`lyric.js` は ed4868cf1 に無く比べない）。それまでの「351 of 351」は Motion の文字が作られず、両側とも何も描かない絵同士の一致だった |
+| S2 | 今ある書類の見た目が変わらない | 変更前のエンジン（コミット `ed4868cf1`）で描いた絵を正解役に、script を1つ持つ物（棚のレシピ104本と `shelves/animators/` の Motion、時刻 0.0・0.7・1.9 秒）を新エンジンで開いて描き、PNG を `cmp` で比べる（11/8 の新旧比較と同じやり方）。Motion はフォントで作った文字 MOTOLII に付ける。どちらかの側で置く呼び出しが断られる・エンジンが答えない・絵が出来ないときは数を認めず終了コード 2。片側にしか無い物は名前を出して比べない。全組一致 | 11/9：351 of 351（レシピ104本＋Motion 13本。`lyric.js` は ed4868cf1 に無く比べない）。それまでの「351 of 351」は Motion の文字が作られず、両側とも何も描かない絵同士の一致だった |

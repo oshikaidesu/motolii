@@ -43,12 +43,12 @@ Motolii はもう、VS Code の形のキーの表（keys.dart）と keybindings.
 ユーザー（10/30）：「これからどんどん fx 表現は増える、50000 件まで行ったらどうする？ 売買サイトを参考にできないかな、メルカリとか」「かれらはその情報すら入力させないようにしているよね。こっちは静的解析できるから似たアプローチが取れるはず」。棚を眺めて選ぶのは 1,200 件（glow だけで 16 枚）でもう苦しい。メルカリは写真を撮るだけで題名・カテゴリ・説明を埋め（AI 出品サポート、2024/9）、写真で探す（絵の埋め込みと近いものの検索）。効果のファイルは中身を全部読めて何度でも描けるので、同じ形が取れる：**読んで分かる札**と**描いて測って分かる札**を、置いた瞬間に自動で付ける。調べ：サブエージェント（読むだけ）、主な行は確かめた。
 
 **今あるもの**
-- ISF の読み：engine/isf.cpp。絵の入力・入力の無い物（生成）83〜86・170〜171 行、音の入力 89・141〜145 行、PASSES・PERSISTENT 70〜78 行、CATEGORIES を棚の 7 語（Glitch・Distort・Color・Film・Light・Time・Stylize）に部分一致で寄せる 201〜206 行、DESCRIPTION を説明に 207〜210 行。glslang と Tint はもう入っている（Tint の WGSL inspector と SPIRV-Cross も組んであるが使っていない）
+- ISF の読み：engine/community/isf.cpp。絵の入力・入力の無い物（生成）83〜86・170〜171 行、音の入力 89・141〜145 行、PASSES・PERSISTENT 70〜78 行、CATEGORIES を棚の 7 語（Glitch・Distort・Color・Film・Light・Time・Stylize）に部分一致で寄せる 201〜206 行、DESCRIPTION を説明に 207〜210 行。glslang と Tint はもう入っている（Tint の WGSL inspector と SPIRV-Cross も組んであるが使っていない）
 - 棚：dock_effects.dart（名前か説明文の部分一致で探す 47 行、札は label から 48〜58 行）、★ は ~/.motolii/effect_stars.json。効果の「最近使った」は無い（字体だけ）
 - 札の絵：effect_tiles.dart（気球の写真と Aa、8 コマ、つなぎは progress を 0→1、PERSISTENT は頭から描く）。tileSame は「見本と見分けがつかない」（ffmpeg の PSNR が 8 コマとも 40 dB 超 → NO CHANGE）で、**効果どうしが似ているかは見ていない**
 - AbsentMotion の tools/effect_showcase.json：181 本の効果ごとに写真 9 枚のどれに掛けるか・動かし方。Motolii は params と split だけ読み、photo・animate は読んでいない
 
-**数えたもの**（engine/effects）
+**数えたもの**（shelves/effects）
 - .fs 420・.wgsl 168・.am 20・.mjs 4・AviUtl2 276
 - 説明が無い .fs：198 / 420（キーが無い 105、空 93）
 - カテゴリの綴りがばらばら（Color と Color Effect、Distort・Distortion・Distortion Effect、タブ入り）

@@ -11,10 +11,10 @@ import 'dart:io';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 
-import '../motolii.dart' show motoliiDir;
+import '../motolii.dart' show motoliiShelves;
 import '../parts/text_hand.dart';
 import '../tokens.dart';
-import 'dock_make.dart' show createNames;
+import 'dock/dock_make.dart' show createNames;
 import 'effect_tiles.dart' show EffectTiles;
 import 'ws.dart';
 
@@ -80,7 +80,7 @@ String shelfAdd(Ws ws, String from, String code, String name, Iterable<String> t
   final ext = from.substring(from.lastIndexOf('.')), expression = shelfIsExpression(from);
   final dir = expression ? _ownExpressions : _ownEffects, file = '$dir/$name$ext';
   // (the maker's file of a name stands over the library's (doc_folder_files): neither is written over)
-  for (final f in [file, if (!expression) '$motoliiDir/effects/$name$ext']) {
+  for (final f in [file, if (!expression) '$motoliiShelves/effects/$name$ext']) {
     if (File(f).existsSync()) return '"$name$ext" is already there';
   }
   Directory(dir).createSync(recursive: true);

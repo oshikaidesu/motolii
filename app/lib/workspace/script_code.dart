@@ -9,7 +9,7 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
-import 'dock_program.dart' show ProgramCode;
+import 'dock/dock_program.dart' show ProgramCode;
 import 'effect_tiles.dart' show EffectTiles;
 import 'ws.dart';
 

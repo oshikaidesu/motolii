@@ -4,7 +4,7 @@ import 'package:flutter/widgets.dart';
 
 import '../inspector/inspector_parts.dart' show Hov;
 import '../tokens.dart';
-import 'desk_kit.dart';
+import 'desk/desk_kit.dart';
 import 'ws.dart';
 
 class WsDesk extends StatelessWidget {

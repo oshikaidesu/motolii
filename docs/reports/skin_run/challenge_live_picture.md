@@ -47,12 +47,12 @@ CAMetalLayer を Flutter に渡す道はどうか。
 | 部品 | 有るもの | 場所 |
 |---|---|---|
 | IOSurface つき BGRA の面を三枚 | `CVPixelBufferCreate` + `kCVPixelBufferIOSurfacePropertiesKey` + `kCVPixelBufferMetalCompatibilityKey` | `engine/glass_door_mac.mm:29-33` |
-| IOSurface を Dawn の texture にする | `wgpuDeviceImportSharedTextureMemory` → `wgpuSharedTextureMemoryCreateTexture` → `wgpuSharedTextureMemoryBeginAccess` | `engine/video.h:100-117` (読む用。書く用は usage を変えるだけ) |
+| IOSurface を Dawn の texture にする | `wgpuDeviceImportSharedTextureMemory` → `wgpuSharedTextureMemoryCreateTexture` → `wgpuSharedTextureMemoryBeginAccess` | `engine/media/video.h:100-117` (読む用。書く用は usage を変えるだけ) |
 | その機能を device が持つ | `SharedTextureMemoryIOSurface`, `SharedFenceMTLSharedEvent` を要求済み | `webgpu/platform/WebGPUPlatform.cpp:89-90` |
 | WGPUTexture を Filament の Texture にする | patch 済みの `importTextureR`。「format と usage はそのまま」 | `WebGPUDriver.cpp:680-689`, `WebGPUTexture.cpp:285-308`, 公開口 `filament/include/filament/Texture.h:357` |
 | Dawn の呼び出しを Filament の順番に入れる | `door::on_driver`, `door::device` | `engine/dawn_probe/gpu_door.h:16-20`, `gpu_door.cpp:16-24` |
-| Texture を描き先にする | `RenderTarget::Builder::texture`, `View::setRenderTarget`。stage はもう使っている | `RenderTarget.h:109`, `View.h:152`, `engine/kit.h:141, 658` |
-| 「終わった」を知る | `Engine::flushAndWait` = driver の `finish` = submit して GPU 完了まで待つ。stage の `draw(s, nullptr, true)` がもう呼んでいる | `filament/src/details/Engine.cpp:878-879`, `WebGPUQueueManager.cpp:84-97`, `engine/kit.h:745-752` |
+| Texture を描き先にする | `RenderTarget::Builder::texture`, `View::setRenderTarget`。stage はもう使っている | `RenderTarget.h:109`, `View.h:152`, `engine/stage/kit.h:141, 658` |
+| 「終わった」を知る | `Engine::flushAndWait` = driver の `finish` = submit して GPU 完了まで待つ。stage の `draw(s, nullptr, true)` がもう呼んでいる | `filament/src/details/Engine.cpp:878-879`, `WebGPUQueueManager.cpp:84-97`, `engine/stage/kit.h:745-752` |
 | 三枚を回す・できた番号を置く | `g_live.front`, `slot[i].busy`, `glass_front()` | `engine/glass_live.h:14`, `glass_live.mm:52`, `glass_scene.mm:3039-3041` |
 | Flutter が面を受け取る | `GlassTexture: FlutterTexture`, `copyPixelBuffer`, `textureFrameAvailable` | `MainFlutterWindow.swift:25-91` (そのまま使える) |
 
@@ -110,7 +110,7 @@ video.h も「貸しっぱなし」(`video.h:114-117`)。同じ作法でよい: 
 
 始める時 (一度):
 1. `CVPixelBufferCreate(..., kCVPixelFormatType_32BGRA, {IOSurfaceProperties, MetalCompatibility})` を三枚 — `engine/glass_door_mac.mm:29-31`
-2. `CVPixelBufferGetIOSurface(buffer)` — `engine/video.h:84`
+2. `CVPixelBufferGetIOSurface(buffer)` — `engine/media/video.h:84`
 3. `door::on_driver(engine, [...]{ ... })` の中で 4-6 — `dawn_probe/gpu_door.h:20`
 4. `wgpuDeviceImportSharedTextureMemory(door::device(engine), &desc)`、`WGPUSharedTextureMemoryIOSurfaceDescriptor` を鎖に — `webgpu.h:4842`, `webgpu.h:2780`, 例 `video.h:100-105`
 5. `wgpuSharedTextureMemoryCreateTexture(memory, &like)`、`like.format = WGPUTextureFormat_BGRA8Unorm`, `like.usage = WGPUTextureUsage_RenderAttachment` — `webgpu.h:4996`, 許される usage `SharedTextureMemoryMTL.mm:131-135`

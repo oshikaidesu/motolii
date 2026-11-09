@@ -26,9 +26,9 @@ Alight Motion の効果のうち、[alight_checklist.md](alight_checklist.md) �
 | pannellum の `src/js/libpannellum.js`（fragEquirectangular） | MIT | 正距円筒の絵を yaw・pitch・roll・hfov で平らな視野に | ISF に包む読み口か糊 |
 | perfect-freehand（https://github.com/steveruizok/perfect-freehand） | MIT | 点の列から太さの変わる線の輪郭（始めと終わりの細り） | QuickJS で回し、輪郭を libtess2 へ |
 | CountUp.js（https://github.com/inorganik/countUp.js） | MIT | 数を数え上げる・桁区切り・小数・イーズ | QuickJS で回す（画面の要素は小さな代役） |
-| FFmpeg の v360（libavfilter/vf_v360.c） | LGPL-2.1 以上 | 正距円筒→正距円筒を yaw・pitch・roll で、正距円筒→平ら も | Motolii はもう ffmpeg を呼ぶ（`engine/mosh.h`）。同じ形で裏で焼く |
+| FFmpeg の v360（libavfilter/vf_v360.c） | LGPL-2.1 以上 | 正距円筒→正距円筒を yaw・pitch・roll で、正距円筒→平ら も | Motolii はもう ffmpeg を呼ぶ（`engine/media/mosh.h`）。同じ形で裏で焼く |
 | GStreamer の GstVideoDither（`gst/video/video-dither.h`） | LGPL | Floyd–Steinberg・Sierra Lite・Bayer、段の数（quantizer）。手元の /opt/homebrew の頭で確かめた | もう入っている GStreamer の関数を呼ぶ |
-| Skia の画の効果（SkImageFilters の Blur・Morphology・DistantLitSpecular など） | BSD-3 | SVG の feSpecularLighting と同じ。Motolii は今 pathops だけ作る（`engine/skia.sh`） | Skia の core の効果を作る所まで広げる |
+| Skia の画の効果（SkImageFilters の Blur・Morphology・DistantLitSpecular など） | BSD-3 | SVG の feSpecularLighting と同じ。Motolii は今 pathops だけ作る（`engine/deps/skia.sh`） | Skia の core の効果を作る所まで広げる |
 
 **使わない（許可が合わない）**：Lygia（Prosperity 3.0.0＝商用は 30 日の試しだけ、商用はスポンサーの Patron License。LICENSE.md と README で確かめた）、Remotion の `@remotion/effects`（Long Shadows・Bevel Alpha・Contour Lines まで揃うが Remotion License、package は UNLICENSED）、obs-shaderfilter（GPL-2.0）、Natron・openfx-misc（GPL-2.0）、Ethereios/ISF-shaders（README が CC 非営利、Shadertoy から）、grigM/ISF-shaders-collection（許可なし、Shadertoy の写し）、GSAP（独自）。godotshaders.com は 1 本ごとに CC0・MIT・GPL-3 を作者が選ぶ。読み口と 1 本ごとの確認が要るので、今回は当てにしなかった。
 
@@ -36,12 +36,12 @@ Alight Motion の効果のうち、[alight_checklist.md](alight_checklist.md) �
 
 - **360º Reorient Sphere**：360º の正距円筒の写真・動画の向きを変える — 借りる先：FFmpeg の v360（`v360=e:e:yaw=…:pitch=…:roll=…`）（LGPL-2.1）— 入れ方：エンジン。Datamosh と同じに裏で焼いて ~/Library/Caches/Motolii に置き、キーは sendcmd のファイルで渡す
 - **360º Viewer**：360º の絵を球の内から見たように平らに映す — 借りる先：pannellum の fragEquirectangular（MIT）。もう一つは FFmpeg の v360（e→flat、h_fov・v_fov）（LGPL-2.1）— 入れ方：エンジン。pannellum の GLSL を ISF に包む糊、または v360 を Reorient と同じ形で焼く。今の「部屋に貼って environment_rotate」は物の効果ではない
-- **Bend**：レイヤーを円の弧に沿って曲げる — 借りる先：`Circle Wrap Distortion.fs`（inputAngle で弧の開き）（MIT）— 入れ方：置くだけ（近い）。同じにするなら、形の bend（`engine/flat.mat` の頂点の段）を写真・文字の板にも掛ける（板を細かい三角形にする）エンジンの仕事
+- **Bend**：レイヤーを円の弧に沿って曲げる — 借りる先：`Circle Wrap Distortion.fs`（inputAngle で弧の開き）（MIT）— 入れ方：置くだけ（近い）。同じにするなら、形の bend（`engine/materials/flat.mat` の頂点の段）を写真・文字の板にも掛ける（板を細かい三角形にする）エンジンの仕事
 - **Blink**：不透明度を元の値と 0 で交互に — 借りる先：今あるふるまい oscillator を opacity に、`step` で 0 か 1 に丸める。画素なら `Strobe.fs`（MIT）。動きの見本は AE の式 `Math.round(time*f)%2` — 入れ方：置くだけ（今ある仕組み）
 - **Contour Gradient**：不透明な所の輪郭からの距離でグラデーション — 借りる先：距離の絵は Godot の canvas_sdf.glsl（MIT）。見た目の見本は GIMP の Shapeburst・Photoshop の「シェイプバースト」 — 入れ方：エンジン。透明度から距離の絵を作る段を足し、距離を色の表で引く（この一歩の見本はまだ無い）
 - **Contour Lines**：輪郭に沿って線を何本も — 借りる先：距離の絵は Godot の canvas_sdf.glsl（MIT）。1 本だけなら pixi-filters の OutlineFilter（MIT）か今の形・文字の stroke — 入れ方：エンジン。距離の絵から等間隔の線（Contour Gradient と同じ段を使う）
 - **Contour Strips**：明るさか透明度を高さにして、細い紙の帯を前後に重ねる — 借りる先：見つからない（ossia の `depth/Depth Topo Bands.fs` などは深さの入力用で、レイヤーの明るさには使えない）— 入れ方：—
-- **Copy Background**：後ろの絵をレイヤーに写し、調整レイヤーにする — 借りる先：仕組みの見本は pixi の BackdropBlurFilter（`blendRequired`・`backTexture`）（MIT）、AE の調整レイヤー — 入れ方：エンジン。物の効果の入力に「その物より下に描いた絵」を渡す（`engine/thing_fx.h`、`screen.h` の ScreenStack）。Magnify Background・Mask Blur・Polar Displacement Map も同じ仕事で出る
+- **Copy Background**：後ろの絵をレイヤーに写し、調整レイヤーにする — 借りる先：仕組みの見本は pixi の BackdropBlurFilter（`blendRequired`・`backTexture`）（MIT）、AE の調整レイヤー — 入れ方：エンジン。物の効果の入力に「その物より下に描いた絵」を渡す（`engine/stage/thing_fx.h`、`screen.h` の ScreenStack）。Magnify Background・Mask Blur・Polar Displacement Map も同じ仕事で出る
 - **Count Up/Down**：文字の中の数に一定の値を足す・掛ける（数え上げ） — 借りる先：CountUp.js（MIT）。動きの見本は AE の Numbers と sourceText の式 — 入れ方：エンジン。QuickJS で CountUp.js を回し、文字の中の数だけを毎コマ書き換える口を足す
 - **Dark Glow**：明るさのしきい値より暗い所の周りに暗いにじみ — 借りる先：`Gloom.fs`（Bloom の暗い版：最後に `min(mix(元, ぼかし*0.9, intensity), 元)`）（MIT）— 入れ方：置くだけ（`Gloom.fs` と `Gloom.vs` を効果のフォルダへ）
 - **Echo Keyframes**：キーの動きだけを元に、前後の時刻の姿の写しを出す — 借りる先：今ある `copies`＋`stagger`（写しごとに秒ずれて動く）、色は `copy_fill`。動きの見本は AE の Echo — 入れ方：置くだけ（今ある仕組み）。写しごとに薄くするのに opacity のふるまいが要るかは確かめる
@@ -80,7 +80,7 @@ Alight Motion の効果のうち、[alight_checklist.md](alight_checklist.md) �
 - **Starfield**：2 次元で動かせる視差のある星空 — 借りる先：小さな丸に `copies`＋`scatter_z` ほか散らす値、カメラを動かす（本当の視差）。今の `Hyperspace.fs` も — 入れ方：置くだけ（今ある仕組み）
 - **Stretch Segment**：角度に沿って切り、離した間を画素を引き伸ばして埋める — 借りる先：`Rotate.fs` → `Edge Blowout.fs`（insideBleed）→ `Rotate.fs`（MIT）— 入れ方：置くだけ（近い。切れ目の両側が離れて動くのは無い）
 - **Stroke Taper**：手描きの線の始めと終わりを細く — 借りる先：perfect-freehand（taper・easing・thinning）（MIT）— 入れ方：エンジン。QuickJS で回し、出た輪郭を libtess2 で塗る
-- **Text Progress**：文字を 1 字ずつ途中まで見せる — 借りる先：今ある文字の split＋出来合いの動き（`engine/animators/*.js` の「出る数」）。動きの見本は AE のテキストアニメーターの範囲セレクター — 入れ方：置くだけ（今ある仕組み）
+- **Text Progress**：文字を 1 字ずつ途中まで見せる — 借りる先：今ある文字の split＋出来合いの動き（`shelves/animators/*.js` の「出る数」）。動きの見本は AE のテキストアニメーターの範囲セレクター — 入れ方：置くだけ（今ある仕組み）
 - **Tile Shift**：格子に分け、升ごとに中身をでたらめな向きにずらす — 借りる先：ちょうど同じ物は見つからない（近いのは今の `Pixel Shifter.fs` と `Glitch Shifter.fs`）— 入れ方：—
 - **Time Quantization**：この物だけ時間を段々に進める — 借りる先：動きの見本は AE の Posterize Time（フレームレートのつまみ）。キーだけなら今の anime.js の `steps(n)` — 入れ方：エンジン（小さい）。物の時間を `floor(t×fps)/fps` にして、動画・Lottie・キー・ふるまいに渡す
 - **Zoom Streaks**：1 点の周りに拡大した写しを重ねた放射の筋 — 借りる先：今ある `copies`＋`copy_size`（anchor を中心に）、重ね方 lighten。画素なら `God Rays.fs`（MIT）か ossia の `linear/Radial Blur.fs`（Zoom）— 入れ方：置くだけ（今ある仕組み）

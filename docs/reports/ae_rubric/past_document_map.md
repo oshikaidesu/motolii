@@ -192,7 +192,7 @@
     - `Random {seed: 500, grain: 0.15, center_u: 0.5, center_v: 0.75, bias: 0.5}`
     - `Steps {width: 0.178, smooth: 0.0}`
     - `ElasticSteps {width: 0.2, elasticity: 0.5}`
-  - 今（`engine/interp.h:20-26`）との食い違い：**Bounce**（今 `1.5/2.75, 0.75`。この数は過去では `doc/eval/gsap.rs:102` にだけ在る = 要らないと言われた側）と **Random**（今 `0, 0.25, 0.5, 0.8, 0.5`）。Cyclic と ElasticSteps と Steps と Elastic と Bezier は過去の表と同じ。
+  - 今（`engine/motion/interp.h:20-26`）との食い違い：**Bounce**（今 `1.5/2.75, 0.75`。この数は過去では `doc/eval/gsap.rs:102` にだけ在る = 要らないと言われた側）と **Random**（今 `0, 0.25, 0.5, 0.8, 0.5`）。Cyclic と ElasticSteps と Steps と Elastic と Bezier は過去の表と同じ。
   - 取っ手の動く幅も同じファイル：Bounce first_dip 0.06〜0.7・dip 0〜0.9、Elastic limit 1.02〜2.0・period 0.12〜0.7・damp 0〜0.97、Cyclic period 0.08〜0.95・peak 0.02〜0.98（`ease_kinds.rs:83-84,93,105-106,117,130`）。
   - 注意：`ease` の `kind` が 9 つに無い名前だと `gsap::interp_for` に渡る（`ease_kinds.rs:268-272`）。GSAP の写しを外すならここも外れる。`EasyEase`／`EasyEaseIn`／`EasyEaseOut` は別扱い（`native/port.rs:418-420`）。
   - 机だけで動く時の見本（Rust なし）：Linear、Ease `[.42,0,.58,1]`、Bezier `[.25,.1,.78,.92]`、Spring、Bounce（`lib/desks/ease/face.dart:61-66`）。

@@ -12,28 +12,28 @@
 
 ## 今の「レシピ」がこの線のどちらにいるか（11/9 時点のコード）
 
-`engine/recipes/` の1つの書き方（`engine/doc_recipes.h:2` `doc_recipes_read`）に、両方が入っている。めちゃくちゃに見えるのはこのため。
+`shelves/recipes/` の1つの書き方（`engine/document/doc_recipes.h:2` `doc_recipes_read`）に、両方が入っている。めちゃくちゃに見えるのはこのため。
 
 | レシピ | 中身（根拠） | どっち |
 |---|---|---|
-| Canvalry の分（lissajous・cube・sphere など） | Cavalry のスクリプトを丸ごと動かす。コピーの位置・回転・ノブはスクリプトの中（`engine/recipes/from_canvalry.py:2`） | Program |
+| Canvalry の分（lissajous・cube・sphere など） | Cavalry のスクリプトを丸ごと動かす。コピーの位置・回転・ノブはスクリプトの中（`shelves/recipes/from_canvalry.py:2`） | Program |
 | Cube Wave・Dwitter-48ed・Blob Track | `// make` の頭が無く、p5 などのまま（`Cube Wave.js:1`「as it is」、`doc_recipes.h:10`） | Program |
 | am_*（AbsentMotion の形） | ホストのパスの形に値を入れただけ（`// make shape path`） | Create |
-| burst・rings・tunnel など | ホストのコピーの値を決めるだけ。計算は C++（`engine/doc_kinds.h:345` 付近） | Create |
+| burst・rings・tunnel など | ホストのコピーの値を決めるだけ。計算は C++（`engine/document/doc_kinds.h:345` 付近） | Create |
 | Repeater・AE Grid/Ring/Stagger | AE の式。ホストの物の値（コピーの位置）を動かす | Create |
 
-11/9 から、Program の行の物は Program の棚に出て、Create の Recipes には出ない。Canvalry の分は頭の行 `// --label:Cavalry`、p5 などのままの物はエンジンがそう読んだ時に、パックとして一覧に出る（`engine/doc_recipes.h` `doc_recipes_read`）。作るのは Create と同じ `make <名前>`。ファイルは動かしていない（作った物の `script` がそのパスを持っているため）。
+11/9 から、Program の行の物は Program の棚に出て、Create の Recipes には出ない。Canvalry の分は頭の行 `// --label:Cavalry`、p5 などのままの物はエンジンがそう読んだ時に、パックとして一覧に出る（`engine/document/doc_recipes.h` `doc_recipes_read`）。作るのは Create と同じ `make <名前>`。ファイルは動かしていない（作った物の `script` がそのパスを持っているため）。
 
 ## 今の作りとの差
 
 - 11/9 の未コミットの変更（`app/lib/workspace/script_code.dart`）は、打ち直した式の写しを `programs/` に置く。そのため Program タブに出てしまい、この線の反対側にいる。
 - 同じ変更の「Add to Create」（式のプリセットを `recipes/` に書く、`dock_make_4.dart`）は、レシピの書き方をさらに増やしている。取り下げる方向で、まだ決めていない。
-- 物の `script` にはファイルが1つしか入らない（`engine/doc_values.h:321`）。Effects の Motion も Repeater もこの1つを書き換えるので、同時に付けられない（`app/lib/workspace/ws_2.dart:624`、`dock_make_2.dart:496` の「It has a script already」）。例外はステージ（物番号0）で、複数入る（`doc_values.h:329`）。
+- 物の `script` にはファイルが1つしか入らない（`engine/document/doc_values.h:321`）。Effects の Motion も Repeater もこの1つを書き換えるので、同時に付けられない（`app/lib/workspace/ws_2.dart:624`、`dock_make_2.dart:496` の「It has a script already」）。例外はステージ（物番号0）で、複数入る（`doc_values.h:329`）。
 - 物の `fx`（エフェクトの列）にはファイルをいくつでも順に並べられ、AbsentMotion の動き（`.am`）はもう複数重なる（`doc_values.h:322`・`:333`）。Expression をこの列に入れられれば、並べ替え・目玉・外す・複製もエフェクトのカードの操作のまま使える。ただし、fx の列に入れた JS がコピーの並べ方（`each()`）まで動くかは、まだ確かめていない。
-- Create の Copies の枠は、Repeater 1つだけの特別な枠（`app/lib/workspace/dock_make_2.dart:416`）。
+- Create の Copies の枠は、Repeater 1つだけの特別な枠（`app/lib/workspace/dock/dock_make_2.dart:416`）。
 - Glass（Materials の枠）も「選んでいる固体を変える」ので、同じ理由で Create にいるのは筋が通らない。どこへ置くかはまだ決めていない。
 
 ## 出典
 
 - AE の式はレイヤーのプロパティに付く：Adobe「Expression basics」（https://helpx.adobe.com/after-effects/using/expression-basics.html）
-- Canvalry を丸ごと動かしている：`engine/recipes/from_canvalry.py` の頭のコメント
+- Canvalry を丸ごと動かしている：`shelves/recipes/from_canvalry.py` の頭のコメント

@@ -1,0 +1,582 @@
+// The Stage seat: header with view controls, the tool column, the viewport (stage_view.dart) and the tool options strip.
+// The picture is the work (stage_art.dart); the chrome around it stays grey and round, with the accent only on what is on.
+import 'dart:io' show Directory, File;
+
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+import '../../forms/forms.dart';
+import '../../parts/skin_parts.dart';
+
+import '../../parts/glyphs.dart';
+import '../../tokens.dart';
+import 'stage_art.dart';
+import 'stage_view.dart';
+import '../two_fingers.dart';
+import '../workspace.dart' show wsPlace;
+import '../ws.dart';
+
+class WsStage extends StatelessWidget {
+  const WsStage({super.key});
+  @override
+  Widget build(BuildContext context) => const WsSeat(child: _Stage());
+}
+
+const _tools = [
+  (G.select, 'Select', 'V'),
+  (G.move, 'Move', 'M'),
+  (G.rect, 'Rectangle', 'R'),
+  (G.ellipse, 'Ellipse', 'E'),
+  (G.pen, 'Pen', 'P'),
+  (G.text, 'Text', 'T'),
+  (G.brush, 'Brush', 'B'),   // (a path drawn by hand, Alight Motion's freehand; B as Photoshop's and After Effects' brush)
+  (G.camera, 'Camera', 'C'),   // (After Effects' Unified Camera tool, C: a drag turns the camera round where it looks, the wheel brings it nearer)
+];
+
+/// The tools as the window's commands (`tool.select`, `tool.text`…), their letters in its keymap (keys.dart): heard
+/// wherever the window has the keys and no words are being typed, as After Effects' and Photoshop's tool letters are,
+/// not only while the stage has them (golf_noise.md (78): a document box closed left them to the window, and T was
+/// not heard).
+Map<String, VoidCallback> wsToolCommands(Ws ws) => {for (final (i, t) in _tools.indexed) 'tool.${t.$2.toLowerCase()}': () => ws.setView('stage.tool', i)};
+
+class _Stage extends StatefulWidget {
+  const _Stage();
+  @override
+  State<_Stage> createState() => _StageState();
+}
+
+class _StageState extends State<_Stage> {
+  // (how the stage looks: the window's view, so any pane may read it and the window opened again shows the same)
+  Ws get _ws => WsScope.read(context);
+  int get _zoom => _ws.viewOf('stage.zoom', 0);
+  set _zoom(int v) => _ws.setView('stage.zoom', v);
+  int get _tool => _ws.viewOf('stage.tool', 0);
+  set _tool(int v) => _ws.setView('stage.tool', v);
+  bool get _safe => _ws.viewOf('stage.safe', true);
+  set _safe(bool v) => _ws.setView('stage.safe', v);
+  bool get _grid => _ws.viewOf('stage.grid', false);
+  set _grid(bool v) => _ws.setView('stage.grid', v);
+  bool get _camera => _ws.viewOf('stage.camera', false);   // (AbsentMotion's cameraView: off till asked, the stage sees the world)
+  (Object?, String) _eyeTold = (null, '');
+
+  /// The inside told which eye the stage is seen by, when that has changed (a document opened begins at the world's).
+  void _tellEye(Ws ws) {
+    final m = ws.inside, word = ws.freeEye ? ws.eye.join(' ') : '';
+    if (m == null || _eyeTold == (m, word)) return;
+    _eyeTold = (m, word);
+    m.later('eye', word: word);
+  }
+
+  set _camera(bool v) => _ws.setView('stage.camera', v);
+  Map<String, int> get _opts => _ws.view.putIfAbsent('stage.options', () => <String, int>{}) as Map<String, int>;
+  final _cursor = ValueNotifier<Offset?>(null);
+  final _focus = FocusNode(debugLabel: 'stage');
+  final _view = GlobalKey();   // (the view: what is under a tile let go over it)
+  String? _shot;   // (the picture as it was when taken: a still among the system's temporary files)
+  bool _showing = false;
+
+  @override
+  void dispose() {
+    _cursor.dispose();
+    _focus.dispose();
+    _forget();
+    super.dispose();
+  }
+
+  /// After Effects' Take Snapshot: the picture at the playhead kept as a still (the inside's Export Frame), to be seen
+  /// again over the picture while Show Snapshot is held: an earlier look against the one now, nothing undone (P19).
+  void _take() {
+    final m = _ws.inside;
+    if (m == null) return;
+    final png = '${Directory.systemTemp.path}/motolii_snapshot_${DateTime.now().microsecondsSinceEpoch}.png';   // (a new name each time: Flutter's image cache knows a file by its name)
+    if (!m.still(png)) {
+      _ws.notice = 'No snapshot: ${m.trouble}';
+      return;
+    }
+    _forget();
+    setState(() => _shot = png);
+  }
+
+  void _forget() {
+    try {
+      if (_shot case final was?) File(was).deleteSync();
+    } catch (_) {}   // (gone already)
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    WsScope.frameOf(context);   // (the scene is at the playhead)
+    WsScope.pictureOf(context);   // (and as the picture shown has it)
+    final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked, WsAspect.stage, WsAspect.view}), scene = Ws.timed('stage scene', () => ArtScene.of(ws, camera: !ws.freeEye));
+    _tellEye(ws);
+    return DragTarget<VoidCallback>(   // (a tile of a shelf dropped here does what its double press does: Ableton's drop of a device on a track)
+      onWillAcceptWithDetails: (_) => true,
+      onAcceptWithDetails: (d) {   // (on the thing it is let go over, as After Effects takes an effect dragged to a layer in
+        //  the Composition panel; over none, on the picked thing as a double press puts it)
+        if ((_view.currentState as StageHandles?)?.hitAt(d.offset) case final id?) ws.select(id);
+        d.data();
+      },
+      builder: (context, hot, _) => DecoratedBox(
+        position: DecorationPosition.foreground,
+        decoration: BoxDecoration(border: hot.isEmpty ? null : Border.all(color: WsT.accent, width: 2)),
+        child: Focus(
+      focusNode: _focus,
+      child: Column(
+        children: [
+          WsHeader(
+            '',
+            trailing: [
+              _Seg(items: stageZooms, index: _zoom, onChanged: (i) => setState(() => _zoom = i)),
+              SizedBox(width: Shape.s(6)),
+              _Toggle(label: 'Safe', icon: _Icon.safe, on: _safe, onTap: () => setState(() => _safe = !_safe)),
+              SizedBox(width: WsT.gap),
+              _Toggle(label: 'Grid', icon: _Icon.grid, on: _grid, onTap: () => setState(() => _grid = !_grid)),
+              SizedBox(width: Shape.s(6)),
+              if (_camera || ws.layers.any((l) => l.kind == WsKind.camera)) ...[   // (AbsentMotion's PreviewMode: the switch once there is a camera to switch to)
+                _Toggle(label: _camera ? 'Camera' : 'Free', glyph: G.camera, on: _camera, onTap: () => setState(() => _camera = !_camera)),
+                SizedBox(width: Shape.s(6)),
+              ],
+              _Toggle(key: const ValueKey('ws-snapshot-take'), label: 'Snapshot', icon: _Icon.snap, on: false, onTap: _take),
+              if (_shot != null) ...[
+                SizedBox(width: WsT.gap),
+                Listener(   // (After Effects' Show Snapshot: seen while it is held; let go, the picture as it is now)
+                  onPointerDown: (_) => setState(() => _showing = true),
+                  onPointerUp: (_) => setState(() => _showing = false),
+                  onPointerCancel: (_) => setState(() => _showing = false),
+                  child: _Toggle(key: const ValueKey('ws-snapshot-show'), label: 'Show', icon: _Icon.show, on: _showing, onTap: () {}),
+                ),
+              ],
+            ],
+          ),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _ToolColumn(active: _tool, onChanged: (i) => setState(() => _tool = i), onTwice: (kind) => _whole(ws, kind)),
+                Expanded(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      WsTwoFingers(onPinchStep: (step) => setState(() => _zoom = (_zoom + step).clamp(0, stageZooms.length - 1)), child: StageView(key: _view, scene: scene, selected: ws.selected, zoom: _zoom, grid: _grid, safe: _safe, cursor: _cursor, onPoke: _focus.requestFocus, texture: ws.stageTexture, snapshot: _showing ? _shot : null, make: const [null, null, 'rect', 'circle', 'pen', 'text', 'brush', 'camera'][_tool], brushSize: const [8.0, 16.0, 32.0][_opts['brush.size'] ?? 1], brushTool: const [1, 0, 2, 3][_opts['brush.kind'] ?? 0], axis: _tool == 1 ? _opts['move.axis'] ?? 0 : 0, fromCentre: (_opts['ell.from'] ?? 0) == 1, snap: _tool < 2 && (_opts[_tool == 0 ? 'sel.snap' : 'move.snap'] ?? 1) == 1, pivots: (_opts['sel.pivot'] ?? 0) == 1, group: _tool == 0 && (_opts['sel.level'] ?? 0) == 1, mask: (_opts[_tool == 2 ? 'rect.mode' : 'pen.mode'] ?? 0) == 1 && (_tool == 2 || _tool == 4))), // (joined: the tool in hand draws a thing of the document)
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _OptionsStrip(tool: _tool, opts: _opts, onOpt: (k, v) => setState(() => _opts[k] = v), scene: scene, layer: ws.layer, ws: ws),
+        ],
+      ),
+    ),
+      ),
+    );
+  }
+}
+
+// ---- small round things you touch --------------------------------------------------------------------------------------
+
+class _Hov extends StatefulWidget {
+  const _Hov({required this.builder, this.onTap});
+  final Widget Function(BuildContext, bool) builder;
+  final VoidCallback? onTap;
+  @override
+  State<_Hov> createState() => _HovState();
+}
+
+class _HovState extends State<_Hov> {
+  bool _h = false;
+  @override
+  Widget build(BuildContext context) => MouseRegion(
+    cursor: widget.onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
+    onEnter: (_) => setState(() => _h = true),
+    onExit: (_) => setState(() => _h = false),
+    child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onTap, child: widget.builder(context, _h)),
+  );
+}
+
+/// A segmented chip: a well with round items, the chosen one filled with the accent.
+class _Seg extends StatelessWidget {
+  const _Seg({required this.items, required this.index, required this.onChanged});
+  final List<String> items;
+  final int index;
+  final ValueChanged<int> onChanged;
+  @override
+  Widget build(BuildContext context) => Forms.worn.segment(context, ChoiceSpec(labels: items, selected: index, onSelect: onChanged));
+}
+
+enum _Icon { safe, grid, snap, show }
+
+/// An on/off chip: raised with an accent mark when on, a quiet well when off.
+class _Toggle extends StatelessWidget {
+  const _Toggle({super.key, required this.label, required this.on, required this.onTap, this.icon, this.glyph});
+  final String label;
+  final bool on;
+  final VoidCallback onTap;
+  final _Icon? icon;
+  final G? glyph;
+  @override
+  Widget build(BuildContext context) => Forms.worn.flag(
+    context,
+    FlagSpec(
+      label: label,
+      on: on,
+      onTap: onTap,
+      mark: (ink) {
+        if (glyph case final g?) return Glyph(g, size: Shape.z(14), color: ink);
+        return CustomPaint(size: const Size.square(12), painter: _IconPainter(icon!, ink));
+      },
+    ),
+  );
+}
+
+class _IconPainter extends CustomPainter {
+  const _IconPainter(this.icon, this.c);
+  final _Icon icon;
+  final Color c;
+  @override
+  void paint(Canvas cv, Size s) {
+    if (SkinParts.draw(cv, s, 'stage.${icon.name}', c)) return; // (the skin's own picture, if it brings one)
+    final p = Paint()
+      ..color = c
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    final r = (Offset.zero & s).deflate(1);
+    switch (icon) {
+      case _Icon.safe:
+        cv.drawRect(r, p);
+        cv.drawRect(r.deflate(2.5), p);
+      case _Icon.grid:
+        cv.drawRect(r, p);
+        for (final t in const [1 / 3, 2 / 3]) {
+          cv.drawLine(Offset(r.left + r.width * t, r.top), Offset(r.left + r.width * t, r.bottom), p);
+          cv.drawLine(Offset(r.left, r.top + r.height * t), Offset(r.right, r.top + r.height * t), p);
+        }
+      case _Icon.snap:   // (a camera's body and its lens)
+        cv.drawRRect(RRect.fromRectAndRadius(Rect.fromLTRB(r.left, r.top + r.height * .25, r.right, r.bottom), const Radius.circular(1.5)), p);
+        cv.drawCircle(r.center.translate(0, r.height * .12), r.width * .2, p);
+      case _Icon.show:   // (the picture halved: then and now)
+        cv.drawRect(r, p);
+        cv.drawRect(Rect.fromLTRB(r.left, r.top, r.center.dx, r.bottom), p..style = PaintingStyle.fill);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_IconPainter o) => o.icon != icon || o.c != c;
+}
+
+/// A shape tool pressed twice: one as large as the picture, at once (After Effects': Adobe's own lesson on adding layers).
+void _whole(Ws ws, String kind) {
+  ws.whole(kind);
+  ws.setView('stage.tool', 0);
+}
+
+// ---- tool column -------------------------------------------------------------------------------------------------------
+
+class _ToolColumn extends StatelessWidget {
+  const _ToolColumn({required this.active, required this.onChanged, required this.onTwice});
+  final int active;
+  final ValueChanged<int> onChanged;
+  final ValueChanged<String> onTwice;
+  static var _last = (-1, 0);   // (the tool last pressed, and when)
+
+  void _press(int i) {
+    final now = DateTime.now().millisecondsSinceEpoch, twice = _last.$1 == i && now - _last.$2 < 500;
+    _last = (i, now);
+    if (twice && (i == 2 || i == 3)) return onTwice(i == 2 ? 'rect' : 'circle');
+    onChanged(i);
+  }
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: WsT.rail,
+    decoration: BoxDecoration(
+      color: WsT.body,
+      border: Border(right: BorderSide(color: WsT.line)),
+    ),
+    child: ClipRect(
+      child: OverflowBox(
+        alignment: Alignment.topCenter,
+        maxHeight: double.infinity,
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: Shape.s(6)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var i = 0; i < _tools.length; i++) ...[
+                if (i == 2 || i == 4 || i == 7) Container(width: Shape.z(20), height: 1, margin: EdgeInsets.symmetric(vertical: Shape.s(5)), color: WsT.line),
+                if (i != 0 && i != 2 && i != 4 && i != 7) SizedBox(height: Shape.s(3)),
+                _ToolButton(key: ValueKey('ws-tool-$i'), glyph: _tools[i].$1, on: i == active, onTap: () => _press(i)),
+              ],
+              Container(width: Shape.z(20), height: 1, margin: EdgeInsets.symmetric(vertical: Shape.s(8)), color: WsT.line),
+              const _Swatches(),   // (joined: the picked thing's fill and stroke, or the inks a drawn thing gets)
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _ToolButton extends StatelessWidget {
+  const _ToolButton({super.key, required this.glyph, required this.on, required this.onTap});
+  final G glyph;
+  final bool on;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => _Hov(
+    onTap: onTap,
+    builder: (_, h) => Container(
+      width: Shape.z(28),
+      height: Shape.z(28),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: on ? WsT.accent : (h ? WsT.raised : WsT.body), borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
+      child: Glyph(glyph, size: Shape.z(16), color: on ? WsT.onAccent : (h ? Grey.g95 : Grey.g63)),
+    ),
+  );
+}
+
+/// Fill and stroke inks of the drawing tools, fill above, stroke below. Pressed, one is the one the Colors shelf
+/// gives its colour to, brought to the front and ringed, and the shelf comes (CLIP STUDIO PAINT's main and sub colour
+/// icons at the foot of its tools: the one picked has a blue outline and the wheel changes it; Illustrator's Fill and
+/// Stroke boxes: the one chosen is edited). With nothing picked, it is the ink or the edge a thing drawn next comes in.
+class _Swatches extends StatelessWidget {
+  const _Swatches();
+  @override
+  Widget build(BuildContext context) {
+    final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), p = _paintOf(ws);
+    final fill = p.fill ?? WsT.body, stroke = p.stroke ?? WsT.line, edgeOn = ws.aim == 'stroke';
+    Widget box(String aim, BoxDecoration look) => GestureDetector(
+      key: ValueKey('ws-ink-$aim'),
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        ws.aim = aim;
+        ws.route('Browser › Colors');
+      },
+      child: Container(
+        width: Shape.z(16),
+        height: Shape.z(16),
+        foregroundDecoration: ws.aim == aim ? BoxDecoration(borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius)), border: Border.all(color: WsT.accent)) : null,
+        decoration: look,
+      ),
+    );
+    final edge = Positioned(
+      right: 0,
+      bottom: 0,
+      child: box('stroke', BoxDecoration(color: WsT.body, borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius)), border: Border.all(color: stroke, width: 3))),
+    );
+    final ink = Positioned(left: 0, top: 0, child: box('fill', BoxDecoration(color: fill, borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius)), border: Border.all(color: WsT.body))));
+    return SizedBox(
+    width: Shape.z(26),
+    height: Shape.z(26),
+    child: Stack(
+      children: edgeOn ? [ink, edge] : [edge, ink],   // (the one aimed in front)
+    ),
+  );
+  }
+}
+
+/// Joined: a colour of the document as Flutter's (six digits; a ramp by its first); null: none.
+Color? _colourOf(String word) {   // (a gradient by its first stop, where it stands left out)
+  final first = word.split(' ').first.split('@').first;
+  final v = first.length == 6 || first.length == 8 ? int.tryParse(first.substring(0, 6), radix: 16) : null;
+  return v == null ? null : Color(0xFF000000 | v);
+}
+
+/// Joined: what the picked thing is painted with and how it is set (or, nothing picked, the inks a drawn thing gets).
+// (read once a reading of the document and a pick: the strip is built at every picture while it plays, these do not
+//  change with the moment, and a read then waits for the inside telling the stage its moment)
+(Object, ({Color? fill, Color? stroke, String width, String round, String font, String size, int align}))? _paintRead;
+({Color? fill, Color? stroke, String width, String round, String font, String size, int align}) _paintOf(Ws ws) {
+  final key = (ws.rev, ws.selected, ws.ink, ws.edge);
+  if (_paintRead case (final k, final p) when k == key) return p;
+  final p = _paintNow(ws);
+  _paintRead = (key, p);
+  return p;
+}
+
+({Color? fill, Color? stroke, String width, String round, String font, String size, int align}) _paintNow(Ws ws) {
+  final m = ws.inside!, t = int.tryParse(ws.selected ?? '');
+  if (t == null) return (fill: _colourOf(ws.ink), stroke: _colourOf(ws.edge), width: ws.edge.isEmpty ? 'None' : '6 px', round: '0%', font: '—', size: '—', align: 0);
+  final w = m.value(t, 'stroke_width', 0), r = m.value(t, 'round', 0), text = m.word(t, 'kind') == 'text';
+  return (
+    fill: _colourOf(m.word(t, 'fill')),
+    stroke: _colourOf(m.word(t, 'stroke')),
+    width: m.word(t, 'stroke').isEmpty ? 'None' : '${(w ?? 0).round()} px',
+    round: '${((r ?? 0) * 200).round()}%', // (of the shorter side's half)
+    font: text ? m.word(t, 'file').split('/').last.replaceFirst(RegExp(r'\.ttf$'), '') : '—',
+    size: text ? '${((m.value(t, 'size', m.now) ?? 1) * m.point).round()} px' : '—',
+    align: ((m.value(t, 'align', 0) ?? 0) * 2).round().clamp(0, 2),
+  );
+}
+
+// ---- tool options strip ------------------------------------------------------------------------------------------------
+
+class _OptionsStrip extends StatelessWidget {
+  const _OptionsStrip({required this.tool, required this.opts, required this.onOpt, required this.scene, required this.layer, required this.ws});
+  final Ws ws;
+  final int tool;
+  final Map<String, int> opts;
+  final void Function(String, int) onOpt;
+  final ArtScene scene;
+  final WsLayer? layer;
+
+  Widget _seg(String key, List<String> items, {int initial = 0}) => _Seg(items: items, index: opts[key] ?? initial, onChanged: (i) => onOpt(key, i));
+  Widget _flag(String key, String label, {bool initial = false, G? glyph}) {
+    final on = (opts[key] ?? (initial ? 1 : 0)) == 1;
+    return _Toggle(label: label, on: on, glyph: glyph, icon: glyph == null ? _Icon.safe : null, onTap: () => onOpt(key, on ? 0 : 1));
+  }
+
+  List<Widget> _items() {
+    return _joined(ws, _paintOf(ws));
+  }
+
+  /// Joined: the tool's own settings (how it draws or carries), and the picked thing's values as the document has them.
+  List<Widget> _joined(Ws ws, ({Color? fill, Color? stroke, String width, String round, String font, String size, int align}) p) => switch (tool) {
+    0 => [_seg('sel.level', const ['Layer', 'Group']), _flag('sel.snap', 'Snap', initial: true), _flag('sel.pivot', 'Pivots')],
+    1 => [_seg('move.axis', const ['Free', 'X', 'Y']), _flag('move.snap', 'Snap', initial: true)],
+    2 => [_Field('Fill', swatch: p.fill ?? WsT.body), _Field('Stroke', value: p.width), _Field('Radius', value: p.round), _seg('rect.mode', const ['Shape', 'Mask'])],
+    3 => [_Field('Fill', swatch: p.fill ?? WsT.body), _Field('Stroke', value: p.width), _seg('ell.from', const ['Corner', 'Centre'])],
+    4 => [_seg('pen.mode', const ['Path', 'Mask'])],
+    7 => [_Field('Drag', value: 'Orbit'), _Field('Wheel', value: 'Dolly')],   // (what the hand does with it, as After Effects' camera tools are named)
+    6 => [_Field('Fill', swatch: p.fill ?? WsT.body), _seg('brush.kind', const ['Brush', 'Pen', 'Fill', 'Eraser'], initial: 0), _seg('brush.size', const ['Thin', 'Medium', 'Thick'], initial: 1)],   // (Alight Motion's drawing tools: as the pressure says, as wide all along, the way gone round filled, and its eraser, of the picked drawing)
+    _ => [
+      _Field('Font', value: p.font),
+      _Field('Size', value: p.size),
+      _Seg(
+        items: const ['L', 'C', 'R'],
+        index: p.align,
+        onChanged: (i) { // (the picked text's lines laid so: the document's align)
+          final t = int.tryParse(ws.selected ?? '');
+          final m = ws.inside;
+          if (t == null || m == null) return;
+          m
+            ..later('together', number: 1)
+            ..later('set', thing: t, name: 'align', number: i / 2)
+            ..later('set', thing: t, name: 'anchor_x', number: i - 1.0);   // (round where it stands: After Effects' point text)
+          ws.after(m.later('together'));   // (without waiting)
+        },
+      ),
+      _Field('Fill', swatch: p.fill ?? WsT.body),   // (and its colour, in the same row: Alight Motion's text bar, align, font, size, colour)
+    ],
+  };
+
+
+
+  @override
+  Widget build(BuildContext context) {
+    final items = _items();
+    return Container(
+      height: WsT.header,
+      padding: EdgeInsets.symmetric(horizontal: WsT.inset),
+      decoration: BoxDecoration(
+        color: WsT.body,
+        border: Border(top: BorderSide(color: WsT.line)),
+      ),
+      child: LayoutBuilder(builder: (_, box) => Row(
+        children: [
+          Expanded(
+            child: ClipRect(
+              child: OverflowBox(
+                alignment: Alignment.centerLeft,
+                maxWidth: double.infinity,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: Shape.z(62),
+                      child: Text(_tools[tool].$2.toUpperCase(), style: T.micro(Grey.g56).copyWith(fontWeight: FontWeight.w700, letterSpacing: 1)),
+                    ),
+                    for (var i = 0; i < items.length; i++) ...[if (i > 0) SizedBox(width: Shape.s(6)), items[i]],
+                  ],
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: WsT.inset),
+          ConstrainedBox(   // (as wide as it is, the tools before it given the rest; wider than the whole strip, drawn smaller, never cut, as dock_parts.dart's trailing)
+            constraints: BoxConstraints(maxWidth: (box.maxWidth - 2 * WsT.inset).clamp(0, double.infinity)),
+            child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerRight, child: ValueListenableBuilder<int>(valueListenable: ws.seen, builder: (_, _, _) => _Readout(scene: scene, layer: layer))), // (and while a hand carries a value)
+          ),
+        ],
+      )),
+    );
+  }
+}
+
+/// A labelled value in a well: the options strip's mock fields.
+class _Field extends StatelessWidget {
+  const _Field(this.label, {this.value, this.swatch});
+  final String label;
+  final String? value;
+  final Color? swatch;
+  @override
+  Widget build(BuildContext context) => Container(
+    height: Shape.z(20),
+    padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
+    decoration: BoxDecoration(color: WsT.well, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label, style: T.micro(Grey.g56)),
+        SizedBox(width: Shape.s(6)),
+        if (swatch case final s?)
+          Container(
+            width: Shape.z(22),
+            height: Shape.z(12),
+            decoration: BoxDecoration(color: s, borderRadius: BorderRadius.all(Shape.r(3))),
+          )
+        else
+          Text(value ?? '', style: T.value(Grey.g91)),
+      ],
+    ),
+  );
+}
+
+/// The selected layer at this frame: its hue and name, then position, scale and rotation as the stage sees them.
+class _Readout extends StatelessWidget {
+  const _Readout({required this.scene, required this.layer});
+  final ArtScene scene;
+  final WsLayer? layer;
+  @override
+  Widget build(BuildContext context) {
+    final l = layer, box = WsArt.boxOf(scene, l?.id), ws = WsScope.of(context, {WsAspect.document, WsAspect.picked});
+    if (l == null || ws.many.length > 1) return Text(ws.many.isEmpty ? 'Nothing selected' : '${ws.many.length} picked', style: T.label(Grey.g56));   // (picked together, one of them picked before or not: said so, as the bar over the stage does)
+    Widget pair(String k, String v) => Padding(
+      padding: EdgeInsets.only(left: Shape.s(10)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(k, style: T.micro(Grey.g56)),
+          SizedBox(width: Shape.s(4)),
+          Text(v, style: T.value(Grey.g91)),
+        ],
+      ),
+    );
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: Shape.z(8),
+          height: Shape.z(8),
+          decoration: BoxDecoration(color: l.tone, borderRadius: BorderRadius.all(Shape.r(2))),
+        ),
+        SizedBox(width: Shape.s(6)),
+        Text(l.name, style: T.name(Grey.g95).copyWith(fontWeight: FontWeight.w600)),
+        // (a relation has no picture of its own: nothing to say; nor has a camera, which is on the frame while its bar is,
+        //  and has no size: its name alone, as After Effects' camera layer has no bounds and no Scale; golf (76))
+        if (box == null && ws.inside?.word(int.parse(l.id), 'kind') != 'behaviour' && !(l.kind == WsKind.camera && (scene.layer(l.id)?.live(scene.frame) ?? false)))
+          Padding(
+            padding: EdgeInsets.only(left: Shape.s(10)),
+            child: Text(l.kind == WsKind.audio ? 'No picture' : ws.freeEye && (scene.layer(l.id)?.live(scene.frame) ?? false) ? 'In Camera View' : 'Not on this frame', style: T.label(Grey.g56)),   // (a 2D thing shows in the camera's eye alone, as in After Effects' working views)
+          )
+        else if (l.kind != WsKind.camera) ...[
+          // (the same numbers as the inspector's, which are the document's)
+          if (wsPlace(ws, l.id) case final at) ...[
+            pair('P', '${at['x']?.round()}, ${at['y']?.round()}'),
+            pair('S', '${at['scale_y']?.round()}%'),
+            pair('R', '${at['rotate']?.round()}°'),
+          ],
+        ],
+      ],
+    );
+  }
+}

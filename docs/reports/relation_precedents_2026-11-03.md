@@ -5,11 +5,11 @@
 
 ## 今の Motolii（コードを読んだ）
 
-- 5 種は `engine/doc_relations.h:133` の `doc_related` に C++ で直に書いてある（71 行）。足すにはエンジンの作り直しが要る。
+- 5 種は `engine/document/doc_relations.h:133` の `doc_related` に C++ で直に書いてある（71 行）。足すにはエンジンの作り直しが要る。
 - 範囲が無い。全員に同じ強さで、違うのは順番（`lag`）だけ。`doc_falloff_at` はふるまい用にあるが、`doc_related` からは呼ばない。Push の半径だけが例外。
 - 1 値ずつ。物 1 つの値 1 つごとに呼ばれ、全員を一度に見ない。
 - 効く値は位置・回転・大きさ・不透明度。色・効果の値・文字には効かない。
-- スクリプトの `each(i, n, t, k)` は 1 つの物の写し 1 個ずつ。他の物は絵と音しか読めない（`engine/script.cpp:119`）。
+- スクリプトの `each(i, n, t, k)` は 1 つの物の写し 1 個ずつ。他の物は絵と音しか読めない（`engine/community/script.cpp:119`）。
 
 ## 見本
 
@@ -37,7 +37,7 @@
 
 ## 試した結果（11/3、ユーザーの「実験してみてくれ」）
 
-形：`engine/relations/` に JS を 1 本置く。本体は `relate(things, t, k)` 1 つ。全員を受けて、変える物だけ返す。C4D の Full Control の形で、書き方は Motolii の `each` に揃えた。
+形：`shelves/relations/` に JS を 1 本置く。本体は `relate(things, t, k)` 1 つ。全員を受けて、変える物だけ返す。C4D の Full Control の形で、書き方は Motolii の `each` に揃えた。
 
 | 試した事 | どこで | 結果 |
 |---|---|---|

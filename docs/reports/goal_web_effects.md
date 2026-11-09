@@ -7,7 +7,7 @@ shader-effects-inc/shaders（shaders.com、MIT、200 種）の効果を、Motoli
 ## できたと言える条件
 
 1. `docs/reports/splat_orbit.mp4`（Motolii が書き出した動画）に、作者の Glitch を掛けた動画が、Motolii の中で撮れる。動画は作者の VideoTexture か ImageTexture を通る。
-2. 物の効果の段の 1 つとして載る（`engine/thing_fx.h` の段の並び。ThorVG と同じ道：Filament の描く糸の順番に入れる `door::on_driver`、結果は `Texture::Builder::import` で Filament へ）。
+2. 物の効果の段の 1 つとして載る（`engine/stage/thing_fx.h` の段の並び。ThorVG と同じ道：Filament の描く糸の順番に入れる `door::on_driver`、結果は `Texture::Builder::import` で Filament へ）。
 3. つまみは作者の定義（各効果の props の範囲と初期値）をそのまま使う。時間は作者の口 `renderFrame({ deltaSeconds })` で Motolii の時間軸の 1 コマにつなぐ。
 4. 1920×1080 で 1 コマ 16.7 ms 未満。QuickJS の分と GPU の分を分けて測る。
 

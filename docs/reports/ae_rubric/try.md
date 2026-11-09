@@ -75,5 +75,5 @@ list
 
 ## 同じ事を C の関数で（Flutter のガワが呼ぶ形）
 
-`engine/motolii.h` が口。`engine/check/api.c` が素の C からの呼び方の見本（`engine/out/wgpu_kit/` で `../api_check ../mine2.motolii out/api.png`）。
+`engine/library/motolii.h` が口。`engine/check/api.c` が素の C からの呼び方の見本（`engine/out/wgpu_kit/` で `../api_check ../mine2.motolii out/api.png`）。
 上の行を読む道具（`edit.sh`）も、中ではこの関数だけを呼んでいる。

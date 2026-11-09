@@ -34,6 +34,9 @@ final String motoliiDir = () {
   return 'engine';
 }();
 
+/// The library's own shelves (effects, recipes, fonts…): shelves/, beside engine/.
+final String motoliiShelves = '${Directory(motoliiDir).absolute.parent.path}/shelves';
+
 /// The document the window opens: --dart-define=MOTOLII_DOC=/path/to.motolii, or the inside's own out/skin.motolii.
 String get motoliiDoc {
   const given = String.fromEnvironment('MOTOLII_DOC');

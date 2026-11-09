@@ -130,7 +130,7 @@ Filament 1.77.2 を Dawn（WebGPU）で動かして測った物。**Windows で�
 
 ## 編集
 
-`engine/doc.h`（244行）と `engine/edit.mm`（51行）。場面を C++ で書かずに、**1本のプログラムが文書を開いて、呼び出しを1行ずつ受ける。**
+`engine/document/doc.h`（244行）と `engine/edit.mm`（51行）。場面を C++ で書かずに、**1本のプログラムが文書を開いて、呼び出しを1行ずつ受ける。**
 - 文書＝SQLite のファイル1個。中身は「物・名前・時刻・値」の事実の並び。
 - 呼び出し：置く（動画・AEの絵と写真・3Dファイル・ガラス）、消す、値を変える、言葉を変える（重ね方など）、キーを打つ・消す、取り消し、やり直し。
   1回の呼び出し＝1個の変更＝取り消し1歩。変更は呼び出しが返る時にはファイルに入っている。取り消しの歩みもファイルに入っているので、閉じて開いても取り消せる。
@@ -209,10 +209,10 @@ Filament へのパッチの使っていない部分を消す（約11個）、led
 `edit_v5.mp4` は `edit_v4` と同じ文書を、元の色のまま出る設定で書き直した物。
 
 編集の中身を C の関数の口にした（4回目の後）：
-- `engine/motolii.h`（37行、関数18個）：開く、置く、消す、値、言葉、キー、キーを消す、取り消し、やり直し、長さ、時刻、絵、動画の書き出し、一覧、間違いの理由。
+- `engine/library/motolii.h`（37行、関数18個）：開く、置く、消す、値、言葉、キー、キーを消す、取り消し、やり直し、長さ、時刻、絵、動画の書き出し、一覧、間違いの理由。
   ガワは文書を持たず、取っ手と物の番号だけを持つ（lumit の作法）。Flutter からは dart:ffi でこのヘッダの関数を呼ぶ形になる（**Flutter からはまだ呼んでいない**）。
-- `engine/motolii.mm`（57行）は各関数を `doc.h` と `kit.h` に渡すだけ。全部まとめて共有ライブラリ1個（`out/libmotolii.dylib`、23MB）になる。
-- 行を読む道具（`engine/edit.cpp`、62行）は、`motolii.h` だけを呼ぶ客に作り直した（Filament も ThorVG も SQLite も知らない。40KB）。文書の検査と音の検査は、この客を通して前と同じ結果（`records/doc.txt`、`records/sound.txt`）。
+- `engine/library/motolii.mm`（57行）は各関数を `doc.h` と `kit.h` に渡すだけ。全部まとめて共有ライブラリ1個（`out/libmotolii.dylib`、23MB）になる。
+- 行を読む道具（`engine/library/edit.cpp`、62行）は、`motolii.h` だけを呼ぶ客に作り直した（Filament も ThorVG も SQLite も知らない。40KB）。文書の検査と音の検査は、この客を通して前と同じ結果（`records/doc.txt`、`records/sound.txt`）。
 - 素の C から同じ口を呼ぶ検査（`engine/check/api.c`、`records/api.txt`）：ガラスを置く、値、キー、取り消し、間違いの理由、絵。通った。
 - 無い物：動いている絵をガワに渡す口（共有テクスチャ）、変わった所だけ知らせる流れ、ドラッグ中の仮置き。舞台の大きさは開く時に決めるが、カメラは決め打ち。
 
@@ -225,7 +225,7 @@ Windows の道筋は `engine/WINDOWS.md` の頭に、今の土台（Dawn、ThorV
 
 - **キーの読み違いを直した。** 夜の間「区間イージングは捨てる物」と逆に読んで、文書のキーを「間は1種類のなめらかさだけ」で作っていた。正しくは Motolii 独自の物で、**キーとキーの「間」そのものを決める**。
   この紙の上の方にある「キーごとの速度曲線は無い」「なめらかで行き過ぎない1種類だけ」という文は、その誤った作りの説明。2〜4回目の採点もその作りと、その読みの採点表で行われた。
-- **作り直した**（`engine/doc.h`）：キーは値を持つ。キーから次のキーまでの間が「行き方」を持つ。行き方は名前つきで文書の中にあり、中身は式。式を計算するのは SQLite（文書の入れ物そのもの。1回 0.2〜0.35 マイクロ秒）。
+- **作り直した**（`engine/document/doc.h`）：キーは値を持つ。キーから次のキーまでの間が「行き方」を持つ。行き方は名前つきで文書の中にあり、中身は式。式を計算するのは SQLite（文書の入れ物そのもの。1回 0.2〜0.35 マイクロ秒）。
   はじめから入れた行き方は7つ（smooth、linear、in、out、hold、bounce、wiggle）。自分の行き方は式1行で足せる。どの行き方も両端でキーの値に合う（合わない式は足す時に断る）。
   GStreamer の controller は使わなくなった（間ごとに行き方を変えられないため）。
 - 検査（`check/doc_ways.txt`、`records/doc.txt`）：1→3 の2秒の間で、linear は 0.5秒で 1.5、hold は 1.99秒まで 1・2秒で 3、wiggle は両端で 1 と 3・途中は 1.643、bounce、自分で足した overshoot、どれも期待の値。
@@ -237,7 +237,7 @@ Windows の道筋は `engine/WINDOWS.md` の頭に、今の土台（Dawn、ThorV
 
 間の行き方は、過去の倉庫から持ってきた（同じ朝、ユーザーに「それらは過去倉庫から持ってこれる」と言われて）：
 - 上の「作り直した」の中の「はじめから入れた行き方は7つ（smooth、linear、in、out、hold、bounce、wiggle）」は私が式を決めた物で、**消した**。
-- 代わりに、過去の倉庫 `~/rust_ae/Motolii`（`motolii/crates/motolii-doc/src/eval/track.rs`、`bezier.rs`）の間の定義9種類を、名前・数の名前と並び・式・断る数の決まりごと、そのまま C++ に写した（`engine/interp.h`、162行）：
+- 代わりに、過去の倉庫 `~/rust_ae/Motolii`（`motolii/crates/motolii-doc/src/eval/track.rs`、`bezier.rs`）の間の定義9種類を、名前・数の名前と並び・式・断る数の決まりごと、そのまま C++ に写した（`engine/motion/interp.h`、162行）：
   Hold、Linear、Bezier、Bounce、Elastic、Cyclic、Random、Steps、ElasticSteps。
 - 写しの確かめ（`engine/check/interp_twin.sh`、`records/interp_twin.txt`）：倉庫の式の行をそのまま別の場所でコンパイルして、41点×10通りで C++ の写しと突き合わせた。**差 0**（小数12桁まで）。Bezier は倉庫の物差しの厳密な3行と 2e-16 で合う。倉庫の中は読むだけで、何も書いていない。
 - 倉庫に無くて私が置いた物：数を言わない時の「いつもの数」のうち、Cyclic の peak・linear・envelope_end、Random の5つ、ElasticSteps の elasticity。何も言わない間を Bezier（過去のスキンの「Ease」の数）にした事。

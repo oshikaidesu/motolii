@@ -38,7 +38,7 @@ GitHub Actions runs the ledger check on every push and pull request (`.github/wo
 3. **Say where things came from.** In the commit or pull request: what was borrowed from where (URL, version or commit), what was checked and what is not done yet. Example: `git show d46f69cac`. Keep the first line (the subject) to about 72 characters and put the details after a blank line (git's convention; much of the history so far has long subjects, but from now on).
 4. **Bundling other people's work.**
    - Keep the author's folder as unchanged as possible, with their licence text (`LICENSE`) and where it came from (`SOURCE.txt`: name and author / licence / from / page) beside it.
-   - Work whose author publishes no licence text is not bundled; fetch it from the author at build time instead (`engine/midi_roll.sh` is an example).
+   - Work whose author publishes no licence text is not bundled; fetch it from the author at build time instead (`engine/deps/midi_roll.sh` is an example).
    - Changes to upstream code are kept as patches, applied to a pinned upstream at build time (`engine/gpu/tvg_on_dawn.sh` is an example).
    - Add a row to [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md).
 
@@ -47,7 +47,7 @@ GitHub Actions runs the ledger check on every push and pull request (`.github/wo
 | What | Where to start | Difficulty |
 |---|---|---|
 | An `.app` you can hand out: put the Homebrew libraries the engine loads (GStreamer, glib, SQLite, LuaJIT, QuickJS, and ffmpeg for writing) inside the `.app`, with [dylibbundler](https://github.com/auriamg/macdylibbundler) or GStreamer's macOS framework | `engine/edit.sh`, `app/macos/` | Medium |
-| AviUtl2 calls still missing (`obj.computeshader`, the built-in effects, …), following the references (AviUtl2's lua.txt, sashimono-edit) | `docs/reports/aviutl2/converter_plan.md`, `engine/aviutl.cpp` | Medium–hard |
+| AviUtl2 calls still missing (`obj.computeshader`, the built-in effects, …), following the references (AviUtl2's lua.txt, sashimono-edit) | `docs/reports/aviutl2/converter_plan.md`, `engine/community/aviutl.cpp` | Medium–hard |
 | TSL looks on the editor's shelves | `engine/tsl/`, `docs/reports/tsl_collection.md` | Medium |
 
 ## Known gaps

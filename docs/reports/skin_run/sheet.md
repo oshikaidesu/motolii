@@ -4,7 +4,7 @@
 
 ## 目標
 
-ウィジェットブックの見本の窓（`lab_book` の Workspace › Workspace）を、本物の中身（`engine/motolii.h`）につなぐ。つないだ窓だけで、手本の画を作れる所まで。
+ウィジェットブックの見本の窓（`lab_book` の Workspace › Workspace）を、本物の中身（`engine/library/motolii.h`）につなぐ。つないだ窓だけで、手本の画を作れる所まで。
 
 ## 作る的（この順）
 

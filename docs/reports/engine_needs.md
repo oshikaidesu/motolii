@@ -2,7 +2,7 @@
 
 ユーザー（10/30）：「エンジンがいるものは今の間にある程度目星をつけておこう。そこの目星の外に出てくるものは例外として」「場当たり的に変更するものにエンジンはあまり含ませたくない」「何度も再起動が必要な時点で開発者が居ないと新しい表現が作れない」。
 
-大陸系のシナリオ（docs/reports/scenarios.md の P04〜P24）と、ゴルフの表（docs/reports/golf_noise.md）の未済を、どこで直すかで 3 つに分けた。確かめたのは、エンジンが知っている値の一覧（engine/doc_kinds.h）、ふるまい（doc_edit.h：stagger・oscillator・noise・random・around・row・follow・push・group）、棚のフォルダーのファイル（effects・animators・recipes）、台帳（ASSETS.md）。
+大陸系のシナリオ（docs/reports/scenarios.md の P04〜P24）と、ゴルフの表（docs/reports/golf_noise.md）の未済を、どこで直すかで 3 つに分けた。確かめたのは、エンジンが知っている値の一覧（engine/document/doc_kinds.h）、ふるまい（doc_edit.h：stagger・oscillator・noise・random・around・row・follow・push・group）、棚のフォルダーのファイル（effects・animators・recipes）、台帳（ASSETS.md）。
 
 - **窓**：Flutter の窓だけ。ホットリロードで済み、再起動は要らない
 - **ファイル**：効果・動き・レシピなどを棚のフォルダーに置くだけ。窓が見張っているので再起動は要らない

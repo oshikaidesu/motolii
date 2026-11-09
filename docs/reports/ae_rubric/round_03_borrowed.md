@@ -6,7 +6,7 @@
 ## 1. 読んだ物
 
 全部読んだ：
-- `engine/kit.h`（927行）、`video.h`（348）、`drawn.h`（110）、`motion.h`（137）、`doc.h`（245）、`solid.h`（69）
+- `engine/stage/kit.h`（927行）、`video.h`（348）、`drawn.h`（110）、`motion.h`（137）、`doc.h`（245）、`solid.h`（69）
 - 材質：`flat.mat`、`thick_glass.mat`、`matte.mat`、`matte.glsl`、`far_look.mat`、`far_side.mat`、`studio.glsl`
 - 場面：`edit.mm`、`lay.mm`、`neko.mm`、`puppet.mm`、`mask.mm`、`wall.mm`、`ae.mm`、`led.mm`
 - つなぎ：`dawn_probe/gpu_door.h`、`gpu_door.cpp`、`CMakeLists.txt`、`kit_wgpu.sh`、`tvg_on_dawn.sh`、`edit.sh`、`records.sh`、`check/` の9個

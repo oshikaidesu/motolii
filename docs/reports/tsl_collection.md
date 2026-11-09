@@ -217,7 +217,7 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
   - 理由（Dawn のコード）：Replay の「1 コマ」の区切りは、画面に出す瞬間（`surface.Present()`、Replay.cpp:1510-1515）だけ。画面なしの記録には区切りが無い。
 - 仮に画面つきで記録して区切りを入れても、Replay は読み位置を前に進めるだけ（`PlayFrameImpl`、Replay.cpp:1594-1602）。同じコマを、時間を変えてもう一度流す口は無い。しかも各コマには、記録した時の時間を書く命令（writeBuffer）がそのまま入っている。
 - なので、時間を変えて動かすこと、毎コマの時間を測ることは、Replay ではできない。Replay は「取り込んだ一式が正しいか」を確かめる道具として使い、本番の再生には使わない。
-- Motolii が既に持っている「何段も描く・毎コマ時間を渡す」仕組みは ISF の PASSES（`engine/isf.cpp`：TARGET、PERSISTENT、FLOAT、大きさ。WGSL にして Motolii の画面で描く）。TSL の何段も描く効果をこの形に載せられるかは、まだ確かめていない。
+- Motolii が既に持っている「何段も描く・毎コマ時間を渡す」仕組みは ISF の PASSES（`engine/community/isf.cpp`：TARGET、PERSISTENT、FLOAT、大きさ。WGSL にして Motolii の画面で描く）。TSL の何段も描く効果をこの形に載せられるかは、まだ確かめていない。
 
 ### 1 コマは何でできているか：記録を数えた（10/26）
 
@@ -263,7 +263,7 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
 |---|---|---|
 | Chainsawkitten/WebGPUReconstruct | MIT、2026-10-26 | ブラウザの WebGPU を記録してネイティブの Dawn・wgpu で流し直す。目的はデバッグと再現（README）。Motolii が既に持つ Dawn の記録・流し直しと同じ種類で、時間を変えて繰り返さない |
 | brendan-duncan/webgpu_recorder | MIT、2026-06-08 | .wgpu は JSON の `init`（1 回）・`frames`（コマごとの命令の並び）・`data`（中身）に分かれる（README の Binary Recording Format）。再生役は JS（webgpu_player.js）で、記録したコマを順に流す |
-| mrRay/ISF_Spec | MIT、2025-03-20 | 何段も描く・前のコマを残す・時間・つまみをデータで書く形式。Motolii は既に読んでいる（`engine/isf.cpp`） |
+| mrRay/ISF_Spec | MIT、2025-03-20 | 何段も描く・前のコマを残す・時間・つまみをデータで書く形式。Motolii は既に読んでいる（`engine/community/isf.cpp`） |
 | mrRay/ISFMSLKit | GitHub では NOASSERTION（ChatGPT は BSD と言うが未確認）、2026-09-16 | ISF を Metal で動かす |
 | takahirox/tsl-node-editor | MIT、2026-10-16 | TSL のノード編集。出すのは TSL と three.js のコード |
 | dfranx/SHADERed | MIT、2023-09-22 | シェーダーの IDE、Shadertoy を取り込むプラグイン |
@@ -318,7 +318,7 @@ singularity と tornado（MisterPrada）、hologram-particles、three.js-tsl-san
 
 ## ASCII：文字盤は横に置く絵（11/2）
 
-作者は Canvas に Geist Mono の字を並べて文字盤を作る（`ascii-atlas.ts`）。ブラウザの代わりに `magick` が同じフォントで同じ並びに描き、`sl_ascii_<組>.0.png` として `.wgsl` の横に置いた。字の幅と高さは `magick -debug annotate` で測った値。文字盤は 1 枚が約 172×304 で、ファイルの中の表に書くには大きいので、`.wgsl` の頭に `--image@名前:ファイル` を足した（`engine/screen.h`、ThorVG で 1 回読むだけ、`aviutl_load.h` の `aviutl_drawn` と同じ手順、RGBA8 で数字はそのまま）。
+作者は Canvas に Geist Mono の字を並べて文字盤を作る（`ascii-atlas.ts`）。ブラウザの代わりに `magick` が同じフォントで同じ並びに描き、`sl_ascii_<組>.0.png` として `.wgsl` の横に置いた。字の幅と高さは `magick -debug annotate` で測った値。文字盤は 1 枚が約 172×304 で、ファイルの中の表に書くには大きいので、`.wgsl` の頭に `--image@名前:ファイル` を足した（`engine/stage/screen.h`、ThorVG で 1 回読むだけ、`aviutl_load.h` の `aviutl_drawn` と同じ手順、RGBA8 で数字はそのまま）。
 
 - 取った物：Light、Dense、Boxes、Hex、Binary の 5 本。
 - 取らなかった物：Blocks、Shades、Hatching は Geist Mono に字が無く、作者の処理で Light と同じ絵になる。Katakana と Custom も今は無い。文字セットのつまみは文字盤が 1 枚なので外し、組ごとに 1 本にした。

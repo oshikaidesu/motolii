@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 
 import '../forms/forms.dart';
 import '../tokens.dart';
-import 'dock_glyphs.dart';
+import 'dock/dock_glyphs.dart';
 import 'ws.dart';
 
 /// One pane: its name (also its id), the mark on its tab, and how to build its body.

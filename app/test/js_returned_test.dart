@@ -39,7 +39,7 @@ void main() {
   });
 
   test('the Repeater itself: x reaches k.StepX, k.ScatterX and k.DriftX', () {
-    final src = File('$engine/recipes/repeater.js').readAsStringSync();
+    final src = File('$shelves/recipes/repeater.js').readAsStringSync();
     final rows = jsReturned(lib, src);
     final x = rows.firstWhere((r) => r.name == 'x');
     expect(src.substring(x.start, x.end), 'x');

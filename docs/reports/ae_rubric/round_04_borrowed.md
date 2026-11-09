@@ -7,7 +7,7 @@ SQLite をメモリの中だけで1回（5節の「表の決まりは SQLite が
 ## 1. 読んだ物
 
 全部読んだ：
-- `engine/kit.h`（927行）、`video.h`（348）、`drawn.h`（142）、`motion.h`（137）、`doc.h`（283）、`solid.h`（73）
+- `engine/stage/kit.h`（927行）、`video.h`（348）、`drawn.h`（142）、`motion.h`（137）、`doc.h`（283）、`solid.h`（73）
 - 材質：`flat.mat`、`thick_glass.mat`、`matte.mat`、`matte.glsl`、`far_look.mat`、`far_side.mat`、`studio.glsl`、`spectrum.glsl`
 - led の4つ（今回は中身まで全部）：`glasslight.mat`（99）、`paper.mat`（77）、`floor_shade.mat`（35）、`paper_copy.mat`（17）
 - 場面：`edit.mm`、`lay.mm`、`neko.mm`、`puppet.mm`、`mask.mm`、`wall.mm`、`ae.mm`、`led.mm`

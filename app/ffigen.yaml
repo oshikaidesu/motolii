@@ -1,7 +1,7 @@
-# The inside's calls as Dart sees them, made by Dart's own ffigen from engine/motolii.h (not written by hand):
+# The inside's calls as Dart sees them, made by Dart's own ffigen from engine/library/motolii.h (not written by hand):
 #   dart run ffigen --config ffigen.yaml
 name: MotoliiBindings
-description: The inside's C calls (engine/motolii.h), made by ffigen.
+description: The inside's C calls (engine/library/motolii.h), made by ffigen.
 output: lib/motolii_bindings.dart
 headers:
   entry-points:

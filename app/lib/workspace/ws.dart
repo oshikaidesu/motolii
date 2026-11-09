@@ -2,7 +2,7 @@
 // This file is what every seat shares: the mock document they all read (Ws), and the window's own tokens (WsT).
 // Tone and manner come from the Inspector's Pop rules (sets/inspector_parts.dart): containers square and tiled edge to edge,
 // what you touch or read round, colour flat and opaque, one lime accent, each kind of thing wearing its own hue.
-import 'package:motolii/workspace/desk_ease_cards.dart' show easeCurve;
+import 'package:motolii/workspace/desk/desk_ease_cards.dart' show easeCurve;
 import 'dart:async' show Timer;
 import 'dart:developer' show Timeline, TimelineTask;
 import 'dart:io' show Platform;
@@ -15,9 +15,9 @@ import '../motolii.dart';
 export '../motolii.dart' show MotoliiDocument, MotoliiMoment, MotoliiWrites, MotoliiQuestions, MotoliiShelves, MotoliiWatch;   // (the inside's reads, an extension of Motolii: whoever holds the window's Ws.inside can call them)
 import '../theme.dart';
 import '../tokens.dart';
-import 'desk_kit.dart' show DeskTool, deskTools;
+import 'desk/desk_kit.dart' show DeskTool, deskTools;
 import 'ws_beats.dart';
-import 'stage_art.dart' show WsArt;
+import 'stage/stage_art.dart' show WsArt;
 export 'ws_beats.dart';
 
 part 'ws_2.dart';

@@ -3,7 +3,7 @@
 ## 解く問題
 **Motolii の区間イーズ（キーとキーの間の進み方）で、「今の Motolii と Alight Motion に無い線の具合」をどこまで出せるかを増やし、窓の Ease の机から触れるようにする。**
 
-- 土台は Alight Motion の 9 種（直線・止める・ベジェ・Bounce・Elastic・Cyclic・Random・Steps・Elastic Steps）。Motolii は `engine/interp.h` に同じ 9 種を持つ。**ただし既定の数字と取っ手の働きが Alight Motion と違う**（Elastic・Random・Steps は大きく、Bounce・Elastic Steps は少し）。比べた絵：`docs/reports/alight_ui/137_ease_vs_motolii.jpg`。Alight Motion の既定の曲線と取っ手の位置の数字：`docs/reports/alight_ease/default_curves.csv`、`default_handles.json`。
+- 土台は Alight Motion の 9 種（直線・止める・ベジェ・Bounce・Elastic・Cyclic・Random・Steps・Elastic Steps）。Motolii は `engine/motion/interp.h` に同じ 9 種を持つ。**ただし既定の数字と取っ手の働きが Alight Motion と違う**（Elastic・Random・Steps は大きく、Bounce・Elastic Steps は少し）。比べた絵：`docs/reports/alight_ui/137_ease_vs_motolii.jpg`。Alight Motion の既定の曲線と取っ手の位置の数字：`docs/reports/alight_ease/default_curves.csv`、`default_handles.json`。
 - Alight Motion は「区間ごとに型を選ぶ」入口までで止まっている売り物。Motolii はその先へ伸ばす。伸ばす方向とお手本：`docs/reports/ease_segments.md`。
 - **足してはいけない物**：
   - 始まりと終わりの 2 つの取っ手のベジェで描ける物（Sine・Quad・Cubic・Quart・Quint・Expo・Circ・Back と、その in/out/inOut/outIn）。easings.net が全部に cubic-bezier を載せている。机の見本 8 枚とベジェの取っ手で足りる。
@@ -14,11 +14,11 @@
 
 ## 今の状態
 **コミット済み**
-- `8fa40d2`：SQLite の関数 `anime(式, u)`。区間の式（`define` や `engine/ways/*.way`）から anime.js（`engine/third_party/anime/`、MIT、v4.5.0 をそのまま）のイーズを呼べる。QuickJS で動く（`engine/script.cpp` の `anime_ease`、`engine/doc_match.h`）。検査 `engine/check/anime_ways.sh`（yes）。これは「点で好きな形を描く `linear()`」などの道具として残す。
-- `f8d60ad`：anime.js の見本 46 本（`engine/ways/anime_*.way`）。**これは足してはいけない物だった**。
+- `8fa40d2`：SQLite の関数 `anime(式, u)`。区間の式（`define` や `shelves/ways/*.way`）から anime.js（`engine/third_party/anime/`、MIT、v4.5.0 をそのまま）のイーズを呼べる。QuickJS で動く（`engine/community/script.cpp` の `anime_ease`、`engine/document/doc_match.h`）。検査 `engine/check/anime_ways.sh`（yes）。これは「点で好きな形を描く `linear()`」などの道具として残す。
+- `f8d60ad`：anime.js の見本 46 本（`shelves/ways/anime_*.way`）。**これは足してはいけない物だった**。
 
 **まだコミットしていない変更**（作業の途中。見直してから扱う）
-- `engine/ways/anime_*.way` 46 本を消した（上の誤りを戻す）。
+- `shelves/ways/anime_*.way` 46 本を消した（上の誤りを戻す）。
 - `skin/book/lib/workspace/desk_ease_library.dart`（新規）：机の下の段。表（All / ★）、横スクロールの札、並びは固定、最近使った 4 本を頭に区切って出す、星は ★ の表に集める、星はカーソルを乗せた時だけ見せる。星と最近は `~/.motolii/ease_stars.json`。
 - `skin/book/lib/workspace/desk_ease_presets.dart`：下の段を `EaseLibrary` に替えた。`PresetTile` を公開し、`label` を足した。
 - `skin/book/test/workspace_ease_library_test.dart`（新規）：**anime.js の表がある前の形のまま。今の作りに合わせて書き直す必要がある**。

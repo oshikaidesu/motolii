@@ -5,7 +5,7 @@
 # for a name) is refused: it cuts by line count, not by job. Run by the pre-commit hook; or by hand.
 import re, subprocess, sys
 
-OWN = re.compile(r'^(engine/[^/]+\.(h|cpp|mm)|engine/.+\.js|app/lib/.+\.dart)$')
+OWN = re.compile(r'^(engine/(?!third_party/)[^/]+/[^/]+\.(h|cpp|mm)|engine/(?!third_party/).+\.js|shelves/(?!aviutl_scripts/).+\.js|app/lib/.+\.dart)$')
 NUMBERED = re.compile(r'_\d+\.(dart|h|cpp|mm|js)$')
 LIMIT = 500
 LEDGER = '.githooks/over_500.txt'
@@ -25,6 +25,10 @@ def ledger(text):
 
 
 before = ledger(git('show', f'HEAD:{LEDGER}'))
+for line in git('diff', '--cached', '-M', '--name-status', '--diff-filter=R').splitlines():   # (a file moved keeps its allowance)
+    _, old, new = line.split('\t')
+    if old in before:
+        before[new] = before.pop(old)
 now = ledger(git('show', f':{LEDGER}')) or before
 bad = []
 for path, n in now.items():

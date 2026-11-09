@@ -4,14 +4,14 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import '../tokens.dart';
-import 'dock_effects.dart';
-import 'dock_files.dart';
-import 'dock_fonts.dart';
-import 'dock_glyphs.dart';
-import 'dock_make.dart';
-import 'dock_parts.dart';
-import 'dock_tags.dart';
-import 'dock_program.dart';
+import 'dock/dock_effects.dart';
+import 'dock/dock_files.dart';
+import 'dock/dock_fonts.dart';
+import 'dock/dock_glyphs.dart';
+import 'dock/dock_make.dart';
+import 'dock/dock_parts.dart';
+import 'dock/dock_tags.dart';
+import 'dock/dock_program.dart';
 import 'effect_tiles.dart';
 import 'ws.dart';
 
