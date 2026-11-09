@@ -1,8 +1,8 @@
-// Every effect on the shelf has a tile that shows what it does, as Alight Motion's do (docs/reports/alight_ui.md, 71 and 72).
+// Every effect on the shelf has a tile that shows what it does, as Alight Motion's do (docs/internal/reports/alight_motion/alight_ui.md, 71 and 72).
 // AbsentMotion shows each of its effects by a table written beforehand (tools/effect_showcase.json); here a tile is told
 // the same things by the effect itself, so a file put in by its maker needs no line and no developer. Read from it
 // (doc_recipes.h, isf_tags): a transition's progress goes from 0 to 1, what runs by the clock or keeps its frame before is
-// left to run. Measured (AbsentMotion's change(), docs/reports/sketch_import_2026-11-01.md): the sample stands still, so what
+// left to run. Measured (AbsentMotion's change(), docs/internal/reports/engine/sketch_import_2026-11-01.md): the sample stands still, so what
 // moves is the effect; the knob that stands for it goes between two values ([_telling]); nothing seen on the whole photo,
 // it goes on a card going past on AbsentMotion's grid (its "move" layout), where what it does at an edge or to what moves
 // shows; with no knob to turn, the line between before and after goes across it. No tile stands but one that shows nothing.
@@ -515,7 +515,7 @@ abstract final class EffectTiles {
   }
 
   /// The knob that stands for an effect, and the two values it goes between. Set beside the 121 lines of AbsentMotion's
-  /// table where a hand says which (docs/reports/sketch_import_2026-11-01.md), the one that changes the picture most is right
+  /// table where a hand says which (docs/internal/reports/engine/sketch_import_2026-11-01.md), the one that changes the picture most is right
   /// for 3 of the 27 it moves: what a hand moves is what plays as a clock would, rotY, progress, evolution, phase (After
   /// Effects' own Evolution and Transition Completion); then, of [filed], the knobs the hand gave a value, the one that
   /// makes most of it, from what the file has to that; then the file's first that shows, its author's first, single

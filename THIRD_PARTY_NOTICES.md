@@ -43,7 +43,7 @@ Motolii は「ネットで見つけたかっこいい表現を、自分の動画
 | anime.js v4.5.0 | [juliangarnier/anime](https://github.com/juliangarnier/anime) | MIT | `engine/third_party/anime/` |
 | acorn 8.18.0（After Effects の式を貼った時に一度だけ読む構文解析器） | [acornjs/acorn](https://github.com/acornjs/acorn) | MIT | `engine/third_party/js/acorn/`（npm 配布の `acorn.js` と `LICENSE` をそのまま。レシピが `AE.compile` と書いた時だけ読み、毎コマは読まない） |
 | p5.js 1.11.13 | [processing/p5.js](https://github.com/processing/p5.js) | LGPL-2.1 | `engine/third_party/js/p5/`（配布の `p5.min.js` と `license.txt` をそのまま、差し替えられる普通のファイルとして読む） |
-| Cube Wave（Coding Challenge 86） | [CodingTrain/Coding-Challenges](https://github.com/CodingTrain/Coding-Challenges)（Copyright (c) 2022 Coding Train） | MIT | `shelves/recipes/Cube Wave.js`（1 行目に元、以下そのまま） |
+| Cube Wave（Coding Challenge 86） | [CodingTrain/Coding-Challenges](https://github.com/CodingTrain/Coding-Challenges)（Copyright (c) 2022 Coding Train） | MIT | `shelves/recipes/copies/Cube Wave.js`（1 行目に元、以下そのまま） |
 | Godot のイーズの式 | [godotengine/godot](https://github.com/godotengine/godot) の easing_equations.h（Robert Penner の式） | MIT | `engine/third_party/godot_easing/` |
 | Godot の String::capitalize（つまみのキーを名前として見せる：ease_in → Ease In） | [godotengine/godot](https://github.com/godotengine/godot) core/string/ustring.cpp の _separate_compound_words・capitalize、コミット c51ff06e8836 | MIT | `engine/community/js/script_leva.h`（JavaScript に移した、頭に出所）、ライセンスは `engine/third_party/godot_easing/` の物と同じ |
 | 画面の拍子 | [nmfisher/thermion](https://github.com/nmfisher/thermion) | Apache-2.0 | `engine/third_party/thermion_frame/`（NOTICE.md） |
