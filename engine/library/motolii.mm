@@ -8,4 +8,8 @@
 #include <onnxruntime_cxx_api.h>   // (how alike pictures look, for the shelves' maps: motolii_likeness)
 #include "library/look_map.h"   // (the shelves' maps)
 #include "library/motolii_calls.h"
+#include "library/motolii_calls_sound.h"
+#include "library/motolii_calls_files.h"
+#include "library/motolii_calls_later.h"
+#include "library/motolii_calls_moment.h"
 #include "library/motolii_write.h"
