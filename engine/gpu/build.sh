@@ -1,6 +1,6 @@
 #!/bin/zsh
 # engine/gpu/build.sh: Filament 1.77.2 built from source WITH its WebGPU (Dawn) backend, plus filament_dawn_compute.patch
-# (compute; a shorter wait; the device lent out and Texture::Builder::import filled in, for stage/drawn/drawn.h).
+# (compute; a shorter wait; the device lent out and Texture::Builder::import filled in, for stage/canvas/canvas.h).
 # The prebuilt SDK in ../third_party/filament has no WebGPU backend; this builds a second Filament beside it and
 # leaves that one alone. First build: about 5 minutes on an M4 (4 min 55 s from a fresh clone, 10/27; Dawn is most of it).
 #   ./build.sh          build, then run once with pictures into engine/out/gpu/shots
@@ -25,5 +25,5 @@ cd "$SRC/out/wgpu"
 [ -f build.ninja ] || cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DFILAMENT_SUPPORTS_WEBGPU=ON -DFILAMENT_SKIP_SAMPLES=ON \
     -DFILAMENT_BUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=../wgpu_install -DMOTOLII_PROBE_DIR="$HERE" ../..
 ninja matc
-ninja install > /dev/null   # (the headers and libraries the kit builds against: ../wgpu_install, CMAKE_INSTALL_PREFIX above)
+ninja install > /dev/null   # (the headers and libraries the renderer builds against: ../wgpu_install, CMAKE_INSTALL_PREFIX above)
 cd "$HERE"

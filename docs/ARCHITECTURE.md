@@ -16,7 +16,7 @@ flowchart TB
     API["motolii.h：C の呼び出し"]
     Hand["entry/render_thread.h：プロジェクトと GPU を持つレンダースレッド 1 本"]
     Doc["doc*.h：プロジェクト（SQLite）、取り消し"]
-    Kit["kit*.h・drawn*.h：フレームを描く"]
+    Render["render*.h・canvas*.h：フレームを描く"]
     FX["isf.cpp・aviutl*.h・layer_fx.h：効果"]
     Script["script.cpp：QuickJS-ng（レシピ・three.js）、LuaJIT（AviUtl2）"]
   end
@@ -31,14 +31,14 @@ flowchart TB
   end
   UI --> FFI --> API --> Hand
   Hand --> Doc --> SQLite
-  Hand --> Kit --> Filament --> Dawn
-  Kit --> ThorVG --> Dawn
+  Hand --> Render --> Filament --> Dawn
+  Render --> ThorVG --> Dawn
   Hand --> FX
   Hand --> Script
-  Kit --> Gst
-  Kit --> FF
-  Kit --> Jolt
-  Kit -- "CVPixelBuffer（IOSurface）3 枚、コピーなし" --> UI
+  Render --> Gst
+  Render --> FF
+  Render --> Jolt
+  Render -- "CVPixelBuffer（IOSurface）3 枚、コピーなし" --> UI
 ```
 
 ## 境目
@@ -54,7 +54,7 @@ flowchart TB
 ## 描く
 
 - **Filament** を v1.77.2 のソースから WebGPU（Dawn）の口で組む（`engine/gpu/build.sh`）。配られている SDK には WebGPU が無いため。当てる差分：計算（compute）の口、Dawn の装置を外に貸す口、外のテクスチャを受ける `Texture::Builder::import`（`filament_dawn_compute.patch`）、AviUtl2 の HLSL のために glslang の HLSL の読み手を入れる（`glslang_hlsl.patch`）。
-- **ThorVG** は WebGPU のエンジンを、Filament と同じ Dawn の装置の上で動かす（`engine/gpu/tvg_on_dawn.sh`、`drawn.h`）。描いた絵は Filament のシーンの中の板になる（切り抜き・ガラス越し・キーが効く）。
+- **ThorVG** は WebGPU のエンジンを、Filament と同じ Dawn の装置の上で動かす（`engine/gpu/tvg_on_dawn.sh`、`canvas.h`）。描いた絵は Filament のシーンの中の板になる（切り抜き・ガラス越し・キーが効く）。
 - 形の足し引きは **Skia** のパスの部分だけ（`engine/deps/skia.sh`）、平らな形の三角形分けは **libtess2**。
 - 画面の拍子は Thermion の FrameScheduler（CVDisplayLink、`engine/third_party/thermion_frame/`）。
 
@@ -79,7 +79,7 @@ flowchart TB
 
 - 動画は **GStreamer** が読み（何の形式でも、GStreamer が部品を選ぶ）、絵を板に貼る（`engine/media/video_layer.h`、`gstreamer_file_source.h`）。
 - 作業中の音は GStreamer の playbin（`sound_playback.h`）。
-- 書き出しは、1 秒 60 フレーム描いて **ffmpeg** に渡し、レイヤーの音も ffmpeg で混ぜる（`engine/stage/kit/kit_draw.h` の `film`）。
+- 書き出しは、1 秒 60 フレーム描いて **ffmpeg** に渡し、レイヤーの音も ffmpeg で混ぜる（`engine/stage/render/render_draw.h` の `film`）。
 
 ## 棚を読む所
 
@@ -98,5 +98,5 @@ flowchart TB
 | `skins/` | — | `skin/theme.dart` `ColorTheme.skinNames`（前の置き場 `~/.motolii/skins/` も読む） |
 | `extensions/hydra/` | `document/adapter.h`、`community/shaders/hydra_isf.cpp` | — |
 | （棚でない）`engine/third_party/wordnet_ja/` | `entry/calls_find.h` `find_english`（`doc_folders("words")`） | — |
-| （棚でない）`engine/third_party/noto_sans_jp/` | `stage/drawn/drawn_made.h` `type_fallback`（`doc_folders("fonts")`） | `workspace/dock/dock_fonts.dart` |
+| （棚でない）`engine/third_party/noto_sans_jp/` | `stage/canvas/canvas_renderables.h` `type_fallback`（`doc_folders("fonts")`） | `workspace/dock/dock_fonts.dart` |
 | （棚でない）`engine/third_party/gflanguages/` | — | `workspace/dock/dock_fonts.dart`（`samples.json`） |

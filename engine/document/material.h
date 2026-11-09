@@ -6,7 +6,7 @@ static std::string doc_material(Doc& d, int layer) {
     if (!said.empty()) return said;
     return doc_word(d, layer, "kind") == "solid" && doc_word(d, layer, "fill") == "glass" ? "glass" : "";
 }
-// The sheet a flat layer (a film, a picture, a text, a shape) wears its material as: flat.mat's own for it (kit_wgpu.sh),
+// The sheet a flat layer (a film, a picture, a text, a shape) wears its material as: flat.mat's own for it (filament_webgpu.sh),
 // its picture its colour. "" none: as it is drawn. Of glass, the stage behind it is read (doc_layers_read).
 static std::string doc_sheet_material(Doc& d, int layer) {
     if (!doc_among("video image text shape", doc_word(d, layer, "kind"))) return "";
@@ -27,7 +27,7 @@ static void doc_material_instances(Stage& s, const Doc::Shown& t, const std::fun
     auto& faces = s.engine->getRenderableManager();
     if (t.video) each(t.video->look);
     if (t.drawn) each(t.drawn->look);
-    for (const Stage::Made& made : s.made)
+    for (const Stage::Renderable& made : s.renderables)
         if (t.shape && made.of == t.shape) each(faces.getMaterialInstanceAt(faces.getInstance(made.thing), 0));
     if (t.solid) for (const utils::Entity e : t.solid->parts) {
         const auto one = faces.getInstance(e);
@@ -37,7 +37,7 @@ static void doc_material_instances(Stage& s, const Doc::Shown& t, const std::fun
 // Each drawn part of a layer (Filament's renderables), and the scene it is in (its run's: run 0 or not yet put, the stage's own).
 static void doc_entities(Stage& s, const Doc::Shown& t, const std::function<void(utils::Entity)>& each) {
     const Mesh* m = t.video ? t.video->sheet : t.drawn ? t.drawn->sheet : t.shape;
-    for (const Stage::Made& made : s.made)
+    for (const Stage::Renderable& made : s.renderables)
         if (m && made.of == m && !made.matte) each(made.thing);
     if (t.solid) for (const utils::Entity e : t.solid->parts) each(e);
 }

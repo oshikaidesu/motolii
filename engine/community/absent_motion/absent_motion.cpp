@@ -1,7 +1,7 @@
 // absent_motion.cpp: AbsentMotion's own motion effects (Auto Shake, Random Displace, Random Jitter, Oscillate, Swing,
 // Spin, Pulse Size: its motion.cpp ApplyMotion; Apache-2.0, Copyright 2026 The AbsentMotion authors), run as AbsentMotion
 // runs them: a layer of its own (scene.h) given the thing's time and its effects in order, its placement begun where
-// nothing is moved. Built apart (gpu/kit_wgpu.sh), beside AbsentMotion's motion.cpp, scene.cpp and easing.cpp as
+// nothing is moved. Built apart (gpu/filament_webgpu.sh), beside AbsentMotion's motion.cpp, scene.cpp and easing.cpp as
 // they are (what of scene.cpp draws or reads a scene is not reached: the library is linked dead-stripped).
 #include "community/absent_motion/absent_motion.h"
 #include "scene.h"
@@ -44,7 +44,7 @@ float absent_opacity(const std::vector<AbsentEffect>& effects, int64_t thing, do
 // Range Transform (Offset, Angle, Scale, Alpha) on the copies in its Range, as AbsentMotion's own Ranged does for its repeats
 // (Start, End, Phase, Random Order). Not made yet, not yet read from Alight Motion: Fill Color, Ease In, Ease Out, Overlap,
 // Shape, Invert.
-static double scatter_knob(const AbsentEffect& e, const char* name, size_t i, double usual) {
+static double scatter_parameter(const AbsentEffect& e, const char* name, size_t i, double usual) {
     for (const auto& [n, v] : e.params)
         if (n == name) return i < v.size() ? v[i] : usual;
     return usual;
@@ -56,17 +56,17 @@ static double scatter_unit(uint64_t seed, uint64_t k) {   // (0 to 1, a hash of 
 }
 static double scatter_fold(double v) { return 1.0 - std::fabs(1.0 - std::fmod(std::fabs(v), 2.0)); }   // (back and forth inside 0 to 1: a wander never leaves the disc)
 static std::vector<am::RepeatCopy> scatter_repeat(const AbsentEffect& e) {
-    const int n = (int)std::clamp<long long>(std::llround(scatter_knob(e, "count", 0, 20)), 0, 5000);
-    const double radius = std::max(0.0, scatter_knob(e, "radius", 0, 300)), evolution = scatter_knob(e, "evolution", 0, 0);
-    const uint64_t seed = (uint64_t)std::llround(scatter_knob(e, "seed", 0, 0) * 1000.0) * 0x2545f4914f6cdd1dull + 0x51ed27ull;
-    const double phase = scatter_knob(e, "rangePhase", 0, 0);
-    const double start = scatter_knob(e, "rangeStart", 0, 0) + phase, end = scatter_knob(e, "rangeEnd", 0, 1) + phase;
-    const SkPoint offset = {(float)scatter_knob(e, "rangeOffset", 0, 0), (float)scatter_knob(e, "rangeOffset", 1, 0)};
-    const double angle = scatter_knob(e, "rangeAngle", 0, 0), scale = std::max(0.0, scatter_knob(e, "rangeScale", 0, 1)), alpha = std::clamp(scatter_knob(e, "rangeAlpha", 0, 1), 0.0, 1.0);
+    const int n = (int)std::clamp<long long>(std::llround(scatter_parameter(e, "count", 0, 20)), 0, 5000);
+    const double radius = std::max(0.0, scatter_parameter(e, "radius", 0, 300)), evolution = scatter_parameter(e, "evolution", 0, 0);
+    const uint64_t seed = (uint64_t)std::llround(scatter_parameter(e, "seed", 0, 0) * 1000.0) * 0x2545f4914f6cdd1dull + 0x51ed27ull;
+    const double phase = scatter_parameter(e, "rangePhase", 0, 0);
+    const double start = scatter_parameter(e, "rangeStart", 0, 0) + phase, end = scatter_parameter(e, "rangeEnd", 0, 1) + phase;
+    const SkPoint offset = {(float)scatter_parameter(e, "rangeOffset", 0, 0), (float)scatter_parameter(e, "rangeOffset", 1, 0)};
+    const double angle = scatter_parameter(e, "rangeAngle", 0, 0), scale = std::max(0.0, scatter_parameter(e, "rangeScale", 0, 1)), alpha = std::clamp(scatter_parameter(e, "rangeAlpha", 0, 1), 0.0, 1.0);
     std::vector<size_t> order(n);
     for (int i = 0; i < n; i++) order[i] = i;
-    if (scatter_knob(e, "randomOrder", 0, 0) >= 0.5 && n > 1) {   // (the order the Range reaches them in, the way AbsentMotion's Random Order sorts its spots)
-        const uint64_t rs = (uint64_t)std::llround(scatter_knob(e, "randomSeed", 0, 0) * 1000.0) * 0x9e3779b97f4a7c15ull + 0x77ull;
+    if (scatter_parameter(e, "randomOrder", 0, 0) >= 0.5 && n > 1) {   // (the order the Range reaches them in, the way AbsentMotion's Random Order sorts its spots)
+        const uint64_t rs = (uint64_t)std::llround(scatter_parameter(e, "randomSeed", 0, 0) * 1000.0) * 0x9e3779b97f4a7c15ull + 0x77ull;
         std::sort(order.begin(), order.end(), [&](size_t a, size_t b) { return scatter_unit(rs, a) < scatter_unit(rs, b); });
     }
     std::vector<double> reaches(n);   // (how far along the Range each copy is, 0 to 1)
@@ -87,10 +87,10 @@ static std::vector<am::RepeatCopy> scatter_repeat(const AbsentEffect& e) {
     return out;
 }
 // A repeat laid on those before it, each copy of the new by each of the old, as AbsentMotion's RepeatCopies does it.
-static std::vector<am::RepeatCopy> scatter_on(const std::vector<am::RepeatCopy>& made, const std::vector<am::RepeatCopy>& result) {
+static std::vector<am::RepeatCopy> scatter_on(const std::vector<am::RepeatCopy>& built, const std::vector<am::RepeatCopy>& result) {
     std::vector<am::RepeatCopy> next;
-    next.reserve(std::min<size_t>(25000, made.size() * result.size()));
-    for (const am::RepeatCopy& m : made)
+    next.reserve(std::min<size_t>(25000, built.size() * result.size()));
+    for (const am::RepeatCopy& m : built)
         for (const am::RepeatCopy& r : result) {
             if (next.size() >= 25000) break;
             am::RepeatCopy c = r;
@@ -132,7 +132,7 @@ double absent_ease(const char* type, const double* p, int n, double u) {
 }
 // As AbsentMotion's text.cpp Shown changes a text layer's words, its Choice and Seed as there (they lie in text.cpp
 // with its Skia paragraphs, not built here): each text effect in its order, by textanim.cpp's own CountNumbers,
-// FormatTimecode and Scramble. Text Randomizer's own characters are none here (a knob of words is not had): Scramble's own
+// FormatTimecode and Scramble. Text Randomizer's own characters are none here (a parameter of words is not had): Scramble's own
 // set then, as AbsentMotion's when none is typed.
 bool absent_text_on(const std::vector<AbsentEffect>& effects) {
     return std::any_of(effects.begin(), effects.end(), [](const AbsentEffect& e) { return e.id == "countupdown" || e.id == "timecode" || e.id == "textrandomizer"; });

@@ -11,7 +11,7 @@ static void doc_layer_solid_aim(Doc& d, int layer, ThingFx& e) {   // (before th
         place = doc_place(d, layer, d.stage->now), doc_half(d, layer, &half);
     }
     thing_fx_face(s, e, place, half);
-    thing_fx_pictures(s, e.st, e.view);
+    thing_fx_textures(s, e.st, e.view);
     e.look->setParameter("place", mat4f::scaling(float3{0.f}));   // (its sheet: nowhere)
     if (!e.solid || !e.solidLook) return;
     move(s, e.solid, [&](int, const mat4f&) { return mat4f(place); });
@@ -100,10 +100,10 @@ static bool doc_fx_frame(Doc& d, int layer, const ThingFx& e, double* frame) {
     std::copy(e.own, e.own + 4, frame), frame[4] = 0;
     return true;
 }
-static void doc_layer_solid(Doc& d, int layer, ThingFx& e, const ScreenNumbers& numbers, const std::function<DrawnFx()>& thorFx) {   // (in the frame)
+static void doc_layer_solid(Doc& d, int layer, ThingFx& e, const ScreenNumbers& numbers, const std::function<Canvas2DFx()>& thorFx) {   // (in the frame)
     Stage& s = *d.stage;
     thing_effects_draw(s, e.st, e.view, numbers, thorFx);
-    if (solid_reads(e.solidFile)) thing_fx_cover(s, e, (int)(e.knobs.count("precision") ? e.knobs["precision"] : 160)), thing_fx_solid(s, e, true);
+    if (solid_reads(e.solidFile)) thing_fx_cover(s, e, (int)(e.parameters.count("precision") ? e.parameters["precision"] : 160)), thing_fx_solid(s, e, true);
 }
 // What an AviUtl2 script asks of the other layers (aviutl_fx.h): its layers are the document's layers in the order
 // they lie, the furthest back layer 1 (doc_laid; AviUtl2 draws layer 1 first, the higher over it). "aviutl.layer":
@@ -158,11 +158,11 @@ static void doc_layers_fx(Doc& d) {
         e.solidFile.clear();
         for (const std::string& w : doc_fx_list(d, layer)) if (solid_is(w)) e.solidFile = w;   // (a solid's shape among them: its picture laid on that, layer_fx.h; the last named)
         if (const DocScript* sc = e.solidFile.empty() ? nullptr : doc_script_of(d, e.solidFile)) {   // (its knobs as the document says them now, by their own names; the solid made with them, before the frame)
-            e.knobs.clear(), e.words.clear();
-            for (size_t i = 0; i < sc->knobs.size(); ++i) {
-                const ScriptKnob& k = sc->knobs[i];
+            e.parameters.clear(), e.words.clear();
+            for (size_t i = 0; i < sc->parameters.size(); ++i) {
+                const ScriptParameter& k = sc->parameters[i];
                 const std::string w = doc_word(d, layer, sc->names[i].c_str());
-                if (k.kind != "select") e.knobs[k.name] = doc_number(d, layer, sc->names[i].c_str(), d.stage->now, k.usual);
+                if (k.kind != "select") e.parameters[k.name] = doc_number(d, layer, sc->names[i].c_str(), d.stage->now, k.usual);
                 else e.words[k.name] = w.empty() ? k.words.substr(0, k.words.find(' ')) : w;
             }
             float2 half{0.5f};
@@ -207,11 +207,11 @@ static void doc_layers_fx(Doc& d) {
                 const double dx = e.world ? dot(way, e.square[0].xyz) * e.own[4] : is[0] - was[0], dy = e.world ? -dot(way, e.square[1].xyz) * e.own[4] : is[1] - was[1];   // (stood: along its own picture)
                 return name == "blurLength" ? ppp * std::hypot(dx, dy) : std::atan2(-dy, -dx) * 180.0 / M_PI;   // (its blur reads behind it along the way it is told: told back, it trails behind the way it goes)
             }
-            return doc_number(d, layer, doc_screen_knob(file, name).c_str(), d.stage->now, usual);
+            return doc_number(d, layer, doc_screen_parameter(file, name).c_str(), d.stage->now, usual);
         };
         const auto thorFx = [&d, layer = layer, &e = e] {   // (ThorVG's own among its steps, as they are now: lengths in points of the stage)
             std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
-            DrawnFx fx;
+            Canvas2DFx fx;
             std::string why;
             doc_fx(d, layer, d.stage->now, false, 1.0, fx, why, true);
             double frame[8];
@@ -248,14 +248,14 @@ static void doc_layers_fx(Doc& d) {
                 }
             }
             if (!e.solidFile.empty()) return doc_layer_solid_aim(d, layer, e);
-            if (e.st.readsBehind) {   // (its sheet on the screen only, not in the picture of what is behind it that its effect reads: as the glass leaves itself out, kit_things.h)
+            if (e.st.readsBehind) {   // (its sheet on the screen only, not in the picture of what is behind it that its effect reads: as the glass leaves itself out, render_layers.h)
                 s.backdropRead = true;
-                for (const Stage::Made& made : s.made) if (made.of == e.sheet) s.engine->getRenderableManager().setLayerMask(s.engine->getRenderableManager().getInstance(made.thing), 0xFF, 0x02);
+                for (const Stage::Renderable& made : s.renderables) if (made.of == e.sheet) s.engine->getRenderableManager().setLayerMask(s.engine->getRenderableManager().getInstance(made.thing), 0xFF, 0x02);
             }
             e.st.ground = d.backdropIs.size() == 6 ? (int)std::strtol(d.backdropIs.c_str(), nullptr, 16) : -1;   // (the colour behind everything: what an effect reading the frame finds where nothing is drawn)
             if (e.world) doc_layer_stand(d, layer, e);
             else thing_fx_aim(s, e, box);
-            thing_fx_pictures(s, e.st, e.view);
+            thing_fx_textures(s, e.st, e.view);
             if (e.look) e.look->setParameter("image", thing_fx_seen(e.st), e.shell ? TextureSampler(TextureSampler::MinFilter::NEAREST, TextureSampler::MagFilter::NEAREST) : TextureSampler(TextureSampler::MinFilter::LINEAR, TextureSampler::MagFilter::LINEAR));
             if (e.look) {   // (its glow over what its effects made: the stage's bloom, as a layer without effects glows (doc_evaluate))
                 std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
@@ -312,7 +312,7 @@ static void doc_layers_read(Doc& d, const std::vector<std::pair<int, Doc::Shown*
         from[i] = parts.size();
         doc_entities(s, *laid[i].second, [&](utils::Entity e) { parts.push_back(e); });
         if (const auto own = d.layerFx.find(laid[i].first); own != d.layerFx.end())
-            for (const Stage::Made& made : s.made) if (made.of == own->second.sheet) parts.push_back(made.thing);
+            for (const Stage::Renderable& made : s.renderables) if (made.of == own->second.sheet) parts.push_back(made.thing);
     }
     for (size_t i = 0; i < laid.size(); ++i) {
         const int layer = laid[i].first;

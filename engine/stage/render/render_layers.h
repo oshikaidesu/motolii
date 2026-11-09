@@ -1,4 +1,4 @@
-// kit_things.h: part of kit.h. Read only through kit.h.
+// render_layers.h: part of render.h. Read only through render.h.
 // Letters as a solid, by the system's own solid text (SceneKit makes it, ModelIO hands over the mesh): `deep`
 // through, the edges cut off by `chamfer`; a capital is about 0.7 high. The letters' lower left is at the origin,
 // they run along x and stand up along y, the middle of their depth is at z = 0.
@@ -8,13 +8,13 @@ static Mesh* letters(const char* text, float deep, float chamfer) {
     solid.font = [NSFont fontWithName:@"Helvetica-Bold" size:size];
     solid.chamferRadius = chamfer * size;
     solid.flatness = 0.02;
-    MDLMesh* made = [MDLMesh meshWithSCNGeometry:solid];
-    MDLVertexAttributeData* ps = [made vertexAttributeDataForAttributeNamed:MDLVertexAttributePosition asFormat:MDLVertexFormatFloat3];
-    MDLVertexAttributeData* ns = [made vertexAttributeDataForAttributeNamed:MDLVertexAttributeNormal asFormat:MDLVertexFormatFloat3];
-    if (!made.vertexCount || !ps || !ns) return nullptr;
+    MDLMesh* built = [MDLMesh meshWithSCNGeometry:solid];
+    MDLVertexAttributeData* ps = [built vertexAttributeDataForAttributeNamed:MDLVertexAttributePosition asFormat:MDLVertexFormatFloat3];
+    MDLVertexAttributeData* ns = [built vertexAttributeDataForAttributeNamed:MDLVertexAttributeNormal asFormat:MDLVertexFormatFloat3];
+    if (!built.vertexCount || !ps || !ns) return nullptr;
     Mesh* m = new Mesh;
     float3 low{1e9f};
-    for (NSUInteger i = 0; i < made.vertexCount; ++i) {
+    for (NSUInteger i = 0; i < built.vertexCount; ++i) {
         const float* p = (const float*)((const uint8_t*)ps.dataStart + i * ps.stride);
         const float* n = (const float*)((const uint8_t*)ns.dataStart + i * ns.stride);
         m->pos.push_back(float3{p[0], p[1], p[2]} / size);
@@ -23,7 +23,7 @@ static Mesh* letters(const char* text, float deep, float chamfer) {
         low = min(low, m->pos.back());
     }
     for (float3& p : m->pos) p = p - float3{low.x, low.y, 0.f};
-    for (MDLSubmesh* part in made.submeshes) {
+    for (MDLSubmesh* part in built.submeshes) {
         if (part.geometryType != MDLGeometryTypeTriangles) continue;
         const void* b = [part.indexBuffer map].bytes;
         for (NSUInteger i = 0; i < part.indexCount; ++i)
@@ -243,7 +243,7 @@ static MaterialInstance* own_glass(Stage& s, Mesh* m, std::vector<mat4f> places,
     return mi;
 }
 
-// A solid worn by one of the kit's materials of its own (Create's Material group, doc.h doc_material): Filament's own
+// A solid worn by one of the renderer's materials of its own (Create's Material group, doc.h doc_material): Filament's own
 // glass (own_glass, above: ior its bend, split how far its colours part, swim how far its faces lean, vivid its thin
 // film's rainbow, dark how deep its colour), lacquer (blade.mat: its colour dark at the root, as it is at the tip, under
 // a hard clear coat; metal 0 lacquer, 1 steel) or a bubble (bubble.mat: vivid how bright its rim). tone: its colour.
@@ -344,59 +344,59 @@ static void key_out(MaterialInstance* look, float3 colour = float3{0.f, 1.f, 0.f
 // What comes back names the matte. Each matte is a picture of its own, taken before all else (`draw`) by its own eye,
 // the film's camera or one riding on the thing, with nothing but its shapes in it; the things it cuts look themselves
 // up in it by that eye (matte.glsl), so they are cut the same whichever eye looks at the stage.
-static int matte(Stage& s, Mesh* m, std::vector<mat4f> places, Texture* picture = nullptr, bool byLight = false, float strength = 1.f, int into = -1, const Mesh* on = nullptr) {
+static int matte(Stage& s, Mesh* m, std::vector<mat4f> places, Texture* frameTexture = nullptr, bool byLight = false, float strength = 1.f, int into = -1, const Mesh* on = nullptr) {
     auto& tm = s.engine->getTransformManager();
     if (into < 0) {
-        Stage::Matte made{};
+        Stage::Matte built{};
         uint32_t w = 2 * (uint32_t)s.w, h = 2 * (uint32_t)s.h;   // (in the film's picture: twice as fine as the screen)
-        made.eye = s.film;
-        made.onPlace = mat4f{};
-        for (const Stage::Made& d : s.made) {
+        built.eye = s.film;
+        built.onPlace = mat4f{};
+        for (const Stage::Renderable& d : s.renderables) {
             if (!on || d.of != on) continue;
             float3 low = on->pos[0], high = on->pos[0];
             for (const float3& p : on->pos) { low = min(low, p); high = max(high, p); }
             // an eye before the thing, looking along its z at all of it, and going where it goes
             utils::Entity e = utils::EntityManager::get().create();
             tm.create(e, tm.getInstance(d.thing), mat4f::translation(float3{0.f, 0.f, high.z + 1.f}));
-            made.eye = s.engine->createCamera(e);
-            made.eye->setProjection(Camera::Projection::ORTHO, low.x, high.x, low.y, high.y, 0.1, double(high.z - low.z) + 2.0);
+            built.eye = s.engine->createCamera(e);
+            built.eye->setProjection(Camera::Projection::ORTHO, low.x, high.x, low.y, high.y, 0.1, double(high.z - low.z) + 2.0);
             const float fine = (float)std::max(s.w, s.h) / std::max(high.x - low.x, high.y - low.y);   // (its longer side as fine as the screen's)
             w = 2 * (uint32_t)std::lround(0.5f * fine * (high.x - low.x));
             h = 2 * (uint32_t)std::lround(0.5f * fine * (high.y - low.y));
-            made.on = d.thing;
-            made.onPlace = d.place;
+            built.on = d.thing;
+            built.onPlace = d.place;
             break;
         }
         uint8_t levels = 1;
         while ((std::max(w, h) >> levels) > 0) ++levels;
-        made.picture = Texture::Builder().width(w).height(h).levels(levels).format(Texture::InternalFormat::R8)
+        built.frameTexture = Texture::Builder().width(w).height(h).levels(levels).format(Texture::InternalFormat::R8)
                            .usage(Texture::Usage::COLOR_ATTACHMENT | Texture::Usage::SAMPLEABLE | Texture::Usage::GEN_MIPMAPPABLE).build(*s.engine);
-        made.scene = s.engine->createScene();
-        made.view = s.engine->createView();
-        made.view->setScene(made.scene);
-        made.view->setCamera(made.eye);
-        made.view->setViewport({0, 0, w, h});
-        made.view->setRenderTarget(RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, made.picture).build(*s.engine));
-        made.view->setPostProcessingEnabled(false);
-        s.mattes.push_back(made);
+        built.scene = s.engine->createScene();
+        built.view = s.engine->createView();
+        built.view->setScene(built.scene);
+        built.view->setCamera(built.eye);
+        built.view->setViewport({0, 0, w, h});
+        built.view->setRenderTarget(RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, built.frameTexture).build(*s.engine));
+        built.view->setPostProcessingEnabled(false);
+        s.mattes.push_back(built);
         into = (int)s.mattes.size() - 1;
     }
     Stage::Matte& to = s.mattes[(size_t)into];
     MaterialInstance* shape = add(s, m, "matte.filamat", places);
     if (!shape) return -1;
-    for (size_t i = s.made.size() - places.size(); i < s.made.size(); ++i) {   // (its shape is in the matte's own scene, and in no other picture)
-        s.scene->remove(s.made[i].thing);
-        to.scene->addEntity(s.made[i].thing);
-        s.made[i].matte = true;
+    for (size_t i = s.renderables.size() - places.size(); i < s.renderables.size(); ++i) {   // (its shape is in the matte's own scene, and in no other picture)
+        s.scene->remove(s.renderables[i].thing);
+        to.scene->addEntity(s.renderables[i].thing);
+        s.renderables[i].matte = true;
         if (to.eye == s.film) continue;
-        s.made[i].place = inverse(to.onPlace) * s.made[i].place;   // (on a thing: its place is told from the thing from now on)
-        tm.setParent(tm.getInstance(s.made[i].thing), tm.getInstance(to.on));
-        tm.setTransform(tm.getInstance(s.made[i].thing), s.made[i].place);
+        s.renderables[i].place = inverse(to.onPlace) * s.renderables[i].place;   // (on a thing: its place is told from the thing from now on)
+        tm.setParent(tm.getInstance(s.renderables[i].thing), tm.getInstance(to.on));
+        tm.setTransform(tm.getInstance(s.renderables[i].thing), s.renderables[i].place);
     }
-    shape->setParameter("picture", picture ? picture : white_point(s), TextureSampler(TextureSampler::MinFilter::LINEAR, TextureSampler::MagFilter::LINEAR));
+    shape->setParameter("picture", frameTexture ? frameTexture : white_point(s), TextureSampler(TextureSampler::MinFilter::LINEAR, TextureSampler::MagFilter::LINEAR));
     shape->setParameter("byLight", byLight ? 1.f : 0.f);
     shape->setParameter("strength", strength);
-    if (!picture) shape->setCullingMode(backend::CullingMode::BACK);   // (a solid: its near faces only, so that it covers once)
+    if (!frameTexture) shape->setCullingMode(backend::CullingMode::BACK);   // (a solid: its near faces only, so that it covers once)
     return into;
 }
 
@@ -410,7 +410,7 @@ static bool matted(Stage& s, MaterialInstance* look, int matte, bool inside = tr
     for (const Stage::Cut& c : s.cuts)
         if (c.look == look) use[c.slot] = c.use, softs[c.slot] = c.soft, ++n;
     if (n == 4 || !look->getMaterial()->hasParameter("matteUse")) return false;
-    look->setParameter(names[n], s.mattes[(size_t)matte].picture,
+    look->setParameter(names[n], s.mattes[(size_t)matte].frameTexture,
                        TextureSampler(TextureSampler::MinFilter::LINEAR_MIPMAP_LINEAR, TextureSampler::MagFilter::LINEAR, TextureSampler::WrapMode::CLAMP_TO_EDGE));
     use[n] = inside ? 1.f : -1.f;
     softs[n] = std::log2(1.f + 2.f * std::max(soft, 0.f));   // (a level of the matte's picture: each is twice as coarse as the one before)
@@ -462,14 +462,14 @@ static bool begins(Stage& s) {
 
 // All the pictures of one frame, the helper pictures first (between Filament's beginFrame and endFrame). Every way
 // of drawing the stage goes through here.
-static void pictures_of(Stage& s) {
+static void textures_of(Stage& s) {
     if (s.backdropRead) s.renderer->render(s.view_behind);   // (what is behind, for an effect that reads it (screen_fx.h's backdrop): drawn before the effects, those things' own sheets left out of it)
     for (const auto& [of, one] : s.once) one();
     s.once.clear();
     for (const auto& one : s.before) one();   // (the things with effects of their own, each drawn alone first, as FilamentApp draws its offscreen views before every other: layer_fx.h)
     for (Stage::Matte& m : s.mattes) {
         s.renderer->render(m.view);
-        if (m.soft) m.picture->generateMipmaps(*s.engine);
+        if (m.soft) m.frameTexture->generateMipmaps(*s.engine);
     }
     if (s.view_floor) s.renderer->render(s.view_floor);
     if (s.behindRead) s.renderer->render(s.view_behind);   // (the picture of what is behind: only once glass or the paper reads it; a whole pass of every thing's points)
@@ -482,7 +482,7 @@ static void pictures_of(Stage& s) {
 
 static void draw(Stage& s, std::vector<uint8_t>* pic = nullptr, bool wait = true) {
     while (!begins(s)) {}
-    pictures_of(s);
+    textures_of(s);
     if (pic)
         s.renderer->readPixels(0, 0, (uint32_t)s.w, (uint32_t)s.h,
                                backend::PixelBufferDescriptor(pic->data(), pic->size(), backend::PixelDataFormat::RGBA, backend::PixelDataType::UBYTE));
@@ -492,7 +492,7 @@ static void draw(Stage& s, std::vector<uint8_t>* pic = nullptr, bool wait = true
 
 // Whether the things made of mesh `m` are in the picture (they stay made, and are moved and played as before).
 static void seen(Stage& s, const Mesh* m, bool in) {
-    for (const Stage::Made& d : s.made)
+    for (const Stage::Renderable& d : s.renderables)
         if (d.of == m) { if (in) s.scene->addEntity(d.thing); else s.scene->remove(d.thing); }
 }
 
@@ -500,13 +500,13 @@ static void seen(Stage& s, const Mesh* m, bool in) {
 static void take_off(Stage& s, const Mesh* m) {
     auto& looks = s.engine->getRenderableManager();
     MaterialInstance* look = nullptr;
-    for (size_t i = s.made.size(); i-- > 0;) {
-        if (s.made[i].of != m) continue;
-        look = looks.getMaterialInstanceAt(looks.getInstance(s.made[i].thing), 0);
-        s.scene->remove(s.made[i].thing);
-        s.engine->destroy(s.made[i].thing);
-        if (s.made[i].many) s.engine->destroy(s.made[i].many);   // (after the thing that draws by it)
-        s.made.erase(s.made.begin() + (long)i);
+    for (size_t i = s.renderables.size(); i-- > 0;) {
+        if (s.renderables[i].of != m) continue;
+        look = looks.getMaterialInstanceAt(looks.getInstance(s.renderables[i].thing), 0);
+        s.scene->remove(s.renderables[i].thing);
+        s.engine->destroy(s.renderables[i].thing);
+        if (s.renderables[i].many) s.engine->destroy(s.renderables[i].many);   // (after the thing that draws by it)
+        s.renderables.erase(s.renderables.begin() + (long)i);
     }
     if (!look) return;
     std::erase_if(s.cuts, [look](const Stage::Cut& c) { return c.look == look; });   // (no matte's eye is told to it any more)

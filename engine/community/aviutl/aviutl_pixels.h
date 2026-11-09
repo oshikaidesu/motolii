@@ -44,8 +44,8 @@ static int aviutl_getpixeldata(lua_State* L) {
     uint32_t w = 0, h = 0;
     if (!aviutl_read(r, target, p, w, h)) return lua_pushnil(L), lua_pushinteger(L, 0), lua_pushinteger(L, 0), 3;
     if (order == "bgra") aviutl_swap(p);
-    uint8_t* kept = (uint8_t*)lua_newuserdata(L, p.size() + 1);
-    std::copy(p.begin(), p.end(), kept), kept[p.size()] = order == "bgra";
+    uint8_t* copy = (uint8_t*)lua_newuserdata(L, p.size() + 1);
+    std::copy(p.begin(), p.end(), copy), copy[p.size()] = order == "bgra";
     return lua_pushinteger(L, w), lua_pushinteger(L, h), 3;
 }
 
@@ -87,10 +87,10 @@ static int aviutl_putpixeldata(lua_State* L) {
     const std::string order = lua_isstring(L, 5) ? lua_tostring(L, 5) : data[held] ? "bgra" : "rgba";
     auto* p = new std::vector<uint8_t>(data, data + (size_t)w * h * 4);
     if (order == "bgra") aviutl_swap(*p);
-    const AviutlBuf picture = aviutl_bytes(r, w, h);
-    picture.t->setImage(*r.s->engine, 0, backend::PixelBufferDescriptor(p->data(), p->size(), backend::PixelDataFormat::RGBA, backend::PixelDataType::UBYTE, [](void*, size_t, void* u) { delete (std::vector<uint8_t>*)u; }, p));
+    const AviutlBuf img = aviutl_bytes(r, w, h);
+    img.t->setImage(*r.s->engine, 0, backend::PixelBufferDescriptor(p->data(), p->size(), backend::PixelDataFormat::RGBA, backend::PixelDataType::UBYTE, [](void*, size_t, void* u) { delete (std::vector<uint8_t>*)u; }, p));
     const AviutlBuf& to = aviutl_buf(r, target, w, h);
-    aviutl_lay(r, picture, to.rt, to.w, to.h, 0, 0, 1, 1, 0, 1, 0, 0, -1, 1, 0, 1);
-    aviutl_let_go(r, picture);
+    aviutl_lay(r, img, to.rt, to.w, to.h, 0, 0, 1, 1, 0, 1, 0, 0, -1, 1, 0, 1);
+    aviutl_let_go(r, img);
     return 0;
 }

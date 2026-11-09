@@ -31,8 +31,8 @@ function __lit(r) {
   if (!r._enableLighting || r._useNormalMaterial) return 1;
   const V = r._curCamera.cameraMatrix.mat4, m = __mesh, metal = r._useMetalness, v = __view(r), at = (a, i, w) => [V[0] * a[i] + V[4] * a[i + 1] + V[8] * a[i + 2] + w * V[12], V[1] * a[i] + V[5] * a[i + 1] + V[9] * a[i + 2] + w * V[13], V[2] * a[i] + V[6] * a[i + 1] + V[10] * a[i + 2] + w * V[14]];
   const way = (a, i) => { const p = at(a, i, 0); return [p[0], -p[1], p[2]]; }, place = (a, i) => { const p = at(a, i, 1), z = (p[2] + v.back) * v.z, w = Math.max(1 + v.pull * z, 0.1); return [p[0] * v.x * __U / w, -p[1] * v.y * __U / w, z * __U / w]; }, three = (a, i) => [a[i], a[i + 1], a[i + 2]];
-  const kept = [r.ambientLightColors, r.directionalLightDirections, r.directionalLightDiffuseColors, r.directionalLightSpecularColors, r.pointLightPositions, r.pointLightDiffuseColors, r.pointLightSpecularColors, r.spotLightPositions, r.spotLightDirections, r.spotLightDiffuseColors, r.spotLightSpecularColors, r.spotLightAngle, r.spotLightConc, r.constantAttenuation, r.linearAttenuation, r.quadraticAttenuation, metal, V].join();
-  let set = m.sets.get(kept);
+  const cached = [r.ambientLightColors, r.directionalLightDirections, r.directionalLightDiffuseColors, r.directionalLightSpecularColors, r.pointLightPositions, r.pointLightDiffuseColors, r.pointLightSpecularColors, r.spotLightPositions, r.spotLightDirections, r.spotLightDiffuseColors, r.spotLightSpecularColors, r.spotLightAngle, r.spotLightConc, r.constantAttenuation, r.linearAttenuation, r.quadraticAttenuation, metal, V].join();
+  let set = m.sets.get(cached);
   if (set === undefined) {
     const o = [0, 0, 0, __U, r.constantAttenuation, r.linearAttenuation, r.quadraticAttenuation, 0];
     for (let i = 0; i + 2 < r.ambientLightColors.length && i < 15; i += 3) for (let k = 0; k < 3; ++k) o[k] += Math.max(0, r.ambientLightColors[i + k] - metal);
@@ -40,7 +40,7 @@ function __lit(r) {
     for (let j = 0; j < dirs; ++j) o.push(...way(r.directionalLightDirections, j * 3), 0, ...three(r.directionalLightDiffuseColors, j * 3), 0, ...three(r.directionalLightSpecularColors, j * 3), 0);
     for (let j = 0; j < points; ++j) o.push(...place(r.pointLightPositions, j * 3), 0, ...three(r.pointLightDiffuseColors, j * 3), 0, ...three(r.pointLightSpecularColors, j * 3), 0);
     for (let j = 0; j < spots; ++j) o.push(...place(r.spotLightPositions, j * 3), r.spotLightAngle[j], ...way(r.spotLightDirections, j * 3), r.spotLightConc[j], ...three(r.spotLightDiffuseColors, j * 3), 0, ...three(r.spotLightSpecularColors, j * 3), 0);
-    m.sets.set(kept, set = { o, dirs, points, spots, i: m.sets.size });
+    m.sets.set(cached, set = { o, dirs, points, spots, i: m.sets.size });
   }
   const own = r.curSpecularColor, shine = metal > 0 ? own.map((v, i) => r.curFillColor[i] * metal + v * (1 - metal)) : own, row = [...three(r.curAmbientColor, 0), (r._hasSetAmbient ? 1 : 0) + (r._useSpecularMaterial ? 2 : 0), ...three(shine, 0), r._useShininess, ...three(r.curEmissiveColor, 0), metal, set.dirs, set.points, set.spots, set.i];
   const key = row.join();
@@ -48,7 +48,7 @@ function __lit(r) {
   if (i === undefined) m.rows.set(key, i = m.rows.size);
   return 2 + i;
 }
-// shader() on what it draws: its own GLSL runs, as a Filament material made from it (document/sketch.h, by matc). What is drawn is
+// shader() on what it draws: its own GLSL runs, as a Filament material built from it (document/sketch.h, by matc). What is drawn is
 // already where its camera sees it, so its matrices are nothing and aPosition is that place; what its vertex shader leaves there
 // stands in the world, moved or not. What it tells a shader goes with each draw: those told the same are drawn as one.
 var __shaders = [], __shader_of = new Map();
@@ -139,7 +139,7 @@ function __paint(r) {   // (what sketch.mat reads, or 1000 and on: which of this
   return 1000 + g;
 }
 // What it draws with, texture() or image(): a createGraphics is a canvas of paints like the one a 2D sketch paints on, each
-// frame's taken as that one's are (__paints) and drawn by ThorVG (drawn_sketch.h sketch_texture). 0: none.
+// frame's taken as that one's are (__paints) and drawn by ThorVG (canvas_sketch.h sketch_texture). 0: none.
 var __tex = [], __tex_of = new Map();
 function __tex_at(r) {
   const e = r._tex && r._tex.canvas, flat = e && e.flat;
@@ -163,7 +163,7 @@ function __sheet_word(r, line) {
   if (!__sheet) (__sheet = document.createElement('canvas')).width = __SHEET, __sheet.height = __SHEET, __sheet.getContext('2d');
   const c = __sheet.flat, fine = Math.min(2, 200 / size), px = size * fine, W = Math.min(__SHEET, Math.ceil(String(line).length * px * 0.75 + px)), H = Math.ceil(px * 1.5);
   if (__sheet_x + W > __SHEET) __sheet_x = 0, __sheet_y += __sheet_row, __sheet_row = 0;
-  if (__sheet_y + H > __SHEET) c.clearRect(0, 0, __SHEET, __SHEET), __sheet_of.clear(), __sheet_x = __sheet_y = __sheet_row = 0;   // (words that change each frame: a sheet again, each frame's kept as a picture's are)
+  if (__sheet_y + H > __SHEET) c.clearRect(0, 0, __SHEET, __SHEET), __sheet_of.clear(), __sheet_x = __sheet_y = __sheet_row = 0;   // (words that change each frame: a sheet again, each frame's cached as a picture's are)
   c.font = px + 'px sans-serif', c.fillStyle = '#ffffff', c.textAlign = how, c.textBaseline = 'alphabetic';
   c.fillText(String(line), __sheet_x + (how === 'center' ? W / 2 : how === 'right' ? W : 0), __sheet_y + px * 1.1);
   q = { x: __sheet_x, y: __sheet_y, W, H, fine, base: px * 1.1 };
@@ -249,7 +249,7 @@ function __mesh_at(f) {   // (all it has drawn since it last cleared, for docume
   let from = f, d = 0, t = 0, l = 0;
   while (from > 0 && !__meshes[from].wiped) --from;
   for (let i = from; i <= f; ++i) d += __meshes[i].draws.length, t += __meshes[i].tris.length, l += __meshes[i].lines.length;
-  // (sketch.mat's table: each frame kept its own, so those of a sketch that never clears go after one another; past 80 rows what is drawn is flat, past 720 places a row reads the last lights that fit)
+  // (sketch.mat's table: each frame cached its own, so those of a sketch that never clears go after one another; past 80 rows what is drawn is flat, past 720 places a row reads the last lights that fit)
   const rows = [], sets = [];
   let count = 0;
   for (let i = from; i <= f; ++i) count += __meshes[i].rows.length;
@@ -281,7 +281,7 @@ function __mesh_at(f) {   // (all it has drawn since it last cleared, for docume
 }
 function __mesh_shader(i) { return __shaders[i].text; }
 function __mesh_shader_names(i) { return __shaders[i].names.map(u => [u.name, u.type, u.count, u.size].join(' ')).join('\n'); }
-function __mesh_shape(i) {   // (a shape as p5 made it, once)
+function __mesh_shape(i) {   // (a shape as p5 built it, once)
   const g = __shapes[i], v = g.vertices, n = g.vertexNormals || [], u = g.uvs || [], f = g.faces, e = g.edges || [], o = new Float32Array(3 + v.length * 8 + f.length * 3 + e.length * 2);
   o.set([v.length, f.length, e.length]);
   let at = 3;
@@ -299,11 +299,11 @@ p5.RendererGL.prototype.drawBuffersScaled = function (gId, x, y, z) {
   for (const i of [1, 4, 6, 9, 13]) m[i] = -m[i];   // (p5's y goes down, the world's up)
   const sx = Math.hypot(m[0], m[1], m[2]) || 1, sy = Math.hypot(m[4], m[5], m[6]) || 1, sz = Math.hypot(m[8], m[9], m[10]) || 1, deg = 180 / Math.PI;
   const of = String(gId).split('|')[0], whole = of === 'ellipsoid' ? 2 : 1;   // (an ellipsoid told by its radii; the world's ball is as wide as 1, as p5's box)
-  __drawn.push(m[12] * __U, m[13] * __U, m[14] * __U, whole * x * sx * __U, whole * y * sy * __U, whole * z * sz * __U, Math.atan2(m[1] / sx, m[0] / sx) * deg, Math.asin(Math.max(-1, Math.min(1, -m[2] / sx))) * deg, Math.atan2(m[6] / sy, m[10] / sz) * deg, __L, this._useNormalMaterial || this._tex ? -1 : __packed(this.curFillColor));
+  __placed.push(m[12] * __U, m[13] * __U, m[14] * __U, whole * x * sx * __U, whole * y * sy * __U, whole * z * sz * __U, Math.atan2(m[1] / sx, m[0] / sx) * deg, Math.asin(Math.max(-1, Math.min(1, -m[2] / sx))) * deg, Math.atan2(m[6] / sy, m[10] / sz) * deg, __L, this._useNormalMaterial || this._tex ? -1 : __packed(this.curFillColor));
   return this;
 };
-// shader(): what it is told is kept. A flat thing drawn with one, and nothing else in any frame, is that shader painting the
-// stage (door_p5_shader.h makes it an effect, its numbers knobs). Any more, and it is what paints what it draws: __paint.
+// shader(): what it is told is cached. A flat thing drawn with one, and nothing else in any frame, is that shader painting the
+// stage (adapter_p5_shader.h makes it an effect, its numbers parameters). Any more, and it is what paints what it draws: __paint.
 var __shaded = null, __shaded_kind = '', __draws_most = 0, __draws_now = 0;
 p5.prototype.shader = function (s) { this._renderer.userFillShader = s, this._renderer._useNormalMaterial = false; return this; };
 p5.Shader.prototype.setUniform = function (n, v) {

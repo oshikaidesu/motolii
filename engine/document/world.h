@@ -34,15 +34,15 @@ template <class Tell, class Make> static bool doc_kept_walk(Doc& d, Doc::Related
     }
     return !k.frames.empty();
 }
-static std::string doc_relate_knobs(Doc& d, int by, const DocScript& sc, double at) {
+static std::string doc_relate_parameters(Doc& d, int by, const DocScript& sc, double at) {
     std::ostringstream js;
     js.precision(12);
     js << '{';
-    for (size_t i = 0; i < sc.knobs.size(); ++i) {
-        js << sc.knobs[i].name << ':';
-        if (sc.knobs[i].kind != "select") { js << doc_number(d, by, sc.names[i].c_str(), at, sc.knobs[i].usual) << ','; continue; }
+    for (size_t i = 0; i < sc.parameters.size(); ++i) {
+        js << sc.parameters[i].name << ':';
+        if (sc.parameters[i].kind != "select") { js << doc_number(d, by, sc.names[i].c_str(), at, sc.parameters[i].usual) << ','; continue; }
         const std::string w = doc_word(d, by, sc.names[i].c_str());
-        js << '"' << (w.empty() ? sc.knobs[i].words.substr(0, sc.knobs[i].words.find(' ')) : w) << "\",";
+        js << '"' << (w.empty() ? sc.parameters[i].words.substr(0, sc.parameters[i].words.find(' ')) : w) << "\",";
     }
     js << '}';
     return js.str();
@@ -84,7 +84,7 @@ static const std::vector<double>& doc_related_all(Doc& d, int by, double t) {
             doc_half(d, layer, &half);
             js << 2.0 * half.x * size << ',' << 2.0 * half.y * size << ',' << layer << ',' << doc_falloff_at(d, by, place, at) << "],";
         }
-        js << "]," << at << ',' << doc_relate_knobs(d, by, *sc, at) << ',' << by << ',' << frame << ',' << (!k.solves || doc_number(d, by, "strength", at, 1) > 0 ? "true" : "false") << ')';
+        js << "]," << at << ',' << doc_relate_parameters(d, by, *sc, at) << ',' << by << ',' << frame << ',' << (!k.solves || doc_number(d, by, "strength", at, 1) > 0 ? "true" : "false") << ')';
         return js.str();
     };
     const auto told = [&](double at, size_t frame) {   // (watching what it reads, at the first)
@@ -196,7 +196,7 @@ static const std::vector<double>* doc_world(Doc& d, double t) {
                 js << stands[many] << ',' << stands[many + 1] << ',' << layer << ',' << near << ',' << stands[0] << ',' << stands[1] << ',' << stands[2] << "],";
                 call.on.emplace_back(s, weight * near);
             }
-            js << "]," << at << ',' << doc_relate_knobs(d, by, *sc, at) << ',' << by << ',' << f << ',' << (weight > 0.0 ? "true" : "false") << ')';
+            js << "]," << at << ',' << doc_relate_parameters(d, by, *sc, at) << ',' << by << ',' << f << ',' << (weight > 0.0 ? "true" : "false") << ')';
             call.js = js.str();
             all += call.js;
             calls.push_back(std::move(call));

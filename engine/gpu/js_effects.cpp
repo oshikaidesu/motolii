@@ -4,7 +4,7 @@
 // table (motolii_dawn_procs) and lent Filament's device and a texture of it (wrapDevice, wrapTexture); the effect is
 // drawn by community/three_tsl/jsrh_napi/shaders.ts. After it, the texture is read back here, on the same device.
 //   ./gpu/js_effects.sh <preset.json> <w> <h> <frames> <out.rgba>
-#include "gpu_door.h"
+#include "gpu_interop.h"
 #include <filament/Engine.h>
 #include <dawn/native/DawnNative.h>
 #include <dawn/webgpu_cpp.h>
@@ -70,9 +70,9 @@ int main(int argc, char** argv) {
   if (argc < 6) { std::printf("usage: js_effects <preset.json> <w> <h> <frames> <out.rgba>\n"); return 2; }
   const uint32_t W = (uint32_t)std::atoi(argv[2]), H = (uint32_t)std::atoi(argv[3]);
   filament::Engine* engine = filament::Engine::Builder().backend(filament::Engine::Backend::WEBGPU).build();
-  if (!engine || !door::device(engine)) { std::printf("FAIL no Filament WebGPU device\n"); return 1; }
-  WGPUDevice device = (WGPUDevice)door::device(engine);
-  WGPUInstance instance = (WGPUInstance)door::instance(engine);
+  if (!engine || !interop::device(engine)) { std::printf("FAIL no Filament WebGPU device\n"); return 1; }
+  WGPUDevice device = (WGPUDevice)interop::device(engine);
+  WGPUInstance instance = (WGPUInstance)interop::instance(engine);
   wgpu::TextureDescriptor td{};
   td.size = {W, H, 1};
   td.format = wgpu::TextureFormat::RGBA8Unorm;

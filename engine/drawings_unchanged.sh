@@ -24,8 +24,8 @@ export MOTOLII_OWN=$tmp/own   # (no maker's recipes, motions or looks: the libra
 echo "building the engine at $old ..."
 git -C "$here" worktree add --detach -q "$oldtree" "$old" || exit 1
 for e in third_party/*(N); do [ -e $oldtree/engine/$e ] || ln -s ${e:A} $oldtree/engine/$e; done
-mkdir -p $oldtree/engine/out/wgpu_kit/out
-for f in out/*.o(N) out/wgpu_kit/*.filamat(N); do cp -p $f $oldtree/engine/$f; done
+mkdir -p $oldtree/engine/out/filament_webgpu/out
+for f in out/*.o(N) out/filament_webgpu/*.filamat(N); do cp -p $f $oldtree/engine/$f; done
 for d in lightroom small_studio graffiti_shelter_2k studio_small_02_2k venetian_crossroads_2k parking_garage_2k pillars_2k; do [ -d out/$d ] && cp -Rp out/$d $oldtree/engine/out/; done
 engines=($oldtree/engine $here)
 for e in $engines; do

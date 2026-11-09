@@ -1,4 +1,4 @@
-// boxlight.mat: the light a glass box throws on the floor in the sun (drawn into the floor's picture of sunlight, kit.h), the way the makers of such pictures do it
+// boxlight.mat: the light a glass box throws on the floor in the sun (drawn into the floor's picture of sunlight, render.h), the way the makers of such pictures do it
 // (a finely cut surface, every corner's light bent and landed, brightness from how the cut is squeezed):
 // the mesh is the box's own round-edged surface, cut fine. Each corner in the sun takes its ray into the box, through
 // it (mirrored inside where it cannot leave), out, and down to the floor: the corner is drawn THERE. Where the landed
@@ -9,7 +9,7 @@
 // worked out on the CPU.
 // Not here: light that goes on through another box, light on anything but the floor, a box in another's shadow
 // (it throws its light all the same).
-// Mesh: kit.h's cube, cut fine (positions +-0.5). Copy (instance) = box * colours + colour. 64 boxes at most.
+// Mesh: render.h's cube, cut fine (positions +-0.5). Copy (instance) = box * colours + colour. 64 boxes at most.
 material {
     name : boxlight,
     shadingModel : unlit,

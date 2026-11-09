@@ -148,7 +148,7 @@ static double doc_usual(Doc& d, const char* name) {
     if (!strncmp(name, "js_", 3))   // (a knob of a script: as its head says it comes)
         for (const auto& [file, sc] : doc_scripts(d))
             for (size_t i = 0; i < sc.names.size(); ++i)
-                if (sc.names[i] == name) return sc.knobs[i].usual;
+                if (sc.names[i] == name) return sc.parameters[i].usual;
     return doc_among("parent_rotate parent_size scale_x scale_y scale_z size speed volume opacity wide tall visible distance zoom copies blur_levelletter_spacing line_spacing contrast saturation vibrance environment gradient_scale wave_speed slope power strength spread", name) ? 1.0 : !strcmp(name, "duration") ? -1.0
          : !strcmp(name, "radius") ? 0.5 : !strcmp(name, "gap") ? 0.2   // (a relation as it comes: what it works by when nothing is said)
          : !strcmp(name, "metallic") || doc_among("bevel_metallic side_metallic back_metallic", name) ? 0.08 : !strcmp(name, "roughness") || doc_among("bevel_roughness side_roughness back_roughness", name) ? 0.6 : !strcmp(name, "reflectance") ? 0.5 : !strcmp(name, "thickness") ? 0.5 : !strcmp(name, "sun_size") ? 1.09 : !strcmp(name, "sun_halo") ? 10.0   // (a solid's surface as it comes)

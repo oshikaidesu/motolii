@@ -36,18 +36,18 @@ int main() {
     like.size = {W, H, 1};
     like.format = wgpu::TextureFormat::BGRA8Unorm;   // (what ThorVG's last step writes: blue first; RGBA is refused by its pipeline)
     like.usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopySrc;
-    wgpu::Texture picture = device.CreateTexture(&like);
+    wgpu::Texture frameTexture = device.CreateTexture(&like);
 
     if (tvg::Initializer::init(0) != tvg::Result::Success) { std::printf("FAIL thorvg init\n"); return 1; }
     tvg::WgCanvas* canvas = tvg::WgCanvas::gen();
     if (!canvas) { std::printf("FAIL no WgCanvas (ThorVG built without its WebGPU engine)\n"); return 1; }
-    if (canvas->target(device.Get(), instance.Get(), picture.Get(), W, H, tvg::ColorSpace::ABGR8888S, 1) != tvg::Result::Success) { std::printf("FAIL target\n"); return 1; }
+    if (canvas->target(device.Get(), instance.Get(), frameTexture.Get(), W, H, tvg::ColorSpace::ABGR8888S, 1) != tvg::Result::Success) { std::printf("FAIL target\n"); return 1; }
     tvg::Shape* disc = tvg::Shape::gen();
     disc->appendCircle(128, 128, 80, 80);
     disc->fill(255, 0, 0, 255);
     canvas->add(disc);
-    const bool drawn = canvas->update() == tvg::Result::Success && canvas->draw(true) == tvg::Result::Success && canvas->sync() == tvg::Result::Success;
-    if (!drawn) { std::printf("FAIL draw\n"); return 1; }
+    const bool rendered = canvas->update() == tvg::Result::Success && canvas->draw(true) == tvg::Result::Success && canvas->sync() == tvg::Result::Success;
+    if (!rendered) { std::printf("FAIL draw\n"); return 1; }
 
     // read the texture back
     wgpu::BufferDescriptor room{};
@@ -56,7 +56,7 @@ int main() {
     wgpu::Buffer back = device.CreateBuffer(&room);
     wgpu::CommandEncoder coder = device.CreateCommandEncoder();
     wgpu::TexelCopyTextureInfo from{};
-    from.texture = picture;
+    from.texture = frameTexture;
     wgpu::TexelCopyBufferInfo to{};
     to.buffer = back;
     to.layout.bytesPerRow = W * 4;
@@ -77,6 +77,6 @@ int main() {
     std::printf("(blue green red alpha) middle %d %d %d %d   corner %d %d %d %d   just inside the rim %d %d %d %d   device errors %d\n", middle[0], middle[1], middle[2], middle[3],
                 corner[0], corner[1], corner[2], corner[3], rim[0], rim[1], rim[2], rim[3], errors);
     const bool ok = middle[2] > 250 && middle[1] < 5 && middle[0] < 5 && middle[3] > 250 && corner[3] < 5 && errors == 0;   // (bytes are blue, green, red, alpha)
-    std::printf(ok ? "PASS: ThorVG drew on the Dawn device\n" : "FAIL: not the picture expected\n");
+    std::printf(ok ? "PASS: ThorVG drew on the Dawn device\n" : "FAIL: not the image expected\n");
     return ok ? 0 : 1;
 }

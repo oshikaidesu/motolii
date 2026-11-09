@@ -1,10 +1,10 @@
-// drawn_flat.h: part of drawn.h. Read only through drawn.h.
+// canvas_flat.h: part of canvas.h. Read only through canvas.h.
 // A flat shape's triangles as its path is now (flat_mesh): its fill (none if hollow: cut by libtess2, made again only
 // when its path changes, `refill`), then its edge (ThorVG's own stroker: trimmed and dashed as told, its triangles
 // straight), in shares of its height from its middle (uv) and in the stage's units (pos), into its sheet; where each
 // part's indices end (a part with none: one empty triangle).
 bool sk_trim(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, float from, float to, std::vector<tvg::PathCommand>& outCmds, std::vector<tvg::Point>& outPts);
-static std::vector<uint32_t> shape_cut(Drawn* d, float trimFrom, float trimTo, bool refill) {
+static std::vector<uint32_t> shape_cut(Canvas2D* d, float trimFrom, float trimTo, bool refill) {
     const tvg::PathCommand* cmds; const tvg::Point* pts; uint32_t cmdsCnt = 0, ptsCnt = 0;
     d->outline->path(&cmds, &cmdsCnt, &pts, &ptsCnt);
     Mesh& m = *d->sheet;
@@ -137,10 +137,10 @@ static std::vector<uint32_t> shape_cut(Drawn* d, float trimFrom, float trimTo, b
 // the view's MSAA, its points moved in the look's vertex stage (bends). Nothing is drawn for it into a picture of its
 // own: forty of them waving cost a quarter of the time as ThorVG pictures do (check/shape_mesh.sh). No ramp, no effects:
 // those are `flat`'s. edge: its colour, and how wide (a share of its height; inside its frame, as `flat`'s).
-static Drawn* flat_mesh(Stage& s, const char* form, float wide, const mat4f& place, float high, float3 colour, const char* lay = nullptr, float4 edge = float4{0.f},
-                        const DrawnFx& fx = {}, int points = 6, float inner = 0.5f, float round = 0.f, bool bends = true) {
+static Canvas2D* flat_mesh(Stage& s, const char* form, float wide, const mat4f& place, float high, float3 colour, const char* lay = nullptr, float4 edge = float4{0.f},
+                        const Canvas2DFx& fx = {}, int points = 6, float inner = 0.5f, float round = 0.f, bool bends = true) {
     const int h = 1024, w = std::max(2, (int)std::lround(1024.f * wide));   // (points to make its path in: its own, as fine as it is)
-    Drawn* d = new Drawn;
+    Canvas2D* d = new Canvas2D;
     d->fx = fx, d->cutW = (float)w, d->sheetHigh = high, d->hollow = fx.hollow;
     const float in = std::round(0.5f * std::min(edge.w * (float)h, 0.5f * (float)std::min(w, h)));   // (half its edge: the path set in by that, as `flat` does, a whole point)
     d->edgeWide = 2.f * in;
@@ -175,24 +175,24 @@ bool sk_op(int op, const tvg::PathCommand* ac, uint32_t acn, const tvg::Point* a
 // in this one's points), as Cavalry's Boolean.
 static std::atomic<size_t> cuts_held{0};
 static constexpr size_t cuts_most = 256ull << 20;
-Drawn::Cuts::~Cuts() { cuts_held -= bytes; }
-static uint64_t cut_key(float3 trim, const std::array<float, 10>& bend, const Drawn::Other& join, const Drawn::Other& morph, const Drawn::Other& trace) {
+Canvas2D::Cuts::~Cuts() { cuts_held -= bytes; }
+static uint64_t cut_key(float3 trim, const std::array<float, 10>& bend, const Canvas2D::Other& join, const Canvas2D::Other& morph, const Canvas2D::Other& trace) {
     uint64_t h = 1469598103934665603ull;   // (FNV-1a over everything it is cut from)
     const auto mix = [&](const void* p, size_t n) { for (size_t i = 0; i < n; ++i) h = (h ^ ((const uint8_t*)p)[i]) * 1099511628211ull; };
     mix(&trim, sizeof trim), mix(bend.data(), sizeof bend);
-    for (const Drawn::Other* o : {&join, &morph, &trace})
+    for (const Canvas2D::Other* o : {&join, &morph, &trace})
         mix(&o->how, sizeof o->how), mix(&o->much, sizeof o->much), mix(o->by.data(), o->by.size() * sizeof(tvg::PathCommand)), mix(o->at.data(), o->at.size() * sizeof(tvg::Point));
     return h;
 }
-static void cut_at(Stage& s, Drawn* d, float3 trim, const std::array<float, 10>& bend, Drawn::Other join = {}, Drawn::Other morph = {}, Drawn::Other trace = {}) {
+static void cut_at(Stage& s, Canvas2D* d, float3 trim, const std::array<float, 10>& bend, Canvas2D::Other join = {}, Canvas2D::Other morph = {}, Canvas2D::Other trace = {}) {
     if (join.how < 0 || join.by.empty()) join = {};
     if (morph.much <= 0.f || morph.by.empty()) morph = {};
     if (trace.by.empty()) trace = {};
     const bool joins = !(join == d->joined) || !(morph == d->morphed) || !(trace == d->traced);
     if (!d->cut || !d->outline || (trim == d->trimmed && bend == d->bent && !joins)) return;
     const uint64_t key = cut_key(trim, bend, join, morph, trace);
-    if (const auto kept = d->cuts.all.find(key); kept != d->cuts.all.end()) {   // (cut so before: as it was)
-        const Drawn::Cut& c = kept->second;
+    if (const auto cached = d->cuts.all.find(key); cached != d->cuts.all.end()) {   // (cut so before: as it was)
+        const Canvas2D::Cut& c = cached->second;
         d->trimmed = trim, d->bent = bend, d->joined = std::move(join), d->morphed = std::move(morph), d->traced = std::move(trace);
         d->outline->reset(), d->outline->appendPath(c.by.data(), (uint32_t)c.by.size(), c.at.data(), (uint32_t)c.at.size());
         Mesh& m = *d->sheet;
@@ -256,7 +256,7 @@ static void cut_at(Stage& s, Drawn* d, float3 trim, const std::array<float, 10>&
     const float from = std::clamp(trim.y, 0.f, 1.f) + trim.z, to = 1.f - std::clamp(trim.x, 0.f, 1.f) + trim.z;
     const std::vector<uint32_t> ends = shape_cut(d, from, to, refill);
     reshape(s, d->sheet, ends);
-    Drawn::Cut c;   // (kept, while there is room: the oldest of its own let go first)
+    Canvas2D::Cut c;   // (kept, while there is room: the oldest of its own let go first)
     const tvg::PathCommand* cmds; const tvg::Point* pts; uint32_t cmdsCnt = 0, ptsCnt = 0;
     d->outline->path(&cmds, &cmdsCnt, &pts, &ptsCnt);
     const Mesh& m = *d->sheet;
@@ -278,10 +278,10 @@ static void cut_at(Stage& s, Drawn* d, float3 trim, const std::array<float, 10>&
 // One layer of an After Effects file drawn alone, in its own space: its place and turn left out (they are its sheet's,
 // put in the scene by its pose: lottie_motion.h), on a sheet of its own `pixel` units a point of the composition. A 3D layer's
 // picture where it is. `box`: where its sheet lies in the layer's own space (x, y, w, h, in points of the composition).
-static Drawn* layer_picture(Stage& s, const char* file, uint32_t id, float pixel, float4* box) {
-    if (!door::device(s.engine)) return nullptr;
+static Canvas2D* layer_canvas(Stage& s, const char* file, uint32_t id, float pixel, float4* box) {
+    if (!interop::device(s.engine)) return nullptr;
     float4 found{0.f};
-    door::on_driver(s.engine, [&] {   // (how large it is, at its first moment: ThorVG's own bounds of it alone)
+    interop::on_driver(s.engine, [&] {   // (how large it is, at its first moment: ThorVG's own bounds of it alone)
         tvg::Initializer::init(0);
         tvg::Animation* look = tvg::LottieAnimation::gen();
         if (look->picture()->load(file) == tvg::Result::Success && (look->frame(1.f), look->frame(0.f), true))   // (built: ThorVG builds a moment when it is told one other than the one it has)
@@ -297,7 +297,7 @@ static Drawn* layer_picture(Stage& s, const char* file, uint32_t id, float pixel
     if (found.z <= 0.f || found.w <= 0.f) return nullptr;
     *box = found;
     const float sharp = std::max(1.f, 512.f / found.w);   // (drawn at least 512 points high, however small it is in the composition)
-    return drawn(s, [&](Drawn* d, int* w, int* h) -> tvg::Paint* {
+    return place_canvas(s, [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {
         d->source = tvg::LottieAnimation::gen();
         if (d->source->picture()->load(file) != tvg::Result::Success) return nullptr;
         d->source->frame(1.f);   // (so that its first moment, asked for, is built)
@@ -309,15 +309,15 @@ static Drawn* layer_picture(Stage& s, const char* file, uint32_t id, float pixel
     }, mat4f{}, found.w * pixel, float3{-1.f}, true, nullptr);
 }
 
-static Drawn* layer_picture(Stage& s, const char* file, const char* layer, float pixel, float4* box) { return layer_picture(s, file, tvg::Accessor::id(layer), pixel, box); }
+static Canvas2D* layer_canvas(Stage& s, const char* file, const char* layer, float pixel, float4* box) { return layer_canvas(s, file, tvg::Accessor::id(layer), pixel, box); }
 
 // An After Effects picture's 3D layers (ThorVG says each layer's pose and whether it is 3D): from now on not drawn in
-// its own picture, each to be a sheet of its own where it is (layer_picture). Their ids.
-static std::vector<uint32_t> picture_deep(Stage& s, Drawn* d) {
+// its own picture, each to be a sheet of its own where it is (layer_canvas). Their ids.
+static std::vector<uint32_t> canvas_deep(Stage& s, Canvas2D* d) {
     std::vector<uint32_t> ids;
     tvg::LottieAnimation* film = d ? d->lottie : nullptr;
     if (!film) return ids;
-    door::on_driver(s.engine, [&] {
+    interop::on_driver(s.engine, [&] {
         auto* walk = tvg::Accessor::gen();
         walk->set(film->picture(), [&](const tvg::Paint* one, void*) {
             float n[19];
@@ -334,9 +334,9 @@ static std::vector<uint32_t> picture_deep(Stage& s, Drawn* d) {
 }
 
 // That layer as it is at `frame` of its file, drawn again for the frame that comes next.
-static void layer_at(Stage& s, Drawn* d, float frame) {
+static void layer_at(Stage& s, Canvas2D* d, float frame) {
     if (!d || !d->source) return;
-    door::on_driver(s.engine, [d, frame] {
+    interop::on_driver(s.engine, [d, frame] {
         d->source->frame(frame);
         d->holder->remove();
         if (const tvg::Paint* one = d->source->picture()->paint(d->layerId)) {
@@ -353,13 +353,13 @@ static void layer_at(Stage& s, Drawn* d, float frame) {
 // A picture taken off the stage for good.
 // Nothing waits for it (as Filament's own destroy): what ThorVG holds, and the picture itself, go on the driver thread
 // after every frame sent before that may still draw it, since that thread runs what it is given in turn.
-static void picture_off(Stage& s, Drawn* d) {
+static void canvas_off(Stage& s, Canvas2D* d) {
     s.playing.erase(d);
     edge_off(s, d);
     take_off(s, d->sheet);
     d->look = nullptr;
-    kept_drop(s, d);
-    door::on_driver(s.engine, [d] { delete d->canvas; delete d->film; d->canvas = nullptr, d->film = nullptr; });   // (ThorVG let go of its texture before Filament destroys it)
+    cache_drop(s, d);
+    interop::on_driver(s.engine, [d] { delete d->canvas; delete d->film; d->canvas = nullptr, d->film = nullptr; });   // (ThorVG let go of its texture before Filament destroys it)
     if (d->texture) s.engine->destroy(d->texture);
-    door::on_driver(s.engine, [d] { delete d; });
+    interop::on_driver(s.engine, [d] { delete d; });
 }

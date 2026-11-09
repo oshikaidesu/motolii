@@ -1,13 +1,13 @@
-// An ISF effect (Vidvox's Interactive Shader Format: a GLSL fragment shader with a JSON head of its knobs) dropped in an
+// An ISF effect (Vidvox's Interactive Shader Format: a GLSL fragment shader with a JSON head of its parameters) dropped in an
 // effects folder works as a .wgsl does: made one in vgpu's manner (screen_fx.h) inside Motolii, by the parts Filament's
 // build already has (glslang to SPIR-V, Tint from SPIR-V to WGSL, as Dawn itself reads SPIR-V), its head read by
 // rapidjson (as Filament's assimp has it). The shader's own lines are kept; around them ISF's words (IMG_NORM_PIXEL, IMG_THIS_PIXEL,
 // isf_FragNormCoord, TIME, RENDERSIZE...) are said in plain GLSL, each picture split into a texture and a sampler, the
-// knobs gathered into one struct and written in the head (script.h: // --track@...), its passes too (// --pass@...).
+// parameters gathered into one struct and written in the head (script.h: // --track@...), its passes too (// --pass@...).
 // Made once into ~/Library/Caches/Motolii/isf/<hash>.wgsl, named by the file as it is. Its other images are
 // other things' pictures (screen_fx.h others), its audio inputs other things' sound; its own vertex shader is worked out at each pixel.
 #include "community/shaders/isf.h"
-#include "community/door.h"
+#include "community/adapter.h"
 #include "community/shaders/three_isf.h"
 #include <sys/stat.h>
 #include <cstdio>
@@ -48,7 +48,7 @@ static std::string isf_wgsl(const std::string& text, const std::string& name, st
             return std::snprintf(out, sizeof out, "s%g", (m[1].matched ? 1 / std::stod(m[1]) : 1) * (m[2].matched ? std::stod(m[2]) : 1)), said = out, true;
         if (std::regex_match(e, std::regex(R"([\d.]+)"))) return said = "a" + std::to_string((int)std::stod(e)), true;
         // (any other: the spec's expression worked out by SQLite, $WIDTH and $HEIGHT bound as its parameters are; at 1000
-        //  points a share of the stage's when it reads the stage's size, so many points when not, none when it reads a knob)
+        //  points a share of the stage's when it reads the stage's size, so many points when not, none when it reads a parameter)
         sqlite3* db = nullptr;
         sqlite3_stmt* q = nullptr;
         double v = -1;
@@ -76,33 +76,33 @@ static std::string isf_wgsl(const std::string& text, const std::string& name, st
             if (!size(p, "WIDTH", "WIDTH", w) || !size(p, "HEIGHT", "HEIGHT", h)) return why = "a pass's size it cannot say", "";
             if (!t.empty() && std::find(targets.begin(), targets.end(), t) == targets.end()) targets.push_back(t);
             if (!t.empty()) setSize[t] = {w.rfind("a", 0) == 0, h.rfind("a", 0) == 0};
-            const bool kept = p.HasMember("PERSISTENT") && num(p["PERSISTENT"], 0), fine = p.HasMember("FLOAT") && num(p["FLOAT"], 0);
-            passLines.push_back("// --pass@" + t + ":" + (kept ? "1" : "0") + "," + (fine ? "1" : "0") + "," + w + "," + h);
+            const bool persistent = p.HasMember("PERSISTENT") && num(p["PERSISTENT"], 0), fine = p.HasMember("FLOAT") && num(p["FLOAT"], 0);
+            passLines.push_back("// --pass@" + t + ":" + (persistent ? "1" : "0") + "," + (fine ? "1" : "0") + "," + w + "," + h);
         }
 
     const rapidjson::Value none(rapidjson::kArrayType);
     const rapidjson::Value& inputs = head.HasMember("INPUTS") && head["INPUTS"].IsArray() ? head["INPUTS"] : none;
-    std::vector<std::string> pictures;
-    for (const auto& i : inputs.GetArray()) if (str(i, "TYPE") == "image") pictures.push_back(str(i, "NAME"));
+    std::vector<std::string> imageNames;
+    for (const auto& i : inputs.GetArray()) if (str(i, "TYPE") == "image") imageNames.push_back(str(i, "NAME"));
     // (none: a generator, ISF's "source" (ISF_Spec: sources, filters, transitions): on a thing it paints only where the thing
-    //  is, After Effects' Preserve Underlying Transparency; the thing's own picture is still at binding 0, the door's form)
-    const std::string picture = pictures.empty() ? "inputImage" : std::find(pictures.begin(), pictures.end(), "inputImage") != pictures.end() ? "inputImage" : pictures[0];
+    //  is, After Effects' Preserve Underlying Transparency; the thing's own picture is still at binding 0, the interop's form)
+    const std::string inputName = imageNames.empty() ? "inputImage" : std::find(imageNames.begin(), imageNames.end(), "inputImage") != imageNames.end() ? "inputImage" : imageNames[0];
     std::vector<std::string> others;   // (its other images: each another thing's picture, chosen on its card, bound after the passes' pictures)
-    for (const std::string& other : pictures) if (other != picture) others.push_back(other);
+    for (const std::string& other : imageNames) if (other != inputName) others.push_back(other);
     for (const auto& i : inputs.GetArray()) if (str(i, "TYPE") == "audio" || str(i, "TYPE") == "audioFFT") others.push_back(str(i, "NAME"));   // (its sound: an image as the spec says, bound after its other images)
 
     const std::map<std::string, std::string> kinds = {{"float", "float"}, {"bool", "int"}, {"long", "int"}, {"event", "int"}, {"point2D", "vec2"}, {"color", "vec4"}};
     std::string glsl = "#version 450\n";
     // (each picture a texture and a sampler named after it, read through ISF's own words by pasting the name: a name
     //  the shader also gives a variable of its own is left alone; only the picture in is also its own name outright)
-    std::vector<std::string> read = {picture};
+    std::vector<std::string> read = {inputName};
     read.insert(read.end(), targets.begin(), targets.end());
     for (size_t k = 0; k < read.size(); ++k)
         glsl += "layout(set = 0, binding = " + std::to_string(2 * k) + ") uniform texture2D isf_tex_" + read[k] + ";\nlayout(set = 0, binding = " + std::to_string(2 * k + 1) + ") uniform sampler isf_smp_" + read[k] + ";\n";
     for (size_t k = 0; k < others.size(); ++k)
         glsl += "layout(set = 0, binding = " + std::to_string(2 * (read.size() + k)) + ") uniform texture2D isf_tex_" + others[k] + ";\nlayout(set = 0, binding = " + std::to_string(2 * (read.size() + k) + 1) + ") uniform sampler isf_smp_" + others[k] + ";\n";
-    glsl += "layout(set = 0, binding = " + std::to_string(2 * (read.size() + others.size())) + ") uniform Knobs {\n  float time;\n  vec2 resolution;\n  float frame;\n  float isf_rate;\n  float passindex;\n  float clip_time;\n  float clip_length;\n  vec4 frameRect;\n  vec4 passRect;\n";   // (and a thing's own: how far into it, how long it lasts, seconds, document/moment_fx.h; the stage's: none)
-    std::vector<std::string> switches;   // (an on/off knob: an int, as WGSL keeps no bool in a uniform, read as a bool where the shader names it, not where a colour's .r is)
+    glsl += "layout(set = 0, binding = " + std::to_string(2 * (read.size() + others.size())) + ") uniform Parameters {\n  float time;\n  vec2 resolution;\n  float frame;\n  float isf_rate;\n  float passindex;\n  float clip_time;\n  float clip_length;\n  vec4 frameRect;\n  vec4 passRect;\n";   // (and a thing's own: how far into it, how long it lasts, seconds, document/moment_fx.h; the stage's: none)
+    std::vector<std::string> switches;   // (an on/off parameter: an int, as WGSL keeps no bool in a uniform, read as a bool where the shader names it, not where a colour's .r is)
     std::string lines;
     for (const auto& k : inputs.GetArray()) {
         const std::string t = str(k, "TYPE"), n = str(k, "NAME");
@@ -154,7 +154,7 @@ static std::string isf_wgsl(const std::string& text, const std::string& name, st
         read.push_back(n);   // (read through ISF's words as the others are)
     }
     for (const std::string& n : others) glsl += "#define " + n + " sampler2D(isf_tex_" + n + ", isf_smp_" + n + ")\n";
-    glsl += "#define " + picture + " sampler2D(isf_tex_" + picture + ", isf_smp_" + picture + ")\n";
+    glsl += "#define " + inputName + " sampler2D(isf_tex_" + inputName + ", isf_smp_" + inputName + ")\n";
     glsl += "#define TIME time\n#define RENDERSIZE resolution\n#define TIMEDELTA (1.0 / isf_rate)\n#define FRAMEINDEX int(frame)\n#define PASSINDEX int(passindex)\n#define DATE vec4(0.0, 0.0, 0.0, TIME)\n";   // (ISF_Spec: DATE.w the seconds of the day; here the document's own time, a clock that runs as the video does (Alight Motion's Timecode))
     for (const std::string& n : read) glsl += "#define isf_img_" + n + " sampler2D(isf_tex_" + n + ", isf_smp_" + n + ")\n#define _" + n + "_imgRect vec4(0.0, 0.0, RENDERSIZE)\n#define _" + n + "_imgSize RENDERSIZE\n#define _" + n + "_flip false\n";   // (VVISF's own words for a picture's place and size: each as large as the stage here)
     glsl += "#define vv_FragNormCoord isf_FragNormCoord\n";   // (ISF 1's name for it, as VVISF still says)
@@ -189,8 +189,8 @@ static std::string isf_wgsl(const std::string& text, const std::string& name, st
         body = std::regex_replace(body, std::regex(R"(\bIMG_THIS(?:_NORM)?_PIXEL\s*\(\s*isf_img_)" + n + R"(\b)"), "isf_in_here(" + r + ", isf_img_" + n);
         body = std::regex_replace(body, std::regex(R"(\btexture(?:2D)?\s*\(\s*(?:isf_img_)?)" + n + R"(\b)"), "isf_in(" + r + ", isf_img_" + n);
     }
-    if (pictures.empty())   // (a generator: its last pass as clear as the thing under it is, Preserve Underlying Transparency)
-        body = std::regex_replace(body, std::regex(R"(\bvoid\s+main\s*\()"), "void isf_source_main(") + "\nvoid main() { isf_source_main(); if (PASSINDEX == " + std::to_string(std::max<int>((int)passLines.size() - 1, 0)) + ") isf_FragColor.a *= texture(" + picture + ", isf_FragNormCoord).a; }\n";
+    if (imageNames.empty())   // (a generator: its last pass as clear as the thing under it is, Preserve Underlying Transparency)
+        body = std::regex_replace(body, std::regex(R"(\bvoid\s+main\s*\()"), "void isf_source_main(") + "\nvoid main() { isf_source_main(); if (PASSINDEX == " + std::to_string(std::max<int>((int)passLines.size() - 1, 0)) + ") isf_FragColor.a *= texture(" + inputName + ", isf_FragNormCoord).a; }\n";
     glsl += "#line 1\n" + std::regex_replace(body, std::regex(R"(^[ \t]*#version.*$)"), "");
 
     static std::once_flag once;
@@ -213,9 +213,9 @@ static std::string isf_wgsl(const std::string& text, const std::string& name, st
     if (ir != tint::Success) return why = "SPIR-V: " + ir.Failure().reason, "";
     tint::wgsl::writer::Options o;
     o.allow_non_uniform_derivatives = true;
-    auto made = tint::wgsl::writer::ProgramFromIR(ir.Get(), o);
-    if (made != tint::Success) return why = "WGSL: " + made.Failure().reason, "";
-    auto wgsl = tint::wgsl::writer::Generate(made.Get(), o);
+    auto built = tint::wgsl::writer::ProgramFromIR(ir.Get(), o);
+    if (built != tint::Success) return why = "WGSL: " + built.Failure().reason, "";
+    auto wgsl = tint::wgsl::writer::Generate(built.Get(), o);
     if (wgsl != tint::Success) return why = "WGSL: " + wgsl.Failure().reason, "";
 
     const std::string credit = str(head, "CREDIT");
@@ -232,7 +232,7 @@ static std::string isf_wgsl(const std::string& text, const std::string& name, st
         // (a transition, ISF's (ISF_Spec: its startImage, endImage and progress), on one shelf whatever its wipe or
         //  dissolve, as After Effects keeps its transitions under Transition: they lay on Wipe, Dissolve and others;
         //  put on, one runs from the playhead, doc_fx_file: golf (65))
-        if (std::find(pictures.begin(), pictures.end(), "startImage") != pictures.end() && std::find(pictures.begin(), pictures.end(), "endImage") != pictures.end() &&
+        if (std::find(imageNames.begin(), imageNames.end(), "startImage") != imageNames.end() && std::find(imageNames.begin(), imageNames.end(), "endImage") != imageNames.end() &&
             std::any_of(inputs.GetArray().begin(), inputs.GetArray().end(), [&](const rapidjson::Value& i) { return str(i, "NAME") == "progress"; }))
             shelf = "Transition";
         top += "// --label:" + shelf + "\n";
@@ -247,7 +247,7 @@ static std::string isf_wgsl(const std::string& text, const std::string& name, st
 
 std::string isf_tags(const std::string& file) {
     std::ifstream in(file);
-    const std::string text = door_isf(std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>()));
+    const std::string text = adapter_isf(std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>()));
     const size_t open = text.find("/*"), close = text.find("*/");
     rapidjson::Document head;
     if (open == std::string::npos || close == std::string::npos || head.Parse(text.c_str() + open + 2, close - open - 2).HasParseError() || !head.IsObject()) return "";
@@ -255,14 +255,14 @@ std::string isf_tags(const std::string& file) {
     const rapidjson::Value none(rapidjson::kArrayType);
     const rapidjson::Value& inputs = head.HasMember("INPUTS") && head["INPUTS"].IsArray() ? head["INPUTS"] : none;
     const rapidjson::Value& passes = head.HasMember("PASSES") && head["PASSES"].IsArray() ? head["PASSES"] : none;
-    std::vector<std::string> pictures;
+    std::vector<std::string> imageNames;
     bool sound = false, progress = false;
     for (const auto& i : inputs.GetArray()) {
-        if (str(i, "TYPE") == "image") pictures.push_back(str(i, "NAME"));
+        if (str(i, "TYPE") == "image") imageNames.push_back(str(i, "NAME"));
         sound = sound || str(i, "TYPE") == "audio" || str(i, "TYPE") == "audioFFT";   // (Shadertoy's Sound Input)
         progress = progress || str(i, "NAME") == "progress";
     }
-    const auto has = [&](const char* n) { return std::find(pictures.begin(), pictures.end(), n) != pictures.end(); };
+    const auto has = [&](const char* n) { return std::find(imageNames.begin(), imageNames.end(), n) != imageNames.end(); };
     const bool transition = has("startImage") && has("endImage") && progress;   // (ISF_Spec's transitions, as isf_wgsl's label reads them)
     bool feedback = false;   // (a pass kept from frame to frame: ISF_Spec's PERSISTENT, VIDVOX's own Feedback)
     for (const auto& p : passes.GetArray()) feedback = feedback || (p.IsObject() && p.HasMember("PERSISTENT") && (p["PERSISTENT"].IsBool() ? p["PERSISTENT"].GetBool() : p["PERSISTENT"].IsNumber() && p["PERSISTENT"].GetDouble() != 0));
@@ -271,12 +271,12 @@ std::string isf_tags(const std::string& file) {
     std::string tags;
     const auto tag = [&](bool on, const char* word) { if (on) tags += (tags.empty() ? "" : " ") + std::string(word); };
     tag(transition, "transition");
-    tag(pictures.empty(), "generator");   // (no picture in: ISF_Spec's sources)
+    tag(imageNames.empty(), "generator");   // (no picture in: ISF_Spec's sources)
     tag(sound, "sound");
     tag(passes.Size() > 1, "multipass");   // (Shadertoy's Multipass)
     tag(feedback, "feedback");
     tag((body.find("TIME") != std::string::npos || body.find("FRAMEINDEX") != std::string::npos || body.find("DATE") != std::string::npos) && std::regex_search(body, clock), "time");   // (the regex only where its words are: doc_wgsl_tags)
-    tag(!transition && pictures.size() > 1, "image");   // (another thing's picture in, beside its own: Shadertoy's Webcam, a picture from outside)
+    tag(!transition && imageNames.size() > 1, "image");   // (another thing's picture in, beside its own: Shadertoy's Webcam, a picture from outside)
     return tags;
 }
 
@@ -284,12 +284,12 @@ std::string isf_tags(const std::string& file) {
 //  last did, as a script half typed keeps what ran (doc_script_of), and its card says why: isf_trouble)
 static std::mutex isf_lock;
 static std::map<std::string, std::string> isf_good, isf_why;
-static std::string isf_kept(const std::string& file, const std::string& why) {
-    isf_why[file] = why.empty() ? std::string("it could not be made WGSL") : why;
+static std::string isf_fallback(const std::string& file, const std::string& why) {
+    isf_why[file] = why.empty() ? std::string("it could not be turned into WGSL") : why;
     const auto good = isf_good.find(file);
     return good == isf_good.end() ? "" : good->second;
 }
-static std::string isf_made(const std::string& file, const std::string& out) {
+static std::string isf_built(const std::string& file, const std::string& out) {
     isf_good[file] = out, isf_why.erase(file);
     return out;
 }
@@ -304,9 +304,9 @@ std::string isf_file(const std::string& asked) {
     struct stat st {};
     if (stat(file.c_str(), &st) != 0) return "";
     const std::string key = "isf 15|" + file + "|" + std::to_string(st.st_mtimespec.tv_sec) + "." + std::to_string(st.st_mtimespec.tv_nsec) + "|" + std::to_string(st.st_size);
-    static std::map<std::string, std::string> made;   // (what each file as it is became: its last made, or "", if it could not be)
+    static std::map<std::string, std::string> built;   // (what each file as it is became: its last made, or "", if it could not be)
     std::lock_guard<std::mutex> hold(isf_lock);
-    if (auto m = made.find(key); m != made.end()) return m->second;
+    if (auto m = built.find(key); m != built.end()) return m->second;
     uint64_t hash = 1469598103934665603ull;
     for (unsigned char c : key) hash = (hash ^ c) * 1099511628211ull;
     const char* home = std::getenv("HOME");
@@ -315,7 +315,7 @@ std::string isf_file(const std::string& asked) {
     std::snprintf(name, sizeof name, "%016llx.wgsl", (unsigned long long)hash);
     const std::string out = (dir / name).string();
     std::error_code e;
-    if (std::filesystem::exists(out, e)) return made[key] = isf_made(file, out);
+    if (std::filesystem::exists(out, e)) return built[key] = isf_built(file, out);
     std::ifstream in(file);
     std::stringstream text;
     text << in.rdbuf();
@@ -324,20 +324,20 @@ std::string isf_file(const std::string& asked) {
         const std::string isf = three_isf(file, why);
         if (isf.empty()) {
             std::fprintf(stderr, "the three.js effect %s is not taken: %s\n", file.c_str(), why.substr(0, 600).c_str());
-            return made[key] = isf_kept(file, why);
+            return built[key] = isf_fallback(file, why);
         }
         text.str(isf);
     }
     const std::string stem = std::filesystem::path(file).stem().string();
     std::stringstream vertex;   // (its own vertex shader, if it has one beside it)
     if (std::ifstream vs(std::filesystem::path(file).replace_extension(".vs")); vs) vertex << vs.rdbuf();
-    const std::string wgsl = isf_wgsl(door_isf(text.str()), stem, why, vertex.str());   // (Shadertoy's and GLSL Sandbox's as they come: door.h)
+    const std::string wgsl = isf_wgsl(adapter_isf(text.str()), stem, why, vertex.str());   // (Shadertoy's and GLSL Sandbox's as they come: adapter.h)
     if (wgsl.empty()) {
         std::fprintf(stderr, "the ISF effect %s is not taken: %s\n", file.c_str(), why.substr(0, 600).c_str());
-        return made[key] = isf_kept(file, why);
+        return built[key] = isf_fallback(file, why);
     }
     std::filesystem::create_directories(dir, e);
     std::ofstream(out + ".part") << wgsl;
     std::filesystem::rename(out + ".part", out, e);
-    return made[key] = isf_made(file, out);
+    return built[key] = isf_built(file, out);
 }

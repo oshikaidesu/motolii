@@ -21,7 +21,7 @@ static const std::map<std::string, AviutlRemade>& aviutl_remakes() {
     }();
     return all;
 }
-// One of them on the object, as a thing's ISF effect is drawn (screen_fx.h screen_draw): its knobs the params said (each
+// One of them on the object, as a thing's ISF effect is drawn (screen_fx.h screen_draw): its parameters the params said (each
 // said again as Sashimono says it; a check its _on, a colour its parts), the rest as its file says; the object made
 // straight for it and premultiplied again after, as the thing's picture is given to its effects. -1: none of them.
 static int aviutl_sashimono(lua_State* L, AviutlRun& r, const std::string& n, const std::map<std::string, double>& said) {
@@ -32,9 +32,9 @@ static int aviutl_sashimono(lua_State* L, AviutlRun& r, const std::string& n, co
         fx = new ScreenFx;
         fx->file = found->second.file;
         std::string code;
-        if (screen_read(*fx, code)) fx->door = door::screen(r.s->engine, fx->file.c_str(), code.c_str(), fx->bytes, &fx->trouble, fx->pictures, fx->layered);
+        if (screen_read(*fx, code)) fx->interop = interop::screen(r.s->engine, fx->file.c_str(), code.c_str(), fx->bytes, &fx->trouble, fx->textureCount, fx->layered);
     }
-    if (!fx->door) return aviutl_no(L, "obj.effect " + n + ": " + fx->trouble.substr(0, 300));
+    if (!fx->interop) return aviutl_no(L, "obj.effect " + n + ": " + fx->trouble.substr(0, 300));
     std::map<std::string, double> v;
     for (const auto& [k, x] : said)
         if (const auto p = found->second.params.find(k); p != found->second.params.end()) {
@@ -43,15 +43,15 @@ static int aviutl_sashimono(lua_State* L, AviutlRun& r, const std::string& n, co
             v[p->second[0]] = y;
             if (!p->second[2].empty()) v[p->second[2]] = y;
         }
-    const ScreenNumbers numbers = [&](const std::string&, const std::string& knob, double usual) {
-        if (knob == "clip_time") return r.s->now;   // (its clock the script's obj.time; its length, none that ends)
-        if (knob == "clip_length") return 1.0e9;
-        if (const auto it = v.find(knob); it != v.end()) return it->second;
-        const std::string base = knob.size() > 2 ? knob.substr(0, knob.size() - 2) : std::string();
-        if (knob.size() > 3 && knob.compare(knob.size() - 3, 3, "_on") == 0 && v.count(knob.substr(0, knob.size() - 3))) return v[knob.substr(0, knob.size() - 3)] != 0 ? 1.0 : 0.0;
-        if (const auto it = v.find(base); it != v.end() && knob[knob.size() - 2] == '_') {   // (a colour, AviUtl's 0xRRGGBB)
+    const ScreenNumbers numbers = [&](const std::string&, const std::string& parameter, double usual) {
+        if (parameter == "clip_time") return r.s->now;   // (its clock the script's obj.time; its length, none that ends)
+        if (parameter == "clip_length") return 1.0e9;
+        if (const auto it = v.find(parameter); it != v.end()) return it->second;
+        const std::string base = parameter.size() > 2 ? parameter.substr(0, parameter.size() - 2) : std::string();
+        if (parameter.size() > 3 && parameter.compare(parameter.size() - 3, 3, "_on") == 0 && v.count(parameter.substr(0, parameter.size() - 3))) return v[parameter.substr(0, parameter.size() - 3)] != 0 ? 1.0 : 0.0;
+        if (const auto it = v.find(base); it != v.end() && parameter[parameter.size() - 2] == '_') {   // (a colour, AviUtl's 0xRRGGBB)
             const int c = (int)it->second;
-            const char part = knob.back();
+            const char part = parameter.back();
             return part == 'x' ? ((c >> 16) & 255) / 255.0 : part == 'y' ? ((c >> 8) & 255) / 255.0 : part == 'z' ? (c & 255) / 255.0 : 1.0;
         }
         return usual;
@@ -64,8 +64,8 @@ static int aviutl_sashimono(lua_State* L, AviutlRun& r, const std::string& n, co
     aviutl_lay(r, out, r.bufs["object"].rt, object.w, object.h, 0, 0, 1, 1, 0, 1, 0, 0, -1, 1, 0, 1);   // (premultiplied again, as AviUtl2's pictures are)
     return 0;
 }
-// A knob's value made its variable (a global, or obj's for the old --track0) as its kind is told (lua.txt): from `num`
-// (a knob's value by its name), or the Lua value at `said` on the stack, as obj.effect said it.
+// A parameter's value made its variable (a global, or obj's for the old --track0) as its kind is told (lua.txt): from `num`
+// (a parameter's value by its name), or the Lua value at `said` on the stack, as obj.effect said it.
 static void aviutl_set(lua_State* L, const AviutlVar& v, const std::function<double(const std::string&)>& num, int said = 0) {
     const size_t lead = v.expr.find_first_not_of(" \t");
     const char kind = lead == std::string::npos ? 0 : v.expr[lead];   // (a --value's by its default: { a table, " a string, a digit a number)
@@ -88,8 +88,8 @@ static void aviutl_set(lua_State* L, const AviutlVar& v, const std::function<dou
     else lua_setglobal(L, v.var.c_str());
 }
 // A script of this file by its name (lua.txt obj.effect: each script is an effect, "name@file" a part of an @ file, its
-// knobs said by the names they are shown by, as an alias file says them): run on the object here, in this Lua and on
-// these buffers, as AviUtl2's scripts share theirs; a knob not said as it comes, and its variable given back what it
+// parameters said by the names they are shown by, as an alias file says them): run on the object here, in this Lua and on
+// these buffers, as AviUtl2's scripts share theirs; a parameter not said as it comes, and its variable given back what it
 // held after. As σ軸's scripts hand their "PI" (a part's own text of Lua values) and Stylize_K's its Mosaic, zopty's
 // どこでもバッファ 遅延 its 入出力, noiseTe's フラクタルノイズ its パーリンノイズ. -1: no such script in this file.
 static int aviutl_called(lua_State* L, AviutlRun& r, const std::string& n) {
@@ -105,7 +105,7 @@ static int aviutl_called(lua_State* L, AviutlRun& r, const std::string& n) {
         const std::string text = own.rfind("\xEF\xBB\xBF", 0) == 0 ? own.substr(3) : own;
         if (luaL_loadbuffer(L, text.data(), text.size(), ("@" + n).c_str())) return lua_error(L);
         c.chunk = luaL_ref(L, LUA_REGISTRYINDEX), c.vars = aviutl_vars(own);
-        for (const ScriptKnob& k : aviutl_knobs(path)) c.usual[k.name] = k.usual;
+        for (const ScriptParameter& k : aviutl_parameters(path)) c.usual[k.name] = k.usual;
     }
     if (c.chunk == LUA_REFNIL) return -1;
     const int top = lua_gettop(L);
@@ -151,9 +151,9 @@ static int aviutl_effect(lua_State* L) {   // (a built-in effect by its name: th
         for (const auto& [from, to, x] : {std::tuple{object, across, true}, std::tuple{across, object, false}}) {
             const float k[4] = {x ? 1.f / from.w : 0.f, x ? 0.f : 1.f / from.h, (float)radius, 0};
             const int pass = r.draws[r.blur]++;
-            door::knobs(r.s->engine, r.blur, k, sizeof k, pass);
-            Texture* picture = from.t;
-            door::draw(r.s->engine, r.blur, &picture, to.rt, to.w, to.h, pass);
+            interop::parameters(r.s->engine, r.blur, k, sizeof k, pass);
+            Texture* texture = from.t;
+            interop::draw(r.s->engine, r.blur, &texture, to.rt, to.w, to.h, pass);
         }
         return 0;
     }
@@ -193,7 +193,7 @@ static int aviutl_effect(lua_State* L) {   // (a built-in effect by its name: th
         }
         return 0;
     }
-    if (const auto made = aviutl_sashimono(L, r, n, said); made >= 0) return made;   // (one Sashimono Edit remakes)
+    if (const auto built = aviutl_sashimono(L, r, n, said); built >= 0) return built;   // (one Sashimono Edit remakes)
     if (n == "オフスクリーン描画") return 0;   // (sashimono-edit objapi.py _offscreen: the effects laid up so far made into the picture; here each is made at once, so none wait)
     if (n.empty()) return 0;   // (no name: lua.txt says the filters after the script, which run after it here anyway; YMM4-LuaScript native/worker.lua and sashimono-edit objapi.py lua_effect return the same)
     if (const int ran = aviutl_called(L, r, n); ran >= 0) return ran;

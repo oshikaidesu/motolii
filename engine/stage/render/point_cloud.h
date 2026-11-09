@@ -5,8 +5,8 @@
 // out by exp(-r^2); the slots laid in order of depth by a 16-bit counting sort on a thread of its own each time the eye
 // has moved, only the table of which splat is in which slot sent again; then laid one over another from the farthest,
 // Filament's own see-through blending. A plain scan's point is round, as large as its neighbours are far. Fitted to 1
-// tall, its middle at the place, as gltf_model.h fits a file. Its Mesh is a name only: the kit knows the thing by it.
-// (kit.h: read before this)
+// tall, its middle at the place, as gltf_model.h fits a file. Its Mesh is a name only: the renderer knows the thing by it.
+// (render.h: read before this)
 #pragma once
 #include <cmath>
 #include <fstream>
@@ -58,17 +58,17 @@ static Mesh* points(Stage& s, const char* file, std::string& why, MaterialInstan
                *op = find("opacity"), *s0 = find("scale_0"), *s1 = find("scale_1"), *s2 = find("scale_2"),
                *r0 = find("rot_0"), *r1 = find("rot_1"), *r2 = find("rot_2"), *r3 = find("rot_3");
     if (!x || !y || !z) return why = "a point cloud's points have x, y and z", nullptr;
-    std::vector<uint32_t> kept;   // (the points seen: a splat nearly clear is left out)
-    kept.reserve(n);
-    for (size_t i = 0; i < n; ++i) if (!op || 1.0 / (1.0 + std::exp(-get(op, i))) >= 0.05) kept.push_back((uint32_t)i);
-    if (kept.empty()) return why = "the point cloud has no points to see", nullptr;
+    std::vector<uint32_t> visible;   // (the points seen: a splat nearly clear is left out)
+    visible.reserve(n);
+    for (size_t i = 0; i < n; ++i) if (!op || 1.0 / (1.0 + std::exp(-get(op, i))) >= 0.05) visible.push_back((uint32_t)i);
+    if (visible.empty()) return why = "the point cloud has no points to see", nullptr;
     // (its box from the most of it, a hundredth left out at each end of each way: a few far-off grains, as a capture's
     //  sky and floaters are, do not make the rest small; those points stay, drawn where they are)
     float3 lo, hi;
     for (int a = 0; a < 3; ++a) {
         const Prop* along = a == 0 ? x : a == 1 ? y : z;
-        std::vector<float> v(kept.size());
-        for (size_t k = 0; k < kept.size(); ++k) v[k] = (float)(a == 1 ? -get(along, kept[k]) : get(along, kept[k]));   // (the scan's y points down, as COLMAP's does: up here)
+        std::vector<float> v(visible.size());
+        for (size_t k = 0; k < visible.size(); ++k) v[k] = (float)(a == 1 ? -get(along, visible[k]) : get(along, visible[k]));   // (the scan's y points down, as COLMAP's does: up here)
         std::nth_element(v.begin(), v.begin() + (long)(v.size() / 100), v.end());
         lo[a] = v[v.size() / 100];
         std::nth_element(v.begin(), v.begin() + (long)(v.size() - 1 - v.size() / 100), v.end());
@@ -77,8 +77,8 @@ static Mesh* points(Stage& s, const char* file, std::string& why, MaterialInstan
     // (fitted to 1 tall about its middle; for a scan of a room or a street the tall way is its height)
     const float3 mid = 0.5f * (lo + hi);
     const float tall = std::max(1e-6f, std::max({hi.y - lo.y, 0.5f * (hi.x - lo.x), 0.5f * (hi.z - lo.z)}));
-    const float plain = 1.2f * std::cbrt((hi.x - lo.x) * (hi.y - lo.y) * (hi.z - lo.z) / (float)kept.size()) / tall;   // (a scan's grain: as far as its neighbours are, on the whole)
-    const size_t m = kept.size();
+    const float plain = 1.2f * std::cbrt((hi.x - lo.x) * (hi.y - lo.y) * (hi.z - lo.z) / (float)visible.size()) / tall;   // (a scan's grain: as far as its neighbours are, on the whole)
+    const size_t m = visible.size();
     // (each splat four texels, as PlayCanvas holds a splat, so its effects read them as they are (points.mat): its middle
     //  in the file's own units with y turned up, and how much it is seen; its turn (x y z w); its size each way, and red;
     //  green, blue. Fitted to 1 tall only on the way out (the look's `fit`))
@@ -86,7 +86,7 @@ static Mesh* points(Stage& s, const char* file, std::string& why, MaterialInstan
     std::vector<float> data((size_t)wide * rows * 4, 0.f);
     std::vector<float3> middles(m);
     for (size_t k = 0; k < m; ++k) {
-        const size_t i = kept[k];
+        const size_t i = visible[k];
         const float3 p{(float)get(x, i), (float)-get(y, i), (float)get(z, i)};
         float3 colour{1.f};
         if (r && g && b) colour = float3{(float)get(r, i), (float)get(g, i), (float)get(b, i)} / 255.f;
@@ -144,7 +144,7 @@ static Mesh* points(Stage& s, const char* file, std::string& why, MaterialInstan
         .material(0, look).castShadows(false).receiveShadows(false).culling(false).build(*s.engine, e);
     s.engine->getTransformManager().create(e);
     s.scene->addEntity(e);
-    s.made.push_back({e, name, 0, mat4f{}});
+    s.renderables.push_back({e, name, 0, mat4f{}});
 
     // (the sort, antimatter15's: each splat's depth along the eye, put to 16 bits between the nearest and the farthest,
     //  one counting pass; on a thread of its own, asked again whenever the eye has moved; farthest first here)
@@ -220,8 +220,8 @@ static Mesh* points(Stage& s, const char* file, std::string& why, MaterialInstan
 static Material* points_effect(Stage& s, const std::string& file, std::shared_ptr<SplatEffect>& fx, std::string& why) {
     fx = std::make_shared<SplatEffect>(file);
     if (!fx->ok()) return why = fx->trouble(), fx.reset(), nullptr;
-    static std::map<std::string, Material*> made;
-    Material*& m = made[fx->glsl()];
+    static std::map<std::string, Material*> built;
+    Material*& m = built[fx->glsl()];
     if (m) return m;
     Dl_info lib{};
     dladdr((const void*)&points_effect, &lib);

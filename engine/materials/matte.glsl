@@ -1,4 +1,4 @@
-// matte.glsl: what the mattes leave of a point (kit.h: matte, matted). A matte is a picture taken by an eye of its
+// matte.glsl: what the mattes leave of a point (render.h: matte, matted). A matte is a picture taken by an eye of its
 // own, before all else: white where its shape is, black where it is not, grey between. That eye is the film's camera
 // (the matte is in the film's picture) or one that rides on a thing (the matte is on the thing). A material that
 // can be cut has the parameters matte0..3 (the pictures), matteEye0..3 (for each: where its eye sees a point of the

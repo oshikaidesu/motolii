@@ -1,6 +1,6 @@
 // paper.mat: the paper the glass things stand on. Lit by Filament as any lit surface, but how much of the SUN reaches
 // a place is not Filament's shadow: it is read from `sunlight`, a picture of the floor from straight above
-// (kit.h draws it): 1 where the sun falls bare, 0 in a thing's shade, more than 1 where glass throws light.
+// (render.h draws it): 1 where the sun falls bare, 0 in a thing's shade, more than 1 where glass throws light.
 // Shade and thrown light lie in the one picture and are softened here together, by the same amount, so they
 // belong to each other; the hook is Filament's own (customSurfaceShading: the material says what a light does).
 // How much: as a sun with some width does it. The picture's fourth number is how far the shade at a place flew

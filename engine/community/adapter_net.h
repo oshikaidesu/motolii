@@ -1,6 +1,6 @@
-// door_net.h: part of document/adapter.h. What a thing from the net comes with. curl fetches it, as extensions/hydra/get.sh does,
+// adapter_net.h: part of document/adapter.h. What a thing from the net comes with. curl fetches it, as extensions/hydra/get.sh does,
 // with no shell between. A work on OpenProcessing, named by its address, is what the site's public API says it is
-// (openprocessing.org/api: its tabs, libraries, files, license), laid out in a folder as a saved page is, so the door reads it
+// (openprocessing.org/api: its tabs, libraries, files, license), laid out in a folder as a saved page is, so the adapter reads it
 // as it reads any page. The site answers 40 asks a minute; a work is 3 and one for each of its files.
 #pragma once
 #include <glib.h>
@@ -11,26 +11,26 @@
 #include <sstream>
 #include <string>
 
-inline bool door_fetch(const std::string& url, const std::filesystem::path& to) {
+inline bool adapter_fetch(const std::string& url, const std::filesystem::path& to) {
     const std::string file = to.string();
     const char* line[] = {"curl", "-fsSL", "--proto", "=http,https", "--proto-redir", "=http,https", "-m", "60", "-o", file.c_str(), "--url", url.c_str(), nullptr};
     gint status = 1;
     return g_spawn_sync(nullptr, (gchar**)line, nullptr, (GSpawnFlags)(G_SPAWN_SEARCH_PATH | G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL), nullptr, nullptr, nullptr, nullptr, &status, nullptr) && status == 0;
 }
 
-inline std::string door_site_work(const std::string& word) {   // (the number of a work on OpenProcessing, "": it is not an address of one)
+inline std::string adapter_site_work(const std::string& word) {   // (the number of a work on OpenProcessing, "": it is not an address of one)
     static const std::regex address(R"(^\s*(?:https?://)?(?:www\.)?openprocessing\.org/sketch/(\d+)[^\s]*\s*$)");
     std::smatch said;
     return word.size() < 200 && std::regex_match(word, said, address) ? said[1].str() : "";
 }
 
 // Its page, in `at` with its tabs and its files ("": it did not come, and why).
-inline std::filesystem::path door_openprocessing(const std::string& id, const std::filesystem::path& at, std::string& why) {
+inline std::filesystem::path adapter_openprocessing(const std::string& id, const std::filesystem::path& at, std::string& why) {
     const std::string api = "https://openprocessing.org/api/sketch/" + id;
     std::error_code wrong;
     std::filesystem::create_directories(at, wrong);
     const auto asked = [&](const std::string& url, const char* name, rapidjson::Document& out) {
-        if (!door_fetch(url, at / name)) return false;
+        if (!adapter_fetch(url, at / name)) return false;
         std::ifstream in(at / name);
         std::stringstream all;
         all << in.rdbuf();
@@ -53,7 +53,7 @@ inline std::filesystem::path door_openprocessing(const std::string& id, const st
     }
     for (const auto& one : files.GetArray()) {   // (its pictures and the rest, under its address)
         const std::string url = word(one, "url"), name = safe(word(one, "name"));
-        if (!url.empty() && !name.empty() && !door_fetch(url, at / name)) return why = "OpenProcessing did not give the file " + name, std::filesystem::path{};
+        if (!url.empty() && !name.empty() && !adapter_fetch(url, at / name)) return why = "OpenProcessing did not give the file " + name, std::filesystem::path{};
     }
     if (page) return at / "index.html";
     if (std::filesystem::exists(at / "mySketch.js", wrong)) scripts.push_back("mySketch.js");

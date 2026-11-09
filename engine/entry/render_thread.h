@@ -1,10 +1,10 @@
 // render_thread.h: part of motolii.mm. Read only through motolii.mm. The one hand (Motolii) and how it is asked: on_render_thread,
 // by_look, posted; what was late kept for the window. Its loop is render_thread_loop.h, the window's calls window.h.
 #include <CoreText/CoreText.h>
-#include "stage/kit/kit.h"
+#include "stage/render/render.h"
 #include "document/doc.h"
 #include "stage/live.h"
-#include "stage/stage_kept.h"
+#include "stage/stage_cache.h"
 #include "media/sound_playback.h"
 #include "media/sound_level.h"
 #include "media/midi_notes.h"
@@ -54,7 +54,7 @@ struct Motolii {
     std::atomic<bool> playing{false};
     bool second = false;   // the Camera View tab is open (live_camera)
     std::chrono::steady_clock::time_point stirred{};   // (the hand's last stir: something asked, or playing, or changed)
-    bool ahead = false;                                  // (films' frames ahead being kept while the hand rests: picture_ahead)
+    bool ahead = false;                                  // (films' frames ahead being kept while the hand rests: frames_ahead)
     std::atomic<bool> loop{true};   // (play goes round the work area; not: it stops at its end. Atomic: asked without the document)
     std::atomic<bool> keying{false};   // (the document's own, mirrored: asked each picture without waiting for the document)
     std::atomic<bool> evaluating{false};  // (the hand is telling the stage a moment, the document held: a shell reading now would wait)
@@ -74,7 +74,7 @@ struct Motolii {
     long judged = 0;
     double gpu_ms = 0.0, gpu_most = 0.0;   // (the GPU's middle time for the last pictures, and the most it was)
     double scale = 1.0;   // (how large the stage's views are drawn now: stage_scale)
-    StageKept cache;      // (the stage's pictures kept on disk for playing: stage_kept.h)
+    StageCache cache;      // (the stage's pictures kept on disk for playing: stage_cache.h)
     double spent[4] = {0, 0, 0, 0};   // (seconds the hand spent: asked to change, asked to read, telling the moment, drawing)
     long many[4] = {0, 0, 0, 0};
     // The window's pictures of the document (snapshot.h, docs/app/BRIDGE.md), set down by the hand, read under their own lock.

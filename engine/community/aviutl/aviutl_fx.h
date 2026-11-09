@@ -2,7 +2,7 @@
 // LuaJIT 2.1 (MIT, AviUtl2's own default Lua) with os, io, debug, ffi.C and ffi.load taken out as lua.txt says, and an
 // `obj` of its spec's names, each done by what Motolii already has: its buffers ("object", "tempbuffer", "cache:...",
 // "framebuffer": the thing's own picture as it leaves) RGBA16F pictures premultiplied as AviUtl2's, its shaders drawn
-// by the door (screen_door.h), obj.draw by one placing shader. What it asks for that is not here stops it with
+// by the interop (screen_interop.h), obj.draw by one placing shader. What it asks for that is not here stops it with
 // "not yet: obj.X" (said once, its picture left as it came): never a picture silently other than the script's.
 #pragma once
 #include "community/aviutl/aviutl.h"
@@ -18,21 +18,21 @@ struct AviutlCalled { int chunk = LUA_NOREF; std::vector<AviutlVar> vars; std::m
 struct AviutlRun {
     std::string file, own, all, trouble;
     std::vector<AviutlVar> vars;
-    std::map<std::string, double> usual;            // (each knob's value as it comes)
-    lua_State* L = nullptr;                         // (the one of the thing's scripts: aviutl_made)
+    std::map<std::string, double> usual;            // (each parameter's value as it comes)
+    lua_State* L = nullptr;                         // (the one of the thing's scripts: aviutl_open)
     int chunk = LUA_NOREF, obj = LUA_NOREF;         // (its text made a function, and its obj, in L)
     std::string path;                               // (where its require looks: package.path while it runs)
     std::map<std::string, AviutlBuf> bufs;
     std::map<std::string, AviutlBuf> loaded;        // (figures and picture files obj.load drew, by what was asked: aviutl_load.h)
     std::multimap<std::pair<uint32_t, uint32_t>, AviutlBuf> spare;   // (pictures let go, kept by size for the next asked: a buffer made and let go each frame takes the same ones)
-    std::map<std::string, door::Screen*> doors;     // (each shader made, by its name and way of sampling)
+    std::map<std::string, interop::Screen*> interops;     // (each shader made, by its name and way of sampling)
     std::map<std::string, std::string> hlsls;       // (each shader's text by its registered name, found once: aviutl_hlsl, asked each frame)
-    std::map<door::Screen*, int> draws;             // (draws of each this frame: each its own constants, the door's pass)
-    door::Screen *place = nullptr, *poly = nullptr, *blur = nullptr;
+    std::map<interop::Screen*, int> draws;             // (draws of each this frame: each its own constants, the interop's pass)
+    interop::Screen *place = nullptr, *poly = nullptr, *blur = nullptr;
     Texture *none = nullptr, *random = nullptr;
     std::set<std::string> said;
     std::chrono::steady_clock::time_point until = std::chrono::steady_clock::time_point::max();   // (this frame's run stopped past it: aviutl_late)
-    std::optional<std::string> late;                // (the knobs' values it ran past that with: not run again with them; none yet, so one of no knobs runs)
+    std::optional<std::string> late;                // (the parameters' values it ran past that with: not run again with them; none yet, so one of no parameters runs)
     Stage* s = nullptr;                             // (this frame's)
     std::string target, blend, sampler;
     bool drew = false;
@@ -62,7 +62,7 @@ struct AviutlRun {
 // and made premultiplied (a thing's picture, straight as Motolii's effects keep it: effected.mat), 2: made straight again.
 static const char* const aviutl_placing = R"(
 struct K { m: vec4f, at: vec2f, src: vec2f, size: vec2f, alpha: f32, way: f32, colour: vec4f }
-@group(0) @binding(0) var picture: texture_2d<f32>;
+@group(0) @binding(0) var sourceTexture: texture_2d<f32>;
 @group(0) @binding(1) var near: sampler;
 @group(0) @binding(2) var<uniform> k: K;
 @fragment fn main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f {
@@ -70,41 +70,41 @@ struct K { m: vec4f, at: vec2f, src: vec2f, size: vec2f, alpha: f32, way: f32, c
   let d = frag.xy - k.at;
   let c = (vec2f(dot(k.m.xy, d), dot(k.m.zw, d)) + k.src) / k.size;
   let w = clamp(c * k.size + 0.5, vec2f(0.0), vec2f(1.0)) * clamp((1.0 - c) * k.size + 0.5, vec2f(0.0), vec2f(1.0));
-  var s = textureSampleLevel(picture, near, c, 0.0);
+  var s = textureSampleLevel(sourceTexture, near, c, 0.0);
   if (k.colour.x == 1.0) { s = vec4f(s.rgb * s.a, s.a); }
   s = s * (k.alpha * select(w.x * w.y, 1.0, k.way == 2.0));
   if (k.colour.x == 2.0 && s.a > 0.0) { s = vec4f(s.rgb / s.a, s.a); }
   return s;
 }
 )";
-// obj.drawpoly's: the picture on triangles (the door's mesh), at each corner's uv, or each corner's colour, faded by alpha.
+// obj.drawpoly's: the picture on triangles (the interop's mesh), at each corner's uv, or each corner's colour, faded by alpha.
 static const char* const aviutl_poly = R"(
 struct K { alpha: f32 }
-@group(0) @binding(0) var picture: texture_2d<f32>;
+@group(0) @binding(0) var sourceTexture: texture_2d<f32>;
 @group(0) @binding(1) var near: sampler;
 @group(0) @binding(2) var<uniform> k: K;
 @fragment fn main(@location(0) uv: vec2f, @location(1) colour: vec4f) -> @location(0) vec4f {
-  let seen = textureSampleLevel(picture, near, uv, 0.0);
-  return select(seen, vec4f(1.0), uv.x < -1.0) * colour * k.alpha;   // (a coloured face: its uv off the picture, its colour alone)
+  let seen = textureSampleLevel(sourceTexture, near, uv, 0.0);
+  return select(seen, vec4f(1.0), uv.x < -1.0) * colour * k.alpha;   // (a coloured face: its uv off the sourceTexture, its colour alone)
 }
 )";
 // obj.effect ぼかし's: sashimono-edit's blur1d (MIT, effects/builtin.py), one way a pass: the pixel and `radius` either
 // side (96 at most) weighed by a Gaussian of half the radius; the buffer premultiplied already, as its premul makes it.
 static const char* const aviutl_blur = R"(
 struct K { step: vec2f, radius: f32, unused: f32 }
-@group(0) @binding(0) var picture: texture_2d<f32>;
+@group(0) @binding(0) var sourceTexture: texture_2d<f32>;
 @group(0) @binding(1) var near: sampler;
 @group(0) @binding(2) var<uniform> k: K;
 @fragment fn main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f {
-  let at = frag.xy / vec2f(textureDimensions(picture));
+  let at = frag.xy / vec2f(textureDimensions(sourceTexture));
   let sigma = max(k.radius * 0.5, 0.5);
-  var sum = textureSampleLevel(picture, near, at, 0.0);
+  var sum = textureSampleLevel(sourceTexture, near, at, 0.0);
   var total = 1.0;
   let taps = i32(min(k.radius, 96.0));
   for (var i = 1; i <= taps; i++) {
     let o = f32(i);
     let w = exp(-0.5 * o * o / (sigma * sigma));
-    sum += (textureSampleLevel(picture, near, at + k.step * o, 0.0) + textureSampleLevel(picture, near, at - k.step * o, 0.0)) * w;
+    sum += (textureSampleLevel(sourceTexture, near, at + k.step * o, 0.0) + textureSampleLevel(sourceTexture, near, at - k.step * o, 0.0)) * w;
     total += 2.0 * w;
   }
   return sum / total;
@@ -133,17 +133,17 @@ static AviutlBuf& aviutl_buf(AviutlRun& r, const std::string& name, uint32_t w =
     w = std::clamp<uint32_t>(w ? w : b.w, 1, 8192), h = std::clamp<uint32_t>(h ? h : b.h, 1, 8192);
     if (b.t && b.w == w && b.h == h) return b;
     if (b.t) r.spare.insert({{b.w, b.h}, b});
-    if (const auto kept = r.spare.find({w, h}); kept != r.spare.end()) return b = kept->second, r.spare.erase(kept), b;
+    if (const auto cached = r.spare.find({w, h}); cached != r.spare.end()) return b = cached->second, r.spare.erase(cached), b;
     b.w = w, b.h = h;
     b.t = Texture::Builder().width(w).height(h).levels(1).format(Texture::InternalFormat::RGBA16F).usage(Texture::Usage::COLOR_ATTACHMENT | Texture::Usage::SAMPLEABLE).build(*r.s->engine);
     b.rt = RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, b.t).build(*r.s->engine);
     return b;
 }
-// One placing (blend: -1 in its place, 0 over, 1 added, 2 masked; sampler as the door's), knobs as the struct above.
+// One placing (blend: -1 in its place, 0 over, 1 added, 2 masked; sampler as the interop's), parameters as the struct above.
 static void aviutl_put(AviutlRun& r, Texture* from, RenderTarget* to, uint32_t w, uint32_t h, const float* k, int blend = -1, int sampler = 0) {
     const int pass = r.draws[r.place]++;
-    door::knobs(r.s->engine, r.place, k, 64, pass);
-    door::draw(r.s->engine, r.place, &from, to, w, h, pass, nullptr, blend >= 0, std::max(blend, 0), sampler);
+    interop::parameters(r.s->engine, r.place, k, 64, pass);
+    interop::draw(r.s->engine, r.place, &from, to, w, h, pass, nullptr, blend >= 0, std::max(blend, 0), sampler);
 }
 // A picture laid on another: its middle (+ c, its own centre) at the target's middle + o, zoomed (sx, sy) and turned rz degrees.
 static void aviutl_lay(AviutlRun& r, const AviutlBuf& from, RenderTarget* to, uint32_t w, uint32_t h, double ox, double oy, double sx, double sy, double rz, double alpha, double cx, double cy, int blend, int sampler, float way = 0, float as = 0) {
@@ -172,7 +172,7 @@ static double aviutl_num(lua_State* L, int i, double otherwise = 0) { return lua
 // package is put in: the folder's time).
 static std::vector<std::filesystem::path> aviutl_shared(const std::filesystem::path& dir) {
     static std::mutex hold;
-    static std::map<std::filesystem::path, std::pair<std::filesystem::file_time_type, std::vector<std::filesystem::path>>> kept;
+    static std::map<std::filesystem::path, std::pair<std::filesystem::file_time_type, std::vector<std::filesystem::path>>> cached;
     std::vector<std::filesystem::path> dirs = {dir};
     for (std::filesystem::path p = dir; p.has_relative_path() && p != p.parent_path(); p = p.parent_path()) {
         if (p.parent_path().filename() != "aviutl_scripts") continue;
@@ -180,9 +180,9 @@ static std::vector<std::filesystem::path> aviutl_shared(const std::filesystem::p
         const std::filesystem::path root = p.parent_path();
         const auto when = std::filesystem::last_write_time(root, wrong);
         std::lock_guard<std::mutex> one(hold);
-        auto& [made, all] = kept[root];
-        if (all.empty() || made != when) {
-            all.clear(), made = when;
+        auto& [built, all] = cached[root];
+        if (all.empty() || built != when) {
+            all.clear(), built = when;
             for (const auto& e : std::filesystem::directory_iterator(root, wrong))
                 if (std::filesystem::is_directory(e.path() / "Script", wrong)) all.push_back(e.path() / "Script");
             std::sort(all.begin(), all.end());
@@ -193,7 +193,7 @@ static std::vector<std::filesystem::path> aviutl_shared(const std::filesystem::p
     return dirs;
 }
 static std::string aviutl_hlsl(AviutlRun& r, const std::string& name) {   // (a shader by its registered name: this script's, this file's, or "name@script" another's in the Script folder ("name@part@file": a part of an @ file))
-    if (auto kept = r.hlsls.find(name); kept != r.hlsls.end()) return kept->second;
+    if (auto cached = r.hlsls.find(name); cached != r.hlsls.end()) return cached->second;
     const size_t at = name.find('@');
     const std::string entry = name.substr(0, at), head = "--[[pixelshader@" + entry + ":";
     std::vector<std::string> texts = {r.own, r.all};
@@ -213,14 +213,14 @@ static std::string aviutl_hlsl(AviutlRun& r, const std::string& name) {   // (a 
         if (const size_t p = t.find(head); p != std::string::npos) return r.hlsls[name] = t.substr(p + head.size(), t.find("]]", p) - p - head.size());
     return r.hlsls[name] = "";
 }
-static door::Screen* aviutl_door(AviutlRun& r, const std::string& name, bool clip, std::string& why, const AviutlShader** made = nullptr) {
+static interop::Screen* aviutl_interop(AviutlRun& r, const std::string& name, bool clip, std::string& why, const AviutlShader** built = nullptr) {
     const std::string hlsl = aviutl_hlsl(r, name), entry = name.substr(0, name.find('@'));
     if (hlsl.empty()) return why = "no pixelshader@" + name, nullptr;
     const AviutlShader& sh = aviutl_shader(hlsl, entry, clip);
-    if (made) *made = &sh;
-    door::Screen*& d = r.doors[name + (clip ? "|clip" : "")];
+    if (built) *built = &sh;
+    interop::Screen*& d = r.interops[name + (clip ? "|clip" : "")];
     if (!d && sh.wgsl.empty()) return why = sh.why, nullptr;
-    if (!d) d = door::screen(r.s->engine, entry.c_str(), sh.wgsl.c_str(), sh.bytes, &why, sh.pictures);
+    if (!d) d = interop::screen(r.s->engine, entry.c_str(), sh.wgsl.c_str(), sh.bytes, &why, sh.textureCount);
     return d;
 }
 

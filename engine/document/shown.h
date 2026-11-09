@@ -31,7 +31,7 @@ static bool doc_half_now(Doc& d, int layer, float2* half, float* deep) {
     if (shown == d.shown.end()) return false;
     const Doc::Shown& t = shown->second;
     if (t.solid) {
-        const Aabb box = t.solid->made->getBoundingBox();
+        const Aabb box = t.solid->asset->getBoundingBox();
         const float tall = std::max(box.max.y - box.min.y, 1e-6f);
         if (deep) *deep = 0.5f * (box.max.z - box.min.z) / tall;
         return *half = float2{0.5f * (box.max.x - box.min.x) / tall, 0.5f}, true;

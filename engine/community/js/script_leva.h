@@ -1,10 +1,10 @@
-// A recipe's knobs in leva's object form (pmndrs/leva, MIT, https://github.com/pmndrs/leva at 402a1e9d0899: leva-LICENSE.txt), one object at its top:
+// A recipe's parameters in leva's object form (pmndrs/leva, MIT, https://github.com/pmndrs/leva at 402a1e9d0899: leva-LICENSE.txt), one object at its top:
 //   const knobs = { count: 5, spin: true, tint: "#ff3366", way: { value: "ring", options: ["ring", "grid"] },
 //                   spread: { value: 0.5, min: 0, max: 2, step: 0.01 }, Advanced: folder({ ... }, { collapsed: true }) };
 // the kind from the value as leva's own plugins tell it (a number a slider, a boolean a check, "#rrggbb" a colour, options a
 // choice). Told as the AviUtl2 head lines script.cpp already reads (as isf.cpp tells an ISF's JSON), so the card is the same.
-// min and max are how far its knob goes, not how far a hand may (document/layer_edit.h); none written: Houdini's FloatParmTemplate's
-// own, 0 to 10, min_is_strict False, widened to reach its value (Motolii's own: a knob at its end could not be dragged to it). The values reach each() flat, k.name, as leva's useControls returns them.
+// min and max are how far its parameter goes, not how far a hand may (document/layer_edit.h); none written: Houdini's FloatParmTemplate's
+// own, 0 to 10, min_is_strict False, widened to reach its value (Motolii's own: a parameter at its end could not be dragged to it). The values reach each() flat, k.name, as leva's useControls returns them.
 // Its label: leva's { label } as written, else the key as Godot's inspector shows one (String::capitalize, MIT, godotengine/godot
 // at c51ff06e8836: "ease_in" Ease In, "scaleFrom" Scale From).
 #pragma once
@@ -18,7 +18,7 @@
 #include <string>
 
 // leva's folder() (packages/leva/src/helpers/folder.ts): only marks the object as a fold. Global in a recipe's runtime too.
-static const char* leva_kept = "function folder(schema, settings) { return { __folder: true, schema: schema, settings: settings || {} }; }";
+static const char* leva_prelude = "function folder(schema, settings) { return { __folder: true, schema: schema, settings: settings || {} }; }";
 
 // (the object told as head lines: a fold its key, a colour three numbers _x _y _z of 0 to 1 labelled r g b as an ISF colour
 //  is, which the card shows as one colour; the step none written as leva's Number plugin's normalize() makes it)
@@ -70,7 +70,7 @@ static const char* leva_told = R"((function (all) {
   return lines.join('\n');
 }))";
 
-// The head a recipe's `const knobs = { ... }` (let or var too) says, as lines; "" if it has none or it cannot be read.
+// The head a recipe's `const knobs = { ... }` (let or var too; the name its authors write, kept as they write it) says, as lines; "" if it has none or it cannot be read.
 inline std::string leva_head(const std::string& src, std::string* trouble = nullptr) {
     size_t open = std::string::npos;
     for (size_t i = 0; i < src.size() && open == std::string::npos; ++i) {   // (the first, outside comments and strings)
@@ -103,7 +103,7 @@ inline std::string leva_head(const std::string& src, std::string* trouble = null
         else if (c == '}' && --deep == 0) break;
     }
     if (close >= src.size()) return "";
-    const std::string js = std::string(leva_kept) + ";\n" + leva_told + "(" + src.substr(open, close - open + 1) + ")";
+    const std::string js = std::string(leva_prelude) + ";\n" + leva_told + "(" + src.substr(open, close - open + 1) + ")";
     JSRuntime* rt = JS_NewRuntime();
     JSContext* cx = JS_NewContext(rt);
     JSValue out = JS_Eval(cx, js.c_str(), js.size(), "knobs", JS_EVAL_TYPE_GLOBAL);
@@ -119,7 +119,7 @@ inline std::string leva_head(const std::string& src, std::string* trouble = null
 }
 
 // A colour's three numbers _x _y _z also told to each() as leva's useControls returns a colour, k.tint "#rrggbb" (a name
-// that is a knob of its own is left as it is).
+// that is a parameter of its own is left as it is).
 inline void leva_colours(JSContext* cx, JSValue k, const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words) {
     for (const auto& [name, v] : numbers) {
         const std::string base = name.size() > 2 && name.compare(name.size() - 2, 2, "_x") == 0 ? name.substr(0, name.size() - 2) : "";

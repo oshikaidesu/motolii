@@ -16,7 +16,7 @@ std::string isf_trouble(const std::string& file);
 std::string isf_tags(const std::string& file);
 
 // An effect put on a thing again (an effect card's Duplicate, doc_fx_duplicate: "Glow~2.fs" beside "Glow.fs"): the file
-// it is a copy of, read as that one is; its values its own, a value's name being its file's (doc_screen_knob). Any
+// it is a copy of, read as that one is; its values its own, a value's name being its file's (doc_screen_parameter). Any
 // other: the file as it is.
 inline std::string fx_source(const std::string& f) {
     std::error_code wrong;

@@ -1,5 +1,5 @@
-// See gpu_door.h.
-#include "gpu_door.h"
+// See gpu_interop.h.
+#include "gpu_interop.h"
 
 #include <filament/Engine.h>
 
@@ -7,7 +7,7 @@
 
 #include "details/Engine.h"
 
-namespace door {
+namespace interop {
 using namespace filament;
 
 static backend::WebGPUPlatform* platform(Engine* engine) {
@@ -23,4 +23,4 @@ void* instance(Engine* engine) {
 }
 void on_driver(Engine* engine, std::function<void()> work) { downcast(engine)->getDriverApi().queueCommand(std::move(work)); }
 void submit(Engine* engine) { downcast(engine)->getDriverApi().flush(); }
-}  // namespace door
+}  // namespace interop

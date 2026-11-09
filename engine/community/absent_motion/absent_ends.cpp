@@ -1,7 +1,7 @@
 // absent_ends.cpp: AbsentMotion's own ends of a line (Alight Motion's line start and end: arrow, t-line, square,
 // diamond, arrow, circle and teardrop, hollow or filled: its styles.cpp DrawStrokeEnd; Apache-2.0, Copyright 2026 The
 // AbsentMotion authors). Its styles.cpp is read whole into this file as it is, so that its own drawing of an end, kept
-// to that file, is called from here; what else of it is not reached is stripped (gpu/kit_wgpu.sh, -dead_strip).
+// to that file, is called from here; what else of it is not reached is stripped (gpu/filament_webgpu.sh, -dead_strip).
 #include "styles.cpp"
 #include "community/absent_motion/absent_motion.h"
 #include "include/utils/SkParsePath.h"

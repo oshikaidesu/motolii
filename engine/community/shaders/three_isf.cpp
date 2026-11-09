@@ -3,7 +3,7 @@
 // The module run as it is in QuickJS, as splatfx.cpp runs a PlayCanvas effect: 'three' given as a module of stand-ins
 // for what uniforms' values are made of (QuickJS's module loader). Its shader adapted to ISF as ISF's own primer says
 // (docs.isf.video, chapter 9: the uniforms to INPUTS, their declarations taken out; texture2D as it is): tDiffuse is
-// ISF's inputImage, three's vUv ISF's isf_FragNormCoord, its time ISF's TIME. A knob's range as from_three.py made it
+// ISF's inputImage, three's vUv ISF's isf_FragNormCoord, its time ISF's TIME. A parameter's range as from_three.py made it
 // (from 0, or four times below, to four times its value, at least 1). Not taken: three's own #include pieces.
 #include "community/shaders/three_isf.h"
 #include <quickjs.h>
@@ -27,10 +27,10 @@ static JSModuleDef* three_load(JSContext* cx, const char* name, void*) {
     std::string src;
     if (std::string(name) == "three") src = three_stand_ins;
     else { std::ifstream in(name); std::stringstream all; all << in.rdbuf(); src = all.str(); }
-    JSValue made = JS_Eval(cx, src.c_str(), src.size(), name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
-    if (JS_IsException(made)) return nullptr;
-    auto* m = (JSModuleDef*)JS_VALUE_GET_PTR(made);
-    JS_FreeValue(cx, made);
+    JSValue built = JS_Eval(cx, src.c_str(), src.size(), name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+    if (JS_IsException(built)) return nullptr;
+    auto* m = (JSModuleDef*)JS_VALUE_GET_PTR(built);
+    JS_FreeValue(cx, built);
     return m;
 }
 
@@ -100,7 +100,7 @@ std::string three_isf(const std::string& file, std::string& why) {
     const std::regex uniform(R"(^[ \t]*uniform[ \t]+(\w+)[ \t]+(\w+)[ \t]*;[ \t]*(//.*)?$)", std::regex::multiline);
     for (std::sregex_iterator m(frag.begin(), frag.end(), uniform), end; m != end; ++m) {
         const std::string type = (*m)[1], own = (*m)[2];
-        const bool taken = own == "resolution" || own == "frame" || own == "passindex";   // (names isf.cpp's knobs have of their own: the shader's renamed)
+        const bool taken = own == "resolution" || own == "frame" || own == "passindex";   // (names isf.cpp's parameters have of their own: the shader's renamed)
         const std::string n = taken ? own + "_three" : own;
         if (taken) defines += "#define " + own + " " + n + "\n";
         const auto range = [&](double v) { w.Key("MIN"), w.Double(v < 0 ? 4 * v : 0), w.Key("MAX"), w.Double(std::max(1.0, 4 * std::fabs(v))); };
@@ -126,7 +126,7 @@ std::string three_isf(const std::string& file, std::string& why) {
             w.Key("NAME"), w.String(n.c_str()), w.Key("TYPE"), w.String("color"), w.Key("DEFAULT"), w.StartArray();
             for (const char* f : {"x", "y", "z", "w"}) w.Double(value(n, f, 1, 0));
             w.EndArray();
-        } else if (type == "vec3") {   // (ISF has no three numbers: three knobs, the shader's own name made of them)
+        } else if (type == "vec3") {   // (ISF has no three numbers: three parameters, the shader's own name made of them)
             const bool colour = u.HasMember(n.c_str()) && u[n.c_str()].IsObject() && u[n.c_str()].HasMember("r");
             const char* const fields[] = {colour ? "r" : "x", colour ? "g" : "y", colour ? "b" : "z"};
             for (int i = 0; i < 3; ++i) {
@@ -137,10 +137,10 @@ std::string three_isf(const std::string& file, std::string& why) {
                 if (i < 2) w.EndObject();
             }   // (the last closed below, as every other)
             defines += "#define " + n + " vec3(" + n + "_" + fields[0] + ", " + n + "_" + fields[1] + ", " + n + "_" + fields[2] + ")\n";
-        } else { w.EndObject(), w.EndArray(), w.EndObject(); return why = "a uniform of a kind ISF has no knob for: " + type + " " + n, ""; }
+        } else { w.EndObject(), w.EndArray(), w.EndObject(); return why = "a uniform of a kind ISF has no parameter for: " + type + " " + n, ""; }
         w.EndObject();
     }
-    if (first) return why = "it reads no picture: not an effect", "";
+    if (first) return why = "it reads no image: not an effect", "";
     w.EndArray(), w.EndObject();
     frag = std::regex_replace(frag, uniform, "");
     std::smatch at;

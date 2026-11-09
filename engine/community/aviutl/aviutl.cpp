@@ -88,7 +88,7 @@ std::vector<AviutlVar> aviutl_vars(const std::string& text) {
         AviutlVar v;
         v.kind = m[1], v.var = m[2].matched ? m[2].str() : v.kind + m[3].str();   // (--track0: is obj.track0)
         v.named = m[2].matched;
-        if (v.kind == "checksection") v.kind = "check";   // (a check that opens the knobs under it, its third its own folding: as a check)
+        if (v.kind == "checksection") v.kind = "check";   // (a check that opens the parameters under it, its third its own folding: as a check)
         std::vector<std::string> parts;
         std::stringstream rest(m[4].str());
         for (std::string one; std::getline(rest, one, ',');) parts.push_back(std::regex_replace(one, std::regex(R"(^\s+|\s+$)"), ""));
@@ -118,20 +118,20 @@ std::vector<AviutlVar> aviutl_vars(const std::string& text) {
     return vars;
 }
 
-std::vector<ScriptKnob> aviutl_knobs(const std::string& file) {
+std::vector<ScriptParameter> aviutl_parameters(const std::string& file) {
     std::string own, all, why;
-    std::vector<ScriptKnob> knobs;
-    if (!aviutl_text(file, own, all, why)) return knobs;
+    std::vector<ScriptParameter> parameters;
+    if (!aviutl_text(file, own, all, why)) return parameters;
     std::istringstream lines(own);
     const std::regex said(R"(^--(track|checksection|check|color|select)(?:@(\w+)|(\d)):([^,\r]*)(?:,([^\r]*))?)");
     for (std::string line; std::getline(lines, line);) {
         std::smatch m;
-        if (line.rfind("--dialog:", 0) == 0) {   // (its checks: each a knob, its label before its /chk)
+        if (line.rfind("--dialog:", 0) == 0) {   // (its checks: each a parameter, its label before its /chk)
             const std::regex check(R"((?:^|;)\s*([^,;]*)/chk\s*,\s*(?:local\s+)?(\w+))");
             for (const AviutlVar& v : aviutl_vars(line))
                 if (v.kind == "check")
                     for (std::sregex_iterator c(line.begin() + 9, line.end(), check), end; c != end; ++c)
-                        if ((*c)[2] == v.var) knobs.push_back({v.var, (*c)[1].str(), "check", 0, 1, v.usual, 1, ""});
+                        if ((*c)[2] == v.var) parameters.push_back({v.var, (*c)[1].str(), "check", 0, 1, v.usual, 1, ""});
             continue;
         }
         if (!std::regex_search(line, m, said)) continue;
@@ -139,7 +139,7 @@ std::vector<ScriptKnob> aviutl_knobs(const std::string& file) {
         std::string label = m[4].str();
         const size_t eq = label.find('=');
         if (eq != std::string::npos) label.resize(eq);
-        ScriptKnob k;
+        ScriptParameter k;
         k.name = v.var, k.label = label, k.kind = v.kind == "check" ? "check" : "track";
         if (v.kind == "track") {
             std::vector<double> n;
@@ -150,13 +150,13 @@ std::vector<ScriptKnob> aviutl_knobs(const std::string& file) {
         } else if (v.kind == "check") k.high = 1, k.usual = v.usual, k.step = 1;
         else if (v.kind == "select") k.high = std::max<double>(0, (double)v.values.size() - 1), k.usual = v.usual, k.step = 1;
         else {
-            if (v.unset) knobs.push_back({v.var + "_on", label, "check", 0, 1, 0, 1, ""});
-            for (int c = 0; c < 3; ++c) knobs.push_back({v.var + "_" + "rgb"[c], label + " " + "RGB"[c], "track", 0, 255, (double)(((int)v.usual >> (16 - 8 * c)) & 255), 1, ""});
+            if (v.unset) parameters.push_back({v.var + "_on", label, "check", 0, 1, 0, 1, ""});
+            for (int c = 0; c < 3; ++c) parameters.push_back({v.var + "_" + "rgb"[c], label + " " + "RGB"[c], "track", 0, 255, (double)(((int)v.usual >> (16 - 8 * c)) & 255), 1, ""});
             continue;
         }
-        knobs.push_back(k);
+        parameters.push_back(k);
     }
-    return knobs;
+    return parameters;
 }
 
 // (each float of the constants, HLSL's place to WGSL's: a scalar or a vector, a matrix's columns or an array's elements
@@ -231,8 +231,8 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
         legal.RegisterLegalizationPasses();
         spvtools::OptimizerOptions unchecked;
         unchecked.set_run_validator(false);
-        std::vector<uint32_t> made;
-        if (legal.Run(spv.data(), spv.size(), &made, unchecked)) spv.swap(made);
+        std::vector<uint32_t> built;
+        if (legal.Run(spv.data(), spv.size(), &built, unchecked)) spv.swap(built);
     }
     std::map<uint32_t, std::string> names;   // (SPIR-V read for each struct's member offsets: OpName 5, OpMemberDecorate 72 Offset 35; an empty struct (OpTypeStruct 30 of none) Tint cannot take)
     std::map<uint32_t, std::map<uint32_t, uint32_t>> offsets;
@@ -250,9 +250,9 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
     if (ir != tint::Success) return sh.why = "SPIR-V: " + ir.Failure().reason, sh;
     tint::wgsl::writer::Options o;
     o.allow_non_uniform_derivatives = true;
-    auto made = tint::wgsl::writer::ProgramFromIR(ir.Get(), o);
-    if (made != tint::Success) return sh.why = "WGSL: " + made.Failure().reason, sh;
-    const tint::Program& p = made.Get();
+    auto built = tint::wgsl::writer::ProgramFromIR(ir.Get(), o);
+    if (built != tint::Success) return sh.why = "WGSL: " + built.Failure().reason, sh;
+    const tint::Program& p = built.Get();
     for (const auto* g : p.AST().GlobalVariables()) {   // (the constants' struct, b0, as Tint lays it)
         const auto* v = p.Sem().Get<tint::sem::GlobalVariable>(g);
         if (!v || v->AddressSpace() != tint::core::AddressSpace::kUniform || !v->Attributes().binding_point || v->Attributes().binding_point->binding != 144) continue;
@@ -265,21 +265,21 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
     // (another cbuffer (a global not static: $Global) is bound to nothing in AviUtl2, which reads zero in D3D11: a private
     //  variable, which WGSL begins at zero)
     std::string code = std::regex_replace(wgsl->wgsl, std::regex(R"(@group\(0u?\) @binding\((?!144u?\))\d+u?\) var<uniform>)"), "var<private>");
-    // (the door's bindings: picture k's texture at 2k, its sampler at 2k+1, the constants after all the pictures)
+    // (the interop's bindings: picture k's texture at 2k, its sampler at 2k+1, the constants after all the pictures)
     const std::regex bound(R"(@group\(0u?\) @binding\((\d+)u?\) var(<uniform>)?)");
     int most = 0;
     for (std::sregex_iterator m(code.begin(), code.end(), bound), end; m != end; ++m)
         if (!(*m)[2].matched) most = std::max(most, std::stoi((*m)[1]) % 128 + 1);
-    sh.pictures = std::max(1, most);
-    if (sh.pictures > 16)   // (Filament asks Dawn for 16 samplers a stage (WebGPUPlatform.cpp REQUIRED_LIMITS), a picture its texture and its sampler both (WebGPUDescriptorSetLayout.cpp); one past it made the frame's every draw void)
-        return sh.why = "not yet: " + std::to_string(sh.pictures) + " pictures read at once, Filament's WebGPU takes 16", sh;
+    sh.textureCount = std::max(1, most);
+    if (sh.textureCount > 16)   // (Filament asks Dawn for 16 samplers a stage (WebGPUPlatform.cpp REQUIRED_LIMITS), a picture its texture and its sampler both (WebGPUDescriptorSetLayout.cpp); one past it made the frame's every draw void)
+        return sh.why = "not yet: " + std::to_string(sh.textureCount) + " textures read at once, Filament's WebGPU takes 16", sh;
     std::string out;
     auto at = code.cbegin();
     for (std::sregex_iterator m(code.begin(), code.end(), bound), end; m != end; ++m) {
         const int b = std::stoi((*m)[1]);
         if ((*m)[2].matched ? b != 144 : b >= 144) return sh.why = "not yet: a resource of its kind (binding " + std::to_string(b) + ")", sh;
         out.append(at, code.cbegin() + m->position());
-        out += "@group(0) @binding(" + std::to_string((*m)[2].matched ? 2 * sh.pictures : b < 128 ? 2 * b : 2 * (b - 128) + 1) + ") var" + (*m)[2].str();
+        out += "@group(0) @binding(" + std::to_string((*m)[2].matched ? 2 * sh.textureCount : b < 128 ? 2 * b : 2 * (b - 128) + 1) + ") var" + (*m)[2].str();
         at = code.cbegin() + m->position() + m->length();
     }
     out.append(at, code.cend());
@@ -297,9 +297,9 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
 
 const AviutlShader& aviutl_shader(const std::string& hlsl, const std::string& entry, bool clip) {
     static std::mutex lock;
-    static std::map<std::string, AviutlShader> made;   // (each shader as written made once: a few milliseconds each)
+    static std::map<std::string, AviutlShader> built;   // (each shader as written made once: a few milliseconds each)
     std::lock_guard<std::mutex> hold(lock);
     const std::string key = entry + (clip ? "|clip|" : "||") + hlsl;
-    if (auto m = made.find(key); m != made.end()) return m->second;
-    return made[key] = aviutl_make(hlsl, entry, clip);
+    if (auto m = built.find(key); m != built.end()) return m->second;
+    return built[key] = aviutl_make(hlsl, entry, clip);
 }

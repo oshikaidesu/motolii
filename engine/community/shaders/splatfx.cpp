@@ -26,7 +26,7 @@ struct SplatEffect::Own {
     JSContext* cx = nullptr;
     JSValue effect = JS_UNDEFINED;
     std::string trouble, glsl, file;
-    std::vector<ScriptKnob> knobs;
+    std::vector<ScriptParameter> parameters;
     std::vector<std::pair<std::string, int>> fields;   // (each attribute and how many numbers it is: 1, or 3)
     bool finished = false;
 };
@@ -37,10 +37,10 @@ static JSModuleDef* splatfx_load(JSContext* cx, const char* name, void*) {
     if (n == "playcanvas") src = splatfx_playcanvas;
     else if (std::filesystem::path(n).filename() == "gsplat-shader-effect.mjs") src = splatfx_base;
     else { std::ifstream in(n); std::stringstream all; all << in.rdbuf(); src = all.str(); }
-    JSValue made = JS_Eval(cx, src.c_str(), src.size(), name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
-    if (JS_IsException(made)) return nullptr;
-    auto* m = (JSModuleDef*)JS_VALUE_GET_PTR(made);
-    JS_FreeValue(cx, made);
+    JSValue built = JS_Eval(cx, src.c_str(), src.size(), name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+    if (JS_IsException(built)) return nullptr;
+    auto* m = (JSModuleDef*)JS_VALUE_GET_PTR(built);
+    JS_FreeValue(cx, built);
     return m;
 }
 
@@ -91,15 +91,15 @@ SplatEffect::SplatEffect(const std::string& file) : own(new Own) {
         if (std::regex_search(text, r, std::regex("@range\\s*\\[\\s*(-?[\\d.]+)\\s*,\\s*(-?[\\d.]+)\\s*\\][^/]*\\*/\\s*" + name + "\\s*=")))
             low = std::stod(r[1]), high = std::stod(r[2]);
         JSValue v = JS_GetPropertyStr(cx, own->effect, name.c_str());
-        const auto knob = [&](const std::string& n, const std::string& label, double usual, double lo, double hi) {
-            ScriptKnob k;
+        const auto parameter = [&](const std::string& n, const std::string& label, double usual, double lo, double hi) {
+            ScriptParameter k;
             k.name = n, k.label = label, k.kind = "track", k.low = lo, k.high = hi, k.usual = usual, k.step = 0.001;
-            own->knobs.push_back(k);
+            own->parameters.push_back(k);
         };
         double one = 0;
         if (JS_IsNumber(v)) {
             JS_ToFloat64(cx, &one, v);
-            knob(name, name, one, std::min(low, one), std::max(high, one));
+            parameter(name, name, one, std::min(low, one), std::max(high, one));
             own->fields.push_back({name, 1});
         } else if (JS_IsObject(v)) {
             const bool colour = JS_HasProperty(cx, v, JS_NewAtom(cx, "r"));
@@ -108,7 +108,7 @@ SplatEffect::SplatEffect(const std::string& file) : own(new Own) {
                 JSValue p = JS_GetPropertyStr(cx, v, std::string(1, parts[c]).c_str());
                 JS_ToFloat64(cx, &one, p);
                 JS_FreeValue(cx, p);
-                knob(name + "_" + parts[c], name + " " + parts[c], one, colour ? 0.0 : std::min(-10.0, one), colour ? std::max(1.0, one) : std::max(10.0, one));
+                parameter(name + "_" + parts[c], name + " " + parts[c], one, colour ? 0.0 : std::min(-10.0, one), colour ? std::max(1.0, one) : std::max(10.0, one));
             }
             own->fields.push_back({name, colour ? 3 : -3});
         }
@@ -125,10 +125,10 @@ SplatEffect::~SplatEffect() {
 bool SplatEffect::ok() const { return own->trouble.empty(); }
 const std::string& SplatEffect::trouble() const { return own->trouble; }
 const std::string& SplatEffect::glsl() const { return own->glsl; }
-const std::vector<ScriptKnob>& SplatEffect::knobs() const { return own->knobs; }
+const std::vector<ScriptParameter>& SplatEffect::parameters() const { return own->parameters; }
 bool SplatEffect::finished() const { return own->finished; }
-void SplatEffect::usual(const std::string& knob, double is) {
-    for (ScriptKnob& k : own->knobs) if (k.name == knob) k.usual = is, k.low = std::min(k.low, is), k.high = std::max(k.high, is);
+void SplatEffect::usual(const std::string& parameter, double is) {
+    for (ScriptParameter& k : own->parameters) if (k.name == parameter) k.usual = is, k.low = std::min(k.low, is), k.high = std::max(k.high, is);
 }
 
 std::vector<std::pair<std::string, std::vector<float>>> SplatEffect::uniforms(double time, double dt, const std::function<double(const std::string&, double)>& value) {
@@ -136,11 +136,11 @@ std::vector<std::pair<std::string, std::vector<float>>> SplatEffect::uniforms(do
     if (!ok()) return out;
     JSContext* cx = own->cx;
     size_t k = 0;
-    for (const auto& [name, n] : own->fields) {   // (each attribute as the knobs say it now)
-        if (n == 1) { JS_SetPropertyStr(cx, own->effect, name.c_str(), JS_NewFloat64(cx, value(own->knobs[k].name, own->knobs[k].usual))); ++k; continue; }
+    for (const auto& [name, n] : own->fields) {   // (each attribute as the parameters say it now)
+        if (n == 1) { JS_SetPropertyStr(cx, own->effect, name.c_str(), JS_NewFloat64(cx, value(own->parameters[k].name, own->parameters[k].usual))); ++k; continue; }
         JSValue v = JS_GetPropertyStr(cx, own->effect, name.c_str());
         const char* parts = n == 3 ? "rgb" : "xyz";
-        for (int c = 0; c < 3; ++c, ++k) JS_SetPropertyStr(cx, v, std::string(1, parts[c]).c_str(), JS_NewFloat64(cx, value(own->knobs[k].name, own->knobs[k].usual)));
+        for (int c = 0; c < 3; ++c, ++k) JS_SetPropertyStr(cx, v, std::string(1, parts[c]).c_str(), JS_NewFloat64(cx, value(own->parameters[k].name, own->parameters[k].usual)));
         JS_FreeValue(cx, v);
     }
     JS_SetPropertyStr(cx, own->effect, "effectTime", JS_NewFloat64(cx, time));
@@ -176,7 +176,7 @@ std::vector<std::pair<std::string, std::vector<float>>> SplatEffect::uniforms(do
 #include <mutex>
 
 namespace {
-struct SplatConfig : matp::Config {   // (as kit_wgpu.sh runs matc: -a webgpu -a metal -p desktop)
+struct SplatConfig : matp::Config {   // (as filament_webgpu.sh runs matc: -a webgpu -a metal -p desktop)
     SplatConfig() { mTargetApi = TargetApi::WEBGPU | TargetApi::METAL; mPlatform = Platform::DESKTOP; }
     Output* getOutput() const noexcept override { return nullptr; }
     Input* getInput() const noexcept override { return nullptr; }
@@ -192,8 +192,8 @@ std::vector<uint8_t> splat_effect_look(const std::string& mat, const std::string
     const std::filesystem::path dir = std::filesystem::path(home ? home : "/tmp") / "Library/Caches/Motolii/splatfx";
     char name[40];
     std::snprintf(name, sizeof name, "%016llx.filamat", (unsigned long long)hash);
-    const std::filesystem::path kept = dir / name;
-    if (std::ifstream in(kept, std::ios::binary); in) return std::vector<uint8_t>(std::istreambuf_iterator<char>(in), {});
+    const std::filesystem::path cached = dir / name;
+    if (std::ifstream in(cached, std::ios::binary); in) return std::vector<uint8_t>(std::istreambuf_iterator<char>(in), {});
     // (its uniforms said as the look's parameters, read through their own names; the rest of its text as it is)
     std::string params, names, code;
     std::istringstream lines(glsl);
@@ -228,6 +228,6 @@ std::vector<uint8_t> splat_effect_look(const std::string& mat, const std::string
     std::vector<uint8_t> bytes((const uint8_t*)package.getData(), (const uint8_t*)package.getData() + package.getSize());
     std::error_code e;
     std::filesystem::create_directories(dir, e);
-    std::ofstream(kept, std::ios::binary).write((const char*)bytes.data(), (std::streamsize)bytes.size());
+    std::ofstream(cached, std::ios::binary).write((const char*)bytes.data(), (std::streamsize)bytes.size());
     return bytes;
 }

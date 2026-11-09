@@ -12,7 +12,7 @@
 #include "third_party/filament_src/third_party/cgltf/cgltf.h"   // (the reader of glTF that Filament's own loader is built on: already in its library)
 
 struct Solid {
-    gltfio::FilamentAsset* made = nullptr;
+    gltfio::FilamentAsset* asset = nullptr;
     mat4f fit;             // the file's own size and middle brought to: 1 tall, its middle at the place
     float seconds = 0.f;   // how long its own movement is (none: 0)
     float starts = 0.f;    // how far into it it is when the stage's time is 0
@@ -22,7 +22,7 @@ struct Solid {
 
 // A file's movement at a moment of its own: the one named (none, or not one of its own: its first), round and round.
 static void solid_at(Solid* d, const std::string& name, double seconds, size_t nth = 0) {
-    gltfio::Animator* moves = d->made->getAssetInstances()[nth]->getAnimator();
+    gltfio::Animator* moves = d->asset->getAssetInstances()[nth]->getAnimator();
     if (!moves->getAnimationCount()) return;
     size_t which = 0;
     for (size_t i = 0; i < d->moves.size(); ++i) if (d->moves[i] == name) which = i;
@@ -40,7 +40,7 @@ static gltfio::AssetLoader* solid_loader(Stage& s) {
 // Where it is (and how large: a place may scale).
 static void solid_to(Stage& s, Solid* d, const mat4f& place, size_t nth = 0) {
     auto& tm = s.engine->getTransformManager();
-    tm.setTransform(tm.getInstance(d->made->getAssetInstances()[nth]->getRoot()), place * d->fit);
+    tm.setTransform(tm.getInstance(d->asset->getAssetInstances()[nth]->getRoot()), place * d->fit);
 }
 
 // The 3D file put in the scene, `high` tall, its middle at `place`, `many` of it (gltfio's own instances: one source, each
@@ -49,28 +49,28 @@ static Solid* solid(Stage& s, const char* file, const mat4f& place, float high, 
     const std::vector<uint8_t> bytes = load_file(file);
     Solid* d = new Solid;
     std::vector<gltfio::FilamentInstance*> ones((size_t)std::max(1, many));
-    d->made = bytes.empty() ? nullptr : solid_loader(s)->createInstancedAsset(bytes.data(), (uint32_t)bytes.size(), ones.data(), ones.size());
-    if (!d->made) return nullptr;
-    gltfio::ResourceLoader pictures({.engine = s.engine, .gltfPath = file, .normalizeSkinningWeights = true});   // (where a .gltf's parts are: Filament's gltf_viewer tells it so)
-    std::vector<std::vector<uint8_t>> beside(d->made->getResourceUriCount());   // (a .gltf's parts in files beside it: read and handed over, as gltfio asks)
+    d->asset = bytes.empty() ? nullptr : solid_loader(s)->createInstancedAsset(bytes.data(), (uint32_t)bytes.size(), ones.data(), ones.size());
+    if (!d->asset) return nullptr;
+    gltfio::ResourceLoader resources({.engine = s.engine, .gltfPath = file, .normalizeSkinningWeights = true});   // (where a .gltf's parts are: Filament's gltf_viewer tells it so)
+    std::vector<std::vector<uint8_t>> beside(d->asset->getResourceUriCount());   // (a .gltf's parts in files beside it: read and handed over, as gltfio asks)
     for (size_t i = 0; i < beside.size(); ++i) {
-        const char* part = d->made->getResourceUris()[i];
+        const char* part = d->asset->getResourceUris()[i];
         beside[i] = load_file((std::filesystem::path(file).parent_path() / part).string().c_str());
-        pictures.addResourceData(part, gltfio::ResourceLoader::BufferDescriptor(beside[i].data(), beside[i].size()));
+        resources.addResourceData(part, gltfio::ResourceLoader::BufferDescriptor(beside[i].data(), beside[i].size()));
     }
-    if (!s.solidPictures) s.solidPictures = gltfio::createStbProvider(s.engine);
-    gltfio::TextureProvider* reader = (gltfio::TextureProvider*)s.solidPictures;
-    pictures.addTextureProvider("image/png", reader);
-    pictures.addTextureProvider("image/jpeg", reader);
-    if (!pictures.loadResources(d->made)) return nullptr;
-    d->made->releaseSourceData();
-    const Aabb box = d->made->getBoundingBox();
+    if (!s.solidTextures) s.solidTextures = gltfio::createStbProvider(s.engine);
+    gltfio::TextureProvider* reader = (gltfio::TextureProvider*)s.solidTextures;
+    resources.addTextureProvider("image/png", reader);
+    resources.addTextureProvider("image/jpeg", reader);
+    if (!resources.loadResources(d->asset)) return nullptr;
+    d->asset->releaseSourceData();
+    const Aabb box = d->asset->getBoundingBox();
     d->fit = mat4f::scaling(high / std::max(box.max.y - box.min.y, 1e-6f)) * mat4f::translation(-0.5f * (box.min + box.max));
     solid_to(s, d, place);
-    for (size_t i = 0; i < d->made->getEntityCount(); ++i)
-        if (s.engine->getRenderableManager().hasComponent(d->made->getEntities()[i])) d->parts.push_back(d->made->getEntities()[i]);
+    for (size_t i = 0; i < d->asset->getEntityCount(); ++i)
+        if (s.engine->getRenderableManager().hasComponent(d->asset->getEntities()[i])) d->parts.push_back(d->asset->getEntities()[i]);
     s.scene->addEntities(d->parts.data(), d->parts.size());
-    gltfio::Animator* moves = d->made->getInstance()->getAnimator();
+    gltfio::Animator* moves = d->asset->getInstance()->getAnimator();
     for (size_t i = 0; i < moves->getAnimationCount(); ++i) {   // (its movements by name; one with none, by its number)
         const char* name = moves->getAnimationName(i);
         std::string word = name && *name ? name : "move" + std::to_string(i + 1);
@@ -87,8 +87,8 @@ static Solid* solid(Stage& s, const char* file, const mat4f& place, float high, 
     return d;
 }
 
-// A 3D file's shape alone, as a mesh of the kit: every triangle of it where the file puts it, brought to 1 tall with
-// its middle at the middle (as `solid` shows it). For a look of the kit's own that draws a shape more than once
+// A 3D file's shape alone, as a mesh of the renderer: every triangle of it where the file puts it, brought to 1 tall with
+// its middle at the middle (as `solid` shows it). For a look of the renderer's own that draws a shape more than once
 // (glass). It stands as the file has it at rest: a movement of its own is not gone through. nullptr: not read.
 static Mesh* solid_mesh(const char* file) {
     cgltf_options how{};
@@ -178,6 +178,6 @@ static void solid_seen(Stage& s, Solid* d, bool in) {
 static void solid_off(Stage& s, Solid* d) {
     s.playing.erase(d);
     solid_seen(s, d, false);
-    solid_loader(s)->destroyAsset(d->made);
+    solid_loader(s)->destroyAsset(d->asset);
     delete d;
 }

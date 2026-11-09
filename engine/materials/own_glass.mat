@@ -1,6 +1,6 @@
 // own_glass.mat: glass by Filament's own means, nothing of ours in it: its screen-space refraction of a solid, its
 // absorption (the glass's colour), its dispersion, its mirroring of the room, and a thin film if wanted. Put down
-// through kit.h's own_glass(), which takes its depth from the mesh.
+// through render.h's own_glass(), which takes its depth from the mesh.
 // thickness: how deep the solid is, for the bend and the colour. absorb: how much of red, green and blue a unit of
 // depth takes. lean: how far its faces lean from flat, slowly, this way and that (a crushed look), in whole waves
 // of the mesh's uv. film: how much thin film lies on the glass (0: none). split: how far the colours part.

@@ -1,4 +1,4 @@
-// drawn_made.h: part of drawn.h. Read only through drawn.h.
+// canvas_renderables.h: part of canvas.h. Read only through canvas.h.
 #include <fstream>
 #include <list>
 #include <mutex>
@@ -13,15 +13,15 @@
 // What ThorVG's own scene effects do to it, each as a share of its height (0: none): a blur; a shadow of a colour, so
 // much of it (shadow.w), falling so far, that way (degrees, as ThorVG counts them) and so soft.
    // (copies: how many times it is put down: the document tells each where)
-static Drawn* drawn(Stage& s, const std::function<tvg::Paint*(Drawn*, int*, int*)>& paints, const mat4f& place, float high, float3 ground, bool shown, const char* lay, const DrawnFx& fx = {}) {
-    if (!door::device(s.engine)) return nullptr;   // (another backend)
-    Drawn* d = new Drawn;
-    WGPUTexture made = nullptr;
+static Canvas2D* place_canvas(Stage& s, const std::function<tvg::Paint*(Canvas2D*, int*, int*)>& paints, const mat4f& place, float high, float3 ground, bool shown, const char* lay, const Canvas2DFx& fx = {}) {
+    if (!interop::device(s.engine)) return nullptr;   // (another backend)
+    Canvas2D* d = new Canvas2D;
+    WGPUTexture built = nullptr;
     tvg::Paint* loose = nullptr;
     bool owned = false;
     int w = 0, h = 0;
     float own = high;
-    door::on_driver(s.engine, [&] {
+    interop::on_driver(s.engine, [&] {
         tvg::Initializer::init(0);
         tvg::Paint* p = paints(d, &w, &h);
         if (!p || w <= 0 || h <= 0) return;
@@ -46,7 +46,7 @@ static Drawn* drawn(Stage& s, const std::function<tvg::Paint*(Drawn*, int*, int*
             high *= (float)(h + 2 * room) / (float)h;   // (the thing itself stays as large)
             w += 2 * room, h += 2 * room;
         }
-        d->pictureHigh = (float)h;
+        d->canvasHigh = (float)h;
         if (const float most = (float)std::max(w, h); most > 4096.f) {   // (no larger than a picture the device takes, with room to spare: the whole drawn smaller, its sheet as large)
             tvg::Scene* smaller = tvg::Scene::gen();
             smaller->add(p);
@@ -62,10 +62,10 @@ static Drawn* drawn(Stage& s, const std::function<tvg::Paint*(Drawn*, int*, int*
         like.dimension = WGPUTextureDimension_2D;
         like.mipLevelCount = 1;
         like.sampleCount = 1;
-        made = wgpuDeviceCreateTexture((WGPUDevice)door::device(s.engine), &like);
-        d->made = made;
+        built = wgpuDeviceCreateTexture((WGPUDevice)interop::device(s.engine), &like);
+        d->target = built;
         d->canvas = tvg::WgCanvas::gen();
-        if (!d->canvas || d->canvas->target(door::device(s.engine), door::instance(s.engine), made, (uint32_t)w, (uint32_t)h, tvg::ColorSpace::ABGR8888S, 1) != tvg::Result::Success) return;
+        if (!d->canvas || d->canvas->target(interop::device(s.engine), interop::instance(s.engine), built, (uint32_t)w, (uint32_t)h, tvg::ColorSpace::ABGR8888S, 1) != tvg::Result::Success) return;
         if (ground.x >= 0.f) {
             tvg::Shape* under = tvg::Shape::gen();
             under->appendRect(0, 0, (float)w, (float)h);
@@ -81,14 +81,14 @@ static Drawn* drawn(Stage& s, const std::function<tvg::Paint*(Drawn*, int*, int*
         d->canvas->sync();
     });
     s.engine->flushAndWait();   // (once, at set-up: the lines above ran on the other thread)
-    if (!made || !owned) {   // (not made: what was begun is let go)
-        door::on_driver(s.engine, [&] { if (loose) tvg::Paint::rel(loose); delete d->canvas; delete d->film; if (made) wgpuTextureRelease(made); });
+    if (!built || !owned) {   // (not made: what was begun is let go)
+        interop::on_driver(s.engine, [&] { if (loose) tvg::Paint::rel(loose); delete d->canvas; delete d->film; if (built) wgpuTextureRelease(built); });
         s.engine->flushAndWait();
         delete d;
         return nullptr;
     }
     d->texture = Texture::Builder().width((uint32_t)w).height((uint32_t)h).levels(1).sampler(Texture::Sampler::SAMPLER_2D).format(Texture::InternalFormat::RGBA8)
-                     .usage(Texture::Usage::SAMPLEABLE).import((intptr_t)made).build(*s.engine);
+                     .usage(Texture::Usage::SAMPLEABLE).import((intptr_t)built).build(*s.engine);
     d->sheet = new Mesh;
     for (float2 c : {float2{-1, -1}, float2{1, -1}, float2{1, 1}, float2{-1, 1}}) {
         d->sheet->pos.push_back({0.5f * high * (float)w / (float)h * c.x, 0.5f * high * c.y, 0.f});
@@ -98,7 +98,7 @@ static Drawn* drawn(Stage& s, const std::function<tvg::Paint*(Drawn*, int*, int*
     d->sheet->idx = {0, 1, 2, 0, 2, 3};
     if (fx.thick) sheet_deep(d->sheet, 0.1f * own), d->boxed = float3{d->sheet->pos[1].x, d->sheet->pos[2].y, 0.1f * own};   // (a fifth of its height through: the depth Raster_Extrude.js gives at Scale Z 1)
     if (d->frames > 1.f)   // (a film: it goes on by itself as the stage's time does, round and round)
-        s.playing[d] = [&s, d](double now) { picture_at(s, d, std::fmod((float)now + d->starts, d->seconds)); };
+        s.playing[d] = [&s, d](double now) { canvas_at(s, d, std::fmod((float)now + d->starts, d->seconds)); };
     if (!shown) return d;
     d->inLight = fx.lit;
     d->look = add(s, d->sheet, flat_laid(lay, fx.lit, fx.wear).c_str(), std::vector<mat4f>((size_t)std::max(1, d->letters.empty() ? fx.copies : (int)d->letters.size()), place), 1, fx.lit, 1, 4, fx.together && d->letters.empty());   // (split into letters: a copy each)
@@ -134,11 +134,11 @@ static float lottie_in(const char* file) {
 }
 
 // marker: a named stretch of an After Effects file it plays, over and over (ThorVG's Lottie markers; none: all of it).
-static Drawn* picture(Stage& s, const char* file, const mat4f& place, float high, float3 ground = float3{-1.f}, bool shown = true, const char* lay = nullptr, const DrawnFx& fx = {}, const char* marker = "") {
+static Canvas2D* image_canvas(Stage& s, const char* file, const mat4f& place, float high, float3 ground = float3{-1.f}, bool shown = true, const char* lay = nullptr, const Canvas2DFx& fx = {}, const char* marker = "") {
     if (!std::filesystem::is_regular_file(file)) return nullptr;   // (ThorVG ends the program on a folder)
     const std::string ext = std::filesystem::path(file).extension().string();
     const bool lottie = ext == ".json" || ext == ".lot";
-    Drawn* made = drawn(s, [&](Drawn* d, int* w, int* h) -> tvg::Paint* {
+    Canvas2D* built = place_canvas(s, [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {
         tvg::LottieAnimation* own = lottie ? tvg::LottieAnimation::gen() : nullptr;
         d->film = own ? own : tvg::Animation::gen();
         d->lottie = own;
@@ -171,12 +171,12 @@ static Drawn* picture(Stage& s, const char* file, const mat4f& place, float high
         p->size((float)*w, (float)*h);
         return p;
     }, place, high, ground, shown, lay, fx);
-    if (made && made->frames > 1.f) {   // (its kept frames known on disk by its file as it is now: kept_file)
+    if (built && built->frames > 1.f) {   // (its kept frames known on disk by its file as it is now: cache_file)
         std::error_code e;
-        made->keyBase = std::filesystem::absolute(file, e).string() + "|" + std::to_string(std::filesystem::file_size(file, e)) + "|" +
+        built->keyBase = std::filesystem::absolute(file, e).string() + "|" + std::to_string(std::filesystem::file_size(file, e)) + "|" +
                         std::to_string((long long)std::filesystem::last_write_time(file, e).time_since_epoch().count());
     }
-    return made;
+    return built;
 }
 
 // Words put in the scene, set by ThorVG in the font of `fontFile` (a .ttf): a sheet `high` tall for each line, as
@@ -273,18 +273,18 @@ static tvg::Fill* ramp_of(const std::vector<float4>& given, float w, float h, bo
 // are kept (the fallback is asked again and again); one not read lacks nothing that can be told.
 static std::string type_lacks(const std::string& fontFile, const std::string& words) {
     static std::mutex lock;
-    static std::list<std::pair<std::string, std::shared_ptr<const std::vector<unsigned char>>>> kept;
+    static std::list<std::pair<std::string, std::shared_ptr<const std::vector<unsigned char>>>> cached;
     std::shared_ptr<const std::vector<unsigned char>> bytes;
     {
         std::lock_guard<std::mutex> hold(lock);
-        for (auto it = kept.begin(); it != kept.end() && !bytes; ++it)
-            if (it->first == fontFile) bytes = it->second, kept.splice(kept.begin(), kept, it);
+        for (auto it = cached.begin(); it != cached.end() && !bytes; ++it)
+            if (it->first == fontFile) bytes = it->second, cached.splice(cached.begin(), cached, it);
         if (!bytes) {
             std::ifstream in(fontFile, std::ios::binary);
             if (!in) return "";
             bytes = std::make_shared<const std::vector<unsigned char>>(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
-            kept.emplace_front(fontFile, bytes);
-            if (kept.size() > 6) kept.pop_back();
+            cached.emplace_front(fontFile, bytes);
+            if (cached.size() > 6) cached.pop_back();
         }
     }
     stbtt_fontinfo info;
@@ -351,11 +351,11 @@ static bool type_sets(const char* fontFile, const char* words) {
 // edge: an outline round the letters, ThorVG's own (its colour; w: how wide, a share of the line's height; 0: none).
 // fx.rims: more of them, each outside the last: the letters drawn again under them, each its outline wider.
 // Lines: the words may be broken by \n; align: how the lines lie one under another (ThorVG's own: 0 left, 1 right).
-static Drawn* type(Stage& s, const char* words, const char* fontFile, const mat4f& place, float high, float3 colour = float3{0.f}, const char* lay = nullptr, float4 edge = float4{0.f}, float align = 0.f, const DrawnFx& fx = {}) {
+static Canvas2D* type(Stage& s, const char* words, const char* fontFile, const mat4f& place, float high, float3 colour = float3{0.f}, const char* lay = nullptr, float4 edge = float4{0.f}, float align = 0.f, const Canvas2DFx& fx = {}) {
     if (!std::filesystem::is_regular_file(fontFile)) return nullptr;
     const std::string fell = type_fallback(fontFile, words);   // (letters it lacks: all of them in the fallback, no tofu; the inspector says so, motolii_font_lacks)
     if (!fell.empty()) fontFile = fell.c_str();
-    return drawn(s, [&](Drawn* d, int* w, int* h) -> tvg::Paint* {
+    return place_canvas(s, [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {
         if (tvg::Text::load(fontFile) != tvg::Result::Success) return nullptr;
         tvg::Text* t = tvg::Text::gen();
         float x = 0.f, y = 0.f, wide = 0.f, tall = 0.f;
@@ -471,7 +471,7 @@ static Drawn* type(Stage& s, const char* words, const char* fontFile, const mat4
 // cut in pieces no longer than `fine` points (0: as they are), for what bends it as it is drawn. Kept as made in `d`.
 bool sk_svg(const char* data, std::vector<tvg::PathCommand>& cmds, std::vector<tvg::Point>& pts);
 int sk_ends(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, float from, float to, std::vector<float>& out);
-static void flat_path(Drawn* d, tvg::Shape* shape, const char* form, int w, int h, float in, int points, float inner, float round, float fine) {
+static void flat_path(Canvas2D* d, tvg::Shape* shape, const char* form, int w, int h, float in, int points, float inner, float round, float fine) {
     const float cx = 0.5f * (float)w, cy = 0.5f * (float)h, rx = cx - in, ry = cy - in;
     const float thick = in > 0.f ? 2.f * in : 0.08f * (float)h;   // (a wave's line: its stroke, or a share of its height)
     if (form[0] == 'M' || form[0] == 'm') {   // (a path of its own, drawn by a pen: SVG's path data, in its height from its middle, down as SVG goes; Skia reads it)
@@ -573,9 +573,9 @@ static void flat_path(Drawn* d, tvg::Shape* shape, const char* form, int w, int 
 // inner points at `inner` of the way out), line (a long rect, round at its ends), null (nothing to see: a thing to
 // go with); all drawn by ThorVG's own Shape.
 // How wide a picture's file is to its height, as ThorVG reads it (0: it cannot): on the driver thread, as drawn() makes one.
-static float picture_aspect(Stage& s, const char* file) {
+static float canvas_aspect(Stage& s, const char* file) {
     float pw = 0.f, ph = 0.f;
-    door::on_driver(s.engine, [&] {
+    interop::on_driver(s.engine, [&] {
         tvg::Initializer::init(0);
         tvg::Picture* pic = tvg::Picture::gen();
         if (pic->load(file) == tvg::Result::Success) pic->size(&pw, &ph);
@@ -584,9 +584,9 @@ static float picture_aspect(Stage& s, const char* file) {
     s.engine->flushAndWait();
     return ph > 0.f ? pw / ph : 0.f;
 }
-static Drawn* flat(Stage& s, const char* form, float wide, const mat4f& place, float high, float3 colour, const char* lay = nullptr, float4 edge = float4{0.f}, const DrawnFx& fx = {},
+static Canvas2D* flat(Stage& s, const char* form, float wide, const mat4f& place, float high, float3 colour, const char* lay = nullptr, float4 edge = float4{0.f}, const Canvas2DFx& fx = {},
                    int points = 6, float inner = 0.5f, float round = 0.f) {
-    return drawn(s, [&](Drawn* d, int* w, int* h) -> tvg::Paint* {
+    return place_canvas(s, [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {
         const float tall = std::min(0.5f * (float)std::max(s.w, s.h), 4096.f / std::max(wide, 1e-3f));   // (as fine as half the stage; a long thin bar less high, so that it is as long as it is said)
         *h = std::max(2, 2 * (int)std::ceil(0.5f * tall));
         *w = std::max(2, 2 * (int)std::ceil(0.5f * tall * wide));

@@ -43,7 +43,7 @@ abstract final class MaterialTiles {
 
   /// Where [wears]'s tile goes: by the material, how it is shown and when its compiled material was written.
   static String home(String wears) {
-    final f = File('$motoliiDir/out/wgpu_kit/${_filamat[wears] ?? wears}.filamat');
+    final f = File('$motoliiDir/out/filament_webgpu/${_filamat[wears] ?? wears}.filamat');
     var hash = 1469598103934665603;
     for (final c in 'material|$wears|${_shows[wears]}|${f.existsSync() ? f.lastModifiedSync().microsecondsSinceEpoch : 0}'.codeUnits) {
       hash = (hash ^ c) * 1099511628211;

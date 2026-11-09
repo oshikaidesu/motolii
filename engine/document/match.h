@@ -130,10 +130,10 @@ static bool doc_match(Doc& d) {
         if (const Mesh* m = it->second.video ? it->second.video->sheet : it->second.drawn ? it->second.drawn->sheet : it->second.shape)   // (its copies' own looks first, while its copies are still known)
             doc_copy_looks_off(d, m, it->second.video ? it->second.video->look : it->second.drawn ? it->second.drawn->look : it->second.look);
         if (const Mesh* m = it->second.video ? it->second.video->sheet : it->second.drawn ? it->second.drawn->sheet : it->second.shape)   // (and the shape it cuts a matte by: done away with first)
-            doc_unshape(s, [m](const Stage::Made& made) { return made.of == m; });
+            doc_unshape(s, [m](const Stage::Renderable& made) { return made.of == m; });
         if (it->second.video) video_off(s, it->second.video);
-        if (it->second.drawn) picture_off(s, it->second.drawn);
-        for (const auto& deep : it->second.deep) picture_off(s, deep.sheet);
+        if (it->second.drawn) canvas_off(s, it->second.drawn);
+        for (const auto& deep : it->second.deep) canvas_off(s, deep.sheet);
         if (it->second.solid) solid_off(s, it->second.solid);
         if (!it->second.light.isNull()) {   // (out of every scene, and done away with)
             s.scene->remove(it->second.light);
@@ -181,7 +181,7 @@ static bool doc_match(Doc& d) {
         const float4 edge = edgeRgb < 0 ? float4{0.f} : float4{float3{(float)((edgeRgb >> 16) & 255), (float)((edgeRgb >> 8) & 255), (float)(edgeRgb & 255)} / 255.f, (float)(doc_number(d, layer, "stroke_width", 0, 0) / (0.5 * s.h * up.y / up.w))};
         if (!stroke.empty() && edgeRgb < 0) why = "a stroke is six digits, as ff3366";
         const double units = 0.5 * s.h * up.y / up.w;   // (points of the picture to one unit of the stage, where layers stand at first)
-        DrawnFx fx;
+        Canvas2DFx fx;
         fx.thick = doc_on(d, layer, "scale_z"), fx.lit = doc_lit(d, layer), fx.bevel = doc_bevel(d, layer) > 0;
         fx.wear = doc_sheet_material(d, layer);   // (a material it wears: its sheet flat.mat's own for it, in Filament's light (glass reads what is behind, unlit))
         if (!fx.wear.empty() && fx.wear != "glass") fx.lit = true;
@@ -285,28 +285,28 @@ static bool doc_match(Doc& d) {
             const std::string ext = std::filesystem::path(file).extension().string();
             const double cl = doc_number(d, layer, "crop_left", 0, 0), ct = doc_number(d, layer, "crop_top", 0, 0), cr = doc_number(d, layer, "crop_right", 0, 0), cb = doc_number(d, layer, "crop_bottom", 0, 0);
             const bool cropped = cl + ct + cr + cb > 0.0;
-            const float aspect = doc_among(".jpg .jpeg .png .webp .bmp .JPG .JPEG .PNG", ext) && (edge.w > 0.f || doc_number(d, layer, "round", 0, 0) > 0.0 || cropped) ? picture_aspect(s, file.c_str()) : 0.f;
-            if (ext == ".js") {   // (a p5.js sketch that paints in 2D, what it paints ThorVG's: drawn_sketch.h)
+            const float aspect = doc_among(".jpg .jpeg .png .webp .bmp .JPG .JPEG .PNG", ext) && (edge.w > 0.f || doc_number(d, layer, "round", 0, 0) > 0.0 || cropped) ? canvas_aspect(s, file.c_str()) : 0.f;
+            if (ext == ".js") {   // (a p5.js sketch that paints in 2D, what it paints ThorVG's: canvas_sketch.h)
                 std::string under;   // (the film under it: what its createCapture and createVideo see)
                 for (int t : doc_laid(d)) { if (t == layer) break; if (doc_word(d, t, "kind") == "video") under = doc_word(d, t, "file"); }
                 std::shared_ptr<Script>& ready = doc_scripts_kept(d).sketches[file].ready;   // (what was run to see it runs, where no film is under it)
                 auto run = ready && under.empty() ? std::exchange(ready, nullptr) : std::make_shared<Script>(file, (doc_engine("third_party/js/p5") / "p5.min.js").string(), under);
                 if (!run->flat()) why = run->ok() ? "not a 2D sketch: " + file : run->trouble();
-                else if (fxOk && (made.drawn = sketch_picture(s, run, (doc_engine("third_party/filament_src/assets/fonts") / "Roboto-Medium.ttf").string(), 1.f, lay, fx))) s.playing.erase(made.drawn);
+                else if (fxOk && (made.drawn = sketch_canvas(s, run, (doc_engine("third_party/filament_src/assets/fonts") / "Roboto-Medium.ttf").string(), 1.f, lay, fx))) s.playing.erase(made.drawn);
             } else if (fxOk && aspect > 0.f) {   // (a photo with an edge, round corners or cut in: a rect as wide as it is, its own file its fill, as a shape filled with media is (Alight Motion's media layers take a border as its shapes do))
-                DrawnFx own = fx;
+                Canvas2DFx own = fx;
                 own.media = file;
                 char cut[256];   // (cut in: the rect it shows a path of its own within the whole photo, in its height from its middle, so what is left stays where it was)
                 std::snprintf(cut, sizeof cut, "M%.5f %.5f L%.5f %.5f L%.5f %.5f L%.5f %.5f Z", aspect * (cl - 0.5), ct - 0.5, aspect * (0.5 - std::min(cr, 0.95 - cl)), ct - 0.5,
                               aspect * (0.5 - std::min(cr, 0.95 - cl)), 0.5 - std::min(cb, 0.95 - ct), aspect * (cl - 0.5), 0.5 - std::min(cb, 0.95 - ct));
                 made.drawn = flat(s, cropped ? cut : "rect", aspect, mat4f{}, 1.f, float3{1.f}, lay, edge, own.over(1.f), 4, 0.5f, (float)doc_number(d, layer, "round", 0, 0));
-            } else if (fxOk && !shown.empty() && (made.drawn = picture(s, shown.c_str(), mat4f{}, rollHigh, float3{-1.f}, true, lay, fx, doc_word(d, layer, "marker").c_str()))) s.playing.erase(made.drawn);
-            if (made.drawn && made.drawn->lottie && !picture_deep(s, made.drawn).empty()) {   // (its 3D layers stood up where they are, as After Effects shows them)
+            } else if (fxOk && !shown.empty() && (made.drawn = image_canvas(s, shown.c_str(), mat4f{}, rollHigh, float3{-1.f}, true, lay, fx, doc_word(d, layer, "marker").c_str()))) s.playing.erase(made.drawn);
+            if (made.drawn && made.drawn->lottie && !canvas_deep(s, made.drawn).empty()) {   // (its 3D layers stood up where they are, as After Effects shows them)
                 made.motion = std::make_shared<Motion>();
                 if (motion_open(*made.motion, file.c_str()))
                     for (uint32_t id : made.drawn->deep) {
                         float4 box;
-                        if (Drawn* own = layer_picture(s, file.c_str(), id, 1.f / made.motion->h, &box)) made.deep.push_back({id, own, box});
+                        if (Canvas2D* own = layer_canvas(s, file.c_str(), id, 1.f / made.motion->h, &box)) made.deep.push_back({id, own, box});
                     }
             }
         } else if (kind == "text") {   // (words in a font: said by `say N text ...`; until then, the font's own name)
@@ -323,7 +323,7 @@ static bool doc_match(Doc& d) {
             } else {   // (a line is long and thin as it comes: 25 times as long as it is thick, a tenth of a unit thick)
                 const bool line = shape == "line", wave = shape == "wave";   // (a wave: a line waving, ten times as long as it is high)
                 fx.hollow = fill == "none";   // (filled with nothing: its edge alone, a frame)
-                fx.media = doc_word(d, layer, "fill_media");   // (filled with a picture's file: drawn_made.h flat)
+                fx.media = doc_word(d, layer, "fill_media");   // (filled with a picture's file: canvas_renderables.h flat)
                 fx.evenOdd = doc_word(d, layer, "fill_rule") == "evenodd";
                 const float high = line ? 0.04f : wave ? 0.3f : 1.f;
                 // (its outline alone, in one colour: cut into triangles and drawn by Filament as the scene's other layers

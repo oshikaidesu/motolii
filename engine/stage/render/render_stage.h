@@ -1,4 +1,4 @@
-// kit_stage.h: part of kit.h. Read only through kit.h.
+// render_stage.h: part of render.h. Read only through render.h.
 #include <filament/Camera.h>
 #include <filament/ColorGrading.h>
 #include <filament/Engine.h>
@@ -125,37 +125,37 @@ struct Stage {
     std::map<const void*, std::function<Sound()>> sounding;   // what is heard, each under its own thing: asked when a film is written
     std::map<const void*, std::function<void(double)>> playing;   // what goes on by itself as the stage's time does (films, pictures), each under its own thing
     std::vector<std::function<void()>> said_after;      // a word of their own after each line of `clock` and `soak`
-    struct Made { utils::Entity thing; const Mesh* of; int nth; mat4f place; bool matte = false;   // (matte: the shape a matte is cut by, in that matte's own scene)
+    struct Renderable { utils::Entity thing; const Mesh* of; int nth; mat4f place; bool matte = false;   // (matte: the shape a matte is cut by, in that matte's own scene)
                   InstanceBuffer* many = nullptr; int count = 1; };   // (all its places drawn in one go, Filament's own instancing: each place an instance of the one thing; `move` tells them all at once)
     utils::Entity sun;                     // the sun, where there is one (paper_and_sun), and all that goes by its direction: `sun_to`
     std::vector<MaterialInstance*> by_sun;
-    struct Matte { Scene* scene; View* view; Texture* picture; bool soft; Camera* eye; utils::Entity on; mat4f onPlace; };
+    struct Matte { Scene* scene; View* view; Texture* frameTexture; bool soft; Camera* eye; utils::Entity on; mat4f onPlace; };
     std::vector<Matte> mattes;   // the mattes: each a picture taken by its own eye, drawn before all else (matte); soft: some thing reads it blurred
     struct Cut { MaterialInstance* look; int slot, matte; float use, soft; };
     std::vector<Cut> cuts;       // which look reads which matte (matted): told where the matte's eye is before every picture
     Texture* white = nullptr;    // a white point: the matte of a thing that nothing cuts
     // (what is made once for this stage's engine and kept: a stage opened after another in the same program has its own)
     std::map<std::string, Material*> materials;    // each material file, read and built once
-    void* solids = nullptr; void* solidPictures = nullptr;   // Filament's reader of 3D files and its reader of their pictures (gltf_model.h)
-    std::vector<Made> made;   // every thing put on the stage: of which mesh, at which of that mesh's places (a film moves them: `move`)
+    void* solids = nullptr; void* solidTextures = nullptr;   // Filament's reader of 3D files and its reader of their pictures (gltf_model.h)
+    std::vector<Renderable> renderables;   // every thing put on the stage: of which mesh, at which of that mesh's places (a film moves them: `move`)
     // The desk: the editing window's whole stage pane (w, h pixels: 0, none), the picture there as on the stage but seen
     // further back, the stage's own lying at x, y (its top left) so many pixels a point; what lies off it is seen too.
     // Over it, the marks of the picked thing (its frame: middle, width, height, turn, the point it turns about, as
     // doc_frame gives them) and of the one under the hand; `point`: desk pixels a point of the screen the marks are sized in.
     struct { uint32_t w = 0, h = 0; double x = 0, y = 0, scale = 1, point = 2; math::mat4 was, wasCulled;
-             bool picked = false, hovered = false, knob = true; double pick[8] = {}, hover[8] = {}; } desk;
+             bool picked = false, hovered = false, rotateHandle = true; double pick[8] = {}, hover[8] = {}; } desk;
     std::function<void()> over;   // drawn last, over all of them (a whole-screen effect: screen_fx.h)
-    std::map<const void*, std::function<void()>> once;   // to do once before the next picture, by whose it is (a picture's distances from its edge: drawn_edge.h)
+    std::map<const void*, std::function<void()>> once;   // to do once before the next picture, by whose it is (a picture's distances from its edge: canvas_edge.h)
     std::vector<std::function<void()>> before;   // drawn before the stage's own view, each into a picture of its own (a thing with effects of its own: layer_fx.h)
     std::vector<std::function<void()>> aim;      // told before each frame begins, what those pictures and the looks that show them are (Filament sends a look's parameters on as a frame begins: FRenderer::beginFrame, FEngine::prepare)
     std::function<void()> lastly;   // and after everything, in the same frame (the desk: its stage's picture placed on it, live.h)
-    Texture* drawnInto = nullptr;   // the picture the views draw into (live.h, screen_fx.h); none: the screen
+    Texture* drawTarget = nullptr;   // the picture the views draw into (live.h, screen_fx.h); none: the screen
     RenderTarget* out = nullptr;   // where the picture goes at last (none: the screen; the window's live picture: live.h)
 };
 
 static Stage open_stage(int w, int h) {
     Stage s{w, h};
-    // (BACKEND=webgpu: Filament's WebGPU backend, Dawn, which is the way to Windows; it needs the Filament built from source, see gpu/kit_wgpu.sh)
+    // (BACKEND=webgpu: Filament's WebGPU backend, Dawn, which is the way to Windows; it needs the Filament built from source, see gpu/filament_webgpu.sh)
     const char* backend = getenv("BACKEND");
     s.engine = Engine::Builder().backend(backend && !strcmp(backend, "webgpu") ? Engine::Backend::WEBGPU : Engine::Backend::METAL).build();
     // (a picture that does nothing to its colours gets them through exactly: Filament may then take its one fine row of
@@ -173,7 +173,7 @@ static Stage open_stage(int w, int h) {
     s.view->setViewport({0, 0, (uint32_t)w, (uint32_t)h});
     s.view->setDithering(View::Dithering::NONE);
     s.view->setAntiAliasing(View::AntiAliasing::FXAA);
-    s.view->setMultiSampleAntiAliasingOptions({.enabled = true, .sampleCount = 4});   // (the edges of flat shapes drawn as triangles, drawn.h flat_mesh: as Unity's and three.js's are)
+    s.view->setMultiSampleAntiAliasingOptions({.enabled = true, .sampleCount = 4});   // (the edges of flat shapes drawn as triangles, canvas.h flat_mesh: as Unity's and three.js's are)
     s.view->setScreenSpaceRefractionEnabled(true);
     s.view->setVisibleLayers(0x03, 0x03);
     Renderer::ClearOptions clear{};
@@ -217,10 +217,10 @@ static void desk_lay(Stage& s, bool on) {
 
 // The room the glass mirrors and is lit by: one of the studios that come with Filament, made into a .ktx by cmgen.
 static bool room(Stage& s, const char* ktx, float intensity) {
-    static std::vector<std::vector<uint8_t>> kept;
-    kept.push_back(load_file(ktx));
-    if (kept.back().empty()) return false;
-    auto* bundle = new image::Ktx1Bundle(kept.back().data(), (uint32_t)kept.back().size());
+    static std::vector<std::vector<uint8_t>> ktxs;
+    ktxs.push_back(load_file(ktx));
+    if (ktxs.back().empty()) return false;
+    auto* bundle = new image::Ktx1Bundle(ktxs.back().data(), (uint32_t)ktxs.back().size());
     float3 sh[9];
     if (!bundle->getSphericalHarmonics(sh)) return false;
     Texture* tex = ktxreader::Ktx1Reader::createTexture(s.engine, bundle, false);
@@ -307,7 +307,7 @@ static std::vector<MaterialInstance*> add_parts(Stage& s, Mesh* m, const char* f
             mi->setParameter("matteUse", float4{0.f});
             mi->setParameter("matteSoft", float4{0.f});
         }
-        for (const char* name : {"backdrop", "edge"}) if (mat->hasParameter(name)) mi->setParameter(name, white_point(s), TextureSampler());   // (none read until doc.h says which, no bevel until drawn_made.h makes one: Filament refuses a sampler left unset)
+        for (const char* name : {"backdrop", "edge"}) if (mat->hasParameter(name)) mi->setParameter(name, white_point(s), TextureSampler());   // (none read until doc.h says which, no bevel until canvas_renderables.h makes one: Filament refuses a sampler left unset)
         looks.push_back(mi);
     }
     float3 low = n ? m->pos[0] : float3{0.f}, high = low;   // (Filament wants a thing's rough size if it casts or takes shadows)
@@ -337,7 +337,7 @@ static std::vector<MaterialInstance*> add_parts(Stage& s, Mesh* m, const char* f
         if (many) b.instances(count, many); else b.instances((size_t)copies);
         b.priority((uint8_t)order).build(*s.engine, e);
         s.scene->addEntity(e);
-        s.made.push_back({e, m, (int)at, place, false, many, (int)count});
+        s.renderables.push_back({e, m, (int)at, place, false, many, (int)count});
     }
     return looks;
 }
@@ -355,16 +355,16 @@ static MaterialInstance* add(Stage& s, Mesh* m, const char* filamat, std::vector
 // anew when it is built on it (RenderableManager::Builder::build), so it stays where it is, in the scene, under what it is under.
 static void more_parts(Stage& s, Mesh* m, size_t parts, MaterialInstance* look) {
     auto& faces = s.engine->getRenderableManager();
-    for (const Stage::Made& made : s.made) {
-        if (made.of != m) continue;
-        const auto at = faces.getInstance(made.thing);
+    for (const Stage::Renderable& built : s.renderables) {
+        if (built.of != m) continue;
+        const auto at = faces.getInstance(built.thing);
         const uint8_t mask = faces.getLayerMask(at), order = faces.getPriority(at), channel = faces.getChannel(at);
         const uint16_t blend = faces.getBlendOrderAt(at, 0);
         const bool everywhere = faces.isGlobalBlendOrderEnabledAt(at, 0);
         const Box box = faces.getAxisAlignedBoundingBox(at);
         RenderableManager::Builder b(parts);
         for (size_t k = 0; k < parts; ++k) b.geometry(k, RenderableManager::PrimitiveType::TRIANGLES, m->vb, m->ib, 0, 0).material(k, look).blendOrder(k, blend).globalBlendOrderEnabled(k, everywhere);
-        b.boundingBox(box).culling(false).castShadows(false).receiveShadows(false).layerMask(0xFF, mask).priority(order).channel(channel).build(*s.engine, made.thing);
+        b.boundingBox(box).culling(false).castShadows(false).receiveShadows(false).layerMask(0xFF, mask).priority(order).channel(channel).build(*s.engine, built.thing);
     }
 }
 static void reshape(Stage& s, Mesh* m, const std::vector<uint32_t>& ends) {
@@ -394,9 +394,9 @@ static void reshape(Stage& s, Mesh* m, const std::vector<uint32_t>& ends) {
     mesh_points(s, *m, m->vb, n);
     m->ib->setBuffer(*s.engine, copied(m->idx.data(), m->idx.size() * sizeof(uint32_t)));
     auto& faces = s.engine->getRenderableManager();
-    for (const Stage::Made& made : s.made) {
-        if (made.of != m) continue;
-        const auto at = faces.getInstance(made.thing);
+    for (const Stage::Renderable& built : s.renderables) {
+        if (built.of != m) continue;
+        const auto at = faces.getInstance(built.thing);
         for (size_t k = 0; k < ends.size() && k < faces.getPrimitiveCount(at); ++k) {
             const uint32_t from = k ? ends[k - 1] : 0;
             faces.setGeometryAt(at, k, RenderableManager::PrimitiveType::TRIANGLES, m->vb, m->ib, from, ends[k] - from);

@@ -1,6 +1,6 @@
 // sketch.h: part of doc.h. What a p5.js sketch draws in WEBGL, as p5 itself has it each frame (p5_mesh.h's __mesh_at:
 // its own shapes, its own vertices, what its camera sees), stood in the world as one mesh, made again each frame as a
-// sheet's is (kit_stage.h's reshape). Shapes come once and are laid out here (a thousand spheres are too many for a script
+// sheet's is (render_stage.h's reshape). Shapes come once and are laid out here (a thousand spheres are too many for a script
 // to turn each frame), so a sketch has no limit of copies, and any shape it can draw is the shape it drew. A line is a thin
 // band that faces the eye, as p5's line shader makes it. What it draws goes on from frame to frame until it is cleared.
 static const SketchShape* doc_sketch_shape(std::vector<SketchShape>& shapes, Script& run, size_t i) {
@@ -22,7 +22,7 @@ static const SketchShape* doc_sketch_shape(std::vector<SketchShape>& shapes, Scr
     return &shapes[i];
 }
 // A shader of a sketch's as a Filament material: what p5_mesh.h's __shader_text made of it, compiled by Filament's own matc as the kit's
-// are (gpu/kit_wgpu.sh), a third of a second for a real one, kept by what it says. What cannot be made says why and paints nothing.
+// are (gpu/filament_webgpu.sh), a third of a second for a real one, kept by what it says. What cannot be made says why and paints nothing.
 static SketchPaint doc_sketch_paint(Stage& s, const std::string& text, const std::string& names) {
     SketchPaint paint;
     std::istringstream lines(names);
@@ -73,8 +73,8 @@ static void doc_sketch_mesh(Doc& d, int layer, Doc::Shown& t, double now) {
     const float3 eye = float3{(float)(from.x / from.w), (float)(from.y / from.w), (float)(from.z / from.w)};
     t.look->setParameter("eye", eye), t.look->setParameter("fromSketch", math::mat3f(shown.upperLeft()));   // (what it lights itself it lights where it stands now)
     std::map<int, float> strong;
-    for (size_t i = 0; i < sc->knobs.size(); ++i)
-        if (const std::string& k = sc->knobs[i].name; k.rfind("line_", 0) == 0) strong[std::atoi(k.c_str() + 5)] = (float)doc_number(d, layer, sc->names[i].c_str(), now, sc->knobs[i].usual);
+    for (size_t i = 0; i < sc->parameters.size(); ++i)
+        if (const std::string& k = sc->parameters[i].name; k.rfind("line_", 0) == 0) strong[std::atoi(k.c_str() + 5)] = (float)doc_number(d, layer, sc->names[i].c_str(), now, sc->parameters[i].usual);
     if (t.sketchFrame == frame && t.sketchMade == doc_scripts_made(d) && length(t.sketchEye - eye) < 1e-4f && t.sketchStrong == strong) return;
     if (t.sketchMade != doc_scripts_made(d)) t.sketchShapes.clear(), t.sketchPics.clear(), t.sketchPaints.clear();
     t.sketchFrame = frame, t.sketchMade = doc_scripts_made(d), t.sketchEye = eye, t.sketchStrong = strong;
@@ -109,7 +109,7 @@ static void doc_sketch_mesh(Doc& d, int layer, Doc::Shown& t, double now) {
         const std::vector<uint8_t> said = sc->run->bytes("__mesh_pic(" + std::to_string(i) + ")");
         if (said.size() < 4 * sizeof(float)) break;
         const float* p = (const float*)said.data();
-        Drawn* pic = sketch_texture(s, sc->run.get(), (doc_engine("third_party/filament_src/assets/fonts") / "Roboto-Medium.ttf").string(), (int)i, (int)p[0], (int)p[1]);
+        Canvas2D* pic = sketch_texture(s, sc->run.get(), (doc_engine("third_party/filament_src/assets/fonts") / "Roboto-Medium.ttf").string(), (int)i, (int)p[0], (int)p[1]);
         t.sketchPics.push_back(pic);
         if (!pic) continue;
         constexpr TextureSampler::WrapMode wraps[] = {TextureSampler::WrapMode::CLAMP_TO_EDGE, TextureSampler::WrapMode::REPEAT, TextureSampler::WrapMode::MIRRORED_REPEAT};
@@ -117,7 +117,7 @@ static void doc_sketch_mesh(Doc& d, int layer, Doc::Shown& t, double now) {
         read.setWrapModeS(wraps[(int)p[2]]), read.setWrapModeT(wraps[(int)p[3]]);
         t.look->setParameter(("picture" + std::to_string(i)).c_str(), pic->texture, read);
     }
-    for (Drawn* pic : t.sketchPics) if (pic) picture_at(s, pic, (float)frame / 60.f);
+    for (Canvas2D* pic : t.sketchPics) if (pic) canvas_at(s, pic, (float)frame / 60.f);
     Mesh& m = *t.shape;
     m.pos.clear(), m.nrm.clear(), m.uv.clear(), m.uv1.clear(), m.color.clear(), m.idx.clear();
     std::vector<std::vector<uint32_t>> parts(worn.size() + 1);   // (0: sketch.mat's. Each way a part of its own, so that each wears what it was told)
@@ -191,7 +191,7 @@ static void doc_sketch_mesh(Doc& d, int layer, Doc::Shown& t, double now) {
     if (ends.size() > t.sketchParts) more_parts(s, &m, t.sketchParts = ends.size() + ends.size() / 2, t.look);
     reshape(s, &m, ends);
     auto& faces = s.engine->getRenderableManager();
-    for (const Stage::Made& made : s.made) {
+    for (const Stage::Renderable& made : s.renderables) {
         if (made.of != &m) continue;
         const auto at = faces.getInstance(made.thing);
         for (size_t i = 0; i < worn.size(); ++i) if (worn[i]) faces.setMaterialInstanceAt(at, i + 1, worn[i]);

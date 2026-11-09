@@ -6,20 +6,20 @@
 static int aviutl_module(lua_State* L) { return luaL_error(L, "needs %s.mod2, an AviUtl2 script module (a Windows DLL)", luaL_checkstring(L, 1)); }
 // ffi.load("kernel32")'s clock, as Wine gives it (dlls/ntdll/unix/sync.c NtQueryPerformanceCounter: the monotonic clock
 // counted at TICKSPERSEC, 10,000,000 a second): HexScript's Particle_H.lua times its own frame by it (M.clock). No other
-// Windows library and no other kernel32 call is here: the script stops saying which it wanted (aviutl_made's sandbox).
+// Windows library and no other kernel32 call is here: the script stops saying which it wanted (aviutl_open's sandbox).
 static int aviutl_ticks(lua_State* L) { return lua_pushnumber(L, (double)std::chrono::duration_cast<std::chrono::duration<long long, std::ratio<1, 10000000>>>(std::chrono::steady_clock::now().time_since_epoch()).count()), 1; }
 static int aviutl_pixelshader(lua_State* L) {   // (name, target, {resource...}, {constant...}, blend, sampler)
     AviutlRun& r = aviutl_of(L);
     const std::string name = luaL_checkstring(L, 1), target = aviutl_name(luaL_checkstring(L, 2)), blend = lua_isstring(L, 5) ? lua_tostring(L, 5) : "copy", sampler = aviutl_str(L, 6);
     const AviutlShader* sh = nullptr;
     std::string why;
-    door::Screen* d = aviutl_door(r, name, sampler == "clip" || sampler == "dot", why, &sh);
+    interop::Screen* d = aviutl_interop(r, name, sampler == "clip" || sampler == "dot", why, &sh);
     if (!d) return aviutl_no(L, "obj.pixelshader " + name + ": " + why.substr(0, 300));
     if (target.rfind("image:", 0) == 0 || !r.bufs.count(target)) return aviutl_no(L, "obj.pixelshader into " + target);
     std::vector<std::string> res;
     if (lua_istable(L, 3)) for (int i = 1; i <= (int)lua_objlen(L, 3); ++i) lua_rawgeti(L, 3, i), res.push_back(aviutl_name(aviutl_str(L, -1))), lua_pop(L, 1);
     else if (lua_isstring(L, 3)) res.push_back(aviutl_name(lua_tostring(L, 3)));
-    std::vector<Texture*> read((size_t)sh->pictures, r.none);
+    std::vector<Texture*> read((size_t)sh->textureCount, r.none);
     for (size_t i = 0; i < res.size() && i < read.size(); ++i) {
         if (res[i] == "random") { read[i] = r.random; continue; }
         if ((res[i] == "framebuffer" && !r.behind) || !r.bufs.count(res[i])) return aviutl_no(L, "obj.pixelshader reading " + res[i]);
@@ -35,8 +35,8 @@ static int aviutl_pixelshader(lua_State* L) {   // (name, target, {resource...},
     if (way == -2) return aviutl_no(L, "obj.pixelshader blend " + blend);
     const AviutlBuf& t = r.bufs[target];
     const int pass = r.draws[d]++;
-    if (!k.empty()) door::knobs(r.s->engine, d, k.data(), (uint32_t)k.size() * 4, pass);
-    door::draw(r.s->engine, d, read.data(), t.rt, t.w, t.h, pass, nullptr, way >= 0, std::max(way, 0), sampler == "dot" ? 1 : sampler == "loop" ? 2 : sampler == "mirror" ? 3 : 0);
+    if (!k.empty()) interop::parameters(r.s->engine, d, k.data(), (uint32_t)k.size() * 4, pass);
+    interop::draw(r.s->engine, d, read.data(), t.rt, t.w, t.h, pass, nullptr, way >= 0, std::max(way, 0), sampler == "dot" ? 1 : sampler == "loop" ? 2 : sampler == "mirror" ? 3 : 0);
     return 0;
 }
 static int aviutl_clearbuffer(lua_State* L) {   // (target[, w, h][, colour])
@@ -53,10 +53,10 @@ static int aviutl_copybuffer(lua_State* L) {   // (dst, src; src "image:" a pict
     AviutlRun& r = aviutl_of(L);
     const std::string to = aviutl_name(luaL_checkstring(L, 1)), from = aviutl_name(luaL_checkstring(L, 2));
     if (from.rfind("image:", 0) == 0 && to != "framebuffer") {
-        const AviutlBuf* const picture = aviutl_image(r, from.substr(6));
-        if (!picture) return lua_pushboolean(L, 0), 1;
-        const AviutlBuf& t = aviutl_buf(r, to, picture->w, picture->h);
-        aviutl_lay(r, *picture, t.rt, t.w, t.h, 0, 0, 1, 1, 0, 1, 0, 0, -1, 1);
+        const AviutlBuf* const img = aviutl_image(r, from.substr(6));
+        if (!img) return lua_pushboolean(L, 0), 1;
+        const AviutlBuf& t = aviutl_buf(r, to, img->w, img->h);
+        aviutl_lay(r, *img, t.rt, t.w, t.h, 0, 0, 1, 1, 0, 1, 0, 0, -1, 1);
         return lua_pushboolean(L, 1), 1;
     }
     if ((from == "framebuffer" || to == "framebuffer") && !r.behind) return aviutl_no(L, "obj.copybuffer " + to + " from " + from);
@@ -156,14 +156,14 @@ static int aviutl_getaudio(lua_State* L) {
     if (own) lua_pushvalue(L, into);
     return own ? 3 : 2;
 }
-static int aviutl_data(lua_State* L) { return lua_pushnil(L), 1; }   // (obj.data: what was kept with the object; none kept here, nil, as 波形ライン.obj2 asks it in a pcall and draws by its knobs without)
+static int aviutl_data(lua_State* L) { return lua_pushnil(L), 1; }   // (obj.data: what was kept with the object; none kept here, nil, as 波形ライン.obj2 asks it in a pcall and draws by its parameters without)
 // obj.setanchor(name, num, options...) as AviUtl2's lua.txt tells it (aviutl2_modern_docs, MIT: docs/lua/index.md):
 // a table's points too few for num, its {table} option taken, else laid by AviUtl itself. Its points are not on the
 // screen here yet for a hand to move, so points all on one spot (a table's usual {0,0,...}, BezierPath's) would stay a
 // path of no length: they are laid as a hand would first draw them, a screen's third from the object's middle: across
 // it as "line" joins them (one wave over and under), round it as "loop", "star" and "arm" join them or none, on a grid
 // for "mesh". Tracks'
-// points ("track", "x,y") are their keys': one, the knobs' values, for now.
+// points ("track", "x,y") are their keys': one, the parameters' values, for now.
 static int aviutl_setanchor(lua_State* L) {
     const int num = std::max(1, (int)aviutl_num(L, 2));
     if (!lua_isstring(L, 1) || lua_isnumber(L, 1)) return lua_pushinteger(L, num), 1;   // (a table itself: only its line shown)

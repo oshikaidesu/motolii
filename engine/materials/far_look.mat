@@ -1,5 +1,5 @@
 // far_look.mat: how the far faces of a glass solid look from within: the room's lamps mirrored on them, a thin shade
-// on each face, a darker line where a face is seen along itself. kit.h's thick_glass lays them (culling FRONT,
+// on each face, a darker line where a face is seen along itself. render.h's thick_glass lays them (culling FRONT,
 // blended) over the picture of the scene without the glass; the near faces (thick_glass.mat) bend that picture, so
 // the solid's own far side is seen through it, shifted and stretched: what tells a solid from a shell.
 material {

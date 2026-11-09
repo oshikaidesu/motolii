@@ -1,10 +1,10 @@
-// A recipe as code: a JavaScript file whose head declares its knobs in AviUtl2's manner, one a line,
+// A recipe as code: a JavaScript file whose head declares its parameters in AviUtl2's manner, one a line,
 //   // --track@count:Count,1,5000,800,1      a number: name:label,lowest,highest,as it comes,step
 //   // --check@spin:Spin,1                    on or off (1 or 0)
 //   // --select@way:Way,ring,grid,spiral      one of some words, the first as it comes
-//   // --group:Advanced                       the knobs after it folded away under that name, until a bare // --group
+//   // --group:Advanced                       the parameters after it folded away under that name, until a bare // --group
 //   // --macro@Spread:Spread,0.5 -> StepX 0 0.6, ScatterX 0 2
-//                                             one knob, 0 to 1 (as it comes: 0.5), turning others: each is its min + (max - min) x
+//                                             one parameter, 0 to 1 (as it comes: 0.5), turning others: each is its min + (max - min) x
 //                                             the macro, Min above Max the other way (Ableton's Rack Macro Controls, Live 12
 //                                             manual 25.7.1 Map Mode). On its card it stands first; what it turns is folded into
 //                                             Advanced, "← Spread" after its name, and may still be set by hand: the macro adds
@@ -13,8 +13,8 @@
 //                                             (document/expressions.h doc_macro_adds)
 // or, in place of those lines, leva's object form at its top, const knobs = { distance: 2, Advanced: folder({ ... }) } (script_leva.h);
 // and whose body says, for each copy of the thing it is given to, where it is and how:
-//   function each(i, n, t, k) { return { x, y, z, size, rotate, rotate_x, rotate_y, opacity }; }   // i of n copies, t seconds since the thing began, k the knobs (and k.duration: how long the thing lasts)
-// (as Cavalry's JavaScript Utility gives a Duplicator its points). Behind the door: QuickJS-ng (js_bench chose it).
+//   function each(i, n, t, k) { return { x, y, z, size, rotate, rotate_x, rotate_y, opacity }; }   // i of n copies, t seconds since the thing began, k the parameters (and k.duration: how long the thing lasts)
+// (as Cavalry's JavaScript Utility gives a Duplicator its points). Behind the interop: QuickJS-ng (js_bench chose it).
 // k also has duration and px (a pixel of the document, in the stage's units). A recipe may hold an After Effects expression
 // as it is posted: AE.compile(`...`) once, AE.run(f, ...) in each() (ae_expr.h; read once, not every frame).
 #pragma once
@@ -32,13 +32,13 @@
 // own watch runs in the window (dart:io's, on FSEvents), none in here; what is made from files asks its file again only then.
 static std::atomic<int>& files_changed() { static std::atomic<int> n{0}; return n; }
 
-struct ScriptKnob {
+struct ScriptParameter {
     std::string name, label, kind;   // kind: track, check, select or picture (an effect's image read from another thing)
     double low = 0, high = 1, usual = 0, step = 0;
     std::string words;               // a select's words, with spaces between
     std::string group;               // the group it lies in, as AviUtl2's head says (// --group:Name … // --group): its card's fold ("" none)
     struct Turned { std::string name; double low, high; };
-    std::vector<Turned> turns;       // a macro's (// --macro@): the knobs it turns and over what span; a macro is a track of 0 to 1
+    std::vector<Turned> turns;       // a macro's (// --macro@): the parameters it turns and over what span; a macro is a track of 0 to 1
     std::string by;                  // the macro that turns this one ("" none)
 };
 struct ScriptCopy { double x = 0, y = 0, z = 0, size = 1, rotate = 0, rotate_x = 0, rotate_y = 0, opacity = 1, scale_x = 1, scale_y = 1, scale_z = 1, colour = -1; };   // (colour: a solid copy's own, red green blue; -1: as the solid is)
@@ -84,16 +84,16 @@ inline bool script_pushes(const std::string& src) { return src.find("function fo
 inline bool script_is_sketch(const std::string& src) { return src.find("function each") == std::string::npos && (src.find("function draw") != std::string::npos || src.find("function relate") != std::string::npos || script_pushes(src) || src.find("function setup") != std::string::npos || src.find("createCanvas") != std::string::npos); }
 // The lines of a sketch that draw: a for makes hundreds from one line and a count may grow, the line stays. Each is told
 // to the run as it comes, __L (as Processing's Tweak Mode rewrites a sketch's source to reach its numbers,
-// java/src/processing/mode/java/tweak), and is a knob of the thing, how strong that line's shapes are, named line_ and its
+// java/src/processing/mode/java/tweak), and is a parameter of the thing, how strong that line's shapes are, named line_ and its
 // number: so a sketch is opened into few rows, however many it draws. Returns the source so told.
 struct SketchLine { int line; std::string what; };
 std::string sketch_marked(const std::string& src, std::vector<SketchLine>* lines);
-// The knobs a file declares (read from its head, a sketch's its lines that draw; empty if it has none or cannot be read).
-std::vector<ScriptKnob> script_knobs(const std::string& file);
+// The parameters a file declares (read from its head, a sketch's its lines that draw; empty if it has none or cannot be read).
+std::vector<ScriptParameter> script_parameters(const std::string& file);
 // The values an effect comes with where its own show nothing on a picture (Alight Motion's rule: an effect is seen as it
-// is put on, docs/internal/reports/alight_motion/alight_ui.md "最初の値"): first.tsv beside it, "file<TAB>knob<TAB>value" a line, measured by
-// fx_first.sh, laid over its knobs' usual values. The author's file is left as it is.
-void script_first(const std::string& file, std::vector<ScriptKnob>& knobs);
+// is put on, docs/internal/reports/alight_motion/alight_ui.md "最初の値"): first.tsv beside it, "file<TAB>parameter<TAB>value" a line, measured by
+// fx_first.sh, laid over its parameters' usual values. The author's file is left as it is.
+void script_first(const std::string& file, std::vector<ScriptParameter>& parameters);
 
 // How far an ease of anime.js (third_party/anime, MIT) has gone at u, 0 to 1: `said` as anime.js says it ("outElastic(1, .3)",
 // "spring({ bounce: .5 })", "linear(0, '0.25 75%', 1)", "steps(4)", "irregular(10, 1)"); `bundle` is where its file is.
@@ -119,14 +119,14 @@ public:
     std::vector<double> numbers(const std::string& js);   // what it answers to that, a Float64Array (empty: it failed, and says so once)
     std::vector<double> paints(int frame, int had, int pic = -1);
     std::vector<int> lines() const;   // (a sketch's lines that draw, as sketch_marked says)   // what makes that frame on a canvas holding the frame `had` (p5_stand.h's __paints)
-    // Each copy at a moment, the knobs as the document says them now (a select by the word it is).
+    // Each copy at a moment, the parameters as the document says them now (a select by the word it is).
     ScriptCopy each(int i, int n, double t, const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words);
-    // Every copy at once: each() for each, or, for a file with no each(), the whole file run with its knobs as globals
+    // Every copy at once: each() for each, or, for a file with no each(), the whole file run with its parameters as globals
     // (n0, n1...), time and frame, giving a Canvalry PointCloud whose points are in pixels (`unit` stage units a pixel).
     std::vector<ScriptCopy> copies(int n, double t, const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words, double unit);
 private:
-    void knobs(const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words);   // (told the script's knobs object)
-    ScriptCopy ask(int i, int n, double t);   // (each() with the knobs as last told)
+    void parameters(const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words);   // (told the script's parameters object)
+    ScriptCopy ask(int i, int n, double t);   // (each() with the parameters as last told)
 
     struct Own;
     std::unique_ptr<Own> own;

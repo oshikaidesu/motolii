@@ -153,7 +153,7 @@ static math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
     if (member)   // (laid on another shape's outline, evenly, each turned the way it goes there, as Cavalry's Duplicator on a shape)
         if (const int on = (int)doc_literal(d, layer, "copy_on", 0, 0); on && on != layer && doc_number(d, on, "copy_on", 0, 0) == 0.0) {
             const auto found = d.shown.find(on);
-            const Drawn* b = found == d.shown.end() ? nullptr : found->second.drawn;
+            const Canvas2D* b = found == d.shown.end() ? nullptr : found->second.drawn;
             if (b && b->cut && b->outline) {
                 const tvg::PathCommand* cmds; const tvg::Point* pts; uint32_t cmdsCnt = 0, ptsCnt = 0;
                 b->outline->path(&cmds, &cmdsCnt, &pts, &ptsCnt);
@@ -264,16 +264,16 @@ static std::vector<math::mat4> doc_joins(Doc& d, int layer, double now) {
 
 // The shapes the kit's mattes are cut by that `which` names, taken out of their matte's scene and done away with,
 // their looks too (a look holds the picture it reads: Filament will not let that picture go while a look holds it).
-static void doc_unshape(Stage& s, const std::function<bool(const Stage::Made&)>& which) {
+static void doc_unshape(Stage& s, const std::function<bool(const Stage::Renderable&)>& which) {
     auto& faces = s.engine->getRenderableManager();
-    for (size_t i = s.made.size(); i-- > 0;) {
-        if (!s.made[i].matte || !which(s.made[i])) continue;
-        const utils::Entity e = s.made[i].thing;
+    for (size_t i = s.renderables.size(); i-- > 0;) {
+        if (!s.renderables[i].matte || !which(s.renderables[i])) continue;
+        const utils::Entity e = s.renderables[i].thing;
         MaterialInstance* look = faces.getMaterialInstanceAt(faces.getInstance(e), 0);
         for (Stage::Matte& mt : s.mattes) mt.scene->remove(e);
         s.engine->destroy(e);
         s.engine->destroy(look);
-        s.made.erase(s.made.begin() + (long)i);
+        s.renderables.erase(s.renderables.begin() + (long)i);
     }
 }
 // Every layer told its moment: whether it is on (from its start, for its duration if it has one), what of itself it
@@ -303,7 +303,7 @@ static std::vector<float> doc_sound_now(Doc& d, int layer, const std::string& fi
         }
         return all;
     }
-    const int t = (int)doc_number(d, layer, doc_screen_knob(file, name).c_str(), now, 0);
+    const int t = (int)doc_number(d, layer, doc_screen_parameter(file, name).c_str(), now, 0);
     if (t <= 0 || !doc_knows(d, t, nullptr, nullptr, nullptr, false)) return {};
     const std::string heard = doc_word(d, t, "file");
     if (heard.empty()) return {};

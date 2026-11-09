@@ -3,7 +3,7 @@
 // drawn by moving this one's last picture: the pixels of one, the movement of the other. Made once, on a thread of its
 // own, into ~/Library/Caches/Motolii/mosh/<hash>.mp4, named by what goes in (the files as they are, the moment); the
 // thing plays its own film till then. A step on the film before it is decoded: first, before any of its effects.
-// (doc.h: read after kit.h)
+// (doc.h: read after render.h)
 #pragma once
 #include <sys/stat.h>
 #include <atomic>
@@ -63,7 +63,7 @@ static std::string mosh_file(const std::string& film, double at, const std::stri
             "mv out.mp4 " + mosh_quoted(out);
         const bool ok = std::system(("/bin/zsh -c " + mosh_quoted(cmd)).c_str()) == 0;
         std::filesystem::remove_all(work, e);
-        if (!ok) std::fprintf(stderr, "the datamosh of %s could not be made\n", film.c_str());
+        if (!ok) std::fprintf(stderr, "the datamosh of %s could not be built\n", film.c_str());
         mosh_done = true;
     }).detach();
     return "";

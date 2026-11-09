@@ -1,6 +1,6 @@
 // aviutl_load.h: part of aviutl_fx.h. obj.load as lua.txt says it, for a figure, a picture file (and obj.copybuffer's "image:"), words and the frame (the AviUtl2 script
 // skill's references/api.md, gasdyueer, MIT: "figure", name[, color, size, line, round]; "image", file, true or false).
-// Drawn by ThorVG's own CPU canvas (SwCanvas, in Motolii's ThorVG), its premultiplied pixels laid in the object as
+// Canvas2D by ThorVG's own CPU canvas (SwCanvas, in Motolii's ThorVG), its premultiplied pixels laid in the object as
 // they are, kept by what was asked (the same asked again is not drawn again).
 // The figures as sashimono-edit draws them (MIT, engine/sources.py _shape_path, _polygon_path, _star_path; objapi.py
 // FIGURE_NAMES, MAX_FIGURE_SIZE 4096, FILLED_LINE 4000): a square picture `size` wide (背景 the screen), polygons and
@@ -15,8 +15,8 @@
 static const std::map<std::string, int> aviutl_figures ={{"円", 0}, {"四角形", 4}, {"三角形", 3}, {"五角形", 5}, {"六角形", 6}, {"星形", -5}, {"背景", 1}};
 
 // Its pixels, as a picture of the run's own, kept by `key`; made by `paint` into a canvas w x h (none: false).
-static const AviutlBuf* aviutl_drawn(AviutlRun& r, const std::string& key, uint32_t w, uint32_t h, const std::function<bool(tvg::SwCanvas*)>& paint) {
-    if (const auto kept = r.loaded.find(key); kept != r.loaded.end()) return &kept->second;
+static const AviutlBuf* aviutl_canvas(AviutlRun& r, const std::string& key, uint32_t w, uint32_t h, const std::function<bool(tvg::SwCanvas*)>& paint) {
+    if (const auto cached = r.loaded.find(key); cached != r.loaded.end()) return &cached->second;
     if (!w || !h || w > 4096 || h > 4096) return nullptr;
     auto* pixels = new std::vector<uint32_t>((size_t)w * h, 0);
     tvg::Initializer::init(0);   // (ThorVG makes no canvas, and reads no file, when it is not started: tvgCanvas.cpp SwCanvas::gen)
@@ -56,7 +56,7 @@ static const AviutlBuf* aviutl_image(AviutlRun& r, std::string file) {
     delete p;
     if (!read) return nullptr;
     const auto at = std::filesystem::last_write_time(file, wrong);
-    return aviutl_drawn(r, "image|" + file + "|" + std::to_string((long long)at.time_since_epoch().count()), (uint32_t)std::lround(w), (uint32_t)std::lround(h), [&](tvg::SwCanvas* c) {
+    return aviutl_canvas(r, "image|" + file + "|" + std::to_string((long long)at.time_since_epoch().count()), (uint32_t)std::lround(w), (uint32_t)std::lround(h), [&](tvg::SwCanvas* c) {
         tvg::Picture* q = tvg::Picture::gen();
         return q->load(file.c_str()) == tvg::Result::Success && c->add(q) == tvg::Result::Success;
     });
@@ -107,7 +107,7 @@ static std::string aviutl_font_file(const std::string& name, bool bold, bool ita
 
 // obj.load "text": the words in obj.setfont's font, size, colour and decoration, a picture as large as they are set
 // (YMM4-LuaScript, routersys, MIT: TextRenderer.Render, the layout's own box; nothing said, one clear pixel). Set by
-// ThorVG's text as Motolii's words are (drawn_made.h type: its size in points, AviUtl's in pixels, so 72 / 96 of it).
+// ThorVG's text as Motolii's words are (canvas_renderables.h type: its size in points, AviUtl's in pixels, so 72 / 96 of it).
 // The decorations as sashimono-edit measured AviUtl2 v2.1.6a (MIT, compat/decoration.py DECORATIONS, by obj.setfont's
 // number in its order: mapping.py _DECORATION_BY_INDEX): an edge of 8, 4, 12 and 4 hundredths of the size outside the
 // letters (縁取り, 細, 太, 角), a shadow 5 hundredths right and down (影付き; 薄, half as strong), in the edge colour.
@@ -119,7 +119,7 @@ static const AviutlBuf* aviutl_text(AviutlRun& r, const std::string& words, uint
     const float out = (float)(size * (deco >= 0 && deco <= 6 ? edges[deco] : 0)), down = deco == 1 || deco == 2 ? (float)(0.05 * size) : 0.f;
     const std::string key = "text|" + f.name + "|" + std::to_string(size) + "|" + std::to_string(deco) + "|" + std::to_string(colour) + "|" + std::to_string(edge) + "|" + std::to_string(f.bold) + std::to_string(f.italic) + "|" + words;
     if (!measured) r.worded.insert(key);
-    if (const auto kept = r.loaded.find(key); kept != r.loaded.end()) return measured && (measured[0] = kept->second.w, measured[1] = kept->second.h), &kept->second;
+    if (const auto cached = r.loaded.find(key); cached != r.loaded.end()) return measured && (measured[0] = cached->second.w, measured[1] = cached->second.h), &cached->second;
     bool slant = false;
     const std::string file = aviutl_font_file(f.name, f.bold, f.italic, &slant);
     if (tvg::Text::load(file.c_str()) != tvg::Result::Success) return nullptr;
@@ -150,9 +150,9 @@ static const AviutlBuf* aviutl_text(AviutlRun& r, const std::string& words, uint
     if (measured) return measured[0] = (uint32_t)std::ceil(w), measured[1] = (uint32_t)std::ceil(h), tvg::Paint::rel(all), nullptr;
     all->translate(-x, -y);
     bool given = false;
-    const AviutlBuf* made = aviutl_drawn(r, key, (uint32_t)std::ceil(w), (uint32_t)std::ceil(h), [&](tvg::SwCanvas* c) { return given = true, c->add(all) == tvg::Result::Success; });
+    const AviutlBuf* built = aviutl_canvas(r, key, (uint32_t)std::ceil(w), (uint32_t)std::ceil(h), [&](tvg::SwCanvas* c) { return given = true, c->add(all) == tvg::Result::Success; });
     if (!given) tvg::Paint::rel(all);
-    return made;
+    return built;
 }
 
 static int aviutl_load(lua_State* L) {
@@ -179,7 +179,7 @@ static int aviutl_load(lua_State* L) {
             return lua_pushboolean(L, 1), 1;
         }
         const uint8_t cr = (colour >> 16) & 255, cg = (colour >> 8) & 255, cb = colour & 255;
-        return lay(aviutl_drawn(r, "figure|" + name + "|" + std::to_string(colour) + "|" + std::to_string(w) + "x" + std::to_string(h) + "|" + std::to_string(line), w, h, [&](tvg::SwCanvas* c) {
+        return lay(aviutl_canvas(r, "figure|" + name + "|" + std::to_string(colour) + "|" + std::to_string(w) + "x" + std::to_string(h) + "|" + std::to_string(line), w, h, [&](tvg::SwCanvas* c) {
             tvg::Shape* s = aviutl_figure(f->second, (float)w, (float)h);
             if (line <= 0) return s->fill(cr, cg, cb), c->add(s) == tvg::Result::Success;
             s->fill(0, 0, 0, 0), s->strokeWidth((float)(2 * line)), s->strokeFill(cr, cg, cb);   // (twice as wide, the half outside cut away by the figure)

@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
             std::string words = rest(1), lower = words, lines, said;
             std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return (char)std::tolower(c); });
             int plain = 0;
-            for (const char* book : {"../../../docs/internal/reports/effects/golf_noise.md"}) {   // (from out/wgpu_kit, where edit.sh runs this)
+            for (const char* book : {"../../../docs/internal/reports/effects/golf_noise.md"}) {   // (from out/filament_webgpu, where edit.sh runs this)
                 std::ifstream in(book);
                 int n = 0;
                 for (std::string l; std::getline(in, l);) {

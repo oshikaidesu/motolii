@@ -27,7 +27,7 @@ static void doc_look(Doc& d) {
     for (const int h : holders)
         for (const std::string& file : script_files(doc_word(d, h, h == 0 ? "script" : "fx")))
             if (DocScript* sc = doc_script_of(d, file); sc && sc->viewer)
-                told.push_back(viewer_said(file, sc->knobs, [&](size_t k) { return doc_number(d, h, sc->names[k].c_str(), s.now, sc->knobs[k].usual); }));
+                told.push_back(viewer_said(file, sc->parameters, [&](size_t k) { return doc_number(d, h, sc->names[k].c_str(), s.now, sc->parameters[k].usual); }));
     const bool theirs = std::any_of(told.begin(), told.end(), [](const std::string& t) { return t.find("\"colorGrading\"") != std::string::npos; });
     std::string key = grade;
     if (theirs) for (const std::string& t : told) key += t;
@@ -124,7 +124,7 @@ static void doc_look(Doc& d) {
                 }
         if (name == "clip_time") return d.stage->now;   // (the stage's own clock and length: the document's)
         if (name == "clip_length") return doc_seconds(d);
-        return doc_number(d, 0, doc_screen_knob(file, name).c_str(), d.stage->now, usual);
+        return doc_number(d, 0, doc_screen_parameter(file, name).c_str(), d.stage->now, usual);
     });
     const std::string behind = doc_word(d, 0, "background");
     if (doc_word(d, 0, "behind") == "room") {   // (the room itself behind everything, as bright as it lights the stage: its own picture, made once a room)
@@ -146,12 +146,12 @@ static void doc_look(Doc& d) {
     // solid layer whatever their priority, so a blended backdrop was painted over the solids.
     const std::string colour = doc_word(d, 0, "behind") == "room" ? "" : behind;
     if (colour != d.backdropIs) {
-        if (d.backdrop) picture_off(s, d.backdrop), d.backdrop = nullptr;
+        if (d.backdrop) canvas_off(s, d.backdrop), d.backdrop = nullptr;
         if (!colour.empty()) {
             const math::double4 up = s.camera->getProjectionMatrix() * s.camera->getViewMatrix() * math::double4{0, 1, 0, 1};
             if ((d.backdrop = flat(s, "rect", (float)s.w / (float)s.h, mat4f{}, (float)(2.0 * up.w / up.y), hex("background", float3{0.f}), "opaque"))) {   // (opaque: Filament draws it with the solid layers, first by its priority, not over them with the sheets)
                 auto& faces = s.engine->getRenderableManager();
-                for (const Stage::Made& made : s.made)
+                for (const Stage::Renderable& made : s.renderables)
                     if (made.of == d.backdrop->sheet) faces.setPriority(faces.getInstance(made.thing), 0), faces.setChannel(faces.getInstance(made.thing), 0);
                 d.backdrop->look->setDepthWrite(false), d.backdrop->look->setDepthCulling(false);
             }

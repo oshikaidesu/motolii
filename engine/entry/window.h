@@ -106,7 +106,7 @@ const char* motolii_shaping(Motolii*) {   // (the cards are the maker's, not the
 const char* motolii_spent(Motolii* m) {
     return by_look(m, [=] {
         char line[400];
-        std::snprintf(line, sizeof line, "changes %ld %.0f ms, reads %ld %.0f ms, moments %ld %.0f ms, draws %ld %.0f ms (waiting for the GPU %.0f ms); beats drawn on %ld, the GPU not done at %ld, nothing new at %ld, two changes in one %ld, unseen %ld; films put %.0f ms (most %.1f); films' frames kept %ld, from disk %ld, drawn %ld", m->many[0], 1e3 * m->spent[0], m->many[1], 1e3 * m->spent[1], m->many[2], 1e3 * m->spent[2], m->many[3], 1e3 * m->spent[3], m->live ? 1e3 * m->live->waited : 0.0, m->beats_rendered, m->beats_gpu_busy, m->beats_still, m->beats_two, m->beats_unseen, m->videos_ms, m->videos_most, films_kept.load(), films_disk.load(), films_drawn.load());
+        std::snprintf(line, sizeof line, "changes %ld %.0f ms, reads %ld %.0f ms, moments %ld %.0f ms, draws %ld %.0f ms (waiting for the GPU %.0f ms); beats drawn on %ld, the GPU not done at %ld, nothing new at %ld, two changes in one %ld, unseen %ld; films put %.0f ms (most %.1f); films' frames kept %ld, from disk %ld, drawn %ld", m->many[0], 1e3 * m->spent[0], m->many[1], 1e3 * m->spent[1], m->many[2], 1e3 * m->spent[2], m->many[3], 1e3 * m->spent[3], m->live ? 1e3 * m->live->waited : 0.0, m->beats_rendered, m->beats_gpu_busy, m->beats_still, m->beats_two, m->beats_unseen, m->videos_ms, m->videos_most, films_cached.load(), films_disk.load(), films_rendered.load());
         std::vector<std::pair<double, std::string>> calls;
         for (const auto& [name, cost] : m->by_call) {
             char one[160];
