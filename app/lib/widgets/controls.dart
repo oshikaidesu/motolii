@@ -5,9 +5,8 @@ import 'package:naked_ui/naked_ui.dart';
 import '../skin/tokens.dart';
 
 class PillSwitch extends StatelessWidget {
-  const PillSwitch({super.key, required this.on, this.fam = Fam.scatter});
+  const PillSwitch({super.key, required this.on});
   final bool on;
-  final Fam fam;
 
   /// Fine, not heavy (critique, 4 passes): a 28x16 track; off = a grey thumb on g20; on = an accent TINT with a 1px accent edge and a light thumb, never a solid accent block.
   @override

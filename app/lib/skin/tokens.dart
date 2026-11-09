@@ -72,20 +72,6 @@ abstract final class Grey {
   static Color get rowLine => ColorTheme.of('RowLine', g10);
 }
 
-/// A relation family: the colour a relation carries everywhere. [code] identity.dart
-class Fam {
-  const Fam(this.name, this.jp, this.c);
-  final String name, jp;
-  final Color c;
-  static const scatter = Fam('Scatter', '散らす', Color(0xFFE974AB));
-  static const along = Fam('Along Path', 'パスに沿って', Color(0xFF7DD5B1));
-  static const stagger = Fam('Stagger', 'ずらす', Color(0xFF4781E5));
-  static const face = Fam('Face', '向かせる', Color(0xFFEFCB4E));
-  static const follow = Fam('Follow', '追従', Color(0xFFF69260));
-  static const attach = Fam('Attach', 'くっつける', Color(0xFFA889E9));
-  static const all = [scatter, along, stagger, face, follow, attach];
-}
-
 abstract final class C {
   /// [open] Error and destructive actions. Delegates to [Role.error] (Grey keeps #E5584B).
   static Color get danger => Role.error;
@@ -121,8 +107,6 @@ abstract final class Role {
   static Color get key => _pick(N.g95, const Color(0xFFFAF500), const Color(0xFFF0E442));
   static Color get linked => _pick(N.g95, const Color(0xFFC77DD8), const Color(0xFFCC79A7));
 
-  /// A relation's own family colour when one is known (it is already CVD-checked); Grey and unknown family fall back to [linked].
-  static Color linkedFor(Fam? f) => f == null ? linked : f.c;
   static Color get selected => _pick(const Color(0xFF7A87E3), const Color(0xFF5C8DFF), const Color(0xFF4A8FE0));
 
   /// A still row with no key yet (hollow diamond): neutral cool grey-blue in A and B, today's grey in Grey. Never the mode hue.

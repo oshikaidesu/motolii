@@ -22,6 +22,9 @@ OWED = {
     # edit.sh's `effect` puts an effect on at the stage's moment (docs/using/make_intro_movie.md runs it); the window
     # asks later('effect') with its own moment. It goes when edit.cpp asks the same way.
     'motolii_now',
+    # The window asks later('undo') and later('drag_start'). edit.cpp calls these. The names go when the check reads that queue.
+    'motolii_undo',
+    'motolii_drag_start',
 }
 SAY = 'nothing in the window reaches this; wire it to a menu/dock/card or delete it'
 IDENT = re.compile(r'[A-Za-z_$][\w$]*')

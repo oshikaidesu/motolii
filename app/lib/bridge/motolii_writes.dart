@@ -76,8 +76,6 @@ extension MotoliiWrites on Motolii {
   /// Whether every change a hand makes is keyed now (Animate all).
   bool get keyingNow => _keying(_m, -1) != 0;
 
-  bool dragStart(int layer) => _took(_dragStart(_m, layer) != 0);
-
   /// A hand takes hold, without waiting (the window's way: refused, its let go says why).
   void take(int layer) => later('drag_start', layer: layer);
 
@@ -118,6 +116,4 @@ extension MotoliiWrites on Motolii {
   /// every other, its ticket said at once ([answer] says when it is done).
   int later(String call, {int layer = 0, String name = '', String word = '', double number = 0}) =>
       _with([call, name, word], (s) => _later(_m, s[0], layer, s[1], s[2], number));
-
-  bool undo() => _took(_undo(_m) != 0);
 }

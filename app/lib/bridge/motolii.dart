@@ -220,7 +220,6 @@ class Motolii {
   late final _easing = _b.motolii_easing;
   late final _path3 = _b.motolii_path3;
   late final _keying = _b.motolii_keying;
-  late final _dragStart = _b.motolii_drag_start;
   late final _dragUpdate = _b.motolii_drag_update;
   late final _put = _b.motolii_put;
   late final _createScripts = _b.motolii_create_scripts;
@@ -238,7 +237,6 @@ class Motolii {
   late final _together = _b.motolii_together;
   late final _frames = _b.motolii_frames;
   late final _cacheRuns = _b.motolii_cache;
-  late final _undo = _b.motolii_undo;
   late final _error = _b.motolii_error;
   late final _list = _b.motolii_list;
   late final _still = _b.motolii_still;

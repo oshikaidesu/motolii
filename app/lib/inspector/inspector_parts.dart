@@ -86,24 +86,13 @@ class Pop extends InheritedWidget {
 
   /// Each card wears its kind as a colour, so a folded stack reads by hue before it reads by word.
   /// The layer's own cards are muted; effects are saturated, since they are the ones that pile up.
-  static Color get toneTransform => ColorTheme.of('ToneTransform', const Color(0xFF6F9CF0));
   static Color get toneLayer => ColorTheme.of('ToneLayer', const Color(0xFF9AA4B2));
-  static Color get toneText => ColorTheme.of('ToneText', const Color(0xFFD9D2C3));
-  static Color get toneFill => ColorTheme.of('ToneFill', const Color(0xFFD9A47A));
   static Color get toneBlend => ColorTheme.of('ToneBlend', const Color(0xFF7FB8B0));
 
-  /// Host features (no shader): one hue per family, so a Repeater and a Trim Paths never read as the same kind of card.
   static Color get tonePlace => ColorTheme.of('TonePlace', const Color(0xFFF08A5D));
-  static Color get tonePath => ColorTheme.of('TonePath', const Color(0xFF5CC8E8));
-  static Color get toneSolid => ColorTheme.of('ToneSolid', const Color(0xFFC9A0DC));
   static Color get toneTextAnim => ColorTheme.of('ToneTextAnim', const Color(0xFFE8C76A));
-  static Color get toneMask => ColorTheme.of('ToneMask', const Color(0xFF8FBF73));
   static Color get toneTime => ColorTheme.of('ToneTime', const Color(0xFFE58FB4));
   static Color get toneLayout => ColorTheme.of('ToneLayout', const Color(0xFF7C9CBF));
-  static Color get toneParticles => ColorTheme.of('ToneParticles', const Color(0xFFF2A65A));
-  static Color get toneCamera => ColorTheme.of('ToneCamera', const Color(0xFFA7B4C8));
-  static Color get toneOutput => ColorTheme.of('ToneOutput', const Color(0xFF6FD6C2));
-  static Color get toneLink => ColorTheme.of('ToneLink', const Color(0xFFB0A6F0));
   @override
   bool updateShouldNotify(Pop old) => false;
 }
