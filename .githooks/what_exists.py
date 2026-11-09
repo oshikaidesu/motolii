@@ -2,7 +2,7 @@
 # What is already here that does this? Asked in words, on both sides of the app.
 #   what_exists.py WORD...          by hand, both sides:  python3 .githooks/what_exists.py wave copies noise
 #   what_exists.py --text SIDE      the words of a text on stdin (an edit, a diff): what it is most about. SIDE: engine | dart
-#   what_exists.py --sketch SIDE    a sketch on stdin: code written as one wishes it could be, before anything is looked
+#   what_exists.py --sketch SIDE [FILE]   a sketch on stdin (FILE: the file of ours it is for; the answer is then kept): code written as one wishes it could be, before anything is looked
 #                                   up (it need not run). Each name it calls is asked for: exists, something near, or
 #                                   nothing. What is left as nothing is all that would be ours to write.
 #   nearest(top, text, side)        the same from Python (.claude/hooks/own_code_sign.py, .githooks/own_code_check.py)
@@ -180,13 +180,20 @@ def sketch(top, text, side):
 if __name__ == '__main__':
     top = subprocess.run(['git', 'rev-parse', '--show-toplevel'], capture_output=True, text=True).stdout.strip()
     if sys.argv[1:2] == ['--sketch']:
-        found = sketch(top, sys.stdin.read(), sys.argv[2] if len(sys.argv) > 2 else 'dart')
+        text = sys.stdin.read()
+        found = sketch(top, text, sys.argv[2] if len(sys.argv) > 2 else 'dart')
+        lines = []
         for name, how, things in found:
-            print(f'{name}: {"exists" if how == "is" else "nothing is called this; the nearest" if how == "like" else "nothing here does this"}')
-            for i, shown in things:
-                print(f'    {i}   — {shown}')
+            lines.append(f'{name}: {"exists" if how == "is" else "nothing is called this; the nearest" if how == "like" else "nothing here does this"}')
+            lines += [f'    {i}   — {shown}' for i, shown in things]
         counts = {h: sum(1 for _, how, _ in found if how == h) for h in ('is', 'like', 'nothing')}
-        print(f'{len(found)} names: {counts["is"]} exist, {counts["like"]} have something near, {counts["nothing"]} would be ours to write', file=sys.stderr)
+        lines.append(f'{len(found)} names: {counts["is"]} exist, {counts["like"]} have something near, {counts["nothing"]} would be ours to write')
+        print('\n'.join(lines))
+        if len(sys.argv) > 3 and found:   # (a sketch for a file of ours: kept, so the door and the commit can see it was asked)
+            kept = os.path.join(subprocess.run(['git', 'rev-parse', '--path-format=absolute', '--git-common-dir'], capture_output=True, text=True).stdout.strip(), 'motolii-sketches')
+            os.makedirs(kept, exist_ok=True)
+            with open(os.path.join(kept, sys.argv[3].replace('/', '__')), 'w', encoding='utf-8') as f:
+                f.write(text + '\n---\n' + '\n'.join(lines) + '\n')
         sys.exit(0)
     if sys.argv[1:2] == ['--text']:
         found, count = nearest(top, sys.stdin.read(), sys.argv[2] if len(sys.argv) > 2 else 'engine')
