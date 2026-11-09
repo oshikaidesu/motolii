@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # The measurable rules of AGENTS.md 「構成の目標」, checked on what is staged (the index), not on the disk.
 # A rule nobody checks is ignored: every one here was written after a session left that mess behind.
-# Run by the pre-commit hook after size_check.py; or by hand (it then checks the index as it is).
+#   layout_check.py              the index as it is: the pre-commit hook after size_check.py, or by hand
+#   layout_check.py --all [BASE] the commit checked out (HEAD); rule 5 on the files added since BASE when given:
+#                                CI (.github/workflows/checks.yml) on a pull request's tree
 import re, subprocess, sys
 from collections import Counter
 
@@ -22,8 +24,18 @@ def paths(*a):
     return [p for p in git(*a, '-z').split('\0') if p]
 
 
-files = paths('ls-files', '--cached')
-added = paths('diff', '--cached', '--name-only', '--diff-filter=A')
+if sys.argv[1:2] == ['--all']:
+    base = sys.argv[2] if len(sys.argv) > 2 else ''
+    if base and not git('rev-parse', '-q', '--verify', base + '^{commit}').strip():
+        print(f'layout check: base {base} is not in this clone; rule 5 skipped', file=sys.stderr)
+        base = ''
+    tree = 'HEAD'
+    files = paths('ls-tree', '-r', '--name-only', 'HEAD')
+    added = paths('diff', '--name-only', '--diff-filter=A', base, 'HEAD') if base else []
+else:
+    tree = ''
+    files = paths('ls-files', '--cached')
+    added = paths('diff', '--cached', '--name-only', '--diff-filter=A')
 bad = []
 
 # rule 1: the root holds the 4 entrances and the fixed documents, nothing else
@@ -48,7 +60,7 @@ for area in AREAS:
     if readme_path not in files:
         bad.append(f'rule 2: {readme_path}: missing; write it with a table naming every folder in {area}/')
         continue
-    readme = git('show', f':{readme_path}')
+    readme = git('show', f'{tree}:{readme_path}')
     folders = sorted({p.split('/')[1] for p in inside if p.count('/') >= 2})
     wanted = [(f'{area}/{f}', f) for f in folders]
     if area == 'app':
