@@ -550,14 +550,13 @@ static bool doc_raise(Doc& d, int thing, int places) {
 // Code below the head is the first thing's script.
 struct DocRecipe { std::string name, what, path, program; std::vector<std::string> lines; bool code = false; };   // (program: what a closed pack was written for, listed on the Program shelf, not Create; "" one of Create's)
 static std::vector<DocRecipe> doc_recipes_read();
+// A part of the engine itself, not a shelf (third_party/'s p5.js, anime.js, Filament's fonts and matc): engine/<part>, where this library's out/ is.
+static std::filesystem::path doc_engine(const char* part) { Dl_info lib{}; dladdr((const void*)&doc_engine, &lib); std::error_code wrong; return std::filesystem::weakly_canonical(lib.dli_fname ? lib.dli_fname : ".", wrong).parent_path().parent_path() / part; }
 // The folders a kind of file is read from: the library's own (shelves/, beside the engine/ whose out/ this library is in), then the maker's
 // own, as a maker's scripts and presets are theirs (MOTOLII_OWN, or %APPDATA%/Motolii on Windows, or
 // ~/Library/Application Support/Motolii on a Mac), each with a folder of that kind in it. The maker's of a name stands.
 static std::vector<std::filesystem::path> doc_folders(const char* folder) {
-    Dl_info lib{};
-    dladdr((const void*)&doc_folders, &lib);
-    std::error_code wrong;
-    std::vector<std::filesystem::path> at{std::filesystem::weakly_canonical(lib.dli_fname ? lib.dli_fname : ".", wrong).parent_path().parent_path().parent_path() / "shelves" / folder};
+    std::vector<std::filesystem::path> at{(doc_engine("..") / "shelves" / folder).lexically_normal()};
     if (const char* own = std::getenv("MOTOLII_OWN")) at.push_back(std::filesystem::path(own) / folder);
     else if (const char* app = std::getenv("APPDATA")) at.push_back(std::filesystem::path(app) / "Motolii" / folder);
     else if (const char* home = std::getenv("HOME")) at.push_back(std::filesystem::path(home) / "Library" / "Application Support" / "Motolii" / folder);

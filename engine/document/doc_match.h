@@ -73,7 +73,7 @@ static long long doc_sketch_written(Doc& d, const std::string& file) {
     const long long stamp = (long long)std::filesystem::last_write_time(file, wrong).time_since_epoch().count();
     if (wrong || stamp == one.seen) return one.whole;
     one.seen = stamp;
-    auto run = std::make_shared<Script>(file, (doc_folders("third_party/js/p5").front() / "p5.min.js").string());
+    auto run = std::make_shared<Script>(file, (doc_engine("third_party/js/p5") / "p5.min.js").string());
     if (run->flat()) one.whole = stamp, one.ready = run;
     if (run->ok()) doc_scripts_kept(d).why.erase(file);
     else doc_scripts_kept(d).why[file] = d.trouble = run->trouble();
@@ -290,9 +290,9 @@ static bool doc_match(Doc& d) {
                 std::string under;   // (the film under it: what its createCapture and createVideo see)
                 for (int t : doc_laid(d)) { if (t == thing) break; if (doc_word(d, t, "kind") == "film") under = doc_word(d, t, "file"); }
                 std::shared_ptr<Script>& ready = doc_scripts_kept(d).sketches[file].ready;   // (what was run to see it runs, where no film is under it)
-                auto run = ready && under.empty() ? std::exchange(ready, nullptr) : std::make_shared<Script>(file, (doc_folders("third_party/js/p5").front() / "p5.min.js").string(), under);
+                auto run = ready && under.empty() ? std::exchange(ready, nullptr) : std::make_shared<Script>(file, (doc_engine("third_party/js/p5") / "p5.min.js").string(), under);
                 if (!run->flat()) why = run->ok() ? "not a 2D sketch: " + file : run->trouble();
-                else if (fxOk && (made.drawn = sketch_picture(s, run, (doc_folders("third_party/filament_src/assets/fonts").front() / "Roboto-Medium.ttf").string(), 1.f, lay, fx))) s.playing.erase(made.drawn);
+                else if (fxOk && (made.drawn = sketch_picture(s, run, (doc_engine("third_party/filament_src/assets/fonts") / "Roboto-Medium.ttf").string(), 1.f, lay, fx))) s.playing.erase(made.drawn);
             } else if (fxOk && aspect > 0.f) {   // (a photo with an edge, round corners or cut in: a rect as wide as it is, its own file its fill, as a shape filled with media is (Alight Motion's media layers take a border as its shapes do))
                 DrawnFx own = fx;
                 own.media = file;
@@ -533,7 +533,7 @@ static Doc* doc_open(Stage& s, const char* path) {
     }, nullptr, nullptr);
     // (and how far an ease of anime.js has gone at u, as anime.js says it: anime('outElastic(1, .3)', u), script.h)
     sqlite3_create_function(d->file, "anime", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, nullptr, [](sqlite3_context* c, int, sqlite3_value** v) {
-        static const std::string bundle = (doc_folders("third_party/anime").front() / "anime.umd.min.js").string();
+        static const std::string bundle = (doc_engine("third_party/anime") / "anime.umd.min.js").string();
         std::string trouble;
         const double went = anime_ease(bundle, (const char*)sqlite3_value_text(v[0]), sqlite3_value_double(v[1]), &trouble);
         if (trouble.empty()) sqlite3_result_double(c, went);

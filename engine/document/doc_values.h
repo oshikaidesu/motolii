@@ -263,7 +263,7 @@ static char doc_thor_letter(const std::string& w) {
     for (int i = 0; i < 4; ++i) if (w == doc_thor_names[i]) return "trsb"[i];
     return 0;
 }
-static std::vector<std::filesystem::path> doc_folders(const char* folder);
+static std::vector<std::filesystem::path> doc_folders(const char* folder); static std::filesystem::path doc_engine(const char* part);   // (doc_edit.h)
 static DocScript* doc_script_of(Doc& d, const std::string& file, bool runs = true) {
     if (file.empty() || file == "none" || std::filesystem::path(file).extension() == ".mid") return nullptr;   // (a MIDI file's notes are copies, not a script: midi.h)
     DocScript& s = doc_scripts(d)[file];
@@ -298,7 +298,7 @@ static DocScript* doc_script_of(Doc& d, const std::string& file, bool runs = tru
             return &s;
         }
         if (lottie) return &s;   // (read, not run)
-        if (!screen && runs) s.run = std::make_unique<Script>(fx_source(file), (doc_folders("third_party/js/p5").front() / "p5.min.js").string());   // (a .wgsl or an ISF .fs is drawn, not run: screen.h)
+        if (!screen && runs) s.run = std::make_unique<Script>(fx_source(file), (doc_engine("third_party/js/p5") / "p5.min.js").string());   // (a .wgsl or an ISF .fs is drawn, not run: screen.h)
         if (s.run && !s.run->ok() && was.run && was.run->ok()) {   // (code half typed: what ran stays, and says why)
             doc_scripts_kept(d).why[file] = d.trouble = s.run->trouble();
             s = std::move(was), s.stamp = stamp, s.seen = files_changed();
