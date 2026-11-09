@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 
-import '../skin/tokens.dart';
-import 'inspector_parts.dart';
+import '../../skin/tokens.dart';
+import '../inspector_parts.dart';
 
 /// The panels that own lists (fonts, colours, eases). The Inspector shows what is set and sends you there; it never holds the list.
 enum LinkTo {
@@ -12,47 +12,6 @@ enum LinkTo {
   const LinkTo(this.panel, this.shelf);
   final String panel, shelf;
   String get route => panel == shelf ? panel : '$panel › $shelf';
-}
-
-/// One cell: what is set now, and where it is chosen.
-/// contract: a tap only asks for the panel (`route` in Doc, the lab's stand-in); the choice made there comes back as the value.
-class PanelLink extends StatelessWidget {
-  const PanelLink({super.key, required this.to, required this.value, this.lead, this.label, this.id = ''});
-  final LinkTo to;
-  final String value, id; // (id: the slot it is aimed at, as a block tile's link is)
-  final String? label;
-  final Widget? lead;
-
-  @override
-  Widget build(BuildContext context) {
-    final x = Ctx.of(context), off = x.cfg.locked;
-    return Hov(
-      key: ValueKey('link:${to.name}:${id.isEmpty ? label ?? '' : id}'),
-      cursor: off ? SystemMouseCursors.basic : SystemMouseCursors.click,
-      onTap: off
-          ? null
-          : () {
-              x.doc.s2['route.at'] = id;
-              x.doc.str('route', to.route);
-            },
-      builder: (_, h) => Container(
-        height: Pop.cell,
-        padding: EdgeInsets.only(left: Shape.s(8), right: Shape.s(6)),
-        decoration: BoxDecoration(color: h && !off ? Grey.g20 : Pop.well, borderRadius: BorderRadius.all(Shape.r(6))),
-        child: Row(
-          children: [
-            if (label case final l?) ...[Text(l, style: T.label(Grey.g63)), SizedBox(width: Shape.s(8))],
-            if (lead case final w?) ...[w, SizedBox(width: Shape.s(6))],
-            Expanded(
-              child: Text(value, style: T.value(Grey.g95), maxLines: 1, overflow: TextOverflow.ellipsis),
-            ),
-            if (to.shelf != label) ...[Text(to.shelf, style: T.label(h && !off ? Grey.g95 : Grey.g56)), SizedBox(width: Shape.s(2))],
-            CustomPaint(size: const Size(8, 8), painter: _LinkArrowPaint(h && !off ? Grey.g95 : Grey.g56)),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 /// The value line of a block tile that is chosen elsewhere: the value, then where it is chosen.
@@ -91,23 +50,6 @@ class LinkLine extends StatelessWidget {
   }
 }
 
-/// A small swatch for a colour link.
-class LinkSwatch extends StatelessWidget {
-  const LinkSwatch(this.hex, {super.key});
-  final String hex;
-  @override
-  Widget build(BuildContext context) => Container(
-    width: Shape.z(14),
-    height: Shape.z(14),
-    decoration: BoxDecoration(
-      color: hexControls(hex) ?? Grey.g95,
-      borderRadius: BorderRadius.all(Shape.r(3)),
-      border: Border.all(color: Grey.g38),
-    ),
-  );
-}
-
-/// The arrow that says "opens elsewhere".
 class _LinkArrowPaint extends CustomPainter {
   const _LinkArrowPaint(this.c);
   final Color c;

@@ -69,7 +69,7 @@ extension _StageViewDraw on _StageViewState {
     }
     ws.after(m.later('together'), (done, _) {
       if (!done || made <= 0) return;
-      if (kind == 'text') textToType = true; // (typed at once: the Text card takes the keys, inspector_material.dart)
+      if (kind == 'text') textToType = true; // (typed at once: its words field takes the keys, inspector_param_controls_tile.dart)
       ws.select('$made');
     });
     ws.setView('stage.tool', 0); // (one drawn, the hand is free: Alight Motion's Add is one act and Figma's tool goes back to select; After Effects' stays, so they part and Alight Motion decides: golf_noise.md head, ㊼)

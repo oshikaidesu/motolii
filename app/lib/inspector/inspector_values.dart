@@ -1,85 +1,16 @@
-// Part of inspector_state.dart: the mock document the controls edit (Doc).
+// Part of inspector_state.dart: the values the panel's cards edit (Doc), as the host gives them; none of its own.
 part of 'inspector_state.dart';
 
-/// A pure-Dart mock of the selected layer(s). Not the product's model; only enough to make every control really do its job.
+/// The picked thing's values as the panel edits them: the host's numbers, words and switches, keyed `v_` and the
+/// value's name as its cards declare them ([Fx]). It holds no value of its own: a card's default is its declaration's.
 class Doc extends ChangeNotifier {
-  Doc(this.kind, {this.count = 1, int effects = 2, List<Fx>? fx, this.cards = const []}) : fxDefs = fx ?? kEffects {
-    void s(String id, double v) {
-      this.v[id] = v;
-      d[id] = v;
-    }
-
-    s('v_x', 960);
-    s('v_y', 540);
-    s('v_z', 0);
-    s('v_scale_x', 100);
-    s('v_scale_y', 100);
-    s('v_scale_z', 100);
-    s('v_rotate_x', 0);
-    s('v_rotate_y', 0);
-    s('v_rotate', 0);
-    s('v_anchor_x', 50);
-    s('v_anchor_y', 50);
-    s('v_anchor_z', 0);
-    s('v_opacity', 100);
-    s('depth', 0);
-    s('v_x', 960);
-    s('v_y', 540);
-    s('v_z', 0);
-    s('v_rotate_x', 12);
-    s('v_rotate_y', -20);
-    s('v_distance', 1800);
-    s('v_zoom', 100);
-    s('v_rotate', 0);
-    s('v_size', 48);
-    s('v_stroke_width', 2);
-    s('lay.cols', 3);
-    s('lay.rows', 2);
-    s('lay.gap', 8);
-    s('lay.pad', 16);
-    s('lay.w', 480);
-    s('rel.d', 72);
-    s('rel.s', 48);
-    s('rel.f', 36);
-    s('comp.w', 1920);
-    s('comp.h', 1080);
-    s('comp.fps', 30);
-    for (final f in [...fxDefs, ...cards]) {
+  Doc(this.kind, {this.count = 1, this.cards = const []}) {
+    for (final f in cards) {
       for (final (i, p) in f.params.indexed) {
-        paramDefaults(f.id, p).forEach(s);
-        if (p.look == ParamLook.colour) s2['${f.id}_${p.id}'] = paramColour(f.decls[i]);
-        if (p.look == ParamLook.choice) s2['${f.id}_${p.id}'] = p.options[p.def.round().clamp(0, p.options.length - 1)];
+        paramDefaults(f.id, p).forEach((id, x) => v[id] = d[id] = x); // (the declaration's @default, until the host says the value)
+        if (p.look == ParamLook.color) s2.putIfAbsent('${f.id}_${p.id}', () => paramColor(f.decls[i]));
+        if (p.look == ParamLook.choice) s2.putIfAbsent('${f.id}_${p.id}', () => p.options[p.def.round().clamp(0, p.options.length - 1)]);
       }
-    }
-    fxOrder.addAll(fx == null ? kEffects.take(effects).map((f) => f.id) : fx.map((f) => f.id));
-    v['v_x'] = 420.5;
-    v['v_opacity'] = 62;
-    v['v_rotate'] = 450;
-    v['blur_radius'] = 24;
-    keys['v_position'] = KeyS.at;
-    keys['v_rotate'] = KeyS.anim;
-    s2['v_parent'] = 'None';
-    s2['v_blend'] = 'Normal';
-    s2['v_parent'] = 'None';
-    s2['v_text'] = 'Hero title\nSmall move changes everything.';
-    s2['v_file'] = 'Inter Display';
-    s2['v_align'] = 'Left';
-    s2['size'] = 'Hug';
-    s2['v_fill'] = '#D9D2C3';
-    s2['v_stroke'] = 'None';
-    b['ghost'] = false;
-    b['v_clip'] = false;
-    b['lay.on'] = true;
-    b['lay.ignore'] = false;
-    if (kind == Kind.several) {
-      void m(String id, List<double> xs) => multi[id] = xs;
-      for (final e in v.entries) {
-        multi[e.key] = List.filled(count, e.value);
-      }
-      m('v_x', [120, 360, -40]);
-      m('v_opacity', [100, 62, 100]);
-      m('v_rotate', [0, 0, 0]);
-      m('v_scale_x', [100, 100, 80]);
     }
   }
 
@@ -93,7 +24,6 @@ class Doc extends ChangeNotifier {
   /// What a chooser may offer, where the host says so (by the chooser's id): otherwise its own list.
   final Map<String, List<String>> choices = {};
   final Map<String, bool> b = {};
-  final List<String> fxOrder = [];
 
   /// What the host calls the layer's kind, where the six kinds have no word for it (a film, a picture, a solid); and the
   /// values the host has for it (a card of values it has not is not shown); null: the sample's.
@@ -104,19 +34,12 @@ class Doc extends ChangeNotifier {
   /// The host's own cards of values (each one's Params, its fields keyed `v_` and the value's name): what the host has
   /// beyond the sample's cards.
   final List<Fx> cards;
-
-  /// The effects the cards are made from: the host's, or the sample's.
-  final List<Fx> fxDefs;
-  bool animateAll = false, link = true;
+  bool animateAll = false;
 
   /// Whether an edit marks its own key (the sample's rule, D2); off where a host owns the keys (joined: the document
   /// keys what a hand changes, and a mark told besides was a second key, made before the change, with the old value).
   bool marksEdits = true;
 
-  /// The layer's space, kept as a word with the others so that a host is told of it (d2, d25, d3).
-  Space get space => _spaceWords.entries.where((e) => e.value == s2['v_space']).firstOrNull?.key ?? Space.d3; // (no word: a solid, 3D only)
-  set space(Space s) => s2['v_space'] = _spaceWords[s]!;
-  static const _spaceWords = {Space.d2: '2d', Space.d25: '2.5d', Space.d3: '3d'}; // (the document's words for the three plates)
   String? directHover;
   String query = '';
 
@@ -131,16 +54,7 @@ class Doc extends ChangeNotifier {
   /// The selected layer's own name, when a host (the workspace) knows it.
   String? title;
 
-  String get name =>
-      title ??
-      switch (kind) {
-        Kind.shape => 'Jewel',
-        Kind.text => 'Hero title',
-        Kind.camera => 'Camera 1',
-        Kind.group => 'Jewel Field',
-        Kind.several => '$count layers',
-        Kind.none => '',
-      };
+  String get name => title ?? (kind == Kind.several ? '$count layers' : '');
 
   /// null = the layers differ (mixed).
   double? get(String id) {
@@ -283,12 +197,6 @@ class Doc extends ChangeNotifier {
     _undo.clear();
     keys[prop] = s;
     _watched['key:$prop']?.value++; // (the field whose mark it is draws it now)
-    if (link && (prop == 'v_scale_x' || prop == 'v_scale_y')) {
-      // (linked, Scale is one value with one key: After Effects' stopwatch on Scale; the link undone, each its own: Separate Dimensions)
-      final other = prop == 'v_scale_x' ? 'v_scale_y' : 'v_scale_x';
-      keys[other] = s;
-      _watched['key:$other']?.value++;
-    }
     notifyListeners();
   }
 
@@ -315,7 +223,7 @@ class Doc extends ChangeNotifier {
     flags.forEach((id, x) => b.putIfAbsent(id, () => x));
   }
 
-  /// Fields picked together; Shift-click spans a rectangle on [pickGrid] like a spreadsheet.
+  /// Fields picked together; Shift-click spans a rectangle of [_grid] (a card a row, its fields in their order) like a spreadsheet.
   final Set<String> picked = {};
   String? _pickFrom;
   int pickGen = 0;
@@ -327,7 +235,7 @@ class Doc extends ChangeNotifier {
     picked.clear();
     if (span && a != null && b != null) {
       for (var r = math.min(a.$1, b.$1); r <= math.max(a.$1, b.$1); r++) {
-        final row = pickGrid[r];
+        final row = _grid[r];
         for (var c = math.min(a.$2, b.$2); c <= math.max(a.$2, b.$2) && c < row.length; c++) {
           picked.add(row[c]);
         }
@@ -347,9 +255,12 @@ class Doc extends ChangeNotifier {
     notifyListeners();
   }
 
-  static (int, int)? _cell(String id) {
-    for (var r = 0; r < pickGrid.length; r++) {
-      final c = pickGrid[r].indexOf(id);
+  late final _grid = [
+    for (final f in cards) [for (final p in f.params) ...paramDefaults(f.id, p).keys],
+  ];
+  (int, int)? _cell(String id) {
+    for (var r = 0; r < _grid.length; r++) {
+      final c = _grid[r].indexOf(id);
       if (c >= 0) return (r, c);
     }
     return null;
@@ -360,10 +271,6 @@ class Doc extends ChangeNotifier {
     directHover = prop;
     notifyListeners();
   }
-
-  /// The host's say on the effects: one taken off (true: it is); their order changed (false: the host has none).
-  bool Function(String id)? onFxRemove;
-  bool Function()? onFxMove;
 
   /// The host's MIDI keys (om_midi's panel, a row's menu): a property keyed from a file's notes (false: not taken), and
   /// the BPM a file says. Null: the menu has no MIDI.
@@ -392,42 +299,4 @@ class Doc extends ChangeNotifier {
   /// The host's answer to how the thing (its copy, the first is 0) moves over a while (see Motolii.path): four numbers a
   /// moment; null: it has none.
   Future<List<double>?> Function(double to, int n, int copy)? onPath;
-
-  void moveFx(String id, int by) {
-    if (!(onFxMove?.call() ?? true)) return;
-    final i = fxOrder.indexOf(id), j = i + by;
-    if (i < 0 || j < 0 || j >= fxOrder.length) return;
-    fxOrder
-      ..removeAt(i)
-      ..insert(j, id);
-    notifyListeners();
-  }
-
-  void placeFx(String id, int at) {
-    if (!(onFxMove?.call() ?? true)) return;
-    final i = fxOrder.indexOf(id);
-    if (i < 0 || at < 0 || at >= fxOrder.length || at == i) return;
-    fxOrder
-      ..removeAt(i)
-      ..insert(at, id);
-    notifyListeners();
-  }
-
-  void removeFx(String id) {
-    if (!(onFxRemove?.call(id) ?? true)) return;
-    fxOrder.remove(id);
-    notifyListeners();
-  }
-
-  void randomFx(Fx f) {
-    final r = math.Random(f.id.hashCode + (v['${f.id}_seed'] = (v['${f.id}_seed'] ?? 0) + 1).toInt());
-    for (final p in f.params) {
-      if (!p.bounded || p.look == ParamLook.toggle || p.look == ParamLook.choice || p.look == ParamLook.colour) continue;
-      double roll() => double.parse((p.min! + (p.max! - p.min!) * r.nextDouble()).toStringAsFixed(p.dec));
-      for (final id in paramDefaults(f.id, p).keys) {
-        v[id] = roll();
-      }
-    }
-    notifyListeners();
-  }
 }

@@ -92,10 +92,10 @@ $F/flutter analyze lib
   - Fonts は 440px 以上で見本の大きいカード、狭いと行。Media は 440px 以上で木が左、狭いと上。
   - Effects はフィルター帯を開いていて 560px 以上なら、帯を一覧の横に縦いっぱいで立てる。狭いと上の帯。
   - **Inspector は縦積みのまま**(カードを横に並べない)。カードの中身を、Effects のパラメーターと同じブロックの格子(`Pop.tileMin` ごとに列が増える)にする。
-- **Inspector は一目でわかること。** フォント・色の一覧・イージングは、それぞれ専用のパネル(Browser › Fonts、Browser › Colors、Ease のツールパネル)が持つ。Inspector は今の値を見せて、そこへ誘導するだけ(`PanelLink` / `LinkLine` → `Ws.route`)。
+- **Inspector は一目でわかること。** フォント・色の一覧・イージングは、それぞれ専用のパネル(Browser › Fonts、Browser › Colors、Ease のツールパネル)が持つ。Inspector は今の値を見せて、そこへ誘導するだけ(`LinkLine` → `Ws.route`)。
 - **Inspector の値は Stage と一致させる。** 位置・倍率・回転・塗りは `WsArt.boxOf` と絵の色から渡す(`InspHost(values:, strs:)`)。
 - **パスの操作は同じものを何度でも重ねられる**(パンク膨張の後にまたパンク膨張)。UI 側で数を絞らない。
-- **シードなど普段触らない値も、隠さずに Advanced に置く**(`AdvancedFold`)。
+- **シードなど普段触らない値も、隠さずに Advanced に置く**(宣言の `@advanced`、`ValuesCard` が畳む)。
 - **テキストは普通に**: 入力欄、その下にサイズ・太さ・色。
 - **Effects の一覧にサムネイルは付けない。** 見た目は Stage で確かめる: 行を選ぶ → 選択中のレイヤーに仮で掛かる → Add / Enter で確定、Cancel / Esc で取り消し。
 - **効果のタグは 2 種類。** 振る舞い(Seat / Applies to / Time / Inputs / Parameters / Origin)は shader の静的解析が出す。何に見えるか(Look)だけを作者が `@tags(...)` で書く。試し表示だけで伝わらないこと(下の合成を読む、1 フレーム目に何も出ない、など)は、作者の `@preview(...)` か解析結果から帯に一言出す。

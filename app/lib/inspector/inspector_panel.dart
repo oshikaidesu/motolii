@@ -1,38 +1,18 @@
-import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/widgets.dart';
 
 import '../skin/tokens.dart';
-import 'transform/inspector_direct_transform.dart';
-import 'inspector_light.dart';
 import 'inspector_parts.dart';
-import 'inspector_motion_preview.dart';
-import 'inspector_shadow.dart';
-import 'inspector_trim.dart';
 
 // ---- 13. the whole panel ----------------------------------------------------------------------------------------------
-/// The cards the window knows and draws by hand, by the inside's card name (Transform, Camera, Text, Fill, Blending):
-/// their values are the document's own names ('v_x', 'v_opacity'). A card of one's own may be given here too; a card
-/// with no hand of its own is drawn from what the inside says of its values ([ValuesCard]).
-final inspectorCards = <String, Widget Function(Fx card)>{
-  'Transform': (_) => const DirectTransform(),
-  'Camera': (_) => const CameraGroup(),
-  'Text': (_) => const TextGroup(),
-  'Fill': (_) => const FillStroke(),
-  'Blending': (_) => const BlendRows(),
-  'Light': (c) => ValuesCard(c, top: const LightDrawing()), // (its values as tiles, under a drawing of the light you pull)
-  'Wave': (c) => ValuesCard(c, side: const MotionPreview('Wave')), // (and a square moving as the thing will, while touched: Good Boy Ninja's Wiggle)
-  'Physics': (c) => ValuesCard(c, side: const MotionPreview('Physics')), // (falling and bouncing)
-  'Field': (c) => ValuesCard(c, side: const MotionPreview('Field')), // (its copies, grown and turned as near the field as they lie)
-  'Connect': (c) => ValuesCard(c, side: const MotionPreview('Connect')), // (its copies, where they lie)
-  'Drop Shadow': (c) => ValuesCard(c, top: const ShadowDrawing()), // (the shadow, taken and put where it falls)
-  'Trim Paths': (c) => ValuesCard(c, top: const TrimDrawing()), // (the part of the path left, its ends taken)
-};
+// contract: one rule for every card. A card is what the inside declares (card_table.h, sent by motolii_cards and
+// written as a WGSL uniform struct by workspace/inspector_feed/cards.dart), drawn by [ValuesCard] as an effect is: no card is named here.
 
-// (under its effects, as Alight Motion's list ends: before the first card of what it may do besides, doc_cards_of's order)
+// (under its effects, as Alight Motion's list ends: after the last card the host says is an effect (doc_cards_of lays
+//  them before what it may do besides); none on it, at the end)
 int _addAt(Doc doc) {
-  final at = doc.cards.indexWhere((c) => const {'Wave', 'Field', 'Shine', 'Motion', 'Play'}.contains(c.name));
-  return at < 0 ? doc.cards.length : at;
+  final at = doc.cards.lastIndexWhere((c) => doc.movable.contains(c.name)) + 1;
+  return at > 0 ? at : doc.cards.length;
 }
 
 /// Alight Motion's Add Effect, under a thing's effects: the shelf of them, ready to be searched.
@@ -114,11 +94,7 @@ class _InspectorPanelState extends State<InspectorPanel> {
         const EmptyState()
       else ...[
         // contract: one stack: the host's cards, Transform first, then the effects on it, then what it may do besides (Premiere Pro's Effect Controls: the effects put on under Motion and Opacity); every titled card folds on its own.
-        for (final (i, c) in doc.cards.indexed) ...[
-          if (doc.onAddEffect != null && i == _addAt(doc)) const AddEffectRow(),
-          inspectorCards[c.name]?.call(c) ??
-              ValuesCard(c), // (a card the window knows, drawn by hand; one it does not (an effect, a script's knobs), drawn from what the inside says)
-        ],
+        for (final (i, c) in doc.cards.indexed) ...[if (doc.onAddEffect != null && i == _addAt(doc)) const AddEffectRow(), ValuesCard(c)],
         if (doc.onAddEffect != null && _addAt(doc) >= doc.cards.length) const AddEffectRow(),
       ],
     ];
@@ -154,21 +130,4 @@ class _InspectorPanelState extends State<InspectorPanel> {
     final floated = Overlay.maybeOf(context) == null ? Overlay.wrap(child: panel) : panel;
     return Pop(child: floated);
   }
-}
-
-/// A quiet heading over a pile of cards, aligned with the cards' own titles.
-class PopGroupLabel extends StatelessWidget {
-  const PopGroupLabel(this.text, {super.key, this.count});
-  final String text;
-  final int? count;
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.fromLTRB(Pop.inset, Pop.insetY, Pop.inset, Pop.gap),
-    child: Row(
-      children: [
-        Text(text.toUpperCase(), style: T.micro(Grey.g56).copyWith(fontWeight: FontWeight.w700, letterSpacing: .6)),
-        if (count != null) ...[SizedBox(width: Shape.s(6)), Text('$count', style: T.micro(Grey.g44).copyWith(fontWeight: FontWeight.w700))],
-      ],
-    ),
-  );
 }

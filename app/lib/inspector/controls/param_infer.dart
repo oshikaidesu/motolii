@@ -43,7 +43,7 @@ enum ParamLook {
   toggle,
 
   /// A colour (vec3 / vec4).
-  colour,
+  color,
 
   /// A random seed: a number with a re-roll.
   seed,
@@ -236,7 +236,7 @@ const _upW = {'height', 'rise', 'lift', 'up', 'top', 'vertical'};
 const _downW = {'drop', 'gravity', 'down', 'sink', 'fall', 'bottom'};
 const _xW = {'width', 'horizontal', 'left', 'right'};
 const _toggleW = {'is', 'use', 'enable', 'enabled', 'invert', 'flip', 'clamp', 'additive', 'pin', 'mirror', 'loop', 'repeat'};
-const _colourW = {'colour', 'tint', 'rgb', 'rgba', 'fill', 'ink', 'shade', 'background', 'foreground'};
+const _colorW = {'colour', 'tint', 'rgb', 'rgba', 'fill', 'ink', 'shade', 'background', 'foreground'};
 const _sizeW = {'size', 'scale', 'aspect', 'extent', 'stretch'};
 const _pxW = {'radius', 'size', 'width', 'height', 'distance', 'length', 'offset', 'spread', 'blur'};
 
@@ -296,7 +296,7 @@ Param infer(Decl d) {
   if (d.type == WType.boolean || a.containsKey('toggle') || (whole && _any(w, _toggleW) && (max == null || max <= 1))) {
     return p(ParamLook.toggle, 'on/off', lo: 0, hi: 1);
   }
-  if (d.type == WType.vec3 || d.type == WType.vec4) return p(ParamLook.colour, _any(w, _colourW) ? 'colour name' : 'a 3–4 component value');
+  if (d.type == WType.vec3 || d.type == WType.vec4) return p(ParamLook.color, _any(w, _colorW) ? 'colour name' : 'a 3–4 component value');
   if (d.type == WType.vec2) {
     if (_any(w, _sizeW)) return p(ParamLook.size, 'a 2D size', lo: min ?? 0, u: unit.isEmpty && _any(w, {'size'}) ? 'px' : null);
     final uv = _any(w, {'center', 'centre', 'origin', 'focus', 'uv', 'pivot'});

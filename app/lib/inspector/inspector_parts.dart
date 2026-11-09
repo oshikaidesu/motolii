@@ -8,25 +8,16 @@ import '../skin/theme.dart';
 import '../skin/tokens.dart';
 import 'inspector_state.dart';
 
-export 'inspector_advanced.dart';
-export 'inspector_anchor.dart';
 export 'inspector_badges.dart';
-export 'inspector_camera_layout.dart';
 export 'inspector_choosers_header.dart';
-export 'effects/inspector_effects.dart';
-export 'inspector_layer_tiles.dart';
-export 'inspector_light.dart';
-export 'inspector_material.dart';
+export 'inspector_card.dart';
 export 'controls/inspector_number_field.dart';
 export 'inspector_panel.dart';
-export 'inspector_panel_link.dart';
+export 'controls/inspector_param_controls_link.dart';
 export 'controls/inspector_param_controls.dart';
-export 'inspector_relations.dart';
 export 'rows/inspector_rows.dart';
 export 'inspector_small.dart';
 export 'inspector_state.dart';
-export 'transform/inspector_transform_rows.dart';
-export 'inspector_value_marks.dart';
 export 'controls/param_infer.dart';
 
 // ---- 0. open values -------------------------------------------------------------------------------------------------

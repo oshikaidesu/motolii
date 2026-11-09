@@ -1,17 +1,14 @@
-import 'dart:math' as math;
-
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/effects/inspector_effects_effect_card.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 
-import '../../skin/tokens.dart';
-import '../inspector_motion_preview.dart' show CardOver;
-import '../inspector_parts.dart';
-import '../../widgets/timeline_painters.dart' show TpGlyph, TpGlyphView;
-import '../../widgets/text_gestures.dart';
+import '../skin/theme.dart';
+import '../skin/tokens.dart';
+import 'inspector_parts.dart';
+import '../widgets/timeline_painters.dart' show TpGlyph, TpGlyphView;
 
-// ---- 10. effects ------------------------------------------------------------------------------------------------------
-/// An effect as a plugin ships it: a name and a WGSL uniform struct. Its rows are whatever [readParams] makes of the struct.
+// ---- 10. a card ------------------------------------------------------------------------------------------------------
+/// A card as the inside declares it, an effect's and a thing's own alike: a name and a WGSL uniform struct
+/// (workspace/inspector_feed/cards.dart writes it from motolii_cards, card_table.h). Its fields are whatever [infer] makes of it.
 class Fx {
   Fx(this.id, this.name, this.wgsl, {Color? tone, Color Function()? toneOf, required this.mark, this.vendor}) : _tone = tone, _toneOf = toneOf;
   final String id, name, wgsl;
@@ -22,92 +19,6 @@ class Fx {
   final CardMark mark;
   late final List<Decl> decls = parseWgsl(wgsl);
   late final List<Param> params = [for (final d in decls) infer(d)];
-}
-
-class EffectsStack extends StatelessWidget {
-  const EffectsStack({super.key});
-  @override
-  Widget build(BuildContext context) {
-    final x = Ctx.of(context), doc = x.doc;
-    final cards = [
-      for (var i = 0; i < doc.fxOrder.length; i++)
-        EffectCard(doc.fxDefs.firstWhere((f) => f.id == doc.fxOrder[i]), key: ValueKey(doc.fxOrder[i]), first: i == 0),
-    ];
-    final none =
-        doc.query.isNotEmpty &&
-        !doc.fxOrder.any((id) => doc.fxDefs.firstWhere((f) => f.id == id).params.any((p) => p.label.toLowerCase().contains(doc.query.toLowerCase())));
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (x.cfg.maybe) const ParamSearch(),
-        if (none)
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: Shape.s(8)),
-            child: Text('No parameter matches', style: T.label(Grey.g56)),
-          )
-        else
-          ...cards,
-      ],
-    );
-  }
-}
-
-/// H3 (maybe): search flattens the groups, unfolds Advanced, and says so when nothing matches.
-class ParamSearch extends StatefulWidget {
-  const ParamSearch({super.key});
-  @override
-  State<ParamSearch> createState() => _ParamSearchState();
-}
-
-class _ParamSearchState extends State<ParamSearch> {
-  final _c = TextEditingController();
-  final _f = FocusNode(debugLabel: 'param-search');
-  @override
-  void dispose() {
-    _c.dispose();
-    _f.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final x = Ctx.of(context), ed = Ed(x.cfg.ed);
-    return Container(
-      height: cellH,
-      margin: EdgeInsets.only(bottom: Shape.s(4)),
-      padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
-      alignment: Alignment.centerLeft,
-      decoration: BoxDecoration(
-        color: Grey.g13,
-        borderRadius: BorderRadius.all(Shape.r(4)),
-        border: Border.all(color: ed.rule),
-      ),
-      child: Stack(
-        alignment: Alignment.centerLeft,
-        children: [
-          if (_c.text.isEmpty) Text('Search parameters', style: T.label(Grey.g56)),
-          TextGestures(
-            field: (k) => EditableText(
-              key: k,
-              rendererIgnoresPointer: true,
-              controller: _c,
-              focusNode: _f,
-              style: T.name(Grey.g95),
-              cursorColor: Grey.g95,
-              backgroundCursorColor: Grey.g20,
-              maxLines: 1,
-              onChanged: (s) {
-                x.doc.query = s;
-                x.doc.poke();
-                setState(() {});
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// A thing's own card's head: its values copied, given to another, as they come (After Effects' Reset).
@@ -141,12 +52,10 @@ class CardWords extends StatelessWidget {
   }
 }
 
-/// A card of the host's own values, in the effects' manner: its Params, each field a value (keyed `v_` and its name).
+/// Every card of the panel, drawn one way: its declaration's Params, each field a value (keyed `v_` and its name).
 class ValuesCard extends StatelessWidget {
-  ValuesCard(this.card, {super.key, this.top, this.side});
+  const ValuesCard(this.card, {super.key});
   final Fx card;
-  final Widget? top; // (a drawing of what the values make, above them: the window's own for a card it knows)
-  final Widget? side; // (or a square one beside the first of them, Good Boy Ninja's Wiggle's way: its tiles to its right, the rest under both)
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc, ed = Ed(x.cfg.ed), k = 'v.${card.name}', adv = doc.b['$k.adv'] ?? false, past = doc.b['$k.past'] ?? false;
@@ -249,44 +158,7 @@ class ValuesCard extends StatelessWidget {
               ],
             ),
       children: [
-        ?top,
-        if (side case final square?)
-          LayoutBuilder(
-            builder: (context, box) {
-              final g = Pop.tileGap, edge = Pop.tile * 3 + g * 2; // (the square as high as three rows of tiles)
-              final right = box.maxWidth - edge - g, cols = ((right + g) / (Pop.tileMin + g)).floor();
-              if (cols < 1) {
-                return Column(
-                  children: [
-                    SizedBox(height: edge, child: square),
-                    SizedBox(height: g),
-                    ParamGrid('v', heroes),
-                  ],
-                ); // (too narrow: above them)
-              }
-              var n = 0, room = cols * 3; // (as many tiles as three rows beside it hold)
-              for (final p in heroes) {
-                room -= math.min(ParamGrid.span(p), cols);
-                if (room < 0) break;
-                n++;
-              }
-              return Column(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox.square(dimension: edge, child: square),
-                      SizedBox(width: g),
-                      Expanded(child: ParamGrid('v', heroes.take(n).toList())),
-                    ],
-                  ),
-                  if (n < heroes.length) ...[SizedBox(height: g), ParamGrid('v', heroes.skip(n).toList())],
-                ],
-              );
-            },
-          )
-        else
-          ParamGrid('v', heroes),
+        ParamGrid('v', heroes),
         if (rest.isNotEmpty) ...[
           Padding(
             padding: EdgeInsets.only(top: Shape.s(4)),
@@ -335,13 +207,10 @@ class ValuesCard extends StatelessWidget {
         ],
       ],
     );
-    final shown = PastRange(
-      flag: '$k.past',
-      child: side == null ? sect : CardOver(child: sect),
-    ); // (a hand anywhere on the card plays its preview)
+    final shown = PastRange(flag: '$k.past', child: sect);
     if (at < 0 || doc.onCardMove == null) return shown;
     return DragTarget<String>(
-      // (an effect let go on this one's card takes its place; the line says on which side it lands, as the stack's own EffectCard)
+      // (an effect let go on this one's card takes its place; the line says on which side it lands)
       onWillAcceptWithDetails: (d) => d.data != card.name && doc.movable.contains(d.data),
       onAcceptWithDetails: (d) => doc.onCardMove!(d.data, at - doc.movable.indexOf(d.data)),
       builder: (context, held, _) {
@@ -486,4 +355,30 @@ class _Bin extends CustomPainter {
 
   @override
   bool shouldRepaint(_Bin o) => o.color != color;
+}
+
+/// What follows the pointer while an effect is dragged: the folded head, lifted.
+class FxDragGhost extends StatelessWidget {
+  const FxDragGhost(this.fx, {super.key});
+  final Fx fx;
+  @override
+  Widget build(BuildContext context) => Container(
+    width: Shape.z(220),
+    height: Pop.titleH + Pop.insetY * 2,
+    padding: EdgeInsets.symmetric(horizontal: Pop.inset),
+    decoration: BoxDecoration(
+      color: Grey.g20,
+      boxShadow: [BoxShadow(color: ColorTheme.of('Shadow', const Color(0x99000000)), blurRadius: 14, offset: const Offset(0, 6))],
+    ),
+    child: Row(
+      children: [
+        ToneBadge(fx.mark, fx.tone),
+        SizedBox(width: Shape.s(6)),
+        Text(
+          fx.name,
+          style: T.title(Grey.g95).copyWith(fontSize: T.px(12), fontWeight: FontWeight.w700),
+        ),
+      ],
+    ),
+  );
 }
