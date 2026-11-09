@@ -1,8 +1,8 @@
-add picture ../../fx_sample.jpg
+add picture ../../../shelves/effects/sources/fx_sample.jpg
 add text ../arial_black.ttf
 say 2 text MOTOLII
 say 2 fill ffffff
-add picture ../../fx_sample.jpg
+add picture ../../../shelves/effects/sources/fx_sample.jpg
 add light sun
 set 1 duration 4
 set 2 duration 4
@@ -14,9 +14,9 @@ set 2 size 0.32
 set 2 y -0.05
 set 3 x 2
 set 3 size 0.75
-say 1 fx ../../solids/Cube.js
-say 2 fx ../../solids/Raster_Extrude.js
-say 3 fx ../../solids/Heart.js
+say 1 fx ../../../shelves/solids/Cube.js
+say 2 fx ../../../shelves/solids/Raster_Extrude.js
+say 3 fx ../../../shelves/solids/Heart.js
 set 2 js_Raster_Extrude_depth 0.6
 set 2 rotate_x -20
 set 1 rotate_x -15
