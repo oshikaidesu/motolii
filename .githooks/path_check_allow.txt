@@ -10,3 +10,9 @@ engine/third_party/AbsentMotion*   # fetched by engine/gpu/kit_wgpu.sh (and abse
 engine/third_party/skia_src*  # fetched by engine/deps/skia.sh; engine/.gitignore keeps third_party/* out
 app/src/main/*                # inside AbsentMotion's checkout (an Android app/), named by heads as where a file was made from
 docs/ALIGHT_COMPATIBILITY.md  # inside AbsentMotion's checkout, named by scatter_repeat.am's head
+*reports/*.png          # the reports' pictures and films are kept on the machine only (.gitignore: many show others' apps)
+*reports/*.jpg          # (the same)
+*reports/*.jpeg         # (the same)
+*reports/*.mp4          # (the same)
+*reports/*.gif          # (the same)
+*reports/*.webm         # (the same)

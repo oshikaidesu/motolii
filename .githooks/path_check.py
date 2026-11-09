@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Rule P: every path a shelf file names must lead somewhere, so moving a folder can never quietly kill a shelf.
+# Rule P: every path a shelf file or one of our .md names must lead somewhere, so a move can never quietly break it.
 # The shelf files (shelves/, but aviutl_scripts/: those packages find theirs by AviUtl's own package.path) and the
 # scripts that write them (engine/community/three_tsl/*_shelf.ts). Each path is resolved as its reader resolves it,
 # against what is staged (or a commit's tree), never the disk:
@@ -9,10 +9,13 @@
 #   {motolii}/...  in a look (.motolii)         from shelves/ (doc_looks.h doc_look_roots)
 #   './' '../' in quotes                        a .sh: from where its `cd "$(dirname "$0")..."` went; a .ts: its folder
 #   shelves/... engine/... app/... docs/...     from the repository's root (a head saying where it was made from)
+# And every .md of our own (not in an aviutl_scripts/ nor engine/third_party/: their authors'): [text](path),
+# [name]: path and <img src="path">, from the .md's folder as GitHub resolves them ('/' from the root); a web address,
+# mailto: or #anchor alone is skipped, and so is what sits in `code`.
 # What is fetched or made at build time is in path_check_allow.txt, each with why.
 #   pre-commit: the staged shelf files; all of them when a staged change deletes or renames anything.
 #   --all [--rev REV]: every shelf file (of REV's tree), for CI and for trying it on a commit from the past.
-import fnmatch, json, os, posixpath, re, sqlite3, subprocess, sys, tempfile
+import fnmatch, json, os, posixpath, re, sqlite3, subprocess, sys, tempfile, urllib.parse
 
 HOOKS = os.path.dirname(os.path.abspath(__file__))
 args = sys.argv[1:]
@@ -38,6 +41,8 @@ for f in list(folders):
 
 
 def wanted(p):
+    if p.endswith('.md'):   # (not the authors' own documents, whose links go into their repos)
+        return '/aviutl_scripts/' not in '/' + p and not p.startswith('engine/third_party/')
     if p.startswith('shelves/'):
         return not p.startswith('shelves/aviutl_scripts/') and p.endswith(
             ('.js', '.mjs', '.wgsl', '.fs', '.am', '.way', '.motolii', '.sh', '.py'))
@@ -119,6 +124,27 @@ def refuse(where, line, target, why='not found'):
     bad.append(f'rule P: {where}:{line} → {target}: {why}')
 
 
+LINK = re.compile(r'\]\(\s*(<[^>]+>|[^)\s]+)|^\s{0,3}\[[^\]]+\]:\s*(\S+)|<img\b[^>]*?\bsrc\s*=\s*["\']([^"\']+)', re.I | re.M)
+WEB = re.compile(r'^[a-z][a-z0-9+.-]*:', re.I)   # (http:, https:, mailto:, data: ...)
+
+
+def check_links(path, folder, text):
+    fenced = False
+    for n, line in enumerate(text.split('\n'), 1):
+        if line.lstrip().startswith(('```', '~~~')):
+            fenced = not fenced
+        if fenced:
+            continue
+        for found in LINK.findall(re.sub(r'`[^`]*`', '', line)):
+            written = next(w for w in found if w).strip('<>')
+            target = urllib.parse.unquote(written.split('#', 1)[0].split('?', 1)[0])
+            if not target or WEB.match(written):
+                continue
+            resolved = posixpath.normpath(target.lstrip('/') if target.startswith('/') else posixpath.join(folder, target))
+            if not there(resolved, folder_too=True) and not allowed(written, resolved):
+                refuse(path, n, resolved)
+
+
 def check_relative(where, line, base, written, ts=False):
     resolved = posixpath.normpath(posixpath.join(base, written))
     tries = [resolved] + ([resolved + e for e in ('.ts', '.js', '/index.ts', '/index.js')] if ts else [])
@@ -149,6 +175,9 @@ for path, blob in blobs(look):
                     refuse(path, f'thing {thing} {name}', resolved)
         continue
     text = blob.decode('utf-8', 'replace')
+    if path.endswith('.md'):
+        check_links(path, folder, text)
+        continue
     ts, sh = path.endswith('.ts'), path.endswith('.sh')
     base = folder
     for n, line in enumerate(text.split('\n'), 1):
@@ -177,6 +206,6 @@ for path, blob in blobs(look):
 for b in bad:
     print(b)
 if bad:
-    print(f'{len(bad)} path(s) a shelf names lead nowhere: fix them where they are named (or follow the file that moved).'
+    print(f'{len(bad)} path(s) a shelf or a .md names lead nowhere: fix them where they are named (or follow the file that moved).'
           f' Fetched or made at build time: .githooks/path_check_allow.txt, with why.', file=sys.stderr)
     sys.exit(1)
