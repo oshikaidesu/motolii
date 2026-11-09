@@ -42,7 +42,6 @@ Motolii は「ネットで見つけたかっこいい表現を、自分の動画
 | anime.js v4.5.0 | [juliangarnier/anime](https://github.com/juliangarnier/anime) | MIT | `engine/third_party/anime/` |
 | acorn 8.18.0（After Effects の式を貼った時に一度だけ読む構文解析器） | [acornjs/acorn](https://github.com/acornjs/acorn) | MIT | `engine/third_party/js/acorn/`（npm 配布の `acorn.js` と `LICENSE` をそのまま。レシピが `AE.compile` と書いた時だけ読み、毎コマは読まない） |
 | p5.js 1.11.13 | [processing/p5.js](https://github.com/processing/p5.js) | LGPL-2.1 | `engine/third_party/js/p5/`（配布の `p5.min.js` と `license.txt` をそのまま、差し替えられる普通のファイルとして読む） |
-| Blockly 13.4.0（Expression のカードの Block：ブロックを並べて each() を作る） | [google/blockly](https://github.com/google/blockly)（npm `blockly` 13.4.0） | Apache-2.0（npm 配布の LICENSE） | `skin/book/assets/blocks/blockly/`（npm 配布の `blockly_compressed.js`・`blocks_compressed.js`・`javascript_compressed.js`・`msg/en.js`・`media/` と `LICENSE` をそのまま。音は入れていない） |
 | Cube Wave（Coding Challenge 86） | [CodingTrain/Coding-Challenges](https://github.com/CodingTrain/Coding-Challenges)（Copyright (c) 2022 Coding Train） | MIT | `engine/recipes/Cube Wave.js`（1 行目に元、以下そのまま） |
 | Godot のイーズの式 | [godotengine/godot](https://github.com/godotengine/godot) の easing_equations.h（Robert Penner の式） | MIT | `engine/third_party/godot_easing/` |
 | 画面の拍子 | [nmfisher/thermion](https://github.com/nmfisher/thermion) | Apache-2.0 | `engine/third_party/thermion_frame/`（NOTICE.md） |

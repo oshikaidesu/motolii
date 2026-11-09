@@ -8,15 +8,13 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
-import '../sets/inspector/inspector_effects.dart' show CodeOwnHeight;
 import '../tokens.dart';
-import 'block_code.dart';
 import 'dock_program.dart' show ProgramCode;
 import 'effect_tiles.dart' show EffectTiles;
 import 'shelf_add.dart';
 import 'ws.dart';
 
-class FxCode extends StatefulWidget implements CodeOwnHeight {
+class FxCode extends StatefulWidget {
   const FxCode(this.ws, this.thing, this.word, {super.key});
   final Ws ws;
   final int thing;
@@ -107,10 +105,6 @@ class _FxCodeState extends State<FxCode> {
   String? _adding;   // (the name being written to add it to the shelf by)
   String _added = '';   // (what came of the last Add to shelf: why not, or where it went)
   bool _addedOk = false;
-  late bool _blocks = widget.word.endsWith('.js') && File(_kept).existsSync();   // (an expression's Block mode: block_code.dart)
-
-  /// Where an expression's blocks are kept: beside its code (Blockly's JSON). Its code is made from them.
-  String get _kept => '${FxCode.source(_mine ?? widget.word)}.blocks.json';
 
   static String get _own => '${EffectTiles.own}/programs/fx/';
 
@@ -154,25 +148,6 @@ class _FxCodeState extends State<FxCode> {
       _saved(to);
     });
   }
-
-  // (the blocks' each() under the file's head, its title and knobs kept: doc_fx_title, script_knobs; then the blocks)
-  void _blocked(String state, String code) {
-    final head = FxCode._head(FxCode.source(_mine ?? widget.word));
-    _write('${[...head, ''].join('\n')}$code');
-    File(_kept).writeAsStringSync(state);
-  }
-
-  Widget _modes() => Row(children: [
-    for (final b in [false, true])
-      Padding(
-        padding: EdgeInsets.only(right: Shape.s(8)),
-        child: GestureDetector(
-          onTap: () => setState(() => _blocks = b),
-          child: MouseRegion(cursor: SystemMouseCursors.click, child: Text(b ? 'Block' : 'Code', style: T.label(_blocks == b ? Grey.g76 : Grey.g56))),
-        ),
-      ),
-    if (_blocks) Expanded(child: Text('Blocks write the code over', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g56))),
-  ]);
 
   void _saved(String file) => widget.ws.after(widget.ws.inside!.later('code', word: file), (done, why) {
     if (mounted) setState(() => _why = done ? '' : why.trim());
@@ -233,7 +208,7 @@ class _FxCodeState extends State<FxCode> {
   @override
   Widget build(BuildContext context) {
     if (_mine == widget.word) _mine = null;
-    return SizedBox(height: Shape.z(_blocks ? 560 : 360), child: Column(   // (the blocks taller than the code: a card is narrow, they grow down)
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (_why.isNotEmpty)
@@ -244,14 +219,9 @@ class _FxCodeState extends State<FxCode> {
               Expanded(child: Text('Does not compile; the last that did is shown. $_why', maxLines: 4, overflow: TextOverflow.ellipsis, style: T.label(Role.error))),
             ]),
           ),
-        if (widget.word.endsWith('.js')) Padding(padding: EdgeInsets.only(bottom: Shape.s(4)), child: _modes()),
-        Expanded(
-          child: _blocks
-              ? BlockCode(File(_kept).existsSync() ? File(_kept).readAsStringSync() : null, _blocked, key: ValueKey('blocks-${widget.thing}'))
-              : ProgramCode(FxCode.source(_mine ?? widget.word), _write, keep: _making),
-        ),
+        Expanded(child: ProgramCode(FxCode.source(_mine ?? widget.word), _write, keep: _making)),
         Padding(padding: EdgeInsets.only(top: Shape.s(4)), child: _shelf()),
       ],
-    ));
+    );
   }
 }
