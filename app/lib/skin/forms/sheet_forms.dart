@@ -356,9 +356,9 @@ class SheetForms extends Forms {
 
   /// A name on the sheet. Picked, a quarter stands at its left. The band behind it is the sheet.
   @override
-  Widget track(BuildContext context, TrackSpec t) => GestureDetector(
-    behavior: HitTestBehavior.opaque,
-    onTap: t.onSelect,
+  Widget track(BuildContext context, TrackSpec t) => NakedButton(
+    onPressed: t.onSelect,
+    enableFeedback: false,
     child: Padding(
       padding: EdgeInsets.only(left: Shape.s(6), right: Shape.s(6)),
       child: Row(

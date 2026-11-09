@@ -1,5 +1,6 @@
 // The window's own forms: each control as the window has always drawn it.
 import 'package:flutter/widgets.dart';
+import 'package:naked_ui/naked_ui.dart';
 
 import '../../widgets/controls.dart' show PillSwitch;
 import '../svg_parts.dart';
@@ -72,25 +73,25 @@ class OwnForms extends Forms {
   /// The word and a switch: the state is a word, never colour alone. The word is pressed as the switch is, the two one
   /// control, as AbsentMotion's SwitchRow (SettingsDrawer.kt: the whole row toggleable, its label with it).
   @override
-  Widget onOff(BuildContext context, SwitchSpec s) => IgnorePointer(
-    ignoring: !s.enabled,
-    child: GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => s.onChanged(!s.on),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: Shape.z(20),
-            child: Text(s.on ? 'On' : 'Off', textAlign: TextAlign.right, style: T.label(s.enabled && s.on ? Grey.g95 : Grey.g56)),
-          ),
-          SizedBox(width: Shape.s(8)),
-          Opacity(
-            opacity: s.enabled ? 1 : .5,
-            child: Pop.on(context) ? PopSwitch(on: s.on, onChanged: s.onChanged) : PillSwitch(on: s.on, onChanged: s.onChanged),
-          ),
-        ],
-      ),
+  Widget onOff(BuildContext context, SwitchSpec s) => NakedToggle(
+    value: s.on,
+    asSwitch: true,
+    enabled: s.enabled,
+    enableFeedback: false,
+    onChanged: s.onChanged,
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: Shape.z(20),
+          child: Text(s.on ? 'On' : 'Off', textAlign: TextAlign.right, style: T.label(s.enabled && s.on ? Grey.g95 : Grey.g56)),
+        ),
+        SizedBox(width: Shape.s(8)),
+        Opacity(
+          opacity: s.enabled ? 1 : .5,
+          child: Pop.on(context) ? PopSwitch(on: s.on) : PillSwitch(on: s.on),
+        ),
+      ],
     ),
   );
 

@@ -1,26 +1,20 @@
 // The window's own drawing of the controls a form may replace. A form that does not override these keeps this picture.
 import 'package:flutter/widgets.dart';
+import 'package:naked_ui/naked_ui.dart';
 
 import '../tokens.dart';
 import '../../workspace/state/state.dart' show WsT;
 import 'forms.dart';
 
-class _Hot extends StatefulWidget {
+class _Hot extends StatelessWidget {
   const _Hot({required this.builder, this.onTap});
   final Widget Function(bool hot) builder;
   final VoidCallback? onTap;
   @override
-  State<_Hot> createState() => _HotState();
-}
-
-class _HotState extends State<_Hot> {
-  bool _h = false;
-  @override
-  Widget build(BuildContext context) => MouseRegion(
-    cursor: widget.onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
-    onEnter: (_) => setState(() => _h = true),
-    onExit: (_) => setState(() => _h = false),
-    child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onTap, child: widget.builder(_h)),
+  Widget build(BuildContext context) => NakedButton(
+    onPressed: onTap,
+    enableFeedback: false,
+    builder: (context, st, _) => builder(st.isHovered),
   );
 }
 
@@ -111,9 +105,9 @@ abstract final class Usual {
   );
 
   /// One timeline name: a band, an accent edge when picked, the kind and the three toggles.
-  static Widget track(BuildContext context, TrackSpec t) => GestureDetector(
-    behavior: HitTestBehavior.opaque,
-    onTap: t.onSelect,
+  static Widget track(BuildContext context, TrackSpec t) => NakedButton(
+    onPressed: t.onSelect,
+    enableFeedback: false,
     child: Container(
       color: t.selected ? Grey.g20 : (t.hot ? Grey.g15 : (t.index.isEven ? Grey.bandA : Grey.bandB)),
       padding: EdgeInsets.only(bottom: Shape.s(1)),

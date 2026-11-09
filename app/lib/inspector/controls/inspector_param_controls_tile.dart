@@ -133,11 +133,9 @@ class ParamTile extends StatelessWidget {
             child: Row(
               key: ValueKey('toggle:$id'), // (found by its value's id)
               children: [
-                IgnorePointer(
-                  child: Opacity(
-                    opacity: on ? 1 : .4,
-                    child: PopSwitch(on: b, onChanged: (_) {}),
-                  ),
+                Opacity(
+                  opacity: on ? 1 : .4,
+                  child: PopSwitch(on: b),
                 ),
                 SizedBox(width: Shape.s(6)),
                 Text(b ? 'On' : 'Off', style: T.label(on ? Grey.g76 : Grey.g56)),

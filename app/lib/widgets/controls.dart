@@ -1,5 +1,6 @@
 // Controls. One rule: the value is the loudest thing in a control, the chrome around it is grey, the family colour marks only what it belongs to.
 import 'package:flutter/widgets.dart';
+import 'package:naked_ui/naked_ui.dart';
 
 import '../skin/tokens.dart';
 
@@ -7,16 +8,13 @@ import '../skin/tokens.dart';
 enum Look { concept, quiet, glow }
 
 class PillSwitch extends StatelessWidget {
-  const PillSwitch({super.key, required this.on, this.fam = Fam.scatter, this.onChanged});
+  const PillSwitch({super.key, required this.on, this.fam = Fam.scatter});
   final bool on;
   final Fam fam;
-  final ValueChanged<bool>? onChanged;
 
   /// Fine, not heavy (critique, 4 passes): a 28x16 track; off = a grey thumb on g20; on = an accent TINT with a 1px accent edge and a light thumb, never a solid accent block.
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: () => onChanged?.call(!on),
-    child: AnimatedContainer(
+  Widget build(BuildContext context) => AnimatedContainer(
       duration: const Duration(milliseconds: 120),
       curve: Curves.easeOut,
       width: Shape.z(28),
@@ -33,7 +31,6 @@ class PillSwitch extends StatelessWidget {
         height: Shape.z(10),
         decoration: BoxDecoration(color: on ? Role.of(Grey.g95, Role.mode) : Grey.g56, shape: BoxShape.circle),
       ),
-    ),
   );
 }
 
@@ -48,8 +45,10 @@ class Segmented extends StatelessWidget {
   /// One selected style across the lab: a g20 pill with g95 text and a 1px accent underline (critique 2026-10-02: four selected styles were found).
   @override
   Widget build(BuildContext context) {
-    Widget seg(int i) => GestureDetector(
-      onTap: () => onChanged?.call(i),
+    Widget seg(int i) => NakedToggleOption<int>(
+      value: i,
+      enableFeedback: false,
+      semanticLabel: items[i],
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
         curve: Curves.easeOut,
@@ -66,7 +65,10 @@ class Segmented extends StatelessWidget {
         ),
       ),
     );
-    return Container(
+    return NakedToggleGroup<int>(
+      selectedValue: index,
+      onChanged: onChanged == null ? null : (v) => v == null ? null : onChanged!(v),
+      child: Container(
       height: Shape.z(26),
       padding: EdgeInsets.all(Shape.s(2)),
       decoration: BoxDecoration(color: Grey.g07, borderRadius: BorderRadius.all(Shape.r(7))),
@@ -75,6 +77,7 @@ class Segmented extends StatelessWidget {
         mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
         children: [for (var i = 0; i < items.length; i++) expand ? Expanded(child: seg(i)) : seg(i)],
       ),
+    ),
     );
   }
 }

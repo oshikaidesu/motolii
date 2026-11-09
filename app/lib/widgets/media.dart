@@ -2,6 +2,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
+import 'package:naked_ui/naked_ui.dart';
 
 import '../skin/tokens.dart';
 
@@ -67,15 +68,18 @@ class MiniSlider extends StatelessWidget {
   final ValueChanged<double> onChanged;
   @override
   Widget build(BuildContext context) {
-    final t = ((value - min) / (max - min)).clamp(0.0, 1.0);
-    void set(Offset p) => onChanged(min + (max - min) * (p.dx / width).clamp(0.0, 1.0));
-    return MouseRegion(
-      cursor: SystemMouseCursors.resizeLeftRight,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onPanDown: (d) => set(d.localPosition),
-        onPanUpdate: (d) => set(d.localPosition),
-        child: SizedBox(
+    final span = max - min;
+    return NakedSlider(
+      values: [value.clamp(min, max).toDouble()],
+      min: min,
+      max: max,
+      step: span / width,
+      mouseCursor: SystemMouseCursors.resizeLeftRight,
+      enableFeedback: false,
+      onChanged: (next) => onChanged(next.first),
+      builder: (context, st, _) {
+        final t = st.visualPercentageAt(0);
+        return SizedBox(
           width: width,
           height: Shape.z(20),
           child: Stack(
@@ -100,8 +104,8 @@ class MiniSlider extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

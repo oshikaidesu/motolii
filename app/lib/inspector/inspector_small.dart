@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/forms/forms.dart';
+import 'package:naked_ui/naked_ui.dart';
 
 import '../skin/tokens.dart';
 import 'inspector_parts.dart';
@@ -65,23 +66,21 @@ class _FloatShutState extends State<FloatShut> {
   );
 }
 
-class Hov extends StatefulWidget {
-  const Hov({super.key, required this.builder, this.cursor = SystemMouseCursors.click, this.onTap});
+class Hov extends StatelessWidget {
+  const Hov({super.key, required this.builder, this.cursor = SystemMouseCursors.click, this.onTap, this.excludeSemantics = false});
   final Widget Function(BuildContext, bool) builder;
   final MouseCursor cursor;
   final VoidCallback? onTap;
-  @override
-  State<Hov> createState() => _HovState();
-}
 
-class _HovState extends State<Hov> {
-  bool h = false;
+  /// A Semantics node above already names this control.
+  final bool excludeSemantics;
   @override
-  Widget build(BuildContext context) => MouseRegion(
-    cursor: widget.cursor,
-    onEnter: (_) => setState(() => h = true),
-    onExit: (_) => setState(() => h = false),
-    child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onTap, child: widget.builder(context, h)),
+  Widget build(BuildContext context) => NakedButton(
+    onPressed: onTap,
+    mouseCursor: cursor,
+    enableFeedback: false,
+    excludeSemantics: excludeSemantics,
+    builder: (context, st, _) => builder(context, st.isHovered),
   );
 }
 
@@ -183,6 +182,7 @@ class LinkMark extends StatelessWidget {
     label: 'Link',
     child: Hov(
       onTap: enabled ? onTap : null,
+      excludeSemantics: true,
       builder: (_, h) => SizedBox(
         width: Shape.z(18),
         height: cellH,
@@ -233,25 +233,21 @@ class OnOff extends StatelessWidget {
 }
 
 class PopSwitch extends StatelessWidget {
-  const PopSwitch({super.key, required this.on, required this.onChanged});
+  const PopSwitch({super.key, required this.on});
   final bool on;
-  final ValueChanged<bool> onChanged;
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: () => onChanged(!on),
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 120),
-      curve: Curves.easeOut,
-      width: Shape.z(28),
-      height: Shape.z(16),
-      padding: EdgeInsets.all(Shape.s(2)),
-      alignment: on ? Alignment.centerRight : Alignment.centerLeft,
-      decoration: BoxDecoration(color: on ? Pop.accent : Grey.g26, borderRadius: BorderRadius.all(Shape.r(8))),
-      child: Container(
-        width: Shape.z(12),
-        height: Shape.z(12),
-        decoration: BoxDecoration(color: on ? Pop.onAccent : Grey.g63, shape: BoxShape.circle),
-      ),
+  Widget build(BuildContext context) => AnimatedContainer(
+    duration: const Duration(milliseconds: 120),
+    curve: Curves.easeOut,
+    width: Shape.z(28),
+    height: Shape.z(16),
+    padding: EdgeInsets.all(Shape.s(2)),
+    alignment: on ? Alignment.centerRight : Alignment.centerLeft,
+    decoration: BoxDecoration(color: on ? Pop.accent : Grey.g26, borderRadius: BorderRadius.all(Shape.r(8))),
+    child: Container(
+      width: Shape.z(12),
+      height: Shape.z(12),
+      decoration: BoxDecoration(color: on ? Pop.onAccent : Grey.g63, shape: BoxShape.circle),
     ),
   );
 }
@@ -296,6 +292,7 @@ class GlyphPlate extends StatelessWidget {
     label: label,
     child: Hov(
       onTap: onTap,
+      excludeSemantics: true,
       builder: (_, h) {
         final pop = Pop.on(context);
         final ink = on ? (pop ? Pop.onAccent : Grey.g95) : (h ? Grey.g76 : Grey.g56);
