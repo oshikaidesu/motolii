@@ -19,7 +19,7 @@ class NumFieldState extends State<NumField> {
   static int rightAt = -1; // (the press a field took for its menu: the row round it leaves it)
   static bool _tabbed = false; // (the field that takes focus now was gone to by Tab: it opens to be typed in)
   final _ctl = TextEditingController();
-  bool _editing = false, _err = false, _hover = false, _focus = false, _drag = false, _moved = false, _cancelled = false;
+  bool _editing = false, _hover = false, _focus = false, _drag = false, _moved = false, _cancelled = false;
   Offset _down = Offset.zero;
   double _start = 0, _acc = 0, _sum = 0;
   DateTime? _lastUp;
@@ -102,12 +102,7 @@ class NumFieldState extends State<NumField> {
       doc.setMany({for (final id in doc.picked) id: id == widget.id || same ? c : (doc.get(id) ?? 0) + d});
       return;
     }
-    final f = widget.onSet;
-    if (f != null) {
-      f(c);
-    } else {
-      _x.doc.set(widget.id, c);
-    }
+    doc.set(widget.id, c);
   }
 
   // (what a right click on it offers: its keys as its mark does, the rest of the row's menu on the row's own label)
@@ -141,10 +136,8 @@ class NumFieldState extends State<NumField> {
   }
 
   void _reset() {
-    final f = widget.onReset, doc = _x.doc, id = widget.id;
-    if (f != null) {
-      f();
-    } else if (id.startsWith('v_') && doc.onCardReset != null) {
+    final doc = _x.doc, id = widget.id;
+    if (id.startsWith('v_') && doc.onCardReset != null) {
       doc.onCardReset!([
         id.substring(2),
       ]); // (as it comes: what is said of it forgotten, its card's own Reset; the inspector's default is only what it was when the card was made)
@@ -167,9 +160,6 @@ class NumFieldState extends State<NumField> {
     setState(() => _drag = false);
   }
 
-  double _w = 0;
-  bool _inGlyph(Offset p) => p.dx > _w - Pop.glyph - Pop.tilePad && (widget.glyphTall || p.dy < Pop.glyph + Pop.tilePad);
-
   // (where the key mark is drawn, and what it says: a press near it keys the value there, or takes the key here away)
   Offset? _keyAt;
   KeyS? _keys;
@@ -191,7 +181,6 @@ class NumFieldState extends State<NumField> {
       final now = _x.doc.keys[widget.id] ?? _keys; // (as the document says it now: the field may not have been built since an undo)
       return _x.doc.setKey(widget.id, now == KeyS.at ? KeyS.anim : KeyS.at); // (a press on the mark keys this frame, or takes that key away)
     }
-    if (widget.glyph != null && widget.glyphOwnsPointer && _inGlyph(e.localPosition)) return;
     if (e.buttons != kPrimaryButton) return;
     final doc = _x.doc;
     if (HardwareKeyboard.instance.isShiftPressed) {
@@ -334,10 +323,7 @@ class NumFieldState extends State<NumField> {
     final v = _x.doc.get(widget.id);
     _ctl.text = typed ?? (v == null ? '' : fmt(v, widget.decimals));
     _ctl.selection = typed != null ? TextSelection.collapsed(offset: _ctl.text.length) : TextSelection(baseOffset: 0, extentOffset: _ctl.text.length);
-    setState(() {
-      _editing = true;
-      _err = false;
-    });
+    setState(() => _editing = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _editing) _ef.requestFocus();
     });
@@ -392,11 +378,7 @@ class NumFieldState extends State<NumField> {
       return true;
     }
     final t = _typed();
-    if (t == null) {
-      // contract: invalid text keeps the field open and says "Number required" (C2).
-      setState(() => _err = true);
-      return false;
-    }
+    if (t == null) return false; // (invalid text keeps the field open)
     _apply(t, same: true);
     _close();
     return true;
@@ -419,31 +401,25 @@ class NumFieldState extends State<NumField> {
 
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), ed = const Ed();
+    final x = Ctx.of(context);
     final v = x.doc.get(widget.id), on = _on, narrow = RowOff.maybe(context)?.narrow ?? false;
     final live = _drag && _moved;
     const idle = Color(0x00000000);
     final Color edge = live
         ? C.mode.withValues(alpha: .8)
         : (_focus || _editing ? Grey.g63 : (_hover && on ? Grey.g38 : idle));
-    final pop = Pop.on(context);
-    final picked = pop && x.doc.isPicked(widget.id);
-    final fillC = pop
-        ? (!on ? Grey.g10 : (picked ? Color.alphaBlend(Pop.accent.withValues(alpha: .14), Pop.well) : (_hover || live ? Grey.g20 : Pop.well)))
-        : (!on ? Grey.g10 : Grey.g13);
+    final picked = x.doc.isPicked(widget.id);
+    final fillC = !on ? Grey.g10 : (picked ? Color.alphaBlend(Pop.accent.withValues(alpha: .14), Pop.well) : (_hover || live ? Grey.g20 : Pop.well));
     return LayoutBuilder(
       builder: (context, box) {
         final w = box.maxWidth;
-        _w = w;
-        final row = pop ? RowInfo.of(context) : null;
+        final row = RowInfo.of(context);
         final showUnit = w >= wUnit && !narrow && row?.unit == null, tight = w < wTight;
         final t = (_bounded && v != null) ? ((v - widget.min!) / (widget.max! - widget.min!)).clamp(0.0, 1.0) : 0.0;
         String unit = widget.unit ?? '';
         if (widget.turns && v != null && v.abs() >= 360 && w >= 120) unit = '° ${(v / 360).truncate()}x ${fmt(v.remainder(360), 0)}';
-        final word = v == 0 && widget.zeroWord != null ? widget.zeroWord! : null;
         Widget valueText() {
           if (v == null) return Text('Mixed', style: T.label(Grey.g76));
-          if (word != null) return Text(word, style: T.label(on ? Grey.g76 : Grey.g56));
           return FittedBox(
             // (a number wider than its field is drawn smaller, never cut)
             fit: BoxFit.scaleDown,
@@ -453,13 +429,9 @@ class NumFieldState extends State<NumField> {
                 children: [
                   TextSpan(
                     text: fmt(v, widget.decimals, tight: tight), // (its places fixed, as Push shows them: a number does not jump in width as it moves)
-                    style: widget.caption != null
-                        ? blockValue(on ? Grey.g95 : Grey.g56)
-                        : pop
-                        ? T.value(on ? Grey.g95 : Grey.g56).copyWith(fontWeight: FontWeight.w600)
-                        : T.value(on ? Grey.g95 : Grey.g56),
+                    style: blockValue(on ? Grey.g95 : Grey.g56),
                   ),
-                  if (showUnit && unit.isNotEmpty) TextSpan(text: pop ? '\u2009$unit' : ' $unit', style: T.label(pop ? Grey.g44 : Grey.g56)),
+                  if (showUnit && unit.isNotEmpty) TextSpan(text: '\u2009$unit', style: T.label(Grey.g44)),
                 ],
               ),
               maxLines: 1,
@@ -468,26 +440,11 @@ class NumFieldState extends State<NumField> {
           );
         }
 
-        final lead = _err && w >= 150
-            ? Text('Number required', style: T.label(Role.error))
-            : (widget.label != null
-                  ? Text(
-                      ed.lab(widget.label!),
-                      maxLines: 1,
-                      softWrap: false,
-                      style: pop && widget.axis != null
-                          ? T.label(on ? Color.lerp(widget.axis!, Grey.g100, .3)! : Grey.g56).copyWith(fontWeight: FontWeight.w700)
-                          : ed.labStyle(on ? Grey.g63 : Grey.g56),
-                    )
-                  : null);
-        final block = widget.caption != null;
         // contract: animated = a dim dot, keyed at the playhead = a lit dot (the automation blip, not a column). A value
         // that takes keys shows its mark always, hollow when it has none, and a press on it keys it there (Alight Motion's
         // diamond beside each value, After Effects' and Premiere Pro's stopwatch: golf_noise.md (59)).
-        final ks = pop ? (x.doc.keys[widget.id] ?? row?.keys) : null;
-        _keyAt = ks != null && (ks != KeyS.off || x.doc.keys.containsKey(widget.id))
-            ? (block ? Offset(w - Pop.tilePad - 3, Pop.tile - 10) : Offset(w - 6, 6))
-            : null;
+        final ks = x.doc.keys[widget.id] ?? row?.keys;
+        _keyAt = ks != null && (ks != KeyS.off || x.doc.keys.containsKey(widget.id)) ? Offset(w - Pop.tilePad - 3, Pop.tile - 10) : null;
         _keys = ks;
         final editor = _editing
             ? TextGestures(
@@ -496,18 +453,15 @@ class NumFieldState extends State<NumField> {
                   rendererIgnoresPointer: true,
                   controller: _ctl,
                   focusNode: _ef,
-                  style: block ? blockValue(Grey.g95) : T.value(Grey.g95),
+                  style: blockValue(Grey.g95),
                   cursorColor: Grey.g95,
                   backgroundCursorColor: Grey.g20,
                   selectionColor: Role.selected.withValues(alpha: .4),
-                  textAlign: block ? TextAlign.left : (pop ? TextAlign.center : TextAlign.right),
+                  textAlign: TextAlign.left,
                   maxLines: 1,
                   selectAllOnFocus: false, // (_startEdit says the selection: all of the number when begun by a click or Return; the caret after a number begun by typing it, which Flutter's own select-all on a desktop's focus took, so the next key replaced the first: golf P05, "230" came out 0)
                   keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.\-+eE*/() ]'))],
-                  onChanged: (_) {
-                    if (_err) setState(() => _err = false);
-                  },
                 ),
               )
             : null;
@@ -516,29 +470,20 @@ class NumFieldState extends State<NumField> {
           NumberSpec(
             value: valueText(),
             editor: editor,
-            lead: lead,
-            glyph: widget.glyph,
             caption: widget.caption,
             width: w,
-            height: block ? Pop.tile : (pop ? Pop.cell : cellH),
+            height: Pop.tile,
             fillColor: fillC,
-            borderColor: picked ? Pop.accentInk.withValues(alpha: .7) : (pop && !(_focus || _editing || live) ? const Color(0x00000000) : edge),
+            borderColor: picked ? Pop.accentInk.withValues(alpha: .7) : (!(_focus || _editing || live) ? const Color(0x00000000) : edge),
             rangeColor: on ? Grey.g56 : Grey.g44,
             fill: _bounded && v != null ? t : null,
             zeroAt: _zeroAt,
             bipolar: _bounded && widget.bipolar,
-            block: block,
-            pop: pop,
             editing: _editing,
-            glyphTall: widget.glyphTall,
             on: on,
-            hot: _hover,
-            live: live,
-            axis: widget.axis,
             keyDot: _keyAt == null ? null : (ks == KeyS.at ? Pop.keyDot : (ks == KeyS.anim ? Pop.keyDot.withValues(alpha: .5) : Grey.g56)),
             keyEmpty: ks == KeyS.off,
             pad: Pop.tilePad,
-            glyphBox: Pop.glyph,
           ),
         );
         return OverlayPortal.targetsRootOverlay(
@@ -566,11 +511,11 @@ class NumFieldState extends State<NumField> {
               },
               child: RawGestureDetector(
                 // (a press that scrubs is the field's at once: a scroll round the inspector would take a drag that goes up or
-                //  down too and carry the field away under the hand; a press on a glyph that owns it, or while typing, is not)
+                //  down too and carry the field away under the hand; while typing, it is not)
                 gestures: {
                   ScrubClaim: GestureRecognizerFactoryWithHandlers<ScrubClaim>(
                     () => ScrubClaim(),
-                    (r) => r.takes = (e) => _on && !_editing && !(widget.glyph != null && widget.glyphOwnsPointer && _inGlyph(e.localPosition)),
+                    (r) => r.takes = (e) => _on && !_editing,
                   ),
                 },
                 child: Listener(

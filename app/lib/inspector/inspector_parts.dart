@@ -18,8 +18,6 @@ export 'inspector_state.dart';
 export 'controls/param_infer.dart';
 
 // ---- 0. open values -------------------------------------------------------------------------------------------------
-// [open] a value cell's height (the lab's ValueWell is 22; rows are 24 on the 4px rhythm; B uses 22).
-double get cellH => Shape.z(22);
 // [open] one narrowing rule for the whole panel (H1): a cell narrower than _wUnit drops its unit, narrower than _wTight drops decimals (never to a false 0).
 const wUnit = 72.0, wTight = 60.0;
 // [open] two clicks within this are a double click.
@@ -67,10 +65,9 @@ class Pop extends InheritedWidget {
   static double get gap => Shape.s(2.0);
   static double get cell => Shape.z(22.0);
 
-  /// A parameter block: name on top, value large at the bottom, its picture in the top-right corner; text always starts at the same x.
+  /// A parameter block: name on top, the value under it.
   static double get tile => Shape.z(42); // (the skin's Size and Spacing)
   static double get tileMin => Shape.z(100);
-  static double get glyph => Shape.z(20);
   static double get tileGap => Shape.s(4);
   static double get tilePad => Shape.s(8);
 
