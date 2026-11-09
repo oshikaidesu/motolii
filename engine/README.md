@@ -30,11 +30,20 @@
 
 本体が使わない試し（ガラスや光、Dawn、プローブ、Widgetbook など）は main から外しました。履歴はタグ `lab-archive-2026-11-09` に残っています（`git show lab-archive-2026-11-09:lab/`）。
 
+## フォルダ
+
 | フォルダ | 中身 |
 |---|---|
-| `gpu/` | Filament を WebGPU（Dawn）で組むスクリプト |
-| `deps/` | 外のライブラリを組むスクリプトと、人のコードに当てる差分（`deps/patches/<ライブラリ>/`） |
-| `effects/`・`recipes/`・`animators/`・`ways/`・`looks/`・`solids/` | 同梱の効果・レシピ・動き・イーズ・ルック・形（利用者のフォルダ `~/Library/Application Support/Motolii/` と同じ形） |
-| `aviutl_scripts/` | 同梱の AviUtl2 のスクリプト |
-| `community/three_tsl/` | three.js の TSL と shaders.com の効果を取ってきて WGSL にする道具 |
+| `library/` | 窓が呼ぶ本体：`motolii.h`（C の呼び出し）・`motolii.mm`（`libmotolii.dylib` になる）・`edit.cpp`（1 行ずつの命令のシェル） |
+| `document/` | 書類（SQLite）：`doc_*.h`。物・値・キー・取り消し・場面への反映 |
+| `stage/` | 描く所：Filament と ThorVG（`kit*.h`・`drawn*.h`・`live.h`） |
+| `community/` | ネットのコードをそのまま動かす口：`aviutl/`（AviUtl2）・`shaders/`（ISF・Shadertoy）・`js/`（p5・AE 式・three.js）・`absent_motion/`・`three_tsl/`（three.js の TSL を three.js 自身の組み立て役で WGSL に） |
+| `media/` | 動画（GStreamer）・音・MIDI |
+| `motion/` | 動き：キーの間・イーズ・物理（Jolt） |
+| `materials/` | Filament の材質（`.mat`）と、それが読む `.glsl` |
+| `gpu/` | Filament・ThorVG を WebGPU（Dawn）で組むスクリプト（`build.sh`・`tvg_on_dawn.sh`・`kit_wgpu.sh`）と、Filament の組み立ての中で組む口（`*_door.cpp`） |
+| `deps/` | 外のライブラリを取ってきて組むスクリプト。`deps/patches/<ライブラリ>/` は人のコードに当てる差分（`.patch`） |
 | `third_party/` | 取ってくる依存（git の外）と、同梱の小さな物 |
+| `out/` | 組み立てと描いた物の出力（git の外）。`out/gpu/`・`out/tsl/` もここ |
+
+同梱の効果・レシピ・字体などの棚は、リポジトリ直下の [`../shelves/`](../shelves/) にあります。
