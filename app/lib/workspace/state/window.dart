@@ -76,30 +76,18 @@ class Ws {
     rev++;
     duration = (m.seconds * fps).round().clamp(1, 1 << 20);
     final holding = {for (final t in m.layers) (m.value(t, 'parent', 0) ?? 0).round()}; // (who has things going with it)
-    layers
-      ..clear()
-      ..addAll([
-        for (final t in m.layers.reversed) // (the sample's manner: the nearest thing is the top row)
-          () {
-            final kind = m.word(t, 'kind'), from = ((m.value(t, 'start', 0) ?? 0) * fps).round(), lasts = m.lasts(t);
-            final name = m.word(t, 'name'); // (what it is called is the inside's to say)
-            // (a key on any value of it that takes keys is a key on its bar: the inside says which those are)
-            final keys = <int>{for (final s in m.layerKeyTimes(t)) (s * fps).round()}.toList()..sort();
-            return WsLayer(
-              '$t',
-              name,
-              switch (kind) {
-                'text' => WsKind.text,
-                'camera' => WsKind.camera,
-                'shape' when m.word(t, 'shape') == 'null' && holding.contains(t) => WsKind.group,
-                _ => WsKind.shape,
-              },
-              from,
-              _outF(from, lasts),
-              keys,
-            );
-          }(),
-      ]);
+    WsLayer row(int t) {
+      final kind = m.word(t, 'kind'), from = ((m.value(t, 'start', 0) ?? 0) * fps).round(), lasts = m.lasts(t);
+      final keys = <int>{for (final s in m.layerKeyTimes(t)) (s * fps).round()}.toList()..sort(); // (a key on any value of it that takes keys is a key on its bar)
+      return WsLayer('$t', m.word(t, 'name'), switch (kind) {
+        'text' => WsKind.text,
+        'camera' => WsKind.camera,
+        'shape' when m.word(t, 'shape') == 'null' && holding.contains(t) => WsKind.group,
+        _ => WsKind.shape,
+      }, from, _outF(from, lasts), keys); // (what it is called is the inside's to say)
+    }
+
+    layers..clear()..addAll([for (final t in m.layers.reversed) row(t)]); // (the nearest thing is the top row)
     if (_sel != null && layers.every((l) => l.id != _sel)) {
       _sel = layers.firstOrNull?.id; // (a picked thing gone: the first; nothing picked stays so, the stage's)
     }

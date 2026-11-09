@@ -40,17 +40,7 @@ class ParamTile extends StatelessWidget {
     switch (p.look) {
       case ParamLook.toggle:
         final doc = Ctx.of(context).doc, b = (doc.get(id) ?? 0) > 0;
-        return Hov(
-          onTap: () => doc.set(id, b ? 0 : 1),
-          builder: (_, h) => Row(
-            key: ValueKey('toggle:$id'),
-            children: [
-              PopSwitch(on: b),
-              SizedBox(width: Shape.s(6)),
-              Text(b ? 'On' : 'Off', style: T.label(h ? Grey.g95 : Grey.g76)),
-            ],
-          ),
-        );
+        return OnOff(key: ValueKey('toggle:$id'), on: b, onChanged: (v) => doc.set(id, v ? 1 : 0));
       case ParamLook.choice:
         final n = p.options.length;
         if (n == 0) return _num(context);
