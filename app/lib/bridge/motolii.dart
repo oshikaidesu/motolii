@@ -268,12 +268,8 @@ class Motolii {
 
   late final _guide = _b.motolii_guide;
 
-  final _labels = <String, String>{},
-      _tileImages = <String, String>{},
-      _homes = <String, String>{},
-      _abouts = <String, String>{},
-      _tags = <String, Set<String>>{};
-  final _same = <String>{};
+  final _items = <String, ShelfItem>{}; // (by name and by file)
+  final _listed = <String, List<ShelfItem>>{}; // (by listing: screen, thing, look, motion, relation)
 
   final _shownOf = <String, Shown?>{}; // (read out of the things' parts once a picture of the document)
 
@@ -285,11 +281,8 @@ class Motolii {
   void forgetFolders() {
     _b.motolii_files_changed();
     _folders.clear();
-    _labels.clear();
-    _tileImages.clear();
-    _abouts.clear();
-    _homes.clear();
-    _same.clear();
+    _items.clear();
+    _listed.clear();
   }
 
   /// The window's thread watched: while on, a change it waits for, or a read that waits on the document over 2 ms, is

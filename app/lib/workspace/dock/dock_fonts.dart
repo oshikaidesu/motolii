@@ -15,6 +15,7 @@ import 'dock_map.dart';
 import 'dock_widgets.dart';
 import 'dock_tags.dart';
 import '../shelf/effect_tiles.dart' show EffectTiles;
+import '../shelf/shelf_tile.dart';
 import '../state/state.dart';
 
 part 'dock_font_map.dart';
@@ -323,37 +324,13 @@ class FontsShelf extends StatelessWidget {
                             ),
                           )
                         : null;
-                    if (box.maxWidth < 440) {
-                      return ListView(
-                        padding: EdgeInsets.zero,
-                        children: [
-                          for (final f in list) _FontRow(f, c, usedBy: usedBy(f)),
-                          ?notHere,
-                        ],
-                      );
-                    }
-                    final cols = wsCols(box.maxWidth, 200), w = wsCell(box.maxWidth, cols);
-                    final rows = (list.length / cols).ceil();
-                    return ListView.builder(
-                      // (a row at a time: only what is shown has its file read, _own)
-                      padding: EdgeInsets.zero,
-                      itemCount: rows + (notHere == null ? 0 : 1),
-                      itemBuilder: (context, i) => i == rows
-                          ? notHere!
-                          : Padding(
-                              padding: EdgeInsets.only(bottom: i == rows - 1 ? 0 : WsT.gutter),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                spacing: WsT.gutter,
-                                children: [
-                                  for (final f in list.skip(i * cols).take(cols))
-                                    SizedBox(
-                                      width: w,
-                                      child: _FontCard(f, c, usedBy: usedBy(f)),
-                                    ),
-                                ],
-                              ),
-                            ),
+                    return ShelfGrid(
+                      // (only what is shown is made, so only what is shown has its file read, _own)
+                      shelfLooks['Fonts']!,
+                      list: box.maxWidth < 440,
+                      count: list.length,
+                      footer: notHere,
+                      tile: (i) => _fontTile(list[i], c, list: box.maxWidth < 440, usedBy: usedBy(list[i])),
                     );
                   },
                 ),
@@ -404,115 +381,39 @@ TextStyle _face(_Font f, double size, Color c) => TextStyle(
   decoration: TextDecoration.none,
 );
 
-class _FontRow extends StatelessWidget {
-  const _FontRow(this.f, this.c, {this.usedBy});
-  final _Font f;
-  final DockCtx c;
-  final String? usedBy;
-  @override
-  Widget build(BuildContext context) {
-    final sel = c.sel == f.family, star = c.starred(f.family);
-    return DockHover(
-      onTap: () {
-        c.pick(f.family);
-        _toRole(c, f);
-      },
-      onDoubleTap: () => _setFont(c, f), // (two presses set it; carried to the stage it does the same)
-      builder: (context, h) => AnimatedContainer(
-        duration: Mo.dur,
-        curve: Mo.ease,
-        height: Shape.z(46),
-        margin: EdgeInsets.only(bottom: WsT.gutter),
-        padding: EdgeInsets.only(left: WsT.inset, right: Shape.s(4)),
-        color: dockFill(sel, h, WsT.card),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(f.sample ?? _sample, maxLines: 1, style: _face(f, 17, dockInk(sel, Grey.g95))),
-                  ),
-                  SizedBox(height: Shape.s(5)),
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          '${f.family}  ·  ${f.script ?? DockTags.of('Fonts', f.family, f.path == null ? const <String>{} : (c.ws.inside?.fontTags(f.path!) ?? const <String>{})).take(2).join(' ')}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: T.label(dockInk(sel, Grey.g76)),
-                        ),
-                      ),
-                      if (f.script != null) ...[SizedBox(width: Shape.s(6)), const DockTag(_noLatin)],
-                      if (usedBy case final u?) ...[SizedBox(width: Shape.s(6)), DockTag(u, hue: sel ? null : WsT.toneText)],
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            if (star || h || sel) DockStar(on: star, ink: sel ? WsT.onAccent : null, onTap: () => c.star(f.family)) else SizedBox(width: Shape.s(20)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The wide form: a card per family with the sample large enough to judge the face, its facts under it.
-class _FontCard extends StatelessWidget {
-  const _FontCard(this.f, this.c, {this.usedBy});
-  final _Font f;
-  final DockCtx c;
-  final String? usedBy;
-  @override
-  Widget build(BuildContext context) {
-    final sel = c.sel == f.family, star = c.starred(f.family);
-    return DockHover(
-      onTap: () {
-        c.pick(f.family);
-        _toRole(c, f);
-      },
-      onDoubleTap: () => _setFont(c, f),
-      builder: (context, h) => AnimatedContainer(
-        duration: Mo.dur,
-        curve: Mo.ease,
-        height: Shape.z(96),
-        padding: EdgeInsets.fromLTRB(WsT.inset, Shape.s(8), Shape.s(4), Shape.s(8)),
-        color: dockFill(sel, h, WsT.card),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Spacer(),
-                if (star || h || sel) DockStar(on: star, ink: sel ? WsT.onAccent : null, onTap: () => c.star(f.family)) else SizedBox(height: Shape.s(20)),
-              ],
-            ),
-            const Spacer(),
-            Text(f.sample ?? 'Motion', maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: _face(f, 28, dockInk(sel, Grey.g95))),
-            const Spacer(),
-            Row(
-              children: [
-                Flexible(
-                  child: Text(
-                    '${f.family}  ·  ${f.script ?? DockTags.of('Fonts', f.family, f.path == null ? const <String>{} : (c.ws.inside?.fontTags(f.path!) ?? const <String>{})).take(2).join(' ')}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: T.label(dockInk(sel, Grey.g76)),
-                  ),
-                ),
-                if (f.script != null) ...[SizedBox(width: Shape.s(6)), const DockTag(_noLatin)],
-                if (usedBy case final u?) ...[SizedBox(width: Shape.s(6)), DockTag(u, hue: sel ? null : WsT.toneText)],
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+/// One font as a tile of the Fonts shelf: a row (narrow) or a card (wide), its sample set in its own face.
+Widget _fontTile(_Font f, DockCtx c, {required bool list, String? usedBy}) {
+  final sel = c.sel == f.family, star = c.starred(f.family);
+  final tags =
+      f.script ?? DockTags.of('Fonts', f.family, f.path == null ? const <String>{} : (c.ws.inside?.fontTags(f.path!) ?? const <String>{})).take(2).join(' ');
+  return ShelfTile(
+    ShelfItem(f.family, f.family, label: f.script ?? '', about: f.sample ?? ''),
+    shelfLooks['Fonts']!,
+    list: list,
+    picked: sel,
+    picks: false,
+    onTap: () {
+      c.pick(f.family);
+      _toRole(c, f);
+    },
+    onApply: () => _setFont(c, f), // (two presses set it; carried to the stage it does the same)
+    art: (_) => list
+        ? FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(f.sample ?? _sample, maxLines: 1, style: _face(f, 17, dockInk(sel, Grey.g95))),
+          )
+        : Text(f.sample ?? 'Motion', maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: _face(f, 28, dockInk(sel, Grey.g95))),
+    says: '${f.family}  ·  $tags',
+    marks: [
+      if (f.script != null) ...[SizedBox(width: Shape.s(6)), const DockTag(_noLatin)],
+      if (usedBy case final u?) ...[SizedBox(width: Shape.s(6)), DockTag(u, hue: sel ? null : WsT.toneText)],
+    ],
+    after: (h) => [
+      if (star || h || sel)
+        DockStar(on: star, ink: sel ? WsT.onAccent : null, onTap: () => c.star(f.family))
+      else
+        SizedBox(width: list ? Shape.s(20) : null, height: list ? null : Shape.s(20)),
+    ],
+  );
 }

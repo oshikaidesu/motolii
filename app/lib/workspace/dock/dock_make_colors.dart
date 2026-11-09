@@ -135,8 +135,9 @@ class _ColorBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final col = b.colour!, own = b.group == 'mine', pal = _pals.where((p) => p.id == b.group).firstOrNull;
-    return GestureDetector(
-      onSecondaryTapDown: (d) {
+    return DockHover(
+      key: ValueKey('colour-box-${b.group}-${b.i}'),
+      onMenu: (at) {
         final items = [
           if (own) ...[
             WsMenuItem(
@@ -166,42 +167,39 @@ class _ColorBox extends StatelessWidget {
         ];
         if (items.isEmpty) return;
         final box = _boxMenu.currentContext?.findRenderObject() as RenderBox?;
-        _boxMenu.currentState?.show(box?.globalToLocal(d.globalPosition) ?? Offset.zero, items);
+        _boxMenu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, items);
       },
-      child: DockHover(
-        key: ValueKey('colour-box-${b.group}-${b.i}'),
-        onHover: (on) {
-          _named.value = on ? b.group : _pressed;
-          _hovered.value = on ? b.group : null;
+      onHover: (on) {
+        _named.value = on ? b.group : _pressed;
+        _hovered.value = on ? b.group : null;
+      },
+      onTap: () {
+        _named.value = _pressed = b.group;
+        _take(c, col);
+      },
+      builder: (context, h) => ValueListenableBuilder<String?>(
+        valueListenable: _hovered,
+        builder: (context, over, _) {
+          // (the hand on a box: a rainbow rim round each box of its palette, so a palette is seen whole with no gap kept round it: the user, a rim, not the others darkened)
+          final box = Container(
+            decoration: BoxDecoration(
+              color: col,
+              borderRadius: BorderRadius.all(Shape.r(over == b.group ? 3 : 5)),
+              border: _wheelFrom == _hex(col).substring(1).toLowerCase() ? Border.all(color: Grey.g95, width: 2) : null,
+            ),
+          );
+          return over != b.group
+              ? box
+              : Container(
+                  key: const ValueKey('colour-rim'),
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.all(Shape.r(5)),
+                    gradient: const SweepGradient(colors: _rainbow),
+                  ),
+                  child: box,
+                );
         },
-        onTap: () {
-          _named.value = _pressed = b.group;
-          _take(c, col);
-        },
-        builder: (context, h) => ValueListenableBuilder<String?>(
-          valueListenable: _hovered,
-          builder: (context, over, _) {
-            // (the hand on a box: a rainbow rim round each box of its palette, so a palette is seen whole with no gap kept round it: the user, a rim, not the others darkened)
-            final box = Container(
-              decoration: BoxDecoration(
-                color: col,
-                borderRadius: BorderRadius.all(Shape.r(over == b.group ? 3 : 5)),
-                border: _wheelFrom == _hex(col).substring(1).toLowerCase() ? Border.all(color: Grey.g95, width: 2) : null,
-              ),
-            );
-            return over != b.group
-                ? box
-                : Container(
-                    key: const ValueKey('colour-rim'),
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.all(Shape.r(5)),
-                      gradient: const SweepGradient(colors: _rainbow),
-                    ),
-                    child: box,
-                  );
-          },
-        ),
       ),
     );
   }
@@ -390,13 +388,14 @@ class _Grad extends StatelessWidget {
     final (look, at) = _previewOf(g.colors, g.blend, g.at);
     return Semantics(
       label: g.name,
-      child: GestureDetector(
-        onSecondaryTapDown: !g.saved
+      child: DockHover(
+        key: ValueKey('colour-$id'),
+        onMenu: !g.saved
             ? null
-            : (d) {
+            : (at) {
                 // (one's own gradient's menu: deleted, as one's own colour)
                 final box = _boxMenu.currentContext?.findRenderObject() as RenderBox?;
-                _boxMenu.currentState?.show(box?.globalToLocal(d.globalPosition) ?? Offset.zero, [
+                _boxMenu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [
                   WsMenuItem(
                     'Delete this gradient',
                     () => c.set(() {
@@ -406,15 +405,12 @@ class _Grad extends StatelessWidget {
                   ),
                 ]);
               },
-        child: DockHover(
-          key: ValueKey('colour-$id'),
-          onTap: () => _putGradient(c, g.colors, g.blend, g.at), // (a press puts it on, where its colours stand and mixed as it was kept)
-          builder: (context, h) => Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: look, stops: at),
-              borderRadius: BorderRadius.all(Shape.r(5)),
-              border: _wheelFrom == word ? Border.all(color: Grey.g95, width: 2) : (h ? Border.all(color: Grey.g76) : null),
-            ),
+        onTap: () => _putGradient(c, g.colors, g.blend, g.at), // (a press puts it on, where its colours stand and mixed as it was kept)
+        builder: (context, h) => Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: look, stops: at),
+            borderRadius: BorderRadius.all(Shape.r(5)),
+            border: _wheelFrom == word ? Border.all(color: Grey.g95, width: 2) : (h ? Border.all(color: Grey.g76) : null),
           ),
         ),
       ),

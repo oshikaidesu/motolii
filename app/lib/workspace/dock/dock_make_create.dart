@@ -302,21 +302,13 @@ class CreateShelf extends StatelessWidget {
                             ),
                             if (!(c.query.isEmpty && c.mem.createFolded.contains(g))) ...[
                               const SizedBox(height: WsT.gutter),
-                              LayoutBuilder(
-                                builder: (context, box) {
-                                  final cols = wsCols(box.maxWidth, 74, min: 2), w = wsCell(box.maxWidth, cols);
-                                  return Wrap(
-                                    spacing: WsT.gutter,
-                                    runSpacing: WsT.gutter,
-                                    children: [
-                                      for (final m in items)
-                                        SizedBox(
-                                          width: w,
-                                          height: Shape.z(70),
-                                          child: m.file != null && shelfAdded(m.file!) ? _OwnTile(m, c, key: ValueKey('ws-own-${m.file}')) : _MakeTile(m, c),
-                                        ),
-                                    ],
-                                  );
+                              ShelfGrid(
+                                shelfLooks['Create']!,
+                                shrinkWrap: true,
+                                count: items.length,
+                                tile: (i) {
+                                  final m = items[i];
+                                  return m.file != null && shelfAdded(m.file!) ? _OwnTile(m, c, key: ValueKey('ws-own-${m.file}')) : _makeTile(m, c);
                                 },
                               ),
                             ],
@@ -340,87 +332,67 @@ class CreateShelf extends StatelessWidget {
   }
 }
 
-class _MakeTile extends StatelessWidget {
-  const _MakeTile(this.m, this.c, {this.naming});
-  final _Make m;
-  final DockCtx c;
-  final Widget? naming; // (where its name is being written, in its place)
-  @override
-  Widget build(BuildContext context) {
-    final sel = c.sel == m.id;
-    final inside = c.ws.inside;
-    final makes =
-        inside != null &&
-        (m.recipe
-            ? inside.createScripts.any((r) => r.$1 == m.name)
-            : _asked.containsKey(m.name) || _worn.containsKey(m.name) || m.onPicked || inside.elements.any((e) => e.$1 == m.name));
-    return DockHover(
-      onTap: () => c.pick(m.id),
-      onDoubleTap: makes ? () => _make(c, m) : null, // (two presses make it, one step)
-      picks: true,
-      builder: (context, h) => AnimatedContainer(
-        duration: Mo.dur,
-        curve: Mo.ease,
-        padding: EdgeInsets.all(Shape.s(7)),
-        color: sel ? WsT.accent : (h ? WsT.raised : WsT.card),
-        child: Stack(
-          children: [
-            if (m.recipe && _isRecipe(c, m.name)) // (a recipe: its motion as the inside reckons it, drawn by the window, the whole list moving at once)
-              Positioned.fill(child: RecipeMotionView(m.name))
-            else if (m.file
-                case final f?) // (an expression: copies it lays out, drawn by the inside as an effect's tile, played while in sight: copies_tiles.dart)
-              Positioned.fill(
-                child: ValueListenableBuilder(
-                  valueListenable: CopiesTiles.drawn,
-                  builder: (_, _, _) => switch (CopiesTiles.of(f)) {
-                    '' => Align(
-                      alignment: Alignment.topLeft,
-                      child: DockGlyph(m.g, size: Shape.z(26), color: sel ? WsT.onAccent : m.hue),
-                    ),
-                    final p => TileMoving(p, playing: true), // (played while in sight: TileMoving's own)
-                  },
-                ),
-              )
-            else if (_worn[m.name] case final w?) // (a material: a ball wearing it, drawn by the inside: material_tiles.dart)
-              Positioned.fill(
-                child: ValueListenableBuilder(
-                  valueListenable: MaterialTiles.drawn,
-                  builder: (_, _, _) => switch (MaterialTiles.of(w)) {
-                    '' => Align(
-                      alignment: Alignment.topLeft,
-                      child: DockGlyph(m.g, size: Shape.z(26), color: sel ? WsT.onAccent : m.hue),
-                    ),
-                    final p => TileMoving(p, playing: false),
-                  },
-                ),
-              )
-            else
-              Align(
-                alignment: Alignment.topLeft,
-                child: DockGlyph(m.g, size: Shape.z(26), color: sel ? WsT.onAccent : m.hue),
-              ),
-            if (m.key.isNotEmpty)
-              Align(
-                alignment: Alignment.topRight,
-                child: Text(m.key, style: T.micro(dockInk(sel, Grey.g56))),
-              ),
-            Align(
-              alignment: Alignment.bottomLeft,
-              child:
-                  naming ??
-                  AutoSizeText(
-                    // (a long name on two lines of whole words, as Finder's icons have it; smaller rather than a word broken)
-                    m.name,
-                    maxLines: 2,
-                    wrapWords: false,
-                    minFontSize: 6,
-                    stepGranularity: .5,
-                    style: T.name(dockInk(sel, Grey.g95)).copyWith(fontWeight: FontWeight.w700),
-                  ),
-            ),
-          ],
+/// One Create tile: the shelf's one tile, in its look. [naming]: where its name is being written, in its place; [onMenu]: a right click.
+Widget _makeTile(_Make m, DockCtx c, {Key? key, Widget? naming, ValueChanged<Offset>? onMenu}) {
+  final sel = c.sel == m.id, inside = c.ws.inside;
+  final makes =
+      inside != null &&
+      (m.recipe
+          ? inside.createScripts.any((r) => r.$1 == m.name)
+          : _asked.containsKey(m.name) || _worn.containsKey(m.name) || m.onPicked || inside.elements.any((e) => e.$1 == m.name));
+  return ShelfTile(
+    ShelfItem(m.id, m.name, about: m.what),
+    shelfLooks['Create']!,
+    key: key,
+    picked: sel,
+    naming: naming,
+    onMenu: onMenu,
+    onTap: () => c.pick(m.id),
+    onApply: makes ? () => _make(c, m) : null, // (two presses make it, one step)
+    art: (_) => _makeArt(m, c, sel),
+    over: (_) => [
+      if (m.key.isNotEmpty)
+        Align(
+          alignment: Alignment.topRight,
+          child: Text(m.key, style: T.micro(dockInk(sel, Grey.g56))),
         ),
+    ],
+  );
+}
+
+/// A tile's picture, one of four: a recipe's motion, an expression's copies, a material's ball, or its mark.
+Widget _makeArt(_Make m, DockCtx c, bool sel) {
+  Widget mark() => Align(
+    alignment: Alignment.topLeft,
+    child: DockGlyph(m.g, size: Shape.z(26), color: sel ? WsT.onAccent : m.hue),
+  );
+  if (m.recipe && _isRecipe(c, m.name)) {
+    // (a recipe: its motion as the inside reckons it, drawn by the window, the whole list moving at once)
+    return Positioned.fill(child: RecipeMotionView(m.name));
+  }
+  if (m.file case final f?) {
+    // (an expression: copies it lays out, drawn by the inside as an effect's tile, played while in sight: copies_tiles.dart)
+    return Positioned.fill(
+      child: ValueListenableBuilder(
+        valueListenable: CopiesTiles.drawn,
+        builder: (_, _, _) => switch (CopiesTiles.of(f)) {
+          '' => mark(),
+          final p => TileMoving(p, playing: true), // (played while in sight: TileMoving's own)
+        },
       ),
     );
   }
+  if (_worn[m.name] case final w?) {
+    // (a material: a ball wearing it, drawn by the inside: material_tiles.dart)
+    return Positioned.fill(
+      child: ValueListenableBuilder(
+        valueListenable: MaterialTiles.drawn,
+        builder: (_, _, _) => switch (MaterialTiles.of(w)) {
+          '' => mark(),
+          final p => TileMoving(p, playing: false),
+        },
+      ),
+    );
+  }
+  return mark();
 }

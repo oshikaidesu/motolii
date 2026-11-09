@@ -116,7 +116,7 @@ class DockCtx {
 
 /// Hover + tap, nothing else: repaints only when the pointer enters or leaves.
 class DockHover extends StatefulWidget {
-  const DockHover({super.key, required this.builder, this.onTap, this.onDoubleTap, this.picks = false, this.onHover});
+  const DockHover({super.key, required this.builder, this.onTap, this.onDoubleTap, this.picks = false, this.onHover, this.onMenu, this.onMove});
 
   /// Whether ⌘ was held as the last tile was pressed.
   static bool cmdAtPress = false;
@@ -136,6 +136,12 @@ class DockHover extends StatefulWidget {
   /// The pointer came onto it (true) or went off (false), told once each; gone from the window under it, off as well
   /// (a MouseRegion unmounted under the pointer tells no exit).
   final ValueChanged<bool>? onHover;
+
+  /// A secondary press (a right click), told with where it was on the screen.
+  final ValueChanged<Offset>? onMenu;
+
+  /// The pointer moved over it, told with where it is in the tile.
+  final ValueChanged<Offset>? onMove;
   @override
   State<DockHover> createState() => _DockHoverState();
 }
@@ -182,6 +188,7 @@ class _DockHoverState extends State<DockHover> {
     cursor: widget.onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
     onEnter: (_) => _hover(true),
     onExit: (_) => _hover(false),
+    onHover: widget.onMove == null ? null : (e) => widget.onMove!(e.localPosition),
     child: _carried(
       Listener(
         // (the press as it comes, before the gestures settle which it is)
@@ -192,6 +199,7 @@ class _DockHoverState extends State<DockHover> {
           behavior: HitTestBehavior.opaque,
           onTap: widget.picks && widget.onDoubleTap != null ? null : widget.onTap,
           onDoubleTap: widget.onDoubleTap,
+          onSecondaryTapDown: widget.onMenu == null ? null : (d) => widget.onMenu!(d.globalPosition),
           child: widget.builder(context, _h),
         ),
       ),

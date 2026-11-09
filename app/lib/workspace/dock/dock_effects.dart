@@ -1,8 +1,6 @@
 // The Effects shelf: all the inside does to a picture, as tiles sorted by what each is for (the inside's labels as
 // chips, not who draws it): the effects a thing may be given (picked: its foot puts it on or takes it off), the
 // whole-screen effects (on the picked thing as the camera sees it, or on the stage, in their order), the motions.
-import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
@@ -20,13 +18,22 @@ import '../shelf/effect_decks.dart';
 import '../shelf/effect_tiles.dart';
 import '../shelf/empty_fx.dart';
 import '../shelf/shelf_add.dart';
+import '../shelf/shelf_tile.dart';
 import '../state/state.dart';
 import '../commands/context_menu.dart';
 
 // (each: what it is told by (a thing's own by its name; a file's by its file: two files may share a name, Halftone's
 //  three.js .wgsl and an AviUtl2 script), its name, what it is for, its tile, whether it is on, what two presses do
 //  (also what a drop on the stage does), what it says of itself)
-typedef _Fx = ({String id, String name, String label, Widget Function(bool small) tile, bool on, VoidCallback apply, String said});
+typedef _Fx = ({
+  String id,
+  String name,
+  String label,
+  Widget Function(bool small, ValueChanged<Offset>? menu) tile, // (menu: what a right click on it does)
+  bool on,
+  VoidCallback apply,
+  String said,
+});
 
 class EffectsShelf extends StatefulWidget {
   const EffectsShelf(this.c, {super.key});
@@ -34,7 +41,7 @@ class EffectsShelf extends StatefulWidget {
 
   /// The files' effects by their names, as After Effects' Effects & Presets lists each kind: the inside gives them by
   /// file, so VIDVOX's capitals came before AbsentMotion's am_ files, two runs of A to Z (golf_noise.md ㊾). Once a shelf.
-  static final _byName = Expando<List<(String, String, String)>>(); // (as shown, file, as the inside names it)
+  static final _byName = Expando<List<(String, ShelfItem)>>(); // (as shown, the inside's item)
 
   @override
   State<EffectsShelf> createState() => _EffectsShelfState();
@@ -83,6 +90,85 @@ class _EffectsShelfState extends State<EffectsShelf> {
     //  thing go on a new board, Ws.fxToggle)
     // (an effect file on the picked thing taken off by Remove, a press putting on another: Ws.screenPut)
     VoidCallback? off(_Fx e) => screen.contains(e.id) ? () => ws.screenToggle(e.id) : null;
+    final look = shelfLooks['Effects']!;
+    // (laid over a tile's picture, none on a small one: ON (and its place among those on the stage) when it is on, why
+    //  it is seen to change nothing on the sample when it is (FOR SOUND, UNSUPPORTED…), the star once starred or under
+    //  the pointer)
+    List<Widget> Function(bool) marks(String id, bool small, {String? on, String? same}) =>
+        (h) => [
+          if (on != null && !small) Positioned(left: 3, top: 3, child: DockTag(on, hue: WsT.accent, edge: true)),
+          if (same != null && !small)
+            Positioned(
+              left: 3,
+              bottom: 3,
+              child: DockTag(same, hue: Grey.g63, edge: true),
+            ), // (the sample as it is: what it lacks there, or that the inside does not draw it yet)
+          if (!small && (c.starred(id) || h))
+            Positioned(
+              right: 0,
+              top: 0,
+              child: DockStar(key: ValueKey('ws-star-$id'), on: c.starred(id), onTap: () => c.star(id)),
+            ),
+        ];
+    // (what the inside said of each, by the id it is told by: a thing's own by its name, a file's by its file)
+    final seen = <String, ShelfItem>{};
+    String pic(String id) => seen[id]?.picture ?? '';
+    // (one item of the three listings: only what truly differs by listing is switched on its [from])
+    _Fx fx(String name, ShelfItem i) {
+      final thing = i.from == 'thing', screened = i.from == 'screen', id = thing ? i.name : i.id;
+      final lit = thing ? on.contains(id) : screened && screen.contains(id);
+      final apply = chosen(id, thing ? () => ws.fxToggle(id) : (screened ? () => ws.screenPut(id) : () => ws.lookPut(id)), taken: thing && lit);
+      seen[id] = i;
+      return (
+        id: id,
+        name: name,
+        label: thing || screened ? i.label : 'Look',
+        on: lit,
+        apply: apply,
+        said: thing
+            ? _said(ws, id)
+            : !screened
+            ? (picked ? 'A look for the picked thing' : 'A look, on a new board')
+            : i.same && EffectTiles.stopped(id).isNotEmpty
+            ? 'Stops here: ${EffectTiles.stopped(id)}'
+            : i.same && EffectTiles.lacks(id).isNotEmpty
+            ? 'Needs: ${EffectTiles.lacks(id)}'
+            : i.about.isEmpty
+            ? (picked ? 'On the picked thing' : 'On all under it')
+            : i.about,
+        tile: (small, menu) => ShelfTile(
+          ShelfItem(id, name, picture: i.picture),
+          look,
+          key: small || thing ? null : ValueKey(screened ? 'ws-screen-$id' : 'ws-look-$name'),
+          small: small,
+          art: thing && i.picture.isEmpty ? _painted(_FxLook(name)) : null, // (without a picture, its small drawing)
+          picked: c.sel == id,
+          lit: lit,
+          onTap: () => c.pick(id),
+          onApply: apply,
+          onMenu: menu,
+          onHover: screened ? (h) => ws.tryOn(h ? id : null) : null, // (what it does shown on the picked thing meanwhile, Ws.tryOn)
+          naming: screened && _renaming == id ? ShelfNameField(name, (to) => _renamed(id, name, to)) : null,
+          over: marks(
+            id,
+            small,
+            on: !lit ? null : (screened ? 'ON ${screen.indexOf(id) + 1}' : 'ON'),
+            same: screened && i.same ? EffectTiles.sameTag(id) : null,
+          ),
+        ),
+      );
+    }
+
+    // (the files' effects by their names, one the maker added and renamed by the name written beside it, shelf_add.dart)
+    final screens = m.items('screen');
+    final lined = <(String, ShelfItem)>[
+      for (final i in m.items('thing')) (i.name, i),
+      ...(EffectsShelf._byName[screens] ??= ([for (final i in screens) (shelfNamed(i.id) ?? i.name, i)]
+        ..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase())))),
+      // (a look kept by its name, Save Look: given to the picked thing, its values, effects and keys)
+      for (final (_, f) in m.presets)
+        if (m.item(f) case final i?) (i.name, i),
+    ];
     final every = <_Fx>[
       // (first: an empty one, its code open on its card to paste an ISF effect into: empty_fx.dart)
       (
@@ -92,102 +178,29 @@ class _EffectsShelfState extends State<EffectsShelf> {
         on: false,
         apply: chosen('empty:effect', () => emptyPut(ws, expression: false, told: (why) => why.isEmpty ? null : ws.notice = 'Not taken: $why')),
         said: picked ? 'An empty effect on the picked thing: paste ISF code into its card' : 'An empty effect, on a new board: paste ISF code into its card',
-        tile: (small) => EffectTile(
-          'Empty',
+        tile: (small, menu) => ShelfTile(
+          ShelfItem('empty:effect', 'Empty'),
+          look,
           small: small,
-          look: const EmptyLook(),
-          on: null,
+          art: _painted(const EmptyLook()),
           picked: c.sel == 'empty:effect',
           onTap: () => c.pick('empty:effect'),
           onApply: chosen('empty:effect', () => emptyPut(ws, expression: false, told: (why) => why.isEmpty ? null : ws.notice = 'Not taken: $why')),
+          onMenu: menu,
         ),
       ),
-      for (final (n, _) in m.layerEffects)
-        (
-          id: n,
-          name: n,
-          label: m.label(n),
-          on: on.contains(n),
-          apply: chosen(n, () => ws.fxToggle(n), taken: on.contains(n)),
-          said: _said(ws, n),
-          tile: (small) => EffectTile(
-            n,
-            small: small,
-            file: m.tileImage(n),
-            look: _FxLook(n),
-            on: on.contains(n) ? 'ON' : null,
-            picked: c.sel == n,
-            onTap: () => c.pick(n),
-            onApply: chosen(n, () => ws.fxToggle(n), taken: on.contains(n)),
-            star: small ? null : c,
-          ),
-        ),
-      // (one the maker added and renamed by the name written beside it, shelf_add.dart)
-      for (final (n, f, said) in EffectsShelf._byName[m.effects] ??= ([
-        for (final (n, f) in m.effects) (shelfNamed(f) ?? n, f, n),
-      ]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase()))))
-        (
-          id: f,
-          name: n,
-          label: m.label(said),
-          on: screen.contains(f),
-          apply: chosen(f, () => ws.screenPut(f)),
-          said: m.tileSame(f) && EffectTiles.stopped(f).isNotEmpty
-              ? 'Stops here: ${EffectTiles.stopped(f)}'
-              : m.tileSame(f) && EffectTiles.lacks(f).isNotEmpty
-              ? 'Needs: ${EffectTiles.lacks(f)}'
-              : m.about(f).isEmpty
-              ? (picked ? 'On the picked thing' : 'On all under it')
-              : m.about(f),
-          tile: (small) => EffectTile(
-            n,
-            key: small ? null : ValueKey('ws-screen-$f'),
-            small: small,
-            file: m.tileImage(f),
-            same: m.tileSame(f) ? EffectTiles.sameTag(f) : null,
-            on: screen.contains(f) ? 'ON ${screen.indexOf(f) + 1}' : null,
-            picked: c.sel == f,
-            onTap: () => c.pick(f),
-            onApply: chosen(f, () => ws.screenPut(f)),
-            star: small ? null : c,
-            starId: f,
-            onHover: (h) => ws.tryOn(h ? f : null),
-            naming: _renaming == f ? ShelfNameField(n, (to) => _renamed(f, n, to)) : null,
-          ),
-        ),
-      // (a look kept by its name, Save Look: given to the picked thing, its values, effects and keys)
-      for (final (n, f) in m.presets)
-        (
-          id: f,
-          name: n,
-          label: 'Look',
-          on: false,
-          apply: chosen(f, () => ws.lookPut(f)),
-          said: picked ? 'A look for the picked thing' : 'A look, on a new board',
-          tile: (small) => EffectTile(
-            n,
-            key: small ? null : ValueKey('ws-look-$n'),
-            small: small,
-            file: m.tileImage(f),
-            on: null,
-            picked: c.sel == f,
-            onTap: () => c.pick(f),
-            onApply: chosen(f, () => ws.lookPut(f)),
-            star: small ? null : c,
-            starId: f,
-          ),
-        ),
+      for (final (n, i) in lined) fx(n, i),
       // (no motions: they are expressions, on Create's Expression group: dock_make_3.dart)
     ];
     // (by its name, or by what it does in its maker's words, as Alight Motion's search reads the descriptions; when that
     //  finds nothing, a word typed wrong or in part, the nearest five by RapidFuzz (the inside's find, the user's choice),
     //  as a search engine's "Did you mean" comes when the words as typed find nothing)
     // (and by what it is, read from it, as the other shelves' tags are found: DockTags, each word on its own; golf (92))
-    Set<String> tagsOf(String id) => DockTags.of('Effects', id, m.tags(id));
+    Set<String> tagsOf(String id) => DockTags.of('Effects', id, seen[id]?.tags ?? const {});
     bool found(String q, _Fx e) =>
         q.isEmpty ||
         e.name.toLowerCase().contains(q.toLowerCase()) ||
-        m.about(e.id).toLowerCase().contains(q.toLowerCase()) ||
+        (seen[e.id]?.about ?? '').toLowerCase().contains(q.toLowerCase()) ||
         DockTags.hit(q, e.name, tagsOf(e.id));
     final hits = [
           for (final e in every)
@@ -198,7 +211,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
         ? const <String>[]
         : m.find(c.query, [
             for (final e in every)
-              if (!hit.contains(e.id)) (e.id, '${e.name} ${e.label}', m.about(e.id)),
+              if (!hit.contains(e.id)) (e.id, '${e.name} ${e.label}', (seen[e.id]?.about ?? '')),
           ]);
     final first = DockTags.latched('Effects', c.query), latched = every.where((e) => e.id == first).take(1).toList();
     final all = [
@@ -280,7 +293,14 @@ class _EffectsShelfState extends State<EffectsShelf> {
                 deck.things.remove(t);
                 effectDecksKeep();
               }),
-              tile: (bool small) => EffectTile(t.name, lost: true, on: null, picked: c.sel == t.id, onTap: () => c.pick(t.id)),
+              tile: (small, menu) => ShelfTile(
+                ShelfItem(t.id, t.name),
+                look,
+                picked: c.sel == t.id,
+                onTap: () => c.pick(t.id),
+                onMenu: menu,
+                over: (_) => [Positioned(left: 3, bottom: 3, child: DockTag('NOT HERE', hue: Grey.g63, edge: true))],
+              ),
             ),
     ];
     // (ten in sight over the tiles while nothing narrows them, as Alight Motion's effect browser opens on its last ten,
@@ -327,46 +347,27 @@ class _EffectsShelfState extends State<EffectsShelf> {
       ]);
     }
 
-    Widget tile(_Fx e, bool small) => GestureDetector(onSecondaryTapDown: (d) => menuOn(e, d.globalPosition), child: e.tile(small));
+    Widget tile(_Fx e, bool small) => e.tile(small, (at) => menuOn(e, at));
     // (one the deck holds, under its row: Hearthstone's deck list, each card a strip of its picture and its name; a
     //  press picks it, two put it on, carried it goes where it is let go, a right click its menu, as its tile)
-    Widget strip(_Fx e) => GestureDetector(
-      onSecondaryTapDown: e.label == 'Not here' ? null : (d) => menuOn(e, d.globalPosition),
-      child: DockHover(
-        key: ValueKey('ws-fx-held-${e.id}'),
-        onTap: () => c.pick(e.id),
-        onDoubleTap: e.apply,
-        picks: true,
-        builder: (context, h) => Container(
-          height: Shape.z(22),
-          padding: EdgeInsets.only(left: Shape.s(4) + Shape.z(14), right: WsT.inset),
-          color: dockFill(c.sel == e.id, h),
-          child: Row(
-            children: [
-              SizedBox.square(
-                dimension: Shape.z(18),
-                child: m.tileImage(e.id).isEmpty ? ColoredBox(color: WsT.card) : TileMoving(m.tileImage(e.id), playing: true),
-              ), // (played while in sight: TileMoving's own)
-              SizedBox(width: Shape.s(6)),
-              Expanded(
-                child: Text(
-                  e.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: T.name(dockInk(c.sel == e.id, e.label == 'Not here' ? Grey.g56 : null)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    Widget strip(_Fx e) => ShelfTile(
+      ShelfItem(e.id, e.name, picture: pic(e.id)),
+      look,
+      key: ValueKey('ws-fx-held-${e.id}'),
+      list: true,
+      indent: Shape.z(14),
+      ink: e.label == 'Not here' ? Grey.g56 : null,
+      picked: c.sel == e.id,
+      onTap: () => c.pick(e.id),
+      onApply: e.apply,
+      onMenu: e.label == 'Not here' ? null : (at) => menuOn(e, at),
     );
     // (a deck's picture: the pictures of its first four, two by two, or of its first alone while it holds fewer, as
     //  Spotify makes a playlist's cover)
     Widget? cover(Iterable<String> ids) {
       final f = [
         for (final id in ids)
-          if (m.tileImage(id) case final p when p.isNotEmpty) p,
+          if (pic(id) case final p when p.isNotEmpty) p,
       ].take(4).toList();
       Widget one(String p) => TileMoving(p, playing: false);
       return f.isEmpty
@@ -425,18 +426,16 @@ class _EffectsShelfState extends State<EffectsShelf> {
           onPick: c.pickChip,
         ), // (the tags read first, as Shadertoy's filters head its results: the kinds are many, a hundred and more, the most first as the tags)
         if (inSight.isNotEmpty)
-          GridView.count(
+          ShelfGrid(
+            look,
             key: const ValueKey('ws-fx-recent'),
+            cols: 5,
+            small: true,
             shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.only(top: WsT.gutter, bottom: WsT.gutter),
-            crossAxisCount: 5,
-            crossAxisSpacing: WsT.gutter,
-            mainAxisSpacing: WsT.gutter,
-            children: [
-              for (var i = 0; i < (inSight.length > 5 ? 10 : 5); i++) i < inSight.length ? tile(inSight[i], true) : const SizedBox(),
-            ], // (as Alight Motion's box of two rows; one until a sixth: in the window a row with one tile stood empty over the shelf)
-          ),
+            pad: EdgeInsets.only(top: WsT.gutter, bottom: WsT.gutter),
+            count: inSight.length,
+            tile: (i) => tile(inSight[i], true),
+          ), // (as Alight Motion's box of two rows; one until a sixth: in the window a row with one tile stood empty over the shelf)
         Expanded(
           child: CallbackShortcuts(
             // (B puts the one picked where its menu's one row would, as in Lightroom's Library grid)
@@ -464,12 +463,12 @@ class _EffectsShelfState extends State<EffectsShelf> {
                           final clip = dockModel('clip_b32'); // (by how CLIP sees each moment, once it is made; else by tiny colours)
                           final drawn = [
                             for (final e in every)
-                              if (m.tileImage(e.id).isNotEmpty) e,
+                              if (pic(e.id).isNotEmpty) e,
                           ];
                           if (!drawing || map.places.value.isEmpty) {
                             map.need(
                               m,
-                              [for (final e in drawn) (e.id, m.tileImage(e.id))],
+                              [for (final e in drawn) (e.id, pic(e.id))],
                               (from) => _fxNumbers(m, clip, [for (final e in drawn) e.label], from),
                               also: '${clip ?? ''} kinds',
                             );
@@ -479,28 +478,12 @@ class _EffectsShelfState extends State<EffectsShelf> {
                             [for (final e in listed) (e.id, tile(e, true))],
                             picked: c.sel,
                             press: c.pick,
-                            peek: (id) => TileMoving(m.tileImage(id), playing: true),
+                            peek: (id) => TileMoving(pic(id), playing: true),
                             names: {for (final e in every) e.id: e.name},
                           );
                         },
                       )
-                    : LayoutBuilder(
-                        builder: (context, box) {
-                          final cols = wsCols(box.maxWidth, Shape.z(84)), w = wsCell(box.maxWidth, cols);
-                          return GridView.builder(
-                            // (only the tiles in sight are made, Flutter's own lazy grid, as the Fonts shelf's rows: a Wrap made all 1,293 at each opening)
-                            padding: EdgeInsets.zero,
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: cols,
-                              crossAxisSpacing: WsT.gutter,
-                              mainAxisSpacing: WsT.gutter,
-                              mainAxisExtent: w + Shape.z(18),
-                            ), // (a tile: its square and its name, EffectTile)
-                            itemCount: listed.length,
-                            itemBuilder: (context, i) => tile(listed[i], false),
-                          );
-                        },
-                      ),
+                    : ShelfGrid(look, count: listed.length, tile: (i) => tile(listed[i], false)),
               ),
             ),
           ),
@@ -550,9 +533,8 @@ class _EffectsShelfState extends State<EffectsShelf> {
                     ),
             ),
           ),
-          if (sel != null &&
-              m.tileImage(sel.id).isNotEmpty) // (large and moving, as Alight Motion's effect browser opens a large moving sample of the one pressed)
-            SizedBox(key: const ValueKey('ws-fx-preview'), height: Shape.z(140), child: TileMoving(m.tileImage(sel.id), playing: true)),
+          if (sel != null && pic(sel.id).isNotEmpty) // (large and moving, as Alight Motion's effect browser opens a large moving sample of the one pressed)
+            SizedBox(key: const ValueKey('ws-fx-preview'), height: Shape.z(140), child: TileMoving(pic(sel.id), playing: true)),
           if (sel != null)
             _FxFooter(
               sel.name,
@@ -576,189 +558,11 @@ class _EffectsShelfState extends State<EffectsShelf> {
   }
 }
 
-/// One tile, whatever draws it: what it does to a sample (the picture the inside says, drawn by effect_tiles.dart and
-/// moving, in the grid always (11/4, the user: "keep the effect window moving"), on the map while the hand is on it, as
-/// Alight Motion's tiles move; or made by shelves/effects/sources/fx_tiles.sh; without one, a thing's
-/// effect its small drawing, else a plain tile), its name, ON (and its place among those on the stage) when it is on,
-/// why it is seen to change nothing on the sample when it is (FOR SOUND, UNSUPPORTED…), the star for a thing's effect.
-class EffectTile extends StatelessWidget {
-  const EffectTile(
-    this.name, {
-    super.key,
-    this.file,
-    this.look,
-    required this.on,
-    required this.onTap,
-    this.onApply,
-    this.picked = false,
-    this.same,
-    this.star,
-    this.starId,
-    this.naming,
-    this.small = false,
-    this.lost = false,
-    this.onHover,
-  });
-  final String name;
-  final bool small; // (its square alone, among the last put on: no name, no tags; the foot says which)
-  final bool lost; // (a deck holds it, this machine does not)
-  final Widget? naming; // (where its name is being written, in its place)
-  final String? file, on;
-  final CustomPainter? look;
-  final bool picked;
-  final String? same; // (seen to change nothing on the sample: why, EffectTiles.sameTag)
-  final VoidCallback onTap;
-  final VoidCallback? onApply; // (two presses: it is put on, or taken off)
-  final ValueChanged<bool>? onHover; // (the hand on it, or off: what it does shown on the picked thing meanwhile, Ws.tryOn)
-  final DockCtx? star;
-  final String? starId; // (what it is starred by: a file's effect by its file, two files may share a name)
-  @override
-  Widget build(BuildContext context) => DockHover(
-    onTap: onTap,
-    onDoubleTap: onApply,
-    picks: true,
-    onHover: onHover,
-    builder: (context, h) => Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AspectRatio(
-          aspectRatio: 1,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              ColoredBox(color: WsT.card),
-              if (file case final f? when f.isNotEmpty)
-                TileMoving(
-                  f,
-                  playing: h || !small,
-                ) // (in the grid always: played while in sight, TileMoving's own; on the map the hand's alone, 1,255 of 16 pictures about 3 GB)
-              else if (look != null)
-                FittedBox(
-                  child: CustomPaint(size: const Size(18, 16), painter: look),
-                ),
-              if (on case final o? when !small) Positioned(left: 3, top: 3, child: DockTag(o, hue: WsT.accent, edge: true)),
-              if (same case final why? when !small)
-                Positioned(
-                  left: 3,
-                  bottom: 3,
-                  child: DockTag(why, hue: Grey.g63, edge: true),
-                ), // (the sample as it is: what it lacks there, or that the inside does not draw it yet)
-              if (lost) Positioned(left: 3, bottom: 3, child: DockTag('NOT HERE', hue: Grey.g63, edge: true)),
-              if (star case final s? when s.starred(starId ?? name) || h)
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: DockStar(key: ValueKey('ws-star-${starId ?? name}'), on: s.starred(starId ?? name), onTap: () => s.star(starId ?? name)),
-                ),
-              if (on != null || picked || h)
-                IgnorePointer(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: on != null || picked ? WsT.accentInk : Grey.g76, width: on != null || picked ? 2 : 1),
-                    ),
-                  ),
-                ), // (drawn over all, taking no hand: the star under it is pressed)
-            ],
-          ),
-        ),
-        if (!small)
-          Container(
-            height: Shape.z(18),
-            padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
-            alignment: Alignment.centerLeft,
-            color: dockFill(picked, h, WsT.card),
-            child:
-                naming ??
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(name, maxLines: 1, style: T.micro(dockInk(picked, Grey.g76))),
-                ), // (a name wider than its tile is drawn smaller, never cut)
-          ),
-      ],
-    ),
-  );
-}
-
-/// A tile's picture, its moving ones played there and back at 24 a second while [playing], so it neither steps nor jumps
-/// where it starts again (effect_tiles.dart); its still otherwise, and for a picture with none beside it. Keyed by when
-/// the file was written: a widget told the same file keeps the picture it had (an equal provider is not resolved again).
-class TileMoving extends StatefulWidget {
-  const TileMoving(this.file, {super.key, required this.playing});
-  final String file;
-  final bool playing;
-  @override
-  State<TileMoving> createState() => TileMovingState();
-}
-
-class TileMovingState extends State<TileMoving> {
-  static final _way = [for (var k = 0; k < EffectTiles.moments.length; k++) k, for (var k = EffectTiles.moments.length - 2; k > 0; k--) k];
-  int? _step;
-  Timer? _clock;
-  bool _awake = true; // (its tab, its page shown: TickerMode, as an AnimationController's)
-
-  void _follow() {
-    final go =
-        widget.playing &&
-        _awake &&
-        File(EffectTiles.frame(widget.file, EffectTiles.moments.length - 1)).existsSync(); // (the last: one drawn with fewer stands until it is drawn again)
-    if (go == (_clock != null)) return;
-    _clock?.cancel();
-    _clock = go
-        ? Timer.periodic(
-            const Duration(microseconds: 41667),
-            (_) => mounted && _inSight() ? setState(() => _step = ((_step ?? EffectTiles.still) + 1) % _way.length) : null,
-          )
-        : null;
-    if (!go) _step = null;
-  }
-
-  /// Whether some of it is in sight: within the shelf it scrolls in, and the window (a long shelf's tiles out of it stand still).
-  bool _inSight() {
-    final box = context.findRenderObject();
-    if (box is! RenderBox || !box.attached || !box.hasSize) return false;
-    var r = box.localToGlobal(Offset.zero) & box.size;
-    if (Scrollable.maybeOf(context)?.context.findRenderObject() case final RenderBox view when view.attached && view.hasSize) {
-      r = r.intersect(view.localToGlobal(Offset.zero) & view.size);
-    }
-    r = r.intersect(Offset.zero & MediaQuery.sizeOf(context));
-    return r.width > 0 && r.height > 0;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _follow();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _awake = TickerMode.valuesOf(context).enabled;
-    _follow();
-  }
-
-  @override
-  void didUpdateWidget(TileMoving old) {
-    super.didUpdateWidget(old);
-    _follow();
-  }
-
-  @override
-  void dispose() {
-    _clock?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => Image.file(
-    key: ValueKey(FileStat.statSync(widget.file).modified),
-    File(_step == null ? widget.file : EffectTiles.frame(widget.file, _way[_step!])),
-    fit: BoxFit.cover,
-    cacheWidth: EffectTiles.readWide,
-    gaplessPlayback: true,
-    errorBuilder: (_, _, _) => const SizedBox(),
-  );
-}
+/// A tile's picture drawn by the window, where the inside has none for it: a thing's effect its small drawing, Empty its plus.
+Widget Function(bool) _painted(CustomPainter p) =>
+    (_) => FittedBox(
+      child: CustomPaint(size: const Size(18, 16), painter: p),
+    );
 
 /// The Effects map's numbers for [ids], their tiles' moments read from [homes]: how each looks (CLIP's at three moments
 /// of its sixteen: how it moves too; or their tiny colours) beside what it is for, the shelf's own word ([kinds]: the
@@ -819,8 +623,8 @@ class _FxFooter extends StatelessWidget {
   );
 }
 
-/// What each of the inside's own effects does to a square, drawn small: a blur's soft edge, a shadow under it, a glow
-/// round it, a path half drawn, two tones, a ramp of colours. (An effect the window does not know has no picture.)
+/// What the inside's path effects do to a square, drawn small, where the shelf has no picture for them: a path half
+/// drawn, a dot moving along one. (An effect the window does not know has no picture.)
 class _FxLook extends CustomPainter {
   const _FxLook(this.name);
   final String name;
@@ -828,21 +632,6 @@ class _FxLook extends CustomPainter {
   void paint(Canvas c, Size s) {
     const ink = Color(0xFFE0A35A), r = Rect.fromLTWH(4, 3, 10, 10);
     switch (name) {
-      case 'Gaussian Blur':
-        c.drawRect(
-          r,
-          Paint()
-            ..color = ink
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.5),
-        ); // (soft all round: nothing sharp left)
-      case 'Drop Shadow':
-        c.drawRect(
-          r.shift(const Offset(2, 2)),
-          Paint()
-            ..color = const Color(0xFF000000)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.2),
-        );
-        c.drawRect(r, Paint()..color = ink);
       case 'Trim Paths':
         c.drawArc(
           Rect.fromCircle(center: r.center, radius: 5.5),
@@ -867,11 +656,6 @@ class _FxLook extends CustomPainter {
             ..strokeWidth = 1,
         );
         c.drawCircle(r.center + const Offset(0, -5.5), 2, Paint()..color = ink);
-      case 'Duotone':
-        c.drawRect(Rect.fromLTWH(r.left, r.top, r.width / 2, r.height), Paint()..color = const Color(0xFF2B3A67));
-        c.drawRect(Rect.fromLTWH(r.center.dx, r.top, r.width / 2, r.height), Paint()..color = const Color(0xFFF4C27A));
-      case 'Gradient Map':
-        c.drawRect(r, Paint()..shader = const LinearGradient(colors: [Color(0xFF2B3A67), Color(0xFFE0607E), Color(0xFFF4C27A)]).createShader(r));
     }
   }
 

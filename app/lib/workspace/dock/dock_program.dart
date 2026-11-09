@@ -10,7 +10,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:re_editor/re_editor.dart';
 import 'package:re_highlight/languages/glsl.dart';
@@ -19,14 +18,14 @@ import 'package:re_highlight/styles/atom-one-dark.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
 
 import '../../bridge/motolii.dart';
-import '../../widgets/text_gestures.dart';
 import '../../skin/tokens.dart';
-import 'dock_effects.dart';
 import '../shelf/copies_tiles.dart';
 import 'dock_glyphs.dart';
 import 'dock_widgets.dart';
 import '../shelf/effect_tiles.dart';
 import '../shelf/program_tiles.dart';
+import '../shelf/shelf_add.dart';
+import '../shelf/shelf_tile.dart';
 import '../state/state.dart';
 import '../commands/context_menu.dart';
 
@@ -119,8 +118,6 @@ class _ProgramShelfState extends State<ProgramShelf> {
   void _told(Program p, bool done, String why) => c.set(() => done ? c.mem.trouble.remove(p.file) : c.mem.trouble[p.file] = why);
   final _menu = GlobalKey<WsMenuState>();
   String? _renaming; // (the file whose name is being written)
-  final _words = TextEditingController();
-  late final FocusNode _focus = FocusNode()..addListener(() => _focus.hasFocus ? null : _renamed());
 
   void _drawn() => setState(() {});
 
@@ -133,8 +130,6 @@ class _ProgramShelfState extends State<ProgramShelf> {
   @override
   void dispose() {
     CopiesTiles.drawn.removeListener(_drawn);
-    _words.dispose();
-    _focus.dispose();
     super.dispose();
   }
 
@@ -154,48 +149,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
     });
   }
 
-  void _rename(Program p) {
-    setState(() => _renaming = p.file);
-    _words
-      ..text = p.name
-      ..selection = TextSelection(baseOffset: 0, extentOffset: p.name.length);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus()); // (its field is there from the next frame)
-  }
-
-  void _renamed() {
-    final file = _renaming;
-    if (file == null) return;
-    Program(file).rename(_words.text);
-    setState(() => _renaming = null);
-  }
-
-  Widget _naming(Program p) => CallbackShortcuts(
-    bindings: {
-      const SingleActivator(LogicalKeyboardKey.escape): () {
-        _words.text = p.name;
-        _focus.unfocus();
-      },
-    },
-    child: Container(
-      color: Grey.g91,
-      padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
-      alignment: Alignment.centerLeft,
-      child: TextGestures(
-        key: const ValueKey('ws-program-name'),
-        field: (k) => EditableText(
-          key: k,
-          rendererIgnoresPointer: true,
-          controller: _words,
-          focusNode: _focus,
-          style: T.micro(Grey.g13),
-          cursorColor: Grey.g13,
-          backgroundCursorColor: Grey.g38,
-          maxLines: 1,
-          onSubmitted: (_) => _focus.unfocus(),
-        ),
-      ),
-    ),
-  );
+  void _rename(Program p) => setState(() => _renaming = p.file);
 
   void _menuOn(Program p, Offset at) {
     c.pick(p.file);
@@ -271,35 +225,27 @@ class _ProgramShelfState extends State<ProgramShelf> {
                   }, key: ValueKey(sel.file))
                 : shown.isEmpty
                 ? DockEmpty(c.query)
-                : SingleChildScrollView(
-                    child: LayoutBuilder(
-                      builder: (context, box) {
-                        final cols = wsCols(box.maxWidth, Shape.z(84)), w = wsCell(box.maxWidth, cols);
-                        return Wrap(
-                          spacing: WsT.gutter,
-                          runSpacing: WsT.gutter,
-                          children: [
-                            for (final p in shown)
-                              SizedBox(
-                                width: w,
-                                child: GestureDetector(
-                                  onSecondaryTapDown: (d) => _menuOn(p, d.globalPosition),
-                                  child: EffectTile(
-                                    p.name,
-                                    key: ValueKey('ws-program-${p.stem}-${tile(p).isEmpty ? 0 : File(tile(p)).lastModifiedSync().millisecondsSinceEpoch}'),
-                                    file: tile(p),
-                                    on: null,
-                                    onTap: () => c.pick(p.file),
-                                    onApply: () => _put(p),
-                                    picked: c.sel == p.file,
-                                    naming: _renaming == p.file ? _naming(p) : null,
-                                  ), // (two presses make it, as on Create; drawn again under the same name, an Image with the same file goes on showing the first: the date in its key)
-                                ),
-                              ),
-                          ],
-                        );
-                      },
-                    ),
+                : ShelfGrid(
+                    shelfLooks['Program']!,
+                    count: shown.length,
+                    tile: (i) {
+                      final p = shown[i];
+                      return ShelfTile(
+                        ShelfItem(p.file, p.name, picture: tile(p)),
+                        shelfLooks['Program']!,
+                        key: ValueKey('ws-program-${p.stem}-${tile(p).isEmpty ? 0 : File(tile(p)).lastModifiedSync().millisecondsSinceEpoch}'),
+                        onTap: () => c.pick(p.file),
+                        onApply: () => _put(p),
+                        onMenu: (at) => _menuOn(p, at),
+                        picked: c.sel == p.file,
+                        naming: _renaming == p.file
+                            ? ShelfNameField(p.name, (to) {
+                                if (to != null) p.rename(to);
+                                setState(() => _renaming = null);
+                              })
+                            : null,
+                      ); // (two presses make it, as on Create; drawn again under the same name, an Image with the same file goes on showing the first: the date in its key)
+                    },
                   ),
           ),
           if (sel != null && !c.mem.programCode && tile(sel).isNotEmpty) // (large, as the Effects shelf's)

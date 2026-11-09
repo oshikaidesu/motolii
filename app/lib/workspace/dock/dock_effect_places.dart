@@ -289,57 +289,55 @@ class EffectPlacesState extends State<EffectPlaces> {
         if (aim) Text(' +', key: const ValueKey('ws-fx-target'), style: s),
       ],
     );
-    return GestureDetector(
-      onSecondaryTapDown: menu == null ? null : (d) => menu(d.globalPosition),
-      child: DockHover(
-        key: ValueKey('ws-fx-place-$place'),
-        onTap: onTap ?? () => c.set(() => (c.mem.fxPlace = place, c.mem.fxListOpen = false)),
-        builder: (context, h) => AnimatedContainer(
-          duration: Mo.dur,
-          curve: Mo.ease,
-          height: Shape.z(cover == null ? 22 : 34),
-          padding: EdgeInsets.only(left: Shape.s(4) + depth * Shape.s(12.0), right: WsT.inset),
-          color: dockFill(here, h),
-          child: Row(
-            children: [
-              SizedBox(
-                width: Shape.z(14),
-                height: Shape.z(22),
-                child: open == null
-                    ? null
-                    : AnimatedRotation(
-                        turns: open ? .25 : 0,
-                        duration: Mo.dur,
-                        curve: Mo.ease,
-                        child: DockGlyph(DockG.chevron, size: Shape.z(7), color: dockInk(here, Grey.g63)),
-                      ),
-              ),
-              if (cover != null)
-                SizedBox.square(dimension: Shape.z(28), child: cover)
-              else
-                DockGlyph(g, size: Shape.z(12), color: here ? WsT.onAccent : Grey.g63),
-              SizedBox(width: Shape.s(6)),
-              Expanded(
-                child:
-                    field ??
-                    (cover == null
-                        ? named(T.name(dockInk(here)).copyWith(fontWeight: here ? FontWeight.w600 : FontWeight.w400))
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              named(T.name(dockInk(here)).copyWith(fontWeight: here ? FontWeight.w600 : FontWeight.w400)),
-                              Text(
-                                '${g == DockG.search ? 'By words · ' : ''}${n ?? 0} ${n == 1 ? 'effect' : 'effects'}',
-                                maxLines: 1,
-                                style: T.micro(dockInk(here, Grey.g56)),
-                              ),
-                            ],
-                          )),
-              ),
-              if (n != null && cover == null) Text('$n', style: T.value(dockInk(here, Grey.g56)).copyWith(fontSize: T.px(10))),
-            ],
-          ),
+    return DockHover(
+      key: ValueKey('ws-fx-place-$place'),
+      onMenu: menu,
+      onTap: onTap ?? () => c.set(() => (c.mem.fxPlace = place, c.mem.fxListOpen = false)),
+      builder: (context, h) => AnimatedContainer(
+        duration: Mo.dur,
+        curve: Mo.ease,
+        height: Shape.z(cover == null ? 22 : 34),
+        padding: EdgeInsets.only(left: Shape.s(4) + depth * Shape.s(12.0), right: WsT.inset),
+        color: dockFill(here, h),
+        child: Row(
+          children: [
+            SizedBox(
+              width: Shape.z(14),
+              height: Shape.z(22),
+              child: open == null
+                  ? null
+                  : AnimatedRotation(
+                      turns: open ? .25 : 0,
+                      duration: Mo.dur,
+                      curve: Mo.ease,
+                      child: DockGlyph(DockG.chevron, size: Shape.z(7), color: dockInk(here, Grey.g63)),
+                    ),
+            ),
+            if (cover != null)
+              SizedBox.square(dimension: Shape.z(28), child: cover)
+            else
+              DockGlyph(g, size: Shape.z(12), color: here ? WsT.onAccent : Grey.g63),
+            SizedBox(width: Shape.s(6)),
+            Expanded(
+              child:
+                  field ??
+                  (cover == null
+                      ? named(T.name(dockInk(here)).copyWith(fontWeight: here ? FontWeight.w600 : FontWeight.w400))
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            named(T.name(dockInk(here)).copyWith(fontWeight: here ? FontWeight.w600 : FontWeight.w400)),
+                            Text(
+                              '${g == DockG.search ? 'By words · ' : ''}${n ?? 0} ${n == 1 ? 'effect' : 'effects'}',
+                              maxLines: 1,
+                              style: T.micro(dockInk(here, Grey.g56)),
+                            ),
+                          ],
+                        )),
+            ),
+            if (n != null && cover == null) Text('$n', style: T.value(dockInk(here, Grey.g56)).copyWith(fontSize: T.px(10))),
+          ],
         ),
       ),
     );

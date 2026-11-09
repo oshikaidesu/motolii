@@ -170,12 +170,14 @@ class _OwnTileState extends State<_OwnTile> {
   @override
   Widget build(BuildContext context) => WsMenu(
     key: _menu,
-    child: GestureDetector(
-      onSecondaryTapDown: (d) {
+    child: _makeTile(
+      widget.m,
+      widget.c,
+      naming: _naming ? ShelfNameField(widget.m.name, _renamed) : null,
+      onMenu: (at) {
         final box = _menu.currentContext?.findRenderObject() as RenderBox?;
-        _menu.currentState?.show(box?.globalToLocal(d.globalPosition) ?? Offset.zero, [WsMenuItem('Rename…', () => setState(() => _naming = true))]);
+        _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [WsMenuItem('Rename…', () => setState(() => _naming = true))]);
       },
-      child: _MakeTile(widget.m, widget.c, naming: _naming ? ShelfNameField(widget.m.name, _renamed) : null),
     ),
   );
 }

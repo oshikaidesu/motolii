@@ -145,7 +145,7 @@ extension MotoliiDocument on Motolii {
 
   /// The effects a thing may be given, by name, with the value that puts each on (the Effects shelf); its card shows
   /// while it is on ([cards]).
-  List<(String, String)> get layerEffects => _labelled((_document['effectNames'] as String?) ?? '');
+  List<(String, String)> get layerEffects => _labelled((_document['effectNames'] as String?) ?? '', 'thing');
 
   List<String> get easingNames => Motolii._spaced(_document['easingNames']);
 

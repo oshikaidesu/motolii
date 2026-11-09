@@ -14,6 +14,7 @@ import 'dock_resizable.dart';
 import 'dock_glyphs.dart';
 import 'dock_widgets.dart';
 import 'dock_tags.dart';
+import '../shelf/shelf_tile.dart';
 import '../state/state.dart';
 part 'dock_files_read.dart';
 part 'dock_files_used.dart';
