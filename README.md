@@ -354,7 +354,7 @@ flowchart LR
 
 | 外向け | 作者の作業メモ（日本語、そのまま公開） |
 |---|---|
-| `README.md`・`README.en.md`・[`docs/README.md`](docs/README.md)（docs の地図）・`docs/ARCHITECTURE.md`・`.github/CONTRIBUTING.md`・`.github/CONTRIBUTING.en.md`・`THIRD_PARTY_NOTICES.md`・`engine/README.md` | `docs/internal/notes/`（やること・採点表）・`docs/internal/reports/`（調べた記録。絵と動画、人の投稿を集めた物は git に入れていない）・`docs/app/OVERVIEW.md`・`docs/app/PROCESS.md`（10 月初めの記録） |
+| `README.md`・`README.en.md`・[`docs/README.md`](docs/README.md)（docs の地図）・`docs/ARCHITECTURE.md`・`.github/CONTRIBUTING.md`・`.github/CONTRIBUTING.en.md`・`THIRD_PARTY_NOTICES.md`・`engine/README.md` | `docs/internal/notes/`（やること・採点表）・`docs/internal/reports/`（調べた記録。絵と動画、人の投稿を集めた物は git に入れていない）・`docs/internal/reports/window/design_lab_*.md`（10 月初めの記録） |
 
 </details>
 
