@@ -4,32 +4,6 @@ import 'package:naked_ui/naked_ui.dart';
 
 import '../skin/tokens.dart';
 
-class PillSwitch extends StatelessWidget {
-  const PillSwitch({super.key, required this.on});
-  final bool on;
-
-  /// Fine, not heavy (critique, 4 passes): a 28x16 track; off = a grey thumb on g20; on = an accent TINT with a 1px accent edge and a light thumb, never a solid accent block.
-  @override
-  Widget build(BuildContext context) => AnimatedContainer(
-      duration: const Duration(milliseconds: 120),
-      curve: Curves.easeOut,
-      width: Shape.z(28),
-      height: Shape.z(16),
-      padding: EdgeInsets.all(Shape.s(2)),
-      alignment: on ? Alignment.centerRight : Alignment.centerLeft,
-      decoration: BoxDecoration(
-        color: on ? C.mode.withValues(alpha: .30) : Grey.g20,
-        borderRadius: BorderRadius.all(Shape.r(8)),
-        border: Border.all(color: on ? Role.selected.withValues(alpha: .85) : Grey.g26, width: 1),
-      ),
-      child: Container(
-        width: Shape.z(10),
-        height: Shape.z(10),
-        decoration: BoxDecoration(color: on ? Grey.g95 : Grey.g56, shape: BoxShape.circle),
-      ),
-  );
-}
-
 class Segmented extends StatelessWidget {
   const Segmented({super.key, required this.items, required this.index, this.onChanged, this.accent, this.expand = false});
   final List<String> items;

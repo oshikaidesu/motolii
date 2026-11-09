@@ -4,50 +4,9 @@ import 'dart:math' as math;
 
 enum WType { f32, i32, u32, boolean, vec2, vec3, vec4 }
 
-/// How a value is shown and handled. Each look is a different picture of the value, not a different number box.
-enum ParamLook {
-  /// No range known: a number you drag.
-  scrub,
-
-  /// A range: a number with a fill along its bottom.
-  bar,
-
-  /// A range that straddles zero: the fill grows out from the centre.
-  bipolar,
-
-  /// A share of a whole (0–100 %), drawn as a pie.
-  percent,
-
-  /// A direction or turn, drawn as a dial you turn.
-  angle,
-
-  /// A horizontal amount: dragged sideways.
-  horizontal,
-
-  /// A vertical amount: pictured as a level (the number still scrubs sideways like every other).
-  vertical,
-
-  /// A point (vec2): a pad you place it on, X dragged sideways, Y up and down.
-  point,
-
-  /// A size (vec2): width dragged sideways, height up and down, linkable.
-  size,
-
-  /// A small whole number: minus, the count, plus.
-  stepper,
-
-  /// One of a few named options.
-  choice,
-
-  /// On or off.
-  toggle,
-
-  /// A colour (vec3 / vec4).
-  color,
-
-  /// A random seed: a number with a re-roll.
-  seed,
-}
+/// How a value is handled. A plain number is [scrub]. [bipolar], [percent] and [angle] change that number.
+/// A point, a size, a choice, a toggle and a colour are different controls.
+enum ParamLook { scrub, bipolar, percent, angle, point, size, choice, toggle, color }
 
 /// One field of the struct as written, with the attributes found on it.
 class Decl {
@@ -75,15 +34,12 @@ class Param {
     this.options = const [],
     this.advanced = false,
     this.fold,
-    this.upIncreases = true,
     this.open = false,
     this.validMin,
     this.validMax,
     this.toShader = 1,
-    this.why = '',
-    this.weight,
   });
-  final String id, label, unit, why;
+  final String id, label, unit;
   final ParamLook look;
   final WType type;
   final double? min, max;
@@ -95,14 +51,8 @@ class Param {
   /// The name of the fold it lies in, as `// @advanced(Name)` says (null: unnamed, shown as Advanced).
   final String? fold;
 
-  /// For vertical looks: dragging up raises the value (false: dragging down does, e.g. a drop).
-  final bool upIncreases;
-
   /// [min] and [max] are how far its scrub goes; more is taken typed.
   final bool open;
-
-  /// How much moving it alone shows its effect, 0 to 10, `@weight(7)` (null: not weighed).
-  final double? weight;
 
   /// How far a number typed goes, `@valid(lo, hi)`, where it is more than [min] and [max] (NumField.validMin).
   final double? validMin, validMax;
@@ -232,13 +182,8 @@ const _shareW = {
   'feather',
   'smoothness',
 };
-const _upW = {'height', 'rise', 'lift', 'up', 'top', 'vertical'};
-const _downW = {'drop', 'gravity', 'down', 'sink', 'fall', 'bottom'};
-const _xW = {'width', 'horizontal', 'left', 'right'};
 const _toggleW = {'is', 'use', 'enable', 'enabled', 'invert', 'flip', 'clamp', 'additive', 'pin', 'mirror', 'loop', 'repeat'};
-const _colorW = {'colour', 'tint', 'rgb', 'rgba', 'fill', 'ink', 'shade', 'background', 'foreground'};
 const _sizeW = {'size', 'scale', 'aspect', 'extent', 'stretch'};
-const _pxW = {'radius', 'size', 'width', 'height', 'distance', 'length', 'offset', 'spread', 'blur'};
 
 double? _num(String? s) => s == null ? null : double.tryParse(s);
 
@@ -262,7 +207,7 @@ Param infer(Decl d) {
     return span <= 4 ? 2 : (span <= 40 ? 1 : 0);
   }
 
-  Param p(ParamLook look, String why, {double? lo, double? hi, double scale = 1, bool up = true, String? u, List<String> opts = const []}) {
+  Param p(ParamLook look, {double? lo, double? hi, double scale = 1, String? u, List<String> opts = const []}) {
     final l = lo ?? min, h = hi ?? max;
     return Param(
       id: d.name,
@@ -281,61 +226,33 @@ Param infer(Decl d) {
       validMin: _num(a['valid']?.elementAtOrNull(0)),
       validMax: _num(a['valid']?.elementAtOrNull(1)),
       fold: d.fold,
-      upIncreases: up,
       toShader: scale,
-      why: why,
-      weight: _num(a['weight']?.firstOrNull),
     );
   }
 
-  if (a['enum'] case final o? when o.isNotEmpty) return p(ParamLook.choice, 'listed options', lo: 0, hi: o.length - 1.0, opts: o);
+  if (a['enum'] case final o? when o.isNotEmpty) return p(ParamLook.choice, lo: 0, hi: o.length - 1.0, opts: o);
   if (ui != null) {
     final look = ParamLook.values.where((l) => l.name == ui).firstOrNull;
-    if (look != null) return p(look, 'asked for @ui($ui)');
+    if (look != null) return p(look);
   }
   if (d.type == WType.boolean || a.containsKey('toggle') || (whole && _any(w, _toggleW) && (max == null || max <= 1))) {
-    return p(ParamLook.toggle, 'on/off', lo: 0, hi: 1);
+    return p(ParamLook.toggle, lo: 0, hi: 1);
   }
-  if (d.type == WType.vec3 || d.type == WType.vec4) return p(ParamLook.color, _any(w, _colorW) ? 'colour name' : 'a 3–4 component value');
+  if (d.type == WType.vec3 || d.type == WType.vec4) return p(ParamLook.color);
   if (d.type == WType.vec2) {
-    if (_any(w, _sizeW)) return p(ParamLook.size, 'a 2D size', lo: min ?? 0, u: unit.isEmpty && _any(w, {'size'}) ? 'px' : null);
+    if (_any(w, _sizeW)) return p(ParamLook.size, lo: min ?? 0, u: unit.isEmpty && _any(w, {'size'}) ? 'px' : null);
     final uv = _any(w, {'center', 'centre', 'origin', 'focus', 'uv', 'pivot'});
-    return p(ParamLook.point, 'a 2D point', lo: min ?? (uv ? 0 : -1), hi: max ?? 1);
+    return p(ParamLook.point, lo: min ?? (uv ? 0 : -1), hi: max ?? 1);
   }
-  if (_any(w, {'seed'})) return p(ParamLook.seed, 'a random seed', lo: min ?? 0, hi: max ?? 9999);
   final rad = unit == 'rad' || (min != null && max != null && (max - math.pi).abs() < .01 && (min + math.pi).abs() < .01);
   if (unit == '°' || unit == 'deg' || rad || _any(w, _angleW)) {
     final s = rad ? math.pi / 180 : 1.0;
-    return p(
-      ParamLook.angle,
-      rad ? 'radians, shown in degrees' : 'an angle',
-      lo: min == null ? -180 : min / s,
-      hi: max == null ? 180 : max / s,
-      scale: s,
-      u: '°',
-    );
+    return p(ParamLook.angle, lo: min == null ? -180 : min / s, hi: max == null ? 180 : max / s, scale: s, u: '°');
   }
   final unitShare = min == 0 && max == 1 && _any(w, _shareW);
   if (unit == '%' || unitShare) {
-    return p(
-      ParamLook.percent,
-      unitShare ? '0–1 share, shown as %' : 'a percentage',
-      lo: unitShare ? 0 : (min ?? 0),
-      hi: unitShare ? 100 : (max ?? 100),
-      scale: unitShare ? .01 : 1,
-      u: '%',
-    );
+    return p(ParamLook.percent, lo: unitShare ? 0 : (min ?? 0), hi: unitShare ? 100 : (max ?? 100), scale: unitShare ? .01 : 1, u: '%');
   }
-  if (whole && min != null && max != null && max - min <= 12) return p(ParamLook.stepper, 'a small count');
-  if (unit.isEmpty && _any(w, _pxW)) unit = 'px';
-  final last = w.lastOrNull;
-  if (last == 'y' || _any(w, _upW) || _any(w, _downW)) {
-    return p(ParamLook.vertical, 'a vertical amount', up: !_any(w, _downW));
-  }
-  if (last == 'x' || _any(w, _xW)) return p(ParamLook.horizontal, 'a horizontal amount');
-  if (min != null && max != null) {
-    if (min < 0 && max > 0 && (min.abs() - max).abs() <= max * .5) return p(ParamLook.bipolar, 'a range around zero');
-    return p(ParamLook.bar, 'a range');
-  }
-  return p(ParamLook.scrub, 'no range');
+  if (min != null && max != null && min < 0 && max > 0 && (min.abs() - max).abs() <= max * .5) return p(ParamLook.bipolar);
+  return p(ParamLook.scrub);
 }

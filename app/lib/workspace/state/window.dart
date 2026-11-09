@@ -66,19 +66,6 @@ class Ws extends ChangeNotifier {
   /// shape (the cards) is made again when this moves.
   int reads = 0;
 
-  /// Where the window's building spends its time (for the rampage's report): a name and the time it took, summed.
-  static final spent = <String, Duration>{};
-
-  /// The longest each named part took at once.
-  static final slowest = <String, Duration>{};
-  static T timed<T>(String name, T Function() does) {
-    final w = Stopwatch()..start();
-    final made = Timeline.timeSync(name, does); // (named in Flutter's own timeline too)
-    spent[name] = (spent[name] ?? Duration.zero) + w.elapsed;
-    if (w.elapsed > (slowest[name] ?? Duration.zero)) slowest[name] = w.elapsed;
-    return made;
-  }
-
   /// Where a bar ends, in frames: a thing on for good runs to the document's end.
   static int _outF(int from, double lasts) => lasts < 0 ? duration : (from + (lasts * fps).round()).clamp(from + 1, duration);
 

@@ -58,14 +58,14 @@ class _InspectorPanelState extends State<_InspectorPanel> {
       _seen = now;
       _frame = ws.frame;
       if (was is (int, String?, bool) && was.$2 == ws.selected && was.$3 == ws.animating && _onlyNumbers(ws)) {
-        _live.value = (Ws.timed('transform', () => wsTransform(ws, ws.layer?.id)), Ws.timed('key marks', () => _keyMarks(ws, ws.layer?.id)));
+        _live.value = (wsTransform(ws, ws.layer?.id), _keyMarks(ws, ws.layer?.id));
         return;
       }
       if (mounted) setState(() {});
     } else if (ws.frame != _frame) {
       _frame = ws.frame;
       if (!_keyed(ws)) return;
-      _live.value = (Ws.timed('transform', () => wsTransform(ws, ws.layer?.id)), Ws.timed('key marks', () => _keyMarks(ws, ws.layer?.id)));
+      _live.value = (wsTransform(ws, ws.layer?.id), _keyMarks(ws, ws.layer?.id));
       _settle?.cancel();
       _settle = Timer(
         const Duration(milliseconds: 150),
@@ -81,7 +81,7 @@ class _InspectorPanelState extends State<_InspectorPanel> {
   void _seenNow() {
     final ws = _ws!;
     if (_now(ws) != _seen || ws.selected == null || ws.playing) return; // (played: the moment's own reading above)
-    _live.value = (Ws.timed('transform', () => wsTransform(ws, ws.layer?.id)), Ws.timed('key marks', () => _keyMarks(ws, ws.layer?.id)));
+    _live.value = (wsTransform(ws, ws.layer?.id), _keyMarks(ws, ws.layer?.id));
   }
 
   // (the panel itself, made once a size: a new one each build would build its whole tree again, whatever changed)
@@ -134,25 +134,22 @@ class _InspectorPanelState extends State<_InspectorPanel> {
               key: ValueKey(k),
               kind: k,
               kindWord: _kindWord(ws, l?.id),
-              cards: Ws.timed('value cards', () => _valueCards(ws, l?.id)),
-              properties: Ws.timed(
-                'properties',
-                () => int.tryParse(l?.id ?? '') == null ? null : _propertiesOf(m.values(int.parse(l!.id)).toSet()),
-              ), // (a card of values the thing has not is not shown)
+              cards: _valueCards(ws, l?.id),
+              properties: int.tryParse(l?.id ?? '') == null ? null : _propertiesOf(m.values(int.parse(l!.id)).toSet()), // (a card of values the thing has not is not shown)
               title: l?.name,
               onSum: m.workOut,
               onCardReset: int.tryParse(l?.id ?? '') == null
                   ? null
                   : (names) => ws.after(m.later('reset', layer: int.parse(l!.id), word: names.join(' ')), (_, _) => ws.reread()),
-              values: Ws.timed('transform', () => wsTransform(ws, l?.id)),
-              strs: Ws.timed('words', () => _words(ws, l?.id)),
-              choices: Ws.timed('choices', () => _choices(ws, l?.id)),
+              values: wsTransform(ws, l?.id),
+              strs: _words(ws, l?.id),
+              choices: _choices(ws, l?.id),
               onWords: (changed) => _say(ws, l?.id, changed),
               onAnimateAll: (on) => ws.animating = on,
               animating: ws.animating,
-              flags: Ws.timed('flags', () => _flags(ws, l?.id)),
+              flags: _flags(ws, l?.id),
               onFlags: (changed) => _flag(ws, l?.id, changed),
-              keyMarks: Ws.timed('key marks', () => _keyMarks(ws, l?.id)),
+              keyMarks: _keyMarks(ws, l?.id),
               onValues: (changed, {required live}) => _write(ws, l?.id, changed, live: live),
               onDrop: () => ws.after(m.later('drag_end')), // (put down unchanged, without waiting)
               onKey: (prop, mark) => _mark(ws, l?.id, prop, mark),

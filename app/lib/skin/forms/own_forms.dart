@@ -3,7 +3,6 @@ import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
 import '../../inspector/inspector_parts.dart';
-import '../../widgets/controls.dart' show PillSwitch;
 import '../tokens.dart';
 import 'forms.dart';
 
@@ -29,7 +28,7 @@ class OwnForms extends Forms {
         SizedBox(width: Shape.s(8)),
         Opacity(
           opacity: s.enabled ? 1 : .5,
-          child: Pop.on(context) ? PopSwitch(on: s.on) : PillSwitch(on: s.on),
+          child: PopSwitch(on: s.on),
         ),
       ],
     ),

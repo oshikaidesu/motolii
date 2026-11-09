@@ -78,10 +78,8 @@ final _cardsMade = <int, (String, List<Fx>, Motolii)>{};
 
 List<Fx> _makeCards(Ws ws, Motolii m, int t) {
   final at = _drawn(ws); // (as the picture shown has it)
-  final weights = const <String, double>{};
   String field(String n) {
-    final sh = m.shown(n),
-        label = '@label(${sh?.label ?? n.replaceAll('_', ' ').replaceRange(0, 1, n[0].toUpperCase())})${weights[n] == null ? '' : ' @weight(${weights[n]})'}';
+    final sh = m.shown(n), label = '@label(${sh?.label ?? n.replaceAll('_', ' ').replaceRange(0, 1, n[0].toUpperCase())})';
     if (sh?.look == 'thing') {
       // (another thing, by the names the timeline shows: None, then the others; its number is the document's)
       final others = _others(ws, t), at = others.values.toList().indexOf((m.value(t, n, 0) ?? 0).round());
@@ -105,10 +103,8 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
       final ui = switch (turned ? 'angle' : sh?.look) {
         'onoff' => '@toggle',
         'angle' => '@ui(angle)',
-        'seed' => '@ui(seed)',
-        'count' => hi - lo <= 12 ? '@ui(stepper)' : '@ui(bar)',
         'share' when lo >= 0 && hi <= 100 => '@ui(percent)',
-        _ => lo < 0 && hi > 0 ? '@ui(bipolar)' : '@ui(bar)',
+        _ => lo < 0 && hi > 0 ? '@ui(bipolar)' : '',
       };
       final whole = sh?.look == 'count' || sh?.look == 'onoff' || sh?.look == 'seed';
       return '  /// $label $ui @range($lo, $hi)${sh?.open == true ? ' @open' : ''}$valid @unit(${turned ? '°' : sh?.unit ?? ''}) @default(${_shown(m, t, n, m.value(t, n, at) ?? lo0)})\n  $n: ${whole ? 'u32' : 'f32'},';
@@ -127,7 +123,7 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
       ? n.substring(0, n.length - 2)
       : null;
   String colour(String base) =>
-      '  /// @label(${m.shown('${base}_x')!.label.substring(0, m.shown('${base}_x')!.label.length - 2)})${weights['${base}_x'] == null ? '' : ' @weight(${weights['${base}_x']})'} @unit(colours)\n  $base: vec3<f32>,';
+      '  /// @label(${m.shown('${base}_x')!.label.substring(0, m.shown('${base}_x')!.label.length - 2)}) @unit(colours)\n  $base: vec3<f32>,';
   return [
     for (final (title, names) in m.cards(t))
       if (title == 'Sound' ||
