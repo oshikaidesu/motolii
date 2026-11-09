@@ -98,8 +98,8 @@ class Doc extends ChangeNotifier {
   /// What the host calls the layer's kind, where the six kinds have no word for it (a film, a picture, a solid); and the
   /// values the host has for it (a card of values it has not is not shown); null: the sample's.
   String? kindWord;
-  Set<String>? seats;
-  bool seat(String id) => seats?.contains(id) ?? true;
+  Set<String>? properties;
+  bool hasProperty(String id) => properties?.contains(id) ?? true;
 
   /// The host's own cards of values (each one's Params, its fields keyed `v_` and the value's name): what the host has
   /// beyond the sample's cards.

@@ -76,7 +76,7 @@ class DirectTransform extends StatelessWidget {
                   'rotate',
                   'opacity',
                 ])
-                  if (doc.seat('v_$n')) n,
+                  if (doc.hasProperty('v_$n')) n,
               ],
               more: [
                 if (doc.onArrange case final to?) // (Alight Motion's ⋯ on Move & Transform; they lay in the menu bar alone: golf_noise.md 【入口】)
@@ -94,7 +94,7 @@ class DirectTransform extends StatelessWidget {
               '${brief(doc.get('v_x'))}, ${brief(doc.get('v_y'))}',
               '${brief(doc.get('v_scale_x'))}%',
               '${brief(doc.get('v_rotate'))}°',
-              if (doc.seat('v_opacity')) '${brief(doc.get('v_opacity'), 0)}%',
+              if (doc.hasProperty('v_opacity')) '${brief(doc.get('v_opacity'), 0)}%',
               if (doc.s2['v_parent'] case final p? when p != 'None') p,
             ],
             children: [
@@ -110,14 +110,14 @@ class DirectTransform extends StatelessWidget {
                     PosRow(),
                     ScaleRow(),
                     RotRow(),
-                    if (doc.seat('v_opacity')) const OpacityRow(),
+                    if (doc.hasProperty('v_opacity')) const OpacityRow(),
                     const ParentRow(),
                   ], // (After Effects' Transform, in its order, its Anchor Point in the card below; Parent with them, as in the table of doc_values.h)
                 ),
               ),
             ],
           ),
-          if (doc.seat('v_anchor_x'))
+          if (doc.hasProperty('v_anchor_x'))
             const AnchorCard(), // (the box in sight, its numbers with it: After Effects hides nine points behind an icon, a step back from this)
         ],
       ),

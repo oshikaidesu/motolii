@@ -5,7 +5,7 @@
 part of 'stage_view.dart';
 
 extension _StageViewDraw on _StageViewState {
-  void _lassoLetGo(_View v) {
+  void _lassoDragEnd(_View v) {
     final round = _lasso, ws = WsScope.read(context);
     setState(() => _lasso = null);
     if (round == null || round.length < 3) return;
@@ -102,7 +102,7 @@ extension _StageViewDraw on _StageViewState {
     ws.after(m.later('together'), (done, _) => done && made > 0 ? ws.select('$made') : null);
   }
 
-  void _brushLetGo(_View v) {
+  void _brushDragEnd(_View v) {
     final way = _brush, ws = WsScope.read(context), m = ws.inside;
     setState(() => _brush = null);
     if (way == null || way.length < 2 || m == null) return;

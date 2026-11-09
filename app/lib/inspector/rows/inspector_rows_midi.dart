@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/style/tokens.dart';
 
-import '../../parts/text_hand.dart';
+import '../../parts/text_gestures.dart';
 
 /// om_midi's kinds of keys, by the inside's names (midi.h: midi_keys), in its panel's words.
 const midiKinds = [('velocity', 'Velocity'), ('pitch', 'Pitch'), ('count', 'Count'), ('on', 'Note on'), ('bool', 'Bool')];
@@ -104,7 +104,7 @@ class _MidiKeysState extends State<MidiKeys> {
               padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
               alignment: Alignment.centerLeft,
               decoration: BoxDecoration(color: Grey.g15, borderRadius: BorderRadius.all(Shape.r(4))),
-              child: TextHand(
+              child: TextGestures(
                 field: (k) => EditableText(
                   key: k,
                   rendererIgnoresPointer: true,

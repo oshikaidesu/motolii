@@ -1,6 +1,6 @@
-// The workspace's Timeline seat: transport + timecode on top, layer labels beside the track area, a ruler with the work area, the playhead.
-// The document lives in Ws; this seat keeps only how it looks at it (zoom, scroll, loop, the row toggles, the work area).
-import 'package:motolii/workspace/desk/desk_ease_cards.dart' show easeCurve;
+// The workspace's Timeline panel: transport + timecode on top, layer labels beside the track area, a ruler with the work area, the playhead.
+// The document lives in Ws; this panel keeps only how it looks at it (zoom, scroll, loop, the row toggles, the work area).
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart' show easeCurve;
 
 import 'dart:async' show Timer;
 import 'dart:developer' show Timeline;
@@ -26,10 +26,10 @@ import 'timeline_paint.dart';
 import '../relate.dart';
 import '../ws.dart';
 import '../ws_menu.dart';
-import '../../parts/text_hand.dart';
+import '../../parts/text_gestures.dart';
 part 'timeline_asked.dart';
 part 'timeline_view.dart';
-part 'timeline_hand.dart';
+part 'timeline_drag.dart';
 part 'timeline_rows.dart';
 part 'timeline_ruler.dart';
 part 'timeline_snap.dart';
@@ -218,7 +218,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
       ws.pickKeys(keys);
     } else if (things.isNotEmpty) {
       ws.clearKeys();
-      ws.pickMany(things, byHand: false);
+      ws.pickMany(things, inOrder: false);
     }
   }
 
@@ -314,7 +314,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
   }
 
   /// Joined: the work area carried is the document's when the hand lets go (one step).
-  void _workLetGo() {
+  void _workDragEnd() {
     final m = _ws?.inside;
     if (_markHeld case (final at, final name)?) {
       _markHeld = null;

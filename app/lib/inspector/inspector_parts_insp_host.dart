@@ -16,7 +16,7 @@ class InspHost extends StatefulWidget {
     this.effects = 2,
     this.fx,
     this.kindWord,
-    this.seats,
+    this.properties,
     this.onFxRemove,
     this.onMidi,
     this.midiBpm,
@@ -67,9 +67,9 @@ class InspHost extends StatefulWidget {
   /// The effects on the layer, as the host has them (each one's card from its Params); null: the sample's first [effects].
   final List<Fx>? fx;
 
-  /// What the host calls the kind (see [Doc.kindWord]), and the values it has (see [Doc.seats]).
+  /// What the host calls the kind (see [Doc.kindWord]), and the values it has (see [Doc.properties]).
   final String? kindWord;
-  final Set<String>? seats;
+  final Set<String>? properties;
 
   /// The values and key marks at a new moment, told without the host being built again (played, only the moment moves:
   /// the fields that show them follow, the rest of the inspector stays as it was built).
@@ -143,8 +143,8 @@ class InspHost extends StatefulWidget {
   /// The host's own Animate all (null: the inspector keeps its own): shown as it is, never reset by a new kind.
   final bool? animating;
 
-  /// The on/off seats the host owns (Clip to below ...), and a change of them told to it. false: the host did not
-  /// take it (nothing is behind that seat), and the seat goes back.
+  /// The on/off properties the host owns (Clip to below ...), and a change of them told to it. false: the host did not
+  /// take it (nothing is behind that switch), and the switch goes back.
   final Map<String, bool> flags;
   final bool Function(Map<String, bool> changed)? onFlags;
 
@@ -166,7 +166,7 @@ class _InspHostState extends State<InspHost> {
           widget.onKey ==
           null // (a host told of keys keys what a hand changes itself)
       ..kindWord = widget.kindWord
-      ..seats = widget.seats
+      ..properties = widget.properties
       ..onFxRemove = widget.onFxRemove
       ..onMidi = widget.onMidi
       ..midiBpm = widget.midiBpm
@@ -336,7 +336,7 @@ class _InspHostState extends State<InspHost> {
     }
     if (o.title != widget.title ||
         o.kindWord != widget.kindWord ||
-        !setEquals(o.seats, widget.seats) ||
+        !setEquals(o.properties, widget.properties) ||
         o.choices.toString() != widget.choices.toString() ||
         !listEquals(o.cardsOff, widget.cardsOff)) {
       _tick++; // (an effect's eye shut or opened: its card says so)
@@ -344,7 +344,7 @@ class _InspHostState extends State<InspHost> {
     doc
       ..title = widget.title
       ..kindWord = widget.kindWord
-      ..seats = widget.seats
+      ..properties = widget.properties
       ..onFxRemove = widget.onFxRemove
       ..onMidi = widget.onMidi
       ..midiBpm = widget.midiBpm

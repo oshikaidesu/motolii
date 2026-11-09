@@ -10,7 +10,7 @@ import 'package:motolii/parts/controls.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/style/tokens.dart';
 
-import '../../parts/text_hand.dart';
+import '../../parts/text_gestures.dart';
 
 class NumFieldState extends State<NumField> {
   final _node = FocusNode(debugLabel: 'num');
@@ -528,7 +528,7 @@ class NumFieldState extends State<NumField> {
             : null;
         _keys = ks;
         final editor = _editing
-            ? TextHand(
+            ? TextGestures(
                 field: (k) => EditableText(
                   key: k,
                   rendererIgnoresPointer: true,

@@ -55,7 +55,7 @@ final _makes = <(String, List<_Make>)>[
         WsT.toneCamera,
         '⇧C',
         '3D camera, 45 mm',
-      ), // (the lens it comes with: the stage's 30 degrees on Filament's 24 mm film, desk_depth.dart _filmMm, as the Camera desk says)
+      ), // (the lens it comes with: the stage's 30 degrees on Filament's 24 mm film, tool_panel_depth.dart _filmMm, as the Camera tool panel says)
       _Make('Null', DockG.nullObj, Grey.g76, '⇧N', 'Invisible parent'),
       _Make('Adjustment', DockG.nullObj, Grey.g76, '', 'What is put on it works on all under it'),
     ],

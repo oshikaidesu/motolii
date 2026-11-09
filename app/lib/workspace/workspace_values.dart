@@ -1,7 +1,7 @@
 // workspace_values.dart: a value as the inspector shows it, read from the inside at the picture's moment, and a hand's change of it told back (numbers, words, choices, switches).
 part of 'workspace.dart';
 
-int? _holding; // (the thing a hand on the inspector holds now: held once, carried at every step, let go when it lets go)
+int? _dragged; // (the thing a hand on the inspector holds now: held once, carried at every step, let go when it lets go)
 
 /// A value as a hand reads it, and back (Motolii.reading).
 double _shown(Motolii m, int t, String n, double v) {
@@ -36,7 +36,7 @@ double _unshown(Motolii m, int t, String n, double x) {
 //  not waited for while it tells the stage a moment the playhead has just been put at)
 double _drawn(Ws ws) => ws.inside?.drawnAt ?? ws.frame / Ws.fps;
 
-/// Joined: only where a thing is, how large and how turned (the inspector's seats), as the stage's readout shows them:
+/// Joined: only where a thing is, how large and how turned (the inspector's properties), as the stage's readout shows them:
 /// not the cards' hundreds of numbers [wsTransform] reads.
 Map<String, double> wsPlace(Ws ws, String id) {
   final m = ws.inside, t = int.tryParse(id);
@@ -111,12 +111,12 @@ void _write(Ws ws, String? id, Map<String, double> changed, {required bool live}
     }
     if (changed.isEmpty) return;
   }
-  final now = ws.frame / Ws.fps, dragged = _holding == t;
+  final now = ws.frame / Ws.fps, dragged = _dragged == t;
   if (!dragged) {
     m.take(t); // (held once a hand: each step after only carries)
     _found.clear();
   }
-  _holding = live ? t : null;
+  _dragged = live ? t : null;
   String? why;
   final carried = <String, double>{};
   for (final e in changed.entries) {
@@ -124,7 +124,7 @@ void _write(Ws ws, String? id, Map<String, double> changed, {required bool live}
     if (to != null) _found[to.$1] ??= m.value(t, to.$1, now) ?? to.$2;
     if (to != null && !m.carry(to.$1, to.$2)) why ??= m.trouble;
     if (to != null) carried[to.$1] = to.$2;
-    if (to == null) why ??= 'the document has no ${e.key}: '; // (a seat the document has no value for says so, rather than keep the number)
+    if (to == null) why ??= 'the document has no ${e.key}: '; // (a property the document has no value for says so, rather than keep the number)
   }
   if (live) {
     if (ws.playing) ws.playing = false; // (a hand on a value stops the play: what is changed is changed at one moment)

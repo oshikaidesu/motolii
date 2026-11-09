@@ -1,14 +1,14 @@
-// workspace_seat.dart: the inspector's seat in the window: what it listens to, and when it builds again or only tells the fields their numbers.
+// workspace_panel.dart: the inspector's panel in the window: what it listens to, and when it builds again or only tells the fields their numbers.
 part of 'workspace.dart';
 
-/// The Inspector of the lab, fed by the workspace's selection; its panel links open the dock's shelves or the desk.
-class _InspectorSeat extends StatefulWidget {
-  const _InspectorSeat();
+/// The Inspector of the lab, fed by the workspace's selection; its panel links open the dock's shelves or the tool panel.
+class _InspectorPanel extends StatefulWidget {
+  const _InspectorPanel();
   @override
-  State<_InspectorSeat> createState() => _InspectorSeatState();
+  State<_InspectorPanel> createState() => _InspectorPanelState();
 }
 
-class _InspectorSeatState extends State<_InspectorSeat> {
+class _InspectorPanelState extends State<_InspectorPanel> {
   // (the inspector follows only what it shows: the document, what is picked, Animate, and the moment only while what is
   //  picked has keys; played, a thing with no keys shows the same numbers, so it is not built again each picture)
   Ws? _ws;
@@ -141,9 +141,9 @@ class _InspectorSeatState extends State<_InspectorSeat> {
               fx: const [], // (an effect is one of the inside's cards, shown while it is on)
               kindWord: _kindWord(ws, l?.id),
               cards: Ws.timed('value cards', () => _valueCards(ws, l?.id)),
-              seats: Ws.timed(
-                'seats',
-                () => int.tryParse(l?.id ?? '') == null ? null : _seatsOf(m.values(int.parse(l!.id)).toSet()),
+              properties: Ws.timed(
+                'properties',
+                () => int.tryParse(l?.id ?? '') == null ? null : _propertiesOf(m.values(int.parse(l!.id)).toSet()),
               ), // (a card of values the thing has not is not shown)
               title: l?.name,
               onRoute: ws.route,

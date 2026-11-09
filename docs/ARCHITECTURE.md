@@ -94,7 +94,7 @@ flowchart TB
 | `relations/` | `motolii_calls.h` `motolii_relations` | `workspace/relate.dart` |
 | `looks/` | `doc_looks.h` `doc_look_names` | `bridge/motolii_shelves.dart` `looks` |
 | `solids/` | `community/js/solid_three.cpp`、`doc_moment_fx.h` | — |
-| `ease/` | `doc_recipes.h` `doc_own_ways` | `workspace/desk/desk_ease_shelf.dart` |
+| `ease/` | `doc_recipes.h` `doc_own_ways` | `workspace/tool_panel/tool_panel_ease_shelf.dart` |
 | `skins/` | — | `style/theme.dart` `ColorTheme.skinNames`（前の置き場 `~/.motolii/skins/` も読む） |
 | `extensions/hydra/` | `doc_door.h`、`community/shaders/hydra_isf.cpp` | — |
 | （棚でない）`engine/third_party/wordnet_ja/` | `entry/motolii_calls_find.h` `find_english`（`doc_folders("words")`） | — |

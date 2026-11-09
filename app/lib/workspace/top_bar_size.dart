@@ -78,7 +78,7 @@ class _SizeChipState extends State<_SizeChip> {
           borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius)),
           border: Border.all(color: WsT.accent),
         ),
-        child: TextHand(
+        child: TextGestures(
           field: (k) => EditableText(
             key: k,
             rendererIgnoresPointer: true,
@@ -138,8 +138,8 @@ class _SizeChipState extends State<_SizeChip> {
                         runSpacing: Shape.s(6),
                         children: [
                           for (final s in sizeShapes)
-                            DeskChip(key: ValueKey('size-${s.$1}'), label: s.$1, on: s == now, onTap: () => _to(ws, sizeOf(s, short))),
-                          if (now == null) DeskChip(label: '$shownW:$shownH', on: true, onTap: () {}), // (its own: a size typed)
+                            ToolChip(key: ValueKey('size-${s.$1}'), label: s.$1, on: s == now, onTap: () => _to(ws, sizeOf(s, short))),
+                          if (now == null) ToolChip(label: '$shownW:$shownH', on: true, onTap: () {}), // (its own: a size typed)
                         ],
                       ),
                       SizedBox(height: Shape.s(12)),
@@ -150,7 +150,7 @@ class _SizeChipState extends State<_SizeChip> {
                         runSpacing: Shape.s(6),
                         children: [
                           for (final p in sizeResolutions)
-                            DeskChip(
+                            ToolChip(
                               key: ValueKey('size-${p}p'),
                               label: '${p}p',
                               on: p == short,
@@ -169,7 +169,7 @@ class _SizeChipState extends State<_SizeChip> {
                         runSpacing: Shape.s(6),
                         children: [
                           for (final r in const [12, 15, 18, 20, 24, 25, 30, 48, 50, 60])
-                            DeskChip(
+                            ToolChip(
                               key: ValueKey('size-${r}fps'),
                               label: '$r',
                               on: r == Ws.fps,
@@ -200,7 +200,7 @@ class _SizeChipState extends State<_SizeChip> {
                             ('Blue', '0047bb'),
                             ('Transparent', ''),
                           ])
-                            DeskChip(
+                            ToolChip(
                               key: ValueKey('size-bg-$label'),
                               label: label,
                               on: (ws.inside?.word(0, 'background') ?? '') == hex,
@@ -224,7 +224,7 @@ class _SizeChipState extends State<_SizeChip> {
                         runSpacing: Shape.s(6),
                         children: [
                           for (final n in const [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 45, 60])
-                            DeskChip(
+                            ToolChip(
                               key: ValueKey('size-len-$n'),
                               label: n == 0 ? 'End' : '${n}s',
                               on: (ws.inside?.value(0, 'layer_length', 0) ?? 0).round() == n,

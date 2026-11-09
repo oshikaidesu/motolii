@@ -1,26 +1,26 @@
-// The Desk: the drawer under the Inspector. It follows the selection and holds one tool at a time (keys picked -> Ease,
+// The Tool Panel: the drawer under the Inspector. It follows the selection and holds one tool at a time (keys picked -> Ease,
 // a camera -> Depth, otherwise the Tools catalog); a tool opened by hand stays pinned until the selection moves or you unpin it.
 import 'package:flutter/widgets.dart';
 
 import '../../inspector/inspector_parts.dart' show Hov;
 import '../../style/tokens.dart';
-import 'desk_kit.dart';
+import 'tool_panel_widgets.dart';
 import '../ws.dart';
 
-class WsDesk extends StatelessWidget {
-  const WsDesk({super.key});
+class WsToolPanel extends StatelessWidget {
+  const WsToolPanel({super.key});
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.of(context, {WsAspect.fronted, WsAspect.picked}), name = ws.desk;
-    return WsSeat(
+    final ws = WsScope.of(context, {WsAspect.fronted, WsAspect.picked}), name = ws.toolPanel;
+    return WsPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _DeskHeader(name: name),
+          _ToolHeader(name: name),
           Expanded(
             child: switch (name) {
               'Tools' => const _Catalog(),
-              _ => deskTool(ws, name).build?.call() ?? _Placeholder(name: name),
+              _ => panelTool(ws, name).build?.call() ?? _Placeholder(name: name),
             },
           ),
         ],
@@ -30,25 +30,29 @@ class WsDesk extends StatelessWidget {
 }
 
 /// The tool's sticker and name, whether it follows the selection or is pinned, and the way back to the catalog.
-class _DeskHeader extends StatelessWidget {
-  const _DeskHeader({required this.name});
+class _ToolHeader extends StatelessWidget {
+  const _ToolHeader({required this.name});
   final String name;
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.of(context, {WsAspect.fronted, WsAspect.picked}), pinned = ws.deskManual != null;
+    final ws = WsScope.of(context, {WsAspect.fronted, WsAspect.picked}), pinned = ws.toolPanelManual != null;
     return LayoutBuilder(
       builder: (context, box) {
         final wide = box.maxWidth >= 340;
         return WsHeader(
           name,
-          leading: DeskSticker(name),
+          leading: ToolSticker(name),
           trailing: [
             if (pinned)
-              DeskChip(label: wide ? 'Pinned · Follow' : 'Pinned', dot: Grey.g76, onTap: () => ws.openDesk(null))
+              ToolChip(label: wide ? 'Pinned · Follow' : 'Pinned', dot: Grey.g76, onTap: () => ws.openToolPanel(null))
             else
-              DeskChip(label: wide ? 'Follows selection' : 'Follows', dot: WsT.accent),
+              ToolChip(label: wide ? 'Follows selection' : 'Follows', dot: WsT.accent),
             SizedBox(width: WsT.gap),
-            DeskIconButton(glyph: (ink) => DeskGlyph('Tools', ink), on: name == 'Tools', onTap: () => ws.openDesk(name == 'Tools' && pinned ? null : 'Tools')),
+            ToolIconButton(
+              glyph: (ink) => ToolGlyph('Tools', ink),
+              on: name == 'Tools',
+              onTap: () => ws.openToolPanel(name == 'Tools' && pinned ? null : 'Tools'),
+            ),
           ],
         );
       },
@@ -56,14 +60,14 @@ class _DeskHeader extends StatelessWidget {
   }
 }
 
-/// Every desk tool as a tile: sticker, name, what it acts on. The one the selection would pick wears an Auto tag.
-/// Columns come from the width; the rows share the height while each keeps [_minTile], else the grid scrolls; a tall desk never stretches a tile past [_maxTile].
+/// Every tool panel tool as a tile: sticker, name, what it acts on. The one the selection would pick wears an Auto tag.
+/// Columns come from the width; the rows share the height while each keeps [_minTile], else the grid scrolls; a tall tool panel never stretches a tile past [_maxTile].
 class _Catalog extends StatelessWidget {
   const _Catalog();
   static const _cell = 104.0, _minTile = 62.0, _maxTile = 92.0;
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.read(context), auto = ws.deskAuto;
+    final ws = WsScope.read(context), auto = ws.toolPanelAuto;
     return LayoutBuilder(
       builder: (context, box) {
         final w = box.maxWidth - WsT.gap * 2, h = box.maxHeight - WsT.gap * 2;
@@ -80,7 +84,7 @@ class _Catalog extends StatelessWidget {
                   SizedBox(
                     width: cw,
                     height: tile,
-                    child: _ToolTile(t, auto: t.name == auto, onTap: () => ws.openDesk(t.name)),
+                    child: _ToolTile(t, auto: t.name == auto, onTap: () => ws.openToolPanel(t.name)),
                   ),
               ],
             ),
@@ -93,7 +97,7 @@ class _Catalog extends StatelessWidget {
 
 class _ToolTile extends StatelessWidget {
   const _ToolTile(this.tool, {required this.auto, required this.onTap});
-  final DeskTool tool;
+  final PanelTool tool;
   final bool auto;
   final VoidCallback onTap;
   @override
@@ -109,7 +113,7 @@ class _ToolTile extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                DeskSticker(tool.name, size: Shape.z(26)),
+                ToolSticker(tool.name, size: Shape.z(26)),
                 const Spacer(),
                 if (auto)
                   Flexible(
@@ -151,7 +155,7 @@ class _Placeholder extends StatelessWidget {
   final String name;
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.read(context), tool = deskTool(ws, name);
+    final ws = WsScope.read(context), tool = panelTool(ws, name);
     return Padding(
       padding: EdgeInsets.only(top: WsT.gutter),
       child: Row(
@@ -164,7 +168,7 @@ class _Placeholder extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('DESK TOOL', style: T.micro(tool.tone).copyWith(fontWeight: FontWeight.w700, letterSpacing: 1.4)),
+                  Text('TOOL', style: T.micro(tool.tone).copyWith(fontWeight: FontWeight.w700, letterSpacing: 1.4)),
                   SizedBox(height: Shape.s(6)),
                   FittedBox(
                     fit: BoxFit.scaleDown,
@@ -183,8 +187,8 @@ class _Placeholder extends StatelessWidget {
                     spacing: WsT.gap,
                     runSpacing: WsT.gap,
                     children: [
-                      DeskChip(label: 'Back to Tools', dot: Grey.g76, onTap: () => ws.openDesk('Tools')),
-                      DeskChip(label: 'Follow selection', dot: WsT.accent, onTap: () => ws.openDesk(null)),
+                      ToolChip(label: 'Back to Tools', dot: Grey.g76, onTap: () => ws.openToolPanel('Tools')),
+                      ToolChip(label: 'Follow selection', dot: WsT.accent, onTap: () => ws.openToolPanel(null)),
                     ],
                   ),
                 ],
@@ -199,7 +203,7 @@ class _Placeholder extends StatelessWidget {
               child: Center(
                 child: FractionallySizedBox(
                   widthFactor: .8,
-                  child: AspectRatio(aspectRatio: 1, child: CustomPaint(painter: DeskGlyph(name, WsT.onAccent))),
+                  child: AspectRatio(aspectRatio: 1, child: CustomPaint(painter: ToolGlyph(name, WsT.onAccent))),
                 ),
               ),
             ),

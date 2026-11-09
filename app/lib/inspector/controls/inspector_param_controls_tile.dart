@@ -11,7 +11,7 @@ import 'package:motolii/inspector/inspector_value_marks.dart';
 import 'package:motolii/style/tokens.dart';
 
 import '../../workspace/two_fingers.dart';
-import '../../parts/text_hand.dart';
+import '../../parts/text_gestures.dart';
 
 /// One parameter as a block: the name on top, the number large under it, a picture of the value in the top-right corner.
 /// contract: every block still shows the number and takes typing, scrubbing and the sideways slide; the picture is added, never a replacement.
@@ -480,7 +480,7 @@ class _WordsState extends State<_Words> {
     if (!_f.hasFocus && _c.text != now) _c.text = now; // (out of the field it is what the host has now: another thing picked, an undo)
     return IgnorePointer(
       ignoring: !widget.on,
-      child: TextHand(
+      child: TextGestures(
         key: ValueKey('words:${widget.id}'),
         field: (k) => EditableText(
           key: k,

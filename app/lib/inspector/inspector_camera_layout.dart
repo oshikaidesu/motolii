@@ -215,7 +215,7 @@ class LayoutGroup extends StatelessWidget {
 }
 
 /// The camera's framing as a drawing of its value: zoom, the lens's view narrowing as it grows; distance, the camera
-/// further from the point it looks at (the Depth desk's own picture, small).
+/// further from the point it looks at (the Depth tool panel's own picture, small).
 class _CamGlyph extends StatelessWidget {
   const _CamGlyph({required this.zoom});
   final bool zoom;

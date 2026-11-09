@@ -1,7 +1,7 @@
-// Part of ws.dart: a seat's header and the seat round it.
+// Part of ws.dart: a panel's header and the panel round it.
 part of 'ws.dart';
 
-/// A seat's header: title on the left, [trailing] on the right, a hairline under it.
+/// A panel's header: title on the left, [trailing] on the right, a hairline under it.
 class WsHeader extends StatelessWidget {
   const WsHeader(this.title, {super.key, this.trailing = const [], this.leading});
   final String title;
@@ -26,9 +26,9 @@ class WsHeader extends StatelessWidget {
   );
 }
 
-/// A seat: a square tile of [WsT.body] that clips what it holds.
-class WsSeat extends StatelessWidget {
-  const WsSeat({super.key, required this.child});
+/// A panel: a square tile of [WsT.body] that clips what it holds.
+class WsPanel extends StatelessWidget {
+  const WsPanel({super.key, required this.child});
   final Widget child;
   @override
   Widget build(BuildContext context) => ClipRect(

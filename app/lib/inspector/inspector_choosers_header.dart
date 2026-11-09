@@ -10,7 +10,7 @@ import '../parts/controls.dart';
 import '../parts/glyphs.dart';
 import '../style/tokens.dart';
 import 'inspector_parts.dart';
-import '../parts/text_hand.dart';
+import '../parts/text_gestures.dart';
 
 // ---- 6. choosers and hand-overs -------------------------------------------------------------------------------------
 /// A short list lives in a segmented control; a long one opens a searchable list (G2, G3). Never prev/next cycling (do-not-repeat 6, 7).
@@ -152,7 +152,7 @@ class ChooserState extends State<Chooser> {
                 alignment: Alignment.centerLeft,
                 children: [
                   if (_q.text.isEmpty) Text('Search', style: T.label(Grey.g56)),
-                  TextHand(
+                  TextGestures(
                     field: (k) => EditableText(
                       key: k,
                       rendererIgnoresPointer: true,

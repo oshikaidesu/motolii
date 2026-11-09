@@ -7,19 +7,19 @@ import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/widgets.dart';
 
 import '../../style/tokens.dart';
-import 'desk_kit.dart';
+import 'tool_panel_widgets.dart';
 import '../relate.dart';
 import '../stage/stage_art.dart';
 import '../two_fingers.dart';
 import '../ws.dart';
 
-class DeskRelations extends StatefulWidget {
-  const DeskRelations({super.key});
+class RelationsTool extends StatefulWidget {
+  const RelationsTool({super.key});
   @override
-  State<DeskRelations> createState() => _DeskRelationsState();
+  State<RelationsTool> createState() => _RelationsToolState();
 }
 
-class _DeskRelationsState extends State<DeskRelations> {
+class _RelationsToolState extends State<RelationsTool> {
   double _yaw = 0, _pitch = 0, _zoom = 1; // (turned: 0, 0 is from the front, the camera's own way; a scroll comes closer)
   (int, Map<String, List<_P3>>)? _paths; // (each thing's way through the whole stretch, as the document stood: asked again when it changes)
   int? _pathsAsked;
@@ -101,7 +101,7 @@ class _DeskRelationsState extends State<DeskRelations> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          DeskStrip(left: [DeskLayerChip('Relations · ${world.relations.length}', WsT.toneGroup)]),
+          ToolStrip(left: [ToolLayerChip('Relations · ${world.relations.length}', WsT.toneGroup)]),
           ColoredBox(
             // (the tab says what it is for in the words that do it, as the stage's top does; Blender's Constraints tab holds its own Add)
             color: WsT.card,
@@ -117,7 +117,7 @@ class _DeskRelationsState extends State<DeskRelations> {
                     GestureDetector(
                       key: ValueKey('ws-tab-relate-$k'),
                       onTap: many ? () => wsRelate(ws, k) : null,
-                      child: IntrinsicWidth(child: DeskLayerChip(wsRelationWord(k), many ? WsT.accent : Grey.g38)),
+                      child: IntrinsicWidth(child: ToolLayerChip(wsRelationWord(k), many ? WsT.accent : Grey.g38)),
                     ),
                 ],
               ),

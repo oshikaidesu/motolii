@@ -29,8 +29,8 @@ extension _WsTimelineTracks on _WsTimelineState {
                   onSecondaryTapDown: (d) => _rulerRight(d.localPosition),
                   onPanDown: (d) => _rulerDown(d.localPosition),
                   onPanUpdate: (d) => _rulerMove(d.localPosition),
-                  onPanEnd: (_) => _workLetGo(),
-                  onPanCancel: _workLetGo,
+                  onPanEnd: (_) => _workDragEnd(),
+                  onPanCancel: _workDragEnd,
                   child: SizedBox(
                     height: WtM.ruler,
                     child: CustomPaint(
@@ -139,7 +139,7 @@ extension _WsTimelineTracks on _WsTimelineState {
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: child,
                 ),
-                child: TextHand(
+                child: TextGestures(
                   key: const ValueKey('ws-tl-mark-name'),
                   field: (k) => EditableText(
                     key: k,

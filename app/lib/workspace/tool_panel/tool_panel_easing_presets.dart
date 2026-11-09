@@ -5,18 +5,18 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart' show Hov;
 import 'package:motolii/style/tokens.dart';
-import 'package:motolii/workspace/desk/desk_ease.dart';
-import 'package:motolii/workspace/desk/desk_ease_numbers.dart' show easeIsUsual;
+import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_numbers.dart' show easeIsUsual;
 import 'package:motolii/workspace/ws.dart';
 
-class PresetTile extends StatelessWidget {
-  const PresetTile(this.ease, {super.key, required this.on, required this.onTap, required this.side, this.carried = true});
+class EasingPresetTile extends StatelessWidget {
+  const EasingPresetTile(this.ease, {super.key, required this.on, required this.onTap, required this.side, this.carried = true});
   final Ease ease;
   final double side; // (the square's: as the panel's height lets it be, so no row of them lies empty)
   final bool on;
   final VoidCallback onTap;
 
-  /// Whether a hand may carry it to the graph or the flow, to lay it over the way there (desk_ease_cards.dart).
+  /// Whether a hand may carry it to the graph or the flow, to lay it over the way there (tool_panel_ease_cards.dart).
   final bool carried;
   @override
   Widget build(BuildContext context) {

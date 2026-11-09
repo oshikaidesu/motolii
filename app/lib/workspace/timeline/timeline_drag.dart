@@ -1,7 +1,7 @@
-// timeline_hand.dart: a hand on the tracks: what the pointer would do over a bar, a bar or a key taken.
+// timeline_drag.dart: a hand on the tracks: what the pointer would do over a bar, a bar or a key taken.
 part of 'timeline.dart';
 
-extension _WsTimelineHand on _WsTimelineState {
+extension _WsTimelineDrag on _WsTimelineState {
   // ---------------------------------------------------------------- input
 
   // The row under a height: its place, its layer, and the value whose lane it is (null: the layer's own row).

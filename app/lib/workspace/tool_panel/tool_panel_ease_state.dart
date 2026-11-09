@@ -1,4 +1,4 @@
-// The desk's Ease tool: the curve between the picked key and the next one, its two handles, presets as thumbnails, and the numbers.
+// The tool panel's Ease tool: the curve between the picked key and the next one, its two handles, presets as thumbnails, and the numbers.
 
 import 'dart:async' show scheduleMicrotask;
 import 'dart:math' as math;
@@ -7,30 +7,30 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/style/tokens.dart';
-import 'package:motolii/workspace/desk/desk_ease.dart';
-import 'package:motolii/workspace/desk/desk_ease_cards.dart';
-import 'package:motolii/workspace/desk/desk_ease_graph.dart';
-import 'package:motolii/workspace/desk/desk_ease_numbers.dart';
-import 'package:motolii/workspace/desk/desk_ease_shelf.dart';
-import 'package:motolii/workspace/desk/desk_ease_trial.dart';
-import 'package:motolii/workspace/desk/desk_ease_side.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_graph.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_numbers.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_shelf.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_trial.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_side.dart';
 import 'package:motolii/workspace/ws.dart';
 
-part 'desk_ease_ends.dart';
+part 'tool_panel_ease_ends.dart';
 
-/// The curve copied in the Ease desk, kept while the window is open (Alight Motion's Copy of a curve).
+/// The curve copied in the Ease tool panel, kept while the window is open (Alight Motion's Copy of a curve).
 Ease? easeCopied;
 
 /// Whether an end of a stretch pulled up or down jumps there: a key a frame outside keeps the value as it was, so the
 /// value jumps at the key (three points, as the user drew it, 10/30); off, only the key's value moves and the stretch
-/// beside follows. The user's to choose, on the desk (10/30: "飛びたくないなら後でおしりの点を消せばいい、もしくは設定で
+/// beside follows. The user's to choose, on the tool panel (10/30: "飛びたくないなら後でおしりの点を消せばいい、もしくは設定で
 /// 決めれると良い、ユーザに託す", "easeにon/offであるといい"). Kept while the window is open.
 bool easeJump = true;
 
 /// Whether the graph looks past 0 and 1 (Alight Motion's Enable Overshoot). Kept while the window is open.
 bool easeOvershoot = false;
 
-class DeskEaseState extends State<DeskEase> with _EaseEnds {
+class EaseToolState extends State<EaseTool> with _EaseEnds {
   // Joined: while a hand is down the ease is told to the document as it goes (the stage and the bars follow), the newest
   // one at a time (one still on its way: the next waits, those between are skipped); all of it one step of undo.
   bool _down = false, _open = false, _going = false;
@@ -69,7 +69,7 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
   }
 
   // Every picked key's stretch, on whatever bar it is: each value keyed there. A last key has no stretch after it: the
-  // one that ends at it, as the desk shows.
+  // one that ends at it, as the tool panel shows.
   List<(int, String, double)> _stretches(Ws ws) => [
     if (ws.stretch case final s?)
       (int.parse(s.layer), s.name, s.at)
@@ -148,7 +148,7 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
     _told = e;
     final m = ws.inside!, to = said(e);
     final all = _stretches(ws);
-    // (as it already goes, each: nothing is told, so a way's own numbers that have no seat here are not written over;
+    // (as it already goes, each: nothing is told, so a way's own numbers that have no field here are not written over;
     //  told as the hand went: told once more as it let go, and the step it opened closed)
     final told = [
       for (final (t, name, at) in all)
@@ -197,11 +197,11 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
     final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), span = easeSpan(ws), store = eases[ws] ??= {}, id = spanId(span);
     if ((ws.inside, span) case (final m?, final span?)) {
       final at = keysAt(ws, span);
-      final inDocument = at.isEmpty ? easePreset('Linear') : heard(m.wayOf(int.parse(span.layer.id), at.keys.first, at.values.first));
+      final inDocument = at.isEmpty ? easingPreset('Linear') : heard(m.wayOf(int.parse(span.layer.id), at.keys.first, at.values.first));
       if (_told case final t? when !ws.waiting || said(t) == said(inDocument)) _told = null;
       var ease = _pending ?? _told ?? _base ?? inDocument;
       if (easeOther(ease) && ease.drawn == null) {
-        ease = easeCard(said(ease), m); // (no seat for this kind: its curve is the inside's own working of it, as said now)
+        ease = easeCard(said(ease), m); // (no tile for this kind: its curve is the inside's own working of it, as said now)
       }
       void set(Ease e) {
         setState(() => _pending = e);
@@ -223,7 +223,7 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
     }
     // (no stretch: a way of the panel's own, to make and try and keep on the shelf, the document told nothing: the maker,
     //  10/31, "区間を選ばなくてもプリセットの作成ぐらいできるように")
-    final own = store[id] ?? easePreset(ws.inside == null ? 'Ease' : 'Linear');
+    final own = store[id] ?? easingPreset(ws.inside == null ? 'Ease' : 'Linear');
     return _body(
       ws,
       span,
@@ -259,7 +259,7 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
       set(laidOn(e));
     }
 
-    void hold(Ease? e) {
+    void over(Ease? e) {
       // (on the stage too, as the graph shows it)
       setState(() => _held = e);
       if (ws.inside == null || span == null) return;
@@ -326,7 +326,7 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
         final leftColumn = SizedBox(
           width: left,
           child: EaseLeft(
-            onReverse: !whole && card != easePreset('Linear') && turned != card ? () => put(turned) : null,
+            onReverse: !whole && card != easingPreset('Linear') && turned != card ? () => put(turned) : null,
             menu: [
               (
                 'copy',
@@ -361,7 +361,7 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
             ease: whole ? ease : card,
             side: side,
             across: tall,
-            shapes: easeRow(unseated(ws)),
+            shapes: easeRow(easingsWithoutTile(ws)),
             onPick: (e) {
               if (_adding) return add(e);
               if (whole) {
@@ -375,10 +375,10 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
         );
         final target = DragTarget<Object>(
           onWillAcceptWithDetails: (d) {
-            if (d.data case final Ease e) hold(laidOn(e));
+            if (d.data case final Ease e) over(laidOn(e));
             return true; // (a card of the flow too: let go on it, it stays)
           },
-          onLeave: (d) => d is Ease ? hold(null) : null,
+          onLeave: (d) => d is Ease ? over(null) : null,
           onAcceptWithDetails: (d) {
             _held = null;
             if (d.data case final Ease e) {
@@ -473,7 +473,7 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
                     whole: pile.length > 1 ? _held ?? easeLaid(cards) : null,
                     onWhole: () => setState(() => _card = -1),
                     onPress: (i) => setState(() => (_card = i, _adding = false, _overLocked = false)),
-                    onOff: (i) => set(cards.length > 1 ? easeLaid([...cards]..removeAt(i)) : easePreset('Linear')),
+                    onOff: (i) => set(cards.length > 1 ? easeLaid([...cards]..removeAt(i)) : easingPreset('Linear')),
                     onMove: (from, to) {
                       final next = [...cards];
                       next.insert(to, next.removeAt(from));
@@ -485,7 +485,7 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
                       _card = i;
                       set(easeLaid([...cards]..insertAll(i, [for (final c in easeCards(said(e))) easeCard(c, ws.inside)])));
                     },
-                    onHold: (e, i) => hold(e == null ? null : easeLaid([...cards]..insertAll(i, [for (final c in easeCards(said(e))) easeCard(c, ws.inside)]))),
+                    onOver: (e, i) => over(e == null ? null : easeLaid([...cards]..insertAll(i, [for (final c in easeCards(said(e))) easeCard(c, ws.inside)]))),
                   ),
                 ),
               ],
@@ -541,7 +541,7 @@ class DeskEaseState extends State<DeskEase> with _EaseEnds {
                               maxWidth: wide,
                               child: EaseShelf(
                                 now: said(ease),
-                                ways: easeOthers(unseated(ws)),
+                                ways: easeOthers(easingsWithoutTile(ws)),
                                 columns: across,
                                 pitch: side + Shape.s(6),
                                 side: side,

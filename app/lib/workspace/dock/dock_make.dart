@@ -12,10 +12,10 @@ import 'package:material_color_utilities/material_color_utilities.dart';
 
 import '../../bridge/motolii.dart' show motoliiShelves;
 import '../../inspector/inspector_parts.dart' show Pop;
-import '../../parts/text_hand.dart' show TextHand, wordsPicked;
+import '../../parts/text_gestures.dart' show TextGestures, wordsPicked;
 import '../../parts/media_parts.dart' show MiniSlider;
 import '../../style/tokens.dart';
-import '../desk/desk_kit.dart' show DeskChip;
+import '../tool_panel/tool_panel_widgets.dart' show ToolChip;
 import 'dock_glyphs.dart';
 import 'dock_parts.dart';
 import '../../style/theme.dart' show ColorTheme;
@@ -211,7 +211,7 @@ class ColorsShelf extends StatelessWidget {
 
     // (what it is painted with: Alight Motion's four tabs, Figma's paint type; a press each. A colour to a gradient
     //  fades to clear, as Figma's first gradient does; a gradient to a colour keeps the stop picked)
-    Widget kind(String label, bool on, VoidCallback go) => DeskChip(key: ValueKey('colour-kind-$label'), label: label, on: on, onTap: on ? null : go);
+    Widget kind(String label, bool on, VoidCallback go) => ToolChip(key: ValueKey('colour-kind-$label'), label: label, on: on, onTap: on ? null : go);
     // (two blocks, the user's: the top stays where it is, what is coloured, how, the wheel; only the colours below
     //  scroll, so + and the dice, at the head of them, are always at hand. The picker above, the kept colours under it:
     //  Procreate's Color Panel, its palette at the bottom of the Disc and Classic tabs; Figma's picker, the document's
@@ -245,7 +245,7 @@ class ColorsShelf extends StatelessWidget {
                 ),
               ),
               SizedBox(width: Shape.s(6)),
-              DeskChip(
+              ToolChip(
                 key: const ValueKey('colour-sample'),
                 label: 'Sample',
                 onTap: () => _sample(c),
@@ -269,7 +269,7 @@ class ColorsShelf extends StatelessWidget {
               kind('None', none, () => _fill(c, name == 'stroke' ? '' : 'none')),
               const Spacer(),
               if (gradient && stops.length > 2)
-                DeskChip(key: const ValueKey('colour-stop-remove'), label: 'Remove stop', onTap: () => _fill(c, _wordOfStops([...stops]..removeAt(_stop)))),
+                ToolChip(key: const ValueKey('colour-stop-remove'), label: 'Remove stop', onTap: () => _fill(c, _wordOfStops([...stops]..removeAt(_stop)))),
             ],
           ),
           SizedBox(height: Shape.s(8)),
@@ -281,7 +281,7 @@ class ColorsShelf extends StatelessWidget {
                 _stop = i;
                 _wheelFrom = ''; // (the picker shows the stop picked)
               }),
-              onHand: (down) => down ? m.later('together', number: 1) : c.ws.after(m.later('together')),
+              onDrag: (down) => down ? m.later('together', number: 1) : c.ws.after(m.later('together')),
             ),
             SizedBox(height: Shape.s(6)),
             Wrap(
@@ -289,7 +289,7 @@ class ColorsShelf extends StatelessWidget {
               spacing: Shape.s(4),
               children: [
                 for (final MapEntry(key: b, value: label) in _blends.entries)
-                  DeskChip(
+                  ToolChip(
                     key: ValueKey('colour-blend-$b'),
                     label: label,
                     on: _blendNow(c) == b,
@@ -403,13 +403,13 @@ class ColorsShelf extends StatelessWidget {
                 ),
               ),
               SizedBox(width: Shape.s(6)),
-              DeskChip(
+              ToolChip(
                 key: const ValueKey('colour-add'),
                 label: '+',
                 onTap: () => c.set(() => _keepNow(c)),
               ), // (the colour now kept as one's own, or the gradient whole: CLIP STUDIO PAINT's Add Color)
               SizedBox(width: Shape.s(4)),
-              DeskChip(
+              ToolChip(
                 key: const ValueKey('colour-keep'),
                 label: 'Keep',
                 onTap: used.isEmpty
@@ -421,7 +421,7 @@ class ColorsShelf extends StatelessWidget {
                       }),
               ),
               SizedBox(width: Shape.s(4)),
-              DeskChip(
+              ToolChip(
                 key: const ValueKey('colour-photo'),
                 label: 'Photo',
                 onTap: photo == null

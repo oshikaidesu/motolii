@@ -8,7 +8,7 @@ import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 import '../parts/controls.dart';
 import '../style/tokens.dart';
 import 'inspector_parts.dart';
-import '../parts/text_hand.dart';
+import '../parts/text_gestures.dart';
 
 // ---- 9. material -------------------------------------------------------------------------------------------------------
 const _blends = ['Normal', 'Add', 'Multiply', 'Screen', 'Overlay', 'Soft light', 'Hard light', 'Difference'];
@@ -34,7 +34,7 @@ class BlendRows extends StatelessWidget {
           keyable: false,
           cells: [Chooser(id: 'v_blend', options: doc.choices['v_blend'] ?? _blends)],
         ),
-        if (doc.seat('ghost')) // (a seat the document has not, joined, is not shown: a switch that moves nothing is not a switch)
+        if (doc.hasProperty('ghost')) // (a property the document has not, joined, is not shown: a switch that moves nothing is not a switch)
           PropRow(
             id: 'ghost',
             label: 'Ghost',
@@ -73,7 +73,7 @@ class FillStroke extends StatelessWidget {
   @override
   // contract: the field shows the value and hands over to the Colours tool aimed at THIS slot (I1). Stroke width counts only while a stroke exists.
   Widget build(BuildContext context) {
-    final doc = Ctx.of(context).doc, none = (doc.s2['v_stroke'] ?? '—') == '—', edge = doc.seat('v_stroke'); // (a solid or a light has no edge)
+    final doc = Ctx.of(context).doc, none = (doc.s2['v_stroke'] ?? '—') == '—', edge = doc.hasProperty('v_stroke'); // (a solid or a light has no edge)
     final media = (doc.s2['v_fill_media'] ?? '—').split('/').last,
         fill = media == '—' || media.isEmpty ? doc.s2['v_fill'] ?? '—' : media; // (filled with a picture, it says so: a colour picked takes its place)
     return Sect(
@@ -217,7 +217,7 @@ class _TextGroupState extends State<TextGroup> {
                   borderRadius: BorderRadius.all(Shape.r(4)),
                   border: Border.all(color: _f.hasFocus ? Grey.g63 : Grey.g26), // (a box you type in, seen as one even with nothing written)
                 ),
-                child: TextHand(
+                child: TextGestures(
                   key: const ValueKey('ws-text-words'),
                   field: (k) => EditableText(
                     key: k,

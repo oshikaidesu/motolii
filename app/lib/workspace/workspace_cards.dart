@@ -17,9 +17,9 @@ Kind _kindOf(WsLayer? l) => switch (l?.kind) {
   _ => Kind.shape,
 };
 
-/// The seats a thing has: the document's own names, and the inspector's numbers whose value it holds (a light has no
+/// The properties a thing has: the document's own names, and the inspector's numbers whose value it holds (a light has no
 /// scale and no opacity, a flat thing no scale z: those are not shown).
-Set<String> _seatsOf(Set<String> names) => {...names, for (final n in names) 'v_$n', 'depth'}; // (a hand-drawn card asks by the value's id, 'v_x')
+Set<String> _propertiesOf(Set<String> names) => {...names, for (final n in names) 'v_$n', 'depth'}; // (a hand-drawn card asks by the value's id, 'v_x')
 
 /// Joined: the colours on the inside's own cards, as the inspector writes a colour (none said: a dash).
 Map<String, String> _cardColours(Motolii m, int t, [double at = 0]) => {

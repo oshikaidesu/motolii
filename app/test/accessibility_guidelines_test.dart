@@ -16,7 +16,7 @@ import 'package:motolii/workspace/dock/dock_make.dart' show coloursAt;
 import 'package:motolii/workspace/dock/dock_map.dart' show dockMapsAt;
 import 'package:motolii/workspace/dock/dock_parts.dart' show dockStarsAt;
 import 'package:motolii/workspace/dock/dock_tags.dart' show DockTags;
-import 'package:motolii/workspace/desk/desk_ease_shelf.dart' show easeKeptAt;
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_shelf.dart' show easeKeptAt;
 import 'package:motolii/workspace/shelf/effect_decks.dart' show effectDecksAt, effectRecentAt;
 import 'package:motolii/workspace/timeline/timeline.dart' show WsTimeline;
 import 'package:motolii/workspace/workspace.dart' show Workspace;

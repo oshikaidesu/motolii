@@ -11,7 +11,7 @@ import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 
 import '../../bridge/motolii.dart' show motoliiShelves;
-import '../../parts/text_hand.dart';
+import '../../parts/text_gestures.dart';
 import '../../style/tokens.dart';
 import '../dock/dock_make.dart' show createNames;
 import 'effect_tiles.dart' show EffectTiles;
@@ -178,7 +178,7 @@ class _ShelfNameFieldState extends State<ShelfNameField> {
       color: Grey.g91,
       padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
       alignment: Alignment.centerLeft,
-      child: TextHand(
+      child: TextGestures(
         field: (k) => EditableText(
           key: k,
           rendererIgnoresPointer: true,

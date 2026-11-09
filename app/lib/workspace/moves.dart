@@ -1,6 +1,6 @@
 // Joined: a group's move, as the code that makes it reads: who (its things, in its order), when (its strength's two
 // keys; each thing its lag later than the one before), from where to where (the group's own x, y, spread, scatter,
-// size, opacity and turns are the other end; the things' own places the seats), how (the way of the stretch between
+// size, opacity and turns are the other end; the things' own places their homes), how (the way of the stretch between
 // the two keys). Read from the document, told to it without waiting; where a thing is at the other end is asked of the
 // inside (where it shows while the strength is whole), never worked out here.
 import 'dart:math' as math;
@@ -18,9 +18,9 @@ class WsMove {
   final int by;
   final List<int> who;
   final double start, length, lag;
-  final bool coming; // (from the other end to the seats; else from the seats out to it)
+  final bool coming; // (from the other end to the homes; else from the homes out to it)
   final Map<String, double> end;
-  final double out, over; // (how it eases: 0 even, 1 slowing hard at the end; past the seat and back, 0 none)
+  final double out, over; // (how it eases: 0 even, 1 slowing hard at the end; past the home and back, 0 none)
 
   double get last => start + length + lag * math.max(0, who.length - 1); // (when the last of them is there)
 
@@ -69,7 +69,7 @@ String wsMoveName(Ws ws, Iterable<String> who, bool coming) {
   return '${coming ? 'in' : 'out'} · $all';
 }
 
-/// The way a move eases, said as the inside says a stretch: a Bezier slowing as much as [out], past the seat by [over].
+/// The way a move eases, said as the inside says a stretch: a Bezier slowing as much as [out], past the home by [over].
 String wsMoveWay(double out, double over) => 'Bezier ${(.6 - .5 * out).toStringAsFixed(3)} 0 0.2 ${(1 + over).toStringAsFixed(3)}';
 
 /// A move made of [who]: they come in at [start] from a little below, clear, each a little later; one step, picked.
@@ -168,7 +168,7 @@ final _poses = <(Motolii, int, double), ({double x, double y, double size, doubl
 Object? _posesOf;
 final wsPosesTold = ValueNotifier<int>(0);
 
-/// A thing's own value at a moment, as the document says it (its seat, not where a relation shows it): from the copies
+/// A thing's own value at a moment, as the document says it (its own place, not where a relation shows it): from the copies
 /// when they hold it, another moment asked ([Motolii.valuesAt]) and kept as [wsShows] keeps where it shows.
 double wsValue(Motolii m, int t, String n, double at, double or) {
   if (!m.moving(t).contains(n) || at == 0 || m.keyMoments(t, n).any((k) => (k - at).abs() < .5 / m.rate)) {

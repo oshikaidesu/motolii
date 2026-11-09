@@ -23,7 +23,7 @@ class _WaitedState extends State<_Waited> {
   void initState() {
     super.initState();
     SchedulerBinding.instance.addTimingsCallback(_timings);
-    GestureBinding.instance.pointerRouter.addGlobalRoute(_hand);
+    GestureBinding.instance.pointerRouter.addGlobalRoute(_pointer);
     _look = Timer.periodic(const Duration(milliseconds: 500), (_) {
       // (read without waiting: the inside's count)
       final ws = WsScope.read(context);
@@ -51,7 +51,7 @@ class _WaitedState extends State<_Waited> {
     });
   }
 
-  void _hand(PointerEvent e) {
+  void _pointer(PointerEvent e) {
     if (e.down || e is PointerScrollEvent || e is PointerPanZoomUpdateEvent) _moved = true;
   }
 
@@ -99,7 +99,7 @@ class _WaitedState extends State<_Waited> {
   void dispose() {
     _look.cancel();
     SchedulerBinding.instance.removeTimingsCallback(_timings);
-    GestureBinding.instance.pointerRouter.removeGlobalRoute(_hand);
+    GestureBinding.instance.pointerRouter.removeGlobalRoute(_pointer);
     super.dispose();
   }
 

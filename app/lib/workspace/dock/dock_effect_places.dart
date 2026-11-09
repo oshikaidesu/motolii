@@ -8,7 +8,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../parts/text_hand.dart' show TextHand;
+import '../../parts/text_gestures.dart' show TextGestures;
 import '../../style/tokens.dart';
 import 'dock_glyphs.dart';
 import 'dock_parts.dart';
@@ -234,7 +234,7 @@ class EffectPlacesState extends State<EffectPlaces> {
               builder: (_, _) =>
                   _words.text.isEmpty ? IgnorePointer(child: Text('Search words, #tags', maxLines: 1, style: T.name(Grey.g56))) : const SizedBox(),
             ),
-          TextHand(
+          TextGestures(
             key: const ValueKey('ws-fx-naming'),
             field: (k) => EditableText(
               key: k,

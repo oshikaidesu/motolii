@@ -1,53 +1,56 @@
-// The desk's shared small things: the tool catalog (name, hue, what it acts on), each tool's painted glyph, and the round
-// touchables the desk's bodies use (chip, icon button, scrub field, readout).
+// The tool panel's shared small things: the tool catalog (name, hue, what it acts on), each tool's painted glyph, and the round
+// touchables the tool panel's bodies use (chip, icon button, scrub field, readout).
 import 'package:flutter/widgets.dart';
 
 import '../../parts/skin_parts.dart';
 
-import '../../parts/text_hand.dart';
+import '../../parts/text_gestures.dart';
 import '../../inspector/inspector_parts.dart' show Hov, Pop;
 import '../../style/tokens.dart';
-import 'desk_align.dart';
-import 'desk_blend.dart';
+import 'tool_panel_align.dart';
+import 'tool_panel_blend.dart';
 import '../ws.dart';
 import '../two_fingers.dart';
 
-/// One tool the desk can hold. [acts] is what it works on, said in two words.
-/// A tool of the desk: its name, its hue, what it acts on, and what the desk holds while it is open (none yet: a card
-/// that says what it will act on). Tools of your own: Workspace(tools: [DeskTool(...)]).
-class DeskTool {
-  const DeskTool(this.name, this.tone, this.acts, {this.build});
+/// One tool the tool panel can hold. [acts] is what it works on, said in two words.
+/// A tool of the tool panel: its name, its hue, what it acts on, and what the tool panel holds while it is open (none yet: a card
+/// that says what it will act on). Tools of your own: Workspace(tools: [PanelTool(...)]).
+class PanelTool {
+  const PanelTool(this.name, this.tone, this.acts, {this.build});
   final String name, acts;
   final Color tone;
   final Widget Function()? build;
 }
 
-final deskTools = [DeskTool('Blend', Pop.toneBlend, 'Layer stack', build: DeskBlend.new), DeskTool('Align', Pop.toneLayout, 'Selection', build: DeskAlign.new)];
+final panelTools = [
+  PanelTool('Blend', Pop.toneBlend, 'Layer stack', build: BlendTool.new),
+  PanelTool('Align', Pop.toneLayout, 'Selection', build: AlignTool.new),
+];
 
-DeskTool deskTool(Ws ws, String name) => ws.tools.firstWhere((t) => t.name == name, orElse: () => DeskTool(name, Grey.g63, ''));
+PanelTool panelTool(Ws ws, String name) => ws.tools.firstWhere((t) => t.name == name, orElse: () => PanelTool(name, Grey.g63, ''));
 
 /// A tool's sticker: a flat tile of its hue with the glyph knocked out in dark ink.
-class DeskSticker extends StatelessWidget {
-  const DeskSticker(this.name, {super.key, this.size = 16});
+class ToolSticker extends StatelessWidget {
+  const ToolSticker(this.name, {super.key, this.size = 16});
   final String name;
   final double size;
   @override
   Widget build(BuildContext context) {
-    final tone = name == 'Tools' ? Grey.g76 : deskTool(WsScope.read(context), name).tone, own = name != 'Tools' && deskTools.every((t) => t.name != name);
+    final tone = name == 'Tools' ? Grey.g76 : panelTool(WsScope.read(context), name).tone, own = name != 'Tools' && panelTools.every((t) => t.name != name);
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(color: tone, borderRadius: BorderRadius.circular(size * .3)),
       child: own
           ? Center(child: Text(name.characters.first, style: T.micro(WsT.onAccent)))
-          : CustomPaint(painter: DeskGlyph(name, WsT.onAccent)), // (a tool of your own: its first letter)
+          : CustomPaint(painter: ToolGlyph(name, WsT.onAccent)), // (a tool of your own: its first letter)
     );
   }
 }
 
 /// Each tool drawn as one bold shape on a 20-unit grid.
-class DeskGlyph extends CustomPainter {
-  const DeskGlyph(this.name, this.ink);
+class ToolGlyph extends CustomPainter {
+  const ToolGlyph(this.name, this.ink);
   final String name;
   final Color ink;
 
@@ -146,12 +149,12 @@ class DeskGlyph extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(DeskGlyph o) => o.name != name || o.ink != ink;
+  bool shouldRepaint(ToolGlyph o) => o.name != name || o.ink != ink;
 }
 
 /// A round header chip: a mark and a word. [onTap] makes it a button.
-class DeskChip extends StatelessWidget {
-  const DeskChip({super.key, required this.label, this.dot, this.onTap, this.on = false});
+class ToolChip extends StatelessWidget {
+  const ToolChip({super.key, required this.label, this.dot, this.onTap, this.on = false});
   final String label;
   final Color? dot;
   final VoidCallback? onTap;
@@ -191,8 +194,8 @@ class DeskChip extends StatelessWidget {
 }
 
 /// A square-ish round button holding one glyph.
-class DeskIconButton extends StatelessWidget {
-  const DeskIconButton({super.key, required this.glyph, required this.onTap, this.on = false, this.size = 20});
+class ToolIconButton extends StatelessWidget {
+  const ToolIconButton({super.key, required this.glyph, required this.onTap, this.on = false, this.size = 20});
   final CustomPainter Function(Color ink) glyph;
   final VoidCallback onTap;
   final bool on;
@@ -210,8 +213,8 @@ class DeskIconButton extends StatelessWidget {
 }
 
 /// A field you scrub sideways: label left, value right, a fill bar in the field's [tone] shows where the value sits in its range.
-class DeskScrub extends StatefulWidget {
-  const DeskScrub({
+class ToolScrub extends StatefulWidget {
+  const ToolScrub({
     super.key,
     required this.label,
     required this.value,
@@ -231,10 +234,10 @@ class DeskScrub extends StatefulWidget {
   final Color? tone; // (none: the theme's ChosenDefault)
   final bool enabled;
   @override
-  State<DeskScrub> createState() => _DeskScrubState();
+  State<ToolScrub> createState() => _ToolScrubState();
 }
 
-class _DeskScrubState extends State<DeskScrub> {
+class _ToolScrubState extends State<ToolScrub> {
   bool _hot = false, _drag = false, _typing = false;
   final _words = TextEditingController();
   final _focus = FocusNode();
@@ -317,7 +320,7 @@ class _DeskScrubState extends State<DeskScrub> {
                         child: _typing
                             ? SizedBox(
                                 width: Shape.z(44),
-                                child: TextHand(
+                                child: TextGestures(
                                   field: (k) => EditableText(
                                     key: k,
                                     rendererIgnoresPointer: true,
@@ -352,8 +355,8 @@ class _DeskScrubState extends State<DeskScrub> {
 }
 
 /// The strip over a tool's body: what it works on at the left (cut off, never wrapped, when narrow), actions at the right.
-class DeskStrip extends StatelessWidget {
-  const DeskStrip({super.key, required this.left, this.right = const []});
+class ToolStrip extends StatelessWidget {
+  const ToolStrip({super.key, required this.left, this.right = const []});
   final List<Widget> left, right;
   @override
   Widget build(BuildContext context) => Container(
@@ -377,8 +380,8 @@ class DeskStrip extends StatelessWidget {
 }
 
 /// A flat chip in a layer's hue with its name in dark ink.
-class DeskLayerChip extends StatelessWidget {
-  const DeskLayerChip(this.name, this.tone, {super.key});
+class ToolLayerChip extends StatelessWidget {
+  const ToolLayerChip(this.name, this.tone, {super.key});
   final String name;
   final Color tone;
   @override
@@ -391,9 +394,9 @@ class DeskLayerChip extends StatelessWidget {
   );
 }
 
-/// A caption over a section of the desk's side column.
-class DeskCaption extends StatelessWidget {
-  const DeskCaption(this.text, {super.key, this.tone, this.trailing});
+/// A caption over a section of the tool panel's side column.
+class ToolCaption extends StatelessWidget {
+  const ToolCaption(this.text, {super.key, this.tone, this.trailing});
   final String text;
   final Color? tone;
   final String? trailing;
@@ -418,8 +421,8 @@ class DeskCaption extends StatelessWidget {
 }
 
 /// A big number with its unit and a quiet line under it.
-class DeskReadout extends StatelessWidget {
-  const DeskReadout({super.key, required this.value, this.unit = '', this.sub, this.ink});
+class ToolReadout extends StatelessWidget {
+  const ToolReadout({super.key, required this.value, this.unit = '', this.sub, this.ink});
   final String value, unit;
   final String? sub;
   final Color? ink;
@@ -445,7 +448,7 @@ class DeskReadout extends StatelessWidget {
 }
 
 /// Draws a line of text in a painter, anchored by [ax] / [ay] (0 left/top, 1 right/bottom).
-void deskText(Canvas c, String s, Offset at, TextStyle st, {double ax = 0, double ay = 0}) {
+void toolText(Canvas c, String s, Offset at, TextStyle st, {double ax = 0, double ay = 0}) {
   final tp = TextPainter(
     text: TextSpan(text: s, style: st),
     textDirection: TextDirection.ltr,

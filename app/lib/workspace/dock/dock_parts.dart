@@ -13,7 +13,7 @@ import '../../parts/media_parts.dart' show drawStar, glyph;
 import '../../style/tokens.dart';
 import 'dock_glyphs.dart';
 import '../ws.dart';
-import '../../parts/text_hand.dart';
+import '../../parts/text_gestures.dart';
 
 part 'dock_search.dart';
 part 'dock_stars.dart';
@@ -26,7 +26,7 @@ class DockMem {
   final chip = <String, String>{};
   final folded = <String>{'Time'};
   final open = <String>{'Project'};
-  final starred = _starsRead(); // (what the hand starred: kept in ~/.motolii/effect_stars.json, as the Ease desk keeps its own)
+  final starred = _starsRead(); // (what the hand starred: kept in ~/.motolii/effect_stars.json, as the Ease tool panel keeps its own)
 
   /// Why the last thing asked of the inside for an entry was not done (by the entry's id).
   final trouble = <String, String>{};

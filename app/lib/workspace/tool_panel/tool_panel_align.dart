@@ -1,16 +1,16 @@
-// The desk's Align tool: the picked thing put against the picture's edges or its middle, by what of it is seen (the
+// The tool panel's Align tool: the picked thing put against the picture's edges or its middle, by what of it is seen (the
 // upright box of its outline, as the inside sees it). Moved as a hand moves it on the stage (held, carried by so many points of
 // the picture, let go: one step), so the inside reckons it into its own units, through its parent's turn.
 import 'package:flutter/widgets.dart';
 
 import '../../style/tokens.dart';
 
-import 'desk_kit.dart';
+import 'tool_panel_widgets.dart';
 import '../stage/stage_art.dart' show WsArt;
 import '../ws.dart';
 
-class DeskAlign extends StatelessWidget {
-  const DeskAlign({super.key});
+class AlignTool extends StatelessWidget {
+  const AlignTool({super.key});
 
   /// What of the picked thing is seen: the upright box of its outline, as the inside sees it (null: nothing picked or seen).
   static Rect? _seen(Ws ws) {
@@ -58,7 +58,7 @@ class DeskAlign extends StatelessWidget {
     return ListView(
       padding: EdgeInsets.all(WsT.gap),
       children: [
-        if (ws.layer case final l?) DeskStrip(left: [DeskLayerChip(l.name, wsTone(l.kind))]),
+        if (ws.layer case final l?) ToolStrip(left: [ToolLayerChip(l.name, wsTone(l.kind))]),
         SizedBox(height: Shape.s(8)),
         for (final row in const [
           [0, 1, 2],
@@ -71,7 +71,7 @@ class DeskAlign extends StatelessWidget {
               child: Row(
                 children: [
                   for (final side in row) ...[
-                    DeskIconButton(
+                    ToolIconButton(
                       key: ValueKey('align.$side'),
                       size: Shape.z(36),
                       on: at(side),
