@@ -12,12 +12,10 @@ class InspectorPanel extends StatefulWidget {
 
 class _InspectorPanelState extends State<InspectorPanel> {
   final _node = FocusNode(debugLabel: 'inspector');
-  final _scroll = ScrollController();
 
   @override
   void dispose() {
     _node.dispose();
-    _scroll.dispose();
     super.dispose();
   }
 
@@ -41,15 +39,12 @@ class _InspectorPanelState extends State<InspectorPanel> {
         child: SizedBox.expand(
           child: ColoredBox(
             color: Grey.g07,
-            // (only the cards in sight are built: a stage with seventy effects on it builds as one with seven; a text just
-            //  placed waits for its card, out of sight under Transform: built for it, the box then scrolls itself to the caret)
             child: Column(
               children: [
                 // (the name and Animate all stay where they are, the cards going by under them: Alight Motion's key button stands in the panel's frame, outside what scrolls, LayerTools.kt LayerPanel)
                 if (k != Kind.none) Padding(padding: EdgeInsets.fromLTRB(Pop.gap, Pop.gap, Pop.gap, 0), child: const InspHeader()),
                 Expanded(
                   child: ListView(
-                    controller: _scroll,
                     padding: EdgeInsets.all(Pop.gap),
                     children: body,
                   ),

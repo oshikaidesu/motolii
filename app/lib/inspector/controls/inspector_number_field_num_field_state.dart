@@ -406,7 +406,7 @@ class NumFieldState extends State<NumField> implements TextSelectionGestureDetec
         ? Role.selected.withValues(alpha: .8)
         : (_focus || _editing ? Grey.g63 : (_hover ? Grey.g38 : idle));
     final picked = x.doc.isPicked(widget.id);
-    final fillC = picked ? Color.alphaBlend(Pop.accent.withValues(alpha: .14), Pop.well) : (_hover || live ? Grey.g20 : Pop.well);
+    final fillC = picked ? Color.alphaBlend(Accent.fill.withValues(alpha: .14), Grey.g15) : (_hover || live ? Grey.g20 : Grey.g15);
     return LayoutBuilder(
       builder: (context, box) {
         final w = box.maxWidth;
@@ -472,13 +472,13 @@ class NumFieldState extends State<NumField> implements TextSelectionGestureDetec
             width: w,
             height: Pop.tile,
             fillColor: fillC,
-            borderColor: picked ? Pop.accentInk.withValues(alpha: .7) : (!(_focus || _editing || live) ? const Color(0x00000000) : edge),
+            borderColor: picked ? Accent.ink.withValues(alpha: .7) : (!(_focus || _editing || live) ? const Color(0x00000000) : edge),
             rangeColor: Grey.g56,
             fill: _bounded && v != null ? t : null,
             zeroAt: _zeroAt,
             bipolar: _bounded && widget.bipolar,
             editing: _editing,
-            keyDot: _keyAt == null ? null : (ks == KeyS.at ? Pop.keyDot : (ks == KeyS.anim ? Pop.keyDot.withValues(alpha: .5) : Grey.g56)),
+            keyDot: _keyAt == null ? null : (ks == KeyS.at ? Accent.key : (ks == KeyS.anim ? Accent.key.withValues(alpha: .5) : Grey.g56)),
             keyEmpty: ks == KeyS.off,
             pad: Pop.tilePad,
           ),

@@ -25,15 +25,6 @@ const dblParts = Duration(milliseconds: 320);
 
 /// The inspector's colours and measures, from the skin.
 abstract final class Pop {
-  static Color get accent => Accent.fill; // (the skin's: one accent for the window)
-  static Color get onAccent => Accent.on;
-  static Color get keyDot => Accent.key;
-
-  /// The accent as a line or text on a ground (the skin's, made deep enough to read on white). Fills stay [accent].
-  static Color get accentInk => Accent.ink;
-  static Color get card => Grey.g13;
-  static Color get well => Grey.g15;
-
   /// Cards are inset [inset] at the sides, and stand [gap] apart and from the panel edge.
   static double get inset => Shape.s(8.0);
   static double get gap => Shape.s(2.0);

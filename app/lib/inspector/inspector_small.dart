@@ -4,7 +4,6 @@ import 'package:motolii/skin/forms/forms.dart';
 import 'package:naked_ui/naked_ui.dart';
 
 import '../skin/tokens.dart';
-import 'inspector_parts.dart';
 
 // ---- 3. small things ------------------------------------------------------------------------------------------------
 /// What floats over the window goes when anything else is touched, by either button, and on Esc (Flutter's TapRegion; a
@@ -98,11 +97,11 @@ class PopSwitch extends StatelessWidget {
     height: Shape.z(16),
     padding: EdgeInsets.all(Shape.s(2)),
     alignment: on ? Alignment.centerRight : Alignment.centerLeft,
-    decoration: BoxDecoration(color: on ? Pop.accent : Grey.g26, borderRadius: BorderRadius.all(Shape.r(8))),
+    decoration: BoxDecoration(color: on ? Accent.fill : Grey.g26, borderRadius: BorderRadius.all(Shape.r(8))),
     child: Container(
       width: Shape.z(12),
       height: Shape.z(12),
-      decoration: BoxDecoration(color: on ? Pop.onAccent : Grey.g63, shape: BoxShape.circle),
+      decoration: BoxDecoration(color: on ? Accent.on : Grey.g63, shape: BoxShape.circle),
     ),
   );
 }

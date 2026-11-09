@@ -20,7 +20,7 @@ class InspHeader extends StatelessWidget {
     return Container(
       height: Shape.z(34),
       padding: EdgeInsets.symmetric(horizontal: Pop.inset),
-      color: Pop.card,
+      color: Grey.g13,
       child: Row(
         children: [
           Flexible(
@@ -75,7 +75,7 @@ class EmptyState extends StatelessWidget {
             height: Pop.cell,
             margin: EdgeInsets.only(bottom: Pop.gap),
             alignment: Alignment.center,
-            decoration: BoxDecoration(color: h ? Grey.g20 : Pop.well, borderRadius: BorderRadius.all(Shape.r(6))),
+            decoration: BoxDecoration(color: h ? Grey.g20 : Grey.g15, borderRadius: BorderRadius.all(Shape.r(6))),
             child: Text('Stage settings', style: T.label(h ? Grey.g95 : Grey.g76)),
           ),
         ),
