@@ -16,7 +16,7 @@
 | `dock/` | タブの印 `DockG` と、コードを書く `ProgramCode` |
 | `shelf/` | 棚のタイル（効果・スクリプト・素材） |
 | `stage/` | コンポジションの寸法 `WsArt` |
-| `timeline/` | タイムライン |
+| `timeline/` | タイムラインのペイン（中身は空） |
 | `tool_panel/` | ヘッダの `ToolChip` と、自分の `PanelTool` |
 
 ## 自分のパネルを足す（入口はここだけ）
