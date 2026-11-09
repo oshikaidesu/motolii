@@ -1,16 +1,5 @@
-// The window's colour theme in Ableton Live's manner (its .ask files): a flat list of roles, each a colour,
-//   <Motolii><Theme>
-//     <ChosenDefault Value="#b3c66b"/>
-//     <Grey07 Value="#131313"/>
-//   </Theme></Motolii>
-// read from the skin the window wears (skins/<name>/theme.xml, the maker's own folder's or shelves/', the name kept in window.xml); a role the file does not say is the window's own (VS Code's manner). The meaning
-// roles keep Ableton's names (ChosenDefault, ChosenPlay, ChosenRecord, Alert, SelectionBackground, ControlOnForeground,
-// Clip1-16), the key mark Blender's (Keyframe); the grey ramp keeps the window's own step names (Grey00 ... Grey100),
-// each step a role in both shades (ground, body, card, well, raised, lines, quiet text, text, strong text).
-// A role may also be a number or a word (AviUtl2's style.conf, Obsidian's variables): the skin's shapes and type,
-//     <Shade Value="light"/>  <Corner Value="3"/>  <TextScale Value="1.1"/>  <FontSans Value="Space Grotesk"/>
-//     <FontSansFile Value="~/.motolii/fonts/SpaceGrotesk.ttf"/>
-// a file named for a font is loaded under that name when the theme is read.
+// Reads a skin's theme.xml, as shelves/skins/README.md says: roles are colours or words, and a role the file does not
+// say is the window's own. A Font...File role loads that file under the family its Font... role names.
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data' show ByteData;
