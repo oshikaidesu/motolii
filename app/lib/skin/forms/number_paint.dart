@@ -19,7 +19,6 @@ class NumberSpec {
     this.zeroAt = 0,
     this.bipolar = false,
     this.editing = false,
-    this.on = true,
     this.keyDot,
     this.keyEmpty = false,
     this.pad = 8,
@@ -35,7 +34,7 @@ class NumberSpec {
 
   /// 0..1 along a bounded field. Null: the field has no range, so no mark travels.
   final double? fill;
-  final bool bipolar, editing, on;
+  final bool bipolar, editing;
   final Color fillColor, borderColor, rangeColor;
   final Color? keyDot;
 
@@ -104,7 +103,7 @@ Widget usualNumber(BuildContext context, NumberSpec n) {
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
-                      child: Text(n.caption!, maxLines: 1, style: T.micro(n.on ? Grey.g63 : Grey.g44).copyWith(height: 1.1)),
+                      child: Text(n.caption!, maxLines: 1, style: T.micro(Grey.g63).copyWith(height: 1.1)),
                     ),
                   SizedBox(
                     height: Shape.z(18),

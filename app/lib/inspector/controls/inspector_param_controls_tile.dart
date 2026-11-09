@@ -31,7 +31,6 @@ class ParamTile extends StatelessWidget {
         step: p.dec > 0 ? p.step * 10 : 1,
         bipolar: p.look == ParamLook.bipolar,
         turns: p.look == ParamLook.angle,
-        enabled: !RowOff.offOf(context),
       ),
     );
   }
@@ -40,15 +39,15 @@ class ParamTile extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (p.look) {
       case ParamLook.toggle:
-        final doc = Ctx.of(context).doc, on = !RowOff.offOf(context), b = (doc.get(id) ?? 0) > 0;
+        final doc = Ctx.of(context).doc, b = (doc.get(id) ?? 0) > 0;
         return Hov(
-          onTap: on ? () => doc.set(id, b ? 0 : 1) : null,
+          onTap: () => doc.set(id, b ? 0 : 1),
           builder: (_, h) => Row(
             key: ValueKey('toggle:$id'),
             children: [
               PopSwitch(on: b),
               SizedBox(width: Shape.s(6)),
-              Text(b ? 'On' : 'Off', style: T.label(h && on ? Grey.g95 : Grey.g76)),
+              Text(b ? 'On' : 'Off', style: T.label(h ? Grey.g95 : Grey.g76)),
             ],
           ),
         );
@@ -56,13 +55,11 @@ class ParamTile extends StatelessWidget {
         final n = p.options.length;
         if (n == 0) return _num(context);
         final doc = Ctx.of(context).doc;
-        return Dis(
+        return Segmented(
           key: ValueKey('choice:$id'),
-          child: Segmented(
-            items: p.options,
-            index: (doc.get(id) ?? 0).round().clamp(0, n - 1),
-            onChanged: (i) => doc.set(id, i.toDouble()),
-          ),
+          items: p.options,
+          index: (doc.get(id) ?? 0).round().clamp(0, n - 1),
+          onChanged: (i) => doc.set(id, i.toDouble()),
         );
       case ParamLook.color:
         final shown = Ctx.of(context).doc.s2[id] ?? '—';

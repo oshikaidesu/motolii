@@ -83,7 +83,7 @@ class OnOff extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Forms.worn.onOff(
     context,
-    SwitchSpec(on: on, onChanged: onChanged, enabled: !RowOff.offOf(context)),
+    SwitchSpec(on: on, onChanged: onChanged),
   ); // (as the skin's forms draw it)
 }
 

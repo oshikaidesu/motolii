@@ -11,8 +11,8 @@ const forms = <String, Forms>{'own': OwnForms()};
 
 /// On or off.
 class SwitchSpec {
-  const SwitchSpec({required this.on, required this.onChanged, this.enabled = true});
-  final bool on, enabled;
+  const SwitchSpec({required this.on, required this.onChanged});
+  final bool on;
   final ValueChanged<bool> onChanged;
 }
 

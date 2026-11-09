@@ -15,7 +15,6 @@ class OwnForms extends Forms {
   Widget onOff(BuildContext context, SwitchSpec s) => NakedToggle(
     value: s.on,
     asSwitch: true,
-    enabled: s.enabled,
     enableFeedback: false,
     onChanged: s.onChanged,
     child: Row(
@@ -23,13 +22,10 @@ class OwnForms extends Forms {
       children: [
         SizedBox(
           width: Shape.z(20),
-          child: Text(s.on ? 'On' : 'Off', textAlign: TextAlign.right, style: T.label(s.enabled && s.on ? Grey.g95 : Grey.g56)),
+          child: Text(s.on ? 'On' : 'Off', textAlign: TextAlign.right, style: T.label(s.on ? Grey.g95 : Grey.g56)),
         ),
         SizedBox(width: Shape.s(8)),
-        Opacity(
-          opacity: s.enabled ? 1 : .5,
-          child: PopSwitch(on: s.on),
-        ),
+        PopSwitch(on: s.on),
       ],
     ),
   );

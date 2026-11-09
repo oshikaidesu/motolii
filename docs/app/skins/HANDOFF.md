@@ -40,7 +40,7 @@ Motolii のアプリ（Flutter、`app`）の見た目は、エンジンの側（
 
 | 関数 | 渡る物 | アプリの部品 |
 |---|---|---|
-| `onOff(context, SwitchSpec)` | `on`、`onChanged`、`enabled` | オン・オフ（Animate all など） |
+| `onOff(context, SwitchSpec)` | `on`、`onChanged` | オン・オフ（Animate all など） |
 
 数値の絵は `number_paint.dart` の一つ。見た目の動き（`AnimatedContainer`、`TweenAnimationBuilder` など）は自由。手の受け取り（`GestureDetector`、`MouseRegion`、`Listener`）だけは書かず naked_ui に任せる。
 

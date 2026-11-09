@@ -30,7 +30,6 @@ class NumFieldState extends State<NumField> implements TextSelectionGestureDetec
   DateTime? _lastUp;
 
   Ctx get _x => Ctx.read(context);
-  bool get _on => widget.enabled && !(context.getInheritedWidgetOfExactType<RowOff>()?.off ?? false);
   bool get _bounded => widget.min != null && widget.max != null;
   double get _zeroAt => _bounded ? ((0 - widget.min!) / (widget.max! - widget.min!)).clamp(0.0, 1.0) : 0;
 
@@ -175,7 +174,7 @@ class NumFieldState extends State<NumField> implements TextSelectionGestureDetec
   }
 
   void _onDown(PointerDownEvent e) {
-    if (!_on || _editing) return;
+    if (_editing) return;
     if (e.buttons == kSecondaryButton) {
       // (After Effects' and Blender's right click on a value; every number, its row or an effect's knob alike: all by the mouse alone, 10/29)
       rightAt = e.pointer;
@@ -245,14 +244,14 @@ class NumFieldState extends State<NumField> implements TextSelectionGestureDetec
   // panel's modifier rule), so a slide and a scrub of the same length move a value the same amount. An up/down slide is not claimed, so it scrolls
   // the panel. No button needs holding (do-not-repeat 4).
   void _onSignal(PointerSignalEvent e) {
-    if (e is! PointerScrollEvent || !_on || _editing) return;
+    if (e is! PointerScrollEvent || _editing) return;
     final d = e.scrollDelta;
     if (d.dx.abs() <= d.dy.abs()) return;
     GestureBinding.instance.pointerSignalResolver.register(e, (ev) => _slide((ev as PointerScrollEvent).scrollDelta.dx));
   }
 
   void _onPan(PointerPanZoomUpdateEvent e) {
-    if (!_on || _editing) return;
+    if (_editing) return;
     final d = e.localPanDelta;
     if (d.dx.abs() > d.dy.abs()) _slide(d.dx);
   }
@@ -288,7 +287,7 @@ class NumFieldState extends State<NumField> implements TextSelectionGestureDetec
       );
       return KeyEventResult.handled;
     }
-    if (_editing || !_on) return KeyEventResult.ignored;
+    if (_editing) return KeyEventResult.ignored;
     if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
     final k = e.logicalKey;
     if (k == LogicalKeyboardKey.escape && _drag && _moved) {
@@ -324,7 +323,7 @@ class NumFieldState extends State<NumField> implements TextSelectionGestureDetec
 
   void _startEdit([String? typed]) {
     // (typed: the number begun with that character)
-    if (!mounted || _editing || !_on) return;
+    if (!mounted || _editing) return;
     final v = _x.doc.get(widget.id);
     _ctl.text = typed ?? (v == null ? '' : fmt(v, widget.decimals));
     _ctl.selection = typed != null ? TextSelection.collapsed(offset: _ctl.text.length) : TextSelection(baseOffset: 0, extentOffset: _ctl.text.length);
@@ -407,14 +406,14 @@ class NumFieldState extends State<NumField> implements TextSelectionGestureDetec
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context);
-    final v = x.doc.get(widget.id), on = _on;
+    final v = x.doc.get(widget.id);
     final live = _drag && _moved;
     const idle = Color(0x00000000);
     final Color edge = live
         ? Role.selected.withValues(alpha: .8)
-        : (_focus || _editing ? Grey.g63 : (_hover && on ? Grey.g38 : idle));
+        : (_focus || _editing ? Grey.g63 : (_hover ? Grey.g38 : idle));
     final picked = x.doc.isPicked(widget.id);
-    final fillC = !on ? Grey.g10 : (picked ? Color.alphaBlend(Pop.accent.withValues(alpha: .14), Pop.well) : (_hover || live ? Grey.g20 : Pop.well));
+    final fillC = picked ? Color.alphaBlend(Pop.accent.withValues(alpha: .14), Pop.well) : (_hover || live ? Grey.g20 : Pop.well);
     return LayoutBuilder(
       builder: (context, box) {
         final w = box.maxWidth;
@@ -434,7 +433,7 @@ class NumFieldState extends State<NumField> implements TextSelectionGestureDetec
                 children: [
                   TextSpan(
                     text: fmt(v, widget.decimals, tight: tight), // (its places fixed, as Push shows them: a number does not jump in width as it moves)
-                    style: blockValue(on ? Grey.g95 : Grey.g56),
+                    style: blockValue(Grey.g95),
                   ),
                   if (showUnit && unit.isNotEmpty) TextSpan(text: '\u2009$unit', style: T.label(Grey.g44)),
                 ],
@@ -481,12 +480,11 @@ class NumFieldState extends State<NumField> implements TextSelectionGestureDetec
             height: Pop.tile,
             fillColor: fillC,
             borderColor: picked ? Pop.accentInk.withValues(alpha: .7) : (!(_focus || _editing || live) ? const Color(0x00000000) : edge),
-            rangeColor: on ? Grey.g56 : Grey.g44,
+            rangeColor: Grey.g56,
             fill: _bounded && v != null ? t : null,
             zeroAt: _zeroAt,
             bipolar: _bounded && widget.bipolar,
             editing: _editing,
-            on: on,
             keyDot: _keyAt == null ? null : (ks == KeyS.at ? Pop.keyDot : (ks == KeyS.anim ? Pop.keyDot.withValues(alpha: .5) : Grey.g56)),
             keyEmpty: ks == KeyS.off,
             pad: Pop.tilePad,
@@ -521,7 +519,7 @@ class NumFieldState extends State<NumField> implements TextSelectionGestureDetec
                 gestures: {
                   ScrubClaim: GestureRecognizerFactoryWithHandlers<ScrubClaim>(
                     () => ScrubClaim(),
-                    (r) => r.takes = (e) => _on && !_editing,
+                    (r) => r.takes = (e) => !_editing,
                   ),
                 },
                 child: Listener(
@@ -532,7 +530,7 @@ class NumFieldState extends State<NumField> implements TextSelectionGestureDetec
                   onPointerSignal: _onSignal,
                   onPointerPanZoomUpdate: _onPan,
                   child: MouseRegion(
-                    cursor: !on ? SystemMouseCursors.basic : (_editing ? SystemMouseCursors.text : SystemMouseCursors.resizeLeftRight),
+                    cursor: _editing ? SystemMouseCursors.text : SystemMouseCursors.resizeLeftRight,
                     onEnter: (_) => setState(() => _hover = true),
                     onExit: (_) => setState(() => _hover = false),
                     // (past what it vouches for, or going there under the hand: drawn the other way about)

@@ -23,30 +23,6 @@ const wUnit = 72.0, wTight = 60.0;
 // [open] two clicks within this are a double click.
 const dblParts = Duration(milliseconds: 320);
 
-/// Set by a row: its controls are off (locked, driven or disabled).
-class RowOff extends InheritedWidget {
-  const RowOff({super.key, required this.off, required super.child});
-  final bool off;
-  static RowOff? maybe(BuildContext c) => c.dependOnInheritedWidgetOfExactType<RowOff>();
-  static bool offOf(BuildContext c) => maybe(c)?.off ?? false;
-  @override
-  bool updateShouldNotify(RowOff o) => o.off != off;
-}
-
-/// For controls that cannot recolour themselves (Segmented): off = a fixed dim and no pointer.
-class Dis extends StatelessWidget {
-  const Dis({super.key, required this.child});
-  final Widget child;
-  @override
-  Widget build(BuildContext context) {
-    final off = RowOff.offOf(context);
-    return IgnorePointer(
-      ignoring: off,
-      child: Opacity(opacity: off ? .6 : 1, child: child),
-    );
-  }
-}
-
 /// The inspector's colours and measures, from the skin.
 abstract final class Pop {
   static Color get accent => Accent.fill; // (the skin's: one accent for the window)
