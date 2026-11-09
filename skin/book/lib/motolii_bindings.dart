@@ -738,6 +738,21 @@ class MotoliiBindings {
   late final _motolii_home = _motolii_homePtr
       .asFunction<void Function(ffi.Pointer<pkg_ffi.Utf8>)>();
 
+  ffi.Pointer<pkg_ffi.Utf8> motolii_js_returned(ffi.Pointer<pkg_ffi.Utf8> src) {
+    return _motolii_js_returned(src);
+  }
+
+  late final _motolii_js_returnedPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>)
+        >
+      >('motolii_js_returned');
+  late final _motolii_js_returned = _motolii_js_returnedPtr
+      .asFunction<
+        ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>)
+      >();
+
   ffi.Pointer<pkg_ffi.Utf8> motolii_kept(ffi.Pointer<Motolii> m) {
     return _motolii_kept(m);
   }
