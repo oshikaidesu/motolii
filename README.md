@@ -48,7 +48,7 @@ ISF、WGSL、AviUtl2 のスクリプトにも対応しています。ファイ�
 
 ![光る文字、回るピンクの輪、線の模様、色のずれ](docs/pictures/mv.gif)
 
-*Motolii で作った 8 秒。組み立てた後に `docs/examples/mv.sh` の 1 行で同じ物が `~/Movies/Motolii/mv.mp4` にできます。*
+*Motolii で作った 8 秒。組み立てた後に [`docs/guide/readme_movie.md`](docs/guide/readme_movie.md) の命令を貼れば、同じ物が `~/Movies/Motolii/mv.mp4` にできます。*
 
 ## 動作環境
 
@@ -250,7 +250,7 @@ EOF
 - `write …`：MP4 に書き出す。
 - 同じ命令をもう一度走らせると、同じプロジェクトにレイヤーがもう 1 つ増えます。やり直すなら先に `rm ~/Movies/Motolii/first_cmd.motolii`。
 
-上の 8 秒の作例は `docs/examples/mv.sh`（中の命令は `docs/examples/mv.txt`）。
+上の 8 秒の作例の命令は [`docs/guide/readme_movie.md`](docs/guide/readme_movie.md)。
 
 </details>
 
@@ -345,7 +345,7 @@ flowchart LR
 | `app/` | アプリの画面（Flutter、macOS） |
 | `thorvg/` | ThorVG を wgpu に載せた前の結合（前の試しのスクリプトが使う） |
 | `old/` | 前の土台の実験（今の作りからは使っていない） |
-| `docs/` | この README の絵と作例（`pictures/`・`examples/`）、作者の作業メモ（`notes/`） |
+| `docs/` | この README の絵（`pictures/`）と作例（`guide/`）、作者の作業メモ（`notes/`） |
 
 </details>
 

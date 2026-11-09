@@ -48,7 +48,7 @@ A finished video can be written out as an MP4.
 
 ![Glowing text, a spinning pink ring, a pattern of lines, split colours](docs/pictures/mv.gif)
 
-*8 seconds made with Motolii. Once built, `docs/examples/mv.sh` makes the same as `~/Movies/Motolii/mv.mp4` in one line.*
+*8 seconds made with Motolii. Once built, the calls in [`docs/guide/readme_movie.md`](docs/guide/readme_movie.md), pasted, make the same as `~/Movies/Motolii/mv.mp4`.*
 
 ## Requirements
 
@@ -250,7 +250,7 @@ EOF
 - `write …`: exports the MP4.
 - Running the same commands again adds another layer to the same project; to start over, `rm ~/Movies/Motolii/first_cmd.motolii` first.
 
-The 8-second example at the top is `docs/examples/mv.sh` (its commands are in `docs/examples/mv.txt`).
+The calls of the 8-second example at the top are in [`docs/guide/readme_movie.md`](docs/guide/readme_movie.md).
 
 </details>
 
@@ -339,7 +339,7 @@ The project's stance: **code you write yourself is a debt.** Look for an existin
 | `shelves/aviutl_scripts/` | Bundled AviUtl2 scripts (per author, with LICENSE and SOURCE.txt) |
 | `app/` | The UI (Flutter, macOS) |
 | `thorvg/`, `old/` | Earlier work, kept |
-| `docs/` | This README's pictures and examples (`pictures/`, `examples/`) and the author's working notes (`notes/`, Japanese) |
+| `docs/` | This README's pictures (`pictures/`) and examples (`guide/`) and the author's working notes (`notes/`, Japanese) |
 
 </details>
 
