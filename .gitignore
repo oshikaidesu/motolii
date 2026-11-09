@@ -54,3 +54,12 @@ __pycache__/
 /docs/internal/reports/window/skin_run/*.motolii
 # what the window tests shoot; the pictures the READMEs show are .jpg made from them
 /docs/pictures/*.png
+# Claude Code's folder (code.claude.com/docs/en/settings): settings.json and hooks/ are the project's, kept in git as
+# f12f6d031 had them; the rest is one person's: settings.local.json, worktrees/, a lead's notes and locks, and a
+# launch.json naming its own session's scratchpad
+/.claude/*
+!/.claude/settings.json
+!/.claude/hooks/
+# Cursor's folder: one person's editor. Its rules repeat AGENTS.md, which Cursor reads itself (cursor.com/docs/context/rules),
+# and its stop hook reads reports/alight_checklist.md, which is gone
+/.cursor/
