@@ -164,7 +164,7 @@ static Drawn* sketch_picture(Stage& s, std::shared_ptr<Script> run, const std::s
         d->sketchScene->scale(fit / run->density());   // (its paints come in its canvas's own pixels: pixelDensity(2) has twice as many as its width says)
         d->sketchLines = std::make_shared<std::map<int, double>>();
         for (const int line : run->lines()) (*d->sketchLines)[line] = 1.0;
-        d->sketch = [run, d, lines = d->sketchLines](int at, int had) {   // (each paint as strong as its line's knob is now, doc_evaluate)
+        d->sketch = [run, d, lines = d->sketchLines](int at, int had) {   // (each paint as strong as its line's parameter is now, doc_evaluate)
             std::vector<double> o = run->paints(at, had);
             for (size_t i = 1; i + 12 <= o.size();) {
                 double* p = &o[i];

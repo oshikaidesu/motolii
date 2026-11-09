@@ -1,5 +1,5 @@
 // absent_motion.h: AbsentMotion's own motion effects on a thing (absent_motion.cpp, built apart with AbsentMotion's
-// sources and Skia's headers): each effect its id and its knobs' values by the names AbsentMotion reads them by (a point's
+// sources and Skia's headers): each effect its id and its parameters' values by the names AbsentMotion reads them by (a point's
 // or a colour's numbers in order), the thing's number (its randomness's seed, as AbsentMotion's layer id) and its time;
 // what AbsentMotion's ApplyMotion moves it by, in its pixels (y down, degrees clockwise: Skia's way).
 #pragma once

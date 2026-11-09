@@ -6,7 +6,7 @@ struct DocScript {
     int seen = -1;   // (files_changed when the file was last asked whether it changed: asked again only after another)
     bool viewer = false;   // (Filament's own settings file: read and laid on the stage's view, not drawn: viewer_settings.h)
     std::string absent;    // (AbsentMotion's own motion effect, its id: the layer moved by AbsentMotion's C++, absent_motion.h)
-    std::vector<ScriptKnob> knobs;
+    std::vector<ScriptParameter> parameters;
     std::vector<std::string> names;
     std::vector<DocValue> values;
     std::vector<DocShown> shown;
@@ -30,10 +30,10 @@ static const DocShown* doc_shown_of(Doc& d, const char* name) {
 }
 // A whole-screen effect's knob in the document: its file's name before the knob's, as several lie on one stage and two
 // may each have a knob of one name (Posterize's gamma and Boxinator's are not one value).
-static std::string doc_screen_knob(const std::string& file, const std::string& knob) {   // (a value's name is one word: an ISF file's "Frosted Glass" says Frosted_Glass)
+static std::string doc_screen_parameter(const std::string& file, const std::string& parameter) {   // (a value's name is one word: an ISF file's "Frosted Glass" says Frosted_Glass)
     std::string stem = std::filesystem::path(file).stem().string();
     for (char& c : stem) if (!(c >= '0' && c <= '9') && !(c >= 'A' && c <= 'Z') && !(c >= 'a' && c <= 'z') && c != '_') c = '_';   // (byte by byte, ASCII's alone: std::isalnum by the locale took a UTF-8 locale's é for 0xE9, half a letter left in the name (effect_tiles.dart _stem: ライ is ______))
-    return "js_" + stem + "_" + knob;
+    return "js_" + stem + "_" + parameter;
 }
 // ThorVG's own effects by the value that puts each on, as a layer's list of effects names them, and their letters
 // (DrawnFx::order).
@@ -59,13 +59,13 @@ static DocScript* doc_script_of(Doc& d, const std::string& file, bool runs = tru
         DocScript was = std::move(s);
         s = DocScript{};
         s.viewer = lottie && viewer_is(file);
-        s.stamp = stamp, s.seen = files_changed(), s.knobs = ext == ".mjs" ? SplatEffect(file).knobs() : s.viewer ? viewer_knobs(file) : lottie ? lottie_knobs(file) : script_knobs(screen ? isf_file(file) : fx_source(file));   // (an expression put on again, "repeater~2.js": its file's: doc_fx_duplicate)
-        if (screen) script_first(file, s.knobs);   // (the values it comes with, where its own show nothing: fx_first.sh)
-        std::erase_if(s.knobs, [](const ScriptKnob& k) { return k.kind == "picture" && k.name == "backdrop"; });   // (what is behind it is given, not chosen on its card: screen_fx.h)
+        s.stamp = stamp, s.seen = files_changed(), s.parameters = ext == ".mjs" ? SplatEffect(file).parameters() : s.viewer ? viewer_parameters(file) : lottie ? lottie_parameters(file) : script_parameters(screen ? isf_file(file) : fx_source(file));   // (an expression put on again, "repeater~2.js": its file's: doc_fx_duplicate)
+        if (screen) script_first(file, s.parameters);   // (the values it comes with, where its own show nothing: fx_first.sh)
+        std::erase_if(s.parameters, [](const ScriptParameter& k) { return k.kind == "picture" && k.name == "backdrop"; });   // (what is behind it is given, not chosen on its card: screen_fx.h)
         doc_scripts_made(d)++;   // (what was worked out from the old one is forgotten)
-        for (const ScriptKnob& k : s.knobs) s.names.push_back(screen || lottie || absent || fx_source(file) != file ? doc_screen_knob(file, k.name) : "js_" + k.name);   // (one put on again: its values its own, as an effect's)
-        for (size_t i = 0; i < s.knobs.size(); ++i) {   // (the names are all made first: what points into them stays put)
-            const ScriptKnob& k = s.knobs[i];
+        for (const ScriptParameter& k : s.parameters) s.names.push_back(screen || lottie || absent || fx_source(file) != file ? doc_screen_parameter(file, k.name) : "js_" + k.name);   // (one put on again: its values its own, as an effect's)
+        for (size_t i = 0; i < s.parameters.size(); ++i) {   // (the names are all made first: what points into them stays put)
+            const ScriptParameter& k = s.parameters[i];
             const bool open = k.kind == "track";   // (an effect's number: its author's range is what is vouched for and what its knob shows, not all it may be, Houdini's range not strict (FloatParmTemplate minIsStrict); a low of 0 or more still a floor: layer_edit.h)
             // (a motion's knobs a camera's too: it takes AbsentMotion's motions, golf ㊴; its strength was refused on it)
             s.values.push_back(DocValue{s.names[i].c_str(), absent ? "video image text shape solid stage camera" : "video image text shape solid stage behaviour", k.kind == "select" ? 0.0 : k.low, k.kind == "select" ? 0.0 : k.high, k.kind == "track", k.kind == "select" ? k.words.c_str() : nullptr, open});
@@ -101,7 +101,7 @@ static std::vector<DocScript*> doc_scripts_on(Doc& d, int layer) {
         for (const std::string& file : script_files(doc_word(d, layer, "fx"))) if (!doc_thor_letter(file)) if (DocScript* sc = doc_script_of(d, file)) all.push_back(sc);
         if (const std::string file = doc_word(d, layer, "file"); doc_word(d, layer, "kind") == "image")   // (an After Effects file's slots, a sketch's lines that draw; a sketch is run by its picture, doc_match)
             if (const std::string ext = std::filesystem::path(file).extension().string(); ext == ".json" || ext == ".lot" || ext == ".js")
-                if (DocScript* sc = doc_script_of(d, file, ext != ".js"); sc && !sc->knobs.empty()) all.push_back(sc);
+                if (DocScript* sc = doc_script_of(d, file, ext != ".js"); sc && !sc->parameters.empty()) all.push_back(sc);
         return all;
     }
     for (const std::string& file : script_files(said)) if (DocScript* sc = doc_script_of(d, file)) all.push_back(sc);
@@ -117,12 +117,12 @@ static std::vector<AbsentEffect> doc_absent_on(Doc& d, int layer, double now) {
         if (std::filesystem::path(file).extension() == ".am")
             if (DocScript* sc = doc_script_of(d, file); sc && !sc->absent.empty()) {
                 AbsentEffect e{sc->absent, {}};
-                for (size_t i = 0; i < sc->knobs.size(); ++i) {
-                    std::string name = sc->knobs[i].name;
+                for (size_t i = 0; i < sc->parameters.size(); ++i) {
+                    std::string name = sc->parameters[i].name;
                     const size_t cut = name.rfind('_');
                     const bool part = cut != std::string::npos && cut + 2 == name.size() && std::string("xyzw").find(name[cut + 1]) != std::string::npos;
                     if (part) name = name.substr(0, cut);
-                    const float v = (float)doc_number(d, layer, sc->names[i].c_str(), now, sc->knobs[i].usual);
+                    const float v = (float)doc_number(d, layer, sc->names[i].c_str(), now, sc->parameters[i].usual);
                     if (part && !e.params.empty() && e.params.back().first == name) e.params.back().second.push_back(v);
                     else e.params.push_back({name, {v}});
                 }

@@ -13,7 +13,7 @@
 #include <cstring>
 #include <vector>
 
-namespace door {
+namespace interop {
 using namespace filament;
 using namespace filament::backend;
 
@@ -57,7 +57,7 @@ Program* program(Engine* engine, const char* name, const char* wgsl, const Kind*
 Buffer* buffer(Engine* engine, Kind kind, uint32_t bytes) {
     bytes = (bytes + 15u) & ~15u;
     return new Buffer{driver(engine).createBufferObject(bytes, kind == Kind::UNIFORM ? BufferObjectBinding::UNIFORM : BufferObjectBinding::SHADER_STORAGE,
-                                                        BufferUsage::DYNAMIC, utils::ImmutableCString{"door"}),
+                                                        BufferUsage::DYNAMIC, utils::ImmutableCString{"interop"}),
                       bytes};
 }
 
@@ -72,7 +72,7 @@ void write(Engine* engine, Buffer* b, const void* data, uint32_t bytes, uint32_t
 }
 
 Set* set(Engine* engine, Program* p, Buffer* const* buffers) {
-    auto* out = new Set{driver(engine).createDescriptorSet(p->layout, utils::ImmutableCString{"door"})};
+    auto* out = new Set{driver(engine).createDescriptorSet(p->layout, utils::ImmutableCString{"interop"})};
     for (size_t i = 0; i < p->slots.size(); ++i)
         driver(engine).updateDescriptorSetBuffer(out->handle, descriptor_binding_t(i), buffers[i]->handle, 0, buffers[i]->bytes);
     return out;
@@ -89,4 +89,4 @@ void read(Engine* engine, Buffer* b, uint32_t at, uint32_t bytes, void* into) {
     driver(engine).readBufferSubData(b->handle, at, bytes, BufferDescriptor(into, bytes));
     engine->flushAndWait();
 }
-}  // namespace door
+}  // namespace interop

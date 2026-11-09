@@ -39,7 +39,7 @@ static double interp_smoothstep(double edge0, double edge1, double x) {
 // the stretch is not drawn, however high, and all the room left lies flat: a ball stopped dead in the air's reach (the maker,
 // 10/31: "畳まれてる"). Here it goes in that room, as much lower as it is shorter, so it lands on the key, and it grows out
 // of nothing as the room does. No other tool cuts one short: Dan Ebberts' runs on past the key, Penner's and GSAP's are
-// fitted. Fitting them all, as GSAP does, costs the Length knob and the stillness of a bounce that has died away: left as it
+// fitted. Fitting them all, as GSAP does, costs the Length parameter and the stillness of a bounce that has died away: left as it
 // is. The usual numbers leave under 0.05 of room, so they go as Alight Motion's, to the number.
 static double interp_bounce(const double* p, double u) {
     const double lowest = 0.0055;   // (easing.cpp's kMinBounce: lower, it has died away, and what is left is still)

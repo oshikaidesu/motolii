@@ -303,7 +303,7 @@ static std::vector<float> doc_sound_now(Doc& d, int layer, const std::string& fi
         }
         return all;
     }
-    const int t = (int)doc_number(d, layer, doc_screen_knob(file, name).c_str(), now, 0);
+    const int t = (int)doc_number(d, layer, doc_screen_parameter(file, name).c_str(), now, 0);
     if (t <= 0 || !doc_knows(d, t, nullptr, nullptr, nullptr, false)) return {};
     const std::string heard = doc_word(d, t, "file");
     if (heard.empty()) return {};

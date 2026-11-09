@@ -87,8 +87,8 @@ static Solid* solid(Stage& s, const char* file, const mat4f& place, float high, 
     return d;
 }
 
-// A 3D file's shape alone, as a mesh of the kit: every triangle of it where the file puts it, brought to 1 tall with
-// its middle at the middle (as `solid` shows it). For a look of the kit's own that draws a shape more than once
+// A 3D file's shape alone, as a mesh of the renderer: every triangle of it where the file puts it, brought to 1 tall with
+// its middle at the middle (as `solid` shows it). For a look of the renderer's own that draws a shape more than once
 // (glass). It stands as the file has it at rest: a movement of its own is not gone through. nullptr: not read.
 static Mesh* solid_mesh(const char* file) {
     cgltf_options how{};

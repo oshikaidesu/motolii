@@ -1,9 +1,9 @@
-// An ISF effect (Vidvox's Interactive Shader Format: a GLSL fragment shader with a JSON head of its knobs) dropped in an
+// An ISF effect (Vidvox's Interactive Shader Format: a GLSL fragment shader with a JSON head of its parameters) dropped in an
 // effects folder works as a .wgsl does: made one in vgpu's manner (screen_fx.h) inside Motolii, by the parts Filament's
 // build already has (glslang to SPIR-V, Tint from SPIR-V to WGSL, as Dawn itself reads SPIR-V), its head read by
 // rapidjson (as Filament's assimp has it). The shader's own lines are kept; around them ISF's words (IMG_NORM_PIXEL, IMG_THIS_PIXEL,
 // isf_FragNormCoord, TIME, RENDERSIZE...) are said in plain GLSL, each picture split into a texture and a sampler, the
-// knobs gathered into one struct and written in the head (script.h: // --track@...), its passes too (// --pass@...).
+// parameters gathered into one struct and written in the head (script.h: // --track@...), its passes too (// --pass@...).
 // Made once into ~/Library/Caches/Motolii/isf/<hash>.wgsl, named by the file as it is. Its other images are
 // other things' pictures (screen_fx.h others), its audio inputs other things' sound; its own vertex shader is worked out at each pixel.
 #include "community/shaders/isf.h"
@@ -48,7 +48,7 @@ static std::string isf_wgsl(const std::string& text, const std::string& name, st
             return std::snprintf(out, sizeof out, "s%g", (m[1].matched ? 1 / std::stod(m[1]) : 1) * (m[2].matched ? std::stod(m[2]) : 1)), said = out, true;
         if (std::regex_match(e, std::regex(R"([\d.]+)"))) return said = "a" + std::to_string((int)std::stod(e)), true;
         // (any other: the spec's expression worked out by SQLite, $WIDTH and $HEIGHT bound as its parameters are; at 1000
-        //  points a share of the stage's when it reads the stage's size, so many points when not, none when it reads a knob)
+        //  points a share of the stage's when it reads the stage's size, so many points when not, none when it reads a parameter)
         sqlite3* db = nullptr;
         sqlite3_stmt* q = nullptr;
         double v = -1;
@@ -85,7 +85,7 @@ static std::string isf_wgsl(const std::string& text, const std::string& name, st
     std::vector<std::string> pictures;
     for (const auto& i : inputs.GetArray()) if (str(i, "TYPE") == "image") pictures.push_back(str(i, "NAME"));
     // (none: a generator, ISF's "source" (ISF_Spec: sources, filters, transitions): on a thing it paints only where the thing
-    //  is, After Effects' Preserve Underlying Transparency; the thing's own picture is still at binding 0, the door's form)
+    //  is, After Effects' Preserve Underlying Transparency; the thing's own picture is still at binding 0, the interop's form)
     const std::string picture = pictures.empty() ? "inputImage" : std::find(pictures.begin(), pictures.end(), "inputImage") != pictures.end() ? "inputImage" : pictures[0];
     std::vector<std::string> others;   // (its other images: each another thing's picture, chosen on its card, bound after the passes' pictures)
     for (const std::string& other : pictures) if (other != picture) others.push_back(other);
@@ -102,7 +102,7 @@ static std::string isf_wgsl(const std::string& text, const std::string& name, st
     for (size_t k = 0; k < others.size(); ++k)
         glsl += "layout(set = 0, binding = " + std::to_string(2 * (read.size() + k)) + ") uniform texture2D isf_tex_" + others[k] + ";\nlayout(set = 0, binding = " + std::to_string(2 * (read.size() + k) + 1) + ") uniform sampler isf_smp_" + others[k] + ";\n";
     glsl += "layout(set = 0, binding = " + std::to_string(2 * (read.size() + others.size())) + ") uniform Knobs {\n  float time;\n  vec2 resolution;\n  float frame;\n  float isf_rate;\n  float passindex;\n  float clip_time;\n  float clip_length;\n  vec4 frameRect;\n  vec4 passRect;\n";   // (and a thing's own: how far into it, how long it lasts, seconds, document/moment_fx.h; the stage's: none)
-    std::vector<std::string> switches;   // (an on/off knob: an int, as WGSL keeps no bool in a uniform, read as a bool where the shader names it, not where a colour's .r is)
+    std::vector<std::string> switches;   // (an on/off parameter: an int, as WGSL keeps no bool in a uniform, read as a bool where the shader names it, not where a colour's .r is)
     std::string lines;
     for (const auto& k : inputs.GetArray()) {
         const std::string t = str(k, "TYPE"), n = str(k, "NAME");
@@ -247,7 +247,7 @@ static std::string isf_wgsl(const std::string& text, const std::string& name, st
 
 std::string isf_tags(const std::string& file) {
     std::ifstream in(file);
-    const std::string text = door_isf(std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>()));
+    const std::string text = adapter_isf(std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>()));
     const size_t open = text.find("/*"), close = text.find("*/");
     rapidjson::Document head;
     if (open == std::string::npos || close == std::string::npos || head.Parse(text.c_str() + open + 2, close - open - 2).HasParseError() || !head.IsObject()) return "";
@@ -331,7 +331,7 @@ std::string isf_file(const std::string& asked) {
     const std::string stem = std::filesystem::path(file).stem().string();
     std::stringstream vertex;   // (its own vertex shader, if it has one beside it)
     if (std::ifstream vs(std::filesystem::path(file).replace_extension(".vs")); vs) vertex << vs.rdbuf();
-    const std::string wgsl = isf_wgsl(door_isf(text.str()), stem, why, vertex.str());   // (Shadertoy's and GLSL Sandbox's as they come: adapter.h)
+    const std::string wgsl = isf_wgsl(adapter_isf(text.str()), stem, why, vertex.str());   // (Shadertoy's and GLSL Sandbox's as they come: adapter.h)
     if (wgsl.empty()) {
         std::fprintf(stderr, "the ISF effect %s is not taken: %s\n", file.c_str(), why.substr(0, 600).c_str());
         return made[key] = isf_kept(file, why);

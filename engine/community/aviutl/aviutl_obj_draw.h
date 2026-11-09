@@ -1,5 +1,5 @@
-// aviutl_obj_draw.h: part of aviutl_fx.h. Read only through aviutl_fx.h. obj.draw and obj.drawpoly: a picture placed in depth on the door's mesh, and the blend and sampler it is laid with.
-// Faces on the door's mesh into `to`, its middle the corners' 0, 0, y down: each four corners two triangles, 0-1-2 and
+// aviutl_obj_draw.h: part of aviutl_fx.h. Read only through aviutl_fx.h. obj.draw and obj.drawpoly: a picture placed in depth on the interop's mesh, and the blend and sampler it is laid with.
+// Faces on the interop's mesh into `to`, its middle the corners' 0, 0, y down: each four corners two triangles, 0-1-2 and
 // 0-2-3 (sashimono-edit's _fill_quad, MIT), the picture `from` on them at the corners' u, v (pixels), or their colours
 // (premultiplied, 0 to 1: lua.txt's, as sashimono-edit's raster.draw_triangle takes them); all of one call at once (as
 // Filament draws its own triangle). Seen by AviUtl's camera as sashimono-edit's engine/gpu/projection.py has it (1024
@@ -21,11 +21,11 @@ static void aviutl_mesh(AviutlRun& r, const AviutlBuf& from, const AviutlBuf& to
     if (corners.empty()) return;
     const float k[4] = {(float)fade, 0, 0, 0};
     const int pass = r.draws[r.poly]++;
-    door::knobs(r.s->engine, r.poly, k, sizeof k, pass);
+    interop::parameters(r.s->engine, r.poly, k, sizeof k, pass);
     Texture* picture = from.t ? from.t : r.none;
-    door::draw(r.s->engine, r.poly, &picture, to.rt, to.w, to.h, pass, nullptr, true, way, sampler, corners.data(), (uint32_t)(corners.size() / door::MESH_CORNER));
+    interop::draw(r.s->engine, r.poly, &picture, to.rt, to.w, to.h, pass, nullptr, true, way, sampler, corners.data(), (uint32_t)(corners.size() / interop::MESH_CORNER));
 }
-// obj.setoption "blend" as the door lays it (screen_interop.h's blend), as lua.txt's words are read by sashimono-edit
+// obj.setoption "blend" as the interop lays it (screen_interop.h's blend), as lua.txt's words are read by sashimono-edit
 // (MIT, compat/aviutl/raster.py _over): the buffers premultiplied, so "alpha_add" (colours weighed by their alphas,
 // the alphas added) is what is there plus what is drawn; "alpha_sub" (colours kept, the alpha drawn taken away)
 // Porter-Duff's "out", the same where either is opaque (their a_b - a_t is a_b (1 - a_t) there); "alpha_add2"

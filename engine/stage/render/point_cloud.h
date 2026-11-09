@@ -5,7 +5,7 @@
 // out by exp(-r^2); the slots laid in order of depth by a 16-bit counting sort on a thread of its own each time the eye
 // has moved, only the table of which splat is in which slot sent again; then laid one over another from the farthest,
 // Filament's own see-through blending. A plain scan's point is round, as large as its neighbours are far. Fitted to 1
-// tall, its middle at the place, as gltf_model.h fits a file. Its Mesh is a name only: the kit knows the thing by it.
+// tall, its middle at the place, as gltf_model.h fits a file. Its Mesh is a name only: the renderer knows the thing by it.
 // (render.h: read before this)
 #pragma once
 #include <cmath>

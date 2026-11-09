@@ -35,12 +35,12 @@ static void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
             made->file = file;
             std::string code;
             if (!screen_read(*made, code)) { std::fprintf(stderr, "%s\n", made->trouble.c_str()); continue; }
-            made->door = door::screen(s.engine, file.c_str(), code.c_str(), made->bytes, &made->trouble, made->pictures, made->layered);
-            if (!made->door) std::fprintf(stderr, "the effect %s is not taken: %s\n", file.c_str(), made->trouble.c_str());
+            made->interop = interop::screen(s.engine, file.c_str(), code.c_str(), made->bytes, &made->trouble, made->pictures, made->layered);
+            if (!made->interop) std::fprintf(stderr, "the effect %s is not taken: %s\n", file.c_str(), made->trouble.c_str());
             made->stamp = screen_stamp(file);
         }
-        if (made->door) st.fx.push_back(made), st.steps.push_back(0);
-        if (made->door && std::find(made->others.begin(), made->others.end(), "backdrop") != made->others.end()) st.readsBehind = true;   // (AbsentMotion's backdrop: the stage's behind, screen_fx.h)
+        if (made->interop) st.fx.push_back(made), st.steps.push_back(0);
+        if (made->interop && std::find(made->others.begin(), made->others.end(), "backdrop") != made->others.end()) st.readsBehind = true;   // (AbsentMotion's backdrop: the stage's behind, screen_fx.h)
     }
     const auto nameOf = [](const std::string& file) { const size_t hash = file.rfind('#'); return hash != std::string::npos ? aviutl_unword(file.substr(hash + 1)) : std::filesystem::path(file).stem().string(); };   // (one of an @ file: its name after #)
     std::vector<std::string> names;   // (the effects in their order, by name: what a script asks of its fellows, obj.getoption "script_name")
@@ -52,13 +52,13 @@ static void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
 // between `into` (0 or 1): a picture of the one before put in a scene of ThorVG's, the effect on the scene, drawn on the
 // driver thread in line with Filament's pictures. Its lengths are points of the stage, `ppp` pixels each.
 static void thing_thor(Stage& s, ScreenStack& st, char k, void* from, int into, uint32_t w, uint32_t h, const DrawnFx& fx, float ppp) {
-    door::submit(s.engine);   // (what Filament drew into `from` on the GPU's queue first: ThorVG hands its own drawing over at once)
-    door::on_driver(s.engine, [&s, &st, k, from, into, w, h, fx, ppp] {
+    interop::submit(s.engine);   // (what Filament drew into `from` on the GPU's queue first: ThorVG hands its own drawing over at once)
+    interop::on_driver(s.engine, [&s, &st, k, from, into, w, h, fx, ppp] {
         tvg::WgCanvas*& c = st.thor[into];
         if (!c) {
             tvg::Initializer::init(0);
             c = tvg::WgCanvas::gen();
-            if (c->target(door::device(s.engine), door::instance(s.engine), st.device[into + 1], w, h, tvg::ColorSpace::ABGR8888S, 1) != tvg::Result::Success) return;
+            if (c->target(interop::device(s.engine), interop::instance(s.engine), st.device[into + 1], w, h, tvg::ColorSpace::ABGR8888S, 1) != tvg::Result::Success) return;
         }
         c->remove();
         tvg::Picture* picture = tvg::Picture::gen();
@@ -81,7 +81,7 @@ static void thing_fx_pictures(Stage& s, ScreenStack& st, View* v) {
     if (!st.shot || st.shot->getWidth() != w || st.shot->getHeight() != h) {   // (its pictures as large as the view draws; made again when that moves)
         for (Texture*& t : {std::ref(st.shot), std::ref(st.depth), std::ref(st.between[0]), std::ref(st.between[1])}) if (t) s.engine->destroy(t), t = nullptr;
         for (RenderTarget*& r : {std::ref(st.target), std::ref(st.betweenTarget[0]), std::ref(st.betweenTarget[1])}) if (r) s.engine->destroy(r), r = nullptr;
-        door::on_driver(s.engine, [made = std::vector<void*>(st.device, st.device + 3), thor = std::vector<tvg::WgCanvas*>(st.thor, st.thor + 2)] {   // (after the pictures drawn with them)
+        interop::on_driver(s.engine, [made = std::vector<void*>(st.device, st.device + 3), thor = std::vector<tvg::WgCanvas*>(st.thor, st.thor + 2)] {   // (after the pictures drawn with them)
             for (tvg::WgCanvas* c : thor) delete c;
             for (void* t : made) if (t) wgpuTextureRelease((WGPUTexture)t);
         });
@@ -96,7 +96,7 @@ static void thing_fx_pictures(Stage& s, ScreenStack& st, View* v) {
             like.mipLevelCount = 1, like.sampleCount = 1;
             static const char* const names[3] = {"thing shot", "thing between 0", "thing between 1"};
             like.label = {names[n], WGPU_STRLEN};
-            void* made = st.device[n++] = wgpuDeviceCreateTexture((WGPUDevice)door::device(s.engine), &like);
+            void* made = st.device[n++] = wgpuDeviceCreateTexture((WGPUDevice)interop::device(s.engine), &like);
             return Texture::Builder().width(w).height(h).levels(1).format(Texture::InternalFormat::RGBA8).usage(Texture::Usage::COLOR_ATTACHMENT | Texture::Usage::SAMPLEABLE | Texture::Usage::BLIT_SRC).import((intptr_t)made).build(*s.engine);
         };
         st.shot = picture();
@@ -160,7 +160,7 @@ struct ThingFx {
     // (its picture on a solid's faces, when its fx names a shape (solids/*.js): the shape's file, what the solid was last
     //  made of, the solid and its look; for one made of its outline, its coverage as last read back, and how many times)
     std::string solidFile, solidSaid, solidAs;   // (solidAs: its look's material)
-    std::map<std::string, double> knobs;   // (its shape's knobs as said now, its words, and the thing's size: its own units)
+    std::map<std::string, double> parameters;   // (its shape's parameters as said now, its words, and the thing's size: its own units)
     std::map<std::string, std::string> words;
     float2 size{1.f};
     Mesh* solid = nullptr;
@@ -186,7 +186,7 @@ static View* thing_fx_view(Stage& s, ThingFx& e) {
     return v;
 }
 
-// Its sheet (and solid) moved into the scene it lies in (`into`: a group's, or the stage's own): the kit makes and takes
+// Its sheet (and solid) moved into the scene it lies in (`into`: a group's, or the stage's own): the renderer makes and takes
 // off things in the stage's own only.
 static void thing_fx_into(Stage& s, ThingFx& e, Scene* into) {
     Scene* const to = into ? into : s.scene;
@@ -284,22 +284,22 @@ static void thing_fx_stand(Stage& s, ThingFx& e, const math::mat4& place, float2
     move(s, e.sheet, [&](int, const mat4f&) { return sheet; });
 }
 
-// Its solid made again when what it is made of has changed (its shape's file, knobs and size; its coverage): put in the
+// Its solid made again when what it is made of has changed (its shape's file, parameters and size; its coverage): put in the
 // stage's own scene, casting and taking shadows, unlit when its Lit is off; one already there given its new points in
 // place (reshape). Within a frame only that: a look made then is not ready till the next (Filament readies every look
 // as a frame begins, FEngine::prepare), so a new one waits for the next moment.
 static void thing_fx_solid(Stage& s, ThingFx& e, bool inFrame) {
     std::string said = e.solidFile + " " + std::to_string(e.size.x) + " " + std::to_string(e.size.y) + " " + std::to_string(e.cover->times);
-    for (const auto& [n, v] : e.knobs) said += " " + n + "=" + std::to_string(v);
+    for (const auto& [n, v] : e.parameters) said += " " + n + "=" + std::to_string(v);
     for (const auto& [n, w] : e.words) said += " " + n + ":" + w;
-    const auto lit = e.knobs.find("lit");
-    const bool flat = lit != e.knobs.end() && lit->second == 0;
+    const auto lit = e.parameters.find("lit");
+    const bool flat = lit != e.parameters.end() && lit->second == 0;
     const char* const look = flat ? "solid_image_flat.filamat" : "solid_image.filamat";
     const bool anew = !e.solid || e.solidAs != look;
     if (said == e.solidSaid || (anew && inFrame)) return;
     SolidMade made;
     std::string why;
-    if (!solid_three(e.solidFile, e.knobs, e.words, e.size.x, e.size.y, e.cover->a, e.cover->w, e.cover->h, made, why)) std::fprintf(stderr, "the solid %s is not made: %s\n", e.solidFile.c_str(), why.substr(0, 600).c_str());
+    if (!solid_three(e.solidFile, e.parameters, e.words, e.size.x, e.size.y, e.cover->a, e.cover->w, e.cover->h, made, why)) std::fprintf(stderr, "the solid %s is not made: %s\n", e.solidFile.c_str(), why.substr(0, 600).c_str());
     if (made.idx.empty() || made.pos.size() != made.nrm.size() || made.uv.size() * 3 != made.pos.size() * 2) made = SolidMade{{0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 1, 0, 0, 1, 0, 0, 1}, {0, 0, 0, 0, 0, 0}, {0, 1, 2}};   // (none yet, Raster Extrude's before its picture is read: a point, its look ready)
     e.solidSaid = said;
     if (anew && e.solid) take_off(s, e.solid), delete e.solid, e.solid = nullptr;

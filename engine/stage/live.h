@@ -1,7 +1,7 @@
 // live.h: the stage's picture as it is drawn, handed to a shell on a screen without a copy. The main view draws into
 // one of three pixel buffers that the GPU and the shell share (CVPixelBuffers on IOSurfaces: made as glass_door_mac.mm
 // makes them, which did this on Filament's Metal backend). Here each buffer is shown to Dawn as a texture (the call
-// video_layer.h reads films by, used the other way round) and made a render target of Filament's through the door the
+// video_layer.h reads films by, used the other way round) and made a render target of Filament's through the interop the
 // patch already has (Texture::Builder::import). "Finished" is a Filament fence put after it signalled. macOS only.
 #include <CoreVideo/CoreVideo.h>
 #include <IOSurface/IOSurface.h>
@@ -33,14 +33,14 @@ static Live* live_open(Stage& s, uint32_t w = 0, uint32_t h = 0) {   // (0: the 
     for (CVPixelBufferRef& b : l->buffer)
         if (CVPixelBufferCreate(kCFAllocatorDefault, (size_t)w, (size_t)h, kCVPixelFormatType_32BGRA, (__bridge CFDictionaryRef)like, &b) != kCVReturnSuccess) return nullptr;
     Engine* engine = s.engine;
-    door::on_driver(engine, [l, engine, w, h] {
+    interop::on_driver(engine, [l, engine, w, h] {
         for (int i = 0; i < Live::N; ++i) {
             WGPUSharedTextureMemoryIOSurfaceDescriptor from{};
             from.chain.sType = WGPUSType_SharedTextureMemoryIOSurfaceDescriptor;
             from.ioSurface = CVPixelBufferGetIOSurface(l->buffer[i]);
             WGPUSharedTextureMemoryDescriptor what{};
             what.nextInChain = &from.chain;
-            l->lent[i] = wgpuDeviceImportSharedTextureMemory((WGPUDevice)door::device(engine), &what);
+            l->lent[i] = wgpuDeviceImportSharedTextureMemory((WGPUDevice)interop::device(engine), &what);
             WGPUTextureDescriptor as{};
             as.size = {w, h, 1};
             as.format = WGPUTextureFormat_BGRA8Unorm;
@@ -68,13 +68,13 @@ static Live* live_open(Stage& s, uint32_t w = 0, uint32_t h = 0) {   // (0: the 
 static void live_close(Stage& s, Live* l) {
     if (!l) return;
     s.engine->flushAndWait();
-    door::on_driver(s.engine, [l] { for (void* c : l->marks) delete reinterpret_cast<tvg::WgCanvas*>(c); });
+    interop::on_driver(s.engine, [l] { for (void* c : l->marks) delete reinterpret_cast<tvg::WgCanvas*>(c); });
     for (int i = 0; i < Live::N; ++i) {
         if (l->target[i]) s.engine->destroy(l->target[i]);
         if (l->seen[i]) s.engine->destroy(l->seen[i]);
     }
     s.engine->flushAndWait();
-    door::on_driver(s.engine, [l] {
+    interop::on_driver(s.engine, [l] {
         for (int i = 0; i < Live::N; ++i) {
             if (l->shared[i]) wgpuTextureRelease(l->shared[i]);
             if (l->lent[i]) wgpuSharedTextureMemoryRelease(l->lent[i]);
@@ -87,14 +87,14 @@ static void live_close(Stage& s, Live* l) {
 }
 
 // The marks over the desk's picture (and the cover over what lies off the stage, under them), drawn by ThorVG into the same buffer after Filament's picture and not clearing
-// it, on the same device and queue (canvas.h's way): the picked thing's frame, its four corners, the knob it turns by,
+// it, on the same device and queue (canvas.h's way): the picked thing's frame, its four corners, the rotation handle it turns by,
 // the point it turns about; the frame of the one under the hand, thin. As the window's own marks were (stage_view.dart).
 static void desk_marks(Stage& s, Live* l, int i) {
     const auto k = s.desk;
 
-    void *device = door::device(s.engine), *instance = door::instance(s.engine);
+    void *device = interop::device(s.engine), *instance = interop::instance(s.engine);
     const int s_w = s.w, s_h = s.h;
-    door::on_driver(s.engine, [l, i, k, device, instance, s_w, s_h] {
+    interop::on_driver(s.engine, [l, i, k, device, instance, s_w, s_h] {
         auto& canvas = reinterpret_cast<tvg::WgCanvas*&>(l->marks[i]);
         if (!canvas) {
             tvg::Initializer::init(0);   // (as canvas.h: counted, once is enough)
@@ -110,7 +110,7 @@ static void desk_marks(Stage& s, Live* l, int i) {
             const auto local = [&](double u, double v) { const double x = u * 0.5 * f[2], y = v * 0.5 * f[3]; return at(f[0] + x * cs - y * sn, f[1] + x * sn + y * cs); };
             return Frame{{local(-1, -1), local(1, -1), local(1, 1), local(-1, 1)}, local(0, -1), at(f[0], f[1]), at(f[5], f[6])};
         };
-        // (quiet: no dark edging, thin lines, small knobs, a little see-through; the accent is the window's own)
+        // (quiet: no dark edging, thin lines, small handles, a little see-through; the accent is the window's own)
         const auto line = [&](std::initializer_list<float2> pts, bool closed, float width, uint8_t a) {
             tvg::Shape* sh = tvg::Shape::gen();
             bool first = true;
@@ -138,16 +138,16 @@ static void desk_marks(Stage& s, Live* l, int i) {
         if (k.picked) {
             const Frame f = frame(k.pick);
             line({f.c[0], f.c[1], f.c[2], f.c[3]}, true, 1.f, 220);   // (its frame, the corners joined)
-            if (k.knob) {   // (the knob it is turned by, a stem's length out from the middle of its top edge)
+            if (k.rotateHandle) {   // (the handle it is turned by, a stem's length out from the middle of its top edge)
                 float2 n = f.top - f.mid;
                 const float len = length(n);
                 n = len < 1.f ? float2{0.f, -1.f} : n / len;
-                const float2 knob = f.top + n * 18.f * pt;   // (where the window takes hold of it: stage_view.dart _V.stem)
-                line({f.top, knob}, false, 0.75f, 140);
-                dot(knob, 2.75f);
+                const float2 handle = f.top + n * 18.f * pt;   // (where the window takes hold of it: stage_view.dart _V.stem)
+                line({f.top, handle}, false, 0.75f, 140);
+                dot(handle, 2.75f);
             }
             for (float2 c : f.c) square(c, 2.75f);   // (the corners a hand pulls it larger by)
-            if (k.knob)
+            if (k.rotateHandle)
                 for (int i = 0; i < 4; ++i) square((f.c[i] + f.c[(i + 1) % 4]) * 0.5f, 2.75f);   // (its sides' middles, one way only: stage_view.dart _handles)
             tvg::Shape* ring = tvg::Shape::gen();   // (the point it turns about: a small ring and four short ticks)
             ring->appendCircle(f.pivot.x, f.pivot.y, 4.f * pt, 4.f * pt);

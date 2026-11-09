@@ -1,8 +1,8 @@
 // hydra_isf.cpp: code for Hydra (hydra-synth, Olivia Jack and others, AGPL-3.0) as an ISF effect. Hydra is not in Motolii:
 // extensions/hydra/get.sh puts npm's package in the maker's own folder, and it is run here in a QuickJS of its own, told
 // the code and giving back text. Its own generator-factory.js writes the GLSL, with no WebGL and no page. Every number of a
-// chain is passed as a function, so Hydra makes it a uniform and it is a knob here; what is moving in the code (a function
-// of time, an array) is read every 0.1 second by Hydra's own code and is that knob's keys, to be edited as any keys are.
+// chain is passed as a function, so Hydra makes it a uniform and it is a parameter here; what is moving in the code (a function
+// of time, an array) is read every 0.1 second by Hydra's own code and is that parameter's keys, to be edited as any keys are.
 #include "community/shaders/hydra_isf.h"
 #include <quickjs.h>
 #include <filesystem>
@@ -82,18 +82,18 @@ try {
   const isf = { ISFVSN: '2', DESCRIPTION: 'Hydra', CATEGORIES: ['Hydra'], INPUTS: (reads ? [{ NAME: 'inputImage', TYPE: 'image' }] : []).concat(inputs) };
   if (passes.length) isf.PASSES = passes.map(n => ({ TARGET: n, PERSISTENT: true })).concat([{}]);
   let main = '';
-  for (const n of Object.keys(bodies)) main += 'void door_' + n + '(){' + bodies[n] + '}\n';
+  for (const n of Object.keys(bodies)) main += 'void adapter_' + n + '(){' + bodies[n] + '}\n';
   if (passes.length) {
     main += 'void main(){';
-    passes.forEach((n, i) => main += 'if(PASSINDEX==' + i + '){' + (bodies[n] ? 'door_' + n + '();' : 'gl_FragColor=vec4(0.,0.,0.,1.);') + 'return;}');
+    passes.forEach((n, i) => main += 'if(PASSINDEX==' + i + '){' + (bodies[n] ? 'adapter_' + n + '();' : 'gl_FragColor=vec4(0.,0.,0.,1.);') + 'return;}');
     main += 'gl_FragColor=IMG_NORM_PIXEL(' + shown.name + ',isf_FragNormCoord);}\n';
-  } else main += 'void main(){door_' + shown.name + '();}\n';
+  } else main += 'void main(){adapter_' + shown.name + '();}\n';
   g.__isf = '/*' + JSON.stringify(isf) + '*/\n' + head + '\n' + main;
-  g.__knobs = JSON.stringify(g.__moving || []);
+  g.__parameters = JSON.stringify(g.__moving || []);
 } catch (e) { globalThis.__why = String(e) + ' ' + (e.stack || ''); }
 )";
 
-bool hydra_isf(const std::string& folder, const std::string& code, double seconds, std::string& isf, std::vector<HydraKnob>& knobs, std::string& why) {
+bool hydra_isf(const std::string& folder, const std::string& code, double seconds, std::string& isf, std::vector<HydraParameter>& parameters, std::string& why) {
     const std::filesystem::path src = std::filesystem::path(folder) / "src";
     std::error_code wrong;
     if (!std::filesystem::exists(src / "generator-factory.js", wrong)) return why = "Hydra is a part of its own and is not there: run shelves/extensions/hydra/get.sh", false;
@@ -129,12 +129,12 @@ bool hydra_isf(const std::string& folder, const std::string& code, double second
         JS_GetLength(cx, moving, &n);
         for (int64_t i = 0; i < n; ++i) {
             JSValue one = JS_GetPropertyInt64(cx, moving, i), word = JS_GetPropertyStr(cx, one, "name"), keys = JS_GetPropertyStr(cx, one, "keys");
-            HydraKnob k;
+            HydraParameter k;
             if (const char* s = JS_ToCString(cx, word)) k.name = s, JS_FreeCString(cx, s);
             int64_t m = 0;
             JS_GetLength(cx, keys, &m);
             for (int64_t j = 0; j < m; ++j) { double v = 0; JSValue at = JS_GetPropertyInt64(cx, keys, j); JS_ToFloat64(cx, &v, at); JS_FreeValue(cx, at); k.keys.push_back(v); }
-            knobs.push_back(std::move(k));
+            parameters.push_back(std::move(k));
             JS_FreeValue(cx, keys), JS_FreeValue(cx, word), JS_FreeValue(cx, one);
         }
     }

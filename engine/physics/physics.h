@@ -1,4 +1,4 @@
-// Things of the document falling and striking one another: Jolt (physics_bench chose it), behind a door that shows
+// Things of the document falling and striking one another: Jolt (physics_bench chose it), behind an interop that shows
 // none of its own types. Every picture of the stage is a step of 1/60 s from the document's beginning, kept once made,
 // so going back in time is reading what was kept, and the same document moves the same way every time.
 #pragma once

@@ -88,7 +88,7 @@ std::vector<AviutlVar> aviutl_vars(const std::string& text) {
         AviutlVar v;
         v.kind = m[1], v.var = m[2].matched ? m[2].str() : v.kind + m[3].str();   // (--track0: is obj.track0)
         v.named = m[2].matched;
-        if (v.kind == "checksection") v.kind = "check";   // (a check that opens the knobs under it, its third its own folding: as a check)
+        if (v.kind == "checksection") v.kind = "check";   // (a check that opens the parameters under it, its third its own folding: as a check)
         std::vector<std::string> parts;
         std::stringstream rest(m[4].str());
         for (std::string one; std::getline(rest, one, ',');) parts.push_back(std::regex_replace(one, std::regex(R"(^\s+|\s+$)"), ""));
@@ -118,20 +118,20 @@ std::vector<AviutlVar> aviutl_vars(const std::string& text) {
     return vars;
 }
 
-std::vector<ScriptKnob> aviutl_knobs(const std::string& file) {
+std::vector<ScriptParameter> aviutl_parameters(const std::string& file) {
     std::string own, all, why;
-    std::vector<ScriptKnob> knobs;
-    if (!aviutl_text(file, own, all, why)) return knobs;
+    std::vector<ScriptParameter> parameters;
+    if (!aviutl_text(file, own, all, why)) return parameters;
     std::istringstream lines(own);
     const std::regex said(R"(^--(track|checksection|check|color|select)(?:@(\w+)|(\d)):([^,\r]*)(?:,([^\r]*))?)");
     for (std::string line; std::getline(lines, line);) {
         std::smatch m;
-        if (line.rfind("--dialog:", 0) == 0) {   // (its checks: each a knob, its label before its /chk)
+        if (line.rfind("--dialog:", 0) == 0) {   // (its checks: each a parameter, its label before its /chk)
             const std::regex check(R"((?:^|;)\s*([^,;]*)/chk\s*,\s*(?:local\s+)?(\w+))");
             for (const AviutlVar& v : aviutl_vars(line))
                 if (v.kind == "check")
                     for (std::sregex_iterator c(line.begin() + 9, line.end(), check), end; c != end; ++c)
-                        if ((*c)[2] == v.var) knobs.push_back({v.var, (*c)[1].str(), "check", 0, 1, v.usual, 1, ""});
+                        if ((*c)[2] == v.var) parameters.push_back({v.var, (*c)[1].str(), "check", 0, 1, v.usual, 1, ""});
             continue;
         }
         if (!std::regex_search(line, m, said)) continue;
@@ -139,7 +139,7 @@ std::vector<ScriptKnob> aviutl_knobs(const std::string& file) {
         std::string label = m[4].str();
         const size_t eq = label.find('=');
         if (eq != std::string::npos) label.resize(eq);
-        ScriptKnob k;
+        ScriptParameter k;
         k.name = v.var, k.label = label, k.kind = v.kind == "check" ? "check" : "track";
         if (v.kind == "track") {
             std::vector<double> n;
@@ -150,13 +150,13 @@ std::vector<ScriptKnob> aviutl_knobs(const std::string& file) {
         } else if (v.kind == "check") k.high = 1, k.usual = v.usual, k.step = 1;
         else if (v.kind == "select") k.high = std::max<double>(0, (double)v.values.size() - 1), k.usual = v.usual, k.step = 1;
         else {
-            if (v.unset) knobs.push_back({v.var + "_on", label, "check", 0, 1, 0, 1, ""});
-            for (int c = 0; c < 3; ++c) knobs.push_back({v.var + "_" + "rgb"[c], label + " " + "RGB"[c], "track", 0, 255, (double)(((int)v.usual >> (16 - 8 * c)) & 255), 1, ""});
+            if (v.unset) parameters.push_back({v.var + "_on", label, "check", 0, 1, 0, 1, ""});
+            for (int c = 0; c < 3; ++c) parameters.push_back({v.var + "_" + "rgb"[c], label + " " + "RGB"[c], "track", 0, 255, (double)(((int)v.usual >> (16 - 8 * c)) & 255), 1, ""});
             continue;
         }
-        knobs.push_back(k);
+        parameters.push_back(k);
     }
-    return knobs;
+    return parameters;
 }
 
 // (each float of the constants, HLSL's place to WGSL's: a scalar or a vector, a matrix's columns or an array's elements
@@ -265,7 +265,7 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
     // (another cbuffer (a global not static: $Global) is bound to nothing in AviUtl2, which reads zero in D3D11: a private
     //  variable, which WGSL begins at zero)
     std::string code = std::regex_replace(wgsl->wgsl, std::regex(R"(@group\(0u?\) @binding\((?!144u?\))\d+u?\) var<uniform>)"), "var<private>");
-    // (the door's bindings: picture k's texture at 2k, its sampler at 2k+1, the constants after all the pictures)
+    // (the interop's bindings: picture k's texture at 2k, its sampler at 2k+1, the constants after all the pictures)
     const std::regex bound(R"(@group\(0u?\) @binding\((\d+)u?\) var(<uniform>)?)");
     int most = 0;
     for (std::sregex_iterator m(code.begin(), code.end(), bound), end; m != end; ++m)

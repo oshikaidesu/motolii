@@ -81,7 +81,7 @@ end
 function rand1(seed, frame) return aviutl_rand(0, 4294967294, seed or 0, frame or obj.frame or 0) / 4294967295 end
 )";
 
-// Made once a file: its Lua state (the libraries lua.txt leaves, require from its own folder), obj, its knobs' first
+// Made once a file: its Lua state (the libraries lua.txt leaves, require from its own folder), obj, its parameters' first
 // values, and each of its shaders made (said on stderr: one that cannot be is "not yet" when it is used).
 static std::shared_ptr<AviutlRun> aviutl_made(Stage& s, const std::string& file, lua_State* with = nullptr) {
     auto r = std::make_shared<AviutlRun>();
@@ -90,7 +90,7 @@ static std::shared_ptr<AviutlRun> aviutl_made(Stage& s, const std::string& file,
     r->vars = aviutl_vars(r->own);
     r->behind = std::regex_search(r->all, std::regex(R"re(copybuffer\s*\([^)]*"(framebuffer|frm)"|getoption\s*\(\s*"drawtarget"\s*\)|load\s*\(\s*"framebuffer"|pixeloption\s*\(\s*"get"\s*,\s*"(framebuffer|frm)")re"));   // (it reads the frame: its picture there is the stage's behind it)
     r->wide = std::regex_search(r->all, std::regex(R"(obj\.draw(poly)?\s*\()"));   // (it draws the object itself: where it will on the screen)
-    for (const ScriptKnob& k : aviutl_knobs(file)) r->usual[k.name] = k.usual;
+    for (const ScriptParameter& k : aviutl_parameters(file)) r->usual[k.name] = k.usual;
     std::string& path = r->path;   // (require: its own folder, then the Script folder's others: aviutl_shared)
     for (const std::filesystem::path& dir : aviutl_shared(std::filesystem::path(file).parent_path())) path += (path.empty() ? "" : ";") + dir.string() + "/?.lua;" + dir.string() + "/?/init.lua";
     lua_State* L = r->L = with ? with : luaL_newstate();
@@ -127,12 +127,12 @@ static std::shared_ptr<AviutlRun> aviutl_made(Stage& s, const std::string& file,
     if (luaL_loadbuffer(L, text.data(), text.size(), ("@" + std::filesystem::path(file).filename().string()).c_str())) r->trouble = lua_tostring(L, -1);
     else r->chunk = luaL_ref(L, LUA_REGISTRYINDEX);
     std::string why;
-    if (!(r->place = door::screen(s.engine, "aviutl place", aviutl_placing, 64, &why))) r->trouble = "its placing shader: " + why;
-    if (!(r->poly = door::screen(s.engine, "aviutl drawpoly", aviutl_poly, 16, &why, 1, 0, true))) r->trouble = "its drawpoly shader: " + why;
-    if (!(r->blur = door::screen(s.engine, "aviutl blur", aviutl_blur, 16, &why))) r->trouble = "its blur shader: " + why;
+    if (!(r->place = interop::screen(s.engine, "aviutl place", aviutl_placing, 64, &why))) r->trouble = "its placing shader: " + why;
+    if (!(r->poly = interop::screen(s.engine, "aviutl drawpoly", aviutl_poly, 16, &why, 1, 0, true))) r->trouble = "its drawpoly shader: " + why;
+    if (!(r->blur = interop::screen(s.engine, "aviutl blur", aviutl_blur, 16, &why))) r->trouble = "its blur shader: " + why;
     r->none = Texture::Builder().width(1).height(1).levels(1).format(Texture::InternalFormat::RGBA8).build(*s.engine);
     r->none->setImage(*s.engine, 0, backend::PixelBufferDescriptor(new uint32_t(0), 4, backend::PixelDataFormat::RGBA, backend::PixelDataType::UBYTE, [](void* p, size_t, void*) { delete (uint32_t*)p; }));
-    auto* noise = new std::vector<math::half>(256 * 256);   // ("random": 256 x 256 of 0 to 1 (R32F there; a half float here, as a door's picture is filtered))
+    auto* noise = new std::vector<math::half>(256 * 256);   // ("random": 256 x 256 of 0 to 1 (R32F there; a half float here, as an interop's picture is filtered))
     std::mt19937 rng(1);
     for (math::half& h : *noise) h = math::half(std::uniform_real_distribution<float>(0.f, 1.f)(rng));
     r->random = Texture::Builder().width(256).height(256).levels(1).format(Texture::InternalFormat::R16F).build(*s.engine);
@@ -141,14 +141,14 @@ static std::shared_ptr<AviutlRun> aviutl_made(Stage& s, const std::string& file,
     const std::regex shader(R"(--\[\[pixelshader@(\w+):)");
     for (std::sregex_iterator m(r->all.begin(), r->all.end(), shader), end; m != end; ++m, ++all) {
         std::string why;
-        if (aviutl_door(*r, (*m)[1], false, why) && (aviutl_door(*r, (*m)[1], true, why) || true)) ++made;   // (and the way it samples "clip", made now: not inside a frame)
+        if (aviutl_interop(*r, (*m)[1], false, why) && (aviutl_interop(*r, (*m)[1], true, why) || true)) ++made;   // (and the way it samples "clip", made now: not inside a frame)
         else std::fprintf(stderr, "the AviUtl2 shader %s of %s is not made: %s\n", (*m)[1].str().c_str(), file.c_str(), why.substr(0, 400).c_str());
     }
     std::fprintf(stderr, "AviUtl2 script %s: %d of %d shaders made%s%s\n", file.c_str(), made, all, r->trouble.empty() ? "" : ", not taken: ", r->trouble.substr(0, 300).c_str());
     return r;
 }
 
-// One frame of it: the thing's picture `from` (w x h) its object, its knobs and obj's values told, the script run, and
+// One frame of it: the thing's picture `from` (w x h) its object, its parameters and obj's values told, the script run, and
 // what it leaves (the frame it drew, else the object as obj now places it) drawn into `to`.
 static void aviutl_draw_step(Stage& s, AviutlRun& r, Texture* from, RenderTarget* to, const ScreenNumbers& numbers, uint32_t w, uint32_t h) {
     r.s = &s, r.target = "framebuffer", r.blend = "none", r.sampler.clear(), r.drew = false, r.draws.clear(), r.font = {}, r.numbers = &numbers, r.pixelFrom = "object", r.pixelType = "col", r.pixelRead = false;
@@ -193,7 +193,7 @@ static void aviutl_draw_step(Stage& s, AviutlRun& r, Texture* from, RenderTarget
             {"layer", numbers(r.file, "aviutl.layer", 1)}, {"index", 0}, {"num", 1}, {"id", 1}, {"effect_id", 1}, {"frame_s", 0}, {"frame_e", frame}, {"effect_layer", 1}, {"originframe", 0}, {"scene_id", 0}};
         for (const auto& [n, v] : values) lua_pushnumber(L, v), lua_setfield(L, -2, n);
         lua_pop(L, 1);
-        std::string with;   // (its knobs' values now)
+        std::string with;   // (its parameters' values now)
         for (const AviutlVar& v : r.vars) with += std::to_string(numbers(r.file, v.var, NAN)) + ",";
         if (with == r.late) trouble = aviutl_too_long;
         else {

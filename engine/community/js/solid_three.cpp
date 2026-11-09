@@ -1,5 +1,5 @@
 // solid_three.cpp: a solid's shape made by three.js (MIT, github.com/mrdoob/three.js r186: build/three.core.js and two
-// of its examples, third_party/js/three) as three.js makes it. The shape's file (solids/*.js: its knobs in its head as
+// of its examples, third_party/js/three) as three.js makes it. The shape's file (solids/*.js: its parameters in its head as
 // a recipe's, script.h; `export function solid(k)` giving a BufferGeometry) run as it is in QuickJS, as three_isf.cpp
 // runs a three.js effect; the geometry's own typed arrays copied out. One QuickJS kept for all (three.core.js read once:
 // 24 ms), the modules it has read kept by their names.

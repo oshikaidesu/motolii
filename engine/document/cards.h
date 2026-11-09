@@ -111,8 +111,8 @@ static std::string doc_fx_duplicate(Doc& d, int layer, const std::string& title)
     doc_act(d);
     bool ok = doc_say(d, layer, "fx", fx.c_str());
     if (script)
-        for (size_t i = 0; i < script->knobs.size(); ++i)   // (from what its values are called: an expression's first, js_<knob>)
-            ok = ok && doc_change(d, sqlite3_mprintf("insert or replace into keyframe select layer, %Q, at, value, easing from keyframe where layer = %d and name = %Q", doc_screen_knob(made, script->knobs[i].name).c_str(), layer, script->names[i].c_str()));
+        for (size_t i = 0; i < script->parameters.size(); ++i)   // (from what its values are called: an expression's first, js_<knob>)
+            ok = ok && doc_change(d, sqlite3_mprintf("insert or replace into keyframe select layer, %Q, at, value, easing from keyframe where layer = %d and name = %Q", doc_screen_parameter(made, script->parameters[i].name).c_str(), layer, script->names[i].c_str()));
     return doc_acted(d) && ok ? made : "";
 }
 // The titles of a layer's effect cards in the order its effects are laid ("Halftone;Gaussian Blur").

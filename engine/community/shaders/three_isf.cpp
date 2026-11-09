@@ -3,7 +3,7 @@
 // The module run as it is in QuickJS, as splatfx.cpp runs a PlayCanvas effect: 'three' given as a module of stand-ins
 // for what uniforms' values are made of (QuickJS's module loader). Its shader adapted to ISF as ISF's own primer says
 // (docs.isf.video, chapter 9: the uniforms to INPUTS, their declarations taken out; texture2D as it is): tDiffuse is
-// ISF's inputImage, three's vUv ISF's isf_FragNormCoord, its time ISF's TIME. A knob's range as from_three.py made it
+// ISF's inputImage, three's vUv ISF's isf_FragNormCoord, its time ISF's TIME. A parameter's range as from_three.py made it
 // (from 0, or four times below, to four times its value, at least 1). Not taken: three's own #include pieces.
 #include "community/shaders/three_isf.h"
 #include <quickjs.h>
@@ -100,7 +100,7 @@ std::string three_isf(const std::string& file, std::string& why) {
     const std::regex uniform(R"(^[ \t]*uniform[ \t]+(\w+)[ \t]+(\w+)[ \t]*;[ \t]*(//.*)?$)", std::regex::multiline);
     for (std::sregex_iterator m(frag.begin(), frag.end(), uniform), end; m != end; ++m) {
         const std::string type = (*m)[1], own = (*m)[2];
-        const bool taken = own == "resolution" || own == "frame" || own == "passindex";   // (names isf.cpp's knobs have of their own: the shader's renamed)
+        const bool taken = own == "resolution" || own == "frame" || own == "passindex";   // (names isf.cpp's parameters have of their own: the shader's renamed)
         const std::string n = taken ? own + "_three" : own;
         if (taken) defines += "#define " + own + " " + n + "\n";
         const auto range = [&](double v) { w.Key("MIN"), w.Double(v < 0 ? 4 * v : 0), w.Key("MAX"), w.Double(std::max(1.0, 4 * std::fabs(v))); };
@@ -126,7 +126,7 @@ std::string three_isf(const std::string& file, std::string& why) {
             w.Key("NAME"), w.String(n.c_str()), w.Key("TYPE"), w.String("color"), w.Key("DEFAULT"), w.StartArray();
             for (const char* f : {"x", "y", "z", "w"}) w.Double(value(n, f, 1, 0));
             w.EndArray();
-        } else if (type == "vec3") {   // (ISF has no three numbers: three knobs, the shader's own name made of them)
+        } else if (type == "vec3") {   // (ISF has no three numbers: three parameters, the shader's own name made of them)
             const bool colour = u.HasMember(n.c_str()) && u[n.c_str()].IsObject() && u[n.c_str()].HasMember("r");
             const char* const fields[] = {colour ? "r" : "x", colour ? "g" : "y", colour ? "b" : "z"};
             for (int i = 0; i < 3; ++i) {

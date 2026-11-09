@@ -2,7 +2,7 @@
 // LuaJIT 2.1 (MIT, AviUtl2's own default Lua) with os, io, debug, ffi.C and ffi.load taken out as lua.txt says, and an
 // `obj` of its spec's names, each done by what Motolii already has: its buffers ("object", "tempbuffer", "cache:...",
 // "framebuffer": the thing's own picture as it leaves) RGBA16F pictures premultiplied as AviUtl2's, its shaders drawn
-// by the door (screen_interop.h), obj.draw by one placing shader. What it asks for that is not here stops it with
+// by the interop (screen_interop.h), obj.draw by one placing shader. What it asks for that is not here stops it with
 // "not yet: obj.X" (said once, its picture left as it came): never a picture silently other than the script's.
 #pragma once
 #include "community/aviutl/aviutl.h"
@@ -18,21 +18,21 @@ struct AviutlCalled { int chunk = LUA_NOREF; std::vector<AviutlVar> vars; std::m
 struct AviutlRun {
     std::string file, own, all, trouble;
     std::vector<AviutlVar> vars;
-    std::map<std::string, double> usual;            // (each knob's value as it comes)
+    std::map<std::string, double> usual;            // (each parameter's value as it comes)
     lua_State* L = nullptr;                         // (the one of the thing's scripts: aviutl_made)
     int chunk = LUA_NOREF, obj = LUA_NOREF;         // (its text made a function, and its obj, in L)
     std::string path;                               // (where its require looks: package.path while it runs)
     std::map<std::string, AviutlBuf> bufs;
     std::map<std::string, AviutlBuf> loaded;        // (figures and picture files obj.load drew, by what was asked: aviutl_load.h)
     std::multimap<std::pair<uint32_t, uint32_t>, AviutlBuf> spare;   // (pictures let go, kept by size for the next asked: a buffer made and let go each frame takes the same ones)
-    std::map<std::string, door::Screen*> doors;     // (each shader made, by its name and way of sampling)
+    std::map<std::string, interop::Screen*> interops;     // (each shader made, by its name and way of sampling)
     std::map<std::string, std::string> hlsls;       // (each shader's text by its registered name, found once: aviutl_hlsl, asked each frame)
-    std::map<door::Screen*, int> draws;             // (draws of each this frame: each its own constants, the door's pass)
-    door::Screen *place = nullptr, *poly = nullptr, *blur = nullptr;
+    std::map<interop::Screen*, int> draws;             // (draws of each this frame: each its own constants, the interop's pass)
+    interop::Screen *place = nullptr, *poly = nullptr, *blur = nullptr;
     Texture *none = nullptr, *random = nullptr;
     std::set<std::string> said;
     std::chrono::steady_clock::time_point until = std::chrono::steady_clock::time_point::max();   // (this frame's run stopped past it: aviutl_late)
-    std::optional<std::string> late;                // (the knobs' values it ran past that with: not run again with them; none yet, so one of no knobs runs)
+    std::optional<std::string> late;                // (the parameters' values it ran past that with: not run again with them; none yet, so one of no parameters runs)
     Stage* s = nullptr;                             // (this frame's)
     std::string target, blend, sampler;
     bool drew = false;
@@ -77,7 +77,7 @@ struct K { m: vec4f, at: vec2f, src: vec2f, size: vec2f, alpha: f32, way: f32, c
   return s;
 }
 )";
-// obj.drawpoly's: the picture on triangles (the door's mesh), at each corner's uv, or each corner's colour, faded by alpha.
+// obj.drawpoly's: the picture on triangles (the interop's mesh), at each corner's uv, or each corner's colour, faded by alpha.
 static const char* const aviutl_poly = R"(
 struct K { alpha: f32 }
 @group(0) @binding(0) var picture: texture_2d<f32>;
@@ -139,11 +139,11 @@ static AviutlBuf& aviutl_buf(AviutlRun& r, const std::string& name, uint32_t w =
     b.rt = RenderTarget::Builder().texture(RenderTarget::AttachmentPoint::COLOR, b.t).build(*r.s->engine);
     return b;
 }
-// One placing (blend: -1 in its place, 0 over, 1 added, 2 masked; sampler as the door's), knobs as the struct above.
+// One placing (blend: -1 in its place, 0 over, 1 added, 2 masked; sampler as the interop's), parameters as the struct above.
 static void aviutl_put(AviutlRun& r, Texture* from, RenderTarget* to, uint32_t w, uint32_t h, const float* k, int blend = -1, int sampler = 0) {
     const int pass = r.draws[r.place]++;
-    door::knobs(r.s->engine, r.place, k, 64, pass);
-    door::draw(r.s->engine, r.place, &from, to, w, h, pass, nullptr, blend >= 0, std::max(blend, 0), sampler);
+    interop::parameters(r.s->engine, r.place, k, 64, pass);
+    interop::draw(r.s->engine, r.place, &from, to, w, h, pass, nullptr, blend >= 0, std::max(blend, 0), sampler);
 }
 // A picture laid on another: its middle (+ c, its own centre) at the target's middle + o, zoomed (sx, sy) and turned rz degrees.
 static void aviutl_lay(AviutlRun& r, const AviutlBuf& from, RenderTarget* to, uint32_t w, uint32_t h, double ox, double oy, double sx, double sy, double rz, double alpha, double cx, double cy, int blend, int sampler, float way = 0, float as = 0) {
@@ -213,14 +213,14 @@ static std::string aviutl_hlsl(AviutlRun& r, const std::string& name) {   // (a 
         if (const size_t p = t.find(head); p != std::string::npos) return r.hlsls[name] = t.substr(p + head.size(), t.find("]]", p) - p - head.size());
     return r.hlsls[name] = "";
 }
-static door::Screen* aviutl_door(AviutlRun& r, const std::string& name, bool clip, std::string& why, const AviutlShader** made = nullptr) {
+static interop::Screen* aviutl_interop(AviutlRun& r, const std::string& name, bool clip, std::string& why, const AviutlShader** made = nullptr) {
     const std::string hlsl = aviutl_hlsl(r, name), entry = name.substr(0, name.find('@'));
     if (hlsl.empty()) return why = "no pixelshader@" + name, nullptr;
     const AviutlShader& sh = aviutl_shader(hlsl, entry, clip);
     if (made) *made = &sh;
-    door::Screen*& d = r.doors[name + (clip ? "|clip" : "")];
+    interop::Screen*& d = r.interops[name + (clip ? "|clip" : "")];
     if (!d && sh.wgsl.empty()) return why = sh.why, nullptr;
-    if (!d) d = door::screen(r.s->engine, entry.c_str(), sh.wgsl.c_str(), sh.bytes, &why, sh.pictures);
+    if (!d) d = interop::screen(r.s->engine, entry.c_str(), sh.wgsl.c_str(), sh.bytes, &why, sh.pictures);
     return d;
 }
 

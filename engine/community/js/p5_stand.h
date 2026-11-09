@@ -1,6 +1,6 @@
 // p5.js with no page: a sketch from the net, its file as it is, run by p5.js itself (third_party/js/p5, 1.11.13, LGPL-2.1,
 // its file as it is released) in the script's QuickJS, as Cavalry's and AviUtl's scripts are run by stand-ins for what they
-// ask of their host. No browser and nothing drawn: what p5 draws in WEBGL is taken at drawBuffersScaled, the one door its
+// ask of their host. No browser and nothing drawn: what p5 draws in WEBGL is taken at drawBuffersScaled, the one adapter its
 // box, plane, ellipsoid, cylinder, cone and torus all go through (src/webgl/p5.RendererGL.Retained.js), with its model
 // matrix (uModelMatrix), and said as the copies of a thing. A frame once run is kept: a sketch only goes forward, so going
 // back is reading. Frames are its own 60 a second, as requestAnimationFrame and a clock stepped by hand (timesnap's way).
@@ -74,7 +74,7 @@ function __flat(e) {
   const whole_ink = k => typeof k === 'string' ? __rgba(k)[3] === 255 : k.kind && k.stops.every(q => __rgba(q[1])[3] === 255);
   const whole = (x, y, w, h) => X(x, y) <= 0 && Y(x, y) <= 0 && X(x + w, y + h) >= e.width && Y(x + w, y + h) >= e.height && !m[1] && !m[2];   // (a background(): what was painted before is gone)
   const box = (x, y, w, h) => { M(x, y), L(x + w, y), L(x + w, y + h), L(x, y + h), path.push(3), ux = sx, uy = sy; };
-  const wipe = () => {   // (the spec's: a canvas told its size again is new; a page's own colour behind it, __door_canvas's sheet, is what it then shows)
+  const wipe = () => {   // (the spec's: a canvas told its size again is new; a page's own colour behind it, __adapter_canvas's sheet, is what it then shows)
     ops = [], clear = true, path = [], m = [1, 0, 0, 1, 0, 0];
     if (c) Object.assign(c, { fillStyle: '#000000', strokeStyle: '#000000', lineWidth: 1, globalAlpha: 1, globalCompositeOperation: 'source-over' });
     if (c && e.sheet) c.fillStyle = e.sheet, c.fillRect(0, 0, e.width, e.height), c.fillStyle = '#000000';
@@ -219,7 +219,7 @@ function __film_show() {   // (at the size it was asked for, each its nearest of
 }
 function __film_step() { const next = __film_next(); if (next) __film.source = next, __film_show(); }
 // What the forms of adapter.h paint on is p5's own canvas: asked for by a page's id or made, it is that one; a second made is another.
-function __door_canvas() {
+function __adapter_canvas() {
   const e = drawingContext.canvas, make = document.createElement;
   let given = false;
   e.ownerDocument = document, e.nodeType = 1, document.defaultView = globalThis, document.nodeType = 9;
@@ -336,8 +336,8 @@ function __most() {   // (as many copies as its first seconds draw at once, a se
 function __shape() {   // (only boxes, only balls or only rings, with no lines and no lights of its own: the world's own, as real as any. Any more: as it draws them, document/sketch.h)
   __most();
   if (__parts.length || __three) return '';
-  const kit = { box: 'cube', ellipsoid: 'ball', torus: 'ring' }, kinds = Object.keys(__kinds);
-  return kinds.length === 1 && kit[kinds[0]] && !__lined && !__tex.length && !__shaders.length && !__meshes.some(m => m.tris.length || m.rows.length) ? kit[kinds[0]] : 'sketch';
+  const builtin = { box: 'cube', ellipsoid: 'ball', torus: 'ring' }, kinds = Object.keys(__kinds);
+  return kinds.length === 1 && builtin[kinds[0]] && !__lined && !__tex.length && !__shaders.length && !__meshes.some(m => m.tris.length || m.rows.length) ? builtin[kinds[0]] : 'sketch';
 }
 var __by_at = -1, __by = [];
 function __three_each(i, f, part) {   // (the frame's meshes by their parts; each part's copies a solid's: adapter.h)
@@ -354,7 +354,7 @@ function each(i, n, t, k) {
   const f = Math.max(0, Math.round(t * 60));
   __to(f);
   if (__parts.length || __three) return __three_each(i, f, k.part | 0);
-  const c = __frames[f], at = i * 11, strong = (k && k['line_' + c[at + 9]]) ?? 1;   // (its line's knob: what that line drew grows out of nothing)
+  const c = __frames[f], at = i * 11, strong = (k && k['line_' + c[at + 9]]) ?? 1;   // (its line's parameter: what that line drew grows out of nothing)
   return at < c.length ? { x: c[at], y: c[at + 1], z: c[at + 2], scale_x: c[at + 3] * strong, scale_y: c[at + 4] * strong, scale_z: c[at + 5] * strong, rotate: c[at + 6], rotate_y: c[at + 7], rotate_x: c[at + 8], colour: c[at + 10] } : { size: 0 };
 }
 )";

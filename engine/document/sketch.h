@@ -73,8 +73,8 @@ static void doc_sketch_mesh(Doc& d, int layer, Doc::Shown& t, double now) {
     const float3 eye = float3{(float)(from.x / from.w), (float)(from.y / from.w), (float)(from.z / from.w)};
     t.look->setParameter("eye", eye), t.look->setParameter("fromSketch", math::mat3f(shown.upperLeft()));   // (what it lights itself it lights where it stands now)
     std::map<int, float> strong;
-    for (size_t i = 0; i < sc->knobs.size(); ++i)
-        if (const std::string& k = sc->knobs[i].name; k.rfind("line_", 0) == 0) strong[std::atoi(k.c_str() + 5)] = (float)doc_number(d, layer, sc->names[i].c_str(), now, sc->knobs[i].usual);
+    for (size_t i = 0; i < sc->parameters.size(); ++i)
+        if (const std::string& k = sc->parameters[i].name; k.rfind("line_", 0) == 0) strong[std::atoi(k.c_str() + 5)] = (float)doc_number(d, layer, sc->names[i].c_str(), now, sc->parameters[i].usual);
     if (t.sketchFrame == frame && t.sketchMade == doc_scripts_made(d) && length(t.sketchEye - eye) < 1e-4f && t.sketchStrong == strong) return;
     if (t.sketchMade != doc_scripts_made(d)) t.sketchShapes.clear(), t.sketchPics.clear(), t.sketchPaints.clear();
     t.sketchFrame = frame, t.sketchMade = doc_scripts_made(d), t.sketchEye = eye, t.sketchStrong = strong;

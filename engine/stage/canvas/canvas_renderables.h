@@ -14,14 +14,14 @@
 // much of it (shadow.w), falling so far, that way (degrees, as ThorVG counts them) and so soft.
    // (copies: how many times it is put down: the document tells each where)
 static Drawn* drawn(Stage& s, const std::function<tvg::Paint*(Drawn*, int*, int*)>& paints, const mat4f& place, float high, float3 ground, bool shown, const char* lay, const DrawnFx& fx = {}) {
-    if (!door::device(s.engine)) return nullptr;   // (another backend)
+    if (!interop::device(s.engine)) return nullptr;   // (another backend)
     Drawn* d = new Drawn;
     WGPUTexture made = nullptr;
     tvg::Paint* loose = nullptr;
     bool owned = false;
     int w = 0, h = 0;
     float own = high;
-    door::on_driver(s.engine, [&] {
+    interop::on_driver(s.engine, [&] {
         tvg::Initializer::init(0);
         tvg::Paint* p = paints(d, &w, &h);
         if (!p || w <= 0 || h <= 0) return;
@@ -62,10 +62,10 @@ static Drawn* drawn(Stage& s, const std::function<tvg::Paint*(Drawn*, int*, int*
         like.dimension = WGPUTextureDimension_2D;
         like.mipLevelCount = 1;
         like.sampleCount = 1;
-        made = wgpuDeviceCreateTexture((WGPUDevice)door::device(s.engine), &like);
+        made = wgpuDeviceCreateTexture((WGPUDevice)interop::device(s.engine), &like);
         d->made = made;
         d->canvas = tvg::WgCanvas::gen();
-        if (!d->canvas || d->canvas->target(door::device(s.engine), door::instance(s.engine), made, (uint32_t)w, (uint32_t)h, tvg::ColorSpace::ABGR8888S, 1) != tvg::Result::Success) return;
+        if (!d->canvas || d->canvas->target(interop::device(s.engine), interop::instance(s.engine), made, (uint32_t)w, (uint32_t)h, tvg::ColorSpace::ABGR8888S, 1) != tvg::Result::Success) return;
         if (ground.x >= 0.f) {
             tvg::Shape* under = tvg::Shape::gen();
             under->appendRect(0, 0, (float)w, (float)h);
@@ -82,7 +82,7 @@ static Drawn* drawn(Stage& s, const std::function<tvg::Paint*(Drawn*, int*, int*
     });
     s.engine->flushAndWait();   // (once, at set-up: the lines above ran on the other thread)
     if (!made || !owned) {   // (not made: what was begun is let go)
-        door::on_driver(s.engine, [&] { if (loose) tvg::Paint::rel(loose); delete d->canvas; delete d->film; if (made) wgpuTextureRelease(made); });
+        interop::on_driver(s.engine, [&] { if (loose) tvg::Paint::rel(loose); delete d->canvas; delete d->film; if (made) wgpuTextureRelease(made); });
         s.engine->flushAndWait();
         delete d;
         return nullptr;
@@ -575,7 +575,7 @@ static void flat_path(Drawn* d, tvg::Shape* shape, const char* form, int w, int 
 // How wide a picture's file is to its height, as ThorVG reads it (0: it cannot): on the driver thread, as drawn() makes one.
 static float picture_aspect(Stage& s, const char* file) {
     float pw = 0.f, ph = 0.f;
-    door::on_driver(s.engine, [&] {
+    interop::on_driver(s.engine, [&] {
         tvg::Initializer::init(0);
         tvg::Picture* pic = tvg::Picture::gen();
         if (pic->load(file) == tvg::Result::Success) pic->size(&pw, &ph);

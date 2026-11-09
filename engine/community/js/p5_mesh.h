@@ -303,7 +303,7 @@ p5.RendererGL.prototype.drawBuffersScaled = function (gId, x, y, z) {
   return this;
 };
 // shader(): what it is told is kept. A flat thing drawn with one, and nothing else in any frame, is that shader painting the
-// stage (adapter_p5_shader.h makes it an effect, its numbers knobs). Any more, and it is what paints what it draws: __paint.
+// stage (adapter_p5_shader.h makes it an effect, its numbers parameters). Any more, and it is what paints what it draws: __paint.
 var __shaded = null, __shaded_kind = '', __draws_most = 0, __draws_now = 0;
 p5.prototype.shader = function (s) { this._renderer.userFillShader = s, this._renderer._useNormalMaterial = false; return this; };
 p5.Shader.prototype.setUniform = function (n, v) {

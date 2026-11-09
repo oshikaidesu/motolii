@@ -1,4 +1,4 @@
-// script.h's door: the head read for knobs, QuickJS-ng behind each().
+// script.h's adapter: the head read for parameters, QuickJS-ng behind each().
 #include "community/js/script.h"
 #include "community/adapter.h"
 #include "community/aviutl/aviutl.h"
@@ -80,35 +80,35 @@ std::string sketch_marked(const std::string& src, std::vector<SketchLine>* lines
     }
     return out;
 }
-std::vector<ScriptKnob> script_knobs(const std::string& file) {
-    if (aviutl_is(file)) return aviutl_knobs(file);   // (an AviUtl2 script's head: aviutl.cpp)
-    std::vector<ScriptKnob> knobs;
+std::vector<ScriptParameter> script_parameters(const std::string& file) {
+    if (aviutl_is(file)) return aviutl_parameters(file);   // (an AviUtl2 script's head: aviutl.cpp)
+    std::vector<ScriptParameter> parameters;
     std::ifstream in(file);
     std::stringstream told_head;
     std::istream* from = &in;
     if (std::filesystem::path(file).extension() == ".js") {
         std::stringstream all;
         all << in.rdbuf();
-        const std::string told = door_js(all.str(), door_form(all.str()));   // (a form from the net told as a sketch: adapter.h)
-        if (script_is_sketch(told) && told.find("function relate") == std::string::npos && !script_pushes(told) && !solid_is(file)) {   // (a relation is p5's too, but its head says its knobs; a solid's shape says THREE. too, but is no scene from the net: its head says its knobs, solid_three.h)
-            if (door_form(all.str()) == "three") {   // (which part of the scene this thing is: document/adapter.h)
-                ScriptKnob part;
+        const std::string told = adapter_js(all.str(), adapter_form(all.str()));   // (a form from the net told as a sketch: adapter.h)
+        if (script_is_sketch(told) && told.find("function relate") == std::string::npos && !script_pushes(told) && !solid_is(file)) {   // (a relation is p5's too, but its head says its parameters; a solid's shape says THREE. too, but is no scene from the net: its head says its parameters, solid_three.h)
+            if (adapter_form(all.str()) == "three") {   // (which part of the scene this thing is: document/adapter.h)
+                ScriptParameter part;
                 part.kind = "track", part.name = "part", part.label = "Part", part.high = 9999, part.step = 1;
                 return {part};
             }
             std::vector<SketchLine> lines;
             sketch_marked(told, &lines);
             for (const SketchLine& l : lines) {
-                ScriptKnob k;
+                ScriptParameter k;
                 k.kind = "track", k.name = "line_" + std::to_string(l.line), k.label = l.what + " " + std::to_string(l.line), k.high = 1, k.usual = 1;
-                knobs.push_back(k);
+                parameters.push_back(k);
             }
-            return knobs;
+            return parameters;
         }
         in.clear(), in.seekg(0);
         if (const std::string head = leva_head(all.str()); !head.empty()) told_head.str(head), from = &told_head;   // (leva's object at its top: script_leva.h)
     }
-    std::string group;   // (AviUtl2's --group:Name[,open] gathers the knobs after it, a bare --group ends it: docs/internal/reports/aviutl/aviutl2_converter.md)
+    std::string group;   // (AviUtl2's --group:Name[,open] gathers the parameters after it, a bare --group ends it: docs/internal/reports/aviutl/aviutl2_converter.md)
     for (std::string line; std::getline(*from, line);) {
         if (line.rfind("//", 0) != 0) { if (line.find_first_not_of(" \t\r") == std::string::npos) continue; break; }   // (the head ends where code begins)
         if (const size_t g = line.find_first_not_of(" \t", 2); g != std::string::npos && line.compare(g, 7, "--group") == 0 && (g + 7 == line.size() || line[g + 7] == ':' || line[g + 7] == '\r')) {
@@ -120,7 +120,7 @@ std::vector<ScriptKnob> script_knobs(const std::string& file) {
         }
         const size_t dash = line.find("--"), at = line.find('@'), colon = line.find(':');
         if (dash == std::string::npos || at == std::string::npos || colon == std::string::npos || !(dash < at && at < colon)) continue;
-        ScriptKnob k;
+        ScriptParameter k;
         k.kind = line.substr(dash + 2, at - dash - 2), k.name = line.substr(at + 1, colon - at - 1);
         if (k.kind == "macro") {   // (label[,as it comes] -> name low high, name low high: script.h)
             const size_t to = line.find("->", colon);
@@ -128,11 +128,11 @@ std::vector<ScriptKnob> script_knobs(const std::string& file) {
             if (head.empty() || head[0].empty() || k.name.empty() || to == std::string::npos) continue;
             for (const std::string& one : split(line.substr(to + 2), ',')) {
                 std::istringstream w(one);
-                ScriptKnob::Turned t;
+                ScriptParameter::Turned t;
                 if (w >> t.name >> t.low >> t.high) k.turns.push_back(t);
             }
             k.kind = "track", k.label = head[0], k.low = 0, k.high = 1, k.step = 0.01, k.usual = head.size() >= 2 ? std::atof(head[1].c_str()) : 0;
-            knobs.push_back(k);   // (in no group, wherever its line is: a macro stands out)
+            parameters.push_back(k);   // (in no group, wherever its line is: a macro stands out)
             continue;
         }
         const std::vector<std::string> said = split(line.substr(colon + 1), ',');
@@ -151,21 +151,21 @@ std::vector<ScriptKnob> script_knobs(const std::string& file) {
             for (size_t i = 1; i < said.size(); ++i) k.words += (i > 1 ? " " : "") + said[i];
         } else continue;
         k.group = group;
-        knobs.push_back(k);
+        parameters.push_back(k);
     }
     // (a macro first on its card, Ableton's above the Rack; what it turns folded away, said to be turned)
-    std::stable_partition(knobs.begin(), knobs.end(), [](const ScriptKnob& k) { return !k.turns.empty(); });
-    for (const ScriptKnob& m : knobs)
-        for (const ScriptKnob::Turned& t : m.turns)
-            for (ScriptKnob& k : knobs)
+    std::stable_partition(parameters.begin(), parameters.end(), [](const ScriptParameter& k) { return !k.turns.empty(); });
+    for (const ScriptParameter& m : parameters)
+        for (const ScriptParameter::Turned& t : m.turns)
+            for (ScriptParameter& k : parameters)
                 if (k.name == t.name && k.turns.empty() && k.by.empty()) {
                     k.by = m.name, k.label += " ← " + m.label;
                     if (k.group.empty()) k.group = "Advanced";
                 }
-    return knobs;
+    return parameters;
 }
 
-void script_first(const std::string& file, std::vector<ScriptKnob>& knobs) {
+void script_first(const std::string& file, std::vector<ScriptParameter>& parameters) {
     static std::mutex hold;
     static std::map<std::string, std::pair<long long, std::map<std::string, std::map<std::string, double>>>> read;   // (each folder's first.tsv, as it was when last written)
     const size_t slash = file.find_last_of('/');
@@ -185,7 +185,7 @@ void script_first(const std::string& file, std::vector<ScriptKnob>& knobs) {
     }
     const auto own = values.find(name);
     if (own == values.end()) return;
-    for (ScriptKnob& k : knobs)
+    for (ScriptParameter& k : parameters)
         if (const auto v = own->second.find(k.name); v != own->second.end()) k.usual = v->second;
 }
 
@@ -255,7 +255,7 @@ static JSValue image_read(JSContext* cx, JSValueConst, int, JSValueConst* a) {  
 struct Script::Own {
     JSRuntime* rt = nullptr;
     JSContext* cx = nullptr;
-    JSValue each = JS_UNDEFINED, knobs = JS_UNDEFINED;
+    JSValue each = JS_UNDEFINED, parameters = JS_UNDEFINED;
     std::string trouble, file, src;
     bool whole = false;   // no each(): the whole file says every copy at once, as a Canvalry distribution (a PointCloud)
     bool sketch = false;   // a p5.js sketch (p5_stand.h)
@@ -269,7 +269,7 @@ Script::Script(const std::string& file, const std::string& p5, const std::string
     std::ifstream in(file);
     std::stringstream code;
     code << in.rdbuf();
-    const std::string form = door_form(code.str()), src = door_js(code.str(), form);   // (a form from the net told as a sketch: adapter.h)
+    const std::string form = adapter_form(code.str()), src = adapter_js(code.str(), form);   // (a form from the net told as a sketch: adapter.h)
     own->rt = JS_NewRuntime();
     JS_SetMemoryLimit(own->rt, 2ull << 30);   // (a sketch keeps its frames: 100,000 rectangles a frame are 1.5 GB a second. It stops with an error, not with the machine)
     own->cx = JS_NewContext(own->rt);
@@ -277,7 +277,7 @@ Script::Script(const std::string& file, const std::string& p5, const std::string
     const std::string ways = ways_kept();
     JS_FreeValue(own->cx, JS_Eval(own->cx, ways.c_str(), ways.size(), "ways", JS_EVAL_TYPE_GLOBAL));
     JS_FreeValue(own->cx, JS_Eval(own->cx, cavalry_kept, std::char_traits<char>::length(cavalry_kept), "cavalry", JS_EVAL_TYPE_GLOBAL));
-    JS_FreeValue(own->cx, JS_Eval(own->cx, leva_kept, strlen(leva_kept), "leva", JS_EVAL_TYPE_GLOBAL));   // (folder(), as its knobs object says its folds: script_leva.h)
+    JS_FreeValue(own->cx, JS_Eval(own->cx, leva_kept, strlen(leva_kept), "leva", JS_EVAL_TYPE_GLOBAL));   // (folder(), as its parameters object says its folds: script_leva.h)
     if (src.find("AE.compile") != std::string::npos) {   // (an After Effects expression the recipe holds: read once with acorn, third_party/js/acorn, then only called: ae_expr.h)
         const std::filesystem::path where = std::filesystem::path(p5).parent_path().parent_path() / "acorn" / "acorn.js";
         std::ifstream lib(where);
@@ -299,11 +299,11 @@ Script::Script(const std::string& file, const std::string& p5, const std::string
         JS_FreeValue(own->cx, JS_Eval(own->cx, p5_before, std::char_traits<char>::length(p5_before), "p5_before", JS_EVAL_TYPE_GLOBAL));
         JS_FreeValue(own->cx, JS_Eval(own->cx, p5js.c_str(), p5js.size(), "p5.min.js", JS_EVAL_TYPE_GLOBAL));
         for (const char* stand : {p5_after, p5_three, p5_mesh}) JS_FreeValue(own->cx, JS_Eval(own->cx, stand, std::char_traits<char>::length(stand), "p5_after", JS_EVAL_TYPE_GLOBAL));
-        if (const std::string needs = door_library(form); !needs.empty()) {
+        if (const std::string needs = adapter_library(form); !needs.empty()) {
             std::ifstream one(std::filesystem::path(p5).parent_path().parent_path() / needs);
             std::stringstream text;
             text << one.rdbuf();
-            const std::string lib = door_library_text(form, text.str());
+            const std::string lib = adapter_library_text(form, text.str());
             JS_FreeValue(own->cx, JS_Eval(own->cx, lib.c_str(), lib.size(), needs.c_str(), JS_EVAL_TYPE_GLOBAL));
         }
         if (script_pushes(src) && src.find("d3.") != std::string::npos) for (const char* lib : {"d3-binarytree", "d3-quadtree", "d3-octree", "d3-force-3d"}) {   // (a relation that pushes with d3's forces, third_party/js; the other two it says it needs only run forceSimulation, which the world does for it: document/world.h)
@@ -313,7 +313,7 @@ Script::Script(const std::string& file, const std::string& p5, const std::string
             const std::string read = text.str();
             JS_FreeValue(own->cx, JS_Eval(own->cx, read.c_str(), read.size(), lib, JS_EVAL_TYPE_GLOBAL));
         }
-        for (const std::string& needs : door_needs(code.str())) {   // (a library from the net: fetched by the door, it stands beside the sketch)
+        for (const std::string& needs : adapter_needs(code.str())) {   // (a library from the net: fetched by the adapter, it stands beside the sketch)
             std::ifstream one(std::filesystem::path(file).parent_path() / std::filesystem::path(file).stem() / needs);
             std::stringstream text;
             text << one.rdbuf();
@@ -355,11 +355,11 @@ Script::Script(const std::string& file, const std::string& p5, const std::string
     own->each = JS_GetPropertyStr(own->cx, g, "each");
     JS_FreeValue(own->cx, g);
     own->whole = !JS_IsFunction(own->cx, own->each);
-    own->knobs = JS_NewObject(own->cx);
+    own->parameters = JS_NewObject(own->cx);
 }
 Script::~Script() {
     if (!own->cx) return;
-    JS_FreeValue(own->cx, own->each), JS_FreeValue(own->cx, own->knobs);
+    JS_FreeValue(own->cx, own->each), JS_FreeValue(own->cx, own->parameters);
     for (JSAtom a : own->said) if (a != JS_ATOM_NULL) JS_FreeAtom(own->cx, a);
     JS_FreeContext(own->cx), JS_FreeRuntime(own->rt);
 }
@@ -431,9 +431,9 @@ const std::string& Script::trouble() const { return own->trouble; }
 std::vector<ScriptCopy> Script::copies(int n, double t, const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words, double unit) {
     std::vector<ScriptCopy> all((size_t)std::max(n, 0));
     if (!ok()) return all;
-    if (!own->whole) {   // (the knobs told once, then each copy asked)
-        knobs(numbers, words);
-        JS_SetPropertyStr(own->cx, own->knobs, "px", JS_NewFloat64(own->cx, unit));   // (k.px: a pixel of the document in the stage's units, so an expression written in After Effects' pixels says where)
+    if (!own->whole) {   // (the parameters told once, then each copy asked)
+        parameters(numbers, words);
+        JS_SetPropertyStr(own->cx, own->parameters, "px", JS_NewFloat64(own->cx, unit));   // (k.px: a pixel of the document in the stage's units, so an expression written in After Effects' pixels says where)
         for (int i = 0; i < n; ++i) all[(size_t)i] = ask(i, n, t);
         return all;
     }
@@ -475,20 +475,20 @@ std::vector<ScriptCopy> Script::copies(int n, double t, const std::map<std::stri
 
 ScriptCopy Script::each(int i, int n, double t, const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words) {
     if (!ok() || own->whole) return ScriptCopy{};
-    knobs(numbers, words);
+    parameters(numbers, words);
     return ask(i, n, t);
 }
-void Script::knobs(const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words) {
+void Script::parameters(const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words) {
     JSContext* cx = own->cx;
-    for (const auto& [name, v] : numbers) JS_SetPropertyStr(cx, own->knobs, name.c_str(), JS_NewFloat64(cx, v));
-    for (const auto& [name, w] : words) JS_SetPropertyStr(cx, own->knobs, name.c_str(), JS_NewString(cx, w.c_str()));
-    leva_colours(cx, own->knobs, numbers, words);   // (k.tint "#rrggbb", as leva returns a colour: script_leva.h)
+    for (const auto& [name, v] : numbers) JS_SetPropertyStr(cx, own->parameters, name.c_str(), JS_NewFloat64(cx, v));
+    for (const auto& [name, w] : words) JS_SetPropertyStr(cx, own->parameters, name.c_str(), JS_NewString(cx, w.c_str()));
+    leva_colours(cx, own->parameters, numbers, words);   // (k.tint "#rrggbb", as leva returns a colour: script_leva.h)
 }
-ScriptCopy Script::ask(int i, int n, double t) {   // (each(), the knobs as last told)
+ScriptCopy Script::ask(int i, int n, double t) {   // (each(), the parameters as last told)
     ScriptCopy c;
     JSContext* cx = own->cx;
     JS_UpdateStackTop(own->rt);
-    JSValue args[4] = {JS_NewInt32(cx, i), JS_NewInt32(cx, n), JS_NewFloat64(cx, t), JS_DupValue(cx, own->knobs)};
+    JSValue args[4] = {JS_NewInt32(cx, i), JS_NewInt32(cx, n), JS_NewFloat64(cx, t), JS_DupValue(cx, own->parameters)};
     JSValue out = JS_Call(cx, own->each, JS_UNDEFINED, 4, args);
     JS_FreeValue(cx, args[3]);
     if (JS_IsException(out)) {

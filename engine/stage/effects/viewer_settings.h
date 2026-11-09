@@ -1,9 +1,9 @@
 // viewer_settings.h: Filament's own settings file as a whole-screen effect on the shelf. The file is libs/viewer's JSON
 // (viewer/Settings.h: {"view": {"colorGrading": {...}, "bloom": {...}, "fog": {...}, ...}}, what gltf_viewer saves and
-// reads); its numbers and on-offs are knobs on its card, as an After Effects file's slots are (lottie_slots.h, and by its
+// reads); its numbers and on-offs are parameters on its card, as an After Effects file's slots are (lottie_slots.h, and by its
 // rule for a range none says), and the values as they are now are read back by Filament's own JsonSerializer and laid
 // on the stage's view over what the stage's own values make (document/camera.h doc_look): a part the file does not name stays
-// as the stage has it. Its words (enum names: a tone mapping, a custom LUT) are not knobs: the file says them.
+// as the stage has it. Its words (enum names: a tone mapping, a custom LUT) are not parameters: the file says them.
 #pragma once
 #include "community/js/script.h"
 #include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/document.h"
@@ -50,19 +50,19 @@ static bool viewer_is(const std::string& file) {
     return viewer_read(viewer_text(file), doc);
 }
 
-// Each knob's words: "viewer <its place in the file, a JSON Pointer> <which of its numbers, -1 when it is one>".
-static void viewer_walk(const rapidjson::Value& v, const std::string& at, std::vector<ScriptKnob>& knobs) {
+// Each parameter's words: "viewer <its place in the file, a JSON Pointer> <which of its numbers, -1 when it is one>".
+static void viewer_walk(const rapidjson::Value& v, const std::string& at, std::vector<ScriptParameter>& parameters) {
     if (v.IsObject()) {
-        for (auto& m : v.GetObject()) viewer_walk(m.value, at + "/" + m.name.GetString(), knobs);
+        for (auto& m : v.GetObject()) viewer_walk(m.value, at + "/" + m.name.GetString(), parameters);
         return;
     }
     std::string name = at.substr(6), label = name;   // (after "/view/")
     for (char& c : name) if (c == '/') c = '_';
     for (char& c : label) if (c == '/') c = ' ';
     if (v.IsBool()) {
-        ScriptKnob one;
+        ScriptParameter one;
         one.kind = "check", one.name = name, one.label = label, one.usual = v.GetBool() ? 1 : 0, one.words = "viewer " + at + " -1";
-        knobs.push_back(one);
+        parameters.push_back(one);
         return;
     }
     std::vector<double> n;
@@ -70,7 +70,7 @@ static void viewer_walk(const rapidjson::Value& v, const std::string& at, std::v
     else if (v.IsArray() && v.Size() <= 4) for (auto& e : v.GetArray()) { if (!e.IsNumber() || !std::isfinite(e.GetDouble())) return; n.push_back(e.GetDouble()); }
     static const char* const xyzw[] = {"x", "y", "z", "w"};
     for (size_t i = 0; i < n.size(); ++i) {
-        ScriptKnob one;
+        ScriptParameter one;
         one.kind = "track";
         one.name = v.IsArray() ? name + "_" + xyzw[i] : name;
         one.label = v.IsArray() ? label + " " + xyzw[i] : label;
@@ -78,22 +78,22 @@ static void viewer_walk(const rapidjson::Value& v, const std::string& at, std::v
         one.low = n[i] < 0 ? 4 * n[i] : 0, one.high = std::max(1.0, 4 * std::fabs(n[i]));   // (lottie_slots.h's rule for a range none says)
         one.step = 0.001;
         one.words = "viewer " + at + " " + std::to_string(v.IsArray() ? (int)i : -1);
-        knobs.push_back(one);
+        parameters.push_back(one);
     }
 }
-static std::vector<ScriptKnob> viewer_knobs(const std::string& file) {
-    std::vector<ScriptKnob> knobs;
+static std::vector<ScriptParameter> viewer_parameters(const std::string& file) {
+    std::vector<ScriptParameter> parameters;
     rapidjson::Document doc;
-    if (viewer_read(viewer_text(file), doc)) viewer_walk(doc["view"], "/view", knobs);
-    return knobs;
+    if (viewer_read(viewer_text(file), doc)) viewer_walk(doc["view"], "/view", parameters);
+    return parameters;
 }
 
-// The file with each knob's number now put in its place, as Filament's JsonSerializer reads it ("" when it does not read).
-static std::string viewer_said(const std::string& file, const std::vector<ScriptKnob>& knobs, const std::function<double(size_t)>& now) {
+// The file with each parameter's number now put in its place, as Filament's JsonSerializer reads it ("" when it does not read).
+static std::string viewer_said(const std::string& file, const std::vector<ScriptParameter>& parameters, const std::function<double(size_t)>& now) {
     rapidjson::Document doc;
     if (!viewer_read(viewer_text(file), doc)) return "";
-    for (size_t k = 0; k < knobs.size(); ++k) {
-        std::istringstream words(knobs[k].words);
+    for (size_t k = 0; k < parameters.size(); ++k) {
+        std::istringstream words(parameters[k].words);
         std::string viewer, at;
         int i = -1;
         words >> viewer >> at >> i;

@@ -27,7 +27,7 @@ static void doc_look(Doc& d) {
     for (const int h : holders)
         for (const std::string& file : script_files(doc_word(d, h, h == 0 ? "script" : "fx")))
             if (DocScript* sc = doc_script_of(d, file); sc && sc->viewer)
-                told.push_back(viewer_said(file, sc->knobs, [&](size_t k) { return doc_number(d, h, sc->names[k].c_str(), s.now, sc->knobs[k].usual); }));
+                told.push_back(viewer_said(file, sc->parameters, [&](size_t k) { return doc_number(d, h, sc->names[k].c_str(), s.now, sc->parameters[k].usual); }));
     const bool theirs = std::any_of(told.begin(), told.end(), [](const std::string& t) { return t.find("\"colorGrading\"") != std::string::npos; });
     std::string key = grade;
     if (theirs) for (const std::string& t : told) key += t;
@@ -124,7 +124,7 @@ static void doc_look(Doc& d) {
                 }
         if (name == "clip_time") return d.stage->now;   // (the stage's own clock and length: the document's)
         if (name == "clip_length") return doc_seconds(d);
-        return doc_number(d, 0, doc_screen_knob(file, name).c_str(), d.stage->now, usual);
+        return doc_number(d, 0, doc_screen_parameter(file, name).c_str(), d.stage->now, usual);
     });
     const std::string behind = doc_word(d, 0, "background");
     if (doc_word(d, 0, "behind") == "room") {   // (the room itself behind everything, as bright as it lights the stage: its own picture, made once a room)

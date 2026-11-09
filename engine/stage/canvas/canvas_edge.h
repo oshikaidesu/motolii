@@ -1,7 +1,7 @@
 #include "gpu/screen_interop.h"
 // canvas_edge.h: how far each point of a picture is from its edge, in points, for its bevel (deep.glsl): the pictures of
 // bevy_mod_outline's flood (src/flood/sobel_init.wgsl, jump_flood.wgsl; MIT OR Apache-2.0), its seeds and steps as they
-// are, the door's way of saying them: seeds from what is not the picture, so it floods inward, and the same flood outward
+// are, the interop's way of saying them: seeds from what is not the picture, so it floods inward, and the same flood outward
 // from what is (its other two numbers), and a last pass that keeps the length, in less than 0 outside, smoothed, which
 // reads smoothly between points where the way to the edge turns round, and at the edge itself comes down to 0 as it was
 // (a round bevel stands straight up there: an unsmoothed length's least step shows as a saw).
@@ -33,10 +33,10 @@ fn sample(p: vec2i) -> f32 {
 }
 )";
 static const char* const edge_flood_wgsl = R"(
-struct Knobs { step_length: f32, a: f32, b: f32, c: f32 };
+struct Parameters { step_length: f32, a: f32, b: f32, c: f32 };
 @group(0) @binding(0) var screen_texture: texture_2d<f32>;
 @group(0) @binding(1) var near: sampler;
-@group(0) @binding(2) var<uniform> instance: Knobs;
+@group(0) @binding(2) var<uniform> instance: Parameters;
 @fragment fn main(@builtin(position) frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f {
     let dims = vec2i(textureDimensions(screen_texture));
     let step = i32(instance.step_length);
@@ -101,20 +101,20 @@ static void edge_off(Stage& s, Drawn* d) {
 static void edge_ask(Stage& s, Drawn* d, int reach) {
     d->stale = false;
     s.once[d] = [&s, d, reach] {
-        static std::map<Engine*, std::array<door::Screen*, 3>> doors;
-        auto& made = doors[s.engine];
-        if (!made[0]) made = {door::screen(s.engine, "edge seeds", edge_seeds_wgsl, 0), door::screen(s.engine, "edge flood", edge_flood_wgsl, 16), door::screen(s.engine, "edge length", edge_length_wgsl, 0)};
+        static std::map<Engine*, std::array<interop::Screen*, 3>> interops;
+        auto& made = interops[s.engine];
+        if (!made[0]) made = {interop::screen(s.engine, "edge seeds", edge_seeds_wgsl, 0), interop::screen(s.engine, "edge flood", edge_flood_wgsl, 16), interop::screen(s.engine, "edge length", edge_length_wgsl, 0)};
         if (!made[0] || !made[1] || !made[2]) return;
-        door::draw(s.engine, made[0], d->texture, d->edgeInto[0], d->edgeW, d->edgeH);
+        interop::draw(s.engine, made[0], d->texture, d->edgeInto[0], d->edgeW, d->edgeH);
         int front = 0, pass = 0, step = 1;
         while (step < std::max(reach, 8)) step *= 2;   // (8: the last pass reads 6 points round each, outside too)
         for (; step >= 1; step /= 2, pass++) {
             const float k[4] = {(float)step, 0.f, 0.f, 0.f};
-            door::knobs(s.engine, made[1], k, sizeof k, pass);
+            interop::parameters(s.engine, made[1], k, sizeof k, pass);
             Texture* from = d->edge[front];
-            door::draw(s.engine, made[1], &from, d->edgeInto[!front], d->edgeW, d->edgeH, pass);
+            interop::draw(s.engine, made[1], &from, d->edgeInto[!front], d->edgeW, d->edgeH, pass);
             front = !front;
         }
-        door::draw(s.engine, made[2], d->edge[front], d->edgeInto[2], d->edgeW, d->edgeH);
+        interop::draw(s.engine, made[2], d->edge[front], d->edgeInto[2], d->edgeW, d->edgeH);
     };
 }

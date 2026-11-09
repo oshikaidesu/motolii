@@ -57,7 +57,7 @@ static void curves(RenderPath& into, const PathCommand* cmds, uint32_t cmdsCnt, 
     }
 }
 
-// (whether every point is a number: one carried to no number, a shape pushed far past its knobs, sends ThorVG's own
+// (whether every point is a number: one carried to no number, a shape pushed far past its parameters, sends ThorVG's own
 //  measuring round for ever; such a shape is not drawn)
 static bool numbers(const Point* p, uint32_t n) {
     for (uint32_t i = 0; i < n; ++i) if (!std::isfinite(p[i].x) || !std::isfinite(p[i].y)) return false;

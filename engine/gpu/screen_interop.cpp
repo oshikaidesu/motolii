@@ -27,7 +27,7 @@
 #include <cstring>
 #include <vector>
 
-namespace door {
+namespace interop {
 using namespace filament;
 using namespace filament::backend;
 
@@ -60,11 +60,11 @@ struct Screen {
     ProgramHandle program;
     DescriptorSetLayoutHandle layout;
     int pictures = 1;
-    BufferObjectHandle knobs;   // every pass's in one, each at a place of its own (written several times in one frame, one place would show its last): Filament's own per-renderable uniforms, one buffer and an offset each (FScene's mRenderableUBO); a buffer a pass held a handle each, past the driver's handle arena for a script drawing 30,000 times a frame (tim's もじゃもじゃT)
-    uint32_t knobRoom = 0, knobStride = 0;   // (how many passes it has places for; from one's place to the next, the device's uniform offset alignment)
-    uint32_t knobBytes = 0;
+    BufferObjectHandle parameters;   // every pass's in one, each at a place of its own (written several times in one frame, one place would show its last): Filament's own per-renderable uniforms, one buffer and an offset each (FScene's mRenderableUBO); a buffer a pass held a handle each, past the driver's handle arena for a script drawing 30,000 times a frame (tim's もじゃもじゃT)
+    uint32_t parameterRoom = 0, parameterStride = 0;   // (how many passes it has places for; from one's place to the next, the device's uniform offset alignment)
+    uint32_t parameterBytes = 0;
     struct Mesh { VertexBuffer* vb = nullptr; IndexBuffer* ib = nullptr; RenderPrimitiveHandle primitive; uint32_t room = 0; };
-    Mesh corners;   // every pass's corners in one, one after another as the frame's passes come (from 0 each frame), each drawn from its own (as the knobs: a mesh a pass held three handles each)
+    Mesh corners;   // every pass's corners in one, one after another as the frame's passes come (from 0 each frame), each drawn from its own (as the parameters: a mesh a pass held three handles each)
     uint32_t cursor = 0;   // (where the next pass's go)
     bool mesh = false;
 };
@@ -73,11 +73,11 @@ static DriverApi& driver(Engine* engine) { return downcast(engine)->getDriverApi
 
 // Whether Dawn takes the fragment shader: made once on Filament's own device, on its driver's thread, inside an error scope.
 static bool takes(Engine* engine, const char* fragment, std::string* why) {
-    WGPUDevice device = (WGPUDevice)door::device(engine);
-    WGPUInstance instance = (WGPUInstance)door::instance(engine);
+    WGPUDevice device = (WGPUDevice)interop::device(engine);
+    WGPUInstance instance = (WGPUInstance)interop::instance(engine);
     if (!device || !instance) return true;
     struct Said { bool done = false, ok = true; std::string message; } said;
-    door::on_driver(engine, [&] {
+    interop::on_driver(engine, [&] {
         wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
         WGPUShaderSourceWGSL code{};
         code.chain.sType = WGPUSType_ShaderSourceWGSL;
@@ -105,11 +105,11 @@ static bool takes(Engine* engine, const char* fragment, std::string* why) {
     return said.ok;
 }
 
-Screen* screen(Engine* engine, const char* name, const char* fragment, uint32_t knobBytes, std::string* why, int pictures, unsigned layered, bool mesh) {
+Screen* screen(Engine* engine, const char* name, const char* fragment, uint32_t parameterBytes, std::string* why, int pictures, unsigned layered, bool mesh) {
     if (!takes(engine, fragment, why)) return nullptr;
     DriverApi& d = driver(engine);
     auto* s = new Screen;
-    s->knobBytes = (knobBytes + 15u) & ~15u;
+    s->parameterBytes = (parameterBytes + 15u) & ~15u;
     s->pictures = pictures < 1 ? 1 : pictures;
     s->mesh = mesh;
     backend::Program p;
@@ -127,7 +127,7 @@ Screen* screen(Engine* engine, const char* name, const char* fragment, uint32_t 
         bindings.push_back({utils::CString("picture"), kind, descriptor_binding_t(i)});
         layout.descriptors.push_back({kind, ShaderStageFlags::FRAGMENT, descriptor_binding_t(i)});
     }
-    if (s->knobBytes) {
+    if (s->parameterBytes) {
         bindings.push_back({utils::CString("knobs"), DescriptorType::UNIFORM_BUFFER, descriptor_binding_t(s->pictures)});
         layout.descriptors.push_back({DescriptorType::UNIFORM_BUFFER, ShaderStageFlags::FRAGMENT, descriptor_binding_t(s->pictures)});
     }
@@ -137,29 +137,29 @@ Screen* screen(Engine* engine, const char* name, const char* fragment, uint32_t 
     return s;
 }
 
-static BufferObjectHandle knobsOf(Engine* engine, Screen* s, int pass) {
+static BufferObjectHandle parametersOf(Engine* engine, Screen* s, int pass) {
     DriverApi& d = driver(engine);
-    if (!s->knobStride) {
+    if (!s->parameterStride) {
         const uint32_t align = (uint32_t)std::max<size_t>(d.getUniformBufferOffsetAlignment(), 4);
-        s->knobStride = (s->knobBytes + align - 1) / align * align;
+        s->parameterStride = (s->parameterBytes + align - 1) / align * align;
     }
-    if ((uint32_t)pass >= s->knobRoom) {   // (made again, twice as roomy; the old one let go after the draws already told to read it, in the order told)
-        if (s->knobRoom) d.destroyBufferObject(s->knobs);
-        uint32_t room = std::max(s->knobRoom, 16u);
+    if ((uint32_t)pass >= s->parameterRoom) {   // (made again, twice as roomy; the old one let go after the draws already told to read it, in the order told)
+        if (s->parameterRoom) d.destroyBufferObject(s->parameters);
+        uint32_t room = std::max(s->parameterRoom, 16u);
         while (room <= (uint32_t)pass) room *= 2;
-        s->knobRoom = room;
-        s->knobs = d.createBufferObject(room * s->knobStride, BufferObjectBinding::UNIFORM, BufferUsage::DYNAMIC, utils::ImmutableCString{"screen"});
+        s->parameterRoom = room;
+        s->parameters = d.createBufferObject(room * s->parameterStride, BufferObjectBinding::UNIFORM, BufferUsage::DYNAMIC, utils::ImmutableCString{"screen"});
     }
-    return s->knobs;
+    return s->parameters;
 }
 
-void knobs(Engine* engine, Screen* s, const void* data, uint32_t bytes, int pass) {
-    if (!s->knobBytes || !bytes) return;
-    const BufferObjectHandle to = knobsOf(engine, s, pass);
-    bytes = bytes < s->knobBytes ? bytes : s->knobBytes;
-    void* copy = std::calloc(1, s->knobBytes);
+void parameters(Engine* engine, Screen* s, const void* data, uint32_t bytes, int pass) {
+    if (!s->parameterBytes || !bytes) return;
+    const BufferObjectHandle to = parametersOf(engine, s, pass);
+    bytes = bytes < s->parameterBytes ? bytes : s->parameterBytes;
+    void* copy = std::calloc(1, s->parameterBytes);
     std::memcpy(copy, data, bytes);
-    driver(engine).updateBufferObject(to, BufferDescriptor(copy, s->knobBytes, [](void* p, size_t, void*) { std::free(p); }), (uint32_t)pass * s->knobStride);
+    driver(engine).updateBufferObject(to, BufferDescriptor(copy, s->parameterBytes, [](void* p, size_t, void*) { std::free(p); }), (uint32_t)pass * s->parameterStride);
 }
 
 // A pass's `count` corners after the passes' before it this frame (`first`, where they start): the mesh made again,
@@ -201,7 +201,7 @@ void draw(Engine* engine, Screen* s, Texture* const* from, RenderTarget* to, uin
     linear.wrapS = linear.wrapT = sampler == 2 ? SamplerWrapMode::REPEAT : sampler == 3 ? SamplerWrapMode::MIRRORED_REPEAT : SamplerWrapMode::CLAMP_TO_EDGE;
     DescriptorSetHandle set = d.createDescriptorSet(s->layout, utils::ImmutableCString{"screen"});
     for (int i = 0; i < s->pictures; ++i) d.updateDescriptorSetTexture(set, descriptor_binding_t(i), downcast(from[i])->getHwHandle(), linear);
-    if (s->knobBytes) d.updateDescriptorSetBuffer(set, descriptor_binding_t(s->pictures), knobsOf(engine, s, pass), (uint32_t)pass * s->knobStride, s->knobBytes);
+    if (s->parameterBytes) d.updateDescriptorSetBuffer(set, descriptor_binding_t(s->pictures), parametersOf(engine, s, pass), (uint32_t)pass * s->parameterStride, s->parameterBytes);
     RenderPassParams params{};
     params.viewport = at ? backend::Viewport{at[0], at[1], (uint32_t)at[2], (uint32_t)at[3]} : backend::Viewport{0, 0, w, h};
     params.flags.discardStart = over ? TargetBufferFlags::NONE : TargetBufferFlags::ALL;   // (laid over: what is there is kept)
@@ -238,10 +238,10 @@ void draw(Engine* engine, Screen* s, Texture* const* from, RenderTarget* to, uin
 
 void drop(Engine* engine, Screen* s) {
     DriverApi& d = driver(engine);
-    if (s->knobRoom) d.destroyBufferObject(s->knobs);
+    if (s->parameterRoom) d.destroyBufferObject(s->parameters);
     if (const Screen::Mesh& m = s->corners; m.vb) d.destroyRenderPrimitive(m.primitive), engine->destroy(m.vb), engine->destroy(m.ib);
     d.destroyDescriptorSetLayout(s->layout);
     d.destroyProgram(s->program);
     delete s;
 }
-}  // namespace door
+}  // namespace interop

@@ -25,5 +25,5 @@ cd "$SRC/out/wgpu"
 [ -f build.ninja ] || cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DFILAMENT_SUPPORTS_WEBGPU=ON -DFILAMENT_SKIP_SAMPLES=ON \
     -DFILAMENT_BUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=../wgpu_install -DMOTOLII_PROBE_DIR="$HERE" ../..
 ninja matc
-ninja install > /dev/null   # (the headers and libraries the kit builds against: ../wgpu_install, CMAKE_INSTALL_PREFIX above)
+ninja install > /dev/null   # (the headers and libraries the renderer builds against: ../wgpu_install, CMAKE_INSTALL_PREFIX above)
 cd "$HERE"

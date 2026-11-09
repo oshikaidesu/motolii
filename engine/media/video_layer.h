@@ -7,7 +7,7 @@
 // flat.mat. Nothing of a picture goes through the CPU. A picture is chosen by the time the film gives it (a phone's
 // film does not keep an even pace), and a film that says it is to be turned (shot upright) is turned.
 // Only on the WebGPU backend (BACKEND=webgpu, gpu/filament_webgpu.sh with KIT_EXTRA: see puppet.sh), with Filament
-// asking its device for the sharing (filament_dawn_compute.patch). The Mac's door only, so far.
+// asking its device for the sharing (filament_dawn_compute.patch). The Mac's interop only, so far.
 #include "gpu/gpu_interop.h"
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
@@ -74,7 +74,7 @@ static void video_give_back(Stage& s, Video::Planes& planes) {
     --video_shared;
     if (planes.light) s.engine->destroy(planes.light);
     if (planes.colour) s.engine->destroy(planes.colour);
-    door::on_driver(s.engine, [lent = planes.lent, shared = planes.shared.load()] {
+    interop::on_driver(s.engine, [lent = planes.lent, shared = planes.shared.load()] {
         WGPUSharedTextureMemoryEndAccessState ended{};
         wgpuSharedTextureMemoryEndAccess(lent, shared, &ended);
         wgpuSharedTextureMemoryEndAccessStateFreeMembers(ended);
@@ -182,13 +182,13 @@ static bool video_show(Stage& s, Video* v) {
         CFRetain(surface);
         const uint32_t w = (uint32_t)v->w, h = (uint32_t)v->h;
         Engine* engine = s.engine;
-        door::on_driver(engine, [planes, surface, w, h, engine] {
+        interop::on_driver(engine, [planes, surface, w, h, engine] {
             WGPUSharedTextureMemoryIOSurfaceDescriptor from{};
             from.chain.sType = WGPUSType_SharedTextureMemoryIOSurfaceDescriptor;
             from.ioSurface = surface;
             WGPUSharedTextureMemoryDescriptor what{};
             what.nextInChain = &from.chain;
-            WGPUSharedTextureMemory memory = wgpuDeviceImportSharedTextureMemory((WGPUDevice)door::device(engine), &what);
+            WGPUSharedTextureMemory memory = wgpuDeviceImportSharedTextureMemory((WGPUDevice)interop::device(engine), &what);
             WGPUTextureDescriptor like{};
             like.size = {w, h, 1};
             like.format = WGPUTextureFormat_R8BG8Biplanar420Unorm;   // (light, and colour at half the size: what a decoder leaves)
@@ -290,7 +290,7 @@ static gint64 video_discovered(const char* file) {
     return length;
 }
 static Video* video(Stage& s, const char* file, const mat4f& place, float high, float from = 0.f, float to = -1.f, float speed = 1.f, const char* lay = nullptr, bool lit = false, const std::string& wear = "") {
-    if (!door::device(s.engine)) return video_trouble = "not the WebGPU backend", nullptr;   // (another backend)
+    if (!interop::device(s.engine)) return video_trouble = "not the WebGPU backend", nullptr;   // (another backend)
     static const bool started = (gst_init(nullptr, nullptr), true);
     (void)started;
     Video* v = new Video;

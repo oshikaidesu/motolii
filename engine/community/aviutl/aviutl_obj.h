@@ -13,7 +13,7 @@ static int aviutl_pixelshader(lua_State* L) {   // (name, target, {resource...},
     const std::string name = luaL_checkstring(L, 1), target = aviutl_name(luaL_checkstring(L, 2)), blend = lua_isstring(L, 5) ? lua_tostring(L, 5) : "copy", sampler = aviutl_str(L, 6);
     const AviutlShader* sh = nullptr;
     std::string why;
-    door::Screen* d = aviutl_door(r, name, sampler == "clip" || sampler == "dot", why, &sh);
+    interop::Screen* d = aviutl_interop(r, name, sampler == "clip" || sampler == "dot", why, &sh);
     if (!d) return aviutl_no(L, "obj.pixelshader " + name + ": " + why.substr(0, 300));
     if (target.rfind("image:", 0) == 0 || !r.bufs.count(target)) return aviutl_no(L, "obj.pixelshader into " + target);
     std::vector<std::string> res;
@@ -35,8 +35,8 @@ static int aviutl_pixelshader(lua_State* L) {   // (name, target, {resource...},
     if (way == -2) return aviutl_no(L, "obj.pixelshader blend " + blend);
     const AviutlBuf& t = r.bufs[target];
     const int pass = r.draws[d]++;
-    if (!k.empty()) door::knobs(r.s->engine, d, k.data(), (uint32_t)k.size() * 4, pass);
-    door::draw(r.s->engine, d, read.data(), t.rt, t.w, t.h, pass, nullptr, way >= 0, std::max(way, 0), sampler == "dot" ? 1 : sampler == "loop" ? 2 : sampler == "mirror" ? 3 : 0);
+    if (!k.empty()) interop::parameters(r.s->engine, d, k.data(), (uint32_t)k.size() * 4, pass);
+    interop::draw(r.s->engine, d, read.data(), t.rt, t.w, t.h, pass, nullptr, way >= 0, std::max(way, 0), sampler == "dot" ? 1 : sampler == "loop" ? 2 : sampler == "mirror" ? 3 : 0);
     return 0;
 }
 static int aviutl_clearbuffer(lua_State* L) {   // (target[, w, h][, colour])
@@ -156,14 +156,14 @@ static int aviutl_getaudio(lua_State* L) {
     if (own) lua_pushvalue(L, into);
     return own ? 3 : 2;
 }
-static int aviutl_data(lua_State* L) { return lua_pushnil(L), 1; }   // (obj.data: what was kept with the object; none kept here, nil, as 波形ライン.obj2 asks it in a pcall and draws by its knobs without)
+static int aviutl_data(lua_State* L) { return lua_pushnil(L), 1; }   // (obj.data: what was kept with the object; none kept here, nil, as 波形ライン.obj2 asks it in a pcall and draws by its parameters without)
 // obj.setanchor(name, num, options...) as AviUtl2's lua.txt tells it (aviutl2_modern_docs, MIT: docs/lua/index.md):
 // a table's points too few for num, its {table} option taken, else laid by AviUtl itself. Its points are not on the
 // screen here yet for a hand to move, so points all on one spot (a table's usual {0,0,...}, BezierPath's) would stay a
 // path of no length: they are laid as a hand would first draw them, a screen's third from the object's middle: across
 // it as "line" joins them (one wave over and under), round it as "loop", "star" and "arm" join them or none, on a grid
 // for "mesh". Tracks'
-// points ("track", "x,y") are their keys': one, the knobs' values, for now.
+// points ("track", "x,y") are their keys': one, the parameters' values, for now.
 static int aviutl_setanchor(lua_State* L) {
     const int num = std::max(1, (int)aviutl_num(L, 2));
     if (!lua_isstring(L, 1) || lua_isnumber(L, 1)) return lua_pushinteger(L, num), 1;   // (a table itself: only its line shown)

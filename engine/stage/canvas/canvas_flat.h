@@ -279,9 +279,9 @@ static void cut_at(Stage& s, Drawn* d, float3 trim, const std::array<float, 10>&
 // put in the scene by its pose: lottie_motion.h), on a sheet of its own `pixel` units a point of the composition. A 3D layer's
 // picture where it is. `box`: where its sheet lies in the layer's own space (x, y, w, h, in points of the composition).
 static Drawn* layer_picture(Stage& s, const char* file, uint32_t id, float pixel, float4* box) {
-    if (!door::device(s.engine)) return nullptr;
+    if (!interop::device(s.engine)) return nullptr;
     float4 found{0.f};
-    door::on_driver(s.engine, [&] {   // (how large it is, at its first moment: ThorVG's own bounds of it alone)
+    interop::on_driver(s.engine, [&] {   // (how large it is, at its first moment: ThorVG's own bounds of it alone)
         tvg::Initializer::init(0);
         tvg::Animation* look = tvg::LottieAnimation::gen();
         if (look->picture()->load(file) == tvg::Result::Success && (look->frame(1.f), look->frame(0.f), true))   // (built: ThorVG builds a moment when it is told one other than the one it has)
@@ -317,7 +317,7 @@ static std::vector<uint32_t> picture_deep(Stage& s, Drawn* d) {
     std::vector<uint32_t> ids;
     tvg::LottieAnimation* film = d ? d->lottie : nullptr;
     if (!film) return ids;
-    door::on_driver(s.engine, [&] {
+    interop::on_driver(s.engine, [&] {
         auto* walk = tvg::Accessor::gen();
         walk->set(film->picture(), [&](const tvg::Paint* one, void*) {
             float n[19];
@@ -336,7 +336,7 @@ static std::vector<uint32_t> picture_deep(Stage& s, Drawn* d) {
 // That layer as it is at `frame` of its file, drawn again for the frame that comes next.
 static void layer_at(Stage& s, Drawn* d, float frame) {
     if (!d || !d->source) return;
-    door::on_driver(s.engine, [d, frame] {
+    interop::on_driver(s.engine, [d, frame] {
         d->source->frame(frame);
         d->holder->remove();
         if (const tvg::Paint* one = d->source->picture()->paint(d->layerId)) {
@@ -359,7 +359,7 @@ static void picture_off(Stage& s, Drawn* d) {
     take_off(s, d->sheet);
     d->look = nullptr;
     kept_drop(s, d);
-    door::on_driver(s.engine, [d] { delete d->canvas; delete d->film; d->canvas = nullptr, d->film = nullptr; });   // (ThorVG let go of its texture before Filament destroys it)
+    interop::on_driver(s.engine, [d] { delete d->canvas; delete d->film; d->canvas = nullptr, d->film = nullptr; });   // (ThorVG let go of its texture before Filament destroys it)
     if (d->texture) s.engine->destroy(d->texture);
-    door::on_driver(s.engine, [d] { delete d; });
+    interop::on_driver(s.engine, [d] { delete d; });
 }

@@ -70,9 +70,9 @@ int main(int argc, char** argv) {
   if (argc < 6) { std::printf("usage: js_effects <preset.json> <w> <h> <frames> <out.rgba>\n"); return 2; }
   const uint32_t W = (uint32_t)std::atoi(argv[2]), H = (uint32_t)std::atoi(argv[3]);
   filament::Engine* engine = filament::Engine::Builder().backend(filament::Engine::Backend::WEBGPU).build();
-  if (!engine || !door::device(engine)) { std::printf("FAIL no Filament WebGPU device\n"); return 1; }
-  WGPUDevice device = (WGPUDevice)door::device(engine);
-  WGPUInstance instance = (WGPUInstance)door::instance(engine);
+  if (!engine || !interop::device(engine)) { std::printf("FAIL no Filament WebGPU device\n"); return 1; }
+  WGPUDevice device = (WGPUDevice)interop::device(engine);
+  WGPUInstance instance = (WGPUInstance)interop::instance(engine);
   wgpu::TextureDescriptor td{};
   td.size = {W, H, 1};
   td.format = wgpu::TextureFormat::RGBA8Unorm;

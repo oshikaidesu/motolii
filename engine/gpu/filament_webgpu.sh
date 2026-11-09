@@ -1,5 +1,5 @@
 #!/bin/zsh
-# One of the kit's pictures (ring, poster, blocks, shapes) on Filament's WebGPU (Dawn) backend, beside the usual Metal
+# One of the renderer's pictures (ring, poster, blocks, shapes) on Filament's WebGPU (Dawn) backend, beside the usual Metal
 # build (which is not touched). Needs gpu/build.sh first (the WebGPU-enabled Filament and its matc).
 #   ./filament_webgpu.sh ring                 builds ../out/<name>_wgpu and runs it on WebGPU:  ../out/filament_webgpu/out/<name>.png
 #   BACKEND=metal ./filament_webgpu.sh ring   the same program on Metal, to compare
@@ -45,7 +45,7 @@ for f in paper paper_copy floor_shade effected effected_world effected_solid thi
     [ $f = bubble ] && { $MATC -a webgpu -a metal -p desktop -DWORN -o out/filament_webgpu/bubble_worn.filamat materials/bubble.mat > out/filament_webgpu/bubble_worn.log 2>&1 || echo "no WebGPU material: bubble_worn"; }   # (a thing wearing Bubble: stage/render/render_layers.h solid_wear)
 done
 # ThorVG here is the one built against Dawn (gpu/tvg_on_dawn.sh makes it): it can draw on Filament's own device
-# (stage/canvas/canvas.h), through the door built inside Filament's build (gpu_interop.h).
+# (stage/canvas/canvas.h), through the interop built inside Filament's build (gpu_interop.h).
 THOR=third_party/thorvg_src
 [ -f $THOR/build_dawn/src/libthorvg-1.a ] || ./gpu/tvg_on_dawn.sh > /dev/null
 meson configure $THOR/build_dawn -Dengines=cpu,wg -Dextra=lottie_exp > /dev/null   # (kept on: meson set up again by a changed source takes ThorVG's defaults, the CPU engine alone)
@@ -73,9 +73,9 @@ for f in motion scene easing textanim; do [ out/am_$f.o -nt $AM/$f.cpp ] || clan
 [ out/absent_motion.o -nt community/absent_motion/absent_motion.cpp ] && [ out/absent_motion.o -nt community/absent_motion/absent_motion.h ] || clang++ -c -std=c++20 -I $PWD -O2 -DNDEBUG -fno-rtti -fvisibility=hidden -I $SKIA -I $AM community/absent_motion/absent_motion.cpp -o out/absent_motion.o
 [ out/absent_drawing.o -nt community/absent_motion/absent_drawing.cpp ] && [ out/absent_drawing.o -nt $AM/drawing.cpp ] || clang++ -c -std=c++20 -I $PWD -O2 -DNDEBUG -fno-rtti -fvisibility=hidden -I $SKIA -I $AM community/absent_motion/absent_drawing.cpp -o out/absent_drawing.o   # (its drawing.cpp read whole: community/absent_motion/absent_drawing.cpp)
 [ out/absent_ends.o -nt community/absent_motion/absent_ends.cpp ] && [ out/absent_ends.o -nt $AM/styles.cpp ] || clang++ -c -std=c++20 -I $PWD -O2 -DNDEBUG -fno-rtti -fvisibility=hidden -I $SKIA -I $AM community/absent_motion/absent_ends.cpp -o out/absent_ends.o   # (its styles.cpp read whole: community/absent_motion/absent_ends.cpp)
-(cd $SRC/out/wgpu && ninja motolii_door > /dev/null)
-clang++ -std=c++20 -fobjc-arc -O2 -I "$SDK/include" -I $THOR/inc -I $THOR/src/loaders/lottie -I $SRC/third_party/dawn/include -I $SRC/out/wgpu/third_party/dawn/gen/include -I $PWD ${KIT_SRC:-entry/$n.mm} ${=KIT_EXTRA} \
-    $THOR/build_dawn/src/libthorvg-1.a out/bend.o out/skpath.o out/absent_motion.o out/absent_ends.o out/absent_drawing.o out/am_motion.o out/am_scene.o out/am_easing.o out/am_textanim.o $SKIA/out/path/libpathops.a $SKIA/out/path/libskia.a -I third_party/libtess2/Include third_party/libtess2/build/libtess2.a -I third_party/curve_fit_nd/c third_party/curve_fit_nd/build/libcurve_fit_nd.a $SRC/out/wgpu/filament/motolii_probe/libmotolii_door.a -L "$SDK/lib/arm64" \
+(cd $SRC/out/wgpu && ninja motolii_interop > /dev/null)
+clang++ -std=c++20 -fobjc-arc -O2 -I "$SDK/include" -I $THOR/inc -I $THOR/src/loaders/lottie -I $SRC/third_party/dawn/include -I $SRC/out/wgpu/third_party/dawn/gen/include -I $PWD ${RENDER_SRC:-entry/$n.mm} ${=RENDER_EXTRA} \
+    $THOR/build_dawn/src/libthorvg-1.a out/bend.o out/skpath.o out/absent_motion.o out/absent_ends.o out/absent_drawing.o out/am_motion.o out/am_scene.o out/am_easing.o out/am_textanim.o $SKIA/out/path/libpathops.a $SKIA/out/path/libskia.a -I third_party/libtess2/Include third_party/libtess2/build/libtess2.a -I third_party/curve_fit_nd/c third_party/curve_fit_nd/build/libcurve_fit_nd.a $SRC/out/wgpu/filament/motolii_probe/libmotolii_interop.a -L "$SDK/lib/arm64" \
     -lfilament -lbackend -lwebgpu_dawn -lbluegl -lbluevk -lfilabridge -lfilaflat \
     -lutils -lgeometry -lsmol-v -libl -lktxreader -lstb -luberzlib -lzstd \
     -lshaders -lperfetto -labseil -lmeshoptimizer -lcamutils -limage -lbasis_transcoder -luberarchive -lmatdbg -lfilamat -lcivetweb -lviewer \

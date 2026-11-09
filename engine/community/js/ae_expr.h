@@ -9,7 +9,7 @@
 //   AE.run(f, { index, time, value, comp, layer, effect })   // undefined from the expression: the value as it was
 //   AE.comp({ width, height, numLayers }, [{ name, index, width, height, position: (t) => [x, y], controls }])   // thisComp
 //   controls: { Effect: { Slider: 1 } } or (effect, property) => number: what effect("Effect")("Slider") reads
-//   AE.name("X Offset"): "X_Offset", a recipe knob's name
+//   AE.name("X Offset"): "X_Offset", a recipe parameter's name
 // Not done: the property names bare (position, opacity), loopOut, + - * / on a vector in -x and +=, toWorld, footage().
 // wiggle and random are not After Effects' own sequences: a value that depends on the very numbers will not match.
 #pragma once

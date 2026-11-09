@@ -243,7 +243,7 @@ static MaterialInstance* own_glass(Stage& s, Mesh* m, std::vector<mat4f> places,
     return mi;
 }
 
-// A solid worn by one of the kit's materials of its own (Create's Material group, doc.h doc_material): Filament's own
+// A solid worn by one of the renderer's materials of its own (Create's Material group, doc.h doc_material): Filament's own
 // glass (own_glass, above: ior its bend, split how far its colours part, swim how far its faces lean, vivid its thin
 // film's rainbow, dark how deep its colour), lacquer (blade.mat: its colour dark at the root, as it is at the tip, under
 // a hard clear coat; metal 0 lacquer, 1 steel) or a bubble (bubble.mat: vivid how bright its rim). tone: its colour.

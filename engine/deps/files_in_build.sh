@@ -26,7 +26,7 @@ while todo:
     if 'MOTOLII_PROBE_DIR' in said(s): scripts.append('gpu/CMakeLists.txt')
 named = '\n'.join(said(s) for s in scripts)
 # (gpu/filament_webgpu.sh builds ${RENDER_SRC:-entry/$n.mm}, $n the name its caller gives it: `filament_webgpu.sh motolii`)
-for src in re.findall(r'KIT_SRC:-([\w/]+)\$n\.mm', named):
+for src in re.findall(r'RENDER_SRC:-([\w/]+)\$n\.mm', named):
     named += ''.join(f'\n{src}{n}.mm' for n in re.findall(r'filament_webgpu\.sh (\w+)', named))
 units = sorted(f for f in own if f.endswith(('.cpp', '.mm')) and (names(named, f) or
                f.startswith('gpu/') and re.search(r'(?<![\w/])' + re.escape(f[4:]) + r'(?![\w.])', said('gpu/CMakeLists.txt'))))

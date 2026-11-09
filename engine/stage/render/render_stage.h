@@ -143,7 +143,7 @@ struct Stage {
     // Over it, the marks of the picked thing (its frame: middle, width, height, turn, the point it turns about, as
     // doc_frame gives them) and of the one under the hand; `point`: desk pixels a point of the screen the marks are sized in.
     struct { uint32_t w = 0, h = 0; double x = 0, y = 0, scale = 1, point = 2; math::mat4 was, wasCulled;
-             bool picked = false, hovered = false, knob = true; double pick[8] = {}, hover[8] = {}; } desk;
+             bool picked = false, hovered = false, rotateHandle = true; double pick[8] = {}, hover[8] = {}; } desk;
     std::function<void()> over;   // drawn last, over all of them (a whole-screen effect: screen_fx.h)
     std::map<const void*, std::function<void()>> once;   // to do once before the next picture, by whose it is (a picture's distances from its edge: canvas_edge.h)
     std::vector<std::function<void()>> before;   // drawn before the stage's own view, each into a picture of its own (a thing with effects of its own: layer_fx.h)

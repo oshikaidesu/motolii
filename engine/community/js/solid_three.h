@@ -11,7 +11,7 @@ bool solid_is(const std::string& file);
 bool solid_reads(const std::string& file);
 // Its points, normals, UVs (three's v up) and triangles; repeat: its picture repeats (geometry.userData.repeat).
 struct SolidMade { std::vector<float> pos, nrm, uv; std::vector<uint32_t> idx; bool repeat = false; };
-// The shape made with its knobs as said now and the thing's size (wide, high: its own units); `cover` the picture's
+// The shape made with its parameters as said now and the thing's size (wide, high: its own units); `cover` the picture's
 // coverage (0-255, coverW by coverH, rows from the top), for one that reads it. false: `why` says.
 bool solid_three(const std::string& file, const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words,
                  double wide, double high, const std::vector<uint8_t>& cover, int coverW, int coverH, SolidMade& out, std::string& why);

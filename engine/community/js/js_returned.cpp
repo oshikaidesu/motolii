@@ -1,9 +1,9 @@
 // js_returned.cpp: what an expression's each() returns, read from its code as it is written, as places in it: each
-// property of the object it returns, where its value is, and where the numbers and knobs that make it are. A card draws
+// property of the object it returns, where its value is, and where the numbers and parameters that make it are. A card draws
 // its rows from these and a hand changes the code there and nowhere else (Processing's Tweak Mode, as sketch_marked
 // reaches a sketch's numbers; Bret Victor's Learnable Programming), so the code stays the one thing kept. A value that
 // is a name is followed to what each() says of that name (const/let/var x = …, x = …, x += …), and on through the names
-// in those, each once; a knob is k.Name or k["Name"], k being each()'s fourth parameter. What cannot be followed is left
+// in those, each once; a parameter is k.Name or k["Name"], k being each()'s fourth parameter. What cannot be followed is left
 // out, never refused. Read by tree-sitter and its JavaScript grammar (tree_sitter.sh, MIT): it gives each part of the
 // code its bytes, and a tree even for code half typed. QuickJS, which runs the code, makes no tree to ask.
 #include "entry/motolii.h"
@@ -43,7 +43,7 @@ TSNode each_of(const char* src, TSNode n) {
 
 struct Reading {
     const char* src;
-    std::string knobs = "k";                       // (each()'s fourth parameter's name)
+    std::string parameters = "k";                       // (each()'s fourth parameter's name)
     std::map<std::string, std::vector<TSNode>> said;   // (what each() says of a name: the values given it, in order)
     std::vector<std::tuple<uint32_t, uint32_t, std::string>> found;   // (start, end, "n" or "k:Name"), for one property
     std::set<std::string> followed;
@@ -63,9 +63,9 @@ struct Reading {
         if (!followed.insert(name).second) return;   // (each name once: x = x + 1 and the like end)
         if (const auto s = said.find(name); s != said.end()) for (const TSNode v : s->second) look(v);
     }
-    std::string knob(TSNode n) {   // (k.Name, k["Name"], k['Name']: Name; else "")
-        if (is(n, "member_expression") && text(src, field(n, "object")) == knobs) return text(src, field(n, "property"));
-        if (is(n, "subscript_expression") && text(src, field(n, "object")) == knobs && is(field(n, "index"), "string")) {
+    std::string parameter(TSNode n) {   // (k.Name, k["Name"], k['Name']: Name; else "")
+        if (is(n, "member_expression") && text(src, field(n, "object")) == parameters) return text(src, field(n, "property"));
+        if (is(n, "subscript_expression") && text(src, field(n, "object")) == parameters && is(field(n, "index"), "string")) {
             const std::string s = text(src, field(n, "index"));
             return s.size() >= 2 ? s.substr(1, s.size() - 2) : "";
         }
@@ -74,7 +74,7 @@ struct Reading {
     void look(TSNode n) {
         if (ts_node_is_null(n)) return;
         if (is(n, "number")) { found.emplace_back(ts_node_start_byte(n), ts_node_end_byte(n), "n"); return; }
-        if (const std::string k = knob(n); !k.empty()) { found.emplace_back(ts_node_start_byte(n), ts_node_end_byte(n), "k:" + k); return; }
+        if (const std::string k = parameter(n); !k.empty()) { found.emplace_back(ts_node_start_byte(n), ts_node_end_byte(n), "k:" + k); return; }
         if (is(n, "identifier") || is(n, "shorthand_property_identifier")) { follow(text(src, n)); return; }
         for (uint32_t i = 0; i < ts_node_named_child_count(n); ++i) look(ts_node_named_child(n, i));
     }
@@ -122,7 +122,7 @@ const char* motolii_js_returned(const char* src) {
     if (const TSNode each = each_of(src, ts_tree_root_node(tree)); !ts_node_is_null(each)) {
         Reading r{src};
         const TSNode ps = field(each, "parameters");
-        if (ts_node_named_child_count(ps) >= 4 && is(ts_node_named_child(ps, 3), "identifier")) r.knobs = text(src, ts_node_named_child(ps, 3));
+        if (ts_node_named_child_count(ps) >= 4 && is(ts_node_named_child(ps, 3), "identifier")) r.parameters = text(src, ts_node_named_child(ps, 3));
         const TSNode body = field(each, "body");
         r.gather(body);
         if (const TSNode b = bare(body); is(b, "object")) r.object(b, said);   // (an arrow's body that is the object: (i) => ({ x: i }))

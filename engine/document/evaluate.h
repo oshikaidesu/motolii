@@ -203,10 +203,10 @@ static void doc_evaluate(Doc& d, double now) {
         }
         if (t.solid && !t.solid->moves.empty()) for (size_t nth = 0; nth < t.solid->made->getAssetInstanceCount(); ++nth) solid_at(t.solid, doc_word(d, layer, "animation"), (lies[i].since - doc_delay(d, layer, (int)nth)) * doc_number(d, layer, "speed", 0, 1), nth);   // (its own movement, from when it comes on)
         if (t.drawn && t.drawn->lottie)   // (its slots as their knobs are now)
-            if (DocScript* sc = doc_script_of(d, doc_word(d, layer, "file")); sc && !sc->knobs.empty()) {
+            if (DocScript* sc = doc_script_of(d, doc_word(d, layer, "file")); sc && !sc->parameters.empty()) {
                 std::vector<double> v;
-                for (size_t k = 0; k < sc->knobs.size(); ++k) v.push_back(doc_number(d, layer, sc->names[k].c_str(), now, sc->knobs[k].usual));
-                slots_at(s, t.drawn, lottie_slots_json(sc->knobs, v));
+                for (size_t k = 0; k < sc->parameters.size(); ++k) v.push_back(doc_number(d, layer, sc->names[k].c_str(), now, sc->parameters[k].usual));
+                slots_at(s, t.drawn, lottie_slots_json(sc->parameters, v));
             }
         if (t.drawn && std::filesystem::path(doc_word(d, layer, "file")).extension() == ".mid") {   // (a MIDI roll's notes struck as ALMaMPlayer's note.gd strikes them: lit up over 0.17 s, held as long as the note (0.2 s longer if it is 0.4 s or less), down over 0.27 s; grown to 1.03 over 0.2 s and left so; dipped 0.25 + its velocity x 0.2 x 0.7 over 0.17 s, back over 0.27 s once held; sine in and out)
             const std::string file = doc_word(d, layer, "file");
@@ -439,7 +439,7 @@ static void doc_evaluate(Doc& d, double now) {
         const std::vector<math::mat4> joins = doc_number(d, layer, "connect", 0, 0) != 0.0 ? doc_joins(d, layer, now) : std::vector<math::mat4>{};   // (a joining layer: its copies lie between another's)
         if (t.grains && t.look) t.look->setParameter("dissolve", (float)doc_number(d, layer, "dissolve", now, 0)), t.look->setParameter("grain", (float)doc_number(d, layer, "grain", now, 1));
         if (t.grains && t.look && t.splatFx) {   // (its effect's uniforms at its own time: the knobs as the document says them, then the effect's updateEffect)
-            const auto said = t.splatFx->uniforms(std::max(0.0, now - doc_number(d, layer, "start", 0, 0)), 1.0 / 60.0, [&](const std::string& knob, double usual) { return doc_number(d, layer, doc_screen_knob(t.splatFxFile, knob).c_str(), now, usual); });
+            const auto said = t.splatFx->uniforms(std::max(0.0, now - doc_number(d, layer, "start", 0, 0)), 1.0 / 60.0, [&](const std::string& parameter, double usual) { return doc_number(d, layer, doc_screen_parameter(t.splatFxFile, parameter).c_str(), now, usual); });
             for (const auto& [n, f] : said) {
                 if (f.size() == 1) t.look->setParameter(n.c_str(), f[0]);
                 else if (f.size() == 2) t.look->setParameter(n.c_str(), float2{f[0], f[1]});

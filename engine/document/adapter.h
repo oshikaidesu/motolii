@@ -5,20 +5,20 @@
 #include "community/shaders/adapter_p5_shader.h"
 #include "community/adapter_net.h"
 // What moved in a program's code as keys on what wears its effect `fx`, where they can be edited: a straight line two of them.
-static void doc_door_keys(Doc& d, int layer, const std::string& fx, const std::vector<HydraKnob>& moving) {
-    for (const HydraKnob& k : moving) {
-        const std::string name = doc_screen_knob(fx, k.name);
-        if (door_line(k.keys)) doc_key(d, layer, name.c_str(), 0, k.keys[0]), doc_key(d, layer, name.c_str(), DOOR_LINE_ENDS, door_line_end(k.keys));
+static void doc_door_keys(Doc& d, int layer, const std::string& fx, const std::vector<HydraParameter>& moving) {
+    for (const HydraParameter& k : moving) {
+        const std::string name = doc_screen_parameter(fx, k.name);
+        if (adapter_line(k.keys)) doc_key(d, layer, name.c_str(), 0, k.keys[0]), doc_key(d, layer, name.c_str(), ADAPTER_LINE_ENDS, adapter_line_end(k.keys));
         else for (size_t i = 0; i < k.keys.size(); ++i) doc_key(d, layer, name.c_str(), (double)i * HYDRA_STEP, k.keys[i]);
     }
 }
 // A p5 sketch's shader as an effect beside its code, its .fs's text (""; `why` when it has one that cannot come).
-static std::string doc_p5_shaded(const std::filesystem::path& file, std::vector<HydraKnob>& moving, std::string& why) {
+static std::string doc_p5_shaded(const std::filesystem::path& file, std::vector<HydraParameter>& moving, std::string& why) {
     Script run(file.string(), (doc_engine("third_party/js/p5") / "p5.min.js").string());
     const std::string got = run.said("__shaded_take(30)");
     std::string fs, vs;
     if (!run.ok()) return why = run.trouble(), "";
-    if (got.empty() || !door_p5_shader(got, fs, vs, moving, why)) return "";
+    if (got.empty() || !adapter_p5_shader(got, fs, vs, moving, why)) return "";
     std::ofstream(std::filesystem::path(file).replace_extension(".fs")) << fs;
     std::ofstream(std::filesystem::path(file).replace_extension(".vs")) << vs;
     return fs;
@@ -45,7 +45,7 @@ static int doc_three_part(Doc& d, Script& run, const std::filesystem::path& file
 static int doc_door(Doc& d, const std::string& said, int picked) {
     std::string word = said, why;
     std::error_code wrong;
-    if (const std::string work = door_site_work(said); !work.empty() && (word = door_openprocessing(work, doc_folders("sites").back() / "openprocessing" / work, why).string()).empty()) return d.error = why, 0;
+    if (const std::string work = adapter_site_work(said); !work.empty() && (word = adapter_openprocessing(work, doc_folders("sites").back() / "openprocessing" / work, why).string()).empty()) return d.error = why, 0;
     std::string text = word;
     if (word.size() < 1024 && std::filesystem::is_regular_file(word, wrong)) {
         std::ifstream in(word);
@@ -57,24 +57,24 @@ static int doc_door(Doc& d, const std::string& said, int picked) {
     const bool kept = std::filesystem::path(word).parent_path() == folder;   // (one of the Program shelf's own, as it is now: not kept again)
     std::vector<std::pair<std::string, std::filesystem::path>> libraries;   // (each file's name, where it was fetched to)
     const std::filesystem::path brought = doc_folders("libraries").back();
-    text = door_page(text, text != word ? std::filesystem::path(word).parent_path() : std::filesystem::path{}, [&](const std::string& url) {
+    text = adapter_page(text, text != word ? std::filesystem::path(word).parent_path() : std::filesystem::path{}, [&](const std::string& url) {
         uint64_t mark = 1469598103934665603ull;
         for (unsigned char c : url) mark = (mark ^ c) * 1099511628211ull;
         const std::string name = std::to_string(mark & 0xffffff) + ".js";   // (an address is not a file's name; each one fetched once)
         std::filesystem::create_directories(brought, wrong);
-        if (!std::filesystem::exists(brought / name, wrong) && !door_fetch(url, brought / name)) return std::string();
+        if (!std::filesystem::exists(brought / name, wrong) && !adapter_fetch(url, brought / name)) return std::string();
         libraries.push_back({name, brought / name});
         return name;
     });
-    if (text != word) text = door_shader_files(text, std::filesystem::path(word).parent_path());
-    const bool tabs = door_has(text, "\"renderpass\"");
+    if (text != word) text = adapter_shader_files(text, std::filesystem::path(word).parent_path());
+    const bool tabs = adapter_has(text, "\"renderpass\"");
     if (tabs) {   // (Shadertoy's file of all its tabs: made one ISF here, as Hydra's is)
         std::string why;
-        if ((text = door_shadertoy(text, why)).empty()) return d.error = why, 0;
+        if ((text = adapter_shadertoy(text, why)).empty()) return d.error = why, 0;
     }
-    const std::string came = text, form = tabs ? "shadertoy" : door_form(text), told = door_js(text, form);
+    const std::string came = text, form = tabs ? "shadertoy" : adapter_form(text), told = adapter_js(text, form);
     const bool hydra = form == "hydra", shader = hydra || form == "shadertoy" || form == "sandbox" || form == "twigl" || form == "bonzomatic";
-    std::vector<HydraKnob> moving;
+    std::vector<HydraParameter> moving;
     if (hydra) {   // (the code as an ISF effect, kept as that: Hydra is a part apart, hydra_isf.cpp)
         std::string why, isf;
         if (!hydra_isf(doc_folders("extensions/hydra").back().string(), text, 30.0, isf, moving, why)) return d.error = why, 0;
@@ -85,12 +85,12 @@ static int doc_door(Doc& d, const std::string& said, int picked) {
     for (unsigned char c : text) hash = (hash ^ c) * 1099511628211ull;
     char tail[16];
     std::snprintf(tail, sizeof tail, "-%04llx", (unsigned long long)(hash & 0xffff));
-    const std::string name = door_name(form);
+    const std::string name = adapter_name(form);
     std::filesystem::create_directories(folder, wrong);
     std::filesystem::path file = folder / (name + tail + (shader ? ".fs" : ".js"));
     if (kept && !hydra) file = word;
     else if (!std::filesystem::exists(file, wrong)) std::ofstream(file) << text;
-    if (word != came && !kept) door_pictures(text, std::filesystem::path(word).parent_path(), file);
+    if (word != came && !kept) adapter_pictures(text, std::filesystem::path(word).parent_path(), file);
     for (const auto& [name, from] : libraries) {   // (it needs them beside it, as its pictures)
         const std::filesystem::path to = file.parent_path() / file.stem();
         std::filesystem::create_directories(to, wrong);
@@ -98,12 +98,12 @@ static int doc_door(Doc& d, const std::string& said, int picked) {
     }
     if (hydra) std::ofstream(file.parent_path() / (file.stem().string() + ".hydra")) << came;   // (what was written, kept beside what it became: the Program shelf shows this one)
     std::string shaded;   // (a p5 sketch that paints its stage with a shader is that shader, an effect as any: not a picture of it)
-    if (form.empty() && door_has(told, "hader(") && (shaded = doc_p5_shaded(file, moving, why)).empty() && !why.empty()) return d.error = why, 0;
+    if (form.empty() && adapter_has(told, "hader(") && (shaded = doc_p5_shaded(file, moving, why)).empty() && !why.empty()) return d.error = why, 0;
     const std::string fx = shaded.empty() ? file.string() : std::filesystem::path(file).replace_extension(".fs").string();
     const bool effect = shader || !shaded.empty();
     doc_act(d);
     int layer = 0;
-    if (effect && door_has(shaded.empty() ? door_isf(text) : shaded, "inputImage") && picked) {
+    if (effect && adapter_has(shaded.empty() ? adapter_isf(text) : shaded, "inputImage") && picked) {
         if (doc_fx_file(d, picked, fx.c_str(), d.stage->now)) layer = picked;
     } else if (effect) {
         if ((layer = doc_add(d, "shape", "rect")) && doc_say(d, layer, "name", name.c_str()) && doc_fx_file(d, layer, fx.c_str(), d.stage->now)) doc_fit(d, layer, "stretch");
@@ -164,8 +164,8 @@ static std::string doc_three_saved(Doc& d, const std::filesystem::path& file) {
 // Hydra's code saved: the effect made from it again, and what moves in it keyed again on what wears it.
 static std::string doc_hydra_saved(Doc& d, const std::filesystem::path& file, const std::string& text) {
     std::string why, isf;
-    std::vector<HydraKnob> moving;
-    if (!hydra_isf(doc_folders("extensions/hydra").back().string(), door_page(text), 30.0, isf, moving, why)) return why;
+    std::vector<HydraParameter> moving;
+    if (!hydra_isf(doc_folders("extensions/hydra").back().string(), adapter_page(text), 30.0, isf, moving, why)) return why;
     const std::string made = std::filesystem::path(file).replace_extension(".fs").string();
     std::ofstream(made) << isf;
     doc_act(d);
@@ -176,7 +176,7 @@ static std::string doc_hydra_saved(Doc& d, const std::filesystem::path& file, co
 // A p5 sketch's code saved, one whose shader is an effect: the effect made from it again, its keys again on what wears it.
 static std::string doc_p5_shaded_saved(Doc& d, const std::filesystem::path& file) {
     std::string why;
-    std::vector<HydraKnob> moving;
+    std::vector<HydraParameter> moving;
     if (doc_p5_shaded(file, moving, why).empty()) return why;
     const std::string made = std::filesystem::path(file).replace_extension(".fs").string();
     doc_act(d);
@@ -195,7 +195,7 @@ static std::string doc_code_saved(Doc& d, const std::string& file) {
     std::ifstream in(file);
     std::stringstream all;
     all << in.rdbuf();
-    const bool three = ext == ".js" && door_form(all.str()) == "three";
+    const bool three = ext == ".js" && adapter_form(all.str()) == "three";
     const bool shaded = ext == ".js" && std::filesystem::exists(std::filesystem::path(file).replace_extension(".vs"), wrong);
     if (!wrong && stamp != seen) {
         seen = stamp, why.clear();

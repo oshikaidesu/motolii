@@ -161,7 +161,7 @@ static void trim_at(Stage& s, Drawn* d, float cut, float begin = 0.f, float offs
     if (!d->shape || (is == d->trimmed)) return;
     d->trimmed = is;
     kept_drop(s, d);
-    door::on_driver(s.engine, [d, cut, begin, offset] {
+    interop::on_driver(s.engine, [d, cut, begin, offset] {
         d->shape->trimpath(std::clamp(begin, 0.f, 1.f) + offset, 1.f - std::clamp(cut, 0.f, 1.f) + offset);
         d->canvas->update();
         d->canvas->draw(true), d->stale = true;
@@ -179,7 +179,7 @@ static void bend_at(Stage& s, Drawn* d, float round, float bloat, float zigzag, 
     if (!d->shape || d->plain.empty() || is == d->bent) return;
     d->bent = is;
     kept_drop(s, d);
-    door::on_driver(s.engine, [d, is] {
+    interop::on_driver(s.engine, [d, is] {
         const float high = d->plainHigh, side = d->plainSide;
         tvg_bend(d->shape, d->plain.data(), (uint32_t)d->plain.size(), d->plainAt.data(), (uint32_t)d->plainAt.size(), std::clamp(is[0], 0.f, 0.5f) * side,
                  100.f * std::clamp(is[1], -1.f, 1.f), std::clamp(is[2], -4.f, 4.f) * high, (int)std::clamp(is[3], 0.f, 100.f), is[4] > 0.5f, std::clamp(is[5], -4.f, 4.f) * high, d->fine);
@@ -199,7 +199,7 @@ static void slots_at(Stage& s, Drawn* d, const std::string& slots) {
     if (!d->lottie || slots == d->slots) return;
     d->slots = slots;
     kept_drop(s, d);
-    door::on_driver(s.engine, [d, slots] {
+    interop::on_driver(s.engine, [d, slots] {
         if (d->slotsId) d->lottie->del(d->slotsId), d->slotsId = 0;
         if (!slots.empty() && (d->slotsId = d->lottie->gen(slots.c_str()))) d->lottie->apply(d->slotsId);
         d->madeAt = -1;   // (its frame drawn again)
@@ -213,7 +213,7 @@ static void lit_at(Stage& s, Drawn* d, const std::vector<float>& lit, const std:
     if (!d->film || (lit == d->lit && moves.size() == d->moves.size() && std::equal(moves.begin(), moves.end(), d->moves.begin(), [](const tvg::Matrix& a, const tvg::Matrix& b) { return !std::memcmp(&a, &b, sizeof a); }))) return;
     d->lit = lit, d->moves = moves;
     kept_drop(s, d);
-    door::on_driver(s.engine, [d, lit, moves, colour] {
+    interop::on_driver(s.engine, [d, lit, moves, colour] {
         for (size_t i = 0; i < lit.size(); ++i)
             if (auto* note = const_cast<tvg::Paint*>(d->film->picture()->paint(tvg::Accessor::id(("note" + std::to_string(i)).c_str()))); note && note->type() == tvg::Type::Shape) {
                 const float3 c = min(colour + 0.3f * lit[i], float3{1.f});
@@ -236,7 +236,7 @@ static bool words_at(Stage& s, Drawn* d, const std::string& words) {
     if (!type_lacks(d->textFont, words).empty()) return false;   // (a letter its font lacks: made again, in the fallback (type))
     d->words = words;
     kept_drop(s, d);
-    door::on_driver(s.engine, [d, words] {
+    interop::on_driver(s.engine, [d, words] {
         d->text->translate(0.f, 0.f);
         d->text->text(words.c_str());
         float x = 0.f, y = 0.f, wide = 0.f, tall = 0.f;
@@ -260,7 +260,7 @@ static void fx_at(Stage& s, Drawn* d, const DrawnFx& told) {
         return;
     d->fx = fx;
     kept_drop(s, d);
-    door::on_driver(s.engine, [d, fx] {
+    interop::on_driver(s.engine, [d, fx] {
         effects_on(d->effects, fx, d->tall);
         d->canvas->update();
         d->canvas->draw(true), d->stale = true;
@@ -270,7 +270,7 @@ static void fx_at(Stage& s, Drawn* d, const DrawnFx& told) {
 
 // A font for the pictures put after it (an SVG names its fonts; ThorVG knows only the ones it is given).
 static void font(Stage& s, const char* path) {
-    door::on_driver(s.engine, [path] {
+    interop::on_driver(s.engine, [path] {
         tvg::Initializer::init(0);
         tvg::Text::load(path);
     });
@@ -429,7 +429,7 @@ static void kept_drop(Stage& s, Drawn* d) {
     }
     d->kept.clear();
     d->ahead.clear();
-    door::on_driver(s.engine, [made = std::move(d->keptMade)] { for (WGPUTexture t : made) wgpuTextureRelease(t); });   // (after Filament has taken and let go of them)
+    interop::on_driver(s.engine, [made = std::move(d->keptMade)] { for (WGPUTexture t : made) wgpuTextureRelease(t); });   // (after Filament has taken and let go of them)
     d->keptMade.clear();
     d->shownAt = -1;
     ++d->keepAge;
@@ -450,7 +450,7 @@ static void kept_take(Stage& s, Drawn* d) {
 // if `keep`, into one of its own that keeps it.
 static void kept_put(Stage& s, Drawn* d, int at, const std::vector<uint8_t>& pixels, bool shown, bool keep, int age) {
     const uint32_t w = wgpuTextureGetWidth(d->made), h = wgpuTextureGetHeight(d->made);
-    const WGPUDevice device = (WGPUDevice)door::device(s.engine);
+    const WGPUDevice device = (WGPUDevice)interop::device(s.engine);
     WGPUTextureDescriptor like{};
     like.size = {w, h, 1};
     like.format = wgpuTextureGetFormat(d->made);
@@ -489,7 +489,7 @@ static void kept_draw(Stage& s, Drawn* d, int at, bool keep, const std::filesyst
     std::error_code e;
     const bool toDisk = d->look && !file.empty() && !std::filesystem::exists(file, e);
     if (!keep && !toDisk) return;
-    const WGPUDevice device = (WGPUDevice)door::device(s.engine);
+    const WGPUDevice device = (WGPUDevice)interop::device(s.engine);
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(device, nullptr);
     WGPUTexture copy = nullptr;
     if (keep) {
@@ -539,11 +539,11 @@ static void picture_at(Stage& s, Drawn* d, float seconds) {
     const std::filesystem::path file = kept_file(d, at);
     auto pixels = std::make_shared<std::vector<uint8_t>>();
     if (d->look && kept_read(file, *pixels, kept_one(d)))   // (drawn before, on disk: put up as it is, not drawn)
-        ++films_disk, door::on_driver(s.engine, [&s, d, at, pixels, keep, age = d->keepAge.load()] { kept_put(s, d, at, *pixels, true, keep, age); });
+        ++films_disk, interop::on_driver(s.engine, [&s, d, at, pixels, keep, age = d->keepAge.load()] { kept_put(s, d, at, *pixels, true, keep, age); });
     else {
         std::shared_ptr<std::vector<double>> paints;
         if (d->sketch) paints = std::make_shared<std::vector<double>>(d->sketch(at, d->sketchAt)), d->sketchAt = at;
-        ++films_drawn, door::on_driver(s.engine, [&s, d, at, keep, file, paints, age = d->keepAge.load()] { kept_draw(s, d, at, keep, file, age, paints.get()); });
+        ++films_drawn, interop::on_driver(s.engine, [&s, d, at, keep, file, paints, age = d->keepAge.load()] { kept_draw(s, d, at, keep, file, age, paints.get()); });
     }
 }
 
@@ -571,9 +571,9 @@ static int picture_ahead(Stage& s, Drawn* d, int many) {
         else d->ahead.insert(at);   // (only onto disk: not asked again while it is written)
         auto pixels = std::make_shared<std::vector<uint8_t>>();
         if (onDisk && kept_read(file, *pixels, kept_one(d)))
-            door::on_driver(s.engine, [&s, d, at, pixels, age = d->keepAge.load()] { kept_put(s, d, at, *pixels, false, true, age); });
+            interop::on_driver(s.engine, [&s, d, at, pixels, age = d->keepAge.load()] { kept_put(s, d, at, *pixels, false, true, age); });
         else
-            door::on_driver(s.engine, [&s, d, at, keep, file, age = d->keepAge.load()] { kept_draw(s, d, at, keep, file, age); });
+            interop::on_driver(s.engine, [&s, d, at, keep, file, age = d->keepAge.load()] { kept_draw(s, d, at, keep, file, age); });
         ++begun;
     }
     return begun;
