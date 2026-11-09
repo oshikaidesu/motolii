@@ -189,11 +189,7 @@ class _InspectorPanelState extends State<_InspectorPanel> {
                           : m.later('fx_out', layer: int.parse(l!.id), word: title),
                       (_, _) => ws.reread(),
                     ),
-              cardCode: int.tryParse(l?.id ?? '') == null
-                  ? null
-                  : (title, names) => title == 'Script'
-                        ? (m.word(int.parse(l!.id), 'script').endsWith('.js') ? ScriptCode(ws, int.parse(l.id), key: ValueKey('script-code-${l.id}')) : null)
-                        : FxCode.of(ws, int.parse(l!.id), title, names), // (a script's code under its knobs: script_code.dart; an effect's: fx_code.dart)
+              cardCode: null,
               onCardEye: int.tryParse(l?.id ?? '') == null
                   ? null
                   : (title) => ws.after(m.later('fx_visible', layer: int.parse(l!.id), word: title), (_, _) => ws.reread()),

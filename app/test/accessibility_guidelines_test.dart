@@ -10,14 +10,11 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/bridge/motolii.dart' show motoliiDir;
 import 'package:motolii/skin/theme.dart' show ColorTheme;
-import 'package:motolii/workspace/shelf/effect_decks.dart' show effectDecksAt, effectRecentAt;
 import 'package:motolii/workspace/timeline/timeline.dart' show WsTimeline;
 import 'package:motolii/workspace/workspace.dart' show Workspace;
 import 'package:motolii/workspace/window/zoom.dart' show WsZoom;
 
 final _built = File('$motoliiDir/out/libmotolii.dylib').existsSync();
-
-File _tmp(String name) => File('${Directory.systemTemp.createTempSync(name).path}/$name.json');
 
 Future<void> _open(WidgetTester t) async {
   const size = Size(1600, 960);
@@ -25,9 +22,7 @@ Future<void> _open(WidgetTester t) async {
   t.view.devicePixelRatio = 1;
   t.binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel('motolii/stage'), (_) async => -1);
   t.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.menu, (_) async => null);
-  // (the maker's own kept state is left alone: every store points at a temp file)
-  effectDecksAt(_tmp('decks'));
-  effectRecentAt(_tmp('recent'));
+  // (the maker's own kept state is left alone)
   ColorTheme.at = '${Directory.systemTemp.path}/motolii_test_no_theme.xml';
   WsZoom.set(1, keep: false);
   final doc = '${Directory.systemTemp.createTempSync('a11y').path}/a11y.motolii';

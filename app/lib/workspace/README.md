@@ -14,7 +14,6 @@
 | `edits/` | 選んだ複数のレイヤーにまとめて掛ける編集：`make_relation.dart` 関係を作る、`group_moves.dart` グループの動き、`keyframe_edits.dart` キーフレームの移動・削除・コピー |
 | `inspector_feed/` | `workspace.dart` の部品：プロジェクトから Inspector（`../inspector/`）へ渡す物。`panel.dart` パネルとして読み直す時、`cards.dart` カード、`values.dart` 値の読み書き、`keyframe_marks.dart` 値の横のキーの印 |
 | `dock/` | タブの印 `DockG` と、コードを書く `ProgramCode` |
-| `shelf/` | 棚のタイル（効果・スクリプト・素材） |
 | `stage/` | コンポジションの寸法 `WsArt` |
 | `timeline/` | タイムラインのペイン（中身は空） |
 | `tool_panel/` | ヘッダの `ToolChip` と、自分の `PanelTool` |

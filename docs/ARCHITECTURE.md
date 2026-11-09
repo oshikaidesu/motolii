@@ -87,10 +87,10 @@ flowchart TB
 
 | フォルダ | エンジン | アプリ（`app/lib/`） |
 |---|---|---|
-| `effects/` | `document/recipes.h` `doc_folder_names` | `workspace/shelf/effect_tiles.dart` |
-| `aviutl_scripts/` | `document/recipes.h` `doc_aviutl_names` | `workspace/shelf/effect_decks.dart` `effectPack` |
+| `effects/` | `document/recipes.h` `doc_folder_names` | — |
+| `aviutl_scripts/` | `document/recipes.h` `doc_aviutl_names` | — |
 | `create/` | `document/recipes.h` `doc_recipes_read` | — |
-| `expressions/` | `entry/calls.h` `motolii_animators` | `workspace/shelf/shelf_add.dart`（Add to shelf の書き込み先） |
+| `expressions/` | `entry/calls.h` `motolii_animators` | — |
 | `relations/` | `entry/calls.h` `motolii_relations` | `workspace/edits/make_relation.dart` |
 | `looks/` | `document/presets.h` `doc_look_names` | `bridge/motolii_shelves.dart` `looks` |
 | `solids/` | `community/three/solid_three.cpp`、`document/moment_fx.h` | — |

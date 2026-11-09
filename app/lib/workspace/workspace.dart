@@ -12,7 +12,6 @@ import 'package:flutter/widgets.dart';
 import '../skin/svg_parts.dart';
 import 'stage/stage_art.dart' show WsArt;
 import 'window/zoom.dart';
-import 'shelf/effect_tiles.dart';
 import 'commands/command_actions.dart';
 
 import 'package:motolii/inspector/inspector_parts_insp_host.dart';
@@ -30,8 +29,6 @@ import 'top_bar/top_bar.dart';
 import '../bridge/motolii.dart';
 import 'edits/make_relation.dart';
 import 'state/state.dart';
-import 'shelf/script_code.dart';
-import 'shelf/fx_code.dart';
 part 'inspector_feed/panel.dart';
 part 'inspector_feed/cards.dart';
 part 'inspector_feed/values.dart';
@@ -63,7 +60,6 @@ class _WorkspaceState extends State<Workspace> {
     ..tools = [...panelTools, ...widget.tools]
     ..view.addAll(widget.view);
   Motolii? _inside;
-  StreamSubscription<FileSystemEvent>? _own; // (the maker's own folder watched: effect_tiles.dart)
 
   String? _doc; // (the document that is open: the one the window was given, or one made or opened from the menu)
 
@@ -244,16 +240,6 @@ class _WorkspaceState extends State<Workspace> {
     final inside = Motolii.open(doc);
     if (inside == null) return;
     _inside = inside;
-    _own = EffectTiles.watch(
-      inside,
-      () {
-        // (a file put in the maker's own folder: on the shelves at once; an element written over: followed where it is put in)
-        if (mounted) _ws.after(inside.later('follow_elements'), (_, _) => _ws.reread());
-      },
-      program: (file) {
-        if (mounted) _ws.after(inside.later('code', word: file), (_, _) => _ws.reread());
-      },
-    );
     _ws.after(inside.later('follow_elements')); // (as the document is opened: AbsentMotion's elements followed as a project is loaded)
     _doc = doc;
     _beside = _documents();
@@ -283,7 +269,6 @@ class _WorkspaceState extends State<Workspace> {
     _keepPoster();
     FocusManager.instance.removeListener(_keepKeys);
     _windowFocus.dispose();
-    _own?.cancel();
     _inside?.close();
     _ws.dispose();
     super.dispose();
