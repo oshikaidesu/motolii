@@ -206,6 +206,7 @@ for path, blob in blobs(look):
 for b in bad:
     print(b)
 if bad:
-    print(f'{len(bad)} path(s) a shelf or a .md names lead nowhere: fix them where they are named (or follow the file that moved).'
-          f' Fetched or made at build time: .githooks/path_check_allow.txt, with why.', file=sys.stderr)
+    print(f'path check refused this commit (rule: every path a shelf file or our .md names leads somewhere; .githooks/README.md):'
+          f' {len(bad)} path(s) above lead nowhere. Fix each where it is named, or follow the file that moved;'
+          f' only what is fetched or made at build time goes in .githooks/path_check_allow.txt, with why.', file=sys.stderr)
     sys.exit(1)

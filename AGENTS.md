@@ -24,7 +24,7 @@
 
 読む人は 2 人いる。表現を持ち込む人は `shelves/` だけを見る。コードを直す人は `app/`・`engine/` を見る。どちらも 3 分で迷わないこと。
 
-1. 直下に置くのは、入口 4 つ（`shelves/`・`app/`・`engine/`・`docs/`）と決まった文書（README・AGENTS・LICENSE・THIRD_PARTY_NOTICES・Brewfile）だけ。
+1. 直下に置くのは、入口 4 つ（`shelves/`・`app/`・`engine/`・`docs/`）と決まった文書（`README.md`・`README.en.md`・`AGENTS.md`・`LICENSE-APACHE`・`LICENSE-MIT`・`THIRD_PARTY_NOTICES.md`・`Brewfile`）と、git と GitHub が読む `.` で始まる物（`.github/`・`.githooks/`・`.gitignore` など）だけ。
 2. 入口ごとに README を 1 枚置き、その表に 2 段目のフォルダを全部 1 行ずつ載せる（`app/` は `lib/` の中まで）。表に無いフォルダは、無いのと同じ。
 3. 他人のコードは、場所で見分けがつくようにする。そのまま持ち込んだ物は `shelves/`・`engine/third_party/`、それへの手直しは `engine/deps/patches/<lib>/`、動かすための口は `engine/community/` に置く。それ以外は全部自前。
 4. 作った物（組み立て・テストの出力、調査の絵）は、`engine/out/`・`app/build/`・`docs/internal/` の外に出さない。
@@ -36,7 +36,7 @@
 
 来た人も AI も、最初の 3 分でこれだけ読めば動ける。
 
-- 始める前に `git config core.hooksPath .githooks`。コミットのたびに、500 行の決まり・構成の目標・件名 72 字が測られる。同じ検査は push と PR のたびに CI（`.github/workflows/checks.yml`）も回すので、入れなければ GitHub で落ちる。
+- 始める前に `git config core.hooksPath .githooks`。コミットのたびに、500 行の決まり・構成の目標（1・2・4・5・6）・件名 72 字が測られる。何がどれに断られ、どう直すかは [.githooks/README.md](.githooks/README.md)。同じ検査は push と PR のたびに CI（`.github/workflows/checks.yml`）も回すので、入れなければ GitHub で落ちる。
 - 言葉：コードの中では、アプリを「窓」、エンジンを「中身」、レイヤーを「物」、プロジェクトを「書類」、プレビューを「場面」、左のタブを「棚」と呼ぶ（[CONTRIBUTING](.github/CONTRIBUTING.md)）。
 - 確かめるときは、錠の要らない静的な検査から始める。
   - Dart：`cd app && dart analyze lib`
@@ -54,10 +54,9 @@
 
 ## 後始末
 
-初めて来た人が 3 分で読めない物は、置いた者の負債。どれも実際に起きた散らかしから決めた。
+初めて来た人が 3 分で読めない物は、置いた者の負債。どれも実際に起きた散らかしから決めた。直下の散らかし、README の表に無いフォルダ、番号の名前は、もう hook が断る（構成の目標）。ここに残るのは、まだ機械が測れない物だけ。
 
 - 手を止める前にコミットする。未コミットのまま main に 244 件を置き去りにして消えたセッションがあった。
-- 新しいフォルダを作ったら、その場所の README に 1 行で中身を書く。名前だけでは中身が分からない（`tsl`・`ways`・door）。
 - 取り込み終わった worktree とブランチは、その場で消す。15 個が残っていた。
 - パッチ・ビルド出力・調査資料を、ソースの隣に置かない。
 - ビルドの錠（`/tmp/motolii-build.lock`）を数分を超えて握る作業は、始める前に理由と長さを報告する。誰かが待っていたら先に通す。この機械にしか無い物を片付けるために、他の全員を止めない。1 人が共有の Filament を作り直したせいで、他の 2 人が錠の前で待たされた。

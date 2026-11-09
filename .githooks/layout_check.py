@@ -8,7 +8,8 @@ import os, re, subprocess, sys
 from collections import Counter
 
 AREAS = ('shelves', 'app', 'engine', 'docs')
-ROOT_FILES = re.compile(r'^(README\.md|README\.en\.md|AGENTS\.md|LICENSE-[^/]+|THIRD_PARTY_NOTICES\.md|Brewfile|\..+)$')
+# the dual licence's two files, named as Rust's API Guidelines C-PERMISSIVE names them (rust-lang.github.io/api-guidelines/necessities.html)
+ROOT_FILES = re.compile(r'^(README\.md|README\.en\.md|AGENTS\.md|LICENSE-APACHE|LICENSE-MIT|THIRD_PARTY_NOTICES\.md|Brewfile|\..+)$')
 NOT_IN_TABLE = {'app/macos'}                 # Flutter's own platform folder (`flutter create`), not ours to describe
 NOT_COUNTED = ('shelves/', 'engine/third_party/')   # shelf contents and others' code (rule 6 counts own files only)
 NUMBERED = re.compile(r'_\d+\.[^/.]+$')
@@ -121,5 +122,5 @@ for folder, n in sorted(per_folder.items()):
         bad.append(f'rule 6: {folder}/: {n} own files (at most {LIMIT}); split them into folders by job')
 
 if bad:
-    print('layout check refused this commit (AGENTS.md 構成の目標):\n  ' + '\n  '.join(bad), file=sys.stderr)
+    print('layout check refused this commit (rule: AGENTS.md 構成の目標, numbered as below; .githooks/README.md):\n  ' + '\n  '.join(bad), file=sys.stderr)
     sys.exit(1)

@@ -45,6 +45,6 @@ else:
 
 bad = [f'{at}: {len(s)} characters: {s[:80]}…' for at, s in subjects if len(s) > LIMIT]
 if bad:
-    print('subject check refused (at most 72 characters):\n  ' + '\n  '.join(bad) + f'\n{HOW}\n{fix}',
+    print('subject check refused (rule: a subject of 72 characters at most; .githooks/README.md):\n  ' + '\n  '.join(bad) + f'\n{HOW}\n{fix}',
           file=sys.stderr)
     sys.exit(1)
