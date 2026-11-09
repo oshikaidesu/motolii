@@ -1,4 +1,4 @@
-// motion.h: After Effects' motion for the things on a stage. The motion is a Lottie file (what After Effects writes
+// lottie_motion.h: After Effects' motion for the things on a stage. The motion is a Lottie file (what After Effects writes
 // out, or anything that writes the same); ThorVG reads it and works out where every layer is at a moment: keys,
 // easing, paths, parents, precompositions, time remapping, loops, expressions are all ThorVG's own code, none of it
 // is done again here. What is taken from ThorVG is a layer's place by the layer's name. Nothing is drawn by ThorVG

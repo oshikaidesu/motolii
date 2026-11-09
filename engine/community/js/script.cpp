@@ -4,7 +4,7 @@
 #include "community/aviutl/aviutl.h"
 #include "community/js/p5_stand.h"
 #include "media/video_frames_for_scripts.h"
-#include "motion/ways.h"
+#include "motion/easing_names.h"
 #include "community/js/ae_expr.h"
 #include "community/js/script_leva.h"
 #include "community/js/solid_three.h"
@@ -221,7 +221,7 @@ function animate(i, n, t, k, a) {
 }
 )";
 
-// ease(name, u): a way by its name (ways.h), the same expression as a key's stretch; not one of them: as it is.
+// ease(name, u): a way by its name (easing_names.h), the same expression as a key's stretch; not one of them: as it is.
 static std::string ways_kept() {
     std::string js = "var ease = (function () { var pow = Math.pow, exp = Math.exp, cos = Math.cos, abs = Math.abs, pi = function () { return Math.PI; }; var w = {";
     for (const auto& one : named_ways) js += std::string(one.name) + ": function (u) { return " + one.goes + "; }, ";

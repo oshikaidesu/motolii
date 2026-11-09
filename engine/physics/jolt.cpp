@@ -1,5 +1,5 @@
 // physics.h's door, Jolt behind it (built as jolt_bench.cpp was, tag lab-archive-2026-11-09: cross-platform deterministic, one thread).
-#include "motion/physics.h"
+#include "physics/physics.h"
 #include <Jolt/Jolt.h>
 #include <Jolt/RegisterTypes.h>
 #include <Jolt/Core/Factory.h>

@@ -27,8 +27,9 @@
 | `document/` | プロジェクト（SQLite）：`doc_*.h`。レイヤー・値・キー・取り消し（変更を SQLite の表に積む）・プレビューへの反映 |
 | `stage/` | 描く所。`kit/`＝Filament で描く所（Engine・カメラ・光・立体・書き出し）、`drawn/`＝ThorVG のキャンバスに描いた 2D の絵をプレビューに板として置く所、ほかは効果（`thing_fx.h`・`screen.h`）・アプリへ渡すフレーム（`live.h`）・再生用のキャッシュ（`stage_kept.h`） |
 | `community/` | ネットのコードをそのまま動かす口：`aviutl/`（AviUtl2）・`shaders/`（ISF・Shadertoy）・`js/`（p5・AE 式・three.js）・`absent_motion/`・`three_tsl/`（three.js の TSL を three.js 自身の組み立て役で WGSL に） |
-| `media/` | 動画（GStreamer）・音・MIDI・点滅の検査（IRIS） |
-| `motion/` | 動き：キーの間・イーズ・物理（Jolt） |
+| `media/` | GStreamer で読む物。名前の頭で分かれる：`video_*`＝動画（`video_layer.h`＝場面に置く動画の物、GPU で解く・`video_frames_for_scripts.h`＝スケッチが CPU で読む小さな絵・`video_datamosh.h`・`video_flash_check.cpp`＝点滅の検査（IRIS））、`sound_*`＝音（`sound_level.h`＝大きさ・`sound_playback.h`＝再生中に鳴らす）、`midi_*`＝MIDI、`gstreamer_file_source.h`＝ファイルを渡す口 |
+| `motion/` | 動き：イーズは `easing_*.h` だけ（`easing_curves.h`＝キーの間の 9 種・`easing_names.h`＝名前で呼ぶイーズ・`easing_godot.h`）、`lottie_motion.h`＝Lottie の動きを ThorVG が解く |
+| `physics/` | 物理：`physics.h`＝口、`jolt.cpp`＝その裏の Jolt |
 | `materials/` | Filament の材質（`.mat`）と、それが読む `.glsl`。組むのは `gpu/kit_wgpu.sh` が名を挙げる物 |
 | `gpu/` | Filament・ThorVG を WebGPU（Dawn）で組むスクリプト（`build.sh`・`tvg_on_dawn.sh`・`kit_wgpu.sh`）と、Filament の組み立ての中で組む interop（`*_door.cpp`：Filament・Dawn の公開されていない内側に届く所）。`js_effects.sh`・`tsl_on_dawn.sh` は手で走らせる試し |
 | `deps/` | 外のライブラリを取ってきて組むスクリプト、ビルドの錠、エディタ用の `compile_commands.sh`、下の一覧を作る `files_in_build.sh`。`deps/patches/<ライブラリ>/` は人のコードに当てる差分（`.patch`） |
@@ -55,7 +56,7 @@
 - `entry/` (14): `edit.cpp`、`motolii.h`、`motolii.mm`、`motolii_calls.h`、`motolii_calls_files.h`、`motolii_calls_find.h`、`motolii_calls_later.h`、`motolii_calls_map.h`、`motolii_calls_moment.h`、`motolii_calls_sound.h`、`motolii_hand.h`、`motolii_hand_loop.h`、`motolii_window.h`、`motolii_write.h`
 - `gpu/` (7): `compute_door.cpp`、`compute_door.h`、`gpu_door.cpp`、`gpu_door.h`、`screen_door.cpp`、`screen_door.h`、`tvg_on_dawn.cpp`
 - `media/` (10): `video_frames_for_scripts.h`、`video_flash_check.cpp`、`gstreamer_file_source.h`、`sound_playback.h`、`midi_notes.h`、`midi_roll.cpp`、`midi_roll.h`、`video_datamosh.h`、`sound_level.h`、`video_layer.h`
-- `motion/` (6): `godot_easing.h`、`interp.h`、`motion.h`、`physics.cpp`、`physics.h`、`ways.h`
+- `motion/` (6): `easing_godot.h`、`easing_curves.h`、`lottie_motion.h`、`jolt.cpp`、`physics.h`、`easing_names.h`
 - `stage/` (10): `bend.cpp`、`live.h`、`picture.h`、`points.h`、`screen.h`、`skpath.cpp`、`solid.h`、`stage_kept.h`、`thing_fx.h`、`viewer_settings.h`
 - `stage/drawn/` (6): `drawn.h`、`drawn_edge.h`、`drawn_flat.h`、`drawn_kept.h`、`drawn_made.h`、`drawn_sketch.h`
 - `stage/kit/` (4): `kit.h`、`kit_draw.h`、`kit_stage.h`、`kit_things.h`

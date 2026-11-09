@@ -1,4 +1,4 @@
-// interp.h: how a value goes through the stretch between two keys. Alight Motion's nine kinds (its help center,
+// easing_curves.h: how a value goes through the stretch between two keys. Alight Motion's nine kinds (its help center,
 // "Animation Easing Curves": Cubic Bezier, Bounce, Elastic, Cyclic, Random, Steps, Elastic Steps, with hold and linear),
 // as the past repository made them after it, brought as they are from there (rust_ae/Motolii, motolii/crates/motolii-doc/src/eval/track.rs and bezier.rs): the same names,
 // the same numbers in the same order, the same formulas, the same numbers refused. `interp_ease` is told u (how far

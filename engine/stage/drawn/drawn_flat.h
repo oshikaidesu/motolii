@@ -276,7 +276,7 @@ static void cut_at(Stage& s, Drawn* d, float3 trim, const std::array<float, 10>&
 }
 
 // One layer of an After Effects file drawn alone, in its own space: its place and turn left out (they are its sheet's,
-// put in the scene by its pose: motion.h), on a sheet of its own `pixel` units a point of the composition. A 3D layer's
+// put in the scene by its pose: lottie_motion.h), on a sheet of its own `pixel` units a point of the composition. A 3D layer's
 // picture where it is. `box`: where its sheet lies in the layer's own space (x, y, w, h, in points of the composition).
 static Drawn* layer_picture(Stage& s, const char* file, uint32_t id, float pixel, float4* box) {
     if (!door::device(s.engine)) return nullptr;

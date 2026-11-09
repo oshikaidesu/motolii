@@ -46,7 +46,7 @@ static sqlite3_stmt* doc_way_named(Doc& d, const std::string& name) {
     if (known != d.named.end()) return known->second;
     sqlite3_stmt* way = nullptr;
     doc_rows(d, sqlite3_mprintf("select goes from way where name = %Q", name.c_str()), [&](sqlite3_stmt* row) { way = doc_goes(d, (const char*)sqlite3_column_text(row, 0)); });
-    if (!way)   // (not defined here: one of the ways by name, ways.h)
+    if (!way)   // (not defined here: one of the ways by name, easing_names.h)
         for (const auto& one : named_ways) if (name == one.name) way = doc_goes(d, std::string("a + (b - a) * (") + one.goes + ")");
     return d.named[name] = way;
 }

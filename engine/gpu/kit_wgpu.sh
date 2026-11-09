@@ -54,7 +54,7 @@ ninja -C $THOR/build_dawn > /dev/null
 [ out/bend.o -nt stage/bend.cpp ] || clang++ -c -std=c++17 -I $PWD -O2 -fno-rtti -fno-exceptions -DTVG_STATIC -I $THOR/build_dawn -I $THOR/inc -I $THOR/src/common -I $THOR/src/renderer -I $THOR/src/renderer/gpu_engine -I $THOR/src/renderer/gpu_engine/wg -I $THOR/src/loaders/lottie -I $SRC/third_party/dawn/include -I $SRC/out/wgpu/third_party/dawn/gen/include stage/bend.cpp -o out/bend.o
 ./deps/libtess2.sh
 ./deps/curve_fit_nd.sh   # (doc_curve: a hand's way made a path of cubic Béziers, as Blender's Draw Curve)
-./deps/jolt.sh   # (motion/physics.cpp: Jolt, which edit.sh and build_lib.sh link)
+./deps/jolt.sh   # (physics/jolt.cpp: Jolt, which edit.sh and build_lib.sh link)
 ./deps/iris.sh   # (media/video_flash_check.cpp: EA's IRIS and the OpenCV it reads, which edit.sh and build_lib.sh link)
 # (media/video_flash_check.cpp built apart, in IRIS's own C++17: its log lines pass runtime format strings, which C++20's fmt refuses)
 I=third_party/iris

@@ -3,9 +3,9 @@
 #include <string_view>
 #include <unordered_map>
 #include <tuple>
-#include "motion/motion.h"
-#include "motion/interp.h"
-#include "motion/physics.h"
+#include "motion/lottie_motion.h"
+#include "motion/easing_curves.h"
+#include "physics/physics.h"
 #include "community/js/script.h"
 #include "community/door.h"
 #include "community/shaders/hydra_isf.h"
@@ -15,7 +15,7 @@
 #include "community/shaders/isf.h"
 #include "community/shaders/three_isf.h"
 #include "media/midi_roll.h"
-#include "motion/ways.h"
+#include "motion/easing_names.h"
 #include "stage/screen.h"
 #include "stage/thing_fx.h"
 #include "media/video_datamosh.h"

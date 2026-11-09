@@ -3,7 +3,7 @@
 // fact stays as it is; with more it moves, and they are its keys. One call = one change = one step of undo (Lumit's
 // bridge is so), and the stage shows it as the call returns. A change the stage cannot show is not made.
 // Keys, Motolii's own way: a key holds a value, and THE STRETCH FROM A KEY TO THE NEXT IS ITSELF DEFINED: how the value
-// goes there. The kinds of stretch are Motolii's own nine, brought from the past repository as they are (interp.h:
+// goes there. The kinds of stretch are Motolii's own nine, brought from the past repository as they are (easing_curves.h:
 // Hold, Linear, Bezier, Bounce, Elastic, Cyclic, Random, Steps, ElasticSteps, each with its numbers). A way of one's
 // own can be added by an expression kept in the document (worked out by SQLite's own expressions: u is how far
 // through the stretch, 0 to 1; t the seconds into it; d its length; a and b the two keys' values; p1 to p4 numbers
@@ -42,7 +42,7 @@
 #include "document/doc_eye.h"   // (where a camera looks from; the stage's eye, light and backdrop as the document says)
 #include "document/doc_fx_list.h"   // (a thing's effects in the order they are laid, and as its stack runs them)
 #include "document/doc_moment_fx.h"   // (a thing with effects of its own, told a moment)
-#include "motion/godot_easing.h"   // (Godot's Tween's easing, for a MIDI roll's notes)
+#include "motion/easing_godot.h"   // (Godot's Tween's easing, for a MIDI roll's notes)
 #include "document/doc_sketch.h"   // (what a p5.js sketch draws in WEBGL, one mesh in the world)
 #include "document/doc_moment.h"   // (the stage told a moment)
 #include "document/doc_match.h"   // (the stage made again as the document says; its file opened, changed, undone)
