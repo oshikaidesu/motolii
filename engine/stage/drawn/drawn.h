@@ -6,9 +6,9 @@
 // (gpu/tvg_on_dawn.sh) and Filament patched to lend its device and take a texture (gpu_door.h).
 // All of ThorVG's work is queued like Filament's own calls and runs on Filament's driver thread.
 // In parts, read in this order (each a piece of the one before it, none alone):
-#include "stage/drawn_kept.h"
-#include "stage/drawn_edge.h"
-#include "stage/drawn_made.h"
-#include "stage/drawn_sketch.h"
+#include "stage/drawn/drawn_kept.h"
+#include "stage/drawn/drawn_edge.h"
+#include "stage/drawn/drawn_made.h"
+#include "stage/drawn/drawn_sketch.h"
 #include "community/absent_motion/absent_motion.h"   // (an open edge's ends as AbsentMotion draws them: drawn_flat.h)
-#include "stage/drawn_flat.h"
+#include "stage/drawn/drawn_flat.h"

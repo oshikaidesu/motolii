@@ -1,5 +1,5 @@
 // doc_kinds.h: part of doc.h (the document and the names its values go by). Read only through doc.h.
-#include "stage/drawn.h"
+#include "stage/drawn/drawn.h"
 #include <string_view>
 #include <unordered_map>
 #include <tuple>

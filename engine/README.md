@@ -14,7 +14,7 @@
 | `motolii.mm` | その実装（`libmotolii.dylib` になる）。中で `motolii_hand.h`（書類を持って描くスレッド）と `motolii_calls.h` を読む |
 | `edit.cpp` | 1 行ずつの命令で書類をいじるシェル。`./edit.sh 書類.motolii` で組んで開く（`help` で一覧） |
 | `doc.h` と `doc_*.h` | 書類（SQLite）：物・値・キー・取り消し（変更を SQLite の表に積む）・場面への反映 |
-| `kit.h`・`kit_*.h`・`drawn*.h` | Filament と ThorVG で描く所 |
+| `stage/kit/`・`stage/drawn/` | Filament と ThorVG で描く所 |
 
 ## 今の組み立てが使う物
 
@@ -38,7 +38,7 @@
 |---|---|
 | `library/` | 窓が呼ぶ本体：`motolii.h`（C の呼び出し）・`motolii.mm`（`libmotolii.dylib` になる）・`edit.cpp`（1 行ずつの命令のシェル） |
 | `document/` | 書類（SQLite）：`doc_*.h`。物・値・キー・取り消し・場面への反映 |
-| `stage/` | 描く所：Filament と ThorVG（`kit*.h`・`drawn*.h`・`live.h`） |
+| `stage/` | 描く所。`kit/`＝Filament の場面（エンジン・カメラ・光・立体・書き出し）、`drawn/`＝ThorVG が描く 2D の絵を場面の板として置く物、ほかは効果（`thing_fx.h`・`screen.h`）・窓へ渡す絵（`live.h`）・再生用の控え（`stage_kept.h`） |
 | `community/` | ネットのコードをそのまま動かす口：`aviutl/`（AviUtl2）・`shaders/`（ISF・Shadertoy）・`js/`（p5・AE 式・three.js）・`absent_motion/`・`three_tsl/`（three.js の TSL を three.js 自身の組み立て役で WGSL に） |
 | `media/` | 動画（GStreamer）・音・MIDI |
 | `motion/` | 動き：キーの間・イーズ・物理（Jolt） |
