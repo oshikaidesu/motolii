@@ -26,6 +26,7 @@ dependencies:
   re_editor: ^0.10.0
   re_highlight: ^0.0.3
   vector_math: ^2.4.3
+  webview_flutter: ^4.14.1   # (Google's Blockly as it is, in the system's web view: an Expression card's Block mode, block_code.dart)
   widgetbook: ^3.25.0
 
 dev_dependencies:
@@ -42,3 +43,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:   # (the Block mode's page and Blockly beside it, read by the web view from the app: block_code.dart)
+    - assets/blocks/
+    - assets/blocks/blockly/
+    - assets/blocks/blockly/msg/
+    - assets/blocks/blockly/media/
