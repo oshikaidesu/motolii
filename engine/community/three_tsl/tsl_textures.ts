@@ -3,10 +3,10 @@
 // says nothing, as README.md:125).
 import * as std from "qjs:std"
 import * as THREE from "three/webgpu"
-import * as T from "../third_party/tsl/boytchev__tsl-textures/src/tsl-textures.js"
+import * as T from "../../third_party/tsl/boytchev__tsl-textures/src/tsl-textures.js"
 import { convertAll } from "./convert"
 
-const docs = "../third_party/tsl/boytchev__tsl-textures/docs/"
+const docs = "../../third_party/tsl/boytchev__tsl-textures/docs/"
 const pages = (std.popen(`ls ${docs}`, "r").readAsString() ?? "").split("\n").filter(f => f.endsWith(".md"))
 const said = pages.map(p => std.loadFile(docs + p) ?? "")
 const slotsOf = (name: string) => {

@@ -3,7 +3,7 @@
 // input (README.md:40-44: 1 a float, 2 a 2D vector, 3 a 3D vector), so the same input is made that size.
 import * as THREE from "three/webgpu"
 import { uv, time, vec3 } from "three/tsl"
-import * as N from "../third_party/tsl/bandinopla__threejs-noise-functions/src/index"
+import * as N from "../../third_party/tsl/bandinopla__threejs-noise-functions/src/index"
 import { convertAll } from "./convert"
 
 const input = (size: string) => {

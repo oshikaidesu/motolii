@@ -1,7 +1,7 @@
 // verekia/tslfx (MIT): every effect it exports, as its README's "Vanilla Three.js" uses one: `const { uniforms, nodes } =
 // impact()`, then `material.colorNode = nodes.colorNode` (README.md:12-18); its other nodes (opacityNode, ...) likewise.
 import * as THREE from "three/webgpu"
-import * as FX from "../third_party/tsl/verekia__tslfx/src/shaders/index"
+import * as FX from "../../third_party/tsl/verekia__tslfx/src/shaders/index"
 import { convertAll } from "./convert"
 
 const effects: [string, () => any][] = []

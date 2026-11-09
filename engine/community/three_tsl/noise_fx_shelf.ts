@@ -8,13 +8,13 @@ import "core-js/actual/structured-clone"
 import * as std from "qjs:std"
 import * as THREE from "three/webgpu"
 import { positionGeometry, time, uniform } from "three/tsl"
-import * as N from "../third_party/tsl/bandinopla__threejs-noise-functions/src/index"
-import { impact, scatter } from "../third_party/tsl/verekia__tslfx/src/shaders/index"
+import * as N from "../../third_party/tsl/bandinopla__threejs-noise-functions/src/index"
+import { impact, scatter } from "../../third_party/tsl/verekia__tslfx/src/shaders/index"
 import { madeText } from "./shelf_file"
 
-const dir = "../effects"
+const dir = "../../effects"
 const write = (file: string, title: string, by: string, material: any, lines: [any, string][], fields: Map<string, string>, of: Map<any, string[]>) => {
-  const made = madeText(material, [`// ${title}: ${by}, by three.js's own builder (engine/tsl/noise_fx_shelf.ts)`, "// --label:Generate"], lines, fields, of)
+  const made = madeText(material, [`// ${title}: ${by}, by three.js's own builder (engine/community/three_tsl/noise_fx_shelf.ts)`, "// --label:Generate"], lines, fields, of)
   std.open(`${dir}/${file}.wgsl`, "w").puts(made.text)
   console.log(`${file}: ${made.knobs} knobs, ${made.uniforms} uniforms`)
 }

@@ -1,4 +1,4 @@
-// Curl noise: threejs-noise-functions by lumiey (MIT, github.com/bandinopla/threejs-noise-functions), by three.js's own builder (engine/tsl/noise_fx_shelf.ts)
+// Curl noise: threejs-noise-functions by lumiey (MIT, github.com/bandinopla/threejs-noise-functions), by three.js's own builder (engine/community/three_tsl/noise_fx_shelf.ts)
 // --label:Generate
 // --track@scale:Scale,0,24,6,0.1
 // --track@pace:Pace,0,4,1,0.01

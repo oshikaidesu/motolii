@@ -7,10 +7,10 @@ import "core-js/actual/structured-clone"
 import * as std from "qjs:std"
 import * as THREE from "three/webgpu"
 import { uniform, uv } from "three/tsl"
-import * as T from "../third_party/tsl/boytchev__tsl-textures/src/tsl-textures.js"
+import * as T from "../../third_party/tsl/boytchev__tsl-textures/src/tsl-textures.js"
 import { madeText } from "./shelf_file"
 
-const root = "../third_party/tsl/boytchev__tsl-textures/", dir = "../effects"
+const root = "../../third_party/tsl/boytchev__tsl-textures/", dir = "../../effects"
 const pages = (std.popen(`ls ${root}docs`, "r").readAsString() ?? "").split("\n").filter(f => f.endsWith(".md")).map(p => std.loadFile(`${root}docs/${p}`) ?? "")
 const only = scriptArgs.slice(1)
 const axes = "xyz"
@@ -55,7 +55,7 @@ for (const [name, f] of Object.entries(T) as [string, any][]) {
     const material: any = new THREE.MeshBasicNodeMaterial()
     material.colorNode = f(args)
     const about = new RegExp(`^## .*\\n+(?!<)([^\\n]+)`, "m").exec(pages.find(t => t.includes(`import { ${name} }`)) ?? "")?.[1]
-    const head = [`// ${title}: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/tsl/textures_shelf.ts)`, "// --label:Generate"]
+    const head = [`// ${title}: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)`, "// --label:Generate"]
     if (about) head.push(`// --about:${about.trim()}`)
     const made = madeText(material, head, lines, fields, of)
     std.open(`${dir}/tt_${name.replace(/[A-Z]/g, c => "_" + c.toLowerCase())}.wgsl`, "w").puts(made.text)

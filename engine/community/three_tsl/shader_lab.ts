@@ -5,10 +5,10 @@
 import "core-js/actual/url"   // (first: its modules use URL as they load)
 import "core-js/actual/structured-clone"
 import * as THREE from "three/webgpu"
-import { getLayerDefinition } from "../third_party/tsl/basementstudio__shader-lab/src/lib/editor/config/layer-registry"
-import { buildParameterValues } from "../third_party/tsl/basementstudio__shader-lab/src/lib/editor/parameter-schema"
-import { DEFAULT_MASK_CONFIG } from "../third_party/tsl/basementstudio__shader-lab/src/types/editor"
-import { PipelineManager } from "../third_party/tsl/basementstudio__shader-lab/packages/shader-lab-react/src/renderer/pipeline-manager"
+import { getLayerDefinition } from "../../third_party/tsl/basementstudio__shader-lab/src/lib/editor/config/layer-registry"
+import { buildParameterValues } from "../../third_party/tsl/basementstudio__shader-lab/src/lib/editor/parameter-schema"
+import { DEFAULT_MASK_CONFIG } from "../../third_party/tsl/basementstudio__shader-lab/src/types/editor"
+import { PipelineManager } from "../../third_party/tsl/basementstudio__shader-lab/packages/shader-lab-react/src/renderer/pipeline-manager"
 import { plane, wgsl } from "./convert"
 import * as std from "qjs:std"
 import * as os from "qjs:os"
@@ -20,8 +20,8 @@ const types = ["photographic-cells", "displaced-rings", "annotations", "ascii", 
   "focus-blur", "glass", "connected-dots", "photocopy", "outline", "voxel", "gradient", "shape", "fluid", "pixel-trail",
   "magnify-lens"]   // (pipeline-manager.ts:706-811, the ones not needing a picture, a camera or the user's own code)
 const manager: any = { renderer: null, onRuntimeError: () => {} }
-const dir = "out/shader-lab"
-os.mkdir("out"); os.mkdir(dir)
+const dir = "../../out/tsl/shader-lab"
+os.mkdir("../../out"); os.mkdir("../../out/tsl"); os.mkdir(dir)
 const said = std.open(dir + "/made.tsv", "w")
 let made = 0, ok = 0
 for (const type of types) {

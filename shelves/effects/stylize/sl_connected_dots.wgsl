@@ -1,4 +1,4 @@
-// Connected Dots: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/tsl/shader_lab_shelf.ts)
+// Connected Dots: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_tsl/shader_lab_shelf.ts)
 // --label:Stylize
 // --about:Turns the image into points linked to their neighbors: tone graphs, ink blobs or fading plexus lines. Points can drift so links form and break.
 // --pass@t0:0,1,s0.36953125000000003,s0.37812500000000004

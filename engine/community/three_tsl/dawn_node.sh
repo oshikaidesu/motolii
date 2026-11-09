@@ -2,9 +2,9 @@
 # Dawn's own WebGPU binding for JavaScript (dawn.node, src/dawn/node) built from Motolii's own Dawn: the Filament build
 # gpu/build.sh makes (out/wgpu, already DAWN_ENABLE_PIC), with DAWN_BUILD_NODE_BINDINGS on, as Dawn's
 # src/dawn/node/README.md builds it. Its three inputs fetched at the commits Dawn's own DEPS names (dawn_node), and Go
-# for its code generator (idlgen), from Homebrew.   ./tsl/dawn_node.sh   -> filament_src/out/wgpu/third_party/dawn/dawn.node
+# for its code generator (idlgen), from Homebrew.   ./community/three_tsl/dawn_node.sh   -> filament_src/out/wgpu/third_party/dawn/dawn.node
 set -e
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 F=$PWD/third_party/filament_src
 T=$F/third_party/dawn/third_party
 for spec in "node-api-headers https://github.com/nodejs/node-api-headers d5cfe19da8b974ca35764dd1c73b91d57cd3c4ce" \

@@ -39,7 +39,7 @@ GitHub Actions runs the ledger check on every push and pull request (`.github/wo
 4. **Bundling other people's work.**
    - Keep the author's folder as unchanged as possible, with their licence text (`LICENSE`) and where it came from (`SOURCE.txt`: name and author / licence / from / page) beside it.
    - Work whose author publishes no licence text is not bundled; fetch it from the author at build time instead (`engine/deps/midi_roll.sh` is an example).
-   - Changes to upstream code are kept as patches, applied to a pinned upstream at build time (`engine/gpu/tvg_on_dawn.sh` is an example).
+   - Changes to upstream code are kept as patches, applied to a pinned upstream at build time (patches in `engine/deps/patches/<library>/`; `engine/gpu/tvg_on_dawn.sh` is an example).
    - Add a row to [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md).
 
 ## Good first tasks
@@ -48,7 +48,7 @@ GitHub Actions runs the ledger check on every push and pull request (`.github/wo
 |---|---|---|
 | An `.app` you can hand out: put the Homebrew libraries the engine loads (GStreamer, glib, SQLite, LuaJIT, QuickJS, and ffmpeg for writing) inside the `.app`, with [dylibbundler](https://github.com/auriamg/macdylibbundler) or GStreamer's macOS framework | `engine/edit.sh`, `app/macos/` | Medium |
 | AviUtl2 calls still missing (`obj.computeshader`, the built-in effects, …), following the references (AviUtl2's lua.txt, sashimono-edit) | `docs/internal/reports/aviutl/aviutl2/converter_plan.md`, `engine/community/aviutl/aviutl.cpp` | Medium–hard |
-| TSL looks on the editor's shelves | `engine/tsl/`, `docs/internal/reports/effects/tsl_collection.md` | Medium |
+| TSL looks on the editor's shelves | `engine/community/three_tsl/`, `docs/internal/reports/effects/tsl_collection.md` | Medium |
 
 ## Known gaps
 

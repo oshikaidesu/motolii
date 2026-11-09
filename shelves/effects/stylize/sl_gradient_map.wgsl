@@ -1,4 +1,4 @@
-// Gradient Map: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/tsl/shader_lab_shelf.ts)
+// Gradient Map: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_tsl/shader_lab_shelf.ts)
 // --label:Stylize
 // --about:Recolors the image by brightness using a color ramp you edit.
 // --track@amount:Amount,0,1,1,0.01

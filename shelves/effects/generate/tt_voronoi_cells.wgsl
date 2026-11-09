@@ -1,4 +1,4 @@
-// Voronoi cells: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/tsl/textures_shelf.ts)
+// Voronoi cells: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)
 // --label:Generate
 // --about:This texture generates a pattern of [Worley noise](https://en.wikipedia.org/wiki/Worley_noise) based on 3D
 // --track@scale:Scale,0,4,2,0.04

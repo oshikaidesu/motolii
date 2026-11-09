@@ -4,6 +4,8 @@
 
 窓（`../app/`）は、ここが組む `out/libmotolii.dylib` を C の呼び出しで使います。作りの全体は [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)。
 
+**door（扉）**：人のコードとの境目を 1 か所に閉じ込めたファイル。Filament の公開されていない中身に手を入れるのは `gpu/*_door.*` だけ、ネットのコードをそのまま入れるのは `community/door*.h` と `document/doc_door.h` だけで、相手が変わったら扉だけを直す。
+
 ## 入口
 
 | ファイル | 何か |
@@ -12,7 +14,7 @@
 | `motolii.mm` | その実装（`libmotolii.dylib` になる）。中で `motolii_hand.h`（書類を持って描くスレッド）と `motolii_calls.h` を読む |
 | `edit.cpp` | 1 行ずつの命令で書類をいじるシェル。`./edit.sh 書類.motolii` で組んで開く（`help` で一覧） |
 | `doc.h` と `doc_*.h` | 書類（SQLite）：物・値・キー・取り消し（変更を SQLite の表に積む）・場面への反映 |
-| `kit.h`・`kit_*.h`・`drawn*.h` | Filament と ThorVG で描く所 |
+| `stage/kit/`・`stage/drawn/` | Filament と ThorVG で描く所 |
 
 ## 今の組み立てが使う物
 
@@ -30,10 +32,20 @@
 
 本体が使わない試し（ガラスや光、Dawn、プローブ、Widgetbook など）は main から外しました。履歴はタグ `lab-archive-2026-11-09` に残っています（`git show lab-archive-2026-11-09:lab/`）。
 
+## フォルダ
+
 | フォルダ | 中身 |
 |---|---|
-| `gpu/` | Filament を WebGPU（Dawn）で組むスクリプトと、Filament・ThorVG・Dawn に当てる差分（`*.patch`） |
-| `effects/`・`recipes/`・`animators/`・`ways/`・`looks/`・`solids/` | 同梱の効果・レシピ・動き・イーズ・ルック・形（利用者のフォルダ `~/Library/Application Support/Motolii/` と同じ形） |
-| `aviutl_scripts/` | 同梱の AviUtl2 のスクリプト |
-| `tsl/` | TSL と shaders.com の効果を取ってきて WGSL にする道具 |
+| `library/` | 窓が呼ぶ本体：`motolii.h`（C の呼び出し）・`motolii.mm`（`libmotolii.dylib` になる）・`edit.cpp`（1 行ずつの命令のシェル） |
+| `document/` | 書類（SQLite）：`doc_*.h`。物・値・キー・取り消し・場面への反映 |
+| `stage/` | 描く所。`kit/`＝Filament の場面（エンジン・カメラ・光・立体・書き出し）、`drawn/`＝ThorVG が描く 2D の絵を場面の板として置く物、ほかは効果（`thing_fx.h`・`screen.h`）・窓へ渡す絵（`live.h`）・再生用の控え（`stage_kept.h`） |
+| `community/` | ネットのコードをそのまま動かす口：`aviutl/`（AviUtl2）・`shaders/`（ISF・Shadertoy）・`js/`（p5・AE 式・three.js）・`absent_motion/`・`three_tsl/`（three.js の TSL を three.js 自身の組み立て役で WGSL に） |
+| `media/` | 動画（GStreamer）・音・MIDI |
+| `motion/` | 動き：キーの間・イーズ・物理（Jolt） |
+| `materials/` | Filament の材質（`.mat`）と、それが読む `.glsl` |
+| `gpu/` | Filament・ThorVG を WebGPU（Dawn）で組むスクリプト（`build.sh`・`tvg_on_dawn.sh`・`kit_wgpu.sh`）と、Filament の組み立ての中で組む口（`*_door.cpp`） |
+| `deps/` | 外のライブラリを取ってきて組むスクリプト。`deps/patches/<ライブラリ>/` は人のコードに当てる差分（`.patch`） |
 | `third_party/` | 取ってくる依存（git の外）と、同梱の小さな物 |
+| `out/` | 組み立てと描いた物の出力（git の外）。`out/gpu/`・`out/tsl/` もここ |
+
+同梱の効果・レシピ・字体などの棚は、リポジトリ直下の [`../shelves/`](../shelves/) にあります。
