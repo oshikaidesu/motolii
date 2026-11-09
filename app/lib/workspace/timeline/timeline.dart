@@ -1,7 +1,5 @@
 // The workspace's Timeline panel: transport + timecode on top, layer labels beside the track area, a ruler with the work area, the playhead.
 // The document lives in Ws; this panel keeps only how it looks at it (zoom, scroll, loop, the row toggles, the work area).
-import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart' show easeCurve;
-
 import 'dart:async' show Timer;
 import 'dart:developer' show Timeline;
 import 'dart:io';

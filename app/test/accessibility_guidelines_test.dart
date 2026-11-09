@@ -16,7 +16,6 @@ import 'package:motolii/workspace/dock/dock_make.dart' show colorsAt;
 import 'package:motolii/workspace/dock/dock_map.dart' show dockMapsAt;
 import 'package:motolii/workspace/dock/dock_widgets.dart' show dockStarsAt;
 import 'package:motolii/workspace/dock/dock_tags.dart' show DockTags;
-import 'package:motolii/workspace/tool_panel/tool_panel_ease_shelf.dart' show easeKeptAt;
 import 'package:motolii/workspace/shelf/effect_decks.dart' show effectDecksAt, effectRecentAt;
 import 'package:motolii/workspace/timeline/timeline.dart' show WsTimeline;
 import 'package:motolii/workspace/workspace.dart' show Workspace;
@@ -36,7 +35,6 @@ Future<void> _open(WidgetTester t) async {
   colorsAt(_tmp('colors'));
   effectDecksAt(_tmp('decks'));
   effectRecentAt(_tmp('recent'));
-  easeKeptAt(_tmp('kept'));
   dockMapsAt(Directory.systemTemp.createTempSync('maps'));
   DockTags.latchedAt(_tmp('latched'));
   dockStarsAt(_tmp('stars'));

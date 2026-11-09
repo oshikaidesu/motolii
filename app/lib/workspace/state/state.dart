@@ -2,8 +2,6 @@
 // This file is what every panel shares: the mock document they all read (Ws), and the window's own tokens (WsT).
 // Tone and manner come from the Inspector's Pop rules (sets/inspector_parts.dart): containers square and tiled edge to edge,
 // what you touch or read round, colour flat and opaque, one lime accent, each kind of thing wearing its own hue.
-import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart' show easeCurve;
-
 import 'dart:async' show Timer;
 import 'dart:developer' show Timeline, TimelineTask;
 import 'dart:io' show Platform;
@@ -34,6 +32,14 @@ part 'effects.dart';
 part 'picked.dart';
 part 'scope.dart';
 part 'panel_header.dart';
+
+/// How a way goes, at the 65 steps the snapshot already stored (easingCurves).
+List<double> easeCurve(String way, Motolii m) {
+  if (_curves.length > 512) _curves.clear();
+  return _curves[way] ??= List<double>.unmodifiable([for (var i = 0; i <= 64; i++) m.easingAt(way, i / 64.0)]);
+}
+
+final _curves = <String, List<double>>{};
 
 /// The window's own sizes and colours. A panel names one of these; it never types a number that is the window's business.
 abstract final class WsT {

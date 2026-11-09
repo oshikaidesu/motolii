@@ -17,10 +17,10 @@
 | `shelf/` | 棚のタイル（効果・スクリプト・素材） |
 | `stage/` | プレビュー（Filament が描いた絵と、その上のドラッグ） |
 | `timeline/` | タイムライン |
-| `tool_panel/` | Inspector の下のツールパネル（Ease、Align、Blend …） |
+| `tool_panel/` | ヘッダの `ToolChip` と、自分の `PanelTool` |
 
 ## 自分のパネルを足す（入口はここだけ）
-使う物の置き場：`Workspace`（`workspace.dart`）、`WsPane`（`window/panes.dart`。アイコンは `DockG` か null）、`PanelTool`（`tool_panel/tool_panel_widgets.dart`）、`Ws`・`WsScope`（`state/window.dart`・`state/scope.dart`）、`Motolii`（`../bridge/motolii.dart`）、Ease のタイル `easingsWithoutTile`（`tool_panel/tool_panel_ease.dart`）。
+使う物の置き場：`Workspace`（`workspace.dart`）、`WsPane`（`window/panes.dart`。アイコンは `DockG` か null）、`PanelTool`（`tool_panel/tool_panel_widgets.dart`）、`Ws`・`WsScope`（`state/window.dart`・`state/scope.dart`）、`Motolii`（`../bridge/motolii.dart`）。
 ```dart
 Workspace(document: path, extra: [
   WsPane('Notes', null, () => const MyNotes()),   // (名前、アイコン（null なら頭文字）、中身)

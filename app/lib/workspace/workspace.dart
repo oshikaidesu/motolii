@@ -21,10 +21,6 @@ import 'package:motolii/inspector/inspector_parts_insp_host.dart';
 
 import '../inspector/inspector_parts.dart';
 import '../skin/theme.dart';
-import 'tool_panel/tool_panel.dart';
-import 'tool_panel/tool_panel_depth.dart';
-import 'tool_panel/tool_panel_relations.dart';
-import 'tool_panel/tool_panel_ease.dart';
 import 'dock/dock.dart';
 import 'dock/dock_glyphs.dart';
 import 'window/home.dart';
@@ -384,10 +380,10 @@ final _panes = [
   WsPane('Camera View', DockG.camera, () => const WsCameraView(), minSize: 240),
   WsPane('Inspector', DockG.inspector, () => const _InspectorPanel(), minSize: 200),
   WsPane('Timeline', DockG.timeline, () => const WsTimeline(), minSize: 160),
-  WsPane('Ease', DockG.time, () => const EaseTool(), minSize: 260),
-  WsPane('Camera', DockG.camera, () => const DepthTool(), minSize: WsT.lower),
-  WsPane('Tool Panel', DockG.toolPanel, () => const WsToolPanel(), minSize: WsT.lower),
-  WsPane('Relations', DockG.toolPanel, () => const RelationsTool(), minSize: WsT.lower),
+  WsPane('Ease', DockG.time, () => const SizedBox.shrink(), minSize: 260),
+  WsPane('Camera', DockG.camera, () => const SizedBox.shrink(), minSize: WsT.lower),
+  WsPane('Tool Panel', DockG.toolPanel, () => const SizedBox.shrink(), minSize: WsT.lower),
+  WsPane('Relations', DockG.toolPanel, () => const SizedBox.shrink(), minSize: WsT.lower),
 ];
 
 /// A pane's tab strip, added on top of the reference heights so the panels keep theirs.
