@@ -226,8 +226,8 @@ void motolii_tell(Motolii* m, void (*told)(int which));   /* the window's one li
 const char* motolii_hand_step(Motolii* m);   /* where the inside's hand is in its round now ("waiting for a change or a beat", "doing the changes asked", "drawing", "putting the films at the moment"...), read without waiting: why a shell waits long */
 int motolii_asked(Motolii* m);   /* how many changes asked later are not begun yet */
 void motolii_watch(Motolii* m, int on);   /* on from the opening; while on, the window's (main) thread may not wait on the hand: a change it waits for, or a read waiting on the document over 2 ms, is kept */
-const char* motolii_broken(Motolii* m);   /* what was kept since motolii_watch(1): one to a line, named and timed; "" none */
-long motolii_broken_count(Motolii* m);   /* how many times the window's thread waited since it was watched (watched from the opening), read without waiting */
+const char* motolii_broken(Motolii* m);   /* what was kept since motolii_watch(1): one to a line, its clock time (hh:mm:ss.mmm) first, named and timed; "" none */
+long motolii_broken_count(Motolii* m);   /* how many times the window's thread waited, or the inside took over 1/60 s for a picture (by its own clock or the GPU's), since it was watched (from the opening), read without waiting */
 int motolii_sequence(Motolii* m, double overlap);   /* Sequence Layers: the things that have a length and stand on their own, from the front, one after another (less `overlap` seconds), on frames, keys moved with them; one step */
 const char* motolii_list(Motolii* m);                              /* every fact of the document, a line each (until the next call) */
 /* The stage's picture as it is drawn, for a shell to show without a copy. The inside keeps its own clock: it draws
