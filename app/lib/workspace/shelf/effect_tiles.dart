@@ -100,7 +100,7 @@ abstract final class EffectTiles {
   }
 
   /// How much moving each knob of [file] alone shows its effect, 0 to 10, as an agent that read only the effect's code
-  /// weighed it (shelves/knob_weights.json, by the shelf's entry: its file from the library's folder, an AviUtl2 script's
+  /// weighed it (knob_weights.json beside this file, by the shelf's entry: its file from the library's folder, an AviUtl2 script's
   /// #name and all; set beside AbsentMotion's effect_showcase.json, where a hand says which knob its tile moves, its
   /// heaviest was that knob in 26 of 28), by the inside's names (doc_values.h doc_screen_knob: the file's stem before
   /// the knob's), `_time` how much letting it run shows it. Empty: not weighed (the maker's own).
@@ -172,7 +172,7 @@ abstract final class EffectTiles {
   static Map<String, dynamic> _entry(String dir, String file) {
     final all = _weights ??= () {
       try {
-        return jsonDecode(File('$motoliiShelves/knob_weights.json').readAsStringSync()) as Map<String, dynamic>;
+        return jsonDecode(File('${Directory(motoliiDir).absolute.parent.path}/app/lib/workspace/shelf/knob_weights.json').readAsStringSync()) as Map<String, dynamic>;
       } catch (_) {
         return const <String, dynamic>{};
       }
