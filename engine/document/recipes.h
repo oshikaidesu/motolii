@@ -9,7 +9,7 @@ static std::vector<DocRecipe> doc_recipes_read() {
         text << in.rdbuf();
         const std::string form = door_form(text.str()), told = door_js(text.str(), form);   // (a form from the net told as a sketch: door.h)
         if (text.str().find("\n// make ") == std::string::npos && script_is_sketch(told)) {   // (a sketch of p5.js as it comes, no head of ours: a solid given it)
-            r.name = f.stem().string(), r.what = form.empty() ? "A p5.js sketch" : "A sketch from the net", r.code = told.find("WEBGL") != std::string::npos, r.program = door_name(form);   // (its things and motion all its own: docs/internal/notes/CREATE_PROGRAM.md)
+            r.name = f.stem().string(), r.what = form.empty() ? "A p5.js sketch" : "A sketch from the net", r.code = told.find("WEBGL") != std::string::npos, r.program = door_name(form);   // (its layers and motion all its own: docs/internal/notes/CREATE_PROGRAM.md)
             r.lines = {r.code ? "make solid cube" : "make picture " + r.path};   // (in 3D its solids stand in the world; in 2D what it paints is a picture)
             if (!r.code) r.lines.push_back("fit fit");   // (as large as the picture: doc_fit, After Effects' Fit to Comp)
             all.push_back(r);
@@ -33,7 +33,7 @@ static std::string doc_recipe_names() {
     for (const DocRecipe& r : doc_recipes()) all += (all.empty() ? "" : "\n") + r.name + "\t" + r.what + (r.program.empty() ? "" : "\t" + r.program + "\t" + r.path);   // (a pack: the Program shelf's)
     return all;
 }
-// Whether a file the document's pictures are made from (the stage's effects, the things' scripts) has been written
+// Whether a file the document's pictures are made from (the stage's effects, the layers' scripts) has been written
 // over since it was read: a stage that is not drawing is woken by it (a file saved shows at once).
 static bool doc_files_moved(Doc& d) {
     bool moved = screen_moved(d.screen);
@@ -42,7 +42,7 @@ static bool doc_files_moved(Doc& d) {
     return moved;
 }
 // The files of a kind in its folders (doc_folders) ("name\tpath\tlabel\tpicture", one to a line): the whole-screen effects (effects/*.wgsl),
-// the motions a thing may be given (expressions/*.js); a file's name as its first line says it, before the colon; its label
+// the motions a layer may be given (expressions/*.js); a file's name as its first line says it, before the colon; its label
 // (what it is for, the shelf's kind) as a head line "// --label:Distort" says it (AviUtl's --label:, its script's menu); its
 // picture for the shelf the .png beside it, if there is one ("" none).
 // An effect's tile on the shelf, "\tpicture\thome\tsame": its picture (the one drawn for it in
@@ -172,10 +172,10 @@ static std::string doc_aviutl_names() {
 // bezier(u, x1, y1, x2, y2), way('Cyclic', u)). Put on a key, it is written into the document, so the document goes as it did wherever it
 // is opened. The maker's own of a name goes before the library's.
 // One for the whole program, read by every document's hand and every window's look: held by a lock, given as a copy.
-static std::mutex& doc_own_ways_lock() { static std::mutex one; return one; }
-static std::atomic<int>& doc_own_ways_made() { static std::atomic<int> made{0}; return made; }   // (how many times what was read was not what was before: the window's picture made again, entry/render_thread.h)
-static std::map<std::string, std::string> doc_own_ways() {
-    std::lock_guard<std::mutex> hold(doc_own_ways_lock());
+static std::mutex& doc_own_easings_lock() { static std::mutex one; return one; }
+static std::atomic<int>& doc_own_easings_made() { static std::atomic<int> made{0}; return made; }   // (how many times what was read was not what was before: the window's picture made again, entry/render_thread.h)
+static std::map<std::string, std::string> doc_own_easings() {
+    std::lock_guard<std::mutex> hold(doc_own_easings_lock());
     static std::map<std::string, std::string> kept;
     static int seen = -1;
     if (seen == files_changed()) return kept;   // (looked at again when the window says a file changed: the OS's own watch, GIO's GFileMonitor, tells only while GLib's default main context runs, and none runs here; dart:io's runs in the window)
@@ -186,31 +186,31 @@ static std::map<std::string, std::string> doc_own_ways() {
         for (const auto& e : std::filesystem::directory_iterator(dir, wrong)) {
             if (e.path().extension() != ".way") continue;
             std::ifstream in(e.path());
-            std::string line, name, goes;
+            std::string line, name, expression;
             while (std::getline(in, line)) {
-                if (line.rfind("//", 0) != 0) { goes += line + " "; continue; }
+                if (line.rfind("//", 0) != 0) { expression += line + " "; continue; }
                 if (name.empty() && line.find(':') != std::string::npos) name = line.substr(2, line.find(':') - 2);
             }
             name.erase(0, name.find_first_not_of(' '));
             if (name.empty()) name = e.path().stem().string();
-            if (goes.find_first_not_of(' ') != std::string::npos) all[name] = goes;   // (the maker's folder is read last: theirs of a name stands)
+            if (expression.find_first_not_of(' ') != std::string::npos) all[name] = expression;   // (the maker's folder is read last: theirs of a name stands)
         }
-    if (all != kept) kept = all, ++doc_own_ways_made();
+    if (all != kept) kept = all, ++doc_own_easings_made();
     return kept;
 }
 static std::string doc_recipe_code_path(const std::string& name) {
     for (const DocRecipe& one : doc_recipes()) if (one.code && one.name == name) return one.path;
     return "";
 }
-// The recipe of that name made at the stage's present moment, one step (0: not made, d.trouble says why).
-static bool doc_fit(Doc& d, int thing, const std::string& how);
+// The recipe of that name made at the stage's present moment, one step (0: not made, d.error says why).
+static bool doc_fit(Doc& d, int layer, const std::string& how);
 static int doc_make(Doc& d, const char* name) {
     std::vector<DocRecipe> all = doc_recipes();
     const DocRecipe* r = nullptr;
     for (const DocRecipe& one : all) if (one.name == name) r = &one;
-    if (!r) return d.trouble = std::string("there is no recipe ") + name, 0;
+    if (!r) return d.error = std::string("there is no recipe ") + name, 0;
     doc_act(d);
-    int now = 0, first = 0, before = 0;   // (the thing the lines tell: "make" the first, "then" another, each named as the recipe)
+    int now = 0, first = 0, before = 0;   // (the layer the lines tell: "make" the first, "then" another, each named as the recipe)
     double from = 0.0;   // (where its keys count from: "here" says the playhead)
     for (const std::string& line : r->lines) {
         std::istringstream w(line);
@@ -227,13 +227,13 @@ static int doc_make(Doc& d, const char* name) {
             if (now == first && r->code) doc_say(d, now, "script", r->path.c_str());
             continue;
         }
-        const int thing = now;
-        if (!thing) break;
-        if (call == "set") doc_set(d, thing, value.c_str(), rest == "first" ? first : rest == "before" ? before : rest == "behind" ? first - 0.5 : std::atof(rest.c_str()));   // (a thing it goes with: the recipe's first, or the one made before this one; an order just behind the first)
-        else if (call == "say") doc_say(d, thing, value.c_str(), value == "script" && rest == "this" ? r->path.c_str() : rest.c_str());   // (another of its things run by the recipe's own code: "this"; by another recipe's, its name: a preset that lays its copies out says "Repeater", doc_say)
-        else if (call == "here") from = d.stage->now, doc_set(d, thing, "start", from);   // (it begins where the playhead is, as a clip is placed: not a picture that goes round)
-        else if (call == "fit") doc_fit(d, thing, value);
-        else if (call == "key") { std::istringstream k(rest); double at = 0, is = 0; k >> at >> is; doc_key(d, thing, value.c_str(), from + at, is); }   // (at that moment of the document, wherever the stage stands: its film loops as made)
+        const int layer = now;
+        if (!layer) break;
+        if (call == "set") doc_set(d, layer, value.c_str(), rest == "first" ? first : rest == "before" ? before : rest == "behind" ? first - 0.5 : std::atof(rest.c_str()));   // (a layer it goes with: the recipe's first, or the one made before this one; an order just behind the first)
+        else if (call == "say") doc_say(d, layer, value.c_str(), value == "script" && rest == "this" ? r->path.c_str() : rest.c_str());   // (another of its layers run by the recipe's own code: "this"; by another recipe's, its name: a preset that lays its copies out says "Repeater", doc_say)
+        else if (call == "here") from = d.stage->now, doc_set(d, layer, "start", from);   // (it begins where the playhead is, as a clip is placed: not a picture that goes round)
+        else if (call == "fit") doc_fit(d, layer, value);
+        else if (call == "key") { std::istringstream k(rest); double at = 0, is = 0; k >> at >> is; doc_key(d, layer, value.c_str(), from + at, is); }   // (at that moment of the document, wherever the stage stands: its film loops as made)
     }
     return doc_acted(d) && now ? first : 0;
 }

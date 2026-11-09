@@ -442,7 +442,7 @@ static Camera* god_view(Stage& s, bool on) {
 static void time_is(Stage& s, double seconds) {
     s.now = s.frames > 0.0 ? std::floor(seconds * s.frames + 1e-6) / s.frames : seconds;   // (a document of so many frames a second is seen only at them: Alight Motion's project frame rate, After Effects' composition's)
     seconds = s.now;
-    std::vector<const void*> all;   // (each by its key, looked for again as it comes: one may make things again, and take some off, as it goes (doc_moment))
+    std::vector<const void*> all;   // (each by its key, looked for again as it comes: one may make things again, and take some off, as it goes (doc_evaluate))
     for (const auto& [who, goes] : s.playing) all.push_back(who);
     for (const void* who : all)
         if (const auto it = s.playing.find(who); it != s.playing.end()) it->second(seconds);

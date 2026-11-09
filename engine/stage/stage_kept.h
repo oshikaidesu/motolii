@@ -45,7 +45,7 @@ static uint64_t stage_kept_key(Doc& d, int w, int h) {
     uint64_t hash = 1469598103934665603ull;   // (FNV-1a, as kept frames are named)
     const auto add = [&](const std::string& s) { for (unsigned char c : s) hash = (hash ^ c) * 1099511628211ull; hash = (hash ^ 0xff) * 1099511628211ull; };
     add(std::to_string(w) + "x" + std::to_string(h));
-    doc_rows(d, sqlite3_mprintf("select thing, name, at, value, coalesce(way, '') from fact order by thing, name, at"), [&](sqlite3_stmt* row) {
+    doc_rows(d, sqlite3_mprintf("select layer, name, at, value, coalesce(easing, '') from keyframe order by layer, name, at"), [&](sqlite3_stmt* row) {
         for (int i = 0; i < 5; ++i) add(sqlite3_column_text(row, i) ? (const char*)sqlite3_column_text(row, i) : "");
         const char* name = (const char*)sqlite3_column_text(row, 1);
         if (sqlite3_column_text(row, 3) && (!strcmp(name, "file") || !strcmp(name, "fx") || !strcmp(name, "script")))   // (a file it uses, as it is now: a picture's, and its effects' and script's)
@@ -54,7 +54,7 @@ static uint64_t stage_kept_key(Doc& d, int w, int h) {
                 if (stat(one.c_str(), &st) == 0) add(std::to_string(st.st_mtimespec.tv_sec) + "." + std::to_string(st.st_mtimespec.tv_nsec) + "." + std::to_string(st.st_size));
             }
     });
-    doc_rows(d, sqlite3_mprintf("select name, coalesce(goes, '') from way order by name"), [&](sqlite3_stmt* row) { add((const char*)sqlite3_column_text(row, 0)); add((const char*)sqlite3_column_text(row, 1)); });
+    doc_rows(d, sqlite3_mprintf("select name, coalesce(expression, '') from easing order by name"), [&](sqlite3_stmt* row) { add((const char*)sqlite3_column_text(row, 0)); add((const char*)sqlite3_column_text(row, 1)); });
     return hash;
 }
 
@@ -96,7 +96,7 @@ static void stage_kept_fresh(StageKept& k, Doc& d, Stage& s, long revision, int 
 // One picture of the work area not looked at yet, drawn as a written film draws it and kept if it took too long (the
 // hand rests: what it draws is not shown). false: none left to look at.
 static bool stage_kept_one(StageKept& k, Doc& d, Stage& s, int rate, double budget_ms) {
-    if (d.eyeAsked) return false;   // (these are the camera's pictures: not drawn by the window's working eye)
+    if (d.viewCameraAsked) return false;   // (these are the camera's pictures: not drawn by the window's working eye)
     double from = 0.0, to = 0.0;
     doc_work(d, &from, &to);
     int at = -1;

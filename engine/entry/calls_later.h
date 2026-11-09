@@ -37,7 +37,7 @@ int motolii_later(Motolii* m, const char* call, int thing, const char* name, con
             else if (c == "door") ok = m->made = changes(m, doc_door(doc(m), w, thing));   // (word: code from the net; thing: the one picked, or 0)
             else if (c == "code") {   // (word: a program's file, saved)
                 const std::string why = doc_code_saved(doc(m), w);
-                ok = why.empty(), m->changed = true, doc(m).things_changed = true;   // (its knobs may be others now)
+                ok = why.empty(), m->changed = true, doc(m).layers_changed = true;   // (its knobs may be others now)
                 if (!ok) m->trouble = why;
                 m->revision.fetch_add(1, std::memory_order_release), picture_update(m), picture_moment(m);
             }
@@ -75,15 +75,15 @@ int motolii_later(Motolii* m, const char* call, int thing, const char* name, con
             else if (c == "outline") ok = changes(m, (int)doc_to_path(doc(m), thing));   // (Alight Motion's Convert to Outline: the shape a path of the outline it shows)
             else if (c == "curve") ok = m->made = changes(m, doc_curve(doc(m), w.c_str()));   // (word: how far the curve may stray, in points of the picture, then the hand's points, x y each; the answer is the new path)
             else if (c == "brush") ok = m->made = changes(m, doc_brush(doc(m), w.c_str(), thing));   // (word: the tool (0 pen, 1 brush, 2 fill, 3 eraser: of the thing's drawing), how wide, then each point of the picture x y and its pressure; the answer is the new shape, or the one erased from)
-            else if (c == "copy") ok = (int)doc_look_save(doc(m), thing, w.c_str(), true);   // (word: the file it is kept in, whole)
-            else if (c == "paste") ok = m->made = changes(m, doc_look_paste(doc(m), w.c_str(), number));   // (word: that file; number: when it begins; the answer is the new thing)
-            else if (c == "copy_style") ok = (int)doc_look_save(doc(m), thing, w.c_str(), false, n);   // (its look: document/presets.h; name: only these values, a card's)
-            else if (c == "keep_look") ok = (int)doc_look_keep(doc(m), thing, w, n);   // (word: its name on the shelf; name: only these values, a card's)
+            else if (c == "copy") ok = (int)doc_preset_save(doc(m), thing, w.c_str(), true);   // (word: the file it is kept in, whole)
+            else if (c == "paste") ok = m->made = changes(m, doc_preset_paste(doc(m), w.c_str(), number));   // (word: that file; number: when it begins; the answer is the new thing)
+            else if (c == "copy_style") ok = (int)doc_preset_save(doc(m), thing, w.c_str(), false, n);   // (its look: document/presets.h; name: only these values, a card's)
+            else if (c == "keep_look") ok = (int)doc_preset_keep(doc(m), thing, w, n);   // (word: its name on the shelf; name: only these values, a card's)
             else if (c == "keep_element") ok = (int)doc_element_keep(doc(m), thing, w);   // (word: its name among the elements)
             else if (c == "fx_duplicate") ok = changes(m, (int)!doc_fx_duplicate(doc(m), thing, w).empty());   // (word: the effect's card's title: it put on again after it, its values with it)
             else if (c == "element") ok = m->made = changes(m, doc_element_add(doc(m), w.c_str(), number));   // (word: the element's file; number: when it begins; the answer is the new thing)
             else if (c == "follow_elements") ok = changes(m, doc_elements_follow(doc(m))) >= 0;   // (each element put in whose file was written since made as it is now)
-            else if (c == "paste_style") ok = changes(m, (int)doc_look_put(doc(m), thing, w.c_str()));
+            else if (c == "paste_style") ok = changes(m, (int)doc_preset_put(doc(m), thing, w.c_str()));
             else if (c == "remove") ok = changes(m, (int)doc_remove(doc(m), thing));
             else if (c == "relate") ok = changes(m, (int)doc_relate(doc(m), thing, w.c_str(), m->now));
             else if (c == "fx_file") ok = changes(m, (int)doc_fx_file(doc(m), thing, w.c_str(), m->now));   // (an effect file put at the end of the thing's effects, or taken out; a transition runs from now)
@@ -102,7 +102,7 @@ int motolii_later(Motolii* m, const char* call, int thing, const char* name, con
                 int wide = 0, high = 0;
                 std::sscanf(w.c_str(), "%d %d", &wide, &high);
                 char* say = doc_size_words(wide, high);
-                ok = say ? changes(m, (int)doc_change(*m->d, say)) : (m->d->trouble = "a stage is from 16 to 8192 points each way, an even number of them", 0);
+                ok = say ? changes(m, (int)doc_change(*m->d, say)) : (m->d->error = "a stage is from 16 to 8192 points each way, an even number of them", 0);
             }
             else if (c == "raise") ok = changes(m, (int)doc_raise(doc(m), thing, (int)number));
             else if (c == "sequence") ok = changes(m, (int)doc_sequence(doc(m), number, RATE));

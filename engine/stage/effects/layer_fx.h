@@ -156,7 +156,7 @@ struct ThingFx {
     double own[5] = {0, 0, 0, 0, 0};       // (stood: where it is on its picture, its middle, its width and height, in its points, and how many points a unit of the world)
     math::mat4 square;                     // (stood: where its picture is filmed from, the thing's own place, unscaled)
     bool shell = false;                    // (a solid: it stays in the world and shows its picture itself, `look` on its faces while the stage is drawn: effected_solid.mat)
-    std::vector<MaterialInstance*> looks;  // (its faces' own looks while that one is on them: doc_thing_shell)
+    std::vector<MaterialInstance*> looks;  // (its faces' own looks while that one is on them: doc_layer_shell)
     // (its picture on a solid's faces, when its fx names a shape (solids/*.js): the shape's file, what the solid was last
     //  made of, the solid and its look; for one made of its outline, its coverage as last read back, and how many times)
     std::string solidFile, solidSaid, solidAs;   // (solidAs: its look's material)

@@ -1,4 +1,4 @@
-// values.h: part of doc.h (the values a thing may have, and how each is shown). Read only through doc.h.
+// values.h: part of doc.h (the values a layer may have, and how each is shown). Read only through doc.h.
 static const DocShown doc_shown[] = {
     {"text", "words", "", "Text", 0, 0, nullptr},
     {"file", "file", "", "Font", 0, 0, nullptr},
@@ -124,7 +124,7 @@ static const DocShown doc_shown[] = {
     {"parent_size", "share", "%", "Its size", 0, 2, nullptr},
     {"roll", "", "", "Roll", 0, 0, nullptr},
     {"scale_assist", "", "", "Assist", 0, 0, nullptr}, {"scale_assist_amount", "share", "%", "Scale", 0, 4, nullptr}, {"scale_assist_damp", "share", "%", "Damp", 1, 3, nullptr},
-    {"roll_radius", "", "", "Roll radius", -5, 5, nullptr},   // (the thing it goes with: shown by its name)
+    {"roll_radius", "", "", "Roll radius", -5, 5, nullptr},   // (the layer it goes with: shown by its name)
     {"mosh_with", "thing", "", "Motion of", 0, 0, nullptr}, {"dissolve", "", "", "Dissolve", 0, 2, nullptr}, {"grain", "share", "%", "Grain", 0.1, 4, nullptr}, {"mosh_at", "", "s", "From", 0, 10, nullptr},
     {"connect_to", "thing", "", "With", 0, 0, nullptr},
     {"resample", "", "", "Points", 0, 64, nullptr},
