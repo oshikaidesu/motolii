@@ -4,7 +4,8 @@
 #     picture by hand in Dart, a layer kind compared by name in C++). `ast-grep scan` exits 1 on a rule of severity error.
 #   clang-format (clang.llvm.org/docs/ClangFormat.html) with /.clang-format: the engine's C++ as the formatter leaves it,
 #     160 wide like the Dart side. `--dry-run --Werror` writes nothing and exits 1 on a file it would change.
-#   shape_check.sh          the files staged for this commit: the pre-commit hook
+#   shape_check.sh          the files staged for this commit: the pre-commit hook. A staged file may hold no more
+#                           refused shapes than it held at HEAD, so the count only falls
 #   shape_check.sh --all    every own file of the checkout: CI (.github/workflows/checks.yml), or by hand
 # A checker that is not installed is skipped here and said so; CI has both.
 cd "$(git rev-parse --show-toplevel)" || exit 1
@@ -18,8 +19,26 @@ cpp=$(list 'engine/*.h' 'engine/*.cpp' 'engine/*.mm' | grep -v -e '^engine/third
 bad=0
 if [ -n "$dart$cpp" ]; then
     if command -v ast-grep >/dev/null 2>&1; then
-        # shellcheck disable=SC2086
-        ast-grep scan -c .githooks/sgconfig.yml $dart $cpp >&2 || bad=1
+        if [ "$1" = --all ]; then
+            # shellcheck disable=SC2086
+            ast-grep scan -c .githooks/sgconfig.yml $dart $cpp >&2 || bad=1
+        else
+            # a commit: a file may hold no more refused shapes than it held at HEAD (a new file: none). So a file
+            # half cleaned can be committed and the count only falls (a ratchet: github.com/imbue-ai/ratchets).
+            was_at=$(mktemp -d)
+            refused() { ast-grep scan -c "$PWD/.githooks/sgconfig.yml" --json=stream "$1" 2>/dev/null | grep -c '"severity":"error"'; }
+            for f in $dart $cpp; do
+                now=$(refused "$f")
+                mkdir -p "$was_at/$(dirname "$f")"
+                if git show "HEAD:$f" > "$was_at/$f" 2>/dev/null; then was=$(refused "$was_at/$f"); else was=0; fi
+                if [ "$now" -gt "$was" ]; then
+                    ast-grep scan -c .githooks/sgconfig.yml "$f" >&2
+                    echo "shape check: $f holds $now refused shapes, it held $was at HEAD; the count only falls" >&2
+                    bad=1
+                fi
+            done
+            rm -rf "$was_at"
+        fi
     else
         echo "shape check: ast-grep is not installed (brew bundle); skipped here, CI runs it" >&2
     fi

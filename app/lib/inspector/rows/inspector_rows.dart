@@ -66,42 +66,6 @@ class AxisColumns extends InheritedWidget {
   bool updateShouldNotify(AxisColumns old) => false;
 }
 
-/// The X / Y / Z column header, laid on the same grid as PropRow's cells.
-class AxisHeader extends StatelessWidget {
-  const AxisHeader({super.key});
-  @override
-  Widget build(BuildContext context) {
-    final cfg = Ctx.of(context).cfg;
-    return LayoutBuilder(
-      builder: (context, box) => SizedBox(
-        height: Shape.z(16),
-        child: Row(
-          children: [
-            SizedBox(width: labelWPop),
-            Expanded(
-              child: Row(
-                children: [
-                  for (final (i, a) in const [(0, 'X'), (1, 'Y'), (2, 'Z')]) ...[
-                    if (i > 0) SizedBox(width: Shape.s(4)),
-                    Expanded(
-                      child: Text(
-                        a,
-                        textAlign: TextAlign.center,
-                        style: T.micro(Color.lerp(axesParts[i], Grey.g100, .3)!).copyWith(fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            if (cfg.resetArrow) SizedBox(width: resetW),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// A small picture of a row's value, drawn before its label, so the value reads as a shape before it reads as a number.
 class RowMark extends InheritedWidget {
   const RowMark({super.key, required this.marks, required super.child});

@@ -6,19 +6,6 @@ import 'package:naked_ui/naked_ui.dart';
 import '../skin/tokens.dart';
 import 'inspector_parts.dart';
 
-// ---- 3. small things ------------------------------------------------------------------------------------------------
-/// A contract written as a 10px caption under a control.
-class Cap extends StatelessWidget {
-  const Cap(this.text, {super.key, this.color});
-  final String text;
-  final Color? color;
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.only(top: Shape.s(6)),
-    child: Text(text, style: T.label(color ?? Grey.g56).copyWith(height: 1.3)),
-  );
-}
-
 /// What floats over the window goes when anything else is touched, by either button, and on Esc (Flutter's TapRegion; a
 /// Mac's menu, Windows' too): [keep] a press it leaves alone, the one that opens it again; [group] what counts as inside.
 class FloatShut extends StatefulWidget {
@@ -167,28 +154,6 @@ class ResetMark extends StatelessWidget {
             ),
           )
         : null,
-  );
-}
-
-/// The link between two fields: closed chain = linked, broken chain = free. Shape carries the state, not tone alone.
-class LinkMark extends StatelessWidget {
-  const LinkMark({super.key, required this.on, this.onTap, this.enabled = true});
-  final bool on, enabled;
-  final VoidCallback? onTap;
-  @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    toggled: on,
-    label: 'Link',
-    child: Hov(
-      onTap: enabled ? onTap : null,
-      excludeSemantics: true,
-      builder: (_, h) => SizedBox(
-        width: Shape.z(18),
-        height: cellH,
-        child: CustomPaint(painter: _LinkPaint(on, h && enabled, enabled)),
-      ),
-    ),
   );
 }
 
