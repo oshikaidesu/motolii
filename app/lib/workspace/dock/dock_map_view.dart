@@ -190,7 +190,7 @@ class _DockMapState extends State<DockMap> {
   Widget _settings() => Column(
     crossAxisAlignment: CrossAxisAlignment.end,
     children: [
-      DockIconButton(DockG.more, key: ValueKey('ws-map-$_name-forces'), on: _forces, onTap: () => setState(() => _forces = !_forces)),
+      IconPress(dockMark(DockG.more), key: ValueKey('ws-map-$_name-forces'), on: _forces, onTap: () => setState(() => _forces = !_forces)),
       if (_forces)
         Container(
           key: ValueKey('ws-map-$_name-forces-open'),
@@ -253,7 +253,7 @@ class _DockMapState extends State<DockMap> {
     final i = list.indexOf(widget.picked ?? '');
     Widget arrow(String key, int by) => Transform.flip(
       flipX: by < 0,
-      child: DockIconButton(DockG.chevron, key: ValueKey('ws-map-$_name-$key'), onTap: () => _step(list, by)),
+      child: IconPress(dockMark(DockG.chevron), key: ValueKey('ws-map-$_name-$key'), onTap: () => _step(list, by)),
     );
     return Container(
       key: ValueKey('ws-alike-$_name'),
@@ -274,7 +274,7 @@ class _DockMapState extends State<DockMap> {
             ),
           ),
           arrow('next', 1),
-          DockIconButton(DockG.reload, key: ValueKey('ws-map-$_name-refresh'), on: i > 0, onTap: () => setState(() => _from = widget.picked)),
+          IconPress(dockMark(DockG.reload), key: ValueKey('ws-map-$_name-refresh'), on: i > 0, onTap: () => setState(() => _from = widget.picked)),
         ],
       ),
     );

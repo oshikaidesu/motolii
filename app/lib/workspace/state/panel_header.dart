@@ -2,27 +2,33 @@
 part of 'state.dart';
 
 /// A panel's header: title on the left, [trailing] on the right, a hairline under it.
+/// [height], [color] and [padding] are for the headers that sit taller, darker or tighter; [child] stands in for the whole row.
 class WsHeader extends StatelessWidget {
-  const WsHeader(this.title, {super.key, this.trailing = const [], this.leading});
+  const WsHeader(this.title, {super.key, this.trailing = const [], this.leading, this.height, this.color, this.padding, this.child});
   final String title;
   final List<Widget> trailing;
-  final Widget? leading;
+  final Widget? leading, child;
+  final double? height;
+  final Color? color;
+  final EdgeInsetsGeometry? padding;
   @override
   Widget build(BuildContext context) => Container(
-    height: WsT.header,
-    padding: EdgeInsets.symmetric(horizontal: WsT.inset),
+    height: height ?? WsT.header,
+    padding: padding ?? EdgeInsets.symmetric(horizontal: WsT.inset),
     decoration: BoxDecoration(
-      color: WsT.body,
+      color: color ?? WsT.body,
       border: Border(bottom: BorderSide(color: WsT.line)),
     ),
-    child: Row(
-      children: [
-        if (leading case final l?) ...[l, SizedBox(width: Shape.s(6))],
-        if (title.isNotEmpty) Text(title, style: T.name(Grey.g95).copyWith(fontWeight: FontWeight.w700)),
-        const Spacer(),
-        ...trailing,
-      ],
-    ),
+    child:
+        child ??
+        Row(
+          children: [
+            if (leading case final l?) ...[l, SizedBox(width: Shape.s(6))],
+            if (title.isNotEmpty) Text(title, style: T.name(Grey.g95).copyWith(fontWeight: FontWeight.w700)),
+            const Spacer(),
+            ...trailing,
+          ],
+        ),
   );
 }
 

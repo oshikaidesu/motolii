@@ -6,30 +6,30 @@ class _LabelHeader extends StatelessWidget {
   final int count;
   final bool solo;
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => WsHeader(
+    '',
     height: WtM.ruler,
+    color: Grey.g10,
     padding: EdgeInsets.only(left: Shape.s(8), right: Shape.s(6)),
-    decoration: BoxDecoration(
-      color: Grey.g10,
-      border: Border(bottom: BorderSide(color: WsT.line)),
-    ),
-    child: Row(
+    leading: Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text('#', style: T.micro(Grey.g56)),
         SizedBox(width: Shape.s(12)),
         Text('LAYER', style: T.micro(Grey.g63).copyWith(letterSpacing: 1)),
         SizedBox(width: Shape.s(6)),
         Text('$count', style: T.value(Grey.g56).copyWith(fontSize: T.px(10))),
-        const Spacer(),
-        for (final g in const [TpGlyph.eye, TpGlyph.solo, TpGlyph.lock])
-          SizedBox(
-            width: Shape.z(20),
-            child: Center(
-              child: CustomPaint(size: const Size.square(10), painter: TpGlyphPainter(g, g == TpGlyph.solo && solo ? WsT.accent : Grey.g56)),
-            ),
-          ),
       ],
     ),
+    trailing: [
+      for (final g in const [TpGlyph.eye, TpGlyph.solo, TpGlyph.lock])
+        SizedBox(
+          width: Shape.z(20),
+          child: Center(
+            child: CustomPaint(size: const Size.square(10), painter: TpGlyphPainter(g, g == TpGlyph.solo && solo ? WsT.accent : Grey.g56)),
+          ),
+        ),
+    ],
   );
 }
 

@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../skin/tokens.dart';
 import 'tool_panel_widgets.dart';
+import '../../widgets/controls.dart' show Chip, ChipLook;
 import '../edits/make_relation.dart';
 import '../stage/stage_art.dart';
 import '../../widgets/two_fingers.dart';
@@ -101,7 +102,9 @@ class _RelationsToolState extends State<RelationsTool> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ToolStrip(left: [ToolLayerChip('Relations · ${world.relations.length}', WsT.toneGroup)]),
+          ToolStrip(
+            left: [Chip(label: 'Relations · ${world.relations.length}', look: ChipLook.flat(WsT.toneGroup))],
+          ),
           ColoredBox(
             // (the tab says what it is for in the words that do it, as the stage's top does; Blender's Constraints tab holds its own Add)
             color: WsT.card,
@@ -117,7 +120,9 @@ class _RelationsToolState extends State<RelationsTool> {
                     GestureDetector(
                       key: ValueKey('ws-tab-relate-$k'),
                       onTap: many ? () => wsRelate(ws, k) : null,
-                      child: IntrinsicWidth(child: ToolLayerChip(wsRelationWord(k), many ? WsT.accent : Grey.g38)),
+                      child: IntrinsicWidth(
+                        child: Chip(label: wsRelationWord(k), look: ChipLook.flat(many ? WsT.accent : Grey.g38)),
+                      ),
                     ),
                 ],
               ),

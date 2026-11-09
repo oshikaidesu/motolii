@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../skin/tokens.dart';
 import 'tool_panel_widgets.dart';
+import '../../widgets/controls.dart' show Chip, ChipLook;
 import '../state/state.dart';
 import '../../widgets/two_fingers.dart';
 
@@ -115,7 +116,7 @@ class _DepthToolState extends State<DepthTool> {
         children: [
           ToolStrip(
             left: [
-              ToolLayerChip(cam?.name ?? 'Camera', WsT.toneCamera),
+              Chip(label: cam?.name ?? 'Camera', look: ChipLook.flat(WsT.toneCamera)),
               SizedBox(width: Shape.s(8)),
               Text('${lens.focal.round()} mm', style: T.value(Grey.g91)),
               SizedBox(width: Shape.s(8)),
@@ -123,7 +124,7 @@ class _DepthToolState extends State<DepthTool> {
               SizedBox(width: Shape.s(8)),
               Text('${(lens.fov * 180 / math.pi).toStringAsFixed(1)}° view', style: T.label(Grey.g56)),
             ],
-            right: [ToolChip(label: target == null ? 'Focus free' : 'On ${target.name}', dot: target == null ? Grey.g56 : wsTone(target.kind))],
+            right: [Chip(label: target == null ? 'Focus free' : 'On ${target.name}', dot: target == null ? Grey.g56 : wsTone(target.kind))],
           ),
           const SizedBox(height: WsT.gutter),
           Expanded(

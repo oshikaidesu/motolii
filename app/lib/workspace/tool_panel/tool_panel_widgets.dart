@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 import '../../skin/svg_parts.dart';
 
 import '../../widgets/text_gestures.dart';
-import '../../inspector/inspector_parts.dart' show Hov, Pop;
+import '../../inspector/inspector_parts.dart' show Pop;
 import '../../skin/tokens.dart';
 import 'tool_panel_align.dart';
 import 'tool_panel_blend.dart';
@@ -152,65 +152,9 @@ class ToolGlyph extends CustomPainter {
   bool shouldRepaint(ToolGlyph o) => o.name != name || o.ink != ink;
 }
 
-/// A round header chip: a mark and a word. [onTap] makes it a button.
-class ToolChip extends StatelessWidget {
-  const ToolChip({super.key, required this.label, this.dot, this.onTap, this.on = false});
-  final String label;
-  final Color? dot;
-  final VoidCallback? onTap;
-  final bool on;
-  @override
-  Widget build(BuildContext context) => Hov(
-    onTap: onTap,
-    cursor: onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
-    builder: (_, h) => Container(
-      height: Shape.z(18),
-      padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
-      decoration: BoxDecoration(color: on ? WsT.accent : (h && onTap != null ? WsT.raised : WsT.well), borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius))),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (dot != null) ...[
-            Container(
-              width: Shape.z(6),
-              height: Shape.z(6),
-              decoration: BoxDecoration(color: on ? WsT.onAccent : dot, shape: BoxShape.circle),
-            ),
-            SizedBox(width: Shape.s(5)),
-          ],
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.ellipsis,
-              style: T.micro(on ? WsT.onAccent : (h && onTap != null ? Grey.g95 : Grey.g76)),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-/// A square-ish round button holding one glyph.
-class ToolIconButton extends StatelessWidget {
-  const ToolIconButton({super.key, required this.glyph, required this.onTap, this.on = false, this.size = 20});
-  final CustomPainter Function(Color ink) glyph;
-  final VoidCallback onTap;
-  final bool on;
-  final double size;
-  @override
-  Widget build(BuildContext context) => Hov(
-    onTap: onTap,
-    builder: (_, h) => Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(color: on ? WsT.accent : (h ? WsT.raised : WsT.well), borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
-      child: CustomPaint(painter: glyph(on ? WsT.onAccent : (h ? Grey.g95 : Grey.g76))),
-    ),
-  );
-}
+/// A painted glyph for an [IconPress] tile: fills the tile, in the ink the press gives.
+Widget Function(Color) paintInk(CustomPainter Function(Color ink) glyph) =>
+    (ink) => SizedBox.expand(child: CustomPaint(painter: glyph(ink)));
 
 /// A field you scrub sideways: label left, value right, a fill bar in the field's [tone] shows where the value sits in its range.
 class ToolScrub extends StatefulWidget {
@@ -376,21 +320,6 @@ class ToolStrip extends StatelessWidget {
         ...right,
       ],
     ),
-  );
-}
-
-/// A flat chip in a layer's hue with its name in dark ink.
-class ToolLayerChip extends StatelessWidget {
-  const ToolLayerChip(this.name, this.tone, {super.key});
-  final String name;
-  final Color tone;
-  @override
-  Widget build(BuildContext context) => Container(
-    height: Shape.z(16),
-    padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
-    alignment: Alignment.center,
-    decoration: BoxDecoration(color: tone, borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius))),
-    child: Text(name, style: T.micro(WsT.onAccent).copyWith(fontWeight: FontWeight.w700)),
   );
 }
 

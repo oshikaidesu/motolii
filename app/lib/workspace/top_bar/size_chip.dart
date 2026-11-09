@@ -138,9 +138,8 @@ class _SizeChipState extends State<_SizeChip> {
                         spacing: Shape.s(6),
                         runSpacing: Shape.s(6),
                         children: [
-                          for (final s in sizeShapes)
-                            ToolChip(key: ValueKey('size-${s.$1}'), label: s.$1, on: s == now, onTap: () => _to(ws, sizeOf(s, short))),
-                          if (now == null) ToolChip(label: '$shownW:$shownH', on: true, onTap: () {}), // (its own: a size typed)
+                          for (final s in sizeShapes) Chip(key: ValueKey('size-${s.$1}'), label: s.$1, on: s == now, onTap: () => _to(ws, sizeOf(s, short))),
+                          if (now == null) Chip(label: '$shownW:$shownH', on: true, onTap: () {}), // (its own: a size typed)
                         ],
                       ),
                       SizedBox(height: Shape.s(12)),
@@ -151,7 +150,7 @@ class _SizeChipState extends State<_SizeChip> {
                         runSpacing: Shape.s(6),
                         children: [
                           for (final p in sizeResolutions)
-                            ToolChip(
+                            Chip(
                               key: ValueKey('size-${p}p'),
                               label: '${p}p',
                               on: p == short,
@@ -168,7 +167,7 @@ class _SizeChipState extends State<_SizeChip> {
                         runSpacing: Shape.s(6),
                         children: [
                           for (final r in const [12, 15, 18, 20, 24, 25, 30, 48, 50, 60])
-                            ToolChip(
+                            Chip(
                               key: ValueKey('size-${r}fps'),
                               label: '$r',
                               on: r == Ws.fps,
@@ -199,7 +198,7 @@ class _SizeChipState extends State<_SizeChip> {
                             ('Blue', '0047bb'),
                             ('Transparent', ''),
                           ])
-                            ToolChip(
+                            Chip(
                               key: ValueKey('size-bg-$label'),
                               label: label,
                               on: (ws.inside?.word(0, 'background') ?? '') == hex,
@@ -223,7 +222,7 @@ class _SizeChipState extends State<_SizeChip> {
                         runSpacing: Shape.s(6),
                         children: [
                           for (final n in const [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 45, 60])
-                            ToolChip(
+                            Chip(
                               key: ValueKey('size-len-$n'),
                               label: n == 0 ? 'End' : '${n}s',
                               on: (ws.inside?.value(0, 'layer_length', 0) ?? 0).round() == n,
@@ -275,7 +274,10 @@ class _SizeChipState extends State<_SizeChip> {
             setState(() => _scrub = null);
             if (w != null && w != w0.round() && ws.onSize != null) ws.onSize!(w, (w * h0 / w0).round());
           },
-          child: _Chip('$shownW × $shownH'),
+          child: Chip(
+            label: '$shownW × $shownH',
+            look: ChipLook.readout(ink: Grey.g76),
+          ),
         ),
       ),
     );

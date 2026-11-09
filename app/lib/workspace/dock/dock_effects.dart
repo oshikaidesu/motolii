@@ -563,8 +563,8 @@ class _EffectsShelfState extends State<EffectsShelf> {
               onAction: off(sel) ?? sel.apply,
               needs: !picked,
               more: Builder(
-                builder: (b) => DockIconButton(
-                  DockG.more,
+                builder: (b) => IconPress(
+                  dockMark(DockG.more),
                   key: const ValueKey('ws-fx-more'),
                   onTap: () => menuOn(sel, (b.findRenderObject() as RenderBox).localToGlobal(Offset.zero)),
                 ),

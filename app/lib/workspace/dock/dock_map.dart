@@ -24,7 +24,7 @@ import '../../bridge/motolii.dart' show Motolii, MotoliiQuestions;
 import '../../widgets/media.dart' show MiniSlider;
 import '../../skin/tokens.dart';
 import 'dock_glyphs.dart';
-import 'dock_widgets.dart' show DockIconButton;
+import 'dock_widgets.dart' show dockMark, IconPress;
 import '../state/state.dart' show WsT;
 part 'dock_map_view.dart';
 

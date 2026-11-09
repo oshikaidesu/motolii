@@ -111,32 +111,32 @@ class _WsShelfState extends State<WsShelf> {
           name,
           trailing: [
             if (name == 'Media') ...[
-              DockIconButton(DockG.grid, on: !_mem.mediaList, onTap: () => setState(() => _mem.mediaList = false)),
-              DockIconButton(DockG.list, on: _mem.mediaList, onTap: () => setState(() => _mem.mediaList = true)),
-              DockIconButton(
-                DockG.folder,
+              IconPress(dockMark(DockG.grid), on: !_mem.mediaList, onTap: () => setState(() => _mem.mediaList = false)),
+              IconPress(dockMark(DockG.list), on: _mem.mediaList, onTap: () => setState(() => _mem.mediaList = true)),
+              IconPress(
+                dockMark(DockG.folder),
                 on: _mem.mediaDeep,
                 onTap: () => setState(() => _mem.mediaDeep = !_mem.mediaDeep),
               ), // (the folders below listed with it)
-              DockIconButton(
-                DockG.files,
+              IconPress(
+                dockMark(DockG.files),
                 on: _mem.treeSide != 0,
                 onTap: () => setState(() => _mem.treeSide = (_mem.treeSide + 1) % 3),
               ), // (the tree: by the room, left, above)
             ] else if (name == 'Program') ...[
-              DockIconButton(DockG.list, on: !_mem.programCode, onTap: () => setState(() => _mem.programCode = false)),
-              DockIconButton(DockG.program, on: _mem.programCode, onTap: () => setState(() => _mem.programCode = true)),
+              IconPress(dockMark(DockG.list), on: !_mem.programCode, onTap: () => setState(() => _mem.programCode = false)),
+              IconPress(dockMark(DockG.program), on: _mem.programCode, onTap: () => setState(() => _mem.programCode = true)),
             ] else ...[
               if (name == 'Effects' || name == 'Fonts') ...[
                 // (its items in rows, or as a map, the alike near: XO's Space beside its list, dock_map.dart)
-                DockIconButton(
-                  DockG.grid,
+                IconPress(
+                  dockMark(DockG.grid),
                   key: ValueKey('ws-$name-rows'),
                   on: !_mem.mapped.contains(name),
                   onTap: () => setState(() => _mem.mapped.remove(name)),
                 ),
-                DockIconButton(
-                  DockG.particles,
+                IconPress(
+                  dockMark(DockG.particles),
                   key: ValueKey('ws-$name-map'),
                   on: _mem.mapped.contains(name),
                   onTap: () => setState(() => _mem.mapped.add(name)),
@@ -145,8 +145,8 @@ class _WsShelfState extends State<WsShelf> {
               if (name == 'Effects') // (the tiles being drawn, lit; a press draws the picked one's again, or, none picked, all of them: no source for it, the user's own wish)
                 ListenableBuilder(
                   listenable: EffectTiles.progress,
-                  builder: (context, _) => DockIconButton(
-                    DockG.reload,
+                  builder: (context, _) => IconPress(
+                    dockMark(DockG.reload),
                     key: const ValueKey('ws-fx-reload'),
                     on: EffectTiles.progress.value != null,
                     onTap: ws.inside == null ? null : () => EffectTiles.again(ws.inside!, file: c.sel),

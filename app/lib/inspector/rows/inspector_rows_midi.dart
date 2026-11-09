@@ -5,6 +5,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 
 import '../../widgets/text_gestures.dart';
 
@@ -81,7 +82,7 @@ class _MidiKeysState extends State<MidiKeys> {
             'MIDI',
             Row(
               children: [
-                Chip('Choose…', on: false, onTap: () => _choose(doc)),
+                Chip(label: 'Choose…', look: ChipLook.choice, onTap: () => _choose(doc)),
                 SizedBox(width: Shape.s(6)),
                 Expanded(
                   child: Text(name ?? 'None', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(name == null ? Grey.g56 : Grey.g91)),
@@ -94,7 +95,10 @@ class _MidiKeysState extends State<MidiKeys> {
             Wrap(
               spacing: Shape.s(2),
               runSpacing: Shape.s(2),
-              children: [for (var c = -1; c < 16; c++) Chip(c < 0 ? 'Any' : '${c + 1}', on: _channel == c, onTap: () => setState(() => _channel = c))],
+              children: [
+                for (var c = -1; c < 16; c++)
+                  Chip(label: c < 0 ? 'Any' : '${c + 1}', look: ChipLook.choice, on: _channel == c, onTap: () => setState(() => _channel = c)),
+              ],
             ),
           ),
           line(
@@ -123,13 +127,13 @@ class _MidiKeysState extends State<MidiKeys> {
             Wrap(
               spacing: Shape.s(2),
               runSpacing: Shape.s(2),
-              children: [for (final (k, w) in midiKinds) Chip(w, on: _kind == k, onTap: () => setState(() => _kind = k))],
+              children: [for (final (k, w) in midiKinds) Chip(label: w, look: ChipLook.choice, on: _kind == k, onTap: () => setState(() => _kind = k))],
             ),
           ),
           SizedBox(height: Shape.s(4)),
           Row(
             children: [
-              Chip('Apply', on: true, onTap: () => _apply(doc)),
+              Chip(label: 'Apply', look: ChipLook.choice, on: true, onTap: () => _apply(doc)),
               SizedBox(width: Shape.s(8)),
               if (_trouble != null) Expanded(child: Text(_trouble!, style: T.label(Grey.g56))),
             ],

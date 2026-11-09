@@ -2,6 +2,9 @@
 // inside names, each drawn as two discs and what their overlap becomes), how much of it is there (its opacity, a bar pulled across), and
 // whether it shows only where the layer under it is (clip). A tap on a name picks it. The ways are the inside's (motolii_words); the window draws each.
 import 'package:flutter/gestures.dart' show kPrimaryButton;
+
+import '../../widgets/controls.dart' show IconPress;
+
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart' show NakedFocusableDetector;
 
@@ -75,11 +78,13 @@ class _RowState extends State<_Row> {
               ),
             ), // (its way, named: two ways can look alike small)
             SizedBox(width: Shape.s(4)),
-            ToolIconButton(
+            IconPress(
+              paintInk((ink) => _Way(now, ink)),
+              rest: WsT.well,
+              ink: Grey.g76,
               key: ValueKey('blend.${l.id}'),
               size: Shape.z(24),
               on: _open,
-              glyph: (ink) => _Way(now, ink),
               onTap: () => setState(() => _open = !_open),
             ),
             SizedBox(width: Shape.s(8)),
@@ -92,11 +97,13 @@ class _RowState extends State<_Row> {
             if (l == ws.layers.last)
               SizedBox(width: Shape.s(24)) // (the back-most: nothing under it to clip to)
             else
-              ToolIconButton(
+              IconPress(
+                paintInk((ink) => _Clip(ink)),
+                rest: WsT.well,
+                ink: Grey.g76,
                 key: ValueKey('clip.${l.id}'),
                 size: Shape.z(24),
                 on: clip,
-                glyph: (ink) => _Clip(ink),
                 onTap: () {
                   ws.after(m!.later('set', layer: t, name: 'clip', number: clip ? 0 : 1));
                 },
@@ -139,11 +146,13 @@ class _RowState extends State<_Row> {
                       NakedFocusableDetector(
                         canRequestFocus: false,
                         onHoverChange: (over) => setState(() => _hover = over ? w : null),
-                        child: ToolIconButton(
+                        child: IconPress(
+                          paintInk((ink) => _Way(w, ink)),
+                          rest: WsT.well,
+                          ink: Grey.g76,
                           key: ValueKey('blend.${l.id}.$w'),
                           size: Shape.z(26),
                           on: w == now,
-                          glyph: (ink) => _Way(w, ink),
                           onTap: () => say('blend', w),
                         ),
                       ),

@@ -20,7 +20,7 @@ import '../../skin/theme.dart';
 import '../../skin/tokens.dart';
 import '../stage/stage_art.dart' show WsArt;
 import '../state/state.dart';
-import '../tool_panel/tool_panel_widgets.dart' show ToolChip;
+import '../../widgets/controls.dart' show Chip, ChipLook;
 import '../../widgets/two_fingers.dart';
 import '../../widgets/text_gestures.dart';
 part 'timings.dart';
@@ -56,9 +56,15 @@ class WsTopBar extends StatelessWidget {
           SizedBox(width: Shape.s(10)),
           const _SizeChip(),
           SizedBox(width: Shape.s(4)),
-          _Chip('${Ws.fps} fps'),
+          Chip(
+            label: '${Ws.fps} fps',
+            look: ChipLook.readout(ink: Grey.g76),
+          ),
           SizedBox(width: Shape.s(4)),
-          _Chip(ws.timecode(Ws.duration)),
+          Chip(
+            label: ws.timecode(Ws.duration),
+            look: ChipLook.readout(ink: Grey.g76),
+          ),
           const Spacer(),
           const WsZoomReadout(),
           const _ShadeSwitch(),
@@ -96,19 +102,6 @@ class _Wordmark extends StatelessWidget {
         style: T.title(Grey.g95).copyWith(fontSize: T.px(14), fontWeight: FontWeight.w800, letterSpacing: -.2),
       ),
     ],
-  );
-}
-
-class _Chip extends StatelessWidget {
-  const _Chip(this.text);
-  final String text;
-  @override
-  Widget build(BuildContext context) => Container(
-    height: Shape.z(20),
-    padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
-    alignment: Alignment.center,
-    decoration: BoxDecoration(color: WsT.well, borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius))),
-    child: Text(text, style: T.value(Grey.g76).copyWith(fontSize: T.px(10))),
   );
 }
 
@@ -481,7 +474,7 @@ class _RenderState extends State<_Render> {
                                 crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   for (final (v, said) in choices)
-                                    ToolChip(
+                                    Chip(
                                       key: ValueKey('render-$name-$v'),
                                       label: said,
                                       on: now == v,
@@ -511,7 +504,7 @@ class _RenderState extends State<_Render> {
                                 runSpacing: Shape.s(4),
                                 children: [
                                   for (final (label, ending, _) in _formats)
-                                    ToolChip(key: ValueKey('render-$label'), label: label, on: _ending == ending, onTap: () => again(() => _as(ending))),
+                                    Chip(key: ValueKey('render-$label'), label: label, on: _ending == ending, onTap: () => again(() => _as(ending))),
                                 ],
                               ),
                               SizedBox(height: Shape.s(4)),

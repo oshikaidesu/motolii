@@ -5,6 +5,9 @@ language: dart
 severity: error
 message: a picture drawn by hand in Dart (CustomPainter)
 note: a mark is a glyph of the skin's font or an SVG of the skin (flutter_svg); a picture of the document is the engine's
+# app/lib/widgets/controls.dart is the one place a painting is put on the screen for the small parts (Badge, IconPress):
+# a part that holds a mark takes the painter and paints it there, so the call sites name no CustomPaint.
+ignores: ['**/widgets/controls.dart']
 rule:
   any:
     - kind: superclass

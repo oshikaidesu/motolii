@@ -3,6 +3,8 @@
 // the picture, let go: one step), so the inside reckons it into its own units, through its parent's turn.
 import 'package:flutter/widgets.dart';
 
+import '../../widgets/controls.dart' show Chip, ChipLook, IconPress;
+
 import '../../skin/tokens.dart';
 
 import 'tool_panel_widgets.dart';
@@ -58,7 +60,10 @@ class AlignTool extends StatelessWidget {
     return ListView(
       padding: EdgeInsets.all(WsT.gap),
       children: [
-        if (ws.layer case final l?) ToolStrip(left: [ToolLayerChip(l.name, wsTone(l.kind))]),
+        if (ws.layer case final l?)
+          ToolStrip(
+            left: [Chip(label: l.name, look: ChipLook.flat(wsTone(l.kind)))],
+          ),
         SizedBox(height: Shape.s(8)),
         for (final row in const [
           [0, 1, 2],
@@ -71,11 +76,13 @@ class AlignTool extends StatelessWidget {
               child: Row(
                 children: [
                   for (final side in row) ...[
-                    ToolIconButton(
+                    IconPress(
+                      paintInk((ink) => _Side(side, ink)),
+                      rest: WsT.well,
+                      ink: Grey.g76,
                       key: ValueKey('align.$side'),
                       size: Shape.z(36),
                       on: at(side),
-                      glyph: (ink) => _Side(side, ink),
                       onTap: () => r == null ? null : align(ws, side),
                     ),
                     SizedBox(width: Shape.s(4)),

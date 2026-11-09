@@ -18,6 +18,7 @@ import '../../bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiMoment,
 import '../../widgets/timeline_painters.dart' show TpGlyph, TpGlyphView;
 import '../../inspector/inspector_state.dart' show textToType;
 import '../../inspector/inspector_small.dart' show Hov;
+import '../../widgets/controls.dart' show Badge, Chip, ChipLook;
 import '../edits/make_relation.dart';
 
 import 'package:perfect_freehand/perfect_freehand.dart' show getStrokeOutlinePoints, getStrokePoints, PointVector, StrokeOptions;

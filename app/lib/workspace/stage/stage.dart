@@ -9,6 +9,7 @@ import '../../inspector/inspector_small.dart' show Hov;
 import '../../skin/forms/forms.dart';
 import '../../skin/svg_parts.dart';
 
+import '../../widgets/controls.dart' show IconPress;
 import '../../widgets/glyphs.dart';
 import '../../skin/tokens.dart';
 import 'stage_art.dart';
@@ -323,7 +324,15 @@ class _ToolColumn extends StatelessWidget {
                     color: WsT.line,
                   ),
                 if (i != 0 && i != 2 && i != 4 && i != 7) SizedBox(height: Shape.s(3)),
-                _ToolButton(key: ValueKey('ws-tool-$i'), glyph: _tools[i].$1, on: i == active, onTap: () => _press(i)),
+                IconPress(
+                  (ink) => Glyph(_tools[i].$1, size: Shape.z(16), color: ink),
+                  key: ValueKey('ws-tool-$i'),
+                  size: Shape.z(28),
+                  rest: WsT.body,
+                  ink: Grey.g63,
+                  on: i == active,
+                  onTap: () => _press(i),
+                ),
               ],
               Container(
                 width: Shape.z(20),
@@ -336,24 +345,6 @@ class _ToolColumn extends StatelessWidget {
           ),
         ),
       ),
-    ),
-  );
-}
-
-class _ToolButton extends StatelessWidget {
-  const _ToolButton({super.key, required this.glyph, required this.on, required this.onTap});
-  final G glyph;
-  final bool on;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) => Hov(
-    onTap: onTap,
-    builder: (_, h) => Container(
-      width: Shape.z(28),
-      height: Shape.z(28),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(color: on ? WsT.accent : (h ? WsT.raised : WsT.body), borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
-      child: Glyph(glyph, size: Shape.z(16), color: on ? WsT.onAccent : (h ? Grey.g95 : Grey.g63)),
     ),
   );
 }

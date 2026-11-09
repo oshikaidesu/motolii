@@ -197,9 +197,12 @@ class OnOff extends StatelessWidget {
   }
 }
 
+/// The 28x16 on/off track. The arguments say another skin's colours, 1px edge and thumb size; none given is the pop look.
 class PopSwitch extends StatelessWidget {
-  const PopSwitch({super.key, required this.on});
+  const PopSwitch({super.key, required this.on, this.trackOn, this.trackOff, this.thumbOn, this.thumbOff, this.edgeOn, this.edgeOff, this.thumb = 12});
   final bool on;
+  final Color? trackOn, trackOff, thumbOn, thumbOff, edgeOn, edgeOff;
+  final double thumb;
   @override
   Widget build(BuildContext context) => AnimatedContainer(
     duration: const Duration(milliseconds: 120),
@@ -208,37 +211,15 @@ class PopSwitch extends StatelessWidget {
     height: Shape.z(16),
     padding: EdgeInsets.all(Shape.s(2)),
     alignment: on ? Alignment.centerRight : Alignment.centerLeft,
-    decoration: BoxDecoration(color: on ? Pop.accent : Grey.g26, borderRadius: BorderRadius.all(Shape.r(8))),
-    child: Container(
-      width: Shape.z(12),
-      height: Shape.z(12),
-      decoration: BoxDecoration(color: on ? Pop.onAccent : Grey.g63, shape: BoxShape.circle),
+    decoration: BoxDecoration(
+      color: on ? (trackOn ?? Pop.accent) : (trackOff ?? Grey.g26),
+      borderRadius: BorderRadius.all(Shape.r(8)),
+      border: edgeOn == null ? null : Border.all(color: on ? edgeOn! : edgeOff!, width: 1),
     ),
-  );
-}
-
-/// A choice chip in the lab's choice-control style: a g20 pill, g95 text, a 1px accent underline.
-class Chip extends StatelessWidget {
-  const Chip(this.text, {super.key, required this.on, this.onTap, this.enabled = true});
-  final String text;
-  final bool on, enabled;
-  final VoidCallback? onTap;
-  @override
-  Widget build(BuildContext context) => Hov(
-    onTap: enabled ? onTap : null,
-    builder: (_, h) => Opacity(
-      opacity: enabled ? 1 : .4,
-      child: Container(
-        height: Shape.z(20),
-        padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: on ? Grey.g20 : (h ? Grey.g15 : null),
-          borderRadius: BorderRadius.all(Shape.r(5)),
-          border: Border(bottom: BorderSide(color: on ? Role.selected : const Color(0x00000000))),
-        ),
-        child: Text(text, style: T.label(on ? Grey.g95 : Grey.g63)),
-      ),
+    child: Container(
+      width: Shape.z(thumb),
+      height: Shape.z(thumb),
+      decoration: BoxDecoration(color: on ? (thumbOn ?? Pop.onAccent) : (thumbOff ?? Grey.g63), shape: BoxShape.circle),
     ),
   );
 }

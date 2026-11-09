@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook;
 
 /// A group: a heading and its rows. How groups are told apart is the Editorial knob: A a rule above, B a grey step, C a rule under a large heading.
 class Sect extends StatelessWidget {
@@ -132,7 +133,10 @@ class _PopCard extends StatelessWidget {
     List<Widget> lead(bool h) => [
       // the mark sits centred in its box, and the gap after it equals the card's inset, so it has the same air on both sides
       if (toggle != null) ...[FoldMark(open: open, hot: h), SizedBox(width: Pop.inset)],
-      if (s.mark != null && tone != null) ...[ToneBadge(s.mark!, tone, dim: s.dim), SizedBox(width: Shape.s(6))],
+      if (s.mark != null && tone != null) ...[
+        Badge(s.dim ? Grey.g26 : tone, size: 16, radius: const Radius.circular(16 * .32), mark: MarkPaint(s.mark!, s.dim ? Grey.g56 : Pop.onAccent)),
+        SizedBox(width: Shape.s(6)),
+      ],
       if (title != null)
         Flexible(
           child: Text(
@@ -176,19 +180,34 @@ class _PopCard extends StatelessWidget {
                                 var used = 0.0;
                                 final fit = <String>[];
                                 for (final t in chips) {
-                                  final w = BriefChip.width(t) + (fit.isEmpty ? 0 : 4);
+                                  final w = Chip.width(t, ChipLook.brief()) + (fit.isEmpty ? 0 : 4);
                                   if (used + w > box.maxWidth) break;
                                   used += w;
                                   fit.add(t);
                                 }
                                 if (fit.isEmpty) {
                                   return Row(
-                                    children: [Flexible(child: BriefChip(chips.first, dim: s.dim))],
+                                    children: [
+                                      Flexible(
+                                        child: Chip(
+                                          label: chips.first,
+                                          dot: Chip.swatch(chips.first),
+                                          look: ChipLook.brief(dim: s.dim),
+                                        ),
+                                      ),
+                                    ],
                                   );
                                 }
                                 return Row(
                                   children: [
-                                    for (final (i, t) in fit.indexed) ...[if (i > 0) SizedBox(width: Shape.s(4)), BriefChip(t, dim: s.dim)],
+                                    for (final (i, t) in fit.indexed) ...[
+                                      if (i > 0) SizedBox(width: Shape.s(4)),
+                                      Chip(
+                                        label: t,
+                                        dot: Chip.swatch(t),
+                                        look: ChipLook.brief(dim: s.dim),
+                                      ),
+                                    ],
                                   ],
                                 );
                               },

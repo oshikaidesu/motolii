@@ -10,7 +10,6 @@ import 'package:flutter/widgets.dart';
 
 import '../../bridge/motolii.dart' show Motolii, MotoliiQuestions, motoliiDir;
 import '../../skin/tokens.dart';
-import '../tool_panel/tool_panel_widgets.dart' show ToolChip;
 import 'dock_files.dart' show dockRead;
 import 'dock_map.dart';
 import 'dock_widgets.dart';
@@ -184,7 +183,7 @@ class _Roles extends StatelessWidget {
                     ],
                   ),
                 ),
-                ToolChip(key: ValueKey('font-add-$r'), label: '+', onTap: () => _addIn(c, face)),
+                Chip(key: ValueKey('font-add-$r'), label: '+', onTap: () => _addIn(c, face)),
               ],
             ),
           ),

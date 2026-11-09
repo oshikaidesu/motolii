@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart' show Hov;
 import 'package:motolii/inspector/rows/inspector_rows.dart' show FoldMark;
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Chip;
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
@@ -110,7 +111,7 @@ class _EaseNumbersState extends State<EaseNumbers> {
                       if (bezier)
                         SizedBox(
                           width: each,
-                          child: ToolChip(key: const ValueKey('ease-overshoot'), label: 'Overshoot', on: widget.overshoot, onTap: widget.onOvershoot),
+                          child: Chip(key: const ValueKey('ease-overshoot'), label: 'Overshoot', on: widget.overshoot, onTap: widget.onOvershoot),
                         ),
                     ],
                   );

@@ -4,6 +4,7 @@ import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 import '../skin/theme.dart';
 import '../skin/tokens.dart';
 import 'inspector_parts.dart';
+import '../widgets/controls.dart' show Badge;
 import '../widgets/timeline_painters.dart' show TpGlyph, TpGlyphView;
 
 // ---- 10. a card ------------------------------------------------------------------------------------------------------
@@ -372,7 +373,7 @@ class FxDragGhost extends StatelessWidget {
     ),
     child: Row(
       children: [
-        ToneBadge(fx.mark, fx.tone),
+        Badge(fx.tone, size: 16, radius: const Radius.circular(16 * .32), mark: MarkPaint(fx.mark, Pop.onAccent)),
         SizedBox(width: Shape.s(6)),
         Text(
           fx.name,

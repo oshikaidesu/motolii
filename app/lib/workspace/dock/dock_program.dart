@@ -306,7 +306,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
             SizedBox(height: Shape.z(140), child: TileMoving(tile(sel), playing: true)),
           if (sel != null)
             DockFooter(
-              preview: DockBadge(DockG.program, WsT.toneText, size: Shape.z(34)),
+              preview: dockBadge(DockG.program, WsT.toneText, size: Shape.z(34)),
               title: sel.name,
               meta: c.mem.trouble[sel.file]?.replaceAll('the script ${sel.file}: ', '') ?? sel.first,
               action: 'Create',

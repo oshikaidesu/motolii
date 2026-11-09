@@ -12,12 +12,21 @@ import '../../skin/forms/forms.dart';
 import '../../inspector/inspector_parts.dart' show Pop;
 import '../../widgets/media.dart' show drawStar, glyph;
 import '../../skin/tokens.dart';
+import '../../widgets/controls.dart' show Badge;
+export '../../widgets/controls.dart' show Badge, Chip, IconPress; // (the shared small parts the shelves use, with the dock's own)
 import 'dock_glyphs.dart';
 import '../state/state.dart';
 import '../../widgets/text_gestures.dart';
 
 part 'dock_search.dart';
 part 'dock_stars.dart';
+
+/// The dock's badge: a hue tile with its glyph at .62 of it (the one [Badge], dressed for a shelf).
+Widget dockBadge(DockG g, Color hue, {double size = 20}) => Badge(
+  hue,
+  size: size,
+  child: DockGlyph(g, size: size * .62, color: WsT.onAccent),
+);
 
 const dockFilterHeight = 168.0;
 
@@ -297,43 +306,9 @@ class DockTag extends StatelessWidget {
   );
 }
 
-/// A square hue tile carrying a dark glyph: how an item says what kind it is before you read its name.
-class DockBadge extends StatelessWidget {
-  const DockBadge(this.g, this.hue, {super.key, this.size = 20, this.inverted = false});
-  final DockG g;
-  final Color hue;
-  final double size;
-  final bool inverted;
-  @override
-  Widget build(BuildContext context) => Container(
-    width: size,
-    height: size,
-    alignment: Alignment.center,
-    decoration: BoxDecoration(color: inverted ? WsT.onAccent : hue, borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius))),
-    child: DockGlyph(g, size: size * .62, color: inverted ? WsT.accent : WsT.onAccent),
-  );
-}
-
-class DockIconButton extends StatelessWidget {
-  const DockIconButton(this.g, {super.key, this.onTap, this.on = false});
-  final DockG g;
-  final VoidCallback? onTap;
-  final bool on;
-  @override
-  Widget build(BuildContext context) => DockHover(
-    onTap: onTap,
-    builder: (context, h) => AnimatedContainer(
-      duration: Mo.dur,
-      curve: Mo.ease,
-      width: Shape.z(20),
-      height: Shape.z(20),
-      margin: EdgeInsets.only(left: Shape.s(2)),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(color: on ? WsT.raised : (h ? WsT.card : null), borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius))),
-      child: DockGlyph(g, size: Shape.z(11), color: on || h ? Grey.g95 : Grey.g63),
-    ),
-  );
-}
+/// The glyph of an [IconPress] in the dock's header: 11 wide, in the ink the press gives.
+Widget Function(Color) dockMark(DockG g) =>
+    (ink) => DockGlyph(g, size: Shape.z(11), color: ink);
 
 /// The foot of a shelf: what is picked (preview, name, facts), where it would go (the selected layer), and the one action, in the accent.
 class DockFooter extends StatelessWidget {

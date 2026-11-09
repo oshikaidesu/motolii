@@ -1,6 +1,9 @@
 // What stands beside the graph, as AbsentMotion's EasingPanel.kt lays it, Apache-2.0: LeftColumn (reverse and ⋯) and a
 // narrow row of shapes, none named. Its layout and its moves, in this window's own colours.
 import 'package:flutter/widgets.dart';
+
+import '../../widgets/controls.dart' show IconPress;
+
 import 'package:motolii/inspector/inspector_card.dart' show CardMore;
 import 'package:motolii/inspector/inspector_parts.dart' show Hov;
 import 'package:motolii/skin/tokens.dart';
@@ -151,10 +154,12 @@ class EaseStep extends StatelessWidget {
         : (keys.any((f) => f > s.to) ? s.to : null);
     return to == null
         ? const SizedBox.shrink()
-        : ToolIconButton(
+        : IconPress(
+            paintInk((ink) => EaseChevron(ink, back)),
+            rest: WsT.well,
+            ink: Grey.g76,
             key: ValueKey(back ? 'ease-previous' : 'ease-next'),
             size: Shape.z(18),
-            glyph: (ink) => EaseChevron(ink, back),
             onTap: () => ws.pickKey((layer: s!.layer.id, frame: to)),
           );
   }

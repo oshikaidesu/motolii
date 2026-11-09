@@ -23,13 +23,9 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final big = T.value(Grey.g76).copyWith(fontSize: T.px(14), fontWeight: FontWeight.w500, fontFeatures: const [FontFeature.tabularFigures()]);
     final picked = ws.keys.length, layer = ws.layer;
-    return Container(
+    return WsHeader(
+      '',
       height: WtM.header,
-      padding: EdgeInsets.symmetric(horizontal: WsT.inset),
-      decoration: BoxDecoration(
-        color: WsT.body,
-        border: Border(bottom: BorderSide(color: WsT.line)),
-      ),
       child: LayoutBuilder(
         builder: (context, box) {
           final roomy = box.maxWidth >= 1000,
@@ -38,7 +34,7 @@ class _Header extends StatelessWidget {
           return Row(
             children: [
               if (mid) ...[
-                _Chip(ws.document?.replaceFirst(RegExp(r'\.motolii$'), '') ?? 'Main', mono: false),
+                Chip(label: ws.document?.replaceFirst(RegExp(r'\.motolii$'), '') ?? 'Main', look: _readout(mono: false)),
                 SizedBox(width: Shape.s(12)),
               ], // (joined: the document's name)
               _Btn(TpGlyph.toStart, key: const ValueKey('ws-tl-start'), onTap: () => onStep(-ws.frame)),
@@ -77,7 +73,7 @@ class _Header extends StatelessWidget {
               _TimeTyped(ws: ws, style: big, onStep: onStep), // (one number, one weight: not three colours)
               SizedBox(width: Shape.s(8)),
               if (roomy) ...[Text('/ ${ws.timecode(Ws.duration)}', style: T.value(Grey.g56)), SizedBox(width: Shape.s(10))],
-              _Chip('${Ws.fps} fps'),
+              Chip(label: '${Ws.fps} fps', look: _readout()),
               SizedBox(width: Shape.s(4)),
               _Tempo(ws: ws),
               SizedBox(width: Shape.s(12)),
@@ -352,7 +348,7 @@ class _TempoState extends State<_Tempo> {
           setState(() => _typing = true);
           _focus.requestFocus();
         },
-        child: _Chip(bpm > 0 ? '${_said(bpm)} BPM' : 'BPM'),
+        child: Chip(label: bpm > 0 ? '${_said(bpm)} BPM' : 'BPM', look: _readout()),
       );
     }
     return Row(
@@ -387,29 +383,20 @@ class _TempoState extends State<_Tempo> {
         SizedBox(width: Shape.s(4)),
         Listener(
           onPointerDown: (_) => _tapping = true,
-          child: NakedButton(key: const ValueKey('ws-tl-bpm-tap'), enableFeedback: false, onPressed: _tap, child: const _Chip('Tap', mono: false)),
+          child: NakedButton(
+            key: const ValueKey('ws-tl-bpm-tap'),
+            enableFeedback: false,
+            onPressed: _tap,
+            child: Chip(label: 'Tap', look: _readout(mono: false)),
+          ),
         ),
       ],
     );
   }
 }
 
-class _Chip extends StatelessWidget {
-  const _Chip(this.text, {this.mono = true});
-  final String text;
-  final bool mono;
-  @override
-  Widget build(BuildContext context) => Container(
-    height: Shape.z(20),
-    padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
-    alignment: Alignment.center,
-    decoration: BoxDecoration(color: WsT.well, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
-    child: Text(
-      text,
-      style: mono ? T.value(Grey.g91).copyWith(fontSize: T.px(10.5)) : T.micro(Grey.g91).copyWith(fontWeight: FontWeight.w600),
-    ),
-  );
-}
+/// The timeline header's readouts: a well, g91 ink, the radius of its buttons.
+ChipLook _readout({bool mono = true}) => ChipLook.readout(ink: Grey.g91, size: 10.5, radius: WsT.radius, mono: mono);
 
 class _ZoomSlider extends StatelessWidget {
   const _ZoomSlider({required this.zoom, required this.onZoom});

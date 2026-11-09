@@ -173,20 +173,25 @@ class _RelationMarks extends StatelessWidget {
             Positioned(
               left: p.dx + 12,
               top: p.dy - 24,
-              child: _Badge('×', () => wsFree(ws, id), key: ValueKey('ws-free-$id')),
+              child: Badge.round(WsT.accent, onTap: () => wsFree(ws, id), key: ValueKey('ws-free-$id'), mark: _GlyphPaint('x', WsT.onAccent)),
             ), // (one taken out of it where it stands: the others stay)
             if ((kind == 'follow' || kind == 'push') && id != leader)
               Positioned(
                 left: p.dx - 24,
                 top: p.dy - 24,
-                child: _Badge('crown', () => wsLead(ws, id), faint: true, key: ValueKey('ws-lead-$id')),
+                child: Badge.round(
+                  WsT.body.withValues(alpha: .7),
+                  onTap: () => wsLead(ws, id),
+                  key: ValueKey('ws-lead-$id'),
+                  mark: _GlyphPaint('crown', Grey.g63),
+                ),
               ), // (another's crown: that one leads, nothing moving)
           ],
           if (on(leader ?? '') case final l? when leader != null)
             Positioned(
               left: l.dx - 24,
               top: l.dy - 24,
-              child: _Badge('crown', () {}, key: const ValueKey('ws-leader')),
+              child: Badge.round(WsT.accent, onTap: () {}, key: const ValueKey('ws-leader'), mark: _GlyphPaint('crown', WsT.onAccent)),
             ), // (the leader)
           if (isRelation &&
               (kind == 'around' ||
@@ -196,11 +201,11 @@ class _RelationMarks extends StatelessWidget {
                 Positioned(
                   left: on(l.id)!.dx - 24,
                   top: on(l.id)!.dy - 24,
-                  child: _Badge(
-                    'crown',
-                    () => ws.after(m.later('set', layer: rel, name: 'leader', number: double.parse(l.id)), (_, _) => ws.reread()),
-                    faint: true,
+                  child: Badge.round(
+                    WsT.body.withValues(alpha: .7),
+                    onTap: () => ws.after(m.later('set', layer: rel, name: 'leader', number: double.parse(l.id)), (_, _) => ws.reread()),
                     key: ValueKey('ws-lead-${l.id}'),
+                    mark: _GlyphPaint('crown', Grey.g63),
                   ),
                 ),
           if (!isRelation &&
@@ -210,7 +215,7 @@ class _RelationMarks extends StatelessWidget {
             Positioned(
               left: on(ws.many.first)!.dx - 24,
               top: on(ws.many.first)!.dy - 24,
-              child: _Badge('crown', () {}, faint: true, key: const ValueKey('ws-leader-to-be')),
+              child: Badge.round(WsT.body.withValues(alpha: .7), onTap: () {}, key: const ValueKey('ws-leader-to-be'), mark: _GlyphPaint('crown', Grey.g63)),
             ),
           if (sel != null && tags.isNotEmpty) // (the relations the picked thing is in, the one on top first: a touch picks it)
             Positioned(
@@ -218,7 +223,14 @@ class _RelationMarks extends StatelessWidget {
               top: sel.dy + 18,
               child: Row(
                 children: [
-                  for (final r in tags) _RelateChip(wsRelationOf(m!, int.parse(r)), () => ws.select(r), outlined: r != wsWinner(ws), key: ValueKey('ws-in-$r')),
+                  for (final r in tags)
+                    Chip(
+                      label: wsRelationWord(wsRelationOf(m!, int.parse(r))),
+                      look: ChipLook.relate,
+                      on: r == wsWinner(ws),
+                      onTap: () => ws.select(r),
+                      key: ValueKey('ws-in-$r'),
+                    ),
                 ],
               ),
             ), // (filled: the one that shows; the rest under it, or switched off, outlined)
@@ -234,19 +246,33 @@ class _RelationMarks extends StatelessWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   runSpacing: Shape.s(4),
                   children: together.length > 1
-                      ? [_Said('${together.length} picked'), for (final k in wsRelationChoices(ws)) _RelateChip(k, () => wsRelate(ws, k))]
+                      ? [
+                          _Said('${together.length} picked'),
+                          for (final k in wsRelationChoices(ws))
+                            Chip(label: wsRelationWord(k), look: ChipLook.relate, on: true, onTap: () => wsRelate(ws, k), key: ValueKey('ws-relate-$k')),
+                        ]
                       : [
                           _Said('${wsRelationWord(wsRelationOf(m!, rel!))} · ${wsMembersOf(ws).length}'),
-                          _RelateChip(
-                            'eye',
-                            () => wsSwitch(ws),
-                            glyph: (m!.value(rel!, 'visible', 0) ?? 1) > .5 ? TpGlyph.eye : TpGlyph.eyeOff,
+                          Chip(
+                            label: wsRelationWord('eye'),
+                            look: ChipLook.relate,
+                            on: true,
+                            onTap: () => wsSwitch(ws),
+                            glyph: (_) => TpGlyphView((m.value(rel, 'visible', 0) ?? 1) > .5 ? TpGlyph.eye : TpGlyph.eyeOff, WsT.onAccent, size: Shape.z(12)),
                             key: const ValueKey('ws-relation-switch'),
                           ), // (its eye, as on its row: shut, what it is on top of shows)
-                          _RelateChip('bake', () => wsRelease(ws), key: const ValueKey('ws-relate-release')),
-                          _RelateChip(
-                            'delete',
-                            () => ws.after(
+                          Chip(
+                            label: wsRelationWord('bake'),
+                            look: ChipLook.relate,
+                            on: true,
+                            onTap: () => wsRelease(ws),
+                            key: const ValueKey('ws-relate-release'),
+                          ),
+                          Chip(
+                            label: wsRelationWord('delete'),
+                            look: ChipLook.relate,
+                            on: true,
+                            onTap: () => ws.after(
                               m.later('remove', layer: rel),
                               (_, _) => ws
                                 ..select(null)
@@ -402,52 +428,6 @@ class _Said extends StatelessWidget {
     padding: EdgeInsets.symmetric(horizontal: Shape.s(8), vertical: Shape.s(5)),
     decoration: BoxDecoration(color: WsT.body, borderRadius: BorderRadius.all(Shape.r(12))),
     child: Text(text, style: T.label(Grey.g91)),
-  );
-}
-
-/// What things picked together may do together, or a relation a thing is in (outlined): a word on a pill.
-class _RelateChip extends StatelessWidget {
-  const _RelateChip(this.kind, this.onTap, {this.outlined = false, this.glyph, super.key});
-  final String kind;
-  final VoidCallback onTap;
-  final bool outlined;
-  final TpGlyph? glyph; // (drawn instead of its word)
-  @override
-  Widget build(BuildContext context) => Hov(
-    key: key == null ? ValueKey('ws-relate-$kind') : null,
-    cursor: SystemMouseCursors.basic,
-    onTap: onTap,
-    builder: (_, _) => Container(
-      margin: EdgeInsets.only(right: Shape.s(4)),
-      padding: EdgeInsets.symmetric(horizontal: Shape.s(10), vertical: Shape.s(5)),
-      decoration: BoxDecoration(
-        color: outlined ? WsT.body : WsT.accent,
-        border: outlined ? Border.all(color: WsT.accent) : null,
-        borderRadius: BorderRadius.all(Shape.r(12)),
-      ),
-      child: glyph != null
-          ? TpGlyphView(glyph!, WsT.onAccent, size: Shape.z(12))
-          : Text(wsRelationWord(kind), style: T.label(outlined ? WsT.accent : WsT.onAccent)),
-    ),
-  );
-}
-
-/// A small round mark on a thing a relation moves: × takes it out, a crown is its leader.
-class _Badge extends StatelessWidget {
-  const _Badge(this.glyph, this.onTap, {this.faint = false, super.key});
-  final String glyph;
-  final VoidCallback onTap;
-  final bool faint;
-  @override
-  Widget build(BuildContext context) => Hov(
-    cursor: SystemMouseCursors.basic,
-    onTap: onTap,
-    builder: (_, _) => Container(
-      width: 18,
-      height: 18,
-      decoration: BoxDecoration(color: faint ? WsT.body.withValues(alpha: .7) : WsT.accent, shape: BoxShape.circle),
-      child: CustomPaint(painter: _GlyphPaint(glyph == '×' ? 'x' : glyph, faint ? Grey.g63 : WsT.onAccent)),
-    ),
   );
 }
 

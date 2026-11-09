@@ -104,7 +104,7 @@ class _Art extends StatelessWidget {
       final flat = Container(
         color: WsT.well,
         alignment: Alignment.center,
-        child: DockBadge(n.g, Grey.g63, size: Shape.z(26)),
+        child: dockBadge(n.g, Grey.g63, size: Shape.z(26)),
       );
       if (n.g == DockG.video) {
         return FutureBuilder<String?>(
@@ -142,7 +142,7 @@ class _Art extends StatelessWidget {
       _ => Container(
         color: WsT.well,
         alignment: Alignment.center,
-        child: DockBadge(n.g, n.g == DockG.comp ? WsT.accent : Grey.g63, size: Shape.z(26)),
+        child: dockBadge(n.g, n.g == DockG.comp ? WsT.accent : Grey.g63, size: Shape.z(26)),
       ),
     };
   }

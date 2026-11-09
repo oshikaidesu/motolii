@@ -446,7 +446,7 @@ class EffectPlacesState extends State<EffectPlaces> {
                   DockSection(
                     'Decks',
                     trailing: Builder(
-                      builder: (b) => DockIconButton(DockG.plus, key: const ValueKey('ws-fx-deck-new'), onTap: () => _plus(b)),
+                      builder: (b) => IconPress(dockMark(DockG.plus), key: const ValueKey('ws-fx-deck-new'), onTap: () => _plus(b)),
                     ),
                   ),
                   for (final d in widget.decks.keys) ...[_deck(d), if (widget.mapped && c.mem.fxPlace == '@${d.name}') _held(d)],

@@ -2,6 +2,8 @@
 // a camera -> Depth, otherwise the Tools catalog); a tool opened by hand stays pinned until the selection moves or you unpin it.
 import 'package:flutter/widgets.dart';
 
+import '../../widgets/controls.dart' show Chip, IconPress;
+
 import '../../inspector/inspector_parts.dart' show Hov;
 import '../../skin/tokens.dart';
 import 'tool_panel_widgets.dart';
@@ -44,12 +46,15 @@ class _ToolHeader extends StatelessWidget {
           leading: ToolSticker(name),
           trailing: [
             if (pinned)
-              ToolChip(label: wide ? 'Pinned · Follow' : 'Pinned', dot: Grey.g76, onTap: () => ws.openToolPanel(null))
+              Chip(label: wide ? 'Pinned · Follow' : 'Pinned', dot: Grey.g76, onTap: () => ws.openToolPanel(null))
             else
-              ToolChip(label: wide ? 'Follows selection' : 'Follows', dot: WsT.accent),
+              Chip(label: wide ? 'Follows selection' : 'Follows', dot: WsT.accent),
             SizedBox(width: WsT.gap),
-            ToolIconButton(
-              glyph: (ink) => ToolGlyph('Tools', ink),
+            IconPress(
+              paintInk((ink) => ToolGlyph('Tools', ink)),
+              rest: WsT.well,
+              ink: Grey.g76,
+              size: 20,
               on: name == 'Tools',
               onTap: () => ws.openToolPanel(name == 'Tools' && pinned ? null : 'Tools'),
             ),
@@ -187,8 +192,8 @@ class _Placeholder extends StatelessWidget {
                     spacing: WsT.gap,
                     runSpacing: WsT.gap,
                     children: [
-                      ToolChip(label: 'Back to Tools', dot: Grey.g76, onTap: () => ws.openToolPanel('Tools')),
-                      ToolChip(label: 'Follow selection', dot: WsT.accent, onTap: () => ws.openToolPanel(null)),
+                      Chip(label: 'Back to Tools', dot: Grey.g76, onTap: () => ws.openToolPanel('Tools')),
+                      Chip(label: 'Follow selection', dot: WsT.accent, onTap: () => ws.openToolPanel(null)),
                     ],
                   ),
                 ],

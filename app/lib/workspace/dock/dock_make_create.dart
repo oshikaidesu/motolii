@@ -328,7 +328,7 @@ class CreateShelf extends StatelessWidget {
         ),
         if (sel != null)
           DockFooter(
-            preview: DockBadge(sel.g, sel.hue, size: Shape.z(34)),
+            preview: dockBadge(sel.g, sel.hue, size: Shape.z(34)),
             title: '${sel.name} layer',
             meta: c.mem.trouble[sel.name] ?? 'At ${c.ws.timecode()} · ${sel.what}',
             action: sel.onPicked || (_worn.containsKey(sel.name) && c.ws.selected != null) ? 'Put on' : 'Create',

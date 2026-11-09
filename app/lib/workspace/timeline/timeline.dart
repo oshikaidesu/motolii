@@ -16,6 +16,7 @@ import 'package:naked_ui/naked_ui.dart';
 
 import '../../skin/forms/forms.dart';
 import '../../bridge/motolii.dart' show Motolii, mediaSecondsOf;
+import '../../widgets/controls.dart' show Chip, ChipLook;
 import '../../widgets/two_fingers.dart';
 import '../commands/command_actions.dart' show wsTimelineAsk, wsAskRename, wsAskTimeline, wsMarkPicked;
 import '../../widgets/timeline_painters.dart' show TpGlyph, TpGlyphPainter;
