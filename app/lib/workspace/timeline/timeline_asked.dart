@@ -222,7 +222,7 @@ mixin _TimelineAsked on State<WsTimeline> {
               color: Grey.g91,
               padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
               alignment: Alignment.centerLeft,
-              child: TextHand(
+              child: TextGestures(
                 key: ValueKey('ws-tl-rename-$id'),
                 field: (k) => EditableText(
                   key: k,

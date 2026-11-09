@@ -285,11 +285,11 @@ int _stop = 0; // (the stop the picker colours)
 /// bar puts a stop there in the colour the bar has there; a stop pressed is the one the square above colours; a stop
 /// carried along the bar moves; Remove takes the picked one out (two stay at least).
 class _Stops extends StatefulWidget {
-  const _Stops(this.stops, this.onChanged, this.onPick, {this.onHand});
+  const _Stops(this.stops, this.onChanged, this.onPick, {this.onDrag});
   final List<(Color, double)> stops;
   final ValueChanged<List<(Color, double)>> onChanged;
   final ValueChanged<int> onPick;
-  final ValueChanged<bool>? onHand; // (a hand down on it, and up: one step)
+  final ValueChanged<bool>? onDrag; // (a hand down on it, and up: one step)
   @override
   State<_Stops> createState() => _StopsState();
 }
@@ -348,7 +348,7 @@ class _StopsState extends State<_Stops> {
                     onTap: () => widget.onPick(i),
                     onHorizontalDragStart: (_) {
                       widget.onPick(i);
-                      widget.onHand?.call(true);
+                      widget.onDrag?.call(true);
                       setState(() => _held = [...s]);
                     },
                     onHorizontalDragUpdate: (d) {
@@ -361,7 +361,7 @@ class _StopsState extends State<_Stops> {
                       final held = _held!, at = held[i].$2;
                       widget.onPick(held.where((e) => e.$2 < at).length); // (carried past another, it is picked where it now stands)
                       setState(() => _held = null);
-                      widget.onHand?.call(false);
+                      widget.onDrag?.call(false);
                     },
                     child: Container(
                       decoration: BoxDecoration(

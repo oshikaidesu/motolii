@@ -10,10 +10,10 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/inspector/inspector_parts.dart' show Hov;
 import 'package:motolii/style/tokens.dart';
-import 'package:motolii/workspace/desk/desk_ease.dart';
-import 'package:motolii/workspace/desk/desk_ease_cards.dart';
-import 'package:motolii/workspace/desk/desk_ease_presets.dart';
-import 'package:motolii/workspace/desk/desk_ease_side.dart' show EaseChevron;
+import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_easing_presets.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_side.dart' show EaseChevron;
 import 'package:motolii/workspace/ws.dart';
 
 /// What a hand kept, each as it is said (a curve, a card, all the cards), as a device carried to Live's browser by its title
@@ -96,7 +96,7 @@ class EaseShelf extends StatelessWidget {
   Widget build(BuildContext context) {
     final kept = easeKept();
     final across = SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: columns, mainAxisExtent: pitch);
-    Widget tile(Ease e, Key key) => PresetTile(e, key: key, on: said(e) == now, side: side, onTap: () => said(e) == now ? null : onPick(e));
+    Widget tile(Ease e, Key key) => EasingPresetTile(e, key: key, on: said(e) == now, side: side, onTap: () => said(e) == now ? null : onPick(e));
     return DragTarget<int>(
       onAcceptWithDetails: (d) => onKeep(d.data),
       builder: (_, hot, _) => DecoratedBox(

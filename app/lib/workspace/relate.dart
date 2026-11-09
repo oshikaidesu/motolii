@@ -44,7 +44,7 @@ void wsRelate(Ws ws, String kind) {
     m.later('say', thing: -1, name: 'name', word: wsRelationWord(kind)); // (its row and its card say which it is)
   }
   m.later('set', thing: -1, name: 'strength', number: 1); // (said, so its card shows it as it works)
-  if ((kind == 'follow' || kind == 'push') && ws.manyByHand) {
+  if ((kind == 'follow' || kind == 'push') && ws.manyInOrder) {
     m.later('set', thing: -1, name: 'leader', number: double.parse(who.first)); // (picked one by one: the first leads, as it was picked first)
   }
   m.later('relate', thing: -1, word: who.join(' '));
@@ -87,8 +87,12 @@ void wsLead(Ws ws, String id) {
 
 /// A thing added to those picked together (Shift or Cmd with a click): the one picked alone goes in with it.
 void wsPickAlso(Ws ws, String id) {
-  if (ws.many.contains(id)) return ws.pickMany({...ws.many}..remove(id), byHand: true); // (picked already: one less)
-  ws.pickMany({...ws.many, if (ws.selected case final s? when !wsMembersOf(ws).contains(s) && ws.many.isEmpty && int.tryParse(s) != null) s, id}, byHand: true);
+  if (ws.many.contains(id)) return ws.pickMany({...ws.many}..remove(id), inOrder: true); // (picked already: one less)
+  ws.pickMany({
+    ...ws.many,
+    if (ws.selected case final s? when !wsMembersOf(ws).contains(s) && ws.many.isEmpty && int.tryParse(s) != null) s,
+    id,
+  }, inOrder: true);
 }
 
 /// Things picked from the one picked last to [id], as their rows lie (Shift on a row, After Effects' manner).
@@ -96,7 +100,7 @@ void wsPickRange(Ws ws, String id) {
   final ids = [for (final l in ws.layers) l.id], from = ws.many.isNotEmpty ? ws.many.last : ws.selected;
   final a = from == null ? -1 : ids.indexOf(from), b = ids.indexOf(id);
   if (a < 0 || b < 0) return wsPickAlso(ws, id);
-  ws.pickMany(a <= b ? ids.sublist(a, b + 1) : ids.sublist(b, a + 1).reversed, byHand: true);
+  ws.pickMany(a <= b ? ids.sublist(a, b + 1) : ids.sublist(b, a + 1).reversed, inOrder: true);
 }
 
 /// One thing out of the picked relation, where it shows now (the others stay where they are).

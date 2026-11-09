@@ -4,8 +4,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
-import 'package:motolii/workspace/desk/desk_ease.dart';
-import 'package:motolii/workspace/desk/desk_ease_cards.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
 
 class EaseHandle {
   const EaseHandle(

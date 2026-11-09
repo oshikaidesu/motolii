@@ -47,7 +47,7 @@ class _HexFieldState extends State<_HexField> {
   @override
   Widget build(BuildContext context) {
     if (!_f.hasFocus) _c.text = widget.hex;
-    return TextHand(
+    return TextGestures(
       field: (k) => EditableText(
         key: k,
         rendererIgnoresPointer: true,

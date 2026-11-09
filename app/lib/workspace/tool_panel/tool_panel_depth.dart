@@ -1,17 +1,17 @@
-// The desk's Depth tool: the camera seen from above. Layers sit as slabs at their Z in their own hue, the lens cone opens
+// The tool panel's Depth tool: the camera seen from above. Layers sit as slabs at their Z in their own hue, the lens cone opens
 // with the focal length, and the focus line (with its depth-of-field band) is dragged or snapped to a slab.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
 import '../../style/tokens.dart';
-import 'desk_kit.dart';
+import 'tool_panel_widgets.dart';
 import '../ws.dart';
 import '../two_fingers.dart';
 
 const _zMax = 3000.0;
 
-/// The lens, kept per document so leaving the desk and coming back keeps it.
+/// The lens, kept per document so leaving the tool panel and coming back keeps it.
 class _Lens {
   double focal = 50, focus = 1120, fstop = 2.8;
   String? target;
@@ -33,7 +33,7 @@ final _lenses = Expando<_Lens>();
 /// (Camera::setLensProjection): 12 mm over the tangent of half the stage's 30 degrees.
 const _filmMm = 12 / 0.2679491924311227;
 
-/// Joined: the document's camera that the desk is on (the first one listed), the lens read from it as the desk counts
+/// Joined: the document's camera that the tool panel is on (the first one listed), the lens read from it as the tool panel counts
 /// (focus in points of the picture from the eye; none said, where it looks), and how far off its eye is.
 ({int camera, double eye})? _lensOf(Ws ws, _Lens lens) {
   final m = ws.inside, cam = ws.layers.where((l) => l.kind == WsKind.camera).firstOrNull;
@@ -44,13 +44,13 @@ const _filmMm = 12 / 0.2679491924311227;
     ..focal = (m.value(t, 'zoom', at) ?? 1) * _filmMm
     ..fstop = stop > 0
         ? stop
-        : 22 // (nought, all sharp: the desk's narrowest)
+        : 22 // (nought, all sharp: the tool panel's narrowest)
     ..focus = focus > 0 ? focus * p : eye;
   return (camera: t, eye: eye);
 }
 
-/// Joined: the lens as the desk now has it, carried on the camera (shown at once; the document's when the hand lets go).
-void _carryLens(Ws ws, int camera, _Lens lens) {
+/// Joined: the lens as the tool panel now has it, carried on the camera (shown at once; the document's when the hand lets go).
+void _updateLens(Ws ws, int camera, _Lens lens) {
   final m = ws.inside!, p = m.point;
   m.take(camera);
   m
@@ -78,20 +78,20 @@ List<_Slab> _slabsOf(Ws ws) {
   ];
 }
 
-class DeskDepth extends StatefulWidget {
-  const DeskDepth({super.key});
+class DepthTool extends StatefulWidget {
+  const DepthTool({super.key});
   @override
-  State<DeskDepth> createState() => _DeskDepthState();
+  State<DepthTool> createState() => _DepthToolState();
 }
 
-class _DeskDepthState extends State<DeskDepth> {
+class _DepthToolState extends State<DepthTool> {
   @override
   Widget build(BuildContext context) {
     WsScope.pictureOf(context); // (the lens as it is in the picture shown)
     final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), lens = _lenses[ws] ??= _Lens(), joined = _lensOf(ws, lens);
     void edit(void Function() f) {
       setState(f);
-      if (joined != null) _carryLens(ws, joined.camera, lens);
+      if (joined != null) _updateLens(ws, joined.camera, lens);
     }
 
     final cam = ws.layers.where((l) => l.kind == WsKind.camera).firstOrNull;
@@ -113,9 +113,9 @@ class _DeskDepthState extends State<DeskDepth> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          DeskStrip(
+          ToolStrip(
             left: [
-              DeskLayerChip(cam?.name ?? 'Camera', WsT.toneCamera),
+              ToolLayerChip(cam?.name ?? 'Camera', WsT.toneCamera),
               SizedBox(width: Shape.s(8)),
               Text('${lens.focal.round()} mm', style: T.value(Grey.g91)),
               SizedBox(width: Shape.s(8)),
@@ -123,7 +123,7 @@ class _DeskDepthState extends State<DeskDepth> {
               SizedBox(width: Shape.s(8)),
               Text('${(lens.fov * 180 / math.pi).toStringAsFixed(1)}° view', style: T.label(Grey.g56)),
             ],
-            right: [DeskChip(label: target == null ? 'Focus free' : 'On ${target.name}', dot: target == null ? Grey.g56 : wsTone(target.kind))],
+            right: [ToolChip(label: target == null ? 'Focus free' : 'On ${target.name}', dot: target == null ? Grey.g56 : wsTone(target.kind))],
           ),
           const SizedBox(height: WsT.gutter),
           Expanded(
@@ -180,9 +180,9 @@ class _LensNumbers extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              DeskCaption('Lens', tone: WsT.toneCamera),
+              ToolCaption('Lens', tone: WsT.toneCamera),
               SizedBox(height: Shape.s(4)),
-              DeskScrub(
+              ToolScrub(
                 label: 'Focal',
                 value: lens.focal,
                 min: 15,
@@ -193,7 +193,7 @@ class _LensNumbers extends StatelessWidget {
                 onChanged: (v) => onEdit(() => lens.focal = v),
               ),
               SizedBox(height: Shape.s(2)),
-              DeskScrub(
+              ToolScrub(
                 label: 'Aperture',
                 value: lens.fstop,
                 min: 1.4,
@@ -204,9 +204,9 @@ class _LensNumbers extends StatelessWidget {
                 onChanged: (v) => onEdit(() => lens.fstop = v),
               ),
               SizedBox(height: Shape.s(10)),
-              DeskCaption('Focus', tone: WsT.accent),
+              ToolCaption('Focus', tone: WsT.accent),
               SizedBox(height: Shape.s(4)),
-              DeskScrub(
+              ToolScrub(
                 label: 'Dist',
                 value: lens.focus,
                 min: 100,
@@ -218,7 +218,7 @@ class _LensNumbers extends StatelessWidget {
                   lens.target = null;
                 }),
               ),
-              if (box.maxHeight >= 170) ...[SizedBox(height: Shape.s(6)), DeskReadout(value: far(d.far - d.near), unit: 'px', sub: 'depth of field')],
+              if (box.maxHeight >= 170) ...[SizedBox(height: Shape.s(6)), ToolReadout(value: far(d.far - d.near), unit: 'px', sub: 'depth of field')],
               if (box.maxHeight >= 214) ...[SizedBox(height: Shape.s(7)), pair('Near', far(d.near)), SizedBox(height: Shape.s(4)), pair('Far', far(d.far))],
             ],
           ),
@@ -338,7 +338,7 @@ class _DepthPainter extends CustomPainter {
       final y = m.at(0, z).dy.floorToDouble() + .5;
       final major = z % 1000 == 0;
       c.drawLine(Offset(30, y), Offset(s.width - 6, y), line..color = major ? Grey.g20 : Grey.g15);
-      if (major) deskText(c, z == 0 ? '0' : '${(z / 1000).round()}k', Offset(26, y), lab, ax: 1, ay: .5);
+      if (major) toolText(c, z == 0 ? '0' : '${(z / 1000).round()}k', Offset(26, y), lab, ax: 1, ay: .5);
     }
     // The lens cone, out to the far edge of the diagram.
     final half = math.atan(36 / (2 * focal)), reach = _zMax * 1.1;
@@ -439,7 +439,7 @@ class _DepthPainter extends CustomPainter {
       fill,
     );
     c.drawCircle(e + const Offset(0, 9), 2.5, Paint()..color = WsT.onAccent);
-    deskText(c, 'CAM', e + const Offset(14, 9), T.micro(Grey.g63).copyWith(fontWeight: FontWeight.w700, letterSpacing: 1), ay: .5);
+    toolText(c, 'CAM', e + const Offset(14, 9), T.micro(Grey.g63).copyWith(fontWeight: FontWeight.w700, letterSpacing: 1), ay: .5);
   }
 
   @override

@@ -11,8 +11,8 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/inspector/inspector_parts.dart' show Hov;
 import 'package:motolii/style/tokens.dart';
-import 'package:motolii/workspace/desk/desk_ease.dart';
-import 'package:motolii/workspace/desk/desk_ease_presets.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_easing_presets.dart';
 import 'package:motolii/workspace/ws.dart';
 
 const _over = '×', _space = '~', _turned = 'Reverse:'; // (a way defined in a document is one word)
@@ -169,7 +169,7 @@ class EaseCards extends StatelessWidget {
     required this.onOff,
     required this.onMove,
     required this.onLay,
-    required this.onHold,
+    required this.onOver,
     required this.side,
     this.across = false,
   });
@@ -184,7 +184,7 @@ class EaseCards extends StatelessWidget {
   final ValueChanged<int> onPress, onOff;
   final void Function(int from, int to) onMove;
   final void Function(Ease shape, int at) onLay;
-  final void Function(Ease? shape, int at) onHold; // (a shape held over a card: seen before it is let go)
+  final void Function(Ease? shape, int at) onOver; // (a shape held over a card: seen before it is let go)
 
   @override
   Widget build(BuildContext context) {
@@ -196,9 +196,9 @@ class EaseCards extends StatelessWidget {
         children: [
           SizedBox.fromSize(
             size: side,
-            child: PresetTile(c, on: i == now, side: this.side, onTap: () => onPress(i), carried: false),
+            child: EasingPresetTile(c, on: i == now, side: this.side, onTap: () => onPress(i), carried: false),
           ),
-          if (h && (cards.length > 1 || c != easePreset('Linear')))
+          if (h && (cards.length > 1 || c != easingPreset('Linear')))
             Positioned(
               right: -Shape.s(4),
               top: -Shape.s(3),
@@ -209,10 +209,10 @@ class EaseCards extends StatelessWidget {
     );
     Widget place(int i, Widget child) => DragTarget<Object>(
       onWillAcceptWithDetails: (d) {
-        if (d.data case final Ease e) onHold(e, i);
+        if (d.data case final Ease e) onOver(e, i);
         return d.data != i && d.data != _all;
       },
-      onLeave: (d) => d is Ease ? onHold(null, i) : null,
+      onLeave: (d) => d is Ease ? onOver(null, i) : null,
       onAcceptWithDetails: (d) {
         if (d.data case final Ease e) onLay(e, i);
         if (d.data case final int from) onMove(from, i);
@@ -266,7 +266,7 @@ class EaseCards extends StatelessWidget {
                     if (i > 0) by(i),
                     if (cards.length > 1)
                       place(i, carried(i, c))
-                    else if (c == easePreset('Linear'))
+                    else if (c == easingPreset('Linear'))
                       card(i, c)
                     else
                       carried(i, c), // (a straight line alone: nothing to carry)
@@ -294,10 +294,10 @@ class EaseCards extends StatelessWidget {
               child: Draggable<int>(
                 data: _all,
                 dragAnchorStrategy: pointerDragAnchorStrategy,
-                feedback: easeHeld(PresetTile(w, on: false, side: this.side, onTap: () {}, carried: false), this.side),
+                feedback: easeHeld(EasingPresetTile(w, on: false, side: this.side, onTap: () {}, carried: false), this.side),
                 child: SizedBox.fromSize(
                   size: side,
-                  child: PresetTile(w, key: const ValueKey('ease.whole'), on: now < 0, side: this.side, onTap: onWhole, carried: false),
+                  child: EasingPresetTile(w, key: const ValueKey('ease.whole'), on: now < 0, side: this.side, onTap: onWhole, carried: false),
                 ),
               ),
             ),

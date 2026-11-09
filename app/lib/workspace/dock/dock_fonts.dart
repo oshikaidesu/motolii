@@ -10,7 +10,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../bridge/motolii.dart' show Motolii, MotoliiQuestions, motoliiDir;
 import '../../style/tokens.dart';
-import '../desk/desk_kit.dart' show DeskChip;
+import '../tool_panel/tool_panel_widgets.dart' show ToolChip;
 import 'dock_files.dart' show dockRead;
 import 'dock_map.dart';
 import 'dock_parts.dart';
@@ -97,7 +97,7 @@ Future<void> fontsRead(Ws ws) => _reading ??= Zone.root.run<Future<void>>(() asy
 });
 
 /// Where the fonts set lately are kept, the newest first, eight (a test points it elsewhere: [fontRecentAt]), as the
-/// Ease desk keeps its recent ways (ease_stars.json).
+/// Ease tool panel keeps its recent ways (ease_stars.json).
 File _recentFile = File('${Platform.environment['HOME']}/.motolii/font_recent.json');
 List<String>? _recent;
 void fontRecentAt(File f) => (_recentFile = f, _recent = null);
@@ -184,7 +184,7 @@ class _Roles extends StatelessWidget {
                     ],
                   ),
                 ),
-                DeskChip(key: ValueKey('font-add-$r'), label: '+', onTap: () => _addIn(c, face)),
+                ToolChip(key: ValueKey('font-add-$r'), label: '+', onTap: () => _addIn(c, face)),
               ],
             ),
           ),

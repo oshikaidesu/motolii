@@ -4,10 +4,10 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/effects/inspector_effects.dart' show CardMore;
 import 'package:motolii/inspector/inspector_parts.dart' show Hov;
 import 'package:motolii/style/tokens.dart';
-import 'package:motolii/workspace/desk/desk_ease.dart';
-import 'package:motolii/workspace/desk/desk_ease_cards.dart' show easeIsTurned, easeTurn;
-import 'package:motolii/workspace/desk/desk_ease_presets.dart';
-import 'package:motolii/workspace/desk/desk_kit.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart' show easeIsTurned, easeTurn;
+import 'package:motolii/workspace/tool_panel/tool_panel_easing_presets.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
 import 'package:motolii/workspace/ws.dart';
 
 /// The shapes, one row, one press each (the maker, 10/31: with ways multiplied the second row of AbsentMotion's panel is
@@ -20,13 +20,13 @@ double easeFits(double length) => (length / Shape.z(34)).floorToDouble().clamp(7
 
 bool easeIsBezier(Ease e) => const {'Linear', 'Bezier'}.contains(said(e).split(' ').first);
 
-/// The row: the shapes, then, scrolled to, Hold, which has no seat among them.
+/// The row: the shapes, then, scrolled to, Hold, which has no tile among them.
 List<Ease> easeRow(List<Ease> ways) {
-  Ease? named(String n) => easePresets.where((p) => p.name == n).firstOrNull ?? ways.where((w) => w.name == n).firstOrNull;
-  return [for (final n in easeShapes) ?named(n), easePreset('Hold')];
+  Ease? named(String n) => easingPresets.where((p) => p.name == n).firstOrNull ?? ways.where((w) => w.name == n).firstOrNull;
+  return [for (final n in easeShapes) ?named(n), easingPreset('Hold')];
 }
 
-/// The ways of the window and the document that are none of the shapes: they lie on the shelf (desk_ease_shelf.dart).
+/// The ways of the window and the document that are none of the shapes: they lie on the shelf (tool_panel_ease_shelf.dart).
 List<Ease> easeOthers(List<Ease> ways) => [
   for (final w in ways)
     if (!easeShapes.contains(w.name)) w,
@@ -56,7 +56,7 @@ class EaseShapes extends StatelessWidget {
         itemExtent: (across ? box.maxWidth : box.maxHeight) / easeFits(across ? box.maxWidth : box.maxHeight),
         children: [
           for (final e in shapes)
-            PresetTile(
+            EasingPresetTile(
               e,
               key: ValueKey('ease.${e.name}'),
               on: _isOf(e, ease),
@@ -70,7 +70,7 @@ class EaseShapes extends StatelessWidget {
 }
 
 /// The left column: reverse, and under ⋯ the curve copied and pasted (Alight Motion's Copy Curve, Paste Curve, Paste
-/// Curve to All Keyframes), and the maker's own Jump (desk_ease_state.dart easeJump). Its Enable Overshoot is among the numbers.
+/// Curve to All Keyframes), and the maker's own Jump (tool_panel_ease_state.dart easeJump). Its Enable Overshoot is among the numbers.
 class EaseLeft extends StatelessWidget {
   const EaseLeft({super.key, this.onReverse, required this.menu});
   final VoidCallback? onReverse; // (none: the way cannot be turned)
@@ -151,7 +151,7 @@ class EaseStep extends StatelessWidget {
         : (keys.any((f) => f > s.to) ? s.to : null);
     return to == null
         ? const SizedBox.shrink()
-        : DeskIconButton(
+        : ToolIconButton(
             key: ValueKey(back ? 'ease-previous' : 'ease-next'),
             size: Shape.z(18),
             glyph: (ink) => EaseChevron(ink, back),

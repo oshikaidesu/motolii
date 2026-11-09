@@ -159,7 +159,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
 
   // Joined: a thing held on the stage, carried, and let go. The stage only says how far the hand has gone, in points of
   // the picture; where that puts the thing (at its own depth), and what it is to the document, is the inside's.
-  ({Offset from, bool moved, String? by})? _held; // (by: a handle's way of carrying it, scale, turn or pivot; null: placed)
+  ({Offset from, bool moved, String? by})? _drag; // (by: a handle's way of carrying it, scale, turn or pivot; null: placed)
   String? _grip; // (the handle in hand, by its name: it alone shown, lit, while it is carried: Alight Motion's)
 
   // Joined, Snap (the past repository's, After Effects' snapping): the held thing's left, middle and right (top, middle,
@@ -231,22 +231,22 @@ class _StageViewState extends State<StageView> implements StageHandles {
   double _orbitRate = .25; // (degrees a pixel)
   ({double zoom, double reach, Offset middle})? _lensFrom; // (the frame's size when the hand took hold)
 
-  void _carry(_View v, Offset local) {
-    final h = _held, ws = WsScope.read(context), m = ws.inside;
+  void _dragUpdate(_View v, Offset local) {
+    final h = _drag, ws = WsScope.read(context), m = ws.inside;
     if (h == null || m == null) return;
     if (h.by == 'gizmo orbit' && _orbitFrom != null) {
       // (it goes the way the hand does)
       final d = (local - h.from) * _orbitRate, o = _orbitFrom!;
       m.carry('rotate_y', o.y + d.dx);
       m.carry('rotate_x', (o.x + d.dy).clamp(-89.0, 89.0));
-      _held = (from: h.from, moved: true, by: h.by);
+      _drag = (from: h.from, moved: true, by: h.by);
       return;
     }
     if (h.by == 'gizmo lens' && _lensFrom != null) {
       // (as far from the middle as the hand now is, against where it took hold: a larger frame, a wider lens)
       final l = _lensFrom!;
       m.carry('zoom', (l.zoom * l.reach / math.max((local - l.middle).distance, 1)).clamp(.01, 100.0));
-      _held = (from: h.from, moved: true, by: h.by);
+      _drag = (from: h.from, moved: true, by: h.by);
       return;
     }
     if (h.by == 'orbit' && _orbitFrom != null) {
@@ -255,7 +255,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
       if (ws.freeEye) return ws.setView('stage.eye', [o.y - d.dx * .25, (o.x - d.dy * .25).clamp(-89.0, 89.0), ws.eye[2]]);
       m.carry('rotate_y', o.y - d.dx * .25);
       m.carry('rotate_x', (o.x - d.dy * .25).clamp(-89.0, 89.0));
-      _held = (from: h.from, moved: true, by: 'orbit');
+      _drag = (from: h.from, moved: true, by: 'orbit');
       setState(() {});
       return;
     }
@@ -266,7 +266,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
       final across = side.isEven ? c[1] - c[0] : c[3] - c[0], len = math.max(1.0, across.distance), dir = across / len * (side < 2 ? 1.0 : -1.0);
       final at = handles[way] ?? h.from, inBy = ((local - at).dx * dir.dx + (local - at).dy * dir.dy) / len;
       if (crop.length == 4) m.carry(_crops[side], (crop[side] + inBy).clamp(0.0, .95 - crop[(side + 2) % 4]));
-      _held = (from: h.from, moved: true, by: way);
+      _drag = (from: h.from, moved: true, by: way);
       setState(() {});
       return;
     }
@@ -280,7 +280,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
           ((m.value(t, 'points', 0) ?? 5) + (((local - h.from).dx * g.u.dx + (local - h.from).dy * g.u.dy) / 24).round()).clamp(3, 64).toDouble(),
         );
       }
-      _held = (from: h.from, moved: true, by: way);
+      _drag = (from: h.from, moved: true, by: way);
       setState(() {});
       return;
     }
@@ -297,7 +297,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
         }
       }
       m.carry('$even${sized ? (keys.isAltPressed ? 'scale' : 'side') : way}', gone.dx, gone.dy);
-      _held = (from: h.from, moved: true, by: way);
+      _drag = (from: h.from, moved: true, by: way);
       setState(() {});
       return;
     }
@@ -309,7 +309,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
       _ => all,
     }, v.s);
     m.carry('place', by.dx, by.dy);
-    _held = (from: h.from, moved: true, by: null);
+    _drag = (from: h.from, moved: true, by: null);
     setState(() {});
   }
 
@@ -399,7 +399,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
                 },
                 dragStartBehavior:
                     DragStartBehavior.down, // (a thing is held where the hand came down, not where it had got to when the drag was known for one)
-                onPanStart: (d) => _hold(v, _last = d.localPosition),
+                onPanStart: (d) => _dragStart(v, _last = d.localPosition),
                 onPanUpdate: (d) => _brush != null
                     ? setState(() => _brush!.add(d.localPosition))
                     : _lasso != null
@@ -411,16 +411,16 @@ class _StageViewState extends State<StageView> implements StageHandles {
                       })
                     : _pulling != null
                     ? (widget.cursor.value = v.toComp(_last = d.localPosition))
-                    : _carry(v, _last = d.localPosition),
+                    : _dragUpdate(v, _last = d.localPosition),
                 onPanEnd: (_) => _brush != null
-                    ? _brushLetGo(v)
+                    ? _brushDragEnd(v)
                     : _lasso != null
-                    ? _lassoLetGo(v)
+                    ? _lassoDragEnd(v)
                     : _drawFrom != null
                     ? (widget.make == 'pen' ? _pen(v, _drawFrom!, _last ?? _drawFrom!) : _draw(v, _last ?? _drawFrom!))
                     : _pulling != null
-                    ? _pullLetGo(v, _last!)
-                    : _letGo(),
+                    ? _pullDragEnd(v, _last!)
+                    : _dragEnd(),
                 onPanCancel: () => _brush != null
                     ? setState(() => _brush = null)
                     : _lasso != null
@@ -429,7 +429,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
                     ? setState(() => _drawFrom = null)
                     : _pulling != null
                     ? _pulling = null
-                    : _letGo(keep: false),
+                    : _dragEnd(keep: false),
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -518,7 +518,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
                           ),
                         ),
                       ),
-                    if (_held case final h?
+                    if (_drag case final h?
                         when h.moved && _last != null) // (the numbers while a hand moves it, by the hand, as Figma shows them; Alight Motion shows none)
                       if (_heldSays(h.by) case final says?)
                         Positioned(

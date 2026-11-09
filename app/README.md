@@ -6,7 +6,7 @@ Flutter で書いたアプリ。描くのもプロジェクトを持つのもエ
 |---|---|
 | `lib/main.dart` | 起動したらアプリのウィンドウを開く |
 | `lib/bridge/` | アプリとエンジンの境目（[`docs/app/BRIDGE.md`](../docs/app/BRIDGE.md)）。エンジン（`libmotolii.dylib`）を呼ぶ口：プロジェクト、棚、問い合わせ、書き込み |
-| `lib/workspace/` | アプリの画面そのもの。`dock/` 左の棚、`stage/` プレビュー、`timeline/` タイムライン、`desk/` 下のツールパネル、`shelf/` 棚のタイル（地図は [`lib/workspace/README.md`](lib/workspace/README.md)） |
+| `lib/workspace/` | アプリの画面そのもの。`dock/` 左の棚、`stage/` プレビュー、`timeline/` タイムライン、`tool_panel/` 下のツールパネル、`shelf/` 棚のタイル（地図は [`lib/workspace/README.md`](lib/workspace/README.md)） |
 | `lib/inspector/` | 右の Inspector。`controls/` パラメーターの操作部品、`effects/` 効果のカード、`rows/` 行、`transform/` 位置と回転 |
 | `lib/parts/` | パネルをまたいで使う部品。`skin_parts.dart` はスキンの `parts/*.svg`（theme.xml の `<Parts>`）をアプリの印の代わりに描く |
 | `lib/forms/` | スキンの Dart の側：ボタン・札など部品 1 つずつの組み立て方。スキンの theme.xml が `<Forms Value="poster"/>` で選ぶ（`own.dart` がアプリのいつもの形） |

@@ -4,7 +4,7 @@
 // ignore_for_file: invalid_use_of_protected_member
 part of 'stage_view.dart';
 
-extension _StageViewHand on _StageViewState {
+extension _StageViewDrag on _StageViewState {
   Rect _bounds(ArtBox b) {
     final p = [for (final c in b.corners) WsArt.toView(widget.scene, c)];
     return p.skip(1).fold(Rect.fromPoints(p[0], p[0]), (r, q) => r.expandToInclude(Rect.fromPoints(q, q)));
@@ -76,7 +76,7 @@ extension _StageViewHand on _StageViewState {
     return false;
   }
 
-  void _pullLetGo(_View v, Offset local) {
+  void _pullDragEnd(_View v, Offset local) {
     final p = _pulling, ws = WsScope.read(context), m = ws.inside;
     _pulling = null;
     if (p == null || m == null) return;
@@ -87,7 +87,7 @@ extension _StageViewHand on _StageViewState {
     ws.after(m.later('together'));
   }
 
-  void _hold(_View v, Offset local) {
+  void _dragStart(_View v, Offset local) {
     if (widget.make == 'camera') {
       // (After Effects' Unified Camera tool: a drag turns the camera round where it looks)
       final ws = WsScope.read(context), m = ws.inside, cam = _cameraOf(ws);
@@ -97,14 +97,14 @@ extension _StageViewHand on _StageViewState {
       }
       if (ws.freeEye) {
         _orbitFrom = (x: ws.eye[1], y: ws.eye[0]);
-        _held = (from: local, moved: false, by: 'orbit');
+        _drag = (from: local, moved: false, by: 'orbit');
         return;
       }
       final at = ws.frame / Ws.fps;
       m.take(cam);
       if (ws.playing) ws.playing = false;
       _orbitFrom = (x: m.value(cam, 'rotate_x', at) ?? 0, y: m.value(cam, 'rotate_y', at) ?? 0);
-      _held = (from: local, moved: false, by: 'orbit');
+      _drag = (from: local, moved: false, by: 'orbit');
       return;
     }
     if (widget.make == 'brush') {
@@ -159,15 +159,15 @@ extension _StageViewHand on _StageViewState {
         final at = _doc(v, local); // (points of the picture, as the inside counts them)
         m.carry('grip', at.dx, at.dy);
         if (ws.playing) ws.playing = false;
-        _held = (from: local, moved: false, by: by);
+        _drag = (from: local, moved: false, by: by);
         if (grip != _grip) setState(() => _grip = grip);
         return;
       }
     }
-    if (m != null && _gizmoHold(v, local, inside: false)) return;
+    if (m != null && _gizmoDragStart(v, local, inside: false)) return;
     if (_pull(v, local)) return; // (a guide out of a ruler, or one taken hold of: after the handles, which lie over everything)
     final id = m == null ? null : _hit(v, local), t = int.tryParse(id ?? '');
-    if (m != null && t == null && _gizmoHold(v, local, inside: true)) return; // (AbsentMotion's TopLayerAt: the things first, then the frame they lie in)
+    if (m != null && t == null && _gizmoDragStart(v, local, inside: true)) return; // (AbsentMotion's TopLayerAt: the things first, then the frame they lie in)
     if (m != null && t == null) {
       // (where no thing is: drawn round)
       ws.select(null);
@@ -178,13 +178,13 @@ extension _StageViewHand on _StageViewState {
     m.take(t);
     ws.select(id);
     if (ws.playing) ws.playing = false; // (a hand on a thing stops the play)
-    _held = (from: local, moved: false, by: null);
+    _drag = (from: local, moved: false, by: null);
     _snapFrom(id!);
   }
 
-  void _letGo({bool keep = true}) {
-    final h = _held, ws = WsScope.read(context), m = ws.inside, free = h?.by == 'orbit' && ws.freeEye;
-    _held = null;
+  void _dragEnd({bool keep = true}) {
+    final h = _drag, ws = WsScope.read(context), m = ws.inside, free = h?.by == 'orbit' && ws.freeEye;
+    _drag = null;
     _orbitFrom = null;
     _lensFrom = null;
     _snapTo = null;

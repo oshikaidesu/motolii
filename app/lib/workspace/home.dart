@@ -15,7 +15,7 @@ import 'package:flutter/widgets.dart';
 import '../bridge/motolii.dart' show docFactsOf;
 import '../style/tokens.dart';
 import 'ws.dart';
-import '../parts/text_hand.dart';
+import '../parts/text_gestures.dart';
 
 /// One document listed: its file, and what it kept (null: none yet, or not read yet).
 class HomeDoc {
@@ -184,7 +184,7 @@ class _WsHomeState extends State<WsHome> {
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: WsT.inset, vertical: 4),
                     decoration: BoxDecoration(color: WsT.card, borderRadius: BorderRadius.circular(6)),
-                    child: TextHand(
+                    child: TextGestures(
                       key: const ValueKey('home-find'),
                       field: (k) => EditableText(
                         key: k,

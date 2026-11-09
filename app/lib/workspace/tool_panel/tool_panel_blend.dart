@@ -1,4 +1,4 @@
-// The desk's Blend tool: the layer stack, the front first. Each layer that lies on what is under it: how (its blend:
+// The tool panel's Blend tool: the layer stack, the front first. Each layer that lies on what is under it: how (its blend:
 // the ways the inside names, each drawn as two discs and what their overlap becomes), how much of it is there (its
 // opacity, a bar pulled across), and whether it shows only where the layer under it is (clip). A tap on a name picks it.
 // What the ways are is the inside's (motolii_words); the window only draws each.
@@ -6,11 +6,11 @@ import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/widgets.dart';
 
 import '../../style/tokens.dart';
-import 'desk_kit.dart';
+import 'tool_panel_widgets.dart';
 import '../ws.dart';
 
-class DeskBlend extends StatelessWidget {
-  const DeskBlend({super.key});
+class BlendTool extends StatelessWidget {
+  const BlendTool({super.key});
   @override
   Widget build(BuildContext context) {
     final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked});
@@ -74,7 +74,7 @@ class _RowState extends State<_Row> {
               ),
             ), // (its way, named: two ways can look alike small)
             SizedBox(width: Shape.s(4)),
-            DeskIconButton(
+            ToolIconButton(
               key: ValueKey('blend.${l.id}'),
               size: Shape.z(24),
               on: _open,
@@ -91,7 +91,7 @@ class _RowState extends State<_Row> {
             if (l == ws.layers.last)
               SizedBox(width: Shape.s(24)) // (the back-most: nothing under it to clip to)
             else
-              DeskIconButton(
+              ToolIconButton(
                 key: ValueKey('clip.${l.id}'),
                 size: Shape.z(24),
                 on: clip,
@@ -139,7 +139,7 @@ class _RowState extends State<_Row> {
                       MouseRegion(
                         onEnter: (_) => setState(() => _hover = w),
                         onExit: (_) => setState(() => _hover = null),
-                        child: DeskIconButton(
+                        child: ToolIconButton(
                           key: ValueKey('blend.${l.id}.$w'),
                           size: Shape.z(26),
                           on: w == now,
@@ -194,7 +194,7 @@ class _OpacityState extends State<_Opacity> {
     m.carry('opacity', v);
   }
 
-  void _letGo() {
+  void _dragEnd() {
     final ws = WsScope.read(context);
     if (_held == null) return;
     _held = null;
@@ -206,8 +206,8 @@ class _OpacityState extends State<_Opacity> {
     builder: (context, box) => Listener(
       onPointerDown: (e) => e.buttons == kPrimaryButton ? _to(e.localPosition.dx, box.maxWidth) : null,
       onPointerMove: (e) => _held != null ? _to(e.localPosition.dx, box.maxWidth) : null, // (only a drag that began with the first button)
-      onPointerUp: (_) => _letGo(),
-      onPointerCancel: (_) => _letGo(),
+      onPointerUp: (_) => _dragEnd(),
+      onPointerCancel: (_) => _dragEnd(),
       child: CustomPaint(painter: _Bar(_held ?? widget.value)),
     ),
   );

@@ -1,5 +1,5 @@
-// The whole window: top bar, then the panes (panes.dart) — browser shelves | Stage over Timeline, Inspector over Desk, rearrangeable.
-// Each seat is its own file and reads the shared Ws.
+// The whole window: top bar, then the panes (panes.dart) — browser shelves | Stage over Timeline, Inspector over Tool Panel, rearrangeable.
+// Each panel is its own file and reads the shared Ws.
 import 'dock/dock_parts.dart' show askDockSearch;
 
 import 'dart:developer' show Timeline;
@@ -21,15 +21,15 @@ import 'package:motolii/inspector/inspector_parts_insp_host.dart';
 
 import '../inspector/inspector_parts.dart';
 import '../style/theme.dart';
-import 'desk/desk.dart';
-import 'desk/desk_depth.dart';
-import 'desk/desk_relations.dart';
-import 'desk/desk_ease.dart';
+import 'tool_panel/tool_panel.dart';
+import 'tool_panel/tool_panel_depth.dart';
+import 'tool_panel/tool_panel_relations.dart';
+import 'tool_panel/tool_panel_ease.dart';
 import 'dock/dock.dart';
 import 'dock/dock_glyphs.dart';
 import 'home.dart';
 import 'panes.dart';
-import 'desk/desk_kit.dart';
+import 'tool_panel/tool_panel_widgets.dart';
 import 'key_drag.dart';
 import 'keys.dart';
 import 'stage/stage.dart';
@@ -42,7 +42,7 @@ import 'relate.dart';
 import 'ws.dart';
 import 'shelf/script_code.dart';
 import 'shelf/fx_code.dart';
-part 'workspace_seat.dart';
+part 'workspace_panel.dart';
 part 'workspace_cards.dart';
 part 'workspace_values.dart';
 part 'workspace_keys.dart';
@@ -59,8 +59,8 @@ class Workspace extends StatefulWidget {
   /// through [WsScope.of] (its `inside` is the document, `selected` the picked thing, `frame` the moment).
   final List<WsPane> extra;
 
-  /// Desk tools of your own, after the window's (a DeskTool with its `build`).
-  final List<DeskTool> tools;
+  /// Tool Panel tools of your own, after the window's (a PanelTool with its `build`).
+  final List<PanelTool> tools;
 
   /// How the window looks when it opens (Ws.view: as it was left, say).
   final Map<String, Object?> view;
@@ -70,7 +70,7 @@ class Workspace extends StatefulWidget {
 
 class _WorkspaceState extends State<Workspace> {
   late final _ws = Ws()
-    ..tools = [...deskTools, ...widget.tools]
+    ..tools = [...panelTools, ...widget.tools]
     ..view.addAll(widget.view);
   Motolii? _inside;
   StreamSubscription<FileSystemEvent>? _own; // (the maker's own folder watched: effect_tiles.dart)
@@ -228,7 +228,7 @@ class _WorkspaceState extends State<Workspace> {
     _ws.notice = m.still(png) ? 'Written: ${png.split('/').last}' : 'Not written: ${m.trouble}';
   }
 
-  /// The window's menus, in the system's own menu bar: what the sample window has no seat for (a new document,
+  /// The window's menus, in the system's own menu bar: what the sample window has no panel for (a new document,
   /// another document, the film written out) and what the keyboard does elsewhere (undo, redo, take a thing out).
   // The window holds the focus when nothing in it does (a field left, a pane closed): its keys are heard there.
   final _windowFocus = FocusNode(debugLabel: 'window');
@@ -350,7 +350,7 @@ class _WorkspaceState extends State<Workspace> {
         ),
       ),
     );
-    if (_ws.inside == null) return ColoredBox(color: WsT.ground); // (the document still opening: no seat is built on nothing)
+    if (_ws.inside == null) return ColoredBox(color: WsT.ground); // (the document still opening: no panel is built on nothing)
     return PlatformMenuBar(
       menus: _menus(),
       child: WsKeys(
@@ -382,15 +382,15 @@ final _panes = [
   for (final (name, g, _) in dockShelves) WsPane(name, g, () => WsShelf(name), minSize: 240, iconOnly: true),
   WsPane('Stage', DockG.stage, () => const WsStage(), minSize: 320),
   WsPane('Camera View', DockG.camera, () => const WsCameraView(), minSize: 240),
-  WsPane('Inspector', DockG.inspector, () => const _InspectorSeat(), minSize: 200),
+  WsPane('Inspector', DockG.inspector, () => const _InspectorPanel(), minSize: 200),
   WsPane('Timeline', DockG.timeline, () => const WsTimeline(), minSize: 160),
-  WsPane('Ease', DockG.time, () => const DeskEase(), minSize: 260),
-  WsPane('Camera', DockG.camera, () => const DeskDepth(), minSize: WsT.lower),
-  WsPane('Desk', DockG.desk, () => const WsDesk(), minSize: WsT.lower),
-  WsPane('Relations', DockG.desk, () => const DeskRelations(), minSize: WsT.lower),
+  WsPane('Ease', DockG.time, () => const EaseTool(), minSize: 260),
+  WsPane('Camera', DockG.camera, () => const DepthTool(), minSize: WsT.lower),
+  WsPane('Tool Panel', DockG.toolPanel, () => const WsToolPanel(), minSize: WsT.lower),
+  WsPane('Relations', DockG.toolPanel, () => const RelationsTool(), minSize: WsT.lower),
 ];
 
-/// A pane's tab strip, added on top of the reference heights so the seats keep theirs.
+/// A pane's tab strip, added on top of the reference heights so the panels keep theirs.
 const _strip = 22.0;
 
 /// The reference arrangement: the browser shelves (one strip of tabs) | Stage over Timeline and Ease on the left, Inspector over Camera on the right.
@@ -407,7 +407,7 @@ DockingArea _preset(DockingItem Function(String name, {double? size, double? wei
   DockingColumn(
     [
       extra.isEmpty ? item('Inspector') : DockingTabs([item('Inspector'), for (final p in extra) item(p.name)]),
-      DockingTabs([item('Camera'), item('Desk'), item('Relations')], size: WsT.lower + _strip),
+      DockingTabs([item('Camera'), item('Tool Panel'), item('Relations')], size: WsT.lower + _strip),
     ],
     size: WsT.inspector,
     minimalSize: 340,

@@ -1,4 +1,4 @@
-// Part of ws.dart: the workspace state every seat reads (Ws).
+// Part of ws.dart: the workspace state every panel reads (Ws).
 part of 'ws.dart';
 
 /// A sound: a film whose file has no picture, hidden and heard (doc_add), Alight Motion's audio layer: docs/internal/reports/alight_motion/alight_ui.md 177.
@@ -157,14 +157,14 @@ class Ws extends ChangeNotifier {
     super.dispose();
   }
 
-  /// What the inside shows changed without the document changing (a thing held and carried): the seats look again.
+  /// What the inside shows changed without the document changing (a thing held and carried): the panels look again.
   void shown() {
     lastChange = null; // (not a step of the document: what it changed is not known)
     rev++;
     _tell(WsAspect.document);
   }
 
-  /// The document read again, after any change to it: what the seats list is what the document holds.
+  /// The document read again, after any change to it: what the panels list is what the document holds.
   /// The document's tempo, beats a minute (0: none), and its beats.
   double get bpm => _inside?.value(0, 'bpm', 0) ?? 0;
   WsBeats? get beats => WsBeats.of(bpm, _inside?.value(0, 'bpm_from', 0) ?? 0, Ws.fps);
@@ -252,7 +252,7 @@ class Ws extends ChangeNotifier {
   }
 
   /// The things whose moving values the window shows (told the inside: Motolii.subscribe): the picked one and those picked
-  /// with it, the cameras (the Depth desk's lens), the relations (the Relations desk's map), and a picked relation's things.
+  /// with it, the cameras (the Depth tool panel's lens), the relations (the Relations tool panel's map), and a picked relation's things.
   void _watch() {
     final m = _inside;
     if (m == null) return;
@@ -264,7 +264,7 @@ class Ws extends ChangeNotifier {
         if (l.kind == WsKind.camera) ?int.tryParse(l.id),
       for (final l in layers)
         if (int.tryParse(l.id) case final t? when m.word(t, 'kind') == 'behaviour')
-          t, // (the relations: the Relations desk draws each by its knobs, at the moment)
+          t, // (the relations: the Relations tool panel draws each by its knobs, at the moment)
       if (sel != null && m.word(sel, 'kind') == 'behaviour')
         for (final w in m.word(sel, 'members').split(' ')) ?int.tryParse(w),
     });
@@ -276,7 +276,7 @@ class Ws extends ChangeNotifier {
 
   /// The things picked together (drawn round on the stage): what a relation is made of. Picking one alone clears them.
   final many = <String>{};
-  bool manyByHand = false; // (picked one by one, in that order: the first leads; drawn round, they have no order)
+  bool manyInOrder = false; // (picked one by one, in that order: the first leads; drawn round, they have no order)
   final _keys = <WsKey>{};
   Set<WsKey> get keys => _keys;
 
@@ -332,14 +332,14 @@ class Ws extends ChangeNotifier {
   /// Where the working eye stands round the world's middle: about, over, how far.
   List<double> get eye => viewOf('stage.eye', const [0.0, 0.0, 1.0]);
 
-  /// What the user opened in the desk by hand; null lets the desk follow the selection.
-  String? deskManual;
+  /// What the user opened in the tool panel by hand; null lets the tool panel follow the selection.
+  String? toolPanelManual;
 
-  /// The desk's tools: the window's own, then any of your own (Workspace(tools:)).
-  List<DeskTool> tools = deskTools;
-  void openDesk(String? name) {
-    deskManual = name;
-    front('Desk');
+  /// The tool panel's tools: the window's own, then any of your own (Workspace(tools:)).
+  List<PanelTool> tools = panelTools;
+  void openToolPanel(String? name) {
+    toolPanelManual = name;
+    front('Tool Panel');
   }
 
   /// A pane brought to the front of its tabs (the panes follow: panes.dart).
@@ -350,11 +350,11 @@ class Ws extends ChangeNotifier {
 
   (String, int)? fronted;
 
-  /// The desk follows the selection (Motolii panels/desk.dart): keys picked -> Ease, a camera -> Depth, else Tools.
-  String get desk => deskManual ?? deskAuto;
+  /// The tool panel follows the selection (the old Motolii's panels/desk.dart): keys picked -> Ease, a camera -> Depth, else Tools.
+  String get toolPanel => toolPanelManual ?? toolPanelAuto;
 
-  /// What the selection alone would put on the desk: keys picked, Ease; a camera, Depth; else the Tools catalog.
-  String get deskAuto => 'Tools'; // (Ease and Camera are panes of their own now)
+  /// What the selection alone would put on the tool panel: keys picked, Ease; a camera, Depth; else the Tools catalog.
+  String get toolPanelAuto => 'Tools'; // (Ease and Camera are panes of their own now)
 
   /// Joined: the value of the picked thing (or of the stage, with nothing picked) a colour picked on the Colors shelf is
   /// said to, when a card's colour link or the tool strip's ink or edge aimed it there; null: the fill. Told as a pick
@@ -367,7 +367,7 @@ class Ws extends ChangeNotifier {
     _tell(WsAspect.picked);
   }
 
-  /// A panel link elsewhere asked for a panel (fonts, colours, ease): the dock or desk shows it.
+  /// A panel link elsewhere asked for a panel (fonts, colours, ease): the dock or tool panel shows it.
   void route(String to) {
     switch (to) {
       case final s when s.startsWith('Browser'):
@@ -468,7 +468,7 @@ class Ws extends ChangeNotifier {
   /// Joined: a change asked without waiting ([Motolii.later]): looked at once a picture till the inside has done it, then
   /// the document read again and [then] told (done or not, and why not). The window never stands still for the inside.
   /// Joined: what the steps changed that the last reading of the document took in (null: not known, as after a hand's
-  /// carry): a seat that shows only some values builds itself again only when they are among these.
+  /// carry): a panel that shows only some values builds itself again only when they are among these.
   ({bool things, Set<(int, String)> values})? lastChange;
 
   int _afters = 0; // (tickets still looked at: the document is read again once, when the last of them is done)

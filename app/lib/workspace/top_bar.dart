@@ -18,9 +18,9 @@ import '../style/theme.dart';
 import '../style/tokens.dart';
 import 'stage/stage_art.dart' show WsArt;
 import 'ws.dart';
-import 'desk/desk_kit.dart' show DeskChip;
+import 'tool_panel/tool_panel_widgets.dart' show ToolChip;
 import 'two_fingers.dart';
-import '../parts/text_hand.dart';
+import '../parts/text_gestures.dart';
 part 'top_bar_timings.dart';
 part 'top_bar_size.dart';
 
@@ -423,7 +423,7 @@ class _RenderState extends State<_Render> {
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: Shape.s(8), vertical: Shape.s(5)),
                           decoration: BoxDecoration(color: WsT.well, borderRadius: BorderRadius.all(Shape.r(4))),
-                          child: TextHand(
+                          child: TextGestures(
                             field: (k) => EditableText(
                               key: k,
                               rendererIgnoresPointer: true,
@@ -495,7 +495,7 @@ class _RenderState extends State<_Render> {
                                 crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   for (final (v, said) in choices)
-                                    DeskChip(
+                                    ToolChip(
                                       key: ValueKey('render-$name-$v'),
                                       label: said,
                                       on: now == v,
@@ -525,7 +525,7 @@ class _RenderState extends State<_Render> {
                                 runSpacing: Shape.s(4),
                                 children: [
                                   for (final (label, ending, _) in _formats)
-                                    DeskChip(key: ValueKey('render-$label'), label: label, on: _ending == ending, onTap: () => again(() => _as(ending))),
+                                    ToolChip(key: ValueKey('render-$label'), label: label, on: _ending == ending, onTap: () => again(() => _as(ending))),
                                 ],
                               ),
                               SizedBox(height: Shape.s(4)),

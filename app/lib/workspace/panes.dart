@@ -1,4 +1,4 @@
-// The window's panes: the seats laid out by the off-the-shelf `docking` package, so a tab can be dragged onto another strip,
+// The window's panes: the panels laid out by the off-the-shelf `docking` package, so a tab can be dragged onto another strip,
 // split off to a side, and every divider resized. The lab's version of Motolii's DockWorkspace (ui/lib/workspace/dock_workspace.dart);
 // no Detach, since a window of its own needs the native shell. Chrome comes from WsT, so both shades apply.
 import 'package:docking/docking.dart';
@@ -106,7 +106,7 @@ class _WsPanesState extends State<WsPanes> {
           ),
         ),
       ),
-      widget: WsSeat(child: p.build()),
+      widget: WsPanel(child: p.build()),
       size: size,
       weight: weight,
       minimalSize: p.minSize,
@@ -130,7 +130,7 @@ class _WsPanesState extends State<WsPanes> {
   );
 }
 
-/// Tab strips in the window's manner: a quiet band on the gutter, the front tab wears the seat's body and an accent underline.
+/// Tab strips in the window's manner: a quiet band on the gutter, the front tab wears the panel's body and an accent underline.
 /// A form with [Forms.plainTabs] drops the cards, so its own mark is the only thing that says which pane is in front.
 TabbedViewThemeData _tabs() {
   final t = Grey.light ? TabbedViewThemeData.minimalist() : TabbedViewThemeData.dark();

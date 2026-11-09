@@ -1,4 +1,4 @@
-// The Stage seat: header with view controls, the tool column, the viewport (stage_view.dart) and the tool options strip.
+// The Stage panel: header with view controls, the tool column, the viewport (stage_view.dart) and the tool options strip.
 // The picture is the work (stage_art.dart); the chrome around it stays grey and round, with the accent only on what is on.
 import 'dart:io' show Directory, File;
 
@@ -21,7 +21,7 @@ part 'stage_options.dart';
 class WsStage extends StatelessWidget {
   const WsStage({super.key});
   @override
-  Widget build(BuildContext context) => const WsSeat(child: _Stage());
+  Widget build(BuildContext context) => const WsPanel(child: _Stage());
 }
 
 const _tools = [

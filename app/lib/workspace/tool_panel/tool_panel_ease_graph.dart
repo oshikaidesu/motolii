@@ -5,10 +5,10 @@ import 'dart:math' as math;
 import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/style/tokens.dart';
-import 'package:motolii/workspace/desk/desk_ease.dart';
-import 'package:motolii/workspace/desk/desk_ease_cards.dart';
-import 'package:motolii/workspace/desk/desk_ease_handles.dart';
-import 'package:motolii/workspace/desk/desk_kit.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_handles.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
 import 'package:motolii/workspace/ws.dart';
 
 import '../two_fingers.dart';
@@ -67,7 +67,7 @@ class EaseGraph extends StatefulWidget {
   final void Function(bool start, double by)? onEnd, onEndMove; // (let go; and as it goes)
   final String? Function(bool start, double by)? endSays; // (what the end pulled makes its value, shown beside it while it is pulled)
   final bool jump, overshoot; // (overshoot: looks past 0 and 1, and a handle goes there: Alight Motion's Enable Overshoot)
-  final double? trial; // (where a trial of the way has come to, 0 to 1, with no stretch to go by: desk_ease_trial.dart)
+  final double? trial; // (where a trial of the way has come to, 0 to 1, with no stretch to go by: tool_panel_ease_trial.dart)
   final List<double>
   beats; // (where the document's beats fall in the stretch, 0 to 1: a line each, and a handle stays on one it is brought near, as the timeline's grid)
   @override
@@ -383,8 +383,8 @@ class _GraphPainter extends CustomPainter {
     if (from != null && to != null && to! > from!) {
       if (g.width > Shape.z(80)) {
         // (too narrow, only the frame now)
-        deskText(c, '$from', Offset(g.left, bottom + 6), numbers);
-        deskText(c, '$to', Offset(g.right, bottom + 6), numbers, ax: 1);
+        toolText(c, '$from', Offset(g.left, bottom + 6), numbers);
+        toolText(c, '$to', Offset(g.right, bottom + 6), numbers, ax: 1);
       }
       if (frame >= from! && frame <= to!) {
         final u = (frame - from!) / (to! - from!),
@@ -395,11 +395,11 @@ class _GraphPainter extends CustomPainter {
               ..strokeWidth = 1.5;
         c.drawLine(Offset(x, top - 8), Offset(x, bottom + 4), line);
         c.drawCircle(px(Offset(u, y)), 4.5, Paint()..color = WsT.playhead);
-        if (frame != from && frame != to) deskText(c, '$frame', Offset(x, bottom + 6), T.micro(WsT.playhead).copyWith(fontWeight: FontWeight.w700), ax: .5);
+        if (frame != from && frame != to) toolText(c, '$frame', Offset(x, bottom + 6), T.micro(WsT.playhead).copyWith(fontWeight: FontWeight.w700), ax: .5);
       } else if (g.width > Shape.z(80)) {
         // (not in this stretch: which way it lies, and where)
         final before = frame < from!;
-        deskText(c, before ? '‹ $frame' : '$frame ›', Offset(g.center.dx, bottom + 6), T.micro(WsT.playhead).copyWith(fontWeight: FontWeight.w700), ax: .5);
+        toolText(c, before ? '‹ $frame' : '$frame ›', Offset(g.center.dx, bottom + 6), T.micro(WsT.playhead).copyWith(fontWeight: FontWeight.w700), ax: .5);
       }
     }
     // A way tried: where it has come to on its curve, and a ball on the bar going as a value would.
@@ -426,7 +426,7 @@ class _GraphPainter extends CustomPainter {
       final o = handle(h.x, h.y), on = active == i, ink = h.param ? WsT.keyDot : Grey.g95;
       c.drawCircle(o, on ? 7 : 6, Paint()..color = ink);
       if (dragging && on && !h.param) {
-        deskText(
+        toolText(
           c,
           '${h.x.toStringAsFixed(2)}, ${h.y.toStringAsFixed(2)}',
           o + Offset(h.x < .5 ? 9 : -9, -9),

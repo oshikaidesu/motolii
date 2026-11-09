@@ -53,7 +53,7 @@ class _RelationMarks extends StatelessWidget {
             : null; // (a ring's or a row's middle is its leader's place and its centre a step from it)
         final lx = lead == null ? 0.0 : m.shows(lead, 'x', now)?.$1 ?? 0, ly = lead == null ? 0.0 : m.shows(lead, 'y', now)?.$1 ?? 0;
         final cx = val('centre_x') + lx, cy = val('centre_y') + ly, mid = screen(cx, cy), px = m.point * v.s;
-        Widget handle(String key, Offset at, void Function((double, double) u) carry) => Positioned(
+        Widget handle(String key, Offset at, void Function((double, double) u) dragUpdate) => Positioned(
           // (the middle a cross, a size an arrow out)
           left: at.dx - 7,
           top: at.dy - 7,
@@ -63,7 +63,7 @@ class _RelationMarks extends StatelessWidget {
             onPanStart: (_) => m.take(rel),
             onPanUpdate: (d) {
               final box = context.findRenderObject() as RenderBox?;
-              if (box != null) carry(units(box.globalToLocal(d.globalPosition)));
+              if (box != null) dragUpdate(units(box.globalToLocal(d.globalPosition)));
             },
             onPanEnd: (_) => ws.after(m.later('let_go', number: 1), (_, _) => ws.reread()),
             child: Container(
@@ -204,7 +204,7 @@ class _RelationMarks extends StatelessWidget {
                   ),
                 ),
           if (!isRelation &&
-              ws.manyByHand &&
+              ws.manyInOrder &&
               ws.many.length > 1 &&
               on(ws.many.first) != null) // (picked one by one: the first leads a Follow or a Push, shown before it is made)
             Positioned(

@@ -8,9 +8,9 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart' show Hov;
 import 'package:motolii/inspector/rows/inspector_rows.dart' show FoldMark;
 import 'package:motolii/style/tokens.dart';
-import 'package:motolii/workspace/desk/desk_ease.dart';
-import 'package:motolii/workspace/desk/desk_ease_cards.dart';
-import 'package:motolii/workspace/desk/desk_kit.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
 import 'package:motolii/workspace/ws.dart';
 
 typedef _Number = ({String name, int at, double lo, double hi, bool many});
@@ -96,7 +96,7 @@ class _EaseNumbersState extends State<EaseNumbers> {
                         ))
                           SizedBox(
                             width: each,
-                            child: DeskScrub(
+                            child: ToolScrub(
                               key: ValueKey('ease-number-${n.name}'),
                               label: n.name,
                               value: n.many ? 1 / now[n.at] : now[n.at],
@@ -110,7 +110,7 @@ class _EaseNumbersState extends State<EaseNumbers> {
                       if (bezier)
                         SizedBox(
                           width: each,
-                          child: DeskChip(key: const ValueKey('ease-overshoot'), label: 'Overshoot', on: widget.overshoot, onTap: widget.onOvershoot),
+                          child: ToolChip(key: const ValueKey('ease-overshoot'), label: 'Overshoot', on: widget.overshoot, onTap: widget.onOvershoot),
                         ),
                     ],
                   );

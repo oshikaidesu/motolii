@@ -19,7 +19,7 @@ import 'package:re_highlight/styles/atom-one-dark.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
 
 import '../../bridge/motolii.dart';
-import '../../parts/text_hand.dart';
+import '../../parts/text_gestures.dart';
 import '../../style/tokens.dart';
 import 'dock_effects.dart';
 import '../shelf/copies_tiles.dart';
@@ -180,7 +180,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
       color: Grey.g91,
       padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
       alignment: Alignment.centerLeft,
-      child: TextHand(
+      child: TextGestures(
         key: const ValueKey('ws-program-name'),
         field: (k) => EditableText(
           key: k,

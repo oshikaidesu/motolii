@@ -9,15 +9,15 @@ extension WsPick on Ws {
     _aim = null;
     _keys.clear();
     _stretch = null;
-    deskManual = null;
+    toolPanelManual = null;
     _tell(WsAspect.picked);
   }
 
-  void pickMany(Iterable<String> ids, {bool byHand = false}) {
+  void pickMany(Iterable<String> ids, {bool inOrder = false}) {
     many
       ..clear()
       ..addAll(ids);
-    manyByHand = byHand;
+    manyInOrder = inOrder;
     _tell(WsAspect.picked);
   }
 
@@ -26,7 +26,7 @@ extension WsPick on Ws {
     _keys.add(k);
     _stretch = null;
     _sel = k.layer;
-    deskManual = null;
+    toolPanelManual = null;
     _tell(WsAspect.picked);
   }
 
@@ -37,7 +37,7 @@ extension WsPick on Ws {
       ..addAll(ks);
     _stretch = null;
     if (_keys.isNotEmpty) _sel = _keys.first.layer;
-    deskManual = null;
+    toolPanelManual = null;
     _tell(WsAspect.picked);
   }
 
@@ -58,7 +58,7 @@ extension WsPick on Ws {
     _keys.clear();
     _stretch = _stretchOf(layer, name, from);
     _sel = layer;
-    deskManual = null;
+    toolPanelManual = null;
     _tell(WsAspect.picked);
     if (_stretch != null) front('Ease');
   }

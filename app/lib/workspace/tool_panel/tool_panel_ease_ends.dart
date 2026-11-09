@@ -1,11 +1,11 @@
 // The two ends of a stretch, pulled up and down their bars outside the square (the maker, 10/31, drawn on a picture of it).
-part of 'desk_ease_state.dart';
+part of 'tool_panel_ease_state.dart';
 
 /// Of each stretch whose ends a hand has moved, each value as its two keys first were and the measure of its bars: the
 /// ends stand where they were left, read from the keys, so an undo takes them back (the user, 10/31: "確定してもその位置のままで").
 final _endsFrom = Expando<Map<String, Map<String, (double, double, double)>>>();
 
-mixin _EaseEnds on State<DeskEase> {
+mixin _EaseEnds on State<EaseTool> {
   String? _trouble;
 
   // (an end of the stretch pulled [by], in the graph's measure: each value keyed at both its ends moves its key there by

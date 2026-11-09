@@ -42,7 +42,7 @@ extension _StageViewCamera on _StageViewState {
   /// A hand on a camera in the working eye: where it is goes round the point it looks at (After Effects' camera and point
   /// of interest), a picked one's corner sizes the frame, which is the lens (AbsentMotion's withCameraFrameScaled), and
   /// the frame or that point moves it (cameraGesture). [inside]: anywhere in the frame, or only on its marks.
-  bool _gizmoHold(_View v, Offset local, {required bool inside}) {
+  bool _gizmoDragStart(_View v, Offset local, {required bool inside}) {
     final ws = WsScope.read(context), m = ws.inside!, scene = widget.scene, at = ws.frame / Ws.fps;
     for (final id in scene.gizmos.keys) {
       final g = [for (final p in scene.gizmo(id)) p == null ? null : v.toScreen(WsArt.toView(scene, p))], cam = int.parse(id);
@@ -67,7 +67,7 @@ extension _StageViewCamera on _StageViewState {
       m.take(cam);
       ws.select(id);
       if (ws.playing) ws.playing = false;
-      _held = (from: local, moved: false, by: by == 'place' ? null : by);
+      _drag = (from: local, moved: false, by: by == 'place' ? null : by);
       return true;
     }
     return false;

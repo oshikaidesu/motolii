@@ -8,7 +8,7 @@ import '../../style/tokens.dart';
 import '../inspector_motion_preview.dart' show CardOver;
 import '../inspector_parts.dart';
 import '../../parts/timeline_parts.dart' show TpGlyph, TpGlyphView;
-import '../../parts/text_hand.dart';
+import '../../parts/text_gestures.dart';
 
 // ---- 10. effects ------------------------------------------------------------------------------------------------------
 /// An effect as a plugin ships it: a name and a WGSL uniform struct. Its rows are whatever [readParams] makes of the struct.
@@ -87,7 +87,7 @@ class _ParamSearchState extends State<ParamSearch> {
         alignment: Alignment.centerLeft,
         children: [
           if (_c.text.isEmpty) Text('Search parameters', style: T.label(Grey.g56)),
-          TextHand(
+          TextGestures(
             field: (k) => EditableText(
               key: k,
               rendererIgnoresPointer: true,

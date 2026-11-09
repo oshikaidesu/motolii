@@ -55,7 +55,7 @@ enum DockG {
   stage,
   inspector,
   timeline,
-  desk,
+  toolPanel,
   reload,
 }
 
@@ -181,7 +181,7 @@ class _P extends CustomPainter {
         cv.drawRRect(rr(.26, .43, .5, .14, .04), fl);
         cv.drawRRect(rr(.16, .66, .38, .14, .04), fl);
         cv.drawLine(p(.86, .12), p(.86, .88), st);
-      case DockG.desk:
+      case DockG.toolPanel:
         cv.drawRRect(rr(.12, .12, .34, .34, .08), fl);
         cv.drawRRect(rr(.54, .12, .34, .34, .08), st);
         cv.drawRRect(rr(.12, .54, .34, .34, .08), st);

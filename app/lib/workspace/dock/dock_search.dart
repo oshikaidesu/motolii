@@ -79,7 +79,7 @@ class _DockSearchState extends State<DockSearch> {
                     IgnorePointer(
                       child: Text(widget.hint, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(Grey.g56)),
                     ),
-                  TextHand(
+                  TextGestures(
                     field: (k) => EditableText(
                       key: k,
                       rendererIgnoresPointer: true,

@@ -1,8 +1,8 @@
-// The workspace: one window that gathers the lab's panels (browser dock, stage, inspector, timeline, desk).
-// This file is what every seat shares: the mock document they all read (Ws), and the window's own tokens (WsT).
+// The workspace: one window that gathers the lab's panels (browser dock, stage, inspector, timeline, tool panel).
+// This file is what every panel shares: the mock document they all read (Ws), and the window's own tokens (WsT).
 // Tone and manner come from the Inspector's Pop rules (sets/inspector_parts.dart): containers square and tiled edge to edge,
 // what you touch or read round, colour flat and opaque, one lime accent, each kind of thing wearing its own hue.
-import 'package:motolii/workspace/desk/desk_ease_cards.dart' show easeCurve;
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart' show easeCurve;
 
 import 'dart:async' show Timer;
 import 'dart:developer' show Timeline, TimelineTask;
@@ -24,7 +24,7 @@ export '../bridge/motolii.dart'
         MotoliiWatch; // (the inside's reads, an extension of Motolii: whoever holds the window's Ws.inside can call them)
 import '../style/theme.dart';
 import '../style/tokens.dart';
-import 'desk/desk_kit.dart' show DeskTool, deskTools;
+import 'tool_panel/tool_panel_widgets.dart' show PanelTool, panelTools;
 import 'ws_beats.dart';
 import 'stage/stage_art.dart' show WsArt;
 export 'ws_beats.dart';
@@ -35,23 +35,23 @@ part 'ws_pick.dart';
 part 'ws_scope.dart';
 part 'ws_header.dart';
 
-/// The window's own sizes and colours. A seat names one of these; it never types a number that is the window's business.
+/// The window's own sizes and colours. A panel names one of these; it never types a number that is the window's business.
 abstract final class WsT {
-  /// The gutter between seats: the dark you see between tiles.
+  /// The gutter between panels: the dark you see between tiles.
   static const gutter = 2.0;
 
-  /// A seat's header strip (title, tabs, small actions).
+  /// A panel's header strip (title, tabs, small actions).
   static double get header => Shape.z(28);
 
   /// The stage's tool column.
   static double get rail => Shape.z(40);
 
-  /// Seat widths and the lower band's height, at the reference window (1600 x 960).
+  /// Panel widths and the lower band's height, at the reference window (1600 x 960).
   static const dock = 300.0, inspector = 372.0, lower = 300.0;
   static double get topBar => Shape.z(40);
   static const minWindow = Size(1280, 800), refWindow = Size(1600, 960);
 
-  /// Grounds: the gutter, a seat's body, a card or row inside it, a well (field) inside that.
+  /// Grounds: the gutter, a panel's body, a card or row inside it, a well (field) inside that.
   static Color get ground => Grey.g00;
   static Color get body => Grey.g07;
   static Color get card => Grey.g13;
@@ -71,7 +71,7 @@ abstract final class WsT {
   /// Round things you touch: fields, chips, tabs, buttons.
   static const radius = 6.0, chipRadius = 4.0;
 
-  /// Paddings inside a seat.
+  /// Paddings inside a panel.
   static double get inset => Shape.s(8);
   static double get gap => Shape.s(4);
 
@@ -170,7 +170,7 @@ typedef WsKey = ({String layer, int frame});
 typedef WsStretchPicked = ({String layer, String name, double at, int from, int to});
 
 /// The window's state: the document's things as rows (read again from the inside), what is picked, the moment, the
-/// view. Every seat listens to this and nothing else; a seat never keeps a copy of what is here.
+/// view. Every panel listens to this and nothing else; a panel never keeps a copy of what is here.
 /// contract: changes notify once per user action; nothing here ticks while idle (play advances only while [playing]).
 /// What of the window changed: a part of it is built again only when one it reads did (Flutter's InheritedModel
 /// aspects: [WsScope.of]). [WsAspect.document]: the inside's picture of the document was read again.

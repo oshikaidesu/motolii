@@ -14,7 +14,7 @@ import '../ws.dart';
 
 part 'timeline_tracks_paint.dart';
 
-/// The timeline seat's own sizes.
+/// The timeline panel's own sizes.
 abstract final class WtM {
   static const divider = 1.0;
   static double get header => Shape.z(32.0);
@@ -48,7 +48,7 @@ class WtView {
   int get hashCode => Object.hash(ppf, scroll);
 }
 
-/// One row as drawn: a snapshot of the layer plus how the seat shows it.
+/// One row as drawn: a snapshot of the layer plus how the panel shows it.
 @immutable
 class WtRow {
   const WtRow({

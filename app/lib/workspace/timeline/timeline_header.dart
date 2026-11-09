@@ -215,7 +215,7 @@ class _TimeTypedState extends State<_TimeTyped> {
       width: Shape.z(72),
       child: CallbackShortcuts(
         bindings: {const SingleActivator(LogicalKeyboardKey.escape): _focus.unfocus},
-        child: TextHand(
+        child: TextGestures(
           key: const ValueKey('ws-tl-time-words'),
           field: (k) => EditableText(
             key: k,
@@ -385,7 +385,7 @@ class _TempoState extends State<_Tempo> {
                 _focus.unfocus();
               },
             },
-            child: TextHand(
+            child: TextGestures(
               key: const ValueKey('ws-tl-bpm-words'),
               field: (k) => EditableText(
                 key: k,
