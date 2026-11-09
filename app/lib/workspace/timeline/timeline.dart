@@ -36,6 +36,8 @@ part 'timeline_slip.dart';
 part 'timeline_header.dart';
 part 'timeline_labels.dart';
 part 'timeline_overview.dart';
+part 'timeline_media.dart';
+part 'timeline_tracks.dart';
 
 class WsTimeline extends StatefulWidget {
   const WsTimeline({super.key});
@@ -337,108 +339,15 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
   // of the inside (another isolate), shown when it comes.
   (int, List<int>)? _beats;
   int? _beatsAsked;
-  // The picked group's end of intro and start of outro, kept with it as an element (its Element card's End of intro,
-  // Start of outro: doc_element_clock), where they fall on the ruler.
-  List<int> _retimedOf(Ws ws) {
-    final m = ws.inside, t = int.tryParse(ws.selected ?? '');
-    if (m == null || t == null) return const [];
-    final start = m.value(t, 'start', 0) ?? 0;
-    return [for (final n in const ['retime_in', 'retime_out']) if ((m.value(t, n, 0) ?? 0) > 0) ((start + m.value(t, n, 0)!) * Ws.fps).round()];
-  }
-
-  List<int> _beatsOf(Ws ws) {
-    final m = ws.inside;
-    if (m == null) return const [];
-    if (_beats case (final r, final b) when r == ws.reads) return b;
-    if (_beatsAsked == ws.reads) return _beats?.$2 ?? const [];
-    final asks = <Future<List<double>>>[];
-    for (final l in ws.layers) {
-      final t = int.tryParse(l.id), rise = t == null ? 0.0 : m.value(t, 'beats', 0) ?? 0;
-      if (rise > 0 && _waveOf(ws, l) != null) asks.add(m.strikes(t!, rise));   // (only once its sound is read)
-    }
-    final reads = _beatsAsked = ws.reads;
-    Future.wait(asks).then((all) => mounted ? setState(() => _beats = (reads, ws.strikes = [for (final s in all) for (final at in s) (at * Ws.fps).round()])) : null);
-    return _beats?.$2 ?? const [];
-  }
-
   // A film's sound on its bar: read once on another isolate (the inside keeps it), then laid on the document's frames
   // where the film shows them, asked again only when the document changes.
   // A film's pictures on its bar: the one it plays in the middle of each sixth of it (its begin, its speed, either way),
   // made small by the inside (GStreamer, another isolate) and read as pictures; asked again only when the document changes.
   final _frames = <String, (Object, List<ui.Image>?)>{};
   final _framesAsked = <String, Object>{};
-  List<ui.Image>? _framesOf(Ws ws, WsLayer l) {
-    final m = ws.inside, t = int.tryParse(l.id);
-    if (m != null && t != null && m.word(t, 'kind') == 'picture') return _stillOf(m.whole(m.word(t, 'file')), l.id);
-    if (m == null || t == null || m.word(t, 'kind') != 'film') return null;
-    final file = m.whole(m.word(t, 'file')), begin = m.value(t, 'begin', 0) ?? 0, speed = m.value(t, 'speed', 0) ?? 1, start = m.value(t, 'start', 0) ?? 0;
-    final key = (file, begin, speed, start, l.inF, l.outF);
-    if (_frames[l.id] case (final k, final f) when k == key) return f;
-    if (_framesAsked[l.id] != key) {
-      _framesAsked[l.id] = key;
-      const n = 6;
-      final lasts = (l.outF - l.inF) / Ws.fps;
-      final seconds = [for (var i = 0; i < n; i++) begin + (speed < 0 ? lasts - (i + .5) / n * lasts : (i + .5) / n * lasts) * speed.abs()];
-      Future.wait([for (final s in seconds) m.filmFrame(file, s)]).then((pngs) async {
-        if (pngs.any((p) => p == null)) return mounted ? setState(() => _frames[l.id] = (key, null)) : null;   // (no pictures: its sound alone)
-        final read = [for (final p in pngs) (await (await ui.instantiateImageCodec(File(p!).readAsBytesSync())).getNextFrame()).image];
-        if (mounted) setState(() => _frames[l.id] = (key, read));
-      });
-    }
-    return _frames[l.id]?.$2;
-  }
-
-  // A shape's form and its fill, as the document says them: its own small picture at the row's left.
-  // (no fill: its outline in its stroke's colour)
-  (String, Color?, bool)? _formOf(Ws ws, WsLayer l) {
-    final m = ws.inside, t = int.tryParse(l.id);
-    if (m == null || t == null || m.word(t, 'kind') != 'shape') return null;
-    Color? colour(String hex) => hex.length == 6 && int.tryParse(hex, radix: 16) != null ? Color(0xFF000000 | int.parse(hex, radix: 16)) : null;
-    final outline = m.word(t, 'fill') == 'none';
-    return (m.word(t, 'shape'), colour(m.word(t, outline ? 'stroke' : 'fill')), outline);
-  }
-
-  // A photo on its bar: itself, read once small (as tall as a bar needs), laid along the bar again and again as
-  // Alight Motion's photo bar is (docs/internal/reports/alight_motion/alight_ui.md: タイムラインの絵); one Flutter cannot read: none.
-  List<ui.Image>? _stillOf(String file, String id) {
-    if (_frames[id] case (final k, final f) when k == file) return f;
-    if (_framesAsked[id] != file) {
-      _framesAsked[id] = file;
-      () async {
-        try {
-          final read = (await (await ui.instantiateImageCodec(await File(file).readAsBytes(), targetHeight: 48)).getNextFrame()).image;
-          if (mounted) setState(() => _frames[id] = (file, [read]));
-        } catch (_) {
-          if (mounted) setState(() => _frames[id] = (file, null));
-        }
-      }();
-    }
-    return _frames[id]?.$2;
-  }
-
   final _waves = <String, (int, int, int, List<double>?)>{};   // (thing: document read, from, to, loudness a frame)
   final _asked = <String>{};
   final _waveAsked = <String, (int, int, int)>{};
-  List<double>? _waveOf(Ws ws, WsLayer l) {
-    final m = ws.inside, t = int.tryParse(l.id);
-    if (m == null || t == null || m.word(t, 'kind') != 'film') return null;
-    final key = (ws.reads, l.inF, l.outF);
-    final had = _waves[l.id];
-    if (had case (final r, final a, final b, final w) when (r, a, b) == key) return w;
-    if (_waveAsked[l.id] != key) {   // (a question of the inside, another isolate: laid on the bar when it comes)
-      _waveAsked[l.id] = key;
-      m.loudnessOver(t, l.inF / Ws.fps, l.outF / Ws.fps, l.outF - l.inF).then((w) {
-        if (!mounted) return;
-        if (w == null) {
-          if (_asked.add(l.id)) m.loudness(t).then((_) => mounted ? setState(() => (_waveAsked.remove(l.id), _beats = null, _beatsAsked = null)) : null);
-          return;
-        }
-        setState(() => (_waves[l.id] = (key.$1, key.$2, key.$3, w.isEmpty ? null : w), _beats = null, _beatsAsked = null));   // (its sound now read: the beats asked again)
-      });
-    }
-    return had?.$4;
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_workDrag == null) {   // (the document's work area)
@@ -518,135 +427,6 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     );
   }
 
-  Widget _tracks(Ws ws, List<WtRow> rows) => LayoutBuilder(
-    builder: (context, box) {
-      _trackW = box.maxWidth;
-      _rowsH = math.max(0, box.maxHeight - WtM.ruler - WtM.overview);
-      _scroll = _clampScroll(_scroll);
-      _vscroll = _clampV(rows.length);
-      final v = _view;
-      return Stack(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              WsMenu(
-                key: _rulerMenu,
-                child: GestureDetector(
-                key: const ValueKey('ws-tl-ruler'),
-                behavior: HitTestBehavior.opaque,
-                supportedDevices: wsPressing,
-                onTapUp: (d) => _rulerTap(d.localPosition),   // (Live's scrub area: timeline_asked.dart)
-                onDoubleTapDown: (d) => _rulerDouble(d.localPosition),
-                onDoubleTap: () {},
-                onSecondaryTapDown: (d) => _rulerRight(d.localPosition),
-                onPanDown: (d) => _rulerDown(d.localPosition),
-                onPanUpdate: (d) => _rulerMove(d.localPosition),
-                onPanEnd: (_) => _workLetGo(),
-                onPanCancel: _workLetGo,
-                child: SizedBox(
-                  height: WtM.ruler,
-                  child: CustomPaint(
-                    painter: WtRulerPainter(view: v, fps: Ws.fps, workIn: _workIn, workOut: _workOut, markers: _marksOf(_ws!), markColours: _markColoursOf(_ws!), beats: _beatsOf(ws), tempo: ws.beats, retimed: _retimedOf(ws)),
-                    foregroundPainter: WtKeptPainter(view: v, kept: ws.kept), // (the pictures kept on disk for playing)
-                  ),
-                ),
-              ),
-              ),
-              Expanded(
-                child: MouseRegion(
-                  cursor: _cursor,
-                  onHover: (e) {
-                    final c = _cursorAt(e.localPosition);
-                    if (c != _cursor) setState(() => _cursor = c);
-                  },
-                  child: Listener(
-                  onPointerSignal: _wheel,
-                  child: WsTwoFingers(
-                  onPan: _fingers,
-                  onPinch: _pinch,
-                  child: WsMenu(
-                  key: _trackMenu,
-                  child: GestureDetector(
-                    key: const ValueKey('ws-tl-tracks'),
-                    behavior: HitTestBehavior.opaque,
-                    supportedDevices: wsPressing,
-                    dragStartBehavior: DragStartBehavior.down,
-                    onTapDown: (d) => _trackDown(d.localPosition),
-                    onSecondaryTapDown: (d) => _trackRight(d.localPosition),
-                    onTapUp: (d) => _laneTap(d.localPosition),   // (a lane's tap, once it is known not to be a drag)
-                    onPanStart: (d) => _barDown(d.localPosition),
-                    onPanUpdate: (d) => _barMove(d.localPosition),
-                    onPanEnd: (_) => _barUp(),
-                    onPanCancel: () => _barUp(keep: false),
-                    child: RepaintBoundary(
-                      child: CustomPaint(
-                        size: Size.infinite,
-                        painter: WtTracksPainter(rows: rows, view: v, fps: Ws.fps, vscroll: _vscroll, tempo: ws.beats, restAt: _restAt),
-                      ),
-                    ),
-                  ),
-                  ),
-                  ),
-                ),
-                ),
-              ),
-              ValueListenableBuilder<int>(valueListenable: ws.moment, builder: (_, frame, _) => _Overview(from: _scroll, to: _scroll + _visible, frame: frame, onDrag: (p) => _overview(p, box.maxWidth))),
-            ],
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: WtM.overview,
-            child: IgnorePointer(
-              child: RepaintBoundary(
-                child: ClipRect(
-                  child: CustomPaint(
-                    painter: WtPlayheadPainter(view: v, frame: ws.frame, headTop: WtM.band + 1, moment: ws.moment),   // (painted again as the playhead moves, nothing built)
-                  ),
-                ),
-              ),
-            ),
-          ),
-          if (_box case (final a, final b)?)
-            Positioned.fromRect(
-              rect: Rect.fromPoints(a, b).shift(Offset(0, WtM.ruler)),
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(color: WsT.accent.withAlpha(36), border: Border.all(color: WsT.accent, width: 1)),
-                ),
-              ),
-            ),
-          if (_naming case (final at, _)?)   // (the flag itself written in, as wide as its words, as Figma's layer name is written where it stands)
-            Positioned(
-              left: v.x((at * Ws.fps).round()).roundToDouble(),
-              top: WtM.band + 2,
-              height: 12,
-              child: ListenableBuilder(
-                listenable: _markWords,
-                builder: (_, child) => Container(
-                  width: wtFlagWidth('${_markWords.text}  '),
-                  color: WsT.toneText,
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: child,
-                ),
-                child: TextHand(key: const ValueKey('ws-tl-mark-name'), field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
-                  controller: _markWords,
-                  focusNode: _markFocus,
-                  style: T.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700),
-                  cursorColor: Grey.g13,
-                  backgroundCursorColor: Grey.g38,
-                  selectionColor: Grey.g13.withValues(alpha: .3),   // (its words picked, seen as picked)
-                  maxLines: 1,
-                  onSubmitted: (_) => _markFocus.unfocus(),
-                )),
-              ),
-            ),
-        ],
-      );
-    },
-  );
 }
 
 // ---------------------------------------------------------------- header strip
