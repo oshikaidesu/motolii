@@ -78,14 +78,13 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
   final at = _drawn(ws); // (as the picture shown has it)
   String field(String n) {
     final sh = m.shown(n), label = '@label(${sh?.label ?? n.replaceAll('_', ' ').replaceRange(0, 1, n[0].toUpperCase())})';
+    String menu(Iterable<String> words, int at) => '  /// $label @enum(${words.join(', ')}) @default($at)\n  $n: u32,';
     if (sh?.look == 'thing') {
       // (another thing, by the names the timeline shows: None, then the others; its number is the document's)
-      final others = _others(ws, t), at = others.values.toList().indexOf((m.value(t, n, 0) ?? 0).round());
-      return '  /// $label @enum(${['None', ...others.keys.map((o) => o.replaceAll(',', ' '))].join(', ')}) @default(${at + 1})\n  $n: u32,';
+      final others = _others(ws, t), place = others.values.toList().indexOf((m.value(t, n, 0) ?? 0).round());
+      return menu(['None', ...others.keys.map((o) => o.replaceAll(',', ' '))], place + 1);
     }
-    if (m.words(t, n) case final words when words.isNotEmpty) {
-      return '  /// $label @enum(${words.join(', ')}) @default(${math.max(0, words.indexOf(m.word(t, n)))})\n  $n: u32,';
-    }
+    if (m.words(t, n) case final words when words.isNotEmpty) return menu(words, math.max(0, words.indexOf(m.word(t, n))));
     if (m.range(t, n) case (final lo0, final hi0)) {
       double shown(double x) => _shown(m, t, n, x);
       (double, double) span(double x, double y) => x < y ? (x, y) : (y, x);
@@ -113,24 +112,22 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
     final label = m.shown('${base}_x')!.label;
     return '  /// @label(${label.substring(0, label.length - 2)}) @unit(colours)\n  $base: vec3<f32>,';
   }
+
+  List<String> lines(List<String> names) {
+    final skip = {for (final x in names) if (_colourBase(m, x, names) case final b?) ...['${b}_y', '${b}_z']};
+    return [
+      for (final n in names)
+        if (m.shown(n)?.fold == null)
+          if (_colourBase(m, n, names) case final base?) colour(base) else if (!skip.contains(n)) field(n),
+      for (final fold in {for (final n in names) ?m.shown(n)?.fold})
+        ...['  // @advanced($fold)', for (final n in names) if (m.shown(n)?.fold == fold) field(n)],
+    ];
+  }
+
   return [
     for (final (title, names) in m.cards(t))
-      if (title == 'Sound' ||
-          !wsSound(m, t)) // (a sound has its volume and no picture to place: Alight Motion's audio layer, docs/internal/reports/alight_motion/alight_ui.md 177)
-        Fx(
-          'v',
-          title,
-          'struct Params {\n${[
-            for (final n in names)
-              if (m.shown(n)?.fold == null)
-                if (_colourBase(m, n, names) case final base?) colour(base) else if (!{
-                  for (final x in names)
-                    if (_colourBase(m, x, names) case final b?) ...['${b}_y', '${b}_z'],
-                }.contains(n)) field(n),
-            for (final fold in {for (final n in names) ?m.shown(n)?.fold}) ...['  // @advanced($fold)', for (final n in names)
-              if (m.shown(n)?.fold == fold) field(n)],
-          ].join('\n')}\n}',
-        ),
+      if (title == 'Sound' || !wsSound(m, t)) // (a sound has its volume and no picture to place)
+        Fx('v', title, 'struct Params {\n${lines(names).join('\n')}\n}'),
   ];
 }
 
