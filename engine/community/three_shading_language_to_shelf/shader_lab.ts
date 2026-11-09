@@ -44,7 +44,7 @@ for (const type of types) {
       made++
       try {
         const mesh = pass.compositeMesh?.material === m ? pass.compositeMesh : new THREE.Mesh(plane, m)
-        const [v, f] = wgsl(mesh, m, pass.camera, pass.scene, mesh === pass.compositeMesh ? `${dir}/${type}` : undefined)
+        const [v, f] = wgsl(mesh, m, pass.camera, pass.scene)
         std.open(`${dir}/${type}.${i}.vert.wgsl`, "w").puts(v); std.open(`${dir}/${type}.${i}.frag.wgsl`, "w").puts(f)
         said.puts(`${type}.${i}\tok\n`); ok++
       } catch (e: any) { said.puts(`${type}.${i}\t${String(e?.message ?? e).replace(/\s+/g, " ").slice(0, 160)}\n`) }

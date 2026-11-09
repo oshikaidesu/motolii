@@ -3,18 +3,8 @@
 int motolii_add(Motolii* m, const char* kind, const char* file) { return on_render_thread(m, [=] { return changes(m, (int)(doc_add(doc(m), kind, file))); }); }
 int motolii_remove(Motolii* m, int layer) { return on_render_thread(m, [=] { return changes(m, (int)(doc_remove(doc(m), layer))); }); }
 int motolii_set(Motolii* m, int layer, const char* name, double number) { return on_render_thread(m, [=] { return changes(m, (int)(doc_set(doc(m), layer, name, doc_macro_own(doc(m), layer, name, doc(m).stage ? doc(m).stage->now : 0.0, number)))); }); }   // (the value the hand sees: one a macro turns made its own, document/expressions.h)
-int motolii_points(Motolii* m, int layer, double* xy, int room) { return by_look(m, [=] { return doc_points(*m->d, layer, m->d->stage->now, xy, room); }); }
-int motolii_handles(Motolii* m, int layer, double* xy, double* of, int room) { return by_look(m, [=] { return doc_points(*m->d, layer, m->d->stage->now, xy, room, true, of); }); }
-int motolii_pen(Motolii* m, int layer, double x, double y, double hx, double hy) { return on_render_thread(m, [=] { return changes(m, doc_pen(doc(m), layer, x, y, hx, hy)); }); }
 int motolii_say(Motolii* m, int layer, const char* name, const char* word) { return on_render_thread(m, [=] { return changes(m, (int)(doc_say(doc(m), layer, name, word))); }); }
 int motolii_key(Motolii* m, int layer, const char* name, double at, double number) { return on_render_thread(m, [=] { return changes(m, (int)(doc_key(doc(m), layer, name, at, doc_macro_own(doc(m), layer, name, at, number)))); }); }
-// Many keys of one value in one call and one step (a world's motion baked into keys, a film's beats...): asked of the
-// hand once, made one act, the stage made again once at its end.
-int motolii_key_many(Motolii* m, int layer, const char* name, int n, const double* at, const double* number) {
-    return on_render_thread(m, [=] {
-        return changes(m, (int)doc_key_many(doc(m), layer, name, n, at, number));
-    });
-}
 // A MIDI file's notes made keys of a value, as om_midi makes them in After Effects (midi_notes.h: midi_keys), each held; one step.
 int motolii_midi(Motolii* m, int layer, const char* name, const char* file, const char* kind, int channel, double bpm) {
     std::vector<MidiEvent> events = midi_events(file);
@@ -34,8 +24,6 @@ int motolii_midi(Motolii* m, int layer, const char* name, const char* file, cons
     });
 }
 double motolii_midi_bpm(const char* file) { return midi_bpm(file); }
-int motolii_unkey(Motolii* m, int layer, const char* name, double at) { return on_render_thread(m, [=] { return changes(m, (int)(doc_unkey(doc(m), layer, name, at))); }); }
-int motolii_keys(Motolii* m, int layer, const char* name) { return by_look(m, [=] { return (int)(doc_keys(doc(m), layer, name)); }); }
 static int easing_is(Motolii* m, int layer, const char* name, double at, const char* easing) {   // (on the hand)
     Doc& d = doc(m);
     bool here = false;
@@ -64,7 +52,6 @@ static int define_is(Motolii* m, const char* easing, const char* expression) {  
 }
 const char* motolii_effect_names(Motolii* m) { return by_look(m, [m] { return (m->listed = doc_effect_names()).c_str(); }); }
 int motolii_effect(Motolii* m, int layer, const char* name, double at) { return on_render_thread(m, [=] { return changes(m, (int)(doc_effect(doc(m), layer, name, at))); }); }
-int motolii_define(Motolii* m, const char* easing, const char* expression) { return on_render_thread(m, [=] { return define_is(m, easing, expression); }); }
 const char* motolii_easings(Motolii* m) { return by_look(m, [m] { return (m->listed = doc_easings(*m->d)).c_str(); }); }
 int motolii_work_out(Motolii* m, const char* sum, double* is) {
     const std::string said(sum);
@@ -81,9 +68,6 @@ int motolii_work_out(Motolii* m, const char* sum, double* is) {
         sqlite3_finalize(asked);
         return (int)ok;
     });
-}
-int motolii_value(Motolii* m, int layer, const char* name, double at, double* is) {
-    return by_look(m, [=] { return (int)(doc_value(doc(m), layer, name, at, is) && (doc_macro_over(doc(m), layer, name, at, is), true)); });   // (a knob a macro turns: as the macro makes it)
 }
 // A value as the stage shows it: what what drives it (a relation, a behaviour) makes of it, 2; its own, 1; none, 0.
 int motolii_shows(Motolii* m, int layer, const char* name, double at, double* is) {
@@ -102,13 +86,6 @@ double motolii_lasts(Motolii* m, int layer) { return by_look(m, [=] { return doc
 int motolii_key_times(Motolii* m, int layer, const char* name, double* at, int room) {
     return by_look(m, [=] { const std::vector<double> all = doc_key_times(*m->d, layer, name); for (int i = 0; i < room && i < (int)all.size(); ++i) at[i] = all[(size_t)i]; return (int)all.size(); });
 }
-// A thing's frame on the picture at the stage's moment, as the stage's own eye sees it: its middle, how wide and how
-// high (points of the picture, from the top left), and how far it is turned (degrees, clockwise as seen).
-int motolii_bounds(Motolii* m, int layer, double* frame) {
-    return by_look(m, [=] { return (int)(doc_knows(doc(m), layer) && doc_frame(*m->d, layer, m->now, frame)); });
-}
-// What of a thing is seen at the stage's moment: the upright box of its outline on the picture (left, top, right, bottom).
-int motolii_seen(Motolii* m, int layer, double* box) { return by_look(m, [=] { return (int)(doc_knows(doc(m), layer) && doc_seen_box(*m->d, layer, m->now, box)); }); }
 int motolii_path(Motolii* m, int layer, int copy, double from, double to, int n, double* path) {
     return by_look(m, [=] {
         if (!doc_knows(doc(m), layer) || n < 1) return 0;
@@ -141,16 +118,7 @@ int motolii_keying(Motolii* m, int on) {   // (on below 0: only says whether eve
 }
 int motolii_drag_start(Motolii* m, int layer) { return on_render_thread(m, [=] { return (int)doc_hold(doc(m), layer); }); }
 int motolii_drag_update(Motolii* m, const char* by, double a, double b) { return posted(m, std::string("carry ") + by, [m, by = std::string(by), a, b] { doc_carry(doc(m), by.c_str(), a, b); }); }   // (refused: said when it is let go)
-int motolii_drag_end(Motolii* m, int keep) { return on_render_thread(m, [=] { return changes(m, (int)doc_let_go(doc(m), keep != 0)); }); }
 int motolii_put(Motolii* m, int layer, const char* name, double at, double number) { return on_render_thread(m, [=] { return changes(m, (int)doc_put(doc(m), layer, name, at, doc_macro_own(doc(m), layer, name, at, number))); }); }   // (as the hand sees it: doc_macro_own)
-int motolii_key_here(Motolii* m, int layer, const char* name, double at) { return on_render_thread(m, [=] { return changes(m, (int)doc_key_here(doc(m), layer, name, at)); }); }
-int motolii_size(Motolii* m, int wide, int high) {
-    return on_render_thread(m, [=] {
-        char* say = doc_size_words(wide, high);
-        return say ? changes(m, (int)doc_change(*m->d, say)) : (m->d->error = "a stage is from 16 to 8192 points each way, an even number of them", 0);
-    });
-}
-int motolii_work(Motolii* m, double from, double to) { return on_render_thread(m, [=] { return changes(m, (int)doc_work_is(doc(m), from, to)); }); }
 int motolii_work_of(Motolii* m, double* from, double* to) { return by_look(m, [=] { return doc_work(*m->d, from, to), 1; }); }
 int motolii_mark(Motolii* m, double at, const char* word) { return on_render_thread(m, [=] { return changes(m, (int)doc_mark(doc(m), at, word)); }); }
 int motolii_guide(Motolii* m, const char* axis, double at, int on) { return on_render_thread(m, [=] { return changes(m, (int)doc_guide(doc(m), axis, at, on != 0)); }); }
@@ -167,11 +135,6 @@ int motolii_fits(Motolii* m) {
     });
 }
 int motolii_size_of(Motolii* m, int* wide, int* high) { return by_look(m, [=] { return *wide = m->s->w, *high = m->s->h, 1; }); }
-int motolii_raise(Motolii* m, int layer, int places) { return on_render_thread(m, [=] { return changes(m, (int)doc_raise(doc(m), layer, places)); }); }
-int motolii_stay(Motolii* m, int layer, const char* name, double at) { return on_render_thread(m, [=] { return changes(m, (int)doc_stay(doc(m), layer, name, at)); }); }
-int motolii_keyed(Motolii* m, int layer, const char* name, double at) {
-    return by_look(m, [=] { return doc_keyed(*m->d, layer, name, at); });
-}
 const char* motolii_words(Motolii* m, int layer, const char* name) { return by_look(m, [=] { return (said_word() = doc_words(*m->d, layer, name)).c_str(); }); }
 // Every moment a key of any of a thing's values that take keys stands at, each once and in time: a timeline's bar
 // marks in one call (asked a value at a time, a document of fifteen recipes was hundreds of calls each reading).
@@ -196,8 +159,6 @@ const char* motolii_effects(Motolii* m) {   // (the effects folder's, then AviUt
     });
 }
 void motolii_files_changed(void) { ++files_changed(); }
-int motolii_preset_save(Motolii* m, int layer, const char* path) { return by_look(m, [=] { return (int)doc_preset_save(*m->d, layer, path); }); }
-int motolii_preset_apply(Motolii* m, int layer, const char* path) { return on_render_thread(m, [=] { return changes(m, doc_preset_put(doc(m), layer, path)); }); }
 const char* motolii_presets(Motolii* m) { return by_look(m, [=] { return (said_word() = doc_preset_names()).c_str(); }); }
 const char* motolii_animators(Motolii* m) { return by_look(m, [=] { return (said_word() = doc_folder_names("expressions", ".js")).c_str(); }); }
 const char* motolii_relations(Motolii* m) { return by_look(m, [=] { return (said_word() = doc_folder_names("relations", ".js")).c_str(); }); }
@@ -326,4 +287,3 @@ const char* motolii_reading(Motolii* m, int layer, const char* name) {
         return (said_word() = line).c_str();
     });
 }
-int motolii_sequence(Motolii* m, double overlap) { return on_render_thread(m, [=] { return changes(m, (int)doc_sequence(doc(m), overlap, RATE)); }); }

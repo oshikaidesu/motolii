@@ -50,8 +50,6 @@ static double interp_bounce(const double* p, double u) {
     const double high = height * room / length * interp_smoothstep(0.05, 0.15, room);
     return 1 - 4 * high * (u - start) * (1 - u) / (room * room);
 }
-static double interp_mix(double a, double b, double t) { return a + (b - a) * t; }
-static double interp_fract(double x) { return x - std::floor(x); }
 static double interp_clamp(double x, double low, double high) { return std::fmin(std::fmax(x, low), high); }
 
 // (bezier.rs: the CSS easing curve. x back to the curve's own parameter: Newton eight times, then halving: the past
@@ -74,18 +72,6 @@ static double interp_bezier(double x1, double y1, double x2, double y2, double x
         s = (lo + hi) / 2.0;
     }
     return interp_sample(y1, y2, s);
-}
-// (a wave repeated: `peak` is the phase of its top, `linear` mixes cosine with triangle, `envelope_end` the end of the line its valleys ride on)
-static double interp_wave(double peak, double linear, double phi) {
-    const double s = interp_clamp(peak, 0.02, 0.98), tri = phi < s ? phi / s : (1.0 - phi) / (1.0 - s);
-    const double smooth = phi < s ? (1.0 - std::cos((3.141592653589793 * phi) / s)) / 2.0 : (1.0 + std::cos((3.141592653589793 * (phi - s)) / (1.0 - s))) / 2.0;
-    return interp_mix(smooth, tri, interp_clamp(linear, 0.0, 1.0));
-}
-// (shaken: `grain` is how fine, `center_u` and `center_v` where the shaking is strongest and how strong, `bias` pushes the band; it is still at both ends)
-static double interp_lattice(double seed, double index) { const double value = std::sin((seed + index * 97.13) * 12.9898) * 43758.5453; return (value - std::floor(value)) * 2.0 - 1.0; }
-static double interp_noise(double x, double seed) {
-    const double index = std::floor(x), local = x - index;
-    return interp_mix(interp_lattice(seed, index), interp_lattice(seed, index + 1.0), (1.0 - std::cos(3.141592653589793 * local)) / 2.0);
 }
 
 static double interp_ease(const Interp& i, double u) {

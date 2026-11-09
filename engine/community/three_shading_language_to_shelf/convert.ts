@@ -28,40 +28,9 @@ export function built(object: any, material: any, camera?: any, scene?: any): an
   return b
 }
 
-export function wgsl(object: any, material: any, camera?: any, scene?: any, drawable?: string): [string, string] {
+export function wgsl(object: any, material: any, camera?: any, scene?: any): [string, string] {
   const b = built(object, material, camera, scene)
-  if (drawable) writeDrawable(drawable, b, object, material, b.camera, b.scene)
   return [b.vertexShader, b.fragmentShader]
-}
-
-// What gpu/wgsl_effect_on_dawn.cpp needs to draw it, all from three's own code: each bind group's uniforms as three packs
-// them (binding.update -> binding.buffer, three.webgpu.js 32983-32987) after its NodeFrame update (55980-55995,
-// 56124-56134), and the mesh's arrays.
-function writeDrawable(dir: string, b: any, object: any, material: any, camera: any, scene: any) {
-  os.mkdir(dir)
-  const frame: any = new (THREE as any).NodeFrame()
-  frame.renderer = renderer; frame.scene = scene; frame.object = object; frame.camera = camera; frame.material = material
-  frame.update()
-  for (const node of b.updateNodes) frame.updateNode(node)
-  const bin = (name: string, a: ArrayBufferView) => { const f = std.open(`${dir}/${name}`, "wb"); f.write(a.buffer, a.byteOffset, a.byteLength); f.close() }
-  let plan = ""
-  b.getBindings().forEach((g: any, gi: number) => g.bindings.forEach((x: any, bi: number) => {
-    if (x.isUniformsGroup) { x.update(); bin(`g${gi}b${bi}.bin`, x.buffer); plan += `${gi} ${bi} uniform ${x.buffer.byteLength}\n` }
-    else if (x.isSampledTexture) plan += `${gi} ${bi} texture 0\n`
-    else if (x.isSampler) {   // (how three's texture says it is read: its filters and wraps, as three.js's own numbers)
-      const t = x.texture ?? {}
-      plan += `${gi} ${bi} sampler 0 ${t.magFilter ?? 1006} ${t.minFilter ?? 1006} ${t.wrapS ?? 1001} ${t.wrapT ?? 1001}\n`
-    }
-    else plan += `${gi} ${bi} ${x.constructor?.name ?? "other"} 0\n`
-  }))
-  std.open(`${dir}/bindings.txt`, "w").puts(plan)
-  std.open(`${dir}/vert.wgsl`, "w").puts(b.vertexShader)
-  std.open(`${dir}/frag.wgsl`, "w").puts(b.fragmentShader)
-  // the vertex inputs in the order the builder gave them locations (b.attributes), each "<name> <type>" with its array
-  const g = object.geometry
-  std.open(`${dir}/attributes.txt`, "w").puts(b.attributes.map((a: any) => `${a.name} ${a.type}\n`).join(""))
-  for (const a of b.attributes) bin(`${a.name}.f32`, new Float32Array(g.attributes[a.name].array))
-  bin("index.u16", new Uint16Array(g.index.array))
 }
 
 // Each named effect made by `make` (a material for the plane) written to engine/out/tsl/<collection>/<name>.{vert,frag}.wgsl; a line
@@ -74,7 +43,7 @@ export function convertAll(collection: string, effects: [string, () => any][]) {
   for (const [name, make] of effects) {
     try {
       const material = make()
-      const [v, f] = wgsl(new THREE.Mesh(plane, material), material, undefined, undefined, `${dir}/${name}`)
+      const [v, f] = wgsl(new THREE.Mesh(plane, material), material)
       std.open(`${dir}/${name}.vert.wgsl`, "w").puts(v)
       std.open(`${dir}/${name}.frag.wgsl`, "w").puts(f)
       said.puts(`${name}\tok\n`); ok++

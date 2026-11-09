@@ -134,42 +134,6 @@ static void clock(Stage& s, int frameCount, const std::function<void(float)>& po
     }
 }
 
-// The stage played on and on by the clock at 60 a second, with no jump in time (the film goes round as often as it
-// takes): how it holds up over minutes. A line a minute: pictures drawn and left out (Filament says no when it is
-// behind), the longest this thread took over one picture, and how much memory the program holds.
-static void soak(Stage& s, double seconds, int frameCount, const std::function<void(float)>& pose) {
-    s.by_clock = true;
-    const auto start = std::chrono::steady_clock::now();
-    const long ticks = (long)(seconds * 60.0);
-    int rendered = 0, left_out = 0, all_rendered = 0, all_left = 0;
-    double longest = 0.0;
-    for (long i = 0; i < ticks; ++i) {
-        std::this_thread::sleep_until(start + std::chrono::microseconds(i * 1000000 / 60));
-        const auto began = std::chrono::steady_clock::now();
-        time_is(s, (double)i / 60.0);
-        pose((float)((double)i / (double)frameCount));   // (on past 1: time does not go back)
-        if (begins(s)) {
-            textures_of(s);
-            s.renderer->endFrame();
-            ++rendered;
-        } else ++left_out;
-        longest = std::max(longest, std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - began).count());
-        if ((i + 1) % 3600 == 0 || i + 1 == ticks) {
-            mach_task_basic_info_data_t info;
-            mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
-            task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &count);
-            std::printf("minute %2ld: %d rendered, %d left out; longest %.1f ms; memory %.0f MB\n", (i + 1 + 3599) / 3600, rendered, left_out, longest, (double)info.resident_size / 1048576.0);
-            std::fflush(stdout);
-            for (const auto& word : s.said_after) word();
-            all_rendered += rendered; all_left += left_out;
-            rendered = left_out = 0;
-            longest = 0.0;
-        }
-    }
-    s.engine->flushAndWait();
-    std::printf("in all: %d rendered, %d left out, over %.0f seconds\n", all_rendered, all_left, seconds);
-}
-
 static bool shoot(Stage& s, const char* path) {
     std::vector<uint8_t> pic((size_t)s.w * s.h * 4);   // (its own: stages of other sizes shoot on other threads at once, the window's tiles; draw waits for the read)
     for (int i = 0; i < 3; ++i) draw(s, i == 2 ? &pic : nullptr);
@@ -179,26 +143,3 @@ static bool shoot(Stage& s, const char* path) {
     return [[rep representationUsingType:NSBitmapImageFileTypePNG properties:@{}] writeToFile:@(path) atomically:YES];
 }
 
-// The sun turned to shine another way (a film's pose): the shade and the light the glass throws go with it.
-static void sun_to(Stage& s, float3 way) {
-    auto& lights = s.engine->getLightManager();
-    lights.setDirection(lights.getInstance(s.sun), way);
-    for (MaterialInstance* mi : s.by_sun) mi->setParameter("sunWay", way);
-}
-
-// What a picture's program does once its stage is set: the still (out/<name>.png); or, asked for `film`, the film
-// (out/<name>.mp4); or, asked for `time`, the film played for its cost.
-static int show(Stage& s, int argc, char** argv, const char* name, int frameCount, const std::function<void(float)>& pose) {
-    const std::string still = std::string("out/") + name + ".png", moving = std::string("out/") + name + ".mp4";
-    if (argc > 1 && !strcmp(argv[1], "time")) return clock(s, frameCount, pose), 0;
-    if (argc > 1 && !strcmp(argv[1], "soak")) return soak(s, argc > 2 ? atof(argv[2]) : 60.0, frameCount, pose), 0;   // (soak 600: ten minutes)
-    const bool as_film = argc > 1 && !strcmp(argv[1], "film");
-    if (!as_film) {   // (a still: the stage three tenths of the way through its film)
-        s.by_clock = false;
-        time_is(s, 0.3 * (double)frameCount / 60.0);
-        pose(0.3f);
-    }
-    if (!(as_film ? film(s, moving.c_str(), frameCount, pose) : shoot(s, still.c_str()))) return fail(as_film ? "film" : "png");
-    std::printf("wrote %s\n", (as_film ? moving : still).c_str());
-    return 0;
-}

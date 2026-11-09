@@ -38,7 +38,6 @@ static int thumbnail_at(const char* video, const char* png, int wide, double fra
     gst_object_unref(pipeline);
     return done;
 }
-int motolii_thumbnail(const char* video, const char* png, int wide) { return thumbnail_at(video, png, wide, 0.0); }
 int motolii_thumbnail_at(const char* video, const char* png, int wide, double fraction) { return thumbnail_at(video, png, wide, fraction); }
 int motolii_thumbnail_seconds(const char* video, const char* png, int wide, double seconds) { return thumbnail_at(video, png, wide, 0.0, seconds); }
 // What a media file is, as GStreamer's discoverer tells it (gst-discoverer-1.0's own): "wide high rate seconds format",

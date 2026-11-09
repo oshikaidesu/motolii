@@ -2,7 +2,6 @@
 static bool doc_stay(Doc& d, int layer, const char* name, double at) {   // (its keys go: it stays what it is at that moment)
     return doc_knows(d, layer, name) && (!doc_keys(d, layer, name) || doc_set(d, layer, name, doc_number(d, layer, name, at, doc_usual(d, name))));
 }
-static int doc_keyed(Doc& d, int layer, const char* name, double at) { return !doc_keys(d, layer, name) ? 0 : doc_keys(d, layer, name, at) ? 2 : 1; }
 // The words a value of a layer may be (a blend's, a solid's shape), with spaces between ("": any word, or not a word).
 static const DocValue* doc_script_value(Doc& d, int layer, const char* name) {   // (a knob of the layer's script)
     if (strncmp(name, "js_", 3)) return nullptr;

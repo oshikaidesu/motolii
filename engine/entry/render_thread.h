@@ -31,12 +31,12 @@ struct Motolii {
     Stage* s = nullptr;
     Doc* d = nullptr;
     Live* live = nullptr;
-    int pick = 0, hover = 0;   // the thing picked in the window and the one under its hand: marked on the desk (motolii_pick)
+    int pick = 0, hover = 0;   // the thing picked in the window and the one under its hand: marked on the desk (later "pick")
     std::set<int> watched;     // the things the window shows the moving values of (later "watch", Anthem's subscription): in the moment's picture
     std::map<const void*, Heard> heard;   // the things' sound heard as the live stage plays (sound_playback.h)
     std::string error, listed;
     std::thread render_thread;
-    std::atomic<const char*> status{"opening"};   // (where the hand is in its round: said by motolii_render_thread_status, so a shell that waits long can tell why)
+    std::atomic<const char*> status{"opening"};   // (where the hand is in its round: told on stderr when the round throws)
     std::mutex asked_lock;
     std::condition_variable asked_now;
     std::unique_ptr<thermion::FrameScheduler> beat;   // (the screen's beat, Thermion's: a picture is drawn on each; CVDisplayLink, DXGI on Windows)

@@ -36,7 +36,6 @@ static int changes(Motolii* m, int done) {
 
 // The stage's picture, live: started once; then the last finished picture and how many there have been (any thread).
 static int live_is(Motolii* m) { return m->live || (m->live = live_open(*m->s)) ? 1 : 0; }
-int motolii_live(Motolii* m) { return on_render_thread(m, [m] { return live_is(m); }); }
 void* motolii_front(Motolii* m) { return m->live ? live_front(m->live) : nullptr; }
 unsigned long long motolii_frames(Motolii* m) { return m->live ? m->live->frames.load() : 0; }
 void motolii_finished(Motolii* m, void (*listener)(void*), void* with) { m->shown_with = with; m->shown = listener; }
@@ -68,35 +67,12 @@ static int view_camera_is(Motolii* m, const char* word) {   // ("about over far"
     m->changed = true;
     return 1;
 }
-int motolii_pick(Motolii* m, int layer, int hover) { return on_render_thread(m, [=] { return pick_is(m, layer, hover); }); }
-int motolii_desk(Motolii* m, int w, int h, double x, double y, double scale, double point) {
-    return on_render_thread(m, [=] { return desk_is(m, w, h, x, y, scale, point); });
-}
 void* motolii_desk_front(Motolii* m) { return m->live && m->live->desk ? live_front(m->live->desk) : nullptr; }
 unsigned long long motolii_desk_frames(Motolii* m) { return m->live && m->live->desk ? m->live->desk->frames.load() : 0; }
 int motolii_loop(Motolii* m, int on) {   // (on below 0: only asks: answered at once, not queued behind the hand's picture)
     if (on < 0) return (int)m->loop.load();
     m->loop = on != 0;   // (said at once: the hand reads it as it goes round)
     return on != 0;
-}
-// What the document's steps changed since this was last asked, a line each: "things" first when a thing came or went,
-// then "thing name" for each value; asking forgets them. And the names of the values that change what cards a thing
-// has (their conditions, its kind, its script, its shape or file, its letters split): a shell builds a thing's cards
-// again when one of these changes, and only tells its numbers otherwise.
-// Each thing's sound as heard now, a line each: its file, where the stage's moment puts it in its file, where it is,
-// and whether it is playing (seconds; -1: not heard now). For checks: the speakers are not asked.
-const char* motolii_heard(Motolii* m) {
-    return by_look(m, [=] {
-        std::string all;
-        for (const auto& [who, h] : m->heard) {
-            gint64 is = -1;
-            if (h.bin) gst_element_query_position(h.bin, GST_FORMAT_TIME, &is);
-            char line[600];
-            std::snprintf(line, sizeof line, "%s %.3f %.3f %d\n", h.file.c_str(), h.wanted, is < 0 ? -1.0 : (double)is / GST_SECOND, h.on ? 1 : 0);
-            all += line;
-        }
-        return (said_word() = all).c_str();
-    });
 }
 const char* motolii_shaping(Motolii*) {   // (the cards are the maker's, not the document's: nothing waited for, as motolii_easing_numbers; the window asked it at the opening and waited 22 ms, golf (87))
     std::string all = "kind script shape file split name";   // (and its name: the inspector says it)

@@ -102,15 +102,6 @@ static filament::math::mat4f motion_built(Motion& m, uint32_t id, float* zoom = 
     return above ? motion_built(m, above) * own : own;
 }
 
-// Where a layer is at that moment, flat or 3D alike: its place in the composition's space, and how opaque it is.
-// false while the layer is not there (before its in point, after its out point).
-static bool motion_of(Motion& m, const char* layer, filament::math::mat4f* place, float* opacity = nullptr) {
-    tvg::Matrix flat;
-    if (!motion_flat(m, tvg::Accessor::id(layer), &flat, opacity)) return false;
-    *place = motion_built(m, tvg::Accessor::id(layer));
-    return true;
-}
-
 // A place of the composition put into the scene: the composition's corner (0, 0, 0) lies at `corner`, a pixel to the
 // right is `right`, a pixel down is `down` (and a pixel away from the eye is square to both). What comes back takes a
 // thing given in the scene's units, in the layer's own axes (x right, y down, z away), to where the layer has it.
@@ -121,17 +112,3 @@ static filament::math::mat4f motion_in_scene(const filament::math::mat4f& place,
     return mat4f(float4{x * pixel, 0.f}, float4{y * pixel, 0.f}, float4{z * pixel, 0.f}, float4{corner, 1.f}) * place * mat4f::scaling(1.f / pixel);
 }
 
-// A camera layer at that moment: where it stands and looks (its own axes: x right, y down, looking along +z), and
-// its angle of view from top to bottom, in degrees, for a picture `high` pixels high (After Effects gives a camera a
-// zoom: the distance in pixels at which a pixel of the composition is a pixel of the picture).
-// For Filament's camera, whose own axes are x right, y up, looking along -z:
-//   camera->setModelMatrix(motion_in_scene(place, corner, right, down) * mat4f::scaling(float3{1, -1, -1}));
-static bool motion_camera(Motion& m, const char* layer, filament::math::mat4f* place, float* view_degrees, float high) {
-    tvg::Matrix flat;
-    float zoom = 0.f;
-    if (!motion_flat(m, layer, &flat)) return false;
-    *place = motion_built(m, tvg::Accessor::id(layer), &zoom);
-    if (zoom <= 0.f) return false;
-    *view_degrees = 2.f * std::atan(0.5f * high / zoom) * 180.f / 3.14159265f;
-    return true;
-}
