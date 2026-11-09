@@ -1,6 +1,6 @@
 # タブの紹介
 
-*English: [tabs.en.md](tabs.en.md)　・　[README の「画面の見方」に戻る](../../README.md#画面の見方)*
+*English: [screen_tour.en.md](screen_tour.en.md)　・　[README の「画面の見方」に戻る](../../README.md#画面の見方)*
 
 絵は 2026-11-03 の画面です。
 

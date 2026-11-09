@@ -48,7 +48,7 @@ A finished video can be written out as an MP4.
 
 ![Glowing text, a spinning pink ring, a pattern of lines, split colours](docs/pictures/mv.gif)
 
-*8 seconds made with Motolii. Once built, the calls in [`docs/guide/readme_movie.md`](docs/guide/readme_movie.md), pasted, make the same as `~/Movies/Motolii/mv.mp4`.*
+*8 seconds made with Motolii. Once built, the calls in [`docs/using/make_intro_movie.md`](docs/using/make_intro_movie.md), pasted, make the same as `~/Movies/Motolii/mv.mp4`.*
 
 ## Requirements
 
@@ -181,14 +181,14 @@ Opens the app (the first time it seems to stall for 1–3 minutes while it build
 ![The app's seven areas, numbered](docs/pictures/panels.jpg)
 
 1. **Top bar**: project name, frame size, fps, length, undo and redo, Render (export).
-2. **[Left tabs](docs/guide/tabs.en.md#left-tabs)**: Media, Effects, Fonts, Colors, Create (shapes and recipes), Program (pasted code), Presets (combinations you saved; not usable yet).
-3. **[Preview (Stage)](docs/guide/tabs.en.md#preview-tabs)**: place and move layers while you watch. The tools are in the column on its left (select, move, shapes, pen, text, …). The tab above switches to Camera View, the finished picture through the camera.
+2. **[Left tabs](docs/using/screen_tour.en.md#left-tabs)**: Media, Effects, Fonts, Colors, Create (shapes and recipes), Program (pasted code), Presets (combinations you saved; not usable yet).
+3. **[Preview (Stage)](docs/using/screen_tour.en.md#preview-tabs)**: place and move layers while you watch. The tools are in the column on its left (select, move, shapes, pen, text, …). The tab above switches to Camera View, the finished picture through the camera.
 4. **Inspector**: the selected layer's values (Transform, Anchor, Blend, Fill, …). The relations acting on the layer are listed at the top.
 5. **Timeline**: layers and keyframes, playback, markers, BPM.
 6. **Ease**: how a value moves between keyframes; the column on the right holds ready-made curves.
-7. **[Bottom-right tabs](docs/guide/tabs.en.md#bottom-right-tabs)**: Camera (lens and focus), Desk (tools), Relations (move many layers together).
+7. **[Bottom-right tabs](docs/using/screen_tour.en.md#bottom-right-tabs)**: Camera (lens and focus), Desk (tools), Relations (move many layers together).
 
-Each tab, with pictures and how to use it: [The tabs](docs/guide/tabs.en.md).
+Each tab, with pictures and how to use it: [The tabs](docs/using/screen_tour.en.md).
 
 ### Your first piece (in the app)
 
@@ -250,7 +250,7 @@ EOF
 - `write …`: exports the MP4.
 - Running the same commands again adds another layer to the same project; to start over, `rm ~/Movies/Motolii/first_cmd.motolii` first.
 
-The calls of the 8-second example at the top are in [`docs/guide/readme_movie.md`](docs/guide/readme_movie.md).
+The calls of the 8-second example at the top are in [`docs/using/make_intro_movie.md`](docs/using/make_intro_movie.md).
 
 </details>
 
@@ -339,7 +339,7 @@ The project's stance: **code you write yourself is a debt.** Look for an existin
 | `shelves/aviutl_scripts/` | Bundled AviUtl2 scripts (per author, with LICENSE and SOURCE.txt) |
 | `app/` | The UI (Flutter, macOS) |
 | `thorvg/`, `old/` | Earlier work, kept |
-| `docs/` | This README's pictures (`pictures/`) and examples (`guide/`) and the author's working notes (`notes/`, Japanese) |
+| `docs/` | Documents by reader: using the app (`using/`), the window (`app/`), the engine (`engine/`); this README's pictures (`pictures/`); the author's working notes (`internal/`, Japanese). Table: [`docs/README.md`](docs/README.md) |
 
 </details>
 

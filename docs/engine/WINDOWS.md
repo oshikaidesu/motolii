@@ -1,5 +1,7 @@
 # 今の土台の Windows の道（2026-10-14）
 
+*What building the engine on Windows would take. Nothing has been built or run on Windows yet: this is what reading the sources and headers showed, what is still unknown, and the first steps once a machine is there.*
+
 **Windows では何もビルドしていないし、動かしてもいない。機械も無い。** ここにあるのは、手元のソースとヘッダを読んで分かった事と、まだ分からない事。
 今の土台＝Filament を Dawn（WebGPU）で、ThorVG、GStreamer、SQLite、FFmpeg。下の「ガラスを Windows の Skin に出す経路」は 10/12 の古い土台（Vulkan 直）の話で、今は使っていない。
 

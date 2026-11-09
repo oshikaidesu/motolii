@@ -1,6 +1,6 @@
 # The tabs
 
-*日本語: [tabs.md](tabs.md)　·　[Back to "The screen" in the README](../../README.en.md#the-screen)*
+*日本語: [screen_tour.md](screen_tour.md)　·　[Back to "The screen" in the README](../../README.en.md#the-screen)*
 
 The pictures show the app on 2026-11-03.
 

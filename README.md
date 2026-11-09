@@ -48,7 +48,7 @@ ISF、WGSL、AviUtl2 のスクリプトにも対応しています。ファイ�
 
 ![光る文字、回るピンクの輪、線の模様、色のずれ](docs/pictures/mv.gif)
 
-*Motolii で作った 8 秒。組み立てた後に [`docs/guide/readme_movie.md`](docs/guide/readme_movie.md) の命令を貼れば、同じ物が `~/Movies/Motolii/mv.mp4` にできます。*
+*Motolii で作った 8 秒。組み立てた後に [`docs/using/make_intro_movie.md`](docs/using/make_intro_movie.md) の命令を貼れば、同じ物が `~/Movies/Motolii/mv.mp4` にできます。*
 
 ## 動作環境
 
@@ -181,14 +181,14 @@ app/live.sh
 ![画面の 7 つの区画に番号を付けた図](docs/pictures/panels.jpg)
 
 1. **上の帯**：プロジェクト名、画面サイズ、fps、長さ、取り消し・やり直し、Render（書き出し）。
-2. **[左のタブ](docs/guide/tabs.md#左のタブ)**：Media（素材）、Effects（エフェクト）、Fonts（書体）、Colors（色）、Create（図形とレシピ）、Program（貼ったコード）、Presets（保存した組み合わせ。まだ使えません）。
-3. **[プレビュー（Stage）](docs/guide/tabs.md#プレビューのタブ)**：見ながら置く・動かす所。左の縦の列が道具（選択・移動・図形・ペン・文字など）。上のタブで Camera View（カメラから見た仕上がり）に切り替えます。
+2. **[左のタブ](docs/using/screen_tour.md#左のタブ)**：Media（素材）、Effects（エフェクト）、Fonts（書体）、Colors（色）、Create（図形とレシピ）、Program（貼ったコード）、Presets（保存した組み合わせ。まだ使えません）。
+3. **[プレビュー（Stage）](docs/using/screen_tour.md#プレビューのタブ)**：見ながら置く・動かす所。左の縦の列が道具（選択・移動・図形・ペン・文字など）。上のタブで Camera View（カメラから見た仕上がり）に切り替えます。
 4. **インスペクタ**：選んだレイヤーの値（Transform・Anchor・Blend・Fill など）。上に、そのレイヤーにかかっている関係が並びます。
 5. **タイムライン**：レイヤーとキーフレーム、再生、マーカー、BPM。
 6. **Ease**：キーフレームの間の動き方。右の列が曲線の見本です。
-7. **[右下のタブ](docs/guide/tabs.md#右下のタブ)**：Camera（レンズとピント）、Desk（道具）、Relations（複数のレイヤーをまとめて動かす）。
+7. **[右下のタブ](docs/using/screen_tour.md#右下のタブ)**：Camera（レンズとピント）、Desk（道具）、Relations（複数のレイヤーをまとめて動かす）。
 
-タブごとの絵と使い方は [タブの紹介](docs/guide/tabs.md) にあります。
+タブごとの絵と使い方は [タブの紹介](docs/using/screen_tour.md) にあります。
 
 ### 最初の 1 本（画面で）
 
@@ -250,7 +250,7 @@ EOF
 - `write …`：MP4 に書き出す。
 - 同じ命令をもう一度走らせると、同じプロジェクトにレイヤーがもう 1 つ増えます。やり直すなら先に `rm ~/Movies/Motolii/first_cmd.motolii`。
 
-上の 8 秒の作例の命令は [`docs/guide/readme_movie.md`](docs/guide/readme_movie.md)。
+上の 8 秒の作例の命令は [`docs/using/make_intro_movie.md`](docs/using/make_intro_movie.md)。
 
 </details>
 
@@ -345,7 +345,7 @@ flowchart LR
 | `app/` | アプリの画面（Flutter、macOS） |
 | `thorvg/` | ThorVG を wgpu に載せた前の結合（前の試しのスクリプトが使う） |
 | `old/` | 前の土台の実験（今の作りからは使っていない） |
-| `docs/` | この README の絵（`pictures/`）と作例（`guide/`）、作者の作業メモ（`notes/`） |
+| `docs/` | 読む人ごとの文書：使い方（`using/`）・窓（`app/`）・中身（`engine/`）、この README の絵（`pictures/`）、作者の作業メモ（`internal/`）。表は [`docs/README.md`](docs/README.md) |
 
 </details>
 
