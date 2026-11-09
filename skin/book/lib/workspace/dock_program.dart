@@ -22,7 +22,7 @@ import '../motolii.dart';
 import '../sets/foundations/text_hand.dart';
 import '../tokens.dart';
 import 'dock_effects.dart';
-import 'create_preview.dart';
+import 'copies_tiles.dart';
 import 'dock_glyphs.dart';
 import 'dock_parts.dart';
 import 'effect_tiles.dart';
@@ -110,8 +110,17 @@ class _ProgramShelfState extends State<ProgramShelf> {
   final _words = TextEditingController();
   late final FocusNode _focus = FocusNode()..addListener(() => _focus.hasFocus ? null : _renamed());
 
+  void _drawn() => setState(() {});
+
+  @override
+  void initState() {
+    super.initState();
+    CopiesTiles.drawn.addListener(_drawn);   // (a pack's tile drawn: shown)
+  }
+
   @override
   void dispose() {
+    CopiesTiles.drawn.removeListener(_drawn);
     _words.dispose();
     _focus.dispose();
     super.dispose();
@@ -203,15 +212,16 @@ class _ProgramShelfState extends State<ProgramShelf> {
     }
     final shown = all.where((p) => (c.chip == 'All' || c.chip == p.form) && (c.hit(p.name) || c.hit(p.stem) || c.hit(p.first))).toList();
     final sel = c.foot((c.mem.programCode ? _stood(all) : null) ?? all.where((p) => p.file == c.sel).firstOrNull);
-    final m = c.ws.inside;
-    if (m != null && all.any((p) => p.recipe != null)) RecipeMotions.ask(File(m.libPath).parent.parent.path, [for (final r in m.recipes) r.$1]);   // (a pack's tile: its motion as Create drew it, dock_make_3.dart _isRecipe)
     if (all.isEmpty) return Padding(padding: EdgeInsets.all(Shape.s(24)), child: Text('Copy code from the web, then Paste', textAlign: TextAlign.center, style: T.label(Grey.g63)));
     if (!c.mem.programCode) {
       ProgramTiles.ask(all.where((p) => p.recipe == null).map((p) => p.file), () {
         if (mounted) setState(() {});
       });
     }
-    String tile(Program p) => File(ProgramTiles.home(p.file)).existsSync() ? ProgramTiles.home(p.file) : '';
+    String tile(Program p) => switch (p.recipe) {
+      final r? => CopiesTiles.of(p.file, make: r),
+      _ => File(ProgramTiles.home(p.file)).existsSync() ? ProgramTiles.home(p.file) : '',
+    };   // (a pack's drawn as Create's expressions are, made by its name)
     return WsMenu(
       key: _menu,
       child: Column(
@@ -239,7 +249,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
                                 width: w,
                                 child: GestureDetector(
                                   onSecondaryTapDown: (d) => _menuOn(p, d.globalPosition),
-                                  child: EffectTile(p.name, key: ValueKey('ws-program-${p.stem}-${tile(p).isEmpty ? 0 : File(tile(p)).lastModifiedSync().millisecondsSinceEpoch}'), file: tile(p), picture: p.recipe == null ? null : RecipeMotionView(p.recipe!), on: null, onTap: () => c.pick(p.file), onApply: () => _put(p), picked: c.sel == p.file, naming: _renaming == p.file ? _naming(p) : null),   // (two presses make it, as on Create; drawn again under the same name, an Image with the same file goes on showing the first: the date in its key)
+                                  child: EffectTile(p.name, key: ValueKey('ws-program-${p.stem}-${tile(p).isEmpty ? 0 : File(tile(p)).lastModifiedSync().millisecondsSinceEpoch}'), file: tile(p), on: null, onTap: () => c.pick(p.file), onApply: () => _put(p), picked: c.sel == p.file, naming: _renaming == p.file ? _naming(p) : null),   // (two presses make it, as on Create; drawn again under the same name, an Image with the same file goes on showing the first: the date in its key)
                                 ),
                               ),
                           ],
