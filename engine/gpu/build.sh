@@ -3,7 +3,7 @@
 # (compute; a shorter wait; the device lent out and Texture::Builder::import filled in, for stage/drawn.h).
 # The prebuilt SDK in ../third_party/filament has no WebGPU backend; this builds a second Filament beside it and
 # leaves that one alone. First build: about 5 minutes on an M4 (4 min 55 s from a fresh clone, 10/27; Dawn is most of it).
-#   ./build.sh          build, then run once with pictures into out/shots
+#   ./build.sh          build, then run once with pictures into engine/out/gpu/shots
 set -e
 cd "$(dirname "$0")"
 HERE="$PWD"
@@ -19,7 +19,7 @@ fi
 # (a depth-only pass keeps a material's fragment stage: without it a shadow is its whole quad, whatever it cuts away)
 (cd "$SRC" && { git apply --reverse --check "$P/filament/filament_webgpu_depth_fragment.patch" 2>/dev/null || git apply "$P/filament/filament_webgpu_depth_fragment.patch"; })
 (cd "$SRC" && { git apply --reverse --check "$P/tint/tint_msl_let.patch" 2>/dev/null || git apply "$P/tint/tint_msl_let.patch"; })   # (a first open of a 立体 took 76 s in Apple's compiler, on one shader, for a `const`)
-mkdir -p "$SRC/out/wgpu" out/shots
+mkdir -p "$SRC/out/wgpu" ../out/gpu/shots
 cd "$SRC/out/wgpu"
 [ -f build.ninja ] || cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DFILAMENT_SUPPORTS_WEBGPU=ON -DFILAMENT_SKIP_SAMPLES=ON \
     -DFILAMENT_BUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=../wgpu_install -DMOTOLII_PROBE_DIR="$HERE" ../..

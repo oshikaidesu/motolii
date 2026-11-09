@@ -64,11 +64,11 @@ function writeDrawable(dir: string, b: any, object: any, material: any, camera: 
   bin("index.u16", new Uint16Array(g.index.array))
 }
 
-// Each named effect made by `make` (a material for the plane) written to out/<collection>/<name>.{vert,frag}.wgsl; a line
-// for each in out/<collection>/made.tsv: name, ok or the builder's error.
+// Each named effect made by `make` (a material for the plane) written to engine/out/tsl/<collection>/<name>.{vert,frag}.wgsl; a line
+// for each in engine/out/tsl/<collection>/made.tsv: name, ok or the builder's error.
 export function convertAll(collection: string, effects: [string, () => any][]) {
-  const dir = "out/" + collection
-  os.mkdir("out"); os.mkdir(dir)
+  const dir = "../../out/tsl/" + collection
+  os.mkdir("../../out"); os.mkdir("../../out/tsl"); os.mkdir(dir)
   const said = std.open(dir + "/made.tsv", "w")
   let ok = 0
   for (const [name, make] of effects) {

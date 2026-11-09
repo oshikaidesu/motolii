@@ -68,7 +68,7 @@ function drawn(pass: any, input: any, output: any, time: number, step: (scene: a
 
 // What buildPatternAtlas draws on its canvas and how it turns that to a mask (pattern-atlas.ts), its SVGs drawn by librsvg.
 function atlas(preset: string, cell = 16): any {
-  const from = `../../third_party/tsl/basementstudio__shader-lab/public/assets/patterns/${preset}`, raw = "out/atlas.rgba"
+  const from = `../../third_party/tsl/basementstudio__shader-lab/public/assets/patterns/${preset}`, raw = "../../out/tsl/atlas.rgba"
   const files = (std.popen(`ls ${from}`, "r").readAsString() ?? "").split("\n").filter(f => f.endsWith(".svg"))
   const data = new Uint8Array(files.length * cell * cell * 4), one = new Uint8Array(cell * cell * 4)
   files.forEach((f, i) => {
@@ -85,7 +85,7 @@ function atlas(preset: string, cell = 16): any {
 // A Canvas for buildAsciiAtlas (ascii-atlas.ts): the author's Geist Mono at its 51 px drawn by magick where fillText asks, a
 // letter's numbers where getImageData does, the font's own measures (-debug annotate) where measureText does.
 const canvases = { documentElement: {}, createElement: () => {
-  const font = "../../third_party/tsl/basementstudio__shader-lab/public/fonts/geist/Geist-Mono.woff2", raw = "out/glyph.rgba", drawn = new Map<string, Uint8Array>()
+  const font = "../../third_party/tsl/basementstudio__shader-lab/public/fonts/geist/Geist-Mono.woff2", raw = "../../out/tsl/glyph.rgba", drawn = new Map<string, Uint8Array>()
   let data = new Uint8Array(4)
   const canvas: any = { width: 1, height: 1, getContext: () => context }
   const context = { clearRect: () => { data = new Uint8Array(canvas.width * canvas.height * 4) },
@@ -106,7 +106,7 @@ const canvases = { documentElement: {}, createElement: () => {
 } }
 // A picture too large to say in the file, a PNG beside it.
 const saved = (word: string) => (t: any, i: number) => {
-  const name = `sl_${word.replace(/\W/g, "_")}.${i}.png`, raw = "out/saved.rgba", out = std.open(raw, "wb")
+  const name = `sl_${word.replace(/\W/g, "_")}.${i}.png`, raw = "../../out/tsl/saved.rgba", out = std.open(raw, "wb")
   out.write(t.image.data.buffer, 0, t.image.data.length); out.close()
   std.popen(`magick -size ${t.image.width}x${t.image.height} -depth 8 rgba:${raw} -define png:color-type=6 ${dir}/${name}`, "r").readAsString()
   return name

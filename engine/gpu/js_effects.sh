@@ -8,12 +8,12 @@ cd "$(dirname "$0")/.."
 HB=${HOMEBREW_PREFIX:-$(brew --prefix)}   # (where Homebrew is: /opt/homebrew on Apple silicon)
 SRC=third_party/filament_src
 SDK=$SRC/out/wgpu_install
-J=community/three_tsl/out/jsrh_napi/src/Node-API
+J=out/tsl/jsrh_napi/src/Node-API
 Q=$HB/opt/quickjs-ng
 (cd $SRC/out/wgpu && ninja motolii_door third_party/dawn/dawn.node > /dev/null)
 [ -d $J ] || ./community/three_tsl/jsrh_napi/build.sh > /dev/null
 (cd community/three_tsl && npx esbuild jsrh_napi/shaders.ts --bundle --format=esm --platform=neutral '--external:qjs:*' --main-fields=module,main \
-    '--define:process.env.NODE_ENV="production"' --outfile=out/jsrh_napi/shaders.mjs --log-level=warning)   # (the authors' built package, as it is)
+    '--define:process.env.NODE_ENV="production"' --outfile=../../out/tsl/jsrh_napi/shaders.mjs --log-level=warning)   # (the authors' built package, as it is)
 clang++ -std=c++20 -O2 -w -DNAPI_VERSION=8 -I "$SDK/include" -I $SRC/third_party/dawn/include -I $SRC/out/wgpu/third_party/dawn/gen/include \
     -I $Q/include -I $J/Include/Shared -I $J/Include/Engine/QuickJS -I $J/Source -I gpu gpu/js_effects.cpp \
     $J/Source/js_native_api_quickjs.cc $J/Source/js_native_api_shared.cc $J/Source/env_quickjs.cc -L $Q/lib -lqjs -Wl,-rpath,$Q/lib \
@@ -22,4 +22,4 @@ clang++ -std=c++20 -O2 -w -DNAPI_VERSION=8 -I "$SDK/include" -I $SRC/third_party
     -lutils -lgeometry -lsmol-v -libl -lktxreader -lstb -luberzlib -lzstd \
     -lshaders -lperfetto -labseil -lmeshoptimizer -lcamutils -limage -lbasis_transcoder -luberarchive -lmatdbg -lfilamat -lcivetweb \
     -framework Cocoa -framework Metal -framework CoreVideo -framework QuartzCore -framework IOSurface -framework IOKit -lz -o out/js_effects
-DAWN_NODE=$PWD/$SRC/out/wgpu/third_party/dawn/dawn.node EFFECT_JS=$PWD/community/three_tsl/out/jsrh_napi/shaders.mjs ./out/js_effects "$@"
+DAWN_NODE=$PWD/$SRC/out/wgpu/third_party/dawn/dawn.node EFFECT_JS=$PWD/out/tsl/jsrh_napi/shaders.mjs ./out/js_effects "$@"
