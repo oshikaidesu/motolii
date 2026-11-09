@@ -6,6 +6,7 @@
 #include "film_read.h"
 #include "ways.h"
 #include "ae_expr.h"
+#include "script_leva.h"
 #include <quickjs.h>
 #include <algorithm>
 #include <filesystem>
@@ -82,6 +83,8 @@ std::vector<ScriptKnob> script_knobs(const std::string& file) {
     if (aviutl_is(file)) return aviutl_knobs(file);   // (an AviUtl2 script's head: aviutl.cpp)
     std::vector<ScriptKnob> knobs;
     std::ifstream in(file);
+    std::stringstream told_head;
+    std::istream* from = &in;
     if (std::filesystem::path(file).extension() == ".js") {
         std::stringstream all;
         all << in.rdbuf();
@@ -102,9 +105,10 @@ std::vector<ScriptKnob> script_knobs(const std::string& file) {
             return knobs;
         }
         in.clear(), in.seekg(0);
+        if (const std::string head = leva_head(all.str()); !head.empty()) told_head.str(head), from = &told_head;   // (leva's object at its top: script_leva.h)
     }
     std::string group;   // (AviUtl2's --group:Name[,open] gathers the knobs after it, a bare --group ends it: reports/aviutl2_converter.md)
-    for (std::string line; std::getline(in, line);) {
+    for (std::string line; std::getline(*from, line);) {
         if (line.rfind("//", 0) != 0) { if (line.find_first_not_of(" \t\r") == std::string::npos) continue; break; }   // (the head ends where code begins)
         if (const size_t g = line.find_first_not_of(" \t", 2); g != std::string::npos && line.compare(g, 7, "--group") == 0 && (g + 7 == line.size() || line[g + 7] == ':' || line[g + 7] == '\r')) {
             const size_t colon = line.find(':', g);
@@ -270,6 +274,7 @@ Script::Script(const std::string& file, const std::string& p5, const std::string
     const std::string ways = ways_kept();
     JS_FreeValue(own->cx, JS_Eval(own->cx, ways.c_str(), ways.size(), "ways", JS_EVAL_TYPE_GLOBAL));
     JS_FreeValue(own->cx, JS_Eval(own->cx, cavalry_kept, std::char_traits<char>::length(cavalry_kept), "cavalry", JS_EVAL_TYPE_GLOBAL));
+    JS_FreeValue(own->cx, JS_Eval(own->cx, leva_kept, strlen(leva_kept), "leva", JS_EVAL_TYPE_GLOBAL));   // (folder(), as its knobs object says its folds: script_leva.h)
     if (src.find("AE.compile") != std::string::npos) {   // (an After Effects expression the recipe holds: read once with acorn, third_party/js/acorn, then only called: ae_expr.h)
         const std::filesystem::path where = std::filesystem::path(p5).parent_path().parent_path() / "acorn" / "acorn.js";
         std::ifstream lib(where);
@@ -473,6 +478,7 @@ void Script::knobs(const std::map<std::string, double>& numbers, const std::map<
     JSContext* cx = own->cx;
     for (const auto& [name, v] : numbers) JS_SetPropertyStr(cx, own->knobs, name.c_str(), JS_NewFloat64(cx, v));
     for (const auto& [name, w] : words) JS_SetPropertyStr(cx, own->knobs, name.c_str(), JS_NewString(cx, w.c_str()));
+    leva_colours(cx, own->knobs, numbers, words);   // (k.tint "#rrggbb", as leva returns a colour: script_leva.h)
 }
 ScriptCopy Script::ask(int i, int n, double t) {   // (each(), the knobs as last told)
     ScriptCopy c;
