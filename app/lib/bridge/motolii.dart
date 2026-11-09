@@ -8,7 +8,7 @@ import 'dart:ffi';
 import 'dart:io';
 
 import 'package:ffi/ffi.dart';
-import 'package:flutter/foundation.dart' show debugPrint, setEquals;
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/services.dart';
 import 'package:motolii/bridge/motolii_bindings.dart' as c; // (the inside's calls as Dart's ffigen made them: ffigen.yaml)
 part 'motolii_document.dart';
@@ -102,7 +102,6 @@ class Motolii {
   late final _workOut = _b.motolii_work_out;
 
   late final _add = _b.motolii_add;
-  late final _remove = _b.motolii_remove;
   late final _set = _b.motolii_set;
   late final _keying = _b.motolii_keying;
   late final _dragUpdate = _b.motolii_drag_update;
@@ -115,8 +114,6 @@ class Motolii {
   Set<int> _watched = const {};
 
   late final _rate = _b.motolii_rate;
-
-  final _unaskedSaid = <String>{};
 
   late final _shaping = _b.motolii_shaping;
 

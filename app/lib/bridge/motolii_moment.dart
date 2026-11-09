@@ -26,24 +26,12 @@ extension MotoliiMoment on Motolii {
       return (((_of(layer)['keyValues'] as Map<String, dynamic>?)?[name] as List<dynamic>?)?[i] as num?)
           ?.toDouble(); // (at one of its keys: what the key holds)
     }
-    return _unasked('value', layer, name, at);
-  }
-
-  /// A read the pictures do not hold (another moment of a thing not watched): not asked of the inside here, the window
-  /// would wait (docs/app/BRIDGE.md rule 1); ask it as a question ([shownAt]), or watch the thing ([subscribe]). Said once.
-  double? _unasked(String what, int layer, String name, double at) {
-    if (_watched.contains(layer)) return null; // (watched just now: in the next picture)
-    if (_unaskedSaid.add('$what $name')) debugPrint('BRIDGE: $what($layer, $name, $at) is not in the pictures: ask it ([shownAt]) or watch the thing');
-    return null;
+    return null; // (another moment of a thing not watched: not asked here, the window would wait)
   }
 
   /// A value as the stage shows it (what a relation or behaviour makes of it), and whether one drives it; null: none.
   (double, bool)? shows(int layer, String name, double at) {
-    if (!_isNow(at)) {
-      return switch (_unasked('shows', layer, name, at)) {
-        _ => null,
-      };
-    }
+    if (!_isNow(at)) return null; // (another moment: not asked here)
     final v = (_momentOf(layer)?['shows'] as Map<String, dynamic>?)?[name] as List<dynamic>?;
     return v == null ? null : ((v[0] as num).toDouble(), v[1] as bool);
   }

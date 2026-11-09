@@ -39,8 +39,6 @@ extension MotoliiWrites on Motolii {
   /// What a solid is made of is its `fill`: a colour, or `glass`.
   int add(String kind, String file) => _took(_with([kind, file], (s) => _add(_m, s[0], s[1])));
 
-  bool remove(int layer) => _took(_remove(_m, layer) != 0);
-
   bool set(int layer, String name, double number) => _took(_with([name], (s) => _set(_m, layer, s[0], number)) != 0);
 
   /// A thing held by a hand, carried, and let go (motolii.h): the one form of everything a hand drags. [by] is

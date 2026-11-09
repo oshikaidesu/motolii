@@ -94,8 +94,6 @@ class Ws extends ChangeNotifier {
               switch (kind) {
                 'text' => WsKind.text,
                 'camera' => WsKind.camera,
-                'film' when wsSound(m, t) => WsKind.audio,
-                'film' || 'picture' => WsKind.image,
                 'shape' when m.word(t, 'shape') == 'null' && holding.contains(t) => WsKind.group,
                 _ => WsKind.shape,
               },
@@ -152,10 +150,9 @@ class Ws extends ChangeNotifier {
 
   /// Where the hand comes to rest and J and K go: the marks and the other things' ends and keys.
   List<(double, String)> get marks => _inside!.marks;
-  Set<int> stops({Set<String> skip = const {}}) => {
+  Set<int> stops() => {
     for (final (at, _) in marks) (at * fps).round(),
-    for (final l in layers)
-      if (!skip.contains(l.id)) ...[l.inF, l.outF, ...l.keys],
+    for (final l in layers) ...[l.inF, l.outF, ...l.keys],
   };
   set animating(bool on) {
     _inside?.keying(on);
@@ -168,14 +165,13 @@ class Ws extends ChangeNotifier {
   /// carry): a panel that shows only some values builds itself again only when they are among these.
   ({bool layers, Set<(int, String)> values})? lastChange;
 
-  void after(int ticket, [void Function(bool done, String why)? then, void Function(int answer)? got]) {
+  void after(int ticket, [void Function(bool done, String why)? then]) {
     final m = _inside;
     if (m == null) return;
     m.answered(ticket).then((r) {
       // (told by the inside when it is done: nothing looked at each picture)
       final (a, why) = r;
       then?.call(a >= 1, why);
-      if (a >= 1) got?.call(a); // (an add's or a make's answer: the new thing)
     });
   }
 

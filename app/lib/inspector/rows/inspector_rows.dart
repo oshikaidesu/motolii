@@ -36,10 +36,9 @@ class _FoldPaint extends CustomPainter {
 }
 
 class RowInfo extends InheritedWidget {
-  const RowInfo({super.key, required this.unit, required this.keys, required super.child});
-  final String? unit;
+  const RowInfo({super.key, required this.keys, required super.child});
   final KeyS keys;
   static RowInfo? of(BuildContext c) => c.dependOnInheritedWidgetOfExactType<RowInfo>();
   @override
-  bool updateShouldNotify(RowInfo old) => old.unit != unit || old.keys != keys;
+  bool updateShouldNotify(RowInfo old) => old.keys != keys;
 }

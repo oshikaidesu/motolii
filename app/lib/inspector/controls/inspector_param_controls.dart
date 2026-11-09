@@ -44,7 +44,7 @@ class ParamGrid extends StatelessWidget {
               if (i > 0) SizedBox(width: g),
               Expanded(
                 flex: math.min(span(ps[i]), cols),
-                child: RowOff(off: !enabled, narrow: false, child: ParamTile(fx, ps[i])),
+                child: RowOff(off: !enabled, child: ParamTile(fx, ps[i])),
               ),
             ],
             if (last && filled < cols) ...[SizedBox(width: g), Spacer(flex: cols - filled)],

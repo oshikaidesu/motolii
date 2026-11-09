@@ -57,7 +57,7 @@ class EmptyState extends StatelessWidget {
   const EmptyState({super.key});
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), ed = const Ed();
+    final x = Ctx.of(context);
     // contract: one plain muted line, no controls, no stale values (A6).
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -82,7 +82,7 @@ class EmptyState extends StatelessWidget {
         if (x.doc.b['stage.open'] ?? false)
           for (final c in x.doc.cards) ValuesCard(c),
         SizedBox(height: Shape.s(1)),
-        Container(height: 1, color: ed.rule),
+        Container(height: 1, color: const Color.fromRGBO(255, 255, 255, .12)),
       ],
     );
   }

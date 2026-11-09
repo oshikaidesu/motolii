@@ -28,7 +28,7 @@ abstract final class WsT {
   static Color get body => Grey.g07;
 }
 
-enum WsKind { shape, text, image, camera, group, audio }
+enum WsKind { shape, text, camera, group }
 
 /// One layer of the mock composition: where it lives in time, and where its keys are (frames).
 class WsLayer {

@@ -20,7 +20,7 @@ class ValuesCard extends StatelessWidget {
   final Fx card;
   @override
   Widget build(BuildContext context) {
-    final doc = Ctx.of(context).doc, ed = const Ed(), k = 'v.${card.name}', adv = doc.b['$k.adv'] ?? false;
+    final doc = Ctx.of(context).doc, k = 'v.${card.name}', adv = doc.b['$k.adv'] ?? false;
     final heroes = [for (final p in card.params) if (!p.advanced) p];
     final rest = [for (final p in card.params) if (p.advanced) p];
     return PastRange(
@@ -40,7 +40,7 @@ class ValuesCard extends StatelessWidget {
                 padding: EdgeInsets.only(top: Shape.s(4)),
                 child: Row(
                   children: [
-                    Text(rest.first.fold ?? 'Advanced', style: ed.labStyle(h || adv ? Grey.g95 : Grey.g63)),
+                    Text(rest.first.fold ?? 'Advanced', style: T.label(h || adv ? Grey.g95 : Grey.g63)),
                     const Spacer(),
                     FoldMark(open: adv, hot: h || adv),
                   ],

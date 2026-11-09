@@ -1,24 +1,13 @@
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
-import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart' show ChangeNotifier, ValueListenable, ValueNotifier;
 
-import '../skin/tokens.dart';
 import 'inspector_parts.dart';
 part 'inspector_values.dart';
 
 enum KeyS { off, anim, at }
 
 enum Kind { shape, text, camera, group, none }
-
-/// The inspector's type: a 12% hairline, and a rule above a group.
-class Ed {
-  const Ed();
-  double get hair => .12;
-  Color get rule => Color.fromRGBO(255, 255, 255, hair);
-
-  TextStyle labStyle(Color c) => T.label(c);
-}
 
 /// The property a value is part of, whose key mark is theirs together: a document's x, y, z are its position; its
 /// scale_x .. scale_z its scale, rotate_x, rotate_y and rotate its rotation, anchor_x .. anchor_z its anchor.

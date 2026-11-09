@@ -402,7 +402,7 @@ class NumFieldState extends State<NumField> {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context);
-    final v = x.doc.get(widget.id), on = _on, narrow = RowOff.maybe(context)?.narrow ?? false;
+    final v = x.doc.get(widget.id), on = _on;
     final live = _drag && _moved;
     const idle = Color(0x00000000);
     final Color edge = live
@@ -414,7 +414,7 @@ class NumFieldState extends State<NumField> {
       builder: (context, box) {
         final w = box.maxWidth;
         final row = RowInfo.of(context);
-        final showUnit = w >= wUnit && !narrow && row?.unit == null, tight = w < wTight;
+        final showUnit = w >= wUnit, tight = w < wTight;
         final t = (_bounded && v != null) ? ((v - widget.min!) / (widget.max! - widget.min!)).clamp(0.0, 1.0) : 0.0;
         String unit = widget.unit ?? '';
         if (widget.turns && v != null && v.abs() >= 360 && w >= 120) unit = '° ${(v / 360).truncate()}x ${fmt(v.remainder(360), 0)}';

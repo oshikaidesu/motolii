@@ -16,7 +16,6 @@ class ParamTile extends StatelessWidget {
   Widget _num(BuildContext context, {String? sub, String? caption}) {
     final fid = sub == null ? id : '$id.$sub';
     return RowInfo(
-      unit: null,
       keys: Ctx.of(context).doc.keys[id] ?? KeyS.off,
       child: NumField(
         id: fid,
