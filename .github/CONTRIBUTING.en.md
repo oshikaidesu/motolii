@@ -33,8 +33,8 @@ GitHub Actions runs the ledger check on every push and pull request (`.github/wo
 
 ## Rules
 
-1. **Look before you write.** Look at the tree (`engine/` the product, `lab/` experiments, `app/` the window, `docs/` research) and existing implementations on the net. If something can be used the way its author meant, use it.
-2. **One job a file, 500 lines at most.** Split by what each part is for and name it so (a bare number like `_2` is refused). Experiments go in `lab/`, not `engine/`.
+1. **Look before you write.** Look at the tree (`engine/` the product, `app/` the window, `docs/` research) and existing implementations on the net. If something can be used the way its author meant, use it.
+2. **One job a file, 500 lines at most.** Split by what each part is for and name it so (a bare number like `_2` is refused). Experiments stay on your own branch; main holds only what the window uses.
 3. **Say where things came from.** In the commit or pull request: what was borrowed from where (URL, version or commit), what was checked and what is not done yet. Example: `git show d46f69cac`. Keep the first line (the subject) to about 72 characters and put the details after a blank line (git's convention; much of the history so far has long subjects, but from now on).
 4. **Bundling other people's work.**
    - Keep the author's folder as unchanged as possible, with their licence text (`LICENSE`) and where it came from (`SOURCE.txt`: name and author / licence / from / page) beside it.
