@@ -1,4 +1,4 @@
-// Clouds: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)
+// Clouds: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture renders clouds. The texture has alpha channel
 // --track@scale:Scale,0,4,2,0.04

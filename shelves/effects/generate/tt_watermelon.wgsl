@@ -1,4 +1,4 @@
-// Watermelon: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)
+// Watermelon: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture renderes the surface of a watermelon with two colors - one for the
 // --track@scale:Scale,0,4,2,0.04

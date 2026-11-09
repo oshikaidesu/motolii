@@ -1,4 +1,4 @@
-// Threshold: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_tsl/shader_lab_shelf.ts)
+// Threshold: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Stylize
 // --about:Turns the image into stark black and white at a cutoff you set.
 // --track@threshold:Threshold,0,1,0.5,0.01

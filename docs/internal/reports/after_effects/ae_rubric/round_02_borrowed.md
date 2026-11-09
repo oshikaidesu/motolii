@@ -8,7 +8,7 @@
 - `engine/stage/kit.h`（908行）、`video.h`、`drawn.h`、`motion.h`、`doc.h`
 - 材質：`flat.mat`、`thick_glass.mat`、`matte.mat`、`matte.glsl`、`far_look.mat`、`far_side.mat`、`studio.glsl`、`glasslight.mat`、`paper.mat`、`floor_shade.mat`、`paper_copy.mat`、`spectrum.glsl`
 - 場面：`edit.mm`、`lay.mm`、`neko.mm`、`puppet.mm`、`mask.mm`、`wall.mm`、`ae.mm`、`led.mm`
-- つなぎ：`dawn_probe/gpu_door.h`、`gpu_door.cpp`、`CMakeLists.txt`、`build.sh`、`kit_wgpu.sh`、`tvg_on_dawn.sh`、`edit.sh`、`records.sh`、`lay.sh`、`neko.sh`、`check/` の5個
+- つなぎ：`dawn_probe/gpu_door.h`、`gpu_door.cpp`、`CMakeLists.txt`、`build.sh`、`filament_webgpu.sh`、`deps/thorvg.sh`、`edit.sh`、`records.sh`、`lay.sh`、`neko.sh`、`check/` の5個
 - パッチ2本：`filament_dawn_compute.patch`（375行）、`thorvg_z.patch`（362行）
 - 紙：`AE_RUBRIC.md`、`evidence.md`、`research_edit_core.md`、`round_01.md`、`records/doc.txt`、`records/when.txt`
 
@@ -55,8 +55,8 @@
 2. `gpu_door.cpp:8`、`24`：Filament の内側のヘッダ `details/Engine.h` で描画の列に仕事を入れる。そのために Filament のビルドの中で自分の物を作る（`CMakeLists.txt:8`、パッチ 10-13行）。`Engine.h` の公開の口に同じ物は無かった（読んだ）。
 3. `video.h:81`、`89-93`：共有を貸して返さない。`video_off`（`video.h:263-277`）にも返す呼び出しが無い。共有の元も共有テクスチャも放していない。
 4. `motion.h:47`、`50`：`const_cast` で回る。
-5. `tvg_on_dawn.sh:14-20`：Dawn を `wgpu_native` という名前の偽の札で ThorVG のビルドに渡す。
-6. `kit_wgpu.sh:31`：入れた SDK ではなく、ビルド途中の木の中（`out/wgpu/third_party/dawn/gen/include`、`thorvg_src/src/loaders/lottie`）を直に読む。
+5. `deps/thorvg.sh:14-20`：Dawn を `wgpu_native` という名前の偽の札で ThorVG のビルドに渡す。
+6. `filament_webgpu.sh:31`：入れた SDK ではなく、ビルド途中の木の中（`out/wgpu/third_party/dawn/gen/include`、`thorvg_src/src/loaders/lottie`）を直に読む。
 7. （半分）`kit.h:110`：`setFeatureFlag` は公開の口だが、旗の名前 `engine.color_grading.use_1d_lut` は内側の物（`filament/src/details/ColorGrading.cpp:812` で見た）。
 
 ### (d) パッチのうち、持ち主の振る舞いを変える行
@@ -109,7 +109,7 @@
 **本当に借り物だった所（確かめた）**
 - 取り消し：`doc.h:144-148` が session で変更の束を取り、`doc.h:176-177` が `sqlite3changeset_invert` と `sqlite3changeset_apply` で戻す。作り直しではない。Homebrew の本体に記号が38個ある。
 - キーの間：`doc.h:44-45`、`50` が `gst_interpolation_control_source_new`、`gst_timed_value_control_source_set`、`gst_control_source_get_value`。自前の補間は無い。
-- 重ね方：`flat.mat:9` の `blending` を `kit_wgpu.sh:21-23` が matc の公開の引数 `-T` で4回作る。Filament 自身の混ぜ方。ただし乗算だけ `flat.mat:54-56` に自前の直しが1行ある。
+- 重ね方：`flat.mat:9` の `blending` を `filament_webgpu.sh:21-23` が matc の公開の引数 `-T` で4回作る。Filament 自身の混ぜ方。ただし乗算だけ `flat.mat:54-56` に自前の直しが1行ある。
 - 動画の色の重みと範囲の数字：`video.h:207-214` が `gst_video_color_matrix_get_Kr_Kb` と `gst_video_color_range_offsets`。ここまでは借り物。行列に組むのと掛けるのは自作（(a)3）。範囲は GStreamer の言う事を信じず、絵そのものに聞き直している（`video.h:211-213`）。
 - 繰り返しと速さと逆再生：`video.h:136` の `gst_element_seek`（rate と SEGMENT）。GStreamer の物。
 
@@ -190,7 +190,7 @@ Mac 専用の混ざり（`kit.h:32-37`、文字の立体、PNG 書き、メモ�
 ## 6. 信じなかった所（evidence.md）
 
 - **「公式でない口を使っている所」が2個だけ**。数えたら6個と半分（上の(c)）。`gpu_door.cpp` が Filament の内側のヘッダを使う事、`const_cast`、偽の `wgpu_native` の札、ビルド途中の木を直に読む事が書いていない。
-- **「自分で書いた物 2124行」**。足し算は合う。でも入っていない物がある：場面 493、検査 115、スクリプト 60（`edit.sh`、`records.sh`、`tvg_on_dawn.sh`）、`CMakeLists.txt` 11、led 用 228、パッチの足した行 316。今夜の道ぜんぶで約3350行。
+- **「自分で書いた物 2124行」**。足し算は合う。でも入っていない物がある：場面 493、検査 115、スクリプト 60（`edit.sh`、`records.sh`、`deps/thorvg.sh`）、`CMakeLists.txt` 11、led 用 228、パッチの足した行 316。今夜の道ぜんぶで約3350行。
 - **「今夜の場面が使っていない部分も残ったまま」**。本当。ただし量が書いていない：Filament のパッチ159行のうち約110行。
 - **「色：ファイルが言う色の式で直す」**。半分。重みと範囲の数字は GStreamer から。行列は自作。明るさの曲線は見ていない（`flat.mat:53` は何でも画面の式で戻す）。10ビットは8ビットに頼んで受けている（`video.h:176`）。HLG と PQ が来たら色は違うはず（推測）。
 - **「値に時刻つきの事実を2個以上書くと、その間をつなぐ」**。本当だが、効くのは5つの値だけ（上）。「どの値にも」ではない。

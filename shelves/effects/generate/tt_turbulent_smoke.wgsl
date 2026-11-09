@@ -1,4 +1,4 @@
-// Turbulent smoke: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)
+// Turbulent smoke: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture recreates an animated turbulent smoke. Click on a snapshot to open it online.
 // --track@scale:Scale,0,4,2,0.04

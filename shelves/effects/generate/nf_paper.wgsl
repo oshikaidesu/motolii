@@ -1,4 +1,4 @@
-// Paper noise: threejs-noise-functions by lumiey (MIT, github.com/bandinopla/threejs-noise-functions), by three.js's own builder (engine/community/three_tsl/noise_fx_shelf.ts)
+// Paper noise: threejs-noise-functions by lumiey (MIT, github.com/bandinopla/threejs-noise-functions), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_noise_and_tslfx.ts)
 // --label:Generate
 // --track@scale:Scale,0,24,6,0.1
 // --track@pace:Pace,0,4,1,0.01

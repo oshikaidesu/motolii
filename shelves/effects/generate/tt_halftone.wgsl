@@ -1,4 +1,4 @@
-// Halftone: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)
+// Halftone: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture enforces halftone pattern by keeping some part of the object surface
 // --track@scale:Scale,0,4,2,0.04

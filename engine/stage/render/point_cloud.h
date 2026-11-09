@@ -15,7 +15,7 @@
 #include <thread>
 #include <memory>
 #include <dlfcn.h>
-#include "community/shaders/splatfx.h"
+#include "community/playcanvas/splatfx.h"
 
 // (floats handed to a texture, freed by Filament once it has them)
 static backend::PixelBufferDescriptor points_pixels(std::vector<float>&& from, backend::PixelDataFormat format) {

@@ -159,16 +159,10 @@ brew bundle
 Installs what the `Brewfile` lists (GStreamer, SQLite, ffmpeg, cmake, …). `Homebrew Bundle complete!` at the end means it worked.
 
 ```bash
-engine/gpu/build.sh
+engine/build.sh
 ```
 
-Downloads and builds Filament with its WebGPU backend (~5 minutes on an M4). It worked if it ends without an error.
-
-```bash
-engine/edit.sh build.motolii < /dev/null
-```
-
-Builds the engine, downloading ThorVG, Skia, libtess2 and Jolt the first time. `edit.sh` opens a project file and waits for commands; `< /dev/null` gives it none, so it builds, makes an empty file and exits. `engine/out/libmotolii.dylib` existing means it worked (`build.motolii` can be deleted).
+Builds the engine. The first time it builds Filament with its WebGPU backend from source (~5 minutes on an M4) and downloads ThorVG, Skia, libtess2 and Jolt. `engine/out/libmotolii.dylib` existing means it worked.
 
 ```bash
 app/tool/live.sh
@@ -264,8 +258,8 @@ The calls of the 8-second example at the top are in [`docs/using/make_intro_movi
 | `xcrun: error`, or Xcode missing | Install Xcode from the App Store, open it once to add its components, then `sudo xcodebuild -license accept` |
 | `No space left on device` | Free 10 GB or more, then run the command that stopped again |
 | `git clone` or `build.sh` stopped on the network | Run the same command again; if it still stops, delete the half-downloaded folder in `engine/third_party/` and run it again |
-| `ld: library 'webgpu_dawn' not found` | Run `engine/gpu/build.sh` first |
-| The app opens but the preview is black | Check the engine is built (`engine/out/libmotolii.dylib`); if not, `engine/edit.sh build.motolii < /dev/null` |
+| `ld: library 'webgpu_dawn' not found` | Run `engine/build.sh` again (it starts by building Filament) |
+| The app opens but the preview is black | Check the engine is built (`engine/out/libmotolii.dylib`); if not, `engine/build.sh` |
 
 Still stuck? Open an [issue](https://github.com/oshikaidesu/motolii/issues) with the command you ran and what it printed (there is a template). Questions about using it go to [Discussions](https://github.com/oshikaidesu/motolii/discussions). English or Japanese.
 
@@ -274,7 +268,7 @@ Still stuck? Open an [issue](https://github.com/oshikaidesu/motolii/issues) with
 <details>
 <summary><b>Updating and removing</b></summary>
 
-- Update: `git pull`, then run `engine/gpu/build.sh` and `engine/edit.sh build.motolii < /dev/null` again (only what changed is rebuilt); `app/tool/live.sh` rebuilds the app.
+- Update: `git pull`, then run `engine/build.sh` again (only what changed is rebuilt); `app/tool/live.sh` rebuilds the app.
 - Remove: delete the `motolii` folder (everything downloaded and built is inside it). Your projects and videos stay in `~/Movies/Motolii/` (or wherever else you put them). Flutter: delete `~/flutter`. What `brew bundle` installed goes with `brew uninstall`.
 
 </details>

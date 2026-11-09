@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Rule P: every path a shelf file or one of our .md names must lead somewhere, so a move can never quietly break it.
 # The shelf files (shelves/, but aviutl_scripts/: those packages find theirs by AviUtl's own package.path) and the
-# scripts that write them (engine/community/three_tsl/*_shelf.ts). Each path is resolved as its reader resolves it,
+# scripts that write them (engine/community/three_shading_language_to_shelf/write_shelf_*.ts). Each path is resolved as its reader resolves it,
 # against what is staged (or a commit's tree), never the disk:
 #   import / export from / import() / require   from the file's folder (QuickJS's way; a .ts also as esbuild: .ts, .js,
 #                                               /index.ts); a bare name: the package.json beside a .ts, or the allowlist
@@ -46,7 +46,7 @@ def wanted(p):
     if p.startswith('shelves/'):
         return not p.startswith('shelves/aviutl_scripts/') and p.endswith(
             ('.js', '.mjs', '.wgsl', '.fs', '.am', '.way', '.motolii', '.sh', '.py'))
-    return fnmatch.fnmatch(p, 'engine/community/three_tsl/*_shelf.ts')
+    return fnmatch.fnmatch(p, 'engine/community/three_shading_language_to_shelf/write_shelf_*.ts')
 
 
 if everything or rev:
@@ -195,7 +195,8 @@ for path, blob in blobs(look):
                         refuse(path, n, written, 'not in package.json')
                 elif not allowed(written, written):
                     refuse(path, n, written, 'not a file, nor given (path_check_allow.txt)')
-        for written in IMAGE.findall(line) + (ISF_PATH.findall(line) if path.endswith('.fs') else []):
+        # (in a .ts that writes shelf files, an --image@ line is the head it writes, its file named when it runs, not a path here)
+        for written in ([] if ts else IMAGE.findall(line)) + (ISF_PATH.findall(line) if path.endswith('.fs') else []):
             check_relative(path, n, folder, written)
         if sh or ts:
             for _, written in RELATIVE.findall(line):

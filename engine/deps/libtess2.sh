@@ -5,7 +5,7 @@
 #   ./deps/libtess2.sh
 set -e
 cd "$(dirname "$0")/.."
-source deps/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: deps/build_lock.sh)
+source tools/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: tools/build_lock.sh)
 L=$PWD/third_party/libtess2
 [ -d $L ] || { mkdir -p $L && git init -q $L && git -C $L -c core.hooksPath=/dev/null fetch -q --depth 1 https://github.com/memononen/libtess2 8dbd6483e920311a58c9af10a10beb278efebc36 && git -C $L checkout -q FETCH_HEAD; }
 mkdir -p $L/build

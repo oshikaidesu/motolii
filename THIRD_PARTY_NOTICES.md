@@ -32,8 +32,8 @@ Motolii は「ネットで見つけたかっこいい表現を、自分の動画
 | Sashimono Edit の効果（GLSL を ISF にした物） | [kagemorikosame/sashimono-edit](https://github.com/kagemorikosame/sashimono-edit) src/sashimono/effects/builtin.py、コミット 761b6e4ba247 | MIT（Copyright (c) 2026 Sashimono Edit contributors） | `shelves/effects/* (Sashimono).fs`（`shelves/effects/sources/from_sashimono.py` で作った物）、`shelves/effects/sources/sashimono-LICENSE.txt` |
 | pixi-filters の OutlineFilter（Multi-Border の縁） | [pixijs/filters](https://github.com/pixijs/filters) 6.1.5、lib/outline/outline.mjs | MIT（Copyright (c) 2013-2025 Mathew Groves, Chad Engler） | `shelves/effects/stylize/Multi-Border.fs`（ISF の頭に出所と、uniform を入力にした所）、`pixi-filters-LICENSE.txt` |
 | gl-chromakey の ProcessChromaKey（Key Spill Cleaner の色かぶり取り） | [bhj/gl-chromakey](https://github.com/bhj/gl-chromakey)、src/lib/shaders/fragmentShaderPaint.js | MIT（Copyright (c) 2011 Mozilla Foundation、Copyright (c) 2020-2025 RadRoot LLC） | `shelves/effects/key/Key Spill Cleaner.fs`（ISF の頭に出所と、絵の読み方を ISF の IMG_NORM_PIXEL にした所）、`gl-chromakey-LICENSE.txt` |
-| YMM4-LuaScript の aviutl_rand（AviUtl2 のスクリプトの obj.rand・rand） | [routersys/YMM4-LuaScript](https://github.com/routersys/YMM4-LuaScript)、native/shim.lua・native/worker.lua、コミット fd540b834bfd | MIT（Copyright (c) 2026 routersys） | `engine/community/aviutl/aviutl_fx.h`（Lua のまま、頭に出所）、`engine/community/aviutl/ymm4-luascript-LICENSE.txt` |
-| leva のつまみの書き方（folder() と、範囲を書かない数の刻み：getStep・Number の normalize） | [pmndrs/leva](https://github.com/pmndrs/leva)、packages/leva/src/helpers/folder.ts・utils/math.ts・plugins/Number/number-plugin.ts、コミット 402a1e9d0899 | MIT（Copyright (c) 2021 Poimandres） | `engine/community/js/script_leva.h`（JavaScript のまま、頭に出所）、`engine/community/js/leva-LICENSE.txt` |
+| YMM4-LuaScript の aviutl_rand（AviUtl2 のスクリプトの obj.rand・rand） | [routersys/YMM4-LuaScript](https://github.com/routersys/YMM4-LuaScript)、native/shim.lua・native/worker.lua、コミット fd540b834bfd | MIT（Copyright (c) 2026 routersys） | `engine/community/aviutl/aviutl_fx.h`（Lua のまま、頭に出所）、`engine/third_party/ymm4-luascript/LICENSE` |
+| leva のつまみの書き方（folder() と、範囲を書かない数の刻み：getStep・Number の normalize） | [pmndrs/leva](https://github.com/pmndrs/leva)、packages/leva/src/helpers/folder.ts・utils/math.ts・plugins/Number/number-plugin.ts、コミット 402a1e9d0899 | MIT（Copyright (c) 2021 Poimandres） | `engine/community/quickjs/script_leva.h`（JavaScript のまま、頭に出所）、`engine/third_party/leva/LICENSE` |
 | 場面転換の効果 13 本（ISF-Files が ISF にした物） | [gl-transitions](https://github.com/gl-transitions/gl-transitions)（各 .fs の頭に作者：gre、Jake Nelson、Fernando Kuteken、bobylito、Hewlett-Packard ほか） | 各ファイルの頭のとおり：MIT 12 本、BSD-3-Clause 1 本（Inverted Page Curl、Copyright (c) 2010 Hewlett-Packard。著作権表示とライセンスの全文がファイルの中のコメントにある） | `shelves/effects/transition/Fade.fs`・`Wipe *.fs` など、`CREDIT` に gl-transitions の URL |
 | CRT の仕上げ（WGSL に改変） | [vercel-labs/vgpu](https://github.com/vercel-labs/vgpu) の post.wgsl | MIT | `shelves/effects/stylize/crt_finish.wgsl`、`vgpu-LICENSE.txt` |
 | データモッシュ（WGSL に改変） | [newomp4/phosphor](https://github.com/newomp4/phosphor) | MIT | `shelves/effects/glitch/datamosh.wgsl`、`phosphor-LICENSE.txt` |
@@ -48,7 +48,7 @@ Motolii は「ネットで見つけたかっこいい表現を、自分の動画
 | p5.js 1.11.13 | [processing/p5.js](https://github.com/processing/p5.js) | LGPL-2.1 | `engine/third_party/js/p5/`（配布の `p5.min.js` と `license.txt` をそのまま、差し替えられる普通のファイルとして読む） |
 | Cube Wave（Coding Challenge 86） | [CodingTrain/Coding-Challenges](https://github.com/CodingTrain/Coding-Challenges)（Copyright (c) 2022 Coding Train） | MIT | `shelves/create/repeats/Cube Wave.js`（1 行目に元、以下そのまま） |
 | Godot のイーズの式 | [godotengine/godot](https://github.com/godotengine/godot) の easing_equations.h（Robert Penner の式） | MIT | `engine/third_party/godot_easing/` |
-| Godot の String::capitalize（つまみのキーを名前として見せる：ease_in → Ease In） | [godotengine/godot](https://github.com/godotengine/godot) core/string/ustring.cpp の _separate_compound_words・capitalize、コミット c51ff06e8836 | MIT | `engine/community/js/script_leva.h`（JavaScript に移した、頭に出所）、ライセンスは `engine/third_party/godot_easing/` の物と同じ |
+| Godot の String::capitalize（つまみのキーを名前として見せる：ease_in → Ease In） | [godotengine/godot](https://github.com/godotengine/godot) core/string/ustring.cpp の _separate_compound_words・capitalize、コミット c51ff06e8836 | MIT | `engine/community/quickjs/script_leva.h`（JavaScript に移した、頭に出所）、ライセンスは `engine/third_party/godot_easing/` の物と同じ |
 | 日本語 WordNet v1.1（検索で日本語を英語に引く表 `ja_en.tsv`、`engine/deps/wnja_export.py` で切り出した物） | [bond-lab/wnja](https://github.com/bond-lab/wnja)（NICT、Francis Bond・Takayuki Kuribayashi） | 日本語 WordNet のライセンス（`LICENSE-wnja.txt`） | `engine/third_party/wordnet_ja/`（`SOURCE.txt`） |
 | Noto Sans JP（字が足りない時の代わりの書体） | [notofonts/noto-cjk](https://github.com/notofonts/noto-cjk) | SIL OFL 1.1 | `engine/third_party/noto_sans_jp/`（`NotoSansJP-LICENSE.txt`） |
 | gflanguages の見本の文（Fonts タブ、`engine/deps/from_gflanguages.py` で切り出した `samples.json`） | [googlefonts/lang](https://github.com/googlefonts/lang) | Apache-2.0 | `engine/third_party/gflanguages/`（`gflanguages-LICENSE.txt`） |
@@ -64,8 +64,8 @@ Motolii は「ネットで見つけたかっこいい表現を、自分の動画
 
 | 物 | 版 | ライセンス | 取ってくるスクリプト | Motolii の差分 |
 |---|---|---|---|---|
-| [Filament](https://github.com/google/filament)（Dawn・glslang を含む） | v1.77.2 | Apache-2.0 ほか | `engine/gpu/build.sh` | `engine/deps/patches/filament/`、`glslang/`、`tint/`、`dawn/` |
-| [ThorVG](https://github.com/thorvg/thorvg) | 9203245 | MIT | `engine/gpu/tvg_on_dawn.sh` | `engine/deps/patches/thorvg/` |
+| [Filament](https://github.com/google/filament)（Dawn・glslang を含む） | v1.77.2 | Apache-2.0 ほか | `engine/deps/filament.sh` | `engine/deps/patches/filament/`、`glslang/`、`tint/`、`dawn/` |
+| [ThorVG](https://github.com/thorvg/thorvg) | 9203245 | MIT | `engine/deps/thorvg.sh` | `engine/deps/patches/thorvg/` |
 | [Skia](https://skia.org/)（パスの部分だけ） | chrome/m149 | BSD-3-Clause | `engine/deps/skia.sh` | なし |
 | [libtess2](https://github.com/memononen/libtess2) | 8dbd648 | SGI Free Software License B 2.0 | `engine/deps/libtess2.sh` | なし |
 | [Jolt Physics](https://github.com/jrouwe/JoltPhysics) | a4b24c3 | MIT | `engine/deps/jolt.sh` | なし |
@@ -75,12 +75,12 @@ Motolii は「ネットで見つけたかっこいい表現を、自分の動画
 | [nlohmann/json](https://github.com/nlohmann/json)（IRIS の設定と結果） | v3.12.0（55f9368） | MIT | `engine/deps/iris.sh` | なし |
 | [PianoRollSvg.js](https://github.com/bladeSk/midi-to-piano-roll)（MIDI ビューのピアノロール） | 205854e | MIT（作者の package.json の申告。ライセンスの文書が作者の側に無いので同梱しない） | `engine/deps/midi_roll.sh` | なし |
 | [Filament の組み立て済み SDK](https://github.com/google/filament/releases/tag/v1.77.2)（前の試しのスクリプトだけが使う） | v1.77.2 | Apache-2.0 | `engine/sdk.sh` | なし |
-| [BabylonJS/JsRuntimeHost](https://github.com/BabylonJS/JsRuntimeHost) の Node-API | 980cfb0 | MIT | `engine/community/three_tsl/jsrh_napi/build.sh` | `engine/deps/patches/jsruntimehost/` |
-| TSL の表現 48 か所 | `engine/community/three_tsl/sources.tsv` のとおり | 各作者 | `engine/community/three_tsl/fetch.sh` | `engine/deps/patches/shader-lab/`、`ics-creative/` |
+| [BabylonJS/JsRuntimeHost](https://github.com/BabylonJS/JsRuntimeHost) の Node-API | 980cfb0 | MIT | `engine/community/web_renderer_on_dawn/node_api_quickjs/build.sh` | `engine/deps/patches/jsruntimehost/` |
+| TSL の表現 48 か所 | `engine/community/three_shading_language_to_shelf/sources.tsv` のとおり | 各作者 | `engine/community/three_shading_language_to_shelf/fetch.sh` | `engine/deps/patches/shader-lab/`、`ics-creative/` |
 | [perfect_freehand](https://pub.dev/packages/perfect_freehand)（Brush の筆跡の輪郭。元は Steve Ruiz の perfect-freehand） | 2.5.2+1 | MIT（Copyright (c) 2021 Stephen Ruiz、2023 Adil Hanney） | `app/pubspec.yaml`（flutter pub get） | なし |
 | [AbsentMotion](https://github.com/Comett1225/AbsentMotion)（効果を WGSL にする元） | 0f5d891 | Apache-2.0 | `shelves/effects/sources/absent.sh` | なし |
-| [OpenAI CLIP](https://github.com/openai/CLIP) ViT-B/32 の絵の読み手（棚の地図：効果のコマ）。ONNX にして `~/Library/Caches/Motolii/models/clip_b32.onnx` に置く | open_clip の `openai` の重み（ViT-B-32.pt） | MIT | `engine/deps/look_models.py`（読み込みは [open_clip](https://github.com/mlfoundations/open_clip)、MIT。書き出しは [PyTorch](https://github.com/pytorch/pytorch) の torch.onnx.export、BSD-3-Clause） | なし |
-| [FontCLIP](https://github.com/yukistavailable/FontCLIP)（Tatsukawa ら、Eurographics 2024）の絵の読み手（棚の地図：字体の見本）。ONNX にして `fontclip_b32.onnx` | setup_data.py の model.pt | MIT（重みも MIT と作者が issue 13 で） | `engine/deps/look_models.py`（[FontMap](https://github.com/tfrere/fontmap) の fontclip_model.py の読み方、MIT） | なし |
+| [OpenAI CLIP](https://github.com/openai/CLIP) ViT-B/32 の絵の読み手（棚の地図：効果のコマ）。ONNX にして `~/Library/Caches/Motolii/models/clip_b32.onnx` に置く | open_clip の `openai` の重み（ViT-B-32.pt） | MIT | `engine/deps/likeness_models.py`（読み込みは [open_clip](https://github.com/mlfoundations/open_clip)、MIT。書き出しは [PyTorch](https://github.com/pytorch/pytorch) の torch.onnx.export、BSD-3-Clause） | なし |
+| [FontCLIP](https://github.com/yukistavailable/FontCLIP)（Tatsukawa ら、Eurographics 2024）の絵の読み手（棚の地図：字体の見本）。ONNX にして `fontclip_b32.onnx` | setup_data.py の model.pt | MIT（重みも MIT と作者が issue 13 で） | `engine/deps/likeness_models.py`（[FontMap](https://github.com/tfrere/fontmap) の fontclip_model.py の読み方、MIT） | なし |
 
 ## 3. AviUtl2 のスクリプトの一覧（172）
 

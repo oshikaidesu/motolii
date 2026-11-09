@@ -1,4 +1,4 @@
-// Impact: TSLFX by Verekia (MIT, github.com/verekia/tslfx), by three.js's own builder (engine/community/three_tsl/noise_fx_shelf.ts)
+// Impact: TSLFX by Verekia (MIT, github.com/verekia/tslfx), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_noise_and_tslfx.ts)
 // --label:Generate
 // --track@duration:Duration,0.1,3,0.5,0.1
 // --track@vesicaCount:Vesica Count,0,15,6,1

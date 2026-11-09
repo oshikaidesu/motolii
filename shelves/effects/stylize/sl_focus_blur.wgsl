@@ -1,4 +1,4 @@
-// Blur: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_tsl/shader_lab_shelf.ts)
+// Blur: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Stylize
 // --about:Blur that varies across the frame: depth of field, tilt-shift, radial focus or tone-based, with Gaussian, lens bokeh or motion streaks.
 // --pass@t0:0,1,s0.5,s0.5

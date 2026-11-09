@@ -11,7 +11,7 @@ SQLite をメモリの中だけで1回（5節の「表の決まりは SQLite が
 - 材質：`flat.mat`、`thick_glass.mat`、`matte.mat`、`matte.glsl`、`far_look.mat`、`far_side.mat`、`studio.glsl`、`spectrum.glsl`
 - led の4つ（今回は中身まで全部）：`glasslight.mat`（99）、`paper.mat`（77）、`floor_shade.mat`（35）、`paper_copy.mat`（17）
 - 場面：`edit.mm`、`lay.mm`、`neko.mm`、`puppet.mm`、`mask.mm`、`wall.mm`、`ae.mm`、`led.mm`
-- つなぎ：`dawn_probe/gpu_door.h`、`gpu_door.cpp`、`CMakeLists.txt`、`kit_wgpu.sh`、`tvg_on_dawn.sh`、`edit.sh`、`records.sh`、`check/doc.sh`、`check/sound.sh`、`check/doc_calls.txt`
+- つなぎ：`dawn_probe/gpu_door.h`、`gpu_door.cpp`、`CMakeLists.txt`、`filament_webgpu.sh`、`deps/thorvg.sh`、`edit.sh`、`records.sh`、`check/doc.sh`、`check/sound.sh`、`check/doc_calls.txt`
 - パッチ2本：`filament_dawn_compute.patch`（375行）、`thorvg_z.patch`（362行）
 - 紙：`AE_RUBRIC.md`（3版）、`round_03_borrowed.md`、`evidence.md`、`research_edit_core.md`（今回は全部）
 - 記録：`records/doc.txt`、`records/soak_neko.txt`、`records/when.txt`
@@ -34,7 +34,7 @@ SQLite をメモリの中だけで1回（5節の「表の決まりは SQLite が
 - GStreamer 本体のソースは手元に無い。動画の時刻合わせを持ち主に返せるか（`sync`、コマ送り）は今回も試していない。
 - パッチが3回目から変わっていない事は、3回目の行番号と1行ずつ合う事でだけ確かめた（合った）。
 
-3回目の後に変わったファイルは、日付で見ると `doc.h`、`drawn.h`、`edit.mm`（01:46）、`solid.h`、`kit_wgpu.sh`（01:41）。
+3回目の後に変わったファイルは、日付で見ると `doc.h`、`drawn.h`、`edit.mm`（01:46）、`solid.h`、`filament_webgpu.sh`（01:41）。
 `kit.h`、`video.h`、材質、パッチは3回目の行番号のまま。
 
 ## 2. 数えた物
@@ -83,8 +83,8 @@ SQLite をメモリの中だけで1回（5節の「表の決まりは SQLite が
 - **C2** `gpu_door.cpp:8`、`24`：Filament の内側のヘッダ。**新しく分かった事**：公開の口は有る（`Engine.h:1139-1165` の `runCommandAsync`）。でも WebGPU では使えない（`WebGPUDriver.cpp:996-998` が `isAsynchronousModeEnabled() = false`）。だから今は借りられない。1個。
 - **C3** `video.h:114-117`：Dawn の共有を貸しっぱなし。3回目のまま。1個。
 - **C4** `motion.h:47`、`50`：`const_cast`。読むだけ。厳しく1、甘く0.5。
-- **C5** `tvg_on_dawn.sh:14-20`：Dawn を `wgpu_native` の名前で渡す。ビルドの設定で、コードの口ではない。厳しく1、甘く0。
-- **C6** `kit_wgpu.sh:31-32`：ビルド途中の木の中を直に読む。根は C2 と同じ（Filament は自分の Dawn を外に出さない）。厳しく1、甘く0。
+- **C5** `deps/thorvg.sh:14-20`：Dawn を `wgpu_native` の名前で渡す。ビルドの設定で、コードの口ではない。厳しく1、甘く0。
+- **C6** `filament_webgpu.sh:31-32`：ビルド途中の木の中を直に読む。根は C2 と同じ（Filament は自分の Dawn を外に出さない）。厳しく1、甘く0。
 - **C7 Filament のシェーダの内側の名前**：`thick_glass.mat:159`、`far_look.mat:29`（`frameUniforms.iblLuminance`）。
   **今回増えた所**：`glasslight.mat:57`（`mesh_position`）、`thick_glass.mat:98`（`getNormalizedPhysicalViewportCoord`）。どれも `docs/Materials.md.html` に1回も出ない（数えた）。まとめて1個。甘くは A1 と A5 の一部として0。
 - **C8（半分）ThorVG の物を作って放さない**：`drawn.h:64-67`（地の四角。透明の時は足さず、放さない）。**今回増えた所**：`drawn.h:100-103`（読めなかった時に `d->film` が残る）、`drawn.h:117-125`（測れなかった時に `t` が残る）。`thorvg.h:792` は `Paint::rel` で放せと言う。
@@ -237,9 +237,9 @@ Filament へのパッチ、ThorVG へのパッチ。ただし中身は (d) と (
 
 ### 種類2：古い仕事を消す事になる。持ち主（ユーザー）が決める
 
-- H1〜H7：`kit.h:254-265`、`306-334`、`443-516`、`530-544`、`906-910`、`97-98`、`drawn.h:24-30`、`kit.h:33-35` と `kit_wgpu.sh:36` の SceneKit・ModelIO、`studio.glsl:4-19`。
+- H1〜H7：`kit.h:254-265`、`306-334`、`443-516`、`530-544`、`906-910`、`97-98`、`drawn.h:24-30`、`kit.h:33-35` と `filament_webgpu.sh:36` の SceneKit・ModelIO、`studio.glsl:4-19`。
   消すと `blocks`、`poster`、`acid`、`shapes`、`dance`、`ring`、`torture` がビルドできなくなる。
-- H8：古い材質82本、場面41本、ヘッダ8本、`kit_wgpu.sh:15` の `glassbox boxlight bubble poster own_glass blade`。
+- H8：古い材質82本、場面41本、ヘッダ8本、`filament_webgpu.sh:15` の `glassbox boxlight bubble poster own_glass blade`。
 - E1〜E3：パッチの計算用の口・並び・読み戻し、`dawn_probe/compute_door.cpp`、`compute_door.h`、`cbeam.h`、`CMakeLists.txt:8`。古い「計算で頂点を書く」試しが動かなくなる。
 - E4：パッチ 329、356-364行。呼ぶ物はリポジトリに無い。手で打つ試し用だったはず（推測）。
 - E5：パッチ 338-339行。古い場面16本が 32 ビットの的を使う。
@@ -352,7 +352,7 @@ gltfio の説明どおり（`ResourceLoader.h:74-87`：「外の物は使う側�
 | 順 | 何を消すか・誰に返すか | 厳しく | 甘く | 種類 | 絵 |
 |---|---|---|---|---|---|
 | 1 | **led と、今夜それだけが通る物**：`thorvg_z.patch`、`motion.h`、`glasslight.mat`、`paper.mat`、`floor_shade.mat`、`paper_copy.mat`、`kit.h:336-441` | −13（A5〜A7、D3〜D8、f1、G6、G7、C4） | −6.5 | 3 | led が無くなる（AE の3Dレイヤーとカメラ、紙の虹）。他の7場面は同じ |
-| 2 | **古い山**：`kit.h` の7つの関数、`drawn.h:24-30`、SceneKit・ModelIO、古い材質82・場面41・ヘッダ8、`kit_wgpu.sh:15` | −8（H 全部） | −1 | 2 | 今夜の絵は同じ。古い場面がビルドできなくなる |
+| 2 | **古い山**：`kit.h` の7つの関数、`drawn.h:24-30`、SceneKit・ModelIO、古い材質82・場面41・ヘッダ8、`filament_webgpu.sh:15` | −8（H 全部） | −1 | 2 | 今夜の絵は同じ。古い場面がビルドできなくなる |
 | 3 | **Filament のパッチの使っていない所**：計算用の口、並び、読み戻し、環境変数、Float32Blendable、`compute_door.*`、`cbeam.h` | −5（E 全部） | −3 | 2 | 同じ。Filament をビルドし直す |
 | 4 | **ガラスを Filament に返す**：`thick_glass.mat`、`far_side.mat`、`far_look.mat`、`studio.glsl`、`kit.h:518-528`、`546-603`、手作りの形 | −3（A1、C7、G8） | −2 | 3 | 6場面で変わる。ユーザーが決める事 |
 | 5 | **動画の時刻と貸し借りを持ち主に返す**：`video.h:316-348`、`167-172`、`338-341`、`114-117`、`88-92` | −3（B1、B2、C3） | −2 | 1B | 同じはず。落ち・遅れ・メモリを測り直す（未試行） |

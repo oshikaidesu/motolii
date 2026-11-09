@@ -1,4 +1,4 @@
-// The Program shelf: what came as code (the door, engine/community/adapter.h), kept as it was written and listed by what it was
+// The Program shelf: what came as code (the door, engine/community/sites/adapter.h), kept as it was written and listed by what it was
 // written for: neither an effect, nor a thing to create, nor a preset. A list, or the picked one's code: what is typed
 // is saved as it is typed, and the thing on the stage and its knobs in the inspector follow (doc_script_of reads a file
 // that changed). As Godot and Unity keep scripts as files on a shelf with their knobs in the inspector; where the code is

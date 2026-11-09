@@ -5,7 +5,7 @@
 // on the stage's view over what the stage's own values make (document/camera.h doc_look): a part the file does not name stays
 // as the stage has it. Its words (enum names: a tone mapping, a custom LUT) are not parameters: the file says them.
 #pragma once
-#include "community/js/script.h"
+#include "community/quickjs/script.h"
 #include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/document.h"
 #include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/pointer.h"
 #include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/stringbuffer.h"

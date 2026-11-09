@@ -2,11 +2,13 @@
 !/third_party/anime/
 !/third_party/godot_easing/
 !/third_party/js/
+!/third_party/leva/
 !/third_party/midi_roll/
 !/third_party/qdtsne/
 !/third_party/scipy_lsap/
 !/third_party/rapidfuzz/
 !/third_party/thermion_frame/
+!/third_party/ymm4-luascript/
 probe
 *.filamat
-out/
+/out/

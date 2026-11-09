@@ -1,9 +1,9 @@
 // adapter.h: part of doc.h. Code taken from the net, read as what it is (adapter.h), kept in the maker's own folder as it
 // came (so it is on the shelf too) and put on the stage. word: the code, or a file of it. A shader that reads a picture
 // goes on the picked layer, as an effect; one that makes its own fills the stage; a sketch is a picture, in 3D a solid.
-#include "community/shaders/adapter_shadertoy_json.h"
-#include "community/shaders/adapter_p5_shader.h"
-#include "community/adapter_net.h"
+#include "community/sites/adapter_shadertoy_json.h"
+#include "community/p5/adapter_p5_shader.h"
+#include "community/sites/adapter_net.h"
 // What moved in a program's code as keys on what wears its effect `fx`, where they can be edited: a straight line two of them.
 static void doc_door_keys(Doc& d, int layer, const std::string& fx, const std::vector<HydraParameter>& moving) {
     for (const HydraParameter& k : moving) {

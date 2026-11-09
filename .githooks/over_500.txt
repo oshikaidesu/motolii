@@ -21,7 +21,7 @@
 514 engine/stage/render/render_layers.h
 529 shelves/create/over_footage/Blob Track.js
 531 engine/stage/effects/screen_fx.h
-565 engine/community/js/script.cpp
+565 engine/community/quickjs/script.cpp
 6342 engine/third_party/js/acorn/acorn.js
 1501 engine/third_party/js/three/BufferGeometryUtils.js
 60586 engine/third_party/js/three/three.core.js

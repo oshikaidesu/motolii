@@ -289,7 +289,7 @@ Future<Float32List?> _read(List<String> files) async {
 }
 
 /// The CLIP image encoder [name] (clip_b32: OpenAI's ViT-B/32; fontclip_b32: FontCLIP's) once it has been made
-/// (engine/deps/look_models.py); null: not made, the maps tell pictures apart by their tiny colours ([dockTiny]).
+/// (engine/deps/likeness_models.py); null: not made, the maps tell pictures apart by their tiny colours ([dockTiny]).
 String? dockModel(String name) {
   final f = '${Platform.environment['HOME']}/Library/Caches/Motolii/models/$name.onnx';
   return File(f).existsSync() ? f : null;

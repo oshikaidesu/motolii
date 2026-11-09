@@ -6,8 +6,8 @@
 // name are told as they come; `time` (seconds), `frame` (its number at sixty a second), `aspect` (wide over high), `resolution`, `width` and `height` (points) by the stage.
 #pragma once
 // (render.h: read before this, as doc.h does)
-#include "community/js/script.h"
-#include "community/shaders/isf.h"
+#include "community/quickjs/script.h"
+#include "community/isf/isf.h"
 #include "gpu/screen_interop.h"
 #include <math/half.h>
 #include <thorvg.h>

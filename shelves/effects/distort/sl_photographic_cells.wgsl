@@ -1,4 +1,4 @@
-// Photographic Cells: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_tsl/shader_lab_shelf.ts)
+// Photographic Cells: Shader Lab's (Apache-2.0, Copyright 2026 basement.studio LLC, github.com/basementstudio/shader-lab), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_shader_lab.ts)
 // --label:Distort
 // --about:Reveals the photo through a grid of cells joined into regions, with stepped edges and outlines.
 // --track@mode:Layout,0,2,0,1

@@ -1,4 +1,4 @@
-// Dyson sphere: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_tsl/textures_shelf.ts)
+// Dyson sphere: tsl-textures by Pavel Boytchev (MIT, github.com/boytchev/tsl-textures), by three.js's own builder (engine/community/three_shading_language_to_shelf/write_shelf_tsl_textures.ts)
 // --label:Generate
 // --about:This texture generates a possible fractal interpretation of a
 // --track@scale:Scale,0,4,2,0.04

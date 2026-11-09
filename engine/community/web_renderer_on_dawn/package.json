@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "description": "A web effect's own renderer (npm shaders, shader-effects-inc) run as it is in Motolii's QuickJS on Filament's Dawn device (js_effects.sh): the package, and what a browser or Node gives that its renderer and dawn.node expect (node_api_quickjs/web_globals.ts).",
+  "dependencies": {
+    "abort-controller": "^3.0.0",
+    "core-js": "3.45.1",
+    "event-target-shim": "^6.0.2",
+    "fast-text-encoding": "^1.0.6",
+    "shaders": "^4.0.5"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.0"
+  }
+}

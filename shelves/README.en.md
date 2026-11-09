@@ -63,7 +63,7 @@ Before renaming a file, look at "Name shown" above. A document finds what it use
 - Files with a first line `// Name:` (`effects/` `.js` and `.wgsl`, `create/`, `expressions/`, `relations/`, `solids/`, `ease/`): the file name is not shown, so any form will do. Those here keep their source's names (`solids/`: Alight Motion's names with `_` for spaces; `create/shapes/am_*`: AbsentMotion's shapes).
 - Files whose name is shown (`looks/`, `effects/` `.fs`, a p5 sketch with no head such as `create/repeats/Cube Wave.js`, a `relations/` file with no `// Name:`): write it with spaces and capitals as it should read. An ISF `.fs` keeps the name it was handed out with.
 - `aviutl_scripts/`: `<author>__<package>/`, the author and package names of the AviUtl2 catalogue. Inside, the package as it is handed out, with its `LICENSE` and a `SOURCE.txt`.
-- Only what is one item each goes here. A part of others (e.g. `face_uv.js`, the UVs of an extruded shape) goes beside the code that runs them (`engine/community/js/`).
+- Only what is one item each goes here. A part of others (e.g. `face_uv.js`, the UVs of an extruded shape) goes beside the code that runs them (`engine/community/three/`, beside `solid_three.cpp`, which runs the `solids/` shelf). `face_uv.js` was written for Motolii, not brought in from someone else, so it lives under `engine/`, not on a shelf (AGENTS.md 構成の目標 3).
 
 ## Not here
 

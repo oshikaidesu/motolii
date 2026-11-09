@@ -115,8 +115,8 @@ Shader Lab（basementstudio/shader-lab、Apache-2.0）の効果を、外にあ�
   - uniform のバイト（`binding.update()` → `binding.buffer`）
   - 板の形の数
   - 作り方は `engine/dawn_probe/tsl_dump.ts`（QuickJS で回す）。three.js が描く前にすることを、同じ順でしている：カメラを WebGPU の座標の決まりにする（three.webgpu.js 62657）、`NodeFrame` で値を更新する。
-- 描く側は `engine/dawn_probe/tsl_on_dawn.cpp`。
-  - 装置と読み戻しは `tvg_on_dawn.cpp` と同じ。
+- 描く側は `engine/dawn_probe/wgsl_effect_on_dawn.cpp`。
+  - 装置と読み戻しは `thorvg_on_dawn.cpp` と同じ。
   - 描く手順は Dawn の `samples/HelloTriangle.cpp` と同じ。
   - シェーダーが宣言した並びのまま描く（`layout` を指定せず、Dawn に任せる）。Filament の決まりを通らない。
 - 写真の 35% の画素が変わった（間引いて数えた）。縦の筋ごとにずれて、雲の縁が波打ち、茎の切れ目が横にずれる。つまみは初めの値（周波数 20、振れ幅 0.02、ゆがみ 0.28、ばらつき 0.35）。
@@ -145,5 +145,5 @@ Shader Lab（basementstudio/shader-lab、Apache-2.0）の効果を、外にあ�
   - 色の違いの原因は確かめていない。候補は、ブラウザ側の色の管理か、色を整える仕上げか、画面を撮った時の色の扱い。
 - 試しも直した：
   - `engine/dawn_probe/tsl_dump.ts` を、作者の `applyLayerState` を通す形にした。
-  - `tsl_on_dawn.cpp` は、読み戻しの 1 行を 256 バイトの倍数にそろえた（WebGPU の決まり。前の試しは幅 256 だったので当たらなかった）。
+  - `wgsl_effect_on_dawn.cpp` は、読み戻しの 1 行を 256 バイトの倍数にそろえた（WebGPU の決まり。前の試しは幅 256 だったので当たらなかった）。
 - 分かったこと：TSL の変換も描く手順も、three.js と Dawn のまま合っていた。ずれたのは、作者がすること（層の設定）を私が飛ばした所だけ。

@@ -53,8 +53,8 @@ flowchart TB
 
 ## 描く
 
-- **Filament** を v1.77.2 のソースから WebGPU（Dawn）の口で組む（`engine/gpu/build.sh`）。配られている SDK には WebGPU が無いため。当てる差分：計算（compute）の口、Dawn の装置を外に貸す口、外のテクスチャを受ける `Texture::Builder::import`（`filament_dawn_compute.patch`）、AviUtl2 の HLSL のために glslang の HLSL の読み手を入れる（`glslang_hlsl.patch`）。
-- **ThorVG** は WebGPU のエンジンを、Filament と同じ Dawn の装置の上で動かす（`engine/gpu/tvg_on_dawn.sh`、`canvas.h`）。描いた絵は Filament のシーンの中の板になる（切り抜き・ガラス越し・キーが効く）。
+- **Filament** を v1.77.2 のソースから WebGPU（Dawn）の口で組む（`engine/deps/filament.sh`）。配られている SDK には WebGPU が無いため。当てる差分：計算（compute）の口、Dawn の装置を外に貸す口、外のテクスチャを受ける `Texture::Builder::import`（`filament_dawn_compute.patch`）、AviUtl2 の HLSL のために glslang の HLSL の読み手を入れる（`glslang_hlsl.patch`）。
+- **ThorVG** は WebGPU のエンジンを、Filament と同じ Dawn の装置の上で動かす（`engine/deps/thorvg.sh`、`canvas.h`）。描いた絵は Filament のシーンの中の板になる（切り抜き・ガラス越し・キーが効く）。
 - 形の足し引きは **Skia** のパスの部分だけ（`engine/deps/skia.sh`）、平らな形の三角形分けは **libtess2**。
 - 画面の拍子は Thermion の FrameScheduler（CVDisplayLink、`engine/third_party/thermion_frame/`）。
 
@@ -62,12 +62,12 @@ flowchart TB
 
 | 置く物 | 道 | どこ |
 |---|---|---|
-| ISF（`.fs`、GLSL） | glslang → SPIR-V → Tint → WGSL。Filament の組み立てに入っている物をそのまま使う | `engine/community/shaders/isf.cpp` |
+| ISF（`.fs`、GLSL） | glslang → SPIR-V → Tint → WGSL。Filament の組み立てに入っている物をそのまま使う | `engine/community/isf/isf.cpp` |
 | WGSL（`.wgsl`） | そのまま。頭に AviUtl2 式のパラメーターの行。横に置いた絵は `--image@名前:ファイル` で ThorVG が 1 回読む | `engine/stage/effects/screen_fx.h`、`layer_fx.h` |
 | AviUtl2（`.anm2`・`.obj2`） | Lua は LuaJIT（AviUtl2 と同じ）で走らせ、`obj` の呼び出しをエンジンの関数で受ける。中の HLSL は glslang の HLSL の読み手 → SPIR-V → Tint → WGSL | `engine/community/aviutl/aviutl.cpp`、`aviutl_fx.h` |
-| three.js の形（`shelves/solids/*.js`） | QuickJS-ng で three.js を動かし、BufferGeometry を受け取る | `engine/community/js/solid_three.cpp` |
-| レシピ（`shelves/create/*/*.js`） | QuickJS-ng。1 回でレイヤーと値を作る | `engine/community/js/script.cpp` |
-| TSL | three.js 自身の WGSLNodeBuilder を QuickJS で（道具。棚に載せるのは出来上がった `.wgsl` だけ） | `engine/community/three_tsl/`、`shelves/effects/<傾向>/` の `sl_*.wgsl`・`tt_*.wgsl`・`nf_*.wgsl`・`tf_*.wgsl` |
+| three.js の形（`shelves/solids/*.js`） | QuickJS-ng で three.js を動かし、BufferGeometry を受け取る | `engine/community/three/solid_three.cpp` |
+| レシピ（`shelves/create/*/*.js`） | QuickJS-ng。1 回でレイヤーと値を作る | `engine/community/quickjs/script.cpp` |
+| TSL | three.js 自身の WGSLNodeBuilder を QuickJS で（道具。棚に載せるのは出来上がった `.wgsl` だけ） | `engine/community/three_shading_language_to_shelf/`、`shelves/effects/<傾向>/` の `sl_*.wgsl`・`tt_*.wgsl`・`nf_*.wgsl`・`tf_*.wgsl` |
 
 ## プロジェクト
 
@@ -93,10 +93,10 @@ flowchart TB
 | `expressions/` | `entry/calls.h` `motolii_animators` | `workspace/dock/dock_make_expressions.dart` `_expressionsOf`、`workspace/shelf/shelf_add.dart`（Add to shelf の書き込み先） |
 | `relations/` | `entry/calls.h` `motolii_relations` | `workspace/edits/make_relation.dart` |
 | `looks/` | `document/presets.h` `doc_look_names` | `bridge/motolii_shelves.dart` `looks` |
-| `solids/` | `community/js/solid_three.cpp`、`document/moment_fx.h` | — |
+| `solids/` | `community/three/solid_three.cpp`、`document/moment_fx.h` | — |
 | `ease/` | `document/recipes.h` `doc_own_ways` | `workspace/tool_panel/tool_panel_ease_shelf.dart` |
 | `skins/` | — | `skin/theme.dart` `ColorTheme.skinNames`（前の置き場 `~/.motolii/skins/` も読む） |
-| `extensions/hydra/` | `document/adapter.h`、`community/shaders/hydra_isf.cpp` | — |
+| `extensions/hydra/` | `document/adapter.h`、`community/hydra/hydra_isf.cpp` | — |
 | （棚でない）`engine/third_party/wordnet_ja/` | `entry/calls_find.h` `find_english`（`doc_folders("words")`） | — |
 | （棚でない）`engine/third_party/noto_sans_jp/` | `stage/canvas/canvas_renderables.h` `type_fallback`（`doc_folders("fonts")`） | `workspace/dock/dock_fonts.dart` |
 | （棚でない）`engine/third_party/gflanguages/` | — | `workspace/dock/dock_fonts.dart`（`samples.json`） |
