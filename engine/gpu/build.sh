@@ -11,7 +11,7 @@ SRC="$HERE/../third_party/filament_src"
 P="$HERE/../deps/patches"   # (what Motolii changes in Filament, its glslang and its Tint: deps/patches/<library>/)
 if [ ! -d "$SRC" ]; then
     git clone --depth 1 --branch v1.77.2 https://github.com/google/filament.git "$SRC"
-    (cd "$SRC" && git apply "$P/filament/filament_dawn_compute.patch" && git apply "$P/glslang/glslang_hlsl.patch")   # (glslang_hlsl: its HLSL front end built in, AviUtl2's shaders: ../aviutl.cpp)
+    (cd "$SRC" && git apply "$P/filament/filament_dawn_compute.patch" && git apply "$P/glslang/glslang_hlsl.patch")   # (glslang_hlsl: its HLSL front end built in, AviUtl2's shaders: community/aviutl/aviutl.cpp)
 fi
 # (Filament's WebGPU viewport turned to WebGPU's top-left origin, as its own scissor() does: upstream's TODO in
 #  beginRenderPass, still there on main 10/27. Put on a tree made before it too, once)
