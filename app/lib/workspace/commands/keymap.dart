@@ -14,8 +14,6 @@ import 'package:flutter/widgets.dart';
 /// and the standard Mac ones (New, Undo).
 const defaultKeys = <(String, String)>[
   ('cmd+n', 'file.new'),
-  ('cmd+o', 'file.home'), // (the documents listed: the Mac's own Open, as Alight Motion's home lists its projects)
-  ('cmd+shift+r', 'file.render'), // (Live 42.3: Export Audio/Video)
   ('shift+e', 'file.exportFrame'), // (Premiere Pro's Export Frame)
   ('cmd+z', 'edit.undo'),
   ('cmd+shift+z', 'edit.redo'),
@@ -92,25 +90,6 @@ const _keys = {
   'down': LogicalKeyboardKey.arrowDown,
   'home': LogicalKeyboardKey.home,
   'end': LogicalKeyboardKey.end,
-  'pageup': LogicalKeyboardKey.pageUp,
-  'pagedown': LogicalKeyboardKey.pageDown,
-  'backspace': LogicalKeyboardKey.backspace,
-  'delete': LogicalKeyboardKey.delete,
-  'enter': LogicalKeyboardKey.enter,
-  'escape': LogicalKeyboardKey.escape,
-  'tab': LogicalKeyboardKey.tab,
-  'f1': LogicalKeyboardKey.f1,
-  'f2': LogicalKeyboardKey.f2,
-  'f3': LogicalKeyboardKey.f3,
-  'f4': LogicalKeyboardKey.f4,
-  'f5': LogicalKeyboardKey.f5,
-  'f6': LogicalKeyboardKey.f6,
-  'f7': LogicalKeyboardKey.f7,
-  'f8': LogicalKeyboardKey.f8,
-  'f9': LogicalKeyboardKey.f9,
-  'f10': LogicalKeyboardKey.f10,
-  'f11': LogicalKeyboardKey.f11,
-  'f12': LogicalKeyboardKey.f12,
 };
 
 /// A command said by a key.

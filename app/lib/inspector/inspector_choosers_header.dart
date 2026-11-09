@@ -15,7 +15,6 @@ class InspHeader extends StatelessWidget {
       Kind.text => 'Text',
       Kind.camera => 'Camera',
       Kind.group => 'Group',
-      Kind.several => 'Layers',
       Kind.none => '',
     };
     return Container(
@@ -37,7 +36,7 @@ class InspHeader extends StatelessWidget {
             ),
           ),
           SizedBox(width: Shape.s(6)),
-          Text(doc.kind == Kind.several ? 'Several' : word, maxLines: 1, style: T.label(Grey.g56)),
+          Text(word, maxLines: 1, style: T.label(Grey.g56)),
           const Spacer(),
           Text('Animate all', style: T.label(Grey.g63)),
           SizedBox(width: Shape.s(6)),

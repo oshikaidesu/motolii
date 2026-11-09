@@ -4,7 +4,7 @@ part of 'inspector_state.dart';
 /// The picked thing's values as the panel edits them: the host's numbers, words and switches, keyed `v_` and the
 /// value's name as its cards declare them ([Fx]). It holds no value of its own: a card's default is its declaration's.
 class Doc extends ChangeNotifier {
-  Doc(this.kind, {this.count = 1, this.cards = const []}) {
+  Doc(this.kind, {this.cards = const []}) {
     for (final f in cards) {
       for (final (i, p) in f.params.indexed) {
         paramDefaults(f.id, p).forEach((id, x) => v[id] = d[id] = x); // (the declaration's @default, until the host says the value)
@@ -15,9 +15,7 @@ class Doc extends ChangeNotifier {
   }
 
   final Kind kind;
-  final int count;
   final Map<String, double> v = {}, d = {};
-  final Map<String, List<double>> multi = {};
   final Map<String, KeyS> keys = {};
   final Map<String, String> s2 = {};
 
@@ -48,42 +46,27 @@ class Doc extends ChangeNotifier {
   /// The selected layer's own name, when a host (the workspace) knows it.
   String? title;
 
-  String get name => title ?? (kind == Kind.several ? '$count layers' : '');
+  String get name => title ?? '';
 
-  /// null = the layers differ (mixed).
-  double? get(String id) {
-    final m = multi[id];
-    if (m == null) return v[id];
-    return m.every((x) => x == m.first) ? m.first : null;
-  }
+  double? get(String id) => v[id];
 
-  bool changed(String id) {
-    final x = get(id);
-    return x == null || x != d[id];
-  }
-
-  /// A typed or reset value is absolute for every selected layer (A7).
+  /// A typed or reset value.
   void set(String id, double x) => setMany({id: x});
 
-  /// A scrub on a mixed value moves each layer by the same amount (A7).
+  /// A scrub moves the value by [dx].
   void delta(String id, double dx) {
-    final m = multi[id];
-    if (m != null) {
-      multi[id] = [for (final e in m) e + dx];
-    } else {
-      v[id] = (v[id] ?? 0) + dx;
-    }
+    v[id] = (v[id] ?? 0) + dx;
     _touch(id);
     notifyListeners();
   }
 
-  ({Map<String, double> values, Map<String, List<double>> mixed, Map<String, KeyS> keys})? _gesture;
+  ({Map<String, double> values, Map<String, KeyS> keys})? _gesture;
 
   /// A hand is on a value (between beginGesture and endGesture): what it shows is not settled yet.
   bool get inGesture => _gesture != null;
 
   void beginGesture() {
-    _gesture ??= (values: Map.of(v), mixed: {for (final e in multi.entries) e.key: List.of(e.value)}, keys: Map.of(keys));
+    _gesture ??= (values: Map.of(v), keys: Map.of(keys));
   }
 
   void endGesture() {
@@ -132,7 +115,6 @@ class Doc extends ChangeNotifier {
   void setMany(Map<String, double> xs) {
     for (final e in xs.entries) {
       v[e.key] = e.value;
-      if (multi.containsKey(e.key)) multi[e.key] = List.filled(count, e.value);
       _touch(e.key);
     }
     notifyListeners();
@@ -143,7 +125,6 @@ class Doc extends ChangeNotifier {
     for (final i in ids) {
       final dv = d[i] ?? 0;
       v[i] = dv;
-      if (multi.containsKey(i)) multi[i] = List.filled(count, dv);
       final p = propOf(i);
       if (animateAll || (keys[p] ?? KeyS.off) != KeyS.off) keys[p] = KeyS.at;
     }
@@ -172,12 +153,10 @@ class Doc extends ChangeNotifier {
   /// Fields picked together; Shift-click spans a rectangle of [_grid] (a card a row, its fields in their order) like a spreadsheet.
   final Set<String> picked = {};
   String? _pickFrom;
-  int pickGen = 0;
   bool isPicked(String id) => picked.length > 1 && picked.contains(id);
 
   void pick(String id, {bool span = false}) {
     final from = _pickFrom, a = from == null ? null : _cell(from), b = _cell(id), shown = picked.length > 1;
-    pickGen++;
     picked.clear();
     if (span && a != null && b != null) {
       for (var r = math.min(a.$1, b.$1); r <= math.max(a.$1, b.$1); r++) {

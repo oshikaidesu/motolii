@@ -1,16 +1,15 @@
-// Owns the panel's values (Doc) and re-provides it whenever it changes. A different kind or count makes a new document (give it a key).
+// Owns the panel's values (Doc) and re-provides it whenever it changes. A different kind makes a new document (give it a key).
 // How it LOOKS is the lab's (DESIGN.md): hairlines, type carries hierarchy, grey levels, accent only C.mode. The old Motolii is not a source.
 
 import 'package:flutter/foundation.dart' show ValueListenable, listEquals, mapEquals;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 
-/// Owns the panel's values (Doc) and re-provides it whenever it changes. A different kind or count makes a new document (give it a key).
+/// Owns the panel's values (Doc) and re-provides it whenever it changes. A different kind makes a new document (give it a key).
 class InspHost extends StatefulWidget {
   const InspHost({
     super.key,
     required this.kind,
-    this.count = 1,
     this.kindWord,
     this.onSum,
     this.onCardReset,
@@ -33,7 +32,6 @@ class InspHost extends StatefulWidget {
     required this.child,
   });
   final Kind kind;
-  final int count;
   final Widget child;
 
   /// What the host calls the kind (see [Doc.kindWord]).
@@ -94,7 +92,7 @@ class InspHost extends StatefulWidget {
 class _InspHostState extends State<InspHost> {
   late Doc doc = _make();
   Doc _make() {
-    final d = Doc(widget.kind, count: widget.count, cards: widget.cards ?? const [])
+    final d = Doc(widget.kind, cards: widget.cards ?? const [])
       ..title = widget.title
       ..marksEdits =
           widget.onKey ==
@@ -201,7 +199,6 @@ class _InspHostState extends State<InspHost> {
       widget.live?.addListener(_atMoment);
     }
     if (o.kind != widget.kind ||
-        o.count != widget.count ||
         !listEquals(
           o.cards?.map((f) => f.name + f.wgsl.replaceAll(RegExp(r'@default\([^)]*\)'), '')).toList(),
           widget.cards?.map((f) => f.name + f.wgsl.replaceAll(RegExp(r'@default\([^)]*\)'), '')).toList(),

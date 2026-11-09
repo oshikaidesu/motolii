@@ -14,7 +14,7 @@ bool textToType = false;
 
 enum KeyS { off, anim, at }
 
-enum Kind { shape, text, camera, group, several, none }
+enum Kind { shape, text, camera, group, none }
 
 /// The inspector's type: a 12% hairline, and a rule above a group.
 class Ed {

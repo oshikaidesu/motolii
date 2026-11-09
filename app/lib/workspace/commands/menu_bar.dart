@@ -12,9 +12,7 @@ extension _WorkspaceMenus on _WorkspaceState {
 
     return {
       'file.new': () => _open(_fresh()),
-      'file.render': () {},
       'file.exportFrame': _exportFrame,
-      'file.home': () {},
       'file.poster': () => m.set(0, 'poster_at', ws.frame / 60),
       'file.package': _package,
       'edit.undo': () => _typed(const UndoTextIntent(SelectionChangedCause.keyboard)) ? null : ws.after(m.later('undo')),
@@ -43,14 +41,12 @@ extension _WorkspaceMenus on _WorkspaceState {
           PlatformMenuItemGroup(
             members: [
               item('New Document', 'file.new'),
-              item('Projects…', 'file.home'),
               PlatformMenu(
                 label: 'Open',
                 menus: [for (final f in _beside) PlatformMenuItem(label: f.split('/').last, onSelected: f == _doc ? null : () => _open(f))],
               ),
             ],
           ),
-          item('Export Video…', 'file.render'),
           item('Export Frame', 'file.exportFrame'),
           item('Package Project', 'file.package'),
           item('Use Frame as Project Picture', 'file.poster'),
