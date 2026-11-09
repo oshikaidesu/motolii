@@ -22,10 +22,6 @@ OWED = {
     # edit.sh's `effect` puts an effect on at the stage's moment (docs/using/make_intro_movie.md runs it); the window
     # asks later('effect') with its own moment. It goes when edit.cpp asks the same way.
     'motolii_now',
-    # the Inspector is being rebuilt on one card rule (card_check.py); what it leaves standing goes with that work
-    'app/lib/inspector/inspector_small.dart Cap',
-    'app/lib/inspector/inspector_small.dart LinkMark',
-    'app/lib/inspector/rows/inspector_rows.dart AxisHeader',
 }
 SAY = 'nothing in the window reaches this; wire it to a menu/dock/card or delete it'
 IDENT = re.compile(r'[A-Za-z_$][\w$]*')

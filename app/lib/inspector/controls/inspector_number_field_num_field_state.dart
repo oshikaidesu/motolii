@@ -187,7 +187,7 @@ class NumFieldState extends State<NumField> {
     }
     if (_keyAt case final k? when e.buttons == kPrimaryButton && (e.localPosition - k).distance <= 9) {
       final now = _x.doc.keys[widget.id] ?? _keys; // (as the document says it now: the field may not have been built since an undo)
-      return _x.doc.setKey(widget.id, now == KeyS.at ? KeyS.anim : KeyS.at); // (the row's KeyMark contract: inspector_rows_prop_row.dart)
+      return _x.doc.setKey(widget.id, now == KeyS.at ? KeyS.anim : KeyS.at); // (a press on the mark keys this frame, or takes that key away)
     }
     if (widget.glyph != null && widget.glyphOwnsPointer && _inGlyph(e.localPosition)) return;
     if (e.buttons != kPrimaryButton) return;
@@ -448,7 +448,6 @@ class NumFieldState extends State<NumField> {
     final x = Ctx.of(context), cfg = x.cfg, ed = Ed(cfg.ed), look = cfg.look;
     final v = x.doc.get(widget.id), on = _on, narrow = RowOff.maybe(context)?.narrow ?? false;
     final live = _drag && _moved;
-    final group = widget.id.split('.').first, linked = on && RowMark.has(context, group);
     final Color idle = switch (look) {
       Look.concept || Look.glow => ed.rule,
       Look.quiet => cfg.ed == Editorial.a ? const Color(0x00000000) : ed.rule,
@@ -508,7 +507,7 @@ class NumFieldState extends State<NumField> {
               )
             : (live && cfg.maybe && _rung != 1
                   ? Text('x${_rung == .01 ? '.01' : (_rung == .1 ? '.1' : '10')}', style: T.micro(Grey.g95))
-                  : (widget.label != null && !(pop && widget.axis != null && AxisColumns.on(context))
+                  : (widget.label != null
                         ? Text(
                             ed.lab(widget.label!),
                             maxLines: 1,
@@ -620,14 +619,8 @@ class NumFieldState extends State<NumField> {
                   onPointerPanZoomUpdate: _onPan,
                   child: MouseRegion(
                     cursor: !on ? SystemMouseCursors.basic : (_editing ? SystemMouseCursors.text : SystemMouseCursors.resizeLeftRight),
-                    onEnter: (_) {
-                      setState(() => _hover = true);
-                      if (linked) x.doc.setDirectHover(group);
-                    },
-                    onExit: (_) {
-                      setState(() => _hover = false);
-                      if (linked && x.doc.directHover == group) x.doc.setDirectHover(null);
-                    },
+                    onEnter: (_) => setState(() => _hover = true),
+                    onExit: (_) => setState(() => _hover = false),
                     // (past what it vouches for, or going there under the hand: drawn the other way about)
                     child:
                         (!widget.turns && _bounded && v != null && (v < widget.min! || v > widget.max!)) ||
