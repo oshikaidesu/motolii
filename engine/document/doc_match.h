@@ -20,7 +20,7 @@ static bool doc_bends(Doc& d, int thing) {
         for (const auto& [name, is] : d.held.tried) any = any || (is != 0.0 && strstr(doc_bending, ("'" + name + "'").c_str()));
     return any;
 }
-// A film thing's real datamosh (mosh.h): the film made again with the other's motion poured in, once made; "" none
+// A film thing's real datamosh (video_datamosh.h): the film made again with the other's motion poured in, once made; "" none
 // (not on, no other film, or not made yet: its own film meanwhile).
 // A level's drawing numbered `n`: the drawings of one folder told apart by the number at the end of their names,
 // between the name and the ending, as OpenToonz reads a level (animation.0001.tif, animation_0001.tif: tfilepath.cpp's

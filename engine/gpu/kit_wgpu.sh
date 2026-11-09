@@ -55,10 +55,10 @@ ninja -C $THOR/build_dawn > /dev/null
 ./deps/libtess2.sh
 ./deps/curve_fit_nd.sh   # (doc_curve: a hand's way made a path of cubic Béziers, as Blender's Draw Curve)
 ./deps/jolt.sh   # (motion/physics.cpp: Jolt, which edit.sh and build_lib.sh link)
-./deps/iris.sh   # (media/flashes.cpp: EA's IRIS and the OpenCV it reads, which edit.sh and build_lib.sh link)
-# (media/flashes.cpp built apart, in IRIS's own C++17: its log lines pass runtime format strings, which C++20's fmt refuses)
+./deps/iris.sh   # (media/video_flash_check.cpp: EA's IRIS and the OpenCV it reads, which edit.sh and build_lib.sh link)
+# (media/video_flash_check.cpp built apart, in IRIS's own C++17: its log lines pass runtime format strings, which C++20's fmt refuses)
 I=third_party/iris
-[ out/flashes.o -nt media/flashes.cpp ] && [ out/flashes.o -nt entry/motolii.h ] || clang++ -c -std=c++17 -I $PWD -O2 -I $I/IRIS/include -I $I/IRIS/utils/include -I $I/spdlog/include -I $I/json/single_include -I $I/opencv_out/include/opencv4 media/flashes.cpp -o out/flashes.o
+[ out/flashes.o -nt media/video_flash_check.cpp ] && [ out/flashes.o -nt entry/motolii.h ] || clang++ -c -std=c++17 -I $PWD -O2 -I $I/IRIS/include -I $I/IRIS/utils/include -I $I/spdlog/include -I $I/json/single_include -I $I/opencv_out/include/opencv4 media/video_flash_check.cpp -o out/flashes.o
 ./deps/midi_roll.sh   # (media/midi_roll.cpp: bladeSk's PianoRollSvg.js, read as the MIDI view is drawn)
 # (stage/skpath.cpp: Skia's own path operations, its Boolean: deps/skia.sh builds it)
 SKIA=third_party/skia_src

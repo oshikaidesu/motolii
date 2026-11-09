@@ -44,7 +44,7 @@ static char doc_thor_letter(const std::string& w) {
 }
 static std::vector<std::filesystem::path> doc_folders(const char* folder); static std::filesystem::path doc_engine(const char* part);   // (doc_folders.h)
 static DocScript* doc_script_of(Doc& d, const std::string& file, bool runs = true) {
-    if (file.empty() || file == "none" || std::filesystem::path(file).extension() == ".mid") return nullptr;   // (a MIDI file's notes are copies, not a script: midi.h)
+    if (file.empty() || file == "none" || std::filesystem::path(file).extension() == ".mid") return nullptr;   // (a MIDI file's notes are copies, not a script: midi_notes.h)
     DocScript& s = doc_scripts(d)[file];
     if (s.stamp >= 0 && s.seen == files_changed()) return &s;   // (first: what follows opens the file)
     const std::string ext = std::filesystem::path(file).extension().string();

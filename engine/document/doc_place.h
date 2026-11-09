@@ -24,7 +24,7 @@ static std::vector<AbsentEffect> doc_placing_absent(Doc& d, int thing, double sa
 }
 static DocLaid doc_laid(Doc& d, int thing, int copy, int n, double said) {
     DocLaid out;
-    if (const std::string notes = doc_literal_word(d, thing, "script"); std::filesystem::path(notes).extension() == ".mid") {   // (a MIDI file's notes, copies: midi.h)
+    if (const std::string notes = doc_literal_word(d, thing, "script"); std::filesystem::path(notes).extension() == ".mid") {   // (a MIDI file's notes, copies: midi_notes.h)
         Doc::Scripted& kept = d.scripted[thing];
         if (kept.at != said || (int)kept.copies.size() != n)   // (its speed: the file's beats faster or slower, as a film's)
         {   // (its highest row where the roll of the same file at the same speed has it, put at the same place: midi_roll.cpp, its top row the file's highest note)
@@ -284,7 +284,7 @@ static bool doc_knows(Doc& d, int thing, const char* name, const double* number,
 static bool doc_frame(Doc& d, int thing, double now, double* frame);
 // An ISF audio input's values now (screen.h sounds): the sound of the thing its knob names (by number, on the card as
 // a picture's is), at that thing's own moment as its film shows it (from its start, from where it begins, at its
-// speed: motolii_loudness_over's way), read once aside (sound.h); none named, or not read yet: none (silence).
+// speed: motolii_loudness_over's way), read once aside (sound_level.h); none named, or not read yet: none (silence).
 static std::vector<float> doc_sound_now(Doc& d, int thing, const std::string& file, const std::string& name, bool fft, int wide) {
     std::lock_guard<std::recursive_timed_mutex> hold(d.lock);   // (asked while the picture is drawn)
     const double now = d.stage->now;

@@ -1,4 +1,4 @@
-// gst_read.h: a file handed to a made pipeline's filesrc (named "in") as its location property, as GStreamer's own
+// gstreamer_file_source.h: a file handed to a made pipeline's filesrc (named "in") as its location property, as GStreamer's own
 // tutorials hand it (g_object_set), not written into the pipeline's words: a path with letters past ASCII (曲/…) would
 // come back escaped (\346…) and not be found.
 #pragma once

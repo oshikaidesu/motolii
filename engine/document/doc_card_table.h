@@ -56,7 +56,7 @@ static const DocCard doc_cards[] = {
     {"Note", "label note", nullptr, nullptr, true},   // (what a maker wrote of it: After Effects' layer comment)
     {"Trim Paths", "trim trim_begin trim_offset", "trim", "+"},
     {"Datamosh", "mosh_with mosh_at", "mosh", "+"},
-    {"Points", "dissolve grain", "file", "~.ply"},   // (a point cloud's own: points.h)   // (the film's own compressed pictures, mosh.h)   // (After Effects' shape operator: added from the shelf)
+    {"Points", "dissolve grain", "file", "~.ply"},   // (a point cloud's own: points.h)   // (the film's own compressed pictures, video_datamosh.h)   // (After Effects' shape operator: added from the shelf)
     {"Gaussian Blur", "blur blur_direction", "blur", "+"},   // (the effects (doc_effects), each its card while it is on, as After Effects' Effect Controls)
     {"Drop Shadow", "shadow shadow_distance shadow_angle shadow_blur shadow_opacity", "shadow", "+"},
     {"Glow", "glow_opacity", "glow", "+"},   // (how strong: Filament's bloom on its own picture, doc_moment)

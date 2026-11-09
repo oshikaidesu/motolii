@@ -15,7 +15,7 @@ int motolii_key_many(Motolii* m, int thing, const char* name, int n, const doubl
         return changes(m, (int)doc_key_many(doc(m), thing, name, n, at, number));
     });
 }
-// A MIDI file's notes made keys of a value, as om_midi makes them in After Effects (midi.h: midi_keys), each held; one step.
+// A MIDI file's notes made keys of a value, as om_midi makes them in After Effects (midi_notes.h: midi_keys), each held; one step.
 int motolii_midi(Motolii* m, int thing, const char* name, const char* file, const char* kind, int channel, double bpm) {
     std::vector<MidiEvent> events = midi_events(file);
     if (bpm > 0) {   // (the file's beats at another tempo, as om_midi's BPM box: a time is its beats times 60 / BPM)

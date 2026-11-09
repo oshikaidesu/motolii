@@ -1,5 +1,5 @@
-// film_read.h: a film's pictures one after another on the CPU, small, for a sketch to read: GStreamer's own parts (appsink,
-// as its tutorial "Short-cutting the pipeline" pulls samples). video.h keeps a film on the GPU; a sketch asks for numbers.
+// video_frames_for_scripts.h: a film's pictures one after another on the CPU, small, for a sketch to read: GStreamer's own parts (appsink,
+// as its tutorial "Short-cutting the pipeline" pulls samples). video_layer.h keeps a film on the GPU; a sketch asks for numbers.
 #pragma once
 #include <gst/app/gstappsink.h>
 #include <gst/gst.h>

@@ -77,8 +77,8 @@ flowchart TB
 
 ## 動画・音・書き出し
 
-- 動画は **GStreamer** が読み（何の形式でも、GStreamer が部品を選ぶ）、絵を板に貼る（`engine/media/video.h`、`gst_read.h`）。
-- 作業中の音は GStreamer の playbin（`sound.h`）。
+- 動画は **GStreamer** が読み（何の形式でも、GStreamer が部品を選ぶ）、絵を板に貼る（`engine/media/video_layer.h`、`gstreamer_file_source.h`）。
+- 作業中の音は GStreamer の playbin（`sound_playback.h`）。
 - 書き出しは、1 秒 60 フレーム描いて **ffmpeg** に渡し、レイヤーの音も ffmpeg で混ぜる（`engine/stage/kit/kit_draw.h` の `film`）。
 
 ## 棚を読む所

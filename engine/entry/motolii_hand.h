@@ -5,9 +5,9 @@
 #include "document/doc.h"
 #include "stage/live.h"
 #include "stage/stage_kept.h"
-#include "media/heard.h"
-#include "media/sound.h"
-#include "media/midi.h"
+#include "media/sound_playback.h"
+#include "media/sound_level.h"
+#include "media/midi_notes.h"
 #include <CoreText/CoreText.h>
 #include "entry/motolii.h"
 #include "rendering/FrameScheduler.hpp"   // (third_party/thermion_frame: the screen's own beat)
@@ -33,7 +33,7 @@ struct Motolii {
     Live* live = nullptr;
     int pick = 0, hover = 0;   // the thing picked in the window and the one under its hand: marked on the desk (motolii_pick)
     std::set<int> watched;     // the things the window shows the moving values of (later "watch", Anthem's subscription): in the moment's picture
-    std::map<const void*, Heard> heard;   // the things' sound heard as the live stage plays (heard.h)
+    std::map<const void*, Heard> heard;   // the things' sound heard as the live stage plays (sound_playback.h)
     std::string trouble, listed;
     std::thread hand;
     std::atomic<const char*> step{"opening"};   // (where the hand is in its round: said by motolii_hand_step, so a shell that waits long can tell why)

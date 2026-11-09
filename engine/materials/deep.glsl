@@ -9,7 +9,7 @@
 // A bevel is one section, how high it stands by how far in from its edge, as a font's height field: After Effects'
 // Angular, Convex and Concave, Easy Typography's Ogee and Step; carried on past the middle of a stroke it is Chizzle's
 // chisel. It cuts the box's front and back alike, each ray's test being only whether a point is still under the section.
-highp vec2 deepUV(highp vec2 q) {   // (a point of the box's front to its picture: its corners as the sheet's, video.h; v turned over as Filament turns a sheet's)
+highp vec2 deepUV(highp vec2 q) {   // (a point of the box's front to its picture: its corners as the sheet's, video_layer.h; v turned over as Filament turns a sheet's)
     vec2 o = mat2(materialParams.deepTurn.xy, materialParams.deepTurn.zw) * (q / materialParams.deep.xy) * 0.5 + 0.5;
     return vec2(o.x, 1.0 - o.y);
 }

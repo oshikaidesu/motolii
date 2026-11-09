@@ -313,7 +313,7 @@ abstract final class EffectTiles {
       '${folder.path}/beat.wav',
     ); // (a sound alone: heard by every AviUtl2 script (its audiobuffer: doc_sound_now), by an ISF's audio input its knob names)
     m.set(song, 'opacity', 0); // (its wavescope not seen: heard, as the window puts a sound in hidden (Alight Motion's sound layer has no picture))
-    var heard = false; // (its sound read once, aside (sound.h sound_of): silence until then)
+    var heard = false; // (its sound read once, aside (sound_level.h sound_of): silence until then)
     final words = m.add(
       'text',
       wsTextFont,

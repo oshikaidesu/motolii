@@ -5,7 +5,7 @@
 # features2d for a header, videoio reading a film by the Mac's own AVFoundation), nothing else fetched or read by it;
 # spdlog 1.15.3 and nlohmann/json 3.12.0 (MIT, headers only). IRIS's own CMake finds ffmpeg through vcpkg's FindFFMPEG,
 # so its sources, the ones its CMakeLists lists, are built here as they are, against Homebrew's ffmpeg (Brewfile).
-# Out come third_party/iris/lib/libiris.a and OpenCV's in third_party/iris/opencv_out (media/flashes.cpp; edit.sh and
+# Out come third_party/iris/lib/libiris.a and OpenCV's in third_party/iris/opencv_out (media/video_flash_check.cpp; edit.sh and
 # build_lib.sh link them). Measured on this Mac: 44 s for OpenCV, 31 s for IRIS (docs/internal/reports/alight_motion/alight_checklist.md, 11/4).
 #   ./deps/iris.sh
 set -e

@@ -18,16 +18,16 @@
 #include "motion/ways.h"
 #include "stage/screen.h"
 #include "stage/thing_fx.h"
-#include "media/mosh.h"
+#include "media/video_datamosh.h"
 #include "stage/points.h"
 #include <filesystem>
 #include <mutex>
 #include <dlfcn.h>
 #include <fstream>
 #include "stage/solid.h"
-#include "media/video.h"
-#include "media/sound.h"
-#include "media/midi.h"
+#include "media/video_layer.h"
+#include "media/sound_level.h"
+#include "media/midi_notes.h"
 #include <filament/Skybox.h>
 #include <set>
 #include <sstream>
@@ -226,7 +226,7 @@ static const DocValue doc_values[] = {
     {"scale_assist", doc_drawn, 0, 0, false, "y x both"}, {"scale_assist_amount", doc_drawn, 0, 100, true, nullptr}, {"scale_assist_damp", doc_drawn, 1, 10, true, nullptr},   // (Alight Motion's Scale Assist, as scale_x and scale_y: grown one way alone, or wider and as much thinner as a squashed ball keeps its bulk)
     {"roll", doc_kinds, 0, 0, false, "x y"}, {"roll_radius", doc_kinds, -1e3, 1e3, true, nullptr},   // (turned as a wheel rolling as it goes along x, or y; its radius half its smaller side and this more)
     {"dissolve", "solid", 0, 100, true, nullptr}, {"grain", "solid", 0.05, 20, true, nullptr},   // (a point cloud's: its grains thrown out each its own way, so far; and how large they are drawn: points.h)
-    {"mosh", "film", 0, 1, false, nullptr}, {"mosh_with", "film", 0, 1e9, false, nullptr}, {"mosh_at", "film", 0, 1e6, false, nullptr},   // (a real datamosh: from that moment of its film, the other's motion poured into its last picture: mosh.h)   // (the thing it goes with: it is moved, turned and sized as that one is, then as it is itself; 0: none)
+    {"mosh", "film", 0, 1, false, nullptr}, {"mosh_with", "film", 0, 1e9, false, nullptr}, {"mosh_at", "film", 0, 1e6, false, nullptr},   // (a real datamosh: from that moment of its film, the other's motion poured into its last picture: video_datamosh.h)   // (the thing it goes with: it is moved, turned and sized as that one is, then as it is itself; 0: none)
     {"space", "film picture text shape", 0, 0, false, "2d 2.5d 3d"},   // (the past repository's three tags: 2d is not in the world and lies by the order alone; 2.5d is a sheet in the world, before or behind by depth, always facing the eye; 3d is filmed as it is, the camera turning round it, as a solid is)
     {"align", "text", 0, 1, false, nullptr},
     // (ThorVG's own scene effects on a thing it draws: a blur, and a shadow of a colour, how far it falls, which way, how

@@ -1,10 +1,10 @@
-// sound.h: how loud a file's sound is through its length, as GStreamer's own level element measures it (decoded as
+// sound_level.h: how loud a file's sound is through its length, as GStreamer's own level element measures it (decoded as
 // fast as it goes, not played), and the moments it strikes: where it grows louder by so much at once (a drum, a clap).
 // After Effects' Convert Audio to Keyframes reads the same loudness; the strikes are where its curve jumps.
 #pragma once
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
-#include "media/gst_read.h"
+#include "media/gstreamer_file_source.h"
 
 #include <algorithm>
 #include <map>

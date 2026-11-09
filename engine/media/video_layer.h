@@ -1,4 +1,4 @@
-// video.h: a film from a file (whatever GStreamer can read: it chooses the parts itself), put in the scene as a thing like any other: a flat sheet
+// video_layer.h: a film from a file (whatever GStreamer can read: it chooses the parts itself), put in the scene as a thing like any other: a flat sheet
 // whose look is the film's picture at a moment (flat.mat, as for ThorVG's pictures: so it can be cut by mattes, seen
 // through glass, and keyed: `green`).
 // GStreamer reads the file and has the machine's video decoder make the pictures; a picture stays where the decoder
@@ -317,7 +317,7 @@ static Video* video(Stage& s, const char* file, const mat4f& place, float high, 
         GstElement* turn = cpu && !v->heard ? gst_element_factory_make("videoconvert", nullptr) : nullptr;
         v->out = GST_APP_SINK(gst_element_factory_make("appsink", nullptr));
         if (!opens || !reads || !v->out || (cpu && !turn)) return video_trouble = "GStreamer lacks a part (filesrc, decodebin3, decodebin, videoconvert or appsink)", nullptr;
-        GstCaps* wanted = gst_caps_from_string("video/x-raw,format=NV12");   // (light and colour apart, eight bits: what video.h shares)
+        GstCaps* wanted = gst_caps_from_string("video/x-raw,format=NV12");   // (light and colour apart, eight bits: what video_layer.h shares)
         g_object_set(opens, "location", file, nullptr);
         g_object_set(v->out, "sync", FALSE, "max-buffers", 2, "caps", wanted, nullptr);
         gst_caps_unref(wanted);

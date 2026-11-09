@@ -1,7 +1,7 @@
 // live.h: the stage's picture as it is drawn, handed to a shell on a screen without a copy. The main view draws into
 // one of three pixel buffers that the GPU and the shell share (CVPixelBuffers on IOSurfaces: made as glass_door_mac.mm
 // makes them, which did this on Filament's Metal backend). Here each buffer is shown to Dawn as a texture (the call
-// video.h reads films by, used the other way round) and made a render target of Filament's through the door the
+// video_layer.h reads films by, used the other way round) and made a render target of Filament's through the door the
 // patch already has (Texture::Builder::import). "Finished" is a Filament fence put after it signalled. macOS only.
 #include <CoreVideo/CoreVideo.h>
 #include <IOSurface/IOSurface.h>

@@ -107,7 +107,7 @@ inline std::string door_shader_files(const std::string& text, const std::filesys
     return out + text.substr(at);
 }
 
-// The pictures a sketch loads, from beside it to a folder named as what is kept: a script has no files of its own (film_read.h's beside).
+// The pictures a sketch loads, from beside it to a folder named as what is kept: a script has no files of its own (video_frames_for_scripts.h's beside).
 inline void door_pictures(const std::string& text, const std::filesystem::path& beside, const std::filesystem::path& kept) {
     static const std::regex load(R"re(\bloadImage\s*\(\s*['"`]([^'"`]+)['"`])re");
     std::error_code wrong;

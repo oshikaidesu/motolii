@@ -1,10 +1,10 @@
-// midi.h: a MIDI file's notes, as GStreamer's own midiparse reads it (a buffer an event, its time the event's): each
+// midi_notes.h: a MIDI file's notes, as GStreamer's own midiparse reads it (a buffer an event, its time the event's): each
 // note's coming on and going off, its channel, pitch and velocity. Made keys as om_midi makes After Effects keyframes
 // of them (github.com/otomad/om_midi, Core.ts; GPL: its rules, not its code).
 #pragma once
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
-#include "media/gst_read.h"
+#include "media/gstreamer_file_source.h"
 #include "community/js/script.h"
 #include <fstream>
 #include <iterator>

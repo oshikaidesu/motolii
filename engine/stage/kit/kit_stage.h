@@ -303,7 +303,7 @@ static std::vector<MaterialInstance*> add_parts(Stage& s, Mesh* m, const char* f
         if (mat->hasParameter("matteUse")) {   // (a material that can be cut: by nothing, until `matted` says so)
             for (const char* name : {"matte0", "matte1", "matte2", "matte3"}) mi->setParameter(name, white_point(s), TextureSampler());
             for (const char* name : {"matteEye0", "matteEye1", "matteEye2", "matteEye3"}) mi->setParameter(name, mat4f{});
-            if (mat->hasParameter("colours")) mi->setParameter("colours", white_point(s), TextureSampler());   // (a film's second plane: video.h)
+            if (mat->hasParameter("colours")) mi->setParameter("colours", white_point(s), TextureSampler());   // (a film's second plane: video_layer.h)
             mi->setParameter("matteUse", float4{0.f});
             mi->setParameter("matteSoft", float4{0.f});
         }

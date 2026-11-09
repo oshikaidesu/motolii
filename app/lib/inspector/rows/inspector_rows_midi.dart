@@ -8,7 +8,7 @@ import 'package:motolii/style/tokens.dart';
 
 import '../../parts/text_hand.dart';
 
-/// om_midi's kinds of keys, by the inside's names (midi.h: midi_keys), in its panel's words.
+/// om_midi's kinds of keys, by the inside's names (midi_notes.h: midi_keys), in its panel's words.
 const midiKinds = [('velocity', 'Velocity'), ('pitch', 'Pitch'), ('count', 'Count'), ('on', 'Note on'), ('bool', 'Bool')];
 
 class MidiKeys extends StatefulWidget {
