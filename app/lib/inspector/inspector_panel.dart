@@ -1,8 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/widgets.dart';
-import '../tokens.dart';
-import 'inspector_direct_transform.dart';
+import '../style/tokens.dart';
+import 'transform/inspector_direct_transform.dart';
 import 'inspector_light.dart';
 import 'inspector_parts.dart';
 import 'inspector_motion_preview.dart';

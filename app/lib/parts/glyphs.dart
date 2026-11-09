@@ -4,7 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'skin_parts.dart';
 
-import '../tokens.dart';
+import '../style/tokens.dart';
 
 enum G { select, move, rect, ellipse, pen, text, brush, image, camera, repeater, grid, circle, spiral, shape, effect, media }
 

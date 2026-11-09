@@ -3,9 +3,9 @@
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/inspector_param_controls_tile.dart';
+import 'package:motolii/inspector/controls/inspector_param_controls_tile.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/tokens.dart';
+import 'package:motolii/style/tokens.dart';
 
 /// The same flowing block grid as [ParamGrid], for blocks that are not shader parameters (choices, switches, pads).
 class LdGrid extends StatelessWidget {

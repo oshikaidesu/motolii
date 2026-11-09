@@ -4,7 +4,7 @@ import 'package:flutter/widgets.dart';
 import '../parts/controls.dart' show PillSwitch;
 import '../parts/skin_parts.dart';
 import '../inspector/inspector_parts.dart';
-import '../tokens.dart';
+import '../style/tokens.dart';
 import '../workspace/ws.dart' show WsT;
 import 'forms.dart';
 

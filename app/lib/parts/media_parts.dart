@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
 
-import '../tokens.dart';
+import '../style/tokens.dart';
 
 const kFast = Mo.dur;
 const kEase = Curves.easeOut;

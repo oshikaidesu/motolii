@@ -3,10 +3,10 @@
 // offset (round the end and back in at the beginning, as After Effects' trim does); take an end to cut there, take the
 // bright part to slide it. Its numbers stay below as the card's tiles.
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/inspector_direct_transform.dart' show TransformZone;
+import 'package:motolii/inspector/transform/inspector_direct_transform.dart' show TransformZone;
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/inspector/inspector_pulled.dart';
-import 'package:motolii/tokens.dart';
+import 'package:motolii/style/tokens.dart';
 
 class TrimDrawing extends StatefulWidget {
   const TrimDrawing({super.key});

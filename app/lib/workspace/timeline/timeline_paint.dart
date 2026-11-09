@@ -9,7 +9,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../forms/forms.dart';
 import '../../parts/timeline_parts.dart' show tpFine, tpMajor;
-import '../../tokens.dart';
+import '../../style/tokens.dart';
 import '../ws.dart';
 
 /// The timeline seat's own sizes.

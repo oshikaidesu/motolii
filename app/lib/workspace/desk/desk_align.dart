@@ -2,7 +2,7 @@
 // upright box of its outline, as the inside sees it). Moved as a hand moves it on the stage (held, carried by so many points of
 // the picture, let go: one step), so the inside reckons it into its own units, through its parent's turn.
 import 'package:flutter/widgets.dart';
-import '../../tokens.dart';
+import '../../style/tokens.dart';
 
 import 'desk_kit.dart';
 import '../stage/stage_art.dart' show WsArt;

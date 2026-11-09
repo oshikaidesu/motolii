@@ -5,7 +5,7 @@ import 'package:docking/docking.dart';
 import 'package:flutter/widgets.dart';
 
 import '../forms/forms.dart';
-import '../tokens.dart';
+import '../style/tokens.dart';
 import 'dock/dock_glyphs.dart';
 import 'ws.dart';
 

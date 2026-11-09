@@ -6,7 +6,7 @@ import 'dart:math' as math;
 import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/widgets.dart';
 
-import '../../tokens.dart';
+import '../../style/tokens.dart';
 import 'desk_kit.dart';
 import '../relate.dart';
 import '../stage/stage_art.dart';

@@ -2,7 +2,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
-import 'package:motolii/motolii.dart';
+import 'package:motolii/engine/motolii.dart';
 import 'package:motolii/workspace/desk/desk_ease_cards.dart' show easeIsLaid, easeIsTurned;
 import 'package:motolii/workspace/desk/desk_ease_state.dart';
 

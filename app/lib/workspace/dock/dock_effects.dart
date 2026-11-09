@@ -8,18 +8,18 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../motolii.dart' show Motolii;
-import '../../tokens.dart';
+import '../../engine/motolii.dart' show Motolii;
+import '../../style/tokens.dart';
 import 'dock_effect_places.dart';
 import 'dock_glyphs.dart';
 import 'dock_map.dart';
 import 'dock_parts.dart';
 import 'dock_resizable.dart';
 import 'dock_tags.dart';
-import '../effect_decks.dart';
-import '../effect_tiles.dart';
-import '../empty_fx.dart';
-import '../shelf_add.dart';
+import '../shelf/effect_decks.dart';
+import '../shelf/effect_tiles.dart';
+import '../shelf/empty_fx.dart';
+import '../shelf/shelf_add.dart';
 import '../ws.dart';
 import '../ws_menu.dart';
 

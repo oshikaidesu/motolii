@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/forms/forms.dart';
-import '../tokens.dart';
+import '../style/tokens.dart';
 import 'inspector_parts.dart';
 
 // ---- 3. small things ------------------------------------------------------------------------------------------------

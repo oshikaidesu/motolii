@@ -1,7 +1,7 @@
 // Controls. One rule: the value is the loudest thing in a control, the chrome around it is grey, the family colour marks only what it belongs to.
 import 'package:flutter/widgets.dart';
 
-import '../tokens.dart';
+import '../style/tokens.dart';
 
 /// The three looks an open design question is shown in; the owner picks one in the real window (DESIGN.md section 9).
 enum Look { concept, quiet, glow }

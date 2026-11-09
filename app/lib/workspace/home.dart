@@ -12,8 +12,8 @@ import 'dart:math' as math;
 import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';
 
-import '../motolii.dart' show docFactsOf;
-import '../tokens.dart';
+import '../engine/motolii.dart' show docFactsOf;
+import '../style/tokens.dart';
 import 'ws.dart';
 import '../parts/text_hand.dart';
 

@@ -5,7 +5,7 @@
 import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/widgets.dart';
 
-import '../../tokens.dart';
+import '../../style/tokens.dart';
 import 'desk_kit.dart';
 import '../ws.dart';
 

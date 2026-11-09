@@ -1,7 +1,7 @@
 // The window's own drawing of the controls a form may replace. A form that does not override these keeps this picture.
 import 'package:flutter/widgets.dart';
 
-import '../tokens.dart';
+import '../style/tokens.dart';
 import '../workspace/ws.dart' show WsT;
 import 'forms.dart';
 

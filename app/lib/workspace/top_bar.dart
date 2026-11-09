@@ -13,8 +13,8 @@ import '../forms/forms.dart';
 import '../parts/skin_parts.dart';
 import 'zoom.dart';
 
-import '../theme.dart';
-import '../tokens.dart';
+import '../style/theme.dart';
+import '../style/tokens.dart';
 import 'stage/stage_art.dart' show WsArt;
 import 'ws.dart';
 import 'desk/desk_kit.dart' show DeskChip;

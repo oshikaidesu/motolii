@@ -8,7 +8,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
 import '../inspector/inspector_small.dart' show FloatShut, Hov;
-import '../tokens.dart';
+import '../style/tokens.dart';
 import 'keys.dart' show CommandIntent;
 import 'ws.dart';
 

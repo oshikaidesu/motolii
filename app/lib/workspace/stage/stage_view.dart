@@ -11,10 +11,10 @@ import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter/services.dart' show HardwareKeyboard, KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 
-import '../../tokens.dart';
+import '../../style/tokens.dart';
 import 'stage_art.dart';
 import '../two_fingers.dart';
-import '../../motolii.dart' show Motolii, MotoliiDocument, MotoliiMoment, MotoliiWrites, MotoliiQuestions, MotoliiShelves, MotoliiWatch;
+import '../../engine/motolii.dart' show Motolii, MotoliiDocument, MotoliiMoment, MotoliiWrites, MotoliiQuestions, MotoliiShelves, MotoliiWatch;
 import '../../parts/timeline_parts.dart' show TpGlyph, TpGlyphView;
 import '../../inspector/inspector_material.dart' show textToType;
 import '../relate.dart';

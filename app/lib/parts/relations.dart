@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import '../tokens.dart';
+import '../style/tokens.dart';
 import 'controls.dart';
 
 /// The family's mark: drawn, not a font glyph, so it carries the family's colour and stays crisp at any size.

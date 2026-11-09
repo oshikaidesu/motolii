@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import '../tokens.dart';
+import '../style/tokens.dart';
 import 'inspector_parts.dart';
 
 /// Values that seldom change (seeds, point types, limits): folded at the card's foot, never removed.

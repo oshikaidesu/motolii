@@ -11,10 +11,10 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/widgets.dart';
 
-import '../motolii.dart';
-export '../motolii.dart' show MotoliiDocument, MotoliiMoment, MotoliiWrites, MotoliiQuestions, MotoliiShelves, MotoliiWatch;   // (the inside's reads, an extension of Motolii: whoever holds the window's Ws.inside can call them)
-import '../theme.dart';
-import '../tokens.dart';
+import '../engine/motolii.dart';
+export '../engine/motolii.dart' show MotoliiDocument, MotoliiMoment, MotoliiWrites, MotoliiQuestions, MotoliiShelves, MotoliiWatch;   // (the inside's reads, an extension of Motolii: whoever holds the window's Ws.inside can call them)
+import '../style/theme.dart';
+import '../style/tokens.dart';
 import 'desk/desk_kit.dart' show DeskTool, deskTools;
 import 'ws_beats.dart';
 import 'stage/stage_art.dart' show WsArt;

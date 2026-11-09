@@ -4,7 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import '../../tokens.dart';
+import '../../style/tokens.dart';
 import 'desk_kit.dart';
 import '../ws.dart';
 import '../two_fingers.dart';

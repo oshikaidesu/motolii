@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/inspector_rows_prop_row.dart';
-import 'package:motolii/inspector/inspector_rows_sect.dart';
+import 'package:motolii/inspector/rows/inspector_rows_prop_row.dart';
+import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 import '../parts/relations.dart';
-import '../tokens.dart';
+import '../style/tokens.dart';
 import 'inspector_parts.dart';
 
 // ---- 12. relations ----------------------------------------------------------------------------------------------------

@@ -2,8 +2,8 @@
 // "ステージとは別にカメラのタブが必要"; After Effects' 2 Views with Active Camera). Nothing to hold here: a look, the hand is on the stage.
 import 'package:flutter/widgets.dart';
 
-import '../../motolii.dart' show Motolii, MotoliiWrites;
-import '../../tokens.dart';
+import '../../engine/motolii.dart' show Motolii, MotoliiWrites;
+import '../../style/tokens.dart';
 import 'stage_art.dart';
 import '../ws.dart';
 

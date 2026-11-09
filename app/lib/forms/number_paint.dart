@@ -4,7 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import '../tokens.dart';
+import '../style/tokens.dart';
 
 class NumberSpec {
   const NumberSpec({

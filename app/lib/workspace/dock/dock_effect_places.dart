@@ -9,10 +9,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../parts/text_hand.dart' show TextHand;
-import '../../tokens.dart';
+import '../../style/tokens.dart';
 import 'dock_glyphs.dart';
 import 'dock_parts.dart';
-import '../effect_decks.dart';
+import '../shelf/effect_decks.dart';
 import '../ws.dart';
 import '../ws_menu.dart';
 

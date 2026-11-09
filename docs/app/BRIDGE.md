@@ -26,7 +26,7 @@ Thermion（描けは前が終わるまで捨てる）。調べた記録は `rese
 
 | # | 物 | 場所 | 何をしていたか | 置き換え | 済 |
 |---|---|---|---|---|---|
-| H1 | `_kept` `_keptCarried` `_copy` `_was` `_copyCarried` `_wasCarried` | `app/lib/motolii.dart` 604〜641 | 書類の版が変わるまで読んだ物を覚える | 書類の写し（D） || 橋から消した（10/24） |
+| H1 | `_kept` `_keptCarried` `_copy` `_was` `_copyCarried` `_wasCarried` | `app/lib/engine/motolii.dart` 604〜641 | 書類の版が変わるまで読んだ物を覚える | 書類の写し（D） || 橋から消した（10/24） |
 | H2 | `_asked` `_atMoment` `_dontWait` `_refused` | 同 643〜665 | 中身が忙しければ断って前の値を出す | 写し（D・M）。待つ場面がもう無い || 橋から消した（10/24） |
 | H3 | `again` | 同 663、`workspace/ws.dart` 130〜148 | 断られた値を次のコマで窓全体／コマを見る部品にもう一度読ませる | 写しの差し替えの知らせ || 橋と ws.dart から消した（10/24） |
 | H4 | `_readings` `_shownOf` `_fontKinds` `_folders` | 同 | 1回読んだら覚える | D（読み方・見せ方）、S（フォルダ・フォント） || `_readings` は消した。`_shownOf` は写しを読み解いた物の置き場として残る（写しが新しくなると空にする）。`_folders`（S）と `_fontKinds`（書類を読まない CoreText の答え）は残す |

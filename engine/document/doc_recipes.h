@@ -50,7 +50,7 @@ static bool doc_files_moved(Doc& d) {
 // then a .png beside it, as fx_tiles.sh writes the library's; "" none yet), where one drawn for it goes, named by the
 // file and when it and the first.tsv beside it were last written, and how the window draws them, as midi_roll_file names
 // its rolls (an @ file's script by "file#name"): any of them changed, it is drawn again; and "same" when none of its frames is seen to differ from the sample (home.same; the window
-// draws and measures them: app/lib/workspace/effect_tiles.dart).
+// draws and measures them: app/lib/workspace/shelf/effect_tiles.dart).
 static std::string doc_tile(const std::string& ref, const std::filesystem::path& beside) {
     std::error_code wrong;
     const std::string file = ref.substr(0, ref.find('#'));

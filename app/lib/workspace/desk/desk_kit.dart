@@ -5,7 +5,7 @@ import '../../parts/skin_parts.dart';
 
 import '../../parts/text_hand.dart';
 import '../../inspector/inspector_parts.dart' show Hov, Pop;
-import '../../tokens.dart';
+import '../../style/tokens.dart';
 import 'desk_align.dart';
 import 'desk_blend.dart';
 import '../ws.dart';

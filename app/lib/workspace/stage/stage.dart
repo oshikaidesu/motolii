@@ -8,7 +8,7 @@ import '../../forms/forms.dart';
 import '../../parts/skin_parts.dart';
 
 import '../../parts/glyphs.dart';
-import '../../tokens.dart';
+import '../../style/tokens.dart';
 import 'stage_art.dart';
 import 'stage_view.dart';
 import '../two_fingers.dart';

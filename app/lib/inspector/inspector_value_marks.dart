@@ -5,7 +5,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
-import 'package:motolii/tokens.dart';
+import 'package:motolii/style/tokens.dart';
 
 typedef ValueMark = void Function(Canvas c, Size s, double? v, Color ink);
 

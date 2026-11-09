@@ -3,8 +3,8 @@
 // takes the hand where it is drawn; the stage is told the finer pixels. Kept in ~/.motolii/window.xml, beside the theme.
 import 'package:flutter/widgets.dart';
 
-import '../tokens.dart';
-import '../window_file.dart';
+import '../style/tokens.dart';
+import 'window_file.dart';
 import 'two_fingers.dart';
 
 abstract final class WsZoom {

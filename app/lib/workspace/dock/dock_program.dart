@@ -18,15 +18,15 @@ import 'package:re_highlight/languages/javascript.dart';
 import 'package:re_highlight/styles/atom-one-dark.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
 
-import '../../motolii.dart';
+import '../../engine/motolii.dart';
 import '../../parts/text_hand.dart';
-import '../../tokens.dart';
+import '../../style/tokens.dart';
 import 'dock_effects.dart';
-import '../copies_tiles.dart';
+import '../shelf/copies_tiles.dart';
 import 'dock_glyphs.dart';
 import 'dock_parts.dart';
-import '../effect_tiles.dart';
-import '../program_tiles.dart';
+import '../shelf/effect_tiles.dart';
+import '../shelf/program_tiles.dart';
 import '../ws.dart';
 import '../ws_menu.dart';
 

@@ -3,7 +3,7 @@
 // move and the letting go are told as they come.
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/inspector_number_field.dart' show ScrubClaim;
+import 'package:motolii/inspector/controls/inspector_number_field.dart' show ScrubClaim;
 
 class Pulled extends StatefulWidget {
   const Pulled({super.key, required this.takes, required this.onDown, required this.onMove, required this.onUp, required this.child});

@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'skin_parts.dart';
 
 import 'controls.dart' show Look;
-import '../tokens.dart';
+import '../style/tokens.dart';
 
 const tpFast = Duration(milliseconds: 120);
 Color get tpAccent => Role.selected; // the panel's accent: a picked key, an armed toggle

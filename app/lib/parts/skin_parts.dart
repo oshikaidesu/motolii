@@ -8,7 +8,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../theme.dart';
+import '../style/theme.dart';
 
 abstract final class SkinParts {
   static final _pics = <String, PictureInfo>{};

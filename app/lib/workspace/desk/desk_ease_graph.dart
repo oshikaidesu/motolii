@@ -4,7 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';
-import 'package:motolii/tokens.dart';
+import 'package:motolii/style/tokens.dart';
 import 'package:motolii/workspace/desk/desk_ease.dart';
 import 'package:motolii/workspace/desk/desk_ease_cards.dart';
 import 'package:motolii/workspace/desk/desk_ease_handles.dart';

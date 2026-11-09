@@ -8,14 +8,14 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter/widgets.dart';
 
-import '../../motolii.dart' show Motolii, MotoliiQuestions, motoliiShelves;
-import '../../tokens.dart';
+import '../../engine/motolii.dart' show Motolii, MotoliiQuestions, motoliiShelves;
+import '../../style/tokens.dart';
 import '../desk/desk_kit.dart' show DeskChip;
 import 'dock_files.dart' show dockRead;
 import 'dock_map.dart';
 import 'dock_parts.dart';
 import 'dock_tags.dart';
-import '../effect_tiles.dart' show EffectTiles;
+import '../shelf/effect_tiles.dart' show EffectTiles;
 import '../ws.dart';
 
 // ---------------------------------------------------------------- fonts

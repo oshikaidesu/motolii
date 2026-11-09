@@ -10,7 +10,7 @@ import 'package:flutter/widgets.dart';
 import '../../forms/forms.dart';
 import '../../inspector/inspector_parts.dart' show Pop;
 import '../../parts/media_parts.dart' show drawStar, glyph;
-import '../../tokens.dart';
+import '../../style/tokens.dart';
 import 'dock_glyphs.dart';
 import '../ws.dart';
 import '../../parts/text_hand.dart';

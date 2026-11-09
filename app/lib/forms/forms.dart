@@ -5,8 +5,8 @@
 // Saved while the window runs through live.sh, it shows at once.
 import 'package:flutter/widgets.dart';
 
-import '../theme.dart';
-import '../tokens.dart';
+import '../style/theme.dart';
+import '../style/tokens.dart';
 import 'lighttable.dart';
 import 'number_paint.dart';
 import 'own.dart';

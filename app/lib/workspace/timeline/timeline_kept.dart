@@ -3,7 +3,7 @@
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 
-import '../../tokens.dart';
+import '../../style/tokens.dart';
 import 'timeline_paint.dart';
 import '../ws.dart';
 

@@ -3,7 +3,7 @@ import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../tokens.dart';
+import '../../style/tokens.dart';
 import 'dock_parts.dart';
 import '../ws.dart';
 import '../two_fingers.dart';

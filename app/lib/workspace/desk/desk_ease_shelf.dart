@@ -7,9 +7,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
-import 'package:motolii/motolii.dart';
+import 'package:motolii/engine/motolii.dart';
 import 'package:motolii/inspector/inspector_parts.dart' show Hov;
-import 'package:motolii/tokens.dart';
+import 'package:motolii/style/tokens.dart';
 import 'package:motolii/workspace/desk/desk_ease.dart';
 import 'package:motolii/workspace/desk/desk_ease_cards.dart';
 import 'package:motolii/workspace/desk/desk_ease_presets.dart';

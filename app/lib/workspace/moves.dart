@@ -7,7 +7,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show ValueNotifier;
 
-import '../motolii.dart';
+import '../engine/motolii.dart';
 import 'ws.dart';
 
 /// The group's values that make its other end, as they come.

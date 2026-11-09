@@ -6,8 +6,8 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
-import '../theme.dart';
-import '../tokens.dart';
+import '../style/theme.dart';
+import '../style/tokens.dart';
 import 'forms.dart';
 
 const _film = Color(0xFF1B1A18), _opal = Color(0xFFF6F7F4), _grease = Color(0xFFF06A1E), _graphite = Color(0xFF26292B), _loupe = Color(0xFFA9AEAB);
