@@ -267,7 +267,7 @@ abstract final class EffectTiles {
     // (under the photo, the picture a transition goes to: put on a clip, one takes it away and what is under it shows
     //  (doc_fx_file), as gl-transitions' own previews go from one photo to another (scripts/rendering/render-preview.mjs:
     //  a road among its three); on the whole screen it had nothing to go to, and went to black)
-    final grid = m.add('picture', '${folder.path}/grid.png'), under = m.add('picture', '$dir/fx_sample_end.jpg'), photo = m.add('picture', '$dir/fx_sample.jpg'), card = m.add('picture', '$dir/fx_sample.jpg');
+    final sample = '${Directory(dir).absolute.parent.path}/shelves/effects/sources', grid = m.add('picture', '${folder.path}/grid.png'), under = m.add('picture', '$sample/fx_sample_end.jpg'), photo = m.add('picture', '$sample/fx_sample.jpg'), card = m.add('picture', '$sample/fx_sample.jpg');
     _ffmpeg(['-f', 'lavfi', '-i', "aevalsrc='0.9*sin(2*PI*(50+120*exp(-25*mod(t,1/3)))*t)*exp(-9*mod(t,1/3))+0.25*sin(2*PI*(300+850*t)*t)*(0.5+0.5*sin(6*PI*t))':s=48000:d=2", '${folder.path}/beat.wav']);   // (for one that hears: a kick three times a second under a tone rising 300 to 2000 Hz, by the same ffmpeg's lavfi as the grid)
     final song = m.add('film', '${folder.path}/beat.wav');   // (a sound alone: heard by every AviUtl2 script (its audiobuffer: doc_sound_now), by an ISF's audio input its knob names)
     m.set(song, 'opacity', 0);   // (its wavescope not seen: heard, as the window puts a sound in hidden (Alight Motion's sound layer has no picture))
