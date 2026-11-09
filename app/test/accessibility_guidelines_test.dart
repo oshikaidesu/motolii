@@ -2,10 +2,9 @@
 // applied to the app's real window (Workspace on a new document, the engine library loaded through FFI).
 // Expected values live in flutter_test, not here. Failures are information about the UI; do not edit the UI to pass.
 // Skipped where engine/out/libmotolii.dylib is not built (engine/edit.sh).
-//   flutter test --no-pub external_test/
+//   cd app && flutter test --no-pub test/accessibility_guidelines_test.dart
 import 'dart:io';
 
-import 'package:flutter/semantics.dart' show SemanticsHandle;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';

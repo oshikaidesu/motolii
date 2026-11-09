@@ -12,7 +12,18 @@ Flutter の窓。描くのも書類を持つのも本体（[`../engine/`](../eng
 | `lib/forms/` | 窓の形（スキン）ごとの並べ方 |
 | `lib/style/` | 色と寸法 |
 | `skins/` | 同梱のスキン（`theme.xml` と部品の絵。名前は `skins/PARTS.md`） |
-| `test/`、`external_test/` | 試験。`external_test/` は実機の窓を動かして測る |
+| `test/` | ウィジェットの試験（`flutter test`）。`accessibility_guidelines_test.dart`：本物の窓が Flutter のアクセシビリティの指針を満たすか |
+| `integration_test/`、`test_driver/` | 実機の Mac の窓で動かす試験（`flutter drive`）。`frame_timing_test.dart`：タイムラインを回して 1 コマ 16 ms に収まるか |
 | `tool/flicker.py` | 画面の録画から、ちらついたコマを探す |
+
+試験の走らせ方（どちらも `app/` で）：
+
+```bash
+flutter test --no-pub test/
+```
+
+```bash
+flutter drive --profile -d macos --driver=test_driver/frame_timing_driver.dart --target=integration_test/frame_timing_test.dart
+```
 
 見た目の決まりは [`DESIGN.md`](DESIGN.md)。

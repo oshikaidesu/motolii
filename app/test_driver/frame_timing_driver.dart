@@ -1,6 +1,6 @@
 // External requirement: Flutter's own frame budget (about 16 ms a frame, 60 fps) while the timeline is scrolled.
 // Pattern from https://docs.flutter.dev/cookbook/testing/integration/profiling (Measure performance with an integration test).
-//   cd app && flutter drive --profile -d macos --driver=external_test/frame_timing_driver.dart --target=external_test/frame_timing_test.dart
+//   cd app && flutter drive --profile -d macos --driver=test_driver/frame_timing_driver.dart --target=integration_test/frame_timing_test.dart
 // The timeline and its summary are written to build/frame_timing.timeline.json and build/frame_timing.timeline_summary.json.
 import 'package:flutter_driver/flutter_driver.dart' as driver;
 import 'package:integration_test/integration_test_driver.dart';
