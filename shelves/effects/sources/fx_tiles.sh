@@ -3,8 +3,8 @@
 # and a white Aa over it) with the effect on. A whole-screen effect's is written beside it (distort/twirl.wgsl ->
 # distort/twirl.png); a thing's effect (the inside's own, put on the Aa) as thing_<its value>.png in the folder its
 # last one was in (doc_fx_put.h finds it in any folder: script_shelf_file); a new one in effects/ itself, to be put
-# into its folder by hand as f8925af9c sorted them. Run by hand; nothing builds it. (engine/fx_tiles.sh until 416fced3a.)
-#   shelves/effects/sources/fx_tiles.sh [shelves/effects/distort/twirl.wgsl ...]
+# into its folder by hand as f8925af9c sorted them. Run by hand; nothing builds it. (in engine/ until 416fced3a.)
+#   shelves/effects/sources/fx_tiles.sh [shelves/effects/distort/am_bulge.wgsl ...]
 # fx_sample.jpg: "Mid-Hudson balloon festival 15" by Juliancolton, public domain (PD-self), Wikimedia Commons, cut square.
 fx=(${${@:-${0:a:h}/../*/*.wgsl}:a})   # (as given, or every .wgsl on the shelf, before cd)
 cd "$(dirname "$0")/../../../engine"
