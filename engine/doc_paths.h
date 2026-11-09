@@ -438,7 +438,10 @@ static bool doc_carry(Doc& d, const char* by, double a, double b) {
         if (found == h.from.end()) found = h.from.emplace(name, doc_number(d, h.thing, name, now, doc_usual(d, name))).first;
         return found->second;
     };
-    const auto tries = [&](const char* name, double is) { return doc_knows(d, h.thing, name, &is) && (h.tried[name] = is, true); };
+    const auto tries = [&](const char* name, double is) {
+        if (double turned = 0; !doc_macro_over(d, h.thing, name, now, &turned).empty()) return d.trouble = "a macro turns it: move the macro", false;   // (doc_set's)
+        return doc_knows(d, h.thing, name, &is) && (h.tried[name] = is, true);
+    };
     bool ok = true;
     if (!strcmp(by, "place")) {
         // (by the working eye the hand's travel is that eye's, the way After Effects' working views move a 3D layer)

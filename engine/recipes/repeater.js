@@ -3,6 +3,8 @@
 // say fill ff3366
 // set size 0.1
 // set copies 5
+// --macro@Spread:Spread,0.5 -> StepX 0 0.6
+// --macro@Chaos:Chaos,0 -> ScatterX 0 2, ScatterY 0 1.2, ScatterRotate 0 180, ScatterSize 0 0.5
 // --track@Columns:Columns,0,100,0,1
 // --track@StepX:Step X,-5,5,0.3,0.01
 // --track@StepY:Step Y,-5,5,0,0.01

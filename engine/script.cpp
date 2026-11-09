@@ -117,6 +117,19 @@ std::vector<ScriptKnob> script_knobs(const std::string& file) {
         if (dash == std::string::npos || at == std::string::npos || colon == std::string::npos || !(dash < at && at < colon)) continue;
         ScriptKnob k;
         k.kind = line.substr(dash + 2, at - dash - 2), k.name = line.substr(at + 1, colon - at - 1);
+        if (k.kind == "macro") {   // (label[,as it comes] -> name low high, name low high: script.h)
+            const size_t to = line.find("->", colon);
+            const std::vector<std::string> head = split(line.substr(colon + 1, to == std::string::npos ? std::string::npos : to - colon - 1), ',');
+            if (head.empty() || head[0].empty() || k.name.empty() || to == std::string::npos) continue;
+            for (const std::string& one : split(line.substr(to + 2), ',')) {
+                std::istringstream w(one);
+                ScriptKnob::Turned t;
+                if (w >> t.name >> t.low >> t.high) k.turns.push_back(t);
+            }
+            k.kind = "track", k.label = head[0], k.low = 0, k.high = 1, k.step = 0.01, k.usual = head.size() >= 2 ? std::atof(head[1].c_str()) : 0;
+            knobs.push_back(k);   // (in no group, wherever its line is: a macro stands out)
+            continue;
+        }
         const std::vector<std::string> said = split(line.substr(colon + 1), ',');
         if (said.empty() || k.name.empty()) continue;
         k.label = said[0];
@@ -135,6 +148,15 @@ std::vector<ScriptKnob> script_knobs(const std::string& file) {
         k.group = group;
         knobs.push_back(k);
     }
+    // (a macro first on its card, Ableton's above the Rack; what it turns folded away, said to be turned)
+    std::stable_partition(knobs.begin(), knobs.end(), [](const ScriptKnob& k) { return !k.turns.empty(); });
+    for (const ScriptKnob& m : knobs)
+        for (const ScriptKnob::Turned& t : m.turns)
+            for (ScriptKnob& k : knobs)
+                if (k.name == t.name && k.turns.empty() && k.by.empty()) {
+                    k.by = m.name, k.label += " ← " + m.label;
+                    if (k.group.empty()) k.group = "Advanced";
+                }
     return knobs;
 }
 
