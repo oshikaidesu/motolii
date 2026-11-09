@@ -30,7 +30,7 @@
 | `media/` | GStreamer で読む物。名前の頭で分かれる：`video_*`＝動画（`video_layer.h`＝プレビューに置く動画のレイヤー、GPU で解く・`video_frames_for_scripts.h`＝スケッチが CPU で読む小さなフレーム・`video_datamosh.h`・`video_flash_check.cpp`＝点滅の検査（IRIS））、`sound_*`＝音（`sound_level.h`＝大きさ・`sound_playback.h`＝再生中に鳴らす）、`midi_*`＝MIDI、`gstreamer_file_source.h`＝ファイルを渡す口 |
 | `motion/` | 動き：イーズは `easing_*.h` だけ（`easing_curves.h`＝キーの間の 9 種・`easing_names.h`＝名前で呼ぶイーズ・`easing_godot.h`）、`lottie_motion.h`＝Lottie の動きを ThorVG が解く |
 | `physics/` | 物理：`physics.h`＝口、`jolt.cpp`＝その裏の Jolt |
-| `materials/` | Filament の材質（`.mat`）と、それが読む `.glsl`。組むのは `gpu/kit_wgpu.sh` が名を挙げる物 |
+| `materials/` | Filament の材質（`.mat`）と、それが `#include` する `.glsl`。組むのは `gpu/kit_wgpu.sh` が名を挙げる物。`.glsl` を別のフォルダに分けないのは Filament 自身の置き方（`filament/src/materials/ssao/` は `sao.mat` の隣に `saoImpl.fs`） |
 | `gpu/` | Filament・ThorVG を WebGPU（Dawn）で組むスクリプト（`build.sh`・`tvg_on_dawn.sh`・`kit_wgpu.sh`）と、Filament の組み立ての中で組む interop（`*_door.cpp`：Filament・Dawn の公開されていない内側に届く所）。`js_effects.sh`・`tsl_on_dawn.sh` は手で走らせる試し |
 | `deps/` | 外のライブラリを取ってきて組むスクリプト、ビルドの錠、エディタ用の `compile_commands.sh`、下の一覧を作る `files_in_build.sh`。`deps/patches/<ライブラリ>/` は人のコードに当てる差分（`.patch`） |
 | `third_party/` | 取ってくる依存（git の外）と、同梱の小さな物（`anime/`・`godot_easing/`・`js/`・`midi_roll/`・`qdtsne/`・`rapidfuzz/`・`scipy_lsap/`・`thermion_frame/`） |
@@ -52,14 +52,16 @@
 - `community/aviutl/` (9): `aviutl.cpp`、`aviutl.h`、`aviutl_fx.h`、`aviutl_load.h`、`aviutl_obj.h`、`aviutl_obj_draw.h`、`aviutl_obj_effect.h`、`aviutl_pixels.h`、`aviutl_run.h`
 - `community/js/` (11): `ae_expr.h`、`js_returned.cpp`、`lottie_slots.h`、`p5_mesh.h`、`p5_stand.h`、`p5_three.h`、`script.cpp`、`script.h`、`script_leva.h`、`solid_three.cpp`、`solid_three.h`
 - `community/shaders/` (11): `door_p5_shader.h`、`door_shadertoy.h`、`door_shadertoy_json.h`、`hydra_isf.cpp`、`hydra_isf.h`、`isf.cpp`、`isf.h`、`splatfx.cpp`、`splatfx.h`、`three_isf.cpp`、`three_isf.h`
-- `document/` (35): `doc.h`、`document/arrange.h`、`document/card_table.h`、`document/cards.h`、`document/adapter.h`、`document/layer_edit.h`、`document/expressions.h`、`document/camera.h`、`document/folders.h`、`document/fx_list.h`、`document/fx_put.h`、`document/hold.h`、`document/keys_put.h`、`document/kinds.h`、`document/presets.h`、`document/marks.h`、`document/match.h`、`document/evaluate.h`、`document/moment_fx.h`、`document/parent.h`、`document/paths.h`、`document/place.h`、`document/recipes.h`、`document/relate.h`、`document/relations.h`、`document/scripts.h`、`document/shown.h`、`document/sketch.h`、`document/undo.h`、`document/time_edit.h`、`document/value_at.h`、`document/values.h`、`document/easings_put.h`、`document/material.h`、`document/world.h`
-- `entry/` (14): `edit.cpp`、`motolii.h`、`motolii.mm`、`entry/calls.h`、`entry/calls_files.h`、`entry/calls_find.h`、`entry/calls_later.h`、`entry/calls_map.h`、`entry/calls_time.h`、`entry/calls_sound.h`、`entry/render_thread.h`、`entry/render_thread_loop.h`、`entry/window.h`、`entry/export.h`
+- `document/` (35): `adapter.h`、`arrange.h`、`camera.h`、`card_table.h`、`cards.h`、`doc.h`、`easings_put.h`、`evaluate.h`、`expressions.h`、`folders.h`、`fx_list.h`、`fx_put.h`、`hold.h`、`keys_put.h`、`kinds.h`、`layer_edit.h`、`marks.h`、`match.h`、`material.h`、`moment_fx.h`、`parent.h`、`paths.h`、`place.h`、`presets.h`、`recipes.h`、`relate.h`、`relations.h`、`scripts.h`、`shown.h`、`sketch.h`、`time_edit.h`、`undo.h`、`value_at.h`、`values.h`、`world.h`
+- `entry/` (14): `calls.h`、`calls_files.h`、`calls_find.h`、`calls_later.h`、`calls_map.h`、`calls_sound.h`、`calls_time.h`、`edit.cpp`、`export.h`、`motolii.h`、`motolii.mm`、`render_thread.h`、`render_thread_loop.h`、`window.h`
 - `gpu/` (7): `compute_door.cpp`、`compute_door.h`、`gpu_door.cpp`、`gpu_door.h`、`screen_door.cpp`、`screen_door.h`、`tvg_on_dawn.cpp`
-- `media/` (10): `video_frames_for_scripts.h`、`video_flash_check.cpp`、`gstreamer_file_source.h`、`sound_playback.h`、`midi_notes.h`、`midi_roll.cpp`、`midi_roll.h`、`video_datamosh.h`、`sound_level.h`、`video_layer.h`
-- `motion/` (6): `easing_godot.h`、`easing_curves.h`、`lottie_motion.h`、`jolt.cpp`、`physics.h`、`easing_names.h`
-- `stage/` (10): `bend.cpp`、`live.h`、`picture.h`、`points.h`、`screen.h`、`skpath.cpp`、`solid.h`、`stage_kept.h`、`thing_fx.h`、`viewer_settings.h`
-- `stage/drawn/` (6): `drawn.h`、`drawn_edge.h`、`drawn_flat.h`、`drawn_kept.h`、`drawn_made.h`、`drawn_sketch.h`
-- `stage/kit/` (4): `kit.h`、`kit_draw.h`、`kit_stage.h`、`kit_things.h`
+- `media/` (10): `gstreamer_file_source.h`、`midi_notes.h`、`midi_roll.cpp`、`midi_roll.h`、`sound_level.h`、`sound_playback.h`、`video_datamosh.h`、`video_flash_check.cpp`、`video_frames_for_scripts.h`、`video_layer.h`
+- `motion/` (4): `easing_curves.h`、`easing_godot.h`、`easing_names.h`、`lottie_motion.h`
+- `physics/` (2): `jolt.cpp`、`physics.h`
+- `stage/` (3): `live.h`、`picture.h`、`stage_kept.h`
+- `stage/drawn/` (8): `drawn.h`、`drawn_edge.h`、`drawn_flat.h`、`drawn_kept.h`、`drawn_made.h`、`drawn_sketch.h`、`skia_path_operations.cpp`、`thorvg_path_operators.cpp`
+- `stage/effects/` (3): `layer_fx.h`、`screen_fx.h`、`viewer_settings.h`
+- `stage/kit/` (6): `gltf_model.h`、`kit.h`、`kit_draw.h`、`kit_stage.h`、`kit_things.h`、`point_cloud.h`
 
 Not read by the build (2): `gpu/js_effects.cpp`、`gpu/tsl_on_dawn.cpp`
 <!-- /files_in_build.sh -->
