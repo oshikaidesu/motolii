@@ -21,7 +21,7 @@ extension WsFx on Ws {
     final m = _inside;
     if (m == null) return const {};
     return {
-      for (final t in m.things) ...[...fxFiles(m.word(t, 'fx')), ...fxOf('$t'), if (m.word(t, 'script') case final s when s.isNotEmpty && s != 'none') s],
+      for (final t in m.layers) ...[...fxFiles(m.word(t, 'fx')), ...fxOf('$t'), if (m.word(t, 'script') case final s when s.isNotEmpty && s != 'none') s],
     };
   }
 
@@ -33,8 +33,8 @@ extension WsFx on Ws {
     var made = 0;
     after(m.later('add', name: 'shape', word: kind), null, (t) => made = t);
     m
-      ..later('set', thing: -1, name: 'size', number: WsArt.comp.height / m.point)
-      ..later('set', thing: -1, name: 'wide', number: WsArt.comp.width / WsArt.comp.height);
+      ..later('set', layer: -1, name: 'size', number: WsArt.comp.height / m.point)
+      ..later('set', layer: -1, name: 'wide', number: WsArt.comp.width / WsArt.comp.height);
     wsInked(this, 'shape', kind);
     also?.call(m);
     after(m.later('together'), (done, _) {
@@ -46,9 +46,9 @@ extension WsFx on Ws {
   /// Adjustment Layer).
   void adjustment([String? file]) => whole('rect', (m) {
     m
-      ..later('say', thing: -1, name: 'fill', word: 'behind')
-      ..later('say', thing: -1, name: 'name', word: 'Adjustment');
-    if (file != null) m.later('fx_file', thing: -1, word: file);
+      ..later('say', layer: -1, name: 'fill', word: 'behind')
+      ..later('say', layer: -1, name: 'name', word: 'Adjustment');
+    if (file != null) m.later('fx_file', layer: -1, word: file);
   });
 
   /// Joined: an effect put over the others on the picked thing, or taken off (one step either way). Nothing picked: a new
@@ -61,7 +61,7 @@ extension WsFx on Ws {
       return true;
     }
     // (at the end of its effects or out, by the inside's rule for its list; not taken, said why: a camera takes motions only)
-    after(m.later('fx_file', thing: t, word: file), (done, why) => done || why.isEmpty ? null : notice = 'Not taken: ${why.split(':').first}');
+    after(m.later('fx_file', layer: t, word: file), (done, why) => done || why.isEmpty ? null : notice = 'Not taken: ${why.split(':').first}');
     return true;
   }
 
@@ -85,11 +85,11 @@ extension WsFx on Ws {
   void tryOn(String? file) {
     final m = _inside, t = int.tryParse(selected ?? '');
     if (m == null) return;
-    if (_trying) after(m.later('let_go', number: 0));
+    if (_trying) after(m.later('drag_end', number: 0));
     _trying = file != null && t != null;
     if (!_trying) return;
-    after(m.later('hold', thing: t!)); // (without waiting, as Align's hold: the shelf's hand never stands still for it)
-    after(m.later('carry', name: 'effect', word: file!));
+    after(m.later('drag_start', layer: t!)); // (without waiting, as Align's hold: the shelf's hand never stands still for it)
+    after(m.later('drag_update', name: 'effect', word: file!));
   }
 
   /// Joined: the motion the picked thing has (its script's file; '' none).
@@ -105,8 +105,8 @@ extension WsFx on Ws {
   void motionToggle(String file) {
     final m = _inside, t = int.tryParse(selected ?? '');
     if (m == null) return;
-    if (t == null) return whole('rect', (m) => m.later('say', thing: -1, name: 'script', word: file));
-    after(m.later('say', thing: t, name: 'script', word: motion == file ? 'none' : file)); // (without waiting)
+    if (t == null) return whole('rect', (m) => m.later('say', layer: -1, name: 'script', word: file));
+    after(m.later('say', layer: t, name: 'script', word: motion == file ? 'none' : file)); // (without waiting)
   }
 
   /// Joined: an effect of the shelf put on the picked thing as it comes, or taken off (one step either way). Nothing
@@ -115,15 +115,15 @@ extension WsFx on Ws {
   void fxToggle(String name) {
     final m = _inside, t = int.tryParse(selected ?? '');
     if (m == null) return;
-    if (t == null) return whole('rect', (m) => m.later('effect', thing: -1, name: name, number: frame / fps));
-    after(m.later('effect', thing: t, name: name, number: frame / fps)); // (without waiting)
+    if (t == null) return whole('rect', (m) => m.later('effect', layer: -1, name: name, number: frame / fps));
+    after(m.later('effect', layer: t, name: name, number: frame / fps)); // (without waiting)
   }
 
   /// Joined: a look kept by its name given to the picked thing; nothing picked, to a new board, as [motionToggle].
   void lookPut(String file) {
     final m = _inside, t = int.tryParse(selected ?? '');
     if (m == null) return;
-    if (t == null) return whole('rect', (m) => m.later('paste_style', thing: -1, word: file));
-    after(m.later('paste_style', thing: t, word: file));
+    if (t == null) return whole('rect', (m) => m.later('paste_style', layer: -1, word: file));
+    after(m.later('paste_style', layer: t, word: file));
   }
 }

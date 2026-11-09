@@ -55,6 +55,6 @@ extension _WsTimelineRuler on _WsTimelineState {
 
   void _flag(Ws ws, String name, String id) {
     final m = ws.inside!;
-    ws.after(m.later('set', thing: int.parse(id), name: name, number: (name == 'solo' ? _isSolo(ws, id) : _isLocked(ws, id)) ? 0 : 1));
+    ws.after(m.later('set', layer: int.parse(id), name: name, number: (name == 'solo' ? _isSolo(ws, id) : _isLocked(ws, id)) ? 0 : 1));
   }
 }

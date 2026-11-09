@@ -408,9 +408,9 @@ class _Footer extends StatelessWidget {
                 _ => null,
               },
         onAction: () => fills
-            ? c.ws.after(m.later('say', thing: shape, name: 'fill_media', word: n.id))
+            ? c.ws.after(m.later('say', layer: shape, name: 'fill_media', word: n.id))
             : swaps
-            ? c.ws.after(m.later('say', thing: shape, name: 'file', word: n.id), (done, why) => done ? c.ws.reread() : c.ws.notice = 'Not replaced: $why')
+            ? c.ws.after(m.later('say', layer: shape, name: 'file', word: n.id), (done, why) => done ? c.ws.reread() : c.ws.notice = 'Not replaced: $why')
             : can
             ? _place(c, n)
             : c.ws.select(layer),

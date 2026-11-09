@@ -40,7 +40,7 @@ class _RowState extends State<_Row> {
     final clip = ways.isNotEmpty && (m!.value(t!, 'clip', 0) ?? 0) > 0.5;
     final opacity = ways.isEmpty ? 1.0 : (m!.value(t!, 'opacity', m.now) ?? 1).clamp(0.0, 1.0);
     void say(String name, String word) {
-      if (m != null && t != null) ws.after(m.later('say', thing: t, name: name, word: word));
+      if (m != null && t != null) ws.after(m.later('say', layer: t, name: name, word: word));
     }
 
     final row = Container(
@@ -97,7 +97,7 @@ class _RowState extends State<_Row> {
                 on: clip,
                 glyph: (ink) => _Clip(ink),
                 onTap: () {
-                  ws.after(m!.later('set', thing: t, name: 'clip', number: clip ? 0 : 1));
+                  ws.after(m!.later('set', layer: t, name: 'clip', number: clip ? 0 : 1));
                 },
               ),
           ],
@@ -191,14 +191,14 @@ class _OpacityState extends State<_Opacity> {
     final v = (x / wide).clamp(0.0, 1.0);
     if (_held == null) m.take(widget.thing);
     setState(() => _held = v);
-    m.carry('opacity', v);
+    m.dragUpdate('opacity', v);
   }
 
   void _dragEnd() {
     final ws = WsScope.read(context);
     if (_held == null) return;
     _held = null;
-    if (ws.inside case final m?) ws.after(m.later('let_go', number: 1));
+    if (ws.inside case final m?) ws.after(m.later('drag_end', number: 1));
   }
 
   @override

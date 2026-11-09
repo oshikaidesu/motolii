@@ -72,10 +72,10 @@ abstract final class RecipeMotions {
     if (m == null) return tell.send(null);
     for (final r in recipes) {
       if (halt.value != 0) break; // (stopped: its document shut below, as when all are made)
-      final before = m.things.toSet();
-      if (m.make(r) == 0) continue;
+      final before = m.layers.toSet();
+      if (m.create(r) == 0) continue;
       final parts = <({int colour, List<Float32List> copies, String outline, bool evenOdd, bool edge})>[];
-      for (final t in m.things.where((t) => !before.contains(t))) {
+      for (final t in m.layers.where((t) => !before.contains(t))) {
         if (const {'behaviour', 'camera', 'light'}.contains(m.word(t, 'kind'))) continue;
         final n = math.max(1, (m.value(t, 'copies', 0) ?? 1).round());
         final step = math.max(1, (n / _mostCopies).ceil());

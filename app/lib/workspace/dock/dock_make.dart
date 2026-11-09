@@ -66,9 +66,9 @@ void _fillLetters(DockCtx c, int t, (int, int) at, String word) {
           : (base.isEmpty || base == 'none' ? 'ffffff' : base),
   ];
   m.later('together', number: 1); // (one step)
-  if (m.word(t, 'split') != 'letters') m.later('say', thing: t, name: 'split', word: 'letters');
-  m.later('say', thing: t, name: 'copy_fill', word: each.join(' '));
-  m.later('say', thing: t, name: 'copy_fill_way', word: 'cycle');
+  if (m.word(t, 'split') != 'letters') m.later('say', layer: t, name: 'split', word: 'letters');
+  m.later('say', layer: t, name: 'copy_fill', word: each.join(' '));
+  m.later('say', layer: t, name: 'copy_fill_way', word: 'cycle');
   c.ws.after(m.later('together'), (done, why) => c.set(() => done ? c.mem.trouble.remove('fill') : c.mem.trouble['fill'] = why));
 }
 
@@ -99,8 +99,8 @@ void _fill(DockCtx c, String word) {
     //  Styling.kt withBorderAdded, BorderSize 6) and as the drawing tools give their edge (wsInked): one step; golf (89))
     final edged = aim == 'stroke' && t != null && word != 'none' && (m.value(t, 'stroke_width', 0) ?? 0) <= 0;
     if (edged) m.later('together', number: 1);
-    final said = m.later('say', thing: t ?? 0, name: aim, word: word);
-    if (edged) m.later('set', thing: t, name: 'stroke_width', number: 6);
+    final said = m.later('say', layer: t ?? 0, name: aim, word: word);
+    if (edged) m.later('set', layer: t, name: 'stroke_width', number: 6);
     c.ws.after(
       edged ? m.later('together') : said,
       (done, why) => c.set(() {
@@ -117,7 +117,7 @@ void _fill(DockCtx c, String word) {
     return;
   }
   c.ws.after(
-    m.later('say', thing: t, name: 'fill', word: word),
+    m.later('say', layer: t, name: 'fill', word: word),
     (done, why) => c.set(() {
       if (done) keep('fill');
       done ? c.mem.trouble.remove('fill') : c.mem.trouble['fill'] = why;
@@ -295,7 +295,7 @@ class ColorsShelf extends StatelessWidget {
                     on: _blendNow(c) == b,
                     onTap: () {
                       final t = _colored(c);
-                      t != null && name == 'fill' ? c.ws.after(m.later('say', thing: t, name: 'gradient_blend', word: b)) : c.set(() => c.ws.inkBlend = b);
+                      t != null && name == 'fill' ? c.ws.after(m.later('say', layer: t, name: 'gradient_blend', word: b)) : c.set(() => c.ws.inkBlend = b);
                     },
                   ),
               ],

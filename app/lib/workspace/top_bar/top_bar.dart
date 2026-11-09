@@ -134,7 +134,7 @@ class _HoverState extends State<_Hover> {
 String wsStepSaid(Ws ws, String done) {
   final c = ws.lastChange, m = ws.inside;
   if (c == null || m == null) return done;
-  if (c.things) return '$done: things added or taken away';
+  if (c.layers) return '$done: things added or taken away';
   final byThing = <int, Set<String>>{};
   for (final (t, n) in c.values) {
     (byThing[t] ??= {}).add(m.shown(n)?.label ?? n);
@@ -501,7 +501,7 @@ class _RenderState extends State<_Render> {
                                       on: now == v,
                                       onTap: m == null
                                           ? null
-                                          : () => ws.after(m.later('set', thing: 0, name: name, number: v.toDouble()), (_, _) => mounted ? again(() {}) : null),
+                                          : () => ws.after(m.later('set', layer: 0, name: name, number: v.toDouble()), (_, _) => mounted ? again(() {}) : null),
                                     ),
                                   if (name == 'render_mbps' && now > 0)
                                     Text(

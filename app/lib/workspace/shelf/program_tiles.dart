@@ -61,7 +61,7 @@ abstract final class ProgramTiles {
     for (final (f, to) in files) {
       final trying = File('$to.trying')..createSync(recursive: true);
       m.at(0); // (what is placed comes on where the clock stands)
-      final ticket = m.later('door', word: f);
+      final ticket = m.later('adapter', word: f);
       var said = -1;
       for (var n = 0; said < 0 && n < 6000; n++) {
         sleep(const Duration(milliseconds: 10));
@@ -70,7 +70,7 @@ abstract final class ProgramTiles {
       if (said >= 1 && [for (var k = 0; k < _pictures; k++) m.at(_from + k / _perSecond) && m.still('${folder.path}/$k.png')].every((done) => done)) {
         _kept(folder.path, to);
       }
-      for (final t in m.things.toList()) {
+      for (final t in m.layers.toList()) {
         m.remove(t);
       }
       trying.deleteSync();

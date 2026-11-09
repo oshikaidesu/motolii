@@ -15,7 +15,7 @@ String createFact(Ws ws) {
   return (
     'Recipes',
     [
-      for (final (name, what) in ws.inside!.recipes)
+      for (final (name, what) in ws.inside!.createScripts)
         if (!expressions.contains(name) && !packs.contains(name)) _Make(name, DockG.copies, Pop.tonePlace, '', what, recipe: true),
     ],
   );
@@ -175,7 +175,7 @@ void _make(DockCtx c, _Make tile) {
   if (tile.recipe) {
     // (a picture in one call: one step, and it is picked)
     c.ws.after(
-      m.later('make', word: name),
+      m.later('create', word: name),
       (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why),
       (made) => c.ws.select('$made'),
     ); // (without waiting: picked once made)
@@ -194,13 +194,13 @@ void _make(DockCtx c, _Make tile) {
     void told(bool done, String why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why);
     if (t != null) {
       if (!_wears.contains(m.word(t, 'kind'))) return c.set(() => c.mem.trouble[name] = 'A camera, a light or a null wears nothing: pick a thing that is seen');
-      c.ws.after(m.later('say', thing: t, name: 'shading', word: wears), told);
+      c.ws.after(m.later('say', layer: t, name: 'shading', word: wears), told);
       return;
     }
     m.later('together', number: 1); // (one step: the ball and what it wears)
     c.ws.after(m.later('add', name: 'solid', word: 'ball'), null, (made) => c.ws.select('$made'));
     wsInked(c.ws, 'solid', 'ball');
-    m.later('say', thing: -1, name: 'shading', word: wears);
+    m.later('say', layer: -1, name: 'shading', word: wears);
     c.ws.after(m.later('together'), told);
     return;
   }
@@ -224,13 +224,13 @@ void _make(DockCtx c, _Make tile) {
   ); // (without waiting: picked once made; a text in the body's font)
   wsInked(c.ws, asked.$1, asked.$2);
   for (final e in (_starts[name] ?? const <String, double>{}).entries) {
-    m.later('set', thing: -1, name: e.key, number: e.value);
+    m.later('set', layer: -1, name: e.key, number: e.value);
   }
-  if (name == 'Floor') m.later('say', thing: -1, name: 'name', word: name);
+  if (name == 'Floor') m.later('say', layer: -1, name: 'name', word: name);
   if (asked.$1 == 'light' && (m.value(0, 'environment', 0) ?? 1) == 1) {
     m.later(
       'set',
-      thing: 0,
+      layer: 0,
       name: 'environment',
       number: .3,
     ); // (After Effects: a light put in takes over from the default light; the Room dims, what it was is one field in Stage settings)
@@ -352,7 +352,7 @@ class _MakeTile extends StatelessWidget {
     final makes =
         inside != null &&
         (m.recipe
-            ? inside.recipes.any((r) => r.$1 == m.name)
+            ? inside.createScripts.any((r) => r.$1 == m.name)
             : _asked.containsKey(m.name) || _worn.containsKey(m.name) || m.onPicked || inside.elements.any((e) => e.$1 == m.name));
     return DockHover(
       onTap: () => c.pick(m.id),

@@ -2,7 +2,7 @@
 part of 'motolii.dart';
 
 extension MotoliiWatch on Motolii {
-  String get trouble => _trouble(_m).toDartString();
+  String get error => _error(_m).toDartString();
 
   String get list => _list(_m).toDartString();
 
@@ -11,9 +11,9 @@ extension MotoliiWatch on Motolii {
 
   int get frames => _frames(_m); // (how many pictures the live stage has drawn: motolii_frames)
 
-  /// The stage's pictures kept on disk for playing, as stretches of frames [from, to) (motolii_kept).
-  List<(int, int)> get kept {
-    final n = _keptRuns(_m).toDartString().split(' ').where((w) => w.isNotEmpty).map(int.parse).toList();
+  /// The stage's pictures kept on disk for playing, as stretches of frames [from, to) (motolii_cache).
+  List<(int, int)> get cache {
+    final n = _cacheRuns(_m).toDartString().split(' ').where((w) => w.isNotEmpty).map(int.parse).toList();
     return [for (var i = 0; i + 1 < n.length; i += 2) (n[i], n[i + 1])];
   }
 

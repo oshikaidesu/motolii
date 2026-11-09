@@ -66,7 +66,7 @@ class _StageState extends State<_Stage> {
     final m = ws.inside, word = ws.freeEye ? ws.eye.join(' ') : '';
     if (m == null || _eyeTold == (m, word)) return;
     _eyeTold = (m, word);
-    m.later('eye', word: word);
+    m.later('view_camera', word: word);
   }
 
   set _camera(bool v) => _ws.setView('stage.camera', v);
@@ -92,7 +92,7 @@ class _StageState extends State<_Stage> {
     if (m == null) return;
     final png = '${Directory.systemTemp.path}/motolii_snapshot_${DateTime.now().microsecondsSinceEpoch}.png'; // (a new name each time: Flutter's image cache knows a file by its name)
     if (!m.still(png)) {
-      _ws.notice = 'No snapshot: ${m.trouble}';
+      _ws.notice = 'No snapshot: ${m.error}';
       return;
     }
     _forget();

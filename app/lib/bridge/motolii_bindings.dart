@@ -75,28 +75,28 @@ class MotoliiBindings {
   late final _motolii_broken_countPtr = _lookup<ffi.NativeFunction<ffi.Long Function(ffi.Pointer<Motolii>)>>('motolii_broken_count');
   late final _motolii_broken_count = _motolii_broken_countPtr.asFunction<int Function(ffi.Pointer<Motolii>)>(isLeaf: true);
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_cards(ffi.Pointer<Motolii> m, int thing) {
-    return _motolii_cards(m, thing);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_cards(ffi.Pointer<Motolii> m, int layer) {
+    return _motolii_cards(m, layer);
   }
 
   late final _motolii_cardsPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Int)>>('motolii_cards');
   late final _motolii_cards = _motolii_cardsPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, int)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_cards_more(ffi.Pointer<Motolii> m, int thing) {
-    return _motolii_cards_more(m, thing);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_cards_more(ffi.Pointer<Motolii> m, int layer) {
+    return _motolii_cards_more(m, layer);
   }
 
   late final _motolii_cards_morePtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Int)>>('motolii_cards_more');
   late final _motolii_cards_more = _motolii_cards_morePtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, int)>();
 
-  int motolii_carry(ffi.Pointer<Motolii> m, ffi.Pointer<pkg_ffi.Utf8> by, double a, double b) {
-    return _motolii_carry(m, by, a, b);
+  int motolii_drag_update(ffi.Pointer<Motolii> m, ffi.Pointer<pkg_ffi.Utf8> by, double a, double b) {
+    return _motolii_drag_update(m, by, a, b);
   }
 
-  late final _motolii_carryPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>, ffi.Double, ffi.Double)>>(
-    'motolii_carry',
+  late final _motolii_drag_updatePtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>, ffi.Double, ffi.Double)>>(
+    'motolii_drag_update',
   );
-  late final _motolii_carry = _motolii_carryPtr.asFunction<int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>, double, double)>();
+  late final _motolii_drag_update = _motolii_drag_updatePtr.asFunction<int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>, double, double)>();
 
   void motolii_close(ffi.Pointer<Motolii> m) {
     return _motolii_close(m);
@@ -105,8 +105,8 @@ class MotoliiBindings {
   late final _motolii_closePtr = _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<Motolii>)>>('motolii_close');
   late final _motolii_close = _motolii_closePtr.asFunction<void Function(ffi.Pointer<Motolii>)>();
 
-  int motolii_define(ffi.Pointer<Motolii> m, ffi.Pointer<pkg_ffi.Utf8> way, ffi.Pointer<pkg_ffi.Utf8> expression) {
-    return _motolii_define(m, way, expression);
+  int motolii_define(ffi.Pointer<Motolii> m, ffi.Pointer<pkg_ffi.Utf8> easing, ffi.Pointer<pkg_ffi.Utf8> expression) {
+    return _motolii_define(m, easing, expression);
   }
 
   late final _motolii_definePtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<pkg_ffi.Utf8>)>>(
@@ -136,17 +136,17 @@ class MotoliiBindings {
   late final _motolii_desk_frontPtr = _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Void> Function(ffi.Pointer<Motolii>)>>('motolii_desk_front');
   late final _motolii_desk_front = _motolii_desk_frontPtr.asFunction<ffi.Pointer<ffi.Void> Function(ffi.Pointer<Motolii>)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_doc_facts(ffi.Pointer<pkg_ffi.Utf8> path, ffi.Pointer<pkg_ffi.Utf8> png) {
-    return _motolii_doc_facts(path, png);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_doc_properties(ffi.Pointer<pkg_ffi.Utf8> path, ffi.Pointer<pkg_ffi.Utf8> png) {
+    return _motolii_doc_properties(path, png);
   }
 
-  late final _motolii_doc_factsPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<pkg_ffi.Utf8>)>>(
-    'motolii_doc_facts',
+  late final _motolii_doc_propertiesPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<pkg_ffi.Utf8>)>>(
+    'motolii_doc_properties',
   );
-  late final _motolii_doc_facts = _motolii_doc_factsPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<pkg_ffi.Utf8>)>();
+  late final _motolii_doc_properties = _motolii_doc_propertiesPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<pkg_ffi.Utf8>)>();
 
-  int motolii_effect(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name, double at) {
-    return _motolii_effect(m, thing, name, at);
+  int motolii_effect(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name, double at) {
+    return _motolii_effect(m, layer, name, at);
   }
 
   late final _motolii_effectPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>, ffi.Double)>>(
@@ -186,8 +186,8 @@ class MotoliiBindings {
   late final _motolii_find = _motolii_findPtr
       .asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<pkg_ffi.Utf8>, int)>();
 
-  void motolii_finished(ffi.Pointer<Motolii> m, ffi.Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>> tell, ffi.Pointer<ffi.Void> with$) {
-    return _motolii_finished(m, tell, with$);
+  void motolii_finished(ffi.Pointer<Motolii> m, ffi.Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>> listener, ffi.Pointer<ffi.Void> with$) {
+    return _motolii_finished(m, listener, with$);
   }
 
   late final _motolii_finishedPtr =
@@ -206,8 +206,8 @@ class MotoliiBindings {
   late final _motolii_fitsPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>)>>('motolii_fits');
   late final _motolii_fits = _motolii_fitsPtr.asFunction<int Function(ffi.Pointer<Motolii>)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_flashes(ffi.Pointer<pkg_ffi.Utf8> film, ffi.Pointer<pkg_ffi.Utf8> folder) {
-    return _motolii_flashes(film, folder);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_flashes(ffi.Pointer<pkg_ffi.Utf8> video, ffi.Pointer<pkg_ffi.Utf8> folder) {
+    return _motolii_flashes(video, folder);
   }
 
   late final _motolii_flashesPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<pkg_ffi.Utf8>)>>(
@@ -232,12 +232,12 @@ class MotoliiBindings {
   late final _motolii_font_tagsPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>)>>('motolii_font_tags');
   late final _motolii_font_tags = _motolii_font_tagsPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>)>();
 
-  int motolii_frame(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<ffi.Double> frame) {
-    return _motolii_frame(m, thing, frame);
+  int motolii_bounds(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<ffi.Double> frame) {
+    return _motolii_bounds(m, layer, frame);
   }
 
-  late final _motolii_framePtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<ffi.Double>)>>('motolii_frame');
-  late final _motolii_frame = _motolii_framePtr.asFunction<int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<ffi.Double>)>();
+  late final _motolii_boundsPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<ffi.Double>)>>('motolii_bounds');
+  late final _motolii_bounds = _motolii_boundsPtr.asFunction<int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<ffi.Double>)>();
 
   int motolii_frames(ffi.Pointer<Motolii> m) {
     return _motolii_frames(m);
@@ -253,8 +253,8 @@ class MotoliiBindings {
   late final _motolii_frontPtr = _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Void> Function(ffi.Pointer<Motolii>)>>('motolii_front');
   late final _motolii_front = _motolii_frontPtr.asFunction<ffi.Pointer<ffi.Void> Function(ffi.Pointer<Motolii>)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_fx_titles(ffi.Pointer<Motolii> m, int thing) {
-    return _motolii_fx_titles(m, thing);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_fx_titles(ffi.Pointer<Motolii> m, int layer) {
+    return _motolii_fx_titles(m, layer);
   }
 
   late final _motolii_fx_titlesPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Int)>>('motolii_fx_titles');
@@ -285,15 +285,15 @@ class MotoliiBindings {
   late final _motolii_guidesPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>>('motolii_guides');
   late final _motolii_guides = _motolii_guidesPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_hand_step(ffi.Pointer<Motolii> m) {
-    return _motolii_hand_step(m);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_render_thread_status(ffi.Pointer<Motolii> m) {
+    return _motolii_render_thread_status(m);
   }
 
-  late final _motolii_hand_stepPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>>('motolii_hand_step');
-  late final _motolii_hand_step = _motolii_hand_stepPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
+  late final _motolii_render_thread_statusPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>>('motolii_render_thread_status');
+  late final _motolii_render_thread_status = _motolii_render_thread_statusPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
 
-  int motolii_handles(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<ffi.Double> xy, ffi.Pointer<ffi.Double> of, int room) {
-    return _motolii_handles(m, thing, xy, of, room);
+  int motolii_handles(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<ffi.Double> xy, ffi.Pointer<ffi.Double> of, int room) {
+    return _motolii_handles(m, layer, xy, of, room);
   }
 
   late final _motolii_handlesPtr =
@@ -310,12 +310,12 @@ class MotoliiBindings {
   late final _motolii_heardPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>>('motolii_heard');
   late final _motolii_heard = _motolii_heardPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
 
-  int motolii_hold(ffi.Pointer<Motolii> m, int thing) {
-    return _motolii_hold(m, thing);
+  int motolii_drag_start(ffi.Pointer<Motolii> m, int layer) {
+    return _motolii_drag_start(m, layer);
   }
 
-  late final _motolii_holdPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int)>>('motolii_hold');
-  late final _motolii_hold = _motolii_holdPtr.asFunction<int Function(ffi.Pointer<Motolii>, int)>();
+  late final _motolii_drag_startPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int)>>('motolii_drag_start');
+  late final _motolii_drag_start = _motolii_drag_startPtr.asFunction<int Function(ffi.Pointer<Motolii>, int)>();
 
   void motolii_home(ffi.Pointer<pkg_ffi.Utf8> folder) {
     return _motolii_home(folder);
@@ -331,15 +331,15 @@ class MotoliiBindings {
   late final _motolii_js_returnedPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>)>>('motolii_js_returned');
   late final _motolii_js_returned = _motolii_js_returnedPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_kept(ffi.Pointer<Motolii> m) {
-    return _motolii_kept(m);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_cache(ffi.Pointer<Motolii> m) {
+    return _motolii_cache(m);
   }
 
-  late final _motolii_keptPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>>('motolii_kept');
-  late final _motolii_kept = _motolii_keptPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
+  late final _motolii_cachePtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>>('motolii_cache');
+  late final _motolii_cache = _motolii_cachePtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
 
-  int motolii_key(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name, double at, double number) {
-    return _motolii_key(m, thing, name, at, number);
+  int motolii_key(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name, double at, double number) {
+    return _motolii_key(m, layer, name, at, number);
   }
 
   late final _motolii_keyPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>, ffi.Double, ffi.Double)>>(
@@ -347,8 +347,8 @@ class MotoliiBindings {
   );
   late final _motolii_key = _motolii_keyPtr.asFunction<int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<pkg_ffi.Utf8>, double, double)>();
 
-  int motolii_key_here(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name, double at) {
-    return _motolii_key_here(m, thing, name, at);
+  int motolii_key_here(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name, double at) {
+    return _motolii_key_here(m, layer, name, at);
   }
 
   late final _motolii_key_herePtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>, ffi.Double)>>(
@@ -356,8 +356,8 @@ class MotoliiBindings {
   );
   late final _motolii_key_here = _motolii_key_herePtr.asFunction<int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<pkg_ffi.Utf8>, double)>();
 
-  int motolii_key_many(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name, int n, ffi.Pointer<ffi.Double> at, ffi.Pointer<ffi.Double> number) {
-    return _motolii_key_many(m, thing, name, n, at, number);
+  int motolii_key_many(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name, int n, ffi.Pointer<ffi.Double> at, ffi.Pointer<ffi.Double> number) {
+    return _motolii_key_many(m, layer, name, n, at, number);
   }
 
   late final _motolii_key_manyPtr =
@@ -369,19 +369,19 @@ class MotoliiBindings {
   late final _motolii_key_many = _motolii_key_manyPtr
       .asFunction<int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<pkg_ffi.Utf8>, int, ffi.Pointer<ffi.Double>, ffi.Pointer<ffi.Double>)>();
 
-  int motolii_key_moments(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name, ffi.Pointer<ffi.Double> at, int room) {
-    return _motolii_key_moments(m, thing, name, at, room);
+  int motolii_key_times(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name, ffi.Pointer<ffi.Double> at, int room) {
+    return _motolii_key_times(m, layer, name, at, room);
   }
 
-  late final _motolii_key_momentsPtr =
+  late final _motolii_key_timesPtr =
       _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<ffi.Double>, ffi.Int)>>(
-        'motolii_key_moments',
+        'motolii_key_times',
       );
-  late final _motolii_key_moments = _motolii_key_momentsPtr
+  late final _motolii_key_times = _motolii_key_timesPtr
       .asFunction<int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<ffi.Double>, int)>();
 
-  int motolii_keyed(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name, double at) {
-    return _motolii_keyed(m, thing, name, at);
+  int motolii_keyed(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name, double at) {
+    return _motolii_keyed(m, layer, name, at);
   }
 
   late final _motolii_keyedPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>, ffi.Double)>>(
@@ -396,8 +396,8 @@ class MotoliiBindings {
   late final _motolii_keyingPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int)>>('motolii_keying');
   late final _motolii_keying = _motolii_keyingPtr.asFunction<int Function(ffi.Pointer<Motolii>, int)>();
 
-  int motolii_keys(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name) {
-    return _motolii_keys(m, thing, name);
+  int motolii_keys(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name) {
+    return _motolii_keys(m, layer, name);
   }
 
   late final _motolii_keysPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>)>>('motolii_keys');
@@ -410,8 +410,8 @@ class MotoliiBindings {
   late final _motolii_kind_ofPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>)>>('motolii_kind_of');
   late final _motolii_kind_of = _motolii_kind_ofPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<pkg_ffi.Utf8>)>();
 
-  double motolii_lasts(ffi.Pointer<Motolii> m, int thing) {
-    return _motolii_lasts(m, thing);
+  double motolii_lasts(ffi.Pointer<Motolii> m, int layer) {
+    return _motolii_lasts(m, layer);
   }
 
   late final _motolii_lastsPtr = _lookup<ffi.NativeFunction<ffi.Double Function(ffi.Pointer<Motolii>, ffi.Int)>>('motolii_lasts');
@@ -420,12 +420,12 @@ class MotoliiBindings {
   int motolii_later(
     ffi.Pointer<Motolii> m,
     ffi.Pointer<pkg_ffi.Utf8> call,
-    int thing,
+    int layer,
     ffi.Pointer<pkg_ffi.Utf8> name,
     ffi.Pointer<pkg_ffi.Utf8> word,
     double number,
   ) {
-    return _motolii_later(m, call, thing, name, word, number);
+    return _motolii_later(m, call, layer, name, word, number);
   }
 
   late final _motolii_laterPtr =
@@ -437,12 +437,12 @@ class MotoliiBindings {
   late final _motolii_later = _motolii_laterPtr
       .asFunction<int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>, int, ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<pkg_ffi.Utf8>, double)>();
 
-  int motolii_let_go(ffi.Pointer<Motolii> m, int keep) {
-    return _motolii_let_go(m, keep);
+  int motolii_drag_end(ffi.Pointer<Motolii> m, int keep) {
+    return _motolii_drag_end(m, keep);
   }
 
-  late final _motolii_let_goPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int)>>('motolii_let_go');
-  late final _motolii_let_go = _motolii_let_goPtr.asFunction<int Function(ffi.Pointer<Motolii>, int)>();
+  late final _motolii_drag_endPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int)>>('motolii_drag_end');
+  late final _motolii_drag_end = _motolii_drag_endPtr.asFunction<int Function(ffi.Pointer<Motolii>, int)>();
 
   int motolii_likeness(ffi.Pointer<pkg_ffi.Utf8> model, ffi.Pointer<ffi.UnsignedChar> rgba, int n, int dims, ffi.Pointer<ffi.Float> out) {
     return _motolii_likeness(model, rgba, n, dims, out);
@@ -469,28 +469,28 @@ class MotoliiBindings {
   late final _motolii_livePtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>)>>('motolii_live');
   late final _motolii_live = _motolii_livePtr.asFunction<int Function(ffi.Pointer<Motolii>)>();
 
-  int motolii_look_put(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> path) {
-    return _motolii_look_put(m, thing, path);
+  int motolii_preset_apply(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> path) {
+    return _motolii_preset_apply(m, layer, path);
   }
 
-  late final _motolii_look_putPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>)>>('motolii_look_put');
-  late final _motolii_look_put = _motolii_look_putPtr.asFunction<int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<pkg_ffi.Utf8>)>();
+  late final _motolii_preset_applyPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>)>>('motolii_preset_apply');
+  late final _motolii_preset_apply = _motolii_preset_applyPtr.asFunction<int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<pkg_ffi.Utf8>)>();
 
-  int motolii_look_save(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> path) {
-    return _motolii_look_save(m, thing, path);
+  int motolii_preset_save(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> path) {
+    return _motolii_preset_save(m, layer, path);
   }
 
-  late final _motolii_look_savePtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>)>>(
-    'motolii_look_save',
+  late final _motolii_preset_savePtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>)>>(
+    'motolii_preset_save',
   );
-  late final _motolii_look_save = _motolii_look_savePtr.asFunction<int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<pkg_ffi.Utf8>)>();
+  late final _motolii_preset_save = _motolii_preset_savePtr.asFunction<int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<pkg_ffi.Utf8>)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_looks(ffi.Pointer<Motolii> m) {
-    return _motolii_looks(m);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_presets(ffi.Pointer<Motolii> m) {
+    return _motolii_presets(m);
   }
 
-  late final _motolii_looksPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>>('motolii_looks');
-  late final _motolii_looks = _motolii_looksPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
+  late final _motolii_presetsPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>>('motolii_presets');
+  late final _motolii_presets = _motolii_presetsPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
 
   int motolii_loop(ffi.Pointer<Motolii> m, int on) {
     return _motolii_loop(m, on);
@@ -499,8 +499,8 @@ class MotoliiBindings {
   late final _motolii_loopPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int)>>('motolii_loop');
   late final _motolii_loop = _motolii_loopPtr.asFunction<int Function(ffi.Pointer<Motolii>, int)>();
 
-  int motolii_loudness(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<ffi.Float> db, int room) {
-    return _motolii_loudness(m, thing, db, room);
+  int motolii_loudness(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<ffi.Float> db, int room) {
+    return _motolii_loudness(m, layer, db, room);
   }
 
   late final _motolii_loudnessPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<ffi.Float>, ffi.Int)>>(
@@ -508,8 +508,8 @@ class MotoliiBindings {
   );
   late final _motolii_loudness = _motolii_loudnessPtr.asFunction<int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<ffi.Float>, int)>();
 
-  int motolii_loudness_over(ffi.Pointer<Motolii> m, int thing, double from, double to, int n, ffi.Pointer<ffi.Float> db) {
-    return _motolii_loudness_over(m, thing, from, to, n, db);
+  int motolii_loudness_over(ffi.Pointer<Motolii> m, int layer, double from, double to, int n, ffi.Pointer<ffi.Float> db) {
+    return _motolii_loudness_over(m, layer, from, to, n, db);
   }
 
   late final _motolii_loudness_overPtr =
@@ -519,12 +519,12 @@ class MotoliiBindings {
   late final _motolii_loudness_over = _motolii_loudness_overPtr
       .asFunction<int Function(ffi.Pointer<Motolii>, int, double, double, int, ffi.Pointer<ffi.Float>)>();
 
-  int motolii_make(ffi.Pointer<Motolii> m, ffi.Pointer<pkg_ffi.Utf8> recipe) {
-    return _motolii_make(m, recipe);
+  int motolii_create(ffi.Pointer<Motolii> m, ffi.Pointer<pkg_ffi.Utf8> script) {
+    return _motolii_create(m, script);
   }
 
-  late final _motolii_makePtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)>>('motolii_make');
-  late final _motolii_make = _motolii_makePtr.asFunction<int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)>();
+  late final _motolii_createPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)>>('motolii_create');
+  late final _motolii_create = _motolii_createPtr.asFunction<int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)>();
 
   int motolii_map(ffi.Pointer<ffi.Float> points, int n, int dims, ffi.Pointer<ffi.Double> xy) {
     return _motolii_map(points, n, dims, xy);
@@ -563,14 +563,14 @@ class MotoliiBindings {
 
   int motolii_midi(
     ffi.Pointer<Motolii> m,
-    int thing,
+    int layer,
     ffi.Pointer<pkg_ffi.Utf8> name,
     ffi.Pointer<pkg_ffi.Utf8> file,
     ffi.Pointer<pkg_ffi.Utf8> kind,
     int channel,
     double bpm,
   ) {
-    return _motolii_midi(m, thing, name, file, kind, channel, bpm);
+    return _motolii_midi(m, layer, name, file, kind, channel, bpm);
   }
 
   late final _motolii_midiPtr =
@@ -589,8 +589,8 @@ class MotoliiBindings {
   late final _motolii_midi_bpmPtr = _lookup<ffi.NativeFunction<ffi.Double Function(ffi.Pointer<pkg_ffi.Utf8>)>>('motolii_midi_bpm');
   late final _motolii_midi_bpm = _motolii_midi_bpmPtr.asFunction<double Function(ffi.Pointer<pkg_ffi.Utf8>)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_moving(ffi.Pointer<Motolii> m, int thing) {
-    return _motolii_moving(m, thing);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_moving(ffi.Pointer<Motolii> m, int layer) {
+    return _motolii_moving(m, layer);
   }
 
   late final _motolii_movingPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Int)>>('motolii_moving');
@@ -619,8 +619,8 @@ class MotoliiBindings {
   );
   late final _motolii_pack = _motolii_packPtr.asFunction<int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<pkg_ffi.Utf8>)>();
 
-  int motolii_path(ffi.Pointer<Motolii> m, int thing, int copy, double from, double to, int n, ffi.Pointer<ffi.Double> path) {
-    return _motolii_path(m, thing, copy, from, to, n, path);
+  int motolii_path(ffi.Pointer<Motolii> m, int layer, int copy, double from, double to, int n, ffi.Pointer<ffi.Double> path) {
+    return _motolii_path(m, layer, copy, from, to, n, path);
   }
 
   late final _motolii_pathPtr =
@@ -629,8 +629,8 @@ class MotoliiBindings {
       );
   late final _motolii_path = _motolii_pathPtr.asFunction<int Function(ffi.Pointer<Motolii>, int, int, double, double, int, ffi.Pointer<ffi.Double>)>();
 
-  int motolii_path3(ffi.Pointer<Motolii> m, int thing, int copy, double from, double to, int n, ffi.Pointer<ffi.Double> path) {
-    return _motolii_path3(m, thing, copy, from, to, n, path);
+  int motolii_path3(ffi.Pointer<Motolii> m, int layer, int copy, double from, double to, int n, ffi.Pointer<ffi.Double> path) {
+    return _motolii_path3(m, layer, copy, from, to, n, path);
   }
 
   late final _motolii_path3Ptr =
@@ -639,8 +639,8 @@ class MotoliiBindings {
       );
   late final _motolii_path3 = _motolii_path3Ptr.asFunction<int Function(ffi.Pointer<Motolii>, int, int, double, double, int, ffi.Pointer<ffi.Double>)>();
 
-  int motolii_pen(ffi.Pointer<Motolii> m, int thing, double x, double y, double hx, double hy) {
-    return _motolii_pen(m, thing, x, y, hx, hy);
+  int motolii_pen(ffi.Pointer<Motolii> m, int layer, double x, double y, double hx, double hy) {
+    return _motolii_pen(m, layer, x, y, hx, hy);
   }
 
   late final _motolii_penPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Double, ffi.Double, ffi.Double, ffi.Double)>>(
@@ -648,20 +648,20 @@ class MotoliiBindings {
   );
   late final _motolii_pen = _motolii_penPtr.asFunction<int Function(ffi.Pointer<Motolii>, int, double, double, double, double)>();
 
-  int motolii_pick(ffi.Pointer<Motolii> m, int thing, int hover) {
-    return _motolii_pick(m, thing, hover);
+  int motolii_pick(ffi.Pointer<Motolii> m, int layer, int hover) {
+    return _motolii_pick(m, layer, hover);
   }
 
   late final _motolii_pickPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Int)>>('motolii_pick');
   late final _motolii_pick = _motolii_pickPtr.asFunction<int Function(ffi.Pointer<Motolii>, int, int)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_picture(ffi.Pointer<Motolii> m, int which, int since, ffi.Pointer<ffi.Long> version) {
-    return _motolii_picture(m, which, since, version);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_snapshot(ffi.Pointer<Motolii> m, int which, int since, ffi.Pointer<ffi.Long> version) {
+    return _motolii_snapshot(m, which, since, version);
   }
 
-  late final _motolii_picturePtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Long, ffi.Pointer<ffi.Long>)>>('motolii_picture');
-  late final _motolii_picture = _motolii_picturePtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, int, int, ffi.Pointer<ffi.Long>)>();
+  late final _motolii_snapshotPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Long, ffi.Pointer<ffi.Long>)>>('motolii_snapshot');
+  late final _motolii_snapshot = _motolii_snapshotPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, int, int, ffi.Pointer<ffi.Long>)>();
 
   int motolii_play(ffi.Pointer<Motolii> m, int playing) {
     return _motolii_play(m, playing);
@@ -677,8 +677,8 @@ class MotoliiBindings {
   late final _motolii_pointPtr = _lookup<ffi.NativeFunction<ffi.Double Function(ffi.Pointer<Motolii>)>>('motolii_point');
   late final _motolii_point = _motolii_pointPtr.asFunction<double Function(ffi.Pointer<Motolii>)>();
 
-  int motolii_points(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<ffi.Double> xy, int room) {
-    return _motolii_points(m, thing, xy, room);
+  int motolii_points(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<ffi.Double> xy, int room) {
+    return _motolii_points(m, layer, xy, room);
   }
 
   late final _motolii_pointsPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<ffi.Double>, ffi.Int)>>(
@@ -693,8 +693,8 @@ class MotoliiBindings {
   late final _motolii_posterPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)>>('motolii_poster');
   late final _motolii_poster = _motolii_posterPtr.asFunction<int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)>();
 
-  int motolii_put(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name, double at, double number) {
-    return _motolii_put(m, thing, name, at, number);
+  int motolii_put(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name, double at, double number) {
+    return _motolii_put(m, layer, name, at, number);
   }
 
   late final _motolii_putPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>, ffi.Double, ffi.Double)>>(
@@ -702,15 +702,15 @@ class MotoliiBindings {
   );
   late final _motolii_put = _motolii_putPtr.asFunction<int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<pkg_ffi.Utf8>, double, double)>();
 
-  int motolii_raise(ffi.Pointer<Motolii> m, int thing, int places) {
-    return _motolii_raise(m, thing, places);
+  int motolii_raise(ffi.Pointer<Motolii> m, int layer, int places) {
+    return _motolii_raise(m, layer, places);
   }
 
   late final _motolii_raisePtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Int)>>('motolii_raise');
   late final _motolii_raise = _motolii_raisePtr.asFunction<int Function(ffi.Pointer<Motolii>, int, int)>();
 
-  int motolii_range(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name, ffi.Pointer<ffi.Double> low, ffi.Pointer<ffi.Double> high) {
-    return _motolii_range(m, thing, name, low, high);
+  int motolii_range(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name, ffi.Pointer<ffi.Double> low, ffi.Pointer<ffi.Double> high) {
+    return _motolii_range(m, layer, name, low, high);
   }
 
   late final _motolii_rangePtr =
@@ -727,8 +727,8 @@ class MotoliiBindings {
   late final _motolii_ratePtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>)>>('motolii_rate');
   late final _motolii_rate = _motolii_ratePtr.asFunction<int Function(ffi.Pointer<Motolii>)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_reading(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name) {
-    return _motolii_reading(m, thing, name);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_reading(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name) {
+    return _motolii_reading(m, layer, name);
   }
 
   late final _motolii_readingPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>)>>(
@@ -736,12 +736,12 @@ class MotoliiBindings {
   );
   late final _motolii_reading = _motolii_readingPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, int, ffi.Pointer<pkg_ffi.Utf8>)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_recipes(ffi.Pointer<Motolii> m) {
-    return _motolii_recipes(m);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_create_scripts(ffi.Pointer<Motolii> m) {
+    return _motolii_create_scripts(m);
   }
 
-  late final _motolii_recipesPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>>('motolii_recipes');
-  late final _motolii_recipes = _motolii_recipesPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
+  late final _motolii_create_scriptsPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>>('motolii_create_scripts');
+  late final _motolii_create_scripts = _motolii_create_scriptsPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
 
   int motolii_redo(ffi.Pointer<Motolii> m) {
     return _motolii_redo(m);
@@ -757,15 +757,15 @@ class MotoliiBindings {
   late final _motolii_relationsPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>>('motolii_relations');
   late final _motolii_relations = _motolii_relationsPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
 
-  int motolii_remove(ffi.Pointer<Motolii> m, int thing) {
-    return _motolii_remove(m, thing);
+  int motolii_remove(ffi.Pointer<Motolii> m, int layer) {
+    return _motolii_remove(m, layer);
   }
 
   late final _motolii_removePtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int)>>('motolii_remove');
   late final _motolii_remove = _motolii_removePtr.asFunction<int Function(ffi.Pointer<Motolii>, int)>();
 
-  int motolii_say(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name, ffi.Pointer<pkg_ffi.Utf8> word) {
-    return _motolii_say(m, thing, name, word);
+  int motolii_say(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name, ffi.Pointer<pkg_ffi.Utf8> word) {
+    return _motolii_say(m, layer, name, word);
   }
 
   late final _motolii_sayPtr =
@@ -779,8 +779,8 @@ class MotoliiBindings {
   late final _motolii_secondsPtr = _lookup<ffi.NativeFunction<ffi.Double Function(ffi.Pointer<Motolii>)>>('motolii_seconds');
   late final _motolii_seconds = _motolii_secondsPtr.asFunction<double Function(ffi.Pointer<Motolii>)>();
 
-  int motolii_seen(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<ffi.Double> box) {
-    return _motolii_seen(m, thing, box);
+  int motolii_seen(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<ffi.Double> box) {
+    return _motolii_seen(m, layer, box);
   }
 
   late final _motolii_seenPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<ffi.Double>)>>('motolii_seen');
@@ -793,8 +793,8 @@ class MotoliiBindings {
   late final _motolii_sequencePtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Double)>>('motolii_sequence');
   late final _motolii_sequence = _motolii_sequencePtr.asFunction<int Function(ffi.Pointer<Motolii>, double)>();
 
-  int motolii_set(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name, double number) {
-    return _motolii_set(m, thing, name, number);
+  int motolii_set(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name, double number) {
+    return _motolii_set(m, layer, name, number);
   }
 
   late final _motolii_setPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>, ffi.Double)>>(
@@ -832,8 +832,8 @@ class MotoliiBindings {
   );
   late final _motolii_shown = _motolii_shownPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)>();
 
-  int motolii_shows(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name, double at, ffi.Pointer<ffi.Double> is$) {
-    return _motolii_shows(m, thing, name, at, is$);
+  int motolii_shows(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name, double at, ffi.Pointer<ffi.Double> is$) {
+    return _motolii_shows(m, layer, name, at, is$);
   }
 
   late final _motolii_showsPtr =
@@ -866,8 +866,8 @@ class MotoliiBindings {
   late final _motolii_spentPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>>('motolii_spent');
   late final _motolii_spent = _motolii_spentPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
 
-  int motolii_stay(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name, double at) {
-    return _motolii_stay(m, thing, name, at);
+  int motolii_stay(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name, double at) {
+    return _motolii_stay(m, layer, name, at);
   }
 
   late final _motolii_stayPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>, ffi.Double)>>(
@@ -882,50 +882,50 @@ class MotoliiBindings {
   late final _motolii_stillPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)>>('motolii_still');
   late final _motolii_still = _motolii_stillPtr.asFunction<int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)>();
 
-  int motolii_strikes(ffi.Pointer<Motolii> m, int thing, double rise, int own, ffi.Pointer<ffi.Double> at, int room) {
-    return _motolii_strikes(m, thing, rise, own, at, room);
+  int motolii_strikes(ffi.Pointer<Motolii> m, int layer, double rise, int own, ffi.Pointer<ffi.Double> at, int room) {
+    return _motolii_strikes(m, layer, rise, own, at, room);
   }
 
   late final _motolii_strikesPtr =
       _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Double, ffi.Int, ffi.Pointer<ffi.Double>, ffi.Int)>>('motolii_strikes');
   late final _motolii_strikes = _motolii_strikesPtr.asFunction<int Function(ffi.Pointer<Motolii>, int, double, int, ffi.Pointer<ffi.Double>, int)>();
 
-  void motolii_tell(ffi.Pointer<Motolii> m, ffi.Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Int which)>> told) {
-    return _motolii_tell(m, told);
+  void motolii_add_listener(ffi.Pointer<Motolii> m, ffi.Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Int which)>> listener) {
+    return _motolii_add_listener(m, listener);
   }
 
-  late final _motolii_tellPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<Motolii>, ffi.Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Int which)>>)>>('motolii_tell');
-  late final _motolii_tell = _motolii_tellPtr
+  late final _motolii_add_listenerPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<Motolii>, ffi.Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Int which)>>)>>('motolii_add_listener');
+  late final _motolii_add_listener = _motolii_add_listenerPtr
       .asFunction<void Function(ffi.Pointer<Motolii>, ffi.Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Int which)>>)>();
 
-  int motolii_thing_key_moments(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<ffi.Double> at, int room) {
-    return _motolii_thing_key_moments(m, thing, at, room);
+  int motolii_layer_key_times(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<ffi.Double> at, int room) {
+    return _motolii_layer_key_times(m, layer, at, room);
   }
 
-  late final _motolii_thing_key_momentsPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<ffi.Double>, ffi.Int)>>(
-    'motolii_thing_key_moments',
+  late final _motolii_layer_key_timesPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<ffi.Double>, ffi.Int)>>(
+    'motolii_layer_key_times',
   );
-  late final _motolii_thing_key_moments = _motolii_thing_key_momentsPtr.asFunction<int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<ffi.Double>, int)>();
+  late final _motolii_layer_key_times = _motolii_layer_key_timesPtr.asFunction<int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<ffi.Double>, int)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_thing_stretches(ffi.Pointer<Motolii> m, int thing) {
-    return _motolii_thing_stretches(m, thing);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_layer_stretches(ffi.Pointer<Motolii> m, int layer) {
+    return _motolii_layer_stretches(m, layer);
   }
 
-  late final _motolii_thing_stretchesPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Int)>>(
-    'motolii_thing_stretches',
+  late final _motolii_layer_stretchesPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Int)>>(
+    'motolii_layer_stretches',
   );
-  late final _motolii_thing_stretches = _motolii_thing_stretchesPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, int)>();
+  late final _motolii_layer_stretches = _motolii_layer_stretchesPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, int)>();
 
-  int motolii_things(ffi.Pointer<Motolii> m, ffi.Pointer<ffi.Int> things, int room) {
-    return _motolii_things(m, things, room);
+  int motolii_layers(ffi.Pointer<Motolii> m, ffi.Pointer<ffi.Int> layers, int room) {
+    return _motolii_layers(m, layers, room);
   }
 
-  late final _motolii_thingsPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Pointer<ffi.Int>, ffi.Int)>>('motolii_things');
-  late final _motolii_things = _motolii_thingsPtr.asFunction<int Function(ffi.Pointer<Motolii>, ffi.Pointer<ffi.Int>, int)>();
+  late final _motolii_layersPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Pointer<ffi.Int>, ffi.Int)>>('motolii_layers');
+  late final _motolii_layers = _motolii_layersPtr.asFunction<int Function(ffi.Pointer<Motolii>, ffi.Pointer<ffi.Int>, int)>();
 
-  int motolii_thumbnail(ffi.Pointer<pkg_ffi.Utf8> film, ffi.Pointer<pkg_ffi.Utf8> png, int wide) {
-    return _motolii_thumbnail(film, png, wide);
+  int motolii_thumbnail(ffi.Pointer<pkg_ffi.Utf8> video, ffi.Pointer<pkg_ffi.Utf8> png, int wide) {
+    return _motolii_thumbnail(video, png, wide);
   }
 
   late final _motolii_thumbnailPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<pkg_ffi.Utf8>, ffi.Int)>>(
@@ -933,16 +933,16 @@ class MotoliiBindings {
   );
   late final _motolii_thumbnail = _motolii_thumbnailPtr.asFunction<int Function(ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<pkg_ffi.Utf8>, int)>();
 
-  int motolii_thumbnail_at(ffi.Pointer<pkg_ffi.Utf8> film, ffi.Pointer<pkg_ffi.Utf8> png, int wide, double fraction) {
-    return _motolii_thumbnail_at(film, png, wide, fraction);
+  int motolii_thumbnail_at(ffi.Pointer<pkg_ffi.Utf8> video, ffi.Pointer<pkg_ffi.Utf8> png, int wide, double fraction) {
+    return _motolii_thumbnail_at(video, png, wide, fraction);
   }
 
   late final _motolii_thumbnail_atPtr =
       _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<pkg_ffi.Utf8>, ffi.Int, ffi.Double)>>('motolii_thumbnail_at');
   late final _motolii_thumbnail_at = _motolii_thumbnail_atPtr.asFunction<int Function(ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<pkg_ffi.Utf8>, int, double)>();
 
-  int motolii_thumbnail_seconds(ffi.Pointer<pkg_ffi.Utf8> film, ffi.Pointer<pkg_ffi.Utf8> png, int wide, double seconds) {
-    return _motolii_thumbnail_seconds(film, png, wide, seconds);
+  int motolii_thumbnail_seconds(ffi.Pointer<pkg_ffi.Utf8> video, ffi.Pointer<pkg_ffi.Utf8> png, int wide, double seconds) {
+    return _motolii_thumbnail_seconds(video, png, wide, seconds);
   }
 
   late final _motolii_thumbnail_secondsPtr =
@@ -950,8 +950,8 @@ class MotoliiBindings {
   late final _motolii_thumbnail_seconds = _motolii_thumbnail_secondsPtr
       .asFunction<int Function(ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<pkg_ffi.Utf8>, int, double)>();
 
-  void motolii_timed(ffi.Pointer<Motolii> m, int pictures) {
-    return _motolii_timed(m, pictures);
+  void motolii_timed(ffi.Pointer<Motolii> m, int frames) {
+    return _motolii_timed(m, frames);
   }
 
   late final _motolii_timedPtr = _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<Motolii>, ffi.Int)>>('motolii_timed');
@@ -964,22 +964,22 @@ class MotoliiBindings {
   late final _motolii_togetherPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int)>>('motolii_together');
   late final _motolii_together = _motolii_togetherPtr.asFunction<int Function(ffi.Pointer<Motolii>, int)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_trouble(ffi.Pointer<Motolii> m) {
-    return _motolii_trouble(m);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_error(ffi.Pointer<Motolii> m) {
+    return _motolii_error(m);
   }
 
-  late final _motolii_troublePtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>>('motolii_trouble');
-  late final _motolii_trouble = _motolii_troublePtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
+  late final _motolii_errorPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>>('motolii_error');
+  late final _motolii_error = _motolii_errorPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
 
-  int motolii_type_picture(ffi.Pointer<pkg_ffi.Utf8> font, ffi.Pointer<pkg_ffi.Utf8> words, int w, int h, double most, ffi.Pointer<ffi.UnsignedChar> grey) {
-    return _motolii_type_picture(font, words, w, h, most, grey);
+  int motolii_type_frame(ffi.Pointer<pkg_ffi.Utf8> font, ffi.Pointer<pkg_ffi.Utf8> words, int w, int h, double most, ffi.Pointer<ffi.UnsignedChar> grey) {
+    return _motolii_type_frame(font, words, w, h, most, grey);
   }
 
-  late final _motolii_type_picturePtr =
+  late final _motolii_type_framePtr =
       _lookup<
         ffi.NativeFunction<ffi.Int Function(ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<pkg_ffi.Utf8>, ffi.Int, ffi.Int, ffi.Float, ffi.Pointer<ffi.UnsignedChar>)>
-      >('motolii_type_picture');
-  late final _motolii_type_picture = _motolii_type_picturePtr
+      >('motolii_type_frame');
+  late final _motolii_type_frame = _motolii_type_framePtr
       .asFunction<int Function(ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<pkg_ffi.Utf8>, int, int, double, ffi.Pointer<ffi.UnsignedChar>)>();
 
   int motolii_undo(ffi.Pointer<Motolii> m) {
@@ -989,8 +989,8 @@ class MotoliiBindings {
   late final _motolii_undoPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>)>>('motolii_undo');
   late final _motolii_undo = _motolii_undoPtr.asFunction<int Function(ffi.Pointer<Motolii>)>();
 
-  int motolii_unkey(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name, double at) {
-    return _motolii_unkey(m, thing, name, at);
+  int motolii_unkey(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name, double at) {
+    return _motolii_unkey(m, layer, name, at);
   }
 
   late final _motolii_unkeyPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>, ffi.Double)>>(
@@ -998,8 +998,8 @@ class MotoliiBindings {
   );
   late final _motolii_unkey = _motolii_unkeyPtr.asFunction<int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<pkg_ffi.Utf8>, double)>();
 
-  int motolii_value(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name, double at, ffi.Pointer<ffi.Double> is$) {
-    return _motolii_value(m, thing, name, at, is$);
+  int motolii_value(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name, double at, ffi.Pointer<ffi.Double> is$) {
+    return _motolii_value(m, layer, name, at, is$);
   }
 
   late final _motolii_valuePtr =
@@ -1009,8 +1009,8 @@ class MotoliiBindings {
   late final _motolii_value = _motolii_valuePtr
       .asFunction<int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<pkg_ffi.Utf8>, double, ffi.Pointer<ffi.Double>)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_values(ffi.Pointer<Motolii> m, int thing) {
-    return _motolii_values(m, thing);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_values(ffi.Pointer<Motolii> m, int layer) {
+    return _motolii_values(m, layer);
   }
 
   late final _motolii_valuesPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Int)>>('motolii_values');
@@ -1023,59 +1023,59 @@ class MotoliiBindings {
   late final _motolii_watchPtr = _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<Motolii>, ffi.Int)>>('motolii_watch');
   late final _motolii_watch = _motolii_watchPtr.asFunction<void Function(ffi.Pointer<Motolii>, int)>();
 
-  int motolii_way(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name, double at, ffi.Pointer<pkg_ffi.Utf8> way) {
-    return _motolii_way(m, thing, name, at, way);
+  int motolii_easing(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name, double at, ffi.Pointer<pkg_ffi.Utf8> easing) {
+    return _motolii_easing(m, layer, name, at, easing);
   }
 
-  late final _motolii_wayPtr =
+  late final _motolii_easingPtr =
       _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>, ffi.Double, ffi.Pointer<pkg_ffi.Utf8>)>>(
-        'motolii_way',
+        'motolii_easing',
       );
-  late final _motolii_way = _motolii_wayPtr.asFunction<int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<pkg_ffi.Utf8>, double, ffi.Pointer<pkg_ffi.Utf8>)>();
+  late final _motolii_easing = _motolii_easingPtr.asFunction<int Function(ffi.Pointer<Motolii>, int, ffi.Pointer<pkg_ffi.Utf8>, double, ffi.Pointer<pkg_ffi.Utf8>)>();
 
-  double motolii_way_at(ffi.Pointer<Motolii> m, ffi.Pointer<pkg_ffi.Utf8> way, double u) {
-    return _motolii_way_at(m, way, u);
+  double motolii_easing_at(ffi.Pointer<Motolii> m, ffi.Pointer<pkg_ffi.Utf8> easing, double u) {
+    return _motolii_easing_at(m, easing, u);
   }
 
-  late final _motolii_way_atPtr = _lookup<ffi.NativeFunction<ffi.Double Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>, ffi.Double)>>(
-    'motolii_way_at',
+  late final _motolii_easing_atPtr = _lookup<ffi.NativeFunction<ffi.Double Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>, ffi.Double)>>(
+    'motolii_easing_at',
   );
-  late final _motolii_way_at = _motolii_way_atPtr.asFunction<double Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>, double)>();
+  late final _motolii_easing_at = _motolii_easing_atPtr.asFunction<double Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>, double)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_way_names(ffi.Pointer<Motolii> m) {
-    return _motolii_way_names(m);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_easing_names(ffi.Pointer<Motolii> m) {
+    return _motolii_easing_names(m);
   }
 
-  late final _motolii_way_namesPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>>('motolii_way_names');
-  late final _motolii_way_names = _motolii_way_namesPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
+  late final _motolii_easing_namesPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>>('motolii_easing_names');
+  late final _motolii_easing_names = _motolii_easing_namesPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_way_numbers(ffi.Pointer<Motolii> m, ffi.Pointer<pkg_ffi.Utf8> kind) {
-    return _motolii_way_numbers(m, kind);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_easing_numbers(ffi.Pointer<Motolii> m, ffi.Pointer<pkg_ffi.Utf8> kind) {
+    return _motolii_easing_numbers(m, kind);
   }
 
-  late final _motolii_way_numbersPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)>>(
-    'motolii_way_numbers',
+  late final _motolii_easing_numbersPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)>>(
+    'motolii_easing_numbers',
   );
-  late final _motolii_way_numbers = _motolii_way_numbersPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)>();
+  late final _motolii_easing_numbers = _motolii_easing_numbersPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_way_of(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name, double at) {
-    return _motolii_way_of(m, thing, name, at);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_easing_of(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name, double at) {
+    return _motolii_easing_of(m, layer, name, at);
   }
 
-  late final _motolii_way_ofPtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>, ffi.Double)>>('motolii_way_of');
-  late final _motolii_way_of = _motolii_way_ofPtr
+  late final _motolii_easing_ofPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>, ffi.Double)>>('motolii_easing_of');
+  late final _motolii_easing_of = _motolii_easing_ofPtr
       .asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, int, ffi.Pointer<pkg_ffi.Utf8>, double)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_ways(ffi.Pointer<Motolii> m) {
-    return _motolii_ways(m);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_easings(ffi.Pointer<Motolii> m) {
+    return _motolii_easings(m);
   }
 
-  late final _motolii_waysPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>>('motolii_ways');
-  late final _motolii_ways = _motolii_waysPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
+  late final _motolii_easingsPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>>('motolii_easings');
+  late final _motolii_easings = _motolii_easingsPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_word(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name) {
-    return _motolii_word(m, thing, name);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_word(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name) {
+    return _motolii_word(m, layer, name);
   }
 
   late final _motolii_wordPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>)>>(
@@ -1083,8 +1083,8 @@ class MotoliiBindings {
   );
   late final _motolii_word = _motolii_wordPtr.asFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, int, ffi.Pointer<pkg_ffi.Utf8>)>();
 
-  ffi.Pointer<pkg_ffi.Utf8> motolii_words(ffi.Pointer<Motolii> m, int thing, ffi.Pointer<pkg_ffi.Utf8> name) {
-    return _motolii_words(m, thing, name);
+  ffi.Pointer<pkg_ffi.Utf8> motolii_words(ffi.Pointer<Motolii> m, int layer, ffi.Pointer<pkg_ffi.Utf8> name) {
+    return _motolii_words(m, layer, name);
   }
 
   late final _motolii_wordsPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pkg_ffi.Utf8> Function(ffi.Pointer<Motolii>, ffi.Int, ffi.Pointer<pkg_ffi.Utf8>)>>(
@@ -1117,12 +1117,12 @@ class MotoliiBindings {
   );
   late final _motolii_work_out = _motolii_work_outPtr.asFunction<int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>, ffi.Pointer<ffi.Double>)>();
 
-  int motolii_write(ffi.Pointer<Motolii> m, ffi.Pointer<pkg_ffi.Utf8> mp4) {
-    return _motolii_write(m, mp4);
+  int motolii_export(ffi.Pointer<Motolii> m, ffi.Pointer<pkg_ffi.Utf8> mp4) {
+    return _motolii_export(m, mp4);
   }
 
-  late final _motolii_writePtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)>>('motolii_write');
-  late final _motolii_write = _motolii_writePtr.asFunction<int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)>();
+  late final _motolii_exportPtr = _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)>>('motolii_export');
+  late final _motolii_export = _motolii_exportPtr.asFunction<int Function(ffi.Pointer<Motolii>, ffi.Pointer<pkg_ffi.Utf8>)>();
 }
 
 final class Motolii extends ffi.Opaque {}

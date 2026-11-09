@@ -37,9 +37,9 @@ class AlignTool extends StatelessWidget {
       _ => 0.0,
     };
     if (dx.abs() < .25 && dy.abs() < .25) return;
-    m.later('hold', thing: t); // (moved as a hand moves it, without waiting; once more if a thing in depth is seen elsewhere where it went)
-    m.carry('place', dx, dy);
-    ws.after(m.later('let_go', number: 1), (done, _) => done && pass == 0 ? align(ws, side, 1) : null);
+    m.later('drag_start', layer: t); // (moved as a hand moves it, without waiting; once more if a thing in depth is seen elsewhere where it went)
+    m.dragUpdate('place', dx, dy);
+    ws.after(m.later('drag_end', number: 1), (done, _) => done && pass == 0 ? align(ws, side, 1) : null);
   }
 
   @override

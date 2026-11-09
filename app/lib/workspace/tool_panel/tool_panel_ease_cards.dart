@@ -84,9 +84,9 @@ Ease easeCard(String word, Motolii? m) {
   }
   final e = heard(word);
   if (!easeOther(e) || m == null) return e;
-  if (easeIsPoints(word) && !_worked.containsKey(word) && m.wayExact(word, 1) < .5) return e; // (not defined yet, so it ends nowhere: drawn when it is)
+  if (easeIsPoints(word) && !_worked.containsKey(word) && m.easingExact(word, 1) < .5) return e; // (not defined yet, so it ends nowhere: drawn when it is)
   if (_worked.length > 256) _worked.clear();
-  return Ease(e.kind, e.p1, e.p2, e.name, _worked[word] ??= [for (var i = 0; i <= _steps; i++) m.wayExact(word, i / _steps)]);
+  return Ease(e.kind, e.p1, e.p2, e.name, _worked[word] ??= [for (var i = 0; i <= _steps; i++) m.easingExact(word, i / _steps)]);
 }
 
 final _curves = <String, List<double>>{};

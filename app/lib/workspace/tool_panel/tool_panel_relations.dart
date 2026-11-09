@@ -33,7 +33,7 @@ class _RelationsToolState extends State<RelationsTool> {
     final at = (ws.rev, ws.selected);
     if (_stations?.$1 == at || _stationsAsked == at || m == null) return _stations?.$2 ?? const {};
     _stationsAsked = at;
-    final moments = r != null && m.word(r, 'kind') == 'behaviour' ? ({for (final n in m.moving(r)) ...m.keyMoments(r, n)}.toList()..sort()) : <double>[];
+    final moments = r != null && m.word(r, 'kind') == 'behaviour' ? ({for (final n in m.moving(r)) ...m.keyTimes(r, n)}.toList()..sort()) : <double>[];
     final members = [
       for (final s in r == null ? const <String>[] : m.word(r, 'members').split(' '))
         if (int.tryParse(s) case final t? when moments.length > 1) t,

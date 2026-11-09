@@ -21,10 +21,10 @@ extension MotoliiQuestions on Motolii {
 
   /// The whole document written as a film (.mp4, with its films' sound), on another isolate: the window does not wait.
   /// The inside's one hand takes the call in its turn, from whatever thread it comes.
-  Future<bool> write(String mp4) {
+  Future<bool> exportVideo(String mp4) {
     final lib = libPath, at = _m.address;
     return Isolate.run(() {
-      final ask = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_write;
+      final ask = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_export;
       final to = mp4.toNativeUtf8();
       final done = ask(_P.fromAddress(at), to) != 0;
       malloc.free(to);
@@ -108,11 +108,11 @@ extension MotoliiQuestions on Motolii {
   }
 
   /// Of each font file, [words] in it white on black [w] by [h], a byte a point, no larger than size [most] when it is
-  /// more than 0 (motolii_type_picture; null: not drawn), asked on another isolate as [setting].
+  /// more than 0 (motolii_type_frame; null: not drawn), asked on another isolate as [setting].
   Future<List<Uint8List?>> typePictures(List<String> fonts, String words, int w, int h, {double most = 0}) {
     final lib = libPath;
     return Isolate.run(() {
-      final ask = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_type_picture;
+      final ask = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_type_frame;
       final said = words.toNativeUtf8(), out = malloc<UnsignedChar>(w * h), all = <Uint8List?>[];
       for (final f in fonts) {
         final file = f.toNativeUtf8();
@@ -135,8 +135,8 @@ extension MotoliiQuestions on Motolii {
       for (final (i, p) in pictures.indexed) {
         into.cast<Uint8>().asTypedList(n * side).setRange(i * side, (i + 1) * side, p);
       }
-      final told = n > 0 && c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_likeness(file.cast(), into, n, dims, out) != 0;
-      final all = told ? [for (var i = 0; i < n; i++) Float32List.fromList(out.asTypedList(n * dims).sublist(i * dims, (i + 1) * dims))] : null;
+      final encoded = n > 0 && c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_likeness(file.cast(), into, n, dims, out) != 0;
+      final all = encoded ? [for (var i = 0; i < n; i++) Float32List.fromList(out.asTypedList(n * dims).sublist(i * dims, (i + 1) * dims))] : null;
       malloc.free(file);
       malloc.free(into);
       malloc.free(out);
@@ -184,9 +184,9 @@ extension MotoliiQuestions on Motolii {
   /// How a thing moves over a while, as the stage places it (its wave and all): [n] moments from [from] to before [to],
   /// four numbers each: where it is (x, y, units of the stage), how far turned (degrees), how large (a share). null: no
   /// such thing. Asked once when its values change, for a small preview that then plays by itself (motolii_path).
-  Future<List<double>?> path(int thing, {int copy = 0, double from = 0, required double to, int n = 60}) => _ask((l, m) {
+  Future<List<double>?> path(int layer, {int copy = 0, double from = 0, required double to, int n = 60}) => _ask((l, m) {
     final out = malloc<Double>(4 * n);
-    final got = c.MotoliiBindings(l).motolii_path(m, thing, copy, from, to, n, out);
+    final got = c.MotoliiBindings(l).motolii_path(m, layer, copy, from, to, n, out);
     final p = [for (var i = 0; i < 4 * got; i++) out[i]];
     malloc.free(out);
     return got > 0 ? p : null;
@@ -199,21 +199,21 @@ extension MotoliiQuestions on Motolii {
   }
 
   /// The same in the round: four numbers a moment, where it is (x, y, z, units of the stage) and how large (motolii_path3).
-  List<double>? path3(int thing, {int copy = 0, double from = 0, required double to, int n = 24}) {
+  List<double>? path3(int layer, {int copy = 0, double from = 0, required double to, int n = 24}) {
     final out = malloc<Double>(4 * n);
-    final got = _path3(_m, thing, copy, from, to, n, out), p = [for (var i = 0; i < 4 * got; i++) out[i]];
+    final got = _path3(_m, layer, copy, from, to, n, out), p = [for (var i = 0; i < 4 * got; i++) out[i]];
     malloc.free(out);
     return got > 0 ? p : null;
   }
 
   /// A film's sound: its loudness (dB, 0 at full) 100 times a second of its own (none: no sound, or not a film). Read
   /// on another isolate, the file decoded once: the window does not wait.
-  Future<List<double>> loudness(int thing) {
+  Future<List<double>> loudness(int layer) {
     final lib = libPath, at = _m.address;
     return Isolate.run(() {
       final ask = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_loudness;
-      final m = _P.fromAddress(at), n = ask(m, thing, nullptr, 0), out = malloc<Float>(n < 1 ? 1 : n);
-      final got = ask(m, thing, out, n), all = [for (var i = 0; i < got && i < n; i++) out[i].toDouble()];
+      final m = _P.fromAddress(at), n = ask(m, layer, nullptr, 0), out = malloc<Float>(n < 1 ? 1 : n);
+      final got = ask(m, layer, out, n), all = [for (var i = 0; i < got && i < n; i++) out[i].toDouble()];
       malloc.free(out);
       return all;
     });
@@ -221,9 +221,9 @@ extension MotoliiQuestions on Motolii {
 
   /// How loud a film's sound is at [n] moments of the document from [from] to before [to], where its film shows them
   /// (dB; -100 silent or not shown). null: its sound not read yet ([loudness] reads it); empty: no sound.
-  Future<List<double>?> loudnessOver(int thing, double from, double to, int n) => _ask((l, m) {
+  Future<List<double>?> loudnessOver(int layer, double from, double to, int n) => _ask((l, m) {
     final out = malloc<Float>(n < 1 ? 1 : n);
-    final got = c.MotoliiBindings(l).motolii_loudness_over(m, thing, from, to, n, out);
+    final got = c.MotoliiBindings(l).motolii_loudness_over(m, layer, from, to, n, out);
     final all = got < 0 ? null : [for (var i = 0; i < got; i++) out[i].toDouble()];
     malloc.free(out);
     return all;
@@ -231,28 +231,28 @@ extension MotoliiQuestions on Motolii {
 
   /// Where a film's sound strikes (grows [rise] dB louder at once): the document's moments where it shows them, or
   /// [own] the film's own seconds. Asked once its loudness has been read ([loudness]).
-  Future<List<double>> strikes(int thing, double rise, {bool own = false}) => _ask((l, m) {
+  Future<List<double>> strikes(int layer, double rise, {bool own = false}) => _ask((l, m) {
     final ask = c.MotoliiBindings(l).motolii_strikes;
-    final n = ask(m, thing, rise, own ? 1 : 0, nullptr, 0), out = malloc<Double>(n < 1 ? 1 : n);
-    final got = ask(m, thing, rise, own ? 1 : 0, out, n), all = [for (var i = 0; i < got && i < n; i++) out[i]];
+    final n = ask(m, layer, rise, own ? 1 : 0, nullptr, 0), out = malloc<Double>(n < 1 ? 1 : n);
+    final got = ask(m, layer, rise, own ? 1 : 0, out, n), all = [for (var i = 0; i < got && i < n; i++) out[i]];
     malloc.free(out);
     return all;
   });
 
   /// A film's first picture, small, as a .png file (null: none could be made). Made once and on another isolate: the
   /// window does not wait.
-  Future<String?> thumbnail(String film) => _thumbnails[film] ??= _thumbnail(libPath, film);
+  Future<String?> thumbnail(String video) => _thumbnails[video] ??= _thumbnail(libPath, video);
 
   /// A picture [step] of [steps] along the film (a tile looked along by the hand's place on it, or played).
   /// The film's picture so many seconds in (a tenth's nearest), small: a bar on the timeline shows what it plays.
-  Future<String?> filmFrame(String film, double seconds) =>
-      _thumbnails['$film@${(seconds * 10).round()}'] ??= _thumbnail(libPath, film, 0, 1, (seconds * 10).round() / 10);
+  Future<String?> videoFrame(String video, double seconds) =>
+      _thumbnails['$video@${(seconds * 10).round()}'] ??= _thumbnail(libPath, video, 0, 1, (seconds * 10).round() / 10);
 
-  Future<String?> thumbnailAt(String film, int step, int steps) =>
-      step == 0 ? thumbnail(film) : _thumbnails['$film#$step/$steps'] ??= _thumbnail(libPath, film, step, steps);
+  Future<String?> thumbnailAt(String video, int step, int steps) =>
+      step == 0 ? thumbnail(video) : _thumbnails['$video#$step/$steps'] ??= _thumbnail(libPath, video, step, steps);
 
   /// A ticket's answer when it comes, and why not if refused: Thermion's VoidCallbackRegistry, as it is (a Completer under
-  /// each request's number, completed when the inside says an answer is there: motolii_tell 8). Nothing looks again and again.
+  /// each request's number, completed when the inside says an answer is there: motolii_add_listener 8). Nothing looks again and again.
   Future<(int, String)> answered(int ticket) {
     final a = answer(ticket);
     if (a >= 0) return Future.value((a, a >= 1 ? '' : answerWhy));

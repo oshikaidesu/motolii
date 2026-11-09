@@ -131,7 +131,7 @@ mixin _TimelineAsked on State<WsTimeline> {
       if (ws.beats != null)
         WsMenuItem(
           'Set 1.1.1 Here',
-          () => ws.after(m.later('set', thing: 0, name: 'bpm_from', number: at), (_, _) => ws.reread()),
+          () => ws.after(m.later('set', layer: 0, name: 'bpm_from', number: at), (_, _) => ws.reread()),
         ), // (a bar begins here: Live's)
     ]);
   }
@@ -200,7 +200,7 @@ mixin _TimelineAsked on State<WsTimeline> {
     if (id == null) return;
     setState(() => _renaming = null);
     final t = int.tryParse(id), was = ws?.layers.where((l) => l.id == id).firstOrNull?.name;
-    if (t != null && words.isNotEmpty && words != was && ws?.inside != null) ws!.after(ws.inside!.later('say', thing: t, name: 'name', word: words));
+    if (t != null && words.isNotEmpty && words != was && ws?.inside != null) ws!.after(ws.inside!.later('say', layer: t, name: 'name', word: words));
   }
 
   /// The name field over the row being renamed (Enter or clicking away keeps it, Esc leaves the name as it was).

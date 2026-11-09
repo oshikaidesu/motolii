@@ -49,7 +49,7 @@ extension WsPick on Ws {
   }
 
   WsStretchPicked? _stretchOf(String layer, String name, int from) {
-    final t = int.tryParse(layer), at = t == null ? const <double>[] : _inside?.keyMoments(t, name) ?? const <double>[];
+    final t = int.tryParse(layer), at = t == null ? const <double>[] : _inside?.keyTimes(t, name) ?? const <double>[];
     final i = at.indexWhere((s) => (s * Ws.fps).round() == from);
     return i < 0 || i + 1 >= at.length ? null : (layer: layer, name: name, at: at[i], from: from, to: (at[i + 1] * Ws.fps).round());
   }

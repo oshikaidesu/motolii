@@ -62,7 +62,7 @@ Set<String> shelfTaken(Ws ws, {required bool expression}) {
   if (m == null) return const {};
   return {
     'Empty',
-    for (final l in [m.thingEffects, m.looks]) ...l.map((e) => e.$1),
+    for (final l in [m.layerEffects, m.presets]) ...l.map((e) => e.$1),
     for (final (n, f) in m.effects) shelfNamed(f) ?? n,
   };
 }

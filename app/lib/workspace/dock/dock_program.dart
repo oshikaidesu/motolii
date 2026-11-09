@@ -142,14 +142,14 @@ class _ProgramShelfState extends State<ProgramShelf> {
     final m = c.ws.inside!;
     if (p.recipe case final r?) {
       return c.ws.after(
-        m.later('make', word: r),
+        m.later('create', word: r),
         (done, why) => _told(p, done, why),
         (made) => c.ws.select('$made'),
       ); // (as Create's tile made it: dock_make_colors.dart _make)
     }
-    c.ws.after(m.later('door', thing: int.tryParse(c.ws.selected ?? '') ?? 0, word: p.file), (done, why) => _told(p, done, why), (made) {
+    c.ws.after(m.later('adapter', layer: int.tryParse(c.ws.selected ?? '') ?? 0, word: p.file), (done, why) => _told(p, done, why), (made) {
       if (made <= 0) return;
-      if (p.name != p.plain) c.ws.after(m.later('say', thing: made, name: 'name', word: p.name));
+      if (p.name != p.plain) c.ws.after(m.later('say', layer: made, name: 'name', word: p.name));
       c.ws.select('$made');
     });
   }

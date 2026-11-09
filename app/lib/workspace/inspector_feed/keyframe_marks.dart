@@ -46,7 +46,7 @@ void _mark(Ws ws, String? id, String prop, KeyS mark) {
         KeyS.anim => 'unkey',
         KeyS.off => 'stay',
       },
-      thing: t,
+      layer: t,
       name: n,
       number: at,
     );

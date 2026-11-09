@@ -77,7 +77,7 @@ class ArtScene {
   /// A thing's frame on the picture as the inside sees it at this moment, asked when it is wanted (a hand on the
   /// stage, the picked one's line), not for every thing at every picture: null, not shown.
   ArtBox? box(String id) => _asked.putIfAbsent(id, () {
-    final f = _inside?.frame(int.tryParse(id) ?? -1);
+    final f = _inside?.bounds(int.tryParse(id) ?? -1);
     return f == null ? null : ArtBox(Offset(f[0], f[1]), Size(f[2], f[3]), rot: f[4] * math.pi / 180, anchor: Offset(f[5], f[6]));
   });
 

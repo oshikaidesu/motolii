@@ -104,10 +104,10 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
     var last = 0;
     _define(m, said(e));
     for (final (t, name, at) in all) {
-      last = m.later('way', thing: t, name: name, number: at, word: said(e));
+      last = m.later('easing', layer: t, name: name, number: at, word: said(e));
     }
     for (final t in {for (final (t, _, _) in all) t}) {
-      last = m.later('show', thing: t); // (the stage, the bars and the numbers go with the hand, the step still open)
+      last = m.later('show', layer: t); // (the stage, the bars and the numbers go with the hand, the step still open)
     }
     ws.after(last, (_, _) {
       _going = false;
@@ -152,13 +152,13 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
     //  told as the hand went: told once more as it let go, and the step it opened closed)
     final told = [
       for (final (t, name, at) in all)
-        if (_open || said(heard(m.wayOf(t, name, at))) != to) (t, name, at),
+        if (_open || said(heard(m.easingOf(t, name, at))) != to) (t, name, at),
     ];
     if (_open) {
       _open = false;
       _define(m, to);
       for (final (t, name, at) in told) {
-        m.later('way', thing: t, name: name, number: at, word: to);
+        m.later('easing', layer: t, name: name, number: at, word: to);
       }
       _define(m, to); // (again, the stretch on it: what it went by till now, no longer asked for, goes)
       ws.after(m.later('together'), (done, why) => mounted ? setState(() => _trouble = done ? null : why) : null);
@@ -168,7 +168,7 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
     m.later('together', number: 1); // (one step, without waiting)
     _define(m, to);
     for (final (t, name, at) in told) {
-      m.later('way', thing: t, name: name, number: at, word: to);
+      m.later('easing', layer: t, name: name, number: at, word: to);
     }
     _define(m, to);
     ws.after(m.later('together'), (done, why) => mounted ? setState(() => _trouble = done ? null : why) : null);
@@ -185,7 +185,7 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
     for (final l in ws.layers.where((l) => layers.contains(l.id))) {
       for (final f in l.keys) {
         for (final at in keysAt(ws, (layer: l, from: f, to: f, picked: f)).entries) {
-          m.later('way', thing: int.parse(l.id), name: at.key, number: at.value, word: said(e));
+          m.later('easing', layer: int.parse(l.id), name: at.key, number: at.value, word: said(e));
         }
       }
     }
@@ -197,7 +197,7 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
     final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), span = easeSpan(ws), store = eases[ws] ??= {}, id = spanId(span);
     if ((ws.inside, span) case (final m?, final span?)) {
       final at = keysAt(ws, span);
-      final inDocument = at.isEmpty ? easingPreset('Linear') : heard(m.wayOf(int.parse(span.layer.id), at.keys.first, at.values.first));
+      final inDocument = at.isEmpty ? easingPreset('Linear') : heard(m.easingOf(int.parse(span.layer.id), at.keys.first, at.values.first));
       if (_told case final t? when !ws.waiting || said(t) == said(inDocument)) _told = null;
       var ease = _pending ?? _told ?? _base ?? inDocument;
       if (easeOther(ease) && ease.drawn == null) {

@@ -176,7 +176,7 @@ class _SizeChipState extends State<_SizeChip> {
                               onTap: ws.inside == null
                                   ? null
                                   : () => ws.after(
-                                      ws.inside!.later('set', thing: 0, name: 'frame_rate', number: r == ws.inside!.rate ? 0 : r.toDouble()),
+                                      ws.inside!.later('set', layer: 0, name: 'frame_rate', number: r == ws.inside!.rate ? 0 : r.toDouble()),
                                       (_, _) => ws.reread(),
                                     ),
                             ),
@@ -209,8 +209,8 @@ class _SizeChipState extends State<_SizeChip> {
                                   : () {
                                       final m = ws.inside!;
                                       m.later('together', number: 1);
-                                      m.later('say', thing: 0, name: 'background', word: hex);
-                                      m.later('set', thing: 0, name: 'render_alpha', number: hex.isEmpty ? 1 : 0);
+                                      m.later('say', layer: 0, name: 'background', word: hex);
+                                      m.later('set', layer: 0, name: 'render_alpha', number: hex.isEmpty ? 1 : 0);
                                       ws.after(m.later('together'), (_, _) => ws.reread());
                                     },
                             ),
@@ -230,7 +230,7 @@ class _SizeChipState extends State<_SizeChip> {
                               on: (ws.inside?.value(0, 'layer_length', 0) ?? 0).round() == n,
                               onTap: ws.inside == null
                                   ? null
-                                  : () => ws.after(ws.inside!.later('set', thing: 0, name: 'layer_length', number: n.toDouble()), (_, _) => ws.reread()),
+                                  : () => ws.after(ws.inside!.later('set', layer: 0, name: 'layer_length', number: n.toDouble()), (_, _) => ws.reread()),
                             ),
                         ],
                       ),

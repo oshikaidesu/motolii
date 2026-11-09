@@ -162,7 +162,7 @@ class _WsShelfState extends State<WsShelf> {
                       'Fonts' => '${fontsOffered ?? '…'} fonts',
                       'Effects' => switch (EffectTiles.progress.value) {
                         (final done, final all) => '$done of $all',
-                        null => '${(ws.inside?.thingEffects.length ?? 0) + (ws.inside?.effects.length ?? 0)} ready',
+                        null => '${(ws.inside?.layerEffects.length ?? 0) + (ws.inside?.effects.length ?? 0)} ready',
                       },
                       'Colors' => '${usedColors(ws).values.toSet().length} used here',
                       'Create' => createFact(ws),

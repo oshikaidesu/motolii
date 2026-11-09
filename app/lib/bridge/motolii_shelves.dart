@@ -3,26 +3,26 @@ part of 'motolii.dart';
 
 extension MotoliiShelves on Motolii {
   /// Pictures in one call: each recipe's name and what it makes.
-  List<(String, String)> get recipes => _folders.putIfAbsent('recipes', () => [for (final l in _recipeLines) (l[0], l[1])]);
+  List<(String, String)> get createScripts => _folders.putIfAbsent('recipes', () => [for (final l in _createScriptLines) (l[0], l[1])]);
 
   /// The closed packs among them, the Program shelf's and not Create's (docs/internal/notes/CREATE_PROGRAM.md): each one's name
   /// and file, and what it was written for ([packKinds]: Cavalry, p5.js…), as the inside says.
   List<(String, String)> get packs => _folders.putIfAbsent(
     'packs',
     () => [
-      for (final l in _recipeLines)
+      for (final l in _createScriptLines)
         if (l.length > 3) (l[0], l[3]),
     ],
   );
   List<(String, String)> get packKinds => _folders.putIfAbsent(
     'packKinds',
     () => [
-      for (final l in _recipeLines)
+      for (final l in _createScriptLines)
         if (l.length > 3) (l[0], l[2]),
     ],
   );
-  List<List<String>> get _recipeLines => [
-    for (final line in _recipes(_m).toDartString().split('\n'))
+  List<List<String>> get _createScriptLines => [
+    for (final line in _createScripts(_m).toDartString().split('\n'))
       if (line.split('\t') case final l when l.length > 1 && l[0].isNotEmpty) l,
   ];
 
@@ -33,23 +33,23 @@ extension MotoliiShelves on Motolii {
   /// Whether a thing's script is the Repeater: the library's file, a maker's own of that name (which stands over it:
   /// doc_folders), or one written from it (repeater-….js: a thing's own code, script_code.dart, or one added to Create);
   /// then js_StepX and the rest of its knobs are the thing's values.
-  bool hasRepeater(int thing) => RegExp(r'(^|/)repeater(-[^/]*)?\.js$').hasMatch(word(thing, 'script'));
+  bool hasRepeater(int layer) => RegExp(r'(^|/)repeater(-[^/]*)?\.js$').hasMatch(word(layer, 'script'));
 
   /// The whole-screen effects on the shelf: each one's name and file (the stage's script is the files of those on it).
   List<(String, String)> get effects => _folders.putIfAbsent('effects', () => _labelled(_effects(_m).toDartString()));
 
   /// The looks on the shelf (a thing's values, effects and keys kept by a name: document/presets.h): each one's name and file.
-  List<(String, String)> get looks => [
-    for (final l in _kept)
+  List<(String, String)> get presets => [
+    for (final l in _presetLines)
       if (_labels[l.$1] != 'Element') l,
   ];
 
   /// The elements (a thing kept whole with what it holds, put in linked: Alight Motion's My Elements): each one's name and file.
   List<(String, String)> get elements => [
-    for (final l in _kept)
+    for (final l in _presetLines)
       if (_labels[l.$1] == 'Element') l,
   ];
-  List<(String, String)> get _kept => _folders.putIfAbsent('looks', () => _labelled(_looks(_m).toDartString()));
+  List<(String, String)> get _presetLines => _folders.putIfAbsent('looks', () => _labelled(_presets(_m).toDartString()));
 
   /// The motions a thing may be given (Cavalry's Animators): each one's name and file (a thing's script is the file of the one it has).
   List<(String, String)> get animators => _folders.putIfAbsent('animators', () => _labelled(_animators(_m).toDartString()));
@@ -65,9 +65,9 @@ extension MotoliiShelves on Motolii {
 
   /// An effect's (or a motion's) picture for its tile, as the inside says: what it does to a sample ('' none). By its
   /// name, or by its file (a file's effect may share a name with one of the inside's own, Datamosh and datamosh.wgsl).
-  String picture(String name) {
+  String tileImage(String name) {
     _said();
-    return _pictures[name] ?? '';
+    return _tileImages[name] ?? '';
   }
 
   /// What an effect does, in its maker's words, as its file's head says (--about:; '' none said): by name or file.
@@ -95,15 +95,15 @@ extension MotoliiShelves on Motolii {
   }
 
   /// A tile drawn where [home] says: the effects it is for show it from now on (workspace/effect_tiles.dart).
-  void tileDrawn(String home, {bool same = false}) {
+  void tileRendered(String home, {bool same = false}) {
     for (final e in _homes.entries) {
       if (e.value != home) continue;
-      _pictures[e.key] = home;
+      _tileImages[e.key] = home;
       same ? _same.add(e.key) : _same.remove(e.key);
     }
   }
 
-  void _said() => (effects, thingEffects); // (both lists read: their labels and pictures with them)
+  void _said() => (effects, layerEffects); // (both lists read: their labels and pictures with them)
 
   /// "name\tfile\tlabel\tpicture\thome\tsame\tabout\ttags" lines: the names and files, the labels, pictures, homes, sameness, words and tags kept for [label], [picture], [tileHome], [tileSame], [about] and [tags].
   List<(String, String)> _labelled(String lines) {
@@ -114,7 +114,7 @@ extension MotoliiShelves on Motolii {
       if (w.length > 2) _labels[w[0]] = w[2];
       for (final k in [w[0], w[1]]) {
         // (by name and by file: the file's is its own)
-        if (w.length > 3) _pictures[k] = w[3];
+        if (w.length > 3) _tileImages[k] = w[3];
         if (w.length > 4) _homes[k] = w[4];
         if (w.length > 5 && w[5] == 'same') _same.add(k);
         if (w.length > 6 && w[6].isNotEmpty) _abouts[k] = w[6];
@@ -127,7 +127,7 @@ extension MotoliiShelves on Motolii {
   /// How a value is shown to a hand, as the inside says (null: as its range says): its look, the unit it is read in,
   /// its name in plain words, the span its knob covers (in the document's units) and the fold it lies in.
   Shown? shown(String name) => _shownOf.putIfAbsent(name, () {
-    for (final part in _thing.values) {
+    for (final part in _layer.values) {
       if ((part['shown'] as Map<String, dynamic>?)?[name] case final String said) {
         final f = said.split('\t');
         return f.length < 6
@@ -149,8 +149,8 @@ extension MotoliiShelves on Motolii {
   }
 
   /// A kind's numbers as a hand takes them: each one's name, lowest and highest (none: a kind without, or one defined).
-  List<(String, double, double)> wayNumbers(String kind) {
-    final w = _with([kind], (s) => _wayNumbers(_m, s[0]).toDartString()).split(' ').where((x) => x.isNotEmpty).toList();
+  List<(String, double, double)> easingNumbers(String kind) {
+    final w = _with([kind], (s) => _easingNumbers(_m, s[0]).toDartString()).split(' ').where((x) => x.isNotEmpty).toList();
     return [for (var i = 0; i + 2 < w.length; i += 3) (w[i], double.parse(w[i + 1]), double.parse(w[i + 2]))];
   }
 

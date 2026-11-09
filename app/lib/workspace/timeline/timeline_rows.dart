@@ -34,7 +34,7 @@ extension _WsTimelineRows on _WsTimelineState {
   }
 
   void _eye(Ws ws, String id) {
-    ws.after(ws.inside!.later('set', thing: int.parse(id), name: 'visible', number: _isHidden(ws, id) ? 1 : 0));
+    ws.after(ws.inside!.later('set', layer: int.parse(id), name: 'visible', number: _isHidden(ws, id) ? 1 : 0));
   }
 
   // Joined: solo and lock are the document's (After Effects keeps both in its project): while any thing is solo only
@@ -121,7 +121,7 @@ extension _WsTimelineRows on _WsTimelineState {
                                 onVerticalDragEnd: (_) {
                                   final by = (_lift / WtM.row).round();
                                   if (by != 0) {
-                                    ws.after(ws.inside!.later('raise', thing: int.parse(l.id), number: (by > 0 ? -1 : 1) * _places(ws, l, by).toDouble()));
+                                    ws.after(ws.inside!.later('raise', layer: int.parse(l.id), number: (by > 0 ? -1 : 1) * _places(ws, l, by).toDouble()));
                                   }
                                 },
                                 child: _LabelRow(

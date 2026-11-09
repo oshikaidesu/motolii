@@ -68,13 +68,13 @@ Future<void> _placeSheet(DockCtx c, String file) async {
       c.ws.after(m.later('add', word: drawings.first.$2), (done, why) {
         if (!done) asked.complete(0);
       }, asked.complete);
-      m.later('fit', thing: -1, word: 'fit');
-      m.later('say', thing: -1, name: 'name', word: name);
-      m.later('set', thing: -1, name: 'duration', number: sheet.frames / 24);
+      m.later('fit', layer: -1, word: 'fit');
+      m.later('say', layer: -1, name: 'name', word: name);
+      m.later('set', layer: -1, name: 'duration', number: sheet.frames / 24);
       for (final (f, n) in keys) {
         final at = '${from + f / 24}';
-        m.later('key', thing: -1, name: 'cel', word: at, number: n.toDouble());
-        m.later('way', thing: -1, name: 'cel', number: double.parse(at), word: 'hold');
+        m.later('key', layer: -1, name: 'cel', word: at, number: n.toDouble());
+        m.later('easing', layer: -1, name: 'cel', number: double.parse(at), word: 'hold');
       }
       made.add(asked.future);
     } else {
