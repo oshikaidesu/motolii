@@ -551,7 +551,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
             ),
           ),
           if (sel != null &&
-              m.tileImage(sel.id).isNotEmpty) // (its pictures large and moving, as Alight Motion's effect browser opens a large moving sample of the one pressed)
+              m.tileImage(sel.id).isNotEmpty) // (large and moving, as Alight Motion's effect browser opens a large moving sample of the one pressed)
             SizedBox(key: const ValueKey('ws-fx-preview'), height: Shape.z(140), child: TileMoving(m.tileImage(sel.id), playing: true)),
           if (sel != null)
             _FxFooter(
