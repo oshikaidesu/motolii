@@ -56,8 +56,7 @@ class DockMem {
   /// when the shelf is narrow.
   String fxPlace = 'All';
   double fxListHeight = 176;
-  bool fxListOpen = false;   // (narrow: else folded to the one row that says where it looks)
-
+  bool fxListOpen = false; // (narrow: else folded to the one row that says where it looks)
 }
 
 /// One build's view of the dock for a shelf body: the memory, the search text, the document, and how to change local state.
@@ -85,11 +84,13 @@ class DockCtx {
   String get chip => mem.chip[shelf] ?? 'All';
   void pickChip(String c) => set(() => mem.chip[shelf] = c);
   bool hit(String name) => query.isEmpty || name.toLowerCase().contains(query.toLowerCase());
+
   /// When the words as typed find nothing, the shelf's nearest five, best first (each item its id, name and what it
   /// does): the inside's find, RapidFuzz for a word typed wrong or in part, Japanese WordNet for a Japanese word, as the
   /// effects shelf finds them (golf_noise.md (91), (96)); every shelf alike (97). None while nothing is typed.
   /// [least]: the score under which one is left out (Motolii.find).
-  List<String> near(Iterable<(String, String, String)> items, {double least = 0}) => query.trim().isEmpty ? const [] : ws.inside?.find(query, items, least: least) ?? const [];
+  List<String> near(Iterable<(String, String, String)> items, {double least = 0}) =>
+      query.trim().isEmpty ? const [] : ws.inside?.find(query, items, least: least) ?? const [];
   Set<String> get _stars => mem.starred;
   bool starred(String id) => _stars.contains(id);
   void star(String id) => set(() {
@@ -131,7 +132,7 @@ class DockHover extends StatefulWidget {
 
 class _DockHoverState extends State<DockHover> {
   bool _h = false;
-  Timer? _second;   // (while a second press would make it two)
+  Timer? _second; // (while a second press would make it two)
 
   @override
   void dispose() {
@@ -171,12 +172,20 @@ class _DockHoverState extends State<DockHover> {
     cursor: widget.onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
     onEnter: (_) => _hover(true),
     onExit: (_) => _hover(false),
-    child: _carried(Listener(   // (the press as it comes, before the gestures settle which it is)
-      onPointerDown: _down,
-      onPointerUp: _up,
-      onPointerCancel: _up,
-      child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.picks && widget.onDoubleTap != null ? null : widget.onTap, onDoubleTap: widget.onDoubleTap, child: widget.builder(context, _h)),
-    )),
+    child: _carried(
+      Listener(
+        // (the press as it comes, before the gestures settle which it is)
+        onPointerDown: _down,
+        onPointerUp: _up,
+        onPointerCancel: _up,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.picks && widget.onDoubleTap != null ? null : widget.onTap,
+          onDoubleTap: widget.onDoubleTap,
+          child: widget.builder(context, _h),
+        ),
+      ),
+    ),
   );
 
   /// A tile that has an action of its own can be carried to the stage: dropped there, it does what two presses do.
@@ -185,7 +194,13 @@ class _DockHoverState extends State<DockHover> {
       : Draggable<VoidCallback>(
           data: widget.onDoubleTap!,
           dragAnchorStrategy: pointerDragAnchorStrategy,
-          feedback: IgnorePointer(child: Container(width: Shape.z(22), height: Shape.z(22), decoration: BoxDecoration(color: WsT.accent, borderRadius: BorderRadius.all(Shape.r(4))))),
+          feedback: IgnorePointer(
+            child: Container(
+              width: Shape.z(22),
+              height: Shape.z(22),
+              decoration: BoxDecoration(color: WsT.accent, borderRadius: BorderRadius.all(Shape.r(4))),
+            ),
+          ),
           child: tile,
         );
 }
@@ -245,7 +260,13 @@ class DockSection extends StatelessWidget {
               style: T.micro(Grey.g91).copyWith(fontWeight: FontWeight.w700, letterSpacing: .9),
             ),
           ),
-          if (trailing case final w?) Flexible(child: Align(alignment: Alignment.centerRight, child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerRight, child: w))),   // (drawn smaller in a narrow shelf, never cut)
+          if (trailing case final w?)
+            Flexible(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerRight, child: w),
+              ),
+            ), // (drawn smaller in a narrow shelf, never cut)
           if (count != null) Text('$count', style: T.value(Grey.g56).copyWith(fontSize: T.px(10))),
         ],
       ),
@@ -331,8 +352,8 @@ class DockFooter extends StatelessWidget {
 
   /// What the action does is make a new thing (not change the selected one): 'to new layer'.
   final bool fresh;
-  final Widget? more;   // (beside the action: Spotify's three dots)
-  final Widget? lasts;   // (how long the new thing lasts, chosen before it is placed: beside where it goes)
+  final Widget? more; // (beside the action: Spotify's three dots)
+  final Widget? lasts; // (how long the new thing lasts, chosen before it is placed: beside where it goes)
   final Widget? preview;
   final String title, meta, action, doneLabel;
   final VoidCallback? onAction;
@@ -341,7 +362,9 @@ class DockFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), l = fresh ? null : ws.layer;
     return Container(
-      constraints: BoxConstraints(minHeight: Shape.z(52)),   // (as tall as what it says, 52 at least: two lines of words overflowed a fixed 52 by a point, Flutter's RenderFlex overflow; golf (95))
+      constraints: BoxConstraints(
+        minHeight: Shape.z(52),
+      ), // (as tall as what it says, 52 at least: two lines of words overflowed a fixed 52 by a point, Flutter's RenderFlex overflow; golf (95))
       padding: EdgeInsets.symmetric(horizontal: WsT.inset),
       decoration: BoxDecoration(
         color: WsT.card,
@@ -380,8 +403,16 @@ class DockFooter extends StatelessWidget {
                         child: Text(l.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g91)),
                       ),
                     ] else
-                      Flexible(child: Text('new layer', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g91))),
-                    if (lasts case final w?) ...[SizedBox(width: Shape.s(8)), Flexible(flex: 3, child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: w))],   // (smaller rather than cut, when the shelf is narrow)
+                      Flexible(
+                        child: Text('new layer', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g91)),
+                      ),
+                    if (lasts case final w?) ...[
+                      SizedBox(width: Shape.s(8)),
+                      Flexible(
+                        flex: 3,
+                        child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: w),
+                      ),
+                    ], // (smaller rather than cut, when the shelf is narrow)
                   ],
                 ),
               ],
@@ -411,19 +442,17 @@ class DockFooter extends StatelessWidget {
   }
 }
 
-
 /// What a shelf shows when the search finds nothing.
 class DockEmpty extends StatelessWidget {
   const DockEmpty(this.query, {super.key, this.said});
   final String query;
-  final String? said;   // (nothing typed: what is empty here, and what to do)
+  final String? said; // (nothing typed: what is empty here, and what to do)
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.all(Shape.s(24)),
     child: Text(said ?? 'Nothing matches “$query”', textAlign: TextAlign.center, style: T.label(Grey.g63)),
   );
 }
-
 
 /// A shelf's sections as cards: one column while the shelf is narrow; as it widens, columns of at least [minColumn] px stand side by side
 /// and each section goes to the shortest column so far ([weights] estimate the heights, in rows). A shelf made wider shows more at once.

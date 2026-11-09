@@ -23,10 +23,14 @@ Set<String> _seatsOf(Set<String> names) => {...names, for (final n in names) 'v_
 
 /// Joined: the colours on the inside's own cards, as the inspector writes a colour (none said: a dash).
 Map<String, String> _cardColours(Motolii m, int t, [double at = 0]) => {
-  for (final (_, names) in m.cards(t))   // (an effect's colour, three numbers shown as one: _makeCards; at the moment drawn, as the card's numbers are)
+  for (final (_, names) in m.cards(t)) // (an effect's colour, three numbers shown as one: _makeCards; at the moment drawn, as the card's numbers are)
     for (final n in names)
-      if (n.endsWith('_x') && names.contains('${n.substring(0, n.length - 2)}_y') && names.contains('${n.substring(0, n.length - 2)}_z') && (m.shown(n)?.label ?? '').endsWith(' r'))
-        'v_${n.substring(0, n.length - 2)}': '#${[for (final c in 'xyz'.split('')) ((m.value(t, '${n.substring(0, n.length - 2)}_$c', at) ?? 0).clamp(0, 1) * 255).round().toRadixString(16).padLeft(2, '0')].join().toUpperCase()}',
+      if (n.endsWith('_x') &&
+          names.contains('${n.substring(0, n.length - 2)}_y') &&
+          names.contains('${n.substring(0, n.length - 2)}_z') &&
+          (m.shown(n)?.label ?? '').endsWith(' r'))
+        'v_${n.substring(0, n.length - 2)}':
+            '#${[for (final c in 'xyz'.split('')) ((m.value(t, '${n.substring(0, n.length - 2)}_$c', at) ?? 0).clamp(0, 1) * 255).round().toRadixString(16).padLeft(2, '0')].join().toUpperCase()}',
   for (final (_, names) in m.cards(t))
     for (final n in names)
       if (m.words(t, n).isEmpty && m.range(t, n) == null)
@@ -35,10 +39,23 @@ Map<String, String> _cardColours(Motolii m, int t, [double at = 0]) => {
             : m.word(t, n).isEmpty || m.word(t, n) == 'none'
             ? '—'
             : m.shown(n)?.look == 'file'
-            ? m.word(t, n).split('/').last // (a file by its name)
+            ? m
+                  .word(t, n)
+                  .split('/')
+                  .last // (a file by its name)
             : m.shown(n)?.look == 'numbers'
             ? m.word(t, n) // (numbers, one for each copy, as they are)
-            : m.word(t, n).split(' ').where((c) => c.isNotEmpty).map((w) => w.split('@').first).map((c) => int.tryParse(c, radix: 16) != null && (c.length == 6 || c.length == 8) ? '#${c.toUpperCase()}' : c.replaceRange(0, 1, c[0].toUpperCase())).join(' '),   // (a gradient's stop said by its colour, where it stands left out) // (a colour, or colours in their order; a word that is not one, a material, as it is: Glass)
+            : m
+                  .word(t, n)
+                  .split(' ')
+                  .where((c) => c.isNotEmpty)
+                  .map((w) => w.split('@').first)
+                  .map(
+                    (c) => int.tryParse(c, radix: 16) != null && (c.length == 6 || c.length == 8)
+                        ? '#${c.toUpperCase()}'
+                        : c.replaceRange(0, 1, c[0].toUpperCase()),
+                  )
+                  .join(' '), // (a gradient's stop said by its colour, where it stands left out) // (a colour, or colours in their order; a word that is not one, a material, as it is: Glass)
 };
 
 /// Joined: the cards the inside shows a thing's values on beyond the sample's (motolii_cards), each as Params in the
@@ -60,10 +77,13 @@ List<Fx>? _valueCards(Ws ws, String? id) {
 final _cardsMade = <int, (String, List<Fx>, Motolii)>{};
 
 List<Fx> _makeCards(Ws ws, Motolii m, int t) {
-  final at = _drawn(ws);   // (as the picture shown has it)
-  final weights = {for (final f in Ws.fxFiles('${m.word(t, 'fx')} ${m.word(t, 'script')}')) ...EffectTiles.weighed(motoliiShelves, f)};   // (how much moving each knob of its effects shows them, as their tiles move)
+  final at = _drawn(ws); // (as the picture shown has it)
+  final weights = {
+    for (final f in Ws.fxFiles('${m.word(t, 'fx')} ${m.word(t, 'script')}')) ...EffectTiles.weighed(motoliiShelves, f),
+  }; // (how much moving each knob of its effects shows them, as their tiles move)
   String field(String n) {
-    final sh = m.shown(n), label = '@label(${sh?.label ?? n.replaceAll('_', ' ').replaceRange(0, 1, n[0].toUpperCase())})${weights[n] == null ? '' : ' @weight(${weights[n]})'}';
+    final sh = m.shown(n),
+        label = '@label(${sh?.label ?? n.replaceAll('_', ' ').replaceRange(0, 1, n[0].toUpperCase())})${weights[n] == null ? '' : ' @weight(${weights[n]})'}';
     if (sh?.look == 'thing') {
       // (another thing, by the names the timeline shows: None, then the others; its number is the document's)
       final others = _others(ws, t), at = others.values.toList().indexOf((m.value(t, n, 0) ?? 0).round());
@@ -73,11 +93,17 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
       return '  /// $label @enum(${words.join(', ')}) @default(${math.max(0, words.indexOf(m.word(t, n)))})\n  $n: u32,';
     }
     if (m.range(t, n) case (final lo0, final hi0)) {
-      final a = _shown(m, t, n, sh != null && sh.high > sh.low ? sh.low : lo0), b = _shown(m, t, n, sh != null && sh.high > sh.low ? sh.high : hi0), lo = math.min(a, b), hi = math.max(a, b);
+      final a = _shown(m, t, n, sh != null && sh.high > sh.low ? sh.low : lo0),
+          b = _shown(m, t, n, sh != null && sh.high > sh.low ? sh.high : hi0),
+          lo = math.min(a, b),
+          hi = math.max(a, b);
       // (the card's span is how far it slides; a number typed goes as far as the inside takes it, as After Effects'
       //  slider range and valid range, PF_FloatSliderDef: Datamosh's From slides to 10 s and is typed to the inside's)
-      final va = _shown(m, t, n, lo0), vb = _shown(m, t, n, hi0), valid = sh?.open != true && (math.min(va, vb) < lo || math.max(va, vb) > hi) ? ' @valid(${math.min(va, vb)}, ${math.max(va, vb)})' : '';
-      final turned = sh?.look == '' && hi - lo >= 90 && angleLabel(sh!.label);   // (an effect's angle in degrees, by its label: a dial, as After Effects' PF_ADD_ANGLE)
+      final va = _shown(m, t, n, lo0),
+          vb = _shown(m, t, n, hi0),
+          valid = sh?.open != true && (math.min(va, vb) < lo || math.max(va, vb) > hi) ? ' @valid(${math.min(va, vb)}, ${math.max(va, vb)})' : '';
+      final turned =
+          sh?.look == '' && hi - lo >= 90 && angleLabel(sh!.label); // (an effect's angle in degrees, by its label: a dial, as After Effects' PF_ADD_ANGLE)
       final ui = switch (turned ? 'angle' : sh?.look) {
         'onoff' => '@toggle',
         'angle' => '@ui(angle)',
@@ -95,21 +121,35 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
   // (an effect's colour, ISF's one input the inside holds as three numbers (_x _y _z) and an alpha: one colour on its
   //  card, as After Effects' and Alight Motion's effect colour is, the Colors shelf said to it (the inside's say puts the
   //  three); golf_noise.md (83): white took three number fields)
-  String? colourOf(String n, List<String> names) => n.endsWith('_x') && names.contains('${n.substring(0, n.length - 2)}_y') && names.contains('${n.substring(0, n.length - 2)}_z') && (m.shown(n)?.label ?? '').endsWith(' r') ? n.substring(0, n.length - 2) : null;
-  String colour(String base) => '  /// @label(${m.shown('${base}_x')!.label.substring(0, m.shown('${base}_x')!.label.length - 2)})${weights['${base}_x'] == null ? '' : ' @weight(${weights['${base}_x']})'} @unit(colours)\n  $base: vec3<f32>,';
+  String? colourOf(String n, List<String> names) =>
+      n.endsWith('_x') &&
+          names.contains('${n.substring(0, n.length - 2)}_y') &&
+          names.contains('${n.substring(0, n.length - 2)}_z') &&
+          (m.shown(n)?.label ?? '').endsWith(' r')
+      ? n.substring(0, n.length - 2)
+      : null;
+  String colour(String base) =>
+      '  /// @label(${m.shown('${base}_x')!.label.substring(0, m.shown('${base}_x')!.label.length - 2)})${weights['${base}_x'] == null ? '' : ' @weight(${weights['${base}_x']})'} @unit(colours)\n  $base: vec3<f32>,';
   return [
     for (final (title, names) in m.cards(t))
-      if (title == 'Sound' || !wsSound(m, t))   // (a sound has its volume and no picture to place: Alight Motion's audio layer, docs/internal/reports/alight_motion/alight_ui.md 177)
-      Fx('v', title, 'struct Params {\n${[
-        for (final n in names)
-          if (m.shown(n)?.fold == null)
-            if (colourOf(n, names) case final base?) colour(base)
-            else if (!{for (final x in names) if (colourOf(x, names) case final b?) ...['${b}_y', '${b}_z']}.contains(n)) field(n),
-        for (final fold in {for (final n in names) ?m.shown(n)?.fold}) ...[
-          '  // @advanced($fold)',
-          for (final n in names) if (m.shown(n)?.fold == fold) field(n),
-        ],
-      ].join('\n')}\n}', toneOf: () => Pop.toneLayer, mark: CardMark.layer),
+      if (title == 'Sound' ||
+          !wsSound(m, t)) // (a sound has its volume and no picture to place: Alight Motion's audio layer, docs/internal/reports/alight_motion/alight_ui.md 177)
+        Fx(
+          'v',
+          title,
+          'struct Params {\n${[
+            for (final n in names)
+              if (m.shown(n)?.fold == null)
+                if (colourOf(n, names) case final base?) colour(base) else if (!{
+                  for (final x in names)
+                    if (colourOf(x, names) case final b?) ...['${b}_y', '${b}_z'],
+                }.contains(n)) field(n),
+            for (final fold in {for (final n in names) ?m.shown(n)?.fold}) ...['  // @advanced($fold)', for (final n in names)
+              if (m.shown(n)?.fold == fold) field(n)],
+          ].join('\n')}\n}',
+          toneOf: () => Pop.toneLayer,
+          mark: CardMark.layer,
+        ),
   ];
 }
 
@@ -118,7 +158,15 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
 /// A value of the inside's own cards as the inspector counts it: another thing by its place (None first), a number
 /// in the card's units, a word by its place among those it may be (the stage's and a thing's alike).
 double _onCard(Ws ws, Motolii m, int t, String n, double at) {
-  final seen = const {'x', 'y', 'z', 'rotate', 'scale_x', 'scale_y', 'opacity'}.contains(n) ? m.shows(t, n, at) : null;   // (the values the moment's copy carries as the stage shows them: picture.h)
-  if (seen != null) return _shown(m, t, n, seen.$1);   // (where it shows: a hand carrying it, a relation moving it, as After Effects shows a value an expression drives)
-  return m.shown(n)?.look == 'thing' ? (_others(ws, t).values.toList().indexOf((m.value(t, n, 0) ?? 0).round()) + 1).toDouble() : m.words(t, n).isEmpty ? _shown(m, t, n, m.value(t, n, at) ?? 0) : math.max(0, m.words(t, n).indexOf(m.word(t, n))).toDouble(); // (the inside's own cards: a number as it is, a word by its place among those it may be)
+  final seen = const {'x', 'y', 'z', 'rotate', 'scale_x', 'scale_y', 'opacity'}.contains(n)
+      ? m.shows(t, n, at)
+      : null; // (the values the moment's copy carries as the stage shows them: picture.h)
+  if (seen != null) {
+    return _shown(m, t, n, seen.$1); // (where it shows: a hand carrying it, a relation moving it, as After Effects shows a value an expression drives)
+  }
+  return m.shown(n)?.look == 'thing'
+      ? (_others(ws, t).values.toList().indexOf((m.value(t, n, 0) ?? 0).round()) + 1).toDouble()
+      : m.words(t, n).isEmpty
+      ? _shown(m, t, n, m.value(t, n, at) ?? 0)
+      : math.max(0, m.words(t, n).indexOf(m.word(t, n))).toDouble(); // (the inside's own cards: a number as it is, a word by its place among those it may be)
 }

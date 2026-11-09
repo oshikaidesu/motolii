@@ -30,8 +30,14 @@ class WsColourWheel extends StatelessWidget {
           children: [
             // (the ring is stroked on the edge of its box, half of it outside, as HueRingPicker pads it; that half takes
             //  no press there, so an unseen ring the whole size takes them: the hue is the angle from the middle, the same)
-            SizedBox.square(dimension: s, child: IgnorePointer(child: ColorPickerHueRing(color, onChanged, strokeWidth: _ring))),
-            SizedBox.square(dimension: s + _ring, child: Opacity(opacity: 0, child: ColorPickerHueRing(color, onChanged, strokeWidth: _ring))),
+            SizedBox.square(
+              dimension: s,
+              child: IgnorePointer(child: ColorPickerHueRing(color, onChanged, strokeWidth: _ring)),
+            ),
+            SizedBox.square(
+              dimension: s + _ring,
+              child: Opacity(opacity: 0, child: ColorPickerHueRing(color, onChanged, strokeWidth: _ring)),
+            ),
             SizedBox.square(
               dimension: s / 1.6,
               child: ClipRRect(borderRadius: const BorderRadius.all(Radius.circular(3)), child: ColorPickerArea(color, onChanged, PaletteType.hsv)),

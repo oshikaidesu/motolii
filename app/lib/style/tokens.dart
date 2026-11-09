@@ -28,8 +28,8 @@ enum Shade { dark, light }
 /// brightest and text the darkest. Dark is exactly [N].
 abstract final class Grey {
   static final shade = ValueNotifier<Shade>(Shade.dark);
-  static bool get light => ColorTheme.shadeSaid.value ?? shade.value == Shade.light;   // (a skin that names its shade has it)
-  static Color _p(String role, Color dark, Color light) => ColorTheme.of(role, _made(Grey.light ? light : dark));   // (the theme file's, else the shade's own)
+  static bool get light => ColorTheme.shadeSaid.value ?? shade.value == Shade.light; // (a skin that names its shade has it)
+  static Color _p(String role, Color dark, Color light) => ColorTheme.of(role, _made(Grey.light ? light : dark)); // (the theme file's, else the shade's own)
 
   /// A step of the shade's own ramp moved onto the skin's `Background` and `Foreground` (neither said: as it is), so a skin
   /// names two colours and every grey follows: the step's tone sits between theirs where the shade's own body (Grey07) and
@@ -41,8 +41,11 @@ abstract final class Grey {
     return _madeOnce.putIfAbsent((own, bg, fg, light), () {
       final body = light ? const Color(0xFFF2F2F4) : N.g07, text = light ? const Color(0xFF121318) : N.g95;
       final b = bg ?? body, f = fg ?? text, tb = Hct.fromInt(b.toARGB32()).tone, tf = Hct.fromInt(f.toARGB32()).tone;
-      final t = (Hct.fromInt(own.toARGB32()).tone - Hct.fromInt(body.toARGB32()).tone) / (Hct.fromInt(text.toARGB32()).tone - Hct.fromInt(body.toARGB32()).tone);
-      final side = Hct.fromInt((t < .5 ? b : f).toARGB32()); // (grounds wear the background's colour, inks the foreground's: never a muddy mix of two strong ones)
+      final t =
+          (Hct.fromInt(own.toARGB32()).tone - Hct.fromInt(body.toARGB32()).tone) / (Hct.fromInt(text.toARGB32()).tone - Hct.fromInt(body.toARGB32()).tone);
+      final side = Hct.fromInt(
+        (t < .5 ? b : f).toARGB32(),
+      ); // (grounds wear the background's colour, inks the foreground's: never a muddy mix of two strong ones)
       final made = t == 0 ? b : (t == 1 ? f : Color(Hct.from(side.hue, side.chroma, (tb + (tf - tb) * t).clamp(0.0, 100.0)).toInt()));
       return made.withAlpha((own.a * 255).round());
     });
@@ -65,7 +68,7 @@ abstract final class Grey {
   static Color get g91 => _p('Grey91', N.g91, const Color(0xFF22232A));
   static Color get g95 => _p('Grey95', N.g95, const Color(0xFF121318));
   static Color get g100 => _p('Grey100', N.g100, const Color(0xFF000000));
-  static Color get bandA => ColorTheme.of('BandA', g10);   // (the timeline's rows, in turn, and the line between them)
+  static Color get bandA => ColorTheme.of('BandA', g10); // (the timeline's rows, in turn, and the line between them)
   static Color get bandB => ColorTheme.of('BandB', g13);
   static Color get rowLine => ColorTheme.of('RowLine', g10);
   static Color get glaze9 => _p('Glaze9', N.glaze9, const Color(0x0F000000));
@@ -156,16 +159,16 @@ abstract final class Accent {
 
 /// The skin's shapes (theme file roles; a role it does not say is the window's own): how round every corner is.
 abstract final class Shape {
-  static double get corner => ColorTheme.number('Corner', 1).clamp(0, 10);   // (any number a skin says is held to what the window can draw)
+  static double get corner => ColorTheme.number('Corner', 1).clamp(0, 10); // (any number a skin says is held to what the window can draw)
 
   /// A corner of today's [x] px, as round as the skin says.
   static Radius r(double x) => Radius.circular(x * corner);
 
   /// A margin of today's [x] px, as airy as the skin says (`Spacing`).
-  static double s(double x) => x * ColorTheme.number('Spacing', 1).clamp(0, 2);   // (more than twice the air pushes the dock's tabs out of the window)
+  static double s(double x) => x * ColorTheme.number('Spacing', 1).clamp(0, 2); // (more than twice the air pushes the dock's tabs out of the window)
 
   /// A part's size of today's [x] px (a row's height, a strip, a rail), as large as the skin says (`Size`).
-  static double z(double x) => x * ColorTheme.number('Size', 1).clamp(.85, 1.5);   // (smaller parts than this leave no room for the words)
+  static double z(double x) => x * ColorTheme.number('Size', 1).clamp(.85, 1.5); // (smaller parts than this leave no room for the words)
 }
 
 abstract final class T {

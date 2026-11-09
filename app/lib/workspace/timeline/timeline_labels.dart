@@ -50,7 +50,7 @@ class _LabelRow extends StatefulWidget {
   final int index, depth;
   final WtRow row;
   final bool hidden, solo;
-  final bool? lanes;   // (whether its keyed values stand open; null: it has no keys)
+  final bool? lanes; // (whether its keyed values stand open; null: it has no keys)
   final VoidCallback onLanes, onSelect, onEye, onSolo, onLock;
   @override
   State<_LabelRow> createState() => _LabelRowState();
@@ -73,11 +73,15 @@ class _LabelRowState extends State<_LabelRow> {
           dim: r.dim,
           hot: _h,
           onSelect: widget.onSelect,
-          kind: Row(   // (its own small picture, as Alight Motion's row; before it the triangle of a row with keys, After Effects' twirl)
+          kind: Row(
+            // (its own small picture, as Alight Motion's row; before it the triangle of a row with keys, After Effects' twirl)
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(width: Shape.z(10) * widget.depth),   // (set in under its group, as Apple Motion's Layers list and Cavalry's tree)
-              if (widget.lanes case final open?) _Toggle(open ? TpGlyph.caretD : TpGlyph.caretR, on: false, lit: true, onTap: widget.onLanes) else SizedBox(width: Shape.z(20)),
+              SizedBox(width: Shape.z(10) * widget.depth), // (set in under its group, as Apple Motion's Layers list and Cavalry's tree)
+              if (widget.lanes case final open?)
+                _Toggle(open ? TpGlyph.caretD : TpGlyph.caretR, on: false, lit: true, onTap: widget.onLanes)
+              else
+                SizedBox(width: Shape.z(20)),
               WtThumb(r),
             ],
           ),

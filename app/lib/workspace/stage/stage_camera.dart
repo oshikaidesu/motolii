@@ -27,7 +27,8 @@ class _WsCameraViewState extends State<WsCameraView> {
   void _look(Duration _) {
     if (!mounted) return;
     final m = WsScope.read(context).inside, seen = context.findAncestorWidgetOfExactType<Offstage>()?.offstage != true;
-    if (_told != (m, seen)) {   // (a document opened begins with the tab unsaid)
+    if (_told != (m, seen)) {
+      // (a document opened begins with the tab unsaid)
       _told = (m, seen);
       m?.later('camera_view', word: seen ? 'on' : '');
     }
@@ -45,7 +46,14 @@ class _WsCameraViewState extends State<WsCameraView> {
     final id = WsScope.of(context, {WsAspect.document, WsAspect.stage}).stageTexture;
     return ColoredBox(
       color: Grey.g10,
-      child: id == null ? null : Center(child: AspectRatio(aspectRatio: WsArt.comp.aspectRatio, child: Texture(textureId: id, filterQuality: FilterQuality.medium))),
+      child: id == null
+          ? null
+          : Center(
+              child: AspectRatio(
+                aspectRatio: WsArt.comp.aspectRatio,
+                child: Texture(textureId: id, filterQuality: FilterQuality.medium),
+              ),
+            ),
     );
   }
 }

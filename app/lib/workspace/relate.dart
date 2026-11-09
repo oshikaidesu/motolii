@@ -9,7 +9,11 @@ const wsRelations = ['around', 'row', 'follow', 'push', 'group', 'relate'];
 
 /// What can be pressed to make a relation: the kinds the inside knows, then each one written as a file (relations/*.js,
 /// the library's and the maker's: what is put there shows here).
-List<String> wsRelationChoices(Ws ws) => [for (final k in wsRelations) if (k != 'relate') k, for (final r in ws.inside?.relations ?? const <(String, String)>[]) r.$2];
+List<String> wsRelationChoices(Ws ws) => [
+  for (final k in wsRelations)
+    if (k != 'relate') k,
+  for (final r in ws.inside?.relations ?? const <(String, String)>[]) r.$2,
+];
 
 /// What a relation's kind is called where it is pressed.
 String wsRelationWord(String kind) {
@@ -29,18 +33,22 @@ List<String> wsRelatable(Ws ws) => [
 void wsRelate(Ws ws, String kind) {
   final m = ws.inside, who = wsRelatable(ws);
   if (m == null || who.length < 2) return;
-  if (kind == 'group') return wsMakeMove(ws, who, (ws.frame / Ws.fps * 10).round() / 10);   // (a group is a move: it comes in from where it is said to, at the playhead)
-  m.later('together', number: 1);   // (one step, asked without waiting: the behaviour is the thing the add makes)
+  if (kind == 'group') {
+    return wsMakeMove(ws, who, (ws.frame / Ws.fps * 10).round() / 10); // (a group is a move: it comes in from where it is said to, at the playhead)
+  }
+  m.later('together', number: 1); // (one step, asked without waiting: the behaviour is the thing the add makes)
   final file = kind.endsWith('.js');
-  ws.after(m.later('add', name: 'behaviour', word: file ? 'relate' : kind), null, (b) => ws.select('$b'));   // (picked as soon as it is there: its card, its row)
+  ws.after(m.later('add', name: 'behaviour', word: file ? 'relate' : kind), null, (b) => ws.select('$b')); // (picked as soon as it is there: its card, its row)
   if (file) {
     m.later('say', thing: -1, name: 'script', word: kind);
-    m.later('say', thing: -1, name: 'name', word: wsRelationWord(kind));   // (its row and its card say which it is)
+    m.later('say', thing: -1, name: 'name', word: wsRelationWord(kind)); // (its row and its card say which it is)
   }
-  m.later('set', thing: -1, name: 'strength', number: 1);   // (said, so its card shows it as it works)
-  if ((kind == 'follow' || kind == 'push') && ws.manyByHand) m.later('set', thing: -1, name: 'leader', number: double.parse(who.first));   // (picked one by one: the first leads, as it was picked first)
+  m.later('set', thing: -1, name: 'strength', number: 1); // (said, so its card shows it as it works)
+  if ((kind == 'follow' || kind == 'push') && ws.manyByHand) {
+    m.later('set', thing: -1, name: 'leader', number: double.parse(who.first)); // (picked one by one: the first leads, as it was picked first)
+  }
   m.later('relate', thing: -1, word: who.join(' '));
-  ws.after(m.later('together'), (_, _) => ws.reread());   // (made or not, the window shows what the document is)
+  ws.after(m.later('together'), (_, _) => ws.reread()); // (made or not, the window shows what the document is)
 }
 
 /// The things a relation moves (any of their values connected to it), when the picked thing is a relation; else none.
@@ -48,7 +56,10 @@ void wsRelate(Ws ws, String kind) {
 Set<String> wsMembersOf(Ws ws) {
   final m = ws.inside, sel = int.tryParse(ws.selected ?? '');
   if (m == null || sel == null || m.word(sel, 'kind') != 'behaviour' || !wsRelations.contains(m.word(sel, 'file'))) return const {};
-  return {for (final w in m.word(sel, 'members').split(' ')) if (int.tryParse(w) case final t? when m.things.contains(t)) '$t'};   // (its own list, in its order: one it moves through another relation counted too)
+  return {
+    for (final w in m.word(sel, 'members').split(' '))
+      if (int.tryParse(w) case final t? when m.things.contains(t)) '$t',
+  }; // (its own list, in its order: one it moves through another relation counted too)
 }
 
 /// What a thing aims at: each value of it that names another thing (Parent, Leader, Join, Into...), and a relation's
@@ -62,7 +73,8 @@ List<(String, String)> wsTargets(Ws ws, String id) {
       if (m.shown(n) case final s? when s.look == 'thing')
         if ((m.value(t, n, 0) ?? 0).round() case final o when m.things.contains(o)) (s.label, '$o'),
     if (m.word(t, 'kind') == 'behaviour' && wsRelations.contains(m.word(t, 'file')))
-      for (final s in m.word(t, 'members').split(' ')) if (int.tryParse(s) case final o? when m.things.contains(o)) ('Moves', '$o'),
+      for (final s in m.word(t, 'members').split(' '))
+        if (int.tryParse(s) case final o? when m.things.contains(o)) ('Moves', '$o'),
   ];
 }
 
@@ -75,7 +87,7 @@ void wsLead(Ws ws, String id) {
 
 /// A thing added to those picked together (Shift or Cmd with a click): the one picked alone goes in with it.
 void wsPickAlso(Ws ws, String id) {
-  if (ws.many.contains(id)) return ws.pickMany({...ws.many}..remove(id), byHand: true);   // (picked already: one less)
+  if (ws.many.contains(id)) return ws.pickMany({...ws.many}..remove(id), byHand: true); // (picked already: one less)
   ws.pickMany({...ws.many, if (ws.selected case final s? when !wsMembersOf(ws).contains(s) && ws.many.isEmpty && int.tryParse(s) != null) s, id}, byHand: true);
 }
 
@@ -123,10 +135,10 @@ List<String> wsRelationsOf(Ws ws) {
   final m = ws.inside, t = int.tryParse(ws.selected ?? '');
   if (m == null || t == null || m.word(t, 'kind') == 'behaviour') return const [];
   final all = <String>[
-    for (final r in m.things)   // (those it leads)
+    for (final r in m.things) // (those it leads)
       if (m.word(r, 'kind') == 'behaviour' && wsRelations.contains(m.word(r, 'file')) && (m.value(r, 'leader', 0) ?? 0).round() == t) '$r',
   ];
-  for (var r = (m.value(t, 'x_by', 0) ?? 0).round(); r > 0 && all.length < 8 && !all.contains('$r') && wsRelations.contains(m.word(r, 'file')); ) {
+  for (var r = (m.value(t, 'x_by', 0) ?? 0).round(); r > 0 && all.length < 8 && !all.contains('$r') && wsRelations.contains(m.word(r, 'file'));) {
     if (!all.contains('$r')) all.add('$r');
     final members = m.word(r, 'members').split(' '), under = m.word(r, 'under').split(' '), at = members.indexOf('$t');
     r = at >= 0 && at < under.length ? int.tryParse(under[at]) ?? 0 : 0;
@@ -139,6 +151,6 @@ List<String> wsRelationsOf(Ws ws) {
 void wsSwitch(Ws ws) {
   final m = ws.inside, by = int.tryParse(ws.selected ?? '');
   if (m == null || by == null) return;
-  final on = (m.value(by, 'visible', 0) ?? 1) > .5;   // (its eye, as a row's: its strength as it was)
+  final on = (m.value(by, 'visible', 0) ?? 1) > .5; // (its eye, as a row's: its strength as it was)
   ws.after(m.later('set', thing: by, name: 'visible', number: on ? 0 : 1), (_, _) => ws.reread());
 }

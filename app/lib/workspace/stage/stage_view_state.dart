@@ -21,6 +21,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
   }
 
   static const _crops = ['crop_left', 'crop_top', 'crop_right', 'crop_bottom'];
+
   /// The picked photo's crop, each side's share cut in (the inside's), while it is being cropped: none otherwise.
   List<double> _cropOf() {
     final m = WsScope.read(context).inside, t = int.tryParse(widget.selected ?? '');
@@ -28,14 +29,16 @@ class _StageViewState extends State<StageView> implements StageHandles {
     return [for (final n in _crops) m.value(t, n, 0) ?? 0];
   }
 
-  static bool _photo(Motolii m, int t) => m.word(t, 'kind') == 'picture' && RegExp(r'\.(jpe?g|png|webp|bmp)$', caseSensitive: false).hasMatch(m.word(t, 'file'));
+  static bool _photo(Motolii m, int t) =>
+      m.word(t, 'kind') == 'picture' && RegExp(r'\.(jpe?g|png|webp|bmp)$', caseSensitive: false).hasMatch(m.word(t, 'file'));
 
   // (a picked photo pressed twice is cropped, its crop's bars on its sides, till a press anywhere or Enter: Figma's Crop
   //  an image; Keynote's images, double-clicked; Alight Motion's crop takes a hand only while its own card is open)
   String? _cropping;
-  String? _tapped;   // (the one pressed a moment ago, till the wait for a second press is over: Flutter's double tap's own wait)
+  String? _tapped; // (the one pressed a moment ago, till the wait for a second press is over: Flutter's double tap's own wait)
   Timer? _tapWait;
-  bool _enter(KeyEvent e) {   // (while no words are being typed)
+  bool _enter(KeyEvent e) {
+    // (while no words are being typed)
     if (_cropping == null || e is! KeyDownEvent || e.logicalKey != LogicalKeyboardKey.enter) return false;
     if (primaryFocus?.context?.findAncestorWidgetOfExactType<EditableText>() != null) return false;
     setState(() => _cropping = null);
@@ -70,7 +73,8 @@ class _StageViewState extends State<StageView> implements StageHandles {
   double? _toldDpr;
   void _deskTo(_View v) {
     final dpr = MediaQuery.devicePixelRatioOf(context), m = WsScope.read(context).inside;
-    if (m != _deskOf) {   // (another document opened in its place: its own desk told and its picture asked; the last one's was kept, and the stage stood still on it: golf_noise.md (73))
+    if (m != _deskOf) {
+      // (another document opened in its place: its own desk told and its picture asked; the last one's was kept, and the stage stood still on it: golf_noise.md (73))
       _desk = null;
       _toldDesk = null;
       _toldPick = null;
@@ -82,8 +86,16 @@ class _StageViewState extends State<StageView> implements StageHandles {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _toldDesk != v || _toldDpr != dpr) return;
       final m = _deskOf!;
-      final ticket = m.desk((v.area.width * dpr).round(), (v.area.height * dpr).round(), (v.o.dx - v.area.left) * dpr, (v.o.dy - v.area.top) * dpr, v.s * dpr, dpr);
-      void look(Duration _) {   // (a picture at a time till the inside has made the desk: the window never stands still for it)
+      final ticket = m.desk(
+        (v.area.width * dpr).round(),
+        (v.area.height * dpr).round(),
+        (v.o.dx - v.area.left) * dpr,
+        (v.o.dy - v.area.top) * dpr,
+        v.s * dpr,
+        dpr,
+      );
+      void look(Duration _) {
+        // (a picture at a time till the inside has made the desk: the window never stands still for it)
         if (!mounted) return;
         final a = m.answer(ticket);
         if (a < 0) {
@@ -94,7 +106,10 @@ class _StageViewState extends State<StageView> implements StageHandles {
         _toldPick = null;
         if (_desk == null) m.deskTexture().then((id) => mounted && id >= 0 ? setState(() => _desk = id) : null);
       }
-      SchedulerBinding.instance..scheduleFrameCallback(look)..ensureVisualUpdate();
+
+      SchedulerBinding.instance
+        ..scheduleFrameCallback(look)
+        ..ensureVisualUpdate();
     });
   }
 
@@ -131,7 +146,8 @@ class _StageViewState extends State<StageView> implements StageHandles {
   String? _hit(_View v, Offset local) {
     // (a thing that lies off the picture can still be held by its frame and carried back)
     final d = _doc(v, local), id = WsArt.hit(widget.scene, d), m = WsScope.read(context).inside;
-    if (widget.group && m != null && id != null) { // (Group: the outermost of the things it goes with, by the document's parent)
+    if (widget.group && m != null && id != null) {
+      // (Group: the outermost of the things it goes with, by the document's parent)
       var t = int.parse(id);
       for (var p = (m.value(t, 'parent', 0) ?? 0).round(), n = 0; p > 0 && n < 64; p = (m.value(t, 'parent', 0) ?? 0).round(), n++) {
         t = p;
@@ -143,8 +159,8 @@ class _StageViewState extends State<StageView> implements StageHandles {
 
   // Joined: a thing held on the stage, carried, and let go. The stage only says how far the hand has gone, in points of
   // the picture; where that puts the thing (at its own depth), and what it is to the document, is the inside's.
-  ({Offset from, bool moved, String? by})? _held;   // (by: a handle's way of carrying it, scale, turn or pivot; null: placed)
-  String? _grip;   // (the handle in hand, by its name: it alone shown, lit, while it is carried: Alight Motion's)
+  ({Offset from, bool moved, String? by})? _held; // (by: a handle's way of carrying it, scale, turn or pivot; null: placed)
+  String? _grip; // (the handle in hand, by its name: it alone shown, lit, while it is carried: Alight Motion's)
 
   // Joined, Snap (the past repository's, After Effects' snapping): the held thing's left, middle and right (top, middle,
   // bottom) stick to the nearest of the same three lines of every other thing it does not go with and of the picture,
@@ -171,7 +187,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
   // corner). Its first goes to the picked thing, the rest to the one the pen made (thing -1); the inside reckons all of
   // it (a new path begun, closed on its first point, a point put on or taken off a closed one) from where the hand is.
   bool _penning = false;
-  List<Offset>? _penWay;   // (the hand's way while the pen is down: a scribble, not a handle drawn out, is made a path of its own)
+  List<Offset>? _penWay; // (the hand's way while the pen is down: a scribble, not a handle drawn out, is made a path of its own)
 
   void _pen(_View v, Offset down, Offset up) {
     final ws = WsScope.read(context), m = ws.inside, way = _penWay;
@@ -185,7 +201,11 @@ class _StageViewState extends State<StageView> implements StageHandles {
     _penning = true;
     if (first) m.later('together', number: 1);
     var made = 0;
-    ws.after(m.later('pen', thing: first ? int.tryParse(widget.selected ?? '') ?? 0 : -1, word: '${a.dx} ${a.dy} ${h.dx} ${h.dy}'), null, (t) => made = t); // (first on the picked thing: a closed path gains or loses a point, anything else begins a new one)
+    ws.after(
+      m.later('pen', thing: first ? int.tryParse(widget.selected ?? '') ?? 0 : -1, word: '${a.dx} ${a.dy} ${h.dx} ${h.dy}'),
+      null,
+      (t) => made = t,
+    ); // (first on the picked thing: a closed path gains or loses a point, anything else begins a new one)
     if (first) {
       wsInked(ws, 'shape', 'path');
       ws.after(m.later('together'), (done, _) => done && made > 0 ? ws.select('$made') : null);
@@ -204,30 +224,33 @@ class _StageViewState extends State<StageView> implements StageHandles {
   //  stroke and has AbsentMotion make its outline as Alight Motion's brush does (doc_brush): each point's pressure, as
   //  AbsentMotion's brush reads it, its radius here over half the brush)
   List<Offset>? _brush;
-  ({double x, double y})? _orbitFrom;   // (the camera's turn when the hand took hold)
-  double? _dollyAt;   // (its distance while the wheel turns)
+  ({double x, double y})? _orbitFrom; // (the camera's turn when the hand took hold)
+  double? _dollyAt; // (its distance while the wheel turns)
   Timer? _dollyRest;
 
-  double _orbitRate = .25;   // (degrees a pixel)
-  ({double zoom, double reach, Offset middle})? _lensFrom;   // (the frame's size when the hand took hold)
+  double _orbitRate = .25; // (degrees a pixel)
+  ({double zoom, double reach, Offset middle})? _lensFrom; // (the frame's size when the hand took hold)
 
   void _carry(_View v, Offset local) {
     final h = _held, ws = WsScope.read(context), m = ws.inside;
     if (h == null || m == null) return;
-    if (h.by == 'gizmo orbit' && _orbitFrom != null) {   // (it goes the way the hand does)
+    if (h.by == 'gizmo orbit' && _orbitFrom != null) {
+      // (it goes the way the hand does)
       final d = (local - h.from) * _orbitRate, o = _orbitFrom!;
       m.carry('rotate_y', o.y + d.dx);
       m.carry('rotate_x', (o.x + d.dy).clamp(-89.0, 89.0));
       _held = (from: h.from, moved: true, by: h.by);
       return;
     }
-    if (h.by == 'gizmo lens' && _lensFrom != null) {   // (as far from the middle as the hand now is, against where it took hold: a larger frame, a wider lens)
+    if (h.by == 'gizmo lens' && _lensFrom != null) {
+      // (as far from the middle as the hand now is, against where it took hold: a larger frame, a wider lens)
       final l = _lensFrom!;
       m.carry('zoom', (l.zoom * l.reach / math.max((local - l.middle).distance, 1)).clamp(.01, 100.0));
       _held = (from: h.from, moved: true, by: h.by);
       return;
     }
-    if (h.by == 'orbit' && _orbitFrom != null) {   // (sideways round it, up and down over it: a quarter of a degree a pixel)
+    if (h.by == 'orbit' && _orbitFrom != null) {
+      // (sideways round it, up and down over it: a quarter of a degree a pixel)
       final d = local - h.from, o = _orbitFrom!;
       if (ws.freeEye) return ws.setView('stage.eye', [o.y - d.dx * .25, (o.x - d.dy * .25).clamp(-89.0, 89.0), ws.eye[2]]);
       m.carry('rotate_y', o.y - d.dx * .25);
@@ -237,7 +260,8 @@ class _StageViewState extends State<StageView> implements StageHandles {
       return;
     }
     final all = (local - h.from) / v.s; // (screen px -> points of the picture)
-    if (h.by case final way? when way.startsWith('crop ')) {   // (a photo's side cut in as far as the hand goes in from where it is cut, no further than leaves some of it)
+    if (h.by case final way? when way.startsWith('crop ')) {
+      // (a photo's side cut in as far as the hand goes in from where it is cut, no further than leaves some of it)
       final side = int.parse(way.substring(5)), c = [for (var i = 0; i < 4; i++) handles['corner $i'] ?? Offset.zero], crop = _cropOf();
       final across = side.isEven ? c[1] - c[0] : c[3] - c[0], len = math.max(1.0, across.distance), dir = across / len * (side < 2 ? 1.0 : -1.0);
       final at = handles[way] ?? h.from, inBy = ((local - at).dx * dir.dx + (local - at).dy * dir.dy) / len;
@@ -246,10 +270,16 @@ class _StageViewState extends State<StageView> implements StageHandles {
       setState(() {});
       return;
     }
-    if (h.by case final way? when way == 'round' || way == 'points') {   // (a shape's own: its corners' roundness, or its points, as far as the hand goes)
+    if (h.by case final way? when way == 'round' || way == 'points') {
+      // (a shape's own: its corners' roundness, or its points, as far as the hand goes)
       final c = [for (var i = 0; i < 4; i++) handles['corner $i'] ?? Offset.zero], g = _gripOf(c), t = int.tryParse(widget.selected ?? '');
       if (way == 'round') m.carry('round', g.roundOf(local));
-      if (way == 'points' && t != null) m.carry('points', ((m.value(t, 'points', 0) ?? 5) + (((local - h.from).dx * g.u.dx + (local - h.from).dy * g.u.dy) / 24).round()).clamp(3, 64).toDouble());
+      if (way == 'points' && t != null) {
+        m.carry(
+          'points',
+          ((m.value(t, 'points', 0) ?? 5) + (((local - h.from).dx * g.u.dx + (local - h.from).dy * g.u.dy) / 24).round()).clamp(3, 64).toDouble(),
+        );
+      }
       _held = (from: h.from, moved: true, by: way);
       setState(() {});
       return;
@@ -273,7 +303,11 @@ class _StageViewState extends State<StageView> implements StageHandles {
     }
     // (the Move tool's way; ⇧ held, across or down only, whichever the hand has gone further: Illustrator's and Figma's)
     final axis = widget.axis == 0 && HardwareKeyboard.instance.isShiftPressed ? (all.dx.abs() >= all.dy.abs() ? 1 : 2) : widget.axis;
-    final by = _snapped(switch (axis) { 1 => Offset(all.dx, 0), 2 => Offset(0, all.dy), _ => all }, v.s);
+    final by = _snapped(switch (axis) {
+      1 => Offset(all.dx, 0),
+      2 => Offset(0, all.dy),
+      _ => all,
+    }, v.s);
     m.carry('place', by.dx, by.dy);
     _held = (from: h.from, moved: true, by: null);
     setState(() {});
@@ -325,138 +359,221 @@ class _StageViewState extends State<StageView> implements StageHandles {
       return WsMenu(
         key: _menu,
         child: Listener(
-        onPointerSignal: (e) => _scroll(e, v),
-        child: WsTwoFingers(
-        onPan: (by, _) => _panBy(by, v),
-        child: MouseRegion(
-          onHover: (e) {
-            widget.cursor.value = v.toComp(e.localPosition);
-            final h = _hit(v, e.localPosition);
-            if (h != _hover) setState(() => _hover = h);
-          },
-          onExit: (_) {
-            widget.cursor.value = null;
-            if (_hover != null) setState(() => _hover = null);
-          },
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            supportedDevices: wsPressing,
-            onSecondaryTapDown: (d) {   // (the thing under the hand, its menu as on its bar)
-              final ws = WsScope.read(context), id = _hit(v, d.localPosition), l = ws.layers.where((l) => l.id == id).firstOrNull;
-              if (l != null) _menu.currentState?.show(d.localPosition, wsThingMenu(context, ws, l));
-            },
-            onTapUp: (d) {
-              widget.onPoke?.call();
-              if (widget.make == 'pen') return _pen(v, d.localPosition, d.localPosition); // (a tap: a corner)
-              if (widget.make == 'brush') return; // (a stroke is drawn, not tapped)
-              if (widget.make != null) return _draw(v, _drawFrom = d.localPosition); // (only come down: one as it comes, there)
-              final hit = _hit(v, d.localPosition), ws = WsScope.read(context), m = ws.inside;
-              if (HardwareKeyboard.instance.isShiftPressed || HardwareKeyboard.instance.isMetaPressed) return hit == null ? null : wsPickAlso(ws, hit); // (Shift or Cmd: one more picked together, or one less; on nothing, nothing lost)
-              final twice = hit != null && hit == _tapped;
-              _tapWait?.cancel();
-              _tapped = twice ? null : hit;
-              if (!twice) _tapWait = Timer(kDoubleTapTimeout, () => _tapped = null);
-              ws.select(hit);
-              final crop = twice && m != null && _photo(m, int.parse(hit)) ? hit : null;
-              if (crop != _cropping) setState(() => _cropping = crop);
-            },
-            dragStartBehavior: DragStartBehavior.down, // (a thing is held where the hand came down, not where it had got to when the drag was known for one)
-            onPanStart: (d) => _hold(v, _last = d.localPosition),
-            onPanUpdate: (d) => _brush != null
-                ? setState(() => _brush!.add(d.localPosition))
-                : _lasso != null
-                ? setState(() => _lasso!.add(d.localPosition))
-                : _drawFrom != null
-                ? setState(() {
-                    _last = d.localPosition;   // (where the hand is, for every tool: inside `_penWay?.add(…)` it was skipped with the pen's list, and a rect was made where the hand came down)
-                    _penWay?.add(d.localPosition);
-                  })
-                : _pulling != null
-                ? (widget.cursor.value = v.toComp(_last = d.localPosition))
-                : _carry(v, _last = d.localPosition),
-            onPanEnd: (_) => _brush != null
-                ? _brushLetGo(v)
-                : _lasso != null
-                ? _lassoLetGo(v)
-                : _drawFrom != null
-                ? (widget.make == 'pen' ? _pen(v, _drawFrom!, _last ?? _drawFrom!) : _draw(v, _last ?? _drawFrom!))
-                : _pulling != null
-                ? _pullLetGo(v, _last!)
-                : _letGo(),
-            onPanCancel: () => _brush != null ? setState(() => _brush = null) : _lasso != null ? setState(() => _lasso = null) : _drawFrom != null ? setState(() => _drawFrom = null) : _pulling != null ? _pulling = null : _letGo(keep: false),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                RepaintBoundary(
-                  child: CustomPaint(
-                    painter: _ViewPainter(scene, v, widget.selected, _hover == widget.selected ? null : _hover, grid: widget.grid, safe: widget.safe, part: widget.texture == null ? _Part.all : _Part.under, pivots: widget.pivots, met: _met, trail: trail, parent: _parentOf(), grip: _grip, form: _formOf(), crop: _cropOf()),
-                  ),
-                ),
-                if (_desk case final desk? when widget.texture != null) ...[ // (the whole pane as the inside draws it: off the stage covered half way, the picked thing marked)
-                  Positioned.fromRect(rect: v.area, child: IgnorePointer(child: Texture(textureId: desk, filterQuality: FilterQuality.medium))),
-                  Positioned.fromRect(rect: v.comp, child: const IgnorePointer(child: SizedBox(key: ValueKey('ws-stage-comp')))), // (where the picture lies in it)
-                ] else
-                Positioned.fromRect(
-                  rect: v.comp,
-                  child: IgnorePointer(
-                    child: widget.texture == null
-                        ? const SizedBox(key: ValueKey('ws-stage-comp'))
-                        : ClipRect(key: const ValueKey('ws-stage-comp'), child: Texture(textureId: widget.texture!, filterQuality: FilterQuality.medium)),
-                  ),
-                ),
-                if (widget.snapshot case final shot?)   // (Show Snapshot held: the earlier picture where the picture lies)
-                  Positioned.fromRect(rect: v.comp, child: IgnorePointer(child: Image.file(File(shot), key: const ValueKey('ws-stage-snapshot'), fit: BoxFit.fill, gaplessPlayback: true))),
-                if (int.tryParse(widget.selected ?? '') case final picked? when WsScope.read(context).inside != null) // (the picked path's own points, to be taken hold of)
-                  IgnorePointer(child: CustomPaint(size: Size.infinite, painter: _PointsPainter([for (final p in WsScope.read(context).inside!.points(picked)) v.toScreen(WsArt.toView(widget.scene, p))],
-                      [for (final (h, o) in WsScope.read(context).inside!.handles(picked)) (v.toScreen(WsArt.toView(widget.scene, h)), v.toScreen(WsArt.toView(widget.scene, o)))]))),
-                if (_drawFrom case final from? when _last != null && widget.make == 'pen' && _penWay != null && _scribbled(_penWay!, from, _last!)) // (a scribble: its way, thin, as the brush's; made a path when let go)
-                  IgnorePointer(child: CustomPaint(painter: _BrushWay(_penWay!, WsT.accent)))
-                else if (_drawFrom case final from? when _last != null && widget.make == 'pen') // (the pen's handle being drawn out: through its point, both ways)
-                  IgnorePointer(child: CustomPaint(size: Size.infinite, painter: _HandlePainter(from, _last!)))
-                else if (_drawFrom case final from? when _last != null) // (what is being drawn: its box)
-                  Positioned.fromRect(
-                    rect: Rect.fromPoints(from, _last!),
-                    child: IgnorePointer(child: DecoratedBox(decoration: BoxDecoration(border: Border.all(color: WsT.accent)))),
-                  ),
-                if (_held case final h? when h.moved && _last != null)   // (the numbers while a hand moves it, by the hand, as Figma shows them; Alight Motion shows none)
-                  if (_heldSays(h.by) case final says?)
-                    Positioned(
-                      left: _last!.dx + 16,
-                      top: _last!.dy + 16,
-                      child: IgnorePointer(
-                        child: Container(
-                          key: const ValueKey('ws-held-says'),
-                          padding: EdgeInsets.symmetric(horizontal: Shape.s(6), vertical: Shape.s(3)),
-                          decoration: BoxDecoration(color: WsT.raised, borderRadius: BorderRadius.all(Shape.r(3))),
-                          child: Text(says, style: T.micro(Grey.g95)),
+          onPointerSignal: (e) => _scroll(e, v),
+          child: WsTwoFingers(
+            onPan: (by, _) => _panBy(by, v),
+            child: MouseRegion(
+              onHover: (e) {
+                widget.cursor.value = v.toComp(e.localPosition);
+                final h = _hit(v, e.localPosition);
+                if (h != _hover) setState(() => _hover = h);
+              },
+              onExit: (_) {
+                widget.cursor.value = null;
+                if (_hover != null) setState(() => _hover = null);
+              },
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                supportedDevices: wsPressing,
+                onSecondaryTapDown: (d) {
+                  // (the thing under the hand, its menu as on its bar)
+                  final ws = WsScope.read(context), id = _hit(v, d.localPosition), l = ws.layers.where((l) => l.id == id).firstOrNull;
+                  if (l != null) _menu.currentState?.show(d.localPosition, wsThingMenu(context, ws, l));
+                },
+                onTapUp: (d) {
+                  widget.onPoke?.call();
+                  if (widget.make == 'pen') return _pen(v, d.localPosition, d.localPosition); // (a tap: a corner)
+                  if (widget.make == 'brush') return; // (a stroke is drawn, not tapped)
+                  if (widget.make != null) return _draw(v, _drawFrom = d.localPosition); // (only come down: one as it comes, there)
+                  final hit = _hit(v, d.localPosition), ws = WsScope.read(context), m = ws.inside;
+                  if (HardwareKeyboard.instance.isShiftPressed || HardwareKeyboard.instance.isMetaPressed) {
+                    return hit == null ? null : wsPickAlso(ws, hit); // (Shift or Cmd: one more picked together, or one less; on nothing, nothing lost)
+                  }
+                  final twice = hit != null && hit == _tapped;
+                  _tapWait?.cancel();
+                  _tapped = twice ? null : hit;
+                  if (!twice) _tapWait = Timer(kDoubleTapTimeout, () => _tapped = null);
+                  ws.select(hit);
+                  final crop = twice && m != null && _photo(m, int.parse(hit)) ? hit : null;
+                  if (crop != _cropping) setState(() => _cropping = crop);
+                },
+                dragStartBehavior:
+                    DragStartBehavior.down, // (a thing is held where the hand came down, not where it had got to when the drag was known for one)
+                onPanStart: (d) => _hold(v, _last = d.localPosition),
+                onPanUpdate: (d) => _brush != null
+                    ? setState(() => _brush!.add(d.localPosition))
+                    : _lasso != null
+                    ? setState(() => _lasso!.add(d.localPosition))
+                    : _drawFrom != null
+                    ? setState(() {
+                        _last = d.localPosition; // (where the hand is, for every tool: inside `_penWay?.add(…)` it was skipped with the pen's list, and a rect was made where the hand came down)
+                        _penWay?.add(d.localPosition);
+                      })
+                    : _pulling != null
+                    ? (widget.cursor.value = v.toComp(_last = d.localPosition))
+                    : _carry(v, _last = d.localPosition),
+                onPanEnd: (_) => _brush != null
+                    ? _brushLetGo(v)
+                    : _lasso != null
+                    ? _lassoLetGo(v)
+                    : _drawFrom != null
+                    ? (widget.make == 'pen' ? _pen(v, _drawFrom!, _last ?? _drawFrom!) : _draw(v, _last ?? _drawFrom!))
+                    : _pulling != null
+                    ? _pullLetGo(v, _last!)
+                    : _letGo(),
+                onPanCancel: () => _brush != null
+                    ? setState(() => _brush = null)
+                    : _lasso != null
+                    ? setState(() => _lasso = null)
+                    : _drawFrom != null
+                    ? setState(() => _drawFrom = null)
+                    : _pulling != null
+                    ? _pulling = null
+                    : _letGo(keep: false),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    RepaintBoundary(
+                      child: CustomPaint(
+                        painter: _ViewPainter(
+                          scene,
+                          v,
+                          widget.selected,
+                          _hover == widget.selected ? null : _hover,
+                          grid: widget.grid,
+                          safe: widget.safe,
+                          part: widget.texture == null ? _Part.all : _Part.under,
+                          pivots: widget.pivots,
+                          met: _met,
+                          trail: trail,
+                          parent: _parentOf(),
+                          grip: _grip,
+                          form: _formOf(),
+                          crop: _cropOf(),
                         ),
                       ),
                     ),
-                if (widget.texture != null)
-                  IgnorePointer(
-                    child: CustomPaint(
-                      painter: _ViewPainter(scene, v, widget.selected, _hover == widget.selected ? null : _hover, grid: widget.grid, safe: widget.safe, part: _Part.over, pivots: widget.pivots, met: _met, marked: _desk != null, trail: trail, parent: _parentOf(), grip: _grip, form: _formOf(), crop: _cropOf()),
+                    if (_desk case final desk? when widget.texture != null) ...[
+                      // (the whole pane as the inside draws it: off the stage covered half way, the picked thing marked)
+                      Positioned.fromRect(
+                        rect: v.area,
+                        child: IgnorePointer(
+                          child: Texture(textureId: desk, filterQuality: FilterQuality.medium),
+                        ),
+                      ),
+                      Positioned.fromRect(
+                        rect: v.comp,
+                        child: const IgnorePointer(child: SizedBox(key: ValueKey('ws-stage-comp'))),
+                      ), // (where the picture lies in it)
+                    ] else
+                      Positioned.fromRect(
+                        rect: v.comp,
+                        child: IgnorePointer(
+                          child: widget.texture == null
+                              ? const SizedBox(key: ValueKey('ws-stage-comp'))
+                              : ClipRect(
+                                  key: const ValueKey('ws-stage-comp'),
+                                  child: Texture(textureId: widget.texture!, filterQuality: FilterQuality.medium),
+                                ),
+                        ),
+                      ),
+                    if (widget.snapshot case final shot?) // (Show Snapshot held: the earlier picture where the picture lies)
+                      Positioned.fromRect(
+                        rect: v.comp,
+                        child: IgnorePointer(
+                          child: Image.file(File(shot), key: const ValueKey('ws-stage-snapshot'), fit: BoxFit.fill, gaplessPlayback: true),
+                        ),
+                      ),
+                    if (int.tryParse(widget.selected ?? '') case final picked?
+                        when WsScope.read(context).inside != null) // (the picked path's own points, to be taken hold of)
+                      IgnorePointer(
+                        child: CustomPaint(
+                          size: Size.infinite,
+                          painter: _PointsPainter(
+                            [for (final p in WsScope.read(context).inside!.points(picked)) v.toScreen(WsArt.toView(widget.scene, p))],
+                            [
+                              for (final (h, o) in WsScope.read(context).inside!.handles(picked))
+                                (v.toScreen(WsArt.toView(widget.scene, h)), v.toScreen(WsArt.toView(widget.scene, o))),
+                            ],
+                          ),
+                        ),
+                      ),
+                    if (_drawFrom case final from?
+                        when _last != null &&
+                            widget.make == 'pen' &&
+                            _penWay != null &&
+                            _scribbled(_penWay!, from, _last!)) // (a scribble: its way, thin, as the brush's; made a path when let go)
+                      IgnorePointer(child: CustomPaint(painter: _BrushWay(_penWay!, WsT.accent)))
+                    else if (_drawFrom case final from?
+                        when _last != null && widget.make == 'pen') // (the pen's handle being drawn out: through its point, both ways)
+                      IgnorePointer(
+                        child: CustomPaint(size: Size.infinite, painter: _HandlePainter(from, _last!)),
+                      )
+                    else if (_drawFrom case final from? when _last != null) // (what is being drawn: its box)
+                      Positioned.fromRect(
+                        rect: Rect.fromPoints(from, _last!),
+                        child: IgnorePointer(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(border: Border.all(color: WsT.accent)),
+                          ),
+                        ),
+                      ),
+                    if (_held case final h?
+                        when h.moved && _last != null) // (the numbers while a hand moves it, by the hand, as Figma shows them; Alight Motion shows none)
+                      if (_heldSays(h.by) case final says?)
+                        Positioned(
+                          left: _last!.dx + 16,
+                          top: _last!.dy + 16,
+                          child: IgnorePointer(
+                            child: Container(
+                              key: const ValueKey('ws-held-says'),
+                              padding: EdgeInsets.symmetric(horizontal: Shape.s(6), vertical: Shape.s(3)),
+                              decoration: BoxDecoration(color: WsT.raised, borderRadius: BorderRadius.all(Shape.r(3))),
+                              child: Text(says, style: T.micro(Grey.g95)),
+                            ),
+                          ),
+                        ),
+                    if (widget.texture != null)
+                      IgnorePointer(
+                        child: CustomPaint(
+                          painter: _ViewPainter(
+                            scene,
+                            v,
+                            widget.selected,
+                            _hover == widget.selected ? null : _hover,
+                            grid: widget.grid,
+                            safe: widget.safe,
+                            part: _Part.over,
+                            pivots: widget.pivots,
+                            met: _met,
+                            marked: _desk != null,
+                            trail: trail,
+                            parent: _parentOf(),
+                            grip: _grip,
+                            form: _formOf(),
+                            crop: _cropOf(),
+                          ),
+                        ),
+                      ),
+                    IgnorePointer(child: CustomPaint(painter: _RulerPainter(v, widget.cursor, scene))),
+                    _RelationMarks(scene: scene, v: v, lasso: _lasso),
+                    if (_brush case final way?) IgnorePointer(child: CustomPaint(painter: _BrushWay(way, WsT.accent))), // (the way drawn so far, thin: the stroke itself is the inside's once let go) // (drawn round, the things picked together, the relation picked: its shape, its handles, what it moves)
+                    Positioned(
+                      left: _V.ruler + _V.pad,
+                      bottom: _V.pad,
+                      child: _Hud(scale: v.s, cursor: widget.cursor),
                     ),
-                  ),
-                IgnorePointer(child: CustomPaint(painter: _RulerPainter(v, widget.cursor, scene))),
-                _RelationMarks(scene: scene, v: v, lasso: _lasso),
-                if (_brush case final way?) IgnorePointer(child: CustomPaint(painter: _BrushWay(way, WsT.accent))), // (the way drawn so far, thin: the stroke itself is the inside's once let go) // (drawn round, the things picked together, the relation picked: its shape, its handles, what it moves)
-                Positioned(
-                  left: _V.ruler + _V.pad,
-                  bottom: _V.pad,
-                  child: _Hud(scale: v.s, cursor: widget.cursor),
+                    if (widget.zoom != 0 && box.maxWidth > 360 && box.maxHeight > 220)
+                      Positioned(
+                        right: _V.pad,
+                        bottom: _V.pad,
+                        child: _Navigator(scene: scene, view: v, texture: widget.texture),
+                      ),
+                  ],
                 ),
-                if (widget.zoom != 0 && box.maxWidth > 360 && box.maxHeight > 220)
-                  Positioned(
-                    right: _V.pad,
-                    bottom: _V.pad,
-                    child: _Navigator(scene: scene, view: v, texture: widget.texture),
-                  ),
-              ],
+              ),
             ),
           ),
-        ),
-        ),
         ),
       );
     },
@@ -468,10 +585,14 @@ class _BrushWay extends CustomPainter {
   final List<Offset> way;
   final Color ink;
   @override
-  void paint(Canvas c, Size s) => c.drawPoints(PointMode.polygon, way, Paint()
-    ..color = ink
-    ..strokeWidth = 2
-    ..strokeCap = StrokeCap.round);
+  void paint(Canvas c, Size s) => c.drawPoints(
+    PointMode.polygon,
+    way,
+    Paint()
+      ..color = ink
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round,
+  );
   @override
   bool shouldRepaint(_BrushWay o) => true;
 }

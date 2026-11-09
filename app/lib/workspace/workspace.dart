@@ -1,6 +1,7 @@
 // The whole window: top bar, then the panes (panes.dart) — browser shelves | Stage over Timeline, Inspector over Desk, rearrangeable.
 // Each seat is its own file and reads the shared Ws.
 import 'dock/dock_parts.dart' show askDockSearch;
+
 import 'dart:developer' show Timeline;
 import 'dart:async';
 import 'dart:io';
@@ -9,11 +10,13 @@ import 'dart:math' as math;
 import 'package:docking/docking.dart';
 import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter/widgets.dart';
+
 import '../parts/skin_parts.dart';
 import 'stage/stage_art.dart' show WsArt;
 import 'zoom.dart';
 import 'shelf/effect_tiles.dart';
 import 'ableton.dart';
+
 import 'package:motolii/inspector/inspector_parts_insp_host.dart';
 
 import '../inspector/inspector_parts.dart';
@@ -70,7 +73,7 @@ class _WorkspaceState extends State<Workspace> {
     ..tools = [...deskTools, ...widget.tools]
     ..view.addAll(widget.view);
   Motolii? _inside;
-  StreamSubscription<FileSystemEvent>? _own;   // (the maker's own folder watched: effect_tiles.dart)
+  StreamSubscription<FileSystemEvent>? _own; // (the maker's own folder watched: effect_tiles.dart)
 
   String? _doc; // (the document that is open: the one the window was given, or one made or opened from the menu)
 
@@ -79,8 +82,10 @@ class _WorkspaceState extends State<Workspace> {
     super.initState();
     FocusManager.instance.addListener(_keepKeys);
     ColorTheme.watch(() => WidgetsBinding.instance.reassembleApplication());
-    SkinParts.follow();   // (the theme's drawn parts: an SVG folder, read when the theme names it)   // (the theme file: read, and read again when written; the window built again in place)
-    _join(widget.document ?? '${Directory.systemTemp.createTempSync('motolii').path}/Untitled.motolii'); // (no document given: a new one, as After Effects opens an untitled project)
+    SkinParts.follow(); // (the theme's drawn parts: an SVG folder, read when the theme names it)   // (the theme file: read, and read again when written; the window built again in place)
+    _join(
+      widget.document ?? '${Directory.systemTemp.createTempSync('motolii').path}/Untitled.motolii',
+    ); // (no document given: a new one, as After Effects opens an untitled project)
   }
 
   /// Another document in place of the open one (made, if there is none at that place).
@@ -103,7 +108,10 @@ class _WorkspaceState extends State<Workspace> {
   List<String> _beside = const [];
   List<String> _documents() {
     final here = Directory(File(_doc!).parent.path);
-    return [for (final f in here.listSync().whereType<File>()) if (f.path.endsWith('.motolii')) f.path]..sort();
+    return [
+      for (final f in here.listSync().whereType<File>())
+        if (f.path.endsWith('.motolii')) f.path,
+    ]..sort();
   }
 
   /// A text box has the keys: the act is its own, by Flutter's own text actions (true: it was given it).
@@ -114,7 +122,9 @@ class _WorkspaceState extends State<Workspace> {
   }
 
   /// The things picked: together if more than one is, else the one.
-  List<int> _picked() => [for (final id in _ws.many.isNotEmpty ? _ws.many : {?_ws.selected}) ?int.tryParse(id)];
+  List<int> _picked() => [
+    for (final id in _ws.many.isNotEmpty ? _ws.many : {?_ws.selected}) ?int.tryParse(id),
+  ];
 
   /// One step for each picked thing told so, all of it one step to undo.
   void _eachPicked(int Function(int) tell) {
@@ -169,9 +179,9 @@ class _WorkspaceState extends State<Workspace> {
     final written = 'Written: ${film.split('/').last}', checking = '$written · Checking flashes…';
     _ws.notice = checking;
     final fails = await flashesOf(m.libPath, film);
-    if (!mounted || _ws.notice != checking) return;   // (something said meanwhile stands)
+    if (!mounted || _ws.notice != checking) return; // (something said meanwhile stands)
     String clock(double s) => '${s ~/ 60}:${(s % 60).toStringAsFixed(1).padLeft(4, '0')}';
-    final name = film.split('/').last;   // (what it found first, the name after: the bar's end is cut. NN/g's F-shaped reading, words that carry the news first)
+    final name = film.split('/').last; // (what it found first, the name after: the bar's end is cut. NN/g's F-shaped reading, words that carry the news first)
     _ws.notice = switch (fails) {
       null => written,
       [] => 'Flash check: no issues found · $name',
@@ -223,15 +233,19 @@ class _WorkspaceState extends State<Workspace> {
   // The window holds the focus when nothing in it does (a field left, a pane closed): its keys are heard there.
   final _windowFocus = FocusNode(debugLabel: 'window');
   void _keepKeys() {
-    bool fallen() {   // (out of the window)
+    bool fallen() {
+      // (out of the window)
       final now = FocusManager.instance.primaryFocus;
       return now == null || (now is FocusScopeNode && _windowFocus.ancestors.contains(now));
     }
+
     if (!mounted || !fallen() || _windowFocus.context == null) return;
     // (once the frame's own asking is done: a field built in it asks for the keys after the frame, and was robbed of them: golf_noise.md (111))
-    WidgetsBinding.instance.addPostFrameCallback((_) => scheduleMicrotask(() {
-      if (mounted && fallen()) _windowFocus.requestFocus();
-    }));
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => scheduleMicrotask(() {
+        if (mounted && fallen()) _windowFocus.requestFocus();
+      }),
+    );
   }
 
   /// The window's commands by name (keys.dart: the keys that say them, the window's own and the maker's file).
@@ -240,12 +254,17 @@ class _WorkspaceState extends State<Workspace> {
     final inside = Motolii.open(doc);
     if (inside == null) return;
     _inside = inside;
-    _own = EffectTiles.watch(inside, () {   // (a file put in the maker's own folder: on the shelves at once; an element written over: followed where it is put in)
-      if (mounted) _ws.after(inside.later('follow_elements'), (_, _) => _ws.reread());
-    }, program: (file) {
-      if (mounted) _ws.after(inside.later('code', word: file), (_, _) => _ws.reread());
-    });
-    _ws.after(inside.later('follow_elements'));   // (as the document is opened: AbsentMotion's elements followed as a project is loaded)
+    _own = EffectTiles.watch(
+      inside,
+      () {
+        // (a file put in the maker's own folder: on the shelves at once; an element written over: followed where it is put in)
+        if (mounted) _ws.after(inside.later('follow_elements'), (_, _) => _ws.reread());
+      },
+      program: (file) {
+        if (mounted) _ws.after(inside.later('code', word: file), (_, _) => _ws.reread());
+      },
+    );
+    _ws.after(inside.later('follow_elements')); // (as the document is opened: AbsentMotion's elements followed as a project is loaded)
     _doc = doc;
     _beside = _documents();
     final id = await inside.texture();
@@ -257,7 +276,7 @@ class _WorkspaceState extends State<Workspace> {
       ..notice = null
       ..onRender = _render
       ..onSize = (wide, high) {
-        _ws.after(inside.later('size', word: '$wide $high'));   // (without waiting: the document's picture then says it does not fit, and it is opened again)
+        _ws.after(inside.later('size', word: '$wide $high')); // (without waiting: the document's picture then says it does not fit, and it is opened again)
       }
       ..refit = () {
         // (a stage is opened at a size: the document closed and opened again, at the moment it was at)
@@ -281,14 +300,15 @@ class _WorkspaceState extends State<Workspace> {
   }
 
   /// The panes drag their tabs on an overlay; the window brings its own so it works under any host.
-  _Window? _built;   // (one widget, kept: a card or a tab carried is a change of the overlay, and the whole window, every shelf's tiles, was built again for it: 18,358 widgets, 90 ms, each time one was taken up or let go)
+  _Window? _built; // (one widget, kept: a card or a tab carried is a change of the overlay, and the whole window, every shelf's tiles, was built again for it: 18,358 widgets, 90 ms, each time one was taken up or let go)
   late final _entry = OverlayEntry(
     maintainState: true,
     builder: (context) => LayoutBuilder(
       builder: (context, box) {
         final window = _built != null && _built!.extra == widget.extra ? _built! : _built = _Window(widget.extra);
         if (box.maxWidth >= WsT.minWindow.width && box.maxHeight >= WsT.minWindow.height) return window;
-        return FittedBox( // (laid out no smaller than the least window, shrunk only as far as that needs: a zoomed window stays zoomed)
+        return FittedBox(
+          // (laid out no smaller than the least window, shrunk only as far as that needs: a zoomed window stays zoomed)
           child: SizedBox(width: math.max(box.maxWidth, WsT.minWindow.width), height: math.max(box.maxHeight, WsT.minWindow.height), child: window),
         );
       },
@@ -331,7 +351,14 @@ class _WorkspaceState extends State<Workspace> {
       ),
     );
     if (_ws.inside == null) return ColoredBox(color: WsT.ground); // (the document still opening: no seat is built on nothing)
-    return PlatformMenuBar(menus: _menus(), child: WsKeys(keymap: _keymap, commands: _commands(), child: WsZoomed(child: window)));
+    return PlatformMenuBar(
+      menus: _menus(),
+      child: WsKeys(
+        keymap: _keymap,
+        commands: _commands(),
+        child: WsZoomed(child: window),
+      ),
+    );
   }
 }
 
@@ -375,9 +402,16 @@ DockingArea _preset(DockingItem Function(String name, {double? size, double? wei
       DockingTabs([for (final (name, _, _) in dockShelves) item(name)], size: WsT.dock),
       DockingTabs([item('Stage'), item('Camera View')]),
     ]),
-    DockingRow([item('Timeline'), item('Ease', size: WsT.inspector)], size: WsT.lower + _strip, minimalSize: 220),   // (the stretch between two keys, beside the keys; never lower than its seven shapes and its curve can be read: docking's own minimum, as VS Code's views say theirs)
+    DockingRow([item('Timeline'), item('Ease', size: WsT.inspector)], size: WsT.lower + _strip, minimalSize: 220), // (the stretch between two keys, beside the keys; never lower than its seven shapes and its curve can be read: docking's own minimum, as VS Code's views say theirs)
   ]),
-  DockingColumn([extra.isEmpty ? item('Inspector') : DockingTabs([item('Inspector'), for (final p in extra) item(p.name)]), DockingTabs([item('Camera'), item('Desk'), item('Relations')], size: WsT.lower + _strip)], size: WsT.inspector, minimalSize: 340),   // (the camera, whatever is picked)
+  DockingColumn(
+    [
+      extra.isEmpty ? item('Inspector') : DockingTabs([item('Inspector'), for (final p in extra) item(p.name)]),
+      DockingTabs([item('Camera'), item('Desk'), item('Relations')], size: WsT.lower + _strip),
+    ],
+    size: WsT.inspector,
+    minimalSize: 340,
+  ), // (the camera, whatever is picked)
 ]);
 
 /// The paint each layer wears on the stage, so the Inspector's Fill names the colour you see.

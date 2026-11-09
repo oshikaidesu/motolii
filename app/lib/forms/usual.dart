@@ -40,7 +40,10 @@ abstract final class Usual {
               height: Shape.z(16),
               padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
               alignment: Alignment.center,
-              decoration: BoxDecoration(color: i == c.selected ? WsT.accent : (h ? WsT.raised : WsT.well), borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius))),
+              decoration: BoxDecoration(
+                color: i == c.selected ? WsT.accent : (h ? WsT.raised : WsT.well),
+                borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius)),
+              ),
               child: Text(c.labels[i], style: T.label(i == c.selected ? WsT.onAccent : (h ? Grey.g95 : Grey.g76)).copyWith(fontWeight: FontWeight.w600)),
             ),
           ),
@@ -116,12 +119,27 @@ abstract final class Usual {
       padding: EdgeInsets.only(bottom: Shape.s(1)),
       child: Stack(
         children: [
-          if (t.selected) Positioned(left: 0, top: 0, bottom: 0, width: Shape.z(3), child: ColoredBox(color: WsT.accent)),
+          if (t.selected)
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: Shape.z(3),
+              child: ColoredBox(color: WsT.accent),
+            ),
           Padding(
             padding: EdgeInsets.only(left: Shape.s(8), right: Shape.s(6)),
             child: Row(
               children: [
-                SizedBox(width: 14, child: Text('${t.index + 1}', softWrap: false, overflow: TextOverflow.visible, style: T.value(t.selected ? Grey.g91 : Grey.g56).copyWith(fontSize: T.px(10)))),
+                SizedBox(
+                  width: 14,
+                  child: Text(
+                    '${t.index + 1}',
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
+                    style: T.value(t.selected ? Grey.g91 : Grey.g56).copyWith(fontSize: T.px(10)),
+                  ),
+                ),
                 SizedBox(width: Shape.s(6)),
                 t.kind,
                 SizedBox(width: Shape.s(7)),

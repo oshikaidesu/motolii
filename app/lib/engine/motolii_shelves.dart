@@ -7,8 +7,20 @@ extension MotoliiShelves on Motolii {
 
   /// The closed packs among them, the Program shelf's and not Create's (docs/internal/notes/CREATE_PROGRAM.md): each one's name
   /// and file, and what it was written for ([packKinds]: Cavalry, p5.js…), as the inside says.
-  List<(String, String)> get packs => _folders.putIfAbsent('packs', () => [for (final l in _recipeLines) if (l.length > 3) (l[0], l[3])]);
-  List<(String, String)> get packKinds => _folders.putIfAbsent('packKinds', () => [for (final l in _recipeLines) if (l.length > 3) (l[0], l[2])]);
+  List<(String, String)> get packs => _folders.putIfAbsent(
+    'packs',
+    () => [
+      for (final l in _recipeLines)
+        if (l.length > 3) (l[0], l[3]),
+    ],
+  );
+  List<(String, String)> get packKinds => _folders.putIfAbsent(
+    'packKinds',
+    () => [
+      for (final l in _recipeLines)
+        if (l.length > 3) (l[0], l[2]),
+    ],
+  );
   List<List<String>> get _recipeLines => [
     for (final line in _recipes(_m).toDartString().split('\n'))
       if (line.split('\t') case final l when l.length > 1 && l[0].isNotEmpty) l,
@@ -27,10 +39,16 @@ extension MotoliiShelves on Motolii {
   List<(String, String)> get effects => _folders.putIfAbsent('effects', () => _labelled(_effects(_m).toDartString()));
 
   /// The looks on the shelf (a thing's values, effects and keys kept by a name: doc_looks.h): each one's name and file.
-  List<(String, String)> get looks => [for (final l in _kept) if (_labels[l.$1] != 'Element') l];
+  List<(String, String)> get looks => [
+    for (final l in _kept)
+      if (_labels[l.$1] != 'Element') l,
+  ];
 
   /// The elements (a thing kept whole with what it holds, put in linked: Alight Motion's My Elements): each one's name and file.
-  List<(String, String)> get elements => [for (final l in _kept) if (_labels[l.$1] == 'Element') l];
+  List<(String, String)> get elements => [
+    for (final l in _kept)
+      if (_labels[l.$1] == 'Element') l,
+  ];
   List<(String, String)> get _kept => _folders.putIfAbsent('looks', () => _labelled(_looks(_m).toDartString()));
 
   /// The motions a thing may be given (Cavalry's Animators): each one's name and file (a thing's script is the file of the one it has).
@@ -85,7 +103,7 @@ extension MotoliiShelves on Motolii {
     }
   }
 
-  void _said() => (effects, thingEffects);   // (both lists read: their labels and pictures with them)
+  void _said() => (effects, thingEffects); // (both lists read: their labels and pictures with them)
 
   /// "name\tfile\tlabel\tpicture\thome\tsame\tabout\ttags" lines: the names and files, the labels, pictures, homes, sameness, words and tags kept for [label], [picture], [tileHome], [tileSame], [about] and [tags].
   List<(String, String)> _labelled(String lines) {
@@ -94,7 +112,8 @@ extension MotoliiShelves on Motolii {
       if (w.length < 2 || w[0].isEmpty) continue;
       out.add((w[0], w[1]));
       if (w.length > 2) _labels[w[0]] = w[2];
-      for (final k in [w[0], w[1]]) {   // (by name and by file: the file's is its own)
+      for (final k in [w[0], w[1]]) {
+        // (by name and by file: the file's is its own)
         if (w.length > 3) _pictures[k] = w[3];
         if (w.length > 4) _homes[k] = w[4];
         if (w.length > 5 && w[5] == 'same') _same.add(k);
@@ -111,7 +130,9 @@ extension MotoliiShelves on Motolii {
     for (final part in _thing.values) {
       if ((part['shown'] as Map<String, dynamic>?)?[name] case final String said) {
         final f = said.split('\t');
-        return f.length < 6 ? null : Shown(f[0], f[1], f[2], double.parse(f[3]), double.parse(f[4]), f[5].isEmpty ? null : f[5], open: f.length > 6 && f[6] == '1');
+        return f.length < 6
+            ? null
+            : Shown(f[0], f[1], f[2], double.parse(f[3]), double.parse(f[4]), f[5].isEmpty ? null : f[5], open: f.length > 6 && f[6] == '1');
       }
     }
     return null;
@@ -140,7 +161,9 @@ extension MotoliiShelves on Motolii {
   /// its name and label, and what it does (the inside's motolii_find: RapidFuzz, typos, parts, abbreviations). Those
   /// scored under [least] left out, as RapidFuzz's extract's score_cutoff (0: none).
   List<String> find(String words, Iterable<(String, String, String)> items, {int limit = 0, double least = 0}) {
-    final lines = [for (final (id, name, about) in items) [id, name, about].map((w) => w.replaceAll(RegExp(r'[\t\n]'), ' ')).join('\t')].join('\n');
+    final lines = [
+      for (final (id, name, about) in items) [id, name, about].map((w) => w.replaceAll(RegExp(r'[\t\n]'), ' ')).join('\t'),
+    ].join('\n');
     return [
       for (final line in _with([words, lines], (s) => _find(_m, s[0], s[1], limit).toDartString()).split('\n'))
         if (line.lastIndexOf('\t') case final i when i > 0 && (double.tryParse(line.substring(i + 1)) ?? 0) >= least) line.substring(0, i),

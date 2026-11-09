@@ -49,7 +49,14 @@ class _GlyphPaint extends CustomPainter {
   void paint(Canvas c, Size s) {
     c.save();
     c.scale(s.width / 16, s.height / 14);
-    draw(c, Paint()..color = ink..style = PaintingStyle.stroke..strokeWidth = 1.2..strokeCap = StrokeCap.round);
+    draw(
+      c,
+      Paint()
+        ..color = ink
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2
+        ..strokeCap = StrokeCap.round,
+    );
     c.restore();
   }
 
@@ -106,7 +113,10 @@ class SheetForms extends Forms {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (st.isSelected) ...[
-                      SizedBox.square(dimension: Shape.z(6), child: CustomPaint(painter: _MarkPaint(_Mark.dot, Accent.key))),
+                      SizedBox.square(
+                        dimension: Shape.z(6),
+                        child: CustomPaint(painter: _MarkPaint(_Mark.dot, Accent.key)),
+                      ),
                       SizedBox(width: Shape.s(6)),
                     ],
                     Text(c.labels[i], style: _word(st.isSelected ? Grey.g100 : Grey.g56, w: st.isSelected ? FontWeight.w600 : FontWeight.w400)),
@@ -180,7 +190,10 @@ class SheetForms extends Forms {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(s.on ? 'On' : 'Off', style: _word(s.on ? Grey.g95 : Grey.g56, w: FontWeight.w500).copyWith(fontSize: T.px(11))),
+          Text(
+            s.on ? 'On' : 'Off',
+            style: _word(s.on ? Grey.g95 : Grey.g56, w: FontWeight.w500).copyWith(fontSize: T.px(11)),
+          ),
           SizedBox(width: Shape.s(6)),
           SizedBox.square(
             dimension: Shape.z(12),
@@ -203,7 +216,10 @@ class SheetForms extends Forms {
               child: Row(
                 children: [
                   if (c.tone != null) ...[
-                    SizedBox.square(dimension: Shape.z(6), child: CustomPaint(painter: _MarkPaint(_Mark.dot, c.tone!))),
+                    SizedBox.square(
+                      dimension: Shape.z(6),
+                      child: CustomPaint(painter: _MarkPaint(_Mark.dot, c.tone!)),
+                    ),
                     SizedBox(width: Shape.s(8)),
                   ],
                   Expanded(
@@ -262,7 +278,10 @@ class SheetForms extends Forms {
                       child: CustomPaint(painter: _MarkPaint(st.isSelected ? _Mark.quarter : _Mark.ring, st.isSelected ? Accent.key : Grey.g38)),
                     ),
                     SizedBox(width: Shape.s(4)),
-                    Text(c.labels[i], style: T.label(st.isSelected ? Grey.g100 : Grey.g56).copyWith(fontWeight: st.isSelected ? FontWeight.w600 : FontWeight.w400)),
+                    Text(
+                      c.labels[i],
+                      style: T.label(st.isSelected ? Grey.g100 : Grey.g56).copyWith(fontWeight: st.isSelected ? FontWeight.w600 : FontWeight.w400),
+                    ),
                   ],
                 ),
               ),
@@ -283,7 +302,10 @@ class SheetForms extends Forms {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox.square(dimension: Shape.z(18), child: CustomPaint(painter: _MarkPaint(f.on ? _Mark.dot : _Mark.ring, ink))),
+            SizedBox.square(
+              dimension: Shape.z(18),
+              child: CustomPaint(painter: _MarkPaint(f.on ? _Mark.dot : _Mark.ring, ink)),
+            ),
             SizedBox(width: Shape.s(5)),
             if (f.mark != null) ...[f.mark!(f.on ? Grey.g95 : Grey.g56), SizedBox(width: Shape.s(4))],
             Text(f.label, style: T.label(f.on ? Grey.g95 : Grey.g56).copyWith(fontWeight: f.on ? FontWeight.w600 : FontWeight.w400)),
@@ -314,7 +336,10 @@ class SheetForms extends Forms {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (on) ...[
-                        SizedBox.square(dimension: Shape.z(5), child: CustomPaint(painter: _MarkPaint(_Mark.dot, Accent.key))),
+                        SizedBox.square(
+                          dimension: Shape.z(5),
+                          child: CustomPaint(painter: _MarkPaint(_Mark.dot, Accent.key)),
+                        ),
                         SizedBox(width: Shape.s(4)),
                       ],
                       Text(name, style: T.label(on ? Grey.g100 : Grey.g56).copyWith(fontWeight: on ? FontWeight.w600 : FontWeight.w400)),
@@ -338,9 +363,20 @@ class SheetForms extends Forms {
       padding: EdgeInsets.only(left: Shape.s(6), right: Shape.s(6)),
       child: Row(
         children: [
-          SizedBox.square(dimension: Shape.z(16), child: CustomPaint(painter: _MarkPaint(t.selected ? _Mark.quarter : _Mark.ring, t.selected ? Accent.key : Grey.g38))),
+          SizedBox.square(
+            dimension: Shape.z(16),
+            child: CustomPaint(painter: _MarkPaint(t.selected ? _Mark.quarter : _Mark.ring, t.selected ? Accent.key : Grey.g38)),
+          ),
           SizedBox(width: Shape.s(6)),
-          SizedBox(width: 14, child: Text('${t.index + 1}', softWrap: false, overflow: TextOverflow.visible, style: T.value(Grey.g56).copyWith(fontSize: T.px(10)))),
+          SizedBox(
+            width: 14,
+            child: Text(
+              '${t.index + 1}',
+              softWrap: false,
+              overflow: TextOverflow.visible,
+              style: T.value(Grey.g56).copyWith(fontSize: T.px(10)),
+            ),
+          ),
           SizedBox(width: Shape.s(6)),
           t.kind,
           SizedBox(width: Shape.s(7)),
@@ -373,20 +409,36 @@ class SheetForms extends Forms {
             padding: EdgeInsets.only(right: n.glyph != null ? n.glyphBox : 0, bottom: n.fill == null ? 0 : 2),
             child: Row(
               children: [
-                SizedBox.square(dimension: Shape.z(14), child: CustomPaint(painter: _MarkPaint(n.fill == null ? _Mark.quarter : _Mark.dot, shape))),
+                SizedBox.square(
+                  dimension: Shape.z(14),
+                  child: CustomPaint(painter: _MarkPaint(n.fill == null ? _Mark.quarter : _Mark.dot, shape)),
+                ),
                 SizedBox(width: Shape.s(6)),
-                if (n.caption != null) ...[
-                  Text(n.caption!, style: T.micro(n.on ? Grey.g63 : Grey.g44)),
-                  SizedBox(width: Shape.s(6)),
-                ],
+                if (n.caption != null) ...[Text(n.caption!, style: T.micro(n.on ? Grey.g63 : Grey.g44)), SizedBox(width: Shape.s(6))],
                 if (n.lead != null) Flexible(child: n.lead!),
-                Expanded(child: Align(alignment: Alignment.centerRight, child: shown)),
+                Expanded(
+                  child: Align(alignment: Alignment.centerRight, child: shown),
+                ),
               ],
             ),
           ),
-          if (n.glyph != null) Positioned(right: 0, top: 0, bottom: 0, width: n.glyphBox, child: Center(child: n.glyph)),
+          if (n.glyph != null)
+            Positioned(
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: n.glyphBox,
+              child: Center(child: n.glyph),
+            ),
           if (n.keyDot != null) Positioned(top: 2, right: 2, child: keyDiamond(n.keyDot!, empty: n.keyEmpty)),
-          if (n.fill != null) Positioned(left: Shape.z(20), right: 0, bottom: 0, height: Shape.z(10), child: CustomPaint(painter: _Range(n.fill, n.live || n.hot))),
+          if (n.fill != null)
+            Positioned(
+              left: Shape.z(20),
+              right: 0,
+              bottom: 0,
+              height: Shape.z(10),
+              child: CustomPaint(painter: _Range(n.fill, n.live || n.hot)),
+            ),
         ],
       ),
     );
@@ -410,7 +462,10 @@ class SheetForms extends Forms {
   Widget paneMark(BuildContext context, {required bool selected, required Widget mark}) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      SizedBox.square(dimension: Shape.z(14), child: CustomPaint(painter: _MarkPaint(selected ? _Mark.quarter : _Mark.ring, selected ? Accent.key : Grey.g38))),
+      SizedBox.square(
+        dimension: Shape.z(14),
+        child: CustomPaint(painter: _MarkPaint(selected ? _Mark.quarter : _Mark.ring, selected ? Accent.key : Grey.g38)),
+      ),
       SizedBox(width: Shape.s(4)),
       mark,
     ],
@@ -428,7 +483,13 @@ class _Range extends CustomPainter {
   @override
   void paint(Canvas c, Size s) {
     final y = s.height / 2;
-    c.drawLine(Offset(0, y), Offset(s.width, y), Paint()..color = Grey.g26..strokeWidth = 1);
+    c.drawLine(
+      Offset(0, y),
+      Offset(s.width, y),
+      Paint()
+        ..color = Grey.g26
+        ..strokeWidth = 1,
+    );
     if (fill == null) return;
     c.drawCircle(Offset(4 + (s.width - 8) * fill!.clamp(0, 1), y), hot ? 4 : 3, Paint()..color = hot ? Accent.key : Grey.g95);
   }

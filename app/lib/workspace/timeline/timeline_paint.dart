@@ -75,8 +75,8 @@ class WtRow {
     this.laneOn,
     this.whole,
   });
-  final (int, int)? whole;   // (a film's whole length as it lies, cut or not: the pale slip-edit bar of After Effects)
-  final List<WsStretch> stretches;   // (how it goes between its keys: each stretch's way drawn between them)
+  final (int, int)? whole; // (a film's whole length as it lies, cut or not: the pale slip-edit bar of After Effects)
+  final List<WsStretch> stretches; // (how it goes between its keys: each stretch's way drawn between them)
 
   /// A value's own lane in place of a bar (Ableton's automation lane): each key's frame and where its value stands
   /// between the lowest and the highest the value's keys hold (0 to 1); null: a layer's row.
@@ -84,9 +84,9 @@ class WtRow {
 
   /// How the lane goes from each key to the next: its way's shape, 0 at the key and 1 at the next (as a stretch's).
   final List<List<double>>? laneWays;
-  final int? laneOn;   // (the stretch picked by its line: its place among them)
-  final Color? tone;   // (its label colour; none: its kind's)
-  final List<Color>? mix;   // (a relation's: its things' label colours, its bar their gradient)
+  final int? laneOn; // (the stretch picked by its line: its place among them)
+  final Color? tone; // (its label colour; none: its kind's)
+  final List<Color>? mix; // (a relation's: its things' label colours, its bar their gradient)
   final String name;
 
   /// How loud its sound is at each frame of its bar (dB, the inside's reading; null: no sound to show).
@@ -98,12 +98,12 @@ class WtRow {
   /// A shape's form (the inside's shape word: rect, circle, star...) and its fill: its own small picture at the row's left.
   final String? form;
   final Color? fill;
-  final bool outline;   // (no fill: drawn as its outline, [fill] its stroke's colour)
+  final bool outline; // (no fill: drawn as its outline, [fill] its stroke's colour)
   final WsKind kind;
   final int inF, outF;
   final List<int> keys;
   final Set<int> picked;
-  final bool selected, dim, locked, clipped;   // (clipped: cut to the thing under it, a ↘ before its name as Alight Motion marks it)
+  final bool selected, dim, locked, clipped; // (clipped: cut to the thing under it, a ↘ before its name as Alight Motion marks it)
   @override
   bool operator ==(Object other) =>
       other is WtRow &&
@@ -121,14 +121,17 @@ class WtRow {
       other.clipped == clipped &&
       other.whole == whole &&
       identical(other.wave, wave) &&
-      identical(other.frames, frames) &&   // (read once a change: the same list until the document changes)
+      identical(other.frames, frames) && // (read once a change: the same list until the document changes)
       other.form == form &&
       other.fill == fill &&
       other.outline == outline &&
       listEquals(other.lane, lane) &&
       other.laneOn == laneOn &&
       other.stretches.length == stretches.length &&
-      [for (var i = 0; i < stretches.length; i++) other.stretches[i].from == stretches[i].from && other.stretches[i].to == stretches[i].to && other.stretches[i].way == stretches[i].way].every((same) => same);
+      [
+        for (var i = 0; i < stretches.length; i++)
+          other.stretches[i].from == stretches[i].from && other.stretches[i].to == stretches[i].to && other.stretches[i].way == stretches[i].way,
+      ].every((same) => same);
   @override
   int get hashCode => Object.hash(name, kind, inF, outF, Object.hashAll(keys), Object.hashAllUnordered(picked), selected, dim, locked);
 }
@@ -160,7 +163,8 @@ TextPainter _text(String s, TextStyle st) => TextPainter(
 
 void _vLines(Canvas c, WtView v, int fps, double w, double top, double bottom, {required Color major, required Color fine, WsBeats? beats}) {
   final mj = tpMajor(v.ppf, fps), fn = tpFine(v.ppf, fps, mj), p = Paint();
-  if (beats != null) {   // (its grid by the beat, not the second, as far as they can be told apart: Live's grid widens as it is zoomed out)
+  if (beats != null) {
+    // (its grid by the beat, not the second, as far as they can be told apart: Live's grid widens as it is zoomed out)
     for (final (f, bar) in beats.between(v.scroll, v.scroll + w / v.ppf)) {
       if (bar || beats.every * v.ppf >= 8) c.drawRect(Rect.fromLTWH(v.x(f).roundToDouble(), top, 1, bottom - top), p..color = bar ? major : fine);
     }
@@ -178,16 +182,26 @@ void _vLines(Canvas c, WtView v, int fps, double w, double top, double bottom, {
 // ---------------------------------------------------------------- ruler
 
 class WtRulerPainter extends CustomPainter {
-  const WtRulerPainter({required this.view, required this.fps, required this.workIn, required this.workOut, required this.markers, this.tempo, this.markColours = const {}, this.beats = const [], this.retimed = const []});
+  const WtRulerPainter({
+    required this.view,
+    required this.fps,
+    required this.workIn,
+    required this.workOut,
+    required this.markers,
+    this.tempo,
+    this.markColours = const {},
+    this.beats = const [],
+    this.retimed = const [],
+  });
   final WtView view;
   final int fps, workIn, workOut;
   final List<(int, String)> markers;
-  final Map<int, Color> markColours;   // (a mark's colour by its frame, if it has one)
+  final Map<int, Color> markColours; // (a mark's colour by its frame, if it has one)
 
   /// Where the films' sound strikes (their Beats), frames: a short tick each at the ruler's foot.
   final List<int> beats;
-  final WsBeats? tempo;   // (the document's own beats: a tick each, taller where a bar begins)
-  final List<int> retimed;   // (the picked element's end of intro and start of outro, frames: small yellow marks at the ruler's top, as Alight Motion shows them)
+  final WsBeats? tempo; // (the document's own beats: a tick each, taller where a bar begins)
+  final List<int> retimed; // (the picked element's end of intro and start of outro, frames: small yellow marks at the ruler's top, as Alight Motion shows them)
 
   @override
   void paint(Canvas c, Size s) {
@@ -209,12 +223,23 @@ class WtRulerPainter extends CustomPainter {
     }
     if (tempo case final b?) {
       for (final (f, bar) in b.between(view.scroll, view.scroll + s.width / view.ppf)) {
-        if (bar || b.every * view.ppf >= 8) c.drawRect(Rect.fromLTWH(view.x(f).roundToDouble(), bottom - (bar ? 11 : 6), 1, bar ? 11 : 6), p..color = bar ? WsT.accent : Grey.g56);
+        if (bar || b.every * view.ppf >= 8) {
+          c.drawRect(Rect.fromLTWH(view.x(f).roundToDouble(), bottom - (bar ? 11 : 6), 1, bar ? 11 : 6), p..color = bar ? WsT.accent : Grey.g56);
+        }
       }
     }
     for (final f in retimed) {
       final x = view.x(f).roundToDouble();
-      if (x >= -4 && x <= s.width + 4) c.drawPath(Path()..moveTo(x - 4, 0)..lineTo(x + 4, 0)..lineTo(x, 6)..close(), p..color = WsT.toneMark);
+      if (x >= -4 && x <= s.width + 4) {
+        c.drawPath(
+          Path()
+            ..moveTo(x - 4, 0)
+            ..lineTo(x + 4, 0)
+            ..lineTo(x, 6)
+            ..close(),
+          p..color = WsT.toneMark,
+        );
+      }
     }
     final flags = <(Rect, TextPainter, Color)>[];
     final xs = [for (final (f, _) in markers) view.x(f).roundToDouble()];
@@ -261,7 +286,7 @@ class WtRulerPainter extends CustomPainter {
       );
       c.drawRect(Rect.fromLTWH(x, r.bottom, 1, bottom - r.bottom), p..color = ink);
       c.save();
-      c.clipRect(Rect.fromLTRB(r.left, r.top, r.right - 3, r.bottom));   // (a name cut at its flag's end)
+      c.clipRect(Rect.fromLTRB(r.left, r.top, r.right - 3, r.bottom)); // (a name cut at its flag's end)
       t.paint(c, Offset(r.left + 3, r.center.dy - t.height / 2));
       c.restore();
       t.dispose();
@@ -270,7 +295,14 @@ class WtRulerPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(WtRulerPainter o) => o.view != view || o.fps != fps || o.workIn != workIn || o.workOut != workOut || o.markers != markers || !mapEquals(o.markColours, markColours) || !identical(o.beats, beats);
+  bool shouldRepaint(WtRulerPainter o) =>
+      o.view != view ||
+      o.fps != fps ||
+      o.workIn != workIn ||
+      o.workOut != workOut ||
+      o.markers != markers ||
+      !mapEquals(o.markColours, markColours) ||
+      !identical(o.beats, beats);
 }
 
 // ---------------------------------------------------------------- tracks
@@ -280,7 +312,7 @@ class WtPlayheadPainter extends CustomPainter {
   final WtView view;
   final int frame;
   final double headTop;
-  final ValueListenable<int>? moment;   // (where it is now, read as it is painted: painted again as it moves, nothing built)
+  final ValueListenable<int>? moment; // (where it is now, read as it is painted: painted again as it moves, nothing built)
 
   @override
   void paint(Canvas c, Size s) {
@@ -347,7 +379,10 @@ class WtThumb extends StatelessWidget {
     if (r.frames case final f? when f.isNotEmpty) {
       return ClipRRect(
         borderRadius: BorderRadius.all(Shape.r(3)),
-        child: SizedBox.square(dimension: WtM.chip, child: RawImage(image: f.first, fit: BoxFit.cover, opacity: AlwaysStoppedAnimation(r.dim ? .35 : 1))),
+        child: SizedBox.square(
+          dimension: WtM.chip,
+          child: RawImage(image: f.first, fit: BoxFit.cover, opacity: AlwaysStoppedAnimation(r.dim ? .35 : 1)),
+        ),
       );
     }
     if (r.form case final form? when r.kind == WsKind.shape && form != 'null') {
@@ -355,7 +390,9 @@ class WtThumb extends StatelessWidget {
         width: WtM.chip,
         height: WtM.chip,
         decoration: BoxDecoration(color: Grey.g20, borderRadius: BorderRadius.all(Shape.r(3))),
-        child: CustomPaint(painter: _FormPainter(form, (r.fill ?? wsTone(r.kind)).withValues(alpha: r.dim ? .35 : 1), outline: r.outline)),
+        child: CustomPaint(
+          painter: _FormPainter(form, (r.fill ?? wsTone(r.kind)).withValues(alpha: r.dim ? .35 : 1), outline: r.outline),
+        ),
       );
     }
     return WtKindChip(r.kind, dim: r.dim, tone: r.tone);
@@ -369,7 +406,12 @@ class _FormPainter extends CustomPainter {
   final bool outline;
   @override
   void paint(Canvas c, Size s) {
-    final b = (Offset.zero & s).deflate(s.width * .16), st = Paint()..color = ink..style = PaintingStyle.stroke..strokeWidth = 1.4..strokeCap = StrokeCap.round;
+    final b = (Offset.zero & s).deflate(s.width * .16),
+        st = Paint()
+          ..color = ink
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.4
+          ..strokeCap = StrokeCap.round;
     final f = outline ? st : (Paint()..color = ink);
     Path round(int n, double inner) => Path()
       ..addPolygon([
@@ -389,7 +431,7 @@ class _FormPainter extends CustomPainter {
         c.drawLine(b.bottomLeft, b.topRight, st);
       case 'ring':
         c.drawOval(b.deflate(1), st);
-      default:   // (circle, and the forms with no small mark of their own: a round in its fill)
+      default: // (circle, and the forms with no small mark of their own: a round in its fill)
         c.drawOval(b, f);
     }
   }

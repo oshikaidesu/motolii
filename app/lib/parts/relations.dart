@@ -13,7 +13,10 @@ class FamIcon extends StatelessWidget {
   final double size;
   final Color? color;
   @override
-  Widget build(BuildContext context) => SizedBox.square(dimension: size, child: CustomPaint(painter: _Icon(fam, color ?? fam.c)));
+  Widget build(BuildContext context) => SizedBox.square(
+    dimension: size,
+    child: CustomPaint(painter: _Icon(fam, color ?? fam.c)),
+  );
 }
 
 class _Icon extends CustomPainter {
@@ -22,25 +25,45 @@ class _Icon extends CustomPainter {
   final Color c;
   @override
   void paint(Canvas cv, Size s) {
-    final w = s.width, st = Paint()..color = c..style = PaintingStyle.stroke..strokeWidth = w * .09..strokeCap = StrokeCap.round, fl = Paint()..color = c;
+    final w = s.width,
+        st = Paint()
+          ..color = c
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = w * .09
+          ..strokeCap = StrokeCap.round,
+        fl = Paint()..color = c;
     switch (fam.name) {
       case 'Scatter':
         for (final p in const [Offset(.2, .3), Offset(.5, .18), Offset(.78, .34), Offset(.34, .62), Offset(.66, .7), Offset(.22, .84), Offset(.84, .84)]) {
           cv.drawCircle(p * w, w * .075, fl);
         }
       case 'Along Path':
-        cv.drawPath(Path()..moveTo(w * .12, w * .78)..cubicTo(w * .3, w * .1, w * .55, w * .95, w * .88, w * .22), st);
+        cv.drawPath(
+          Path()
+            ..moveTo(w * .12, w * .78)
+            ..cubicTo(w * .3, w * .1, w * .55, w * .95, w * .88, w * .22),
+          st,
+        );
         cv.drawCircle(Offset(w * .88, w * .22), w * .08, fl);
       case 'Stagger':
         for (var i = 0; i < 4; i++) {
-          cv.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * (.12 + i * .12), w * (.14 + i * .2), w * .46, w * .12), Radius.circular(w * .03)), fl..color = c.withValues(alpha: .4 + i * .2));
+          cv.drawRRect(
+            RRect.fromRectAndRadius(Rect.fromLTWH(w * (.12 + i * .12), w * (.14 + i * .2), w * .46, w * .12), Radius.circular(w * .03)),
+            fl..color = c.withValues(alpha: .4 + i * .2),
+          );
         }
       case 'Face':
         cv.drawCircle(Offset(w / 2, w / 2), w * .34, st);
         cv.drawCircle(Offset(w / 2, w / 2), w * .09, fl..color = c);
       case 'Follow':
         cv.drawLine(Offset(w * .12, w * .5), Offset(w * .8, w * .5), st);
-        cv.drawPath(Path()..moveTo(w * .6, w * .28)..lineTo(w * .86, w * .5)..lineTo(w * .6, w * .72), st);
+        cv.drawPath(
+          Path()
+            ..moveTo(w * .6, w * .28)
+            ..lineTo(w * .86, w * .5)
+            ..lineTo(w * .6, w * .72),
+          st,
+        );
       default: // Attach
         cv.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * .1, w * .36, w * .46, w * .28), Radius.circular(w * .14)), st);
         cv.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * .44, w * .36, w * .46, w * .28), Radius.circular(w * .14)), st);
@@ -70,11 +93,15 @@ class RelationTile extends StatelessWidget {
         border: Border.all(color: look == Look.glow ? fam.c.withValues(alpha: .45) : (filled ? const Color(0x00000000) : Grey.g20), width: 1),
         boxShadow: look == Look.glow ? [BoxShadow(color: fam.c.withValues(alpha: .22), blurRadius: 16)] : null,
       ),
-      child: Flex(direction: Axis.vertical, mainAxisAlignment: MainAxisAlignment.center, children: [
-        FamIcon(fam, color: filled ? Grey.g07 : fam.c),
-        SizedBox(height: Shape.s(7)),
-        Text(fam.name, style: T.name(ink).copyWith(fontSize: T.px(10.5))),
-      ]),
+      child: Flex(
+        direction: Axis.vertical,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          FamIcon(fam, color: filled ? Grey.g07 : fam.c),
+          SizedBox(height: Shape.s(7)),
+          Text(fam.name, style: T.name(ink).copyWith(fontSize: T.px(10.5))),
+        ],
+      ),
     );
   }
 }
@@ -85,7 +112,10 @@ class Gadget extends StatelessWidget {
   final Fam fam;
   final double size;
   @override
-  Widget build(BuildContext context) => SizedBox.square(dimension: size, child: CustomPaint(painter: _Gadget(fam)));
+  Widget build(BuildContext context) => SizedBox.square(
+    dimension: size,
+    child: CustomPaint(painter: _Gadget(fam)),
+  );
 }
 
 class _Gadget extends CustomPainter {
@@ -94,10 +124,20 @@ class _Gadget extends CustomPainter {
   @override
   void paint(Canvas cv, Size s) {
     final w = s.width, c = fam.c, mid = Offset(w / 2, w / 2);
-    Paint line([double a = 1, double sw = 1.2]) => Paint()..color = c.withValues(alpha: a)..style = PaintingStyle.stroke..strokeWidth = sw;
+    Paint line([double a = 1, double sw = 1.2]) => Paint()
+      ..color = c.withValues(alpha: a)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = sw;
     void handle(Offset o) {
       cv.drawCircle(o, 6, Paint()..color = c);
-      cv.drawCircle(o, 6, Paint()..color = Grey.g100..style = PaintingStyle.stroke..strokeWidth = 1.5);
+      cv.drawCircle(
+        o,
+        6,
+        Paint()
+          ..color = Grey.g100
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5,
+      );
     }
 
     switch (fam.name) {
@@ -110,7 +150,10 @@ class _Gadget extends CustomPainter {
         }
         handle(mid + Offset(w * .3, -w * .3));
       case 'Along Path':
-        final p = Path()..moveTo(w * .08, w * .82)..cubicTo(w * .25, w * .1, w * .45, w * .95, w * .62, w * .5)..cubicTo(w * .75, w * .2, w * .85, w * .3, w * .92, w * .14);
+        final p = Path()
+          ..moveTo(w * .08, w * .82)
+          ..cubicTo(w * .25, w * .1, w * .45, w * .95, w * .62, w * .5)
+          ..cubicTo(w * .75, w * .2, w * .85, w * .3, w * .92, w * .14);
         cv.drawPath(p, line(1, 1.6));
         final m = p.computeMetrics().first;
         for (var i = 0; i < 5; i++) {
@@ -130,14 +173,23 @@ class _Gadget extends CustomPainter {
         handle(mid);
         handle(mid + Offset(w * .36, -w * .14));
       case 'Follow':
-        final p = Path()..moveTo(w * .14, w * .72)..cubicTo(w * .35, w * .85, w * .5, w * .42, w * .84, w * .26);
+        final p = Path()
+          ..moveTo(w * .14, w * .72)
+          ..cubicTo(w * .35, w * .85, w * .5, w * .42, w * .84, w * .26);
         for (final m in p.computeMetrics()) {
           for (var d = 0.0; d < m.length; d += 11) {
             cv.drawPath(m.extractPath(d, d + 6), line(.8, 1.4));
           }
         }
         handle(Offset(w * .14, w * .72));
-        cv.drawPath(Path()..moveTo(w * .76, w * .34)..lineTo(w * .9, w * .24)..lineTo(w * .8, w * .18)..close(), Paint()..color = Grey.g95);
+        cv.drawPath(
+          Path()
+            ..moveTo(w * .76, w * .34)
+            ..lineTo(w * .9, w * .24)
+            ..lineTo(w * .8, w * .18)
+            ..close(),
+          Paint()..color = Grey.g95,
+        );
       default: // Attach
         final a = Offset(w * .3, w * .62), b = Offset(w * .7, w * .38);
         cv.drawLine(a, b, line(.9, 1.4));
@@ -162,37 +214,65 @@ class RelationCard extends StatelessWidget {
   final ValueChanged<bool>? onToggle;
   @override
   Widget build(BuildContext context) => Container(
-        padding: EdgeInsets.all(Shape.s(12)),
-        decoration: BoxDecoration(
-          color: look == Look.quiet ? Grey.g13 : const Color(0xFF1B1B1D),
-          borderRadius: BorderRadius.all(Shape.r(10)),
-          border: Border.all(color: look == Look.glow ? fam.c.withValues(alpha: .4) : Grey.g20),
-          boxShadow: look == Look.glow ? [BoxShadow(color: fam.c.withValues(alpha: .16), blurRadius: 24)] : null,
-        ),
-        child: Flex(direction: Axis.vertical, crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
-          Flex(direction: Axis.horizontal, crossAxisAlignment: CrossAxisAlignment.center, children: [
-            Container(width: Shape.z(10), height: Shape.z(10), decoration: BoxDecoration(color: fam.c, shape: BoxShape.circle)),
+    padding: EdgeInsets.all(Shape.s(12)),
+    decoration: BoxDecoration(
+      color: look == Look.quiet ? Grey.g13 : const Color(0xFF1B1B1D),
+      borderRadius: BorderRadius.all(Shape.r(10)),
+      border: Border.all(color: look == Look.glow ? fam.c.withValues(alpha: .4) : Grey.g20),
+      boxShadow: look == Look.glow ? [BoxShadow(color: fam.c.withValues(alpha: .16), blurRadius: 24)] : null,
+    ),
+    child: Flex(
+      direction: Axis.vertical,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flex(
+          direction: Axis.horizontal,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: Shape.z(10),
+              height: Shape.z(10),
+              decoration: BoxDecoration(color: fam.c, shape: BoxShape.circle),
+            ),
             SizedBox(width: Shape.s(9)),
-            Flex(direction: Axis.vertical, crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              Text(fam.name, style: T.title()),
-              SizedBox(height: Shape.s(4)),
-              Text(fam.jp, style: T.label(Grey.g56)),
-            ]),
+            Flex(
+              direction: Axis.vertical,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(fam.name, style: T.title()),
+                SizedBox(height: Shape.s(4)),
+                Text(fam.jp, style: T.label(Grey.g56)),
+              ],
+            ),
             const Spacer(),
             PillSwitch(on: on, fam: fam, onChanged: onToggle),
-          ]),
-          SizedBox(height: Shape.s(12)),
-          Flex(direction: Axis.horizontal, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          ],
+        ),
+        SizedBox(height: Shape.s(12)),
+        Flex(
+          direction: Axis.horizontal,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Gadget(fam, size: Shape.z(132)),
             SizedBox(width: Shape.s(12)),
-            Expanded(child: Flex(direction: Axis.vertical, mainAxisSize: MainAxisSize.min, children: [
-              ValueWell(label: 'Density', value: density, fam: fam),
-              SizedBox(height: Shape.s(6)),
-              ValueWell(label: 'Spread', value: spread, fam: fam),
-              SizedBox(height: Shape.s(6)),
-              ValueWell(label: 'Falloff', value: .36, fam: fam),
-            ])),
-          ]),
-        ]),
-      );
+            Expanded(
+              child: Flex(
+                direction: Axis.vertical,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ValueWell(label: 'Density', value: density, fam: fam),
+                  SizedBox(height: Shape.s(6)),
+                  ValueWell(label: 'Spread', value: spread, fam: fam),
+                  SizedBox(height: Shape.s(6)),
+                  ValueWell(label: 'Falloff', value: .36, fam: fam),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
 }

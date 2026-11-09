@@ -66,7 +66,8 @@ class _TransformCanvasState extends State<TransformCanvas> {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context);
-    return ListenableBuilder( // (drawn again when one of its values is told anew: a hand on the stage, a moment)
+    return ListenableBuilder(
+      // (drawn again when one of its values is told anew: a hand on the stage, a moment)
       listenable: Listenable.merge([for (final id in TransformLayout.watched) x.doc.watch(id)]),
       builder: (context, _) => _drawing(context, x),
     );
@@ -80,12 +81,20 @@ class _TransformCanvasState extends State<TransformCanvas> {
         child: LayoutBuilder(
           builder: (context, box) {
             final values = Map.of(x.doc.v);
-            if (_homeOf != x.doc.title) { // (another thing: drawn from where it is)
+            if (_homeOf != x.doc.title) {
+              // (another thing: drawn from where it is)
               _home = null;
               _homeOf = x.doc.title;
             }
             var g = TransformLayout(box.biggest, values, space: x.doc.space, home: _home ??= TransformHome.of(values));
-            if (_grab == null && g.away) g = TransformLayout(box.biggest, values, space: x.doc.space, home: _home = TransformHome.of(values)); // (gone out of the frame: back in the middle)
+            if (_grab == null && g.away) {
+              g = TransformLayout(
+                box.biggest,
+                values,
+                space: x.doc.space,
+                home: _home = TransformHome.of(values),
+              ); // (gone out of the frame: back in the middle)
+            }
             final mixed = g.ids.any((id) => x.doc.get(id) == null);
             final enabled = _editable(x, g);
             final own = _grab ?? _hover;
@@ -267,7 +276,12 @@ class _CanvasPaint extends CustomPainter {
         ).createShader(front.getBounds()),
     );
     // (the corner cut off, where it points up and right: the window's accent, so it reads as a mark, not a chip)
-    c.drawPath(Path()..addPolygon([for (final p in const [Offset(.45, -1), Offset(1, -1), Offset(1, -.45)]) g.world(Offset(p.dx * g.half.dx, p.dy * g.half.dy))], true), fill(Pop.accent));
+    c.drawPath(
+      Path()..addPolygon([
+        for (final p in const [Offset(.45, -1), Offset(1, -1), Offset(1, -.45)]) g.world(Offset(p.dx * g.half.dx, p.dy * g.half.dy)),
+      ], true),
+      fill(Pop.accent),
+    );
     if (hot != TransformZone.move) return;
     final arrows = Grey.g100;
     final reach = math.min(g.half.dx.abs(), g.half.dy.abs()) * .7;

@@ -2,6 +2,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
+
 import '../../parts/skin_parts.dart';
 
 enum DockG {
@@ -104,8 +105,14 @@ class _P extends CustomPainter {
       case DockG.media || DockG.video:
         cv.drawRRect(rr(.1, .2, .8, .6, .12), st);
         cv.drawPath(poly(const [Offset(.42, .36), Offset(.64, .5), Offset(.42, .64)]), fl);
-      case DockG.effects:   // ("fx", After Effects' and Premiere Pro's mark of a layer's effects: the sparkle was taken for a +, golf (57))
-        final t = TextPainter(text: TextSpan(text: 'fx', style: TextStyle(color: c, fontSize: w * .8, fontStyle: FontStyle.italic, fontWeight: FontWeight.w700, height: 1)), textDirection: TextDirection.ltr)..layout();
+      case DockG.effects: // ("fx", After Effects' and Premiere Pro's mark of a layer's effects: the sparkle was taken for a +, golf (57))
+        final t = TextPainter(
+          text: TextSpan(
+            text: 'fx',
+            style: TextStyle(color: c, fontSize: w * .8, fontStyle: FontStyle.italic, fontWeight: FontWeight.w700, height: 1),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
         t.paint(cv, Offset((w - t.width) / 2, (s.height - t.height) / 2));
         t.dispose();
       case DockG.fonts || DockG.font:
@@ -139,11 +146,11 @@ class _P extends CustomPainter {
         final k = g == DockG.create ? .3 : .2;
         cv.drawLine(p(.5, k), p(.5, 1 - k), st);
         cv.drawLine(p(k, .5), p(1 - k, .5), st);
-      case DockG.reload:   // (the round arrow on a browser's reload)
+      case DockG.reload: // (the round arrow on a browser's reload)
         cv.drawArc(r(.14, .14, .72, .72), -math.pi * .3, math.pi * 1.65, false, st);
         cv.drawLine(p(.84, .1), p(.82, .34), st);
         cv.drawLine(p(.82, .34), p(.58, .3), st);
-      case DockG.program:   // (code's angle brackets and slash)
+      case DockG.program: // (code's angle brackets and slash)
         cv.drawLine(p(.34, .3), p(.12, .5), st);
         cv.drawLine(p(.12, .5), p(.34, .7), st);
         cv.drawLine(p(.66, .3), p(.88, .5), st);
@@ -152,7 +159,7 @@ class _P extends CustomPainter {
       case DockG.search:
         cv.drawCircle(p(.43, .43), w * .26, st);
         cv.drawLine(p(.63, .63), p(.86, .86), st);
-      case DockG.more:   // (three dots, a menu of what can be done to it)
+      case DockG.more: // (three dots, a menu of what can be done to it)
         for (final x in const [.2, .5, .8]) {
           cv.drawCircle(p(x, .5), w * .07, fl);
         }

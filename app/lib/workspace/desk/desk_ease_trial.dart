@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 class EaseTrial extends StatefulWidget {
   const EaseTrial({super.key, required this.way, required this.builder});
   final String way;
-  final Widget Function(double? at) builder;   // (0 to 1 along the way; none: not running)
+  final Widget Function(double? at) builder; // (0 to 1 along the way; none: not running)
   @override
   State<EaseTrial> createState() => _EaseTrialState();
 }
@@ -42,7 +42,7 @@ class _EaseTrialState extends State<EaseTrial> with SingleTickerProviderStateMix
     onExit: (_) => _over = false,
     child: AnimatedBuilder(
       animation: _run,
-      builder: (_, _) => widget.builder(_run.isAnimating ? (_run.value * 1.2).clamp(0.0, 1.0) : null),   // (a beat at the end, as it has arrived)
+      builder: (_, _) => widget.builder(_run.isAnimating ? (_run.value * 1.2).clamp(0.0, 1.0) : null), // (a beat at the end, as it has arrived)
     ),
   );
 }

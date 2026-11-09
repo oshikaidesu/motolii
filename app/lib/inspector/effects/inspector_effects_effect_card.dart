@@ -190,7 +190,10 @@ class FxDragGhost extends StatelessWidget {
       children: [
         ToneBadge(fx.mark, fx.tone),
         SizedBox(width: Shape.s(6)),
-        Text(fx.name, style: T.title(Grey.g95).copyWith(fontSize: T.px(12), fontWeight: FontWeight.w700)),
+        Text(
+          fx.name,
+          style: T.title(Grey.g95).copyWith(fontSize: T.px(12), fontWeight: FontWeight.w700),
+        ),
       ],
     ),
   );

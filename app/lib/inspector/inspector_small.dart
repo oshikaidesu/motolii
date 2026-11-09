@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/forms/forms.dart';
+
 import '../style/tokens.dart';
 import 'inspector_parts.dart';
 
@@ -31,12 +32,12 @@ class FloatShut extends StatefulWidget {
 
 class _FloatShutState extends State<FloatShut> {
   final _keys = FocusNode(debugLabel: 'float');
-  final _was = FocusManager.instance.primaryFocus;   // (who held the keys: given back)
+  final _was = FocusManager.instance.primaryFocus; // (who held the keys: given back)
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? _keys.requestFocus() : null);   // (a field holding the keys would take Esc for itself)
+    WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? _keys.requestFocus() : null); // (a field holding the keys would take Esc for itself)
   }
 
   @override
@@ -162,7 +163,9 @@ class ResetMark extends StatelessWidget {
     child: show
         ? Hov(
             onTap: onTap,
-            builder: (_, h) => Center(child: Text('↺', style: T.label(h ? Grey.g95 : Grey.g56).copyWith(fontSize: T.px(12)))),
+            builder: (_, h) => Center(
+              child: Text('↺', style: T.label(h ? Grey.g95 : Grey.g56).copyWith(fontSize: T.px(12))),
+            ),
           )
         : null,
   );

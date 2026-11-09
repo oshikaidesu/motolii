@@ -20,7 +20,15 @@ abstract final class MaterialTiles {
   static final drawn = ValueNotifier<int>(0);
 
   /// The compiled material a ball wearing [wears] is drawn with (doc_match.h: surface_model, thick_glass, solid_wear).
-  static const _filamat = {'lit': 'floor_lit', 'cloth': 'solid_cloth', 'subsurface': 'solid_subsurface', 'glass': 'thick_glass', 'filament_glass': 'own_glass', 'lacquer': 'blade', 'bubble': 'bubble_worn'};
+  static const _filamat = {
+    'lit': 'floor_lit',
+    'cloth': 'solid_cloth',
+    'subsurface': 'solid_subsurface',
+    'glass': 'thick_glass',
+    'filament_glass': 'own_glass',
+    'lacquer': 'blade',
+    'bubble': 'bubble_worn',
+  };
 
   /// What a ball wearing [wears] is given besides, to show what it is: its colour, its own numbers, and a sun from
   /// behind (turned round, Y degrees, how strong) where light through it or a rim is the material. Without, Lit, Cloth
@@ -79,7 +87,7 @@ abstract final class MaterialTiles {
       if (m == null) continue;
       try {
         Directory(File(home).parent.path).createSync(recursive: true);
-        final back = m.add('shape', 'rect');   // (what glass bends and tints: a ramp across it)
+        final back = m.add('shape', 'rect'); // (what glass bends and tints: a ramp across it)
         m
           ..say(back, 'fill', 'ff3366 3366ff')
           ..set(back, 'gradient_angle', 90)

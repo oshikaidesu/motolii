@@ -39,7 +39,6 @@ class FileNode {
   bool get disk => id.startsWith('/');
   bool get listed => !disk || _lists.containsKey(id);
   List<FileNode> get kids => disk && folder ? _listed(id) : _kids;
-
 }
 
 // ---------------------------------------------------------------- the disk
@@ -50,10 +49,10 @@ String Function(String file) _kindOfFile = (_) => '';
 Future<String?> Function(String film, int step, int steps)? _thumbnailAtOf;
 DockG? _glyphOf(String file) => switch (_kindOfFile(file)) {
   'film' => DockG.video,
-  'sound' => DockG.audio,   // (songs on a tab of their own: Alight Motion's Add has Audio apart from Media, docs/internal/reports/alight_motion/alight_ui.md 176)
+  'sound' => DockG.audio, // (songs on a tab of their own: Alight Motion's Add has Audio apart from Media, docs/internal/reports/alight_motion/alight_ui.md 176)
   'picture' => DockG.image,
   'solid' => DockG.shape,
   'text' => DockG.font,
-  'timesheet' => DockG.comp,   // (its columns put together: _placeSheet)
+  'timesheet' => DockG.comp, // (its columns put together: _placeSheet)
   _ => null,
 };

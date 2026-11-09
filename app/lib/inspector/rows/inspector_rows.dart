@@ -12,7 +12,6 @@ class Rule extends StatelessWidget {
   Widget build(BuildContext context) => Container(height: 1, color: Ed(Ctx.of(context).cfg.ed).rule);
 }
 
-
 /// A card's fold mark: points right when folded, down when open, so a card that can fold says so before it is touched.
 class FoldMark extends StatelessWidget {
   const FoldMark({super.key, required this.open, this.hot = false});

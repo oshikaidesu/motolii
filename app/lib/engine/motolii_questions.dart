@@ -4,13 +4,20 @@ part of 'motolii.dart';
 extension MotoliiQuestions on Motolii {
   /// The stage's picture as a Flutter texture (the inside draws it by its own clock; nothing is copied). -1: none.
   Future<int> texture() async {
-    final (a, _) = await answered(later('live'));   // (opened by the hand: the window never stands still for it)
+    final (a, _) = await answered(later('live')); // (opened by the hand: the window never stands still for it)
     if (a == 0) return -1;
     return await Motolii._channel.invokeMethod<int>('start', {'lib': libPath, 'handle': _m.address}) ?? -1;
   }
 
   /// The desk's picture as a Flutter texture (-1: none).
-  Future<int> deskTexture() async => _deskId ??= await Motolii._channel.invokeMethod<int>('start', {'lib': libPath, 'handle': _m.address, 'front': 'motolii_desk_front', 'frames': 'motolii_desk_frames'}) ?? -1;
+  Future<int> deskTexture() async => _deskId ??=
+      await Motolii._channel.invokeMethod<int>('start', {
+        'lib': libPath,
+        'handle': _m.address,
+        'front': 'motolii_desk_front',
+        'frames': 'motolii_desk_frames',
+      }) ??
+      -1;
 
   /// The whole document written as a film (.mp4, with its films' sound), on another isolate: the window does not wait.
   /// The inside's one hand takes the call in its turn, from whatever thread it comes.
@@ -44,7 +51,9 @@ extension MotoliiQuestions on Motolii {
       malloc.free(out);
       return all;
     });
-  }  /// Each thing's own value at each moment asked, as the document says it (not what a relation makes of it; null: it
+  }
+
+  /// Each thing's own value at each moment asked, as the document says it (not what a relation makes of it; null: it
 
   /// has none): another moment than the picture's, a question (docs/app/BRIDGE.md Q), asked on another isolate as [shownAt].
   Future<List<double?>> valuesAt(List<(int, String, double)> asks) {
@@ -74,7 +83,7 @@ extension MotoliiQuestions on Motolii {
       final said = [for (final w in words) w.toNativeUtf8()], out = <int>[];
       for (final f in fonts) {
         final file = f.toNativeUtf8();
-        out.add(said.indexWhere((w) => ask(file, w) != 0));   // (one lacking a letter is told so by its cmap, before ThorVG reads it: type_sets)
+        out.add(said.indexWhere((w) => ask(file, w) != 0)); // (one lacking a letter is told so by its cmap, before ThorVG reads it: type_sets)
         malloc.free(file);
       }
       said.forEach(malloc.free);
@@ -236,9 +245,11 @@ extension MotoliiQuestions on Motolii {
 
   /// A picture [step] of [steps] along the film (a tile looked along by the hand's place on it, or played).
   /// The film's picture so many seconds in (a tenth's nearest), small: a bar on the timeline shows what it plays.
-  Future<String?> filmFrame(String film, double seconds) => _thumbnails['$film@${(seconds * 10).round()}'] ??= _thumbnail(libPath, film, 0, 1, (seconds * 10).round() / 10);
+  Future<String?> filmFrame(String film, double seconds) =>
+      _thumbnails['$film@${(seconds * 10).round()}'] ??= _thumbnail(libPath, film, 0, 1, (seconds * 10).round() / 10);
 
-  Future<String?> thumbnailAt(String film, int step, int steps) => step == 0 ? thumbnail(film) : _thumbnails['$film#$step/$steps'] ??= _thumbnail(libPath, film, step, steps);
+  Future<String?> thumbnailAt(String film, int step, int steps) =>
+      step == 0 ? thumbnail(film) : _thumbnails['$film#$step/$steps'] ??= _thumbnail(libPath, film, step, steps);
 
   /// A ticket's answer when it comes, and why not if refused: Thermion's VoidCallbackRegistry, as it is (a Completer under
   /// each request's number, completed when the inside says an answer is there: motolii_tell 8). Nothing looks again and again.
@@ -251,7 +262,7 @@ extension MotoliiQuestions on Motolii {
   /// A ticket's answer: -1 not done yet, 0 refused ([answerWhy] says why), 1 done; said once.
   int answer(int ticket) {
     final a = _answer(_m, ticket);
-    if (a >= 0) _take(3);   // (done: the pictures as the inside made them before it answered)
+    if (a >= 0) _take(3); // (done: the pictures as the inside made them before it answered)
     return a;
   }
 

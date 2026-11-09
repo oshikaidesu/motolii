@@ -27,7 +27,10 @@ List<Ease> easeRow(List<Ease> ways) {
 }
 
 /// The ways of the window and the document that are none of the shapes: they lie on the shelf (desk_ease_shelf.dart).
-List<Ease> easeOthers(List<Ease> ways) => [for (final w in ways) if (!easeShapes.contains(w.name)) w];
+List<Ease> easeOthers(List<Ease> ways) => [
+  for (final w in ways)
+    if (!easeShapes.contains(w.name)) w,
+];
 
 /// Whether the way now is this shape: AbsentMotion's EasingCatalog.matches, a bezier by its numbers, any other by its kind.
 bool _isOf(Ease shape, Ease now) {
@@ -40,7 +43,7 @@ class EaseShapes extends StatelessWidget {
   const EaseShapes({super.key, required this.ease, required this.shapes, required this.side, required this.onPick, this.across = false});
   final Ease ease;
   final double side;
-  final bool across;   // (laid across, under the graph, in a tall pane)
+  final bool across; // (laid across, under the graph, in a tall pane)
   final List<Ease> shapes;
   final ValueChanged<Ease> onPick;
 
@@ -53,7 +56,13 @@ class EaseShapes extends StatelessWidget {
         itemExtent: (across ? box.maxWidth : box.maxHeight) / easeFits(across ? box.maxWidth : box.maxHeight),
         children: [
           for (final e in shapes)
-            PresetTile(e, key: ValueKey('ease.${e.name}'), on: _isOf(e, ease), side: side, onTap: () => _isOf(e, ease) && !(easeIsBezier(e) && said(e) != said(ease)) ? null : onPick(e)),   // (the one it is already: its own numbers kept)
+            PresetTile(
+              e,
+              key: ValueKey('ease.${e.name}'),
+              on: _isOf(e, ease),
+              side: side,
+              onTap: () => _isOf(e, ease) && !(easeIsBezier(e) && said(e) != said(ease)) ? null : onPick(e),
+            ), // (the one it is already: its own numbers kept)
         ],
       ),
     ),
@@ -64,7 +73,7 @@ class EaseShapes extends StatelessWidget {
 /// Curve to All Keyframes), and the maker's own Jump (desk_ease_state.dart easeJump). Its Enable Overshoot is among the numbers.
 class EaseLeft extends StatelessWidget {
   const EaseLeft({super.key, this.onReverse, required this.menu});
-  final VoidCallback? onReverse;   // (none: the way cannot be turned)
+  final VoidCallback? onReverse; // (none: the way cannot be turned)
   final List<(String, String, VoidCallback)> menu;
 
   @override
@@ -82,13 +91,18 @@ class EaseLeft extends StatelessWidget {
             ),
           ),
         ),
-        Expanded(child: Center(child: CardMore(name: 'Ease', word: '⋯', above: true, big: true, items: menu))),
+        Expanded(
+          child: Center(
+            child: CardMore(name: 'Ease', word: '⋯', above: true, big: true, items: menu),
+          ),
+        ),
       ],
     ),
   );
 }
 
-class _Reverse extends CustomPainter {   // (AbsentMotion's EasingIcons.kt REVERSE_ARROWS)
+class _Reverse extends CustomPainter {
+  // (AbsentMotion's EasingIcons.kt REVERSE_ARROWS)
   const _Reverse(this.ink);
   final Color ink;
   @override
@@ -97,11 +111,22 @@ class _Reverse extends CustomPainter {   // (AbsentMotion's EasingIcons.kt REVER
     c.scale(k);
     c.drawPath(
       Path()
-        ..moveTo(16, 3)..lineTo(20, 7)..lineTo(16, 11)
-        ..moveTo(20, 7)..lineTo(4, 7)
-        ..moveTo(8, 21)..lineTo(4, 17)..lineTo(8, 13)
-        ..moveTo(4, 17)..lineTo(20, 17),
-      Paint()..color = ink..style = PaintingStyle.stroke..strokeWidth = 1.9..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round,
+        ..moveTo(16, 3)
+        ..lineTo(20, 7)
+        ..lineTo(16, 11)
+        ..moveTo(20, 7)
+        ..lineTo(4, 7)
+        ..moveTo(8, 21)
+        ..lineTo(4, 17)
+        ..lineTo(8, 13)
+        ..moveTo(4, 17)
+        ..lineTo(20, 17),
+      Paint()
+        ..color = ink
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.9
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
     );
   }
 
@@ -119,10 +144,19 @@ class EaseStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = span, ws = WsScope.of(context, {WsAspect.document});
     final keys = s == null ? const <int>[] : ([...s.layer.keys]..sort());
-    final to = s == null ? null : back ? keys.where((f) => f < s.from).lastOrNull : (keys.any((f) => f > s.to) ? s.to : null);
+    final to = s == null
+        ? null
+        : back
+        ? keys.where((f) => f < s.from).lastOrNull
+        : (keys.any((f) => f > s.to) ? s.to : null);
     return to == null
         ? const SizedBox.shrink()
-        : DeskIconButton(key: ValueKey(back ? 'ease-previous' : 'ease-next'), size: Shape.z(18), glyph: (ink) => EaseChevron(ink, back), onTap: () => ws.pickKey((layer: s!.layer.id, frame: to)));
+        : DeskIconButton(
+            key: ValueKey(back ? 'ease-previous' : 'ease-next'),
+            size: Shape.z(18),
+            glyph: (ink) => EaseChevron(ink, back),
+            onTap: () => ws.pickKey((layer: s!.layer.id, frame: to)),
+          );
   }
 }
 
@@ -133,7 +167,18 @@ class EaseChevron extends CustomPainter {
   @override
   void paint(Canvas c, Size s) {
     final x = back ? s.width * .6 : s.width * .4, d = back ? -s.width * .2 : s.width * .2;
-    c.drawPath(Path()..moveTo(x, s.height * .25)..lineTo(x + d, s.height / 2)..lineTo(x, s.height * .75), Paint()..color = ink..strokeWidth = 1.4..style = PaintingStyle.stroke..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round);
+    c.drawPath(
+      Path()
+        ..moveTo(x, s.height * .25)
+        ..lineTo(x + d, s.height / 2)
+        ..lineTo(x, s.height * .75),
+      Paint()
+        ..color = ink
+        ..strokeWidth = 1.4
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
   }
 
   @override

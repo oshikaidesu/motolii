@@ -38,10 +38,10 @@ void easeKeep(String word, {bool off = false}) {
   try {
     _keptFile.parent.createSync(recursive: true);
     _keptFile.writeAsStringSync(jsonEncode(kept));
-  } catch (_) {}   // (not kept: known while the window is open)
+  } catch (_) {} // (not kept: known while the window is open)
 }
 
-final _tiles = <String, Ease>{};   // (each worked out once: fifty are not worked out again as a hand moves a handle)
+final _tiles = <String, Ease>{}; // (each worked out once: fifty are not worked out again as a hand moves a handle)
 
 double get easeGripWide => Shape.z(8);
 
@@ -56,7 +56,10 @@ class EaseGrip extends StatelessWidget {
     builder: (_, h) => Container(
       width: easeGripWide,
       height: Shape.z(34),
-      decoration: BoxDecoration(color: h ? Grey.g56 : Grey.g38, borderRadius: BorderRadius.horizontal(left: Shape.r(4))),
+      decoration: BoxDecoration(
+        color: h ? Grey.g56 : Grey.g38,
+        borderRadius: BorderRadius.horizontal(left: Shape.r(4)),
+      ),
       child: CustomPaint(painter: EaseChevron(h ? Grey.g95 : Grey.g76, !open)),
     ),
   );
@@ -69,14 +72,25 @@ class EaseGrip extends StatelessWidget {
 /// the stretch when the empty frame is pressed, as an empty part of Photoshop's Swatches panel takes the colour now. A
 /// kept one comes off by its ×.
 class EaseShelf extends StatelessWidget {
-  const EaseShelf({super.key, required this.now, required this.ways, required this.columns, required this.pitch, required this.side, required this.onPick, required this.onKeep, required this.onForget, required this.inside});
-  final String now;   // (the whole way on the stretch, as said)
-  final List<Ease> ways;   // (those of the document and the maker's folder)
+  const EaseShelf({
+    super.key,
+    required this.now,
+    required this.ways,
+    required this.columns,
+    required this.pitch,
+    required this.side,
+    required this.onPick,
+    required this.onKeep,
+    required this.onForget,
+    required this.inside,
+  });
+  final String now; // (the whole way on the stretch, as said)
+  final List<Ease> ways; // (those of the document and the maker's folder)
   final int columns;
   final double pitch, side;
   final Motolii? inside;
   final ValueChanged<Ease> onPick, onForget;
-  final ValueChanged<int> onKeep;   // (a card of the flow: its place; all of them: below 0)
+  final ValueChanged<int> onKeep; // (a card of the flow: its place; all of them: below 0)
 
   @override
   Widget build(BuildContext context) {
@@ -86,14 +100,23 @@ class EaseShelf extends StatelessWidget {
     return DragTarget<int>(
       onAcceptWithDetails: (d) => onKeep(d.data),
       builder: (_, hot, _) => DecoratedBox(
-        decoration: BoxDecoration(color: WsT.card, border: hot.isEmpty ? Border(left: BorderSide(color: Grey.g38)) : Border.all(color: WsT.accent, width: 2)),
+        decoration: BoxDecoration(
+          color: WsT.card,
+          border: hot.isEmpty ? Border(left: BorderSide(color: Grey.g38)) : Border.all(color: WsT.accent, width: 2),
+        ),
         child: CustomScrollView(
           slivers: [
             SliverGrid.builder(
               gridDelegate: across,
               itemCount: kept.length + 1,
               itemBuilder: (_, i) => i == kept.length
-                  ? Hov(key: const ValueKey('ease.shelf.slot'), onTap: () => onKeep(-1), builder: (_, h) => Center(child: EaseSlot(side: side, ink: h ? Grey.g76 : Grey.g38)))
+                  ? Hov(
+                      key: const ValueKey('ease.shelf.slot'),
+                      onTap: () => onKeep(-1),
+                      builder: (_, h) => Center(
+                        child: EaseSlot(side: side, ink: h ? Grey.g76 : Grey.g38),
+                      ),
+                    )
                   : Hov(
                       cursor: MouseCursor.defer,
                       builder: (_, h) {
@@ -101,13 +124,24 @@ class EaseShelf extends StatelessWidget {
                         return Stack(
                           children: [
                             Positioned.fill(child: tile(e, ValueKey('ease.kept.${kept[i]}'))),
-                            if (h) Positioned(right: 0, top: 0, child: EaseOff(key: ValueKey('ease.forget.${kept[i]}'), onTap: () => onForget(e))),
+                            if (h)
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: EaseOff(key: ValueKey('ease.forget.${kept[i]}'), onTap: () => onForget(e)),
+                              ),
                           ],
                         );
                       },
                     ),
             ),
-            SliverToBoxAdapter(child: Container(height: 1, margin: EdgeInsets.symmetric(vertical: Shape.s(3), horizontal: Shape.s(4)), color: Grey.g38)),
+            SliverToBoxAdapter(
+              child: Container(
+                height: 1,
+                margin: EdgeInsets.symmetric(vertical: Shape.s(3), horizontal: Shape.s(4)),
+                color: Grey.g38,
+              ),
+            ),
             SliverGrid.builder(gridDelegate: across, itemCount: ways.length, itemBuilder: (_, i) => tile(ways[i], ValueKey('ease.${ways[i].name}'))),
           ],
         ),

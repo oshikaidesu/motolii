@@ -29,8 +29,17 @@ class HomeDoc {
 }
 
 class WsHome extends StatefulWidget {
-  const WsHome({super.key, required this.folder, required this.lib, required this.open, required this.onOpen, required this.onExport, required this.onNew, required this.onClose});
-  final String folder, lib, open;   // (the folder listed, the inside's library (read on another isolate), the document open now)
+  const WsHome({
+    super.key,
+    required this.folder,
+    required this.lib,
+    required this.open,
+    required this.onOpen,
+    required this.onExport,
+    required this.onNew,
+    required this.onClose,
+  });
+  final String folder, lib, open; // (the folder listed, the inside's library (read on another isolate), the document open now)
   final void Function(String doc) onOpen;
   final void Function(List<String> docs) onExport;
   final VoidCallback onNew, onClose;
@@ -39,11 +48,11 @@ class WsHome extends StatefulWidget {
 }
 
 class _WsHomeState extends State<WsHome> {
-  static var byName = false;   // (as it was last asked, as AbsentMotion keeps its sortBy)
+  static var byName = false; // (as it was last asked, as AbsentMotion keeps its sortBy)
   List<HomeDoc> _docs = const [];
-  String? _menu, _asking;   // (the card whose actions are open; the one asked whether it goes to the Trash)
-  String _find = '';   // (CapCut's search over its projects: by name)
-  final _picked = <String>{};   // (Alight Motion's ⋯ › Select, or ⌘ as the Finder's and DaVinci Resolve's project list: while any is, a press picks)
+  String? _menu, _asking; // (the card whose actions are open; the one asked whether it goes to the Trash)
+  String _find = ''; // (CapCut's search over its projects: by name)
+  final _picked = <String>{}; // (Alight Motion's ⋯ › Select, or ⌘ as the Finder's and DaVinci Resolve's project list: while any is, a press picks)
   late final Directory _pictures = Directory.systemTemp.createTempSync('motolii_home');
 
   @override
@@ -62,7 +71,7 @@ class _WsHomeState extends State<WsHome> {
     super.dispose();
   }
 
-  var _reads = 0;   // (each reading's pictures named apart: one shown is not written over while it is read)
+  var _reads = 0; // (each reading's pictures named apart: one shown is not written over while it is read)
   void _read() {
     final docs = <HomeDoc>[], read = _reads++;
     for (final f in Directory(widget.folder).listSync().whereType<File>()) {
@@ -75,9 +84,11 @@ class _WsHomeState extends State<WsHome> {
       final png = '${_pictures.path}/$read-$i.png';
       docFactsOf(widget.lib, d.path, png).then((facts) {
         if (!mounted) return;
-        setState(() => d
-          ..facts = facts
-          ..picture = facts != null && File(png).existsSync() ? png : null);
+        setState(
+          () => d
+            ..facts = facts
+            ..picture = facts != null && File(png).existsSync() ? png : null,
+        );
       });
     }
   }
@@ -110,11 +121,15 @@ class _WsHomeState extends State<WsHome> {
   }
 
   static const _months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  static String _day(DateTime t) => '${t.day} ${_months[t.month - 1]} ${t.year}';   // (AbsentMotion's dateHeader in English: d MMMM yyyy)
+  static String _day(DateTime t) => '${t.day} ${_months[t.month - 1]} ${t.year}'; // (AbsentMotion's dateHeader in English: d MMMM yyyy)
 
   @override
   Widget build(BuildContext context) {
-    final rows = <Widget>[], shown = [for (final d in _docs) if (d.name.toLowerCase().contains(_find.toLowerCase())) d];
+    final rows = <Widget>[],
+        shown = [
+          for (final d in _docs)
+            if (d.name.toLowerCase().contains(_find.toLowerCase())) d,
+        ];
     Widget grid(List<HomeDoc> docs) => Wrap(spacing: 20, runSpacing: 20, children: [for (final d in docs) _card(d)]);
     if (byName) {
       rows.add(grid(shown..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()))));
@@ -125,7 +140,12 @@ class _WsHomeState extends State<WsHome> {
       }
       for (final MapEntry(key: day, value: docs) in byDay.entries) {
         rows
-          ..add(Padding(padding: EdgeInsets.only(top: rows.isEmpty ? 0 : 24, bottom: 12), child: Text(day, style: T.label(Grey.g76))))
+          ..add(
+            Padding(
+              padding: EdgeInsets.only(top: rows.isEmpty ? 0 : 24, bottom: 12),
+              child: Text(day, style: T.label(Grey.g76)),
+            ),
+          )
           ..add(grid(docs));
       }
     }
@@ -139,13 +159,18 @@ class _WsHomeState extends State<WsHome> {
           children: [
             Row(children: [const Spacer(), _button('home-close', '×', false, widget.onClose)]),
             const SizedBox(height: 8),
-            GestureDetector(   // (CapCut's "Create project", as wide as all)
+            GestureDetector(
+              // (CapCut's "Create project", as wide as all)
               key: const ValueKey('home-new'),
               onTap: widget.onNew,
               child: Container(
                 height: 120,
                 alignment: Alignment.center,
-                decoration: BoxDecoration(color: WsT.card, borderRadius: BorderRadius.circular(12), border: Border.all(color: WsT.raised)),
+                decoration: BoxDecoration(
+                  color: WsT.card,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: WsT.raised),
+                ),
                 child: Text('+  New Project', style: T.title(Grey.g91)),
               ),
             ),
@@ -159,14 +184,19 @@ class _WsHomeState extends State<WsHome> {
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: WsT.inset, vertical: 4),
                     decoration: BoxDecoration(color: WsT.card, borderRadius: BorderRadius.circular(6)),
-                    child: TextHand(key: const ValueKey('home-find'), field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
-                      controller: _findText,
-                      focusNode: _findFocus,
-                      style: T.label(Grey.g91),
-                      cursorColor: WsT.accent,
-                      backgroundCursorColor: Grey.g63,
-                      onChanged: (v) => setState(() => _find = v),
-                    )),
+                    child: TextHand(
+                      key: const ValueKey('home-find'),
+                      field: (k) => EditableText(
+                        key: k,
+                        rendererIgnoresPointer: true,
+                        controller: _findText,
+                        focusNode: _findFocus,
+                        style: T.label(Grey.g91),
+                        cursorColor: WsT.accent,
+                        backgroundCursorColor: Grey.g63,
+                        onChanged: (v) => setState(() => _find = v),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -203,7 +233,7 @@ class _WsHomeState extends State<WsHome> {
     ),
   );
 
-  static const _tile = 150.0;   // (a tile: its picture square above its name, as CapCut's desktop grid)
+  static const _tile = 150.0; // (a tile: its picture square above its name, as CapCut's desktop grid)
 
   Widget _card(HomeDoc d) {
     final f = d.facts, open = d.path == widget.open;
@@ -221,7 +251,11 @@ class _WsHomeState extends State<WsHome> {
           children: [
             Container(
               height: _tile,
-              decoration: BoxDecoration(color: WsT.card, borderRadius: BorderRadius.circular(8), border: open ? Border.all(color: WsT.accent, width: 2) : null),
+              decoration: BoxDecoration(
+                color: WsT.card,
+                borderRadius: BorderRadius.circular(8),
+                border: open ? Border.all(color: WsT.accent, width: 2) : null,
+              ),
               clipBehavior: Clip.antiAlias,
               child: Stack(
                 fit: StackFit.expand,
@@ -257,9 +291,14 @@ class _WsHomeState extends State<WsHome> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(d.name, style: T.name(Grey.g91).copyWith(fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(
+              d.name,
+              style: T.name(Grey.g91).copyWith(fontWeight: FontWeight.w700),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             const SizedBox(height: 2),
-            Text([_bytes(d.bytes), if (f != null) _length(f.seconds)].join(' | '), style: T.value(Grey.g63), maxLines: 1),   // (CapCut's "254.3M | 02:13")
+            Text([_bytes(d.bytes), if (f != null) _length(f.seconds)].join(' | '), style: T.value(Grey.g63), maxLines: 1), // (CapCut's "254.3M | 02:13")
             Text(_facts(d).join(' · '), key: ValueKey('home-facts:${d.path}'), style: T.value(Grey.g56), maxLines: 1, overflow: TextOverflow.ellipsis),
             if (_menu == d.path)
               Padding(
@@ -276,10 +315,15 @@ class _WsHomeState extends State<WsHome> {
                         ]
                       : [
                           _button('home-open:${d.path}', 'Open', false, () => widget.onOpen(d.path)),
-                          _button('home-select:${d.path}', 'Select', false, () => setState(() {
-                            _picked.add(d.path);
-                            _menu = null;
-                          })),
+                          _button(
+                            'home-select:${d.path}',
+                            'Select',
+                            false,
+                            () => setState(() {
+                              _picked.add(d.path);
+                              _menu = null;
+                            }),
+                          ),
                           _button('home-export:${d.path}', 'Export…', false, () => widget.onExport([d.path])),
                           _button('home-duplicate:${d.path}', 'Duplicate', false, () => _duplicate(d)),
                           if (!open) _button('home-trash:${d.path}', 'Move to Trash', false, () => setState(() => _asking = d.path)),
@@ -304,10 +348,14 @@ class _WsHomeState extends State<WsHome> {
         break;
       }
     }
-    return [if (ratio != null) ...[ratio, '${math.min(f.wide, f.high)}p'] else '${f.wide}x${f.high}', '${f.rate == f.rate.roundToDouble() ? f.rate.round() : f.rate}fps'];   // (its own, the size box's frame_rate)
+    return [
+      if (ratio != null) ...[ratio, '${math.min(f.wide, f.high)}p'] else '${f.wide}x${f.high}',
+      '${f.rate == f.rate.roundToDouble() ? f.rate.round() : f.rate}fps',
+    ]; // (its own, the size box's frame_rate)
   }
 
-  static String _bytes(int bytes) {   // (ExportOptions.kt formatBytes)
+  static String _bytes(int bytes) {
+    // (ExportOptions.kt formatBytes)
     String f(double v, String unit) => (v >= 10 ? v.toStringAsFixed(0) : v.toStringAsFixed(1).replaceFirst(RegExp(r'\.0$'), '')) + unit;
     if (bytes < 1024) return '${math.max(bytes, 0)}B';
     if (bytes < 1024 * 1024 - 512) return f(bytes / 1024, 'KB');
@@ -315,7 +363,8 @@ class _WsHomeState extends State<WsHome> {
     return f(bytes / (1024 * 1024 * 1024), 'GB');
   }
 
-  static String _length(double seconds) {   // (CapCut's "02:13"; an hour or more as AbsentMotion's 01:02:13)
+  static String _length(double seconds) {
+    // (CapCut's "02:13"; an hour or more as AbsentMotion's 01:02:13)
     final s = seconds.round();
     String two(int n) => n.toString().padLeft(2, '0');
     return s >= 3600 ? '${two(s ~/ 3600)}:${two(s ~/ 60 % 60)}:${two(s % 60)}' : '${two(s ~/ 60)}:${two(s % 60)}';

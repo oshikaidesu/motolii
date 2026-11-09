@@ -121,7 +121,10 @@ class _ToolTile extends StatelessWidget {
                         padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(color: WsT.accent, borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius))),
-                        child: Text('AUTO', style: T.micro(WsT.onAccent).copyWith(fontSize: T.px(9), fontWeight: FontWeight.w700, letterSpacing: .6)),
+                        child: Text(
+                          'AUTO',
+                          style: T.micro(WsT.onAccent).copyWith(fontSize: T.px(9), fontWeight: FontWeight.w700, letterSpacing: .6),
+                        ),
                       ),
                     ),
                   ),
@@ -166,7 +169,10 @@ class _Placeholder extends StatelessWidget {
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
-                    child: Text(name, style: T.title(Grey.g95).copyWith(fontSize: T.px(34), fontWeight: FontWeight.w800, letterSpacing: -1, height: 1)),
+                    child: Text(
+                      name,
+                      style: T.title(Grey.g95).copyWith(fontSize: T.px(34), fontWeight: FontWeight.w800, letterSpacing: -1, height: 1),
+                    ),
                   ),
                   SizedBox(height: Shape.s(10)),
                   Text('Works on ${tool.acts.toLowerCase()}.', style: T.label(Grey.g76).copyWith(fontSize: T.px(11))),

@@ -18,30 +18,67 @@ class ValueWell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = ((value - min) / (max - min)).clamp(0.0, 1.0);
-    return LayoutBuilder(builder: (context, box) {
-      void set(Offset p) => onChanged?.call(min + (max - min) * (p.dx / box.maxWidth).clamp(0.0, 1.0));
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onPanDown: (d) => set(d.localPosition),
-        onPanUpdate: (d) => set(d.localPosition),
-        child: SizedBox(
-          height: Shape.z(22),
-          child: Stack(children: [
-            Positioned.fill(child: DecoratedBox(decoration: BoxDecoration(color: Grey.g07, borderRadius: BorderRadius.all(Shape.r(4)), border: Border.all(color: Grey.g20)))),
-            Positioned(left: 0, top: 0, bottom: 0, width: box.maxWidth * t, child: DecoratedBox(decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [fam.c.withValues(alpha: .28), fam.c.withValues(alpha: .55)]),
-              borderRadius: BorderRadius.all(Shape.r(4)),
-            ))),
-            Positioned(left: 0, top: 4, bottom: 4, width: Shape.z(2), child: DecoratedBox(decoration: BoxDecoration(color: fam.c, borderRadius: BorderRadius.all(Shape.r(1))))),
-            Positioned.fill(child: Padding(padding: EdgeInsets.symmetric(horizontal: Shape.s(9)), child: Flex(direction: Axis.horizontal, crossAxisAlignment: CrossAxisAlignment.center, children: [
-              Text(label, style: T.label(Grey.g76)),
-              const Spacer(),
-              Text(value.toStringAsFixed(decimals), style: T.value(Grey.g95)),
-            ]))),
-          ]),
-        ),
-      );
-    });
+    return LayoutBuilder(
+      builder: (context, box) {
+        void set(Offset p) => onChanged?.call(min + (max - min) * (p.dx / box.maxWidth).clamp(0.0, 1.0));
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onPanDown: (d) => set(d.localPosition),
+          onPanUpdate: (d) => set(d.localPosition),
+          child: SizedBox(
+            height: Shape.z(22),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Grey.g07,
+                      borderRadius: BorderRadius.all(Shape.r(4)),
+                      border: Border.all(color: Grey.g20),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: box.maxWidth * t,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [fam.c.withValues(alpha: .28), fam.c.withValues(alpha: .55)]),
+                      borderRadius: BorderRadius.all(Shape.r(4)),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  top: 4,
+                  bottom: 4,
+                  width: Shape.z(2),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(color: fam.c, borderRadius: BorderRadius.all(Shape.r(1))),
+                  ),
+                ),
+                Positioned.fill(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: Shape.s(9)),
+                    child: Flex(
+                      direction: Axis.horizontal,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(label, style: T.label(Grey.g76)),
+                        const Spacer(),
+                        Text(value.toStringAsFixed(decimals), style: T.value(Grey.g95)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -54,22 +91,26 @@ class PillSwitch extends StatelessWidget {
   /// Fine, not heavy (critique, 4 passes): a 28x16 track; off = a grey thumb on g20; on = an accent TINT with a 1px accent edge and a light thumb, never a solid accent block.
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: () => onChanged?.call(!on),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          curve: Curves.easeOut,
-          width: Shape.z(28),
-          height: Shape.z(16),
-          padding: EdgeInsets.all(Shape.s(2)),
-          alignment: on ? Alignment.centerRight : Alignment.centerLeft,
-          decoration: BoxDecoration(
-            color: on ? Role.of(C.mode.withValues(alpha: .30), Grey.g20) : Grey.g20,
-            borderRadius: BorderRadius.all(Shape.r(8)),
-            border: Border.all(color: on ? Role.of(Role.selected.withValues(alpha: .85), Role.mode) : Grey.g26, width: 1),
-          ),
-          child: Container(width: Shape.z(10), height: Shape.z(10), decoration: BoxDecoration(color: on ? Role.of(Grey.g95, Role.mode) : Grey.g56, shape: BoxShape.circle)),
-        ),
-      );
+    onTap: () => onChanged?.call(!on),
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeOut,
+      width: Shape.z(28),
+      height: Shape.z(16),
+      padding: EdgeInsets.all(Shape.s(2)),
+      alignment: on ? Alignment.centerRight : Alignment.centerLeft,
+      decoration: BoxDecoration(
+        color: on ? Role.of(C.mode.withValues(alpha: .30), Grey.g20) : Grey.g20,
+        borderRadius: BorderRadius.all(Shape.r(8)),
+        border: Border.all(color: on ? Role.of(Role.selected.withValues(alpha: .85), Role.mode) : Grey.g26, width: 1),
+      ),
+      child: Container(
+        width: Shape.z(10),
+        height: Shape.z(10),
+        decoration: BoxDecoration(color: on ? Role.of(Grey.g95, Role.mode) : Grey.g56, shape: BoxShape.circle),
+      ),
+    ),
+  );
 }
 
 class Segmented extends StatelessWidget {
@@ -84,27 +125,32 @@ class Segmented extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget seg(int i) => GestureDetector(
-          onTap: () => onChanged?.call(i),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 120),
-            curve: Curves.easeOut,
-            padding: EdgeInsets.symmetric(horizontal: expand ? Shape.s(6) : Shape.s(12)),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: i == index ? Grey.g20 : null,
-              borderRadius: BorderRadius.all(Shape.r(5)),
-              border: Border(bottom: BorderSide(color: i == index ? (accent ?? Role.selected) : const Color(0x00000000), width: 1)),
-            ),
-            child: FittedBox(fit: BoxFit.scaleDown, child: Text(items[i].toUpperCase(), maxLines: 1, softWrap: false, style: T.micro(i == index ? Grey.g95 : Grey.g63).copyWith(letterSpacing: .4))),
-          ),
-        );
+      onTap: () => onChanged?.call(i),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.symmetric(horizontal: expand ? Shape.s(6) : Shape.s(12)),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: i == index ? Grey.g20 : null,
+          borderRadius: BorderRadius.all(Shape.r(5)),
+          border: Border(bottom: BorderSide(color: i == index ? (accent ?? Role.selected) : const Color(0x00000000), width: 1)),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(items[i].toUpperCase(), maxLines: 1, softWrap: false, style: T.micro(i == index ? Grey.g95 : Grey.g63).copyWith(letterSpacing: .4)),
+        ),
+      ),
+    );
     return Container(
       height: Shape.z(26),
       padding: EdgeInsets.all(Shape.s(2)),
       decoration: BoxDecoration(color: Grey.g07, borderRadius: BorderRadius.all(Shape.r(7))),
-      child: Flex(direction: Axis.horizontal, mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min, children: [
-        for (var i = 0; i < items.length; i++) expand ? Expanded(child: seg(i)) : seg(i),
-      ]),
+      child: Flex(
+        direction: Axis.horizontal,
+        mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+        children: [for (var i = 0; i < items.length; i++) expand ? Expanded(child: seg(i)) : seg(i)],
+      ),
     );
   }
 }
@@ -119,18 +165,18 @@ class Tool extends StatelessWidget {
   final VoidCallback? onTap;
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: size,
-          height: size,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: fill ?? (on ? Grey.g20 : Grey.g13),
-            shape: round ? BoxShape.circle : BoxShape.rectangle,
-            borderRadius: round ? null : BorderRadius.all(Shape.r(6)),
-            border: Border.all(color: on ? Grey.g44 : Grey.g20, width: 1),
-          ),
-          child: child,
-        ),
-      );
+    onTap: onTap,
+    child: Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: fill ?? (on ? Grey.g20 : Grey.g13),
+        shape: round ? BoxShape.circle : BoxShape.rectangle,
+        borderRadius: round ? null : BorderRadius.all(Shape.r(6)),
+        border: Border.all(color: on ? Grey.g44 : Grey.g20, width: 1),
+      ),
+      child: child,
+    ),
+  );
 }

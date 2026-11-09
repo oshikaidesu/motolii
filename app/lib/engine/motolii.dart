@@ -12,7 +12,7 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart' show debugPrint, setEquals;
 import 'package:flutter/services.dart';
-import 'package:motolii/engine/motolii_bindings.dart' as c;   // (the inside's calls as Dart's ffigen made them: ffigen.yaml)
+import 'package:motolii/engine/motolii_bindings.dart' as c; // (the inside's calls as Dart's ffigen made them: ffigen.yaml)
 part 'motolii_document.dart';
 part 'motolii_moment.dart';
 part 'motolii_writes.dart';
@@ -53,7 +53,12 @@ Future<String?> _thumbnail(String lib, String film, [int step = 0, int steps = 1
   final folder = Directory('${Directory.systemTemp.path}/motolii_thumbnails')..createSync(recursive: true);
   // (named by the film's own place, so it is found again in another run, and by when the film was last changed)
   final named = film.replaceAll(RegExp(r'[^A-Za-z0-9]'), '_');
-  final png = '${folder.path}/${named.length > 150 ? named.substring(named.length - 150) : named}_${File(film).statSync().modified.millisecondsSinceEpoch}${seconds != null ? '_s${(seconds * 10).round()}' : step == 0 ? '' : '_$step'}.png';
+  final png =
+      '${folder.path}/${named.length > 150 ? named.substring(named.length - 150) : named}_${File(film).statSync().modified.millisecondsSinceEpoch}${seconds != null
+          ? '_s${(seconds * 10).round()}'
+          : step == 0
+          ? ''
+          : '_$step'}.png';
   if (File(png).existsSync()) return png;
   final made = await Isolate.run(() {
     final b = c.MotoliiBindings(DynamicLibrary.open(lib));
@@ -78,7 +83,10 @@ Future<List<String>> _mediaSaid(String lib, String file) => _mediaInfos[file] ??
 });
 
 /// How long a media file plays, as the discoverer tells it (0: a still, or it cannot be read).
-Future<double> mediaSecondsOf(String lib, String file) async => switch (await _mediaSaid(lib, file)) { final s when s.length >= 5 => double.parse(s[3]), _ => 0 };
+Future<double> mediaSecondsOf(String lib, String file) async => switch (await _mediaSaid(lib, file)) {
+  final s when s.length >= 5 => double.parse(s[3]),
+  _ => 0,
+};
 
 /// A document read without opening it (the inside's own, on another isolate): its size and length as it last kept them
 /// (Motolii.poster) and its frames a second, its picture written to [png]; null: it kept none, or it is not one.
@@ -122,11 +130,14 @@ Future<List<(double, double)>?> flashesOf(String lib, String film) async {
     final frames = (jsonDecode(File('${File(told).parent.path}/frameData.json').readAsStringSync()) as Map)['NonPassFrameData'] as Map;
     List<num> of(String k) => [...(frames[k] as List? ?? const []).cast<num>()];
     final n = of('Frame'), luminance = of('LuminanceFrameResult'), red = of('RedFrameResult'), pattern = of('PatternFrameResult');
-    final at = [for (final s in (frames['TimeStampString'] as List? ?? const []).cast<String>()) s.split(':').fold<double>(0, (a, p) => a * 60 + double.parse(p))];
+    final at = [
+      for (final s in (frames['TimeStampString'] as List? ?? const []).cast<String>()) s.split(':').fold<double>(0, (a, p) => a * 60 + double.parse(p)),
+    ];
     final fails = <(double, double)>[];
     for (var i = 0; i < n.length; i++) {
       if (luminance[i] < 2 && red[i] < 2 && pattern[i] < 1) continue;
-      if (fails.isNotEmpty && i > 0 && n[i - 1] == n[i] - 1 && fails.last.$2 == at[i - 1]) {   // (the frame before failed too: one stretch)
+      if (fails.isNotEmpty && i > 0 && n[i - 1] == n[i] - 1 && fails.last.$2 == at[i - 1]) {
+        // (the frame before failed too: one stretch)
         fails.last = (fails.last.$1, at[i]);
       } else {
         fails.add((at[i], at[i]));
@@ -141,7 +152,7 @@ Future<List<(double, double)>?> flashesOf(String lib, String film) async {
 class Motolii {
   Motolii._(this._lib, this._m, this.libPath, this.home);
   final DynamicLibrary _lib;
-  late final _b = c.MotoliiBindings(_lib);   // (the inside's calls, made by Dart's ffigen from motolii.h: ffigen.yaml)
+  late final _b = c.MotoliiBindings(_lib); // (the inside's calls, made by Dart's ffigen from motolii.h: ffigen.yaml)
   final _P _m;
   final String libPath;
 
@@ -175,8 +186,8 @@ class Motolii {
   late final _picture = _b.motolii_picture;
   late final _tell = _b.motolii_tell;
   NativeCallable<Void Function(Int)>? _told;
-  Map<String, dynamic> _document = const {};   // (the document's own part)
-  final _thing = <int, Map<String, dynamic>>{};   // (each thing's part, as of the version it came with)
+  Map<String, dynamic> _document = const {}; // (the document's own part)
+  final _thing = <int, Map<String, dynamic>>{}; // (each thing's part, as of the version it came with)
   Map<String, dynamic> _moment = const {'thing': {}};
   int _documentAt = -1, _momentAt = -1;
 
@@ -184,8 +195,11 @@ class Motolii {
   /// it), [moment] the moment's, [kept] the stretches of the stage's pictures kept on disk.
   void Function({required bool document, required bool moment, required bool kept})? told;
 
-  final _knows = <String, Set<String>>{};   // (the maker's tables, the same for every document: read once)
-  static List<String> _spaced(Object? said) => [for (final w in ((said as String?) ?? '').split(' ')) if (w.isNotEmpty) w];
+  final _knows = <String, Set<String>>{}; // (the maker's tables, the same for every document: read once)
+  static List<String> _spaced(Object? said) => [
+    for (final w in ((said as String?) ?? '').split(' '))
+      if (w.isNotEmpty) w,
+  ];
   static List<double> _numbers(Object? said) => [for (final n in (said as List<dynamic>?) ?? const []) (n as num).toDouble()];
 
   late final _play = _b.motolii_play;
@@ -263,10 +277,14 @@ class Motolii {
 
   late final _guide = _b.motolii_guide;
 
-  final _labels = <String, String>{}, _pictures = <String, String>{}, _homes = <String, String>{}, _abouts = <String, String>{}, _tags = <String, Set<String>>{};
+  final _labels = <String, String>{},
+      _pictures = <String, String>{},
+      _homes = <String, String>{},
+      _abouts = <String, String>{},
+      _tags = <String, Set<String>>{};
   final _same = <String>{};
 
-  final _shownOf = <String, Shown?>{};   // (read out of the things' parts once a picture of the document)
+  final _shownOf = <String, Shown?>{}; // (read out of the things' parts once a picture of the document)
 
   /// What the folders hold (recipes, effects, animators): not the document's, read once, and again after [forgetFolders].
   final _folders = <String, List<(String, String)>>{};
@@ -313,12 +331,12 @@ class Motolii {
   }
 
   void _take(int which) {
-    if (which & 8 != 0) which |= 3;   // (the answers looked at are all there are by now, later ones than the one told: heard late, a step's end comes with what the step made, as answer() takes them)
+    if (which & 8 != 0) which |= 3; // (the answers looked at are all there are by now, later ones than the one told: heard late, a step's end comes with what the step made, as answer() takes them)
     final version = malloc<Long>();
     if (which & 1 != 0) {
       final p = _picture(_m, 1, _documentAt, version), all = jsonDecode(p.toDartString()) as Map<String, dynamic>;
       malloc.free(p);
-      if (version.value == _documentAt) which &= ~1;   // (asked again, not new: nothing told)
+      if (version.value == _documentAt) which &= ~1; // (asked again, not new: nothing told)
       _documentAt = version.value;
       if (all['document'] case final Map<String, dynamic> d) _document = d;
       (all['thing'] as Map<String, dynamic>).forEach((t, part) => _thing[int.parse(t)] = part as Map<String, dynamic>);
@@ -329,7 +347,7 @@ class Motolii {
     if (which & 2 != 0) {
       final p = _picture(_m, 2, 0, version);
       if (version.value == _momentAt) {
-        which &= ~2;   // (asked again, not new)
+        which &= ~2; // (asked again, not new)
       } else {
         _moment = jsonDecode(p.toDartString()) as Map<String, dynamic>;
         _momentAt = version.value;
@@ -337,7 +355,8 @@ class Motolii {
       malloc.free(p);
     }
     malloc.free(version);
-    if (which & 8 != 0) {   // (an answer is there: the changes waited for, each looked at once)
+    if (which & 8 != 0) {
+      // (an answer is there: the changes waited for, each looked at once)
       for (final t in [..._waiting.keys]) {
         final a = _answer(_m, t);
         if (a >= 0) _waiting.remove(t)!.complete((a, a >= 1 ? '' : answerWhy));
@@ -353,7 +372,8 @@ class Motolii {
     return answer;
   }
 
-  T _with<T>(List<String> words, T Function(List<_S>) call) => using((a) => call([for (final w in words) w.toNativeUtf8(allocator: a)]));   // (package:ffi's Arena: all let go when the call is done)
+  T _with<T>(List<String> words, T Function(List<_S>) call) =>
+      using((a) => call([for (final w in words) w.toNativeUtf8(allocator: a)])); // (package:ffi's Arena: all let go when the call is done)
 
   void close() {
     _tell(_m, nullptr);

@@ -9,6 +9,7 @@ import 'package:motolii/inspector/controls/inspector_param_controls_gauge.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/inspector/inspector_value_marks.dart';
 import 'package:motolii/style/tokens.dart';
+
 import '../../workspace/two_fingers.dart';
 import '../../parts/text_hand.dart';
 
@@ -30,7 +31,9 @@ class ParamTile extends StatelessWidget {
       child: NumField(
         id: fid,
         caption: caption ?? p.label,
-        glyph: valueMarks[id] == null ? glyph : ValueMarkGlyph(valueMarks[id]!, Ctx.of(context).doc.get(id)), // (a value the window knows: drawn as what it does)
+        glyph: valueMarks[id] == null
+            ? glyph
+            : ValueMarkGlyph(valueMarks[id]!, Ctx.of(context).doc.get(id)), // (a value the window knows: drawn as what it does)
         glyphOwnsPointer: owns,
         glyphTall: tall,
         unit: p.unit,
@@ -43,7 +46,7 @@ class ParamTile extends StatelessWidget {
         perPx: p.perPx,
         step: p.dec > 0 ? p.step * 10 : 1,
         bipolar: p.look == ParamLook.bipolar,
-        turns: p.look == ParamLook.angle,   // (counted in turns past one, as After Effects' angle: 1x 30°)
+        turns: p.look == ParamLook.angle, // (counted in turns past one, as After Effects' angle: 1x 30°)
         enabled: !RowOff.offOf(context),
       ),
     );
@@ -57,7 +60,7 @@ class ParamTile extends StatelessWidget {
   /// user, 11/5, of thirty tried in the window: 青磁 seiji, 撫子 nadeshiko,
   /// 浅黄 usuki, from nipponcolors.com, each 6:1 or more on Pop.well.
   static int step(double? w) => w == null || w < 4 ? 0 : (w < 6 ? 1 : (w < 8 ? 2 : 3));
-  static var steps = const [Color(0xFF69B0AC), Color(0xFFDC9FB4), Color(0xFFFAD689)];   // (a picture test tries others)
+  static var steps = const [Color(0xFF69B0AC), Color(0xFFDC9FB4), Color(0xFFFAD689)]; // (a picture test tries others)
 
   static ColorFilter duotone(Color to) {
     final lo = Pop.well, hi = Grey.g95, ground = Color.alphaBlend(to.withValues(alpha: .18), lo);
@@ -65,11 +68,16 @@ class ParamTile extends StatelessWidget {
       final a = (word - under) / (high - low);
       return [for (var j = 0; j < 5; j++) j == k ? a : (j == 4 ? (under - a * low) * 255 : 0)];
     }
+
     return ColorFilter.matrix([
       ...row(0, lo.r, hi.r, ground.r, to.r),
       ...row(1, lo.g, hi.g, ground.g, to.g),
       ...row(2, lo.b, hi.b, ground.b, to.b),
-      0, 0, 0, 1, 0,
+      0,
+      0,
+      0,
+      1,
+      0,
     ]);
   }
 
@@ -163,7 +171,12 @@ class ParamTile extends StatelessWidget {
         return shell(_Words(id: id, on: on), tall: true);
       case ParamLook.colour when p.unit == 'file':
         // a file, given from a shelf (the text's font: the Fonts shelf), as a colour is given from the Colors shelf
-        return shell(Padding(padding: EdgeInsets.only(bottom: Shape.s(3)), child: LinkLine(to: LinkTo.fonts, value: doc.s2[id] ?? '—', id: id)));
+        return shell(
+          Padding(
+            padding: EdgeInsets.only(bottom: Shape.s(3)),
+            child: LinkLine(to: LinkTo.fonts, value: doc.s2[id] ?? '—', id: id),
+          ),
+        );
       case ParamLook.colour when p.unit == 'numbers':
         // numbers, one for each in their order (a bar chart's heights): bars a hand drags up and down, said when let go
         return shell(_Heights(id: id, on: on));
@@ -173,7 +186,11 @@ class ParamTile extends StatelessWidget {
           glyph: all.length > 1 ? _Ramp(all) : Swatch(doc.s2[id]),
           Padding(
             padding: EdgeInsets.only(bottom: Shape.s(3)),
-            child: LinkLine(to: LinkTo.colors, value: all.length > 1 ? '${all.length}' : doc.s2[id] ?? '—', id: id), // (colours in their order: how many, the strip shows which)
+            child: LinkLine(
+              to: LinkTo.colors,
+              value: all.length > 1 ? '${all.length}' : doc.s2[id] ?? '—',
+              id: id,
+            ), // (colours in their order: how many, the strip shows which)
           ),
         );
       case ParamLook.angle:
@@ -463,16 +480,21 @@ class _WordsState extends State<_Words> {
     if (!_f.hasFocus && _c.text != now) _c.text = now; // (out of the field it is what the host has now: another thing picked, an undo)
     return IgnorePointer(
       ignoring: !widget.on,
-      child: TextHand(key: ValueKey('words:${widget.id}'), field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
-        controller: _c,
-        focusNode: _f,
-        style: T.name(widget.on ? Grey.g95 : Grey.g44).copyWith(fontWeight: FontWeight.w400),
-        cursorColor: Grey.g95,
-        backgroundCursorColor: Grey.g20,
-        minLines: 2,
-        maxLines: 2,
-        selectionColor: Role.selected.withValues(alpha: .4),
-      )),
+      child: TextHand(
+        key: ValueKey('words:${widget.id}'),
+        field: (k) => EditableText(
+          key: k,
+          rendererIgnoresPointer: true,
+          controller: _c,
+          focusNode: _f,
+          style: T.name(widget.on ? Grey.g95 : Grey.g44).copyWith(fontWeight: FontWeight.w400),
+          cursorColor: Grey.g95,
+          backgroundCursorColor: Grey.g20,
+          minLines: 2,
+          maxLines: 2,
+          selectionColor: Role.selected.withValues(alpha: .4),
+        ),
+      ),
     );
   }
 }

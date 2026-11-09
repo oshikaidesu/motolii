@@ -35,7 +35,8 @@ function each(i, n, t, k) { return {}; }
 /// on a new board, as the shelf's others go. [told] why it is not taken, or '' once it is.
 void emptyPut(Ws ws, {required bool expression, void Function(String why)? told}) {
   if (ws.inside == null) return;
-  final dir = '${EffectTiles.own}/programs/fx/${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}', file = '$dir/${expression ? 'empty.js' : 'Empty.fs'}';
+  final dir = '${EffectTiles.own}/programs/fx/${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}',
+      file = '$dir/${expression ? 'empty.js' : 'Empty.fs'}';
   Directory(dir).createSync(recursive: true);
   File(file).writeAsStringSync(expression ? _js : _isf);
   fxPut(ws, file, expression: expression, told: told, open: true);
@@ -49,7 +50,7 @@ void fxPut(Ws ws, String file, {required bool expression, void Function(String w
   if (m == null) return;
   final t = int.tryParse(ws.selected ?? '');
   final (word, title) = _said(t == null ? '' : m.word(t, 'fx'), file);
-  if (open) ws.view['inspector.v.$title.code'] = true;   // (its card's Code fold, as a hand opens it: workspace_values.dart _flag)
+  if (open) ws.view['inspector.v.$title.code'] = true; // (its card's Code fold, as a hand opens it: workspace_values.dart _flag)
   if (t == null) return expression ? ws.whole('rect', (m) => m.later('fx_file', thing: -1, word: word)) : ws.adjustment(word);
   ws.after(m.later('fx_file', thing: t, word: word), (done, why) {
     told?.call(done ? '' : why);

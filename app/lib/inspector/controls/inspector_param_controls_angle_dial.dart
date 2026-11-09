@@ -19,9 +19,10 @@ class _AngleDialState extends State<AngleDial> {
   double? _last;
   bool _hot = false;
   double _angle(Offset local) {
-    final o = (context.size ?? const Size(22, 22)).center(Offset.zero);   // (the middle it is drawn round: its slot may be smaller than it asks, Pop.glyph)
+    final o = (context.size ?? const Size(22, 22)).center(Offset.zero); // (the middle it is drawn round: its slot may be smaller than it asks, Pop.glyph)
     return math.atan2(local.dy - o.dy, local.dx - o.dx);
   }
+
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc;
@@ -47,7 +48,9 @@ class _AngleDialState extends State<AngleDial> {
           _last = a;
           // (as far as a number typed goes, not the slider's ends: After Effects' angle turns on with no end, its
           //  revolutions counted; a closed span of a turn or more goes round again inside it, as Godot's wrapf)
-          final p = widget.p, lo = p.open && (p.min ?? 0) < 0 ? double.negativeInfinity : p.validMin ?? p.min ?? double.negativeInfinity, hi = p.open ? double.infinity : p.validMax ?? p.max ?? double.infinity;
+          final p = widget.p,
+              lo = p.open && (p.min ?? 0) < 0 ? double.negativeInfinity : p.validMin ?? p.min ?? double.negativeInfinity,
+              hi = p.open ? double.infinity : p.validMax ?? p.max ?? double.infinity;
           var v = (doc.get(widget.id) ?? 0) + d * 180 / math.pi;
           if (hi - lo >= 360) v = v > hi ? v - 360 * ((v - hi) / 360).ceil() : (v < lo ? v + 360 * ((lo - v) / 360).ceil() : v);
           doc.set(widget.id, v.clamp(lo, hi).roundToDouble());
@@ -61,7 +64,10 @@ class _AngleDialState extends State<AngleDial> {
           _last = null;
         },
         // (drawn again when its number is told anew, as a field is: Doc.watch; the inspector is not built again for it)
-        child: ListenableBuilder(listenable: doc.watch(widget.id), builder: (context, _) => CustomPaint(size: const Size(22, 22), painter: _DialPaint(doc.get(widget.id) ?? 0, _hot || _last != null))),
+        child: ListenableBuilder(
+          listenable: doc.watch(widget.id),
+          builder: (context, _) => CustomPaint(size: const Size(22, 22), painter: _DialPaint(doc.get(widget.id) ?? 0, _hot || _last != null)),
+        ),
       ),
     );
   }

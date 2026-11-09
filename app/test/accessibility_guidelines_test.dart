@@ -44,8 +44,14 @@ Future<void> _open(WidgetTester t) async {
   ColorTheme.at = '${Directory.systemTemp.path}/motolii_test_no_theme.xml';
   WsZoom.set(1, keep: false);
   final doc = '${Directory.systemTemp.createTempSync('a11y').path}/a11y.motolii';
-  await t.pumpWidget(WidgetsApp(color: const Color(0xFF000000), builder: (c, _) => Workspace(document: doc)));
-  for (var i = 0; i < 1500 && find.byType(WsTimeline).evaluate().isEmpty; i++) {   // (the engine answers in real time)
+  await t.pumpWidget(
+    WidgetsApp(
+      color: const Color(0xFF000000),
+      builder: (c, _) => Workspace(document: doc),
+    ),
+  );
+  for (var i = 0; i < 1500 && find.byType(WsTimeline).evaluate().isEmpty; i++) {
+    // (the engine answers in real time)
     await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
     await t.pump();
   }
@@ -64,7 +70,7 @@ void main() {
       final SemanticsHandle semantics = t.ensureSemantics();
       await _open(t);
       expect(find.byType(WsTimeline), findsOneWidget, reason: 'the real window opened');
-      t.takeException();   // (a layout overflow on opening is its own test below, not counted against each guideline)
+      t.takeException(); // (a layout overflow on opening is its own test below, not counted against each guideline)
       await expectLater(t, meetsGuideline(guideline));
       t.takeException();
       semantics.dispose();

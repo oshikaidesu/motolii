@@ -19,7 +19,13 @@ extension _StageViewCamera on _StageViewState {
   void _dolly(double by) {
     final ws = WsScope.read(context), m = ws.inside, cam = _cameraOf(ws);
     if (m == null || cam == null) return;
-    if (ws.freeEye) return ws.setView('stage.eye', [ws.eye[0], ws.eye[1], (ws.eye[2] * math.exp(by * .002)).clamp(.01, 100.0)]);   // (After Effects' working views: the tool moves the view, not the camera)
+    if (ws.freeEye) {
+      return ws.setView('stage.eye', [
+        ws.eye[0],
+        ws.eye[1],
+        (ws.eye[2] * math.exp(by * .002)).clamp(.01, 100.0),
+      ]); // (After Effects' working views: the tool moves the view, not the camera)
+    }
     if (_dollyAt == null) {
       m.take(cam);
       _dollyAt = m.value(cam, 'distance', ws.frame / Ws.fps) ?? 1;
@@ -46,7 +52,9 @@ extension _StageViewCamera on _StageViewState {
       final String by;
       if (on(g[5], 10)) {
         by = 'gizmo orbit';
-        _orbitRate = g[4] == null ? .25 : 180 / math.pi / math.max((g[5]! - g[4]!).distance, 60);   // (a turn as far as the hand has gone on the circle it goes round)
+        _orbitRate = g[4] == null
+            ? .25
+            : 180 / math.pi / math.max((g[5]! - g[4]!).distance, 60); // (a turn as far as the hand has gone on the circle it goes round)
         _orbitFrom = (x: m.value(cam, 'rotate_x', at) ?? 0, y: m.value(cam, 'rotate_y', at) ?? 0);
       } else if (widget.selected == id && frame.any((p) => on(p, 8)) && g[4] != null) {
         by = 'gizmo lens';

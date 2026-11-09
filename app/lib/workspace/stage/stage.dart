@@ -4,6 +4,7 @@ import 'dart:io' show Directory, File;
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+
 import '../../forms/forms.dart';
 import '../../parts/skin_parts.dart';
 
@@ -30,8 +31,8 @@ const _tools = [
   (G.ellipse, 'Ellipse', 'E'),
   (G.pen, 'Pen', 'P'),
   (G.text, 'Text', 'T'),
-  (G.brush, 'Brush', 'B'),   // (a path drawn by hand, Alight Motion's freehand; B as Photoshop's and After Effects' brush)
-  (G.camera, 'Camera', 'C'),   // (After Effects' Unified Camera tool, C: a drag turns the camera round where it looks, the wheel brings it nearer)
+  (G.brush, 'Brush', 'B'), // (a path drawn by hand, Alight Motion's freehand; B as Photoshop's and After Effects' brush)
+  (G.camera, 'Camera', 'C'), // (After Effects' Unified Camera tool, C: a drag turns the camera round where it looks, the wheel brings it nearer)
 ];
 
 /// The tools as the window's commands (`tool.select`, `tool.text`…), their letters in its keymap (keys.dart): heard
@@ -57,7 +58,7 @@ class _StageState extends State<_Stage> {
   set _safe(bool v) => _ws.setView('stage.safe', v);
   bool get _grid => _ws.viewOf('stage.grid', false);
   set _grid(bool v) => _ws.setView('stage.grid', v);
-  bool get _camera => _ws.viewOf('stage.camera', false);   // (AbsentMotion's cameraView: off till asked, the stage sees the world)
+  bool get _camera => _ws.viewOf('stage.camera', false); // (AbsentMotion's cameraView: off till asked, the stage sees the world)
   (Object?, String) _eyeTold = (null, '');
 
   /// The inside told which eye the stage is seen by, when that has changed (a document opened begins at the world's).
@@ -72,8 +73,8 @@ class _StageState extends State<_Stage> {
   Map<String, int> get _opts => _ws.view.putIfAbsent('stage.options', () => <String, int>{}) as Map<String, int>;
   final _cursor = ValueNotifier<Offset?>(null);
   final _focus = FocusNode(debugLabel: 'stage');
-  final _view = GlobalKey();   // (the view: what is under a tile let go over it)
-  String? _shot;   // (the picture as it was when taken: a still among the system's temporary files)
+  final _view = GlobalKey(); // (the view: what is under a tile let go over it)
+  String? _shot; // (the picture as it was when taken: a still among the system's temporary files)
   bool _showing = false;
 
   @override
@@ -89,7 +90,7 @@ class _StageState extends State<_Stage> {
   void _take() {
     final m = _ws.inside;
     if (m == null) return;
-    final png = '${Directory.systemTemp.path}/motolii_snapshot_${DateTime.now().microsecondsSinceEpoch}.png';   // (a new name each time: Flutter's image cache knows a file by its name)
+    final png = '${Directory.systemTemp.path}/motolii_snapshot_${DateTime.now().microsecondsSinceEpoch}.png'; // (a new name each time: Flutter's image cache knows a file by its name)
     if (!m.still(png)) {
       _ws.notice = 'No snapshot: ${m.trouble}';
       return;
@@ -101,18 +102,21 @@ class _StageState extends State<_Stage> {
   void _forget() {
     try {
       if (_shot case final was?) File(was).deleteSync();
-    } catch (_) {}   // (gone already)
+    } catch (_) {} // (gone already)
   }
 
   @override
   Widget build(BuildContext context) {
-    WsScope.frameOf(context);   // (the scene is at the playhead)
-    WsScope.pictureOf(context);   // (and as the picture shown has it)
-    final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked, WsAspect.stage, WsAspect.view}), scene = Ws.timed('stage scene', () => ArtScene.of(ws, camera: !ws.freeEye));
+    WsScope.frameOf(context); // (the scene is at the playhead)
+    WsScope.pictureOf(context); // (and as the picture shown has it)
+    final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked, WsAspect.stage, WsAspect.view}),
+        scene = Ws.timed('stage scene', () => ArtScene.of(ws, camera: !ws.freeEye));
     _tellEye(ws);
-    return DragTarget<VoidCallback>(   // (a tile of a shelf dropped here does what its double press does: Ableton's drop of a device on a track)
+    return DragTarget<VoidCallback>(
+      // (a tile of a shelf dropped here does what its double press does: Ableton's drop of a device on a track)
       onWillAcceptWithDetails: (_) => true,
-      onAcceptWithDetails: (d) {   // (on the thing it is let go over, as After Effects takes an effect dragged to a layer in
+      onAcceptWithDetails: (d) {
+        // (on the thing it is let go over, as After Effects takes an effect dragged to a layer in
         //  the Composition panel; over none, on the picked thing as a double press puts it)
         if ((_view.currentState as StageHandles?)?.hitAt(d.offset) case final id?) ws.select(id);
         d.data();
@@ -121,54 +125,79 @@ class _StageState extends State<_Stage> {
         position: DecorationPosition.foreground,
         decoration: BoxDecoration(border: hot.isEmpty ? null : Border.all(color: WsT.accent, width: 2)),
         child: Focus(
-      focusNode: _focus,
-      child: Column(
-        children: [
-          WsHeader(
-            '',
-            trailing: [
-              _Seg(items: stageZooms, index: _zoom, onChanged: (i) => setState(() => _zoom = i)),
-              SizedBox(width: Shape.s(6)),
-              _Toggle(label: 'Safe', icon: _Icon.safe, on: _safe, onTap: () => setState(() => _safe = !_safe)),
-              SizedBox(width: WsT.gap),
-              _Toggle(label: 'Grid', icon: _Icon.grid, on: _grid, onTap: () => setState(() => _grid = !_grid)),
-              SizedBox(width: Shape.s(6)),
-              if (_camera || ws.layers.any((l) => l.kind == WsKind.camera)) ...[   // (AbsentMotion's PreviewMode: the switch once there is a camera to switch to)
-                _Toggle(label: _camera ? 'Camera' : 'Free', glyph: G.camera, on: _camera, onTap: () => setState(() => _camera = !_camera)),
-                SizedBox(width: Shape.s(6)),
-              ],
-              _Toggle(key: const ValueKey('ws-snapshot-take'), label: 'Snapshot', icon: _Icon.snap, on: false, onTap: _take),
-              if (_shot != null) ...[
-                SizedBox(width: WsT.gap),
-                Listener(   // (After Effects' Show Snapshot: seen while it is held; let go, the picture as it is now)
-                  onPointerDown: (_) => setState(() => _showing = true),
-                  onPointerUp: (_) => setState(() => _showing = false),
-                  onPointerCancel: (_) => setState(() => _showing = false),
-                  child: _Toggle(key: const ValueKey('ws-snapshot-show'), label: 'Show', icon: _Icon.show, on: _showing, onTap: () {}),
+          focusNode: _focus,
+          child: Column(
+            children: [
+              WsHeader(
+                '',
+                trailing: [
+                  _Seg(items: stageZooms, index: _zoom, onChanged: (i) => setState(() => _zoom = i)),
+                  SizedBox(width: Shape.s(6)),
+                  _Toggle(label: 'Safe', icon: _Icon.safe, on: _safe, onTap: () => setState(() => _safe = !_safe)),
+                  SizedBox(width: WsT.gap),
+                  _Toggle(label: 'Grid', icon: _Icon.grid, on: _grid, onTap: () => setState(() => _grid = !_grid)),
+                  SizedBox(width: Shape.s(6)),
+                  if (_camera || ws.layers.any((l) => l.kind == WsKind.camera)) ...[
+                    // (AbsentMotion's PreviewMode: the switch once there is a camera to switch to)
+                    _Toggle(label: _camera ? 'Camera' : 'Free', glyph: G.camera, on: _camera, onTap: () => setState(() => _camera = !_camera)),
+                    SizedBox(width: Shape.s(6)),
+                  ],
+                  _Toggle(key: const ValueKey('ws-snapshot-take'), label: 'Snapshot', icon: _Icon.snap, on: false, onTap: _take),
+                  if (_shot != null) ...[
+                    SizedBox(width: WsT.gap),
+                    Listener(
+                      // (After Effects' Show Snapshot: seen while it is held; let go, the picture as it is now)
+                      onPointerDown: (_) => setState(() => _showing = true),
+                      onPointerUp: (_) => setState(() => _showing = false),
+                      onPointerCancel: (_) => setState(() => _showing = false),
+                      child: _Toggle(key: const ValueKey('ws-snapshot-show'), label: 'Show', icon: _Icon.show, on: _showing, onTap: () {}),
+                    ),
+                  ],
+                ],
+              ),
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _ToolColumn(active: _tool, onChanged: (i) => setState(() => _tool = i), onTwice: (kind) => _whole(ws, kind)),
+                    Expanded(
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          WsTwoFingers(
+                            onPinchStep: (step) => setState(() => _zoom = (_zoom + step).clamp(0, stageZooms.length - 1)),
+                            child: StageView(
+                              key: _view,
+                              scene: scene,
+                              selected: ws.selected,
+                              zoom: _zoom,
+                              grid: _grid,
+                              safe: _safe,
+                              cursor: _cursor,
+                              onPoke: _focus.requestFocus,
+                              texture: ws.stageTexture,
+                              snapshot: _showing ? _shot : null,
+                              make: const [null, null, 'rect', 'circle', 'pen', 'text', 'brush', 'camera'][_tool],
+                              brushSize: const [8.0, 16.0, 32.0][_opts['brush.size'] ?? 1],
+                              brushTool: const [1, 0, 2, 3][_opts['brush.kind'] ?? 0],
+                              axis: _tool == 1 ? _opts['move.axis'] ?? 0 : 0,
+                              fromCentre: (_opts['ell.from'] ?? 0) == 1,
+                              snap: _tool < 2 && (_opts[_tool == 0 ? 'sel.snap' : 'move.snap'] ?? 1) == 1,
+                              pivots: (_opts['sel.pivot'] ?? 0) == 1,
+                              group: _tool == 0 && (_opts['sel.level'] ?? 0) == 1,
+                              mask: (_opts[_tool == 2 ? 'rect.mode' : 'pen.mode'] ?? 0) == 1 && (_tool == 2 || _tool == 4),
+                            ),
+                          ), // (joined: the tool in hand draws a thing of the document)
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
+              _OptionsStrip(tool: _tool, opts: _opts, onOpt: (k, v) => setState(() => _opts[k] = v), scene: scene, layer: ws.layer, ws: ws),
             ],
           ),
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _ToolColumn(active: _tool, onChanged: (i) => setState(() => _tool = i), onTwice: (kind) => _whole(ws, kind)),
-                Expanded(
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      WsTwoFingers(onPinchStep: (step) => setState(() => _zoom = (_zoom + step).clamp(0, stageZooms.length - 1)), child: StageView(key: _view, scene: scene, selected: ws.selected, zoom: _zoom, grid: _grid, safe: _safe, cursor: _cursor, onPoke: _focus.requestFocus, texture: ws.stageTexture, snapshot: _showing ? _shot : null, make: const [null, null, 'rect', 'circle', 'pen', 'text', 'brush', 'camera'][_tool], brushSize: const [8.0, 16.0, 32.0][_opts['brush.size'] ?? 1], brushTool: const [1, 0, 2, 3][_opts['brush.kind'] ?? 0], axis: _tool == 1 ? _opts['move.axis'] ?? 0 : 0, fromCentre: (_opts['ell.from'] ?? 0) == 1, snap: _tool < 2 && (_opts[_tool == 0 ? 'sel.snap' : 'move.snap'] ?? 1) == 1, pivots: (_opts['sel.pivot'] ?? 0) == 1, group: _tool == 0 && (_opts['sel.level'] ?? 0) == 1, mask: (_opts[_tool == 2 ? 'rect.mode' : 'pen.mode'] ?? 0) == 1 && (_tool == 2 || _tool == 4))), // (joined: the tool in hand draws a thing of the document)
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _OptionsStrip(tool: _tool, opts: _opts, onOpt: (k, v) => setState(() => _opts[k] = v), scene: scene, layer: ws.layer, ws: ws),
-        ],
-      ),
-    ),
+        ),
       ),
     );
   }
@@ -252,10 +281,10 @@ class _IconPainter extends CustomPainter {
           cv.drawLine(Offset(r.left + r.width * t, r.top), Offset(r.left + r.width * t, r.bottom), p);
           cv.drawLine(Offset(r.left, r.top + r.height * t), Offset(r.right, r.top + r.height * t), p);
         }
-      case _Icon.snap:   // (a camera's body and its lens)
+      case _Icon.snap: // (a camera's body and its lens)
         cv.drawRRect(RRect.fromRectAndRadius(Rect.fromLTRB(r.left, r.top + r.height * .25, r.right, r.bottom), const Radius.circular(1.5)), p);
         cv.drawCircle(r.center.translate(0, r.height * .12), r.width * .2, p);
-      case _Icon.show:   // (the picture halved: then and now)
+      case _Icon.show: // (the picture halved: then and now)
         cv.drawRect(r, p);
         cv.drawRect(Rect.fromLTRB(r.left, r.top, r.center.dx, r.bottom), p..style = PaintingStyle.fill);
     }
@@ -278,7 +307,7 @@ class _ToolColumn extends StatelessWidget {
   final int active;
   final ValueChanged<int> onChanged;
   final ValueChanged<String> onTwice;
-  static var _last = (-1, 0);   // (the tool last pressed, and when)
+  static var _last = (-1, 0); // (the tool last pressed, and when)
 
   void _press(int i) {
     final now = DateTime.now().millisecondsSinceEpoch, twice = _last.$1 == i && now - _last.$2 < 500;
@@ -304,12 +333,23 @@ class _ToolColumn extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               for (var i = 0; i < _tools.length; i++) ...[
-                if (i == 2 || i == 4 || i == 7) Container(width: Shape.z(20), height: 1, margin: EdgeInsets.symmetric(vertical: Shape.s(5)), color: WsT.line),
+                if (i == 2 || i == 4 || i == 7)
+                  Container(
+                    width: Shape.z(20),
+                    height: 1,
+                    margin: EdgeInsets.symmetric(vertical: Shape.s(5)),
+                    color: WsT.line,
+                  ),
                 if (i != 0 && i != 2 && i != 4 && i != 7) SizedBox(height: Shape.s(3)),
                 _ToolButton(key: ValueKey('ws-tool-$i'), glyph: _tools[i].$1, on: i == active, onTap: () => _press(i)),
               ],
-              Container(width: Shape.z(20), height: 1, margin: EdgeInsets.symmetric(vertical: Shape.s(8)), color: WsT.line),
-              const _Swatches(),   // (joined: the picked thing's fill and stroke, or the inks a drawn thing gets)
+              Container(
+                width: Shape.z(20),
+                height: 1,
+                margin: EdgeInsets.symmetric(vertical: Shape.s(8)),
+                color: WsT.line,
+              ),
+              const _Swatches(), // (joined: the picked thing's fill and stroke, or the inks a drawn thing gets)
             ],
           ),
         ),
@@ -356,22 +396,45 @@ class _Swatches extends StatelessWidget {
       child: Container(
         width: Shape.z(16),
         height: Shape.z(16),
-        foregroundDecoration: ws.aim == aim ? BoxDecoration(borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius)), border: Border.all(color: WsT.accent)) : null,
+        foregroundDecoration: ws.aim == aim
+            ? BoxDecoration(
+                borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius)),
+                border: Border.all(color: WsT.accent),
+              )
+            : null,
         decoration: look,
       ),
     );
     final edge = Positioned(
       right: 0,
       bottom: 0,
-      child: box('stroke', BoxDecoration(color: WsT.body, borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius)), border: Border.all(color: stroke, width: 3))),
+      child: box(
+        'stroke',
+        BoxDecoration(
+          color: WsT.body,
+          borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius)),
+          border: Border.all(color: stroke, width: 3),
+        ),
+      ),
     );
-    final ink = Positioned(left: 0, top: 0, child: box('fill', BoxDecoration(color: fill, borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius)), border: Border.all(color: WsT.body))));
+    final ink = Positioned(
+      left: 0,
+      top: 0,
+      child: box(
+        'fill',
+        BoxDecoration(
+          color: fill,
+          borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius)),
+          border: Border.all(color: WsT.body),
+        ),
+      ),
+    );
     return SizedBox(
-    width: Shape.z(26),
-    height: Shape.z(26),
-    child: Stack(
-      children: edgeOn ? [ink, edge] : [edge, ink],   // (the one aimed in front)
-    ),
-  );
+      width: Shape.z(26),
+      height: Shape.z(26),
+      child: Stack(
+        children: edgeOn ? [ink, edge] : [edge, ink], // (the one aimed in front)
+      ),
+    );
   }
 }

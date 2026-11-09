@@ -24,5 +24,5 @@ extension MotoliiWatch on Motolii {
 
   String get broken => _broken(_m).toDartString();
 
-  int get brokenCount => _brokenCount(_m);   // (how many times since watched: read without waiting)
+  int get brokenCount => _brokenCount(_m); // (how many times since watched: read without waiting)
 }
