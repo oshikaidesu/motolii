@@ -16,7 +16,7 @@ import 'package:widgetbook/widgetbook.dart';
 import '../motolii.dart' show motoliiDir;
 import '../tokens.dart';
 
-/// Where the glass lives. Override with --dart-define=GLASS_DIR=/path/to/motolii/filament.
+/// Where the glass lives. Override with --dart-define=GLASS_DIR=/path/to/motolii/engine.
 final String _dir = const String.fromEnvironment('GLASS_DIR').isNotEmpty ? const String.fromEnvironment('GLASS_DIR') : motoliiDir;
 
 /// The picture's size in pixels, fixed when the library starts.

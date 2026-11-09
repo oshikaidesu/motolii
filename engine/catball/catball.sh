@@ -4,7 +4,7 @@
 #   ./catball/catball.sh [balls] [seed]
 cd "$(dirname "$0")/.."
 HB=${HOMEBREW_PREFIX:-$(brew --prefix)}   # (where Homebrew is: /opt/homebrew on Apple silicon)
-mkdir -p out/catball ../reports/show/catball
+mkdir -p out/catball ../docs/reports/show/catball
 [ -f out/catball/happy.outline ] || python3 -I catball/bake.py out/vid/happy.mp4 out/catball/happy.outline || exit 1
 cc -std=c17 -O2 catball/sim.c -I$HB/include -L$HB/lib -lbox2d -o out/catball/sim || exit 1
 out/catball/sim out/catball/happy.outline ${1:-40} ${2:-7} > out/catball/balls.txt || exit 1
@@ -15,5 +15,5 @@ rm -f out/catball/catball.motolii
     n=$(grep -c "^add" out/catball/balls.txt)
     for i in $(seq 2 $((n + 1))); do echo "say $i fill $(echo "6437ff ff24e0 000000 4ffd7a" | cut -d' ' -f$(( (i % 4) + 1 )))"; done
     grep "^key\|^way" out/catball/balls.txt
-    echo "write $PWD/../reports/show/catball/catball.mp4"
+    echo "write $PWD/../docs/reports/show/catball/catball.mp4"
 } | SIZE=1920x1080 ./edit.sh out/catball/catball.motolii | grep "NOT\|write"

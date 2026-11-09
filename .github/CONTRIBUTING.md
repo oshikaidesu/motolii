@@ -49,8 +49,8 @@ GitHub の Actions は、台帳の確かめを毎回走らせます（`.github/w
 | 何 | どこから | 難しさ |
 |---|---|---|
 | 配れる `.app`：中身が読む Homebrew の部品（GStreamer・glib・SQLite・LuaJIT・QuickJS）を `.app` の中に入れる。[dylibbundler](https://github.com/auriamg/macdylibbundler) か GStreamer の macOS 用フレームワーク | `engine/edit.sh`、`skin/book/macos/` | 中 |
-| AviUtl2 のスクリプトで足りない呼び出し（`obj.computeshader`、本体のエフェクトなど）を、手本（AviUtl2 の lua.txt、sashimono-edit）どおりに | `reports/aviutl2/converter_plan.md`、`engine/aviutl.cpp` | 中〜難 |
-| TSL の表現を編集の棚に出す | `engine/tsl/`、`reports/tsl_collection.md` | 中 |
+| AviUtl2 のスクリプトで足りない呼び出し（`obj.computeshader`、本体のエフェクトなど）を、手本（AviUtl2 の lua.txt、sashimono-edit）どおりに | `docs/reports/aviutl2/converter_plan.md`、`engine/aviutl.cpp` | 中〜難 |
+| TSL の表現を編集の棚に出す | `engine/tsl/`、`docs/reports/tsl_collection.md` | 中 |
 | 台帳 `ASSETS.md` の見出しに英語を添える | `ASSETS.md` | 易 |
 
 ## 知っている穴

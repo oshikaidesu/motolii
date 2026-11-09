@@ -39,7 +39,7 @@ float absent_opacity(const std::vector<AbsentEffect>& effects, int64_t thing, do
 }
 // Scatter Repeat: Alight Motion's own, which AbsentMotion has not converted (its docs/ALIGHT_COMPATIBILITY.md says "Not
 // converted yet"; no other implementation was found), so written here from what Alight Motion 6.2.60 shows of it
-// (reports/alight_checklist.md): the layer itself goes and Count copies of it lie in a disc of Radius about where it stood,
+// (docs/reports/alight_checklist.md): the layer itself goes and Count copies of it lie in a disc of Radius about where it stood,
 // each its own way by its number and Seed (one keeps its place when Count grows), moving smoothly as Evolution changes;
 // Range Transform (Offset, Angle, Scale, Alpha) on the copies in its Range, as AbsentMotion's own Ranged does for its repeats
 // (Start, End, Phase, Random Order). Not made yet, not yet read from Alight Motion: Fill Color, Ease In, Ease Out, Overlap,

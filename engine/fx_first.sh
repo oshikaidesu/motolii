@@ -1,6 +1,6 @@
 #!/bin/zsh
 # The values an effect of the library comes with where its own show nothing (Alight Motion's rule: an effect is seen as it
-# is put on; where its numbers do nothing it comes with one that does, reports/alight_ui.md "最初の値"). On fx_tiles.sh's
+# is put on; where its numbers do nothing it comes with one that does, docs/reports/alight_ui.md "最初の値"). On fx_tiles.sh's
 # sample, each screen effect (.fs, .wgsl) is drawn as its file says; one not seen to differ from the sample (PSNR over
 # 40 dB, as the window's tiles are told: skin/book/lib/workspace/effect_tiles.dart) has its knobs tried in turn, each from
 # its own value toward its highest in tenths, and the first that is plainly seen (under 30 dB) is written to

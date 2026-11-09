@@ -30,12 +30,12 @@ node_modules/
 __pycache__/
 # Kept on this machine only, not in git: the reports' pictures and films (many show other people's apps or footage),
 # Windows binaries inside the AviUtl2 packages (Motolii runs on macOS), and packages whose author gives no licence text.
-/reports/**/*.png
-/reports/**/*.jpg
-/reports/**/*.jpeg
-/reports/**/*.mp4
-/reports/**/*.gif
-/reports/**/*.webm
+/docs/reports/**/*.png
+/docs/reports/**/*.jpg
+/docs/reports/**/*.jpeg
+/docs/reports/**/*.mp4
+/docs/reports/**/*.gif
+/docs/reports/**/*.webm
 /engine/aviutl_scripts/**/*.mod2
 /engine/aviutl_scripts/**/*.aux2
 /engine/aviutl_scripts/**/*.exe
@@ -49,8 +49,8 @@ __pycache__/
 /engine/aviutl_scripts/もも猫__スカラップ円/
 /engine/aviutl_scripts/もも猫__ルーローの多角形/
 /engine/aviutl_scripts/暘_弥涼__SliceGlitch/
-/reports/user_panels/sheets/youtube/
+/docs/reports/user_panels/sheets/youtube/
 /build.motolii
-/reports/user_panels/
-/reports/skin_run/*.motolii
+/docs/reports/user_panels/
+/docs/reports/skin_run/*.motolii
 /docs/media/*.png   # (what the window tests shoot; the pictures the READMEs show are .jpg made from them)

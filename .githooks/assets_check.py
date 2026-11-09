@@ -24,7 +24,7 @@ for line in ledger.split('\n'):
         places.append(token)
 files = subprocess.run(['git', 'ls-files', '--cached'], capture_output=True, text=True).stdout.split('\n')   # (what git holds or is about to: a file of one's own not added is not asked about)
 # (not things one would look for: pictures and films, other people's sources, build output, the reports themselves)
-skip = re.compile(r'(^|/)(third_party|target|build|out|\.dart_tool|Pods|ephemeral)/|^reports/|^research_notes/|\.(png|jpe?g|mp4|ico|icns|lock|g\.dart)$|(^|/)\.[^/]+$')
+skip = re.compile(r'(^|/)(third_party|target|build|out|\.dart_tool|Pods|ephemeral)/|^docs/reports/|^research_notes/|\.(png|jpe?g|mp4|ico|icns|lock|g\.dart)$|(^|/)\.[^/]+$')
 files = [f for f in files if f and not skip.search(f) and os.path.exists(f)]
 def covered(f):
     base = os.path.basename(f)

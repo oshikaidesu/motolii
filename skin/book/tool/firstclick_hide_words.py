@@ -1,4 +1,4 @@
-# The first-click pictures with every word hidden (reports/firstclick/NN_nowords.png): each word's box filled with the
+# The first-click pictures with every word hidden (docs/reports/firstclick/NN_nowords.png): each word's box filled with the
 # colour just beside it, so a control is found by its glyph alone (the window speaks by glyphs, not by explaining text).
 #   python3 tool/firstclick_hide_words.py
 import json, os
