@@ -1,28 +1,53 @@
 #!/usr/bin/env python3
-# Code of our own is the dear way; code that is already somewhere is the free one.
-# A commit that leaves more lines of our own than it found (app/lib Dart, engine C++ and materials: added minus
-# deleted, over the whole commit) has to say, in its message, where it looked first and why each place fell short.
-# A commit that hands the work to what exists and deletes as much as it adds says nothing: it is not asked.
-# (The same trade as a ratchet's `bump`, which wants its reason in the commit message: github.com/imbue-ai/ratchets.)
+# Code of our own is the dear way; code that is already somewhere is the free one. And nothing a person uses goes
+# away unsaid. Two rules on a commit, both read from its message (git-interpret-trailers(1) form, `Key: value`):
+#
+# 1. LINES OF OUR OWN. A commit that leaves a file of ours (app/lib Dart, engine C++ and materials) longer than it
+#    found it must say where it looked first and why each place fell short. Counted file by file: lines deleted from
+#    one file do not pay for lines added to another, so nothing is bought by deleting something else. A commit that
+#    hands the work to what exists and lengthens no file of ours is asked nothing.
+#      Own-lines: +N                  N as this check measured it
+#      Looked-in-repo: PATH           a file of others' code here (shelves/ or engine/community/), in the tree; when
+#                                     .githooks/what_exists.py finds files like the added lines, one of those
+#      Repo-falls-short: ...          why that file does not do it
+#      Looked-in-library: NAME        a library already linked or depended on (engine/deps/*.sh, engine/third_party/,
+#                                     app/pubspec.yaml, Brewfile)
+#      Library-falls-short: ...       why it does not do it
+#      Looked-on-web: https://...     an implementation outside (a repository, a package, a paper's code)
+#      Web-falls-short: ...           why it is not brought in
+#      Fails-without: ...             the command that fails without these lines, and what it prints
+#    The three reasons must differ from each other.
+#    (The trade of a ratchet's `bump`, which wants its reason in the commit message: github.com/imbue-ai/ratchets.)
+#
+# 2. WHAT A PERSON USES. A commit that takes away a name the tables declare (a card, a value, a command, a C call, a
+#    window command, a menu item), or deletes a file of ours or a behaviour on the shelves, must name each one:
+#      Removes: NAME, NAME, ...       every name or path taken away (several lines may share them)
+#      Now-done-by: PATH | NAME | nothing: WHY     where a person gets it now (a file here, a linked library), or why not
+#    (On 2026-11-10 a ledger of lines was met by deleting the stage, the timeline and the shelves' panels.)
+#
 #   own_code_check.py MESSAGE_FILE   the commit-msg hook (.githooks/commit-msg): what is staged, the message being written
 #   own_code_check.py --range A..B   CI (.github/workflows/checks.yml): every commit made since this rule came in
-# What the message must hold (git-interpret-trailers(1) form, `Key: value`, one a line), each checked:
-#   Own-lines: +N                  N is the count this check measured: the lines of our own the commit adds, net
-#   Looked-in-repo: PATH           a file of others' code already here (shelves/ or engine/community/); it must exist
-#   Repo-falls-short: ...          why that file does not do it
-#   Looked-in-library: NAME        a library already linked or depended on (engine/deps/*.sh, app/pubspec.yaml, Brewfile)
-#   Library-falls-short: ...       why it does not do it
-#   Looked-on-web: https://...     an implementation outside (a repository, a package, a paper's code)
-#   Web-falls-short: ...           why it is not brought in
-#   Fails-without: ...             the command that fails without these lines, and what it prints
-# The three reasons must differ from each other. A merge is not asked: the commits it brings were.
+# A merge is not asked: the commits it brings were.
 import os, re, subprocess, sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from what_exists import nearest
+except Exception:   # (a branch cut before what_exists.py: no search, the rest holds)
+    nearest = None
 
 OWN = re.compile(r'^(app/lib/.+\.dart|engine/(?!third_party/|out/).+\.(h|cpp|mm|mat|glsl))$')
 OTHERS_HERE = ('shelves/', 'engine/community/')
 KEYS = ['Own-lines', 'Looked-in-repo', 'Repo-falls-short', 'Looked-in-library', 'Library-falls-short',
         'Looked-on-web', 'Web-falls-short', 'Fails-without']
-TRAILER = re.compile(r'^(' + '|'.join(KEYS) + r'):[ \t]*(.*\S)[ \t]*$', re.M)
+TRAILER = re.compile(r'^(' + '|'.join(KEYS + ['Removes', 'Now-done-by']) + r'):[ \t]*(.*\S)[ \t]*$', re.M)
+# Where a name a person uses is declared, and how it is written there.
+DECLARED = [('a card', 'engine/document/card_table.h', r'\{"([^"]+)",\s*"[^"]*"'),
+            ('a value', 'engine/document/kinds.h', r'\{"([a-z_0-9]+)",\s*"'),
+            ('a command', 'engine/entry/calls_later.h', r'\bc == "([a-z_]+)"'),
+            ('a call', 'engine/entry/motolii.h', r'\b(motolii_[a-z_0-9]+)\s*\('),
+            ('a window command', 'app/lib/workspace/commands/keymap.dart', r"'([a-z]+\.[A-Za-z]+)'"),
+            ('a menu item', 'app/lib/workspace/commands/menu_bar.dart', r"item\('([^']+)'")]
 SELF = '.githooks/own_code_check.py'
 
 
@@ -35,26 +60,43 @@ def generated(rev, path):
     return 'AUTO GENERATED FILE' in git('show', f'{rev}:{path}')[:400]
 
 
-def net_own(numstat, rev):
-    """Lines of our own added minus deleted, from `--numstat -M` output; `rev`: where to read a file's head ('' the index)."""
+def own_lines(numstat, rev):
+    """Lines of our own the commit adds: for each file of ours, added minus deleted where that is more than nothing.
+    From `--numstat -M`; `rev`: where to read a file's head ('' the index)."""
     total = 0
     for line in numstat.splitlines():
         parts = line.split('\t')
         if len(parts) < 3 or parts[0] == '-':
             continue
-        path = re.sub(r'\{[^{}]* => ([^{}]*)\}', r'\1', parts[2]).replace('//', '/')   # (a rename's new name)
-        path = path.split(' => ')[-1]
+        path = re.sub(r'\{[^{}]* => ([^{}]*)\}', r'\1', parts[2]).replace('//', '/').split(' => ')[-1]
         if OWN.match(path) and not generated(rev, path):
-            total += int(parts[0]) - int(parts[1])
+            total += max(0, int(parts[0]) - int(parts[1]))
     return total
 
 
+def taken_away(before, after, deleted):
+    """[(what, name)] a person had at `before` and has not at `after` ('' the index); `deleted`: the files deleted."""
+    gone = []
+    for what, path, how in DECLARED:
+        was = set(re.findall(how, git('show', f'{before}:{path}')))
+        now = set(re.findall(how, git('show', f'{after}:{path}')))
+        gone += [(what, n) for n in sorted(was - now)]
+    for path in deleted:
+        if OWN.match(path):
+            gone.append(('a file of ours', path))
+        elif path.startswith('shelves/'):
+            gone.append(('a file on the shelves', path))
+    return gone
+
+
 def libraries(rev):
-    """The names of what is already linked or depended on, read from the tree itself."""
+    """The names of what is already linked, bundled or depended on, read from the tree itself."""
     names = {'flutter'}
-    for p in git('ls-tree', '-r', '--name-only', rev or 'HEAD', 'engine/deps/').split():
-        if p.endswith('.sh'):
+    for p in git('ls-tree', '-r', '--name-only', rev or 'HEAD', 'engine/deps/', 'engine/third_party/').split('\n'):
+        if p.startswith('engine/deps/') and p.endswith('.sh'):
             names.add(os.path.basename(p)[:-3])
+        elif p.startswith('engine/third_party/') and p.count('/') > 2:
+            names.add(p.split('/')[2])
     in_deps = False
     for line in git('show', f'{rev}:app/pubspec.yaml').splitlines():
         if re.match(r'^\S', line):
@@ -65,40 +107,83 @@ def libraries(rev):
     return {n.lower() for n in names}
 
 
-def judge(message, net, rev):
-    """What is wrong with `message` for a commit that adds `net` own lines; [] when nothing is."""
+def in_tree(rev, path):
+    return bool(git('ls-tree', rev or 'HEAD', path).strip()) or (not rev and bool(git('ls-files', '--cached', path).strip()))
+
+
+def judge(message, net, gone, like, rev):
+    """What is wrong with `message` for a commit that adds `net` own lines and takes `gone` away; [] when nothing is.
+    `like`: the files what_exists found like the added lines."""
     said = {}
     for key, value in TRAILER.findall(message):
         said.setdefault(key, []).append(value)
-    wrong = [f'{k}: is missing' for k in KEYS if k not in said]
-    if said.get('Own-lines') and said['Own-lines'][0].lstrip('+') != str(net):
-        wrong.append(f"Own-lines: says {said['Own-lines'][0]}, the commit adds +{net}")
-    for path in said.get('Looked-in-repo', []):
-        if not path.startswith(OTHERS_HERE):
-            wrong.append(f'Looked-in-repo: {path} is not under {" or ".join(OTHERS_HERE)}')
-        elif not git('ls-tree', rev or 'HEAD', path).strip() and not (not rev and git('ls-files', '--cached', path).strip()):
-            wrong.append(f'Looked-in-repo: {path} is not in the tree')
+    wrong = []
     known = libraries(rev)
-    for name in said.get('Looked-in-library', []):
-        if name.split()[0].lower() not in known:
-            wrong.append(f'Looked-in-library: {name.split()[0]} is not linked or depended on ({", ".join(sorted(known))})')
-    for url in said.get('Looked-on-web', []):
-        if not re.match(r'^https://[^\s/]+\.[^\s/]+/\S+$', url):
-            wrong.append(f'Looked-on-web: {url} is not an https address of one implementation')
-    reasons = [said[k][0].lower() for k in ('Repo-falls-short', 'Library-falls-short', 'Web-falls-short') if k in said]
-    if len(set(reasons)) < len(reasons):
-        wrong.append('the three falls-short reasons are the same sentence; each place fell short in its own way')
+    if net > 0:
+        wrong += [f'{k}: is missing' for k in KEYS if k not in said]
+        if said.get('Own-lines') and said['Own-lines'][0].lstrip('+') != str(net):
+            wrong.append(f"Own-lines: says {said['Own-lines'][0]}, the commit adds +{net}")
+        looked = said.get('Looked-in-repo', [])
+        for path in looked:
+            if not path.startswith(OTHERS_HERE):
+                wrong.append(f'Looked-in-repo: {path} is not under {" or ".join(OTHERS_HERE)}')
+            elif not in_tree(rev, path):
+                wrong.append(f'Looked-in-repo: {path} is not in the tree')
+        if looked and like and not set(looked) & {p for p, _, _ in like}:
+            wrong.append('Looked-in-repo: names none of the files found like these lines; look at one of them:\n      '
+                         + '\n      '.join(f'{p}   — {shown}' for p, shown, _ in like))
+        for name in said.get('Looked-in-library', []):
+            if name.split()[0].lower() not in known:
+                wrong.append(f'Looked-in-library: {name.split()[0]} is not linked or depended on ({", ".join(sorted(known))})')
+        for url in said.get('Looked-on-web', []):
+            if not re.match(r'^https://[^\s/]+\.[^\s/]+/\S+$', url):
+                wrong.append(f'Looked-on-web: {url} is not an https address of one implementation')
+        reasons = [said[k][0].lower() for k in ('Repo-falls-short', 'Library-falls-short', 'Web-falls-short') if k in said]
+        if len(set(reasons)) < len(reasons):
+            wrong.append('the three falls-short reasons are the same sentence; each place fell short in its own way')
+    if gone:
+        named = ' , '.join(said.get('Removes', []))
+        unsaid = [f'{what}: {name}' for what, name in gone if not re.search(r'(?<![\w./-])' + re.escape(name) + r'(?![\w./-])', named)]
+        if unsaid:
+            wrong.append(f'Removes: does not name {len(unsaid)} of the {len(gone)} things this commit takes away:\n      ' + '\n      '.join(unsaid[:40])
+                         + (f'\n      … and {len(unsaid) - 40} more' if len(unsaid) > 40 else ''))
+        if 'Now-done-by' not in said:
+            wrong.append('Now-done-by: is missing (a file here, a linked library, or `nothing: why`)')
+        for where in said.get('Now-done-by', []):
+            if where.lower().startswith('nothing:') and len(where) > len('nothing:') + 1:
+                continue
+            if not (where.startswith(OTHERS_HERE) and in_tree(rev, where)) and where.split()[0].lower() not in known:
+                wrong.append(f'Now-done-by: {where} is neither a file in the tree under {" or ".join(OTHERS_HERE)}, a linked library, nor `nothing: why`')
     return wrong
 
 
-def refuse(where, net, wrong, fix):
-    form = '\n'.join(f'    {k}: {"+" + str(net) if k == "Own-lines" else ""}' for k in KEYS)
-    print(f'own code check refused (rule: lines of our own are paid for in the message; .githooks/README.md):\n'
-          f'  {where} adds +{net} lines of our own (app/lib Dart, engine C++ and materials, added minus deleted).\n  '
-          + '\n  '.join(wrong) +
-          f'\nThe free way: hand the work to what exists (shelves/, engine/community/, a linked library) and delete'
-          f' as many lines as you add; then nothing is asked.\nThe dear way: add these to the message, each true:\n{form}\n{fix}',
-          file=sys.stderr)
+def refuse(where, net, gone, wrong, fix):
+    out = ['own code check refused (rule: lines of our own are paid for, and nothing goes away unsaid; .githooks/README.md):']
+    if net > 0:
+        out.append(f'  {where} adds +{net} lines of our own (app/lib Dart, engine C++ and materials; file by file, added minus deleted).')
+    if gone:
+        out.append(f'  {where} takes {len(gone)} thing(s) away from what a person uses.')
+    out += ['  ' + w for w in wrong]
+    if net > 0:
+        out += ['The free way: hand the work to what exists (shelves/, engine/community/, a linked library) and lengthen no file of ours;'
+                ' then nothing is asked. Search it: python3 .githooks/what_exists.py WORD...',
+                'The dear way: add these to the message, each true:'] + [f'    {k}: {"+" + str(net) if k == "Own-lines" else ""}' for k in KEYS]
+    if gone:
+        out += ['To take something away, name it and say where a person gets it now:', '    Removes: ', '    Now-done-by: ']
+    print('\n'.join(out + [fix]), file=sys.stderr)
+
+
+def added_text(diff):
+    return '\n'.join(l[1:] for l in diff.splitlines() if l.startswith('+') and not l.startswith('+++'))
+
+
+def like_these(diff):
+    if nearest is None:
+        return []
+    try:
+        return nearest(git('rev-parse', '--show-toplevel').strip(), added_text(diff), limit=8)[0]
+    except Exception:
+        return []
 
 
 if sys.argv[1:2] == ['--range']:
@@ -106,18 +191,26 @@ if sys.argv[1:2] == ['--range']:
     for h in git('log', '--no-merges', '--format=%H', sys.argv[2]).split():
         if not git('ls-tree', h, SELF).strip():   # (made before this rule: history is not rewritten)
             continue
-        net = net_own(git('show', '--numstat', '-M', '--format=', h), h)
-        if net > 0 and (wrong := judge(git('log', '-1', '--format=%B', h), net, h)):
-            refuse(h[:9], net, wrong, 'Reword it (git rebase -i, `reword`) and push again.')
+        net = own_lines(git('show', '--numstat', '-M', '--format=', h), h)
+        deleted = [l.split('\t', 1)[1] for l in git('show', '--name-status', '-M', '--diff-filter=D', '--format=', h).splitlines() if '\t' in l]
+        gone = taken_away(f'{h}^', h, deleted)
+        if net <= 0 and not gone:
+            continue
+        like = like_these(git('show', '-U0', '--format=', h, '--', 'app/lib', 'engine')) if net > 0 else []
+        if wrong := judge(git('log', '-1', '--format=%B', h), net, gone, like, h):
+            refuse(h[:9], net, gone, wrong, 'Reword it (git rebase -i, `reword`) and push again.')
             failed = True
     sys.exit(1 if failed else 0)
 
-top = git('rev-parse', '--show-toplevel').strip()
 if os.path.exists(os.path.join(git('rev-parse', '--git-dir').strip(), 'MERGE_HEAD')):
     sys.exit(0)
 with open(sys.argv[1], encoding='utf-8', errors='replace') as f:
     message = '\n'.join(l for l in f.read().split('# ------------------------ >8')[0].split('\n') if not l.startswith('#'))
-net = net_own(git('diff', '--cached', '--numstat', '-M'), '')
-if net > 0 and (wrong := judge(message, net, '')):
-    refuse('this commit', net, wrong, f'Your message is kept: git commit -e -F {sys.argv[1]}')
-    sys.exit(1)
+net = own_lines(git('diff', '--cached', '--numstat', '-M'), '')
+deleted = [l.split('\t', 1)[1] for l in git('diff', '--cached', '--name-status', '-M', '--diff-filter=D').splitlines() if '\t' in l]
+gone = taken_away('HEAD', '', deleted)
+if net > 0 or gone:
+    like = like_these(git('diff', '--cached', '-U0', '--', 'app/lib', 'engine')) if net > 0 else []
+    if wrong := judge(message, net, gone, like, ''):
+        refuse('this commit', net, gone, wrong, f'Your message is kept: git commit -e -F {sys.argv[1]}')
+        sys.exit(1)
