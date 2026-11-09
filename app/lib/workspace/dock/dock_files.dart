@@ -8,7 +8,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
 import '../../bridge/motolii.dart' show Motolii, mediaInfoOf, mediaSecondsOf;
-import '../../inspector/inspector_parts.dart' show Pop;
+import '../../inspector/inspector_parts.dart' show Hov, Pop;
 import '../../skin/tokens.dart';
 import 'dock_resizable.dart';
 import 'dock_glyphs.dart';

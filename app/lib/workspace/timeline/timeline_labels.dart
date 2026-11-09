@@ -101,9 +101,10 @@ class _Toggle extends StatelessWidget {
   final bool on, lit, strong;
   final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    behavior: HitTestBehavior.opaque,
-    onTap: onTap,
+  Widget build(BuildContext context) => NakedButton(
+    enableFeedback: false,
+    onPressed: onTap,
+    mouseCursor: MouseCursor.defer,
     child: SizedBox(
       width: Shape.z(20),
       height: WtM.row - 1,

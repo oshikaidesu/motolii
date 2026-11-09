@@ -5,6 +5,7 @@ import 'dart:io' show Directory, File;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import '../../inspector/inspector_small.dart' show Hov;
 import '../../skin/forms/forms.dart';
 import '../../skin/svg_parts.dart';
 
@@ -205,25 +206,6 @@ class _StageState extends State<_Stage> {
 
 // ---- small round things you touch --------------------------------------------------------------------------------------
 
-class _Hov extends StatefulWidget {
-  const _Hov({required this.builder, this.onTap});
-  final Widget Function(BuildContext, bool) builder;
-  final VoidCallback? onTap;
-  @override
-  State<_Hov> createState() => _HovState();
-}
-
-class _HovState extends State<_Hov> {
-  bool _h = false;
-  @override
-  Widget build(BuildContext context) => MouseRegion(
-    cursor: widget.onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
-    onEnter: (_) => setState(() => _h = true),
-    onExit: (_) => setState(() => _h = false),
-    child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onTap, child: widget.builder(context, _h)),
-  );
-}
-
 /// A segmented chip: a well with round items, the chosen one filled with the accent.
 class _Seg extends StatelessWidget {
   const _Seg({required this.items, required this.index, required this.onChanged});
@@ -364,7 +346,7 @@ class _ToolButton extends StatelessWidget {
   final bool on;
   final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => _Hov(
+  Widget build(BuildContext context) => Hov(
     onTap: onTap,
     builder: (_, h) => Container(
       width: Shape.z(28),
@@ -386,14 +368,14 @@ class _Swatches extends StatelessWidget {
   Widget build(BuildContext context) {
     final ws = WsScope.of(context, {WsAspect.document, WsAspect.picked}), p = _paintOf(ws);
     final fill = p.fill ?? WsT.body, stroke = p.stroke ?? WsT.line, edgeOn = ws.aim == 'stroke';
-    Widget box(String aim, BoxDecoration look) => GestureDetector(
+    Widget box(String aim, BoxDecoration look) => Hov(
       key: ValueKey('ws-ink-$aim'),
-      behavior: HitTestBehavior.opaque,
+      cursor: MouseCursor.defer,
       onTap: () {
         ws.aim = aim;
         ws.route('Browser › Colors');
       },
-      child: Container(
+      builder: (_, _) => Container(
         width: Shape.z(16),
         height: Shape.z(16),
         foregroundDecoration: ws.aim == aim

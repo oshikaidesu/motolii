@@ -11,6 +11,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';
+import 'package:naked_ui/naked_ui.dart';
 
 import '../../bridge/motolii.dart' show docFactsOf;
 import '../../skin/tokens.dart';
@@ -159,10 +160,11 @@ class _WsHomeState extends State<WsHome> {
           children: [
             Row(children: [const Spacer(), _button('home-close', '×', false, widget.onClose)]),
             const SizedBox(height: 8),
-            GestureDetector(
+            NakedButton(
+              enableFeedback: false,
               // (CapCut's "Create project", as wide as all)
               key: const ValueKey('home-new'),
-              onTap: widget.onNew,
+              onPressed: widget.onNew,
               child: Container(
                 height: 120,
                 alignment: Alignment.center,
@@ -222,9 +224,10 @@ class _WsHomeState extends State<WsHome> {
 
   Widget _button(String key, String text, bool on, VoidCallback tap) => Padding(
     padding: const EdgeInsets.only(left: 4),
-    child: GestureDetector(
+    child: NakedButton(
+      enableFeedback: false,
       key: ValueKey(key),
-      onTap: tap,
+      onPressed: tap,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: WsT.inset, vertical: 4),
         decoration: BoxDecoration(color: on ? WsT.accent : WsT.card, borderRadius: BorderRadius.circular(6)),
@@ -232,16 +235,16 @@ class _WsHomeState extends State<WsHome> {
       ),
     ),
   );
-
   static const _tile = 150.0; // (a tile: its picture square above its name, as CapCut's desktop grid)
 
   Widget _card(HomeDoc d) {
     final f = d.facts, open = d.path == widget.open;
     return SizedBox(
       width: _tile,
-      child: GestureDetector(
+      child: NakedButton(
+        enableFeedback: false,
         key: ValueKey('home-doc:${d.path}'),
-        onTap: () => _picked.isNotEmpty || HardwareKeyboard.instance.isMetaPressed
+        onPressed: () => _picked.isNotEmpty || HardwareKeyboard.instance.isMetaPressed
             ? setState(() {
                 if (!_picked.remove(d.path)) _picked.add(d.path);
               })
@@ -276,9 +279,10 @@ class _WsHomeState extends State<WsHome> {
                   Positioned(
                     right: 0,
                     top: 0,
-                    child: GestureDetector(
+                    child: NakedButton(
+                      enableFeedback: false,
                       key: ValueKey('home-more:${d.path}'),
-                      onTap: () => setState(() => _menu = _menu == d.path ? null : d.path),
+                      onPressed: () => setState(() => _menu = _menu == d.path ? null : d.path),
                       child: Container(
                         margin: const EdgeInsets.all(6),
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

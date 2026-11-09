@@ -443,9 +443,9 @@ class _EffectsShelfState extends State<EffectsShelf> {
             bindings: {const SingleActivator(LogicalKeyboardKey.keyB): () => sel == null ? null : target(sel)},
             child: Focus(
               focusNode: _tileKeys,
-              child: Listener(
+              child: TapRegion(
                 behavior: HitTestBehavior.translucent,
-                onPointerDown: (_) => c.mem.mapped.contains('Effects') ? null : _tileKeys.requestFocus(), // (the map takes the keys itself)
+                onTapInside: (_) => c.mem.mapped.contains('Effects') ? null : _tileKeys.requestFocus(), // (the map takes the keys itself)
                 child: listed.isEmpty
                     ? DockEmpty(
                         c.query,

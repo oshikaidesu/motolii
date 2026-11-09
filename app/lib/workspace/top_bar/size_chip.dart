@@ -109,9 +109,10 @@ class _SizeChipState extends State<_SizeChip> {
           child: Stack(
             children: [
               Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: _box.hide,
+                child: NakedButton(
+                  onPressed: _box.hide,
+                  mouseCursor: SystemMouseCursors.basic,
+                  enableFeedback: false,
                   child: const ColoredBox(color: Color(0x88000000)),
                 ),
               ),
@@ -159,10 +160,8 @@ class _SizeChipState extends State<_SizeChip> {
                         ],
                       ),
                       SizedBox(height: Shape.s(12)),
-                      Text(
-                        'Frame rate',
-                        style: T.label(Grey.g56),
-                      ), // (Alight Motion's ten, as AbsentMotion's NewProjectSheet lists them: the document seen only at its frames, written at them too)
+                      // (Alight Motion's ten, as AbsentMotion's NewProjectSheet lists them: the document seen only at its frames, written at them too)
+                      Text('Frame rate', style: T.label(Grey.g56)),
                       SizedBox(height: Shape.s(6)),
                       Wrap(
                         spacing: Shape.s(6),

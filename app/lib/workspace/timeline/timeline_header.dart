@@ -198,16 +198,14 @@ class _TimeTypedState extends State<_TimeTyped> {
   Widget build(BuildContext context) {
     final ws = widget.ws;
     if (!_typing) {
-      return MouseRegion(
-        cursor: SystemMouseCursors.text,
-        child: GestureDetector(
-          key: const ValueKey('ws-tl-time'),
-          behavior: HitTestBehavior.opaque,
-          onTap: _begin,
-          child: ValueListenableBuilder<int>(
-            valueListenable: ws.moment,
-            builder: (_, _, _) => Text(ws.timecode(), style: widget.style),
-          ),
+      return NakedButton(
+        key: const ValueKey('ws-tl-time'),
+        mouseCursor: SystemMouseCursors.text,
+        enableFeedback: false,
+        onPressed: _begin,
+        child: ValueListenableBuilder<int>(
+          valueListenable: ws.moment,
+          builder: (_, _, _) => Text(ws.timecode(), style: widget.style),
         ),
       );
     }
@@ -236,7 +234,7 @@ class _TimeTypedState extends State<_TimeTyped> {
 }
 
 /// A round touchable: a well that lights on hover; [on] fills it with the accent, [lit] raises it in grey.
-class _Btn extends StatefulWidget {
+class _Btn extends StatelessWidget {
   const _Btn(this.g, {super.key, this.onTap, this.on = false, this.lit = false, this.size = 24, this.width, this.rest, this.label});
   final TpGlyph g;
   final VoidCallback? onTap;
@@ -246,45 +244,31 @@ class _Btn extends StatefulWidget {
   final Color? rest;
   final String? label;
   @override
-  State<_Btn> createState() => _BtnState();
-}
-
-class _BtnState extends State<_Btn> {
-  bool _h = false, _d = false;
-  @override
-  Widget build(BuildContext context) {
-    final on = widget.on;
-    final bg = on
-        ? WsT.accent
-        : (_d || widget.lit ? Grey.g26 : (_h ? WsT.raised : const Color(0x00000000))); // (flat at rest: a button shows itself when the hand is on it)
-    final ink = on ? WsT.onAccent : (_h || widget.lit ? Grey.g100 : (widget.rest ?? Grey.g56));
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _h = true),
-      onExit: (_) => setState(() => _h = false),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => setState(() => _d = true),
-        onTapUp: (_) => setState(() => _d = false),
-        onTapCancel: () => setState(() => _d = false),
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: Mo.dur,
-          curve: Mo.ease,
-          width: widget.width ?? widget.size,
-          height: widget.size,
-          decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CustomPaint(size: const Size.square(11), painter: TpGlyphPainter(widget.g, ink)),
-              if (widget.label case final l?) ...[SizedBox(width: Shape.s(4)), Text(l, style: T.micro(ink).copyWith(fontWeight: FontWeight.w700))],
-            ],
-          ),
+  Widget build(BuildContext context) => NakedButton(
+    onPressed: onTap,
+    enableFeedback: false,
+    builder: (context, st, _) {
+      final h = st.isHovered, d = st.isPressed;
+      final bg = on
+          ? WsT.accent
+          : (d || lit ? Grey.g26 : (h ? WsT.raised : const Color(0x00000000))); // (flat at rest: a button shows itself when the hand is on it)
+      final ink = on ? WsT.onAccent : (h || lit ? Grey.g100 : (rest ?? Grey.g56));
+      return AnimatedContainer(
+        duration: Mo.dur,
+        curve: Mo.ease,
+        width: width ?? size,
+        height: size,
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CustomPaint(size: const Size.square(11), painter: TpGlyphPainter(g, ink)),
+            if (label case final l?) ...[SizedBox(width: Shape.s(4)), Text(l, style: T.micro(ink).copyWith(fontWeight: FontWeight.w700))],
+          ],
         ),
-      ),
-    );
-  }
+      );
+    },
+  );
 }
 
 /// The document's tempo, beside its frame rate as Live's is in its Control Bar: pressed, it is written, and Tap goes by the
@@ -354,23 +338,21 @@ class _TempoState extends State<_Tempo> {
     final ws = widget.ws, bpm = ws.bpm;
     if (ws.inside == null) return const SizedBox.shrink();
     if (!_typing) {
-      return MouseRegion(
-        cursor: SystemMouseCursors.text,
-        child: GestureDetector(
-          key: const ValueKey('ws-tl-bpm'),
-          behavior: HitTestBehavior.opaque,
-          onTap: () {
-            final now = bpm > 0 ? _said(bpm) : '';
-            _words.value = TextEditingValue(
-              text: now,
-              selection: TextSelection(baseOffset: 0, extentOffset: now.length),
-            );
-            _taps.clear();
-            setState(() => _typing = true);
-            _focus.requestFocus();
-          },
-          child: _Chip(bpm > 0 ? '${_said(bpm)} BPM' : 'BPM'),
-        ),
+      return NakedButton(
+        key: const ValueKey('ws-tl-bpm'),
+        mouseCursor: SystemMouseCursors.text,
+        enableFeedback: false,
+        onPressed: () {
+          final now = bpm > 0 ? _said(bpm) : '';
+          _words.value = TextEditingValue(
+            text: now,
+            selection: TextSelection(baseOffset: 0, extentOffset: now.length),
+          );
+          _taps.clear();
+          setState(() => _typing = true);
+          _focus.requestFocus();
+        },
+        child: _Chip(bpm > 0 ? '${_said(bpm)} BPM' : 'BPM'),
       );
     }
     return Row(
@@ -405,7 +387,7 @@ class _TempoState extends State<_Tempo> {
         SizedBox(width: Shape.s(4)),
         Listener(
           onPointerDown: (_) => _tapping = true,
-          child: GestureDetector(key: const ValueKey('ws-tl-bpm-tap'), behavior: HitTestBehavior.opaque, onTap: _tap, child: const _Chip('Tap', mono: false)),
+          child: NakedButton(key: const ValueKey('ws-tl-bpm-tap'), enableFeedback: false, onPressed: _tap, child: const _Chip('Tap', mono: false)),
         ),
       ],
     );

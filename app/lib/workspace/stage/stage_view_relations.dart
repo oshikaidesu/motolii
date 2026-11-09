@@ -342,11 +342,11 @@ class WsRelationStack extends StatelessWidget {
               final id = int.parse(r), kind = m.word(id, 'file'), on = (m.value(id, 'visible', 0) ?? 1) > .5;
               final lead = (m.value(id, 'leader', 0) ?? 0).round(), leads = '$lead' == t;
               final ink = r == top ? Grey.g95 : Grey.g56;
-              return GestureDetector(
+              return Hov(
                 key: ValueKey('ws-stack-$r'),
-                behavior: HitTestBehavior.opaque,
+                cursor: SystemMouseCursors.basic,
                 onTap: () => ws.select(r),
-                child: Padding(
+                builder: (_, _) => Padding(
                   padding: EdgeInsets.symmetric(vertical: Shape.s(3)),
                   child: Row(
                     children: [
@@ -375,10 +375,11 @@ class WsRelationStack extends StatelessWidget {
                         ),
                       ),
                       if (!leads)
-                        GestureDetector(
+                        Hov(
                           key: ValueKey('ws-stack-free-$r'),
+                          cursor: SystemMouseCursors.basic,
                           onTap: () => ws.after(m.later('free', layer: int.parse(t), number: id.toDouble()), (_, _) => ws.reread()),
-                          child: Text('×', style: T.label(Grey.g56)),
+                          builder: (_, _) => Text('×', style: T.label(Grey.g56)),
                         ),
                     ],
                   ),
@@ -412,10 +413,11 @@ class _RelateChip extends StatelessWidget {
   final bool outlined;
   final TpGlyph? glyph; // (drawn instead of its word)
   @override
-  Widget build(BuildContext context) => GestureDetector(
+  Widget build(BuildContext context) => Hov(
     key: key == null ? ValueKey('ws-relate-$kind') : null,
+    cursor: SystemMouseCursors.basic,
     onTap: onTap,
-    child: Container(
+    builder: (_, _) => Container(
       margin: EdgeInsets.only(right: Shape.s(4)),
       padding: EdgeInsets.symmetric(horizontal: Shape.s(10), vertical: Shape.s(5)),
       decoration: BoxDecoration(
@@ -437,9 +439,10 @@ class _Badge extends StatelessWidget {
   final VoidCallback onTap;
   final bool faint;
   @override
-  Widget build(BuildContext context) => GestureDetector(
+  Widget build(BuildContext context) => Hov(
+    cursor: SystemMouseCursors.basic,
     onTap: onTap,
-    child: Container(
+    builder: (_, _) => Container(
       width: 18,
       height: 18,
       decoration: BoxDecoration(color: faint ? WsT.body.withValues(alpha: .7) : WsT.accent, shape: BoxShape.circle),
@@ -521,16 +524,13 @@ class _Hud extends StatelessWidget {
           builder: (_, p, _) => Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('X ', style: T.micro(Grey.g56)),
-              SizedBox(
-                width: Shape.z(34),
-                child: Text(p == null ? '—' : '${p.dx.round()}', style: T.value(p == null ? Grey.g56 : Grey.g91)),
-              ),
-              Text('Y ', style: T.micro(Grey.g56)),
-              SizedBox(
-                width: Shape.z(34),
-                child: Text(p == null ? '—' : '${p.dy.round()}', style: T.value(p == null ? Grey.g56 : Grey.g91)),
-              ),
+              for (final (l, n) in [('X ', p?.dx), ('Y ', p?.dy)]) ...[
+                Text(l, style: T.micro(Grey.g56)),
+                SizedBox(
+                  width: Shape.z(34),
+                  child: Text(n == null ? '—' : '${n.round()}', style: T.value(n == null ? Grey.g56 : Grey.g91)),
+                ),
+              ],
             ],
           ),
         ),

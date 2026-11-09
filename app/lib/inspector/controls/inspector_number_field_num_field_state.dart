@@ -15,7 +15,7 @@ import '../../widgets/text_gestures.dart';
 class NumFieldState extends State<NumField> {
   final _node = FocusNode(debugLabel: 'num');
   late final FocusNode _ef = FocusNode(debugLabel: 'num-edit', onKeyEvent: _editKey);
-  final _menu = OverlayPortalController();
+  final _menu = ContextMenuController();
   Offset _menuAt = Offset.zero;
   static int rightAt = -1; // (the press a field took for its menu: the row round it leaves it)
   static bool _tabbed = false; // (the field that takes focus now was gone to by Tab: it opens to be typed in)
@@ -66,6 +66,7 @@ class NumFieldState extends State<NumField> {
     _watch?.removeListener(_retold);
     _keyWatch?.removeListener(_retold);
     _pending?.cancel();
+    _menu.remove();
     _ef.dispose();
     _node.dispose();
     _ctl.dispose();
@@ -183,7 +184,17 @@ class NumFieldState extends State<NumField> {
       // (After Effects' and Blender's right click on a value; every number, its row or an effect's knob alike: all by the mouse alone, 10/29)
       rightAt = e.pointer;
       _menuAt = e.position;
-      return _menu.show();
+      return _menu.show(
+        context: context,
+        contextMenuBuilder: (_) => TinyMenuAt(
+          at: _menuAt,
+          name: 'num',
+          of: widget.id,
+          items: _menuItems(),
+          hide: _menu.remove,
+          keep: (e) => e.pointer == rightAt && e.buttons == kSecondaryButton && _inMe(e.position), // (right pressed here again: its place, as a Mac's)
+        ),
+      );
     }
     if (_keyAt case final k? when e.buttons == kPrimaryButton && (e.localPosition - k).distance <= 9) {
       final now = _x.doc.keys[widget.id] ?? _keys; // (as the document says it now: the field may not have been built since an undo)
@@ -579,62 +590,51 @@ class NumFieldState extends State<NumField> {
             glyphBox: Pop.glyph,
           ),
         );
-        return OverlayPortal.targetsRootOverlay(
-          controller: _menu,
-          overlayChildBuilder: (_) => TinyMenuAt(
-            at: _menuAt,
-            name: 'num',
-            of: widget.id,
-            items: _menuItems(),
-            hide: _menu.hide,
-            keep: (e) => e.pointer == rightAt && e.buttons == kSecondaryButton && _inMe(e.position),
-          ), // (right pressed here again: its place, as a Mac's)
-          child: Actions(
-            // (Cmd+A on a field held: all of its number, not every thing in the window; After Effects' and Figma's)
-            actions: {SelectAllTextIntent: CallbackAction<SelectAllTextIntent>(onInvoke: (_) => _startEdit())},
-            child: Focus(
-              focusNode: _node,
-              onKeyEvent: _key,
-              onFocusChange: (f) {
-                setState(() => _focus = f);
-                if (f && _tabbed) {
-                  _tabbed = false;
-                  _startEdit();
-                }
+        return Actions(
+          // (Cmd+A on a field held: all of its number, not every thing in the window; After Effects' and Figma's)
+          actions: {SelectAllTextIntent: CallbackAction<SelectAllTextIntent>(onInvoke: (_) => _startEdit())},
+          child: Focus(
+            focusNode: _node,
+            onKeyEvent: _key,
+            onFocusChange: (f) {
+              setState(() => _focus = f);
+              if (f && _tabbed) {
+                _tabbed = false;
+                _startEdit();
+              }
+            },
+            child: RawGestureDetector(
+              // (a press that scrubs is the field's at once: a scroll round the inspector would take a drag that goes up or
+              //  down too and carry the field away under the hand; a press on a glyph that owns it, or while typing, is not)
+              gestures: {
+                ScrubClaim: GestureRecognizerFactoryWithHandlers<ScrubClaim>(
+                  () => ScrubClaim(),
+                  (r) => r.takes = (e) => _on && !_editing && !(widget.glyph != null && widget.glyphOwnsPointer && _inGlyph(e.localPosition)),
+                ),
               },
-              child: RawGestureDetector(
-                // (a press that scrubs is the field's at once: a scroll round the inspector would take a drag that goes up or
-                //  down too and carry the field away under the hand; a press on a glyph that owns it, or while typing, is not)
-                gestures: {
-                  ScrubClaim: GestureRecognizerFactoryWithHandlers<ScrubClaim>(
-                    () => ScrubClaim(),
-                    (r) => r.takes = (e) => _on && !_editing && !(widget.glyph != null && widget.glyphOwnsPointer && _inGlyph(e.localPosition)),
-                  ),
-                },
-                child: Listener(
-                  onPointerDown: _onDown,
-                  onPointerMove: _onMove,
-                  onPointerUp: _onUp,
-                  onPointerCancel: _onCancel,
-                  onPointerSignal: _onSignal,
-                  onPointerPanZoomUpdate: _onPan,
-                  child: MouseRegion(
-                    cursor: !on ? SystemMouseCursors.basic : (_editing ? SystemMouseCursors.text : SystemMouseCursors.resizeLeftRight),
-                    onEnter: (_) {
-                      setState(() => _hover = true);
-                      if (linked) x.doc.setDirectHover(group);
-                    },
-                    onExit: (_) {
-                      setState(() => _hover = false);
-                      if (linked && x.doc.directHover == group) x.doc.setDirectHover(null);
-                    },
-                    // (past what it vouches for, or going there under the hand: drawn the other way about)
-                    child:
-                        (!widget.turns && _bounded && v != null && (v < widget.min! || v > widget.max!)) ||
-                            (_drag && _moved && _going && (widget.open || widget.validMin != null || widget.validMax != null))
-                        ? ColorFiltered(colorFilter: pastInk, child: body)
-                        : body,
-                  ),
+              child: Listener(
+                onPointerDown: _onDown,
+                onPointerMove: _onMove,
+                onPointerUp: _onUp,
+                onPointerCancel: _onCancel,
+                onPointerSignal: _onSignal,
+                onPointerPanZoomUpdate: _onPan,
+                child: MouseRegion(
+                  cursor: !on ? SystemMouseCursors.basic : (_editing ? SystemMouseCursors.text : SystemMouseCursors.resizeLeftRight),
+                  onEnter: (_) {
+                    setState(() => _hover = true);
+                    if (linked) x.doc.setDirectHover(group);
+                  },
+                  onExit: (_) {
+                    setState(() => _hover = false);
+                    if (linked && x.doc.directHover == group) x.doc.setDirectHover(null);
+                  },
+                  // (past what it vouches for, or going there under the hand: drawn the other way about)
+                  child:
+                      (!widget.turns && _bounded && v != null && (v < widget.min! || v > widget.max!)) ||
+                          (_drag && _moved && _going && (widget.open || widget.validMin != null || widget.validMax != null))
+                      ? ColorFiltered(colorFilter: pastInk, child: body)
+                      : body,
                 ),
               ),
             ),

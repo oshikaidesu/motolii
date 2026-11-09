@@ -100,8 +100,8 @@ class _InspectorPanelState extends State<InspectorPanel> {
     ];
     final panel = Focus(
       focusNode: _node,
-      child: Listener(
-        onPointerDown: (_) => WidgetsBinding.instance.addPostFrameCallback((_) {
+      child: TapRegion(
+        onTapInside: (_) => WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && !_node.hasFocus) _node.requestFocus();
         }),
         child: Container(

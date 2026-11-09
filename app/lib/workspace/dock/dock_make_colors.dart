@@ -135,75 +135,72 @@ class _ColorBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final col = b.colour!, own = b.group == 'mine', pal = _pals.where((p) => p.id == b.group).firstOrNull;
-    return MouseRegion(
-      onEnter: (_) => _named.value = _hovered.value = b.group,
-      onExit: (_) {
-        _named.value = _pressed;
-        _hovered.value = null;
+    return GestureDetector(
+      onSecondaryTapDown: (d) {
+        final items = [
+          if (own) ...[
+            WsMenuItem(
+              'Replace with ${_hex(_wheel.toColor())}',
+              () => c.set(() {
+                _mineColors[b.i] = _wheel.toColor();
+                _keepMine();
+              }),
+            ),
+            WsMenuItem(
+              'Delete',
+              () => c.set(() {
+                _mineColors.removeAt(b.i);
+                _keepMine();
+              }),
+            ),
+          ],
+          if (pal != null && pal.saved)
+            WsMenuItem(
+              'Delete this palette',
+              () => c.set(() {
+                _minePals.remove(pal);
+                _named.value = _pressed = null;
+                _keepMine();
+              }),
+            ),
+        ];
+        if (items.isEmpty) return;
+        final box = _boxMenu.currentContext?.findRenderObject() as RenderBox?;
+        _boxMenu.currentState?.show(box?.globalToLocal(d.globalPosition) ?? Offset.zero, items);
       },
-      child: GestureDetector(
-        onSecondaryTapDown: (d) {
-          final items = [
-            if (own) ...[
-              WsMenuItem(
-                'Replace with ${_hex(_wheel.toColor())}',
-                () => c.set(() {
-                  _mineColors[b.i] = _wheel.toColor();
-                  _keepMine();
-                }),
-              ),
-              WsMenuItem(
-                'Delete',
-                () => c.set(() {
-                  _mineColors.removeAt(b.i);
-                  _keepMine();
-                }),
-              ),
-            ],
-            if (pal != null && pal.saved)
-              WsMenuItem(
-                'Delete this palette',
-                () => c.set(() {
-                  _minePals.remove(pal);
-                  _named.value = _pressed = null;
-                  _keepMine();
-                }),
-              ),
-          ];
-          if (items.isEmpty) return;
-          final box = _boxMenu.currentContext?.findRenderObject() as RenderBox?;
-          _boxMenu.currentState?.show(box?.globalToLocal(d.globalPosition) ?? Offset.zero, items);
+      child: DockHover(
+        key: ValueKey('colour-box-${b.group}-${b.i}'),
+        onHover: (on) {
+          _named.value = on ? b.group : _pressed;
+          _hovered.value = on ? b.group : null;
         },
-        child: DockHover(
-          key: ValueKey('colour-box-${b.group}-${b.i}'),
-          onTap: () {
-            _named.value = _pressed = b.group;
-            _take(c, col);
+        onTap: () {
+          _named.value = _pressed = b.group;
+          _take(c, col);
+        },
+        builder: (context, h) => ValueListenableBuilder<String?>(
+          valueListenable: _hovered,
+          builder: (context, over, _) {
+            // (the hand on a box: a rainbow rim round each box of its palette, so a palette is seen whole with no gap kept round it: the user, a rim, not the others darkened)
+            final box = Container(
+              decoration: BoxDecoration(
+                color: col,
+                borderRadius: BorderRadius.all(Shape.r(over == b.group ? 3 : 5)),
+                border: _wheelFrom == _hex(col).substring(1).toLowerCase() ? Border.all(color: Grey.g95, width: 2) : null,
+              ),
+            );
+            return over != b.group
+                ? box
+                : Container(
+                    key: const ValueKey('colour-rim'),
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.all(Shape.r(5)),
+                      gradient: const SweepGradient(colors: _rainbow),
+                    ),
+                    child: box,
+                  );
           },
-          builder: (context, h) => ValueListenableBuilder<String?>(
-            valueListenable: _hovered,
-            builder: (context, over, _) {
-              // (the hand on a box: a rainbow rim round each box of its palette, so a palette is seen whole with no gap kept round it: the user, a rim, not the others darkened)
-              final box = Container(
-                decoration: BoxDecoration(
-                  color: col,
-                  borderRadius: BorderRadius.all(Shape.r(over == b.group ? 3 : 5)),
-                  border: _wheelFrom == _hex(col).substring(1).toLowerCase() ? Border.all(color: Grey.g95, width: 2) : null,
-                ),
-              );
-              return over != b.group
-                  ? box
-                  : Container(
-                      key: const ValueKey('colour-rim'),
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.all(Shape.r(5)),
-                        gradient: const SweepGradient(colors: _rainbow),
-                      ),
-                      child: box,
-                    );
-            },
-          ),
         ),
       ),
     );

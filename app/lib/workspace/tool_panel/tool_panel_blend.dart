@@ -1,10 +1,11 @@
-// The tool panel's Blend tool: the layer stack, the front first. Each layer that lies on what is under it: how (its blend:
-// the ways the inside names, each drawn as two discs and what their overlap becomes), how much of it is there (its
-// opacity, a bar pulled across), and whether it shows only where the layer under it is (clip). A tap on a name picks it.
-// What the ways are is the inside's (motolii_words); the window only draws each.
+// The tool panel's Blend tool: the layer stack, the front first. Each layer that lies on what is under it: how (its blend: the ways the
+// inside names, each drawn as two discs and what their overlap becomes), how much of it is there (its opacity, a bar pulled across), and
+// whether it shows only where the layer under it is (clip). A tap on a name picks it. The ways are the inside's (motolii_words); the window draws each.
 import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/widgets.dart';
+import 'package:naked_ui/naked_ui.dart' show NakedFocusableDetector;
 
+import '../../inspector/inspector_small.dart' show Hov;
 import '../../skin/tokens.dart';
 import 'tool_panel_widgets.dart';
 import '../state/state.dart';
@@ -56,10 +57,10 @@ class _RowState extends State<_Row> {
           ),
           SizedBox(width: Shape.s(8)),
           Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
+            child: Hov(
+              cursor: SystemMouseCursors.basic,
               onTap: () => ws.select(l.id),
-              child: Text(l.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(ways.isEmpty ? Grey.g56 : Grey.g91)),
+              builder: (_, _) => Text(l.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(ways.isEmpty ? Grey.g56 : Grey.g91)),
             ),
           ),
           if (ways.isNotEmpty) ...[
@@ -110,8 +111,7 @@ class _RowState extends State<_Row> {
         child: row,
       );
     }
-    // (every way, in After Effects' groups: normal; darker; lighter; contrast; difference; colour. The way under the
-    //  hand, or the one it lies, named once under them)
+    // (every way, in After Effects' groups: normal; darker; lighter; contrast; difference; colour; the way under the hand named under)
     final groups = <List<String>>[[], [], [], [], [], []];
     for (final w in ways) {
       groups[_group(w)].add(w);
@@ -136,9 +136,9 @@ class _RowState extends State<_Row> {
                   if (g.isNotEmpty) ...[
                     if (k > 0) SizedBox(width: Shape.s(8)),
                     for (final w in g)
-                      MouseRegion(
-                        onEnter: (_) => setState(() => _hover = w),
-                        onExit: (_) => setState(() => _hover = null),
+                      NakedFocusableDetector(
+                        canRequestFocus: false,
+                        onHoverChange: (over) => setState(() => _hover = over ? w : null),
                         child: ToolIconButton(
                           key: ValueKey('blend.${l.id}.$w'),
                           size: Shape.z(26),

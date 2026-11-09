@@ -154,10 +154,10 @@ class _FolderRow extends StatelessWidget {
         color: dockFill(here, h),
         child: Row(
           children: [
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
+            Hov(
+              cursor: MouseCursor.defer,
               onTap: hasSubs ? () => c.toggle(c.mem.open, n.id) : null,
-              child: SizedBox(
+              builder: (_, _) => SizedBox(
                 width: Shape.z(14),
                 height: Shape.z(22),
                 child: hasSubs
@@ -216,16 +216,15 @@ class _Crumbs extends StatelessWidget {
                       child: DockGlyph(DockG.chevron, size: Shape.z(6), color: Grey.g56),
                     ),
                   Flexible(
-                    child: GestureDetector(
+                    child: Hov(
                       key: ValueKey('browser:crumb:${n.id}'),
+                      cursor: MouseCursor.defer,
                       onTap: () => _go(c, n.id),
-                      child: Text(
+                      builder: (_, _) => Text(
                         n.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: T
-                            .micro(i == path.length - 1 ? Grey.g95 : Grey.g63)
-                            .copyWith(fontWeight: i == path.length - 1 ? FontWeight.w700 : FontWeight.w500),
+                        style: T.micro(n == path.last ? Grey.g95 : Grey.g63).copyWith(fontWeight: n == path.last ? FontWeight.w700 : FontWeight.w500),
                       ),
                     ),
                   ),

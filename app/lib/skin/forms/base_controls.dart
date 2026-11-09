@@ -11,11 +11,7 @@ class _Hot extends StatelessWidget {
   final Widget Function(bool hot) builder;
   final VoidCallback? onTap;
   @override
-  Widget build(BuildContext context) => NakedButton(
-    onPressed: onTap,
-    enableFeedback: false,
-    builder: (context, st, _) => builder(st.isHovered),
-  );
+  Widget build(BuildContext context) => NakedButton(onPressed: onTap, enableFeedback: false, builder: (context, st, _) => builder(st.isHovered));
 }
 
 abstract final class Usual {

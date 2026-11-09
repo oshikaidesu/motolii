@@ -12,6 +12,7 @@ import 'package:flutter/gestures.dart' show kDoubleTapSlop, kDoubleTapTimeout, D
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:naked_ui/naked_ui.dart';
 
 import '../../skin/forms/forms.dart';
 import '../../bridge/motolii.dart' show Motolii, mediaSecondsOf;
@@ -421,8 +422,8 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     ];
     return Focus(
       focusNode: _focus,
-      child: Listener(
-        onPointerDown: (_) => _focus.requestFocus(),
+      child: TapRegion(
+        onTapInside: (_) => _focus.requestFocus(),
         child: ColoredBox(
           color: WsT.body,
           child: Column(

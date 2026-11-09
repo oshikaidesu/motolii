@@ -70,9 +70,10 @@ extension _WsTimelineRows on _WsTimelineState {
                               right: Shape.s(8),
                               top: i * WtM.row - top,
                               height: WtM.row,
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () => ws.select(other), // (a press goes there: Cavalry's connection list)
+                              child: NakedButton(
+                                enableFeedback: false,
+                                mouseCursor: SystemMouseCursors.basic,
+                                onPressed: () => ws.select(other), // (a press goes there: Cavalry's connection list)
                                 child: Row(
                                   children: [
                                     Text(said, maxLines: 1, style: T.label(Grey.g56)),

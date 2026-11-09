@@ -9,7 +9,9 @@ import 'package:flutter/gestures.dart' show GestureBinding, PointerEvent, Pointe
 import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
+import 'package:naked_ui/naked_ui.dart';
 
+import '../../inspector/inspector_small.dart' show Hov;
 import '../../skin/forms/forms.dart';
 import '../../skin/svg_parts.dart';
 import '../window/zoom.dart';
@@ -110,23 +112,12 @@ class _Chip extends StatelessWidget {
   );
 }
 
-class _Hover extends StatefulWidget {
+class _Hover extends StatelessWidget {
   const _Hover({super.key, required this.builder, this.onTap});
   final Widget Function(bool hot) builder;
   final VoidCallback? onTap;
   @override
-  State<_Hover> createState() => _HoverState();
-}
-
-class _HoverState extends State<_Hover> {
-  bool _h = false;
-  @override
-  Widget build(BuildContext context) => MouseRegion(
-    cursor: SystemMouseCursors.click,
-    onEnter: (_) => setState(() => _h = true),
-    onExit: (_) => setState(() => _h = false),
-    child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onTap, child: widget.builder(_h)),
-  );
+  Widget build(BuildContext context) => Hov(onTap: onTap, builder: (_, h) => builder(h));
 }
 
 /// What a step undone or done again changed, in plain words, as After Effects' and Premiere Pro's Edit menu names the
@@ -151,7 +142,7 @@ class _UndoRedo extends StatelessWidget {
     mainAxisSize: MainAxisSize.min,
     children: [
       for (final flip in [false, true])
-        _Hover(
+        Hov(
           key: ValueKey(flip ? 'ws-redo' : 'ws-undo'),
           // (a step of the document back, or forward again)
           onTap: () {
@@ -162,7 +153,7 @@ class _UndoRedo extends StatelessWidget {
               (done, why) => ws.notice = done ? wsStepSaid(ws, flip ? 'Redone' : 'Undone') : why,
             ); // (the window does not wait for the step)
           },
-          builder: (h) => Container(
+          builder: (_, h) => Container(
             width: Shape.z(24),
             height: Shape.z(24),
             alignment: Alignment.center,
@@ -220,10 +211,10 @@ class _ShadeSwitch extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => _Hover(
+  Widget build(BuildContext context) => Hov(
     key: const ValueKey('ws-shade'),
     onTap: flip,
-    builder: (h) => Container(
+    builder: (_, h) => Container(
       width: Shape.z(24),
       height: Shape.z(24),
       alignment: Alignment.center,
@@ -286,12 +277,7 @@ class _Saved extends StatelessWidget {
         SizedBox(width: Shape.s(6)),
         ConstrainedBox(
           constraints: BoxConstraints(maxWidth: Shape.z(260)),
-          child: go == null
-              ? said
-              : MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: GestureDetector(onTap: go, child: said),
-                ),
+          child: go == null ? said : Hov(onTap: go, builder: (_, _) => said),
         ),
       ],
     );
@@ -395,10 +381,10 @@ class _RenderState extends State<_Render> {
           child: Stack(
             children: [
               Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
+                child: Hov(
+                  cursor: MouseCursor.defer,
                   onTap: _open.hide,
-                  child: const ColoredBox(color: Color(0x88000000)),
+                  builder: (_, _) => const ColoredBox(color: Color(0x88000000)),
                 ),
               ),
               Center(
@@ -543,9 +529,10 @@ class _RenderState extends State<_Render> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          GestureDetector(
+                          Hov(
+                            cursor: MouseCursor.defer,
                             onTap: _open.hide,
-                            child: Padding(
+                            builder: (_, _) => Padding(
                               padding: EdgeInsets.symmetric(horizontal: Shape.s(12), vertical: Shape.s(6)),
                               child: Text('Cancel', style: T.name(Grey.g76)),
                             ),

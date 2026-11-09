@@ -46,10 +46,10 @@ class Sect extends StatelessWidget {
     final ed = Ed(Ctx.of(context).cfg.ed);
     final head = (title == null && trailing == null)
         ? null
-        : GestureDetector(
-            behavior: HitTestBehavior.opaque,
+        : Hov(
+            cursor: SystemMouseCursors.basic,
             onTap: onToggle,
-            child: SizedBox(
+            builder: (_, _) => SizedBox(
               height: Shape.z(24),
               child: Row(
                 children: [

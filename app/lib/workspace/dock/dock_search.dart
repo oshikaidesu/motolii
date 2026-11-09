@@ -1,7 +1,6 @@
 // Part of dock_widgets.dart: the shelf's search well, and the search asked for from elsewhere.
 part of 'dock_widgets.dart';
 
-/// The search well under the header: magnifier, editable text, clear.
 /// The shelf's search asked for from elsewhere (the Inspector's Add Effect): the field in sight takes the keys, or the
 /// next one to come.
 final _searchAsked = ValueNotifier(0);
@@ -55,8 +54,10 @@ class _DockSearchState extends State<DockSearch> {
   @override
   Widget build(BuildContext context) {
     final c = widget.controller;
-    final well = GestureDetector(
-      onTap: _focus.requestFocus,
+    final well = NakedButton(
+      enableFeedback: false,
+      onPressed: _focus.requestFocus,
+      mouseCursor: MouseCursor.defer,
       child: AnimatedContainer(
         duration: Mo.dur,
         curve: Mo.ease,

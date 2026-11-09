@@ -18,7 +18,6 @@ class _WaitedState extends State<_Waited> {
   final _late = <String>[]; // (the window's own missed frames, timed: the last 200)
 
   static const _beat = 1000000 ~/ 60; // (1/60 s in microseconds: a frame's budget, as Flutter's performance overlay judges it)
-
   @override
   void initState() {
     super.initState();
@@ -126,8 +125,10 @@ class _WaitedState extends State<_Waited> {
               // (a tap anywhere else closes it, as macOS's transient NSPopover; it is not taken from what is under it)
               groupId: _group,
               onTapOutside: (_) => _show(false),
-              child: GestureDetector(
-                onTap: () => _show(false),
+              child: NakedButton(
+                enableFeedback: false,
+                onPressed: () => _show(false),
+                mouseCursor: SystemMouseCursors.basic,
                 child: Container(
                   width: Shape.z(520),
                   constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(overlay).height * .7), // (each line whole, wrapped; many: scrolled, none cut)

@@ -7,6 +7,7 @@
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
+import 'package:naked_ui/naked_ui.dart';
 
 import '../../skin/tokens.dart';
 import '../dock/dock_program.dart' show ProgramCode;
@@ -202,15 +203,13 @@ class _FxCodeState extends State<FxCode> {
     if (_adding case final name?) return SizedBox(height: Shape.s(18), child: ShelfNameField(name, _add, small: false));
     return Row(
       children: [
-        GestureDetector(
-          onTap: () => setState(() {
+        NakedButton(
+          onPressed: () => setState(() {
             _adding = FxCode.titleOf(_mine ?? widget.word);
             _added = '';
           }),
-          child: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: Text('Add to shelf', style: T.label(Grey.g76)),
-          ),
+          enableFeedback: false,
+          child: Text('Add to shelf', style: T.label(Grey.g76)),
         ),
         if (_added.isNotEmpty) ...[
           SizedBox(width: Shape.s(8)),
