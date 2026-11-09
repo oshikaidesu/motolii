@@ -128,7 +128,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
 
   void _put(Program p) {
     final m = c.ws.inside!;
-    if (p.recipe case final r?) return c.ws.after(m.later('make', word: r), (done, why) => _told(p, done, why), (made) => c.ws.select('$made'));   // (as Create's tile made it: dock_make_2.dart _make)
+    if (p.recipe case final r?) return c.ws.after(m.later('make', word: r), (done, why) => _told(p, done, why), (made) => c.ws.select('$made'));   // (as Create's tile made it: dock_make_colours.dart _make)
     c.ws.after(m.later('door', thing: int.tryParse(c.ws.selected ?? '') ?? 0, word: p.file), (done, why) => _told(p, done, why), (made) {
       if (made <= 0) return;
       if (p.name != p.plain) c.ws.after(m.later('say', thing: made, name: 'name', word: p.name));

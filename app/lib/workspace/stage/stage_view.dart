@@ -22,9 +22,9 @@ import 'package:perfect_freehand/perfect_freehand.dart' show getStrokeOutlinePoi
 import 'package:perfect_freehand/src/get_stroke_radius.dart' show getStrokeRadius;   // (how wide its pressure makes a point: kept private by the package, read as it is)
 import '../ws.dart';
 import '../ws_menu.dart';
-part 'stage_view_2.dart';
-part 'stage_view_3.dart';
-part 'stage_view_4.dart';
+part 'stage_view_state.dart';
+part 'stage_view_relations.dart';
+part 'stage_view_painter.dart';
 
 /// Zoom steps of the header chip: fit, then fixed scales.
 const stageZooms = ['Fit', '50%', '100%'];

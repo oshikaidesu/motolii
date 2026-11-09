@@ -29,8 +29,8 @@ import '../shelf/effect_tiles.dart' show EffectTiles;
 import '../shelf/empty_fx.dart';
 import '../shelf/shelf_add.dart';
 import '../ws.dart';
-part 'dock_make_2.dart';
-part 'dock_make_3.dart';
+part 'dock_make_colours.dart';
+part 'dock_make_expressions.dart';
 
 // ---------------------------------------------------------------- colors
 

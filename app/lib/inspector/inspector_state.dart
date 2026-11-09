@@ -6,7 +6,7 @@ import 'package:motolii/inspector/effects/inspector_effects_k_effects.dart';
 import '../parts/controls.dart';
 import '../style/tokens.dart';
 import 'inspector_parts.dart';
-part 'inspector_state_2.dart';
+part 'inspector_mock_doc.dart';
 
 enum Editorial { a, b, c }
 

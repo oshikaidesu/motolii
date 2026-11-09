@@ -20,7 +20,7 @@ import 'ws.dart';
 import 'desk/desk_kit.dart' show DeskChip;
 import 'two_fingers.dart';
 import '../parts/text_hand.dart';
-part 'top_bar_2.dart';
+part 'top_bar_timings.dart';
 
 class WsTopBar extends StatelessWidget {
   const WsTopBar({super.key});

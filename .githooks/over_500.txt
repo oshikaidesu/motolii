@@ -4,16 +4,16 @@
 515 app/lib/workspace/dock/dock_effects.dart
 600 app/lib/workspace/dock/dock_fonts.dart
 610 app/lib/workspace/dock/dock_make.dart
-691 app/lib/workspace/dock/dock_make_2.dart
+691 app/lib/workspace/dock/dock_make_colours.dart
 605 app/lib/workspace/dock/dock_parts.dart
 649 app/lib/workspace/shelf/effect_tiles.dart
 582 app/lib/workspace/stage/stage.dart
-845 app/lib/workspace/stage/stage_view_2.dart
+845 app/lib/workspace/stage/stage_view_state.dart
 652 app/lib/workspace/timeline/timeline.dart
 674 app/lib/workspace/timeline/timeline_paint.dart
 649 app/lib/workspace/top_bar.dart
 772 app/lib/workspace/workspace.dart
-751 app/lib/workspace/ws_2.dart
+751 app/lib/workspace/ws_state.dart
 1028 engine/community/aviutl/aviutl_fx.h
 589 engine/document/doc_edit.h
 726 engine/document/doc_match.h
@@ -28,7 +28,7 @@
 514 engine/stage/kit_things.h
 793 engine/library/motolii_calls.h
 615 engine/library/motolii_hand.h
-529 shelves/recipes/Blob Track.js
+529 shelves/recipes/on_film/Blob Track.js
 531 engine/stage/screen.h
 565 engine/community/js/script.cpp
 6342 engine/third_party/js/acorn/acorn.js

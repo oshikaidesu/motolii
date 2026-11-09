@@ -567,8 +567,8 @@ static std::vector<std::filesystem::path> doc_folders(const char* folder) {
 static std::vector<std::filesystem::path> doc_folder_files(const char* folder, const char* extension) {
     std::map<std::string, std::filesystem::path> by; std::error_code wrong;   // (a folder not there, `wrong`: none from it)
     const auto take = [&](const std::filesystem::path& p) { if ((" " + std::string(extension) + " ").find(" " + p.extension().string() + " ") != std::string::npos && p.has_extension()) by[p.filename().string()] = p; };   // (extensions: one, or a few with spaces between)
-    for (const auto& dir : doc_folders(folder))   // (effects/ a folder for what each does, as the shelf's own kinds: blur/, color/, distort/…, read through)
-        if (std::string(folder) == "effects") for (const auto& e : std::filesystem::recursive_directory_iterator(dir, wrong)) take(e.path());
+    for (const auto& dir : doc_folders(folder))   // (effects/ and recipes/ a folder for what each does or comes from: blur/, shapes/…, read through)
+        if (std::string(folder) == "effects" || std::string(folder) == "recipes") for (const auto& e : std::filesystem::recursive_directory_iterator(dir, wrong)) take(e.path());
         else for (const auto& e : std::filesystem::directory_iterator(dir, wrong)) take(e.path());
     std::vector<std::filesystem::path> files;
     for (const auto& [_, f] : by) files.push_back(f);

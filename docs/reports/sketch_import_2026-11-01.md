@@ -515,7 +515,7 @@ OpenProcessing の多くは by-nc-sa。ここまでは非営利のテストだ�
 
 **枠（Tracery、blob tracking）。** TD の Blob Track TOP は OpenCV の枠の検出を部品にした物で、TD 発ではない。元は画像処理の連結成分で、2007 年の multiblob（Pd）のような作品用の道具がある。バズっている見た目の最初の 1 本は特定できなかった。見た目の道具は Tracery（AE）、AE Blob Tracker、Shader Lab。どれも「動いた所のかたまりに飾りの枠」で、人を見分けてはいない。Shader Lab は説明でラベルは飾りと言っている。
 
-**Motolii での結果。** `shelves/recipes/Blob Track.js` を足した（3f49e7e4c）。`tracker.ts` を型だけ外してスケッチに載せ、エンジンは変えていない。OpenCV の `vtest.avi`（git の外）で、Create の棚から載せて本物の窓で再生まで確認。初回は 1 コマ 93 ms だったが、周りのマスとの比較が重いと切り分け、変化の小さいマスを飛ばして 41 ms、解析を 1 回おきにして 27 ms。
+**Motolii での結果。** `shelves/recipes/on_film/Blob Track.js` を足した（3f49e7e4c）。`tracker.ts` を型だけ外してスケッチに載せ、エンジンは変えていない。OpenCV の `vtest.avi`（git の外）で、Create の棚から載せて本物の窓で再生まで確認。初回は 1 コマ 93 ms だったが、周りのマスとの比較が重いと切り分け、変化の小さいマスを飛ばして 41 ms、解析を 1 回おきにして 27 ms。
 
 **タイムズレ（Time Displacement、スリットスキャン）。** 元は写真のスリットスキャンで、映画では 2001 年宇宙の旅（1968）のスターゲートが有名（抜粋）。AE の Time Displacement と TD の Time Machine TOP は同じ考えで、絵の明るさがその場所の遅れを決める。Motolii の Time Displacement（keijiro/SlitScanCam）は横か縦の傾きしか持たない。マップの追加は途中で止めた。残りはチェックリストの T の末尾。
 
