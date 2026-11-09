@@ -31,8 +31,8 @@ build_lock() {
         mv $_build_lock_dir $_build_lock_dir.gone.$$ 2>/dev/null && echo "${ZSH_ARGZERO:t}: build lock with no holder, an hour old, broken" >&2
         rm -rf $_build_lock_dir.gone.$$; continue
       fi
-      (( said % 30 == 0 )) && echo "${ZSH_ARGZERO:t}: waiting for the build lock: ${holder:-?} $(cat $_build_lock_dir/command 2>/dev/null)" >&2
-      sleep 1; (( said++ ))
+      if [ $((said % 30)) = 0 ]; then echo "${ZSH_ARGZERO:t}: waiting for the build lock: ${holder:-?} $(cat $_build_lock_dir/command 2>/dev/null)" >&2; fi
+      sleep 1; said=$((said + 1))   # (not (( said++ )): it is 0 the first time, a failure that ends a set -e script)
     done
     echo $$ > $_build_lock_dir/pid
     print -r -- "${ZSH_ARGZERO:t} $*" > $_build_lock_dir/command
