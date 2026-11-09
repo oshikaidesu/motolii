@@ -10,7 +10,7 @@ After Effects のような映像制作を、より簡単な操作で行えるよ
 
 [English](README.en.md) ・ [質問・相談（Discussions）](https://github.com/oshikaidesu/motolii/discussions) ・ [不具合（Issues）](https://github.com/oshikaidesu/motolii/issues)　どちらも日本語・英語のどちらでも。
 
-![Motolii の画面：左に素材と棚、真ん中に場面、下にタイムライン、右に値](docs/media/window.jpg)
+![Motolii の画面：左に素材と棚、真ん中に場面、下にタイムライン、右に値](docs/pictures/window.jpg)
 
 ## エフェクトとスクリプト
 
@@ -24,7 +24,7 @@ ISF、WGSL、AviUtl2 のスクリプトにも対応しています。ファイ�
 
 ※ 対応形式のコードでも、すべてが正しく動作するわけではありません。動作検証の結果は後述しています。
 
-![配られている ISF の効果 8 本を写真と文字に掛けた所](docs/media/effects.jpg)
+![配られている ISF の効果 8 本を写真と文字に掛けた所](docs/pictures/effects.jpg)
 
 *配られている ISF の効果 8 本を、写真（パブリックドメイン）と文字に掛けた所。どれも作者のファイルのまま。*
 
@@ -46,7 +46,7 @@ ISF、WGSL、AviUtl2 のスクリプトにも対応しています。ファイ�
 
 完成した映像は MP4 形式で書き出せます。
 
-![光る文字、回るピンクの輪、線の模様、色のずれ](docs/media/mv.gif)
+![光る文字、回るピンクの輪、線の模様、色のずれ](docs/pictures/mv.gif)
 
 *Motolii で作った 8 秒。組み立てた後に `docs/examples/mv.sh` の 1 行で同じ物が `~/Movies/Motolii/mv.mp4` にできます。*
 
@@ -178,7 +178,7 @@ app/live.sh
 
 ### 画面の見方
 
-![画面の 7 つの区画に番号を付けた図](docs/media/panels.jpg)
+![画面の 7 つの区画に番号を付けた図](docs/pictures/panels.jpg)
 
 1. **上の帯**：プロジェクト名、画面サイズ、fps、長さ、取り消し・やり直し、Render（書き出し）。
 2. **[左のタブ](docs/guide/tabs.md#左のタブ)**：Media（素材）、Effects（エフェクト）、Fonts（書体）、Colors（色）、Create（図形とレシピ）、Program（貼ったコード）、Presets（保存した組み合わせ。まだ使えません）。
@@ -192,17 +192,17 @@ app/live.sh
 
 ### 最初の 1 本（画面で）
 
-<img src="docs/media/window_step1.jpg" alt="1：空のプロジェクト" width="560">
+<img src="docs/pictures/window_step1.jpg" alt="1：空のプロジェクト" width="560">
 
 1. 左上のタブの 5 つ目（四角に ＋、**Create**）を押し、検索に `Iris` と打ちます。
 2. **Iris** のタイルを押し、下の **Create** を押します。プレビューに色の輪が置かれ、タイムラインにレイヤーが 1 本増えます。
-   <img src="docs/media/window_step2.jpg" alt="2：レシピ Iris を置いた所" width="560">
+   <img src="docs/pictures/window_step2.jpg" alt="2：レシピ Iris を置いた所" width="560">
 3. 輪を選んだまま、タブの 2 つ目（fx、**Effects**）に替えて `Glow` を探し、押して下の **Add** を押します。輪が光り、ボタンが **Remove**（外す）に変わります。
-   <img src="docs/media/window_step3.jpg" alt="3：Glow をかけた所" width="560">
+   <img src="docs/pictures/window_step3.jpg" alt="3：Glow をかけた所" width="560">
 4. 右上の **Render** を押すと、書き出しの小窓が出ます。名前（例 `first`）を入れて、小窓の **Render** を押します。
-   <img src="docs/media/window_step4.jpg" alt="4：書き出しの小窓" width="560">
+   <img src="docs/pictures/window_step4.jpg" alt="4：書き出しの小窓" width="560">
 5. プロジェクトの隣に `first.mp4` ができ、上に `Written: first.mp4` と出ます。
-   <img src="docs/media/window_step5.jpg" alt="5：書き出した所" width="560">
+   <img src="docs/pictures/window_step5.jpg" alt="5：書き出した所" width="560">
 
 ### ネットのエフェクトを 1 本追加する
 
@@ -211,9 +211,9 @@ Motolii の一番の使い方です。例として、[ISF-Files](https://github.
 1. エフェクトのファイル（`.fs`）をダウンロードします。例：ISF-Files のページで `ISF/ASCII Art.fs` を開き、右上の **Download raw file**（↓ のボタン）を押します。
 2. Finder で ⌘⇧G を押し、`~/Library/Application Support/Motolii/` と打って開きます。中に `effects` フォルダを作り（無ければ）、ファイルを入れます。
 3. Effects タブに、すぐ出ます（再起動は要りません）。サムネイル（気球の写真にそのエフェクトをかけた見本）も数秒で自動で作られ、ポインタを乗せると動きます。既定の値では見た目が変わらない物には **NO CHANGE** と出ます。レイヤーを選んで、タイルを押し、下の **Add** を押します。
-   ![Effects タブに ASCII Art が出た所](docs/media/drop_shelf.jpg)
+   ![Effects タブに ASCII Art が出た所](docs/pictures/drop_shelf.jpg)
 4. プレビューでも書き出しでも、こうなります（写真に ASCII Art をかけた所）。
-   ![写真に ASCII Art をかけて書き出した所](docs/media/drop_ascii.jpg)
+   ![写真に ASCII Art をかけて書き出した所](docs/pictures/drop_ascii.jpg)
 
 WGSL（`.wgsl`）、レシピ（`.js` を `recipes/` に）、関係（`.js` を `relations/` に）、イージング（`.way` を `ways/` に）、AviUtl2 のスクリプト（作者のフォルダごと `aviutl_scripts/` に）も同じように置けます。保存したファイル名の最後が `.fs` になっているか確かめてください（ブラウザが `.txt` を付けることがあります）。
 
@@ -242,7 +242,7 @@ write $HOME/Movies/Motolii/first_cmd.mp4
 EOF
 ```
 
-![最初の 1 本：線の模様が波打ち、色がずれる](docs/media/first.gif)
+![最初の 1 本：線の模様が波打ち、色がずれる](docs/pictures/first.gif)
 
 - `make Weave`：レシピ「Weave」でレイヤー 1 を作る（`recipes` で一覧）。
 - `effect 1 Glow`：レイヤー 1 にエフェクトをかける（`effects` で一覧）。
@@ -345,7 +345,7 @@ flowchart LR
 | `app/` | アプリの画面（Flutter、macOS） |
 | `thorvg/` | ThorVG を wgpu に載せた前の結合（前の試しのスクリプトが使う） |
 | `old/` | 前の土台の実験（今の作りからは使っていない） |
-| `docs/` | この README の絵と作例（`media/`・`examples/`）、作者の作業メモ（`notes/`） |
+| `docs/` | この README の絵と作例（`pictures/`・`examples/`）、作者の作業メモ（`notes/`） |
 
 </details>
 

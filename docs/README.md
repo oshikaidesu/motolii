@@ -9,7 +9,7 @@
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | コードを触る人 | 全体の作り（窓・中身・描画・動画のつながり）。最初に読む |
 | [`TESTING.md`](TESTING.md) | コードを触る人 | 試験の決まり |
 | [`app/`](app/) | 窓（Flutter）を触る人 | 窓と中身の境目、見た目の決まり、スキンの作り方。入口は [`app/README.md`](../app/README.md) |
-| [`media/`](media/) | — | README とガイドが載せる絵と動画 |
+| [`pictures/`](pictures/) | — | README とガイドが載せる絵と動画（画面の写真・作例の gif） |
 | [`internal/`](internal/) | 作者だけ（読まなくてよい） | `notes/`：作者のやること・採点表。`reports/`：他のアプリ（After Effects・Alight Motion・CapCut など）を調べた記録 |
 
 手伝い方は [`.github/CONTRIBUTING.md`](../.github/CONTRIBUTING.md)（[English](../.github/CONTRIBUTING.en.md)）。

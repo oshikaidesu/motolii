@@ -6,7 +6,7 @@
 
 ## 左のタブ
 
-![左のタブ 7 つ](../media/tabs_left.jpg)
+![左のタブ 7 つ](../pictures/tabs_left.jpg)
 
 左上の小さなアイコンを押して替えます（左から、絵の順）。どのタブも上に検索があります。
 
@@ -22,7 +22,7 @@
 
 ## プレビューのタブ
 
-![Stage と Camera View](../media/tabs_preview.jpg)
+![Stage と Camera View](../pictures/tabs_preview.jpg)
 
 | タブ | 何が見える |
 |---|---|
@@ -31,7 +31,7 @@
 
 ## 右下のタブ
 
-![Camera・Desk・Relations](../media/tabs_right.jpg)
+![Camera・Desk・Relations](../pictures/tabs_right.jpg)
 
 | タブ | 何がある | 使い方 |
 |---|---|---|
