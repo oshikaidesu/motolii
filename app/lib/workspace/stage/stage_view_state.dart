@@ -180,7 +180,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
   Offset? _drawFrom;
 
   // Joined: drawn round on the stage where no thing is (no tool in hand): the things whose middles it goes round are
-  // picked together (Ws.many), and what they may do together is offered beside them (relate.dart).
+  // picked together (Ws.many), and what they may do together is offered beside them (make_relation.dart).
   List<Offset>? _lasso;
 
   // Joined: the pen: a point where the hand came down, its handle drawn out as far as the hand was dragged (a tap: a

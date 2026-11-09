@@ -4,10 +4,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 import 'tool_panel_widgets.dart';
-import '../ws.dart';
-import '../two_fingers.dart';
+import '../state/state.dart';
+import '../../widgets/two_fingers.dart';
 
 const _zMax = 3000.0;
 

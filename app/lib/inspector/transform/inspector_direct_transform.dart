@@ -5,8 +5,8 @@ import 'package:motolii/inspector/transform/inspector_direct_transform_canvas.da
 import 'package:motolii/inspector/transform/inspector_direct_transform_value_glyph.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 
-import '../../style/theme.dart';
-import '../../style/tokens.dart';
+import '../../skin/theme.dart';
+import '../../skin/tokens.dart';
 import '../inspector_parts.dart';
 
 /// What a point on the canvas grabs. Each zone edits one Transform row.

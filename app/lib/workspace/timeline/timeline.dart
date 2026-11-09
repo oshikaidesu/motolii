@@ -13,20 +13,20 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../forms/forms.dart';
+import '../../skin/forms/forms.dart';
 import '../../bridge/motolii.dart' show Motolii, mediaSecondsOf;
-import '../two_fingers.dart';
-import '../ableton.dart' show wsTimelineAsk, wsAskRename, wsAskTimeline, wsMarkPicked;
-import '../../parts/timeline_parts.dart' show TpGlyph, TpGlyphPainter;
-import '../../style/tokens.dart';
-import '../key_drag.dart';
-import '../keys.dart' show CommandIntent;
+import '../../widgets/two_fingers.dart';
+import '../commands/command_actions.dart' show wsTimelineAsk, wsAskRename, wsAskTimeline, wsMarkPicked;
+import '../../widgets/timeline_painters.dart' show TpGlyph, TpGlyphPainter;
+import '../../skin/tokens.dart';
+import '../edits/keyframe_edits.dart';
+import '../commands/keymap.dart' show CommandIntent;
 import 'timeline_kept.dart';
 import 'timeline_paint.dart';
-import '../relate.dart';
-import '../ws.dart';
-import '../ws_menu.dart';
-import '../../parts/text_gestures.dart';
+import '../edits/make_relation.dart';
+import '../state/state.dart';
+import '../commands/context_menu.dart';
+import '../../widgets/text_gestures.dart';
 part 'timeline_asked.dart';
 part 'timeline_view.dart';
 part 'timeline_drag.dart';
@@ -326,7 +326,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
         m!.later('together', number: 1);
         m.later('mark', number: at);
         m.later('mark', number: to, word: name);
-        if (_ws!.markColours[at] case final k?) m.later('mark_colour', number: to, word: '$k'); // (its colour with it)
+        if (_ws!.markColors[at] case final k?) m.later('mark_colour', number: to, word: '$k'); // (its colour with it)
         _ws!.after(m.later('together'));
       } else {
         // (held and let go where it was, a hand's shake taken for a drag: a click, it goes there and picks it as _rulerTap does; golf (88))

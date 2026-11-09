@@ -5,9 +5,9 @@
 import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/widgets.dart';
 
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 import 'tool_panel_widgets.dart';
-import '../ws.dart';
+import '../state/state.dart';
 
 class BlendTool extends StatelessWidget {
   const BlendTool({super.key});

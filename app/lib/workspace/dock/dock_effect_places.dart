@@ -8,13 +8,13 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../parts/text_gestures.dart' show TextGestures;
-import '../../style/tokens.dart';
+import '../../widgets/text_gestures.dart' show TextGestures;
+import '../../skin/tokens.dart';
 import 'dock_glyphs.dart';
-import 'dock_parts.dart';
+import 'dock_widgets.dart';
 import '../shelf/effect_decks.dart';
-import '../ws.dart';
-import '../ws_menu.dart';
+import '../state/state.dart';
+import '../commands/context_menu.dart';
 
 const dockFxListHeight = 176.0;
 

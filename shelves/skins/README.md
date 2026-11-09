@@ -114,11 +114,11 @@ Mac に入っている書体なら名前だけでよい。幅の広い書体（M
 
 色・数・印・枠は見た目の差し替えまで。ボタンが何の形をしているか、選択肢がどう並ぶか、札がどう組まれるかまで変えるのがフォーム。React Aria や Radix の「ヘッドレス UI」と同じ分け方で、
 
-- **アプリが渡すもの**：部品の言葉・今の値・押した時にすること（`lib/forms/forms.dart` の `ActionSpec` `ChoiceSpec` `SwitchSpec` `CardSpec`）
+- **アプリが渡すもの**：部品の言葉・今の値・押した時にすること（`lib/skin/forms/forms.dart` の `ActionSpec` `ChoiceSpec` `SwitchSpec` `CardSpec`）
 - **手で触った時の動き**：[naked_ui](https://pub.dev/packages/naked_ui)（押す・手が乗る・選ぶ・切り替える、読み上げも）
 - **フォームが書くもの**：それをどう組み立てて見せるか、だけ
 
-フォームは Dart のクラス1つ（`lib/forms/poster.dart` が見本）。部品の種類ごとに1つずつ書く：
+フォームは Dart のクラス1つ（`lib/skin/forms/poster_forms.dart` が見本）。部品の種類ごとに1つずつ書く：
 
 | フォームの関数 | アプリの部品 |
 |---|---|
@@ -128,9 +128,9 @@ Mac に入っている書体なら名前だけでよい。幅の広い書体（M
 | `onOff` | オン・オフ（Animate all など） |
 | `card` | インスペクタの札1枚 |
 
-新しいフォームは、`lib/forms/<名前>.dart` に `Forms` を継いだクラスを書き、`lib/forms/forms.dart` の `forms` に1行足し、革の theme.xml に `<Forms Value="<名前>"/>` と書く。
+新しいフォームは、`lib/skin/forms/<名前>_forms.dart` に `Forms` を継いだクラスを書き、`lib/skin/forms/forms.dart` の `forms` に1行足し、革の theme.xml に `<Forms Value="<名前>"/>` と書く。
 
-**すぐ試す**：`./live.sh` でアプリを開いておけば、フォームのファイルを保存した瞬間に開いたアプリが描き直る（状態はそのまま）。
+**すぐ試す**：`app/tool/live.sh` でアプリを開いておけば、フォームのファイルを保存した瞬間に開いたアプリが描き直る（状態はそのまま）。
 
 フォームはアプリに組み込まれるので、配った人が置くだけでは着られない（色・数・印・枠は置くだけで着られる）。
 
@@ -149,7 +149,7 @@ Mac に入っている書体なら名前だけでよい。幅の広い書体（M
 
 そのまま渡せる頼み方：
 
-> `shelves/skins/README.md` と `shelves/skins/ROLES.md` を読んで、`~/Library/Application Support/Motolii/skins/<名前>/theme.xml` に「（欲しい見た目）」の革を書いて。`./live.sh` でアプリを開いて見て、気になる所を直して、また見る。読めない文字や差し色の埋もれがなくなるまで繰り返して。
+> `shelves/skins/README.md` と `shelves/skins/ROLES.md` を読んで、`~/Library/Application Support/Motolii/skins/<名前>/theme.xml` に「（欲しい見た目）」の革を書いて。`app/tool/live.sh` でアプリを開いて見て、気になる所を直して、また見る。読めない文字や差し色の埋もれがなくなるまで繰り返して。
 
 ## 文字は切れない
 

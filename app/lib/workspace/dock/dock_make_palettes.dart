@@ -31,7 +31,7 @@ const _blends = {'rgb': 'RGB', 'oklab': 'OKLab', 'hue': 'Hue', 'steps': 'Steps'}
 
 /// How the gradient coloured now is mixed: the picked thing's gradient_blend, or the ink's ('rgb' unsaid).
 String _blendNow(DockCtx c) {
-  final t = _coloured(c), w = t != null && (c.ws.aim ?? 'fill') == 'fill' ? c.ws.inside!.word(t, 'gradient_blend') : c.ws.inkBlend;
+  final t = _colored(c), w = t != null && (c.ws.aim ?? 'fill') == 'fill' ? c.ws.inside!.word(t, 'gradient_blend') : c.ws.inkBlend;
   return w.isEmpty ? 'rgb' : w;
 }
 
@@ -62,7 +62,7 @@ String _blendNow(DockCtx c) {
 /// A gradient put on what is coloured: its colours, and how they are mixed (the picked thing's gradient_blend, or the
 /// ink's, for the next thing drawn); one step.
 void _putGradient(DockCtx c, List<Color> cs, String blend, [List<double>? at]) {
-  final m = c.ws.inside!, t = _coloured(c);
+  final m = c.ws.inside!, t = _colored(c);
   final word = at != null && at.length == cs.length
       ? _wordOfStops([for (var i = 0; i < cs.length; i++) (cs[i], at[i])])
       : [for (final k in cs) _hex(k).substring(1).toLowerCase()].join(' ');
@@ -96,22 +96,22 @@ final _minePals = <_Pal>[];
 
 /// One's own colours, kept one by one (CLIP STUDIO PAINT's colour set: Add Color puts the drawing colour in, a tile
 /// pressed draws with it, a tile's menu replaces or deletes it).
-final _mineColours = <Color>[];
+final _mineColors = <Color>[];
 final _mineGrads = <_Gradient>[];
 bool _mineRead = false;
 File _mineFile = File('${Platform.environment['HOME']}/.motolii/colors.json');
 
 /// Where they are kept (a test points it elsewhere, and forgets what was read: as easeStarsAt).
-void coloursAt(File f) {
+void colorsAt(File f) {
   _mineFile = f;
   _mineRead = false;
   _minePals.clear();
-  _mineColours.clear();
+  _mineColors.clear();
   _mineGrads.clear();
   _tile = 52;
 }
 
-Color? _colourOf(Object? hex) {
+Color? _colorOf(Object? hex) {
   final v = int.tryParse('$hex'.replaceFirst('#', ''), radix: 16);
   return v == null ? null : Color(0xFF000000 | v);
 }
@@ -122,7 +122,7 @@ void _readMine() {
   try {
     final told = jsonDecode(_mineFile.readAsStringSync()) as Map;
     for (final (i, p) in ((told['palettes'] as List?) ?? const []).indexed) {
-      final cs = [for (final h in (p['colors'] as List)) ?_colourOf(h)];
+      final cs = [for (final h in (p['colors'] as List)) ?_colorOf(h)];
       final sh = (p['shares'] as List?)?.map((v) => (v as num).toDouble()).toList();
       if (cs.isNotEmpty) {
         _minePals.add(
@@ -130,10 +130,10 @@ void _readMine() {
         );
       }
     }
-    _mineColours.addAll([for (final h in (told['colours'] as List?) ?? const []) ?_colourOf(h)]);
+    _mineColors.addAll([for (final h in (told['colours'] as List?) ?? const []) ?_colorOf(h)]);
     if (told['tile'] case final num v) _tile = v.toDouble().clamp(_tileLeast, _tileMost);
     for (final g in (told['gradients'] as List?) ?? const []) {
-      final cs = [for (final h in (g['colors'] as List)) ?_colourOf(h)];
+      final cs = [for (final h in (g['colors'] as List)) ?_colorOf(h)];
       final at = (g['at'] as List?)?.map((v) => (v as num).toDouble()).toList();
       if (cs.length > 1) {
         _mineGrads.add(
@@ -173,7 +173,7 @@ void _keepMine() {
               'at': g.at,
             },
         ],
-        'colours': [for (final c in _mineColours) _hex(c)],
+        'colours': [for (final c in _mineColors) _hex(c)],
         'tile': _tile,
       }),
     );

@@ -3,7 +3,7 @@
 part of 'stage.dart';
 
 /// Joined: a colour of the document as Flutter's (six digits; a ramp by its first); null: none.
-Color? _colourOf(String word) {
+Color? _colorOf(String word) {
   // (a gradient by its first stop, where it stands left out)
   final first = word.split(' ').first.split('@').first;
   final v = first.length == 6 || first.length == 8 ? int.tryParse(first.substring(0, 6), radix: 16) : null;
@@ -26,12 +26,12 @@ Color? _colourOf(String word) {
 ({Color? fill, Color? stroke, String width, String round, String font, String size, int align}) _paintNow(Ws ws) {
   final m = ws.inside!, t = int.tryParse(ws.selected ?? '');
   if (t == null) {
-    return (fill: _colourOf(ws.ink), stroke: _colourOf(ws.edge), width: ws.edge.isEmpty ? 'None' : '6 px', round: '0%', font: '—', size: '—', align: 0);
+    return (fill: _colorOf(ws.ink), stroke: _colorOf(ws.edge), width: ws.edge.isEmpty ? 'None' : '6 px', round: '0%', font: '—', size: '—', align: 0);
   }
   final w = m.value(t, 'stroke_width', 0), r = m.value(t, 'round', 0), text = m.word(t, 'kind') == 'text';
   return (
-    fill: _colourOf(m.word(t, 'fill')),
-    stroke: _colourOf(m.word(t, 'stroke')),
+    fill: _colorOf(m.word(t, 'fill')),
+    stroke: _colorOf(m.word(t, 'stroke')),
     width: m.word(t, 'stroke').isEmpty ? 'None' : '${(w ?? 0).round()} px',
     round: '${((r ?? 0) * 200).round()}%', // (of the shorter side's half)
     font: text ? m.word(t, 'file').split('/').last.replaceFirst(RegExp(r'\.ttf$'), '') : '—',
@@ -147,7 +147,7 @@ class _OptionsStrip extends StatelessWidget {
             ),
             SizedBox(width: WsT.inset),
             ConstrainedBox(
-              // (as wide as it is, the tools before it given the rest; wider than the whole strip, drawn smaller, never cut, as dock_parts.dart's trailing)
+              // (as wide as it is, the tools before it given the rest; wider than the whole strip, drawn smaller, never cut, as dock_widgets.dart's trailing)
               constraints: BoxConstraints(maxWidth: (box.maxWidth - 2 * WsT.inset).clamp(0, double.infinity)),
               child: FittedBox(
                 fit: BoxFit.scaleDown,

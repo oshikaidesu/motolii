@@ -5,10 +5,10 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 import 'effect_tiles.dart' show EffectTiles;
 import 'fx_code.dart' show FxCode;
-import '../ws.dart';
+import '../state/state.dart';
 
 // (as it comes it changes nothing)
 const _isf = '''/*{
@@ -50,7 +50,7 @@ void fxPut(Ws ws, String file, {required bool expression, void Function(String w
   if (m == null) return;
   final t = int.tryParse(ws.selected ?? '');
   final (word, title) = _said(t == null ? '' : m.word(t, 'fx'), file);
-  if (open) ws.view['inspector.v.$title.code'] = true; // (its card's Code fold, as a hand opens it: workspace_values.dart _flag)
+  if (open) ws.view['inspector.v.$title.code'] = true; // (its card's Code fold, as a hand opens it: values.dart _flag)
   if (t == null) return expression ? ws.whole('rect', (m) => m.later('fx_file', thing: -1, word: word)) : ws.adjustment(word);
   ws.after(m.later('fx_file', thing: t, word: word), (done, why) {
     told?.call(done ? '' : why);

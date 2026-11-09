@@ -6,7 +6,7 @@ import 'dart:math' as math;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii.dart';
-import 'package:motolii/style/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_graph.dart';
@@ -14,7 +14,7 @@ import 'package:motolii/workspace/tool_panel/tool_panel_ease_numbers.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_shelf.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_trial.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_side.dart';
-import 'package:motolii/workspace/ws.dart';
+import 'package:motolii/workspace/state/state.dart';
 
 part 'tool_panel_ease_ends.dart';
 

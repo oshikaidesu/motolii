@@ -1,11 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
-import 'package:motolii/style/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/inspector/rows/inspector_rows_prop_row.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 
-import '../parts/controls.dart';
+import '../widgets/controls.dart';
 import 'inspector_parts.dart';
 
 // ---- 11. camera and layout ------------------------------------------------------------------------------------------

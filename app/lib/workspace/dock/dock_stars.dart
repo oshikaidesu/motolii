@@ -1,5 +1,5 @@
-// Part of dock_parts.dart: the stars: the star that keeps an item in Starred, and where the starred are kept.
-part of 'dock_parts.dart';
+// Part of dock_widgets.dart: the stars: the star that keeps an item in Starred, and where the starred are kept.
+part of 'dock_widgets.dart';
 
 /// The star that keeps an item in Starred; shown on hover, on the picked row, or when set.
 class DockStar extends StatelessWidget {

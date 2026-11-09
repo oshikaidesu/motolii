@@ -3,12 +3,12 @@
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/effects/inspector_effects.dart' show CardMore;
 import 'package:motolii/inspector/inspector_parts.dart' show Hov;
-import 'package:motolii/style/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart' show easeIsTurned, easeTurn;
 import 'package:motolii/workspace/tool_panel/tool_panel_easing_presets.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
-import 'package:motolii/workspace/ws.dart';
+import 'package:motolii/workspace/state/state.dart';
 
 /// The shapes, one row, one press each (the maker, 10/31: with ways multiplied the second row of AbsentMotion's panel is
 /// not needed). Alight Motion's, in the order of AbsentMotion's EasingCatalog.families, its four beziers first.

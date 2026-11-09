@@ -19,16 +19,16 @@ import 'package:re_highlight/styles/atom-one-dark.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
 
 import '../../bridge/motolii.dart';
-import '../../parts/text_gestures.dart';
-import '../../style/tokens.dart';
+import '../../widgets/text_gestures.dart';
+import '../../skin/tokens.dart';
 import 'dock_effects.dart';
 import '../shelf/copies_tiles.dart';
 import 'dock_glyphs.dart';
-import 'dock_parts.dart';
+import 'dock_widgets.dart';
 import '../shelf/effect_tiles.dart';
 import '../shelf/program_tiles.dart';
-import '../ws.dart';
-import '../ws_menu.dart';
+import '../state/state.dart';
+import '../commands/context_menu.dart';
 
 /// One program on the shelf: its file, what it was written for, and the hash that tells it from the others of those.
 class Program {
@@ -145,7 +145,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
         m.later('make', word: r),
         (done, why) => _told(p, done, why),
         (made) => c.ws.select('$made'),
-      ); // (as Create's tile made it: dock_make_colours.dart _make)
+      ); // (as Create's tile made it: dock_make_colors.dart _make)
     }
     c.ws.after(m.later('door', thing: int.tryParse(c.ws.selected ?? '') ?? 0, word: p.file), (done, why) => _told(p, done, why), (made) {
       if (made <= 0) return;

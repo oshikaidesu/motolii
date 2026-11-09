@@ -7,7 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/transform/inspector_direct_transform.dart' show TransformZone;
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/inspector/inspector_pulled.dart';
-import 'package:motolii/style/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 
 /// The light as it shines: a sun's parallel rays, a point's glow all round, a spot's cone; pull the right rail for its
 /// strength, the ring's knob for how far it reaches, the cone's edge for how wide it opens.

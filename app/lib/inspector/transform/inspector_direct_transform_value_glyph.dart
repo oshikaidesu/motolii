@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/transform/inspector_direct_transform.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/style/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 
 /// The row's current value as a picture: where it sits, how big, which way, how solid.
 class ValueGlyph extends StatelessWidget {

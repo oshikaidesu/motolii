@@ -5,8 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/effects/inspector_effects_k_effects.dart';
 
-import '../parts/controls.dart';
-import '../style/tokens.dart';
+import '../widgets/controls.dart';
+import '../skin/tokens.dart';
 import 'inspector_parts.dart';
 part 'inspector_mock_doc.dart';
 

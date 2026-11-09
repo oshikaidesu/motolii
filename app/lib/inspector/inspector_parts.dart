@@ -4,8 +4,8 @@
 
 import 'package:flutter/widgets.dart';
 
-import '../style/theme.dart';
-import '../style/tokens.dart';
+import '../skin/theme.dart';
+import '../skin/tokens.dart';
 import 'inspector_state.dart';
 
 export 'inspector_advanced.dart';

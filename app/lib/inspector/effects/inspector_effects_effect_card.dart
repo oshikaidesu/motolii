@@ -1,9 +1,9 @@
 // What follows the pointer while an effect is dragged: the folded head, lifted.
 import 'package:flutter/widgets.dart';
-import 'package:motolii/style/theme.dart';
+import 'package:motolii/skin/theme.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
-import 'package:motolii/style/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 
 class EffectCard extends StatefulWidget {
   const EffectCard(this.fx, {super.key, this.first = false});

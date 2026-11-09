@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/style/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 
 /// The value as a small live picture beside its label: a pie for a share, a level for a height, a dot for a point.
 class Gauge extends StatelessWidget {

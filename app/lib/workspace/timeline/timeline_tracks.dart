@@ -40,7 +40,7 @@ extension _WsTimelineTracks on _WsTimelineState {
                         workIn: _workIn,
                         workOut: _workOut,
                         markers: _marksOf(_ws!),
-                        markColours: _markColoursOf(_ws!),
+                        markColors: _markColorsOf(_ws!),
                         beats: _beatsOf(ws),
                         tempo: ws.beats,
                         retimed: _retimedOf(ws),

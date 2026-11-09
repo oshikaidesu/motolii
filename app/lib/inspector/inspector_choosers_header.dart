@@ -2,15 +2,15 @@ import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:motolii/style/theme.dart';
+import 'package:motolii/skin/theme.dart';
 import 'package:motolii/inspector/rows/inspector_rows_prop_row.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 
-import '../parts/controls.dart';
-import '../parts/glyphs.dart';
-import '../style/tokens.dart';
+import '../widgets/controls.dart';
+import '../widgets/glyphs.dart';
+import '../skin/tokens.dart';
 import 'inspector_parts.dart';
-import '../parts/text_gestures.dart';
+import '../widgets/text_gestures.dart';
 
 // ---- 6. choosers and hand-overs -------------------------------------------------------------------------------------
 /// A short list lives in a segmented control; a long one opens a searchable list (G2, G3). Never prev/next cycling (do-not-repeat 6, 7).

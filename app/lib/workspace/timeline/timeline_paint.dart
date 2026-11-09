@@ -7,10 +7,10 @@ import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/foundation.dart' show listEquals, mapEquals, ValueListenable;
 import 'package:flutter/widgets.dart';
 
-import '../../forms/forms.dart';
-import '../../parts/timeline_parts.dart' show tpFine, tpMajor;
-import '../../style/tokens.dart';
-import '../ws.dart';
+import '../../skin/forms/forms.dart';
+import '../../widgets/timeline_painters.dart' show tpFine, tpMajor;
+import '../../skin/tokens.dart';
+import '../state/state.dart';
 
 part 'timeline_tracks_paint.dart';
 
@@ -189,14 +189,14 @@ class WtRulerPainter extends CustomPainter {
     required this.workOut,
     required this.markers,
     this.tempo,
-    this.markColours = const {},
+    this.markColors = const {},
     this.beats = const [],
     this.retimed = const [],
   });
   final WtView view;
   final int fps, workIn, workOut;
   final List<(int, String)> markers;
-  final Map<int, Color> markColours; // (a mark's colour by its frame, if it has one)
+  final Map<int, Color> markColors; // (a mark's colour by its frame, if it has one)
 
   /// Where the films' sound strikes (their Beats), frames: a short tick each at the ruler's foot.
   final List<int> beats;
@@ -247,7 +247,7 @@ class WtRulerPainter extends CustomPainter {
       final x = view.x(f).roundToDouble();
       if (x < -60 || x > s.width) continue;
       final t = _text(name, T.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700));
-      flags.add((Rect.fromLTWH(x, WtM.band + 2, wtFlagRoom(name, x, xs), 12), t, markColours[f] ?? WsT.toneText));
+      flags.add((Rect.fromLTWH(x, WtM.band + 2, wtFlagRoom(name, x, xs), 12), t, markColors[f] ?? WsT.toneText));
     }
     if (view.ppf >= 3) {
       final f0 = view.scroll.floor();
@@ -301,7 +301,7 @@ class WtRulerPainter extends CustomPainter {
       o.workIn != workIn ||
       o.workOut != workOut ||
       o.markers != markers ||
-      !mapEquals(o.markColours, markColours) ||
+      !mapEquals(o.markColors, markColors) ||
       !identical(o.beats, beats);
 }
 

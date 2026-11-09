@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/style/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 
 /// A dial for an angle: turn it by moving around it (the farther out, the finer), or scrub the number beside it.
 /// contract: one turn of the pointer is one turn of the value, so the dial never lies about direction; one undo per drag.

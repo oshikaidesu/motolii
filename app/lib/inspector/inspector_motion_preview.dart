@@ -9,9 +9,9 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/style/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 
-import '../workspace/two_fingers.dart';
+import '../widgets/two_fingers.dart';
 
 /// A hand anywhere on a card (its name, its preview, its tiles): the card's preview plays while it is there.
 class CardOver extends StatefulWidget {

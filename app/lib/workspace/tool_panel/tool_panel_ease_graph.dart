@@ -4,14 +4,14 @@ import 'dart:math' as math;
 
 import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';
-import 'package:motolii/style/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_handles.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
-import 'package:motolii/workspace/ws.dart';
+import 'package:motolii/workspace/state/state.dart';
 
-import '../two_fingers.dart';
+import '../../widgets/two_fingers.dart';
 
 /// The graph: value up, time across. Handles are dragged; only a drag or hover repaints it. The two ends stand on a bar
 /// each, left and right, and are pulled up and down them (the user's, 10/30: "左と右にある点を上下に動かせるように", and

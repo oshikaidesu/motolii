@@ -6,9 +6,9 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_value_marks.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/inspector/rows/inspector_rows_midi.dart';
-import 'package:motolii/style/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 
-import '../../workspace/two_fingers.dart';
+import '../../widgets/two_fingers.dart';
 
 /// One property: label, its value cells, the key mark, the reset mark. The columns are the same on every row (B1) so X/Y/Z line up.
 /// contract: right-click a row for Key this frame / Remove key / Remove animation / Keys from MIDI (om_midi's panel, where

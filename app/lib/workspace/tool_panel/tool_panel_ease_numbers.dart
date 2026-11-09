@@ -7,11 +7,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart' show Hov;
 import 'package:motolii/inspector/rows/inspector_rows.dart' show FoldMark;
-import 'package:motolii/style/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
-import 'package:motolii/workspace/ws.dart';
+import 'package:motolii/workspace/state/state.dart';
 
 typedef _Number = ({String name, int at, double lo, double hi, bool many});
 _Number _n(String name, int at, double lo, double hi, {bool many = false}) => (name: name, at: at, lo: lo, hi: hi, many: many);

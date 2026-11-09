@@ -3,15 +3,15 @@ import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:motolii/parts/controls.dart';
+import 'package:motolii/widgets/controls.dart';
 import 'package:motolii/inspector/controls/inspector_param_controls_angle_dial.dart';
 import 'package:motolii/inspector/controls/inspector_param_controls_gauge.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/inspector/inspector_value_marks.dart';
-import 'package:motolii/style/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 
-import '../../workspace/two_fingers.dart';
-import '../../parts/text_gestures.dart';
+import '../../widgets/two_fingers.dart';
+import '../../widgets/text_gestures.dart';
 
 /// One parameter as a block: the name on top, the number large under it, a picture of the value in the top-right corner.
 /// contract: every block still shows the number and takes typing, scrubbing and the sideways slide; the picture is added, never a replacement.

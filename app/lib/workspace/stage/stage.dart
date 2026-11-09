@@ -5,16 +5,16 @@ import 'dart:io' show Directory, File;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../forms/forms.dart';
-import '../../parts/skin_parts.dart';
+import '../../skin/forms/forms.dart';
+import '../../skin/svg_parts.dart';
 
-import '../../parts/glyphs.dart';
-import '../../style/tokens.dart';
+import '../../widgets/glyphs.dart';
+import '../../skin/tokens.dart';
 import 'stage_art.dart';
 import 'stage_view.dart';
-import '../two_fingers.dart';
+import '../../widgets/two_fingers.dart';
 import '../workspace.dart' show wsPlace;
-import '../ws.dart';
+import '../state/state.dart';
 
 part 'stage_options.dart';
 
@@ -35,7 +35,7 @@ const _tools = [
   (G.camera, 'Camera', 'C'), // (After Effects' Unified Camera tool, C: a drag turns the camera round where it looks, the wheel brings it nearer)
 ];
 
-/// The tools as the window's commands (`tool.select`, `tool.text`…), their letters in its keymap (keys.dart): heard
+/// The tools as the window's commands (`tool.select`, `tool.text`…), their letters in its keymap (keymap.dart): heard
 /// wherever the window has the keys and no words are being typed, as After Effects' and Photoshop's tool letters are,
 /// not only while the stage has them (golf_noise.md (78): a document box closed left them to the window, and T was
 /// not heard).

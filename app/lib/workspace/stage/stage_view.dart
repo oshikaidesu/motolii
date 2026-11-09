@@ -11,20 +11,20 @@ import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter/services.dart' show HardwareKeyboard, KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 import 'stage_art.dart';
-import '../two_fingers.dart';
+import '../../widgets/two_fingers.dart';
 import '../../bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiMoment, MotoliiWrites, MotoliiQuestions, MotoliiShelves, MotoliiWatch;
-import '../../parts/timeline_parts.dart' show TpGlyph, TpGlyphView;
+import '../../widgets/timeline_painters.dart' show TpGlyph, TpGlyphView;
 import '../../inspector/inspector_material.dart' show textToType;
-import '../relate.dart';
+import '../edits/make_relation.dart';
 
 import 'package:perfect_freehand/perfect_freehand.dart' show getStrokeOutlinePoints, getStrokePoints, PointVector, StrokeOptions;
 import 'package:perfect_freehand/src/get_stroke_radius.dart'
     show getStrokeRadius; // (how wide its pressure makes a point: kept private by the package, read as it is)
 
-import '../ws.dart';
-import '../ws_menu.dart';
+import '../state/state.dart';
+import '../commands/context_menu.dart';
 part 'stage_view_state.dart';
 part 'stage_view_drag.dart';
 part 'stage_view_draw.dart';

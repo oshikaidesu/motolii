@@ -171,10 +171,10 @@ engine/edit.sh build.motolii < /dev/null
 Builds the engine, downloading ThorVG, Skia, libtess2 and Jolt the first time. `edit.sh` opens a project file and waits for commands; `< /dev/null` gives it none, so it builds, makes an empty file and exits. `engine/out/libmotolii.dylib` existing means it worked (`build.motolii` can be deleted).
 
 ```bash
-app/live.sh
+app/tool/live.sh
 ```
 
-Opens the app (the first time it seems to stall for 1–3 minutes while it builds; the text scrolling in the terminal can be ignored). The project file is `~/Movies/Motolii/Untitled.motolii` (saved automatically), and exported videos go beside it. Closing the window quits, and closing the terminal closes the window. Next time, in a new terminal: `cd ~/motolii && app/live.sh` (if you cloned in your home folder).
+Opens the app (the first time it seems to stall for 1–3 minutes while it builds; the text scrolling in the terminal can be ignored). The project file is `~/Movies/Motolii/Untitled.motolii` (saved automatically), and exported videos go beside it. Closing the window quits, and closing the terminal closes the window. Next time, in a new terminal: `cd ~/motolii && app/tool/live.sh` (if you cloned in your home folder).
 
 ### The screen
 
@@ -259,7 +259,7 @@ The calls of the 8-second example at the top are in [`docs/using/make_intro_movi
 
 | You see | Do |
 |---|---|
-| `flutter: command not found` | Run the second line of "Get Flutter" again, or `FLUTTER=/path/to/flutter app/live.sh` |
+| `flutter: command not found` | Run the second line of "Get Flutter" again, or `FLUTTER=/path/to/flutter app/tool/live.sh` |
 | `brew: command not found` | Install Homebrew with the one line on [brew.sh](https://brew.sh/) |
 | `xcrun: error`, or Xcode missing | Install Xcode from the App Store, open it once to add its components, then `sudo xcodebuild -license accept` |
 | `No space left on device` | Free 10 GB or more, then run the command that stopped again |
@@ -274,7 +274,7 @@ Still stuck? Open an [issue](https://github.com/oshikaidesu/motolii/issues) with
 <details>
 <summary><b>Updating and removing</b></summary>
 
-- Update: `git pull`, then run `engine/gpu/build.sh` and `engine/edit.sh build.motolii < /dev/null` again (only what changed is rebuilt); `app/live.sh` rebuilds the app.
+- Update: `git pull`, then run `engine/gpu/build.sh` and `engine/edit.sh build.motolii < /dev/null` again (only what changed is rebuilt); `app/tool/live.sh` rebuilds the app.
 - Remove: delete the `motolii` folder (everything downloaded and built is inside it). Your projects and videos stay in `~/Movies/Motolii/` (or wherever else you put them). Flutter: delete `~/flutter`. What `brew bundle` installed goes with `brew uninstall`.
 
 </details>

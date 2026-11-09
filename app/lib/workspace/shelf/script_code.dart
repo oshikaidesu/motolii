@@ -11,7 +11,7 @@ import 'package:flutter/widgets.dart';
 
 import '../dock/dock_program.dart' show ProgramCode;
 import 'effect_tiles.dart' show EffectTiles;
-import '../ws.dart';
+import '../state/state.dart';
 
 class ScriptCode extends StatefulWidget {
   const ScriptCode(this.ws, this.thing, {super.key});

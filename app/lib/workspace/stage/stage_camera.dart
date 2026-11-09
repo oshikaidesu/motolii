@@ -3,9 +3,9 @@
 import 'package:flutter/widgets.dart';
 
 import '../../bridge/motolii.dart' show Motolii, MotoliiWrites;
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 import 'stage_art.dart';
-import '../ws.dart';
+import '../state/state.dart';
 
 class WsCameraView extends StatefulWidget {
   const WsCameraView({super.key});

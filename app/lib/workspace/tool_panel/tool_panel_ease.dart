@@ -6,7 +6,7 @@ import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart' show easeIsLaid, easeIsTurned;
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_state.dart';
 
-import '../ws.dart';
+import '../state/state.dart';
 
 enum EaseKind { bezier, hold }
 

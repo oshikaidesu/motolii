@@ -3,9 +3,9 @@
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 import 'timeline_paint.dart';
-import '../ws.dart';
+import '../state/state.dart';
 
 class WtKeptPainter extends CustomPainter {
   WtKeptPainter({required this.view, required this.kept}) : super(repaint: kept);

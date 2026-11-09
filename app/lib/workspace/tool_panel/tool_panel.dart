@@ -3,9 +3,9 @@
 import 'package:flutter/widgets.dart';
 
 import '../../inspector/inspector_parts.dart' show Hov;
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 import 'tool_panel_widgets.dart';
-import '../ws.dart';
+import '../state/state.dart';
 
 class WsToolPanel extends StatelessWidget {
   const WsToolPanel({super.key});

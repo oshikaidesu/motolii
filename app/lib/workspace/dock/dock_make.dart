@@ -12,15 +12,15 @@ import 'package:material_color_utilities/material_color_utilities.dart';
 
 import '../../bridge/motolii.dart' show motoliiShelves;
 import '../../inspector/inspector_parts.dart' show Pop;
-import '../../parts/text_gestures.dart' show TextGestures, wordsPicked;
-import '../../parts/media_parts.dart' show MiniSlider;
-import '../../style/tokens.dart';
+import '../../widgets/text_gestures.dart' show TextGestures, wordsPicked;
+import '../../widgets/media.dart' show MiniSlider;
+import '../../skin/tokens.dart';
 import '../tool_panel/tool_panel_widgets.dart' show ToolChip;
 import 'dock_glyphs.dart';
-import 'dock_parts.dart';
-import '../../style/theme.dart' show ColorTheme;
-import '../colour_wheel.dart';
-import '../ws_menu.dart';
+import 'dock_widgets.dart';
+import '../../skin/theme.dart' show ColorTheme;
+import 'dock_color_wheel.dart';
+import '../commands/context_menu.dart';
 import '../shelf/copies_tiles.dart';
 import '../shelf/material_tiles.dart';
 import '../shelf/create_preview.dart';
@@ -28,8 +28,8 @@ import 'dock_effects.dart' show TileMoving;
 import '../shelf/effect_tiles.dart' show EffectTiles;
 import '../shelf/empty_fx.dart';
 import '../shelf/shelf_add.dart';
-import '../ws.dart';
-part 'dock_make_colours.dart';
+import '../state/state.dart';
+part 'dock_make_colors.dart';
 part 'dock_make_create.dart';
 part 'dock_make_expressions.dart';
 part 'dock_make_palettes.dart';
@@ -73,7 +73,7 @@ void _fillLetters(DockCtx c, int t, (int, int) at, String word) {
 }
 
 void _fill(DockCtx c, String word) {
-  final m = c.ws.inside!, t = _coloured(c);
+  final m = c.ws.inside!, t = _colored(c);
   if ((c.ws.aim == null || c.ws.aim == 'fill') && RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(word)) {
     if (_lettersPicked(c, t) case final at?) return _fillLetters(c, t!, at, word.toLowerCase());
   }
@@ -126,7 +126,7 @@ void _fill(DockCtx c, String word) {
 }
 
 /// The colours of the things, each by the thing's name: what the document's things are filled with (a ramp by its first).
-Map<String, Color> usedColours(Ws ws) {
+Map<String, Color> usedColors(Ws ws) {
   final m = ws.inside;
   if (m == null) return const {};
   return {
@@ -152,7 +152,7 @@ class ColorsShelf extends StatelessWidget {
 
   /// The thing a colour goes to now and its value's name (null: the next thing drawn).
   (int?, String) _target() {
-    final t = _coloured(c), aim = c.ws.aim ?? 'fill';
+    final t = _colored(c), aim = c.ws.aim ?? 'fill';
     return (t ?? (aim == 'fill' || aim == 'stroke' ? null : 0), aim);
   }
 
@@ -164,7 +164,7 @@ class ColorsShelf extends StatelessWidget {
     }); // (what it colours is said at its top: built again when a link or the tool strip aims it, or a thing is picked)
     _readMine();
     final m = c.ws.inside!, usedCount = <Color, int>{};
-    for (final col in usedColours(c.ws).values) {
+    for (final col in usedColors(c.ws).values) {
       usedCount[col] = (usedCount[col] ?? 0) + 1; // (how many things are of it: how much of the picture, roughly)
     }
     final used = usedCount.keys.toList();
@@ -180,7 +180,7 @@ class ColorsShelf extends StatelessWidget {
         // (a hand on the wheel: it keeps the hue the hand gave, which a grey written as hex would lose)
       } else if (gradient) {
         _wheel = HSVColor.fromColor(stops[_stop].$1.withValues(alpha: 1));
-      } else if (_colourOf(word.split(' ').first.split('@').first) case final col?) {
+      } else if (_colorOf(word.split(' ').first.split('@').first) case final col?) {
         _wheel = HSVColor.fromColor(col);
       }
     }
@@ -294,7 +294,7 @@ class ColorsShelf extends StatelessWidget {
                     label: label,
                     on: _blendNow(c) == b,
                     onTap: () {
-                      final t = _coloured(c);
+                      final t = _colored(c);
                       t != null && name == 'fill' ? c.ws.after(m.later('say', thing: t, name: 'gradient_blend', word: b)) : c.set(() => c.ws.inkBlend = b);
                     },
                   ),
@@ -308,7 +308,7 @@ class ColorsShelf extends StatelessWidget {
               constraints: BoxConstraints(maxWidth: Shape.z(170)),
               child: AspectRatio(
                 aspectRatio: 1,
-                child: WsColourWheel(
+                child: WsColorWheel(
                   key: const ValueKey('colour-square'),
                   color: _wheel,
                   onChanged: to,
@@ -449,7 +449,7 @@ class ColorsShelf extends StatelessWidget {
       child: _Bento([
         // (what was added last at the top: one's own colours, one's own gradients, newest first; the user, "追加はいつも上から"; no app found doing so: Procreate fills the next empty slot, Canva sorts by hue)
         if (q.isEmpty)
-          for (final (i, col) in _mineColours.indexed) _Box('mine', i, 1, colour: col),
+          for (final (i, col) in _mineColors.indexed) _Box('mine', i, 1, colour: col),
         for (final (i, g) in grads)
           if (g.saved) _Box('grads', i, 1, grad: g),
         if (q.isEmpty)
@@ -505,7 +505,7 @@ class ColorsShelf extends StatelessWidget {
 }
 
 /// The thing the shelf colours: the one picked (a sound has nothing to colour: the next thing drawn, then, as with none).
-int? _coloured(DockCtx c) => switch (int.tryParse(c.ws.selected ?? '')) {
+int? _colored(DockCtx c) => switch (int.tryParse(c.ws.selected ?? '')) {
   final t? when wsSound(c.ws.inside!, t) => null,
   final t => t,
 };
@@ -513,7 +513,7 @@ int? _coloured(DockCtx c) => switch (int.tryParse(c.ws.selected ?? '')) {
 /// What is coloured now, as the document or the inks say it: the picked thing's value aimed at (its fill, unless a
 /// link or the tool strip aimed another), else the stage's, else the ink or edge of the next thing drawn.
 String _paintNow(DockCtx c) {
-  final t = _coloured(c), aim = c.ws.aim ?? 'fill', m = c.ws.inside!;
+  final t = _colored(c), aim = c.ws.aim ?? 'fill', m = c.ws.inside!;
   if (t != null) return m.word(t, aim);
   if (aim == 'fill' || aim == 'stroke') return aim == 'stroke' ? c.ws.edge : c.ws.ink;
   return m.word(0, aim);

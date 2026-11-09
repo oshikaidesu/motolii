@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiMoment, MotoliiWrites, MotoliiQuestions, MotoliiShelves, MotoliiWatch;
-import '../ws.dart';
+import '../state/state.dart';
 
 /// The poster's own inks: flat, saturated, opaque. They belong to the picture, never to the chrome.
 abstract final class ArtInk {

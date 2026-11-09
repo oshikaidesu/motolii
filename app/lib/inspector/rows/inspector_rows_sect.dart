@@ -1,9 +1,9 @@
 // A group: a heading and its rows. How groups are told apart is the Editorial knob: A a rule above, B a grey step, C a rule under a large heading.
 import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';
-import 'package:motolii/forms/forms.dart';
+import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/style/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 
 /// A group: a heading and its rows. How groups are told apart is the Editorial knob: A a rule above, B a grey step, C a rule under a large heading.
 class Sect extends StatelessWidget {

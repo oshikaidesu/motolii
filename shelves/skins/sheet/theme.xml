@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Sheet: one paper ground. Ink is the structure. The red mark is only where you are (the mode, a key).
      Layer kinds stay a whisper of graphite, so the picture on the stage keeps the colour.
-     How the five controls are put together is lib/forms/sheet.dart. -->
+     How the five controls are put together is app/lib/skin/forms/sheet_forms.dart. -->
 <Motolii>
 	<Theme>
 		<Forms Value="sheet"/>

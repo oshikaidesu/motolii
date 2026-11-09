@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../style/tokens.dart';
+import '../skin/tokens.dart';
 import 'inspector_parts.dart';
 
 /// The panels that own lists (fonts, colours, eases). The Inspector shows what is set and sends you there; it never holds the list.

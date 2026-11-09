@@ -2,15 +2,15 @@
 // touchables the tool panel's bodies use (chip, icon button, scrub field, readout).
 import 'package:flutter/widgets.dart';
 
-import '../../parts/skin_parts.dart';
+import '../../skin/svg_parts.dart';
 
-import '../../parts/text_gestures.dart';
+import '../../widgets/text_gestures.dart';
 import '../../inspector/inspector_parts.dart' show Hov, Pop;
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 import 'tool_panel_align.dart';
 import 'tool_panel_blend.dart';
-import '../ws.dart';
-import '../two_fingers.dart';
+import '../state/state.dart';
+import '../../widgets/two_fingers.dart';
 
 /// One tool the tool panel can hold. [acts] is what it works on, said in two words.
 /// A tool of the tool panel: its name, its hue, what it acts on, and what the tool panel holds while it is open (none yet: a card

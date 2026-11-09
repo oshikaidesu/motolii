@@ -83,7 +83,7 @@ extension MotoliiDocument on Motolii {
   };
 
   /// The marks that have a colour: the moment of each to its colour, 1 to 16 (the label colours).
-  Map<double, int> get markColours => {
+  Map<double, int> get markColors => {
     for (final line in ((_document['markColours'] as String?) ?? '').split('\n'))
       if (line.indexOf(' ') case final i when i > 0) double.parse(line.substring(0, i)): int.parse(line.substring(i + 1)),
   };

@@ -9,12 +9,12 @@ import 'package:flutter/widgets.dart';
 
 import '../../bridge/motolii.dart' show Motolii, mediaInfoOf, mediaSecondsOf;
 import '../../inspector/inspector_parts.dart' show Pop;
-import '../../style/tokens.dart';
+import '../../skin/tokens.dart';
 import 'dock_resizable.dart';
 import 'dock_glyphs.dart';
-import 'dock_parts.dart';
+import 'dock_widgets.dart';
 import 'dock_tags.dart';
-import '../ws.dart';
+import '../state/state.dart';
 part 'dock_files_read.dart';
 part 'dock_files_used.dart';
 part 'dock_files_sheet.dart';

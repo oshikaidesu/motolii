@@ -28,7 +28,7 @@ import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter/painting.dart' show FileImage, ResizeImage;
 
 import '../../bridge/motolii.dart';
-import '../ws.dart' show wsTextFont;
+import '../state/state.dart' show wsTextFont;
 
 part 'effect_tiles_knob.dart';
 part 'effect_tiles_seen.dart';
@@ -67,7 +67,7 @@ abstract final class EffectTiles {
   static const still = 10;
 
   /// How much moving each knob of [file] alone shows its effect, 0 to 10, as an agent that read only the effect's code
-  /// weighed it (knob_weights.json beside this file, by the shelf's entry: its file from the library's folder, an AviUtl2 script's
+  /// weighed it (app/assets/effect_parameter_weights.json, by the shelf's entry: its file from the library's folder, an AviUtl2 script's
   /// #name and all; set beside AbsentMotion's effect_showcase.json, where a hand says which knob its tile moves, its
   /// heaviest was that knob in 26 of 28), by the inside's names (document/scripts.h doc_screen_knob: the file's stem before
   /// the knob's), `_time` how much letting it run shows it. Empty: not weighed (the maker's own).
@@ -144,7 +144,7 @@ abstract final class EffectTiles {
   static Map<String, dynamic> _entry(String dir, String file) {
     final all = _weights ??= () {
       try {
-        return jsonDecode(File('${Directory(motoliiDir).absolute.parent.path}/app/lib/workspace/shelf/knob_weights.json').readAsStringSync())
+        return jsonDecode(File('${Directory(motoliiDir).absolute.parent.path}/app/assets/effect_parameter_weights.json').readAsStringSync())
             as Map<String, dynamic>;
       } catch (_) {
         return const <String, dynamic>{};
