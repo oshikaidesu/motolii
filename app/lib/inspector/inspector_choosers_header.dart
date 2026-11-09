@@ -3,8 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/theme.dart';
-import 'package:motolii/inspector/rows/inspector_rows_prop_row.dart';
-import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 
 import '../widgets/controls.dart';
 import '../widgets/glyphs.dart';
@@ -439,33 +437,7 @@ class EmptyState extends StatelessWidget {
         ),
         if (x.doc.b['stage.open'] ?? false)
           for (final c in x.doc.cards) ValuesCard(c), // (the host's own: the whole picture's values)
-        if (x.cfg.maybe)
-          Sect(
-            title: 'Composition',
-            first: true,
-            children: [
-              PropRow(
-                id: 'comp.w',
-                label: 'Width',
-                keyable: false,
-                cells: const [NumField(id: 'comp.w', unit: 'px', min: 16, max: 8192)],
-              ),
-              PropRow(
-                id: 'comp.h',
-                label: 'Height',
-                keyable: false,
-                cells: const [NumField(id: 'comp.h', unit: 'px', min: 16, max: 8192)],
-              ),
-              PropRow(
-                id: 'comp.fps',
-                label: 'Frame rate',
-                keyable: false,
-                cells: const [NumField(id: 'comp.fps', unit: 'fps', min: 1, max: 240)],
-              ),
-            ],
-          )
-        else
-          SizedBox(height: Shape.s(1)),
+        SizedBox(height: Shape.s(1)),
         if (!x.cfg.maybe) Container(height: 1, color: ed.rule),
       ],
     );

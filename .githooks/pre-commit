@@ -2,6 +2,7 @@
 # Before every commit: is every file of our own still one job, 500 lines at most? (.githooks/size_check.py)
 # Then: does the tree still keep the layout of AGENTS.md 「構成の目標」? (.githooks/layout_check.py)
 # Then: does every path a shelf file names still lead somewhere? (.githooks/path_check.py)
+# Then: is every Inspector card the engine's declaration, none drawn by hand? (.githooks/card_check.py)
 # Then: is every staged Dart file as `dart format` leaves it? (.githooks/format_check.py; skipped without dart)
 # Then: do the added lines use a dropped house word? (.githooks/word_check.py; report only until its FAIL switch is on)
 # Set up once with:  git config core.hooksPath .githooks        To commit all the same:  git commit --no-verify
@@ -11,7 +12,7 @@ hooks="$(git rev-parse --show-toplevel)/.githooks"
 left() { grep -cv -e '^#' -e '^[[:space:]]*$' "$hooks/$1" 2>/dev/null; }
 echo "debt: $(left over_500.txt) files over 500 lines (.githooks/over_500.txt)," \
      "$(left path_check_allow.txt) paths allowed to lead nowhere (.githooks/path_check_allow.txt)" >&2
-for check in size_check.py layout_check.py path_check.py format_check.py word_check.py; do
+for check in size_check.py layout_check.py path_check.py card_check.py format_check.py word_check.py; do
     [ -f "$hooks/$check" ] || continue
     python3 "$hooks/$check" || { echo "refused by .githooks/$check: what it refuses and how to fix it, .githooks/README.md" >&2; exit 1; }
 done
