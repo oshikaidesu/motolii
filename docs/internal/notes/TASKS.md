@@ -4,7 +4,7 @@
 土台：Filament を Dawn（WebGPU）で。Mac と Windows の両方。1080p / 60コマ毎秒。
 書き方：どのタスクも「通ったと言える一文」を1行で。言えないなら、まだタスクになってない。
 **作る前に、ディレクトリを見る。** engine/ は本体、lab/ は実験、app/ は窓、docs/ は調べた紙。
-経過の全文は `docs/internal/reports/logs/tasks_log_2026-10-15.md`、`docs/internal/reports/logs/tasks_log_2026-10-14.md`（前の日の分は git の履歴）。
+経過の全文は `docs/internal/notes/tasks_history/tasks_log_2026-10-15.md`、`docs/internal/notes/tasks_history/tasks_log_2026-10-14.md`（前の日の分は git の履歴）。
 
 最終更新：2026-10-19
 
@@ -55,7 +55,7 @@
 
 ## 今の状態（2026-10-15 夜）
 
-10/14 夜に決めた 0〜8 の順は、ほぼ済んだ。経過の全文は `docs/internal/reports/logs/tasks_log_2026-10-15.md`。
+10/14 夜に決めた 0〜8 の順は、ほぼ済んだ。経過の全文は `docs/internal/notes/tasks_history/tasks_log_2026-10-15.md`。
 
 | # | 中身 | 状態 | 証拠 |
 |---|---|---|---|
@@ -198,7 +198,7 @@
 | 43 | 革（スキン）：人でも LLM でも、`~/.motolii/skins/<名前>/theme.xml` を書いて、撮って見て、直せる。中身はそのままで窓全体の見た目が変わる（色・明暗・角の丸み・余白・部品の大きさ・文字の大きさ・書体・印の絵）。`Background`・`Foreground`・差し色の3色で灰色の段が全部作られる（Material の HCT を借用）。View › Skin で選ぶ。`skins/shoot.sh <フォルダ>` がそのフォルダに preview.png を書く。手引き `shelves/skins/README.md`、名前の一覧 `shelves/skins/ROLES.md`（窓のどこかの表つき、コードと食い違うと `test/skin_names_test.dart` が落ちる） | 済み（10/20）：外の LLM 3人に手引きだけで作らせて 6→7→8/10、指摘は全部直した。窓の直書きの大きさは0（全部 `Size`／`Spacing` を読む）。文字は切れずに縮めて収める（`integration_test/skin_fit_test.dart`：意地悪な革7つ × 棚5つ × 選ぶ物6通りで切れ0・はみ出し0、長い名前は auto_size_text で2行まで）。残り：線の太さ（細線は1画素のまま）、配る場所調べ `research_notes/skins/SUMMARY.md` |
 | 44 | 効果は物に付く（After Effects の層の効果、ただしカメラから見た平面：網点は画面にまっすぐ）：物を選んで効果の一覧を押すとその物だけにかかり、何も選んでいなければ舞台全体。立体・写真・文字・形・動画のどれでも | 一歩目（10/19、b9ba631・9bd14f2）：物の fx に .wgsl を並べると、その物の層を自分の絵に描いて効果をかけ、物の形で切り抜いて重ねる（`check/thing_fx.txt`、`docs/internal/reports/window/screen/thing_fx.png`）。背景をコピー（689474a）：調整レイヤーは作らず、塗り behind（後ろに見えている絵）＋効果＋重ね方を1つの物に同時に持つ（効果が先、重ね方が後）。残り：はみ出す効果（光のにじみ）の余白、写真・動画は塗りを持たないので背景のコピーにならない、効果を付けた立体は他の立体とめり込まない（1枚の層）、物ごとに描画1回と効果の分だけ重くなる（測っていない） |
 | 32 | 書き出しを OpenTimelineIO で（タイムラインを外の編集ソフトへ） | 手つかず。要るかはきみの判断 |
-| 4 | 今日の動画（led、mask）が Windows でも同じ絵で60コマ毎秒で出る | 手つかず（機械が無い）。今の土台の道筋は `engine/WINDOWS.md` の頭に書いた（読んだだけ） |
+| 4 | 今日の動画（led、mask）が Windows でも同じ絵で60コマ毎秒で出る | 手つかず（機械が無い）。今の土台の道筋は `docs/engine/WINDOWS.md` の頭に書いた（読んだだけ） |
 
 ## 小さい穴（まとめて、または通りがかりに）
 

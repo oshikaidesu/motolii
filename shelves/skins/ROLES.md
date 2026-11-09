@@ -1,5 +1,7 @@
 # 革で使える名前（theme.xml の役割）
 
+*Every name a skin's `theme.xml` can set (`<Name Value="..."/>`): colours, sizes and fonts. A name left out keeps the app's own value; the app rereads the file the moment it changes.*
+
 スキンのフォルダの `theme.xml` に `<名前 Value="..."/>` を並べる。書かない名前はアプリのいつもの値のまま。アプリは theme.xml が書き換わった瞬間に読み直す。見本は [paper](./paper/theme.xml)（短い）と [labs](./labs/theme.xml)（作り込み）。
 この一覧とアプリが読む名前は揃えておく。
 

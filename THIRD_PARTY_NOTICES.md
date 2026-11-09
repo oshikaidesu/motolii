@@ -1,5 +1,7 @@
 # 同梱した他の人の作品（Third-party notices）
 
+*Other people's work shipped with Motolii, each under its own licence (Motolii's licence does not cover it): who made it, where it came from, its licence, and where it sits in this repository. Changes we make are kept apart as patches.*
+
 Motolii は「ネットで見つけたかっこいい表現を、自分の動画にすぐ使う」ための道具です。そのために、多くの作者が公開してくれた作品を同梱し、なるべく作者の作り方のまま動かしています。作者のみなさんに感謝します。
 
 - 同梱した物はそれぞれの作者の物で、それぞれのライセンスに従います。Motolii のリポジトリのライセンスはこれらには掛かりません。
@@ -44,7 +46,7 @@ Motolii は「ネットで見つけたかっこいい表現を、自分の動画
 | anime.js v4.5.0 | [juliangarnier/anime](https://github.com/juliangarnier/anime) | MIT | `engine/third_party/anime/` |
 | acorn 8.18.0（After Effects の式を貼った時に一度だけ読む構文解析器） | [acornjs/acorn](https://github.com/acornjs/acorn) | MIT | `engine/third_party/js/acorn/`（npm 配布の `acorn.js` と `LICENSE` をそのまま。レシピが `AE.compile` と書いた時だけ読み、毎コマは読まない） |
 | p5.js 1.11.13 | [processing/p5.js](https://github.com/processing/p5.js) | LGPL-2.1 | `engine/third_party/js/p5/`（配布の `p5.min.js` と `license.txt` をそのまま、差し替えられる普通のファイルとして読む） |
-| Cube Wave（Coding Challenge 86） | [CodingTrain/Coding-Challenges](https://github.com/CodingTrain/Coding-Challenges)（Copyright (c) 2022 Coding Train） | MIT | `shelves/create/copies/Cube Wave.js`（1 行目に元、以下そのまま） |
+| Cube Wave（Coding Challenge 86） | [CodingTrain/Coding-Challenges](https://github.com/CodingTrain/Coding-Challenges)（Copyright (c) 2022 Coding Train） | MIT | `shelves/create/repeats/Cube Wave.js`（1 行目に元、以下そのまま） |
 | Godot のイーズの式 | [godotengine/godot](https://github.com/godotengine/godot) の easing_equations.h（Robert Penner の式） | MIT | `engine/third_party/godot_easing/` |
 | Godot の String::capitalize（つまみのキーを名前として見せる：ease_in → Ease In） | [godotengine/godot](https://github.com/godotengine/godot) core/string/ustring.cpp の _separate_compound_words・capitalize、コミット c51ff06e8836 | MIT | `engine/community/js/script_leva.h`（JavaScript に移した、頭に出所）、ライセンスは `engine/third_party/godot_easing/` の物と同じ |
 | 日本語 WordNet v1.1（検索で日本語を英語に引く表 `ja_en.tsv`、`engine/deps/wnja_export.py` で切り出した物） | [bond-lab/wnja](https://github.com/bond-lab/wnja)（NICT、Francis Bond・Takayuki Kuribayashi） | 日本語 WordNet のライセンス（`LICENSE-wnja.txt`） | `engine/third_party/wordnet_ja/`（`SOURCE.txt`） |

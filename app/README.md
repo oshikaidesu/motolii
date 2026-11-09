@@ -1,5 +1,7 @@
 # app — Motolii のアプリ
 
+*Motolii's app (Flutter, macOS). It draws nothing and holds no project: it calls the engine (`../engine/`) and shows what comes back. Open it with `./live.sh`; build it with `flutter build macos --profile`. The table below names every folder, down into `lib/`.*
+
 Flutter で書いたアプリ。描くのもプロジェクトを持つのもエンジン（[`../engine/`](../engine/)）で、アプリはそれを呼んで見せて操るだけ。開くのは `./live.sh`（保存すると開いたアプリにすぐ出る）、組むのは `flutter build macos --profile`。
 
 | 場所 | 中身 |

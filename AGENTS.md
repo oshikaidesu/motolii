@@ -1,5 +1,7 @@
 # Motolii
 
+*Rules for anyone, person or AI, changing this repository: the aim (an expression found on the net, usable in your video at once), the layout every folder follows, how to check work, the author's principles, and cleaning up after yourself.*
+
 ## 目的
 
 ネットで見つけたかっこいい表現を、自分の動画にすぐ使えること。

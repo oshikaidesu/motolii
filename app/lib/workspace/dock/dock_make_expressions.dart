@@ -80,7 +80,7 @@ List<(String, String)> _expressionRecipes() {
     final d = Directory(dir);
     if (!d.existsSync()) continue;
     for (final f in d.listSync(recursive: true).whereType<File>()) {
-      // (its folders: shapes/, cavalry/, copies/, on_film/)
+      // (its folders: shapes/, cavalry/, repeats/, over_footage/)
       final n = f.path.split('/').last;
       if (n.endsWith('.js') && f.readAsStringSync().contains(RegExp(r'function\s+each\b'))) by[n] = f.path;
     }
