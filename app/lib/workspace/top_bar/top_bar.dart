@@ -345,7 +345,7 @@ class _RenderState extends State<_Render> {
     WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? _focus.requestFocus() : null);
   }
 
-  // (the kinds the inside writes, by the file's ending: kit_draw.h; Alight Motion's own four)
+  // (the kinds the inside writes, by the file's ending: render_draw.h; Alight Motion's own four)
   static const _formats = [
     ('MP4', '.mp4', "H.264, with the films' sound"),
     ('HEVC', '.mov', "HEVC by the Mac's own encoder, with the films' sound"),
@@ -482,7 +482,7 @@ class _RenderState extends State<_Render> {
                           'Background',
                           'render_alpha',
                           const [(0, 'Solid'), (1, 'Clear')],
-                        ), // (clear where nothing is drawn: kept by PNG, GIF and a .mov's HEVC, kit_draw.h film)
+                        ), // (clear where nothing is drawn: kept by PNG, GIF and a .mov's HEVC, render_draw.h film)
                       ])
                         row(
                           label,

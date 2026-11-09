@@ -1,6 +1,6 @@
 #!/bin/zsh
 # engine/compile_commands.json for an editor's clangd (clangd.llvm.org/installation#project-setup): the library's one
-# translation unit, entry/motolii.mm, with the flags gpu/kit_wgpu.sh and edit.sh build it with, and each other .cpp
+# translation unit, entry/motolii.mm, with the flags gpu/filament_webgpu.sh and edit.sh build it with, and each other .cpp
 # of ours with the same; then each header the context its unit reads it in (deps/clangd_context.py). Nothing is
 # built. Run after the dependencies are fetched (edit.sh once), from anywhere:
 #   ./deps/compile_commands.sh
@@ -18,7 +18,7 @@ eval "$(grep -m1 '^    KIT_EXTRA=' edit.sh | sed 's/ BUILDONLY=1.*//; s/^ *//')"
 SRC=$TP/filament_src; SDK=$SRC/out/wgpu_install; THOR=$TP/thorvg_src; SKIA=$TP/skia_src
 flags=(-std=c++20 -fobjc-arc -I $SDK/include -I $THOR/inc -I $THOR/src/loaders/lottie -I $SRC/third_party/dawn/include
        -I $SRC/out/wgpu/third_party/dawn/gen/include -I $PWD -I $TP/libtess2/Include -I $TP/curve_fit_nd/c
-       -I $SKIA -I $TP/AbsentMotion/app/src/main/cpp)   # (gpu/kit_wgpu.sh's, and the -I its .o files are built with)
+       -I $SKIA -I $TP/AbsentMotion/app/src/main/cpp)   # (gpu/filament_webgpu.sh's, and the -I its .o files are built with)
 if [ $TP != third_party ]; then   # (our #include "third_party/filament_src/..." read after -I $PWD, so a file of ours is never the main checkout's)
   mkdir -p out/fetched && ln -sfn $TP out/fetched/third_party && flags+=(-I $PWD/out/fetched)
 fi

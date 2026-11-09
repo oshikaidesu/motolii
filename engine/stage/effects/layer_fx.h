@@ -90,7 +90,7 @@ static void thing_fx_pictures(Stage& s, ScreenStack& st, View* v) {
         const auto picture = [&] {   // (the device's own, so ThorVG reads and draws it too; Filament's by import)
             WGPUTextureDescriptor like{};
             like.size = {w, h, 1};
-            like.format = WGPUTextureFormat_BGRA8Unorm;   // (what ThorVG's last step writes, as a picture of its own is: drawn.h)
+            like.format = WGPUTextureFormat_BGRA8Unorm;   // (what ThorVG's last step writes, as a picture of its own is: canvas.h)
             like.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
             like.dimension = WGPUTextureDimension_2D;
             like.mipLevelCount = 1, like.sampleCount = 1;

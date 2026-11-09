@@ -6,9 +6,9 @@
 // SharedTextureMemory): its light and its colour are two planes of one texture, turned to red, green and blue in
 // flat.mat. Nothing of a picture goes through the CPU. A picture is chosen by the time the film gives it (a phone's
 // film does not keep an even pace), and a film that says it is to be turned (shot upright) is turned.
-// Only on the WebGPU backend (BACKEND=webgpu, gpu/kit_wgpu.sh with KIT_EXTRA: see puppet.sh), with Filament
+// Only on the WebGPU backend (BACKEND=webgpu, gpu/filament_webgpu.sh with KIT_EXTRA: see puppet.sh), with Filament
 // asking its device for the sharing (filament_dawn_compute.patch). The Mac's door only, so far.
-#include "gpu/gpu_door.h"
+#include "gpu/gpu_interop.h"
 #include <gst/gst.h>
 #include <gst/app/gstappsink.h>
 #include <gst/pbutils/pbutils.h>
@@ -41,7 +41,7 @@ struct Video {
     float2 keySoft{0.f};
     int own = 0;                       // keyed by its own ground (the colour its four corners share): 1 if it has one, 2 in any case (green if it has none)
     mat4f rule;                        // its light and two colour numbers to red, green, blue
-    Mesh* sheet = nullptr;             // the thing in the scene: moved like any other (kit.h: move)
+    Mesh* sheet = nullptr;             // the thing in the scene: moved like any other (render.h: move)
     MaterialInstance* look = nullptr;
     struct Planes { std::atomic<WGPUTexture> shared{nullptr}; WGPUSharedTextureMemory lent = nullptr; Texture* light = nullptr; Texture* colour = nullptr; gint64 used = 0; };
     uint32_t shown = 0;                // which surface is on the sheet
@@ -126,7 +126,7 @@ static void video_own_key(Video* v, GstSample* picture) {
     float strong = 0.6f;   // (pure green's)
     const bool has = picture && video_ground(v, picture, &ground, &strong);
     if (!has) ground = float3{0.f, 1.f, 0.f}, strong = 0.6f;
-    // (how near counts as the screen, how wide its edge, how far its colour is taken out: kit.h's numbers for pure green, in
+    // (how near counts as the screen, how wide its edge, how far its colour is taken out: render.h's numbers for pure green, in
     //  proportion to how far this ground is from grey: a dark green's greys are nearer to it)
     if (v->own && (has || v->own == 2)) v->key = float4{ground, 0.2f * strong}, v->keySoft = float2{0.5f * strong, 1.5f * strong};
 }
@@ -264,7 +264,7 @@ static void video_at(Stage& s, Video* v, float seconds);
 // not read at all. (Read and dropped it cost 51 decoders their work, and an HEVC film played slower than it was shot
 // then gave no picture at all: so GStreamer alone, 1.28.8, with both streams taken.)
 static gint video_wanted(GstElement*, GstStreamCollection*, GstStream* stream, gpointer film) {
-    if (gst_stream_get_stream_type(stream) & GST_STREAM_TYPE_AUDIO) ((Video*)film)->sound = true;   // (it has sound: heard in a written film, kit.h)
+    if (gst_stream_get_stream_type(stream) & GST_STREAM_TYPE_AUDIO) ((Video*)film)->sound = true;   // (it has sound: heard in a written film, render.h)
     return (gst_stream_get_stream_type(stream) & (((Video*)film)->heard ? GST_STREAM_TYPE_AUDIO : GST_STREAM_TYPE_VIDEO)) ? 1 : 0;
 }
 
@@ -438,7 +438,7 @@ static void video_off(Stage& s, Video* v) {
     delete v;
 }
 
-// A colour of the film made clear (kit.h: key_out), green by default: a green screen. Until the film's first picture is
+// A colour of the film made clear (render.h: key_out), green by default: a green screen. Until the film's first picture is
 // on the sheet the sheet stays all clear.
 static void key_out(Video* v, float3 colour = float3{0.f, 1.f, 0.f}, float near = 0.12f, float soft = 0.3f, float spill = 0.9f) {
     v->key = float4{colour, near};

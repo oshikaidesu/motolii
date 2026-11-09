@@ -1,7 +1,7 @@
 // compute_door: the one place that reaches Filament's driver for compute. Filament 1.77.2 has no public way to a
 // compute shader or a storage buffer; its WebGPU backend can run them once filament_dawn_compute.patch is in. This is
 // only that reach, nothing more: a program (WGSL), buffers, a set of buffers for a program, run. When Filament gets a
-// public way, only compute_door.cpp changes.
+// public way, only compute_interop.cpp changes.
 // Built inside Filament's own build (it needs the engine's private headers): libmotolii_door.a, see CMakeLists.txt.
 // Calls are queued like any other Filament call: `run` between beginFrame and the render of what uses the result is
 // in order with it on the GPU, and nothing is waited for. `read` is for tests: it waits for the GPU.

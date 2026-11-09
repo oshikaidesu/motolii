@@ -7,7 +7,7 @@
 // Made once into ~/Library/Caches/Motolii/isf/<hash>.wgsl, named by the file as it is. Its other images are
 // other things' pictures (screen_fx.h others), its audio inputs other things' sound; its own vertex shader is worked out at each pixel.
 #include "community/shaders/isf.h"
-#include "community/door.h"
+#include "community/adapter.h"
 #include "community/shaders/three_isf.h"
 #include <sys/stat.h>
 #include <cstdio>
@@ -331,7 +331,7 @@ std::string isf_file(const std::string& asked) {
     const std::string stem = std::filesystem::path(file).stem().string();
     std::stringstream vertex;   // (its own vertex shader, if it has one beside it)
     if (std::ifstream vs(std::filesystem::path(file).replace_extension(".vs")); vs) vertex << vs.rdbuf();
-    const std::string wgsl = isf_wgsl(door_isf(text.str()), stem, why, vertex.str());   // (Shadertoy's and GLSL Sandbox's as they come: door.h)
+    const std::string wgsl = isf_wgsl(door_isf(text.str()), stem, why, vertex.str());   // (Shadertoy's and GLSL Sandbox's as they come: adapter.h)
     if (wgsl.empty()) {
         std::fprintf(stderr, "the ISF effect %s is not taken: %s\n", file.c_str(), why.substr(0, 600).c_str());
         return made[key] = isf_kept(file, why);

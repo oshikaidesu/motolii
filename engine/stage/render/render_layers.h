@@ -1,4 +1,4 @@
-// kit_things.h: part of kit.h. Read only through kit.h.
+// render_layers.h: part of render.h. Read only through render.h.
 // Letters as a solid, by the system's own solid text (SceneKit makes it, ModelIO hands over the mesh): `deep`
 // through, the edges cut off by `chamfer`; a capital is about 0.7 high. The letters' lower left is at the origin,
 // they run along x and stand up along y, the middle of their depth is at z = 0.

@@ -1,5 +1,5 @@
-// See compute_door.h.
-#include "compute_door.h"
+// See compute_interop.h.
+#include "compute_interop.h"
 
 #include <filament/BufferObject.h>
 #include <filament/Engine.h>

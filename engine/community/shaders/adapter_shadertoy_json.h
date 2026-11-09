@@ -1,8 +1,8 @@
-// door_shadertoy_json.h: part of document/adapter.h. A Shadertoy shader as the site keeps it, all its tabs, read into door_tabs_isf
-// (door_shadertoy.h): rust_ae's isf_from_shadertoy_project, by the JSON's own words.
+// adapter_shadertoy_json.h: part of document/adapter.h. A Shadertoy shader as the site keeps it, all its tabs, read into door_tabs_isf
+// (adapter_shadertoy.h): rust_ae's isf_from_shadertoy_project, by the JSON's own words.
 #pragma once
 #include <rapidjson/document.h>
-#include "community/door.h"
+#include "community/adapter.h"
 
 // The site's JSON (its API's, its Export's), all its tabs ("": it cannot be, and why): made one file at the door, as
 // Hydra's is. A sound's tab is left out, as VVISF's is; a cube's draws what nothing here can read.

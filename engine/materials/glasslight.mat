@@ -1,4 +1,4 @@
-// glasslight.mat: the light a glass thing throws on the floor in the sun (drawn into the floor's picture of sunlight, kit.h). For ANY mesh: it asks only where the
+// glasslight.mat: the light a glass thing throws on the floor in the sun (drawn into the floor's picture of sunlight, render.h). For ANY mesh: it asks only where the
 // surface is and which way it faces. The way the makers of such pictures do it in real time (a finely cut surface,
 // every corner's light bent and landed, brightness from how the cut is squeezed), with one more thing left out: what
 // the light does INSIDE the glass. A corner in the sun bends its ray once, by its own facing, and that ray is taken

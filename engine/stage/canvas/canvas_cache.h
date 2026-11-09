@@ -1,5 +1,5 @@
-// drawn_kept.h: part of drawn.h. Read only through drawn.h.
-#include "gpu/gpu_door.h"
+// canvas_cache.h: part of canvas.h. Read only through canvas.h.
+#include "gpu/gpu_interop.h"
 #include <thorvg.h>
 #include <thorvg_lottie.h>
 #include <tesselator.h>
@@ -20,16 +20,16 @@
 // lights are made three (0: not at all).
 struct DrawnFx { bool split = false;   // (a text's letters each a copy of their own)
     bool splitWords = false;   // (its words, not its letters: After Effects' Based On Words, Alight Motion's Text Transform)
-    bool together = false;   // (its copies drawn in one go, each an instance of one thing: none coloured or cleared each of its own, kit.h add_parts)
+    bool together = false;   // (its copies drawn in one go, each an instance of one thing: none coloured or cleared each of its own, render.h add_parts)
     bool thick = false;    // (it has depth: its sheet a box, its picture pushed through it, deep.glsl)
     bool lit = false;      // (in the lamps' light: flat.mat's flat_lit, doc_lit)
     std::string wear;      // (a material it wears, its picture its colour: flat.mat's flat_<wear>, doc_sheet_material; "" none)
-    bool bevel = false;    // (its box's edges cut as its doc says: deep.glsl, drawn_edge.h)
+    bool bevel = false;    // (its box's edges cut as its doc says: deep.glsl, canvas_edge.h)
     std::vector<float4> rims;   // (more outlines, each outside the last: its colour; w: how wide, a share of its height: type)
     bool column = false;   // (its letters one under another, a letter's height from each to the next)
     float letters = 1.f, lines = 1.f, italic = 0.f, wrapWidth = 0.f; int wrap = 0;   // (a text's lines broken in a box so many of its letters' heights wide, ThorVG's layout and wrap; 0: as typed)
     float dash = 0.f, dashFrom = 0.f; int cap = -1, join = -1;   // (ThorVG's own: Text::spacing, italic; Shape::strokeDash, strokeCap, strokeJoin; -1: as it comes)
-    int heads = 0; float headSize = 4.f; int headShape = 0, headStart = -1;   // (heads on an open edge's ends, as Cavalry's: 1 its end, 2 its start, 3 both; so many times its edge long; 0 arrow, 1 circle, 2 box, 3 chevron, 4 bar; from 5 Alight Motion's, drawn by AbsentMotion (drawn_flat.h); its start's own, -1 as its end's)
+    int heads = 0; float headSize = 4.f; int headShape = 0, headStart = -1;   // (heads on an open edge's ends, as Cavalry's: 1 its end, 2 its start, 3 both; so many times its edge long; 0 arrow, 1 circle, 2 box, 3 chevron, 4 bar; from 5 Alight Motion's, drawn by AbsentMotion (canvas_flat.h); its start's own, -1 as its end's)
     float blur = 0.f; int blurWay = 0; float overHigh = 1.f; float4 shadow{0.f}; float fall = 0.f, way = 0.f, soft = 0.f; float tint = 0.f; float3 tints[2]{}; float tritone = 0.f; float3 tones[3]{}; int copies = 1;
                  std::vector<float4> ramp;   // (two colours or more: it is filled from the first at its top to the last at its bottom, ThorVG's linear gradient)
                  std::vector<float> rampAt;
@@ -67,7 +67,7 @@ struct Drawn {
     uint32_t slotsId = 0;              // (ThorVG's for them, driver thread only)
     std::atomic<int> keepAge{0};       // (one more each time its kept frames are thrown away: a copy made before is not kept)
     tvg::Animation* film = nullptr;    // (the same)
-    std::function<std::vector<double>(int, int)> sketch;   // (a 2D sketch: what makes a frame on a canvas holding another, its Script's paints; main thread: drawn_sketch.h)
+    std::function<std::vector<double>(int, int)> sketch;   // (a 2D sketch: what makes a frame on a canvas holding another, its Script's paints; main thread: canvas_sketch.h)
     std::shared_ptr<std::map<int, double>> sketchLines;    // (how strong each of its lines that draw is now; main thread: script.h sketch_marked)
     int sketchAt = -1;                 // (the frame last asked of it, which its canvas will hold; main thread)
     tvg::Scene* sketchScene = nullptr; // (what its paints are put in, driver thread only)
@@ -75,14 +75,14 @@ struct Drawn {
     std::map<int, std::shared_ptr<std::vector<uint8_t>>> sketchPics;   // (the pictures it paints, by p5_stand.h's __bitmaps: asked for on the main thread, read on the driver's)
     std::mutex sketchPicsLock;
     Texture* texture = nullptr;        // what Filament reads
-    Texture* edge[3] = {};             // how far each of its points is from its edge (drawn_edge.h)
+    Texture* edge[3] = {};             // how far each of its points is from its edge (canvas_edge.h)
     RenderTarget* edgeInto[3] = {};
     uint32_t edgeW = 0, edgeH = 0;
     float4 bands{0.f};   // (where each stroke ends, in points from its outside; w: how many: a Step bevel's stairs, deep.glsl)
     bool inLight = false;              // (flat_lit: its surface is told each moment, document/evaluate.h)
     int edgeReach = 0;                 // (how far that is known, in points)
     std::atomic<bool> stale{true};     // (drawn again since that was worked out: set on the driver thread)
-    Mesh* sheet = nullptr;             // the thing in the scene: moved like any other (kit.h: move)
+    Mesh* sheet = nullptr;             // the thing in the scene: moved like any other (render.h: move)
     float3 boxed{0.f};                 // (half its box across, up and through, when it has depth; its box is open: document/evaluate.h)
     bool open = false;
     MaterialInstance* look = nullptr;  // its look (none if it is not shown)

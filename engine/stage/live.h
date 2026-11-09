@@ -23,7 +23,7 @@ struct Live {
     Fence* pending = nullptr;          // the picture begun and not yet finished by the GPU, and which buffer it is in
     int pendingIn = -1;
     void* marks[N] = {};               // (a desk's: ThorVG's canvas on each buffer, the marks drawn over the picture: desk_marks)
-    Live* desk = nullptr;              // the editing window's whole stage pane (kit.h desk_lay): while it is on, the stage is drawn there, not here
+    Live* desk = nullptr;              // the editing window's whole stage pane (render.h desk_lay): while it is on, the stage is drawn there, not here
 };
 
 static Live* live_open(Stage& s, uint32_t w = 0, uint32_t h = 0) {   // (0: the stage's own size)
@@ -87,7 +87,7 @@ static void live_close(Stage& s, Live* l) {
 }
 
 // The marks over the desk's picture (and the cover over what lies off the stage, under them), drawn by ThorVG into the same buffer after Filament's picture and not clearing
-// it, on the same device and queue (drawn.h's way): the picked thing's frame, its four corners, the knob it turns by,
+// it, on the same device and queue (canvas.h's way): the picked thing's frame, its four corners, the knob it turns by,
 // the point it turns about; the frame of the one under the hand, thin. As the window's own marks were (stage_view.dart).
 static void desk_marks(Stage& s, Live* l, int i) {
     const auto k = s.desk;
@@ -97,7 +97,7 @@ static void desk_marks(Stage& s, Live* l, int i) {
     door::on_driver(s.engine, [l, i, k, device, instance, s_w, s_h] {
         auto& canvas = reinterpret_cast<tvg::WgCanvas*&>(l->marks[i]);
         if (!canvas) {
-            tvg::Initializer::init(0);   // (as drawn.h: counted, once is enough)
+            tvg::Initializer::init(0);   // (as canvas.h: counted, once is enough)
             canvas = tvg::WgCanvas::gen();
             if (!canvas || canvas->target(device, instance, l->shared[i], k.w, k.h, tvg::ColorSpace::ABGR8888S, 2) != tvg::Result::Success) return;   // (2: drawn over: thorvg_over.patch)
         }
@@ -170,7 +170,7 @@ static void live_draw(Stage& s, Live* l) {
     const bool placed = desk && (s.over || !s.before.empty());
     s.out = desk && !placed ? desk->target[desk->next] : l->target[l->next];
     if (desk && !placed) desk_lay(s, true);
-    Texture* const wasInto = s.drawnInto;   // (the picture the views draw into, for one that reads what is under: kit.h)
+    Texture* const wasInto = s.drawnInto;   // (the picture the views draw into, for one that reads what is under: render.h)
     if (!s.over) s.drawnInto = desk && !placed ? desk->seen[desk->next] : l->seen[l->next];
     if (placed) {
         const int i = l->next, j = desk->next;
@@ -200,7 +200,7 @@ static void live_draw(Stage& s, Live* l) {
     else l->next = (l->next + 1) % Live::N;
 }
 
-// A picture made before (stage_kept.h) put on the stage as it is, instead of drawing it: on the desk where the stage
+// A picture made before (stage_cache.h) put on the stage as it is, instead of drawing it: on the desk where the stage
 // lies (what lies off it is not in the picture), its marks over it as live_draw puts them.
 static void live_show(Stage& s, Live* l, Texture* picture) {
     Live* desk = l->desk && s.desk.w ? l->desk : nullptr;

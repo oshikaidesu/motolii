@@ -3,7 +3,7 @@
 // cannot leave (the two faces stand like a wedge: a prism, a twist, an edge) it is thrown back inside and ends in the
 // glass's own room. Faces that run alongside each other bend the way there and back: such glass is plainly clear.
 // The method is Wyman's image-space refraction through two interfaces (SIGGRAPH 2005): the far faces are not followed
-// but looked up in two pictures kit.h draws first, which way they face (far_side.mat) and how far away they are.
+// but looked up in two pictures render.h draws first, which way they face (far_side.mat) and how far away they are.
 // The colours part as in three.js drei's MeshTransmissionMaterial (N8Programs, MIT): `samples` readings, red, green
 // and blue each with its own index, the indices drawn further apart from reading to reading.
 // The glass mirrors its own room too (its strip lamps, as bright as the scene's sky makes them), not the scene's:
@@ -25,8 +25,8 @@ material {
         { type : float, name : ior },
         { type : float, name : thickness },   // how far beyond the glass the picture behind is read, in the scene's units
         { type : float, name : swim },        // how much of the bend is kept where the way leaves (0: as glass does; 1: all of it)
-        { type : float, name : usual },       // how deep the solid is as a rule (kit.h works it out from the mesh)
-        { type : float, name : longFrom },    // how many times that a way must be before it counts as long (1 for bars and sheets, more for lumps; kit.h)
+        { type : float, name : usual },       // how deep the solid is as a rule (render.h works it out from the mesh)
+        { type : float, name : longFrom },    // how many times that a way must be before it counts as long (1 for bars and sheets, more for lumps; render.h)
         { type : float, name : dark },        // how fast a way through the glass longer than that goes dark
         { type : float, name : edgeFire },    // how far the colours part at that dark's edge, against what glass does (1)
         { type : float, name : split },       // how far the colours' indices part (drei's chromaticAberration)

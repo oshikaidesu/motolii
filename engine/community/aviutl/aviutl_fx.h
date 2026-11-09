@@ -2,7 +2,7 @@
 // LuaJIT 2.1 (MIT, AviUtl2's own default Lua) with os, io, debug, ffi.C and ffi.load taken out as lua.txt says, and an
 // `obj` of its spec's names, each done by what Motolii already has: its buffers ("object", "tempbuffer", "cache:...",
 // "framebuffer": the thing's own picture as it leaves) RGBA16F pictures premultiplied as AviUtl2's, its shaders drawn
-// by the door (screen_door.h), obj.draw by one placing shader. What it asks for that is not here stops it with
+// by the door (screen_interop.h), obj.draw by one placing shader. What it asks for that is not here stops it with
 // "not yet: obj.X" (said once, its picture left as it came): never a picture silently other than the script's.
 #pragma once
 #include "community/aviutl/aviutl.h"

@@ -1,4 +1,4 @@
-// door_shadertoy.h: part of door.h. A Shadertoy shader as an ISF file, each tab a pass: VVISF's ShadertoyConverter.cpp
+// adapter_shadertoy.h: part of adapter.h. A Shadertoy shader as an ISF file, each tab a pass: VVISF's ShadertoyConverter.cpp
 // (BSD-3-Clause, which sorts the buffers first and the Image last) and rust_ae's shadertoy.rs (which keeps each buffer
 // PERSISTENT and FLOAT). Each tab's code stays as it was written. What differs between tabs is said in macros around it:
 // its iChannels, each a number here that door_read reads (a sampler told to a function goes as that number, which Vulkan's

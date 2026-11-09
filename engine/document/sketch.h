@@ -1,6 +1,6 @@
 // sketch.h: part of doc.h. What a p5.js sketch draws in WEBGL, as p5 itself has it each frame (p5_mesh.h's __mesh_at:
 // its own shapes, its own vertices, what its camera sees), stood in the world as one mesh, made again each frame as a
-// sheet's is (kit_stage.h's reshape). Shapes come once and are laid out here (a thousand spheres are too many for a script
+// sheet's is (render_stage.h's reshape). Shapes come once and are laid out here (a thousand spheres are too many for a script
 // to turn each frame), so a sketch has no limit of copies, and any shape it can draw is the shape it drew. A line is a thin
 // band that faces the eye, as p5's line shader makes it. What it draws goes on from frame to frame until it is cleared.
 static const SketchShape* doc_sketch_shape(std::vector<SketchShape>& shapes, Script& run, size_t i) {
@@ -22,7 +22,7 @@ static const SketchShape* doc_sketch_shape(std::vector<SketchShape>& shapes, Scr
     return &shapes[i];
 }
 // A shader of a sketch's as a Filament material: what p5_mesh.h's __shader_text made of it, compiled by Filament's own matc as the kit's
-// are (gpu/kit_wgpu.sh), a third of a second for a real one, kept by what it says. What cannot be made says why and paints nothing.
+// are (gpu/filament_webgpu.sh), a third of a second for a real one, kept by what it says. What cannot be made says why and paints nothing.
 static SketchPaint doc_sketch_paint(Stage& s, const std::string& text, const std::string& names) {
     SketchPaint paint;
     std::istringstream lines(names);

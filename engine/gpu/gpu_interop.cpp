@@ -1,5 +1,5 @@
-// See gpu_door.h.
-#include "gpu_door.h"
+// See gpu_interop.h.
+#include "gpu_interop.h"
 
 #include <filament/Engine.h>
 

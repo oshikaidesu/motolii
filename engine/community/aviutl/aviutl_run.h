@@ -170,7 +170,7 @@ static void aviutl_draw_step(Stage& s, AviutlRun& r, Texture* from, RenderTarget
     const AviutlBuf& frame = aviutl_buf(r, "framebuffer", w, h);
     const bool behind = r.behind && s.behind && r.box[2] > r.box[0] && r.box[3] > r.box[1];
     aviutl_clear(r, frame, behind ? std::max(r.ground, 0) : 0, behind && r.ground >= 0);
-    if (behind) {   // (what is drawn before it, there: the stage's colour, then the stage's picture without the thing (kit_things.h, as AbsentMotion's backdrop reads it) in sRGB as the thing's own picture is given (screen_tone), over it)
+    if (behind) {   // (what is drawn before it, there: the stage's colour, then the stage's picture without the thing (render_layers.h, as AbsentMotion's backdrop reads it) in sRGB as the thing's own picture is given (screen_tone), over it)
         const double bw = s.behind->getWidth(), bh = s.behind->getHeight(), kx = bw / std::max(1, s.w), ky = bh / std::max(1, s.h);
         const AviutlBuf all{s.behind, nullptr, (uint32_t)bw, (uint32_t)bh};
         const AviutlBuf& there = aviutl_buf(r, "~behind", w, h);

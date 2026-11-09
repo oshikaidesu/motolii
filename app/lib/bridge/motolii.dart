@@ -172,14 +172,14 @@ class Motolii {
     } catch (_) {
       return null;
     }
-    final home = '$dir/out/wgpu_kit'.toNativeUtf8(), doc = document.toNativeUtf8();
+    final home = '$dir/out/filament_webgpu'.toNativeUtf8(), doc = document.toNativeUtf8();
     c.MotoliiBindings(lib).motolii_home(home);
     final m = c.MotoliiBindings(lib).motolii_open(doc, wide, high);
     malloc
       ..free(home)
       ..free(doc);
     if (m == nullptr) return null;
-    return Motolii._(lib, m, path, '$dir/out/wgpu_kit').._listen();
+    return Motolii._(lib, m, path, '$dir/out/filament_webgpu').._listen();
   }
 
   // ------------------------------------------------------------------ the pictures (docs/app/BRIDGE.md)

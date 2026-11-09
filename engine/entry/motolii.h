@@ -220,7 +220,7 @@ int motolii_pack(Motolii* m, const char* folder, const char* name);   /* the doc
 int motolii_poster(Motolii* m, const char* png);                   /* the document's own picture (at its poster_at, else now), 256 on its longer side, written to png and kept in the document with its size and length */
 const char* motolii_doc_properties(const char* path, const char* png);  /* a document read without opening it: "wide high seconds rate" as it was last kept, its picture written to png (null: not); "": none kept (any thread) */
 int motolii_still(Motolii* m, const char* png);                    /* the stage as it is now, as a picture */
-int motolii_export(Motolii* m, const char* mp4);                    /* the whole document as a video (.mp4 H.264, .mov HEVC, .gif, .png a picture each: kit_draw.h), with its videos' sound; other calls are answered meanwhile (from another thread), but the document is not changed and nothing is held until it is done */
+int motolii_export(Motolii* m, const char* mp4);                    /* the whole document as a video (.mp4 H.264, .mov HEVC, .gif, .png a picture each: render_draw.h), with its videos' sound; other calls are answered meanwhile (from another thread), but the document is not changed and nothing is held until it is done */
 int motolii_rate(Motolii* m);                                      /* how many pictures a second that video has (a shell that counts in frames counts in these) */
 char* motolii_snapshot(Motolii* m, int which, long since, long* version);   /* the window's pictures of the document (docs/app/BRIDGE.md), read without the document: 1 the document's (its own part and each layer's part newer than since), 2 the moment's; JSON, a copy freed with free(); *version: as of which */
 void motolii_add_listener(Motolii* m, void (*listener)(int which));   /* the window's one listener, called (from the hand) when pictures are new: 1 the document's, 2 the moment's, 4 the cached frames (motolii_cache), 8 an answer to a change asked later (motolii_answer), or'd */
@@ -249,7 +249,7 @@ unsigned long long motolii_frames(Motolii* m);
 /* Told on the hand's thread whenever a picture (the stage's or the desk's) is finished: `tell(with)`; then motolii_front
    or motolii_desk_front has it (Thermion's markTextureFrameAvailable: the shell asks nothing on a clock of its own). */
 void motolii_finished(Motolii* m, void (*listener)(void*), void* with);
-/* The stage's pictures kept on disk for playing (stage_kept.h): as stretches of frames at motolii_rate, "from to from to"
+/* The stage's pictures kept on disk for playing (stage_cache.h): as stretches of frames at motolii_rate, "from to from to"
    ("" none), and how many times that has changed (read without waiting, as motolii_revision). */
 const char* motolii_cache(Motolii* m);
 /* A layer's effect cards' titles in the order its effects are laid, ";" between ("" none): ThorVG's own and files' alike.

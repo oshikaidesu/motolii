@@ -6,7 +6,7 @@ static std::string doc_material(Doc& d, int layer) {
     if (!said.empty()) return said;
     return doc_word(d, layer, "kind") == "solid" && doc_word(d, layer, "fill") == "glass" ? "glass" : "";
 }
-// The sheet a flat layer (a film, a picture, a text, a shape) wears its material as: flat.mat's own for it (kit_wgpu.sh),
+// The sheet a flat layer (a film, a picture, a text, a shape) wears its material as: flat.mat's own for it (filament_webgpu.sh),
 // its picture its colour. "" none: as it is drawn. Of glass, the stage behind it is read (doc_layers_read).
 static std::string doc_sheet_material(Doc& d, int layer) {
     if (!doc_among("video image text shape", doc_word(d, layer, "kind"))) return "";

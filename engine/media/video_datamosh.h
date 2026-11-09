@@ -3,7 +3,7 @@
 // drawn by moving this one's last picture: the pixels of one, the movement of the other. Made once, on a thread of its
 // own, into ~/Library/Caches/Motolii/mosh/<hash>.mp4, named by what goes in (the files as they are, the moment); the
 // thing plays its own film till then. A step on the film before it is decoded: first, before any of its effects.
-// (doc.h: read after kit.h)
+// (doc.h: read after render.h)
 #pragma once
 #include <sys/stat.h>
 #include <atomic>

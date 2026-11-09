@@ -1,9 +1,9 @@
 // The stage's own pictures kept on disk for playing (Final Cut Pro's background render, After Effects' disk cache): what
 // will be played is known (the work area), so while the hand rests each of its pictures is drawn once as a written film
 // draws it, and one that took longer than a picture may (it would be late when played) is kept, zstd on disk as kept
-// frames are (drawn.h). Played, a kept picture is put on the screen instead of drawn. A light document keeps nothing.
+// frames are (canvas.h). Played, a kept picture is put on the screen instead of drawn. A light document keeps nothing.
 // Kept by the document as it is (its facts, its ways, the files it uses as they are, its size): any change, drawn again.
-// (motolii.mm: read after kit.h, doc.h and live.h)
+// (motolii.mm: read after render.h, doc.h and live.h)
 #pragma once
 #include <sys/stat.h>
 #include <future>

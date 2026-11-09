@@ -2,7 +2,7 @@
 // band of round pieces each as wide as its pressure says; EachPiece, Stroke Taper and Drawing Progress on it; Apache-2.0,
 // Copyright 2026 The AbsentMotion authors). Its drawing.cpp is read whole into this file as it is, so that its own
 // making of a stroke, kept to that file, is called from here; its pieces put together into one outline by Skia's own
-// union (SkPathOps) when it is to be kept, else laid beside one another, to be filled as one (libtess2's nonzero, drawn_flat.h).
+// union (SkPathOps) when it is to be kept, else laid beside one another, to be filled as one (libtess2's nonzero, canvas_flat.h).
 #include "drawing.cpp"
 #include "community/absent_motion/absent_motion.h"
 #include "include/pathops/SkPathOps.h"

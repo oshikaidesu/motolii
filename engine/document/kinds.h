@@ -1,5 +1,5 @@
 // kinds.h: part of doc.h (the document and the names its values go by). Read only through doc.h.
-#include "stage/drawn/drawn.h"
+#include "stage/canvas/canvas.h"
 #include <string_view>
 #include <unordered_map>
 #include <tuple>
@@ -7,7 +7,7 @@
 #include "motion/easing_curves.h"
 #include "physics/physics.h"
 #include "community/js/script.h"
-#include "community/door.h"
+#include "community/adapter.h"
 #include "community/shaders/hydra_isf.h"
 #include "community/js/lottie_slots.h"
 #include "stage/effects/viewer_settings.h"
@@ -19,12 +19,12 @@
 #include "stage/effects/screen_fx.h"
 #include "stage/effects/layer_fx.h"
 #include "media/video_datamosh.h"
-#include "stage/kit/point_cloud.h"
+#include "stage/render/point_cloud.h"
 #include <filesystem>
 #include <mutex>
 #include <dlfcn.h>
 #include <fstream>
-#include "stage/kit/gltf_model.h"
+#include "stage/render/gltf_model.h"
 #include "media/video_layer.h"
 #include "media/sound_level.h"
 #include "media/midi_notes.h"
@@ -194,7 +194,7 @@ static const DocValue doc_values[] = {
     {"layer_length", "stage", 0, 3600, false, nullptr},   // (how long a layer put in lasts, seconds; 0: to the document's end: AbsentMotion's New Layer Length, doc_add)
     {"bpm", "stage", 0, 999, false, nullptr},   // (the document's tempo, beats a minute; 0: none. What the timeline's grid goes by: Live's Tempo field; Alight Motion has none)
     {"bpm_from", "stage", 0, 1e6, false, nullptr},   // (where a bar begins, seconds: Live's Set 1.1.1 Here)
-    {"frame_rate", "video image text solid shape stage", 0, 60, false, nullptr},   // (the stage's: the document's frame rate, all of it seen only at its frames, kit_things.h time_is)
+    {"frame_rate", "video image text solid shape stage", 0, 60, false, nullptr},   // (the stage's: the document's frame rate, all of it seen only at its frames, render_layers.h time_is)
     {"speed_hold", "video solid image text shape", 0, 0, false, "start now end"},   // (where its Speed holds it in time, as After Effects' Time Stretch: its start, the playhead, its end)   // (its own frames a second, 0 as the stage's: doc_stepped)
     {"volume", "video", 0, 2, true, nullptr},   // (how loud its sound is heard and written: 1 as it comes, 0 none, 2 twice; Alight Motion's Volume, 0 to 200%)
     {"beats", "video", 0, 60, false, nullptr},   // (where its sound strikes: louder by so many dB at once; 0, none shown)
@@ -374,7 +374,7 @@ static const DocValue doc_values[] = {
     //  reflected or repeated)
     {"gradient", "text shape", 0, 0, false, "linear radial"}, {"gradient_angle", "text shape", -1e6, 1e6, false, nullptr},
     {"gradient_scale", "text shape", 0.01, 100, false, nullptr}, {"gradient_spread", "text shape", 0, 0, false, "pad reflect repeat"},
-    // (how the colours between its stops are mixed: CSS Color 4's color-interpolation-method, drawn_made.h ramp_of)
+    // (how the colours between its stops are mixed: CSS Color 4's color-interpolation-method, canvas_renderables.h ramp_of)
     {"gradient_blend", "text shape", 0, 0, false, "rgb oklab hue steps"},
     {"cap", "shape", 0, 0, false, "butt round square"}, {"join", "shape", 0, 0, false, "miter round bevel"},
     // (arrow heads on its edge's open ends, Cavalry's basicArrowHead: which ends, and so many times its edge long)

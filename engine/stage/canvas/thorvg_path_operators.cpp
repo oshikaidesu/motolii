@@ -1,7 +1,7 @@
 // thorvg_path_operators.cpp: After Effects' path operators on a flat shape, done by ThorVG's own (its Lottie reader's modifiers:
 // round corners, pucker & bloat, zig zag, offset paths), in that order, offset last as ThorVG chains them.
 // And a shape's edge as triangles, as ThorVG's own WebGPU engine strokes it (tvg_edge). Apart from the rest because
-// ThorVG's inside headers bring all of its names in; out come two calls (drawn.h).
+// ThorVG's inside headers bring all of its names in; out come two calls (canvas.h).
 #include "tvgLottieModifier.h"
 #include "tvgGpuCommon.h"
 #include "tvgWgTessellator.h"

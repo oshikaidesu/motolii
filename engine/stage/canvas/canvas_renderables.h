@@ -1,4 +1,4 @@
-// drawn_made.h: part of drawn.h. Read only through drawn.h.
+// canvas_renderables.h: part of canvas.h. Read only through canvas.h.
 #include <fstream>
 #include <list>
 #include <mutex>

@@ -1,4 +1,4 @@
-// kit_stage.h: part of kit.h. Read only through kit.h.
+// render_stage.h: part of render.h. Read only through render.h.
 #include <filament/Camera.h>
 #include <filament/ColorGrading.h>
 #include <filament/Engine.h>
@@ -145,7 +145,7 @@ struct Stage {
     struct { uint32_t w = 0, h = 0; double x = 0, y = 0, scale = 1, point = 2; math::mat4 was, wasCulled;
              bool picked = false, hovered = false, knob = true; double pick[8] = {}, hover[8] = {}; } desk;
     std::function<void()> over;   // drawn last, over all of them (a whole-screen effect: screen_fx.h)
-    std::map<const void*, std::function<void()>> once;   // to do once before the next picture, by whose it is (a picture's distances from its edge: drawn_edge.h)
+    std::map<const void*, std::function<void()>> once;   // to do once before the next picture, by whose it is (a picture's distances from its edge: canvas_edge.h)
     std::vector<std::function<void()>> before;   // drawn before the stage's own view, each into a picture of its own (a thing with effects of its own: layer_fx.h)
     std::vector<std::function<void()>> aim;      // told before each frame begins, what those pictures and the looks that show them are (Filament sends a look's parameters on as a frame begins: FRenderer::beginFrame, FEngine::prepare)
     std::function<void()> lastly;   // and after everything, in the same frame (the desk: its stage's picture placed on it, live.h)
@@ -155,7 +155,7 @@ struct Stage {
 
 static Stage open_stage(int w, int h) {
     Stage s{w, h};
-    // (BACKEND=webgpu: Filament's WebGPU backend, Dawn, which is the way to Windows; it needs the Filament built from source, see gpu/kit_wgpu.sh)
+    // (BACKEND=webgpu: Filament's WebGPU backend, Dawn, which is the way to Windows; it needs the Filament built from source, see gpu/filament_webgpu.sh)
     const char* backend = getenv("BACKEND");
     s.engine = Engine::Builder().backend(backend && !strcmp(backend, "webgpu") ? Engine::Backend::WEBGPU : Engine::Backend::METAL).build();
     // (a picture that does nothing to its colours gets them through exactly: Filament may then take its one fine row of
@@ -173,7 +173,7 @@ static Stage open_stage(int w, int h) {
     s.view->setViewport({0, 0, (uint32_t)w, (uint32_t)h});
     s.view->setDithering(View::Dithering::NONE);
     s.view->setAntiAliasing(View::AntiAliasing::FXAA);
-    s.view->setMultiSampleAntiAliasingOptions({.enabled = true, .sampleCount = 4});   // (the edges of flat shapes drawn as triangles, drawn.h flat_mesh: as Unity's and three.js's are)
+    s.view->setMultiSampleAntiAliasingOptions({.enabled = true, .sampleCount = 4});   // (the edges of flat shapes drawn as triangles, canvas.h flat_mesh: as Unity's and three.js's are)
     s.view->setScreenSpaceRefractionEnabled(true);
     s.view->setVisibleLayers(0x03, 0x03);
     Renderer::ClearOptions clear{};
@@ -307,7 +307,7 @@ static std::vector<MaterialInstance*> add_parts(Stage& s, Mesh* m, const char* f
             mi->setParameter("matteUse", float4{0.f});
             mi->setParameter("matteSoft", float4{0.f});
         }
-        for (const char* name : {"backdrop", "edge"}) if (mat->hasParameter(name)) mi->setParameter(name, white_point(s), TextureSampler());   // (none read until doc.h says which, no bevel until drawn_made.h makes one: Filament refuses a sampler left unset)
+        for (const char* name : {"backdrop", "edge"}) if (mat->hasParameter(name)) mi->setParameter(name, white_point(s), TextureSampler());   // (none read until doc.h says which, no bevel until canvas_renderables.h makes one: Filament refuses a sampler left unset)
         looks.push_back(mi);
     }
     float3 low = n ? m->pos[0] : float3{0.f}, high = low;   // (Filament wants a thing's rough size if it casts or takes shadows)

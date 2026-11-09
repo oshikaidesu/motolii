@@ -248,7 +248,7 @@ static void doc_layers_fx(Doc& d) {
                 }
             }
             if (!e.solidFile.empty()) return doc_layer_solid_aim(d, layer, e);
-            if (e.st.readsBehind) {   // (its sheet on the screen only, not in the picture of what is behind it that its effect reads: as the glass leaves itself out, kit_things.h)
+            if (e.st.readsBehind) {   // (its sheet on the screen only, not in the picture of what is behind it that its effect reads: as the glass leaves itself out, render_layers.h)
                 s.backdropRead = true;
                 for (const Stage::Made& made : s.made) if (made.of == e.sheet) s.engine->getRenderableManager().setLayerMask(s.engine->getRenderableManager().getInstance(made.thing), 0xFF, 0x02);
             }

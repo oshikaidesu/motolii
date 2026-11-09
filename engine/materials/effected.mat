@@ -35,7 +35,7 @@ material {
     vertexDomainDeviceJittered : true,   // (Filament pads its picture to a multiple of 16 on the right and top and a camera's projection is told so; a device sheet is only with this: Renderer.cpp, surface_main.vs)
     depthWrite : false,
     depthCulling : false,
-    blending : ${BLENDING},   // (kit_wgpu.sh builds it once for each way a sheet lies on what is behind, as flat.mat: transparent, add, multiply, screen)
+    blending : ${BLENDING},   // (filament_webgpu.sh builds it once for each way a sheet lies on what is behind, as flat.mat: transparent, add, multiply, screen)
     shadingModel : unlit,
     variantFilter : [ skinning, shadowReceiver, vsm ],
     culling: none

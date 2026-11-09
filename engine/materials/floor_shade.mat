@@ -1,4 +1,4 @@
-// floor_shade.mat: a mesh laid flat on the floor along the sun's way, in one plain value. kit.h draws the floor's
+// floor_shade.mat: a mesh laid flat on the floor along the sun's way, in one plain value. render.h draws the floor's
 // picture of sunlight with it: the whole floor in 1 (bare sun), then every thing's shade in 0 on top.
 // Beside the value it writes how far the shade flew from the thing to the floor (the picture's fourth number):
 // a sun has some width, so shade is sharp at a thing's foot and softer the further it flew (paper.mat).

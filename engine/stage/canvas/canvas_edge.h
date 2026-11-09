@@ -1,5 +1,5 @@
-#include "gpu/screen_door.h"
-// drawn_edge.h: how far each point of a picture is from its edge, in points, for its bevel (deep.glsl): the pictures of
+#include "gpu/screen_interop.h"
+// canvas_edge.h: how far each point of a picture is from its edge, in points, for its bevel (deep.glsl): the pictures of
 // bevy_mod_outline's flood (src/flood/sobel_init.wgsl, jump_flood.wgsl; MIT OR Apache-2.0), its seeds and steps as they
 // are, the door's way of saying them: seeds from what is not the picture, so it floods inward, and the same flood outward
 // from what is (its other two numbers), and a last pass that keeps the length, in less than 0 outside, smoothed, which

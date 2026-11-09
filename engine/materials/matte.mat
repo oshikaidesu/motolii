@@ -1,4 +1,4 @@
-// matte.mat: a matte's shape, drawn into the matte's own picture of the screen (kit.h: matte): white where it is,
+// matte.mat: a matte's shape, drawn into the matte's own picture of the screen (render.h: matte): white where it is,
 // by how much it covers. A sheet with a picture on it (ThorVG's) covers by the picture's clearness, or by its light
 // (After Effects' luma matte); a solid is given a white picture and covers all of itself. Shapes laid over each
 // other in one matte join.

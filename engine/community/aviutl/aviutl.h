@@ -31,7 +31,7 @@ bool aviutl_text(const std::string& file, std::string& own, std::string& all, st
 struct AviutlVar { std::string var, kind, expr, label; double usual = 0, step = 1; bool truth = false, unset = false, named = false; std::vector<double> values; std::vector<std::string> choices; };   // (named: --track@name, a variable of its own; else --track0, obj.track0; label: its name shown, obj.effect's for it; step: a track's 移動単位)
 std::vector<AviutlVar> aviutl_vars(const std::string& text);
 std::vector<ScriptKnob> aviutl_knobs(const std::string& file);
-// One embedded pixel shader made WGSL in the door's manner (screen_door.h: tN at binding 2N, sN at 2N+1, b0 after them,
+// One embedded pixel shader made WGSL in the door's manner (screen_interop.h: tN at binding 2N, sN at 2N+1, b0 after them,
 // its entry `main`), `clip`: each sample transparent past the picture (the sampler "clip"). Its constants as Lua gives
 // them (floats in HLSL's cbuffer packing) moved where WGSL lays them: `count` floats from byte `from` to byte `to`.
 struct AviutlShader {

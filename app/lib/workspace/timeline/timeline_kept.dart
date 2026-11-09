@@ -1,4 +1,4 @@
-// The stage's pictures kept on disk for playing (the inside's stage_kept.h), marked under the ruler's work-area band as
+// The stage's pictures kept on disk for playing (the inside's stage_cache.h), marked under the ruler's work-area band as
 // After Effects marks its cached frames: a thin line where a played picture is put, not drawn.
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';

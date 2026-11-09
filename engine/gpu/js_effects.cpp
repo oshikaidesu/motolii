@@ -4,7 +4,7 @@
 // table (motolii_dawn_procs) and lent Filament's device and a texture of it (wrapDevice, wrapTexture); the effect is
 // drawn by community/three_tsl/jsrh_napi/shaders.ts. After it, the texture is read back here, on the same device.
 //   ./gpu/js_effects.sh <preset.json> <w> <h> <frames> <out.rgba>
-#include "gpu_door.h"
+#include "gpu_interop.h"
 #include <filament/Engine.h>
 #include <dawn/native/DawnNative.h>
 #include <dawn/webgpu_cpp.h>

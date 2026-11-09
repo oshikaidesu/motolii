@@ -107,7 +107,7 @@ static std::string aviutl_font_file(const std::string& name, bool bold, bool ita
 
 // obj.load "text": the words in obj.setfont's font, size, colour and decoration, a picture as large as they are set
 // (YMM4-LuaScript, routersys, MIT: TextRenderer.Render, the layout's own box; nothing said, one clear pixel). Set by
-// ThorVG's text as Motolii's words are (drawn_made.h type: its size in points, AviUtl's in pixels, so 72 / 96 of it).
+// ThorVG's text as Motolii's words are (canvas_renderables.h type: its size in points, AviUtl's in pixels, so 72 / 96 of it).
 // The decorations as sashimono-edit measured AviUtl2 v2.1.6a (MIT, compat/decoration.py DECORATIONS, by obj.setfont's
 // number in its order: mapping.py _DECORATION_BY_INDEX): an edge of 8, 4, 12 and 4 hundredths of the size outside the
 // letters (縁取り, 細, 太, 角), a shadow 5 hundredths right and down (影付き; 薄, half as strong), in the edge colour.

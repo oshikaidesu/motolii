@@ -22,7 +22,7 @@ function __any(name) {
   });
 }
 // A canvas with no pixels, as a 2D sketch paints on it: what the WHATWG canvas context is told, kept as numbers for ThorVG
-// (drawn_sketch.h), each paint its kind (1 fill, 2 stroke, 3 words), colour, blend, line, how many numbers follow of its path
+// (canvas_sketch.h), each paint its kind (1 fill, 2 stroke, 3 words), colour, blend, line, how many numbers follow of its path
 // (0 move, 1 line, 2 curve, 3 close) and of its gradient and the sketch's line that drew it, its points turned by the matrix as they are told, as the spec says. svgcanvas, which writes the same calls as SVG, took
 // 45 ms a frame in QuickJS for 1161 shapes and this 6, and has no globalCompositeOperation.
 const __blends = { multiply: 1, screen: 2, overlay: 3, darken: 4, lighten: 5, 'color-dodge': 6, 'color-burn': 7, 'hard-light': 8, 'soft-light': 9, difference: 10, exclusion: 11, hue: 12, saturation: 13, color: 14, luminosity: 15, lighter: 16 };   // (ThorVG's BlendMethod)
@@ -33,7 +33,7 @@ function __rgba(style) {   // (a colour as p5 itself reads it)
   return c;
 }
 // Whole pictures a sketch holds, loaded, made pixel by pixel or a film's: their bytes stay here, a paint says which by its number
-// (drawn_sketch.h sketch_bitmap). What is made each frame goes when 300 MB of them are held: what shows it is on disk by then (drawn_kept.h).
+// (canvas_sketch.h sketch_bitmap). What is made each frame goes when 300 MB of them are held: what shows it is on disk by then (canvas_cache.h).
 var __bitmaps = [null], __bitmaps_made = [], __bitmaps_held = 0;
 function __bitmap_new(bytes, stays) {
   __bitmaps.push(bytes);
@@ -218,7 +218,7 @@ function __film_show() {   // (at the size it was asked for, each its nearest of
   __film.drawingContext.bytes_are(out);
 }
 function __film_step() { const next = __film_next(); if (next) __film.source = next, __film_show(); }
-// What the forms of door.h paint on is p5's own canvas: asked for by a page's id or made, it is that one; a second made is another.
+// What the forms of adapter.h paint on is p5's own canvas: asked for by a page's id or made, it is that one; a second made is another.
 function __door_canvas() {
   const e = drawingContext.canvas, make = document.createElement;
   let given = false;
@@ -340,7 +340,7 @@ function __shape() {   // (only boxes, only balls or only rings, with no lines a
   return kinds.length === 1 && kit[kinds[0]] && !__lined && !__tex.length && !__shaders.length && !__meshes.some(m => m.tris.length || m.rows.length) ? kit[kinds[0]] : 'sketch';
 }
 var __by_at = -1, __by = [];
-function __three_each(i, f, part) {   // (the frame's meshes by their parts; each part's copies a solid's: door.h)
+function __three_each(i, f, part) {   // (the frame's meshes by their parts; each part's copies a solid's: adapter.h)
   if (__by_at !== f) {
     __three_whole(), __by_at = f, __by = [];
     const c = __frames[f];

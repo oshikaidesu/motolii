@@ -1,7 +1,7 @@
 // calls_find.h: part of motolii.mm, read before calls.h. The shelves' search (motolii_find): RapidFuzz for words typed
 // wrong or in part, Japanese WordNet and SQLite's FTS5 for Japanese words (the user's Mercari: read, not asked; golf
 // (91), (96)). Cut out of calls.h as it was, by size.
-// A text's letters (a byte 10xxxxxx goes with the one before it, as drawn_made.h splits a text), in small letters as
+// A text's letters (a byte 10xxxxxx goes with the one before it, as canvas_renderables.h splits a text), in small letters as
 // RapidFuzz's utils.default_process; and back to UTF-8.
 static std::u32string find_letters(const std::string& s) {
     std::u32string out;

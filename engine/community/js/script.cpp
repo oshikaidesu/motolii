@@ -1,6 +1,6 @@
 // script.h's door: the head read for knobs, QuickJS-ng behind each().
 #include "community/js/script.h"
-#include "community/door.h"
+#include "community/adapter.h"
 #include "community/aviutl/aviutl.h"
 #include "community/js/p5_stand.h"
 #include "media/video_frames_for_scripts.h"
@@ -89,7 +89,7 @@ std::vector<ScriptKnob> script_knobs(const std::string& file) {
     if (std::filesystem::path(file).extension() == ".js") {
         std::stringstream all;
         all << in.rdbuf();
-        const std::string told = door_js(all.str(), door_form(all.str()));   // (a form from the net told as a sketch: door.h)
+        const std::string told = door_js(all.str(), door_form(all.str()));   // (a form from the net told as a sketch: adapter.h)
         if (script_is_sketch(told) && told.find("function relate") == std::string::npos && !script_pushes(told) && !solid_is(file)) {   // (a relation is p5's too, but its head says its knobs; a solid's shape says THREE. too, but is no scene from the net: its head says its knobs, solid_three.h)
             if (door_form(all.str()) == "three") {   // (which part of the scene this thing is: document/adapter.h)
                 ScriptKnob part;
@@ -269,7 +269,7 @@ Script::Script(const std::string& file, const std::string& p5, const std::string
     std::ifstream in(file);
     std::stringstream code;
     code << in.rdbuf();
-    const std::string form = door_form(code.str()), src = door_js(code.str(), form);   // (a form from the net told as a sketch: door.h)
+    const std::string form = door_form(code.str()), src = door_js(code.str(), form);   // (a form from the net told as a sketch: adapter.h)
     own->rt = JS_NewRuntime();
     JS_SetMemoryLimit(own->rt, 2ull << 30);   // (a sketch keeps its frames: 100,000 rectangles a frame are 1.5 GB a second. It stops with an error, not with the machine)
     own->cx = JS_NewContext(own->rt);

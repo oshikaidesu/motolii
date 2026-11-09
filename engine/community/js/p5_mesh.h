@@ -139,7 +139,7 @@ function __paint(r) {   // (what sketch.mat reads, or 1000 and on: which of this
   return 1000 + g;
 }
 // What it draws with, texture() or image(): a createGraphics is a canvas of paints like the one a 2D sketch paints on, each
-// frame's taken as that one's are (__paints) and drawn by ThorVG (drawn_sketch.h sketch_texture). 0: none.
+// frame's taken as that one's are (__paints) and drawn by ThorVG (canvas_sketch.h sketch_texture). 0: none.
 var __tex = [], __tex_of = new Map();
 function __tex_at(r) {
   const e = r._tex && r._tex.canvas, flat = e && e.flat;
@@ -303,7 +303,7 @@ p5.RendererGL.prototype.drawBuffersScaled = function (gId, x, y, z) {
   return this;
 };
 // shader(): what it is told is kept. A flat thing drawn with one, and nothing else in any frame, is that shader painting the
-// stage (door_p5_shader.h makes it an effect, its numbers knobs). Any more, and it is what paints what it draws: __paint.
+// stage (adapter_p5_shader.h makes it an effect, its numbers knobs). Any more, and it is what paints what it draws: __paint.
 var __shaded = null, __shaded_kind = '', __draws_most = 0, __draws_now = 0;
 p5.prototype.shader = function (s) { this._renderer.userFillShader = s, this._renderer._useNormalMaterial = false; return this; };
 p5.Shader.prototype.setUniform = function (n, v) {

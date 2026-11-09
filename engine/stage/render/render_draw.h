@@ -1,4 +1,4 @@
-// kit_draw.h: part of kit.h. Read only through kit.h.
+// render_draw.h: part of render.h. Read only through render.h.
 // A film moves things between its pictures: every thing made of mesh `m` goes where `to` says (told which of the
 // mesh's places it is, and that place). Poses only: nothing is worked out here that a picture is made of.
 static void move(Stage& s, const Mesh* m, const std::function<mat4f(int, const mat4f&)>& to, const mat4f* eye = nullptr) {

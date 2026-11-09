@@ -84,7 +84,7 @@ cd app && flutter test --no-pub test/accessibility_guidelines_test.dart
 
 ## 実行結果：エンジン側の外の基準（2026-11-08）
 
-`engine/out/edit_wgpu`（ビルド済み、`BACKEND=webgpu`）を `cd engine/out/wgpu_kit` から、ファイルごとに新しい文書で1回ずつ走らせた。1枚目の絵は `at 0.5`（ISF は `at` なし）の `still` で、「空白でない」は PNG（1080x1920）を読んで黒（0,0,0）でない画素を数えたもの。拒否は `NOT done: ...` の行、落ちは終了コードが 0 でないこと。`edit.sh` は走らせていない（ライブラリを作り直すため）。
+`engine/out/edit_wgpu`（ビルド済み、`BACKEND=webgpu`）を `cd engine/out/filament_webgpu` から、ファイルごとに新しい文書で1回ずつ走らせた。1枚目の絵は `at 0.5`（ISF は `at` なし）の `still` で、「空白でない」は PNG（1080x1920）を読んで黒（0,0,0）でない画素を数えたもの。拒否は `NOT done: ...` の行、落ちは終了コードが 0 でないこと。`edit.sh` は走らせていない（ライブラリを作り直すため）。
 
 ### Lottie
 

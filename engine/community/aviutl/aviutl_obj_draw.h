@@ -25,7 +25,7 @@ static void aviutl_mesh(AviutlRun& r, const AviutlBuf& from, const AviutlBuf& to
     Texture* picture = from.t ? from.t : r.none;
     door::draw(r.s->engine, r.poly, &picture, to.rt, to.w, to.h, pass, nullptr, true, way, sampler, corners.data(), (uint32_t)(corners.size() / door::MESH_CORNER));
 }
-// obj.setoption "blend" as the door lays it (screen_door.h's blend), as lua.txt's words are read by sashimono-edit
+// obj.setoption "blend" as the door lays it (screen_interop.h's blend), as lua.txt's words are read by sashimono-edit
 // (MIT, compat/aviutl/raster.py _over): the buffers premultiplied, so "alpha_add" (colours weighed by their alphas,
 // the alphas added) is what is there plus what is drawn; "alpha_sub" (colours kept, the alpha drawn taken away)
 // Porter-Duff's "out", the same where either is opaque (their a_b - a_t is a_b (1 - a_t) there); "alpha_add2"

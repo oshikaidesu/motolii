@@ -1,5 +1,5 @@
-// See screen_door.h.
-#include "screen_door.h"
+// See screen_interop.h.
+#include "screen_interop.h"
 
 #include <filament/Engine.h>
 #include <filament/IndexBuffer.h>
@@ -15,7 +15,7 @@
 #include "details/RenderTarget.h"
 #include "details/Texture.h"
 #include "details/VertexBuffer.h"
-#include "gpu_door.h"
+#include "gpu_interop.h"
 
 #include <webgpu/webgpu.h>
 

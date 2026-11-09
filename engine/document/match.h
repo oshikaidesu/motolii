@@ -286,7 +286,7 @@ static bool doc_match(Doc& d) {
             const double cl = doc_number(d, layer, "crop_left", 0, 0), ct = doc_number(d, layer, "crop_top", 0, 0), cr = doc_number(d, layer, "crop_right", 0, 0), cb = doc_number(d, layer, "crop_bottom", 0, 0);
             const bool cropped = cl + ct + cr + cb > 0.0;
             const float aspect = doc_among(".jpg .jpeg .png .webp .bmp .JPG .JPEG .PNG", ext) && (edge.w > 0.f || doc_number(d, layer, "round", 0, 0) > 0.0 || cropped) ? picture_aspect(s, file.c_str()) : 0.f;
-            if (ext == ".js") {   // (a p5.js sketch that paints in 2D, what it paints ThorVG's: drawn_sketch.h)
+            if (ext == ".js") {   // (a p5.js sketch that paints in 2D, what it paints ThorVG's: canvas_sketch.h)
                 std::string under;   // (the film under it: what its createCapture and createVideo see)
                 for (int t : doc_laid(d)) { if (t == layer) break; if (doc_word(d, t, "kind") == "video") under = doc_word(d, t, "file"); }
                 std::shared_ptr<Script>& ready = doc_scripts_kept(d).sketches[file].ready;   // (what was run to see it runs, where no film is under it)
@@ -323,7 +323,7 @@ static bool doc_match(Doc& d) {
             } else {   // (a line is long and thin as it comes: 25 times as long as it is thick, a tenth of a unit thick)
                 const bool line = shape == "line", wave = shape == "wave";   // (a wave: a line waving, ten times as long as it is high)
                 fx.hollow = fill == "none";   // (filled with nothing: its edge alone, a frame)
-                fx.media = doc_word(d, layer, "fill_media");   // (filled with a picture's file: drawn_made.h flat)
+                fx.media = doc_word(d, layer, "fill_media");   // (filled with a picture's file: canvas_renderables.h flat)
                 fx.evenOdd = doc_word(d, layer, "fill_rule") == "evenodd";
                 const float high = line ? 0.04f : wave ? 0.3f : 1.f;
                 // (its outline alone, in one colour: cut into triangles and drawn by Filament as the scene's other layers

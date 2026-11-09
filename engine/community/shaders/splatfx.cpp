@@ -176,7 +176,7 @@ std::vector<std::pair<std::string, std::vector<float>>> SplatEffect::uniforms(do
 #include <mutex>
 
 namespace {
-struct SplatConfig : matp::Config {   // (as kit_wgpu.sh runs matc: -a webgpu -a metal -p desktop)
+struct SplatConfig : matp::Config {   // (as filament_webgpu.sh runs matc: -a webgpu -a metal -p desktop)
     SplatConfig() { mTargetApi = TargetApi::WEBGPU | TargetApi::METAL; mPlatform = Platform::DESKTOP; }
     Output* getOutput() const noexcept override { return nullptr; }
     Input* getInput() const noexcept override { return nullptr; }

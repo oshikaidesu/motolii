@@ -121,7 +121,7 @@ extension _WorkspaceMenus on _WorkspaceState {
                 (made) => ws.select('$made'),
               ) // (at the playhead, the pasted one picked: Live's paste at the insert marker)
             : null;
-        // (code copied from the net, whatever it is written for: read by the inside, door.h; what was copied last wins)
+        // (code copied from the net, whatever it is written for: read by the inside, adapter.h; what was copied last wins)
         Clipboard.getData(Clipboard.kTextPlain).then((said) {
           final code = said?.text ?? '';
           if (code.trim().isEmpty || code == _textWhenCopied) return own();

@@ -1,9 +1,9 @@
-// sound_playback.h: the things' own sound heard while the stage plays (Stage::sounding: what a written film mixes, kit.h): each
+// sound_playback.h: the things' own sound heard while the stage plays (Stage::sounding: what a written film mixes, render.h): each
 // a GStreamer playbin of its file's sound alone, sought to where the stage's moment puts it in its cut and played at its
 // speed; paused when the stage stands or the thing is not on; sought again when it strays (its cut gone round, the
 // playhead put elsewhere, a clock apart). MOTOLII_MUTE: everything as it is, at no loudness (checks run on a desk).
 #pragma once
-// (after kit.h: Stage, Stage::Sound)
+// (after render.h: Stage, Stage::Sound)
 #include <gst/gst.h>
 #include <cmath>
 #include <cstdlib>

@@ -26,7 +26,7 @@ TABLES = re.compile(r'\b(?:from|into|update|join|table(?: if not exists)?|attach
 FOREIGN = {
     'lookAt',     # Filament Camera::lookAt(eye, center, up) (filament/include/filament/Camera.h), §2 a
     'IOKit',      # Apple's framework (developer.apple.com/documentation/iokit), linked by engine/gpu/*.sh
-    'SceneKit',   # Apple's framework (developer.apple.com/documentation/scenekit), engine/stage/kit/
+    'SceneKit',   # Apple's framework (developer.apple.com/documentation/scenekit), engine/stage/render/
 }
 # A name under another library's namespace is that library's (§2 a, b, e): tvg::Picture, filament::View, ui.Picture.
 QUALIFIED = re.compile(r'\b(?:tvg|filament|utils|math)::\w+(?:::\w+)*|\bui\.\w+')

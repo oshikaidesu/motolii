@@ -93,7 +93,7 @@ const canvases = { documentElement: {}, createElement: () => {
     measureText: (text: string) => ({ width: 30.6 * [...text].length, fontBoundingBoxAscent: 47, fontBoundingBoxDescent: 12 }),
     fillText: (text: string, x: number, y: number) => {
       const key = `${text} ${x} ${y} ${canvas.width} ${canvas.height}`
-      if (!drawn.has(key)) {
+      if (!canvas.has(key)) {
         const said = text.replace(/%/g, "%%").replace(/\\/g, "\\\\").replace(/^@/, "\\@").replace(/'/g, "'\\''")
         std.popen(`magick -size ${canvas.width}x${canvas.height} xc:none -font ${font} -pointsize 51 -fill white -annotate +${x - 15.3}+${y} '${said}' -depth 8 rgba:${raw}`, "r").readAsString()
         const one = new Uint8Array(canvas.width * canvas.height * 4), got = std.open(raw, "rb")

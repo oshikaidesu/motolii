@@ -1,4 +1,4 @@
-// paper_copy.mat: the paper on the screen, taken from the picture of the scene without the glass (kit.h: `behind`),
+// paper_copy.mat: the paper on the screen, taken from the picture of the scene without the glass (render.h: `behind`),
 // where it has been drawn already with its sunlight, shade and tooth. Drawing the paper once instead of twice.
 material {
     name : paper_copy,

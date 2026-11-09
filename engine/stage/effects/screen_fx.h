@@ -2,13 +2,13 @@
 // frag: vec4f, @location(0) uv: vec2f) -> @location(0) vec4f`, the picture a `texture_2d<f32>`, a `sampler`, and its
 // knobs one `var<uniform>` struct), with its knobs declared in its head as a recipe's are (script.h: // --track@name:...).
 // The stage's picture is drawn to a texture of its own instead of the screen, and the effect draws it on the screen
-// (screen_door.h: through Filament's own driver, in order with its pictures). Knobs the struct has and the head does not
+// (screen_interop.h: through Filament's own driver, in order with its pictures). Knobs the struct has and the head does not
 // name are told as they come; `time` (seconds), `frame` (its number at sixty a second), `aspect` (wide over high), `resolution`, `width` and `height` (points) by the stage.
 #pragma once
-// (kit.h: read before this, as doc.h does)
+// (render.h: read before this, as doc.h does)
 #include "community/js/script.h"
 #include "community/shaders/isf.h"
-#include "gpu/screen_door.h"
+#include "gpu/screen_interop.h"
 #include <math/half.h>
 #include <thorvg.h>
 #include <filesystem>
@@ -280,7 +280,7 @@ static Texture* screen_picture(Stage& s) {
         .usage(Texture::Usage::COLOR_ATTACHMENT | Texture::Usage::SAMPLEABLE).build(*s.engine);
 }
 // The frames a second an effect is told (ISF's FRAMEINDEX and TIMEDELTA, Shadertoy's iFrameRate, AviUtl's obj.framerate):
-// the document's own, at whose frames its time is seen (kit_things.h time_is); none said, the stage's sixty it is drawn at.
+// the document's own, at whose frames its time is seen (render_layers.h time_is); none said, the stage's sixty it is drawn at.
 static double screen_rate(const Stage& s) { return s.frames > 0.0 ? s.frames : 60.0; }
 static void screen_knobs(Stage& s, ScreenFx& fx, const ScreenNumbers& numbers, int pass = 0, double pw = 0, double ph = 0) {
     std::vector<float> at(fx.bytes / 4, 0.f);
@@ -426,7 +426,7 @@ static void screen_draw(Stage& s, ScreenStack& st, ScreenFx& fx, Texture* from, 
         for (size_t k = 1; k < own; ++k)
             read[k] = (fx.layered >> k) & 1u ? fx.history : target < fx.targets.size() ? fx.targets[target].picture[fx.targets[target].front] : from, target += !((fx.layered >> k) & 1u);
         for (size_t k = own; k < read.size(); ++k) {   // (another thing's picture; none chosen yet, its own, but a transition's end nothing (ISF_Spec: a transition's endImage))
-            if (fx.others[k - own] == "backdrop" && s.behind) { read[k] = s.behind; continue; }   // (what is behind the thing: the stage's picture without it, kit_things.h; AbsentMotion's backdrop)
+            if (fx.others[k - own] == "backdrop" && s.behind) { read[k] = s.behind; continue; }   // (what is behind the thing: the stage's picture without it, render_layers.h; AbsentMotion's backdrop)
             const bool end = fx.others[k - own] == "endImage";
             if (end && !st.clear) {
                 st.clear = Texture::Builder().width(1).height(1).levels(1).format(Texture::InternalFormat::RGBA8).build(*s.engine);

@@ -1,4 +1,4 @@
-// drawn_flat.h: part of drawn.h. Read only through drawn.h.
+// canvas_flat.h: part of canvas.h. Read only through canvas.h.
 // A flat shape's triangles as its path is now (flat_mesh): its fill (none if hollow: cut by libtess2, made again only
 // when its path changes, `refill`), then its edge (ThorVG's own stroker: trimmed and dashed as told, its triangles
 // straight), in shares of its height from its middle (uv) and in the stage's units (pos), into its sheet; where each

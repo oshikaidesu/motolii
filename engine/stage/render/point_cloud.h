@@ -6,7 +6,7 @@
 // has moved, only the table of which splat is in which slot sent again; then laid one over another from the farthest,
 // Filament's own see-through blending. A plain scan's point is round, as large as its neighbours are far. Fitted to 1
 // tall, its middle at the place, as gltf_model.h fits a file. Its Mesh is a name only: the kit knows the thing by it.
-// (kit.h: read before this)
+// (render.h: read before this)
 #pragma once
 #include <cmath>
 #include <fstream>
