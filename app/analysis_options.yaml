@@ -1,5 +1,9 @@
 include: package:flutter_lints/flutter.yaml
 
+# The width `dart format` and editors' format-on-save use (dart.dev/tools/dart-format, "Configuring formatter page width").
+formatter:
+  page_width: 160
+
 analyzer:
   exclude:
     - build/**
