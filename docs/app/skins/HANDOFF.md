@@ -1,6 +1,6 @@
 # Motolii の見た目：引き継ぎ（人と AI 向け）
 
-Motolii の窓（Flutter、`app`）の見た目は、中身（書類・動き・絵）に触らずに3段で変えられる。この文書は、続きを作る人や AI が、これだけ読めば手を動かせるように書いてある。スキンを作るだけなら [README.md](README.md) で足りる。
+Motolii の窓（Flutter、`app`）の見た目は、中身（書類・動き・絵）に触らずに3段で変えられる。この文書は、続きを作る人や AI が、これだけ読めば手を動かせるように書いてある。スキンを作るだけなら [README.md](../../../shelves/skins/README.md) で足りる。
 
 ## 1. 3つの段
 
@@ -10,7 +10,7 @@ Motolii の窓（Flutter、`app`）の見た目は、中身（書類・動き・
 | ② 絵 | 印（アイコン）と、部品の枠 | `parts/*.svg` | フォルダを置くだけ |
 | ③ フォーム | 部品の**組み立てそのもの**（ボタンが何の形か、選択肢がどう並ぶか、札がどう組まれるか） | Dart のクラス1つ（`lib/forms/<名前>.dart`） | アプリに組み込む |
 
-①②は [README.md](README.md)・[ROLES.md](ROLES.md)・[PARTS.md](PARTS.md) に全部ある。外の LLM 3人に README だけで作らせて 6 → 7 → 8 点（10点満点）、指摘は直した。
+①②は [README.md](../../../shelves/skins/README.md)・[ROLES.md](../../../shelves/skins/ROLES.md)・[PARTS.md](../../../shelves/skins/PARTS.md) に全部ある。外の LLM 3人に README だけで作らせて 6 → 7 → 8 点（10点満点）、指摘は直した。
 ③はヘッドレス UI（React Aria・Radix と同じ分け方）。ここから下は主に③の話。
 
 ## 2. ファイルの地図
@@ -27,7 +27,7 @@ Motolii の窓（Flutter、`app`）の見た目は、中身（書類・動き・
 | `lib/forms/own.dart` | いつもの見た目のフォーム（前からの見た目をそのまま移した） |
 | `lib/forms/poster.dart` | 見本：スイスの幾何学ポスター風 |
 | `lib/forms/lighttable.dart` | 見本：フィルムのライトテーブル風（外の AI が HANDOFF だけで書いた、7/10） |
-| `skins/<名前>/` | リポジトリの見本の革（labs、paper、streets、poster、lighttable） |
+| `../shelves/skins/<名前>/` | リポジトリの見本の革（labs、paper、streets、poster、lighttable） |
 | `live.sh` | 窓を開いたまま、`lib/` の .dart を保存した瞬間に描き直す（状態は保つ） |
 
 ## 3. フォームの作り方（ヘッドレス UI）
@@ -66,7 +66,7 @@ Motolii の窓（Flutter、`app`）の見た目は、中身（書類・動き・
 | 文字の型 | `T.value()` | 書体は革の `FontMono`（等幅）。数と時間に |
 | 文字の大きさ | `T.px(11)` | 革の TextScale を掛けた大きさ（`.copyWith(fontSize: T.px(n))`） |
 | 書体の名前 | `T.sans` `T.mono` | 革が言う書体の名前 |
-| 色 | `Grey.g00`〜`Grey.g100`、`Grey.bandA` など | 灰色の段（どの段が窓のどこかは [ROLES.md](ROLES.md) の表）。革の Background・Foreground から作られる |
+| 色 | `Grey.g00`〜`Grey.g100`、`Grey.bandA` など | 灰色の段（どの段が窓のどこかは [ROLES.md](../../../shelves/skins/ROLES.md) の表）。革の Background・Foreground から作られる |
 | 色 | `WsT.accent` `WsT.onAccent` `Pop.accentInk` | 差し色、その上の文字、地の上に線や文字で使う差し色（`lib/workspace/ws.dart`、`lib/inspector/inspector_parts.dart`） |
 | 色 | `axX` `axY` `axZ`、Spec の `tone` | 軸の色、札の種類の色 |
 | 形 | `Shape.r(n)` | 角の丸み（`Radius`、革の Corner を掛ける） |
@@ -104,11 +104,11 @@ Anthropic 公式の考え方（[frontend-design スキル](https://github.com/an
 
 **値と絵の革**（置くだけで着られる）：
 
-> `docs/app/skins/README.md` と `docs/app/skins/ROLES.md` を読んで、`~/.motolii/skins/<名前>/theme.xml` に「（欲しい見た目）」の革を書いて。`./live.sh` で窓を開いて見て、直して、また見る。読めない文字や差し色の埋もれがなくなるまで。
+> `shelves/skins/README.md` と `shelves/skins/ROLES.md` を読んで、`~/Library/Application Support/Motolii/skins/<名前>/theme.xml` に「（欲しい見た目）」の革を書いて。`./live.sh` で窓を開いて見て、直して、また見る。読めない文字や差し色の埋もれがなくなるまで。
 
 **フォーム**（組み立てから変える）。届く部品は §3 の表。ドックのタブそのもの（`docking` が描く）はまだ外（§7）。
 
-> `docs/app/skins/HANDOFF.md` を読んで、`lib/forms/<名前>.dart` に「（欲しい見た目）」のフォームを書き、登録して、`app/skins/<名前>/theme.xml` で着る革を作って。先に色4〜6個・書体・ASCII の配置図を書いて「ありがちな所」を直してから書くこと。§3 の表の関数を全部書く（書かない関数は窓のいつもの絵のまま）。ドックのタブはまだ届かない。`./live.sh` で窓を開いて見て直す。最後に切れ0・はみ出し0を確かめる。
+> `docs/app/skins/HANDOFF.md` を読んで、`lib/forms/<名前>.dart` に「（欲しい見た目）」のフォームを書き、登録して、`shelves/skins/<名前>/theme.xml` で着る革を作って。先に色4〜6個・書体・ASCII の配置図を書いて「ありがちな所」を直してから書くこと。§3 の表の関数を全部書く（書かない関数は窓のいつもの絵のまま）。ドックのタブはまだ届かない。`./live.sh` で窓を開いて見て直す。最後に切れ0・はみ出し0を確かめる。
 
 ## 6. 落とし穴（踏んだ物）
 

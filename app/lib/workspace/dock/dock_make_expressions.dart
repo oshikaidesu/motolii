@@ -67,7 +67,7 @@ class _HexFieldState extends State<_HexField> {
 
 // ---- the Expression group: every JS that goes on a thing and moves its values (docs/internal/notes/CREATE_PROGRAM.md), one
 //  place for them all: the recipes with each() (the Repeater, After Effects' expressions, Maze, Sunflower…), the
-//  motions (Cavalry's Animators, animators/), the maker's own (Add to shelf: shelf_add.dart). Each is put on the picked
+//  motions (Cavalry's Animators, expressions/), the maker's own (Add to shelf: shelf_add.dart). Each is put on the picked
 //  thing as a card of its own, as many as are wanted (fx_file, empty_fx.dart fxPut); nothing picked, a recipe makes
 //  its thing as its head says, the others go on a new board.
 
@@ -75,7 +75,8 @@ class _HexFieldState extends State<_HexField> {
 /// the library's, as the inside's doc_folders).
 List<(String, String)> _expressionRecipes() {
   final by = <String, String>{};
-  for (final dir in ['$motoliiShelves/recipes', '${EffectTiles.own}/recipes']) {
+  for (final dir in ['$motoliiShelves/create', '${EffectTiles.own}/recipes', '${EffectTiles.own}/create']) {
+    // (recipes/: the maker's folder of the name it had before 2026-11-09, as doc_folders reads it)
     final d = Directory(dir);
     if (!d.existsSync()) continue;
     for (final f in d.listSync(recursive: true).whereType<File>()) {
@@ -95,7 +96,8 @@ List<_Make> _expressionsOf(Ws ws) => [
   for (final (name, file) in _expressionRecipes())
     _Make(name, DockG.copies, Pop.tonePlace, '', 'On the picked thing, a card of its own (nothing picked: makes its own thing)', file: file, made: true),
   for (final (name, file) in ws.inside?.animators ?? const <(String, String)>[])
-    _Make(name, DockG.copies, Pop.tonePlace, '', 'A motion, on the picked thing, a card of its own (nothing picked: on a new board)', file: file),
+    if (!shelfAdded(file)) // (one the maker added is in expressions/ too, the inside's motions' folder: its tile is the one below, with its name)
+      _Make(name, DockG.copies, Pop.tonePlace, '', 'A motion, on the picked thing, a card of its own (nothing picked: on a new board)', file: file),
   for (final (name, file) in shelfExpressions())
     _Make(
       name,

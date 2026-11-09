@@ -34,8 +34,11 @@ final String motoliiDir = () {
   return 'engine';
 }();
 
-/// The library's own shelves (effects, recipes, fonts…): shelves/, beside engine/.
+/// The library's own shelves (effects, create, skins…): shelves/, beside engine/.
 final String motoliiShelves = '${Directory(motoliiDir).absolute.parent.path}/shelves';
+
+/// The maker's own folder, a folder in it for each shelf: MOTOLII_OWN, or ~/Library/Application Support/Motolii (as the inside's doc_folders).
+String get motoliiOwn => Platform.environment['MOTOLII_OWN'] ?? '${Platform.environment['HOME']}/Library/Application Support/Motolii';
 
 /// The document the window opens: --dart-define=MOTOLII_DOC=/path/to.motolii, or the inside's own out/skin.motolii.
 String get motoliiDoc {

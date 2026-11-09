@@ -12,11 +12,11 @@
 
 ## 今の「レシピ」がこの線のどちらにいるか（11/9 時点のコード）
 
-`shelves/recipes/` の1つの書き方（`engine/document/doc_recipes.h:2` `doc_recipes_read`）に、両方が入っている。めちゃくちゃに見えるのはこのため。
+`shelves/create/` の1つの書き方（`engine/document/doc_recipes.h:2` `doc_recipes_read`）に、両方が入っている。めちゃくちゃに見えるのはこのため。
 
 | レシピ | 中身（根拠） | どっち |
 |---|---|---|
-| Canvalry の分（lissajous・cube・sphere など） | Cavalry のスクリプトを丸ごと動かす。コピーの位置・回転・ノブはスクリプトの中（`shelves/recipes/cavalry/from_canvalry.py:2`） | Program |
+| Canvalry の分（lissajous・cube・sphere など） | Cavalry のスクリプトを丸ごと動かす。コピーの位置・回転・ノブはスクリプトの中（`shelves/create/cavalry/from_canvalry.py:2`） | Program |
 | Cube Wave・Dwitter-48ed・Blob Track | `// make` の頭が無く、p5 などのまま（`Cube Wave.js:1`「as it is」、`doc_recipes.h:10`） | Program |
 | am_*（AbsentMotion の形） | ホストのパスの形に値を入れただけ（`// make shape path`） | Create |
 | burst・rings・tunnel など | ホストのコピーの値を決めるだけ。計算は C++（`engine/document/doc_kinds.h:345` 付近） | Create |
@@ -36,4 +36,4 @@
 ## 出典
 
 - AE の式はレイヤーのプロパティに付く：Adobe「Expression basics」（https://helpx.adobe.com/after-effects/using/expression-basics.html）
-- Canvalry を丸ごと動かしている：`shelves/recipes/cavalry/from_canvalry.py` の頭のコメント
+- Canvalry を丸ごと動かしている：`shelves/create/cavalry/from_canvalry.py` の頭のコメント

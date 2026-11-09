@@ -25,8 +25,8 @@ static std::string find_utf8(const std::u32string& s) {
     }
     return out;
 }
-// Japanese words a hand types, said in English: Japanese WordNet (NICT; words/ja_en.tsv, cut from its wnjpn.db as
-// words/SOURCE.txt says; a maker's own words/ja_en.tsv adds to it), its kana as hiragana (katakana and hiragana are
+// Japanese words a hand types, said in English: Japanese WordNet (NICT; third_party/wordnet_ja/ja_en.tsv, cut from its wnjpn.db as
+// its SOURCE.txt says; a maker's own words/ja_en.tsv adds to it: doc_folders), its kana as hiragana (katakana and hiragana are
 // Unicode's two blocks 0x60 apart), the longest word it has at each place (a dictionary's longest match); a kana
 // alone (a particle: が, を) is no word, nor letters of other scripts (an English word typed is RapidFuzz's). Each
 // word found, its English words. None: not Japanese, or no word of it known.

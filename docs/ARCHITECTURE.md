@@ -30,7 +30,7 @@
 | 場面・舞台・Stage | composition（AE のコンポジション）。描かれる画面 | `struct Stage` [`kit_stage.h:95`](../engine/stage/kit/kit_stage.h#L95) |
 | 書類 | project file（`.motolii`、中身は SQLite） | `struct Doc` [`doc_kinds.h:37`](../engine/document/doc_kinds.h#L37)、表は [`doc_steps.h:33`](../engine/document/doc_steps.h#L33)〜36 |
 | 棚 | 効果・レシピなどの一覧（AE の Effects & Presets パネル） | `shelves/`、窓は `app/lib/workspace/dock/` |
-| レシピ | 1 回で物と値を作るスクリプト（AE の animation preset に近い） | `shelves/recipes/` |
+| レシピ | 1 回で物と値を作るスクリプト（AE の animation preset に近い） | `shelves/create/` |
 
 ## 全体
 
@@ -94,7 +94,7 @@ flowchart TB
 | WGSL（`.wgsl`） | そのまま。頭に AviUtl2 式のつまみの行。横に置いた絵は `--image@名前:ファイル` で ThorVG が 1 回読む | `engine/stage/screen.h`、`thing_fx.h` |
 | AviUtl2（`.anm2`・`.obj2`） | Lua は LuaJIT（AviUtl2 と同じ）で走らせ、`obj` の呼び出しを中身の物で受ける。中の HLSL は glslang の HLSL の読み手 → SPIR-V → Tint → WGSL | `engine/community/aviutl/aviutl.cpp`、`aviutl_fx.h` |
 | three.js の形（`shelves/solids/*.js`） | QuickJS-ng で three.js を動かし、BufferGeometry を受け取る | `engine/community/js/solid_three.cpp` |
-| レシピ（`shelves/recipes/*/*.js`） | QuickJS-ng。1 回で物と値を作る | `engine/community/js/script.cpp` |
+| レシピ（`shelves/create/*/*.js`） | QuickJS-ng。1 回で物と値を作る | `engine/community/js/script.cpp` |
 | TSL | three.js 自身の WGSLNodeBuilder を QuickJS で（道具。棚に載せるのは出来上がった `.wgsl` だけ） | `engine/community/three_tsl/`、`shelves/effects/<傾向>/` の `sl_*.wgsl`・`tt_*.wgsl`・`nf_*.wgsl`・`tf_*.wgsl` |
 
 ## 書類
@@ -108,3 +108,23 @@ flowchart TB
 - 動画は **GStreamer** が読み（何の形式でも、GStreamer が部品を選ぶ）、絵を板に貼る（`engine/media/video.h`、`gst_read.h`）。
 - 作業中の音は GStreamer の playbin（`sound.h`）。
 - 書き出しは、場面を 1 秒 60 枚描いて **ffmpeg** に渡し、物の音も ffmpeg で混ぜる（`engine/stage/kit/kit_draw.h` の `film`）。
+
+## 棚を読む所
+
+`shelves/` のフォルダ（と利用者のフォルダの同じ名前のフォルダ）を、どのコードが読むか。場所を決めるのは `engine/document/doc_folders.h` の `doc_folders` 1 つで、窓の側は `app/lib/bridge/motolii.dart` の `motoliiShelves`・`motoliiOwn`。前の名前（`recipes/`・`animators/`・`ways/`）の利用者のフォルダも `doc_folders` が読み、書類に残る古い道は `script.h` の `script_shelf_file` が今の棚へ引き直す。
+
+| フォルダ | 中身（エンジン） | 窓（`app/lib/`） |
+|---|---|---|
+| `effects/` | `doc_recipes.h` `doc_folder_names` | `workspace/shelf/effect_tiles.dart` |
+| `aviutl_scripts/` | `doc_recipes.h` `doc_aviutl_names` | `workspace/shelf/effect_decks.dart` `effectPack` |
+| `create/` | `doc_recipes.h` `doc_recipes_read` | `workspace/dock/dock_make_expressions.dart` `_expressionRecipes`、`dock_make_create.dart` |
+| `expressions/` | `motolii_calls.h` `motolii_animators` | `workspace/dock/dock_make_expressions.dart` `_expressionsOf`、`workspace/shelf/shelf_add.dart`（Add to shelf の書き込み先） |
+| `relations/` | `motolii_calls.h` `motolii_relations` | `workspace/relate.dart` |
+| `looks/` | `doc_looks.h` `doc_look_names` | `bridge/motolii_shelves.dart` `looks` |
+| `solids/` | `community/js/solid_three.cpp`、`doc_moment_fx.h` | — |
+| `ease/` | `doc_recipes.h` `doc_own_ways` | `workspace/desk/desk_ease_shelf.dart` |
+| `skins/` | — | `style/theme.dart` `ColorTheme.skinNames`（前の置き場 `~/.motolii/skins/` も読む） |
+| `extensions/hydra/` | `doc_door.h`、`community/shaders/hydra_isf.cpp` | — |
+| （棚でない）`engine/third_party/wordnet_ja/` | `entry/motolii_calls_find.h` `find_english`（`doc_folders("words")`） | — |
+| （棚でない）`engine/third_party/noto_sans_jp/` | `stage/drawn/drawn_made.h` `type_fallback`（`doc_folders("fonts")`） | `workspace/dock/dock_fonts.dart` |
+| （棚でない）`engine/third_party/gflanguages/` | — | `workspace/dock/dock_fonts.dart`（`samples.json`） |

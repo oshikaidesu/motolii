@@ -1,7 +1,7 @@
 // doc_recipes.h: part of doc.h (recipes). Read only through doc.h.
 static std::vector<DocRecipe> doc_recipes_read() {
     std::vector<DocRecipe> all;
-    for (const auto& f : doc_folder_files("recipes", ".js")) {
+    for (const auto& f : doc_folder_files("create", ".js")) {
         DocRecipe r;
         r.path = f.string();
         std::ifstream in(f);
@@ -42,7 +42,7 @@ static bool doc_files_moved(Doc& d) {
     return moved;
 }
 // The files of a kind in its folders (doc_folders) ("name\tpath\tlabel\tpicture", one to a line): the whole-screen effects (effects/*.wgsl),
-// the motions a thing may be given (animators/*.js); a file's name as its first line says it, before the colon; its label
+// the motions a thing may be given (expressions/*.js); a file's name as its first line says it, before the colon; its label
 // (what it is for, the shelf's kind) as a head line "// --label:Distort" says it (AviUtl's --label:, its script's menu); its
 // picture for the shelf the .png beside it, if there is one ("" none).
 // An effect's tile on the shelf, "\tpicture\thome\tsame": its picture (the one drawn for it in
@@ -166,7 +166,7 @@ static std::string doc_aviutl_names() {
     if (!all.empty()) all.pop_back();
     return all;
 }
-// The ways a maker keeps of their own, as a maker's scripts are theirs: a file each in ways/ of their own folder
+// The ways a maker keeps of their own, as a maker's scripts are theirs: a file each in ease/ of their own folder
 // (doc_folders), and the few the library comes with (one put in either is a tile of the Ease desk at once). Its first line says its name
 // before the colon; the rest is how far it is, as a way defined in a document says it (doc_define: a, b, u, p1..p4,
 // bezier(u, x1, y1, x2, y2), way('Cyclic', u)). Put on a key, it is written into the document, so the document goes as it did wherever it
@@ -182,7 +182,7 @@ static std::map<std::string, std::string> doc_own_ways() {
     seen = files_changed();
     std::map<std::string, std::string> all;
     std::error_code wrong;
-    for (const auto& dir : doc_folders("ways"))
+    for (const auto& dir : doc_folders("ease"))
         for (const auto& e : std::filesystem::directory_iterator(dir, wrong)) {
             if (e.path().extension() != ".way") continue;
             std::ifstream in(e.path());

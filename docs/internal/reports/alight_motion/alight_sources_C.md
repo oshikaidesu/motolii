@@ -61,7 +61,7 @@
 - **Star Prism**：星の輪郭は three.js の見本 `examples/webgl_geometry_extrude_shapes.html` の星（半径を交互に 10 点、MIT）か Motolii の star の形（points・inner）。押し出しは `ExtrudeGeometry`（MIT）— 入れ方：Heart と同じ（bevel で Smoothing、`UVGenerator`）。Motolii の形の輪郭ならどれでも押し出せるので、Alight より広い。
 - **Three-axis Cross**：three.js `BoxGeometry` 3 本（x・y・z に細長く）を examples の `BufferGeometryUtils.mergeGeometries`（MIT）で 1 つに（確かめた：72 点）— 入れ方：Smoothing は `RoundedBoxGeometry` を 3 本。Alight のガイドにはつまみが書いてない（「まだ書いている途中」）ので、腕の太さ・長さは Alight で見て決める。
 - **Torus**：three.js `TorusGeometry`（MIT）— 入れ方：そのまま（u が輪を 1 周、v が管を 1 周）。いまの立体 ring は自分で書いた `torus()` なので、これに替える。
-- **Tunnel**：three.js `CylinderGeometry(…, openEnded=true)`（MIT）を内側から見る。曲がったトンネルにするなら `TubeGeometry`＋`CatmullRomCurve3`（MIT、確かめた：3185 点）— 入れ方：材質は doubleSided（内側が見える）、`WrapMode::REPEAT` で絵を奥へ繰り返し、UV の v をずらすと奥へ流れる。遠くを暗くするのは Filament の View の fog。Alight のガイドにはつまみが無い。手元の ISF に Tunnel の物は無い（`shelves/recipes/copies/tunnel.js` は写しを並べるレシピで別物）。
+- **Tunnel**：three.js `CylinderGeometry(…, openEnded=true)`（MIT）を内側から見る。曲がったトンネルにするなら `TubeGeometry`＋`CatmullRomCurve3`（MIT、確かめた：3185 点）— 入れ方：材質は doubleSided（内側が見える）、`WrapMode::REPEAT` で絵を奥へ繰り返し、UV の v をずらすと奥へ流れる。遠くを暗くするのは Filament の View の fog。Alight のガイドにはつまみが無い。手元の ISF に Tunnel の物は無い（`shelves/create/copies/tunnel.js` は写しを並べるレシピで別物）。
 
 ## 出所が無い・決まっていない物
 

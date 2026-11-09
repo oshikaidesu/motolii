@@ -41,7 +41,7 @@ names() { echo recipes | (cd $engines[$1] && ./edit.sh $tmp/docs/names_$1.motoli
 typeset -A has   # (side and name: 1 where that side has it)
 for side in 1 2; do
     for r in "${(@f)$(names $side)}"; do [ -n "$r" ] && has[${side}:recipe:${r}]=1; done
-    for f in $engines[$side]/animators/*.js(N:t) $engines[$side]/../shelves/animators/*.js(N:t); do has[${side}:motion:${f}]=1; done
+    for f in $engines[$side]/animators/*.js(N:t) $engines[$side]/../shelves/{animators,expressions}/*.js(N:t); do has[${side}:motion:${f}]=1; done
 done
 recipes=("${(@f)$(for k in ${(k)has}; do [[ $k = ?:recipe:* ]] && print -r -- ${k#?:recipe:}; done | sort -u)}")
 motions=("${(@f)$(for k in ${(k)has}; do [[ $k = ?:motion:* ]] && print -r -- ${k#?:motion:}; done | sort -u)}")
@@ -89,7 +89,7 @@ for f in $motions; do
     alone motion $f && continue
     for side in 1 2; do draw $side m$n "add text $font
 say 1 text MOTOLII
-say 1 script $(ls $engines[$side]/animators/$f $engines[$side]/../shelves/animators/$f 2> /dev/null | head -1)" "motion ${f:r}"; done
+say 1 script $(ls $engines[$side]/animators/$f $engines[$side]/../shelves/{animators,expressions}/$f 2> /dev/null | head -1)" "motion ${f:r}"; done
     compare m$n "motion ${f:r}"
     compared=$((compared + 1))
 done
