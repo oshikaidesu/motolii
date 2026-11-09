@@ -20,7 +20,12 @@ void main() {
   testWidgets('scrolling the timeline keeps the frame budget', (tester) async {
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.menu, (_) async => null);
     final doc = '${Directory.systemTemp.createTempSync('frame_timing').path}/frame_timing.motolii';
-    await tester.pumpWidget(WidgetsApp(color: const Color(0xFF000000), builder: (c, _) => Workspace(document: doc)));
+    await tester.pumpWidget(
+      WidgetsApp(
+        color: const Color(0xFF000000),
+        builder: (c, _) => Workspace(document: doc),
+      ),
+    );
     await tester.pumpAndSettle();
 
     // a document with enough tracks that the timeline has something to scroll
@@ -30,12 +35,13 @@ void main() {
     }
     ws.reread();
     await tester.pumpAndSettle();
-    await tester.runAsync(() => Future<void>.delayed(const Duration(seconds: 1)));   // (what the window reads as it opens finishes before the hand moves)
+    await tester.runAsync(() => Future<void>.delayed(const Duration(seconds: 1))); // (what the window reads as it opens finishes before the hand moves)
 
     final wheel = TestPointer(1, PointerDeviceKind.mouse);
     await tester.sendEventToBinding(wheel.hover(tester.getCenter(find.byType(WsTimeline))));
     await binding.traceAction(() async {
-      for (var i = 0; i < 120; i++) {   // down, up, and sideways: one wheel notch a frame, about two seconds
+      for (var i = 0; i < 120; i++) {
+        // down, up, and sideways: one wheel notch a frame, about two seconds
         final dy = (i ~/ 30).isEven ? 40.0 : -40.0;
         await tester.sendEventToBinding(wheel.scroll(i % 4 == 3 ? Offset(dy, 0) : Offset(0, dy)));
         await tester.pump();

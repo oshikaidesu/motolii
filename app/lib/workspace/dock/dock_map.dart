@@ -42,8 +42,8 @@ class DockMapPlaces {
   /// none at first, the map as FontMap lays it.
   final squeeze = ValueNotifier<double>(0);
   String? _for;
-  Map<String, Offset> _laid = const {};   // (where t-SNE lays them, before they are pushed apart: what is alike is told by it)
-  double _aspect = 1920 / 1080;   // (the room's width to its height: FontMap's canvas is the page it is shown on)
+  Map<String, Offset> _laid = const {}; // (where t-SNE lays them, before they are pushed apart: what is alike is told by it)
+  double _aspect = 1920 / 1080; // (the room's width to its height: FontMap's canvas is the page it is shown on)
   Future<void>? _spreading;
 
   /// The room the map is shown in, its width to its height: pushed apart again on a canvas of that shape.
@@ -55,19 +55,23 @@ class DockMapPlaces {
 
   /// [_laid] pushed apart for the room and drawn together by [squeeze] ([dockSpread]), one at a time, again till what it
   /// was for is the last asked.
-  Future<void> _spread() => _spreading ?? (_spreading = Zone.root.run<Future<void>>(() => Future<void>(() async {
-    try {
-      for (var laid = const <String, Offset>{}, a = 0.0, q = -1.0; !identical(laid, _laid) || a != _aspect || q != squeeze.value;) {
-        laid = _laid;
-        a = _aspect;
-        q = squeeze.value;
-        final s = laid.isEmpty ? const <Offset>[] : await _spreadAway(laid.values.toList(), a, q);
-        if (identical(laid, _laid)) places.value = {for (final (i, id) in laid.keys.indexed) id: s[i]};
-      }
-    } finally {
-      _spreading = null;
-    }
-  })));
+  Future<void> _spread() =>
+      _spreading ??
+      (_spreading = Zone.root.run<Future<void>>(
+        () => Future<void>(() async {
+          try {
+            for (var laid = const <String, Offset>{}, a = 0.0, q = -1.0; !identical(laid, _laid) || a != _aspect || q != squeeze.value;) {
+              laid = _laid;
+              a = _aspect;
+              q = squeeze.value;
+              final s = laid.isEmpty ? const <Offset>[] : await _spreadAway(laid.values.toList(), a, q);
+              if (identical(laid, _laid)) places.value = {for (final (i, id) in laid.keys.indexed) id: s[i]};
+            }
+          } finally {
+            _spreading = null;
+          }
+        }),
+      ));
 
   File get _kept => File('${_mapsAt.path}/map_$name.json');
 
@@ -80,28 +84,37 @@ class DockMapPlaces {
     final key = jsonEncode([also, for (final (id, from) in items) '$id\t$from']);
     if (key == _for) return;
     _for = key;
-    Zone.root.run(() async {   // (on the program's own clock, as fontsRead: a test may wait for it)
-      Future<void> show(Map<String, Offset> laid) async {   // (kept as t-SNE lays them; pushed apart each time shown, a moment's work)
+    Zone.root.run(() async {
+      // (on the program's own clock, as fontsRead: a test may wait for it)
+      Future<void> show(Map<String, Offset> laid) async {
+        // (kept as t-SNE lays them; pushed apart each time shown, a moment's work)
         if (key != _for) return;
         _laid = laid;
         await _spread();
       }
+
       var known = <String, Offset>{};
       try {
         final kept = jsonDecode(await _kept.readAsString()) as Map<String, dynamic>, was = (jsonDecode(kept['for'] as String) as List).cast<String>();
         final same = was.skip(1).toSet(), from = {for (final (id, f) in items) id: f};
         if (was.first.trim() == also.trim()) {
-          known = {for (final MapEntry(key: id, value: at) in (kept['places'] as Map<String, dynamic>).entries) if (same.contains('$id\t${from[id]}')) id: Offset(((at as List)[0] as num).toDouble(), (at[1] as num).toDouble())};
+          known = {
+            for (final MapEntry(key: id, value: at) in (kept['places'] as Map<String, dynamic>).entries)
+              if (same.contains('$id\t${from[id]}')) id: Offset(((at as List)[0] as num).toDouble(), (at[1] as num).toDouble()),
+          };
         }
-      } catch (_) {}   // (none kept, or for others: laid out now)
+      } catch (_) {} // (none kept, or for others: laid out now)
       if (known.length == items.length) return show(known);
-      if (known.isNotEmpty) await show(known);   // (those laid before at once; the new join them when read)
+      if (known.isNotEmpty) await show(known); // (those laid before at once; the new join them when read)
       laying.value = known.isEmpty;
       final numbers = await read([for (final (_, from) in items) from]);
-      if (key != _for) return;   // (asked for others meanwhile: theirs comes)
+      if (key != _for) return; // (asked for others meanwhile: theirs comes)
       var at = <String, Offset>{};
       if (known.isEmpty) {
-        final ids = [for (final (i, (id, _)) in items.indexed) if (numbers[i] != null) id];
+        final ids = [
+          for (final (i, (id, _)) in items.indexed)
+            if (numbers[i] != null) id,
+        ];
         final laid = await m.map([for (final v in numbers) ?v]);
         if (laid != null) at = {for (final (i, id) in ids.indexed) id: Offset(laid[i].$1, laid[i].$2)};
       } else {
@@ -113,15 +126,26 @@ class DockMapPlaces {
       laying.value = false;
       try {
         _kept.parent.createSync(recursive: true);
-        await _kept.writeAsString(jsonEncode({'for': key, 'places': {for (final MapEntry(key: id, value: p) in at.entries) id: [p.dx, p.dy]}}));
-      } catch (_) {}   // (not kept: laid out again next time)
+        await _kept.writeAsString(
+          jsonEncode({
+            'for': key,
+            'places': {
+              for (final MapEntry(key: id, value: p) in at.entries) id: [p.dx, p.dy],
+            },
+          }),
+        );
+      } catch (_) {} // (not kept: laid out again next time)
     });
   }
 
   /// Where each of [seen] not [known] goes: the middle each way of where its 25 nearest of the known lie (openTSNE's
   /// initialization.median).
   static Map<String, Offset> _joined(Map<String, Offset> known, Map<String, Float32List> seen) {
-    final base = [for (final id in known.keys) if (seen.containsKey(id)) id], out = <String, Offset>{};
+    final base = [
+          for (final id in known.keys)
+            if (seen.containsKey(id)) id,
+        ],
+        out = <String, Offset>{};
     double mid(List<double> v) => (v..sort())[v.length ~/ 2];
     for (final MapEntry(key: id, value: v) in seen.entries) {
       if (known.containsKey(id) || base.isEmpty) continue;
@@ -146,7 +170,11 @@ class DockMapPlaces {
   List<String> alike(String id, Iterable<String> among, int k) {
     final at = _laid.isEmpty ? places.value : _laid, p = at[id];
     if (p == null) return const [];
-    final near = [for (final o in among) if (o != id) if (at[o] case final q?) (o, (q - p).distanceSquared)]..sort((a, b) => a.$2.compareTo(b.$2));
+    final near = [
+      for (final o in among)
+        if (o != id)
+          if (at[o] case final q?) (o, (q - p).distanceSquared),
+    ]..sort((a, b) => a.$2.compareTo(b.$2));
     return [id, for (final (o, _) in near.take(k - 1)) o];
   }
 }
@@ -177,12 +205,22 @@ const dockSpreadRadius = 13.0;
 List<Offset> dockSpread(List<Offset> at, [double aspect = 1920 / 1080, double squeeze = 0]) {
   const pad = 40.0, r = dockSpreadRadius, pull = 0.03;
   final w = math.sqrt(1920 * 1080 * aspect), h = 1920 * 1080 / w;
-  final nodes = [for (final (i, p) in at.indexed) ForceNode(id: '$i')..x = p.dx * (w - 2 * pad) + pad..y = p.dy * (h - 2 * pad) + pad];
-  final collide = CollideForce(radius: (_) => r), sim = ForceSimulation(nodes)
-    ..alphaDecay = 1 - math.pow(0.001, 1 / 300).toDouble()   // (d3's, where force_graph keeps its Apeirron graph's)
-    ..alphaTarget = 0
-    ..addForce(collide)
-    ..addForce(_Toward([for (final n in nodes) Offset(n.x, n.y)], pull));
+  final nodes = [
+    for (final (i, p) in at.indexed)
+      ForceNode(id: '$i')
+        ..x = p.dx * (w - 2 * pad) + pad
+        ..y = p.dy * (h - 2 * pad) + pad,
+  ];
+  final collide = CollideForce(radius: (_) => r),
+      sim = ForceSimulation(nodes)
+        ..alphaDecay =
+            1 -
+            math
+                .pow(0.001, 1 / 300)
+                .toDouble() // (d3's, where force_graph keeps its Apeirron graph's)
+        ..alphaTarget = 0
+        ..addForce(collide)
+        ..addForce(_Toward([for (final n in nodes) Offset(n.x, n.y)], pull));
   if (squeeze > 0) sim.addForce(_Toward(List.filled(nodes.length, Offset(w / 2, h / 2)), squeeze * .1));
   for (var tick = 0; tick < 140; tick++) {
     sim.tick();
@@ -228,6 +266,7 @@ Future<Float32List?> dockTiny(List<String> files) async {
   if (v != null) _tiny[key] = v;
   return v;
 }
+
 Future<Float32List?> _read(List<String> files) async {
   const side = 16;
   final out = Float32List(files.length * side * side * 3);
@@ -270,7 +309,7 @@ Future<Float32List?> dockSeen(Motolii m, String model, List<String> files) async
     try {
       keys.add('$model\n$f\n${File(f).lastModifiedSync().microsecondsSinceEpoch}');
     } catch (_) {
-      return null;   // (the picture not there)
+      return null; // (the picture not there)
     }
     if (dockLookKept(keys[k]) case final had?) {
       v.setRange(512 * k, 512 * (k + 1), had);
@@ -312,11 +351,12 @@ Float32List? dockLookKept(String key) {
     return null;
   }
 }
+
 void dockLookKeep(String key, Float32List v) {
   try {
     _look(key).parent.createSync(recursive: true);
     _look(key).writeAsBytesSync(Float32List.fromList(v).buffer.asUint8List());
-  } catch (_) {}   // (not kept: read again next time)
+  } catch (_) {} // (not kept: read again next time)
 }
 
 /// Items' numbers of several parts side by side, as FontMap lays fonts by FontCLIP's numbers beside their tags' and
@@ -326,7 +366,11 @@ void dockLookKeep(String key, Float32List v) {
 List<Float32List?> dockTogether(List<List<Float32List?>> parts, List<double> weights, {Set<int> even = const {}}) {
   final n = parts.first.length, made = <List<Float32List>>[];
   for (final (k, rows) in parts.indexed) {
-    final dims = rows.nonNulls.firstOrNull?.length ?? 0, had = [for (final r in rows) if (r != null && r.length == dims) r];
+    final dims = rows.nonNulls.firstOrNull?.length ?? 0,
+        had = [
+          for (final r in rows)
+            if (r != null && r.length == dims) r,
+        ];
     final mean = Float64List(dims), sd = Float64List(dims)..fillRange(0, dims, 1);
     for (final r in had) {
       for (var i = 0; i < dims; i++) {
@@ -381,11 +425,12 @@ Map<String, Color> dockPalette(Map<String, Offset> at) => _palettes[at] ??= _pal
 Map<String, Color> _palette(Map<String, Offset> at) {
   final ids = at.keys.toList(), n = ids.length;
   if (n == 0) return const {};
-  final xs = [for (final id in ids) at[id]!.dx], ys = [for (final id in ids) -at[id]!.dy];   // (y up, as DataMapPlot's)
+  final xs = [for (final id in ids) at[id]!.dx], ys = [for (final id in ids) -at[id]!.dy]; // (y up, as DataMapPlot's)
   final cx = (xs.reduce(math.min) + xs.reduce(math.max)) / 2, cy = (ys.reduce(math.min) + ys.reduce(math.max)) / 2;
   final r = [for (var i = 0; i < n; i++) math.sqrt((xs[i] - cx) * (xs[i] - cx) + (ys[i] - cy) * (ys[i] - cy))];
   final t = [for (var i = 0; i < n; i++) math.atan2(ys[i] - cy, xs[i] - cx)];
-  double interp(double x, List<double> xp, List<double> fp) {   // (numpy's interp: the ends held)
+  double interp(double x, List<double> xp, List<double> fp) {
+    // (numpy's interp: the ends held)
     if (x <= xp.first) return fp.first;
     if (x >= xp.last) return fp.last;
     var k = 1;
@@ -394,6 +439,7 @@ Map<String, Color> _palette(Map<String, Offset> at) {
     }
     return xp[k] == xp[k - 1] ? fp[k] : fp[k - 1] + (fp[k] - fp[k - 1]) * (x - xp[k - 1]) / (xp[k] - xp[k - 1]);
   }
+
   final order = List.generate(n, (i) => i)..sort((a, b) => t[a].compareTo(t[b]));
   var sum = 0.0;
   final base = [for (final i in order) sum += r[i]], byT = [for (final i in order) t[i]];
@@ -410,7 +456,10 @@ Map<String, Color> _palette(Map<String, Offset> at) {
           if (hi > math.pi) hi -= 2 * math.pi;
           if (lo < -math.pi) lo += 2 * math.pi;
           final wraps = lo > 0 && hi < 0;
-          final some = [for (var i = 0; i < n; i++) if (wraps ? (t[i] > lo || t[i] < hi) : (t[i] > lo && t[i] < hi)) r[i]]..sort();
+          final some = [
+            for (var i = 0; i < n; i++)
+              if (wraps ? (t[i] > lo || t[i] < hi) : (t[i] > lo && t[i] < hi)) r[i],
+          ]..sort();
           if (some.isNotEmpty) return some;
         }
         return [...r]..sort();
@@ -430,7 +479,8 @@ Map<String, Color> _palette(Map<String, Offset> at) {
   final jch = [for (final c in raw) Cam16.fromInt(c)];
   final leastJ = jch.map((c) => c.j).reduce(math.min), leastC = jch.map((c) => c.chroma).reduce(math.min);
   return {
-    for (final (i, c) in jch.indexed) ids[i]: Color(Cam16.fromJch((c.j * math.sqrt2).clamp(leastJ, 100), (c.chroma / 2).clamp(math.min(10 / 2, leastC), 50), c.hue).toInt()),
+    for (final (i, c) in jch.indexed)
+      ids[i]: Color(Cam16.fromJch((c.j * math.sqrt2).clamp(leastJ, 100), (c.chroma / 2).clamp(math.min(10 / 2, leastC), 50), c.hue).toInt()),
   };
 }
 

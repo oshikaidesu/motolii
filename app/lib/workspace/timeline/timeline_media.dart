@@ -11,7 +11,10 @@ extension _WsTimelineMedia on _WsTimelineState {
     final m = ws.inside, t = int.tryParse(ws.selected ?? '');
     if (m == null || t == null) return const [];
     final start = m.value(t, 'start', 0) ?? 0;
-    return [for (final n in const ['retime_in', 'retime_out']) if ((m.value(t, n, 0) ?? 0) > 0) ((start + m.value(t, n, 0)!) * Ws.fps).round()];
+    return [
+      for (final n in const ['retime_in', 'retime_out'])
+        if ((m.value(t, n, 0) ?? 0) > 0) ((start + m.value(t, n, 0)!) * Ws.fps).round(),
+    ];
   }
 
   List<int> _beatsOf(Ws ws) {
@@ -22,10 +25,22 @@ extension _WsTimelineMedia on _WsTimelineState {
     final asks = <Future<List<double>>>[];
     for (final l in ws.layers) {
       final t = int.tryParse(l.id), rise = t == null ? 0.0 : m.value(t, 'beats', 0) ?? 0;
-      if (rise > 0 && _waveOf(ws, l) != null) asks.add(m.strikes(t!, rise));   // (only once its sound is read)
+      if (rise > 0 && _waveOf(ws, l) != null) asks.add(m.strikes(t!, rise)); // (only once its sound is read)
     }
     final reads = _beatsAsked = ws.reads;
-    Future.wait(asks).then((all) => mounted ? setState(() => _beats = (reads, ws.strikes = [for (final s in all) for (final at in s) (at * Ws.fps).round()])) : null);
+    Future.wait(asks).then(
+      (all) => mounted
+          ? setState(
+              () => _beats = (
+                reads,
+                ws.strikes = [
+                  for (final s in all)
+                    for (final at in s) (at * Ws.fps).round(),
+                ],
+              ),
+            )
+          : null,
+    );
     return _beats?.$2 ?? const [];
   }
 
@@ -42,7 +57,7 @@ extension _WsTimelineMedia on _WsTimelineState {
       final lasts = (l.outF - l.inF) / Ws.fps;
       final seconds = [for (var i = 0; i < n; i++) begin + (speed < 0 ? lasts - (i + .5) / n * lasts : (i + .5) / n * lasts) * speed.abs()];
       Future.wait([for (final s in seconds) m.filmFrame(file, s)]).then((pngs) async {
-        if (pngs.any((p) => p == null)) return mounted ? setState(() => _frames[l.id] = (key, null)) : null;   // (no pictures: its sound alone)
+        if (pngs.any((p) => p == null)) return mounted ? setState(() => _frames[l.id] = (key, null)) : null; // (no pictures: its sound alone)
         final read = [for (final p in pngs) (await (await ui.instantiateImageCodec(File(p!).readAsBytesSync())).getNextFrame()).image];
         if (mounted) setState(() => _frames[l.id] = (key, read));
       });
@@ -84,7 +99,8 @@ extension _WsTimelineMedia on _WsTimelineState {
     final key = (ws.reads, l.inF, l.outF);
     final had = _waves[l.id];
     if (had case (final r, final a, final b, final w) when (r, a, b) == key) return w;
-    if (_waveAsked[l.id] != key) {   // (a question of the inside, another isolate: laid on the bar when it comes)
+    if (_waveAsked[l.id] != key) {
+      // (a question of the inside, another isolate: laid on the bar when it comes)
       _waveAsked[l.id] = key;
       m.loudnessOver(t, l.inF / Ws.fps, l.outF / Ws.fps, l.outF - l.inF).then((w) {
         if (!mounted) return;
@@ -92,7 +108,9 @@ extension _WsTimelineMedia on _WsTimelineState {
           if (_asked.add(l.id)) m.loudness(t).then((_) => mounted ? setState(() => (_waveAsked.remove(l.id), _beats = null, _beatsAsked = null)) : null);
           return;
         }
-        setState(() => (_waves[l.id] = (key.$1, key.$2, key.$3, w.isEmpty ? null : w), _beats = null, _beatsAsked = null));   // (its sound now read: the beats asked again)
+        setState(
+          () => (_waves[l.id] = (key.$1, key.$2, key.$3, w.isEmpty ? null : w), _beats = null, _beatsAsked = null),
+        ); // (its sound now read: the beats asked again)
       });
     }
     return had?.$4;

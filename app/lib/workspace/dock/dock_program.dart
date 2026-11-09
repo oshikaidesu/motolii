@@ -55,7 +55,8 @@ class Program {
       final lines = File(file).readAsLinesSync();
       final kept = RegExp(r'^/\*\{.*"DESCRIPTION":"([^"]*)"').firstMatch(lines.first)?[1];
       if (kept != null && kept != 'Shadertoy') return kept;
-      return [for (final l in lines.take(8)) RegExp(r'^// (.+) by [^,]+, [^,]+, openprocessing\.org/sketch/\d+').firstMatch(l)?[1]].nonNulls.firstOrNull ?? plain;
+      return [for (final l in lines.take(8)) RegExp(r'^// (.+) by [^,]+, [^,]+, openprocessing\.org/sketch/\d+').firstMatch(l)?[1]].nonNulls.firstOrNull ??
+          plain;
     } catch (_) {
       return plain;
     }
@@ -70,9 +71,13 @@ class Program {
   /// The first line of it that says something.
   String get first {
     try {
-      final kept = RegExp(r'^/\*\{.*"DESCRIPTION":"([^"]*)"(?:,"CREDIT":"([^"]*)")?').firstMatch(File(file).readAsLinesSync().first);   // (what a file of many tabs says it is)
+      final kept = RegExp(r'^/\*\{.*"DESCRIPTION":"([^"]*)"(?:,"CREDIT":"([^"]*)")?')
+          .firstMatch(File(file).readAsLinesSync().first); // (what a file of many tabs says it is)
       if (kept != null && kept[1] != 'Shadertoy') return kept[2] == null ? kept[1]! : '${kept[1]} · ${kept[2]}';
-      return File(file).readAsLinesSync().map((l) => l.trim()).firstWhere((l) => l.isNotEmpty && !l.startsWith('//') && !l.startsWith('#') && !l.startsWith('/*'), orElse: () => '');
+      return File(file)
+          .readAsLinesSync()
+          .map((l) => l.trim())
+          .firstWhere((l) => l.isNotEmpty && !l.startsWith('//') && !l.startsWith('#') && !l.startsWith('/*'), orElse: () => '');
     } catch (_) {
       return '';
     }
@@ -84,7 +89,10 @@ List<Program> programs() {
   final dir = Directory('${EffectTiles.own}/programs');
   if (!dir.existsSync()) return const [];
   final all = dir.listSync().whereType<File>().where((f) => RegExp(r'\.(js|fs|hydra)$').hasMatch(f.path)).toList();
-  final made = {for (final f in all) if (RegExp(r'\.(hydra|js)$').hasMatch(f.path)) f.path.replaceFirst(RegExp(r'\.(hydra|js)$'), '.fs')};
+  final made = {
+    for (final f in all)
+      if (RegExp(r'\.(hydra|js)$').hasMatch(f.path)) f.path.replaceFirst(RegExp(r'\.(hydra|js)$'), '.fs'),
+  };
   final kept = all.where((f) => !made.contains(f.path)).toList()..sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
   return [for (final f in kept) Program(f.path)];
 }
@@ -92,7 +100,11 @@ List<Program> programs() {
 /// The maker's programs, then the library's packs not among them (one put in from the net and kept there too: once).
 List<Program> programsAndPacks(Motolii? m) {
   final own = programs(), stems = {for (final p in own) p.stem}, kinds = {for (final (name, kind) in m?.packKinds ?? const <(String, String)>[]) name: kind};
-  return [...own, for (final (name, file) in m?.packs ?? const <(String, String)>[]) if (!stems.contains(name)) Program(file, recipe: name, kind: kinds[name])];
+  return [
+    ...own,
+    for (final (name, file) in m?.packs ?? const <(String, String)>[])
+      if (!stems.contains(name)) Program(file, recipe: name, kind: kinds[name]),
+  ];
 }
 
 class ProgramShelf extends StatefulWidget {
@@ -106,7 +118,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
   DockCtx get c => widget.c;
   void _told(Program p, bool done, String why) => c.set(() => done ? c.mem.trouble.remove(p.file) : c.mem.trouble[p.file] = why);
   final _menu = GlobalKey<WsMenuState>();
-  String? _renaming;   // (the file whose name is being written)
+  String? _renaming; // (the file whose name is being written)
   final _words = TextEditingController();
   late final FocusNode _focus = FocusNode()..addListener(() => _focus.hasFocus ? null : _renamed());
 
@@ -115,7 +127,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
   @override
   void initState() {
     super.initState();
-    CopiesTiles.drawn.addListener(_drawn);   // (a pack's tile drawn: shown)
+    CopiesTiles.drawn.addListener(_drawn); // (a pack's tile drawn: shown)
   }
 
   @override
@@ -128,7 +140,13 @@ class _ProgramShelfState extends State<ProgramShelf> {
 
   void _put(Program p) {
     final m = c.ws.inside!;
-    if (p.recipe case final r?) return c.ws.after(m.later('make', word: r), (done, why) => _told(p, done, why), (made) => c.ws.select('$made'));   // (as Create's tile made it: dock_make_colours.dart _make)
+    if (p.recipe case final r?) {
+      return c.ws.after(
+        m.later('make', word: r),
+        (done, why) => _told(p, done, why),
+        (made) => c.ws.select('$made'),
+      ); // (as Create's tile made it: dock_make_colours.dart _make)
+    }
     c.ws.after(m.later('door', thing: int.tryParse(c.ws.selected ?? '') ?? 0, word: p.file), (done, why) => _told(p, done, why), (made) {
       if (made <= 0) return;
       if (p.name != p.plain) c.ws.after(m.later('say', thing: made, name: 'name', word: p.name));
@@ -141,7 +159,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
     _words
       ..text = p.name
       ..selection = TextSelection(baseOffset: 0, extentOffset: p.name.length);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());   // (its field is there from the next frame)
+    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus()); // (its field is there from the next frame)
   }
 
   void _renamed() {
@@ -162,15 +180,20 @@ class _ProgramShelfState extends State<ProgramShelf> {
       color: Grey.g91,
       padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
       alignment: Alignment.centerLeft,
-      child: TextHand(key: const ValueKey('ws-program-name'), field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
-        controller: _words,
-        focusNode: _focus,
-        style: T.micro(Grey.g13),
-        cursorColor: Grey.g13,
-        backgroundCursorColor: Grey.g38,
-        maxLines: 1,
-        onSubmitted: (_) => _focus.unfocus(),
-      )),
+      child: TextHand(
+        key: const ValueKey('ws-program-name'),
+        field: (k) => EditableText(
+          key: k,
+          rendererIgnoresPointer: true,
+          controller: _words,
+          focusNode: _focus,
+          style: T.micro(Grey.g13),
+          cursorColor: Grey.g13,
+          backgroundCursorColor: Grey.g38,
+          maxLines: 1,
+          onSubmitted: (_) => _focus.unfocus(),
+        ),
+      ),
     ),
   );
 
@@ -181,7 +204,10 @@ class _ProgramShelfState extends State<ProgramShelf> {
       WsMenuItem('Create', () => _put(p)),
       if (p.recipe == null) WsMenuItem('Rename…', () => _rename(p)),
       const WsMenuItem.rule(),
-      WsMenuItem(Platform.isWindows ? 'Show in Explorer' : 'Show in Finder', () => Platform.isWindows ? Process.run('explorer', ['/select,${p.file.replaceAll('/', r'\')}']) : Process.run('open', ['-R', p.file])),
+      WsMenuItem(
+        Platform.isWindows ? 'Show in Explorer' : 'Show in Finder',
+        () => Platform.isWindows ? Process.run('explorer', ['/select,${p.file.replaceAll('/', r'\')}']) : Process.run('open', ['-R', p.file]),
+      ),
     ]);
   }
 
@@ -212,7 +238,12 @@ class _ProgramShelfState extends State<ProgramShelf> {
     }
     final shown = all.where((p) => (c.chip == 'All' || c.chip == p.form) && (c.hit(p.name) || c.hit(p.stem) || c.hit(p.first))).toList();
     final sel = c.foot((c.mem.programCode ? _stood(all) : null) ?? all.where((p) => p.file == c.sel).firstOrNull);
-    if (all.isEmpty) return Padding(padding: EdgeInsets.all(Shape.s(24)), child: Text('Copy code from the web, then Paste', textAlign: TextAlign.center, style: T.label(Grey.g63)));
+    if (all.isEmpty) {
+      return Padding(
+        padding: EdgeInsets.all(Shape.s(24)),
+        child: Text('Copy code from the web, then Paste', textAlign: TextAlign.center, style: T.label(Grey.g63)),
+      );
+    }
     if (!c.mem.programCode) {
       ProgramTiles.ask(all.where((p) => p.recipe == null).map((p) => p.file), () {
         if (mounted) setState(() {});
@@ -221,7 +252,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
     String tile(Program p) => switch (p.recipe) {
       final r? => CopiesTiles.of(p.file, make: r),
       _ => File(ProgramTiles.home(p.file)).existsSync() ? ProgramTiles.home(p.file) : '',
-    };   // (a pack's drawn as Create's expressions are, made by its name)
+    }; // (a pack's drawn as Create's expressions are, made by its name)
     return WsMenu(
       key: _menu,
       child: Column(
@@ -229,7 +260,11 @@ class _ProgramShelfState extends State<ProgramShelf> {
         children: [
           if (!c.mem.programCode) DockChips([('All', all.length), for (final e in forms.entries) (e.key, e.value)], active: c.chip, onPick: c.pickChip),
           Expanded(
-            child: c.mem.programCode && sel != null && sel.recipe == null   // (a pack's file is the library's: not written over here)
+            child:
+                c.mem.programCode &&
+                    sel != null &&
+                    sel.recipe ==
+                        null // (a pack's file is the library's: not written over here)
                 ? ProgramCode(sel.file, (text) {
                     File(sel.file).writeAsStringSync(text);
                     _saved(sel);
@@ -249,7 +284,16 @@ class _ProgramShelfState extends State<ProgramShelf> {
                                 width: w,
                                 child: GestureDetector(
                                   onSecondaryTapDown: (d) => _menuOn(p, d.globalPosition),
-                                  child: EffectTile(p.name, key: ValueKey('ws-program-${p.stem}-${tile(p).isEmpty ? 0 : File(tile(p)).lastModifiedSync().millisecondsSinceEpoch}'), file: tile(p), on: null, onTap: () => c.pick(p.file), onApply: () => _put(p), picked: c.sel == p.file, naming: _renaming == p.file ? _naming(p) : null),   // (two presses make it, as on Create; drawn again under the same name, an Image with the same file goes on showing the first: the date in its key)
+                                  child: EffectTile(
+                                    p.name,
+                                    key: ValueKey('ws-program-${p.stem}-${tile(p).isEmpty ? 0 : File(tile(p)).lastModifiedSync().millisecondsSinceEpoch}'),
+                                    file: tile(p),
+                                    on: null,
+                                    onTap: () => c.pick(p.file),
+                                    onApply: () => _put(p),
+                                    picked: c.sel == p.file,
+                                    naming: _renaming == p.file ? _naming(p) : null,
+                                  ), // (two presses make it, as on Create; drawn again under the same name, an Image with the same file goes on showing the first: the date in its key)
                                 ),
                               ),
                           ],
@@ -258,7 +302,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
                     ),
                   ),
           ),
-          if (sel != null && !c.mem.programCode && tile(sel).isNotEmpty)   // (large, as the Effects shelf's)
+          if (sel != null && !c.mem.programCode && tile(sel).isNotEmpty) // (large, as the Effects shelf's)
             SizedBox(height: Shape.z(140), child: TileMoving(tile(sel), playing: true)),
           if (sel != null)
             DockFooter(
@@ -281,7 +325,7 @@ class ProgramCode extends StatefulWidget {
   const ProgramCode(this.file, this.write, {super.key, this.keep = false});
   final String file;
   final void Function(String text) write;
-  final bool keep;   // (what is typed kept as it is, the file not read back: being made, FxCode)
+  final bool keep; // (what is typed kept as it is, the file not read back: being made, FxCode)
   @override
   State<ProgramCode> createState() => _ProgramCodeState();
 }
@@ -300,7 +344,7 @@ class _ProgramCodeState extends State<ProgramCode> {
   void didUpdateWidget(ProgramCode old) {
     super.didUpdateWidget(old);
     final now = File(widget.file).readAsStringSync();
-    if (now != _written && !(_soon?.isActive ?? false) && !widget.keep) _text.text = _written = now;   // (written by another editor)
+    if (now != _written && !(_soon?.isActive ?? false) && !widget.keep) _text.text = _written = now; // (written by another editor)
   }
 
   @override
@@ -314,8 +358,9 @@ class _ProgramCodeState extends State<ProgramCode> {
   @override
   Widget build(BuildContext context) => CodeEditor(
     controller: _text,
-    wordWrap: true,   // (a shelf's width: a line pushed sideways is out of sight)
-    autocompleteSymbols: false,   // (exactly what is typed: re_editor puts in a closing " ] } and does not step over one typed, {"a":"b"} came out with ""} after it)
+    wordWrap: true, // (a shelf's width: a line pushed sideways is out of sight)
+    autocompleteSymbols:
+        false, // (exactly what is typed: re_editor puts in a closing " ] } and does not step over one typed, {"a":"b"} came out with ""} after it)
     onChanged: (_) {
       _soon?.cancel();
       _soon = Timer(const Duration(milliseconds: 400), _save);

@@ -27,13 +27,15 @@ class _LightDrawingState extends State<LightDrawing> {
   Widget build(BuildContext context) {
     final doc = Ctx.of(context).doc;
     final card = doc.cards.where((c) => c.name == 'Light').firstOrNull;
-    double norm(String id) { // (where a value lies on its range, 0 to 1: the drawing is the range, not the number)
+    double norm(String id) {
+      // (where a value lies on its range, 0 to 1: the drawing is the range, not the number)
       final p = card?.params.where((p) => p.id == id).firstOrNull, v = doc.get('v_$id');
       if (p == null || v == null || p.min == null || p.max == null || p.max == p.min) return .5;
       return ((v - p.min!) / (p.max! - p.min!)).clamp(0.0, 1.0);
     }
 
-    void pull(String id, double at) { // (a value set where the drawing says: its range, from 0 to 1)
+    void pull(String id, double at) {
+      // (a value set where the drawing says: its range, from 0 to 1)
       final p = card?.params.where((p) => p.id == id).firstOrNull;
       if (p == null || p.min == null || p.max == null) return;
       doc.set('v_$id', p.min! + (p.max! - p.min!) * at.clamp(0.0, 1.0));
@@ -87,7 +89,11 @@ class _Light {
   double get railX => size.width - rail;
   double get railTop => 18;
   double get railBottom => size.height - 16;
-  Offset get source => spot ? Offset(28, size.height / 2) : point ? Offset((size.width - rail * 2) / 2, size.height / 2) : const Offset(20, 14);
+  Offset get source => spot
+      ? Offset(28, size.height / 2)
+      : point
+      ? Offset((size.width - rail * 2) / 2, size.height / 2)
+      : const Offset(20, 14);
   double get far => (spot ? size.width - rail * 2 - 40 : size.height / 2 - 6) * (.2 + .8 * reach); // (how far its glow reaches)
   double get half => (8 + 52 * cone) * math.pi / 180; // (half the cone's opening)
   Offset get strengthKnob => Offset(railX, railBottom - (railBottom - railTop) * strength);
@@ -107,10 +113,11 @@ class _LightPaint extends CustomPainter {
   @override
   void paint(Canvas c, Size s) {
     c.drawRRect(RRect.fromRectAndRadius(Offset.zero & s, Shape.r(8)), Paint()..color = Grey.g07);
-    final glow = warm.withValues(alpha: .12 + .55 * g.strength), line = Paint()
-      ..color = warm.withValues(alpha: .35 + .6 * g.strength)
-      ..strokeWidth = 1.6
-      ..strokeCap = StrokeCap.round;
+    final glow = warm.withValues(alpha: .12 + .55 * g.strength),
+        line = Paint()
+          ..color = warm.withValues(alpha: .35 + .6 * g.strength)
+          ..strokeWidth = 1.6
+          ..strokeCap = StrokeCap.round;
     c.save();
     c.clipRRect(RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, s.width - _Light.rail * 2, s.height), Shape.r(8)));
     if (g.spot) {
@@ -119,12 +126,19 @@ class _LightPaint extends CustomPainter {
         ..moveTo(g.source.dx, g.source.dy)
         ..arcTo(Rect.fromCircle(center: g.source, radius: g.far), -g.half, g.half * 2, false)
         ..close();
-      c.drawPath(path, Paint()..shader = RadialGradient(colors: [glow, glow.withValues(alpha: 0)]).createShader(Rect.fromCircle(center: g.source, radius: g.far)));
+      c.drawPath(
+        path,
+        Paint()..shader = RadialGradient(colors: [glow, glow.withValues(alpha: 0)]).createShader(Rect.fromCircle(center: g.source, radius: g.far)),
+      );
       c.drawLine(g.source, g.source + Offset(math.cos(-g.half), math.sin(-g.half)) * g.far, line);
       c.drawLine(g.source, g.source + Offset(math.cos(g.half), math.sin(g.half)) * g.far, line);
     } else if (g.point) {
       // (a glow all round, as far as it reaches; rays as long as it is strong)
-      c.drawCircle(g.source, g.far, Paint()..shader = RadialGradient(colors: [glow, glow.withValues(alpha: 0)]).createShader(Rect.fromCircle(center: g.source, radius: g.far)));
+      c.drawCircle(
+        g.source,
+        g.far,
+        Paint()..shader = RadialGradient(colors: [glow, glow.withValues(alpha: 0)]).createShader(Rect.fromCircle(center: g.source, radius: g.far)),
+      );
       for (var i = 0; i < 8; i++) {
         final a = i * math.pi / 4, d = Offset(math.cos(a), math.sin(a));
         c.drawLine(g.source + d * 9, g.source + d * (11 + 22 * g.strength), line);
@@ -147,10 +161,11 @@ class _LightPaint extends CustomPainter {
       ..strokeCap = StrokeCap.round;
     c.drawLine(Offset(g.railX, g.railTop), Offset(g.railX, g.railBottom), rail);
     // (the brightness marks every hand has seen: a sun with rays at the top of the rail, a dim dot at its foot)
-    final top = Offset(g.railX, g.railTop - 4), mark = Paint()
-      ..color = Grey.g63
-      ..strokeWidth = 1.2
-      ..strokeCap = StrokeCap.round;
+    final top = Offset(g.railX, g.railTop - 4),
+        mark = Paint()
+          ..color = Grey.g63
+          ..strokeWidth = 1.2
+          ..strokeCap = StrokeCap.round;
     c.drawCircle(top, 2.5, mark);
     for (var i = 0; i < 8; i++) {
       final d = Offset(math.cos(i * math.pi / 4), math.sin(i * math.pi / 4));
@@ -159,10 +174,14 @@ class _LightPaint extends CustomPainter {
     c.drawCircle(Offset(g.railX, g.railBottom + 6), 1.8, mark);
     void knob(Offset at, _Knob k, Color col) {
       c.drawCircle(at, held == k ? 7 : 5.5, Paint()..color = col);
-      c.drawCircle(at, held == k ? 7 : 5.5, Paint()
-        ..color = Grey.g07
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5);
+      c.drawCircle(
+        at,
+        held == k ? 7 : 5.5,
+        Paint()
+          ..color = Grey.g07
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5,
+      );
     }
 
     knob(g.strengthKnob, _Knob.strength, warm);

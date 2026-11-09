@@ -2,7 +2,7 @@
 # AbsentMotion's shapes (Apache-2.0: github.com/Comett1225/AbsentMotion, fetched by engine/gpu/kit_wgpu.sh) on the Make
 # shelf as recipes, am_<name>.js here: its own shapes.cpp, read as it is, built with Skia (engine/deps/skia.sh's libskia)
 # beside the little of its scene it reads (absent_shapes/), each of its shapes.xml a path (from_absent_shapes.py).
-# Run by hand when AbsentMotion's shapes change; nothing builds it. (engine/absent_shapes.sh until 416fced3a.)
+# Run by hand when AbsentMotion's shapes change; nothing builds it. (in engine/ until 416fced3a.)
 #   shelves/recipes/shapes/absent_shapes.sh
 cd "$(dirname "$0")"
 E=${0:a:h}/../../../engine

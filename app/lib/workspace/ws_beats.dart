@@ -7,7 +7,7 @@ double? wsNumber(String said) => double.tryParse(halfWidth(said).trim());
 
 class WsBeats {
   const WsBeats(this.first, this.every);
-  final double first, every;   // (in frames: where a bar begins, and from one beat to the next)
+  final double first, every; // (in frames: where a bar begins, and from one beat to the next)
 
   static WsBeats? of(double bpm, double from, int fps) => bpm > 0 ? WsBeats(from * fps, 60 / bpm * fps) : null;
 

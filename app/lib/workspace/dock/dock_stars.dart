@@ -12,7 +12,11 @@ class DockStar extends StatelessWidget {
     onTap: onTap,
     builder: (context, h) {
       final col = ink ?? (on ? Pop.keyDot : (h ? Grey.g91 : Grey.g56));
-      return SizedBox(width: Shape.z(20), height: Shape.z(20), child: Center(child: glyph(11, (cv, s) => drawStar(cv, s, col, on), [col, on])));
+      return SizedBox(
+        width: Shape.z(20),
+        height: Shape.z(20),
+        child: Center(child: glyph(11, (cv, s) => drawStar(cv, s, col, on), [col, on])),
+      );
     },
   );
 }
@@ -27,6 +31,7 @@ Set<String> _starsRead() {
     return {};
   }
 }
+
 void _starsKeep(Set<String> all) {
   try {
     _starsFile.parent.createSync(recursive: true);

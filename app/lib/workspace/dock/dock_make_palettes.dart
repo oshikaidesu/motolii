@@ -22,7 +22,7 @@ class _Gradient {
   const _Gradient(this.name, this.colors, {this.blend = 'oklab', this.saved = false, this.at});
   final String name;
   final List<Color> colors;
-  final List<double>? at;   // (where each colour stands, a share of the way; null: evenly)
+  final List<double>? at; // (where each colour stands, a share of the way; null: evenly)
   final String blend;
   final bool saved;
 }
@@ -36,18 +36,36 @@ String _blendNow(DockCtx c) {
 }
 
 /// How a gradient looks on the shelf, mixed as the inside will mix it (OKLab drawn by CAM16, the eye's mix Flutter has).
-(List<Color>, List<double>?) _previewOf(List<Color> cs, String blend, [List<double>? at]) => at != null && blend == 'rgb' ? (cs, at) : switch (blend) {
-  'steps' => ([for (final c in cs) ...[c, c]], [for (var i = 0; i < cs.length; i++) ...[i / cs.length, (i + 1) / cs.length]]),
-  'hue' => ([for (var i = 0; i < cs.length - 1; i++) for (var k = 0; k < 6; k++) HSVColor.lerp(HSVColor.fromColor(cs[i]), HSVColor.fromColor(cs[i + 1]), k / 6)!.toColor(), cs.last], null),
-  'oklab' => (_stopsOf(cs, true), null),
-  _ => (cs, null),
-};
+(List<Color>, List<double>?) _previewOf(List<Color> cs, String blend, [List<double>? at]) => at != null && blend == 'rgb'
+    ? (cs, at)
+    : switch (blend) {
+        'steps' => (
+          [
+            for (final c in cs) ...[c, c],
+          ],
+          [
+            for (var i = 0; i < cs.length; i++) ...[i / cs.length, (i + 1) / cs.length],
+          ],
+        ),
+        'hue' => (
+          [
+            for (var i = 0; i < cs.length - 1; i++)
+              for (var k = 0; k < 6; k++) HSVColor.lerp(HSVColor.fromColor(cs[i]), HSVColor.fromColor(cs[i + 1]), k / 6)!.toColor(),
+            cs.last,
+          ],
+          null,
+        ),
+        'oklab' => (_stopsOf(cs, true), null),
+        _ => (cs, null),
+      };
 
 /// A gradient put on what is coloured: its colours, and how they are mixed (the picked thing's gradient_blend, or the
 /// ink's, for the next thing drawn); one step.
 void _putGradient(DockCtx c, List<Color> cs, String blend, [List<double>? at]) {
   final m = c.ws.inside!, t = _coloured(c);
-  final word = at != null && at.length == cs.length ? _wordOfStops([for (var i = 0; i < cs.length; i++) (cs[i], at[i])]) : [for (final k in cs) _hex(k).substring(1).toLowerCase()].join(' ');
+  final word = at != null && at.length == cs.length
+      ? _wordOfStops([for (var i = 0; i < cs.length; i++) (cs[i], at[i])])
+      : [for (final k in cs) _hex(k).substring(1).toLowerCase()].join(' ');
   if (t == null || (c.ws.aim ?? 'fill') != 'fill') {
     c.ws.inkBlend = blend;
     return _fill(c, word);
@@ -75,6 +93,7 @@ const _starterGrads = <_Gradient>[
 
 // What the maker has kept: ~/.motolii/colors.json {"palettes": [{"name": "", "colors": ["#rrggbb"]}], "gradients": [{"name": "", "colors": [], "blend": "oklab"}], "colours": [], "tile": 52}.
 final _minePals = <_Pal>[];
+
 /// One's own colours, kept one by one (CLIP STUDIO PAINT's colour set: Add Color puts the drawing colour in, a tile
 /// pressed draws with it, a tile's menu replaces or deletes it).
 final _mineColours = <Color>[];
@@ -105,27 +124,59 @@ void _readMine() {
     for (final (i, p) in ((told['palettes'] as List?) ?? const []).indexed) {
       final cs = [for (final h in (p['colors'] as List)) ?_colourOf(h)];
       final sh = (p['shares'] as List?)?.map((v) => (v as num).toDouble()).toList();
-      if (cs.isNotEmpty) _minePals.add(_Pal('mine$i', '${p['name']}', cs, saved: true, reference: p['reference'] as String?, shares: sh != null && sh.length == cs.length ? sh : null));
+      if (cs.isNotEmpty) {
+        _minePals.add(
+          _Pal('mine$i', '${p['name']}', cs, saved: true, reference: p['reference'] as String?, shares: sh != null && sh.length == cs.length ? sh : null),
+        );
+      }
     }
     _mineColours.addAll([for (final h in (told['colours'] as List?) ?? const []) ?_colourOf(h)]);
     if (told['tile'] case final num v) _tile = v.toDouble().clamp(_tileLeast, _tileMost);
     for (final g in (told['gradients'] as List?) ?? const []) {
       final cs = [for (final h in (g['colors'] as List)) ?_colourOf(h)];
       final at = (g['at'] as List?)?.map((v) => (v as num).toDouble()).toList();
-      if (cs.length > 1) _mineGrads.add(_Gradient('${g['name']}', cs, blend: g['blend'] as String? ?? (g['oklab'] == false ? 'rgb' : 'oklab'), saved: true, at: at != null && at.length == cs.length ? at : null));
+      if (cs.length > 1) {
+        _mineGrads.add(
+          _Gradient(
+            '${g['name']}',
+            cs,
+            blend: g['blend'] as String? ?? (g['oklab'] == false ? 'rgb' : 'oklab'),
+            saved: true,
+            at: at != null && at.length == cs.length ? at : null,
+          ),
+        );
+      }
     }
-  } catch (_) {}   // (no file: only the starters)
+  } catch (_) {} // (no file: only the starters)
 }
 
 void _keepMine() {
   try {
     _mineFile.parent.createSync(recursive: true);
-    _mineFile.writeAsStringSync(jsonEncode({
-      'palettes': [for (final p in _minePals) {'name': p.name, 'colors': [for (final c in p.colors) _hex(c)], 'reference': p.reference, 'shares': p.shares}],
-      'gradients': [for (final g in _mineGrads) {'name': g.name, 'colors': [for (final c in g.colors) _hex(c)], 'blend': g.blend, 'at': g.at}],
-      'colours': [for (final c in _mineColours) _hex(c)],
-      'tile': _tile,
-    }));
+    _mineFile.writeAsStringSync(
+      jsonEncode({
+        'palettes': [
+          for (final p in _minePals)
+            {
+              'name': p.name,
+              'colors': [for (final c in p.colors) _hex(c)],
+              'reference': p.reference,
+              'shares': p.shares,
+            },
+        ],
+        'gradients': [
+          for (final g in _mineGrads)
+            {
+              'name': g.name,
+              'colors': [for (final c in g.colors) _hex(c)],
+              'blend': g.blend,
+              'at': g.at,
+            },
+        ],
+        'colours': [for (final c in _mineColours) _hex(c)],
+        'tile': _tile,
+      }),
+    );
   } catch (_) {}
 }
 
@@ -147,12 +198,21 @@ List<Color> _stopsOf(List<Color> cs, bool smooth, {int per = 5}) {
     final a = Cam16.fromInt(cs[i].toARGB32()), b = Cam16.fromInt(cs[i + 1].toARGB32());
     for (var k = 0; k < per; k++) {
       final t = k / per;
-      out.add(k == 0 ? cs[i] : Color(Cam16.fromUcs(a.jstar + (b.jstar - a.jstar) * t, a.astar + (b.astar - a.astar) * t, a.bstar + (b.bstar - a.bstar) * t).viewed(ViewingConditions.sRgb)));
+      out.add(
+        k == 0
+            ? cs[i]
+            : Color(
+                Cam16.fromUcs(
+                  a.jstar + (b.jstar - a.jstar) * t,
+                  a.astar + (b.astar - a.astar) * t,
+                  a.bstar + (b.bstar - a.bstar) * t,
+                ).viewed(ViewingConditions.sRgb),
+              ),
+      );
     }
   }
   return out..add(cs.last);
 }
-
 
 /// A palette taken from a photo: the picture shrunk, its pixels sorted into colours by Google's quantizer
 /// (material_color_utilities, as Material You takes a palette from a wallpaper), each with how many pixels it has
@@ -173,7 +233,14 @@ Future<_Pal?> _paletteFrom(String path, {int count = 6}) async {
     final kept = Directory('${Platform.environment['HOME']}/.motolii/references')..createSync(recursive: true);
     final name = path.split('/').last, copy = '${kept.path}/${DateTime.now().millisecondsSinceEpoch}_$name';
     File(path).copySync(copy);
-    return _Pal('mine${_minePals.length}', name.replaceFirst(RegExp(r'\.[A-Za-z0-9]+$'), ''), [for (final e in found) Color(e.key)], saved: true, reference: copy, shares: [for (final e in found) e.value / total]);
+    return _Pal(
+      'mine${_minePals.length}',
+      name.replaceFirst(RegExp(r'\.[A-Za-z0-9]+$'), ''),
+      [for (final e in found) Color(e.key)],
+      saved: true,
+      reference: copy,
+      shares: [for (final e in found) e.value / total],
+    );
   } catch (_) {
     return null;
   }

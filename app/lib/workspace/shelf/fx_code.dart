@@ -18,11 +18,11 @@ class FxCode extends StatefulWidget {
   const FxCode(this.ws, this.thing, this.word, {super.key});
   final Ws ws;
   final int thing;
-  final String word;   // (as the thing's fx says it)
+  final String word; // (as the thing's fx says it)
   @override
   State<FxCode> createState() => _FxCodeState();
 
-  static final _code = RegExp(r'\.(wgsl|fs|js)$');   // (drawn code, and an expression: a .js with each(), doc_expressions.h)
+  static final _code = RegExp(r'\.(wgsl|fs|js)$'); // (drawn code, and an expression: a .js with each(), doc_expressions.h)
 
   /// The code of a thing's effect card (null: not one of its code effects), by its values, not its title alone: two
   /// cards may share one (ThorVG's Tint is called Duotone, as an ISF file may be). An effect's values, and an expression
@@ -41,12 +41,14 @@ class FxCode extends StatefulWidget {
     for (final w in Ws.fxFiles(fx)) {
       if (!_code.hasMatch(w)) continue;
       final file = source(w), stem = EffectTiles.knobStem(w), titled = titleOf(w) == title;
-      if (w.endsWith('.js') && _three(file)) continue;   // (a three.js effect: saved, it is run as a scene, doc_three_saved)
+      if (w.endsWith('.js') && _three(file)) continue; // (a three.js effect: saved, it is run as a scene, doc_three_saved)
       if (names.isEmpty) {
         if (titled) return w;
         continue;
       }
-      final fits = w.endsWith('.js') && file == w ? names.every({for (final k in _knobs(_head(file))) 'js_$k'}.contains) : names.every((n) => n.startsWith('js_${stem}_'));
+      final fits = w.endsWith('.js') && file == w
+          ? names.every({for (final k in _knobs(_head(file))) 'js_$k'}.contains)
+          : names.every((n) => n.startsWith('js_${stem}_'));
       if (!fits) continue;
       final score = (titled ? 1000 : 0) + stem.length;
       if (best == null || score > best.$2) best = (w, score);
@@ -73,7 +75,10 @@ class FxCode extends StatefulWidget {
   /// Its head: the lines before its code (script.cpp script_knobs reads its knobs there).
   static List<String> _head(String file) {
     try {
-      return [for (final l in File(file).readAsLinesSync().takeWhile((l) => l.startsWith('//') || l.trim().isEmpty)) if (l.startsWith('//')) l];
+      return [
+        for (final l in File(file).readAsLinesSync().takeWhile((l) => l.startsWith('//') || l.trim().isEmpty))
+          if (l.startsWith('//')) l,
+      ];
     } catch (_) {
       return const [];
     }
@@ -85,7 +90,8 @@ class FxCode extends StatefulWidget {
       if ((l.indexOf('--'), l.indexOf('@'), l.indexOf(':')) case (final d, final a, final c) when d >= 0 && d < a && a < c && c > a + 1) l.substring(a + 1, c),
   ];
 
-  static bool _three(String file) {   // (three_isf.cpp three_is: a .js with a fragmentShader)
+  static bool _three(String file) {
+    // (three_isf.cpp three_is: a .js with a fragmentShader)
     try {
       return File(file).readAsStringSync().contains('fragmentShader');
     } catch (_) {
@@ -98,12 +104,12 @@ class FxCode extends StatefulWidget {
 }
 
 class _FxCodeState extends State<FxCode> {
-  String? _mine;   // (the copy said, until the inside has it as the thing's)
-  String _why = '';   // (why its code as it is now is not taken, said on its card; '' it is)
-  bool _making = false;   // (its copy made once as it was, before what is typed is written over it)
-  String? _typed;   // (typed meanwhile)
-  String? _adding;   // (the name being written to add it to the shelf by)
-  String _added = '';   // (what came of the last Add to shelf: why not, or where it went)
+  String? _mine; // (the copy said, until the inside has it as the thing's)
+  String _why = ''; // (why its code as it is now is not taken, said on its card; '' it is)
+  bool _making = false; // (its copy made once as it was, before what is typed is written over it)
+  String? _typed; // (typed meanwhile)
+  String? _adding; // (the name being written to add it to the shelf by)
+  String _added = ''; // (what came of the last Add to shelf: why not, or where it went)
   bool _addedOk = false;
 
   static String get _own => '${EffectTiles.own}/programs/fx/';
@@ -139,7 +145,7 @@ class _FxCodeState extends State<FxCode> {
     _mine = said;
     _making = true;
     _typed = text;
-    final fx = [for (final w in Ws.fxFiles(m.word(widget.thing, 'fx'))) w == word ? said : w].join(' ');   // (as doc_fx_join says it)
+    final fx = [for (final w in Ws.fxFiles(m.word(widget.thing, 'fx'))) w == word ? said : w].join(' '); // (as doc_fx_join says it)
     m.later('say', thing: widget.thing, name: 'fx', word: fx);
     ws.after(m.later('code', word: to), (_, _) {
       _making = false;
@@ -163,7 +169,10 @@ class _FxCodeState extends State<FxCode> {
     }
     final first = File('$home/first.tsv'), name = word.split('/').last;
     if (first.existsSync()) {
-      final lines = [for (final l in first.readAsLinesSync()) if (l.split('\t').first == name) l];
+      final lines = [
+        for (final l in first.readAsLinesSync())
+          if (l.split('\t').first == name) l,
+      ];
       if (lines.isNotEmpty) File('$dir/first.tsv').writeAsStringSync('${lines.join('\n')}\n');
     }
     for (final l in File(from).readAsLinesSync()) {
@@ -180,7 +189,9 @@ class _FxCodeState extends State<FxCode> {
     setState(() => _adding = null);
     if (name == null) return;
     final word = _mine ?? widget.word, file = FxCode.source(word), expression = shelfIsExpression(file);
-    final why = _why.isNotEmpty ? 'It does not compile: fix it first' : shelfAdd(widget.ws, file, _typed ?? File(file).readAsStringSync(), name, shelfTaken(widget.ws, expression: expression));
+    final why = _why.isNotEmpty
+        ? 'It does not compile: fix it first'
+        : shelfAdd(widget.ws, file, _typed ?? File(file).readAsStringSync(), name, shelfTaken(widget.ws, expression: expression));
     setState(() {
       _addedOk = why.isEmpty;
       _added = why.isEmpty ? 'Added to ${expression ? 'Create, Copies' : 'Effects'} as ${name.trim()}' : why;
@@ -189,20 +200,27 @@ class _FxCodeState extends State<FxCode> {
 
   Widget _shelf() {
     if (_adding case final name?) return SizedBox(height: Shape.s(18), child: ShelfNameField(name, _add, small: false));
-    return Row(children: [
-      GestureDetector(
-        onTap: () => setState(() {
-          _adding = FxCode.titleOf(_mine ?? widget.word);
-          _added = '';
-        }),
-        child: MouseRegion(cursor: SystemMouseCursors.click, child: Text('Add to shelf', style: T.label(Grey.g76))),
-      ),
-      if (_added.isNotEmpty) ...[
-        SizedBox(width: Shape.s(8)),
-        if (!_addedOk) ErrMark(gap: Shape.s(4)),
-        Expanded(child: Text(_added, maxLines: 2, overflow: TextOverflow.ellipsis, style: T.label(_addedOk ? Grey.g56 : Role.error))),
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: () => setState(() {
+            _adding = FxCode.titleOf(_mine ?? widget.word);
+            _added = '';
+          }),
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: Text('Add to shelf', style: T.label(Grey.g76)),
+          ),
+        ),
+        if (_added.isNotEmpty) ...[
+          SizedBox(width: Shape.s(8)),
+          if (!_addedOk) ErrMark(gap: Shape.s(4)),
+          Expanded(
+            child: Text(_added, maxLines: 2, overflow: TextOverflow.ellipsis, style: T.label(_addedOk ? Grey.g56 : Role.error)),
+          ),
+        ],
       ],
-    ]);
+    );
   }
 
   @override
@@ -214,13 +232,21 @@ class _FxCodeState extends State<FxCode> {
         if (_why.isNotEmpty)
           Padding(
             padding: EdgeInsets.symmetric(vertical: Shape.s(4)),
-            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              ErrMark(gap: Shape.s(4)),
-              Expanded(child: Text('Does not compile; the last that did is shown. $_why', maxLines: 4, overflow: TextOverflow.ellipsis, style: T.label(Role.error))),
-            ]),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ErrMark(gap: Shape.s(4)),
+                Expanded(
+                  child: Text('Does not compile; the last that did is shown. $_why', maxLines: 4, overflow: TextOverflow.ellipsis, style: T.label(Role.error)),
+                ),
+              ],
+            ),
           ),
         Expanded(child: ProgramCode(FxCode.source(_mine ?? widget.word), _write, keep: _making)),
-        Padding(padding: EdgeInsets.only(top: Shape.s(4)), child: _shelf()),
+        Padding(
+          padding: EdgeInsets.only(top: Shape.s(4)),
+          child: _shelf(),
+        ),
       ],
     );
   }

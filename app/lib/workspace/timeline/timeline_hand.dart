@@ -34,12 +34,13 @@ extension _WsTimelineHand on _WsTimelineState {
   void _trackDown(Offset p) {
     final ws = _ws!, v = _view;
     final r = _rowAt(p.dy);
-    if (r == null) { // (below the rows: nothing picked, After Effects' manner; joined, the inspector is then the whole picture's)
+    if (r == null) {
+      // (below the rows: nothing picked, After Effects' manner; joined, the inspector is then the whole picture's)
       ws.clearKeys();
       ws.select(null);
       return;
     }
-    if (r.value != null) return;   // (a lane: its tap is the lane's, on the hand's way up)
+    if (r.value != null) return; // (a lane: its tap is the lane's, on the hand's way up)
     final i = r.i, l = r.l;
     final cy = i * WtM.row - _vscroll + WtM.row / 2;
     if (!_isLocked(ws, l.id) && (p.dy - cy).abs() <= WtM.bar / 2 + 2) {
@@ -71,10 +72,13 @@ extension _WsTimelineHand on _WsTimelineState {
     final ws = _ws!, v = _view, r = _rowAt(p.dy);
     if (r == null) return MouseCursor.defer;
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);
-    if (r.value case final n?) {   // (a lane: over a breakpoint, it is taken by a click)
+    if (r.value case final n?) {
+      // (a lane: over a breakpoint, it is taken by a click)
       final t = int.parse(l.id);
       final at = ws.inside!.keyMoments(t, n), f = v.frameAt(p.dx) / Ws.fps;
-      return at.any((k) => (v.x((k * Ws.fps).round()) - p.dx).abs() <= WtM.keyPicked + 2) || (at.isNotEmpty && f > at.first && f < at.last) ? SystemMouseCursors.click : SystemMouseCursors.precise;
+      return at.any((k) => (v.x((k * Ws.fps).round()) - p.dx).abs() <= WtM.keyPicked + 2) || (at.isNotEmpty && f > at.first && f < at.last)
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.precise;
     }
     if (_isLocked(ws, l.id) || p.dx < a - 6 || p.dx > b + 6) return _onPale(ws, l, p) ? SystemMouseCursors.grab : SystemMouseCursors.precise;
     if (l.keys.any((k) => (v.x(k) - p.dx).abs() <= WtM.keyPicked + 2)) return SystemMouseCursors.click;
@@ -85,7 +89,7 @@ extension _WsTimelineHand on _WsTimelineState {
     final ws = _ws!, v = _view, m = ws.inside;
     final r = _rowAt(p.dy);
     if (m == null || r == null) return false;
-    if (r.value != null) return true;   // (a lane: nothing carried, and no box drawn from it)
+    if (r.value != null) return true; // (a lane: nothing carried, and no box drawn from it)
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);
     final off = p.dx < a - 6 || p.dx > b + 6;
     if (_isLocked(_ws!, l.id) || (off && !_onPale(ws, l, p))) return false;
@@ -106,7 +110,16 @@ extension _WsTimelineHand on _WsTimelineState {
     _stops = ws.stops(skip: {l.id, ...ws.many})..add(ws.frame);
     _barWhole = _wholeOf(ws, l);
     if (off && (ws.frame < l.inF || ws.frame >= l.outF)) ws.frame = l.inF;
-    _bar = (id: l.id, part: off ? 'slip' : (p.dx - b).abs() <= 6 ? 'tail' : ((p.dx - a).abs() <= 6 ? 'head' : 'bar'), grab: v.frameAt(p.dx), moved: false);
+    _bar = (
+      id: l.id,
+      part: off
+          ? 'slip'
+          : (p.dx - b).abs() <= 6
+          ? 'tail'
+          : ((p.dx - a).abs() <= 6 ? 'head' : 'bar'),
+      grab: v.frameAt(p.dx),
+      moved: false,
+    );
     return true;
   }
 }

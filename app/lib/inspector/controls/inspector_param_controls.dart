@@ -64,7 +64,6 @@ class ParamGrid extends StatelessWidget {
   );
 }
 
-
 Color? hexControls(String? s) => s != null && RegExp(r'^#[0-9A-Fa-f]{6}$').hasMatch(s) ? Color(int.parse(s.substring(1), radix: 16) | 0xFF000000) : null;
 
 /// The default value of every id a parameter owns, for a fresh layer and for Reset.
@@ -123,7 +122,14 @@ class Steps extends StatelessWidget {
       );
     }
 
-    return Column(mainAxisSize: MainAxisSize.min, children: [btn('+', 1), SizedBox(height: Shape.s(2)), btn('−', -1)]);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        btn('+', 1),
+        SizedBox(height: Shape.s(2)),
+        btn('−', -1),
+      ],
+    );
   }
 }
 
@@ -172,5 +178,3 @@ class _DicePaint extends CustomPainter {
   @override
   bool shouldRepaint(_DicePaint o) => o.hot != hot || o.face != face;
 }
-
-

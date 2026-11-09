@@ -4,10 +4,10 @@
 part of 'timeline.dart';
 
 mixin _TimelineAsked on State<WsTimeline> {
-  _WsTimelineState get _t => this as _WsTimelineState;   // (the timeline it is part of: its zoom, its scroll)
+  _WsTimelineState get _t => this as _WsTimelineState; // (the timeline it is part of: its zoom, its scroll)
 
-  (double, double)? _before;   // (the zoom and scroll before Z: X goes back to them, Live 42.16)
-  String? _renaming;   // (the row whose name is being written: Cmd+R, Live 42.5)
+  (double, double)? _before; // (the zoom and scroll before Z: X goes back to them, Live 42.16)
+  String? _renaming; // (the row whose name is being written: Cmd+R, Live 42.5)
   final _renameWords = TextEditingController();
   late final FocusNode _renameFocus = FocusNode()..addListener(() => _renameFocus.hasFocus ? null : _renamed());
 
@@ -35,8 +35,12 @@ mixin _TimelineAsked on State<WsTimeline> {
         t._setZoom(t._zoom / 1.5);
       case 'fit':
         t._setZoom(1);
-      case 'selection':   // (the picked keys, else the picked thing's bar, fill the view: Live's Z)
-        final frames = ws.keys.isNotEmpty ? [for (final k in ws.keys) k.frame] : [if (ws.layer case final l?) ...[l.inF, l.outF]];
+      case 'selection': // (the picked keys, else the picked thing's bar, fill the view: Live's Z)
+        final frames = ws.keys.isNotEmpty
+            ? [for (final k in ws.keys) k.frame]
+            : [
+                if (ws.layer case final l?) ...[l.inF, l.outF],
+              ];
         if (frames.isEmpty) return;
         final a = frames.reduce((p, q) => p < q ? p : q), b = frames.reduce((p, q) => p > q ? p : q), span = (b - a).clamp(6, Ws.duration);
         _before ??= (t._zoom, t._scroll);
@@ -113,23 +117,31 @@ mixin _TimelineAsked on State<WsTimeline> {
         }, keys: '⌫'),
         const WsMenuItem.rule(),
         // (its colour, one of the label colours, as Premiere Pro's, DaVinci Resolve's and CapCut's markers have one; golf ㉕)
-        WsMenuItem.colours([for (var k = 0; k < 16; k++) wsLabelColour(k)], (ws.markColours[flag.$1] ?? 0) - 1, (k) => ws.after(m.later('mark_colour', number: flag.$1, word: '${k + 1}'))),
+        WsMenuItem.colours(
+          [for (var k = 0; k < 16; k++) wsLabelColour(k)],
+          (ws.markColours[flag.$1] ?? 0) - 1,
+          (k) => ws.after(m.later('mark_colour', number: flag.$1, word: '${k + 1}')),
+        ),
       ]);
     }
     final at = _t._view.frameAt(p.dx).round().clamp(0, Ws.duration) / Ws.fps, taken = ws.marks.any((k) => (k.$1 - at).abs() < 0.5 / Ws.fps);
     _t._rulerMenu.currentState?.show(p, [
       WsMenuItem('Add Marker', taken ? null : () => _addMark(at, named: false), why: 'One is here'),
       WsMenuItem('Add Marker and Name…', taken ? null : () => _addMark(at, named: true), why: 'One is here'),
-      if (ws.beats != null) WsMenuItem('Set 1.1.1 Here', () => ws.after(m.later('set', thing: 0, name: 'bpm_from', number: at), (_, _) => ws.reread())),   // (a bar begins here: Live's)
+      if (ws.beats != null)
+        WsMenuItem(
+          'Set 1.1.1 Here',
+          () => ws.after(m.later('set', thing: 0, name: 'bpm_from', number: at), (_, _) => ws.reread()),
+        ), // (a bar begins here: Live's)
     ]);
   }
 
   /// A bar's own menu by a right click (golf_noise.md ㉒: P15 split the title and took pieces out by the menu bar alone).
   void _trackRight(Offset p) {
     final t = _t, ws = t._ws, r = t._rowAt(p.dy);
-    if (ws == null || r == null || r.value != null) return;   // (below the rows, or a lane: no bar)
+    if (ws == null || r == null || r.value != null) return; // (below the rows, or a lane: no bar)
     final l = r.l, f = t._view.frameAt(p.dx);
-    if (f < l.inF || f > l.outF) return;   // (beside its bar)
+    if (f < l.inF || f > l.outF) return; // (beside its bar)
     t._trackMenu.currentState?.show(p, wsThingMenu(context, ws, l));
   }
 
@@ -168,7 +180,8 @@ mixin _TimelineAsked on State<WsTimeline> {
   void _rename() {
     final ws = _t._ws;
     if (!mounted || ws == null) return;
-    if (wsMarkPicked.value case final flag?) {   // (a picked locator is named, in its flag, its words picked: Final Cut Pro's marker)
+    if (wsMarkPicked.value case final flag?) {
+      // (a picked locator is named, in its flag, its words picked: Final Cut Pro's marker)
       setState(() => _t._naming = flag);
       _t._markWords
         ..text = flag.$2
@@ -209,15 +222,20 @@ mixin _TimelineAsked on State<WsTimeline> {
               color: Grey.g91,
               padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
               alignment: Alignment.centerLeft,
-              child: TextHand(key: ValueKey('ws-tl-rename-$id'), field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
-                controller: _renameWords,
-                focusNode: _renameFocus,
-                style: T.label(Grey.g13).copyWith(fontWeight: FontWeight.w700),
-                cursorColor: Grey.g13,
-                backgroundCursorColor: Grey.g38,
-                maxLines: 1,
-                onSubmitted: (_) => _renameFocus.unfocus(),
-              )),
+              child: TextHand(
+                key: ValueKey('ws-tl-rename-$id'),
+                field: (k) => EditableText(
+                  key: k,
+                  rendererIgnoresPointer: true,
+                  controller: _renameWords,
+                  focusNode: _renameFocus,
+                  style: T.label(Grey.g13).copyWith(fontWeight: FontWeight.w700),
+                  cursorColor: Grey.g13,
+                  backgroundCursorColor: Grey.g38,
+                  maxLines: 1,
+                  onSubmitted: (_) => _renameFocus.unfocus(),
+                ),
+              ),
             ),
           ),
         );

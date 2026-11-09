@@ -3,16 +3,25 @@
 // Tone and manner come from the Inspector's Pop rules (sets/inspector_parts.dart): containers square and tiled edge to edge,
 // what you touch or read round, colour flat and opaque, one lime accent, each kind of thing wearing its own hue.
 import 'package:motolii/workspace/desk/desk_ease_cards.dart' show easeCurve;
+
 import 'dart:async' show Timer;
 import 'dart:developer' show Timeline, TimelineTask;
 import 'dart:io' show Platform;
 import 'dart:math' as math;
+
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/widgets.dart';
 
 import '../engine/motolii.dart';
-export '../engine/motolii.dart' show MotoliiDocument, MotoliiMoment, MotoliiWrites, MotoliiQuestions, MotoliiShelves, MotoliiWatch;   // (the inside's reads, an extension of Motolii: whoever holds the window's Ws.inside can call them)
+export '../engine/motolii.dart'
+    show
+        MotoliiDocument,
+        MotoliiMoment,
+        MotoliiWrites,
+        MotoliiQuestions,
+        MotoliiShelves,
+        MotoliiWatch; // (the inside's reads, an extension of Motolii: whoever holds the window's Ws.inside can call them)
 import '../style/theme.dart';
 import '../style/tokens.dart';
 import 'desk/desk_kit.dart' show DeskTool, deskTools;
@@ -67,14 +76,15 @@ abstract final class WsT {
   static double get gap => Shape.s(4);
 
   /// Hues per kind of layer / asset, shared by timeline bars, browser tiles and the stage's artwork, so a thing keeps its colour everywhere.
-  static Color get toneShape => ColorTheme.of('Clip1', const Color(0xFFF08A5D));   // (a layer's kind: Ableton's clip colours)
+  static Color get toneShape => ColorTheme.of('Clip1', const Color(0xFFF08A5D)); // (a layer's kind: Ableton's clip colours)
   static Color get toneText => ColorTheme.of('Clip2', const Color(0xFFD9D2C3));
   static Color get toneImage => ColorTheme.of('Clip3', const Color(0xFF7FB8B0));
   static Color get toneCamera => ColorTheme.of('Clip4', const Color(0xFFA7B4C8));
   static Color get toneGroup => ColorTheme.of('Clip5', const Color(0xFFB0A6F0));
   static Color get toneParticles => ColorTheme.of('Clip6', const Color(0xFFF2A65A));
   static Color get toneAudio => ColorTheme.of('Clip7', const Color(0xFF5CC8E8));
-  static Color get toneMark => ColorTheme.of('ElementMark', const Color(0xFFF2C94C));   // (an element's intro and outro marks on the ruler: Alight Motion's small yellow ones)
+  static Color get toneMark =>
+      ColorTheme.of('ElementMark', const Color(0xFFF2C94C)); // (an element's intro and outro marks on the ruler: Alight Motion's small yellow ones)
 
   /// The playhead line: the accent, so "now" is the loudest line in the window. Its head is an [accent] fill.
   static Color get playhead => accentInk;
@@ -93,7 +103,24 @@ Color wsLabel(String id) => wsLabelColour(wsChosenLabels[id] ?? ((int.tryParse(i
 
 /// The label colour [k], 0 to 15 (a mark's colour is one of these too).
 Color wsLabelColour(int k) => ColorTheme.of('Label${k + 1}', Color(_live[k]));
-const _live = [0xFFFF94A6, 0xFFFFA529, 0xFFF7F47C, 0xFFBFFB00, 0xFF1AFF2F, 0xFF25FFA8, 0xFF5CFFE8, 0xFF8BC5FF, 0xFF5480E4, 0xFF92A7FF, 0xFFD86CE4, 0xFFE553A0, 0xFFFF3636, 0xFFF66C03, 0xFF10A4EE, 0xFF00BFAF];   // (Ableton Live's clip colours)
+const _live = [
+  0xFFFF94A6,
+  0xFFFFA529,
+  0xFFF7F47C,
+  0xFFBFFB00,
+  0xFF1AFF2F,
+  0xFF25FFA8,
+  0xFF5CFFE8,
+  0xFF8BC5FF,
+  0xFF5480E4,
+  0xFF92A7FF,
+  0xFFD86CE4,
+  0xFFE553A0,
+  0xFFFF3636,
+  0xFFF66C03,
+  0xFF10A4EE,
+  0xFF00BFAF,
+]; // (Ableton Live's clip colours)
 
 Color wsTone(WsKind k) => switch (k) {
   WsKind.shape => WsT.toneShape,
@@ -107,16 +134,30 @@ Color wsTone(WsKind k) => switch (k) {
 
 /// One layer of the mock composition: where it lives in time, and where its keys are (frames).
 class WsLayer {
-  WsLayer(this.id, this.name, this.kind, this.inF, this.outF, this.keys, {this.parent, this.lined = false, this.hidden = false, this.solo = false, this.locked = false, this.clipped = false, this.stretches = const []});
+  WsLayer(
+    this.id,
+    this.name,
+    this.kind,
+    this.inF,
+    this.outF,
+    this.keys, {
+    this.parent,
+    this.lined = false,
+    this.hidden = false,
+    this.solo = false,
+    this.locked = false,
+    this.clipped = false,
+    this.stretches = const [],
+  });
   final String id, name;
   final WsKind kind;
   int inF, outF;
   final List<int> keys;
   final List<WsStretch> stretches; // (how it goes between its keys, as the inside says: drawn on its bar)
   final String? parent;
-  final bool lined;   // (a sketch whose lines that draw are knobs of it: opened, a row of each, script.h sketch_marked)
+  final bool lined; // (a sketch whose lines that draw are knobs of it: opened, a row of each, script.h sketch_marked)
   final bool hidden, solo, locked, clipped; // (clipped: shown only inside the thing under it, Clip to below) (as the inside said when the layers were last read: a row asks nothing of it while the stage plays)
-  Color get tone => wsLabel(id);   // (its label colour)
+  Color get tone => wsLabel(id); // (its label colour)
 }
 
 /// A stretch between two keys: its frames and how it goes there (the way's shape, 0 to 1, at 17 points along it).

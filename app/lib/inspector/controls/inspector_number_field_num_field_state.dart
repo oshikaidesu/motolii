@@ -9,6 +9,7 @@ import 'package:motolii/forms/number_paint.dart';
 import 'package:motolii/parts/controls.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/style/tokens.dart';
+
 import '../../parts/text_hand.dart';
 
 class NumFieldState extends State<NumField> {
@@ -16,8 +17,8 @@ class NumFieldState extends State<NumField> {
   late final FocusNode _ef = FocusNode(debugLabel: 'num-edit', onKeyEvent: _editKey);
   final _menu = OverlayPortalController();
   Offset _menuAt = Offset.zero;
-  static int rightAt = -1;   // (the press a field took for its menu: the row round it leaves it)
-  static bool _tabbed = false;   // (the field that takes focus now was gone to by Tab: it opens to be typed in)
+  static int rightAt = -1; // (the press a field took for its menu: the row round it leaves it)
+  static bool _tabbed = false; // (the field that takes focus now was gone to by Tab: it opens to be typed in)
   final _ctl = TextEditingController();
   bool _editing = false, _err = false, _hover = false, _focus = false, _drag = false, _moved = false, _cancelled = false;
   Offset _down = Offset.zero;
@@ -46,7 +47,8 @@ class NumFieldState extends State<NumField> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final w = _x.doc.watch(widget.id), k = _x.doc.watch('key:${widget.id}');   // (and its key mark's news: showAt tells it, so the mark is drawn as the document says it, not a step behind)
+    final w = _x.doc.watch(widget.id),
+        k = _x.doc.watch('key:${widget.id}'); // (and its key mark's news: showAt tells it, so the mark is drawn as the document says it, not a step behind)
     if (w != _watch) {
       _watch?.removeListener(_retold);
       _watch = w..addListener(_retold);
@@ -70,13 +72,21 @@ class NumFieldState extends State<NumField> {
     super.dispose();
   }
 
-  double _clamp(double v) => math.min(widget.open ? double.infinity : widget.validMax ?? widget.max ?? double.infinity, math.max(widget.open && (widget.min ?? 0) < 0 ? double.negativeInfinity : widget.validMin ?? widget.min ?? double.negativeInfinity, v));
+  double _clamp(double v) => math.min(
+    widget.open ? double.infinity : widget.validMax ?? widget.max ?? double.infinity,
+    math.max(widget.open && (widget.min ?? 0) < 0 ? double.negativeInfinity : widget.validMin ?? widget.min ?? double.negativeInfinity, v),
+  );
   // (its card let past its ends by a right click, or Option held now: PastRange)
-  bool get _pastCard => switch (PastRange.of(context)) { final f? => _x.doc.b[f] ?? false, _ => false };
-  bool get _going => _pastCard || (HardwareKeyboard.instance.isAltPressed && _x.cfg.mod == ModRule.shiftFine);   // (in the other rule Option is finer)
+  bool get _pastCard => switch (PastRange.of(context)) {
+    final f? => _x.doc.b[f] ?? false,
+    _ => false,
+  };
+  bool get _going => _pastCard || (HardwareKeyboard.instance.isAltPressed && _x.cfg.mod == ModRule.shiftFine); // (in the other rule Option is finer)
   // (a scrub stops at the knob's ends, or where a number typed past them already lies; an angle's goes on as far as one
   //  typed, as After Effects' angle scrubs, and so does one going past)
-  double _scrubbed(double v) => widget.turns || _going || (!widget.open && widget.validMin == null && widget.validMax == null) ? _clamp(v) : math.min(math.max(widget.max ?? double.infinity, _start), math.max(math.min(widget.min ?? double.negativeInfinity, _start), v));
+  double _scrubbed(double v) => widget.turns || _going || (!widget.open && widget.validMin == null && widget.validMax == null)
+      ? _clamp(v)
+      : math.min(math.max(widget.max ?? double.infinity, _start), math.max(math.min(widget.min ?? double.negativeInfinity, _start), v));
   double _tidy(double v) => double.parse(v.toStringAsFixed(6));
 
   // contract: with several fields picked, typing sets them all; a scrub or nudge moves them all by the same amount.
@@ -101,14 +111,23 @@ class NumFieldState extends State<NumField> {
     final doc = _x.doc, id = widget.id, ks = doc.keys[id] ?? _keys;
     return [
       ('reset', 'Reset', _reset),
-      ('copy', 'Copy', () {
-        if (doc.get(id) case final v?) Clipboard.setData(ClipboardData(text: fmt(v, widget.decimals)));
-      }),
-      ('paste', 'Paste', () async {
-        final t = double.tryParse((await Clipboard.getData(Clipboard.kTextPlain))?.text?.trim() ?? '');
-        if (t != null && mounted) _apply(t, same: true);
-      }),
-      if (PastRange.of(context) case final f?) ('past', _pastCard ? 'Stop at Range Ends' : 'Go Past Range Ends', () => doc.flag(f, !_pastCard)),   // (its whole card)
+      (
+        'copy',
+        'Copy',
+        () {
+          if (doc.get(id) case final v?) Clipboard.setData(ClipboardData(text: fmt(v, widget.decimals)));
+        },
+      ),
+      (
+        'paste',
+        'Paste',
+        () async {
+          final t = double.tryParse((await Clipboard.getData(Clipboard.kTextPlain))?.text?.trim() ?? '');
+          if (t != null && mounted) _apply(t, same: true);
+        },
+      ),
+      if (PastRange.of(context) case final f?)
+        ('past', _pastCard ? 'Stop at Range Ends' : 'Go Past Range Ends', () => doc.flag(f, !_pastCard)), // (its whole card)
       if (ks != null) ...[
         if (ks != KeyS.at) ('key', 'Key this frame', () => doc.setKey(id, KeyS.at)),
         if (ks == KeyS.at) ('unkey', 'Remove key', () => doc.setKey(id, KeyS.anim)),
@@ -122,7 +141,9 @@ class NumFieldState extends State<NumField> {
     if (f != null) {
       f();
     } else if (id.startsWith('v_') && doc.onCardReset != null) {
-      doc.onCardReset!([id.substring(2)]);   // (as it comes: what is said of it forgotten, its card's own Reset; the inspector's default is only what it was when the card was made)
+      doc.onCardReset!([
+        id.substring(2),
+      ]); // (as it comes: what is said of it forgotten, its card's own Reset; the inspector's default is only what it was when the card was made)
     } else {
       doc.resetIds([id]);
     }
@@ -158,14 +179,15 @@ class NumFieldState extends State<NumField> {
 
   void _onDown(PointerDownEvent e) {
     if (!_on || _editing) return;
-    if (e.buttons == kSecondaryButton) {   // (After Effects' and Blender's right click on a value; every number, its row or an effect's knob alike: all by the mouse alone, 10/29)
+    if (e.buttons == kSecondaryButton) {
+      // (After Effects' and Blender's right click on a value; every number, its row or an effect's knob alike: all by the mouse alone, 10/29)
       rightAt = e.pointer;
       _menuAt = e.position;
       return _menu.show();
     }
     if (_keyAt case final k? when e.buttons == kPrimaryButton && (e.localPosition - k).distance <= 9) {
-      final now = _x.doc.keys[widget.id] ?? _keys;   // (as the document says it now: the field may not have been built since an undo)
-      return _x.doc.setKey(widget.id, now == KeyS.at ? KeyS.anim : KeyS.at);   // (the row's KeyMark contract: inspector_rows_prop_row.dart)
+      final now = _x.doc.keys[widget.id] ?? _keys; // (as the document says it now: the field may not have been built since an undo)
+      return _x.doc.setKey(widget.id, now == KeyS.at ? KeyS.anim : KeyS.at); // (the row's KeyMark contract: inspector_rows_prop_row.dart)
     }
     if (widget.glyph != null && widget.glyphOwnsPointer && _inGlyph(e.localPosition)) return;
     if (e.buttons != kPrimaryButton) return;
@@ -194,7 +216,7 @@ class NumFieldState extends State<NumField> {
     if (!_moved && (e.position - _down).distance < 4) return;
     final cfg = _x.cfg;
     if (!_moved) {
-      _x.doc.beginGesture();   // (a scrub is one gesture: what it shows is settled when the hand lets go)
+      _x.doc.beginGesture(); // (a scrub is one gesture: what it shows is settled when the hand lets go)
       setState(() => _moved = true);
     }
     var m = cfg.mult();
@@ -288,10 +310,14 @@ class NumFieldState extends State<NumField> {
   }
 
   KeyEventResult _key(FocusNode n, KeyEvent e) {
-    if (_editing && !_ef.hasFocus) {   // (the editor has the keys a frame on: what comes before that is its all the same, golf_noise.md (113))
+    if (_editing && !_ef.hasFocus) {
+      // (the editor has the keys a frame on: what comes before that is its all the same, golf_noise.md (113))
       final c = e.character ?? '', at = _ctl.selection;
       if (e is! KeyDownEvent || !RegExp(r'^[0-9.\-+*/]$').hasMatch(c)) return _editKey(n, e);
-      _ctl.value = TextEditingValue(text: _ctl.text.replaceRange(at.start, at.end, c), selection: TextSelection.collapsed(offset: at.start + 1));
+      _ctl.value = TextEditingValue(
+        text: _ctl.text.replaceRange(at.start, at.end, c),
+        selection: TextSelection.collapsed(offset: at.start + 1),
+      );
       return KeyEventResult.handled;
     }
     if (_editing || !_on) return KeyEventResult.ignored;
@@ -328,7 +354,8 @@ class NumFieldState extends State<NumField> {
     return KeyEventResult.ignored;
   }
 
-  void _startEdit([String? typed]) {   // (typed: the number begun with that character)
+  void _startEdit([String? typed]) {
+    // (typed: the number begun with that character)
     if (!mounted || _editing || !_on) return;
     final v = _x.doc.get(widget.id);
     _ctl.text = typed ?? (v == null ? '' : fmt(v, widget.decimals));
@@ -353,18 +380,21 @@ class NumFieldState extends State<NumField> {
       _commit();
       return KeyEventResult.handled;
     }
-    if (e.logicalKey == LogicalKeyboardKey.tab) {   // (After Effects', Figma's and Blender's Tab: this number kept, the next field ready to type in; a number not taken stays here)
+    if (e.logicalKey == LogicalKeyboardKey.tab) {
+      // (After Effects', Figma's and Blender's Tab: this number kept, the next field ready to type in; a number not taken stays here)
       if (_commit()) {
         final back = HardwareKeyboard.instance.isShiftPressed;
-        WidgetsBinding.instance.addPostFrameCallback((_) {   // (once its own editor is gone: that is what comes next till then)
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          // (once its own editor is gone: that is what comes next till then)
           _tabbed = true;
           back ? _node.previousFocus() : _node.nextFocus();
-          scheduleMicrotask(() => _tabbed = false);   // (after the focus has gone there, a microtask of its own)
+          scheduleMicrotask(() => _tabbed = false); // (after the focus has gone there, a microtask of its own)
         });
       }
       return KeyEventResult.handled;
     }
-    if (e.logicalKey == LogicalKeyboardKey.arrowUp || e.logicalKey == LogicalKeyboardKey.arrowDown) {   // (After Effects' and Figma's: the number typed so far moved a step)
+    if (e.logicalKey == LogicalKeyboardKey.arrowUp || e.logicalKey == LogicalKeyboardKey.arrowDown) {
+      // (After Effects' and Figma's: the number typed so far moved a step)
       final t = double.tryParse(halfWidth(_ctl.text).trim()) ?? _x.doc.get(widget.id);
       if (t == null) return KeyEventResult.handled;
       final up = e.logicalKey == LogicalKeyboardKey.arrowUp ? 1 : -1;
@@ -382,7 +412,8 @@ class NumFieldState extends State<NumField> {
   }
 
   bool _commit() {
-    if (_ctl.text.trim().isEmpty) {   // (nothing typed: as Esc)
+    if (_ctl.text.trim().isEmpty) {
+      // (nothing typed: as Esc)
       _close();
       return true;
     }
@@ -443,26 +474,27 @@ class NumFieldState extends State<NumField> {
         Widget valueText() {
           if (v == null) return Text(Role.grey ? 'Mixed' : '— Mixed', style: T.label(Role.of(Grey.g76, Role.info)));
           if (word != null) return Text(word, style: T.label(on ? Grey.g76 : Grey.g56));
-          return FittedBox( // (a number wider than its field is drawn smaller, never cut)
+          return FittedBox(
+            // (a number wider than its field is drawn smaller, never cut)
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: fmt(v, widget.decimals, tight: tight), // (its places fixed, as Push shows them: a number does not jump in width as it moves)
-                  style: widget.caption != null
-                      ? blockValue(on ? Grey.g95 : Grey.g56)
-                      : pop
-                      ? T.value(on ? Grey.g95 : Grey.g56).copyWith(fontWeight: FontWeight.w600)
-                      : T.value(on ? Grey.g95 : Grey.g56),
-                ),
-                if (showUnit && unit.isNotEmpty) TextSpan(text: pop ? '\u2009$unit' : ' $unit', style: T.label(pop ? Grey.g44 : Grey.g56)),
-              ],
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: fmt(v, widget.decimals, tight: tight), // (its places fixed, as Push shows them: a number does not jump in width as it moves)
+                    style: widget.caption != null
+                        ? blockValue(on ? Grey.g95 : Grey.g56)
+                        : pop
+                        ? T.value(on ? Grey.g95 : Grey.g56).copyWith(fontWeight: FontWeight.w600)
+                        : T.value(on ? Grey.g95 : Grey.g56),
+                  ),
+                  if (showUnit && unit.isNotEmpty) TextSpan(text: pop ? '\u2009$unit' : ' $unit', style: T.label(pop ? Grey.g44 : Grey.g56)),
+                ],
+              ),
+              maxLines: 1,
+              softWrap: false,
             ),
-            maxLines: 1,
-            softWrap: false,
-          ),
           );
         }
 
@@ -491,25 +523,31 @@ class NumFieldState extends State<NumField> {
         // that takes keys shows its mark always, hollow when it has none, and a press on it keys it there (Alight Motion's
         // diamond beside each value, After Effects' and Premiere Pro's stopwatch: golf_noise.md (59)).
         final ks = pop ? (x.doc.keys[widget.id] ?? row?.keys) : null;
-        _keyAt = ks != null && (ks != KeyS.off || x.doc.keys.containsKey(widget.id)) ? (block ? Offset(w - Pop.tilePad - 3, Pop.tile - 10) : Offset(w - 6, 6)) : null;
+        _keyAt = ks != null && (ks != KeyS.off || x.doc.keys.containsKey(widget.id))
+            ? (block ? Offset(w - Pop.tilePad - 3, Pop.tile - 10) : Offset(w - 6, 6))
+            : null;
         _keys = ks;
         final editor = _editing
-            ? TextHand(field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
-                controller: _ctl,
-                focusNode: _ef,
-                style: block ? blockValue(Grey.g95) : T.value(Grey.g95),
-                cursorColor: Grey.g95,
-                backgroundCursorColor: Grey.g20,
-                selectionColor: Role.selected.withValues(alpha: .4),
-                textAlign: block ? TextAlign.left : (pop ? TextAlign.center : TextAlign.right),
-                maxLines: 1,
-                selectAllOnFocus: false,   // (_startEdit says the selection: all of the number when begun by a click or Return; the caret after a number begun by typing it, which Flutter's own select-all on a desktop's focus took, so the next key replaced the first: golf P05, "230" came out 0)
-                keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.\-+eE*/() ]'))],
-                onChanged: (_) {
-                  if (_err) setState(() => _err = false);
-                },
-              ))
+            ? TextHand(
+                field: (k) => EditableText(
+                  key: k,
+                  rendererIgnoresPointer: true,
+                  controller: _ctl,
+                  focusNode: _ef,
+                  style: block ? blockValue(Grey.g95) : T.value(Grey.g95),
+                  cursorColor: Grey.g95,
+                  backgroundCursorColor: Grey.g20,
+                  selectionColor: Role.selected.withValues(alpha: .4),
+                  textAlign: block ? TextAlign.left : (pop ? TextAlign.center : TextAlign.right),
+                  maxLines: 1,
+                  selectAllOnFocus: false, // (_startEdit says the selection: all of the number when begun by a click or Return; the caret after a number begun by typing it, which Flutter's own select-all on a desktop's focus took, so the next key replaced the first: golf P05, "230" came out 0)
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.\-+eE*/() ]'))],
+                  onChanged: (_) {
+                    if (_err) setState(() => _err = false);
+                  },
+                ),
+              )
             : null;
         final body = paintNumber(
           context,
@@ -543,46 +581,63 @@ class NumFieldState extends State<NumField> {
         );
         return OverlayPortal.targetsRootOverlay(
           controller: _menu,
-          overlayChildBuilder: (_) => TinyMenuAt(at: _menuAt, name: 'num', of: widget.id, items: _menuItems(), hide: _menu.hide, keep: (e) => e.pointer == rightAt && e.buttons == kSecondaryButton && _inMe(e.position)),   // (right pressed here again: its place, as a Mac's)
-          child: Actions(   // (Cmd+A on a field held: all of its number, not every thing in the window; After Effects' and Figma's)
-          actions: {SelectAllTextIntent: CallbackAction<SelectAllTextIntent>(onInvoke: (_) => _startEdit())},
-          child: Focus(
-          focusNode: _node,
-          onKeyEvent: _key,
-          onFocusChange: (f) {
-            setState(() => _focus = f);
-            if (f && _tabbed) {
-              _tabbed = false;
-              _startEdit();
-            }
-          },
-          child: RawGestureDetector(
-            // (a press that scrubs is the field's at once: a scroll round the inspector would take a drag that goes up or
-            //  down too and carry the field away under the hand; a press on a glyph that owns it, or while typing, is not)
-            gestures: {ScrubClaim: GestureRecognizerFactoryWithHandlers<ScrubClaim>(() => ScrubClaim(), (r) => r.takes = (e) => _on && !_editing && !(widget.glyph != null && widget.glyphOwnsPointer && _inGlyph(e.localPosition)))},
-            child: Listener(
-            onPointerDown: _onDown,
-            onPointerMove: _onMove,
-            onPointerUp: _onUp,
-            onPointerCancel: _onCancel,
-            onPointerSignal: _onSignal,
-            onPointerPanZoomUpdate: _onPan,
-            child: MouseRegion(
-              cursor: !on ? SystemMouseCursors.basic : (_editing ? SystemMouseCursors.text : SystemMouseCursors.resizeLeftRight),
-              onEnter: (_) {
-                setState(() => _hover = true);
-                if (linked) x.doc.setDirectHover(group);
+          overlayChildBuilder: (_) => TinyMenuAt(
+            at: _menuAt,
+            name: 'num',
+            of: widget.id,
+            items: _menuItems(),
+            hide: _menu.hide,
+            keep: (e) => e.pointer == rightAt && e.buttons == kSecondaryButton && _inMe(e.position),
+          ), // (right pressed here again: its place, as a Mac's)
+          child: Actions(
+            // (Cmd+A on a field held: all of its number, not every thing in the window; After Effects' and Figma's)
+            actions: {SelectAllTextIntent: CallbackAction<SelectAllTextIntent>(onInvoke: (_) => _startEdit())},
+            child: Focus(
+              focusNode: _node,
+              onKeyEvent: _key,
+              onFocusChange: (f) {
+                setState(() => _focus = f);
+                if (f && _tabbed) {
+                  _tabbed = false;
+                  _startEdit();
+                }
               },
-              onExit: (_) {
-                setState(() => _hover = false);
-                if (linked && x.doc.directHover == group) x.doc.setDirectHover(null);
-              },
-              // (past what it vouches for, or going there under the hand: drawn the other way about)
-              child: (!widget.turns && _bounded && v != null && (v < widget.min! || v > widget.max!)) || (_drag && _moved && _going && (widget.open || widget.validMin != null || widget.validMax != null)) ? ColorFiltered(colorFilter: pastInk, child: body) : body,
+              child: RawGestureDetector(
+                // (a press that scrubs is the field's at once: a scroll round the inspector would take a drag that goes up or
+                //  down too and carry the field away under the hand; a press on a glyph that owns it, or while typing, is not)
+                gestures: {
+                  ScrubClaim: GestureRecognizerFactoryWithHandlers<ScrubClaim>(
+                    () => ScrubClaim(),
+                    (r) => r.takes = (e) => _on && !_editing && !(widget.glyph != null && widget.glyphOwnsPointer && _inGlyph(e.localPosition)),
+                  ),
+                },
+                child: Listener(
+                  onPointerDown: _onDown,
+                  onPointerMove: _onMove,
+                  onPointerUp: _onUp,
+                  onPointerCancel: _onCancel,
+                  onPointerSignal: _onSignal,
+                  onPointerPanZoomUpdate: _onPan,
+                  child: MouseRegion(
+                    cursor: !on ? SystemMouseCursors.basic : (_editing ? SystemMouseCursors.text : SystemMouseCursors.resizeLeftRight),
+                    onEnter: (_) {
+                      setState(() => _hover = true);
+                      if (linked) x.doc.setDirectHover(group);
+                    },
+                    onExit: (_) {
+                      setState(() => _hover = false);
+                      if (linked && x.doc.directHover == group) x.doc.setDirectHover(null);
+                    },
+                    // (past what it vouches for, or going there under the hand: drawn the other way about)
+                    child:
+                        (!widget.turns && _bounded && v != null && (v < widget.min! || v > widget.max!)) ||
+                            (_drag && _moved && _going && (widget.open || widget.validMin != null || widget.validMax != null))
+                        ? ColorFiltered(colorFilter: pastInk, child: body)
+                        : body,
+                  ),
+                ),
+              ),
             ),
-          ),
-          ),
-          ),
           ),
         );
       },

@@ -2,6 +2,8 @@
 
 *English version: [.github/CONTRIBUTING.en.md](CONTRIBUTING.en.md). English is fine for issues and pull requests. Contributions are dual licensed under Apache-2.0 or MIT, as the project is. Short version: build with the README, run the checks below, and say in your pull request what you borrowed from where.*
 
+コードの言葉（thing・fact・way・film・hand・door…）を After Effects などの言葉に引き直す表：[`docs/ARCHITECTURE.md` の「言葉」](../docs/ARCHITECTURE.md#言葉words)。
+
 ## できること
 
 - **Issue**：不具合、組み立てで止まった所、「この表現を使いたい」という見本（URL と、何が良いのか）。ひな型があります。
@@ -16,6 +18,8 @@
 git config core.hooksPath .githooks
 ```
 
+入れなくても、同じ検査（500 行・置き場・件名 72 字）は push と PR のたびに `.github/workflows/checks.yml` が回します。入れておくと、GitHub で落ちる前に手元で止まります。
+
 コードと台帳の言葉：画面（アプリ）を「窓」、エンジンを「中身」、レイヤーを「物」、プロジェクトファイルを「書類」、プレビュー（Stage）を「場面」、左のタブを「棚」と呼んでいます。
 
 ## 確かめ方
@@ -23,6 +27,7 @@ git config core.hooksPath .githooks
 | 何を | コマンド | 通った時 |
 |---|---|---|
 | 1 ファイル 500 行（下の決まり 2） | `python3 .githooks/size_check.py` | 何も出なければ通過 |
+| 置き場（AGENTS.md「構成の目標」） | `python3 .githooks/layout_check.py` | 何も出なければ通過 |
 | 窓の書き方 | `cd app && flutter analyze lib` | エラー 0（今ある注意は 100） |
 
 GitHub の Actions で組み立て全部を走らせるのは `.github/workflows/build.yml`（Apple Silicon の Mac で、README の手順どおり組んで `flutter analyze`。コードに触る PR と、Actions の画面から手で）。自分で書いた試験はありません（コードと試験を同じ手が書いていたので、2026-11-08 に全部消しました）。外から求める条件は [`docs/TESTING.md`](../docs/TESTING.md)。作りは [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) と [`engine/README.md`](../engine/README.md)。行動規範は [`.github/CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)、脆弱性は [`.github/SECURITY.md`](SECURITY.md)。
@@ -36,7 +41,7 @@ GitHub の Actions で組み立て全部を走らせるのは `.github/workflows
 自分のコードのファイルは 500 行まで。超えそうなら、役目ごとに名前を付けて分けてください（`_2` のような番号の名前は止まります）。実験は自分のブランチに置き、main には窓が使う物だけを入れます。
 
 ### 3. コミット（PR）の本文に出典
-何をどこから借りたか（URL・版かコミット）と、何を確かめて何がまだかを書きます。例：`git show d46f69cac`。1 行目（見出し）は 72 字くらいまでに短く、詳しい事は 1 行空けて本文に（git の慣習。今までの履歴は見出しが長い物が多いが、これからは）。
+何をどこから借りたか（URL・版かコミット）と、何を確かめて何がまだかを書きます。例：`git show d46f69cac`。1 行目（見出し）は 72 字まで、詳しい事は 1 行空けて本文に。超えると `.githooks/commit-msg` がコミットを止め、CI（`.github/workflows/checks.yml`）も PR を落とします。
 
 ### 4. 他の人の作品を入れる時
 - 作者のフォルダごと、なるべく手を入れずに置く。隣に作者のライセンスの文書（`LICENSE`）と、取ってきた所（`SOURCE.txt`：名前と作者／licence／from／page）。

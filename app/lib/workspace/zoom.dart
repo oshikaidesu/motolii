@@ -76,7 +76,10 @@ class WsZoomed extends StatelessWidget {
             child: Transform.scale(
               scale: z,
               alignment: Alignment.topLeft,
-              child: MediaQuery(data: mq.copyWith(size: size, devicePixelRatio: mq.devicePixelRatio * z), child: child), // (finer pixels: the stage renders sharp)
+              child: MediaQuery(
+                data: mq.copyWith(size: size, devicePixelRatio: mq.devicePixelRatio * z),
+                child: child,
+              ), // (finer pixels: the stage renders sharp)
             ),
           ),
         );

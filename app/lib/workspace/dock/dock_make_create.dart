@@ -4,20 +4,27 @@ part of 'dock_make.dart';
 
 /// How many of the Create shelf's tiles make or lay out something of the document, of all it shows.
 String createFact(Ws ws) {
-  final recipes = _recipesOf(ws).$2.length, expressions = _expressionsOf(ws).length;   // (the recipes that are expressions are tiles of the Expression group's)
+  final recipes = _recipesOf(ws).$2.length, expressions = _expressionsOf(ws).length; // (the recipes that are expressions are tiles of the Expression group's)
   return '${_asked.length + _worn.length + recipes + expressions} ready'; // (the shelf shows only these)
 }
 
 /// Joined: the inside's recipes, pictures in one call (as Cavalry's tutorials build them), each a tile.
 (String, List<_Make>) _recipesOf(Ws ws) {
-  final expressions = {for (final (name, _) in _expressionRecipes()) name};   // (not those that are expressions: their tiles are the Expression group's)
-  final packs = {for (final (name, _) in ws.inside!.packs) name};   // (nor the closed packs: the Program shelf's, dock_program.dart)
-  return ('Recipes', [for (final (name, what) in ws.inside!.recipes) if (!expressions.contains(name) && !packs.contains(name)) _Make(name, DockG.copies, Pop.tonePlace, '', what, recipe: true)]);
+  final expressions = {for (final (name, _) in _expressionRecipes()) name}; // (not those that are expressions: their tiles are the Expression group's)
+  final packs = {for (final (name, _) in ws.inside!.packs) name}; // (nor the closed packs: the Program shelf's, dock_program.dart)
+  return (
+    'Recipes',
+    [
+      for (final (name, what) in ws.inside!.recipes)
+        if (!expressions.contains(name) && !packs.contains(name)) _Make(name, DockG.copies, Pop.tonePlace, '', what, recipe: true),
+    ],
+  );
 }
 
 /// The elements kept (Edit › Save to My Elements), put in at the playhead linked to their file: Alight Motion's + ›
 /// Object / Element › Element, AbsentMotion's ElementPicker (ElementUi.kt).
-(String, List<_Make>) _elementsOf(Ws ws) => ('Elements', [for (final (name, _) in ws.inside!.elements) _Make(name, DockG.nullObj, Grey.g76, '', 'Element, linked to its file')]);
+(String, List<_Make>) _elementsOf(Ws ws) =>
+    ('Elements', [for (final (name, _) in ws.inside!.elements) _Make(name, DockG.nullObj, Grey.g76, '', 'Element, linked to its file')]);
 
 // ---------------------------------------------------------------- create
 
@@ -31,10 +38,10 @@ class _Make {
   /// Rectangle, Star, Cube, Sun beside Motolii's shape, solid and light of those names (the shelf's own were made as
   /// the recipe while it was asked first).
   final bool recipe;
-  final String? file;   // (an expression: its file, put on the picked thing as a card of its own)
-  final bool made;   // (an expression whose head makes its thing (a recipe's "// make"): nothing picked, that is made)
+  final String? file; // (an expression: its file, put on the picked thing as a card of its own)
+  final bool made; // (an expression whose head makes its thing (a recipe's "// make"): nothing picked, that is made)
   String get id => file ?? (recipe ? 'recipe:$name' : name);
-  bool get onPicked => file != null || _onPicked.contains(name);   // (put on the picked thing, or a new board)
+  bool get onPicked => file != null || _onPicked.contains(name); // (put on the picked thing, or a new board)
 }
 
 final _makes = <(String, List<_Make>)>[
@@ -42,7 +49,13 @@ final _makes = <(String, List<_Make>)>[
     'Layers',
     [
       _Make('Text', DockG.text, WsT.toneText, 'T', 'Type layer'),
-      _Make('Camera', DockG.camera, WsT.toneCamera, '⇧C', '3D camera, 45 mm'),   // (the lens it comes with: the stage's 30 degrees on Filament's 24 mm film, desk_depth.dart _filmMm, as the Camera desk says)
+      _Make(
+        'Camera',
+        DockG.camera,
+        WsT.toneCamera,
+        '⇧C',
+        '3D camera, 45 mm',
+      ), // (the lens it comes with: the stage's 30 degrees on Filament's 24 mm film, desk_depth.dart _filmMm, as the Camera desk says)
       _Make('Null', DockG.nullObj, Grey.g76, '⇧N', 'Invisible parent'),
       _Make('Adjustment', DockG.nullObj, Grey.g76, '', 'What is put on it works on all under it'),
     ],
@@ -58,9 +71,15 @@ final _makes = <(String, List<_Make>)>[
     ],
   ),
   (
-    'Expression',   // (every JS that goes on a thing and moves its values, after Empty: dock_make_expressions.dart _expressionsOf)
+    'Expression', // (every JS that goes on a thing and moves its values, after Empty: dock_make_expressions.dart _expressionsOf)
     [
-      _Make('Empty', DockG.plus, Pop.tonePlace, '', 'An empty expression on the picked thing (nothing picked: on a new board): write or paste each() into its card\'s code'),
+      _Make(
+        'Empty',
+        DockG.plus,
+        Pop.tonePlace,
+        '',
+        'An empty expression on the picked thing (nothing picked: on a new board): write or paste each() into its card\'s code',
+      ),
     ],
   ),
 ];
@@ -86,6 +105,7 @@ final _lights = (
     _Make('Spot', DockG.light, WsT.toneCamera, '', 'A cone of light'),
   ],
 );
+
 /// What a thing is made of, a material: put on the picked thing, any that is seen (a flat one wears it on its own plane,
 /// its picture its colour), one at a time; nothing picked, a ball wearing it (a material is made in Create, not chosen
 /// among colours: the user, 10/29, "マテリアルなら普通クリエイトに入れるべき"). Filament's own and the kit's, by their names to a
@@ -102,9 +122,17 @@ final _materials = (
     _Make('Bubble', DockG.radial, WsT.toneShape, '', 'Nearly clear, a bright rim'),
   ],
 );
-const _worn = {'Lit': 'lit', 'Cloth': 'cloth', 'Subsurface': 'subsurface', 'Glass': 'glass', 'Filament glass': 'filament_glass', 'Lacquer': 'lacquer', 'Bubble': 'bubble'};   // (the tile, and the shading it gives)
-const _wears = {'film', 'picture', 'text', 'shape', 'solid'};   // (the kinds of thing that are seen, and so wear one)
-const _onPicked = {'Empty'};   // (put on the picked thing, or a new board: empty_fx.dart)
+const _worn = {
+  'Lit': 'lit',
+  'Cloth': 'cloth',
+  'Subsurface': 'subsurface',
+  'Glass': 'glass',
+  'Filament glass': 'filament_glass',
+  'Lacquer': 'lacquer',
+  'Bubble': 'bubble',
+}; // (the tile, and the shading it gives)
+const _wears = {'film', 'picture', 'text', 'shape', 'solid'}; // (the kinds of thing that are seen, and so wear one)
+const _onPicked = {'Empty'}; // (put on the picked thing, or a new board: empty_fx.dart)
 
 final _asked = {
   'Text': ('text', wsTextFont),
@@ -144,17 +172,24 @@ const _laid = <String, Map<String, double>>{
 /// the shelf says why.
 void _make(DockCtx c, _Make tile) {
   final m = c.ws.inside!, name = tile.name;
-  if (tile.recipe) { // (a picture in one call: one step, and it is picked)
-    c.ws.after(m.later('make', word: name), (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why), (made) => c.ws.select('$made'));   // (without waiting: picked once made)
+  if (tile.recipe) {
+    // (a picture in one call: one step, and it is picked)
+    c.ws.after(
+      m.later('make', word: name),
+      (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why),
+      (made) => c.ws.select('$made'),
+    ); // (without waiting: picked once made)
     return;
   }
   if (tile.file != null) return _expressionPut(c, tile);
   if (name == 'Adjustment') return c.ws.adjustment();
-  if (name == 'Empty') {   // (an expression to write: empty_fx.dart; what went wrong before forgotten once it is taken)
+  if (name == 'Empty') {
+    // (an expression to write: empty_fx.dart; what went wrong before forgotten once it is taken)
     c.set(() => c.mem.trouble.remove(name));
     return emptyPut(c.ws, expression: true, told: (why) => c.set(() => why.isEmpty ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why));
-  }   // (After Effects' New > Adjustment Layer)
-  if (_worn[name] case final wears?) {   // (on the picked thing, in place of the one it wore; nothing picked, a ball wearing it, picked)
+  } // (After Effects' New > Adjustment Layer)
+  if (_worn[name] case final wears?) {
+    // (on the picked thing, in place of the one it wore; nothing picked, a ball wearing it, picked)
     final t = int.tryParse(c.ws.selected ?? '');
     void told(bool done, String why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why);
     if (t != null) {
@@ -162,7 +197,7 @@ void _make(DockCtx c, _Make tile) {
       c.ws.after(m.later('say', thing: t, name: 'shading', word: wears), told);
       return;
     }
-    m.later('together', number: 1);   // (one step: the ball and what it wears)
+    m.later('together', number: 1); // (one step: the ball and what it wears)
     c.ws.after(m.later('add', name: 'solid', word: 'ball'), null, (made) => c.ws.select('$made'));
     wsInked(c.ws, 'solid', 'ball');
     m.later('say', thing: -1, name: 'shading', word: wears);
@@ -170,18 +205,36 @@ void _make(DockCtx c, _Make tile) {
     return;
   }
   if (!_asked.containsKey(name)) {
-    if (m.elements.where((e) => e.$1 == name).firstOrNull case final e?) {   // (at the playhead, in the middle, picked: AbsentMotion's addElement)
-      c.ws.after(m.later('element', word: e.$2, number: c.ws.frame / Ws.fps), (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why), (made) => c.ws.select('$made'));
+    if (m.elements.where((e) => e.$1 == name).firstOrNull case final e?) {
+      // (at the playhead, in the middle, picked: AbsentMotion's addElement)
+      c.ws.after(
+        m.later('element', word: e.$2, number: c.ws.frame / Ws.fps),
+        (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why),
+        (made) => c.ws.select('$made'),
+      );
     }
     return;
   }
   final asked = _asked[name]!;
-  m.later('together', number: 1);   // (one step: the thing and its inks)
-  c.ws.after(m.later('add', name: asked.$1, word: asked.$1 == 'text' ? c.ws.bodyFace : asked.$2), null, (made) => c.ws.select('$made'));   // (without waiting: picked once made; a text in the body's font)
+  m.later('together', number: 1); // (one step: the thing and its inks)
+  c.ws.after(
+    m.later('add', name: asked.$1, word: asked.$1 == 'text' ? c.ws.bodyFace : asked.$2),
+    null,
+    (made) => c.ws.select('$made'),
+  ); // (without waiting: picked once made; a text in the body's font)
   wsInked(c.ws, asked.$1, asked.$2);
-  for (final e in (_starts[name] ?? const <String, double>{}).entries) m.later('set', thing: -1, name: e.key, number: e.value);
+  for (final e in (_starts[name] ?? const <String, double>{}).entries) {
+    m.later('set', thing: -1, name: e.key, number: e.value);
+  }
   if (name == 'Floor') m.later('say', thing: -1, name: 'name', word: name);
-  if (asked.$1 == 'light' && (m.value(0, 'environment', 0) ?? 1) == 1) m.later('set', thing: 0, name: 'environment', number: .3);   // (After Effects: a light put in takes over from the default light; the Room dims, what it was is one field in Stage settings)
+  if (asked.$1 == 'light' && (m.value(0, 'environment', 0) ?? 1) == 1) {
+    m.later(
+      'set',
+      thing: 0,
+      name: 'environment',
+      number: .3,
+    ); // (After Effects: a light put in takes over from the default light; the Room dims, what it was is one field in Stage settings)
+  }
   c.ws.after(m.later('together'), (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why));
 }
 
@@ -203,12 +256,16 @@ class CreateShelf extends StatelessWidget {
       for (final (g, items) in makes)
         if (c.chip == 'All' || c.chip == g) (g, items.where((m) => c.hit(m.name)).toList()),
     ].where((e) => e.$2.isNotEmpty).toList();
-    if (groups.isEmpty && c.query.trim().isNotEmpty) {   // (nothing has the words as typed: the nearest five, each in its own group, golf (97))
+    if (groups.isEmpty && c.query.trim().isNotEmpty) {
+      // (nothing has the words as typed: the nearest five, each in its own group, golf (97))
       // (by the tile's name alone, and only those near it: with its group's name, "Material" drew every material up
       //  for any word, Butterfly's or Empty's. RapidFuzz's WRatio of a word typed wrong to its tile is 77 or more
       //  (bubbel Bubble 83, lacker Lacquer 77, clth Cloth 89), of a word to a tile it is not 72 or less (butterfly
       //  Bubble 49, empty Gem 72). A Japanese word is found by what it means (WordNet, its own scores): all kept)
-      final near = c.near([for (final (_, items) in makes) for (final m in items) (m.id, m.name, '')], least: c.query.runes.every((r) => r < 128) ? 75 : 0);
+      final near = c.near([
+        for (final (_, items) in makes)
+          for (final m in items) (m.id, m.name, ''),
+      ], least: c.query.runes.every((r) => r < 128) ? 75 : 0);
       groups = [
         for (final (g, items) in makes)
           if (c.chip == 'All' || c.chip == g) (g, [for (final id in near) ...items.where((m) => m.id == id)]),
@@ -236,19 +293,32 @@ class CreateShelf extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            DockSection(g, count: items.length, hue: items.first.hue, folded: c.query.isEmpty && c.mem.createFolded.contains(g), onTap: () => c.set(() => c.mem.createFolded.contains(g) ? c.mem.createFolded.remove(g) : c.mem.createFolded.add(g))),
-                            if (!(c.query.isEmpty && c.mem.createFolded.contains(g))) ...[
-                            const SizedBox(height: WsT.gutter),
-                            LayoutBuilder(
-                              builder: (context, box) {
-                                final cols = wsCols(box.maxWidth, 74, min: 2), w = wsCell(box.maxWidth, cols);
-                                return Wrap(
-                                  spacing: WsT.gutter,
-                                  runSpacing: WsT.gutter,
-                                  children: [for (final m in items) SizedBox(width: w, height: Shape.z(70), child: m.file != null && shelfAdded(m.file!) ? _OwnTile(m, c, key: ValueKey('ws-own-${m.file}')) : _MakeTile(m, c))],
-                                );
-                              },
+                            DockSection(
+                              g,
+                              count: items.length,
+                              hue: items.first.hue,
+                              folded: c.query.isEmpty && c.mem.createFolded.contains(g),
+                              onTap: () => c.set(() => c.mem.createFolded.contains(g) ? c.mem.createFolded.remove(g) : c.mem.createFolded.add(g)),
                             ),
+                            if (!(c.query.isEmpty && c.mem.createFolded.contains(g))) ...[
+                              const SizedBox(height: WsT.gutter),
+                              LayoutBuilder(
+                                builder: (context, box) {
+                                  final cols = wsCols(box.maxWidth, 74, min: 2), w = wsCell(box.maxWidth, cols);
+                                  return Wrap(
+                                    spacing: WsT.gutter,
+                                    runSpacing: WsT.gutter,
+                                    children: [
+                                      for (final m in items)
+                                        SizedBox(
+                                          width: w,
+                                          height: Shape.z(70),
+                                          child: m.file != null && shelfAdded(m.file!) ? _OwnTile(m, c, key: ValueKey('ws-own-${m.file}')) : _MakeTile(m, c),
+                                        ),
+                                    ],
+                                  );
+                                },
+                              ),
                             ],
                           ],
                         ),
@@ -274,12 +344,16 @@ class _MakeTile extends StatelessWidget {
   const _MakeTile(this.m, this.c, {this.naming});
   final _Make m;
   final DockCtx c;
-  final Widget? naming;   // (where its name is being written, in its place)
+  final Widget? naming; // (where its name is being written, in its place)
   @override
   Widget build(BuildContext context) {
     final sel = c.sel == m.id;
     final inside = c.ws.inside;
-    final makes = inside != null && (m.recipe ? inside.recipes.any((r) => r.$1 == m.name) : _asked.containsKey(m.name) || _worn.containsKey(m.name) || m.onPicked || inside.elements.any((e) => e.$1 == m.name));
+    final makes =
+        inside != null &&
+        (m.recipe
+            ? inside.recipes.any((r) => r.$1 == m.name)
+            : _asked.containsKey(m.name) || _worn.containsKey(m.name) || m.onPicked || inside.elements.any((e) => e.$1 == m.name));
     return DockHover(
       onTap: () => c.pick(m.id),
       onDoubleTap: makes ? () => _make(c, m) : null, // (two presses make it, one step)
@@ -291,18 +365,35 @@ class _MakeTile extends StatelessWidget {
         color: sel ? WsT.accent : (h ? WsT.raised : WsT.card),
         child: Stack(
           children: [
-            if (m.recipe && _isRecipe(c, m.name))   // (a recipe: its motion as the inside reckons it, drawn by the window, the whole list moving at once)
+            if (m.recipe && _isRecipe(c, m.name)) // (a recipe: its motion as the inside reckons it, drawn by the window, the whole list moving at once)
               Positioned.fill(child: RecipeMotionView(m.name))
-            else if (m.file case final f?)   // (an expression: copies it lays out, drawn by the inside as an effect's tile, played while in sight: copies_tiles.dart)
-              Positioned.fill(child: ValueListenableBuilder(valueListenable: CopiesTiles.drawn, builder: (_, _, _) => switch (CopiesTiles.of(f)) {
-                '' => Align(alignment: Alignment.topLeft, child: DockGlyph(m.g, size: Shape.z(26), color: sel ? WsT.onAccent : m.hue)),
-                final p => TileMoving(p, playing: true),   // (played while in sight: TileMoving's own)
-              }))
-            else if (_worn[m.name] case final w?)   // (a material: a ball wearing it, drawn by the inside: material_tiles.dart)
-              Positioned.fill(child: ValueListenableBuilder(valueListenable: MaterialTiles.drawn, builder: (_, _, _) => switch (MaterialTiles.of(w)) {
-                '' => Align(alignment: Alignment.topLeft, child: DockGlyph(m.g, size: Shape.z(26), color: sel ? WsT.onAccent : m.hue)),
-                final p => TileMoving(p, playing: false),
-              }))
+            else if (m.file
+                case final f?) // (an expression: copies it lays out, drawn by the inside as an effect's tile, played while in sight: copies_tiles.dart)
+              Positioned.fill(
+                child: ValueListenableBuilder(
+                  valueListenable: CopiesTiles.drawn,
+                  builder: (_, _, _) => switch (CopiesTiles.of(f)) {
+                    '' => Align(
+                      alignment: Alignment.topLeft,
+                      child: DockGlyph(m.g, size: Shape.z(26), color: sel ? WsT.onAccent : m.hue),
+                    ),
+                    final p => TileMoving(p, playing: true), // (played while in sight: TileMoving's own)
+                  },
+                ),
+              )
+            else if (_worn[m.name] case final w?) // (a material: a ball wearing it, drawn by the inside: material_tiles.dart)
+              Positioned.fill(
+                child: ValueListenableBuilder(
+                  valueListenable: MaterialTiles.drawn,
+                  builder: (_, _, _) => switch (MaterialTiles.of(w)) {
+                    '' => Align(
+                      alignment: Alignment.topLeft,
+                      child: DockGlyph(m.g, size: Shape.z(26), color: sel ? WsT.onAccent : m.hue),
+                    ),
+                    final p => TileMoving(p, playing: false),
+                  },
+                ),
+              )
             else
               Align(
                 alignment: Alignment.topLeft,
@@ -315,14 +406,17 @@ class _MakeTile extends StatelessWidget {
               ),
             Align(
               alignment: Alignment.bottomLeft,
-              child: naming ?? AutoSizeText( // (a long name on two lines of whole words, as Finder's icons have it; smaller rather than a word broken)
-                m.name,
-                maxLines: 2,
-                wrapWords: false,
-                minFontSize: 6,
-                stepGranularity: .5,
-                style: T.name(dockInk(sel, Grey.g95)).copyWith(fontWeight: FontWeight.w700),
-              ),
+              child:
+                  naming ??
+                  AutoSizeText(
+                    // (a long name on two lines of whole words, as Finder's icons have it; smaller rather than a word broken)
+                    m.name,
+                    maxLines: 2,
+                    wrapWords: false,
+                    minFontSize: 6,
+                    stepGranularity: .5,
+                    style: T.name(dockInk(sel, Grey.g95)).copyWith(fontWeight: FontWeight.w700),
+                  ),
             ),
           ],
         ),

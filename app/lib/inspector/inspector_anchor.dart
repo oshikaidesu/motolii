@@ -1,7 +1,9 @@
 import 'dart:math' as math;
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
+
 import '../style/tokens.dart';
 import 'transform/inspector_direct_transform.dart';
 import 'inspector_parts.dart';
@@ -9,7 +11,9 @@ import 'inspector_parts.dart';
 const _depthNames = {-50: 'Front', 0: 'Middle', 50: 'Back'};
 
 /// A number alone tells only who watches it (Ctx.tick): the box, its name and the icon on the row watch the anchor's three.
-Listenable anchorMoved(Doc doc) => Listenable.merge([for (final id in const ['v_anchor_x', 'v_anchor_y', 'v_anchor_z']) doc.watch(id)]);
+Listenable anchorMoved(Doc doc) => Listenable.merge([
+  for (final id in const ['v_anchor_x', 'v_anchor_y', 'v_anchor_z']) doc.watch(id),
+]);
 
 String anchorName(double? x, double? y, double? z) {
   if (x == null || y == null || z == null) return 'Mixed';
@@ -57,7 +61,9 @@ class AnchorCard extends StatelessWidget {
           children: [
             const AnchorCube(),
             SizedBox(height: Pop.titleGap),
-            const AxisColumns(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [AxisHeader(), AnchorRow()])),
+            const AxisColumns(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [AxisHeader(), AnchorRow()]),
+            ),
           ],
         );
       },

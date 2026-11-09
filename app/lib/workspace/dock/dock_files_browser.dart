@@ -13,7 +13,12 @@ class MediaShelf extends StatelessWidget {
     if (at != 'Project' && !at.startsWith('/')) c.mem.folder = _rootsOf(c).first.id;
     return LayoutBuilder(
       builder: (context, box) {
-        if (switch (c.mem.treeSide) { 1 => true, 2 => false, _ => box.maxWidth >= _wide }) {   // (the tree by the room, or where the hand put it)
+        if (switch (c.mem.treeSide) {
+          1 => true,
+          2 => false,
+          _ => box.maxWidth >= _wide,
+        }) {
+          // (the tree by the room, or where the hand put it)
           return Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -49,7 +54,8 @@ class MediaShelf extends StatelessWidget {
 /// The locations of a joined window: what the document is made of (its files, and the folders they are in), then the disk.
 List<FileNode> _rootsOf(DockCtx c) {
   final kindOf = c.ws.inside!.kindOf;
-  _kindOfFile = (f) => f.toLowerCase().endsWith('.xdts') ? 'timesheet' : kindOf(f);   // (CLIP STUDIO's, OpenToonz's timesheet: not a thing of the inside's, its columns are)
+  _kindOfFile = (f) =>
+      f.toLowerCase().endsWith('.xdts') ? 'timesheet' : kindOf(f); // (CLIP STUDIO's, OpenToonz's timesheet: not a thing of the inside's, its columns are)
   _thumbnailAtOf = c.ws.inside!.thumbnailAt;
   final files = _used(c.ws).keys.toList()..sort();
   return [
@@ -58,7 +64,8 @@ List<FileNode> _rootsOf(DockCtx c) {
       'Project',
       DockG.folder,
       kids: [
-        for (final d in {?c.ws.documentFolder, for (final f in files) _dir(f)}) FileNode(d, _base(d), DockG.folder), // (the document's own folder first: a new document is one step from what lies beside it)
+        for (final d in {?c.ws.documentFolder, for (final f in files) _dir(f)})
+          FileNode(d, _base(d), DockG.folder), // (the document's own folder first: a new document is one step from what lies beside it)
         for (final f in files)
           if (_glyphOf(f) case final g?) FileNode(f, _base(f), g),
       ],
@@ -88,7 +95,8 @@ void _go(DockCtx c, String id) => c.set(() {
 
 void _open(FileNode n, DockCtx c) {
   if (n.folder) return _go(c, n.id);
-  if (DockHover.cmdAtPress && _kindOfFile(n.id).isNotEmpty) {   // (⌘: one more picked, or one less, as Finder)
+  if (DockHover.cmdAtPress && _kindOfFile(n.id).isNotEmpty) {
+    // (⌘: one more picked, or one less, as Finder)
     if (_filesPicked.isEmpty && c.sel != null && _kindOfFile(c.sel!).isNotEmpty) _filesPicked.add(c.sel!);
     _filesPicked.contains(n.id) ? _filesPicked.remove(n.id) : _filesPicked.add(n.id);
   } else {
@@ -118,7 +126,10 @@ class _Tree extends StatelessWidget {
     }
     return ColoredBox(
       color: WsT.body,
-      child: ListView(padding: EdgeInsets.symmetric(vertical: Shape.s(2)), children: rows),
+      child: ListView(
+        padding: EdgeInsets.symmetric(vertical: Shape.s(2)),
+        children: rows,
+      ),
     );
   }
 }

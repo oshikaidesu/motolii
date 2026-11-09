@@ -58,7 +58,14 @@ class NumberSpec {
 /// faint: keys elsewhere; [empty]: none, yet it takes them). Pressed, the field keys the value there (num_field_state).
 Widget keyDiamond(Color colour, {bool empty = false}) => Transform.rotate(
   angle: math.pi / 4,
-  child: Container(width: Shape.z(5), height: Shape.z(5), decoration: BoxDecoration(color: empty ? null : colour, border: empty ? Border.all(color: colour) : null)),
+  child: Container(
+    width: Shape.z(5),
+    height: Shape.z(5),
+    decoration: BoxDecoration(
+      color: empty ? null : colour,
+      border: empty ? Border.all(color: colour) : null,
+    ),
+  ),
 );
 
 typedef NumberPaint = Widget Function(BuildContext context, NumberSpec spec);
@@ -75,7 +82,11 @@ Widget usualNumber(BuildContext context, NumberSpec n) {
   final shown = n.editing && n.editor != null ? n.editor! : n.value;
   return Container(
     height: n.height,
-    decoration: BoxDecoration(color: n.fillColor, borderRadius: BorderRadius.circular(n.pop ? 6 : 4), border: Border.all(color: n.borderColor)),
+    decoration: BoxDecoration(
+      color: n.fillColor,
+      borderRadius: BorderRadius.circular(n.pop ? 6 : 4),
+      border: Border.all(color: n.borderColor),
+    ),
     child: ClipRRect(
       borderRadius: BorderRadius.circular(n.pop ? 5 : 3),
       child: Stack(
@@ -89,7 +100,13 @@ Widget usualNumber(BuildContext context, NumberSpec n) {
               child: ColoredBox(color: n.rangeColor),
             )
           else if (n.fill != null)
-            Positioned(left: 0, bottom: 0, height: Shape.z(2), width: (n.width - 2) * n.fill!, child: ColoredBox(color: n.rangeColor)),
+            Positioned(
+              left: 0,
+              bottom: 0,
+              height: Shape.z(2),
+              width: (n.width - 2) * n.fill!,
+              child: ColoredBox(color: n.rangeColor),
+            ),
           if (n.keyDot != null)
             Positioned(
               top: n.block ? null : 3,
@@ -97,7 +114,14 @@ Widget usualNumber(BuildContext context, NumberSpec n) {
               right: n.block ? n.pad : 3,
               child: keyDiamond(n.keyDot!, empty: n.keyEmpty),
             ),
-          if (n.axis != null && !n.pop) Positioned(left: 0, top: 5, bottom: 5, width: Shape.z(2), child: ColoredBox(color: n.axis!)),
+          if (n.axis != null && !n.pop)
+            Positioned(
+              left: 0,
+              top: 5,
+              bottom: 5,
+              width: Shape.z(2),
+              child: ColoredBox(color: n.axis!),
+            ),
           if (n.glyph != null)
             Positioned(
               right: n.glyphTall ? 4 : n.pad - 3,
@@ -115,8 +139,16 @@ Widget usualNumber(BuildContext context, NumberSpec n) {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    if (n.caption != null) FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(n.caption!, maxLines: 1, style: T.micro(n.on ? Grey.g63 : Grey.g44).copyWith(height: 1.1))),
-                    SizedBox(height: Shape.z(18), child: Align(alignment: Alignment.centerLeft, child: shown)),
+                    if (n.caption != null)
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(n.caption!, maxLines: 1, style: T.micro(n.on ? Grey.g63 : Grey.g44).copyWith(height: 1.1)),
+                      ),
+                    SizedBox(
+                      height: Shape.z(18),
+                      child: Align(alignment: Alignment.centerLeft, child: shown),
+                    ),
                   ],
                 ),
               ),
@@ -129,7 +161,13 @@ Widget usualNumber(BuildContext context, NumberSpec n) {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     if (n.lead != null) Flexible(child: n.lead!) else const SizedBox.shrink(),
-                    if (!n.editing) Expanded(flex: 4, child: Align(alignment: n.pop ? Alignment.center : Alignment.centerRight, child: n.value)) else const Spacer(),
+                    if (!n.editing)
+                      Expanded(
+                        flex: 4,
+                        child: Align(alignment: n.pop ? Alignment.center : Alignment.centerRight, child: n.value),
+                      )
+                    else
+                      const Spacer(),
                     if (n.editing && n.editor != null) SizedBox(width: (n.width - 36).clamp(28, 72), child: n.editor),
                   ],
                 ),

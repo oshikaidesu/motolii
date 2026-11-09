@@ -43,3 +43,4 @@ The same holds for the other shelves: the doors that run code from the net are i
 
 - The knob weights (`knob_weights.json`) are not a shelf but a table the Effects dock's tiles read, so they sit beside the code that reads them, `effect_tiles.dart` (`app/lib/workspace/shelf/`).
 - The Make dock's Elements (Alight Motion's My Elements) are only in `elements/` in your own folder; none ship with Motolii (`doc_looks.h`).
+- The scripts that make the shelves' files are not items, so they sit beside what they make: `effects/sources/` (`absent.sh`, `fx_first.sh`, `fx_tiles.sh`, `from_*.py`) and `recipes/shapes/absent_shapes.sh`. They are run by hand; the build never calls them.

@@ -127,7 +127,9 @@ abstract class Forms {
   Widget number(BuildContext context, NumberSpec n) => usualNumber(context, n);
 
   /// The bar of a layer in the timeline: its fill, how tall and how round it is, and the band behind its row.
-  Color trackFill(Color kind, {required bool dim, required bool selected}) => dim ? Grey.g26 : (selected ? Color.lerp(kind, const Color(0xFFFFFFFF), .18)! : kind);   // (its colour as it is, as Ableton's clips; picked, a little lighter)
+  Color trackFill(Color kind, {required bool dim, required bool selected}) => dim
+      ? Grey.g26
+      : (selected ? Color.lerp(kind, const Color(0xFFFFFFFF), .18)! : kind); // (its colour as it is, as Ableton's clips; picked, a little lighter)
   double get trackRadius => 4;
   double trackBar({required bool selected}) => Shape.z(18);
   Color trackBand(int index, bool selected) => selected ? Grey.g20 : (index.isEven ? Grey.bandA : Grey.bandB);

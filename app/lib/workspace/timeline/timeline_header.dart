@@ -32,29 +32,49 @@ class _Header extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, box) {
-          final roomy = box.maxWidth >= 1000, mid = box.maxWidth >= 820, slide = box.maxWidth >= 600;   // (narrower: the zoom by its buttons alone, as the document's name and length go)
+          final roomy = box.maxWidth >= 1000,
+              mid = box.maxWidth >= 820,
+              slide = box.maxWidth >= 600; // (narrower: the zoom by its buttons alone, as the document's name and length go)
           return Row(
             children: [
-              if (mid) ...[_Chip(ws.document?.replaceFirst(RegExp(r'\.motolii$'), '') ?? 'Main', mono: false), SizedBox(width: Shape.s(12))], // (joined: the document's name)
+              if (mid) ...[
+                _Chip(ws.document?.replaceFirst(RegExp(r'\.motolii$'), '') ?? 'Main', mono: false),
+                SizedBox(width: Shape.s(12)),
+              ], // (joined: the document's name)
               _Btn(TpGlyph.toStart, key: const ValueKey('ws-tl-start'), onTap: () => onStep(-ws.frame)),
               SizedBox(width: Shape.s(2)),
               _Btn(TpGlyph.stepBack, key: const ValueKey('ws-tl-back'), onTap: () => onStep(-1)),
               SizedBox(width: Shape.s(2)),
-              ValueListenableBuilder<int>(   // (only the button follows play: the rows are not built again)
+              ValueListenableBuilder<int>(
+                // (only the button follows play: the rows are not built again)
                 valueListenable: ws.on[WsAspect.playing]!,
-                builder: (_, _, _) => _Btn(ws.playing ? TpGlyph.pause : TpGlyph.play, key: const ValueKey('ws-tl-play'), width: Shape.z(34), on: ws.playing, rest: WsT.accent, onTap: onToggle),
+                builder: (_, _, _) => _Btn(
+                  ws.playing ? TpGlyph.pause : TpGlyph.play,
+                  key: const ValueKey('ws-tl-play'),
+                  width: Shape.z(34),
+                  on: ws.playing,
+                  rest: WsT.accent,
+                  onTap: onToggle,
+                ),
               ),
               SizedBox(width: Shape.s(2)),
               _Btn(TpGlyph.stepFwd, key: const ValueKey('ws-tl-fwd'), onTap: () => onStep(1)),
               SizedBox(width: Shape.s(2)),
               _Btn(TpGlyph.loop, key: const ValueKey('ws-tl-loop'), on: loop, onTap: onLoop),
               SizedBox(width: Shape.s(2)),
-              ValueListenableBuilder<int>(   // (Live's Set button, 6.4: a marker where the playhead is; on one, it takes it away)
+              ValueListenableBuilder<int>(
+                // (Live's Set button, 6.4: a marker where the playhead is; on one, it takes it away)
                 valueListenable: ws.moment,
-                builder: (_, _, _) => _Btn(ws.marks.any((k) => (k.$1 * Ws.fps).round() == ws.frame) ? TpGlyph.minus : TpGlyph.plus, key: const ValueKey('ws-tl-mark'), width: Shape.z(66), label: 'Marker', onTap: onMark),
+                builder: (_, _, _) => _Btn(
+                  ws.marks.any((k) => (k.$1 * Ws.fps).round() == ws.frame) ? TpGlyph.minus : TpGlyph.plus,
+                  key: const ValueKey('ws-tl-mark'),
+                  width: Shape.z(66),
+                  label: 'Marker',
+                  onTap: onMark,
+                ),
               ),
               SizedBox(width: Shape.s(12)),
-              _TimeTyped(ws: ws, style: big, onStep: onStep),   // (one number, one weight: not three colours)
+              _TimeTyped(ws: ws, style: big, onStep: onStep), // (one number, one weight: not three colours)
               SizedBox(width: Shape.s(8)),
               if (roomy) ...[Text('/ ${ws.timecode(Ws.duration)}', style: T.value(Grey.g56)), SizedBox(width: Shape.s(10))],
               _Chip('${Ws.fps} fps'),
@@ -69,7 +89,8 @@ class _Header extends StatelessWidget {
                       WtKindChip(layer.kind, tone: layer.tone),
                       SizedBox(width: Shape.s(6)),
                       Flexible(
-                        child: FittedBox( // (drawn smaller, never cut)
+                        child: FittedBox(
+                          // (drawn smaller, never cut)
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
                           child: Text(
@@ -88,7 +109,15 @@ class _Header extends StatelessWidget {
               if (slide) ...[_ZoomSlider(zoom: zoom, onZoom: onZoom), SizedBox(width: Shape.s(4))],
               _Btn(TpGlyph.plus, key: const ValueKey('ws-tl-zoom-in'), size: Shape.z(22), onTap: () => onZoom(zoom * 1.5)),
               SizedBox(width: Shape.s(4)),
-              _Btn(TpGlyph.fit, key: const ValueKey('ws-tl-fit'), size: Shape.z(22), width: Shape.z(46), label: 'Fit', lit: zoom <= 1.001, onTap: () => onZoom(1)),
+              _Btn(
+                TpGlyph.fit,
+                key: const ValueKey('ws-tl-fit'),
+                size: Shape.z(22),
+                width: Shape.z(46),
+                label: 'Fit',
+                lit: zoom <= 1.001,
+                onTap: () => onZoom(1),
+              ),
             ],
           );
         },
@@ -106,9 +135,16 @@ int? wtTimeOf(String said, int now, int fps) {
   final parts = m[2]!.split(RegExp(r'[:.;]'));
   final fields = parts.length > 1
       ? [for (final p in parts.reversed) int.tryParse(p) ?? 0]
-      : [for (var s = parts.single; s.isNotEmpty; s = s.length > 2 ? s.substring(0, s.length - 2) : '') int.parse(s.length > 2 ? s.substring(s.length - 2) : s)];
+      : [
+          for (var s = parts.single; s.isNotEmpty; s = s.length > 2 ? s.substring(0, s.length - 2) : '')
+            int.parse(s.length > 2 ? s.substring(s.length - 2) : s),
+        ];
   final f = fields[0] + (fields.length > 1 ? fields[1] * fps : 0) + (fields.length > 2 ? fields[2] * 60 * fps : 0);
-  return switch (m[1]) { '+' => now + f, '-' => now - f, _ => f };
+  return switch (m[1]) {
+    '+' => now + f,
+    '-' => now - f,
+    _ => f,
+  };
 }
 
 /// The playhead's time: pressed, it is typed (Premiere Pro's and After Effects' current time display: click it and
@@ -144,7 +180,10 @@ class _TimeTypedState extends State<_TimeTyped> {
 
   void _begin() {
     final now = widget.ws.timecode();
-    _words.value = TextEditingValue(text: now, selection: TextSelection(baseOffset: 0, extentOffset: now.length));   // (all of it picked: what is typed takes its place)
+    _words.value = TextEditingValue(
+      text: now,
+      selection: TextSelection(baseOffset: 0, extentOffset: now.length),
+    ); // (all of it picked: what is typed takes its place)
     setState(() => _typing = true);
     _focus.requestFocus();
   }
@@ -165,7 +204,10 @@ class _TimeTypedState extends State<_TimeTyped> {
           key: const ValueKey('ws-tl-time'),
           behavior: HitTestBehavior.opaque,
           onTap: _begin,
-          child: ValueListenableBuilder<int>(valueListenable: ws.moment, builder: (_, _, _) => Text(ws.timecode(), style: widget.style)),
+          child: ValueListenableBuilder<int>(
+            valueListenable: ws.moment,
+            builder: (_, _, _) => Text(ws.timecode(), style: widget.style),
+          ),
         ),
       );
     }
@@ -173,16 +215,21 @@ class _TimeTypedState extends State<_TimeTyped> {
       width: Shape.z(72),
       child: CallbackShortcuts(
         bindings: {const SingleActivator(LogicalKeyboardKey.escape): _focus.unfocus},
-        child: TextHand(key: const ValueKey('ws-tl-time-words'), field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
-          controller: _words,
-          focusNode: _focus,
-          style: widget.style.copyWith(color: Grey.g100),
-          cursorColor: Grey.g100,
-          backgroundCursorColor: Grey.g38,
-          selectionColor: WsT.accent.withValues(alpha: .35),
-          maxLines: 1,
-          onSubmitted: _go,
-        )),
+        child: TextHand(
+          key: const ValueKey('ws-tl-time-words'),
+          field: (k) => EditableText(
+            key: k,
+            rendererIgnoresPointer: true,
+            controller: _words,
+            focusNode: _focus,
+            style: widget.style.copyWith(color: Grey.g100),
+            cursorColor: Grey.g100,
+            backgroundCursorColor: Grey.g38,
+            selectionColor: WsT.accent.withValues(alpha: .35),
+            maxLines: 1,
+            onSubmitted: _go,
+          ),
+        ),
       ),
     );
   }
@@ -207,7 +254,9 @@ class _BtnState extends State<_Btn> {
   @override
   Widget build(BuildContext context) {
     final on = widget.on;
-    final bg = on ? WsT.accent : (_d || widget.lit ? Grey.g26 : (_h ? WsT.raised : const Color(0x00000000)));   // (flat at rest: a button shows itself when the hand is on it)
+    final bg = on
+        ? WsT.accent
+        : (_d || widget.lit ? Grey.g26 : (_h ? WsT.raised : const Color(0x00000000))); // (flat at rest: a button shows itself when the hand is on it)
     final ink = on ? WsT.onAccent : (_h || widget.lit ? Grey.g100 : (widget.rest ?? Grey.g56));
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -252,7 +301,7 @@ class _TempoState extends State<_Tempo> {
   final _focus = FocusNode();
   final _taps = <DateTime>[];
   bool _typing = false, _kept = false;
-  bool _tapping = false;   // (a hand on Tap takes the keyboard from the field: it stays while the beats go on)
+  bool _tapping = false; // (a hand on Tap takes the keyboard from the field: it stays while the beats go on)
   Timer? _tapped;
 
   @override
@@ -265,7 +314,7 @@ class _TempoState extends State<_Tempo> {
   void _left() {
     if (_focus.hasFocus || !_typing || _tapping) return;
     setState(() => _typing = false);
-    final bpm = wsNumber(_words.text) ?? 0;   // (nothing written: no tempo)
+    final bpm = wsNumber(_words.text) ?? 0; // (nothing written: no tempo)
     if (!_kept && bpm != widget.ws.bpm) _set(bpm);
     _kept = false;
   }
@@ -312,7 +361,10 @@ class _TempoState extends State<_Tempo> {
           behavior: HitTestBehavior.opaque,
           onTap: () {
             final now = bpm > 0 ? _said(bpm) : '';
-            _words.value = TextEditingValue(text: now, selection: TextSelection(baseOffset: 0, extentOffset: now.length));
+            _words.value = TextEditingValue(
+              text: now,
+              selection: TextSelection(baseOffset: 0, extentOffset: now.length),
+            );
             _taps.clear();
             setState(() => _typing = true);
             _focus.requestFocus();
@@ -333,16 +385,21 @@ class _TempoState extends State<_Tempo> {
                 _focus.unfocus();
               },
             },
-            child: TextHand(key: const ValueKey('ws-tl-bpm-words'), field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
-              controller: _words,
-              focusNode: _focus,
-              style: T.value(Grey.g95).copyWith(fontSize: T.px(10.5)),
-              cursorColor: WsT.accent,
-              backgroundCursorColor: Grey.g38,
-              selectionColor: WsT.accent.withValues(alpha: .3),
-              maxLines: 1,
-              onSubmitted: (_) => _focus.unfocus(),
-            )),
+            child: TextHand(
+              key: const ValueKey('ws-tl-bpm-words'),
+              field: (k) => EditableText(
+                key: k,
+                rendererIgnoresPointer: true,
+                controller: _words,
+                focusNode: _focus,
+                style: T.value(Grey.g95).copyWith(fontSize: T.px(10.5)),
+                cursorColor: WsT.accent,
+                backgroundCursorColor: Grey.g38,
+                selectionColor: WsT.accent.withValues(alpha: .3),
+                maxLines: 1,
+                onSubmitted: (_) => _focus.unfocus(),
+              ),
+            ),
           ),
         ),
         SizedBox(width: Shape.s(4)),
@@ -365,7 +422,10 @@ class _Chip extends StatelessWidget {
     padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
     alignment: Alignment.center,
     decoration: BoxDecoration(color: WsT.well, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
-    child: Text(text, style: mono ? T.value(Grey.g91).copyWith(fontSize: T.px(10.5)) : T.micro(Grey.g91).copyWith(fontWeight: FontWeight.w600)),
+    child: Text(
+      text,
+      style: mono ? T.value(Grey.g91).copyWith(fontSize: T.px(10.5)) : T.micro(Grey.g91).copyWith(fontWeight: FontWeight.w600),
+    ),
   );
 }
 

@@ -22,7 +22,7 @@ class ScriptCode extends StatefulWidget {
 }
 
 class _ScriptCodeState extends State<ScriptCode> {
-  String? _mine;   // (the copy written and said, until the inside has it as the thing's script)
+  String? _mine; // (the copy written and said, until the inside has it as the thing's script)
 
   String get _said => widget.ws.inside!.word(widget.thing, 'script');
 
@@ -45,7 +45,7 @@ class _ScriptCodeState extends State<ScriptCode> {
       m.later('say', thing: widget.thing, name: 'script', word: to);
     }
     ws.after(m.later('code', word: to), (done, why) {
-      if (!done) ws.notice = why;   // (half typed: what ran stays, doc_script_of)
+      if (!done) ws.notice = why; // (half typed: what ran stays, doc_script_of)
       ws.reread();
     });
   }

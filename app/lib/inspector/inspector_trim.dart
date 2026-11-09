@@ -24,8 +24,11 @@ class _TrimDrawingState extends State<TrimDrawing> {
   @override
   Widget build(BuildContext context) {
     final doc = Ctx.of(context).doc;
-    return ListenableBuilder( // (drawn again when one of its numbers is told anew, by its tiles or the inside)
-      listenable: Listenable.merge([for (final id in const ['v_trim', 'v_trim_begin', 'v_trim_offset']) doc.watch(id)]),
+    return ListenableBuilder(
+      // (drawn again when one of its numbers is told anew, by its tiles or the inside)
+      listenable: Listenable.merge([
+        for (final id in const ['v_trim', 'v_trim_begin', 'v_trim_offset']) doc.watch(id),
+      ]),
       builder: (context, _) => _drawing(doc),
     );
   }
@@ -38,7 +41,12 @@ class _TrimDrawingState extends State<TrimDrawing> {
         child: LayoutBuilder(
           builder: (context, box) {
             // (the card counts them in hundredths: trim is what is cut off the end, the offset is in turns)
-            final g = _Trim(box.biggest, begin: (doc.get('v_trim_begin') ?? 0) / 100, end: 1 - (doc.get('v_trim') ?? 0) / 100, slide: (doc.get('v_trim_offset') ?? 0) / 100);
+            final g = _Trim(
+              box.biggest,
+              begin: (doc.get('v_trim_begin') ?? 0) / 100,
+              end: 1 - (doc.get('v_trim') ?? 0) / 100,
+              slide: (doc.get('v_trim_offset') ?? 0) / 100,
+            );
             _Knob? pick(Offset p) {
               if ((p - g.at(g.begin + g.slide)).distance <= 9) return _Knob.begin;
               if ((p - g.at(g.end + g.slide)).distance <= 9) return _Knob.end;
@@ -60,7 +68,10 @@ class _TrimDrawingState extends State<TrimDrawing> {
                   case _Knob.end:
                     doc.set('v_trim', ((1 - _Trim.wrap(u - g.slide)).clamp(0.0, 1 - g.begin) * 100));
                   case _Knob.slide:
-                    doc.set('v_trim_offset', (doc.get('v_trim_offset') ?? 0) + (u - _from) * 100); // (from what it is now: the drawing may not be drawn again between two moves)
+                    doc.set(
+                      'v_trim_offset',
+                      (doc.get('v_trim_offset') ?? 0) + (u - _from) * 100,
+                    ); // (from what it is now: the drawing may not be drawn again between two moves)
                     _from = u;
                   case null:
                 }
@@ -115,7 +126,11 @@ class _TrimPaint extends CustomPainter {
       ..strokeCap = StrokeCap.round;
     c.drawLine(Offset(_Trim.pad, g.y), Offset(s.width - _Trim.pad, g.y), line(Grey.g20, 3)); // (the whole path, faint)
     for (final (a, b) in g.stretches) {
-      c.drawLine(Offset(_Trim.pad + a * (s.width - 2 * _Trim.pad), g.y), Offset(_Trim.pad + b * (s.width - 2 * _Trim.pad), g.y), line(held == _Knob.slide ? Pop.accent : Pop.tonePlace, 4));
+      c.drawLine(
+        Offset(_Trim.pad + a * (s.width - 2 * _Trim.pad), g.y),
+        Offset(_Trim.pad + b * (s.width - 2 * _Trim.pad), g.y),
+        line(held == _Knob.slide ? Pop.accent : Pop.tonePlace, 4),
+      );
     }
     for (final (k, u) in [(_Knob.begin, g.begin + g.slide), (_Knob.end, g.end + g.slide)]) {
       c.drawCircle(g.at(u), held == k ? 6.5 : 5, Paint()..color = held == k ? Pop.accent : TransformZone.lift.color);

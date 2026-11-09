@@ -40,12 +40,22 @@ class ArtScene {
   ArtScene.of(Ws ws, {required this.camera})
     : frame = ws.frame,
       title = ws.document == null ? 'CODA_main' : ws.document!.replaceFirst(RegExp(r'\.motolii$'), ''), // (joined: the document's own name)
-      guidesX = [for (final (a, at) in ws.guides) if (a == 'x') at],
-      guidesY = [for (final (a, at) in ws.guides) if (a == 'y') at],
+      guidesX = [
+        for (final (a, at) in ws.guides)
+          if (a == 'x') at,
+      ],
+      guidesY = [
+        for (final (a, at) in ws.guides)
+          if (a == 'y') at,
+      ],
       layers = List.unmodifiable([for (final l in ws.layers) ArtLayer(l)]),
       rev = ws.rev,
       eye = ws.eye,
-      gizmos = {if (ws.freeEye) for (final l in ws.layers) if (l.kind == WsKind.camera) l.id: ws.inside?.gizmo(int.parse(l.id)) ?? ''},
+      gizmos = {
+        if (ws.freeEye)
+          for (final l in ws.layers)
+            if (l.kind == WsKind.camera) l.id: ws.inside?.gizmo(int.parse(l.id)) ?? '',
+      },
       _inside = ws.inside;
 
   final Motolii? _inside;
@@ -58,7 +68,10 @@ class ArtScene {
   /// A camera's points on the picture: its frame's four corners, the point it looks at, where it is. Null: one behind the eye.
   List<Offset?> gizmo(String id) {
     final n = (gizmos[id] ?? '').trim().split(' ').map(double.tryParse).toList();
-    return [for (var i = 0; i + 1 < n.length; i += 2) if (n[i] case final x?) Offset(x, n[i + 1]!) else null];
+    return [
+      for (var i = 0; i + 1 < n.length; i += 2)
+        if (n[i] case final x?) Offset(x, n[i + 1]!) else null,
+    ];
   }
 
   /// A thing's frame on the picture as the inside sees it at this moment, asked when it is wanted (a hand on the
@@ -69,7 +82,10 @@ class ArtScene {
   });
 
   /// Every thing's frame, asked now.
-  Map<String, ArtBox> get boxes => {for (final l in layers) if (box(l.id) case final b?) l.id: b};
+  Map<String, ArtBox> get boxes => {
+    for (final l in layers)
+      if (box(l.id) case final b?) l.id: b,
+  };
 
   /// How many times the joined document has been read again: a change at the same frame is another scene.
   final int rev;
@@ -80,7 +96,13 @@ class ArtScene {
   ArtLayer? layer(String? id) => layers.where((l) => l.id == id).firstOrNull;
   @override
   bool operator ==(Object other) =>
-      other is ArtScene && other.frame == frame && other.rev == rev && other.camera == camera && identical(other.eye, eye) && mapEquals(other.gizmos, gizmos) && listEquals(other.layers, layers);
+      other is ArtScene &&
+      other.frame == frame &&
+      other.rev == rev &&
+      other.camera == camera &&
+      identical(other.eye, eye) &&
+      mapEquals(other.gizmos, gizmos) &&
+      listEquals(other.layers, layers);
   @override
   int get hashCode => Object.hash(frame, camera, Object.hashAll(layers));
 }
@@ -102,7 +124,6 @@ class ArtBox {
 
 Offset _rot(Offset p, double a) => Offset(p.dx * math.cos(a) - p.dy * math.sin(a), p.dx * math.sin(a) + p.dy * math.cos(a));
 
-
 /// The stage's picture in document px: its size, the things' frames, and what a point is on.
 abstract final class WsArt {
   static Size comp = const Size(1920, 1080); // (a document's own)
@@ -121,7 +142,8 @@ abstract final class WsArt {
 
   /// The topmost layer under [p] (document px), or null. The background is locked: a click on it means "nothing".
   static String? hit(ArtScene s, Offset p) {
-    for (final l in s.layers) {   // (the thing in front, of those whose real frame the point is in; the first row is the nearest thing)
+    for (final l in s.layers) {
+      // (the thing in front, of those whose real frame the point is in; the first row is the nearest thing)
       if (s.box(l.id)?.contains(p) ?? false) return l.id;
     }
     return null;

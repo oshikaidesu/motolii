@@ -6,6 +6,8 @@
 
 **エディタ（VS Code などの clangd）**：`edit.sh` で依存を取ってきた後に `./deps/compile_commands.sh` を 1 回（ヘッダーを足した時も）。`engine/compile_commands.json` ができ、「part of X.h」の部品にもそれを読む所までの文脈が付いて、赤い誤りが出なくなる。
 
+コードの言葉（thing・fact・way・made・drawn・kept・told・hand…）を AE・Filament の言葉に引き直す表は [`../docs/ARCHITECTURE.md` の「言葉」](../docs/ARCHITECTURE.md#言葉words)。
+
 **door（扉）**：人のコードとの境目を 1 か所に閉じ込めたファイル。Filament の公開されていない中身に手を入れるのは `gpu/*_door.*` だけ、ネットのコードをそのまま入れるのは `community/door*.h` と `document/doc_door.h` だけで、相手が変わったら扉だけを直す。
 
 ## 入口

@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/style/tokens.dart';
+
 import '../workspace/two_fingers.dart';
 
 /// A hand anywhere on a card (its name, its preview, its tiles): the card's preview plays while it is there.
@@ -64,7 +65,8 @@ class _MotionPreviewState extends State<MotionPreview> with SingleTickerProvider
     ..removeWhere((t) => !t.isActive)
     ..add(Timer(Duration(milliseconds: ms), () => mounted ? does() : null));
 
-  void _play() { // (while a hand is on its card, or a little while after a number changed: still otherwise, no frames asked for)
+  void _play() {
+    // (while a hand is on its card, or a little while after a number changed: still otherwise, no frames asked for)
     final touched = _over || DateTime.now().difference(_changed).inMilliseconds < (_round * 2000).clamp(1500, 4000);
     if (touched && _moves) {
       if (!_clock.isAnimating) _clock.repeat();
@@ -78,14 +80,24 @@ class _MotionPreviewState extends State<MotionPreview> with SingleTickerProvider
   /// How each copy moves, as the inside has it now (fewer moments each when there are many): asked, answered later.
   Future<List<List<double>>> _all(Doc doc) async {
     final copies = (doc.get('v_copies') ?? 1).round().clamp(1, MotionPreview.most);
-    final asked = await Future.wait([for (var c = 0; c < copies; c++) if (doc.onPath?.call(_round, copies > 1 ? 24 : MotionPreview.samples, c) case final p?) p]);
-    return [for (final p in asked) if (p != null && p.length >= 8) p];
+    final asked = await Future.wait([
+      for (var c = 0; c < copies; c++)
+        if (doc.onPath?.call(_round, copies > 1 ? 24 : MotionPreview.samples, c) case final p?) p,
+    ]);
+    return [
+      for (final p in asked)
+        if (p != null && p.length >= 8) p,
+    ];
   }
 
-  static bool _moving(List<List<double>> paths) =>
-      paths.any((p) => [for (var i = 0; i + 3 < p.length; i += 4) (p[i] - p[0]).abs() + (p[i + 1] - p[1]).abs() + (p[i + 2] - p[2]).abs() + (p[i + 3] - p[3]).abs()].any((d) => d > 1e-6));
+  static bool _moving(List<List<double>> paths) => paths.any(
+    (p) =>
+        [for (var i = 0; i + 3 < p.length; i += 4) (p[i] - p[0]).abs() + (p[i + 1] - p[1]).abs() + (p[i + 2] - p[2]).abs() + (p[i + 3] - p[3]).abs()]
+            .any((d) => d > 1e-6),
+  );
 
-  Future<void> _ask(Doc doc) async { // (how they move, as the inside has it now)
+  Future<void> _ask(Doc doc) async {
+    // (how they move, as the inside has it now)
     if (!mounted) return;
     final all = await _all(doc);
     if (!mounted) return;
@@ -111,14 +123,17 @@ class _MotionPreviewState extends State<MotionPreview> with SingleTickerProvider
     final ids = doc.cards.where((c) => c.name == widget.card).firstOrNull?.params.map((p) => 'v_${p.id}') ?? const <String>[];
     final speed = widget.card == 'Wave' ? (doc.get('v_wave_speed') ?? 1).abs() : 0.0;
     final round = speed > 0 ? (1 / speed).clamp(.25, 4.0) : 2.0; // (one round of a wave; two seconds of anything else)
-    final asked = [for (final id in [...ids, 'v_copies']) doc.get(id)].join(' ');
-    if (asked != _asked) { // (a number of the card changed: asked again once the inside has it, then played a while)
+    final asked = [
+      for (final id in [...ids, 'v_copies']) doc.get(id),
+    ].join(' ');
+    if (asked != _asked) {
+      // (a number of the card changed: asked again once the inside has it, then played a while)
       final first = _asked.isEmpty;
       _asked = asked;
       _round = round;
       _clock.duration = Duration(milliseconds: (round * 1000).round());
       if (first) {
-        _ask(doc);   // (asked of the host: drawn when it comes)
+        _ask(doc); // (asked of the host: drawn when it comes)
       } else {
         _changed = DateTime.now();
         _after(60, () => _ask(doc)); // (what the hand set reaches the inside in its queue)
@@ -133,7 +148,9 @@ class _MotionPreviewState extends State<MotionPreview> with SingleTickerProvider
       behavior: HitTestBehavior.opaque,
       onPanStart: (d) {
         final box = context.size;
-        _unit = _paths.isNotEmpty && box != null ? _fit(_paths, box).k : .2; // (points of the box a point of the picture, as it lies when the hand takes it: kept while held)
+        _unit = _paths.isNotEmpty && box != null
+            ? _fit(_paths, box).k
+            : .2; // (points of the box a point of the picture, as it lies when the hand takes it: kept while held)
         doc.beginGesture();
       },
       onPanUpdate: (d) {
@@ -203,10 +220,14 @@ class _MotionPaint extends CustomPainter {
       c.scale(size);
       c.drawRRect(RRect.fromRectAndRadius(Rect.fromCircle(center: Offset.zero, radius: half), Radius.circular(one ? 4 : 2)), paint);
       if (mark) {
-        c.drawLine(Offset(-half + half * .36, -half + half * .27), Offset(half - half * .36, -half + half * .27), Paint() // (its top edge marked: how far it turns shows)
-          ..color = Grey.g07
-          ..strokeWidth = one ? 2 : 1.4
-          ..strokeCap = StrokeCap.round);
+        c.drawLine(
+          Offset(-half + half * .36, -half + half * .27),
+          Offset(half - half * .36, -half + half * .27),
+          Paint() // (its top edge marked: how far it turns shows)
+            ..color = Grey.g07
+            ..strokeWidth = one ? 2 : 1.4
+            ..strokeCap = StrokeCap.round,
+        );
       }
       c.restore();
     }
@@ -230,17 +251,24 @@ class _MotionPaint extends CustomPainter {
           final j = (g * n / ghosts).floor();
           square(on(p[4 * j], p[4 * j + 1]), -(p[4 * j + 2] - p[2]) * math.pi / 180, p[3] == 0 ? 1 : (p[4 * j + 3] / p[3]).clamp(.2, 3.0), ghost);
         }
-        final rest = on(p[0], p[1]), cross = Paint()
-          ..color = Grey.g26
-          ..strokeWidth = 1;
+        final rest = on(p[0], p[1]),
+            cross = Paint()
+              ..color = Grey.g26
+              ..strokeWidth = 1;
         c.drawLine(rest - const Offset(6, 0), rest + const Offset(6, 0), cross); // (where it rests)
         c.drawLine(rest - const Offset(0, 6), rest + const Offset(0, 6), cross);
       }
     }
-    for (final (k, p) in paths.indexed) { // (each where it is now, turned and sized as it is now; the first brightest)
+    for (final (k, p) in paths.indexed) {
+      // (each where it is now, turned and sized as it is now; the first brightest)
       final n = p.length ~/ 4, i = (clock.value * n).floor() % n, base = paths.first[3] == 0 ? 1.0 : paths.first[3];
-      square(on(p[4 * i], p[4 * i + 1]), -(p[4 * i + 2] - (one ? p[2] : 0)) * math.pi / 180, (p[4 * i + 3] / base).clamp(.2, 3.0),
-          Paint()..color = k == 0 ? Pop.accent : Pop.accent.withValues(alpha: .6), mark: true);
+      square(
+        on(p[4 * i], p[4 * i + 1]),
+        -(p[4 * i + 2] - (one ? p[2] : 0)) * math.pi / 180,
+        (p[4 * i + 3] / base).clamp(.2, 3.0),
+        Paint()..color = k == 0 ? Pop.accent : Pop.accent.withValues(alpha: .6),
+        mark: true,
+      );
     }
   }
 

@@ -20,10 +20,12 @@ class Ease {
   /// A way with no seat on this desk: how it goes, as the document itself works it out (how far, at even steps of the stretch).
   final List<double>? drawn;
 
-  double at(double x) => drawn != null ? _along(drawn!, x) : switch (kind) {
-    EaseKind.bezier => bezierY(p1, p2, x),
-    EaseKind.hold => x < 1 ? 0 : 1,
-  };
+  double at(double x) => drawn != null
+      ? _along(drawn!, x)
+      : switch (kind) {
+          EaseKind.bezier => bezierY(p1, p2, x),
+          EaseKind.hold => x < 1 ? 0 : 1,
+        };
 
   Ease withHandles(Offset a, Offset b) => Ease(EaseKind.bezier, a, b);
   Ease reversed() => Ease(kind, Offset(1 - p2.dx, 1 - p2.dy), Offset(1 - p1.dx, 1 - p1.dy), name);
@@ -78,11 +80,14 @@ EaseSpan? easeSpan(Ws ws) {
   if (ws.stretch case final s?) {
     if (ws.layers.where((l) => l.id == s.layer).firstOrNull case final l?) return (layer: l, from: s.from, to: s.to, picked: 1);
   }
-  if (ws.keys.isEmpty) {   // (no key picked: the stretch the playhead is in, of the picked thing, as Alight Motion opens its ease when the playhead is between two keys: docs/internal/reports/alight_motion/alight_ui.md, イーズ)
+  if (ws.keys.isEmpty) {
+    // (no key picked: the stretch the playhead is in, of the picked thing, as Alight Motion opens its ease when the playhead is between two keys: docs/internal/reports/alight_motion/alight_ui.md, イーズ)
     final layer = ws.layers.where((l) => l.id == ws.selected).firstOrNull, f = ws.frame;
     final keys = layer == null ? const <int>[] : ([...layer.keys]..sort());
     final from = keys.where((k) => k <= f).lastOrNull, to = keys.where((k) => k > f).firstOrNull, before = keys.where((k) => k < f).lastOrNull;
-    if (from == f && to == null && before != null) return (layer: layer!, from: before, to: f, picked: 0);   // (on its last key: the stretch that ends there, as with that key picked below; golf_noise.md ㊵)
+    if (from == f && to == null && before != null) {
+      return (layer: layer!, from: before, to: f, picked: 0); // (on its last key: the stretch that ends there, as with that key picked below; golf_noise.md ㊵)
+    }
     return from == null || to == null ? null : (layer: layer!, from: from, to: to, picked: 0);
   }
   final picked = ws.keys.toList()..sort((a, b) => a.frame.compareTo(b.frame));
@@ -106,10 +111,12 @@ class DeskEase extends StatefulWidget {
 }
 
 /// Joined: an ease as the document says a stretch's way (three of its nine kinds have a seat on this desk), and back.
-String said(Ease e) => easeOther(e) ? e.name! : switch (e.kind) {
-  EaseKind.hold => 'Hold',
-  EaseKind.bezier => e.name == 'Linear' ? 'Linear' : 'Bezier ${e.p1.dx} ${e.p1.dy} ${e.p2.dx} ${e.p2.dy}',
-};
+String said(Ease e) => easeOther(e)
+    ? e.name!
+    : switch (e.kind) {
+        EaseKind.hold => 'Hold',
+        EaseKind.bezier => e.name == 'Linear' ? 'Linear' : 'Bezier ${e.p1.dx} ${e.p1.dy} ${e.p2.dx} ${e.p2.dy}',
+      };
 Ease heard(String said) {
   // (the inside says a way back in one form: the kind's name, then all its numbers)
   final w = said.split(' '), n = [for (final x in w.skip(1)) double.tryParse(x) ?? 0];
@@ -124,13 +131,14 @@ Ease heard(String said) {
 /// Joined: the values of the span's thing that have a key where the span begins, each with that key's own moment.
 Map<String, double> keysAt(Ws ws, EaseSpan span) {
   final m = ws.inside!, t = int.parse(span.layer.id);
-  if (ws.stretch case final s?) return {s.name: s.at};   // (a line picked: that value's alone)
+  if (ws.stretch case final s?) return {s.name: s.at}; // (a line picked: that value's alone)
   // (asked again only when the document is read again: not each picture a playing stage shows)
   if (_keysAtOf[ws] case (final r, final id, final f, final at) when r == ws.reads && id == span.layer.id && f == span.from) return at;
   final at = _keysAt(m, t, span);
   _keysAtOf[ws] = (ws.reads, span.layer.id, span.from, at);
   return at;
 }
+
 final _keysAtOf = Expando<(int, String, int, Map<String, double>)>();
 Map<String, double> _keysAt(Motolii m, int t, EaseSpan span) {
   return {
@@ -147,11 +155,12 @@ final _unseatedOf = Expando<(String, List<Ease>)>();
 List<Ease> unseated(Ws ws) {
   final m = ws.inside;
   if (m == null) return const [];
-  if (_unseatedOf[m] case (final was, final tiles) when was == '${ws.reads}') return tiles;   // (the ways asked again only when the document is read again)
+  if (_unseatedOf[m] case (final was, final tiles) when was == '${ws.reads}') return tiles; // (the ways asked again only when the document is read again)
   final names = m.wayNames, said = '${ws.reads}';
   final tiles = [
     for (final name in names)
-      if (name != 'Bezier' && !easeIsLaid(name) && !easeIsTurned(name) && easePresets.every((p) => p.name != name)) Ease(EaseKind.bezier, Offset.zero, const Offset(1, 1), name, [for (var i = 0; i <= 32; i++) m.wayAt(name, i / 32)]),
+      if (name != 'Bezier' && !easeIsLaid(name) && !easeIsTurned(name) && easePresets.every((p) => p.name != name))
+        Ease(EaseKind.bezier, Offset.zero, const Offset(1, 1), name, [for (var i = 0; i <= 32; i++) m.wayAt(name, i / 32)]),
   ];
   _unseatedOf[m] = (said, tiles);
   return tiles;

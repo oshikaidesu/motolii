@@ -5,6 +5,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/style/tokens.dart';
+
 import '../../parts/text_hand.dart';
 
 /// om_midi's kinds of keys, by the inside's names (midi.h: midi_keys), in its panel's words.
@@ -33,7 +34,11 @@ class _MidiKeysState extends State<MidiKeys> {
   }
 
   Future<void> _choose(Doc doc) async {
-    final got = await openFile(acceptedTypeGroups: const [XTypeGroup(label: 'MIDI', extensions: ['mid', 'midi'], uniformTypeIdentifiers: ['public.midi-audio'])]);
+    final got = await openFile(
+      acceptedTypeGroups: const [
+        XTypeGroup(label: 'MIDI', extensions: ['mid', 'midi'], uniformTypeIdentifiers: ['public.midi-audio']),
+      ],
+    );
     if (got == null || !mounted) return;
     setState(() {
       _file = got.path;
@@ -57,7 +62,10 @@ class _MidiKeysState extends State<MidiKeys> {
       padding: EdgeInsets.symmetric(vertical: Shape.s(2)),
       child: Row(
         children: [
-          SizedBox(width: Shape.z(56), child: Text(label, style: T.label(Grey.g63))),
+          SizedBox(
+            width: Shape.z(56),
+            child: Text(label, style: T.label(Grey.g63)),
+          ),
           Expanded(child: child),
         ],
       ),
@@ -75,7 +83,9 @@ class _MidiKeysState extends State<MidiKeys> {
               children: [
                 Chip('Choose…', on: false, onTap: () => _choose(doc)),
                 SizedBox(width: Shape.s(6)),
-                Expanded(child: Text(name ?? 'None', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(name == null ? Grey.g56 : Grey.g91))),
+                Expanded(
+                  child: Text(name ?? 'None', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(name == null ? Grey.g56 : Grey.g91)),
+                ),
               ],
             ),
           ),
@@ -94,7 +104,18 @@ class _MidiKeysState extends State<MidiKeys> {
               padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
               alignment: Alignment.centerLeft,
               decoration: BoxDecoration(color: Grey.g15, borderRadius: BorderRadius.all(Shape.r(4))),
-              child: TextHand(field: (k) => EditableText(key: k, rendererIgnoresPointer: true,controller: _bpm, focusNode: _f, style: T.name(Grey.g95), cursorColor: Grey.g95, backgroundCursorColor: Grey.g20, maxLines: 1)),
+              child: TextHand(
+                field: (k) => EditableText(
+                  key: k,
+                  rendererIgnoresPointer: true,
+                  controller: _bpm,
+                  focusNode: _f,
+                  style: T.name(Grey.g95),
+                  cursorColor: Grey.g95,
+                  backgroundCursorColor: Grey.g20,
+                  maxLines: 1,
+                ),
+              ),
             ),
           ),
           line(

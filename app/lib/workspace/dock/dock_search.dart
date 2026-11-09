@@ -38,7 +38,9 @@ class _DockSearchState extends State<DockSearch> {
     if (!mounted) return;
     _searchAwaited = false;
     _focus.requestFocus();
-    WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? _focus.requestFocus() : null);   // (the press that asked gives the panel it came from the keys, a frame on: inspector_panel.dart)
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => mounted ? _focus.requestFocus() : null,
+    ); // (the press that asked gives the panel it came from the keys, a frame on: inspector_panel.dart)
     WidgetsBinding.instance.scheduleFrame();
     widget.controller.selection = TextSelection(baseOffset: 0, extentOffset: widget.controller.text.length);
   }
@@ -77,16 +79,20 @@ class _DockSearchState extends State<DockSearch> {
                     IgnorePointer(
                       child: Text(widget.hint, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(Grey.g56)),
                     ),
-                  TextHand(field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
-                    controller: c,
-                    focusNode: _focus,
-                    style: T.name(Grey.g95),
-                    cursorColor: WsT.accent,
-                    backgroundCursorColor: Grey.g44,
-                    selectionColor: Grey.g38,
-                    cursorWidth: 1.5,
-                    maxLines: 1,
-                  )),
+                  TextHand(
+                    field: (k) => EditableText(
+                      key: k,
+                      rendererIgnoresPointer: true,
+                      controller: c,
+                      focusNode: _focus,
+                      style: T.name(Grey.g95),
+                      cursorColor: WsT.accent,
+                      backgroundCursorColor: Grey.g44,
+                      selectionColor: Grey.g38,
+                      cursorWidth: 1.5,
+                      maxLines: 1,
+                    ),
+                  ),
                 ],
               ),
             ),

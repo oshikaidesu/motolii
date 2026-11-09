@@ -3,6 +3,7 @@
 // "edit.redo"}; a command begun with '-' takes that key from the command). Flutter's own Shortcuts and Actions carry
 // them; the menus show the same keys. While words are being typed, a key with no cmd, ctrl or alt is the words'.
 import 'package:re_editor/re_editor.dart' show CodeEditor;
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -13,60 +14,60 @@ import 'package:flutter/widgets.dart';
 /// standard Mac ones (New, Undo, Cut, Copy, Paste, Select All), and the stage's tools.
 const defaultKeys = <(String, String)>[
   ('cmd+n', 'file.new'),
-  ('cmd+o', 'file.home'),   // (the documents listed: the Mac's own Open, as Alight Motion's home lists its projects)
-  ('cmd+shift+r', 'file.render'),   // (Live 42.3: Export Audio/Video)
-  ('shift+e', 'file.exportFrame'),   // (Premiere Pro's Export Frame)
+  ('cmd+o', 'file.home'), // (the documents listed: the Mac's own Open, as Alight Motion's home lists its projects)
+  ('cmd+shift+r', 'file.render'), // (Live 42.3: Export Audio/Video)
+  ('shift+e', 'file.exportFrame'), // (Premiere Pro's Export Frame)
   ('cmd+z', 'edit.undo'),
   ('cmd+shift+z', 'edit.redo'),
   ('cmd+x', 'edit.cut'),
   ('cmd+c', 'edit.copy'),
   ('cmd+v', 'edit.paste'),
-  ('cmd+alt+c', 'edit.copyStyle'),   // (the Mac's own: Pages, Keynote, TextEdit)
+  ('cmd+alt+c', 'edit.copyStyle'), // (the Mac's own: Pages, Keynote, TextEdit)
   ('cmd+alt+v', 'edit.pasteStyle'),
   ('cmd+a', 'edit.selectAll'),
-  ('cmd+shift+a', 'edit.deselectAll'),   // (After Effects', Premiere Pro's: Deselect All)
-  ('cmd+alt+b', 'edit.workToPicked'),   // (After Effects': the work area to the selected layers, else the whole)
-  ('cmd+d', 'thing.duplicate'),   // (Live 42.5)
-  ('cmd+g', 'thing.group'),   // (Figma's, Keynote's: Group)
+  ('cmd+shift+a', 'edit.deselectAll'), // (After Effects', Premiere Pro's: Deselect All)
+  ('cmd+alt+b', 'edit.workToPicked'), // (After Effects': the work area to the selected layers, else the whole)
+  ('cmd+d', 'thing.duplicate'), // (Live 42.5)
+  ('cmd+g', 'thing.group'), // (Figma's, Keynote's: Group)
   ('cmd+shift+g', 'thing.ungroup'),
-  ('cmd+]', 'thing.forward'),   // (After Effects', Figma's, Illustrator's: Bring Forward, Send Backward)
+  ('cmd+]', 'thing.forward'), // (After Effects', Figma's, Illustrator's: Bring Forward, Send Backward)
   ('cmd+[', 'thing.backward'),
-  ('cmd+e', 'thing.split'),   // (Live 42.5: Split)
-  ('[', 'time.playhead'),   // (After Effects': Move Layer In Point to current time, Out Point)
+  ('cmd+e', 'thing.split'), // (Live 42.5: Split)
+  ('[', 'time.playhead'), // (After Effects': Move Layer In Point to current time, Out Point)
   (']', 'time.playhead_end'),
-  ('alt+[', 'time.extend'),   // (Final Cut Pro: Trim Start, Trim End)
+  ('alt+[', 'time.extend'), // (Final Cut Pro: Trim Start, Trim End)
   ('alt+]', 'time.trim_end'),
-  ('cmd+r', 'thing.rename'),   // (Live 42.5, 42.19)
-  ('0', 'thing.deactivate'),   // (Live 42.15/42.16/42.19: 0 switches a clip off and on; here the eye)
-  ('s', 'thing.solo'),   // (Live 42.15/42.19)
-  ('u', 'thing.lanes'),   // (After Effects' U: the picked layers' keyed properties)
-  ('a', 'mark.animate'),   // (Apple Motion's A: Record Animation, every change keyed, pressed again off)
+  ('cmd+r', 'thing.rename'), // (Live 42.5, 42.19)
+  ('0', 'thing.deactivate'), // (Live 42.15/42.16/42.19: 0 switches a clip off and on; here the eye)
+  ('s', 'thing.solo'), // (Live 42.15/42.19)
+  ('u', 'thing.lanes'), // (After Effects' U: the picked layers' keyed properties)
+  ('a', 'mark.animate'), // (Apple Motion's A: Record Animation, every change keyed, pressed again off)
   ('backspace', 'thing.remove'),
   ('delete', 'thing.remove'),
-  ('space', 'play.fromStart'),   // (Live 42.20)
-  ('shift+space', 'play.continue'),   // (Live 42.20)
-  ('left', 'nudge.left'),   // (Live 42.16: nudge selection)
+  ('space', 'play.fromStart'), // (Live 42.20)
+  ('shift+space', 'play.continue'), // (Live 42.20)
+  ('left', 'nudge.left'), // (Live 42.16: nudge selection)
   ('right', 'nudge.right'),
   ('shift+left', 'nudge.left10'),
   ('shift+right', 'nudge.right10'),
-  ('up', 'layer.previous'),   // (Live: the arrow keys go between tracks)
+  ('up', 'layer.previous'), // (Live: the arrow keys go between tracks)
   ('down', 'layer.next'),
-  ('cmd+l', 'loop.toggle'),   // (Live 42.16)
-  ('=', 'zoom.in'),   // (Live 42.9: + and -, the + without shift)
+  ('cmd+l', 'loop.toggle'), // (Live 42.16)
+  ('=', 'zoom.in'), // (Live 42.9: + and -, the + without shift)
   ('shift+=', 'zoom.in'),
   ('-', 'zoom.out'),
-  ('z', 'zoom.selection'),   // (Live 42.16)
+  ('z', 'zoom.selection'), // (Live 42.16)
   ('x', 'zoom.back'),
   ('w', 'zoom.width'),
-  (',', 'frame.previous'),   // (Live has none: Rive's and Jitter's)
+  (',', 'frame.previous'), // (Live has none: Rive's and Jitter's)
   ('.', 'frame.next'),
-  ('j', 'frame.previousStop'),   // (After Effects': J and K, the previous and next visible item in the time ruler)
+  ('j', 'frame.previousStop'), // (After Effects': J and K, the previous and next visible item in the time ruler)
   ('k', 'frame.nextStop'),
   ('shift+,', 'frame.back10'),
   ('shift+.', 'frame.forward10'),
-  ('home', 'frame.first'),   // (Live 42.20: move insert marker to beginning)
+  ('home', 'frame.first'), // (Live 42.20: move insert marker to beginning)
   ('end', 'frame.last'),
-  ('v', 'tool.select'),   // (the stage's tools, their letters as stage.dart lists them: After Effects', Photoshop's)
+  ('v', 'tool.select'), // (the stage's tools, their letters as stage.dart lists them: After Effects', Photoshop's)
   ('m', 'tool.move'),
   ('r', 'tool.rectangle'),
   ('e', 'tool.ellipse'),
@@ -82,24 +83,28 @@ class Keymap {
   final List<(SingleActivator, String)> pairs;
 
   static Keymap load([String? file]) {
-    final all = [for (final (k, c) in defaultKeys) if (activatorOf(k) case final a?) (a, c)];
+    final all = [
+      for (final (k, c) in defaultKeys)
+        if (activatorOf(k) case final a?) (a, c),
+    ];
     final path = file ?? '${Platform.environment['HOME']}/.motolii/keybindings.json';
     try {
       final told = jsonDecode(File(path).readAsStringSync()) as List;
       for (final e in told.cast<Map>()) {
         final a = activatorOf('${e['key']}'), c = '${e['command']}';
         if (a == null) continue;
-        all.removeWhere((p) => _same(p.$1, a));   // (one key, one command: the maker's)
+        all.removeWhere((p) => _same(p.$1, a)); // (one key, one command: the maker's)
         if (!c.startsWith('-')) all.add((a, c));
       }
-    } catch (_) {}   // (no file, or not a list: the window's own keys)
+    } catch (_) {} // (no file, or not a list: the window's own keys)
     return Keymap(all);
   }
 
   /// The first key that says a command (the menus show it), if any.
   SingleActivator? keyOf(String command) => pairs.where((p) => p.$2 == command).firstOrNull?.$1;
 
-  static bool _same(SingleActivator a, SingleActivator b) => a.trigger == b.trigger && a.meta == b.meta && a.shift == b.shift && a.control == b.control && a.alt == b.alt;
+  static bool _same(SingleActivator a, SingleActivator b) =>
+      a.trigger == b.trigger && a.meta == b.meta && a.shift == b.shift && a.control == b.control && a.alt == b.alt;
 }
 
 /// A key as written ("cmd+shift+z", "space", "left"...) as Flutter's own activator; null if not one it knows.
@@ -108,23 +113,49 @@ SingleActivator? activatorOf(String said) {
   final key = _keys[parts.last] ?? (parts.last.length == 1 ? LogicalKeyboardKey.findKeyByKeyId(parts.last.codeUnitAt(0)) : null);
   if (key == null) return null;
   final mods = parts.sublist(0, parts.length - 1).toSet();
-  return SingleActivator(key, meta: mods.contains('cmd') || mods.contains('meta'), shift: mods.contains('shift'), control: mods.contains('ctrl') || mods.contains('control'), alt: mods.contains('alt') || mods.contains('option'));
+  return SingleActivator(
+    key,
+    meta: mods.contains('cmd') || mods.contains('meta'),
+    shift: mods.contains('shift'),
+    control: mods.contains('ctrl') || mods.contains('control'),
+    alt: mods.contains('alt') || mods.contains('option'),
+  );
 }
 
 const _keys = {
-  'space': LogicalKeyboardKey.space, 'left': LogicalKeyboardKey.arrowLeft, 'right': LogicalKeyboardKey.arrowRight, 'up': LogicalKeyboardKey.arrowUp,
-  'down': LogicalKeyboardKey.arrowDown, 'home': LogicalKeyboardKey.home, 'end': LogicalKeyboardKey.end, 'pageup': LogicalKeyboardKey.pageUp,
-  'pagedown': LogicalKeyboardKey.pageDown, 'backspace': LogicalKeyboardKey.backspace, 'delete': LogicalKeyboardKey.delete, 'enter': LogicalKeyboardKey.enter,
-  'escape': LogicalKeyboardKey.escape, 'tab': LogicalKeyboardKey.tab, 'f1': LogicalKeyboardKey.f1, 'f2': LogicalKeyboardKey.f2, 'f3': LogicalKeyboardKey.f3,
-  'f4': LogicalKeyboardKey.f4, 'f5': LogicalKeyboardKey.f5, 'f6': LogicalKeyboardKey.f6, 'f7': LogicalKeyboardKey.f7, 'f8': LogicalKeyboardKey.f8,
-  'f9': LogicalKeyboardKey.f9, 'f10': LogicalKeyboardKey.f10, 'f11': LogicalKeyboardKey.f11, 'f12': LogicalKeyboardKey.f12,
+  'space': LogicalKeyboardKey.space,
+  'left': LogicalKeyboardKey.arrowLeft,
+  'right': LogicalKeyboardKey.arrowRight,
+  'up': LogicalKeyboardKey.arrowUp,
+  'down': LogicalKeyboardKey.arrowDown,
+  'home': LogicalKeyboardKey.home,
+  'end': LogicalKeyboardKey.end,
+  'pageup': LogicalKeyboardKey.pageUp,
+  'pagedown': LogicalKeyboardKey.pageDown,
+  'backspace': LogicalKeyboardKey.backspace,
+  'delete': LogicalKeyboardKey.delete,
+  'enter': LogicalKeyboardKey.enter,
+  'escape': LogicalKeyboardKey.escape,
+  'tab': LogicalKeyboardKey.tab,
+  'f1': LogicalKeyboardKey.f1,
+  'f2': LogicalKeyboardKey.f2,
+  'f3': LogicalKeyboardKey.f3,
+  'f4': LogicalKeyboardKey.f4,
+  'f5': LogicalKeyboardKey.f5,
+  'f6': LogicalKeyboardKey.f6,
+  'f7': LogicalKeyboardKey.f7,
+  'f8': LogicalKeyboardKey.f8,
+  'f9': LogicalKeyboardKey.f9,
+  'f10': LogicalKeyboardKey.f10,
+  'f11': LogicalKeyboardKey.f11,
+  'f12': LogicalKeyboardKey.f12,
 };
 
 /// A command said by a key.
 class CommandIntent extends Intent {
   const CommandIntent(this.name, this.plain);
   final String name;
-  final bool plain;   // (a key with no cmd, ctrl or alt: the words' while words are typed)
+  final bool plain; // (a key with no cmd, ctrl or alt: the words' while words are typed)
 }
 
 /// The keys over the whole window, each saying its command ([commands]: what each does).
@@ -149,6 +180,7 @@ class _Command extends Action<CommandIntent> {
     final at = FocusManager.instance.primaryFocus?.context;
     return at?.findAncestorStateOfType<EditableTextState>() != null || at?.findAncestorWidgetOfExactType<CodeEditor>() != null;
   }
+
   @override
   bool isEnabled(CommandIntent intent) => commands.containsKey(intent.name) && !(intent.plain && _typing);
   @override

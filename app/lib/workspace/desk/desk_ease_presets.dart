@@ -12,7 +12,7 @@ import 'package:motolii/workspace/ws.dart';
 class PresetTile extends StatelessWidget {
   const PresetTile(this.ease, {super.key, required this.on, required this.onTap, required this.side, this.carried = true});
   final Ease ease;
-  final double side;   // (the square's: as the panel's height lets it be, so no row of them lies empty)
+  final double side; // (the square's: as the panel's height lets it be, so no row of them lies empty)
   final bool on;
   final VoidCallback onTap;
 
@@ -54,7 +54,12 @@ Widget easeHeld(Widget card, double side) {
       offset: Offset(-w / 2, -h / 2),
       child: Transform.rotate(
         angle: -.06,
-        child: Container(width: w, height: h, decoration: BoxDecoration(borderRadius: BorderRadius.all(Shape.r(WsT.radius)), boxShadow: easeShadow), child: card),
+        child: Container(
+          width: w,
+          height: h,
+          decoration: BoxDecoration(borderRadius: BorderRadius.all(Shape.r(WsT.radius)), boxShadow: easeShadow),
+          child: card,
+        ),
       ),
     ),
   );
@@ -84,10 +89,24 @@ class EaseIcon extends CustomPainter {
     const box = Rect.fromLTWH(3, 4, 61, 60);
     final square = RRect.fromRectAndRadius(box, const Radius.circular(8));
     c.drawRRect(square, Paint()..color = ink.withValues(alpha: .16));
-    c.drawRRect(square, Paint()..color = ink.withValues(alpha: .4)..style = PaintingStyle.stroke..strokeWidth = 3);
+    c.drawRRect(
+      square,
+      Paint()
+        ..color = ink.withValues(alpha: .4)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3,
+    );
     c.clipRRect(square);
-    final curve = Paint()..color = ink..style = PaintingStyle.stroke..strokeWidth = 3.8..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round;
-    final bar = Paint()..color = ink..strokeWidth = 4.4..strokeCap = StrokeCap.round;
+    final curve = Paint()
+      ..color = ink
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.8
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final bar = Paint()
+      ..color = ink
+      ..strokeWidth = 4.4
+      ..strokeCap = StrokeCap.round;
     void dot(double u, double v) => c.drawCircle(Offset(_x(u), _y(v)), 5.5, Paint()..color = ink);
     void segment(double u0, double u1, double v0, [double? v1]) => c.drawLine(Offset(_x(u0), _y(v0)), Offset(_x(u1), _y(v1 ?? v0)), bar);
     void line(double Function(double) f, int count, [double scale = 1]) {
@@ -98,8 +117,14 @@ class EaseIcon extends CustomPainter {
       }
       c.drawPath(path, curve);
     }
+
     void bezier(Offset a, Offset b) {
-      c.drawPath(Path()..moveTo(_x(0), _y(0))..cubicTo(_x(a.dx), _y(a.dy), _x(b.dx), _y(b.dy), _x(1), _y(1)), curve);
+      c.drawPath(
+        Path()
+          ..moveTo(_x(0), _y(0))
+          ..cubicTo(_x(a.dx), _y(a.dy), _x(b.dx), _y(b.dy), _x(1), _y(1)),
+        curve,
+      );
       segment(0, a.dx, 0, a.dy);
       dot(a.dx, a.dy);
       segment(1, b.dx, 1, b.dy);
@@ -107,8 +132,9 @@ class EaseIcon extends CustomPainter {
     }
 
     final word = said(ease).split(' ').first;
-    final out = word == 'Bezier' && [ease.p1.dy, ease.p2.dy].any((y) => y < 0 || y > 1);   // (past 0 and 1: drawn as it is it leaves its square)
-    switch (easeIsUsual(said(ease)) && !out ? word : '') {   // (its numbers changed: its own curve, or a card or a kept one with 8 waves would look like 3.5)
+    final out = word == 'Bezier' && [ease.p1.dy, ease.p2.dy].any((y) => y < 0 || y > 1); // (past 0 and 1: drawn as it is it leaves its square)
+    switch (easeIsUsual(said(ease)) && !out ? word : '') {
+      // (its numbers changed: its own curve, or a card or a kept one with 8 waves would look like 3.5)
       case 'Linear':
         bezier(const Offset(.25, .25), const Offset(.75, .75));
       case 'Bezier':
@@ -145,9 +171,17 @@ class EaseIcon extends CustomPainter {
           for (var i = 1; i <= 6; i++) {
             path.lineTo(_x(u0 + .07 * i), _y(v + (i.isOdd ? .07 : -.04)));
           }
-          c.drawPath(path, Paint()..color = ink..style = PaintingStyle.stroke..strokeWidth = 3.2..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round);
+          c.drawPath(
+            path,
+            Paint()
+              ..color = ink
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 3.2
+              ..strokeCap = StrokeCap.round
+              ..strokeJoin = StrokeJoin.round,
+          );
         }
-      default:   // (its own curve, all of it in the square: what overshoots too)
+      default: // (its own curve, all of it in the square: what overshoots too)
         final at = [for (var i = 0; i < 48; i++) ease.at(i / 47)];
         final lo = math.min(0.0, at.reduce(math.min)), hi = math.max(1.0, at.reduce(math.max));
         line((u) => .06 + .88 * (ease.at(u) - lo) / (hi - lo), 48);

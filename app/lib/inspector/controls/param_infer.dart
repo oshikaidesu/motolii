@@ -138,8 +138,7 @@ List<Decl> parseWgsl(String src) {
   var advanced = false;
   String? fold;
   Map<String, List<String>> attrs(String s) => {
-    for (final m in _attrRe.allMatches(s))
-      m.group(1)!: (m.group(2) ?? '').split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+    for (final m in _attrRe.allMatches(s)) m.group(1)!: (m.group(2) ?? '').split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
   };
   for (final raw in body.split('\n')) {
     final line = raw.trim();
@@ -209,10 +208,29 @@ const _angleW = {'angle', 'rotation', 'hue', 'phase', 'heading', 'direction', 't
 
 /// Whether a knob's label names an angle: the words [infer] takes for one, and AviUtl scripts' own (角度, 回転); not
 /// how fast one turns (回転速度, spin speed: a slider, as After Effects' is).
-bool angleLabel(String label) => (_any(paramWords(label), _angleW) || RegExp('角度|回転|色相|向き|方向').hasMatch(label)) && !RegExp('速|speed|rate', caseSensitive: false).hasMatch(label);
+bool angleLabel(String label) =>
+    (_any(paramWords(label), _angleW) || RegExp('角度|回転|色相|向き|方向').hasMatch(label)) && !RegExp('速|speed|rate', caseSensitive: false).hasMatch(label);
 const _shareW = {
-  'mix', 'amount', 'strength', 'opacity', 'intensity', 'blend', 'threshold', 'knee', 'falloff', 'softness', 'fade',
-  'progress', 'coverage', 'density', 'wet', 'dry', 'roughness', 'tint', 'feather', 'smoothness',
+  'mix',
+  'amount',
+  'strength',
+  'opacity',
+  'intensity',
+  'blend',
+  'threshold',
+  'knee',
+  'falloff',
+  'softness',
+  'fade',
+  'progress',
+  'coverage',
+  'density',
+  'wet',
+  'dry',
+  'roughness',
+  'tint',
+  'feather',
+  'smoothness',
 };
 const _upW = {'height', 'rise', 'lift', 'up', 'top', 'vertical'};
 const _downW = {'drop', 'gravity', 'down', 'sink', 'fall', 'bottom'};

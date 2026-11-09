@@ -85,7 +85,6 @@ class PastRange extends InheritedWidget {
 /// Past what is vouched for: a number drawn the other way about, light for dark (Flutter's ColorFilter.matrix inversion).
 const pastInk = ColorFilter.matrix(<double>[-1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0]);
 
-
 /// A short list over the panel, one picked does that and closes: an effect card's ⋮, a number's right click.
 class TinyMenu extends StatelessWidget {
   const TinyMenu({super.key, required this.name, required this.of, required this.items, required this.hide});
@@ -96,24 +95,32 @@ class TinyMenu extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     width: Shape.z(150),
     padding: EdgeInsets.all(Shape.s(3)),
-    decoration: BoxDecoration(color: Grey.g15, borderRadius: BorderRadius.all(Shape.r(8)), border: Border.all(color: Grey.g26)),
-    child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      for (final (key, label, does) in items)
-        Hov(
-          key: ValueKey('$name-$key:$of'),
-          onTap: () {
-            hide();
-            does();
-          },
-          builder: (_, h) => Container(
-            height: Shape.z(22),
-            padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
-            alignment: Alignment.centerLeft,
-            decoration: BoxDecoration(color: h ? Grey.g26 : null, borderRadius: BorderRadius.all(Shape.r(5))),
-            child: Text(label, maxLines: 1, style: T.name(h ? Grey.g95 : Grey.g76)),
+    decoration: BoxDecoration(
+      color: Grey.g15,
+      borderRadius: BorderRadius.all(Shape.r(8)),
+      border: Border.all(color: Grey.g26),
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final (key, label, does) in items)
+          Hov(
+            key: ValueKey('$name-$key:$of'),
+            onTap: () {
+              hide();
+              does();
+            },
+            builder: (_, h) => Container(
+              height: Shape.z(22),
+              padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
+              alignment: Alignment.centerLeft,
+              decoration: BoxDecoration(color: h ? Grey.g26 : null, borderRadius: BorderRadius.all(Shape.r(5))),
+              child: Text(label, maxLines: 1, style: T.name(h ? Grey.g95 : Grey.g76)),
+            ),
           ),
-        ),
-    ]),
+      ],
+    ),
   );
 }
 
@@ -128,13 +135,19 @@ class TinyMenuAt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final room = MediaQuery.sizeOf(context), wide = Shape.z(150), high = items.length * Shape.z(22) + 2 * Shape.s(3) + 2;
-    return Stack(children: [
-      Positioned(
-        left: at.dx.clamp(0, math.max(0, room.width - wide)).toDouble(),
-        top: (at.dy + high <= room.height ? at.dy : math.max(0, at.dy - high)).toDouble(),
-        child: FloatShut(shut: hide, keep: keep, child: TinyMenu(name: name, of: of, items: items, hide: hide)),
-      ),
-    ]);
+    return Stack(
+      children: [
+        Positioned(
+          left: at.dx.clamp(0, math.max(0, room.width - wide)).toDouble(),
+          top: (at.dy + high <= room.height ? at.dy : math.max(0, at.dy - high)).toDouble(),
+          child: FloatShut(
+            shut: hide,
+            keep: keep,
+            child: TinyMenu(name: name, of: of, items: items, hide: hide),
+          ),
+        ),
+      ],
+    );
   }
 }
 

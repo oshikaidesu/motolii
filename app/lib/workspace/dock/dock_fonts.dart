@@ -29,7 +29,6 @@ class _Font {
   final String? script, sample; // (a font of other letters than Latin: which, and its own words in them (samples.json))
 }
 
-
 final _fontFile = RegExp(r'\.(ttf|otf|ttc|otc)$', caseSensitive: false);
 
 /// Joined: the font files of this machine that the inside sets words in, and those beside the document: read once,
@@ -55,7 +54,15 @@ int fontsUnoffered = 0;
 /// fonts and the maker's own are offered as well (doc_folders, the fallback's).
 Future<void> fontsRead(Ws ws) => _reading ??= Zone.root.run<Future<void>>(() async {
   final files = <String>[];
-  for (final dir in ['/System/Library/Fonts', '/System/Library/Fonts/Supplemental', '/Library/Fonts', '${Platform.environment['HOME']}/Library/Fonts', '$motoliiShelves/fonts', '${EffectTiles.own}/fonts', ?ws.documentFolder]) {
+  for (final dir in [
+    '/System/Library/Fonts',
+    '/System/Library/Fonts/Supplemental',
+    '/Library/Fonts',
+    '${Platform.environment['HOME']}/Library/Fonts',
+    '$motoliiShelves/fonts',
+    '${EffectTiles.own}/fonts',
+    ?ws.documentFolder,
+  ]) {
     try {
       for (final e in await Directory(dir).list().toList()) {
         if (e is File && _fontFile.hasMatch(e.path)) files.add(e.path);
@@ -66,16 +73,26 @@ Future<void> fontsRead(Ws ws) => _reading ??= Zone.root.run<Future<void>>(() asy
   try {
     scripts = [
       for (final s in jsonDecode(File('$motoliiShelves/fonts/samples.json').readAsStringSync()) as List)
-        for (final w in [s['sample'], s['letters']]) if (w is String && w.isNotEmpty) ('${s['script']}', w),   // (its words; else its alphabet's first letters, for one without their marks)
+        for (final w in [s['sample'], s['letters']])
+          if (w is String && w.isNotEmpty) ('${s['script']}', w), // (its words; else its alphabet's first letters, for one without their marks)
     ];
-  } catch (_) {}   // (none there: only the fonts with Latin letters)
+  } catch (_) {} // (none there: only the fonts with Latin letters)
   final first = await ws.inside!.settingFirst(files, [_sample, for (final (_, w) in scripts) w]);
   _disk = [
     for (final (i, f) in files.indexed)
-      if (first[i] >= 0) _Font(f.split('/').last.substring(0, f.split('/').last.length - 4), path: f, script: first[i] == 0 ? null : scripts[first[i] - 1].$1, sample: first[i] == 0 ? null : scripts[first[i] - 1].$2),
+      if (first[i] >= 0)
+        _Font(
+          f.split('/').last.substring(0, f.split('/').last.length - 4),
+          path: f,
+          script: first[i] == 0 ? null : scripts[first[i] - 1].$1,
+          sample: first[i] == 0 ? null : scripts[first[i] - 1].$2,
+        ),
   ]..sort((a, b) => a.family.toLowerCase().compareTo(b.family.toLowerCase()));
   fontsUnoffered = first.where((k) => k < 0).length;
-  _ownWords = {for (final f in _disk!) if ((f.path, f.sample) case (final p?, final w?)) p: w};
+  _ownWords = {
+    for (final f in _disk!)
+      if ((f.path, f.sample) case (final p?, final w?)) p: w,
+  };
   dockRead.value++;
 });
 
@@ -99,7 +116,7 @@ void _used(String family) {
   try {
     _recentFile.parent.createSync(recursive: true);
     _recentFile.writeAsStringSync(jsonEncode(r));
-  } catch (_) {}   // (not kept: known while the window is open)
+  } catch (_) {} // (not kept: known while the window is open)
 }
 
 /// Joined: the font given to the picked text; with no text picked, a new text set in it.
@@ -107,8 +124,8 @@ void _setFont(DockCtx c, _Font f) {
   _used(f.family);
   final m = c.ws.inside!, t = int.tryParse(c.ws.selected ?? '');
   void told(bool done, String why) => c.set(() => done ? c.mem.trouble.remove(f.family) : c.mem.trouble[f.family] = why);
-  if (t != null && m.word(t, 'kind') == 'text') return c.ws.after(m.later('say', thing: t, name: 'file', word: f.path!), told);   // (without waiting)
-  m.later('together', number: 1);   // (one step: the text and its inks)
+  if (t != null && m.word(t, 'kind') == 'text') return c.ws.after(m.later('say', thing: t, name: 'file', word: f.path!), told); // (without waiting)
+  m.later('together', number: 1); // (one step: the text and its inks)
   c.ws.after(m.later('add', name: 'text', word: f.path!), null, (made) => c.ws.select('$made'));
   wsInked(c.ws, 'text', '');
   c.ws.after(m.later('together'), told);
@@ -126,7 +143,7 @@ void _toRole(DockCtx c, _Font f) {
 /// A new text in a role's font, at the playhead, in the inks, picked: Canva's Add a heading, Add a little bit of body text.
 void _addIn(DockCtx c, String font) {
   final m = c.ws.inside!;
-  m.later('together', number: 1);   // (one step: the text and its inks)
+  m.later('together', number: 1); // (one step: the text and its inks)
   c.ws.after(m.later('add', name: 'text', word: font), null, (made) => c.ws.select('$made'));
   wsInked(c.ws, 'text', '');
   c.ws.after(m.later('together'), (done, why) => c.set(() => done ? c.mem.trouble.remove('role') : c.mem.trouble['role'] = why));
@@ -177,12 +194,19 @@ class _Roles extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.only(bottom: WsT.gutter),
-      child: Row(children: [role('title', 'Title', c.ws.titleFace), SizedBox(width: WsT.gutter), role('body', 'Body', c.ws.bodyFace)]),
+      child: Row(
+        children: [
+          role('title', 'Title', c.ws.titleFace),
+          SizedBox(width: WsT.gutter),
+          role('body', 'Body', c.ws.bodyFace),
+        ],
+      ),
     );
   }
 }
 
 const _sample = 'Motion for more relations';
+
 /// What a font of other letters says beside its name: set in it, Latin words are drawn in the fallback (type_fallback),
 /// and the inspector says so.
 const _noLatin = 'NO LATIN';
@@ -205,7 +229,8 @@ class FontsShelf extends StatelessWidget {
     bool used(_Font f) => setIn.containsKey(f.path);
     Set<String> tagsOf(_Font f) => DockTags.of('Fonts', f.family, f.path == null ? const <String>{} : (c.ws.inside?.fontTags(f.path!) ?? const <String>{}));
     var hits = fonts.where((f) => DockTags.hit(c.query, f.family, tagsOf(f))).toList();
-    if (hits.isEmpty && c.query.trim().isNotEmpty) {   // (nothing has the words as typed: the nearest five, golf (97))
+    if (hits.isEmpty && c.query.trim().isNotEmpty) {
+      // (nothing has the words as typed: the nearest five, golf (97))
       final near = c.near([for (final f in fonts) (f.family, '${f.family} ${tagsOf(f).join(' ')}', '')]);
       hits = [for (final id in near) ...fonts.where((f) => f.family == id).take(1)];
     }
@@ -221,10 +246,10 @@ class FontsShelf extends StatelessWidget {
       'Used' => used(f),
       'Recent' => fontRecent().contains(f.family),
       'Starred' => c.starred(f.family),
-      final tag => tagsOf(f).contains(tag),   // (a tag chip: the families with it)
+      final tag => tagsOf(f).contains(tag), // (a tag chip: the families with it)
     };
     final list = hits.where(keep).toList();
-    if (c.chip == 'Recent') list.sort((a, b) => fontRecent().indexOf(a.family).compareTo(fontRecent().indexOf(b.family)));   // (the newest first)
+    if (c.chip == 'Recent') list.sort((a, b) => fontRecent().indexOf(a.family).compareTo(fontRecent().indexOf(b.family))); // (the newest first)
     final sel = fonts.where((f) => f.family == c.sel).firstOrNull;
     final picked = sel == null ? null : setIn[sel.path], onText = picked != null && picked.id == c.ws.selected;
     return Column(
@@ -237,7 +262,7 @@ class FontsShelf extends StatelessWidget {
             ('Used', hits.where(used).length),
             ('Recent', hits.where((f) => fontRecent().contains(f.family)).length),
             ('Starred', hits.where((f) => c.starred(f.family)).length),
-            for (final t in top) (t.key, t.value),   // (all, the most first: the row slides, Usual.chips)
+            for (final t in top) (t.key, t.value), // (all, the most first: the row slides, Usual.chips)
           ],
           active: c.chip,
           onPick: c.pickChip,
@@ -248,61 +273,88 @@ class FontsShelf extends StatelessWidget {
               : LayoutBuilder(
                   builder: (context, box) {
                     String? usedBy(_Font f) => setIn[f.path]?.name;
-                    if (c.mem.mapped.contains('Fonts')) {   // (as a map: each told by its letters as the stage sets them, ThorVG's)
+                    if (c.mem.mapped.contains('Fonts')) {
+                      // (as a map: each told by its letters as the stage sets them, ThorVG's)
                       final map = dockMap('Fonts'), files = [for (final f in fonts) ?f.path];
                       _drawAll(m, files);
-                      final clip = dockModel('fontclip_b32');   // (by how FontCLIP sees each, once it is made; else by its word drawn small)
-                      map.need(m, [for (final f in files) (f, f)], (from) async {   // (each by its file: two files may have one name, Arial Unicode's)
+                      final clip = dockModel('fontclip_b32'); // (by how FontCLIP sees each, once it is made; else by its word drawn small)
+                      map.need(m, [for (final f in files) (f, f)], (from) async {
+                        // (each by its file: two files may have one name, Arial Unicode's)
                         final List<Float32List?> look;
                         if (clip != null) {
                           look = await _byFontClip(m, clip, from);
                         } else {
                           await _drawAll(m, files);
-                          look = [for (final f in from) if (_drawn[f] case final g?) _halved(g) else null];
+                          look = [
+                            for (final f in from)
+                              if (_drawn[f] case final g?) _halved(g) else null,
+                          ];
                         }
                         final kinds = [for (final f in from) _kindOf(m, f)], all = kinds.toSet().toList();
-                        return dockTogether([look, [for (final k in kinds) Float32List(all.length)..[all.indexOf(k)] = 1]], const [1, 0.5]);   // (FontMap's style blended in at half: same-style fonts group together)
+                        return dockTogether(
+                          [
+                            look,
+                            [for (final k in kinds) Float32List(all.length)..[all.indexOf(k)] = 1],
+                          ],
+                          const [1, 0.5],
+                        ); // (FontMap's style blended in at half: same-style fonts group together)
                       }, also: '${clip ?? ''} kinds');
                       final byPath = {for (final f in list) ?f.path: f};
-                      return DockMap(map, [for (final MapEntry(key: p, value: f) in byPath.entries) (p, _FontDot(f, c, map: map))], aspect: _dot.$1 / _dot.$2, picked: list.where((f) => f.family == c.sel).firstOrNull?.path, press: (p) {
-                        if (byPath[p] case final f?) {
-                          c.pick(f.family);   // (one press, as on the map: XO's hot swap, the role's font when no text is picked)
-                          _toRole(c, f);
-                        }
-                      });
+                      return DockMap(
+                        map,
+                        [for (final MapEntry(key: p, value: f) in byPath.entries) (p, _FontDot(f, c, map: map))],
+                        aspect: _dot.$1 / _dot.$2,
+                        picked: list.where((f) => f.family == c.sel).firstOrNull?.path,
+                        press: (p) {
+                          if (byPath[p] case final f?) {
+                            c.pick(f.family); // (one press, as on the map: XO's hot swap, the role's font when no text is picked)
+                            _toRole(c, f);
+                          }
+                        },
+                      );
                     }
                     final notHere = c.chip == 'All' && c.query.trim().isEmpty && fontsUnoffered > 0
-                        ? Padding(   // (the ones not offered, and why: the user, 11/5, a reason rather than a font gone without one)
+                        ? Padding(
+                            // (the ones not offered, and why: the user, 11/5, a reason rather than a font gone without one)
                             key: const ValueKey('ws-fonts-unoffered'),
                             padding: EdgeInsets.fromLTRB(WsT.inset, Shape.s(8), WsT.inset, Shape.s(8)),
-                            child: Text('$fontsUnoffered fonts here are not offered: they have no letters of any language (symbols, maths, emoji), or ThorVG cannot read them', style: T.label(Grey.g56)),
+                            child: Text(
+                              '$fontsUnoffered fonts here are not offered: they have no letters of any language (symbols, maths, emoji), or ThorVG cannot read them',
+                              style: T.label(Grey.g56),
+                            ),
                           )
                         : null;
                     if (box.maxWidth < 440) {
                       return ListView(
                         padding: EdgeInsets.zero,
-                        children: [for (final f in list) _FontRow(f, c, usedBy: usedBy(f)), ?notHere],
+                        children: [
+                          for (final f in list) _FontRow(f, c, usedBy: usedBy(f)),
+                          ?notHere,
+                        ],
                       );
                     }
                     final cols = wsCols(box.maxWidth, 200), w = wsCell(box.maxWidth, cols);
                     final rows = (list.length / cols).ceil();
-                    return ListView.builder(   // (a row at a time: only what is shown has its file read, _own)
+                    return ListView.builder(
+                      // (a row at a time: only what is shown has its file read, _own)
                       padding: EdgeInsets.zero,
                       itemCount: rows + (notHere == null ? 0 : 1),
-                      itemBuilder: (context, i) => i == rows ? notHere! : Padding(
-                        padding: EdgeInsets.only(bottom: i == rows - 1 ? 0 : WsT.gutter),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: WsT.gutter,
-                          children: [
-                            for (final f in list.skip(i * cols).take(cols))
-                              SizedBox(
-                                width: w,
-                                child: _FontCard(f, c, usedBy: usedBy(f)),
+                      itemBuilder: (context, i) => i == rows
+                          ? notHere!
+                          : Padding(
+                              padding: EdgeInsets.only(bottom: i == rows - 1 ? 0 : WsT.gutter),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                spacing: WsT.gutter,
+                                children: [
+                                  for (final f in list.skip(i * cols).take(cols))
+                                    SizedBox(
+                                      width: w,
+                                      child: _FontCard(f, c, usedBy: usedBy(f)),
+                                    ),
+                                ],
                               ),
-                          ],
-                        ),
-                      ),
+                            ),
                     );
                   },
                 ),
@@ -337,7 +389,9 @@ String _own(_Font f) {
   final p = f.path;
   if (p == null) return f.family;
   if (_read.add(p)) {
-    Zone.root.run(() => (FontLoader(p)..addFont(File(p).readAsBytes().then(ByteData.sublistView))).load().catchError((Object _) {}));   // (a file gone since: the row stays in the name's face)
+    Zone.root.run(
+      () => (FontLoader(p)..addFont(File(p).readAsBytes().then(ByteData.sublistView))).load().catchError((Object _) {}),
+    ); // (a file gone since: the row stays in the name's face)
   }
   return p;
 }
@@ -364,7 +418,7 @@ class _FontRow extends StatelessWidget {
         c.pick(f.family);
         _toRole(c, f);
       },
-      onDoubleTap: () => _setFont(c, f),   // (two presses set it; carried to the stage it does the same)
+      onDoubleTap: () => _setFont(c, f), // (two presses set it; carried to the stage it does the same)
       builder: (context, h) => AnimatedContainer(
         duration: Mo.dur,
         curve: Mo.ease,
@@ -379,15 +433,24 @@ class _FontRow extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(f.sample ?? _sample, maxLines: 1, style: _face(f, 17, dockInk(sel, Grey.g95)))),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(f.sample ?? _sample, maxLines: 1, style: _face(f, 17, dockInk(sel, Grey.g95))),
+                  ),
                   SizedBox(height: Shape.s(5)),
                   Row(
                     children: [
                       Flexible(
-                        child: Text('${f.family}  ·  ${f.script ?? DockTags.of('Fonts', f.family, f.path == null ? const <String>{} : (c.ws.inside?.fontTags(f.path!) ?? const <String>{})).take(2).join(' ')}', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(dockInk(sel, Grey.g76))),
+                        child: Text(
+                          '${f.family}  ·  ${f.script ?? DockTags.of('Fonts', f.family, f.path == null ? const <String>{} : (c.ws.inside?.fontTags(f.path!) ?? const <String>{})).take(2).join(' ')}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: T.label(dockInk(sel, Grey.g76)),
+                        ),
                       ),
                       if (f.script != null) ...[SizedBox(width: Shape.s(6)), const DockTag(_noLatin)],
-                if (usedBy case final u?) ...[SizedBox(width: Shape.s(6)), DockTag(u, hue: sel ? null : WsT.toneText)],
+                      if (usedBy case final u?) ...[SizedBox(width: Shape.s(6)), DockTag(u, hue: sel ? null : WsT.toneText)],
                     ],
                   ),
                 ],
@@ -400,7 +463,6 @@ class _FontRow extends StatelessWidget {
     );
   }
 }
-
 
 /// The wide form: a card per family with the sample large enough to judge the face, its facts under it.
 class _FontCard extends StatelessWidget {
@@ -438,7 +500,12 @@ class _FontCard extends StatelessWidget {
             Row(
               children: [
                 Flexible(
-                  child: Text('${f.family}  ·  ${f.script ?? DockTags.of('Fonts', f.family, f.path == null ? const <String>{} : (c.ws.inside?.fontTags(f.path!) ?? const <String>{})).take(2).join(' ')}', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(dockInk(sel, Grey.g76))),
+                  child: Text(
+                    '${f.family}  ·  ${f.script ?? DockTags.of('Fonts', f.family, f.path == null ? const <String>{} : (c.ws.inside?.fontTags(f.path!) ?? const <String>{})).take(2).join(' ')}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: T.label(dockInk(sel, Grey.g76)),
+                  ),
                 ),
                 if (f.script != null) ...[SizedBox(width: Shape.s(6)), const DockTag(_noLatin)],
                 if (usedBy case final u?) ...[SizedBox(width: Shape.s(6)), DockTag(u, hue: sel ? null : WsT.toneText)],

@@ -30,8 +30,9 @@ void effectUsed(String id, {required String words, required String chip}) {
   try {
     _recentFile.parent.createSync(recursive: true);
     _recentFile.writeAsStringSync(jsonEncode(r));
-    File('${_recentFile.parent.path}/effect_used.jsonl').writeAsStringSync('${jsonEncode({'at': DateTime.now().toIso8601String(), 'id': id, 'words': words, 'chip': chip})}\n', mode: FileMode.append);
-  } catch (_) {}   // (not kept: known while the window is open)
+    File('${_recentFile.parent.path}/effect_used.jsonl')
+        .writeAsStringSync('${jsonEncode({'at': DateTime.now().toIso8601String(), 'id': id, 'words': words, 'chip': chip})}\n', mode: FileMode.append);
+  } catch (_) {} // (not kept: known while the window is open)
 }
 
 /// One effect in a deck: what the shelf tells it by here, its name, and a fingerprint of its file (none for one of the
@@ -55,9 +56,19 @@ class EffectDeck {
   String name, words;
   final List<DeckThing> things;
   final Set<String> without;
-  bool target = false;   // (the one an effect's right click puts in: kept in the file, never in a deck code)
-  Map<String, Object> get json => {'name': name, 'words': words, 'things': [for (final t in things) t.json], 'without': without.toList()};
-  static EffectDeck of(Map j) => EffectDeck('${j['name']}', words: '${j['words'] ?? ''}', things: [for (final t in j['things'] as List? ?? const []) DeckThing.of(t as Map)], without: {for (final s in j['without'] as List? ?? const []) '$s'});
+  bool target = false; // (the one an effect's right click puts in: kept in the file, never in a deck code)
+  Map<String, Object> get json => {
+    'name': name,
+    'words': words,
+    'things': [for (final t in things) t.json],
+    'without': without.toList(),
+  };
+  static EffectDeck of(Map j) => EffectDeck(
+    '${j['name']}',
+    words: '${j['words'] ?? ''}',
+    things: [for (final t in j['things'] as List? ?? const []) DeckThing.of(t as Map)],
+    without: {for (final s in j['without'] as List? ?? const []) '$s'},
+  );
 
   /// Put in, or taken out, by hand; [found]: its words find it.
   void toggle(String id, String name, {required bool found}) {
@@ -83,8 +94,14 @@ List<EffectDeck> effectDecks() => _decks ??= () {
 void effectDecksKeep() {
   try {
     _decksFile.parent.createSync(recursive: true);
-    _decksFile.writeAsStringSync(jsonEncode({'decks': [for (final d in effectDecks()) {...d.json, if (d.target) 'target': true}]}));
-  } catch (_) {}   // (not kept: known while the window is open)
+    _decksFile.writeAsStringSync(
+      jsonEncode({
+        'decks': [
+          for (final d in effectDecks()) {...d.json, if (d.target) 'target': true},
+        ],
+      }),
+    );
+  } catch (_) {} // (not kept: known while the window is open)
 }
 
 /// Where an effect's right click puts it, one place however many decks there are: a deck set as the target, else the
@@ -111,7 +128,7 @@ String deckName(String name) {
 /// The fingerprint of an effect's file, SHA-256's first twelve (package:crypto; '' for what is no file).
 String effectSum(String id) {
   try {
-    final at = id.indexOf('#');   // (one of a file's several scripts: its word stays on)
+    final at = id.indexOf('#'); // (one of a file's several scripts: its word stays on)
     return sha256.convert(File(at < 0 ? id : id.substring(0, at)).readAsBytesSync()).toString().substring(0, 12) + (at < 0 ? '' : id.substring(at));
   } catch (_) {
     return '';
@@ -129,11 +146,21 @@ String _place(String id) => id.startsWith('$motoliiShelves/') ? id.substring(mot
 /// a video's description: a list, names and fingerprints, the effects not in it, as every set handed on holds its
 /// programs by name (.mrpack, Nexus Collections, ReShade's presets). JSON, gzipped, in Base64 for URLs.
 const deckCodeHead = 'motolii-deck:';
-String deckCode(EffectDeck d) => deckCodeHead + base64Url.encode(gzip.encode(utf8.encode(jsonEncode({
-  ...d.json,
-  'things': [for (final t in d.things) {...t.json, 'id': _place(t.id)}],
-  'without': [for (final s in d.without) _place(s)],
-}))));
+String deckCode(EffectDeck d) =>
+    deckCodeHead +
+    base64Url.encode(
+      gzip.encode(
+        utf8.encode(
+          jsonEncode({
+            ...d.json,
+            'things': [
+              for (final t in d.things) {...t.json, 'id': _place(t.id)},
+            ],
+            'without': [for (final s in d.without) _place(s)],
+          }),
+        ),
+      ),
+    );
 
 /// The deck a line says; null when it says none.
 EffectDeck? deckRead(String line) {

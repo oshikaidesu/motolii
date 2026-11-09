@@ -10,7 +10,7 @@ Map<String, KeyS> _keyMarks(Ws ws, String? id) {
   if (m == null || t == null) return const {};
   final at = _drawn(ws);
   final marks = {for (final MapEntry(:key, :value) in _keyable(ws, t).entries) key: KeyS.values[m.keyed(t, value, at)]};
-  final props = <String, KeyS>{};   // (a property's mark is the most of its values': a key on any, keyed)
+  final props = <String, KeyS>{}; // (a property's mark is the most of its values': a key on any, keyed)
   for (final MapEntry(:key, :value) in marks.entries) {
     final p = propOf(key);
     if (p != key && (props[p] == null || value.index > props[p]!.index)) props[p] = value;
@@ -35,9 +35,21 @@ void _mark(Ws ws, String? id, String prop, KeyS mark) {
   final at = ws.frame / Ws.fps, has = m.values(t).toSet();
   // (only the values it has: a flat thing has no scale_z, and a key asked of it was refused and took the whole step,
   //  the number let go of with it, back: with Animate on, a flat thing's first scale was lost)
-  m.later('together', number: 1);   // (one step, without waiting)
-  for (final n in [for (final MapEntry(:key, :value) in _keyable(ws, t).entries) if (key == prop || propOf(key) == prop) value].where(has.contains)) {
-    m.later(switch (mark) { KeyS.at => 'key_here', KeyS.anim => 'unkey', KeyS.off => 'stay' }, thing: t, name: n, number: at);
+  m.later('together', number: 1); // (one step, without waiting)
+  for (final n in [
+    for (final MapEntry(:key, :value) in _keyable(ws, t).entries)
+      if (key == prop || propOf(key) == prop) value,
+  ].where(has.contains)) {
+    m.later(
+      switch (mark) {
+        KeyS.at => 'key_here',
+        KeyS.anim => 'unkey',
+        KeyS.off => 'stay',
+      },
+      thing: t,
+      name: n,
+      number: at,
+    );
   }
   ws.after(m.later('together'));
 }
@@ -46,6 +58,10 @@ void _mark(Ws ws, String? id, String prop, KeyS mark) {
 bool _midi(Ws ws, String? id, String prop, String file, String kind, int channel, double bpm) {
   final m = ws.inside!, t = id == null ? 0 : int.tryParse(id);
   if (t == null) return false;
-  final has = m.values(t).toSet(), names = [for (final MapEntry(:key, :value) in _keyable(ws, t).entries) if (key == prop || propOf(key) == prop) value].where(has.contains);
+  final has = m.values(t).toSet(),
+      names = [
+        for (final MapEntry(:key, :value) in _keyable(ws, t).entries)
+          if (key == prop || propOf(key) == prop) value,
+      ].where(has.contains);
   return names.isNotEmpty && m.together(() => names.fold(true, (ok, n) => m.midi(t, n, file, kind, channel, bpm) && ok));
 }

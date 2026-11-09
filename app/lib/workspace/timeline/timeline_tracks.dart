@@ -20,25 +20,35 @@ extension _WsTimelineTracks on _WsTimelineState {
               WsMenu(
                 key: _rulerMenu,
                 child: GestureDetector(
-                key: const ValueKey('ws-tl-ruler'),
-                behavior: HitTestBehavior.opaque,
-                supportedDevices: wsPressing,
-                onTapUp: (d) => _rulerTap(d.localPosition),   // (Live's scrub area: timeline_asked.dart)
-                onDoubleTapDown: (d) => _rulerDouble(d.localPosition),
-                onDoubleTap: () {},
-                onSecondaryTapDown: (d) => _rulerRight(d.localPosition),
-                onPanDown: (d) => _rulerDown(d.localPosition),
-                onPanUpdate: (d) => _rulerMove(d.localPosition),
-                onPanEnd: (_) => _workLetGo(),
-                onPanCancel: _workLetGo,
-                child: SizedBox(
-                  height: WtM.ruler,
-                  child: CustomPaint(
-                    painter: WtRulerPainter(view: v, fps: Ws.fps, workIn: _workIn, workOut: _workOut, markers: _marksOf(_ws!), markColours: _markColoursOf(_ws!), beats: _beatsOf(ws), tempo: ws.beats, retimed: _retimedOf(ws)),
-                    foregroundPainter: WtKeptPainter(view: v, kept: ws.kept), // (the pictures kept on disk for playing)
+                  key: const ValueKey('ws-tl-ruler'),
+                  behavior: HitTestBehavior.opaque,
+                  supportedDevices: wsPressing,
+                  onTapUp: (d) => _rulerTap(d.localPosition), // (Live's scrub area: timeline_asked.dart)
+                  onDoubleTapDown: (d) => _rulerDouble(d.localPosition),
+                  onDoubleTap: () {},
+                  onSecondaryTapDown: (d) => _rulerRight(d.localPosition),
+                  onPanDown: (d) => _rulerDown(d.localPosition),
+                  onPanUpdate: (d) => _rulerMove(d.localPosition),
+                  onPanEnd: (_) => _workLetGo(),
+                  onPanCancel: _workLetGo,
+                  child: SizedBox(
+                    height: WtM.ruler,
+                    child: CustomPaint(
+                      painter: WtRulerPainter(
+                        view: v,
+                        fps: Ws.fps,
+                        workIn: _workIn,
+                        workOut: _workOut,
+                        markers: _marksOf(_ws!),
+                        markColours: _markColoursOf(_ws!),
+                        beats: _beatsOf(ws),
+                        tempo: ws.beats,
+                        retimed: _retimedOf(ws),
+                      ),
+                      foregroundPainter: WtKeptPainter(view: v, kept: ws.kept), // (the pictures kept on disk for playing)
+                    ),
                   ),
                 ),
-              ),
               ),
               Expanded(
                 child: MouseRegion(
@@ -48,37 +58,40 @@ extension _WsTimelineTracks on _WsTimelineState {
                     if (c != _cursor) setState(() => _cursor = c);
                   },
                   child: Listener(
-                  onPointerSignal: _wheel,
-                  child: WsTwoFingers(
-                  onPan: _fingers,
-                  onPinch: _pinch,
-                  child: WsMenu(
-                  key: _trackMenu,
-                  child: GestureDetector(
-                    key: const ValueKey('ws-tl-tracks'),
-                    behavior: HitTestBehavior.opaque,
-                    supportedDevices: wsPressing,
-                    dragStartBehavior: DragStartBehavior.down,
-                    onTapDown: (d) => _trackDown(d.localPosition),
-                    onSecondaryTapDown: (d) => _trackRight(d.localPosition),
-                    onTapUp: (d) => _laneTap(d.localPosition),   // (a lane's tap, once it is known not to be a drag)
-                    onPanStart: (d) => _barDown(d.localPosition),
-                    onPanUpdate: (d) => _barMove(d.localPosition),
-                    onPanEnd: (_) => _barUp(),
-                    onPanCancel: () => _barUp(keep: false),
-                    child: RepaintBoundary(
-                      child: CustomPaint(
-                        size: Size.infinite,
-                        painter: WtTracksPainter(rows: rows, view: v, fps: Ws.fps, vscroll: _vscroll, tempo: ws.beats, restAt: _restAt),
+                    onPointerSignal: _wheel,
+                    child: WsTwoFingers(
+                      onPan: _fingers,
+                      onPinch: _pinch,
+                      child: WsMenu(
+                        key: _trackMenu,
+                        child: GestureDetector(
+                          key: const ValueKey('ws-tl-tracks'),
+                          behavior: HitTestBehavior.opaque,
+                          supportedDevices: wsPressing,
+                          dragStartBehavior: DragStartBehavior.down,
+                          onTapDown: (d) => _trackDown(d.localPosition),
+                          onSecondaryTapDown: (d) => _trackRight(d.localPosition),
+                          onTapUp: (d) => _laneTap(d.localPosition), // (a lane's tap, once it is known not to be a drag)
+                          onPanStart: (d) => _barDown(d.localPosition),
+                          onPanUpdate: (d) => _barMove(d.localPosition),
+                          onPanEnd: (_) => _barUp(),
+                          onPanCancel: () => _barUp(keep: false),
+                          child: RepaintBoundary(
+                            child: CustomPaint(
+                              size: Size.infinite,
+                              painter: WtTracksPainter(rows: rows, view: v, fps: Ws.fps, vscroll: _vscroll, tempo: ws.beats, restAt: _restAt),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                  ),
-                  ),
-                ),
                 ),
               ),
-              ValueListenableBuilder<int>(valueListenable: ws.moment, builder: (_, frame, _) => _Overview(from: _scroll, to: _scroll + _visible, frame: frame, onDrag: (p) => _overview(p, box.maxWidth))),
+              ValueListenableBuilder<int>(
+                valueListenable: ws.moment,
+                builder: (_, frame, _) => _Overview(from: _scroll, to: _scroll + _visible, frame: frame, onDrag: (p) => _overview(p, box.maxWidth)),
+              ),
             ],
           ),
           Positioned(
@@ -90,7 +103,12 @@ extension _WsTimelineTracks on _WsTimelineState {
               child: RepaintBoundary(
                 child: ClipRect(
                   child: CustomPaint(
-                    painter: WtPlayheadPainter(view: v, frame: ws.frame, headTop: WtM.band + 1, moment: ws.moment),   // (painted again as the playhead moves, nothing built)
+                    painter: WtPlayheadPainter(
+                      view: v,
+                      frame: ws.frame,
+                      headTop: WtM.band + 1,
+                      moment: ws.moment,
+                    ), // (painted again as the playhead moves, nothing built)
                   ),
                 ),
               ),
@@ -101,11 +119,14 @@ extension _WsTimelineTracks on _WsTimelineState {
               rect: Rect.fromPoints(a, b).shift(Offset(0, WtM.ruler)),
               child: IgnorePointer(
                 child: DecoratedBox(
-                  decoration: BoxDecoration(color: WsT.accent.withAlpha(36), border: Border.all(color: WsT.accent, width: 1)),
+                  decoration: BoxDecoration(
+                    color: WsT.accent.withAlpha(36),
+                    border: Border.all(color: WsT.accent, width: 1),
+                  ),
                 ),
               ),
             ),
-          if (_naming case (final at, _)?)   // (the flag itself written in, as wide as its words, as Figma's layer name is written where it stands)
+          if (_naming case (final at, _)?) // (the flag itself written in, as wide as its words, as Figma's layer name is written where it stands)
             Positioned(
               left: v.x((at * Ws.fps).round()).roundToDouble(),
               top: WtM.band + 2,
@@ -118,16 +139,21 @@ extension _WsTimelineTracks on _WsTimelineState {
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: child,
                 ),
-                child: TextHand(key: const ValueKey('ws-tl-mark-name'), field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
-                  controller: _markWords,
-                  focusNode: _markFocus,
-                  style: T.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700),
-                  cursorColor: Grey.g13,
-                  backgroundCursorColor: Grey.g38,
-                  selectionColor: Grey.g13.withValues(alpha: .3),   // (its words picked, seen as picked)
-                  maxLines: 1,
-                  onSubmitted: (_) => _markFocus.unfocus(),
-                )),
+                child: TextHand(
+                  key: const ValueKey('ws-tl-mark-name'),
+                  field: (k) => EditableText(
+                    key: k,
+                    rendererIgnoresPointer: true,
+                    controller: _markWords,
+                    focusNode: _markFocus,
+                    style: T.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700),
+                    cursorColor: Grey.g13,
+                    backgroundCursorColor: Grey.g38,
+                    selectionColor: Grey.g13.withValues(alpha: .3), // (its words picked, seen as picked)
+                    maxLines: 1,
+                    onSubmitted: (_) => _markFocus.unfocus(),
+                  ),
+                ),
               ),
             ),
         ],

@@ -22,8 +22,8 @@ const dockShelves = <(String, DockG, String)>[
   ('Fonts', DockG.fonts, 'Search 15 families'),
   ('Colors', DockG.colors, 'Search palettes'),
   ('Create', DockG.create, 'Search layers and shapes'),
-  ('Program', DockG.program, 'Search code'),   // (what came as code: dock_program.dart)
-  ('Presets', DockG.files, 'Search presets'),   // (motion and effects together, kept as one: saving them comes once editing is settled)
+  ('Program', DockG.program, 'Search code'), // (what came as code: dock_program.dart)
+  ('Presets', DockG.files, 'Search presets'), // (motion and effects together, kept as one: saving them comes once editing is settled)
 ];
 
 const _facts = {'Presets': '0', 'Effects': '33 in library', 'Fonts': '15 families', 'Colors': '6 palettes', 'Create': '24 kinds'};
@@ -113,27 +113,52 @@ class _WsShelfState extends State<WsShelf> {
             if (name == 'Media') ...[
               DockIconButton(DockG.grid, on: !_mem.mediaList, onTap: () => setState(() => _mem.mediaList = false)),
               DockIconButton(DockG.list, on: _mem.mediaList, onTap: () => setState(() => _mem.mediaList = true)),
-              DockIconButton(DockG.folder, on: _mem.mediaDeep, onTap: () => setState(() => _mem.mediaDeep = !_mem.mediaDeep)),   // (the folders below listed with it)
-              DockIconButton(DockG.files, on: _mem.treeSide != 0, onTap: () => setState(() => _mem.treeSide = (_mem.treeSide + 1) % 3)),   // (the tree: by the room, left, above)
+              DockIconButton(
+                DockG.folder,
+                on: _mem.mediaDeep,
+                onTap: () => setState(() => _mem.mediaDeep = !_mem.mediaDeep),
+              ), // (the folders below listed with it)
+              DockIconButton(
+                DockG.files,
+                on: _mem.treeSide != 0,
+                onTap: () => setState(() => _mem.treeSide = (_mem.treeSide + 1) % 3),
+              ), // (the tree: by the room, left, above)
             ] else if (name == 'Program') ...[
               DockIconButton(DockG.list, on: !_mem.programCode, onTap: () => setState(() => _mem.programCode = false)),
               DockIconButton(DockG.program, on: _mem.programCode, onTap: () => setState(() => _mem.programCode = true)),
             ] else ...[
-              if (name == 'Effects' || name == 'Fonts') ...[   // (its items in rows, or as a map, the alike near: XO's Space beside its list, dock_map.dart)
-                DockIconButton(DockG.grid, key: ValueKey('ws-$name-rows'), on: !_mem.mapped.contains(name), onTap: () => setState(() => _mem.mapped.remove(name))),
-                DockIconButton(DockG.particles, key: ValueKey('ws-$name-map'), on: _mem.mapped.contains(name), onTap: () => setState(() => _mem.mapped.add(name))),
+              if (name == 'Effects' || name == 'Fonts') ...[
+                // (its items in rows, or as a map, the alike near: XO's Space beside its list, dock_map.dart)
+                DockIconButton(
+                  DockG.grid,
+                  key: ValueKey('ws-$name-rows'),
+                  on: !_mem.mapped.contains(name),
+                  onTap: () => setState(() => _mem.mapped.remove(name)),
+                ),
+                DockIconButton(
+                  DockG.particles,
+                  key: ValueKey('ws-$name-map'),
+                  on: _mem.mapped.contains(name),
+                  onTap: () => setState(() => _mem.mapped.add(name)),
+                ),
               ],
-              if (name == 'Effects')   // (the tiles being drawn, lit; a press draws the picked one's again, or, none picked, all of them: no source for it, the user's own wish)
+              if (name == 'Effects') // (the tiles being drawn, lit; a press draws the picked one's again, or, none picked, all of them: no source for it, the user's own wish)
                 ListenableBuilder(
                   listenable: EffectTiles.progress,
-                  builder: (context, _) => DockIconButton(DockG.reload, key: const ValueKey('ws-fx-reload'), on: EffectTiles.progress.value != null, onTap: ws.inside == null ? null : () => EffectTiles.again(ws.inside!, file: c.sel)),
+                  builder: (context, _) => DockIconButton(
+                    DockG.reload,
+                    key: const ValueKey('ws-fx-reload'),
+                    on: EffectTiles.progress.value != null,
+                    onTap: ws.inside == null ? null : () => EffectTiles.again(ws.inside!, file: c.sel),
+                  ),
                 ),
               ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: Shape.z(88)),
                 child: ListenableBuilder(
                   listenable: Listenable.merge([dockRead, EffectTiles.progress]),
                   builder: (context, _) => Text(
-                    switch (name) { // (what the inside has: the fonts it sets, the effects it does, the colours the document uses, the tiles that make)
+                    switch (name) {
+                      // (what the inside has: the fonts it sets, the effects it does, the colours the document uses, the tiles that make)
                       'Fonts' => '${fontsOffered ?? '…'} fonts',
                       'Effects' => switch (EffectTiles.progress.value) {
                         (final done, final all) => '$done of $all',
@@ -152,10 +177,7 @@ class _WsShelfState extends State<WsShelf> {
             ],
           ],
         ),
-        DockSearch(
-          controller: _search,
-          hint: name == 'Fonts' ? 'Search fonts' : hint,
-        ),
+        DockSearch(controller: _search, hint: name == 'Fonts' ? 'Search fonts' : hint),
         Builder(
           builder: (context) {
             // (the word being typed, finished by the tags the shelf has: a press takes one)
@@ -163,32 +185,37 @@ class _WsShelfState extends State<WsShelf> {
             if (done.isEmpty) return const SizedBox.shrink();
             return Padding(
               padding: EdgeInsets.symmetric(horizontal: WsT.inset, vertical: Shape.s(3)),
-              child: SingleChildScrollView(   // (all of them in one line that slides, as the chips' row does: Usual.chips)
+              child: SingleChildScrollView(
+                // (all of them in one line that slides, as the chips' row does: Usual.chips)
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                children: [
-                  for (final t in done) ...[
-                    if (t != done.first) SizedBox(width: Shape.s(4)),
-                    DockHover(
-                      onTap: () {
-                        final text = DockTags.complete(_search.text, t);
-                        _search.value = TextEditingValue(text: text, selection: TextSelection.collapsed(offset: text.length));
-                      },
-                      builder: (context, h) => Container(
-                        padding: EdgeInsets.symmetric(horizontal: Shape.s(7), vertical: Shape.s(2)),
-                        decoration: BoxDecoration(color: h ? WsT.raised : WsT.well, borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius))),
-                        child: Text(t, style: T.micro(Grey.g91)),
+                  children: [
+                    for (final t in done) ...[
+                      if (t != done.first) SizedBox(width: Shape.s(4)),
+                      DockHover(
+                        onTap: () {
+                          final text = DockTags.complete(_search.text, t);
+                          _search.value = TextEditingValue(
+                            text: text,
+                            selection: TextSelection.collapsed(offset: text.length),
+                          );
+                        },
+                        builder: (context, h) => Container(
+                          padding: EdgeInsets.symmetric(horizontal: Shape.s(7), vertical: Shape.s(2)),
+                          decoration: BoxDecoration(color: h ? WsT.raised : WsT.well, borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius))),
+                          child: Text(t, style: T.micro(Grey.g91)),
+                        ),
                       ),
-                    ),
+                    ],
                   ],
-                ],
                 ),
               ),
             );
           },
         ),
         Expanded(
-          child: ListenableBuilder(   // (a foot waiting for a second press opens when that can no longer come: DockCtx.foot)
+          child: ListenableBuilder(
+            // (a foot waiting for a second press opens when that can no longer come: DockCtx.foot)
             listenable: DockHover.secondMayCome,
             builder: (context, _) => switch (name) {
               'Effects' => EffectsShelf(c),

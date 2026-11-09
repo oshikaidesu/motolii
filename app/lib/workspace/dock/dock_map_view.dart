@@ -27,14 +27,14 @@ class DockMap extends StatefulWidget {
 
 class _DockMapState extends State<DockMap> {
   final _keys = FocusNode(debugLabel: 'ws-map');
-  String? _from;   // (where the list of the alike was made from: the one pressed on the map, as XO's from its Space)
-  final _seen = <String>[];   // (what was picked, in turn: XO's History)
+  String? _from; // (where the list of the alike was made from: the one pressed on the map, as XO's from its Space)
+  final _seen = <String>[]; // (what was picked, in turn: XO's History)
   int _at = -1;
-  final _view = TransformationController();   // (how near it is zoomed: what the pointer is on told at its size)
-  final _over = ValueNotifier<String?>(null);   // (the one the pointer is on)
+  final _view = TransformationController(); // (how near it is zoomed: what the pointer is on told at its size)
+  final _over = ValueNotifier<String?>(null); // (the one the pointer is on)
   Map<String, Offset>? _atWas;
   Size _roomWas = Size.zero;
-  bool _forces = false;   // (Obsidian's graph settings opened from its corner: its Forces)
+  bool _forces = false; // (Obsidian's graph settings opened from its corner: its Forces)
 
   @override
   void initState() {
@@ -49,7 +49,7 @@ class _DockMapState extends State<DockMap> {
   }
 
   void _saw(String? id) {
-    if (id == null || (_at >= 0 && _seen[_at] == id)) return;   // (gone to by the history itself: kept as it is)
+    if (id == null || (_at >= 0 && _seen[_at] == id)) return; // (gone to by the history itself: kept as it is)
     _seen
       ..removeRange(_at + 1, _seen.length)
       ..add(id);
@@ -84,7 +84,7 @@ class _DockMapState extends State<DockMap> {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
-      widget.places.roomIs(box.maxWidth / box.maxHeight);   // (laid out on a canvas the shape of the room it is seen in)
+      widget.places.roomIs(box.maxWidth / box.maxHeight); // (laid out on a canvas the shape of the room it is seen in)
       return ListenableBuilder(
         listenable: Listenable.merge([widget.places.places, widget.places.laying]),
         builder: (context, _) {
@@ -96,7 +96,9 @@ class _DockMapState extends State<DockMap> {
           final sw = Shape.z(32) * widget.aspect, gap = Shape.s(4);
           final k = math.max(2, ((box.maxWidth - 3 * Shape.z(20) - 2 * gap) / (sw + gap)).floor());
           final picked = widget.picked;
-          if (picked != null && at.containsKey(picked) && (_from == null || !widget.places.alike(_from!, tiles.keys, k).contains(picked))) _from = picked;   // (picked elsewhere: its own list)
+          if (picked != null && at.containsKey(picked) && (_from == null || !widget.places.alike(_from!, tiles.keys, k).contains(picked))) {
+            _from = picked; // (picked elsewhere: its own list)
+          }
           final list = picked == null || _from == null || !tiles.containsKey(_from) ? const <String>[] : widget.places.alike(_from!, tiles.keys, k);
           return CallbackShortcuts(
             bindings: {
@@ -111,7 +113,7 @@ class _DockMapState extends State<DockMap> {
               focusNode: _keys,
               child: Listener(
                 behavior: HitTestBehavior.translucent,
-                onPointerDown: (_) => _keys.requestFocus(),   // (the keys go to the map once it is pressed, not to the stage's nudge)
+                onPointerDown: (_) => _keys.requestFocus(), // (the keys go to the map once it is pressed, not to the stage's nudge)
                 child: Column(
                   children: [
                     Expanded(child: LayoutBuilder(builder: (context, room) => _map(at, tiles, Size(room.maxWidth, room.maxHeight)))),
@@ -127,15 +129,19 @@ class _DockMapState extends State<DockMap> {
   );
 
   Widget _map(Map<String, Offset> at, Map<String, Widget> tiles, Size room) {
-    final r = dockSpreadRadius, a = widget.aspect, side = 2 * r / math.sqrt(1 + a * a);   // (a tile inside its circle)
+    final r = dockSpreadRadius, a = widget.aspect, side = 2 * r / math.sqrt(1 + a * a); // (a tile inside its circle)
     var box = Rect.fromCenter(center: at.values.first, width: 0, height: 0);
     for (final p in at.values) {
       box = box.expandToInclude(Rect.fromCenter(center: p, width: 0, height: 0));
     }
     box = box.inflate(r);
-    final s = math.min(room.width / box.width, room.height / box.height) * .92, left = (room.width - box.width * s) / 2 - box.left * s, top = (room.height - box.height * s) / 2 - box.top * s;
-    Rect? place(String id) => at[id] == null ? null : Rect.fromCenter(center: Offset(left + at[id]!.dx * s, top + at[id]!.dy * s), width: side * a * s, height: side * s);
-    if (!identical(at, _atWas) || room != _roomWas) {   // (laid out anew, or the room another size: where it was looking is gone, so the whole)
+    final s = math.min(room.width / box.width, room.height / box.height) * .92,
+        left = (room.width - box.width * s) / 2 - box.left * s,
+        top = (room.height - box.height * s) / 2 - box.top * s;
+    Rect? place(String id) =>
+        at[id] == null ? null : Rect.fromCenter(center: Offset(left + at[id]!.dx * s, top + at[id]!.dy * s), width: side * a * s, height: side * s);
+    if (!identical(at, _atWas) || room != _roomWas) {
+      // (laid out anew, or the room another size: where it was looking is gone, so the whole)
       if (_atWas != null) _view.value = Matrix4.identity();
       _atWas = at;
       _roomWas = room;
@@ -143,7 +149,7 @@ class _DockMapState extends State<DockMap> {
     Widget item(String id, Widget tile) => MouseRegion(
       onEnter: (_) => _over.value = id,
       onExit: (_) => _over.value == id ? _over.value = null : null,
-      child: Listener(onPointerDown: (_) => _from = id, child: tile),   // (pressed on the map: the list made from it, as XO's Space)
+      child: Listener(onPointerDown: (_) => _from = id, child: tile), // (pressed on the map: the list made from it, as XO's Space)
     );
 
     return ClipRect(
@@ -160,7 +166,8 @@ class _DockMapState extends State<DockMap> {
                 children: [
                   for (final MapEntry(key: id, value: tile) in tiles.entries)
                     if (place(id) case final at?)
-                      AnimatedPositioned.fromRect(   // (laid out anew, each moves there: d3's transition, 250 ms, easeCubic, its defaults)
+                      AnimatedPositioned.fromRect(
+                        // (laid out anew, each moves there: d3's transition, 250 ms, easeCubic, its defaults)
                         key: ValueKey('ws-map-$_name-$id'),
                         rect: at,
                         duration: const Duration(milliseconds: 250),
@@ -196,7 +203,8 @@ class _DockMapState extends State<DockMap> {
               Text('Center force', style: T.label(Grey.g76)),
               ValueListenableBuilder(
                 valueListenable: widget.places.squeeze,
-                builder: (context, s, _) => MiniSlider(key: ValueKey('ws-map-$_name-center'), value: s, width: Shape.z(96), onChanged: (v) => widget.places.squeeze.value = v),
+                builder: (context, s, _) =>
+                    MiniSlider(key: ValueKey('ws-map-$_name-center'), value: s, width: Shape.z(96), onChanged: (v) => widget.places.squeeze.value = v),
               ),
             ],
           ),
@@ -211,7 +219,7 @@ class _DockMapState extends State<DockMap> {
     builder: (context, _) {
       final id = _over.value, r = id == null ? null : place(id);
       if (id == null || r == null || tiles[id] == null) return const SizedBox();
-      final w = Shape.z(140), at = MatrixUtils.transformRect(_view.value, r);   // (as large as the foot's moving picture)
+      final w = Shape.z(140), at = MatrixUtils.transformRect(_view.value, r); // (as large as the foot's moving picture)
       final left = (at.right + Shape.s(6) + w > room.width ? at.left - Shape.s(6) - w : at.right + Shape.s(6)).clamp(0.0, math.max(0.0, room.width - w));
       return Stack(
         children: [
@@ -243,7 +251,10 @@ class _DockMapState extends State<DockMap> {
   /// Splice's Similar Sounds run again on one of its matches).
   Widget _alike(List<String> list, Map<String, Widget> tiles, double sw, double gap) {
     final i = list.indexOf(widget.picked ?? '');
-    Widget arrow(String key, int by) => Transform.flip(flipX: by < 0, child: DockIconButton(DockG.chevron, key: ValueKey('ws-map-$_name-$key'), onTap: () => _step(list, by)));
+    Widget arrow(String key, int by) => Transform.flip(
+      flipX: by < 0,
+      child: DockIconButton(DockG.chevron, key: ValueKey('ws-map-$_name-$key'), onTap: () => _step(list, by)),
+    );
     return Container(
       key: ValueKey('ws-alike-$_name'),
       padding: EdgeInsets.symmetric(vertical: gap),

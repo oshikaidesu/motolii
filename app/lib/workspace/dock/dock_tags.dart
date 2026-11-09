@@ -23,7 +23,7 @@ abstract final class DockTags {
       for (final e in told.entries) {
         _own['${e.key}'] = {for (final t in e.value as List) '$t'.toLowerCase()};
       }
-    } catch (_) {}   // (no file, or not a map: the built-in tags alone)
+    } catch (_) {} // (no file, or not a map: the built-in tags alone)
   }
 
   /// A thing's tags: the built-in, and the maker's own.
@@ -45,7 +45,7 @@ abstract final class DockTags {
     try {
       return _latches = {for (final e in (jsonDecode(_latchFile.readAsStringSync()) as Map).entries) '${e.key}': '${e.value}'};
     } catch (_) {
-      return _latches = {};   // (none yet, or not a map)
+      return _latches = {}; // (none yet, or not a map)
     }
   }
 
@@ -60,7 +60,7 @@ abstract final class DockTags {
     try {
       _latchFile.parent.createSync(recursive: true);
       _latchFile.writeAsStringSync(jsonEncode(_latched));
-    } catch (_) {}   // (not kept: the latch holds while the window is open)
+    } catch (_) {} // (not kept: the latch holds while the window is open)
   }
 
   /// Whether a thing answers a search: every word of it is in its name, among its tags, or (a colour) its code.
@@ -81,7 +81,10 @@ abstract final class DockTags {
     final words = query.split(RegExp(r'\s+'));
     final last = words.isEmpty ? '' : words.last.toLowerCase();
     if (last.isEmpty) return const [];
-    final found = [for (final t in seen[shelf] ?? const <String>{}) if (t.startsWith(last) && t != last) t]..sort();
+    final found = [
+      for (final t in seen[shelf] ?? const <String>{})
+        if (t.startsWith(last) && t != last) t,
+    ]..sort();
     return found;
   }
 
@@ -93,16 +96,25 @@ abstract final class DockTags {
 
   /// A colour's tags, from Google's HCT and colour temperature (material_color_utilities): warm or cool (its temperature
   /// among all the hues), light or dark (its tone), vivid or muted (its chroma).
-  static Set<String> ofColour(Color c) => _ofColour.putIfAbsent(c.toARGB32(), () => _tagsOf(c));   // (a colour's tags never change: worked out once)
+  static Set<String> ofColour(Color c) => _ofColour.putIfAbsent(c.toARGB32(), () => _tagsOf(c)); // (a colour's tags never change: worked out once)
   static final _ofColour = <int, Set<String>>{};
   static Set<String> _tagsOf(Color c) {
     final hct = Hct.fromInt(c.toARGB32());
-    final tags = <String>{hct.tone > 65 ? 'light' : hct.tone < 35 ? 'dark' : 'mid'};
+    final tags = <String>{
+      hct.tone > 65
+          ? 'light'
+          : hct.tone < 35
+          ? 'dark'
+          : 'mid',
+    };
     if (hct.chroma < 10) {
       tags.add('grey');
     } else {
       final warm = TemperatureCache(hct).inputRelativeTemperature >= .5;
-      tags..add(warm ? 'warm' : 'cool')..add(warm ? 'hot' : 'cold')..add(hct.chroma > 60 ? 'vivid' : 'muted');
+      tags
+        ..add(warm ? 'warm' : 'cool')
+        ..add(warm ? 'hot' : 'cold')
+        ..add(hct.chroma > 60 ? 'vivid' : 'muted');
       if (hct.tone > 75 && hct.chroma < 50) tags.add('pastel');
     }
     return tags;

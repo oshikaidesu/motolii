@@ -13,7 +13,8 @@ part of 'dock_files.dart';
   try {
     final table = (jsonDecode(text.substring(first.length)) as Map)['timeTables'][0] as Map, unread = <String>{};
     final names = (table['timeTableHeaders'] as List).firstWhere((h) => h['fieldId'] == 0)['names'] as List;
-    final tracks = ((table['fields'] as List).firstWhere((f) => f['fieldId'] == 0)['tracks'] as List).cast<Map>().toList()..sort((a, b) => (a['trackNo'] as int).compareTo(b['trackNo'] as int));
+    final tracks = ((table['fields'] as List).firstWhere((f) => f['fieldId'] == 0)['tracks'] as List).cast<Map>().toList()
+      ..sort((a, b) => (a['trackNo'] as int).compareTo(b['trackNo'] as int));
     List<(int, int)> keysOf(Map track) {
       final keys = <int, int>{0: -1};
       for (final item in (track['frames'] as List).cast<Map>().toList()..sort((a, b) => (a['frame'] as int).compareTo(b['frame'] as int))) {
@@ -38,7 +39,13 @@ List<(int, String)>? _levelNamed(String sheet, String name) {
   final here = File(sheet).parent.path, named = RegExp('^${RegExp.escape(name)}[._]\\d+\\.[^./]+\$');
   for (final folder in [here, '$here/$name']) {
     if (!Directory(folder).existsSync()) continue;
-    if (_level([for (final e in Directory(folder).listSync()) if (e is File && named.hasMatch(_base(e.path))) e.path], least: 1) case final drawings?) return drawings;
+    if (_level([
+          for (final e in Directory(folder).listSync())
+            if (e is File && named.hasMatch(_base(e.path))) e.path,
+        ], least: 1)
+        case final drawings?) {
+      return drawings;
+    }
   }
   return null;
 }
@@ -75,8 +82,14 @@ Future<void> _placeSheet(DockCtx c, String file) async {
     }
   }
   c.ws.after(m.later('together'), (_, _) => c.ws.reread());
-  final ids = [for (final i in await Future.wait(made)) if (i > 0) '$i'];
+  final ids = [
+    for (final i in await Future.wait(made))
+      if (i > 0) '$i',
+  ];
   c.ws.pickMany(ids);
-  final told = [if (missing.isNotEmpty) 'no drawings named ${missing.join(', ')} beside it', if (sheet.unread.isNotEmpty) 'not read: ${sheet.unread.join(', ')}'];
+  final told = [
+    if (missing.isNotEmpty) 'no drawings named ${missing.join(', ')} beside it',
+    if (sheet.unread.isNotEmpty) 'not read: ${sheet.unread.join(', ')}',
+  ];
   c.ws.notice = 'Placed ${ids.length} of ${sheet.columns.length} columns of ${_base(file)}${told.isEmpty ? '' : ': ${told.join('; ')}'}';
 }

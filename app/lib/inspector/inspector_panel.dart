@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/widgets.dart';
+
 import '../style/tokens.dart';
 import 'transform/inspector_direct_transform.dart';
 import 'inspector_light.dart';
@@ -40,35 +41,48 @@ class AddEffectRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final doc = Ctx.of(context).doc;
-    final names = ['fx', 'fx_off', for (final c in doc.cards) if (doc.movable.contains(c.name)) for (final p in c.params) p.id];
+    final names = [
+      'fx',
+      'fx_off',
+      for (final c in doc.cards)
+        if (doc.movable.contains(c.name))
+          for (final p in c.params) p.id,
+    ];
     Widget word(String key, String word, VoidCallback? does) => Hov(
       key: ValueKey(key),
       onTap: does,
-      builder: (_, h) => Padding(padding: EdgeInsets.only(left: Shape.s(10)), child: Text(word, style: T.label(h ? Grey.g95 : Grey.g56))),
+      builder: (_, h) => Padding(
+        padding: EdgeInsets.only(left: Shape.s(10)),
+        child: Text(word, style: T.label(h ? Grey.g95 : Grey.g56)),
+      ),
     );
     return Padding(
       padding: EdgeInsets.only(bottom: Pop.gap),
-      child: Row(children: [
-        Expanded(
-          child: Hov(
-            key: const ValueKey('add-effect'),
-            onTap: doc.onAddEffect,
-            builder: (_, h) => Container(
-              height: Pop.cell,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(color: h ? Grey.g20 : Pop.well, borderRadius: BorderRadius.all(Shape.r(6))),
-              child: Text('+ Add Effect', style: T.label(h ? Grey.g95 : Grey.g76)),
+      child: Row(
+        children: [
+          Expanded(
+            child: Hov(
+              key: const ValueKey('add-effect'),
+              onTap: doc.onAddEffect,
+              builder: (_, h) => Container(
+                height: Pop.cell,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: h ? Grey.g20 : Pop.well, borderRadius: BorderRadius.all(Shape.r(6))),
+                child: Text('+ Add Effect', style: T.label(h ? Grey.g95 : Grey.g76)),
+              ),
             ),
           ),
-        ),
-        // (Alight Motion's Copy Effects and Paste Effects: its whole stack, the knobs with it)
-        if (doc.movable.isNotEmpty) if (doc.onCardCopy case final copy?) word('effects-copy', 'Copy all', () => copy(names)),
-        if (doc.onCardPaste case final paste?) word('effects-paste', 'Paste', paste),
-        if (doc.moreCards.isNotEmpty && doc.onMoreCard != null) ...[   // (what Alight Motion shows for its kind is all that is there unasked: the rest by name)
-          SizedBox(width: Shape.s(10)),
-          CardMore(name: 'More', word: 'More', items: [for (final title in doc.moreCards) (title, title, () => doc.onMoreCard!(title))]),
+          // (Alight Motion's Copy Effects and Paste Effects: its whole stack, the knobs with it)
+          if (doc.movable.isNotEmpty)
+            if (doc.onCardCopy case final copy?) word('effects-copy', 'Copy all', () => copy(names)),
+          if (doc.onCardPaste case final paste?) word('effects-paste', 'Paste', paste),
+          if (doc.moreCards.isNotEmpty && doc.onMoreCard != null) ...[
+            // (what Alight Motion shows for its kind is all that is there unasked: the rest by name)
+            SizedBox(width: Shape.s(10)),
+            CardMore(name: 'More', word: 'More', items: [for (final title in doc.moreCards) (title, title, () => doc.onMoreCard!(title))]),
+          ],
         ],
-      ]),
+      ),
     );
   }
 }
@@ -102,7 +116,8 @@ class _InspectorPanelState extends State<InspectorPanel> {
         // contract: one stack: the host's cards, Transform first, then the effects on it, then what it may do besides (Premiere Pro's Effect Controls: the effects put on under Motion and Opacity); every titled card folds on its own.
         for (final (i, c) in doc.cards.indexed) ...[
           if (doc.onAddEffect != null && i == _addAt(doc)) const AddEffectRow(),
-          inspectorCards[c.name]?.call(c) ?? ValuesCard(c), // (a card the window knows, drawn by hand; one it does not (an effect, a script's knobs), drawn from what the inside says)
+          inspectorCards[c.name]?.call(c) ??
+              ValuesCard(c), // (a card the window knows, drawn by hand; one it does not (an effect, a script's knobs), drawn from what the inside says)
         ],
         if (doc.onAddEffect != null && _addAt(doc) >= doc.cards.length) const AddEffectRow(),
       ],
@@ -123,7 +138,14 @@ class _InspectorPanelState extends State<InspectorPanel> {
             children: [
               // (the name and Animate all stay where they are, the cards going by under them: Alight Motion's key button stands in the panel's frame, outside what scrolls, LayerTools.kt LayerPanel)
               if (k != Kind.none) Padding(padding: EdgeInsets.fromLTRB(Pop.gap, Pop.gap, Pop.gap, 0), child: const InspHeader()),
-              Expanded(child: ListView(controller: _scroll, padding: EdgeInsets.all(Pop.gap), scrollCacheExtent: textToType ? const ScrollCacheExtent.pixels(4000) : null, children: body)),
+              Expanded(
+                child: ListView(
+                  controller: _scroll,
+                  padding: EdgeInsets.all(Pop.gap),
+                  scrollCacheExtent: textToType ? const ScrollCacheExtent.pixels(4000) : null,
+                  children: body,
+                ),
+              ),
             ],
           ),
         ),

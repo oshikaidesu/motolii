@@ -7,6 +7,7 @@ import 'package:motolii/inspector/inspector_value_marks.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/inspector/rows/inspector_rows_midi.dart';
 import 'package:motolii/style/tokens.dart';
+
 import '../../workspace/two_fingers.dart';
 
 /// One property: label, its value cells, the key mark, the reset mark. The columns are the same on every row (B1) so X/Y/Z line up.
@@ -41,7 +42,7 @@ class PropRow extends StatefulWidget {
 
 class _PropRowState extends State<PropRow> {
   bool _midi = false;
-  final _menu = OverlayPortalController();   // (a right click's list, over the panel, as a number's own: not laid in among the rows)
+  final _menu = OverlayPortalController(); // (a right click's list, over the panel, as a number's own: not laid in among the rows)
   Offset _menuAt = Offset.zero;
 
   // (its key mark and whether it differs from as it comes, at a new moment: told alone, as its fields are)
@@ -53,7 +54,11 @@ class _PropRowState extends State<PropRow> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final doc = Ctx.read(context).doc, now = [doc.watch('key:${widget.id}'), for (final i in widget.ids ?? [widget.id]) doc.watch(i)];
+    final doc = Ctx.read(context).doc,
+        now = [
+          doc.watch('key:${widget.id}'),
+          for (final i in widget.ids ?? [widget.id]) doc.watch(i),
+        ];
     if (listEquals(now, _watching)) return;
     for (final w in _watching) {
       w.removeListener(_moved);
@@ -82,7 +87,8 @@ class _PropRowState extends State<PropRow> {
         mixedAny = ids.any((i) => doc.get(i) == null),
         ks = doc.keys[widget.id] ?? KeyS.off;
     final active = doc.directHover == widget.id;
-    final mark = widget.lead ?? RowMark.of(context, widget.id) ?? (valueMarks[widget.id] == null ? null : ValueMarkGlyph(valueMarks[widget.id]!, doc.get(widget.id)));
+    final mark =
+        widget.lead ?? RowMark.of(context, widget.id) ?? (valueMarks[widget.id] == null ? null : ValueMarkGlyph(valueMarks[widget.id]!, doc.get(widget.id)));
     final pop = Pop.on(context);
     final units = widget.cells.whereType<NumField>().map((f) => f.unit).toSet();
     final shared = pop && units.length == 1 ? units.single : null;
@@ -125,28 +131,30 @@ class _PropRowState extends State<PropRow> {
             Row(
               children: [
                 if (mark != null)
-                  _Scrub( // (the row's mark is its handle too: pulled sideways, its number moves, as Figma's field glyphs)
+                  _Scrub(
+                    // (the row's mark is its handle too: pulled sideways, its number moves, as Figma's field glyphs)
                     field: cellsOn ? widget.cells.whereType<NumField>().where((f) => f.id == widget.id).firstOrNull : null,
                     child: Padding(
-                    padding: EdgeInsets.only(right: Shape.s(6)),
-                    child: Opacity(
-                      opacity: cellsOn ? 1 : .4,
-                      child: pop
-                          ? Container(
-                              width: Shape.z(28),
-                              height: Pop.cell,
-                              padding: EdgeInsets.all(Shape.s(2)),
-                              decoration: BoxDecoration(color: active ? Grey.g20 : null, borderRadius: BorderRadius.all(Shape.r(7))),
-                              child: FittedBox(child: mark),
-                            )
-                          : mark,
+                      padding: EdgeInsets.only(right: Shape.s(6)),
+                      child: Opacity(
+                        opacity: cellsOn ? 1 : .4,
+                        child: pop
+                            ? Container(
+                                width: Shape.z(28),
+                                height: Pop.cell,
+                                padding: EdgeInsets.all(Shape.s(2)),
+                                decoration: BoxDecoration(color: active ? Grey.g20 : null, borderRadius: BorderRadius.all(Shape.r(7))),
+                                child: FittedBox(child: mark),
+                              )
+                            : mark,
+                      ),
                     ),
-                  ),
                   )
                 else if (pop)
                   SizedBox(width: Shape.s(34)),
                 (unit != null ? Expanded.new : Flexible.new)(
-                  child: FittedBox( // (a label wider than its column is drawn smaller, never cut)
+                  child: FittedBox(
+                    // (a label wider than its column is drawn smaller, never cut)
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -176,95 +184,114 @@ class _PropRowState extends State<PropRow> {
                   ),
               ],
             ),
-            if (widget.under != null) Padding(padding: EdgeInsets.only(top: Shape.s(4), bottom: Shape.s(2)), child: widget.under),
+            if (widget.under != null)
+              Padding(
+                padding: EdgeInsets.only(top: Shape.s(4), bottom: Shape.s(2)),
+                child: widget.under,
+              ),
           ],
         );
         return OverlayPortal.targetsRootOverlay(
           controller: _menu,
-          overlayChildBuilder: (_) => TinyMenuAt(at: _menuAt, name: 'row', of: widget.id, hide: _menu.hide, items: [
-            if (doc.onCardReset case final reset?) ('reset', 'Reset', () => reset([for (final i in ids) if (i.startsWith('v_')) i.substring(2)])),   // (Alight Motion's Reset Location, Scale, Rotation; After Effects' Reset)
-            if (ks != KeyS.at) ('key', 'Key this frame', () => doc.setKey(widget.id, KeyS.at)),
-            if (ks == KeyS.at) ('unkey', 'Remove key', () => doc.setKey(widget.id, KeyS.anim)),
-            if (ks != KeyS.off) ('unanimate', 'Remove animation', () => doc.setKey(widget.id, KeyS.off)),
-            if (doc.onMidi != null) ('midi', 'Keys from MIDI…', () => setState(() => _midi = true)),
-            if (cfg.maybe) ('relate', 'Relate…', () {}),
-          ]),
-          child: Listener(
-          behavior: HitTestBehavior.translucent,
-          onPointerDown: (e) {
-            if (e.buttons == kSecondaryButton && widget.keyable && !locked && e.pointer != NumFieldState.rightAt) {   // (on the label: a number's own right click is its own)
-              _menuAt = e.position;
-              _menu.show();
-            }
-          },
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                constraints: BoxConstraints(minHeight: pop ? Pop.row : ed.row),
-                padding: EdgeInsets.symmetric(vertical: Shape.s(1)),
-                decoration: pop
-                    ? BoxDecoration(color: active ? Grey.g15 : null, borderRadius: BorderRadius.all(Shape.r(6)))
-                    : BoxDecoration(
-                        color: active ? Grey.g20 : null,
-                        border: active ? Border(left: BorderSide(color: Grey.g95, width: 2)) : null,
-                      ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(width: lw, child: label),
-                    Expanded(
-                      child: RowOff(
-                        off: !cellsOn,
-                        narrow: box.maxWidth < 300,
-                        child: IgnorePointer(
-                          ignoring: !cellsOn,
-                          child: pop ? RowInfo(unit: unit, keys: widget.keyable ? ks : KeyS.off, child: cells) : cells,
-                        ),
-                      ),
-                    ),
-                    // the key column is reserved on every row so every field ends at one edge
-                    if (pop)
-                      const SizedBox.shrink()
-                    else if (widget.keyable)
-                      KeyMark(
-                        state: ks,
-                        enabled: !locked,
-                        // contract: click = key at the playhead; on a key here it removes that key (the track stays animated).
-                        onTap: () => doc.setKey(widget.id, ks == KeyS.at ? KeyS.anim : KeyS.at),
-                      )
-                    else
-                      SizedBox(width: keyW),
-                    if (cfg.resetArrow) ResetMark(show: (changed || mixedAny) && !locked, onTap: () => doc.resetIds(ids)),
-                  ],
-                ),
-              ),
-              if (widget.note != null)
-                Padding(
-                  padding: EdgeInsets.only(left: lw, bottom: Shape.s(2)),
-                  child: Text(widget.note!, style: T.label(Grey.g56)),
-                ),
-              if (showRel)
-                Padding(
-                  padding: EdgeInsets.only(left: lw, bottom: Shape.s(2)),
-                  child: Text(
-                    'Driven by ${widget.rel!.name}${widget.relName != null ? ' · ${widget.relName}' : ''}. Edit it in Relations.',
-                    style: T.label(Role.linkedFor(widget.rel)),
-                  ),
-                ),
-              if (_midi)
-                Container(
-                  margin: EdgeInsets.only(top: Shape.s(2), bottom: Shape.s(4)),
-                  decoration: BoxDecoration(
-                    color: Grey.g13,
-                    borderRadius: BorderRadius.all(Shape.r(4)),
-                    border: Border.all(color: ed.rule),
-                  ),
-                  child: MidiKeys(prop: widget.id, onDone: () => setState(() => _midi = false)),
-                ),
+          overlayChildBuilder: (_) => TinyMenuAt(
+            at: _menuAt,
+            name: 'row',
+            of: widget.id,
+            hide: _menu.hide,
+            items: [
+              if (doc.onCardReset case final reset?)
+                (
+                  'reset',
+                  'Reset',
+                  () => reset([
+                    for (final i in ids)
+                      if (i.startsWith('v_')) i.substring(2),
+                  ]),
+                ), // (Alight Motion's Reset Location, Scale, Rotation; After Effects' Reset)
+              if (ks != KeyS.at) ('key', 'Key this frame', () => doc.setKey(widget.id, KeyS.at)),
+              if (ks == KeyS.at) ('unkey', 'Remove key', () => doc.setKey(widget.id, KeyS.anim)),
+              if (ks != KeyS.off) ('unanimate', 'Remove animation', () => doc.setKey(widget.id, KeyS.off)),
+              if (doc.onMidi != null) ('midi', 'Keys from MIDI…', () => setState(() => _midi = true)),
+              if (cfg.maybe) ('relate', 'Relate…', () {}),
             ],
           ),
+          child: Listener(
+            behavior: HitTestBehavior.translucent,
+            onPointerDown: (e) {
+              if (e.buttons == kSecondaryButton && widget.keyable && !locked && e.pointer != NumFieldState.rightAt) {
+                // (on the label: a number's own right click is its own)
+                _menuAt = e.position;
+                _menu.show();
+              }
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  constraints: BoxConstraints(minHeight: pop ? Pop.row : ed.row),
+                  padding: EdgeInsets.symmetric(vertical: Shape.s(1)),
+                  decoration: pop
+                      ? BoxDecoration(color: active ? Grey.g15 : null, borderRadius: BorderRadius.all(Shape.r(6)))
+                      : BoxDecoration(
+                          color: active ? Grey.g20 : null,
+                          border: active ? Border(left: BorderSide(color: Grey.g95, width: 2)) : null,
+                        ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(width: lw, child: label),
+                      Expanded(
+                        child: RowOff(
+                          off: !cellsOn,
+                          narrow: box.maxWidth < 300,
+                          child: IgnorePointer(
+                            ignoring: !cellsOn,
+                            child: pop ? RowInfo(unit: unit, keys: widget.keyable ? ks : KeyS.off, child: cells) : cells,
+                          ),
+                        ),
+                      ),
+                      // the key column is reserved on every row so every field ends at one edge
+                      if (pop)
+                        const SizedBox.shrink()
+                      else if (widget.keyable)
+                        KeyMark(
+                          state: ks,
+                          enabled: !locked,
+                          // contract: click = key at the playhead; on a key here it removes that key (the track stays animated).
+                          onTap: () => doc.setKey(widget.id, ks == KeyS.at ? KeyS.anim : KeyS.at),
+                        )
+                      else
+                        SizedBox(width: keyW),
+                      if (cfg.resetArrow) ResetMark(show: (changed || mixedAny) && !locked, onTap: () => doc.resetIds(ids)),
+                    ],
+                  ),
+                ),
+                if (widget.note != null)
+                  Padding(
+                    padding: EdgeInsets.only(left: lw, bottom: Shape.s(2)),
+                    child: Text(widget.note!, style: T.label(Grey.g56)),
+                  ),
+                if (showRel)
+                  Padding(
+                    padding: EdgeInsets.only(left: lw, bottom: Shape.s(2)),
+                    child: Text(
+                      'Driven by ${widget.rel!.name}${widget.relName != null ? ' · ${widget.relName}' : ''}. Edit it in Relations.',
+                      style: T.label(Role.linkedFor(widget.rel)),
+                    ),
+                  ),
+                if (_midi)
+                  Container(
+                    margin: EdgeInsets.only(top: Shape.s(2), bottom: Shape.s(4)),
+                    decoration: BoxDecoration(
+                      color: Grey.g13,
+                      borderRadius: BorderRadius.all(Shape.r(4)),
+                      border: Border.all(color: ed.rule),
+                    ),
+                    child: MidiKeys(prop: widget.id, onDone: () => setState(() => _midi = false)),
+                  ),
+              ],
+            ),
           ),
         );
       },

@@ -88,10 +88,7 @@ class _Arrow extends CustomPainter {
   @override
   void paint(Canvas c, Size s) {
     final r = Rect.fromCenter(center: s.center(Offset.zero), width: s.shortestSide * .5, height: s.shortestSide * .5);
-    c.drawPath(
-      Path()..addPolygon(open ? [r.topLeft, r.topRight, r.bottomCenter] : [r.topLeft, r.centerRight, r.bottomLeft], true),
-      Paint()..color = ink,
-    );
+    c.drawPath(Path()..addPolygon(open ? [r.topLeft, r.topRight, r.bottomCenter] : [r.topLeft, r.centerRight, r.bottomLeft], true), Paint()..color = ink);
   }
 
   @override
@@ -287,11 +284,7 @@ class LightTableForms extends Forms {
         color: _opal.withValues(alpha: .6),
         margin: EdgeInsets.only(left: strip),
         padding: EdgeInsets.fromLTRB(Shape.s(10), Shape.s(2), Shape.s(6), Shape.s(6)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [?head, if (c.open) ...c.body],
-        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [?head, if (c.open) ...c.body]),
       ),
     );
   }

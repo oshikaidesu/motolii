@@ -1,6 +1,7 @@
 // The desk's shared small things: the tool catalog (name, hue, what it acts on), each tool's painted glyph, and the round
 // touchables the desk's bodies use (chip, icon button, scrub field, readout).
 import 'package:flutter/widgets.dart';
+
 import '../../parts/skin_parts.dart';
 
 import '../../parts/text_hand.dart';
@@ -21,13 +22,9 @@ class DeskTool {
   final Widget Function()? build;
 }
 
-final deskTools = [
-  DeskTool('Blend', Pop.toneBlend, 'Layer stack', build: DeskBlend.new),
-  DeskTool('Align', Pop.toneLayout, 'Selection', build: DeskAlign.new),
-];
+final deskTools = [DeskTool('Blend', Pop.toneBlend, 'Layer stack', build: DeskBlend.new), DeskTool('Align', Pop.toneLayout, 'Selection', build: DeskAlign.new)];
 
 DeskTool deskTool(Ws ws, String name) => ws.tools.firstWhere((t) => t.name == name, orElse: () => DeskTool(name, Grey.g63, ''));
-
 
 /// A tool's sticker: a flat tile of its hue with the glyph knocked out in dark ink.
 class DeskSticker extends StatelessWidget {
@@ -41,7 +38,9 @@ class DeskSticker extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(color: tone, borderRadius: BorderRadius.circular(size * .3)),
-      child: own ? Center(child: Text(name.characters.first, style: T.micro(WsT.onAccent))) : CustomPaint(painter: DeskGlyph(name, WsT.onAccent)), // (a tool of your own: its first letter)
+      child: own
+          ? Center(child: Text(name.characters.first, style: T.micro(WsT.onAccent)))
+          : CustomPaint(painter: DeskGlyph(name, WsT.onAccent)), // (a tool of your own: its first letter)
     );
   }
 }
@@ -229,7 +228,7 @@ class DeskScrub extends StatefulWidget {
   final double value, min, max, perPx, pad;
   final ValueChanged<double> onChanged;
   final String Function(double) format;
-  final Color? tone;   // (none: the theme's ChosenDefault)
+  final Color? tone; // (none: the theme's ChosenDefault)
   final bool enabled;
   @override
   State<DeskScrub> createState() => _DeskScrubState();
@@ -260,7 +259,10 @@ class _DeskScrubState extends State<DeskScrub> {
   // (pressed, it is written: as the window's other numbers. Its number alone, all of it picked: what is typed takes its place)
   void _write() {
     final now = RegExp(r'-?[\d.]+').stringMatch(widget.format(widget.value)) ?? '';
-    _words.value = TextEditingValue(text: now, selection: TextSelection(baseOffset: 0, extentOffset: now.length));
+    _words.value = TextEditingValue(
+      text: now,
+      selection: TextSelection(baseOffset: 0, extentOffset: now.length),
+    );
     setState(() => _typing = true);
     _focus.requestFocus();
   }
@@ -308,23 +310,28 @@ class _DeskScrubState extends State<DeskScrub> {
                     Text(w.label, style: T.label(w.enabled ? Grey.g63 : Grey.g56)),
                     SizedBox(width: Shape.s(4)),
                     Expanded(
-                      child: FittedBox( // (a number wider than its field is drawn smaller, never cut)
+                      child: FittedBox(
+                        // (a number wider than its field is drawn smaller, never cut)
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerRight,
                         child: _typing
                             ? SizedBox(
                                 width: Shape.z(44),
-                                child: TextHand(field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
-                                  controller: _words,
-                                  focusNode: _focus,
-                                  style: T.value(Grey.g100).copyWith(fontSize: T.px(10.5)),
-                                  cursorColor: WsT.accent,
-                                  backgroundCursorColor: Grey.g38,
-                                  selectionColor: WsT.accent.withValues(alpha: .3),
-                                  textAlign: TextAlign.right,
-                                  maxLines: 1,
-                                  onSubmitted: (_) => _focus.unfocus(),
-                                )),
+                                child: TextHand(
+                                  field: (k) => EditableText(
+                                    key: k,
+                                    rendererIgnoresPointer: true,
+                                    controller: _words,
+                                    focusNode: _focus,
+                                    style: T.value(Grey.g100).copyWith(fontSize: T.px(10.5)),
+                                    cursorColor: WsT.accent,
+                                    backgroundCursorColor: Grey.g38,
+                                    selectionColor: WsT.accent.withValues(alpha: .3),
+                                    textAlign: TextAlign.right,
+                                    maxLines: 1,
+                                    onSubmitted: (_) => _focus.unfocus(),
+                                  ),
+                                ),
                               )
                             : Text(
                                 w.format(w.value),
@@ -425,7 +432,10 @@ class DeskReadout extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.baseline,
         textBaseline: TextBaseline.alphabetic,
         children: [
-          Text(value, style: T.value(ink ?? Grey.g95).copyWith(fontSize: T.px(18), fontWeight: FontWeight.w700, letterSpacing: -.5)),
+          Text(
+            value,
+            style: T.value(ink ?? Grey.g95).copyWith(fontSize: T.px(18), fontWeight: FontWeight.w700, letterSpacing: -.5),
+          ),
           if (unit.isNotEmpty) ...[SizedBox(width: Shape.s(2)), Text(unit, style: T.label(Grey.g63))],
         ],
       ),

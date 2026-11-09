@@ -26,7 +26,7 @@ const _moments = 24, _seconds = 3.0, _mostCopies = 160;
 abstract final class RecipeMotions {
   static final _all = <String, RecipeMotion>{};
   static bool _asked = false;
-  static Pointer<Int32>? _halt;   // (said to the making: stop after the recipe it is on; read there between recipes)
+  static Pointer<Int32>? _halt; // (said to the making: stop after the recipe it is on; read there between recipes)
   static Completer<void>? _ended;
 
   /// The making stopped once the recipe it is on is made, its document shut by itself, and waited for: a window shut,
@@ -41,6 +41,7 @@ abstract final class RecipeMotions {
     _ended = null;
     _asked = false;
   }
+
   static final ready = ValueNotifier<int>(0);
 
   static RecipeMotion? of(String recipe) => _all[recipe];
@@ -70,7 +71,7 @@ abstract final class RecipeMotions {
     final m = Motolii.open('${folder.path}/previews.motolii', wide: 1080, high: 1080, dir: dir);
     if (m == null) return tell.send(null);
     for (final r in recipes) {
-      if (halt.value != 0) break;   // (stopped: its document shut below, as when all are made)
+      if (halt.value != 0) break; // (stopped: its document shut below, as when all are made)
       final before = m.things.toSet();
       if (m.make(r) == 0) continue;
       final parts = <({int colour, List<Float32List> copies, String outline, bool evenOdd, bool edge})>[];
@@ -85,7 +86,13 @@ abstract final class RecipeMotions {
         }
         final fill = m.word(t, 'fill').split(' ').first, edge = fill == 'none';
         final outline = m.word(t, 'shape') == 'path' ? m.word(t, 'path') : '';
-        parts.add((colour: 0xFF000000 | (int.tryParse(edge ? m.word(t, 'stroke') : fill, radix: 16) ?? 0xD9D2C3), copies: copies, outline: outline, evenOdd: m.word(t, 'fill_rule') == 'evenodd', edge: edge));
+        parts.add((
+          colour: 0xFF000000 | (int.tryParse(edge ? m.word(t, 'stroke') : fill, radix: 16) ?? 0xD9D2C3),
+          copies: copies,
+          outline: outline,
+          evenOdd: m.word(t, 'fill_rule') == 'evenodd',
+          edge: edge,
+        ));
       }
       tell.send((r, parts));
     }
@@ -112,7 +119,7 @@ class RecipeMotionView extends StatelessWidget {
       builder: (context, _, _) {
         final motion = RecipeMotions.of(recipe);
         if (motion == null || motion.isEmpty) return const SizedBox.shrink();
-        if (motion case [final one] when one.outline.isNotEmpty && one.copies.length <= 1) return _Outline(one);   // (one path shape, still: its outline)
+        if (motion case [final one] when one.outline.isNotEmpty && one.copies.length <= 1) return _Outline(one); // (one path shape, still: its outline)
         return ValueListenableBuilder<int>(
           valueListenable: _clock,
           builder: (context, k, _) => CustomPaint(painter: _MotionPainter(motion, k % _moments, k)),
@@ -137,7 +144,8 @@ class _MotionPainter extends CustomPainter {
     var lo = const Offset(double.infinity, double.infinity), hi = const Offset(-double.infinity, -double.infinity);
     for (final part in motion) {
       for (final c in part.copies) {
-        for (var i = 0; i < c.length ~/ 4; i++) {   // (the box is of every moment: the picture holds still while it moves)
+        for (var i = 0; i < c.length ~/ 4; i++) {
+          // (the box is of every moment: the picture holds still while it moves)
           final v = look.transform3(Vector3(c[4 * i], c[4 * i + 1], c[4 * i + 2]));
           final o = Offset(v.x, -v.y);
           lo = Offset(math.min(lo.dx, o.dx), math.min(lo.dy, o.dy));
@@ -175,10 +183,14 @@ class _Outline extends StatelessWidget {
     final xs = [for (var i = 0; i + 1 < n.length; i += 2) n[i]], ys = [for (var i = 1; i < n.length; i += 2) n[i]];
     final lo = (xs.reduce(math.min), ys.reduce(math.min)), side = math.max(xs.reduce(math.max) - lo.$1, ys.reduce(math.max) - lo.$2), pad = side * .12 + .05;
     final hex = (part.colour & 0xFFFFFF).toRadixString(16).padLeft(6, '0');
-    final paint = part.edge ? 'fill="none" stroke="#$hex" stroke-width="${side * .08}" stroke-linecap="round"' : 'fill="#$hex"${part.evenOdd ? ' fill-rule="evenodd"' : ''}';
+    final paint = part.edge
+        ? 'fill="none" stroke="#$hex" stroke-width="${side * .08}" stroke-linecap="round"'
+        : 'fill="#$hex"${part.evenOdd ? ' fill-rule="evenodd"' : ''}';
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),   // (above its name)
-      child: SvgPicture.string('<svg xmlns="http://www.w3.org/2000/svg" viewBox="${lo.$1 - pad} ${lo.$2 - pad} ${side + 2 * pad} ${side + 2 * pad}"><path d="${part.outline}" $paint/></svg>'),
+      padding: const EdgeInsets.only(bottom: 14), // (above its name)
+      child: SvgPicture.string(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="${lo.$1 - pad} ${lo.$2 - pad} ${side + 2 * pad} ${side + 2 * pad}"><path d="${part.outline}" $paint/></svg>',
+      ),
     );
   }
 }

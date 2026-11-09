@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/effects/inspector_effects_effect_card.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
@@ -23,14 +24,14 @@ class Fx {
   late final List<Param> params = [for (final d in decls) infer(d)];
 }
 
-
 class EffectsStack extends StatelessWidget {
   const EffectsStack({super.key});
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc;
     final cards = [
-      for (var i = 0; i < doc.fxOrder.length; i++) EffectCard(doc.fxDefs.firstWhere((f) => f.id == doc.fxOrder[i]), key: ValueKey(doc.fxOrder[i]), first: i == 0),
+      for (var i = 0; i < doc.fxOrder.length; i++)
+        EffectCard(doc.fxDefs.firstWhere((f) => f.id == doc.fxOrder[i]), key: ValueKey(doc.fxOrder[i]), first: i == 0),
     ];
     final none =
         doc.query.isNotEmpty &&
@@ -86,19 +87,23 @@ class _ParamSearchState extends State<ParamSearch> {
         alignment: Alignment.centerLeft,
         children: [
           if (_c.text.isEmpty) Text('Search parameters', style: T.label(Grey.g56)),
-          TextHand(field: (k) => EditableText(key: k, rendererIgnoresPointer: true,
-            controller: _c,
-            focusNode: _f,
-            style: T.name(Grey.g95),
-            cursorColor: Grey.g95,
-            backgroundCursorColor: Grey.g20,
-            maxLines: 1,
-            onChanged: (s) {
-              x.doc.query = s;
-              x.doc.poke();
-              setState(() {});
-            },
-          )),
+          TextHand(
+            field: (k) => EditableText(
+              key: k,
+              rendererIgnoresPointer: true,
+              controller: _c,
+              focusNode: _f,
+              style: T.name(Grey.g95),
+              cursorColor: Grey.g95,
+              backgroundCursorColor: Grey.g20,
+              maxLines: 1,
+              onChanged: (s) {
+                x.doc.query = s;
+                x.doc.poke();
+                setState(() {});
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -110,23 +115,29 @@ class CardWords extends StatelessWidget {
   const CardWords(this.name, this.ids, {super.key, this.more = const []});
   final String name;
   final List<String> ids;
-  final List<(String, String, VoidCallback)> more;   // (under its ⋮)
+  final List<(String, String, VoidCallback)> more; // (under its ⋮)
   @override
   Widget build(BuildContext context) {
     final doc = Ctx.of(context).doc;
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      for (final (word, does) in [
-        if (doc.onCardCopy case final copy?) ('Copy', () => copy(ids)),
-        if (doc.onCardPaste case final paste?) ('Paste', paste),
-        if (doc.onCardReset case final reset?) ('Reset', () => reset(ids)),
-      ])
-        Hov(
-          key: ValueKey('card-${word.toLowerCase()}:$name'),
-          onTap: does,
-          builder: (_, h) => Padding(padding: EdgeInsets.only(right: Shape.s(6)), child: Text(word, style: T.label(h ? Grey.g95 : Grey.g56))),
-        ),
-      if (more.isNotEmpty) CardMore(name: name, items: more),
-    ]);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final (word, does) in [
+          if (doc.onCardCopy case final copy?) ('Copy', () => copy(ids)),
+          if (doc.onCardPaste case final paste?) ('Paste', paste),
+          if (doc.onCardReset case final reset?) ('Reset', () => reset(ids)),
+        ])
+          Hov(
+            key: ValueKey('card-${word.toLowerCase()}:$name'),
+            onTap: does,
+            builder: (_, h) => Padding(
+              padding: EdgeInsets.only(right: Shape.s(6)),
+              child: Text(word, style: T.label(h ? Grey.g95 : Grey.g56)),
+            ),
+          ),
+        if (more.isNotEmpty) CardMore(name: name, items: more),
+      ],
+    );
   }
 }
 
@@ -139,64 +150,104 @@ class ValuesCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc, ed = Ed(x.cfg.ed), k = 'v.${card.name}', adv = doc.b['$k.adv'] ?? false, past = doc.b['$k.past'] ?? false;
-    final heroes = [for (final p in card.params) if (!p.advanced) p], rest = [for (final p in card.params) if (p.advanced) p];
+    final heroes = [
+          for (final p in card.params)
+            if (!p.advanced) p,
+        ],
+        rest = [
+          for (final p in card.params)
+            if (p.advanced) p,
+        ];
     // (the first row, then the rest folded under the name of what they are; the fold says nothing more than its glyph)
-    final at = doc.movable.indexOf(card.name);   // (one of its effects: up or down its stack, After Effects' dragging a card)
+    final at = doc.movable.indexOf(card.name); // (one of its effects: up or down its stack, After Effects' dragging a card)
     final sect = Sect(
       title: card.name,
       tone: card.tone,
       mark: card.mark,
       trailing: (at < 0 || doc.onCardMove == null) && doc.onCardReset == null && doc.onCardCopy == null
           ? null
-          : Row(mainAxisSize: MainAxisSize.min, children: [
-              if (past)   // (let past its ends: its range's lock open, Houdini's range lock; a press shuts it)
-                Hov(
-                  key: ValueKey('card-past:${card.name}'),
-                  onTap: () => doc.flag('$k.past', false),
-                  builder: (_, h) => Padding(padding: EdgeInsets.only(right: Shape.s(6)), child: TpGlyphView(TpGlyph.unlock, h ? Grey.g95 : Grey.g76)),
-                ),
-              if (at < 0) CardWords(card.name, [for (final p in card.params) p.id], more: [('past', past ? 'Stop at Range Ends' : 'Go Past Range Ends', () => doc.flag('$k.past', !past))]),
-              if (card.name == 'Script' && doc.onCardRemove != null)   // (a script is put on as an effect is, and comes off the same way: golf_noise.md (123))
-                Hov(
-                  key: const ValueKey('card-remove:Script'),
-                  onTap: () => doc.onCardRemove!(card.name),
-                  builder: (_, h) => Padding(padding: EdgeInsets.only(right: Shape.s(6)), child: CustomPaint(size: Size.square(Shape.z(12)), painter: _Bin(h ? Grey.g95 : Grey.g56))),
-                ),
-              if (at >= 0) ...[   // (an effect's card, as AbsentMotion's EffectHeader and Alight Motion's: its eye, ⋮ with the rest, the bin)
-                if (doc.onCardEye != null)
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (past) // (let past its ends: its range's lock open, Houdini's range lock; a press shuts it)
                   Hov(
-                    key: ValueKey('card-${doc.cardsOff.contains(card.name) ? 'show' : 'hide'}:${card.name}'),
-                    onTap: () => doc.onCardEye!(card.name),
-                    builder: (_, h) => Padding(padding: EdgeInsets.only(right: Shape.s(6)), child: TpGlyphView(doc.cardsOff.contains(card.name) ? TpGlyph.eyeOff : TpGlyph.eye, h ? Grey.g95 : Grey.g56)),
+                    key: ValueKey('card-past:${card.name}'),
+                    onTap: () => doc.flag('$k.past', false),
+                    builder: (_, h) => Padding(
+                      padding: EdgeInsets.only(right: Shape.s(6)),
+                      child: TpGlyphView(TpGlyph.unlock, h ? Grey.g95 : Grey.g76),
+                    ),
                   ),
-                CardMore(name: card.name, items: [   // (AbsentMotion's More: Effect Info, Reset to Defaults, Copy Effect, Paste Effect Values; Alight Motion's Duplicate; and a preset of it kept)
-                  ('past', past ? 'Stop at Range Ends' : 'Go Past Range Ends', () => doc.flag('$k.past', !past)),   // (as a right click on any of its numbers: PastRange)
-                  if (doc.onCardInfo case final info?) ('info', 'Effect Info', () => info(card.name)),
-                  if (doc.onCardReset case final reset?) ('reset', 'Reset to Defaults', () => reset([for (final p in card.params) p.id])),
-                  if (doc.onCardDuplicate case final duplicate?) ('duplicate', 'Duplicate', () => duplicate(card.name)),
-                  if (doc.onCardCopy case final copy?) ('copy', 'Copy Effect', () => copy([for (final p in card.params) p.id])),
-                  if (doc.onCardPaste case final paste?) ('paste', 'Paste Effect Values', paste),
-                  if (doc.onCardSave case final save?) ('save', 'Save as Preset', () => save(card.name, [for (final p in card.params) p.id])),
-                ]),
-                if (doc.onCardRemove != null)
+                if (at < 0)
+                  CardWords(
+                    card.name,
+                    [for (final p in card.params) p.id],
+                    more: [('past', past ? 'Stop at Range Ends' : 'Go Past Range Ends', () => doc.flag('$k.past', !past))],
+                  ),
+                if (card.name == 'Script' && doc.onCardRemove != null) // (a script is put on as an effect is, and comes off the same way: golf_noise.md (123))
                   Hov(
-                    key: ValueKey('card-remove:${card.name}'),
+                    key: const ValueKey('card-remove:Script'),
                     onTap: () => doc.onCardRemove!(card.name),
-                    builder: (_, h) => Padding(padding: EdgeInsets.only(right: Shape.s(6)), child: CustomPaint(size: Size.square(Shape.z(12)), painter: _Bin(h ? Grey.g95 : Grey.g56))),
+                    builder: (_, h) => Padding(
+                      padding: EdgeInsets.only(right: Shape.s(6)),
+                      child: CustomPaint(size: Size.square(Shape.z(12)), painter: _Bin(h ? Grey.g95 : Grey.g56)),
+                    ),
+                  ),
+                if (at >= 0) ...[
+                  // (an effect's card, as AbsentMotion's EffectHeader and Alight Motion's: its eye, ⋮ with the rest, the bin)
+                  if (doc.onCardEye != null)
+                    Hov(
+                      key: ValueKey('card-${doc.cardsOff.contains(card.name) ? 'show' : 'hide'}:${card.name}'),
+                      onTap: () => doc.onCardEye!(card.name),
+                      builder: (_, h) => Padding(
+                        padding: EdgeInsets.only(right: Shape.s(6)),
+                        child: TpGlyphView(doc.cardsOff.contains(card.name) ? TpGlyph.eyeOff : TpGlyph.eye, h ? Grey.g95 : Grey.g56),
+                      ),
+                    ),
+                  CardMore(
+                    name: card.name,
+                    items: [
+                      // (AbsentMotion's More: Effect Info, Reset to Defaults, Copy Effect, Paste Effect Values; Alight Motion's Duplicate; and a preset of it kept)
+                      (
+                        'past',
+                        past ? 'Stop at Range Ends' : 'Go Past Range Ends',
+                        () => doc.flag('$k.past', !past),
+                      ), // (as a right click on any of its numbers: PastRange)
+                      if (doc.onCardInfo case final info?) ('info', 'Effect Info', () => info(card.name)),
+                      if (doc.onCardReset case final reset?) ('reset', 'Reset to Defaults', () => reset([for (final p in card.params) p.id])),
+                      if (doc.onCardDuplicate case final duplicate?) ('duplicate', 'Duplicate', () => duplicate(card.name)),
+                      if (doc.onCardCopy case final copy?) ('copy', 'Copy Effect', () => copy([for (final p in card.params) p.id])),
+                      if (doc.onCardPaste case final paste?) ('paste', 'Paste Effect Values', paste),
+                      if (doc.onCardSave case final save?) ('save', 'Save as Preset', () => save(card.name, [for (final p in card.params) p.id])),
+                    ],
+                  ),
+                  if (doc.onCardRemove != null)
+                    Hov(
+                      key: ValueKey('card-remove:${card.name}'),
+                      onTap: () => doc.onCardRemove!(card.name),
+                      builder: (_, h) => Padding(
+                        padding: EdgeInsets.only(right: Shape.s(6)),
+                        child: CustomPaint(size: Size.square(Shape.z(12)), painter: _Bin(h ? Grey.g95 : Grey.g56)),
+                      ),
+                    ),
+                ],
+                if (at >= 0 && doc.onCardMove != null && doc.movable.length > 1) // (Alight Motion's ≡ on an effect's row, After Effects' dragging an effect in Effect Controls: held and dragged up or down its stack)
+                  Draggable<String>(
+                    key: ValueKey('card-drag:${card.name}'),
+                    data: card.name,
+                    axis: Axis.vertical,
+                    feedback: FxDragGhost(card),
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.grab,
+                      child: SizedBox(
+                        width: Shape.z(16),
+                        height: Shape.z(16),
+                        child: CustomPaint(painter: _Grip(Grey.g56)),
+                      ),
+                    ),
                   ),
               ],
-              if (at >= 0 && doc.onCardMove != null && doc.movable.length > 1)   // (Alight Motion's ≡ on an effect's row, After Effects' dragging an effect in Effect Controls: held and dragged up or down its stack)
-                Draggable<String>(
-                  key: ValueKey('card-drag:${card.name}'),
-                  data: card.name,
-                  axis: Axis.vertical,
-                  feedback: FxDragGhost(card),
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.grab,
-                    child: SizedBox(width: Shape.z(16), height: Shape.z(16), child: CustomPaint(painter: _Grip(Grey.g56))),
-                  ),
-                ),
-            ]),
+            ),
       children: [
         ?top,
         if (side case final square?)
@@ -204,7 +255,15 @@ class ValuesCard extends StatelessWidget {
             builder: (context, box) {
               final g = Pop.tileGap, edge = Pop.tile * 3 + g * 2; // (the square as high as three rows of tiles)
               final right = box.maxWidth - edge - g, cols = ((right + g) / (Pop.tileMin + g)).floor();
-              if (cols < 1) return Column(children: [SizedBox(height: edge, child: square), SizedBox(height: g), ParamGrid('v', heroes)]); // (too narrow: above them)
+              if (cols < 1) {
+                return Column(
+                  children: [
+                    SizedBox(height: edge, child: square),
+                    SizedBox(height: g),
+                    ParamGrid('v', heroes),
+                  ],
+                ); // (too narrow: above them)
+              }
               var n = 0, room = cols * 3; // (as many tiles as three rows beside it hold)
               for (final p in heroes) {
                 room -= math.min(ParamGrid.span(p), cols);
@@ -235,7 +294,9 @@ class ValuesCard extends StatelessWidget {
               onTap: () => doc.flag('$k.adv', !adv),
               builder: (_, h) => Container(
                 height: Shape.z(24),
-                decoration: BoxDecoration(border: Border(top: BorderSide(color: ed.rule))),
+                decoration: BoxDecoration(
+                  border: Border(top: BorderSide(color: ed.rule)),
+                ),
                 child: Row(
                   children: [
                     Text(rest.first.fold ?? 'Advanced', style: ed.labStyle(h || adv ? Grey.g95 : Grey.g63)),
@@ -248,7 +309,8 @@ class ValuesCard extends StatelessWidget {
           ),
           if (adv) ParamGrid('v', rest),
         ],
-        if (doc.cardCode?.call(card.name, [for (final p in card.params) p.id]) case final code?) ...[   // (its code under its knobs, folded as Advanced is: the knobs are what is used, the code what they drive)
+        if (doc.cardCode?.call(card.name, [for (final p in card.params) p.id]) case final code?) ...[
+          // (its code under its knobs, folded as Advanced is: the knobs are what is used, the code what they drive)
           Padding(
             padding: EdgeInsets.only(top: Shape.s(4)),
             child: Hov(
@@ -256,7 +318,9 @@ class ValuesCard extends StatelessWidget {
               onTap: () => doc.flag('$k.code', !(doc.b['$k.code'] ?? false)),
               builder: (_, h) => Container(
                 height: Shape.z(24),
-                decoration: BoxDecoration(border: Border(top: BorderSide(color: ed.rule))),
+                decoration: BoxDecoration(
+                  border: Border(top: BorderSide(color: ed.rule)),
+                ),
                 child: Row(
                   children: [
                     Text('Code', style: ed.labStyle(h || (doc.b['$k.code'] ?? false) ? Grey.g95 : Grey.g63)),
@@ -271,9 +335,13 @@ class ValuesCard extends StatelessWidget {
         ],
       ],
     );
-    final shown = PastRange(flag: '$k.past', child: side == null ? sect : CardOver(child: sect)); // (a hand anywhere on the card plays its preview)
+    final shown = PastRange(
+      flag: '$k.past',
+      child: side == null ? sect : CardOver(child: sect),
+    ); // (a hand anywhere on the card plays its preview)
     if (at < 0 || doc.onCardMove == null) return shown;
-    return DragTarget<String>(   // (an effect let go on this one's card takes its place; the line says on which side it lands, as the stack's own EffectCard)
+    return DragTarget<String>(
+      // (an effect let go on this one's card takes its place; the line says on which side it lands, as the stack's own EffectCard)
       onWillAcceptWithDetails: (d) => d.data != card.name && doc.movable.contains(d.data),
       onAcceptWithDetails: (d) => doc.onCardMove!(d.data, at - doc.movable.indexOf(d.data)),
       builder: (context, held, _) {
@@ -283,7 +351,15 @@ class ValuesCard extends StatelessWidget {
           clipBehavior: Clip.none,
           children: [
             shown,
-            if (from >= 0) Positioned(left: 0, right: 0, top: below ? null : 0, bottom: below ? 0 : null, height: Shape.z(2), child: ColoredBox(color: card.tone)),
+            if (from >= 0)
+              Positioned(
+                left: 0,
+                right: 0,
+                top: below ? null : 0,
+                bottom: below ? 0 : null,
+                height: Shape.z(2),
+                child: ColoredBox(color: card.tone),
+              ),
           ],
         );
       },
@@ -315,7 +391,7 @@ class _Grip extends CustomPainter {
 class CardMore extends StatefulWidget {
   const CardMore({super.key, required this.name, required this.items, this.word = '⋮', this.above = false, this.big = false});
   final String name, word;
-  final bool above, big;   // (above: opened upward, for one at the window's foot: AbsentMotion's AboveAnchor)
+  final bool above, big; // (above: opened upward, for one at the window's foot: AbsentMotion's AboveAnchor)
   final List<(String key, String label, VoidCallback does)> items;
   @override
   State<CardMore> createState() => _CardMoreState();
@@ -324,7 +400,7 @@ class CardMore extends StatefulWidget {
 class _CardMoreState extends State<CardMore> {
   final _link = LayerLink();
   final _portal = OverlayPortalController();
-  bool _up = false;   // (no room under it: opened upward, as TinyMenuAt does)
+  bool _up = false; // (no room under it: opened upward, as TinyMenuAt does)
 
   void _open() {
     final box = context.findRenderObject()! as RenderBox;
@@ -335,28 +411,54 @@ class _CardMoreState extends State<CardMore> {
 
   @override
   Widget build(BuildContext context) => CompositedTransformTarget(
-        link: _link,
-        child: OverlayPortal.targetsRootOverlay(
-          controller: _portal,
-          overlayChildBuilder: (_) => Align(
-            alignment: Alignment.topLeft,
-            child: CompositedTransformFollower(
-              link: _link,
-              targetAnchor: widget.above ? Alignment.topLeft : _up ? Alignment.topRight : Alignment.bottomRight,
-              followerAnchor: widget.above ? Alignment.bottomLeft : _up ? Alignment.bottomRight : Alignment.topRight,
-              child: FloatShut(shut: _portal.hide, group: _link, child: TinyMenu(name: 'card', of: widget.name, items: widget.items, hide: _portal.hide)),
-            ),
+    link: _link,
+    child: OverlayPortal.targetsRootOverlay(
+      controller: _portal,
+      overlayChildBuilder: (_) => Align(
+        alignment: Alignment.topLeft,
+        child: CompositedTransformFollower(
+          link: _link,
+          targetAnchor: widget.above
+              ? Alignment.topLeft
+              : _up
+              ? Alignment.topRight
+              : Alignment.bottomRight,
+          followerAnchor: widget.above
+              ? Alignment.bottomLeft
+              : _up
+              ? Alignment.bottomRight
+              : Alignment.topRight,
+          child: FloatShut(
+            shut: _portal.hide,
+            group: _link,
+            child: TinyMenu(name: 'card', of: widget.name, items: widget.items, hide: _portal.hide),
           ),
-          child: TapRegion(
-            groupId: _link,   // (a press on the ⋮ itself shuts it, by the ⋮: not shut, then opened again)
-            child: Hov(
-              key: ValueKey('card-more:${widget.name}'),
-              onTap: widget.items.isEmpty ? null : _open,
-              builder: (_, h) => Padding(padding: EdgeInsets.only(right: Shape.s(6)), child: Text(widget.word, style: T.label(h ? Grey.g95 : widget.big ? Grey.g76 : Grey.g56).copyWith(fontSize: widget.big ? T.px(20) : null, fontWeight: widget.big ? FontWeight.w700 : null))),
+        ),
+      ),
+      child: TapRegion(
+        groupId: _link, // (a press on the ⋮ itself shuts it, by the ⋮: not shut, then opened again)
+        child: Hov(
+          key: ValueKey('card-more:${widget.name}'),
+          onTap: widget.items.isEmpty ? null : _open,
+          builder: (_, h) => Padding(
+            padding: EdgeInsets.only(right: Shape.s(6)),
+            child: Text(
+              widget.word,
+              style: T
+                  .label(
+                    h
+                        ? Grey.g95
+                        : widget.big
+                        ? Grey.g76
+                        : Grey.g56,
+                  )
+                  .copyWith(fontSize: widget.big ? T.px(20) : null, fontWeight: widget.big ? FontWeight.w700 : null),
             ),
           ),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 /// A bin: an effect taken off by it (AbsentMotion's Trash on its header).
@@ -372,7 +474,14 @@ class _Bin extends CustomPainter {
     final w = s.width;
     c.drawLine(Offset(w * .15, w * .25), Offset(w * .85, w * .25), p);
     c.drawLine(Offset(w * .4, w * .12), Offset(w * .6, w * .12), p);
-    c.drawPath(Path()..moveTo(w * .25, w * .3)..lineTo(w * .3, w * .9)..lineTo(w * .7, w * .9)..lineTo(w * .75, w * .3), p);
+    c.drawPath(
+      Path()
+        ..moveTo(w * .25, w * .3)
+        ..lineTo(w * .3, w * .9)
+        ..lineTo(w * .7, w * .9)
+        ..lineTo(w * .75, w * .3),
+      p,
+    );
   }
 
   @override

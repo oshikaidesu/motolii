@@ -91,20 +91,20 @@ class InspHost extends StatefulWidget {
   final List<String> moreCards;
   final void Function(String title)? onMoreCard;
   final void Function(String how)? onArrange;
-  final void Function(List<String> names)? onCardReset;   // (a card's values as they come: Reset on its head)
-  final void Function(String title)? onCardRemove;   // (one of its effects taken off: Remove on its card's head, Alight Motion's Delete)
-  final Widget? Function(String title, List<String> names)? cardCode;   // (a card's code, drawn by the host: Doc.cardCode)
-  final void Function(String title)? onCardEye;   // (one of its effects turned off or on again, its values kept: Alight Motion's eye on an effect)
-  final void Function(String title, List<String> names)? onCardSave;   // (an effect's values, keys and all, kept on the shelf: Alight Motion's preset of one effect)
-  final void Function(String title)? onCardInfo;   // (what an effect does, in its maker's words: AbsentMotion's Effect Info)
-  final void Function(String title)? onCardDuplicate;   // (the effect put on again after it, its values with it: Alight Motion's Duplicate)
-  final List<String> cardsOff;   // (the titles of those turned off)
-  final void Function(List<String> names)? onCardCopy;   // (a card's values copied, to be given to another thing: Copy on its head)
-  final VoidCallback? onCardPaste;   // (and given: Paste)
+  final void Function(List<String> names)? onCardReset; // (a card's values as they come: Reset on its head)
+  final void Function(String title)? onCardRemove; // (one of its effects taken off: Remove on its card's head, Alight Motion's Delete)
+  final Widget? Function(String title, List<String> names)? cardCode; // (a card's code, drawn by the host: Doc.cardCode)
+  final void Function(String title)? onCardEye; // (one of its effects turned off or on again, its values kept: Alight Motion's eye on an effect)
+  final void Function(String title, List<String> names)?
+  onCardSave; // (an effect's values, keys and all, kept on the shelf: Alight Motion's preset of one effect)
+  final void Function(String title)? onCardInfo; // (what an effect does, in its maker's words: AbsentMotion's Effect Info)
+  final void Function(String title)? onCardDuplicate; // (the effect put on again after it, its values with it: Alight Motion's Duplicate)
+  final List<String> cardsOff; // (the titles of those turned off)
+  final void Function(List<String> names)? onCardCopy; // (a card's values copied, to be given to another thing: Copy on its head)
+  final VoidCallback? onCardPaste; // (and given: Paste)
 
   /// How the thing moves over a while, as the host places it (see [Doc.onPath]).
-  final Future<List<double>?> Function(double to, int n, int copy)? onPath;   // (a question of the host's: answered later)
-
+  final Future<List<double>?> Function(double to, int n, int copy)? onPath; // (a question of the host's: answered later)
 
   /// The host's own cards of values (see [Doc.cards]).
   final List<Fx>? cards;
@@ -162,7 +162,9 @@ class _InspHostState extends State<InspHost> {
   Doc _make() {
     final d = Doc(widget.kind, count: widget.count, effects: widget.effects, fx: widget.fx, cards: widget.cards ?? const [])
       ..title = widget.title
-      ..marksEdits = widget.onKey == null   // (a host told of keys keys what a hand changes itself)
+      ..marksEdits =
+          widget.onKey ==
+          null // (a host told of keys keys what a hand changes itself)
       ..kindWord = widget.kindWord
       ..seats = widget.seats
       ..onFxRemove = widget.onFxRemove
@@ -205,7 +207,7 @@ class _InspHostState extends State<InspHost> {
       ..clear()
       ..addAll(d.b);
     if (widget.animating case final on?) {
-      d.animateAll = _animating = on;   // (the host's: the inspector shows it)
+      d.animateAll = _animating = on; // (the host's: the inspector shows it)
     } else {
       widget.onAnimateAll?.call(_animating = d.animateAll); // (a new document of the inspector begins with it off: the host is told)
     }
@@ -218,14 +220,17 @@ class _InspHostState extends State<InspHost> {
   final _seenWords = <String, String>{};
   final _seenFlags = <String, bool>{};
   bool _live = false;
-  void _tell() => widget.together == null || doc.inGesture ? _tells() : widget.together!(_tells); // (under a hand only where it is is told, nothing settled: no step to make one of)
+  void _tell() => widget.together == null || doc.inGesture
+      ? _tells()
+      : widget.together!(_tells); // (under a hand only where it is is told, nothing settled: no step to make one of)
   bool _animating = false;
   void _tells() {
     if (doc.animateAll != _animating) widget.onAnimateAll?.call(_animating = doc.animateAll);
-    final live = doc.inGesture, changed = {
-      for (final e in doc.v.entries)
-        if (_seen[e.key] != e.value) e.key: e.value,
-    };
+    final live = doc.inGesture,
+        changed = {
+          for (final e in doc.v.entries)
+            if (_seen[e.key] != e.value) e.key: e.value,
+        };
     if (changed.isNotEmpty) {
       if (!live) _seen.addAll(changed);
       widget.onValues?.call(changed, live: live);
@@ -245,7 +250,8 @@ class _InspHostState extends State<InspHost> {
     if (widget.onFlags case final tell?) {
       final flags = {
         for (final e in doc.b.entries)
-          if ((_seenFlags[e.key] ?? e.key.endsWith('.open')) != e.value) e.key: e.value,   // (a card is open until it is folded: its first fold is news too, or it opens again at the next reading)
+          if ((_seenFlags[e.key] ?? e.key.endsWith('.open')) != e.value)
+            e.key: e.value, // (a card is open until it is folded: its first fold is news too, or it opens again at the next reading)
       };
       if (flags.isNotEmpty) {
         if (tell(flags)) {
@@ -287,7 +293,14 @@ class _InspHostState extends State<InspHost> {
       o.live?.removeListener(_atMoment);
       widget.live?.addListener(_atMoment);
     }
-    if (o.kind != widget.kind || o.count != widget.count || o.effects != widget.effects || !listEquals(o.fx?.map((f) => f.wgsl).toList(), widget.fx?.map((f) => f.wgsl).toList()) || !listEquals(o.cards?.map((f) => f.name + f.wgsl.replaceAll(RegExp(r'@default\([^)]*\)'), '')).toList(), widget.cards?.map((f) => f.name + f.wgsl.replaceAll(RegExp(r'@default\([^)]*\)'), '')).toList())) {
+    if (o.kind != widget.kind ||
+        o.count != widget.count ||
+        o.effects != widget.effects ||
+        !listEquals(o.fx?.map((f) => f.wgsl).toList(), widget.fx?.map((f) => f.wgsl).toList()) ||
+        !listEquals(
+          o.cards?.map((f) => f.name + f.wgsl.replaceAll(RegExp(r'@default\([^)]*\)'), '')).toList(),
+          widget.cards?.map((f) => f.name + f.wgsl.replaceAll(RegExp(r'@default\([^)]*\)'), '')).toList(),
+        )) {
       doc.dispose();
       doc = _make();
       _tick++;
@@ -297,7 +310,7 @@ class _InspHostState extends State<InspHost> {
       // (numbers and key marks: told to the fields that show them; words, flags, choices and the rest: everything again)
       final owned = widget.onValues != null;
       if (owned ? !doc.inGesture : !mapEquals(o.values, widget.values)) {
-        if (doc.showAt(widget.values, const {})) _tick++;   // (a value no field watches changed: shown by building again)
+        if (doc.showAt(widget.values, const {})) _tick++; // (a value no field watches changed: shown by building again)
         _seen.addAll(widget.values);
       }
       if (widget.onFlags != null) {
@@ -321,7 +334,13 @@ class _InspHostState extends State<InspHost> {
       doc.animateAll = _animating = on;
       _tick++;
     }
-    if (o.title != widget.title || o.kindWord != widget.kindWord || !setEquals(o.seats, widget.seats) || o.choices.toString() != widget.choices.toString() || !listEquals(o.cardsOff, widget.cardsOff)) _tick++;   // (an effect's eye shut or opened: its card says so)
+    if (o.title != widget.title ||
+        o.kindWord != widget.kindWord ||
+        !setEquals(o.seats, widget.seats) ||
+        o.choices.toString() != widget.choices.toString() ||
+        !listEquals(o.cardsOff, widget.cardsOff)) {
+      _tick++; // (an effect's eye shut or opened: its card says so)
+    }
     doc
       ..title = widget.title
       ..kindWord = widget.kindWord

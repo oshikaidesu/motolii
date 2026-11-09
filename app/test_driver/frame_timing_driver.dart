@@ -19,8 +19,10 @@ Future<void> main() {
       final build = s['missed_frame_build_budget_count'] as int;
       final raster = s['missed_frame_rasterizer_budget_count'] as int;
       // ignore: avoid_print
-      print('frames $frames, missed build budget $build (worst ${s['worst_frame_build_time_millis']} ms), '
-          'missed raster budget $raster (worst ${s['worst_frame_rasterizer_time_millis']} ms)');
+      print(
+        'frames $frames, missed build budget $build (worst ${s['worst_frame_build_time_millis']} ms), '
+        'missed raster budget $raster (worst ${s['worst_frame_rasterizer_time_millis']} ms)',
+      );
       if (frames == 0) throw StateError('no frames were recorded: the interaction drew nothing');
       if (build + raster > 0) throw StateError('$build build and $raster raster frames missed the 16 ms budget');
     },

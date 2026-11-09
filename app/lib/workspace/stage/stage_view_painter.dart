@@ -2,10 +2,26 @@
 part of 'stage_view.dart';
 
 class _ViewPainter extends CustomPainter {
-  _ViewPainter(this.scene, this.v, this.sel, this.hover, {required this.grid, required this.safe, this.part = _Part.all, this.pivots = false, this.met = (null, null), this.marked = false, this.trail, this.parent, this.grip, this.form = ('', 0), this.crop = const []});
-  final String? grip;   // (the handle in hand: it alone shown, lit; the others gone till it is let go)
-  final (String, double) form;   // (the picked shape's form and roundness: its own handles)
-  final List<double> crop;   // (the picked photo's crop: a bar on each side)
+  _ViewPainter(
+    this.scene,
+    this.v,
+    this.sel,
+    this.hover, {
+    required this.grid,
+    required this.safe,
+    this.part = _Part.all,
+    this.pivots = false,
+    this.met = (null, null),
+    this.marked = false,
+    this.trail,
+    this.parent,
+    this.grip,
+    this.form = ('', 0),
+    this.crop = const [],
+  });
+  final String? grip; // (the handle in hand: it alone shown, lit; the others gone till it is let go)
+  final (String, double) form; // (the picked shape's form and roundness: its own handles)
+  final List<double> crop; // (the picked photo's crop: a bar on each side)
 
   /// The inside marks the picked thing and the one under the hand on its desk: not drawn here.
   final bool marked;
@@ -45,18 +61,29 @@ class _ViewPainter extends CustomPainter {
     if (safe && scene.gizmos.isEmpty) _safe(c, comp);
     c.restore();
     _guides(c);
-    if (trail case final w? when w.length > 1) {   // (thin, an arrow every so often the way it goes)
+    if (trail case final w? when w.length > 1) {
+      // (thin, an arrow every so often the way it goes)
       final line = _line(WsT.accent.withValues(alpha: .75), 1.2), pts = [for (final q in w) _scr(q)];
       c.drawPoints(PointMode.polygon, pts, line);
       for (var i = 6; i + 1 < pts.length; i += 12) {
         final d = pts[i + 1] - pts[i];
         if (d.distance < .5) continue;
         final u = d / d.distance, n = Offset(-u.dy, u.dx), tip = pts[i];
-        c.drawPath(Path()..moveTo((tip - u * 6 + n * 4).dx, (tip - u * 6 + n * 4).dy)..lineTo(tip.dx, tip.dy)..lineTo((tip - u * 6 - n * 4).dx, (tip - u * 6 - n * 4).dy), line);
+        c.drawPath(
+          Path()
+            ..moveTo((tip - u * 6 + n * 4).dx, (tip - u * 6 + n * 4).dy)
+            ..lineTo(tip.dx, tip.dy)
+            ..lineTo((tip - u * 6 - n * 4).dx, (tip - u * 6 - n * 4).dy),
+          line,
+        );
       }
     }
-    if (met.$1 case final x?) c.drawLine(Offset(v.toScreen(Offset(x, 0)).dx, v.area.top), Offset(v.toScreen(Offset(x, 0)).dx, v.area.bottom), _line(WsT.accent));
-    if (met.$2 case final y?) c.drawLine(Offset(v.area.left, v.toScreen(Offset(0, y)).dy), Offset(v.area.right, v.toScreen(Offset(0, y)).dy), _line(WsT.accent));
+    if (met.$1 case final x?) {
+      c.drawLine(Offset(v.toScreen(Offset(x, 0)).dx, v.area.top), Offset(v.toScreen(Offset(x, 0)).dx, v.area.bottom), _line(WsT.accent));
+    }
+    if (met.$2 case final y?) {
+      c.drawLine(Offset(v.area.left, v.toScreen(Offset(0, y)).dy), Offset(v.area.right, v.toScreen(Offset(0, y)).dy), _line(WsT.accent));
+    }
     if (pivots) {
       for (final MapEntry(:key, :value) in scene.boxes.entries) {
         if (key == sel) continue;
@@ -65,20 +92,26 @@ class _ViewPainter extends CustomPainter {
         c.drawCircle(a, 3.5, _line(Grey.g91, 1.2));
       }
     }
-    if (WsArt.boxOf(scene, parent) case final b?) c.drawPath(_boxPath(b), _line(Grey.g63, 1));   // (what the picked thing goes with: its frame, grey)
-    for (final id in scene.gizmos.keys) _gizmo(c, id);
-    if (marked) {   // (the inside marks its frame, corners, sides, knob and pivot; its own handles are drawn here, over them)
-      if ((WsArt.boxOf(scene, sel), scene.layer(sel)) case (final b?, final l?)) _own(c, _handles(_scr, b, knob: l.kind != WsKind.camera && l.id != 'bg', form: form.$1, round: form.$2, crop: crop));
+    if (WsArt.boxOf(scene, parent) case final b?) c.drawPath(_boxPath(b), _line(Grey.g63, 1)); // (what the picked thing goes with: its frame, grey)
+    for (final id in scene.gizmos.keys) {
+      _gizmo(c, id);
+    }
+    if (marked) {
+      // (the inside marks its frame, corners, sides, knob and pivot; its own handles are drawn here, over them)
+      if ((WsArt.boxOf(scene, sel), scene.layer(sel)) case (final b?, final l?)) {
+        _own(c, _handles(_scr, b, knob: l.kind != WsKind.camera && l.id != 'bg', form: form.$1, round: form.$2, crop: crop));
+      }
       return c.restore();
     }
-    if (WsArt.boxOf(scene, hover) case final b?) _legible(c, _boxPath(b), wsLabel(hover!), 1);   // (in its label colour, as its row)
+    if (WsArt.boxOf(scene, hover) case final b?) _legible(c, _boxPath(b), wsLabel(hover!), 1); // (in its label colour, as its row)
     if (WsArt.boxOf(scene, sel) case final b?) _selection(c, b, scene.layer(sel)!);
     c.restore();
   }
 
   void _captions(Canvas c, Rect comp) {
     if (comp.top - v.area.top < 18) return;
-    final l = _tp(scene.title, T.micro(Grey.g76).copyWith(fontWeight: FontWeight.w700)), d = _tp('${WsArt.comp.width.round()} × ${WsArt.comp.height.round()}  ·  ${Ws.fps} fps', T.micro(Grey.g56));
+    final l = _tp(scene.title, T.micro(Grey.g76).copyWith(fontWeight: FontWeight.w700)),
+        d = _tp('${WsArt.comp.width.round()} × ${WsArt.comp.height.round()}  ·  ${Ws.fps} fps', T.micro(Grey.g56));
     final y = comp.top - 6 - l.height;
     l.paint(c, Offset(comp.left, y));
     d.paint(c, Offset(comp.left + l.width + 8, y));
@@ -138,8 +171,14 @@ class _ViewPainter extends CustomPainter {
       _legible(c, Path()..addPolygon(frame, true), ink, picked ? 2 : 1);
       c.drawLine(frame[0], frame[2], _line(ink.withValues(alpha: .35), 1));
       c.drawLine(frame[1], frame[3], _line(ink.withValues(alpha: .35), 1));
-      if (eye != null) for (final p in frame) c.drawLine(eye, p, _line(ink.withValues(alpha: .35), 1));
-      if (picked) for (final p in frame) c.drawRect(Rect.fromCenter(center: p, width: 7, height: 7), Paint()..color = ink);
+      if (eye != null)
+        for (final p in frame) {
+          c.drawLine(eye, p, _line(ink.withValues(alpha: .35), 1));
+        }
+      if (picked)
+        for (final p in frame) {
+          c.drawRect(Rect.fromCenter(center: p, width: 7, height: 7), Paint()..color = ink);
+        }
     }
     if (g[4] case final look?) {
       c.drawCircle(look, 5, _line(Grey.g00, 3));
@@ -147,12 +186,20 @@ class _ViewPainter extends CustomPainter {
     }
     if (eye != null) {
       c.drawCircle(eye, 6, Paint()..color = Grey.g00);
-      c.drawCircle(eye, 6, Paint()..color = ink..style = PaintingStyle.stroke..strokeWidth = 2);
+      c.drawCircle(
+        eye,
+        6,
+        Paint()
+          ..color = ink
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
+      );
     }
   }
 
   void _selection(Canvas c, ArtBox b, ArtLayer l) {
-    final h = _handles(_scr, b, knob: l.kind != WsKind.camera && l.id != 'bg', form: form.$1, round: form.$2, crop: crop), pts = [for (var i = 0; i < 4; i++) h['corner $i']!];
+    final h = _handles(_scr, b, knob: l.kind != WsKind.camera && l.id != 'bg', form: form.$1, round: form.$2, crop: crop),
+        pts = [for (var i = 0; i < 4; i++) h['corner $i']!];
     _legible(c, Path()..addPolygon(pts, true), WsT.accent);
     final top = _scr(b.top);
     final lit = WsT.accent.withValues(alpha: 1), seen = (String k) => grip == null || grip == k;
@@ -169,7 +216,11 @@ class _ViewPainter extends CustomPainter {
       c.drawCircle(knob, 4.5 * big, Paint()..color = Grey.g00);
       c.drawCircle(knob, 3.5 * big, Paint()..color = lit);
     }
-    for (final (key, p) in [for (final (i, p) in pts.indexed) ('corner $i', p), for (var i = 0; i < 4; i++) if (h['side $i'] case final s?) ('side $i', s)]) {
+    for (final (key, p) in [
+      for (final (i, p) in pts.indexed) ('corner $i', p),
+      for (var i = 0; i < 4; i++)
+        if (h['side $i'] case final s?) ('side $i', s),
+    ]) {
       if (!seen(key)) continue;
       final r = Rect.fromCenter(center: p, width: _V.handle, height: _V.handle).inflate(grip == key ? _V.handle / 2 : 0);
       c.drawRect(r.inflate(1), Paint()..color = Grey.g00);
@@ -194,17 +245,21 @@ class _ViewPainter extends CustomPainter {
   void _own(Canvas c, Map<String, Offset> h) {
     final lit = WsT.accent.withValues(alpha: 1);
     bool seen(String k) => grip == null || grip == k;
-    if (h['round'] case final r? when seen('round')) {   // (its corners' roundness: a ring in from its first corner)
+    if (h['round'] case final r? when seen('round')) {
+      // (its corners' roundness: a ring in from its first corner)
       final big = grip == 'round' ? 1.6 : 1.0;
       c.drawCircle(r, 4.5 * big, Paint()..color = Grey.g00);
       c.drawCircle(r, 3.5 * big, _line(lit, 1.5));
     }
-    if (h['points'] case final p? when seen('points')) {   // (its points: a diamond out from its side)
-      final big = grip == 'points' ? 1.6 : 1.0, d = Path()..addPolygon([p + Offset(0, -5 * big), p + Offset(5 * big, 0), p + Offset(0, 5 * big), p + Offset(-5 * big, 0)], true);
+    if (h['points'] case final p? when seen('points')) {
+      // (its points: a diamond out from its side)
+      final big = grip == 'points' ? 1.6 : 1.0,
+          d = Path()..addPolygon([p + Offset(0, -5 * big), p + Offset(5 * big, 0), p + Offset(0, 5 * big), p + Offset(-5 * big, 0)], true);
       c.drawPath(d, _line(Grey.g00, 3));
       c.drawPath(d, Paint()..color = lit);
     }
-    for (var i = 0; i < 4; i++) {   // (a photo's crop: a bar along each side where it is cut)
+    for (var i = 0; i < 4; i++) {
+      // (a photo's crop: a bar along each side where it is cut)
       if (h['crop $i'] case final p? when seen('crop $i')) {
         final big = grip == 'crop $i' ? 1.6 : 1.0, along = i.isEven ? Offset(0, 7 * big) : Offset(7 * big, 0);
         c.drawLine(p - along, p + along, _line(Grey.g00, 6));
@@ -235,7 +290,22 @@ class _ViewPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_ViewPainter o) => o.scene != scene || o.v != v || o.sel != sel || o.hover != hover || o.grid != grid || o.safe != safe || o.part != part || o.pivots != pivots || o.met != met || o.marked != marked || !identical(o.trail, trail) || o.parent != parent || o.grip != grip || o.form != form || !listEquals(o.crop, crop);
+  bool shouldRepaint(_ViewPainter o) =>
+      o.scene != scene ||
+      o.v != v ||
+      o.sel != sel ||
+      o.hover != hover ||
+      o.grid != grid ||
+      o.safe != safe ||
+      o.part != part ||
+      o.pivots != pivots ||
+      o.met != met ||
+      o.marked != marked ||
+      !identical(o.trail, trail) ||
+      o.parent != parent ||
+      o.grip != grip ||
+      o.form != form ||
+      !listEquals(o.crop, crop);
 }
 
 // ---- rulers -----------------------------------------------------------------------------------------------------------

@@ -26,7 +26,7 @@ abstract final class ProgramTiles {
   /// The programs whose tile is not drawn since they last changed, put in line. One that took the window down with it
   /// (its .trying left behind) waits for its file to change.
   static void ask(Iterable<String> files, void Function() changed) {
-    if (Platform.environment['FLUTTER_TEST'] == 'true') return;   // (as EffectTiles.ask)
+    if (Platform.environment['FLUTTER_TEST'] == 'true') return; // (as EffectTiles.ask)
     _told = changed;
     for (final f in files) {
       final to = home(f), written = File(f).lastModifiedSync();
@@ -60,14 +60,16 @@ abstract final class ProgramTiles {
     if (m == null) return;
     for (final (f, to) in files) {
       final trying = File('$to.trying')..createSync(recursive: true);
-      m.at(0);   // (what is placed comes on where the clock stands)
+      m.at(0); // (what is placed comes on where the clock stands)
       final ticket = m.later('door', word: f);
       var said = -1;
       for (var n = 0; said < 0 && n < 6000; n++) {
         sleep(const Duration(milliseconds: 10));
         said = m.answer(ticket);
       }
-      if (said >= 1 && [for (var k = 0; k < _pictures; k++) m.at(_from + k / _perSecond) && m.still('${folder.path}/$k.png')].every((done) => done)) _kept(folder.path, to);
+      if (said >= 1 && [for (var k = 0; k < _pictures; k++) m.at(_from + k / _perSecond) && m.still('${folder.path}/$k.png')].every((done) => done)) {
+        _kept(folder.path, to);
+      }
       for (final t in m.things.toList()) {
         m.remove(t);
       }
@@ -82,7 +84,23 @@ abstract final class ProgramTiles {
   static void _kept(String folder, String to) {
     final moving = '$folder/moving.apng';
     try {
-      Process.runSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-framerate', '$_perSecond', '-i', '$folder/%d.png', '-vf', 'scale=$_keep:$_keep:flags=lanczos', '-plays', '0', '-f', 'apng', moving]);
+      Process.runSync('ffmpeg', [
+        '-hide_banner',
+        '-loglevel',
+        'error',
+        '-y',
+        '-framerate',
+        '$_perSecond',
+        '-i',
+        '$folder/%d.png',
+        '-vf',
+        'scale=$_keep:$_keep:flags=lanczos',
+        '-plays',
+        '0',
+        '-f',
+        'apng',
+        moving,
+      ]);
     } on ProcessException {
       // (the one picture, below)
     }

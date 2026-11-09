@@ -17,7 +17,7 @@ mixin _EaseEnds on State<DeskEase> {
   Iterable<(String, List<int>, List<double>, int, double)> _ends(Ws ws, EaseSpan span, bool start, double by) sync* {
     final m = ws.inside!, t = int.parse(span.layer.id), from = _from(ws, span);
     for (final name in m.moving(t)) {
-      if (ws.stretch case final s? when s.name != name) continue;   // (a line picked: that value's ends alone)
+      if (ws.stretch case final s? when s.name != name) continue; // (a line picked: that value's ends alone)
       final at = [for (final s in m.keyMoments(t, name)) (s * Ws.fps).round()], vs = m.keyValues(t, name);
       final i = at.indexOf(span.from), j = at.indexOf(span.to), k = start ? i : j;
       if (i < 0 || j < 0 || k >= vs.length || j >= vs.length) continue;
@@ -60,14 +60,23 @@ mixin _EaseEnds on State<DeskEase> {
     if (_pull == null && done && by.abs() < 1e-4) return;
     final t = int.parse(span.layer.id), key = start ? span.from : span.to, outside = start ? span.from - 1 : span.to + 1;
     if (_pull == null) {
-      for (final (name, at, vs, _, _) in _ends(ws, span, start, 0)) {   // (the measure of the bars, as the keys are now, once)
+      for (final (name, at, vs, _, _) in _ends(ws, span, start, 0)) {
+        // (the measure of the bars, as the keys are now, once)
         final i = at.indexOf(span.from), j = at.indexOf(span.to), shown = m.shown(name);
         _from(ws, span).putIfAbsent(name, () => (vs[i], vs[j], (vs[j] - vs[i]).abs() > 1e-9 ? vs[j] - vs[i] : (shown == null ? 1.0 : shown.high - shown.low)));
       }
       _pull = [..._ends(ws, span, start, 0)];
       m.later('together', number: 1);
       for (final (name, at, vs, k, _) in _pull!) {
-        if (easeJump && outside >= 0 && !at.contains(outside)) m.later('key', thing: t, name: name, word: '${outside / Ws.fps}', number: vs[k]);   // (the key's value before it moved: a frame off, what the value was there)
+        if (easeJump && outside >= 0 && !at.contains(outside)) {
+          m.later(
+            'key',
+            thing: t,
+            name: name,
+            word: '${outside / Ws.fps}',
+            number: vs[k],
+          ); // (the key's value before it moved: a frame off, what the value was there)
+        }
       }
     }
     for (final (name, _, vs, k, _) in _pull!) {
