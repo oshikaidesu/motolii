@@ -89,7 +89,7 @@ $F/flutter analyze lib
   - Fonts は 440px 以上で見本の大きいカード、狭いと行。Media は 440px 以上で木が左、狭いと上。
   - Effects はフィルター帯を開いていて 560px 以上なら、帯を一覧の横に縦いっぱいで立てる。狭いと上の帯。
   - **Inspector は縦積みのまま**(カードを横に並べない)。カードの中身を、Effects のパラメーターと同じブロックの格子(`Pop.tileMin` ごとに列が増える)にする。
-- **Inspector は一目でわかること。** フォント・色の一覧・イージングは、それぞれ専用のパネル(Browser › Fonts、Browser › Colors、Ease のツールパネル)が持つ。Inspector は今の値を見せて、そこへ誘導するだけ(`LinkLine` → `Ws.route`)。
+- **Inspector は今の値を見せる。** 数値は `NumField`、選択肢は `Segmented`。言葉・ファイル・色は、プロジェクトが持っている文字を出す。
 - **Inspector の値は Stage と一致させる。** 位置・倍率・回転・塗りは `WsArt.boxOf` と絵の色から渡す(`InspHost(values:, strs:)`)。
 - **パスの操作は同じものを何度でも重ねられる**(パンク膨張の後にまたパンク膨張)。UI 側で数を絞らない。
 - **シードなど普段触らない値も、隠さずに Advanced に置く**(宣言の `@advanced`、`ValuesCard` が畳む)。

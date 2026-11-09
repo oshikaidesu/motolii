@@ -12,7 +12,6 @@ export 'inspector_choosers_header.dart';
 export 'inspector_card.dart';
 export 'controls/inspector_number_field.dart';
 export 'inspector_panel.dart';
-export 'controls/inspector_param_controls_link.dart';
 export 'controls/inspector_param_controls.dart';
 export 'rows/inspector_rows.dart';
 export 'inspector_small.dart';
