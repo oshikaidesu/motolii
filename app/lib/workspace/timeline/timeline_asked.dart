@@ -117,9 +117,9 @@ mixin _TimelineAsked on State<WsTimeline> {
         }, keys: '⌫'),
         const WsMenuItem.rule(),
         // (its colour, one of the label colours, as Premiere Pro's, DaVinci Resolve's and CapCut's markers have one; golf ㉕)
-        WsMenuItem.colours(
-          [for (var k = 0; k < 16; k++) wsLabelColour(k)],
-          (ws.markColours[flag.$1] ?? 0) - 1,
+        WsMenuItem.colors(
+          [for (var k = 0; k < 16; k++) wsLabelColor(k)],
+          (ws.markColors[flag.$1] ?? 0) - 1,
           (k) => ws.after(m.later('mark_colour', number: flag.$1, word: '${k + 1}')),
         ),
       ]);

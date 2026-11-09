@@ -99,10 +99,10 @@ enum WsKind { shape, text, image, camera, group, particles, audio }
 /// The colours chosen on the Note card (the document's label: its place among Live's colours), read with the document.
 final wsChosenLabels = <String, int>{};
 
-Color wsLabel(String id) => wsLabelColour(wsChosenLabels[id] ?? ((int.tryParse(id) ?? 0) * 5) % _live.length);
+Color wsLabel(String id) => wsLabelColor(wsChosenLabels[id] ?? ((int.tryParse(id) ?? 0) * 5) % _live.length);
 
 /// The label colour [k], 0 to 15 (a mark's colour is one of these too).
-Color wsLabelColour(int k) => ColorTheme.of('Label${k + 1}', Color(_live[k]));
+Color wsLabelColor(int k) => ColorTheme.of('Label${k + 1}', Color(_live[k]));
 const _live = [
   0xFFFF94A6,
   0xFFFFA529,

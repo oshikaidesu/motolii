@@ -22,7 +22,7 @@ Kind _kindOf(WsLayer? l) => switch (l?.kind) {
 Set<String> _propertiesOf(Set<String> names) => {...names, for (final n in names) 'v_$n', 'depth'}; // (a hand-drawn card asks by the value's id, 'v_x')
 
 /// Joined: the colours on the inside's own cards, as the inspector writes a colour (none said: a dash).
-Map<String, String> _cardColours(Motolii m, int t, [double at = 0]) => {
+Map<String, String> _cardColors(Motolii m, int t, [double at = 0]) => {
   for (final (_, names) in m.cards(t)) // (an effect's colour, three numbers shown as one: _makeCards; at the moment drawn, as the card's numbers are)
     for (final n in names)
       if (n.endsWith('_x') &&
@@ -121,7 +121,7 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
   // (an effect's colour, ISF's one input the inside holds as three numbers (_x _y _z) and an alpha: one colour on its
   //  card, as After Effects' and Alight Motion's effect colour is, the Colors shelf said to it (the inside's say puts the
   //  three); golf_noise.md (83): white took three number fields)
-  String? colourOf(String n, List<String> names) =>
+  String? colorOf(String n, List<String> names) =>
       n.endsWith('_x') &&
           names.contains('${n.substring(0, n.length - 2)}_y') &&
           names.contains('${n.substring(0, n.length - 2)}_z') &&
@@ -140,9 +140,9 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
           'struct Params {\n${[
             for (final n in names)
               if (m.shown(n)?.fold == null)
-                if (colourOf(n, names) case final base?) colour(base) else if (!{
+                if (colorOf(n, names) case final base?) colour(base) else if (!{
                   for (final x in names)
-                    if (colourOf(x, names) case final b?) ...['${b}_y', '${b}_z'],
+                    if (colorOf(x, names) case final b?) ...['${b}_y', '${b}_z'],
                 }.contains(n)) field(n),
             for (final fold in {for (final n in names) ?m.shown(n)?.fold}) ...['  // @advanced($fold)', for (final n in names)
               if (m.shown(n)?.fold == fold) field(n)],

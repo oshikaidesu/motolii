@@ -7,8 +7,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart' show ColorPickerArea, ColorPickerHueRing, PaletteType;
 
-class WsColourWheel extends StatelessWidget {
-  const WsColourWheel({super.key, required this.color, required this.onChanged, this.onStart, this.onEnd});
+class WsColorWheel extends StatelessWidget {
+  const WsColorWheel({super.key, required this.color, required this.onChanged, this.onStart, this.onEnd});
   final HSVColor color;
   final ValueChanged<HSVColor> onChanged;
 

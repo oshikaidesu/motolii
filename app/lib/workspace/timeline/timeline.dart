@@ -326,7 +326,7 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
         m!.later('together', number: 1);
         m.later('mark', number: at);
         m.later('mark', number: to, word: name);
-        if (_ws!.markColours[at] case final k?) m.later('mark_colour', number: to, word: '$k'); // (its colour with it)
+        if (_ws!.markColors[at] case final k?) m.later('mark_colour', number: to, word: '$k'); // (its colour with it)
         _ws!.after(m.later('together'));
       } else {
         // (held and let go where it was, a hand's shake taken for a drag: a click, it goes there and picks it as _rulerTap does; golf (88))

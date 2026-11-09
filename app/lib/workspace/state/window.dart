@@ -402,7 +402,7 @@ class Ws extends ChangeNotifier {
       if (!skip.contains(l.id)) ...[l.inF, l.outF, ...l.keys],
     ...strikes,
   };
-  Map<double, int> get markColours => _inside!.markColours;
+  Map<double, int> get markColors => _inside!.markColors;
   List<(String, double)> get guides => _inside!.guides;
   set animating(bool on) {
     _inside?.keying(on);

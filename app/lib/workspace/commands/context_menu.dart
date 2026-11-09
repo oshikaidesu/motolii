@@ -31,15 +31,15 @@ List<WsMenuItem> wsThingMenu(BuildContext context, Ws ws, WsLayer l) {
 /// One row: [go] null, it cannot be done now and [why] says why; [keys] what it is pressed with too (never the only way).
 /// A rule between groups: [WsMenuItem.rule].
 class WsMenuItem {
-  const WsMenuItem(this.label, this.go, {this.keys = '', this.why = ''}) : colours = const [], picked = -1, pick = null;
-  const WsMenuItem.rule() : label = '', go = null, keys = '', why = '', colours = const [], picked = -1, pick = null;
+  const WsMenuItem(this.label, this.go, {this.keys = '', this.why = ''}) : colors = const [], picked = -1, pick = null;
+  const WsMenuItem.rule() : label = '', go = null, keys = '', why = '', colors = const [], picked = -1, pick = null;
 
   /// Colours to pick one of, as Ableton Live's context menus end in the clip's or the track's colours: [picked] the one
   /// it has (-1: none), [pick] told the number of the one pressed.
-  const WsMenuItem.colours(this.colours, this.picked, this.pick) : label = '', go = null, keys = '', why = '';
+  const WsMenuItem.colors(this.colors, this.picked, this.pick) : label = '', go = null, keys = '', why = '';
   final String label, keys, why;
   final VoidCallback? go;
-  final List<Color> colours;
+  final List<Color> colors;
   final int picked;
   final void Function(int)? pick;
 }
@@ -63,13 +63,13 @@ class WsMenuState extends State<WsMenu> {
 
   double get _row => Shape.z(22);
   double get _swatch => Shape.z(20);
-  double _high(WsMenuItem it) => it.colours.isNotEmpty
-      ? (it.colours.length / 8).ceil() * (_swatch + Shape.s(4)) + Shape.s(4)
+  double _high(WsMenuItem it) => it.colors.isNotEmpty
+      ? (it.colors.length / 8).ceil() * (_swatch + Shape.s(4)) + Shape.s(4)
       : it.label.isEmpty
       ? Shape.s(8) + 1
       : _row;
 
-  Widget _one(WsMenuItem it) => it.colours.isNotEmpty
+  Widget _one(WsMenuItem it) => it.colors.isNotEmpty
       ? Padding(
           // (eight to a row)
           padding: EdgeInsets.all(Shape.s(4)),
@@ -77,7 +77,7 @@ class WsMenuState extends State<WsMenu> {
             spacing: Shape.s(4),
             runSpacing: Shape.s(4),
             children: [
-              for (var k = 0; k < it.colours.length; k++)
+              for (var k = 0; k < it.colors.length; k++)
                 Hov(
                   key: ValueKey('ws-menu-colour-$k'),
                   cursor: SystemMouseCursors.click,
@@ -89,7 +89,7 @@ class WsMenuState extends State<WsMenu> {
                     width: _swatch,
                     height: _swatch,
                     decoration: BoxDecoration(
-                      color: it.colours[k],
+                      color: it.colors[k],
                       borderRadius: BorderRadius.all(Shape.r(3)),
                       border: Border.all(color: k == it.picked || h ? Grey.g95 : const Color(0x00000000), width: 2),
                     ),

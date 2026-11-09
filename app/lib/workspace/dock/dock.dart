@@ -164,7 +164,7 @@ class _WsShelfState extends State<WsShelf> {
                         (final done, final all) => '$done of $all',
                         null => '${(ws.inside?.thingEffects.length ?? 0) + (ws.inside?.effects.length ?? 0)} ready',
                       },
-                      'Colors' => '${usedColours(ws).values.toSet().length} used here',
+                      'Colors' => '${usedColors(ws).values.toSet().length} used here',
                       'Create' => createFact(ws),
                       _ => _facts[name] ?? '',
                     },

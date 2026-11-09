@@ -161,7 +161,7 @@ Map<String, String> _words(Ws ws, String? id) {
   final m = ws.inside, t = id == null ? 0 : int.tryParse(id); // (nothing picked: the stage's own cards)
   if (m == null || t == null) return const {};
   return {
-    ..._cardColours(m, t, _drawn(ws)),
+    ..._cardColors(m, t, _drawn(ws)),
     if (m.word(t, 'kind') == 'light') 'light': m.word(t, 'file'), // (which light it is: a sun, a point, a spot; the Light card draws it so)
     if (m.word(t, 'kind') == 'text') 'lacks': _lacks(m, t), // (letters its font has not: drawn in another, said under its words)
     for (final (_, names) in m.cards(t))

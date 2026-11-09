@@ -116,7 +116,7 @@ class _Bento extends StatelessWidget {
                   top: laid[k].$2 * unit,
                   width: laid[k].$3 * unit - gap,
                   height: laid[k].$4 * unit - gap,
-                  child: b.grad != null ? _Grad('grad-${b.i}', b.grad!, c) : _ColourBox(b, c),
+                  child: b.grad != null ? _Grad('grad-${b.i}', b.grad!, c) : _ColorBox(b, c),
                 ),
             ],
           ),
@@ -128,8 +128,8 @@ class _Bento extends StatelessWidget {
 
 /// A colour's box: pressed, it colours (or the stop picked, while a gradient is coloured); the hand on it rings its
 /// group and tells the group in the shelf's foot; its right-click menu, for one's own, replaces or deletes it.
-class _ColourBox extends StatelessWidget {
-  const _ColourBox(this.b, this.c);
+class _ColorBox extends StatelessWidget {
+  const _ColorBox(this.b, this.c);
   final _Box b;
   final DockCtx c;
   @override
@@ -148,14 +148,14 @@ class _ColourBox extends StatelessWidget {
               WsMenuItem(
                 'Replace with ${_hex(_wheel.toColor())}',
                 () => c.set(() {
-                  _mineColours[b.i] = _wheel.toColor();
+                  _mineColors[b.i] = _wheel.toColor();
                   _keepMine();
                 }),
               ),
               WsMenuItem(
                 'Delete',
                 () => c.set(() {
-                  _mineColours.removeAt(b.i);
+                  _mineColors.removeAt(b.i);
                   _keepMine();
                 }),
               ),
@@ -219,7 +219,7 @@ void _keepNow(DockCtx c) {
           0,
           _Gradient('Gradient ${_mineGrads.length + 1}', [for (final s in stops) s.$1], at: [for (final s in stops) s.$2], blend: _blendNow(c), saved: true),
         )
-      : _mineColours.insert(0, _wheel.toColor()); // (at the top, as the newest)
+      : _mineColors.insert(0, _wheel.toColor()); // (at the top, as the newest)
   _keepMine();
 }
 

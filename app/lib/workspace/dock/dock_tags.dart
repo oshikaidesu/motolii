@@ -96,8 +96,8 @@ abstract final class DockTags {
 
   /// A colour's tags, from Google's HCT and colour temperature (material_color_utilities): warm or cool (its temperature
   /// among all the hues), light or dark (its tone), vivid or muted (its chroma).
-  static Set<String> ofColour(Color c) => _ofColour.putIfAbsent(c.toARGB32(), () => _tagsOf(c)); // (a colour's tags never change: worked out once)
-  static final _ofColour = <int, Set<String>>{};
+  static Set<String> ofColor(Color c) => _ofColor.putIfAbsent(c.toARGB32(), () => _tagsOf(c)); // (a colour's tags never change: worked out once)
+  static final _ofColor = <int, Set<String>>{};
   static Set<String> _tagsOf(Color c) {
     final hct = Hct.fromInt(c.toARGB32());
     final tags = <String>{

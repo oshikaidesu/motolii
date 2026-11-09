@@ -12,7 +12,7 @@ import 'package:motolii/bridge/motolii.dart' show motoliiDir;
 import 'package:motolii/skin/theme.dart' show ColorTheme;
 import 'package:motolii/workspace/shelf/create_preview.dart' show RecipeMotions;
 import 'package:motolii/workspace/dock/dock_fonts.dart' show fontRecentAt;
-import 'package:motolii/workspace/dock/dock_make.dart' show coloursAt;
+import 'package:motolii/workspace/dock/dock_make.dart' show colorsAt;
 import 'package:motolii/workspace/dock/dock_map.dart' show dockMapsAt;
 import 'package:motolii/workspace/dock/dock_widgets.dart' show dockStarsAt;
 import 'package:motolii/workspace/dock/dock_tags.dart' show DockTags;
@@ -33,7 +33,7 @@ Future<void> _open(WidgetTester t) async {
   t.binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel('motolii/stage'), (_) async => -1);
   t.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.menu, (_) async => null);
   // (the maker's own kept state is left alone: every store points at a temp file)
-  coloursAt(_tmp('colors'));
+  colorsAt(_tmp('colors'));
   effectDecksAt(_tmp('decks'));
   effectRecentAt(_tmp('recent'));
   easeKeptAt(_tmp('kept'));
