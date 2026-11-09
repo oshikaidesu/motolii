@@ -21,20 +21,17 @@ part 'inspector_feed/keyframe_marks.dart';
 part 'commands/menu_bar.dart';
 
 class Workspace extends StatefulWidget {
-  const Workspace({super.key, this.document, this.view = const {}});
+  const Workspace({super.key, this.document});
 
   /// A document of the inside (motolii.dart) to join the window to: its stage is then the inside's own picture.
   /// null: the sample, with its stand-in art.
   final String? document;
-
-  /// How the window looks when it opens (Ws.view: as it was left, say).
-  final Map<String, Object?> view;
   @override
   State<Workspace> createState() => _WorkspaceState();
 }
 
 class _WorkspaceState extends State<Workspace> {
-  late final _ws = Ws()..view.addAll(widget.view);
+  late final _ws = Ws();
   Motolii? _inside;
 
   String? _doc; // (the document that is open: the one the window was given, or one made or opened from the menu)

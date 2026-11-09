@@ -5,11 +5,8 @@ import 'inspector_parts.dart';
 
 /// A card as the inside declares it: a name and a WGSL uniform struct. Its fields are whatever [infer] makes of them.
 class Fx {
-  Fx(this.id, this.name, this.wgsl, {Color? tone, Color Function()? toneOf}) : _tone = tone, _toneOf = toneOf;
+  Fx(this.id, this.name, this.wgsl);
   final String id, name, wgsl;
-  final Color? _tone;
-  final Color Function()? _toneOf; // (a skin's colour: read when drawn, so a card made before the skin changed wears the new one)
-  Color get tone => _toneOf?.call() ?? _tone!;
   late final List<Decl> decls = parseWgsl(wgsl);
   late final List<Param> params = [for (final d in decls) infer(d)];
 }
@@ -30,7 +27,7 @@ class ValuesCard extends StatelessWidget {
         children: [
           Padding(
             padding: EdgeInsets.only(bottom: Shape.s(4)),
-            child: Text(card.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(card.tone)),
+            child: Text(card.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Pop.toneLayer)),
           ),
           ParamGrid('v', heroes),
           if (rest.isNotEmpty) ...[
