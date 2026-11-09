@@ -10,6 +10,7 @@
 #   ./deps/iris.sh
 set -e
 cd "$(dirname "$0")/.."
+source deps/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: deps/build_lock.sh)
 R=$PWD/third_party/iris
 fetch() { [ -d $R/$1 ] || { mkdir -p $R/$1 && git init -q $R/$1 && git -C $R/$1 -c core.hooksPath=/dev/null fetch -q --depth 1 $2 $3 && git -C $R/$1 checkout -q FETCH_HEAD; }; }
 fetch IRIS https://github.com/electronicarts/IRIS d96978ac1107f3463b77f69a9c1b1ec5d45291a0

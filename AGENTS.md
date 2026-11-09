@@ -42,7 +42,7 @@
   - Dart：`cd app && dart analyze lib`
   - C++：`./engine/check_syntax.sh`（組み立てと同じ指定で `clang++ -fsyntax-only`。何も書かない。`ok: library/motolii.mm` か、誤りとその行）
   - そのほか：`python3 .githooks/size_check.py`・`python3 .githooks/layout_check.py`
-- 組み立て（`engine/build_lib.sh`・`edit.sh`・`flutter build`）は、全員で 1 つの錠を使う：`until mkdir /tmp/motolii-build.lock 2>/dev/null; do sleep 5; done; trap 'rmdir /tmp/motolii-build.lock' EXIT; <組み立て>`。数分を超えるときは、始める前に言う。テストの手順は [docs/TESTING.md](docs/TESTING.md)。
+- テストの手順は [docs/TESTING.md](docs/TESTING.md)。
 - 終わったと言えるのは、使う人に見える物（絵・画面・書き出したファイル）で示せた時だけ。そして、その検査が直す前には落ちるのを見た時だけ。
 
 作者が決めた原則。破る変更は、理由が正しくても入れない。

@@ -5,6 +5,7 @@
 #   ./gpu/js_effects.sh <preset.json> <w> <h> <frames> <out.rgba>
 set -e
 cd "$(dirname "$0")/.."
+source deps/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: deps/build_lock.sh)
 HB=${HOMEBREW_PREFIX:-$(brew --prefix)}   # (where Homebrew is: /opt/homebrew on Apple silicon)
 SRC=third_party/filament_src
 SDK=$SRC/out/wgpu_install

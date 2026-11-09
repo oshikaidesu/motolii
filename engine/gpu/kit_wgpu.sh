@@ -5,6 +5,7 @@
 #   BACKEND=metal ./kit_wgpu.sh ring   the same program on Metal, to compare
 set -e
 cd "$(dirname "$0")/.."
+source deps/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: deps/build_lock.sh)
 n=${1:-ring}
 SRC=third_party/filament_src
 SDK=$SRC/out/wgpu_install

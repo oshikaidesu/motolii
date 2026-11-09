@@ -11,6 +11,7 @@
 #   ./gpu/tvg_on_dawn.sh            builds ThorVG (once) and the probe, runs it
 set -e
 cd "$(dirname "$0")/.."
+source deps/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: deps/build_lock.sh)
 F=$PWD/third_party/filament_src
 T=$PWD/third_party/thorvg_src
 [ -d $T ] || { git init -q $T && git -C $T -c core.hooksPath=/dev/null fetch -q --depth 1 https://github.com/thorvg/thorvg 920324543b0377d14f34ebcd561f27590ddb55de && git -C $T checkout -q FETCH_HEAD; }

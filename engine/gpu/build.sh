@@ -6,6 +6,7 @@
 #   ./build.sh          build, then run once with pictures into engine/out/gpu/shots
 set -e
 cd "$(dirname "$0")"
+source ../deps/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: deps/build_lock.sh)
 HERE="$PWD"
 SRC="$HERE/../third_party/filament_src"
 P="$HERE/../deps/patches"   # (what Motolii changes in Filament, its glslang and its Tint: deps/patches/<library>/)

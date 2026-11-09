@@ -5,6 +5,7 @@
 # for its code generator (idlgen), from Homebrew.   ./community/three_tsl/dawn_node.sh   -> filament_src/out/wgpu/third_party/dawn/dawn.node
 set -e
 cd "$(dirname "$0")/../.."
+source deps/build_lock.sh; build_lock "$@"   # (the machine's one build lock, taken here: deps/build_lock.sh)
 F=$PWD/third_party/filament_src
 T=$F/third_party/dawn/third_party
 for spec in "node-api-headers https://github.com/nodejs/node-api-headers d5cfe19da8b974ca35764dd1c73b91d57cd3c4ce" \
