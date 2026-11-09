@@ -12,7 +12,7 @@ import 'package:flutter/widgets.dart';
 
 /// The window's own keys: Ableton Live 12's (its manual, chapter 42; command_actions.dart says where each comes from)
 /// and the standard Mac ones (New, Undo).
-const defaultKeys = <(String, String)>[
+final defaultKeys = <(String, String)>[
   ('cmd+n', 'file.new'),
   ('shift+e', 'file.exportFrame'), // (Premiere Pro's Export Frame)
   ('cmd+z', 'edit.undo'),
@@ -20,20 +20,12 @@ const defaultKeys = <(String, String)>[
   ('a', 'mark.animate'), // (Apple Motion's A: Record Animation, every change keyed, pressed again off)
   ('space', 'play.fromStart'), // (Live 42.20)
   ('shift+space', 'play.continue'), // (Live 42.20)
-  ('left', 'nudge.left'), // (Live 42.16: nudge selection)
-  ('right', 'nudge.right'),
-  ('shift+left', 'nudge.left10'),
-  ('shift+right', 'nudge.right10'),
-  ('up', 'layer.previous'), // (Live: the arrow keys go between tracks)
-  ('down', 'layer.next'),
-  (',', 'frame.previous'), // (Live has none: Rive's and Jitter's)
-  ('.', 'frame.next'),
-  ('j', 'frame.previousStop'), // (After Effects': J and K, the previous and next visible item in the time ruler)
-  ('k', 'frame.nextStop'),
-  ('shift+,', 'frame.back10'),
-  ('shift+.', 'frame.forward10'),
-  ('home', 'frame.first'), // (Live 42.20: move insert marker to beginning)
-  ('end', 'frame.last'),
+  for (final (k, c) in [('left', 'nudge.left'), ('right', 'nudge.right'), ('shift+left', 'nudge.left10'), ('shift+right', 'nudge.right10')]) (k, c), // (Live 42.16: nudge selection)
+  for (final (k, c) in [('up', 'layer.previous'), ('down', 'layer.next')]) (k, c), // (Live: the arrow keys go between tracks)
+  for (final (k, c) in [(',', 'frame.previous'), ('.', 'frame.next')]) (k, c), // (Live has none: Rive's and Jitter's)
+  for (final (k, c) in [('j', 'frame.previousStop'), ('k', 'frame.nextStop')]) (k, c), // (After Effects': J and K)
+  for (final (k, c) in [('shift+,', 'frame.back10'), ('shift+.', 'frame.forward10')]) (k, c),
+  for (final (k, c) in [('home', 'frame.first'), ('end', 'frame.last')]) (k, c), // (Live 42.20: move insert marker to beginning)
 ];
 
 /// The keys in use: the window's own, the maker's file over them.
