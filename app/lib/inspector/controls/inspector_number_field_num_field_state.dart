@@ -442,7 +442,7 @@ class NumFieldState extends State<NumField> {
         if (widget.turns && v != null && v.abs() >= 360 && w >= 120) unit = '° ${(v / 360).truncate()}x ${fmt(v.remainder(360), 0)}';
         final word = v == 0 && widget.zeroWord != null ? widget.zeroWord! : null;
         Widget valueText() {
-          if (v == null) return Text(Role.grey ? 'Mixed' : '— Mixed', style: T.label(Role.of(Grey.g76, Role.info)));
+          if (v == null) return Text('Mixed', style: T.label(Grey.g76));
           if (word != null) return Text(word, style: T.label(on ? Grey.g76 : Grey.g56));
           return FittedBox(
             // (a number wider than its field is drawn smaller, never cut)
@@ -469,13 +469,7 @@ class NumFieldState extends State<NumField> {
         }
 
         final lead = _err && w >= 150
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const ErrMark(gap: 4),
-                  Text('Number required', style: T.label(Role.error)),
-                ],
-              )
+            ? Text('Number required', style: T.label(Role.error))
             : (widget.label != null
                   ? Text(
                       ed.lab(widget.label!),
@@ -522,7 +516,7 @@ class NumFieldState extends State<NumField> {
           NumberSpec(
             value: valueText(),
             editor: editor,
-            lead: lead ?? (_err ? const ErrMark() : null),
+            lead: lead,
             glyph: widget.glyph,
             caption: widget.caption,
             width: w,

@@ -214,7 +214,6 @@ class _FxCodeState extends State<FxCode> {
         ),
         if (_added.isNotEmpty) ...[
           SizedBox(width: Shape.s(8)),
-          if (!_addedOk) ErrMark(gap: Shape.s(4)),
           Expanded(
             child: Text(_added, maxLines: 2, overflow: TextOverflow.ellipsis, style: T.label(_addedOk ? Grey.g56 : Role.error)),
           ),
@@ -232,15 +231,7 @@ class _FxCodeState extends State<FxCode> {
         if (_why.isNotEmpty)
           Padding(
             padding: EdgeInsets.symmetric(vertical: Shape.s(4)),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ErrMark(gap: Shape.s(4)),
-                Expanded(
-                  child: Text('Does not compile; the last that did is shown. $_why', maxLines: 4, overflow: TextOverflow.ellipsis, style: T.label(Role.error)),
-                ),
-              ],
-            ),
+            child: Text('Does not compile; the last that did is shown. $_why', maxLines: 4, overflow: TextOverflow.ellipsis, style: T.label(Role.error)),
           ),
         Expanded(child: ProgramCode(FxCode.source(_mine ?? widget.word), _write, keep: _making)),
         Padding(

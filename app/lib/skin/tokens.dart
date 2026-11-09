@@ -81,45 +81,12 @@ abstract final class C {
   static Color get mode => Role.mode;
 }
 
-/// Colour palettes of research/color-ud.md: Grey is today's look; A is CUDO-derived, B is Okabe-Ito-derived.
-enum Palette { grey, a, b }
-
-/// Colour-vision simulation (Machado 2009, severity 1.0) applied by the lab chrome around a use case. It is a lens, never part of the product.
-enum Cvd { none, deut, prot, trit }
-
-/// The ONE place of role colours. A part reads `Role.xxx` and never types a hue. Policy P1: colour only on state marks, small chips,
-/// 1 px edges / underlines and the changed value text; no large fills, no stroke over 2 px, at most 2 role colours per row; a non-colour cue is always kept.
+/// The window's role colours. One palette is set, so each name is that colour.
 abstract final class Role {
-  static final palette = ValueNotifier<Palette>(Palette.grey);
-  static final cvd = ValueNotifier<Cvd>(Cvd.none);
-
-  /// Fires when either knob moves.
-  static final Listenable changes = Listenable.merge([palette, cvd]);
-
-  static Color _pick(Color grey, Color a, Color b) => switch (palette.value) {
-    Palette.grey => grey,
-    Palette.a => a,
-    Palette.b => b,
-  };
-  static bool get grey => palette.value == Palette.grey;
-
-  static Color get changed => _pick(N.g95, const Color(0xFF66CCFF), const Color(0xFF56B4E9));
-  static Color get key => _pick(N.g95, const Color(0xFFFAF500), const Color(0xFFF0E442));
-  static Color get linked => _pick(N.g95, const Color(0xFFC77DD8), const Color(0xFFCC79A7));
-
-  static Color get selected => _pick(const Color(0xFF7A87E3), const Color(0xFF5C8DFF), const Color(0xFF4A8FE0));
-
-  /// A still row with no key yet (hollow diamond): neutral cool grey-blue in A and B, today's grey in Grey. Never the mode hue.
-  static Color get still => _pick(N.g95, const Color(0xFF8A98B8), const Color(0xFF8A98B8));
-
-  static Color get mode => _pick(const Color(0xFF7A87E3), const Color(0xFFAE9CFF), const Color(0xFF8F9BEA));
-  static Color get ok => _pick(const Color(0xFF7BCC9E), const Color(0xFF3DBE82), const Color(0xFF1FB98C));
-  static Color get warning => _pick(const Color(0xFFF69260), const Color(0xFFFF9900), const Color(0xFFE69F00));
-  static Color get error => _pick(const Color(0xFFE5584B), const Color(0xFFFF4B3A), const Color(0xFFE5484D));
-
-  /// Grey returns the colour the part has today ([today]); a palette returns the role colour. One call keeps Grey pixel-identical.
-  static Color of(Color today, Color role) => grey ? today : role;
-  static Color get info => N.g63;
+  static const selected = Color(0xFF7A87E3);
+  static const mode = Color(0xFF7A87E3);
+  static const warning = Color(0xFFF69260);
+  static const error = Color(0xFFE5584B);
 }
 
 /// The window's one accent, from the skin (the theme's roles: Ableton's names, the key mark Blender's): a fill, the ink drawn on
@@ -208,44 +175,6 @@ abstract final class T {
     height: 1.1,
     decoration: TextDecoration.none,
   );
-}
-
-/// The non-colour half of every error: a small "!" in a 1 px ring. Anything drawn in [Role.error] carries one (policy P1: never colour only).
-class ErrMark extends StatelessWidget {
-  const ErrMark({super.key, this.size = 11, this.gap = 0, this.lead = 0, this.color});
-  final double size, gap, lead;
-  final Color? color;
-
-  /// Grey keeps today's look exactly, so the mark (and its gaps) is not there in Grey.
-  @override
-  Widget build(BuildContext context) => Role.grey
-      ? const SizedBox.shrink()
-      : Padding(
-          padding: EdgeInsets.only(left: lead, right: gap),
-          child: SizedBox.square(
-            dimension: size,
-            child: CustomPaint(painter: _ErrMarkPainter(color ?? Role.error)),
-          ),
-        );
-}
-
-class _ErrMarkPainter extends CustomPainter {
-  const _ErrMarkPainter(this.c);
-  final Color c;
-  @override
-  void paint(Canvas cv, Size s) {
-    final m = s.center(Offset.zero), r = s.width / 2 - .5;
-    final st = Paint()
-      ..color = c
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    cv.drawCircle(m, r, st);
-    cv.drawLine(Offset(m.dx, m.dy - r * .52), Offset(m.dx, m.dy + r * .12), st);
-    cv.drawCircle(Offset(m.dx, m.dy + r * .5), .6, Paint()..color = c);
-  }
-
-  @override
-  bool shouldRepaint(_ErrMarkPainter o) => o.c != c;
 }
 
 /// What was typed, a Japanese input method's wide letters and digits as plain ones (１２８：３０ is 128:30).

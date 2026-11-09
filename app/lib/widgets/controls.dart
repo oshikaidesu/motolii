@@ -18,14 +18,14 @@ class PillSwitch extends StatelessWidget {
       padding: EdgeInsets.all(Shape.s(2)),
       alignment: on ? Alignment.centerRight : Alignment.centerLeft,
       decoration: BoxDecoration(
-        color: on ? Role.of(C.mode.withValues(alpha: .30), Grey.g20) : Grey.g20,
+        color: on ? C.mode.withValues(alpha: .30) : Grey.g20,
         borderRadius: BorderRadius.all(Shape.r(8)),
-        border: Border.all(color: on ? Role.of(Role.selected.withValues(alpha: .85), Role.mode) : Grey.g26, width: 1),
+        border: Border.all(color: on ? Role.selected.withValues(alpha: .85) : Grey.g26, width: 1),
       ),
       child: Container(
         width: Shape.z(10),
         height: Shape.z(10),
-        decoration: BoxDecoration(color: on ? Role.of(Grey.g95, Role.mode) : Grey.g56, shape: BoxShape.circle),
+        decoration: BoxDecoration(color: on ? Grey.g95 : Grey.g56, shape: BoxShape.circle),
       ),
   );
 }
