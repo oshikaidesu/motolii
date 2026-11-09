@@ -19,7 +19,7 @@ struct AviutlRun {
     std::string file, own, all, trouble;
     std::vector<AviutlVar> vars;
     std::map<std::string, double> usual;            // (each parameter's value as it comes)
-    lua_State* L = nullptr;                         // (the one of the thing's scripts: aviutl_made)
+    lua_State* L = nullptr;                         // (the one of the thing's scripts: aviutl_open)
     int chunk = LUA_NOREF, obj = LUA_NOREF;         // (its text made a function, and its obj, in L)
     std::string path;                               // (where its require looks: package.path while it runs)
     std::map<std::string, AviutlBuf> bufs;
@@ -180,9 +180,9 @@ static std::vector<std::filesystem::path> aviutl_shared(const std::filesystem::p
         const std::filesystem::path root = p.parent_path();
         const auto when = std::filesystem::last_write_time(root, wrong);
         std::lock_guard<std::mutex> one(hold);
-        auto& [made, all] = cached[root];
-        if (all.empty() || made != when) {
-            all.clear(), made = when;
+        auto& [built, all] = cached[root];
+        if (all.empty() || built != when) {
+            all.clear(), built = when;
             for (const auto& e : std::filesystem::directory_iterator(root, wrong))
                 if (std::filesystem::is_directory(e.path() / "Script", wrong)) all.push_back(e.path() / "Script");
             std::sort(all.begin(), all.end());
@@ -213,11 +213,11 @@ static std::string aviutl_hlsl(AviutlRun& r, const std::string& name) {   // (a 
         if (const size_t p = t.find(head); p != std::string::npos) return r.hlsls[name] = t.substr(p + head.size(), t.find("]]", p) - p - head.size());
     return r.hlsls[name] = "";
 }
-static interop::Screen* aviutl_interop(AviutlRun& r, const std::string& name, bool clip, std::string& why, const AviutlShader** made = nullptr) {
+static interop::Screen* aviutl_interop(AviutlRun& r, const std::string& name, bool clip, std::string& why, const AviutlShader** built = nullptr) {
     const std::string hlsl = aviutl_hlsl(r, name), entry = name.substr(0, name.find('@'));
     if (hlsl.empty()) return why = "no pixelshader@" + name, nullptr;
     const AviutlShader& sh = aviutl_shader(hlsl, entry, clip);
-    if (made) *made = &sh;
+    if (built) *built = &sh;
     interop::Screen*& d = r.interops[name + (clip ? "|clip" : "")];
     if (!d && sh.wgsl.empty()) return why = sh.why, nullptr;
     if (!d) d = interop::screen(r.s->engine, entry.c_str(), sh.wgsl.c_str(), sh.bytes, &why, sh.pictures);

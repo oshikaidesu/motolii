@@ -51,9 +51,9 @@ int main(int argc, char** argv) {
     const auto module = [&](const std::string& code) {
         wgpu::ShaderSourceWGSL wgsl{};
         wgsl.code = code.c_str();
-        wgpu::ShaderModuleDescriptor made{};
-        made.nextInChain = &wgsl;
-        return device.CreateShaderModule(&made);
+        wgpu::ShaderModuleDescriptor built{};
+        built.nextInChain = &wgsl;
+        return device.CreateShaderModule(&built);
     };
     wgpu::ShaderModule vs = module(vert), fs = module(frag);
 
@@ -148,13 +148,13 @@ int main(int argc, char** argv) {
         } else { std::printf("FAIL a binding of kind %s\n", kind.c_str()); return 1; }
         groups[g].push_back(e);
     }
-    std::vector<wgpu::BindGroup> made;
+    std::vector<wgpu::BindGroup> built;
     for (uint32_t g = 0; g < groups.size(); ++g) {
         wgpu::BindGroupDescriptor bg{};
         bg.layout = pipeline.GetBindGroupLayout(g);
         bg.entryCount = groups[g].size();
         bg.entries = groups[g].data();
-        made.push_back(device.CreateBindGroup(&bg));
+        built.push_back(device.CreateBindGroup(&bg));
     }
 
     wgpu::RenderPassColorAttachment color{};
@@ -168,7 +168,7 @@ int main(int argc, char** argv) {
     wgpu::CommandEncoder coder = device.CreateCommandEncoder();
     wgpu::RenderPassEncoder pass = coder.BeginRenderPass(&pass_wish);
     pass.SetPipeline(pipeline);
-    for (uint32_t g = 0; g < made.size(); ++g) pass.SetBindGroup(g, made[g]);
+    for (uint32_t g = 0; g < built.size(); ++g) pass.SetBindGroup(g, built[g]);
     for (uint32_t i = 0; i < arrays.size(); ++i) pass.SetVertexBuffer(i, arrays[i]);
     pass.SetIndexBuffer(indices, wgpu::IndexFormat::Uint16);
     pass.DrawIndexed((uint32_t)(index.size() / 2));

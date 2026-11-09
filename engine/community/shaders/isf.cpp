@@ -213,9 +213,9 @@ static std::string isf_wgsl(const std::string& text, const std::string& name, st
     if (ir != tint::Success) return why = "SPIR-V: " + ir.Failure().reason, "";
     tint::wgsl::writer::Options o;
     o.allow_non_uniform_derivatives = true;
-    auto made = tint::wgsl::writer::ProgramFromIR(ir.Get(), o);
-    if (made != tint::Success) return why = "WGSL: " + made.Failure().reason, "";
-    auto wgsl = tint::wgsl::writer::Generate(made.Get(), o);
+    auto built = tint::wgsl::writer::ProgramFromIR(ir.Get(), o);
+    if (built != tint::Success) return why = "WGSL: " + built.Failure().reason, "";
+    auto wgsl = tint::wgsl::writer::Generate(built.Get(), o);
     if (wgsl != tint::Success) return why = "WGSL: " + wgsl.Failure().reason, "";
 
     const std::string credit = str(head, "CREDIT");
@@ -289,7 +289,7 @@ static std::string isf_fallback(const std::string& file, const std::string& why)
     const auto good = isf_good.find(file);
     return good == isf_good.end() ? "" : good->second;
 }
-static std::string isf_made(const std::string& file, const std::string& out) {
+static std::string isf_built(const std::string& file, const std::string& out) {
     isf_good[file] = out, isf_why.erase(file);
     return out;
 }
@@ -304,9 +304,9 @@ std::string isf_file(const std::string& asked) {
     struct stat st {};
     if (stat(file.c_str(), &st) != 0) return "";
     const std::string key = "isf 15|" + file + "|" + std::to_string(st.st_mtimespec.tv_sec) + "." + std::to_string(st.st_mtimespec.tv_nsec) + "|" + std::to_string(st.st_size);
-    static std::map<std::string, std::string> made;   // (what each file as it is became: its last made, or "", if it could not be)
+    static std::map<std::string, std::string> built;   // (what each file as it is became: its last made, or "", if it could not be)
     std::lock_guard<std::mutex> hold(isf_lock);
-    if (auto m = made.find(key); m != made.end()) return m->second;
+    if (auto m = built.find(key); m != built.end()) return m->second;
     uint64_t hash = 1469598103934665603ull;
     for (unsigned char c : key) hash = (hash ^ c) * 1099511628211ull;
     const char* home = std::getenv("HOME");
@@ -315,7 +315,7 @@ std::string isf_file(const std::string& asked) {
     std::snprintf(name, sizeof name, "%016llx.wgsl", (unsigned long long)hash);
     const std::string out = (dir / name).string();
     std::error_code e;
-    if (std::filesystem::exists(out, e)) return made[key] = isf_made(file, out);
+    if (std::filesystem::exists(out, e)) return built[key] = isf_built(file, out);
     std::ifstream in(file);
     std::stringstream text;
     text << in.rdbuf();
@@ -324,7 +324,7 @@ std::string isf_file(const std::string& asked) {
         const std::string isf = three_isf(file, why);
         if (isf.empty()) {
             std::fprintf(stderr, "the three.js effect %s is not taken: %s\n", file.c_str(), why.substr(0, 600).c_str());
-            return made[key] = isf_fallback(file, why);
+            return built[key] = isf_fallback(file, why);
         }
         text.str(isf);
     }
@@ -334,10 +334,10 @@ std::string isf_file(const std::string& asked) {
     const std::string wgsl = isf_wgsl(adapter_isf(text.str()), stem, why, vertex.str());   // (Shadertoy's and GLSL Sandbox's as they come: adapter.h)
     if (wgsl.empty()) {
         std::fprintf(stderr, "the ISF effect %s is not taken: %s\n", file.c_str(), why.substr(0, 600).c_str());
-        return made[key] = isf_fallback(file, why);
+        return built[key] = isf_fallback(file, why);
     }
     std::filesystem::create_directories(dir, e);
     std::ofstream(out + ".part") << wgsl;
     std::filesystem::rename(out + ".part", out, e);
-    return made[key] = isf_made(file, out);
+    return built[key] = isf_built(file, out);
 }

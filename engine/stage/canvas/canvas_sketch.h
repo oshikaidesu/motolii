@@ -184,7 +184,7 @@ static Canvas2D* sketch_picture(Stage& s, std::shared_ptr<Script> run, const std
 }
 // A picture a WEBGL sketch draws with (a createGraphics): the same canvas at its own size, shown only as sketch.mat reads it (document/sketch.h).
 static Canvas2D* sketch_texture(Stage& s, Script* run, const std::string& fontFile, int pic, int wide, int high) {
-    Canvas2D* made = place_canvas(s, [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {
+    Canvas2D* built = place_canvas(s, [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {
         *w = wide, *h = high;
         if (tvg::Text::load(fontFile.c_str()) == tvg::Result::Success) d->sketchFont = std::filesystem::path(fontFile).stem().string();
         d->sketchScene = tvg::Scene::gen();
@@ -192,6 +192,6 @@ static Canvas2D* sketch_texture(Stage& s, Script* run, const std::string& fontFi
         d->frames = 36000.f, d->seconds = 600.f;
         return d->sketchScene;
     }, mat4f{}, 1.f, float3{-1.f}, false, nullptr);
-    if (made) s.playing.erase(made);
-    return made;
+    if (built) s.playing.erase(built);
+    return built;
 }

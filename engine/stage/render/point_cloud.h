@@ -144,7 +144,7 @@ static Mesh* points(Stage& s, const char* file, std::string& why, MaterialInstan
         .material(0, look).castShadows(false).receiveShadows(false).culling(false).build(*s.engine, e);
     s.engine->getTransformManager().create(e);
     s.scene->addEntity(e);
-    s.made.push_back({e, name, 0, mat4f{}});
+    s.renderables.push_back({e, name, 0, mat4f{}});
 
     // (the sort, antimatter15's: each splat's depth along the eye, put to 16 bits between the nearest and the farthest,
     //  one counting pass; on a thread of its own, asked again whenever the eye has moved; farthest first here)
@@ -220,8 +220,8 @@ static Mesh* points(Stage& s, const char* file, std::string& why, MaterialInstan
 static Material* points_effect(Stage& s, const std::string& file, std::shared_ptr<SplatEffect>& fx, std::string& why) {
     fx = std::make_shared<SplatEffect>(file);
     if (!fx->ok()) return why = fx->trouble(), fx.reset(), nullptr;
-    static std::map<std::string, Material*> made;
-    Material*& m = made[fx->glsl()];
+    static std::map<std::string, Material*> built;
+    Material*& m = built[fx->glsl()];
     if (m) return m;
     Dl_info lib{};
     dladdr((const void*)&points_effect, &lib);

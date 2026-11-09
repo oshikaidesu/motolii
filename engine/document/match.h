@@ -130,7 +130,7 @@ static bool doc_match(Doc& d) {
         if (const Mesh* m = it->second.video ? it->second.video->sheet : it->second.drawn ? it->second.drawn->sheet : it->second.shape)   // (its copies' own looks first, while its copies are still known)
             doc_copy_looks_off(d, m, it->second.video ? it->second.video->look : it->second.drawn ? it->second.drawn->look : it->second.look);
         if (const Mesh* m = it->second.video ? it->second.video->sheet : it->second.drawn ? it->second.drawn->sheet : it->second.shape)   // (and the shape it cuts a matte by: done away with first)
-            doc_unshape(s, [m](const Stage::Made& made) { return made.of == m; });
+            doc_unshape(s, [m](const Stage::Renderable& made) { return made.of == m; });
         if (it->second.video) video_off(s, it->second.video);
         if (it->second.drawn) picture_off(s, it->second.drawn);
         for (const auto& deep : it->second.deep) picture_off(s, deep.sheet);

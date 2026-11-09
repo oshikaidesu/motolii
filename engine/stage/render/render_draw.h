@@ -3,7 +3,7 @@
 // mesh's places it is, and that place). Poses only: nothing is worked out here that a picture is made of.
 static void move(Stage& s, const Mesh* m, const std::function<mat4f(int, const mat4f&)>& to, const mat4f* eye = nullptr) {
     auto& tm = s.engine->getTransformManager();
-    for (const Stage::Made& d : s.made) {
+    for (const Stage::Renderable& d : s.renderables) {
         if (d.of != m) continue;
         if (!d.many) { tm.setTransform(tm.getInstance(d.thing), to(d.nth, d.place)); continue; }
         std::vector<mat4f> all((size_t)d.count);   // (a group drawn in one go: its places told at once, those further off first when an eye is given, as flat things lie)

@@ -28,10 +28,10 @@ static char* solid_name(JSContext* cx, const char* base, const char* name, void*
 }
 static JSModuleDef* solid_load(JSContext* cx, const char* name, void*) {
     const std::string src = solid_text(name);
-    JSValue made = JS_Eval(cx, src.c_str(), src.size(), name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
-    if (JS_IsException(made)) return nullptr;
-    auto* m = (JSModuleDef*)JS_VALUE_GET_PTR(made);
-    JS_FreeValue(cx, made);
+    JSValue built = JS_Eval(cx, src.c_str(), src.size(), name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+    if (JS_IsException(built)) return nullptr;
+    auto* m = (JSModuleDef*)JS_VALUE_GET_PTR(built);
+    JS_FreeValue(cx, built);
     return m;
 }
 
@@ -59,11 +59,11 @@ template <typename T> static void solid_array(JSContext* cx, JSValue g, const ch
 }
 
 bool solid_three(const std::string& file, const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words,
-                 double wide, double high, const std::vector<uint8_t>& cover, int coverW, int coverH, SolidMade& out, std::string& why) {
+                 double wide, double high, const std::vector<uint8_t>& cover, int coverW, int coverH, SolidMesh& out, std::string& why) {
     static std::mutex lock;
     static JSRuntime* rt = nullptr;
     static JSContext* cx = nullptr;
-    static int made = 0;
+    static int built = 0;
     std::lock_guard<std::mutex> hold(lock);
     if (!rt) rt = JS_NewRuntime(), cx = JS_NewContext(rt), JS_SetModuleLoaderFunc(rt, solid_name, solid_load, nullptr);
     JSValue g = JS_GetGlobalObject(cx), k = JS_NewObject(cx);
@@ -75,7 +75,7 @@ bool solid_three(const std::string& file, const std::map<std::string, double>& n
     JS_SetPropertyStr(cx, g, "__cover", cover.empty() ? JS_UNDEFINED : JS_NewArrayBufferCopy(cx, cover.data(), cover.size()));
     JS_SetPropertyStr(cx, g, "__why", JS_NewString(cx, ""));
     const std::string code = "import { solid } from '" + std::filesystem::absolute(file).lexically_normal().string() + "';\n" + solid_wrap;
-    const std::string name = "<solid " + std::to_string(++made) + ">";   // (a module of its own each time; the shape's, read once)
+    const std::string name = "<solid " + std::to_string(++built) + ">";   // (a module of its own each time; the shape's, read once)
     JSValue ran = JS_Eval(cx, code.c_str(), code.size(), name.c_str(), JS_EVAL_TYPE_MODULE);
     for (JSContext* job; JS_ExecutePendingJob(rt, &job) > 0;) {}
     if (JS_IsException(ran)) {
@@ -88,7 +88,7 @@ bool solid_three(const std::string& file, const std::map<std::string, double>& n
         JS_FreeCString(cx, s), JS_FreeValue(cx, w);
     }
     JS_FreeValue(cx, ran);
-    out = SolidMade{};
+    out = SolidMesh{};
     if (why.empty()) {
         solid_array(cx, g, "__pos", out.pos), solid_array(cx, g, "__nrm", out.nrm), solid_array(cx, g, "__uv", out.uv), solid_array(cx, g, "__idx", out.idx);
         JSValue r = JS_GetPropertyStr(cx, g, "__repeat");

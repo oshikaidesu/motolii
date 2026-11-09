@@ -193,7 +193,7 @@ static int aviutl_effect(lua_State* L) {   // (a built-in effect by its name: th
         }
         return 0;
     }
-    if (const auto made = aviutl_sashimono(L, r, n, said); made >= 0) return made;   // (one Sashimono Edit remakes)
+    if (const auto built = aviutl_sashimono(L, r, n, said); built >= 0) return built;   // (one Sashimono Edit remakes)
     if (n == "オフスクリーン描画") return 0;   // (sashimono-edit objapi.py _offscreen: the effects laid up so far made into the picture; here each is made at once, so none wait)
     if (n.empty()) return 0;   // (no name: lua.txt says the filters after the script, which run after it here anyway; YMM4-LuaScript native/worker.lua and sashimono-edit objapi.py lua_effect return the same)
     if (const int ran = aviutl_called(L, r, n); ran >= 0) return ran;

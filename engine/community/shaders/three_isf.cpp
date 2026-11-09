@@ -27,10 +27,10 @@ static JSModuleDef* three_load(JSContext* cx, const char* name, void*) {
     std::string src;
     if (std::string(name) == "three") src = three_stand_ins;
     else { std::ifstream in(name); std::stringstream all; all << in.rdbuf(); src = all.str(); }
-    JSValue made = JS_Eval(cx, src.c_str(), src.size(), name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
-    if (JS_IsException(made)) return nullptr;
-    auto* m = (JSModuleDef*)JS_VALUE_GET_PTR(made);
-    JS_FreeValue(cx, made);
+    JSValue built = JS_Eval(cx, src.c_str(), src.size(), name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+    if (JS_IsException(built)) return nullptr;
+    auto* m = (JSModuleDef*)JS_VALUE_GET_PTR(built);
+    JS_FreeValue(cx, built);
     return m;
 }
 

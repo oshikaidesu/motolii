@@ -48,7 +48,7 @@ function __lit(r) {
   if (i === undefined) m.rows.set(key, i = m.rows.size);
   return 2 + i;
 }
-// shader() on what it draws: its own GLSL runs, as a Filament material made from it (document/sketch.h, by matc). What is drawn is
+// shader() on what it draws: its own GLSL runs, as a Filament material built from it (document/sketch.h, by matc). What is drawn is
 // already where its camera sees it, so its matrices are nothing and aPosition is that place; what its vertex shader leaves there
 // stands in the world, moved or not. What it tells a shader goes with each draw: those told the same are drawn as one.
 var __shaders = [], __shader_of = new Map();
@@ -281,7 +281,7 @@ function __mesh_at(f) {   // (all it has drawn since it last cleared, for docume
 }
 function __mesh_shader(i) { return __shaders[i].text; }
 function __mesh_shader_names(i) { return __shaders[i].names.map(u => [u.name, u.type, u.count, u.size].join(' ')).join('\n'); }
-function __mesh_shape(i) {   // (a shape as p5 made it, once)
+function __mesh_shape(i) {   // (a shape as p5 built it, once)
   const g = __shapes[i], v = g.vertices, n = g.vertexNormals || [], u = g.uvs || [], f = g.faces, e = g.edges || [], o = new Float32Array(3 + v.length * 8 + f.length * 3 + e.length * 2);
   o.set([v.length, f.length, e.length]);
   let at = 3;

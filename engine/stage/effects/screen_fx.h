@@ -72,7 +72,7 @@ static void screen_framed(std::string& code) {
     std::smatch parameters, way;
     if (code.find("texture_2d_array") != std::string::npos || !std::regex_search(code, parameters, std::regex(R"(var<uniform>\s+(\w+)\s*:\s*(\w+)\s*;)"))) return;
     if (!std::regex_search(code, way, std::regex(R"(@fragment\s+fn\s+\w+\s*\([^)]*@location\(0\)\s+(\w+)\s*:\s*vec2(?:f|<f32>)[^)]*\)[^{]*\{)"))) return;
-    const std::string k = parameters[1], made = parameters[2], uv = way[1];
+    const std::string k = parameters[1], built = parameters[2], uv = way[1];
     std::string head = way.str();
     const bool pixel = std::regex_search(head, std::regex(R"(@builtin\(position\)\s+frag\s*:)"));
     head = std::regex_replace(std::regex_replace(head, std::regex("\\b" + uv + "(\\s*:)"), uv + "_on$1"), std::regex(R"(\bfrag(\s*:))"), "frag_on$1");
@@ -81,7 +81,7 @@ static void screen_framed(std::string& code) {
     const size_t at = (size_t)way.position(), end = at + (size_t)way.length();
     std::string out = code.substr(0, at) + head + code.substr(end);
     out = std::regex_replace(std::regex_replace(out, std::regex(R"(\btextureSampleLevel\s*\()"), "frame_level("), std::regex(R"(\btextureSample\s*\()"), "frame_sample(");
-    out = std::regex_replace(out, std::regex("struct\\s+" + made + "\\s*\\{"), "struct " + made + " {\n    frameRect: vec4f,");
+    out = std::regex_replace(out, std::regex("struct\\s+" + built + "\\s*\\{"), "struct " + built + " {\n    frameRect: vec4f,");
     std::smatch line;
     std::regex_search(out, line, std::regex(R"(var<uniform>[^;]*;)"));
     const std::string reads = "\nfn frame_level(t: texture_2d<f32>, s: sampler, c: vec2f, l: f32) -> vec4f { return textureSampleLevel(t, s, c * " + k + ".frameRect.zw + " + k + ".frameRect.xy, l); }\nfn frame_sample(t: texture_2d<f32>, s: sampler, c: vec2f) -> vec4f { return textureSample(t, s, c * " + k + ".frameRect.zw + " + k + ".frameRect.xy); }\n";
@@ -216,7 +216,7 @@ struct ScreenStack {
     double frame[4] = {0, 0, 1, 1};       // (a thing's: where the frame its effects reckon by lies on the picture they draw, left, top, width, height, each a share of it; the picture is larger: After Effects' width and height against its buffer (PF_InData))
     double box[4] = {0, 0, 0, 0};   // (a thing's: where it is seen, points of the stage, thing_fx_aim)
     int ground = -1;                // (the stage's colour behind everything, 0xRRGGBB; -1 none)
-    std::map<std::string, ScreenFx*> made;   // every effect made so far, by its file, kept (a shader is made once: making one takes a picture's time or ten)
+    std::map<std::string, ScreenFx*> built;   // every effect made so far, by its file, kept (a shader is made once: making one takes a picture's time or ten)
     Texture* shot = nullptr;
     Texture* depth = nullptr;
     Texture* clear = nullptr;   // (a transition's end with none chosen: nothing, as After Effects' Transition effects (Linear Wipe, Radial Wipe) reveal; made once, kept)
@@ -471,11 +471,11 @@ static void screen_fresh(Stage& s, ScreenFx& fx) {
     again.file = fx.file;
     std::string code;
     if (!screen_read(again, code)) { std::fprintf(stderr, "%s\n", again.trouble.c_str()); return; }
-    interop::Screen* made = interop::screen(s.engine, fx.file.c_str(), code.c_str(), again.bytes, &again.trouble, again.pictures, again.layered);
-    if (!made) { std::fprintf(stderr, "the effect %s as written now is not taken (the one before stays): %s\n", fx.file.c_str(), again.trouble.c_str()); return; }
+    interop::Screen* built = interop::screen(s.engine, fx.file.c_str(), code.c_str(), again.bytes, &again.trouble, again.pictures, again.layered);
+    if (!built) { std::fprintf(stderr, "the effect %s as written now is not taken (the one before stays): %s\n", fx.file.c_str(), again.trouble.c_str()); return; }
     interop::drop(s.engine, fx.interop);
     screen_targets(s, fx, true);
-    fx.parameters = again.parameters, fx.fields = again.fields, fx.bytes = again.bytes, fx.interop = made;
+    fx.parameters = again.parameters, fx.fields = again.fields, fx.bytes = again.bytes, fx.interop = built;
     fx.pictures = again.pictures, fx.targets = again.targets, fx.passes = again.passes, fx.layered = again.layered, fx.spill = again.spill, fx.alpha = again.alpha;   // (the past frames kept as they are if their count stays)
 }
 // Whether a file of the stage's effects has been written over since it was made (what wakes a stage that is not drawing).
@@ -492,17 +492,17 @@ static void screen_effects(Stage& s, ScreenStack& st, const std::string& files, 
     st.fx.clear();
     for (const std::string& file : script_files(files)) {
         if (file == "none" || std::filesystem::path(file).extension() == ".json") continue;   // (Filament's own settings: laid on the view, not drawn: viewer_settings.h)
-        ScreenFx*& made = st.made[file];
-        if (!made) {
-            made = new ScreenFx;
-            made->file = file;
+        ScreenFx*& built = st.built[file];
+        if (!built) {
+            built = new ScreenFx;
+            built->file = file;
             std::string code;
-            if (!screen_read(*made, code)) { std::fprintf(stderr, "%s\n", made->trouble.c_str()); continue; }   // (kept as not made: not read again each time)
-            made->interop = interop::screen(s.engine, file.c_str(), code.c_str(), made->bytes, &made->trouble, made->pictures, made->layered);
-            if (!made->interop) std::fprintf(stderr, "the effect %s is not taken: %s\n", file.c_str(), made->trouble.c_str());
-            made->stamp = screen_stamp(file);
+            if (!screen_read(*built, code)) { std::fprintf(stderr, "%s\n", built->trouble.c_str()); continue; }   // (kept as not made: not read again each time)
+            built->interop = interop::screen(s.engine, file.c_str(), code.c_str(), built->bytes, &built->trouble, built->pictures, built->layered);
+            if (!built->interop) std::fprintf(stderr, "the effect %s is not taken: %s\n", file.c_str(), built->trouble.c_str());
+            built->stamp = screen_stamp(file);
         }
-        if (made->interop) st.fx.push_back(made);
+        if (built->interop) st.fx.push_back(built);
     }
     if (st.fx.empty()) return;
     if (!st.shot) {   // (the pictures between them made once, kept while the stage is)

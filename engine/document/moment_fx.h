@@ -250,7 +250,7 @@ static void doc_layers_fx(Doc& d) {
             if (!e.solidFile.empty()) return doc_layer_solid_aim(d, layer, e);
             if (e.st.readsBehind) {   // (its sheet on the screen only, not in the picture of what is behind it that its effect reads: as the glass leaves itself out, render_layers.h)
                 s.backdropRead = true;
-                for (const Stage::Made& made : s.made) if (made.of == e.sheet) s.engine->getRenderableManager().setLayerMask(s.engine->getRenderableManager().getInstance(made.thing), 0xFF, 0x02);
+                for (const Stage::Renderable& made : s.renderables) if (made.of == e.sheet) s.engine->getRenderableManager().setLayerMask(s.engine->getRenderableManager().getInstance(made.thing), 0xFF, 0x02);
             }
             e.st.ground = d.backdropIs.size() == 6 ? (int)std::strtol(d.backdropIs.c_str(), nullptr, 16) : -1;   // (the colour behind everything: what an effect reading the frame finds where nothing is drawn)
             if (e.world) doc_layer_stand(d, layer, e);
@@ -312,7 +312,7 @@ static void doc_layers_read(Doc& d, const std::vector<std::pair<int, Doc::Shown*
         from[i] = parts.size();
         doc_entities(s, *laid[i].second, [&](utils::Entity e) { parts.push_back(e); });
         if (const auto own = d.layerFx.find(laid[i].first); own != d.layerFx.end())
-            for (const Stage::Made& made : s.made) if (made.of == own->second.sheet) parts.push_back(made.thing);
+            for (const Stage::Renderable& made : s.renderables) if (made.of == own->second.sheet) parts.push_back(made.thing);
     }
     for (size_t i = 0; i < laid.size(); ++i) {
         const int layer = laid[i].first;

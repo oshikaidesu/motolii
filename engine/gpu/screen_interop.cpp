@@ -82,9 +82,9 @@ static bool takes(Engine* engine, const char* fragment, std::string* why) {
         WGPUShaderSourceWGSL code{};
         code.chain.sType = WGPUSType_ShaderSourceWGSL;
         code.code = {fragment, WGPU_STRLEN};
-        WGPUShaderModuleDescriptor made{};
-        made.nextInChain = &code.chain;
-        WGPUShaderModule module = wgpuDeviceCreateShaderModule(device, &made);
+        WGPUShaderModuleDescriptor built{};
+        built.nextInChain = &code.chain;
+        WGPUShaderModule module = wgpuDeviceCreateShaderModule(device, &built);
         WGPUPopErrorScopeCallbackInfo told{};
         told.mode = WGPUCallbackMode_AllowProcessEvents;
         told.callback = [](WGPUPopErrorScopeStatus, WGPUErrorType type, WGPUStringView message, void* to, void*) {

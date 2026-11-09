@@ -191,7 +191,7 @@ static void doc_sketch_mesh(Doc& d, int layer, Doc::Shown& t, double now) {
     if (ends.size() > t.sketchParts) more_parts(s, &m, t.sketchParts = ends.size() + ends.size() / 2, t.look);
     reshape(s, &m, ends);
     auto& faces = s.engine->getRenderableManager();
-    for (const Stage::Made& made : s.made) {
+    for (const Stage::Renderable& made : s.renderables) {
         if (made.of != &m) continue;
         const auto at = faces.getInstance(made.thing);
         for (size_t i = 0; i < worn.size(); ++i) if (worn[i]) faces.setMaterialInstanceAt(at, i + 1, worn[i]);

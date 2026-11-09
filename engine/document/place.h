@@ -264,16 +264,16 @@ static std::vector<math::mat4> doc_joins(Doc& d, int layer, double now) {
 
 // The shapes the kit's mattes are cut by that `which` names, taken out of their matte's scene and done away with,
 // their looks too (a look holds the picture it reads: Filament will not let that picture go while a look holds it).
-static void doc_unshape(Stage& s, const std::function<bool(const Stage::Made&)>& which) {
+static void doc_unshape(Stage& s, const std::function<bool(const Stage::Renderable&)>& which) {
     auto& faces = s.engine->getRenderableManager();
-    for (size_t i = s.made.size(); i-- > 0;) {
-        if (!s.made[i].matte || !which(s.made[i])) continue;
-        const utils::Entity e = s.made[i].thing;
+    for (size_t i = s.renderables.size(); i-- > 0;) {
+        if (!s.renderables[i].matte || !which(s.renderables[i])) continue;
+        const utils::Entity e = s.renderables[i].thing;
         MaterialInstance* look = faces.getMaterialInstanceAt(faces.getInstance(e), 0);
         for (Stage::Matte& mt : s.mattes) mt.scene->remove(e);
         s.engine->destroy(e);
         s.engine->destroy(look);
-        s.made.erase(s.made.begin() + (long)i);
+        s.renderables.erase(s.renderables.begin() + (long)i);
     }
 }
 // Every layer told its moment: whether it is on (from its start, for its duration if it has one), what of itself it

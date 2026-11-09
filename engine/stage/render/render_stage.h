@@ -125,7 +125,7 @@ struct Stage {
     std::map<const void*, std::function<Sound()>> sounding;   // what is heard, each under its own thing: asked when a film is written
     std::map<const void*, std::function<void(double)>> playing;   // what goes on by itself as the stage's time does (films, pictures), each under its own thing
     std::vector<std::function<void()>> said_after;      // a word of their own after each line of `clock` and `soak`
-    struct Made { utils::Entity thing; const Mesh* of; int nth; mat4f place; bool matte = false;   // (matte: the shape a matte is cut by, in that matte's own scene)
+    struct Renderable { utils::Entity thing; const Mesh* of; int nth; mat4f place; bool matte = false;   // (matte: the shape a matte is cut by, in that matte's own scene)
                   InstanceBuffer* many = nullptr; int count = 1; };   // (all its places drawn in one go, Filament's own instancing: each place an instance of the one thing; `move` tells them all at once)
     utils::Entity sun;                     // the sun, where there is one (paper_and_sun), and all that goes by its direction: `sun_to`
     std::vector<MaterialInstance*> by_sun;
@@ -137,7 +137,7 @@ struct Stage {
     // (what is made once for this stage's engine and kept: a stage opened after another in the same program has its own)
     std::map<std::string, Material*> materials;    // each material file, read and built once
     void* solids = nullptr; void* solidPictures = nullptr;   // Filament's reader of 3D files and its reader of their pictures (gltf_model.h)
-    std::vector<Made> made;   // every thing put on the stage: of which mesh, at which of that mesh's places (a film moves them: `move`)
+    std::vector<Renderable> renderables;   // every thing put on the stage: of which mesh, at which of that mesh's places (a film moves them: `move`)
     // The desk: the editing window's whole stage pane (w, h pixels: 0, none), the picture there as on the stage but seen
     // further back, the stage's own lying at x, y (its top left) so many pixels a point; what lies off it is seen too.
     // Over it, the marks of the picked thing (its frame: middle, width, height, turn, the point it turns about, as
@@ -337,7 +337,7 @@ static std::vector<MaterialInstance*> add_parts(Stage& s, Mesh* m, const char* f
         if (many) b.instances(count, many); else b.instances((size_t)copies);
         b.priority((uint8_t)order).build(*s.engine, e);
         s.scene->addEntity(e);
-        s.made.push_back({e, m, (int)at, place, false, many, (int)count});
+        s.renderables.push_back({e, m, (int)at, place, false, many, (int)count});
     }
     return looks;
 }
@@ -355,16 +355,16 @@ static MaterialInstance* add(Stage& s, Mesh* m, const char* filamat, std::vector
 // anew when it is built on it (RenderableManager::Builder::build), so it stays where it is, in the scene, under what it is under.
 static void more_parts(Stage& s, Mesh* m, size_t parts, MaterialInstance* look) {
     auto& faces = s.engine->getRenderableManager();
-    for (const Stage::Made& made : s.made) {
-        if (made.of != m) continue;
-        const auto at = faces.getInstance(made.thing);
+    for (const Stage::Renderable& built : s.renderables) {
+        if (built.of != m) continue;
+        const auto at = faces.getInstance(built.thing);
         const uint8_t mask = faces.getLayerMask(at), order = faces.getPriority(at), channel = faces.getChannel(at);
         const uint16_t blend = faces.getBlendOrderAt(at, 0);
         const bool everywhere = faces.isGlobalBlendOrderEnabledAt(at, 0);
         const Box box = faces.getAxisAlignedBoundingBox(at);
         RenderableManager::Builder b(parts);
         for (size_t k = 0; k < parts; ++k) b.geometry(k, RenderableManager::PrimitiveType::TRIANGLES, m->vb, m->ib, 0, 0).material(k, look).blendOrder(k, blend).globalBlendOrderEnabled(k, everywhere);
-        b.boundingBox(box).culling(false).castShadows(false).receiveShadows(false).layerMask(0xFF, mask).priority(order).channel(channel).build(*s.engine, made.thing);
+        b.boundingBox(box).culling(false).castShadows(false).receiveShadows(false).layerMask(0xFF, mask).priority(order).channel(channel).build(*s.engine, built.thing);
     }
 }
 static void reshape(Stage& s, Mesh* m, const std::vector<uint32_t>& ends) {
@@ -394,9 +394,9 @@ static void reshape(Stage& s, Mesh* m, const std::vector<uint32_t>& ends) {
     mesh_points(s, *m, m->vb, n);
     m->ib->setBuffer(*s.engine, copied(m->idx.data(), m->idx.size() * sizeof(uint32_t)));
     auto& faces = s.engine->getRenderableManager();
-    for (const Stage::Made& made : s.made) {
-        if (made.of != m) continue;
-        const auto at = faces.getInstance(made.thing);
+    for (const Stage::Renderable& built : s.renderables) {
+        if (built.of != m) continue;
+        const auto at = faces.getInstance(built.thing);
         for (size_t k = 0; k < ends.size() && k < faces.getPrimitiveCount(at); ++k) {
             const uint32_t from = k ? ends[k - 1] : 0;
             faces.setGeometryAt(at, k, RenderableManager::PrimitiveType::TRIANGLES, m->vb, m->ib, from, ends[k] - from);

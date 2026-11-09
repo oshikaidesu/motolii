@@ -87,10 +87,10 @@ static std::vector<am::RepeatCopy> scatter_repeat(const AbsentEffect& e) {
     return out;
 }
 // A repeat laid on those before it, each copy of the new by each of the old, as AbsentMotion's RepeatCopies does it.
-static std::vector<am::RepeatCopy> scatter_on(const std::vector<am::RepeatCopy>& made, const std::vector<am::RepeatCopy>& result) {
+static std::vector<am::RepeatCopy> scatter_on(const std::vector<am::RepeatCopy>& built, const std::vector<am::RepeatCopy>& result) {
     std::vector<am::RepeatCopy> next;
-    next.reserve(std::min<size_t>(25000, made.size() * result.size()));
-    for (const am::RepeatCopy& m : made)
+    next.reserve(std::min<size_t>(25000, built.size() * result.size()));
+    for (const am::RepeatCopy& m : built)
         for (const am::RepeatCopy& r : result) {
             if (next.size() >= 25000) break;
             am::RepeatCopy c = r;

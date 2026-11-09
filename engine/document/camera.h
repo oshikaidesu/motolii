@@ -151,7 +151,7 @@ static void doc_look(Doc& d) {
             const math::double4 up = s.camera->getProjectionMatrix() * s.camera->getViewMatrix() * math::double4{0, 1, 0, 1};
             if ((d.backdrop = flat(s, "rect", (float)s.w / (float)s.h, mat4f{}, (float)(2.0 * up.w / up.y), hex("background", float3{0.f}), "opaque"))) {   // (opaque: Filament draws it with the solid layers, first by its priority, not over them with the sheets)
                 auto& faces = s.engine->getRenderableManager();
-                for (const Stage::Made& made : s.made)
+                for (const Stage::Renderable& made : s.renderables)
                     if (made.of == d.backdrop->sheet) faces.setPriority(faces.getInstance(made.thing), 0), faces.setChannel(faces.getInstance(made.thing), 0);
                 d.backdrop->look->setDepthWrite(false), d.backdrop->look->setDepthCulling(false);
             }

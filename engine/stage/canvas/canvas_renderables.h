@@ -16,7 +16,7 @@
 static Canvas2D* place_canvas(Stage& s, const std::function<tvg::Paint*(Canvas2D*, int*, int*)>& paints, const mat4f& place, float high, float3 ground, bool shown, const char* lay, const Canvas2DFx& fx = {}) {
     if (!interop::device(s.engine)) return nullptr;   // (another backend)
     Canvas2D* d = new Canvas2D;
-    WGPUTexture made = nullptr;
+    WGPUTexture built = nullptr;
     tvg::Paint* loose = nullptr;
     bool owned = false;
     int w = 0, h = 0;
@@ -62,10 +62,10 @@ static Canvas2D* place_canvas(Stage& s, const std::function<tvg::Paint*(Canvas2D
         like.dimension = WGPUTextureDimension_2D;
         like.mipLevelCount = 1;
         like.sampleCount = 1;
-        made = wgpuDeviceCreateTexture((WGPUDevice)interop::device(s.engine), &like);
-        d->target = made;
+        built = wgpuDeviceCreateTexture((WGPUDevice)interop::device(s.engine), &like);
+        d->target = built;
         d->canvas = tvg::WgCanvas::gen();
-        if (!d->canvas || d->canvas->target(interop::device(s.engine), interop::instance(s.engine), made, (uint32_t)w, (uint32_t)h, tvg::ColorSpace::ABGR8888S, 1) != tvg::Result::Success) return;
+        if (!d->canvas || d->canvas->target(interop::device(s.engine), interop::instance(s.engine), built, (uint32_t)w, (uint32_t)h, tvg::ColorSpace::ABGR8888S, 1) != tvg::Result::Success) return;
         if (ground.x >= 0.f) {
             tvg::Shape* under = tvg::Shape::gen();
             under->appendRect(0, 0, (float)w, (float)h);
@@ -81,14 +81,14 @@ static Canvas2D* place_canvas(Stage& s, const std::function<tvg::Paint*(Canvas2D
         d->canvas->sync();
     });
     s.engine->flushAndWait();   // (once, at set-up: the lines above ran on the other thread)
-    if (!made || !owned) {   // (not made: what was begun is let go)
-        interop::on_driver(s.engine, [&] { if (loose) tvg::Paint::rel(loose); delete d->canvas; delete d->film; if (made) wgpuTextureRelease(made); });
+    if (!built || !owned) {   // (not made: what was begun is let go)
+        interop::on_driver(s.engine, [&] { if (loose) tvg::Paint::rel(loose); delete d->canvas; delete d->film; if (built) wgpuTextureRelease(built); });
         s.engine->flushAndWait();
         delete d;
         return nullptr;
     }
     d->texture = Texture::Builder().width((uint32_t)w).height((uint32_t)h).levels(1).sampler(Texture::Sampler::SAMPLER_2D).format(Texture::InternalFormat::RGBA8)
-                     .usage(Texture::Usage::SAMPLEABLE).import((intptr_t)made).build(*s.engine);
+                     .usage(Texture::Usage::SAMPLEABLE).import((intptr_t)built).build(*s.engine);
     d->sheet = new Mesh;
     for (float2 c : {float2{-1, -1}, float2{1, -1}, float2{1, 1}, float2{-1, 1}}) {
         d->sheet->pos.push_back({0.5f * high * (float)w / (float)h * c.x, 0.5f * high * c.y, 0.f});
@@ -138,7 +138,7 @@ static Canvas2D* picture(Stage& s, const char* file, const mat4f& place, float h
     if (!std::filesystem::is_regular_file(file)) return nullptr;   // (ThorVG ends the program on a folder)
     const std::string ext = std::filesystem::path(file).extension().string();
     const bool lottie = ext == ".json" || ext == ".lot";
-    Canvas2D* made = place_canvas(s, [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {
+    Canvas2D* built = place_canvas(s, [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {
         tvg::LottieAnimation* own = lottie ? tvg::LottieAnimation::gen() : nullptr;
         d->film = own ? own : tvg::Animation::gen();
         d->lottie = own;
@@ -171,12 +171,12 @@ static Canvas2D* picture(Stage& s, const char* file, const mat4f& place, float h
         p->size((float)*w, (float)*h);
         return p;
     }, place, high, ground, shown, lay, fx);
-    if (made && made->frames > 1.f) {   // (its kept frames known on disk by its file as it is now: cache_file)
+    if (built && built->frames > 1.f) {   // (its kept frames known on disk by its file as it is now: cache_file)
         std::error_code e;
-        made->keyBase = std::filesystem::absolute(file, e).string() + "|" + std::to_string(std::filesystem::file_size(file, e)) + "|" +
+        built->keyBase = std::filesystem::absolute(file, e).string() + "|" + std::to_string(std::filesystem::file_size(file, e)) + "|" +
                         std::to_string((long long)std::filesystem::last_write_time(file, e).time_since_epoch().count());
     }
-    return made;
+    return built;
 }
 
 // Words put in the scene, set by ThorVG in the font of `fontFile` (a .ttf): a sheet `high` tall for each line, as

@@ -27,7 +27,7 @@ static void doc_material_instances(Stage& s, const Doc::Shown& t, const std::fun
     auto& faces = s.engine->getRenderableManager();
     if (t.video) each(t.video->look);
     if (t.drawn) each(t.drawn->look);
-    for (const Stage::Made& made : s.made)
+    for (const Stage::Renderable& made : s.renderables)
         if (t.shape && made.of == t.shape) each(faces.getMaterialInstanceAt(faces.getInstance(made.thing), 0));
     if (t.solid) for (const utils::Entity e : t.solid->parts) {
         const auto one = faces.getInstance(e);
@@ -37,7 +37,7 @@ static void doc_material_instances(Stage& s, const Doc::Shown& t, const std::fun
 // Each drawn part of a layer (Filament's renderables), and the scene it is in (its run's: run 0 or not yet put, the stage's own).
 static void doc_entities(Stage& s, const Doc::Shown& t, const std::function<void(utils::Entity)>& each) {
     const Mesh* m = t.video ? t.video->sheet : t.drawn ? t.drawn->sheet : t.shape;
-    for (const Stage::Made& made : s.made)
+    for (const Stage::Renderable& made : s.renderables)
         if (m && made.of == m && !made.matte) each(made.thing);
     if (t.solid) for (const utils::Entity e : t.solid->parts) each(e);
 }

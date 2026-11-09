@@ -32,13 +32,13 @@ function __rgba(style) {   // (a colour as p5 itself reads it)
   if (!c) __colours.set(style, c = p5.prototype.color.call(p5.instance, style).levels);
   return c;
 }
-// Whole pictures a sketch holds, loaded, made pixel by pixel or a film's: their bytes stay here, a paint says which by its number
-// (canvas_sketch.h sketch_bitmap). What is made each frame goes when 300 MB of them are held: what shows it is on disk by then (canvas_cache.h).
-var __bitmaps = [null], __bitmaps_made = [], __bitmaps_held = 0;
+// Whole pictures a sketch holds, loaded, built pixel by pixel or a film's: their bytes stay here, a paint says which by its number
+// (canvas_sketch.h sketch_bitmap). What is built each frame goes when 300 MB of them are held: what shows it is on disk by then (canvas_cache.h).
+var __bitmaps = [null], __bitmaps_owned = [], __bitmaps_held = 0;
 function __bitmap_new(bytes, stays) {
   __bitmaps.push(bytes);
-  if (!stays) __bitmaps_made.push(__bitmaps.length - 1), __bitmaps_held += bytes.length;
-  while (__bitmaps_held > 3e8 && __bitmaps_made.length > 1) { const i = __bitmaps_made.shift(); __bitmaps_held -= __bitmaps[i].length, __bitmaps[i] = null; }
+  if (!stays) __bitmaps_owned.push(__bitmaps.length - 1), __bitmaps_held += bytes.length;
+  while (__bitmaps_held > 3e8 && __bitmaps_owned.length > 1) { const i = __bitmaps_owned.shift(); __bitmaps_held -= __bitmaps[i].length, __bitmaps[i] = null; }
   return __bitmaps.length - 1;
 }
 function __bitmap(i) { globalThis.__bytes = __bitmaps[i] || new Uint8Array(0); }
@@ -218,7 +218,7 @@ function __film_show() {   // (at the size it was asked for, each its nearest of
   __film.drawingContext.bytes_are(out);
 }
 function __film_step() { const next = __film_next(); if (next) __film.source = next, __film_show(); }
-// What the forms of adapter.h paint on is p5's own canvas: asked for by a page's id or made, it is that one; a second made is another.
+// What the forms of adapter.h paint on is p5's own canvas: asked for by a page's id or built, it is that one; a second built is another.
 function __adapter_canvas() {
   const e = drawingContext.canvas, make = document.createElement;
   let given = false;

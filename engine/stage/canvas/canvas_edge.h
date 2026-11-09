@@ -102,19 +102,19 @@ static void edge_ask(Stage& s, Canvas2D* d, int reach) {
     d->stale = false;
     s.once[d] = [&s, d, reach] {
         static std::map<Engine*, std::array<interop::Screen*, 3>> interops;
-        auto& made = interops[s.engine];
-        if (!made[0]) made = {interop::screen(s.engine, "edge seeds", edge_seeds_wgsl, 0), interop::screen(s.engine, "edge flood", edge_flood_wgsl, 16), interop::screen(s.engine, "edge length", edge_length_wgsl, 0)};
-        if (!made[0] || !made[1] || !made[2]) return;
-        interop::draw(s.engine, made[0], d->texture, d->edgeInto[0], d->edgeW, d->edgeH);
+        auto& built = interops[s.engine];
+        if (!built[0]) built = {interop::screen(s.engine, "edge seeds", edge_seeds_wgsl, 0), interop::screen(s.engine, "edge flood", edge_flood_wgsl, 16), interop::screen(s.engine, "edge length", edge_length_wgsl, 0)};
+        if (!built[0] || !built[1] || !built[2]) return;
+        interop::draw(s.engine, built[0], d->texture, d->edgeInto[0], d->edgeW, d->edgeH);
         int front = 0, pass = 0, step = 1;
         while (step < std::max(reach, 8)) step *= 2;   // (8: the last pass reads 6 points round each, outside too)
         for (; step >= 1; step /= 2, pass++) {
             const float k[4] = {(float)step, 0.f, 0.f, 0.f};
-            interop::parameters(s.engine, made[1], k, sizeof k, pass);
+            interop::parameters(s.engine, built[1], k, sizeof k, pass);
             Texture* from = d->edge[front];
-            interop::draw(s.engine, made[1], &from, d->edgeInto[!front], d->edgeW, d->edgeH, pass);
+            interop::draw(s.engine, built[1], &from, d->edgeInto[!front], d->edgeW, d->edgeH, pass);
             front = !front;
         }
-        interop::draw(s.engine, made[2], d->edge[front], d->edgeInto[2], d->edgeW, d->edgeH);
+        interop::draw(s.engine, built[2], d->edge[front], d->edgeInto[2], d->edgeW, d->edgeH);
     };
 }

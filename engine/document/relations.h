@@ -72,7 +72,7 @@ static double doc_given(Doc& d, int by, int copy, int n, double t, double own, c
 static void doc_copy_looks_off(Doc& d, const Mesh* m, MaterialInstance* main) {
     Stage& s = *d.stage;
     auto& faces = s.engine->getRenderableManager();
-    for (const Stage::Made& made : s.made) {
+    for (const Stage::Renderable& made : s.renderables) {
         if (made.of != m) continue;
         const auto found = d.copyLooks.find(made.thing.getId());
         if (found == d.copyLooks.end()) continue;

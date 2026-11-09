@@ -231,8 +231,8 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
         legal.RegisterLegalizationPasses();
         spvtools::OptimizerOptions unchecked;
         unchecked.set_run_validator(false);
-        std::vector<uint32_t> made;
-        if (legal.Run(spv.data(), spv.size(), &made, unchecked)) spv.swap(made);
+        std::vector<uint32_t> built;
+        if (legal.Run(spv.data(), spv.size(), &built, unchecked)) spv.swap(built);
     }
     std::map<uint32_t, std::string> names;   // (SPIR-V read for each struct's member offsets: OpName 5, OpMemberDecorate 72 Offset 35; an empty struct (OpTypeStruct 30 of none) Tint cannot take)
     std::map<uint32_t, std::map<uint32_t, uint32_t>> offsets;
@@ -250,9 +250,9 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
     if (ir != tint::Success) return sh.why = "SPIR-V: " + ir.Failure().reason, sh;
     tint::wgsl::writer::Options o;
     o.allow_non_uniform_derivatives = true;
-    auto made = tint::wgsl::writer::ProgramFromIR(ir.Get(), o);
-    if (made != tint::Success) return sh.why = "WGSL: " + made.Failure().reason, sh;
-    const tint::Program& p = made.Get();
+    auto built = tint::wgsl::writer::ProgramFromIR(ir.Get(), o);
+    if (built != tint::Success) return sh.why = "WGSL: " + built.Failure().reason, sh;
+    const tint::Program& p = built.Get();
     for (const auto* g : p.AST().GlobalVariables()) {   // (the constants' struct, b0, as Tint lays it)
         const auto* v = p.Sem().Get<tint::sem::GlobalVariable>(g);
         if (!v || v->AddressSpace() != tint::core::AddressSpace::kUniform || !v->Attributes().binding_point || v->Attributes().binding_point->binding != 144) continue;
@@ -297,9 +297,9 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
 
 const AviutlShader& aviutl_shader(const std::string& hlsl, const std::string& entry, bool clip) {
     static std::mutex lock;
-    static std::map<std::string, AviutlShader> made;   // (each shader as written made once: a few milliseconds each)
+    static std::map<std::string, AviutlShader> built;   // (each shader as written made once: a few milliseconds each)
     std::lock_guard<std::mutex> hold(lock);
     const std::string key = entry + (clip ? "|clip|" : "||") + hlsl;
-    if (auto m = made.find(key); m != made.end()) return m->second;
-    return made[key] = aviutl_make(hlsl, entry, clip);
+    if (auto m = built.find(key); m != built.end()) return m->second;
+    return built[key] = aviutl_make(hlsl, entry, clip);
 }

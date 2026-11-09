@@ -37,10 +37,10 @@ static JSModuleDef* splatfx_load(JSContext* cx, const char* name, void*) {
     if (n == "playcanvas") src = splatfx_playcanvas;
     else if (std::filesystem::path(n).filename() == "gsplat-shader-effect.mjs") src = splatfx_base;
     else { std::ifstream in(n); std::stringstream all; all << in.rdbuf(); src = all.str(); }
-    JSValue made = JS_Eval(cx, src.c_str(), src.size(), name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
-    if (JS_IsException(made)) return nullptr;
-    auto* m = (JSModuleDef*)JS_VALUE_GET_PTR(made);
-    JS_FreeValue(cx, made);
+    JSValue built = JS_Eval(cx, src.c_str(), src.size(), name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+    if (JS_IsException(built)) return nullptr;
+    auto* m = (JSModuleDef*)JS_VALUE_GET_PTR(built);
+    JS_FreeValue(cx, built);
     return m;
 }
 

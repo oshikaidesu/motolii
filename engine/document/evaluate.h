@@ -89,7 +89,7 @@ static void doc_evaluate(Doc& d, double now) {
     const int base = sorts.size() > 1 && sorts[0] == 0 && sorts[1] == 1 ? 1 : 0;   // (the last run in the stage's own view: flat layers under the first solid ones)
     const auto made = [&](int layer, bool shows) -> ThingFx& {   // (its view and its sheet, lying on what is behind as it says: Filament's own blending; one that reads what is under, as normal yet)
         const std::string laid = doc_word(d, layer, "blend");
-        return thing_fx_made(s, d.layerFx[layer], shows ? "" : laid == "add" || laid == "multiply" || laid == "screen" ? laid : "", !shows && doc_layer_stands(d, layer, d.layerFx[layer]), shows);
+        return thing_fx_built(s, d.layerFx[layer], shows ? "" : laid == "add" || laid == "multiply" || laid == "screen" ? laid : "", !shows && doc_layer_stands(d, layer, d.layerFx[layer]), shows);
     };
     const auto holder = [&](int layer) -> Scene* {   // (the scene of the nearest group above it that has effects of its own and is on now: its layers drawn in it; none, the stage's)
         for (int up = (int)doc_number(d, layer, "parent", 0, 0), n = 0; up > 0 && n < 64; up = (int)doc_number(d, up, "parent", 0, 0), ++n) {
@@ -132,7 +132,7 @@ static void doc_evaluate(Doc& d, double now) {
             thing_fx_into(s, d.layerFx[lies[i].layer], above);
             const bool stood = d.layerFx[lies[i].layer].world, deep = stood && lies[i].solid;   // (stood in the world: in depth as a sheet of its sort is, by how far off; a 2D layer's, by the order)
             if (stood) d.layerFx[lies[i].layer].look->setDepthCulling(deep), d.layerFx[lies[i].layer].look->setDepthWrite(deep);
-            for (const Stage::Made& made : s.made)
+            for (const Stage::Renderable& made : s.renderables)
                 if (made.of == d.layerFx[lies[i].layer].sheet || (d.layerFx[lies[i].layer].solid && made.of == d.layerFx[lies[i].layer].solid)) {
                     const auto one = faces.getInstance(made.thing);
                     faces.setCulling(one, false), faces.setChannel(one, (uint8_t)std::min(run, 7)), faces.setBlendOrderAt(one, 0, (uint16_t)(i * 128)), faces.setGlobalBlendOrderEnabledAt(one, 0, !deep);   // (its points are the screen's corners: never culled, as image.mat's sheet is not)
@@ -201,7 +201,7 @@ static void doc_evaluate(Doc& d, double now) {
                                      {fx.tints[0], 0.f}, {fx.tints[1], 0.f}, {fx.tones[0], 0.f}, {fx.tones[1], 0.f}, {fx.tones[2], 0.f}};
             t.video->look->setParameter("grade", grade, 6);
         }
-        if (t.solid && !t.solid->moves.empty()) for (size_t nth = 0; nth < t.solid->made->getAssetInstanceCount(); ++nth) solid_at(t.solid, doc_word(d, layer, "animation"), (lies[i].since - doc_delay(d, layer, (int)nth)) * doc_number(d, layer, "speed", 0, 1), nth);   // (its own movement, from when it comes on)
+        if (t.solid && !t.solid->moves.empty()) for (size_t nth = 0; nth < t.solid->asset->getAssetInstanceCount(); ++nth) solid_at(t.solid, doc_word(d, layer, "animation"), (lies[i].since - doc_delay(d, layer, (int)nth)) * doc_number(d, layer, "speed", 0, 1), nth);   // (its own movement, from when it comes on)
         if (t.drawn && t.drawn->lottie)   // (its slots as their knobs are now)
             if (DocScript* sc = doc_script_of(d, doc_word(d, layer, "file")); sc && !sc->parameters.empty()) {
                 std::vector<double> v;
@@ -232,7 +232,7 @@ static void doc_evaluate(Doc& d, double now) {
             t.drawn->open = lies[i].open;
             const float4 box{t.drawn->boxed, lies[i].open ? 1.f : 0.f};
             t.drawn->look->setParameter("deep", box), t.drawn->look->setDepthCulling(lies[i].solid), t.drawn->look->setDepthWrite(lies[i].solid);
-            for (const Stage::Made& made : s.made)
+            for (const Stage::Renderable& made : s.renderables)
                 if (const auto own = d.copyLooks.find(made.thing.getId()); made.of == t.drawn->sheet && own != d.copyLooks.end()) own->second->setParameter("deep", box), own->second->setDepthCulling(lies[i].solid), own->second->setDepthWrite(lies[i].solid);
         }
         if (t.drawn && t.drawn->edge[0]) {   // (its bevel as it is now, in the box's lengths; as far across as through in the world. 12 points as it comes: no source, After Effects' 2 is hardly seen on a title)
@@ -245,7 +245,7 @@ static void doc_evaluate(Doc& d, double now) {
             const float4 cut{across, std::min(through, drawn.boxed.z), told > 0.f ? (float)doc_bevel(d, layer) : 0.f, wide != 0.f ? std::fabs(z / wide) : 1.f};
             const float4 stairs = banded ? float4{drawn.bands.x / most, drawn.bands.y / most, drawn.bands.z / most, drawn.bands.w} : float4{0.f};
             drawn.look->setParameter("deepBevel", cut), drawn.look->setParameter("deepSteps", stairs);
-            for (const Stage::Made& made : s.made)
+            for (const Stage::Renderable& made : s.renderables)
                 if (const auto own = d.copyLooks.find(made.thing.getId()); made.of == drawn.sheet && own != d.copyLooks.end()) own->second->setParameter("deepBevel", cut), own->second->setParameter("deepSteps", stairs);
             const int reach = (int)std::ceil(across * (float)drawn.edgeW / (2.f * drawn.boxed.x));
             if (drawn.stale || reach > drawn.edgeReach) drawn.edgeReach = std::max(reach, drawn.edgeReach), edge_ask(s, &drawn, drawn.edgeReach);
@@ -253,7 +253,7 @@ static void doc_evaluate(Doc& d, double now) {
         if (t.drawn && t.drawn->inLight) {   // (a solid's three as they are now, and as a solid's as they come)
             const float3 surface{(float)doc_number(d, layer, "metallic", now, 0.08), (float)doc_number(d, layer, "roughness", now, 0.6), (float)doc_number(d, layer, "reflectance", now, 0.5)};
             t.drawn->look->setParameter("surface", surface);
-            for (const Stage::Made& made : s.made)
+            for (const Stage::Renderable& made : s.renderables)
                 if (const auto own = d.copyLooks.find(made.thing.getId()); made.of == t.drawn->sheet && own != d.copyLooks.end()) own->second->setParameter("surface", surface);
         }
         if (const std::string material = t.drawn || t.video ? doc_sheet_material(d, layer) : ""; !material.empty()) {   // (the material its sheet wears, its knobs as they are now: flat.mat's wear, doc_sheet_material)
@@ -281,7 +281,7 @@ static void doc_evaluate(Doc& d, double now) {
                 surface[p] = float4{(float)doc_number(d, layer, (part + "metallic").c_str(), now, front.x), (float)doc_number(d, layer, (part + "roughness").c_str(), now, front.y), front.z, 0.f};
             }
             t.drawn->look->setParameter("partColour", colour, 3), t.drawn->look->setParameter("partSurface", surface, 3);
-            for (const Stage::Made& made : s.made)
+            for (const Stage::Renderable& made : s.renderables)
                 if (const auto own = d.copyLooks.find(made.thing.getId()); made.of == t.drawn->sheet && own != d.copyLooks.end()) own->second->setParameter("partColour", colour, 3), own->second->setParameter("partSurface", surface, 3);
         }
         if (t.drawn && t.drawn->sketchLines) {   // (a sketch's lines as strong as they are now: what was drawn with them as they were goes)
@@ -412,7 +412,7 @@ static void doc_evaluate(Doc& d, double now) {
             t.drivenLooks = driven;
             const int members = driven ? doc_members(d, layer) : 1;
             auto& faces = s.engine->getRenderableManager();
-            for (const Stage::Made& made : s.made) {
+            for (const Stage::Renderable& made : s.renderables) {
                 if (made.of != t.drawn->sheet || made.matte) continue;
                 if (driven && !made.many) {   // (each copy its own bends, in its own look and its edge's)
                     float4 own[8];
@@ -451,7 +451,7 @@ static void doc_evaluate(Doc& d, double now) {
                 doc_parts(s, t, [&](RenderableManager& faces, RenderableManager::Instance one) { faces.setMaterialInstanceAt(one, 0, t.splatDone ? t.splatPlain : t.look); });
             }
         }
-        if (t.solid) for (size_t nth = 0; nth < t.solid->made->getAssetInstanceCount(); ++nth) solid_to(s, t.solid, nth || staggered ? mat4f(doc_place(d, layer, now, 0, (int)nth, staggered)) : place, nth);
+        if (t.solid) for (size_t nth = 0; nth < t.solid->asset->getAssetInstanceCount(); ++nth) solid_to(s, t.solid, nth || staggered ? mat4f(doc_place(d, layer, now, 0, (int)nth, staggered)) : place, nth);
         else if (doc_number(d, layer, "connect", 0, 0) != 0.0) move(s, m, [&](int nth, const mat4f&) { return (size_t)nth < joins.size() ? mat4f(joins[(size_t)nth]) : mat4f::scaling(float3{0.f}); });
         else {
             std::vector<float> far;   // (how far off each copy is from the eye: those further off drawn first, within the layer's own place)
@@ -471,7 +471,7 @@ static void doc_evaluate(Doc& d, double now) {
                 std::vector<uint16_t> place_of(far.size());
                 for (size_t k = 0; k < order.size(); ++k) place_of[order[k]] = (uint16_t)(k * 127 / std::max<size_t>(1, order.size() - 1));
                 auto& faces = s.engine->getRenderableManager();
-                for (const Stage::Made& made : s.made) {
+                for (const Stage::Renderable& made : s.renderables) {
                     if (made.of != m || made.nth < 0 || (size_t)made.nth >= place_of.size()) continue;
                     const auto one = faces.getInstance(made.thing);
                     for (size_t part = 0; part < faces.getPrimitiveCount(one); ++part) faces.setBlendOrderAt(one, part, (uint16_t)(t.lies * 128 + place_of[(size_t)made.nth]));
@@ -480,7 +480,7 @@ static void doc_evaluate(Doc& d, double now) {
         }
         if (const auto told = d.scripted.find(layer); told != d.scripted.end() && t.look && !t.drawn && !t.video) {   // (a solid's copies each the colour its sketch fills it with: a look of its own each)
             auto& faces = s.engine->getRenderableManager();
-            for (const Stage::Made& made : s.made) {
+            for (const Stage::Renderable& made : s.renderables) {
                 if (made.of != m || made.matte || made.nth < 0 || (size_t)made.nth >= told->second.copies.size() || told->second.copies[(size_t)made.nth].colour < 0.0) continue;
                 MaterialInstance*& own = d.copyLooks[made.thing.getId()];
                 if (!own) own = MaterialInstance::duplicate(t.look), faces.setMaterialInstanceAt(faces.getInstance(made.thing), 0, own);
@@ -512,7 +512,7 @@ static void doc_evaluate(Doc& d, double now) {
             else {
                 auto& faces = s.engine->getRenderableManager();
                 const int n = doc_members(d, layer);
-                for (const Stage::Made& made : s.made) {
+                for (const Stage::Renderable& made : s.renderables) {
                     if (made.of != m || made.matte) continue;
                     MaterialInstance*& own = d.copyLooks[made.thing.getId()];
                     if (!own) own = MaterialInstance::duplicate(main), faces.setMaterialInstanceAt(faces.getInstance(made.thing), 0, own);
@@ -634,7 +634,7 @@ static void doc_evaluate(Doc& d, double now) {
             unmatte(cut.look, cut.look == base || cut.look == own);   // (what cut its look before is let go of first)
             if (cut.matte >= 0) {
                 Scene* sc = s.mattes[(size_t)cut.matte].scene;
-                doc_unshape(s, [sc](const Stage::Made& made) { return sc->hasEntity(made.thing); });
+                doc_unshape(s, [sc](const Stage::Renderable& made) { return sc->hasEntity(made.thing); });
             }
             cut.matte = matte(s, a->drawn->sheet, {mat4f(doc_place(d, by, now))}, a->drawn->texture ? a->drawn->texture : white_point(s), doc_word(d, layer, "clip_matte") == "luma", 1.f, cut.matte);
             cut.from = by, cut.by = a->drawn, cut.look = nullptr, cut.how = how;
@@ -650,7 +650,7 @@ static void doc_evaluate(Doc& d, double now) {
             if (cut.look == own) cut.look->setParameter("matteUse", float4{0.f});
             cut.look = nullptr, cut.from = 0, cut.by = nullptr;
             Scene* sc = s.mattes[(size_t)cut.matte].scene;
-            doc_unshape(s, [sc](const Stage::Made& made) { return sc->hasEntity(made.thing); });
+            doc_unshape(s, [sc](const Stage::Renderable& made) { return sc->hasEntity(made.thing); });
         }
         if (shaped) { if (t.clipped) doc_material_instances(s, t, [](MaterialInstance* look) { look->unsetScissor(); }), t.clipped = false; }
         else if (clipped || t.clipped) {
@@ -671,7 +671,7 @@ static void doc_evaluate(Doc& d, double now) {
         mat4f sheetAt;
         bool found = false;
         auto& places = s.engine->getTransformManager();
-        for (const Stage::Made& made : s.made)
+        for (const Stage::Renderable& made : s.renderables)
             if (made.of == t.drawn->sheet && !made.matte && made.nth == 0) { sheetAt = places.getWorldTransform(places.getInstance(made.thing)); found = true; break; }
         const float px = 1.f / t.motion->h;
         const float3 corner{-0.5f * t.motion->w * px, 0.5f, 0.f}, right{px, 0.f, 0.f}, down{0.f, -px, 0.f};

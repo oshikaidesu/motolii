@@ -20,7 +20,7 @@ static void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
         if (aviutl_is(file)) {   // (an AviUtl2 script: run each frame on its picture, the one already made kept)
             const auto found = std::find_if(st.aviutl.begin(), st.aviutl.end(), [&](const auto& r) { return r->file == file; });
             const auto first = !scripts.empty() ? scripts.front() : !st.aviutl.empty() ? st.aviutl.front() : nullptr;   // (one Lua for the thing's scripts: what one leaves in a global the next on it reads, as AviUtl2 runs an object's effects one after another in one Lua: CrEasy's 背景ブラー reads the ox its CrEasy set)
-            scripts.push_back(found != st.aviutl.end() ? *found : aviutl_made(s, file, first ? first->L : nullptr)), st.steps.push_back('a');
+            scripts.push_back(found != st.aviutl.end() ? *found : aviutl_open(s, file, first ? first->L : nullptr)), st.steps.push_back('a');
             st.readsBehind |= scripts.back()->behind;   // (one that reads its frame reads what is behind: the stage's behind drawn, its own sheet left out of it)
             st.wide |= scripts.back()->wide;   // (one that draws: on the whole stage, as AviUtl2 draws an object on its screen)
             continue;
@@ -29,18 +29,18 @@ static void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
         if (std::filesystem::path(file).extension() == ".mjs") continue;   // (a splat effect: in the cloud's own look, point_cloud.h)
         if (const std::string ext = std::filesystem::path(file).extension().string(); ext == ".am" || ext == ".json") continue;   // (AbsentMotion's own motion, the thing moved: absent_motion.h; Filament's own settings, the stage's: viewer_settings.h)
         if (solid_is(file)) continue;   // (a solid's shape: its picture laid on it, not an effect on its picture: thing_fx_solid)
-        ScreenFx*& made = st.made[file];
-        if (!made) {
-            made = new ScreenFx;
-            made->file = file;
+        ScreenFx*& built = st.built[file];
+        if (!built) {
+            built = new ScreenFx;
+            built->file = file;
             std::string code;
-            if (!screen_read(*made, code)) { std::fprintf(stderr, "%s\n", made->trouble.c_str()); continue; }
-            made->interop = interop::screen(s.engine, file.c_str(), code.c_str(), made->bytes, &made->trouble, made->pictures, made->layered);
-            if (!made->interop) std::fprintf(stderr, "the effect %s is not taken: %s\n", file.c_str(), made->trouble.c_str());
-            made->stamp = screen_stamp(file);
+            if (!screen_read(*built, code)) { std::fprintf(stderr, "%s\n", built->trouble.c_str()); continue; }
+            built->interop = interop::screen(s.engine, file.c_str(), code.c_str(), built->bytes, &built->trouble, built->pictures, built->layered);
+            if (!built->interop) std::fprintf(stderr, "the effect %s is not taken: %s\n", file.c_str(), built->trouble.c_str());
+            built->stamp = screen_stamp(file);
         }
-        if (made->interop) st.fx.push_back(made), st.steps.push_back(0);
-        if (made->interop && std::find(made->others.begin(), made->others.end(), "backdrop") != made->others.end()) st.readsBehind = true;   // (AbsentMotion's backdrop: the stage's behind, screen_fx.h)
+        if (built->interop) st.fx.push_back(built), st.steps.push_back(0);
+        if (built->interop && std::find(built->others.begin(), built->others.end(), "backdrop") != built->others.end()) st.readsBehind = true;   // (AbsentMotion's backdrop: the stage's behind, screen_fx.h)
     }
     const auto nameOf = [](const std::string& file) { const size_t hash = file.rfind('#'); return hash != std::string::npos ? aviutl_unword(file.substr(hash + 1)) : std::filesystem::path(file).stem().string(); };   // (one of an @ file: its name after #)
     std::vector<std::string> names;   // (the effects in their order, by name: what a script asks of its fellows, obj.getoption "script_name")
@@ -81,9 +81,9 @@ static void thing_fx_pictures(Stage& s, ScreenStack& st, View* v) {
     if (!st.shot || st.shot->getWidth() != w || st.shot->getHeight() != h) {   // (its pictures as large as the view draws; made again when that moves)
         for (Texture*& t : {std::ref(st.shot), std::ref(st.depth), std::ref(st.between[0]), std::ref(st.between[1])}) if (t) s.engine->destroy(t), t = nullptr;
         for (RenderTarget*& r : {std::ref(st.target), std::ref(st.betweenTarget[0]), std::ref(st.betweenTarget[1])}) if (r) s.engine->destroy(r), r = nullptr;
-        interop::on_driver(s.engine, [made = std::vector<void*>(st.device, st.device + 3), thor = std::vector<tvg::WgCanvas*>(st.thor, st.thor + 2)] {   // (after the pictures drawn with them)
+        interop::on_driver(s.engine, [built = std::vector<void*>(st.device, st.device + 3), thor = std::vector<tvg::WgCanvas*>(st.thor, st.thor + 2)] {   // (after the pictures drawn with them)
             for (tvg::WgCanvas* c : thor) delete c;
-            for (void* t : made) if (t) wgpuTextureRelease((WGPUTexture)t);
+            for (void* t : built) if (t) wgpuTextureRelease((WGPUTexture)t);
         });
         st.thor[0] = st.thor[1] = nullptr;
         int n = 0;
@@ -96,8 +96,8 @@ static void thing_fx_pictures(Stage& s, ScreenStack& st, View* v) {
             like.mipLevelCount = 1, like.sampleCount = 1;
             static const char* const names[3] = {"thing shot", "thing between 0", "thing between 1"};
             like.label = {names[n], WGPU_STRLEN};
-            void* made = st.device[n++] = wgpuDeviceCreateTexture((WGPUDevice)interop::device(s.engine), &like);
-            return Texture::Builder().width(w).height(h).levels(1).format(Texture::InternalFormat::RGBA8).usage(Texture::Usage::COLOR_ATTACHMENT | Texture::Usage::SAMPLEABLE | Texture::Usage::BLIT_SRC).import((intptr_t)made).build(*s.engine);
+            void* built = st.device[n++] = wgpuDeviceCreateTexture((WGPUDevice)interop::device(s.engine), &like);
+            return Texture::Builder().width(w).height(h).levels(1).format(Texture::InternalFormat::RGBA8).usage(Texture::Usage::COLOR_ATTACHMENT | Texture::Usage::SAMPLEABLE | Texture::Usage::BLIT_SRC).import((intptr_t)built).build(*s.engine);
         };
         st.shot = picture();
         st.depth = Texture::Builder().width(w).height(h).levels(1).usage(Texture::Usage::DEPTH_ATTACHMENT).format(Texture::InternalFormat::DEPTH24).build(*s.engine);
@@ -190,12 +190,12 @@ static View* thing_fx_view(Stage& s, ThingFx& e) {
 // off things in the stage's own only.
 static void thing_fx_into(Stage& s, ThingFx& e, Scene* into) {
     Scene* const to = into ? into : s.scene;
-    for (const Stage::Made& made : s.made)   // (one made since, in the stage's own, moved too)
-        if ((made.of == e.sheet || (e.solid && made.of == e.solid)) && !to->hasEntity(made.thing)) (e.in ? e.in : s.scene)->remove(made.thing), s.scene->remove(made.thing), to->addEntity(made.thing);
+    for (const Stage::Renderable& built : s.renderables)   // (one made since, in the stage's own, moved too)
+        if ((built.of == e.sheet || (e.solid && built.of == e.solid)) && !to->hasEntity(built.thing)) (e.in ? e.in : s.scene)->remove(built.thing), s.scene->remove(built.thing), to->addEntity(built.thing);
     e.in = to == s.scene ? nullptr : to;
 }
 // The sheet: the whole picture, samples/materials/image.mat's way (its points are the screen's own corners).
-static ThingFx& thing_fx_made(Stage& s, ThingFx& e, const std::string& lay = "", bool world = false, bool shell = false) {
+static ThingFx& thing_fx_built(Stage& s, ThingFx& e, const std::string& lay = "", bool world = false, bool shell = false) {
     if (e.view && e.lay == lay && e.world == world && e.shell == shell) return e;
     if (!e.view) e.view = thing_fx_view(s, e);
     thing_fx_into(s, e, s.scene);
@@ -297,18 +297,18 @@ static void thing_fx_solid(Stage& s, ThingFx& e, bool inFrame) {
     const char* const look = flat ? "solid_image_flat.filamat" : "solid_image.filamat";
     const bool anew = !e.solid || e.solidAs != look;
     if (said == e.solidSaid || (anew && inFrame)) return;
-    SolidMade made;
+    SolidMesh built;
     std::string why;
-    if (!solid_three(e.solidFile, e.parameters, e.words, e.size.x, e.size.y, e.cover->a, e.cover->w, e.cover->h, made, why)) std::fprintf(stderr, "the solid %s is not made: %s\n", e.solidFile.c_str(), why.substr(0, 600).c_str());
-    if (made.idx.empty() || made.pos.size() != made.nrm.size() || made.uv.size() * 3 != made.pos.size() * 2) made = SolidMade{{0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 1, 0, 0, 1, 0, 0, 1}, {0, 0, 0, 0, 0, 0}, {0, 1, 2}};   // (none yet, Raster Extrude's before its picture is read: a point, its look ready)
+    if (!solid_three(e.solidFile, e.parameters, e.words, e.size.x, e.size.y, e.cover->a, e.cover->w, e.cover->h, built, why)) std::fprintf(stderr, "the solid %s is not made: %s\n", e.solidFile.c_str(), why.substr(0, 600).c_str());
+    if (built.idx.empty() || built.pos.size() != built.nrm.size() || built.uv.size() * 3 != built.pos.size() * 2) built = SolidMesh{{0, 0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 1, 0, 0, 1, 0, 0, 1}, {0, 0, 0, 0, 0, 0}, {0, 1, 2}};   // (none yet, Raster Extrude's before its picture is read: a point, its look ready)
     e.solidSaid = said;
     if (anew && e.solid) take_off(s, e.solid), delete e.solid, e.solid = nullptr;
     Mesh* m = e.solid ? e.solid : new Mesh;
-    m->pos.resize(made.pos.size() / 3), m->nrm.resize(made.pos.size() / 3), m->uv.resize(made.uv.size() / 2);
-    std::memcpy(m->pos.data(), made.pos.data(), made.pos.size() * sizeof(float)), std::memcpy(m->nrm.data(), made.nrm.data(), made.nrm.size() * sizeof(float));
-    std::memcpy(m->uv.data(), made.uv.data(), made.uv.size() * sizeof(float));
-    m->idx = std::move(made.idx);
-    e.solidRepeat = made.repeat;
+    m->pos.resize(built.pos.size() / 3), m->nrm.resize(built.pos.size() / 3), m->uv.resize(built.uv.size() / 2);
+    std::memcpy(m->pos.data(), built.pos.data(), built.pos.size() * sizeof(float)), std::memcpy(m->nrm.data(), built.nrm.data(), built.nrm.size() * sizeof(float));
+    std::memcpy(m->uv.data(), built.uv.data(), built.uv.size() * sizeof(float));
+    m->idx = std::move(built.idx);
+    e.solidRepeat = built.repeat;
     if (!anew) return reshape(s, m, {(uint32_t)m->idx.size()});
     e.solid = m, e.solidAs = look;
     e.solidLook = add(s, m, look, {mat4f{}}, 1, true);

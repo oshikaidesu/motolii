@@ -150,9 +150,9 @@ static const AviutlBuf* aviutl_text(AviutlRun& r, const std::string& words, uint
     if (measured) return measured[0] = (uint32_t)std::ceil(w), measured[1] = (uint32_t)std::ceil(h), tvg::Paint::rel(all), nullptr;
     all->translate(-x, -y);
     bool given = false;
-    const AviutlBuf* made = aviutl_canvas(r, key, (uint32_t)std::ceil(w), (uint32_t)std::ceil(h), [&](tvg::SwCanvas* c) { return given = true, c->add(all) == tvg::Result::Success; });
+    const AviutlBuf* built = aviutl_canvas(r, key, (uint32_t)std::ceil(w), (uint32_t)std::ceil(h), [&](tvg::SwCanvas* c) { return given = true, c->add(all) == tvg::Result::Success; });
     if (!given) tvg::Paint::rel(all);
-    return made;
+    return built;
 }
 
 static int aviutl_load(lua_State* L) {

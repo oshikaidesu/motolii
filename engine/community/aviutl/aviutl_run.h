@@ -83,7 +83,7 @@ function rand1(seed, frame) return aviutl_rand(0, 4294967294, seed or 0, frame o
 
 // Made once a file: its Lua state (the libraries lua.txt leaves, require from its own folder), obj, its parameters' first
 // values, and each of its shaders made (said on stderr: one that cannot be is "not yet" when it is used).
-static std::shared_ptr<AviutlRun> aviutl_made(Stage& s, const std::string& file, lua_State* with = nullptr) {
+static std::shared_ptr<AviutlRun> aviutl_open(Stage& s, const std::string& file, lua_State* with = nullptr) {
     auto r = std::make_shared<AviutlRun>();
     r->file = file, r->s = &s;
     if (!aviutl_text(file, r->own, r->all, r->trouble)) return std::fprintf(stderr, "the AviUtl2 script %s is not taken: %s\n", file.c_str(), r->trouble.c_str()), r;
@@ -137,14 +137,14 @@ static std::shared_ptr<AviutlRun> aviutl_made(Stage& s, const std::string& file,
     for (math::half& h : *noise) h = math::half(std::uniform_real_distribution<float>(0.f, 1.f)(rng));
     r->random = Texture::Builder().width(256).height(256).levels(1).format(Texture::InternalFormat::R16F).build(*s.engine);
     r->random->setImage(*s.engine, 0, backend::PixelBufferDescriptor(noise->data(), noise->size() * 2, backend::PixelDataFormat::R, backend::PixelDataType::HALF, [](void*, size_t, void* u) { delete (std::vector<math::half>*)u; }, noise));
-    int made = 0, all = 0;
+    int built = 0, all = 0;
     const std::regex shader(R"(--\[\[pixelshader@(\w+):)");
     for (std::sregex_iterator m(r->all.begin(), r->all.end(), shader), end; m != end; ++m, ++all) {
         std::string why;
-        if (aviutl_interop(*r, (*m)[1], false, why) && (aviutl_interop(*r, (*m)[1], true, why) || true)) ++made;   // (and the way it samples "clip", made now: not inside a frame)
+        if (aviutl_interop(*r, (*m)[1], false, why) && (aviutl_interop(*r, (*m)[1], true, why) || true)) ++built;   // (and the way it samples "clip", made now: not inside a frame)
         else std::fprintf(stderr, "the AviUtl2 shader %s of %s is not made: %s\n", (*m)[1].str().c_str(), file.c_str(), why.substr(0, 400).c_str());
     }
-    std::fprintf(stderr, "AviUtl2 script %s: %d of %d shaders made%s%s\n", file.c_str(), made, all, r->trouble.empty() ? "" : ", not taken: ", r->trouble.substr(0, 300).c_str());
+    std::fprintf(stderr, "AviUtl2 script %s: %d of %d shaders made%s%s\n", file.c_str(), built, all, r->trouble.empty() ? "" : ", not taken: ", r->trouble.substr(0, 300).c_str());
     return r;
 }
 

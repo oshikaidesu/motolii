@@ -419,7 +419,7 @@ static size_t cache_one(const Canvas2D* d) { return d->target ? 4 * (size_t)wgpu
 static void cache_drop(Stage& s, Canvas2D* d) {
     {
         std::lock_guard<std::mutex> hold(d->keepingLock);
-        for (auto& [at, made] : d->keeping) d->cached[at] = nullptr, wgpuTextureRelease(made);
+        for (auto& [at, built] : d->keeping) d->cached[at] = nullptr, wgpuTextureRelease(built);
         d->keeping.clear();
     }
     const size_t one = d->target ? 4 * (size_t)wgpuTextureGetWidth(d->target) * wgpuTextureGetHeight(d->target) : 0;
@@ -429,7 +429,7 @@ static void cache_drop(Stage& s, Canvas2D* d) {
     }
     d->cached.clear();
     d->ahead.clear();
-    interop::on_driver(s.engine, [made = std::move(d->cachedTextures)] { for (WGPUTexture t : made) wgpuTextureRelease(t); });   // (after Filament has taken and let go of them)
+    interop::on_driver(s.engine, [built = std::move(d->cachedTextures)] { for (WGPUTexture t : built) wgpuTextureRelease(t); });   // (after Filament has taken and let go of them)
     d->cachedTextures.clear();
     d->shownAt = -1;
     ++d->keepAge;
@@ -439,10 +439,10 @@ static void cache_drop(Stage& s, Canvas2D* d) {
 // The kept frames the driver thread has made since, taken as Filament's (main thread).
 static void cache_take(Stage& s, Canvas2D* d) {
     std::lock_guard<std::mutex> hold(d->keepingLock);
-    for (auto& [frame, made] : d->keeping) {
-        d->cached[frame] = Texture::Builder().width(wgpuTextureGetWidth(made)).height(wgpuTextureGetHeight(made)).levels(1).sampler(Texture::Sampler::SAMPLER_2D)
-                             .format(Texture::InternalFormat::RGBA8).usage(Texture::Usage::SAMPLEABLE).import((intptr_t)made).build(*s.engine);
-        d->cachedTextures.push_back(made);
+    for (auto& [frame, built] : d->keeping) {
+        d->cached[frame] = Texture::Builder().width(wgpuTextureGetWidth(built)).height(wgpuTextureGetHeight(built)).levels(1).sampler(Texture::Sampler::SAMPLER_2D)
+                             .format(Texture::InternalFormat::RGBA8).usage(Texture::Usage::SAMPLEABLE).import((intptr_t)built).build(*s.engine);
+        d->cachedTextures.push_back(built);
     }
     d->keeping.clear();
 }

@@ -122,27 +122,27 @@ static int interp_said(const std::string& text, Interp* is, std::string* why = n
     for (size_t k = 0; k < sizeof interp_kinds / sizeof *interp_kinds; ++k) {
         const auto& kind = interp_kinds[k];
         if (strcasecmp(name.c_str(), kind.name)) continue;
-        Interp made;
-        made.kind = (Interp::Kind)k;
+        Interp built;
+        built.kind = (Interp::Kind)k;
         int n = 0;
-        for (double one = 0; n < 8 && said >> one;) made.p[n++] = one;
+        for (double one = 0; n < 8 && said >> one;) built.p[n++] = one;
         said.clear();
         const bool right = !(said >> more) && (n == 0 || n == kind.numbers);
-        if (n == 0) for (int j = 0; j < 8; ++j) made.p[j] = kind.usual[j];
-        const double* p = made.p;
+        if (n == 0) for (int j = 0; j < 8; ++j) built.p[j] = kind.usual[j];
+        const double* p = built.p;
         bool finite = true;
         for (int j = 0; j < kind.numbers; ++j) finite = finite && std::isfinite(p[j]);
         const char* rule = !right ? "" : !finite ? "every number is a real one"   // (the past repository's own rules for the numbers)
-            : made.kind == Interp::Bezier && (p[0] < 0.0 || p[0] > 1.0 || p[2] < 0.0 || p[2] > 1.0) ? "x1 and x2 are from 0 to 1"
-            : made.kind == Interp::Bounce && p[0] <= 0.0 ? "first_dip is above 0"
-            : (made.kind == Interp::Elastic && p[1] <= 0.0) || (made.kind == Interp::Cyclic && p[0] <= 0.0) ? "period is above 0"
-            : (made.kind == Interp::Steps || made.kind == Interp::ElasticSteps) && p[0] <= 0.0 ? "width is above 0"
-            : made.kind == Interp::Steps && p[1] < 0.0 ? "smooth is 0 or more" : nullptr;
+            : built.kind == Interp::Bezier && (p[0] < 0.0 || p[0] > 1.0 || p[2] < 0.0 || p[2] > 1.0) ? "x1 and x2 are from 0 to 1"
+            : built.kind == Interp::Bounce && p[0] <= 0.0 ? "first_dip is above 0"
+            : (built.kind == Interp::Elastic && p[1] <= 0.0) || (built.kind == Interp::Cyclic && p[0] <= 0.0) ? "period is above 0"
+            : (built.kind == Interp::Steps || built.kind == Interp::ElasticSteps) && p[0] <= 0.0 ? "width is above 0"
+            : built.kind == Interp::Steps && p[1] < 0.0 ? "smooth is 0 or more" : nullptr;
         if (rule) {
             if (why) *why = std::string(kind.name) + (kind.numbers ? std::string(" is said alone or with its ") + std::to_string(kind.numbers) + " numbers (" + kind.names + ")" : " takes no numbers") + (*rule ? std::string(": ") + rule : "");
             return 1;
         }
-        *is = made;
+        *is = built;
         return 0;
     }
     return -1;

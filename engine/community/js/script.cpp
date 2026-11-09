@@ -466,9 +466,9 @@ std::vector<ScriptCopy> Script::copies(int n, double t, const std::map<std::stri
         JS_FreeValue(cx, a);
         return len;
     };
-    const int64_t made = list("points", [&](ScriptCopy& c, double x, double y) { c.x = x * unit, c.y = y * unit; });
+    const int64_t built = list("points", [&](ScriptCopy& c, double x, double y) { c.x = x * unit, c.y = y * unit; });
     list("sizes", [](ScriptCopy& c, double x, double) { c.size = x; });
-    for (int64_t i = made; i < n; ++i) all[(size_t)i].size = 0;   // (copies past the cloud's last point are not seen)
+    for (int64_t i = built; i < n; ++i) all[(size_t)i].size = 0;   // (copies past the cloud's last point are not seen)
     JS_FreeValue(cx, out);
     return all;
 }
@@ -516,16 +516,16 @@ ScriptCopy Script::ask(int i, int n, double t) {   // (each(), the parameters as
 static const char anime_prelude[] = R"(
 var __eases = {};
 function __ease(said) {
-  var made = __eases[said];
-  if (made) return made;
+  var built = __eases[said];
+  if (built) return built;
   var seed = 0;
   for (var i = 0; i < said.length; i++) seed = (seed * 31 + said.charCodeAt(i)) | 0;
   var r = anime.utils.createSeededRandom(seed), ownRandom = Math.random;
   Math.random = function () { return r(0, 1, 6); };
-  try { with (anime.eases) { with (anime) { made = eval('(' + said + ')'); } } } finally { Math.random = ownRandom; }   // (anime's own linear(), steps()... before eases.linear)
-  if (made && typeof made.ease === 'function') made = made.ease;   // (a spring: its ease)
-  if (typeof made !== 'function') throw new Error(said + ': not an ease of anime.js');
-  return __eases[said] = made;
+  try { with (anime.eases) { with (anime) { built = eval('(' + said + ')'); } } } finally { Math.random = ownRandom; }   // (anime's own linear(), steps()... before eases.linear)
+  if (built && typeof built.ease === 'function') built = built.ease;   // (a spring: its ease)
+  if (typeof built !== 'function') throw new Error(said + ': not an ease of anime.js');
+  return __eases[said] = built;
 }
 function __ease_at(said, u) { return __ease(said)(Math.min(1, Math.max(0, u))); }
 )";

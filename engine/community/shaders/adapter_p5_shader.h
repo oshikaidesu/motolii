@@ -48,7 +48,7 @@ inline bool adapter_p5_shader(const std::string& json, std::string& fs, std::str
         *t = std::regex_replace(*t, uniform, "");
     }
     const auto number = [](double v) { char o[32]; std::snprintf(o, sizeof o, "%.9g", v); return std::string(o); };
-    const auto made = [&](const std::string& type, const std::vector<double>& v, size_t from, size_t n) {
+    const auto built = [&](const std::string& type, const std::vector<double>& v, size_t from, size_t n) {
         std::string o = type + "(";
         for (size_t i = 0; i < n; ++i) o += (i ? "," : "") + number(from + i < v.size() ? v[from + i] : 0.0);
         return o + ")";
@@ -89,11 +89,11 @@ inline bool adapter_p5_shader(const std::string& json, std::string& fs, std::str
         const std::vector<double>& first = samples[0];
         if (row) {   // (a row: as it stood first)
             set += name + "=" + type + "[" + std::to_string(row) + "](";
-            for (int i = 0; i < row; ++i) set += (i ? "," : "") + made(type, first, (size_t)(i * size), (size_t)size);
+            for (int i = 0; i < row; ++i) set += (i ? "," : "") + built(type, first, (size_t)(i * size), (size_t)size);
             set += ");";
             continue;
         }
-        if (type.rfind("mat", 0) == 0) { set += name + "=" + made(type, first, 0, (size_t)size) + ";"; continue; }
+        if (type.rfind("mat", 0) == 0) { set += name + "=" + built(type, first, 0, (size_t)size) + ";"; continue; }
         bool still = true, stage = (type == "vec2" || type == "vec3" || type == "ivec2") && first.size() >= 2 && first[0] > 0;
         const double times = stage ? first[0] / width : 1.0;
         for (const auto& s : samples) {

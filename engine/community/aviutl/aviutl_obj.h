@@ -6,7 +6,7 @@
 static int aviutl_module(lua_State* L) { return luaL_error(L, "needs %s.mod2, an AviUtl2 script module (a Windows DLL)", luaL_checkstring(L, 1)); }
 // ffi.load("kernel32")'s clock, as Wine gives it (dlls/ntdll/unix/sync.c NtQueryPerformanceCounter: the monotonic clock
 // counted at TICKSPERSEC, 10,000,000 a second): HexScript's Particle_H.lua times its own frame by it (M.clock). No other
-// Windows library and no other kernel32 call is here: the script stops saying which it wanted (aviutl_made's sandbox).
+// Windows library and no other kernel32 call is here: the script stops saying which it wanted (aviutl_open's sandbox).
 static int aviutl_ticks(lua_State* L) { return lua_pushnumber(L, (double)std::chrono::duration_cast<std::chrono::duration<long long, std::ratio<1, 10000000>>>(std::chrono::steady_clock::now().time_since_epoch()).count()), 1; }
 static int aviutl_pixelshader(lua_State* L) {   // (name, target, {resource...}, {constant...}, blend, sampler)
     AviutlRun& r = aviutl_of(L);
