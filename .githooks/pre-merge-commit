@@ -1,0 +1,4 @@
+#!/bin/sh
+# A merge commit is a commit too: the same checks as .githooks/pre-commit. Most of main's commits are merges, made in the
+# main checkout, and without this they skip every check there (git's own pre-merge-commit sample does this, githooks(5)).
+exec "$(git rev-parse --show-toplevel)/.githooks/pre-commit"

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-# The measurable rules of AGENTS.md 「構成の目標」, checked on what is staged (the index), not on the disk.
+# The measurable rules of AGENTS.md 「構成の目標」, checked on what is staged (the index), not on the disk (but for rule 1 at the root).
 # A rule nobody checks is ignored: every one here was written after a session left that mess behind.
 #   layout_check.py              the index as it is: the pre-commit hook after size_check.py, or by hand
 #   layout_check.py --all [BASE] the commit checked out (HEAD); rule 5 on the files added since BASE when given:
 #                                CI (.github/workflows/checks.yml) on a pull request's tree
-import re, subprocess, sys
+import os, re, subprocess, sys
 from collections import Counter
 
 AREAS = ('shelves', 'app', 'engine', 'docs')
@@ -39,14 +39,29 @@ else:
 bad = []
 
 # rule 1: the root holds the 4 entrances and the fixed documents, nothing else
-for top in sorted({p.split('/')[0] + ('/' if '/' in p else '') for p in files}):
+def root_allows(top):
     name = top.rstrip('/')
-    if top.endswith('/') and (name in AREAS or name.startswith('.')):
-        continue
-    if not top.endswith('/') and ROOT_FILES.match(name):
-        continue
-    bad.append(f'rule 1: {top}: the root holds only {", ".join(a + "/" for a in AREAS)} and the fixed documents;'
-               f' move it under the entrance it belongs to')
+    if top.endswith('/'):
+        return name in AREAS or name.startswith('.')
+    return bool(ROOT_FILES.match(name))
+
+ROOT_ONLY = f'the root holds only {", ".join(a + "/" for a in AREAS)} and the fixed documents'
+for top in sorted({p.split('/')[0] + ('/' if '/' in p else '') for p in files}):
+    if not root_allows(top):
+        bad.append(f'rule 1: {top}: {ROOT_ONLY}; move it under the entrance it belongs to')
+
+# rule 1 on the disk too (the hook only): an entry git ignores (.gitignore, .git/info/exclude) is still what a
+# newcomer sees on opening the checkout, so the root is read as a folder, not through git
+if not tree:
+    root = git('rev-parse', '--show-toplevel').strip()
+    for entry in sorted(os.listdir(root)):
+        full = os.path.join(root, entry)
+        top = entry + ('/' if os.path.isdir(full) and not os.path.islink(full) else '')
+        if not root_allows(top) and not any(p == entry or p.startswith(entry + '/') for p in files):
+            kind = 'a link' if os.path.islink(full) else 'not in git'
+            bad.append(f'rule 1: {top}: {kind}, but in the checkout\'s root; {ROOT_ONLY}: delete it, or move it'
+                       f' under engine/out, app/build or engine/third_party (git check-ignore -v {entry} names'
+                       f' the line hiding it)')
 
 # rule 2: each entrance README names every folder in it (app/: also every folder in lib/)
 def named(readme, folder):
