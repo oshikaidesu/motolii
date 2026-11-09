@@ -5,6 +5,8 @@
 // choice). Told as the AviUtl2 head lines script.cpp already reads (as isf.cpp tells an ISF's JSON), so the card is the same.
 // min and max are how far its knob goes, not how far a hand may (doc_edit.h); none written: Houdini's FloatParmTemplate's
 // own, 0 to 10, min_is_strict False, widened to reach its value (Motolii's own: a knob at its end could not be dragged to it). The values reach each() flat, k.name, as leva's useControls returns them.
+// Its label: leva's { label } as written, else the key as Godot's inspector shows one (String::capitalize, MIT, godotengine/godot
+// at c51ff06e8836: "ease_in" Ease In, "scaleFrom" Scale From).
 #pragma once
 #include <quickjs.h>
 #include <algorithm>
@@ -31,6 +33,17 @@ static const char* leva_told = R"((function (all) {
     }
     return step || digits(v) / 10;
   }
+  function nice(name) {   // (a key shown as Godot's inspector shows a property: String::capitalize, core/string/ustring.cpp)
+    var up = function (c) { return c !== c.toLowerCase(); }, low = function (c) { return c !== c.toUpperCase(); }, digit = function (c) { return c >= '0' && c <= '9'; };
+    var out = '', start = 0;
+    for (var i = 1; i < name.length; i++) {   // (_separate_compound_words: aA, AAa, 2Aa, 2aa, A2, a2)
+      var p = name[i - 1], c = name[i], next = name[i + 1] || '';
+      if ((low(p) && up(c)) || ((up(p) || digit(p)) && up(c) && low(next)) || (digit(p) && low(c) && low(next)) || ((up(p) || low(p)) && digit(c)))
+        out += name.substring(start, i) + ' ', start = i;
+    }
+    out = (out + name.substring(start)).replace(/[\s_-]/g, ' ').toLowerCase().trim();
+    return out.split(' ').filter(function (w) { return w.length > 0; }).map(function (w) { return w[0].toUpperCase() + w.substring(1); }).join(' ');
+  }
   function one(name, v, fold) {
     if (v && v.__folder) {
       lines.push('// --group:' + name);
@@ -38,7 +51,7 @@ static const char* leva_told = R"((function (all) {
       lines.push(fold ? '// --group:' + fold : '// --group');
       return;
     }
-    var s = v !== null && typeof v === 'object' && !Array.isArray(v) ? v : { value: v }, x = s.value, label = s.label || name;
+    var s = v !== null && typeof v === 'object' && !Array.isArray(v) ? v : { value: v }, x = s.value, label = s.label || nice(name);   // (leva's own label: as written)
     if (s.options) {
       var words = Array.isArray(s.options) ? s.options.slice() : Object.keys(s.options).map(function (k) { return s.options[k]; });
       var at = words.indexOf(x);
