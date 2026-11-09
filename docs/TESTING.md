@@ -5,17 +5,17 @@
 - 試験の「期待値」は、試験される側のコードの外にある（Flutter 公式のガイドライン、W3C の基準、標準規格）。
 - 自作の試験は使い捨て。自作の期待値を守る試験は残さない（旧 `app/test` `integration_test` `test_driver` `engine/check` は削除）。
 - 失敗は UI を直す合図ではなく情報として記録する。ここでは通すために UI を変えていない。
-- 置き場：Flutter の決まりどおり、ウィジェットの試験は `app/test/`（docs.flutter.dev/cookbook/testing/widget/introduction）、実機の窓で動かす試験は `app/integration_test/` と `app/test_driver/`（docs.flutter.dev/testing/integration-tests）。試験が書く物は `app/build/test_output/`。
+- 置き場：Flutter の決まりどおり、ウィジェットの試験は `app/test/`（docs.flutter.dev/cookbook/testing/widget/introduction）、実機でアプリを動かす試験は `app/integration_test/` と `app/test_driver/`（docs.flutter.dev/testing/integration-tests）。試験が書く物は `app/build/test_output/`。
 
 ## 要件の一覧
 
 | 要件 | 出所（取得して存在を確認） | 何を調べるか | 実行 | 状態 |
 |---|---|---|---|---|
-| 押せる所は 48x48 以上（Android） | https://docs.flutter.dev/ui/accessibility/accessibility-testing ・ https://api.flutter.dev/flutter/flutter_test/meetsGuideline.html | `androidTapTargetGuideline`（tap 可能な意味ノード） | 下記 A | 窓なしで実行済み：**失敗** 65 ノード |
-| 押せる所は 44x44 以上（iOS） | 同上 | `iOSTapTargetGuideline` | 下記 A | 窓なしで実行済み：**失敗** 65 ノード |
-| 押せる所に意味ラベルがある | 同上 | `labeledTapTargetGuideline` | 下記 A | 窓なしで実行済み：**失敗** 47 ノード |
-| 文字のコントラスト | 同上 | `textContrastGuideline` | 下記 A | 窓なしで実行済み：**通過**（弱い証拠、下記） |
-| 窓を開いたとき、描画の例外（レイアウトのはみ出し等）が出ない | 同上（フレームワーク自身の assertion を `takeException` で拾う） | 例外が 0 件 | 下記 A | 窓なしで実行済み：**失敗** 1 件 |
+| 押せる所は 48x48 以上（Android） | https://docs.flutter.dev/ui/accessibility/accessibility-testing ・ https://api.flutter.dev/flutter/flutter_test/meetsGuideline.html | `androidTapTargetGuideline`（tap 可能な意味ノード） | 下記 A | ウィンドウなしで実行済み：**失敗** 65 ノード |
+| 押せる所は 44x44 以上（iOS） | 同上 | `iOSTapTargetGuideline` | 下記 A | ウィンドウなしで実行済み：**失敗** 65 ノード |
+| 押せる所に意味ラベルがある | 同上 | `labeledTapTargetGuideline` | 下記 A | ウィンドウなしで実行済み：**失敗** 47 ノード |
+| 文字のコントラスト | 同上 | `textContrastGuideline` | 下記 A | ウィンドウなしで実行済み：**通過**（弱い証拠、下記） |
+| アプリを開いたとき、描画の例外（レイアウトのはみ出し等）が出ない | 同上（フレームワーク自身の assertion を `takeException` で拾う） | 例外が 0 件 | 下記 A | ウィンドウなしで実行済み：**失敗** 1 件 |
 | WCAG 2.2 SC 1.4.3 Contrast (Minimum)：通常文字 4.5:1、大きい文字 3:1 | https://www.w3.org/TR/WCAG22/#contrast-minimum | 参照のみ。実行できる道具はまだ無い（`textContrastGuideline` の閾値が同じかは未確認） | — | 参照のみ（未実装） |
 | WCAG 2.2 SC 2.5.8 Target Size (Minimum)：24x24 CSS px（例外あり） | https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html | 参照のみ。上の 48/44 は携帯の指向けで、マウス操作の desktop アプリにはこちらの 24 が近い | — | 参照のみ（未実装） |
 | 静的解析：flutter_lints | https://pub.dev/packages/flutter_lints （flutter.dev 発行、6.0.0、`analysis_options.yaml` が include 済み） | 規約違反の lint | `cd app && flutter analyze --no-pub` | このセッションでは未実行 |
@@ -28,7 +28,7 @@ cd app && flutter test --no-pub test/accessibility_guidelines_test.dart
 
 フレーム時間の試験は `flutter drive` 用なので `integration_test/` に分けてあり、`flutter test test/` では拾わない。
 
-## 実行結果（2026-11-08、macOS、窓なし）
+## 実行結果（2026-11-08、macOS、ウィンドウなし）
 
 対象：実物の `Workspace`（`lib/workspace/workspace.dart`）を新しい空の文書で 1600x960 に開いた画面。エンジン（`engine/out/libmotolii.dylib`）は FFI で読み込めた。ライブラリが無い環境では `skip`。5 件中 1 件通過、4 件失敗。
 
@@ -38,13 +38,13 @@ cd app && flutter test --no-pub test/accessibility_guidelines_test.dart
 - コントラスト：通過。ただし文字は試験用の Ahem 書体の塗りつぶしで描かれ（Mac の書体を読み込んでいない）、最初の画面だけで、ポップアップやホバーは開いていない。通過は「見た範囲では違反なし」。
 - はみ出し：`A RenderFlex overflowed by 9.9 pixels on the right.` `app/lib/workspace/timeline/timeline_header.dart:228`（2026-11-08 の時の行）（幅 66.0 の Row）。
 
-## フレーム時間（窓が要る：2026-11-08 実行、不通過）
+## フレーム時間（ウィンドウが要る：2026-11-08 実行、不通過）
 
 | Requirement | Verified source | What it checks | How to run | Status |
 |---|---|---|---|---|
 | Flutter's frame budget (about 16 ms a frame, 60 fps) while the Workspace timeline is scrolled | https://docs.flutter.dev/cookbook/testing/integration/profiling ("Measure performance with an integration test") | `traceAction` + `TimelineSummary` over 120 mouse-wheel notches on the timeline (40 shapes, vertical and sideways); fails if any frame misses the build or raster budget, or none were drawn (`app/integration_test/frame_timing_test.dart`, `app/test_driver/frame_timing_driver.dart`) | `cd app && FLUTTER_TEST_OUTPUTS_DIR=build/test_output flutter drive --profile -d macos --driver=test_driver/frame_timing_driver.dart --target=integration_test/frame_timing_test.dart` | FAIL on build budget (ran 2026-11-08, 2 runs; raster budget met) |
 
-結果（2026-11-08、Apple M4、macOS profile ビルドの実窓、2 回流した。`flutter drive` は両回とも exit 1）：テスト本体は通過（期待値を持たない）、ドライバーの予算判定が落ちた。build（UI スレッド）が 16 ms を超えたコマがある。raster は両回とも 0 コマ超過。
+結果（2026-11-08、Apple M4、macOS profile ビルドのアプリ、2 回流した。`flutter drive` は両回とも exit 1）：テスト本体は通過（期待値を持たない）、ドライバーの予算判定が落ちた。build（UI スレッド）が 16 ms を超えたコマがある。raster は両回とも 0 コマ超過。
 
 | 項目 | 1 回目 | 2 回目 |
 |---|---|---|
@@ -103,7 +103,7 @@ cd app && flutter test --no-pub test/accessibility_guidelines_test.dart
 
 ### ISF（Vidvox ISF-Files）
 
-エンジンの `effect <thing> <name>` は、棚の `.fs` を1本も受け付けない（`effect 1 3d Rotate` は `NOT done: no effect is called 3d Rotate`。`doc_effect` が見るのは `doc_effects` の内蔵の効果だけ）。そのため棚の `.fs` は `hold 1` → `carry effect <file>` → `still`（絵は `engine/fx_sample.jpg`）で通した。`carry effect` は「持っている物の上に見せるだけで、置かない」呼び出し。`let_go 1` の後は元の絵に戻る（置いた後に残るかは未確認）。
+エンジンの `effect <thing> <name>` は、棚の `.fs` を1本も受け付けない（`effect 1 3d Rotate` は `NOT done: no effect is called 3d Rotate`。`doc_effect` が見るのは `doc_effects` の内蔵の効果だけ）。そのため棚の `.fs` は `hold 1` → `carry effect <file>` → `still`（絵は `engine/fx_sample.jpg`）で通した。`carry effect` は「掴んでいるレイヤーの上に見せるだけで、置かない」呼び出し。`let_go 1` の後は元の絵に戻る（置いた後に残るかは未確認）。
 
 | corpus | source URL | files | loaded | failed | notes |
 |---|---|---|---|---|---|
@@ -135,23 +135,23 @@ cd app && flutter test --no-pub test/accessibility_guidelines_test.dart
 
 外の基準ではなく、**変更前のエンジン自身（コミット f3b7e30de）を正解役にした突き合わせ**。自作の台本（使い捨て）で、結果だけをここに残す。
 
-- 方法：f3b7e30de を別の作業コピーで組み（ネイティブの `copy_*`・`scatter_*` が残っている版）、同じ場面を旧エンジンと新エンジンで描いて、PNG を `cmp`（描画は決まった結果になることを、同じレシピを2回描いて先に確かめた）。
-- 場面：棚の104本のレシピ × 時刻 0.0・0.7・1.9 秒（312組）。旧は頭が `copy_*`、新は `Repeater` の `js_*`。
+- 方法：f3b7e30de を別の作業コピーで組み（ネイティブの `copy_*`・`scatter_*` が残っている版）、同じプロジェクトを旧エンジンと新エンジンで描いて、PNG を `cmp`（描画は決まった結果になることを、同じレシピを2回描いて先に確かめた）。
+- 描いた物：棚の104本のレシピ × 時刻 0.0・0.7・1.9 秒（312組）。旧は頭が `copy_*`、新は `Repeater` の `js_*`。
 - 結果：**312組すべて画素まで一致**。感度の確認：helix の `js_StepX` を 0.132 から 0.14 に変えると 131,023 画素が変わる（最大の差 255）ので、差があれば見える。
 - 限界：(1) 同名の `helix.js` と `helix_points.js` があり、`make Helix` は後者を選ぶ。`helix.js`（移した物）は別名のコピーで別に確かめ、3時刻とも一致。(2) Bars と Burst の 0.0 秒は、大きさのキーが0で絵が空なので、証明は弱い。(3) 傾き（`js_RotateX/Y`）と `js_Rotate`、`js_Wide` と `js_ScatterRotate` の同時使用は、14本のどれにも無く、合成順の差は試されていない。
 
-## 実行結果：古い書類の移行（2026-11-08、使い捨ての確認）
+## 実行結果：古いプロジェクトの移行（2026-11-08、使い捨ての確認）
 
-書類を開くとき（`doc_open`）、`script` が無く `copy_*`・`scatter_*`・`drift_*` の行を持つ物は、`Repeater` を付けて `js_*` に付け替える（キーと way は元のまま、`seed` は `js_Seed` へ、`js_StepX` は無ければ0、駆動していた `<名前>_by` は捨てる）。別のスクリプトを持つ物には触れない。
+プロジェクトを開くとき（`doc_open`）、`script` が無く `copy_*`・`scatter_*`・`drift_*` の行を持つレイヤーは、`Repeater` を付けて `js_*` に付け替える（キーとイージングは元のまま、`seed` は `js_Seed` へ、`js_StepX` は無ければ0、駆動していた `<名前>_by` は捨てる）。別のスクリプトを持つレイヤーには触れない。
 
-- 確認：古い書類に行を直接書き、新エンジンで開いた。物1（スクリプト無し）は、同じ値で新しく作った `Repeater` と **位置が一致（差 0、7コピー × 3時刻）**。物2（`script none`、キー付きの `copy_x`、`copy_rotate_by`）は、`js_StepX` の2つのキーと way（`linear`）が残り、`_by` の行は消えた。物3（Sunflower のスクリプトと `copy_x`）は変わらない。
-- 限界：自作の確認で、書類は1つだけ。同梱の `.motolii` 23本には、移行の対象になる行が無かった。
+- 確認：古いプロジェクトに行を直接書き、新エンジンで開いた。レイヤー1（スクリプト無し）は、同じ値で新しく作った `Repeater` と **位置が一致（差 0、7コピー × 3時刻）**。レイヤー2（`script none`、キー付きの `copy_x`、`copy_rotate_by`）は、`js_StepX` の2つのキーとイージング（`linear`）が残り、`_by` の行は消えた。レイヤー3（Sunflower のスクリプトと `copy_x`）は変わらない。
+- 限界：自作の確認で、プロジェクトは1つだけ。同梱の `.motolii` 23本には、移行の対象になる行が無かった。
 
 ## 決めてある試験：script を fx のように重ねる（2026-11-09 決めた、まだ走らせていない）
 
-目的は1つ：1つの物に script を2つ以上重ねて、両方が効くこと（`docs/internal/notes/CREATE_PROGRAM.md`）。走らせるのは、実装の文脈を持たない別のセッション。実窓は `--dart-define=MOTOLII_BARE=true` で組み、ユーザーの書類（`skin.motolii`）では試さない。
+目的は1つ：1つのレイヤーに script を2つ以上重ねて、両方が効くこと（`docs/internal/notes/CREATE_PROGRAM.md`）。走らせるのは、実装の文脈を持たない別のセッション。アプリは `--dart-define=MOTOLII_BARE=true` で組み、ユーザーのプロジェクト（`skin.motolii`）では試さない。
 
 | # | 要件 | 何を調べるか | 状態 |
 |---|---|---|---|
-| S1 | 重ねたら両方効く | 実窓で、四角1つに Repeater と Spring In を付ける。断られず（「It has a script already」が出ない）、コピーが並び、かつそれぞれが Spring In の動きをする。時刻 0.0・0.5・1.0 秒の絵を撮り、Repeater だけ・Spring In だけの絵と並べて見せる | 未実行 |
-| S2 | 今ある書類の見た目が変わらない | `./engine/drawings_unchanged.sh ed4868cf1`。変更前のエンジン（コミット `ed4868cf1`）で描いた絵を正解役に、script を1つ持つ物（棚のレシピ104本と `shelves/expressions/` の Motion、時刻 0.0・0.7・1.9 秒）を新エンジンで開いて描き、PNG を `cmp` で比べる（11/8 の新旧比較と同じやり方）。Motion はフォントで作った文字 MOTOLII に付ける。どちらかの側で置く呼び出しが断られる・エンジンが答えない・絵が出来ないときは数を認めず終了コード 2。片側にしか無い物は名前を出して比べない。全組一致 | 11/9：351 of 351（レシピ104本＋Motion 13本。`lyric.js` は ed4868cf1 に無く比べない）。それまでの「351 of 351」は Motion の文字が作られず、両側とも何も描かない絵同士の一致だった |
+| S1 | 重ねたら両方効く | アプリで、四角1つに Repeater と Spring In を付ける。断られず（「It has a script already」が出ない）、コピーが並び、かつそれぞれが Spring In の動きをする。時刻 0.0・0.5・1.0 秒の絵を撮り、Repeater だけ・Spring In だけの絵と並べて見せる | 未実行 |
+| S2 | 今あるプロジェクトの見た目が変わらない | `./engine/drawings_unchanged.sh ed4868cf1`。変更前のエンジン（コミット `ed4868cf1`）で描いた絵を正解役に、script を1つ持つレイヤー（棚のレシピ104本と `shelves/expressions/` の Motion、時刻 0.0・0.7・1.9 秒）を新エンジンで開いて描き、PNG を `cmp` で比べる（11/8 の新旧比較と同じやり方）。Motion はフォントで作った文字 MOTOLII に付ける。どちらかの側で置く呼び出しが断られる・エンジンが答えない・絵が出来ないときは数を認めず終了コード 2。片側にしか無い物は名前を出して比べない。全組一致 | 11/9：351 of 351（レシピ104本＋Motion 13本。`lyric.js` は ed4868cf1 に無く比べない）。それまでの「351 of 351」は Motion の文字が作られず、両側とも何も描かない絵同士の一致だった |

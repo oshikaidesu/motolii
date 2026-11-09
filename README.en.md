@@ -10,7 +10,7 @@ It is being built so that the kind of work done in After Effects takes simpler h
 
 [日本語](README.md) · [Questions (Discussions)](https://github.com/oshikaidesu/motolii/discussions) · [Bugs (Issues)](https://github.com/oshikaidesu/motolii/issues) — English or Japanese.
 
-![The Motolii UI: media and shelves on the left, the composition in the middle, the timeline below, values on the right](docs/pictures/window.jpg)
+![The Motolii UI: media and shelves on the left, the preview in the middle, the timeline below, values on the right](docs/pictures/window.jpg)
 
 ## Effects and scripts
 
@@ -182,7 +182,7 @@ Opens the app (the first time it seems to stall for 1–3 minutes while it build
 
 1. **Top bar**: project name, frame size, fps, length, undo and redo, Render (export).
 2. **[Left tabs](docs/guide/tabs.en.md#left-tabs)**: Media, Effects, Fonts, Colors, Create (shapes and recipes), Program (pasted code), Presets (combinations you saved; not usable yet).
-3. **[Preview (Stage)](docs/guide/tabs.en.md#preview-tabs)**: place and move things while you watch. The tools are in the column on its left (select, move, shapes, pen, text, …). The tab above switches to Camera View, the finished picture through the camera.
+3. **[Preview (Stage)](docs/guide/tabs.en.md#preview-tabs)**: place and move layers while you watch. The tools are in the column on its left (select, move, shapes, pen, text, …). The tab above switches to Camera View, the finished picture through the camera.
 4. **Inspector**: the selected layer's values (Transform, Anchor, Blend, Fill, …). The relations acting on the layer are listed at the top.
 5. **Timeline**: layers and keyframes, playback, markers, BPM.
 6. **Ease**: how a value moves between keyframes; the column on the right holds ready-made curves.

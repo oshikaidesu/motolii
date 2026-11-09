@@ -18,7 +18,7 @@ Concept art has generation noise (a line that is dark here and light there, a ke
 
 ## 0. Where the values live
 
-These are the default (Dark) look of today's window. The code is `app/lib/style/tokens.dart`: `N` the fixed greys, `Grey` the same greys as the skin sets them, `Fam` the family colours, `C.playhead`, `T` the type styles and `Shape` the sizes (the names `H`, `Dn` and `Surface` below are the lab's; they became `C`, `T` and `Shape`). A skin can change any of them: [shelves/skins/README.md](../../shelves/skins/README.md). The goal the lab worked to (2026-10-02, a Widgetbook prototype) is kept in [the lab's record](../internal/reports/window/design_lab_overview_2026-10-02.md).
+These are the default (Dark) look of today's app. The code is `app/lib/style/tokens.dart`: `N` the fixed greys, `Grey` the same greys as the skin sets them, `Fam` the family colours, `C.playhead`, `T` the type styles and `Shape` the sizes (the names `H`, `Dn` and `Surface` below are the lab's; they became `C`, `T` and `Shape`). A skin can change any of them: [shelves/skins/README.md](../../shelves/skins/README.md). The goal the lab worked to (2026-10-02, a Widgetbook prototype) is kept in [the lab's record](../internal/reports/window/design_lab_overview_2026-10-02.md).
 
 ## 1. Visual Theme & Atmosphere
 

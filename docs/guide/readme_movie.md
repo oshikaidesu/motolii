@@ -1,6 +1,6 @@
 # README の頭の 8 秒の作り方
 
-*How the 8 seconds at the top of the README were made: the calls below, pasted as they are into a shell at the repository's root once the inside is built (README, "Build and open"), write `~/Movies/Motolii/mv.mp4`.*
+*How the 8 seconds at the top of the README were made: the calls below, pasted as they are into a shell at the repository's root once the engine is built (README, "Build and open"), write `~/Movies/Motolii/mv.mp4`.*
 
 ![光る文字、回るピンクの輪、線の模様、色のずれ](../pictures/mv.gif)
 
