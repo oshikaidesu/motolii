@@ -3,7 +3,6 @@
 # app/lib counts re-measured once after `dart format` at page_width 160 (the formatter's wrapping changed the line unit).
 646 app/lib/inspector/controls/inspector_number_field_num_field_state.dart
 573 app/lib/widgets/timeline_painters.dart
-577 app/lib/workspace/top_bar/top_bar.dart
 536 app/lib/workspace/state/window.dart
 708 engine/document/evaluate.h
 580 engine/stage/canvas/canvas_cache.h

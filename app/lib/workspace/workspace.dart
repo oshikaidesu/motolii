@@ -25,7 +25,6 @@ import 'tool_panel/tool_panel_widgets.dart';
 import 'edits/keyframe_edits.dart';
 import 'commands/keymap.dart';
 import 'timeline/timeline.dart';
-import 'top_bar/top_bar.dart';
 import '../bridge/motolii.dart';
 import 'edits/make_relation.dart';
 import 'state/state.dart';
@@ -183,7 +182,6 @@ class _WorkspaceState extends State<Workspace> {
     setState(() => _home = false);
     if (docs.length == 1) {
       if (docs.first != _doc) await _open(docs.first);
-      wsAskRender.value++;
       return;
     }
     final back = _doc;
@@ -344,7 +342,7 @@ class _Window extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      SizedBox(height: WsT.topBar, child: WsTopBar()),
+      SizedBox(height: WsT.topBar),
       const SizedBox(height: WsT.gutter),
       Expanded(
         child: WsPanes(panes: [..._panes, ...extra], preset: (item) => _preset(item, extra)),
