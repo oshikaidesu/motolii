@@ -1,33 +1,16 @@
-// The tool panel's shared small things: the tool catalog (name, hue, what it acts on), each tool's painted glyph, and the round
+// The tool panel's shared small things: a tool's sticker, and the round
 // touchables the tool panel's bodies use (chip, icon button, scrub field, readout).
 import 'package:flutter/widgets.dart';
 
-import '../../skin/svg_parts.dart';
+import '../dock/dock_glyphs.dart';
 
 import '../../widgets/text_gestures.dart';
-import '../../inspector/inspector_parts.dart' show Pop;
 import '../../skin/tokens.dart';
-import 'tool_panel_align.dart';
-import 'tool_panel_blend.dart';
+import '../window/panes.dart';
 import '../state/state.dart';
 import '../../widgets/two_fingers.dart';
 
-/// One tool the tool panel can hold. [acts] is what it works on, said in two words.
-/// A tool of the tool panel: its name, its hue, what it acts on, and what the tool panel holds while it is open (none yet: a card
-/// that says what it will act on). Tools of your own: Workspace(tools: [PanelTool(...)]).
-class PanelTool {
-  const PanelTool(this.name, this.tone, this.acts, {this.build});
-  final String name, acts;
-  final Color tone;
-  final Widget Function()? build;
-}
-
-final panelTools = [
-  PanelTool('Blend', Pop.toneBlend, 'Layer stack', build: BlendTool.new),
-  PanelTool('Align', Pop.toneLayout, 'Selection', build: AlignTool.new),
-];
-
-PanelTool panelTool(Ws ws, String name) => ws.tools.firstWhere((t) => t.name == name, orElse: () => PanelTool(name, Grey.g63, ''));
+WsPane? panelTool(Ws ws, String name) => ws.tools.where((t) => t.name == name).firstOrNull;
 
 /// A tool's sticker: a flat tile of its hue with the glyph knocked out in dark ink.
 class ToolSticker extends StatelessWidget {
@@ -36,120 +19,18 @@ class ToolSticker extends StatelessWidget {
   final double size;
   @override
   Widget build(BuildContext context) {
-    final tone = name == 'Tools' ? Grey.g76 : panelTool(WsScope.read(context), name).tone, own = name != 'Tools' && panelTools.every((t) => t.name != name);
+    final tool = panelTool(WsScope.read(context), name);
+    final tone = name == 'Tools' ? Grey.g76 : tool?.tone ?? Grey.g63;
+    final g = name == 'Tools' ? DockG.tools : tool?.glyph;
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(color: tone, borderRadius: BorderRadius.circular(size * .3)),
-      child: own
-          ? Center(child: Text(name.characters.first, style: T.micro(WsT.onAccent)))
-          : CustomPaint(painter: ToolGlyph(name, WsT.onAccent)), // (a tool of your own: its first letter)
+      child: g == null
+          ? Center(child: Text(name.characters.first, style: T.micro(WsT.onAccent))) // (a tool of your own: its first letter)
+          : DockGlyph(g, size: size, color: WsT.onAccent),
     );
   }
-}
-
-/// Each tool drawn as one bold shape on a 20-unit grid.
-class ToolGlyph extends CustomPainter {
-  const ToolGlyph(this.name, this.ink);
-  final String name;
-  final Color ink;
-
-  @override
-  void paint(Canvas c, Size s) {
-    if (SkinParts.draw(c, s, 'desk.${name.toLowerCase().replaceAll(' ', '-')}', ink)) return; // (the skin's own picture, if it brings one)
-    final u = s.width / 20;
-    Offset p(double x, double y) => Offset(x * u, y * u);
-    final fill = Paint()..color = ink;
-    final line = Paint()
-      ..color = ink
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8 * u
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    RRect bar(double x, double y, double w, double h) => RRect.fromRectAndRadius(Rect.fromLTWH(x * u, y * u, w * u, h * u), Radius.circular(u));
-    switch (name) {
-      case 'Ease':
-        c.drawPath(
-          Path()
-            ..moveTo(4 * u, 15 * u)
-            ..cubicTo(11 * u, 15 * u, 9 * u, 5 * u, 16 * u, 5 * u),
-          line,
-        );
-        c.drawCircle(p(4, 15), 2 * u, fill);
-        c.drawCircle(p(16, 5), 2 * u, fill);
-      case 'Depth':
-        c.drawPath(
-          Path()
-            ..moveTo(10 * u, 16 * u)
-            ..lineTo(4 * u, 4 * u)
-            ..lineTo(16 * u, 4 * u)
-            ..close(),
-          line..strokeWidth = 1.4 * u,
-        );
-        c.drawRRect(bar(6, 6.5, 8, 2), fill);
-        c.drawRRect(bar(7.5, 10.5, 5, 2), fill);
-      case 'Blend':
-        c.drawCircle(p(8, 10), 4.5 * u, fill);
-        c.drawCircle(p(12.5, 10), 4.5 * u, line..strokeWidth = 1.5 * u);
-      case 'Align':
-        c.drawLine(p(4.5, 3.5), p(4.5, 16.5), line);
-        c.drawRRect(bar(6.5, 5, 9, 3), fill);
-        c.drawRRect(bar(6.5, 11.5, 6, 3), fill);
-      case 'Sequence':
-        for (var i = 0; i < 3; i++) {
-          c.drawRRect(bar(3.5 + i * 3.5, 4 + i * 4.3, 8, 3), fill);
-        }
-      case 'Path':
-        c.drawPath(
-          Path()
-            ..moveTo(4 * u, 15 * u)
-            ..quadraticBezierTo(4 * u, 5 * u, 10 * u, 9 * u)
-            ..quadraticBezierTo(16 * u, 13 * u, 16 * u, 4 * u),
-          line..strokeWidth = 1.5 * u,
-        );
-        c.drawCircle(p(4, 15), 2 * u, fill);
-        c.drawRRect(bar(14, 2.5, 4, 4), fill);
-      case 'Color':
-        c.drawCircle(p(7, 7.5), 3.2 * u, fill);
-        c.drawCircle(p(13, 7.5), 3.2 * u, line..strokeWidth = 1.4 * u);
-        c.drawCircle(p(10, 13), 3.2 * u, fill);
-      case 'Audio':
-        const hs = <double>[4, 8, 12, 7, 10, 5];
-        for (final (i, h) in hs.indexed) {
-          c.drawRRect(bar(3 + i * 2.5, 10 - h / 2, 1.6, h), fill);
-        }
-      case 'Markers':
-        c.drawLine(p(3, 15), p(17, 15), line..strokeWidth = 1.4 * u);
-        for (final x in [5.0, 13.0]) {
-          c.drawPath(
-            Path()
-              ..moveTo(x * u, 12 * u)
-              ..lineTo((x - 2.5) * u, 9 * u)
-              ..lineTo((x - 2.5) * u, 4 * u)
-              ..lineTo((x + 2.5) * u, 4 * u)
-              ..lineTo((x + 2.5) * u, 9 * u)
-              ..close(),
-            fill,
-          );
-        }
-      case 'Notes':
-        c.drawRRect(bar(4, 3.5, 12, 13), line..strokeWidth = 1.4 * u);
-        c.drawRRect(bar(6.5, 7, 7, 1.6), fill);
-        c.drawRRect(bar(6.5, 10.5, 5, 1.6), fill);
-      case 'Links':
-        c.drawRRect(bar(2.5, 7, 9, 6), line..strokeWidth = 1.5 * u);
-        c.drawRRect(bar(8.5, 7, 9, 6), line);
-      case 'Tools':
-        for (var i = 0; i < 4; i++) {
-          c.drawRRect(bar(4 + (i % 2) * 6.5, 4 + (i ~/ 2) * 6.5, 5.5, 5.5), fill);
-        }
-      default:
-        c.drawCircle(p(10, 10), 3 * u, fill);
-    }
-  }
-
-  @override
-  bool shouldRepaint(ToolGlyph o) => o.name != name || o.ink != ink;
 }
 
 /// A painted glyph for an [IconPress] tile: fills the tile, in the ink the press gives.

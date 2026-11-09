@@ -184,7 +184,7 @@ class _InspectorPanelState extends State<_InspectorPanel> {
                   ? null
                   : () {
                       // (a light takes none: the inside's fx is a film's, a picture's, a text's, a shape's, a solid's, a camera's)
-                      ws.shelf = 'Effects';
+                      ws.front('Effects');
                       askDockSearch();
                     },
               onCardRemove: int.tryParse(l?.id ?? '') == null

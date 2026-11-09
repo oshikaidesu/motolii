@@ -9,35 +9,36 @@ import '../../skin/tokens.dart';
 import '../dock/dock_glyphs.dart';
 import '../state/state.dart';
 
+/// The strip a tab starts on; [catalog] is on no strip: it is opened inside the Tool Panel.
+enum WsAt { shelves, stage, timeline, ease, inspector, tools, catalog }
+
 /// One pane: its name (also its id), the mark on its tab, and how to build its body.
 /// [iconOnly] tabs show the mark alone: for panes whose body already names them in its header, so a strip of many stays narrow.
 class WsPane {
-  const WsPane(this.name, this.glyph, this.build, {this.minSize = 160, this.iconOnly = false});
+  const WsPane(this.name, this.glyph, this.build, {this.at = WsAt.inspector, this.minSize = 160, this.iconOnly = false, this.tone, this.acts = ''});
   final String name;
   final DockG? glyph; // (none: the pane's first letter)
   final Widget Function() build;
   final double minSize;
   final bool iconOnly;
+  final WsAt at;
+  final Color? tone; // (a catalog row: the hue of its sticker)
+  final String acts; // (a catalog row: what it works on)
 }
 
 class WsPanes extends StatefulWidget {
-  const WsPanes({super.key, required this.panes, required this.preset, this.shelves = const {}});
+  const WsPanes({super.key, required this.panes, required this.preset});
   final List<WsPane> panes;
 
-  /// Panes that are browser shelves: the front one is [Ws.shelf], both ways (a tab click sets it, [Ws.route] brings its tab forward).
-  final Set<String> shelves;
-
   /// The arrangement a fresh window starts with.
-  final DockingArea Function(DockingItem Function(String name, {double? size, double? weight}) item) preset;
+  final DockingArea Function(DockingArea Function(WsAt at, {double? size}) strip) preset;
   @override
   State<WsPanes> createState() => _WsPanesState();
 }
 
 class _WsPanesState extends State<WsPanes> {
-  late final _by = {for (final p in widget.panes) p.name: p};
-  late final _layout = DockingLayout(root: widget.preset(_item));
+  late final _layout = DockingLayout(root: widget.preset(_strip));
   Ws? _ws;
-  String? _shelf;
 
   @override
   void didChangeDependencies() {
@@ -45,17 +46,12 @@ class _WsPanesState extends State<WsPanes> {
     final ws = WsScope.read(context);
     if (ws == _ws) return;
     _ws?.on[WsAspect.fronted]!.removeListener(_follow);
-    _ws?.on[WsAspect.shelf]!.removeListener(_follow);
-    _ws = ws
-      ..on[WsAspect.fronted]!.addListener(_follow)
-      ..on[WsAspect.shelf]!.addListener(_follow); // (a shelf named by anyone, not only a tab: brought to the front)
-    _shelf = ws.shelf;
+    _ws = ws..on[WsAspect.fronted]!.addListener(_follow);
   }
 
   @override
   void dispose() {
     _ws?.on[WsAspect.fronted]!.removeListener(_follow);
-    _ws?.on[WsAspect.shelf]!.removeListener(_follow);
     super.dispose();
   }
 
@@ -66,10 +62,6 @@ class _WsPanesState extends State<WsPanes> {
       _fronted = f;
       _toFront(f.$1);
     }
-    final s = _ws!.shelf;
-    if (s == _shelf) return;
-    _shelf = s;
-    _toFront(s);
   }
 
   void _toFront(String s) {
@@ -81,14 +73,17 @@ class _WsPanesState extends State<WsPanes> {
     _layout.rebuild();
   }
 
-  void _picked(DockingItem item) {
-    if (!widget.shelves.contains(item.id)) return;
-    _shelf = item.id as String;
-    _ws?.shelf = _shelf!;
+  /// The tabs that start at [at], in list order: one is the item itself, more are a strip.
+  DockingArea _strip(WsAt at, {double? size}) {
+    final here = [
+      for (final p in widget.panes)
+        if (p.at == at) p,
+    ];
+    return here.length == 1 ? _item(here.single, size: size) : DockingTabs([for (final p in here) _item(p)], size: size);
   }
 
-  DockingItem _item(String name, {double? size, double? weight}) {
-    final p = _by[name]!;
+  DockingItem _item(WsPane p, {double? size}) {
+    final name = p.name;
     return DockingItem(
       id: name,
       name: p.iconOnly ? null : name,
@@ -108,7 +103,6 @@ class _WsPanesState extends State<WsPanes> {
       ),
       widget: WsPanel(child: p.build()),
       size: size,
-      weight: weight,
       minimalSize: p.minSize,
       keepAlive: true,
       // contract: nothing reopens a closed pane yet, so none can be closed.
@@ -125,7 +119,7 @@ class _WsPanesState extends State<WsPanes> {
         dividerThickness: WsT.gutter * 2,
         dividerPainter: DividerPainters.background(color: WsT.ground, highlightedColor: WsT.accentInk),
       ),
-      child: Docking(layout: _layout, onItemSelection: _picked, maximizableItem: false, maximizableTab: false, maximizableTabsArea: false),
+      child: Docking(layout: _layout, maximizableItem: false, maximizableTab: false, maximizableTabsArea: false),
     ),
   );
 }

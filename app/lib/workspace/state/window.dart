@@ -307,15 +307,6 @@ class Ws extends ChangeNotifier {
     _tell(WsAspect.playing);
   }
 
-  /// The browser shelf in front: Media, Effects, Fonts, Colors, Create (Motolii's Browser shelves, each a pane of its own).
-  String _shelf = 'Media';
-  String get shelf => _shelf;
-  set shelf(String s) {
-    if (s == _shelf) return;
-    _shelf = s;
-    _tell(WsAspect.shelf);
-  }
-
   /// How the window looks, by name ('stage.tool', 'fold.Transform'...): what a pane keeps of itself that is not the
   /// document's. Any pane may read it; the window opened again on the same document at the same view shows the same.
   final view = <String, Object?>{};
@@ -335,8 +326,12 @@ class Ws extends ChangeNotifier {
   /// What the user opened in the tool panel by hand; null lets the tool panel follow the selection.
   String? toolPanelManual;
 
-  /// The tool panel's tools: the window's own, then any of your own (Workspace(tools:)).
-  List<PanelTool> tools = panelTools;
+  /// Every tab the window has (set once, by Workspace); the tool panel's catalog is those that start on no strip.
+  List<WsPane> panes = const [];
+  List<WsPane> get tools => [
+    for (final p in panes)
+      if (p.at == WsAt.catalog) p,
+  ];
   void openToolPanel(String? name) {
     toolPanelManual = name;
     front('Tool Panel');
@@ -350,11 +345,8 @@ class Ws extends ChangeNotifier {
 
   (String, int)? fronted;
 
-  /// The tool panel follows the selection (the old Motolii's panels/desk.dart): keys picked -> Ease, a camera -> Depth, else Tools.
-  String get toolPanel => toolPanelManual ?? toolPanelAuto;
-
-  /// What the selection alone would put on the tool panel: keys picked, Ease; a camera, Depth; else the Tools catalog.
-  String get toolPanelAuto => 'Tools'; // (Ease and Camera are panes of their own now)
+  /// What the tool panel holds: the tool opened by hand, else the Tools catalog.
+  String get toolPanel => toolPanelManual ?? 'Tools';
 
   /// Joined: the value of the picked thing (or of the stage, with nothing picked) a colour picked on the Colors shelf is
   /// said to, when a card's colour link or the tool strip's ink or edge aimed it there; null: the fill. Told as a pick
@@ -368,13 +360,7 @@ class Ws extends ChangeNotifier {
   }
 
   /// A panel link elsewhere asked for a panel (fonts, colours, ease): the dock or tool panel shows it.
-  void route(String to) {
-    switch (to) {
-      case final s when s.startsWith('Browser'):
-        shelf = s.split('›').last.trim(); // (told as any shelf named is: the panes bring it to the front)
-    }
-    _tell(WsAspect.route);
-  }
+  void route(String to) => front(to.split('›').last.trim());
 
   /// The shelf's effects on the thing: those whose card the inside shows (an effect's card shows while it is on).
   List<String> fxOf(String? id) {

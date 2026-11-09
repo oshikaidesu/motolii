@@ -23,13 +23,14 @@ import '../inspector/inspector_parts.dart';
 import '../skin/theme.dart';
 import 'tool_panel/tool_panel.dart';
 import 'tool_panel/tool_panel_depth.dart';
+import 'tool_panel/tool_panel_blend.dart';
+import 'tool_panel/tool_panel_align.dart';
 import 'tool_panel/tool_panel_relations.dart';
 import 'tool_panel/tool_panel_ease.dart';
 import 'dock/dock.dart';
 import 'dock/dock_glyphs.dart';
 import 'window/home.dart';
 import 'window/panes.dart';
-import 'tool_panel/tool_panel_widgets.dart';
 import 'edits/keyframe_edits.dart';
 import 'commands/keymap.dart';
 import 'stage/stage.dart';
@@ -49,7 +50,7 @@ part 'inspector_feed/keyframe_marks.dart';
 part 'commands/menu_bar.dart';
 
 class Workspace extends StatefulWidget {
-  const Workspace({super.key, this.document, this.extra = const [], this.tools = const [], this.view = const {}});
+  const Workspace({super.key, this.document, this.extra = const [], this.view = const {}});
 
   /// A document of the inside (motolii.dart) to join the window to: its stage is then the inside's own picture.
   /// null: the sample, with its stand-in art.
@@ -59,9 +60,6 @@ class Workspace extends StatefulWidget {
   /// through [WsScope.of] (its `inside` is the document, `selected` the picked thing, `frame` the moment).
   final List<WsPane> extra;
 
-  /// Tool Panel tools of your own, after the window's (a PanelTool with its `build`).
-  final List<PanelTool> tools;
-
   /// How the window looks when it opens (Ws.view: as it was left, say).
   final Map<String, Object?> view;
   @override
@@ -70,7 +68,7 @@ class Workspace extends StatefulWidget {
 
 class _WorkspaceState extends State<Workspace> {
   late final _ws = Ws()
-    ..tools = [...panelTools, ...widget.tools]
+    ..panes = [..._panes, ...widget.extra]
     ..view.addAll(widget.view);
   Motolii? _inside;
   StreamSubscription<FileSystemEvent>? _own; // (the maker's own folder watched: effect_tiles.dart)
@@ -300,12 +298,11 @@ class _WorkspaceState extends State<Workspace> {
   }
 
   /// The panes drag their tabs on an overlay; the window brings its own so it works under any host.
-  _Window? _built; // (one widget, kept: a card or a tab carried is a change of the overlay, and the whole window, every shelf's tiles, was built again for it: 18,358 widgets, 90 ms, each time one was taken up or let go)
   late final _entry = OverlayEntry(
     maintainState: true,
     builder: (context) => LayoutBuilder(
       builder: (context, box) {
-        final window = _built != null && _built!.extra == widget.extra ? _built! : _built = _Window(widget.extra);
+        const window = _Window(); // (one widget, kept: a card or a tab carried is a change of the overlay, and the whole window, every shelf's tiles, was built again for it: 18,358 widgets, 90 ms, each time one was taken up or let go)
         if (box.maxWidth >= WsT.minWindow.width && box.maxHeight >= WsT.minWindow.height) return window;
         return FittedBox(
           // (laid out no smaller than the least window, shrunk only as far as that needs: a zoomed window stays zoomed)
@@ -363,8 +360,7 @@ class _WorkspaceState extends State<Workspace> {
 }
 
 class _Window extends StatelessWidget {
-  const _Window(this.extra);
-  final List<WsPane> extra;
+  const _Window();
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -372,22 +368,30 @@ class _Window extends StatelessWidget {
       SizedBox(height: WsT.topBar, child: WsTopBar()),
       const SizedBox(height: WsT.gutter),
       Expanded(
-        child: WsPanes(panes: [..._panes, ...extra], preset: (item) => _preset(item, extra), shelves: {for (final s in dockShelves) s.$1}),
+        child: WsPanes(panes: WsScope.read(context).panes, preset: _preset),
       ),
     ],
   );
 }
 
 final _panes = [
-  for (final (name, g, _) in dockShelves) WsPane(name, g, () => WsShelf(name), minSize: 240, iconOnly: true),
-  WsPane('Stage', DockG.stage, () => const WsStage(), minSize: 320),
-  WsPane('Camera View', DockG.camera, () => const WsCameraView(), minSize: 240),
+  WsPane('Media', DockG.media, () => const WsShelf('Media', 'Search files and media'), at: WsAt.shelves, minSize: 240, iconOnly: true),
+  WsPane('Effects', DockG.effects, () => const WsShelf('Effects', 'Search effects and features'), at: WsAt.shelves, minSize: 240, iconOnly: true),
+  WsPane('Fonts', DockG.fonts, () => const WsShelf('Fonts', 'Search fonts'), at: WsAt.shelves, minSize: 240, iconOnly: true),
+  WsPane('Colors', DockG.colors, () => const WsShelf('Colors', 'Search palettes'), at: WsAt.shelves, minSize: 240, iconOnly: true),
+  WsPane('Create', DockG.create, () => const WsShelf('Create', 'Search layers and shapes'), at: WsAt.shelves, minSize: 240, iconOnly: true),
+  WsPane('Program', DockG.program, () => const WsShelf('Program', 'Search code'), at: WsAt.shelves, minSize: 240, iconOnly: true),
+  WsPane('Presets', DockG.files, () => const WsShelf('Presets', 'Search presets'), at: WsAt.shelves, minSize: 240, iconOnly: true),
+  WsPane('Stage', DockG.stage, () => const WsStage(), at: WsAt.stage, minSize: 320),
+  WsPane('Camera View', DockG.camera, () => const WsCameraView(), at: WsAt.stage, minSize: 240),
   WsPane('Inspector', DockG.inspector, () => const _InspectorPanel(), minSize: 200),
-  WsPane('Timeline', DockG.timeline, () => const WsTimeline(), minSize: 160),
-  WsPane('Ease', DockG.time, () => const EaseTool(), minSize: 260),
-  WsPane('Camera', DockG.camera, () => const DepthTool(), minSize: WsT.lower),
-  WsPane('Tool Panel', DockG.toolPanel, () => const WsToolPanel(), minSize: WsT.lower),
-  WsPane('Relations', DockG.toolPanel, () => const RelationsTool(), minSize: WsT.lower),
+  WsPane('Timeline', DockG.timeline, () => const WsTimeline(), at: WsAt.timeline, minSize: 160),
+  WsPane('Ease', DockG.time, () => const EaseTool(), at: WsAt.ease, minSize: 260),
+  WsPane('Camera', DockG.camera, () => const DepthTool(), at: WsAt.tools, minSize: WsT.lower),
+  WsPane('Tool Panel', DockG.toolPanel, () => const WsToolPanel(), at: WsAt.tools, minSize: WsT.lower),
+  WsPane('Relations', DockG.toolPanel, () => const RelationsTool(), at: WsAt.tools, minSize: WsT.lower),
+  WsPane('Blend', DockG.blend, BlendTool.new, at: WsAt.catalog, tone: Pop.toneBlend, acts: 'Layer stack'),
+  WsPane('Align', DockG.align, AlignTool.new, at: WsAt.catalog, tone: Pop.toneLayout, acts: 'Selection'),
 ];
 
 /// A pane's tab strip, added on top of the reference heights so the panels keep theirs.
@@ -396,19 +400,13 @@ const _strip = 22.0;
 /// The reference arrangement: the browser shelves (one strip of tabs) | Stage over Timeline and Ease on the left, Inspector over Camera on the right.
 /// Side and lower panes start at their reference sizes in px and the panes without one share what is left.
 /// contract: give the filling panes no weight; `multi_split_view` turns sizes into weights and would scale them against any weight given.
-DockingArea _preset(DockingItem Function(String name, {double? size, double? weight}) item, List<WsPane> extra) => DockingRow([
+DockingArea _preset(DockingArea Function(WsAt at, {double? size}) strip) => DockingRow([
   DockingColumn([
-    DockingRow([
-      DockingTabs([for (final (name, _, _) in dockShelves) item(name)], size: WsT.dock),
-      DockingTabs([item('Stage'), item('Camera View')]),
-    ]),
-    DockingRow([item('Timeline'), item('Ease', size: WsT.inspector)], size: WsT.lower + _strip, minimalSize: 220), // (the stretch between two keys, beside the keys; never lower than its seven shapes and its curve can be read: docking's own minimum, as VS Code's views say theirs)
+    DockingRow([strip(WsAt.shelves, size: WsT.dock), strip(WsAt.stage)]),
+    DockingRow([strip(WsAt.timeline), strip(WsAt.ease, size: WsT.inspector)], size: WsT.lower + _strip, minimalSize: 220), // (the stretch between two keys, beside the keys; never lower than its seven shapes and its curve can be read: docking's own minimum, as VS Code's views say theirs)
   ]),
   DockingColumn(
-    [
-      extra.isEmpty ? item('Inspector') : DockingTabs([item('Inspector'), for (final p in extra) item(p.name)]),
-      DockingTabs([item('Camera'), item('Tool Panel'), item('Relations')], size: WsT.lower + _strip),
-    ],
+    [strip(WsAt.inspector), strip(WsAt.tools, size: WsT.lower + _strip)],
     size: WsT.inspector,
     minimalSize: 340,
   ), // (the camera, whatever is picked)

@@ -20,7 +20,7 @@
 | `tool_panel/` | Inspector の下のツールパネル（Ease、Align、Blend …） |
 
 ## 自分のパネルを足す（入口はここだけ）
-使う物の置き場：`Workspace`（`workspace.dart`）、`WsPane`（`window/panes.dart`。アイコンは `DockG` か null）、`PanelTool`（`tool_panel/tool_panel_widgets.dart`）、`Ws`・`WsScope`（`state/window.dart`・`state/scope.dart`）、`Motolii`（`../bridge/motolii.dart`）、Ease のタイル `easingsWithoutTile`（`tool_panel/tool_panel_ease.dart`）。
+使う物の置き場：`Workspace`（`workspace.dart`）、`WsPane`（`window/panes.dart`。アイコンは `DockG` か null）、`Ws`・`WsScope`（`state/window.dart`・`state/scope.dart`）、`Motolii`（`../bridge/motolii.dart`）、Ease のタイル `easingsWithoutTile`（`tool_panel/tool_panel_ease.dart`）。
 ```dart
 Workspace(document: path, extra: [
   WsPane('Notes', null, () => const MyNotes()),   // (名前、アイコン（null なら頭文字）、中身)
@@ -33,8 +33,8 @@ Workspace(document: path, extra: [
 
 ## 自分のツールパネルの道具を足す
 ```dart
-Workspace(document: path, tools: [
-  PanelTool('Snap', Color(0xFF55AA88), 'Picked thing', build: MySnap.new),   // (名前、色、何に効くか、中身)
+Workspace(document: path, extra: [
+  WsPane('Snap', null, MySnap.new, at: WsAt.catalog, tone: Color(0xFF55AA88), acts: 'Picked thing'),   // (名前、アイコン、中身、置き場所＝道具の棚、色、何に効くか)
 ])
 ```
 - アプリの道具の後ろに並び、選ぶとツールパネルがその `build` を出す。アイコンは頭文字。中では パネルと同じく `WsScope.of(context)`。
@@ -84,7 +84,7 @@ $F/flutter analyze lib
 
 ## 決まっていること(利用者の裁定)
 - **Media と Files は一つの棚(Media)。** AEViewer 2 型: 左(狭い時は上)に場所(Project / Home / Desktop / Downloads)とフォルダだけの木、右に開いているフォルダの中身をサムネイルかリストで。フォルダのタイルを押すとそのフォルダを開く。パンくずの各段も押せる。検索は今いる場所の中を全部探し、結果に入っているフォルダ名を添える。サムネイルの格子は捨てない。
-- **アプリの画面はドックパネル。** Motolii 本体と同じ pub の `docking`(旧 Motolii の `ui/lib/workspace/dock_workspace.dart` を書き直したもの。この repo には無い)。ブラウザも棚ごとにペインに分けた(rail は無い)。**タブは記号で示す**: 棚のタブは記号だけ(中の見出しが名前を言う、5 枚並んでも細い)、Stage / Inspector / Timeline / Tool Panel は記号 + 名前(パネルの中の見出しに同じ名前を重ねない)。前に出ている棚が `Ws.shelf`(タブを押すと変わり、`Ws.route` で棚のタブが前に出る)。別ウィンドウに出す Detach は native のウィンドウが要るので lab には無い。ペインは閉じられない(開き直す手段がまだ無い)。
+- **アプリの画面はドックパネル。** Motolii 本体と同じ pub の `docking`(旧 Motolii の `ui/lib/workspace/dock_workspace.dart` を書き直したもの。この repo には無い)。ブラウザも棚ごとにペインに分けた(rail は無い)。**タブは記号で示す**: 棚のタブは記号だけ(中の見出しが名前を言う、5 枚並んでも細い)、Stage / Inspector / Timeline / Tool Panel は記号 + 名前(パネルの中の見出しに同じ名前を重ねない)。棚のタブを前に出すのは `Ws.front(name)`(`Ws.route` も同じ呼び出し)。別ウィンドウに出す Detach は native のウィンドウが要るので lab には無い。ペインは閉じられない(開き直す手段がまだ無い)。
 - **初期配置**: 棚のタブの列・Inspector・Timeline・Tool Panel は基準の px で始め、Stage が残りを取る。`multi_split_view` は size を weight に直して足し合わせるので、残りを取るペインには weight を付けない。
 - **ペインは広げたら得をする。** 列を固定して引き伸ばさない。
   - 格子は `wsCols(幅, セルの幅)` で列数を決め、`wsCell` でセルの幅を割り出す(Create のタイル、Colors の色見本、Tool Panel の道具)。

@@ -15,22 +15,9 @@ import 'dock_program.dart';
 import '../shelf/effect_tiles.dart';
 import '../state/state.dart';
 
-/// The shelves: name (also the pane's id and [Ws.shelf]), the mark on its tab, the search hint.
-const dockShelves = <(String, DockG, String)>[
-  ('Media', DockG.media, 'Search files and media'),
-  ('Effects', DockG.effects, 'Search effects and features'),
-  ('Fonts', DockG.fonts, 'Search 15 families'),
-  ('Colors', DockG.colors, 'Search palettes'),
-  ('Create', DockG.create, 'Search layers and shapes'),
-  ('Program', DockG.program, 'Search code'), // (what came as code: dock_program.dart)
-  ('Presets', DockG.files, 'Search presets'), // (motion and effects together, kept as one: saving them comes once editing is settled)
-];
-
-const _facts = {'Presets': '0', 'Effects': '33 in library', 'Fonts': '15 families', 'Colors': '6 palettes', 'Create': '24 kinds'};
-
 class WsShelf extends StatefulWidget {
-  const WsShelf(this.name, {super.key});
-  final String name;
+  const WsShelf(this.name, this.hint, {super.key});
+  final String name, hint;
   @override
   State<WsShelf> createState() => _WsShelfState();
 }
@@ -102,7 +89,6 @@ class _WsShelfState extends State<WsShelf> {
   @override
   Widget build(BuildContext context) {
     final ws = WsScope.read(context), name = widget.name;
-    final (_, _, hint) = dockShelves.firstWhere((s) => s.$1 == name);
     final c = DockCtx(name, _mem, _search.text.trim(), ws, setState, _search.clear);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -166,7 +152,8 @@ class _WsShelfState extends State<WsShelf> {
                       },
                       'Colors' => '${usedColors(ws).values.toSet().length} used here',
                       'Create' => createFact(ws),
-                      _ => _facts[name] ?? '',
+                      'Presets' => '0',
+                      _ => '',
                     },
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -177,7 +164,7 @@ class _WsShelfState extends State<WsShelf> {
             ],
           ],
         ),
-        DockSearch(controller: _search, hint: name == 'Fonts' ? 'Search fonts' : hint),
+        DockSearch(controller: _search, hint: widget.hint),
         Builder(
           builder: (context) {
             // (the word being typed, finished by the tags the shelf has: a press takes one)

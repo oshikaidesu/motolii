@@ -45,10 +45,10 @@ theme.xml に `<Parts Value="フォルダ"/>` を書くと、そのフォルダ�
 | `tp.keyFilled` | キーの印 |
 
 ## ドック（dock.）：パネルの見出しの印、作る棚・効果の棚の印（名前が中身のまま：`dock.media` はメディアのパネル、`dock.star` は星の形を作る）
-`dock.media` `dock.effects` `dock.fonts` `dock.colors` `dock.create` `dock.program` `dock.search` `dock.close` `dock.reload` `dock.chevron` `dock.grid` `dock.list` `dock.particles` `dock.plus` `dock.light` `dock.copies` `dock.text` `dock.time` `dock.shape` `dock.camera` `dock.nullObj` `dock.rect` `dock.ellipse` `dock.polygon` `dock.star` `dock.line` `dock.radial` `dock.folder` `dock.files` `dock.comp` `dock.image` `dock.audio` `dock.video` `dock.font` `dock.link` `dock.stage` `dock.inspector` `dock.timeline` `dock.desk` `dock.more`
+`dock.media` `dock.effects` `dock.fonts` `dock.colors` `dock.create` `dock.program` `dock.search` `dock.close` `dock.reload` `dock.chevron` `dock.grid` `dock.list` `dock.particles` `dock.plus` `dock.light` `dock.copies` `dock.text` `dock.time` `dock.shape` `dock.camera` `dock.nullObj` `dock.rect` `dock.ellipse` `dock.polygon` `dock.star` `dock.line` `dock.radial` `dock.folder` `dock.files` `dock.comp` `dock.image` `dock.audio` `dock.video` `dock.font` `dock.link` `dock.stage` `dock.inspector` `dock.timeline` `dock.toolPanel` `dock.more`
 
-## ツールパネルの道具（desk.）
-`desk.tools` `desk.blend` `desk.align`
+## ツールパネルの道具（dock.）
+`dock.tools` `dock.blend` `dock.align`
 
 ## そのほか
 `undo`（やり直しは同じ絵を裏返して使う）、`shade`（明暗の切り替え）、`stage.safe`、`stage.grid`、`stage.snap`（今の絵を取っておく）、`stage.show`（取っておいた絵を見る）

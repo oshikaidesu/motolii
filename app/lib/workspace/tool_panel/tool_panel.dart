@@ -1,11 +1,13 @@
-// The Tool Panel: the drawer under the Inspector. It follows the selection and holds one tool at a time (keys picked -> Ease,
-// a camera -> Depth, otherwise the Tools catalog); a tool opened by hand stays pinned until the selection moves or you unpin it.
+// The Tool Panel: the drawer under the Inspector. It holds the catalog or one catalog row (a tool opened by hand stays pinned until
+// the selection moves or you unpin it).
 import 'package:flutter/widgets.dart';
 
 import '../../widgets/controls.dart' show Chip, IconPress;
 
 import '../../inspector/inspector_parts.dart' show Hov;
 import '../../skin/tokens.dart';
+import '../dock/dock_glyphs.dart';
+import '../window/panes.dart';
 import 'tool_panel_widgets.dart';
 import '../state/state.dart';
 
@@ -22,7 +24,7 @@ class WsToolPanel extends StatelessWidget {
           Expanded(
             child: switch (name) {
               'Tools' => const _Catalog(),
-              _ => panelTool(ws, name).build?.call() ?? _Placeholder(name: name),
+              _ => panelTool(ws, name)?.build() ?? const SizedBox.shrink(),
             },
           ),
         ],
@@ -51,7 +53,7 @@ class _ToolHeader extends StatelessWidget {
               Chip(label: wide ? 'Follows selection' : 'Follows', dot: WsT.accent),
             SizedBox(width: WsT.gap),
             IconPress(
-              paintInk((ink) => ToolGlyph('Tools', ink)),
+              (ink) => DockGlyph(DockG.tools, size: 20, color: ink),
               rest: WsT.well,
               ink: Grey.g76,
               size: 20,
@@ -65,14 +67,13 @@ class _ToolHeader extends StatelessWidget {
   }
 }
 
-/// Every tool panel tool as a tile: sticker, name, what it acts on. The one the selection would pick wears an Auto tag.
-/// Columns come from the width; the rows share the height while each keeps [_minTile], else the grid scrolls; a tall tool panel never stretches a tile past [_maxTile].
+/// Every tool panel tool as a tile: sticker, name, what it acts on. /// Columns come from the width; the rows share the height while each keeps [_minTile], else the grid scrolls; a tall tool panel never stretches a tile past [_maxTile].
 class _Catalog extends StatelessWidget {
   const _Catalog();
   static const _cell = 104.0, _minTile = 62.0, _maxTile = 92.0;
   @override
   Widget build(BuildContext context) {
-    final ws = WsScope.read(context), auto = ws.toolPanelAuto;
+    final ws = WsScope.read(context);
     return LayoutBuilder(
       builder: (context, box) {
         final w = box.maxWidth - WsT.gap * 2, h = box.maxHeight - WsT.gap * 2;
@@ -89,7 +90,7 @@ class _Catalog extends StatelessWidget {
                   SizedBox(
                     width: cw,
                     height: tile,
-                    child: _ToolTile(t, auto: t.name == auto, onTap: () => ws.openToolPanel(t.name)),
+                    child: _ToolTile(t, onTap: () => ws.openToolPanel(t.name)),
                   ),
               ],
             ),
@@ -101,9 +102,8 @@ class _Catalog extends StatelessWidget {
 }
 
 class _ToolTile extends StatelessWidget {
-  const _ToolTile(this.tool, {required this.auto, required this.onTap});
-  final PanelTool tool;
-  final bool auto;
+  const _ToolTile(this.tool, {required this.onTap});
+  final WsPane tool;
   final VoidCallback onTap;
   @override
   Widget build(BuildContext context) => Hov(
@@ -117,27 +117,7 @@ class _ToolTile extends StatelessWidget {
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ToolSticker(tool.name, size: Shape.z(26)),
-                const Spacer(),
-                if (auto)
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.topRight,
-                      child: Container(
-                        height: Shape.z(14),
-                        padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(color: WsT.accent, borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius))),
-                        child: Text(
-                          'AUTO',
-                          style: T.micro(WsT.onAccent).copyWith(fontSize: T.px(9), fontWeight: FontWeight.w700, letterSpacing: .6),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+              children: [ToolSticker(tool.name, size: Shape.z(26))],
             ),
             const Spacer(),
             Text(
@@ -152,69 +132,4 @@ class _ToolTile extends StatelessWidget {
       ),
     ),
   );
-}
-
-/// A tool the lab has not drawn yet: a poster of it (its hue, its glyph, its name) and the way back.
-class _Placeholder extends StatelessWidget {
-  const _Placeholder({required this.name});
-  final String name;
-  @override
-  Widget build(BuildContext context) {
-    final ws = WsScope.read(context), tool = panelTool(ws, name);
-    return Padding(
-      padding: EdgeInsets.only(top: WsT.gutter),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Container(
-              color: WsT.card,
-              padding: EdgeInsets.fromLTRB(WsT.inset * Shape.s(1.5), WsT.inset * Shape.s(1.5), WsT.inset, WsT.inset),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('TOOL', style: T.micro(tool.tone).copyWith(fontWeight: FontWeight.w700, letterSpacing: 1.4)),
-                  SizedBox(height: Shape.s(6)),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      name,
-                      style: T.title(Grey.g95).copyWith(fontSize: T.px(34), fontWeight: FontWeight.w800, letterSpacing: -1, height: 1),
-                    ),
-                  ),
-                  SizedBox(height: Shape.s(10)),
-                  Text('Works on ${tool.acts.toLowerCase()}.', style: T.label(Grey.g76).copyWith(fontSize: T.px(11))),
-                  SizedBox(height: Shape.s(5)),
-                  Text('Not designed in the lab yet.', style: T.label(Grey.g56)),
-                  const Spacer(),
-                  Wrap(
-                    spacing: WsT.gap,
-                    runSpacing: WsT.gap,
-                    children: [
-                      Chip(label: 'Back to Tools', dot: Grey.g76, onTap: () => ws.openToolPanel('Tools')),
-                      Chip(label: 'Follow selection', dot: WsT.accent, onTap: () => ws.openToolPanel(null)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: WsT.gutter),
-          AspectRatio(
-            aspectRatio: .5,
-            child: ColoredBox(
-              color: tool.tone,
-              child: Center(
-                child: FractionallySizedBox(
-                  widthFactor: .8,
-                  child: AspectRatio(aspectRatio: 1, child: CustomPaint(painter: ToolGlyph(name, WsT.onAccent))),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

@@ -24,7 +24,7 @@ export '../../bridge/motolii.dart'
         MotoliiWatch; // (the inside's reads, an extension of Motolii: whoever holds the window's Ws.inside can call them)
 import '../../skin/theme.dart';
 import '../../skin/tokens.dart';
-import '../tool_panel/tool_panel_widgets.dart' show PanelTool, panelTools;
+import '../window/panes.dart' show WsAt, WsPane;
 import 'beats.dart';
 import '../stage/stage_art.dart' show WsArt;
 export 'beats.dart';
@@ -174,4 +174,4 @@ typedef WsStretchPicked = ({String layer, String name, double at, int from, int 
 /// contract: changes notify once per user action; nothing here ticks while idle (play advances only while [playing]).
 /// What of the window changed: a part of it is built again only when one it reads did (Flutter's InheritedModel
 /// aspects: [WsScope.of]). [WsAspect.document]: the inside's picture of the document was read again.
-enum WsAspect { document, picked, playing, shelf, view, fronted, route, animating, notice, stage }
+enum WsAspect { document, picked, playing, view, fronted, animating, notice, stage }
