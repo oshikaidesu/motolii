@@ -3,7 +3,7 @@
 // asks (the maker, 10/31: "そのeaseの意図から考えるべき"): one that moves a value along, or cuts it into steps, takes what
 // is above through it, as GSAP's timingEase and Blender's stack; a wave is as large as what is above, as GSAP's
 // amplitudeEase; a shake is added to it, as Blender's Noise. Between two cards the flow says which: an arrow, a ×, a + (the
-// maker, 10/31, of a reader who could not tell). To the document they are one way, defined so (way(), doc_match.h), so it is
+// maker, 10/31, of a reader who could not tell). To the document they are one way, defined so (way(), doc_steps.h), so it is
 // kept, undone and listed as any way is. Linear changes nothing that goes through it; a wave under it is as large as it.
 import 'dart:math' as math;
 
@@ -23,7 +23,7 @@ List<String> easeCards(String said) => [for (final w in said.split(_over)) w.sta
 
 bool easeIsLaid(String said) => said.contains(_over);
 
-/// A way said by its points, as CSS's linear() (one word: a space in it is said as ~; anime.js works it out: doc_match.h).
+/// A way said by its points, as CSS's linear() (one word: a space in it is said as ~; anime.js works it out: doc_steps.h).
 bool easeIsPoints(String said) => said.startsWith('linear(');
 bool easeIsTurned(String said) => said.startsWith(_turned);
 

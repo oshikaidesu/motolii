@@ -40,6 +40,8 @@
 #include "document/doc_sketch.h"   // (what a p5.js sketch draws in WEBGL, one mesh in the world)
 #include "document/doc_moment.h"   // (the stage told a moment)
 #include "document/doc_match.h"   // (the stage made again as the document says; its file opened, changed, undone)
+#include "document/doc_marks.h"   // (the document's length, work area, marks, guides, window settings and stage size)
+#include "document/doc_steps.h"   // (the document's file opened; each change kept as one step, undone and done again)
 #include "document/doc_edit.h"   // (things added, freed, related, led; keys and values put)
 #include "document/doc_recipes.h"   // (recipes)
 #include "document/doc_cards.h"   // (a thing's values as a shell lists them: names, words, ranges, cards)
