@@ -69,7 +69,7 @@ target_include_directories(video_flash_check PRIVATE ${IRIS}/IRIS/include ${IRIS
   ${IRIS}/spdlog/include ${IRIS}/json/single_include ${IRIS}/opencv_out/include/opencv4)
 
 # Shaders turned into WGSL by Filament's glslang and Dawn's Tint (ISF's GLSL, AviUtl2's HLSL).
-add_library(isf_translation OBJECT community/isf/isf.cpp)
+add_library(isf_translation OBJECT community/isf/isf.cpp community/isf/isf_compile.cpp community/isf/isf_head.cpp community/isf/isf_translate.cpp)
 add_library(aviutl_translation OBJECT community/aviutl/aviutl.cpp)
 target_compile_definitions(aviutl_translation PRIVATE ENABLE_HLSL)
 foreach(translation isf_translation aviutl_translation)
