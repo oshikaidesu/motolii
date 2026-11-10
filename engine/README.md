@@ -1,97 +1,108 @@
-# engine/ — Motolii のエンジン
+# Motolii engine
 
-*Motolii's engine (C++ / Objective-C++). The app (`../app/`) calls it through the C calls in `entry/motolii.h`; `entry/motolii.mm` becomes `out/libmotolii.dylib`. `./build.sh` is the build; start with the four commands below and the folder table; the list of files the build reads is written by a script from the compiler's own dependency output, not by hand.*
+The C++ / Objective-C++ library behind the app. The app (`../app/`) loads `out/libmotolii.dylib` and reaches it only
+through the C API in `entry/motolii.h`. `out/edit_wgpu` is a command-line shell that makes the same calls, one per line.
+For the overall design see [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md).
 
-アプリ（`../app/`）は、ここが組む `out/libmotolii.dylib` を C の呼び出しで使います。作りの全体は [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)。
+## Build
 
-## 走らせる物
+macOS on Apple silicon, with the tools in the root `Brewfile`. Run from this folder:
 
-組み立ては `./build.sh` の 1 つだけ。ここに置くのは人が手で打つ 4 つで、ほかのスクリプトは `build.sh` が呼ぶ部品（`deps/`・`gpu/filament_webgpu.sh`）か、下の表に書いた手で走らせる試し。
+    ./build.sh          # dependencies, materials, then CMake: compiles what changed
+    ./build.sh lib      # the same, but only libmotolii.dylib (restart the app afterwards: a native library cannot be hot reloaded)
+    ./build.sh test     # the same, then the C++ tests (ctest)
 
-| コマンド | 何をする |
+The first build fetches the dependencies and builds Filament from source (about 5 minutes on an M4). Later builds
+recompile only what changed. Only one build runs at a time on a machine: `build.sh` takes the lock in
+`tools/build_lock.sh` and releases it when it ends. Everything it makes goes to `out/` (not in git).
+
+Once the dependencies exist, CMake can be driven directly: `cmake -S . -B out/cmake -G Ninja && cmake --build out/cmake`.
+
+## Run
+
+    ./edit.sh project.motolii
+
+Builds if needed, opens the project and reads one command per line from standard input (`help` lists them).
+
+## Check and test
+
+- `./check_syntax.sh [path-fragment]` runs `clang++ -fsyntax-only` on every source of ours with CMake's flags. It builds
+  nothing, writes nothing and takes no lock. It prints clang's errors, or `ok: <count> sources`.
+- `./build.sh test` runs ctest. CMake collects every `<name>_test.cpp` beside the code it tests into one GoogleTest
+  binary, but the tree has no `*_test.cpp` file yet, so no C++ test exists today.
+- `./drawings_unchanged.sh <old-commit>` draws every shelf recipe and motion with the engine at that commit and with this
+  one, and compares the pictures byte by byte. How tests are run, and what counts as passing, is in
+  [`../docs/TESTING.md`](../docs/TESTING.md).
+
+## Editor setup
+
+CMake writes `out/cmake/compile_commands.json` (`CMAKE_EXPORT_COMPILE_COMMANDS`) when it configures, which `./build.sh`
+does. There is no `.clangd` file; point clangd at it with `--compile-commands-dir=<this folder>/out/cmake`.
+
+## Layout
+
+| Folder | Responsibility |
 |---|---|
-| `./build.sh` | **組み立て**。アプリが読む `out/libmotolii.dylib` と、`edit.sh` のシェル `out/edit_wgpu` を、変わった所だけ組む。初回は依存を取ってきて Filament をソースから組む（`deps/filament.sh`、M4 で約 5 分）。`./build.sh lib` は `libmotolii.dylib` だけ（`entry/motolii.mm` を直した後、アプリを開き直す前に） |
-| `./edit.sh プロジェクト.motolii` | `build.sh` を通してから、プロジェクトを開いて 1 行ずつ命令を受ける（`help` で一覧） |
-| `./check_syntax.sh` | 組まずに `clang++ -fsyntax-only`。錠も要らず何も書かない。`ok: entry/motolii.mm` か、誤りとその行 |
-| `./drawings_unchanged.sh <古いコミット>` | 棚のレシピと動きを、古いコミットのエンジンと今のエンジンで同じプロジェクトを描き、絵を `cmp` で比べる（[`../docs/TESTING.md`](../docs/TESTING.md)「今あるプロジェクトの見た目が変わらない」） |
+| `entry/` | The public surface. `motolii.h` is the whole C API; `render_thread.h` owns the render thread that holds the project and the GPU; `calls*.h` are the API calls grouped by purpose (find, map, sound, files, time); `edit.cpp` is the shell. |
+| `base/` | Small helpers used everywhere. `json.h` is the single entry point to rapidjson. |
+| `document/` | The project, stored in SQLite. `doc.h` is the one include for the whole module; `undo.h` keeps the change tables and undo; `values.h`, `cards.h` and `marks.h` hold layer values and keys; `match.h` matches items. |
+| `document/edit/` | Changes to the project: layers, keys, easings, effects, parents, relations, arrangement and time (`layer_edit.h`, `keys_put.h`, `fx_put.h`). |
+| `document/evaluate/` | Computing what a project shows at a given time: values between keys, effect lists, camera, world and materials (`evaluate.h`, `value_at.h`, `world.h`). |
+| `document/scripts/` | Reading the shelves into the project: recipes, expressions and scripts, the adapter to posted code, and the shelf folder lists (`recipes.h`, `scripts.h`, `folders.h`). |
+| `shelf/` | Where the shelf folders are: the library's and the user's, and a count of changed files (`shelf_folders.h`). |
+| `stage/` | Drawing. `live.h` hands frames to the app. |
+| `stage/render/` | Drawing with Filament: engine, camera, lights, layers, glTF models and point clouds (`render.h`, `gltf_model.h`, `point_cloud.h`). |
+| `stage/canvas/` | 2D art drawn with ThorVG and placed in the preview as a plane, plus path operations (`canvas.h`, `thorvg_path_operators.cpp`, `skia_path_operations.cpp`). |
+| `stage/effects/` | Effects per layer and over the whole screen, and Filament viewer settings (`layer_fx.h`, `screen_fx.h`, `viewer_settings.h`). |
+| `preview/` | Putting a project on the stage: the playback cache (`playback_cache.h`). |
+| `media/` | Everything read through GStreamer: video (`video_layer.h`, `video_datamosh.h`, `video_flash_check.cpp`), sound (`sound_level.h`, `sound_playback.h`), MIDI (`midi_notes.h`, `midi_roll.h`) and `gstreamer_file_source.h`. |
+| `motion/` | Motion: easing (`easing_curves.h`, `easing_names.h`, `easing_godot.h`) and Lottie motion solved by ThorVG (`lottie_motion.h`). |
+| `physics/` | Physics through Jolt (`physics.h`, `jolt.cpp`). |
+| `materials/` | Filament materials (`.mat`) and the `.glsl` they include, compiled by `materials/build.sh` with Filament's `matc`. |
+| `gpu/` | Our code inside Filament's WebGPU (Dawn) backend: the interop files, built within Filament's own build by `gpu/CMakeLists.txt`, and `thorvg_on_dawn.cpp`. |
+| `community/` | Adapters that run code from the net unchanged (table below). |
+| `deps/` | Scripts that fetch third-party code, and `deps/patches/` (see below). |
+| `tools/` | Our own build helper: `build_lock.sh`. |
+| `third_party/` | Fetched libraries (not in git) and a few small bundled works (in git). |
+| `out/` | Build output (not in git). |
 
-組む物（`build.sh`・`edit.sh`・`drawings_unchanged.sh`）は、機械に 1 つのビルドの錠（`tools/build_lock.sh`）を自分で取る。
+Each folder under `community/` runs code from one outside tool or site, as it is posted.
 
-**エディタ（VS Code などの clangd）**：`build.sh` で依存を取ってきた後に `./tools/compile_commands.sh` を 1 回（ヘッダーを足した時も）。`compile_commands.json` ができ、「part of X.h」の部品にもそれを読む所までの文脈が付く。
-
-## フォルダ
-
-| フォルダ | 中身 |
+| Folder | Runs |
 |---|---|
-| `entry/` | アプリが呼ぶ入口。`motolii.h`＝C の呼び出しの全部（プロジェクトを開く・レイヤーを足す・値を変える・キー・取り消し・書き出し・フレームを受け取る）、`motolii.mm`＝その実装（`libmotolii.dylib` になる）、`calls*.h`＝呼び出しを役目で分けた部品（探す・地図・音・ファイル・時刻…）、`render_thread*.h`＝プロジェクトと GPU を持つレンダースレッド 1 本、`window.h`＝開く・閉じる、`export.h`＝書き出し、`snapshot.h`＝アプリが読むプロジェクトの写し、`edit.cpp`＝同じ呼び出しを 1 行ずつ打つシェル |
-| `base/` | どこからも使う小さな部品：`json.h`＝rapidjson の入口（Filament に付いてくる 1 つの写しをここだけが名前で指す） |
-| `document/` | プロジェクト（SQLite）。`doc.h`＝全部を読む入口、ほかはその部品：`undo.h`＝表と取り消し（変更を SQLite の表に積む）、`values.h`・`keys_put.h`・`layer_edit.h`＝レイヤー・値・キー、`evaluate.h`・`match.h`＝ある時刻の値を出してプレビューへ反映、`presets.h`・`recipes.h`＝棚を読む。中の関数名の頭 `doc_` はファイル名には付けない（フォルダが言っている） |
-| `shelf/` | 棚のフォルダを探す所：`shelf_folders.h`＝ライブラリのフォルダと利用者のフォルダ（`doc_folders`）、エンジン内の部品の場所（`doc_engine`）、ファイルが変わったかの数え（`files_changed`） |
-| `stage/` | 描く所。`render/`＝Filament で描く所（Engine・カメラ・光・書き出し、3D ファイル `gltf_model.h`・点群 `point_cloud.h`）、`canvas/`＝ThorVG のキャンバスに描いた 2D の絵をプレビューに板として置く所（パスの演算：`thorvg_path_operators.cpp`・`skia_path_operations.cpp`）、`effects/`＝効果（レイヤーごと `layer_fx.h`・画面全体 `screen_fx.h`・Filament の設定ファイル `viewer_settings.h`）。直下はプレビューから外へ出す物だけ：アプリへ渡すフレーム（`live.h`） |
-| `preview/` | プロジェクトをステージに置く側：再生用のキャッシュ（`playback_cache.h`） |
-| `community/` | ネットのコードをそのまま動かす口。中のフォルダは、動かす相手（コミュニティ）ごとに 1 つ（下の「`community/` の中」） |
-| `media/` | GStreamer で読む物。名前の頭で分かれる：`video_*`＝動画（`video_layer.h`＝プレビューに置く動画のレイヤー、GPU で解く・`video_frames_for_scripts.h`＝スケッチが CPU で読む小さなフレーム・`video_datamosh.h`・`video_flash_check.cpp`＝点滅の検査（IRIS））、`sound_*`＝音（`sound_level.h`＝大きさ・`sound_playback.h`＝再生中に鳴らす）、`midi_*`＝MIDI、`gstreamer_file_source.h`＝ファイルを渡す口 |
-| `motion/` | 動き：イーズは `easing_*.h` だけ（`easing_curves.h`＝キーの間の 9 種・`easing_names.h`＝名前で呼ぶイーズ・`easing_godot.h`）、`lottie_motion.h`＝Lottie の動きを ThorVG が解く |
-| `physics/` | 物理：`physics.h`＝口、`jolt.cpp`＝その裏の Jolt |
-| `materials/` | Filament の材質（`.mat`）と、それが `#include` する `.glsl`。組むのは `gpu/filament_webgpu.sh` が名を挙げる物。`.glsl` を別のフォルダに分けないのは Filament 自身の置き方（`filament/src/materials/ssao/` は `sao.mat` の隣に `saoImpl.fs`） |
-| `gpu/` | Filament の WebGPU（Dawn）の上の自前：`filament_webgpu.sh`＝材質・ThorVG・リンク（`build.sh` が呼ぶ。手で打たない）、`CMakeLists.txt` と `*_interop.cpp`＝Filament の組み立ての中で組む interop（Filament・Dawn の公開されていない内側に届く所）、`thorvg_on_dawn.cpp`（`deps/thorvg.sh` が組んで走らせる確かめ） |
-| `deps/` | 他人の物を取ってきて組む・取り込むスクリプト。1 ライブラリ 1 本（`filament.sh`・`thorvg.sh`・`skia.sh`・`jolt.sh`…、全部 `build.sh` から）と、手で 1 回走らせる物（`likeness_models.py`＝棚の地図の絵の読み手 CLIP・FontCLIP を ONNX に、`wnja_export.py`・`from_gflanguages.py`＝日本語 WordNet と Google Fonts の見本を `third_party/` の形に）。`deps/patches/<ライブラリ>/` は人のコードに当てる差分（`.patch`） |
-| `tools/` | 何も取ってこない自前の道具：ビルドの錠 `build_lock.sh`（組むスクリプトが全部読む）、エディタと下の検査が読む `compile_commands.json` を書く `compile_commands.sh`（`.cpp`・`.mm` ごとに、それを組む時のフラグ）・`clangd_context.py`、下の一覧を書く `files_in_build.sh`。組まずに確かめる検査：`check_file.sh`＝ファイル 1 つが、自分で読む物だけで通るか、`function_census.py`＝関数・型・変数・マクロの定義を全部数え、`--diff <コミット>` で、移しただけなら中身が 1 文字も変わっていないことを示す（読むのは ast-grep） |
-| `third_party/` | 取ってくる依存（git の外）と、同梱の小さな物（`anime/`・`godot_easing/`・`js/`・`leva/`・`midi_roll/`・`qdtsne/`・`rapidfuzz/`・`scipy_lsap/`・`thermion_frame/`・`ymm4-luascript/` ほか）。`leva/`・`ymm4-luascript/` は、自前のヘッダーにそのまま貼った他人のコード（`community/quickjs/script_leva.h`・`community/aviutl/aviutl_fx.h`）のライセンス文書 |
-| `out/` | 組み立てと描いた物の出力（git の外） |
+| `quickjs/` | The JavaScript of the shelves (recipes, expressions, relations) on QuickJS-ng; AviUtl2-style and leva-style parameters. |
+| `after_effects/` | After Effects expressions (`ae_expr.h`) and the slots of Lottie files exported from After Effects (`lottie_slots.h`). |
+| `p5/` | p5.js sketches in p5.js itself, and sketches that paint with `shader()` as ISF (`adapter_p5_shader.h`). |
+| `three/` | three.js: solid shapes (`solid_three.h`) and screen effects turned into ISF (`three_isf.h`). |
+| `isf/` | ISF effects (`.fs`), translated to WGSL with glslang and Tint. Every shader entry ends here. |
+| `hydra/` | Hydra code, turned into GLSL by Hydra itself, then run as an ISF effect. |
+| `playcanvas/` | PlayCanvas Gaussian-splat effects (`splatfx.h`). |
+| `sites/` | Code in the form it was posted on Dwitter, tixy.land, Turtletoy, Shadertoy, GLSL Sandbox or OpenProcessing: recognised and handed to one of the above (`adapter.h`). |
+| `aviutl/` | AviUtl2 scripts, Lua and HLSL (`aviutl.h`). |
+| `absent_motion/` | AbsentMotion motion and text effects (`absent_motion.h`). |
+| `three_shading_language_to_shelf/` | Not C++: Node tools that fetch three.js Shading Language works, convert them to WGSL with three.js and write them as files under `../shelves/effects/`. Not part of the build. |
 
-**adapter と interop**：人のコードとの境目は 1 か所に閉じ込める。Filament の公開されていない内側に手を入れる interop は `gpu/*_interop.*` だけ、ネットのコードを形を変えずに動かす adapter は `community/sites/adapter*.h`・`community/p5/adapter_p5_shader.h` と `document/scripts/adapter.h` だけ。相手が変わったら、そこだけを直す。
+## Third-party code
 
-### `community/` の中
+- **Fetched libraries** (Filament, ThorVG, Skia, Jolt, libtess2, curve_fit_nd, IRIS, AbsentMotion and others): one script
+  each under `deps/`, pinned to a commit. Each script fetches into `third_party/` and builds with the library's own build
+  system. They are not in git and not built by our CMake.
+- **Changes to them** are patches in `deps/patches/<library>/`, one folder per patched library, applied on top of the fetched source.
+  Nothing in `third_party/` is edited by hand.
+- **Small bundled works** (`anime/`, `godot_easing/`, `js/`, `leva/`, `midi_roll/`, `scipy_lsap/`, `thermion_frame/`,
+  `ymm4-luascript/` and the data folders `wordnet_ja/`, `noto_sans_jp/`, `gflanguages/`) are in git, with their licence
+  files. `engine/.gitignore` lists exactly which ones.
+- Licences of everything are listed in [`../THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md).
 
-C++ の口は、動かす相手ごとに 1 フォルダ。どれも相手のコードを書き換えず、そのまま 1 回組んで動かす（AGENTS.md 原則 1）。
+Two kinds of boundary with other people's code, each confined to a few files so that a change on the other side is fixed
+in one place. An **interop** reaches into Filament's or Dawn's private internals: only `gpu/*_interop.*`. An **adapter**
+runs code from the net unchanged: only `community/sites/adapter*.h`, `community/p5/adapter_p5_shader.h` and
+`document/scripts/adapter.h`.
 
-| フォルダ | 動かす物 |
-|---|---|
-| `quickjs/` | 棚の JavaScript（レシピ・式・関係）を QuickJS-ng で動かす土台：頭のパラメーター（AviUtl2 の書き方と leva の書き方）、`each()`下の p5・three.js・AE 式もこの上で動く |
-| `after_effects/` | AE の式（`ae_expr.h`）と、AE から書き出した Lottie の slots（`lottie_slots.h`） |
-| `p5/` | p5.js のスケッチを p5.js 自身でページ無しに動かす物と、`shader()` で塗るスケッチを ISF にする `adapter_p5_shader.h` |
-| `three/` | three.js：立体の形（`solid_three.cpp`、棚の `solids/` が読む部品 `face_uv.js`）と、画面の効果を ISF にする `three_isf.cpp` |
-| `isf/` | ISF の効果（`.fs`）を glslang と Tint で WGSL にする所。シェーダーの口はみなここに行き着く |
-| `hydra/` | Hydra のコードを Hydra 自身で GLSL にし、ISF の効果にする |
-| `playcanvas/` | PlayCanvas のガウシアンスプラットの効果（点群の見た目、`splatfx.cpp`） |
-| `sites/` | サイトに貼られた形のままのコード（Dwitter・tixy.land・Turtletoy・Shadertoy・GLSL Sandbox・OpenProcessing…）を見分けて、上の口のどれかに渡す（`adapter*.h`） |
-| `aviutl/` | AviUtl2 のスクリプト（Lua と HLSL） |
-| `absent_motion/` | AbsentMotion の動きと文字の効果（C++ のまま） |
-| `three_shading_language_to_shelf/` | **C++ ではない Node の道具**（`package.json`）。ネットの TSL（three.js Shading Language）の作品集を `fetch.sh` で取り、three.js 自身の変換器で WGSL にし（`convert.ts`）、`write_shelf_*.ts` が `shelves/effects/` のファイルに書く。組み立ては読まない |
+## Conventions
 
-同梱の効果・レシピ・字体などの棚は、リポジトリ直下の [`../shelves/`](../shelves/) にあります。
-
-## 今の組み立てが読むファイル
-
-`build.sh` から呼ばれるスクリプトを辿り、そこに名前が出る `.cpp`/`.mm` を `clang++ -MM` にかけて、読むヘッダーを全部数えた物。手で書き換えず、ファイルを足したり消したりしたら `./tools/files_in_build.sh --write` で書き直す。
-
-<!-- files_in_build.sh -->
-128 files of ours (21 units and the headers they read), of the 128 .h/.cpp/.mm git keeps here outside third_party/. Scripts followed: `build.sh`、`deps/curve_fit_nd.sh`、`deps/filament.sh`、`deps/iris.sh`、`deps/jolt.sh`、`deps/libtess2.sh`、`deps/midi_roll.sh`、`deps/skia.sh`、`deps/thorvg.sh`、`gpu/CMakeLists.txt`、`gpu/filament_webgpu.sh`、`tools/build_lock.sh`. Made by `./tools/files_in_build.sh --write`.
-
-- `community/absent_motion/` (4): `absent_drawing.cpp`、`absent_ends.cpp`、`absent_motion.cpp`、`absent_motion.h`
-- `community/after_effects/` (2): `ae_expr.h`、`lottie_slots.h`
-- `community/aviutl/` (9): `aviutl.cpp`、`aviutl.h`、`aviutl_fx.h`、`aviutl_load.h`、`aviutl_obj.h`、`aviutl_obj_draw.h`、`aviutl_obj_effect.h`、`aviutl_pixels.h`、`aviutl_run.h`
-- `community/hydra/` (2): `hydra_isf.cpp`、`hydra_isf.h`
-- `community/isf/` (2): `isf.cpp`、`isf.h`
-- `community/p5/` (4): `adapter_p5_shader.h`、`p5_mesh.h`、`p5_stand.h`、`p5_three.h`
-- `community/playcanvas/` (2): `splatfx.cpp`、`splatfx.h`
-- `community/quickjs/` (3): `script.cpp`、`script.h`、`script_leva.h`
-- `community/sites/` (4): `adapter.h`、`adapter_net.h`、`adapter_shadertoy.h`、`adapter_shadertoy_json.h`
-- `community/three/` (4): `solid_three.cpp`、`solid_three.h`、`three_isf.cpp`、`three_isf.h`
-- `document/` (34): `adapter.h`、`arrange.h`、`camera.h`、`card_table.h`、`cards.h`、`doc.h`、`easings_put.h`、`evaluate.h`、`expressions.h`、`fx_list.h`、`fx_put.h`、`hold.h`、`keys_put.h`、`kinds.h`、`layer_edit.h`、`marks.h`、`match.h`、`material.h`、`moment_fx.h`、`parent.h`、`paths.h`、`place.h`、`presets.h`、`recipes.h`、`relate.h`、`relations.h`、`scripts.h`、`shown.h`、`sketch.h`、`time_edit.h`、`undo.h`、`value_at.h`、`values.h`、`world.h`
-- `entry/` (15): `calls.h`、`calls_files.h`、`calls_find.h`、`calls_later.h`、`calls_map.h`、`calls_sound.h`、`calls_time.h`、`edit.cpp`、`export.h`、`motolii.h`、`motolii.mm`、`render_thread.h`、`render_thread_loop.h`、`snapshot.h`、`window.h`
-- `gpu/` (7): `compute_interop.cpp`、`compute_interop.h`、`gpu_interop.cpp`、`gpu_interop.h`、`screen_interop.cpp`、`screen_interop.h`、`thorvg_on_dawn.cpp`
-- `media/` (10): `gstreamer_file_source.h`、`midi_notes.h`、`midi_roll.cpp`、`midi_roll.h`、`sound_level.h`、`sound_playback.h`、`video_datamosh.h`、`video_flash_check.cpp`、`video_frames_for_scripts.h`、`video_layer.h`
-- `motion/` (4): `easing_curves.h`、`easing_godot.h`、`easing_names.h`、`lottie_motion.h`
-- `physics/` (2): `jolt.cpp`、`physics.h`
-- `preview/` (1): `playback_cache.h`
-- `shelf/` (2): `shelf_folders.cpp`、`shelf_folders.h`
-- `stage/` (1): `live.h`
-- `stage/canvas/` (8): `canvas.h`、`canvas_cache.h`、`canvas_edge.h`、`canvas_flat.h`、`canvas_renderables.h`、`canvas_sketch.h`、`skia_path_operations.cpp`、`thorvg_path_operators.cpp`
-- `stage/effects/` (3): `layer_fx.h`、`screen_fx.h`、`viewer_settings.h`
-- `stage/render/` (6): `gltf_model.h`、`point_cloud.h`、`render.h`、`render_draw.h`、`render_layers.h`、`render_stage.h`
-
-<!-- /files_in_build.sh -->
-
-本体が使わない試し（ガラスや光、Dawn、プローブ、Widgetbook など）は main から外しました。履歴はタグ `lab-archive-2026-11-09` に残っています（`git show lab-archive-2026-11-09:lab/`）。アプリから届かない C 関数・部品・スクリプトは、切る前の main をタグ `noise-archive-2026-11-09` に残して外しました（一覧は [`../docs/design/removed_code_2026-11-09.md`](../docs/design/removed_code_2026-11-09.md)）。
+- [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html), formatted with the root `.clang-format`.
+- Every header is self-contained, has an include guard named `MOTOLII_<PATH>_<NAME>_H_`
+  (`MOTOLII_DOCUMENT_DOC_H_` for `document/doc.h`), and has its source file beside it.
+- Functions of the document module start with `doc_`; the file names do not repeat it.
+- Tests are `<name>_test.cpp` beside the code, written with GoogleTest.
