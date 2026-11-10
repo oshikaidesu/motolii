@@ -511,6 +511,13 @@ extension WorkspaceMenus on WorkspaceState {
       PlatformMenu(
         label: 'Motolii',
         menus: [
+          // macOS's own About panel, which shows macos/Runner/Credits.rtf (FFmpeg's LGPL notice is there).
+          if (PlatformProvidedMenuItem.hasMenu(
+            PlatformProvidedMenuItemType.about,
+          ))
+            const PlatformProvidedMenuItem(
+              type: PlatformProvidedMenuItemType.about,
+            ),
           if (PlatformProvidedMenuItem.hasMenu(
             PlatformProvidedMenuItemType.quit,
           ))
