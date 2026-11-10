@@ -2,6 +2,9 @@
 // It opens as a column of its own and pushes the rest left, so the flow stays in view and its cards can be dragged onto the shelf.
 // It slides like the colour boxes (dock_make_2.dart) and uses as many columns as the pane has room for, like Easey's presetsPage.js.
 // Dragging a card over the grip opens the shelf, like a Finder folder opening under a dragged item (macOS spring-loaded folders).
+import 'package:motolii/workspace/easing/ease.dart';
+import 'package:motolii/workspace/easing/ease_curve.dart';
+import 'package:motolii/workspace/easing/ease_text.dart';
 import 'package:motolii/skin/window_tokens.dart';
 
 import 'dart:convert';
@@ -10,7 +13,6 @@ import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_easing_presets.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_side.dart' show drawEaseChevron;

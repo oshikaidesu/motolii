@@ -1,5 +1,7 @@
 // The controls beside the Ease graph, laid out as in AbsentMotion's EasingPanel.kt (Apache-2.0): a left column with
 // reverse and a menu, and a narrow row of easing shapes without names. The layout and behavior are ported; the colors are this app's.
+import 'package:motolii/workspace/easing/ease.dart';
+import 'package:motolii/workspace/easing/ease_text.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:flutter/widgets.dart';
 
@@ -9,7 +11,6 @@ import 'package:motolii/widgets/media.dart' show Draw, glyph;
 import 'package:motolii/widgets/more_menu.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart' show easeIsTurned, easeTurn;
 import 'package:motolii/workspace/tool_panel/tool_panel_easing_presets.dart';
 import 'package:motolii/widgets/paint_helpers.dart';
 import 'package:motolii/workspace/state/state.dart';

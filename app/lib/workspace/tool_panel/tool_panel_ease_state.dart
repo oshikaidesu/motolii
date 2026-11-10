@@ -1,5 +1,8 @@
 // The tool panel's Ease tool: edits the easing between the picked keyframe and the next one (curve, handles, presets, numbers).
 
+import 'package:motolii/workspace/easing/ease.dart';
+import 'package:motolii/workspace/easing/ease_curve.dart';
+import 'package:motolii/workspace/easing/ease_text.dart';
 import 'package:motolii/skin/window_tokens.dart';
 
 import 'dart:async' show scheduleMicrotask;

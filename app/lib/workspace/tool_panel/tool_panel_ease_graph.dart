@@ -1,5 +1,7 @@
 // The easing graph.
 
+import 'package:motolii/workspace/easing/ease.dart';
+import 'package:motolii/workspace/easing/ease_text.dart';
 import 'package:motolii/skin/layer_colors.dart';
 import 'package:motolii/skin/window_tokens.dart';
 
@@ -9,7 +11,6 @@ import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_handles.dart';
 import 'package:motolii/widgets/paint_helpers.dart';
 import 'package:motolii/workspace/state/state.dart';

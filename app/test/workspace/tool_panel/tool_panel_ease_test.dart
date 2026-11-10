@@ -1,7 +1,8 @@
 // An easing as a value (Ease), its samples (easeAlong), and its text form in the document (said, heard). The expected
 // values are what the code gave when this was written, so a move that changes one fails here. Needs no engine.
+import 'package:motolii/workspace/easing/ease.dart';
+import 'package:motolii/workspace/easing/ease_text.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 
 const _elastic = Ease(EaseKind.bezier, Offset.zero, Offset(1, 1), 'Elastic 1 0.3');
 

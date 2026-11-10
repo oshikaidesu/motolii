@@ -16,6 +16,8 @@
 //
 // The user's own folder is watched while the app is open (dart:io watch, FSEvents on a Mac). When a file is put in or taken out there, the
 // shelves are read again (docs/app/BRIDGE.md rule 8) and its tile is drawn ahead of the rest.
+import 'package:motolii/workspace/easing/ease.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -26,7 +28,6 @@ import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/engine_paths.dart';
 import 'package:motolii/workspace/state/state.dart' show wsTextFont;
-import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart' show easeAlong;
 import 'package:motolii/workspace/shelf/copies_tiles.dart' show TileQueue;
 
 part 'effect_tiles_knob.dart';

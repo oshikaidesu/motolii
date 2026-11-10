@@ -1,12 +1,13 @@
 // Easing presets drawn as small square thumbnails.
 
+import 'package:motolii/workspace/easing/ease.dart';
+import 'package:motolii/workspace/easing/ease_text.dart';
 import 'package:motolii/skin/window_tokens.dart';
 
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_numbers.dart' show easeIsUsual;
 import 'package:motolii/widgets/controls.dart' show Hov;
 

@@ -1,9 +1,10 @@
 // Stacked, reversed and pasted easings as text: what the document stores, what it must define first, and the curve
 // the app draws for them. The expected values are what the code gave when this was written, so a move that changes one
 // fails here. Every call here passes no engine (null), so an easing only the engine can draw keeps its straight line.
+import 'package:motolii/workspace/easing/ease.dart';
+import 'package:motolii/workspace/easing/ease_curve.dart';
+import 'package:motolii/workspace/easing/ease_text.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
 
 Ease _named(String name, [List<double>? drawn]) => Ease(EaseKind.bezier, Offset.zero, const Offset(1, 1), name, drawn);
 

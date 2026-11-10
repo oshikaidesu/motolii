@@ -4,14 +4,14 @@
 // Waves and steps are entered as a count rather than a length, which is how people think of them.
 // Overshoot is switched here, next to the numbers it affects, rather than in a menu as in Alight Motion.
 // Without it Y stops at 0 and 1, so typing a number cannot silently push the curve out of reach.
+import 'package:motolii/workspace/easing/ease.dart';
+import 'package:motolii/workspace/easing/ease_text.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/widgets/fold_mark.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, Hov;
 import 'package:motolii/widgets/number_field.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
 
 typedef _Number = ({String name, int at, double lo, double hi, bool many});
 _Number _n(String name, int at, double lo, double hi, {bool many = false}) => (name: name, at: at, lo: lo, hi: hi, many: many);

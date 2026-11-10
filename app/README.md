@@ -55,7 +55,7 @@ Flutter で書いたアプリ。描くのもプロジェクトを持つのもエ
 表は向かう先で、今のコードはまだ途中にある。
 
 - 表を破っている import は [`tool/layer_debt.txt`](tool/layer_debt.txt) に 1 行ずつ載っている。この帳簿は減るだけ。
-- `workspace/easing/`、`bridge/engine_paths.dart`、`widgets/glyph.dart` はまだ無い。帳簿の import を切るときに、そこへ分ける。
+- `bridge/engine_paths.dart`、`widgets/glyph.dart` はまだ無い。帳簿の import を切るときに、そこへ分ける。
 - 2 つの決まりを破る物（`part`、`panel.dart` の外の `export`）もまだ残っている。`check_layers.py` はこの 2 つを測らない。相対の import は無くなり、`analysis_options.yaml` の `always_use_package_imports` が見張る。
 
 確かめ方（`app/` で）：

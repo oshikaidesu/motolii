@@ -2,11 +2,12 @@
 // The Kotlin is ported rather than run because Kotlin does not run in this app.
 // A yellow handle changes the shape of the curve; a white one marks where the curve starts and ends.
 // Each handle carries the function that turns its new position into the changed easing.
+import 'package:motolii/workspace/easing/ease.dart';
+import 'package:motolii/workspace/easing/ease_text.dart';
+
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
 
 /// One draggable handle on an easing curve.
 class EaseHandle {

@@ -2,9 +2,9 @@
 // This file holds what every panel shares: the document state they all read (Ws) and the window's design tokens (WsT).
 // The look follows the Inspector's rules: square containers tiled edge to edge, round controls,
 // flat opaque colour, one lime accent, and one hue per layer kind.
+import 'package:motolii/workspace/easing/ease_curve.dart';
 import 'package:motolii/skin/layer_colors.dart';
 import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart' show easeCurve;
 
 import 'dart:async' show Timer;
 import 'dart:developer' show Timeline, TimelineTask;

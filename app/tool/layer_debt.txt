@@ -1,15 +1,12 @@
 # Imports in app/lib that the layering map in app/README.md forbids today.
 # One per line, importer -> imported, as paths from app/lib. Written by
 # `python3 app/tool/check_layers.py --write`. It should only get shorter.
-workspace/shelf/effect_tiles.dart -> workspace/tool_panel/tool_panel_ease.dart
 workspace/shelf/fx_code.dart -> workspace/dock/dock_program.dart
 workspace/shelf/shelf_add.dart -> workspace/dock/dock_make.dart
 workspace/shelf/shelf_tile.dart -> workspace/dock/dock_widgets.dart
 workspace/stage/stage.dart -> workspace/workspace.dart
 workspace/state/state.dart -> workspace/stage/stage_art.dart
-workspace/state/state.dart -> workspace/tool_panel/tool_panel_ease_cards.dart
 workspace/state/state.dart -> workspace/window/panes.dart
-workspace/timeline/timeline.dart -> workspace/tool_panel/tool_panel_ease_cards.dart
 workspace/tool_panel/tool_panel.dart -> workspace/window/panes.dart
 workspace/tool_panel/tool_panel_align.dart -> workspace/stage/stage_art.dart
 workspace/tool_panel/tool_panel_blend.dart -> workspace/workspace.dart
