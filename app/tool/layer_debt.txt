@@ -2,7 +2,6 @@
 # One per line, importer -> imported, as paths from app/lib. Written by
 # `python3 app/tool/check_layers.py --write`. It should only get shorter.
 skin/svg_parts.dart -> widgets/media.dart
-widgets/number_field.dart -> skin/forms/number_paint.dart
 workspace/shelf/effect_tiles.dart -> workspace/tool_panel/tool_panel_ease.dart
 workspace/shelf/fx_code.dart -> workspace/dock/dock_program.dart
 workspace/shelf/shelf_add.dart -> workspace/dock/dock_make.dart

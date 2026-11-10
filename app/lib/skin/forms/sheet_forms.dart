@@ -10,7 +10,7 @@ import 'package:motolii/widgets/media.dart' show Draw;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/forms/base_controls.dart';
 import 'package:motolii/skin/forms/forms.dart';
-import 'package:motolii/skin/forms/number_paint.dart';
+import 'package:motolii/widgets/number_field_look.dart';
 
 enum _Mark { dot, ring, quarter }
 

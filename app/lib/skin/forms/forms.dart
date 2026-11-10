@@ -11,7 +11,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/forms/lighttable_forms.dart';
-import 'package:motolii/skin/forms/number_paint.dart';
+import 'package:motolii/widgets/number_field_look.dart';
 import 'package:motolii/skin/forms/own_forms.dart';
 import 'package:motolii/skin/forms/poster_forms.dart';
 import 'package:motolii/skin/forms/sheet_forms.dart';

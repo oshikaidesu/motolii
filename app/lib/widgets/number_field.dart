@@ -5,7 +5,7 @@
 // - It stores no value and enforces no limit. It reads the value when needed and reports every change.
 //   [NumberField.min] and [NumberField.max] only position the range mark it draws.
 // - How far the value may go is up to the caller through [NumberField.reach], together with the source of that limit.
-// - It paints with the skin's form (lib/skin/forms/number_paint.dart) or with the caller's [NumberField.paint].
+// - It paints with the skin's form (lib/widgets/number_field_look.dart) or with the caller's [NumberField.paint].
 //   A panel normally supplies only value, text and onChange.
 import 'dart:async';
 
@@ -13,7 +13,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/skin/forms/number_paint.dart';
+import 'package:motolii/widgets/number_field_look.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/text_gestures.dart';
 
