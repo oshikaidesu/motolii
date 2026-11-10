@@ -33,6 +33,7 @@
 #include "community/script_runner/script_runner.h"
 #include "document/card_table.h"
 #include "document/cards.h"
+#include "document/document.h"
 #include "document/evaluate/evaluate.h"
 #include "document/evaluate/fx_list.h"
 #include "document/evaluate/material.h"

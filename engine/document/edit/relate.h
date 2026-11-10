@@ -7,9 +7,9 @@
 #include <utility>
 #include <vector>
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // Returns a copy of the name that stays valid for the life of the program, so
 // doc_literal can recognize it again by its address. There is one address per

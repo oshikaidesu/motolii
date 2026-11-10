@@ -6,6 +6,7 @@
 #include <cmath>
 #include <sstream>
 
+#include "document/document.h"
 #include "document/edit/hold.h"
 #include "document/edit/keys_put.h"
 #include "document/edit/layer_edit.h"

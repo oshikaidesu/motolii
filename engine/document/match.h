@@ -6,9 +6,9 @@
 
 #include <string>
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // Returns the bevel profile of a layer as its index in {angular, convex,
 // concave, ogee, step} plus one, or 0 for none. Only a layer with depth

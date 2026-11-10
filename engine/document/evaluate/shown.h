@@ -11,9 +11,9 @@
 #include <string>
 #include <vector>
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // Returns the layers in the order they lie, the one furthest back first.
 std::vector<int> doc_layers(Doc& d);

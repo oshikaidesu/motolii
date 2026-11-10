@@ -21,6 +21,7 @@
 #include "community/sites/adapter.h"
 #include "community/sites/adapter_net.h"
 #include "community/sites/adapter_shadertoy_json.h"
+#include "document/document.h"
 #include "document/edit/arrange.h"
 #include "document/edit/fx_put.h"
 #include "document/edit/keys_put.h"

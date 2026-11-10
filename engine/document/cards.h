@@ -6,9 +6,9 @@
 
 #include <string>
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // Removes all keyframes of a property, leaving it constant at the value it had
 // at time "at". Returns false if the layer does not have the property.

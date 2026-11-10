@@ -7,9 +7,9 @@
 #include <string>
 #include <vector>
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // Returns the effects of the shelf, one per line, each line holding these
 // fields separated by tabs:

@@ -8,9 +8,9 @@
 
 #include <string>
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // Returns how long the project is, in seconds: to the end of what ends last. A
 // layer with no duration plays once through itself. Returns 8 if nothing in the

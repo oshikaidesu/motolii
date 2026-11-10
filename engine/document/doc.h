@@ -83,6 +83,8 @@
 // The document is split into the parts below. Read them in this order, because
 // each part builds on the ones before it. Document kinds and the names of
 // properties.
+#include "document/kinds.h"
+// Doc, the state of an open project, made of the parts below.
 #include "document/document.h"
 // The properties a layer may have and how each is displayed.
 #include "document/values.h"

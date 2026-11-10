@@ -9,10 +9,11 @@
 #include <string>
 #include <vector>
 
-#include "document/document.h"
 #include "stage/render/render_stage.h"
 
 namespace motolii {
+
+struct Doc;
 
 // Returns the matrix that places `layer` on the stage at time `now`. `deeper`
 // is nonzero when the result is wanted before the layer's space (2D, 2.5D or

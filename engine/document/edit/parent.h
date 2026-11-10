@@ -6,9 +6,9 @@
 
 #include <vector>
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // Makes `to` the parent of the layer (0 means no parent) without moving the
 // layer on the stage, as After Effects does. The layer's position, its rotation

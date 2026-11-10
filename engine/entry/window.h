@@ -5,10 +5,11 @@
 // frame, the preview, selection, playback and the timing report.
 #include <string>
 
-#include "document/document.h"
 #include "entry/motolii.h"
 
 namespace motolii {
+
+struct Doc;
 
 // A string a call answers with. It is kept until the same thread asks again, so
 // each caller has its own: the render thread, the window, and a question on

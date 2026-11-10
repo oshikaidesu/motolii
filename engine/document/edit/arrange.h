@@ -7,9 +7,9 @@
 #include <string>
 #include <vector>
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // Returns the upright bounding box of a layer's outline on the canvas at time
 // `now`, written to `box` as left, top, right, bottom in canvas points. The

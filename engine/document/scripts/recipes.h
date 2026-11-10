@@ -9,10 +9,11 @@
 #include <string>
 #include <vector>
 
-#include "document/document.h"
 #include "document/scripts/folders.h"
 
 namespace motolii {
+
+struct Doc;
 
 // Returns every recipe found in the create folders. A recipe is a .js file
 // whose leading comment lines give its name and description, followed by

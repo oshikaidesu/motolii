@@ -6,9 +6,9 @@
 #include <math/mat4.h>
 #include <math/vec3.h>
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // A viewpoint computed from a camera layer. `round` is the rotation matrix of
 // the camera, `look` is the point it looks at, `eye` is the position of the

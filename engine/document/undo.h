@@ -8,10 +8,11 @@
 
 #include <string>
 
-#include "document/document.h"
 #include "stage/render/render_stage.h"
 
 namespace motolii {
+
+struct Doc;
 
 // Upgrades the database `schema` of `file` from the old table names to the
 // current ones (layer, keyframe, easing, undo_step), as described in section 3

@@ -22,9 +22,9 @@
 
 #include <string>
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // Writes the layer's preset to the file `path`, replacing any existing file.
 // With `whole`, everything except the parent is kept; this is a copy for Edit >

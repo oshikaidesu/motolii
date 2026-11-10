@@ -16,6 +16,7 @@
 
 #include "document/card_table.h"
 #include "document/cards.h"
+#include "document/document.h"
 #include "document/edit/fx_put.h"
 #include "document/edit/keys_put.h"
 #include "document/edit/parent.h"

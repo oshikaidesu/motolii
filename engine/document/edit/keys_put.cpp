@@ -4,6 +4,7 @@
 
 #include <algorithm>
 
+#include "document/document.h"
 #include "document/edit/arrange.h"
 #include "document/edit/layer_edit.h"
 #include "document/evaluate/value_at.h"

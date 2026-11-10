@@ -4,9 +4,9 @@
 // Adds, duplicates and removes layers, and checks and sets the values and words
 // of a layer.
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // Checks that a request on a layer is allowed. Returns true if the layer exists
 // and, when name is given, the layer's kind has a value of that name that

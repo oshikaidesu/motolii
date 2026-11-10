@@ -46,9 +46,9 @@
 //   it appears. A property name
 //             Drag that number. a is its new value.
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // Starts a drag on `layer`. Returns false if the layer does not exist, or if
 // the project is being exported, because nothing can be dragged until the

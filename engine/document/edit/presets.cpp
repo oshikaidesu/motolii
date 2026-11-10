@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "document/card_table.h"
+#include "document/document.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
 #include "document/undo.h"

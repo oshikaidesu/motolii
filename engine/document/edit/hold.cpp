@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "document/document.h"
 #include "document/edit/arrange.h"
 #include "document/edit/layer_edit.h"
 #include "document/edit/paths.h"

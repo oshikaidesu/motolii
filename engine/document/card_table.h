@@ -4,8 +4,6 @@
 
 #include <string>
 
-#include "document/document.h"
-
 namespace motolii {
 
 // The cards a user sees a layer's values on, besides where the layer is and its

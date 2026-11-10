@@ -12,6 +12,7 @@
 
 #include "community/quickjs/script.h"
 #include "document/cards.h"
+#include "document/document.h"
 #include "document/edit/keys_put.h"
 #include "document/edit/layer_edit.h"
 #include "document/evaluate/fx_list.h"

@@ -24,11 +24,12 @@
 #include <string>
 #include <vector>
 
-#include "document/document.h"
 #include "stage/live.h"
 #include "stage/render/render_stage.h"
 
 namespace motolii {
+
+struct Doc;
 
 // The on-disk frame cache of the stage and the state needed to fill and play
 // it.

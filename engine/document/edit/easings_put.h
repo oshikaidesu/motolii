@@ -6,9 +6,9 @@
 
 #include <string>
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // Removes the keyframe of a property at time "at". If it was the last keyframe,
 // the property keeps the value that keyframe held. Returns false and sets

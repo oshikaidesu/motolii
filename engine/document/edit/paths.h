@@ -6,9 +6,9 @@
 
 #include <math/vec2.h>
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // The plane of a path shape as the image shows it: its middle and its two axes.
 // own() converts a point of the image to the shape's own coordinates, where the

@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "community/quickjs/script.h"
+#include "document/document.h"
 #include "document/evaluate/evaluate.h"
 #include "document/evaluate/value_at.h"
 #include "document/match.h"

@@ -35,6 +35,7 @@
 #include "community/after_effects/lottie_slots.h"
 #include "community/quickjs/script.h"
 #include "document/card_table.h"
+#include "document/document.h"
 #include "document/edit/arrange.h"
 #include "document/evaluate/camera.h"
 #include "document/evaluate/fx_list.h"

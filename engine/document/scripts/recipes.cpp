@@ -16,6 +16,7 @@
 #include "community/isf/isf.h"
 #include "community/quickjs/script.h"
 #include "community/sites/adapter.h"
+#include "document/document.h"
 #include "document/edit/arrange.h"
 #include "document/edit/keys_put.h"
 #include "document/edit/layer_edit.h"

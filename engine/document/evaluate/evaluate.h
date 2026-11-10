@@ -5,9 +5,9 @@
 // one time, and the helpers that decide how much room a layer's effects need
 // and which properties force a layer to be rebuilt.
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // Brings the stage to the state the document has at time `now`. This covers the
 // camera and lens, layer order and depth sorting, scenes, per-layer materials

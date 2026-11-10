@@ -2,8 +2,6 @@
 #define MOTOLII_DOCUMENT_VALUES_H_
 // Lists every property a layer may have and how the inspector shows it.
 
-#include "document/document.h"
-
 namespace motolii {
 
 // How a value is shown to the user. The app draws its control from this and has

@@ -6,9 +6,9 @@
 #include <cstddef>
 #include <vector>
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // Returns the values that relation `by`, written as a script file, gives all
 // its layers at time `t`. For each layer the values are those named in

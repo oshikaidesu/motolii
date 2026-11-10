@@ -17,10 +17,11 @@
 #include <vector>
 
 #include "community/quickjs/script.h"
-#include "document/document.h"
 #include "document/scripts/scripts.h"
 
 namespace motolii {
+
+struct Doc;
 
 // Returns whether `file` is an expression: a .js file whose script lays copies.
 bool doc_expression(Doc& d, const std::string& file);

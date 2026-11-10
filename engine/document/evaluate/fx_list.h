@@ -6,10 +6,11 @@
 #include <string>
 #include <vector>
 
-#include "document/document.h"
 #include "stage/canvas/canvas_cache.h"
 
 namespace motolii {
+
+struct Doc;
 
 // Returns the layer's effects in the order they are laid, like the effect stack
 // of After Effects.

@@ -9,9 +9,9 @@
 // keyframe of a property takes the place of the value that stayed. A keyframe
 // at time 0 is marked by its easing, which is Linear until the user changes it.
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // Sets a keyframe of a property at time `at` to the value `is`. Returns false
 // and sets d.error if `at` is out of range or the property rejects the value.

@@ -16,6 +16,7 @@
 #include "community/quickjs/script.h"
 #include "community/script_runner/script_runner.h"
 #include "document/card_table.h"
+#include "document/document.h"
 #include "document/edit/arrange.h"
 #include "document/edit/keys_put.h"
 #include "document/edit/layer_edit.h"

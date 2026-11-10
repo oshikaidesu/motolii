@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "document/document.h"
 #include "document/edit/arrange.h"
 #include "document/evaluate/camera.h"
 #include "document/evaluate/place.h"

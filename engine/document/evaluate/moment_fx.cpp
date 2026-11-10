@@ -25,6 +25,7 @@
 
 #include "community/quickjs/script.h"
 #include "community/three/solid_three.h"
+#include "document/document.h"
 #include "document/edit/arrange.h"
 #include "document/evaluate/fx_list.h"
 #include "document/evaluate/material.h"

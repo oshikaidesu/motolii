@@ -12,9 +12,9 @@
 
 #include <string>
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // Imports code from `said`, which is a file path, a link to a supported site,
 // or the code itself, and places it on the canvas as described at the top of

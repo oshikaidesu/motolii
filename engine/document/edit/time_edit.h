@@ -8,9 +8,9 @@
 #include <string>
 #include <vector>
 
-#include "document/document.h"
-
 namespace motolii {
+
+struct Doc;
 
 // Duplicates `layer` and places the copy directly above it, as one undo step.
 // Returns the copy's number, or 0 on failure.

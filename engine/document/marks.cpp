@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstring>
 
+#include "document/document.h"
 #include "document/evaluate/value_at.h"
 #include "document/undo.h"
 

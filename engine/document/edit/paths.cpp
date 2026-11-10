@@ -21,6 +21,7 @@ extern "C" {
 
 #include "community/absent_motion/absent_motion.h"
 #include "document/cards.h"
+#include "document/document.h"
 #include "document/edit/layer_edit.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
