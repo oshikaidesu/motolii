@@ -40,7 +40,7 @@ ISF、WGSL、AviUtl2 のスクリプトにも対応しています。ファイ�
 
 ![光る文字、回るピンクの輪、線の模様、色のずれ](../pictures/mv.gif)
 
-*Motolii で作った 8 秒。組み立てた後に [`docs/using/make_intro_movie.md`](make_intro_movie.md) の命令を貼れば、同じ物が `~/Movies/Motolii/mv.mp4` にできます。*
+*Motolii で作った 8 秒。組み立てた後に [`docs/using/make_intro_movie.ja.md`](make_intro_movie.ja.md) の命令を貼れば、同じ物が `~/Movies/Motolii/mv.mp4` にできます。*
 
 ## 動作環境
 
@@ -236,7 +236,7 @@ EOF
 - `write …`：MP4 に書き出す。
 - 同じ命令をもう一度走らせると、同じプロジェクトにレイヤーがもう 1 つ増えます。やり直すなら先に `rm ~/Movies/Motolii/first_cmd.motolii`。
 
-上の 8 秒の作例の命令は [`docs/using/make_intro_movie.md`](make_intro_movie.md)。
+上の 8 秒の作例の命令は [`docs/using/make_intro_movie.ja.md`](make_intro_movie.ja.md)。
 
 </details>
 

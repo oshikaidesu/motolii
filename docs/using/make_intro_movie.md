@@ -1,10 +1,12 @@
-# ガイドの頭の 8 秒の作り方
+# How the 8 seconds at the top of the guide were made
 
-*How the 8 seconds at the top of the guide ([guide.md](guide.md)) were made: the calls below, pasted as they are into a shell at the repository's root once the engine is built (README, "Build and run"), write `~/Movies/Motolii/mv.mp4`.*
+[日本語](make_intro_movie.ja.md)
 
-![光る文字、回るピンクの輪、線の模様、色のずれ](../pictures/mv.gif)
+How the 8 seconds at the top of the [guide](guide.md) were made. Once the engine is assembled (README, "Build and run"), paste the calls below into a shell at the repository's root. They write `~/Movies/Motolii/mv.mp4`.
 
-組み立てた後（README の「Build and run」）、リポジトリの直下でそのまま貼ると `~/Movies/Motolii/mv.mp4` ができます。1 行が `engine/edit.sh` の命令 1 つ（一覧は `help`）：レシピ Weave、3D の輪、文字、Glow、最後に画面全体へ RGB のずれ（`shelves/effects/glitch/rgbshift.wgsl`）。
+![Glowing text, a spinning pink ring, a line pattern, a colour shift](../pictures/mv.gif)
+
+Each line is one command of `engine/edit.sh` (`help` lists them all): the Weave recipe, a 3D ring, text, Glow, and last an RGB shift over the whole screen (`shelves/effects/glitch/rgbshift.wgsl`).
 
 ```zsh
 mkdir -p ~/Movies/Motolii && rm -f ~/Movies/Motolii/mv.motolii
