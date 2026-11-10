@@ -21,6 +21,8 @@
 #include "document/scripts/scripts.h"
 #include "entry/calls_files.h"
 #include "entry/motolii.h"
+#include "entry/motolii_handle.h"
+#include "entry/on_render_thread.h"
 #include "entry/render_thread.h"
 #include "entry/window.h"
 #include "stage/render/render_draw.h"

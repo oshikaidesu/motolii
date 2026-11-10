@@ -18,6 +18,7 @@
 #include <utility>
 
 #include "document/document.h"
+#include "entry/motolii_handle.h"
 #include "stage/live.h"
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"

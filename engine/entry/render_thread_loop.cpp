@@ -34,6 +34,7 @@
 #include "document/scripts/recipes.h"
 #include "document/undo.h"
 #include "entry/calls_time.h"
+#include "entry/motolii_handle.h"
 #include "entry/render_thread.h"
 #include "entry/snapshot.h"
 #include "media/sound_playback.h"

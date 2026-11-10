@@ -25,7 +25,7 @@
 #include "document/kinds.h"
 #include "document/scripts/expressions.h"
 #include "document/undo.h"
-#include "entry/render_thread.h"
+#include "entry/motolii_handle.h"
 
 namespace motolii {
 

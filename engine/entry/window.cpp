@@ -18,6 +18,8 @@
 #include "document/card_table.h"
 #include "document/document.h"
 #include "entry/motolii.h"
+#include "entry/motolii_handle.h"
+#include "entry/on_render_thread.h"
 #include "entry/render_thread.h"
 #include "entry/render_thread_loop.h"
 #include "entry/snapshot.h"
@@ -82,6 +84,9 @@ const char* motolii_error(Motolii* m) {
 
 namespace motolii {
 
+const char* motolii_why(Motolii* m) {
+  return m->error.empty() ? m->d->error.c_str() : m->error.c_str();
+}
 int checked(Motolii* m, bool ok, const char* otherwise) {
   if (!ok && otherwise) m->error = otherwise;
   return ok ? 1 : 0;

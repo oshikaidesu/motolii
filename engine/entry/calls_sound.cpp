@@ -17,7 +17,8 @@
 #include "document/marks.h"
 #include "document/undo.h"
 #include "entry/motolii.h"
-#include "entry/render_thread.h"
+#include "entry/motolii_handle.h"
+#include "entry/on_render_thread.h"
 #include "entry/window.h"
 #include "media/sound_level.h"
 

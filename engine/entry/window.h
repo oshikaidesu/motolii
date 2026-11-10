@@ -37,6 +37,8 @@ struct WindowState {
 // another isolate. motolii_cache keeps its runs in the same way. One string
 // shared by all was overwritten while another caller still read it.
 std::string& said_word();
+// Returns the error text: the engine's if it has one, otherwise the document's.
+const char* motolii_why(Motolii* m);
 // Returns 1 if ok. Otherwise sets the error text to otherwise, if given, and
 // returns 0.
 int checked(Motolii* m, bool ok, const char* otherwise = nullptr);
