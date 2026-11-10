@@ -24,6 +24,8 @@
 #include "scene.h"
 #include "textanim.h"
 
+namespace motolii {
+
 // See absent_layer.h.
 am::Layer absent_layer(const std::vector<AbsentEffect>& effects, int64_t thing,
                        double startMs, double endMs) {
@@ -330,3 +332,5 @@ bool absent_shutter(const std::vector<AbsentEffect>& effects, int64_t thing,
   *open = blur.angle / 360.0 / std::max(1, fps), *moves = blur.position;
   return true;
 }
+
+}  // namespace motolii

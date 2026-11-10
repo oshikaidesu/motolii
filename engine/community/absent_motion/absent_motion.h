@@ -19,6 +19,8 @@
 #include <utility>
 #include <vector>
 
+namespace motolii {
+
 // One effect on a layer: its id and its parameters.
 struct AbsentEffect {
   std::string id;
@@ -121,5 +123,7 @@ std::vector<AbsentCopy> absent_copies(const std::vector<AbsentEffect>& effects,
 // elastic, cyclic, random, step and elasticStep; p holds its n numbers as
 // Alight Motion gives them (easing.h). At most 8 numbers are used.
 double absent_ease(const char* type, const double* p, int n, double u);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_ABSENT_MOTION_ABSENT_MOTION_H_

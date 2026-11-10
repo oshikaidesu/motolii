@@ -13,6 +13,8 @@
 #include "include/utils/SkParsePath.h"
 #include "styles.cpp"
 
+namespace motolii {
+
 // See absent_motion.h.
 std::string absent_line_end(float x, float y, float dx, float dy, float r,
                             float width, int cap, int join, const char* style) {
@@ -31,3 +33,5 @@ std::string absent_line_end(float x, float y, float dx, float dy, float r,
              am::DrawStrokeEnd(nullptr, paint, {x, y}, {dx, dy}, r, style))
       .c_str();
 }
+
+}  // namespace motolii

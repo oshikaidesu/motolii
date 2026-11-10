@@ -21,6 +21,8 @@
 #include "include/pathops/SkPathOps.h"
 #include "include/utils/SkParsePath.h"
 
+namespace motolii {
+
 // See absent_motion.h.
 std::string absent_drawing(const std::string& strokes,
                            const std::vector<AbsentEffect>& effects,
@@ -75,3 +77,5 @@ std::string absent_drawing(const std::string& strokes,
              all.makeTransform(SkMatrix::Scale(1.f / k, 1.f / k)))
       .c_str();
 }
+
+}  // namespace motolii
