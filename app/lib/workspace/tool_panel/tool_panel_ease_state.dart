@@ -14,6 +14,7 @@ import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_ends.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_graph.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_numbers.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_shelf.dart';
@@ -22,8 +23,6 @@ import 'package:motolii/workspace/tool_panel/tool_panel_ease_side.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-
-part 'tool_panel_ease_ends.dart';
 
 /// The curve copied in the Ease tool, kept until the app closes. Like Copy Curve in Alight Motion.
 Ease? easeCopied;
@@ -37,7 +36,7 @@ bool easeJump = true;
 /// Whether the graph shows values past 0 and 1. Like Enable Overshoot in Alight Motion. Kept until the app closes.
 bool easeOvershoot = false;
 
-class EaseToolState extends State<EaseTool> with _EaseEnds {
+class EaseToolState extends State<EaseTool> with EaseEnds {
   // While the pointer is down, each new ease is sent to the document so the canvas and the bars follow it.
   // While one is in flight the next waits and any in between are skipped. The whole drag is one undo step.
   bool _down = false, _open = false, _going = false;
@@ -175,17 +174,17 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
         m.later('easing', layer: t, name: name, number: at, word: to);
       }
       _define(m, to);
-      ws.after(m.later('together'), (done, why) => mounted ? setState(() => _trouble = done ? null : why) : null);
+      ws.after(m.later('together'), (done, why) => mounted ? setState(() => trouble = done ? null : why) : null);
       return;
     }
-    if (told.isEmpty) return setState(() => _trouble = all.isEmpty ? 'No key where the stretch begins' : null);
+    if (told.isEmpty) return setState(() => trouble = all.isEmpty ? 'No key where the stretch begins' : null);
     m.later('together', number: 1);
     _define(m, to);
     for (final (t, name, at) in told) {
       m.later('easing', layer: t, name: name, number: at, word: to);
     }
     _define(m, to);
-    ws.after(m.later('together'), (done, why) => mounted ? setState(() => _trouble = done ? null : why) : null);
+    ws.after(m.later('together'), (done, why) => mounted ? setState(() => trouble = done ? null : why) : null);
   }
 
   // Applies the curve after every keyframe of each picked keyframe's layer, for every property keyed there, as one undo step.
@@ -204,7 +203,7 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
         }
       }
     }
-    ws.after(m.later('together'), (done, why) => mounted ? setState(() => _trouble = done ? null : why) : null);
+    ws.after(m.later('together'), (done, why) => mounted ? setState(() => trouble = done ? null : why) : null);
   }
 
   @override
@@ -309,15 +308,15 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
       beats: beats,
       ease: whole ? easeLaid(cards) : card,
       onion: _held ?? (laid && !whole ? easeLaid(cards) : null),
-      ends: _endsOf(ws, span),
+      ends: endsOf(ws, span),
       span: span,
       frame: frame,
       onChanged: put,
       jump: easeJump,
       overshoot: overshoot && !whole,
-      onEnd: ws.inside == null ? null : (start, by) => _toEnd(ws, span, start, by, done: true),
-      onEndMove: ws.inside == null ? null : (start, by) => _toEnd(ws, span, start, by),
-      endSays: (start, by) => _endSays(ws, span, start, by),
+      onEnd: ws.inside == null ? null : (start, by) => toEnd(ws, span, start, by, done: true),
+      onEndMove: ws.inside == null ? null : (start, by) => toEnd(ws, span, start, by),
+      endSays: (start, by) => endSays(ws, span, start, by),
       trial: trial,
     );
     return LayoutBuilder(
@@ -427,7 +426,7 @@ class EaseToolState extends State<EaseTool> with _EaseEnds {
                               ),
                             ),
                           ),
-                        if (_trouble case final why?)
+                        if (trouble case final why?)
                           Positioned(
                             left: Shape.s(4),
                             right: Shape.s(4),

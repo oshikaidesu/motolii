@@ -1,13 +1,20 @@
 // Dragging the two ends of a span up and down the bars at the sides of the graph square.
-part of 'tool_panel_ease_state.dart';
+import 'dart:math' as math;
+
+import 'package:flutter/widgets.dart';
+
+import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_state.dart';
 
 /// For each span whose ends the user has moved, each property's two key values as they first were, and the scale of its bars.
 ///
 /// The ends stay where they were left. Their position is read from the keys, so an undo moves them back.
 final _endsFrom = Expando<Map<String, Map<String, (double, double, double)>>>();
 
-mixin _EaseEnds on State<EaseTool> {
-  String? _trouble;
+mixin EaseEnds on State<EaseTool> {
+  String? trouble;
 
   // Each property keyed at both ends of the span, as (name, key frames, key values, index of the key at the dragged end).
   Iterable<(String, List<int>, List<double>, int)> _ends(Ws ws, EaseSpan span, bool start) sync* {
@@ -25,7 +32,7 @@ mixin _EaseEnds on State<EaseTool> {
   Map<String, (double, double, double)> _from(Ws ws, EaseSpan span) => (_endsFrom[ws] ??= {}).putIfAbsent('${spanId(span)}:${span.to}', () => {});
 
   // Where the two ends stand on their bars.
-  (double, double) _endsOf(Ws ws, EaseSpan? span) {
+  (double, double) endsOf(Ws ws, EaseSpan? span) {
     if (ws.inside == null || span == null || _from(ws, span).isEmpty) return (0, 1);
     final from = _from(ws, span);
     for (final (name, at, vs, _) in _ends(ws, span, true)) {
@@ -44,7 +51,7 @@ mixin _EaseEnds on State<EaseTool> {
     return (was + by * _from(ws, span)[name]!.$3).clamp(math.min(lo, was), math.max(hi, was));
   }
 
-  void _toEnd(Ws ws, EaseSpan? span, bool start, double by, {bool done = false}) {
+  void toEnd(Ws ws, EaseSpan? span, bool start, double by, {bool done = false}) {
     final m = ws.inside;
     if (m == null || span == null) return;
     if (_pullGoing) {
@@ -75,7 +82,7 @@ mixin _EaseEnds on State<EaseTool> {
     if (done) {
       final told = _pull!.length;
       _pull = null;
-      ws.after(m.later('together'), (ok, why) => mounted ? setState(() => _trouble = ok ? (told == 0 ? 'No value keyed at both ends' : null) : why) : null);
+      ws.after(m.later('together'), (ok, why) => mounted ? setState(() => trouble = ok ? (told == 0 ? 'No value keyed at both ends' : null) : why) : null);
       return;
     }
     _pullGoing = true;
@@ -84,13 +91,13 @@ mixin _EaseEnds on State<EaseTool> {
       final next = _pullNext, last = _pullDone;
       _pullNext = null;
       _pullDone = false;
-      if (next != null) _toEnd(ws, span, start, next, done: last);
+      if (next != null) toEnd(ws, span, start, next, done: last);
     });
   }
 
   // The text shown beside the dragged end: the first property keyed at both ends, with its value and unit as the inspector shows them.
   // After Effects' value graph also shows the value of the point being dragged.
-  String? _endSays(Ws ws, EaseSpan? span, bool start, double by) {
+  String? endSays(Ws ws, EaseSpan? span, bool start, double by) {
     final m = ws.inside;
     if (m == null || span == null) return null;
     final t = int.parse(span.layer.id);
