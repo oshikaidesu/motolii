@@ -31,10 +31,13 @@
 #include "shelf/shelf_folders.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::Engine;
+using filament::RenderTarget;
+using filament::Texture;
+namespace backend = filament::backend;
+namespace math = filament::math;
 
 std::filesystem::file_time_type screen_stamp(const std::string& file) {
   std::error_code wrong;
