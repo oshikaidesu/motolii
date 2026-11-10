@@ -1,6 +1,6 @@
 # app — Motolii のアプリ
 
-*Motolii's app (Flutter, macOS). It draws nothing and holds no project: it calls the engine (`../engine/`) and shows what comes back. Open it with `tool/live.sh`; build it with `flutter build macos --profile`. The table below names every folder, down into `lib/`.*
+*Motolii's app (Flutter, macOS). It draws nothing and holds no project: it calls the engine (`../engine/`) and shows what comes back. Open it with `tool/live.sh`; build it with `flutter build macos --profile`. The table below names every folder, down into `lib/`. Which folder of `lib/` may import which is the second table (「import の向き」), checked by `tool/check_layers.py`.*
 
 Flutter で書いたアプリ。描くのもプロジェクトを持つのもエンジン（[`../engine/`](../engine/)）で、アプリはそれを呼んで見せて操るだけ。開くのは `tool/live.sh`（保存すると開いたアプリにすぐ出る）、組むのは `flutter build macos --profile`。
 
@@ -20,6 +20,51 @@ Flutter で書いたアプリ。描くのもプロジェクトを持つのもエ
 | `build/test_output/` | 試験が書く物（タイムライン、ドライバーの記録）。`build/` の残りは Flutter の作業場 |
 | `tool/live.sh` | アプリを開き、`lib/` の .dart を保存するたびホットリロードを送る（`flutter run` ＋ SIGUSR1）。開くプロジェクトは `MOTOLII_DOC` |
 | `tool/flicker.py` | 手で使う道具。画面の録画（`--record 5 rec.mov`）から、前後と違う 1 コマ（ちらつき）を探して png に書く。要 ffmpeg |
+| `tool/check_layers.py` | `lib/` の import が、下の「import の向き」の表どおりかを確かめる（`python3 tool/check_layers.py`）。今まだ表を破っている import の帳簿が `tool/layer_debt.txt` |
+
+## import の向き
+
+`lib/` の中で、どのフォルダがどのフォルダを import してよいかの表。依存は一方向：画面のパネルから下へ、エンジンを呼ぶ口（`bridge/`）まで。下の物は上の物を知らない。
+
+- 自分のフォルダの中は、いつも import してよい。
+- `export` も import と同じに数える。
+- 行はサブフォルダも含む。ただし `skin/` は `skin/forms/` を含まず、`workspace/` 直下の .dart はその下のフォルダを含まない（どちらも別の行）。
+
+| フォルダ（`lib/` から） | import してよい物 |
+|---|---|
+| `bridge/` | 自前の物は何も |
+| `storage/` | 自前の物は何も |
+| `skin/`（`forms/` を除く） | `bridge/engine_paths.dart`、`storage/` |
+| `widgets/` | `skin/` |
+| `skin/forms/` | `skin/`、`widgets/` |
+| `inspector/` | `skin/`、`skin/forms/`、`widgets/`。`bridge/` も `workspace/` も読まない |
+| `workspace/easing/` | `bridge/` |
+| `workspace/state/` | `bridge/`、`storage/`、`skin/`、`widgets/glyph.dart`、`workspace/easing/` |
+| `workspace/edits/` | `workspace/state/` と、それが import してよい物 |
+| `workspace/commands/` | `workspace/edits/` と、それが import してよい物、`widgets/` |
+| `workspace/shelf/` | `workspace/commands/` と、それが import してよい物、`skin/forms/`。`inspector/` は読まない |
+| `workspace/inspector_feed/` | `workspace/shelf/` と、それが import してよい物、`inspector/` |
+| `workspace/dock/`、`stage/`、`timeline/`、`tool_panel/`、`top_bar/`、`window/` | `workspace/inspector_feed/` と、それが import してよい物。この 6 つは互いを読まない |
+| `workspace/` 直下の .dart（画面の全体） | 何でも |
+| `panel.dart` | 何でも。書くのは `export` の行だけ |
+| `main.dart` | `workspace/` 直下の .dart と `bridge/` |
+
+どのフォルダにも掛かる決まりが 3 つ：`part` を使わない。`export` を書くのは `panel.dart` だけ。自前のファイルは `package:motolii/…` で import する。
+
+表は向かう先で、今のコードはまだ途中にある。
+
+- 表を破っている import は [`tool/layer_debt.txt`](tool/layer_debt.txt) に 1 行ずつ載っている。この帳簿は減るだけ。
+- `storage/`、`workspace/easing/`、`bridge/engine_paths.dart`、`widgets/glyph.dart` はまだ無い。帳簿の import を切るときに、そこへ分ける。
+- 3 つの決まりを破る物（`part`、`panel.dart` の外の `export`、相対の import）もまだ残っている。`check_layers.py` はこの 3 つを測らない。
+
+確かめ方（`app/` で）：
+
+```bash
+python3 tool/check_layers.py            # 表と帳簿に照らす：帳簿に無い import と、もう無い import の行を言う
+python3 tool/check_layers.py --write    # import を切った後に、帳簿を書き直す
+```
+
+`lib/` にフォルダを足したら、この表と `tool/check_layers.py` の `MAY_IMPORT` に 1 行ずつ足す（どの行にも入らないフォルダは断られる）。
 
 ## 自作のパネルを作る
 
