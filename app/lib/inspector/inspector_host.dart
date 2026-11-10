@@ -1,10 +1,13 @@
 // Owns the panel's values (InspectorValues) and provides them again whenever they change. A different kind makes a new document, so give the widget a key.
 // The look follows docs/app/DESIGN.md: hairlines, type carries hierarchy, grey levels, and an accent only for Role.selected.
 
-import 'package:flutter/foundation.dart'
-    show ValueListenable, listEquals, mapEquals;
+import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
 import 'package:flutter/widgets.dart';
+
+import 'package:motolii/inspector/inspector_edits.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
+import 'package:motolii/inspector/inspector_snapshot.dart';
+import 'package:motolii/inspector/inspector_sync.dart';
 import 'package:motolii/inspector/inspector_values.dart';
 
 /// Owns the panel's values ([InspectorValues]) and provides them again whenever they change.
@@ -152,24 +155,7 @@ class _InspectorHostState extends State<InspectorHost> {
   InspectorValues _make() {
     final d = InspectorValues(widget.kind, cards: widget.cards ?? const []);
     _wire(d);
-    d
-      ..v.addAll(widget.values)
-      ..s2.addAll(widget.strs)
-      ..b.addAll(widget.flags)
-      ..keys.addAll(widget.keyMarks)
-      ..animateAll = _animating = widget.animating;
-    _seen
-      ..clear()
-      ..addAll(d.v);
-    _seenKeys
-      ..clear()
-      ..addAll(d.keys);
-    _seenWords
-      ..clear()
-      ..addAll(d.s2);
-    _seenFlags
-      ..clear()
-      ..addAll(d.b);
+    _sync.start(d, _snapshotOf(widget));
     return d..addListener(_r);
   }
 
@@ -194,75 +180,30 @@ class _InspectorHostState extends State<InspectorHost> {
     ..onCardCopy = widget.onCardCopy
     ..onCardPaste = widget.onCardPaste;
 
-  // What the caller has been told of or gave. Only what differs from it is reported.
-  final _seen = <String, double>{};
-  final _seenKeys = <String, KeyframeState>{};
-  final _seenWords = <String, String>{};
-  final _seenFlags = <String, bool>{};
-  bool _live = false;
-  // During a drag, report only the current values and make no undo step, since nothing is settled.
-  void _tell() => doc.inGesture ? _tells() : widget.together(_tells);
-  bool _animating = false;
-  void _tells() {
-    if (doc.animateAll != _animating) {
-      widget.onAnimateAll(_animating = doc.animateAll);
-    }
-    final live = doc.inGesture,
-        changed = {
-          for (final e in doc.v.entries)
-            if (_seen[e.key] != e.value) e.key: e.value,
-        };
-    if (changed.isNotEmpty) {
-      if (!live) _seen.addAll(changed);
-      widget.onValues(changed, live: live);
-    } else if (_live && !live) {
-      widget.onDrop();
-    }
-    _live = live;
-    for (final e in doc.keys.entries.toList()) {
-      // While a drag is in progress nothing is settled; the key is reported when the drag ends.
-      if (live || _seenKeys[e.key] == e.value) continue;
-      _seenKeys[e.key] = e.value;
-      widget.onKey(e.key, e.value);
-    }
-    final words = {
-      for (final e in doc.s2.entries)
-        if (e.key != 'route' &&
-            e.key != 'route.at' &&
-            _seenWords[e.key] != e.value)
-          e.key: e.value,
-    };
-    if (widget.onFlags case final tell?) {
-      final flags = {
-        for (final e in doc.b.entries)
-          if ((_seenFlags[e.key] ?? e.key.endsWith('.open')) != e.value)
-            // A card is open until it is folded, so its first fold is news too. Otherwise it would open again at the next read.
-            e.key: e.value,
-      };
-      if (flags.isNotEmpty) {
-        if (tell(flags)) {
-          _seenFlags.addAll(flags);
-        } else {
-          for (final id in flags.keys) {
-            doc.b[id] = _seenFlags[id] ?? false;
-          }
-        }
-      }
-    }
-    if (words.isEmpty) return;
-    if (widget.onWords(words)) {
-      _seenWords.addAll(words);
-    } else {
-      for (final id in words.keys) {
-        _seenWords.containsKey(id)
-            ? doc.s2[id] = _seenWords[id]!
-            : doc.s2.remove(id);
-      }
-    }
-  }
+  final _sync = InspectorSync();
+
+  InspectorSnapshot _snapshotOf(InspectorHost w) => InspectorSnapshot(
+    numbers: w.values,
+    words: w.strs,
+    flags: w.flags,
+    keyMarks: w.keyMarks,
+    animating: w.animating,
+  );
+
+  InspectorEdits get _edits => InspectorEdits(
+    onValues: widget.onValues,
+    onDrop: widget.onDrop,
+    onKey: widget.onKey,
+    onWords: widget.onWords,
+    onFlags: widget.onFlags,
+    onAnimateAll: widget.onAnimateAll,
+    together: widget.together,
+    onRoute: widget.onRoute,
+    onAim: widget.onAim,
+  );
 
   void _r() {
-    _tell();
+    _sync.report(doc, _edits);
     final r = doc.s2['route'];
     if (r != null) {
       doc.s2.remove('route');
@@ -301,33 +242,12 @@ class _InspectorHostState extends State<InspectorHost> {
       doc.dispose();
       doc = _make();
       _tick++;
-    } else {
-      // A caller that is told of changes owns the values. Whatever it did not take goes back to what it says as soon as no drag is in progress.
-      // A value being dragged is never overwritten, even during playback.
-      // Numbers and key marks are sent to the fields that show them; strings, flags, choices and the rest cause a full rebuild.
-      if (!doc.inGesture) {
-        // A value that no field watches changed, so rebuild to show it.
-        if (doc.showAt(widget.values, const {})) _tick++;
-        _seen.addAll(widget.values);
-      }
-      if (widget.onFlags != null) {
-        if (widget.flags.entries.any((e) => doc.b[e.key] != e.value)) _tick++;
-        doc.b.addAll(widget.flags);
-        _seenFlags.addAll(widget.flags);
-      }
-      if (widget.strs.entries.any((e) => doc.s2[e.key] != e.value)) _tick++;
-      doc.s2.addAll(widget.strs);
-      _seenWords.addAll(widget.strs);
-      // Also cover the case where what is shown differs from the document. A key mark that was just pressed shows lit at once,
-      // and an undo that removes the key leaves the document's marks as they were before the press, so only the shown one differs.
-      if (!mapEquals(o.keyMarks, widget.keyMarks) ||
-          widget.keyMarks.entries.any((e) => doc.keys[e.key] != e.value)) {
-        doc.showAt(const {}, widget.keyMarks);
-        _seenKeys.addAll(widget.keyMarks);
-      }
-    }
-    if (widget.animating != _animating) {
-      doc.animateAll = _animating = widget.animating;
+    } else if (_sync.show(
+      doc,
+      _snapshotOf(widget),
+      _edits,
+      previous: _snapshotOf(o),
+    )) {
       _tick++;
     }
     if (o.title != widget.title ||
@@ -341,12 +261,8 @@ class _InspectorHostState extends State<InspectorHost> {
 
   void _atMoment() {
     final (values, marks) = widget.live.value;
-    // Never during a drag.
-    if (doc.inGesture) return;
-    _seen.addAll(values);
-    _seenKeys.addAll(marks);
     // A value that no field watches changed, such as a choice, so rebuild to show it.
-    if (doc.showAt(values, marks) && mounted) setState(() => _tick++);
+    if (_sync.showAt(doc, values, marks) && mounted) setState(() => _tick++);
   }
 
   @override
