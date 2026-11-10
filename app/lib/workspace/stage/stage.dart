@@ -16,6 +16,7 @@ import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/stage/stage_options.dart';
 import 'package:motolii/workspace/stage/stage_tool.dart';
+import 'package:motolii/workspace/stage/selection_handles.dart';
 import 'package:motolii/workspace/stage/stage_view.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
 import 'package:motolii/workspace/state/art_scene.dart';

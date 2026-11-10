@@ -1,7 +1,6 @@
 // Pan, zoom, hover, key handling and pointer gestures of the stage view.
 import 'dart:async' show Timer;
 import 'dart:io' show File;
-import 'dart:math' as math;
 import 'dart:ui' show PointMode;
 
 import 'package:flutter/gestures.dart';
@@ -22,10 +21,12 @@ import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/commands/layer_menu.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/stage/camera_gestures.dart';
+import 'package:motolii/workspace/stage/selection_handles.dart';
 import 'package:motolii/workspace/stage/stage_context.dart';
 import 'package:motolii/workspace/stage/stage_drag.dart';
+import 'package:motolii/workspace/stage/stage_tokens.dart';
+import 'package:motolii/workspace/stage/stage_tool.dart';
 import 'package:motolii/workspace/stage/stage_view.dart';
-import 'package:motolii/workspace/stage/stage_view_drag.dart';
 import 'package:motolii/workspace/stage/stage_view_draw.dart';
 import 'package:motolii/workspace/stage/stage_view_painter.dart';
 import 'package:motolii/workspace/stage/stage_view_relations.dart';
@@ -43,10 +44,14 @@ class StageViewState extends State<StageView>
   ArtScene get scene => widget.scene;
   @override
   String? get selected => widget.selected;
+  @override
+  StageTool get tool => widget.tool;
+  @override
+  List<double> get crop => _cropOf();
 
-  /// The drag in progress, and the camera gestures that are carried on through it.
-  final drag = StageDrag();
-  late final CameraGestures camera;
+  // The drag in progress, and the camera gestures that are carried on through it.
+  late final StageDrag _drag;
+  late final CameraGestures _camera;
 
   void _rebuild() => setState(() {});
 
@@ -81,8 +86,6 @@ class StageViewState extends State<StageView>
     );
   }
 
-  static const _crops = ['crop_left', 'crop_top', 'crop_right', 'crop_bottom'];
-
   /// The selected image's crop, as the share cut from each side, while it is being cropped; empty otherwise.
   List<double> _cropOf() {
     final m = WorkspaceScope.read(context).inside,
@@ -93,7 +96,7 @@ class StageViewState extends State<StageView>
         !_photo(m, t)) {
       return const [];
     }
-    return [for (final n in _crops) m.value(t, n, 0) ?? 0];
+    return [for (final n in cropSides) m.value(t, n, 0) ?? 0];
   }
 
   static bool _photo(Motolii m, int t) =>
@@ -126,7 +129,8 @@ class StageViewState extends State<StageView>
   @override
   void initState() {
     super.initState();
-    camera = CameraGestures(this, drag)..addListener(_rebuild);
+    _drag = StageDrag(this)..addListener(_rebuild);
+    _camera = CameraGestures(this, _drag)..addListener(_rebuild);
     HardwareKeyboard.instance.addHandler(_enter);
   }
 
@@ -219,7 +223,8 @@ class StageViewState extends State<StageView>
   @override
   void dispose() {
     _deskOf?.desk(0, 0, 0, 0, 0, 0); // Back to the engine's own stage view.
-    camera.dispose();
+    _camera.dispose();
+    _drag.dispose();
     _tapWait?.cancel();
     HardwareKeyboard.instance.removeHandler(_enter);
     super.dispose();
@@ -253,18 +258,6 @@ class StageViewState extends State<StageView>
     }
     return id;
   }
-
-  String? heldGrip; // Handle being dragged; only it is shown, highlighted, during the drag (as in Alight Motion).
-
-  // Snapping, as in After Effects: the left, middle and right edges (and top, middle, bottom) of the dragged layer stick to
-  // the same lines of every other layer not grouped with it, of the canvas, or to a guide, within six screen points.
-  // Holds the lines snapped to and the lines met.
-  ({Rect box, List<(double, double)> xs, List<(double, double)> ys})? snapTo;
-  (double?, double?) met = (null, null);
-
-  // A guide being pulled out of a ruler (the top ruler gives a horizontal line, the left a vertical one) or an existing guide
-  // being dragged. Released over the canvas it is saved in the document; released back over its ruler it is deleted.
-  ({String axis, double? was})? pulling;
 
   Offset? _last;
 
@@ -331,92 +324,62 @@ class StageViewState extends State<StageView>
   // way Alight Motion's brush does. Each point's pressure is its radius here over half the brush size.
   List<Offset>? brush;
 
+  /// Decides what a drag starting at [local] grabs, in order: the active tool's action, a handle of the selected layer,
+  /// a camera gizmo, a guide, a layer, and otherwise a lasso.
+  void _dragStart(StageViewport v, Offset local) {
+    if (widget.tool.make == 'camera') return _camera.orbitDragStart(local);
+    if (widget.tool.make == 'brush') {
+      setState(() => brush = [local]);
+      return;
+    }
+    if (widget.tool.make != null) {
+      if (widget.tool.make == 'pen') penWay = [local];
+      setState(() => drawFrom = local);
+      return;
+    }
+    final ws = WorkspaceScope.read(context), m = ws.inside;
+    if (_drag.handleDragStart(v, local)) return;
+    if (m != null && _camera.gizmoDragStart(v, local, inside: false)) return;
+    // Guides come after the handles, which lie over everything else.
+    if (_drag.guideDragStart(v, local)) return;
+    final id = m == null ? null : hitLocal(v, local),
+        t = int.tryParse(id ?? '');
+    // Layers are tested first, then the camera frames they lie in.
+    if (m != null &&
+        t == null &&
+        _camera.gizmoDragStart(v, local, inside: true)) {
+      return;
+    }
+    if (m != null && t == null) {
+      // Nothing under the pointer: draw a lasso.
+      ws.select(null);
+      setState(() => lasso = [local]);
+      return;
+    }
+    if (m == null || t == null) return;
+    _drag.layerDragStart(id!, local);
+  }
+
+  /// Carries the drag on to [local]: the camera's, when it is one, else the layer's or the handle's.
   void _dragUpdate(StageViewport v, Offset local) {
-    if (camera.dragUpdate(local)) return;
-    final h = drag.held, ws = WorkspaceScope.read(context), m = ws.inside;
-    if (h == null || m == null) return;
-    final all = (local - h.from) / v.scale; // Screen pixels to canvas points.
-    if (h.by case final way? when way.startsWith('crop ')) {
-      // Move the side in as far as the pointer goes inward from the cut edge, leaving at least some of the image.
-      final side = int.parse(way.substring(5)),
-          c = [for (var i = 0; i < 4; i++) handles['corner $i'] ?? Offset.zero],
-          crop = _cropOf();
-      final across = side.isEven ? c[1] - c[0] : c[3] - c[0],
-          len = math.max(1.0, across.distance),
-          dir = across / len * (side < 2 ? 1.0 : -1.0);
-      final at = handles[way] ?? h.from,
-          inBy = ((local - at).dx * dir.dx + (local - at).dy * dir.dy) / len;
-      if (crop.length == 4) {
-        m.dragUpdate(
-          _crops[side],
-          (crop[side] + inBy).clamp(0.0, .95 - crop[(side + 2) % 4]),
-        );
-      }
-      drag.held = (from: h.from, moved: true, by: way);
-      setState(() {});
-      return;
-    }
-    if (h.by case final way? when way == 'round' || way == 'points') {
-      // Shape handles: corner radius or number of points follows the pointer.
-      final c = [
-            for (var i = 0; i < 4; i++) handles['corner $i'] ?? Offset.zero,
-          ],
-          g = gripOf(c),
-          t = int.tryParse(widget.selected ?? '');
-      if (way == 'round') m.dragUpdate('round', g.roundOf(local));
-      if (way == 'points' && t != null) {
-        m.dragUpdate(
-          'points',
-          ((m.value(t, 'points', 0) ?? 5) +
-                  (((local - h.from).dx * g.u.dx +
-                              (local - h.from).dy * g.u.dy) /
-                          24)
-                      .round())
-              .clamp(3, 64)
-              .toDouble(),
-        );
-      }
-      drag.held = (from: h.from, moved: true, by: way);
-      setState(() {});
-      return;
-    }
-    if (h.by case final way?) {
-      var gone = v.toComposition(local) - v.toComposition(h.from);
-      // As in Figma: a corner handle resizes freely in both directions with the opposite side fixed; a side handle resizes that
-      // way only. Shift keeps the aspect ratio or rotates in 15 degree steps; Alt scales from the centre.
-      final keys = HardwareKeyboard.instance,
-          sized = way == 'scale' || way == 'edge',
-          even = keys.isShiftPressed && (sized || way == 'turn') ? 'even_' : '';
-      if (heldGrip case final g? when way == 'edge') {
-        final at = handles[g],
-            across = handles['side ${(int.parse(g.substring(5)) + 2) % 4}'];
-        if (at != null && across != null && (at - across).distance > 1) {
-          final n = (at - across) / (at - across).distance;
-          gone = n * (gone.dx * n.dx + gone.dy * n.dy);
-        }
-      }
-      m.dragUpdate(
-        '$even${sized ? (keys.isAltPressed ? 'scale' : 'side') : way}',
-        gone.dx,
-        gone.dy,
-      );
-      drag.held = (from: h.from, moved: true, by: way);
-      setState(() {});
-      return;
-    }
-    // The Move tool. Shift locks to horizontal or vertical, whichever the pointer has gone further, as in Illustrator and Figma.
-    final axis =
-        widget.tool.axis == 0 && HardwareKeyboard.instance.isShiftPressed
-        ? (all.dx.abs() >= all.dy.abs() ? 1 : 2)
-        : widget.tool.axis;
-    final by = snapped(switch (axis) {
-      1 => Offset(all.dx, 0),
-      2 => Offset(0, all.dy),
-      _ => all,
-    }, v.scale);
-    m.dragUpdate('place', by.dx, by.dy);
-    drag.held = (from: h.from, moved: true, by: null);
-    setState(() {});
+    if (_camera.dragUpdate(local)) return;
+    _drag.dragUpdate(v, local);
+  }
+
+  /// Ends the current drag. With [keep] false, or when nothing moved, the engine discards the change.
+  void _dragEnd({bool keep = true}) {
+    _camera.dragEnd();
+    _drag.dragEnd(keep: keep);
+  }
+
+  /// The id of the selected layer's parent, or null if it has none.
+  String? _parentOf() {
+    final m = WorkspaceScope.read(context).inside,
+        t = int.tryParse(widget.selected ?? '');
+    final p = m == null || t == null
+        ? 0
+        : (m.value(t, 'parent', 0) ?? 0).round();
+    return p > 0 ? '$p' : null;
   }
 
   /// Pans by [by] (two-finger trackpad movement, or the wheel in the other direction) when zoomed in. At Fit there is nowhere to pan.
@@ -477,8 +440,9 @@ class StageViewState extends State<StageView>
       return ContextMenu(
         key: _menu,
         child: TwoFingerGestures(
-          onWheel: (d) =>
-              widget.tool.make == 'camera' ? camera.dolly(d.dy) : _panBy(-d, v),
+          onWheel: (d) => widget.tool.make == 'camera'
+              ? _camera.dolly(d.dy)
+              : _panBy(-d, v),
           onPan: (by, _) => _panBy(by, v),
           child: MouseRegion(
             onHover: (e) {
@@ -543,7 +507,7 @@ class StageViewState extends State<StageView>
                 if (crop != _cropping) setState(() => _cropping = crop);
               },
               dragStartBehavior: DragStartBehavior.down, // Grab the layer where the pointer went down, not where it had got to when the drag was recognised.
-              onPanStart: (d) => dragStart(v, _last = d.localPosition),
+              onPanStart: (d) => _dragStart(v, _last = d.localPosition),
               onPanUpdate: (d) => brush != null
                   ? setState(() => brush!.add(d.localPosition))
                   : lasso != null
@@ -553,7 +517,7 @@ class StageViewState extends State<StageView>
                       _last = d.localPosition; // Record the pointer position for every tool, not only the pen.
                       penWay?.add(d.localPosition);
                     })
-                  : pulling != null
+                  : _drag.isPullingGuide
                   ? (widget.cursor.value = v.toComposition(
                       _last = d.localPosition,
                     ))
@@ -566,18 +530,18 @@ class StageViewState extends State<StageView>
                   ? (widget.tool.make == 'pen'
                         ? _pen(v, drawFrom!, _last ?? drawFrom!)
                         : draw(v, _last ?? drawFrom!))
-                  : pulling != null
-                  ? pullDragEnd(v, _last!)
-                  : dragEnd(),
+                  : _drag.isPullingGuide
+                  ? _drag.guideDragEnd(v, _last!)
+                  : _dragEnd(),
               onPanCancel: () => brush != null
                   ? setState(() => brush = null)
                   : lasso != null
                   ? setState(() => lasso = null)
                   : drawFrom != null
                   ? setState(() => drawFrom = null)
-                  : pulling != null
-                  ? pulling = null
-                  : dragEnd(keep: false),
+                  : _drag.isPullingGuide
+                  ? _drag.guideDragCancel()
+                  : _dragEnd(keep: false),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -594,10 +558,10 @@ class StageViewState extends State<StageView>
                             ? ViewPart.all
                             : ViewPart.under,
                         pivots: widget.tool.pivots,
-                        met: met,
+                        met: _drag.met,
                         trail: trail,
-                        parent: parentOf(),
-                        grip: heldGrip,
+                        parent: _parentOf(),
+                        grip: _drag.heldGrip,
                         form: _formOf(),
                         crop: _cropOf(),
                       ),
@@ -705,9 +669,9 @@ class StageViewState extends State<StageView>
                         ),
                       ),
                     ),
-                  if (drag.held
+                  if (_drag.held
                       case final h? when h.moved && _last != null) // Show the numbers beside the pointer while dragging, as Figma does; Alight Motion shows none.
-                    if (heldSays(h.by) case final says?)
+                    if (_drag.heldSays(h.by) case final says?)
                       Positioned(
                         left: _last!.dx + 16,
                         top: _last!.dy + 16,
@@ -741,11 +705,11 @@ class StageViewState extends State<StageView>
                           safe: widget.safe,
                           part: ViewPart.over,
                           pivots: widget.tool.pivots,
-                          met: met,
+                          met: _drag.met,
                           marked: _desk != null,
                           trail: trail,
-                          parent: parentOf(),
-                          grip: heldGrip,
+                          parent: _parentOf(),
+                          grip: _drag.heldGrip,
                           form: _formOf(),
                           crop: _cropOf(),
                         ),

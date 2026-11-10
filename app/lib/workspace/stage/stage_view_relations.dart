@@ -15,7 +15,7 @@ import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
 import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
-import 'package:motolii/workspace/stage/stage_view.dart';
+import 'package:motolii/workspace/stage/stage_tokens.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
