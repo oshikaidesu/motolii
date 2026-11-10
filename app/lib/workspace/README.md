@@ -88,7 +88,7 @@ On Mac it is `~/Library/Application Support/Motolii/`; on Windows `%APPDATA%\Mot
 - Do not hide rarely used values such as a seed: declare them `@advanced` and `ValuesCard` folds them.
 - Path operations can be stacked any number of times; the UI does not limit them.
 - The Effects list has no thumbnails. Select a row to try it on the selected layer, Add or Enter to keep it, Cancel or Esc to undo.
-- The Inspector shows current values and links to the panel that edits them (`LinkLine`): fonts, color lists and easing live in their own panels. Position, scale, rotation and fill come from `ArtGeometry.boxOf` so they match the Stage (`InspectorHost(values:, strs:)`).
+- The Inspector shows current values and links to the panel that edits them (`LinkLine`): fonts, color lists and easing live in their own panels. Position, scale, rotation and fill come from `ArtGeometry.boxOf` so they match the Stage (`InspectorHost(snapshot:)`, an `InspectorSnapshot` of numbers and words).
 
 ## Changing this folder
 

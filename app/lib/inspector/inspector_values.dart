@@ -4,9 +4,11 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
 import 'package:flutter/widgets.dart';
 
+import 'package:motolii/inspector/card_actions.dart';
 import 'package:motolii/inspector/controls/inspector_parameter_controls.dart';
 import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/inspector/inspector_card.dart';
+import 'package:motolii/inspector/inspected_layer.dart';
 import 'package:motolii/inspector/inspector_state.dart';
 
 /// The values of the selected layer as the inspector edits them: numbers, strings and switches.
@@ -38,12 +40,15 @@ class InspectorValues extends ChangeNotifier {
 
   final Map<String, bool> b = {};
 
-  /// The caller's name for the layer kind where the six kinds have none, such as video, image or solid. Null uses the sample's name.
-  String? kindWord;
-
-  /// Cards the caller supplies in addition to the sample's cards.
-  /// Each card's params become fields keyed `v_` plus the value name.
+  /// The cards these values were made for. Each card's params are fields keyed `v_` plus the value name.
+  /// They stay as they were when the values were made, while [layer] follows the caller.
   final List<CardDeclaration> cards;
+
+  /// The layer as the caller describes it now: its name, the caller's word for its kind, and which cards move, are off or could be added.
+  late InspectedLayer layer = InspectedLayer(kind: kind, cards: cards);
+
+  /// What the buttons and menus on the cards do, as the caller gives them now. Read them when they are used, not before.
+  CardActions actions = const CardActions();
   bool animateAll = false;
 
   @override
@@ -54,10 +59,8 @@ class InspectorValues extends ChangeNotifier {
     super.dispose();
   }
 
-  /// The selected layer's name, when the caller knows it.
-  String? title;
-
-  String get name => title ?? '';
+  /// The selected layer's name, or '' when the caller does not know it.
+  String get name => layer.title ?? '';
 
   double? get(String id) => v[id];
 
@@ -209,31 +212,4 @@ class InspectorValues extends ChangeNotifier {
     }
     return null;
   }
-
-  /// Titles of the caller's cards that can move up or down (its effects), and the callback that moves one by that many places.
-  List<String> movable = const [];
-  void Function(String title, int by)? onCardMove;
-
-  /// Titles of cards the caller could add that are not shown yet.
-  List<String> moreCards = const [];
-  void Function(String title)? onMoreCard;
-
-  /// Opens the effect shelf with its search focused, like Alight Motion's Add Effect.
-  VoidCallback? onAddEffect;
-
-  /// Evaluates an arithmetic expression typed into a number field. Returns null if the text is not one.
-  double? Function(String sum)? onSum;
-  void Function(List<String> names)? onCardReset;
-  void Function(String title)? onCardRemove;
-
-  /// Builds the code view of a card, found by its title and its value names, because two cards can share a title (ThorVG's Tint and an ISF Duotone).
-  /// It sits under the card's parameters, like After Effects' expression under its value.
-  Widget? Function(String title, List<String> names)? cardCode;
-  void Function(String title)? onCardEye;
-  void Function(String title, List<String> names)? onCardSave;
-  void Function(String title)? onCardInfo;
-  void Function(String title)? onCardDuplicate;
-  List<String> cardsOff = const [];
-  void Function(List<String> names)? onCardCopy;
-  VoidCallback? onCardPaste;
 }

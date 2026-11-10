@@ -43,9 +43,11 @@ class CardWords extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         for (final (word, does) in [
-          if (doc.onCardCopy case final copy?) ('Copy', () => copy(ids)),
-          if (doc.onCardPaste case final paste?) ('Paste', paste),
-          if (doc.onCardReset case final reset?) ('Reset', () => reset(ids)),
+          if (doc.actions.onCardCopy case final copy?)
+            ('Copy', () => copy(ids)),
+          if (doc.actions.onCardPaste case final paste?) ('Paste', paste),
+          if (doc.actions.onCardReset case final reset?)
+            ('Reset', () => reset(ids)),
         ])
           Padding(
             padding: EdgeInsets.only(right: Shape.s(6)),
@@ -83,14 +85,14 @@ class ValuesCard extends StatelessWidget {
         ];
     // The main params show first. The advanced ones are folded under a row named for what they are.
     // The index of this card among the movable effects, or -1. Effects can be dragged up or down their stack, as in After Effects.
-    final at = doc.movable.indexOf(card.name);
+    final at = doc.layer.movable.indexOf(card.name);
     final sect = Section(
       title: card.name,
       tone: card.tone,
       trailing:
-          (at < 0 || doc.onCardMove == null) &&
-              doc.onCardReset == null &&
-              doc.onCardCopy == null
+          (at < 0 || doc.actions.onCardMove == null) &&
+              doc.actions.onCardReset == null &&
+              doc.actions.onCardCopy == null
           ? null
           : Row(
               mainAxisSize: MainAxisSize.min,
@@ -123,10 +125,10 @@ class ValuesCard extends StatelessWidget {
                     ],
                   ),
                 // A script is added like an effect and removed the same way.
-                if (card.name == 'Script' && doc.onCardRemove != null)
+                if (card.name == 'Script' && doc.actions.onCardRemove != null)
                   Pressable(
                     key: const ValueKey('card-remove:Script'),
-                    onTap: () => doc.onCardRemove!(card.name),
+                    onTap: () => doc.actions.onCardRemove!(card.name),
                     builder: (_, h) => Padding(
                       padding: EdgeInsets.only(right: Shape.s(6)),
                       child: glyph(
@@ -138,16 +140,16 @@ class ValuesCard extends StatelessWidget {
                   ),
                 if (at >= 0) ...[
                   // An effect's header has the eye, the ⋮ menu with the rest, and the bin, as in AbsentMotion's EffectHeader and Alight Motion.
-                  if (doc.onCardEye != null)
+                  if (doc.actions.onCardEye != null)
                     Pressable(
                       key: ValueKey(
-                        'card-${doc.cardsOff.contains(card.name) ? 'show' : 'hide'}:${card.name}',
+                        'card-${doc.layer.cardsOff.contains(card.name) ? 'show' : 'hide'}:${card.name}',
                       ),
-                      onTap: () => doc.onCardEye!(card.name),
+                      onTap: () => doc.actions.onCardEye!(card.name),
                       builder: (_, h) => Padding(
                         padding: EdgeInsets.only(right: Shape.s(6)),
                         child: Glyph(
-                          doc.cardsOff.contains(card.name)
+                          doc.layer.cardsOff.contains(card.name)
                               ? TimelineGlyphs.eyeOff
                               : TimelineGlyphs.eye,
                           size: 12,
@@ -167,25 +169,25 @@ class ValuesCard extends StatelessWidget {
                         past ? 'Stop at Range Ends' : 'Go Past Range Ends',
                         () => doc.flag('$k.past', !past),
                       ),
-                      if (doc.onCardInfo case final info?)
+                      if (doc.actions.onCardInfo case final info?)
                         ('info', 'Effect Info', () => info(card.name)),
-                      if (doc.onCardReset case final reset?)
+                      if (doc.actions.onCardReset case final reset?)
                         (
                           'reset',
                           'Reset to Defaults',
                           () => reset([for (final p in card.params) p.id]),
                         ),
-                      if (doc.onCardDuplicate case final duplicate?)
+                      if (doc.actions.onCardDuplicate case final duplicate?)
                         ('duplicate', 'Duplicate', () => duplicate(card.name)),
-                      if (doc.onCardCopy case final copy?)
+                      if (doc.actions.onCardCopy case final copy?)
                         (
                           'copy',
                           'Copy Effect',
                           () => copy([for (final p in card.params) p.id]),
                         ),
-                      if (doc.onCardPaste case final paste?)
+                      if (doc.actions.onCardPaste case final paste?)
                         ('paste', 'Paste Effect Values', paste),
-                      if (doc.onCardSave case final save?)
+                      if (doc.actions.onCardSave case final save?)
                         (
                           'save',
                           'Save as Preset',
@@ -195,10 +197,10 @@ class ValuesCard extends StatelessWidget {
                         ),
                     ],
                   ),
-                  if (doc.onCardRemove != null)
+                  if (doc.actions.onCardRemove != null)
                     Pressable(
                       key: ValueKey('card-remove:${card.name}'),
-                      onTap: () => doc.onCardRemove!(card.name),
+                      onTap: () => doc.actions.onCardRemove!(card.name),
                       builder: (_, h) => Padding(
                         padding: EdgeInsets.only(right: Shape.s(6)),
                         child: glyph(
@@ -210,7 +212,9 @@ class ValuesCard extends StatelessWidget {
                     ),
                 ],
                 // The ≡ grip drags an effect up or down its stack, as in Alight Motion and After Effects' Effect Controls.
-                if (at >= 0 && doc.onCardMove != null && doc.movable.length > 1)
+                if (at >= 0 &&
+                    doc.actions.onCardMove != null &&
+                    doc.layer.movable.length > 1)
                   Draggable<String>(
                     key: ValueKey('card-drag:${card.name}'),
                     data: card.name,
@@ -242,7 +246,9 @@ class ValuesCard extends StatelessWidget {
           ),
           if (adv) ParameterGrid(rest),
         ],
-        if (doc.cardCode?.call(card.name, [for (final p in card.params) p.id])
+        if (doc.actions.cardCode?.call(card.name, [
+              for (final p in card.params) p.id,
+            ])
             case final code?) ...[
           // The card's code folds under its params like Advanced does. The params are what the user edits and the code is what they drive.
           _FoldRow(
@@ -257,15 +263,17 @@ class ValuesCard extends StatelessWidget {
       ],
     );
     final shown = PastRange(flag: '$k.past', child: sect);
-    if (at < 0 || doc.onCardMove == null) return shown;
+    if (at < 0 || doc.actions.onCardMove == null) return shown;
     return DragTarget<String>(
       // An effect dropped on this card takes its place. The line shows on which side it lands.
       onWillAcceptWithDetails: (d) =>
-          d.data != card.name && doc.movable.contains(d.data),
-      onAcceptWithDetails: (d) =>
-          doc.onCardMove!(d.data, at - doc.movable.indexOf(d.data)),
+          d.data != card.name && doc.layer.movable.contains(d.data),
+      onAcceptWithDetails: (d) => doc.actions.onCardMove!(
+        d.data,
+        at - doc.layer.movable.indexOf(d.data),
+      ),
       builder: (context, held, _) {
-        final from = held.isEmpty ? -1 : doc.movable.indexOf(held.first!);
+        final from = held.isEmpty ? -1 : doc.layer.movable.indexOf(held.first!);
         final below = from >= 0 && from < at;
         return Stack(
           clipBehavior: Clip.none,

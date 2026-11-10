@@ -16,7 +16,8 @@ import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, Pressable;
 // Where the Add Effect row goes: after the last card that is an effect, as Alight Motion's list ends.
 // doc_cards_of lays the effects out before the other cards. With no effect, it goes at the end.
 int _addAt(InspectorValues doc) {
-  final at = doc.cards.lastIndexWhere((c) => doc.movable.contains(c.name)) + 1;
+  final at =
+      doc.cards.lastIndexWhere((c) => doc.layer.movable.contains(c.name)) + 1;
   return at > 0 ? at : doc.cards.length;
 }
 
@@ -30,7 +31,7 @@ class AddEffectRow extends StatelessWidget {
       'fx',
       'fx_off',
       for (final c in doc.cards)
-        if (doc.movable.contains(c.name))
+        if (doc.layer.movable.contains(c.name))
           for (final p in c.params) p.id,
     ];
     Widget word(String key, String word, VoidCallback? does) => Padding(
@@ -49,7 +50,7 @@ class AddEffectRow extends StatelessWidget {
           Expanded(
             child: Pressable(
               key: const ValueKey('add-effect'),
-              onTap: doc.onAddEffect,
+              onTap: doc.actions.onAddEffect,
               builder: (_, h) => Container(
                 height: InspectorSkin.cell,
                 alignment: Alignment.center,
@@ -65,20 +66,21 @@ class AddEffectRow extends StatelessWidget {
             ),
           ),
           // Copy and paste the whole effect stack with its parameters, as Alight Motion's Copy Effects and Paste Effects do.
-          if (doc.movable.isNotEmpty)
-            if (doc.onCardCopy case final copy?)
+          if (doc.layer.movable.isNotEmpty)
+            if (doc.actions.onCardCopy case final copy?)
               word('effects-copy', 'Copy all', () => copy(names)),
-          if (doc.onCardPaste case final paste?)
+          if (doc.actions.onCardPaste case final paste?)
             word('effects-paste', 'Paste', paste),
-          if (doc.moreCards.isNotEmpty && doc.onMoreCard != null) ...[
+          if (doc.layer.moreCards.isNotEmpty &&
+              doc.actions.onMoreCard != null) ...[
             // As in Alight Motion, only the cards for the layer's kind show by default. The rest are listed by name here.
             SizedBox(width: Shape.s(10)),
             CardMore(
               name: 'More',
               word: 'More',
               items: [
-                for (final title in doc.moreCards)
-                  (title, title, () => doc.onMoreCard!(title)),
+                for (final title in doc.layer.moreCards)
+                  (title, title, () => doc.actions.onMoreCard!(title)),
               ],
             ),
           ],
@@ -117,10 +119,11 @@ class _InspectorPanelState extends State<InspectorPanel> {
         // One stack: Transform first, then the layer's effects, then the other cards. Premiere Pro's Effect Controls lists effects under Motion and Opacity the same way.
         // Every titled card folds on its own.
         for (final (i, c) in doc.cards.indexed) ...[
-          if (doc.onAddEffect != null && i == _addAt(doc)) const AddEffectRow(),
+          if (doc.actions.onAddEffect != null && i == _addAt(doc))
+            const AddEffectRow(),
           ValuesCard(c),
         ],
-        if (doc.onAddEffect != null && _addAt(doc) >= doc.cards.length)
+        if (doc.actions.onAddEffect != null && _addAt(doc) >= doc.cards.length)
           const AddEffectRow(),
       ],
     ];

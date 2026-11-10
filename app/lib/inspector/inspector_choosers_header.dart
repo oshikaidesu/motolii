@@ -316,7 +316,7 @@ class InspectorHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final doc = InspectorScope.of(context).doc;
     // The name the app gives the layer kind, for kinds that have no word of their own.
-    final w = doc.kindWord;
+    final w = doc.layer.kindWord;
     final (word, glyph) = switch (doc.kind) {
       Kind.shape when w != null => (
         w,

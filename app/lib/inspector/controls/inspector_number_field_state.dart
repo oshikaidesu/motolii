@@ -156,9 +156,9 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
 
   void _reset() {
     final doc = _x.doc, id = widget.id;
-    if (id.startsWith('v_') && doc.onCardReset != null) {
+    if (id.startsWith('v_') && doc.actions.onCardReset != null) {
       // Use the card's own Reset, which restores the effect's real default. The Inspector's default is only the value from when the card was made.
-      doc.onCardReset!([id.substring(2)]);
+      doc.actions.onCardReset!([id.substring(2)]);
     } else {
       doc.resetIds([id]);
     }
@@ -248,7 +248,7 @@ class InspectorNumberFieldState extends State<InspectorNumberField> {
   double? _typed(String said) {
     final cur = _x.doc.get(widget.id);
     return double.tryParse(said) ??
-        _x.doc.onSum?.call(
+        _x.doc.actions.onSum?.call(
           said.startsWith(RegExp(r'[*/]')) && cur != null ? '$cur$said' : said,
         );
   }
