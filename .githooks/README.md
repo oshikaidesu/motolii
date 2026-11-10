@@ -18,8 +18,6 @@
 | [shape_check.sh](shape_check.sh) | 外の番人を自前のコードに当てる。[ast-grep](https://ast-grep.github.io/) が [rules/](rules/) の形を断る：Dart の手書きの押し・ホバー・重ね（`GestureDetector`・`Listener`・`MouseRegion`・`OverlayPortal`）、手書きのジェスチャー認識、手描き（`CustomPainter`）、C++ でレイヤーの種類を名前で比べる枝（`== "camera"`）。規格（`app/lib/widgets/`）が包んでいる材料をパネルで直接書く（`NakedButton`・`NakedSlider`・`EditableText`・`TextPainter`）。押し・認識・手描きを自前で書いてよいのは規格のフォルダだけ。コミットではステージしたファイルだけ、CI では全部 | 押し・欄・スライダーは規格の部品（`package:motolii/panel.dart`）を使う。足りなければ規格に足す。絵は書体の字か SVG へ。種類は名前でなく性質を表から読む |
 | [rules/](rules/)・[sgconfig.yml](sgconfig.yml) | ast-grep の規則（YAML 1 枚に 1 つ）と、その置き場を言う設定。規則を足すときは、落ちるのを見てから | 断られた行の `note:` を読む |
 | [format_check.py](format_check.py) | `dart format` のままでない Dart（`dart` が無ければ飛ばす） | 表示されたコマンドを打つ |
-| [own_code_check.py](own_code_check.py) | 今は走らない（commit-msg からも CI からも呼ばれない）。ファイルは残っているが、コミットを断らない。「先に仮コード」の決まりは、Claude Code の PreToolUse フック [.claude/hooks/own_code_sign.py](../.claude/hooks/own_code_sign.py) として AI の編集にだけ残る | — |
-| [what_exists.py](what_exists.py) | 断らない。既にある物を言葉で引く道具：`python3 .githooks/what_exists.py wave copies`。エンジンの側は棚と `engine/community/` の動くファイル（名前と見出し）、Dart の側は Flutter 本体と依存パッケージの class（名前と説明）、エンジンの C の呼び出しとカード。SQLite の FTS5（bm25）で近い順に出す。入口の札（[.claude/hooks/own_code_sign.py](../.claude/hooks/own_code_sign.py)）と own_code_check.py が同じ物を使う。`--sketch`：動かなくてよい理想の仮コードを流すと、そこで呼んでいる名前を 1 つずつ「ある／近い物がある／無い」で返す（無いと出た物だけが自前で書く分）。自前の写しを自分で見つける道具ではない（全体に当てると 196 本中 191 本を「何かに似ている」と言った）：写しかどうかは読み手が決める | 書く前に引く |
 | [subject_check.py](subject_check.py) | コミットの件名が 72 字を超える | 1 行目を短く。中身は空行の後の本文へ。書いた文は `git commit -e -F` で戻る |
 | [path_check_allow.txt](path_check_allow.txt) | 負債の帳簿：木に無くても通す道（組み立て時に取ってくる物・作る物）。それぞれ理由つき | 動いたファイルを隠すために足さない。取ってくる物が無くなったら消す |
 

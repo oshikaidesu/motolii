@@ -35,11 +35,9 @@ On every commit, `.githooks/pre-commit` (a merge commit gets the same from `pre-
 | `card_check.py` | An Inspector card drawn by hand in Dart (a value name written as a string). Cards are declared in the engine's `card_table.h` | Staged files | All files |
 | `reach_check.py` | What the app cannot reach: a `motolii_*` C call nothing calls, a public class in `app/lib` nothing uses | Staged files | All files |
 | `format_check.py` | Dart not as `dart format` leaves it | Staged Dart; skipped if `dart` is not on the PATH | **Not run** |
-| `word_check.py` | Dropped house words (`docs/internal/notes/rename_words.md`). For now it only reports counts and refuses nothing | Added lines | All files (refuses nothing) |
 | `shape_check.sh` | [ast-grep](https://ast-grep.github.io/) refuses the shapes in `.githooks/rules/`: hand-written presses, hovers, overlays and painters in Dart, a C++ branch that compares a layer kind by name. A staged file may not hold more refused shapes than it held at HEAD | Staged files; skipped if ast-grep is not installed | All files (CI installs ast-grep) |
 | `subject_check.py` | A subject (first line) over 72 characters | The commit being written | Every commit a push or pull request brings |
 
-`pre-commit` also prints one line first, `debt: ...`. It refuses nothing. It shows what the rules still let stand: the number of files over 500 lines (`over_500.txt`), the number of paths allowed to lead nowhere (`path_check_allow.txt`), and the lines of hand-written Dart. It is there so you can see whether a commit lowers them.
 
 `git commit --no-verify` skips the local checks, but GitHub fails the same ones (all but `format_check.py`, which GitHub does not run).
 
@@ -50,7 +48,6 @@ To try things yourself:
 
 The full build runs on GitHub Actions in `.github/workflows/build.yml` (on an Apple silicon Mac, as the README says, then `flutter analyze`; on pushes to main and pull requests that touch `engine/`, `shelves/`, `app/` or `Brewfile`, and by hand from the Actions tab). There are no self-written tests (they were removed on 2026-11-08: the same hands wrote the code and the tests); the external requirements are in [`docs/TESTING.md`](../docs/TESTING.md).
 
-One more rule applies only when an AI agent edits through Claude Code. `.claude/hooks/own_code_sign.py` runs before the agent's edit and stops an edit that would lengthen a file of our own (Dart in `app/lib`, C++ in `engine/`) until it has looked for what already exists (`python3 .githooks/what_exists.py --sketch dart|engine FILE < SKETCH`). Neither a commit nor GitHub checks it, and it does not concern a person editing by hand.
 
 ## Rules
 

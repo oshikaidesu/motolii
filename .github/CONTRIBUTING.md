@@ -31,11 +31,9 @@ git config core.hooksPath .githooks
 | `card_check.py` | Inspector のカードを Dart で手描きする（値の名前を文字列で書く）。カードはエンジンの `card_table.h` に宣言する | ステージした物 | 全部 |
 | `reach_check.py` | アプリが届かない物：どこからも呼ばれない `motolii_*` の C の呼び出し、`app/lib` の公開クラス | ステージした物 | 全部 |
 | `format_check.py` | `dart format` のままでない Dart | ステージした Dart。`dart` が無ければ飛ばす | **走らない** |
-| `word_check.py` | 使わなくなった言い方（`docs/internal/notes/rename_words.md`）。今は数を出すだけで断らない | 足した行 | 全部（断らない） |
 | `shape_check.sh` | [ast-grep](https://ast-grep.github.io/) が `.githooks/rules/` の形を断る：Dart の手書きの押し・ホバー・重ね・手描き、C++ のレイヤーの種類を名前で比べる枝。ステージしたファイルは、HEAD より断られる形を増やせません | ステージした物。ast-grep が無ければ飛ばす | 全部（ast-grep を入れて走る） |
 | `subject_check.py` | 件名（1 行目）が 72 字を超える | 書いているコミット | PR・push が持ち込む全コミット |
 
-そのほか、`pre-commit` は最初に `debt: …` の 1 行を出します。断りではなく、決まりがまだ許している数です：500 行を超えているファイルの数（`over_500.txt`）、木に無くても通す道の数（`path_check_allow.txt`）、手で書いた Dart の行数。コミットで減っているかを見るためにあります。
 
 `git commit --no-verify` で手元の検査は飛ばせますが、GitHub で同じ検査が落ちます（`format_check.py` は GitHub に無いので落ちません）。
 
@@ -46,7 +44,6 @@ git config core.hooksPath .githooks
 
 GitHub の Actions で全部を組み立てるのは `.github/workflows/build.yml`（Apple Silicon の Mac で、README の手順どおり組んで `flutter analyze`。`engine/`・`shelves/`・`app/`・`Brewfile` に触る main への push と PR、そして Actions の画面から手で）。自分で書いた試験はありません（コードと試験を同じ手が書いていたので、2026-11-08 に全部消しました）。外から求める条件は [`docs/TESTING.md`](../docs/TESTING.md)。作りは [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) と [`engine/README.md`](../engine/README.md)。行動規範は [`.github/CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)、脆弱性は [`.github/SECURITY.md`](SECURITY.md)。
 
-Claude Code などの AI で編集する場合だけ、もう 1 つあります。`.claude/hooks/own_code_sign.py` が Claude Code の編集の前に動き、自前のファイル（`app/lib` の Dart、`engine/` の C++）を長くする編集を、先に既にある物を探す（`python3 .githooks/what_exists.py --sketch dart|engine ファイル < 仮コード`）まで止めます。コミットや GitHub では検査されず、人が手で編集する時には関係ありません。
 
 ## 決まり
 
