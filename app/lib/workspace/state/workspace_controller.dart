@@ -19,6 +19,7 @@ import 'package:motolii/workspace/state/drawing_inks.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/notices.dart';
 import 'package:motolii/workspace/state/pane.dart';
+import 'package:motolii/workspace/state/panel_layout.dart';
 import 'package:motolii/workspace/state/playhead.dart';
 import 'package:motolii/workspace/state/row_folds.dart';
 import 'package:motolii/workspace/state/selection.dart';
@@ -315,8 +316,8 @@ class WorkspaceController extends ChangeNotifier {
     layers: () => layers,
     composition: _composition,
     onChanged: () => _tell(WorkspaceAspect.picked),
-    onLayerSelected: () => toolPanelManual = null,
-    onStretchSelected: () => front('Ease'),
+    onLayerSelected: () => layout.toolPanelManual = null,
+    onStretchSelected: () => layout.front('Ease'),
   );
   String? get selected => selection.selected;
   Layer? get layer => selection.layer;
@@ -351,49 +352,28 @@ class WorkspaceController extends ChangeNotifier {
   set strikes(List<int> frames) => playhead.strikes = frames;
   String timecode([int? f]) => playhead.timecode(f);
 
-  /// View state by name ('stage.tool', 'fold.Transform'): what a panel keeps of itself that is not part of the document.
-  final view = <String, Object?>{};
-  T viewOf<T>(String name, T otherwise) => view[name] as T? ?? otherwise;
-  void setView(String name, Object? value) {
-    if (view[name] == value) return;
-    view[name] = value;
-    _tell(WorkspaceAspect.view);
-  }
-
-  /// Whether the preview uses the working camera, not the document's camera layer (AbsentMotion's cameraMode off).
-  bool get freeEye =>
-      !viewOf('stage.camera', false) &&
-      layers.any((l) => l.kind == LayerKind.camera);
-
-  /// The working camera's position as an orbit around the world's centre: yaw, pitch and distance.
-  List<double> get eye => viewOf('stage.eye', const [0.0, 0.0, 1.0]);
-
-  /// The tool the user opened in the tool panel. Null lets the tool panel follow the selection.
-  String? toolPanelManual;
-
-  /// Every tab in the window, set once by Workspace. The tool panel's catalog is the tabs that do not start in a strip.
-  List<Pane> panes = const [];
-  List<Pane> get tools => [
-    for (final p in panes)
-      if (p.at == PaneStrip.catalog) p,
-  ];
-  void openToolPanel(String? name) {
-    toolPanelManual = name;
-    front('Tool Panel');
-  }
-
-  /// Brings a panel to the front of its tabs (the panels follow, see panes.dart).
-  void front(String pane) {
-    fronted = (pane, (fronted?.$2 ?? 0) + 1);
-    _tell(WorkspaceAspect.fronted);
-  }
-
-  (String, int)? fronted;
-
-  String get toolPanel => toolPanelManual ?? 'Tools';
-
-  /// Handles a link from another panel to a panel (fonts, colours, ease): the dock or tool panel shows it.
-  void route(String to) => front(to.split('›').last.trim());
+  /// The window's panels: the tabs, the panel brought to the front, the tool open in the tool panel, and the view
+  /// state each panel keeps by name.
+  late final layout = PanelLayout(
+    layers: () => layers,
+    onViewChanged: () => _tell(WorkspaceAspect.view),
+    onFronted: () => _tell(WorkspaceAspect.fronted),
+  );
+  Map<String, Object?> get view => layout.view;
+  T viewOf<T>(String name, T otherwise) => layout.viewOf(name, otherwise);
+  void setView(String name, Object? value) => layout.setView(name, value);
+  bool get freeEye => layout.freeEye;
+  List<double> get eye => layout.eye;
+  String? get toolPanelManual => layout.toolPanelManual;
+  set toolPanelManual(String? name) => layout.toolPanelManual = name;
+  List<Pane> get panes => layout.panes;
+  set panes(List<Pane> all) => layout.panes = all;
+  List<Pane> get tools => layout.tools;
+  void openToolPanel(String? name) => layout.openToolPanel(name);
+  void front(String pane) => layout.front(pane);
+  (String, int)? get fronted => layout.fronted;
+  String get toolPanel => layout.toolPanel;
+  void route(String to) => layout.route(to);
 
   /// The shelf effects on layer [id]: those whose card the engine shows. An effect's card shows while the effect is on.
   List<String> fxOf(String? id) {
