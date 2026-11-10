@@ -24,6 +24,7 @@
 | フォルダ | 中身 |
 |---|---|
 | `entry/` | アプリが呼ぶ入口。`motolii.h`＝C の呼び出しの全部（プロジェクトを開く・レイヤーを足す・値を変える・キー・取り消し・書き出し・フレームを受け取る）、`motolii.mm`＝その実装（`libmotolii.dylib` になる）、`calls*.h`＝呼び出しを役目で分けた部品（探す・地図・音・ファイル・時刻…）、`render_thread*.h`＝プロジェクトと GPU を持つレンダースレッド 1 本、`window.h`＝開く・閉じる、`export.h`＝書き出し、`edit.cpp`＝同じ呼び出しを 1 行ずつ打つシェル |
+| `base/` | どこからも使う小さな部品：`json.h`＝rapidjson の入口（Filament に付いてくる 1 つの写しをここだけが名前で指す） |
 | `document/` | プロジェクト（SQLite）。`doc.h`＝全部を読む入口、ほかはその部品：`undo.h`＝表と取り消し（変更を SQLite の表に積む）、`values.h`・`keys_put.h`・`layer_edit.h`＝レイヤー・値・キー、`evaluate.h`・`match.h`＝ある時刻の値を出してプレビューへ反映、`presets.h`・`recipes.h`＝棚を読む。中の関数名の頭 `doc_` はファイル名には付けない（フォルダが言っている） |
 | `shelf/` | 棚のフォルダを探す所：`shelf_folders.h`＝ライブラリのフォルダと利用者のフォルダ（`doc_folders`）、エンジン内の部品の場所（`doc_engine`）、ファイルが変わったかの数え（`files_changed`） |
 | `stage/` | 描く所。`render/`＝Filament で描く所（Engine・カメラ・光・書き出し、3D ファイル `gltf_model.h`・点群 `point_cloud.h`）、`canvas/`＝ThorVG のキャンバスに描いた 2D の絵をプレビューに板として置く所（パスの演算：`thorvg_path_operators.cpp`・`skia_path_operations.cpp`）、`effects/`＝効果（レイヤーごと `layer_fx.h`・画面全体 `screen_fx.h`・Filament の設定ファイル `viewer_settings.h`）。直下はプレビューから外へ出す物だけ：アプリへ渡すフレーム（`live.h`）・アプリが読むプロジェクトの写し（`picture.h`）・再生用のキャッシュ（`stage_cache.h`） |

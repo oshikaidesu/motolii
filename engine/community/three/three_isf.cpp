@@ -24,9 +24,7 @@
 #include <fstream>
 #include <regex>
 #include <sstream>
-#include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/document.h"
-#include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/stringbuffer.h"
-#include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/writer.h"
+#include "base/json.h"
 
 // Source of the stand-in 'three' module: just enough of Vector2/3/4, Color and
 // Matrix3/4 for a shader module to build its uniform values. Vectors keep their

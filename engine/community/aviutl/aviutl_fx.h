@@ -19,7 +19,7 @@
 #include <mutex>
 #include <optional>
 #include <random>
-#include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/document.h"
+#include "base/json.h"
 
 // An image buffer: its texture `t`, the render target `rt` for drawing into it, and its size in
 // pixels.

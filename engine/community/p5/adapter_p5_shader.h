@@ -7,7 +7,7 @@
 // as in hydra_isf.h. The vertices of the sketch's shape are not carried over: the shader is run
 // over a flat rect, plane or quad, so each pixel gets the same input as it would in the sketch.
 #pragma once
-#include <rapidjson/document.h>
+#include "base/json.h"
 #include "community/sites/adapter.h"
 #include "community/hydra/hydra_isf.h"
 

@@ -10,8 +10,7 @@
 //     time that was drawn.
 // Included by motolii.mm, which reads it at the end, after every call it uses.
 #pragma once
-#include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/stringbuffer.h"
-#include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/writer.h"
+#include "base/json.h"
 
 // A rapidjson writer that never emits a non-finite number.
 struct SnapshotWriter : rapidjson::Writer<rapidjson::StringBuffer> {

@@ -2,7 +2,7 @@
 // (adapter_shadertoy.h). Follows rust_ae's isf_from_shadertoy_project and uses the JSON's own field
 // names.
 #pragma once
-#include <rapidjson/document.h>
+#include "base/json.h"
 #include "community/sites/adapter.h"
 
 // Converts the JSON of a Shadertoy shader, as given by the site's API or its Export, with all its

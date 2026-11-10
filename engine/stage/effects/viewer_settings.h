@@ -11,10 +11,7 @@
 // file says them.
 #pragma once
 #include "community/quickjs/script.h"
-#include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/document.h"
-#include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/pointer.h"
-#include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/stringbuffer.h"
-#include "third_party/filament_src/third_party/libassimp/contrib/rapidjson/include/rapidjson/writer.h"
+#include "base/json.h"
 #include <viewer/Settings.h>
 #include <cmath>
 #include <fstream>

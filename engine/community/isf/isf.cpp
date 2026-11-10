@@ -25,7 +25,7 @@
 #include <regex>
 #include <sstream>
 #include <vector>
-#include "rapidjson/document.h"
+#include "base/json.h"
 #include <sqlite3.h>
 #include "glslang/Public/ShaderLang.h"
 #include "SPIRV/GlslangToSpv.h"

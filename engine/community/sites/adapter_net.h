@@ -6,7 +6,7 @@
 // requests a minute. A work takes 3 requests plus one for each of its files.
 #pragma once
 #include <glib.h>
-#include <rapidjson/document.h>
+#include "base/json.h"
 #include <filesystem>
 #include <fstream>
 #include <regex>
