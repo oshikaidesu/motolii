@@ -2,8 +2,6 @@
 // - Layer effects go on the selected layer; the footer button adds or removes one.
 // - Whole-screen effects apply to the selected layer as the camera sees it, or to the stage, in order.
 // - Presets saved from a layer's values can be applied to another layer.
-import 'package:motolii/skin/window_tokens.dart';
-
 import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
@@ -13,27 +11,28 @@ import 'package:motolii/bridge/motolii.dart' show Motolii;
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
-import 'package:motolii/widgets/media.dart' show Draw;
-import 'package:motolii/workspace/dock/dock_effect_places.dart';
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
+import 'package:motolii/widgets/context_menu.dart';
+import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, IconPress;
+import 'package:motolii/widgets/media.dart' show Draw;
+import 'package:motolii/workspace/dock/common/folder_row.dart';
+import 'package:motolii/workspace/dock/common/resizable_band.dart';
+import 'package:motolii/workspace/dock/common/shelf_footer.dart';
+import 'package:motolii/workspace/dock/common/shelf_tags.dart';
+import 'package:motolii/workspace/dock/common/star_button.dart';
+import 'package:motolii/workspace/dock/dock_effect_places.dart';
 import 'package:motolii/workspace/dock/dock_map.dart';
 import 'package:motolii/workspace/dock/dock_map_view.dart';
-import 'package:motolii/workspace/dock/dock_folder_row.dart';
-import 'package:motolii/workspace/dock/dock_stars.dart';
-import 'package:motolii/workspace/dock/dock_widgets.dart';
-import 'package:motolii/workspace/dock/dock_resizable.dart';
-import 'package:motolii/workspace/dock/dock_tags.dart';
 import 'package:motolii/workspace/shelf/effect_decks.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/shelf/empty_effect.dart';
 import 'package:motolii/workspace/shelf/shelf_add.dart';
-import 'package:motolii/workspace/shelf/shelf_tile.dart';
-import 'package:motolii/workspace/state/workspace_controller.dart';
-import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
+import 'package:motolii/workspace/shelf/shelf_tile.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
 import 'package:motolii/workspace/state/effects.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// One effect tile of the shelf. The id is a layer effect's name or a file effect's file, since two files can share a name.
 /// The label says what it is for, [on] whether it is applied, `apply` what a double-click or a drop on the stage does.

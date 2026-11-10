@@ -1,33 +1,33 @@
 // A shelf shown as a pane of its own: Media, Effects, Fonts, Colors, Create, Program or Presets.
 // It has a header, a search field and a body. Each shelf is one tab of the window's panes.
 // Media is the one file browser, for the project and the disk (dock_files.dart).
-import 'package:motolii/skin/window_tokens.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
+import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
+import 'package:motolii/widgets/controls.dart' show IconPress;
+import 'package:motolii/widgets/panel_header.dart';
+import 'package:motolii/workspace/dock/common/shelf_search_field.dart';
+import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/dock/dock_effects.dart';
 import 'package:motolii/workspace/dock/dock_files.dart';
 import 'package:motolii/workspace/dock/dock_files_browser.dart';
 import 'package:motolii/workspace/dock/dock_fonts.dart';
-import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/dock/dock_make.dart';
 import 'package:motolii/workspace/dock/dock_make_create.dart';
 import 'package:motolii/workspace/dock/dock_make_palettes.dart';
-import 'package:motolii/workspace/dock/dock_search.dart';
-import 'package:motolii/workspace/dock/dock_widgets.dart';
-import 'package:motolii/workspace/dock/dock_tags.dart';
 import 'package:motolii/workspace/dock/dock_program.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
-import 'package:motolii/widgets/panel_header.dart';
+import 'package:motolii/workspace/shelf/shelf_context.dart';
+import 'package:motolii/workspace/shelf/tile_colors.dart';
+import 'package:motolii/workspace/shelf/tile_hover.dart';
+import 'package:motolii/workspace/state/effects.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
-import 'package:motolii/workspace/shelf/shelf_context.dart';
-import 'package:motolii/workspace/shelf/tile_hover.dart';
-import 'package:motolii/workspace/shelf/tile_colors.dart';
-import 'package:motolii/workspace/state/effects.dart';
 
 /// One shelf pane. [name] picks which shelf it is and [hint] is the search field's placeholder.
 class ShelfPane extends StatefulWidget {

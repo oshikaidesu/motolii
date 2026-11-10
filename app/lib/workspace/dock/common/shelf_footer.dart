@@ -10,9 +10,6 @@ import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
-// Re-exported so shelves get the shared small widgets together with the dock's own.
-export '../../widgets/controls.dart' show Badge, Chip, IconPress;
-
 /// A section header inside a shelf body: a hue swatch, the title in capitals, an optional count, and an optional fold chevron.
 class DockSection extends StatelessWidget {
   const DockSection(

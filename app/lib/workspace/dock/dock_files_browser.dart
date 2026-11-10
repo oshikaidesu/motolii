@@ -9,11 +9,11 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
+import 'package:motolii/workspace/dock/common/folder_row.dart';
+import 'package:motolii/workspace/dock/common/resizable_band.dart';
 import 'package:motolii/workspace/dock/dock_files.dart';
 import 'package:motolii/workspace/dock/dock_files_contents.dart';
 import 'package:motolii/workspace/dock/dock_files_used.dart';
-import 'package:motolii/workspace/dock/dock_folder_row.dart';
-import 'package:motolii/workspace/dock/dock_resizable.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 

@@ -13,8 +13,6 @@
 //   and shows the file in Finder or Explorer (4.7.7).
 //
 // The code arrives through engine/community/sites/adapter.h.
-import 'package:motolii/skin/window_tokens.dart';
-
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
@@ -24,18 +22,19 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/shelf/copies_tiles.dart';
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
-import 'package:motolii/workspace/dock/dock_folder_row.dart';
-import 'package:motolii/workspace/dock/dock_widgets.dart';
+import 'package:motolii/widgets/context_menu.dart';
+import 'package:motolii/workspace/dock/common/folder_row.dart';
+import 'package:motolii/workspace/dock/common/shelf_footer.dart';
+import 'package:motolii/workspace/shelf/copies_tiles.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
+import 'package:motolii/workspace/shelf/program_code.dart';
 import 'package:motolii/workspace/shelf/program_tiles.dart';
 import 'package:motolii/workspace/shelf/shelf_add.dart';
-import 'package:motolii/workspace/shelf/shelf_tile.dart';
-import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
+import 'package:motolii/workspace/shelf/shelf_tile.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
-import 'package:motolii/workspace/shelf/program_code.dart';
 
 /// One program on the shelf: its file, what it was written for, and the hash that tells it from the others of those.
 class Program {

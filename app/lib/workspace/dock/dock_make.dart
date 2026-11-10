@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+
 import 'package:material_color_utilities/material_color_utilities.dart'
     show QuantizerCelebi;
 
@@ -16,19 +17,20 @@ import 'package:motolii/skin/hex_color.dart' show colorOfHex;
 import 'package:motolii/skin/theme.dart' show ColorTheme;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Chip, IconPress;
 import 'package:motolii/widgets/dice_painter.dart';
 import 'package:motolii/widgets/media.dart' show MiniSlider, glyph;
 import 'package:motolii/widgets/text_gestures.dart'
     show TypedField, wordsPicked;
+import 'package:motolii/workspace/dock/common/shelf_footer.dart';
 import 'package:motolii/workspace/dock/dock_color_wheel.dart';
 import 'package:motolii/workspace/dock/dock_make_colors.dart';
 import 'package:motolii/workspace/dock/dock_make_palettes.dart';
-import 'package:motolii/workspace/dock/dock_widgets.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
-import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
 
 // ---------------------------------------------------------------- colors
 

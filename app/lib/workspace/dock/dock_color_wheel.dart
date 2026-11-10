@@ -6,6 +6,7 @@
 // with its own corner, so when the window is drawn scaled down (WindowZoom, 76%) clicks missed the wheel.
 // The ring and square used here convert the position with globalToLocal, which works at any scale.
 import 'package:flutter/widgets.dart';
+
 import 'package:flutter_colorpicker/flutter_colorpicker.dart'
     show ColorPickerArea, ColorPickerHueRing, PaletteType;
 

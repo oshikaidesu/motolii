@@ -1,5 +1,6 @@
 // The shelf's search field, and a way for other panels to focus it.
 import 'package:flutter/widgets.dart';
+
 import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/skin/tokens.dart';

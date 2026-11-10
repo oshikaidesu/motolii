@@ -13,9 +13,10 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:crypto/crypto.dart' show sha1;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+
+import 'package:crypto/crypto.dart' show sha1;
 import 'package:force_graph/force_graph.dart'
     show CollideForce, Force, ForceNode, ForceSimulation;
 import 'package:material_color_utilities/material_color_utilities.dart'

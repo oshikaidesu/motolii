@@ -15,7 +15,7 @@ import 'package:motolii/workspace/dock/dock_fonts.dart' show fontRecentAt;
 import 'package:motolii/workspace/dock/dock_make_palettes.dart' show colorsAt;
 import 'package:motolii/workspace/dock/dock_map.dart' show dockMapsAt;
 import 'package:motolii/workspace/shelf/shelf_context.dart' show dockStarsAt;
-import 'package:motolii/workspace/dock/dock_tags.dart' show DockTags;
+import 'package:motolii/workspace/dock/common/shelf_tags.dart' show DockTags;
 import 'package:motolii/workspace/tool_panel/ease/ease_shelf.dart'
     show easeKeptAt;
 import 'package:motolii/workspace/shelf/effect_decks.dart'

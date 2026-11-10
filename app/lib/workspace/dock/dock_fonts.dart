@@ -1,7 +1,5 @@
 // The Fonts shelf: each font is shown set in its own face.
 // Effects are in dock_effects.dart, files and media in dock_files.dart.
-import 'package:motolii/skin/window_tokens.dart';
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -11,29 +9,30 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter/widgets.dart';
 
+import 'package:motolii/bridge/engine_paths.dart' show motoliiDir;
 import 'package:motolii/bridge/motolii.dart' show Motolii;
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
-import 'package:motolii/bridge/engine_paths.dart' show motoliiDir;
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/storage/json_file.dart' show fileKeep, fileList;
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
+import 'package:motolii/workspace/dock/common/folder_row.dart';
+import 'package:motolii/workspace/dock/common/shelf_footer.dart';
+import 'package:motolii/workspace/dock/common/shelf_tags.dart';
+import 'package:motolii/workspace/dock/common/star_button.dart';
 import 'package:motolii/workspace/dock/dock_files.dart' show dockRead;
 import 'package:motolii/workspace/dock/dock_font_map.dart';
 import 'package:motolii/workspace/dock/dock_map.dart';
 import 'package:motolii/workspace/dock/dock_map_view.dart';
-import 'package:motolii/storage/json_file.dart' show fileKeep, fileList;
-import 'package:motolii/workspace/dock/dock_folder_row.dart';
-import 'package:motolii/workspace/dock/dock_stars.dart';
-import 'package:motolii/workspace/dock/dock_widgets.dart';
-import 'package:motolii/workspace/dock/dock_tags.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
-import 'package:motolii/workspace/shelf/shelf_tile.dart';
-import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
-import 'package:motolii/workspace/shelf/tile_hover.dart';
+import 'package:motolii/workspace/shelf/shelf_tile.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
+import 'package:motolii/workspace/shelf/tile_hover.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// A font file offered on the shelf.
 class _Font {
