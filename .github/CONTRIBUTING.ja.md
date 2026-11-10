@@ -10,7 +10,7 @@
 
 ## 組み立て
 
-[`README.ja.md`](../README.ja.md) の「使ってみる」のとおり。コミット時に Dart の整形を確かめる hook を入れるなら、クローンした所で一度だけ：
+[`README.ja.md`](../README.ja.md) の「ビルドして動かす」のとおり（手順の詳しい説明は[ガイド](../docs/using/guide.ja.md#使ってみる)）。コミット時に Dart の整形を確かめる hook を入れるなら、クローンした所で一度だけ：
 
 ```bash
 git config core.hooksPath .githooks
@@ -27,6 +27,13 @@ cd app && dart format . && flutter analyze && flutter test
 ```
 
 C++ は、`./engine/check_syntax.sh` が組み立てずに構文を見て、`engine/build.sh` が組み立てます。全部の組み立ては GitHub Actions の `.github/workflows/build.yml`（Apple Silicon の Mac。`engine/`・`shelves/`・`app/`・`Brewfile` に触る main への push と PR、そして Actions の画面から手で）。テストのやり方は [`docs/TESTING.md`](../docs/TESTING.md)。
+
+## 考え方
+
+- **自作は負債。** まず既存の実装を探し、作者のやり方のまま使います。無ければ周りの技術やコミュニティまで探します。
+- 他の人の作品はなるべく手を入れずに同梱し、隣に作者のライセンスと出所を置きます。手を入れる時は、元に当てる差分（`.patch`）に分けて元は作者の配布元からダウンロードするか、ファイルの 1 行目に元と改変を書きます。
+- 今は自分で書いたコードも多くあります（画面の Flutter など）。借りられる物が見つかれば、自分のコードを捨てて取り替えます。
+- コミットごとに、何をどこから借りたか（出典）を書きます。
 
 ## 決まり
 

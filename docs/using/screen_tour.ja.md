@@ -1,6 +1,6 @@
 # タブの紹介
 
-[English](screen_tour.md) ・ [README の「画面の見方」に戻る](../../README.ja.md#画面の見方)
+[English](screen_tour.md) ・ [ガイドの「画面の見方」に戻る](guide.ja.md#画面の見方)
 
 絵は 2026-11-03 の画面です。
 

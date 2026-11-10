@@ -12,7 +12,7 @@ Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). Security problems go to
 
 ## Building
 
-As in [`README.md`](../README.md) ("Try it"). Optionally, once in your clone, enable the hook that checks Dart formatting at commit time:
+As in [`README.md`](../README.md) ("Build and run"); each step in detail is in the [guide](../docs/using/guide.md#try-it). Optionally, once in your clone, enable the hook that checks Dart formatting at commit time:
 
 ```bash
 git config core.hooksPath .githooks
@@ -31,6 +31,10 @@ cd app && dart format . && flutter analyze && flutter test
 ```
 
 For C++, `./engine/check_syntax.sh` checks syntax without building and `engine/build.sh` builds. The full build runs on GitHub Actions in `.github/workflows/build.yml` (an Apple silicon Mac; on pushes to main and pull requests that touch `engine/`, `shelves/`, `app/` or `Brewfile`, and by hand from the Actions tab). How things are tested: [`docs/TESTING.md`](../docs/TESTING.md).
+
+## Stance
+
+The project's stance: **code you write yourself is a debt.** Look for an existing implementation first and use it the way its author meant; bundle other people's work as unchanged as possible, with their licence and source beside it; keep changes to upstream code as patches applied at build time; say in each commit what was borrowed from where. A lot of Motolii is still its own code today (the Flutter UI, for one); where something can be borrowed instead, the own code goes.
 
 ## Rules
 
