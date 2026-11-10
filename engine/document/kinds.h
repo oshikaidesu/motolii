@@ -43,6 +43,8 @@
 #include "stage/render/gltf_model.h"
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 struct DocScript;
 // Doc is an open project: the SQLite database plus the caches built from it.
 // Most members are caches that are cleared at every change to the project.
@@ -1265,4 +1267,7 @@ struct DocShown {
   const char* fold;
   bool open = false;
 };
+
+}  // namespace motolii
+
 #endif  // MOTOLII_DOCUMENT_KINDS_H_
