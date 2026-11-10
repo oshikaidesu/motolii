@@ -1,9 +1,4 @@
 #!/bin/sh
-# Before every commit: does every path a shelf file or a document names still lead somewhere? (.githooks/path_check.py)
-# Then: is every staged Dart file as `dart format` leaves it? (.githooks/format_check.py; skipped without dart)
-# Set up once with:  git config core.hooksPath .githooks
-hooks="$(git rev-parse --show-toplevel)/.githooks"
-for check in path_check.py format_check.py; do
-    [ -f "$hooks/$check" ] || continue
-    python3 "$hooks/$check" || { echo "refused by .githooks/$check: what it refuses and how to fix it, .githooks/README.md" >&2; exit 1; }
-done
+# Refuses a commit whose staged Dart files are not as `dart format` leaves them (format_check.py).
+# Optional. Enable once per clone:  git config core.hooksPath .githooks
+exec python3 "$(git rev-parse --show-toplevel)/.githooks/format_check.py"

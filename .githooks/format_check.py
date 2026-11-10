@@ -2,7 +2,7 @@
 # Is every staged Dart file as `dart format` leaves it? A contributor's editor formats on save (dart.dev/tools/dart-format),
 # so a file left unformatted turns their one-line change into a whole-file diff. The staged text is checked (not the disk),
 # at the width app/analysis_options.yaml gives (formatter: page_width:, found through --stdin-name).
-# No `dart` on PATH: skipped with a word, not refused. Run by the pre-commit hook after layout_check.py; or by hand.
+# No `dart` on PATH: skipped with a word, not refused. Run by the pre-commit hook, or by hand.
 import shutil, subprocess, sys
 
 dart = shutil.which('dart')

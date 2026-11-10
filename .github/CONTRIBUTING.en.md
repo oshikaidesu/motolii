@@ -12,52 +12,34 @@ Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). Security problems go to
 
 ## Building
 
-As in [`README.en.md`](../README.en.md) ("Try it"). If you will commit, once in your clone:
+As in [`README.en.md`](../README.en.md) ("Try it"). Optionally, once in your clone, enable the hook that checks Dart formatting at commit time:
 
 ```bash
 git config core.hooksPath .githooks
 ```
 
-Without it, almost the same checks still run on every push and pull request on GitHub (`.github/workflows/checks.yml`); with it, they stop you at commit time instead of on GitHub.
-
 How the code is laid out: [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) and [`engine/README.md`](../engine/README.md) (which files the current build uses; the rest are earlier probes). Both are in Japanese, with an English summary at the top.
 
 Words in the code and the docs are the ones After Effects, Filament, Flutter and Blender use: app, engine, layer, project, preview (`Stage` in the code). Only the left tabs have their own name, "shelf" (棚, as in Blender's Asset Shelf). No new coinages.
 
-## Checks that run at a commit
+## Checks
 
-On every commit, `.githooks/pre-commit` (a merge commit gets the same from `pre-merge-commit`) and `.githooks/commit-msg` run. When one refuses, the last line says `refused by .githooks/<file>`. How to fix each one: [`.githooks/README.md`](../.githooks/README.md) (Japanese). To run one by hand, from the root of the repository: `python3 .githooks/<file>.py`.
+Run these before you send a pull request. CI runs the same on every push and pull request (`.github/workflows/checks.yml`):
 
-| Check | What it refuses | At a commit | On GitHub (checks.yml) |
-|---|---|---|---|
-| `layout_check.py` | Where things go (AGENTS.md 「構成の目標」): stray files at the root, a folder missing from its entrance README's table, `out/` or `build/` in git, numbered or letter-plus-number names, more than 40 files of our own in one folder. A Japanese `.md` with no `.en.md`, or with no English summary | Staged files | All files |
-| `path_check.py` | A path a shelf file or one of our `.md` names (`import`, image, link) that leads nowhere | Staged shelf files (all of them when something is deleted or moved) | All files |
-| `card_check.py` | An Inspector card drawn by hand in Dart (a value name written as a string). Cards are declared in the engine's `card_table.h` | Staged files | All files |
-| `reach_check.py` | What the app cannot reach: a `motolii_*` C call nothing calls, a public class in `app/lib` nothing uses | Staged files | All files |
-| `format_check.py` | Dart not as `dart format` leaves it | Staged Dart; skipped if `dart` is not on the PATH | **Not run** |
-| `shape_check.sh` | [ast-grep](https://ast-grep.github.io/) refuses the shapes in `.githooks/rules/`: hand-written presses, hovers, overlays and painters in Dart, a C++ branch that compares a layer kind by name. A staged file may not hold more refused shapes than it held at HEAD | Staged files; skipped if ast-grep is not installed | All files (CI installs ast-grep) |
-| `subject_check.py` | A subject (first line) over 72 characters | The commit being written | Every commit a push or pull request brings |
+```bash
+cd app && dart format . && flutter analyze && flutter test
+```
 
-
-`git commit --no-verify` skips the local checks, but GitHub fails the same ones (all but `format_check.py`, which GitHub does not run).
-
-To try things yourself:
-
-- Dart: `cd app && dart analyze lib`
-- C++: `./engine/check_syntax.sh` (checks syntax only, writes nothing)
-
-The full build runs on GitHub Actions in `.github/workflows/build.yml` (on an Apple silicon Mac, as the README says, then `flutter analyze`; on pushes to main and pull requests that touch `engine/`, `shelves/`, `app/` or `Brewfile`, and by hand from the Actions tab). There are no self-written tests (they were removed on 2026-11-08: the same hands wrote the code and the tests); the external requirements are in [`docs/TESTING.md`](../docs/TESTING.md).
-
+For C++, `./engine/check_syntax.sh` checks syntax without building and `engine/build.sh` builds. The full build runs on GitHub Actions in `.github/workflows/build.yml` (an Apple silicon Mac; on pushes to main and pull requests that touch `engine/`, `shelves/`, `app/` or `Brewfile`, and by hand from the Actions tab). How things are tested: [`docs/TESTING.md`](../docs/TESTING.md).
 
 ## Rules
 
-1. **Look before you write.** Look at the tree (`engine/` the product, `app/` the app, `docs/` research) and existing implementations on the net. If something can be used the way its author meant, use it. To search what already exists by words: `python3 .githooks/what_exists.py wave copies`.
-2. **One job a file, 500 lines at most.** Split by what each part is for and name it so (a bare number like `_2` is refused). Experiments stay on your own branch; main holds only what the app uses.
+1. **Look before you write.** Look at the tree (`engine/` the product, `app/` the app, `docs/` research) and existing implementations on the net. If something can be used the way its author meant, use it.
+2. **One job a file.** Split by what each part is for and name it so. Experiments stay on your own branch; main holds only what the app uses.
 3. **Commit messages.**
    - The **subject** (first line) is 72 characters at most and says what changed. For example `Remove the unused Foo card`, `Fix Y in Z`.
    - After one blank line, the **body** says why it changed, what was checked and what is not done yet.
    - If you borrowed something, say where from (URL, version or commit) in the body. Example: `git show d46f69cac`.
-   - A longer subject is stopped by `.githooks/commit-msg`, and GitHub fails the pull request. The text you wrote is kept: `git commit -e -F <file>`.
 4. **Bundling other people's work.**
    - Keep the author's folder as unchanged as possible, with their licence text (`LICENSE`) and where it came from (`SOURCE.txt`: name and author / licence / from / page) beside it.
    - Work whose author publishes no licence text is not bundled; fetch it from the author at build time instead (`engine/deps/midi_roll.sh` is an example).

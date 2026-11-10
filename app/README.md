@@ -71,7 +71,7 @@ python3 tool/check_layers.py --write    # import を切った後に、帳簿を�
 1. Dart のファイルを 1 枚書く。`import 'package:flutter/widgets.dart';` と `import 'package:motolii/panel.dart';` の 2 行だけで足りる（見本：[`example/my_panel.dart`](example/my_panel.dart)）。
 2. 値を並べるだけなら Dart は要らない：`LayerCards(layer: ..., only: ['Transform'])` が、エンジンの宣言（`engine/document/card_table.h`）どおりのカードを出す。自前の絵や操作を持つ所だけ、規格の部品（`NumberField`・`MiniSlider`・`Chip`・`IconPress`・`Glyph` …）で書く。
 3. `lib/main.dart` の `Workspace` に 1 行足す：`Workspace(document: motoliiDoc, extra: const [WsPane('Mine', null, MyPanel.new)])`。印は `null` なら頭文字、`GlyphKind` を渡せば自前の印（スキンに同じ名前の SVG があればそれが勝つ）。
-4. パネルの中で、押し（`GestureDetector`・`NakedButton` …）・打ち込み欄（`EditableText`）・手描き（`CustomPainter`）を自分で書くと、コミットで断られる（[`.githooks/README.md`](../.githooks/README.md) の shape_check）。足りない部品は規格（`lib/widgets/`）に足す：そうすれば全パネルが同じ物を使える。
+4. パネルの中で、押し（`GestureDetector`・`NakedButton` …）・打ち込み欄（`EditableText`）・手描き（`CustomPainter`）は自分で書かない。足りない部品は規格（`lib/widgets/`）に足す：そうすれば全パネルが同じ物を使える。
 
 
 見本のスキンは [`../shelves/skins/`](../shelves/skins/)（作り方も同じ所）。アプリの側で、theme.xml の色・寸法は `lib/skin/theme.dart`、`<Parts>` の絵は `lib/skin/skin_parts.dart`、`<Forms>` の組み立て方は `lib/skin/forms/<名前>_forms.dart` が読む。

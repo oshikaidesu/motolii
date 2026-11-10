@@ -7,7 +7,7 @@
 #                 static, inline, extern, const and constexpr out, which change what compiles and not what runs
 #   macro         a #define (an include guard is not listed)
 #   declaration   a prototype or an extern variable: a name said here and defined elsewhere
-# The parser is not ours: ast-grep (tree-sitter's C++ grammar) with the project file .githooks/sgconfig.yml, which
+# The parser is not ours: ast-grep (tree-sitter's C++ grammar) with the project file tools/sgconfig.yml, which
 # reads .h and .mm as C++. Nothing is compiled, so a commit can be read as well as the checkout.
 #
 #   python3 engine/tools/function_census.py                 the census, then "#" lines of counts
@@ -20,7 +20,7 @@ import hashlib, json, os, re, subprocess, sys, tempfile
 from collections import Counter, defaultdict, namedtuple
 
 ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-CONFIG = os.path.join(os.path.dirname(ROOT), '.githooks', 'sgconfig.yml')
+CONFIG = os.path.join(ROOT, 'tools', 'sgconfig.yml')
 Item = namedtuple('Item', 'kind name file linkage line signature hash')
 
 # (at namespace scope: in no function body and no class body)

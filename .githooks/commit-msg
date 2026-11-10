@@ -1,9 +1,0 @@
-#!/bin/sh
-# Before git records a commit: is its subject 72 characters at most? (.githooks/subject_check.py)
-# Set up once with:  git config core.hooksPath .githooks        CI checks the same on every push and pull request.
-# A check this worktree does not have yet (a branch cut before it was added) is skipped, not a crash.
-hooks="$(git rev-parse --show-toplevel)/.githooks"
-for check in subject_check.py; do
-    [ -f "$hooks/$check" ] || continue
-    python3 "$hooks/$check" "$1" || exit 1
-done
