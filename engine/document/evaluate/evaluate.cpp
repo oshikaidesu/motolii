@@ -39,6 +39,7 @@
 #include "document/document.h"
 #include "document/edit/arrange.h"
 #include "document/evaluate/camera.h"
+#include "document/evaluate/evaluation.h"
 #include "document/evaluate/fx_list.h"
 #include "document/evaluate/material.h"
 #include "document/evaluate/moment_fx.h"
@@ -106,19 +107,10 @@ void doc_evaluate(Doc& d, double now) {
     for (auto& [layer, t] : d.on_stage.shown)
       if (t.celMove && doc_cel(d, layer, now) != t.cel)
         return (void)doc_match(d);
-  const std::vector<int> lie = doc_laid(d);
-  // The state of each layer at this time, in stacking order. `on` says whether
-  // the layer is shown now. `solid` says whether the layer takes part in depth
-  // sorting with other solid layers. `since` is the time in seconds since the
-  // layer started. `open` says whether its 3D box is open.
-  struct Lies {
-    int layer;
-    DocShownLayer* shown;
-    bool on, solid;
-    double since;
-    bool open;
-  };
-  std::vector<Lies> lies;
+  Evaluation evaluation{d, s, now};
+  evaluation.lie = doc_laid(d);
+  const std::vector<int>& lie = evaluation.lie;
+  std::vector<EvaluatedLayer>& lies = evaluation.lies;
   // While any layer is solo, only solo layers are shown.
   bool solo = false;
   for (int layer : lie) solo = solo || doc_number(d, layer, "solo", 0, 0) > 0.5;
@@ -150,14 +142,14 @@ void doc_evaluate(Doc& d, double now) {
     // A layer is on when it is within its time range, visible, and not excluded
     // by solo. A layer that is not a 2D layer, or whose box is open, takes part
     // in depth sorting with the solid layers.
-    Lies one{layer,
-             &found->second,
-             since >= 0.0 && (lasts < 0.0 || since < lasts) &&
-                 doc_number(d, layer, "visible", 0, 1) > 0.5 &&
-                 (!solo || solo_of(layer)),
-             found->second.space != 2 || open,
-             since,
-             open};
+    EvaluatedLayer one{layer,
+                       &found->second,
+                       since >= 0.0 && (lasts < 0.0 || since < lasts) &&
+                           doc_number(d, layer, "visible", 0, 1) > 0.5 &&
+                           (!solo || solo_of(layer)),
+                       found->second.space != 2 || open,
+                       since,
+                       open};
     lies.push_back(one);
   }
   // The camera is the last camera layer in stacking order that is active now.
@@ -250,7 +242,7 @@ void doc_evaluate(Doc& d, double now) {
       s.camera->setProjection(
           30.0, double(s.w) / double(s.h), 0.05,
           60.0 * std::max(1.0, d.working_camera.position[2]));
-      for (Lies& l : lies) l.on = l.on && l.shown->space != 2;
+      for (EvaluatedLayer& l : lies) l.on = l.on && l.shown->space != 2;
     }
   }
   doc_look(d);
@@ -261,7 +253,8 @@ void doc_evaluate(Doc& d, double now) {
   // runs are in the stage's own view and are kept in order by Filament render
   // channels. Within a run of flat layers the blend order decides. A flat
   // layer's materials neither read nor write depth.
-  std::vector<int> runOf(lies.size(), -1), sorts;
+  evaluation.runOf.assign(lies.size(), -1);
+  std::vector<int>&runOf = evaluation.runOf, &sorts = evaluation.sorts;
   for (size_t i = 0; i < lies.size(); ++i) {
     // A camera, a behaviour or a light belongs to no run because nothing of it
     // is drawn.
@@ -273,7 +266,8 @@ void doc_evaluate(Doc& d, double now) {
     runOf[i] = (int)sorts.size() - 1;
   }
   // `base` is 1 when flat layers lie under the first solid layers.
-  const int base = sorts.size() > 1 && sorts[0] == 0 && sorts[1] == 1 ? 1 : 0;
+  evaluation.base = sorts.size() > 1 && sorts[0] == 0 && sorts[1] == 1 ? 1 : 0;
+  const int base = evaluation.base;
   // Returns the effects state of a layer drawn on its own, building it if
   // needed. Unless `shows` is true, the layer's sheet is laid over what is
   // behind it with the layer's blend mode when that mode is add, multiply or
@@ -297,7 +291,7 @@ void doc_evaluate(Doc& d, double now) {
       if (!doc_holds_fx(d, up)) continue;
       const auto at =
           std::find_if(lies.begin(), lies.end(),
-                       [&](const Lies& l) { return l.layer == up; });
+                       [&](const EvaluatedLayer& l) { return l.layer == up; });
       if (at != lies.end() && runOf[(size_t)(at - lies.begin())] >= 0)
         return made(up, false).view->getScene();
     }
@@ -1318,7 +1312,7 @@ void doc_evaluate(Doc& d, double now) {
   // light that is on asks for them. Otherwise crisp shadows are used.
   {
     bool soft = false;
-    for (const Lies& one : lies)
+    for (const EvaluatedLayer& one : lies)
       soft = soft || (one.on && !one.shown->light.isNull() &&
                       doc_number(d, one.layer, "shadow_softness", 0, 0) > 0.0);
     s.view->setShadowType(soft ? View::ShadowType::PCSS
@@ -1327,7 +1321,7 @@ void doc_evaluate(Doc& d, double now) {
   // The lights. Each is in every scene of the stage while it is on, where it
   // is, shining in the direction it is turned, as strong as it is now. An
   // intensity of 1 is as bright as the stage's own light.
-  for (const Lies& one : lies) {
+  for (const EvaluatedLayer& one : lies) {
     const utils::Entity e = one.shown->light;
     if (e.isNull()) continue;
     std::vector<Scene*> all{s.scene};
