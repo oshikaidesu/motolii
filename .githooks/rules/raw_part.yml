@@ -1,0 +1,13 @@
+# The standard (app/lib/widgets/, with the skin's forms and tokens) is what a panel is made of: one part per mechanism,
+# so that a change to the part reaches every panel. Its raw materials are not written in a panel a second time.
+# Seen failing: 18 matches in app/lib/workspace and app/lib/inspector on af3f3073d; in a commit the count per file
+# only falls (shape_check.sh).
+id: raw-part
+language: dart
+severity: error
+message: a raw part the standard already wraps, written in a panel
+note: a press is Hov, IconPress or Chip; a slider is MiniSlider; a typed field is TypedField or NumberField; a line of text on a canvas is lineText (all in package:motolii/panel.dart)
+ignores: ['**/motolii_bindings.dart', '**/lib/widgets/**', '**/lib/skin/**']
+rule:
+  kind: identifier
+  regex: ^(NakedButton|NakedSlider|EditableText|TextPainter)$

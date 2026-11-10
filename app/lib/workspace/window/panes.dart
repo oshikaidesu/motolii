@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import '../../skin/forms/forms.dart';
 import '../../skin/tokens.dart';
 import '../dock/dock_glyphs.dart';
+import '../../widgets/glyphs.dart' show GlyphKind;
 import '../state/state.dart';
 
 /// The strip a tab starts on; [catalog] is on no strip: it is opened inside the Tool Panel.
@@ -17,7 +18,7 @@ enum WsAt { shelves, stage, timeline, ease, inspector, tools, catalog }
 class WsPane {
   const WsPane(this.name, this.glyph, this.build, {this.at = WsAt.inspector, this.minSize = 160, this.iconOnly = false, this.tone, this.acts = ''});
   final String name;
-  final DockG? glyph; // (none: the pane's first letter)
+  final GlyphKind? glyph; // (none: the pane's first letter; a DockG, or a set of marks of one's own)
   final Widget Function() build;
   final double minSize;
   final bool iconOnly;
