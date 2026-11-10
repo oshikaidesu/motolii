@@ -19,21 +19,21 @@ import 'package:motolii/widgets/two_fingers.dart';
 ///
 /// Every block still shows the number and takes typing, scrubbing and the sideways slide. The picture is added, never a replacement.
 /// Numbers always scrub sideways. A picture may handle the pointer its own way: a dial turns, a pad moves both ways.
-class ParamTile extends StatelessWidget {
-  const ParamTile(this.p, {super.key});
-  final Param p;
+class ParameterTile extends StatelessWidget {
+  const ParameterTile(this.p, {super.key});
+  final Parameter p;
 
   String get id => 'v_${p.id}';
 
   Widget _num(BuildContext context, {String? sub, String? caption, Widget? glyph, bool owns = false, bool tall = false}) {
     final fid = sub == null ? id : '$id.$sub';
     return RowInfo(
-      keys: Ctx.of(context).doc.keys[id] ?? KeyS.off,
-      child: NumField(p, id: fid, caption: caption ?? p.label, glyph: glyph, glyphOwnsPointer: owns, glyphTall: tall),
+      keys: InspectorScope.of(context).doc.keys[id] ?? KeyframeState.off,
+      child: InspectorNumberField(p, id: fid, caption: caption ?? p.label, glyph: glyph, glyphOwnsPointer: owns, glyphTall: tall),
     );
   }
 
-  /// How strongly the parameter changes the result (`Param.weight`, 0 to 10), as a step from 0 to 3.
+  /// How strongly the parameter changes the result (`Parameter.weight`, 0 to 10), as a step from 0 to 3.
   ///
   /// Each step above 0 tints the block with its own colour, so strength reads as a gradation of colour, not as yes or no,
   /// and the block stays quiet enough that the rest is still read. The tint follows GitHub's dark-page labels (Primer):
@@ -71,7 +71,7 @@ class ParamTile extends StatelessWidget {
   };
 
   Widget _body(BuildContext context) {
-    final x = Ctx.of(context), doc = x.doc, v = doc.get(id);
+    final x = InspectorScope.of(context), doc = x.doc, v = doc.get(id);
     final gauge = SizedBox.square(
       dimension: InspectorSkin.glyph,
       child: FittedBox(child: Gauge(v, p)),
@@ -113,7 +113,7 @@ class ParamTile extends StatelessWidget {
       ),
     );
     switch (p.look) {
-      case ParamLook.toggle:
+      case ParameterLook.toggle:
         final b = (v ?? 0) > 0;
         return shell(
           onTap: () => doc.set(id, b ? 0 : 1),
@@ -130,7 +130,7 @@ class ParamTile extends StatelessWidget {
             ),
           ),
         );
-      case ParamLook.choice:
+      case ParameterLook.choice:
         return shell(
           SizedBox(
             height: Shape.z(22),
@@ -145,10 +145,10 @@ class ParamTile extends StatelessWidget {
                 : _ChoiceField(id: id, options: p.options),
           ),
         );
-      case ParamLook.color when p.unit == 'words':
+      case ParameterLook.color when p.unit == 'words':
         // Free text, possibly several lines. It is committed when the field loses focus and Esc restores it (like Cavalry's string attribute).
-        return shell(ParamWords(id: id), tall: true);
-      case ParamLook.color when p.unit == 'file':
+        return shell(ParameterWords(id: id), tall: true);
+      case ParameterLook.color when p.unit == 'file':
         // A file chosen from a shelf, such as a text layer's font from the Fonts shelf, as a colour is chosen from the Colors shelf.
         return shell(
           Padding(
@@ -156,10 +156,10 @@ class ParamTile extends StatelessWidget {
             child: LinkLine(to: LinkTo.fonts, value: doc.s2[id] ?? '—', id: id),
           ),
         );
-      case ParamLook.color when p.unit == 'numbers':
+      case ParameterLook.color when p.unit == 'numbers':
         // A list of numbers, such as a bar chart's heights, edited as bars the user drags up and down. Committed on release.
         return shell(_Heights(id: id));
-      case ParamLook.color:
+      case ParameterLook.color:
         final all = (doc.s2[id] ?? '—').split(' ').where((c) => hexControls(c) != null).toList();
         return shell(
           glyph: Swatch(doc.s2[id], ramp: all.length > 1 ? all : null),
@@ -169,15 +169,15 @@ class ParamTile extends StatelessWidget {
             child: LinkLine(to: LinkTo.colors, value: all.length > 1 ? '${all.length}' : doc.s2[id] ?? '—', id: id),
           ),
         );
-      case ParamLook.angle:
+      case ParameterLook.angle:
         return _num(
           context,
           glyph: AngleDial(id: id, p: p),
           owns: true,
         );
-      case ParamLook.percent || ParamLook.vertical || ParamLook.horizontal || ParamLook.bipolar || ParamLook.bar || ParamLook.scrub:
+      case ParameterLook.percent || ParameterLook.vertical || ParameterLook.horizontal || ParameterLook.bipolar || ParameterLook.bar || ParameterLook.scrub:
         return _num(context, glyph: gauge);
-      case ParamLook.seed:
+      case ParameterLook.seed:
         return _num(
           context,
           glyph: SizedBox.square(
@@ -188,15 +188,15 @@ class ParamTile extends StatelessWidget {
           ),
           owns: true,
         );
-      case ParamLook.stepper:
+      case ParameterLook.stepper:
         return _num(
           context,
           glyph: Steps(id: id, p: p),
           owns: true,
           tall: true,
         );
-      case ParamLook.point || ParamLook.size:
-        final point = p.look == ParamLook.point;
+      case ParameterLook.point || ParameterLook.size:
+        final point = p.look == ParameterLook.point;
         return Row(
           children: [
             _PadGlyph(id: id, p: p, size: !point),
@@ -221,7 +221,7 @@ class ParamTile extends StatelessWidget {
 class _PadGlyph extends StatefulWidget {
   const _PadGlyph({required this.id, required this.p, required this.size});
   final String id;
-  final Param p;
+  final Parameter p;
   final bool size;
   @override
   State<_PadGlyph> createState() => _PadGlyphState();
@@ -231,7 +231,7 @@ class _PadGlyphState extends State<_PadGlyph> {
   bool _drag = false, _hot = false;
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), doc = x.doc, p = widget.p;
+    final x = InspectorScope.of(context), doc = x.doc, p = widget.p;
     final ix = '${widget.id}.x', iy = '${widget.id}.y';
     final lo = p.min ?? double.negativeInfinity, hi = p.max ?? double.infinity;
     double step(double v, double d) => double.parse((v + d * p.perPx).clamp(lo, hi).toStringAsFixed(math.max(p.dec, 2)));
@@ -282,7 +282,7 @@ class _HeightsState extends State<_Heights> {
   List<double>? _held;
   double _top = 1;
 
-  List<double> _said(Doc doc) {
+  List<double> _said(InspectorValues doc) {
     final w = [for (final s in (doc.s2[widget.id] ?? '').split(' ')) ?double.tryParse(s)];
     // With no value yet, start from eight equal bars to drag.
     return w.isEmpty ? List.filled(8, 1) : w;
@@ -295,7 +295,7 @@ class _HeightsState extends State<_Heights> {
 
   @override
   Widget build(BuildContext context) {
-    final doc = Ctx.of(context).doc, v = _held ?? _said(doc);
+    final doc = InspectorScope.of(context).doc, v = _held ?? _said(doc);
     return SizedBox(
       height: Shape.z(24),
       child: LayoutBuilder(
@@ -369,7 +369,7 @@ class _ChoiceSync extends StatelessWidget {
   final Widget child;
   @override
   Widget build(BuildContext context) {
-    final doc = Ctx.of(context).doc;
+    final doc = InspectorScope.of(context).doc;
     final i = options.indexOf(doc.s2[id] ?? options.first);
     if (i >= 0 && doc.get(id) != i) {
       WidgetsBinding.instance.addPostFrameCallback((_) => doc.set(id, i.toDouble()));

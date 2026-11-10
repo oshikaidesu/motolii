@@ -23,8 +23,8 @@ import 'package:motolii/storage/free_name.dart' show firstFree;
 import 'package:motolii/widgets/text_gestures.dart';
 
 /// One project listed: its file, and the facts saved in it. [facts] and [picture] are null until read, or if the project saved none.
-class HomeDoc {
-  HomeDoc(this.path, this.changed, this.bytes);
+class HomeProject {
+  HomeProject(this.path, this.changed, this.bytes);
   final String path;
   final DateTime changed;
   final int bytes;
@@ -63,7 +63,7 @@ class HomeWindow extends StatefulWidget {
 class _HomeWindowState extends State<HomeWindow> {
   // The last sort order chosen, kept like AbsentMotion's sortBy.
   static var byName = false;
-  List<HomeDoc> _docs = const [];
+  List<HomeProject> _docs = const [];
   // The card whose menu is open.
   String? _menu;
   // The card waiting for the user to confirm moving it to the Trash.
@@ -94,11 +94,11 @@ class _HomeWindowState extends State<HomeWindow> {
   // Counts reads so each read writes thumbnails under new names and never overwrites one that is on screen.
   var _reads = 0;
   void _read() {
-    final docs = <HomeDoc>[], read = _reads++;
+    final docs = <HomeProject>[], read = _reads++;
     for (final f in Directory(widget.folder).listSync().whereType<File>()) {
       if (!f.path.endsWith('.motolii')) continue;
       final s = f.statSync();
-      docs.add(HomeDoc(f.path, s.modified, s.size));
+      docs.add(HomeProject(f.path, s.modified, s.size));
     }
     setState(() => _docs = docs);
     for (final (i, d) in docs.indexed) {
@@ -115,7 +115,7 @@ class _HomeWindowState extends State<HomeWindow> {
   }
 
   /// Copies the project next to it, named "Name Copy" (AbsentMotion's naming), with a number added if that name is taken.
-  void _duplicate(HomeDoc d) {
+  void _duplicate(HomeProject d) {
     final to = firstFree('${widget.folder}/${d.name} Copy.motolii', (f) => File(f).existsSync(), (n) => '${widget.folder}/${d.name} Copy $n.motolii');
     File(d.path).copySync(to);
     _menu = null;
@@ -123,7 +123,7 @@ class _HomeWindowState extends State<HomeWindow> {
   }
 
   /// Moves the project to the user's ~/.Trash, as the Finder does, adding a number if the name is taken there.
-  void _trash(HomeDoc d) {
+  void _trash(HomeProject d) {
     final trash = '${Platform.environment['HOME']}/.Trash';
     final to = firstFree('$trash/${d.name}.motolii', (f) => File(f).existsSync(), (n) => '$trash/${d.name} $n.motolii');
     try {
@@ -146,11 +146,11 @@ class _HomeWindowState extends State<HomeWindow> {
           for (final d in _docs)
             if (d.name.toLowerCase().contains(_find.toLowerCase())) d,
         ];
-    Widget grid(List<HomeDoc> docs) => Wrap(spacing: 20, runSpacing: 20, children: [for (final d in docs) _card(d)]);
+    Widget grid(List<HomeProject> docs) => Wrap(spacing: 20, runSpacing: 20, children: [for (final d in docs) _card(d)]);
     if (byName) {
       rows.add(grid(shown..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()))));
     } else {
-      final byDay = <String, List<HomeDoc>>{};
+      final byDay = <String, List<HomeProject>>{};
       for (final d in shown..sort((a, b) => b.changed.compareTo(a.changed))) {
         (byDay[_day(d.changed)] ??= []).add(d);
       }
@@ -259,7 +259,7 @@ class _HomeWindowState extends State<HomeWindow> {
   // A square thumbnail above the name, as in CapCut's desktop grid.
   static const _tile = 150.0;
 
-  Widget _card(HomeDoc d) {
+  Widget _card(HomeProject d) {
     final f = d.facts, open = d.path == widget.open;
     return SizedBox(
       width: _tile,
@@ -365,7 +365,7 @@ class _HomeWindowState extends State<HomeWindow> {
 
   /// The aspect ratio and resolution, then the frame rate, as AbsentMotion shows them.
   /// A known ratio gives "9:16" and the shorter side as "1080p"; any other gives "1080x1350".
-  static List<String> _facts(HomeDoc d) {
+  static List<String> _facts(HomeProject d) {
     final f = d.facts;
     if (f == null) return const [];
     String? ratio;

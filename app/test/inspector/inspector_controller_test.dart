@@ -1,10 +1,10 @@
-// Doc, the values the inspector's cards edit: what each call changes and who hears of it (the Doc's own listeners,
-// counted here, and the per-field counters of Doc.watch). The expected values are what the code gave when this was
+// InspectorValues, the values the inspector's cards edit: what each call changes and who hears of it (the InspectorValues's own listeners,
+// counted here, and the per-field counters of InspectorValues.watch). The expected values are what the code gave when this was
 // written, so a move or a split that changes one fails here. Needs no engine.
 import 'dart:ui' show Color;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motolii/inspector/inspector_card.dart' show Fx;
+import 'package:motolii/inspector/inspector_card.dart' show CardDeclaration;
 import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/inspector_values.dart';
 
@@ -27,12 +27,12 @@ struct Second {
 
 Color _tone() => const Color(0xFF000000);
 
-Doc _doc() {
-  final doc = Doc(
+InspectorValues _doc() {
+  final doc = InspectorValues(
     Kind.shape,
     cards: [
-      Fx('First', _first, toneOf: _tone),
-      Fx('Second', _second, toneOf: _tone),
+      CardDeclaration('First', _first, toneOf: _tone),
+      CardDeclaration('Second', _second, toneOf: _tone),
     ],
   );
   addTearDown(doc.dispose);
@@ -40,7 +40,7 @@ Doc _doc() {
 }
 
 void main() {
-  test('a new Doc starts from the defaults its cards declare', () {
+  test('a new InspectorValues starts from the defaults its cards declare', () {
     final doc = _doc();
     expect(doc.v, {'v_amount': 4, 'v_center.x': .5, 'v_center.y': .25, 'v_mode': 1, 'v_x': 0, 'v_radius': 0, 'v_angle': 0});
     expect(doc.d, doc.v);
@@ -113,9 +113,9 @@ void main() {
     final doc = _doc(), amount = doc.watch('v_amount'), mark = doc.watch('key:v_amount');
     var told = 0;
     doc.addListener(() => told++);
-    expect(doc.showAt({'v_amount': 7, 'v_x': 0}, {'v_amount': KeyS.at}), isFalse);
-    expect((doc.v['v_amount'], doc.keys['v_amount'], amount.value, mark.value), (7, KeyS.at, 1, 1));
-    expect(doc.showAt({'v_amount': 7}, {'v_amount': KeyS.at}), isFalse);
+    expect(doc.showAt({'v_amount': 7, 'v_x': 0}, {'v_amount': KeyframeState.at}), isFalse);
+    expect((doc.v['v_amount'], doc.keys['v_amount'], amount.value, mark.value), (7, KeyframeState.at, 1, 1));
+    expect(doc.showAt({'v_amount': 7}, {'v_amount': KeyframeState.at}), isFalse);
     expect((amount.value, mark.value), (1, 1));
     expect(doc.showAt({'v_x': 3}, {}), isTrue);
     expect((doc.v['v_x'], told), (3, 0));
@@ -125,8 +125,8 @@ void main() {
     final doc = _doc(), mark = doc.watch('key:v_position');
     var told = 0;
     doc.addListener(() => told++);
-    doc.setKey('v_position', KeyS.anim);
-    expect((doc.keys['v_position'], mark.value, told), (KeyS.anim, 1, 1));
+    doc.setKey('v_position', KeyframeState.anim);
+    expect((doc.keys['v_position'], mark.value, told), (KeyframeState.anim, 1, 1));
   });
 
   test('resetIds writes the defaults and notifies once', () {
@@ -141,12 +141,12 @@ void main() {
 
   test('resetIds puts a key at the playhead on a property that is animated, or on every one while animateAll is on', () {
     final doc = _doc();
-    doc.keys['v_position'] = KeyS.anim;
+    doc.keys['v_position'] = KeyframeState.anim;
     doc.resetIds(['v_x', 'v_amount']); // v_x is a value of the position property.
-    expect(doc.keys, {'v_position': KeyS.at});
+    expect(doc.keys, {'v_position': KeyframeState.at});
     doc.animateAll = true;
     doc.resetIds(['v_amount']);
-    expect(doc.keys, {'v_position': KeyS.at, 'v_amount': KeyS.at});
+    expect(doc.keys, {'v_position': KeyframeState.at, 'v_amount': KeyframeState.at});
   });
 
   group('pick', () {
@@ -215,7 +215,7 @@ void main() {
   });
 
   test('dispose shuts the field counters too', () {
-    final doc = Doc(Kind.shape), amount = doc.watch('v_amount');
+    final doc = InspectorValues(Kind.shape), amount = doc.watch('v_amount');
     doc.dispose();
     expect(() => amount.addListener(() {}), throwsFlutterError);
   });

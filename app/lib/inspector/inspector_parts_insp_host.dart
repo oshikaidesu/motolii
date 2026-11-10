@@ -1,4 +1,4 @@
-// Owns the panel's values (Doc) and provides them again whenever they change. A different kind makes a new document, so give the widget a key.
+// Owns the panel's values (InspectorValues) and provides them again whenever they change. A different kind makes a new document, so give the widget a key.
 // The look follows docs/app/DESIGN.md: hairlines, type carries hierarchy, grey levels, and an accent only for Role.selected.
 
 import 'package:flutter/foundation.dart' show ValueListenable, listEquals, mapEquals;
@@ -6,10 +6,10 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/inspector/inspector_values.dart';
 
-/// Owns the panel's values ([Doc]) and provides them again whenever they change.
+/// Owns the panel's values ([InspectorValues]) and provides them again whenever they change.
 /// A different kind makes a new document, so give the widget a key.
-class InspHost extends StatefulWidget {
-  const InspHost({
+class InspectorHost extends StatefulWidget {
+  const InspectorHost({
     super.key,
     required this.kind,
     required this.kindWord,
@@ -51,14 +51,14 @@ class InspHost extends StatefulWidget {
   final Kind kind;
   final Widget child;
 
-  /// The caller's name for the kind (see [Doc.kindWord]).
+  /// The caller's name for the kind (see [InspectorValues.kindWord]).
   final String? kindWord;
 
   /// The values and key marks at a new time, applied without rebuilding the host.
   /// During playback only the time moves, so the fields that show the values follow and the rest of the inspector stays as built.
-  final ValueListenable<(Map<String, double>, Map<String, KeyS>)> live;
+  final ValueListenable<(Map<String, double>, Map<String, KeyframeState>)> live;
 
-  /// The caller's effects as cards that move up or down its stack (see [Doc.movable]).
+  /// The caller's effects as cards that move up or down its stack (see [InspectorValues.movable]).
   final List<String> movable;
   final void Function(String title, int by)? onCardMove;
   final double? Function(String sum) onSum;
@@ -72,7 +72,7 @@ class InspHost extends StatefulWidget {
   /// Removes an effect (Remove on the card head, like Alight Motion's Delete).
   final void Function(String title)? onCardRemove;
 
-  /// Builds the code view of a card (see [Doc.cardCode]).
+  /// Builds the code view of a card (see [InspectorValues.cardCode]).
   final Widget? Function(String title, List<String> names)? cardCode;
 
   /// Turns an effect off or on again, keeping its values (like the eye on an effect in Alight Motion).
@@ -96,8 +96,8 @@ class InspHost extends StatefulWidget {
   /// Pastes the copied card values (Paste on the card head).
   final VoidCallback? onCardPaste;
 
-  /// The caller's own cards of values (see [Doc.cards]).
-  final List<Fx>? cards;
+  /// The caller's own cards of values (see [InspectorValues.cards]).
+  final List<CardDeclaration>? cards;
 
   /// The selected layer's name, when the caller knows it.
   final String? title;
@@ -113,7 +113,7 @@ class InspHost extends StatefulWidget {
   final Map<String, String> strs;
 
   /// The key mark of each property (position, scale, rotation ...) as the caller's document has it.
-  final Map<String, KeyS> keyMarks;
+  final Map<String, KeyframeState> keyMarks;
 
   /// Values changed in the inspector. [live] is true while a drag is still in progress, and the call is repeated once when the drag ends.
   final void Function(Map<String, double> changed, {required bool live}) onValues;
@@ -122,7 +122,7 @@ class InspHost extends StatefulWidget {
   final VoidCallback onDrop;
 
   /// A property's key mark was changed in the inspector.
-  final void Function(String prop, KeyS mark) onKey;
+  final void Function(String prop, KeyframeState mark) onKey;
 
   /// Strings changed in the inspector, such as a text's content or a chooser's choice.
   /// Returns false if the caller did not take them, and the fields go back to their previous strings.
@@ -142,13 +142,13 @@ class InspHost extends StatefulWidget {
   /// Wraps one change of the inspector, values then key marks, so the caller can record it as one undo step.
   final void Function(VoidCallback tells) together;
   @override
-  State<InspHost> createState() => _InspHostState();
+  State<InspectorHost> createState() => _InspectorHostState();
 }
 
-class _InspHostState extends State<InspHost> {
-  late Doc doc = _make();
-  Doc _make() {
-    final d = Doc(widget.kind, cards: widget.cards ?? const []);
+class _InspectorHostState extends State<InspectorHost> {
+  late InspectorValues doc = _make();
+  InspectorValues _make() {
+    final d = InspectorValues(widget.kind, cards: widget.cards ?? const []);
     _wire(d);
     d
       ..v.addAll(widget.values)
@@ -172,7 +172,7 @@ class _InspHostState extends State<InspHost> {
   }
 
   /// Gives the document what the caller says about the selected layer, as it is now.
-  void _wire(Doc d) => d
+  void _wire(InspectorValues d) => d
     ..title = widget.title
     ..kindWord = widget.kindWord
     ..movable = widget.movable
@@ -194,7 +194,7 @@ class _InspHostState extends State<InspHost> {
 
   // What the caller has been told of or gave. Only what differs from it is reported.
   final _seen = <String, double>{};
-  final _seenKeys = <String, KeyS>{};
+  final _seenKeys = <String, KeyframeState>{};
   final _seenWords = <String, String>{};
   final _seenFlags = <String, bool>{};
   bool _live = false;
@@ -266,7 +266,7 @@ class _InspHostState extends State<InspHost> {
   }
 
   @override
-  void didUpdateWidget(InspHost o) {
+  void didUpdateWidget(InspectorHost o) {
     super.didUpdateWidget(o);
     if (o.live != widget.live) {
       o.live.removeListener(_atMoment);
@@ -340,5 +340,5 @@ class _InspHostState extends State<InspHost> {
 
   int _tick = 0;
   @override
-  Widget build(BuildContext context) => Ctx(doc: doc, tick: _tick, child: widget.child);
+  Widget build(BuildContext context) => InspectorScope(doc: doc, tick: _tick, child: widget.child);
 }

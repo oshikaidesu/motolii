@@ -108,7 +108,7 @@ class ChooserState extends State<Chooser> {
     setState(() => _open = open);
     open ? _portal.show() : _portal.hide();
     if (open) {
-      _at = widget.options.indexOf(Ctx.read(context).doc.s2[widget.id] ?? widget.options.first);
+      _at = widget.options.indexOf(InspectorScope.read(context).doc.s2[widget.id] ?? widget.options.first);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _node.requestFocus();
@@ -177,7 +177,7 @@ class ChooserState extends State<Chooser> {
 
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), cur = x.doc.s2[widget.id] ?? widget.options.first;
+    final x = InspectorScope.of(context), cur = x.doc.s2[widget.id] ?? widget.options.first;
     void pick(String o) {
       x.doc.str(widget.id, o);
       _set(false);
@@ -246,11 +246,11 @@ class ChooserState extends State<Chooser> {
 }
 
 /// The Inspector's header: the layer's kind icon, name and kind, and the Animate all switch.
-class InspHeader extends StatelessWidget {
-  const InspHeader({super.key});
+class InspectorHeader extends StatelessWidget {
+  const InspectorHeader({super.key});
   @override
   Widget build(BuildContext context) {
-    final doc = Ctx.of(context).doc;
+    final doc = InspectorScope.of(context).doc;
     // The name the app gives the layer kind, for kinds that have no word of their own.
     final w = doc.kindWord;
     final (word, glyph) = switch (doc.kind) {
@@ -320,7 +320,7 @@ class EmptyState extends StatelessWidget {
   const EmptyState({super.key});
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), ed = const InspectorHairline();
+    final x = InspectorScope.of(context), ed = const InspectorHairline();
     // One plain muted line, with no controls and no stale values.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

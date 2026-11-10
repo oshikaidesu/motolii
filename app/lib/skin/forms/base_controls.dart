@@ -7,7 +7,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/skin/forms/forms.dart';
 
-abstract final class Usual {
+abstract final class BaseControls {
   /// A row of round options in a well, with the selected one filled.
   static Widget segment(BuildContext context, ChoiceSpec c) => Container(
     height: Shape.z(20),

@@ -10,7 +10,7 @@ import 'package:motolii/skin/tokens.dart';
 class AngleDial extends StatefulWidget {
   const AngleDial({super.key, required this.id, required this.p});
   final String id;
-  final Param p;
+  final Parameter p;
   @override
   State<AngleDial> createState() => _AngleDialState();
 }
@@ -26,7 +26,7 @@ class _AngleDialState extends State<AngleDial> {
 
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), doc = x.doc;
+    final x = InspectorScope.of(context), doc = x.doc;
     return MouseRegion(
       cursor: SystemMouseCursors.grab,
       onEnter: (_) => setState(() => _hot = true),
@@ -61,7 +61,7 @@ class _AngleDialState extends State<AngleDial> {
           if (_last != null) doc.endGesture();
           _last = null;
         },
-        // Repaints when its value changes, as a number field does (Doc.watch), without rebuilding the Inspector.
+        // Repaints when its value changes, as a number field does (InspectorValues.watch), without rebuilding the Inspector.
         child: ListenableBuilder(
           listenable: doc.watch(widget.id),
           builder: (context, _) => CustomPaint(size: const Size(22, 22), painter: _DialPaint(doc.get(widget.id) ?? 0, _hot || _last != null)),

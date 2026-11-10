@@ -94,7 +94,7 @@ $F/flutter analyze lib
   - Effects はフィルター帯を開いていて 560px 以上なら、帯を一覧の横に縦いっぱいで立てる。狭いと上の帯。
   - **Inspector は縦積みのまま**(カードを横に並べない)。カードの中身を、Effects のパラメーターと同じブロックの格子(`InspectorSkin.tileMin` ごとに列が増える)にする。
 - **Inspector は一目でわかること。** フォント・色の一覧・イージングは、それぞれ専用のパネル(Browser › Fonts、Browser › Colors、Ease のツールパネル)が持つ。Inspector は今の値を見せて、そこへ誘導するだけ(`LinkLine` → `WorkspaceController.route`)。
-- **Inspector の値は Stage と一致させる。** 位置・倍率・回転・塗りは `ArtGeometry.boxOf` と絵の色から渡す(`InspHost(values:, strs:)`)。
+- **Inspector の値は Stage と一致させる。** 位置・倍率・回転・塗りは `ArtGeometry.boxOf` と絵の色から渡す(`InspectorHost(values:, strs:)`)。
 - **パスの操作は同じものを何度でも重ねられる**(パンク膨張の後にまたパンク膨張)。UI 側で数を絞らない。
 - **シードなど普段触らない値も、隠さずに Advanced に置く**(宣言の `@advanced`、`ValuesCard` が畳む)。
 - **テキストは普通に**: 入力欄、その下にサイズ・太さ・色。

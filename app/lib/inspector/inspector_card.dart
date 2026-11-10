@@ -16,15 +16,15 @@ import 'package:motolii/widgets/timeline_painters.dart' show TpGlyph;
 ///
 /// workspace/inspector_feed/cards.dart writes the struct from motolii_cards (card_table.h).
 /// The card's fields are whatever [infer] makes of it.
-class Fx {
-  Fx(this.name, this.wgsl, {required this.toneOf});
+class CardDeclaration {
+  CardDeclaration(this.name, this.wgsl, {required this.toneOf});
   final String name, wgsl;
 
   /// The skin's colour for this card. It is read when drawn, so a card made before the skin changed shows the new colour.
   final Color Function() toneOf;
   Color get tone => toneOf();
-  late final List<Decl> decls = parseWgsl(wgsl);
-  late final List<Param> params = [for (final d in decls) infer(d)];
+  late final List<FieldDeclaration> decls = parseWgsl(wgsl);
+  late final List<Parameter> params = [for (final d in decls) infer(d)];
 }
 
 /// The Copy, Paste and Reset words in the head of a layer's own card, acting on the values [ids] as they are (like After Effects' Reset).
@@ -37,7 +37,7 @@ class CardWords extends StatelessWidget {
   final List<(String, String, VoidCallback)> more;
   @override
   Widget build(BuildContext context) {
-    final doc = Ctx.of(context).doc;
+    final doc = InspectorScope.of(context).doc;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -56,13 +56,13 @@ class CardWords extends StatelessWidget {
   }
 }
 
-/// Draws every card of the panel the same way: one field per Param of its declaration, keyed `v_` plus the param name.
+/// Draws every card of the panel the same way: one field per Parameter of its declaration, keyed `v_` plus the param name.
 class ValuesCard extends StatelessWidget {
   const ValuesCard(this.card, {super.key});
-  final Fx card;
+  final CardDeclaration card;
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), doc = x.doc, k = 'v.${card.name}', adv = doc.b['$k.adv'] ?? false, past = doc.b['$k.past'] ?? false;
+    final x = InspectorScope.of(context), doc = x.doc, k = 'v.${card.name}', adv = doc.b['$k.adv'] ?? false, past = doc.b['$k.past'] ?? false;
     final heroes = [
           for (final p in card.params)
             if (!p.advanced) p,
@@ -74,7 +74,7 @@ class ValuesCard extends StatelessWidget {
     // The main params show first. The advanced ones are folded under a row named for what they are.
     // The index of this card among the movable effects, or -1. Effects can be dragged up or down their stack, as in After Effects.
     final at = doc.movable.indexOf(card.name);
-    final sect = Sect(
+    final sect = Section(
       title: card.name,
       tone: card.tone,
       trailing: (at < 0 || doc.onCardMove == null) && doc.onCardReset == null && doc.onCardCopy == null
@@ -163,8 +163,8 @@ class ValuesCard extends StatelessWidget {
               ],
             ),
       children: [
-        ParamGrid(heroes),
-        if (rest.isNotEmpty) ...[_FoldRow(rest.first.fold ?? 'Advanced', adv, () => doc.flag('$k.adv', !adv)), if (adv) ParamGrid(rest)],
+        ParameterGrid(heroes),
+        if (rest.isNotEmpty) ...[_FoldRow(rest.first.fold ?? 'Advanced', adv, () => doc.flag('$k.adv', !adv)), if (adv) ParameterGrid(rest)],
         if (doc.cardCode?.call(card.name, [for (final p in card.params) p.id]) case final code?) ...[
           // The card's code folds under its params like Advanced does. The params are what the user edits and the code is what they drive.
           _FoldRow('Code', doc.b['$k.code'] ?? false, () => doc.flag('$k.code', !(doc.b['$k.code'] ?? false)), key: ValueKey('card-code:${card.name}')),
@@ -262,7 +262,7 @@ void _drawBin(Canvas c, Size s, Color color) {
 /// The folded card head that follows the pointer while an effect is dragged.
 class FxDragGhost extends StatelessWidget {
   const FxDragGhost(this.fx, {super.key});
-  final Fx fx;
+  final CardDeclaration fx;
   @override
   Widget build(BuildContext context) => Container(
     width: Shape.z(220),

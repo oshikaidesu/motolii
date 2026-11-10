@@ -1,13 +1,13 @@
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/controls/inspector_number_field_num_field_state.dart';
-import 'package:motolii/inspector/controls/param_infer.dart' show Param;
+import 'package:motolii/inspector/controls/param_infer.dart' show Parameter;
 
 /// The Inspector's number field: a [NumberField] wired to the document, with a caption and an optional glyph.
-class NumField extends StatefulWidget {
-  const NumField(this.p, {super.key, required this.id, required this.caption, this.glyph, this.glyphOwnsPointer = false, this.glyphTall = false});
+class InspectorNumberField extends StatefulWidget {
+  const InspectorNumberField(this.p, {super.key, required this.id, required this.caption, this.glyph, this.glyphOwnsPointer = false, this.glyphTall = false});
 
-  /// The parameter as its card declares it. [NumFieldState] reads its unit, decimal places and range from it.
-  final Param p;
+  /// The parameter as its card declares it. [InspectorNumberFieldState] reads its unit, decimal places and range from it.
+  final Parameter p;
 
   /// The document id of the number this field edits.
   final String id;
@@ -26,7 +26,7 @@ class NumField extends StatefulWidget {
   /// Whether the glyph spans the block's full height on the right (stacked buttons) instead of sitting in the corner.
   final bool glyphTall;
   @override
-  State<NumField> createState() => NumFieldState();
+  State<InspectorNumberField> createState() => InspectorNumberFieldState();
 }
 
 /// Placed around a card's fields by the card. It lets their numbers be dragged past the slider's ends.

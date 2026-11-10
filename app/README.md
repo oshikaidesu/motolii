@@ -16,7 +16,7 @@ Flutter で書いたアプリ。描くのもプロジェクトを持つのもエ
 | `lib/storage/` | アプリが手元に残す小さいファイル。`kept_file.dart` ファイルの書き込みと JSON・リストの読み込み、`window_settings.dart` `~/.motolii/window.xml`（倍率と着ているスキン）、`free_name.dart` 空いている名前（コピーに番号を付ける） |
 | `lib/skin/` | 見た目：既定の値と、着ているスキンが差し替える物。`tokens.dart` 色の段と寸法（`docs/app/DESIGN.md` から）、`theme.dart` スキンの theme.xml の色、`skin_parts.dart` スキンの `parts/*.svg`（theme.xml の `<Parts>`）、`forms/` 部品の組み立て方（theme.xml の `<Forms Value="poster"/>` が `poster_forms.dart` を選ぶ。名前の無いスキンは `own_forms.dart`、どのフォームも書かなかった部品は `base_controls.dart`） |
 | `assets/` | アプリが読むデータ。`effect_parameter_weights.json`：効果のパラメーターごとの効き（Effects 棚のタイルが読む）。pubspec の `assets:` には載せない：棚と同じく repo の中から `File` で同期に読む（`lib/workspace/shelf/effect_tiles.dart` の `_entry`） |
-| `test/` | 試験（`flutter test`）。直下の 2 枚は本物の物を見る：`accessibility_guidelines_test.dart` は本物のアプリの画面が Flutter のアクセシビリティの指針を満たすか（エンジンが要る）、`skin_folders_test.dart` は棚のスキンが View › Skin に並ぶか。`inspector/`・`skin/`・`widgets/`・`workspace/` は `lib/` と同じ並びで、エンジンの要らない関数と状態（Inspector の `Doc`、画面の `WorkspaceController`）が今返す値を留める：コードを移したり分けたりして値が変わると落ちる |
+| `test/` | 試験（`flutter test`）。直下の 2 枚は本物の物を見る：`accessibility_guidelines_test.dart` は本物のアプリの画面が Flutter のアクセシビリティの指針を満たすか（エンジンが要る）、`skin_folders_test.dart` は棚のスキンが View › Skin に並ぶか。`inspector/`・`skin/`・`widgets/`・`workspace/` は `lib/` と同じ並びで、エンジンの要らない関数と状態（Inspector の `InspectorValues`、画面の `WorkspaceController`）が今返す値を留める：コードを移したり分けたりして値が変わると落ちる |
 | `integration_test/`、`test_driver/` | 実機の Mac でアプリを動かす試験（`flutter drive`）。`frame_timing_test.dart`：タイムラインを回して 1 コマ 16 ms に収まるか |
 | `build/test_output/` | 試験が書く物（タイムライン、ドライバーの記録）。`build/` の残りは Flutter の作業場 |
 | `tool/live.sh` | アプリを開き、`lib/` の .dart を保存するたびホットリロードを送る（`flutter run` ＋ SIGUSR1）。開くプロジェクトは `MOTOLII_DOC` |

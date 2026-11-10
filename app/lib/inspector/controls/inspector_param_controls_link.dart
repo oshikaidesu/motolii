@@ -24,7 +24,7 @@ class LinkLine extends StatelessWidget {
   final String value, id;
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context);
+    final x = InspectorScope.of(context);
     return Pressable(
       key: ValueKey('link:${to.name}:$id'),
       onTap: () {

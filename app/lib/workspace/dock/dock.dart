@@ -193,7 +193,7 @@ class _ShelfPaneState extends State<ShelfPane> {
             return Padding(
               padding: EdgeInsets.symmetric(horizontal: WindowTokens.inset, vertical: Shape.s(3)),
               child: SingleChildScrollView(
-                // All of them in one line that scrolls sideways, as the chips row does (Usual.chips).
+                // All of them in one line that scrolls sideways, as the chips row does (BaseControls.chips).
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [

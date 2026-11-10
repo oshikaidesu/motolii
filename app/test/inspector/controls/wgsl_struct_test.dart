@@ -3,7 +3,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/inspector/controls/param_infer.dart';
 
-List<Object?> _read(Decl d) => [d.name, d.type, d.attrs, d.advanced, d.fold];
+List<Object?> _read(FieldDeclaration d) => [d.name, d.type, d.attrs, d.advanced, d.fold];
 
 void main() {
   test('a text with no struct has no fields', () {
@@ -30,16 +30,16 @@ struct Other { ignored: f32 }
     expect(
       [for (final d in decls) (d.name, d.type)],
       const [
-        ('a', WType.f32),
-        ('b', WType.f32),
-        ('c', WType.i32),
-        ('d', WType.u32),
-        ('e', WType.boolean),
-        ('f', WType.vec2),
-        ('g', WType.vec2),
-        ('h', WType.vec3),
-        ('i', WType.vec4),
-        ('last', WType.vec4),
+        ('a', WgslType.f32),
+        ('b', WgslType.f32),
+        ('c', WgslType.i32),
+        ('d', WgslType.u32),
+        ('e', WgslType.boolean),
+        ('f', WgslType.vec2),
+        ('g', WgslType.vec2),
+        ('h', WgslType.vec3),
+        ('i', WgslType.vec4),
+        ('last', WgslType.vec4),
       ],
     );
   });
@@ -58,7 +58,7 @@ struct Params {
     expect(decls.map(_read), [
       [
         'blurRadius',
-        WType.f32,
+        WgslType.f32,
         {
           'range': ['0', '200'],
           'unit': ['px'],
@@ -69,7 +69,7 @@ struct Params {
       ],
       [
         'mode',
-        WType.i32,
+        WgslType.i32,
         {
           'enum': ['Low', 'Med', 'High'],
         },
@@ -78,7 +78,7 @@ struct Params {
       ],
       [
         'flip',
-        WType.u32,
+        WgslType.u32,
         {
           'size': ['4'],
           'toggle': <String>[],
@@ -86,7 +86,7 @@ struct Params {
         false,
         null,
       ],
-      ['plain', WType.f32, <String, List<String>>{}, false, null],
+      ['plain', WgslType.f32, <String, List<String>>{}, false, null],
     ]);
   });
 

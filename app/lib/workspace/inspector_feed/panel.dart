@@ -50,7 +50,7 @@ class _InspectorPanelState extends State<InspectorPane> {
   }
 
   // (the moment alone moved: the values and key marks told to the inspector as it stands; anything else: built again)
-  final _live = ValueNotifier<(Map<String, double>, Map<String, KeyS>)>((const {}, const {}));
+  final _live = ValueNotifier<(Map<String, double>, Map<String, KeyframeState>)>((const {}, const {}));
   int? _frame;
   String? _titles; // (the picked thing's cards' titles as last read)
   Object _now(WorkspaceController ws) => (ws.rev, _id(ws), ws.animating);
@@ -166,7 +166,7 @@ class _InspectorPanelState extends State<InspectorPane> {
   Widget build(BuildContext context) {
     final ws = WorkspaceScope.read(context), l = _layerOf(ws), k = _kindOf(l), m = ws.inside!, own = widget.only == null;
     if (!own && l == null) return const SizedBox.shrink(); // (never the stage's cards)
-    Widget host(Widget child) => InspHost(
+    Widget host(Widget child) => InspectorHost(
       key: ValueKey(k),
       kind: k,
       kindWord: _kindWord(ws, l?.id),
@@ -279,7 +279,7 @@ class _InspectorPanelState extends State<InspectorPane> {
               const RelationStack(),
               Expanded(
                 child: LayoutBuilder(builder: (context, box) => host(_panelOf(box))),
-              ), // (the same panel while the pane keeps its size: built again only by what it reads, Ctx)
+              ), // (the same panel while the pane keeps its size: built again only by what it reads, InspectorScope)
             ],
           )
         : host(const _Cards());
@@ -293,7 +293,7 @@ class _Cards extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [for (final c in Ctx.of(context).doc.cards) ValuesCard(c)],
+    children: [for (final c in InspectorScope.of(context).doc.cards) ValuesCard(c)],
   );
 }
 

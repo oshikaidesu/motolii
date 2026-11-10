@@ -1,4 +1,4 @@
-enum KeyS { off, anim, at }
+enum KeyframeState { off, anim, at }
 
 enum Kind { shape, text, camera, group, none }
 

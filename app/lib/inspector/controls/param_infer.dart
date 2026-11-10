@@ -2,10 +2,10 @@
 // so a shader nobody has seen still gets a control that looks like what it moves. Pure Dart: no Flutter.
 import 'dart:math' as math;
 
-enum WType { f32, i32, u32, boolean, vec2, vec3, vec4 }
+enum WgslType { f32, i32, u32, boolean, vec2, vec3, vec4 }
 
 /// How a value is shown and handled. Each look is a different picture of the value, not a different number box.
-enum ParamLook {
+enum ParameterLook {
   /// No range known: a number you drag.
   scrub,
 
@@ -50,18 +50,18 @@ enum ParamLook {
 }
 
 /// One field of the struct as written, with the attributes found on it.
-class Decl {
-  const Decl(this.name, this.type, {this.attrs = const {}, this.advanced = false, this.fold});
+class FieldDeclaration {
+  const FieldDeclaration(this.name, this.type, {this.attrs = const {}, this.advanced = false, this.fold});
   final String name;
-  final WType type;
+  final WgslType type;
   final Map<String, List<String>> attrs;
   final bool advanced;
   final String? fold;
 }
 
 /// What the Inspector needs to draw one parameter. Values are kept in display units (degrees, percent).
-class Param {
-  const Param({
+class Parameter {
+  const Parameter({
     required this.id,
     required this.label,
     required this.look,
@@ -81,7 +81,7 @@ class Param {
     this.weight,
   });
   final String id, label, unit;
-  final ParamLook look;
+  final ParameterLook look;
   final double? min, max;
   final double def, defY;
   final int dec;
@@ -113,24 +113,24 @@ final _structRe = RegExp(r'struct\s+\w+\s*\{([\s\S]*?)\}');
 final _fieldRe = RegExp(r'^\s*(?:@\w+(?:\([^)]*\))?\s*)*(\w+)\s*:\s*([\w<>]+)\s*,?\s*(?://(.*))?$');
 final _attrRe = RegExp(r'@(\w+)(?:\(([^)]*)\))?');
 
-WType? _type(String t) => switch (t) {
-  'f32' || 'f16' => WType.f32,
-  'i32' => WType.i32,
-  'u32' => WType.u32,
-  'bool' => WType.boolean,
-  'vec2f' || 'vec2<f32>' || 'vec2h' => WType.vec2,
-  'vec3f' || 'vec3<f32>' || 'vec3h' => WType.vec3,
-  'vec4f' || 'vec4<f32>' || 'vec4h' => WType.vec4,
+WgslType? _type(String t) => switch (t) {
+  'f32' || 'f16' => WgslType.f32,
+  'i32' => WgslType.i32,
+  'u32' => WgslType.u32,
+  'bool' => WgslType.boolean,
+  'vec2f' || 'vec2<f32>' || 'vec2h' => WgslType.vec2,
+  'vec3f' || 'vec3<f32>' || 'vec3h' => WgslType.vec3,
+  'vec4f' || 'vec4<f32>' || 'vec4h' => WgslType.vec4,
   _ => null,
 };
 
-/// The first struct in [src], one [Decl] per field. Attributes come from `///` lines above a field and `//` after it,
+/// The first struct in [src], one [FieldDeclaration] per field. Attributes come from `///` lines above a field and `//` after it,
 /// e.g. `@range(0, 200) @unit(px) @enum(Low, Med, High) @default(12) @toggle`. A `// @advanced` line marks every field after it;
 /// `// @advanced(Each copy)` names that fold by what it holds.
-List<Decl> parseWgsl(String src) {
+List<FieldDeclaration> parseWgsl(String src) {
   final body = _structRe.firstMatch(src)?.group(1);
   if (body == null) return const [];
-  final out = <Decl>[];
+  final out = <FieldDeclaration>[];
   var pending = <String, List<String>>{};
   var advanced = false;
   String? fold;
@@ -154,7 +154,7 @@ List<Decl> parseWgsl(String src) {
     final t = m == null ? null : _type(m.group(2)!);
     if (m == null || t == null) continue;
     final all = {...pending, ...attrs(line), ...attrs(m.group(3) ?? '')};
-    out.add(Decl(m.group(1)!, t, attrs: all, advanced: advanced || all.containsKey('advanced'), fold: fold));
+    out.add(FieldDeclaration(m.group(1)!, t, attrs: all, advanced: advanced || all.containsKey('advanced'), fold: fold));
     pending = {};
   }
   return out;
@@ -241,7 +241,7 @@ const _pxW = {'radius', 'size', 'width', 'height', 'distance', 'length', 'offset
 double? _num(String? s) => s == null ? null : double.tryParse(s);
 
 /// The guess for one field. Explicit attributes win; then the type; then the name; then the shape of the range.
-Param infer(Decl d) {
+Parameter infer(FieldDeclaration d) {
   final w = paramWords(d.name), a = d.attrs;
   final range = a['range'];
   var min = _num(range?.elementAtOrNull(0)), max = _num(range?.elementAtOrNull(1));
@@ -250,7 +250,7 @@ Param infer(Decl d) {
   var d0 = _num(def?.elementAtOrNull(0)) ?? 0, d1 = _num(def?.elementAtOrNull(1)) ?? d0;
   final lab = a['label']?.join(', ') ?? paramLabel(w);
   final ui = a['ui']?.firstOrNull;
-  final whole = d.type == WType.i32 || d.type == WType.u32;
+  final whole = d.type == WgslType.i32 || d.type == WgslType.u32;
   int dec(double? lo, double? hi) {
     if (whole) return 0;
     if (a['step']?.firstOrNull case final s?) return s.contains('.') ? s.split('.').last.length : 0;
@@ -261,9 +261,9 @@ Param infer(Decl d) {
     return span <= 4 ? 2 : (span <= 40 ? 1 : 0);
   }
 
-  Param p(ParamLook look, {double? lo, double? hi, double scale = 1, bool up = true, String? u, List<String> opts = const []}) {
+  Parameter p(ParameterLook look, {double? lo, double? hi, double scale = 1, bool up = true, String? u, List<String> opts = const []}) {
     final l = lo ?? min, h = hi ?? max;
-    return Param(
+    return Parameter(
       id: d.name,
       label: lab,
       look: look,
@@ -272,7 +272,7 @@ Param infer(Decl d) {
       def: d0 / scale,
       defY: d1 / scale,
       unit: u ?? unit,
-      dec: scale == 1 ? dec(l, h) : (look == ParamLook.percent || look == ParamLook.angle ? 0 : 1),
+      dec: scale == 1 ? dec(l, h) : (look == ParameterLook.percent || look == ParameterLook.angle ? 0 : 1),
       options: opts,
       advanced: d.advanced,
       open: a.containsKey('open'),
@@ -284,40 +284,40 @@ Param infer(Decl d) {
     );
   }
 
-  if (a['enum'] case final o? when o.isNotEmpty) return p(ParamLook.choice, lo: 0, hi: o.length - 1.0, opts: o);
+  if (a['enum'] case final o? when o.isNotEmpty) return p(ParameterLook.choice, lo: 0, hi: o.length - 1.0, opts: o);
   if (ui != null) {
-    final look = ParamLook.values.where((l) => l.name == ui).firstOrNull;
+    final look = ParameterLook.values.where((l) => l.name == ui).firstOrNull;
     if (look != null) return p(look);
   }
-  if (d.type == WType.boolean || a.containsKey('toggle') || (whole && _any(w, _toggleW) && (max == null || max <= 1))) {
-    return p(ParamLook.toggle, lo: 0, hi: 1);
+  if (d.type == WgslType.boolean || a.containsKey('toggle') || (whole && _any(w, _toggleW) && (max == null || max <= 1))) {
+    return p(ParameterLook.toggle, lo: 0, hi: 1);
   }
-  if (d.type == WType.vec3 || d.type == WType.vec4) return p(ParamLook.color);
-  if (d.type == WType.vec2) {
-    if (_any(w, _sizeW)) return p(ParamLook.size, lo: min ?? 0, u: unit.isEmpty && _any(w, {'size'}) ? 'px' : null);
+  if (d.type == WgslType.vec3 || d.type == WgslType.vec4) return p(ParameterLook.color);
+  if (d.type == WgslType.vec2) {
+    if (_any(w, _sizeW)) return p(ParameterLook.size, lo: min ?? 0, u: unit.isEmpty && _any(w, {'size'}) ? 'px' : null);
     final uv = _any(w, {'center', 'centre', 'origin', 'focus', 'uv', 'pivot'});
-    return p(ParamLook.point, lo: min ?? (uv ? 0 : -1), hi: max ?? 1);
+    return p(ParameterLook.point, lo: min ?? (uv ? 0 : -1), hi: max ?? 1);
   }
-  if (_any(w, {'seed'})) return p(ParamLook.seed, lo: min ?? 0, hi: max ?? 9999);
+  if (_any(w, {'seed'})) return p(ParameterLook.seed, lo: min ?? 0, hi: max ?? 9999);
   final rad = unit == 'rad' || (min != null && max != null && (max - math.pi).abs() < .01 && (min + math.pi).abs() < .01);
   if (unit == '°' || unit == 'deg' || rad || _any(w, _angleW)) {
     final s = rad ? math.pi / 180 : 1.0;
-    return p(ParamLook.angle, lo: min == null ? -180 : min / s, hi: max == null ? 180 : max / s, scale: s, u: '°');
+    return p(ParameterLook.angle, lo: min == null ? -180 : min / s, hi: max == null ? 180 : max / s, scale: s, u: '°');
   }
   final unitShare = min == 0 && max == 1 && _any(w, _shareW);
   if (unit == '%' || unitShare) {
-    return p(ParamLook.percent, lo: unitShare ? 0 : (min ?? 0), hi: unitShare ? 100 : (max ?? 100), scale: unitShare ? .01 : 1, u: '%');
+    return p(ParameterLook.percent, lo: unitShare ? 0 : (min ?? 0), hi: unitShare ? 100 : (max ?? 100), scale: unitShare ? .01 : 1, u: '%');
   }
-  if (whole && min != null && max != null && max - min <= 12) return p(ParamLook.stepper);
+  if (whole && min != null && max != null && max - min <= 12) return p(ParameterLook.stepper);
   if (unit.isEmpty && _any(w, _pxW)) unit = 'px';
   final last = w.lastOrNull;
   if (last == 'y' || _any(w, _upW) || _any(w, _downW)) {
-    return p(ParamLook.vertical, up: !_any(w, _downW));
+    return p(ParameterLook.vertical, up: !_any(w, _downW));
   }
-  if (last == 'x' || _any(w, _xW)) return p(ParamLook.horizontal);
+  if (last == 'x' || _any(w, _xW)) return p(ParameterLook.horizontal);
   if (min != null && max != null) {
-    if (min < 0 && max > 0 && (min.abs() - max).abs() <= max * .5) return p(ParamLook.bipolar);
-    return p(ParamLook.bar);
+    if (min < 0 && max > 0 && (min.abs() - max).abs() <= max * .5) return p(ParameterLook.bipolar);
+    return p(ParameterLook.bar);
   }
-  return p(ParamLook.scrub);
+  return p(ParameterLook.scrub);
 }

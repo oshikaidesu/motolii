@@ -12,8 +12,8 @@ import 'package:motolii/widgets/media.dart' show Draw;
 /// A card: a heading and its rows. Clicking the heading folds the card.
 ///
 /// Alt-click folds or opens every card of the document at once, like Option-click on a disclosure triangle in Finder's list view.
-class Sect extends StatelessWidget {
-  const Sect({super.key, required this.title, required this.children, required this.trailing, required this.tone});
+class Section extends StatelessWidget {
+  const Section({super.key, required this.title, required this.children, required this.trailing, required this.tone});
 
   /// The heading text. It also names the card's fold flag in the document.
   final String title;
@@ -29,7 +29,7 @@ class Sect extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final doc = Ctx.of(context).doc;
+    final doc = InspectorScope.of(context).doc;
     final open = !(doc.b['fold.$title'] ?? false);
     void toggle() {
       if (!HardwareKeyboard.instance.isAltPressed) return doc.flag('fold.$title', open);

@@ -6,8 +6,8 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/text_gestures.dart';
 
 /// A text field for free text, two lines tall. The text is committed when the field loses focus, and Esc restores the previous text.
-class ParamWords extends StatelessWidget {
-  const ParamWords({super.key, required this.id});
+class ParameterWords extends StatelessWidget {
+  const ParameterWords({super.key, required this.id});
   final String id;
 
   @override
@@ -18,7 +18,7 @@ class ParamWords extends StatelessWidget {
     return TypedField(
       key: ValueKey('words:$id'),
       // Outside editing, the text is whatever the document holds now, for example after another layer is selected or after undo.
-      text: Ctx.of(context).doc.s2[id] ?? '',
+      text: InspectorScope.of(context).doc.s2[id] ?? '',
       standing: true,
       take: take,
       escapes: true,
@@ -27,7 +27,7 @@ class ParamWords extends StatelessWidget {
       cursor: Grey.g95,
       backgroundCursor: Grey.g20,
       selection: Role.selected.withValues(alpha: .4),
-      onDone: (said) => said == null ? null : Ctx.read(context).doc.str(id, said),
+      onDone: (said) => said == null ? null : InspectorScope.read(context).doc.str(id, said),
       // Remembers the selected characters in wordsPicked so the Colors shelf can colour just those.
       onPick: (v) =>
           wordsPicked.value = v.selection.isValid && !v.selection.isCollapsed ? (text: v.text, start: v.selection.start, end: v.selection.end) : null,

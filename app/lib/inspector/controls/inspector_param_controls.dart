@@ -14,13 +14,13 @@ import 'package:motolii/widgets/controls.dart' show Pressable;
 ///
 /// A normal panel shows three blocks across, and a wider one shows more, so thirty parameters stay a short list.
 /// The order is the shader's. A block that needs room, such as a point, a size or a choice, takes two columns.
-class ParamGrid extends StatelessWidget {
-  const ParamGrid(this.params, {super.key});
-  final List<Param> params;
+class ParameterGrid extends StatelessWidget {
+  const ParameterGrid(this.params, {super.key});
+  final List<Parameter> params;
 
   /// How many columns the block for [p] takes.
-  static int span(Param p) => switch (p.look) {
-    ParamLook.point || ParamLook.size || ParamLook.choice => 2,
+  static int span(Parameter p) => switch (p.look) {
+    ParameterLook.point || ParameterLook.size || ParameterLook.choice => 2,
     _ => 1,
   };
 
@@ -29,7 +29,7 @@ class ParamGrid extends StatelessWidget {
     builder: (context, box) {
       final g = InspectorSkin.tileGap;
       final cols = math.max(1, ((box.maxWidth + g) / (InspectorSkin.tileMin + g)).floor());
-      final rows = <List<Param>>[[]];
+      final rows = <List<Parameter>>[[]];
       var used = 0;
       for (final p in params) {
         final s = math.min(span(p), cols);
@@ -41,11 +41,11 @@ class ParamGrid extends StatelessWidget {
         used += s;
       }
       // A row cut short by a wide block stretches to the edge, so the grid has no holes. Only the last row may end early.
-      Widget row(List<Param> ps, bool last) {
+      Widget row(List<Parameter> ps, bool last) {
         final filled = ps.fold<int>(0, (a, p) => a + math.min(span(p), cols));
         return Row(
           children: [
-            for (var i = 0; i < ps.length; i++) ...[if (i > 0) SizedBox(width: g), Expanded(flex: math.min(span(ps[i]), cols), child: ParamTile(ps[i]))],
+            for (var i = 0; i < ps.length; i++) ...[if (i > 0) SizedBox(width: g), Expanded(flex: math.min(span(ps[i]), cols), child: ParameterTile(ps[i]))],
             if (last && filled < cols) ...[SizedBox(width: g), Spacer(flex: cols - filled)],
           ],
         );
@@ -67,14 +67,14 @@ class ParamGrid extends StatelessWidget {
 Color? hexControls(String? s) => s != null && RegExp(r'^#[0-9A-Fa-f]{6}$').hasMatch(s) ? Color(int.parse(s.substring(1), radix: 16) | 0xFF000000) : null;
 
 /// The default value of every id a parameter owns, for a fresh layer and for Reset.
-Map<String, double> paramDefaults(Param p) => switch (p.look) {
-  ParamLook.point || ParamLook.size => {'v_${p.id}.x': p.def, 'v_${p.id}.y': p.defY},
-  ParamLook.color => const {},
+Map<String, double> paramDefaults(Parameter p) => switch (p.look) {
+  ParameterLook.point || ParameterLook.size => {'v_${p.id}.x': p.def, 'v_${p.id}.y': p.defY},
+  ParameterLook.color => const {},
   _ => {'v_${p.id}': p.def},
 };
 
 /// A colour parameter's default as #RRGGBB, from its 0–1 components.
-String paramColor(Decl d) {
+String paramColor(FieldDeclaration d) {
   final c = [for (final s in d.attrs['default'] ?? const <String>[]) double.tryParse(s) ?? 1];
   int ch(int i) => ((c.elementAtOrNull(i) ?? 1) * 255).round().clamp(0, 255);
   return '#${[ch(0), ch(1), ch(2)].map((e) => e.toRadixString(16).padLeft(2, '0')).join().toUpperCase()}';
@@ -107,10 +107,10 @@ class Swatch extends StatelessWidget {
 class Steps extends StatelessWidget {
   const Steps({super.key, required this.id, required this.p});
   final String id;
-  final Param p;
+  final Parameter p;
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), doc = x.doc, v = doc.get(id) ?? p.def;
+    final x = InspectorScope.of(context), doc = x.doc, v = doc.get(id) ?? p.def;
     Widget btn(String s, double by) {
       final ok = by < 0 ? v > (p.min ?? -1e9) : v < (p.max ?? 1e9);
       return Pressable(
@@ -140,10 +140,10 @@ class Steps extends StatelessWidget {
 class Dice extends StatelessWidget {
   const Dice({super.key, required this.id, required this.p});
   final String id;
-  final Param p;
+  final Parameter p;
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), doc = x.doc;
+    final x = InspectorScope.of(context), doc = x.doc;
     return Pressable(
       onTap: () {
         final v = doc.get(id) ?? 0, hi = p.max ?? 9999, lo = p.min ?? 0;

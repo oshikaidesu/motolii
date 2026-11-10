@@ -111,16 +111,16 @@ abstract class Forms {
   Widget card(BuildContext context, CardSpec c);
 
   /// Fit, Layer/Group and the other small choices. The default is the app's own well.
-  Widget segment(BuildContext context, ChoiceSpec c) => Usual.segment(context, c);
+  Widget segment(BuildContext context, ChoiceSpec c) => BaseControls.segment(context, c);
 
   /// Snap, Safe, Grid and the other small on/off chips.
-  Widget flag(BuildContext context, FlagSpec f) => Usual.flag(context, f);
+  Widget flag(BuildContext context, FlagSpec f) => BaseControls.flag(context, f);
 
   /// A shelf's row of filter chips.
-  Widget chips(BuildContext context, ChipsSpec c) => Usual.chips(context, c);
+  Widget chips(BuildContext context, ChipsSpec c) => BaseControls.chips(context, c);
 
   /// One layer name in the timeline.
-  Widget track(BuildContext context, TrackSpec t) => Usual.track(context, t);
+  Widget track(BuildContext context, TrackSpec t) => BaseControls.track(context, t);
 
   /// A number field's appearance. The field calls [paintNumber], which is bound to this method when the forms load.
   Widget number(BuildContext context, NumberSpec n) => usualNumber(context, n);

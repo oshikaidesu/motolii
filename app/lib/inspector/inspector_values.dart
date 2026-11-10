@@ -1,4 +1,4 @@
-// The values the panel's cards edit (Doc). The caller supplies them; this file holds none of its own.
+// The values the panel's cards edit (InspectorValues). The caller supplies them; this file holds none of its own.
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
@@ -10,23 +10,23 @@ import 'package:motolii/inspector/inspector_card.dart';
 import 'package:motolii/inspector/inspector_state.dart';
 
 /// The values of the selected layer as the inspector edits them: numbers, strings and switches.
-/// Keys are `v_` plus the value name as its card declares it ([Fx]).
-/// Doc keeps no values of its own; a card's default comes from its declaration.
-class Doc extends ChangeNotifier {
-  Doc(this.kind, {this.cards = const []}) {
+/// Keys are `v_` plus the value name as its card declares it ([CardDeclaration]).
+/// InspectorValues keeps no values of its own; a card's default comes from its declaration.
+class InspectorValues extends ChangeNotifier {
+  InspectorValues(this.kind, {this.cards = const []}) {
     for (final f in cards) {
       for (final (i, p) in f.params.indexed) {
         // Start from the declaration's @default until the caller supplies the value.
         paramDefaults(p).forEach((id, x) => v[id] = d[id] = x);
-        if (p.look == ParamLook.color) s2.putIfAbsent('v_${p.id}', () => paramColor(f.decls[i]));
-        if (p.look == ParamLook.choice) s2.putIfAbsent('v_${p.id}', () => p.options[p.def.round().clamp(0, p.options.length - 1)]);
+        if (p.look == ParameterLook.color) s2.putIfAbsent('v_${p.id}', () => paramColor(f.decls[i]));
+        if (p.look == ParameterLook.choice) s2.putIfAbsent('v_${p.id}', () => p.options[p.def.round().clamp(0, p.options.length - 1)]);
       }
     }
   }
 
   final Kind kind;
   final Map<String, double> v = {}, d = {};
-  final Map<String, KeyS> keys = {};
+  final Map<String, KeyframeState> keys = {};
   final Map<String, String> s2 = {};
 
   final Map<String, bool> b = {};
@@ -36,7 +36,7 @@ class Doc extends ChangeNotifier {
 
   /// Cards the caller supplies in addition to the sample's cards.
   /// Each card's params become fields keyed `v_` plus the value name.
-  final List<Fx> cards;
+  final List<CardDeclaration> cards;
   bool animateAll = false;
 
   @override
@@ -90,7 +90,7 @@ class Doc extends ChangeNotifier {
   /// Shows the caller's values at a new time without treating them as an edit: no key and no undo step.
   /// Only the fields whose value or key mark changed are notified, since each watches its own; the inspector does not rebuild.
   /// Returns true when a changed value has no watching field, such as a choice or a switch, so the caller must rebuild the panel.
-  bool showAt(Map<String, double> values, Map<String, KeyS> marks) {
+  bool showAt(Map<String, double> values, Map<String, KeyframeState> marks) {
     var unwatched = false;
     for (final e in values.entries) {
       if (v[e.key] == e.value) continue;
@@ -127,12 +127,12 @@ class Doc extends ChangeNotifier {
       final dv = d[i] ?? 0;
       v[i] = dv;
       final p = propOf(i);
-      if (animateAll || (keys[p] ?? KeyS.off) != KeyS.off) keys[p] = KeyS.at;
+      if (animateAll || (keys[p] ?? KeyframeState.off) != KeyframeState.off) keys[p] = KeyframeState.at;
     }
     notifyListeners();
   }
 
-  void setKey(String prop, KeyS s) {
+  void setKey(String prop, KeyframeState s) {
     keys[prop] = s;
     // Notify the field that draws this key mark.
     _watched['key:$prop']?.value++;

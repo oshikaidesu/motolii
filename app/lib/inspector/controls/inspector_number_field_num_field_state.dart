@@ -17,18 +17,18 @@ import 'package:motolii/widgets/number_field.dart';
 ///
 /// [NumberField] handles dragging and typing. This state adds the document it reads and writes, the range it holds the value to,
 /// multi-selection of fields, the keyframe mark and the right-click menu.
-class NumFieldState extends State<NumField> {
+class InspectorNumberFieldState extends State<InspectorNumberField> {
   final _menu = ContextMenuController();
   Offset _menuAt = Offset.zero;
 
   /// The pointer id of the right-click press that opened a field's menu, so the surrounding row does not handle it too.
   static int rightAt = -1;
 
-  Ctx get _x => Ctx.read(context);
-  Param get _p => widget.p;
+  InspectorScope get _x => InspectorScope.read(context);
+  Parameter get _p => widget.p;
 
   // An angle past 360 degrees is shown as full turns, as in After Effects: 1x 30°.
-  bool get _turns => _p.look == ParamLook.angle;
+  bool get _turns => _p.look == ParameterLook.angle;
 
   // Rebuilds only this field when its value changes, not the whole Inspector.
   ValueListenable<int>? _watch;
@@ -62,7 +62,7 @@ class NumFieldState extends State<NumField> {
   }
 
   // Limits a value to its range.
-  // With Param.open, min and max only bound dragging, and a typed number may go past them. The one limit kept is a min of 0 or more.
+  // With Parameter.open, min and max only bound dragging, and a typed number may go past them. The one limit kept is a min of 0 or more.
   // Otherwise validMin and validMax bound typed numbers. They follow After Effects' PF_FloatSliderDef, whose valid_min and
   // valid_max are separate from its slider_min and slider_max, which correspond to min and max here.
   double _clamp(double v) => math.min(
@@ -119,9 +119,9 @@ class NumFieldState extends State<NumField> {
       if (PastRange.of(context) case final f?)
         // This toggles the flag for the whole card.
         ('past', _pastCard ? 'Stop at Range Ends' : 'Go Past Range Ends', () => doc.flag(f, !_pastCard)),
-      if (ks != KeyS.at) ('key', 'Key this frame', () => doc.setKey(id, KeyS.at)),
-      if (ks == KeyS.at) ('unkey', 'Remove key', () => doc.setKey(id, KeyS.anim)),
-      if (ks != KeyS.off) ('unanimate', 'Remove animation', () => doc.setKey(id, KeyS.off)),
+      if (ks != KeyframeState.at) ('key', 'Key this frame', () => doc.setKey(id, KeyframeState.at)),
+      if (ks == KeyframeState.at) ('unkey', 'Remove key', () => doc.setKey(id, KeyframeState.anim)),
+      if (ks != KeyframeState.off) ('unanimate', 'Remove animation', () => doc.setKey(id, KeyframeState.off)),
     ];
   }
 
@@ -143,7 +143,7 @@ class NumFieldState extends State<NumField> {
 
   // Whether the keyframe mark is drawn, and its state. Pressing the mark adds a keyframe at this time or removes it.
   bool _marked = false;
-  KeyS _keys = KeyS.off;
+  KeyframeState _keys = KeyframeState.off;
 
   bool _inMe(Offset at) {
     final box = context.findRenderObject() as RenderBox?;
@@ -175,7 +175,7 @@ class NumFieldState extends State<NumField> {
       // Read the document's current state, because the field may not have been rebuilt since an undo.
       final now = _x.doc.keys[widget.id] ?? _keys;
       // Pressing the mark adds a keyframe at this time or removes it.
-      _x.doc.setKey(widget.id, now == KeyS.at ? KeyS.anim : KeyS.at);
+      _x.doc.setKey(widget.id, now == KeyframeState.at ? KeyframeState.anim : KeyframeState.at);
       return true;
     }
     if (_inGlyph(e.localPosition, w) || e.buttons != kPrimaryButton) return true;
@@ -210,12 +210,12 @@ class NumFieldState extends State<NumField> {
 
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context);
+    final x = InspectorScope.of(context);
     // A dim dot means animated, and a lit dot means a keyframe at the playhead. A value that can be keyed always shows its mark,
     // hollow when it has no keyframes, and pressing the mark adds a keyframe there.
     // This follows Alight Motion's diamond beside each value and the stopwatch in After Effects and Premiere Pro.
     final ks = _keys = x.doc.keys[widget.id] ?? RowInfo.of(context).keys;
-    _marked = ks != KeyS.off || x.doc.keys.containsKey(widget.id);
+    _marked = ks != KeyframeState.off || x.doc.keys.containsKey(widget.id);
     return NumberField(
       value: () => _x.doc.get(widget.id),
       text: (v, w) => fmt(v, _p.dec, tight: w < wTight),
@@ -239,13 +239,15 @@ class NumFieldState extends State<NumField> {
       past: _past,
       min: _p.min,
       max: _p.max,
-      bipolar: _p.look == ParamLook.bipolar,
+      bipolar: _p.look == ParameterLook.bipolar,
       caption: widget.caption,
       glyph: widget.glyph,
       glyphTall: widget.glyphTall,
       glyphBox: InspectorSkin.glyph,
-      keyDot: !_marked ? null : (ks == KeyS.at ? InspectorSkin.keyDot : (ks == KeyS.anim ? InspectorSkin.keyDot.withValues(alpha: .5) : Grey.g56)),
-      keyEmpty: ks == KeyS.off,
+      keyDot: !_marked
+          ? null
+          : (ks == KeyframeState.at ? InspectorSkin.keyDot : (ks == KeyframeState.anim ? InspectorSkin.keyDot.withValues(alpha: .5) : Grey.g56)),
+      keyEmpty: ks == KeyframeState.off,
       picked: x.doc.isPicked(widget.id),
       height: InspectorSkin.tile,
       pad: InspectorSkin.tilePad,

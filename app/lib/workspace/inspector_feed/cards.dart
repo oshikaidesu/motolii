@@ -15,7 +15,7 @@ import 'package:motolii/workspace/state/workspace_state.dart';
 /// The cards the engine shows for a layer's values beyond the sample's (motolii_cards), each written as a Params struct
 /// the way effects are: a number gets its range and current value, a word gets the list of words it may take.
 /// Nothing about the individual values is hard-coded here.
-List<Fx>? wsValueCards(WorkspaceController ws, String? id) {
+List<CardDeclaration>? wsValueCards(WorkspaceController ws, String? id) {
   // With nothing selected the cards belong to the stage itself, layer 0.
   final m = ws.inside, t = id == null ? 0 : int.tryParse(id);
   if (m == null || t == null) return null;
@@ -30,9 +30,9 @@ List<Fx>? wsValueCards(WorkspaceController ws, String? id) {
   return cards;
 }
 
-final _cardsMade = <int, (String, List<Fx>, Motolii)>{};
+final _cardsMade = <int, (String, List<CardDeclaration>, Motolii)>{};
 
-List<Fx> _makeCards(WorkspaceController ws, Motolii m, int t) {
+List<CardDeclaration> _makeCards(WorkspaceController ws, Motolii m, int t) {
   // The time of the frame on screen.
   final at = wsDrawn(ws);
   // How much each parameter of the layer's effects moves its result, as the effect tiles show it.
@@ -94,7 +94,7 @@ List<Fx> _makeCards(WorkspaceController ws, Motolii m, int t) {
       // A sound layer has a volume and nothing to place on the canvas, as in Alight Motion's audio layer
       // (docs/design/alight_motion_ui.md).
       if (title == 'Sound' || !wsSound(m, t))
-        Fx(
+        CardDeclaration(
           title,
           'struct Params {\n${[
             for (final n in names)

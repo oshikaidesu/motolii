@@ -6,13 +6,13 @@ import 'package:motolii/workspace/inspector_feed/values.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// The keyframe mark of every keyable value of a layer, plus one per property (the strongest mark of its values).
-Map<String, KeyS> wsKeyMarks(WorkspaceController ws, String? id) {
+Map<String, KeyframeState> wsKeyMarks(WorkspaceController ws, String? id) {
   final m = ws.inside, t = id == null ? 0 : int.tryParse(id);
   if (m == null || t == null) return const {};
   final at = wsDrawn(ws);
-  final marks = {for (final MapEntry(:key, :value) in _keyable(ws, t).entries) key: KeyS.values[m.keyed(t, value, at)]};
+  final marks = {for (final MapEntry(:key, :value) in _keyable(ws, t).entries) key: KeyframeState.values[m.keyed(t, value, at)]};
   // A property's mark is the strongest mark among its values: a keyframe on any of them marks the property as animated.
-  final props = <String, KeyS>{};
+  final props = <String, KeyframeState>{};
   for (final MapEntry(:key, :value) in marks.entries) {
     final p = propOf(key);
     if (p != key && (props[p] == null || value.index > props[p]!.index)) props[p] = value;
@@ -31,7 +31,7 @@ Map<String, String> _keyable(WorkspaceController ws, int t) {
 }
 
 /// Applies a keyframe mark chosen in the inspector: a keyframe at the playhead, that keyframe removed, or no keyframes at all.
-void wsMark(WorkspaceController ws, String? id, String prop, KeyS mark) {
+void wsMark(WorkspaceController ws, String? id, String prop, KeyframeState mark) {
   final m = ws.inside!, t = id == null ? 0 : int.tryParse(id);
   if (t == null) return;
   final at = ws.frame / WorkspaceController.fps, has = m.values(t).toSet();
@@ -46,9 +46,9 @@ void wsMark(WorkspaceController ws, String? id, String prop, KeyS mark) {
   ].where(has.contains)) {
     m.later(
       switch (mark) {
-        KeyS.at => 'key_here',
-        KeyS.anim => 'unkey',
-        KeyS.off => 'stay',
+        KeyframeState.at => 'key_here',
+        KeyframeState.anim => 'unkey',
+        KeyframeState.off => 'stay',
       },
       layer: t,
       name: n,

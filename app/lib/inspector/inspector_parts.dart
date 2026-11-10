@@ -22,16 +22,16 @@ export 'controls/param_infer.dart';
 const wUnit = 72.0, wTight = 60.0;
 
 /// Gives the Inspector's widgets the current document and a rebuild tick.
-class Ctx extends InheritedWidget {
-  const Ctx({super.key, required this.doc, required this.tick, required super.child});
-  final Doc doc;
+class InspectorScope extends InheritedWidget {
+  const InspectorScope({super.key, required this.doc, required this.tick, required super.child});
+  final InspectorValues doc;
 
   /// Bumped by the app when more than numbers changed, such as the card structure, labels or the selection.
   /// Only then is everything that reads the Inspector rebuilt.
-  /// A changed number only notifies the field that shows it (Doc.watch).
+  /// A changed number only notifies the field that shows it (InspectorValues.watch).
   final int tick;
-  static Ctx of(BuildContext c) => c.dependOnInheritedWidgetOfExactType<Ctx>()!;
-  static Ctx read(BuildContext c) => c.getInheritedWidgetOfExactType<Ctx>()!;
+  static InspectorScope of(BuildContext c) => c.dependOnInheritedWidgetOfExactType<InspectorScope>()!;
+  static InspectorScope read(BuildContext c) => c.getInheritedWidgetOfExactType<InspectorScope>()!;
   @override
-  bool updateShouldNotify(Ctx old) => old.tick != tick || old.doc != doc;
+  bool updateShouldNotify(InspectorScope old) => old.tick != tick || old.doc != doc;
 }
