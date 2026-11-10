@@ -7,7 +7,6 @@
 // Program.rename): the file stays where it is, so the documents that use it still find it.
 import 'dart:io';
 
-import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 
 import '../../bridge/motolii.dart' show motoliiShelves;
@@ -138,60 +137,24 @@ String shelfRename(Ws ws, String file, String to, Iterable<String> taken) {
 }
 
 /// A name written in place, as Finder's: Return or leaving it says it, Escape lets it be ([done] null).
-class ShelfNameField extends StatefulWidget {
+class ShelfNameField extends StatelessWidget {
   const ShelfNameField(this.name, this.done, {super.key, this.small = true});
   final String name;
   final void Function(String? name) done;
   final bool small; // (a tile's name; else a card's)
   @override
-  State<ShelfNameField> createState() => _ShelfNameFieldState();
-}
-
-class _ShelfNameFieldState extends State<ShelfNameField> {
-  late final _words = TextEditingController(text: widget.name)..selection = TextSelection(baseOffset: 0, extentOffset: widget.name.length);
-  late final FocusNode _focus = FocusNode()..addListener(() => _focus.hasFocus ? null : _say(_words.text));
-  bool _said = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());
-  }
-
-  void _say(String? name) {
-    if (_said) return;
-    _said = true;
-    widget.done(name);
-  }
-
-  @override
-  void dispose() {
-    _words.dispose();
-    _focus.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => CallbackShortcuts(
-    bindings: {const SingleActivator(LogicalKeyboardKey.escape): () => _say(null)},
-    child: Container(
-      color: Grey.g91,
-      padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
-      alignment: Alignment.centerLeft,
-      child: TextGestures(
-        field: (k) => EditableText(
-          key: k,
-          rendererIgnoresPointer: true,
-          controller: _words,
-          focusNode: _focus,
-          style: widget.small ? T.micro(Grey.g13) : T.name(Grey.g13),
-          cursorColor: Grey.g13,
-          backgroundCursorColor: Grey.g38,
-          selectionColor: Grey.g63,
-          maxLines: 1,
-          onSubmitted: (_) => _say(_words.text),
-        ),
-      ),
+  Widget build(BuildContext context) => Container(
+    color: Grey.g91,
+    padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
+    alignment: Alignment.centerLeft,
+    child: TypedField(
+      text: name,
+      take: true,
+      escapes: true,
+      style: small ? T.micro(Grey.g13) : T.name(Grey.g13),
+      cursor: Grey.g13,
+      selection: Grey.g63,
+      onDone: done,
     ),
   );
 }

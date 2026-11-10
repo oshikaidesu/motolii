@@ -59,36 +59,6 @@ class ToolScrub extends StatefulWidget {
 
 class _ToolScrubState extends State<ToolScrub> {
   bool _hot = false, _drag = false, _typing = false;
-  final _words = TextEditingController();
-  final _focus = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-    _focus.addListener(() {
-      if (_focus.hasFocus || !_typing) return;
-      setState(() => _typing = false);
-      if (wsNumber(_words.text) case final v?) widget.onChanged(v.clamp(widget.min, widget.max));
-    });
-  }
-
-  @override
-  void dispose() {
-    _words.dispose();
-    _focus.dispose();
-    super.dispose();
-  }
-
-  // (pressed, it is written: as the window's other numbers. Its number alone, all of it picked: what is typed takes its place)
-  void _write() {
-    final now = RegExp(r'-?[\d.]+').stringMatch(widget.format(widget.value)) ?? '';
-    _words.value = TextEditingValue(
-      text: now,
-      selection: TextSelection(baseOffset: 0, extentOffset: now.length),
-    );
-    setState(() => _typing = true);
-    _focus.requestFocus();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +71,7 @@ class _ToolScrubState extends State<ToolScrub> {
       child: GestureDetector(
         supportedDevices: wsPressing,
         behavior: HitTestBehavior.opaque,
-        onTap: !_typing ? _write : null,
+        onTap: !_typing ? () => setState(() => _typing = true) : null, // (pressed, it is written: its number alone, all picked)
         onHorizontalDragStart: (_) => setState(() => _drag = true),
         onHorizontalDragUpdate: (d) => w.onChanged((w.value + d.delta.dx * w.perPx).clamp(w.min, w.max)),
         onHorizontalDragEnd: (_) => setState(() => _drag = false),
@@ -139,20 +109,17 @@ class _ToolScrubState extends State<ToolScrub> {
                         child: _typing
                             ? SizedBox(
                                 width: Shape.z(44),
-                                child: TextGestures(
-                                  field: (k) => EditableText(
-                                    key: k,
-                                    rendererIgnoresPointer: true,
-                                    controller: _words,
-                                    focusNode: _focus,
-                                    style: T.value(Grey.g100).copyWith(fontSize: T.px(10.5)),
-                                    cursorColor: WsT.accent,
-                                    backgroundCursorColor: Grey.g38,
-                                    selectionColor: WsT.accent.withValues(alpha: .3),
-                                    textAlign: TextAlign.right,
-                                    maxLines: 1,
-                                    onSubmitted: (_) => _focus.unfocus(),
-                                  ),
+                                child: TypedField(
+                                  text: RegExp(r'-?[\d.]+').stringMatch(w.format(w.value)) ?? '',
+                                  take: true,
+                                  style: T.value(Grey.g100).copyWith(fontSize: T.px(10.5)),
+                                  cursor: WsT.accent,
+                                  selection: WsT.accent.withValues(alpha: .3),
+                                  align: TextAlign.right,
+                                  onDone: (said) {
+                                    setState(() => _typing = false);
+                                    if (wsNumber(said ?? '') case final v?) w.onChanged(v.clamp(w.min, w.max));
+                                  },
                                 ),
                               )
                             : Text(w.format(w.value), maxLines: 1, style: T.value(_drag ? Grey.g100 : Grey.g91).copyWith(fontSize: T.px(10.5))),

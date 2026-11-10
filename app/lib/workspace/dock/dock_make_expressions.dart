@@ -10,59 +10,29 @@ bool _isRecipe(DockCtx c, String name) {
 }
 
 /// The colour's number, typed: After Effects' Color Picker and Figma's both take one, #d4a72c, d4a72c or #da2. Told on Return or on leaving it.
-class _HexField extends StatefulWidget {
+class _HexField extends StatelessWidget {
   const _HexField(this.hex, this.onTold);
   final String hex;
   final ValueChanged<Color> onTold;
-  @override
-  State<_HexField> createState() => _HexFieldState();
-}
 
-class _HexFieldState extends State<_HexField> {
-  final _c = TextEditingController();
-  final _f = FocusNode(debugLabel: 'colour-hex');
-
-  void _tell() {
-    final said = _c.text.trim().replaceFirst('#', ''), whole = said.length == 3 ? [for (final k in said.split('')) '$k$k'].join() : said;
-    if (whole.length != 6 || colorOfHex(whole) == null || '#${whole.toLowerCase()}' == widget.hex.toLowerCase()) return;
-    widget.onTold(colorOfHex(whole)!);
+  void _tell(String? said) {
+    final bare = (said ?? '').trim().replaceFirst('#', ''), whole = bare.length == 3 ? [for (final k in bare.split('')) '$k$k'].join() : bare;
+    if (said == null || whole.length != 6 || colorOfHex(whole) == null || '#${whole.toLowerCase()}' == hex.toLowerCase()) return;
+    onTold(colorOfHex(whole)!);
   }
 
   @override
-  void initState() {
-    super.initState();
-    _f.addListener(() {
-      if (!_f.hasFocus) return _tell();
-      WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? _c.selection = TextSelection(baseOffset: 0, extentOffset: _c.text.length) : null);
-    });
-  }
-
-  @override
-  void dispose() {
-    _f.dispose();
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_f.hasFocus) _c.text = widget.hex;
-    return TextGestures(
-      field: (k) => EditableText(
-        key: k,
-        rendererIgnoresPointer: true,
-        controller: _c,
-        focusNode: _f,
-        style: T.value(Grey.g91).copyWith(fontWeight: FontWeight.w600),
-        cursorColor: WsT.accent,
-        backgroundCursorColor: Grey.g44,
-        selectionColor: Grey.g38,
-        cursorWidth: 1.5,
-        maxLines: 1,
-        onSubmitted: (_) => _f.unfocus(),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => TypedField(
+    text: hex,
+    standing: true,
+    pickOnFocus: true,
+    style: T.value(Grey.g91).copyWith(fontWeight: FontWeight.w600),
+    cursor: WsT.accent,
+    backgroundCursor: Grey.g44,
+    selection: Grey.g38,
+    cursorWidth: 1.5,
+    onDone: _tell,
+  );
 }
 
 // ---- the Expression group: every JS that goes on a thing and moves its values (docs/internal/notes/CREATE_PROGRAM.md), one

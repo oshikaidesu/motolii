@@ -12,7 +12,7 @@ import 'package:material_color_utilities/material_color_utilities.dart';
 import '../../bridge/motolii.dart' show motoliiShelves;
 import '../../inspector/controls/inspector_param_controls.dart' show DicePaint;
 import '../../inspector/inspector_parts.dart' show Pop;
-import '../../widgets/text_gestures.dart' show TextGestures, wordsPicked;
+import '../../widgets/text_gestures.dart' show TypedField, wordsPicked;
 import '../../widgets/media.dart' show MiniSlider, glyph;
 import '../../skin/tokens.dart';
 import 'dock_glyphs.dart';

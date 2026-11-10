@@ -27,7 +27,7 @@ const sizeResolutions = [2160, 1440, 1080, 720, 540, 360, 270];
 final wsAskSize = ValueNotifier<bool>(false);
 
 class _SizeChipState extends State<_SizeChip> {
-  final _text = TextEditingController(), _focus = FocusNode(), _box = OverlayPortalController(), _boxKeys = FocusNode(debugLabel: 'document box');
+  final _box = OverlayPortalController(), _boxKeys = FocusNode(debugLabel: 'document box');
   bool _editing = false;
   double? _scrub; // (the width being scrubbed to)
   double _dx = 0;
@@ -48,14 +48,12 @@ class _SizeChipState extends State<_SizeChip> {
   @override
   void dispose() {
     wsAskSize.removeListener(_asked);
-    _text.dispose();
-    _focus.dispose();
     _boxKeys.dispose();
     super.dispose();
   }
 
-  void _commit(Ws ws) {
-    final nums = RegExp(r'\d+').allMatches(_text.text).map((m) => int.parse(m.group(0)!)).toList();
+  void _commit(Ws ws, String? said) {
+    final nums = RegExp(r'\d+').allMatches(said ?? '').map((m) => int.parse(m.group(0)!)).toList();
     setState(() => _editing = false);
     if (nums.isEmpty || ws.onSize == null) return;
     final w0 = WsArt.comp.width, h0 = WsArt.comp.height;
@@ -78,19 +76,12 @@ class _SizeChipState extends State<_SizeChip> {
           borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius)),
           border: Border.all(color: WsT.accent),
         ),
-        child: TextGestures(
-          field: (k) => EditableText(
-            key: k,
-            rendererIgnoresPointer: true,
-            controller: _text,
-            focusNode: _focus,
-            style: T.value(Grey.g95).copyWith(fontSize: T.px(10)),
-            cursorColor: WsT.accent,
-            backgroundCursorColor: Grey.g38,
-            maxLines: 1,
-            onSubmitted: (_) => _commit(ws),
-            onTapOutside: (_) => _commit(ws),
-          ),
+        child: TypedField(
+          text: '${w0.round()}x${h0.round()}',
+          take: true,
+          style: T.value(Grey.g95).copyWith(fontSize: T.px(10)),
+          cursor: WsT.accent,
+          onDone: (said) => _commit(ws, said),
         ),
       );
     }
@@ -259,14 +250,7 @@ class _SizeChipState extends State<_SizeChip> {
           key: const ValueKey('ws-top-size'),
           behavior: HitTestBehavior.opaque,
           onTap: ws.onSize == null ? null : _box.show,
-          onDoubleTap: ws.onSize == null
-              ? null
-              : () {
-                  _text.text = '${w0.round()}x${h0.round()}';
-                  _text.selection = TextSelection(baseOffset: 0, extentOffset: _text.text.length);
-                  setState(() => _editing = true);
-                  WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());
-                },
+          onDoubleTap: ws.onSize == null ? null : () => setState(() => _editing = true),
           onHorizontalDragStart: (_) => _dx = 0,
           onHorizontalDragUpdate: (e) => setState(() => _scrub = math.max(16, w0 + w0 * ((_dx += e.delta.dx) / 3).round() / 100)),
           onHorizontalDragEnd: (_) {

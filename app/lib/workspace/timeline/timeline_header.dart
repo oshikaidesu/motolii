@@ -170,39 +170,12 @@ class _TimeTyped extends StatefulWidget {
 }
 
 class _TimeTypedState extends State<_TimeTyped> {
-  final _words = TextEditingController();
-  final _focus = FocusNode();
   bool _typing = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _focus.addListener(() {
-      if (!_focus.hasFocus && _typing) setState(() => _typing = false);
-    });
-  }
-
-  @override
-  void dispose() {
-    _words.dispose();
-    _focus.dispose();
-    super.dispose();
-  }
-
-  void _begin() {
-    final now = widget.ws.timecode();
-    _words.value = TextEditingValue(
-      text: now,
-      selection: TextSelection(baseOffset: 0, extentOffset: now.length),
-    ); // (all of it picked: what is typed takes its place)
-    setState(() => _typing = true);
-    _focus.requestFocus();
-  }
-
-  void _go(String said) {
+  void _go(String? said) {
     final ws = widget.ws;
-    if (wtTimeOf(said, ws.frame, Ws.fps) case final to?) widget.onStep(to.clamp(0, Ws.duration) - ws.frame);
-    _focus.unfocus();
+    setState(() => _typing = false);
+    if (wtTimeOf(said ?? '', ws.frame, Ws.fps) case final to?) widget.onStep(to.clamp(0, Ws.duration) - ws.frame);
   }
 
   @override
@@ -213,7 +186,7 @@ class _TimeTypedState extends State<_TimeTyped> {
         key: const ValueKey('ws-tl-time'),
         mouseCursor: SystemMouseCursors.text,
         enableFeedback: false,
-        onPressed: _begin,
+        onPressed: () => setState(() => _typing = true),
         child: ValueListenableBuilder<int>(
           valueListenable: ws.moment,
           builder: (_, _, _) => Text(ws.timecode(), style: widget.style),
@@ -222,23 +195,16 @@ class _TimeTypedState extends State<_TimeTyped> {
     }
     return SizedBox(
       width: Shape.z(72),
-      child: CallbackShortcuts(
-        bindings: {const SingleActivator(LogicalKeyboardKey.escape): _focus.unfocus},
-        child: TextGestures(
-          key: const ValueKey('ws-tl-time-words'),
-          field: (k) => EditableText(
-            key: k,
-            rendererIgnoresPointer: true,
-            controller: _words,
-            focusNode: _focus,
-            style: widget.style.copyWith(color: Grey.g100),
-            cursorColor: Grey.g100,
-            backgroundCursorColor: Grey.g38,
-            selectionColor: WsT.accent.withValues(alpha: .35),
-            maxLines: 1,
-            onSubmitted: _go,
-          ),
-        ),
+      child: TypedField(
+        key: const ValueKey('ws-tl-time-words'),
+        text: ws.timecode(), // (all of it picked: what is typed takes its place)
+        take: true,
+        sayOnLeave: false,
+        escapes: true,
+        style: widget.style.copyWith(color: Grey.g100),
+        cursor: Grey.g100,
+        selection: WsT.accent.withValues(alpha: .35),
+        onDone: _go,
       ),
     );
   }
@@ -283,33 +249,22 @@ class _Tempo extends StatefulWidget {
 }
 
 class _TempoState extends State<_Tempo> {
-  final _words = TextEditingController();
-  final _focus = FocusNode();
   final _taps = <DateTime>[];
-  bool _typing = false, _kept = false;
+  final _field = GlobalKey<TypedFieldState>();
+  bool _typing = false;
   bool _tapping = false; // (a hand on Tap takes the keyboard from the field: it stays while the beats go on)
   Timer? _tapped;
 
-  @override
-  void initState() {
-    super.initState();
-    _focus.addListener(_left);
-  }
-
   // (left, it is said, as a marker's name is; Esc: as it was)
-  void _left() {
-    if (_focus.hasFocus || !_typing || _tapping) return;
+  void _left(String? said) {
     setState(() => _typing = false);
-    final bpm = wsNumber(_words.text) ?? 0; // (nothing written: no tempo)
-    if (!_kept && bpm != widget.ws.bpm) _set(bpm);
-    _kept = false;
+    final bpm = wsNumber(said ?? '') ?? 0; // (nothing written: no tempo)
+    if (said != null && bpm != widget.ws.bpm) _set(bpm);
   }
 
   @override
   void dispose() {
     _tapped?.cancel();
-    _words.dispose();
-    _focus.dispose();
     super.dispose();
   }
 
@@ -325,13 +280,13 @@ class _TempoState extends State<_Tempo> {
     _tapped?.cancel();
     _tapped = Timer(const Duration(milliseconds: 2500), () {
       _tapping = false;
-      if (mounted && !_focus.hasFocus) setState(() => _typing = false);
+      if (mounted && _field.currentState?.focused != true) setState(() => _typing = false);
     });
     if (_taps.isNotEmpty && now.difference(_taps.last).inMilliseconds > 2000) _taps.clear();
     _taps.add(now);
     if (_taps.length < 2) return;
     final bpm = (60000 * (_taps.length - 1) / now.difference(_taps.first).inMilliseconds).clamp(20.0, 999.0);
-    _words.text = _said((bpm * 10).roundToDouble() / 10);
+    _field.currentState?.put(_said((bpm * 10).roundToDouble() / 10));
     _set((bpm * 10).roundToDouble() / 10);
   }
 
@@ -345,14 +300,8 @@ class _TempoState extends State<_Tempo> {
         mouseCursor: SystemMouseCursors.text,
         enableFeedback: false,
         onPressed: () {
-          final now = bpm > 0 ? _said(bpm) : '';
-          _words.value = TextEditingValue(
-            text: now,
-            selection: TextSelection(baseOffset: 0, extentOffset: now.length),
-          );
           _taps.clear();
           setState(() => _typing = true);
-          _focus.requestFocus();
         },
         child: Chip(label: bpm > 0 ? '${_said(bpm)} BPM' : 'BPM', look: _readout()),
       );
@@ -361,29 +310,18 @@ class _TempoState extends State<_Tempo> {
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
+          key: const ValueKey('ws-tl-bpm-words'),
           width: Shape.z(42),
-          child: CallbackShortcuts(
-            bindings: {
-              const SingleActivator(LogicalKeyboardKey.escape): () {
-                _kept = true;
-                _focus.unfocus();
-              },
-            },
-            child: TextGestures(
-              key: const ValueKey('ws-tl-bpm-words'),
-              field: (k) => EditableText(
-                key: k,
-                rendererIgnoresPointer: true,
-                controller: _words,
-                focusNode: _focus,
-                style: T.value(Grey.g95).copyWith(fontSize: T.px(10.5)),
-                cursorColor: WsT.accent,
-                backgroundCursorColor: Grey.g38,
-                selectionColor: WsT.accent.withValues(alpha: .3),
-                maxLines: 1,
-                onSubmitted: (_) => _focus.unfocus(),
-              ),
-            ),
+          child: TypedField(
+            key: _field,
+            text: bpm > 0 ? _said(bpm) : '',
+            take: true,
+            escapes: true,
+            hold: () => _tapping,
+            style: T.value(Grey.g95).copyWith(fontSize: T.px(10.5)),
+            cursor: WsT.accent,
+            selection: WsT.accent.withValues(alpha: .3),
+            onDone: _left,
           ),
         ),
         SizedBox(width: Shape.s(4)),
