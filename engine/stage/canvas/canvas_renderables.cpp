@@ -43,10 +43,14 @@
 #include "stage/render/render_stage.h"
 #include "third_party/filament_src/third_party/stb/stb_truetype.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::Texture;
+using filament::TextureSampler;
+using filament::math::float2;
+using filament::math::float3;
+using filament::math::float4;
+using filament::math::mat4f;
 
 namespace {
 

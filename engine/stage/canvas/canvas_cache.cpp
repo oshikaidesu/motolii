@@ -35,10 +35,11 @@
 #include "stage/render/render_stage.h"
 #include "third_party/filament_src/third_party/zstd/lib/zstd.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::Texture;
+using filament::TextureSampler;
+using filament::math::float3;
 
 std::atomic<int> cache_unwritten{0};
 std::atomic<long> films_cached{0}, films_disk{0}, films_rendered{0};

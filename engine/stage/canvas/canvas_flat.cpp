@@ -27,10 +27,17 @@
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::ACCURATE;
+using filament::Color;
+using filament::MaterialInstance;
+using filament::sRGBColor;
+using filament::TextureSampler;
+using filament::math::float2;
+using filament::math::float3;
+using filament::math::float4;
+using filament::math::mat4f;
 
 namespace {
 

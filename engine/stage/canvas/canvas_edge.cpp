@@ -12,9 +12,11 @@
 #include "stage/canvas/canvas_cache.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-
 namespace motolii {
+
+using filament::Engine;
+using filament::RenderTarget;
+using filament::Texture;
 
 namespace {
 

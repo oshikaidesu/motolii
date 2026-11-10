@@ -21,9 +21,10 @@
 #include "stage/canvas/canvas_renderables.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::math::float3;
+using filament::math::mat4f;
 
 namespace {
 
