@@ -1,6 +1,6 @@
 #!/bin/zsh
 # Every shelf item draws as it did at an older commit (docs/TESTING.md, 今ある書類の見た目が変わらない). The engine at
-# <old-commit> (built in a place of its own) and the engine of this checkout each draw every recipe of the Create shelf (make <name>) and every motion of the Effects shelf
+# <old-commit> (built in a place of its own) and the engine of this checkout each draw every recipe of the Create shelf (create <name>) and every motion of the Effects shelf
 # (a text MOTOLII in a font, given it as its script) on a fresh document, at 0.0, 0.7 and 1.9 seconds; each pair of
 # pictures is compared with cmp, as the 11/8 old-and-new comparison was. Prints each that differs and how many matched;
 # one only one side has is named and not compared. A call either side refuses, or a picture not made, stops the count
@@ -37,7 +37,7 @@ echo "built; drawing ..."
 # What each shelf has, on either side. One only one side has is not compared (nothing stands for it on the other): its
 # name is said, as new since <old-commit> or gone since, and it neither counts as matched nor fails.
 # (a document of each side's own: one the old engine made, the new one did not list from, and the list was the old's alone)
-names() { echo recipes | (cd $engines[$1] && ./edit.sh $tmp/docs/names_$1.motolii) 2> /dev/null | sed 's/^  //' | cut -f1 | grep -v '^$'; }
+names() { echo create_scripts | (cd $engines[$1] && ./edit.sh $tmp/docs/names_$1.motolii) 2> /dev/null | sed 's/^  //' | cut -f1 | grep -v '^$'; }
 typeset -A has   # (side and name: 1 where that side has it)
 for side in 1 2; do
     for r in "${(@f)$(names $side)}"; do [ -n "$r" ] && has[${side}:recipe:${r}]=1; done
@@ -80,7 +80,7 @@ n=0 compared=0
 for r in $recipes; do
     n=$((n + 1))
     alone recipe $r && continue
-    for side in 1 2; do draw $side r$n "make $r" "recipe $r"; done
+    for side in 1 2; do draw $side r$n "create $r" "recipe $r"; done
     compare r$n "recipe $r"
     compared=$((compared + 1))
 done
