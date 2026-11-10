@@ -100,15 +100,19 @@ def generated(rev, path):
 
 
 def own_lines(numstat, rev):
-    """Lines of our own the commit adds: for each file of ours, added minus deleted where that is more than nothing.
+    """Lines of our own the commit adds: for each file of ours, added minus deleted where that is more than nothing;
+    none when all our files together got no longer.
     From `--numstat -M`; `rev`: where to read a file's head ('' the index)."""
-    total, longer = 0, []
+    total, whole, longer = 0, 0, []
     for line in numstat.splitlines():
         parts = line.split('\t')
         if len(parts) < 3 or parts[0] == '-':
             continue
         path = re.sub(r'\{[^{}]* => ([^{}]*)\}', r'\1', parts[2]).replace('//', '/').split(' => ')[-1]
-        if not OWN.match(path) or generated(rev, path) or int(parts[0]) <= int(parts[1]):
+        if not OWN.match(path) or generated(rev, path):
+            continue
+        whole += int(parts[0]) - int(parts[1])
+        if int(parts[0]) <= int(parts[1]):
             continue
         # (an import, export or part line points at what exists: taking the standard into use is not a line of our own)
         diff = git('show', '-U0', '--format=', rev, '--', path) if rev else git('diff', '--cached', '-U0', '--', path)
@@ -117,7 +121,7 @@ def own_lines(numstat, rev):
             total += grown
             longer.append(path)
     LONGER[:] = longer
-    return total
+    return total if whole > 0 else 0   # (copies folded into one part: that file grows while all of ours falls; only the sketch is asked)
 
 
 def taken_away(before, after, deleted):
