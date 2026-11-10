@@ -7,10 +7,7 @@ workspace/shelf/shelf_tile.dart -> workspace/dock/dock_widgets.dart
 workspace/stage/stage.dart -> workspace/workspace.dart
 workspace/state/state.dart -> workspace/window/panes.dart
 workspace/tool_panel/tool_panel.dart -> workspace/window/panes.dart
-workspace/tool_panel/tool_panel_align.dart -> workspace/stage/stage_art.dart
 workspace/tool_panel/tool_panel_blend.dart -> workspace/workspace.dart
 workspace/tool_panel/tool_panel_depth.dart -> workspace/workspace.dart
-workspace/tool_panel/tool_panel_relations.dart -> workspace/stage/stage_art.dart
 workspace/tool_panel/tool_panel_widgets.dart -> workspace/window/panes.dart
-workspace/top_bar/top_bar.dart -> workspace/stage/stage_art.dart
 workspace/top_bar/top_bar.dart -> workspace/window/zoom.dart

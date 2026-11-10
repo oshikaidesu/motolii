@@ -4,7 +4,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiWrites;
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/stage/stage_art.dart';
+import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/state.dart';
 
 /// The Camera View tab: shows what the camera layer sees.

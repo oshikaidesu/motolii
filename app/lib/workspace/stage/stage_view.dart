@@ -16,7 +16,7 @@ import 'package:flutter/services.dart' show HardwareKeyboard, KeyDownEvent, KeyE
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/stage/stage_art.dart';
+import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/widgets/two_fingers.dart';
 import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiMoment, MotoliiWrites, MotoliiQuestions;
 import 'package:motolii/widgets/glyphs.dart' show Glyph;

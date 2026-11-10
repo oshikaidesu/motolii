@@ -14,7 +14,7 @@ import 'package:motolii/widgets/tool_strip.dart';
 import 'package:motolii/widgets/paint_helpers.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 import 'package:motolii/workspace/edits/make_relation.dart';
-import 'package:motolii/workspace/stage/stage_art.dart';
+import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/widgets/two_fingers.dart';
 import 'package:motolii/workspace/state/state.dart';
 

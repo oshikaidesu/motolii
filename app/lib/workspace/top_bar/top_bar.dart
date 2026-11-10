@@ -19,7 +19,7 @@ import 'package:motolii/workspace/window/zoom.dart';
 
 import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/stage/stage_art.dart' show WsArt;
+import 'package:motolii/workspace/state/art_scene.dart' show WsArt;
 import 'package:motolii/workspace/state/state.dart';
 import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Hov, IconPress;
 import 'package:motolii/widgets/media.dart' show Draw, glyph;
