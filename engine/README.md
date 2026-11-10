@@ -68,7 +68,7 @@ does. There is no `.clangd` file; point clangd at it with `--compile-commands-di
 | `gpu/` | Our code inside Filament's WebGPU (Dawn) backend: the interop files, built within Filament's own build by `gpu/CMakeLists.txt`, and `thorvg_on_dawn.cpp`. |
 | `community/` | Adapters that run code from the net unchanged (table below). |
 | `deps/` | Scripts that fetch third-party code, and `deps/patches/` (see below). |
-| `tools/` | Our own build helper: `build_lock.sh`. |
+| `tools/` | Our own build helpers: `build_lock.sh`, and `bundle_ffmpeg.sh` (the LGPL-only FFmpeg as a folder that runs from anywhere, for the app bundle). |
 | `third_party/` | Fetched libraries (not in git) and a few small bundled works (in git). |
 | `out/` | Build output (not in git). |
 
