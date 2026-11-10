@@ -18,6 +18,8 @@
 #include "document/scripts/scripts.h"
 #include "document/undo.h"
 
+namespace motolii {
+
 namespace {
 
 // Moves every animated property of `layer` by `by` seconds, as After Effects
@@ -348,3 +350,5 @@ bool doc_reset(Doc& d, int layer, const std::string& names) {
 bool doc_undo(Doc& d) { return doc_undo_step(d, true); }
 
 bool doc_redo(Doc& d) { return doc_undo_step(d, false); }
+
+}  // namespace motolii

@@ -48,6 +48,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Starts a drag on `layer`. Returns false if the layer does not exist, or if
 // the project is being exported, because nothing can be dragged until the
 // export is done. If a drag is already on this layer it simply continues.
@@ -73,5 +75,7 @@ bool doc_carry(Doc& d, const char* by, double a, double b);
 // press does, see doc_fx_file, which also handles the keyframes of a
 // transition.
 bool doc_carry_effect(Doc& d, const char* file);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EDIT_HOLD_H_

@@ -11,6 +11,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Sets a keyframe of a property at time `at` to the value `is`. Returns false
 // and sets d.error if `at` is out of range or the property rejects the value.
 bool doc_key(Doc& d, int layer, const char* name, double at, double is);
@@ -54,5 +56,7 @@ int doc_keys(Doc& d, int layer, const char* name, double at = -1.0);
 // Effects. See the list above. Returns false when the property rejects the
 // value.
 bool doc_put(Doc& d, int layer, const char* name, double at, double is);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EDIT_KEYS_PUT_H_

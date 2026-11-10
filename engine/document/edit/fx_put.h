@@ -9,6 +9,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Returns the effects of the shelf, one per line, each line holding these
 // fields separated by tabs:
 //   name, value, label, picture, two empty fields, about
@@ -58,5 +60,7 @@ bool doc_fx_eye(Doc& d, int layer, const char* title);
 // from the list, see doc_fx_file. A built-in ThorVG effect is unset, see
 // doc_effect. This is one undo step.
 bool doc_fx_out(Doc& d, int layer, const char* name);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EDIT_FX_PUT_H_

@@ -19,6 +19,8 @@
 #include "document/scripts/scripts.h"
 #include "document/undo.h"
 
+namespace motolii {
+
 namespace {
 
 // Returns the properties of the layer that are connected to a relation, each as
@@ -378,3 +380,5 @@ bool doc_release(Doc& d, int by, double now) {
   ok = ok && doc_remove(d, by);
   return doc_acted(d) && ok;
 }
+
+}  // namespace motolii

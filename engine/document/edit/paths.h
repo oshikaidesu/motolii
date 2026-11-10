@@ -8,6 +8,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // The plane of a path shape as the image shows it: its middle and its two axes.
 // own() converts a point of the image to the shape's own coordinates, where the
 // shape is 1 high, measured from its middle with y pointing down as in SVG.
@@ -100,5 +102,7 @@ int doc_brush(Doc& d, const char* said, int into = 0);
 // the path. The fill, the edge and everything else stay as they were. Returns
 // false, with d.error set, if the shape cannot be converted.
 bool doc_to_path(Doc& d, int layer);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EDIT_PATHS_H_

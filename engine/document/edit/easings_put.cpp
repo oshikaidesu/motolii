@@ -13,6 +13,8 @@
 #include "motion/easing_curves.h"
 #include "motion/easing_names.h"
 
+namespace motolii {
+
 bool doc_unkey(Doc& d, int layer, const char* name, double at) {
   if (!doc_knows(d, layer, name)) return false;
   if (!doc_keys(d, layer, name) || !doc_keys(d, layer, name, at))
@@ -99,3 +101,5 @@ bool doc_define(Doc& d, const char* name, const char* expression) {
                          "update set expression = excluded.expression",
                          name, expression));
 }
+
+}  // namespace motolii

@@ -9,6 +9,8 @@
 #include "document/evaluate/value_at.h"
 #include "document/undo.h"
 
+namespace motolii {
+
 bool doc_key(Doc& d, int layer, const char* name, double at, double is) {
   if (!(at >= 0.0 && at <= 1e6))
     return d.error =
@@ -113,3 +115,5 @@ bool doc_put(Doc& d, int layer, const char* name, double at, double is) {
   doc_key(d, layer, name, at, is);
   return doc_acted(d);
 }
+
+}  // namespace motolii

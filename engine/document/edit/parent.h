@@ -8,6 +8,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Makes `to` the parent of the layer (0 means no parent) without moving the
 // layer on the stage, as After Effects does. The layer's position, its rotation
 // about the camera's line of sight and its size are expressed again relative to
@@ -31,5 +33,7 @@ std::vector<int> doc_under(Doc& d, int group);
 // counts as one layer. Returns false, with d.error set, if the layer would not
 // move.
 bool doc_raise(Doc& d, int layer, int places);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EDIT_PARENT_H_

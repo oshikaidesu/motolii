@@ -8,6 +8,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Removes the keyframe of a property at time "at". If it was the last keyframe,
 // the property keeps the value that keyframe held. Returns false and sets
 // d.error on failure.
@@ -28,5 +30,7 @@ bool doc_easing(Doc& d, int layer, const char* name, double at,
 // segments and is accepted only if it starts at the first keyframe's value and
 // ends at the second's. Returns false and sets d.error otherwise.
 bool doc_define(Doc& d, const char* name, const char* expression);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EDIT_EASINGS_PUT_H_

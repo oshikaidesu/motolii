@@ -28,6 +28,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 bool doc_hold(Doc& d, int layer) {
   if (!doc_knows(d, layer)) return false;
   if (d.writing)
@@ -322,3 +324,5 @@ bool doc_carry_effect(Doc& d, const char* file) {
   h.said[" effect"] = file;
   return doc_match(d), doc_evaluate(d, d.stage->now), true;
 }
+
+}  // namespace motolii

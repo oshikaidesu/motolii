@@ -22,6 +22,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 bool doc_parent(Doc& d, int layer, double to) {
   if (!doc_knows(d, layer, "parent", &to)) return false;
   // A ring of layers that each have the next as parent would have no end, so
@@ -166,3 +168,5 @@ bool doc_raise(Doc& d, int layer, int places) {
         all, lie[i], (int)i + 1);
   return doc_change(d, all);
 }
+
+}  // namespace motolii

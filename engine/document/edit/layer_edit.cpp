@@ -29,6 +29,8 @@
 #include "document/scripts/scripts.h"
 #include "document/undo.h"
 
+namespace motolii {
+
 bool doc_knows(Doc& d, int layer, const char* name, const double* number,
                const char* word, bool key) {
   const std::string kind = doc_word(d, layer, "kind");
@@ -458,3 +460,5 @@ bool doc_say(Doc& d, int layer, const char* name, const char* word) {
             std::stoi(hex.substr(2 * (size_t)i, 2), nullptr, 16) / 255.0);
   return doc_acted(d);
 }
+
+}  // namespace motolii

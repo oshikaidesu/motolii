@@ -9,6 +9,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Returns a copy of the name that stays valid for the life of the program, so
 // doc_literal can recognize it again by its address. There is one address per
 // name, ever.
@@ -43,5 +45,7 @@ bool doc_lead(Doc& d, int by, int leader, double now);
 // Releases the relation `by`. Each of its layers stays where it shows at time
 // `now`, and the relation is removed, in one undo step.
 bool doc_release(Doc& d, int by, double now);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EDIT_RELATE_H_

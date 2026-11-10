@@ -10,6 +10,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Duplicates `layer` and places the copy directly above it, as one undo step.
 // Returns the copy's number, or 0 on failure.
 int doc_copy_above(Doc& d, int layer);
@@ -82,5 +84,7 @@ bool doc_reset(Doc& d, int layer, const std::string& names);
 bool doc_undo(Doc& d);
 // Redoes the last undone step. Returns false if there is none.
 bool doc_redo(Doc& d);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EDIT_TIME_EDIT_H_

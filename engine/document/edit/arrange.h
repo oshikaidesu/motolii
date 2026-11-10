@@ -9,6 +9,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Returns the upright bounding box of a layer's outline on the canvas at time
 // `now`, written to `box` as left, top, right, bottom in canvas points. The
 // outline is the layer's own points when they are available, otherwise the
@@ -54,5 +56,7 @@ double doc_usual_on(Doc& d, int layer, const char* name);
 // Reads a property at time `at` into `is`. Returns false if the layer does not
 // have the property.
 bool doc_value(Doc& d, int layer, const char* name, double at, double* is);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EDIT_ARRANGE_H_

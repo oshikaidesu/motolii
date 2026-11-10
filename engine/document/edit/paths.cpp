@@ -32,6 +32,8 @@ extern "C" {
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 DocPlane::DocPlane(Doc& d, int layer, double now) {
   const math::mat4 at = doc_shown_at(d, layer, now);
   o = doc_seen(d, (at * math::double4{0, 0, 0, 1}).xyz),
@@ -351,3 +353,5 @@ bool doc_to_path(Doc& d, int layer) {
   if (!ok) d.act_ok = false;
   return doc_acted(d) && ok;
 }
+
+}  // namespace motolii

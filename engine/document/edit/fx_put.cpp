@@ -21,6 +21,8 @@
 #include "shelf/shelf_folders.h"
 #include "stage/effects/thorvg_effect_names.h"
 
+namespace motolii {
+
 namespace {
 
 // One entry of the table below. The built-in effects of ThorVG are turned on by
@@ -284,3 +286,5 @@ bool doc_fx_out(Doc& d, int layer, const char* name) {
     if (*at == e.value) return doc_effect(d, layer, e.name, 0.0);
   return d.error = *at + " is put on by no effect", false;
 }
+
+}  // namespace motolii

@@ -25,6 +25,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 namespace {
 
 // Moves a layer by (dx, dy) canvas points by changing its x and y in the plane
@@ -330,3 +332,5 @@ bool doc_value(Doc& d, int layer, const char* name, double at, double* is) {
          (*is = doc_number(d, layer, name, at, doc_usual_on(d, layer, name)),
           true);
 }
+
+}  // namespace motolii

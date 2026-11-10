@@ -6,6 +6,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Checks that a request on a layer is allowed. Returns true if the layer exists
 // and, when name is given, the layer's kind has a value of that name that
 // accepts the request: a number, a word, or a keyframe when key is true.
@@ -40,5 +42,7 @@ bool doc_set(Doc& d, int layer, const char* name, double is);
 // Sets a word of a layer. Returns false and sets d.error if the request is
 // refused.
 bool doc_say(Doc& d, int layer, const char* name, const char* word);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EDIT_LAYER_EDIT_H_

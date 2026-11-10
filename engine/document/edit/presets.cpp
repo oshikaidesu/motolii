@@ -17,6 +17,8 @@
 #include "document/undo.h"
 #include "shelf/shelf_folders.h"
 
+namespace motolii {
+
 namespace {
 
 // The properties that say what a layer is. They are not copied into a preset:
@@ -547,3 +549,5 @@ int doc_elements_follow(Doc& d) {
   }
   return n;
 }
+
+}  // namespace motolii

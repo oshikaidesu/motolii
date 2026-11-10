@@ -24,6 +24,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Writes the layer's preset to the file `path`, replacing any existing file.
 // With `whole`, everything except the parent is kept; this is a copy for Edit >
 // Copy, which doc_preset_paste turns back into a layer. `only` is a list of
@@ -100,5 +102,7 @@ int doc_element_add(Doc& d, const char* path, double now);
 // words the user changed since is given them again. One undo step for each
 // element. Returns the number of elements updated.
 int doc_elements_follow(Doc& d);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EDIT_PRESETS_H_
