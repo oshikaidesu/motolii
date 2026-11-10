@@ -47,15 +47,17 @@ class TimelinePane extends StatefulWidget {
 }
 
 class TimelinePaneState extends State<TimelinePane>
-    with SingleTickerProviderStateMixin, TimelineRequests {
+    with SingleTickerProviderStateMixin, TimelineRequests<TimelinePane> {
   late final Ticker ticker = createTicker(tick);
   // One closure, used for both adding and removing the listener.
   // Tearing off an extension method gives a new closure each time, so removeListener would never match.
   late final VoidCallback _listener = changed;
   final _focus = FocusNode(debugLabel: 'timeline');
+  @override
   WorkspaceController? workspace;
 
   /// The zoom, the scroll and the size of the track area.
+  @override
   final viewport = TimelineViewport(() => WorkspaceController.duration);
 
   /// The beats, video frames, thumbnails and waveforms read for the rows.
@@ -65,6 +67,7 @@ class TimelinePaneState extends State<TimelinePane>
   late final slip = SlipEdit(media: media);
 
   /// The work area and the markers on the ruler, and the drag in hand there.
+  @override
   late final ruler = RulerMarks(
     workspaceOf: () => workspace,
     viewport: viewport,
@@ -72,6 +75,7 @@ class TimelinePaneState extends State<TimelinePane>
   );
 
   /// The rows in the order they are laid out, and what each one shows.
+  @override
   late final rows = TimelineRows(
     workspaceOf: () => workspace,
     viewport: viewport,
@@ -98,7 +102,7 @@ class TimelinePaneState extends State<TimelinePane>
     slip.addListener(_rebuild);
     drag.addListener(_rebuild);
     // Starts listening for requests from the app's commands (timeline_requests.dart).
-    hearAsks();
+    listenForRequests();
   }
 
   @override
@@ -129,15 +133,14 @@ class TimelinePaneState extends State<TimelinePane>
     slip.dispose();
     drag.dispose();
     _focus.dispose();
-    stopAsks();
-    markWords.dispose();
-    markFocus.dispose();
+    disposeRequests();
     super.dispose();
   }
 
   // Draws the timeline again after one of the objects it owns has changed.
   void _rebuild() => setState(() {});
 
+  @override
   void setZoom(double z, {int? anchor}) =>
       viewport.setZoom(z, anchor: anchor ?? workspace!.frame);
 
@@ -180,27 +183,6 @@ class TimelinePaneState extends State<TimelinePane>
           beats: workspace!.beats,
           pixelsPerFrame: viewport.view.pixelsPerFrame,
         );
-
-  // The context menus of the ruler, of a bar and of a row's name (see timeline_requests.dart).
-  // On the ruler a right-click adds a marker, a click selects one and moves the playhead there, and Cmd+R renames it.
-  final rulerMenu = GlobalKey<ContextMenuState>();
-  final trackMenu = GlobalKey<ContextMenuState>();
-  final labelMenu = GlobalKey<ContextMenuState>();
-  // The marker whose name is being edited in its flag.
-  (double, String)? naming;
-  final markWords = TextEditingController();
-  // Commits the marker name when the field loses focus.
-  late final FocusNode markFocus = FocusNode()
-    ..addListener(() => markFocus.hasFocus ? null : _named());
-
-  void _named() {
-    final was = naming, ws = workspace!, words = markWords.text.trim();
-    if (was == null) return;
-    setState(() => naming = null);
-    if (words.isNotEmpty && words != was.$2 && ws.inside != null) {
-      ws.after(ws.inside!.later('mark', number: was.$1, word: words));
-    }
-  }
 
   void overview(Offset p, double w) {
     final f = (p.dx - 4) / (w - 8) * WorkspaceController.duration;

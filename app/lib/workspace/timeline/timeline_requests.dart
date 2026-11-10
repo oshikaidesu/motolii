@@ -1,4 +1,4 @@
-// Timeline requests from the app's commands, and the ruler.
+// Timeline requests from the app's commands, the clicks and context menus of the ruler, and renaming in place.
 //
 // - Zoom, loop and rename requests come from command_actions.dart and follow Ableton Live. The timeline keeps its own view state.
 // - The ruler follows Live's scrub area and locators (Live 12 manual, chapter 6 "Arrangement View", sections 6.3 and 6.4).
@@ -15,12 +15,60 @@ import 'package:motolii/workspace/commands/panel_requests.dart'
     show timelineRequest, renameRequested, requestTimeline, selectedMarker;
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
-import 'package:motolii/workspace/timeline/timeline.dart';
+import 'package:motolii/workspace/timeline/ruler_marks.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
+import 'package:motolii/workspace/timeline/timeline_rows.dart';
+import 'package:motolii/workspace/timeline/timeline_viewport.dart';
 
-mixin TimelineRequests on State<TimelinePane> {
-  // The timeline state this mixin is part of: its zoom and scroll.
-  TimelinePaneState get _t => this as TimelinePaneState;
+/// The part of the timeline's State that answers the app's commands and the right-clicks: zooming on request, the
+/// context menus, and renaming a layer or a marker in place.
+///
+/// The State it is mixed into provides the workspace, the viewport, the ruler's marks and the rows.
+mixin TimelineRequests<T extends StatefulWidget> on State<T> {
+  /// The workspace the timeline is shown in, or null before the timeline has one.
+  WorkspaceController? get workspace;
+
+  /// The timeline's zoom and scroll.
+  TimelineViewport get viewport;
+
+  /// The markers on the ruler.
+  RulerMarks get ruler;
+
+  /// The rows as laid out.
+  TimelineRows get rows;
+
+  /// Zooms the timeline to [z] around frame [anchor], or around the playhead.
+  void setZoom(double z, {int? anchor});
+
+  /// The context menu of the ruler.
+  ///
+  /// On the ruler a right-click adds a marker, a click selects one and moves the playhead there, and Cmd+R renames it.
+  final rulerMenu = GlobalKey<ContextMenuState>();
+
+  /// The context menu of a layer's bar.
+  final trackMenu = GlobalKey<ContextMenuState>();
+
+  /// The context menu of a row's name.
+  final labelMenu = GlobalKey<ContextMenuState>();
+
+  /// The marker whose name is being edited in its flag, or null.
+  (double, String)? naming;
+
+  /// The text of the marker name being edited.
+  final markWords = TextEditingController();
+
+  /// The focus of the marker name field. The name is committed when the field loses focus.
+  late final FocusNode markFocus = FocusNode()
+    ..addListener(() => markFocus.hasFocus ? null : _named());
+
+  void _named() {
+    final was = naming, ws = workspace!, words = markWords.text.trim();
+    if (was == null) return;
+    setState(() => naming = null);
+    if (words.isNotEmpty && words != was.$2 && ws.inside != null) {
+      ws.after(ws.inside!.later('mark', number: was.$1, word: words));
+    }
+  }
 
   // The zoom and scroll before "selection" zoomed in. "back" returns to them, as X does in Live.
   (double, double)? _before;
@@ -30,30 +78,34 @@ mixin TimelineRequests on State<TimelinePane> {
   late final FocusNode _renameFocus = FocusNode()
     ..addListener(() => _renameFocus.hasFocus ? null : _renamed());
 
-  void hearAsks() {
+  /// Starts listening for the requests of the app's commands. Called from initState.
+  void listenForRequests() {
     timelineRequest.addListener(_heard);
     renameRequested.addListener(_rename);
   }
 
-  void stopAsks() {
+  /// Stops listening and disposes the name fields. Called from dispose.
+  void disposeRequests() {
     timelineRequest.removeListener(_heard);
     renameRequested.removeListener(_rename);
     _renameWords.dispose();
     _renameFocus.dispose();
+    markWords.dispose();
+    markFocus.dispose();
   }
 
   void _heard() {
-    final t = _t, ws = t.workspace, m = ws?.inside;
+    final ws = workspace, m = ws?.inside;
     if (!mounted || ws == null || m == null) return;
     switch (timelineRequest.value.$1) {
       case 'loop':
         setState(() => m.looping = !m.looping);
       case 'in':
-        t.setZoom(t.viewport.zoom * 1.5);
+        setZoom(viewport.zoom * 1.5);
       case 'out':
-        t.setZoom(t.viewport.zoom / 1.5);
+        setZoom(viewport.zoom / 1.5);
       case 'fit':
-        t.setZoom(1);
+        setZoom(1);
       // Zooms to fill the view with the selected keyframes, else the selected layer's bar, as Z does in Live.
       case 'selection':
         final frames = ws.keys.isNotEmpty
@@ -65,21 +117,21 @@ mixin TimelineRequests on State<TimelinePane> {
         final a = frames.reduce((p, q) => p < q ? p : q),
             b = frames.reduce((p, q) => p > q ? p : q),
             span = (b - a).clamp(6, WorkspaceController.duration);
-        _before ??= (t.viewport.zoom, t.viewport.scroll);
-        t.setZoom(WorkspaceController.duration / (span * 1.2), anchor: a);
-        t.viewport.scrollTo(a - span * .1);
+        _before ??= (viewport.zoom, viewport.scroll);
+        setZoom(WorkspaceController.duration / (span * 1.2), anchor: a);
+        viewport.scrollTo(a - span * .1);
       case 'back':
         if (_before case (final z, final s)?) {
           _before = null;
-          t.setZoom(z);
-          t.viewport.scrollTo(s);
+          setZoom(z);
+          viewport.scrollTo(s);
         }
     }
   }
 
   /// Plays from frame [f]. Playback is stopped first so the clock restarts at the playhead.
   void _playAt(int f) {
-    final ws = _t.workspace!;
+    final ws = workspace!;
     ws.playing = false;
     ws.frame = f;
     ws.playing = true;
@@ -92,16 +144,16 @@ mixin TimelineRequests on State<TimelinePane> {
   /// On desktop the playhead moves, as in Audacity, whose "Click ruler to start playback" setting is off by default.
   /// The work area band handles its own clicks.
   void rulerTap(Offset p) {
-    final t = _t, ws = t.workspace;
+    final ws = workspace;
     if (ws == null) return;
     final int f;
-    if (t.ruler.flagAt(p) case final flag?) {
+    if (ruler.flagAt(p) case final flag?) {
       selectedMarker.value = flag;
       f = (flag.$1 * WorkspaceController.fps).round();
     } else {
       selectedMarker.value = null;
       if (p.dy <= TimelineMetrics.band + 2) return;
-      f = t.viewport.view
+      f = viewport.view
           .frameAt(p.dx)
           .round()
           .clamp(0, WorkspaceController.duration);
@@ -117,15 +169,15 @@ mixin TimelineRequests on State<TimelinePane> {
   /// Live plays from the marker instead, so here "Play from Here" is in the right-click menu.
   /// Elsewhere it zooms to the selection, or to the whole project when nothing is selected, as in Live.
   void rulerDouble(Offset p) {
-    if (_t.ruler.flagAt(p) case final flag?) {
+    if (ruler.flagAt(p) case final flag?) {
       selectedMarker.value = flag;
       return _rename();
     }
-    final ws = _t.workspace;
+    final ws = workspace;
     if (ws != null && (ws.keys.isNotEmpty || ws.layer != null)) {
       return requestTimeline('selection');
     }
-    _t.setZoom(1);
+    setZoom(1);
   }
 
   /// A right-click on the ruler.
@@ -134,11 +186,11 @@ mixin TimelineRequests on State<TimelinePane> {
   /// On a marker it selects the marker, and the menu can rename it, play from it or delete it.
   /// Elsewhere the menu adds a marker named by its order, or one whose name field opens at once, as in Final Cut Pro.
   void rulerRight(Offset p) {
-    final ws = _t.workspace, m = ws?.inside;
+    final ws = workspace, m = ws?.inside;
     if (ws == null || m == null) return;
-    if (_t.ruler.flagAt(p) case final flag?) {
+    if (ruler.flagAt(p) case final flag?) {
       selectedMarker.value = flag;
-      return _t.rulerMenu.currentState?.show(p, [
+      return rulerMenu.currentState?.show(p, [
         ContextMenuItem('Rename…', _rename, keys: '⌘R'),
         ContextMenuItem(
           'Play from Here',
@@ -161,7 +213,7 @@ mixin TimelineRequests on State<TimelinePane> {
       ]);
     }
     final at =
-            _t.viewport.view
+            viewport.view
                 .frameAt(p.dx)
                 .round()
                 .clamp(0, WorkspaceController.duration) /
@@ -169,7 +221,7 @@ mixin TimelineRequests on State<TimelinePane> {
         taken = ws.marks.any(
           (k) => (k.$1 - at).abs() < 0.5 / WorkspaceController.fps,
         );
-    _t.rulerMenu.currentState?.show(p, [
+    rulerMenu.currentState?.show(p, [
       ContextMenuItem(
         'Add Marker',
         taken ? null : () => _addMark(at, named: false),
@@ -194,18 +246,18 @@ mixin TimelineRequests on State<TimelinePane> {
 
   /// A right-click on a layer's bar opens the layer's context menu.
   void trackRight(Offset p) {
-    final t = _t, ws = t.workspace, r = t.rows.rowAt(p.dy);
+    final ws = workspace, r = rows.rowAt(p.dy);
     // Below the rows, or on a property lane, there is no bar.
     if (ws == null || r == null || r.value != null) return;
-    final l = r.l, f = t.viewport.view.frameAt(p.dx);
+    final l = r.l, f = viewport.view.frameAt(p.dx);
     // Beside the bar.
     if (f < l.inF || f > l.outF) return;
-    t.trackMenu.currentState?.show(p, layerContextMenu(context, ws, l));
+    trackMenu.currentState?.show(p, layerContextMenu(context, ws, l));
   }
 
   /// The same menu, opened by a right-click on a row's name.
   void labelRight(Layer l, Offset global) {
-    final menu = _t.labelMenu.currentState, ws = _t.workspace;
+    final menu = labelMenu.currentState, ws = workspace;
     if (menu == null || ws == null) return;
     menu.show(
       (menu.context.findRenderObject() as RenderBox).globalToLocal(global),
@@ -217,7 +269,7 @@ mixin TimelineRequests on State<TimelinePane> {
   ///
   /// It adds a marker at the playhead and selects it. If a marker is already there, it deletes it (Delete Locator in Live).
   void setMark() {
-    final ws = _t.workspace, m = ws?.inside;
+    final ws = workspace, m = ws?.inside;
     if (ws == null || m == null) return;
     if (ws.marks
             .where((k) => (k.$1 * WorkspaceController.fps).round() == ws.frame)
@@ -230,7 +282,7 @@ mixin TimelineRequests on State<TimelinePane> {
   }
 
   void _addMark(double at, {required bool named}) {
-    final ws = _t.workspace!, marks = ws.marks;
+    final ws = workspace!, marks = ws.marks;
     var n = marks.length + 1;
     while (marks.any((k) => k.$2 == 'M$n')) {
       n++;
@@ -243,18 +295,18 @@ mixin TimelineRequests on State<TimelinePane> {
   }
 
   void _rename() {
-    final ws = _t.workspace;
+    final ws = workspace;
     if (!mounted || ws == null) return;
     if (selectedMarker.value case final flag?) {
       // The selected marker's name is edited in its flag with the text selected, as in Final Cut Pro.
-      setState(() => _t.naming = flag);
-      _t.markWords
+      setState(() => naming = flag);
+      markWords
         ..text = flag.$2
         ..selection = TextSelection(
           baseOffset: 0,
           extentOffset: flag.$2.length,
         );
-      return _t.markFocus.requestFocus();
+      return markFocus.requestFocus();
     }
     if (ws.layer == null) return;
     setState(() => _renaming = ws.layer!.id);
@@ -267,7 +319,7 @@ mixin TimelineRequests on State<TimelinePane> {
   }
 
   void _renamed() {
-    final id = _renaming, ws = _t.workspace, words = _renameWords.text.trim();
+    final id = _renaming, ws = workspace, words = _renameWords.text.trim();
     if (id == null) return;
     setState(() => _renaming = null);
     final t = int.tryParse(id),
@@ -290,7 +342,7 @@ mixin TimelineRequests on State<TimelinePane> {
             bindings: {
               const SingleActivator(LogicalKeyboardKey.escape): () {
                 _renameWords.text =
-                    _t.workspace?.layers
+                    workspace?.layers
                         .where((l) => l.id == id)
                         .firstOrNull
                         ?.name ??
