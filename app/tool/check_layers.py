@@ -28,7 +28,7 @@ PACKAGE = 'package:motolii/'
 # ending in .dart is that one file; None is anything. A row covers its
 # subfolders, except 'workspace': that row is only the files directly in it (the
 # shell), so every folder under workspace/ needs a row of its own.
-_STATE = ['bridge', 'storage', 'skin', 'widgets/glyph.dart', 'workspace/easing']
+_STATE = ['bridge', 'storage', 'skin', 'widgets/glyphs.dart', 'workspace/easing']
 _EDITS = _STATE + ['workspace/state']
 _COMMANDS = _EDITS + ['widgets', 'workspace/edits']
 _SHELF = _COMMANDS + ['skin/forms', 'workspace/commands']

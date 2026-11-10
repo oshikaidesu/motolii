@@ -34,6 +34,7 @@ import 'package:motolii/workspace/dock/dock.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/window/home.dart';
 import 'package:motolii/workspace/window/panes.dart';
+import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
 import 'package:motolii/workspace/commands/keymap.dart';
 import 'package:motolii/workspace/stage/stage.dart';

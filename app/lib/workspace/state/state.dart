@@ -25,7 +25,7 @@ export '../../bridge/motolii.dart'
         MotoliiShelves,
         MotoliiWatch; // Extensions of Motolii, so anything holding Ws.inside can call the engine's reads.
 
-import 'package:motolii/workspace/window/panes.dart' show WsAt, WsPane;
+import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/storage/free_name.dart' show firstFree;
 import 'package:motolii/workspace/state/beats.dart';
 

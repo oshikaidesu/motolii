@@ -5,9 +5,6 @@ workspace/shelf/fx_code.dart -> workspace/dock/dock_program.dart
 workspace/shelf/shelf_add.dart -> workspace/dock/dock_make.dart
 workspace/shelf/shelf_tile.dart -> workspace/dock/dock_widgets.dart
 workspace/stage/stage.dart -> workspace/workspace.dart
-workspace/state/state.dart -> workspace/window/panes.dart
-workspace/tool_panel/tool_panel.dart -> workspace/window/panes.dart
 workspace/tool_panel/tool_panel_blend.dart -> workspace/workspace.dart
 workspace/tool_panel/tool_panel_depth.dart -> workspace/workspace.dart
-workspace/tool_panel/tool_panel_widgets.dart -> workspace/window/panes.dart
 workspace/top_bar/top_bar.dart -> workspace/window/zoom.dart

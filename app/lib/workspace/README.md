@@ -21,7 +21,7 @@
 | `tool_panel/` | Inspector の下のツールパネル（Ease、Align、Blend …） |
 
 ## 自分のパネルを足す（入口はここだけ）
-使う物の置き場：`Workspace`（`workspace.dart`）、`WsPane`（`window/panes.dart`。アイコンは `DockG` か null）、`Ws`・`WsScope`（`state/window.dart`・`state/scope.dart`）、`Motolii`（`../bridge/motolii.dart`）、Ease のタイル `easingsWithoutTile`（`tool_panel/tool_panel_ease.dart`）。
+使う物の置き場：`Workspace`（`workspace.dart`）、`WsPane`（`state/pane.dart`。アイコンは `DockG` か null）、`Ws`・`WsScope`（`state/window.dart`・`state/scope.dart`）、`Motolii`（`../bridge/motolii.dart`）、Ease のタイル `easingsWithoutTile`（`tool_panel/tool_panel_ease.dart`）。
 ```dart
 Workspace(document: path, extra: [
   WsPane('Notes', null, () => const MyNotes()),   // (名前、アイコン（null なら頭文字）、中身)
