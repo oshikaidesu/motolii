@@ -8,6 +8,7 @@
 
 #include "community/three/solid_three.h"
 #include "document/evaluate/material.h"
+#include "document/evaluate/moment_fx.h"
 #include "document/evaluate/shown.h"
 #include "document/scripts/scripts.h"
 #include "stage/render/render_draw.h"

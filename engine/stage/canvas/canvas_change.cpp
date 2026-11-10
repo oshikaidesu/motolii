@@ -2,8 +2,8 @@
 // of its sheet show, lighting its letters and changing its words in place. Each
 // drops the frames cached for the canvas (cache_drop) because they no longer
 // match.
-
 #include "gpu/gpu_interop.h"
+#include "stage/canvas/canvas_cache.h"
 #include "stage/canvas/canvas_renderables.h"
 #include "stage/canvas/path_operations.h"
 

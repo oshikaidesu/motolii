@@ -241,6 +241,7 @@ target_link_libraries(motolii_motion PUBLIC motolii_flags motolii_community_abse
 # Adapter: script runner code run as it is.
 add_library(motolii_community_script_runner STATIC
   community/script_runner/script_parameters.cpp
+  community/script_runner/script_natives.cpp
   community/script_runner/script_runner.cpp)
 target_link_libraries(motolii_community_script_runner PUBLIC motolii_flags motolii_community_quickjs motolii_community_after_effects motolii_community_sites motolii_community_three motolii_community_aviutl motolii_community_p5 motolii_media motolii_motion)
 
