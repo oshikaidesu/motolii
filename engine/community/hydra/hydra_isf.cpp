@@ -10,13 +10,23 @@
 // as a function of time or an array, is sampled every HYDRA_STEP seconds by Hydra's own code. The
 // samples become the keyframes of that parameter and can be edited like any other keyframes.
 #include "community/hydra/hydra_isf.h"
-#include <quickjs.h>
+
+#include <cstdint>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <string>
+#include <system_error>
+#include <utility>
+#include <vector>
+
+#include <quickjs.h>
+
+namespace {
 
 // Returns the contents of the file at `file`, or an empty string if it cannot be read.
-static std::string hydra_text(const std::string& file) {
+std::string hydra_text(const std::string& file) {
     std::ifstream in(file);
     std::stringstream all;
     all << in.rdbuf();
@@ -24,12 +34,12 @@ static std::string hydra_text(const std::string& file) {
 }
 // QuickJS module-name normalizer. Resolves `name` relative to the directory of the importing
 // module `base` and returns the result as a newly allocated string.
-static char* hydra_name(JSContext* cx, const char* base, const char* name, void*) {
+char* hydra_name(JSContext* cx, const char* base, const char* name, void*) {
     return js_strdup(cx, (std::filesystem::path(base).parent_path() / name).lexically_normal().string().c_str());
 }
 // QuickJS module loader. Reads the file `name` from disk and compiles it as a module without
 // running it. Returns nullptr if compilation fails.
-static JSModuleDef* hydra_load(JSContext* cx, const char* name, void*) {
+JSModuleDef* hydra_load(JSContext* cx, const char* name, void*) {
     const std::string src = hydra_text(name);
     JSValue built = JS_Eval(cx, src.c_str(), src.size(), name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
     if (JS_IsException(built)) return nullptr;
@@ -42,7 +52,7 @@ static JSModuleDef* hydra_load(JSContext* cx, const char* name, void*) {
 // source), __seconds and __step first. On success the module sets __isf (the ISF text) and
 // __parameters, and sets __moving to the list of time-varying parameters. On failure it sets
 // __why to the error text.
-static const char* const hydra_make = R"(
+const char* const hydra_make = R"(
 import Generator from './generator-factory.js'
 import arrayUtils from './lib/array-utils.js'
 import utility from './glsl/utility-functions.js'
@@ -107,6 +117,8 @@ try {
   g.__parameters = JSON.stringify(g.__moving || []);
 } catch (e) { globalThis.__why = String(e) + ' ' + (e.stack || ''); }
 )";
+
+}  // namespace
 
 // See hydra_isf.h. Runs the Hydra code in a fresh QuickJS runtime that is destroyed before
 // returning, so no state is shared between calls.

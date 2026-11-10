@@ -1,5 +1,7 @@
+#ifndef MOTOLII_COMMUNITY_HYDRA_HYDRA_ISF_H_
+#define MOTOLII_COMMUNITY_HYDRA_HYDRA_ISF_H_
+
 // Declares the conversion of Hydra code into an ISF effect. Implemented in hydra_isf.cpp.
-#pragma once
 #include <string>
 #include <vector>
 
@@ -17,3 +19,5 @@ inline constexpr double HYDRA_STEP = 0.1;
 // On success, returns true, stores the ISF text in `isf`, and appends the time-varying parameters
 // to `parameters`. On failure, returns false and stores the reason in `why`.
 bool hydra_isf(const std::string& folder, const std::string& code, double seconds, std::string& isf, std::vector<HydraParameter>& parameters, std::string& why);
+
+#endif  // MOTOLII_COMMUNITY_HYDRA_HYDRA_ISF_H_
