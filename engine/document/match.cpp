@@ -157,225 +157,40 @@ bool doc_match(Doc& d) {
   bool& all = rebuild.all;
   for (const auto& [layer, of] : told) {
     if (d.on_stage.shown.count(layer)) continue;
-    DocShownLayer made{of};
-    const std::string kind = doc_word(d, layer, "kind"),
-                      file = doc_word(d, layer, "file"),
-                      laid = doc_word(d, layer, "blend"),
-                      shape = doc_word(d, layer, "shape");
+    LayerBuild build{d, s, layer, DocShownLayer{of}};
+    DocShownLayer& made = build.made;
+    build.kind = doc_word(d, layer, "kind");
+    build.file = doc_word(d, layer, "file");
+    build.laid = doc_word(d, layer, "blend");
+    build.shape = doc_word(d, layer, "shape");
+    const std::string &kind = build.kind, &file = build.file,
+                      &laid = build.laid, &shape = build.shape;
     // A layer with effect files of its own is drawn alone as normal. Its blend
     // mode is applied once the effects are on (screen_fx.h).
     const bool effected = doc_fx_files(doc_fx_steps(d, layer));
     // lay is the blend mode for the GPU, or null when the layer is drawn as
     // normal. That is the case with effects, with no blend mode, or with a mode
     // that reads the pixels underneath, which flat.mat mixes itself.
-    const char* lay =
+    build.lay =
         effected || laid.empty() || laid == "normal" || doc_blend_way(laid)
             ? nullptr
             : laid.c_str();
-    std::string why = "it could not be read";
-    const std::string fill = doc_word(d, layer, "fill");
-    // A fill is one colour of six hex digits. For text or a flat shape it can
-    // also be two or more colours that form a ramp. Each colour is six or eight
-    // hex digits, and the last two are the alpha, so a colour can fade to
-    // clear. Each colour may also carry a position, @ followed by a fraction of
-    // the way, as in CSS colour stop positions: ff3366@0.35.
-    std::vector<float4> ramp;
-    std::vector<float> rampAt;
-    long rgb = -1;
-    {
-      std::istringstream said(fill);
-      for (std::string word; said >> word;) {
-        const size_t mark = word.find('@');
-        const std::string one = word.substr(0, mark);
-        rampAt.push_back(
-            mark == std::string::npos
-                ? -1.f
-                : std::clamp(std::strtof(word.c_str() + mark + 1, nullptr), 0.f,
-                             1.f));
-        const bool hex = (one.size() == 6 || one.size() == 8) &&
-                         one.find_first_not_of("0123456789abcdefABCDEF") ==
-                             std::string::npos;
-        const long c =
-            hex ? std::strtol(one.substr(0, 6).c_str(), nullptr, 16) : -1;
-        if (c < 0) {
-          ramp.clear(), rgb = -1;
-          break;
-        }
-        if (ramp.empty()) rgb = c;
-        const float there =
-            one.size() == 8
-                ? (float)std::strtol(one.substr(6).c_str(), nullptr, 16) / 255.f
-                : 1.f;
-        ramp.push_back(float4{(float)((c >> 16) & 255) / 255.f,
-                              (float)((c >> 8) & 255) / 255.f,
-                              (float)(c & 255) / 255.f, there});
-      }
-      // Eight digits (with alpha) are accepted only in a ramp of two colours or
-      // more.
-      if (ramp.size() == 1 && ramp[0].w < 1.f) ramp.clear(), rgb = -1;
-    }
-    const float3 colour =
-        float3{(float)((rgb >> 16) & 255), (float)((rgb >> 8) & 255),
-               (float)(rgb & 255)} /
-        255.f;
-    // The edge is ThorVG's stroke. Its colour is written like a fill. Its width
-    // is converted from points of the image to a fraction of the layer's own
-    // height, at scale 1 where layers start.
-    const std::string stroke = doc_word(d, layer, "stroke");
-    const long edgeRgb =
-        stroke.size() == 6 && stroke.find_first_not_of(
-                                  "0123456789abcdefABCDEF") == std::string::npos
-            ? std::strtol(stroke.c_str(), nullptr, 16)
-            : -1;
-    const math::double4 up = s.camera->getProjectionMatrix() *
-                             s.camera->getViewMatrix() *
-                             math::double4{0, 1, 0, 1};
-    const float4 edge =
-        edgeRgb < 0
-            ? float4{0.f}
-            : float4{float3{(float)((edgeRgb >> 16) & 255),
-                            (float)((edgeRgb >> 8) & 255),
-                            (float)(edgeRgb & 255)} /
-                         255.f,
-                     (float)(doc_number(d, layer, "stroke_width", 0, 0) /
-                             (0.5 * s.h * up.y / up.w))};
-    if (!stroke.empty() && edgeRgb < 0)
-      why = "a stroke is six digits, as ff3366";
-    // Image points per stage unit, where layers start.
-    const double units = 0.5 * s.h * up.y / up.w;
-    Canvas2DFx fx;
-    fx.thick = doc_on(d, layer, "scale_z"), fx.lit = doc_lit(d, layer),
-    fx.bevel = doc_bevel(d, layer) > 0;
-    // The material the layer wears: its sheet uses the variant of flat.mat for
-    // it, lit by Filament's lights. Glass reads what is behind it and is not
-    // lit.
-    fx.wear = doc_sheet_material(d, layer);
-    if (!fx.wear.empty() && fx.wear != "glass") fx.lit = true;
-    for (const std::string rim : {"stroke_2", "stroke_3"})
-      if (const std::string word = doc_word(d, layer, rim.c_str());
-          word.size() == 6) {
-        const long hex = std::strtol(word.c_str(), nullptr, 16);
-        const double wide =
-            doc_number(d, layer, (rim + "_width").c_str(), 0, 0) / units;
-        if (wide > 0.0)
-          fx.rims.push_back(float4{(float)((hex >> 16) & 255) / 255.f,
-                                   (float)((hex >> 8) & 255) / 255.f,
-                                   (float)(hex & 255) / 255.f, (float)wide});
-      }
-    if (ramp.size() > 1) fx.ramp = ramp;
-    // Positions were given. A stop without a position is spread evenly. A stop
-    // positioned before the one ahead of it moves to that one's position, as in
-    // the colour stop fix-up of CSS Images Level 3.
-    if (ramp.size() > 1 && std::any_of(rampAt.begin(), rampAt.end(),
-                                       [](float a) { return a >= 0.f; })) {
-      for (size_t i = 0; i < rampAt.size(); ++i) {
-        if (rampAt[i] < 0.f) rampAt[i] = (float)i / (float)(rampAt.size() - 1);
-        if (i > 0) rampAt[i] = std::max(rampAt[i], rampAt[i - 1]);
-      }
-      fx.rampAt = rampAt;
-    }
-    fx.radial = doc_word(d, layer, "gradient") == "radial",
-    fx.rampAngle = (float)doc_number(d, layer, "gradient_angle", 0, 0),
-    fx.rampScale = (float)doc_number(d, layer, "gradient_scale", 0, 1);
-    fx.spread = doc_word(d, layer, "gradient_spread") == "reflect"  ? 1
-                : doc_word(d, layer, "gradient_spread") == "repeat" ? 2
-                                                                    : 0;
-    const std::vector<AbsentCopy>& repeated =
-        doc_absent_copies(d, layer, d.stage->now);
-    // The number of copies is the number that the repeat effect lays down, if
-    // there is one.
-    fx.copies = repeated.empty() ? (int)doc_number(d, layer, "copies", 0, 1)
-                                 : (int)repeated.size();
-    // Draw the copies in one pass when no copy is cleared on its own (no script
-    // sets opacity) and their colours form a ramp that flat.mat supports. The
-    // 3D layers inside an image do not qualify either.
-    {
-      const std::string fills = doc_word(d, layer, "copy_fill"),
-                        script = doc_word(d, layer, "script");
-      std::istringstream said(fills);
-      int colours = 0;
-      for (std::string one; said >> one && one != "none";) ++colours;
-      const DocScript* sc = doc_script_of(d, script);
-      // True when a behaviour gives each copy its own value. Each copy then has
-      // its own look and cannot be drawn in one pass.
-      bool connected = false;
-      doc_rows(d,
-               sqlite3_mprintf("select 1 from keyframe where layer = %d and "
-                               "name glob '*_by' and value <> 0 limit 1",
-                               layer),
-               [&](sqlite3_stmt*) { connected = true; });
-      // Copies that fade individually, such as those of the repeat effect or
-      // the far ones of a scatter field, each need their own alpha.
-      const bool faded =
-          std::any_of(repeated.begin(), repeated.end(),
-                      [](const AbsentCopy& c) { return c.alpha < 0.999; });
-      // Expressions on the layer. Each may set opacity too.
-      const std::vector<DocScript*> laying = doc_expressions_fx(d, layer);
-      const bool clears =
-          (sc && sc->clears) ||
-          std::any_of(laying.begin(), laying.end(),
-                      [](const DocScript* e) { return e->clears; });
-      // At most eight colours, the size of the ramp in flat.mat.
-      fx.together = fx.copies > 1 && (kind == "shape" || kind == "text") &&
-                    colours <= 8 && !clears && !connected && !faded;
-    }
-    fx.wrapWidth = (float)doc_number(d, layer, "wrap_at", 0, 0);
-    const std::string split = doc_word(d, layer, "split"),
-                      script = doc_word(d, layer, "script");
-    fx.splitWords = split == "words";
-    // A text with a script or an expression moves letter by letter, as in
-    // Cavalry, unless split is none.
-    fx.split = split == "letters" || fx.splitWords ||
-               (split.empty() && ((!script.empty() && script != "none") ||
-                                  !doc_expressions_fx(d, layer).empty()));
-    // Maps to ThorVG's TextWrap. A wrap width without a wrap mode wraps by
-    // words. Vertical wrapping makes a box one letter wide.
-    {
-      const std::string w = doc_word(d, layer, "wrap");
-      fx.wrap = w == "character" || w == "vertical" ? 1
-                : w == "word"                       ? 2
-                : w == "smart"                      ? 3
-                : w == "ellipsis"                   ? 4
-                : fx.wrapWidth > 0.f                ? 2
-                                                    : 0;
-      if (w == "vertical") fx.wrapWidth = 1.f, fx.column = true;
-    }
-    fx.letters = (float)doc_number(d, layer, "letter_spacing", 0, 1),
-    fx.lines = (float)doc_number(d, layer, "line_spacing", 0, 1),
-    fx.italic = (float)doc_number(d, layer, "italic", 0, 0);
-    const auto which = [&](const char* name, const char* words) {
-      const std::string w = doc_word(d, layer, name);
-      if (w.empty()) return -1;
-      int n = 0;
-      for (const char* at = words; *at; ++n) {
-        const size_t len = strcspn(at, " ");
-        if (w == std::string(at, len)) return n;
-        at += len + (at[len] ? 1 : 0);
-      }
-      return -1;
-    };
-    // Indices into ThorVG's StrokeCap and StrokeJoin, in its order.
-    fx.cap = which("cap", "butt round square"),
-    fx.join = which("join", "miter round bevel");
-    fx.rampBlend = std::max(0, which("gradient_blend", "rgb oklab hue steps"));
-    fx.heads = std::max(0, which("heads", "none end start both")),
-    fx.headSize = (float)doc_number(d, layer, "head_size", 0, 4),
-    fx.headShape = std::max(
-        0,
-        which("head_shape",
-              "arrow circle box chevron bar t_line square square_filled "
-              "diamond diamond_filled arrow_hollow arrow_filled circle_hollow "
-              "circle_filled teardrop_hollow teardrop_filled")),
-    fx.headStart =
-        which("head_start",
-              "arrow circle box chevron bar t_line square square_filled "
-              "diamond diamond_filled arrow_hollow arrow_filled circle_hollow "
-              "circle_filled teardrop_hollow teardrop_filled");
-    fx.dash = (float)(doc_number(d, layer, "dash", 0, 0) / units),
-    fx.dashFrom = (float)(doc_number(d, layer, "dash_offset", 0, 0) / units);
-    // Build at the largest size the effects reach. Each time then evaluates
-    // them as they are at that time.
-    bool fxOk = doc_fx(d, layer, 0.0, true, units, fx, why);
+    const char* lay = build.lay;
+    std::string& why = build.why;
+    match_fill(build);
+    const std::string& fill = build.fill;
+    const std::vector<float4>& ramp = build.ramp;
+    const long rgb = build.rgb;
+    const float3 colour = build.colour;
+    match_stroke(build);
+    const std::string& stroke = build.stroke;
+    const long edgeRgb = build.edgeRgb;
+    const math::double4 up = build.up;
+    const float4 edge = build.edge;
+    const double units = build.units;
+    match_flat_look(build);
+    Canvas2DFx& fx = build.fx;
+    const bool fxOk = build.fxOk;
     // An effect file that cannot be built refuses the layer of any kind, as an
     // image's own file is refused.
     if (!fxOk && doc_fx_files(doc_fx_steps(d, layer))) {
