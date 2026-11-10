@@ -11,7 +11,9 @@
 #include "community/absent_motion/absent_motion.h"
 #include "community/quickjs/script.h"
 #include "community/script_runner/script_runner.h"
+#include "document/document.h"
 #include "document/kinds.h"
+#include "document/values.h"
 
 namespace motolii {
 

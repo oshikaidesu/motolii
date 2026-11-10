@@ -46,7 +46,7 @@
 //   it appears. A property name
 //             Drag that number. a is its new value.
 
-#include "document/kinds.h"
+#include "document/document.h"
 
 namespace motolii {
 

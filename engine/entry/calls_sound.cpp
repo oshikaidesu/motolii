@@ -9,11 +9,11 @@
 #include <utility>
 #include <vector>
 
+#include "document/document.h"
 #include "document/edit/keys_put.h"
 #include "document/edit/layer_edit.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
-#include "document/kinds.h"
 #include "document/marks.h"
 #include "document/undo.h"
 #include "entry/motolii.h"

@@ -9,7 +9,7 @@
 // keyframe of a property takes the place of the value that stayed. A keyframe
 // at time 0 is marked by its easing, which is Linear until the user changes it.
 
-#include "document/kinds.h"
+#include "document/document.h"
 
 namespace motolii {
 

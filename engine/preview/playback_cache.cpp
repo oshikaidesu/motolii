@@ -27,8 +27,8 @@
 #include <vector>
 
 #include "community/quickjs/script.h"
+#include "document/document.h"
 #include "document/evaluate/value_at.h"
-#include "document/kinds.h"
 #include "document/marks.h"
 #include "document/scripts/scripts.h"
 #include "shelf/shelf_folders.h"

@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-#include "document/kinds.h"
+#include "document/document.h"
 #include "motion/easing_curves.h"
 #include "motion/easing_names.h"
 #include "stage/effects/screen_fx.h"

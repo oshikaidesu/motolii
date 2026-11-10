@@ -13,7 +13,7 @@
 // line shader does. What the sketch draws stays on screen from frame to frame
 // until the sketch clears it.
 
-#include "document/kinds.h"
+#include "document/document.h"
 
 namespace motolii {
 

@@ -19,10 +19,10 @@
 #include <vector>
 
 #include "community/script_runner/script_runner.h"
+#include "document/document.h"
 #include "document/evaluate/relations.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
-#include "document/kinds.h"
 #include "document/scripts/scripts.h"
 
 using namespace filament;

@@ -27,6 +27,7 @@
 #include "community/absent_motion/absent_motion.h"
 #include "community/script_runner/script_runner.h"
 #include "document/card_table.h"
+#include "document/document.h"
 #include "document/evaluate/place.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"

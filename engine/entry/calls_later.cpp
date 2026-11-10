@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "document/cards.h"
+#include "document/document.h"
 #include "document/edit/arrange.h"
 #include "document/edit/easings_put.h"
 #include "document/edit/fx_put.h"
@@ -24,7 +25,6 @@
 #include "document/edit/relate.h"
 #include "document/edit/time_edit.h"
 #include "document/evaluate/value_at.h"
-#include "document/kinds.h"
 #include "document/marks.h"
 #include "document/match.h"
 #include "document/scripts/adapter.h"

@@ -10,7 +10,7 @@
 #include <functional>
 #include <string>
 
-#include "document/kinds.h"
+#include "document/document.h"
 #include "stage/render/render_stage.h"
 
 namespace motolii {

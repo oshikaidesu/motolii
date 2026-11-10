@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "document/cards.h"
+#include "document/document.h"
 #include "document/edit/arrange.h"
 #include "document/edit/easings_put.h"
 #include "document/edit/fx_put.h"
@@ -29,12 +30,12 @@
 #include "document/evaluate/relations.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
-#include "document/kinds.h"
 #include "document/marks.h"
 #include "document/scripts/expressions.h"
 #include "document/scripts/recipes.h"
 #include "document/scripts/scripts.h"
 #include "document/undo.h"
+#include "document/values.h"
 #include "entry/motolii.h"
 #include "entry/render_thread.h"
 #include "entry/snapshot.h"

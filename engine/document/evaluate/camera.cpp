@@ -34,11 +34,11 @@
 #include <vector>
 
 #include "community/quickjs/script.h"
+#include "document/document.h"
 #include "document/edit/layer_edit.h"
 #include "document/evaluate/place.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
-#include "document/kinds.h"
 #include "document/marks.h"
 #include "document/scripts/scripts.h"
 #include "stage/canvas/canvas_flat.h"

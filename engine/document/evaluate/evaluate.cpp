@@ -45,6 +45,7 @@
 #include "document/evaluate/shown.h"
 #include "document/evaluate/sketch.h"
 #include "document/evaluate/value_at.h"
+#include "document/kinds.h"
 #include "document/marks.h"
 #include "document/match.h"
 #include "document/scripts/scripts.h"

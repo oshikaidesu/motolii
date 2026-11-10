@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-#include "document/kinds.h"
+#include "document/document.h"
 #include "document/scripts/folders.h"
 
 namespace motolii {

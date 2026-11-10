@@ -28,11 +28,11 @@
 
 #include "community/absent_motion/absent_motion.h"
 #include "community/quickjs/script.h"
+#include "document/document.h"
 #include "document/edit/layer_edit.h"
 #include "document/evaluate/relations.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
-#include "document/kinds.h"
 #include "document/marks.h"
 #include "document/scripts/expressions.h"
 #include "document/scripts/scripts.h"

@@ -17,7 +17,7 @@
 #include <string>
 #include <utility>
 
-#include "document/kinds.h"
+#include "document/document.h"
 #include "stage/live.h"
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"

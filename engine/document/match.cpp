@@ -40,6 +40,7 @@
 #include "document/evaluate/relations.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
+#include "document/kinds.h"
 #include "document/marks.h"
 #include "document/scripts/expressions.h"
 #include "document/scripts/scripts.h"

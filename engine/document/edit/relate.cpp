@@ -16,6 +16,7 @@
 #include "document/edit/layer_edit.h"
 #include "document/evaluate/relations.h"
 #include "document/evaluate/value_at.h"
+#include "document/kinds.h"
 #include "document/scripts/scripts.h"
 #include "document/undo.h"
 

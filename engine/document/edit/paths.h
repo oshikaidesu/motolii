@@ -6,7 +6,7 @@
 
 #include <math/vec2.h>
 
-#include "document/kinds.h"
+#include "document/document.h"
 
 namespace motolii {
 

@@ -26,7 +26,7 @@
 #include <utility>
 // Thermion's frame scheduler, in engine/third_party/thermion_frame. It calls
 // back once per display refresh.
-#include "document/kinds.h"
+#include "document/document.h"
 #include "entry/motolii.h"
 #include "entry/snapshot.h"
 #include "media/sound_playback.h"

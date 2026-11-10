@@ -8,9 +8,9 @@
 #include <mutex>
 #include <string>
 
+#include "document/document.h"
 #include "document/edit/presets.h"
 #include "document/evaluate/value_at.h"
-#include "document/kinds.h"
 #include "document/marks.h"
 #include "entry/calls_time.h"
 #include "entry/motolii.h"

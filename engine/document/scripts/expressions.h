@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "community/quickjs/script.h"
-#include "document/kinds.h"
+#include "document/document.h"
 #include "document/scripts/scripts.h"
 
 namespace motolii {

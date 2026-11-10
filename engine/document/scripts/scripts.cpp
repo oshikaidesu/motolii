@@ -20,6 +20,7 @@
 #include "community/script_runner/script_runner.h"
 #include "community/three/solid_three.h"
 #include "community/three/three_isf.h"
+#include "document/document.h"
 #include "document/evaluate/fx_list.h"
 #include "document/evaluate/value_at.h"
 #include "document/kinds.h"

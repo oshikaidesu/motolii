@@ -17,6 +17,7 @@
 
 #include "base/json.h"
 #include "document/card_table.h"
+#include "document/document.h"
 #include "document/edit/arrange.h"
 #include "document/edit/paths.h"
 #include "document/evaluate/shown.h"

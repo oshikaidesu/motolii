@@ -4,7 +4,7 @@
 // Adds, duplicates and removes layers, and checks and sets the values and words
 // of a layer.
 
-#include "document/kinds.h"
+#include "document/document.h"
 
 namespace motolii {
 

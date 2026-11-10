@@ -23,6 +23,7 @@
 #include "document/evaluate/material.h"
 #include "document/evaluate/shown.h"
 #include "document/evaluate/value_at.h"
+#include "document/kinds.h"
 #include "document/scripts/expressions.h"
 #include "document/scripts/scripts.h"
 #include "document/undo.h"

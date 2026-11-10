@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include "document/kinds.h"
+#include "document/document.h"
 
 namespace motolii {
 

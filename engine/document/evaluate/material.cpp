@@ -10,8 +10,8 @@
 #include <string>
 
 #include "document/card_table.h"
+#include "document/document.h"
 #include "document/evaluate/value_at.h"
-#include "document/kinds.h"
 #include "media/video_layer.h"
 #include "stage/canvas/canvas_cache.h"
 #include "stage/render/gltf_model.h"

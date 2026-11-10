@@ -83,7 +83,7 @@
 // The document is split into the parts below. Read them in this order, because
 // each part builds on the ones before it. Document kinds and the names of
 // properties.
-#include "document/kinds.h"
+#include "document/document.h"
 // The properties a layer may have and how each is displayed.
 #include "document/values.h"
 // A layer's scripts, whose parameters become properties of the layer.

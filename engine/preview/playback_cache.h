@@ -24,7 +24,7 @@
 #include <string>
 #include <vector>
 
-#include "document/kinds.h"
+#include "document/document.h"
 #include "stage/live.h"
 #include "stage/render/render_stage.h"
 

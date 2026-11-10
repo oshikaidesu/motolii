@@ -5,7 +5,7 @@
 // one time, and the helpers that decide how much room a layer's effects need
 // and which properties force a layer to be rebuilt.
 
-#include "document/kinds.h"
+#include "document/document.h"
 
 namespace motolii {
 

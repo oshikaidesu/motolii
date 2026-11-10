@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "document/card_table.h"
-#include "document/kinds.h"
+#include "document/document.h"
 #include "entry/motolii.h"
 #include "entry/render_thread.h"
 #include "entry/render_thread_loop.h"

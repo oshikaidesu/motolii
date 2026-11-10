@@ -5,7 +5,7 @@
 // frame, the preview, selection, playback and the timing report.
 #include <string>
 
-#include "document/kinds.h"
+#include "document/document.h"
 #include "entry/motolii.h"
 
 namespace motolii {

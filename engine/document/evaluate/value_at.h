@@ -10,9 +10,14 @@
 #include <string>
 #include <vector>
 
-#include "document/kinds.h"
+#include "document/document.h"
 
 namespace motolii {
+
+// SQL condition for whether a value is keyed. See doc_key.
+#define DOC_KEYED                                                         \
+  "(select count(*) > 1 or max(at) <> 0 or max(easing) is not null from " \
+  "keyframe where layer = %d and name = %Q)"
 
 // Runs the query `ask` on the project database and calls `each` once per result
 // row. Takes ownership of `ask`, which must come from sqlite3_mprintf, and

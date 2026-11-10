@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "document/kinds.h"
+#include "document/document.h"
 #include "stage/canvas/canvas_cache.h"
 
 namespace motolii {

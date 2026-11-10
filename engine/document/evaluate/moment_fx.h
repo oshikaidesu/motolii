@@ -13,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-#include "document/kinds.h"
+#include "document/document.h"
 #include "stage/layer_effects/layer_fx.h"
 
 namespace motolii {

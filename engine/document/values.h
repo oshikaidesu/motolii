@@ -2,9 +2,30 @@
 #define MOTOLII_DOCUMENT_VALUES_H_
 // Lists every property a layer may have and how the inspector shows it.
 
-#include "document/kinds.h"
+#include "document/document.h"
 
 namespace motolii {
+
+// How a value is shown to the user. The app draws its control from this and has
+// nothing of its own. look is one of: count (a whole number), onoff, angle,
+// stage (a length of the stage, shown in points of the image), down (a length
+// up the stage, shown downward as the image counts), share (0 to 1, shown in
+// hundredths), colour, colours and numbers (words of those), words (any text,
+// typed), file (a file, given from a shelf), layer (another layer), seed, or
+// none (as its range specifies). unit is the unit the value is read in. label
+// is a name in plain words. low and high are the span the control covers; the
+// value itself may go further, as its range specifies. fold is the name of the
+// fold it lies in on its card if it is folded away, named by what the fold
+// holds. A card's first row holds at most eight, as on Ableton's Push.
+struct DocShown {
+  const char* name;
+  const char* look;
+  const char* unit;
+  const char* label;
+  double low, high;
+  const char* fold;
+  bool open = false;
+};
 
 // One entry per property. The fields of DocShown are: property name, kind of
 // control, unit, label shown to the user, lowest and highest value of the

@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "community/absent_motion/absent_motion.h"
-#include "document/kinds.h"
+#include "document/document.h"
 #include "physics/physics.h"
 #include "stage/render/render_stage.h"
 

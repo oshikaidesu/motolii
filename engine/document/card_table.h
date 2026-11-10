@@ -4,9 +4,25 @@
 
 #include <string>
 
-#include "document/kinds.h"
+#include "document/document.h"
 
 namespace motolii {
+
+// The cards a user sees a layer's values on, besides where the layer is and its
+// fill: a title and the values on it, in the order shown. A layer is shown
+// those of them its kind has. A value that the window has no other place for
+// goes here. The card is shown only while the value named by `when` is `is`. A
+// leading "!" means is not, and a leading "~" means has it in it. added: the
+// card is shown only once one of its values is set or keyed, or the user asked
+// for it with More. It is not one of the tiles Alight Motion shows for the kind
+// (doc_cards_of).
+struct DocCard {
+  const char* title;
+  const char* names;
+  const char* when = nullptr;
+  const char* is = nullptr;
+  bool added = false;
+};
 
 // Each entry is a card with a title and the space separated properties it
 // shows. The cards that apply to a layer are chosen by the next two fields: a
