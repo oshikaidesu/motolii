@@ -2,134 +2,134 @@
 
 [![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![checks](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml)
 
-**ネットで見つけた表現を、すぐ自分の映像に。**
+**Use a look you found on the net in your own video, right away.**
 
-Motolii は、MV やモーショングラフィックスを制作するためのオープンソースの動画編集ソフトです。
+Motolii is an open-source video editor for making music videos and motion graphics.
 
-**見つけたファイルを使うには**：[`shelves/README.md`](shelves/README.md) を見てください。ファイルの種類ごとに置き場所と書き方があります。
+**To use a file you found**, see [`shelves/README.md`](shelves/README.md). Each kind of file has its own folder and its own way of being written.
 
-- ファイル（シェーダー・`.js`・イージングなど）：種類に合うフォルダに置く。例：`effects/` に `.fs` を置くと Effects タブに出る
-- コード（p5.js・Shadertoy など）：置かずに、コピーしてアプリで ⌘V
+- A file (a shader, a `.js`, an easing...): put it in the folder for its kind. For example, a `.fs` in `effects/` shows in the Effects tab.
+- Code (p5.js, Shadertoy...): do not place it; copy it and press ⌘V in the app.
 
-After Effects のような映像制作を、より簡単な操作で行えるように開発しています。また、Web 上で公開されているエフェクトやスクリプトを、専用プラグインに作り直さずに利用できることも特徴です。
+It is being built so that the kind of work done in After Effects takes simpler handling. It can also use effects and scripts published on the web without rebuilding them as dedicated plugins.
 
-[English](README.en.md) ・ [質問・相談（Discussions）](https://github.com/oshikaidesu/motolii/discussions) ・ [不具合（Issues）](https://github.com/oshikaidesu/motolii/issues)　どちらも日本語・英語のどちらでも。
+[日本語](README.ja.md) · [Questions (Discussions)](https://github.com/oshikaidesu/motolii/discussions) · [Bugs (Issues)](https://github.com/oshikaidesu/motolii/issues) — English or Japanese.
 
-![Motolii の画面：左に素材と棚、真ん中にプレビュー、下にタイムライン、右に値](docs/pictures/window.jpg)
+![The Motolii UI: media and shelves on the left, the preview in the middle, the timeline below, values on the right](docs/pictures/window.jpg)
 
-## エフェクトとスクリプト
+## Effects and scripts
 
-Motolii では、ほかのソフトや Web サイトで公開されているエフェクトを読み込めます。
+Motolii can load effects published on websites and for other software.
 
-例えば、Shadertoy のシェーダーや p5.js のスケッチは、コードをコピーして貼り付けることでレイヤーとして利用できます。読み込んだあとも、キーフレームを設定したり、ほかのエフェクトと組み合わせたりできます。
+A Shadertoy shader or a p5.js sketch, for example, can be used as a layer by copying its code and pasting it in. Once it is loaded, you can set keyframes on it and combine it with other effects.
 
-ISF、WGSL、AviUtl2 のスクリプトにも対応しています。ファイルを指定のフォルダに追加すると、アプリを再起動せずにエフェクト一覧へ反映されます。
+ISF, WGSL and AviUtl2 scripts are supported too. Add a file to the designated folder and it appears in the effects list without restarting the app.
 
-新しく追加したエフェクトにはプレビューが自動生成されるため、名前だけでなく、実際の見た目を確認しながら選べます。
+A preview is generated automatically for each newly added effect, so you can choose by how it actually looks as well as by its name.
 
-※ 対応形式のコードでも、すべてが正しく動作するわけではありません。動作検証の結果は後述しています。
+Note: not all code in a supported format runs correctly. The test results are further down.
 
-![配られている ISF の効果 8 本を写真と文字に掛けた所](docs/pictures/effects.jpg)
+![Eight shared ISF effects on a photo and text](docs/pictures/effects.jpg)
 
-*配られている ISF の効果 8 本を、写真（パブリックドメイン）と文字に掛けた所。どれも作者のファイルのまま。*
+*Eight ISF effects as their authors share them, on a public-domain photo and text.*
 
-## 編集操作
+## Editing
 
-操作方法は Alight Motion を参考にしています。
+The handling is modelled on Alight Motion.
 
-文字や図形はプレビュー画面上で直接移動・変形できます。Animate を有効にすると、値の変更をキーフレームとして記録できます。キーフレーム間のイージングも調整できます。
+Text and shapes can be moved and transformed directly in the preview. With Animate on, changing a value records a keyframe. The easing between keyframes can be adjusted too.
 
-エフェクトは動くサムネイルから探せます。追加したエフェクトも同じ一覧で管理できます。
+Effects can be found by their moving thumbnails. Effects you add are kept in the same list.
 
-また、2D と 3D を切り替える必要はなく、文字、画像、動画、3D モデルなどを同じシーンに配置できます。
+There is no need to switch between 2D and 3D: text, images, video, 3D models and more can sit in the same scene.
 
-## 映像制作
+## Making a video
 
-タイムライン上で素材を配置し、エフェクトやキーフレームを使ってアニメーションを制作できます。
+Place media on the timeline and animate it with effects and keyframes.
 
-動画や音声の読み込み、Lottie アニメーション、MIDI を利用したアニメーション、物理演算にも対応しています。
+Video and audio import, Lottie animations, animation from MIDI and physics are supported too.
 
-完成した映像は MP4 形式で書き出せます。
+A finished video can be written out as an MP4.
 
-![光る文字、回るピンクの輪、線の模様、色のずれ](docs/pictures/mv.gif)
+![Glowing text, a spinning pink ring, a pattern of lines, split colours](docs/pictures/mv.gif)
 
-*Motolii で作った 8 秒。組み立てた後に [`docs/using/make_intro_movie.md`](docs/using/make_intro_movie.md) の命令を貼れば、同じ物が `~/Movies/Motolii/mv.mp4` にできます。*
+*8 seconds made with Motolii. Once built, the calls in [`docs/using/make_intro_movie.md`](docs/using/make_intro_movie.md), pasted, make the same as `~/Movies/Motolii/mv.mp4`.*
 
-## 動作環境
+## Requirements
 
-現在は開発途中で、Apple Silicon 搭載 Mac に対応しています。
+Motolii is still in development and supports Macs with Apple Silicon.
 
-配布用アプリはまだ用意していないため、試す場合はソースコードからビルドする必要があります。
+There is no packaged app yet, so trying it means building it from source.
 
-Windows 版も作る予定です。Filament、ThorVG、GStreamer、Flutter など主な部品は Windows に対応しており、Mac に直接つないでいるのは動画と画面の受け渡しなど一部だけです。Windows でのビルドと動作確認はまだしていません。
+A Windows version is planned. The main parts, such as Filament, ThorVG, GStreamer and Flutter, support Windows, and only a small share of the code, such as handing over video and the picture on screen, is tied directly to the Mac. It has not been built or tested on Windows yet.
 
-対応形式ごとの動作状況、既知の不具合、ビルド手順については以下に記載しています。
+How each format runs, known bugs and the build steps are below.
 
-## 対応形式と動作状況
+## Supported formats and how they run
 
-| 形式 | 確認した結果 |
+| Format | What was checked |
 |---|---|
-| ISF | 327 本中 318 本 |
-| Shadertoy | 300 本中 261 本で絵が出て動いた |
-| p5.js | 168 作中 97 作で絵が出た |
-| AviUtl2 | 594 本中 372 本が最後まで動いた |
+| ISF | 318 of 327 |
+| Shadertoy | 261 of 300 drew and moved |
+| p5.js | 97 of 168 drew a picture |
+| AviUtl2 | 372 of 594 ran to the end |
 
-※ 検証時点・条件はそれぞれ異なります。p5.js は表示できても元作品と見た目が一致するとは限りません。詳しい条件と制限は[検証記録](docs/internal/reports/engine/sketch_import_2026-11-01.md)に記載します。
+Each was checked at a different time under different conditions. A p5.js work that draws may not match the original. The detailed conditions and limits are in the [test record](docs/internal/reports/engine/sketch_import_2026-11-01.md) (Japanese).
 
-### 形式ごとの詳しい様子
+### Each format in detail
 
-| できる事 | 使う形式 | いまの様子 |
+| You can | With | State |
 |---|---|---|
-| VJ ソフト向けに配られているエフェクトをかける | ISF（`.fs`。[ISF-Files](https://github.com/Vidvox/ISF-Files) など） | エフェクトのフォルダに置くと一覧に出ます。ISF-Files の 327 本中 318 本が動きます（数えた検査は、消しました）。同梱 419 本 |
-| WebGPU のシェーダーをかける | WGSL（`.wgsl`。three.js などの画面効果を移した物を含む） | シーン全体にかかります。同梱 266 本 |
-| p5.js のスケッチを貼る | p5.js（コードをコピーして、アプリで ⌘V） | レイヤーになり、Program タブに残ります。キーフレームを打てて、Time Remap で時間の速さも変えられます。OpenProcessing の 168 作中 97 作で絵が出ました（11/1 の数え。元と見た目が一致したのは、最初の 42 作を目で見て約 16 作） |
-| Shadertoy のシェーダーを貼る | GLSL（コードをコピーして、アプリで ⌘V） | 自分で描く作品はレイヤーになり、`iChannel` を読む作品は選んだレイヤーにかかります。どちらも Program タブに残ります。API の写し 36,668 本から無作為に選んだ 300 本中 261 本で絵が出て動きました（2026-11 初めの数え）。黒かった 30 本のうち 26 本はマウスなどの入力待ち。読み込めなかったのが 9 本。Time Remap はまだ p5.js だけです |
-| AviUtl2（日本の動画編集ソフト）のスクリプトを使う | `.anm2`・`.obj2`（中の HLSL を WGSL に変換） | 同梱 172 パッケージ。10/26 の数えで、当時同梱の 594 本中 372 本が最後まで動きました（[`docs/internal/reports/aviutl/aviutl2/catalogue.md`](docs/internal/reports/aviutl/aviutl2/catalogue.md)）。DLL が要る物はまだ動きません |
-| ネットの TSL（three.js のシェーダー言語）の表現を使う | three.js 自身の変換器で WGSL に | [Shader Lab](https://github.com/basementstudio/shader-lab) の 19 本はエフェクト一覧にあります。ほかは WGSL への変換まで |
-| 動画・写真・文字・図形・3D モデル・点群を置く | 動画（GStreamer）、文字と図形（ThorVG）、glTF・`.ply`（Filament） | 動きます |
-| After Effects のアニメーションを置く | Lottie の `.json`（ThorVG） | 動きます |
-| MIDI をアニメーションに使う | MIDI（`.mid`）：ピアノロール、音に合わせて値にキーフレーム | 動きます。MIDI の音はまだ鳴りません（動画の音は鳴ります） |
-| 図形を作る・出入りの動きを付ける | 自分のスクリプト（`.js`） | 置くと一覧に出ます。同梱のレシピ（動く作例）101 本、出入りの動き 13 本 |
-| 複数のレイヤーをまとめて動かす（並べる・追う・群れ・ばね・ぶつかり合い） | 関係のスクリプト（`.js`） | `relations/` に置くと Relations タブに出ます。同梱 9 本と、組み込み 5 つ |
+| Apply effects shared for VJ software | ISF (`.fs`, from [ISF-Files](https://github.com/Vidvox/ISF-Files) and others) | Drop one into the effects folder and it appears in the list. 318 of ISF-Files' 327 run (the check that counted them was removed). 419 bundled |
+| Apply WebGPU shaders | WGSL (`.wgsl`, including screen effects ported from three.js and others) | Applied to the whole scene. 266 bundled |
+| Paste a p5.js sketch | p5.js (copy the code, press ⌘V in the app) | It becomes a layer and stays in the Program tab. You can keyframe it and change its speed with Time Remap. Of 168 works from OpenProcessing, 97 drew a picture (counted on 1 November; checked by eye, about 16 of the first 42 looked like the original) |
+| Paste a Shadertoy shader | GLSL (copy the code, press ⌘V in the app) | A shader that draws by itself becomes a layer; one that reads `iChannel` is applied to the selected layer. Either way it stays in the Program tab. Of 300 picked at random from an API dump of 36,668, 261 drew and moved (counted in early November 2026). Of the 30 black ones, 26 wait for input such as a mouse; 9 failed to load. Time Remap is p5.js only so far |
+| Use scripts made for AviUtl2, a Japanese video editor | `.anm2`, `.obj2` (their HLSL converted to WGSL) | 172 packages bundled. Counted on 26 October: 372 of the 594 scripts bundled then ran to the end ([`docs/internal/reports/aviutl/aviutl2/catalogue.md`](docs/internal/reports/aviutl/aviutl2/catalogue.md)). Scripts that need a Windows DLL don't run yet |
+| Use looks written in TSL (three.js's shading language) | three.js's own compiler to WGSL | 19 from [Shader Lab](https://github.com/basementstudio/shader-lab) are in the effects list; the rest are converted to WGSL only |
+| Place video, photos, text, shapes, 3D models and point clouds | Video (GStreamer), text and shapes (ThorVG), glTF and `.ply` (Filament) | Works |
+| Place After Effects animations | Lottie `.json` (ThorVG) | Works |
+| Animate from MIDI | MIDI (`.mid`): a piano roll, or keyframes on values at each note | Works; MIDI isn't heard yet (a video's sound is) |
+| Make shapes, or give a layer an in/out animation | Your own scripts (`.js`) | Drop one in and it appears in the list. 101 recipes (ready-made animated pieces) and 13 in/out animations bundled |
+| Move many layers together (line up, follow, flock, spring, collide) | Relation scripts (`.js`) | Drop one into `relations/` and it appears in the Relations tab. 9 bundled, plus 5 built in |
 
-作品の権利は作者のものです。Shadertoy や OpenProcessing の作品には非営利の条件が付いた物が多いので、仕事に使う時は作者に確かめてください。
+A work's rights stay with its author. Many works on Shadertoy and OpenProcessing carry a non-commercial licence, so ask the author before using one in paid work.
 
-ほかに：キーフレームとイージング（anime.js のイージングもそのまま使えます）、物理演算（Jolt）、ガラスの屈折、カメラ（焦点距離・絞り・ピント）、MP4 への書き出し。
+Also: keyframes and easing (anime.js eases work as they are), physics (Jolt), refracting glass, a camera (focal length, aperture, focus) and MP4 export.
 
-**ビルドの確認**：GitHub の Apple Silicon の Mac（macos-15）で、この README の手順どおりに新しくビルドし、画面のコードの検査（`flutter analyze`）を走らせています（上の build バッジ）。自分で書いたテストはありません。外から求める条件は [`docs/TESTING.md`](docs/TESTING.md)。
+**Build check**: on a GitHub Apple silicon Mac (macos-15) it is built fresh exactly as this README says, then the UI's analyzer (`flutter analyze`) runs (the build badge above). There are no self-written tests; the external requirements are in [`docs/TESTING.md`](docs/TESTING.md).
 
-**速さ**（M4、上の 8 秒の作例、1080×1920）：1 フレーム約 4 ms で、毎秒 240 フレームでも落ちません。8 秒の書き出しは約 5 秒（ffmpeg のエンコードを含む）。測り直すには、作例を作ってから `printf 'time 240\n' | engine/edit.sh ~/Movies/Motolii/mv.motolii`。
+**Speed** (M4, the 8-second example above, 1080×1920): about 4 ms a frame, no frame dropped even at 240 frames a second. Exporting the 8 seconds takes about 5 seconds, ffmpeg's encoding included. To measure again, make the example, then `printf 'time 240\n' | engine/edit.sh ~/Movies/Motolii/mv.motolii`.
 
-## 試す前に
+## Before you try
 
-- **いま試すと良い人**：Apple Silicon の Mac があり、ターミナルにコマンドを貼ってビルドできる人。p5.js、Shadertoy、シェーダーのエフェクト、AviUtl2 のスクリプトを動画に使ってみたい人。
-- **まだ待つと良い人**：普段の制作にすぐ使いたい人、Windows の人、アプリを入れるだけで使いたい人。
+- **Try it now if** you have an Apple silicon Mac, can paste commands into a terminal to build it, and want to use p5.js sketches, Shadertoy shaders, shader effects or AviUtl2 scripts in a video.
+- **Wait if** you need it for everyday work, use Windows, or want an app you just install.
 
-| | いまの状態 |
+| | Where it stands |
 |---|---|
-| 動く | 上の表で「動きます」の物、自動保存と取り消し、再生（動画の音も鳴る）、MP4 への書き出し、タイムライン・インスペクタ・エフェクト一覧 |
-| 一部 | AviUtl2 のスクリプト、Alight Motion の機能（数は下の「他のソフトとの違い」） |
-| 知っている不具合 | コピーで作るレシピ（Iris・Weave など）のレイヤーに、画面用の `.wgsl` エフェクトをかけると絵が崩れる（シーン全体にかけるのは大丈夫） |
-| まだ | Windows、配布できる `.app`（エンジンが Homebrew の部品を読むので、ビルドした Mac の外では動かない）、MIDI の音 |
+| Works | Everything marked "Works" above, autosave and undo, playback (with a video's sound), MP4 export, the timeline, inspector and effects list |
+| Partly | AviUtl2 scripts; Alight Motion's features (counts under "How it compares") |
+| Known bug | Putting a screen effect (`.wgsl`) on a recipe layer made of copies (Iris, Weave, …) breaks the picture; on the whole scene it is fine |
+| Not yet | Windows; an `.app` you can hand out (the engine loads Homebrew's libraries, so a build only runs on the Mac that built it); MIDI sound |
 
-## 使ってみる
+## Try it
 
-### 要る物
+### What you need
 
-| 物 | 版・大きさ | 入れ方 |
+| | Version, size | Get it |
 |---|---|---|
-| Mac | Apple Silicon（確かめたのは M4、macOS 15.5） | — |
-| Xcode | App Store の Xcode（画面のビルドに要る。Command Line Tools だけでは足りない）。10 GB を超えることがあり、ダウンロードに 30 分〜1 時間かかることもある | App Store。入れたら一度開いて追加の部品を入れ、`sudo xcodebuild -license accept` |
-| Homebrew | — | [brew.sh](https://brew.sh/ja/) の 1 行 |
-| Flutter | 3.47.2（stable）。約 2 GB | 下の「Flutter を入れる」 |
-| Python 3 | macOS に付いている物（Xcode を入れると入る）でよい | — |
-| 空き容量 | Xcode と Flutter のほかに約 10 GB（ビルド後で 8.1 GB） | — |
-| ダウンロード量 | 約 1 GB（Filament のソース 635 MB、Skia 65 MB、Jolt 16 MB ほか。Homebrew の物は別） | — |
-| 時間 | Xcode と Flutter を入れる所からなら 1〜2 時間（回線しだい）。それらがあれば初回 約 10 分（M4。Filament 約 5 分、エンジン 約 1〜2 分、画面 約 1〜3 分） | — |
+| Mac | Apple silicon (checked on an M4, macOS 15.5) | — |
+| Xcode | Xcode from the App Store (the Command Line Tools alone can't build the UI); it can take more than 10 GB and 30 minutes to an hour to download | App Store; open it once to add its components, then `sudo xcodebuild -license accept` |
+| Homebrew | — | The one line on [brew.sh](https://brew.sh/) |
+| Flutter | 3.47.2 (stable), about 2 GB | "Get Flutter" below |
+| Python 3 | The one macOS has (it comes with Xcode) | — |
+| Disk | About 10 GB besides Xcode and Flutter (8.1 GB once built) | — |
+| Downloads | About 1 GB (Filament's source 635 MB, Skia 65 MB, Jolt 16 MB and others; Homebrew's not counted) | — |
+| Time | 1–2 hours from nothing, Xcode and Flutter included (depends on your connection); with them, about 10 minutes the first time on an M4 (Filament ~5, the engine ~1–2, the UI ~1–3) | — |
 
-確かめた Homebrew の版：GStreamer 1.28.8、SQLite 3.53.4、LuaJIT 2.1、QuickJS-ng 0.17.0、ffmpeg 9.0、cmake 4.1、ninja 1.13、meson 1.12。
+Homebrew versions it was checked with: GStreamer 1.28.8, SQLite 3.53.4, LuaJIT 2.1, QuickJS-ng 0.17.0, ffmpeg 9.0, cmake 4.1, ninja 1.13, meson 1.12.
 
-### Flutter を入れる
+### Get Flutter
 
 ```bash
 git clone --depth 1 --branch 3.47.2 https://github.com/flutter/flutter.git ~/flutter
@@ -143,11 +143,11 @@ echo 'export PATH="$HOME/flutter/bin:$PATH"' >> ~/.zprofile && source ~/.zprofil
 flutter doctor
 ```
 
-`Xcode` と `macOS` の行に ✓ が付けば成功です（Android や Chrome の行は ✗ でかまいません）。FVM を使う人は `app/.fvmrc` に版が書いてあります。
+Ticks on the `Xcode` and `macOS` lines mean it worked (crosses on Android or Chrome are fine). With FVM, `app/.fvmrc` names the version.
 
-### ビルドして開く
+### Build and open
 
-ターミナルで 1 つずつ貼ります。2 つ目からは、`motolii` のフォルダの中で（`cd motolii` した後で）走らせます。
+Paste one at a time. From the second on, run them inside the `motolii` folder (after `cd motolii`).
 
 ```bash
 git clone https://github.com/oshikaidesu/motolii.git
@@ -161,76 +161,76 @@ cd motolii
 brew bundle
 ```
 
-`Brewfile` の物（GStreamer・SQLite・ffmpeg・cmake など）が入ります。最後に `Homebrew Bundle complete!` と出れば成功です。
+Installs what the `Brewfile` lists (GStreamer, SQLite, ffmpeg, cmake, …). `Homebrew Bundle complete!` at the end means it worked.
 
 ```bash
 engine/build.sh
 ```
 
-エンジンをビルドします。初回は Filament（WebGPU）をソースから組み（M4 で約 5 分）、ThorVG・Skia・libtess2・Jolt などをダウンロードします。`engine/out/libmotolii.dylib` ができれば成功です。
+Builds the engine. The first time it builds Filament with its WebGPU backend from source (~5 minutes on an M4) and downloads ThorVG, Skia, libtess2 and Jolt. `engine/out/libmotolii.dylib` existing means it worked.
 
 ```bash
 app/tool/live.sh
 ```
 
-アプリが開きます（初回はビルドで 1〜3 分止まって見えます。ターミナルに流れる文字は気にしなくてかまいません）。プロジェクトファイルは `~/Movies/Motolii/Untitled.motolii`（自動で保存）、書き出した動画もその隣にできます。ウィンドウを閉じると終わり、ターミナルを閉じてもウィンドウは閉じます。次からは、新しいターミナルで `cd ~/motolii && app/tool/live.sh`（ホームのフォルダで `git clone` した時）。
+Opens the app (the first time it seems to stall for 1–3 minutes while it builds; the text scrolling in the terminal can be ignored). The project file is `~/Movies/Motolii/Untitled.motolii` (saved automatically), and exported videos go beside it. Closing the window quits, and closing the terminal closes the window. Next time, in a new terminal: `cd ~/motolii && app/tool/live.sh` (if you cloned in your home folder).
 
-### 画面の見方
+### The screen
 
-![画面の 7 つの区画に番号を付けた図](docs/pictures/panels.jpg)
+![The app's seven areas, numbered](docs/pictures/panels.jpg)
 
-1. **上の帯**：プロジェクト名、画面サイズ、fps、長さ、取り消し・やり直し、Render（書き出し）。
-2. **[左のタブ](docs/using/screen_tour.md#左のタブ)**：Media（素材）、Effects（エフェクト）、Fonts（書体）、Colors（色）、Create（図形とレシピ）、Program（貼ったコード）、Presets（保存した組み合わせ。まだ使えません）。
-3. **[プレビュー（Stage）](docs/using/screen_tour.md#プレビューのタブ)**：見ながら置く・動かす所。左の縦の列が道具（選択・移動・図形・ペン・文字など）。上のタブで Camera View（カメラから見た仕上がり）に切り替えます。
-4. **インスペクタ**：選んだレイヤーの値（Transform・Anchor・Blend・Fill など）。上に、そのレイヤーにかかっている関係が並びます。
-5. **タイムライン**：レイヤーとキーフレーム、再生、マーカー、BPM。
-6. **Ease**：キーフレームの間の動き方。右の列が曲線の見本です。
-7. **[右下のタブ](docs/using/screen_tour.md#右下のタブ)**：Camera（レンズとピント）、Desk（道具）、Relations（複数のレイヤーをまとめて動かす）。
+1. **Top bar**: project name, frame size, fps, length, undo and redo, Render (export).
+2. **[Left tabs](docs/using/screen_tour.md#left-tabs)**: Media, Effects, Fonts, Colors, Create (shapes and recipes), Program (pasted code), Presets (combinations you saved; not usable yet).
+3. **[Preview (Stage)](docs/using/screen_tour.md#preview-tabs)**: place and move layers while you watch. The tools are in the column on its left (select, move, shapes, pen, text, …). The tab above switches to Camera View, the finished picture through the camera.
+4. **Inspector**: the selected layer's values (Transform, Anchor, Blend, Fill, …). The relations acting on the layer are listed at the top.
+5. **Timeline**: layers and keyframes, playback, markers, BPM.
+6. **Ease**: how a value moves between keyframes; the column on the right holds ready-made curves.
+7. **[Bottom-right tabs](docs/using/screen_tour.md#bottom-right-tabs)**: Camera (lens and focus), Desk (tools), Relations (move many layers together).
 
-タブごとの絵と使い方は [タブの紹介](docs/using/screen_tour.md) にあります。
+Each tab, with pictures and how to use it: [The tabs](docs/using/screen_tour.md).
 
-### 最初の 1 本（画面で）
+### Your first piece (in the app)
 
-<img src="docs/pictures/window_step1.jpg" alt="1：空のプロジェクト" width="560">
+<img src="docs/pictures/window_step1.jpg" alt="1: an empty project" width="560">
 
-1. 左上のタブの 5 つ目（四角に ＋、**Create**）を押し、検索に `Iris` と打ちます。
-2. **Iris** のタイルを押し、下の **Create** を押します。プレビューに色の輪が置かれ、タイムラインにレイヤーが 1 本増えます。
-   <img src="docs/pictures/window_step2.jpg" alt="2：レシピ Iris を置いた所" width="560">
-3. 輪を選んだまま、タブの 2 つ目（fx、**Effects**）に替えて `Glow` を探し、押して下の **Add** を押します。輪が光り、ボタンが **Remove**（外す）に変わります。
-   <img src="docs/pictures/window_step3.jpg" alt="3：Glow をかけた所" width="560">
-4. 右上の **Render** を押すと、書き出しのダイアログが出ます。名前（例 `first`）を入れて、ダイアログの **Render** を押します。
-   <img src="docs/pictures/window_step4.jpg" alt="4：書き出しのダイアログ" width="560">
-5. プロジェクトの隣に `first.mp4` ができ、上に `Written: first.mp4` と出ます。
-   <img src="docs/pictures/window_step5.jpg" alt="5：書き出した所" width="560">
+1. Press the 5th of the tabs at the top left (a square with a plus, **Create**) and type `Iris` in the search box.
+2. Press the **Iris** tile, then **Create** at the bottom. A ring of colours appears in the preview, and a layer in the timeline.
+   <img src="docs/pictures/window_step2.jpg" alt="2: the Iris recipe placed" width="560">
+3. With the ring selected, switch to the 2nd tab (fx, **Effects**), find `Glow`, press it, then **Add** at the bottom. The ring glows and the button turns into **Remove**.
+   <img src="docs/pictures/window_step3.jpg" alt="3: Glow applied" width="560">
+4. Press **Render** at the top right; the Render box opens. Type a name (e.g. `first`) and press the box's **Render**.
+   <img src="docs/pictures/window_step4.jpg" alt="4: the Render box" width="560">
+5. `first.mp4` is written beside the project, and the top bar says `Written: first.mp4`.
+   <img src="docs/pictures/window_step5.jpg" alt="5: exported" width="560">
 
-### ネットのエフェクトを 1 本追加する
+### Add an effect from the web
 
-Motolii の一番の使い方です。例として、[ISF-Files](https://github.com/Vidvox/ISF-Files) の `ASCII Art.fs`（Motolii には同梱していない物）を使います。
+This is what Motolii is for. As an example, `ASCII Art.fs` from [ISF-Files](https://github.com/Vidvox/ISF-Files) (not bundled with Motolii):
 
-1. エフェクトのファイル（`.fs`）をダウンロードします。例：ISF-Files のページで `ISF/ASCII Art.fs` を開き、右上の **Download raw file**（↓ のボタン）を押します。
-2. Finder で ⌘⇧G を押し、`~/Library/Application Support/Motolii/` と打って開きます。中に `effects` フォルダを作り（無ければ）、ファイルを入れます。
-3. Effects タブに、すぐ出ます（再起動は要りません）。サムネイル（気球の写真にそのエフェクトをかけた見本）も数秒で自動で作られ、ポインタを乗せると動きます。既定の値では見た目が変わらない物には **NO CHANGE** と出ます。レイヤーを選んで、タイルを押し、下の **Add** を押します。
-   ![Effects タブに ASCII Art が出た所](docs/pictures/drop_shelf.jpg)
-4. プレビューでも書き出しでも、こうなります（写真に ASCII Art をかけた所）。
-   ![写真に ASCII Art をかけて書き出した所](docs/pictures/drop_ascii.jpg)
+1. Download the effect file (`.fs`). For example, open `ISF/ASCII Art.fs` on the ISF-Files page, press **Download raw file** (the ↓ button at the top right).
+2. In Finder press ⌘⇧G, type `~/Library/Application Support/Motolii/` and go. Make a folder named `effects` there (if there is none) and put the file in it.
+3. It appears in the Effects tab at once (no restart). Its thumbnail (a balloon photo with the effect applied) is made automatically within seconds, and plays while the pointer is over it. An effect whose default values change nothing shows **NO CHANGE**. Select a layer, press the tile, then **Add**.
+   ![ASCII Art in the Effects tab](docs/pictures/drop_shelf.jpg)
+4. In the preview and in the export it looks like this (ASCII Art on a photo).
+   ![ASCII Art on a photo, exported](docs/pictures/drop_ascii.jpg)
 
-WGSL（`.wgsl`）、Create のタイル（`.js` を `create/` に）、Expression のタイル（`.js` を `expressions/` に）、関係（`.js` を `relations/` に）、Ease のプリセット（`.way` を `ease/` に）、スキン（フォルダごと `skins/` に）、AviUtl2 のスクリプト（作者のフォルダごと `aviutl_scripts/` に）も同じように置けます。保存したファイル名の最後が `.fs` になっているか確かめてください（ブラウザが `.txt` を付けることがあります）。
+WGSL (`.wgsl`), Create tiles (`.js` in `create/`), Expression tiles (`.js` in `expressions/`), relations (`.js` in `relations/`), Ease presets (`.way` in `ease/`), skins (the folder, in `skins/`) and AviUtl2 scripts (the author's folder as it is, in `aviutl_scripts/`) go in the same way. Check that the saved file's name ends in `.fs` (a browser may add `.txt`).
 
-p5.js と Shadertoy は、置かずに貼ります。作品のコードをコピーして、アプリで ⌘V。コードは Program タブに残ります。
+p5.js and Shadertoy are pasted, not dropped: copy the work's code and press ⌘V in the app. The code stays in the Program tab.
 
-### 次に：自分の素材で
+### Next: your own media
 
-- **プロジェクトのサイズ**：上の `1920 × 1080` を 2 回押して打ち直します（縦の MV なら `1080x1920`）。
-- **曲を置く**：mp3・wav・m4a なども Media から **Place** で置けます（書き出しにも入ります）。
-- **動画・写真を置く**：左のタブの 1 つ目（**Media**）で `Home` から自分のフォルダを開き、ファイルを選んで下の **Place**。動画の音は再生中に鳴り、書き出しにも入ります。
-- **文字を置く**：プレビューの左の道具から **T** を選んでプレビューを押すと、文字のレイヤーができます。文字はインスペクタの文字欄で変えます。書体は左のタブの 3 つ目（**Fonts**）から。
-- **動かす**：インスペクタの **Animate all** を入れてから、値（位置・大きさなど）を横にドラッグします。今の時刻にキーフレームが打たれます。時刻を変えてもう一度ドラッグすると、その間が動きます。動き方は下の **Ease** で選びます。
-- **保存・開く**：保存は自動です（上に `Saved 時刻`）。新しいプロジェクトはメニューの **File › New Document**（⌘N）、同じフォルダの別のプロジェクトは **File › Open**。
+- **Frame size**: press `1920 × 1080` at the top twice and type a new one (`1080x1920` for a vertical MV).
+- **Music**: mp3, wav, m4a and others are placed from Media with **Place** too (they are included in the export).
+- **Video and photos**: in the 1st tab (**Media**), open your folder from `Home`, pick a file and press **Place** at the bottom. A video's sound plays during playback and is included in the export.
+- **Text**: pick **T** in the tools left of the preview and click the preview; a text layer appears. Change its words in the inspector's text box. Fonts are in the 3rd tab (**Fonts**).
+- **Animation**: turn on **Animate all** in the inspector, then drag a value (position, size, …) sideways; a keyframe is set at the current time. Move the time and drag again, and it animates in between. Choose how it moves in **Ease** below.
+- **Save and open**: saving is automatic (`Saved` and the time at the top). A new project: **File › New Document** (⌘N); another project in the same folder: **File › Open**.
 
 <details>
-<summary><b>最初の 1 本（コマンドで）</b></summary>
+<summary><b>Your first piece (commands)</b></summary>
 
-画面を使わずに、レシピで絵を作り、光（Glow）とシーン全体の RGB のずれ（`rgbshift.wgsl`）をかけて、8 秒の MP4 に書き出す例です。`engine/edit.sh` はプロジェクトファイルを開いて、1 行ずつの命令を受けます（`help` で一覧）。
+Without the UI: a recipe makes a picture, a glow goes on it, an RGB split (`rgbshift.wgsl`) goes on the whole scene, and 8 seconds are exported as MP4. `engine/edit.sh` opens a project file and takes one command per line (`help` lists them).
 
 ```bash
 engine/edit.sh $HOME/Movies/Motolii/first_cmd.motolii <<EOF
@@ -241,124 +241,107 @@ write $HOME/Movies/Motolii/first_cmd.mp4
 EOF
 ```
 
-![最初の 1 本：線の模様が波打ち、色がずれる](docs/pictures/first.gif)
+![Your first piece: a pattern of lines waving, its colours split](docs/pictures/first.gif)
 
-- `make Weave`：レシピ「Weave」でレイヤー 1 を作る（`recipes` で一覧）。
-- `effect 1 Glow`：レイヤー 1 にエフェクトをかける（`effects` で一覧）。
-- `say 0 script …`：0（シーンそのもの）にシーン全体のエフェクトを置く。
-- `write …`：MP4 に書き出す。
-- 同じ命令をもう一度走らせると、同じプロジェクトにレイヤーがもう 1 つ増えます。やり直すなら先に `rm ~/Movies/Motolii/first_cmd.motolii`。
+- `make Weave`: makes layer 1 from the recipe "Weave" (`recipes` lists them).
+- `effect 1 Glow`: applies an effect to layer 1 (`effects` lists them).
+- `say 0 script …`: puts a whole-scene effect on 0, the scene itself.
+- `write …`: exports the MP4.
+- Running the same commands again adds another layer to the same project; to start over, `rm ~/Movies/Motolii/first_cmd.motolii` first.
 
-上の 8 秒の作例の命令は [`docs/using/make_intro_movie.md`](docs/using/make_intro_movie.md)。
+The calls of the 8-second example at the top are in [`docs/using/make_intro_movie.md`](docs/using/make_intro_movie.md).
 
 </details>
 
 <details>
-<summary><b>困ったら</b></summary>
+<summary><b>If something goes wrong</b></summary>
 
-| 出た事 | 直し方 |
+| You see | Do |
 |---|---|
-| `flutter: command not found` | 上の「Flutter を入れる」の 2 行目をもう一度。別の場所なら `FLUTTER=/path/to/flutter app/tool/live.sh` |
-| `brew: command not found` | [brew.sh](https://brew.sh/ja/) の 1 行で Homebrew を入れる |
-| `xcrun: error` や、Xcode が無いと言われる | App Store で Xcode を入れ、一度開いて追加の部品を入れ、`sudo xcodebuild -license accept` |
-| `No space left on device` | 空きを 10 GB 以上にしてから、止まったコマンドをもう一度 |
-| `git clone` や `build.sh` がネットの途中で止まった | 同じコマンドをもう一度。直らなければ `engine/third_party/` の中の止まった物のフォルダを消してからもう一度 |
-| `ld: library 'webgpu_dawn' not found` | `engine/build.sh` をもう一度（Filament を組む所から始まる） |
-| アプリは開くがプレビューが黒い | エンジンをビルドしたか確かめる（`engine/out/libmotolii.dylib` があるか）。無ければ `engine/build.sh` |
+| `flutter: command not found` | Run the second line of "Get Flutter" again, or `FLUTTER=/path/to/flutter app/tool/live.sh` |
+| `brew: command not found` | Install Homebrew with the one line on [brew.sh](https://brew.sh/) |
+| `xcrun: error`, or Xcode missing | Install Xcode from the App Store, open it once to add its components, then `sudo xcodebuild -license accept` |
+| `No space left on device` | Free 10 GB or more, then run the command that stopped again |
+| `git clone` or `build.sh` stopped on the network | Run the same command again; if it still stops, delete the half-downloaded folder in `engine/third_party/` and run it again |
+| `ld: library 'webgpu_dawn' not found` | Run `engine/build.sh` again (it starts by building Filament) |
+| The app opens but the preview is black | Check the engine is built (`engine/out/libmotolii.dylib`); if not, `engine/build.sh` |
 
-それでも止まったら [Issue](https://github.com/oshikaidesu/motolii/issues) に、走らせたコマンドと出た文をそのまま貼ってください（ひな型があります）。使い方の質問は [Discussions](https://github.com/oshikaidesu/motolii/discussions) へ。日本語・英語のどちらでも。
+Still stuck? Open an [issue](https://github.com/oshikaidesu/motolii/issues) with the command you ran and what it printed (there is a template). Questions about using it go to [Discussions](https://github.com/oshikaidesu/motolii/discussions). English or Japanese.
 
 </details>
 
 <details>
-<summary><b>更新する・消す</b></summary>
+<summary><b>Updating and removing</b></summary>
 
-- 更新：`git pull` の後、`engine/build.sh` をもう一度（変わった所だけビルドし直します）。アプリは `app/tool/live.sh` がビルドし直します。
-- 消す：`motolii` のフォルダを消します（ダウンロードした物とビルドした物は全部この中）。作ったプロジェクトと動画は `~/Movies/Motolii/` に残ります（別の所に置いた物はそこに）。Flutter は `~/flutter` を消します。`brew bundle` で入れた物は `brew uninstall` で。
+- Update: `git pull`, then run `engine/build.sh` again (only what changed is rebuilt); `app/tool/live.sh` rebuilds the app.
+- Remove: delete the `motolii` folder (everything downloaded and built is inside it). Your projects and videos stay in `~/Movies/Motolii/` (or wherever else you put them). Flutter: delete `~/flutter`. What `brew bundle` installed goes with `brew uninstall`.
 
 </details>
 
-## 他のソフトとの違い
+## How it compares
 
 <details>
-<summary>表で比べる</summary>
+<summary>Compare in a table</summary>
 
-| | Motolii | After Effects | Cavalry | Alight Motion | Blender | VDMX・TouchDesigner | Motion Canvas・Rive |
+| | Motolii | After Effects | Cavalry | Alight Motion | Blender | VDMX, TouchDesigner | Motion Canvas, Rive |
 |---|---|---|---|---|---|---|---|
-| 主な使い道 | MV の映像を作って書き出す | 映像の合成 | 2D のモーショングラフィックス | スマホで映像 | 3D 全般 | ライブの映像（演奏） | コードで映像（Motion Canvas）、アプリの中のアニメーション（Rive） |
-| 2D と 3D | 一つのシーン（Filament） | 2D と 3D のレイヤー | 2D が中心 | 2D が中心 | 3D が中心 | 両方（組み方による） | 2D |
-| 動く所 | macOS（Apple Silicon）だけ | Windows・macOS | Windows・macOS | iOS・Android | Windows・macOS・Linux | VDMX は macOS、TouchDesigner は Windows・macOS | ブラウザ・各種 |
-| 成熟度 | 開発中、作者 1 人、リリース無し | 長く使われている | 製品 | 製品 | 長く使われている | 製品 | 使われている |
-| 値段・ライセンス | 無料、Apache-2.0 か MIT | 有料 | 有料（無料版あり） | 有料（無料版あり） | 無料、GPL | 有料（無料版あり） | Motion Canvas は無料・MIT、Rive は無料版あり |
+| Made for | Making and exporting music-video footage | Compositing | 2D motion graphics | Video on a phone | 3D | Live visuals (performing) | Video in code (Motion Canvas), animation inside apps (Rive) |
+| 2D and 3D | One scene (Filament) | 2D and 3D layers | Mostly 2D | Mostly 2D | Mostly 3D | Both (as you wire it) | 2D |
+| Runs on | macOS (Apple silicon) only | Windows, macOS | Windows, macOS | iOS, Android | Windows, macOS, Linux | VDMX: macOS; TouchDesigner: Windows, macOS | Browser and others |
+| Maturity | In development, one author, no release | Long established | Product | Product | Long established | Products | In use |
+| Price, licence | Free, Apache-2.0 or MIT | Paid | Paid (free tier) | Paid (free tier) | Free, GPL | Paid (free tier) | Motion Canvas free, MIT; Rive has a free tier |
 
 </details>
 
-**違い**：ISF をそのまま読むソフトは他にもあります（VDMX・MadMapper）。Motolii の違いは、ISF・WGSL・AviUtl2 のエフェクト、p5.js と Shadertoy の貼り付け、Filament の 3D、タイムライン、MP4 の書き出しを一つにした組み合わせです。
+**What is different**: other tools read ISF as it is too (VDMX, MadMapper). Motolii's difference is the combination: ISF, WGSL and AviUtl2 effects, pasted p5.js and Shadertoy, Filament's 3D, a timeline and MP4 export in one tool.
 
-**まだできない事**：ソフトとしての安定と機能の数は、これからです。配布できるアプリが無い事、Windows で動かない事、ライブで演奏する使い方は考えていない事。
+**What it can't do yet**: stability and breadth of features as a finished tool are still to come. No app to hand out, no Windows, and no thought yet for performing live.
 
-**操作の手本が Alight Motion な訳**：スマホで MV を作る人が慣れている触り方を、まず全部なぞってから、その先へ行くためです。Alight Motion の効果 169 と機能 32 のうち、Motolii に有るのは 101、一部が 37、無いのが 62、未確認が 1 です（10 月末の数え、[`docs/internal/reports/alight_motion/alight_map.md`](docs/internal/reports/alight_motion/alight_map.md)）。
+**Why Alight Motion is the model for its handling**: people who make MVs on their phones already know how it feels; Motolii copies all of it first, then goes further. Of Alight Motion's 169 effects and 32 other features, Motolii has 101, 37 in part, 62 not yet, and 1 unchecked (counted at the end of October, [`docs/internal/reports/alight_motion/alight_map.md`](docs/internal/reports/alight_motion/alight_map.md)).
 
-## 作り
+## How it is built
 
 ```mermaid
 flowchart LR
-  W["アプリの画面<br/>Flutter（app）"] -- "C の呼び出し<br/>motolii.h" --> E["エンジン libmotolii.dylib<br/>（engine/）"]
-  E --> F["Filament<br/>3D・最後の合成"]
-  E --> T["ThorVG<br/>2D・文字"]
-  E --> G["GStreamer・ffmpeg<br/>動画の読み込み・書き出し"]
-  E --> S["SQLite<br/>プロジェクトファイル（.motolii）"]
-  F --> D["Dawn（WebGPU）"]
+  W["The app's UI<br/>Flutter (app)"] -- "C calls<br/>motolii.h" --> E["Engine, libmotolii.dylib<br/>(engine/)"]
+  E --> F["Filament<br/>3D, final compositing"]
+  E --> T["ThorVG<br/>2D, text"]
+  E --> G["GStreamer, ffmpeg<br/>reading and writing video"]
+  E --> S["SQLite<br/>the project file (.motolii)"]
+  F --> D["Dawn (WebGPU)"]
   T --> D
-  E -- "描いた絵をコピーせずに" --> W
+  E -- "its picture, not copied" --> W
 ```
 
-画面は操作だけで、絵はエンジン（`engine/`）が描きます。Google の Filament はビルドの時にダウンロードします。エンジンの入口は [`engine/README.md`](engine/README.md)、全体の作りは [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) にあります。
+The UI only takes input; the engine (`engine/`) draws. Google's Filament is downloaded at build time. The engine's entry points are in [`engine/README.md`](engine/README.md), and the whole design in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (both in Japanese, with an English summary at the top).
 
-## これから
+## Next
 
-1. 配布できる `.app`（Homebrew の部品を中に入れる）を作り、Releases に置く。
-2. Windows 版。
-3. AviUtl2 のスクリプトで足りない呼び出し（`obj.computeshader`、本体のエフェクトなど）と、TSL の表現をエフェクト一覧に。
-4. Alight Motion の機能を揃える。
+1. An `.app` to hand out (Homebrew's libraries inside it), on Releases.
+2. Windows.
+3. The AviUtl2 calls still missing (`obj.computeshader`, the built-in effects, …), and TSL looks in the effects list.
+4. The rest of Alight Motion's features.
 
-## 開発に加わる
+## Contributing
 
-[`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md)（[English](.github/CONTRIBUTING.en.md)）に、ビルド、決まり、手を付けやすい所があります。行動規範は [`.github/CODE_OF_CONDUCT.md`](.github/CODE_OF_CONDUCT.md)、脆弱性の知らせ方は [`.github/SECURITY.md`](.github/SECURITY.md)。
+See [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md) (building, the rules, good first tasks), the [Code of Conduct](.github/CODE_OF_CONDUCT.md) and [`.github/SECURITY.md`](.github/SECURITY.md). Issues and pull requests in English are welcome.
 
-### 考え方
-
-- **自作は負債。** まず既存の実装を探し、作者のやり方のまま使います。無ければ周りの技術やコミュニティまで探します。
-- 他の人の作品はなるべく手を入れずに同梱し、隣に作者のライセンスと出所を置きます。手を入れる時は、元に当てる差分（`.patch`）に分けて元は作者の配布元からダウンロードするか、ファイルの 1 行目に元と改変を書きます。
-- 今は自分で書いたコードも多くあります（画面の Flutter など）。借りられる物が見つかれば、自分のコードを捨てて取り替えます。
-- コミットごとに、何をどこから借りたか（出典）を書きます。
+The project's stance: **code you write yourself is a debt.** Look for an existing implementation first and use it the way its author meant; bundle other people's work as unchanged as possible, with their licence and source beside it; keep changes to upstream code as patches applied at build time; say in each commit what was borrowed from where. A lot of Motolii is still its own code today (the Flutter UI, for one); where something can be borrowed instead, the own code goes.
 
 <details>
-<summary><b>フォルダの並び</b></summary>
+<summary><b>Folders</b></summary>
 
-| 場所 | 中身 |
+| Folder | What |
 |---|---|
-| `engine/` | エンジン。入口と、今のビルドが使うファイルの一覧は [`engine/README.md`](engine/README.md) |
-| `shelves/effects/`・`recipes/`・`relations/`・`animators/`・`ways/` | 同梱のエフェクト・レシピ・関係・出入りの動き・イージング（利用者のフォルダと同じ形） |
-| `shelves/aviutl_scripts/` | 同梱の AviUtl2 のスクリプト（作者ごと、LICENSE と SOURCE.txt つき） |
-| `app/` | アプリの画面（Flutter、macOS） |
-| `thorvg/` | ThorVG を wgpu に載せた前の結合（前の試しのスクリプトが使う） |
-| `old/` | 前の土台の実験（今の作りからは使っていない） |
-| `docs/` | 読む人ごとの文書：使い方（`using/`）・アプリ（`app/`）・エンジン（`engine/`）、この README の絵（`pictures/`）、作者の作業メモ（`internal/`）。表は [`docs/README.md`](docs/README.md) |
+| `engine/` | The engine; its entry points and the files the current build uses: [`engine/README.md`](engine/README.md) (Japanese) |
+| `shelves/effects/`, `recipes/`, `relations/`, `animators/`, `ways/` | Bundled effects, recipes, relations, in/out animations and eases (the same layout as your own folder) |
+| `shelves/aviutl_scripts/` | Bundled AviUtl2 scripts (per author, with LICENSE and SOURCE.txt) |
+| `app/` | The UI (Flutter, macOS) |
+| `thorvg/`, `old/` | Earlier work, kept |
+| `docs/` | Documents by reader: using the app (`using/`), the window (`app/`), the engine (`engine/`); this README's pictures (`pictures/`); the author's working notes (`internal/`, Japanese). Table: [`docs/README.md`](docs/README.md) |
 
 </details>
 
-<details>
-<summary><b>文書の地図</b></summary>
+## Licence
 
-| 外向け | 作者の作業メモ（日本語、そのまま公開） |
-|---|---|
-| `README.md`・`README.en.md`・[`docs/README.md`](docs/README.md)（docs の地図）・`docs/ARCHITECTURE.md`・`.github/CONTRIBUTING.md`・`.github/CONTRIBUTING.en.md`・`THIRD_PARTY_NOTICES.md`・`engine/README.md` | `docs/internal/notes/`（やること・採点表）・`docs/internal/reports/`（調べた記録。絵と動画、人の投稿を集めた物は git に入れていない）・`docs/internal/reports/window/design_lab_*.md`（10 月初めの記録） |
-
-</details>
-
-## ライセンス
-
-Motolii 自身の物は [Apache License 2.0](LICENSE-APACHE) と [MIT](LICENSE-MIT) のどちらでも、使う人が選べます（ダブルライセンス）。送ってもらった貢献も、特に断りが無ければ同じ二つのライセンスで受けます。同梱した他の人の作品は、それぞれのライセンスに従います（[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)）。
-
-*Licensed under either of [Apache License 2.0](LICENSE-APACHE) or [MIT](LICENSE-MIT), at your option. Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions. Bundled third-party works keep their own licences.*
+Licensed under either of [Apache License 2.0](LICENSE-APACHE) or [MIT](LICENSE-MIT), at your option. Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions. Bundled third-party works keep their own licences ([`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)).

@@ -1,61 +1,60 @@
-# 関わり方
+# Contributing
 
-*English version: [.github/CONTRIBUTING.en.md](CONTRIBUTING.en.md). English is fine for issues and pull requests. Contributions are dual licensed under Apache-2.0 or MIT, as the project is. Short version: build with the README, run the checks below, and say in your pull request what you borrowed from where.*
+[日本語](CONTRIBUTING.ja.md)
 
-## できること
+## What you can do
 
-- **Issue**：不具合、組み立てで止まった所、「この表現を使いたい」という見本（URL と、何が良いのか）。ひな型があります。
-- **Pull Request**：受けます。Motolii は Apache-2.0 と MIT のダブルライセンスで、送ってもらった物も、特に断りが無ければ同じ二つのライセンスで受けます。
-- **同梱した作品の作者の方**：載せ方の直し・外してほしい時は Issue で。すぐ直すか外します（[`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md)）。
+- **Issues**: bugs, a build that stopped, or "I want to use this expression" (a URL and what is good about it). There are templates. English or Japanese.
+- **Pull requests**: welcome. Motolii is dual licensed under Apache-2.0 or MIT; unless you explicitly state otherwise, what you send is under the same two licences.
+- **Authors of bundled works**: if you want the way your work is bundled changed, or it removed, open an issue and it will be done ([`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md), Japanese).
 
-## 組み立て
+Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). Security problems go to the Security tab, not to issues ([`.github/SECURITY.md`](SECURITY.md)).
 
-[`README.md`](../README.md) の「使ってみる」のとおり。コミット時に Dart の整形を確かめる hook を入れるなら、クローンした所で一度だけ：
+## Building
+
+As in [`README.md`](../README.md) ("Try it"). Optionally, once in your clone, enable the hook that checks Dart formatting at commit time:
 
 ```bash
 git config core.hooksPath .githooks
 ```
 
-コードと文書の言葉は After Effects・Filament・Flutter・Blender と同じです：アプリ、エンジン、レイヤー、プロジェクト、プレビュー（コードでは `Stage`）。左のタブだけ「棚」（Blender の Asset Shelf）。新しい言い方は作りません。
+How the code is laid out: [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) and [`engine/README.md`](../engine/README.md) (which files the current build uses; the rest are earlier probes). Both are in Japanese, with an English summary at the top.
 
-## 確かめ
+Words in the code and the docs are the ones After Effects, Filament, Flutter and Blender use: app, engine, layer, project, preview (`Stage` in the code). Only the left tabs have their own name, "shelf" (棚, as in Blender's Asset Shelf). No new coinages.
 
-PR を送る前に手元で回してください。同じ物を push と PR のたびに CI（`.github/workflows/checks.yml`）が回します。
+## Checks
+
+Run these before you send a pull request. CI runs the same on every push and pull request (`.github/workflows/checks.yml`):
 
 ```bash
 cd app && dart format . && flutter analyze && flutter test
 ```
 
-C++ は、`./engine/check_syntax.sh` が組み立てずに構文を見て、`engine/build.sh` が組み立てます。全部の組み立ては GitHub Actions の `.github/workflows/build.yml`（Apple Silicon の Mac。`engine/`・`shelves/`・`app/`・`Brewfile` に触る main への push と PR、そして Actions の画面から手で）。テストのやり方は [`docs/TESTING.md`](../docs/TESTING.md)。
+For C++, `./engine/check_syntax.sh` checks syntax without building and `engine/build.sh` builds. The full build runs on GitHub Actions in `.github/workflows/build.yml` (an Apple silicon Mac; on pushes to main and pull requests that touch `engine/`, `shelves/`, `app/` or `Brewfile`, and by hand from the Actions tab). How things are tested: [`docs/TESTING.md`](../docs/TESTING.md).
 
-## 決まり
+## Rules
 
-### 1. 作る前に探す
-新しく書く前に、ディレクトリ（`engine/` 本体、`app/` アプリ、`docs/` 調べた紙）と、ネットの既存の実装を探してください。作者のやり方のまま使える物があれば、それを使います。
+1. **Look before you write.** Look at the tree (`engine/` the product, `app/` the app, `docs/` research) and existing implementations on the net. If something can be used the way its author meant, use it.
+2. **One job a file.** Split by what each part is for and name it so. Experiments stay on your own branch; main holds only what the app uses.
+3. **Commit messages.**
+   - The **subject** (first line) is 72 characters at most and says what changed. For example `Remove the unused Foo card`, `Fix Y in Z`.
+   - After one blank line, the **body** says why it changed, what was checked and what is not done yet.
+   - If you borrowed something, say where from (URL, version or commit) in the body. Example: `git show d46f69cac`.
+4. **Bundling other people's work.**
+   - Keep the author's folder as unchanged as possible, with their licence text (`LICENSE`) and where it came from (`SOURCE.txt`: name and author / licence / from / page) beside it.
+   - Work whose author publishes no licence text is not bundled; fetch it from the author at build time instead (`engine/deps/midi_roll.sh` is an example).
+   - Changes to upstream code are kept as patches, applied to a pinned upstream at build time (patches in `engine/deps/patches/<library>/`; `engine/deps/thorvg.sh` is an example).
+   - Add a row to [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md).
 
-### 2. 1 ファイル 1 役目
-役目ごとに名前を付けて分けてください。実験は自分のブランチに置き、main にはアプリが使う物だけを入れます。
+## Good first tasks
 
-### 3. コミットのメッセージ
-- **件名**（1 行目）は 72 字まで、何を変えたかを書きます。例：`Remove the unused Foo card`、`Fix Y in Z`。
-- 1 行空けて**本文**に、なぜ変えたか、何を確かめて何がまだかを書きます。
-- 何かを借りた時は、どこから借りたか（URL・版かコミット）を本文に書きます。例：`git show d46f69cac`。
-
-### 4. 他の人の作品を入れる時
-- 作者のフォルダごと、なるべく手を入れずに置く。隣に作者のライセンスの文書（`LICENSE`）と、取ってきた所（`SOURCE.txt`：名前と作者／licence／from／page）。
-- 作者がライセンスの文書を出していない物は入れない（入れる代わりに、組み立ての時に作者の所から取る：`engine/deps/midi_roll.sh` が例）。
-- 手を入れる物は、元に当てる差分（`.patch`）に分けて、元は組み立ての時に作者の配布元から取る（差分は `engine/deps/patches/<ライブラリ>/`、`engine/deps/thorvg.sh` が例）。
-- [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md) に行を足す。
-
-## 手を付けやすい所
-
-| 何 | どこから | 難しさ |
+| What | Where to start | Difficulty |
 |---|---|---|
-| 配れる `.app`：エンジンが読む Homebrew の部品（GStreamer・glib・SQLite・LuaJIT・QuickJS）を `.app` の中に入れる。[dylibbundler](https://github.com/auriamg/macdylibbundler) か GStreamer の macOS 用フレームワーク | `engine/edit.sh`、`app/macos/` | 中 |
-| AviUtl2 のスクリプトで足りない呼び出し（`obj.computeshader`、本体のエフェクトなど）を、手本（AviUtl2 の lua.txt、sashimono-edit）どおりに | `docs/internal/reports/aviutl/aviutl2/converter_plan.md`、`engine/community/aviutl/aviutl.cpp` | 中〜難 |
-| TSL の表現を編集の棚に出す | `engine/community/three_shading_language_to_shelf/`、`docs/internal/reports/effects/tsl_collection.md` | 中 |
+| An `.app` you can hand out: put the Homebrew libraries the engine loads (GStreamer, glib, SQLite, LuaJIT, QuickJS, and ffmpeg for writing) inside the `.app`, with [dylibbundler](https://github.com/auriamg/macdylibbundler) or GStreamer's macOS framework | `engine/edit.sh`, `app/macos/` | Medium |
+| AviUtl2 calls still missing (`obj.computeshader`, the built-in effects, …), following the references (AviUtl2's lua.txt, sashimono-edit) | `docs/internal/reports/aviutl/aviutl2/converter_plan.md`, `engine/community/aviutl/aviutl.cpp` | Medium–hard |
+| TSL looks on the editor's shelves | `engine/community/three_shading_language_to_shelf/`, `docs/internal/reports/effects/tsl_collection.md` | Medium |
 
-## 知っている穴
+## Known gaps
 
-- 動くのは macOS（Apple Silicon）だけ。
-- エンジン（`libmotolii.dylib`）は Homebrew の GStreamer などを読むので、作った `.app` はそのままでは他の Mac で動きません。
+- macOS on Apple silicon only.
+- The engine (`libmotolii.dylib`) loads Homebrew's GStreamer and others, so a built `.app` does not run on another Mac as it is.
