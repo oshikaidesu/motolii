@@ -26,6 +26,11 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show ValueNotifier;
 
 import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_moment.dart';
+import 'package:motolii/bridge/motolii_questions.dart';
+import 'package:motolii/bridge/motolii_shelves.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/bridge/engine_paths.dart';
 import 'package:motolii/workspace/state/workspace_state.dart' show wsTextFont;
 import 'package:motolii/workspace/shelf/copies_tiles.dart' show TileQueue;

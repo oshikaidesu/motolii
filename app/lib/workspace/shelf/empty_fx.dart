@@ -10,7 +10,9 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
 import 'package:motolii/workspace/shelf/fx_code.dart' show FxCode;
 import 'package:motolii/workspace/state/workspace_state.dart';
-import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/workspace/state/effects.dart';
 
 // Left as it is, this effect changes nothing.
 const _isf = '''/*{
