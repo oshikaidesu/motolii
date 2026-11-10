@@ -3,7 +3,6 @@
 // It has the transport and timecode on top, layer labels beside the track area, a ruler with the work area, and the playhead.
 // The project lives in WorkspaceController. This panel keeps only how it is viewed: zoom, scroll, loop, the row toggles and the work area.
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -26,6 +25,7 @@ import 'package:motolii/workspace/timeline/frame_snap.dart';
 import 'package:motolii/workspace/timeline/timeline_drag.dart';
 import 'package:motolii/workspace/timeline/timeline_header.dart';
 import 'package:motolii/workspace/timeline/timeline_media.dart';
+import 'package:motolii/workspace/timeline/timeline_media_cache.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
 import 'package:motolii/workspace/timeline/timeline_requests.dart';
@@ -52,6 +52,9 @@ class TimelinePaneState extends State<TimelinePane>
 
   /// The zoom, the scroll and the size of the track area.
   final viewport = TimelineViewport(() => WorkspaceController.duration);
+
+  /// The beats, video frames, thumbnails and waveforms read for the rows.
+  final media = TimelineMediaCache();
   int workIn = 12, workOut = 228;
   int lastFrame = -1;
 
@@ -129,6 +132,7 @@ class TimelinePaneState extends State<TimelinePane>
   void initState() {
     super.initState();
     viewport.addListener(_rebuild);
+    media.addListener(_rebuild);
     // Starts listening for requests from the app's commands (timeline_requests.dart).
     hearAsks();
   }
@@ -156,6 +160,7 @@ class TimelinePaneState extends State<TimelinePane>
     workspace?.moment.removeListener(_listener);
     ticker.dispose();
     viewport.dispose();
+    media.dispose();
     _focus.dispose();
     stopAsks();
     markWords.dispose();
@@ -227,7 +232,6 @@ class TimelinePaneState extends State<TimelinePane>
 
   // The whole video's extent when the drag started (timeline_slip.dart).
   (int, int)? barWhole;
-  final filmSeconds = <String, double>{};
   // The dragged bar's in and out frames when the drag started.
   // A trim stops one frame short of an empty bar, because an empty bar cannot be seen, grabbed again or kept.
   // The project is as long as its longest layer.
@@ -458,21 +462,6 @@ class TimelinePaneState extends State<TimelinePane>
 
   // ---------------------------------------------------------------- build
 
-  // The videos' beats (from their Beats property, computed by the engine).
-  // They are requested from the engine on another isolate, only when the project changes, and shown when they arrive.
-  (int, List<int>)? beats;
-  int? beatsAsked;
-  // A video's waveform on its bar: read once on another isolate, then laid on the project's frames where the video plays.
-  // It is requested again only when the project changes.
-  // A video's thumbnails on its bar: one frame from the middle of each sixth of the video, whatever its start or speed.
-  // The engine makes them small (GStreamer, on another isolate) and the app reads them as images.
-  // They are requested again only when the project changes.
-  final frames = <String, (Object, List<ui.Image>?)>{};
-  final framesAsked = <String, Object>{};
-  // Per layer id: the project read, the from and to frames, and the loudness of each frame.
-  final waves = <String, (int, int, int, List<double>?)>{};
-  final asked = <String>{};
-  final waveAsked = <String, (int, int, int)>{};
   @override
   Widget build(BuildContext context) {
     if (workDrag == null) {
@@ -527,8 +516,8 @@ class TimelinePaneState extends State<TimelinePane>
             dim: isHidden(ws, l.id) || (anySolo(ws) && !isSolo(ws, l.id)),
             locked: isLocked(ws, l.id),
             clipped: l.clipped,
-            wave: waveOf(ws, l),
-            frames: framesOf(ws, l),
+            wave: media.waveOf(ws, l),
+            frames: media.framesOf(ws, l),
             form: formOf(ws, l)?.$1,
             fill: formOf(ws, l)?.$2,
             outline: formOf(ws, l)?.$3 ?? false,

@@ -69,7 +69,7 @@ extension TimelinePaneTracks on TimelinePaneState {
                         workOut: workOut,
                         markers: marksOf(workspace!),
                         markColors: markColorsOf(workspace!),
-                        beats: beatsOf(ws),
+                        beats: media.beatsOf(ws),
                         tempo: ws.beats,
                         retimed: retimedOf(ws),
                       ),

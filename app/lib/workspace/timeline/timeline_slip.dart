@@ -5,7 +5,7 @@
 // This follows After Effects' slip edit and Premiere Pro's Slip tool.
 import 'dart:math' as math;
 
-import 'package:motolii/bridge/motolii.dart' show Motolii, mediaSecondsOf;
+import 'package:motolii/bridge/motolii.dart' show Motolii;
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
@@ -24,14 +24,7 @@ extension TimelinePaneSlip on TimelinePaneState {
     if (m == null || t == null || m.word(t, 'kind') != 'film') return null;
     final said = m.word(t, 'file'),
         file = said.startsWith('/') ? said : '${m.home}/$said';
-    final seconds = filmSeconds[file];
-    if (seconds == null) {
-      filmSeconds[file] = 0;
-      mediaSecondsOf(
-        m.libPath,
-        file,
-      ).then((s) => mounted ? setState(() => filmSeconds[file] = s) : null);
-    }
+    final seconds = media.secondsOf(m, file);
     if (seconds == null || seconds <= 0) return null;
     final rate = WorkspaceController.fps / _speedOf(m, t),
         from = l.inF - (m.value(t, 'begin', 0) ?? 0) * rate;
