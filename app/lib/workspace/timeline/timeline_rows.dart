@@ -1,4 +1,4 @@
-// Each row's state as the project stores it (hidden, solo, locked, a group's colours) and the column of layer names.
+// The column of layer names beside the tracks, and a relation row's colours.
 import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart' show DragStartBehavior;
@@ -16,6 +16,7 @@ import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/workspace/timeline/row_flags.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
 import 'package:motolii/workspace/timeline/timeline_labels.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
@@ -43,11 +44,6 @@ extension TimelinePaneRows on TimelinePaneState {
     return i < 0 ? id : '${i + 1} ${ws.layers[i].name}';
   }
 
-  // Hiding sets the layer's visible property to 0 in the project, so the layer is not on the canvas. It is one undo step.
-  // This reads the last snapshot, so no engine call is made while a row is built.
-  bool isHidden(WorkspaceController ws, String id) =>
-      ws.layers.any((l) => l.id == id && l.hidden);
-
   /// How many layers a row dragged by [by] rows moves past. A collapsed group counts as itself plus all its members.
   int _places(WorkspaceController ws, Layer l, int by) {
     final away = ws.foldedAway,
@@ -65,44 +61,10 @@ extension TimelinePaneRows on TimelinePaneState {
     );
   }
 
-  void _eye(WorkspaceController ws, String id) {
-    ws.after(
-      ws.inside!.later(
-        'set',
-        layer: int.parse(id),
-        name: 'visible',
-        number: isHidden(ws, id) ? 1 : 0,
-      ),
-    );
-  }
-
-  // Solo and lock are stored in the project, as in After Effects. While any layer is solo, only the solo layers are shown.
-  // The engine refuses to change a locked layer and reports an error.
-  bool isSolo(WorkspaceController ws, String id) =>
-      ws.layers.any((l) => l.id == id && l.solo);
-
-  bool isLocked(WorkspaceController ws, String id) =>
-      ws.layers.any((l) => l.id == id && l.locked);
-
-  bool anySolo(WorkspaceController ws) =>
-      ws.layers.any((l) => isSolo(ws, l.id));
-
-  void _flag(WorkspaceController ws, String name, String id) {
-    final m = ws.inside!;
-    ws.after(
-      m.later(
-        'set',
-        layer: int.parse(id),
-        name: name,
-        number: (name == 'solo' ? isSolo(ws, id) : isLocked(ws, id)) ? 0 : 1,
-      ),
-    );
-  }
-
   Widget labels(WorkspaceController ws, List<TimelineRow> rows) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      TimelineLabelHeader(count: ws.layers.length, solo: anySolo(ws)),
+      TimelineLabelHeader(count: ws.layers.length, solo: RowFlags(ws).anySolo),
       Expanded(
         child: ContextMenu(
           key: labelMenu,
@@ -220,8 +182,8 @@ extension TimelinePaneRows on TimelinePaneState {
                                 index: order[i].layer,
                                 depth: ws.depth(l),
                                 row: rows[i],
-                                hidden: isHidden(ws, l.id),
-                                solo: isSolo(ws, l.id),
+                                hidden: RowFlags(ws).isHidden(l.id),
+                                solo: RowFlags(ws).isSolo(l.id),
                                 lanes: l.kind == LayerKind.group
                                     ? ws.groupOpen(l.id)
                                     : l.keys.isEmpty &&
@@ -240,9 +202,9 @@ extension TimelinePaneRows on TimelinePaneState {
                                     ? selectAlso(ws, l.id)
                                     // Cmd adds this layer to the selection, or removes it.
                                     : ws.select(l.id),
-                                onEye: () => _eye(ws, l.id),
-                                onSolo: () => _flag(ws, 'solo', l.id),
-                                onLock: () => _flag(ws, 'lock', l.id),
+                                onEye: () => RowFlags(ws).toggleHidden(l.id),
+                                onSolo: () => RowFlags(ws).toggle('solo', l.id),
+                                onLock: () => RowFlags(ws).toggle('lock', l.id),
                               ),
                             ),
                           ),

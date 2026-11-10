@@ -22,6 +22,7 @@ import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/frame_snap.dart';
+import 'package:motolii/workspace/timeline/row_flags.dart';
 import 'package:motolii/workspace/timeline/timeline_drag.dart';
 import 'package:motolii/workspace/timeline/timeline_header.dart';
 import 'package:motolii/workspace/timeline/timeline_media.dart';
@@ -88,7 +89,8 @@ class TimelinePaneState extends State<TimelinePane>
     final m = ws.inside!,
         t = int.parse(l.id),
         at = m.keyTimes(t, name),
-        vs = m.keyValues(t, name);
+        vs = m.keyValues(t, name),
+        flags = RowFlags(ws);
     final n = math.min(at.length, vs.length);
     final lo = vs.take(n).fold(double.infinity, math.min),
         hi = vs.take(n).fold(-double.infinity, math.max);
@@ -102,8 +104,8 @@ class TimelinePaneState extends State<TimelinePane>
       ],
       picked: const {},
       tone: l.tone,
-      dim: isHidden(ws, l.id) || (anySolo(ws) && !isSolo(ws, l.id)),
-      locked: isLocked(ws, l.id),
+      dim: flags.isHidden(l.id) || (flags.anySolo && !flags.isSolo(l.id)),
+      locked: flags.isLocked(l.id),
       lane: [
         for (var i = 0; i < n; i++)
           (
@@ -269,7 +271,7 @@ class TimelinePaneState extends State<TimelinePane>
           top = i * TimelineMetrics.row - viewport.verticalScroll;
       if (top + TimelineMetrics.row < r.top ||
           top > r.bottom ||
-          isLocked(ws, l.id)) {
+          RowFlags(ws).isLocked(l.id)) {
         continue;
       }
       for (final k in l.keys) {
@@ -475,7 +477,7 @@ class TimelinePaneState extends State<TimelinePane>
       WorkspaceAspect.picked,
       WorkspaceAspect.animating,
     });
-    final away = ws.foldedAway;
+    final away = ws.foldedAway, flags = RowFlags(ws);
     final sel = ws.selected,
         picks = ws.keys,
         lit = {
@@ -513,8 +515,8 @@ class TimelinePaneState extends State<TimelinePane>
                 if (k.layer == l.id) k.frame,
             },
             selected: l.id == sel || lit.contains(l.id),
-            dim: isHidden(ws, l.id) || (anySolo(ws) && !isSolo(ws, l.id)),
-            locked: isLocked(ws, l.id),
+            dim: flags.isHidden(l.id) || (flags.anySolo && !flags.isSolo(l.id)),
+            locked: flags.isLocked(l.id),
             clipped: l.clipped,
             wave: media.waveOf(ws, l),
             frames: media.framesOf(ws, l),

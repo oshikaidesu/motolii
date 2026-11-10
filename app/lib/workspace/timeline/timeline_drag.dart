@@ -6,9 +6,9 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/workspace/timeline/row_flags.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
-import 'package:motolii/workspace/timeline/timeline_rows.dart';
 import 'package:motolii/workspace/timeline/timeline_slip.dart';
 
 extension TimelinePaneDrag on TimelinePaneState {
@@ -28,7 +28,10 @@ extension TimelinePaneDrag on TimelinePaneState {
   // - A second click in the same place adds a keyframe there, as a double-click off the line does in Live.
   void laneTap(Offset p) {
     final ws = workspace!, m = ws.inside, r = rowAt(p.dy), v = viewport.view;
-    if (m == null || r == null || r.value == null || isLocked(ws, r.l.id)) {
+    if (m == null ||
+        r == null ||
+        r.value == null ||
+        RowFlags(ws).isLocked(r.l.id)) {
       return;
     }
     final t = int.parse(r.l.id),
@@ -83,7 +86,7 @@ extension TimelinePaneDrag on TimelinePaneState {
         i * TimelineMetrics.row -
         viewport.verticalScroll +
         TimelineMetrics.row / 2;
-    if (!isLocked(ws, l.id) &&
+    if (!RowFlags(ws).isLocked(l.id) &&
         (p.dy - cy).abs() <= TimelineMetrics.bar / 2 + 2) {
       int? best;
       var bd = TimelineMetrics.keyPicked + 2;
@@ -133,7 +136,7 @@ extension TimelinePaneDrag on TimelinePaneState {
           ? SystemMouseCursors.click
           : SystemMouseCursors.precise;
     }
-    if (isLocked(ws, l.id) || p.dx < a - 6 || p.dx > b + 6) {
+    if (RowFlags(ws).isLocked(l.id) || p.dx < a - 6 || p.dx > b + 6) {
       return _onPale(ws, l, p)
           ? SystemMouseCursors.grab
           : SystemMouseCursors.precise;
@@ -156,7 +159,9 @@ extension TimelinePaneDrag on TimelinePaneState {
     if (r.value != null) return true;
     final l = r.l, a = v.x(l.inF), b = v.x(l.outF);
     final off = p.dx < a - 6 || p.dx > b + 6;
-    if (isLocked(workspace!, l.id) || (off && !_onPale(ws, l, p))) return false;
+    if (RowFlags(workspace!).isLocked(l.id) || (off && !_onPale(ws, l, p))) {
+      return false;
+    }
     for (final k in l.keys) {
       if ((v.x(k) - p.dx).abs() > TimelineMetrics.keyPicked + 2) continue;
       final held = (layer: l.id, frame: k),
