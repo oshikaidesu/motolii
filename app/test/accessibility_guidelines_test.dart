@@ -13,7 +13,7 @@ import 'package:motolii/skin/theme.dart' show ColorTheme;
 import 'package:motolii/workspace/shelf/create_preview.dart' show RecipeMotions;
 import 'package:motolii/workspace/dock/dock_fonts.dart' show fontRecentAt;
 import 'package:motolii/workspace/dock/dock_make_palettes.dart' show colorsAt;
-import 'package:motolii/workspace/dock/dock_map.dart' show dockMapsAt;
+import 'package:motolii/workspace/dock/map/shelf_map.dart' show dockMapsAt;
 import 'package:motolii/workspace/shelf/shelf_context.dart' show dockStarsAt;
 import 'package:motolii/workspace/dock/common/shelf_tags.dart' show DockTags;
 import 'package:motolii/workspace/tool_panel/ease/ease_shelf.dart'

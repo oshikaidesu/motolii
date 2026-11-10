@@ -9,7 +9,7 @@ import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/controls.dart' show IconPress;
 import 'package:motolii/widgets/media.dart' show MiniSlider;
-import 'package:motolii/workspace/dock/dock_map.dart';
+import 'package:motolii/workspace/dock/map/shelf_map.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
 
 /// The map view: each shown item's tile at its position from [DockMapPlaces].
