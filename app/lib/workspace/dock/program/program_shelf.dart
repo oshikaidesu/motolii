@@ -17,18 +17,16 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/bridge/motolii_shelves.dart';
-import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/workspace/dock/common/folder_row.dart';
 import 'package:motolii/workspace/dock/common/shelf_footer.dart';
+import 'package:motolii/workspace/dock/program/program.dart';
+import 'package:motolii/workspace/dock/program/program_commands.dart';
 import 'package:motolii/workspace/shelf/copies_tiles.dart';
-import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/shelf/program_code.dart';
 import 'package:motolii/workspace/shelf/program_tiles.dart';
 import 'package:motolii/workspace/shelf/shelf_add.dart';
@@ -36,125 +34,7 @@ import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
 
-/// One program on the shelf: its file, what it was written for, and the hash that tells it from the others of those.
-class Program {
-  Program(this.file, {this.recipe, this.kind});
-  final String file;
-
-  /// [recipe] is the name of a closed pack from the library: a whole Cavalry script or a p5.js sketch as it came
-  /// (CREATE_PROGRAM.md). It is created by that name, as Create does (doc_make).
-  ///
-  /// [kind] is what the program was written for, as the engine reports it. A pack's file is never overwritten.
-  final String? recipe, kind;
-  String get stem =>
-      file.substring(file.lastIndexOf('/') + 1, file.lastIndexOf('.'));
-  String get form =>
-      kind ??
-      (stem.contains('-') ? stem.substring(0, stem.lastIndexOf('-')) : stem);
-  String get tail =>
-      stem.contains('-') ? stem.substring(stem.lastIndexOf('-') + 1) : '';
-
-  /// The name used when none is set: what it was written for, then its hash.
-  String get plain => '$form $tail'.trim();
-
-  /// The display name: the user's own name if set, otherwise what the file says about itself.
-  ///
-  /// That is the site title adapter_net.h wrote at the head of the file, or the description of a multi-tab file.
-  String get name {
-    if (recipe case final r?) return r;
-    try {
-      if (shelfSidecar(file).existsSync()) {
-        return shelfSidecar(file).readAsStringSync().trim();
-      }
-      final lines = File(file).readAsLinesSync();
-      final kept = RegExp(r'^/\*\{.*"DESCRIPTION":"([^"]*)"')
-          .firstMatch(lines.first)?[1];
-      if (kept != null && kept != 'Shadertoy') return kept;
-      return [
-            for (final l in lines.take(8))
-              RegExp(
-                r'^// (.+) by [^,]+, [^,]+, openprocessing\.org/sketch/\d+',
-              ).firstMatch(l)?[1],
-          ].nonNulls.firstOrNull ??
-          plain;
-    } catch (_) {
-      return plain;
-    }
-  }
-
-  /// Sets the name to [to]. An empty name removes the sidecar, so [name] falls back to [plain].
-  void rename(String to) {
-    if (to.trim().isNotEmpty) {
-      return shelfSidecar(file).writeAsStringSync(to.trim());
-    }
-    if (shelfSidecar(file).existsSync()) shelfSidecar(file).deleteSync();
-  }
-
-  /// The first line of the file that says something.
-  String get first {
-    try {
-      final kept =
-          RegExp(r'^/\*\{.*"DESCRIPTION":"([^"]*)"(?:,"CREDIT":"([^"]*)")?')
-          // A multi-tab file describes itself in its first line.
-          .firstMatch(File(file).readAsLinesSync().first);
-      if (kept != null && kept[1] != 'Shadertoy') {
-        return kept[2] == null ? kept[1]! : '${kept[1]} · ${kept[2]}';
-      }
-      return File(file)
-          .readAsLinesSync()
-          .map((l) => l.trim())
-          .firstWhere(
-            (l) =>
-                l.isNotEmpty &&
-                !l.startsWith('//') &&
-                !l.startsWith('#') &&
-                !l.startsWith('/*'),
-            orElse: () => '',
-          );
-    } catch (_) {
-      return '';
-    }
-  }
-}
-
-/// The user's programs, most recently written first.
-///
-/// A Hydra or p5 source is hidden when the shader it became sits beside it, because that shader stands for it.
-List<Program> programs() {
-  final dir = Directory('${EffectTiles.own}/programs');
-  if (!dir.existsSync()) return const [];
-  final all = dir
-      .listSync()
-      .whereType<File>()
-      .where((f) => RegExp(r'\.(js|fs|hydra)$').hasMatch(f.path))
-      .toList();
-  final made = {
-    for (final f in all)
-      if (RegExp(r'\.(hydra|js)$').hasMatch(f.path))
-        f.path.replaceFirst(RegExp(r'\.(hydra|js)$'), '.fs'),
-  };
-  final kept = all.where((f) => !made.contains(f.path)).toList()
-    ..sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
-  return [for (final f in kept) Program(f.path)];
-}
-
-/// The user's programs, then the library's packs that are not among them.
-///
-/// A pack that was also put in from the web and kept appears only once.
-List<Program> programsAndPacks(Motolii? m) {
-  final own = programs(),
-      stems = {for (final p in own) p.stem},
-      kinds = {
-        for (final (name, kind) in m?.packKinds ?? const <(String, String)>[])
-          name: kind,
-      };
-  return [
-    ...own,
-    for (final (name, file) in m?.packs ?? const <(String, String)>[])
-      if (!stems.contains(name)) Program(file, recipe: name, kind: kinds[name]),
-  ];
-}
-
+/// The Program shelf: the programs as tiles, or the code of the picked one.
 class ProgramShelf extends StatefulWidget {
   const ProgramShelf(this.c, {super.key});
   final ShelfContext c;
@@ -164,9 +44,6 @@ class ProgramShelf extends StatefulWidget {
 
 class _ProgramShelfState extends State<ProgramShelf> {
   ShelfContext get c => widget.c;
-  void _told(Program p, bool done, String why) => c.set(
-    () => done ? c.mem.trouble.remove(p.file) : c.mem.trouble[p.file] = why,
-  );
   final _menu = GlobalKey<ContextMenuState>();
 
   /// The file whose name is being edited, if any.
@@ -187,40 +64,13 @@ class _ProgramShelfState extends State<ProgramShelf> {
     super.dispose();
   }
 
-  void _put(Program p) {
-    final m = c.ws.inside!;
-    if (p.recipe case final r?) {
-      return c.ws.after(
-        m.later('create', word: r),
-        (done, why) => _told(p, done, why),
-        (made) => c.ws.select('$made'),
-        // Created as Create's tile does it (see _make in dock_make_colors.dart).
-      );
-    }
-    c.ws.after(
-      m.later(
-        'adapter',
-        layer: int.tryParse(c.ws.selected ?? '') ?? 0,
-        word: p.file,
-      ),
-      (done, why) => _told(p, done, why),
-      (made) {
-        if (made <= 0) return;
-        if (p.name != p.plain) {
-          c.ws.after(m.later('say', layer: made, name: 'name', word: p.name));
-        }
-        c.ws.select('$made');
-      },
-    );
-  }
-
   void _rename(Program p) => setState(() => _renaming = p.file);
 
   void _menuOn(Program p, Offset at) {
     c.pick(p.file);
     final box = _menu.currentContext?.findRenderObject() as RenderBox?;
     _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [
-      ContextMenuItem('Create', () => _put(p)),
+      ContextMenuItem('Create', () => ProgramCommands(c).put(p)),
       if (p.recipe == null) ContextMenuItem('Rename…', () => _rename(p)),
       const ContextMenuItem.rule(),
       ContextMenuItem(
@@ -232,18 +82,6 @@ class _ProgramShelfState extends State<ProgramShelf> {
             : Process.run('open', ['-R', p.file]),
       ),
     ]);
-  }
-
-  /// Applies the saved code: the layer made from it follows, and so do its parameters in the inspector.
-  ///
-  /// If the code does not run, the reason is shown under the code.
-  void _saved(Program p) {
-    final m = c.ws.inside;
-    if (m == null) return;
-    c.ws.after(m.later('code', word: p.file), (done, why) {
-      _told(p, done, why);
-      c.ws.reread();
-    });
   }
 
   /// The program the selected layer was made from, whose code is the one shown. Godot likewise opens a node's script from the node.
@@ -329,7 +167,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
                     sel.recipe == null
                 ? ProgramCode(sel.file, (text) {
                     File(sel.file).writeAsStringSync(text);
-                    _saved(sel);
+                    ProgramCommands(c).saved(sel);
                   }, key: ValueKey(sel.file))
                 : shown.isEmpty
                 ? DockEmpty(c.query)
@@ -347,7 +185,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
                           'ws-program-${p.stem}-${tile(p).isEmpty ? 0 : File(tile(p)).lastModifiedSync().millisecondsSinceEpoch}',
                         ),
                         onTap: () => c.pick(p.file),
-                        onApply: () => _put(p),
+                        onApply: () => ProgramCommands(c).put(p),
                         onMenu: (at) => _menuOn(p, at),
                         picked: c.sel == p.file,
                         naming: _renaming == p.file
@@ -382,7 +220,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
                   sel.first,
               action: 'Create',
               fresh: true,
-              onAction: () => _put(sel),
+              onAction: () => ProgramCommands(c).put(sel),
             ),
         ],
       ),
