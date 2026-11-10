@@ -233,6 +233,8 @@ add_library(motolii_document OBJECT
   document/edit/time_edit.cpp
   document/evaluate/camera.cpp
   document/evaluate/evaluate.cpp
+  document/evaluate/evaluate_clipping.cpp
+  document/evaluate/evaluate_lights.cpp
   document/evaluate/fx_list.cpp
   document/evaluate/material.cpp
   document/evaluate/moment_fx.cpp
