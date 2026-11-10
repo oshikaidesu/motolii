@@ -24,10 +24,10 @@ import 'package:motolii/workspace/timeline/timeline_tracks_paint.dart';
 import 'package:motolii/workspace/timeline/timeline_view.dart';
 
 extension TimelinePaneTracks on TimelinePaneState {
-  Widget tracks(WorkspaceController ws, List<WtRow> rows) => LayoutBuilder(
+  Widget tracks(WorkspaceController ws, List<TimelineRow> rows) => LayoutBuilder(
     builder: (context, box) {
       trackW = box.maxWidth;
-      rowsH = math.max(0, box.maxHeight - WtM.ruler - WtM.overview);
+      rowsH = math.max(0, box.maxHeight - TimelineMetrics.ruler - TimelineMetrics.overview);
       scroll = clampScroll(scroll);
       vscroll = clampV(rows.length);
       final v = view;
@@ -51,9 +51,9 @@ extension TimelinePaneTracks on TimelinePaneState {
                   onPanEnd: (_) => workDragEnd(),
                   onPanCancel: workDragEnd,
                   child: SizedBox(
-                    height: WtM.ruler,
+                    height: TimelineMetrics.ruler,
                     child: CustomPaint(
-                      painter: WtRulerPainter(
+                      painter: TimelineRulerPainter(
                         view: v,
                         fps: WorkspaceController.fps,
                         workIn: workIn,
@@ -64,7 +64,7 @@ extension TimelinePaneTracks on TimelinePaneState {
                         tempo: ws.beats,
                         retimed: retimedOf(ws),
                       ),
-                      foregroundPainter: WtKeptPainter(view: v, kept: ws.kept), // Marks the frames cached on disk for playback.
+                      foregroundPainter: TimelineCachePainter(view: v, kept: ws.kept), // Marks the frames cached on disk for playback.
                     ),
                   ),
                 ),
@@ -97,7 +97,7 @@ extension TimelinePaneTracks on TimelinePaneState {
                         child: RepaintBoundary(
                           child: CustomPaint(
                             size: Size.infinite,
-                            painter: WtTracksPainter(rows: rows, view: v, fps: WorkspaceController.fps, vscroll: vscroll, restAt: restAt),
+                            painter: TimelineTracksPainter(rows: rows, view: v, fps: WorkspaceController.fps, vscroll: vscroll, restAt: restAt),
                           ),
                         ),
                       ),
@@ -115,15 +115,15 @@ extension TimelinePaneTracks on TimelinePaneState {
             left: 0,
             right: 0,
             top: 0,
-            bottom: WtM.overview,
+            bottom: TimelineMetrics.overview,
             child: IgnorePointer(
               child: RepaintBoundary(
                 child: ClipRect(
                   child: CustomPaint(
-                    painter: WtPlayheadPainter(
+                    painter: TimelinePlayheadPainter(
                       view: v,
                       frame: ws.frame,
-                      headTop: WtM.band + 1,
+                      headTop: TimelineMetrics.band + 1,
                       moment: ws.moment,
                     ), // Repainted as the playhead moves; no widgets are rebuilt.
                   ),
@@ -133,7 +133,7 @@ extension TimelinePaneTracks on TimelinePaneState {
           ),
           if (selectionBox case (final a, final b)?)
             Positioned.fromRect(
-              rect: Rect.fromPoints(a, b).shift(Offset(0, WtM.ruler)),
+              rect: Rect.fromPoints(a, b).shift(Offset(0, TimelineMetrics.ruler)),
               child: IgnorePointer(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
@@ -147,12 +147,12 @@ extension TimelinePaneTracks on TimelinePaneState {
           if (naming case (final at, _)?)
             Positioned(
               left: v.x((at * WorkspaceController.fps).round()).roundToDouble(),
-              top: WtM.band + 2,
+              top: TimelineMetrics.band + 2,
               height: 12,
               child: ListenableBuilder(
                 listenable: markWords,
                 builder: (_, child) => Container(
-                  width: wtFlagWidth('${markWords.text}  '),
+                  width: markerFlagWidth('${markWords.text}  '),
                   color: WindowTokens.toneText,
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: child,

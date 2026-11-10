@@ -38,7 +38,7 @@ class TimelinePane extends StatefulWidget {
   State<TimelinePane> createState() => TimelinePaneState();
 }
 
-class TimelinePaneState extends State<TimelinePane> with SingleTickerProviderStateMixin, TimelineAsked {
+class TimelinePaneState extends State<TimelinePane> with SingleTickerProviderStateMixin, TimelineRequests {
   late final Ticker ticker = createTicker(tick);
   // One closure, used for both adding and removing the listener.
   // Tearing off an extension method gives a new closure each time, so removeListener would never match.
@@ -73,11 +73,11 @@ class TimelinePaneState extends State<TimelinePane> with SingleTickerProviderSta
   ].firstOrNull;
 
   // The lane for one property: its keyframe times and values, read from the project snapshot without asking the engine.
-  WtRow laneRow(WorkspaceController ws, Layer l, String name) {
+  TimelineRow laneRow(WorkspaceController ws, Layer l, String name) {
     final m = ws.inside!, t = int.parse(l.id), at = m.keyTimes(t, name), vs = m.keyValues(t, name);
     final n = math.min(at.length, vs.length);
     final lo = vs.take(n).fold(double.infinity, math.min), hi = vs.take(n).fold(-double.infinity, math.max);
-    return WtRow(
+    return TimelineRow(
       name: name,
       kind: l.kind,
       inF: l.inF,
@@ -132,11 +132,11 @@ class TimelinePaneState extends State<TimelinePane> with SingleTickerProviderSta
   }
 
   void setZoom(double z, {int? anchor}) {
-    final nz = z.clamp(1.0, WtM.maxZoom);
+    final nz = z.clamp(1.0, TimelineMetrics.maxZoom);
     final a = anchor ?? workspace!.frame, ax = view.x(a);
     setState(() {
       zoom = nz;
-      scroll = clampScroll(a - (ax - WtM.padL) / (fit * nz));
+      scroll = clampScroll(a - (ax - TimelineMetrics.padL) / (fit * nz));
     });
   }
 
@@ -144,7 +144,7 @@ class TimelinePaneState extends State<TimelinePane> with SingleTickerProviderSta
   void follow(int f) {
     if (zoom <= 1 || !mounted) return;
     final v = view, x = v.x(f);
-    if (x >= 0 && x <= trackW - WtM.padR) return;
+    if (x >= 0 && x <= trackW - TimelineMetrics.padR) return;
     setState(() => scroll = clampScroll(f - visible * .1));
   }
 
@@ -208,8 +208,8 @@ class TimelinePaneState extends State<TimelinePane> with SingleTickerProviderSta
     for (var i = 0; i < order.length; i++) {
       // A box does not select points on a lane.
       if (order[i].value != null) continue;
-      final l = ws.layers[order[i].layer], top = i * WtM.row - vscroll;
-      if (top + WtM.row < r.top || top > r.bottom || isLocked(ws, l.id)) continue;
+      final l = ws.layers[order[i].layer], top = i * TimelineMetrics.row - vscroll;
+      if (top + TimelineMetrics.row < r.top || top > r.bottom || isLocked(ws, l.id)) continue;
       for (final k in l.keys) {
         if (v.x(k) >= r.left && v.x(k) <= r.right) keys.add((layer: l.id, frame: k));
       }
@@ -300,7 +300,7 @@ class TimelinePaneState extends State<TimelinePane> with SingleTickerProviderSta
       return setState(() {
         markTo = (view.frameAt(p.dx) - markGrab).round().clamp(0, WorkspaceController.duration);
         // Dragged off the ruler: the marker is deleted on release.
-        markOff = p.dy < -WtM.ruler * .6 || p.dy > WtM.ruler * 1.6;
+        markOff = p.dy < -TimelineMetrics.ruler * .6 || p.dy > TimelineMetrics.ruler * 1.6;
       });
     }
     switch (workDrag) {
@@ -404,12 +404,12 @@ class TimelinePaneState extends State<TimelinePane> with SingleTickerProviderSta
             for (final n in _moving(ws, l)) (layer: i, value: n, aim: null),
         ],
     ];
-    final rows = <WtRow>[
+    final rows = <TimelineRow>[
       for (final o in order)
         if (o.value case final n?)
           laneRow(ws, ws.layers[o.layer], n)
         else if (ws.layers[o.layer] case final l)
-          WtRow(
+          TimelineRow(
             name: l.name,
             kind: l.kind,
             inF: l.inF,
@@ -457,9 +457,9 @@ class TimelinePaneState extends State<TimelinePane> with SingleTickerProviderSta
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SizedBox(width: WtM.label, child: labels(ws, rows)),
+                    SizedBox(width: TimelineMetrics.label, child: labels(ws, rows)),
                     SizedBox(
-                      width: WtM.divider,
+                      width: TimelineMetrics.divider,
                       child: ColoredBox(color: WindowTokens.ground),
                     ),
                     Expanded(child: tracks(ws, rows)),

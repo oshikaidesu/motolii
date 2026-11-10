@@ -20,7 +20,7 @@ import 'package:motolii/workspace/timeline/timeline_paint.dart';
 import 'package:motolii/workspace/timeline/timeline_ruler.dart';
 import 'package:motolii/workspace/timeline/timeline_view.dart';
 
-mixin TimelineAsked on State<TimelinePane> {
+mixin TimelineRequests on State<TimelinePane> {
   // The timeline state this mixin is part of: its zoom and scroll.
   TimelinePaneState get _t => this as TimelinePaneState;
 
@@ -99,7 +99,7 @@ mixin TimelineAsked on State<TimelinePane> {
       f = (flag.$1 * WorkspaceController.fps).round();
     } else {
       wsMarkPicked.value = null;
-      if (p.dy <= WtM.band + 2) return;
+      if (p.dy <= TimelineMetrics.band + 2) return;
       f = t.view.frameAt(p.dx).round().clamp(0, WorkspaceController.duration);
     }
     ws
@@ -241,7 +241,7 @@ mixin TimelineAsked on State<TimelinePane> {
           left: Shape.s(28),
           right: Shape.s(4),
           top: top + Shape.s(4),
-          height: WtM.row - Shape.s(8),
+          height: TimelineMetrics.row - Shape.s(8),
           child: CallbackShortcuts(
             bindings: {
               const SingleActivator(LogicalKeyboardKey.escape): () {

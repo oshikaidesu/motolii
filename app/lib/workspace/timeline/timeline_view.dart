@@ -45,13 +45,13 @@ extension TimelinePaneView on TimelinePaneState {
 
   // ---------------------------------------------------------------- view
 
-  double get fit => math.max(.1, (trackW - WtM.padL - WtM.padR) / WorkspaceController.duration);
+  double get fit => math.max(.1, (trackW - TimelineMetrics.padL - TimelineMetrics.padR) / WorkspaceController.duration);
 
-  WtView get view => WtView(fit * zoom, scroll);
+  TimelineView get view => TimelineView(fit * zoom, scroll);
 
   double get visible => WorkspaceController.duration / zoom;
 
   double clampScroll(double s) => s.clamp(0.0, math.max(0.0, WorkspaceController.duration - visible)).toDouble();
 
-  double clampV(int rows) => vscroll.clamp(0.0, math.max(0.0, rows * WtM.row - rowsH)).toDouble();
+  double clampV(int rows) => vscroll.clamp(0.0, math.max(0.0, rows * TimelineMetrics.row - rowsH)).toDouble();
 }

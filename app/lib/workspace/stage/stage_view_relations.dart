@@ -11,7 +11,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Pressable;
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
-import 'package:motolii/widgets/timeline_painters.dart' show TpGlyph;
+import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
 import 'package:motolii/widgets/two_fingers.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/stage/stage_view.dart';
@@ -281,7 +281,7 @@ class RelationMarks extends StatelessWidget {
                             on: true,
                             onTap: () => wsSwitch(ws),
                             glyph: (_) => Glyph(
-                              (m.value(rel, 'visible', 0) ?? 1) > .5 ? TpGlyph.eye : TpGlyph.eyeOff,
+                              (m.value(rel, 'visible', 0) ?? 1) > .5 ? TimelineGlyphs.eye : TimelineGlyphs.eyeOff,
                               color: WindowTokens.onAccent,
                               size: Shape.z(12),
                               fade: true,

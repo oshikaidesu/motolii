@@ -11,11 +11,11 @@ import 'package:motolii/workspace/timeline/timeline_view.dart';
 extension TimelinePaneRuler on TimelinePaneState {
   /// The mark whose flag is under the pointer [p], if any.
   (double, String)? flagAt(Offset p) {
-    if (p.dy < WtM.band + 1 || p.dy > WtM.band + 15) return null;
+    if (p.dy < TimelineMetrics.band + 1 || p.dy > TimelineMetrics.band + 15) return null;
     final xs = [for (final m in workspace!.marks) view.x((m.$1 * WorkspaceController.fps).round()).roundToDouble()];
     for (final m in workspace!.marks.reversed) {
       final x = view.x((m.$1 * WorkspaceController.fps).round()).roundToDouble();
-      if (p.dx >= x - 2 && p.dx <= x + wtFlagRoom(m.$2, x, xs)) return m;
+      if (p.dx >= x - 2 && p.dx <= x + markerFlagRoom(m.$2, x, xs)) return m;
     }
     return null;
   }
@@ -30,7 +30,7 @@ extension TimelinePaneRuler on TimelinePaneState {
       markOff = false;
       return;
     }
-    if (p.dy <= WtM.band + 2) {
+    if (p.dy <= TimelineMetrics.band + 2) {
       final a = v.x(workIn), b = v.x(workOut);
       if ((p.dx - a).abs() <= 6) {
         workDrag = 0;

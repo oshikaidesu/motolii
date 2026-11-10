@@ -7,7 +7,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/panel_header.dart';
-import 'package:motolii/widgets/timeline_painters.dart' show TpGlyph;
+import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
 
 /// Header of the name column: layer count and the visibility, solo and lock icons.
@@ -18,7 +18,7 @@ class TimelineLabelHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) => PanelHeader(
     '',
-    height: WtM.ruler,
+    height: TimelineMetrics.ruler,
     color: Grey.g10,
     padding: EdgeInsets.only(left: Shape.s(8), right: Shape.s(6)),
     leading: Row(
@@ -32,10 +32,10 @@ class TimelineLabelHeader extends StatelessWidget {
       ],
     ),
     trailing: [
-      for (final g in const [TpGlyph.eye, TpGlyph.solo, TpGlyph.lock])
+      for (final g in const [TimelineGlyphs.eye, TimelineGlyphs.solo, TimelineGlyphs.lock])
         SizedBox(
           width: Shape.z(20),
-          child: Center(child: Glyph(g, size: 10, color: g == TpGlyph.solo && solo ? WindowTokens.accent : Grey.g56)),
+          child: Center(child: Glyph(g, size: 10, color: g == TimelineGlyphs.solo && solo ? WindowTokens.accent : Grey.g56)),
         ),
     ],
   );
@@ -58,7 +58,7 @@ class TimelineLabelRow extends StatefulWidget {
     required this.onLock,
   });
   final int index, depth;
-  final WtRow row;
+  final TimelineRow row;
   final bool hidden, solo;
   final bool? lanes; // Whether its keyframed properties are expanded; null if the layer has no keyframes.
   final VoidCallback onLanes, onSelect, onEye, onSolo, onLock;
@@ -89,15 +89,15 @@ class _LabelRowState extends State<TimelineLabelRow> {
             children: [
               SizedBox(width: Shape.z(10) * widget.depth), // Indent layers inside a group, as in Apple Motion's Layers list and Cavalry's tree.
               if (widget.lanes case final open?)
-                _Toggle(open ? TpGlyph.caretD : TpGlyph.caretR, on: false, lit: true, onTap: widget.onLanes)
+                _Toggle(open ? TimelineGlyphs.caretD : TimelineGlyphs.caretR, on: false, lit: true, onTap: widget.onLanes)
               else
                 SizedBox(width: Shape.z(20)),
-              WtThumb(r),
+              TimelineThumbnail(r),
             ],
           ),
-          eye: _Toggle(widget.hidden ? TpGlyph.eyeOff : TpGlyph.eye, on: false, lit: !widget.hidden, onTap: widget.onEye),
-          solo: _Toggle(TpGlyph.solo, on: widget.solo, lit: _h || sel, onTap: widget.onSolo),
-          lock: _Toggle(r.locked ? TpGlyph.lock : TpGlyph.unlock, on: false, lit: r.locked || _h || sel, strong: r.locked, onTap: widget.onLock),
+          eye: _Toggle(widget.hidden ? TimelineGlyphs.eyeOff : TimelineGlyphs.eye, on: false, lit: !widget.hidden, onTap: widget.onEye),
+          solo: _Toggle(TimelineGlyphs.solo, on: widget.solo, lit: _h || sel, onTap: widget.onSolo),
+          lock: _Toggle(r.locked ? TimelineGlyphs.lock : TimelineGlyphs.unlock, on: false, lit: r.locked || _h || sel, strong: r.locked, onTap: widget.onLock),
         ),
       ),
     );
@@ -107,7 +107,7 @@ class _LabelRowState extends State<TimelineLabelRow> {
 /// A row toggle shown as a bare icon. [on] puts it on an accent chip, [strong] on a raised grey one.
 class _Toggle extends StatelessWidget {
   const _Toggle(this.g, {required this.on, required this.lit, this.strong = false, required this.onTap});
-  final TpGlyph g;
+  final TimelineGlyphs g;
   final bool on, lit, strong;
   final VoidCallback onTap;
   @override
@@ -117,7 +117,7 @@ class _Toggle extends StatelessWidget {
     mouseCursor: MouseCursor.defer,
     child: SizedBox(
       width: Shape.z(20),
-      height: WtM.row - 1,
+      height: TimelineMetrics.row - 1,
       child: Center(
         child: Container(
           width: Shape.z(17),

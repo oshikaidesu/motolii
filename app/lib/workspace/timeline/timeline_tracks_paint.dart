@@ -8,14 +8,14 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/widgets/timeline_painters.dart' show tpFine, tpMajor;
+import 'package:motolii/widgets/timeline_painters.dart' show fineTickSpacing, majorTickSpacing;
 import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
 
 /// The bar's fill: the layer kind's hue, a step quieter when not selected. A hidden or soloed-out layer is grey.
-Color wtBarFill(WtRow r) => Forms.worn.trackFill(r.tone ?? wsTone(r.kind), dim: r.dim, selected: r.selected);
+Color trackBarFill(TimelineRow r) => Forms.worn.trackFill(r.tone ?? wsTone(r.kind), dim: r.dim, selected: r.selected);
 
 /// Adds an easing curve to [p] from x [xa] to [xb], sampled finely enough for the pixels on screen.
 ///
@@ -32,8 +32,8 @@ void _wayLine(Path p, List<double> way, double xa, double xb, double width, doub
   p.lineTo(xa + wide * to / n, y(way[to]));
 }
 
-void _vLines(Canvas c, WtView v, int fps, double w, double top, double bottom, {required Color major, required Color fine, Beats? beats}) {
-  final mj = tpMajor(v.ppf, fps), fn = tpFine(v.ppf, fps, mj), p = Paint();
+void _vLines(Canvas c, TimelineView v, int fps, double w, double top, double bottom, {required Color major, required Color fine, Beats? beats}) {
+  final mj = majorTickSpacing(v.ppf, fps), fn = fineTickSpacing(v.ppf, fps, mj), p = Paint();
   if (beats != null) {
     // Draw the grid by beat rather than by second while the lines can be told apart; Live's grid also widens as it is zoomed out.
     for (final (f, bar) in beats.between(v.scroll, v.scroll + w / v.ppf)) {
@@ -50,10 +50,10 @@ void _vLines(Canvas c, WtView v, int fps, double w, double top, double bottom, {
   }
 }
 
-class WtTracksPainter extends CustomPainter {
-  const WtTracksPainter({required this.rows, required this.view, required this.fps, required this.vscroll, this.restAt});
-  final List<WtRow> rows;
-  final WtView view;
+class TimelineTracksPainter extends CustomPainter {
+  const TimelineTracksPainter({required this.rows, required this.view, required this.fps, required this.vscroll, this.restAt});
+  final List<TimelineRow> rows;
+  final TimelineView view;
   final int fps;
   final double vscroll;
 
@@ -66,31 +66,31 @@ class WtTracksPainter extends CustomPainter {
     final p = Paint(), end = view.x(WorkspaceController.duration);
     c.drawRect(Offset.zero & s, p..color = WindowTokens.body);
     for (var i = 0; i < rows.length; i++) {
-      final top = i * WtM.row - vscroll;
-      if (top > s.height || top + WtM.row < 0) continue;
-      c.drawRect(Rect.fromLTWH(0, top, s.width, WtM.row - 1), p..color = Forms.worn.trackBand(i, rows[i].selected));
-      c.drawRect(Rect.fromLTWH(0, top + WtM.row - 1, s.width, 1), p..color = Grey.rowLine);
+      final top = i * TimelineMetrics.row - vscroll;
+      if (top > s.height || top + TimelineMetrics.row < 0) continue;
+      c.drawRect(Rect.fromLTWH(0, top, s.width, TimelineMetrics.row - 1), p..color = Forms.worn.trackBand(i, rows[i].selected));
+      c.drawRect(Rect.fromLTWH(0, top + TimelineMetrics.row - 1, s.width, 1), p..color = Grey.rowLine);
     }
     if (end < s.width) c.drawRect(Rect.fromLTRB(end, 0, s.width, s.height), p..color = WindowTokens.body);
     _vLines(c, view, fps, math.min(s.width, end), 0, s.height, major: Grey.g20, fine: Grey.g15);
     for (var i = 0; i < rows.length; i++) {
-      final top = i * WtM.row - vscroll;
-      if (top > s.height || top + WtM.row < 0) continue;
-      _row(c, s, rows[i], top + WtM.row / 2 - .5);
+      final top = i * TimelineMetrics.row - vscroll;
+      if (top > s.height || top + TimelineMetrics.row < 0) continue;
+      _row(c, s, rows[i], top + TimelineMetrics.row / 2 - .5);
     }
     if (restAt case final f?) c.drawRect(Rect.fromLTWH(view.x(f).roundToDouble(), 0, 1, s.height), p..color = WindowTokens.accent);
   }
 
-  void _row(Canvas c, Size s, WtRow r, double cy) {
+  void _row(Canvas c, Size s, TimelineRow r, double cy) {
     // A lane with no points is a row that only shows what it targets, so nothing is drawn.
     if (r.lane case final pts?) return pts.isEmpty ? null : _lane(c, s, r, pts, cy);
     final p = Paint(), x0 = view.x(r.inF), x1 = math.max(view.x(r.outF), x0 + 4), h = Forms.worn.trackBar(selected: r.selected);
     if (r.whole case (final a, final b)?) {
-      c.drawRect(Rect.fromLTRB(view.x(a), cy - h / 2, view.x(b), cy + h / 2), p..color = wtBarFill(r).withValues(alpha: .18));
+      c.drawRect(Rect.fromLTRB(view.x(a), cy - h / 2, view.x(b), cy + h / 2), p..color = trackBarFill(r).withValues(alpha: .18));
     }
     if (x1 < 0 || x0 > s.width) return;
     final bar = Rect.fromLTRB(x0, cy - h / 2, x1, cy + h / 2), rr = RRect.fromRectAndRadius(bar, Radius.circular(Forms.worn.trackRadius));
-    final fill = wtBarFill(r), ink = r.dim ? Grey.g56 : WindowTokens.onAccent, grip = Color.lerp(fill, Grey.g00, .28)!;
+    final fill = trackBarFill(r), ink = r.dim ? Grey.g56 : WindowTokens.onAccent, grip = Color.lerp(fill, Grey.g00, .28)!;
     final mix = r.mix;
     if (mix != null && mix.length > 1 && !r.dim) {
       // A behaviour bar blends the colours of the layers it affects.
@@ -205,7 +205,7 @@ class WtTracksPainter extends CustomPainter {
       final x = view.x(k);
       if (x < -8 || x > s.width + 8) continue;
       final on = r.picked.contains(k);
-      final rad = on ? WtM.keyPicked : WtM.key;
+      final rad = on ? TimelineMetrics.keyPicked : TimelineMetrics.key;
       final d = Path()
         ..moveTo(x, cy - rad)
         ..lineTo(x + rad, cy)
@@ -240,8 +240,8 @@ class WtTracksPainter extends CustomPainter {
   /// Keyframes are breakpoints at their values, lowest at the bottom, joined by each keyframe's easing curve.
   /// Nothing is drawn before the first or after the last keyframe, because with many lanes a full-width line says nothing.
   /// The line is a lighter shade of the bar's colour, like the bar's own easing lines.
-  void _lane(Canvas c, Size s, WtRow r, List<(int, double)> pts, double cy) {
-    final top = cy - WtM.row / 2 + 4, h = WtM.row - 9, col = Color.lerp(wtBarFill(r), Grey.g100, r.dim ? .25 : .6)!;
+  void _lane(Canvas c, Size s, TimelineRow r, List<(int, double)> pts, double cy) {
+    final top = cy - TimelineMetrics.row / 2 + 4, h = TimelineMetrics.row - 9, col = Color.lerp(trackBarFill(r), Grey.g100, r.dim ? .25 : .6)!;
     Offset at((int, double) q) => Offset(view.x(q.$1), top + (1 - q.$2) * h);
     final line = Path()..moveTo(at(pts.first).dx, at(pts.first).dy);
     for (var i = 0; i < pts.length; i++) {
@@ -254,7 +254,7 @@ class WtTracksPainter extends CustomPainter {
     }
     if (r.laneOn case final i? when i + 1 < pts.length) {
       c.drawRect(
-        Rect.fromLTRB(at(pts[i]).dx, cy - WtM.row / 2, at(pts[i + 1]).dx, cy + WtM.row / 2),
+        Rect.fromLTRB(at(pts[i]).dx, cy - TimelineMetrics.row / 2, at(pts[i + 1]).dx, cy + TimelineMetrics.row / 2),
         Paint()..color = WindowTokens.accent.withValues(alpha: .18),
       ); // Highlights the segment open in the curve editor, like Theatre.js's connector.
     }
@@ -268,7 +268,7 @@ class WtTracksPainter extends CustomPainter {
         ..color = col,
     );
     for (final q in pts) {
-      c.drawCircle(at(q), WtM.key * .75, Paint()..color = col);
+      c.drawCircle(at(q), TimelineMetrics.key * .75, Paint()..color = col);
     }
   }
 
@@ -288,7 +288,7 @@ class WtTracksPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(WtTracksPainter o) => o.view != view || o.fps != fps || o.vscroll != vscroll || o.restAt != restAt || !listEquals(o.rows, rows);
+  bool shouldRepaint(TimelineTracksPainter o) => o.view != view || o.fps != fps || o.vscroll != vscroll || o.restAt != restAt || !listEquals(o.rows, rows);
 }
 
 // ---------------------------------------------------------------- playhead

@@ -10,13 +10,13 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Badge;
-import 'package:motolii/widgets/timeline_painters.dart' show tpFine, tpMajor;
+import 'package:motolii/widgets/timeline_painters.dart' show fineTickSpacing, majorTickSpacing;
 import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// The timeline panel's own sizes.
-abstract final class WtM {
+abstract final class TimelineMetrics {
   static const divider = 1.0;
   static double get header => Shape.z(32.0);
   static double get label => Shape.z(200.0);
@@ -37,21 +37,21 @@ abstract final class WtM {
 
 /// Where frames land on the track area: x = padL + (frame - scroll) * ppf.
 @immutable
-class WtView {
-  const WtView(this.ppf, this.scroll);
+class TimelineView {
+  const TimelineView(this.ppf, this.scroll);
   final double ppf, scroll;
-  double x(num f) => WtM.padL + (f - scroll) * ppf;
-  double frameAt(double x) => (x - WtM.padL) / ppf + scroll;
+  double x(num f) => TimelineMetrics.padL + (f - scroll) * ppf;
+  double frameAt(double x) => (x - TimelineMetrics.padL) / ppf + scroll;
   @override
-  bool operator ==(Object other) => other is WtView && other.ppf == ppf && other.scroll == scroll;
+  bool operator ==(Object other) => other is TimelineView && other.ppf == ppf && other.scroll == scroll;
   @override
   int get hashCode => Object.hash(ppf, scroll);
 }
 
 /// One row as drawn: a snapshot of the layer plus how the panel shows it.
 @immutable
-class WtRow {
-  const WtRow({
+class TimelineRow {
+  const TimelineRow({
     required this.name,
     required this.kind,
     required this.inF,
@@ -103,7 +103,7 @@ class WtRow {
   final bool selected, dim, locked, clipped;
   @override
   bool operator ==(Object other) =>
-      other is WtRow &&
+      other is TimelineRow &&
       other.name == name &&
       other.kind == kind &&
       other.tone == tone &&
@@ -134,22 +134,22 @@ class WtRow {
 }
 
 /// The width of a marker's flag on the ruler, which holds its name. Used both to draw the flag and to hit-test it.
-double wtFlagWidth(String name) => lineText(name, TextStyles.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700)).width + 8;
+double markerFlagWidth(String name) => lineText(name, TextStyles.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700)).width + 8;
 
 /// The width of the flag of a marker at [x]: its name's width, cut short where the next marker begins.
 ///
 /// Logic Pro likewise shows a marker's name only as far as the following marker. [xs] holds the x of every marker.
-double wtFlagRoom(String name, double x, Iterable<double> xs) {
+double markerFlagRoom(String name, double x, Iterable<double> xs) {
   final next = xs.where((o) => o > x).fold<double?>(null, (a, o) => a == null || o < a ? o : a);
-  final w = wtFlagWidth(name);
+  final w = markerFlagWidth(name);
   return next == null ? w : math.max(6, math.min(w, next - x - 1));
 }
 
 // ---------------------------------------------------------------- ruler
 
 /// Paints the ruler: work-area band, time ticks, beats, retimed ends and marker flags.
-class WtRulerPainter extends CustomPainter {
-  const WtRulerPainter({
+class TimelineRulerPainter extends CustomPainter {
+  const TimelineRulerPainter({
     required this.view,
     required this.fps,
     required this.workIn,
@@ -160,7 +160,7 @@ class WtRulerPainter extends CustomPainter {
     this.beats = const [],
     this.retimed = const [],
   });
-  final WtView view;
+  final TimelineView view;
   final int fps, workIn, workOut;
   final List<(int, String)> markers;
   final Map<int, Color> markColors; // A marker's colour by its frame, if it has one.
@@ -178,16 +178,16 @@ class WtRulerPainter extends CustomPainter {
   void paint(Canvas c, Size s) {
     final p = Paint(), end = view.x(WorkspaceController.duration);
     c.drawRect(Offset.zero & s, p..color = Grey.g10);
-    c.drawRect(Rect.fromLTRB(0, 0, s.width, WtM.band), p..color = Grey.g07);
-    if (end < s.width) c.drawRect(Rect.fromLTRB(end, WtM.band, s.width, s.height), p..color = Grey.g07);
+    c.drawRect(Rect.fromLTRB(0, 0, s.width, TimelineMetrics.band), p..color = Grey.g07);
+    if (end < s.width) c.drawRect(Rect.fromLTRB(end, TimelineMetrics.band, s.width, s.height), p..color = Grey.g07);
 
     final a = view.x(workIn), b = view.x(workOut);
-    c.drawRRect(RRect.fromLTRBR(a, 2, b, WtM.band - 1, Shape.r(3)), p..color = Grey.g38);
+    c.drawRRect(RRect.fromLTRBR(a, 2, b, TimelineMetrics.band - 1, Shape.r(3)), p..color = Grey.g38);
     for (final x in [a, b - 4]) {
-      c.drawRRect(RRect.fromLTRBR(x, 1, x + 4, WtM.band, Shape.r(2)), p..color = Grey.g76);
+      c.drawRRect(RRect.fromLTRBR(x, 1, x + 4, TimelineMetrics.band, Shape.r(2)), p..color = Grey.g76);
     }
 
-    final mj = tpMajor(view.ppf, fps), fn = tpFine(view.ppf, fps, mj), bottom = s.height - 1;
+    final mj = majorTickSpacing(view.ppf, fps), fn = fineTickSpacing(view.ppf, fps, mj), bottom = s.height - 1;
     for (final f in beats) {
       final x = view.x(f).roundToDouble();
       if (x >= 0 && x <= s.width) c.drawRect(Rect.fromLTWH(x, bottom - 7, 2, 7), p..color = WindowTokens.toneAudio);
@@ -218,7 +218,7 @@ class WtRulerPainter extends CustomPainter {
       final x = view.x(f).roundToDouble();
       if (x < -60 || x > s.width) continue;
       final t = lineText(name, TextStyles.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700));
-      flags.add((Rect.fromLTWH(x, WtM.band + 2, wtFlagRoom(name, x, xs), 12), t, markColors[f] ?? WindowTokens.toneText));
+      flags.add((Rect.fromLTWH(x, TimelineMetrics.band + 2, markerFlagRoom(name, x, xs), 12), t, markColors[f] ?? WindowTokens.toneText));
     }
     if (view.ppf >= 3) {
       final f0 = view.scroll.floor();
@@ -235,10 +235,10 @@ class WtRulerPainter extends CustomPainter {
       final isMajor = f % mj == 0;
       c.drawRect(Rect.fromLTWH(x, bottom - (isMajor ? 9 : 5), 1, isMajor ? 9 : 5), p..color = isMajor ? Grey.g63 : Grey.g44);
       if (isMajor) {
-        if (flags.any((m) => m.$1.inflate(3).overlaps(Rect.fromLTWH(x + 3, WtM.band + 2, 24, 12)))) continue;
+        if (flags.any((m) => m.$1.inflate(3).overlaps(Rect.fromLTWH(x + 3, TimelineMetrics.band + 2, 24, 12)))) continue;
         final sec = f ~/ fps, fr = (f % fps).round();
         final t = lineText(mj >= fps ? '${sec}s' : '$sec:${fr.toString().padLeft(2, '0')}', TextStyles.value(Grey.g76).copyWith(fontSize: TextStyles.px(10)));
-        t.paint(c, Offset(x + 3, WtM.band + 3));
+        t.paint(c, Offset(x + 3, TimelineMetrics.band + 3));
         t.dispose();
       }
     }
@@ -266,7 +266,7 @@ class WtRulerPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(WtRulerPainter o) =>
+  bool shouldRepaint(TimelineRulerPainter o) =>
       o.view != view ||
       o.fps != fps ||
       o.workIn != workIn ||
@@ -279,9 +279,9 @@ class WtRulerPainter extends CustomPainter {
 // ---------------------------------------------------------------- tracks
 
 /// Paints the playhead: a thin line with a small head.
-class WtPlayheadPainter extends CustomPainter {
-  const WtPlayheadPainter({required this.view, required this.frame, required this.headTop, this.moment}) : super(repaint: moment);
-  final WtView view;
+class TimelinePlayheadPainter extends CustomPainter {
+  const TimelinePlayheadPainter({required this.view, required this.frame, required this.headTop, this.moment}) : super(repaint: moment);
+  final TimelineView view;
   final int frame;
   final double headTop;
   final ValueListenable<int>? moment; // The current frame, read at paint time, so moving the playhead repaints without rebuilding.
@@ -311,14 +311,14 @@ class WtPlayheadPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(WtPlayheadPainter o) => o.view != view || o.frame != frame || o.headTop != headTop || o.moment != moment;
+  bool shouldRepaint(TimelinePlayheadPainter o) => o.view != view || o.frame != frame || o.headTop != headTop || o.moment != moment;
 }
 
 // ---------------------------------------------------------------- overview (the horizontal scroll strip)
 
 /// Paints the overview strip: the whole project in miniature with the visible range and the playhead.
-class WtOverviewPainter extends CustomPainter {
-  const WtOverviewPainter({required this.from, required this.to, required this.frame, required this.hot});
+class TimelineOverviewPainter extends CustomPainter {
+  const TimelineOverviewPainter({required this.from, required this.to, required this.frame, required this.hot});
   final double from, to;
   final int frame;
   final bool hot;
@@ -334,7 +334,7 @@ class WtOverviewPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(WtOverviewPainter o) => o.from != from || o.to != to || o.frame != frame || o.hot != hot;
+  bool shouldRepaint(TimelineOverviewPainter o) => o.from != from || o.to != to || o.frame != frame || o.hot != hot;
 }
 
 // ---------------------------------------------------------------- kind chip
@@ -344,9 +344,9 @@ class WtOverviewPainter extends CustomPainter {
 ///
 /// An image or video layer shows its image, a shape shows its form in its own fill, and other kinds show the mark of
 /// their kind. Alight Motion's camera and audio are marks too. Its screenshots show no text thumbnail, so text keeps its mark.
-class WtThumb extends StatelessWidget {
-  const WtThumb(this.row, {super.key});
-  final WtRow row;
+class TimelineThumbnail extends StatelessWidget {
+  const TimelineThumbnail(this.row, {super.key});
+  final TimelineRow row;
   @override
   Widget build(BuildContext context) {
     final r = row;
@@ -354,22 +354,22 @@ class WtThumb extends StatelessWidget {
       return ClipRRect(
         borderRadius: BorderRadius.all(Shape.r(3)),
         child: SizedBox.square(
-          dimension: WtM.chip,
+          dimension: TimelineMetrics.chip,
           child: RawImage(image: f.first, fit: BoxFit.cover, opacity: AlwaysStoppedAnimation(r.dim ? .35 : 1)),
         ),
       );
     }
     if (r.form case final form? when r.kind == LayerKind.shape && form != 'null') {
       return Container(
-        width: WtM.chip,
-        height: WtM.chip,
+        width: TimelineMetrics.chip,
+        height: TimelineMetrics.chip,
         decoration: BoxDecoration(color: Grey.g20, borderRadius: BorderRadius.all(Shape.r(3))),
         child: CustomPaint(
           painter: _FormPainter(form, (r.fill ?? wsTone(r.kind)).withValues(alpha: r.dim ? .35 : 1), outline: r.outline),
         ),
       );
     }
-    return wtKindChip(r.kind, dim: r.dim, tone: r.tone);
+    return layerKindChip(r.kind, dim: r.dim, tone: r.tone);
   }
 }
 
@@ -415,8 +415,12 @@ class _FormPainter extends CustomPainter {
 }
 
 /// A layer's kind: a small square of its colour with the kind's mark drawn in dark ink.
-Widget wtKindChip(LayerKind kind, {bool dim = false, Color? tone}) =>
-    Badge(dim ? Grey.g26 : tone ?? wsTone(kind), size: WtM.chip, radius: Shape.r(3), mark: _KindPainter(kind, dim ? Grey.g56 : WindowTokens.onAccent));
+Widget layerKindChip(LayerKind kind, {bool dim = false, Color? tone}) => Badge(
+  dim ? Grey.g26 : tone ?? wsTone(kind),
+  size: TimelineMetrics.chip,
+  radius: Shape.r(3),
+  mark: _KindPainter(kind, dim ? Grey.g56 : WindowTokens.onAccent),
+);
 
 class _KindPainter extends CustomPainter {
   const _KindPainter(this.kind, this.ink);

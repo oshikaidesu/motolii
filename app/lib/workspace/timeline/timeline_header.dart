@@ -14,7 +14,7 @@ import 'package:motolii/widgets/media.dart' show MiniSlider;
 import 'package:motolii/widgets/number_field.dart';
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/widgets/text_gestures.dart';
-import 'package:motolii/widgets/timeline_painters.dart' show TpGlyph;
+import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
 import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
@@ -47,7 +47,7 @@ class TimelineHeader extends StatelessWidget {
     final picked = ws.keys.length, layer = ws.layer;
     return PanelHeader(
       '',
-      height: WtM.header,
+      height: TimelineMetrics.header,
       child: LayoutBuilder(
         builder: (context, box) {
           final roomy = box.maxWidth >= 1000, mid = box.maxWidth >= 820, slide = box.maxWidth >= 600; // Narrower than this, only the zoom buttons remain.
@@ -57,15 +57,15 @@ class TimelineHeader extends StatelessWidget {
                 Chip(label: ws.document?.replaceFirst(RegExp(r'\.motolii$'), '') ?? 'Main', look: _readout(mono: false)),
                 SizedBox(width: Shape.s(12)),
               ], // End of the project name chip.
-              _Btn(TpGlyph.toStart, key: const ValueKey('ws-tl-start'), onTap: () => onStep(-ws.frame)),
+              _RoundButton(TimelineGlyphs.toStart, key: const ValueKey('ws-tl-start'), onTap: () => onStep(-ws.frame)),
               SizedBox(width: Shape.s(2)),
-              _Btn(TpGlyph.stepBack, key: const ValueKey('ws-tl-back'), onTap: () => onStep(-1)),
+              _RoundButton(TimelineGlyphs.stepBack, key: const ValueKey('ws-tl-back'), onTap: () => onStep(-1)),
               SizedBox(width: Shape.s(2)),
               ValueListenableBuilder<int>(
                 // Only the play button listens to playback, so the rest of the row is not rebuilt.
                 valueListenable: ws.on[WorkspaceAspect.playing]!,
-                builder: (_, _, _) => _Btn(
-                  ws.playing ? TpGlyph.pause : TpGlyph.play,
+                builder: (_, _, _) => _RoundButton(
+                  ws.playing ? TimelineGlyphs.pause : TimelineGlyphs.play,
                   key: const ValueKey('ws-tl-play'),
                   width: Shape.z(34),
                   on: ws.playing,
@@ -74,15 +74,15 @@ class TimelineHeader extends StatelessWidget {
                 ),
               ),
               SizedBox(width: Shape.s(2)),
-              _Btn(TpGlyph.stepFwd, key: const ValueKey('ws-tl-fwd'), onTap: () => onStep(1)),
+              _RoundButton(TimelineGlyphs.stepFwd, key: const ValueKey('ws-tl-fwd'), onTap: () => onStep(1)),
               SizedBox(width: Shape.s(2)),
-              _Btn(TpGlyph.loop, key: const ValueKey('ws-tl-loop'), on: loop, onTap: onLoop),
+              _RoundButton(TimelineGlyphs.loop, key: const ValueKey('ws-tl-loop'), on: loop, onTap: onLoop),
               SizedBox(width: Shape.s(2)),
               ValueListenableBuilder<int>(
                 // Like the Set button in Ableton Live: adds a marker at the playhead, or removes the one already there.
                 valueListenable: ws.moment,
-                builder: (_, _, _) => _Btn(
-                  ws.marks.any((k) => (k.$1 * WorkspaceController.fps).round() == ws.frame) ? TpGlyph.minus : TpGlyph.plus,
+                builder: (_, _, _) => _RoundButton(
+                  ws.marks.any((k) => (k.$1 * WorkspaceController.fps).round() == ws.frame) ? TimelineGlyphs.minus : TimelineGlyphs.plus,
                   key: const ValueKey('ws-tl-mark'),
                   width: Shape.z(66),
                   label: 'Marker',
@@ -102,7 +102,7 @@ class TimelineHeader extends StatelessWidget {
                   style: big.copyWith(color: Grey.g100),
                   accent: WindowTokens.accent,
                   allow: null,
-                  parse: (said) => wtTimeOf(said, ws.frame, WorkspaceController.fps)?.toDouble(),
+                  parse: (said) => parseTimecode(said, ws.frame, WorkspaceController.fps)?.toDouble(),
                   sayOnLeave: false,
                   onType: (to) => onStep(to.round().clamp(0, WorkspaceController.duration) - ws.frame),
                   paint: (_, shown, typing) =>
@@ -120,7 +120,7 @@ class TimelineHeader extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      wtKindChip(layer.kind, tone: layer.tone),
+                      layerKindChip(layer.kind, tone: layer.tone),
                       SizedBox(width: Shape.s(6)),
                       Flexible(
                         child: FittedBox(
@@ -138,12 +138,12 @@ class TimelineHeader extends StatelessWidget {
                   ),
                 ),
               const Spacer(),
-              _Btn(TpGlyph.minus, key: const ValueKey('ws-tl-zoom-out'), size: Shape.z(22), onTap: () => onZoom(zoom / 1.5)),
+              _RoundButton(TimelineGlyphs.minus, key: const ValueKey('ws-tl-zoom-out'), size: Shape.z(22), onTap: () => onZoom(zoom / 1.5)),
               SizedBox(width: Shape.s(4)),
               if (slide) ...[
                 MiniSlider(
                   key: const ValueKey('ws-tl-zoom'),
-                  values: [math.log(zoom) / math.log(WtM.maxZoom)],
+                  values: [math.log(zoom) / math.log(TimelineMetrics.maxZoom)],
                   width: Shape.z(96),
                   step: .001,
                   height: 22,
@@ -152,14 +152,14 @@ class TimelineHeader extends StatelessWidget {
                   fill: Grey.g44,
                   thumb: const Size.square(12),
                   thumbColor: Grey.g91,
-                  onChanged: (v) => onZoom(math.pow(WtM.maxZoom, v.first).toDouble()),
+                  onChanged: (v) => onZoom(math.pow(TimelineMetrics.maxZoom, v.first).toDouble()),
                 ),
                 SizedBox(width: Shape.s(4)),
               ],
-              _Btn(TpGlyph.plus, key: const ValueKey('ws-tl-zoom-in'), size: Shape.z(22), onTap: () => onZoom(zoom * 1.5)),
+              _RoundButton(TimelineGlyphs.plus, key: const ValueKey('ws-tl-zoom-in'), size: Shape.z(22), onTap: () => onZoom(zoom * 1.5)),
               SizedBox(width: Shape.s(4)),
-              _Btn(
-                TpGlyph.fit,
+              _RoundButton(
+                TimelineGlyphs.fit,
                 key: const ValueKey('ws-tl-fit'),
                 size: Shape.z(22),
                 width: Shape.z(46),
@@ -179,7 +179,7 @@ class TimelineHeader extends StatelessWidget {
 ///
 /// Digits are read from the right as frames, seconds and minutes, so 852, 8:52 and 8.52 all mean 8 seconds 52 frames.
 /// A leading + or - makes the time relative to [now] (+30 is 30 frames later). Returns null if [said] is not a time.
-int? wtTimeOf(String said, int now, int fps) {
+int? parseTimecode(String said, int now, int fps) {
   final m = RegExp(r'^\s*([+-]?)([\d:.;]+)\s*$').firstMatch(halfWidth(said));
   if (m == null) return null;
   final parts = m[2]!.split(RegExp(r'[:.;]'));
@@ -198,9 +198,9 @@ int? wtTimeOf(String said, int now, int fps) {
 }
 
 /// A round icon button that lights up on hover. [on] fills it with the accent colour, [lit] raises it in grey.
-class _Btn extends StatelessWidget {
-  const _Btn(this.g, {super.key, this.onTap, this.on = false, this.lit = false, this.size = 24, this.width, this.rest, this.label});
-  final TpGlyph g;
+class _RoundButton extends StatelessWidget {
+  const _RoundButton(this.g, {super.key, this.onTap, this.on = false, this.lit = false, this.size = 24, this.width, this.rest, this.label});
+  final TimelineGlyphs g;
   final VoidCallback? onTap;
   final bool on, lit;
   final double size;

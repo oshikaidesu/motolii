@@ -71,7 +71,7 @@ extension TimelinePaneRows on TimelinePaneState {
     ws.after(m.later('set', layer: int.parse(id), name: name, number: (name == 'solo' ? isSolo(ws, id) : isLocked(ws, id)) ? 0 : 1));
   }
 
-  Widget labels(WorkspaceController ws, List<WtRow> rows) => Column(
+  Widget labels(WorkspaceController ws, List<TimelineRow> rows) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       TimelineLabelHeader(count: ws.layers.length, solo: anySolo(ws)),
@@ -94,8 +94,8 @@ extension TimelinePaneRows on TimelinePaneState {
                             key: ValueKey('ws-tl-aim-${ws.layers[order[i].layer].id}-$said-$other'),
                             left: Shape.s(34),
                             right: Shape.s(8),
-                            top: i * WtM.row - top,
-                            height: WtM.row,
+                            top: i * TimelineMetrics.row - top,
+                            height: TimelineMetrics.row,
                             child: NakedButton(
                               enableFeedback: false,
                               mouseCursor: SystemMouseCursors.basic,
@@ -118,8 +118,8 @@ extension TimelinePaneRows on TimelinePaneState {
                             key: ValueKey('ws-tl-lane-${ws.layers[order[i].layer].id}-$n'),
                             left: Shape.s(34),
                             right: Shape.s(8),
-                            top: i * WtM.row - top,
-                            height: WtM.row,
+                            top: i * TimelineMetrics.row - top,
+                            height: TimelineMetrics.row,
                             // The lane shows the effect card's name, then the property's own label (for example Threshold, not js_am_rays_threshold).
                             // This follows Ableton's Device and Control choosers and Logic's plug-in and parameter names.
                             child: Row(
@@ -139,8 +139,8 @@ extension TimelinePaneRows on TimelinePaneState {
                             key: ValueKey('ws-tl-label-${l.id}'),
                             left: 0,
                             right: 0,
-                            top: i * WtM.row - top,
-                            height: WtM.row,
+                            top: i * TimelineMetrics.row - top,
+                            height: TimelineMetrics.row,
                             // Dragging a row up or down moves the layer forward or back by as many rows as it was dragged.
                             child: GestureDetector(
                               supportedDevices: wsPressing,
@@ -150,7 +150,7 @@ extension TimelinePaneRows on TimelinePaneState {
                               onVerticalDragStart: (_) => lift = 0,
                               onVerticalDragUpdate: (d) => lift += d.delta.dy,
                               onVerticalDragEnd: (_) {
-                                final by = (lift / WtM.row).round();
+                                final by = (lift / TimelineMetrics.row).round();
                                 if (by != 0) {
                                   ws.after(ws.inside!.later('raise', layer: int.parse(l.id), number: (by > 0 ? -1 : 1) * _places(ws, l, by).toDouble()));
                                 }
@@ -184,7 +184,7 @@ extension TimelinePaneRows on TimelinePaneState {
                       for (var i = 0; i < rows.length; i++)
                         if (order[i].value == null)
                           // The rename field is written over the label (Cmd+R).
-                          if (renameField(i, ws.layers[order[i].layer].id, i * WtM.row - top) case final f?) f,
+                          if (renameField(i, ws.layers[order[i].layer].id, i * TimelineMetrics.row - top) case final f?) f,
                     ],
                   );
                 },

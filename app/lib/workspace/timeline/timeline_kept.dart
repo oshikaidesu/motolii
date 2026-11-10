@@ -8,19 +8,19 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
 
 /// Paints the cached frame ranges in [kept] as thin lines under the work-area band.
-class WtKeptPainter extends CustomPainter {
-  WtKeptPainter({required this.view, required this.kept}) : super(repaint: kept);
-  final WtView view;
+class TimelineCachePainter extends CustomPainter {
+  TimelineCachePainter({required this.view, required this.kept}) : super(repaint: kept);
+  final TimelineView view;
   final ValueListenable<List<(int, int)>> kept;
 
   @override
   void paint(Canvas c, Size s) {
     final ink = Paint()..color = WindowTokens.accent;
     for (final (from, to) in kept.value) {
-      c.drawRect(Rect.fromLTRB(view.x(from).clamp(0, s.width), WtM.band, view.x(to).clamp(0, s.width), WtM.band + Shape.z(3)), ink);
+      c.drawRect(Rect.fromLTRB(view.x(from).clamp(0, s.width), TimelineMetrics.band, view.x(to).clamp(0, s.width), TimelineMetrics.band + Shape.z(3)), ink);
     }
   }
 
   @override
-  bool shouldRepaint(WtKeptPainter o) => o.view != view || o.kept != kept;
+  bool shouldRepaint(TimelineCachePainter o) => o.view != view || o.kept != kept;
 }

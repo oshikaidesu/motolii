@@ -10,7 +10,7 @@ import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Pressable;
 import 'package:motolii/widgets/media.dart' show Draw, glyph;
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
-import 'package:motolii/widgets/timeline_painters.dart' show TpGlyph;
+import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
 
 /// A card as the engine declares it, for an effect or a layer's own values: a name and a WGSL uniform struct.
 ///
@@ -89,7 +89,7 @@ class ValuesCard extends StatelessWidget {
                     onTap: () => doc.flag('$k.past', false),
                     builder: (_, h) => Padding(
                       padding: EdgeInsets.only(right: Shape.s(6)),
-                      child: Glyph(TpGlyph.unlock, size: 12, color: h ? Grey.g95 : Grey.g76, fade: true),
+                      child: Glyph(TimelineGlyphs.unlock, size: 12, color: h ? Grey.g95 : Grey.g76, fade: true),
                     ),
                   ),
                 if (at < 0)
@@ -116,7 +116,12 @@ class ValuesCard extends StatelessWidget {
                       onTap: () => doc.onCardEye!(card.name),
                       builder: (_, h) => Padding(
                         padding: EdgeInsets.only(right: Shape.s(6)),
-                        child: Glyph(doc.cardsOff.contains(card.name) ? TpGlyph.eyeOff : TpGlyph.eye, size: 12, color: h ? Grey.g95 : Grey.g56, fade: true),
+                        child: Glyph(
+                          doc.cardsOff.contains(card.name) ? TimelineGlyphs.eyeOff : TimelineGlyphs.eye,
+                          size: 12,
+                          color: h ? Grey.g95 : Grey.g56,
+                          fade: true,
+                        ),
                       ),
                     ),
                   CardMore(

@@ -26,9 +26,9 @@ class _OverviewState extends State<TimelineOverview> {
       onPanDown: (d) => widget.onDrag(d.localPosition),
       onPanUpdate: (d) => widget.onDrag(d.localPosition),
       child: SizedBox(
-        height: WtM.overview,
+        height: TimelineMetrics.overview,
         child: CustomPaint(
-          painter: WtOverviewPainter(from: widget.from, to: widget.to, frame: widget.frame, hot: _h),
+          painter: TimelineOverviewPainter(from: widget.from, to: widget.to, frame: widget.frame, hot: _h),
         ),
       ),
     ),
