@@ -33,6 +33,7 @@ import 'package:motolii/workspace/stage/stage_tokens.dart';
 import 'package:motolii/workspace/stage/stage_tool.dart';
 import 'package:motolii/workspace/stage/stage_view_relations.dart';
 import 'package:motolii/workspace/stage/stage_viewport.dart';
+import 'package:motolii/workspace/stage/ruler_painter.dart';
 import 'package:motolii/workspace/stage/view_painter.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/layer.dart';
