@@ -102,7 +102,22 @@ class _Header extends StatelessWidget {
               const Spacer(),
               _Btn(TpGlyph.minus, key: const ValueKey('ws-tl-zoom-out'), size: Shape.z(22), onTap: () => onZoom(zoom / 1.5)),
               SizedBox(width: Shape.s(4)),
-              if (slide) ...[_ZoomSlider(zoom: zoom, onZoom: onZoom), SizedBox(width: Shape.s(4))],
+              if (slide) ...[
+                MiniSlider(
+                  key: const ValueKey('ws-tl-zoom'),
+                  values: [math.log(zoom) / math.log(WtM.maxZoom)],
+                  width: Shape.z(96),
+                  step: .001,
+                  height: 22,
+                  groove: 6,
+                  well: WsT.well,
+                  fill: Grey.g44,
+                  thumb: const Size.square(12),
+                  thumbColor: Grey.g91,
+                  onChanged: (v) => onZoom(math.pow(WtM.maxZoom, v.first).toDouble()),
+                ),
+                SizedBox(width: Shape.s(4)),
+              ],
               _Btn(TpGlyph.plus, key: const ValueKey('ws-tl-zoom-in'), size: Shape.z(22), onTap: () => onZoom(zoom * 1.5)),
               SizedBox(width: Shape.s(4)),
               _Btn(
@@ -388,45 +403,3 @@ class _TempoState extends State<_Tempo> {
 
 /// The timeline header's readouts: a well, g91 ink, the radius of its buttons.
 ChipLook _readout({bool mono = true}) => ChipLook.readout(ink: Grey.g91, size: 10.5, radius: WsT.radius, mono: mono);
-
-class _ZoomSlider extends StatelessWidget {
-  const _ZoomSlider({required this.zoom, required this.onZoom});
-  final double zoom;
-  final void Function(double z, {int? anchor}) onZoom;
-  static double get w => Shape.z(96.0);
-  @override
-  Widget build(BuildContext context) {
-    final t = math.log(zoom) / math.log(WtM.maxZoom);
-    void at(Offset p) => onZoom(math.pow(WtM.maxZoom, ((p.dx - 6) / (w - 12)).clamp(0.0, 1.0)).toDouble());
-    return MouseRegion(
-      cursor: SystemMouseCursors.resizeLeftRight,
-      child: GestureDetector(
-        supportedDevices: wsPressing,
-        key: const ValueKey('ws-tl-zoom'),
-        behavior: HitTestBehavior.opaque,
-        onPanDown: (d) => at(d.localPosition),
-        onPanUpdate: (d) => at(d.localPosition),
-        child: SizedBox(
-          width: w,
-          height: Shape.z(22),
-          child: CustomPaint(painter: _ZoomTrack(t)),
-        ),
-      ),
-    );
-  }
-}
-
-class _ZoomTrack extends CustomPainter {
-  const _ZoomTrack(this.t);
-  final double t;
-  @override
-  void paint(Canvas c, Size s) {
-    final cy = s.height / 2, x = 6 + (s.width - 12) * t, p = Paint();
-    c.drawRRect(RRect.fromLTRBR(0, cy - 3, s.width, cy + 3, Shape.r(3)), p..color = WsT.well);
-    c.drawRRect(RRect.fromLTRBR(0, cy - 3, x, cy + 3, Shape.r(3)), p..color = Grey.g44);
-    c.drawCircle(Offset(x, cy), 6, p..color = Grey.g91);
-  }
-
-  @override
-  bool shouldRepaint(_ZoomTrack o) => o.t != t;
-}

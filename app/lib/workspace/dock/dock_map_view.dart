@@ -204,7 +204,7 @@ class _DockMapState extends State<DockMap> {
               ValueListenableBuilder(
                 valueListenable: widget.places.squeeze,
                 builder: (context, s, _) =>
-                    MiniSlider(key: ValueKey('ws-map-$_name-center'), value: s, width: Shape.z(96), onChanged: (v) => widget.places.squeeze.value = v),
+                    MiniSlider(key: ValueKey('ws-map-$_name-center'), values: [s], width: Shape.z(96), onChanged: (v) => widget.places.squeeze.value = v.first),
               ),
             ],
           ),

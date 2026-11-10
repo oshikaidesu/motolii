@@ -381,23 +381,26 @@ class _FilmRange extends StatelessWidget {
       final (a, b) = _filmRanges[file] ?? (0.0, 1.0);
       final w = Shape.z(84);
       String t(double f) => '${(f * len ~/ 60)}:${(f * len % 60).toStringAsFixed(1).padLeft(4, '0')}';
-      int? end; // (the end a drag holds: the nearer when it began)
-      void to(double x) {
-        final f = (x / w).clamp(0.0, 1.0);
-        final (p, q) = _filmRanges[file] ?? (0.0, 1.0);
-        c.set(() => _filmRanges[file] = end == 0 ? (math.min(f, q - .01), q) : (p, math.max(f, p + .01)));
-      }
-
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text('use', style: T.label(Grey.g56)),
           SizedBox(width: Shape.s(4)),
-          GestureDetector(
+          MiniSlider(
+            // (the film's whole length as a dim track, the part used bright between its two bar ends)
             key: const ValueKey('media-film-range'),
-            onHorizontalDragStart: (d) => end = ((d.localPosition.dx / w) - a).abs() <= ((d.localPosition.dx / w) - b).abs() ? 0 : 1,
-            onHorizontalDragUpdate: (d) => to(d.localPosition.dx),
-            child: CustomPaint(size: Size(w, Shape.z(10)), painter: _RangePaint(a, b)),
+            values: [a, b],
+            width: w,
+            step: .001,
+            gap: .01,
+            height: 10,
+            groove: 4,
+            fill: WsT.accent,
+            thumb: const Size(3, 10),
+            thumbRadius: 1,
+            inset: 0,
+            cursor: MouseCursor.defer,
+            onChanged: (v) => c.set(() => _filmRanges[file] = (v[0], v[1])),
           ),
           SizedBox(width: Shape.s(4)),
           Text('${t(a)}–${t(b)}', key: const ValueKey('media-film-said'), style: T.label(Grey.g91)),
@@ -405,24 +408,6 @@ class _FilmRange extends StatelessWidget {
       );
     },
   );
-}
-
-/// The film's whole length as a dim track, the part used bright between its two ends.
-class _RangePaint extends CustomPainter {
-  _RangePaint(this.a, this.b);
-  final double a, b;
-  @override
-  void paint(Canvas c, Size s) {
-    final p = Paint();
-    c.drawRRect(RRect.fromLTRBR(0, s.height / 2 - 2, s.width, s.height / 2 + 2, const Radius.circular(2)), p..color = Grey.g26);
-    c.drawRect(Rect.fromLTRB(a * s.width, s.height / 2 - 2, b * s.width, s.height / 2 + 2), p..color = WsT.accent);
-    for (final f in [a, b]) {
-      c.drawRRect(RRect.fromLTRBR(f * s.width - 1.5, 0, f * s.width + 1.5, s.height, const Radius.circular(1)), p..color = Grey.g95);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_RangePaint o) => o.a != a || o.b != b;
 }
 
 final _filmRanges = <String, (double, double)>{};

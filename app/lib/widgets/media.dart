@@ -41,47 +41,73 @@ void drawStar(Canvas c, Size s, Color col, bool fill) {
   );
 }
 
-/// A thin horizontal slider: the track is grey, the value is the brightest thing.
+/// A thin horizontal slider with one or two handles: the track is grey, the part up to (or between) the handles is
+/// filled. Groove, colours, handle shape and the minimum gap between two handles are arguments.
 class MiniSlider extends StatelessWidget {
-  const MiniSlider({super.key, required this.value, required this.onChanged, this.min = 0, this.max = 1, required this.width});
-  final double value, min, max, width;
-  final ValueChanged<double> onChanged;
+  const MiniSlider({
+    super.key,
+    required this.values,
+    required this.onChanged,
+    this.min = 0,
+    this.max = 1,
+    required this.width,
+    this.step,
+    this.gap = 0,
+    this.height = 20,
+    this.groove = 2,
+    this.well,
+    this.fill,
+    this.thumb = const Size.square(10),
+    this.thumbRadius,
+    this.thumbColor,
+    this.inset,
+    this.cursor = SystemMouseCursors.resizeLeftRight,
+  });
+  final List<double> values;
+  final double min, max, width, gap, height, groove;
+  final double? step, thumbRadius, inset;
+  final Color? well, fill, thumbColor;
+  final Size thumb;
+  final MouseCursor cursor;
+  final ValueChanged<List<double>> onChanged;
   @override
   Widget build(BuildContext context) {
     final span = max - min;
     return NakedSlider(
-      values: [value.clamp(min, max).toDouble()],
+      values: [for (final v in values) v.clamp(min, max).toDouble()],
       min: min,
       max: max,
-      step: span / width,
-      mouseCursor: SystemMouseCursors.resizeLeftRight,
+      step: step ?? span / width,
+      minSpacing: gap,
+      mouseCursor: cursor,
       enableFeedback: false,
-      onChanged: (next) => onChanged(next.first),
+      onChanged: onChanged,
       builder: (context, st, _) {
-        final t = st.visualPercentageAt(0);
+        final tw = Shape.z(thumb.width), pad = inset ?? tw / 2;
+        final xs = [for (var i = 0; i < values.length; i++) pad + (width - 2 * pad) * st.visualPercentageAt(i)];
+        final from = xs.length > 1 ? xs.first : 0.0;
+        Widget bar(double w, Color c) => Container(
+          width: w,
+          height: Shape.z(groove),
+          decoration: BoxDecoration(color: c, borderRadius: BorderRadius.all(Shape.r(groove / 2))),
+        );
         return SizedBox(
           width: width,
-          height: Shape.z(20),
+          height: Shape.z(height),
           child: Stack(
             alignment: Alignment.centerLeft,
             children: [
-              Container(
-                height: Shape.z(2),
-                decoration: BoxDecoration(color: Grey.g26, borderRadius: BorderRadius.all(Shape.r(1))),
-              ),
-              Container(
-                width: width * t,
-                height: Shape.z(2),
-                decoration: BoxDecoration(color: Grey.g56, borderRadius: BorderRadius.all(Shape.r(1))),
-              ),
-              Positioned(
-                left: (width - 10) * t,
-                child: Container(
-                  width: Shape.z(10),
-                  height: Shape.z(10),
-                  decoration: BoxDecoration(color: Grey.g95, shape: BoxShape.circle),
+              bar(width, well ?? Grey.g26),
+              Positioned(left: from, child: bar(xs.last - from, fill ?? Grey.g56)),
+              for (final x in xs)
+                Positioned(
+                  left: x - tw / 2,
+                  child: Container(
+                    width: tw,
+                    height: Shape.z(thumb.height),
+                    decoration: BoxDecoration(color: thumbColor ?? Grey.g95, borderRadius: BorderRadius.all(Radius.circular(thumbRadius ?? 99))),
+                  ),
                 ),
-              ),
             ],
           ),
         );

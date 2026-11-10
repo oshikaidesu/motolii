@@ -379,12 +379,12 @@ class ColorsShelf extends StatelessWidget {
                   builder: (context, b) => MiniSlider(
                     // (the boxes' size, any the maker likes; kept once the hand rests, not written every frame)
                     key: const ValueKey('colour-size'),
-                    value: _tile,
+                    values: [_tile],
                     min: _tileLeast,
                     max: _tileMost,
                     width: math.min(Shape.z(64), b.maxWidth),
                     onChanged: (v) {
-                      c.set(() => _tile = v);
+                      c.set(() => _tile = v.first);
                       _tileKept?.cancel();
                       _tileKept = Timer(const Duration(milliseconds: 400), _keepMine);
                     },

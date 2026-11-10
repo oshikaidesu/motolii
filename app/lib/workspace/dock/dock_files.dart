@@ -17,6 +17,7 @@ import 'dock_tags.dart';
 import '../shelf/shelf_tile.dart';
 import '../state/state.dart';
 import '../../widgets/controls.dart' show Chip, ChipLook, Hov;
+import '../../widgets/media.dart' show MiniSlider;
 part 'dock_files_read.dart';
 part 'dock_files_used.dart';
 part 'dock_files_sheet.dart';
