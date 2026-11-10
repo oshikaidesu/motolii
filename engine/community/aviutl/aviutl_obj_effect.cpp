@@ -28,9 +28,9 @@
 #include "stage/effects/screen_fx.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-
 namespace motolii {
+
+using filament::Texture;
 
 namespace {
 

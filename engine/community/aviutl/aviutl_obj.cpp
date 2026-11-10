@@ -21,9 +21,9 @@
 #include "stage/effects/screen_fx.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-
 namespace motolii {
+
+using filament::Texture;
 
 int aviutl_module(lua_State* L) {
   return luaL_error(L,

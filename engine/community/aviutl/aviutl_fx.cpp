@@ -22,9 +22,10 @@
 #include "gpu/screen_interop.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-
 namespace motolii {
+
+using filament::RenderTarget;
+using filament::Texture;
 
 const char* const aviutl_placing = R"(
 struct K { m: vec4f, at: vec2f, src: vec2f, size: vec2f, alpha: f32, way: f32, colour: vec4f }
