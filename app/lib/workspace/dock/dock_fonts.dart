@@ -16,6 +16,7 @@ import 'package:motolii/bridge/engine_paths.dart' show motoliiDir;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 import 'package:motolii/workspace/dock/dock_files.dart' show dockRead;
+import 'package:motolii/workspace/dock/dock_font_map.dart';
 import 'package:motolii/workspace/dock/dock_map.dart';
 import 'package:motolii/workspace/dock/dock_map_view.dart';
 import 'package:motolii/storage/kept_file.dart' show fileKeep, fileList;
@@ -29,8 +30,6 @@ import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
-
-part 'dock_font_map.dart';
 
 /// A font file offered on the shelf.
 class _Font {
@@ -110,7 +109,7 @@ Future<void> fontsRead(Ws ws) => _reading ??= Zone.root.run<Future<void>>(() asy
         ),
   ]..sort((a, b) => a.family.toLowerCase().compareTo(b.family.toLowerCase()));
   fontsUnoffered = first.where((k) => k < 0).length;
-  _ownWords = {
+  fontSamples = {
     for (final f in _disk!)
       if ((f.path, f.sample) case (final p?, final w?)) p: w,
   };
@@ -298,19 +297,19 @@ class FontsShelf extends StatelessWidget {
                     if (c.mem.mapped.contains('Fonts')) {
                       // Map view: each font is placed by how its letters look when drawn by ThorVG.
                       final map = dockMap('Fonts'), files = [for (final f in fonts) ?f.path];
-                      _drawAll(m, files);
+                      drawFontDots(m, files);
                       // Place fonts by how FontCLIP sees them once the model is available, otherwise by a small drawing of the sample.
                       final clip = dockModel('fontclip_b32');
                       map.need(m, [for (final f in files) (f, f)], (from) async {
                         // Keyed by file, because two files can share one family name.
                         final List<Float32List?> look;
                         if (clip != null) {
-                          look = await _byFontClip(m, clip, from);
+                          look = await byFontClip(m, clip, from);
                         } else {
-                          await _drawAll(m, files);
+                          await drawFontDots(m, files);
                           look = [
                             for (final f in from)
-                              if (_drawn[f] case final g?) _halved(g) else null,
+                              if (fontDotsDrawn[f] case final g?) _halved(g) else null,
                           ];
                         }
                         final kinds = [for (final f in from) _kindOf(m, f)], all = kinds.toSet().toList();
@@ -326,7 +325,7 @@ class FontsShelf extends StatelessWidget {
                       return DockMap(
                         map,
                         [for (final MapEntry(key: p, value: f) in byPath.entries) (p, _FontDot(f, c, map: map))],
-                        aspect: _dot.$1 / _dot.$2,
+                        aspect: fontDotSize.$1 / fontDotSize.$2,
                         picked: list.where((f) => f.family == c.sel).firstOrNull?.path,
                         press: (p) {
                           if (byPath[p] case final f?) {
@@ -445,4 +444,86 @@ Widget _fontTile(_Font f, DockCtx c, {required bool list, String? usedBy}) {
         SizedBox(width: list ? Shape.s(20) : null, height: list ? null : Shape.s(20)),
     ],
   );
+}
+
+/// A font's kind on the map. FontMap colours fonts by category: sans-serif, serif, handwriting, monospace and decorative.
+///
+/// The kind is the class CoreText gives the font (motolii_font_tags). Monospace is checked first, as Google files
+/// monospace fonts. Returns '' if no kind is known.
+String _kindOf(Motolii m, String path) {
+  final t = m.fontTags(path);
+  return t.contains('mono') ? 'mono' : const ['serif', 'sans', 'script', 'ornaments', 'symbols'].firstWhere(t.contains, orElse: () => '');
+}
+
+Float32List _halved(Uint8List g) {
+  final (w, h) = (fontDotSize.$1 ~/ 2, fontDotSize.$2 ~/ 2);
+  final out = Float32List(w * h);
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      out[y * w + x] =
+          (g[2 * y * fontDotSize.$1 + 2 * x] +
+              g[2 * y * fontDotSize.$1 + 2 * x + 1] +
+              g[(2 * y + 1) * fontDotSize.$1 + 2 * x] +
+              g[(2 * y + 1) * fontDotSize.$1 + 2 * x + 1]) /
+          1020;
+    }
+  }
+  return out;
+}
+
+final _seen = <String, ui.Image>{}, _making = <String>{};
+
+/// A font's dot on the map, inked by where it lies on the [map] (see [dockPalette]).
+///
+/// Unlike the effect thumbnails, a word is a single ink, so colour can tell which island of fonts it belongs to.
+/// FontMap colours fonts by category in the same way.
+class _FontDot extends StatefulWidget {
+  const _FontDot(this.f, this.c, {this.map});
+  final _Font f;
+  final DockCtx c;
+  final DockMapPlaces? map;
+  @override
+  State<_FontDot> createState() => _FontDotState();
+}
+
+class _FontDotState extends State<_FontDot> {
+  void _make(String p, Uint8List g) {
+    final rgba = Uint8List(g.length * 4);
+    for (var i = 0; i < g.length; i++) {
+      rgba.setRange(i * 4, i * 4 + 4, [g[i], g[i], g[i], g[i]]); // The pixels are premultiplied white. Without that Flutter showed white boxes.
+    }
+    ui.decodeImageFromPixels(rgba, fontDotSize.$1, fontDotSize.$2, ui.PixelFormat.rgba8888, (image) {
+      // Flutter's own decoder turns the pixels into an image.
+      _seen[p] = image;
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final f = widget.f, c = widget.c, sel = c.sel == f.family;
+    if ((f.path, fontDotsDrawn[f.path]) case (final p?, final g?) when _making.add(p)) _make(p, g);
+    return DockHover(
+      onTap: () {
+        c.pick(f.family);
+        _toRole(c, f);
+      },
+      onDoubleTap: () => _setFont(c, f),
+      builder: (context, h) => Container(
+        color: dockFill(sel, h, WsT.card),
+        child: switch (widget.map) {
+          final map? => ValueListenableBuilder(
+            valueListenable: map.places,
+            builder: (context, at, _) => RawImage(
+              image: _seen[f.path],
+              color: T.ink(dockInk(sel, dockPalette(at)[f.path] ?? Grey.g95)),
+              colorBlendMode: BlendMode.modulate,
+              fit: BoxFit.contain,
+            ),
+          ),
+          null => RawImage(image: _seen[f.path], color: T.ink(dockInk(sel, Grey.g95)), colorBlendMode: BlendMode.modulate, fit: BoxFit.contain),
+        },
+      ),
+    );
+  }
 }
