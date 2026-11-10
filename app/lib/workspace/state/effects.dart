@@ -1,6 +1,10 @@
 // What is applied to the canvas: effects on a layer, a canvas-sized shape or adjustment layer,
 // and the presets and motions the shelf previews, applies and removes.
-part of 'workspace_state.dart';
+import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/storage/free_name.dart' show firstFree;
+import 'package:motolii/workspace/state/workspace_state.dart';
 
 extension WsFx on Ws {
   // Forwarders to the statics on Ws, so the extension can use the same names.
@@ -12,13 +16,13 @@ extension WsFx on Ws {
   List<String> get screenFx {
     final t = int.tryParse(selected ?? '');
     if (t == null) return const [];
-    return fxFiles(_inside?.word(t, 'fx') ?? '');
+    return fxFiles(inside?.word(t, 'fx') ?? '');
   }
 
   /// Every effect and motion file used by any layer in the document, so the shelf can mark them.
   /// The document carries its own files, as Suitcase's Font Sense keeps the fonts a document uses.
   Set<String> get fxUsed {
-    final m = _inside;
+    final m = inside;
     if (m == null) return const {};
     return {
       for (final t in m.layers) ...[...fxFiles(m.word(t, 'fx')), ...fxOf('$t'), if (m.word(t, 'script') case final s when s.isNotEmpty && s != 'none') s],
@@ -27,7 +31,7 @@ extension WsFx on Ws {
 
   /// Adds a shape as large as the canvas, selects it, and applies [also] to it, all as one undo step.
   void whole(String kind, [void Function(Motolii m)? also]) {
-    final m = _inside;
+    final m = inside;
     if (m == null) return;
     m.later('together', number: 1);
     var made = 0;
@@ -54,7 +58,7 @@ extension WsFx on Ws {
   /// Adds effect [file] after the others on the selected layer, or removes it. Either is one undo step.
   /// With no layer selected it creates a new adjustment layer carrying the effect, as Photoshop's Adjustments panel does.
   bool screenToggle(String file) {
-    final m = _inside, t = int.tryParse(selected ?? '');
+    final m = inside, t = int.tryParse(selected ?? '');
     if (m == null) return false;
     if (t == null) {
       adjustment(file);
@@ -81,11 +85,11 @@ extension WsFx on Ws {
 
   /// Previews effect [file] on the selected layer without changing the document. Null ends the preview.
   void tryOn(String? file) {
-    final m = _inside, t = int.tryParse(selected ?? '');
+    final m = inside, t = int.tryParse(selected ?? '');
     if (m == null) return;
-    if (_trying) after(m.later('drag_end', number: 0));
-    _trying = file != null && t != null;
-    if (!_trying) return;
+    if (trying) after(m.later('drag_end', number: 0));
+    trying = file != null && t != null;
+    if (!trying) return;
     // Not awaited, like Align's drag, so the shelf never stalls on it.
     after(m.later('drag_start', layer: t!));
     after(m.later('drag_update', name: 'effect', word: file!));
@@ -94,7 +98,7 @@ extension WsFx on Ws {
   /// The motion of the selected layer: its script file, or '' for none.
   String get motion {
     final t = int.tryParse(selected ?? '');
-    final w = t == null ? '' : (_inside?.word(t, 'script') ?? '');
+    final w = t == null ? '' : (inside?.word(t, 'script') ?? '');
     return w == 'none' ? '' : w;
   }
 
@@ -102,7 +106,7 @@ extension WsFx on Ws {
   /// With no layer selected it creates a canvas-sized layer carrying the effect, as After Effects' applyPreset
   /// puts a preset on a new solid when no layer is selected (scripting guide, Layer.applyPreset).
   void fxToggle(String name) {
-    final m = _inside, t = int.tryParse(selected ?? '');
+    final m = inside, t = int.tryParse(selected ?? '');
     if (m == null) return;
     if (t == null) return whole('rect', (m) => m.later('effect', layer: -1, name: name, number: frame / fps));
     // Not awaited.
@@ -111,7 +115,7 @@ extension WsFx on Ws {
 
   /// Applies the saved preset [file] to the selected layer, or to a new canvas-sized layer when none is selected.
   void lookPut(String file) {
-    final m = _inside, t = int.tryParse(selected ?? '');
+    final m = inside, t = int.tryParse(selected ?? '');
     if (m == null) return;
     if (t == null) return whole('rect', (m) => m.later('paste_style', layer: -1, word: file));
     after(m.later('paste_style', layer: t, word: file));

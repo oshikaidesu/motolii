@@ -1,8 +1,5 @@
 // The workspace state that every panel reads (Ws): the document's layers as rows, the selection, the playhead and the view.
-// Its parts: picked.dart (the selection) and effects.dart (what is applied to the canvas).
-import 'package:motolii/workspace/easing/ease_curve.dart';
-import 'package:motolii/skin/layer_colors.dart';
-
+// What is applied to the canvas is in effects.dart.
 import 'dart:async' show Timer;
 import 'dart:developer' show Timeline, TimelineTask;
 import 'dart:io' show Platform;
@@ -11,15 +8,18 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii.dart';
-
-import 'package:motolii/workspace/state/pane.dart';
-import 'package:motolii/storage/free_name.dart' show firstFree;
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_moment.dart';
+import 'package:motolii/bridge/motolii_questions.dart';
+import 'package:motolii/bridge/motolii_shelves.dart';
+import 'package:motolii/bridge/motolii_watch.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/skin/layer_colors.dart';
+import 'package:motolii/workspace/easing/ease_curve.dart';
 import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
-
-part 'effects.dart';
-part 'picked.dart';
 
 /// Whether layer [t] is a sound: a video layer whose file has no image, hidden and only heard (see doc_add).
 /// Like Alight Motion's audio layer (docs/internal/reports/alight_motion/alight_ui.md).
@@ -303,6 +303,72 @@ class Ws extends ChangeNotifier {
   WsStretchPicked? _stretch;
   WsStretchPicked? get stretch => _stretch;
 
+  /// Selects the layer [id], or clears the selection when null.
+  void select(String? id) {
+    if (id == _sel && many.isEmpty) return;
+    _sel = id;
+    many.clear();
+    _aim = null;
+    _keys.clear();
+    _stretch = null;
+    toolPanelManual = null;
+    _tell(WsAspect.picked);
+  }
+
+  /// Selects several layers. With [inOrder] the first one leads.
+  void pickMany(Iterable<String> ids, {bool inOrder = false}) {
+    many
+      ..clear()
+      ..addAll(ids);
+    manyInOrder = inOrder;
+    _tell(WsAspect.picked);
+  }
+
+  /// Selects one keyframe, or adds it to the selection when [add] is true.
+  void pickKey(WsKey k, {bool add = false}) {
+    if (!add) _keys.clear();
+    _keys.add(k);
+    _stretch = null;
+    _sel = k.layer;
+    toolPanelManual = null;
+    _tell(WsAspect.picked);
+  }
+
+  /// Selects exactly these keyframes, for example after a box selection.
+  void pickKeys(Iterable<WsKey> ks) {
+    _keys
+      ..clear()
+      ..addAll(ks);
+    _stretch = null;
+    if (_keys.isNotEmpty) _sel = _keys.first.layer;
+    toolPanelManual = null;
+    _tell(WsAspect.picked);
+  }
+
+  /// Deselects all keyframes and the selected stretch.
+  void clearKeys() {
+    if (_keys.isEmpty && _stretch == null) return;
+    _keys.clear();
+    _stretch = null;
+    _tell(WsAspect.picked);
+  }
+
+  WsStretchPicked? _stretchOf(String layer, String name, int from) {
+    final t = int.tryParse(layer), at = t == null ? const <double>[] : _inside?.keyTimes(t, name) ?? const <double>[];
+    final i = at.indexWhere((s) => (s * Ws.fps).round() == from);
+    return i < 0 || i + 1 >= at.length ? null : (layer: layer, name: name, at: at[i], from: from, to: (at[i + 1] * Ws.fps).round());
+  }
+
+  /// Selects the stretch of property [name] on [layer] that starts at frame [from], and shows the Ease panel.
+  void pickStretch(String layer, String name, int from) {
+    _keys.clear();
+    _stretch = _stretchOf(layer, name, from);
+    _sel = layer;
+    toolPanelManual = null;
+    _tell(WsAspect.picked);
+    if (_stretch != null) front('Ease');
+  }
+
   /// The playhead frame. It is a separate notifier, so only widgets that show the current time listen to it
   /// ([WsScope.frameOf]) and the rest of the window is not rebuilt as it moves.
   final moment = ValueNotifier<int>(112);
@@ -501,7 +567,7 @@ class Ws extends ChangeNotifier {
   // Whether an effect is being previewed on the selected layer while the pointer is on its tile (see doc_carry_effect).
   // The preview is not part of the document and ends when the pointer leaves, and before any apply. Final Cut Pro's
   // effects browser and DaVinci Resolve's Live Preview work the same way. With nothing selected, nothing is shown.
-  bool _trying = false;
+  bool trying = false;
   String timecode([int? f]) {
     final v = f ?? frame, s = v ~/ fps, fr = v % fps;
     return '${(s ~/ 60).toString().padLeft(2, '0')}:${(s % 60).toString().padLeft(2, '0')}:${fr.toString().padLeft(2, '0')}';
