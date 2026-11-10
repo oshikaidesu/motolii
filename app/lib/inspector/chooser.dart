@@ -1,17 +1,14 @@
-import 'package:motolii/widgets/disclosure_triangle.dart';
-import 'package:motolii/skin/inspector_tokens.dart';
-
 import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:motolii/skin/forms/forms.dart';
-import 'package:motolii/skin/theme.dart';
 
-import 'package:motolii/widgets/glyphs.dart';
+import 'package:motolii/inspector/inspector_scope.dart';
+import 'package:motolii/skin/inspector_tokens.dart';
+import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
+import 'package:motolii/widgets/disclosure_triangle.dart';
 
 /// A dropdown for choosing one of [options], stored as a string under [id].
 ///
@@ -136,7 +133,8 @@ class ChooserState extends State<Chooser> {
     open ? _portal.show() : _portal.hide();
     if (open) {
       _at = widget.options.indexOf(
-        InspectorScope.read(context).doc.s2[widget.id] ?? widget.options.first,
+        InspectorScope.read(context).doc.strings[widget.id] ??
+            widget.options.first,
       );
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -228,7 +226,7 @@ class ChooserState extends State<Chooser> {
   @override
   Widget build(BuildContext context) {
     final x = InspectorScope.of(context),
-        cur = x.doc.s2[widget.id] ?? widget.options.first;
+        cur = x.doc.strings[widget.id] ?? widget.options.first;
     void pick(String o) {
       x.doc.str(widget.id, o);
       _set(false);
@@ -306,137 +304,6 @@ class ChooserState extends State<Chooser> {
           child: TapRegion(groupId: _link, child: field),
         ),
       ),
-    );
-  }
-}
-
-/// The Inspector's header: the layer's kind icon, name and kind, and the Animate all switch.
-class InspectorHeader extends StatelessWidget {
-  const InspectorHeader({super.key});
-  @override
-  Widget build(BuildContext context) {
-    final doc = InspectorScope.of(context).doc;
-    // The name the app gives the layer kind, for kinds that have no word of their own.
-    final w = doc.layer.kindWord;
-    final (word, glyph) = switch (doc.kind) {
-      Kind.shape when w != null => (
-        w,
-        w == 'Film' || w == 'Picture'
-            ? Glyphs.image
-            : w == 'Sound'
-            ? Glyphs.media
-            : Glyphs.shape,
-      ),
-      Kind.shape => ('Shape', Glyphs.shape),
-      Kind.text => ('Text', Glyphs.text),
-      Kind.camera => ('Camera', Glyphs.camera),
-      Kind.group => ('Group', Glyphs.grid),
-      Kind.none => ('', null),
-    };
-    return Container(
-      height: Shape.z(34),
-      padding: EdgeInsets.symmetric(horizontal: InspectorSkin.inset),
-      color: InspectorSkin.card,
-      child: Row(
-        children: [
-          Container(
-            width: Shape.z(22),
-            height: Shape.z(22),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: InspectorSkin.accent,
-              borderRadius: BorderRadius.all(Shape.r(6)),
-            ),
-            child: glyph == null
-                ? null
-                : Glyph(
-                    glyph,
-                    size: Shape.z(13),
-                    color: InspectorSkin.onAccent,
-                  ),
-          ),
-          SizedBox(width: Shape.s(8)),
-          Flexible(
-            child: FittedBox(
-              // Scale the name down rather than cut it off.
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                doc.name,
-                maxLines: 1,
-                style: TextStyles.title(Grey.g100).copyWith(
-                  fontSize: TextStyles.px(13),
-                  fontWeight: FontWeight.w700,
-                  height: 1,
-                ),
-              ),
-            ),
-          ),
-          SizedBox(width: Shape.s(6)),
-          Text(word, maxLines: 1, style: TextStyles.label(Grey.g56)),
-          const Spacer(),
-          Text('Animate all', style: TextStyles.label(Grey.g63)),
-          SizedBox(width: Shape.s(6)),
-          Forms.worn.onOff(
-            context,
-            SwitchSpec(
-              on: doc.animateAll,
-              onChanged: (v) {
-                doc.animateAll = v;
-                doc.poke();
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// What the Inspector shows when nothing is selected.
-class EmptyState extends StatelessWidget {
-  const EmptyState({super.key});
-  @override
-  Widget build(BuildContext context) {
-    final x = InspectorScope.of(context), ed = const InspectorHairline();
-    // One plain muted line, with no controls and no stale values.
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Padding(
-          padding: EdgeInsets.only(top: Shape.s(4), bottom: Shape.s(8)),
-          child: Text(
-            'Nothing selected',
-            style: TextStyles.label(Grey.g56).copyWith(height: 1.4),
-          ),
-        ),
-        // With nothing selected, nothing is shown. After Effects' Effect Controls belongs to a layer and Alight Motion shows none.
-        // The stage's own settings appear only when asked for, as in Apple Motion's Project pane.
-        Pressable(
-          key: const ValueKey('stage-settings'),
-          onTap: () =>
-              x.doc.flag('stage.open', !(x.doc.b['stage.open'] ?? false)),
-          builder: (_, h) => Container(
-            height: InspectorSkin.cell,
-            margin: EdgeInsets.only(bottom: InspectorSkin.gap),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: h ? Grey.g20 : InspectorSkin.well,
-              borderRadius: BorderRadius.all(Shape.r(6)),
-            ),
-            child: Text(
-              'Stage settings',
-              style: TextStyles.label(h ? Grey.g95 : Grey.g76),
-            ),
-          ),
-        ),
-        if (x.doc.b['stage.open'] ?? false)
-          // The stage's own cards, holding the values for the whole image.
-          for (final c in x.doc.cards) ValuesCard(c),
-        SizedBox(height: Shape.s(1)),
-        Container(height: 1, color: ed.rule),
-      ],
     );
   }
 }

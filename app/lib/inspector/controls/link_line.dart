@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/media.dart' show glyph;
 import 'package:motolii/widgets/number_field.dart' show blockValue;
@@ -34,7 +34,7 @@ class LinkLine extends StatelessWidget {
       key: ValueKey('link:${to.name}:$id'),
       onTap: () {
         // Record which parameter the target panel's pick should be applied to.
-        x.doc.s2['route.at'] = id;
+        x.doc.strings['route.at'] = id;
         x.doc.str('route', to.route);
       },
       builder: (_, h) => SizedBox(

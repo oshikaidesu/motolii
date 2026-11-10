@@ -1,14 +1,14 @@
-import 'package:motolii/widgets/dice_painter.dart';
-import 'package:motolii/skin/inspector_tokens.dart';
-
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/controls/inspector_parameter_controls_tile.dart';
 
+import 'package:motolii/inspector/controls/parameter_inference.dart';
+import 'package:motolii/inspector/controls/parameter_tile.dart';
+import 'package:motolii/inspector/inspector_scope.dart';
+import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
+import 'package:motolii/widgets/dice_painter.dart';
 
 /// An effect's parameters as blocks that fill the panel's width.
 ///

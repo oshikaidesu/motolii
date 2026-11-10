@@ -3,11 +3,11 @@ import 'package:flutter/foundation.dart'
     show ChangeNotifier, ValueListenable, ValueNotifier;
 
 import 'package:motolii/inspector/card_actions.dart';
-import 'package:motolii/inspector/controls/inspector_parameter_controls.dart';
+import 'package:motolii/inspector/card_declaration.dart';
+import 'package:motolii/inspector/controls/parameter_grid.dart';
 import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/inspector/field_selection.dart';
 import 'package:motolii/inspector/inspected_layer.dart';
-import 'package:motolii/inspector/inspector_card.dart';
 import 'package:motolii/inspector/inspector_state.dart';
 
 /// The values of the selected layer as the inspector edits them: numbers, strings and switches.
@@ -18,12 +18,13 @@ class InspectorValues extends ChangeNotifier {
     for (final f in cards) {
       for (final (i, p) in f.params.indexed) {
         // Start from the declaration's @default until the caller supplies the value.
-        paramDefaults(p).forEach((id, x) => v[id] = d[id] = x);
+        paramDefaults(p)
+            .forEach((id, x) => numbers[id] = numberDefaults[id] = x);
         if (p.look == ParameterLook.color) {
-          s2.putIfAbsent('v_${p.id}', () => paramColor(f.decls[i]));
+          strings.putIfAbsent('v_${p.id}', () => paramColor(f.decls[i]));
         }
         if (p.look == ParameterLook.choice) {
-          s2.putIfAbsent(
+          strings.putIfAbsent(
             'v_${p.id}',
             () => p.options[p.def.round().clamp(0, p.options.length - 1)],
           );
@@ -33,11 +34,19 @@ class InspectorValues extends ChangeNotifier {
   }
 
   final Kind kind;
-  final Map<String, double> v = {}, d = {};
-  final Map<String, KeyframeState> keys = {};
-  final Map<String, String> s2 = {};
 
-  final Map<String, bool> b = {};
+  /// The numbers shown, by value id.
+  final Map<String, double> numbers = {};
+
+  /// The declared default of each number, by value id.
+  final Map<String, double> numberDefaults = {};
+  final Map<String, KeyframeState> keys = {};
+
+  /// The words and choices, by value id.
+  final Map<String, String> strings = {};
+
+  /// The switches, by value id.
+  final Map<String, bool> flags = {};
 
   /// The cards these values were made for. Each card's params are fields keyed `v_` plus the value name.
   /// They stay as they were when the values were made, while [layer] follows the caller.
@@ -61,13 +70,13 @@ class InspectorValues extends ChangeNotifier {
   /// The selected layer's name, or '' when the caller does not know it.
   String get name => layer.title ?? '';
 
-  double? get(String id) => v[id];
+  double? get(String id) => numbers[id];
 
   /// A typed or reset value is absolute.
   void set(String id, double x) => setMany({id: x});
 
   void delta(String id, double dx) {
-    v[id] = (v[id] ?? 0) + dx;
+    numbers[id] = (numbers[id] ?? 0) + dx;
     notifyListeners();
   }
 
@@ -77,7 +86,7 @@ class InspectorValues extends ChangeNotifier {
   bool get inGesture => _gesture != null;
 
   void beginGesture() {
-    _gesture ??= Map.of(v);
+    _gesture ??= Map.of(numbers);
   }
 
   void endGesture() {
@@ -88,7 +97,7 @@ class InspectorValues extends ChangeNotifier {
     ending = true;
     notifyListeners();
     ending = false;
-    for (final e in v.entries) {
+    for (final e in numbers.entries) {
       if (before?[e.key] != e.value) _watched[e.key]?.value++;
     }
   }
@@ -102,8 +111,8 @@ class InspectorValues extends ChangeNotifier {
   bool showAt(Map<String, double> values, Map<String, KeyframeState> marks) {
     var unwatched = false;
     for (final e in values.entries) {
-      if (v[e.key] == e.value) continue;
-      v[e.key] = e.value;
+      if (numbers[e.key] == e.value) continue;
+      numbers[e.key] = e.value;
       final w = _watched[e.key];
       if (w == null) {
         unwatched = true;
@@ -126,7 +135,7 @@ class InspectorValues extends ChangeNotifier {
 
   void setMany(Map<String, double> xs) {
     for (final e in xs.entries) {
-      v[e.key] = e.value;
+      numbers[e.key] = e.value;
     }
     notifyListeners();
   }
@@ -134,8 +143,8 @@ class InspectorValues extends ChangeNotifier {
   /// Reset writes the default value. On an animated row it also writes a key at the playhead (so the arrow drops: value == default).
   void resetIds(Iterable<String> ids) {
     for (final i in ids) {
-      final dv = d[i] ?? 0;
-      v[i] = dv;
+      final dv = numberDefaults[i] ?? 0;
+      numbers[i] = dv;
       final p = propOf(i);
       if (animateAll || (keys[p] ?? KeyframeState.off) != KeyframeState.off) {
         keys[p] = KeyframeState.at;
@@ -152,12 +161,12 @@ class InspectorValues extends ChangeNotifier {
   }
 
   void str(String id, String x) {
-    s2[id] = x;
+    strings[id] = x;
     notifyListeners();
   }
 
   void flag(String id, bool x) {
-    b[id] = x;
+    flags[id] = x;
     notifyListeners();
   }
 

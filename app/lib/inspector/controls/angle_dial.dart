@@ -1,7 +1,9 @@
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/inspector_parts.dart';
+
+import 'package:motolii/inspector/controls/parameter_inference.dart';
+import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/skin/tokens.dart';
 
 /// A dial for an angle. The user turns it by dragging around its centre, or drags the number beside it.

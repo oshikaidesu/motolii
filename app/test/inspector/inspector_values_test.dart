@@ -4,7 +4,8 @@
 import 'dart:ui' show Color;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motolii/inspector/inspector_card.dart' show CardDeclaration;
+
+import 'package:motolii/inspector/card_declaration.dart' show CardDeclaration;
 import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/inspector_values.dart';
 
@@ -42,7 +43,7 @@ InspectorValues _doc() {
 void main() {
   test('a new InspectorValues starts from the defaults its cards declare', () {
     final doc = _doc();
-    expect(doc.v, {
+    expect(doc.numbers, {
       'v_amount': 4,
       'v_center.x': .5,
       'v_center.y': .25,
@@ -51,10 +52,10 @@ void main() {
       'v_radius': 0,
       'v_angle': 0,
     });
-    expect(doc.d, doc.v);
-    expect(doc.s2, {'v_tint': '#FF8000', 'v_mode': 'Med'});
+    expect(doc.numberDefaults, doc.numbers);
+    expect(doc.strings, {'v_tint': '#FF8000', 'v_mode': 'Med'});
     expect(doc.keys, isEmpty);
-    expect(doc.b, isEmpty);
+    expect(doc.flags, isEmpty);
     expect(doc.fields.picked, isEmpty);
     expect(doc.inGesture, isFalse);
   });
@@ -64,14 +65,17 @@ void main() {
     var told = 0;
     doc.addListener(() => told++);
     doc.set('v_amount', 2);
-    expect((doc.get('v_amount'), doc.d['v_amount'], told), (2, 4, 1));
+    expect(
+      (doc.get('v_amount'), doc.numberDefaults['v_amount'], told),
+      (2, 4, 1),
+    );
     doc.set('v_amount', 2); // The same value still notifies.
     expect(told, 2);
     doc.setMany({'v_amount': 3, 'v_x': 8});
-    expect((doc.v['v_amount'], doc.v['v_x'], told), (3, 8, 3));
+    expect((doc.numbers['v_amount'], doc.numbers['v_x'], told), (3, 8, 3));
     doc.delta('v_x', -1.5);
     doc.delta('v_new', 2); // A value that is not there yet counts from 0.
-    expect((doc.v['v_x'], doc.v['v_new'], told), (6.5, 2, 5));
+    expect((doc.numbers['v_x'], doc.numbers['v_new'], told), (6.5, 2, 5));
     expect(amount.value, 0);
   });
 
@@ -82,7 +86,7 @@ void main() {
     doc.str('v_mode', 'High');
     doc.flag('lit', true);
     doc.poke();
-    expect((doc.s2['v_mode'], doc.b['lit'], told), ('High', true, 3));
+    expect((doc.strings['v_mode'], doc.flags['lit'], told), ('High', true, 3));
   });
 
   test('a drag notifies once when it ends, with ending set, and only then bumps the counters of the values it changed', () {
@@ -134,7 +138,7 @@ void main() {
       isFalse,
     );
     expect(
-      (doc.v['v_amount'], doc.keys['v_amount'], amount.value, mark.value),
+      (doc.numbers['v_amount'], doc.keys['v_amount'], amount.value, mark.value),
       (7, KeyframeState.at, 1, 1),
     );
     expect(
@@ -143,7 +147,7 @@ void main() {
     );
     expect((amount.value, mark.value), (1, 1));
     expect(doc.showAt({'v_x': 3}, {}), isTrue);
-    expect((doc.v['v_x'], told), (3, 0));
+    expect((doc.numbers['v_x'], told), (3, 0));
   });
 
   test(
@@ -167,7 +171,12 @@ void main() {
     doc.addListener(() => told++);
     doc.resetIds(['v_amount', 'v_x', 'v_undeclared']);
     expect(
-      (doc.v['v_amount'], doc.v['v_x'], doc.v['v_undeclared'], told),
+      (
+        doc.numbers['v_amount'],
+        doc.numbers['v_x'],
+        doc.numbers['v_undeclared'],
+        told,
+      ),
       (4, 0, 0, 1),
     );
     expect(doc.keys, isEmpty);

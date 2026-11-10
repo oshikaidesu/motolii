@@ -1,68 +1,20 @@
-import 'package:motolii/widgets/disclosure_triangle.dart';
-import 'package:motolii/widgets/more_menu.dart';
-import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/rows/inspector_section.dart';
 
-import 'package:motolii/skin/theme.dart';
+import 'package:motolii/inspector/card_declaration.dart';
+import 'package:motolii/inspector/card_words.dart';
+import 'package:motolii/inspector/controls/inspector_number_field.dart';
+import 'package:motolii/inspector/controls/parameter_grid.dart';
+import 'package:motolii/inspector/effect_drag_ghost.dart';
+import 'package:motolii/inspector/inspector_scope.dart';
+import 'package:motolii/inspector/rows/section.dart';
+import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/widgets/controls.dart'
-    show Badge, Chip, ChipLook, Pressable;
-import 'package:motolii/widgets/media.dart' show Draw, glyph;
+import 'package:motolii/widgets/controls.dart' show Pressable;
+import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
+import 'package:motolii/widgets/media.dart' show Draw, glyph;
+import 'package:motolii/widgets/more_menu.dart';
 import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
-
-/// A card as the engine declares it, for an effect or a layer's own values: a name and a WGSL uniform struct.
-///
-/// workspace/inspector_feed/cards.dart writes the struct from motolii_cards (card_table.h).
-/// The card's fields are whatever [infer] makes of it.
-class CardDeclaration {
-  CardDeclaration(this.name, this.wgsl, {required this.toneOf});
-  final String name, wgsl;
-
-  /// The skin's colour for this card. It is read when drawn, so a card made before the skin changed shows the new colour.
-  final Color Function() toneOf;
-  Color get tone => toneOf();
-  late final List<FieldDeclaration> decls = parseWgsl(wgsl);
-  late final List<Parameter> params = [for (final d in decls) infer(d)];
-}
-
-/// The Copy, Paste and Reset words in the head of a layer's own card, acting on the values [ids] as they are (like After Effects' Reset).
-class CardWords extends StatelessWidget {
-  const CardWords(this.name, this.ids, {super.key, this.more = const []});
-  final String name;
-  final List<String> ids;
-
-  /// Extra items listed under the card's ⋮ menu.
-  final List<(String, String, VoidCallback)> more;
-  @override
-  Widget build(BuildContext context) {
-    final doc = InspectorScope.of(context).doc;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final (word, does) in [
-          if (doc.actions.onCardCopy case final copy?)
-            ('Copy', () => copy(ids)),
-          if (doc.actions.onCardPaste case final paste?) ('Paste', paste),
-          if (doc.actions.onCardReset case final reset?)
-            ('Reset', () => reset(ids)),
-        ])
-          Padding(
-            padding: EdgeInsets.only(right: Shape.s(6)),
-            child: Chip(
-              key: ValueKey('card-${word.toLowerCase()}:$name'),
-              label: word,
-              onTap: does,
-              look: ChipLook.word,
-            ),
-          ),
-        if (more.isNotEmpty) CardMore(name: name, items: more),
-      ],
-    );
-  }
-}
 
 /// Draws every card of the panel the same way: one field per Parameter of its declaration, keyed `v_` plus the param name.
 class ValuesCard extends StatelessWidget {
@@ -73,8 +25,8 @@ class ValuesCard extends StatelessWidget {
     final x = InspectorScope.of(context),
         doc = x.doc,
         k = 'v.${card.name}',
-        adv = doc.b['$k.adv'] ?? false,
-        past = doc.b['$k.past'] ?? false;
+        adv = doc.flags['$k.adv'] ?? false,
+        past = doc.flags['$k.past'] ?? false;
     final heroes = [
           for (final p in card.params)
             if (!p.advanced) p,
@@ -253,11 +205,11 @@ class ValuesCard extends StatelessWidget {
           // The card's code folds under its params like Advanced does. The params are what the user edits and the code is what they drive.
           _FoldRow(
             'Code',
-            doc.b['$k.code'] ?? false,
-            () => doc.flag('$k.code', !(doc.b['$k.code'] ?? false)),
+            doc.flags['$k.code'] ?? false,
+            () => doc.flag('$k.code', !(doc.flags['$k.code'] ?? false)),
             key: ValueKey('card-code:${card.name}'),
           ),
-          if (doc.b['$k.code'] ?? false)
+          if (doc.flags['$k.code'] ?? false)
             SizedBox(height: Shape.z(360), child: code),
         ],
       ],
@@ -359,47 +311,5 @@ void _drawBin(Canvas c, Size s, Color color) {
       ..lineTo(w * .7, w * .9)
       ..lineTo(w * .75, w * .3),
     p,
-  );
-}
-
-/// The folded card head that follows the pointer while an effect is dragged.
-class EffectDragGhost extends StatelessWidget {
-  const EffectDragGhost(this.fx, {super.key});
-  final CardDeclaration fx;
-  @override
-  Widget build(BuildContext context) => Container(
-    width: Shape.z(220),
-    height: InspectorSkin.titleH + InspectorSkin.insetY * 2,
-    padding: EdgeInsets.symmetric(horizontal: InspectorSkin.inset),
-    decoration: BoxDecoration(
-      color: Grey.g20,
-      boxShadow: [
-        BoxShadow(
-          color: ColorTheme.of('Shadow', const Color(0x99000000)),
-          blurRadius: 14,
-          offset: const Offset(0, 6),
-        ),
-      ],
-    ),
-    child: Row(
-      children: [
-        Badge(
-          fx.tone,
-          size: 16,
-          radius: const Radius.circular(16 * .32),
-          mark: Draw(
-            (c, s) => drawLayerMark(c, s, InspectorSkin.onAccent),
-            InspectorSkin.onAccent,
-          ),
-        ),
-        SizedBox(width: Shape.s(6)),
-        Text(
-          fx.name,
-          style: TextStyles.title(
-            Grey.g95,
-          ).copyWith(fontSize: TextStyles.px(12), fontWeight: FontWeight.w700),
-        ),
-      ],
-    ),
   );
 }

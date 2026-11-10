@@ -239,7 +239,7 @@ class DrawTools extends ChangeNotifier {
     }
     ws.after(m.later('together'), (done, _) {
       if (!done || made <= 0) return;
-      // The new text's field takes the keyboard at once (see inspector_parameter_controls_tile.dart).
+      // The new text's field takes the keyboard at once (see parameter_tile.dart).
       if (kind == 'text') textToType = true;
       ws.select('$made');
     });

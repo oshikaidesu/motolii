@@ -4,7 +4,8 @@
 import 'dart:ui' show Color;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motolii/inspector/inspector_card.dart' show CardDeclaration;
+
+import 'package:motolii/inspector/card_declaration.dart' show CardDeclaration;
 import 'package:motolii/inspector/inspector_edits.dart';
 import 'package:motolii/inspector/inspector_snapshot.dart';
 import 'package:motolii/inspector/inspector_state.dart';
@@ -99,9 +100,9 @@ void main() {
           animating: true,
         ),
       );
-      expect(doc.v, {'v_amount': 7, 'v_mode': 1, 'v_x': 0, 'v_y': 3});
-      expect(doc.s2, {'v_mode': 'Med', 'name': 'Blob'});
-      expect(doc.b, {'clip': true});
+      expect(doc.numbers, {'v_amount': 7, 'v_mode': 1, 'v_x': 0, 'v_y': 3});
+      expect(doc.strings, {'v_mode': 'Med', 'name': 'Blob'});
+      expect(doc.flags, {'clip': true});
       expect(doc.keys, {'v_position': _anim});
       expect(doc.animateAll, isTrue);
     });
@@ -289,7 +290,7 @@ void main() {
         ],
         '}',
       ]);
-      expect(doc.s2['v_mode'], 'Med');
+      expect(doc.strings['v_mode'], 'Med');
       doc.str('fresh', 'x');
       expect(owner.take(), [
         '{',
@@ -299,15 +300,18 @@ void main() {
         ],
         '}',
       ]);
-      expect(doc.s2.containsKey('fresh'), isFalse);
+      expect(doc.strings.containsKey('fresh'), isFalse);
     });
 
     test('a panel link is not a string of the owner: route and route.at are never told and stay', () {
       final (doc, _, owner) = _started();
-      doc.s2['route.at'] = 'v_tint';
+      doc.strings['route.at'] = 'v_tint';
       doc.str('route', 'Colors');
       expect(owner.take(), ['{', '}']);
-      expect((doc.s2['route'], doc.s2['route.at']), ('Colors', 'v_tint'));
+      expect(
+        (doc.strings['route'], doc.strings['route.at']),
+        ('Colors', 'v_tint'),
+      );
     });
   });
 
@@ -356,7 +360,7 @@ void main() {
         ],
         '}',
       ]);
-      expect(doc.b['clip'], isTrue);
+      expect(doc.flags['clip'], isTrue);
       doc.flag('ghost', true);
       expect(owner.take(), [
         '{',
@@ -366,7 +370,7 @@ void main() {
         ],
         '}',
       ]);
-      expect(doc.b['ghost'], isFalse);
+      expect(doc.flags['ghost'], isFalse);
     });
 
     test(
@@ -375,7 +379,7 @@ void main() {
         final (doc, _, owner) = _started(hearsFlags: false);
         doc.flag('clip', true);
         expect(owner.take(), ['{', '}']);
-        expect(doc.b['clip'], isTrue);
+        expect(doc.flags['clip'], isTrue);
       },
     );
   });
@@ -400,10 +404,10 @@ void main() {
     () {
       final (doc, _, owner) = _started();
       doc.animateAll = true;
-      doc.v['v_x'] = 5;
+      doc.numbers['v_x'] = 5;
       doc.keys['v_x'] = _at;
-      doc.b['clip'] = true;
-      doc.s2['name'] = 'Blob';
+      doc.flags['clip'] = true;
+      doc.strings['name'] = 'Blob';
       doc.poke();
       expect(owner.take(), [
         '{',
@@ -439,7 +443,7 @@ void main() {
         ),
         isFalse,
       );
-      expect((doc.v['v_amount'], amount.value), (9, 1));
+      expect((doc.numbers['v_amount'], amount.value), (9, 1));
       expect(owner.take(), isEmpty);
       doc.poke();
       expect(owner.take(), ['{', '}']);
@@ -458,7 +462,7 @@ void main() {
       owner.take();
       const still = InspectorSnapshot(numbers: {'v_amount': 4});
       expect(sync.show(doc, still, owner.edits, previous: still), isTrue);
-      expect(doc.v['v_amount'], 4);
+      expect(doc.numbers['v_amount'], 4);
       doc.poke();
       expect(owner.take(), ['{', '}']);
     });
@@ -480,7 +484,7 @@ void main() {
         ),
         isTrue,
       );
-      expect((doc.v['v_amount'], doc.s2['name']), (5, 'Blob'));
+      expect((doc.numbers['v_amount'], doc.strings['name']), (5, 'Blob'));
       doc.endGesture();
       expect(owner.take(), [
         '{',
@@ -496,7 +500,7 @@ void main() {
       final (doc, sync, owner) = _started();
       const next = InspectorSnapshot(words: {'v_mode': 'High'});
       expect(sync.show(doc, next, owner.edits, previous: _nothing), isTrue);
-      expect(doc.s2['v_mode'], 'High');
+      expect(doc.strings['v_mode'], 'High');
       expect(sync.show(doc, next, owner.edits, previous: next), isFalse);
       doc.poke();
       expect(owner.take(), ['{', '}']);
@@ -506,7 +510,7 @@ void main() {
       final (doc, sync, owner) = _started();
       const next = InspectorSnapshot(flags: {'clip': true});
       expect(sync.show(doc, next, owner.edits, previous: _nothing), isTrue);
-      expect(doc.b['clip'], isTrue);
+      expect(doc.flags['clip'], isTrue);
       expect(sync.show(doc, next, owner.edits, previous: next), isFalse);
       doc.poke();
       expect(owner.take(), ['{', '}']);
@@ -523,7 +527,7 @@ void main() {
         ),
         isFalse,
       );
-      expect(doc.b, isEmpty);
+      expect(doc.flags, isEmpty);
     });
 
     test('a key mark goes to the field that draws it: no rebuild, and it is not told back', () {
@@ -571,7 +575,12 @@ void main() {
       final amount = doc.watch('v_amount'), mark = doc.watch('key:v_amount');
       expect(sync.showAt(doc, {'v_amount': 8}, {'v_amount': _at}), isFalse);
       expect(
-        (doc.v['v_amount'], doc.keys['v_amount'], amount.value, mark.value),
+        (
+          doc.numbers['v_amount'],
+          doc.keys['v_amount'],
+          amount.value,
+          mark.value,
+        ),
         (8, _at, 1, 1),
       );
       expect(owner.take(), isEmpty);
@@ -588,7 +597,7 @@ void main() {
       final (doc, sync, _) = _started();
       doc.beginGesture();
       expect(sync.showAt(doc, {'v_x': 1}, {'v_x': _at}), isFalse);
-      expect(doc.v['v_x'], 0);
+      expect(doc.numbers['v_x'], 0);
       expect(doc.keys, isEmpty);
     });
   });

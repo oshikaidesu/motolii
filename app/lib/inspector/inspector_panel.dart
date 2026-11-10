@@ -1,13 +1,17 @@
-import 'package:motolii/widgets/text_gestures.dart';
-import 'package:motolii/widgets/more_menu.dart';
-import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/inspector/inspector_parts.dart';
+import 'package:motolii/inspector/empty_state.dart';
+import 'package:motolii/inspector/inspector_header.dart';
+import 'package:motolii/inspector/inspector_scope.dart';
+import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/inspector_values.dart';
+import 'package:motolii/inspector/values_card.dart';
+import 'package:motolii/skin/inspector_tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, Pressable;
+import 'package:motolii/widgets/more_menu.dart';
+import 'package:motolii/widgets/text_gestures.dart';
 
 // Every card follows one rule. The engine declares the cards (card_table.h, sent by motolii_cards and
 // written as a WGSL uniform struct by workspace/inspector_feed/cards.dart), and [ValuesCard] draws each one the way it draws an effect.

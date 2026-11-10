@@ -1,7 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/inspector_parts.dart';
+
+import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/skin/tokens.dart';
 
 /// A small live picture of a value, shown beside its label.

@@ -1,8 +1,8 @@
 // The field for a words value: free text that may span lines, like Cavalry's string attribute.
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/skin/tokens.dart';
 
+import 'package:motolii/inspector/inspector_scope.dart';
+import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/text_gestures.dart';
 
 /// A text field for free text, two lines tall. The text is committed when the field loses focus, and Esc restores the previous text.
@@ -18,7 +18,7 @@ class ParameterWords extends StatelessWidget {
     return TypedField(
       key: ValueKey('words:$id'),
       // Outside editing, the text is whatever the document holds now, for example after another layer is selected or after undo.
-      text: InspectorScope.of(context).doc.s2[id] ?? '',
+      text: InspectorScope.of(context).doc.strings[id] ?? '',
       standing: true,
       take: take,
       escapes: true,

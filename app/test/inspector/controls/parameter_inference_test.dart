@@ -2,7 +2,8 @@
 // The expected values are what the code gave when this was written, so a move or a split that changes one fails here.
 // Needs no engine.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motolii/inspector/controls/inspector_parameter_controls.dart'
+
+import 'package:motolii/inspector/controls/parameter_grid.dart'
     show paramColor, paramDefaults;
 import 'package:motolii/inspector/controls/parameter_inference.dart';
 

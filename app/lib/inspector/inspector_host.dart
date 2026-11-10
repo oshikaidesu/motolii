@@ -5,10 +5,12 @@ import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/card_actions.dart';
+import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/inspector/inspected_layer.dart';
 import 'package:motolii/inspector/inspector_edits.dart';
-import 'package:motolii/inspector/inspector_parts.dart';
+import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/inspector_snapshot.dart';
+import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/inspector_sync.dart';
 import 'package:motolii/inspector/inspector_values.dart';
 
@@ -71,10 +73,10 @@ class _InspectorHostState extends State<InspectorHost> {
 
   void _r() {
     _sync.report(doc, widget.edits);
-    final r = doc.s2['route'];
+    final r = doc.strings['route'];
     if (r != null) {
-      doc.s2.remove('route');
-      widget.edits.onAim(doc.s2.remove('route.at') ?? '');
+      doc.strings.remove('route');
+      widget.edits.onAim(doc.strings.remove('route.at') ?? '');
       widget.edits.onRoute(r);
     }
     // During a drag the whole inspector is not rebuilt at each step: the field being dragged shows its own value

@@ -2,13 +2,15 @@
 // under it is built again, and that it uses what its caller gives as it is now. The expected values are what the code
 // gave when this was written, so a move that changes one fails here. Needs no engine.
 import 'package:flutter/widgets.dart';
+
 import 'package:flutter_test/flutter_test.dart';
+
 import 'package:motolii/inspector/card_actions.dart';
+import 'package:motolii/inspector/card_declaration.dart' show CardDeclaration;
 import 'package:motolii/inspector/inspected_layer.dart';
-import 'package:motolii/inspector/inspector_card.dart' show CardDeclaration;
 import 'package:motolii/inspector/inspector_edits.dart';
 import 'package:motolii/inspector/inspector_host.dart';
-import 'package:motolii/inspector/inspector_parts.dart' show InspectorScope;
+import 'package:motolii/inspector/inspector_scope.dart' show InspectorScope;
 import 'package:motolii/inspector/inspector_snapshot.dart';
 import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/inspector/inspector_values.dart';
@@ -142,7 +144,7 @@ void main() {
       final doc = bench.seen.doc;
       expect(bench.seen.builds, 1);
       expect(
-        (doc.kind, doc.name, doc.v['v_amount'], doc.v['v_x']),
+        (doc.kind, doc.name, doc.numbers['v_amount'], doc.numbers['v_x']),
         (Kind.shape, 'Blob', 7, 0),
       );
       expect(doc.layer, same(layer));
@@ -173,13 +175,13 @@ void main() {
       await bench.pump(layer: _layer(wgsl: _cardOtherDefault));
       expect(bench.seen.doc, same(first));
       expect(bench.seen.builds, 1);
-      expect((first.cards.single.wgsl, first.v['v_amount']), (_card, 4));
+      expect((first.cards.single.wgsl, first.numbers['v_amount']), (_card, 4));
 
       await bench.pump(layer: _layer(wgsl: _cardOneMore));
       final second = bench.seen.doc;
       expect(second, isNot(same(first)));
       expect(bench.seen.builds, 2);
-      expect(second.v.containsKey('v_y'), isTrue);
+      expect(second.numbers.containsKey('v_y'), isTrue);
       expect(() => first.addListener(() {}), throwsFlutterError);
 
       await bench.pump(
@@ -225,11 +227,14 @@ void main() {
       await bench.pump(
         snapshot: const InspectorSnapshot(numbers: {'v_amount': 9}),
       );
-      expect((doc.v['v_amount'], amount.value, bench.seen.builds), (9, 1, 1));
+      expect(
+        (doc.numbers['v_amount'], amount.value, bench.seen.builds),
+        (9, 1, 1),
+      );
       await bench.pump(
         snapshot: const InspectorSnapshot(numbers: {'v_amount': 9, 'v_x': 2}),
       );
-      expect((doc.v['v_x'], amount.value, bench.seen.builds), (2, 1, 2));
+      expect((doc.numbers['v_x'], amount.value, bench.seen.builds), (2, 1, 2));
       expect(bench.owner.told, isEmpty);
     },
   );
@@ -282,7 +287,7 @@ void main() {
       final bench = _Bench(tester);
       await bench.pump();
       final doc = bench.seen.doc;
-      doc.s2['route.at'] = 'v_tint';
+      doc.strings['route.at'] = 'v_tint';
       doc.str('route', 'Colors');
       expect(bench.owner.told, [
         '{',
@@ -290,7 +295,7 @@ void main() {
         ['aim', 'v_tint'],
         ['route', 'Colors'],
       ]);
-      expect(doc.s2, isEmpty);
+      expect(doc.strings, isEmpty);
       bench.owner.told.clear();
       doc.str('route', 'Ease');
       expect(bench.owner.told, [
@@ -310,18 +315,21 @@ void main() {
       final doc = bench.seen.doc, amount = doc.watch('v_amount');
       first.value = ({'v_amount': 5}, const {});
       await tester.pump();
-      expect((doc.v['v_amount'], amount.value, bench.seen.builds), (5, 1, 1));
+      expect(
+        (doc.numbers['v_amount'], amount.value, bench.seen.builds),
+        (5, 1, 1),
+      );
       first.value = ({'v_x': 3}, const {});
       await tester.pump();
-      expect((doc.v['v_x'], bench.seen.builds), (3, 2));
+      expect((doc.numbers['v_x'], bench.seen.builds), (3, 2));
 
       bench.live = _newLive();
       await bench.pump();
       first.value = ({'v_x': 5}, const {});
-      expect(doc.v['v_x'], 3);
+      expect(doc.numbers['v_x'], 3);
       bench.live.value = ({'v_x': 7}, const {});
       await tester.pump();
-      expect((doc.v['v_x'], bench.seen.builds), (7, 3));
+      expect((doc.numbers['v_x'], bench.seen.builds), (7, 3));
       expect(bench.owner.told, isEmpty);
     },
   );

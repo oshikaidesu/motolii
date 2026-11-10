@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/inspector/inspector_parts.dart';
+import 'package:motolii/inspector/inspector_state.dart';
 
 /// Gives the rows below it the keyframe state of their property.
 ///

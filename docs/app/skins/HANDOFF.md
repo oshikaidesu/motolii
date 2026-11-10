@@ -128,7 +128,7 @@ Direction for the poster sample: a Swiss geometric poster (Posterlad's Checkers,
 - **const.** `Shape.z()` and its relatives are getters, so they cannot be used inside `const`. Remove the `const` where the analyzer's `const_*` lints point.
 - **Keep ROLES.md in step with the app.** Every name the app reads through `ColorTheme.of`, `ColorTheme.number` and `ColorTheme.word` is listed in ROLES.md, and nothing else is.
 - **Ranges of numbers.** Size 0.85 to 1.5, TextScale 0.85 to 1.3, Spacing 0 to 2, Corner 0 to 10. Outside them the value is pulled to the end (outside them tabs disappear and text is clipped).
-- **The colour of an automatic card.** The inspector's automatic cards read their colour when they paint (`CardDeclaration.toneOf` in `lib/inspector/inspector_card.dart`). Do not store the colour when the card is made.
+- **The colour of an automatic card.** The inspector's automatic cards read their colour when they paint (`CardDeclaration.toneOf` in `lib/inspector/card_declaration.dart`). Do not store the colour when the card is made.
 
 ## 7. Not done yet
 

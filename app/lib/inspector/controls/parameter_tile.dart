@@ -1,18 +1,24 @@
 // One parameter as a block: the name on top, the number large under it, a picture of the value in the top-right corner.
-import 'package:motolii/widgets/switch_track.dart';
-import 'package:motolii/skin/inspector_tokens.dart';
-
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
-import 'package:motolii/widgets/controls.dart';
-import 'package:motolii/inspector/controls/inspector_parameter_controls_angle_dial.dart';
-import 'package:motolii/inspector/controls/inspector_parameter_controls_gauge.dart';
-import 'package:motolii/inspector/controls/inspector_parameter_controls_words.dart';
-import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/inspector/inspector_values.dart';
-import 'package:motolii/skin/tokens.dart';
 
+import 'package:motolii/inspector/chooser.dart';
+import 'package:motolii/inspector/controls/angle_dial.dart';
+import 'package:motolii/inspector/controls/gauge.dart';
+import 'package:motolii/inspector/controls/inspector_number_field.dart';
+import 'package:motolii/inspector/controls/link_line.dart';
+import 'package:motolii/inspector/controls/parameter_grid.dart';
+import 'package:motolii/inspector/controls/parameter_inference.dart';
+import 'package:motolii/inspector/controls/parameter_words.dart';
+import 'package:motolii/inspector/inspector_scope.dart';
+import 'package:motolii/inspector/inspector_state.dart';
+import 'package:motolii/inspector/inspector_values.dart';
+import 'package:motolii/inspector/rows/row_info.dart';
+import 'package:motolii/skin/inspector_tokens.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/controls.dart';
+import 'package:motolii/widgets/switch_track.dart';
 import 'package:motolii/widgets/two_finger_gestures.dart';
 
 /// One parameter as a block: the name on top, the number large under it, a picture of the value in the top-right corner.
@@ -203,25 +209,29 @@ class ParameterTile extends StatelessWidget {
         return shell(
           Padding(
             padding: EdgeInsets.only(bottom: Shape.s(3)),
-            child: LinkLine(to: LinkTo.fonts, value: doc.s2[id] ?? '—', id: id),
+            child: LinkLine(
+              to: LinkTo.fonts,
+              value: doc.strings[id] ?? '—',
+              id: id,
+            ),
           ),
         );
       case ParameterLook.color when p.unit == 'numbers':
         // A list of numbers, such as a bar chart's heights, edited as bars the user drags up and down. Committed on release.
         return shell(_Heights(id: id));
       case ParameterLook.color:
-        final all = (doc.s2[id] ?? '—')
+        final all = (doc.strings[id] ?? '—')
             .split(' ')
             .where((c) => hexControls(c) != null)
             .toList();
         return shell(
-          glyph: Swatch(doc.s2[id], ramp: all.length > 1 ? all : null),
+          glyph: Swatch(doc.strings[id], ramp: all.length > 1 ? all : null),
           Padding(
             padding: EdgeInsets.only(bottom: Shape.s(3)),
             // With several colours, the line shows how many and the swatch strip shows which.
             child: LinkLine(
               to: LinkTo.colors,
-              value: all.length > 1 ? '${all.length}' : doc.s2[id] ?? '—',
+              value: all.length > 1 ? '${all.length}' : doc.strings[id] ?? '—',
               id: id,
             ),
           ),
@@ -358,7 +368,8 @@ class _HeightsState extends State<_Heights> {
 
   List<double> _said(InspectorValues doc) {
     final w = [
-      for (final s in (doc.s2[widget.id] ?? '').split(' ')) ?double.tryParse(s),
+      for (final s in (doc.strings[widget.id] ?? '').split(' '))
+        ?double.tryParse(s),
     ];
     // With no value yet, start from eight equal bars to drag.
     return w.isEmpty ? List.filled(8, 1) : w;
@@ -476,7 +487,7 @@ class _ChoiceSync extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final doc = InspectorScope.of(context).doc;
-    final i = options.indexOf(doc.s2[id] ?? options.first);
+    final i = options.indexOf(doc.strings[id] ?? options.first);
     if (i >= 0 && doc.get(id) != i) {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => doc.set(id, i.toDouble()),

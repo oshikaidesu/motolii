@@ -1,7 +1,7 @@
 // The keyframe marks beside a value (no keyframes, animated, keyframe at this time): reading them and setting them.
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
-import 'package:motolii/inspector/inspector_parts.dart';
+import 'package:motolii/inspector/inspector_state.dart';
 import 'package:motolii/workspace/inspector_feed/values.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 

@@ -21,23 +21,23 @@ class InspectorSync {
   /// Fills a new [doc] with the owner's [snapshot], which is then what the owner is known to have seen.
   void start(InspectorValues doc, InspectorSnapshot snapshot) {
     doc
-      ..v.addAll(snapshot.numbers)
-      ..s2.addAll(snapshot.words)
-      ..b.addAll(snapshot.flags)
+      ..numbers.addAll(snapshot.numbers)
+      ..strings.addAll(snapshot.words)
+      ..flags.addAll(snapshot.flags)
       ..keys.addAll(snapshot.keyMarks)
       ..animateAll = _animating = snapshot.animating;
     _seen
       ..clear()
-      ..addAll(doc.v);
+      ..addAll(doc.numbers);
     _seenKeys
       ..clear()
       ..addAll(doc.keys);
     _seenWords
       ..clear()
-      ..addAll(doc.s2);
+      ..addAll(doc.strings);
     _seenFlags
       ..clear()
-      ..addAll(doc.b);
+      ..addAll(doc.flags);
   }
 
   /// Reports through [edits] whatever [doc] holds that the owner has not seen: values, key marks, strings, switches and Animate all.
@@ -54,7 +54,7 @@ class InspectorSync {
     }
     final live = doc.inGesture,
         changed = {
-          for (final e in doc.v.entries)
+          for (final e in doc.numbers.entries)
             if (_seen[e.key] != e.value) e.key: e.value,
         };
     if (changed.isNotEmpty) {
@@ -71,7 +71,7 @@ class InspectorSync {
       edits.onKey(e.key, e.value);
     }
     final words = {
-      for (final e in doc.s2.entries)
+      for (final e in doc.strings.entries)
         if (e.key != 'route' &&
             e.key != 'route.at' &&
             _seenWords[e.key] != e.value)
@@ -79,7 +79,7 @@ class InspectorSync {
     };
     if (edits.onFlags case final tell?) {
       final flags = {
-        for (final e in doc.b.entries)
+        for (final e in doc.flags.entries)
           if ((_seenFlags[e.key] ?? e.key.endsWith('.open')) != e.value)
             // A card is open until it is folded, so its first fold is news too. Otherwise it would open again at the next read.
             e.key: e.value,
@@ -89,7 +89,7 @@ class InspectorSync {
           _seenFlags.addAll(flags);
         } else {
           for (final id in flags.keys) {
-            doc.b[id] = _seenFlags[id] ?? false;
+            doc.flags[id] = _seenFlags[id] ?? false;
           }
         }
       }
@@ -100,8 +100,8 @@ class InspectorSync {
     } else {
       for (final id in words.keys) {
         _seenWords.containsKey(id)
-            ? doc.s2[id] = _seenWords[id]!
-            : doc.s2.remove(id);
+            ? doc.strings[id] = _seenWords[id]!
+            : doc.strings.remove(id);
       }
     }
   }
@@ -125,16 +125,16 @@ class InspectorSync {
       _seen.addAll(snapshot.numbers);
     }
     if (edits.onFlags != null) {
-      if (snapshot.flags.entries.any((e) => doc.b[e.key] != e.value)) {
+      if (snapshot.flags.entries.any((e) => doc.flags[e.key] != e.value)) {
         rebuild = true;
       }
-      doc.b.addAll(snapshot.flags);
+      doc.flags.addAll(snapshot.flags);
       _seenFlags.addAll(snapshot.flags);
     }
-    if (snapshot.words.entries.any((e) => doc.s2[e.key] != e.value)) {
+    if (snapshot.words.entries.any((e) => doc.strings[e.key] != e.value)) {
       rebuild = true;
     }
-    doc.s2.addAll(snapshot.words);
+    doc.strings.addAll(snapshot.words);
     _seenWords.addAll(snapshot.words);
     // Also cover the case where what is shown differs from the document. A key mark that was just pressed shows lit at once,
     // and an undo that removes the key leaves the document's marks as they were before the press, so only the shown one differs.

@@ -55,7 +55,7 @@ CI runs the first three commands on every push (`../.github/workflows/checks.yml
 | `lib/skin/` | Look: `tokens.dart` (grays, sizes), `window_tokens.dart`, `inspector_tokens.dart`, `theme.dart` (colors from a skin's `theme.xml`), `skin_parts.dart` (a skin's `parts/*.svg`). |
 | `lib/skin/forms/` | How controls are built per skin: `poster_forms.dart`, `sheet_forms.dart`, `lighttable_forms.dart`, `own_forms.dart`, and `base_controls.dart` for controls a skin does not define. |
 | `lib/widgets/` | The standard parts every panel is built from: `controls.dart` (`Pressable`, `Chip`), `number_field.dart` (`NumberField`), `text_gestures.dart` (`TypedField`), `media.dart` (`MiniSlider`), `glyphs.dart` (`Glyph`), `timeline_painters.dart`. |
-| `lib/inspector/` | The Inspector on the right. Cards come from the engine's declarations (`../engine/document/card_table.h`), and `inspector_card.dart` (`ValuesCard`) draws every one of them. |
+| `lib/inspector/` | The Inspector on the right. Cards come from the engine's declarations (`../engine/document/card_table.h`), and `values_card.dart` (`ValuesCard`) draws every one of them. |
 | `lib/inspector/controls/` | Controls per kind of value: number, angle, color, text, link. |
 | `lib/inspector/rows/` | Rows and the frame of a card. |
 | `lib/workspace/` | The window itself and its panels. `workspace.dart` holds `Workspace`. See [`lib/workspace/README.md`](lib/workspace/README.md). |

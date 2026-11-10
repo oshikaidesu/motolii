@@ -1,12 +1,14 @@
 // A card of the inspector: a heading and its rows.
-import 'package:motolii/widgets/disclosure_triangle.dart';
-import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';
+
+import 'package:motolii/inspector/inspector_badges.dart';
+import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/skin/forms/forms.dart';
-import 'package:motolii/inspector/inspector_parts.dart';
+import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Badge, Pressable;
+import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/widgets/media.dart' show Draw;
 
 /// A card: a heading and its rows. Clicking the heading folds the card.
@@ -36,7 +38,7 @@ class Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final doc = InspectorScope.of(context).doc;
-    final open = !(doc.b['fold.$title'] ?? false);
+    final open = !(doc.flags['fold.$title'] ?? false);
     void toggle() {
       if (!HardwareKeyboard.instance.isAltPressed) {
         return doc.flag('fold.$title', open);
