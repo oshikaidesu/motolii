@@ -37,9 +37,11 @@
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-
 namespace motolii {
+
+using filament::RenderTarget;
+using filament::Texture;
+namespace backend = filament::backend;
 
 namespace {
 
