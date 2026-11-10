@@ -15,8 +15,8 @@ import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/context_menu.dart';
+import 'package:motolii/widgets/text_gestures.dart';
 import 'package:motolii/widgets/two_finger_gestures.dart';
-import 'package:motolii/workspace/edits/keyframe_edits.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
@@ -26,16 +26,18 @@ import 'package:motolii/workspace/timeline/frame_snap.dart';
 import 'package:motolii/workspace/timeline/row_flags.dart';
 import 'package:motolii/workspace/timeline/ruler_marks.dart';
 import 'package:motolii/workspace/timeline/slip_edit.dart';
-import 'package:motolii/workspace/timeline/timeline_drag.dart';
+import 'package:motolii/workspace/timeline/timeline_cache_painter.dart';
 import 'package:motolii/workspace/timeline/timeline_header.dart';
 import 'package:motolii/workspace/timeline/timeline_labels.dart';
 import 'package:motolii/workspace/timeline/timeline_media_cache.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
+import 'package:motolii/workspace/timeline/timeline_overview.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
 import 'package:motolii/workspace/timeline/timeline_requests.dart';
 import 'package:motolii/workspace/timeline/timeline_rows.dart';
-import 'package:motolii/workspace/timeline/timeline_tracks.dart';
+import 'package:motolii/workspace/timeline/timeline_tracks_paint.dart';
 import 'package:motolii/workspace/timeline/timeline_view.dart';
+import 'package:motolii/workspace/timeline/track_drag.dart';
 import 'package:motolii/workspace/timeline/timeline_viewport.dart';
 
 class TimelinePane extends StatefulWidget {
@@ -76,6 +78,15 @@ class TimelinePaneState extends State<TimelinePane>
     media: media,
     slip: slip,
   );
+
+  /// The bar, keyframe or selection box being dragged on the tracks, and the cursor over them.
+  late final drag = TrackDrag(
+    workspaceOf: () => workspace,
+    viewport: viewport,
+    rows: rows,
+    slip: slip,
+    snapTo: _snapTo,
+  );
   int lastFrame = -1;
 
   @override
@@ -85,6 +96,7 @@ class TimelinePaneState extends State<TimelinePane>
     media.addListener(_rebuild);
     ruler.addListener(_rebuild);
     slip.addListener(_rebuild);
+    drag.addListener(_rebuild);
     // Starts listening for requests from the app's commands (timeline_requests.dart).
     hearAsks();
   }
@@ -115,6 +127,7 @@ class TimelinePaneState extends State<TimelinePane>
     media.dispose();
     ruler.dispose();
     slip.dispose();
+    drag.dispose();
     _focus.dispose();
     stopAsks();
     markWords.dispose();
@@ -158,16 +171,8 @@ class TimelinePaneState extends State<TimelinePane>
     }
   }
 
-  // The bar being dragged. Dragging the body slides it, and dragging an end trims it.
-  // The timeline only records which part was grabbed and how far the pointer moved.
-  // What that does to the layer (its limits, a video's start) is decided by the engine, and the bar is drawn from the engine's answer.
-  ({String id, String part, double grab, bool moved})? bar;
-  // The frames the drag can snap to, collected when the drag starts.
-  Set<int> stops = const {};
-  // The frame the drag has snapped to, where a guide line is drawn.
-  int? restAt;
-
   // Snapping to [stops] and the beat grid at the present zoom, or null while Cmd is held, which turns snapping off.
+  // The drags on the ruler and on the tracks both ask for it.
   FrameSnap? _snapTo(Set<int> stops) => HardwareKeyboard.instance.isMetaPressed
       ? null
       : FrameSnap(
@@ -175,117 +180,6 @@ class TimelinePaneState extends State<TimelinePane>
           beats: workspace!.beats,
           pixelsPerFrame: viewport.view.pixelsPerFrame,
         );
-
-  // The drag distance [by] adjusted so that the nearest of [ends] lands on a snap stop, if one is close enough.
-  // Where it landed is kept in [restAt].
-  int _snapped(int by, List<int> ends) {
-    final snapped = _snapTo(stops)?.snap(by, ends);
-    restAt = snapped?.at;
-    return snapped?.by ?? by;
-  }
-
-  // The dragged bar's in and out frames when the drag started.
-  // A trim stops one frame short of an empty bar, because an empty bar cannot be seen, grabbed again or kept.
-  // The project is as long as its longest layer.
-  int barIn = 0, barOut = 0;
-
-  // The cursor over the tracks shows what a drag would do: an end trims, the body slides, a keyframe slides, empty space draws a box.
-  MouseCursor cursor = MouseCursor.defer;
-
-  // The keyframe being dragged, together with the other selected keyframes. They slide in time while the playhead shows the position.
-  ({List<SelectedKeyframe> keys, int grab, int by})? slide;
-  // When and where a lane was last clicked, to detect a double-click.
-  DateTime? lanePressed;
-  Offset laneAt = Offset.zero;
-
-  // The selection box dragged over empty track space, in any direction. Its corners are in track coordinates.
-  // It selects the keyframes inside it, or else the layers whose bars it touches, like the marquee in Ableton and After Effects.
-  (Offset, Offset)? selectionBox;
-
-  void barDown(Offset p) {
-    if (!grab(p)) setState(() => selectionBox = (p, p));
-  }
-
-  void _boxUp() {
-    final b = selectionBox;
-    setState(() => selectionBox = null);
-    if (b == null) return;
-    final ws = workspace!, v = viewport.view, r = Rect.fromPoints(b.$1, b.$2);
-    // A click, not a box: the tap handler has already dealt with it.
-    if (r.width < 4 && r.height < 4) return;
-    final keys = <SelectedKeyframe>[], things = <String>[];
-    for (var i = 0; i < rows.order.length; i++) {
-      // A box does not select points on a lane.
-      if (rows.order[i].value != null) continue;
-      final l = ws.layers[rows.order[i].layer],
-          top = i * TimelineMetrics.row - viewport.verticalScroll;
-      if (top + TimelineMetrics.row < r.top ||
-          top > r.bottom ||
-          RowFlags(ws).isLocked(l.id)) {
-        continue;
-      }
-      for (final k in l.keys) {
-        if (v.x(k) >= r.left && v.x(k) <= r.right) {
-          keys.add((layer: l.id, frame: k));
-        }
-      }
-      if (v.x(l.outF) >= r.left && v.x(l.inF) <= r.right) things.add(l.id);
-    }
-    if (keys.isNotEmpty) {
-      ws.pickKeys(keys);
-    } else if (things.isNotEmpty) {
-      ws.clearKeys();
-      ws.pickMany(things, inOrder: false);
-    }
-  }
-
-  void barMove(Offset p) {
-    if (selectionBox case (final from, _)?) {
-      return setState(() => selectionBox = (from, p));
-    }
-    if (slide case final s?) {
-      final by = _snapped(viewport.view.frameAt(p.dx).round() - s.grab, [
-        s.grab,
-      ]);
-      setState(() => slide = (keys: s.keys, grab: s.grab, by: by));
-      workspace!.frame = (s.grab + by).clamp(0, WorkspaceController.duration);
-      return;
-    }
-    final h = bar, ws = workspace!, m = ws.inside;
-    if (h == null || m == null) return;
-    // Moves by whole frames.
-    var by = (viewport.view.frameAt(p.dx) - h.grab).round();
-    if (h.part == 'slip') {
-      bar = (id: h.id, part: h.part, grab: h.grab, moved: true);
-      return slip.slipBy(ws, int.parse(h.id), by, barIn: barIn, barOut: barOut);
-    }
-    by = _snapped(by, [
-      if (h.part != 'tail') barIn,
-      if (h.part != 'head') barOut,
-    ]);
-    if (h.part == 'tail') by = math.max(by, barIn + 1 - barOut);
-    if (h.part == 'head') by = math.min(by, barOut - 1 - barIn);
-    m.dragUpdate(h.part, by / WorkspaceController.fps);
-    bar = (id: h.id, part: h.part, grab: h.grab, moved: true);
-    ws.respan(h.id);
-  }
-
-  void barUp({bool keep = true}) {
-    if (restAt != null) setState(() => restAt = null);
-    if (selectionBox != null) {
-      return keep ? _boxUp() : setState(() => selectionBox = null);
-    }
-    if (slide case final s?) {
-      slide = null;
-      if (keep) slideKeyframes(workspace!, s.keys, s.by);
-      return;
-    }
-    final h = bar, ws = workspace!, m = ws.inside;
-    bar = null;
-    if (h == null || m == null) return;
-    // Does not wait for the engine.
-    ws.after(m.later('drag_end', number: keep && h.moved ? 1 : 0));
-  }
 
   // The context menus of the ruler, of a bar and of a row's name (see timeline_requests.dart).
   // On the ruler a right-click adds a marker, a click selects one and moves the playhead there, and Cmd+R renames it.
@@ -356,7 +250,7 @@ class TimelinePaneState extends State<TimelinePane>
                       width: TimelineMetrics.divider,
                       child: ColoredBox(color: WindowTokens.ground),
                     ),
-                    Expanded(child: tracks(ws, drawn)),
+                    Expanded(child: _tracks(ws, drawn)),
                   ],
                 ),
               ),
@@ -529,5 +423,188 @@ class TimelinePaneState extends State<TimelinePane>
         ),
       ),
     ],
+  );
+
+  // The tracks area: the ruler, the painted rows with their pointer handling, the overview strip, and the playhead
+  // drawn over them.
+  Widget _tracks(
+    WorkspaceController ws,
+    List<TimelineRow> drawn,
+  ) => LayoutBuilder(
+    builder: (context, box) {
+      viewport.layout(
+        trackWidth: box.maxWidth,
+        rowsHeight: math.max(
+          0,
+          box.maxHeight - TimelineMetrics.ruler - TimelineMetrics.overview,
+        ),
+        rows: drawn.length,
+      );
+      final v = viewport.view;
+      return Stack(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ContextMenu(
+                key: rulerMenu,
+                child: GestureDetector(
+                  key: const ValueKey('ws-tl-ruler'),
+                  behavior: HitTestBehavior.opaque,
+                  supportedDevices: pressingDevices,
+                  onTapUp: (d) => rulerTap(
+                    d.localPosition,
+                  ), // Like Ableton Live's scrub area.
+                  onDoubleTapDown: (d) => rulerDouble(d.localPosition),
+                  onDoubleTap: () {},
+                  onSecondaryTapDown: (d) => rulerRight(d.localPosition),
+                  onPanDown: (d) => ruler.down(d.localPosition),
+                  onPanUpdate: (d) => ruler.move(d.localPosition),
+                  onPanEnd: (_) => ruler.end(),
+                  onPanCancel: ruler.end,
+                  child: SizedBox(
+                    height: TimelineMetrics.ruler,
+                    child: CustomPaint(
+                      painter: TimelineRulerPainter(
+                        view: v,
+                        fps: WorkspaceController.fps,
+                        workIn: ruler.workIn,
+                        workOut: ruler.workOut,
+                        markers: ruler.markers,
+                        markColors: ruler.markerColors,
+                        beats: media.beatsOf(ws),
+                        tempo: ws.beats,
+                        retimed: ruler.retimed,
+                      ),
+                      foregroundPainter: TimelineCachePainter(
+                        view: v,
+                        kept: ws.kept,
+                      ), // Marks the frames cached on disk for playback.
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: MouseRegion(
+                  cursor: drag.cursor,
+                  onHover: (e) => drag.hover(e.localPosition),
+                  child: TwoFingerGestures(
+                    onWheel: scrollBy,
+                    onPan: fingers,
+                    onPinch: pinch,
+                    child: ContextMenu(
+                      key: trackMenu,
+                      child: GestureDetector(
+                        key: const ValueKey('ws-tl-tracks'),
+                        behavior: HitTestBehavior.opaque,
+                        supportedDevices: pressingDevices,
+                        dragStartBehavior: DragStartBehavior.down,
+                        onTapDown: (d) => drag.tapDown(d.localPosition),
+                        onSecondaryTapDown: (d) => trackRight(d.localPosition),
+                        onTapUp: (d) => drag.tapUp(d.localPosition), // Only fires once the gesture is known not to be a drag.
+                        onPanStart: (d) => drag.down(d.localPosition),
+                        onPanUpdate: (d) => drag.move(d.localPosition),
+                        onPanEnd: (_) => drag.up(),
+                        onPanCancel: () => drag.up(keep: false),
+                        child: RepaintBoundary(
+                          child: CustomPaint(
+                            size: Size.infinite,
+                            painter: TimelineTracksPainter(
+                              rows: drawn,
+                              view: v,
+                              fps: WorkspaceController.fps,
+                              vscroll: viewport.verticalScroll,
+                              restAt: drag.snappedAt,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              ValueListenableBuilder<int>(
+                valueListenable: ws.moment,
+                builder: (_, frame, _) => TimelineOverview(
+                  from: viewport.scroll,
+                  to: viewport.scroll + viewport.visible,
+                  frame: frame,
+                  onDrag: (p) => overview(p, box.maxWidth),
+                ),
+              ),
+            ],
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: TimelineMetrics.overview,
+            child: IgnorePointer(
+              child: RepaintBoundary(
+                child: ClipRect(
+                  child: CustomPaint(
+                    painter: TimelinePlayheadPainter(
+                      view: v,
+                      frame: ws.frame,
+                      headTop: TimelineMetrics.band + 1,
+                      moment: ws.moment,
+                    ), // Repainted as the playhead moves; no widgets are rebuilt.
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (drag.selectionBox case (final a, final b)?)
+            Positioned.fromRect(
+              rect: Rect.fromPoints(
+                a,
+                b,
+              ).shift(Offset(0, TimelineMetrics.ruler)),
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: WindowTokens.accent.withAlpha(36),
+                    border: Border.all(color: WindowTokens.accent, width: 1),
+                  ),
+                ),
+              ),
+            ),
+          // The flag name is edited in place, as wide as its text, like renaming a layer in Figma.
+          if (naming case (final at, _)?)
+            Positioned(
+              left: v.x((at * WorkspaceController.fps).round()).roundToDouble(),
+              top: TimelineMetrics.band + 2,
+              height: 12,
+              child: ListenableBuilder(
+                listenable: markWords,
+                builder: (_, child) => Container(
+                  width: markerFlagWidth('${markWords.text}  '),
+                  color: WindowTokens.toneText,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: child,
+                ),
+                child: TextGestures(
+                  key: const ValueKey('ws-tl-mark-name'),
+                  field: (k) => EditableText(
+                    key: k,
+                    rendererIgnoresPointer: true,
+                    controller: markWords,
+                    focusNode: markFocus,
+                    style: TextStyles.micro(Grey.g13)
+                        .copyWith(fontWeight: FontWeight.w700),
+                    cursorColor: Grey.g13,
+                    backgroundCursorColor: Grey.g38,
+                    selectionColor: Grey.g13.withValues(
+                      alpha: .3,
+                    ), // Highlight for selected text.
+                    maxLines: 1,
+                    onSubmitted: (_) => markFocus.unfocus(),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      );
+    },
   );
 }
