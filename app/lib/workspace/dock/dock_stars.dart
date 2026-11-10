@@ -24,17 +24,6 @@ class DockStar extends StatelessWidget {
 /// Where the starred effects are kept (a test points it elsewhere: [dockStarsAt]), in the Ease tool panel's way (ease_stars.json).
 File _starsFile = File('${Platform.environment['HOME']}/.motolii/effect_stars.json');
 void dockStarsAt(File f) => _starsFile = f;
-Set<String> _starsRead() {
-  try {
-    return {for (final s in jsonDecode(_starsFile.readAsStringSync()) as List) '$s'};
-  } catch (_) {
-    return {};
-  }
-}
+Set<String> _starsRead() => {for (final s in fileList(_starsFile)) '$s'};
 
-void _starsKeep(Set<String> all) {
-  try {
-    _starsFile.parent.createSync(recursive: true);
-    _starsFile.writeAsStringSync(jsonEncode(all.toList()));
-  } catch (_) {}
-}
+void _starsKeep(Set<String> all) => fileKeep(_starsFile, jsonEncode(all.toList()));

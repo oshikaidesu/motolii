@@ -8,7 +8,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:flutter/gestures.dart' show kDoubleTapSlop, kDoubleTapTimeout, DragStartBehavior, PointerScrollEvent, PointerSignalEvent;
+import 'package:flutter/gestures.dart' show kDoubleTapSlop, kDoubleTapTimeout, DragStartBehavior;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -16,7 +16,7 @@ import 'package:naked_ui/naked_ui.dart';
 
 import '../../skin/forms/forms.dart';
 import '../../bridge/motolii.dart' show Motolii, mediaSecondsOf;
-import '../../widgets/controls.dart' show Chip, ChipLook;
+import '../../widgets/controls.dart' show Chip, ChipLook, IconPress;
 import '../../widgets/two_fingers.dart';
 import '../commands/command_actions.dart' show wsTimelineAsk, wsAskRename, wsAskTimeline, wsMarkPicked;
 import '../../widgets/timeline_painters.dart' show TpGlyph, TpGlyphPainter;
@@ -151,10 +151,6 @@ class _WsTimelineState extends State<WsTimeline> with SingleTickerProviderStateM
     final v = _view, x = v.x(f);
     if (x >= 0 && x <= _trackW - WtM.padR) return;
     setState(() => _scroll = _clampScroll(f - _visible * .1));
-  }
-
-  void _wheel(PointerSignalEvent e) {
-    if (e is PointerScrollEvent) _scrollBy(e.scrollDelta);
   }
 
   /// A trackpad's two fingers: they carry the tracks as a wheel does, the other way (the content goes with the fingers);

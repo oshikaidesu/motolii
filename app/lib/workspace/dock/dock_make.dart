@@ -10,11 +10,13 @@ import 'package:flutter/widgets.dart';
 import 'package:material_color_utilities/material_color_utilities.dart';
 
 import '../../bridge/motolii.dart' show motoliiShelves;
+import '../../inspector/controls/inspector_param_controls.dart' show DicePaint;
 import '../../inspector/inspector_parts.dart' show Pop;
 import '../../widgets/text_gestures.dart' show TextGestures, wordsPicked;
-import '../../widgets/media.dart' show MiniSlider;
+import '../../widgets/media.dart' show MiniSlider, glyph;
 import '../../skin/tokens.dart';
 import 'dock_glyphs.dart';
+import '../window/settings_file.dart' show fileJson, fileKeep;
 import 'dock_widgets.dart';
 import '../../skin/theme.dart' show ColorTheme;
 import 'dock_color_wheel.dart';
@@ -123,17 +125,6 @@ void _fill(DockCtx c, String word) {
   ); // (without waiting)
 }
 
-/// The colours of the things, each by the thing's name: what the document's things are filled with (a ramp by its first).
-Map<String, Color> usedColors(Ws ws) {
-  final m = ws.inside;
-  if (m == null) return const {};
-  return {
-    for (final l in ws.layers)
-      if (m.word(int.parse(l.id), 'fill').split(' ').first.split('@').first case final f when f.length == 6)
-        if (int.tryParse(f, radix: 16) case final v?) l.name: Color(0xFF000000 | v),
-  };
-}
-
 /// The palette whose details the shelf's foot tells: the one the hand is on, else the one last pressed.
 final _named = ValueNotifier<String?>(null);
 String? _pressed;
@@ -178,7 +169,7 @@ class ColorsShelf extends StatelessWidget {
         // (a hand on the wheel: it keeps the hue the hand gave, which a grey written as hex would lose)
       } else if (gradient) {
         _wheel = HSVColor.fromColor(stops[_stop].$1.withValues(alpha: 1));
-      } else if (_colorOf(word.split(' ').first.split('@').first) case final col?) {
+      } else if (colorOfHex(word.split(' ').first.split('@').first) case final col?) {
         _wheel = HSVColor.fromColor(col);
       }
     }
@@ -436,7 +427,7 @@ class ColorsShelf extends StatelessWidget {
                       },
               ),
               SizedBox(width: Shape.s(6)),
-              _Dice(() => c.set(() => _dice++)),
+              _colourDice(() => c.set(() => _dice++)),
             ],
           ),
         ],

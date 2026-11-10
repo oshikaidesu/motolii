@@ -4,7 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Badge;
+import 'package:motolii/widgets/controls.dart' show Badge, Hov;
 
 /// A card: a heading and its rows, folded by its title.
 class Sect extends StatelessWidget {

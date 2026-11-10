@@ -82,7 +82,7 @@ class _Header extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      WtKindChip(layer.kind, tone: layer.tone),
+                      wtKindChip(layer.kind, tone: layer.tone),
                       SizedBox(width: Shape.s(6)),
                       Flexible(
                         child: FittedBox(
@@ -240,30 +240,21 @@ class _Btn extends StatelessWidget {
   final Color? rest;
   final String? label;
   @override
-  Widget build(BuildContext context) => NakedButton(
-    onPressed: onTap,
-    enableFeedback: false,
-    builder: (context, st, _) {
-      final h = st.isHovered, d = st.isPressed;
-      final bg = on
-          ? WsT.accent
-          : (d || lit ? Grey.g26 : (h ? WsT.raised : const Color(0x00000000))); // (flat at rest: a button shows itself when the hand is on it)
-      final ink = on ? WsT.onAccent : (h || lit ? Grey.g100 : (rest ?? Grey.g56));
-      return AnimatedContainer(
-        duration: Mo.dur,
-        curve: Mo.ease,
-        width: width ?? size,
-        height: size,
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CustomPaint(size: const Size.square(11), painter: TpGlyphPainter(g, ink)),
-            if (label case final l?) ...[SizedBox(width: Shape.s(4)), Text(l, style: T.micro(ink).copyWith(fontWeight: FontWeight.w700))],
-          ],
-        ),
-      );
-    },
+  Widget build(BuildContext context) => IconPress(
+    (ink) => Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        CustomPaint(size: const Size.square(11), painter: TpGlyphPainter(g, ink)),
+        if (label case final l?) ...[SizedBox(width: Shape.s(4)), Text(l, style: T.micro(ink).copyWith(fontWeight: FontWeight.w700))],
+      ],
+    ),
+    onTap: onTap,
+    on: on,
+    lit: lit,
+    size: size,
+    width: width,
+    rest: const Color(0x00000000), // (flat at rest: a button shows itself when the hand is on it)
+    ink: rest ?? Grey.g56,
   );
 }
 

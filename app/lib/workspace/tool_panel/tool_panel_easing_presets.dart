@@ -3,11 +3,11 @@
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/inspector_parts.dart' show Hov;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_numbers.dart' show easeIsUsual;
 import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/widgets/controls.dart' show Hov;
 
 class EasingPresetTile extends StatelessWidget {
   const EasingPresetTile(this.ease, {super.key, required this.on, required this.onTap, required this.side, this.carried = true});

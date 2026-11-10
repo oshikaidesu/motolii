@@ -218,38 +218,6 @@ void _keepNow(DockCtx c) {
   _keepMine();
 }
 
-/// The dice: a die's face of five; pressed, the boxes are thrown again.
-class _Dice extends StatelessWidget {
-  const _Dice(this.onTap);
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) => DockHover(
-    key: const ValueKey('colour-dice'),
-    onTap: onTap,
-    builder: (context, h) => Container(
-      width: Shape.z(22),
-      height: Shape.z(22),
-      decoration: BoxDecoration(color: h ? WsT.raised : WsT.well, borderRadius: BorderRadius.all(Shape.r(5))),
-      child: CustomPaint(painter: _DiePaint(h ? Grey.g95 : Grey.g76)),
-    ),
-  );
-}
-
-class _DiePaint extends CustomPainter {
-  const _DiePaint(this.ink);
-  final Color ink;
-  @override
-  void paint(Canvas c, Size s) {
-    final p = Paint()..color = ink, d = s.width / 4.5;
-    for (final o in const [Offset(-1, -1), Offset(1, -1), Offset(0, 0), Offset(-1, 1), Offset(1, 1)]) {
-      c.drawCircle(s.center(Offset.zero) + o * d, s.width / 14, p);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DiePaint o) => o.ink != ink;
-}
-
 /// A gradient's colours and where each stands, as the document says its fill ("ff3366@0.35 ..."; one with no @ stands
 /// evenly), and back.
 List<(Color, double)> _stopsIn(String word) {
@@ -257,12 +225,9 @@ List<(Color, double)> _stopsIn(String word) {
   if (parts.length < 2) return const [];
   final out = <(Color, double)>[];
   for (final (i, w) in parts.indexed) {
-    final hex = w.split('@').first, v = int.tryParse(hex, radix: 16);
-    if (v == null || (hex.length != 6 && hex.length != 8)) return const [];
-    out.add((
-      hex.length == 8 ? Color(((v & 0xFF) << 24) | (v >> 8)) : Color(0xFF000000 | v),
-      w.contains('@') ? (double.tryParse(w.split('@').last) ?? 0).clamp(0.0, 1.0) : i / (parts.length - 1),
-    ));
+    final col = colorOfHex(w.split('@').first);
+    if (col == null) return const [];
+    out.add((col, w.contains('@') ? (double.tryParse(w.split('@').last) ?? 0).clamp(0.0, 1.0) : i / (parts.length - 1)));
   }
   return out;
 }
@@ -417,3 +382,13 @@ class _Grad extends StatelessWidget {
     );
   }
 }
+
+/// The colours' die: a face of five; pressed, the boxes are thrown again.
+Widget _colourDice(VoidCallback onTap) => IconPress(
+  (k) => glyph(Shape.z(22), DicePaint(k, 5, filled: false).paint, k),
+  key: const ValueKey('colour-dice'),
+  onTap: onTap,
+  size: Shape.z(22),
+  rest: WsT.well,
+  ink: Grey.g76,
+);

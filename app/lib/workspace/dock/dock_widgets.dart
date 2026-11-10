@@ -12,12 +12,14 @@ import '../../skin/forms/forms.dart';
 import '../../inspector/inspector_parts.dart' show Pop;
 import '../../widgets/media.dart' show drawStar, glyph;
 import '../../skin/tokens.dart';
-import '../../widgets/controls.dart' show Badge;
+import '../../widgets/controls.dart' show Badge, Hov;
 export '../../widgets/controls.dart' show Badge, Chip, IconPress; // (the shared small parts the shelves use, with the dock's own)
 import 'dock_glyphs.dart';
+import '../window/settings_file.dart' show fileKeep, fileList;
 import '../state/state.dart';
 import '../../widgets/text_gestures.dart';
 
+part 'dock_folder_row.dart';
 part 'dock_search.dart';
 part 'dock_stars.dart';
 
@@ -225,16 +227,6 @@ class _DockHoverState extends State<DockHover> {
 Color dockFill(bool sel, bool hover, [Color? rest]) => sel ? WsT.accent : (hover ? WsT.card : rest ?? WsT.body);
 Color dockInk(bool sel, [Color? rest]) => sel ? WsT.onAccent : rest ?? Grey.g91;
 
-/// A row of round filter chips with counts; the active one is the accent. Scrolls sideways when the shelf is narrow.
-class DockChips extends StatelessWidget {
-  const DockChips(this.chips, {super.key, required this.active, required this.onPick});
-  final List<(String, int?)> chips;
-  final String active;
-  final ValueChanged<String> onPick;
-  @override
-  Widget build(BuildContext context) => Forms.worn.chips(context, ChipsSpec(chips: chips, active: active, onPick: onPick));
-}
-
 /// A section head inside a shelf body: a flat hue block, the name in caps, a count; optional fold chevron.
 class DockSection extends StatelessWidget {
   const DockSection(this.title, {super.key, this.count, this.hue, this.folded, this.onTap, this.trailing});
@@ -287,28 +279,6 @@ class DockSection extends StatelessWidget {
         ],
       ),
     ),
-  );
-}
-
-/// A small round tag: hue fill with dark ink (pop), or a quiet well with grey ink.
-class DockTag extends StatelessWidget {
-  const DockTag(this.text, {super.key, this.hue, this.edge = false});
-  final String text;
-  final Color? hue;
-
-  /// A dark keyline, for tags laid on artwork whose colour is unknown.
-  final bool edge;
-  @override
-  Widget build(BuildContext context) => Container(
-    height: edge ? 16 : 14,
-    padding: EdgeInsets.symmetric(horizontal: Shape.s(4)),
-    alignment: Alignment.center,
-    decoration: BoxDecoration(
-      color: hue ?? WsT.raised,
-      borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius)),
-      border: edge ? Border.all(color: WsT.onAccent, width: 1.5) : null,
-    ),
-    child: Text(text, style: T.micro(hue == null ? Grey.g76 : WsT.onAccent).copyWith(fontWeight: FontWeight.w700, letterSpacing: .4, height: 1)),
   );
 }
 

@@ -7,10 +7,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import '../../inspector/inspector_small.dart' show FloatShut, Hov;
+import '../../inspector/inspector_small.dart' show FloatShut;
 import '../../skin/tokens.dart';
 import 'keymap.dart' show CommandIntent;
 import '../state/state.dart';
+import '../../widgets/controls.dart' show Hov;
 
 /// A thing's own menu by a right click, on its bar, its row or the stage (Ableton Live's clip context menu: Rename,
 /// Duplicate, Split, Deactivate, Delete; Figma's right click on a layer or a thing: mouse_map.md, 7), each the window's
@@ -31,13 +32,14 @@ List<WsMenuItem> wsThingMenu(BuildContext context, Ws ws, WsLayer l) {
 /// One row: [go] null, it cannot be done now and [why] says why; [keys] what it is pressed with too (never the only way).
 /// A rule between groups: [WsMenuItem.rule].
 class WsMenuItem {
-  const WsMenuItem(this.label, this.go, {this.keys = '', this.why = ''}) : colors = const [], picked = -1, pick = null;
-  const WsMenuItem.rule() : label = '', go = null, keys = '', why = '', colors = const [], picked = -1, pick = null;
+  const WsMenuItem(this.label, this.go, {this.keys = '', this.why = '', this.id}) : colors = const [], picked = -1, pick = null;
+  const WsMenuItem.rule() : label = '', go = null, keys = '', why = '', id = null, colors = const [], picked = -1, pick = null;
 
   /// Colours to pick one of, as Ableton Live's context menus end in the clip's or the track's colours: [picked] the one
   /// it has (-1: none), [pick] told the number of the one pressed.
-  const WsMenuItem.colors(this.colors, this.picked, this.pick) : label = '', go = null, keys = '', why = '';
+  const WsMenuItem.colors(this.colors, this.picked, this.pick) : label = '', go = null, keys = '', why = '', id = null;
   final String label, keys, why;
+  final String? id; // (the row's key, where it is not ws-menu- and its label)
   final VoidCallback? go;
   final List<Color> colors;
   final int picked;
@@ -51,19 +53,17 @@ class WsMenu extends StatefulWidget {
   State<WsMenu> createState() => WsMenuState();
 }
 
-class WsMenuState extends State<WsMenu> {
-  final _m = MenuController();
-  List<WsMenuItem> _items = const [];
+/// The floating panel of [items] ([width] wide, scrolling within [max]): every pick runs, then [close]. The window's
+/// context menu and the small ⋮ and right-click lists of the inspector are this one.
+class WsMenuList extends StatelessWidget {
+  const WsMenuList({super.key, required this.items, required this.close, required this.max, required this.width});
+  final List<WsMenuItem> items;
+  final VoidCallback close;
+  final double max, width;
 
-  /// Opens at [at], a place of the child, with [items].
-  void show(Offset at, List<WsMenuItem> items) {
-    setState(() => _items = items);
-    _m.open(position: at);
-  }
-
-  double get _row => Shape.z(22);
-  double get _swatch => Shape.z(20);
-  double _high(WsMenuItem it) => it.colors.isNotEmpty
+  static double get _row => Shape.z(22);
+  static double get _swatch => Shape.z(20);
+  static double high(WsMenuItem it) => it.colors.isNotEmpty
       ? (it.colors.length / 8).ceil() * (_swatch + Shape.s(4)) + Shape.s(4)
       : it.label.isEmpty
       ? Shape.s(8) + 1
@@ -82,7 +82,7 @@ class WsMenuState extends State<WsMenu> {
                   key: ValueKey('ws-menu-colour-$k'),
                   cursor: SystemMouseCursors.click,
                   onTap: () {
-                    _m.close();
+                    close();
                     it.pick?.call(k);
                   },
                   builder: (_, h) => Container(
@@ -104,12 +104,12 @@ class WsMenuState extends State<WsMenu> {
           child: SizedBox(height: 1, child: ColoredBox(color: Grey.g20)),
         )
       : Hov(
-          key: ValueKey('ws-menu-${it.label}'),
+          key: ValueKey(it.id ?? 'ws-menu-${it.label}'),
           cursor: it.go != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
           onTap: it.go == null
               ? null
               : () {
-                  _m.close();
+                  close();
                   it.go!();
                 },
           builder: (_, h) => Container(
@@ -131,11 +131,42 @@ class WsMenuState extends State<WsMenu> {
         );
 
   @override
+  Widget build(BuildContext context) => Container(
+    key: const ValueKey('ws-menu'),
+    width: width,
+    padding: EdgeInsets.all(Shape.s(4)),
+    decoration: BoxDecoration(
+      color: Grey.g13,
+      borderRadius: BorderRadius.all(Shape.r(6)),
+      border: Border.all(color: Grey.g26),
+      boxShadow: [BoxShadow(color: const Color(0x80000000), blurRadius: 24, offset: const Offset(0, 8))],
+    ),
+    child: ConstrainedBox(
+      // (a long one, as many palettes as are kept, scrolls within half the window)
+      constraints: BoxConstraints(maxHeight: max),
+      child: SingleChildScrollView(
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [for (final it in items) _one(it)]),
+      ),
+    ),
+  );
+}
+
+class WsMenuState extends State<WsMenu> {
+  final _m = MenuController();
+  List<WsMenuItem> _items = const [];
+
+  /// Opens at [at], a place of the child, with [items].
+  void show(Offset at, List<WsMenuItem> items) {
+    setState(() => _items = items);
+    _m.open(position: at);
+  }
+
+  @override
   Widget build(BuildContext context) => RawMenuAnchor(
     controller: _m,
     overlayBuilder: (context, info) {
       final w = Shape.z(220), pad = Shape.s(4);
-      final h = math.min(info.overlaySize.height * .5, [for (final it in _items) _high(it)].fold(0.0, (a, b) => a + b)) + pad * 2;
+      final h = math.min(info.overlaySize.height * .5, [for (final it in _items) WsMenuList.high(it)].fold(0.0, (a, b) => a + b)) + pad * 2;
       final at = info.anchorRect.topLeft + (info.position ?? Offset.zero);
       return Positioned(
         left: math.max(0.0, math.min(at.dx, info.overlaySize.width - w)),
@@ -144,24 +175,7 @@ class WsMenuState extends State<WsMenu> {
           // (the anchor shuts it on a left press outside and no more: every press, and Esc, as all that floats)
           group: info.tapRegionGroupId,
           shut: _m.close,
-          child: Container(
-            key: const ValueKey('ws-menu'),
-            width: w,
-            padding: EdgeInsets.all(pad),
-            decoration: BoxDecoration(
-              color: Grey.g13,
-              borderRadius: BorderRadius.all(Shape.r(6)),
-              border: Border.all(color: Grey.g26),
-              boxShadow: [BoxShadow(color: const Color(0x80000000), blurRadius: 24, offset: const Offset(0, 8))],
-            ),
-            child: ConstrainedBox(
-              // (a long one, as many palettes as are kept, scrolls within half the window)
-              constraints: BoxConstraints(maxHeight: info.overlaySize.height * .5),
-              child: SingleChildScrollView(
-                child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [for (final it in _items) _one(it)]),
-              ),
-            ),
-          ),
+          child: WsMenuList(items: _items, close: _m.close, max: info.overlaySize.height * .5, width: w),
         ),
       );
     },

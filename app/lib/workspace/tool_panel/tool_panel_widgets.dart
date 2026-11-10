@@ -171,13 +171,19 @@ class _ToolScrubState extends State<ToolScrub> {
 
 /// The strip over a tool's body: what it works on at the left (cut off, never wrapped, when narrow), actions at the right.
 class ToolStrip extends StatelessWidget {
-  const ToolStrip({super.key, required this.left, this.right = const []});
+  const ToolStrip({super.key, required this.left, this.right = const [], this.height, this.color, this.line = false, this.gap});
   final List<Widget> left, right;
+  final double? height, gap;
+  final Color? color;
+  final bool line;
   @override
   Widget build(BuildContext context) => Container(
-    height: Shape.z(26),
-    color: WsT.card,
+    height: height ?? Shape.z(26),
     padding: EdgeInsets.symmetric(horizontal: WsT.inset),
+    decoration: BoxDecoration(
+      color: color ?? WsT.card,
+      border: line ? Border(top: BorderSide(color: WsT.line)) : null,
+    ),
     child: Row(
       children: [
         Expanded(
@@ -187,7 +193,7 @@ class ToolStrip extends StatelessWidget {
             child: Row(children: left),
           ),
         ),
-        if (right.isNotEmpty) SizedBox(width: WsT.gap),
+        if (right.isNotEmpty) SizedBox(width: gap ?? WsT.gap),
         ...right,
       ],
     ),
@@ -222,10 +228,18 @@ class ToolReadout extends StatelessWidget {
 
 /// Draws a line of text in a painter, anchored by [ax] / [ay] (0 left/top, 1 right/bottom).
 void toolText(Canvas c, String s, Offset at, TextStyle st, {double ax = 0, double ay = 0}) {
-  final tp = TextPainter(
-    text: TextSpan(text: s, style: st),
-    textDirection: TextDirection.ltr,
-  )..layout();
+  final tp = lineText(s, st);
   tp.paint(c, at - Offset(tp.width * ax, tp.height * ay));
   tp.dispose();
+}
+
+/// A straight dashed line from [p] to [q]: [on] long, [off] apart.
+void dashed(Canvas c, Offset p, Offset q, Color ink, double wide, double on, double off) {
+  final line = Paint()
+        ..color = ink
+        ..strokeWidth = wide,
+      far = (q - p).distance;
+  for (var d = 0.0; d < far; d += on + off) {
+    c.drawLine(Offset.lerp(p, q, d / far)!, Offset.lerp(p, q, ((d + on) / far).clamp(0.0, 1.0))!, line);
+  }
 }

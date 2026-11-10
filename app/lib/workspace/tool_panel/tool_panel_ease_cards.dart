@@ -9,11 +9,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii.dart';
-import 'package:motolii/inspector/inspector_parts.dart' show Hov;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_easing_presets.dart';
 import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/widgets/controls.dart' show Hov;
 
 const _over = '×', _space = '~', _turned = 'Reverse:'; // (a way defined in a document is one word)
 const _all = -1; // (what the tile at the foot of the flow carries: all the cards, EaseShapes.onKeep)

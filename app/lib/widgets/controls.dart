@@ -2,19 +2,29 @@
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
-import '../inspector/inspector_small.dart' show Hov;
 import '../skin/tokens.dart';
 import '../workspace/state/state.dart' show WsT;
+
+/// The one press of the window: a hand over it ([builder] is told so) and a press ([onTap]), as naked_ui's button gives them.
+class Hov extends StatelessWidget {
+  const Hov({super.key, required this.builder, this.cursor = SystemMouseCursors.click, this.onTap});
+  final Widget Function(BuildContext, bool) builder;
+  final MouseCursor cursor;
+  final VoidCallback? onTap;
+  @override
+  Widget build(BuildContext context) =>
+      NakedButton(onPressed: onTap, mouseCursor: cursor, enableFeedback: false, builder: (context, st, _) => builder(context, st.isHovered));
+}
 
 /// A small square press holding one glyph; [glyph] is given the ink for the moment (resting, hovered, on). The default look is the dock's
 /// header button: raised when on, a step up on hover, no fill at rest, 20 wide, faded. Given [rest] and [ink] it is the tool panel's and the
 /// stage's tile: accent when on, [rest] fill and [ink] at rest, WsT.radius corners, no margin, no fade.
 class IconPress extends StatelessWidget {
-  const IconPress(this.glyph, {super.key, this.onTap, this.on = false, this.size, this.rest, this.ink});
+  const IconPress(this.glyph, {super.key, this.onTap, this.on = false, this.lit = false, this.size, this.width, this.rest, this.ink});
   final Widget Function(Color ink) glyph;
   final VoidCallback? onTap;
-  final bool on;
-  final double? size; // (none: 20, scaled)
+  final bool on, lit; // (lit, tile only: held raised in grey, not the accent)
+  final double? size, width; // (size none: 20, scaled; width none: the size)
   final Color? rest, ink;
 
   @override
@@ -26,15 +36,15 @@ class IconPress extends StatelessWidget {
       builder: (context, h) => AnimatedContainer(
         duration: tile ? Duration.zero : Mo.dur,
         curve: Mo.ease,
-        width: size ?? Shape.z(20),
+        width: width ?? size ?? Shape.z(20),
         height: size ?? Shape.z(20),
         margin: tile ? null : EdgeInsets.only(left: Shape.s(2)),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: tile ? (on ? WsT.accent : (h ? WsT.raised : rest)) : (on ? WsT.raised : (h ? WsT.card : null)),
+          color: tile ? (on ? WsT.accent : (lit ? Grey.g26 : (h ? WsT.raised : rest))) : (on ? WsT.raised : (h ? WsT.card : null)),
           borderRadius: BorderRadius.all(Shape.r(tile ? WsT.radius : WsT.chipRadius)),
         ),
-        child: glyph(tile ? (on ? WsT.onAccent : (h ? Grey.g95 : ink!)) : (on || h ? Grey.g95 : Grey.g63)),
+        child: glyph(tile ? (on ? WsT.onAccent : (h || lit ? Grey.g95 : ink!)) : (on || h ? Grey.g95 : Grey.g63)),
       ),
     );
   }
@@ -43,10 +53,7 @@ class IconPress extends StatelessWidget {
 /// A small filled tile holding one mark: how a thing says what it is before its name is read. The dock's is a square (chip radius)
 /// with a glyph; [radius] rounds it otherwise (a circle: half of [size]); given [onTap] it is a press.
 class Badge extends StatelessWidget {
-  const Badge(this.color, {super.key, this.child, this.mark, this.size = 20, this.radius})
-    : onTap = null,
-      _round = false,
-      assert((child == null) != (mark == null));
+  const Badge(this.color, {super.key, this.child, this.mark, this.size = 20, this.radius}) : onTap = null, _round = false;
 
   /// The stage's: a circle, 18 across, the arrow kept over it.
   const Badge.round(this.color, {super.key, required CustomPainter this.mark, this.onTap}) : child = null, size = 18, radius = null, _round = true;
@@ -90,6 +97,7 @@ class ChipLook {
     this.hoverInk,
     this.onInk,
     this.edge,
+    this.edgeWidth = 1,
     this.margin,
     this.cursor,
     this.press = true,
@@ -98,9 +106,9 @@ class ChipLook {
   final Color? fill, hoverFill, onFill, hoverInk, onInk;
   final TextStyle Function(Color ink) text;
   final double? height;
-  final double padX, padY, radius;
+  final double padX, padY, radius, edgeWidth;
   final bool center, press;
-  final Color? edge; // (a 1px ring all round, while not on)
+  final Color? edge; // (a ring all round, [edgeWidth] wide, while not on)
   final EdgeInsets? margin;
   final MouseCursor? cursor; // (none: a hand when it can be pressed)
 
@@ -136,6 +144,35 @@ class ChipLook {
     ink: WsT.onAccent,
     press: false,
     text: (c) => T.micro(c).copyWith(fontWeight: FontWeight.w700),
+  );
+
+  /// The dock's tag: [hue] with dark ink, or (none) a quiet raised one in grey; [edge] rings it dark, for tags laid on artwork of unknown colour.
+  static ChipLook tag(Color? hue, {bool edge = false}) => ChipLook(
+    height: edge ? 16 : 14,
+    padX: 4,
+    radius: WsT.chipRadius,
+    center: true,
+    fill: hue ?? WsT.raised,
+    ink: hue == null ? Grey.g76 : WsT.onAccent,
+    edge: edge ? WsT.onAccent : null,
+    edgeWidth: 1.5,
+    press: false,
+    text: (c) => T.micro(c).copyWith(fontWeight: FontWeight.w700, letterSpacing: .4, height: 1),
+  );
+
+  /// A bare grey word that lights under the hand (Copy, Paste, Reset): no fill, no padding.
+  static ChipLook get word => ChipLook(padX: 0, ink: Grey.g56, hoverInk: Grey.g95, text: (c) => T.label(c));
+
+  /// A word on the panel's ground, not a press (the bar over the stage lies over a dark or light surround).
+  static ChipLook get said => ChipLook(
+    padX: 8,
+    padY: 5,
+    radius: 12,
+    fill: WsT.body,
+    ink: Grey.g91,
+    margin: EdgeInsets.only(right: Shape.s(6)),
+    press: false,
+    text: (c) => T.label(c),
   );
 
   /// What things picked together may do together: the accent pill, outlined (not [Chip.on]) when it is only a relation a thing is in.
@@ -177,7 +214,7 @@ class Chip extends StatelessWidget {
         alignment: l.center ? Alignment.center : null,
         decoration: BoxDecoration(
           color: on ? l.onFill ?? l.fill : (lit ? l.hoverFill ?? l.fill : l.fill),
-          border: l.edge != null && !on ? Border.all(color: l.edge!) : null,
+          border: l.edge != null && !on ? Border.all(color: l.edge!, width: l.edgeWidth) : null,
           borderRadius: BorderRadius.all(Shape.r(l.radius)),
         ),
         child: Row(

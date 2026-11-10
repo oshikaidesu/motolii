@@ -2,9 +2,8 @@
 // the selection moves or you unpin it).
 import 'package:flutter/widgets.dart';
 
-import '../../widgets/controls.dart' show Chip, IconPress;
+import '../../widgets/controls.dart' show Chip, Hov, IconPress;
 
-import '../../inspector/inspector_parts.dart' show Hov;
 import '../../skin/tokens.dart';
 import '../dock/dock_glyphs.dart';
 import '../window/panes.dart';

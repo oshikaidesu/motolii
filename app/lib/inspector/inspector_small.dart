@@ -1,7 +1,5 @@
 import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
-import 'package:motolii/skin/forms/forms.dart';
-import 'package:naked_ui/naked_ui.dart';
 
 import '../skin/tokens.dart';
 import 'inspector_parts.dart';
@@ -53,16 +51,6 @@ class _FloatShutState extends State<FloatShut> {
   );
 }
 
-class Hov extends StatelessWidget {
-  const Hov({super.key, required this.builder, this.cursor = SystemMouseCursors.click, this.onTap});
-  final Widget Function(BuildContext, bool) builder;
-  final MouseCursor cursor;
-  final VoidCallback? onTap;
-  @override
-  Widget build(BuildContext context) =>
-      NakedButton(onPressed: onTap, mouseCursor: cursor, enableFeedback: false, builder: (context, st, _) => builder(context, st.isHovered));
-}
-
 String fmt(double v, int dec, {bool tight = false}) {
   var d = tight ? 0 : dec;
   var s = v.toStringAsFixed(d);
@@ -71,15 +59,6 @@ String fmt(double v, int dec, {bool tight = false}) {
     s = v.toStringAsFixed(d);
   }
   return s == '-0' ? '0' : s;
-}
-
-/// The word-and-switch for On/Off (G2): the state is a word, never colour alone.
-class OnOff extends StatelessWidget {
-  const OnOff({super.key, required this.on, required this.onChanged});
-  final bool on;
-  final ValueChanged<bool> onChanged;
-  @override
-  Widget build(BuildContext context) => Forms.worn.onOff(context, SwitchSpec(on: on, onChanged: onChanged)); // (as the skin's forms draw it)
 }
 
 /// The 28x16 on/off track.

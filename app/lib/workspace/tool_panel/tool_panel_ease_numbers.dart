@@ -5,10 +5,9 @@
 // goes, not in a menu Alight Motion's way (the maker, 10/31: a number written turned it on unseen, and the curve went out of
 // reach): off, Y stops at 0 and 1.
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/inspector_parts.dart' show Hov;
 import 'package:motolii/inspector/rows/inspector_rows.dart' show FoldMark;
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Chip;
+import 'package:motolii/widgets/controls.dart' show Chip, Hov;
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';

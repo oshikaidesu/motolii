@@ -3,7 +3,6 @@
 // a follow's threads). Front or top, or turned by a drag; a tap picks a thing or a relation, the inspector beside it.
 import 'dart:math' as math;
 
-import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/widgets.dart';
 
 import '../../skin/tokens.dart';
@@ -135,39 +134,35 @@ class _RelationsToolState extends State<RelationsTool> {
               child: LayoutBuilder(
                 builder: (context, box) {
                   final view = _View(world, box.biggest, _yaw, _pitch, paths: _pathsOf(ws), zoom: _zoom);
-                  return Listener(
-                    onPointerSignal: (e) {
-                      if (e is PointerScrollEvent) setState(() => _zoom = (_zoom * math.exp(-e.scrollDelta.dy / 300)).clamp(.3, 8.0));
-                    },
-                    // (a trackpad's two fingers turn the view, as Blender's do: the drag below takes them; a pinch comes nearer)
-                    child: WsTwoFingers(
-                      onPinch: (by, _) => setState(() => _zoom = (_zoom * by).clamp(.3, 8.0)),
-                      child: GestureDetector(
-                        key: const ValueKey('ws-relations-map'),
-                        behavior: HitTestBehavior.opaque,
-                        onPanUpdate: (d) => setState(() {
-                          _yaw += d.delta.dx * .01;
-                          _pitch = (_pitch - d.delta.dy * .01).clamp(-math.pi / 2, math.pi / 2);
-                        }),
-                        onTapUp: (d) {
-                          if (view.axisAt(d.localPosition) case final a?) {
-                            // (an axis of the gizmo: seen from that side, as Blender's)
-                            final (yaw, pitch) = switch (a) {
-                              'x' => (-math.pi / 2, 0.0),
-                              'y' => (0.0, -math.pi / 2),
-                              _ => (0.0, 0.0),
-                            };
-                            return setState(() {
-                              _yaw = yaw;
-                              _pitch = pitch;
-                            });
-                          }
-                          if (view.hit(d.localPosition) case final id?) ws.select(id);
-                        },
-                        child: CustomPaint(
-                          size: box.biggest,
-                          painter: _Map(view, ws.selected, {if (_pathsOf(ws)[ws.selected] case final w?) ws.selected!: w}, _stationsOf(ws)),
-                        ),
+                  // (a trackpad's two fingers turn the view, as Blender's do: the drag below takes them; a pinch comes nearer)
+                  return WsTwoFingers(
+                    onWheel: (d) => setState(() => _zoom = (_zoom * math.exp(-d.dy / 300)).clamp(.3, 8.0)),
+                    onPinch: (by, _) => setState(() => _zoom = (_zoom * by).clamp(.3, 8.0)),
+                    child: GestureDetector(
+                      key: const ValueKey('ws-relations-map'),
+                      behavior: HitTestBehavior.opaque,
+                      onPanUpdate: (d) => setState(() {
+                        _yaw += d.delta.dx * .01;
+                        _pitch = (_pitch - d.delta.dy * .01).clamp(-math.pi / 2, math.pi / 2);
+                      }),
+                      onTapUp: (d) {
+                        if (view.axisAt(d.localPosition) case final a?) {
+                          // (an axis of the gizmo: seen from that side, as Blender's)
+                          final (yaw, pitch) = switch (a) {
+                            'x' => (-math.pi / 2, 0.0),
+                            'y' => (0.0, -math.pi / 2),
+                            _ => (0.0, 0.0),
+                          };
+                          return setState(() {
+                            _yaw = yaw;
+                            _pitch = pitch;
+                          });
+                        }
+                        if (view.hit(d.localPosition) case final id?) ws.select(id);
+                      },
+                      child: CustomPaint(
+                        size: box.biggest,
+                        painter: _Map(view, ws.selected, {if (_pathsOf(ws)[ws.selected] case final w?) ws.selected!: w}, _stationsOf(ws)),
                       ),
                     ),
                   );
@@ -452,15 +447,7 @@ class _Map extends CustomPainter {
     }
     for (final e in v.axisEnds.entries) {
       c.drawCircle(e.value, 7, Paint()..color = hue[e.key]!);
-      final t = TextPainter(
-        text: TextSpan(
-          text: e.key.toUpperCase(),
-          style: T.micro(const Color(0xFF111111)).copyWith(fontWeight: FontWeight.w700),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      t.paint(c, e.value - Offset(t.width / 2, t.height / 2));
-      t.dispose();
+      toolText(c, e.key.toUpperCase(), e.value, T.micro(const Color(0xFF111111)).copyWith(fontWeight: FontWeight.w700), ax: .5, ay: .5);
     }
   }
 

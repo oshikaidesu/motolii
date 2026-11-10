@@ -1,5 +1,5 @@
 // Inspector parts. What the Inspector must DO comes from research/intents/inspector.md.
-// How it LOOKS is the lab's (DESIGN.md): hairlines, type carries hierarchy, grey levels, accent only C.mode. The old Motolii is not a source.
+// How it LOOKS is the lab's (DESIGN.md): hairlines, type carries hierarchy, grey levels, accent only Role.selected. The old Motolii is not a source.
 
 import 'package:flutter/widgets.dart';
 

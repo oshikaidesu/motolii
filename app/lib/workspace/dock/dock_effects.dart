@@ -8,6 +8,8 @@ import 'package:flutter/widgets.dart';
 
 import '../../bridge/motolii.dart' show Motolii;
 import '../../skin/tokens.dart';
+import '../../widgets/controls.dart' show Chip, ChipLook;
+import '../../widgets/media.dart' show Draw;
 import 'dock_effect_places.dart';
 import 'dock_glyphs.dart';
 import 'dock_map.dart';
@@ -96,12 +98,17 @@ class _EffectsShelfState extends State<EffectsShelf> {
     //  the pointer)
     List<Widget> Function(bool) marks(String id, bool small, {String? on, String? same}) =>
         (h) => [
-          if (on != null && !small) Positioned(left: 3, top: 3, child: DockTag(on, hue: WsT.accent, edge: true)),
+          if (on != null && !small)
+            Positioned(
+              left: 3,
+              top: 3,
+              child: Chip(label: on, look: ChipLook.tag(WsT.accent, edge: true)),
+            ),
           if (same != null && !small)
             Positioned(
               left: 3,
               bottom: 3,
-              child: DockTag(same, hue: Grey.g63, edge: true),
+              child: Chip(label: same, look: ChipLook.tag(Grey.g63, edge: true)),
             ), // (the sample as it is: what it lacks there, or that the inside does not draw it yet)
           if (!small && (c.starred(id) || h))
             Positioned(
@@ -141,7 +148,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
           look,
           key: small || thing ? null : ValueKey(screened ? 'ws-screen-$id' : 'ws-look-$name'),
           small: small,
-          art: thing && i.picture.isEmpty ? _painted(_FxLook(name)) : null, // (without a picture, its small drawing)
+          art: thing && i.picture.isEmpty ? _painted(Draw((c, _) => _fxLook(c, name), name)) : null, // (without a picture, its small drawing)
           picked: c.sel == id,
           lit: lit,
           onTap: () => c.pick(id),
@@ -299,7 +306,13 @@ class _EffectsShelfState extends State<EffectsShelf> {
                 picked: c.sel == t.id,
                 onTap: () => c.pick(t.id),
                 onMenu: menu,
-                over: (_) => [Positioned(left: 3, bottom: 3, child: DockTag('NOT HERE', hue: Grey.g63, edge: true))],
+                over: (_) => [
+                  Positioned(
+                    left: 3,
+                    bottom: 3,
+                    child: Chip(label: 'NOT HERE', look: ChipLook.tag(Grey.g63, edge: true)),
+                  ),
+                ],
               ),
             ),
     ];
@@ -535,14 +548,12 @@ class _EffectsShelfState extends State<EffectsShelf> {
           if (sel != null && pic(sel.id).isNotEmpty) // (large and moving, as Alight Motion's effect browser opens a large moving sample of the one pressed)
             SizedBox(key: const ValueKey('ws-fx-preview'), height: Shape.z(140), child: TileMoving(pic(sel.id), playing: true)),
           if (sel != null)
-            _FxFooter(
-              sel.name,
-              kind: sel.label,
-              said: sel.said,
-              done: sel.on,
-              ws: ws,
+            DockFooter(
+              title: sel.name,
+              meta: sel.label.isEmpty ? sel.said : '${sel.label} · ${sel.said} · double-click to add', // (one press picks, two put it on)
+              action: sel.on ? 'Remove' : 'Add',
+              fresh: !picked,
               onAction: off(sel) ?? sel.apply,
-              needs: !picked,
               more: Builder(
                 builder: (b) => IconPress(
                   dockMark(DockG.more),
@@ -594,70 +605,34 @@ String _said(Ws ws, String name) {
   return now.isEmpty ? '$v · none on it' : '$v · $now';
 }
 
-/// The foot: the picked effect, what it is for and what it does, and Add (or Remove): one press picks, two put it on.
-class _FxFooter extends StatelessWidget {
-  const _FxFooter(
-    this.name, {
-    required this.kind,
-    required this.said,
-    required this.ws,
-    required this.done,
-    required this.onAction,
-    required this.needs,
-    required this.more,
-  });
-  final String name, kind, said;
-  final Ws ws;
-  final bool done, needs; // (needs: nothing picked, it makes a board)
-  final VoidCallback onAction;
-  final Widget more;
-  @override
-  Widget build(BuildContext context) => DockFooter(
-    title: name,
-    meta: kind.isEmpty ? said : '$kind · $said · double-click to add',
-    action: done ? 'Remove' : 'Add',
-    fresh: needs,
-    onAction: onAction,
-    more: more,
-  );
-}
-
 /// What the inside's path effects do to a square, drawn small, where the shelf has no picture for them: a path half
 /// drawn, a dot moving along one. (An effect the window does not know has no picture.)
-class _FxLook extends CustomPainter {
-  const _FxLook(this.name);
-  final String name;
-  @override
-  void paint(Canvas c, Size s) {
-    const ink = Color(0xFFE0A35A), r = Rect.fromLTWH(4, 3, 10, 10);
-    switch (name) {
-      case 'Trim Paths':
-        c.drawArc(
-          Rect.fromCircle(center: r.center, radius: 5.5),
-          -1.6,
-          3.8,
-          false,
-          Paint()
-            ..color = ink
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.8
-            ..strokeCap = StrokeCap.round,
-        );
-      case 'Move Along Path':
-        c.drawArc(
-          Rect.fromCircle(center: r.center, radius: 5.5),
-          -1.6,
-          3.8,
-          false,
-          Paint()
-            ..color = ink
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1,
-        );
-        c.drawCircle(r.center + const Offset(0, -5.5), 2, Paint()..color = ink);
-    }
+void _fxLook(Canvas c, String name) {
+  const ink = Color(0xFFE0A35A), r = Rect.fromLTWH(4, 3, 10, 10);
+  switch (name) {
+    case 'Trim Paths':
+      c.drawArc(
+        Rect.fromCircle(center: r.center, radius: 5.5),
+        -1.6,
+        3.8,
+        false,
+        Paint()
+          ..color = ink
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.8
+          ..strokeCap = StrokeCap.round,
+      );
+    case 'Move Along Path':
+      c.drawArc(
+        Rect.fromCircle(center: r.center, radius: 5.5),
+        -1.6,
+        3.8,
+        false,
+        Paint()
+          ..color = ink
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1,
+      );
+      c.drawCircle(r.center + const Offset(0, -5.5), 2, Paint()..color = ink);
   }
-
-  @override
-  bool shouldRepaint(_FxLook o) => o.name != name;
 }

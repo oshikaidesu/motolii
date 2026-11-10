@@ -498,7 +498,7 @@ class NumFieldState extends State<NumField> {
             fillColor: fillC,
             borderColor: picked
                 ? Pop.accentInk.withValues(alpha: .7)
-                : (live ? C.mode.withValues(alpha: .8) : (_focus || _editing ? Grey.g63 : const Color(0x00000000))),
+                : (live ? Role.selected.withValues(alpha: .8) : (_focus || _editing ? Grey.g63 : const Color(0x00000000))),
             rangeColor: Grey.g56,
             fill: _bounded && v != null ? t : null,
             zeroAt: _zeroAt,

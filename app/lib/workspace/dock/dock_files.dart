@@ -8,7 +8,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
 import '../../bridge/motolii.dart' show Motolii, mediaInfoOf, mediaSecondsOf;
-import '../../inspector/inspector_parts.dart' show Hov, Pop;
+import '../../inspector/inspector_parts.dart' show Pop;
 import '../../skin/tokens.dart';
 import 'dock_resizable.dart';
 import 'dock_glyphs.dart';
@@ -16,6 +16,7 @@ import 'dock_widgets.dart';
 import 'dock_tags.dart';
 import '../shelf/shelf_tile.dart';
 import '../state/state.dart';
+import '../../widgets/controls.dart' show Chip, ChipLook, Hov;
 part 'dock_files_read.dart';
 part 'dock_files_used.dart';
 part 'dock_files_sheet.dart';

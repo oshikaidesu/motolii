@@ -14,7 +14,7 @@ import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter/painting.dart' show FileImage, ResizeImage;
 
 import '../../bridge/motolii.dart';
-import 'effect_tiles.dart' show EffectTiles;
+import 'effect_tiles.dart' show EffectTiles, ffmpeg;
 
 /// Where a tile goes: [kind] and [key] hashed, in the tiles' cache.
 String tileHome(String kind, String key) {
@@ -25,50 +25,108 @@ String tileHome(String kind, String key) {
   return '${Platform.environment['HOME']}/Library/Caches/Motolii/tiles/${kind}_${(hash & 0x7fffffffffffffff).toRadixString(16)}.png';
 }
 
-/// The tiles of one kind, each asked for once and drawn in another isolate by [draw] (the homes drawn); [seen] says
-/// which pictures of a home to forget when it is drawn.
+/// The tiles of one kind, each asked for once and drawn in another isolate by [draw] (the homes drawn), [batch] a time;
+/// [moving]: their pictures beside the still are let go of too. [progress] says how many are drawn out of how many.
 class TileQueue<T> {
-  TileQueue(this.draw, this.seen);
+  TileQueue(this.draw, {this.moving = false, this.batch = 1 << 30, this.progress});
   final List<String> Function(String dir, List<T> jobs) draw;
-  final Iterable<String> Function(String home) seen;
+  final bool moving;
+  final int batch;
+  final ValueNotifier<(int, int)?>? progress;
   final _asked = <String>{}, _queue = <T>[];
   var _drawing = false;
 
   /// Told once some are drawn: the tiles look again.
   final drawn = ValueNotifier<int>(0);
 
+  /// Told the homes of each batch drawn.
+  void Function(List<String> homes)? onDrawn;
+
   /// [home]'s tile ('' none: not drawn yet, or the inside did not draw it), [job] queued once.
   String of(String home, T job) {
     if (File(home).existsSync()) return home;
-    if (File('$home.none').existsSync() || Platform.environment['FLUTTER_TEST'] == 'true' || !_asked.add(home)) return '';
-    _queue.add(job);
-    if (!_drawing) unawaited(_work());
+    if (!File('$home.none').existsSync()) {
+      ask(home, job);
+      start();
+    }
     return '';
+  }
+
+  /// [key] asked once (whatever is on disk: the caller has decided the tile is stale), [job] queued at [at] or last; false
+  /// when it was asked before or nothing is drawn under flutter test.
+  bool ask(String key, T job, {int? at}) {
+    if (Platform.environment['FLUTTER_TEST'] == 'true' || !_asked.add(key)) return false;
+    _queue.insert(at ?? _queue.length, job);
+    return true;
+  }
+
+  void forget(String key) => _asked.remove(key);
+  void drop(bool Function(T job) where) => _queue.removeWhere(where);
+  void start() {
+    if (!_drawing && _queue.isNotEmpty) unawaited(_work());
   }
 
   Future<void> _work() async {
     _drawing = true;
     final dir = motoliiDir, draw = this.draw;
+    var done = 0;
     try {
       while (_queue.isNotEmpty) {
-        final some = [..._queue];
-        _queue.clear();
-        for (final h in await Isolate.run(() => draw(dir, some))) {
-          for (final p in seen(h)) {
+        progress?.value = (done, done + _queue.length);
+        final some = _queue.take(batch).toList();
+        _queue.removeRange(0, some.length);
+        done += some.length;
+        final homes = await Isolate.run(() => draw(dir, some));
+        for (final h in homes) {
+          for (final p in [
+            h,
+            if (moving)
+              for (final (k, _) in EffectTiles.moments.indexed) EffectTiles.frame(h, k),
+          ]) {
             ResizeImage(FileImage(File(p)), width: EffectTiles.readWide).evict();
           }
         }
+        onDrawn?.call(homes);
         drawn.value++;
       }
     } catch (_) {
     } finally {
       _drawing = false;
+      progress?.value = null;
     }
   }
 }
 
+/// Each job's tile drawn on a document of its own (1080 square, the temp folder named for [prefix]) where [homeOf] says;
+/// [one] draws it (true: the home is made; false or a throw: `.none` marks that the inside did not take it); the homes made.
+List<String> drawTiles<T>(String dir, String prefix, List<T> jobs, String Function(T) homeOf, bool Function(Motolii m, T job, String home) one) {
+  final folder = Directory.systemTemp.createTempSync(prefix), made = <String>[];
+  for (final (i, job) in jobs.indexed) {
+    final home = homeOf(job), m = Motolii.open('${folder.path}/$i.motolii', wide: 1080, high: 1080, dir: dir);
+    if (m == null) continue;
+    try {
+      Directory(File(home).parent.path).createSync(recursive: true);
+      if (one(m, job, home)) {
+        made.add(home);
+      } else {
+        File('$home.none').writeAsStringSync('');
+      }
+    } catch (_) {
+      try {
+        File('$home.none').writeAsStringSync('');
+      } catch (_) {}
+    } finally {
+      m.close();
+    }
+  }
+  try {
+    folder.deleteSync(recursive: true);
+  } catch (_) {}
+  return made;
+}
+
 abstract final class CopiesTiles {
-  static final _tiles = TileQueue<(String, String, String?)>(draw, (h) => [h, for (final (k, _) in EffectTiles.moments.indexed) EffectTiles.frame(h, k)]);
+  static final _tiles = TileQueue<(String, String, String?)>(draw, moving: true);
 
   /// Told once some are drawn: the tiles look again.
   static final drawn = _tiles.drawn;
@@ -87,52 +145,26 @@ abstract final class CopiesTiles {
   }
 
   /// Each file's tile drawn where its home says; the homes drawn.
-  static List<String> draw(String dir, List<(String, String, String?)> files) {
-    final folder = Directory.systemTemp.createTempSync('motolii_copies'), made = <String>[];
-    for (final (i, (f, home, make)) in files.indexed) {
-      // (a document each: what one put on leaves (its knobs' values, js_<knob>) is not the next one's)
-      final m = Motolii.open('${folder.path}/copies_$i.motolii', wide: 1080, high: 1080, dir: dir);
-      if (m == null) continue;
-      try {
-        Directory(File(home).parent.path).createSync(recursive: true);
-        final on = make != null ? _answer(m, m.later('create', word: make)) >= 1 : _put(m, f); // (a pack: made by its name, as the Program shelf makes it)
-        final pictures = [
-          if (on)
-            for (final (k, at) in EffectTiles.moments.indexed)
-              if (m.at(at) && m.still('${home.substring(0, home.length - 4)}_$k.png')) '${home.substring(0, home.length - 4)}_$k.png',
-        ];
-        if (pictures.length < EffectTiles.moments.length) {
-          File('$home.none').writeAsStringSync('');
-          for (final p in pictures) {
-            File(p).deleteSync();
-          }
-          continue;
-        }
-        Process.runSync('sips', ['-Z', '192', ...pictures]);
-        File(pictures[EffectTiles.still]).copySync(home);
-        final base = home.substring(0, home.length - 4);
-        try {
-          Process.runSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-i', '${base}_%d.png', '-q:v', '6', '-start_number', '0', '${base}_%d.jpg']);
-        } on ProcessException {
-          // (no ffmpeg: its still alone)
-        }
-        for (final p in pictures) {
-          File(p).deleteSync();
-        }
-        made.add(home);
-      } catch (_) {
-        try {
-          File('$home.none').writeAsStringSync('');
-        } catch (_) {}
-      } finally {
-        m.close();
-      }
+  static List<String> draw(String dir, List<(String, String, String?)> files) => drawTiles(dir, 'motolii_copies', files, (j) => j.$2, (m, job, home) {
+    // (a document each: what one put on leaves (its knobs' values, js_<knob>) is not the next one's)
+    final (f, _, make) = job;
+    final on = make != null ? _answer(m, m.later('create', word: make)) >= 1 : _put(m, f); // (a pack: made by its name, as the Program shelf makes it)
+    final base = home.substring(0, home.length - 4);
+    final pictures = [
+      if (on)
+        for (final (k, at) in EffectTiles.moments.indexed)
+          if (m.at(at) && m.still('${base}_$k.png')) '${base}_$k.png',
+    ];
+    if (pictures.length >= EffectTiles.moments.length) {
+      Process.runSync('sips', ['-Z', '192', ...pictures]);
+      File(pictures[EffectTiles.still]).copySync(home);
+      ffmpeg(['-i', '${base}_%d.png', '-q:v', '6', '-start_number', '0', '${base}_%d.jpg']); // (no ffmpeg: its still alone)
     }
-    try {
-      folder.deleteSync(recursive: true);
-    } catch (_) {}
-    return made;
-  }
+    for (final p in pictures) {
+      File(p).deleteSync();
+    }
+    return pictures.length >= EffectTiles.moments.length;
+  });
 
   /// An expression's: a shape as its head says, the expression put on it, taken by the inside as code is, or not.
   static bool _put(Motolii m, String f) {

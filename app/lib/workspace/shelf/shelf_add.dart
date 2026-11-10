@@ -25,14 +25,14 @@ bool shelfIsExpression(String file) => file.endsWith('.js');
 /// The name written beside one the maker added (null: none, or not theirs).
 String? shelfNamed(String file) {
   if (!shelfAdded(file)) return null;
-  final f = _sidecar(file);
+  final f = shelfSidecar(file);
   return f.existsSync() ? f.readAsStringSync().trim() : null;
 }
 
 /// Whether the file is one the maker added to a shelf (a library file is not: it has no Rename).
 bool shelfAdded(String file) => file.startsWith('$_ownEffects/') || file.startsWith('$_ownExpressions/');
 
-File _sidecar(String file) => File('${file.substring(0, file.lastIndexOf('.'))}.name');
+File shelfSidecar(String file) => File('${file.substring(0, file.lastIndexOf('.'))}.name');
 
 /// The expressions the maker added, by name (the one written beside it, else its head's, else its file's): name and file.
 List<(String, String)> shelfExpressions() {
@@ -131,7 +131,7 @@ String shelfRename(Ws ws, String file, String to, Iterable<String> taken) {
   to = to.trim();
   if (!shelfAdded(file)) return 'Only what you added can be renamed';
   if (_whyNot(to, taken) case final why when why.isNotEmpty) return why;
-  _sidecar(file).writeAsStringSync(to);
+  shelfSidecar(file).writeAsStringSync(to);
   ws.inside?.forgetFolders();
   ws.reread();
   return '';

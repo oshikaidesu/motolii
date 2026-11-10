@@ -5,6 +5,7 @@ import 'package:motolii/inspector/controls/inspector_param_controls_tile.dart';
 
 import '../../skin/tokens.dart';
 import '../inspector_parts.dart';
+import '../../widgets/controls.dart' show Hov;
 
 /// An effect's parameters as blocks that fill the panel's width: three across in a normal panel, more when it is widened,
 /// so thirty parameters stay a short list. Order is the shader's; a block that needs room (a point, a size, a choice) takes two.
@@ -73,23 +74,23 @@ String paramColor(Decl d) {
 }
 
 class Swatch extends StatelessWidget {
-  const Swatch(this.hex, {super.key});
+  const Swatch(this.hex, {super.key, this.ramp});
   final String? hex;
+  final List<String>? ramp; // (colours in their order, a strip from the first to the last)
   @override
   Widget build(BuildContext context) => Center(
     child: Container(
       width: Shape.z(16),
       height: Shape.z(16),
       decoration: BoxDecoration(
-        color: hexControls(hex) ?? Grey.g26,
+        gradient: ramp == null ? null : LinearGradient(colors: [for (final h in ramp!) hexControls(h)!]),
+        color: ramp == null ? hexControls(hex) ?? Grey.g26 : null,
         borderRadius: BorderRadius.all(Shape.r(4)),
         border: Border.all(color: Grey.g38),
       ),
     ),
   );
 }
-
-enum GaugeKind { pie, up, down, across, centre, ramp, free, point, box }
 
 /// A small whole number's plus and minus, stacked to stay one block tall; the count itself is the field beside them.
 class Steps extends StatelessWidget {
@@ -137,19 +138,21 @@ class Dice extends StatelessWidget {
         final v = doc.get(id) ?? 0, hi = p.max ?? 9999, lo = p.min ?? 0;
         doc.set(id, (lo + (v * 7919 + 104729) % (hi - lo + 1)).roundToDouble());
       },
-      builder: (_, h) => CustomPaint(size: const Size(22, 22), painter: _DicePaint(h, (doc.get(id) ?? 0).round() % 6 + 1)),
+      builder: (_, h) => CustomPaint(size: const Size(22, 22), painter: DicePaint(h ? Grey.g95 : Grey.g76, (doc.get(id) ?? 0).round() % 6 + 1)),
     );
   }
 }
 
-class _DicePaint extends CustomPainter {
-  const _DicePaint(this.hot, this.face);
-  final bool hot;
+/// A die showing [face]: a solid square in [ink] with dark pips, or ([filled] off) the pips alone in [ink].
+class DicePaint extends CustomPainter {
+  const DicePaint(this.ink, this.face, {this.filled = true});
+  final Color ink;
   final int face;
+  final bool filled;
   @override
   void paint(Canvas c, Size s) {
     final r = Rect.fromCenter(center: s.center(Offset.zero), width: Shape.z(16), height: Shape.z(16));
-    c.drawRRect(RRect.fromRectAndRadius(r, Shape.r(4)), Paint()..color = hot ? Grey.g95 : Grey.g76);
+    if (filled) c.drawRRect(RRect.fromRectAndRadius(r, Shape.r(4)), Paint()..color = ink);
     const pips = {
       1: [(0, 0)],
       2: [(-1, -1), (1, 1)],
@@ -159,10 +162,10 @@ class _DicePaint extends CustomPainter {
       6: [(-1, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (1, 1)],
     };
     for (final (dx, dy) in pips[face]!) {
-      c.drawCircle(r.center + Offset(dx * 4.0, dy * 4.0), 1.5, Paint()..color = Grey.g10);
+      c.drawCircle(r.center + Offset(dx * 4.0, dy * 4.0), 1.5, Paint()..color = filled ? Grey.g10 : ink);
     }
   }
 
   @override
-  bool shouldRepaint(_DicePaint o) => o.hot != hot || o.face != face;
+  bool shouldRepaint(DicePaint o) => o.ink != ink || o.face != face || o.filled != filled;
 }

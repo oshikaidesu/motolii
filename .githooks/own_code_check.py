@@ -108,8 +108,13 @@ def own_lines(numstat, rev):
         if len(parts) < 3 or parts[0] == '-':
             continue
         path = re.sub(r'\{[^{}]* => ([^{}]*)\}', r'\1', parts[2]).replace('//', '/').split(' => ')[-1]
-        if OWN.match(path) and not generated(rev, path) and int(parts[0]) > int(parts[1]):
-            total += int(parts[0]) - int(parts[1])
+        if not OWN.match(path) or generated(rev, path) or int(parts[0]) <= int(parts[1]):
+            continue
+        # (an import, export or part line points at what exists: taking the standard into use is not a line of our own)
+        diff = git('show', '-U0', '--format=', rev, '--', path) if rev else git('diff', '--cached', '-U0', '--', path)
+        grown = int(parts[0]) - int(parts[1]) - sum((l[0] == '+') - (l[0] == '-') for l in diff.splitlines() if re.match(r'[+-](import|export|part) ', l))
+        if grown > 0:
+            total += grown
             longer.append(path)
     LONGER[:] = longer
     return total

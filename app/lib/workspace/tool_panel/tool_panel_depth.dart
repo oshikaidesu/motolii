@@ -348,12 +348,7 @@ class _DepthPainter extends CustomPainter {
     c.restore();
     // The focus line and its tag.
     final y = m.at(0, focus).dy;
-    final acc = Paint()
-      ..color = WsT.accent
-      ..strokeWidth = hot ? 2 : 1.5;
-    for (var x = 30.0; x < s.width - 50; x += 7) {
-      c.drawLine(Offset(x, y), Offset(math.min(x + 4, s.width - 50), y), acc);
-    }
+    dashed(c, Offset(30, y), Offset(s.width - 50, y), WsT.accent, hot ? 2 : 1.5, 4, 3);
     // Slabs: sharp ones in their full hue, soft ones sink toward the card.
     for (final sl in slabs) {
       final r = m.slab(sl.x, sl.z, sl.w), sharp = sl.z >= near && sl.z <= far, on = sl.id == target;
@@ -374,13 +369,7 @@ class _DepthPainter extends CustomPainter {
     final taken = [for (final sl in slabs) m.slab(sl.x, sl.z, sl.w).inflate(1), Rect.fromLTWH(s.width - 48, y - 8, 42, 16)];
     for (final sl in [...slabs.where((e) => e.id == target), ...slabs.where((e) => e.id != target)]) {
       final r = m.slab(sl.x, sl.z, sl.w), sharp = sl.z >= near && sl.z <= far, on = sl.id == target;
-      final np = TextPainter(
-        text: TextSpan(
-          text: sl.name,
-          style: T.label(sharp ? Grey.g91 : Grey.g56).copyWith(fontWeight: on ? FontWeight.w700 : FontWeight.w400),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
+      final np = lineText(sl.name, T.label(sharp ? Grey.g91 : Grey.g56).copyWith(fontWeight: on ? FontWeight.w700 : FontWeight.w400));
       final at = Rect.fromLTWH(r.left, r.top - 2 - np.height, np.width, np.height);
       if (!taken.any((t) => t.overlaps(at))) {
         taken.add(at);
@@ -389,17 +378,9 @@ class _DepthPainter extends CustomPainter {
       np.dispose();
     }
     final tag = '${focus.round()}';
-    final tp = TextPainter(
-      text: TextSpan(
-        text: tag,
-        style: T.value(WsT.onAccent).copyWith(fontSize: T.px(10), fontWeight: FontWeight.w700),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
     final tr = RRect.fromRectAndRadius(Rect.fromLTWH(s.width - 48, y - 8, 42, 16), Shape.r(WsT.chipRadius));
     c.drawRRect(tr, fill..color = WsT.accent);
-    tp.paint(c, tr.center - Offset(tp.width / 2, tp.height / 2));
-    tp.dispose();
+    toolText(c, tag, tr.center, T.value(WsT.onAccent).copyWith(fontSize: T.px(10), fontWeight: FontWeight.w700), ax: .5, ay: .5);
     // The camera body at the cone's tip.
     final e = m.eye;
     c.drawRRect(

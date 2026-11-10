@@ -4,16 +4,16 @@ import 'dart:io' show Directory, File;
 
 import 'package:flutter/widgets.dart';
 
-import '../../inspector/inspector_small.dart' show Hov;
 import '../../skin/forms/forms.dart';
 import '../../skin/svg_parts.dart';
 
-import '../../widgets/controls.dart' show IconPress;
+import '../../widgets/controls.dart' show Badge, Hov, IconPress;
 import '../../widgets/glyphs.dart';
 import '../../skin/tokens.dart';
 import 'stage_art.dart';
 import 'stage_view.dart';
 import '../../widgets/two_fingers.dart';
+import '../tool_panel/tool_panel_widgets.dart' show ToolStrip;
 import '../workspace.dart' show wsPlace;
 import '../state/state.dart';
 
@@ -132,7 +132,7 @@ class _StageState extends State<_Stage> {
               WsHeader(
                 '',
                 trailing: [
-                  _Seg(items: stageZooms, index: _zoom, onChanged: (i) => setState(() => _zoom = i)),
+                  Forms.worn.segment(context, ChoiceSpec(labels: stageZooms, selected: _zoom, onSelect: (i) => setState(() => _zoom = i))),
                   SizedBox(width: Shape.s(6)),
                   _Toggle(label: 'Safe', icon: _Icon.safe, on: _safe, onTap: () => setState(() => _safe = !_safe)),
                   SizedBox(width: WsT.gap),
@@ -205,16 +205,6 @@ class _StageState extends State<_Stage> {
 }
 
 // ---- small round things you touch --------------------------------------------------------------------------------------
-
-/// A segmented chip: a well with round items, the chosen one filled with the accent.
-class _Seg extends StatelessWidget {
-  const _Seg({required this.items, required this.index, required this.onChanged});
-  final List<String> items;
-  final int index;
-  final ValueChanged<int> onChanged;
-  @override
-  Widget build(BuildContext context) => Forms.worn.segment(context, ChoiceSpec(labels: items, selected: index, onSelect: onChanged));
-}
 
 enum _Icon { safe, grid, snap, show }
 

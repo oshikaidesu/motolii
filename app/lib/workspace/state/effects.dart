@@ -75,11 +75,7 @@ extension WsFx on Ws {
       notice = 'Not taken: only an ISF or a .wgsl effect is put on again so far'; // (the inside's words, doc_fx_duplicate)
       return false;
     }
-    var n = 2;
-    while (had.contains('${file.substring(0, dot)}~$n${file.substring(dot)}')) {
-      n++;
-    }
-    return screenToggle('${file.substring(0, dot)}~$n${file.substring(dot)}');
+    return screenToggle(firstFree(file, had.contains, (n) => '${file.substring(0, dot)}~$n${file.substring(dot)}'));
   }
 
   void tryOn(String? file) {

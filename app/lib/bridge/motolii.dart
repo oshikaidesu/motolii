@@ -49,6 +49,11 @@ String get motoliiDoc {
 typedef _P = Pointer<c.Motolii>;
 typedef _S = Pointer<Utf8>;
 
+/// One of the inside's calls on another isolate (nothing of a document is handed over): [words] as its text arguments,
+/// let go once [call] has made its answer.
+Future<T> _ask<T>(String lib, List<String> words, T Function(c.MotoliiBindings, List<_S>) call) =>
+    Isolate.run(() => using((a) => call(c.MotoliiBindings(DynamicLibrary.open(lib)), [for (final w in words) w.toNativeUtf8(allocator: a)])));
+
 /// A film's thumbnail, made by the inside's own call on another isolate (nothing of a document is handed over: the
 /// call asks nothing of one). Kept in the system's temp folder under the film's place and when it was last changed.
 final _thumbnails = <String, Future<String?>>{};
@@ -63,27 +68,18 @@ Future<String?> _thumbnail(String lib, String video, [int step = 0, int steps = 
           ? ''
           : '_$step'}.png';
   if (File(png).existsSync()) return png;
-  final made = await Isolate.run(() {
-    final b = c.MotoliiBindings(DynamicLibrary.open(lib));
-    final from = video.toNativeUtf8(), to = png.toNativeUtf8();
-    final done = (seconds != null ? b.motolii_thumbnail_seconds(from, to, 160, seconds) : b.motolii_thumbnail_at(from, to, 240, step / steps)) != 0;
-    malloc
-      ..free(from)
-      ..free(to);
-    return done;
-  });
+  final made = await _ask(lib, [
+    video,
+    png,
+  ], (b, w) => (seconds != null ? b.motolii_thumbnail_seconds(w[0], w[1], 160, seconds) : b.motolii_thumbnail_at(w[0], w[1], 240, step / steps)) != 0);
   return made ? png : null;
 }
 
 /// What a media file is, as the inside's GStreamer discoverer tells it, said for a hand: its size, its rate and length
 /// (a film), its kind ('' when it cannot be read). On another isolate: the call asks nothing of a document.
 final _mediaInfos = <String, Future<List<String>>>{};
-Future<List<String>> _mediaSaid(String lib, String file) => _mediaInfos[file] ??= Isolate.run(() {
-  final from = file.toNativeUtf8();
-  final said = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_media_info(from).toDartString().split(' ');
-  malloc.free(from);
-  return said;
-});
+Future<List<String>> _mediaSaid(String lib, String file) =>
+    _mediaInfos[file] ??= _ask(lib, [file], (b, w) => b.motolii_media_info(w[0]).toDartString().split(' '));
 
 /// How long a media file plays, as the discoverer tells it (0: a still, or it cannot be read).
 Future<double> mediaSecondsOf(String lib, String file) async => switch (await _mediaSaid(lib, file)) {
@@ -93,12 +89,8 @@ Future<double> mediaSecondsOf(String lib, String file) async => switch (await _m
 
 /// A document read without opening it (the inside's own, on another isolate): its size and length as it last kept them
 /// (Motolii.poster) and its frames a second, its picture written to [png]; null: it kept none, or it is not one.
-Future<({int wide, int high, double seconds, double rate})?> docFactsOf(String lib, String doc, String png) => Isolate.run(() {
-  final from = doc.toNativeUtf8(), to = png.toNativeUtf8();
-  final said = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_doc_properties(from, to).toDartString().split(' ');
-  malloc
-    ..free(from)
-    ..free(to);
+Future<({int wide, int high, double seconds, double rate})?> docFactsOf(String lib, String doc, String png) => _ask(lib, [doc, png], (b, w) {
+  final said = b.motolii_doc_properties(w[0], w[1]).toDartString().split(' ');
   return said.length < 4 ? null : (wide: int.parse(said[0]), high: int.parse(said[1]), seconds: double.parse(said[2]), rate: double.parse(said[3]));
 });
 
@@ -120,14 +112,7 @@ Future<String> mediaInfoOf(String lib, String file) async {
 /// frameData.json tells each frame that does not pass). Empty: it passes. null: it was not read.
 Future<List<(double, double)>?> flashesOf(String lib, String video) async {
   final folder = '${Platform.environment['HOME']}/Library/Caches/Motolii/flashes';
-  final written = await Isolate.run(() {
-    final from = video.toNativeUtf8(), to = folder.toNativeUtf8();
-    final said = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_flashes(from, to).toDartString();
-    malloc
-      ..free(from)
-      ..free(to);
-    return said;
-  });
+  final written = await _ask(lib, [video, folder], (b, w) => b.motolii_flashes(w[0], w[1]).toDartString());
   if (written.isEmpty) return null;
   try {
     final frames = (jsonDecode(File('${File(written).parent.path}/frameData.json').readAsStringSync()) as Map)['NonPassFrameData'] as Map;

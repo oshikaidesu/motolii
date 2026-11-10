@@ -57,30 +57,28 @@ extension _WsTimelineTracks on _WsTimelineState {
                     final c = _cursorAt(e.localPosition);
                     if (c != _cursor) setState(() => _cursor = c);
                   },
-                  child: Listener(
-                    onPointerSignal: _wheel,
-                    child: WsTwoFingers(
-                      onPan: _fingers,
-                      onPinch: _pinch,
-                      child: WsMenu(
-                        key: _trackMenu,
-                        child: GestureDetector(
-                          key: const ValueKey('ws-tl-tracks'),
-                          behavior: HitTestBehavior.opaque,
-                          supportedDevices: wsPressing,
-                          dragStartBehavior: DragStartBehavior.down,
-                          onTapDown: (d) => _trackDown(d.localPosition),
-                          onSecondaryTapDown: (d) => _trackRight(d.localPosition),
-                          onTapUp: (d) => _laneTap(d.localPosition), // (a lane's tap, once it is known not to be a drag)
-                          onPanStart: (d) => _barDown(d.localPosition),
-                          onPanUpdate: (d) => _barMove(d.localPosition),
-                          onPanEnd: (_) => _barUp(),
-                          onPanCancel: () => _barUp(keep: false),
-                          child: RepaintBoundary(
-                            child: CustomPaint(
-                              size: Size.infinite,
-                              painter: WtTracksPainter(rows: rows, view: v, fps: Ws.fps, vscroll: _vscroll, restAt: _restAt),
-                            ),
+                  child: WsTwoFingers(
+                    onWheel: _scrollBy,
+                    onPan: _fingers,
+                    onPinch: _pinch,
+                    child: WsMenu(
+                      key: _trackMenu,
+                      child: GestureDetector(
+                        key: const ValueKey('ws-tl-tracks'),
+                        behavior: HitTestBehavior.opaque,
+                        supportedDevices: wsPressing,
+                        dragStartBehavior: DragStartBehavior.down,
+                        onTapDown: (d) => _trackDown(d.localPosition),
+                        onSecondaryTapDown: (d) => _trackRight(d.localPosition),
+                        onTapUp: (d) => _laneTap(d.localPosition), // (a lane's tap, once it is known not to be a drag)
+                        onPanStart: (d) => _barDown(d.localPosition),
+                        onPanUpdate: (d) => _barMove(d.localPosition),
+                        onPanEnd: (_) => _barUp(),
+                        onPanCancel: () => _barUp(keep: false),
+                        child: RepaintBoundary(
+                          child: CustomPaint(
+                            size: Size.infinite,
+                            painter: WtTracksPainter(rows: rows, view: v, fps: Ws.fps, vscroll: _vscroll, restAt: _restAt),
                           ),
                         ),
                       ),

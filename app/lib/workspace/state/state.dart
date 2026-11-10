@@ -24,6 +24,7 @@ export '../../bridge/motolii.dart'
 import '../../skin/theme.dart';
 import '../../skin/tokens.dart';
 import '../window/panes.dart' show WsAt, WsPane;
+import '../window/settings_file.dart' show firstFree;
 import 'beats.dart';
 import '../stage/stage_art.dart' show WsArt;
 export 'beats.dart';

@@ -2,10 +2,9 @@
 // narrow row of shapes, none named. Its layout and its moves, in this window's own colours.
 import 'package:flutter/widgets.dart';
 
-import '../../widgets/controls.dart' show IconPress;
+import '../../widgets/controls.dart' show Hov, IconPress;
 
 import 'package:motolii/inspector/inspector_card.dart' show CardMore;
-import 'package:motolii/inspector/inspector_parts.dart' show Hov;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart' show easeIsTurned, easeTurn;

@@ -8,13 +8,15 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii.dart';
-import 'package:motolii/inspector/inspector_parts.dart' show Hov;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_easing_presets.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_side.dart' show EaseChevron;
 import 'package:motolii/workspace/state/state.dart';
+
+import '../../widgets/controls.dart' show Hov;
+import '../window/settings_file.dart' show fileKeep, fileList;
 
 /// What a hand kept, each as it is said (a curve, a card, all the cards), as a device carried to Live's browser by its title
 /// bar is saved (Live's manual, 23.2.5 Saving Presets). In ~/.motolii, as the colours are in colors.json.
@@ -24,21 +26,12 @@ List<String>? _kept;
 /// (a test points it elsewhere, and forgets what was read: as coloursAt)
 void easeKeptAt(File f) => (_keptFile = f, _kept = null);
 
-List<String> easeKept() => _kept ??= () {
-  try {
-    return [for (final w in jsonDecode(_keptFile.readAsStringSync()) as List) '$w'];
-  } catch (_) {
-    return <String>[];
-  }
-}();
+List<String> easeKept() => _kept ??= [for (final w in fileList(_keptFile)) '$w'];
 
 void easeKeep(String word, {bool off = false}) {
   final kept = easeKept()..remove(word);
   if (!off) kept.add(word);
-  try {
-    _keptFile.parent.createSync(recursive: true);
-    _keptFile.writeAsStringSync(jsonEncode(kept));
-  } catch (_) {} // (not kept: known while the window is open)
+  fileKeep(_keptFile, jsonEncode(kept)); // (not kept: known while the window is open)
 }
 
 final _tiles = <String, Ease>{}; // (each worked out once: fifty are not worked out again as a hand moves a handle)

@@ -11,8 +11,6 @@ import 'forms.dart';
 
 const _film = Color(0xFF1B1A18), _opal = Color(0xFFF6F7F4), _grease = Color(0xFFF06A1E), _graphite = Color(0xFF26292B), _loupe = Color(0xFFA9AEAB);
 
-TextStyle _word(Color c, double size, {FontWeight w = FontWeight.w600}) => T.name(c).copyWith(fontSize: T.px(size), fontWeight: w, height: 1.1);
-
 TextStyle _mono(Color c, double size) =>
     T.name(c).copyWith(fontFamily: T.mono, fontSize: T.px(size), height: 1.1, fontFeatures: const [FontFeature.tabularFigures()]);
 
@@ -119,7 +117,7 @@ class LightTableForms extends Forms {
             7,
             Padding(
               padding: EdgeInsets.symmetric(horizontal: Shape.s(8), vertical: Shape.s(2)),
-              child: Text(a.label, maxLines: 1, style: _word(_opal, 15, w: FontWeight.w700)),
+              child: Text(a.label, maxLines: 1, style: T.name(_opal, 15, FontWeight.w700, 1.1)),
             ),
           ),
         ),
@@ -172,7 +170,7 @@ class LightTableForms extends Forms {
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
-                      child: Text(c.title!, maxLines: 1, style: _word(_graphite, 17, w: FontWeight.w600)),
+                      child: Text(c.title!, maxLines: 1, style: T.name(_graphite, 17, FontWeight.w600, 1.1)),
                     ),
                   ),
                   ?c.trailing,

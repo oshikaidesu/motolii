@@ -21,9 +21,9 @@ class Ease {
   final List<double>? drawn;
 
   double at(double x) => drawn != null
-      ? _along(drawn!, x)
+      ? easeAlong(drawn!, x)
       : switch (kind) {
-          EaseKind.bezier => bezierY(p1, p2, x),
+          EaseKind.bezier => Cubic(p1.dx, p1.dy, p2.dx, p2.dy).transform(x.clamp(0.0, 1.0)),
           EaseKind.hold => x < 1 ? 0 : 1,
         };
 
@@ -36,7 +36,8 @@ class Ease {
   int get hashCode => Object.hash(kind, p1, p2);
 }
 
-double _along(List<double> ys, double x) {
+/// How far along [x] (0 to 1, held to it) a line of evenly spaced values [ys] stands.
+double easeAlong(List<double> ys, double x) {
   final at = x.clamp(0.0, 1.0) * (ys.length - 1), i = at.floor().clamp(0, ys.length - 2);
   return ys[i] + (ys[i + 1] - ys[i]) * (at - i);
 }
@@ -57,21 +58,6 @@ Ease easingPreset(String name) => easingPresets.firstWhere((p) => p.name == name
 
 bool easeOther(Ease e) => e.name != null && easingPresets.every((p) => p.name != e.name);
 String? easeName(Ease e) => easeOther(e) ? e.name : easingPresets.where((p) => p == e).firstOrNull?.name;
-
-double bezierY(Offset p1, Offset p2, double x) {
-  double bx(double u) => 3 * (1 - u) * (1 - u) * u * p1.dx + 3 * (1 - u) * u * u * p2.dx + u * u * u;
-  var lo = 0.0, hi = 1.0;
-  for (var i = 0; i < 24; i++) {
-    final m = (lo + hi) / 2;
-    if (bx(m) < x) {
-      lo = m;
-    } else {
-      hi = m;
-    }
-  }
-  final u = (lo + hi) / 2;
-  return 3 * (1 - u) * (1 - u) * u * p1.dy + 3 * (1 - u) * u * u * p2.dy + u * u * u;
-}
 
 /// The stretch of time the ease shapes: the first picked key and the layer's next key.
 typedef EaseSpan = ({WsLayer layer, int from, int to, int picked});

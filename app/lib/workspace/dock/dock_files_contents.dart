@@ -221,33 +221,30 @@ class _TileState extends State<_Tile> {
             ),
           )
         else if (t != null && (h || sel))
-          Positioned(left: 3, top: 3, child: DockTag(_badge(t), hue: t.hue, edge: true)),
-        if (_film && (h || sel) && t != null) Positioned(right: 3, top: 3, child: DockTag(_badge(t), hue: t.hue, edge: true)),
+          Positioned(
+            left: 3,
+            top: 3,
+            child: Chip(label: _badge(t), look: ChipLook.tag(t.hue, edge: true)),
+          ),
+        if (_film && (h || sel) && t != null)
+          Positioned(
+            right: 3,
+            top: 3,
+            child: Chip(label: _badge(t), look: ChipLook.tag(t.hue, edge: true)),
+          ),
         if (n.folder && n.listed)
           Positioned(
             right: 4,
             bottom: 3,
             child: Text('${n.kids.length}', style: T.value(Grey.g63).copyWith(fontSize: T.px(10))),
           ),
-        if (_inUse(n, c)) const Positioned(right: 3, bottom: 3, child: _InUse()),
+        if (_inUse(n, c)) Positioned(right: 3, bottom: 3, child: dockBadge(DockG.link, WsT.accent, size: Shape.z(14))),
       ],
       after: (_) => [
-        if (_inUse(n, c)) ...[const _InUse(), SizedBox(width: Shape.s(6))],
+        if (_inUse(n, c)) ...[dockBadge(DockG.link, WsT.accent, size: Shape.z(14)), SizedBox(width: Shape.s(6))],
       ],
     );
   }
-}
-
-class _InUse extends StatelessWidget {
-  const _InUse();
-  @override
-  Widget build(BuildContext context) => Container(
-    width: Shape.z(14),
-    height: Shape.z(14),
-    alignment: Alignment.center,
-    decoration: BoxDecoration(color: WsT.accent, borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius))),
-    child: DockGlyph(DockG.link, size: Shape.z(10), color: WsT.onAccent),
-  );
 }
 
 /// What the picked file does here: one the inside can show is placed; a folder is gone into.

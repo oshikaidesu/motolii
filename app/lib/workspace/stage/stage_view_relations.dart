@@ -247,12 +247,12 @@ class _RelationMarks extends StatelessWidget {
                   runSpacing: Shape.s(4),
                   children: together.length > 1
                       ? [
-                          _Said('${together.length} picked'),
+                          Chip(label: '${together.length} picked', look: ChipLook.said),
                           for (final k in wsRelationChoices(ws))
                             Chip(label: wsRelationWord(k), look: ChipLook.relate, on: true, onTap: () => wsRelate(ws, k), key: ValueKey('ws-relate-$k')),
                         ]
                       : [
-                          _Said('${wsRelationWord(wsRelationOf(m!, rel!))} · ${wsMembersOf(ws).length}'),
+                          Chip(label: '${wsRelationWord(wsRelationOf(m!, rel!))} · ${wsMembersOf(ws).length}', look: ChipLook.said),
                           Chip(
                             label: wsRelationWord('eye'),
                             look: ChipLook.relate,
@@ -309,20 +309,13 @@ class _MarksPainter extends CustomPainter {
   final List<_Shape> shape;
   @override
   void paint(Canvas c, Size s) {
-    final ink = Paint()
-      ..color = WsT.accent
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
+    final ink = _line(WsT.accent, 1.5);
     if (lasso case final l? when l.length > 1) c.drawPath(Path()..addPolygon(l, false), ink);
     for (final p in at) {
       c.drawCircle(p, 14, ink);
     }
-    final thin = Paint()
-      ..color = WsT.accent.withValues(alpha: .8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
     for (final sh in shape) {
-      thin.color = WsT.accent.withValues(alpha: sh.off ? .25 : .8);
+      final thin = _line(WsT.accent.withValues(alpha: sh.off ? .25 : .8));
       final path = sh.b == null
           ? (Path()..addOval(Rect.fromCenter(center: sh.a, width: 2 * sh.r, height: 2 * sh.r)))
           : (Path()
@@ -415,19 +408,6 @@ class WsRelationStack extends StatelessWidget {
       ),
     );
   }
-}
-
-/// A word in the bar over the stage, on the panel's ground (the bar lies over the stage's surround, dark or light).
-class _Said extends StatelessWidget {
-  const _Said(this.text);
-  final String text;
-  @override
-  Widget build(BuildContext context) => Container(
-    margin: EdgeInsets.only(right: Shape.s(6)),
-    padding: EdgeInsets.symmetric(horizontal: Shape.s(8), vertical: Shape.s(5)),
-    decoration: BoxDecoration(color: WsT.body, borderRadius: BorderRadius.all(Shape.r(12))),
-    child: Text(text, style: T.label(Grey.g91)),
-  );
 }
 
 /// A small mark drawn, not a letter (no font has to carry it): a cross (a middle), an arrow out (a size), an x (out of
@@ -557,13 +537,7 @@ class _MapPainter extends CustomPainter {
     c.scale(k);
     c.restore();
     final r = Rect.fromLTRB(shown.left * k, shown.top * k, shown.right * k, shown.bottom * k).intersect(Offset.zero & s);
-    c.drawRect(
-      r.deflate(.75),
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5
-        ..color = WsT.accent,
-    );
+    c.drawRect(r.deflate(.75), _line(WsT.accent, 1.5));
   }
 
   @override
@@ -583,12 +557,6 @@ void _legible(Canvas c, Path p, Color col, [double w = 1.5]) {
   c.drawPath(p, _line(col, w));
 }
 
-TextPainter _tp(String t, TextStyle s) => TextPainter(
-  text: TextSpan(text: t, style: s),
-  textDirection: TextDirection.ltr,
-  maxLines: 1,
-)..layout();
-
 /// What one painter draws: everything (the stand-in art too), or, when the inside's picture sits in the composition,
 /// what lies under it (the surround, the captions) and what lies over it (grid, guides, the selection).
 enum _Part { all, under, over }
@@ -599,11 +567,7 @@ class _PointsPainter extends CustomPainter {
   final List<(Offset, Offset)> handles;
   @override
   void paint(Canvas c, Size _) {
-    final edge = Paint()
-          ..color = WsT.accent
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1,
-        inside = Paint()..color = const Color(0xFFFFFFFF);
+    final edge = _line(WsT.accent), inside = Paint()..color = const Color(0xFFFFFFFF);
     for (final (h, o) in handles) {
       if ((h - o).distance < 1) continue; // (a handle lying on its point: none to see)
       c

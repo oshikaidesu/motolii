@@ -113,7 +113,7 @@ class WtTracksPainter extends CustomPainter {
       );
     }
     final nameX = math.max(x0 + 8, 6.0) + (r.clipped ? 12 : 0);
-    final t = _text(r.name, T.name(ink).copyWith(fontWeight: FontWeight.w700));
+    final t = lineText(r.name, T.name(ink).copyWith(fontWeight: FontWeight.w700));
     if (nameX + 20 < x1) {
       if (r.wave != null || r.frames != null) {
         c.drawRRect(
@@ -251,7 +251,7 @@ class WtTracksPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(WtTracksPainter o) => o.view != view || o.fps != fps || o.vscroll != vscroll || o.restAt != restAt || !_listEq(o.rows, rows);
+  bool shouldRepaint(WtTracksPainter o) => o.view != view || o.fps != fps || o.vscroll != vscroll || o.restAt != restAt || !listEquals(o.rows, rows);
 }
 
 // ---------------------------------------------------------------- playhead

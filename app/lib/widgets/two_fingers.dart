@@ -13,7 +13,8 @@ const wsPressing = {PointerDeviceKind.mouse, PointerDeviceKind.touch, PointerDev
 /// [onPinch] each change of their spread, by how many times, about where they are; [onPinchStep] +1 or -1 each time
 /// the spread has opened or closed by a quarter (for a zoom of a few steps).
 class WsTwoFingers extends StatefulWidget {
-  const WsTwoFingers({super.key, this.onPan, this.onPinch, this.onPinchStep, required this.child});
+  const WsTwoFingers({super.key, this.onPan, this.onPinch, this.onPinchStep, this.onWheel, required this.child});
+  final void Function(Offset by)? onWheel; // (a wheel's turn, the scroll delta; the other way to carry the view)
   final void Function(Offset by, Offset at)? onPan;
   final void Function(double by, Offset at)? onPinch;
   final void Function(int step)? onPinchStep;
@@ -28,6 +29,9 @@ class _WsTwoFingersState extends State<WsTwoFingers> {
 
   @override
   Widget build(BuildContext context) => Listener(
+    onPointerSignal: (e) {
+      if (e is PointerScrollEvent) widget.onWheel?.call(e.scrollDelta);
+    },
     onPointerPanZoomStart: (_) => _scale = _spread = 1,
     onPointerPanZoomUpdate: (e) {
       if (e.scale != _scale) {

@@ -10,6 +10,7 @@ import 'package:flutter/widgets.dart';
 import '../../skin/forms/forms.dart';
 import '../../widgets/timeline_painters.dart' show tpFine, tpMajor;
 import '../../skin/tokens.dart';
+import '../../widgets/controls.dart' show Badge;
 import '../state/state.dart';
 
 part 'timeline_tracks_paint.dart';
@@ -112,7 +113,7 @@ class WtRow {
       listEquals(other.mix, mix) &&
       other.inF == inF &&
       other.outF == outF &&
-      _listEq(other.keys, keys) &&
+      listEquals(other.keys, keys) &&
       setEquals(other.picked, picked) &&
       other.selected == selected &&
       other.dim == dim &&
@@ -135,16 +136,8 @@ class WtRow {
   int get hashCode => Object.hash(name, kind, inF, outF, Object.hashAll(keys), Object.hashAllUnordered(picked), selected, dim, locked);
 }
 
-bool _listEq<E>(List<E> a, List<E> b) {
-  if (a.length != b.length) return false;
-  for (var i = 0; i < a.length; i++) {
-    if (a[i] != b[i]) return false;
-  }
-  return true;
-}
-
 /// How wide a mark's flag on the ruler is, its name in it (the ruler draws it so; a hand finds it so).
-double wtFlagWidth(String name) => _text(name, T.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700)).width + 8;
+double wtFlagWidth(String name) => lineText(name, T.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700)).width + 8;
 
 /// How wide a mark's flag is where it stands: its name's width, cut where the next mark is, as Logic Pro shows a
 /// marker's name only as far as the following marker (golf ⑳: 解放 at 8.0 s under M2 at 8.37 s); [xs]: every mark's x.
@@ -153,12 +146,6 @@ double wtFlagRoom(String name, double x, Iterable<double> xs) {
   final w = wtFlagWidth(name);
   return next == null ? w : math.max(6, math.min(w, next - x - 1));
 }
-
-TextPainter _text(String s, TextStyle st) => TextPainter(
-  text: TextSpan(text: s, style: st),
-  textDirection: TextDirection.ltr,
-  maxLines: 1,
-)..layout();
 
 void _vLines(Canvas c, WtView v, int fps, double w, double top, double bottom, {required Color major, required Color fine, WsBeats? beats}) {
   final mj = tpMajor(v.ppf, fps), fn = tpFine(v.ppf, fps, mj), p = Paint();
@@ -245,7 +232,7 @@ class WtRulerPainter extends CustomPainter {
     for (final (f, name) in markers) {
       final x = view.x(f).roundToDouble();
       if (x < -60 || x > s.width) continue;
-      final t = _text(name, T.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700));
+      final t = lineText(name, T.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700));
       flags.add((Rect.fromLTWH(x, WtM.band + 2, wtFlagRoom(name, x, xs), 12), t, markColors[f] ?? WsT.toneText));
     }
     if (view.ppf >= 3) {
@@ -265,7 +252,7 @@ class WtRulerPainter extends CustomPainter {
       if (isMajor) {
         if (flags.any((m) => m.$1.inflate(3).overlaps(Rect.fromLTWH(x + 3, WtM.band + 2, 24, 12)))) continue;
         final sec = f ~/ fps, fr = (f % fps).round();
-        final t = _text(mj >= fps ? '${sec}s' : '$sec:${fr.toString().padLeft(2, '0')}', T.value(Grey.g76).copyWith(fontSize: T.px(10)));
+        final t = lineText(mj >= fps ? '${sec}s' : '$sec:${fr.toString().padLeft(2, '0')}', T.value(Grey.g76).copyWith(fontSize: T.px(10)));
         t.paint(c, Offset(x + 3, WtM.band + 3));
         t.dispose();
       }
@@ -394,7 +381,7 @@ class WtThumb extends StatelessWidget {
         ),
       );
     }
-    return WtKindChip(r.kind, dim: r.dim, tone: r.tone);
+    return wtKindChip(r.kind, dim: r.dim, tone: r.tone);
   }
 }
 
@@ -439,19 +426,8 @@ class _FormPainter extends CustomPainter {
   bool shouldRepaint(_FormPainter o) => o.form != form || o.ink != ink || o.outline != outline;
 }
 
-class WtKindChip extends StatelessWidget {
-  const WtKindChip(this.kind, {super.key, this.dim = false, this.tone});
-  final Color? tone;
-  final WsKind kind;
-  final bool dim;
-  @override
-  Widget build(BuildContext context) => Container(
-    width: WtM.chip,
-    height: WtM.chip,
-    decoration: BoxDecoration(color: dim ? Grey.g26 : tone ?? wsTone(kind), borderRadius: BorderRadius.all(Shape.r(3))),
-    child: CustomPaint(painter: _KindPainter(kind, dim ? Grey.g56 : WsT.onAccent)),
-  );
-}
+Widget wtKindChip(WsKind kind, {bool dim = false, Color? tone}) =>
+    Badge(dim ? Grey.g26 : tone ?? wsTone(kind), size: WtM.chip, radius: Shape.r(3), mark: _KindPainter(kind, dim ? Grey.g56 : WsT.onAccent));
 
 class _KindPainter extends CustomPainter {
   const _KindPainter(this.kind, this.ink);

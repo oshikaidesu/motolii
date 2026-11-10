@@ -21,38 +21,37 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:isolate';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show ValueNotifier;
-import 'package:flutter/painting.dart' show FileImage, ResizeImage;
 
 import '../../bridge/motolii.dart';
 import '../state/state.dart' show wsTextFont;
+import '../tool_panel/tool_panel_ease.dart' show easeAlong;
+import 'copies_tiles.dart' show TileQueue;
 
 part 'effect_tiles_knob.dart';
 part 'effect_tiles_seen.dart';
 part 'effect_tiles_showcase.dart';
 
 abstract final class EffectTiles {
-  static final _asked = <String>{}, _queue = <(String, String)>[];
-  static var _drawing = false;
   static void Function()? _told;
 
   /// How many of the tiles in line are drawn, out of how many, while any are (the shelf's reload mark says it).
   static final progress = ValueNotifier<(int, int)?>(null);
+  static final _tiles = TileQueue<(String, String)>(draw, moving: true, batch: 12, progress: progress);
 
   /// [file]'s tile drawn again, ahead of the line, or, with none, every tile on the shelf (the reload mark).
   static void again(Motolii m, {String? file}) {
-    _queue.removeWhere((q) => file == null || q.$1 == file);
+    _tiles.drop((q) => file == null || q.$1 == file);
     for (final (_, f) in m.effects) {
       final home = m.tileHome(f);
       if (home.isEmpty || (file != null && f != file)) continue;
-      _asked.remove(home);
+      _tiles.forget(home);
       try {
         File('$home.tells').deleteSync();
       } catch (_) {}
-      if (file != null && _asked.add(home)) _queue.insert(0, (f, home));
+      if (file != null) _tiles.ask(home, (f, home), at: 0);
     }
     if (_told case final changed?) ask(m, changed);
   }
@@ -230,9 +229,14 @@ abstract final class EffectTiles {
   /// The effects on the shelf whose tile is not drawn yet: one drawn before (this run, or another) shown at once; the
   /// rest put in line, the maker's own at its head (what was just put in), drawn a few at a time, each few shown when done.
   static void ask(Motolii m, void Function() changed) {
-    final mine = <(String, String)>[], theirs = <(String, String)>[];
-    var shown = false;
+    var shown = false, head = 0;
     _told = changed;
+    _tiles.onDrawn = (homes) {
+      for (final h in homes) {
+        m.tileRendered(h, same: File('$h.same').existsSync());
+      }
+      changed();
+    };
     for (final (_, f) in [...m.effects]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase()))) {
       // (as the shelf lists them: its top first)
       final home = m.tileHome(f);
@@ -242,49 +246,20 @@ abstract final class EffectTiles {
       if (!stale && File(home).existsSync()) {
         m.tileRendered(home, same: File('$home.same').existsSync());
         shown = true;
-      } else if (_asked.add(home)) {
-        (f.startsWith(own) ? mine : theirs).add((f, home));
+      } else {
+        final own1 = f.startsWith(own); // (the maker's own at the head, what was just put in; none drawn under flutter test: seven hundred pictures on the GPU while they time the window; flutter drive's draw them)
+        if (_tiles.ask(home, (f, home), at: own1 ? head : null) && own1) head++;
       }
     }
     if (shown) changed();
-    if (Platform.environment['FLUTTER_TEST'] == 'true') {
-      return; // (flutter test's widget tests: none drawn behind them, seven hundred pictures on the GPU while they time the window; flutter drive's draw them)
-    }
-    _queue
-      ..insertAll(0, mine)
-      ..addAll(theirs);
-    if (!_drawing) unawaited(_work(m, changed));
+    _tiles.start();
   }
 
-  static Future<void> _work(Motolii m, void Function() changed) async {
-    _drawing = true;
-    final dir = motoliiDir;
-    var done = 0;
-    try {
-      while (_queue.isNotEmpty) {
-        progress.value = (done, done + _queue.length);
-        final some = _queue.take(12).toList();
-        _queue.removeRange(0, some.length);
-        done += some.length;
-        for (final (home, same) in await Isolate.run(() => draw(dir, some))) {
-          for (final p in [home, for (final (k, _) in moments.indexed) frame(home, k)]) {
-            ResizeImage(FileImage(File(p)), width: readWide).evict();
-          }
-          m.tileRendered(home, same: same);
-        }
-        changed();
-      }
-    } finally {
-      _drawing = false;
-      progress.value = null;
-    }
-  }
-
-  static List<(String, bool)> draw(String dir, List<(String, String)> files) {
-    final folder = Directory.systemTemp.createTempSync('motolii_tiles'), drawn = <(String, bool)>[];
+  static List<String> draw(String dir, List<(String, String)> files) {
+    final folder = Directory.systemTemp.createTempSync('motolii_tiles'), drawn = <String>[];
     final m = Motolii.open('${folder.path}/tiles.motolii', wide: 384, high: 384, dir: dir); // (AbsentMotion's RENDER, its THUMB below)
     if (m == null) return drawn;
-    _ffmpeg([
+    ffmpeg([
       '-f',
       'lavfi',
       '-i',
@@ -301,7 +276,7 @@ abstract final class EffectTiles {
         under = m.add('picture', '$sample/fx_sample_end.jpg'),
         photo = m.add('picture', '$sample/fx_sample.jpg'),
         card = m.add('picture', '$sample/fx_sample.jpg');
-    _ffmpeg([
+    ffmpeg([
       '-f',
       'lavfi',
       '-i',
@@ -517,7 +492,7 @@ abstract final class EffectTiles {
           turn: (at) {
             final t = ((at - moments.first) / (moments.last - moments.first)).clamp(0.0, 1.0);
             for (final MapEntry(key: knob, value: stops) in sweeps.entries) {
-              m.set(on, knob, _along(stops, t * t * (3 - 2 * t))); // (smoothstep: there and back, it does not hit its ends)
+              m.set(on, knob, easeAlong(stops, t * t * (3 - 2 * t))); // (smoothstep: there and back, it does not hit its ends)
             }
           },
         );
@@ -528,7 +503,7 @@ abstract final class EffectTiles {
             enough &&
             (alone == 0 || aloneOk) &&
             (['${moving ? 'moved' : bare}${passes ? '_road' : ''}', 'none', 'stage'].any(
-              (b) => _unseen(home, '${folder.path}/$b'),
+              (b) => _same('${base}_%d.png', '${folder.path}/${b}_%d.png'),
             )); // (or hardly apart from nothing, black, or the grid alone: a square a sound, a video, what it lacks would fill, said so, not left black)
         stands = !moving && !runs && sweeps.isEmpty;
         split = stands && !said.contains('generator');
@@ -547,17 +522,18 @@ abstract final class EffectTiles {
       final at = split ? '0.1+0.8*(3*pow(N/15,2)-2*pow(N/15,3))' : show?.split; // (AbsentMotion's split, its 22 where one stands; no knob to turn, what it did is seen by the line going across: no model for that, the user's wish that no tile stand)
       if (at != null && !same && enough) {
         // (before at its left, as AbsentMotion's effect_thumbs.py lays the photo over it up to there, a white line where they meet)
-        if (_ffmpeg([
-          '-i',
-          '${base}_%d.png',
-          '-i',
-          '${folder.path}/${bare}_%d.png',
-          '-filter_complex',
-          "[0:v]format=gbrp[a];[1:v]format=gbrp[b];[a][b]blend=all_expr='if(lt(abs(X-W*($at)),1),255,if(lt(X,W*($at)),B,A))'",
-          '-start_number',
-          '0',
-          '${base}_%d.split.png',
-        ])) {
+        if (ffmpeg([
+              '-i',
+              '${base}_%d.png',
+              '-i',
+              '${folder.path}/${bare}_%d.png',
+              '-filter_complex',
+              "[0:v]format=gbrp[a];[1:v]format=gbrp[b];[a][b]blend=all_expr='if(lt(abs(X-W*($at)),1),255,if(lt(X,W*($at)),B,A))'",
+              '-start_number',
+              '0',
+              '${base}_%d.split.png',
+            ])?.exitCode ==
+            0) {
           for (final (k, _) in moments.indexed) {
             File('${base}_$k.split.png').renameSync(_drawn(home, k));
           }
@@ -570,7 +546,7 @@ abstract final class EffectTiles {
           File(frame(home, k)).existsSync() ? File(frame(home, k)).deleteSync() : null; // (nothing moves: its still alone)
         }
       } else {
-        _ffmpeg(['-i', '${base}_%d.png', '-q:v', '6', '-start_number', '0', '${base}_%d.jpg']);
+        ffmpeg(['-i', '${base}_%d.png', '-q:v', '6', '-start_number', '0', '${base}_%d.jpg']);
       }
       for (final (k, _) in moments.indexed) {
         File(_drawn(home, k)).deleteSync();
@@ -579,7 +555,7 @@ abstract final class EffectTiles {
         same ? File('$home.same').writeAsStringSync('') : File('$home.same').deleteSync();
       } catch (_) {}
       File('$home.tells').writeAsStringSync(tells(dir, f));
-      drawn.add((home, same));
+      drawn.add(home);
     }
     m.close();
     try {

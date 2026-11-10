@@ -1,12 +1,6 @@
 // Part of effect_tiles.dart: the knob that stands for an effect on its tile, and how far it is turned.
 part of 'effect_tiles.dart';
 
-/// How far along [t] (0 to 1) a line of evenly spaced stops stands.
-double _along(List<double> stops, double t) {
-  final at = t * (stops.length - 1), k = at.floor().clamp(0, stops.length - 2);
-  return stops[k] + (stops[k + 1] - stops[k]) * (at - k);
-}
-
 /// The knob that stands for an effect, and the two values it goes between. Set beside the 121 lines of AbsentMotion's
 /// table where a hand says which (docs/internal/reports/engine/sketch_import_2026-11-01.md), the one that changes the picture most is right
 /// for 3 of the 27 it moves: what a hand moves is what plays as a clock would, rotY, progress, evolution, phase (After

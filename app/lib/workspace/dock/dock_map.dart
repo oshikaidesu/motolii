@@ -24,6 +24,7 @@ import '../../bridge/motolii.dart' show Motolii, MotoliiQuestions;
 import '../../widgets/media.dart' show MiniSlider;
 import '../../skin/tokens.dart';
 import 'dock_glyphs.dart';
+import '../window/settings_file.dart' show fileKeep;
 import 'dock_widgets.dart' show dockMark, IconPress;
 import '../state/state.dart' show WsT;
 part 'dock_map_view.dart';
@@ -353,10 +354,7 @@ Float32List? dockLookKept(String key) {
 }
 
 void dockLookKeep(String key, Float32List v) {
-  try {
-    _look(key).parent.createSync(recursive: true);
-    _look(key).writeAsBytesSync(Float32List.fromList(v).buffer.asUint8List());
-  } catch (_) {} // (not kept: read again next time)
+  fileKeep(_look(key), Float32List.fromList(v).buffer.asUint8List()); // (not kept: read again next time)
 }
 
 /// Items' numbers of several parts side by side, as FontMap lays fonts by FontCLIP's numbers beside their tags' and

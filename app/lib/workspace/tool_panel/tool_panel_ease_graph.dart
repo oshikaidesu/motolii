@@ -296,18 +296,8 @@ class _GraphPainter extends CustomPainter {
       final y = (top + i * (bottom - top) / 4).floorToDouble() + .5;
       c.drawLine(Offset(g.left, y), Offset(g.right, y), grid);
     }
-    void dashed(Offset p, Offset q, Color ink, double wide, double on, double off) {
-      final line = Paint()
-            ..color = ink
-            ..strokeWidth = wide,
-          far = (q - p).distance;
-      for (var d = 0.0; d < far; d += on + off) {
-        c.drawLine(Offset.lerp(p, q, d / far)!, Offset.lerp(p, q, math.min(1, (d + on) / far))!, line);
-      }
-    }
-
-    dashed(Offset(g.left, top), Offset(g.right, top), Grey.g56, 1, 4, 3);
-    dashed(Offset(g.left, bottom), Offset(g.right, bottom), Grey.g56, 1, 4, 3);
+    dashed(c, Offset(g.left, top), Offset(g.right, top), Grey.g56, 1, 4, 3);
+    dashed(c, Offset(g.left, bottom), Offset(g.right, bottom), Grey.g56, 1, 4, 3);
     // A relation's things' copies of the curve, each so much later (thin, faint, under the one a hand shapes).
     c.save();
     c.clipRect(g);
@@ -348,7 +338,7 @@ class _GraphPainter extends CustomPainter {
       if (h.fromX == null || h.fromY == null) continue;
       final o = handle(h.fromX!, h.fromY!), ink = h.param ? WsT.keyDot : Grey.g95;
       if (h.dashed) {
-        dashed(o, handle(h.x, 0), ink, 1, 2.5, 2.5);
+        dashed(c, o, handle(h.x, 0), ink, 1, 2.5, 2.5);
       } else {
         c.drawLine(
           o,
@@ -418,7 +408,7 @@ class _GraphPainter extends CustomPainter {
     // The value jumping at the end pulled: from where it was (the key the jump leaves outside) to where it is now.
     if (pulled != null && jump) {
       final was = pulled == end ? home.$1 : home.$2, now = pulled == end ? a : b;
-      dashed(was, now, Role.warning, 1.6, 3.5, 2.5);
+      dashed(c, was, now, Role.warning, 1.6, 3.5, 2.5);
       c.drawCircle(was, 3, Paint()..color = Grey.g63);
     }
     // The handles: large, a hand's: yellow the shape's, white where it runs.

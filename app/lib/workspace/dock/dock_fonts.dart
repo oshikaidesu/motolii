@@ -10,8 +10,10 @@ import 'package:flutter/widgets.dart';
 
 import '../../bridge/motolii.dart' show Motolii, MotoliiQuestions, motoliiDir;
 import '../../skin/tokens.dart';
+import '../../widgets/controls.dart' show Chip, ChipLook;
 import 'dock_files.dart' show dockRead;
 import 'dock_map.dart';
+import '../window/settings_file.dart' show fileKeep, fileList;
 import 'dock_widgets.dart';
 import 'dock_tags.dart';
 import '../shelf/effect_tiles.dart' show EffectTiles;
@@ -101,22 +103,13 @@ Future<void> fontsRead(Ws ws) => _reading ??= Zone.root.run<Future<void>>(() asy
 File _recentFile = File('${Platform.environment['HOME']}/.motolii/font_recent.json');
 List<String>? _recent;
 void fontRecentAt(File f) => (_recentFile = f, _recent = null);
-List<String> fontRecent() => _recent ??= () {
-  try {
-    return [for (final s in jsonDecode(_recentFile.readAsStringSync()) as List) '$s'];
-  } catch (_) {
-    return <String>[];
-  }
-}();
+List<String> fontRecent() => _recent ??= [for (final s in fileList(_recentFile)) '$s'];
 void _used(String family) {
   final r = fontRecent()
     ..remove(family)
     ..insert(0, family);
   if (r.length > 8) r.removeRange(8, r.length);
-  try {
-    _recentFile.parent.createSync(recursive: true);
-    _recentFile.writeAsStringSync(jsonEncode(r));
-  } catch (_) {} // (not kept: known while the window is open)
+  fileKeep(_recentFile, jsonEncode(r)); // (not kept: known while the window is open)
 }
 
 /// Joined: the font given to the picked text; with no text picked, a new text set in it.
@@ -406,8 +399,8 @@ Widget _fontTile(_Font f, DockCtx c, {required bool list, String? usedBy}) {
         : Text(f.sample ?? 'Motion', maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: _face(f, 28, dockInk(sel, Grey.g95))),
     says: '${f.family}  ·  $tags',
     marks: [
-      if (f.script != null) ...[SizedBox(width: Shape.s(6)), const DockTag(_noLatin)],
-      if (usedBy case final u?) ...[SizedBox(width: Shape.s(6)), DockTag(u, hue: sel ? null : WsT.toneText)],
+      if (f.script != null) ...[SizedBox(width: Shape.s(6)), Chip(label: _noLatin, look: ChipLook.tag(null))],
+      if (usedBy case final u?) ...[SizedBox(width: Shape.s(6)), Chip(label: u, look: ChipLook.tag(sel ? null : WsT.toneText))],
     ],
     after: (h) => [
       if (star || h || sel)

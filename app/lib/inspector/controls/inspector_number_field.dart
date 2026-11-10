@@ -4,9 +4,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/controls/inspector_number_field_num_field_state.dart';
 
-import 'package:motolii/inspector/inspector_small.dart' show FloatShut, Hov;
+import 'package:motolii/inspector/inspector_small.dart' show FloatShut;
 
 import '../../skin/tokens.dart';
+import '../../workspace/commands/context_menu.dart' show WsMenuItem, WsMenuList;
 
 TextStyle blockValue(Color c) => T.value(c).copyWith(fontSize: T.px(14), fontWeight: FontWeight.w600, height: 1.1);
 
@@ -75,46 +76,7 @@ class PastRange extends InheritedWidget {
 /// Past what is vouched for: a number drawn the other way about, light for dark (Flutter's ColorFilter.matrix inversion).
 const pastInk = ColorFilter.matrix(<double>[-1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0]);
 
-/// A short list over the panel, one picked does that and closes: an effect card's ⋮, a number's right click.
-class TinyMenu extends StatelessWidget {
-  const TinyMenu({super.key, required this.name, required this.of, required this.items, required this.hide});
-  final String name, of; // (each row keyed name-word:of)
-  final List<(String, String, VoidCallback)> items;
-  final VoidCallback hide;
-  @override
-  Widget build(BuildContext context) => Container(
-    width: Shape.z(150),
-    padding: EdgeInsets.all(Shape.s(3)),
-    decoration: BoxDecoration(
-      color: Grey.g15,
-      borderRadius: BorderRadius.all(Shape.r(8)),
-      border: Border.all(color: Grey.g26),
-    ),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final (key, label, does) in items)
-          Hov(
-            key: ValueKey('$name-$key:$of'),
-            onTap: () {
-              hide();
-              does();
-            },
-            builder: (_, h) => Container(
-              height: Shape.z(22),
-              padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
-              alignment: Alignment.centerLeft,
-              decoration: BoxDecoration(color: h ? Grey.g26 : null, borderRadius: BorderRadius.all(Shape.r(5))),
-              child: Text(label, maxLines: 1, style: T.name(h ? Grey.g95 : Grey.g76)),
-            ),
-          ),
-      ],
-    ),
-  );
-}
-
-/// [TinyMenu] where the hand pressed, kept inside the window.
+/// A short list over the panel ([WsMenuList]; each row keyed name-word:of) where the hand pressed, kept inside the window: a number's right click.
 class TinyMenuAt extends StatelessWidget {
   const TinyMenuAt({super.key, required this.at, required this.name, required this.of, required this.items, required this.hide, this.keep});
   final Offset at;
@@ -133,7 +95,12 @@ class TinyMenuAt extends StatelessWidget {
           child: FloatShut(
             shut: hide,
             keep: keep,
-            child: TinyMenu(name: name, of: of, items: items, hide: hide),
+            child: WsMenuList(
+              items: [for (final (k, l, f) in items) WsMenuItem(l, f, id: '$name-$k:$of')],
+              close: hide,
+              max: room.height * .5,
+              width: wide,
+            ),
           ),
         ),
       ],

@@ -7,6 +7,7 @@ import '../../inspector/inspector_parts.dart';
 import '../tokens.dart';
 import '../../workspace/state/state.dart' show WsT;
 import 'forms.dart';
+import '../../widgets/controls.dart' show Hov;
 
 class OwnForms extends Forms {
   const OwnForms();

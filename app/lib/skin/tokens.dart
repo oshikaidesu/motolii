@@ -70,11 +70,6 @@ abstract final class Grey {
   static Color get rowLine => ColorTheme.of('RowLine', g10);
 }
 
-abstract final class C {
-  /// The accent: [Role.selected].
-  static Color get mode => Role.selected;
-}
-
 /// The window's role colours. One palette is set, so each name is that colour.
 abstract final class Role {
   static const selected = Color(0xFF7A87E3);
@@ -109,6 +104,13 @@ abstract final class Shape {
   static double z(double x) => x * ColorTheme.number('Size', 1).clamp(.85, 1.5); // (smaller parts than this leave no room for the words)
 }
 
+/// One laid-out line of [s] in [st], to measure or paint on a canvas (the caller disposes it).
+TextPainter lineText(String s, TextStyle st) => TextPainter(
+  text: TextSpan(text: s, style: st),
+  textDirection: TextDirection.ltr,
+  maxLines: 1,
+)..layout();
+
 abstract final class T {
   static String get sans => ColorTheme.word('FontSans', 'Inter');
   static String get mono => ColorTheme.word('FontMono', 'Menlo');
@@ -128,45 +130,32 @@ abstract final class T {
     return l >= N.g56.computeLuminance() || l < .04 ? c : N.g56;
   }
 
-  static TextStyle name([Color? c]) => TextStyle(
+  static TextStyle _sans(Color? c, Color dim, double size, FontWeight? w, double height, [double? ls]) => TextStyle(
     fontFamily: sans,
     fontFamilyFallback: const ['.AppleSystemUIFont'],
-    fontSize: px(11),
-    color: ink(c ?? Grey.g91),
-    height: 1,
-    letterSpacing: .05,
+    fontSize: px(size),
+    fontWeight: w,
+    color: ink(c ?? dim),
+    height: height,
+    letterSpacing: ls,
     decoration: TextDecoration.none,
   );
-  static TextStyle label([Color? c]) => TextStyle(
-    fontFamily: sans,
-    fontFamilyFallback: const ['.AppleSystemUIFont'],
-    fontSize: px(10),
-    color: ink(c ?? Grey.g63),
-    height: 1,
-    letterSpacing: .1,
-    decoration: TextDecoration.none,
-  );
-  static TextStyle micro([Color? c]) => TextStyle(
-    fontFamily: sans,
-    fontFamilyFallback: const ['.AppleSystemUIFont'],
-    fontSize: px(10),
-    fontWeight: FontWeight.w500,
-    color: ink(c ?? Grey.g63),
-    height: 1,
-    letterSpacing: .15,
-    decoration: TextDecoration.none,
-  );
+
+  /// The name's type; [size], [w] and [height] for a form that sets its words larger or heavier.
+  static TextStyle name([Color? c, double size = 11, FontWeight? w, double height = 1]) => _sans(c, Grey.g91, size, w, height, .05);
+  static TextStyle label([Color? c]) => _sans(c, Grey.g63, 10, null, 1, .1);
+  static TextStyle micro([Color? c]) => _sans(c, Grey.g63, 10, FontWeight.w500, 1, .15);
   static TextStyle value([Color? c]) => TextStyle(fontFamily: mono, fontSize: px(11), color: ink(c ?? Grey.g91), height: 1, decoration: TextDecoration.none);
-  static TextStyle title([Color? c]) => TextStyle(
-    fontFamily: sans,
-    fontFamilyFallback: const ['.AppleSystemUIFont'],
-    fontSize: px(13),
-    fontWeight: FontWeight.w600,
-    color: ink(c ?? Grey.g95),
-    height: 1.1,
-    decoration: TextDecoration.none,
-  );
+  static TextStyle title([Color? c]) => _sans(c, Grey.g95, 13, FontWeight.w600, 1.1);
 }
 
 /// What was typed, a Japanese input method's wide letters and digits as plain ones (１２８：３０ is 128:30).
 String halfWidth(String said) => said.replaceAllMapped(RegExp('[！-～]'), (c) => String.fromCharCode(c[0]!.codeUnitAt(0) - 0xFEE0));
+
+/// A colour from a hex word as the document and the theme write it: rrggbb or rrggbbaa (alpha last), a # before it or not
+/// (flutter_colorpicker's colorFromHex reads aarrggbb, so it is not used); null: not hex.
+Color? colorOfHex(String word) {
+  final hex = word.startsWith('#') ? word.substring(1) : word, v = int.tryParse(hex, radix: 16);
+  if (v == null || hex.length != 6 && hex.length != 8) return null;
+  return hex.length == 8 ? Color(((v & 0xFF) << 24) | (v >> 8)) : Color(0xFF000000 | v);
+}

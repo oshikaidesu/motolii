@@ -15,7 +15,9 @@ import 'package:naked_ui/naked_ui.dart';
 
 import '../../bridge/motolii.dart' show docFactsOf;
 import '../../skin/tokens.dart';
+import '../../widgets/controls.dart' show Chip, ChipLook;
 import '../state/state.dart';
+import 'settings_file.dart' show firstFree;
 import '../../widgets/text_gestures.dart';
 
 /// One document listed: its file, and what it kept (null: none yet, or not read yet).
@@ -96,10 +98,7 @@ class _WsHomeState extends State<WsHome> {
 
   /// A copy beside it, named as AbsentMotion names one ("Name Copy", then a number when that is taken).
   void _duplicate(HomeDoc d) {
-    var to = '${widget.folder}/${d.name} Copy.motolii';
-    for (var n = 2; File(to).existsSync(); n++) {
-      to = '${widget.folder}/${d.name} Copy $n.motolii';
-    }
+    final to = firstFree('${widget.folder}/${d.name} Copy.motolii', (f) => File(f).existsSync(), (n) => '${widget.folder}/${d.name} Copy $n.motolii');
     File(d.path).copySync(to);
     _menu = null;
     _read();
@@ -108,10 +107,7 @@ class _WsHomeState extends State<WsHome> {
   /// Into the Trash, not gone: the user's own ~/.Trash, as the Finder puts a file there (a name taken there: a number).
   void _trash(HomeDoc d) {
     final trash = '${Platform.environment['HOME']}/.Trash';
-    var to = '$trash/${d.name}.motolii';
-    for (var n = 2; File(to).existsSync(); n++) {
-      to = '$trash/${d.name} $n.motolii';
-    }
+    final to = firstFree('$trash/${d.name}.motolii', (f) => File(f).existsSync(), (n) => '$trash/${d.name} $n.motolii');
     try {
       File(d.path).renameSync(to);
     } catch (_) {
@@ -224,15 +220,12 @@ class _WsHomeState extends State<WsHome> {
 
   Widget _button(String key, String text, bool on, VoidCallback tap) => Padding(
     padding: const EdgeInsets.only(left: 4),
-    child: NakedButton(
-      enableFeedback: false,
+    child: Chip(
       key: ValueKey(key),
-      onPressed: tap,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: WsT.inset, vertical: 4),
-        decoration: BoxDecoration(color: on ? WsT.accent : WsT.card, borderRadius: BorderRadius.circular(6)),
-        child: Text(text, style: T.label(on ? WsT.onAccent : Grey.g91)),
-      ),
+      label: text,
+      on: on,
+      onTap: tap,
+      look: ChipLook(fill: WsT.card, onFill: WsT.accent, ink: Grey.g91, onInk: WsT.onAccent, padX: 8, padY: 4, radius: 6, text: (c) => T.label(c)),
     ),
   );
   static const _tile = 150.0; // (a tile: its picture square above its name, as CapCut's desktop grid)

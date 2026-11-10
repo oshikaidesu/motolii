@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 
 import '../skin/tokens.dart';
 import 'inspector_parts.dart';
+import '../widgets/controls.dart' show Chip, ChipLook, Hov;
 
 // ---- 13. the whole panel ----------------------------------------------------------------------------------------------
 // contract: one rule for every card. A card is what the inside declares (card_table.h, sent by motolii_cards and
@@ -28,13 +29,9 @@ class AddEffectRow extends StatelessWidget {
         if (doc.movable.contains(c.name))
           for (final p in c.params) p.id,
     ];
-    Widget word(String key, String word, VoidCallback? does) => Hov(
-      key: ValueKey(key),
-      onTap: does,
-      builder: (_, h) => Padding(
-        padding: EdgeInsets.only(left: Shape.s(10)),
-        child: Text(word, style: T.label(h ? Grey.g95 : Grey.g56)),
-      ),
+    Widget word(String key, String word, VoidCallback? does) => Padding(
+      padding: EdgeInsets.only(left: Shape.s(10)),
+      child: Chip(key: ValueKey(key), label: word, onTap: does, look: ChipLook.word),
     );
     return Padding(
       padding: EdgeInsets.only(bottom: Pop.gap),

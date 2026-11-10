@@ -52,109 +52,107 @@ extension _WsTimelineRows on _WsTimelineState {
       Expanded(
         child: WsMenu(
           key: _labelMenu,
-          child: Listener(
-            onPointerSignal: _wheel,
-            child: WsTwoFingers(
-              onPan: (by, _) => _scrollBy(Offset(0, -by.dy)), // (the labels go up and down with the tracks' rows)
-              child: ClipRect(
-                child: LayoutBuilder(
-                  builder: (context, box) {
-                    final top = _clampV(rows.length);
-                    return Stack(
-                      children: [
-                        for (var i = 0; i < rows.length; i++)
-                          if (_order[i].aim case (final said, final other)?)
-                            Positioned(
-                              key: ValueKey('ws-tl-aim-${ws.layers[_order[i].layer].id}-$said-$other'),
-                              left: Shape.s(34),
-                              right: Shape.s(8),
-                              top: i * WtM.row - top,
-                              height: WtM.row,
-                              child: NakedButton(
-                                enableFeedback: false,
-                                mouseCursor: SystemMouseCursors.basic,
-                                onPressed: () => ws.select(other), // (a press goes there: Cavalry's connection list)
-                                child: Row(
-                                  children: [
-                                    Text(said, maxLines: 1, style: T.label(Grey.g56)),
-                                    SizedBox(width: Shape.s(5)),
-                                    Flexible(
-                                      child: Text(_numbered(ws, other), maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g91)),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            )
-                          else if (_order[i].value case final n?) // (a value's lane: its name, under its layer's, as Ableton names a lane by its control)
-                            Positioned(
-                              key: ValueKey('ws-tl-lane-${ws.layers[_order[i].layer].id}-$n'),
-                              left: Shape.s(34),
-                              right: Shape.s(8),
-                              top: i * WtM.row - top,
-                              height: WtM.row,
-                              // (what it aims at, by the card's name then its own: Ableton's Device and Control choosers, Logic's plug-in and parameter; an effect's knob Threshold, not js_am_rays_threshold)
+          child: WsTwoFingers(
+            onWheel: _scrollBy,
+            onPan: (by, _) => _scrollBy(Offset(0, -by.dy)), // (the labels go up and down with the tracks' rows)
+            child: ClipRect(
+              child: LayoutBuilder(
+                builder: (context, box) {
+                  final top = _clampV(rows.length);
+                  return Stack(
+                    children: [
+                      for (var i = 0; i < rows.length; i++)
+                        if (_order[i].aim case (final said, final other)?)
+                          Positioned(
+                            key: ValueKey('ws-tl-aim-${ws.layers[_order[i].layer].id}-$said-$other'),
+                            left: Shape.s(34),
+                            right: Shape.s(8),
+                            top: i * WtM.row - top,
+                            height: WtM.row,
+                            child: NakedButton(
+                              enableFeedback: false,
+                              mouseCursor: SystemMouseCursors.basic,
+                              onPressed: () => ws.select(other), // (a press goes there: Cavalry's connection list)
                               child: Row(
                                 children: [
-                                  if (_laneCard(ws, ws.layers[_order[i].layer], n) case final card?) ...[
-                                    Flexible(
-                                      child: Text(card, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g56)),
-                                    ),
-                                    SizedBox(width: Shape.s(5)),
-                                  ],
-                                  Text(ws.inside?.shown(n)?.label ?? n, maxLines: 1, style: T.label(Grey.g76)),
+                                  Text(said, maxLines: 1, style: T.label(Grey.g56)),
+                                  SizedBox(width: Shape.s(5)),
+                                  Flexible(
+                                    child: Text(_numbered(ws, other), maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g91)),
+                                  ),
                                 ],
                               ),
-                            )
-                          else if (ws.layers[_order[i].layer] case final l)
-                            Positioned(
-                              key: ValueKey('ws-tl-label-${l.id}'),
-                              left: 0,
-                              right: 0,
-                              top: i * WtM.row - top,
-                              height: WtM.row,
-                              // Joined: a row carried up or down is the thing brought nearer or further back, by as many rows as it was carried.
-                              child: GestureDetector(
-                                supportedDevices: wsPressing,
-                                onSecondaryTapDown: (d) => _labelRight(l, d.globalPosition),
-                                dragStartBehavior: DragStartBehavior.down, // (all of the way it was carried counts, from where the hand came down)
-                                onVerticalDragStart: (_) => _lift = 0,
-                                onVerticalDragUpdate: (d) => _lift += d.delta.dy,
-                                onVerticalDragEnd: (_) {
-                                  final by = (_lift / WtM.row).round();
-                                  if (by != 0) {
-                                    ws.after(ws.inside!.later('raise', layer: int.parse(l.id), number: (by > 0 ? -1 : 1) * _places(ws, l, by).toDouble()));
-                                  }
-                                },
-                                child: _LabelRow(
-                                  index: _order[i].layer, // (its layer's number, not its row's: After Effects' # counts layers, a value's lane none; golf (61))
-                                  depth: ws.depth(l),
-                                  row: rows[i],
-                                  hidden: _isHidden(ws, l.id),
-                                  solo: _isSolo(ws, l.id),
-                                  lanes: l.kind == WsKind.group
-                                      ? ws.groupOpen(l.id)
-                                      : l.keys.isEmpty && wsTargets(ws, l.id).isEmpty && !l.lined
-                                      ? null
-                                      : ws.lanesOpen(l.id),
-                                  onLanes: () => l.kind == WsKind.group ? ws.turnGroup(l.id) : ws.twirl([l.id]),
-                                  onSelect: () => HardwareKeyboard.instance.isShiftPressed
-                                      ? wsPickRange(ws, l.id) // (Shift: every row from the last picked to this, After Effects' manner)
-                                      : HardwareKeyboard.instance.isMetaPressed
-                                      ? wsPickAlso(ws, l.id)
-                                      : ws.select(l.id), // (Cmd: one more, or one less)
-                                  onEye: () => _eye(ws, l.id),
-                                  onSolo: () => _flag(ws, 'solo', l.id),
-                                  onLock: () => _flag(ws, 'lock', l.id),
-                                ),
+                            ),
+                          )
+                        else if (_order[i].value case final n?) // (a value's lane: its name, under its layer's, as Ableton names a lane by its control)
+                          Positioned(
+                            key: ValueKey('ws-tl-lane-${ws.layers[_order[i].layer].id}-$n'),
+                            left: Shape.s(34),
+                            right: Shape.s(8),
+                            top: i * WtM.row - top,
+                            height: WtM.row,
+                            // (what it aims at, by the card's name then its own: Ableton's Device and Control choosers, Logic's plug-in and parameter; an effect's knob Threshold, not js_am_rays_threshold)
+                            child: Row(
+                              children: [
+                                if (_laneCard(ws, ws.layers[_order[i].layer], n) case final card?) ...[
+                                  Flexible(
+                                    child: Text(card, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g56)),
+                                  ),
+                                  SizedBox(width: Shape.s(5)),
+                                ],
+                                Text(ws.inside?.shown(n)?.label ?? n, maxLines: 1, style: T.label(Grey.g76)),
+                              ],
+                            ),
+                          )
+                        else if (ws.layers[_order[i].layer] case final l)
+                          Positioned(
+                            key: ValueKey('ws-tl-label-${l.id}'),
+                            left: 0,
+                            right: 0,
+                            top: i * WtM.row - top,
+                            height: WtM.row,
+                            // Joined: a row carried up or down is the thing brought nearer or further back, by as many rows as it was carried.
+                            child: GestureDetector(
+                              supportedDevices: wsPressing,
+                              onSecondaryTapDown: (d) => _labelRight(l, d.globalPosition),
+                              dragStartBehavior: DragStartBehavior.down, // (all of the way it was carried counts, from where the hand came down)
+                              onVerticalDragStart: (_) => _lift = 0,
+                              onVerticalDragUpdate: (d) => _lift += d.delta.dy,
+                              onVerticalDragEnd: (_) {
+                                final by = (_lift / WtM.row).round();
+                                if (by != 0) {
+                                  ws.after(ws.inside!.later('raise', layer: int.parse(l.id), number: (by > 0 ? -1 : 1) * _places(ws, l, by).toDouble()));
+                                }
+                              },
+                              child: _LabelRow(
+                                index: _order[i].layer, // (its layer's number, not its row's: After Effects' # counts layers, a value's lane none; golf (61))
+                                depth: ws.depth(l),
+                                row: rows[i],
+                                hidden: _isHidden(ws, l.id),
+                                solo: _isSolo(ws, l.id),
+                                lanes: l.kind == WsKind.group
+                                    ? ws.groupOpen(l.id)
+                                    : l.keys.isEmpty && wsTargets(ws, l.id).isEmpty && !l.lined
+                                    ? null
+                                    : ws.lanesOpen(l.id),
+                                onLanes: () => l.kind == WsKind.group ? ws.turnGroup(l.id) : ws.twirl([l.id]),
+                                onSelect: () => HardwareKeyboard.instance.isShiftPressed
+                                    ? wsPickRange(ws, l.id) // (Shift: every row from the last picked to this, After Effects' manner)
+                                    : HardwareKeyboard.instance.isMetaPressed
+                                    ? wsPickAlso(ws, l.id)
+                                    : ws.select(l.id), // (Cmd: one more, or one less)
+                                onEye: () => _eye(ws, l.id),
+                                onSolo: () => _flag(ws, 'solo', l.id),
+                                onLock: () => _flag(ws, 'lock', l.id),
                               ),
                             ),
-                        for (var i = 0; i < rows.length; i++)
-                          if (_order[i].value == null)
-                            if (_renameField(i, ws.layers[_order[i].layer].id, i * WtM.row - top) case final f?) f, // (its name written over it: Cmd+R)
-                      ],
-                    );
-                  },
-                ),
+                          ),
+                      for (var i = 0; i < rows.length; i++)
+                        if (_order[i].value == null)
+                          if (_renameField(i, ws.layers[_order[i].layer].id, i * WtM.row - top) case final f?) f, // (its name written over it: Cmd+R)
+                    ],
+                  );
+                },
               ),
             ),
           ),

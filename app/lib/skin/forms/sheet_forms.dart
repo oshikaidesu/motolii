@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
 import '../tokens.dart';
+import 'base_controls.dart';
 import 'forms.dart';
 import 'number_paint.dart';
 
@@ -40,8 +41,6 @@ class _MarkPaint extends CustomPainter {
   bool shouldRepaint(_MarkPaint o) => o.mark != mark || o.ink != ink;
 }
 
-TextStyle _word(Color c) => T.name(c).copyWith(fontSize: T.px(13), fontWeight: FontWeight.w500, height: 1.15);
-
 class SheetForms extends Forms {
   const SheetForms();
 
@@ -56,7 +55,7 @@ class SheetForms extends Forms {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(a.label, style: _word(Grey.g95)),
+            Text(a.label, style: T.name(Grey.g95, 13, FontWeight.w500, 1.15)),
             SizedBox(width: Shape.s(8)),
             SizedBox.square(
               dimension: Shape.z(14),
@@ -80,7 +79,7 @@ class SheetForms extends Forms {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(s.on ? 'On' : 'Off', style: _word(s.on ? Grey.g95 : Grey.g56).copyWith(fontSize: T.px(11))),
+          Text(s.on ? 'On' : 'Off', style: T.name(s.on ? Grey.g95 : Grey.g56, 11, FontWeight.w500, 1.15)),
           SizedBox(width: Shape.s(6)),
           SizedBox.square(
             dimension: Shape.z(12),
@@ -113,7 +112,7 @@ class SheetForms extends Forms {
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
-                      child: Text(c.title!, maxLines: 1, style: _word(Grey.g95)),
+                      child: Text(c.title!, maxLines: 1, style: T.name(Grey.g95, 13, FontWeight.w500, 1.15)),
                     ),
                   ),
                   ?c.trailing,
@@ -242,44 +241,20 @@ class SheetForms extends Forms {
 
   /// A name on the sheet. Picked, a quarter stands at its left. The band behind it is the sheet.
   @override
-  Widget track(BuildContext context, TrackSpec t) => NakedButton(
-    onPressed: t.onSelect,
-    enableFeedback: false,
-    child: Padding(
-      padding: EdgeInsets.only(left: Shape.s(6), right: Shape.s(6)),
-      child: Row(
-        children: [
-          SizedBox.square(
-            dimension: Shape.z(16),
-            child: CustomPaint(painter: _MarkPaint(t.selected ? _Mark.quarter : _Mark.ring, t.selected ? Accent.key : Grey.g38)),
-          ),
-          SizedBox(width: Shape.s(6)),
-          SizedBox(
-            width: 14,
-            child: Text(
-              '${t.index + 1}',
-              softWrap: false,
-              overflow: TextOverflow.visible,
-              style: T.value(Grey.g56).copyWith(fontSize: T.px(10)),
-            ),
-          ),
-          SizedBox(width: Shape.s(6)),
-          t.kind,
-          SizedBox(width: Shape.s(7)),
-          Expanded(
-            child: Text(
-              t.name,
-              style: T.name(t.dim ? Grey.g56 : Grey.g95).copyWith(fontWeight: t.selected ? FontWeight.w600 : FontWeight.w400),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          t.eye,
-          t.solo,
-          t.lock,
-        ],
-      ),
+  Widget track(BuildContext context, TrackSpec t) => Usual.track(
+    context,
+    t,
+    banded: false,
+    mark: SizedBox.square(
+      dimension: Shape.z(16),
+      child: CustomPaint(painter: _MarkPaint(t.selected ? _Mark.quarter : _Mark.ring, t.selected ? Accent.key : Grey.g38)),
     ),
+    index: Grey.g56,
+    ink: Grey.g95,
+    rest: FontWeight.w400,
+    picked: FontWeight.w600,
+    left: 6,
+    bottom: 0,
   );
 
   /// A square of the axis, the number, and a rule. A disc travels the rule when the value has a range.

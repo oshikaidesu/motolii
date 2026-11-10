@@ -2,11 +2,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/theme.dart';
 
 import '../widgets/glyphs.dart';
 import '../skin/tokens.dart';
 import 'inspector_parts.dart';
+import '../widgets/controls.dart' show Hov;
 
 // ---- 6. choosers and hand-overs -------------------------------------------------------------------------------------
 /// A short list lives in a segmented control; a long one opens a searchable list (G2, G3). Never prev/next cycling (do-not-repeat 6, 7).
@@ -287,12 +289,15 @@ class InspHeader extends StatelessWidget {
           const Spacer(),
           Text('Animate all', style: T.label(Grey.g63)),
           SizedBox(width: Shape.s(6)),
-          OnOff(
-            on: doc.animateAll,
-            onChanged: (v) {
-              doc.animateAll = v;
-              doc.poke();
-            },
+          Forms.worn.onOff(
+            context,
+            SwitchSpec(
+              on: doc.animateAll,
+              onChanged: (v) {
+                doc.animateAll = v;
+                doc.poke();
+              },
+            ),
           ),
         ],
       ),

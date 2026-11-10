@@ -8,6 +8,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../widgets/media.dart' show Draw;
 import 'theme.dart';
 
 abstract final class SkinParts {
@@ -108,15 +109,8 @@ class SkinFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final n = [if (hover) 'frame.$name.hover', 'frame.$name'].where(SkinParts.has).firstOrNull;
-    return n == null ? DecoratedBox(decoration: usual, child: child) : CustomPaint(painter: _Frame(n), child: child);
+    return n == null
+        ? DecoratedBox(decoration: usual, child: child)
+        : CustomPaint(painter: Draw((c, s) => SkinParts.frame(c, Offset.zero & s, n), n), child: child);
   }
-}
-
-class _Frame extends CustomPainter {
-  const _Frame(this.name);
-  final String name;
-  @override
-  void paint(Canvas c, Size s) => SkinParts.frame(c, Offset.zero & s, name);
-  @override
-  bool shouldRepaint(_Frame o) => o.name != name;
 }

@@ -20,6 +20,7 @@ import 'package:flutter/widgets.dart';
 
 import '../bridge/motolii.dart' show motoliiOwn, motoliiShelves;
 import '../workspace/window/settings_file.dart';
+import 'tokens.dart' show colorOfHex;
 
 abstract final class ColorTheme {
   /// The roles the theme file says (none: the window's own colours). The window is built again when they change.
@@ -147,7 +148,6 @@ abstract final class ColorTheme {
 
   /// The roles of a theme file: every `<Name Value="#rrggbb"/>` or `"#rrggbbaa"`.
   static Map<String, Color> parse(String xml) => {
-    for (final m in RegExp(r'<(\w+)\s+Value="#([0-9a-fA-F]{6})([0-9a-fA-F]{2})?"\s*/>').allMatches(xml))
-      m.group(1)!: Color(int.parse('${m.group(3) ?? 'ff'}${m.group(2)}', radix: 16)),
+    for (final m in RegExp(r'<(\w+)\s+Value="(#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?)"\s*/>').allMatches(xml)) m.group(1)!: colorOfHex(m.group(2)!)!,
   };
 }

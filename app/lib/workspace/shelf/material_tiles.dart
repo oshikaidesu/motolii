@@ -5,10 +5,10 @@
 import 'dart:io';
 
 import '../../bridge/motolii.dart';
-import 'copies_tiles.dart' show TileQueue, tileHome;
+import 'copies_tiles.dart' show TileQueue, drawTiles, tileHome;
 
 abstract final class MaterialTiles {
-  static final _tiles = TileQueue<(String, String)>(draw, (h) => [h]);
+  static final _tiles = TileQueue<(String, String)>(draw);
 
   /// Told once some are drawn: the tiles look again.
   static final drawn = _tiles.drawn;
@@ -48,57 +48,36 @@ abstract final class MaterialTiles {
   }
 
   /// Each material's tile drawn where its home says; the homes drawn.
-  static List<String> draw(String dir, List<(String, String)> materials) {
-    final folder = Directory.systemTemp.createTempSync('motolii_materials'), made = <String>[];
-    for (final (i, (wears, home)) in materials.indexed) {
-      final m = Motolii.open('${folder.path}/material_$i.motolii', wide: 1080, high: 1080, dir: dir);
-      if (m == null) continue;
-      try {
-        Directory(File(home).parent.path).createSync(recursive: true);
-        final back = m.add('shape', 'rect'); // (what glass bends and tints: a ramp across it)
+  static List<String> draw(String dir, List<(String, String)> materials) => drawTiles(dir, 'motolii_materials', materials, (j) => j.$2, (m, job, home) {
+    final wears = job.$1, back = m.add('shape', 'rect'); // (what glass bends and tints: a ramp across it)
+    m
+      ..say(back, 'fill', 'ff3366 3366ff')
+      ..set(back, 'gradient_angle', 90)
+      ..set(back, 'scale_x', 4)
+      ..set(back, 'scale_y', 4)
+      ..set(back, 'z', -1);
+    final ball = m.add('solid', 'ball');
+    m
+      ..say(ball, 'shading', wears)
+      ..set(ball, 'scale_x', 1.4)
+      ..set(ball, 'scale_y', 1.4)
+      ..set(ball, 'scale_z', 1.4);
+    if (_shows[wears] case (final fill, final numbers, final sun)) {
+      m.say(ball, 'fill', fill);
+      for (final e in numbers.entries) {
+        m.set(ball, e.key, e.value);
+      }
+      if (sun != null) {
+        final light = m.add('light', 'sun');
         m
-          ..say(back, 'fill', 'ff3366 3366ff')
-          ..set(back, 'gradient_angle', 90)
-          ..set(back, 'scale_x', 4)
-          ..set(back, 'scale_y', 4)
-          ..set(back, 'z', -1);
-        final ball = m.add('solid', 'ball');
-        m
-          ..say(ball, 'shading', wears)
-          ..set(ball, 'scale_x', 1.4)
-          ..set(ball, 'scale_y', 1.4)
-          ..set(ball, 'scale_z', 1.4);
-        if (_shows[wears] case (final fill, final numbers, final sun)) {
-          m.say(ball, 'fill', fill);
-          for (final e in numbers.entries) {
-            m.set(ball, e.key, e.value);
-          }
-          if (sun != null) {
-            final light = m.add('light', 'sun');
-            m
-              ..set(light, 'rotate_y', sun.$1)
-              ..set(light, 'intensity', sun.$2);
-          }
-        }
-        final still = '${home.substring(0, home.length - 4)}_still.png';
-        if (!m.at(0) || !m.still(still)) {
-          File('$home.none').writeAsStringSync('');
-          continue;
-        }
-        Process.runSync('sips', ['-Z', '192', still]);
-        File(still).renameSync(home);
-        made.add(home);
-      } catch (_) {
-        try {
-          File('$home.none').writeAsStringSync('');
-        } catch (_) {}
-      } finally {
-        m.close();
+          ..set(light, 'rotate_y', sun.$1)
+          ..set(light, 'intensity', sun.$2);
       }
     }
-    try {
-      folder.deleteSync(recursive: true);
-    } catch (_) {}
-    return made;
-  }
+    final still = '${home.substring(0, home.length - 4)}_still.png';
+    if (!m.at(0) || !m.still(still)) return false;
+    Process.runSync('sips', ['-Z', '192', still]);
+    File(still).renameSync(home);
+    return true;
+  });
 }

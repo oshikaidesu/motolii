@@ -158,9 +158,9 @@ class _WaitedState extends State<_Waited> {
         ),
         child: TapRegion(
           groupId: _group,
-          child: _Hover(
+          child: Hov(
             onTap: () => _show(!_open.isShowing),
-            builder: (h) => Padding(
+            builder: (_, h) => Padding(
               padding: EdgeInsets.only(right: Shape.s(10)),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

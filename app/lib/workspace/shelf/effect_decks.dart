@@ -5,19 +5,14 @@ import 'dart:io';
 import 'package:crypto/crypto.dart' show sha256;
 
 import '../../bridge/motolii.dart' show motoliiShelves;
+import '../window/settings_file.dart' show fileJson, fileKeep, fileList, firstFree;
 
 /// Where the effects put on lately are kept, the newest first, forty, as Alight Motion's effect browser keeps them
 /// (EffectBrowser.kt:117), in the Fonts shelf's way (font_recent.json; a test points it elsewhere: [effectRecentAt]).
 File _recentFile = File('${Platform.environment['HOME']}/.motolii/effect_recent.json');
 List<String>? _recent;
 void effectRecentAt(File f) => (_recentFile = f, _recent = null);
-List<String> effectRecent() => _recent ??= () {
-  try {
-    return [for (final s in jsonDecode(_recentFile.readAsStringSync()) as List) '$s'];
-  } catch (_) {
-    return <String>[];
-  }
-}();
+List<String> effectRecent() => _recent ??= [for (final s in fileList(_recentFile)) '$s'];
 
 /// An effect went on: it comes first among the recent, and a line is added to effect_used.jsonl beside them (one JSON
 /// object a line, JSON Lines' way of a log that only grows): when, which, the words typed and the table it was picked
@@ -27,9 +22,8 @@ void effectUsed(String id, {required String words, required String chip}) {
     ..remove(id)
     ..insert(0, id);
   if (r.length > 40) r.removeRange(40, r.length);
+  fileKeep(_recentFile, jsonEncode(r));
   try {
-    _recentFile.parent.createSync(recursive: true);
-    _recentFile.writeAsStringSync(jsonEncode(r));
     File('${_recentFile.parent.path}/effect_used.jsonl')
         .writeAsStringSync('${jsonEncode({'at': DateTime.now().toIso8601String(), 'id': id, 'words': words, 'chip': chip})}\n', mode: FileMode.append);
   } catch (_) {} // (not kept: known while the window is open)
@@ -86,22 +80,20 @@ List<EffectDeck>? _decks;
 void effectDecksAt(File f) => (_decksFile = f, _decks = null);
 List<EffectDeck> effectDecks() => _decks ??= () {
   try {
-    return [for (final d in (jsonDecode(_decksFile.readAsStringSync()) as Map)['decks'] as List) EffectDeck.of(d as Map)..target = d['target'] == true];
+    return [for (final d in (fileJson(_decksFile) as Map)['decks'] as List) EffectDeck.of(d as Map)..target = d['target'] == true];
   } catch (_) {
     return <EffectDeck>[];
   }
 }();
 void effectDecksKeep() {
-  try {
-    _decksFile.parent.createSync(recursive: true);
-    _decksFile.writeAsStringSync(
-      jsonEncode({
-        'decks': [
-          for (final d in effectDecks()) {...d.json, if (d.target) 'target': true},
-        ],
-      }),
-    );
-  } catch (_) {} // (not kept: known while the window is open)
+  fileKeep(
+    _decksFile,
+    jsonEncode({
+      'decks': [
+        for (final d in effectDecks()) {...d.json, if (d.target) 'target': true},
+      ],
+    }),
+  ); // (not kept: known while the window is open)
 }
 
 /// Where an effect's right click puts it, one place however many decks there are: a deck set as the target, else the
@@ -118,11 +110,7 @@ void effectTargetSet(EffectDeck? to) {
 /// A name no other deck has: the name, then the name 2, as Finder names a copy.
 String deckName(String name) {
   final held = {for (final d in effectDecks()) d.name}, base = name.trim().isEmpty ? 'Deck' : name.trim();
-  var n = base;
-  for (var k = 2; held.contains(n); k++) {
-    n = '$base $k';
-  }
-  return n;
+  return firstFree(base, held.contains, (k) => '$base $k');
 }
 
 /// The fingerprint of an effect's file, SHA-256's first twelve (package:crypto; '' for what is no file).

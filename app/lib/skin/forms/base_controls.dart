@@ -3,16 +3,9 @@ import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
 import '../tokens.dart';
+import '../../widgets/controls.dart' show Hov;
 import '../../workspace/state/state.dart' show WsT;
 import 'forms.dart';
-
-class _Hot extends StatelessWidget {
-  const _Hot({required this.builder, this.onTap});
-  final Widget Function(bool hot) builder;
-  final VoidCallback? onTap;
-  @override
-  Widget build(BuildContext context) => NakedButton(onPressed: onTap, enableFeedback: false, builder: (context, st, _) => builder(st.isHovered));
-}
 
 abstract final class Usual {
   /// A well of round items, the chosen one filled.
@@ -24,9 +17,9 @@ abstract final class Usual {
       mainAxisSize: MainAxisSize.min,
       children: [
         for (var i = 0; i < c.labels.length; i++)
-          _Hot(
+          Hov(
             onTap: () => c.onSelect(i),
-            builder: (h) => Container(
+            builder: (_, h) => Container(
               height: Shape.z(16),
               padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
               alignment: Alignment.center,
@@ -42,9 +35,9 @@ abstract final class Usual {
   );
 
   /// An on/off chip: raised, with the mark in the accent, when on.
-  static Widget flag(BuildContext context, FlagSpec f) => _Hot(
+  static Widget flag(BuildContext context, FlagSpec f) => Hov(
     onTap: f.onTap,
-    builder: (h) {
+    builder: (_, h) {
       final ink = f.on ? WsT.accent : (h ? Grey.g91 : Grey.g56);
       return Container(
         height: Shape.z(20),
@@ -73,9 +66,9 @@ abstract final class Usual {
       child: Row(
         children: [
           for (final (name, n) in c.chips) ...[
-            _Hot(
+            Hov(
               onTap: () => c.onPick(name),
-              builder: (h) {
+              builder: (_, h) {
                 final on = name == c.active;
                 return AnimatedContainer(
                   duration: Mo.dur,
@@ -100,55 +93,72 @@ abstract final class Usual {
     ),
   );
 
-  /// One timeline name: a band, an accent edge when picked, the kind and the three toggles.
-  static Widget track(BuildContext context, TrackSpec t) => NakedButton(
-    onPressed: t.onSelect,
-    enableFeedback: false,
-    child: Container(
-      color: t.selected ? Grey.g20 : (t.hot ? Grey.g15 : (t.index.isEven ? Grey.bandA : Grey.bandB)),
-      padding: EdgeInsets.only(bottom: Shape.s(1)),
-      child: Stack(
+  /// One timeline name: a band, an accent edge when picked, the kind and the three toggles. [banded] false is a bare row; a [mark] stands at its left.
+  static Widget track(
+    BuildContext context,
+    TrackSpec t, {
+    bool banded = true,
+    Widget? mark,
+    Color? index,
+    Color? ink,
+    FontWeight rest = FontWeight.w500,
+    FontWeight picked = FontWeight.w700,
+    double left = 8,
+    double bottom = 1,
+  }) {
+    final row = Padding(
+      padding: EdgeInsets.only(left: Shape.s(left), right: Shape.s(6)),
+      child: Row(
         children: [
-          if (t.selected)
-            Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: Shape.z(3),
-              child: ColoredBox(color: WsT.accent),
-            ),
-          Padding(
-            padding: EdgeInsets.only(left: Shape.s(8), right: Shape.s(6)),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 14,
-                  child: Text(
-                    '${t.index + 1}',
-                    softWrap: false,
-                    overflow: TextOverflow.visible,
-                    style: T.value(t.selected ? Grey.g91 : Grey.g56).copyWith(fontSize: T.px(10)),
-                  ),
-                ),
-                SizedBox(width: Shape.s(6)),
-                t.kind,
-                SizedBox(width: Shape.s(7)),
-                Expanded(
-                  child: Text(
-                    t.name,
-                    style: T.name(t.dim ? Grey.g56 : (t.selected ? Grey.g100 : Grey.g91)).copyWith(fontWeight: t.selected ? FontWeight.w700 : FontWeight.w500),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                t.eye,
-                t.solo,
-                t.lock,
-              ],
+          if (mark != null) ...[mark, SizedBox(width: Shape.s(6))],
+          SizedBox(
+            width: 14,
+            child: Text(
+              '${t.index + 1}',
+              softWrap: false,
+              overflow: TextOverflow.visible,
+              style: T.value(index ?? (t.selected ? Grey.g91 : Grey.g56)).copyWith(fontSize: T.px(10)),
             ),
           ),
+          SizedBox(width: Shape.s(6)),
+          t.kind,
+          SizedBox(width: Shape.s(7)),
+          Expanded(
+            child: Text(
+              t.name,
+              style: T.name(t.dim ? Grey.g56 : (ink ?? (t.selected ? Grey.g100 : Grey.g91))).copyWith(fontWeight: t.selected ? picked : rest),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          t.eye,
+          t.solo,
+          t.lock,
         ],
       ),
-    ),
-  );
+    );
+    return NakedButton(
+      onPressed: t.onSelect,
+      enableFeedback: false,
+      child: Container(
+        color: banded ? (t.selected ? Grey.g20 : (t.hot ? Grey.g15 : (t.index.isEven ? Grey.bandA : Grey.bandB))) : null,
+        padding: EdgeInsets.only(bottom: Shape.s(bottom)),
+        child: !banded
+            ? row
+            : Stack(
+                children: [
+                  if (t.selected)
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: Shape.z(3),
+                      child: ColoredBox(color: WsT.accent),
+                    ),
+                  row,
+                ],
+              ),
+      ),
+    );
+  }
 }

@@ -3,12 +3,7 @@
 part of 'stage.dart';
 
 /// Joined: a colour of the document as Flutter's (six digits; a ramp by its first); null: none.
-Color? _colorOf(String word) {
-  // (a gradient by its first stop, where it stands left out)
-  final first = word.split(' ').first.split('@').first;
-  final v = first.length == 6 || first.length == 8 ? int.tryParse(first.substring(0, 6), radix: 16) : null;
-  return v == null ? null : Color(0xFF000000 | v);
-}
+Color? _colorOf(String word) => colorOfHex(word.split(' ').first.split('@').first)?.withAlpha(255); // (a gradient by its first stop, where it stands left out)
 
 /// Joined: what the picked thing is painted with and how it is set (or, nothing picked, the inks a drawn thing gets).
 // (read once a reading of the document and a pick: the strip is built at every picture while it plays, these do not
@@ -51,115 +46,102 @@ class _OptionsStrip extends StatelessWidget {
   final ArtScene scene;
   final WsLayer? layer;
 
-  Widget _seg(String key, List<String> items, {int initial = 0}) => _Seg(items: items, index: opts[key] ?? initial, onChanged: (i) => onOpt(key, i));
+  Widget _seg(BuildContext c, String key, List<String> items, {int initial = 0}) =>
+      Forms.worn.segment(c, ChoiceSpec(labels: items, selected: opts[key] ?? initial, onSelect: (i) => onOpt(key, i)));
   Widget _flag(String key, String label, {bool initial = false}) {
     final on = (opts[key] ?? (initial ? 1 : 0)) == 1;
     return _Toggle(label: label, on: on, icon: _Icon.safe, onTap: () => onOpt(key, on ? 0 : 1));
   }
 
-  List<Widget> _items() {
-    return _joined(ws, _paintOf(ws));
-  }
+  List<Widget> _items(BuildContext c) => _joined(c, ws, _paintOf(ws));
 
   /// Joined: the tool's own settings (how it draws or carries), and the picked thing's values as the document has them.
-  List<Widget> _joined(Ws ws, ({Color? fill, Color? stroke, String width, String round, String font, String size, int align}) p) => switch (tool) {
-    0 => [
-      _seg('sel.level', const ['Layer', 'Group']),
-      _flag('sel.snap', 'Snap', initial: true),
-      _flag('sel.pivot', 'Pivots'),
-    ],
-    1 => [
-      _seg('move.axis', const ['Free', 'X', 'Y']),
-      _flag('move.snap', 'Snap', initial: true),
-    ],
-    2 => [
-      _Field('Fill', swatch: p.fill ?? WsT.body),
-      _Field('Stroke', value: p.width),
-      _Field('Radius', value: p.round),
-      _seg('rect.mode', const ['Shape', 'Mask']),
-    ],
-    3 => [
-      _Field('Fill', swatch: p.fill ?? WsT.body),
-      _Field('Stroke', value: p.width),
-      _seg('ell.from', const ['Corner', 'Centre']),
-    ],
-    4 => [
-      _seg('pen.mode', const ['Path', 'Mask']),
-    ],
-    7 => [_Field('Drag', value: 'Orbit'), _Field('Wheel', value: 'Dolly')], // (what the hand does with it, as After Effects' camera tools are named)
-    6 => [
-      _Field('Fill', swatch: p.fill ?? WsT.body),
-      _seg('brush.kind', const ['Brush', 'Pen', 'Fill', 'Eraser']),
-      _seg('brush.size', const ['Thin', 'Medium', 'Thick'], initial: 1),
-    ], // (Alight Motion's drawing tools: as the pressure says, as wide all along, the way gone round filled, and its eraser, of the picked drawing)
-    _ => [
-      _Field('Font', value: p.font),
-      _Field('Size', value: p.size),
-      _Seg(
-        items: const ['L', 'C', 'R'],
-        index: p.align,
-        onChanged: (i) {
-          // (the picked text's lines laid so: the document's align)
-          final t = int.tryParse(ws.selected ?? '');
-          final m = ws.inside;
-          if (t == null || m == null) return;
-          m
-            ..later('together', number: 1)
-            ..later('set', layer: t, name: 'align', number: i / 2)
-            ..later('set', layer: t, name: 'anchor_x', number: i - 1.0); // (round where it stands: After Effects' point text)
-          ws.after(m.later('together')); // (without waiting)
-        },
-      ),
-      _Field('Fill', swatch: p.fill ?? WsT.body), // (and its colour, in the same row: Alight Motion's text bar, align, font, size, colour)
-    ],
-  };
+  List<Widget> _joined(BuildContext c, Ws ws, ({Color? fill, Color? stroke, String width, String round, String font, String size, int align}) p) =>
+      switch (tool) {
+        0 => [
+          _seg(c, 'sel.level', const ['Layer', 'Group']),
+          _flag('sel.snap', 'Snap', initial: true),
+          _flag('sel.pivot', 'Pivots'),
+        ],
+        1 => [
+          _seg(c, 'move.axis', const ['Free', 'X', 'Y']),
+          _flag('move.snap', 'Snap', initial: true),
+        ],
+        2 => [
+          _Field('Fill', swatch: p.fill ?? WsT.body),
+          _Field('Stroke', value: p.width),
+          _Field('Radius', value: p.round),
+          _seg(c, 'rect.mode', const ['Shape', 'Mask']),
+        ],
+        3 => [
+          _Field('Fill', swatch: p.fill ?? WsT.body),
+          _Field('Stroke', value: p.width),
+          _seg(c, 'ell.from', const ['Corner', 'Centre']),
+        ],
+        4 => [
+          _seg(c, 'pen.mode', const ['Path', 'Mask']),
+        ],
+        7 => [_Field('Drag', value: 'Orbit'), _Field('Wheel', value: 'Dolly')], // (what the hand does with it, as After Effects' camera tools are named)
+        6 => [
+          _Field('Fill', swatch: p.fill ?? WsT.body),
+          _seg(c, 'brush.kind', const ['Brush', 'Pen', 'Fill', 'Eraser']),
+          _seg(c, 'brush.size', const ['Thin', 'Medium', 'Thick'], initial: 1),
+        ], // (Alight Motion's drawing tools: as the pressure says, as wide all along, the way gone round filled, and its eraser, of the picked drawing)
+        _ => [
+          _Field('Font', value: p.font),
+          _Field('Size', value: p.size),
+          Forms.worn.segment(
+            c,
+            ChoiceSpec(
+              labels: const ['L', 'C', 'R'],
+              selected: p.align,
+              onSelect: (i) {
+                // (the picked text's lines laid so: the document's align)
+                final t = int.tryParse(ws.selected ?? '');
+                final m = ws.inside;
+                if (t == null || m == null) return;
+                m
+                  ..later('together', number: 1)
+                  ..later('set', layer: t, name: 'align', number: i / 2)
+                  ..later('set', layer: t, name: 'anchor_x', number: i - 1.0); // (round where it stands: After Effects' point text)
+                ws.after(m.later('together')); // (without waiting)
+              },
+            ),
+          ),
+          _Field('Fill', swatch: p.fill ?? WsT.body), // (and its colour, in the same row: Alight Motion's text bar, align, font, size, colour)
+        ],
+      };
 
   @override
   Widget build(BuildContext context) {
-    final items = _items();
-    return Container(
-      height: WsT.header,
-      padding: EdgeInsets.symmetric(horizontal: WsT.inset),
-      decoration: BoxDecoration(
+    final items = _items(context);
+    return LayoutBuilder(
+      builder: (_, box) => ToolStrip(
+        height: WsT.header,
         color: WsT.body,
-        border: Border(top: BorderSide(color: WsT.line)),
-      ),
-      child: LayoutBuilder(
-        builder: (_, box) => Row(
-          children: [
-            Expanded(
-              child: ClipRect(
-                child: OverflowBox(
-                  alignment: Alignment.centerLeft,
-                  maxWidth: double.infinity,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: Shape.z(62),
-                        child: Text(_tools[tool].$2.toUpperCase(), style: T.micro(Grey.g56).copyWith(fontWeight: FontWeight.w700, letterSpacing: 1)),
-                      ),
-                      for (var i = 0; i < items.length; i++) ...[if (i > 0) SizedBox(width: Shape.s(6)), items[i]],
-                    ],
-                  ),
-                ),
+        line: true,
+        gap: WsT.inset,
+        left: [
+          SizedBox(
+            width: Shape.z(62),
+            child: Text(_tools[tool].$2.toUpperCase(), style: T.micro(Grey.g56).copyWith(fontWeight: FontWeight.w700, letterSpacing: 1)),
+          ),
+          for (var i = 0; i < items.length; i++) ...[if (i > 0) SizedBox(width: Shape.s(6)), items[i]],
+        ],
+        right: [
+          ConstrainedBox(
+            // (as wide as it is, the tools before it given the rest; wider than the whole strip, drawn smaller, never cut, as dock_widgets.dart's trailing)
+            constraints: BoxConstraints(maxWidth: (box.maxWidth - 2 * WsT.inset).clamp(0, double.infinity)),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: ValueListenableBuilder<int>(
+                valueListenable: ws.seen,
+                builder: (_, _, _) => _Readout(scene: scene, layer: layer),
               ),
-            ),
-            SizedBox(width: WsT.inset),
-            ConstrainedBox(
-              // (as wide as it is, the tools before it given the rest; wider than the whole strip, drawn smaller, never cut, as dock_widgets.dart's trailing)
-              constraints: BoxConstraints(maxWidth: (box.maxWidth - 2 * WsT.inset).clamp(0, double.infinity)),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerRight,
-                child: ValueListenableBuilder<int>(
-                  valueListenable: ws.seen,
-                  builder: (_, _, _) => _Readout(scene: scene, layer: layer),
-                ),
-              ), // (and while a hand carries a value)
-            ),
-          ],
-        ),
+            ), // (and while a hand carries a value)
+          ),
+        ],
       ),
     );
   }
@@ -222,11 +204,7 @@ class _Readout extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: Shape.z(8),
-          height: Shape.z(8),
-          decoration: BoxDecoration(color: l.tone, borderRadius: BorderRadius.all(Shape.r(2))),
-        ),
+        Badge(l.tone, size: Shape.z(8), radius: Shape.r(2)),
         SizedBox(width: Shape.s(6)),
         Text(l.name, style: T.name(Grey.g95).copyWith(fontWeight: FontWeight.w600)),
         // (a relation has no picture of its own: nothing to say; nor has a camera, which is on the frame while its bar is,

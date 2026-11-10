@@ -111,18 +111,13 @@ void colorsAt(File f) {
   _tile = 52;
 }
 
-Color? _colorOf(Object? hex) {
-  final v = int.tryParse('$hex'.replaceFirst('#', ''), radix: 16);
-  return v == null ? null : Color(0xFF000000 | v);
-}
-
 void _readMine() {
   if (_mineRead) return;
   _mineRead = true;
   try {
-    final told = jsonDecode(_mineFile.readAsStringSync()) as Map;
+    final told = fileJson(_mineFile) as Map;
     for (final (i, p) in ((told['palettes'] as List?) ?? const []).indexed) {
-      final cs = [for (final h in (p['colors'] as List)) ?_colorOf(h)];
+      final cs = [for (final h in (p['colors'] as List)) ?colorOfHex('$h')];
       final sh = (p['shares'] as List?)?.map((v) => (v as num).toDouble()).toList();
       if (cs.isNotEmpty) {
         _minePals.add(
@@ -130,10 +125,10 @@ void _readMine() {
         );
       }
     }
-    _mineColors.addAll([for (final h in (told['colours'] as List?) ?? const []) ?_colorOf(h)]);
+    _mineColors.addAll([for (final h in (told['colours'] as List?) ?? const []) ?colorOfHex('$h')]);
     if (told['tile'] case final num v) _tile = v.toDouble().clamp(_tileLeast, _tileMost);
     for (final g in (told['gradients'] as List?) ?? const []) {
-      final cs = [for (final h in (g['colors'] as List)) ?_colorOf(h)];
+      final cs = [for (final h in (g['colors'] as List)) ?colorOfHex('$h')];
       final at = (g['at'] as List?)?.map((v) => (v as num).toDouble()).toList();
       if (cs.length > 1) {
         _mineGrads.add(
@@ -151,33 +146,31 @@ void _readMine() {
 }
 
 void _keepMine() {
-  try {
-    _mineFile.parent.createSync(recursive: true);
-    _mineFile.writeAsStringSync(
-      jsonEncode({
-        'palettes': [
-          for (final p in _minePals)
-            {
-              'name': p.name,
-              'colors': [for (final c in p.colors) _hex(c)],
-              'reference': p.reference,
-              'shares': p.shares,
-            },
-        ],
-        'gradients': [
-          for (final g in _mineGrads)
-            {
-              'name': g.name,
-              'colors': [for (final c in g.colors) _hex(c)],
-              'blend': g.blend,
-              'at': g.at,
-            },
-        ],
-        'colours': [for (final c in _mineColors) _hex(c)],
-        'tile': _tile,
-      }),
-    );
-  } catch (_) {}
+  fileKeep(
+    _mineFile,
+    jsonEncode({
+      'palettes': [
+        for (final p in _minePals)
+          {
+            'name': p.name,
+            'colors': [for (final c in p.colors) _hex(c)],
+            'reference': p.reference,
+            'shares': p.shares,
+          },
+      ],
+      'gradients': [
+        for (final g in _mineGrads)
+          {
+            'name': g.name,
+            'colors': [for (final c in g.colors) _hex(c)],
+            'blend': g.blend,
+            'at': g.at,
+          },
+      ],
+      'colours': [for (final c in _mineColors) _hex(c)],
+      'tile': _tile,
+    }),
+  );
 }
 
 List<_Pal> get _pals => [..._minePals, ..._starterPals];
@@ -251,4 +244,15 @@ Future<_Pal?> _paletteFrom(String path) async {
 String? _pickedPhoto(DockCtx c) {
   final id = (c.ws.view['dock.Media'] as DockMem?)?.sel['Media'];
   return id != null && id.startsWith('/') && RegExp(r'\.(png|jpe?g|webp)$', caseSensitive: false).hasMatch(id) ? id : null;
+}
+
+/// The colours of the things, each by the thing's name: what the document's things are filled with (a ramp by its first).
+Map<String, Color> usedColors(Ws ws) {
+  final m = ws.inside;
+  if (m == null) return const {};
+  return {
+    for (final l in ws.layers)
+      if (m.word(int.parse(l.id), 'fill').split(' ').first.split('@').first case final f when f.length == 6)
+        if (int.tryParse(f, radix: 16) case final v?) l.name: Color(0xFF000000 | v),
+  };
 }

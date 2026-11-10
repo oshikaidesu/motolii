@@ -97,7 +97,8 @@ def main():
     else:
         old, new = str(asked.get('old_string', '')), str(asked.get('new_string', ''))
         after = now.replace(old, new) if asked.get('replace_all') else now.replace(old, new, 1)
-    was, will = git(top, 'show', f'HEAD:{rel}').count('\n'), after.count('\n')
+    own = lambda text: sum(1 for l in text.split('\n') if not re.match(r'(import|export|part) ', l))   # (pointing at what exists is not a line of ours)
+    was, will = own(git(top, 'show', f'HEAD:{rel}')), own(after)
     if will <= was:
         return   # (no longer than at HEAD: the free way)
     name = worker_of(top)

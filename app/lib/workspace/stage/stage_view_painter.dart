@@ -109,12 +109,12 @@ class _ViewPainter extends CustomPainter {
 
   void _captions(Canvas c, Rect comp) {
     if (comp.top - v.area.top < 18) return;
-    final l = _tp(scene.title, T.micro(Grey.g76).copyWith(fontWeight: FontWeight.w700)),
-        d = _tp('${WsArt.comp.width.round()} × ${WsArt.comp.height.round()}  ·  ${Ws.fps} fps', T.micro(Grey.g56));
+    final l = lineText(scene.title, T.micro(Grey.g76).copyWith(fontWeight: FontWeight.w700)),
+        d = lineText('${WsArt.comp.width.round()} × ${WsArt.comp.height.round()}  ·  ${Ws.fps} fps', T.micro(Grey.g56));
     final y = comp.top - 6 - l.height;
     l.paint(c, Offset(comp.left, y));
     d.paint(c, Offset(comp.left + l.width + 8, y));
-    final f = scene.frame, tc = _tp('F ${f.toString().padLeft(3, '0')}', T.value(Grey.g76));
+    final f = scene.frame, tc = lineText('F ${f.toString().padLeft(3, '0')}', T.value(Grey.g76));
     tc.paint(c, Offset(comp.right - tc.width, comp.top - 6 - tc.height));
   }
 
@@ -269,7 +269,7 @@ class _ViewPainter extends CustomPainter {
 
   /// A small rounded name tag sitting on top of [at] (moved inside the viewport when it would leave it).
   void _tag(Canvas c, Offset at, String text, Color fill, Color ink, Color? pip) {
-    final tp = _tp(text, T.micro(ink).copyWith(fontWeight: FontWeight.w700));
+    final tp = lineText(text, T.micro(ink).copyWith(fontWeight: FontWeight.w700));
     final w = tp.width + 12 + (pip == null ? 0 : 10);
     var o = Offset(at.dx, at.dy - _V.tagH - 4);
     o = Offset(
@@ -342,7 +342,7 @@ class _RulerPainter extends CustomPainter {
     for (var x = x0; x <= x1; x += minor) {
       final sx = v.toScreen(Offset(x, 0)).dx.roundToDouble() + .5, major = (x / step).round() * step == x;
       c.drawLine(Offset(sx, major ? 2 : r - 4), Offset(sx, r), tick);
-      if (major) _tp('${x.round()}', label).paint(c, Offset(sx + 3, 2));
+      if (major) lineText('${x.round()}', label).paint(c, Offset(sx + 3, 2));
     }
     c.restore();
 
@@ -356,7 +356,7 @@ class _RulerPainter extends CustomPainter {
         c.save();
         c.translate(2, sy - 3);
         c.rotate(-math.pi / 2);
-        _tp('${y.round()}', label).paint(c, Offset.zero);
+        lineText('${y.round()}', label).paint(c, Offset.zero);
         c.restore();
       }
     }

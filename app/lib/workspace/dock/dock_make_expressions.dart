@@ -24,8 +24,8 @@ class _HexFieldState extends State<_HexField> {
 
   void _tell() {
     final said = _c.text.trim().replaceFirst('#', ''), whole = said.length == 3 ? [for (final k in said.split('')) '$k$k'].join() : said;
-    if (whole.length != 6 || _colorOf(whole) == null || '#${whole.toLowerCase()}' == widget.hex.toLowerCase()) return;
-    widget.onTold(_colorOf(whole)!);
+    if (whole.length != 6 || colorOfHex(whole) == null || '#${whole.toLowerCase()}' == widget.hex.toLowerCase()) return;
+    widget.onTold(colorOfHex(whole)!);
   }
 
   @override

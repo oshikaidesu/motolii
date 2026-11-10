@@ -11,7 +11,6 @@ import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
-import '../../inspector/inspector_small.dart' show Hov;
 import '../../skin/forms/forms.dart';
 import '../../skin/svg_parts.dart';
 import '../window/zoom.dart';
@@ -20,7 +19,7 @@ import '../../skin/theme.dart';
 import '../../skin/tokens.dart';
 import '../stage/stage_art.dart' show WsArt;
 import '../state/state.dart';
-import '../../widgets/controls.dart' show Chip, ChipLook;
+import '../../widgets/controls.dart' show Badge, Chip, ChipLook, Hov, IconPress;
 import '../../widgets/two_fingers.dart';
 import '../../widgets/text_gestures.dart';
 part 'timings.dart';
@@ -86,11 +85,10 @@ class _Wordmark extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      Container(
-        width: Shape.z(22),
-        height: Shape.z(22),
-        alignment: Alignment.center,
-        color: WsT.accent,
+      Badge(
+        WsT.accent,
+        size: Shape.z(22),
+        radius: Radius.zero,
         child: Text(
           'M',
           style: T.title(WsT.onAccent).copyWith(fontSize: T.px(14), fontWeight: FontWeight.w900, height: 1),
@@ -103,14 +101,6 @@ class _Wordmark extends StatelessWidget {
       ),
     ],
   );
-}
-
-class _Hover extends StatelessWidget {
-  const _Hover({required this.builder, this.onTap});
-  final Widget Function(bool hot) builder;
-  final VoidCallback? onTap;
-  @override
-  Widget build(BuildContext context) => Hov(onTap: onTap, builder: (_, h) => builder(h));
 }
 
 /// What a step undone or done again changed, in plain words, as After Effects' and Premiere Pro's Edit menu names the
@@ -135,8 +125,15 @@ class _UndoRedo extends StatelessWidget {
     mainAxisSize: MainAxisSize.min,
     children: [
       for (final flip in [false, true])
-        Hov(
+        IconPress(
+          (c) => Transform.flip(
+            flipX: flip,
+            child: CustomPaint(size: const Size(12, 10), painter: _UndoPaint(c)),
+          ),
           key: ValueKey(flip ? 'ws-redo' : 'ws-undo'),
+          size: Shape.z(24),
+          rest: const Color(0x00000000),
+          ink: Grey.g63,
           // (a step of the document back, or forward again)
           onTap: () {
             final ws = WsScope.read(context), m = ws.inside;
@@ -146,16 +143,6 @@ class _UndoRedo extends StatelessWidget {
               (done, why) => ws.notice = done ? wsStepSaid(ws, flip ? 'Redone' : 'Undone') : why,
             ); // (the window does not wait for the step)
           },
-          builder: (_, h) => Container(
-            width: Shape.z(24),
-            height: Shape.z(24),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: h ? WsT.raised : null, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
-            child: Transform.flip(
-              flipX: flip,
-              child: CustomPaint(size: const Size(12, 10), painter: _UndoPaint(h ? Grey.g95 : Grey.g63)),
-            ),
-          ),
         ),
     ],
   );
@@ -204,16 +191,13 @@ class _ShadeSwitch extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => Hov(
+  Widget build(BuildContext context) => IconPress(
+    (c) => CustomPaint(size: const Size(12, 12), painter: _ShadePaint(c)),
     key: const ValueKey('ws-shade'),
     onTap: flip,
-    builder: (_, h) => Container(
-      width: Shape.z(24),
-      height: Shape.z(24),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(color: h ? WsT.raised : null, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
-      child: CustomPaint(size: const Size(12, 12), painter: _ShadePaint(h ? Grey.g95 : Grey.g63)),
-    ),
+    size: Shape.z(24),
+    rest: const Color(0x00000000),
+    ink: Grey.g63,
   );
 }
 
@@ -262,11 +246,7 @@ class _Saved extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: Shape.z(6),
-          height: Shape.z(6),
-          decoration: BoxDecoration(color: WsT.accent, shape: BoxShape.circle),
-        ),
+        Badge(WsT.accent, size: Shape.z(6), radius: Radius.circular(Shape.z(3))),
         SizedBox(width: Shape.s(6)),
         ConstrainedBox(
           constraints: BoxConstraints(maxWidth: Shape.z(260)),

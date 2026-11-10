@@ -82,9 +82,9 @@ class ParamTile extends StatelessWidget {
 
   Widget _body(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc, v = doc.get(id);
-    Widget gauge(GaugeKind k) => SizedBox.square(
+    final gauge = SizedBox.square(
       dimension: Pop.glyph,
-      child: FittedBox(child: Gauge(k, v, p)),
+      child: FittedBox(child: Gauge(v, p)),
     );
     // the same skeleton as a number block: name at the top-left, the control along the bottom, the picture top-right
     Widget shell(Widget bottom, {VoidCallback? onTap, Widget? glyph, bool tall = false}) => Hov(
@@ -165,7 +165,7 @@ class ParamTile extends StatelessWidget {
       case ParamLook.color:
         final all = (doc.s2[id] ?? '—').split(' ').where((c) => hexControls(c) != null).toList();
         return shell(
-          glyph: all.length > 1 ? _Ramp(all) : Swatch(doc.s2[id]),
+          glyph: Swatch(doc.s2[id], ramp: all.length > 1 ? all : null),
           Padding(
             padding: EdgeInsets.only(bottom: Shape.s(3)),
             child: LinkLine(
@@ -181,18 +181,8 @@ class ParamTile extends StatelessWidget {
           glyph: AngleDial(id: id, p: p),
           owns: true,
         );
-      case ParamLook.percent:
-        return _num(context, glyph: gauge(GaugeKind.pie));
-      case ParamLook.vertical:
-        return _num(context, glyph: gauge(p.upIncreases ? GaugeKind.up : GaugeKind.down));
-      case ParamLook.horizontal:
-        return _num(context, glyph: gauge(GaugeKind.across));
-      case ParamLook.bipolar:
-        return _num(context, glyph: gauge(GaugeKind.centre));
-      case ParamLook.bar:
-        return _num(context, glyph: gauge(GaugeKind.ramp));
-      case ParamLook.scrub:
-        return _num(context, glyph: gauge(GaugeKind.free));
+      case ParamLook.percent || ParamLook.vertical || ParamLook.horizontal || ParamLook.bipolar || ParamLook.bar || ParamLook.scrub:
+        return _num(context, glyph: gauge);
       case ParamLook.seed:
         return _num(
           context,
@@ -228,24 +218,6 @@ class ParamTile extends StatelessWidget {
         );
     }
   }
-}
-
-/// Colours in their order, as a swatch: a strip from the first to the last.
-class _Ramp extends StatelessWidget {
-  const _Ramp(this.hexes);
-  final List<String> hexes;
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Container(
-      width: Shape.z(16),
-      height: Shape.z(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.all(Shape.r(3)),
-        border: Border.all(color: Grey.g44, width: .5),
-        gradient: LinearGradient(colors: [for (final h in hexes) hexControls(h)!]),
-      ),
-    ),
-  );
 }
 
 /// A 2D value's handle: drag it like a trackpad, sideways moves X (or width), up and down moves Y (or height); the picture shows where it is.
@@ -293,7 +265,7 @@ class _PadGlyphState extends State<_PadGlyph> {
           height: Pop.tile,
           decoration: BoxDecoration(color: _drag || _hot ? Grey.g20 : Pop.well, borderRadius: BorderRadius.all(Shape.r(6))),
           child: FittedBox(
-            child: Gauge(widget.size ? GaugeKind.box : GaugeKind.point, null, p, x: doc.get(ix), y: doc.get(iy)),
+            child: Gauge(null, p, x: doc.get(ix), y: doc.get(iy)),
           ),
         ),
       ),

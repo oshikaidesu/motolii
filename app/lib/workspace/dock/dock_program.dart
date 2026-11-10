@@ -40,7 +40,6 @@ class Program {
   String get stem => file.substring(file.lastIndexOf('/') + 1, file.lastIndexOf('.'));
   String get form => kind ?? (stem.contains('-') ? stem.substring(0, stem.lastIndexOf('-')) : stem);
   String get tail => stem.contains('-') ? stem.substring(stem.lastIndexOf('-') + 1) : '';
-  File get _named => File('${file.substring(0, file.lastIndexOf('.'))}.name');
 
   /// What it is called with no name given: what it was written for and its hash.
   String get plain => '$form $tail'.trim();
@@ -50,7 +49,7 @@ class Program {
   String get name {
     if (recipe case final r?) return r;
     try {
-      if (_named.existsSync()) return _named.readAsStringSync().trim();
+      if (shelfSidecar(file).existsSync()) return shelfSidecar(file).readAsStringSync().trim();
       final lines = File(file).readAsLinesSync();
       final kept = RegExp(r'^/\*\{.*"DESCRIPTION":"([^"]*)"').firstMatch(lines.first)?[1];
       if (kept != null && kept != 'Shadertoy') return kept;
@@ -63,8 +62,8 @@ class Program {
 
   /// Nothing written: what it is called with none.
   void rename(String to) {
-    if (to.trim().isNotEmpty) return _named.writeAsStringSync(to.trim());
-    if (_named.existsSync()) _named.deleteSync();
+    if (to.trim().isNotEmpty) return shelfSidecar(file).writeAsStringSync(to.trim());
+    if (shelfSidecar(file).existsSync()) shelfSidecar(file).deleteSync();
   }
 
   /// The first line of it that says something.

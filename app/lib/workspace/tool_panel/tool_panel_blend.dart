@@ -1,12 +1,11 @@
 // The tool panel's Blend tool: the layer stack, the front first. Each layer that lies on what is under it: how (its blend: the ways the
 // inside names, each drawn as two discs and what their overlap becomes). A tap on a name picks it; an opened row shows the inside's Blending
 // card (blend, clip). The ways are the inside's (motolii_words); the window draws each.
-import '../../widgets/controls.dart' show IconPress;
+import '../../widgets/controls.dart' show Hov, IconPress;
 
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart' show NakedFocusableDetector;
 
-import '../../inspector/inspector_small.dart' show Hov;
 import '../../skin/tokens.dart';
 import 'tool_panel_widgets.dart';
 import '../state/state.dart';

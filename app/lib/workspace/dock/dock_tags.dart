@@ -5,6 +5,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import '../window/settings_file.dart' show fileJson, fileKeep;
+
 abstract final class DockTags {
   static final _own = <String, Set<String>>{};
   static bool _read = false;
@@ -16,7 +18,7 @@ abstract final class DockTags {
     if (_read) return;
     _read = true;
     try {
-      final told = jsonDecode(File('${Platform.environment['HOME']}/.motolii/tags.json').readAsStringSync()) as Map;
+      final told = fileJson(File('${Platform.environment['HOME']}/.motolii/tags.json')) as Map;
       for (final e in told.entries) {
         _own['${e.key}'] = {for (final t in e.value as List) '$t'.toLowerCase()};
       }
@@ -40,7 +42,7 @@ abstract final class DockTags {
   static Map<String, String> get _latched {
     if (_latches case final l?) return l;
     try {
-      return _latches = {for (final e in (jsonDecode(_latchFile.readAsStringSync()) as Map).entries) '${e.key}': '${e.value}'};
+      return _latches = {for (final e in (fileJson(_latchFile) as Map).entries) '${e.key}': '${e.value}'};
     } catch (_) {
       return _latches = {}; // (none yet, or not a map)
     }
@@ -54,10 +56,7 @@ abstract final class DockTags {
     final q = query.trim().toLowerCase();
     if (q.isEmpty || _latched['$shelf|$q'] == id) return;
     _latched['$shelf|$q'] = id;
-    try {
-      _latchFile.parent.createSync(recursive: true);
-      _latchFile.writeAsStringSync(jsonEncode(_latched));
-    } catch (_) {} // (not kept: the latch holds while the window is open)
+    fileKeep(_latchFile, jsonEncode(_latched)); // (not kept: the latch holds while the window is open)
   }
 
   /// Whether a thing answers a search: every word of it is in its name or among its tags.

@@ -4,7 +4,8 @@ import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 import '../skin/theme.dart';
 import '../skin/tokens.dart';
 import 'inspector_parts.dart';
-import '../widgets/controls.dart' show Badge;
+import '../widgets/controls.dart' show Badge, Chip, ChipLook, Hov;
+import '../workspace/commands/context_menu.dart' show WsMenuItem, WsMenuList;
 import '../widgets/timeline_painters.dart' show TpGlyph, TpGlyphView;
 
 // ---- 10. a card ------------------------------------------------------------------------------------------------------
@@ -36,13 +37,9 @@ class CardWords extends StatelessWidget {
           if (doc.onCardPaste case final paste?) ('Paste', paste),
           if (doc.onCardReset case final reset?) ('Reset', () => reset(ids)),
         ])
-          Hov(
-            key: ValueKey('card-${word.toLowerCase()}:$name'),
-            onTap: does,
-            builder: (_, h) => Padding(
-              padding: EdgeInsets.only(right: Shape.s(6)),
-              child: Text(word, style: T.label(h ? Grey.g95 : Grey.g56)),
-            ),
+          Padding(
+            padding: EdgeInsets.only(right: Shape.s(6)),
+            child: Chip(key: ValueKey('card-${word.toLowerCase()}:$name'), label: word, onTap: does, look: ChipLook.word),
           ),
         if (more.isNotEmpty) CardMore(name: name, items: more),
       ],
@@ -56,7 +53,7 @@ class ValuesCard extends StatelessWidget {
   final Fx card;
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), doc = x.doc, ed = const Ed(), k = 'v.${card.name}', adv = doc.b['$k.adv'] ?? false, past = doc.b['$k.past'] ?? false;
+    final x = Ctx.of(context), doc = x.doc, k = 'v.${card.name}', adv = doc.b['$k.adv'] ?? false, past = doc.b['$k.past'] ?? false;
     final heroes = [
           for (final p in card.params)
             if (!p.advanced) p,
@@ -156,50 +153,10 @@ class ValuesCard extends StatelessWidget {
             ),
       children: [
         ParamGrid(heroes),
-        if (rest.isNotEmpty) ...[
-          Padding(
-            padding: EdgeInsets.only(top: Shape.s(4)),
-            child: Hov(
-              onTap: () => doc.flag('$k.adv', !adv),
-              builder: (_, h) => Container(
-                height: Shape.z(24),
-                decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: ed.rule)),
-                ),
-                child: Row(
-                  children: [
-                    Text(rest.first.fold ?? 'Advanced', style: T.label(h || adv ? Grey.g95 : Grey.g63)),
-                    const Spacer(),
-                    FoldMark(open: adv, hot: h || adv),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          if (adv) ParamGrid(rest),
-        ],
+        if (rest.isNotEmpty) ...[_FoldRow(rest.first.fold ?? 'Advanced', adv, () => doc.flag('$k.adv', !adv)), if (adv) ParamGrid(rest)],
         if (doc.cardCode?.call(card.name, [for (final p in card.params) p.id]) case final code?) ...[
           // (its code under its knobs, folded as Advanced is: the knobs are what is used, the code what they drive)
-          Padding(
-            padding: EdgeInsets.only(top: Shape.s(4)),
-            child: Hov(
-              key: ValueKey('card-code:${card.name}'),
-              onTap: () => doc.flag('$k.code', !(doc.b['$k.code'] ?? false)),
-              builder: (_, h) => Container(
-                height: Shape.z(24),
-                decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: ed.rule)),
-                ),
-                child: Row(
-                  children: [
-                    Text('Code', style: T.label(h || (doc.b['$k.code'] ?? false) ? Grey.g95 : Grey.g63)),
-                    const Spacer(),
-                    FoldMark(open: doc.b['$k.code'] ?? false, hot: h || (doc.b['$k.code'] ?? false)),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          _FoldRow('Code', doc.b['$k.code'] ?? false, () => doc.flag('$k.code', !(doc.b['$k.code'] ?? false)), key: ValueKey('card-code:${card.name}')),
           if (doc.b['$k.code'] ?? false) SizedBox(height: Shape.z(360), child: code),
         ],
       ],
@@ -231,6 +188,34 @@ class ValuesCard extends StatelessWidget {
       },
     );
   }
+}
+
+/// A card's fold: a ruled 24px row, its word lit while hot or open, [FoldMark] at the right.
+class _FoldRow extends StatelessWidget {
+  const _FoldRow(this.label, this.open, this.onTap, {super.key});
+  final String label;
+  final bool open;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(top: Shape.s(4)),
+    child: Hov(
+      onTap: onTap,
+      builder: (_, h) => Container(
+        height: Shape.z(24),
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: const Ed().rule)),
+        ),
+        child: Row(
+          children: [
+            Text(label, style: T.label(h || open ? Grey.g95 : Grey.g63)),
+            const Spacer(),
+            FoldMark(open: open, hot: h || open),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 /// Three short lines, ≡: an effect's card held there is dragged up or down its stack.
@@ -297,7 +282,12 @@ class _CardMoreState extends State<CardMore> {
           child: FloatShut(
             shut: _portal.hide,
             group: _link,
-            child: TinyMenu(name: 'card', of: widget.name, items: widget.items, hide: _portal.hide),
+            child: WsMenuList(
+              items: [for (final (k, l, f) in widget.items) WsMenuItem(l, f, id: 'card-$k:${widget.name}')],
+              close: _portal.hide,
+              max: MediaQuery.sizeOf(context).height * .5,
+              width: Shape.z(150),
+            ),
           ),
         ),
       ),

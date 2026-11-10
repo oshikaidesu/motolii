@@ -112,7 +112,23 @@ class _Tree extends StatelessWidget {
     final rows = <Widget>[];
     void walk(FileNode n, int depth) {
       final open = c.mem.open.contains(n.id), subs = open || n.listed ? n.kids.where((k) => k.folder).toList() : const <FileNode>[];
-      rows.add(_FolderRow(n, depth, c, open: open, hasSubs: !n.listed || subs.isNotEmpty));
+      final hasSubs = !n.listed || subs.isNotEmpty, files = n.listed ? n.kids.where((k) => !k.folder).length : 0;
+      rows.add(
+        dockFolderRow(
+          key: ValueKey('browser:folder:${n.id}'),
+          here: c.mem.folder == n.id,
+          glyph: DockG.folder,
+          glyphInk: depth == 0 ? WsT.accentInk : Grey.g63,
+          rest: depth == 0 ? Grey.g95 : null,
+          bold: depth == 0,
+          depth: depth,
+          open: hasSubs ? open : null,
+          onToggle: hasSubs ? () => c.toggle(c.mem.open, n.id) : null,
+          count: files > 0 ? files : null,
+          onTap: () => _go(c, n.id),
+          name: (s) => Text(n.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: s),
+        ),
+      );
       if (open) {
         for (final s in subs) {
           walk(s, depth + 1);
@@ -128,60 +144,6 @@ class _Tree extends StatelessWidget {
       child: ListView(
         padding: EdgeInsets.symmetric(vertical: Shape.s(2)),
         children: rows,
-      ),
-    );
-  }
-}
-
-class _FolderRow extends StatelessWidget {
-  const _FolderRow(this.n, this.depth, this.c, {required this.open, required this.hasSubs});
-  final FileNode n;
-  final int depth;
-  final DockCtx c;
-  final bool open, hasSubs;
-  @override
-  Widget build(BuildContext context) {
-    final here = c.mem.folder == n.id, files = n.listed ? n.kids.where((k) => !k.folder).length : 0;
-    return DockHover(
-      key: ValueKey('browser:folder:${n.id}'),
-      onTap: () => _go(c, n.id),
-      builder: (context, h) => AnimatedContainer(
-        duration: Mo.dur,
-        curve: Mo.ease,
-        height: Shape.z(22),
-        padding: EdgeInsets.only(left: Shape.s(4) + depth * Shape.s(12.0), right: WsT.inset),
-        color: dockFill(here, h),
-        child: Row(
-          children: [
-            Hov(
-              cursor: MouseCursor.defer,
-              onTap: hasSubs ? () => c.toggle(c.mem.open, n.id) : null,
-              builder: (_, _) => SizedBox(
-                width: Shape.z(14),
-                height: Shape.z(22),
-                child: hasSubs
-                    ? AnimatedRotation(
-                        turns: open ? .25 : 0,
-                        duration: Mo.dur,
-                        curve: Mo.ease,
-                        child: DockGlyph(DockG.chevron, size: Shape.z(7), color: dockInk(here, Grey.g63)),
-                      )
-                    : null,
-              ),
-            ),
-            DockGlyph(DockG.folder, size: Shape.z(12), color: here ? WsT.onAccent : (depth == 0 ? WsT.accentInk : Grey.g63)),
-            SizedBox(width: Shape.s(6)),
-            Expanded(
-              child: Text(
-                n.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: T.name(dockInk(here, depth == 0 ? Grey.g95 : Grey.g91)).copyWith(fontWeight: depth == 0 || here ? FontWeight.w600 : FontWeight.w400),
-              ),
-            ),
-            if (files > 0) Text('$files', style: T.value(dockInk(here, Grey.g56)).copyWith(fontSize: T.px(10))),
-          ],
-        ),
       ),
     );
   }
