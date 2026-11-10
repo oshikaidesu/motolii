@@ -1,5 +1,5 @@
-# Fast checks on every push and pull request: formatting, static analysis, the app's tests, and the paths that
-# shelf files and documents name. The full build is build.yml.
+# Fast checks on every push and pull request: formatting of the Dart and the C++, static analysis and tests of the app,
+# and the paths that shelf files and documents name. The full build, with the C++ tests, is build.yml.
 name: checks
 on:
   push:
@@ -23,6 +23,13 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed .
       - run: flutter analyze --no-fatal-infos
       - run: flutter test
+  engine-format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: pipx install clang-format==23.1.5   # the version the tree is formatted with
+      - run: git ls-files 'engine/*.h' 'engine/*.cpp' 'engine/*.mm' ':!engine/third_party' | xargs clang-format --dry-run --Werror
   paths:
     runs-on: ubuntu-latest
     timeout-minutes: 5

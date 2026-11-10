@@ -9,7 +9,7 @@ Run these from the repository root unless a command says otherwise.
 ### Static checks (no build, safe at any time)
 
 - Dart: `cd app && dart analyze lib`. A pass prints no errors.
-- C++: `./engine/check_syntax.sh` runs `clang++ -fsyntax-only` on `entry/motolii.mm` with the flags the library is built with, and writes nothing. A pass ends without errors. Pass another unit as the argument to check it instead, for example `./engine/check_syntax.sh community/aviutl/aviutl.cpp`.
+- C++: `./engine/check_syntax.sh` runs `clang++ -fsyntax-only` on every source of ours with the flags CMake gives it, and writes nothing. A pass prints `ok: <count> sources`. Pass part of a path to check only the sources that contain it, for example `./engine/check_syntax.sh document/undo.cpp`.
 - Paths: `python3 .githooks/path_check.py --all` prints every path a shelf file or a Markdown file names that does not exist. A pass prints nothing.
 
 ### Flutter tests (`app/test/`)
@@ -31,7 +31,11 @@ This scrolls the Workspace timeline with 120 mouse-wheel notches and fails if an
 
 ### C++ unit tests
 
-C++ unit tests are files named `<name>_test.cpp` beside the code they test, built and run through CMake and ctest (see the Tests block of [engine/CMakeLists.txt](../engine/CMakeLists.txt)). None exists yet.
+```
+engine/build.sh test
+```
+
+Builds the engine, then runs ctest. C++ unit tests are files named `<name>_test.cpp` beside the code they test; CMake collects them into one GoogleTest binary (see the Tests block of [engine/CMakeLists.txt](../engine/CMakeLists.txt)). None exists yet.
 
 ### Picture comparison
 
@@ -100,6 +104,7 @@ Tests written by the same hand that wrote the code tend to repeat its mistakes, 
 - `dart format --output=none --set-exit-if-changed .`
 - `flutter analyze --no-fatal-infos`
 - `flutter test`
+- `clang-format --dry-run --Werror` over the engine's own sources (clang-format 23.1.5, the root `.clang-format`)
 - `python3 .githooks/path_check.py --all`
 
-[.github/workflows/build.yml](../.github/workflows/build.yml) runs on pushes to main, pull requests that touch `engine/`, `shelves/`, `app/` or the `Brewfile`, and by hand, on macOS 15: `engine/build.sh`, then `engine/edit.sh build.motolii` (a document opened by what was built), then `flutter analyze lib`. It runs no tests and no picture comparison.
+[.github/workflows/build.yml](../.github/workflows/build.yml) runs on pushes to main, pull requests that touch `engine/`, `shelves/`, `app/` or the `Brewfile`, and by hand, on macOS 15: `engine/build.sh test` (the build, then ctest), then `engine/edit.sh build.motolii` (a document opened by what was built). It runs no picture comparison.
