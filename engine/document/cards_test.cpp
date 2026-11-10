@@ -79,6 +79,28 @@ TEST(Cards, AFlatLayerIsOfferedNoSurfaceUntilItIsPlacedInDepth) {
   EXPECT_TRUE(Has(image.more, "Surface")) << image.more;
 }
 
+// After Effects' Character and Paragraph panels are one place for text: the splitting, slant and wrapping are on the Text card,
+// the extra outlines on the Fill card, and there is no card of their own for either.
+TEST(Cards, ATextLayerKeepsItsSplitSlantAndWrapOnTheTextCard) {
+  Layer text("text");
+  const std::string cards = text.Cards();
+  const size_t at = cards.find("Text:");
+  ASSERT_NE(at, std::string::npos) << cards;
+  const std::string line = cards.substr(at, cards.find(';', at) - at);
+  for (const char* name : {" split", " italic", " wrap", " wrap_at"}) EXPECT_NE(line.find(name), std::string::npos) << line;
+  EXPECT_FALSE(Has(cards, "Type")) << cards;
+}
+
+TEST(Cards, ATextLayerKeepsItsExtraOutlinesOnTheFillCard) {
+  Layer text("text");
+  const std::string cards = text.Cards();
+  const size_t at = cards.find("Fill:");
+  ASSERT_NE(at, std::string::npos) << cards;
+  const std::string line = cards.substr(at, cards.find(';', at) - at);
+  EXPECT_NE(line.find(" stroke_2"), std::string::npos) << line;
+  EXPECT_FALSE(Has(cards, "Strokes")) << cards;
+}
+
 TEST(Cards, TrimPathsShowsOnceTheShapeTrims) {
   Layer shape("shape");
   EXPECT_FALSE(Has(shape.Cards(), "Trim Paths"));

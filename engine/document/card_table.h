@@ -53,24 +53,29 @@ inline const DocCard doc_cards[] = {
     // After Effects' Source Text and Character panels and Cavalry's Text shape:
     // what the text says,
     // its font, its size and its alignment.
-    {"Text", "text file size letter_spacing line_spacing align", "kind",
-     "text"},
+    // Shown for text without being asked, as Alight Motion keeps Edit Text
+    // among a text's tiles (see LayerTools.kt in engine/third_party/
+    // AbsentMotion). Slant, wrapping the lines in a box or setting them down
+    // the page, and splitting into letters or words that each have their own
+    // expression sit with the rest of the text, as After Effects' Character and
+    // Paragraph panels do.
+    {"Text",
+     "text file size letter_spacing line_spacing align split italic wrap "
+     "wrap_at",
+     "kind", "text"},
     // After Effects' Polystar: the number of points and how far in between them
     // the star goes.
     {"Star", "points inner", "shape", "star"},
     {"Polygon", "points", "shape", "polygon"},
     // After Effects' Fill and Stroke and Cavalry's Fill and Stroke: a color,
     // colors along a
-    // gradient, or the glass material, plus the stroke and its width.
-    {"Fill", "fill fill_media stroke stroke_width"},
-    // Shown for text without being asked, as Alight Motion keeps Edit Text
-    // among a text's tiles
-    // (see LayerTools.kt in engine/third_party/AbsentMotion). Slant, wrapping
-    // the lines in a box or
-    // setting them down the page, and splitting into letters or words that each
-    // have their own
-    // expression.
-    {"Type", "split italic wrap wrap_at", "kind", "text"},
+    // gradient, or the glass material, plus the stroke and its width. A text
+    // has more outlines, each outside the last, drawn with the text (Alight
+    // Motion's Border): they stand in the text's depth, unlike Multi-Border's,
+    // which sit on its image.
+    {"Fill",
+     "fill fill_media stroke stroke_width stroke_2 stroke_2_width stroke_3 "
+     "stroke_3_width"},
     {"Gradient", "gradient gradient_angle gradient_scale gradient_spread",
      nullptr, nullptr, true},
     // There is no Copies card. The number of copies and the copies' own values
@@ -128,13 +133,6 @@ inline const DocCard doc_cards[] = {
     // a rectangle that its file fills, see doc_match.
     {"Edit Shape", "crop_left crop_top crop_right crop_bottom round", "kind",
      "image"},
-    // Shown for text without being asked: Alight Motion's Border and Shadow is
-    // among a text's
-    // tiles. These are more outlines, each outside the last, drawn with the
-    // text. They stand in the
-    // text's depth, unlike Multi-Border's, which sit on its image.
-    {"Strokes", "stroke_2 stroke_2_width stroke_3 stroke_3_width", "kind",
-     "text"},
     {"Bevel", "bevel bevel_depth bevel_color bevel_metallic bevel_roughness",
      nullptr, nullptr, true},
     // After Effects' Side and Back Color: the other faces of a thick layer.
