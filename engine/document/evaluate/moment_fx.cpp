@@ -1,3 +1,4 @@
+#include "document/evaluate/moment_fx.h"
 
 #include <filament/TextureSampler.h>
 #include <filament/Viewport.h>

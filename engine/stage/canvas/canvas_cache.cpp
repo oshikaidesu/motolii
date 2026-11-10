@@ -1,3 +1,4 @@
+#include "stage/canvas/canvas_cache.h"
 
 #include <filament/TextureSampler.h>
 #include <zstd.h>
