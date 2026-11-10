@@ -120,7 +120,7 @@ final _makes = <(String, List<CreateTile>)>[
         'T',
         'Type layer',
       ),
-      // The default lens is the preview's 30 degrees on Filament's 24 mm film, as the Camera tool panel shows (tool_panel_depth.dart _filmMm).
+      // The default lens is the preview's 30 degrees on Filament's 24 mm film, as the Camera tool panel shows (depth.dart _filmMm).
       CreateTile(
         'Camera',
         AppGlyphs.camera,

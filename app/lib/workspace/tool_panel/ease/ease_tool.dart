@@ -8,7 +8,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_document.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease_state.dart';
+import 'package:motolii/workspace/tool_panel/ease/ease_tool_state.dart';
 
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';

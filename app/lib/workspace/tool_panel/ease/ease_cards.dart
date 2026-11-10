@@ -18,7 +18,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_easing_presets.dart';
+import 'package:motolii/workspace/tool_panel/ease/easing_preset_tile.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/media.dart' show Draw;
 

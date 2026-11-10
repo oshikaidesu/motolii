@@ -8,7 +8,7 @@ import 'package:motolii/widgets/controls.dart' show Chip, Pressable, IconPress;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/state/pane.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
+import 'package:motolii/workspace/tool_panel/tool_sticker.dart';
 import 'package:motolii/widgets/grid_columns.dart';
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';

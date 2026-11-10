@@ -8,7 +8,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease_numbers.dart'
+import 'package:motolii/workspace/tool_panel/ease/ease_numbers.dart'
     show easeIsUsual;
 import 'package:motolii/widgets/controls.dart' show Pressable;
 
@@ -34,7 +34,7 @@ class EasingPresetTile extends StatelessWidget {
   final VoidCallback onTap;
 
   /// Whether the user can drag the tile onto the graph or the card flow to layer it over the easing there.
-  /// See tool_panel_ease_cards.dart.
+  /// See ease_cards.dart.
   final bool carried;
   @override
   Widget build(BuildContext context) {

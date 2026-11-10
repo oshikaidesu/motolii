@@ -100,7 +100,7 @@ The engine finds a shelf's folder in `shelves/` and in the user's own folder of 
 | `relations/` | `entry/calls.cpp` `motolii_relations` | `workspace/edits/make_relation.dart` |
 | `looks/` | `document/edit/presets.h` | `bridge/motolii_shelves.dart` |
 | `solids/` | `community/three/solid_three.cpp` | none |
-| `ease/` | `document/scripts/recipes.h` `doc_own_easings` | `workspace/tool_panel/tool_panel_ease_shelf.dart` |
+| `ease/` | `document/scripts/recipes.h` `doc_own_easings` | `workspace/tool_panel/ease/ease_shelf.dart` |
 | `skins/` | none | `skin/theme.dart` `ColorTheme.skinNames` |
 | `extensions/hydra/` | `document/scripts/adapter.h`, `community/hydra/hydra_isf.cpp` | none |
 | `engine/third_party/wordnet_ja/` (data, not a shelf) | `entry/calls_find.cpp` `find_english` (`doc_folders("words")`) | none |

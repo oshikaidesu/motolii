@@ -8,8 +8,8 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease_state.dart';
+import 'package:motolii/workspace/tool_panel/ease/ease_tool.dart';
+import 'package:motolii/workspace/tool_panel/ease/ease_tool_state.dart';
 
 /// For each span whose ends the user has moved, each property's two key values as they first were, and the scale of its bars.
 ///

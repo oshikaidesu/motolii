@@ -10,8 +10,8 @@ import 'package:motolii/widgets/media.dart' show Draw, glyph;
 
 import 'package:motolii/widgets/more_menu.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_easing_presets.dart';
+import 'package:motolii/workspace/tool_panel/ease/ease_tool.dart';
+import 'package:motolii/workspace/tool_panel/ease/easing_preset_tile.dart';
 import 'package:motolii/widgets/paint_helpers.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
@@ -49,7 +49,7 @@ List<Ease> easeRow(List<Ease> ways) {
   return [for (final n in easeShapes) ?named(n), easingPreset('Hold')];
 }
 
-/// The easings from the app and the project that are not one of the shapes. They go on the shelf (tool_panel_ease_shelf.dart).
+/// The easings from the app and the project that are not one of the shapes. They go on the shelf (ease_shelf.dart).
 List<Ease> easeOthers(List<Ease> ways) => [
   for (final w in ways)
     if (!easeShapes.contains(w.name)) w,
@@ -115,7 +115,7 @@ class EaseShapes extends StatelessWidget {
 
 /// The left column: a reverse button, and a ⋯ menu to copy and paste the curve.
 /// The menu has Alight Motion's Copy Curve, Paste Curve and Paste Curve to All Keyframes, and this app's own Jump
-/// (easeJump in tool_panel_ease_state.dart). Enable Overshoot is among the numbers instead.
+/// (easeJump in ease_tool_state.dart). Enable Overshoot is among the numbers instead.
 class EaseLeft extends StatelessWidget {
   const EaseLeft({super.key, this.onReverse, required this.menu});
 

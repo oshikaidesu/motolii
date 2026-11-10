@@ -10,8 +10,8 @@ import 'dart:math' as math;
 import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease_handles.dart';
+import 'package:motolii/workspace/tool_panel/ease/ease_tool.dart';
+import 'package:motolii/workspace/tool_panel/ease/ease_handle.dart';
 import 'package:motolii/widgets/paint_helpers.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
@@ -103,7 +103,7 @@ class EaseGraph extends StatefulWidget {
   /// as Alight Motion's Enable Overshoot does.
   final bool jump, overshoot;
 
-  /// Progress of a preview of the easing, 0 to 1, shown when there is no span to follow (tool_panel_ease_trial.dart).
+  /// Progress of a preview of the easing, 0 to 1, shown when there is no span to follow (ease_trial.dart).
   final double? trial;
 
   /// Where the document's beats fall in the span, 0 to 1. Each gets a line, and a handle snaps to one it comes near,
