@@ -1,7 +1,7 @@
 // fmt: a number as a field shows it. The expected values are what the code gave when this was written, so a move that
 // changes one fails here. Needs no engine.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motolii/inspector/inspector_small.dart';
+import 'package:motolii/widgets/number_format.dart';
 
 void main() {
   test('fmt writes a number with the decimals asked for, or with none when tight', () {

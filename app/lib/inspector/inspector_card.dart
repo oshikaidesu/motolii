@@ -1,3 +1,4 @@
+import 'package:motolii/widgets/float_shut.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';

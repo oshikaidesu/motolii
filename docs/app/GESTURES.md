@@ -206,7 +206,7 @@
 | Camera の道具（ホイール） | 表示が動くのでなく、カメラが寄る・引く | "After Effects' Unified Camera tool's wheel: the camera nearer or further from where it looks" | `workspace/stage/stage_view_camera.dart` |
 | Colors の色の箱（ホバー） | 手が乗ると、同じパレットの箱の全部に虹の縁が付く | "the user, a rim, not the others darkened" | `workspace/dock/dock_make_colors.dart` |
 | デッキの名前の欄（Save Favorites…） | 名前を言うと Favorites が空になり、戻せない | "as Lightroom's Clear Quick Collection After Saving" | `workspace/dock/dock_effect_places.dart` |
-| 数のメニュー | 同じ数をもう一度右押しすると、閉じずにその所で開き直す | "right pressed here again: its place, as a Mac's" | `inspector/inspector_small.dart` |
+| 数のメニュー | 同じ数をもう一度右押しすると、閉じずにその所で開き直す | "right pressed here again: its place, as a Mac's" | `widgets/float_shut.dart` |
 | 区間を選んでの Delete | 区間は消えず、イージングが Linear に戻る | "a stretch picked: its way off, straight again, not the thing" | `workspace/commands/menu_bar.dart` |
 | Program のコードの欄 | 閉じかっこを足さない。取り消しは欄の物で、プロジェクトの物ではない | "exactly what is typed" | `workspace/dock/dock_program.dart` |
 | カードのエフェクトのコード | 最初に打った時に棚のファイルを写し、写しの方に書く | "the shelf's file is never written over" | `workspace/shelf/fx_code.dart` |

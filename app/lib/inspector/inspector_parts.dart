@@ -14,7 +14,6 @@ export 'inspector_panel.dart';
 export 'controls/inspector_param_controls_link.dart';
 export 'controls/inspector_param_controls.dart';
 export 'rows/inspector_rows.dart';
-export 'inspector_small.dart';
 export 'inspector_state.dart';
 export 'controls/param_infer.dart';
 

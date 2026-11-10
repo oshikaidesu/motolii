@@ -1,11 +1,11 @@
 // The app's default forms: each control drawn the way the app has always drawn it.
+import 'package:motolii/widgets/switch_track.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/skin/svg_parts.dart';
-import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/widgets/controls.dart' show Hov;

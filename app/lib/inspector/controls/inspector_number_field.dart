@@ -4,7 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/controls/inspector_number_field_num_field_state.dart';
 import 'package:motolii/inspector/controls/param_infer.dart' show Param;
 
-import 'package:motolii/inspector/inspector_small.dart' show FloatShut;
+import 'package:motolii/widgets/float_shut.dart' show FloatShut;
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/menu.dart' show WsMenuItem, WsMenuList;

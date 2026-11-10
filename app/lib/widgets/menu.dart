@@ -7,7 +7,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/inspector/inspector_small.dart' show FloatShut;
+import 'package:motolii/widgets/float_shut.dart' show FloatShut;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Hov;
 
