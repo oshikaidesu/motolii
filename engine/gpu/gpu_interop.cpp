@@ -6,7 +6,6 @@
 
 #include "details/Engine.h"
 
-namespace motolii {
 namespace interop {
 using namespace filament;
 
@@ -28,4 +27,3 @@ void on_driver(Engine* engine, std::function<void()> work) {
 }
 void submit(Engine* engine) { downcast(engine)->getDriverApi().flush(); }
 }  // namespace interop
-}  // namespace motolii
