@@ -331,10 +331,12 @@ target_link_libraries(motolii_preview PUBLIC motolii_flags motolii_community_qui
 # The C API the app calls (entry/motolii.h).
 add_library(motolii_entry OBJECT
   entry/calls.cpp
+  entry/calls_easing.cpp
   entry/calls_files.cpp
   entry/calls_find.cpp
   entry/calls_later.cpp
   entry/calls_map.cpp
+  entry/calls_shelf.cpp
   entry/calls_sound.cpp
   entry/calls_time.cpp
   entry/export.cpp

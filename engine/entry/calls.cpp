@@ -1,52 +1,18 @@
 #include "entry/calls.h"
 
-#include <math/mat4.h>
-#include <sqlite3.h>
-#include <strings.h>
 
-#include <cmath>
-#include <cstddef>
-#include <cstdio>
-#include <cstring>
-#include <map>
 #include <regex>
-#include <set>
-#include <sstream>
-#include <string>
-#include <utility>
-#include <vector>
 
 #include "document/cards.h"
-#include "document/document.h"
 #include "document/edit/arrange.h"
-#include "document/edit/easings_put.h"
 #include "document/edit/fx_put.h"
-#include "document/edit/hold.h"
-#include "document/edit/keys_put.h"
 #include "document/edit/layer_edit.h"
-#include "document/edit/presets.h"
 #include "document/edit/relate.h"
-#include "document/evaluate/place.h"
-#include "document/evaluate/relations.h"
 #include "document/evaluate/shown.h"
-#include "document/evaluate/value_at.h"
 #include "document/marks.h"
 #include "document/scripts/expressions.h"
-#include "document/scripts/recipes.h"
-#include "document/scripts/scripts.h"
-#include "document/undo.h"
-#include "document/values.h"
-#include "entry/motolii.h"
-#include "entry/motolii_handle.h"
 #include "entry/on_render_thread.h"
-#include "entry/render_thread.h"
-#include "entry/snapshot.h"
-#include "entry/window.h"
 #include "media/midi_notes.h"
-#include "motion/easing_curves.h"
-#include "shelf/shelf_folders.h"
-#include "stage/canvas/canvas_renderables.h"
-#include "stage/render/render_stage.h"
 
 using filament::math::mat4;
 namespace math = filament::math;
@@ -128,85 +94,11 @@ int motolii_midi(Motolii* m, int layer, const char* name, const char* file,
   });
 }
 
-namespace motolii {
-
-int easing_is(Motolii* m, int layer, const char* name, double at,
-              const char* easing) {
-  Doc& d = doc(m);
-  bool here = false;
-  doc_rows(d, sqlite3_mprintf("select 1 from easing where name = %Q", easing),
-           [&](sqlite3_stmt*) { here = true; });
-  const auto easings = doc_own_easings();
-  const auto own = easings.find(easing);
-  if (here || own == easings.end())
-    return changes(m, (int)(doc_easing(d, layer, name, at, easing)));
-  // The user's own easing: write it into the project and put it on the keyframe
-  // in one undo step.
-  doc_act(d);
-  if (!doc_define(d, easing, own->second.c_str()) ||
-      !doc_easing(d, layer, name, at, easing))
-    d.act.ok = false;
-  return changes(m, (int)doc_acted(d));
-}
-
-}  // namespace motolii
-
-// Puts easing `easing` on the keyframe of property `name` at time `at`. Returns
-// nonzero on success.
-int motolii_easing(Motolii* m, int layer, const char* name, double at,
-                   const char* easing) {
-  return on_render_thread(
-      m, [=] { return easing_is(m, layer, name, at, easing); });
-}
-
-namespace motolii {
-
-int define_is(Motolii* m, const char* easing, const char* expression) {
-  Doc& d = doc(m);
-  doc_act(d);
-  // Write the user's own easings that the expression asks for through
-  // way('name').
-  for (const auto& [name, own] : doc_own_easings()) {
-    if (!strstr(expression, ("way('" + name).c_str())) continue;
-    bool here = false;
-    doc_rows(
-        d,
-        sqlite3_mprintf("select 1 from easing where name = %Q", name.c_str()),
-        [&](sqlite3_stmt*) { here = true; });
-    if (!here && !doc_define(d, name.c_str(), own.c_str())) d.act.ok = false;
-  }
-  if (!doc_define(d, easing, expression)) d.act.ok = false;
-  // Delete the easings that were composed or reversed, named with × or starting
-  // with Reverse:, and that no keyframe uses and no other easing refers to any
-  // more. The app makes one at each step of a drag.
-  if (d.act.ok &&
-      !doc_change(
-          d, sqlite3_mprintf(
-                 "delete from easing where (name glob '*×*' or name glob "
-                 "'Reverse:*') and name <> %Q and name not in (select easing "
-                 "from keyframe where easing is not null) and not exists "
-                 "(select 1 from easing o where o.name <> easing.name and "
-                 "o.expression like '%%''' || easing.name || '%%')",
-                 easing)))
-    d.act.ok = false;
-  return changes(m, (int)doc_acted(d));
-}
-
-}  // namespace motolii
-
-// Returns the names of the effects that can be added, separated by spaces.
-const char* motolii_effect_names(Motolii* m) {
-  return by_look(m, [m] { return (m->listed = doc_effect_names()).c_str(); });
-}
 // Adds effect `name` to the layer at time `at`. Returns nonzero on success.
 int motolii_effect(Motolii* m, int layer, const char* name, double at) {
   return on_render_thread(m, [=] {
     return changes(m, (int)(doc_effect(doc(m), layer, name, at)));
   });
-}
-// Returns the names of the easings that the project has, as text.
-const char* motolii_easings(Motolii* m) {
-  return by_look(m, [m] { return (m->listed = doc_easings(*m->d)).c_str(); });
 }
 // Evaluates the arithmetic text `sum` with SQLite and stores the result in *is.
 // Returns 1 on success, or 0 if the text is not plain arithmetic or SQLite
@@ -441,166 +333,6 @@ int motolii_range(Motolii* m, int layer, const char* name, double* low,
   return by_look(m,
                  [=] { return (int)doc_range(*m->d, layer, name, low, high); });
 }
-// Returns one line per create script: name, a tab, and its description.
-const char* motolii_create_scripts(Motolii* m) {
-  return by_look(m, [=] { return (said_word() = doc_recipe_names()).c_str(); });
-}
-// Returns the names of the effect files followed by the names of the AviUtl2
-// scripts, one per line.
-const char* motolii_effects(Motolii* m) {
-  return by_look(m, [=] {
-    // The file types are .wgsl, .fs, .mjs, .js, .json and .am. A .json file
-    // holds Filament's own settings, see viewer_settings.h. A .am file is an
-    // AbsentMotion motion, see absent_motion.h.
-    const std::string files = doc_folder_names("effects",
-                                               ".wgsl .fs .mjs .js .json .am"),
-                      aviutl = doc_aviutl_names();
-    return (said_word() =
-                files + (files.empty() || aviutl.empty() ? "" : "\n") + aviutl)
-        .c_str();
-  });
-}
-// Records that files on the shelves changed on disk.
-void motolii_files_changed(void) { ++files_changed(); }
-// Returns the names of the presets on the shelf.
-const char* motolii_presets(Motolii* m) {
-  return by_look(m, [=] { return (said_word() = doc_preset_names()).c_str(); });
-}
-// Returns the names of the expression files, separated by spaces.
-const char* motolii_animators(Motolii* m) {
-  return by_look(m, [=] {
-    return (said_word() = doc_folder_names("expressions", ".js")).c_str();
-  });
-}
-// Returns the names of the relation files, separated by spaces.
-const char* motolii_relations(Motolii* m) {
-  return by_look(m, [=] {
-    return (said_word() = doc_folder_names("relations", ".js")).c_str();
-  });
-}
-// Runs the create script `script`, which makes layers and values in one go.
-// Returns nonzero on success.
-int motolii_create(Motolii* m, const char* script) {
-  return on_render_thread(m,
-                          [=] { return changes(m, doc_make(doc(m), script)); });
-}
-// Returns the display settings of property `name` as tab-separated fields:
-// look, unit, label, low, high, the group it folds into, and 1 if that group
-// starts open. The line is empty if the property has none.
-const char* motolii_shown(Motolii* m, const char* name) {
-  return by_look(m, [=] {
-    const DocShown* s = doc_shown_of(*m->d, name);
-    char line[512] = "";
-    if (s)
-      std::snprintf(line, sizeof line, "%s\t%s\t%s\t%g\t%g\t%s\t%d", s->look,
-                    s->unit, s->label, s->low, s->high, s->fold ? s->fold : "",
-                    (int)s->open);
-    return (said_word() = line).c_str();
-  });
-}
-// Returns the effect cards of the layer as text.
-const char* motolii_cards(Motolii* m, int layer) {
-  return by_look(
-      m, [=] { return (said_word() = doc_cards_of(*m->d, layer)).c_str(); });
-}
-// Returns the cards that exist but stay hidden until the user asks for them, in
-// the same format.
-const char* motolii_cards_more(Motolii* m, int layer) {
-  return by_look(m, [=] {
-    std::string more;
-    doc_cards_of(*m->d, layer, &more);
-    return (said_word() = more).c_str();
-  });
-}
-// Returns the titles of the layer's effect cards in effect order, separated by
-// semicolons.
-const char* motolii_fx_titles(Motolii* m, int layer) {
-  return by_look(
-      m, [=] { return (said_word() = doc_fx_titles(*m->d, layer)).c_str(); });
-}
-// Returns the layer kind that a file makes, decided by the end of its name, or
-// "" for none.
-const char* motolii_kind_of(const char* file) { return doc_kind_of(file); }
-// Returns 1 if ThorVG can set `words` in the font file, otherwise 0.
-int motolii_sets(const char* font, const char* words) {
-  return type_sets(font, words) ? 1 : 0;
-}
-// Returns "" if the font file has every letter of `words`. Otherwise returns
-// the letters it lacks, a tab, and the fallback font that has them all, which
-// can be empty.
-const char* motolii_font_lacks(const char* font, const char* words) {
-  thread_local std::string said;
-  if (!font || !words) return "";
-  const std::string lacks = type_lacks(font, words);
-  said =
-      lacks.empty() ? std::string() : lacks + "\t" + type_fallback(font, words);
-  return said.c_str();
-}
-// Returns the numbers that easing kind `kind` takes, as the app presents them:
-// for each one its name, its lowest and its highest value, such as "seed 1 999
-// grain 0 0.5". Returns "" for a kind with none. The kinds are built into the
-// engine, so this does not wait for the render thread.
-const char* motolii_easing_numbers(Motolii*, const char* kind) {
-  static thread_local std::string said;
-  said.clear();
-  for (const auto& k : interp_kinds) {
-    if (strcasecmp(k.name, kind)) continue;
-    std::istringstream names(k.names);
-    std::string name;
-    char one[96];
-    for (int j = 0; j < k.numbers && names >> name; ++j)
-      std::snprintf(one, sizeof one, "%s%s %.9g %.9g", said.empty() ? "" : " ",
-                    name.c_str(), k.lo[j], k.hi[j]),
-          said += one;
-  }
-  return said.c_str();
-}
-// Returns the names of the easings that can be put on a keyframe, separated by
-// spaces: the nine built-in kinds, then the easings defined in the project,
-// then the user's own easings that the project does not have yet.
-const char* motolii_easing_names(Motolii* m) {
-  return by_look(m, [=] {
-    said_word().clear();
-    for (const auto& kind : interp_kinds)
-      said_word() += std::string(said_word().empty() ? "" : " ") + kind.name;
-    std::set<std::string> here;
-    doc_rows(*m->d, sqlite3_mprintf("select name from easing order by name"),
-             [&](sqlite3_stmt* row) {
-               here.insert((const char*)sqlite3_column_text(row, 0));
-               said_word() +=
-                   std::string(" ") + (const char*)sqlite3_column_text(row, 0);
-             });
-    // Then the user's own easings that this project does not have yet.
-    for (const auto& [name, expression] : doc_own_easings())
-      if (!here.count(name)) said_word() += " " + name;
-    return said_word().c_str();
-  });
-}
-// Returns how far along easing `easing` is at progress `u`, from 0 at its
-// beginning to 1 at its end. `easing` is a built-in kind or an easing defined
-// in the project or in a file of the user.
-double motolii_easing_at(Motolii* m, const char* easing, double u) {
-  Interp kind;
-  if (interp_said(easing, &kind) == 0) return interp_ease(kind, u);
-  return by_look(m, [=] {
-    bool here = false;
-    doc_rows(*m->d,
-             sqlite3_mprintf("select 1 from easing where name = %Q", easing),
-             [&](sqlite3_stmt*) { here = true; });
-    const auto easings = doc_own_easings();
-    const auto own = easings.find(easing);
-    // The user's own easing, not yet in this project: evaluate it as its file
-    // says. The parameters are all 1.
-    if (!here && own != easings.end()) {
-      const double p[4] = {1, 1, 1, 1};
-      sqlite3_stmt* expression = doc_expression_statement(*m->d, own->second);
-      return expression ? doc_went(expression, u, u, 1.0, 0.0, 1.0, p) : u;
-    }
-    // An easing defined in the project, evaluated as between a keyframe of 0
-    // and a keyframe of 1 that are one second apart.
-    return doc_went_by(*m->d, easing, u, u, 1.0, 0.0, 1.0);
-  });
-}
 // Begins or ends a group of changes that form one undo step. A nonzero `on`
 // begins it. 0 ends it and returns whether the group succeeded. Previews that
 // were held back while the group was open are made once when it ends.
@@ -641,13 +373,6 @@ const char* motolii_layer_stretches(Motolii* m, int layer) {
                all += line + easing + "\n";
              });
     return (said_word() = all).c_str();
-  });
-}
-// Returns the easing of the keyframe of property `name` at time `at`.
-const char* motolii_easing_of(Motolii* m, int layer, const char* name,
-                              double at) {
-  return by_look(m, [=] {
-    return (said_word() = doc_easing_of(*m->d, layer, name, at)).c_str();
   });
 }
 
