@@ -23,7 +23,7 @@ import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/commands/keymap.dart';
 import 'package:motolii/workspace/commands/menu_bar.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
-import 'package:motolii/workspace/dock/dock.dart';
+import 'package:motolii/workspace/dock/shelf_pane.dart';
 import 'package:motolii/workspace/inspector_feed/panel.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/stage/stage.dart';
