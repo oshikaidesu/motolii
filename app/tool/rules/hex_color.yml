@@ -1,0 +1,49 @@
+# A colour is written once, in lib/skin (a token) or in a data file of swatches; panels read it.
+# `ignores` has two parts. The first is permanent. The second is the baseline: files that broke the rule before it
+# existed. Delete a line when the file is fixed; never add one (a new file that breaks the rule must be fixed instead).
+id: hex-color
+language: dart
+severity: error
+message: A colour is a token in lib/skin, not a hex literal in a panel.
+rule:
+  kind: hex_integer_literal
+  regex: '^0[xX][0-9A-Fa-f]{8}$'
+files:
+  - lib/**
+ignores:
+  - lib/skin/**
+  - lib/bridge/**
+  # baseline
+  - lib/inspector/chooser.dart
+  - lib/inspector/controls/parameter_grid.dart
+  - lib/inspector/controls/parameter_tile.dart
+  - lib/inspector/effect_drag_ghost.dart
+  - lib/main.dart
+  - lib/widgets/context_menu.dart
+  - lib/widgets/controls.dart
+  - lib/widgets/forms/forms.dart
+  - lib/widgets/forms/lighttable_forms.dart
+  - lib/widgets/forms/poster_forms.dart
+  - lib/widgets/number_field_state.dart
+  - lib/workspace/dock/colors/color_bento.dart
+  - lib/workspace/dock/colors/color_commands.dart
+  - lib/workspace/dock/colors/color_palette.dart
+  - lib/workspace/dock/colors/colors_shelf.dart
+  - lib/workspace/dock/colors/photo_palette.dart
+  - lib/workspace/dock/common/shelf_footer.dart
+  - lib/workspace/dock/effects/effect_drawings.dart
+  - lib/workspace/dock/media/file_footer.dart
+  - lib/workspace/dock/media/file_tile.dart
+  - lib/workspace/shelf/create_preview.dart
+  - lib/workspace/stage/stage_tokens.dart
+  - lib/workspace/stage/stage_view_relations.dart
+  - lib/workspace/stage/view_painter.dart
+  - lib/workspace/timeline/timeline_header.dart
+  - lib/workspace/timeline/timeline_rows.dart
+  - lib/workspace/timeline/timeline_tracks_paint.dart
+  - lib/workspace/tool_panel/blend.dart
+  - lib/workspace/tool_panel/ease/easing_preset_tile.dart
+  - lib/workspace/tool_panel/relations.dart
+  - lib/workspace/top_bar/size_chip.dart
+  - lib/workspace/top_bar/timings.dart
+  - lib/workspace/top_bar/top_bar.dart

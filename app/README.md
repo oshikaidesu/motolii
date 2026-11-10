@@ -31,6 +31,8 @@ flutter analyze
 flutter test
 ```
 
+`ast-grep scan` (in `app/`, 0.1 s) holds the rules in `tool/rules/`: no hex colour and no raw `EditableText` or `NakedButton` in a panel; they belong to `lib/skin/` and `lib/widgets/`. Files that broke a rule before it existed are listed in the rule and are removed from the list as they are fixed; a new file is never added to it.
+
 `dart analyze lib` is the quick static check. Most tests need no engine; `test/accessibility_guidelines_test.dart` opens the real app and is skipped when `../engine/out/libmotolii.dylib` is missing.
 
 Frame timing needs a window:
@@ -74,7 +76,7 @@ CI runs the first three commands on every push (`../.github/workflows/checks.yml
 | `test/` | Unit and widget tests, laid out like `lib/` (`inspector/`, `skin/`, `widgets/`, `workspace/`), plus `skin_folders_test.dart` and `accessibility_guidelines_test.dart`. They pin what the code returns now, so a change of value fails them. |
 | `integration_test/` | `frame_timing_test.dart`: scrolls the timeline on a real Mac and checks each frame fits about 16 ms. |
 | `test_driver/` | The driver that runs `integration_test/` with `flutter drive`. Test output goes to `build/test_output/`. |
-| `tool/` | `live.sh` (run with hot reload) and `flicker.py` (finds one-frame flicker in a screen recording; needs ffmpeg). |
+| `tool/` | `live.sh` (run with hot reload), `flicker.py` (finds one-frame flicker in a screen recording; needs ffmpeg) and `rules/` (the `ast-grep` rules above, read through `sgconfig.yml`). |
 | `example/` | `my_panel.dart`: a panel built from the standard alone. The analyzer compiles it, so it breaks when the standard changes. |
 | `assets/` | `effect_parameter_weights.json`: how strongly each effect parameter acts. It is read from the repository with `File`, and is not listed in `pubspec.yaml`. |
 | `macos/` | The Flutter macOS runner project. |

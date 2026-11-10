@@ -30,6 +30,14 @@ jobs:
       - uses: actions/checkout@v4
       - run: pipx install clang-format==23.1.5   # the version the tree is formatted with
       - run: git ls-files 'engine/*.h' 'engine/*.cpp' 'engine/*.mm' ':!engine/third_party' | xargs clang-format --dry-run --Werror
+  app-rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: pipx install ast-grep-cli==0.45.3   # the version the rules were written with
+      - run: ast-grep scan
+        working-directory: app
   paths:
     runs-on: ubuntu-latest
     timeout-minutes: 5
