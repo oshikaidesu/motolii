@@ -13,6 +13,7 @@
 #include <string>
 
 #include "entry/motolii.h"
+#include "media/video_flash_check.h"
 
 int thumbnail_at(const char* video, const char* png, int wide, double fraction,
                  double seconds) {
@@ -163,6 +164,11 @@ const char* motolii_media_info(const char* file) {
   g_free(uri);
   if (discoverer) g_object_unref(discoverer);
   return out.c_str();
+}
+// Checks a video for flashes and patterns that may cause seizures. IRIS does
+// the work; see media/video_flash_check.h.
+const char* motolii_flashes(const char* film, const char* folder) {
+  return video_flash_check(film, folder);
 }
 // Returns the kinds of a font file as CoreText reads them from its family class
 // and traits: serif, sans, script, mono, bold, light, italic, symbols and

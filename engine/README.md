@@ -55,7 +55,7 @@ does. There is no `.clangd` file; point clangd at it with `--compile-commands-di
 | `stage/canvas/` | 2D art drawn with ThorVG and placed in the preview as a plane, plus path operations (`canvas.h`, `thorvg_path_operators.cpp`, `skia_path_operations.cpp`). |
 | `stage/effects/` | Effects per layer and over the whole screen, and Filament viewer settings (`layer_fx.h`, `screen_fx.h`, `viewer_settings.h`). |
 | `preview/` | Putting a project on the stage: the playback cache (`playback_cache.h`). |
-| `media/` | Everything read through GStreamer: video (`video_layer.h`, `video_datamosh.h`, `video_flash_check.cpp`), sound (`sound_level.h`, `sound_playback.h`), MIDI (`midi_notes.h`, `midi_roll.h`) and `gstreamer_file_source.h`. |
+| `media/` | Everything read through GStreamer: video (`video_layer.h`, `video_datamosh.h`, `video_flash_check.h`), sound (`sound_level.h`, `sound_playback.h`), MIDI (`midi_notes.h`, `midi_roll.h`) and `gstreamer_file_source.h`. |
 | `motion/` | Motion: easing (`easing_curves.h`, `easing_names.h`, `easing_godot.h`) and Lottie motion solved by ThorVG (`lottie_motion.h`). |
 | `physics/` | Physics through Jolt (`physics.h`, `jolt.cpp`). |
 | `materials/` | Filament materials (`.mat`) and the `.glsl` they include, compiled by `materials/build.sh` with Filament's `matc`. |

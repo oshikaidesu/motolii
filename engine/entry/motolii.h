@@ -132,9 +132,10 @@ int motolii_thumbnail_seconds(const char* video, const char* png, int wide,
    the next call on this thread. */
 const char* motolii_media_info(const char* file);
 /* Checks a video for flashes and patterns that may cause seizures, using EA's
-   IRIS (video_flash_check.cpp). Returns the path of the result.json it wrote
-   under `folder`, with frameData.json beside it, or "" if the video could not
-   be read. Any thread, one at a time. Valid until the next call on this thread.
+   IRIS (media/video_flash_check.h). Returns the path of the result.json it
+   wrote under `folder`, with frameData.json beside it, or "" if the video could
+   not be read. Any thread, one at a time. Valid until the next call on this
+   thread.
  */
 const char* motolii_flashes(const char* video, const char* folder);
 /* Returns a font file's kinds as CoreText reads them: serif sans script mono

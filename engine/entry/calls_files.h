@@ -2,8 +2,9 @@
 #define MOTOLII_ENTRY_CALLS_FILES_H_
 // calls_files.h: the calls of motolii.h that read files without an open
 // project. They make small thumbnails of videos with GStreamer, report what a
-// media file is with the GStreamer discoverer, and report the kinds of a font
-// with CoreText.
+// media file is with the GStreamer discoverer, check a video for flashes with
+// IRIS (media/video_flash_check.h), and report the kinds of a font with
+// CoreText.
 
 // Writes a frame of a video as a small PNG of width `wide`. A GStreamer
 // pipeline decodes, scales and encodes to PNG, is paused at its first frame,

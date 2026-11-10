@@ -1,29 +1,26 @@
-// Implements motolii_flashes, which finds the flashes and patterns in a video
-// that may cause seizures. It uses EA's IRIS (iris.sh): it calls IRIS's
+// Implements video_flash_check, which finds the flashes and patterns in a
+// video that may cause seizures. It uses EA's IRIS (iris.sh): it calls IRIS's
 // AnalyseVideo and has it write its JSON result, the way IRIS's example app
 // does, using IRIS's own settings in config/appsettings.json.
+#include "media/video_flash_check.h"
+
 #include <dlfcn.h>
 
 #include <filesystem>
 #include <mutex>
 #include <string>
 
-#include "entry/motolii.h"
 #include "iris/Configuration.h"
 #include "iris/Log.h"
 #include "iris/VideoAnalyser.h"
 
-// Analyses `film` and writes the results into `folder`. Returns the path of the
-// result JSON, or an empty string if the inputs are not regular files, the
-// settings are missing, or the analysis fails. The returned pointer stays valid
-// until the next call on the same thread.
-const char* motolii_flashes(const char* film, const char* folder) {
+const char* video_flash_check(const char* film, const char* folder) {
   static thread_local std::string out;
   out.clear();
   Dl_info lib{};
   // The settings are found beside the library, the same way doc_folders finds
   // the library's own.
-  dladdr((const void*)&motolii_flashes, &lib);
+  dladdr((const void*)&video_flash_check, &lib);
   std::error_code wrong;
   const auto settings = std::filesystem::weakly_canonical(
                             lib.dli_fname ? lib.dli_fname : ".", wrong)
