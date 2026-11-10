@@ -135,7 +135,6 @@
 5	static-function	community/aviutl/aviutl_obj_effect.h
 8	static-function	community/aviutl/aviutl_pixels.h
 2	static-function	community/aviutl/aviutl_run.h
-1	static-function	community/quickjs/script.h
 8	static-function	document/adapter.h
 10	static-function	document/arrange.h
 2	static-function	document/camera.h
@@ -144,7 +143,7 @@
 4	static-function	document/easings_put.h
 2	static-function	document/evaluate.h
 10	static-function	document/expressions.h
-5	static-function	document/folders.h
+1	static-function	document/folders.h
 6	static-function	document/fx_list.h
 7	static-function	document/fx_put.h
 4	static-function	document/hold.h

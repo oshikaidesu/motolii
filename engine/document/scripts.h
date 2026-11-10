@@ -81,8 +81,6 @@ static char doc_thor_letter(const std::string& w) {
     for (int i = 0; i < 4; ++i) if (w == doc_thor_names[i]) return "trsb"[i];
     return 0;
 }
-// Defined in engine/document/folders.h.
-static std::vector<std::filesystem::path> doc_folders(const char* folder); static std::filesystem::path doc_engine(const char* part);
 // Returns the script loaded from `file`, loading it again when the file has changed. Returns null
 // when `file` is empty, "none" or a MIDI file, or when it cannot be read. When `runs` is false the
 // code is not compiled. The file is checked for changes only once for each value of

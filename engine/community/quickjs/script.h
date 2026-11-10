@@ -47,11 +47,7 @@
 #include <string>
 #include <vector>
 
-// Counts how many times a watched file or folder was reported as written, added or removed
-// (motolii_files_changed). The watching itself runs in the app through the operating system
-// (dart:io, on FSEvents), not here. Anything built from files rereads its file only when this
-// count changes.
-static std::atomic<int>& files_changed() { static std::atomic<int> n{0}; return n; }
+#include "shelf/shelf_folders.h"
 
 // One parameter declared in a script's header.
 struct ScriptParameter {

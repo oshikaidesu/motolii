@@ -2,11 +2,12 @@
 // remade by Sashimono Edit, and scripts defined in the same file, called by name.
 //
 // Included by aviutl_fx.h; not self-contained.
+
+#include "shelf/shelf_folders.h"
+
 // AviUtl's built-in effects as remade by Sashimono Edit (MIT). Their ISF files and the way their
 // parameters are converted are listed in effects/sources/sashimono_aviutl.json, which
 // from_sashimono.py writes from Sashimono's compat/aviutl/mapping.py. The list is read once.
-// Defined in document/layer_edit.h.
-static std::vector<std::filesystem::path> doc_folders(const char* folder);
 // A remade effect: the ISF file, and for each AviUtl parameter name three strings. The first is the
 // parameter's name in the ISF file. The second says how the number is converted: flip, rest,
 // quarter, byte_percent, or anything else for no conversion. The third is a second ISF parameter

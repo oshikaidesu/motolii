@@ -2,6 +2,7 @@
 // each on to doc.h (the project) or render.h (the preview). No real work happens here.
 // The parts below are included in this order. Each depends on the ones before it, and none
 // compiles alone.
+#include "shelf/shelf_folders.cpp"
 #include "entry/render_thread.h"
 #include "entry/render_thread_loop.h"
 #include "entry/window.h"

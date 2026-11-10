@@ -5,6 +5,9 @@
 #include <list>
 #include <mutex>
 #include <stdexcept>
+
+#include "shelf/shelf_folders.h"
+
 // stb_truetype reports a malformed font by throwing instead of aborting the program. One example is
 // an OpenType cmap (format 4) whose last segment is not 0xFFFF.
 #define STBTT_assert(x) ((x) ? (void)0 : throw std::out_of_range("stb_truetype"))
@@ -404,8 +407,6 @@ static std::string type_lacks(const std::string& fontFile, const std::string& wo
     }
     return lacks;
 }
-// Defined in document/folders.h.
-static std::vector<std::filesystem::path> doc_folders(const char* folder);
 // Returns a font to use instead of `fontFile` when it lacks some characters of `words`, so that no
 // missing-glyph boxes appear. Returns "" if the font has every character or if no font has them
 // all.

@@ -2,8 +2,6 @@
 //
 // Opens a project file, upgrades older files, and records each change to the project as one undo
 // step that can be undone and redone.
-// Defined in folders.h.
-static std::vector<std::filesystem::path> doc_folders(const char* folder);
 // Returns the path of the recipe called `name` that has code, or an empty string if there is none.
 // Defined in recipes.h.
 static std::string doc_recipe_code_path(const std::string& name);
