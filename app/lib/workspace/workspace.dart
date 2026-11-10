@@ -39,7 +39,7 @@ import 'package:motolii/workspace/edits/keyframe_edits.dart';
 import 'package:motolii/workspace/commands/keymap.dart';
 import 'package:motolii/workspace/stage/stage.dart';
 import 'package:motolii/workspace/stage/stage_camera.dart';
-import 'package:motolii/workspace/stage/stage_view.dart' show WsRelationStack;
+import 'package:motolii/workspace/stage/stage_view_relations.dart' show WsRelationStack;
 import 'package:motolii/workspace/timeline/timeline.dart';
 import 'package:motolii/workspace/top_bar/top_bar.dart';
 import 'package:motolii/bridge/motolii.dart';

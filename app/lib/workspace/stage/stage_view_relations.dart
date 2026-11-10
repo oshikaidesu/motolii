@@ -1,5 +1,22 @@
-// Part of stage_view.dart: what is picked together and the relation picked, over the stage.
-part of 'stage_view.dart';
+// What is picked together and the relation picked, over the stage.
+import 'dart:math' as math;
+
+import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter/widgets.dart';
+
+import 'package:motolii/bridge/motolii.dart' show MotoliiDocument, MotoliiMoment, MotoliiWrites;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Hov;
+import 'package:motolii/widgets/glyphs.dart' show Glyph;
+import 'package:motolii/widgets/timeline_painters.dart' show TpGlyph;
+import 'package:motolii/widgets/two_fingers.dart';
+import 'package:motolii/workspace/edits/make_relation.dart';
+import 'package:motolii/workspace/stage/stage_view.dart';
+import 'package:motolii/workspace/state/art_scene.dart';
+import 'package:motolii/workspace/state/workspace_aspect.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// Marks drawn over the stage for the selected layers and the selected relation.
 /// - Several layers selected: a ring on each, and along the top the relations they can be given together.
@@ -7,10 +24,10 @@ part of 'stage_view.dart';
 ///   Each layer it moves gets a ring and an x that removes it; the leader wears a crown, and another layer's crown makes it the leader.
 ///   Along the top are its name and the Release button.
 /// - One layer selected: the relations it belongs to, as outlined tags beside it.
-class _RelationMarks extends StatelessWidget {
-  const _RelationMarks({required this.scene, required this.v, required this.lasso});
+class RelationMarks extends StatelessWidget {
+  const RelationMarks({super.key, required this.scene, required this.v, required this.lasso});
   final ArtScene scene;
-  final _View v;
+  final StageViewport v;
   final List<Offset>? lasso;
 
   @override
@@ -314,13 +331,13 @@ class _MarksPainter extends CustomPainter {
   final List<_Shape> shape;
   @override
   void paint(Canvas c, Size s) {
-    final ink = _line(WsT.accent, 1.5);
+    final ink = linePaint(WsT.accent, 1.5);
     if (lasso case final l? when l.length > 1) c.drawPath(Path()..addPolygon(l, false), ink);
     for (final p in at) {
       c.drawCircle(p, 14, ink);
     }
     for (final sh in shape) {
-      final thin = _line(WsT.accent.withValues(alpha: sh.off ? .25 : .8));
+      final thin = linePaint(WsT.accent.withValues(alpha: sh.off ? .25 : .8));
       final path = sh.b == null
           ? (Path()..addOval(Rect.fromCenter(center: sh.a, width: 2 * sh.r, height: 2 * sh.r)))
           : (Path()
@@ -464,13 +481,13 @@ class _GlyphPaint extends CustomPainter {
 }
 
 /// The pill at the bottom-left of the viewport: the zoom and the pointer position in composition pixels.
-class _Hud extends StatelessWidget {
-  _Hud({required this.scale, required this.cursor});
+class Hud extends StatelessWidget {
+  Hud({super.key, required this.scale, required this.cursor});
   final double scale;
   final ValueNotifier<Offset?> cursor;
   @override
   Widget build(BuildContext context) => Container(
-    height: _V.hud,
+    height: StageTokens.hud,
     padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
     decoration: BoxDecoration(color: WsT.card, borderRadius: BorderRadius.all(Shape.r(WsT.radius))),
     child: Row(
@@ -504,18 +521,18 @@ class _Hud extends StatelessWidget {
 }
 
 /// The navigator: the whole frame in miniature, the part the viewport shows outlined. Shown only when zoomed past fit.
-class _Navigator extends StatelessWidget {
-  const _Navigator({required this.scene, required this.view, this.texture});
+class StageNavigator extends StatelessWidget {
+  const StageNavigator({super.key, required this.scene, required this.view, this.texture});
   final ArtScene scene;
-  final _View view;
+  final StageViewport view;
 
   /// The engine's preview of the whole frame, drawn under the outline. It is the same texture the stage shows.
   final int? texture;
   @override
   Widget build(BuildContext context) {
-    final h = _V.mapW * WsArt.comp.height / WsArt.comp.width;
+    final h = StageTokens.mapW * WsArt.comp.height / WsArt.comp.width;
     return Container(
-      width: _V.mapW + 8,
+      width: StageTokens.mapW + 8,
       height: h + 8,
       padding: EdgeInsets.all(Shape.s(4)),
       color: WsT.card,
@@ -542,7 +559,7 @@ class _MapPainter extends CustomPainter {
     c.scale(k);
     c.restore();
     final r = Rect.fromLTRB(shown.left * k, shown.top * k, shown.right * k, shown.bottom * k).intersect(Offset.zero & s);
-    c.drawRect(r.deflate(.75), _line(WsT.accent, 1.5));
+    c.drawRect(r.deflate(.75), linePaint(WsT.accent, 1.5));
   }
 
   @override
@@ -551,28 +568,22 @@ class _MapPainter extends CustomPainter {
 
 // ---- the preview and what sits on it ----------------------------------------------------------------------------------
 
-Paint _line(Color c, [double w = 1]) => Paint()
+Paint linePaint(Color c, [double w = 1]) => Paint()
   ..style = PaintingStyle.stroke
   ..strokeWidth = w
   ..color = c;
 
-/// Draws a line that reads on any artwork: a dark under-stroke, then the colour.
-void _legible(Canvas c, Path p, Color col, [double w = 1.5]) {
-  c.drawPath(p, _line(Grey.g00, w + 2));
-  c.drawPath(p, _line(col, w));
-}
-
 /// What one painter draws: everything (including the stand-in art), or one side of the engine's preview.
 /// With the preview in the composition, [under] is what lies beneath it (surround, captions), [over] what lies above (grid, guides, selection).
-enum _Part { all, under, over }
+enum ViewPart { all, under, over }
 
-class _PointsPainter extends CustomPainter {
-  _PointsPainter(this.at, this.handles);
+class PointsPainter extends CustomPainter {
+  PointsPainter(this.at, this.handles);
   final List<Offset> at;
   final List<(Offset, Offset)> handles;
   @override
   void paint(Canvas c, Size _) {
-    final edge = _line(WsT.accent), inside = Paint()..color = const Color(0xFFFFFFFF);
+    final edge = linePaint(WsT.accent), inside = Paint()..color = const Color(0xFFFFFFFF);
     for (final (h, o) in handles) {
       if ((h - o).distance < 1) continue;
       c
@@ -589,5 +600,5 @@ class _PointsPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_PointsPainter o) => !listEquals(o.at, at) || !listEquals(o.handles, handles);
+  bool shouldRepaint(PointsPainter o) => !listEquals(o.at, at) || !listEquals(o.handles, handles);
 }

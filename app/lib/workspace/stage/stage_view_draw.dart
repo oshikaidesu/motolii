@@ -3,13 +3,27 @@
 //
 // setState is called from an extension on the State itself, which the analyzer allows only in a class or mixin.
 // ignore_for_file: invalid_use_of_protected_member
-part of 'stage_view.dart';
+import 'dart:math' as math;
 
-extension _StageViewDraw on _StageViewState {
+import 'package:flutter/widgets.dart';
+
+import 'package:perfect_freehand/perfect_freehand.dart' show getStrokeOutlinePoints, getStrokePoints, PointVector, StrokeOptions;
+import 'package:perfect_freehand/src/get_stroke_radius.dart'
+    show getStrokeRadius; // How wide the pressure makes a point. The package keeps it private, so it is imported from src.
+
+import 'package:motolii/bridge/motolii.dart' show MotoliiDocument, MotoliiWrites;
+import 'package:motolii/widgets/text_gestures.dart' show textToType;
+import 'package:motolii/workspace/stage/stage_view.dart';
+import 'package:motolii/workspace/stage/stage_view_state.dart';
+import 'package:motolii/workspace/state/art_scene.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
+
+extension StageViewDraw on StageViewState {
   /// Selects the layers whose centre lies inside the lasso.
-  void _lassoDragEnd(_View v) {
-    final round = _lasso, ws = WsScope.read(context);
-    setState(() => _lasso = null);
+  void lassoDragEnd(StageViewport v) {
+    final round = lasso, ws = WsScope.read(context);
+    setState(() => lasso = null);
     if (round == null || round.length < 3) return;
     // A nearly straight drag selects the box between its ends, as in Figma and After Effects. Otherwise the drawn
     // outline is used.
@@ -22,11 +36,11 @@ extension _StageViewDraw on _StageViewState {
     ]);
   }
 
-  /// Creates a layer of the active tool's kind from a drag that started at [_drawFrom] and ended at [to].
+  /// Creates a layer of the active tool's kind from a drag that started at [drawFrom] and ended at [to].
   /// A drag shorter than 6 screen pixels creates the layer at its default size.
-  void _draw(_View v, Offset to) {
-    final from = _drawFrom, ws = WsScope.read(context), m = ws.inside, kind = widget.make;
-    _drawFrom = null;
+  void draw(StageViewport v, Offset to) {
+    final from = drawFrom, ws = WsScope.read(context), m = ws.inside, kind = widget.make;
+    drawFrom = null;
     setState(() {});
     if (from == null || m == null || kind == null) return;
     final a = v.toComp(from), b = v.toComp(to), p = m.point, c = WsArt.comp;
@@ -88,10 +102,10 @@ extension _StageViewDraw on _StageViewState {
   /// The fit stays within 8 screen pixels of the scribble, like Blender's Draw Curve tool (editcurve_paint.cc). The
   /// result has ordinary pen anchors and handles that the user can move. A scribble that ends where it began becomes
   /// a closed, filled path. Otherwise it becomes an open stroke in the current ink.
-  void _fit(_View v, List<Offset> way) {
+  void fit(StageViewport v, List<Offset> way) {
     final ws = WsScope.read(context), m = ws.inside!;
     // The fitted path is complete, so the next pen click starts a new one.
-    _penning = false;
+    penning = false;
     final points = [for (final p in way) v.toComp(p)], error = (v.toComp(way.first + const Offset(8, 0)) - points.first).distance;
     final closed = (points.first - points.last).distance < 4 * error;
     m.later('together', number: 1);
@@ -113,9 +127,9 @@ extension _StageViewDraw on _StageViewState {
   }
 
   /// Turns the brush stroke into a drawing layer, or erases from the selected drawing with the eraser.
-  void _brushDragEnd(_View v) {
-    final way = _brush, ws = WsScope.read(context), m = ws.inside;
-    setState(() => _brush = null);
+  void brushDragEnd(StageViewport v) {
+    final way = brush, ws = WsScope.read(context), m = ws.inside;
+    setState(() => brush = null);
     if (way == null || way.length < 2 || m == null) return;
     final options = StrokeOptions(size: widget.brushSize, simulatePressure: true, isComplete: true);
     final points = getStrokePoints([for (final p in way) PointVector.fromOffset(offset: v.toComp(p))], options: options);

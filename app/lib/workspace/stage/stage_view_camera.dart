@@ -1,10 +1,19 @@
 // The camera on the stage: which layer is the camera, dragging its gizmo (orbit it or resize its frame), and the
 // mouse wheel dolly.
-part of 'stage_view.dart';
+import 'dart:async' show Timer;
+import 'dart:math' as math;
 
-extension _StageViewCamera on _StageViewState {
+import 'package:flutter/widgets.dart';
+
+import 'package:motolii/bridge/motolii.dart' show MotoliiDocument, MotoliiMoment, MotoliiWrites;
+import 'package:motolii/workspace/stage/stage_view.dart';
+import 'package:motolii/workspace/stage/stage_view_state.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
+
+extension StageViewCamera on StageViewState {
   /// The camera the Camera tool acts on: the selected one, else the project's first.
-  int? _cameraOf(Ws ws) {
+  int? cameraOf(Ws ws) {
     final m = ws.inside, picked = int.tryParse(widget.selected ?? '');
     if (m == null) return null;
     if (picked != null && m.word(picked, 'kind') == 'camera') return picked;
@@ -16,22 +25,22 @@ extension _StageViewCamera on _StageViewState {
 
   /// Moves the camera nearer to or further from its point of interest, like the wheel of After Effects' Unified Camera
   /// tool. All wheel turns until the wheel rests for 300 ms form one undo step.
-  void _dolly(double by) {
-    final ws = WsScope.read(context), m = ws.inside, cam = _cameraOf(ws);
+  void dolly(double by) {
+    final ws = WsScope.read(context), m = ws.inside, cam = cameraOf(ws);
     if (m == null || cam == null) return;
     if (ws.freeEye) {
       // As in After Effects' custom views, the tool moves the view, not the camera layer.
       return ws.setView('stage.eye', [ws.eye[0], ws.eye[1], (ws.eye[2] * math.exp(by * .002)).clamp(.01, 100.0)]);
     }
-    if (_dollyAt == null) {
+    if (dollyAt == null) {
       m.take(cam);
-      _dollyAt = m.value(cam, 'distance', ws.frame / Ws.fps) ?? 1;
+      dollyAt = m.value(cam, 'distance', ws.frame / Ws.fps) ?? 1;
     }
-    _dollyAt = (_dollyAt! * math.exp(by * .002)).clamp(.01, 100.0);
-    m.dragUpdate('distance', _dollyAt!);
-    _dollyRest?.cancel();
-    _dollyRest = Timer(const Duration(milliseconds: 300), () {
-      _dollyAt = null;
+    dollyAt = (dollyAt! * math.exp(by * .002)).clamp(.01, 100.0);
+    m.dragUpdate('distance', dollyAt!);
+    dollyRest?.cancel();
+    dollyRest = Timer(const Duration(milliseconds: 300), () {
+      dollyAt = null;
       ws.after(m.later('drag_end', number: 1));
     });
   }
@@ -43,7 +52,7 @@ extension _StageViewCamera on _StageViewState {
   /// - The frame itself or the point of interest moves the camera.
   ///
   /// [inside] makes any point in the frame count as a hit, not only its handles.
-  bool _gizmoDragStart(_View v, Offset local, {required bool inside}) {
+  bool gizmoDragStart(StageViewport v, Offset local, {required bool inside}) {
     final ws = WsScope.read(context), m = ws.inside!, scene = widget.scene, at = ws.frame / Ws.fps;
     for (final id in scene.gizmos.keys) {
       final g = [for (final p in scene.gizmo(id)) p == null ? null : v.toScreen(p)], cam = int.parse(id);
@@ -54,11 +63,11 @@ extension _StageViewCamera on _StageViewState {
       if (on(g[5], 10)) {
         by = 'gizmo orbit';
         // Degrees per pixel, so the camera turns as far as the pointer travels on the circle it orbits.
-        _orbitRate = g[4] == null ? .25 : 180 / math.pi / math.max((g[5]! - g[4]!).distance, 60);
-        _orbitFrom = (x: m.value(cam, 'rotate_x', at) ?? 0, y: m.value(cam, 'rotate_y', at) ?? 0);
+        orbitRate = g[4] == null ? .25 : 180 / math.pi / math.max((g[5]! - g[4]!).distance, 60);
+        orbitFrom = (x: m.value(cam, 'rotate_x', at) ?? 0, y: m.value(cam, 'rotate_y', at) ?? 0);
       } else if (widget.selected == id && frame.any((p) => on(p, 8)) && g[4] != null) {
         by = 'gizmo lens';
-        _lensFrom = (zoom: m.value(cam, 'zoom', at) ?? 1, reach: (local - g[4]!).distance, middle: g[4]!);
+        lensFrom = (zoom: m.value(cam, 'zoom', at) ?? 1, reach: (local - g[4]!).distance, middle: g[4]!);
       } else if (on(g[4], 10) || (inside && frame.length == 4 && (Path()..addPolygon(frame, true)).contains(local))) {
         by = 'place';
       } else {
@@ -67,7 +76,7 @@ extension _StageViewCamera on _StageViewState {
       m.take(cam);
       ws.select(id);
       if (ws.playing) ws.playing = false;
-      _drag = (from: local, moved: false, by: by == 'place' ? null : by);
+      drag = (from: local, moved: false, by: by == 'place' ? null : by);
       return true;
     }
     return false;

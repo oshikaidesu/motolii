@@ -1,53 +1,20 @@
 // The stage's viewport: the composition centred on a dark surround, rulers and guides, overlays, the selection,
 // the zoom HUD and the navigator.
 // It repaints only when the scene, the selection, the hover or the view changes. The pointer readout repaints the rulers alone.
-import 'package:motolii/skin/layer_colors.dart';
-import 'package:motolii/skin/window_tokens.dart';
-
-import 'dart:async' show Timer;
-import 'dart:io' show File;
 import 'dart:math' as math;
-import 'dart:ui' show PointMode;
 
-import 'package:flutter/foundation.dart' show listEquals;
-import 'package:flutter/gestures.dart';
-import 'package:flutter/scheduler.dart' show SchedulerBinding;
-import 'package:flutter/services.dart' show HardwareKeyboard, KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/workspace/stage/stage_view_state.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
-import 'package:motolii/widgets/two_fingers.dart';
-import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiMoment, MotoliiWrites, MotoliiQuestions;
-import 'package:motolii/widgets/glyphs.dart' show Glyph;
-import 'package:motolii/widgets/timeline_painters.dart' show TpGlyph;
-import 'package:motolii/widgets/text_gestures.dart' show textToType;
-import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Hov;
-import 'package:motolii/workspace/edits/make_relation.dart';
-
-import 'package:perfect_freehand/perfect_freehand.dart' show getStrokeOutlinePoints, getStrokePoints, PointVector, StrokeOptions;
-import 'package:perfect_freehand/src/get_stroke_radius.dart'
-    show getStrokeRadius; // How wide the pressure makes a point. The package keeps it private, so it is imported from src.
-
-import 'package:motolii/workspace/state/layer.dart';
-import 'package:motolii/workspace/state/workspace_aspect.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
-import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/widgets/menu.dart';
-import 'package:motolii/workspace/commands/layer_menu.dart';
-part 'stage_view_state.dart';
-part 'stage_view_drag.dart';
-part 'stage_view_draw.dart';
-part 'stage_view_camera.dart';
-part 'stage_view_relations.dart';
-part 'stage_view_painter.dart';
 
 /// Zoom steps of the header chip: fit, then fixed scales.
 const stageZooms = ['Fit', '50%', '100%'];
-const _fixed = [0.0, .5, 1.0];
 
 /// Viewport sizes: the ruler band, the margin a fit leaves around the composition, the HUD pill and the navigator.
-abstract final class _V {
+abstract final class StageTokens {
   static double get ruler => Shape.z(16.0);
   static double get fitMargin => Shape.s(28.0);
   static double get hud => Shape.z(22.0);
@@ -66,8 +33,8 @@ abstract final class _V {
 
 /// Composition px to screen px: the composition's top-left at [o], [s] screen px per composition px, inside [area].
 @immutable
-class _View {
-  const _View(this.o, this.s, this.area);
+class StageViewport {
+  const StageViewport(this.o, this.s, this.area);
   final Offset o;
   final double s;
   final Rect area;
@@ -75,7 +42,7 @@ class _View {
   Offset toScreen(Offset p) => o + p * s;
   Offset toComp(Offset p) => (p - o) / s;
   @override
-  bool operator ==(Object x) => x is _View && x.o == o && x.s == s && x.area == area;
+  bool operator ==(Object other) => other is StageViewport && other.o == o && other.s == s && other.area == area;
   @override
   int get hashCode => Object.hash(o, s, area);
 }
@@ -149,7 +116,7 @@ class StageView extends StatefulWidget {
   final ValueNotifier<Offset?> cursor;
   final VoidCallback? onPoke;
   @override
-  State<StageView> createState() => _StageViewState();
+  State<StageView> createState() => StageViewState();
 }
 
 /// The selected layer's handles where the stage draws them now, by name, in the stage's own coordinates.
@@ -173,7 +140,7 @@ abstract interface class StageHandles {
 ///
 /// While an image is being cropped (after a double click), [crop] holds the left, top, right and bottom amounts cut
 /// away, as shares of its width or height. A bar is shown on each side where it is cut, in place of the side handles.
-Map<String, Offset> _handles(
+Map<String, Offset> selectionHandles(
   Offset Function(Offset doc) scr,
   ArtBox b, {
   required bool knob,
@@ -192,11 +159,11 @@ Map<String, Offset> _handles(
       'side 2': (c[1] + c[2]) / 2,
       'side 3': (c[3] + c[2]) / 2,
     },
-    if (knob) 'turn': top + n * _V.stem,
+    if (knob) 'turn': top + n * StageTokens.stem,
     'anchor': scr(b.anchor),
     'body': scr(b.c),
-    if (const ['rect', 'polygon', 'star', 'squircle', 'chamfer', 'cog'].contains(form)) 'round': _gripOf(c).roundAt(round),
-    if (const ['polygon', 'star', 'cog'].contains(form)) 'points': (c[1] + c[2]) / 2 + _gripOf(c).u * 18,
+    if (const ['rect', 'polygon', 'star', 'squircle', 'chamfer', 'cog'].contains(form)) 'round': gripOf(c).roundAt(round),
+    if (const ['polygon', 'star', 'cog'].contains(form)) 'points': (c[1] + c[2]) / 2 + gripOf(c).u * 18,
     if (crop.length == 4) ...{
       'crop 0': (c[0] + c[3]) / 2 + (c[1] - c[0]) * crop[0],
       'crop 1': (c[0] + c[1]) / 2 + (c[3] - c[0]) * crop[1],
@@ -209,7 +176,7 @@ Map<String, Offset> _handles(
 /// The reference frame for a shape's own handles, in app points.
 ///
 /// It holds the first corner, the unit directions along the top and down the left side, and the shorter side's length.
-({Offset c0, Offset u, Offset w, double short}) _gripOf(List<Offset> c) {
+({Offset c0, Offset u, Offset w, double short}) gripOf(List<Offset> c) {
   final top = c[1] - c[0], side = c[3] - c[0];
   return (
     c0: c[0],
@@ -219,7 +186,7 @@ Map<String, Offset> _handles(
   );
 }
 
-extension on ({Offset c0, Offset u, Offset w, double short}) {
+extension GripFrame on ({Offset c0, Offset u, Offset w, double short}) {
   /// The roundness handle: in along the diagonal as far as the corners are round, never on the corner itself.
   Offset roundAt(double round) => c0 + (u + w) * math.max(round.clamp(0.0, .5) * short, 12.0);
 

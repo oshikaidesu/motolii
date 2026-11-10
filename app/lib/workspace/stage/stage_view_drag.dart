@@ -3,9 +3,17 @@
 //
 // setState is called from an extension on the State itself, which the analyzer allows only in a class or mixin.
 // ignore_for_file: invalid_use_of_protected_member
-part of 'stage_view.dart';
+import 'package:flutter/widgets.dart';
 
-extension _StageViewDrag on _StageViewState {
+import 'package:motolii/bridge/motolii.dart' show MotoliiDocument, MotoliiMoment, MotoliiWrites;
+import 'package:motolii/workspace/stage/stage_view.dart';
+import 'package:motolii/workspace/stage/stage_view_camera.dart';
+import 'package:motolii/workspace/stage/stage_view_state.dart';
+import 'package:motolii/workspace/state/art_scene.dart';
+import 'package:motolii/workspace/state/workspace_scope.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
+
+extension StageViewDrag on StageViewState {
   /// The axis-aligned rectangle that contains the corners of [b].
   Rect _bounds(ArtBox b) {
     final p = b.corners;
@@ -17,7 +25,7 @@ extension _StageViewDrag on _StageViewState {
   void _snapFrom(String id) {
     final boxes = widget.scene.boxes, m = WsScope.read(context).inside;
     final held = boxes[id];
-    if (!widget.snap || held == null || m == null) return _snapTo = null;
+    if (!widget.snap || held == null || m == null) return snapTo = null;
     int top(int t) {
       for (var p = (m.value(t, 'parent', 0) ?? 0).round(), n = 0; p > 0 && n < 64; p = (m.value(t, 'parent', 0) ?? 0).round(), n++) {
         t = p;
@@ -39,13 +47,13 @@ extension _StageViewDrag on _StageViewState {
       xs.add((r.left, r.right));
       ys.add((r.top, r.bottom));
     }
-    _snapTo = (box: _bounds(held), xs: xs, ys: ys);
+    snapTo = (box: _bounds(held), xs: xs, ys: ys);
   }
 
   /// Adjusts the drag offset [by] so the dragged layer's edges or centre land on a snap line within 6 screen pixels.
   /// [s] is the view scale. It also records which lines were met so the painter can draw them.
-  Offset _snapped(Offset by, double s) {
-    final to = _snapTo;
+  Offset snapped(Offset by, double s) {
+    final to = snapTo;
     if (to == null) return by;
     (double, double?) one(double lo, double size, double d, List<(double, double)> lines) {
       (double, double)? best;
@@ -62,33 +70,33 @@ extension _StageViewDrag on _StageViewState {
 
     final (x, mx) = widget.axis == 2 ? (by.dx, null) : one(to.box.left, to.box.width, by.dx, to.xs);
     final (y, my) = widget.axis == 1 ? (by.dy, null) : one(to.box.top, to.box.height, by.dy, to.ys);
-    _met = (mx, my);
+    met = (mx, my);
     return Offset(x, y);
   }
 
   /// Starts pulling a guide, either out of a ruler or by grabbing an existing guide. Returns whether one was taken.
-  bool _pull(_View v, Offset local) {
+  bool _pull(StageViewport v, Offset local) {
     final ws = WsScope.read(context), m = ws.inside;
     if (m == null) return false;
     final at = v.toComp(local), tol = 4 / v.s;
-    if (local.dy < _V.ruler || local.dx < _V.ruler) {
-      _pulling = (axis: local.dy < _V.ruler ? 'y' : 'x', was: null);
+    if (local.dy < StageTokens.ruler || local.dx < StageTokens.ruler) {
+      pulling = (axis: local.dy < StageTokens.ruler ? 'y' : 'x', was: null);
       return true;
     }
     for (final (axis, g) in m.guides) {
       if (((axis == 'x' ? at.dx : at.dy) - g).abs() > tol) continue;
-      _pulling = (axis: axis, was: g);
+      pulling = (axis: axis, was: g);
       return true;
     }
     return false;
   }
 
   /// Releases a pulled guide: removes the old one if it was moved, and adds a new one unless it was dropped on the ruler.
-  void _pullDragEnd(_View v, Offset local) {
-    final p = _pulling, ws = WsScope.read(context), m = ws.inside;
-    _pulling = null;
+  void pullDragEnd(StageViewport v, Offset local) {
+    final p = pulling, ws = WsScope.read(context), m = ws.inside;
+    pulling = null;
     if (p == null || m == null) return;
-    final over = p.axis == 'y' ? local.dy < _V.ruler : local.dx < _V.ruler, at = v.toComp(local);
+    final over = p.axis == 'y' ? local.dy < StageTokens.ruler : local.dx < StageTokens.ruler, at = v.toComp(local);
     // Group the guide changes into one undo step.
     m.later('together', number: 1);
     if (p.was != null) m.later('guide', name: p.axis, number: p.was!, word: 'off');
@@ -98,33 +106,33 @@ extension _StageViewDrag on _StageViewState {
 
   /// Decides what a drag starting at [local] grabs, in order: the active tool's action, a handle of the selected layer,
   /// a camera gizmo, a guide, a layer, and otherwise a lasso.
-  void _dragStart(_View v, Offset local) {
+  void dragStart(StageViewport v, Offset local) {
     if (widget.make == 'camera') {
       // As with After Effects' Unified Camera tool, dragging orbits the camera around its point of interest.
-      final ws = WsScope.read(context), m = ws.inside, cam = _cameraOf(ws);
+      final ws = WsScope.read(context), m = ws.inside, cam = cameraOf(ws);
       if (m == null || cam == null) {
         ws.notice = 'No camera: add one from Create › Layers';
         return;
       }
       if (ws.freeEye) {
-        _orbitFrom = (x: ws.eye[1], y: ws.eye[0]);
-        _drag = (from: local, moved: false, by: 'orbit');
+        orbitFrom = (x: ws.eye[1], y: ws.eye[0]);
+        drag = (from: local, moved: false, by: 'orbit');
         return;
       }
       final at = ws.frame / Ws.fps;
       m.take(cam);
       if (ws.playing) ws.playing = false;
-      _orbitFrom = (x: m.value(cam, 'rotate_x', at) ?? 0, y: m.value(cam, 'rotate_y', at) ?? 0);
-      _drag = (from: local, moved: false, by: 'orbit');
+      orbitFrom = (x: m.value(cam, 'rotate_x', at) ?? 0, y: m.value(cam, 'rotate_y', at) ?? 0);
+      drag = (from: local, moved: false, by: 'orbit');
       return;
     }
     if (widget.make == 'brush') {
-      setState(() => _brush = [local]);
+      setState(() => brush = [local]);
       return;
     }
     if (widget.make != null) {
-      if (widget.make == 'pen') _penWay = [local];
-      setState(() => _drawFrom = local);
+      if (widget.make == 'pen') penWay = [local];
+      setState(() => drawFrom = local);
       return;
     }
     final ws = WsScope.read(context), m = ws.inside;
@@ -172,21 +180,21 @@ extension _StageViewDrag on _StageViewState {
         final at = v.toComp(local);
         m.dragUpdate('grip', at.dx, at.dy);
         if (ws.playing) ws.playing = false;
-        _drag = (from: local, moved: false, by: by);
-        if (grip != _grip) setState(() => _grip = grip);
+        drag = (from: local, moved: false, by: by);
+        if (grip != heldGrip) setState(() => heldGrip = grip);
         return;
       }
     }
-    if (m != null && _gizmoDragStart(v, local, inside: false)) return;
+    if (m != null && gizmoDragStart(v, local, inside: false)) return;
     // Guides come after the handles, which lie over everything else.
     if (_pull(v, local)) return;
-    final id = m == null ? null : _hit(v, local), t = int.tryParse(id ?? '');
+    final id = m == null ? null : hitLocal(v, local), t = int.tryParse(id ?? '');
     // Layers are tested first, then the camera frames they lie in.
-    if (m != null && t == null && _gizmoDragStart(v, local, inside: true)) return;
+    if (m != null && t == null && gizmoDragStart(v, local, inside: true)) return;
     if (m != null && t == null) {
       // Nothing under the pointer: draw a lasso.
       ws.select(null);
-      setState(() => _lasso = [local]);
+      setState(() => lasso = [local]);
       return;
     }
     if (m == null || t == null) return;
@@ -194,26 +202,26 @@ extension _StageViewDrag on _StageViewState {
     ws.select(id);
     // Grabbing a layer stops playback.
     if (ws.playing) ws.playing = false;
-    _drag = (from: local, moved: false, by: null);
+    drag = (from: local, moved: false, by: null);
     _snapFrom(id!);
   }
 
   /// Ends the current drag. With [keep] false, or when nothing moved, the engine discards the change.
-  void _dragEnd({bool keep = true}) {
-    final h = _drag, ws = WsScope.read(context), m = ws.inside, free = h?.by == 'orbit' && ws.freeEye;
-    _drag = null;
-    _orbitFrom = null;
-    _lensFrom = null;
-    _snapTo = null;
-    if (_grip != null) setState(() => _grip = null);
-    if (_met != (null, null)) setState(() => _met = (null, null));
+  void dragEnd({bool keep = true}) {
+    final h = drag, ws = WsScope.read(context), m = ws.inside, free = h?.by == 'orbit' && ws.freeEye;
+    drag = null;
+    orbitFrom = null;
+    lensFrom = null;
+    snapTo = null;
+    if (heldGrip != null) setState(() => heldGrip = null);
+    if (met != (null, null)) setState(() => met = (null, null));
     if (h == null || m == null || free) return;
     // Queue the release without waiting, then reread the project once the engine has applied it.
     ws.after(m.later('drag_end', number: keep && h.moved ? 1 : 0));
   }
 
   /// The id of the selected layer's parent, or null if it has none.
-  String? _parentOf() {
+  String? parentOf() {
     final m = WsScope.read(context).inside, t = int.tryParse(widget.selected ?? '');
     final p = m == null || t == null ? 0 : (m.value(t, 'parent', 0) ?? 0).round();
     return p > 0 ? '$p' : null;
@@ -221,7 +229,7 @@ extension _StageViewDrag on _StageViewState {
 
   /// The readout for the value a drag is changing, as the stage shows it now: position, size, rotation or anchor point.
   /// [by] is the drag kind. Distances are in canvas pixels and angles in degrees, clockwise as seen.
-  String? _heldSays(String? by) {
+  String? heldSays(String? by) {
     final m = WsScope.read(context).inside, t = int.tryParse(widget.selected ?? '');
     final f = m == null || t == null ? null : m.bounds(t);
     if (f == null) return null;
