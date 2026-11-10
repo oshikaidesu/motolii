@@ -160,7 +160,7 @@
 12	static-function	document/recipes.h
 6	static-function	document/relate.h
 23	static-function	document/relations.h
-9	static-function	document/scripts.h
+8	static-function	document/scripts.h
 10	static-function	document/shown.h
 4	static-function	document/sketch.h
 12	static-function	document/time_edit.h
