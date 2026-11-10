@@ -14,7 +14,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/engine_paths.dart' show motoliiShelves;
 import 'package:motolii/widgets/text_gestures.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/dock/create/create_shelf.dart'
+import 'package:motolii/workspace/dock/create/create_catalog.dart'
     show createNames;
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
 import 'package:motolii/workspace/state/workspace_controller.dart';

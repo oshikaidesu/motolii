@@ -15,6 +15,7 @@ import 'package:motolii/workspace/dock/colors/colors_controller.dart';
 import 'package:motolii/workspace/dock/colors/colors_shelf.dart';
 import 'package:motolii/workspace/dock/common/shelf_search_field.dart';
 import 'package:motolii/workspace/dock/common/shelf_tags.dart';
+import 'package:motolii/workspace/dock/create/create_catalog.dart';
 import 'package:motolii/workspace/dock/create/create_shelf.dart';
 import 'package:motolii/workspace/dock/effects/effects_shelf.dart';
 import 'package:motolii/workspace/dock/fonts/fonts_controller.dart';
