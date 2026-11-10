@@ -6,6 +6,7 @@
 # compile_commands.json (tools/compile_commands.sh writes it when missing). Nothing is built; no lock.
 #   ./tools/files_in_build.sh           the list, by folder, as markdown
 #   ./tools/files_in_build.sh --write   that list put into README.md between its two "files_in_build.sh" marks
+#   ./tools/files_in_build.sh --units   only the units, one a line (tools/check_link.py reads them)
 cd "$(dirname "$0")/.."
 [ -f compile_commands.json ] || ./tools/compile_commands.sh > /dev/null || exit 1
 python3 - "$1" <<'PY'
@@ -30,6 +31,8 @@ for src in re.findall(r'RENDER_SRC:-([\w/]+)\$n\.mm', named):
     named += ''.join(f'\n{src}{n}.mm' for n in re.findall(r'filament_webgpu\.sh (\w+)', named))
 units = sorted(f for f in own if f.endswith(('.cpp', '.mm')) and (names(named, f) or
                f.startswith('gpu/') and re.search(r'(?<![\w/])' + re.escape(f[4:]) + r'(?![\w.])', said('gpu/CMakeLists.txt'))))
+if sys.argv[1] == '--units':
+    print('\n'.join(units)); sys.exit()
 args = {u['file']: [a for a in u['arguments'][1:] if a not in ('-c', u['file'])] for u in json.load(open('compile_commands.json'))}
 read = set()
 for u in units:

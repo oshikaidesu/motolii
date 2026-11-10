@@ -33,7 +33,7 @@
 | `materials/` | Filament の材質（`.mat`）と、それが `#include` する `.glsl`。組むのは `gpu/filament_webgpu.sh` が名を挙げる物。`.glsl` を別のフォルダに分けないのは Filament 自身の置き方（`filament/src/materials/ssao/` は `sao.mat` の隣に `saoImpl.fs`） |
 | `gpu/` | Filament の WebGPU（Dawn）の上の自前：`filament_webgpu.sh`＝材質・ThorVG・リンク（`build.sh` が呼ぶ。手で打たない）、`CMakeLists.txt` と `*_interop.cpp`＝Filament の組み立ての中で組む interop（Filament・Dawn の公開されていない内側に届く所）、`thorvg_on_dawn.cpp`（`deps/thorvg.sh` が組んで走らせる確かめ） |
 | `deps/` | 他人の物を取ってきて組む・取り込むスクリプト。1 ライブラリ 1 本（`filament.sh`・`thorvg.sh`・`skia.sh`・`jolt.sh`…、全部 `build.sh` から）と、手で 1 回走らせる物（`likeness_models.py`＝棚の地図の絵の読み手 CLIP・FontCLIP を ONNX に、`wnja_export.py`・`from_gflanguages.py`＝日本語 WordNet と Google Fonts の見本を `third_party/` の形に）。`deps/patches/<ライブラリ>/` は人のコードに当てる差分（`.patch`） |
-| `tools/` | 何も取ってこない自前の道具：ビルドの錠 `build_lock.sh`（組むスクリプトが全部読む）、エディタ用の `compile_commands.sh`・`clangd_context.py`、下の一覧を書く `files_in_build.sh`。組まずに構成を確かめる検査：`check_file.sh`＝ファイル 1 つが、自分で読む物だけで通るか |
+| `tools/` | 何も取ってこない自前の道具：ビルドの錠 `build_lock.sh`（組むスクリプトが全部読む）、エディタ用の `compile_commands.sh`・`clangd_context.py`、下の一覧を書く `files_in_build.sh`。組まずに構成を確かめる検査：`check_file.sh`＝ファイル 1 つが、自分で読む物だけで通るか、`check_link.py`＝リンクせずに、定義がどこにも無い関数・新しいグローバル変数・2 つのユニットに入る `.cpp` を見つける（今の正解は `link_expected.txt`） |
 | `third_party/` | 取ってくる依存（git の外）と、同梱の小さな物（`anime/`・`godot_easing/`・`js/`・`leva/`・`midi_roll/`・`qdtsne/`・`rapidfuzz/`・`scipy_lsap/`・`thermion_frame/`・`ymm4-luascript/` ほか）。`leva/`・`ymm4-luascript/` は、自前のヘッダーにそのまま貼った他人のコード（`community/quickjs/script_leva.h`・`community/aviutl/aviutl_fx.h`）のライセンス文書 |
 | `out/` | 組み立てと描いた物の出力（git の外） |
 
