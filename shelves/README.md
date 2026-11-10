@@ -192,6 +192,7 @@ A slider is one line, `// --kind@name:Label,...`. The name is what the code read
 | `// --macro@name:Label,as it comes -> slider low high, ...` | One 0-to-1 slider that turns others |
 | `// --label:Word` | The category in the list. In `create/`, it marks a closed pack |
 | `// --about:Words` | An effect's description (used in the effects list) |
+| `// --tag:word word` | Search tags of an effect (`#basic` finds the ordinary ones). Added to the tags Motolii reads from the file itself |
 
 Instead of slider lines, a `const knobs = { distance: 2, ... }` at the top (leva's form) is read too.
 

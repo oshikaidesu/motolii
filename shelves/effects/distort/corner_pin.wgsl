@@ -1,5 +1,6 @@
 // Corner Pin: pulls the four corners of the layer to places of your own, and the picture follows in true perspective, as After Effects' Distort > Corner Pin does. Written for Motolii after Paul Heckbert, "Fundamentals of Texture Mapping and Image Warping" (1989), section 2.2.1, the unit square to a quadrilateral (the same as Foundry Nuke's CornerPin2D); the picture is looked up by the inverse of that map. Positions are shares of the layer: 0,0 is its top left, 1,1 its bottom right, and a corner may go outside.
 // --label:Distort
+// --tag:basic
 // --about:Moves the four corners of the layer anywhere, with perspective. The corners start at the layer's own.
 // --group:Top left
 // --track@tl_x:x,-2,3,0,0.001

@@ -82,12 +82,14 @@ std::string doc_tile(const std::string& ref,
 // isf_tags reads an ISF file. From the head comment lines, which are Motolii's
 // own (screen_fx.h): "multipass" for more than one pass (--pass@), "feedback"
 // when a pass is kept from frame to frame (its first flag is 1, or --history@),
-// and "image" when it takes another image (--picture@). From the body: "time"
-// when it reads the stage's clock (.time or .frame).
+// and "image" when it takes another image (--picture@). A line `// --tag:a b`
+// adds the words it names, so a file can say what it is (for example "basic").
+// From the body: "time" when it reads the stage's clock (.time or .frame).
 std::string doc_wgsl_tags(const std::filesystem::path& file) {
   std::ifstream in(file);
   int passes = 0;
   bool feedback = false, image = false, clock = false;
+  std::string said;
   // Matches a read such as knobs.time. A field that is only declared is not use
   // of the clock.
   static const std::regex ticks(R"(\.\s*(time|frame)\b)");
@@ -104,6 +106,7 @@ std::string doc_wgsl_tags(const std::filesystem::path& file) {
       }
       feedback = feedback || line.find("--history@") != std::string::npos;
       image = image || line.find("--picture@") != std::string::npos;
+      if (line.rfind("// --tag:", 0) == 0) said += (said.empty() ? "" : " ") + line.substr(9);
     } else if (!clock &&
                (line.find("time") != std::string::npos ||
                 line.find("frame") != std::string::npos) &&
@@ -116,7 +119,7 @@ std::string doc_wgsl_tags(const std::filesystem::path& file) {
                                  {clock, "time"},
                                  {image, "image"}})
     if (on) tags += (tags.empty() ? "" : " ") + std::string(word);
-  return tags;
+  return tags + (tags.empty() || said.empty() ? "" : " ") + said;
 }
 
 std::mutex& doc_own_easings_lock() {
