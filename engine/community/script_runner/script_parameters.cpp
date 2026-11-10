@@ -16,6 +16,8 @@
 #include "community/sites/adapter.h"
 #include "community/three/solid_three.h"
 
+namespace motolii {
+
 std::vector<ScriptParameter> script_parameters(const std::string& file) {
   if (aviutl_is(file))
     return aviutl_parameters(file);  // (an AviUtl2 script's head: aviutl.cpp)
@@ -63,3 +65,5 @@ std::vector<ScriptParameter> script_parameters(const std::string& file) {
   }
   return script_header_parameters(*from);
 }
+
+}  // namespace motolii

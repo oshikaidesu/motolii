@@ -35,6 +35,8 @@
 
 #include "community/quickjs/script.h"
 
+namespace motolii {
+
 // Runs one JavaScript file with QuickJS-ng. The file is a script with an each()
 // function, a Cavalry distribution that is run whole, or a p5.js sketch. The
 // constructor runs the code once and keeps each().
@@ -108,5 +110,7 @@ class Script {
   struct Own;
   std::unique_ptr<Own> own;
 };
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_SCRIPT_RUNNER_SCRIPT_RUNNER_H_

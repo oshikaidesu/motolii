@@ -29,6 +29,8 @@
 #include "media/video_frames_for_scripts.h"
 #include "motion/easing_names.h"
 
+namespace motolii {
+
 // What a Canvalry distribution asks of Cavalry's JavaScript (the four names its
 // 26 files use), so one runs as it is.
 static const char* cavalry_prelude = R"(
@@ -527,3 +529,5 @@ ScriptCopy Script::ask(
   JS_FreeValue(cx, out);
   return c;
 }
+
+}  // namespace motolii
