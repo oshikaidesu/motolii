@@ -49,7 +49,7 @@ class FontsShelf extends StatelessWidget {
           m.whole(m.word(int.parse(l.id), 'file')): l,
     };
     bool used(FontFile f) => setIn.containsKey(f.path);
-    Set<String> tagsOf(FontFile f) => ShelfTags.of(
+    Set<String> tagsOf(FontFile f) => controller.tags.of(
       'Fonts',
       f.family,
       f.path == null

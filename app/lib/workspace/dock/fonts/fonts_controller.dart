@@ -12,6 +12,7 @@ import 'package:motolii/bridge/engine_paths.dart' show motoliiDir;
 import 'package:motolii/bridge/motolii.dart' show Motolii;
 import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/storage/json_file.dart' show fileKeep, fileList;
+import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/dock/fonts/font_file.dart';
 import 'package:motolii/workspace/dock/map/shelf_map.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
@@ -28,11 +29,15 @@ const fontDotSize = (96, 32);
 /// What the Fonts shelf keeps while the window is open: the font files it offers, the fonts used lately, and each
 /// font's dot on the map.
 class FontsController {
-  /// [reads] is the counter the shelves listen to; it goes up when the fonts or their dots have been read.
-  FontsController(this.reads);
+  /// [reads] is the counter the shelves listen to; it goes up when the fonts or their dots have been read. [tags] is
+  /// the window's tags, which a search of the shelf matches.
+  FontsController(this.reads, this.tags);
 
   /// Goes up each time the fonts or their dots have been read: the shelf then looks again.
   final ValueNotifier<int> reads;
+
+  /// The tags of the fonts, which a search matches beside their names.
+  final ShelfTags tags;
 
   /// The shelf's map: where each font lies when the shelf is shown as a map.
   final map = ShelfMap('Fonts');

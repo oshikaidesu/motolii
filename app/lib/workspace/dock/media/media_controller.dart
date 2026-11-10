@@ -7,6 +7,7 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
+import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/dock/media/file_node.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
@@ -15,12 +16,16 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 ///
 /// Folders are read once each and off the UI thread.
 class MediaController {
-  /// [reads] is the counter the shelves listen to; it goes up each time a folder has been read.
-  MediaController(this._ws, this.reads);
+  /// [reads] is the counter the shelves listen to; it goes up each time a folder has been read. [tags] is the
+  /// window's tags, which a search of the shelf matches.
+  MediaController(this._ws, this.reads, this.tags);
   final WorkspaceController _ws;
 
   /// Goes up each time a folder of the disk has been read: the shelf then looks again.
   final ValueNotifier<int> reads;
+
+  /// The tags of the files, which a search matches beside their names.
+  final ShelfTags tags;
 
   /// The kind of layer a file makes, as the engine says it. An empty string means none, so the file is not shown.
   /// The shelf chooses the icon for each kind.

@@ -9,14 +9,16 @@ import 'dart:io';
 
 import 'package:motolii/storage/json_file.dart' show fileJson, fileKeep;
 
-abstract final class ShelfTags {
-  static final _own = <String, Set<String>>{};
-  static bool _read = false;
+/// The tags of the shelves' items, the words a search is completed from, and the item each search was last answered
+/// with. One for the window, shared by its shelves.
+class ShelfTags {
+  final _own = <String, Set<String>>{};
+  bool _read = false;
 
   /// The tags each shelf has used so far. A search is completed from these words.
-  static final seen = <String, Set<String>>{};
+  final seen = <String, Set<String>>{};
 
-  static void _load() {
+  void _load() {
     if (_read) return;
     _read = true;
     try {
@@ -34,7 +36,7 @@ abstract final class ShelfTags {
   }
 
   /// The tags of an item: the built-in ones and the user's own.
-  static Set<String> of(String shelf, String id, Set<String> builtIn) {
+  Set<String> of(String shelf, String id, Set<String> builtIn) {
     _load();
     final all = {...builtIn, ...?_own['$shelf|$id']};
     (seen[shelf] ??= {}).addAll(all);
@@ -48,9 +50,11 @@ abstract final class ShelfTags {
   static File _latchFile = File(
     '${Platform.environment['HOME']}/.motolii/latched.json',
   );
-  static Map<String, String>? _latches;
-  static void latchedAt(File f) => (_latchFile = f, _latches = null);
-  static Map<String, String> get _latched {
+  Map<String, String>? _latches;
+
+  /// Sets where the latched items are stored. A test points it at a file of its own before it opens a window.
+  static void latchedAt(File f) => _latchFile = f;
+  Map<String, String> get _latched {
     if (_latches case final l?) return l;
     try {
       return _latches = {
@@ -64,12 +68,12 @@ abstract final class ShelfTags {
   }
 
   /// The item latched to these words on a shelf, or null if there is none.
-  static String? latched(String shelf, String query) => query.trim().isEmpty
+  String? latched(String shelf, String query) => query.trim().isEmpty
       ? null
       : _latched['$shelf|${query.trim().toLowerCase()}'];
 
   /// Latches [id] to [query] on [shelf].
-  static void latch(String shelf, String query, String id) {
+  void latch(String shelf, String query, String id) {
     final q = query.trim().toLowerCase();
     if (q.isEmpty || _latched['$shelf|$q'] == id) return;
     _latched['$shelf|$q'] = id;
@@ -89,7 +93,7 @@ abstract final class ShelfTags {
   }
 
   /// The tags that complete the last word of [query], sorted. A tag equal to the word is not included.
-  static List<String> completing(String shelf, String query) {
+  List<String> completing(String shelf, String query) {
     final words = query.split(RegExp(r'\s+'));
     final last = words.isEmpty ? '' : words.last.toLowerCase();
     if (last.isEmpty) return const [];

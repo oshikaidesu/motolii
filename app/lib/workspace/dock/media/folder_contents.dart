@@ -38,7 +38,7 @@ class FolderContents extends StatelessWidget {
           } else if (ShelfTags.hit(
             c.query,
             k.name,
-            ShelfTags.of('Media', k.id, {
+            media.tags.of('Media', k.id, {
               kindLabelOf(k).toLowerCase(),
               if (k.id.contains('.')) k.id.split('.').last.toLowerCase(),
             }),

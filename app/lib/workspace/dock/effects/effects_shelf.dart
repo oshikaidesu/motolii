@@ -106,7 +106,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     VoidCallback chosen(String id, VoidCallback put, {bool taken = false}) {
       void go() {
         // A closure of its own rather than a tear-off, because a dragged tile is identified by it.
-        ShelfTags.latch('Effects', c.query, id);
+        widget.effects.tags.latch('Effects', c.query, id);
         if (!taken) c.set(() => effectUsed(id, words: c.query, chip: c.chip));
         ws.tryOn(null); // Stop previewing the hovered effect first: applying reads the document as it is.
         put();
@@ -282,7 +282,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     // It also matches the tags read from the effect (ShelfTags), each word on its own.
     // When nothing matches, as for a misspelt or partial word, the nearest five by RapidFuzz are shown, like "Did you mean".
     Set<String> tagsOf(String id) =>
-        ShelfTags.of('Effects', id, seen[id]?.tags ?? const {});
+        widget.effects.tags.of('Effects', id, seen[id]?.tags ?? const {});
     bool found(String q, _EffectEntry e) =>
         q.isEmpty ||
         e.name.toLowerCase().contains(q.toLowerCase()) ||
@@ -300,7 +300,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
               if (!hit.contains(e.id))
                 (e.id, '${e.name} ${e.label}', (seen[e.id]?.about ?? '')),
           ]);
-    final first = ShelfTags.latched('Effects', c.query),
+    final first = widget.effects.tags.latched('Effects', c.query),
         latched = every.where((e) => e.id == first).take(1).toList();
     final all = [
       ...latched,

@@ -56,16 +56,29 @@ class _ShelfPaneState extends State<ShelfPane> {
 
   /// Goes up each time a shelf has read something from the disk off the UI thread, so the shelves look again.
   ValueNotifier<int> get _reads => _kept('reads', () => ValueNotifier<int>(0));
-  MediaController get _media => _kept(
-    'Media.controller',
-    () => MediaController(WorkspaceScope.read(context), _reads),
-  );
+
+  /// The tags of the shelves' items and the words searches are completed from, shared by the window's shelves.
+  ShelfTags get _tags => _kept('tags', ShelfTags.new);
+
+  // What each shelf keeps between builds. What a controller is given is fetched before it is made, because making
+  // one must not add to the view while the view is looking its key up.
+  MediaController get _media {
+    final ws = WorkspaceScope.read(context), reads = _reads, tags = _tags;
+    return _kept('Media.controller', () => MediaController(ws, reads, tags));
+  }
+
   ColorsController get _colors =>
       _kept('Colors.controller', ColorsController.new);
-  EffectsController get _effects =>
-      _kept('Effects.controller', EffectsController.new);
-  FontsController get _fonts =>
-      _kept('Fonts.controller', () => FontsController(_reads));
+  EffectsController get _effects {
+    final tags = _tags;
+    return _kept('Effects.controller', () => EffectsController(tags));
+  }
+
+  FontsController get _fonts {
+    final reads = _reads, tags = _tags;
+    return _kept('Fonts.controller', () => FontsController(reads, tags));
+  }
+
   late final TextEditingController _search =
       TextEditingController(
         text: WorkspaceScope.read(context)
@@ -257,7 +270,7 @@ class _ShelfPaneState extends State<ShelfPane> {
         Builder(
           builder: (context) {
             // Completions of the word being typed, from the tags the shelf has. A click takes one.
-            final done = ShelfTags.completing(name, _search.text);
+            final done = _tags.completing(name, _search.text);
             if (done.isEmpty) return const SizedBox.shrink();
             return Padding(
               padding: EdgeInsets.symmetric(

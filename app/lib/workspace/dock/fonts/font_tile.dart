@@ -10,7 +10,6 @@ import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
-import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/dock/common/star_button.dart';
 import 'package:motolii/workspace/dock/fonts/font_commands.dart';
 import 'package:motolii/workspace/dock/fonts/font_file.dart';
@@ -70,13 +69,16 @@ Widget fontTile(
   final sel = c.sel == f.family, star = c.starred(f.family);
   final tags =
       f.script ??
-      ShelfTags.of(
-        'Fonts',
-        f.family,
-        f.path == null
-            ? const <String>{}
-            : (c.ws.inside?.fontTags(f.path!) ?? const <String>{}),
-      ).take(2).join(' ');
+      controller.tags
+          .of(
+            'Fonts',
+            f.family,
+            f.path == null
+                ? const <String>{}
+                : (c.ws.inside?.fontTags(f.path!) ?? const <String>{}),
+          )
+          .take(2)
+          .join(' ');
   return ShelfTile(
     ShelfItem(f.family, f.family, label: f.script ?? '', about: f.sample ?? ''),
     shelfLooks['Fonts']!,

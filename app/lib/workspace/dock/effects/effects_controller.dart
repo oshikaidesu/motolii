@@ -2,6 +2,7 @@
 import 'dart:typed_data';
 
 import 'package:motolii/bridge/motolii.dart' show Motolii;
+import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/dock/map/image_features.dart';
 import 'package:motolii/workspace/dock/map/shelf_map.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
@@ -9,6 +10,12 @@ import 'package:motolii/workspace/shelf/effect_tiles.dart';
 /// What the Effects shelf keeps while the window is open: its map, what the tiles' pictures look like to the map, and
 /// which effect a dragged tile carries.
 class EffectsController {
+  /// [tags] is the window's tags, which a search of the shelf matches.
+  EffectsController(this.tags);
+
+  /// The tags of the effects, and the effect each search was last answered with.
+  final ShelfTags tags;
+
   /// The shelf's map: where each effect lies when the shelf is shown as a map.
   final map = ShelfMap('Effects');
 
