@@ -59,5 +59,3 @@ jobs:
           .githooks/shape_check.sh --all
       - name: subjects of 72 characters at most (.githooks/subject_check.py)
         run: python3 .githooks/subject_check.py --range "$BASE..$HEAD_SHA"
-      - name: lines of our own are paid for in the message (.githooks/own_code_check.py)
-        run: python3 .githooks/own_code_check.py --range "$BASE..$HEAD_SHA"

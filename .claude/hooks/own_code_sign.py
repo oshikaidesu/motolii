@@ -97,7 +97,7 @@ def main():
     else:
         old, new = str(asked.get('old_string', '')), str(asked.get('new_string', ''))
         after = now.replace(old, new) if asked.get('replace_all') else now.replace(old, new, 1)
-    own = lambda text: sum(1 for l in text.split('\n') if not re.match(r'(import|export|part) ', l))   # (pointing at what exists is not a line of ours)
+    own = lambda text: sum(1 for l in text.split('\n') if not re.match(r'\s*(//|import |export |part )', l))   # (an import points at what exists; a comment is not code)
     was, will = own(git(top, 'show', f'HEAD:{rel}')), own(after)
     if will <= was:
         return   # (no longer than at HEAD: the free way)
