@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/widgets/controls.dart' show Hov, IconPress;
 import 'package:motolii/widgets/media.dart' show Draw, glyph;
 
-import 'package:motolii/inspector/inspector_card.dart' show CardMore;
+import 'package:motolii/widgets/more_menu.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart' show easeIsTurned, easeTurn;

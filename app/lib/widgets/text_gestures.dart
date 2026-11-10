@@ -161,3 +161,8 @@ class TypedFieldState extends State<TypedField> {
 /// Figma and Canva also keep the text selection while a colour is chosen.
 /// Holds the text and the start and end of the selection, or null when nothing is selected.
 final wordsPicked = ValueNotifier<({String text, int start, int end})?>(null);
+
+/// Whether the next text-content field should take keyboard focus with all its text selected.
+/// The preview sets it when it places a new text, so that typing replaces the text at once.
+/// AbsentMotion's addText opens its EditText panel, and Figma's text tool types where the text was placed.
+bool textToType = false;

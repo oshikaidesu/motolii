@@ -6,7 +6,7 @@
 // Without it Y stops at 0 and 1, so typing a number cannot silently push the curve out of reach.
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/rows/inspector_rows.dart' show FoldMark;
+import 'package:motolii/widgets/fold_mark.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, Hov;
 import 'package:motolii/widgets/number_field.dart';

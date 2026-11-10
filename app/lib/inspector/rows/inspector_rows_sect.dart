@@ -1,4 +1,5 @@
 // A card of the inspector: a heading and its rows.
+import 'package:motolii/widgets/fold_mark.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';

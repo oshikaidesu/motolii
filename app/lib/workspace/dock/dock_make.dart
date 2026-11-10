@@ -13,7 +13,7 @@ import 'package:flutter/widgets.dart';
 import 'package:material_color_utilities/material_color_utilities.dart';
 
 import 'package:motolii/bridge/engine_paths.dart' show motoliiShelves;
-import 'package:motolii/inspector/controls/inspector_param_controls.dart' show DicePaint;
+import 'package:motolii/widgets/dice_paint.dart';
 import 'package:motolii/widgets/text_gestures.dart' show TypedField, wordsPicked;
 import 'package:motolii/widgets/media.dart' show MiniSlider, glyph;
 import 'package:motolii/skin/tokens.dart';

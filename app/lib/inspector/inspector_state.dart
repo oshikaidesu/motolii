@@ -6,11 +6,6 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 part 'inspector_values.dart';
 
-/// Whether the next text-content field should take keyboard focus with all its text selected.
-/// The preview sets it when it places a new text, so that typing replaces the text at once.
-/// AbsentMotion's addText opens its EditText panel, and Figma's text tool types where the text was placed.
-bool textToType = false;
-
 enum KeyS { off, anim, at }
 
 enum Kind { shape, text, camera, group, none }

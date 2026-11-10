@@ -21,7 +21,7 @@ import 'package:motolii/widgets/two_fingers.dart';
 import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiMoment, MotoliiWrites, MotoliiQuestions;
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/timeline_painters.dart' show TpGlyph;
-import 'package:motolii/inspector/inspector_state.dart' show textToType;
+import 'package:motolii/widgets/text_gestures.dart' show textToType;
 import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Hov;
 import 'package:motolii/workspace/edits/make_relation.dart';
 
