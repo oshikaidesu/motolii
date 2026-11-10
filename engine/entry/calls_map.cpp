@@ -1,11 +1,27 @@
-// Included by motolii.mm; not self-contained. Implements the shelf maps declared in motolii.h:
-// motolii_map lays items out on a plane so that similar ones lie near each other, motolii_grid
-// snaps such a layout to a grid, motolii_likeness describes images as vectors, and
-// motolii_type_frame draws a font specimen.
+// Implements the shelf maps declared in motolii.h: motolii_map lays items out on a plane so that
+// similar ones lie near each other, motolii_grid snaps such a layout to a grid, motolii_likeness
+// describes images as vectors, and motolii_type_frame draws a font specimen.
 //
 // XLN Audio's XO lays out samples by how alike they sound using t-SNE, and IDEO's Font Map lays
 // out fonts by their drawn letters. The shelves use the same idea. The t-SNE is qdtsne (MIT,
 // third_party/qdtsne), used as in its quick start.
+#include "entry/motolii.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <filesystem>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <vector>
+
+#include <onnxruntime_cxx_api.h>
+#include <thorvg.h>
+#include "qdtsne/qdtsne.hpp"
+#include "rectangular_lsap.h"
 
 // Lays out n points of dims numbers each on a plane with t-SNE, so that similar points lie near
 // each other. points holds the n points one after another. Writes 2n numbers to xy, with x and y
