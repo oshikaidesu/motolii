@@ -35,6 +35,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 void solid_at(Solid* d, const std::string& name, double seconds, size_t nth) {
   gltfio::Animator* moves = d->asset->getAssetInstances()[nth]->getAnimator();
   if (!moves->getAnimationCount()) return;
@@ -239,3 +241,5 @@ void solid_off(Stage& s, Solid* d) {
   solid_loader(s)->destroyAsset(d->asset);
   delete d;
 }
+
+}  // namespace motolii

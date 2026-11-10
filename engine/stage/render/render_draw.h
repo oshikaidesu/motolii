@@ -8,6 +8,8 @@
 
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // Sets the transform of every renderable of mesh `m`. `to` receives the index
 // of the renderable within the mesh and its placement, and returns the new
 // transform. Only transforms are set here; nothing that a frame is made of is
@@ -64,5 +66,7 @@ bool film(Stage& s, const char* path, int frameCount,
 // Renders the stage and saves it as a PNG at `path`. Returns true on success.
 // Three frames are drawn and the pixels are read after the last one.
 bool shoot(Stage& s, const char* path);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_STAGE_RENDER_RENDER_DRAW_H_

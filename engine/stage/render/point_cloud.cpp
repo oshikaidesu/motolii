@@ -43,6 +43,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 namespace {
 // Wraps floats in a pixel buffer for a texture upload. Filament frees the
 // vector when it has finished with the data.
@@ -444,3 +446,5 @@ Material* points_effect(Stage& s, const std::string& file,
                  .package(bytes.data(), bytes.size())
                  .build(*s.engine);
 }
+
+}  // namespace motolii

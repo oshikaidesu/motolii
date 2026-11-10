@@ -45,6 +45,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 void sheet_deep(Mesh* m, float deep) {
   for (size_t i = 0; i < 4; ++i)
     m->pos.push_back(m->pos[i]), m->nrm.push_back(m->nrm[i]),
@@ -553,3 +555,5 @@ Mesh* gem(float size) {
   }
   return m;
 }
+
+}  // namespace motolii

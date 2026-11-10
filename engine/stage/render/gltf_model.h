@@ -16,6 +16,8 @@
 
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // A glTF model placed in the scene.
 struct Solid {
   filament::gltfio::FilamentAsset* asset = nullptr;
@@ -90,5 +92,7 @@ void solid_fill(Stage& s, Solid* d, filament::math::float3 colour,
 // Removes the model from the scene and destroys it. The pointer is invalid
 // afterwards.
 void solid_off(Stage& s, Solid* d);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_STAGE_RENDER_GLTF_MODEL_H_

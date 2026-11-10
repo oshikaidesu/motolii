@@ -32,6 +32,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 namespace {
 // Returns a typical thickness of the solid: four times its volume divided by
 // its surface area. That is two thirds of the width for a ball, the width for a
@@ -405,3 +407,5 @@ void take_off(Stage& s, const Mesh* m) {
   // The material instance goes with its entities.
   s.engine->destroy(look);
 }
+
+}  // namespace motolii

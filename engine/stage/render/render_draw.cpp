@@ -22,6 +22,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 void move(Stage& s, const Mesh* m,
           const std::function<mat4f(int, const mat4f&)>& to, const mat4f* eye) {
   auto& tm = s.engine->getTransformManager();
@@ -180,3 +182,5 @@ bool film(Stage& s, const char* path, int frameCount,
   if (said.alpha) s.view->setBlendMode(View::BlendMode::OPAQUE);
   return pclose(to) == 0;
 }
+
+}  // namespace motolii

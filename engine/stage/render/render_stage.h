@@ -30,6 +30,8 @@
 #include <string>
 #include <vector>
 
+namespace motolii {
+
 inline constexpr float TAU = 6.2831853f;
 
 // A shape that a p5.js sketch draws, in the form the sketch has it. See
@@ -345,5 +347,7 @@ Mesh* sphere(float r, int around = 48, int about = 24);
 // Makes a solid of twenty flat faces, an icosahedron. Each face has its own
 // three corners, so the edges are hard.
 Mesh* gem(float size);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_STAGE_RENDER_RENDER_STAGE_H_

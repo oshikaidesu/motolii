@@ -34,6 +34,8 @@
 #include "community/playcanvas/splatfx.h"
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // Loads the .ply `file` and adds it to the stage as one renderable with a
 // square for each visible point. Returns a Mesh handle for the cloud, or
 // nullptr with the reason in `why`. The remaining arguments are optional
@@ -62,5 +64,7 @@ Mesh* points(Stage& s, const char* file, std::string& why,
 filament::Material* points_effect(Stage& s, const std::string& file,
                                   std::shared_ptr<SplatEffect>& fx,
                                   std::string& why);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_STAGE_RENDER_POINT_CLOUD_H_

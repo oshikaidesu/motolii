@@ -14,6 +14,8 @@
 
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // Adds a solid with one of the renderer's own materials, chosen by name in
 // `wears`. See doc_material in doc.h for the Material group in the Create tab.
 // Returns the material instance, or nullptr if the name is unknown or the build
@@ -108,5 +110,7 @@ void draw(Stage& s, std::vector<uint8_t>* pic = nullptr, bool wait = true);
 
 // Removes from the stage for good every entity made from mesh `m`.
 void take_off(Stage& s, const Mesh* m);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_STAGE_RENDER_RENDER_LAYERS_H_

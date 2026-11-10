@@ -8,6 +8,8 @@
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 bool shoot(Stage& s, const char* path) {
   // This buffer belongs to the call: stages of other sizes, such as the window's tiles, shoot on
   // other threads at the same time. draw waits for the read to finish.
@@ -27,3 +29,5 @@ bool shoot(Stage& s, const char* path) {
   return [[rep representationUsingType:NSBitmapImageFileTypePNG properties:@{}] writeToFile:@(path)
                                                                                  atomically:YES];
 }
+
+}  // namespace motolii
