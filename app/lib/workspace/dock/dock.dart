@@ -11,6 +11,7 @@ import 'package:motolii/workspace/dock/dock_files.dart';
 import 'package:motolii/workspace/dock/dock_fonts.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/dock/dock_make.dart';
+import 'package:motolii/workspace/dock/dock_search.dart';
 import 'package:motolii/workspace/dock/dock_widgets.dart';
 import 'package:motolii/workspace/dock/dock_tags.dart';
 import 'package:motolii/workspace/dock/dock_program.dart';

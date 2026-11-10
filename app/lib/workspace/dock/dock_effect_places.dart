@@ -14,6 +14,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/widgets/text_gestures.dart' show TextGestures;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
+import 'package:motolii/workspace/dock/dock_folder_row.dart';
 import 'package:motolii/workspace/dock/dock_widgets.dart';
 import 'package:motolii/workspace/shelf/effect_decks.dart';
 import 'package:motolii/widgets/menu.dart';

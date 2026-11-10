@@ -1,4 +1,12 @@
-part of 'dock_widgets.dart';
+import 'package:flutter/widgets.dart';
+
+import 'package:motolii/skin/forms/forms.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
+import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/workspace/shelf/tile_colors.dart';
+import 'package:motolii/workspace/shelf/tile_hover.dart';
 
 /// A list row for the shelves, such as a folder in Media or a place in Effects.
 ///

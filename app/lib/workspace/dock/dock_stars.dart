@@ -1,5 +1,10 @@
-// Part of dock_widgets.dart: the star button, and the file that stores which effects are starred.
-part of 'dock_widgets.dart';
+// The star button, and the file that stores which effects are starred.
+import 'package:flutter/widgets.dart';
+
+import 'package:motolii/skin/inspector_tokens.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/media.dart' show drawStar, glyph;
+import 'package:motolii/workspace/shelf/tile_hover.dart';
 
 /// The star button that adds an item to Starred. It is shown on hover, on the selected row, or when set.
 class DockStar extends StatelessWidget {

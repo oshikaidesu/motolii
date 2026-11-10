@@ -1,31 +1,17 @@
 // The dock's shared pieces: per-shelf memory, hover, section heads, and the footer at the bottom of a shelf.
-import 'package:motolii/skin/inspector_tokens.dart';
-import 'package:motolii/skin/window_tokens.dart';
-
 import 'package:flutter/widgets.dart';
-import 'package:naked_ui/naked_ui.dart';
 
-import 'package:motolii/skin/forms/forms.dart';
-import 'package:motolii/widgets/media.dart' show drawStar, glyph;
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Hov;
-
-// Re-exported so shelves get the shared small widgets together with the dock's own.
-export '../../widgets/controls.dart' show Badge, Chip, IconPress;
-
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/grid_columns.dart';
-import 'package:motolii/workspace/commands/panel_requests.dart' show dockSearchAsked, dockSearchAwaited;
+import 'package:motolii/workspace/shelf/tile_hover.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/widgets/text_gestures.dart';
-import 'package:motolii/workspace/shelf/tile_hover.dart';
-import 'package:motolii/workspace/shelf/tile_colors.dart';
 
-part 'dock_folder_row.dart';
-part 'dock_search.dart';
-part 'dock_stars.dart';
+// Re-exported so shelves get the shared small widgets together with the dock's own.
+export '../../widgets/controls.dart' show Badge, Chip, IconPress;
 
 /// A section header inside a shelf body: a hue swatch, the title in capitals, an optional count, and an optional fold chevron.
 class DockSection extends StatelessWidget {

@@ -1,5 +1,13 @@
-// Part of dock_widgets.dart: the shelf's search field, and a way for other panels to focus it.
-part of 'dock_widgets.dart';
+// The shelf's search field, and a way for other panels to focus it.
+import 'package:flutter/widgets.dart';
+import 'package:naked_ui/naked_ui.dart';
+
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
+import 'package:motolii/widgets/text_gestures.dart';
+import 'package:motolii/workspace/commands/panel_requests.dart' show dockSearchAsked, dockSearchAwaited;
+import 'package:motolii/workspace/shelf/tile_hover.dart';
 
 /// The search field at the top of a shelf, with a hint while empty and a clear button once it has text.
 class DockSearch extends StatefulWidget {
