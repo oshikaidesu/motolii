@@ -13,13 +13,15 @@ namespace motolii {
 // leading "!" means is not, and a leading "~" means has it in it. added: the
 // card is shown only once one of its values is set or keyed, or the user asked
 // for it with More. It is not one of the tiles Alight Motion shows for the kind
-// (doc_cards_of).
+// (doc_cards_of). later: this card and the cards after it are the optional
+// features, which go below the cards of the layer's effects.
 struct DocCard {
   const char* title;
   const char* names;
   const char* when = nullptr;
   const char* is = nullptr;
   bool added = false;
+  bool later = false;
 };
 
 // Each entry is a card with a title and the space separated properties it
@@ -81,18 +83,12 @@ inline const DocCard doc_cards[] = {
     // the first expression, see doc_cards_of, as After Effects' Repeater keeps
     // its Copies, Offset
     // and Transform (Start and End Opacity) inside it.
-    {"Field",
-     "field_x field_y field_z field_radius field_band field_size field_rotate "
-     "field_push",
-     nullptr, nullptr, true},
     // A flat layer lit from within. Above 1 the canvas's bloom picks it up
     // where the layer lies in
     // the canvas's own view. A flat layer laid over a solid layer is clear
     // around it and keeps no
     // halo, because ThorVG's glow does that.
-    {"Shine", "emissive", "kind", "!solid", true},
-    // The layer turns the way it is moving, After Effects' Auto-Orient.
-    {"Motion", "orient", "kind", "!camera", true},
+    {"Shine", "emissive", "kind", "!solid", true, true},
     // Playback of the layer. The frame rate of the canvas itself is set in the
     // size box.
     {"Play", "marker animation speed speed_hold frame_rate", "kind", "!stage",
@@ -121,13 +117,6 @@ inline const DocCard doc_cards[] = {
     // shorter place, as Alight Motion's Element settings Re-timing and its
     // marks.
     {"Element", "retime retime_in retime_out", "shape", "null"},
-    // Alight Motion's Scale Assist: grow in one direction alone or in both,
-    // keeping the layer as
-    // bulky as it was. It is added once, from the Effects shelf, as its effect
-    // is in
-    // shelves/looks/Scale Assist.motolii.
-    {"Scale Assist", "scale_assist scale_assist_amount scale_assist_damp",
-     "scale_assist", "!"},
     {"Connect", "connect connect_to connect_reach", nullptr, nullptr, true},
     // The shapes of the open ends of a line, as Cavalry's heads and Alight
     // Motion's line start and
@@ -185,7 +174,6 @@ inline const DocCard doc_cards[] = {
      "kind", "light"},
     {"Projection", "projection shift_x shift_y"},
     {"Room", "room environment environment_rotate behind background"},
-    {"Physics", "physics bounce friction gravity", nullptr, nullptr, true},
     // A behaviour written as a file: its own parameters come under it, as a
     // script's do.
     {"Relation", "strength", "file", "relate"},

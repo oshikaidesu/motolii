@@ -28,7 +28,6 @@ set(THORVG ${THIRD_PARTY}/thorvg_src)
 set(SKIA ${THIRD_PARTY}/skia_src)
 set(ABSENT_MOTION ${THIRD_PARTY}/AbsentMotion/app/src/main/cpp)
 set(IRIS ${THIRD_PARTY}/iris)
-set(JOLT ${THIRD_PARTY}/physics/JoltPhysics)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GSTREAMER REQUIRED IMPORTED_TARGET gstreamer-1.0 gstreamer-app-1.0 gstreamer-video-1.0 gstreamer-pbutils-1.0)
@@ -101,8 +100,7 @@ target_link_libraries(skia_libraries INTERFACE ${SKIA}/out/path/libpathops.a ${S
 
 add_library(motolii_flags INTERFACE)
 target_compile_options(motolii_flags INTERFACE -ffp-contract=off $<$<COMPILE_LANGUAGE:OBJCXX>:-fobjc-arc>)
-target_compile_definitions(motolii_flags INTERFACE SQLITE_ENABLE_SESSION SQLITE_ENABLE_PREUPDATE_HOOK
-  JPH_CROSS_PLATFORM_DETERMINISTIC JPH_DEBUG_RENDERER JPH_OBJECT_LAYER_BITS=16 JPH_OBJECT_STREAM JPH_PROFILE_ENABLED)
+target_compile_definitions(motolii_flags INTERFACE SQLITE_ENABLE_SESSION SQLITE_ENABLE_PREUPDATE_HOOK)
 target_include_directories(motolii_flags INTERFACE
   # Libraries Filament carries in its source tree, used under their own names: <rapidjson/...>, <zstd.h>,
   # <stb_truetype.h>, <cgltf.h>.
@@ -110,7 +108,7 @@ target_include_directories(motolii_flags INTERFACE
   ${FILAMENT}/third_party/stb ${FILAMENT}/third_party/cgltf
   ${FILAMENT_SDK}/include ${THORVG}/inc ${THORVG}/src/loaders/lottie ${DAWN_INCLUDES}
   ${THIRD_PARTY}/libtess2/Include ${THIRD_PARTY}/curve_fit_nd/c ${SKIA} ${ABSENT_MOTION}
-  ${THIRD_PARTY}/thermion_frame/include ${THIRD_PARTY}/qdtsne/include ${THIRD_PARTY}/scipy_lsap ${JOLT}
+  ${THIRD_PARTY}/thermion_frame/include ${THIRD_PARTY}/qdtsne/include ${THIRD_PARTY}/scipy_lsap
   ${HOMEBREW}/opt/sqlite/include ${HOMEBREW}/opt/luajit/include/luajit-2.1 ${HOMEBREW}/opt/quickjs-ng/include
   ${THIRD_PARTY}/onnxruntime/include)
 
@@ -242,11 +240,6 @@ add_library(motolii_community_script_runner STATIC
   community/script_runner/script_runner.cpp)
 target_link_libraries(motolii_community_script_runner PUBLIC motolii_flags motolii_community_quickjs motolii_community_after_effects motolii_community_sites motolii_community_three motolii_community_aviutl motolii_community_p5 motolii_media motolii_motion)
 
-# Rigid bodies, on Jolt.
-add_library(motolii_physics STATIC
-  physics/jolt.cpp)
-target_link_libraries(motolii_physics PUBLIC motolii_flags)
-target_link_libraries(motolii_physics PUBLIC ${JOLT}/jbuild/libJolt.a)
 
 # ThorVG: 2D drawings placed in the scene.
 add_library(motolii_stage_canvas STATIC
@@ -315,7 +308,7 @@ add_library(motolii_document STATIC
   document/scripts/recipes.cpp
   document/scripts/scripts.cpp
   document/undo.cpp)
-target_link_libraries(motolii_document PUBLIC motolii_flags motolii_community_absent_motion motolii_community_quickjs motolii_community_after_effects motolii_shelf motolii_community_sites motolii_community_three motolii_community_isf motolii_community_playcanvas motolii_stage_render motolii_stage_effects motolii_community_aviutl motolii_community_hydra motolii_community_p5 motolii_media motolii_motion motolii_community_script_runner motolii_physics motolii_stage_canvas motolii_stage_layer_effects)
+target_link_libraries(motolii_document PUBLIC motolii_flags motolii_community_absent_motion motolii_community_quickjs motolii_community_after_effects motolii_shelf motolii_community_sites motolii_community_three motolii_community_isf motolii_community_playcanvas motolii_stage_render motolii_stage_effects motolii_community_aviutl motolii_community_hydra motolii_community_p5 motolii_media motolii_motion motolii_community_script_runner motolii_stage_canvas motolii_stage_layer_effects)
 target_link_libraries(motolii_document PUBLIC ${HOMEBREW}/opt/sqlite/lib/libsqlite3.dylib
   ${THIRD_PARTY}/curve_fit_nd/build/libcurve_fit_nd.a)
 
@@ -466,7 +459,7 @@ if(BUILD_TESTING)
       gtest_discover_tests(${module}_test)
     endif()
   endfunction()
-  foreach(folder base shelf motion physics media preview stage entry)
+  foreach(folder base shelf motion media preview stage entry)
     motolii_module_tests(motolii_${folder} ${folder}/*_test.cpp)
   endforeach()
   foreach(folder absent_motion after_effects aviutl hydra isf p5 playcanvas quickjs script_runner sites three)

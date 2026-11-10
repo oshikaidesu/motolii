@@ -39,7 +39,6 @@
 #include "media/midi_notes.h"
 #include "media/midi_roll.h"
 #include "media/sound_level.h"
-#include "physics/physics.h"
 #include "stage/canvas/canvas_cache.h"
 #include "stage/canvas/path_operations.h"
 #include "stage/render/render_stage.h"
@@ -304,27 +303,6 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
     if (const double middle = doc_letter_middle(d, layer, copy); middle != 0.0)
       own = math::mat4::translation(math::double3{middle, 0, 0}) * own *
             math::mat4::translation(math::double3{-middle, 0, 0});
-  // A layer under physics simulation, or a letter of one: use the position and
-  // rotation that the physics world gives, then return.
-  if (!d.physics.keyed && !deeper) {
-    PhysPose pose;
-    if (doc_physics(d, layer, now, &pose, member ? copy : -1)) {
-      const math::quat q{pose.turn[3], pose.turn[0], pose.turn[1],
-                         pose.turn[2]};
-      return math::mat4::translation(
-                 math::double3{pose.at[0], pose.at[1], pose.at[2]}) *
-             math::mat4(math::mat3(math::quat(q))) *
-             math::mat4::scaling(doc_literal(d, layer, "size", now, 1)) *
-             math::mat4::scaling(
-                 math::double3{doc_literal(d, layer, "scale_x", now, 1),
-                               doc_literal(d, layer, "scale_y", now, 1),
-                               doc_scale_z(d, layer, now)}) *
-             math::mat4::translation(math::double3{
-                 -doc_letter_middle(d, layer, member ? copy : -1), 0, 0});
-    }
-  }
-  const math::mat4 heading =
-      math::mat4::rotation(doc_heading(d, layer, now), math::double3{0, 0, 1});
   // Copies placed evenly along another shape's outline, each rotated to follow
   // the direction of the outline there, like Cavalry's Duplicator on a shape.
   if (member)
@@ -366,7 +344,7 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
                                        doc_literal(d, layer, "x", now, 0),
                                        doc_literal(d, layer, "y", now, 0),
                                        doc_literal(d, layer, "z", now, 0)}) *
-                                   heading * turned("rotate", {0, 0, 1}) *
+                                   turned("rotate", {0, 0, 1}) *
                                    turned("rotate_y", {0, 1, 0}) *
                                    turned("rotate_x", {1, 0, 0});
           const math::mat4 back = inverse(frame);
@@ -415,74 +393,16 @@ math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
       helped = helped * math::mat4::rotation(-(roll == "x" ? at.x : -at.y) / r,
                                              math::double3{0, 0, 1});
   }
-  math::double2 assisted{doc_literal(d, layer, "scale_x", now, 1),
-                         doc_literal(d, layer, "scale_y", now, 1)};
-  // Alight Motion's Scale Assist, as bevy_alight_motion implements it
-  // (resolve_parenthelper_visual_scale in src/animation/parenthelper.rs). The
-  // axis is 1 for y, 2 for x and 3 for both; here it is the word "y", "x" or
-  // "both".
-  if (const std::string assist = doc_literal_word(d, layer, "scale_assist");
-      !assist.empty()) {
-    const double k = doc_literal(d, layer, "scale_assist_amount", now, 1),
-                 damp = std::max(
-                     1.0, doc_literal(d, layer, "scale_assist_damp", now, 1));
-    if (assist == "y")
-      assisted.y *= k;
-    else if (assist == "x")
-      assisted.x *= k;
-    else if (assist == "both")
-      assisted.x *= k,
-          assisted.y /=
-          std::max(1e-9,
-                   std::pow(k, 1.71) *
-                       std::pow(damp, 1.0 + 2.75 * std::pow(damp - 1.0, 1.93)));
-  }
   math::mat4 place =
-      there * helped * heading * turned("rotate", {0, 0, 1}) *
+      there * helped * turned("rotate", {0, 0, 1}) *
       turned("rotate_y", {0, 1, 0}) * turned("rotate_x", {1, 0, 0}) *
       math::mat4::translation(shift) *
       math::mat4::scaling(doc_literal(d, layer, "size", now, 1)) *
       math::mat4::scaling(
-          math::double3{assisted.x, assisted.y, doc_scale_z(d, layer, now)}) *
+          math::double3{doc_literal(d, layer, "scale_x", now, 1),
+                        doc_literal(d, layer, "scale_y", now, 1),
+                        doc_scale_z(d, layer, now)}) *
       own * math::mat4::translation(-anchor);
-  const double reach =
-      member ? doc_literal(d, layer, "field_radius", said, 0) : 0.0;
-  // Within the field's radius, the layer is scaled and rotated about the point
-  // where it is seen, the middle of its image, in proportion to how close it is
-  // to the middle of the field.
-  if (reach > 0.0) {
-    const math::double3 at = (place * math::double4{0.0, 0.0, 0.0, 1.0}).xyz;
-    // The field is a sphere, so distance is measured in z as well.
-    const math::double3 middle{doc_literal(d, layer, "field_x", said, 0),
-                               doc_literal(d, layer, "field_y", said, 0),
-                               doc_literal(d, layer, "field_z", said, 0)};
-    const double from = length(at - middle),
-                 band = doc_literal(d, layer, "field_band", said, 0);
-    const double near = std::clamp(band > 0.0
-                                       ? 1.0 - std::fabs(from - reach) / band
-                                       : 1.0 - from / reach,
-                                   0.0, 1.0),
-                 k = near * near * (3.0 - 2.0 * near);
-    const math::double3 away = at - middle;
-    // Push the layer outward as if from a round hole of radius `by`: the
-    // nearest copies all end up about the same distance out, so the hole is
-    // round however the copies were laid.
-    const double r = length(away),
-                 by = doc_literal(d, layer, "field_push", said, 0);
-    const math::double3 push =
-        r > 1e-9
-            ? normalize(away) *
-                  (by > 0.0 ? k * (std::sqrt(r * r + by * by) - r) : k * by)
-            : math::double3{0.0};
-    place = math::mat4::translation(push) * math::mat4::translation(at) *
-            math::mat4::rotation(
-                k * doc_literal(d, layer, "field_rotate", said, 0) *
-                    (double)TAU / 360.0,
-                math::double3{0, 0, 1}) *
-            math::mat4::scaling(std::max(
-                0.0, 1.0 + k * doc_literal(d, layer, "field_size", said, 0))) *
-            math::mat4::translation(-at) * place;
-  }
   // Space set by the user: 2D sticks to the camera; 2.5D stays in the world and
   // is smaller when far, but keeps the angle it was given on the screen; 3D,
   // and a solid, is filmed as it is.

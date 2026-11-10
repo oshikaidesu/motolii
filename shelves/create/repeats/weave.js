@@ -8,9 +8,10 @@
 // set js_Rotate 90
 // set js_StepX 0.36
 // set js_StepY -0.36
-// set field_radius 1.4
-// set field_rotate 90
-// key field_x 0 -3
-// key field_x 4 3
-// key field_x 8 -3
+// say script expressions/Field.js
+// set js_field_radius 1.4
+// set js_field_rotate 90
+// key js_field_x 0 -3
+// key js_field_x 4 3
+// key js_field_x 8 -3
 // say copy_fill ffffff 3366ff

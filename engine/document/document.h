@@ -71,8 +71,6 @@ struct Doc {
   DocKeying keying;
   // The open undo step (undo.h).
   DocAct act;
-  // The layers that fall and collide (evaluate/relations.h).
-  DocPhysics physics;
   // What placing the layers has worked out (evaluate/place.h).
   DocPlaceCache place_cache;
   // The project's scripts, each run as its file specifies (scripts/scripts.h).

@@ -34,7 +34,7 @@ There is no need to switch between 2D and 3D: text, images, video, 3D models and
 
 Place media on the timeline and animate it with effects and keyframes.
 
-Video and audio import, Lottie animations, animation from MIDI and physics are supported too.
+Video and audio import, Lottie animations, animation from MIDI is supported too.
 
 A finished video can be written out as an MP4.
 
@@ -70,7 +70,7 @@ Tried only on an Apple silicon Mac, built from source. The formats that run (wit
 | Flutter | 3.47.2 (stable), about 2 GB | "Get Flutter" below |
 | Python 3 | The one macOS has (it comes with Xcode) | — |
 | Disk | About 10 GB besides Xcode and Flutter (8.1 GB once built) | — |
-| Downloads | About 1 GB (Filament's source 635 MB, Skia 65 MB, Jolt 16 MB and others; Homebrew's not counted) | — |
+| Downloads | About 1 GB (Filament's source 635 MB, Skia 65 MB and others; Homebrew's not counted) | — |
 | Time | 1–2 hours from nothing, Xcode and Flutter included (depends on your connection); with them, about 10 minutes the first time on an M4 (Filament ~5, the engine ~1–2, the UI ~1–3) | — |
 
 Homebrew versions it was checked with: GStreamer 1.28.8, SQLite 3.53.4, LuaJIT 2.1, QuickJS-ng 0.17.0, ffmpeg 9.0, cmake 4.1, ninja 1.13, meson 1.12.
@@ -113,7 +113,7 @@ Installs what the `Brewfile` lists (GStreamer, SQLite, ffmpeg, cmake, …). `Hom
 engine/build.sh
 ```
 
-Builds the engine. The first time it builds Filament with its WebGPU backend from source (~5 minutes on an M4) and downloads ThorVG, Skia, libtess2 and Jolt. `engine/out/libmotolii.dylib` existing means it worked.
+Builds the engine. The first time it builds Filament with its WebGPU backend from source (~5 minutes on an M4) and downloads ThorVG, Skia and libtess2. `engine/out/libmotolii.dylib` existing means it worked.
 
 ```bash
 app/tool/live.sh

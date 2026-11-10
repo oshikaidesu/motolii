@@ -150,8 +150,7 @@ bool doc_frame(Doc& d, int layer, double now, double* frame) {
   frame[0] = middle.x, frame[1] = middle.y,
   frame[2] = 2.0 * half.x * size * std::fabs(sx) * point,
   frame[3] = 2.0 * half.y * size * std::fabs(sy) * point;
-  frame[4] = -doc_number(d, layer, "rotate", now, 0) -
-             doc_heading(d, layer, now) * 360.0 / (double)TAU;
+  frame[4] = -doc_number(d, layer, "rotate", now, 0);
   const math::double3 anchor{doc_number(d, layer, "anchor_x", now, 0) * half.x,
                              doc_number(d, layer, "anchor_y", now, 0) * half.y,
                              0.0};

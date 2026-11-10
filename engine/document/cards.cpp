@@ -233,7 +233,7 @@ std::string doc_cards_of(Doc& d, int layer, std::string* more) {
   const bool behaviour = doc_word(d, layer, "kind") == "behaviour";
   bool past = false;
   for (const DocCard& card : doc_cards) {
-    past = past || !strcmp(card.title, "Field");
+    past = past || card.later;
     // A behavior shows only its own card, not the cards of other layer kinds
     // whose properties happen to share a name with its parameters.
     if (behaviour && !(card.when && !strcmp(card.when, "file"))) continue;

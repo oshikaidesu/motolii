@@ -29,7 +29,6 @@ flowchart TB
     Gst["GStreamer (reads video and sound)"]
     FF["ffmpeg (writes mp4)"]
     SQLite["SQLite"]
-    Jolt["Jolt (physics)"]
   end
   UI --> FFI --> API --> Hand
   Hand --> Doc --> SQLite
@@ -39,7 +38,6 @@ flowchart TB
   Hand --> Script
   Render --> Gst
   Render --> FF
-  Render --> Jolt
   Render -- "3 CVPixelBuffers (IOSurface), no copy" --> UI
 ```
 

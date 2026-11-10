@@ -31,7 +31,7 @@ const char* const doc_preset_kept_out =
 // Properties copied only when they are keyed: a pulse is a preset, a fixed size
 // is not.
 const char* const doc_preset_placed =
-    "'size','scale_x','scale_y','rotate','rotate_x','rotate_y','orient'";
+    "'size','scale_x','scale_y','rotate','rotate_x','rotate_y'";
 
 // Properties whose values are another layer's number; see kinds.h.
 const char* const doc_preset_links =

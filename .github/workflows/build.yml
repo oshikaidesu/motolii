@@ -25,9 +25,8 @@ jobs:
             engine/third_party/filament_src
             engine/third_party/skia_src
             engine/third_party/thorvg_src
-            engine/third_party/physics
             engine/third_party/libtess2
-          key: deps-${{ runner.os }}-${{ hashFiles('engine/deps/patches/**', 'engine/deps/filament.sh', 'engine/deps/thorvg.sh', 'engine/deps/skia.sh', 'engine/deps/jolt.sh', 'engine/deps/libtess2.sh') }}
+          key: deps-${{ runner.os }}-${{ hashFiles('engine/deps/patches/**', 'engine/deps/filament.sh', 'engine/deps/thorvg.sh', 'engine/deps/skia.sh', 'engine/deps/libtess2.sh') }}
       - uses: actions/cache/restore@v4   # (iris.sh's, apart: its pins change without the others built again; what is built, not OpenCV's source)
         id: iris
         with:
@@ -52,7 +51,6 @@ jobs:
             engine/third_party/filament_src
             engine/third_party/skia_src
             engine/third_party/thorvg_src
-            engine/third_party/physics
             engine/third_party/libtess2
           key: ${{ steps.deps.outputs.cache-primary-key }}
       - uses: actions/cache/save@v4

@@ -43,7 +43,7 @@ Windows 版も作る予定です。Filament、ThorVG、GStreamer、Flutter な�
 
 作品の権利は作者のものです。Shadertoy や OpenProcessing の作品には非営利の条件が付いた物が多いので、仕事に使う時は作者に確かめてください。
 
-ほかに：キーフレームとイージング（anime.js のイージングもそのまま使えます）、物理演算（Jolt）、ガラスの屈折、カメラ（焦点距離・絞り・ピント）、MP4 への書き出し。
+ほかに：キーフレームとイージング（anime.js のイージングもそのまま使えます）、ガラスの屈折、カメラ（焦点距離・絞り・ピント）、MP4 への書き出し。
 
 **ビルドの確認**：GitHub の Apple Silicon の Mac（macos-15）で、このガイドの手順どおりに新しくビルドし、画面のコードの検査（`flutter analyze`）を走らせています（[README](../../README.ja.md) の build バッジ）。アプリのテストと、整形・解析の確かめは push のたびに走ります（checks バッジ）。手元での走らせ方は [`docs/TESTING.md`](../TESTING.md)。
 

@@ -38,7 +38,6 @@
 #include "document/marks.h"
 #include "document/scripts/expressions.h"
 #include "document/scripts/scripts.h"
-#include "physics/physics.h"
 #include "shelf/shelf_folders.h"
 #include "stage/canvas/canvas_cache.h"
 #include "stage/canvas/path_operations.h"
@@ -501,147 +500,6 @@ double doc_letter_middle(Doc& d, int layer, int copy) {
   return ((double)(l.x + l.y) * 0.5 - 0.5) * 2.0 * half.x;
 }
 
-bool doc_physics(Doc& d, int layer, double now, PhysPose* pose, int copy) {
-  // Rebuild the description of everything the world is made of: every value and
-  // keyframe of the layers that have physics, and the gravity. A change in it
-  // discards the world.
-  if (d.physics.stale) {
-    d.physics.stale = false;
-    std::string made;
-    doc_rows(
-        d,
-        sqlite3_mprintf("select group_concat(layer || ' ' || name || ' ' || at "
-                        "|| ' ' || quote(value) || ' ' || coalesce(easing, "
-                        "''), ';') from (select * from keyframe where layer in "
-                        "(select layer from keyframe where name = 'physics' "
-                        "and value in ('moves', 'still')) or (layer = 0 and "
-                        "name = 'gravity') order by layer, name, at)"),
-        [&](sqlite3_stmt* row) {
-          if (sqlite3_column_type(row, 0) == SQLITE_TEXT)
-            made = (const char*)sqlite3_column_text(row, 0);
-        });
-    if (made != d.physics.made)
-      d.physics.world.reset(), d.physics.of.clear(), d.physics.copy.clear(),
-          d.physics.until.clear(), d.physics.made = made;
-    d.physics.any = made.find(" physics ") != std::string::npos;
-  }
-  // No layer has physics, so nothing needs to be asked of the document at every
-  // place.
-  if (!d.physics.any) return false;
-  const std::string mine = doc_word(d, layer, "physics");
-  // Only layers set to "moves" are placed by the world. Layers set to "still"
-  // are fixed obstacles.
-  if (mine != "moves") return false;
-  if (!d.physics.world) {
-    std::vector<PhysThing> made;
-    d.physics.of.clear(), d.physics.copy.clear(), d.physics.until.clear();
-    for (int t : doc_laid(d)) {
-      const std::string how = doc_word(d, t, "physics");
-      // Layers without physics, and layers with a parent, are not in the world.
-      if ((how != "moves" && how != "still") ||
-          doc_number(d, t, "parent", 0, 0) != 0.0)
-        continue;
-      float2 half{0.5f};
-      float deep = 0.f;
-      if (!doc_half(d, t, &half, &deep)) continue;
-      const double size = doc_number(d, t, "size", 0, 1);
-      PhysThing one;
-      one.still = how == "still", one.flat = deep == 0.f;
-      one.ball = doc_word(d, t, "shape") == "ball";
-      one.half[0] =
-          (float)(half.x * size * std::fabs(doc_number(d, t, "scale_x", 0, 1)));
-      one.half[1] =
-          (float)(half.y * size * std::fabs(doc_number(d, t, "scale_y", 0, 1)));
-      one.half[2] = one.flat
-                        ? 0.05f
-                        : (float)(deep * size *
-                                  std::fabs(doc_number(d, t, "scale_z", 0, 1)));
-      one.bounce = (float)doc_number(d, t, "bounce", 0, 0.3),
-      one.friction = (float)doc_number(d, t, "friction", 0, 0.5);
-      // The layer's keyframes control it until the last one of these
-      // properties.
-      for (const char* name :
-           {"x", "y", "z", "rotate", "rotate_x", "rotate_y"}) {
-        doc_rows(d,
-                 sqlite3_mprintf("select max(at) from keyframe where layer = "
-                                 "%d and name = %Q and " DOC_KEYED,
-                                 t, name, t, name),
-                 [&](sqlite3_stmt* row) {
-                   if (sqlite3_column_type(row, 0) != SQLITE_NULL)
-                     one.until =
-                         std::max(one.until, sqlite3_column_double(row, 0));
-                 });
-      }
-      const auto sh = d.on_stage.shown.find(t);
-      const std::vector<float2>* letters =
-          sh != d.on_stage.shown.end() && sh->second.drawn &&
-                  !sh->second.drawn->letters.empty()
-              ? &sh->second.drawn->letters
-              : nullptr;
-      // A split text gets one body for each letter, as wide as its ink but a
-      // little narrower, so that neighbours do not start inside each other.
-      const int copies = letters ? (int)letters->size() : 1;
-      for (int c = 0; c < copies; ++c) {
-        PhysThing each = one;
-        if (letters)
-          each.half[0] = std::max(
-              0.01f, 0.92f *
-                         ((*letters)[(size_t)c].y - (*letters)[(size_t)c].x) *
-                         one.half[0]);
-        made.push_back(each);
-        d.physics.of.push_back(t), d.physics.copy.push_back(letters ? c : -1),
-            d.physics.until.push_back(one.still ? 1e9 : one.until);
-      }
-    }
-    // Returns the pose that the layer's keyframes give at time `at`: where its
-    // middle is, and its rotation. The world calls this to place the layers
-    // that keyframes still control.
-    const auto keyed = [&d](int index, double at) {
-      const int t = d.physics.of[(size_t)index],
-                copy = d.physics.copy[(size_t)index];
-      d.physics.keyed = true;
-      const math::double3 middle =
-          (doc_place(d, t, at, 0, std::max(copy, 0), copy >= 0) *
-           math::double4{doc_letter_middle(d, t, copy), 0, 0, 1})
-              .xyz;
-      d.physics.keyed = false;
-      // Returns the quaternion for a rotation of `degrees` about the axis
-      // `about`.
-      const auto half = [](double degrees, math::double3 about) {
-        const double a = 0.5 * degrees * (double)TAU / 360.0;
-        return math::quat{std::cos(a), about.x * std::sin(a),
-                          about.y * std::sin(a), about.z * std::sin(a)};
-      };
-      const math::quat q =
-          half(doc_number(d, t, "rotate", at, 0), {0, 0, 1}) *
-          half(doc_number(d, t, "rotate_y", at, 0), {0, 1, 0}) *
-          half(doc_number(d, t, "rotate_x", at, 0), {1, 0, 0});
-      PhysPose p;
-      p.at[0] = (float)middle.x, p.at[1] = (float)middle.y,
-      p.at[2] = (float)middle.z;
-      p.turn[0] = (float)q.x, p.turn[1] = (float)q.y, p.turn[2] = (float)q.z,
-      p.turn[3] = (float)q.w;
-      return p;
-    };
-    d.physics.world = std::make_unique<PhysWorld>(
-        made, (float)doc_number(d, 0, "gravity", 0, 9.81), keyed);
-  }
-  size_t index = d.physics.of.size();
-  // Copies of a layer that are not letters are not in the world, so they follow
-  // their keyframes.
-  for (size_t i = 0; i < d.physics.of.size(); ++i)
-    if (d.physics.of[i] == layer && d.physics.copy[i] == copy) {
-      index = i;
-      break;
-    }
-  if (index == d.physics.of.size()) return false;
-  // The layer's keyframes still control it.
-  if (now <= d.physics.until[index]) return false;
-  // The world is stepped at 60 frames a second.
-  *pose = d.physics.world->pose((int)index, (int)std::lround(now * 60.0));
-  return true;
-}
-
 bool doc_staggered(Doc& d, int layer, double now) {
   // One box in a sketch is placed by the sketch in the same way.
   if (const DocScript* sc =
@@ -652,38 +510,7 @@ bool doc_staggered(Doc& d, int layer, double now) {
   // of 1.
   if (!doc_expressions_fx(d, layer).empty()) return true;
   return doc_members(d, layer) > 1 ||
-         doc_number(d, layer, "stagger", 0, 0) > 0.0 ||
-         doc_number(d, layer, "field_radius", now, 0) > 0.0;
-}
-
-double doc_heading(Doc& d, int layer, double now) {
-  if (doc_literal(d, layer, "orient", 0, 0) <= 0.5) return 0.0;
-  // Computes the direction of motion between two times into `heading`. Returns
-  // false when the layer did not move.
-  const auto going = [&](double from, double to, double* heading) {
-    const double ax = doc_literal(d, layer, "x", from, 0),
-                 ay = doc_literal(d, layer, "y", from, 0),
-                 bx = doc_literal(d, layer, "x", to, 0),
-                 by = doc_literal(d, layer, "y", to, 0);
-    return std::hypot(bx - ax, by - ay) > 1e-6 &&
-           (*heading = std::atan2(by - ay, bx - ax), true);
-  };
-  double heading = 0.0;
-  // Try a short window around the time first, then a longer one.
-  for (const double step : {1.0 / 240.0, 1.0 / 30.0})
-    if (going(now - step, now + step, &heading)) return heading;
-  // The layer is standing still. Use the direction of motion as it reached the
-  // last keyframe before the time, or else the direction it takes from the
-  // first keyframe after it.
-  std::vector<double> keys = doc_key_times(d, layer, "x"),
-                      more = doc_key_times(d, layer, "y");
-  keys.insert(keys.end(), more.begin(), more.end());
-  std::sort(keys.begin(), keys.end());
-  for (auto k = keys.rbegin(); k != keys.rend(); ++k)
-    if (*k <= now && going(*k - 1.0 / 60.0, *k, &heading)) return heading;
-  for (const double k : keys)
-    if (k >= now && going(k, k + 1.0 / 60.0, &heading)) return heading;
-  return 0.0;
+         doc_number(d, layer, "stagger", 0, 0) > 0.0;
 }
 
 }  // namespace motolii

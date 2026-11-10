@@ -31,8 +31,7 @@ bool doc_rows(Doc& d, char* ask,
 }
 
 void doc_forget(Doc& d) {
-  // The physics world is rebuilt only if its inputs changed; see doc_physics.
-  d.physics.stale = true, d.place_cache.scripted.clear();
+  d.place_cache.scripted.clear();
   d.value_cache.moving.clear(), d.value_cache.literals.clear(),
       d.value_cache.words.clear(), d.value_cache.keyed.clear(),
       d.place_cache.halves.clear(), d.value_cache.heardWords.clear(),

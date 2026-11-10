@@ -275,7 +275,7 @@ namespace {
 // Falloff (Cavalry's Falloff is a multiplier on Strength). The weighted
 // additions are summed, as the POP Solver's microsolvers "accumulate forces",
 // and the world then moves each layer by its speed once, as d3-force's tick
-// does. A rule can therefore change without a jolt, because the speed carries
+// does. A rule can therefore change without a jerk, because the speed carries
 // on whichever relation provides it. A layer that nothing pushes shows what is
 // under all the relations, and continues from there with the speed it has, as a
 // Houdini Bullet object follows its animation until it is made active. While

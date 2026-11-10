@@ -11,6 +11,12 @@
 //   Push   a layer within radius of the leader goes to leader + direction *
 //          radius * (0.6 + 0.4 * distance / radius).
 //   Follow every layer adds the leader's x at t - lag * (n + 1).
+//   Orient rotate = degrees(atan2(dy, dx)) of the way the layer is going.
+//   Gravity (force world, 60 frames a second) y falls g / 3600 * n (n + 1) / 2
+//          after n frames; the floor stops it or throws it up by Bounce.
+// Scale_Assist.js and Field.js are expressions (each()); they are run with
+// Script::copies, the call the document makes, and the formulas are in the
+// files.
 //
 // A Doc cannot be made by doc_open or changed by doc_add, doc_set or doc_relate
 // here: each of them ends in doc_match, which builds the stage in Filament, and
@@ -21,35 +27,38 @@
 // Everything that evaluates them is the engine's own.
 
 #include <gtest/gtest.h>
+#include <math/vec3.h>
 #include <sqlite3.h>
 
 #include <cmath>
 #include <filesystem>
+#include <map>
 #include <sstream>
 #include <string>
 #include <vector>
 
+#include "community/script_runner/script_runner.h"
 #include "document/document.h"
 #include "document/evaluate/relations.h"
 #include "document/evaluate/value_at.h"
-#include "physics/physics.h"
 
 namespace motolii {
 namespace {
 
 namespace fs = std::filesystem;
+namespace math = filament::math;
 
 constexpr double kNear = 1e-3;
 
-// Returns the file of a relation on the shelf. This file is
-// engine/document/evaluate/<name>.
-std::string Shelf(const char* name) {
+// Returns a file on the shelf: `folder` is relations or expressions. This file
+// is engine/document/evaluate/<name>.
+std::string Shelf(const char* folder, const char* name) {
   return (fs::path(__FILE__)
               .parent_path()
               .parent_path()
               .parent_path()
               .parent_path() /
-          "shelves" / "relations" / name)
+          "shelves" / folder / name)
       .string();
 }
 
@@ -91,7 +100,7 @@ class Project {
                bool knowsFrom = true) {
     const int by = next_++;
     Say(by, "kind", "behaviour"), Say(by, "file", "relate");
-    Say(by, "script", Shelf(file));
+    Say(by, "script", Shelf("relations", file));
     Put(by, "strength", 1.0);
     std::ostringstream order, under, from;
     from.precision(17);
@@ -126,6 +135,10 @@ class Project {
   double Y(int layer, double t = 0) {
     doc_forget(*d);
     return doc_literal(*d, layer, "y", t, 0.0);
+  }
+  double Turn(int layer, double t = 0) {
+    doc_forget(*d);
+    return doc_literal(*d, layer, "rotate", t, 0.0);
   }
 
  private:
@@ -235,6 +248,147 @@ TEST(RelateFiles, TwoRelationsThatLeadFromEachOthersLayersEnd) {
     EXPECT_LT(std::fabs(p.Y(layer)), 10.0) << layer;
   }
   At(p, outside, 3, 4);
+}
+
+// Expects the layer to turn by `degrees` at time t.
+void Turns(Project& p, int layer, double degrees, double t = 1.0) {
+  EXPECT_NEAR(p.Turn(layer, t), degrees, kNear) << "rotate of layer " << layer;
+}
+
+TEST(RelateFiles, OrientTurnsEachLayerTheWayItIsGoing) {
+  // rotate = degrees(atan2(dy, dx)) of the way it moves, as look.js turns to
+  // face: along +x is 0, along +y is 90, along -x is 180, up and right is 45.
+  Project p;
+  const int right = p.Layer(0, 0), up = p.Layer(0, 0), diagonal = p.Layer(0, 0),
+            left = p.Layer(0, 0), still = p.Layer(1, 1),
+            outside = p.Layer(3, 4);
+  p.Put(right, "x", 2.0, 2.0), p.Put(right, "rotate", 10.0);
+  p.Put(up, "y", 2.0, 2.0);
+  p.Put(diagonal, "x", 2.0, 2.0), p.Put(diagonal, "y", 2.0, 2.0);
+  p.Put(left, "x", -2.0, 2.0);
+  p.Put(still, "rotate", 30.0);
+  const int orient =
+      p.Relation("Orient.js", {right, up, diagonal, left, still});
+  for (const int layer : {right, up, diagonal, left, still})
+    p.Put(layer, "rotate_by", orient);
+  Turns(p, right, 10), Turns(p, up, 90), Turns(p, diagonal, 45);
+  Turns(p, left, 180);
+  Turns(p, still, 30);  // it does not move, so it keeps its own turn
+  Turns(p, outside, 0);
+  // Where they are is not changed by turning them.
+  EXPECT_NEAR(p.X(diagonal, 1.0), 1.0, kNear);
+  EXPECT_NEAR(p.Y(up, 1.0), 1.0, kNear);
+}
+
+TEST(RelateFiles, GravityPullsALayerDownBy60thsOfASecondSteps) {
+  // 60 frames a second, a speed in units a frame: the speed after frame n is
+  // n * g / 3600 and the layer has fallen g / 3600 * n (n + 1) / 2, so after
+  // 30 frames 9.81 * 465 / 3600 = 1.267125, after 60 frames 9.81 * 1830 / 3600
+  // = 4.98675.
+  Project p;
+  const int a = p.Layer(0, 5), outside = p.Layer(3, 4);
+  p.Put(p.Relation("Gravity.js", {a}), "js_floor", -100.0);
+  At(p, a, 0, 5 - 1.267125, 0.5);
+  At(p, a, 0, 5 - 4.98675, 1.0);
+  At(p, outside, 3, 4, 1.0);
+}
+
+TEST(RelateFiles, GravityStopsALayerAtTheFloorWhenItDoesNotBounce) {
+  // It reaches the floor (0) after about a second and stays on it. Before that
+  // it falls as it would without a floor.
+  Project p;
+  const int a = p.Layer(0, 5), outside = p.Layer(3, 4);
+  const int gravity = p.Relation("Gravity.js", {a});
+  p.Put(gravity, "js_floor", 0.0), p.Put(gravity, "js_bounce", 0.0);
+  At(p, a, 0, 5 - 1.267125, 0.5);
+  At(p, a, 0, 0, 3.0);
+  At(p, outside, 3, 4, 3.0);
+}
+
+TEST(RelateFiles, GravityBouncesALayerUpFromTheFloorAndNeverBelowIt) {
+  Project p;
+  const int a = p.Layer(0, 5);
+  const int gravity = p.Relation("Gravity.js", {a});
+  p.Put(gravity, "js_floor", 0.0), p.Put(gravity, "js_bounce", 0.5);
+  // About 0.2 seconds after it hit the floor (frame 61) it is on its way up.
+  EXPECT_GT(p.Y(a, 1.2), 0.1);
+  for (const double t : {1.0, 1.1, 1.2, 1.5, 2.0, 3.0})
+    EXPECT_GE(p.Y(a, t), -1e-6) << t;
+}
+
+// The copies a script file lays: runs each() of an expression as the document
+// does (doc_expressions_lay). The document's own call cannot be used here, it
+// reads the stage's size.
+std::vector<ScriptCopy> Lay(const char* file,
+                            const std::map<std::string, double>& numbers,
+                            const std::map<std::string, std::string>& words,
+                            const std::vector<math::double3>& at) {
+  Script script(Shelf("expressions", file));
+  EXPECT_TRUE(script.ok()) << script.trouble();
+  std::vector<ScriptCopy> before(at.size());
+  for (size_t i = 0; i < at.size(); ++i)
+    before[i].x = at[i].x, before[i].y = at[i].y, before[i].z = at[i].z;
+  return script.copies((int)at.size(), 0.0, numbers, words, 1.0, before);
+}
+
+TEST(RelateFiles, ScaleAssistGrowsOneWayAloneOrBothWaysKeepingBulk) {
+  const std::vector<math::double3> one{{0, 0, 0}};
+  // X alone and Y alone multiply that axis only.
+  auto c = Lay("Scale_Assist.js", {{"assist_amount", 2}, {"assist_damp", 1}},
+               {{"assist_way", "x"}}, one);
+  EXPECT_NEAR(c[0].scale_x, 2.0, kNear);
+  EXPECT_NEAR(c[0].scale_y, 1.0, kNear);
+  c = Lay("Scale_Assist.js", {{"assist_amount", 3}, {"assist_damp", 1}},
+          {{"assist_way", "y"}}, one);
+  EXPECT_NEAR(c[0].scale_x, 1.0, kNear);
+  EXPECT_NEAR(c[0].scale_y, 3.0, kNear);
+  // Both: scale_x = amount, scale_y = 1 / (amount^1.71 * damp^(1 + 2.75 *
+  // (damp - 1)^1.93)). Amount 2, damp 1: 2^-1.71 = 0.305660. Damp 2:
+  // 2^-(1.71 + 1 + 2.75) = 2^-5.46 = 0.022718.
+  c = Lay("Scale_Assist.js", {{"assist_amount", 2}, {"assist_damp", 1}},
+          {{"assist_way", "both"}}, one);
+  EXPECT_NEAR(c[0].scale_x, 2.0, kNear);
+  EXPECT_NEAR(c[0].scale_y, 0.305660, kNear);
+  c = Lay("Scale_Assist.js", {{"assist_amount", 2}, {"assist_damp", 2}},
+          {{"assist_way", "both"}}, one);
+  EXPECT_NEAR(c[0].scale_y, 0.022718, kNear);
+}
+
+TEST(RelateFiles, FieldChangesCopiesInsideItsRadiusAndNotOutside) {
+  // Radius 1, Grow 1, Turn 90, Push 0.6, round (no ring). With r the distance
+  // from the middle, s = near^2 (3 - 2 near) and near = 1 - r / radius:
+  //   r = 0:   s = 1,   size 2,   turn 90, no push (nowhere to go).
+  //   r = 0.5: s = 0.5, size 1.5, turn 45, x = 0.5 * 0.5 *
+  //            (sqrt(0.25 + 0.36) - 0.5) / 0.5 = 0.140513.
+  //   r = 5:   outside, nothing.
+  const std::map<std::string, double> field{
+      {"field_x", 0},       {"field_y", 0},     {"field_z", 0},
+      {"field_radius", 1},  {"field_band", 0},  {"field_size", 1},
+      {"field_rotate", 90}, {"field_push", 0.6}};
+  auto c = Lay("Field.js", field, {}, {{0, 0, 0}, {0.5, 0, 0}, {5, 0, 0}});
+  EXPECT_NEAR(c[0].size, 2.0, kNear);
+  EXPECT_NEAR(c[0].rotate, 90.0, kNear);
+  EXPECT_NEAR(c[0].x, 0.0, kNear);
+  EXPECT_NEAR(c[1].size, 1.5, kNear);
+  EXPECT_NEAR(c[1].rotate, 45.0, kNear);
+  EXPECT_NEAR(c[1].x, 0.140513, kNear);
+  EXPECT_NEAR(c[2].size, 1.0, kNear);
+  EXPECT_NEAR(c[2].rotate, 0.0, kNear);
+  EXPECT_NEAR(c[2].x, 0.0, kNear);
+  // A ring 0.5 wide at radius 1: strongest at r = 1 (size 2), half way to the
+  // edge of the band at r = 1.25 (near 0.5, s 0.5, size 1.5), none at the
+  // middle.
+  std::map<std::string, double> ring = field;
+  ring["field_band"] = 0.5, ring["field_push"] = 0;
+  c = Lay("Field.js", ring, {}, {{1, 0, 0}, {1.25, 0, 0}, {0, 0, 0}});
+  EXPECT_NEAR(c[0].size, 2.0, kNear);
+  EXPECT_NEAR(c[1].size, 1.5, kNear);
+  EXPECT_NEAR(c[2].size, 1.0, kNear);
+  // A radius of 0 is no field.
+  ring["field_radius"] = 0;
+  c = Lay("Field.js", ring, {}, {{0, 0, 0}});
+  EXPECT_NEAR(c[0].size, 1.0, kNear);
+  EXPECT_NEAR(c[0].rotate, 0.0, kNear);
 }
 
 }  // namespace

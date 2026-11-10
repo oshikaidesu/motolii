@@ -14,7 +14,6 @@
 #include "document/match.h"
 #include "document/scripts/recipes.h"
 #include "motion/easing_curves.h"
-#include "physics/physics.h"
 #include "shelf/shelf_folders.h"
 
 namespace motolii {

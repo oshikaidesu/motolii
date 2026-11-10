@@ -63,7 +63,6 @@ does. There is no `.clangd` file; point clangd at it with `--compile-commands-di
 | `preview/` | Putting a project on the stage: the playback cache (`playback_cache.h`). |
 | `media/` | Everything read through GStreamer: video (`video_layer.h`, `video_datamosh.h`, `video_flash_check.h`), sound (`sound_level.h`, `sound_playback.h`), MIDI (`midi_notes.h`, `midi_roll.h`) and `gstreamer_file_source.h`. |
 | `motion/` | Motion: easing (`easing_curves.h`, `easing_names.h`, `easing_godot.h`) and Lottie motion solved by ThorVG (`lottie_motion.h`). |
-| `physics/` | Physics through Jolt (`physics.h`, `jolt.cpp`). |
 | `materials/` | Filament materials (`.mat`) and the `.glsl` they include, compiled by `materials/build.sh` with Filament's `matc`. |
 | `gpu/` | Our code inside Filament's WebGPU (Dawn) backend: the interop files, built within Filament's own build by `gpu/CMakeLists.txt`, and `thorvg_on_dawn.cpp`. |
 | `community/` | Adapters that run code from the net unchanged (table below). |
@@ -95,7 +94,7 @@ A module may include only the modules it links to, and theirs (see Conventions).
 
 | Layer | Modules | What they are |
 |---|---|---|
-| 0 | `base`, `gpu`, `shelf`, `physics`, `community/quickjs`, `community/absent_motion`, `community/hydra` | Link to no other module. |
+| 0 | `base`, `gpu`, `shelf`, `community/quickjs`, `community/absent_motion`, `community/hydra` | Link to no other module. |
 | 1 | `community/after_effects`, `community/playcanvas`, `community/sites`, `community/three`, `motion` | Adapters and motion built on one layer-0 module. |
 | 2 | `community/isf`, `community/p5`, `stage/render` | The ISF and p5.js adapters; drawing with Filament. |
 | 3 | `media`, `stage/effects` | Video, sound and MIDI; effects over the whole screen. |
@@ -111,7 +110,7 @@ The rows come from the `target_link_libraries` lines in `CMakeLists.txt` and cha
 
 ## Third-party code
 
-- **Fetched libraries** (Filament, ThorVG, Skia, Jolt, libtess2, curve_fit_nd, IRIS, AbsentMotion and others): one script
+- **Fetched libraries** (Filament, ThorVG, Skia, libtess2, curve_fit_nd, IRIS, AbsentMotion and others): one script
   each under `deps/`, pinned to a commit. Each script fetches into `third_party/` and builds with the library's own build
   system. They are not in git and not built by our CMake.
 - **Changes to them** are patches in `deps/patches/<library>/`, one folder per patched library, applied on top of the fetched source.

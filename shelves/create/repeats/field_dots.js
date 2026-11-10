@@ -7,14 +7,15 @@
 // set js_Columns 24
 // set js_StepX 0.24
 // set js_StepY -0.24
-// set field_radius 1.4
-// set field_size 1.2
-// set field_push 0.6
-// key field_x 0 -1.8
-// key field_x 4 1.8
-// key field_x 8 -1.8
 // say script expressions/wave.js
 // set js_wave_y 0.015
 // set js_wave_noise 1
 // set js_wave_speed 0.5
+// say script expressions/Field.js
+// set js_field_radius 1.4
+// set js_field_size 1.2
+// set js_field_push 0.6
+// key js_field_x 0 -1.8
+// key js_field_x 4 1.8
+// key js_field_x 8 -1.8
 // say copy_fill ffffff ff3366

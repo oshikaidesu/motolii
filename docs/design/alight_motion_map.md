@@ -245,7 +245,7 @@ Alight Motion は**下限**（ここまでは揃える線）で、ゴールで�
 | 本物の 3D：立体の材質（金属・粗さ・屈折・分散・クリアコート・シーン）、光と影、部屋の光 | `doc_kinds.h` の solid・light・stage（Filament） |
 | 3D ファイルとその動き | solid の file・animation |
 | 点群・3DGS のスプラットと、その効果 | `points.h`、`effects/*.mjs` |
-| 物理（落ちる・ぶつかる） | Jolt、`physics.h` |
+| 物理（落ちる・ぶつかる） | `shelves/relations/Gravity.js`（旧物理エンジンは 11/11 に外した） |
 | 本物のデータモッシュ（圧縮データそのもの） | `mosh.h` |
 | MIDI を畳まずに部品に | `midi.h`、`midi_roll.cpp` |
 | After Effects のファイル（Lottie）をそのまま、マーカーごとに | ThorVG |

@@ -1,6 +1,6 @@
 #ifndef MOTOLII_DOCUMENT_EVALUATE_RELATIONS_H_
 #define MOTOLII_DOCUMENT_EVALUATE_RELATIONS_H_
-// Behaviours, falloffs, relations, copy placement and physics for layers.
+// Behaviours, falloffs, relations and copy placement for layers.
 
 #include <math/mat4.h>
 #include <math/vec3.h>
@@ -22,8 +22,6 @@ namespace motolii {
 
 struct Doc;
 struct Mesh;
-struct PhysPose;
-class PhysWorld;
 
 // One relation's layers. members: the layers in order, with 0 where one was
 // removed. under: for each member, the relation it was in before; that
@@ -60,29 +58,6 @@ struct DocRelations {
   // Each layer's copies as AbsentMotion's repeat effects lay them at the time
   // last asked, see doc_absent_copies.
   std::map<int, AbsentKept> absentKept;
-};
-
-// The layers that fall and collide (Jolt).
-struct DocPhysics {
-  // The world they are in. Built on first use and rebuilt when what it is
-  // built from changes.
-  std::unique_ptr<PhysWorld> world;
-  // Which layer each of its bodies belongs to.
-  std::vector<int> of;
-  // Which copy each body belongs to, for example a letter of split text. -1
-  // means the layer as a whole.
-  std::vector<int> copy;
-  // Until what time each body is driven by its keyframes.
-  std::vector<double> until;
-  // stale: the project changed since the world was last examined.
-  // any: some layer has physics.
-  bool stale = true, any = false;
-  // Everything the world was built from, as the project described it then. The
-  // world is rebuilt only when this changes.
-  std::string made;
-  // When true, positions are read from the layers' keyframes rather than from
-  // the physics world.
-  bool keyed = false;
 };
 
 // Returns the value that behaviour layer `by` gives to copy number `copy` of
@@ -208,26 +183,11 @@ filament::math::mat4 doc_above(Doc& d, int layer, double now, int deeper = 0);
 // the layer, in the layer's own units. Returns 0 when `copy` is not a letter of
 // the layer.
 double doc_letter_middle(Doc& d, int layer, int copy);
-// Looks up where the physics world puts a layer at time `now` and stores it in
-// `pose`. `copy` is a letter of a split text, or -1 for the whole layer. The
-// world holds the layers that fall and collide. Each is a box as large as the
-// layer, or a ball, and flat layers stay in their plane. It also holds how much
-// each bounces and rubs and where its keyframes put it. The world is built from
-// the document when first asked. Returns false when the world does not control
-// the layer at that time, which means that its keyframes do.
-bool doc_physics(Doc& d, int layer, double now, PhysPose* pose, int copy = -1);
 // Returns whether the stage places a layer as a member of its copies, or as
 // itself. A member is delayed by its order, the first copy too, and laid out as
 // its expressions say. The stage and everyone who asks how the layer moves,
 // such as motolii_path, place it in the same way.
 bool doc_staggered(Doc& d, int layer, double now);
-// Returns the angle in radians about z by which a layer that turns the way it
-// moves is turned at time `now`. A layer does this when its "orient" value is
-// above 0.5. The angle is the direction its keyframes carry it at that time.
-// When it stands still, it is the direction it last moved in, or else the
-// direction it will move in. Returns 0 for any other layer.
-double doc_heading(Doc& d, int layer, double now);
-
 }  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EVALUATE_RELATIONS_H_

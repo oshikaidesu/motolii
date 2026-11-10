@@ -34,7 +34,7 @@ ISF、WGSL、AviUtl2 のスクリプトにも対応しています。ファイ�
 
 タイムライン上で素材を配置し、エフェクトやキーフレームを使ってアニメーションを制作できます。
 
-動画や音声の読み込み、Lottie アニメーション、MIDI を利用したアニメーション、物理演算にも対応しています。
+動画や音声の読み込み、Lottie アニメーション、MIDI を利用したアニメーションにも対応しています。
 
 完成した映像は MP4 形式で書き出せます。
 
@@ -70,7 +70,7 @@ ISF、WGSL、AviUtl2 のスクリプトにも対応しています。ファイ�
 | Flutter | 3.47.2（stable）。約 2 GB | 下の「Flutter を入れる」 |
 | Python 3 | macOS に付いている物（Xcode を入れると入る）でよい | — |
 | 空き容量 | Xcode と Flutter のほかに約 10 GB（ビルド後で 8.1 GB） | — |
-| ダウンロード量 | 約 1 GB（Filament のソース 635 MB、Skia 65 MB、Jolt 16 MB ほか。Homebrew の物は別） | — |
+| ダウンロード量 | 約 1 GB（Filament のソース 635 MB、Skia 65 MB ほか。Homebrew の物は別） | — |
 | 時間 | Xcode と Flutter を入れる所からなら 1〜2 時間（回線しだい）。それらがあれば初回 約 10 分（M4。Filament 約 5 分、エンジン 約 1〜2 分、画面 約 1〜3 分） | — |
 
 確かめた Homebrew の版：GStreamer 1.28.8、SQLite 3.53.4、LuaJIT 2.1、QuickJS-ng 0.17.0、ffmpeg 9.0、cmake 4.1、ninja 1.13、meson 1.12。
@@ -113,7 +113,7 @@ brew bundle
 engine/build.sh
 ```
 
-エンジンをビルドします。初回は Filament（WebGPU）をソースから組み（M4 で約 5 分）、ThorVG・Skia・libtess2・Jolt などをダウンロードします。`engine/out/libmotolii.dylib` ができれば成功です。
+エンジンをビルドします。初回は Filament（WebGPU）をソースから組み（M4 で約 5 分）、ThorVG・Skia・libtess2 などをダウンロードします。`engine/out/libmotolii.dylib` ができれば成功です。
 
 ```bash
 app/tool/live.sh

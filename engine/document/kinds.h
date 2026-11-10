@@ -121,10 +121,6 @@ inline const DocValue doc_values[] = {
      1e6, true, nullptr},
     {"rotate_y", "video image text solid shape camera light behaviour", -1e6,
      1e6, true, nullptr},
-    // Turns the layer the way it is going along its path, with its rotate
-    // added. Like After
-    // Effects' Auto-Orient.
-    {"orient", "video image text solid shape", 0, 1, false, nullptr},
     // Scale along each axis as a multiple of the size, each on its own as After
     // Effects' Scale.
     // Below 0 flips the layer. A flat layer's scale_z is its thickness: if not
@@ -137,14 +133,6 @@ inline const DocValue doc_values[] = {
     {"scale_x", doc_visible_kinds, -1e4, 1e4, true, nullptr},
     {"scale_y", doc_visible_kinds, -1e4, 1e4, true, nullptr},
     {"scale_z", "solid text shape image", -1e4, 1e4, true, nullptr},
-    // physics: none, moves, or still. A layer that moves falls and strikes
-    // others, and the world
-    // takes it from its last keyframe on. A layer that is still is a wall where
-    // the project puts
-    // it. bounce is how much it bounces and friction how it rubs. gravity is
-    // the stage's pull down,
-    // in units of the stage per second per second.
-    {"physics", doc_visible_kinds, 0, 0, false, "none moves still"},
     // script: a preset as code, a JavaScript file that gives the position of
     // each copy (script_runner.h).
     // The parameters in its header are values of the layer, named js_ plus the
@@ -164,9 +152,6 @@ inline const DocValue doc_values[] = {
     // by ";". Like Alight
     // Motion's eye on an effect. Their values are kept.
     {"fx_off", "video image text shape solid camera", 0, 0, false, ""},
-    {"bounce", doc_visible_kinds, 0, 1, false, nullptr},
-    {"friction", doc_visible_kinds, 0, 2, false, nullptr},
-    {"gravity", "stage", -100, 100, false, nullptr},
     // The layer that the stage's effects follow in place of a mouse. Their
     // pointer, center, mouse
     // or point parameters are where that layer is on the image. 0 means none.
@@ -364,12 +349,6 @@ inline const DocValue doc_values[] = {
     // Parenting Helper weights.
     {"parent_rotate", doc_kinds, 0, 2, true, nullptr},
     {"parent_size", doc_kinds, 0, 2, true, nullptr},
-    // Alight Motion's Scale Assist, working on scale_x and scale_y: grown one
-    // way alone, or wider
-    // and as much thinner as a squashed ball keeps its bulk.
-    {"scale_assist", doc_visible_kinds, 0, 0, false, "y x both"},
-    {"scale_assist_amount", doc_visible_kinds, 0, 100, true, nullptr},
-    {"scale_assist_damp", doc_visible_kinds, 1, 10, true, nullptr},
     // roll: turned like a wheel rolling as the layer goes along x or y. The
     // wheel's radius is half
     // its smaller side plus roll_radius.
@@ -619,31 +598,6 @@ inline const DocValue doc_values[] = {
     // height from its
     // middle, with y pointing down as in SVG.
     {"path", "shape", 0, 0, false, ""},
-    // A field over the copies, like Cavalry's falloff: a round place on the
-    // stage given by its
-    // middle (field_x and field_y, in units of the stage) and how far it
-    // reaches (field_radius). A
-    // copy within it is made larger by field_size and turned by field_rotate,
-    // most at its middle
-    // and not at all at its edge.
-    {"field_x", "image text shape", -1e4, 1e4, true, nullptr},
-    {"field_y", "image text shape", -1e4, 1e4, true, nullptr},
-    {"field_radius", "image text shape", 0, 1e4, true, nullptr},
-    {"field_size", "image text shape", -1, 20, true, nullptr},
-    {"field_rotate", "image text shape", -1e4, 1e4, true, nullptr},
-    // The copy is also pushed this far away from the field's middle, in units
-    // of the stage. Below 0
-    // draws it in.
-    {"field_push", "image text shape", -1e3, 1e3, true, nullptr},
-    // A ring this wide, strongest at the radius from the middle and nothing
-    // this far on either
-    // side: a band of large dots going out. 0 gives a round place, strongest in
-    // its middle.
-    {"field_band", "image text shape", 0, 1e4, true, nullptr},
-    // Where the field's middle is toward the viewer. The field is a ball, so
-    // near and far are
-    // measured too.
-    {"field_z", "image text shape", -1e4, 1e4, true, nullptr},
     // Another seed gives another wiggle of the path (evaluate.h).
     {"seed", "shape", 0, 1e6, false, nullptr},
     // More edges, each outside the last: Alight Motion's Add Border,

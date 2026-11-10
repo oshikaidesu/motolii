@@ -20,7 +20,6 @@ if [ ! -f out/deps.stamp ] || [ -n "$(find build.sh deps gpu materials -newer ou
     ninja -C $THORVG/build_dawn > /dev/null
     ./deps/libtess2.sh
     ./deps/curve_fit_nd.sh
-    ./deps/jolt.sh
     ./deps/ffmpeg.sh
     ./deps/onnxruntime.sh
     ./deps/iris.sh
