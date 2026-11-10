@@ -178,13 +178,3 @@ abstract final class T {
 ///
 /// For example `１２８：３０` becomes `128:30`.
 String halfWidth(String said) => said.replaceAllMapped(RegExp('[！-～]'), (c) => String.fromCharCode(c[0]!.codeUnitAt(0) - 0xFEE0));
-
-/// Parses a hex colour as the project and the theme file write it: `rrggbb` or `rrggbbaa` (alpha last), with or without a `#`.
-///
-/// Returns null if [word] is not such a hex colour.
-/// flutter_colorpicker's colorFromHex is not used because it reads `aarrggbb`.
-Color? colorOfHex(String word) {
-  final hex = word.startsWith('#') ? word.substring(1) : word, v = int.tryParse(hex, radix: 16);
-  if (v == null || hex.length != 6 && hex.length != 8) return null;
-  return hex.length == 8 ? Color(((v & 0xFF) << 24) | (v >> 8)) : Color(0xFF000000 | v);
-}

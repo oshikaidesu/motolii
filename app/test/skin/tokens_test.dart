@@ -3,6 +3,7 @@
 import 'dart:ui' show Color;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:motolii/skin/hex_color.dart';
 import 'package:motolii/skin/tokens.dart';
 
 void main() {

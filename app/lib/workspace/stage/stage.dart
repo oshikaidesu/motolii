@@ -9,6 +9,7 @@ import 'package:motolii/skin/svg_parts.dart';
 
 import 'package:motolii/widgets/controls.dart' show Badge, Hov, IconPress;
 import 'package:motolii/widgets/glyphs.dart';
+import 'package:motolii/skin/hex_color.dart' show colorOfHex;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/stage/stage_art.dart';
 import 'package:motolii/workspace/stage/stage_view.dart';
