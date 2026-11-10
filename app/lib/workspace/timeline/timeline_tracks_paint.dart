@@ -1,6 +1,18 @@
 // Painting for the timeline's tracks: each row's bar (fill, keyframes, easing curves, video frames, sound wave)
 // and the value line of an open property lane.
-part of 'timeline_paint.dart';
+import 'dart:math' as math;
+
+import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter/widgets.dart';
+
+import 'package:motolii/skin/forms/forms.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/timeline_painters.dart' show tpFine, tpMajor;
+import 'package:motolii/workspace/state/beats.dart';
+import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/timeline/timeline_paint.dart';
 
 /// The bar's fill: the layer kind's hue, a step quieter when not selected. A hidden or soloed-out layer is grey.
 Color wtBarFill(WtRow r) => Forms.worn.trackFill(r.tone ?? wsTone(r.kind), dim: r.dim, selected: r.selected);
@@ -18,6 +30,24 @@ void _wayLine(Path p, List<double> way, double xa, double xb, double width, doub
     p.lineTo(xa + wide * i / n, y(way[i]));
   }
   p.lineTo(xa + wide * to / n, y(way[to]));
+}
+
+void _vLines(Canvas c, WtView v, int fps, double w, double top, double bottom, {required Color major, required Color fine, WsBeats? beats}) {
+  final mj = tpMajor(v.ppf, fps), fn = tpFine(v.ppf, fps, mj), p = Paint();
+  if (beats != null) {
+    // Draw the grid by beat rather than by second while the lines can be told apart; Live's grid also widens as it is zoomed out.
+    for (final (f, bar) in beats.between(v.scroll, v.scroll + w / v.ppf)) {
+      if (bar || beats.every * v.ppf >= 8) c.drawRect(Rect.fromLTWH(v.x(f).roundToDouble(), top, 1, bottom - top), p..color = bar ? major : fine);
+    }
+    return;
+  }
+  final f0 = (v.scroll / fn).floor() * fn;
+  for (var f = f0; f <= Ws.duration; f += fn) {
+    final x = v.x(f).roundToDouble();
+    if (x > w) break;
+    if (x < 0) continue;
+    c.drawRect(Rect.fromLTWH(x, top, 1, bottom - top), p..color = f % mj == 0 ? major : fine);
+  }
 }
 
 class WtTracksPainter extends CustomPainter {

@@ -1,7 +1,5 @@
 // The workspace timeline's drawing: ruler, track rows, playhead, overview strip and the kind chip.
 // Every painter takes plain values and repaints only when one of them changes; nothing here ticks.
-import 'package:motolii/skin/window_tokens.dart';
-
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -9,15 +7,13 @@ import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/foundation.dart' show listEquals, mapEquals, ValueListenable;
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/skin/forms/forms.dart';
-import 'package:motolii/widgets/timeline_painters.dart' show tpFine, tpMajor;
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Badge;
+import 'package:motolii/widgets/timeline_painters.dart' show tpFine, tpMajor;
+import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
-import 'package:motolii/workspace/state/beats.dart';
-
-part 'timeline_tracks_paint.dart';
 
 /// The timeline panel's own sizes.
 abstract final class WtM {
@@ -147,24 +143,6 @@ double wtFlagRoom(String name, double x, Iterable<double> xs) {
   final next = xs.where((o) => o > x).fold<double?>(null, (a, o) => a == null || o < a ? o : a);
   final w = wtFlagWidth(name);
   return next == null ? w : math.max(6, math.min(w, next - x - 1));
-}
-
-void _vLines(Canvas c, WtView v, int fps, double w, double top, double bottom, {required Color major, required Color fine, WsBeats? beats}) {
-  final mj = tpMajor(v.ppf, fps), fn = tpFine(v.ppf, fps, mj), p = Paint();
-  if (beats != null) {
-    // Draw the grid by beat rather than by second while the lines can be told apart; Live's grid also widens as it is zoomed out.
-    for (final (f, bar) in beats.between(v.scroll, v.scroll + w / v.ppf)) {
-      if (bar || beats.every * v.ppf >= 8) c.drawRect(Rect.fromLTWH(v.x(f).roundToDouble(), top, 1, bottom - top), p..color = bar ? major : fine);
-    }
-    return;
-  }
-  final f0 = (v.scroll / fn).floor() * fn;
-  for (var f = f0; f <= Ws.duration; f += fn) {
-    final x = v.x(f).roundToDouble();
-    if (x > w) break;
-    if (x < 0) continue;
-    c.drawRect(Rect.fromLTWH(x, top, 1, bottom - top), p..color = f % mj == 0 ? major : fine);
-  }
 }
 
 // ---------------------------------------------------------------- ruler
