@@ -323,7 +323,8 @@ file(GLOB_RECURSE MOTOLII_TESTS CONFIGURE_DEPENDS
   base/*_test.cpp shelf/*_test.cpp motion/*_test.cpp physics/*_test.cpp media/*_test.cpp preview/*_test.cpp
   stage/*_test.cpp document/*_test.cpp entry/*_test.cpp community/*_test.cpp)
 if(BUILD_TESTING AND MOTOLII_TESTS)
-  find_package(GTest REQUIRED)
+  # Homebrew's googletest (Brewfile), not one another toolchain on PATH happens to carry.
+  find_package(GTest REQUIRED CONFIG PATHS ${HOMEBREW}/opt/googletest NO_DEFAULT_PATH)
   include(GoogleTest)
   add_executable(motolii_test ${MOTOLII_TESTS})
   target_link_libraries(motolii_test PRIVATE motolii motolii_flags GTest::gtest_main)
