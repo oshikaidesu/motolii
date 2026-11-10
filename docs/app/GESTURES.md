@@ -208,6 +208,6 @@
 | デッキの名前の欄（Save Favorites…） | 名前を言うと Favorites が空になり、戻せない | "as Lightroom's Clear Quick Collection After Saving" | `workspace/dock/dock_effect_places.dart` |
 | 数のメニュー | 同じ数をもう一度右押しすると、閉じずにその所で開き直す | "right pressed here again: its place, as a Mac's" | `widgets/float_shut.dart` |
 | 区間を選んでの Delete | 区間は消えず、イージングが Linear に戻る | "a stretch picked: its way off, straight again, not the thing" | `workspace/commands/menu_bar.dart` |
-| Program のコードの欄 | 閉じかっこを足さない。取り消しは欄の物で、プロジェクトの物ではない | "exactly what is typed" | `workspace/dock/dock_program.dart` |
+| Program のコードの欄 | 閉じかっこを足さない。取り消しは欄の物で、プロジェクトの物ではない | "exactly what is typed" | `workspace/shelf/program_code.dart` |
 | カードのエフェクトのコード | 最初に打った時に棚のファイルを写し、写しの方に書く | "the shelf's file is never written over" | `workspace/shelf/fx_code.dart` |
 | ルーラーのこすり | 吸い付きは普段は切れていて、Shift で入る（バーとキーフレームは逆） | "After Effects': Shift held while the time indicator is dragged, it rests on what it passes" | `workspace/timeline/timeline.dart` |

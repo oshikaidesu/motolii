@@ -26,7 +26,8 @@ import 'package:motolii/widgets/media.dart' show MiniSlider;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/storage/kept_file.dart' show fileKeep;
-import 'package:motolii/workspace/dock/dock_widgets.dart' show dockMark, IconPress;
+import 'package:motolii/workspace/dock/dock_widgets.dart' show IconPress;
+import 'package:motolii/workspace/shelf/tile_colors.dart';
 part 'dock_map_view.dart';
 
 /// Where one shelf's items lie on its map, by id, on a canvas shaped like the viewport ([dockSpread]). [laying] is true

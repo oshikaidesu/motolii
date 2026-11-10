@@ -12,9 +12,10 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii.dart' show ShelfItem;
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/dock/dock_widgets.dart';
 import 'package:motolii/widgets/grid_columns.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
+import 'package:motolii/workspace/shelf/tile_hover.dart';
+import 'package:motolii/workspace/shelf/tile_colors.dart';
 
 // Re-exported so that whoever builds a tile gets the type it takes.
 export '../../bridge/motolii.dart' show ShelfItem;

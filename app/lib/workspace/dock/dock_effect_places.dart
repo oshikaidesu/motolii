@@ -17,6 +17,8 @@ import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/dock/dock_widgets.dart';
 import 'package:motolii/workspace/shelf/effect_decks.dart';
 import 'package:motolii/widgets/menu.dart';
+import 'package:motolii/workspace/shelf/shelf_context.dart';
+import 'package:motolii/workspace/shelf/tile_colors.dart';
 
 const dockFxListHeight = 176.0;
 
