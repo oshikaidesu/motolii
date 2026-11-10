@@ -19,7 +19,7 @@ import 'package:motolii/widgets/controls.dart' show Badge, Hov;
 // Re-exported so shelves get the shared small widgets together with the dock's own.
 export '../../widgets/controls.dart' show Badge, Chip, IconPress;
 
-import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/storage/kept_file.dart' show fileKeep, fileList;
 import 'package:motolii/workspace/state/state.dart';
 import 'package:motolii/widgets/text_gestures.dart';

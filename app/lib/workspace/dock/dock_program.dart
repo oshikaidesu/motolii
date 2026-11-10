@@ -28,7 +28,7 @@ import 'package:re_highlight/styles/atom-one-light.dart';
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/shelf/copies_tiles.dart';
-import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/dock/dock_widgets.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/shelf/program_tiles.dart';

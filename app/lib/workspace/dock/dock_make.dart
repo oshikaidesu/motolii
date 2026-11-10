@@ -18,7 +18,7 @@ import 'package:motolii/widgets/text_gestures.dart' show TypedField, wordsPicked
 import 'package:motolii/widgets/media.dart' show MiniSlider, glyph;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/hex_color.dart' show colorOfHex;
-import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/storage/kept_file.dart' show fileJson, fileKeep;
 import 'package:motolii/workspace/dock/dock_widgets.dart';
 import 'package:motolii/skin/theme.dart' show ColorTheme;

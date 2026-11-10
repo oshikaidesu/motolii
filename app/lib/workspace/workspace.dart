@@ -31,7 +31,7 @@ import 'package:motolii/workspace/tool_panel/tool_panel_align.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_relations.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/dock/dock.dart';
-import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/window/home.dart';
 import 'package:motolii/workspace/window/panes.dart';
 import 'package:motolii/workspace/edits/keyframe_edits.dart';

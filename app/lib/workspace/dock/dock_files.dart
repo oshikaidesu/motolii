@@ -14,7 +14,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii.dart' show Motolii, mediaInfoOf, mediaSecondsOf;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/dock/dock_resizable.dart';
-import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/dock/dock_widgets.dart';
 import 'package:motolii/workspace/dock/dock_tags.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';

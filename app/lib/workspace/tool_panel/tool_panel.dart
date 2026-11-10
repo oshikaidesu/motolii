@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, Hov, IconPress;
 
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/window/panes.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
 import 'package:motolii/workspace/state/state.dart';

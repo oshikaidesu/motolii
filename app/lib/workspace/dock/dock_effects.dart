@@ -14,7 +14,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 import 'package:motolii/widgets/media.dart' show Draw;
 import 'package:motolii/workspace/dock/dock_effect_places.dart';
-import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/dock/dock_map.dart';
 import 'package:motolii/workspace/dock/dock_widgets.dart';
 import 'package:motolii/workspace/dock/dock_resizable.dart';

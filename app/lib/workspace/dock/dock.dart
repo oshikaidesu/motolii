@@ -9,7 +9,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/dock/dock_effects.dart';
 import 'package:motolii/workspace/dock/dock_files.dart';
 import 'package:motolii/workspace/dock/dock_fonts.dart';
-import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/dock/dock_make.dart';
 import 'package:motolii/workspace/dock/dock_widgets.dart';
 import 'package:motolii/workspace/dock/dock_tags.dart';

@@ -9,7 +9,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/glyphs.dart' show GlyphKind;
 import 'package:motolii/workspace/state/state.dart';
 

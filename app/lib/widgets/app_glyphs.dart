@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/widgets/glyphs.dart' show GlyphKind;
 
-export '../../widgets/glyphs.dart' show Glyph;
+export 'glyphs.dart' show Glyph;
 
 enum DockG implements GlyphKind {
   media,

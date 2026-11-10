@@ -3,7 +3,7 @@
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/window/panes.dart';

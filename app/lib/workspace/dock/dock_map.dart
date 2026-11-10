@@ -24,7 +24,7 @@ import 'package:material_color_utilities/material_color_utilities.dart' show Cam
 import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiQuestions;
 import 'package:motolii/widgets/media.dart' show MiniSlider;
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/storage/kept_file.dart' show fileKeep;
 import 'package:motolii/workspace/dock/dock_widgets.dart' show dockMark, IconPress;
 part 'dock_map_view.dart';
