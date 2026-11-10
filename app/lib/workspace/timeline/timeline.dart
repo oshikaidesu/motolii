@@ -22,6 +22,7 @@ import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/workspace/timeline/frame_snap.dart';
 import 'package:motolii/workspace/timeline/timeline_drag.dart';
 import 'package:motolii/workspace/timeline/timeline_header.dart';
 import 'package:motolii/workspace/timeline/timeline_media.dart';
@@ -30,7 +31,6 @@ import 'package:motolii/workspace/timeline/timeline_paint.dart';
 import 'package:motolii/workspace/timeline/timeline_requests.dart';
 import 'package:motolii/workspace/timeline/timeline_rows.dart';
 import 'package:motolii/workspace/timeline/timeline_slip.dart';
-import 'package:motolii/workspace/timeline/timeline_snap.dart';
 import 'package:motolii/workspace/timeline/timeline_tracks.dart';
 import 'package:motolii/workspace/timeline/timeline_view.dart';
 import 'package:motolii/workspace/timeline/timeline_viewport.dart';
@@ -203,10 +203,28 @@ class TimelinePaneState extends State<TimelinePane>
   // The timeline only records which part was grabbed and how far the pointer moved.
   // What that does to the layer (its limits, a video's start) is decided by the engine, and the bar is drawn from the engine's answer.
   ({String id, String part, double grab, bool moved})? bar;
-  // The frames the drag can snap to, collected when the drag starts (timeline_snap.dart).
+  // The frames the drag can snap to, collected when the drag starts.
   Set<int> stops = const {};
   // The frame the drag has snapped to, where a guide line is drawn.
   int? restAt;
+
+  // Snapping to [stops] and the beat grid at the present zoom, or null while Cmd is held, which turns snapping off.
+  FrameSnap? get _snap => HardwareKeyboard.instance.isMetaPressed
+      ? null
+      : FrameSnap(
+          stops: stops,
+          beats: workspace!.beats,
+          pixelsPerFrame: viewport.view.pixelsPerFrame,
+        );
+
+  // The drag distance [by] adjusted so that the nearest of [ends] lands on a snap stop, if one is close enough.
+  // Where it landed is kept in [restAt].
+  int _snapped(int by, List<int> ends) {
+    final snapped = _snap?.snap(by, ends);
+    restAt = snapped?.at;
+    return snapped?.by ?? by;
+  }
+
   // The whole video's extent when the drag started (timeline_slip.dart).
   (int, int)? barWhole;
   final filmSeconds = <String, double>{};
@@ -270,7 +288,9 @@ class TimelinePaneState extends State<TimelinePane>
       return setState(() => selectionBox = (from, p));
     }
     if (slide case final s?) {
-      final by = rested(viewport.view.frameAt(p.dx).round() - s.grab, [s.grab]);
+      final by = _snapped(viewport.view.frameAt(p.dx).round() - s.grab, [
+        s.grab,
+      ]);
       setState(() => slide = (keys: s.keys, grab: s.grab, by: by));
       workspace!.frame = (s.grab + by).clamp(0, WorkspaceController.duration);
       return;
@@ -283,7 +303,7 @@ class TimelinePaneState extends State<TimelinePane>
       bar = (id: h.id, part: h.part, grab: h.grab, moved: true);
       return slip(ws, int.parse(h.id), by);
     }
-    by = rested(by, [
+    by = _snapped(by, [
       if (h.part != 'tail') barIn,
       if (h.part != 'head') barOut,
     ]);
@@ -387,7 +407,7 @@ class TimelinePaneState extends State<TimelinePane>
         // As in After Effects, holding Shift while dragging the time indicator snaps it to what it passes.
         final shift = HardwareKeyboard.instance.isShiftPressed;
         if (shift) stops = workspace!.stops();
-        workspace!.frame = shift ? restOn(f) ?? f : f;
+        workspace!.frame = shift ? _snap?.nearest(f) ?? f : f;
     }
   }
 
