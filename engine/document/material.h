@@ -64,7 +64,6 @@ static bool doc_half(Doc& d, int layer, float2* half, float* deep = nullptr);
 // edge on that side. It is keyed as the older `anchor` property was.
 static math::mat4 doc_place(Doc& d, int layer, double now, int deeper = 0, int copy = 0, bool member = false);
 static math::mat4 doc_shown_at(Doc& d, int layer, double now);
-int sk_along(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, int n, float from, std::vector<float>& out);
 static double doc_point(Doc& d, int layer, double now);
 static math::double2 doc_seen(Doc& d, math::double3 p);
 static math::mat4 doc_above(Doc& d, int layer, double now, int deeper);

@@ -320,12 +320,6 @@ static void trim_at(Stage& s, Canvas2D* d, float cut, float begin = 0.f, float o
     });
 }
 
-// Applies After Effects' path operators with ThorVG (thorvg_path_operators.cpp). round rounds the
-// corners, as a fraction of the shorter side. bloat pinches in or bloats out, from -1 to 1. zigzag
-// has a height, as a fraction of the layer height, and ridges per side, smooth or sharp. offset
-// moves the outline out or in, as a fraction of the height.
-void tvg_bend(tvg::Shape* shape, const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, uint32_t ptsCnt,
-              float round, float bloat, float zigzag, int ridges, bool smooth, float offset, float fine);
 // Bends the shape of `d` with the given parameters, with the units of tvg_bend, and draws it again
 // for the next frame. Does nothing if the parameters are unchanged.
 static void bend_at(Stage& s, Canvas2D* d, float round, float bloat, float zigzag, float ridges, float smooth, float offset) {

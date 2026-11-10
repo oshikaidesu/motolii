@@ -13,6 +13,7 @@
 //
 // The parts below must be included in this order. Each one depends on the one before it, and none
 // stands alone.
+#include "stage/canvas/path_operations.h"
 #include "stage/canvas/canvas_cache.h"
 #include "stage/canvas/canvas_edge.h"
 #include "stage/canvas/canvas_renderables.h"

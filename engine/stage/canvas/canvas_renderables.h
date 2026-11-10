@@ -610,9 +610,6 @@ static Canvas2D* type(Stage& s, const char* words, const char* fontFile, const m
 // fine: Lines and curves are cut into pieces no longer than this many points. 0 leaves them as they
 // are. This lets deformations bend them.
 // The unbent path is kept in `d`.
-// Parses SVG path data into path commands and points. Returns false on failure.
-bool sk_svg(const char* data, std::vector<tvg::PathCommand>& cmds, std::vector<tvg::Point>& pts);
-int sk_ends(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, float from, float to, std::vector<float>& out);
 static void flat_path(Canvas2D* d, tvg::Shape* shape, const char* form, int w, int h, float in, int points, float inner, float round, float fine) {
     const float cx = 0.5f * (float)w, cy = 0.5f * (float)h, rx = cx - in, ry = cy - in;
     // Line width of a wave or spiral: the stroke width, or a fraction of the height.
@@ -803,6 +800,3 @@ static Canvas2D* flat(Stage& s, const char* form, float wide, const mat4f& place
     }, place, high, float3{-1.f}, true, lay, fx);
 }
 
-// Defined in thorvg_path_operators.cpp.
-void tvg_edge(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, uint32_t ptsCnt, float width, int cap, int join, float dash, float dashFrom,
-              float from, float to, std::vector<float>& xy, std::vector<uint32_t>& idx);

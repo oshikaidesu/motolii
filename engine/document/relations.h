@@ -65,9 +65,6 @@ static int doc_driven_by(Doc& d, int layer, const char* name) {
     if (by && doc_word(d, by, "kind") != "behaviour") by = 0;
     return d.drivers.emplace(key, by).first->second;
 }
-// Defined elsewhere. Tests whether the point x, y is inside a path. The caller uses `far` as the
-// distance from the point to the outline.
-bool sk_inside(const tvg::PathCommand* cmds, uint32_t cmdsCnt, const tvg::Point* pts, float x, float y, float* far);
 // Declared here; defined elsewhere in doc.h.
 static math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy, bool member);
 // Returns how strongly behaviour `by` applies at the point `at` of the stage, from 0 to 1. The

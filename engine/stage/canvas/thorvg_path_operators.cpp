@@ -9,6 +9,8 @@
 // This file is separate from the rest of the canvas code because ThorVG's internal headers
 // declare many names that would clash with ours. Only the two functions declared in canvas.h
 // are visible to the rest of the engine.
+#include "stage/canvas/path_operations.h"
+
 #include "tvgLottieModifier.h"
 #include "tvgGpuCommon.h"
 #include "tvgWgTessellator.h"

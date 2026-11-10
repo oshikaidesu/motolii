@@ -22,25 +22,6 @@ struct DocPlane {
     // Converts a point in the shape's own coordinates to a point of the image.
     math::double2 at(double fx, double fy) const { return o + ex * fx - ey * fy; }
 };
-// The sk_svg_* functions read and edit SVG path data with Skia (see
-// engine/stage/canvas/skia_path_operations.cpp).
-// Writes the path's anchor points to xy as x, y pairs and returns how many there are.
-int sk_svg_anchors(const char* data, std::vector<float>& xy);
-// Returns how the path ends, using Skia's verbs: 0 not read or empty, 1 a move alone, 2 a line, 3 a
-// curve, 4 closed. Writes the first point to fx, fy and the number of stretches to stretches.
-int sk_svg_ends(const char* data, float& fx, float& fy, int& stretches);
-// Moves the nth anchor by dx, dy, together with its handles, and writes the new path data to out.
-// Returns false on failure.
-bool sk_svg_move(const char* data, int nth, float dx, float dy, std::string& out);
-// Writes the curves' handles to xy as x, y pairs and returns how many there are. If of is given, it
-// receives the anchor each handle belongs to.
-int sk_svg_handles(const char* data, std::vector<float>& xy, std::vector<float>* of = nullptr);
-// Moves the nth handle by dx, dy and writes the new path data to out. Returns false on failure.
-bool sk_svg_move_handle(const char* data, int nth, float dx, float dy, std::string& out);
-// Edits the path at x, y. A point within reach is removed, and a point on the outline gets a new
-// point put there. Writes the new path data to out. Returns 1 if a point was removed, 2 if one was
-// put, and 0 if nothing changed.
-int sk_svg_edit(const char* data, float x, float y, float reach, std::string& out);
 // Returns the number of points of a path shape and writes up to `room` of them to xy as x, y pairs,
 // in points of the image from its top left. Returns 0 if the layer is not a path shape. If handles
 // is true, writes the curves' handles instead of the points, and, if `of` is given, writes the
