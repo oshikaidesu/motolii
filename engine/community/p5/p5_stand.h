@@ -1,12 +1,16 @@
 #ifndef MOTOLII_COMMUNITY_P5_P5_STAND_H_
 #define MOTOLII_COMMUNITY_P5_P5_STAND_H_
 
-// p5.js with no page: a sketch from the net, its file as it is, run by p5.js itself (third_party/js/p5, 1.11.13, LGPL-2.1,
-// its file as it is released) in the script's QuickJS, as Cavalry's and AviUtl's scripts are run by stand-ins for what they
-// ask of their host. No browser and nothing drawn: what p5 draws in WEBGL is taken at drawBuffersScaled, the one adapter its
-// box, plane, ellipsoid, cylinder, cone and torus all go through (src/webgl/p5.RendererGL.Retained.js), with its model
-// matrix (uModelMatrix), and said as the copies of a thing. A frame once run is kept: a sketch only goes forward, so going
-// back is reading. Frames are its own 60 a second, as requestAnimationFrame and a clock stepped by hand (timesnap's way).
+// p5.js with no page: a sketch from the net, its file as it is, run by p5.js
+// itself (third_party/js/p5, 1.11.13, LGPL-2.1, its file as it is released) in
+// the script's QuickJS, as Cavalry's and AviUtl's scripts are run by stand-ins
+// for what they ask of their host. No browser and nothing drawn: what p5 draws
+// in WEBGL is taken at drawBuffersScaled, the one adapter its box, plane,
+// ellipsoid, cylinder, cone and torus all go through
+// (src/webgl/p5.RendererGL.Retained.js), with its model matrix (uModelMatrix),
+// and said as the copies of a thing. A frame once run is kept: a sketch only
+// goes forward, so going back is reading. Frames are its own 60 a second, as
+// requestAnimationFrame and a clock stepped by hand (timesnap's way).
 
 inline const char* const p5_before = R"(
 var __T = 0, __Q = [], __seed = 12345, __L = 0;   // (__L: the line of the sketch that draws now: script.h sketch_marked)

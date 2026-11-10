@@ -1,8 +1,9 @@
 #ifndef MOTOLII_COMMUNITY_THREE_THREE_ISF_H_
 #define MOTOLII_COMMUNITY_THREE_THREE_ISF_H_
 
-// Declares the converter from a three.js screen effect (examples/jsm/shaders/*.js)
-// to ISF effect text, which isf.cpp then loads like any other ISF effect.
+// Declares the converter from a three.js screen effect
+// (examples/jsm/shaders/*.js) to ISF effect text, which isf.cpp then loads like
+// any other ISF effect.
 #include <string>
 // Returns true if the file is a three.js effect: a .js file containing a
 // fragmentShader.

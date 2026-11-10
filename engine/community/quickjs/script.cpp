@@ -2,6 +2,7 @@
 #include "community/quickjs/script.h"
 
 #include <dlfcn.h>
+#include <quickjs.h>
 #include <sys/stat.h>
 
 #include <algorithm>
@@ -21,8 +22,6 @@
 #include <utility>
 #include <vector>
 
-#include <quickjs.h>
-
 #include "community/after_effects/ae_expr.h"
 #include "community/aviutl/aviutl.h"
 #include "community/p5/p5_mesh.h"
@@ -35,212 +34,328 @@
 #include "motion/easing_names.h"
 
 static std::vector<std::string> split(const std::string& s, char by) {
-    std::vector<std::string> out;
-    std::stringstream in(s);
-    for (std::string one; std::getline(in, one, by);) {
-        const size_t a = one.find_first_not_of(' '), b = one.find_last_not_of(' ');
-        out.push_back(a == std::string::npos ? "" : one.substr(a, b - a + 1));
-    }
-    return out;
+  std::vector<std::string> out;
+  std::stringstream in(s);
+  for (std::string one; std::getline(in, one, by);) {
+    const size_t a = one.find_first_not_of(' '), b = one.find_last_not_of(' ');
+    out.push_back(a == std::string::npos ? "" : one.substr(a, b - a + 1));
+  }
+  return out;
 }
 
 std::string script_shelf_file(const std::string& file) {
-    std::error_code wrong;
-    if (file.find('/') == std::string::npos || std::filesystem::exists(file, wrong)) return file;
-    // For each shelf kind, a map from file name to full path. Filled on first use.
-    static std::map<std::string, std::map<std::string, std::string>> by;
-    for (std::filesystem::path p = std::filesystem::path(file).parent_path(); !p.empty() && p != p.parent_path(); p = p.parent_path()) {
-        const std::string kind = p.filename().string();
-        if (kind != "effects" && kind != "create" && kind != "relations" && kind != "expressions" && kind != "solids" && kind != "looks" && kind != "recipes" && kind != "animators") continue;
-        // A project saved before the shelves were renamed names the old folders: recipes is now
-        // create and animators is now expressions.
-        const std::string now = kind == "recipes" ? "create" : kind == "animators" ? "expressions" : kind;
-        if (!by.count(now)) {
-            Dl_info lib{};
-            dladdr((const void*)&script_shelf_file, &lib);
-            const auto shelf = std::filesystem::weakly_canonical(lib.dli_fname ? lib.dli_fname : ".", wrong).parent_path().parent_path().parent_path() / "shelves" / now;
-            auto& names = by[now];
-            for (const auto& e : std::filesystem::recursive_directory_iterator(shelf, wrong)) names.emplace(e.path().filename().string(), e.path().string());
-        }
-        const auto at = by[now].find(std::filesystem::path(file).filename().string());
-        return at == by[now].end() ? file : at->second;
-    }
+  std::error_code wrong;
+  if (file.find('/') == std::string::npos ||
+      std::filesystem::exists(file, wrong))
     return file;
+  // For each shelf kind, a map from file name to full path. Filled on first
+  // use.
+  static std::map<std::string, std::map<std::string, std::string>> by;
+  for (std::filesystem::path p = std::filesystem::path(file).parent_path();
+       !p.empty() && p != p.parent_path(); p = p.parent_path()) {
+    const std::string kind = p.filename().string();
+    if (kind != "effects" && kind != "create" && kind != "relations" &&
+        kind != "expressions" && kind != "solids" && kind != "looks" &&
+        kind != "recipes" && kind != "animators")
+      continue;
+    // A project saved before the shelves were renamed names the old folders:
+    // recipes is now create and animators is now expressions.
+    const std::string now = kind == "recipes"     ? "create"
+                            : kind == "animators" ? "expressions"
+                                                  : kind;
+    if (!by.count(now)) {
+      Dl_info lib{};
+      dladdr((const void*)&script_shelf_file, &lib);
+      const auto shelf = std::filesystem::weakly_canonical(
+                             lib.dli_fname ? lib.dli_fname : ".", wrong)
+                             .parent_path()
+                             .parent_path()
+                             .parent_path() /
+                         "shelves" / now;
+      auto& names = by[now];
+      for (const auto& e :
+           std::filesystem::recursive_directory_iterator(shelf, wrong))
+        names.emplace(e.path().filename().string(), e.path().string());
+    }
+    const auto at =
+        by[now].find(std::filesystem::path(file).filename().string());
+    return at == by[now].end() ? file : at->second;
+  }
+  return file;
 }
 std::vector<std::string> script_files(const std::string& word) {
-    std::vector<std::string> all;
-    std::istringstream each(word);
-    const auto ends = [](const std::string& w) { if (w.find(".anm2") != std::string::npos || w.find(".obj2") != std::string::npos) return true; for (const char* e : {".wgsl", ".fs", ".js", ".mjs", ".json", ".am"}) if (w.size() >= strlen(e) && w.compare(w.size() - strlen(e), std::string::npos, e) == 0) return true; return false; };
-    for (std::string w; each >> w;) {
-        if (!all.empty() && all.back().find('/') != std::string::npos && !ends(all.back())) all.back() += " " + w;
-        else all.push_back(w);
-    }
-    for (std::string& f : all) f = script_shelf_file(f);
-    return all;
+  std::vector<std::string> all;
+  std::istringstream each(word);
+  const auto ends = [](const std::string& w) {
+    if (w.find(".anm2") != std::string::npos ||
+        w.find(".obj2") != std::string::npos)
+      return true;
+    for (const char* e : {".wgsl", ".fs", ".js", ".mjs", ".json", ".am"})
+      if (w.size() >= strlen(e) &&
+          w.compare(w.size() - strlen(e), std::string::npos, e) == 0)
+        return true;
+    return false;
+  };
+  for (std::string w; each >> w;) {
+    if (!all.empty() && all.back().find('/') != std::string::npos &&
+        !ends(all.back()))
+      all.back() += " " + w;
+    else
+      all.push_back(w);
+  }
+  for (std::string& f : all) f = script_shelf_file(f);
+  return all;
 }
 
-// (what stands in a string or a comment is not a call; a name after a dot is another canvas's, a createGraphics': image()
-// says where that shows; a name followed by a { is a method of the sketch's own)
-std::string sketch_marked(const std::string& src, std::vector<SketchLine>* lines) {
-    static const std::set<std::string> draws{"rect", "square", "ellipse", "circle", "arc", "line", "point", "triangle", "quad", "bezier", "curve", "image", "text", "background", "beginShape",
-                                             "box", "sphere", "plane", "cone", "cylinder", "torus", "ellipsoid", "model"};
-    const auto word = [](char c) { return std::isalnum((unsigned char)c) || c == '_' || c == '$'; };
-    std::string out, last;
-    int line = 1, seen = 0;
-    for (size_t i = 0; i < src.size();) {
-        const char c = src[i];
-        if (c == '\n') ++line;
-        if (c == '/' && i + 1 < src.size() && src[i + 1] == '/') {
-            const size_t end = std::min(src.find('\n', i), src.size());
-            out.append(src, i, end - i), i = end;
-        } else if (c == '/' && i + 1 < src.size() && src[i + 1] == '*') {
-            const size_t end = std::min(src.find("*/", i + 2), src.size() - 2) + 2;
-            line += (int)std::count(src.begin() + (long)i, src.begin() + (long)end, '\n');
-            out.append(src, i, end - i), i = end;
-        } else if (c == '"' || c == '\'' || c == '`') {
-            size_t end = i + 1;
-            while (end < src.size() && src[end] != c && (c == '`' || src[end] != '\n')) end += src[end] == '\\' ? 2 : 1;
-            end = std::min(end + 1, src.size());
-            line += (int)std::count(src.begin() + (long)i, src.begin() + (long)end, '\n');
-            out.append(src, i, end - i), i = end;
-        } else if (word(c)) {
-            size_t end = i;
-            while (end < src.size() && word(src[end])) ++end;
-            const std::string name = src.substr(i, end - i);
-            size_t next = end;
-            while (next < src.size() && (src[next] == ' ' || src[next] == '\t')) ++next;
-            const size_t before = out.find_last_not_of(" \t\r\n");
-            bool mark = next < src.size() && src[next] == '(' && draws.count(name) && last != "function" && (before == std::string::npos || out[before] != '.');
-            if (mark) {
-                int deep = 0;
-                size_t close = next;
-                for (; close < src.size(); ++close) { if (src[close] == '(') ++deep; else if (src[close] == ')' && --deep == 0) break; }
-                size_t after = close + 1;
-                while (after < src.size() && std::isspace((unsigned char)src[after])) ++after;
-                mark = after >= src.size() || src[after] != '{';
-            }
-            if (mark) {
-                out += "__at(" + std::to_string(line) + "," + name + ")";   // (a word as it was, so a line before it with no semicolon still ends there)
-                if (lines && seen != line) lines->push_back({line, name}), seen = line;
-            } else out += name;
-            last = name, i = end;
-        } else {
-            if (!std::isspace((unsigned char)c)) last.clear();
-            out += c, ++i;
+// (what stands in a string or a comment is not a call; a name after a dot is
+// another canvas's, a createGraphics': image() says where that shows; a name
+// followed by a { is a method of the sketch's own)
+std::string sketch_marked(const std::string& src,
+                          std::vector<SketchLine>* lines) {
+  static const std::set<std::string> draws{
+      "rect",  "square",     "ellipse",    "circle",    "arc",    "line",
+      "point", "triangle",   "quad",       "bezier",    "curve",  "image",
+      "text",  "background", "beginShape", "box",       "sphere", "plane",
+      "cone",  "cylinder",   "torus",      "ellipsoid", "model"};
+  const auto word = [](char c) {
+    return std::isalnum((unsigned char)c) || c == '_' || c == '$';
+  };
+  std::string out, last;
+  int line = 1, seen = 0;
+  for (size_t i = 0; i < src.size();) {
+    const char c = src[i];
+    if (c == '\n') ++line;
+    if (c == '/' && i + 1 < src.size() && src[i + 1] == '/') {
+      const size_t end = std::min(src.find('\n', i), src.size());
+      out.append(src, i, end - i), i = end;
+    } else if (c == '/' && i + 1 < src.size() && src[i + 1] == '*') {
+      const size_t end = std::min(src.find("*/", i + 2), src.size() - 2) + 2;
+      line +=
+          (int)std::count(src.begin() + (long)i, src.begin() + (long)end, '\n');
+      out.append(src, i, end - i), i = end;
+    } else if (c == '"' || c == '\'' || c == '`') {
+      size_t end = i + 1;
+      while (end < src.size() && src[end] != c &&
+             (c == '`' || src[end] != '\n'))
+        end += src[end] == '\\' ? 2 : 1;
+      end = std::min(end + 1, src.size());
+      line +=
+          (int)std::count(src.begin() + (long)i, src.begin() + (long)end, '\n');
+      out.append(src, i, end - i), i = end;
+    } else if (word(c)) {
+      size_t end = i;
+      while (end < src.size() && word(src[end])) ++end;
+      const std::string name = src.substr(i, end - i);
+      size_t next = end;
+      while (next < src.size() && (src[next] == ' ' || src[next] == '\t'))
+        ++next;
+      const size_t before = out.find_last_not_of(" \t\r\n");
+      bool mark = next < src.size() && src[next] == '(' && draws.count(name) &&
+                  last != "function" &&
+                  (before == std::string::npos || out[before] != '.');
+      if (mark) {
+        int deep = 0;
+        size_t close = next;
+        for (; close < src.size(); ++close) {
+          if (src[close] == '(')
+            ++deep;
+          else if (src[close] == ')' && --deep == 0)
+            break;
         }
+        size_t after = close + 1;
+        while (after < src.size() && std::isspace((unsigned char)src[after]))
+          ++after;
+        mark = after >= src.size() || src[after] != '{';
+      }
+      if (mark) {
+        out += "__at(" + std::to_string(line) + "," + name +
+               ")";  // (a word as it was, so a line before it with no semicolon
+                     // still ends there)
+        if (lines && seen != line) lines->push_back({line, name}), seen = line;
+      } else
+        out += name;
+      last = name, i = end;
+    } else {
+      if (!std::isspace((unsigned char)c)) last.clear();
+      out += c, ++i;
     }
-    return out;
+  }
+  return out;
 }
 std::vector<ScriptParameter> script_parameters(const std::string& file) {
-    if (aviutl_is(file)) return aviutl_parameters(file);   // (an AviUtl2 script's head: aviutl.cpp)
-    std::vector<ScriptParameter> parameters;
-    std::ifstream in(file);
-    std::stringstream told_head;
-    std::istream* from = &in;
-    if (std::filesystem::path(file).extension() == ".js") {
-        std::stringstream all;
-        all << in.rdbuf();
-        const std::string told = adapter_js(all.str(), adapter_form(all.str()));   // (a form from the net told as a sketch: adapter.h)
-        if (script_is_sketch(told) && told.find("function relate") == std::string::npos && !script_pushes(told) && !solid_is(file)) {   // (a relation is p5's too, but its head says its parameters; a solid's shape says THREE. too, but is no scene from the net: its head says its parameters, solid_three.h)
-            if (adapter_form(all.str()) == "three") {   // (which part of the scene this thing is: document/scripts/adapter.h)
-                ScriptParameter part;
-                part.kind = "track", part.name = "part", part.label = "Part", part.high = 9999, part.step = 1;
-                return {part};
-            }
-            std::vector<SketchLine> lines;
-            sketch_marked(told, &lines);
-            for (const SketchLine& l : lines) {
-                ScriptParameter k;
-                k.kind = "track", k.name = "line_" + std::to_string(l.line), k.label = l.what + " " + std::to_string(l.line), k.high = 1, k.usual = 1;
-                parameters.push_back(k);
-            }
-            return parameters;
-        }
-        in.clear(), in.seekg(0);
-        if (const std::string head = leva_head(all.str()); !head.empty()) told_head.str(head), from = &told_head;   // (leva's object at its top: script_leva.h)
-    }
-    std::string group;   // (AviUtl2's --group:Name[,open] gathers the parameters after it, a bare --group ends it: docs/design/aviutl2_converter.md)
-    for (std::string line; std::getline(*from, line);) {
-        if (line.rfind("//", 0) != 0) { if (line.find_first_not_of(" \t\r") == std::string::npos) continue; break; }   // (the head ends where code begins)
-        if (const size_t g = line.find_first_not_of(" \t", 2); g != std::string::npos && line.compare(g, 7, "--group") == 0 && (g + 7 == line.size() || line[g + 7] == ':' || line[g + 7] == '\r')) {
-            const size_t colon = line.find(':', g);
-            group = line.substr(colon == std::string::npos ? line.size() : colon + 1);
-            group = group.substr(0, group.find(','));   // (its open or closed at first: Motolii's fold is closed at first)
-            group.erase(0, group.find_first_not_of(" \t")), group.erase(group.find_last_not_of(" \t\r") + 1);
-            continue;
-        }
-        const size_t dash = line.find("--"), at = line.find('@'), colon = line.find(':');
-        if (dash == std::string::npos || at == std::string::npos || colon == std::string::npos || !(dash < at && at < colon)) continue;
+  if (aviutl_is(file))
+    return aviutl_parameters(file);  // (an AviUtl2 script's head: aviutl.cpp)
+  std::vector<ScriptParameter> parameters;
+  std::ifstream in(file);
+  std::stringstream told_head;
+  std::istream* from = &in;
+  if (std::filesystem::path(file).extension() == ".js") {
+    std::stringstream all;
+    all << in.rdbuf();
+    const std::string told = adapter_js(
+        all.str(),
+        adapter_form(
+            all.str()));  // (a form from the net told as a sketch: adapter.h)
+    if (script_is_sketch(told) &&
+        told.find("function relate") == std::string::npos &&
+        !script_pushes(told) &&
+        !solid_is(file)) {  // (a relation is p5's too, but its head says its
+                            // parameters; a solid's shape says THREE. too, but
+                            // is no scene from the net: its head says its
+                            // parameters, solid_three.h)
+      if (adapter_form(all.str()) ==
+          "three") {  // (which part of the scene this thing is:
+                      // document/scripts/adapter.h)
+        ScriptParameter part;
+        part.kind = "track", part.name = "part", part.label = "Part",
+        part.high = 9999, part.step = 1;
+        return {part};
+      }
+      std::vector<SketchLine> lines;
+      sketch_marked(told, &lines);
+      for (const SketchLine& l : lines) {
         ScriptParameter k;
-        k.kind = line.substr(dash + 2, at - dash - 2), k.name = line.substr(at + 1, colon - at - 1);
-        if (k.kind == "macro") {   // (label[,as it comes] -> name low high, name low high: script.h)
-            const size_t to = line.find("->", colon);
-            const std::vector<std::string> head = split(line.substr(colon + 1, to == std::string::npos ? std::string::npos : to - colon - 1), ',');
-            if (head.empty() || head[0].empty() || k.name.empty() || to == std::string::npos) continue;
-            for (const std::string& one : split(line.substr(to + 2), ',')) {
-                std::istringstream w(one);
-                ScriptParameter::Turned t;
-                if (w >> t.name >> t.low >> t.high) k.turns.push_back(t);
-            }
-            k.kind = "track", k.label = head[0], k.low = 0, k.high = 1, k.step = 0.01, k.usual = head.size() >= 2 ? std::atof(head[1].c_str()) : 0;
-            parameters.push_back(k);   // (in no group, wherever its line is: a macro stands out)
-            continue;
-        }
-        const std::vector<std::string> said = split(line.substr(colon + 1), ',');
-        if (said.empty() || k.name.empty()) continue;
-        k.label = said[0];
-        if (k.kind == "track" && said.size() >= 4) {
-            k.low = std::atof(said[1].c_str()), k.high = std::atof(said[2].c_str()), k.usual = std::atof(said[3].c_str());
-            k.step = said.size() >= 5 ? std::atof(said[4].c_str()) : 0;
-        } else if (k.kind == "check") {
-            k.low = 0, k.high = 1, k.usual = said.size() >= 2 ? std::atof(said[1].c_str()) : 0, k.step = 1;
-        } else if (k.kind == "picture") {   // (another thing's picture read as one of its images: the thing, by its number)
-            k.low = 0, k.high = 1e9, k.usual = 0, k.step = 1;
-        } else if (k.kind == "sound" && said.size() >= 3) {   // (another thing's sound read as an ISF audio input: the thing, by its number; fft or wave, how many)
-            k.low = 0, k.high = 1e9, k.usual = 0, k.step = 1, k.words = said[1] + " " + said[2];
-        } else if (k.kind == "select" && said.size() >= 2) {
-            for (size_t i = 1; i < said.size(); ++i) k.words += (i > 1 ? " " : "") + said[i];
-        } else continue;
-        k.group = group;
+        k.kind = "track", k.name = "line_" + std::to_string(l.line),
+        k.label = l.what + " " + std::to_string(l.line), k.high = 1,
+        k.usual = 1;
         parameters.push_back(k);
+      }
+      return parameters;
     }
-    // (a macro first on its card, Ableton's above the Rack; what it turns folded away, said to be turned)
-    std::stable_partition(parameters.begin(), parameters.end(), [](const ScriptParameter& k) { return !k.turns.empty(); });
-    for (const ScriptParameter& m : parameters)
-        for (const ScriptParameter::Turned& t : m.turns)
-            for (ScriptParameter& k : parameters)
-                if (k.name == t.name && k.turns.empty() && k.by.empty()) {
-                    k.by = m.name, k.label += " ← " + m.label;
-                    if (k.group.empty()) k.group = "Advanced";
-                }
-    return parameters;
-}
-
-void script_first(const std::string& file, std::vector<ScriptParameter>& parameters) {
-    static std::mutex hold;
-    static std::map<std::string, std::pair<long long, std::map<std::string, std::map<std::string, double>>>> read;   // (each folder's first.tsv, as it was when last written)
-    const size_t slash = file.find_last_of('/');
-    if (slash == std::string::npos) return;
-    const std::string table = file.substr(0, slash) + "/first.tsv", name = file.substr(slash + 1);
-    struct stat st{};
-    const long long when = stat(table.c_str(), &st) == 0 ? (long long)st.st_mtimespec.tv_sec * 1000000000LL + st.st_mtimespec.tv_nsec : -1;
-    std::lock_guard<std::mutex> one(hold);
-    auto& [stamp, values] = read[table];
-    if (stamp != when) {
-        stamp = when, values.clear();
-        std::ifstream in(table);
-        for (std::string line; std::getline(in, line);) {
-            const std::vector<std::string> w = split(line, '\t');
-            if (w.size() >= 3 && !w[0].empty() && w[0][0] != '#') values[w[0]][w[1]] = std::atof(w[2].c_str());
+    in.clear(), in.seekg(0);
+    if (const std::string head = leva_head(all.str()); !head.empty())
+      told_head.str(head),
+          from = &told_head;  // (leva's object at its top: script_leva.h)
+  }
+  std::string
+      group;  // (AviUtl2's --group:Name[,open] gathers the parameters after it,
+              // a bare --group ends it: docs/design/aviutl2_converter.md)
+  for (std::string line; std::getline(*from, line);) {
+    if (line.rfind("//", 0) != 0) {
+      if (line.find_first_not_of(" \t\r") == std::string::npos) continue;
+      break;
+    }  // (the head ends where code begins)
+    if (const size_t g = line.find_first_not_of(" \t", 2);
+        g != std::string::npos && line.compare(g, 7, "--group") == 0 &&
+        (g + 7 == line.size() || line[g + 7] == ':' || line[g + 7] == '\r')) {
+      const size_t colon = line.find(':', g);
+      group = line.substr(colon == std::string::npos ? line.size() : colon + 1);
+      group = group.substr(
+          0, group.find(','));  // (its open or closed at first: Motolii's fold
+                                // is closed at first)
+      group.erase(0, group.find_first_not_of(" \t")),
+          group.erase(group.find_last_not_of(" \t\r") + 1);
+      continue;
+    }
+    const size_t dash = line.find("--"), at = line.find('@'),
+                 colon = line.find(':');
+    if (dash == std::string::npos || at == std::string::npos ||
+        colon == std::string::npos || !(dash < at && at < colon))
+      continue;
+    ScriptParameter k;
+    k.kind = line.substr(dash + 2, at - dash - 2),
+    k.name = line.substr(at + 1, colon - at - 1);
+    if (k.kind == "macro") {  // (label[,as it comes] -> name low high, name low
+                              // high: script.h)
+      const size_t to = line.find("->", colon);
+      const std::vector<std::string> head = split(
+          line.substr(colon + 1, to == std::string::npos ? std::string::npos
+                                                         : to - colon - 1),
+          ',');
+      if (head.empty() || head[0].empty() || k.name.empty() ||
+          to == std::string::npos)
+        continue;
+      for (const std::string& one : split(line.substr(to + 2), ',')) {
+        std::istringstream w(one);
+        ScriptParameter::Turned t;
+        if (w >> t.name >> t.low >> t.high) k.turns.push_back(t);
+      }
+      k.kind = "track", k.label = head[0], k.low = 0, k.high = 1, k.step = 0.01,
+      k.usual = head.size() >= 2 ? std::atof(head[1].c_str()) : 0;
+      parameters.push_back(
+          k);  // (in no group, wherever its line is: a macro stands out)
+      continue;
+    }
+    const std::vector<std::string> said = split(line.substr(colon + 1), ',');
+    if (said.empty() || k.name.empty()) continue;
+    k.label = said[0];
+    if (k.kind == "track" && said.size() >= 4) {
+      k.low = std::atof(said[1].c_str()), k.high = std::atof(said[2].c_str()),
+      k.usual = std::atof(said[3].c_str());
+      k.step = said.size() >= 5 ? std::atof(said[4].c_str()) : 0;
+    } else if (k.kind == "check") {
+      k.low = 0, k.high = 1,
+      k.usual = said.size() >= 2 ? std::atof(said[1].c_str()) : 0, k.step = 1;
+    } else if (k.kind ==
+               "picture") {  // (another thing's picture read as one of its
+                             // images: the thing, by its number)
+      k.low = 0, k.high = 1e9, k.usual = 0, k.step = 1;
+    } else if (k.kind == "sound" &&
+               said.size() >=
+                   3) {  // (another thing's sound read as an ISF audio input:
+                         // the thing, by its number; fft or wave, how many)
+      k.low = 0, k.high = 1e9, k.usual = 0, k.step = 1,
+      k.words = said[1] + " " + said[2];
+    } else if (k.kind == "select" && said.size() >= 2) {
+      for (size_t i = 1; i < said.size(); ++i)
+        k.words += (i > 1 ? " " : "") + said[i];
+    } else
+      continue;
+    k.group = group;
+    parameters.push_back(k);
+  }
+  // (a macro first on its card, Ableton's above the Rack; what it turns folded
+  // away, said to be turned)
+  std::stable_partition(
+      parameters.begin(), parameters.end(),
+      [](const ScriptParameter& k) { return !k.turns.empty(); });
+  for (const ScriptParameter& m : parameters)
+    for (const ScriptParameter::Turned& t : m.turns)
+      for (ScriptParameter& k : parameters)
+        if (k.name == t.name && k.turns.empty() && k.by.empty()) {
+          k.by = m.name, k.label += " ← " + m.label;
+          if (k.group.empty()) k.group = "Advanced";
         }
-    }
-    const auto own = values.find(name);
-    if (own == values.end()) return;
-    for (ScriptParameter& k : parameters)
-        if (const auto v = own->second.find(k.name); v != own->second.end()) k.usual = v->second;
+  return parameters;
 }
 
-// What a Canvalry distribution asks of Cavalry's JavaScript (the four names its 26 files use), so one runs as it is.
+void script_first(const std::string& file,
+                  std::vector<ScriptParameter>& parameters) {
+  static std::mutex hold;
+  static std::map<std::string,
+                  std::pair<long long, std::map<std::string,
+                                                std::map<std::string, double>>>>
+      read;  // (each folder's first.tsv, as it was when last written)
+  const size_t slash = file.find_last_of('/');
+  if (slash == std::string::npos) return;
+  const std::string table = file.substr(0, slash) + "/first.tsv",
+                    name = file.substr(slash + 1);
+  struct stat st{};
+  const long long when =
+      stat(table.c_str(), &st) == 0
+          ? (long long)st.st_mtimespec.tv_sec * 1000000000LL +
+                st.st_mtimespec.tv_nsec
+          : -1;
+  std::lock_guard<std::mutex> one(hold);
+  auto& [stamp, values] = read[table];
+  if (stamp != when) {
+    stamp = when, values.clear();
+    std::ifstream in(table);
+    for (std::string line; std::getline(in, line);) {
+      const std::vector<std::string> w = split(line, '\t');
+      if (w.size() >= 3 && !w[0].empty() && w[0][0] != '#')
+        values[w[0]][w[1]] = std::atof(w[2].c_str());
+    }
+  }
+  const auto own = values.find(name);
+  if (own == values.end()) return;
+  for (ScriptParameter& k : parameters)
+    if (const auto v = own->second.find(k.name); v != own->second.end())
+      k.usual = v->second;
+}
+
+// What a Canvalry distribution asks of Cavalry's JavaScript (the four names its
+// 26 files use), so one runs as it is.
 static const char* cavalry_prelude = R"(
 var cavalry = {
   Point: function (x, y) { this.x = x; this.y = y; },
@@ -272,294 +387,478 @@ function animate(i, n, t, k, a) {
 }
 )";
 
-// ease(name, u): a way by its name (easing_names.h), the same expression as a key's stretch; not one of them: as it is.
+// ease(name, u): a way by its name (easing_names.h), the same expression as a
+// key's stretch; not one of them: as it is.
 static std::string ways_prelude() {
-    std::string js = "var ease = (function () { var pow = Math.pow, exp = Math.exp, cos = Math.cos, abs = Math.abs, pi = function () { return Math.PI; }; var w = {";
-    for (const auto& one : named_ways) js += std::string(one.name) + ": function (u) { return " + one.goes + "; }, ";
-    return js + "}; return function (name, u) { u = Math.min(1, Math.max(0, u)); return w[name] ? w[name](u) : u; }; })();\n";
+  std::string js =
+      "var ease = (function () { var pow = Math.pow, exp = Math.exp, cos = "
+      "Math.cos, abs = Math.abs, pi = function () { return Math.PI; }; var w = "
+      "{";
+  for (const auto& one : named_ways)
+    js +=
+        std::string(one.name) + ": function (u) { return " + one.goes + "; }, ";
+  return js +
+         "}; return function (name, u) { u = Math.min(1, Math.max(0, u)); "
+         "return w[name] ? w[name](u) : u; }; })();\n";
 }
 
-static JSValue film_next(JSContext* cx, JSValueConst, int, JSValueConst*) {   // (the film's next picture, 1/60 s on: its size and its bytes)
-    FilmRead* f = (FilmRead*)JS_GetContextOpaque(cx);
-    if (!f->reader || !f->next()) return JS_NULL;
-    JSValue o = JS_NewObject(cx);
-    JS_SetPropertyStr(cx, o, "w", JS_NewInt32(cx, f->w)), JS_SetPropertyStr(cx, o, "h", JS_NewInt32(cx, f->h));
-    JS_SetPropertyStr(cx, o, "data", JS_NewArrayBufferCopy(cx, f->last.data(), f->last.size()));
-    return o;
+static JSValue film_next(JSContext* cx, JSValueConst, int,
+                         JSValueConst*) {  // (the film's next picture, 1/60 s
+                                           // on: its size and its bytes)
+  FilmRead* f = (FilmRead*)JS_GetContextOpaque(cx);
+  if (!f->reader || !f->next()) return JS_NULL;
+  JSValue o = JS_NewObject(cx);
+  JS_SetPropertyStr(cx, o, "w", JS_NewInt32(cx, f->w)),
+      JS_SetPropertyStr(cx, o, "h", JS_NewInt32(cx, f->h));
+  JS_SetPropertyStr(cx, o, "data",
+                    JS_NewArrayBufferCopy(cx, f->last.data(), f->last.size()));
+  return o;
 }
-static JSValue jobs_run(JSContext* cx, JSValueConst, int, JSValueConst*) {   // (what a promise was waiting on came: it goes on)
-    for (JSContext* job = nullptr; JS_ExecutePendingJob(JS_GetRuntime(cx), &job) > 0;) {}
-    return JS_UNDEFINED;
+static JSValue jobs_run(
+    JSContext* cx, JSValueConst, int,
+    JSValueConst*) {  // (what a promise was waiting on came: it goes on)
+  for (JSContext* job = nullptr;
+       JS_ExecutePendingJob(JS_GetRuntime(cx), &job) > 0;) {
+  }
+  return JS_UNDEFINED;
 }
-static JSValue image_read(JSContext* cx, JSValueConst, int, JSValueConst* a) {   // (a picture its sketch came with, by the name it gives it: only the last part of that name, only from that folder)
-    const char* name = JS_ToCString(cx, a[0]);
-    const std::filesystem::path file = std::filesystem::path(((FilmRead*)JS_GetContextOpaque(cx))->beside) / std::filesystem::path(name ? name : "").filename();
-    JS_FreeCString(cx, name);
-    std::error_code wrong;
-    FilmRead f;
-    if (!std::filesystem::is_regular_file(file, wrong) || !f.open(file.string(), 0)) return JS_NULL;
-    JSValue o = JS_NewObject(cx);
-    JS_SetPropertyStr(cx, o, "w", JS_NewInt32(cx, f.w)), JS_SetPropertyStr(cx, o, "h", JS_NewInt32(cx, f.h));
-    JS_SetPropertyStr(cx, o, "data", JS_NewArrayBufferCopy(cx, f.last.data(), f.last.size()));
-    return o;
+static JSValue image_read(
+    JSContext* cx, JSValueConst, int,
+    JSValueConst*
+        a) {  // (a picture its sketch came with, by the name it gives it: only
+              // the last part of that name, only from that folder)
+  const char* name = JS_ToCString(cx, a[0]);
+  const std::filesystem::path file =
+      std::filesystem::path(((FilmRead*)JS_GetContextOpaque(cx))->beside) /
+      std::filesystem::path(name ? name : "").filename();
+  JS_FreeCString(cx, name);
+  std::error_code wrong;
+  FilmRead f;
+  if (!std::filesystem::is_regular_file(file, wrong) ||
+      !f.open(file.string(), 0))
+    return JS_NULL;
+  JSValue o = JS_NewObject(cx);
+  JS_SetPropertyStr(cx, o, "w", JS_NewInt32(cx, f.w)),
+      JS_SetPropertyStr(cx, o, "h", JS_NewInt32(cx, f.h));
+  JS_SetPropertyStr(cx, o, "data",
+                    JS_NewArrayBufferCopy(cx, f.last.data(), f.last.size()));
+  return o;
 }
 struct Script::Own {
-    JSRuntime* rt = nullptr;
-    JSContext* cx = nullptr;
-    JSValue each = JS_UNDEFINED, parameters = JS_UNDEFINED, at = JS_UNDEFINED;
-    std::string trouble, file, src;
-    bool whole = false;   // no each(): the whole file says every copy at once, as a Canvalry distribution (a PointCloud)
-    bool sketch = false;   // a p5.js sketch (p5_stand.h)
-    FilmRead film;         // what its createCapture and createVideo see
-    std::vector<SketchLine> lines;   // its lines that draw
-    JSAtom said[12] = {};  // the names each() says a copy by, made atoms once (JS_GetPropertyStr makes and frees one at every read: quickjs-ng quickjs.c)
+  JSRuntime* rt = nullptr;
+  JSContext* cx = nullptr;
+  JSValue each = JS_UNDEFINED, parameters = JS_UNDEFINED, at = JS_UNDEFINED;
+  std::string trouble, file, src;
+  bool whole = false;   // no each(): the whole file says every copy at once, as
+                        // a Canvalry distribution (a PointCloud)
+  bool sketch = false;  // a p5.js sketch (p5_stand.h)
+  FilmRead film;        // what its createCapture and createVideo see
+  std::vector<SketchLine> lines;  // its lines that draw
+  JSAtom said[12] = {};  // the names each() says a copy by, made atoms once
+                         // (JS_GetPropertyStr makes and frees one at every
+                         // read: quickjs-ng quickjs.c)
 };
-static const char* const script_copy_names[12] = {"x", "y", "z", "size", "rotate", "rotate_x", "rotate_y", "colour", "opacity", "scale_x", "scale_y", "scale_z"};
+static const char* const script_copy_names[12] = {
+    "x",        "y",      "z",       "size",    "rotate",  "rotate_x",
+    "rotate_y", "colour", "opacity", "scale_x", "scale_y", "scale_z"};
 
-Script::Script(const std::string& file, const std::string& p5, const std::string& film) : own(new Own) {
-    std::ifstream in(file);
-    std::stringstream code;
-    code << in.rdbuf();
-    const std::string form = adapter_form(code.str()), src = adapter_js(code.str(), form);   // (a form from the net told as a sketch: adapter.h)
-    own->rt = JS_NewRuntime();
-    JS_SetMemoryLimit(own->rt, 2ull << 30);   // (a sketch keeps its frames: 100,000 rectangles a frame are 1.5 GB a second. It stops with an error, not with the machine)
-    own->cx = JS_NewContext(own->rt);
-    own->file = file, own->src = src;
-    const std::string ways = ways_prelude();
-    JS_FreeValue(own->cx, JS_Eval(own->cx, ways.c_str(), ways.size(), "ways", JS_EVAL_TYPE_GLOBAL));
-    JS_FreeValue(own->cx, JS_Eval(own->cx, cavalry_prelude, std::char_traits<char>::length(cavalry_prelude), "cavalry", JS_EVAL_TYPE_GLOBAL));
-    JS_FreeValue(own->cx, JS_Eval(own->cx, leva_prelude, strlen(leva_prelude), "leva", JS_EVAL_TYPE_GLOBAL));   // (folder(), as its parameters object says its folds: script_leva.h)
-    if (src.find("AE.compile") != std::string::npos) {   // (an After Effects expression the recipe holds: read once with acorn, third_party/js/acorn, then only called: ae_expr.h)
-        const std::filesystem::path where = std::filesystem::path(p5).parent_path().parent_path() / "acorn" / "acorn.js";
-        std::ifstream lib(where);
+Script::Script(const std::string& file, const std::string& p5,
+               const std::string& film)
+    : own(new Own) {
+  std::ifstream in(file);
+  std::stringstream code;
+  code << in.rdbuf();
+  const std::string
+      form = adapter_form(code.str()),
+      src = adapter_js(
+          code.str(),
+          form);  // (a form from the net told as a sketch: adapter.h)
+  own->rt = JS_NewRuntime();
+  JS_SetMemoryLimit(own->rt,
+                    2ull << 30);  // (a sketch keeps its frames: 100,000
+                                  // rectangles a frame are 1.5 GB a second. It
+                                  // stops with an error, not with the machine)
+  own->cx = JS_NewContext(own->rt);
+  own->file = file, own->src = src;
+  const std::string ways = ways_prelude();
+  JS_FreeValue(own->cx, JS_Eval(own->cx, ways.c_str(), ways.size(), "ways",
+                                JS_EVAL_TYPE_GLOBAL));
+  JS_FreeValue(own->cx, JS_Eval(own->cx, cavalry_prelude,
+                                std::char_traits<char>::length(cavalry_prelude),
+                                "cavalry", JS_EVAL_TYPE_GLOBAL));
+  JS_FreeValue(
+      own->cx,
+      JS_Eval(own->cx, leva_prelude, strlen(leva_prelude), "leva",
+              JS_EVAL_TYPE_GLOBAL));  // (folder(), as its parameters object
+                                      // says its folds: script_leva.h)
+  if (src.find("AE.compile") !=
+      std::string::npos) {  // (an After Effects expression the recipe holds:
+                            // read once with acorn, third_party/js/acorn, then
+                            // only called: ae_expr.h)
+    const std::filesystem::path where =
+        std::filesystem::path(p5).parent_path().parent_path() / "acorn" /
+        "acorn.js";
+    std::ifstream lib(where);
+    std::stringstream text;
+    text << lib.rdbuf();
+    const std::string acorn = text.str();
+    if (!lib || acorn.empty())
+      own->trouble = "acorn is not where it is stored: " + where.string();
+    else {
+      JS_FreeValue(own->cx, JS_Eval(own->cx, acorn.c_str(), acorn.size(),
+                                    "acorn.js", JS_EVAL_TYPE_GLOBAL));
+      JS_FreeValue(own->cx, JS_Eval(own->cx, ae_prelude,
+                                    std::char_traits<char>::length(ae_prelude),
+                                    "ae_expr", JS_EVAL_TYPE_GLOBAL));
+    }
+  }
+  const bool sketch = own->sketch = !p5.empty() && script_is_sketch(src);
+  if (sketch) {
+    std::ifstream lib(p5);
+    std::stringstream all;
+    all << lib.rdbuf();
+    const std::string p5js = all.str();
+    JS_FreeValue(own->cx, JS_Eval(own->cx, p5_before,
+                                  std::char_traits<char>::length(p5_before),
+                                  "p5_before", JS_EVAL_TYPE_GLOBAL));
+    JS_FreeValue(own->cx, JS_Eval(own->cx, p5js.c_str(), p5js.size(),
+                                  "p5.min.js", JS_EVAL_TYPE_GLOBAL));
+    for (const char* stand : {p5_after, p5_three, p5_mesh})
+      JS_FreeValue(own->cx, JS_Eval(own->cx, stand,
+                                    std::char_traits<char>::length(stand),
+                                    "p5_after", JS_EVAL_TYPE_GLOBAL));
+    if (const std::string needs = adapter_library(form); !needs.empty()) {
+      std::ifstream one(std::filesystem::path(p5).parent_path().parent_path() /
+                        needs);
+      std::stringstream text;
+      text << one.rdbuf();
+      const std::string lib = adapter_library_text(form, text.str());
+      JS_FreeValue(own->cx, JS_Eval(own->cx, lib.c_str(), lib.size(),
+                                    needs.c_str(), JS_EVAL_TYPE_GLOBAL));
+    }
+    if (script_pushes(src) && src.find("d3.") != std::string::npos)
+      for (const char* lib :
+           {"d3-binarytree", "d3-quadtree", "d3-octree",
+            "d3-force-3d"}) {  // (a relation that pushes with d3's forces,
+                               // third_party/js; the other two it says it needs
+                               // only run forceSimulation, which the world does
+                               // for it: document/evaluate/world.h)
+        std::ifstream one(
+            std::filesystem::path(p5).parent_path().parent_path() / lib /
+            (std::string(lib) + ".min.js"));
         std::stringstream text;
-        text << lib.rdbuf();
-        const std::string acorn = text.str();
-        if (!lib || acorn.empty()) own->trouble = "acorn is not where it is stored: " + where.string();
-        else {
-            JS_FreeValue(own->cx, JS_Eval(own->cx, acorn.c_str(), acorn.size(), "acorn.js", JS_EVAL_TYPE_GLOBAL));
-            JS_FreeValue(own->cx, JS_Eval(own->cx, ae_prelude, std::char_traits<char>::length(ae_prelude), "ae_expr", JS_EVAL_TYPE_GLOBAL));
-        }
+        text << one.rdbuf();
+        const std::string read = text.str();
+        JS_FreeValue(own->cx, JS_Eval(own->cx, read.c_str(), read.size(), lib,
+                                      JS_EVAL_TYPE_GLOBAL));
+      }
+    for (const std::string& needs : adapter_needs(
+             code.str())) {  // (a library from the net: fetched by the adapter,
+                             // it stands beside the sketch)
+      std::ifstream one(std::filesystem::path(file).parent_path() /
+                        std::filesystem::path(file).stem() / needs);
+      std::stringstream text;
+      text << one.rdbuf();
+      const std::string lib = text.str();
+      JS_FreeValue(own->cx, JS_Eval(own->cx, lib.c_str(), lib.size(),
+                                    needs.c_str(), JS_EVAL_TYPE_GLOBAL));
     }
-    const bool sketch = own->sketch = !p5.empty() && script_is_sketch(src);
-    if (sketch) {
-        std::ifstream lib(p5);
-        std::stringstream all;
-        all << lib.rdbuf();
-        const std::string p5js = all.str();
-        JS_FreeValue(own->cx, JS_Eval(own->cx, p5_before, std::char_traits<char>::length(p5_before), "p5_before", JS_EVAL_TYPE_GLOBAL));
-        JS_FreeValue(own->cx, JS_Eval(own->cx, p5js.c_str(), p5js.size(), "p5.min.js", JS_EVAL_TYPE_GLOBAL));
-        for (const char* stand : {p5_after, p5_three, p5_mesh}) JS_FreeValue(own->cx, JS_Eval(own->cx, stand, std::char_traits<char>::length(stand), "p5_after", JS_EVAL_TYPE_GLOBAL));
-        if (const std::string needs = adapter_library(form); !needs.empty()) {
-            std::ifstream one(std::filesystem::path(p5).parent_path().parent_path() / needs);
-            std::stringstream text;
-            text << one.rdbuf();
-            const std::string lib = adapter_library_text(form, text.str());
-            JS_FreeValue(own->cx, JS_Eval(own->cx, lib.c_str(), lib.size(), needs.c_str(), JS_EVAL_TYPE_GLOBAL));
-        }
-        if (script_pushes(src) && src.find("d3.") != std::string::npos) for (const char* lib : {"d3-binarytree", "d3-quadtree", "d3-octree", "d3-force-3d"}) {   // (a relation that pushes with d3's forces, third_party/js; the other two it says it needs only run forceSimulation, which the world does for it: document/evaluate/world.h)
-            std::ifstream one(std::filesystem::path(p5).parent_path().parent_path() / lib / (std::string(lib) + ".min.js"));
-            std::stringstream text;
-            text << one.rdbuf();
-            const std::string read = text.str();
-            JS_FreeValue(own->cx, JS_Eval(own->cx, read.c_str(), read.size(), lib, JS_EVAL_TYPE_GLOBAL));
-        }
-        for (const std::string& needs : adapter_needs(code.str())) {   // (a library from the net: fetched by the adapter, it stands beside the sketch)
-            std::ifstream one(std::filesystem::path(file).parent_path() / std::filesystem::path(file).stem() / needs);
-            std::stringstream text;
-            text << one.rdbuf();
-            const std::string lib = text.str();
-            JS_FreeValue(own->cx, JS_Eval(own->cx, lib.c_str(), lib.size(), needs.c_str(), JS_EVAL_TYPE_GLOBAL));
-        }
-        if (!film.empty() && (src.find("createCapture") != std::string::npos || src.find("createVideo") != std::string::npos || src.find("loadImage") != std::string::npos)) own->film.open(film, 320);   // (as much of it as a webcam sketch reads, and light)
-        JS_SetContextOpaque(own->cx, &own->film);
-        own->film.beside = (std::filesystem::path(file).parent_path() / std::filesystem::path(file).stem()).string();
-        JSValue g = JS_GetGlobalObject(own->cx);
-        JS_SetPropertyStr(own->cx, g, "__film_next", JS_NewCFunction(own->cx, film_next, "__film_next", 0));
-        JS_SetPropertyStr(own->cx, g, "__image_read", JS_NewCFunction(own->cx, image_read, "__image_read", 1));
-        JS_SetPropertyStr(own->cx, g, "__jobs", JS_NewCFunction(own->cx, jobs_run, "__jobs", 0));
-        JS_FreeValue(own->cx, g);
-    }
-    std::string body = src;
-    if (sketch) {
-        std::string marked = sketch_marked(src, &own->lines);
-        JSValue told = JS_Eval(own->cx, marked.c_str(), marked.size(), file.c_str(), JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
-        if (JS_IsException(told)) JS_FreeValue(own->cx, JS_GetException(own->cx)), own->lines.clear();   // (a file this reader misread runs as it is, its lines not told)
-        else body = std::move(marked);
-        JS_FreeValue(own->cx, told);
-    }
-    const std::string run = sketch ? body + "\n;\n" + p5_start : src;
-    JSValue ran = JS_Eval(own->cx, run.c_str(), run.size(), file.c_str(), JS_EVAL_TYPE_GLOBAL);
-    if (sketch) for (JSContext* job = nullptr; JS_ExecutePendingJob(own->rt, &job) > 0;) {}   // (an async setup(), as p5 2 sketches are, goes on to its end)
-    if (JS_IsException(ran)) {
-        JSValue e = JS_GetException(own->cx);
-        JSValue stack = JS_GetPropertyStr(own->cx, e, "stack");
-        const char* s = JS_ToCString(own->cx, e);
-        const char* where = JS_IsString(stack) ? JS_ToCString(own->cx, stack) : nullptr;
-        own->trouble = std::string("the script ") + file + ": " + (s ? s : "?") + (where ? std::string(" ") + where : "");
-        JS_FreeCString(own->cx, s), JS_FreeValue(own->cx, e);
-        if (where) JS_FreeCString(own->cx, where);
-        JS_FreeValue(own->cx, stack);
-    }
-    JS_FreeValue(own->cx, ran);
+    if (!film.empty() && (src.find("createCapture") != std::string::npos ||
+                          src.find("createVideo") != std::string::npos ||
+                          src.find("loadImage") != std::string::npos))
+      own->film.open(
+          film, 320);  // (as much of it as a webcam sketch reads, and light)
+    JS_SetContextOpaque(own->cx, &own->film);
+    own->film.beside = (std::filesystem::path(file).parent_path() /
+                        std::filesystem::path(file).stem())
+                           .string();
     JSValue g = JS_GetGlobalObject(own->cx);
-    own->each = JS_GetPropertyStr(own->cx, g, "each");
+    JS_SetPropertyStr(own->cx, g, "__film_next",
+                      JS_NewCFunction(own->cx, film_next, "__film_next", 0));
+    JS_SetPropertyStr(own->cx, g, "__image_read",
+                      JS_NewCFunction(own->cx, image_read, "__image_read", 1));
+    JS_SetPropertyStr(own->cx, g, "__jobs",
+                      JS_NewCFunction(own->cx, jobs_run, "__jobs", 0));
     JS_FreeValue(own->cx, g);
-    own->whole = !JS_IsFunction(own->cx, own->each);
-    own->parameters = JS_NewObject(own->cx), own->at = JS_NewObject(own->cx);
+  }
+  std::string body = src;
+  if (sketch) {
+    std::string marked = sketch_marked(src, &own->lines);
+    JSValue told = JS_Eval(own->cx, marked.c_str(), marked.size(), file.c_str(),
+                           JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
+    if (JS_IsException(told))
+      JS_FreeValue(own->cx, JS_GetException(own->cx)),
+          own->lines.clear();  // (a file this reader misread runs as it is, its
+                               // lines not told)
+    else
+      body = std::move(marked);
+    JS_FreeValue(own->cx, told);
+  }
+  const std::string run = sketch ? body + "\n;\n" + p5_start : src;
+  JSValue ran = JS_Eval(own->cx, run.c_str(), run.size(), file.c_str(),
+                        JS_EVAL_TYPE_GLOBAL);
+  if (sketch)
+    for (JSContext* job = nullptr; JS_ExecutePendingJob(own->rt, &job) > 0;) {
+    }  // (an async setup(), as p5 2 sketches are, goes on to its end)
+  if (JS_IsException(ran)) {
+    JSValue e = JS_GetException(own->cx);
+    JSValue stack = JS_GetPropertyStr(own->cx, e, "stack");
+    const char* s = JS_ToCString(own->cx, e);
+    const char* where =
+        JS_IsString(stack) ? JS_ToCString(own->cx, stack) : nullptr;
+    own->trouble = std::string("the script ") + file + ": " + (s ? s : "?") +
+                   (where ? std::string(" ") + where : "");
+    JS_FreeCString(own->cx, s), JS_FreeValue(own->cx, e);
+    if (where) JS_FreeCString(own->cx, where);
+    JS_FreeValue(own->cx, stack);
+  }
+  JS_FreeValue(own->cx, ran);
+  JSValue g = JS_GetGlobalObject(own->cx);
+  own->each = JS_GetPropertyStr(own->cx, g, "each");
+  JS_FreeValue(own->cx, g);
+  own->whole = !JS_IsFunction(own->cx, own->each);
+  own->parameters = JS_NewObject(own->cx), own->at = JS_NewObject(own->cx);
 }
 Script::~Script() {
-    if (!own->cx) return;
-    JS_FreeValue(own->cx, own->each), JS_FreeValue(own->cx, own->parameters), JS_FreeValue(own->cx, own->at);
-    for (JSAtom a : own->said) if (a != JS_ATOM_NULL) JS_FreeAtom(own->cx, a);
-    JS_FreeContext(own->cx), JS_FreeRuntime(own->rt);
+  if (!own->cx) return;
+  JS_FreeValue(own->cx, own->each), JS_FreeValue(own->cx, own->parameters),
+      JS_FreeValue(own->cx, own->at);
+  for (JSAtom a : own->said)
+    if (a != JS_ATOM_NULL) JS_FreeAtom(own->cx, a);
+  JS_FreeContext(own->cx), JS_FreeRuntime(own->rt);
 }
 bool Script::ok() const { return own->trouble.empty(); }
 bool Script::sketch() const { return own->sketch; }
 bool Script::lays() const { return own->cx && !own->whole && !own->sketch; }
 static std::string script_said(JSContext* cx, const char* js) {
-    JS_UpdateStackTop(JS_GetRuntime(cx));   // (asked on whichever thread asks, as numbers() below: quickjs.h, "should be called when changing thread")
-    JSValue out = JS_Eval(cx, js, strlen(js), "sketch", JS_EVAL_TYPE_GLOBAL);
-    if (JS_IsException(out)) {   // (its draw() has failed where it is asked: said here, and it goes on as far as it got)
-        JSValue e = JS_GetException(cx), stack = JS_GetPropertyStr(cx, e, "stack");
-        const char* m = JS_ToCString(cx, e), *where = JS_IsString(stack) ? JS_ToCString(cx, stack) : nullptr;
-        std::fprintf(stderr, "the sketch, asked %.40s: %s\n%s\n", js, m ? m : "?", where ? where : "");
-        if (where) JS_FreeCString(cx, where);
-        JS_FreeCString(cx, m), JS_FreeValue(cx, stack), JS_FreeValue(cx, e);
-    }
-    const char* s = JS_IsException(out) ? nullptr : JS_ToCString(cx, out);
-    const std::string said = s ? s : "";
-    if (s) JS_FreeCString(cx, s);
-    JS_FreeValue(cx, out);
-    return said;
+  JS_UpdateStackTop(JS_GetRuntime(
+      cx));  // (asked on whichever thread asks, as numbers() below: quickjs.h,
+             // "should be called when changing thread")
+  JSValue out = JS_Eval(cx, js, strlen(js), "sketch", JS_EVAL_TYPE_GLOBAL);
+  if (JS_IsException(out)) {  // (its draw() has failed where it is asked: said
+                              // here, and it goes on as far as it got)
+    JSValue e = JS_GetException(cx), stack = JS_GetPropertyStr(cx, e, "stack");
+    const char *m = JS_ToCString(cx, e),
+               *where = JS_IsString(stack) ? JS_ToCString(cx, stack) : nullptr;
+    std::fprintf(stderr, "the sketch, asked %.40s: %s\n%s\n", js, m ? m : "?",
+                 where ? where : "");
+    if (where) JS_FreeCString(cx, where);
+    JS_FreeCString(cx, m), JS_FreeValue(cx, stack), JS_FreeValue(cx, e);
+  }
+  const char* s = JS_IsException(out) ? nullptr : JS_ToCString(cx, out);
+  const std::string said = s ? s : "";
+  if (s) JS_FreeCString(cx, s);
+  JS_FreeValue(cx, out);
+  return said;
 }
-std::string Script::said(const std::string& js) { return own->sketch && ok() ? script_said(own->cx, js.c_str()) : ""; }
+std::string Script::said(const std::string& js) {
+  return own->sketch && ok() ? script_said(own->cx, js.c_str()) : "";
+}
 std::vector<uint8_t> Script::bytes(const std::string& js) {
-    std::vector<uint8_t> out;
-    if (!own->sketch || !ok()) return out;
-    script_said(own->cx, js.c_str());
-    JSValue g = JS_GetGlobalObject(own->cx), a = JS_GetPropertyStr(own->cx, g, "__bytes");
-    size_t from = 0, bytes = 0, each = 0, size = 0;
-    JSValue buffer = JS_GetTypedArrayBuffer(own->cx, a, &from, &bytes, &each);
-    if (const uint8_t* p = JS_IsException(buffer) ? nullptr : JS_GetArrayBuffer(own->cx, &size, buffer)) out.assign(p + from, p + from + bytes);
-    JS_FreeValue(own->cx, buffer), JS_FreeValue(own->cx, a), JS_FreeValue(own->cx, g);
-    return out;
+  std::vector<uint8_t> out;
+  if (!own->sketch || !ok()) return out;
+  script_said(own->cx, js.c_str());
+  JSValue g = JS_GetGlobalObject(own->cx),
+          a = JS_GetPropertyStr(own->cx, g, "__bytes");
+  size_t from = 0, bytes = 0, each = 0, size = 0;
+  JSValue buffer = JS_GetTypedArrayBuffer(own->cx, a, &from, &bytes, &each);
+  if (const uint8_t* p = JS_IsException(buffer)
+                             ? nullptr
+                             : JS_GetArrayBuffer(own->cx, &size, buffer))
+    out.assign(p + from, p + from + bytes);
+  JS_FreeValue(own->cx, buffer), JS_FreeValue(own->cx, a),
+      JS_FreeValue(own->cx, g);
+  return out;
 }
-int Script::most() { return own->sketch && ok() ? std::atoi(script_said(own->cx, "__most()").c_str()) : 0; }
-std::string Script::shape() { return own->sketch && ok() ? script_said(own->cx, "__shape()") : ""; }
-bool Script::flat() { return own->sketch && ok() && script_said(own->cx, "__2d") == "true"; }
-float Script::density() { return own->sketch && ok() ? (float)std::atof(script_said(own->cx, "pixelDensity()").c_str()) : 1.f; }
-int Script::width() { return own->sketch && ok() ? std::atoi(script_said(own->cx, "width").c_str()) : 0; }
-int Script::height() { return own->sketch && ok() ? std::atoi(script_said(own->cx, "height").c_str()) : 0; }
+int Script::most() {
+  return own->sketch && ok()
+             ? std::atoi(script_said(own->cx, "__most()").c_str())
+             : 0;
+}
+std::string Script::shape() {
+  return own->sketch && ok() ? script_said(own->cx, "__shape()") : "";
+}
+bool Script::flat() {
+  return own->sketch && ok() && script_said(own->cx, "__2d") == "true";
+}
+float Script::density() {
+  return own->sketch && ok()
+             ? (float)std::atof(script_said(own->cx, "pixelDensity()").c_str())
+             : 1.f;
+}
+int Script::width() {
+  return own->sketch && ok() ? std::atoi(script_said(own->cx, "width").c_str())
+                             : 0;
+}
+int Script::height() {
+  return own->sketch && ok() ? std::atoi(script_said(own->cx, "height").c_str())
+                             : 0;
+}
 std::vector<int> Script::lines() const {
-    std::vector<int> all;
-    for (const SketchLine& l : own->lines) all.push_back(l.line);
-    return all;
+  std::vector<int> all;
+  for (const SketchLine& l : own->lines) all.push_back(l.line);
+  return all;
 }
-std::vector<double> Script::paints(int frame, int had, int pic) { return numbers("__paints(" + std::to_string(frame) + "," + std::to_string(had) + "," + std::to_string(pic) + ")"); }
+std::vector<double> Script::paints(int frame, int had, int pic) {
+  return numbers("__paints(" + std::to_string(frame) + "," +
+                 std::to_string(had) + "," + std::to_string(pic) + ")");
+}
 std::vector<double> Script::numbers(const std::string& js) {
-    JS_UpdateStackTop(own->rt);   // (asked on whichever thread asks: a question's isolate may work out a relation the hand's has not, as anime_ease below)
-    JSValue out = JS_Eval(own->cx, js.c_str(), js.size(), "sketch", JS_EVAL_TYPE_GLOBAL);
-    if (JS_IsException(out) && own->trouble.empty()) {   // (its draw() has failed: it stays as it was, and says so once)
-        JSValue e = JS_GetException(own->cx);
-        const char* s = JS_ToCString(own->cx, e);
-        own->trouble = std::string("the sketch ") + own->file + ": " + (s ? s : "?");
-        std::fprintf(stderr, "%s\n", own->trouble.c_str());
-        JS_FreeCString(own->cx, s), JS_FreeValue(own->cx, e);
-    }
-    size_t at = 0, bytes = 0, unit = 0, size = 0;
-    JSValue buffer = JS_IsException(out) ? JS_EXCEPTION : JS_GetTypedArrayBuffer(own->cx, out, &at, &bytes, &unit);
-    std::vector<double> all;
-    if (const uint8_t* data = JS_IsException(buffer) ? nullptr : JS_GetArrayBuffer(own->cx, &size, buffer)) {
-        const double* from = (const double*)(data + at);
-        all.assign(from, from + bytes / sizeof(double));
-    }
-    JS_FreeValue(own->cx, buffer), JS_FreeValue(own->cx, out);
-    return all;
+  JS_UpdateStackTop(
+      own->rt);  // (asked on whichever thread asks: a question's isolate may
+                 // work out a relation the hand's has not, as anime_ease below)
+  JSValue out =
+      JS_Eval(own->cx, js.c_str(), js.size(), "sketch", JS_EVAL_TYPE_GLOBAL);
+  if (JS_IsException(out) &&
+      own->trouble.empty()) {  // (its draw() has failed: it stays as it was,
+                               // and says so once)
+    JSValue e = JS_GetException(own->cx);
+    const char* s = JS_ToCString(own->cx, e);
+    own->trouble =
+        std::string("the sketch ") + own->file + ": " + (s ? s : "?");
+    std::fprintf(stderr, "%s\n", own->trouble.c_str());
+    JS_FreeCString(own->cx, s), JS_FreeValue(own->cx, e);
+  }
+  size_t at = 0, bytes = 0, unit = 0, size = 0;
+  JSValue buffer = JS_IsException(out) ? JS_EXCEPTION
+                                       : JS_GetTypedArrayBuffer(
+                                             own->cx, out, &at, &bytes, &unit);
+  std::vector<double> all;
+  if (const uint8_t* data = JS_IsException(buffer)
+                                ? nullptr
+                                : JS_GetArrayBuffer(own->cx, &size, buffer)) {
+    const double* from = (const double*)(data + at);
+    all.assign(from, from + bytes / sizeof(double));
+  }
+  JS_FreeValue(own->cx, buffer), JS_FreeValue(own->cx, out);
+  return all;
 }
 const std::string& Script::trouble() const { return own->trouble; }
 
-std::vector<ScriptCopy> Script::copies(int n, double t, const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words, double unit, const std::vector<ScriptCopy>& before) {
-    std::vector<ScriptCopy> all((size_t)std::max(n, 0));
-    if (!ok()) return all;
-    if (!own->whole) {   // (the parameters told once, then each copy asked)
-        parameters(numbers, words);
-        JS_SetPropertyStr(own->cx, own->parameters, "px", JS_NewFloat64(own->cx, unit));   // (k.px: a pixel of the document in the stage's units, so an expression written in After Effects' pixels says where)
-        for (int i = 0; i < n; ++i) all[(size_t)i] = ask(i, n, t, (size_t)i < before.size() ? before[(size_t)i] : ScriptCopy{});
-        return all;
-    }
-    JSContext* cx = own->cx;
-    JS_UpdateStackTop(own->rt);
-    JSValue g = JS_GetGlobalObject(cx);
-    for (const auto& [name, v] : numbers) JS_SetPropertyStr(cx, g, name.c_str(), JS_NewFloat64(cx, v));
-    for (const auto& [name, w] : words) JS_SetPropertyStr(cx, g, name.c_str(), JS_NewString(cx, w.c_str()));
-    JS_SetPropertyStr(cx, g, "time", JS_NewFloat64(cx, t)), JS_SetPropertyStr(cx, g, "frame", JS_NewFloat64(cx, t * 60.0));
-    JS_FreeValue(cx, g);
-    JSValue out = JS_Eval(cx, own->src.c_str(), own->src.size(), own->file.c_str(), JS_EVAL_TYPE_GLOBAL);
-    if (JS_IsException(out)) {
-        JSValue e = JS_GetException(cx);
-        const char* s = JS_ToCString(cx, e);
-        own->trouble = std::string("the script threw: ") + (s ? s : "?");
-        JS_FreeCString(cx, s), JS_FreeValue(cx, e);
-        return all;
-    }
-    const auto list = [&](const char* name, auto put) {   // (a cloud's points or sizes, each an {x, y})
+std::vector<ScriptCopy> Script::copies(
+    int n, double t, const std::map<std::string, double>& numbers,
+    const std::map<std::string, std::string>& words, double unit,
+    const std::vector<ScriptCopy>& before) {
+  std::vector<ScriptCopy> all((size_t)std::max(n, 0));
+  if (!ok()) return all;
+  if (!own->whole) {  // (the parameters told once, then each copy asked)
+    parameters(numbers, words);
+    JS_SetPropertyStr(
+        own->cx, own->parameters, "px",
+        JS_NewFloat64(own->cx,
+                      unit));  // (k.px: a pixel of the document in the stage's
+                               // units, so an expression written in After
+                               // Effects' pixels says where)
+    for (int i = 0; i < n; ++i)
+      all[(size_t)i] =
+          ask(i, n, t,
+              (size_t)i < before.size() ? before[(size_t)i] : ScriptCopy{});
+    return all;
+  }
+  JSContext* cx = own->cx;
+  JS_UpdateStackTop(own->rt);
+  JSValue g = JS_GetGlobalObject(cx);
+  for (const auto& [name, v] : numbers)
+    JS_SetPropertyStr(cx, g, name.c_str(), JS_NewFloat64(cx, v));
+  for (const auto& [name, w] : words)
+    JS_SetPropertyStr(cx, g, name.c_str(), JS_NewString(cx, w.c_str()));
+  JS_SetPropertyStr(cx, g, "time", JS_NewFloat64(cx, t)),
+      JS_SetPropertyStr(cx, g, "frame", JS_NewFloat64(cx, t * 60.0));
+  JS_FreeValue(cx, g);
+  JSValue out = JS_Eval(cx, own->src.c_str(), own->src.size(),
+                        own->file.c_str(), JS_EVAL_TYPE_GLOBAL);
+  if (JS_IsException(out)) {
+    JSValue e = JS_GetException(cx);
+    const char* s = JS_ToCString(cx, e);
+    own->trouble = std::string("the script threw: ") + (s ? s : "?");
+    JS_FreeCString(cx, s), JS_FreeValue(cx, e);
+    return all;
+  }
+  const auto list =
+      [&](const char* name,
+          auto put) {  // (a cloud's points or sizes, each an {x, y})
         JSValue a = JS_GetPropertyStr(cx, out, name);
         int64_t len = 0;
         if (JS_IsArray(a)) JS_GetLength(cx, a, &len);
         for (int64_t i = 0; i < len && i < n; ++i) {
-            JSValue p = JS_GetPropertyUint32(cx, a, (uint32_t)i), x = JS_GetPropertyStr(cx, p, "x"), y = JS_GetPropertyStr(cx, p, "y");
-            double px = 0, py = 0;
-            JS_ToFloat64(cx, &px, x), JS_ToFloat64(cx, &py, y);
-            put(all[(size_t)i], px, py);
-            JS_FreeValue(cx, x), JS_FreeValue(cx, y), JS_FreeValue(cx, p);
+          JSValue p = JS_GetPropertyUint32(cx, a, (uint32_t)i),
+                  x = JS_GetPropertyStr(cx, p, "x"),
+                  y = JS_GetPropertyStr(cx, p, "y");
+          double px = 0, py = 0;
+          JS_ToFloat64(cx, &px, x), JS_ToFloat64(cx, &py, y);
+          put(all[(size_t)i], px, py);
+          JS_FreeValue(cx, x), JS_FreeValue(cx, y), JS_FreeValue(cx, p);
         }
         JS_FreeValue(cx, a);
         return len;
-    };
-    const int64_t built = list("points", [&](ScriptCopy& c, double x, double y) { c.x = x * unit, c.y = y * unit; });
-    list("sizes", [](ScriptCopy& c, double x, double) { c.size = x; });
-    for (int64_t i = built; i < n; ++i) all[(size_t)i].size = 0;   // (copies past the cloud's last point are not seen)
-    JS_FreeValue(cx, out);
-    return all;
+      };
+  const int64_t built = list("points", [&](ScriptCopy& c, double x, double y) {
+    c.x = x * unit, c.y = y * unit;
+  });
+  list("sizes", [](ScriptCopy& c, double x, double) { c.size = x; });
+  for (int64_t i = built; i < n; ++i)
+    all[(size_t)i].size =
+        0;  // (copies past the cloud's last point are not seen)
+  JS_FreeValue(cx, out);
+  return all;
 }
 
-void Script::parameters(const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words) {
-    JSContext* cx = own->cx;
-    for (const auto& [name, v] : numbers) JS_SetPropertyStr(cx, own->parameters, name.c_str(), JS_NewFloat64(cx, v));
-    for (const auto& [name, w] : words) JS_SetPropertyStr(cx, own->parameters, name.c_str(), JS_NewString(cx, w.c_str()));
-    leva_colours(cx, own->parameters, numbers, words);   // (k.tint "#rrggbb", as leva returns a colour: script_leva.h)
+void Script::parameters(const std::map<std::string, double>& numbers,
+                        const std::map<std::string, std::string>& words) {
+  JSContext* cx = own->cx;
+  for (const auto& [name, v] : numbers)
+    JS_SetPropertyStr(cx, own->parameters, name.c_str(), JS_NewFloat64(cx, v));
+  for (const auto& [name, w] : words)
+    JS_SetPropertyStr(cx, own->parameters, name.c_str(),
+                      JS_NewString(cx, w.c_str()));
+  leva_colours(
+      cx, own->parameters, numbers,
+      words);  // (k.tint "#rrggbb", as leva returns a colour: script_leva.h)
 }
-ScriptCopy Script::ask(int i, int n, double t, const ScriptCopy& at) {   // (each(), the parameters as last told; at: where this copy lies so far, its fifth: one object, told again for each copy)
-    ScriptCopy c;
-    JSContext* cx = own->cx;
-    JS_UpdateStackTop(own->rt);
-    if (own->said[0] == JS_ATOM_NULL) for (int k = 0; k < 12; ++k) own->said[k] = JS_NewAtom(cx, script_copy_names[k]);
-    JS_SetProperty(cx, own->at, own->said[0], JS_NewFloat64(cx, at.x)), JS_SetProperty(cx, own->at, own->said[1], JS_NewFloat64(cx, at.y)), JS_SetProperty(cx, own->at, own->said[2], JS_NewFloat64(cx, at.z));
-    JSValue args[5] = {JS_NewInt32(cx, i), JS_NewInt32(cx, n), JS_NewFloat64(cx, t), JS_DupValue(cx, own->parameters), JS_DupValue(cx, own->at)};
-    JSValue out = JS_Call(cx, own->each, JS_UNDEFINED, 5, args);
-    JS_FreeValue(cx, args[3]), JS_FreeValue(cx, args[4]);
-    if (JS_IsException(out)) {
-        JSValue e = JS_GetException(cx);
-        const char* s = JS_ToCString(cx, e);
-        own->trouble = std::string("each() threw: ") + (s ? s : "?");
-        JS_FreeCString(cx, s), JS_FreeValue(cx, e);
-        return c;
-    }
-    double* const to[12] = {&c.x, &c.y, &c.z, &c.size, &c.rotate, &c.rotate_x, &c.rotate_y, &c.colour, &c.opacity, &c.scale_x, &c.scale_y, &c.scale_z};
-    for (int k = 0; k < 12; ++k) {
-        JSValue v = JS_GetProperty(cx, out, own->said[k]);
-        if (JS_IsNumber(v)) JS_ToFloat64(cx, to[k], v);
-        JS_FreeValue(cx, v);
-    }
-    JS_FreeValue(cx, out);
+ScriptCopy Script::ask(
+    int i, int n, double t,
+    const ScriptCopy&
+        at) {  // (each(), the parameters as last told; at: where this copy lies
+               // so far, its fifth: one object, told again for each copy)
+  ScriptCopy c;
+  JSContext* cx = own->cx;
+  JS_UpdateStackTop(own->rt);
+  if (own->said[0] == JS_ATOM_NULL)
+    for (int k = 0; k < 12; ++k)
+      own->said[k] = JS_NewAtom(cx, script_copy_names[k]);
+  JS_SetProperty(cx, own->at, own->said[0], JS_NewFloat64(cx, at.x)),
+      JS_SetProperty(cx, own->at, own->said[1], JS_NewFloat64(cx, at.y)),
+      JS_SetProperty(cx, own->at, own->said[2], JS_NewFloat64(cx, at.z));
+  JSValue args[5] = {JS_NewInt32(cx, i), JS_NewInt32(cx, n),
+                     JS_NewFloat64(cx, t), JS_DupValue(cx, own->parameters),
+                     JS_DupValue(cx, own->at)};
+  JSValue out = JS_Call(cx, own->each, JS_UNDEFINED, 5, args);
+  JS_FreeValue(cx, args[3]), JS_FreeValue(cx, args[4]);
+  if (JS_IsException(out)) {
+    JSValue e = JS_GetException(cx);
+    const char* s = JS_ToCString(cx, e);
+    own->trouble = std::string("each() threw: ") + (s ? s : "?");
+    JS_FreeCString(cx, s), JS_FreeValue(cx, e);
     return c;
+  }
+  double* const to[12] = {&c.x,       &c.y,        &c.z,        &c.size,
+                          &c.rotate,  &c.rotate_x, &c.rotate_y, &c.colour,
+                          &c.opacity, &c.scale_x,  &c.scale_y,  &c.scale_z};
+  for (int k = 0; k < 12; ++k) {
+    JSValue v = JS_GetProperty(cx, out, own->said[k]);
+    if (JS_IsNumber(v)) JS_ToFloat64(cx, to[k], v);
+    JS_FreeValue(cx, v);
+  }
+  JS_FreeValue(cx, out);
+  return c;
 }
 
-// anime.js's easings (third_party/anime, MIT) run as they are: one QuickJS context for the whole library, the bundle
-// read once from where the library keeps it, and each ease said made once and kept by what it says. irregular() draws
-// its points with Math.random: while an ease is made, anime.js's own seeded one stands in, its seed from the words, so
-// the same words give the same curve every time.
+// anime.js's easings (third_party/anime, MIT) run as they are: one QuickJS
+// context for the whole library, the bundle read once from where the library
+// keeps it, and each ease said made once and kept by what it says. irregular()
+// draws its points with Math.random: while an ease is made, anime.js's own
+// seeded one stands in, its seed from the words, so the same words give the
+// same curve every time.
 static const char anime_prelude[] = R"(
 var __eases = {};
 function __ease(said) {
@@ -576,38 +875,50 @@ function __ease(said) {
 }
 function __ease_at(said, u) { return __ease(said)(Math.min(1, Math.max(0, u))); }
 )";
-double anime_ease(const std::string& bundle, const std::string& said, double u, std::string* trouble) {
-    static std::mutex one;
-    static JSRuntime* rt = nullptr;
-    static JSContext* cx = nullptr;
-    static JSValue at = JS_UNDEFINED;
-    static std::string why;
-    std::lock_guard<std::mutex> held(one);
-    if (!rt) {
-        rt = JS_NewRuntime(), cx = JS_NewContext(rt);
-        std::ifstream in(bundle);
-        std::stringstream code;
-        code << "globalThis.setImmediate = function () { return 0; }; globalThis.clearImmediate = function () {};\n" << in.rdbuf() << anime_prelude;
-        const std::string src = code.str();
-        JSValue ran = JS_Eval(cx, src.c_str(), src.size(), "anime", JS_EVAL_TYPE_GLOBAL);
-        if (!in || JS_IsException(ran)) why = "anime.js is not where it is stored: " + bundle;
-        JS_FreeValue(cx, ran);
-        JSValue g = JS_GetGlobalObject(cx);
-        at = JS_GetPropertyStr(cx, g, "__ease_at");
-        JS_FreeValue(cx, g);
-    }
-    if (!why.empty()) { if (trouble) *trouble = why; return u; }
-    JS_UpdateStackTop(rt);   // (asked on whichever thread asks: the hand's on the stage, the window's to draw a curve. QuickJS measures its stack from where it last was told)
-    JSValue args[2] = {JS_NewStringLen(cx, said.c_str(), said.size()), JS_NewFloat64(cx, u)};
-    JSValue out = JS_Call(cx, at, JS_UNDEFINED, 2, args);
-    JS_FreeValue(cx, args[0]);
-    double v = u;
-    if (JS_IsException(out)) {
-        JSValue e = JS_GetException(cx);
-        const char* s = JS_ToCString(cx, e);
-        if (trouble) *trouble = s ? s : "?";
-        JS_FreeCString(cx, s), JS_FreeValue(cx, e);
-    } else JS_ToFloat64(cx, &v, out);
-    JS_FreeValue(cx, out);
-    return v;
+double anime_ease(const std::string& bundle, const std::string& said, double u,
+                  std::string* trouble) {
+  static std::mutex one;
+  static JSRuntime* rt = nullptr;
+  static JSContext* cx = nullptr;
+  static JSValue at = JS_UNDEFINED;
+  static std::string why;
+  std::lock_guard<std::mutex> held(one);
+  if (!rt) {
+    rt = JS_NewRuntime(), cx = JS_NewContext(rt);
+    std::ifstream in(bundle);
+    std::stringstream code;
+    code << "globalThis.setImmediate = function () { return 0; }; "
+            "globalThis.clearImmediate = function () {};\n"
+         << in.rdbuf() << anime_prelude;
+    const std::string src = code.str();
+    JSValue ran =
+        JS_Eval(cx, src.c_str(), src.size(), "anime", JS_EVAL_TYPE_GLOBAL);
+    if (!in || JS_IsException(ran))
+      why = "anime.js is not where it is stored: " + bundle;
+    JS_FreeValue(cx, ran);
+    JSValue g = JS_GetGlobalObject(cx);
+    at = JS_GetPropertyStr(cx, g, "__ease_at");
+    JS_FreeValue(cx, g);
+  }
+  if (!why.empty()) {
+    if (trouble) *trouble = why;
+    return u;
+  }
+  JS_UpdateStackTop(rt);  // (asked on whichever thread asks: the hand's on the
+                          // stage, the window's to draw a curve. QuickJS
+                          // measures its stack from where it last was told)
+  JSValue args[2] = {JS_NewStringLen(cx, said.c_str(), said.size()),
+                     JS_NewFloat64(cx, u)};
+  JSValue out = JS_Call(cx, at, JS_UNDEFINED, 2, args);
+  JS_FreeValue(cx, args[0]);
+  double v = u;
+  if (JS_IsException(out)) {
+    JSValue e = JS_GetException(cx);
+    const char* s = JS_ToCString(cx, e);
+    if (trouble) *trouble = s ? s : "?";
+    JS_FreeCString(cx, s), JS_FreeValue(cx, e);
+  } else
+    JS_ToFloat64(cx, &v, out);
+  JS_FreeValue(cx, out);
+  return v;
 }

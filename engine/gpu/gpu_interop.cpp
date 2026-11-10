@@ -1,9 +1,8 @@
 // Implements gpu_interop.h.
 #include "gpu_interop.h"
 
-#include <filament/Engine.h>
-
 #include <backend/platforms/WebGPUPlatform.h>
+#include <filament/Engine.h>
 
 #include "details/Engine.h"
 
@@ -11,16 +10,20 @@ namespace interop {
 using namespace filament;
 
 static backend::WebGPUPlatform* platform(Engine* engine) {
-    return engine->getBackend() == backend::Backend::WEBGPU ? static_cast<backend::WebGPUPlatform*>(engine->getPlatform()) : nullptr;
+  return engine->getBackend() == backend::Backend::WEBGPU
+             ? static_cast<backend::WebGPUPlatform*>(engine->getPlatform())
+             : nullptr;
 }
 void* device(Engine* engine) {
-    backend::WebGPUPlatform* p = platform(engine);
-    return p ? p->getDevice().Get() : nullptr;
+  backend::WebGPUPlatform* p = platform(engine);
+  return p ? p->getDevice().Get() : nullptr;
 }
 void* instance(Engine* engine) {
-    backend::WebGPUPlatform* p = platform(engine);
-    return p ? p->getInstance().Get() : nullptr;
+  backend::WebGPUPlatform* p = platform(engine);
+  return p ? p->getInstance().Get() : nullptr;
 }
-void on_driver(Engine* engine, std::function<void()> work) { downcast(engine)->getDriverApi().queueCommand(std::move(work)); }
+void on_driver(Engine* engine, std::function<void()> work) {
+  downcast(engine)->getDriverApi().queueCommand(std::move(work));
+}
 void submit(Engine* engine) { downcast(engine)->getDriverApi().flush(); }
 }  // namespace interop

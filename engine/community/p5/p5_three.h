@@ -1,7 +1,8 @@
 #ifndef MOTOLII_COMMUNITY_P5_P5_THREE_H_
 #define MOTOLII_COMMUNITY_P5_P5_THREE_H_
 
-// three.js in a p5.js sketch's script (p5_stand.h), run after p5_after and before the library itself.
+// three.js in a p5.js sketch's script (p5_stand.h), run after p5_after and
+// before the library itself.
 
 inline const char* const p5_three = R"(
 // A three.js scene with no WebGLRenderer: three.core.js makes everything else. What its renderer is told to draw is taken

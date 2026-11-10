@@ -3,41 +3,48 @@
 
 // JavaScript prelude that compiles and runs After Effects expressions.
 //
-// The prelude is a raw string, ae_prelude, that the caller evaluates in a QuickJS-ng context
-// when a script uses AE.compile. An expression is parsed once by AE.compile, which returns a
-// function; each frame only calls that function. The parser is acorn
-// (third_party/js/acorn, MIT license), loaded into the context only when the script uses
-// AE.compile.
+// The prelude is a raw string, ae_prelude, that the caller evaluates in a
+// QuickJS-ng context when a script uses AE.compile. An expression is parsed
+// once by AE.compile, which returns a function; each frame only calls that
+// function. The parser is acorn (third_party/js/acorn, MIT license), loaded
+// into the context only when the script uses AE.compile.
 //
 // Work done once, at compile time:
-//   - The operators + - * / become vector-aware calls ($a, $s, $m, $d). QuickJS-ng has no
-//     operator overloading, so [1,2] + [3,4] would otherwise give the string "1,23,4".
-//   - The value of the last statement becomes the return value, as in After Effects.
+//   - The operators + - * / become vector-aware calls ($a, $s, $m, $d).
+//   QuickJS-ng has no
+//     operator overloading, so [1,2] + [3,4] would otherwise give the string
+//     "1,23,4".
+//   - The value of the last statement becomes the return value, as in After
+//   Effects.
 //   - A name that is assigned but never declared gets a var declaration.
-//   - The random state is reset on each call only if the text uses a random function.
+//   - The random state is reset on each call only if the text uses a random
+//   function.
 //
-// This follows Bodymovin, which rewrites expressions to $bm_sum, $bm_rt and so on once at
-// export; lottie-web and ThorVG's tvgLottieExpressions.cpp then run that text. Here the
-// rewrite is done on the text as the user posted it. Names follow After Effects
-// (ae-expressions.docsforadobe.dev).
+// This follows Bodymovin, which rewrites expressions to $bm_sum, $bm_rt and so
+// on once at export; lottie-web and ThorVG's tvgLottieExpressions.cpp then run
+// that text. Here the rewrite is done on the text as the user posted it. Names
+// follow After Effects (ae-expressions.docsforadobe.dev).
 //
 // Usage:
 //   const f = AE.compile(`...an expression as it was posted...`);
-//   // Returns the expression's value, or c.value if the expression returns undefined.
-//   AE.run(f, { index, time, value, comp, layer, effect })
-//   // Builds thisComp from the canvas size and a list of layers. "controls" is either
-//   // { Effect: { Slider: 1 } } or a function (effect, property) => number; it supplies what
+//   // Returns the expression's value, or c.value if the expression returns
+//   undefined. AE.run(f, { index, time, value, comp, layer, effect })
+//   // Builds thisComp from the canvas size and a list of layers. "controls" is
+//   either
+//   // { Effect: { Slider: 1 } } or a function (effect, property) => number; it
+//   supplies what
 //   // effect("Effect")("Slider") reads.
 //   AE.comp({ width, height, numLayers },
-//           [{ name, index, width, height, position: (t) => [x, y], controls }])
-//   // Turns a parameter name into an identifier: AE.name("X Offset") is "X_Offset".
-//   AE.name("X Offset")
+//           [{ name, index, width, height, position: (t) => [x, y], controls
+//           }])
+//   // Turns a parameter name into an identifier: AE.name("X Offset") is
+//   "X_Offset". AE.name("X Offset")
 //
-// Not supported: bare property names (position, opacity), loopOut, the operators + - * / on a
-// vector in unary minus and +=, toWorld, and footage().
+// Not supported: bare property names (position, opacity), loopOut, the
+// operators + - * / on a vector in unary minus and +=, toWorld, and footage().
 //
-// wiggle and random do not reproduce After Effects' own random sequences, so values that
-// depend on the exact numbers will not match After Effects.
+// wiggle and random do not reproduce After Effects' own random sequences, so
+// values that depend on the exact numbers will not match After Effects.
 
 inline const char ae_prelude[] = R"AEJS(
 (function (G) {
