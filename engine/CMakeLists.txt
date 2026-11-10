@@ -301,6 +301,7 @@ add_library(motolii_document STATIC
   document/evaluate/place.cpp
   document/evaluate/place_joins.cpp
   document/evaluate/relations.cpp
+  document/evaluate/layer_reads.cpp
   document/evaluate/shown.cpp
   document/evaluate/sketch.cpp
   document/evaluate/value_at.cpp
