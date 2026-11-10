@@ -7,6 +7,8 @@
 #include <sstream>
 #include <string>
 
+#include "community/absent_motion/absent_motion.h"
+
 namespace {
 
 // Returns the standard smoothstep of x between edge0 and edge1, clamped to 0..1.

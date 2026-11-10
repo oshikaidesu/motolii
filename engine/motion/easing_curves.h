@@ -17,10 +17,6 @@
 #include <cmath>
 #include <string>
 
-// Evaluates one of AbsentMotion's easings (its easing.cpp, Ease) by type name.
-// p holds n parameters and u is the progress. See absent_motion.cpp.
-double absent_ease(const char* type, const double* p, int n, double u);
-
 // One easing: a kind and its parameters.
 struct Interp {
     enum Kind { Hold, Linear, Bezier, Bounce, Elastic, Cyclic, Random, Steps, ElasticSteps } kind = Linear;
