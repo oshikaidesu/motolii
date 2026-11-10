@@ -22,10 +22,10 @@ import 'package:motolii/widgets/dice_painter.dart';
 import 'package:motolii/widgets/media.dart' show MiniSlider, glyph;
 import 'package:motolii/widgets/text_gestures.dart'
     show TypedField, wordsPicked;
+import 'package:motolii/workspace/dock/colors/color_bento.dart';
+import 'package:motolii/workspace/dock/colors/color_palette.dart';
+import 'package:motolii/workspace/dock/colors/color_wheel.dart';
 import 'package:motolii/workspace/dock/common/shelf_footer.dart';
-import 'package:motolii/workspace/dock/dock_color_wheel.dart';
-import 'package:motolii/workspace/dock/dock_make_colors.dart';
-import 'package:motolii/workspace/dock/dock_make_palettes.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';

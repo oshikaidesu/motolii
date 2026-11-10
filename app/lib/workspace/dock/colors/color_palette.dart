@@ -7,7 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/skin/hex_color.dart' show colorOfHex;
 import 'package:motolii/storage/json_file.dart' show fileJson, fileKeep;
-import 'package:motolii/workspace/dock/dock_make_colors.dart';
+import 'package:motolii/workspace/dock/colors/color_bento.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// A color palette: the starters, the user's saved ones, or one taken from a photo.
