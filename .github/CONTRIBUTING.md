@@ -36,9 +36,19 @@ For C++, `./engine/check_syntax.sh` checks syntax without building, `engine/buil
 
 The project's stance: **code you write yourself is a debt.** Look for an existing implementation first and use it the way its author meant; bundle other people's work as unchanged as possible, with their licence and source beside it; keep changes to upstream code as patches applied at build time; say in each commit what was borrowed from where. A lot of Motolii is still its own code today (the Flutter UI, for one); where something can be borrowed instead, the own code goes.
 
+## Design principles
+
+Decided by the author. A change that breaks one of them is not merged, even when its reasoning is sound. [`AGENTS.md`](../AGENTS.md) carries the same five for AI agents.
+
+1. **Expressions from the net are not translated.** Pasted code (After Effects expressions, Cavalry, p5.js, shaders) is compiled once and run as it is. The same behaviour is not re-implemented in C++.
+2. **No value is fixed without a source.** Nothing is greyed out or refused. A slider's range is for display and does not limit what can be typed. Where input is limited, the source that limits the same value is cited.
+3. **No web page is embedded in the app.** A visual editor reads from the code and writes its edits back to the code; there is no second copy of the code.
+4. **A small request is met with a mechanism Motolii already has.** Research outside the repository is for when Motolii has nothing.
+5. **Dart holds looks only.** Presses, overlays and selection are handed to an implementation the app already depends on, and no dependency is added. The same hand-written code appearing several times is a copy, not a split: in the Inspector the effect card (`ValuesCard`) is the original, and other cards, number fields, chips and switches fold into it.
+
 ## Rules
 
-1. **Look before you write.** Look at the tree (`engine/` the product, `app/` the app, `docs/` research) and existing implementations on the net. If something can be used the way its author meant, use it.
+1. **Look before you write.** Look at the tree (`engine/` the engine, `app/` the app, `shelves/` the bundled content) and at existing implementations on the net. If something can be used the way its author meant, use it.
 2. **One job a file.** Split by what each part is for and name it so. Experiments stay on your own branch; main holds only what the app uses.
 3. **Commit messages.**
    - The **subject** (first line) is 72 characters at most and says what changed. For example `Remove the unused Foo card`, `Fix Y in Z`.
