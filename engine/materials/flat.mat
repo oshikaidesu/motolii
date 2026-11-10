@@ -21,8 +21,8 @@ material {
         { type : float, name : glowing },    // how much brighter than itself it shines (0: as it is; past 1 the stage's bloom takes it up)
         { type : float4, name : wash },      // a colour laid over it where it is drawn, and how much (a copy's own, from a ramp along the copies; 0: none)
         { type : sampler2d, name : backdrop },   // what lies under it as drawn so far, when its way of lying reads it (render.h textures_of)
-        { type : float, name : blendWay },       // that way (doc.h doc_blend_way: 1 darken ... 13 luminosity; 0: the GPU's own blending)
-        { type : float, name : behind },         // 1: its fill is what is behind it, as it is (doc.h: fill behind, a copy of the background; then its blend as said)
+        { type : float, name : blendWay },       // that way (doc_blend_way: 1 darken ... 13 luminosity; 0: the GPU's own blending)
+        { type : float, name : behind },         // 1: its fill is what is behind it, as it is (the project: fill behind, a copy of the background; then its blend as said)
         { type : mat4, name : behindEye },       // where the stage's eye sees a point of the world: where in that picture a point of it is, on the stage or on a sheet of its own (matte.glsl's matteEye)
         { type : float4[8], name : ramp },   // its copies' colours from the first to the last (copy_fill), when they are drawn in one go
         { type : float4, name : rampOf },    // which copy the first of this one draw is, how many copies there are, how many colours, 1: one each in turn (0 copies: none)
@@ -204,7 +204,7 @@ fragment {
         material.baseColor = vec4(mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(vec3(0.04045), c)), kept) * (there * uncut);
         vec4 wash = materialParams.wash;
         vec4 of = materialParams.rampOf;
-        if (of.y > 0.0) {   // (a copy drawn with others in one go: its colour from its place along the ramp, as doc.h gives each its own)
+        if (of.y > 0.0) {   // (a copy drawn with others in one go: its colour from its place along the ramp, as the project gives each its own)
             float k = of.x + variable_copyOf.x;
             int colours = int(of.z);
             if (of.w > 0.5) wash = vec4(materialParams.ramp[int(mod(k + 0.5, of.z))].rgb, 1.0);

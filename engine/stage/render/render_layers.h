@@ -17,7 +17,7 @@
 namespace motolii {
 
 // Adds a solid with one of the renderer's own materials, chosen by name in
-// `wears`. See doc_material in doc.h for the Material group in the Create tab.
+// `wears`. See doc_material (document/evaluate/material.h) for the Material group in the Create tab.
 // Returns the material instance, or nullptr if the name is unknown or the build
 // failed. "filament_glass": glass from own_glass above. ior is the refraction
 // index, split how far the colours part, swim how far the faces lean, vivid the

@@ -325,7 +325,7 @@ std::vector<MaterialInstance*> add_parts(Stage& s, Mesh* m, const char* filamat,
       mi->setParameter("matteUse", float4{0.f});
       mi->setParameter("matteSoft", float4{0.f});
     }
-    // Nothing is read until doc.h says which, and there is no bevel until
+    // Nothing is read until the project says which, and there is no bevel until
     // canvas_renderables.h makes one. Filament refuses a sampler that is left
     // unset.
     for (const char* name : {"backdrop", "edge"})

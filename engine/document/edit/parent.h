@@ -1,7 +1,7 @@
 #ifndef MOTOLII_DOCUMENT_EDIT_PARENT_H_
 #define MOTOLII_DOCUMENT_EDIT_PARENT_H_
 
-// parent.h: parenting and ordering of layers for doc.h. It sets a layer's
+// parent.h: parenting and ordering of layers. It sets a layer's
 // parent, finds the layers a group holds, and moves a layer among the layers.
 
 #include <vector>

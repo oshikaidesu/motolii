@@ -1,7 +1,87 @@
 #ifndef MOTOLII_DOCUMENT_KINDS_H_
 #define MOTOLII_DOCUMENT_KINDS_H_
-// The kinds of layer and relation, and doc_values, the table of named values
-// that layers can have.
+// The project: a table of keyframes, and the kinds of layer and named values it
+// may hold.
+//
+// The document is a table of keyframes: the value of a layer's named property
+// at a time, as (layer, name, at, value). A property with one keyframe is
+// constant. A property with several keyframes moves between them. Each call
+// makes one change, which is one undo step, and the canvas shows the change by
+// the time the call returns. A change the canvas cannot show is not made.
+//
+// Easing: a keyframe holds a value, and the easing of the segment from a
+// keyframe to the next defines how the value moves between them. The built-in
+// easings are the nine kinds in easing_curves.h: Hold, Linear, Bezier, Bounce,
+// Elastic, Cyclic, Random, Steps and ElasticSteps, each with its own numbers. A
+// custom easing can be added as an SQLite expression stored in the document.
+// Its variables are:
+//   u        progress through the segment, from 0 to 1
+//   t        seconds since the segment began
+//   d        length of the segment in seconds
+//   a, b     the values of the two keyframes
+//   p1..p4   numbers supplied with the easing
+// A custom easing is accepted only if it starts at the first keyframe's value
+// and ends at the second's.
+//
+// Storage and undo come from SQLite: the file format, saving (a change is in
+// the file when its call returns), and undo through the session extension. A
+// change is recorded as a changeset, and undo applies the changeset inverted.
+// The undo steps are stored in the file too. A layer's time uses the names from
+// GES: start and duration.
+//
+// Property names follow ThorVG where ThorVG has a name for the same thing:
+// translate's x and y, rotate, size, blend and its modes, text, fill, and the
+// begin, add and remove of a segment. The properties are:
+//
+//   Numbers
+//     x, y, z, rotate, size  Center position, rotation in degrees, and height.
+//     rotate_x, rotate_y     Rotation in degrees about the layer's own x and y
+//     axes, which
+//                            tilts a layer back or turns it sideways.
+//     opacity                1 is fully visible and 0 is invisible. Applies to
+//     video, image
+//                            and text layers.
+//     start, duration        When the layer appears and for how long. If not
+//     set, the layer
+//                            stays for the whole project and loops.
+//     begin, speed           Video only: the offset into the source and the
+//     playback speed.
+//                            A negative speed plays backwards.
+//     order                  Stacking order among layers. A greater number is
+//     nearer the
+//                            viewer. If not set, layers stack in creation
+//                            order.
+//     visible                0 hides the layer without removing it from the
+//     document, as in
+//                            ThorVG.
+//     clip                   1 shows the layer only inside the box of the layer
+//     before it,
+//                            for example a 3D layer cut by a rectangle.
+//     wide                   Shape only: the width as a multiple of the height.
+//     keyed                  Video only: 1 removes a solid background, such as
+//     a green
+//                            screen, whose color is the one shared by the four
+//                            corners. 0 keeps the background. If not set, the
+//                            background is removed when the video has such a
+//                            color.
+//
+//   Words
+//     blend                  How the layer combines with what is behind it:
+//                            normal | add | multiply | screen.
+//     file, shape            What the layer is made from. The add call sets
+//     them. For a file
+//                            layer it is the file, and for a text layer it is
+//                            the font. For a solid it is one of the built-in
+//                            shapes: ring | gem | cube. For a flat shape drawn
+//                            by ThorVG it is rect | circle.
+//     text                   The text to show, up to the end of the line.
+//     fill                   The surface of the layer. For text it is a color
+//     as six hex
+//                            digits, such as ff3366. For a solid it is a color
+//                            or the material glass.
+//
+// This header: the kinds of layer and relation, and doc_values, the table of
+// named values that layers can have.
 
 namespace motolii {
 

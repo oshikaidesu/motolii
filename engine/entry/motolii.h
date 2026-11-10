@@ -12,7 +12,7 @@
    is what it is made of: a color, or glass.
 
    The names of a layer's properties are ThorVG's own where ThorVG has one (x,
-   y, rotate, size, blend, text, fill, begin). doc.h lists them. */
+   y, rotate, size, blend, text, fill, begin). document/kinds.h lists them. */
 #ifdef __cplusplus
 extern "C" {
 #endif

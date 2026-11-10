@@ -1,7 +1,7 @@
 #ifndef MOTOLII_DOCUMENT_EVALUATE_MOMENT_FX_H_
 #define MOTOLII_DOCUMENT_EVALUATE_MOMENT_FX_H_
 
-// moment_fx.h: per-layer effects for doc.h.
+// moment_fx.h: per-layer effects.
 // A layer with effects of its own is drawn alone into an image of the box where
 // it is seen. Its effects run on that image before the stage's own view is
 // rendered. A layer whose fx names a solid's shape (solids/*.js, for example
