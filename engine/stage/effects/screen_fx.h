@@ -19,6 +19,7 @@
 #include "community/quickjs/script.h"
 #include "community/isf/isf.h"
 #include "gpu/screen_interop.h"
+#include "stage/effects/thorvg_effect_names.h"
 #include <math/half.h>
 #include <thorvg.h>
 #include <filesystem>
@@ -694,9 +695,3 @@ static void screen_effects(Stage& s, ScreenStack& st, const std::string& files, 
         }
     };
 }
-
-// A thing's own effects (its "fx": .wgsl files, paths with spaces between), After Effects' effects on a layer, seen as the
-// camera sees the thing: its run (a view of its own, doc.h) drawn alone into a picture of its own, as large as the view
-// draws, each effect over it in turn (the files as they are: the whole-screen ones), and the last laid over what is under
-// it, where the view would have drawn. Its own stack: an effect's passes and past frames are the thing's.
-static char doc_thor_letter(const std::string& w);

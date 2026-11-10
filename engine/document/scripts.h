@@ -72,15 +72,6 @@ static std::string doc_screen_parameter(const std::string& file, const std::stri
     for (char& c : stem) if (!(c >= '0' && c <= '9') && !(c >= 'A' && c <= 'Z') && !(c >= 'a' && c <= 'z') && c != '_') c = '_';
     return "js_" + stem + "_" + parameter;
 }
-// ThorVG's own effects, named by the value that turns each on in a layer's list of effects. Their
-// letters, in the same order, are in doc_thor_letter and DrawnFx::order. A glow is not one of them.
-// It is Filament's bloom on the layer's own image, see doc_evaluate.
-static const char* const doc_thor_names[] = {"tint", "tritone", "shadow", "blur"};
-// Returns the letter of the ThorVG effect named `w`, or 0 when `w` is not one.
-static char doc_thor_letter(const std::string& w) {
-    for (int i = 0; i < 4; ++i) if (w == doc_thor_names[i]) return "trsb"[i];
-    return 0;
-}
 // Returns the script loaded from `file`, loading it again when the file has changed. Returns null
 // when `file` is empty, "none" or a MIDI file, or when it cannot be read. When `runs` is false the
 // code is not compiled. The file is checked for changes only once for each value of

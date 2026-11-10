@@ -8,9 +8,7 @@
 #pragma once
 #include "community/three/solid_three.h"
 #include "community/aviutl/aviutl_fx.h"
-// Returns the one-letter code of the ThorVG effect named by `w`, or 0 if `w` is not one.
-// Defined elsewhere.
-static char doc_thor_letter(const std::string& w);
+#include "stage/effects/thorvg_effect_names.h"
 // Rebuilds the effect chain of a layer from `files`, the effect files in order. Does nothing if
 // st.files already equals `files`. Fills st.fx with the GPU effects and st.aviutl with the
 // AviUtl2 script runners, reusing a runner already open for the same file. st.steps gets one
