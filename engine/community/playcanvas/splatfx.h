@@ -1,3 +1,6 @@
+#ifndef MOTOLII_COMMUNITY_PLAYCANVAS_SPLATFX_H_
+#define MOTOLII_COMMUNITY_PLAYCANVAS_SPLATFX_H_
+
 // Runs a PlayCanvas Gaussian splat shader effect unchanged.
 //
 // The effects come from playcanvas/engine, scripts/esm/gsplat (MIT), for example
@@ -6,13 +9,16 @@
 // class, which stores uniforms by name and the effect time) are small stand-ins. The effect's
 // GLSL is spliced into the point cloud material (point_cloud.h, points.mat), its attributes
 // become parameters, and its updateEffect is called once per evaluated time.
-#pragma once
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "community/quickjs/script.h"
+
+namespace utils { class JobSystem; }
 
 // One loaded splat effect script: its GLSL, its parameters and its per-time uniforms.
 class SplatEffect {
@@ -53,5 +59,6 @@ private:
 // A package is built once and cached in ~/Library/Caches/Motolii/splatfx, in a file named by a
 // hash of `mat` and `glsl`. `jobs` is the job system of the Filament engine. On failure returns
 // an empty vector and sets `why`.
-namespace utils { class JobSystem; }
 std::vector<uint8_t> splat_effect_look(const std::string& mat, const std::string& glsl, utils::JobSystem& jobs, std::string& why);
+
+#endif  // MOTOLII_COMMUNITY_PLAYCANVAS_SPLATFX_H_

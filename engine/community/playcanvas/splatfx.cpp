@@ -1,18 +1,32 @@
 // Implementation of SplatEffect and splat_effect_look. See splatfx.h.
 #include "community/playcanvas/splatfx.h"
-#include <quickjs.h>
+
+#include <algorithm>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
+#include <mutex>
 #include <regex>
 #include <sstream>
+#include <system_error>
+
+#include <filamat/MaterialBuilder.h>
+#include <filament-matp/MaterialParser.h>
+#include <quickjs.h>
+
+namespace {
 
 // Minimal stand-ins for the parts of the 'playcanvas' module that an effect imports.
-static const char* const splatfx_playcanvas = R"(
+const char* const splatfx_playcanvas = R"(
 export class Vec3 { constructor(x = 0, y = 0, z = 0) { this.x = x; this.y = y; this.z = z; } set(x, y, z) { this.x = x; this.y = y; this.z = z; return this; } copy(v) { return this.set(v.x, v.y, v.z); } clone() { return new Vec3(this.x, this.y, this.z); } }
 export class Color { constructor(r = 0, g = 0, b = 0, a = 1) { this.r = r; this.g = g; this.b = b; this.a = a; } set(r, g, b, a = 1) { this.r = r; this.g = g; this.b = b; this.a = a; return this; } copy(c) { return this.set(c.r, c.g, c.b, c.a); } clone() { return new Color(this.r, this.g, this.b, this.a); } }
 export class Script { constructor() { this.enabled = true; } on() {} off() {} fire() {} }
 )";
-static const char* const splatfx_base = R"(
+const char* const splatfx_base = R"(
 import { Script } from 'playcanvas';
 export class GSplatShaderEffect extends Script {
     constructor() { super(); this.effectTime = 0; this.__uniforms = {}; }
@@ -20,6 +34,8 @@ export class GSplatShaderEffect extends Script {
     isEffectComplete() { const t = this.getCompletionTime ? this.getCompletionTime() : Infinity; return this.effectTime >= t; }
 }
 )";
+
+}  // namespace
 
 // Private state of a SplatEffect: the QuickJS runtime, the effect object and its parameters.
 struct SplatEffect::Own {
@@ -33,9 +49,11 @@ struct SplatEffect::Own {
     bool finished = false;
 };
 
+namespace {
+
 // QuickJS module loader. Serves the stand-ins for 'playcanvas' and for the gsplat shader effect
 // base module, and reads any other module from the file system. Returns null on a compile error.
-static JSModuleDef* splatfx_load(JSContext* cx, const char* name, void*) {
+JSModuleDef* splatfx_load(JSContext* cx, const char* name, void*) {
     const std::string n = name;
     std::string src;
     if (n == "playcanvas") src = splatfx_playcanvas;
@@ -49,13 +67,15 @@ static JSModuleDef* splatfx_load(JSContext* cx, const char* name, void*) {
 }
 
 // Takes the pending QuickJS exception and returns its text.
-static std::string splatfx_said(JSContext* cx) {
+std::string splatfx_said(JSContext* cx) {
     JSValue e = JS_GetException(cx);
     const char* s = JS_ToCString(cx, e);
     std::string out = s ? s : "?";
     JS_FreeCString(cx, s), JS_FreeValue(cx, e);
     return out;
 }
+
+}  // namespace
 
 SplatEffect::SplatEffect(const std::string& file) : own(new Own) {
     own->file = file;
@@ -180,10 +200,6 @@ std::vector<std::pair<std::string, std::vector<float>>> SplatEffect::uniforms(do
     JS_FreeValue(cx, said);
     return out;
 }
-
-#include <filamat/MaterialBuilder.h>
-#include <filament-matp/MaterialParser.h>
-#include <mutex>
 
 namespace {
 // The matp configuration that filament_webgpu.sh passes to matc: -a webgpu -a metal -p desktop.
