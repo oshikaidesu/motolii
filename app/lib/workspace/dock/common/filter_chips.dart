@@ -1,7 +1,7 @@
 // The row of filter chips at the top of a shelf.
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/skin/forms/forms.dart';
+import 'package:motolii/widgets/forms/forms.dart';
 
 /// A row of round filter chips with counts; the active one is the accent. Scrolls sideways when the shelf is narrow.
 class FilterChips extends StatelessWidget {

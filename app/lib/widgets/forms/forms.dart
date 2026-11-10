@@ -5,17 +5,17 @@
 // Press, hover, focus and selection are handled by naked_ui, so a form only draws and never reimplements behaviour.
 //
 // A skin names its forms in theme.xml, for example <Forms Value="poster"/>.
-// A new form is a file in lib/skin/forms plus a line in [forms]. Saved while the app runs through live.sh, it shows at once.
+// A new form is a file in lib/widgets/forms plus a line in [forms]. Saved while the app runs through live.sh, it shows at once.
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/skin/forms/lighttable_forms.dart';
+import 'package:motolii/widgets/forms/base_controls.dart';
+import 'package:motolii/widgets/forms/lighttable_forms.dart';
+import 'package:motolii/widgets/forms/own_forms.dart';
+import 'package:motolii/widgets/forms/poster_forms.dart';
+import 'package:motolii/widgets/forms/sheet_forms.dart';
 import 'package:motolii/widgets/number_field_look.dart';
-import 'package:motolii/skin/forms/own_forms.dart';
-import 'package:motolii/skin/forms/poster_forms.dart';
-import 'package:motolii/skin/forms/sheet_forms.dart';
-import 'package:motolii/skin/forms/base_controls.dart';
 
 /// Every form the app knows, by the name a skin uses.
 const forms = <String, Forms>{

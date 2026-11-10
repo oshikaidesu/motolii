@@ -5,9 +5,9 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/widgets/timeline_painters.dart'
     show fineTickSpacing, majorTickSpacing;
 import 'package:motolii/workspace/state/beats.dart';

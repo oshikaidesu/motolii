@@ -5,11 +5,11 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
-import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/hex_color.dart' show colorOfHex;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Badge;
+import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/widgets/tool_strip.dart';
 import 'package:motolii/workspace/inspector_feed/values.dart'
     show layerPlacement;

@@ -1,9 +1,9 @@
 // The on/off chips of the stage's header and of its options strip, with the marks drawn on them.
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/widgets/glyphs.dart';
 
 /// The marks a header toggle of the stage can carry.

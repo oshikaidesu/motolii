@@ -6,10 +6,10 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii_watch.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
-import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable, IconPress;
+import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/widgets/glyphs.dart';
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/widgets/two_finger_gestures.dart';

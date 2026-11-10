@@ -2,9 +2,9 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/inspector/inspector_scope.dart';
 import 'package:motolii/inspector/inspector_state.dart';
-import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/widgets/glyphs.dart';
 
 /// The Inspector's header: the layer's kind icon, name and kind, and the Animate all switch.

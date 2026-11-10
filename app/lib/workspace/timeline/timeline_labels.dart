@@ -1,10 +1,11 @@
 // The layer name column: a header, and one row per layer with visibility, solo and lock toggles.
 import 'package:flutter/widgets.dart';
+
 import 'package:naked_ui/naked_ui.dart';
 
-import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/forms/forms.dart';
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
