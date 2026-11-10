@@ -1,132 +1,138 @@
-# Motolii の見た目：引き継ぎ（人と AI 向け）
+# How the app's look is built
 
-*Hand-over for people and AI who carry on the app's look: the three layers that change it without touching projects, motion or pictures, and where each is written. To only make a skin, read `shelves/skins/README.md`.*
+This document is for developers and AI agents who carry on the app's look: it lists the three layers that change it without touching projects, motion or pictures, and where each is written. To only make a skin, read [shelves/skins/README.md](../../../shelves/skins/README.md).
 
-Motolii のアプリ（Flutter、`app`）の見た目は、エンジンの側（プロジェクト・動き・絵）に触らずに3段で変えられる。この文書は、続きを作る人や AI が、これだけ読めば手を動かせるように書いてある。スキンを作るだけなら [README.md](../../../shelves/skins/README.md) で足りる。
+The look of the app (Flutter, in `app/`) can be changed in three layers without touching the engine side (project, motion, pictures). A "skin" is one such set of changes: a theme made of colours, type, shapes and SVG parts. A "shelf" is a tab on the left of the window where bundled and user content appears, as in Blender's Asset Shelf. Skins are listed under View › Skin, and a user's own skins sit in a `skins/` folder like the content of any other shelf.
 
-## 1. 3つの段
+## 1. The three layers
 
-| 段 | 何が変わる | 書くもの | 配り方 |
+| Layer | What it changes | What you write | How it is delivered |
 |---|---|---|---|
-| ① 値 | 色・明暗・角・余白・大きさ・文字の大きさ・書体 | `theme.xml`（名前と値を並べるだけ） | フォルダを置くだけ |
-| ② 絵 | 印（アイコン）と、部品の枠 | `parts/*.svg` | フォルダを置くだけ |
-| ③ フォーム | 部品の**組み立てそのもの**（ボタンが何の形か、選択肢がどう並ぶか、札がどう組まれるか） | Dart のクラス1つ（`lib/skin/forms/<名前>_forms.dart`） | アプリに組み込む |
+| 1. Values | Colours, light or dark, corners, spacing, sizes, text size, fonts | `theme.xml` (a list of names and values) | Drop the folder in place |
+| 2. Pictures | Icons, and the frames of parts | `parts/*.svg` | Drop the folder in place |
+| 3. Forms | How a part is **put together** (what shape a button is, how choices line up, how a card is built) | One Dart class (`lib/skin/forms/<name>_forms.dart`) | Compiled into the app |
 
-①②は [README.md](../../../shelves/skins/README.md)・[ROLES.md](../../../shelves/skins/ROLES.md)・[PARTS.md](../../../shelves/skins/PARTS.md) に全部ある。外の LLM 3人に README だけで作らせて 6 → 7 → 8 点（10点満点）、指摘は直した。
-③はヘッドレス UI（React Aria・Radix と同じ分け方）。ここから下は主に③の話。
+Layers 1 and 2 are fully described in [README.md](../../../shelves/skins/README.md), [ROLES.md](../../../shelves/skins/ROLES.md) and [PARTS.md](../../../shelves/skins/PARTS.md). Layer 3 is headless UI, split the way React Aria and Radix split it. The rest of this document is mostly about layer 3.
 
-## 2. ファイルの地図
+## 2. Map of the files
 
-場所は [`app/`](../../../app/) から見た所。
+Paths are relative to [`app/`](../../../app/).
 
-| 場所 | 中身 |
+| Where | What |
 |---|---|
-| `lib/skin/theme.dart` | theme.xml を読む・見張る（`ColorTheme`）。着ている革は `~/.motolii/window.xml` の `Skin` |
-| `lib/skin/tokens.dart` | 色の段（`Grey`、Background/Foreground から HCT で作る）、`Shape.r/s/z`（角・余白・大きさ）、`T.px`（文字）。数の効く範囲もここ |
-| `lib/storage/window_settings.dart` | `~/.motolii/window.xml` の読み書き（倍率と着ている革） |
-| `lib/skin/skin_parts.dart` | 印の SVG（`SkinParts.draw`）と枠の絵（`SkinParts.frame`）。枠の部品 `SkinFrame` は `lib/widgets/skin_frame.dart` |
-| `lib/skin/forms/forms.dart` | **フォームの約束**：渡す物（Spec）と、フォームが書く関数、登録表 `forms` |
-| `lib/skin/forms/own_forms.dart` | いつもの見た目のフォーム（前からの見た目をそのまま移した） |
-| `lib/skin/forms/poster_forms.dart` | 見本：スイスの幾何学ポスター風 |
-| `lib/skin/forms/lighttable_forms.dart` | 見本：フィルムのライトテーブル風（外の AI が HANDOFF だけで書いた、7/10） |
-| `../shelves/skins/<名前>/` | リポジトリの見本の革（labs、paper、streets、poster、lighttable） |
-| `tool/live.sh` | アプリを開いたまま、`lib/` の .dart を保存した瞬間に描き直す（状態は保つ） |
+| `lib/skin/theme.dart` | Reads and watches `theme.xml` (`ColorTheme`). The skin being worn is `Skin` in `~/.motolii/window.xml` |
+| `lib/skin/tokens.dart` | The grey ramp (`Grey`, built from Background and Foreground in HCT), the accent (`Accent`), `Shape.r/s/z` (corners, spacing, sizes), `TextStyles` (type and `TextStyles.px`), and `Motion`. The ranges a number may take are here too |
+| `lib/skin/window_tokens.dart` | The window's grounds, accent shortcuts and layer-kind colours (`WindowTokens`) |
+| `lib/skin/inspector_tokens.dart` | The inspector's colours and spacing (`InspectorSkin`), including the colour of each card kind |
+| `lib/skin/layer_colors.dart` | The sixteen label colours of layers (`Label1` to `Label16`) |
+| `lib/storage/window_settings.dart` | Reads and writes `~/.motolii/window.xml` (the zoom and the skin being worn) |
+| `lib/skin/skin_parts.dart` | The icon SVGs (`SkinParts.draw`) and the frame pictures (`SkinParts.frame`). The frame widget `SkinFrame` is `lib/widgets/skin_frame.dart` |
+| `lib/skin/forms/forms.dart` | **The contract of forms**: the specs the app passes, the functions a form writes, and the table `forms` |
+| `lib/skin/forms/base_controls.dart` | The default drawing of the optional form functions |
+| `lib/skin/forms/own_forms.dart` | The usual look of the app |
+| `lib/skin/forms/poster_forms.dart` | A sample: a Swiss geometric poster |
+| `lib/skin/forms/lighttable_forms.dart` | A sample: film on a light table |
+| `lib/skin/forms/sheet_forms.dart` | A sample: ink lines on one sheet of paper |
+| `../shelves/skins/<name>/` | The sample skins in the repository (labs, paper, streets, poster, lighttable, sheet) |
+| `tool/live.sh` | Runs the app and redraws it the moment a `.dart` file under `lib/` is saved, keeping its state |
 
-## 3. フォームの作り方（ヘッドレス UI）
+## 3. Writing a form
 
-### 分け方
-- **アプリが渡す**：部品の言葉・今の値・押した時にすること（下の Spec）。
-- **手で触った時の動き**：[naked_ui](https://pub.dev/packages/naked_ui)（BSD-3）。押す・手が乗る・選ぶ・切り替える・読み上げ。`NakedButton`、`NakedToggle`（`asSwitch: true` でスイッチ）、`NakedToggleGroup` と `NakedToggleOption`（どれか1つ）、ほかに `NakedSlider` `NakedTabs` `NakedSelect` `NakedMenu` など。builder に状態（`isHovered` `isPressed` `isSelected` `isFocused` `isDisabled`）が来る。
-- **フォームが書く**：それをどう組み立てて見せるか、だけ。**動きを自分で作り直さない**（GestureDetector を足さず naked_ui を使う）。
+### The split
 
-### 約束（`lib/skin/forms/forms.dart`）
+- **The app passes in**: the words of a part, its current value and what a press does (the specs below).
+- **What a hand does**: [naked_ui](https://pub.dev/packages/naked_ui) (BSD-3). Press, hover, select, toggle and screen-reader support. It has `NakedButton`, `NakedToggle` (a switch with `asSwitch: true`), `NakedToggleGroup` with `NakedToggleOption` (exactly one of several), and also `NakedSlider`, `NakedTabs`, `NakedSelect`, `NakedMenu` and more. The builder receives the state (`isHovered`, `isPressed`, `isSelected`, `isFocused`, `isDisabled`).
+- **The form writes**: only how these are put together and drawn. **Do not rebuild the behaviour yourself.** Use naked_ui and do not add a `GestureDetector`.
 
-| 関数 | 渡る物 | アプリの部品 |
+### The contract (`lib/skin/forms/forms.dart`)
+
+A form is a class that extends `Forms`. It must write `action`, `onOff` and `card`. The others have a default in `BaseControls` and may be left out.
+
+| Function | What is passed | Part of the app |
 |---|---|---|
-| `action(context, ActionSpec)` | `label`、`onPressed` | 上の帯の Render |
-| `tabs(context, ChoiceSpec)` | `labels`、`selected`、`onSelect`、`enabled` | 上の帯の Edit・Animate・Export |
-| `choice(context, ChoiceSpec)` | 同上＋`glyphs`（16×14 の箱に描く関数） | インスペクタの Space（2D・2.5D・3D） |
-| `onOff(context, SwitchSpec)` | `on`、`onChanged`、`enabled` | オン・オフ（Animate all など） |
-| `card(context, CardSpec)` | `title`、`tone`（札の種類の色）、`open`、`onToggle`、`trailing`、`body`（行）、`head` と `own`（アプリのいつもの組み立て） | インスペクタの札1枚 |
-| `segment` | `ChoiceSpec`（言葉が並ぶ。幅は言葉の分だけ） | Fit・50%・100%、Layer・Group など |
-| `flag` | `FlagSpec`（言葉、オン、印） | Snap、Safe、Grid など |
-| `chips` | `ChipsSpec` | 棚の絞り込み |
-| `track` | `TrackSpec`（名前、種類の印、目・ソロ・錠） | タイムラインのレイヤーの名前 |
-| `number` | `NumberSpec`（数の文字、打っている欄、範囲） | 数の入力欄。こすって変える動きはアプリが持つ |
+| `action(context, ActionSpec)` | `label`, `onPressed` | Render in the top bar |
+| `onOff(context, SwitchSpec)` | `on`, `onChanged`, `enabled` | On and off switches (Animate all and others) |
+| `card(context, CardSpec)` | `title`, `tone` (the colour of the card's kind), `open`, `onToggle`, `trailing`, `body` (the rows), `head` and `own` (the app's usual build) | One card of the inspector |
+| `segment` (optional) | `ChoiceSpec` (`labels`, `selected`, `onSelect`; the width follows the words) | Fit, 50%, 100%, Layer, Group and similar |
+| `flag` (optional) | `FlagSpec` (`label`, `on`, `onTap`, `mark`) | Snap, Safe, Grid and similar |
+| `chips` (optional) | `ChipsSpec` (`chips` as name and optional count, `active`, `onPick`) | A shelf's filter chips |
+| `track` (optional) | `TrackSpec` (`index`, `name`, `selected`, `dim`, `hot`, `onSelect`, and the finished `kind`, `eye`, `solo` and `lock` widgets) | A layer's name in the timeline |
+| `number` (optional) | `NumberSpec` (in `lib/widgets/number_field_look.dart`: the number's text, the field being typed in, the range and more) | A number field. Scrubbing it is the app's |
+| `trackFill`, `trackRadius`, `trackBar`, `trackBand` (optional) | The kind colour and state of a layer; the row index | The bar of a layer in the timeline and the band behind its row |
+| `paneMark`, `plainTabs` (optional) | `selected` and the app's own `mark`; whether the tab strip drops the package's cards | The mark at the front of a dock tab |
 
-約束の細かい所：
-- `ChoiceSpec.glyphs` の関数は `(Canvas c, Paint stroke)`。**Paint はフォームが作って渡す**（色・太さ・塗りか線かはフォームが決める）。印は 16×14 の箱に描かれるので、大きく描くなら `c.scale()` してから呼ぶ。
-- `CardSpec.head`：アプリのいつもの見出しの行（開閉の印・種類の印・題・キーの点・畳んだ時の要約・`trailing` が組み立て済み）。自分の見出しを作るなら捨ててよい。ただし **`title` が null でも `head` がある札**（`trailing` だけの札）がある。その時は `head` を出す。
-- `CardSpec.own`：見出しと行を余白で包んだ、外枠なしの札の中身全部。「外枠だけ変えたい」なら `own` を自分の枠で包むだけでよい（`own_forms.dart` がそう）。
-- 見た目の動き（`AnimatedContainer`、`TweenAnimationBuilder` など）は自由。手の受け取り（`GestureDetector`、`MouseRegion`、`Listener`）だけは書かず naked_ui に任せる。
+Details of the contract:
 
-### 使える材料
+- `FlagSpec.mark` is a function from the colour the form chooses to the app's icon for the chip. Draw it in that colour.
+- `CardSpec.head` is the app's usual header row, already built (fold mark, kind mark, title, keyframe dot, summary when folded, `trailing`). Drop it if you build your own header. But there are cards that have a `head` and a `null` `title` (cards with only `trailing`). For those, show `head`.
+- `CardSpec.own` is the whole content of the card, header and rows wrapped in padding, with no outer frame. To change only the outer frame, wrap `own` in your own frame (`own_forms.dart` does this).
+- Animation of the look (`AnimatedContainer`, `TweenAnimationBuilder` and so on) is free. Receiving the hand (`GestureDetector`, `MouseRegion`, `Listener`) is left to naked_ui.
 
-| 種類 | 名前 | 中身 |
+### Materials you can use
+
+| Kind | Name | What it is |
 |---|---|---|
-| 文字の型 | `T.title()` `T.name()` `T.label()` `T.micro()` | 書体は革の `FontSans`。見出し・名前・小さな言葉・極小 |
-| 文字の型 | `T.value()` | 書体は革の `FontMono`（等幅）。数と時間に |
-| 文字の大きさ | `T.px(11)` | 革の TextScale を掛けた大きさ（`.copyWith(fontSize: T.px(n))`） |
-| 書体の名前 | `T.sans` `T.mono` | 革が言う書体の名前 |
-| 色 | `Grey.g00`〜`Grey.g100`、`Grey.bandA` など | 灰色の段（どの段がアプリのどこかは [ROLES.md](../../../shelves/skins/ROLES.md) の表）。革の Background・Foreground から作られる |
-| 色 | `WsT.accent` `WsT.onAccent` `Pop.accentInk` | 差し色、その上の文字、地の上に線や文字で使う差し色（`lib/skin/window_tokens.dart`、`lib/skin/inspector_tokens.dart`） |
-| 色 | `axX` `axY` `axZ`、Spec の `tone` | 軸の色、札の種類の色 |
-| 形 | `Shape.r(n)` | 角の丸み（`Radius`、革の Corner を掛ける） |
-| 形 | `Shape.s(n)` `Shape.z(n)` | 余白・大きさ（革の Spacing・Size を掛ける） |
+| Text style | `TextStyles.title()` `TextStyles.name()` `TextStyles.label()` `TextStyles.micro()` | Font is the skin's `FontSans`. Title, name, small label, smallest |
+| Text style | `TextStyles.value()` | Font is the skin's `FontMono` (monospaced). For numbers and times |
+| Text size | `TextStyles.px(11)` | A size multiplied by the skin's `TextScale` (`.copyWith(fontSize: TextStyles.px(n))`) |
+| Font name | `TextStyles.sans` `TextStyles.mono` | The font names the skin gives |
+| Colour | `Grey.g00` to `Grey.g100`, `Grey.bandA` and others | The grey ramp (which step is where in the app is in the table of [ROLES.md](../../../shelves/skins/ROLES.md)). Built from the skin's Background and Foreground |
+| Colour | `Accent.fill` `Accent.on` `Accent.ink` | The accent, the ink on it, and the accent as a line or text on a ground (also as `WindowTokens.accent`, `onAccent` and `accentInk` in `lib/skin/window_tokens.dart`) |
+| Colour | `tone` of a spec | The colour of a card's kind |
+| Shape | `Shape.r(n)` | A corner radius (`Radius`, multiplied by the skin's Corner) |
+| Shape | `Shape.s(n)` `Shape.z(n)` | A margin, and a size (multiplied by the skin's Spacing and Size) |
 
-フォームが自分の色を持つのも自由（`poster_forms.dart` は自分の色の定数を持つ）。革の色に合わせたい所だけ上の材料を使う。
+A form may also have colours of its own (`poster_forms.dart` has constants for its own colours). Use the materials above only where the form should follow the skin's colours.
 
-### 手順
-1. `lib/skin/forms/<名前>_forms.dart` に `class XForms extends Forms` を書き、5つの関数を全部書く（`poster_forms.dart` が見本、240行）。
-2. `lib/skin/forms/forms.dart` の `forms` に `'<名前>': XForms()` を1行足し、import する。
-3. 革のフォルダの `theme.xml` に `<Forms Value="<名前>"/>` と書く（色は同じ theme.xml で）。
-4. 見る：`app/tool/live.sh` でアプリを開き、View › Skin でその革を着て、フォームのファイルを保存するたびに描き直るのを見る。手を乗せた時・押した時は live.sh のアプリで手で確かめる。
-5. 確かめる：切れ0・はみ出し0。色は文字の収まりに効かないので、書くのはフォームと書体（と Size・TextScale を変えるならそれ）だけでよい。
+### Steps
 
-### 守ること
-- 大きさは `Shape.z()`、余白は `Shape.s()`、文字は `T.name()` などの `T.*` と `T.px()` を通す（革の Size・Spacing・TextScale が効くように）。
-- 文字は切らない。箱より広い時は `FittedBox(fit: BoxFit.scaleDown)` で縮める（長い名前は auto_size_text で2行まで）。
-- `own_forms.dart` は「いつもの見た目」の正本。触る時は見た目を1画素も変えない。
+1. Write `class XForms extends Forms` in `lib/skin/forms/<name>_forms.dart`, with at least `action`, `onOff` and `card` (`poster_forms.dart` is a sample).
+2. Add `'<name>': XForms()` to `forms` in `lib/skin/forms/forms.dart`, and import it.
+3. In the skin folder's `theme.xml`, write `<Forms Value="<name>"/>` (the colours go in the same theme.xml).
+4. Look at it: open the app with `app/tool/live.sh`, wear the skin in View › Skin, and watch it redraw every time the form file is saved. Check hover and press by hand in that app.
+5. Check it: no clipped text and no overflow. Colour does not affect how text fits, so what you write is the form and the fonts (and Size and TextScale if the skin changes them).
 
-## 4. デザインの方針
+### Rules
 
-Anthropic 公式の考え方（[frontend-design スキル](https://github.com/anthropics/skills/tree/main/skills/frontend-design)、[公式ブログ](https://claude.com/blog/improving-frontend-design-through-skills)、[cookbook](https://platform.claude.com/cookbook/coding-prompting-for-frontend-aesthetics)）と、このプロジェクトで決まったことを合わせると：
+- Sizes go through `Shape.z()`, margins through `Shape.s()`, and text through `TextStyles.*` (`TextStyles.name()` and so on) and `TextStyles.px()`, so that the skin's Size, Spacing and TextScale take effect.
+- Never clip text. When it is wider than its box, shrink it with `FittedBox(fit: BoxFit.scaleDown)` (long names use auto_size_text, up to two lines).
+- `own_forms.dart` is the reference for the usual look. When you touch it, do not change the look by one pixel.
 
-- **題材に根を張る**：Motolii は「アイデアで勝つ MV を最短で作る道具」。その世界の素材から選ぶ。ありがちな既定値（Inter、白地に紫のグラデ、同じ角丸カードの繰り返し、クリーム×セリフ×テラコッタ、黒×蛍光緑、全部大文字の小見出し）は選択ではない。
-- **色は意味**：札の種類・層の種類など、意味がある時だけ色を付ける。名前から適当に色を選ばない。
-- **大胆さは1か所**：選んでいる物と Render のような主役にだけ。ほかは抑える。
-- **文字が性格**：太さと大きさは極端に（細と極太、3倍の跳び）。大文字だけの言葉は避ける。
-- **密度**：Ableton のように一目で読める密度を保つ。説明の文やホバーの説明は足さない。動画の画面が主役。
-- **動き**：触った結果、何が変わったかを見せる動きだけ。
-- **作り方は2回**：まず色4〜6個・書体・ASCII の配置図を書き、依頼と照らして直してから、コードを書く。撮って自分で講評する。
+## 4. Design direction
 
-今の方向：ユーザーはスイスの幾何学ポスター（Posterlad の Checkers、Xavito deVito のライブのポスター）に寄せたい。候補を絵で並べた時の推しは「ポスター（静かめ）」：色は種類の意味だけ、派手なのは選択と Render だけ、行の密度はミキサー卓のように詰める。今の `poster_forms.dart` はまだ「名前から色」「大文字」「全部の札が派手」が残っている（直す対象）。
+Anthropic's guidance ([the frontend-design skill](https://github.com/anthropics/skills/tree/main/skills/frontend-design), [the blog post](https://claude.com/blog/improving-frontend-design-through-skills), [the cookbook](https://platform.claude.com/cookbook/coding-prompting-for-frontend-aesthetics)) together with what this project has decided:
 
-## 5. AI に頼む時の文
+- **Root it in the subject.** Motolii is a tool for making a music video quickly, by the strength of an idea. Choose from the materials of that world. Common defaults (Inter, a purple gradient on white, the same rounded card repeated, cream with serif and terracotta, black with neon green, all-caps small headings) are not a choice.
+- **Colour is meaning.** Give a colour only where it means something, such as the kind of a card or of a layer. Do not pick a colour from a name.
+- **Boldness in one place.** Only on what is selected and on a lead such as Render. Keep the rest quiet.
+- **Type is character.** Go to extremes in weight and size (thin against extra bold, a threefold jump). Avoid text that is all capitals.
+- **Density.** Keep it readable at a glance, like Ableton. Add no explanatory sentences and no hover tips. The video is the lead.
+- **Motion.** Only motion that shows what changed as a result of a touch.
+- **Work in two passes.** First write four to six colours, the fonts and an ASCII layout, and correct them against the request. Then write the code. Take a picture and critique it yourself.
 
-**値と絵の革**（置くだけで着られる）：
+Direction for the poster sample: a Swiss geometric poster (Posterlad's Checkers, Xavito deVito's gig poster) in a quiet version. Colour only for kind, loud only for the selection and Render, rows as dense as a mixing desk. `poster_forms.dart` still picks a card's colour from its title, which goes against this.
 
-> `shelves/skins/README.md` と `shelves/skins/ROLES.md` を読んで、`~/Library/Application Support/Motolii/skins/<名前>/theme.xml` に「（欲しい見た目）」の革を書いて。`app/tool/live.sh` でアプリを開いて見て、直して、また見る。読めない文字や差し色の埋もれがなくなるまで。
+## 5. Asking an AI
 
-**フォーム**（組み立てから変える）。届く部品は §3 の表。ドックのタブそのもの（`docking` が描く）はまだ外（§7）。
+**A skin of values and pictures** (wearable once it is dropped in place):
 
-> `docs/app/skins/HANDOFF.md` を読んで、`lib/skin/forms/<名前>_forms.dart` に「（欲しい見た目）」のフォームを書き、登録して、`shelves/skins/<名前>/theme.xml` で着る革を作って。先に色4〜6個・書体・ASCII の配置図を書いて「ありがちな所」を直してから書くこと。§3 の表の関数を全部書く（書かない関数はアプリのいつもの絵のまま）。ドックのタブはまだ届かない。`app/tool/live.sh` でアプリを開いて見て直す。最後に切れ0・はみ出し0を確かめる。
+> Read `shelves/skins/README.md` and `shelves/skins/ROLES.md`, then write a skin of "(the look you want)" to `~/Library/Application Support/Motolii/skins/<name>/theme.xml`. Open the app with `app/tool/live.sh`, look, fix, and look again, until no text is unreadable and no accent colour is lost.
 
-## 6. 落とし穴（踏んだ物）
+**A form** (changes how parts are put together). The parts it reaches are in the table in section 3. The dock tab itself (drawn by the `docking` package) is still outside, apart from its mark (section 7).
 
-- **横に流れる行に Flexible**：スクロールする Row（例：プレビューの下の DeskStrip）の子に Flexible/Expanded を入れると、画面が組めずに15件落ちた。
-- **const**：`Shape.z()` などは getter なので、`const` の中では使えない。解析器の `const_*` の指摘の所の `const` を外す。
-- **ROLES.md の書き方**：`` `名前` `` と書いた物は全部「名前」として照合される。値の例は普通の文字で書く。範囲（`Clip1`〜`Clip7`）でなく全部並べる。
-- **数の範囲**：Size 0.85〜1.5、TextScale 0.85〜1.3、Spacing 0〜2、Corner 0〜10 の外は端に収める（外だとタブが消える・文字が切れる）。
-- **自動の札の色**：インスペクタの自動の札は、作った時の色を覚えていた。色は描く時に読む（`Fx.toneOf`）。
+> Read `docs/app/skins/HANDOFF.md`, write a form of "(the look you want)" in `lib/skin/forms/<name>_forms.dart`, register it, and make a skin that wears it in `shelves/skins/<name>/theme.xml`. First write four to six colours, the fonts and an ASCII layout, and correct the common defaults, then write the code. Write `action`, `onOff` and `card` (a function you do not write stays the app's usual drawing). Open the app with `app/tool/live.sh`, look and fix. In the end check that nothing is clipped and nothing overflows.
 
-## 7. まだのこと
+## 6. Pitfalls
 
-- フォームを通っている部品は、Render、Edit/Animate/Export、Space、オン・オフ、札、小さな切り替え（Fit、Layer/Group、Snap、Safe、Grid）、棚の絞り込み、タイムラインの層の名前と帯、数の入力欄。帯の角と地は `trackRadius` と `trackBand`。ドックのタブそのもの（`docking` パッケージが描く）は、まだフォームの外。
-- フォームはアプリに組み込まれるので、配った人が置くだけでは着られない。
-- 細い線（1画素）の太さは革で変わらない。
-- プレビューの中（枠の外の暗い所も）は作品の絵なので、革では変わらない。
+- **Flexible in a row that scrolls sideways.** Putting `Flexible` or `Expanded` in a child of a scrolling `Row` (for example a strip under the preview) leaves the screen unable to lay out.
+- **const.** `Shape.z()` and its relatives are getters, so they cannot be used inside `const`. Remove the `const` where the analyzer's `const_*` lints point.
+- **Keep ROLES.md in step with the app.** Every name the app reads through `ColorTheme.of`, `ColorTheme.number` and `ColorTheme.word` is listed in ROLES.md, and nothing else is.
+- **Ranges of numbers.** Size 0.85 to 1.5, TextScale 0.85 to 1.3, Spacing 0 to 2, Corner 0 to 10. Outside them the value is pulled to the end (outside them tabs disappear and text is clipped).
+- **The colour of an automatic card.** The inspector's automatic cards read their colour when they paint (`CardDeclaration.toneOf` in `lib/inspector/inspector_card.dart`). Do not store the colour when the card is made.
 
-## 8. 履歴
+## 7. Not done yet
 
-`1004c21` 手引き → `6572bd0` 革はフォルダ1つ・2色で灰色の段・shoot.sh・名前の照合 → `220e361` `cdcebd5` 外の LLM の指摘 → `adef71e` 直書きの大きさ0・文字は切らない → `517985e` 無茶な値の守り → `283dee2` 枠（9分割） → `760d873` ヘッドレス UI（フォーム） → `56ce5b4` この引き継ぎ → 外の AI がこれだけでライトテーブルのフォームを書いた（7/10、指摘は §3 の約束の細かい所・使える材料・§5 に反映）
+- The parts that go through forms are Render, the on and off switches, cards, the small choices and chips (Fit, Layer and Group, Snap, Safe, Grid), a shelf's filter chips, a layer's name and its bar in the timeline (the corner and ground of the bar are `trackRadius` and `trackBand`), the mark of a dock tab (`paneMark`), and number fields. The dock tab itself (drawn by the `docking` package) is still outside forms.
+- A form is compiled into the app, so a skin that brings one cannot be worn by just dropping it in place.
+- The width of a thin (1 pixel) line does not change with the skin.
+- The inside of the preview (including the dark area outside its frame) is the work's picture, so a skin does not change it.
