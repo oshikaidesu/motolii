@@ -1,9 +1,27 @@
 // Each row's state as the project stores it (hidden, solo, locked, a group's colours) and the column of layer names.
-part of 'timeline.dart';
+import 'dart:math' as math;
 
-extension _WsTimelineRows on _WsTimelineState {
+import 'package:flutter/gestures.dart' show DragStartBehavior;
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+import 'package:naked_ui/naked_ui.dart';
+
+import 'package:motolii/bridge/motolii.dart' show MotoliiDocument, MotoliiWrites, MotoliiShelves;
+import 'package:motolii/skin/layer_colors.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/menu.dart';
+import 'package:motolii/widgets/two_fingers.dart';
+import 'package:motolii/workspace/edits/make_relation.dart';
+import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/timeline/timeline.dart';
+import 'package:motolii/workspace/timeline/timeline_labels.dart';
+import 'package:motolii/workspace/timeline/timeline_paint.dart';
+import 'package:motolii/workspace/timeline/timeline_view.dart';
+
+extension WsTimelineRows on WsTimelineState {
   /// The label colours of the layers a behaviour affects, in order, or null for an ordinary layer row (which has a single colour).
-  List<Color>? _mixOf(Ws ws, String id) {
+  List<Color>? mixOf(Ws ws, String id) {
     final m = ws.inside, t = int.tryParse(id);
     if (m == null || t == null || m.word(t, 'kind') != 'behaviour' || !wsRelations.contains(m.word(t, 'file'))) return null;
     return [
@@ -20,13 +38,13 @@ extension _WsTimelineRows on _WsTimelineState {
 
   // Hiding sets the layer's visible property to 0 in the project, so the layer is not on the canvas. It is one undo step.
   // This reads the last snapshot, so no engine call is made while a row is built.
-  bool _isHidden(Ws ws, String id) => ws.layers.any((l) => l.id == id && l.hidden);
+  bool isHidden(Ws ws, String id) => ws.layers.any((l) => l.id == id && l.hidden);
 
   /// How many layers a row dragged by [by] rows moves past. A collapsed group counts as itself plus all its members.
   int _places(Ws ws, WsLayer l, int by) {
     final away = ws.foldedAway,
         seen = [
-          for (final o in _order)
+          for (final o in order)
             if (o.value == null) ws.layers[o.layer].id,
         ],
         at = seen.indexOf(l.id);
@@ -35,38 +53,43 @@ extension _WsTimelineRows on _WsTimelineState {
   }
 
   void _eye(Ws ws, String id) {
-    ws.after(ws.inside!.later('set', layer: int.parse(id), name: 'visible', number: _isHidden(ws, id) ? 1 : 0));
+    ws.after(ws.inside!.later('set', layer: int.parse(id), name: 'visible', number: isHidden(ws, id) ? 1 : 0));
   }
 
   // Solo and lock are stored in the project, as in After Effects. While any layer is solo, only the solo layers are shown.
   // The engine refuses to change a locked layer and reports an error.
-  bool _isSolo(Ws ws, String id) => ws.layers.any((l) => l.id == id && l.solo);
+  bool isSolo(Ws ws, String id) => ws.layers.any((l) => l.id == id && l.solo);
 
-  bool _isLocked(Ws ws, String id) => ws.layers.any((l) => l.id == id && l.locked);
+  bool isLocked(Ws ws, String id) => ws.layers.any((l) => l.id == id && l.locked);
 
-  bool _anySolo(Ws ws) => ws.layers.any((l) => _isSolo(ws, l.id));
+  bool anySolo(Ws ws) => ws.layers.any((l) => isSolo(ws, l.id));
 
-  Widget _labels(Ws ws, List<WtRow> rows) => Column(
+  void _flag(Ws ws, String name, String id) {
+    final m = ws.inside!;
+    ws.after(m.later('set', layer: int.parse(id), name: name, number: (name == 'solo' ? isSolo(ws, id) : isLocked(ws, id)) ? 0 : 1));
+  }
+
+  Widget labels(Ws ws, List<WtRow> rows) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      _LabelHeader(count: ws.layers.length, solo: _anySolo(ws)),
+      TimelineLabelHeader(count: ws.layers.length, solo: anySolo(ws)),
       Expanded(
         child: WsMenu(
-          key: _labelMenu,
+          key: labelMenu,
           child: WsTwoFingers(
-            onWheel: _scrollBy,
+            onWheel: scrollBy,
             // The labels scroll vertically together with the track rows.
-            onPan: (by, _) => _scrollBy(Offset(0, -by.dy)),
+            onPan: (by, _) => scrollBy(Offset(0, -by.dy)),
             child: ClipRect(
               child: LayoutBuilder(
                 builder: (context, box) {
-                  final top = _clampV(rows.length);
+                  final top = clampV(rows.length);
                   return Stack(
                     children: [
                       for (var i = 0; i < rows.length; i++)
-                        if (_order[i].aim case (final said, final other)?)
+                        if (order[i].aim case (final said, final other)?)
                           Positioned(
-                            key: ValueKey('ws-tl-aim-${ws.layers[_order[i].layer].id}-$said-$other'),
+                            key: ValueKey('ws-tl-aim-${ws.layers[order[i].layer].id}-$said-$other'),
                             left: Shape.s(34),
                             right: Shape.s(8),
                             top: i * WtM.row - top,
@@ -88,9 +111,9 @@ extension _WsTimelineRows on _WsTimelineState {
                             ),
                           )
                         // A property lane shows the property name under its layer's name, as Ableton names a lane after its control.
-                        else if (_order[i].value case final n?)
+                        else if (order[i].value case final n?)
                           Positioned(
-                            key: ValueKey('ws-tl-lane-${ws.layers[_order[i].layer].id}-$n'),
+                            key: ValueKey('ws-tl-lane-${ws.layers[order[i].layer].id}-$n'),
                             left: Shape.s(34),
                             right: Shape.s(8),
                             top: i * WtM.row - top,
@@ -99,7 +122,7 @@ extension _WsTimelineRows on _WsTimelineState {
                             // This follows Ableton's Device and Control choosers and Logic's plug-in and parameter names.
                             child: Row(
                               children: [
-                                if (_laneCard(ws, ws.layers[_order[i].layer], n) case final card?) ...[
+                                if (laneCard(ws, ws.layers[order[i].layer], n) case final card?) ...[
                                   Flexible(
                                     child: Text(card, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g56)),
                                   ),
@@ -109,7 +132,7 @@ extension _WsTimelineRows on _WsTimelineState {
                               ],
                             ),
                           )
-                        else if (ws.layers[_order[i].layer] case final l)
+                        else if (ws.layers[order[i].layer] case final l)
                           Positioned(
                             key: ValueKey('ws-tl-label-${l.id}'),
                             left: 0,
@@ -119,24 +142,24 @@ extension _WsTimelineRows on _WsTimelineState {
                             // Dragging a row up or down moves the layer forward or back by as many rows as it was dragged.
                             child: GestureDetector(
                               supportedDevices: wsPressing,
-                              onSecondaryTapDown: (d) => _labelRight(l, d.globalPosition),
+                              onSecondaryTapDown: (d) => labelRight(l, d.globalPosition),
                               // Count the whole drag from the pointer-down position.
                               dragStartBehavior: DragStartBehavior.down,
-                              onVerticalDragStart: (_) => _lift = 0,
-                              onVerticalDragUpdate: (d) => _lift += d.delta.dy,
+                              onVerticalDragStart: (_) => lift = 0,
+                              onVerticalDragUpdate: (d) => lift += d.delta.dy,
                               onVerticalDragEnd: (_) {
-                                final by = (_lift / WtM.row).round();
+                                final by = (lift / WtM.row).round();
                                 if (by != 0) {
                                   ws.after(ws.inside!.later('raise', layer: int.parse(l.id), number: (by > 0 ? -1 : 1) * _places(ws, l, by).toDouble()));
                                 }
                               },
-                              child: _LabelRow(
+                              child: TimelineLabelRow(
                                 // The layer's number, not the row's: After Effects' # column counts layers only, not property lanes.
-                                index: _order[i].layer,
+                                index: order[i].layer,
                                 depth: ws.depth(l),
                                 row: rows[i],
-                                hidden: _isHidden(ws, l.id),
-                                solo: _isSolo(ws, l.id),
+                                hidden: isHidden(ws, l.id),
+                                solo: isSolo(ws, l.id),
                                 lanes: l.kind == WsKind.group
                                     ? ws.groupOpen(l.id)
                                     : l.keys.isEmpty && wsTargets(ws, l.id).isEmpty && !l.lined
@@ -157,9 +180,9 @@ extension _WsTimelineRows on _WsTimelineState {
                             ),
                           ),
                       for (var i = 0; i < rows.length; i++)
-                        if (_order[i].value == null)
+                        if (order[i].value == null)
                           // The rename field is written over the label (Cmd+R).
-                          if (_renameField(i, ws.layers[_order[i].layer].id, i * WtM.row - top) case final f?) f,
+                          if (renameField(i, ws.layers[order[i].layer].id, i * WtM.row - top) case final f?) f,
                     ],
                   );
                 },

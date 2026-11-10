@@ -1,9 +1,29 @@
 // The row above the tracks: project name, transport buttons, playhead time, tempo and zoom controls.
-part of 'timeline.dart';
+import 'dart:async' show Timer;
+import 'dart:math' as math;
+
+import 'package:flutter/widgets.dart';
+import 'package:naked_ui/naked_ui.dart';
+
+import 'package:motolii/bridge/motolii.dart' show MotoliiWrites;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, IconPress;
+import 'package:motolii/widgets/glyphs.dart' show Glyph;
+import 'package:motolii/widgets/media.dart' show MiniSlider;
+import 'package:motolii/widgets/number_field.dart';
+import 'package:motolii/widgets/panel_header.dart';
+import 'package:motolii/widgets/text_gestures.dart';
+import 'package:motolii/widgets/timeline_painters.dart' show TpGlyph;
+import 'package:motolii/workspace/state/beats.dart';
+import 'package:motolii/workspace/state/workspace_aspect.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/timeline/timeline_paint.dart';
 
 /// The timeline header. Narrow widths drop the total time, then the project name and layer summary, then the zoom slider.
-class _Header extends StatelessWidget {
-  const _Header({
+class TimelineHeader extends StatelessWidget {
+  const TimelineHeader({
+    super.key,
     required this.ws,
     required this.loop,
     required this.zoom,

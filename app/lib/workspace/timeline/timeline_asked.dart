@@ -2,11 +2,27 @@
 //
 // - Zoom, loop and rename requests come from command_actions.dart and follow Ableton Live. The timeline keeps its own view state.
 // - The ruler follows Live's scrub area and locators (Live 12 manual, chapter 6 "Arrangement View", sections 6.3 and 6.4).
-part of 'timeline.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
-mixin _TimelineAsked on State<WsTimeline> {
+import 'package:motolii/bridge/motolii.dart' show MotoliiWrites;
+import 'package:motolii/skin/layer_colors.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/menu.dart';
+import 'package:motolii/widgets/text_gestures.dart';
+import 'package:motolii/workspace/commands/layer_menu.dart';
+import 'package:motolii/workspace/commands/panel_requests.dart' show wsTimelineAsk, wsAskRename, wsAskTimeline, wsMarkPicked;
+import 'package:motolii/workspace/state/layer.dart';
+import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/timeline/timeline.dart';
+import 'package:motolii/workspace/timeline/timeline_drag.dart';
+import 'package:motolii/workspace/timeline/timeline_paint.dart';
+import 'package:motolii/workspace/timeline/timeline_ruler.dart';
+import 'package:motolii/workspace/timeline/timeline_view.dart';
+
+mixin TimelineAsked on State<WsTimeline> {
   // The timeline state this mixin is part of: its zoom and scroll.
-  _WsTimelineState get _t => this as _WsTimelineState;
+  WsTimelineState get _t => this as WsTimelineState;
 
   // The zoom and scroll before "selection" zoomed in. "back" returns to them, as X does in Live.
   (double, double)? _before;
@@ -15,12 +31,12 @@ mixin _TimelineAsked on State<WsTimeline> {
   final _renameWords = TextEditingController();
   late final FocusNode _renameFocus = FocusNode()..addListener(() => _renameFocus.hasFocus ? null : _renamed());
 
-  void _hearAsks() {
+  void hearAsks() {
     wsTimelineAsk.addListener(_heard);
     wsAskRename.addListener(_rename);
   }
 
-  void _stopAsks() {
+  void stopAsks() {
     wsTimelineAsk.removeListener(_heard);
     wsAskRename.removeListener(_rename);
     _renameWords.dispose();
@@ -28,17 +44,17 @@ mixin _TimelineAsked on State<WsTimeline> {
   }
 
   void _heard() {
-    final t = _t, ws = t._ws, m = ws?.inside;
+    final t = _t, ws = t.workspace, m = ws?.inside;
     if (!mounted || ws == null || m == null) return;
     switch (wsTimelineAsk.value.$1) {
       case 'loop':
         setState(() => m.looping = !m.looping);
       case 'in':
-        t._setZoom(t._zoom * 1.5);
+        t.setZoom(t.zoom * 1.5);
       case 'out':
-        t._setZoom(t._zoom / 1.5);
+        t.setZoom(t.zoom / 1.5);
       case 'fit':
-        t._setZoom(1);
+        t.setZoom(1);
       // Zooms to fill the view with the selected keyframes, else the selected layer's bar, as Z does in Live.
       case 'selection':
         final frames = ws.keys.isNotEmpty
@@ -48,21 +64,21 @@ mixin _TimelineAsked on State<WsTimeline> {
               ];
         if (frames.isEmpty) return;
         final a = frames.reduce((p, q) => p < q ? p : q), b = frames.reduce((p, q) => p > q ? p : q), span = (b - a).clamp(6, Ws.duration);
-        _before ??= (t._zoom, t._scroll);
-        t._setZoom(Ws.duration / (span * 1.2), anchor: a);
-        setState(() => t._scroll = t._clampScroll(a - span * .1));
+        _before ??= (t.zoom, t.scroll);
+        t.setZoom(Ws.duration / (span * 1.2), anchor: a);
+        setState(() => t.scroll = t.clampScroll(a - span * .1));
       case 'back':
         if (_before case (final z, final s)?) {
           _before = null;
-          t._setZoom(z);
-          setState(() => t._scroll = t._clampScroll(s));
+          t.setZoom(z);
+          setState(() => t.scroll = t.clampScroll(s));
         }
     }
   }
 
   /// Plays from frame [f]. Playback is stopped first so the clock restarts at the playhead.
   void _playAt(int f) {
-    final ws = _t._ws!;
+    final ws = _t.workspace!;
     ws.playing = false;
     ws.frame = f;
     ws.playing = true;
@@ -74,17 +90,17 @@ mixin _TimelineAsked on State<WsTimeline> {
   /// Any touch of Alight Motion's timeline stops playback too. There the playhead stays in the middle and the timeline moves.
   /// On desktop the playhead moves, as in Audacity, whose "Click ruler to start playback" setting is off by default.
   /// The work area band handles its own clicks.
-  void _rulerTap(Offset p) {
-    final t = _t, ws = t._ws;
+  void rulerTap(Offset p) {
+    final t = _t, ws = t.workspace;
     if (ws == null) return;
     final int f;
-    if (t._flagAt(p) case final flag?) {
+    if (t.flagAt(p) case final flag?) {
       wsMarkPicked.value = flag;
       f = (flag.$1 * Ws.fps).round();
     } else {
       wsMarkPicked.value = null;
       if (p.dy <= WtM.band + 2) return;
-      f = t._view.frameAt(p.dx).round().clamp(0, Ws.duration);
+      f = t.view.frameAt(p.dx).round().clamp(0, Ws.duration);
     }
     ws
       ..playing = false
@@ -96,14 +112,14 @@ mixin _TimelineAsked on State<WsTimeline> {
   /// On a marker it renames the marker, as Premiere Pro, DaVinci Resolve and Final Cut Pro do.
   /// Live plays from the marker instead, so here "Play from Here" is in the right-click menu.
   /// Elsewhere it zooms to the selection, or to the whole project when nothing is selected, as in Live.
-  void _rulerDouble(Offset p) {
-    if (_t._flagAt(p) case final flag?) {
+  void rulerDouble(Offset p) {
+    if (_t.flagAt(p) case final flag?) {
       wsMarkPicked.value = flag;
       return _rename();
     }
-    final ws = _t._ws;
+    final ws = _t.workspace;
     if (ws != null && (ws.keys.isNotEmpty || ws.layer != null)) return wsAskTimeline('selection');
-    _t._setZoom(1);
+    _t.setZoom(1);
   }
 
   /// A right-click on the ruler.
@@ -111,12 +127,12 @@ mixin _TimelineAsked on State<WsTimeline> {
   /// As in Live (6.4), the scrub area and each locator have their own context menu.
   /// On a marker it selects the marker, and the menu can rename it, play from it or delete it.
   /// Elsewhere the menu adds a marker named by its order, or one whose name field opens at once, as in Final Cut Pro.
-  void _rulerRight(Offset p) {
-    final ws = _t._ws, m = ws?.inside;
+  void rulerRight(Offset p) {
+    final ws = _t.workspace, m = ws?.inside;
     if (ws == null || m == null) return;
-    if (_t._flagAt(p) case final flag?) {
+    if (_t.flagAt(p) case final flag?) {
       wsMarkPicked.value = flag;
-      return _t._rulerMenu.currentState?.show(p, [
+      return _t.rulerMenu.currentState?.show(p, [
         WsMenuItem('Rename…', _rename, keys: '⌘R'),
         WsMenuItem('Play from Here', () => _playAt((flag.$1 * Ws.fps).round())),
         const WsMenuItem.rule(),
@@ -133,8 +149,8 @@ mixin _TimelineAsked on State<WsTimeline> {
         ),
       ]);
     }
-    final at = _t._view.frameAt(p.dx).round().clamp(0, Ws.duration) / Ws.fps, taken = ws.marks.any((k) => (k.$1 - at).abs() < 0.5 / Ws.fps);
-    _t._rulerMenu.currentState?.show(p, [
+    final at = _t.view.frameAt(p.dx).round().clamp(0, Ws.duration) / Ws.fps, taken = ws.marks.any((k) => (k.$1 - at).abs() < 0.5 / Ws.fps);
+    _t.rulerMenu.currentState?.show(p, [
       WsMenuItem('Add Marker', taken ? null : () => _addMark(at, named: false), why: 'One is here'),
       WsMenuItem('Add Marker and Name…', taken ? null : () => _addMark(at, named: true), why: 'One is here'),
       if (ws.beats != null)
@@ -147,19 +163,19 @@ mixin _TimelineAsked on State<WsTimeline> {
   }
 
   /// A right-click on a layer's bar opens the layer's context menu.
-  void _trackRight(Offset p) {
-    final t = _t, ws = t._ws, r = t._rowAt(p.dy);
+  void trackRight(Offset p) {
+    final t = _t, ws = t.workspace, r = t.rowAt(p.dy);
     // Below the rows, or on a property lane, there is no bar.
     if (ws == null || r == null || r.value != null) return;
-    final l = r.l, f = t._view.frameAt(p.dx);
+    final l = r.l, f = t.view.frameAt(p.dx);
     // Beside the bar.
     if (f < l.inF || f > l.outF) return;
-    t._trackMenu.currentState?.show(p, wsThingMenu(context, ws, l));
+    t.trackMenu.currentState?.show(p, wsThingMenu(context, ws, l));
   }
 
   /// The same menu, opened by a right-click on a row's name.
-  void _labelRight(WsLayer l, Offset global) {
-    final menu = _t._labelMenu.currentState, ws = _t._ws;
+  void labelRight(WsLayer l, Offset global) {
+    final menu = _t.labelMenu.currentState, ws = _t.workspace;
     if (menu == null || ws == null) return;
     menu.show((menu.context.findRenderObject() as RenderBox).globalToLocal(global), wsThingMenu(context, ws, l));
   }
@@ -167,8 +183,8 @@ mixin _TimelineAsked on State<WsTimeline> {
   /// The Marker button, as Set Locator in Live (6.4).
   ///
   /// It adds a marker at the playhead and selects it. If a marker is already there, it deletes it (Delete Locator in Live).
-  void _setMark() {
-    final ws = _t._ws, m = ws?.inside;
+  void setMark() {
+    final ws = _t.workspace, m = ws?.inside;
     if (ws == null || m == null) return;
     if (ws.marks.where((k) => (k.$1 * Ws.fps).round() == ws.frame).firstOrNull case (final was, _)?) {
       wsMarkPicked.value = null;
@@ -178,7 +194,7 @@ mixin _TimelineAsked on State<WsTimeline> {
   }
 
   void _addMark(double at, {required bool named}) {
-    final ws = _t._ws!, marks = ws.marks;
+    final ws = _t.workspace!, marks = ws.marks;
     var n = marks.length + 1;
     while (marks.any((k) => k.$2 == 'M$n')) {
       n++;
@@ -191,15 +207,15 @@ mixin _TimelineAsked on State<WsTimeline> {
   }
 
   void _rename() {
-    final ws = _t._ws;
+    final ws = _t.workspace;
     if (!mounted || ws == null) return;
     if (wsMarkPicked.value case final flag?) {
       // The selected marker's name is edited in its flag with the text selected, as in Final Cut Pro.
-      setState(() => _t._naming = flag);
-      _t._markWords
+      setState(() => _t.naming = flag);
+      _t.markWords
         ..text = flag.$2
         ..selection = TextSelection(baseOffset: 0, extentOffset: flag.$2.length);
-      return _t._markFocus.requestFocus();
+      return _t.markFocus.requestFocus();
     }
     if (ws.layer == null) return;
     setState(() => _renaming = ws.layer!.id);
@@ -209,7 +225,7 @@ mixin _TimelineAsked on State<WsTimeline> {
   }
 
   void _renamed() {
-    final id = _renaming, ws = _t._ws, words = _renameWords.text.trim();
+    final id = _renaming, ws = _t.workspace, words = _renameWords.text.trim();
     if (id == null) return;
     setState(() => _renaming = null);
     final t = int.tryParse(id), was = ws?.layers.where((l) => l.id == id).firstOrNull?.name;
@@ -218,7 +234,7 @@ mixin _TimelineAsked on State<WsTimeline> {
 
   /// The name field over the row being renamed.
   /// Enter or clicking away commits the name. Esc restores the old one.
-  Widget? _renameField(int i, String id, double top) => _renaming != id
+  Widget? renameField(int i, String id, double top) => _renaming != id
       ? null
       : Positioned(
           left: Shape.s(28),
@@ -228,7 +244,7 @@ mixin _TimelineAsked on State<WsTimeline> {
           child: CallbackShortcuts(
             bindings: {
               const SingleActivator(LogicalKeyboardKey.escape): () {
-                _renameWords.text = _t._ws?.layers.where((l) => l.id == id).firstOrNull?.name ?? '';
+                _renameWords.text = _t.workspace?.layers.where((l) => l.id == id).firstOrNull?.name ?? '';
                 _renameFocus.unfocus();
               },
             },

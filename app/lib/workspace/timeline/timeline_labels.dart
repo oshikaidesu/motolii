@@ -1,9 +1,18 @@
 // The layer name column: a header, and one row per layer with visibility, solo and lock toggles.
-part of 'timeline.dart';
+import 'package:flutter/widgets.dart';
+import 'package:naked_ui/naked_ui.dart';
+
+import 'package:motolii/skin/forms/forms.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/glyphs.dart' show Glyph;
+import 'package:motolii/widgets/panel_header.dart';
+import 'package:motolii/widgets/timeline_painters.dart' show TpGlyph;
+import 'package:motolii/workspace/timeline/timeline_paint.dart';
 
 /// Header of the name column: layer count and the visibility, solo and lock icons.
-class _LabelHeader extends StatelessWidget {
-  const _LabelHeader({required this.count, required this.solo});
+class TimelineLabelHeader extends StatelessWidget {
+  const TimelineLabelHeader({super.key, required this.count, required this.solo});
   final int count;
   final bool solo;
   @override
@@ -33,8 +42,9 @@ class _LabelHeader extends StatelessWidget {
 }
 
 /// One layer's row in the name column.
-class _LabelRow extends StatefulWidget {
-  const _LabelRow({
+class TimelineLabelRow extends StatefulWidget {
+  const TimelineLabelRow({
+    super.key,
     required this.index,
     required this.depth,
     required this.row,
@@ -53,10 +63,10 @@ class _LabelRow extends StatefulWidget {
   final bool? lanes; // Whether its keyframed properties are expanded; null if the layer has no keyframes.
   final VoidCallback onLanes, onSelect, onEye, onSolo, onLock;
   @override
-  State<_LabelRow> createState() => _LabelRowState();
+  State<TimelineLabelRow> createState() => _LabelRowState();
 }
 
-class _LabelRowState extends State<_LabelRow> {
+class _LabelRowState extends State<TimelineLabelRow> {
   bool _h = false;
   @override
   Widget build(BuildContext context) {
