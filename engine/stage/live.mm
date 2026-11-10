@@ -23,10 +23,13 @@
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::Engine;
+using filament::Fence;
+using filament::RenderTarget;
+using filament::Texture;
+using filament::math::float2;
 
 namespace {
 
