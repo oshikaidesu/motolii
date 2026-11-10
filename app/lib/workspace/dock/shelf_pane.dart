@@ -253,11 +253,11 @@ class _ShelfPaneState extends State<ShelfPane> {
             ],
           ],
         ),
-        DockSearch(controller: _search, hint: widget.hint),
+        ShelfSearchField(controller: _search, hint: widget.hint),
         Builder(
           builder: (context) {
             // Completions of the word being typed, from the tags the shelf has. A click takes one.
-            final done = DockTags.completing(name, _search.text);
+            final done = ShelfTags.completing(name, _search.text);
             if (done.isEmpty) return const SizedBox.shrink();
             return Padding(
               padding: EdgeInsets.symmetric(
@@ -273,7 +273,7 @@ class _ShelfPaneState extends State<ShelfPane> {
                       if (t != done.first) SizedBox(width: Shape.s(4)),
                       DockHover(
                         onTap: () {
-                          final text = DockTags.complete(_search.text, t);
+                          final text = ShelfTags.complete(_search.text, t);
                           _search.value = TextEditingValue(
                             text: text,
                             selection: TextSelection.collapsed(

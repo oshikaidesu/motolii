@@ -7,8 +7,13 @@ import 'package:motolii/widgets/media.dart' show drawStar, glyph;
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 
 /// The star button that adds an item to Starred. It is shown on hover, on the selected row, or when set.
-class DockStar extends StatelessWidget {
-  const DockStar({super.key, required this.on, required this.onTap, this.ink});
+class StarButton extends StatelessWidget {
+  const StarButton({
+    super.key,
+    required this.on,
+    required this.onTap,
+    this.ink,
+  });
   final bool on;
   final VoidCallback onTap;
   final Color? ink;

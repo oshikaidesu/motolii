@@ -9,8 +9,8 @@ import 'package:motolii/widgets/two_finger_gestures.dart';
 /// A band whose height the user sets by dragging the grip on its lower edge.
 ///
 /// The height is clamped to 44..[max]. A double-click on the grip sets it back to [reset].
-class DockResizable extends StatefulWidget {
-  const DockResizable({
+class ResizableBand extends StatefulWidget {
+  const ResizableBand({
     super.key,
     required this.height,
     required this.max,
@@ -28,10 +28,10 @@ class DockResizable extends StatefulWidget {
   final ValueChanged<double> onHeight;
   final Widget child;
   @override
-  State<DockResizable> createState() => _DockResizableState();
+  State<ResizableBand> createState() => _ResizableBandState();
 }
 
-class _DockResizableState extends State<DockResizable> {
+class _ResizableBandState extends State<ResizableBand> {
   final _box = GlobalKey();
   bool _hover = false, _drag = false;
   double _h = 0, _from = 0;

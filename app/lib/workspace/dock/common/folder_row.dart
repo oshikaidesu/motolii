@@ -1,6 +1,6 @@
+// A row of a shelf's list: a folder in Media, a place in Effects.
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
@@ -13,7 +13,7 @@ import 'package:motolii/workspace/shelf/tile_hover.dart';
 /// [depth] indents the row. [open] shows a chevron (null shows none) and [onToggle] is called when the chevron is clicked.
 /// A [glyph] or a [cover] image leads the row, and a [cover] makes the row taller with [sub] under the name.
 /// [name] builds the name from the ink and weight the row chooses. [field] replaces the name, and [count] is shown at the end.
-Widget dockFolderRow({
+Widget folderRow({
   Key? key,
   required bool here,
   required AppGlyphs glyph,
@@ -109,21 +109,3 @@ Widget dockFolderRow({
     );
   },
 );
-
-/// A row of round filter chips with counts; the active one is the accent. Scrolls sideways when the shelf is narrow.
-class DockChips extends StatelessWidget {
-  const DockChips(
-    this.chips, {
-    super.key,
-    required this.active,
-    required this.onPick,
-  });
-  final List<(String, int?)> chips;
-  final String active;
-  final ValueChanged<String> onPick;
-  @override
-  Widget build(BuildContext context) => Forms.worn.chips(
-    context,
-    ChipsSpec(chips: chips, active: active, onPick: onPick),
-  );
-}

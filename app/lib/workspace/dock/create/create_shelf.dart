@@ -9,8 +9,11 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/context_menu.dart';
-import 'package:motolii/workspace/dock/common/folder_row.dart';
+import 'package:motolii/workspace/dock/common/empty_shelf.dart';
+import 'package:motolii/workspace/dock/common/filter_chips.dart';
 import 'package:motolii/workspace/dock/common/shelf_footer.dart';
+import 'package:motolii/workspace/dock/common/shelf_masonry.dart';
+import 'package:motolii/workspace/dock/common/shelf_section.dart';
 import 'package:motolii/workspace/dock/create/built_in_tiles.dart';
 import 'package:motolii/workspace/dock/create/create_catalog.dart';
 import 'package:motolii/workspace/dock/create/create_commands.dart';
@@ -69,7 +72,7 @@ class CreateShelf extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        DockChips(
+        FilterChips(
           [
             ('All', makes.fold<int>(0, (s, e) => s + e.$2.length)),
             for (final (g, items) in makes) (g, items.length),
@@ -79,8 +82,8 @@ class CreateShelf extends StatelessWidget {
         ),
         Expanded(
           child: groups.isEmpty
-              ? DockEmpty(c.query)
-              : DockMasonry(
+              ? EmptyShelf(c.query)
+              : ShelfMasonry(
                   weights: [
                     for (final (_, items) in groups) 1 + items.length / 3,
                   ],
@@ -91,7 +94,7 @@ class CreateShelf extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            DockSection(
+                            ShelfSection(
                               g,
                               count: items.length,
                               hue: items.first.hue,
@@ -130,7 +133,7 @@ class CreateShelf extends StatelessWidget {
                 ),
         ),
         if (sel != null)
-          DockFooter(
+          ShelfFooter(
             preview: dockBadge(sel.g, sel.hue, size: Shape.z(34)),
             title: '${sel.name} layer',
             meta:

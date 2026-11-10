@@ -22,7 +22,8 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/context_menu.dart';
-import 'package:motolii/workspace/dock/common/folder_row.dart';
+import 'package:motolii/workspace/dock/common/empty_shelf.dart';
+import 'package:motolii/workspace/dock/common/filter_chips.dart';
 import 'package:motolii/workspace/dock/common/shelf_footer.dart';
 import 'package:motolii/workspace/dock/program/program.dart';
 import 'package:motolii/workspace/dock/program/program_commands.dart';
@@ -151,7 +152,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (!c.mem.programCode)
-            DockChips(
+            FilterChips(
               [
                 ('All', all.length),
                 for (final e in forms.entries) (e.key, e.value),
@@ -170,7 +171,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
                     ProgramCommands(c).saved(sel);
                   }, key: ValueKey(sel.file))
                 : shown.isEmpty
-                ? DockEmpty(c.query)
+                ? EmptyShelf(c.query)
                 : ShelfGrid(
                     shelfLooks['Program']!,
                     count: shown.length,
@@ -205,7 +206,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
               child: TileMoving(tile(sel), playing: true),
             ),
           if (sel != null)
-            DockFooter(
+            ShelfFooter(
               preview: dockBadge(
                 AppGlyphs.program,
                 WindowTokens.toneText,

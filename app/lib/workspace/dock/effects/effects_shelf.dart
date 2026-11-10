@@ -13,7 +13,8 @@ import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, IconPress;
 import 'package:motolii/widgets/media.dart' show Draw;
-import 'package:motolii/workspace/dock/common/folder_row.dart';
+import 'package:motolii/workspace/dock/common/empty_shelf.dart';
+import 'package:motolii/workspace/dock/common/filter_chips.dart';
 import 'package:motolii/workspace/dock/common/resizable_band.dart';
 import 'package:motolii/workspace/dock/common/shelf_footer.dart';
 import 'package:motolii/workspace/dock/common/shelf_tags.dart';
@@ -95,7 +96,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
   @override
   Widget build(BuildContext context) {
     final ws = c.ws, m = ws.inside;
-    if (m == null) return DockEmpty(c.query);
+    if (m == null) return EmptyShelf(c.query);
     final on = ws.fxOf(ws.selected),
         screen = ws.screenFx,
         picked = int.tryParse(ws.selected ?? '') != null;
@@ -105,7 +106,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     VoidCallback chosen(String id, VoidCallback put, {bool taken = false}) {
       void go() {
         // A closure of its own rather than a tear-off, because a dragged tile is identified by it.
-        DockTags.latch('Effects', c.query, id);
+        ShelfTags.latch('Effects', c.query, id);
         if (!taken) c.set(() => effectUsed(id, words: c.query, chip: c.chip));
         ws.tryOn(null); // Stop previewing the hovered effect first: applying reads the document as it is.
         put();
@@ -153,7 +154,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
             Positioned(
               right: 0,
               top: 0,
-              child: DockStar(
+              child: StarButton(
                 key: ValueKey('ws-star-$id'),
                 on: c.starred(id),
                 onTap: () => c.star(id),
@@ -278,15 +279,15 @@ class _EffectsShelfState extends State<EffectsShelf> {
       // There are no motions here: they are expressions, in Create's Expression group.
     ];
     // Search matches the name, or what the effect does in its author's words, as Alight Motion's search reads descriptions.
-    // It also matches the tags read from the effect (DockTags), each word on its own.
+    // It also matches the tags read from the effect (ShelfTags), each word on its own.
     // When nothing matches, as for a misspelt or partial word, the nearest five by RapidFuzz are shown, like "Did you mean".
     Set<String> tagsOf(String id) =>
-        DockTags.of('Effects', id, seen[id]?.tags ?? const {});
+        ShelfTags.of('Effects', id, seen[id]?.tags ?? const {});
     bool found(String q, _EffectEntry e) =>
         q.isEmpty ||
         e.name.toLowerCase().contains(q.toLowerCase()) ||
         (seen[e.id]?.about ?? '').toLowerCase().contains(q.toLowerCase()) ||
-        DockTags.hit(q, e.name, tagsOf(e.id));
+        ShelfTags.hit(q, e.name, tagsOf(e.id));
     final hits = [
           for (final e in every)
             if (c.hit(e.name) || (c.query.isNotEmpty && found(c.query, e))) e,
@@ -299,7 +300,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
               if (!hit.contains(e.id))
                 (e.id, '${e.name} ${e.label}', (seen[e.id]?.about ?? '')),
           ]);
-    final first = DockTags.latched('Effects', c.query),
+    final first = ShelfTags.latched('Effects', c.query),
         latched = every.where((e) => e.id == first).take(1).toList();
     final all = [
       ...latched,
@@ -357,7 +358,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
       }
     }
     // Tags read from the effects, most common first, as the Fonts shelf's tag chips do (dock_fonts.dart).
-    // Each shows the # that is typed to search for it (DockTags). A kind with the same word is a different thing:
+    // Each shows the # that is typed to search for it (ShelfTags). A kind with the same word is a different thing:
     // VIDVOX's Feedback kind is not the feedback passes read from the shader.
     // "transition" is left out because the Transition kind is read the same way (isf.cpp). Shadertoy's filters are read from the shaders.
     final tagChips = [
@@ -575,7 +576,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     final tiles = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        DockChips(
+        FilterChips(
           [
             ('All', here.length),
             for (final t in tagChips) (t.key, t.value),
@@ -617,7 +618,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
                     : _tileKeys
                           .requestFocus(), // The map handles the keys itself.
                 child: listed.isEmpty
-                    ? DockEmpty(
+                    ? EmptyShelf(
                         c.query,
                         said: c.query.isNotEmpty
                             ? null
@@ -694,10 +695,10 @@ class _EffectsShelfState extends State<EffectsShelf> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         if (c.mem.fxListOpen || building) // A deck on the map, with what it holds under it, at the list's height.
-                          DockResizable(
+                          ResizableBand(
                             height: c.mem.fxListHeight,
                             max: box.maxHeight - 160,
-                            reset: dockEffectListHeight,
+                            reset: defaultEffectListHeight,
                             gripKey: const ValueKey('ws-fx-list-grip'),
                             onHeight: (h) =>
                                 c.set(() => c.mem.fxListHeight = h),
@@ -717,7 +718,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
               child: TileMoving(pic(sel.id), playing: true),
             ),
           if (sel != null)
-            DockFooter(
+            ShelfFooter(
               title: sel.name,
               meta: sel.label.isEmpty
                   ? sel.said

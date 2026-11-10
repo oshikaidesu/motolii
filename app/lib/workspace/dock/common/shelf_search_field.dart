@@ -12,15 +12,19 @@ import 'package:motolii/workspace/commands/panel_requests.dart'
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 
 /// The search field at the top of a shelf, with a hint while empty and a clear button once it has text.
-class DockSearch extends StatefulWidget {
-  const DockSearch({super.key, required this.controller, required this.hint});
+class ShelfSearchField extends StatefulWidget {
+  const ShelfSearchField({
+    super.key,
+    required this.controller,
+    required this.hint,
+  });
   final TextEditingController controller;
   final String hint;
   @override
-  State<DockSearch> createState() => _DockSearchState();
+  State<ShelfSearchField> createState() => _ShelfSearchFieldState();
 }
 
-class _DockSearchState extends State<DockSearch> {
+class _ShelfSearchFieldState extends State<ShelfSearchField> {
   final _focus = FocusNode();
   @override
   void initState() {

@@ -40,7 +40,7 @@ class FileFooter extends StatelessWidget {
     // A file the engine can show can be placed any number of times, each as a new layer starting at the current time.
     if (media.picked.length > 1) {
       // Several files are selected: they are placed together.
-      return DockFooter(
+      return ShelfFooter(
         title: '${media.picked.length} files',
         meta: 'Placed one after another, in the order picked',
         action: 'Place ${media.picked.length}',
@@ -76,7 +76,7 @@ class FileFooter extends StatelessWidget {
       // The description comes from GStreamer's discoverer, like Alight Motion's Media Info. The key gives each file its own state.
       key: ValueKey(n.id),
       future: can && m != null ? mediaInfoOf(m.libPath, n.id) : null,
-      builder: (context, info) => DockFooter(
+      builder: (context, info) => ShelfFooter(
         preview:
             n.disk &&
                 (n.g == AppGlyphs.audio ||

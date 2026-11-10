@@ -16,7 +16,7 @@ import 'package:motolii/workspace/dock/fonts/fonts_controller.dart'
 import 'package:motolii/workspace/dock/colors/saved_colors.dart' show colorsAt;
 import 'package:motolii/workspace/dock/map/shelf_map.dart' show shelfMapsAt;
 import 'package:motolii/workspace/shelf/shelf_context.dart' show dockStarsAt;
-import 'package:motolii/workspace/dock/common/shelf_tags.dart' show DockTags;
+import 'package:motolii/workspace/dock/common/shelf_tags.dart' show ShelfTags;
 import 'package:motolii/workspace/tool_panel/ease/ease_shelf.dart'
     show easeKeptAt;
 import 'package:motolii/workspace/shelf/effect_decks.dart'
@@ -48,7 +48,7 @@ Future<void> _open(WidgetTester t) async {
   effectRecentAt(_tmp('recent'));
   easeKeptAt(_tmp('kept'));
   shelfMapsAt(Directory.systemTemp.createTempSync('maps'));
-  DockTags.latchedAt(_tmp('latched'));
+  ShelfTags.latchedAt(_tmp('latched'));
   dockStarsAt(_tmp('stars'));
   fontRecentAt(_tmp('fonts'));
   ColorTheme.at = '${Directory.systemTemp.path}/motolii_test_no_theme.xml';

@@ -9,7 +9,7 @@ import 'dart:io';
 
 import 'package:motolii/storage/json_file.dart' show fileJson, fileKeep;
 
-abstract final class DockTags {
+abstract final class ShelfTags {
   static final _own = <String, Set<String>>{};
   static bool _read = false;
 

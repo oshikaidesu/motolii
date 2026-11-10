@@ -70,7 +70,7 @@ Widget fontTile(
   final sel = c.sel == f.family, star = c.starred(f.family);
   final tags =
       f.script ??
-      DockTags.of(
+      ShelfTags.of(
         'Fonts',
         f.family,
         f.path == null
@@ -119,7 +119,7 @@ Widget fontTile(
     ],
     after: (h) => [
       if (star || h || sel)
-        DockStar(
+        StarButton(
           on: star,
           ink: sel ? WindowTokens.onAccent : null,
           onTap: () => c.star(f.family),

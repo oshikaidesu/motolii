@@ -1,8 +1,8 @@
 // The contents of the open folder in the Media shelf: what is listed, narrowed by the search and the chips.
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/workspace/dock/common/folder_row.dart';
-import 'package:motolii/workspace/dock/common/shelf_footer.dart';
+import 'package:motolii/workspace/dock/common/empty_shelf.dart';
+import 'package:motolii/workspace/dock/common/filter_chips.dart';
 import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/dock/media/file_footer.dart';
 import 'package:motolii/workspace/dock/media/file_node.dart';
@@ -35,10 +35,10 @@ class FolderContents extends StatelessWidget {
         for (final k in media.kidsOf(n)) {
           if (k.folder) {
             if (depth < 4) walk(k, depth + 1);
-          } else if (DockTags.hit(
+          } else if (ShelfTags.hit(
             c.query,
             k.name,
-            DockTags.of('Media', k.id, {
+            ShelfTags.of('Media', k.id, {
               kindLabelOf(k).toLowerCase(),
               if (k.id.contains('.')) k.id.split('.').last.toLowerCase(),
             }),
@@ -90,7 +90,7 @@ class FolderContents extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FolderCrumbs(path, c, media, searching: searching),
-        DockChips(
+        FilterChips(
           [
             ('All', items.length),
             for (final e in kinds.entries) (e.key, e.value),
@@ -100,7 +100,7 @@ class FolderContents extends StatelessWidget {
         ),
         Expanded(
           child: shown.isEmpty
-              ? DockEmpty(c.query)
+              ? EmptyShelf(c.query)
               : ShelfGrid(
                   shelfLooks['Media']!,
                   list: c.mem.mediaList,

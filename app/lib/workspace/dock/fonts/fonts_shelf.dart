@@ -8,7 +8,8 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/workspace/dock/common/folder_row.dart';
+import 'package:motolii/workspace/dock/common/empty_shelf.dart';
+import 'package:motolii/workspace/dock/common/filter_chips.dart';
 import 'package:motolii/workspace/dock/common/shelf_footer.dart';
 import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/dock/fonts/font_commands.dart';
@@ -48,7 +49,7 @@ class FontsShelf extends StatelessWidget {
           m.whole(m.word(int.parse(l.id), 'file')): l,
     };
     bool used(FontFile f) => setIn.containsKey(f.path);
-    Set<String> tagsOf(FontFile f) => DockTags.of(
+    Set<String> tagsOf(FontFile f) => ShelfTags.of(
       'Fonts',
       f.family,
       f.path == null
@@ -56,7 +57,7 @@ class FontsShelf extends StatelessWidget {
           : (c.ws.inside?.fontTags(f.path!) ?? const <String>{}),
     );
     var hits = fonts
-        .where((f) => DockTags.hit(c.query, f.family, tagsOf(f)))
+        .where((f) => ShelfTags.hit(c.query, f.family, tagsOf(f)))
         .toList();
     if (hits.isEmpty && c.query.trim().isNotEmpty) {
       // Nothing matches the query as typed, so show the five nearest fonts.
@@ -100,7 +101,7 @@ class FontsShelf extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FontRoles(c, controller, fonts),
-        DockChips(
+        FilterChips(
           [
             ('All', hits.length),
             ('Used', hits.where(used).length),
@@ -117,7 +118,7 @@ class FontsShelf extends StatelessWidget {
         ),
         Expanded(
           child: list.isEmpty
-              ? DockEmpty(c.query)
+              ? EmptyShelf(c.query)
               : LayoutBuilder(
                   builder: (context, box) {
                     String? usedBy(FontFile f) => setIn[f.path]?.name;
@@ -222,7 +223,7 @@ class FontsShelf extends StatelessWidget {
                 ),
         ),
         if (sel != null)
-          DockFooter(
+          ShelfFooter(
             preview: Container(
               color: WindowTokens.toneText,
               alignment: Alignment.center,

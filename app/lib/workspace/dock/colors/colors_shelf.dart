@@ -490,7 +490,7 @@ class ColorsShelf extends StatelessWidget {
                 : p.saved
                 ? 'Yours'
                 : 'Starter';
-            return DockFooter(
+            return ShelfFooter(
               key: const ValueKey('colour-details'),
               preview: photo != null
                   ? Image.file(File(photo), fit: BoxFit.cover, cacheWidth: 96)

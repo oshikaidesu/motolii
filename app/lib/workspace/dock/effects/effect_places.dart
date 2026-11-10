@@ -17,13 +17,13 @@ import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/widgets/controls.dart' show IconPress;
 import 'package:motolii/widgets/text_gestures.dart' show TextGestures;
 import 'package:motolii/workspace/dock/common/folder_row.dart';
-import 'package:motolii/workspace/dock/common/shelf_footer.dart';
+import 'package:motolii/workspace/dock/common/shelf_section.dart';
 import 'package:motolii/workspace/shelf/effect_decks.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
 
 /// The height of the list when it stands over the tiles. A double-click on its grip resets to this.
-const dockEffectListHeight = 176.0;
+const defaultEffectListHeight = 176.0;
 
 /// The list of places the Effects shelf looks in. See the file header.
 class EffectPlaces extends StatefulWidget {
@@ -342,7 +342,7 @@ class EffectPlacesState extends State<EffectPlaces> {
     };
   }
 
-  /// One row, built on the Media shelf's folder row (dockFolderRow). Clicking it shows what it holds.
+  /// One row, built on the Media shelf's folder row (folderRow). Clicking it shows what it holds.
   /// [cover] is a deck's picture; the row then looks like a playlist in Spotify's library
   /// (cover, name, and the count under it).
   Widget _row(
@@ -374,7 +374,7 @@ class EffectPlacesState extends State<EffectPlaces> {
         if (aim) Text(' +', key: const ValueKey('ws-fx-target'), style: s),
       ],
     );
-    return dockFolderRow(
+    return folderRow(
       key: ValueKey('ws-fx-place-$place'),
       here: here,
       glyph: g,
@@ -520,7 +520,7 @@ class EffectPlacesState extends State<EffectPlaces> {
                   ),
                   if (widget.mapped && c.mem.fxPlace == '★') _held(null),
                   _row('In video'),
-                  DockSection(
+                  ShelfSection(
                     'Decks',
                     trailing: Builder(
                       builder: (b) => IconPress(

@@ -15,7 +15,7 @@ import 'package:motolii/workspace/dock/media/media_controller.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 
 /// The tree band's height when the shelf is narrow. A double-click on its grip resets to this.
-const dockTreeHeight = 132.0;
+const defaultTreeHeight = 132.0;
 
 /// From this shelf width the tree stands beside the contents instead of above them.
 const _wide = 440.0;
@@ -62,10 +62,10 @@ class MediaShelf extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            DockResizable(
+            ResizableBand(
               height: c.mem.treeHeight,
               max: box.maxHeight - 160,
-              reset: dockTreeHeight,
+              reset: defaultTreeHeight,
               gripKey: const ValueKey('browser:tree-grip'),
               onHeight: (h) => c.set(() => c.mem.treeHeight = h),
               child: _Tree(c, media),
@@ -95,7 +95,7 @@ class _Tree extends StatelessWidget {
               ? media.kidsOf(n).where((k) => !k.folder).length
               : 0;
       rows.add(
-        dockFolderRow(
+        folderRow(
           key: ValueKey('browser:folder:${n.id}'),
           here: c.mem.folder == n.id,
           glyph: AppGlyphs.folder,
