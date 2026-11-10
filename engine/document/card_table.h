@@ -9,12 +9,13 @@ namespace motolii {
 // The cards a user sees a layer's values on, besides where the layer is and its
 // fill: a title and the values on it, in the order shown. A layer is shown
 // those of them its kind has. A value that the window has no other place for
-// goes here. The card is shown only while the value named by `when` is `is`. A
-// leading "!" means is not, and a leading "~" means has it in it. added: the
-// card is shown only once one of its values is set or keyed, or the user asked
-// for it with More. It is not one of the tiles Alight Motion shows for the kind
-// (doc_cards_of). later: this card and the cards after it are the optional
-// features, which go below the cards of the layer's effects.
+// goes here. The card is shown only while the property named by `when` reads
+// one of the words of `is`, space separated; a leading "!" means none of them,
+// and "!" alone means the property is set (doc_cards_of). added: the card is
+// shown only once one of its values is set or keyed, or the user asked for it
+// with More. It is not one of the tiles Alight Motion shows for the kind.
+// later: this card and the cards after it are the optional features, which go
+// below the cards of the layer's effects.
 struct DocCard {
   const char* title;
   const char* names;
@@ -25,17 +26,11 @@ struct DocCard {
 };
 
 // Each entry is a card with a title and the space separated properties it
-// shows. The cards that apply to a layer are chosen by the next two fields: a
-// property and the value it must have, where a leading `!` means is not, a
-// leading `~` means contains, and values such as `+` and `@name` are special
-// matches handled in doc_cards_of. An entry marked `true` is shown only once
-// one of its properties has a value or keyframes, or the user asked for it with
-// More. It is not one of the tiles that Alight Motion shows for the kind. The
-// order is the order of the cards. First come the properties that every layer
-// has, as After Effects' Properties panel keeps Layer Transform at the top for
-// all layer types. Then Alight Motion's Opacity and Blending, which is how the
-// layer lies on what is under it. Then the cards of each kind of layer, such as
-// Text and Paragraph or Shape Properties.
+// shows. The order is the order of the cards. First come the properties that
+// every layer has, as After Effects' Properties panel keeps Layer Transform at
+// the top for all layer types. Then Alight Motion's Opacity and Blending, which
+// is how the layer lies on what is under it. Then the cards of each kind of
+// layer, such as Text and Paragraph or Shape Properties.
 inline const DocCard doc_cards[] = {
     // After Effects' Transform group: where the layer is, how large, how turned
     // and how visible.
@@ -77,7 +72,7 @@ inline const DocCard doc_cards[] = {
     // expression.
     {"Type", "split italic wrap wrap_at", "kind", "text"},
     {"Gradient", "gradient gradient_angle gradient_scale gradient_spread",
-     "fill", "~ ", true},
+     nullptr, nullptr, true},
     // There is no Copies card. The number of copies and the copies' own values
     // are on the card of
     // the first expression, see doc_cards_of, as After Effects' Repeater keeps
@@ -96,8 +91,7 @@ inline const DocCard doc_cards[] = {
     // A program's own time, for a program that paints a flat image and for one
     // that has a body, see
     // doc_own_time.
-    {"Time Remap", "time_remap time_remap_loop", "file", "~.js"},
-    {"Time Remap", "time_remap time_remap_loop", "script", "~.js"},
+    {"Time Remap", "time_remap time_remap_loop", nullptr, nullptr, true},
     // The drawings of an animation level: an image that has a drawing is one.
     {"Drawing", "cel", "cel", "!0"},
     // Where in its file a video starts, as Premiere Pro's Slip. A number typed
@@ -154,11 +148,11 @@ inline const DocCard doc_cards[] = {
     {"Surface",
      "shading metallic roughness reflectance clear_coat clear_coat_roughness "
      "sheen anisotropy thickness emissive",
-     "shading", "@lit cloth subsurface", true},
+     "shading", "lit cloth subsurface", true},
     {"Glass", "shading ior dispersion swim dark vivid", "shading",
-     "@glass filament_glass"},
-    {"Lacquer", "shading metallic", "shading", "@lacquer"},
-    {"Bubble", "shading vivid", "shading", "@bubble"},
+     "glass filament_glass"},
+    {"Lacquer", "shading metallic", "shading", "lacquer"},
+    {"Bubble", "shading vivid", "shading", "bubble"},
     // Which lights reach the layer.
     {"Lit", "light_group", "kind", "solid", true},
     {"Light",
@@ -174,11 +168,11 @@ inline const DocCard doc_cards[] = {
     // doc_cards_of.
     {"Falloff", "region falloff_soft falloff_invert", "file", "!"},
     // After Effects' shape operator, added from the shelf.
-    {"Trim Paths", "trim trim_begin trim_offset", "trim", "+"},
+    {"Trim Paths", "trim trim_begin trim_offset", nullptr, nullptr, true},
     // The compressed images of a video, see media/video_datamosh.h.
-    {"Datamosh", "mosh_with mosh_at", "mosh", "+"},
+    {"Datamosh", "mosh_with mosh_at", nullptr, nullptr, true},
     // A point cloud's own, see stage/render/point_cloud.h.
-    {"Points", "dissolve grain", "file", "~.ply"},
+    {"Points", "dissolve grain", nullptr, nullptr, true},
 };
 // Returns true if `one` is a whole word of the space separated list `words`.
 inline bool doc_among(const std::string& words, const std::string& one) {

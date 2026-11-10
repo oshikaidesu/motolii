@@ -222,6 +222,46 @@ std::string doc_fx_titles(Doc& d, int layer) {
   return all;
 }
 
+namespace {
+
+// Returns the property as a card reads it. A layer that is lit with no
+// material said (a solid, or a flat layer placed in depth) reads "lit" for
+// shading, Filament's lit surface; one that is not lit reads "".
+std::string card_word(Doc& d, int layer, const char* name) {
+  if (strcmp(name, "shading")) return doc_word(d, layer, name);
+  std::string m = doc_material(d, layer);
+  const std::string sp = doc_word(d, layer, "space");
+  if (m.empty() && (doc_word(d, layer, "kind") == "solid" || sp == "3d" ||
+                    sp == "2.5d" || doc_on(d, layer, "scale_z")))
+    m = "lit";
+  return m;
+}
+
+// Returns true if the property a card is shown for reads one of the words of
+// `is`, space separated. A leading "!" is not part of the words; the caller
+// takes it as "none of them". With no word left, the property must be unset. A
+// number reads as the word of its value, and an unset number as 0, for example
+// a layer with no parent.
+bool card_reads(Doc& d, int layer, const DocCard& card) {
+  const std::string w = card_word(d, layer, card.when);
+  const char* at = card.is + (card.is[0] == '!');
+  if (!*at) return w.empty();
+  char* end = nullptr;
+  const double n = std::strtod(w.c_str(), &end);
+  while (*at) {
+    const size_t len = strcspn(at, " ");
+    const std::string want(at, len);
+    if (w == want || (w.empty() && want == "0") ||
+        (!w.empty() && !*end && isdigit((unsigned char)want[0]) &&
+         n == std::atof(want.c_str())))
+      return true;
+    at += len + (at[len] ? 1 : 0);
+  }
+  return false;
+}
+
+}  // namespace
+
 std::string doc_cards_of(Doc& d, int layer, std::string* more) {
   const std::string has = " " + doc_has(d, layer) + " ";
   // The cards of the layer's effects come after the layer's own cards (Text,
@@ -237,36 +277,8 @@ std::string doc_cards_of(Doc& d, int layer, std::string* more) {
     // A behavior shows only its own card, not the cards of other layer kinds
     // whose properties happen to share a name with its parameters.
     if (behaviour && !(card.when && !strcmp(card.when, "file"))) continue;
-    if (card.when && card.is[0] == '+') {
-      // An effect's card is shown while the effect is on.
-      if (!doc_on(d, layer, card.when)) continue;
-    } else if (card.when && card.is[0] == '@') {
-      // A material's card is shown while the layer has one of the card's
-      // materials. A solid with no material, or a flat layer placed in depth,
-      // is lit: it gets Filament's lit surface.
-      std::string m = doc_material(d, layer);
-      const std::string sp = doc_word(d, layer, "space");
-      if (m.empty() && (doc_word(d, layer, "kind") == "solid" || sp == "3d" ||
-                        sp == "2.5d" || doc_on(d, layer, "scale_z")))
-        m = "lit";
-      if (m.empty() || !doc_among(card.is + 1, m)) continue;
-    } else if (card.when && card.is[0] == '~') {
-      // A gradient's card is shown while the fill has more than one color.
-      if (doc_word(d, layer, card.when).find(card.is + 1) == std::string::npos)
-        continue;
-    } else if (card.when) {
-      // A card for one fill value and not another, or while the layer is
-      // clipped.
-      const std::string w = doc_word(d, layer, card.when),
-                        want = card.is[0] == '!' ? card.is + 1 : card.is;
-      char* end = nullptr;
-      const double n = std::strtod(w.c_str(), &end);
-      // An unset number counts as 0, for example a layer with no parent.
-      const bool is = w == want || (w.empty() && want == "0") ||
-                      (!w.empty() && !*end && n == std::atof(want.c_str()) &&
-                       !want.empty() && isdigit((unsigned char)want[0]));
-      if (is == (card.is[0] == '!')) continue;
-    }
+    if (card.when && card_reads(d, layer, card) == (card.is[0] == '!'))
+      continue;
     std::string names;
     // Cards marked "added" are hidden until asked for. By default the user sees
     // Alight Motion's tiles for the layer kind (see LayerTools.kt in
