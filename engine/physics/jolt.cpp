@@ -22,6 +22,8 @@
 
 using namespace JPH;
 
+namespace motolii {
+
 namespace {
 constexpr ObjectLayer STILL = 0, MOVING = 1;
 
@@ -171,3 +173,5 @@ PhysPose PhysWorld::pose(int index, int frameIndex) {
   }
   return o.poses[(size_t)frameIndex][(size_t)index];
 }
+
+}  // namespace motolii

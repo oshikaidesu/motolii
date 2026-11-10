@@ -6,6 +6,8 @@
 #include <map>
 #include <string>
 
+namespace motolii {
+
 std::atomic<int>& files_changed() {
   static std::atomic<int> n{0};
   return n;
@@ -77,3 +79,5 @@ bool doc_folder_moved(int& seen) {
   seen = files_changed();
   return true;
 }
+
+}  // namespace motolii

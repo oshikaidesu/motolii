@@ -19,6 +19,8 @@
 #include <cmath>
 #include <string>
 
+namespace motolii {
+
 // One easing: a kind and its parameters.
 struct Interp {
   enum Kind {
@@ -112,5 +114,7 @@ std::string interp_words(const Interp& is);
 // *why, when given, with a description of the accepted form.
 int interp_said(const std::string& text, Interp* is,
                 std::string* why = nullptr);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_MOTION_EASING_CURVES_H_

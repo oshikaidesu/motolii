@@ -11,6 +11,8 @@
 // Expressions may only use functions that both SQLite and JavaScript provide
 // here: pow, exp, cos, abs and pi().
 
+namespace motolii {
+
 inline const struct {
   const char* name;
   const char* goes;
@@ -25,5 +27,7 @@ inline const struct {
     {"BounceOut", "1 - abs(cos(3.5 * pi() * u)) * pow(1 - u, 2)"},
     {"Overshoot", "1 + 2.70158 * pow(u - 1, 3) + 1.70158 * pow(u - 1, 2)"},
 };
+
+}  // namespace motolii
 
 #endif  // MOTOLII_MOTION_EASING_NAMES_H_

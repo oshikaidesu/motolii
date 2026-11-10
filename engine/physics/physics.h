@@ -13,6 +13,8 @@
 #include <memory>
 #include <vector>
 
+namespace motolii {
+
 // One simulated layer.
 struct PhysThing {
   // True for a wall: the project places it, and only its keyframes move it.
@@ -56,5 +58,7 @@ class PhysWorld {
   struct Own;
   std::unique_ptr<Own> own;
 };
+
+}  // namespace motolii
 
 #endif  // MOTOLII_PHYSICS_PHYSICS_H_

@@ -30,6 +30,8 @@
 
 #include <cstdint>
 
+namespace motolii {
+
 // A loaded Lottie animation. All fields are filled by motion_open().
 struct Motion {
   tvg::LottieAnimation* film = nullptr;
@@ -78,5 +80,7 @@ filament::math::mat4f motion_in_scene(const filament::math::mat4f& place,
                                       filament::math::float3 corner,
                                       filament::math::float3 right,
                                       filament::math::float3 down);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_MOTION_LOTTIE_MOTION_H_

@@ -39,6 +39,8 @@
 
 using namespace filament;
 
+namespace motolii {
+
 namespace {
 
 // Rebuilds runs from state and signals that the set of cached frames changed.
@@ -295,3 +297,5 @@ bool stage_cache_show(StageCache& k, Stage& s, Live* l, double now, int rate) {
   live_show(s, l, k.shown);
   return true;
 }
+
+}  // namespace motolii

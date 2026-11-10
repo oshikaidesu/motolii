@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+namespace motolii {
+
 namespace {
 
 // Converts a flat 2D matrix to a 4x4 matrix in the shared 3D world. The z scale
@@ -112,3 +114,5 @@ filament::math::mat4f motion_in_scene(const filament::math::mat4f& place,
                float4{z * pixel, 0.f}, float4{corner, 1.f}) *
          place * mat4f::scaling(1.f / pixel);
 }
+
+}  // namespace motolii

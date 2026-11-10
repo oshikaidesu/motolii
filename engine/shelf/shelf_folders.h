@@ -7,6 +7,8 @@
 #include <filesystem>
 #include <vector>
 
+namespace motolii {
+
 // Counts how many times a watched file or folder was reported as written, added
 // or removed (motolii_files_changed). The watching itself runs in the app
 // through the operating system (dart:io, on FSEvents), not here. Anything built
@@ -47,5 +49,7 @@ std::vector<std::filesystem::path> doc_folder_files(const char* folder,
 // app has reported a file put in, removed or overwritten (files_changed). The
 // app calls this on every build.
 bool doc_folder_moved(int& seen);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_SHELF_SHELF_FOLDERS_H_

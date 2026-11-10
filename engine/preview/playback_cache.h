@@ -28,6 +28,8 @@
 #include "stage/live.h"
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // The on-disk frame cache of the stage and the state needed to fill and play
 // it.
 struct StageCache {
@@ -84,5 +86,7 @@ bool stage_cache_one(StageCache& k, Doc& d, Stage& s, int rate,
 // and starts reading the next frame from disk. Returns false if no frame is
 // cached for that time, in which case the caller must draw it.
 bool stage_cache_show(StageCache& k, Stage& s, Live* l, double now, int rate);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_PREVIEW_PLAYBACK_CACHE_H_

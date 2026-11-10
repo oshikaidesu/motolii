@@ -9,6 +9,8 @@
 
 #include "community/absent_motion/absent_motion.h"
 
+namespace motolii {
+
 namespace {
 
 // Returns the standard smoothstep of x between edge0 and edge1, clamped to
@@ -172,3 +174,5 @@ int interp_said(const std::string& text, Interp* is, std::string* why) {
   }
   return -1;
 }
+
+}  // namespace motolii
