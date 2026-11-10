@@ -10,7 +10,8 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
+import 'package:motolii/widgets/tool_strip.dart';
+import 'package:motolii/widgets/paint_helpers.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/stage/stage_art.dart';

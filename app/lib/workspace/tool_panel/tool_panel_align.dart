@@ -9,7 +9,8 @@ import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, IconPress;
 
 import 'package:motolii/skin/tokens.dart';
 
-import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
+import 'package:motolii/widgets/tool_strip.dart';
+import 'package:motolii/widgets/paint_helpers.dart';
 import 'package:motolii/workspace/stage/stage_art.dart' show WsArt;
 import 'package:motolii/workspace/state/state.dart';
 

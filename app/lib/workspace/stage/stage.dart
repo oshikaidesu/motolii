@@ -16,7 +16,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/stage/stage_art.dart';
 import 'package:motolii/workspace/stage/stage_view.dart';
 import 'package:motolii/widgets/two_fingers.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart' show ToolStrip;
+import 'package:motolii/widgets/tool_strip.dart';
 import 'package:motolii/workspace/workspace.dart' show wsPlace;
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/state/state.dart';

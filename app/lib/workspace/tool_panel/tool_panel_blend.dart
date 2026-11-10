@@ -9,7 +9,7 @@ import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart' show NakedFocusableDetector;
 
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
+import 'package:motolii/widgets/paint_helpers.dart';
 import 'package:motolii/workspace/state/state.dart';
 import 'package:motolii/workspace/workspace.dart' show LayerCards;
 
