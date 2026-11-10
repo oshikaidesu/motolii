@@ -58,8 +58,8 @@ int motolii_export(Motolii* m, const char* mp4) {
               std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
               std::deque<std::function<void()>> todo;
               {
-                std::lock_guard<std::mutex> hold(m->asked_lock);
-                todo.swap(m->asked);
+                std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);
+                todo.swap(m->render_thread.asked);
               }
               for (auto& does : todo) does();
               // The position in frames: a whole number, or a time between

@@ -31,6 +31,7 @@
 #include "entry/calls_time.h"
 #include "entry/motolii.h"
 #include "entry/playback.h"
+#include "entry/render_thread_loop.h"
 #include "entry/snapshot.h"
 #include "entry/timing.h"
 #include "entry/window.h"
@@ -43,42 +44,20 @@ namespace motolii {
 // Frames per second. This is also the frame rate of an exported video.
 inline constexpr int RATE = 60;
 
-}  // namespace motolii
-
-// The state of the render thread. That thread does everything that touches the
-// engine: it opens the stage, runs each queued call as it arrives while the
-// caller waits for the result, and, when the stage is live, draws a frame
-// whenever something has changed or time is advancing. The clock belongs to the
-// engine. The app is notified when a frame is finished and never asks for one
-// to be drawn.
-//
-// This is the handle that the C API names (entry/motolii.h declares it at
-// global scope), so it is defined outside namespace motolii.
-struct Motolii {
-  motolii::Stage* s = nullptr;
-  motolii::Doc* d = nullptr;
-  motolii::Live* live = nullptr;
-  std::string error, listed;
-  std::thread render_thread;
+// The render thread and the calls waiting for it. That thread does everything
+// that touches the engine: it opens the stage, runs each queued call as it
+// arrives while the caller waits for the result, and, when the stage is live,
+// draws a frame whenever something has changed or time is advancing. The clock
+// belongs to the engine. The app is notified when a frame is finished and never
+// asks for one to be drawn.
+struct RenderThread {
+  std::thread thread;
   // Where the render thread is in its loop. Printed to stderr if the loop
   // throws.
   std::atomic<const char*> status{"opening"};
+  // Guards the queue and wakes the thread when a call or a beat arrives.
   std::mutex asked_lock;
   std::condition_variable asked_now;
-  // Display-synchronized callback from Thermion: CVDisplayLink on macOS, DXGI
-  // on Windows. One frame is drawn per beat.
-  std::unique_ptr<thermion::FrameScheduler> beat;
-  // The number of beats received so far, and the beat the last frame was drawn
-  // on. Both are guarded by asked_lock.
-  uint64_t beats = 0, drew_at = 0;
-  // The number of loop iterations that ran a change since the last frame was
-  // drawn.
-  long writes_on_beat = 0;
-  // The last beat counted as one where the GPU was busy, as one with nothing
-  // new to draw, and as seen, so a beat is counted once.
-  uint64_t busy_at = 0, still_at = 0, seen_beat = 0;
-  // The last file-change count checked.
-  int files_seen = -1;
   // Calls waiting to run on the render thread.
   std::deque<std::function<void()>> asked;
   // Posted calls that have not run yet, by kind. A newer call of the same kind
@@ -87,7 +66,11 @@ struct Motolii {
   // The kind of the last entry in the queue, if it was posted. Only that entry
   // may be replaced.
   std::string lastPosted;
+  // closing is set by motolii_close and ends the loop. changed is true when
+  // something has changed that a frame has not shown yet.
   bool closing = false, changed = true;
+  // The last file-change count checked.
+  int files_seen = -1;
   // The last time the render thread had work: a call arrived, playback ran, or
   // the document changed.
   std::chrono::steady_clock::time_point stirred{};
@@ -97,22 +80,45 @@ struct Motolii {
   // True while the render thread evaluates the stage at a time and holds the
   // document. A reader that asked now would have to wait.
   std::atomic<bool> evaluating{false};
-  // The number of times the document has changed. Can be read from any thread
-  // without the document lock.
-  std::atomic<long> revision{0};
-  // The number of times the values held by an ongoing drag have changed.
-  std::atomic<long> dragged{0};
+};
+
+// The resolution scale of the stage's views and the GPU times it is set from.
+// See stage_scale.
+struct DynamicResolution {
   // Milliseconds the GPU may take for a live frame, out of the 16.7 that a
   // frame has at 60 fps. MOTOLII_BUDGET overrides the default.
   double budget = std::getenv("MOTOLII_BUDGET")
                       ? std::atof(std::getenv("MOTOLII_BUDGET"))
                       : 12.0;
+  // The number of frames drawn. The GPU time is measured every 30.
   long judged = 0;
   // The median GPU time of the last frames and the largest seen.
   double gpu_ms = 0.0, gpu_most = 0.0;
-  // The scale at which the stage's views are drawn now. See stage_scale.
+  // The scale at which the stage's views are drawn now.
   double scale = 1.0;
+};
 
+}  // namespace motolii
+
+// The handle that the C API names (entry/motolii.h declares it at global
+// scope), so it is defined outside namespace motolii.
+struct Motolii {
+  motolii::Stage* s = nullptr;
+  motolii::Doc* d = nullptr;
+  motolii::Live* live = nullptr;
+  std::string error, listed;
+  // The number of times the document has changed. Can be read from any thread
+  // without the document lock.
+  std::atomic<long> revision{0};
+  // The number of times the values held by an ongoing drag have changed.
+  std::atomic<long> dragged{0};
+
+  // The render thread and the calls waiting for it (render_thread.h).
+  motolii::RenderThread render_thread;
+  // The display's beats (render_thread_loop.h).
+  motolii::DisplayBeats display;
+  // The resolution scale of the stage's views (render_thread.h).
+  motolii::DynamicResolution resolution;
   // What the window has selected and opened (window.h).
   motolii::WindowState window;
   // Playing the project in the preview (playback.h).
@@ -169,12 +175,12 @@ auto asked(Motolii* m, Does does, bool changes, const char* who)
   });
   auto done = task.get_future();
   {
-    std::lock_guard<std::mutex> hold(m->asked_lock);
-    m->lastPosted.clear();
-    m->asked.push_back([&task, m, changes, who] {
+    std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);
+    m->render_thread.lastPosted.clear();
+    m->render_thread.asked.push_back([&task, m, changes, who] {
       const auto t0 = std::chrono::steady_clock::now();
       task();
-      if (changes) m->changed = true;
+      if (changes) m->render_thread.changed = true;
       const double took =
           std::chrono::duration<double>(std::chrono::steady_clock::now() - t0)
               .count();
@@ -185,7 +191,7 @@ auto asked(Motolii* m, Does does, bool changes, const char* who)
           m->timing.worst[who] = std::max(m->timing.worst[who], took);
     });
   }
-  m->asked_now.notify_one();
+  m->render_thread.asked_now.notify_one();
   const auto sent = std::chrono::steady_clock::now();
   auto out = done.get();
   why_asked = why;
@@ -194,7 +200,7 @@ auto asked(Motolii* m, Does does, bool changes, const char* who)
       std::chrono::duration<double>(std::chrono::steady_clock::now() - sent)
           .count();
   {
-    std::lock_guard<std::mutex> hold(m->asked_lock);
+    std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);
     auto& r = m->timing.rounds[who];
     r.first = std::max(r.first, round), r.second += round > 0.004;
     if (pthread_main_np() && m->watch.watching) {
@@ -288,7 +294,7 @@ auto by_look(Motolii* m, Does does, const char* who = __builtin_FUNCTION())
     char why[160];
     std::snprintf(why, sizeof why, "%s waited %.1f ms for the document", who,
                   1e3 * waited);
-    std::lock_guard<std::mutex> h(m->asked_lock);
+    std::lock_guard<std::mutex> h(m->render_thread.asked_lock);
     broke_one(m, why);
   }
   return out;

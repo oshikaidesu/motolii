@@ -58,11 +58,14 @@ void stage_scale(Motolii* m) {
   // GPU time is proportional to the number of pixels drawn, so the pixel count
   // is cut by the factor by which the budget is exceeded. The linear scale is
   // the square root of that.
-  else if (m->playback.playing && m->gpu_ms > 0.0)
-    want = std::clamp(m->scale * std::sqrt(m->budget / m->gpu_ms), 0.5, 1.0);
-  if (std::fabs(want - m->scale) < 0.05 && !(want == 1.0 && m->scale != 1.0))
+  else if (m->playback.playing && m->resolution.gpu_ms > 0.0)
+    want = std::clamp(m->resolution.scale * std::sqrt(m->resolution.budget /
+                                                      m->resolution.gpu_ms),
+                      0.5, 1.0);
+  if (std::fabs(want - m->resolution.scale) < 0.05 &&
+      !(want == 1.0 && m->resolution.scale != 1.0))
     return;
-  m->scale = want;
+  m->resolution.scale = want;
   View::DynamicResolutionOptions o;
   o.enabled = want < 1.0, o.minScale = o.maxScale = math::float2{(float)want},
   o.quality = filament::QualityLevel::MEDIUM;
@@ -70,27 +73,28 @@ void stage_scale(Motolii* m) {
 }
 int posted(Motolii* m, const std::string& kind, std::function<void()> does) {
   {
-    std::lock_guard<std::mutex> hold(m->asked_lock);
-    auto& waiting = m->latest[kind];
-    if (waiting && m->lastPosted == kind)
+    std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);
+    auto& waiting = m->render_thread.latest[kind];
+    if (waiting && m->render_thread.lastPosted == kind)
       *waiting = std::move(does);
     else {
       auto mine = std::make_shared<std::function<void()>>(std::move(does));
       waiting = mine;
-      m->asked.push_back([m, kind, mine] {
+      m->render_thread.asked.push_back([m, kind, mine] {
         std::function<void()> now;
         {
-          std::lock_guard<std::mutex> hold(m->asked_lock);
+          std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);
           now = std::move(*mine);
-          if (m->latest[kind] == mine) m->latest.erase(kind);
+          if (m->render_thread.latest[kind] == mine)
+            m->render_thread.latest.erase(kind);
         }
         now();
-        m->changed = true;
+        m->render_thread.changed = true;
       });
-      m->lastPosted = kind;
+      m->render_thread.lastPosted = kind;
     }
   }
-  m->asked_now.notify_one();
+  m->render_thread.asked_now.notify_one();
   return 1;
 }
 

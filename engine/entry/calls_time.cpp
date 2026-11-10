@@ -199,7 +199,7 @@ int motolii_rate(Motolii*) { return RATE; }
 // is on from the time the project is opened, and turning it on again clears the
 // records.
 void motolii_watch(Motolii* m, int on) {
-  std::lock_guard<std::mutex> h(m->asked_lock);
+  std::lock_guard<std::mutex> h(m->render_thread.asked_lock);
   if (on) m->watch.broke.clear(), m->watch.broken = 0;
   m->watch.watching = on != 0;
 }
@@ -208,7 +208,7 @@ long motolii_broken_count(Motolii* m) { return m->watch.broken.load(); }
 // Returns the records made while watching, one per line, or "" if none. Valid
 // until the next call.
 const char* motolii_broken(Motolii* m) {
-  std::lock_guard<std::mutex> h(m->asked_lock);
+  std::lock_guard<std::mutex> h(m->render_thread.asked_lock);
   m->listed.clear();
   for (const std::string& one : m->watch.broke)
     m->listed += (m->listed.empty() ? "" : "\n") + one;

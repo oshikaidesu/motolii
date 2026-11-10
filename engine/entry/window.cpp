@@ -46,22 +46,22 @@ Motolii* motolii_open(const char* document, int wide, int high) {
   Motolii* m = new Motolii;
   std::promise<bool> opened;
   auto ok = opened.get_future();
-  m->render_thread = std::thread(render_thread_run, m, std::string(document),
-                                 wide, high, &opened);
+  m->render_thread.thread = std::thread(
+      render_thread_run, m, std::string(document), wide, high, &opened);
   if (ok.get()) return m;
-  m->render_thread.join();
+  m->render_thread.thread.join();
   return nullptr;
 }
 // Stops the render thread and closes the document.
 void motolii_close(Motolii* m) {
   if (!m) return;
   {
-    std::lock_guard<std::mutex> hold(m->asked_lock);
-    m->closing = true;
+    std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);
+    m->render_thread.closing = true;
   }
-  m->asked_now.notify_one();
-  m->render_thread.join();
-  if (m->beat) m->beat->stop();
+  m->render_thread.asked_now.notify_one();
+  m->render_thread.thread.join();
+  if (m->display.beat) m->display.beat->stop();
   if (m->d) sqlite3_close(m->d->file);
 }
 
@@ -129,7 +129,8 @@ const char* motolii_cache(Motolii* m) {
 namespace motolii {
 
 int pick_is(Motolii* m, int layer, int hover) {
-  m->window.pick = layer, m->window.hover = hover, m->changed = true;
+  m->window.pick = layer, m->window.hover = hover,
+  m->render_thread.changed = true;
   return 1;
 }
 int desk_is(Motolii* m, int w, int h, double x, double y, double scale,
@@ -137,7 +138,7 @@ int desk_is(Motolii* m, int w, int h, double x, double y, double scale,
   if (!m->live) return 0;
   Stage& s = *m->s;
   if (w < 16 || h < 16 || scale <= 0.0)
-    return s.desk.w = 0, m->changed = true, 0;
+    return s.desk.w = 0, m->render_thread.changed = true, 0;
   // Make the output again at its new size.
   if (!m->live->desk || s.desk.w != (uint32_t)w || s.desk.h != (uint32_t)h) {
     Live* was = m->live->desk;
@@ -147,7 +148,7 @@ int desk_is(Motolii* m, int w, int h, double x, double y, double scale,
   }
   s.desk.w = (uint32_t)w, s.desk.h = (uint32_t)h, s.desk.x = x, s.desk.y = y,
   s.desk.scale = scale, s.desk.point = point;
-  m->changed = true;
+  m->render_thread.changed = true;
   return m->live->desk ? 1 : 0;
 }
 int view_camera_is(Motolii* m, const char* word) {
@@ -158,7 +159,7 @@ int view_camera_is(Motolii* m, const char* word) {
                   &d.working_camera.position[2]) == 3;
   time_is(*m->s, m->playback.now);
   snapshot_time(m);
-  m->changed = true;
+  m->render_thread.changed = true;
   return 1;
 }
 
@@ -248,11 +249,12 @@ const char* motolii_spent(Motolii* m) {
                   "ms, %ld over 2 ms; the GPU took %.1f ms a picture, at most "
                   "%.1f, of %.0f it may",
                   1e3 * m->timing.read_waited, 1e3 * m->timing.read_waited_most,
-                  m->timing.read_waits, m->gpu_ms, m->gpu_most, m->budget);
+                  m->timing.read_waits, m->resolution.gpu_ms,
+                  m->resolution.gpu_most, m->resolution.budget);
     said_word() += waits;
     // What the window's own thread asked, with the most waited on first.
     {
-      std::lock_guard<std::mutex> hold(m->asked_lock);
+      std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);
       std::vector<std::pair<std::string, std::array<double, 4>>> all(
           m->timing.window.begin(), m->timing.window.end());
       std::sort(all.begin(), all.end(), [](const auto& a, const auto& b) {
@@ -269,7 +271,7 @@ const char* motolii_spent(Motolii* m) {
       }
     }
     {
-      std::lock_guard<std::mutex> hold(m->asked_lock);
+      std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);
       for (const auto& [name, r] : m->timing.rounds)
         if (r.second) {
           char one[160];

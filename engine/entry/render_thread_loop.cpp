@@ -107,16 +107,16 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
                std::chrono::seconds(2) &&
            (m->playback.playing || (drew_before && beat - drew_before <= 2));
   };
-  m->beat.reset(thermion::FrameScheduler::create(RATE));
-  m->beat->setTargetFps(RATE);
-  m->beat->start(
+  m->display.beat.reset(thermion::FrameScheduler::create(RATE));
+  m->display.beat->setTargetFps(RATE);
+  m->display.beat->start(
       [](uint64_t, void* p) {
         auto* m = static_cast<Motolii*>(p);
         {
-          std::lock_guard<std::mutex> hold(m->asked_lock);
-          ++m->beats;
+          std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);
+          ++m->display.beats;
         }
-        m->asked_now.notify_one();
+        m->render_thread.asked_now.notify_one();
       },
       m);
   for (;;) {
@@ -127,37 +127,46 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       std::deque<std::function<void()>> todo;
       uint64_t beat;
       {
-        m->status = "waiting for a change or a beat";
-        std::unique_lock<std::mutex> hold(m->asked_lock);
+        m->render_thread.status = "waiting for a change or a beat";
+        std::unique_lock<std::mutex> hold(m->render_thread.asked_lock);
         // begun is true while a frame has been begun that the GPU has not
         // finished.
-        const bool running = m->live && (m->playback.playing || m->changed),
+        const bool running = m->live &&
+                             (m->playback.playing || m->render_thread.changed),
                    begun = m->live && m->live->pending;
         // If a frame is in flight, look again after 1 ms. If a frame is wanted,
         // sleep until a call or a beat arrives. Otherwise wake twice a second
         // to notice a file written over, or every 15 ms while frames are being
         // cached ahead.
         if (begun)
-          m->asked_now.wait_for(hold, std::chrono::milliseconds(1), [m] {
-            return !m->asked.empty() || m->closing;
-          });
+          m->render_thread.asked_now.wait_for(
+              hold, std::chrono::milliseconds(1), [m] {
+                return !m->render_thread.asked.empty() ||
+                       m->render_thread.closing;
+              });
         else if (running)
-          m->asked_now.wait(hold, [m] {
-            return !m->asked.empty() || m->closing || m->beats != m->drew_at;
+          m->render_thread.asked_now.wait(hold, [m] {
+            return !m->render_thread.asked.empty() ||
+                   m->render_thread.closing ||
+                   m->display.beats != m->display.drew_at;
           });
         else
-          m->asked_now.wait_for(
-              hold, std::chrono::milliseconds(m->ahead ? 15 : 500), [m] {
-                return !m->asked.empty() || m->closing ||
-                       (m->live && (m->playback.playing || m->changed));
+          m->render_thread.asked_now.wait_for(
+              hold,
+              std::chrono::milliseconds(m->render_thread.ahead ? 15 : 500),
+              [m] {
+                return !m->render_thread.asked.empty() ||
+                       m->render_thread.closing ||
+                       (m->live &&
+                        (m->playback.playing || m->render_thread.changed));
               });
-        if (m->closing) break;
-        todo.swap(m->asked);
-        beat = m->beats;
+        if (m->render_thread.closing) break;
+        todo.swap(m->render_thread.asked);
+        beat = m->display.beats;
         // Count beats that came while the thread was busy elsewhere.
-        if (m->seen_beat && beat > m->seen_beat + 1)
-          m->timing.beats_unseen += (long)(beat - m->seen_beat - 1);
-        m->seen_beat = beat;
+        if (m->display.seen_beat && beat > m->display.seen_beat + 1)
+          m->timing.beats_unseen += (long)(beat - m->display.seen_beat - 1);
+        m->display.seen_beat = beat;
       }
       auto lap_at = std::chrono::steady_clock::now();
       // The start of this iteration. A frame drawn in it is timed from here,
@@ -176,20 +185,21 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       // and, if so, draw again. While playing, this check runs only when the
       // window reports that a file changed.
       if (todo.empty() && m->live &&
-          ((!m->playback.playing && !m->changed) ||
-           m->files_seen != files_changed())) {
+          ((!m->playback.playing && !m->render_thread.changed) ||
+           m->render_thread.files_seen != files_changed())) {
         std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
-        m->files_seen = files_changed();
-        if (doc_files_moved(*m->d)) doc_match(*m->d), m->changed = true;
+        m->render_thread.files_seen = files_changed();
+        if (doc_files_moved(*m->d))
+          doc_match(*m->d), m->render_thread.changed = true;
       }
       lap(0);
-      m->status = "doing the changes asked";
+      m->render_thread.status = "doing the changes asked";
       {
         std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
         const long rows = sqlite3_total_changes(m->d->file);
         const auto held = m->d->held.tried;
         for (auto& does : todo) does();
-        if (!todo.empty()) ++m->writes_on_beat;
+        if (!todo.empty()) ++m->display.writes_on_beat;
         lap(6);
         // An easing put in the user's own easings folder appears at once as a
         // tile in the Ease panel. Otherwise, if the document changed since its
@@ -212,9 +222,9 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       if (mosh_done.exchange(false)) {
         std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
         doc_match(*m->d);
-        m->changed = true;
+        m->render_thread.changed = true;
       }
-      m->status = "telling the window";
+      m->render_thread.status = "telling the window";
       // The document lock is released. Tell the window what is new.
       snapshot_notify(m);
       // The stage stopped, so its sound stops too.
@@ -237,44 +247,48 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
         if (auto listener = m->window.shown.load())
           listener(m->window.shown_with.load());
       lap(3);
-      m->status = "keeping pictures ahead";
+      m->render_thread.status = "keeping pictures ahead";
       const auto t = std::chrono::steady_clock::now();
-      if (!todo.empty() || m->playback.playing || m->changed) m->stirred = t;
-      m->ahead = false;
+      if (!todo.empty() || m->playback.playing || m->render_thread.changed)
+        m->render_thread.stirred = t;
+      m->render_thread.ahead = false;
       // When the thread rests, cache a few frames of each video ahead, as Final
       // Cut Pro renders once the pointer stops.
       if (m->live && ready && todo.empty() && !m->playback.playing &&
-          !m->changed && t - m->stirred > std::chrono::milliseconds(300)) {
+          !m->render_thread.changed &&
+          t - m->render_thread.stirred > std::chrono::milliseconds(300)) {
         std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
         int begun = 0;
         for (auto& [layer, shown] : m->d->on_stage.shown)
           if (shown.drawn) begun += frames_ahead(*m->s, shown.drawn, 2);
         if (begun) m->s->engine->flush();
-        m->ahead = begun > 0;
+        m->render_thread.ahead = begun > 0;
         // After five more seconds, as Final Cut Pro does with background
         // rendering, write to disk the frames of the work area that would be
         // late.
-        if (t - m->stirred > std::chrono::seconds(5) &&
+        if (t - m->render_thread.stirred > std::chrono::seconds(5) &&
             !std::getenv("MOTOLII_KEEP_NONE")) {
           stage_cache_fresh(m->playback.cache, *m->d, *m->s, m->revision.load(),
                             RATE);
-          m->ahead = stage_cache_one(m->playback.cache, *m->d, *m->s, RATE,
-                                     m->budget) ||
-                     m->ahead;
+          m->render_thread.ahead =
+              stage_cache_one(m->playback.cache, *m->d, *m->s, RATE,
+                              m->resolution.budget) ||
+              m->render_thread.ahead;
         }
       }
       lap(4);
       // After playback stops, draw the last frame again at full size, for
       // looking closely.
-      if (m->live && !m->playback.playing && m->scale != 1.0 &&
+      if (m->live && !m->playback.playing && m->resolution.scale != 1.0 &&
           !std::getenv("MOTOLII_SCALE"))
-        stage_scale(m), m->changed = true;
-      if (m->live && beat != m->drew_at &&
-          (m->playback.playing || m->changed) && !ready && beat != m->busy_at) {
-        m->busy_at = beat, ++m->timing.beats_gpu_busy;
+        stage_scale(m), m->render_thread.changed = true;
+      if (m->live && beat != m->display.drew_at &&
+          (m->playback.playing || m->render_thread.changed) && !ready &&
+          beat != m->display.busy_at) {
+        m->display.busy_at = beat, ++m->timing.beats_gpu_busy;
         // A frame was wanted on this beat but the GPU had not finished the last
         // one. That is a missed 60 fps on the GPU.
-        if (moving(m->drew_at, beat)) {
+        if (moving(m->display.drew_at, beat)) {
           // Filament's record of its last finished frame, as the 30-frame check
           // below reads it.
           const auto last = m->s->renderer->getFrameInfoHistory(1);
@@ -288,18 +302,18 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
                         "the inside's picture on the GPU: not done at the beat "
                         "(its last took %.1f ms)",
                         gpu);
-          std::lock_guard<std::mutex> hold(m->asked_lock);
+          std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);
           broke_one(m, why);
         }
       }
       // A beat with nothing new to draw.
-      if (m->live && beat != m->drew_at && !m->playback.playing &&
-          !m->changed && beat != m->still_at)
-        m->still_at = beat, ++m->timing.beats_still;
+      if (m->live && beat != m->display.drew_at && !m->playback.playing &&
+          !m->render_thread.changed && beat != m->display.still_at)
+        m->display.still_at = beat, ++m->timing.beats_still;
       // Not ready: no other frame is begun until the GPU has finished the last
       // one.
-      if (!m->live || beat == m->drew_at ||
-          !(m->playback.playing || m->changed) || !ready) {
+      if (!m->live || beat == m->display.drew_at ||
+          !(m->playback.playing || m->render_thread.changed) || !ready) {
         last = m->playback.playing || !ready ? last : t;
         continue;
       }
@@ -320,16 +334,16 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
           m->playback.now = on >= to || on < from ? from : on;
       }
       last = t;
-      const uint64_t drew_before = m->drew_at;
+      const uint64_t drew_before = m->display.drew_at;
       {
-        std::lock_guard<std::mutex> hold(m->asked_lock);
-        m->drew_at = beat;
+        std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);
+        m->display.drew_at = beat;
       }
       ++m->timing.beats_rendered;
       // More than one change came for this frame, so one of them was never
       // seen.
-      if (m->writes_on_beat > 1) ++m->timing.beats_two;
-      m->writes_on_beat = 0;
+      if (m->display.writes_on_beat > 1) ++m->timing.beats_two;
+      m->display.writes_on_beat = 0;
       m->s->by_clock = m->playback.playing;
       // What the current time asks of the videos. It runs once the document is
       // released.
@@ -340,7 +354,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       bool behind = false;
       {
         std::lock_guard<std::recursive_timed_mutex> holding(m->d->lock);
-        m->evaluating = true;
+        m->render_thread.evaluating = true;
         m->d->solver.live = true,
         m->d->solver.slice = std::chrono::steady_clock::now();
         m->s->later = &videos;
@@ -359,7 +373,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
         }
         // The window's snapshot of this time.
         snapshot_time(m);
-        m->evaluating = false;
+        m->render_thread.evaluating = false;
         behind = std::exchange(m->d->solver.behind, false);
         // Where each sound should be, read from the document.
         sounds = heard_told(*m->s);
@@ -367,7 +381,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       snapshot_notify(m);
       const auto videos_from = std::chrono::steady_clock::now();
       const long late_before = video_late;
-      m->status = "putting the films at the moment";
+      m->render_thread.status = "putting the films at the moment";
       for (const auto& now : videos) now();
       // A video has no frame yet or a seek is under way. Draw again next beat,
       // as a video sink shows its frame once it arrives.
@@ -384,7 +398,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
         m->timing.videos_ms += ms;
         m->timing.videos_most = std::max(m->timing.videos_most, ms);
       }
-      m->status = "putting the sounds at the moment";
+      m->render_thread.status = "putting the sounds at the moment";
       // Seek and play the sounds in the same way.
       heard(sounds, m->playback.heard, m->playback.now, m->playback.playing);
       const auto evaluated = std::chrono::steady_clock::now();
@@ -393,7 +407,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
         stage_cache_fresh(m->playback.cache, *m->d, *m->s, m->revision.load(),
                           RATE);
       }
-      m->status = "drawing";
+      m->render_thread.status = "drawing";
       // While playing, a cached frame is put on the stage instead of being
       // drawn, when one exists. Cached frames cover only the camera's view and
       // the preview's.
@@ -406,7 +420,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
       lap(5);
       // Every 30 frames, measure how long the GPU took for its last frames,
       // against the time each may have.
-      if (++m->judged % 30 == 0) {
+      if (++m->resolution.judged % 30 == 0) {
         std::vector<int64_t> took;
         for (const auto& f : m->s->renderer->getFrameInfoHistory(30))
           if (f.gpuFrameComplete > 0 && f.backendBeginFrame > 0)
@@ -415,7 +429,8 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
           std::nth_element(took.begin(), took.begin() + took.size() / 2,
                            took.end());
           const double ms = (double)took[took.size() / 2] / 1e6;
-          m->gpu_ms = ms, m->gpu_most = std::max(m->gpu_most, ms);
+          m->resolution.gpu_ms = ms,
+          m->resolution.gpu_most = std::max(m->resolution.gpu_most, ms);
         }
         stage_scale(m);
       }
@@ -438,19 +453,19 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
                       "%.1f, drawing %.1f)",
                       ms(round_at, rendered), ms(round_at, t), ms(t, evaluated),
                       ms(evaluated, rendered));
-        std::lock_guard<std::mutex> hold(m->asked_lock);
+        std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);
         broke_one(m, why);
       }
-      m->changed = again;
+      m->render_thread.changed = again;
     } catch (const std::exception& e) {
       std::fprintf(stderr, "motolii: the hand's round threw while %s: %s\n",
-                   m->status.load(), e.what());
+                   m->render_thread.status.load(), e.what());
       m->error = std::string("the hand's round threw: ") + e.what();
       // The error text goes with the next call. This count stays and is
       // reported by motolii_spent.
       ++m->timing.rounds_threw;
-      m->evaluating = false;
-      m->changed = false;
+      m->render_thread.evaluating = false;
+      m->render_thread.changed = false;
       m->playback.playing = false;
     }
   }

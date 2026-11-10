@@ -59,10 +59,11 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
                     w = word ? word : "";
   int ticket = 0;
   {
-    std::lock_guard<std::mutex> hold(m->asked_lock);
+    std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);
     ticket = ++m->later.tickets;
-    m->lastPosted.clear();
-    m->asked.push_back([m, c, n, w, layer = layer, number, ticket]() mutable {
+    m->render_thread.lastPosted.clear();
+    m->render_thread.asked.push_back([m, c, n, w, layer = layer, number,
+                                      ticket]() mutable {
       // The layer that the last queued add or create made.
       if (layer == -1) layer = m->later.last_added;
       const long rows = sqlite3_total_changes(m->d->file);
@@ -135,7 +136,7 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         else if (c == "code") {
           const std::string why = doc_code_saved(doc(m), w);
           // Its parameters may be others now.
-          ok = why.empty(), m->changed = true,
+          ok = why.empty(), m->render_thread.changed = true,
           doc(m).changes.layers_changed = true;
           if (!ok) m->error = why;
           m->revision.fetch_add(1, std::memory_order_release),
@@ -379,7 +380,7 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
           for (int t; in >> t;) m->window.watched.insert(t);
           // Get their values at once, not with the next preview.
           snapshot_time(m);
-          ok = 1, m->changed = true;
+          ok = 1, m->render_thread.changed = true;
         }
         // word: "w h x y scale point", the tool panel's size, its middle, its
         // scale and the point. The result is 1 once the tool panel's image
@@ -393,7 +394,8 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
         }
         // word: not empty when the Camera View tab is open.
         else if (c == "camera_view")
-          ok = 1, m->window.second = !w.empty(), m->changed = true;
+          ok = 1, m->window.second = !w.empty(),
+          m->render_thread.changed = true;
         // word: where the app's working camera stands, as in view_camera_is. An
         // empty word selects the project's camera.
         else if (c == "view_camera")
@@ -422,9 +424,9 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
       if (sqlite3_total_changes(m->d->file) != rows)
         m->revision.fetch_add(1, std::memory_order_release), snapshot_update(m),
             snapshot_time(m);
-      m->changed = true;
+      m->render_thread.changed = true;
       {
-        std::lock_guard<std::mutex> hold(m->asked_lock);
+        std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);
         m->later.answers[ticket] = {
             ok, ok ? std::string() : std::string(motolii_why(m))};
       }
@@ -436,14 +438,14 @@ int motolii_later(Motolii* m, const char* call, int layer, const char* name,
       }
     });
   }
-  m->asked_now.notify_one();
+  m->render_thread.asked_now.notify_one();
   return ticket;
 }
 // Returns the result of the queued change with `ticket`, and forgets it: 1 if
 // done, 0 if refused, or -1 if it is not done yet. Call motolii_answer_why
 // after a 0.
 int motolii_answer(Motolii* m, int ticket) {
-  std::lock_guard<std::mutex> hold(m->asked_lock);
+  std::lock_guard<std::mutex> hold(m->render_thread.asked_lock);
   const auto found = m->later.answers.find(ticket);
   if (found == m->later.answers.end()) return -1;
   const int ok = found->second.first;
