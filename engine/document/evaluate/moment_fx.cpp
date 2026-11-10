@@ -326,7 +326,7 @@ void doc_layers_fx(Doc& d) {
       order.begin(), order.end(),
       [](const auto& a, const auto& b) { return a.first < b.first; });
   // Each layer is drawn alone into an image and its effects run on that image,
-  // before the stage's own view. See engine/stage/effects/layer_fx.h.
+  // before the stage's own view. See engine/stage/layer_effects/layer_fx.h.
   for (const auto& [deep, layer] : order) {
     ThingFx& e = d.layerFx.at(layer);
     thing_effects(s, e.st, doc_fx_join(doc_fx_steps(d, layer)));

@@ -1,5 +1,5 @@
-#ifndef MOTOLII_STAGE_EFFECTS_LAYER_FX_H_
-#define MOTOLII_STAGE_EFFECTS_LAYER_FX_H_
+#ifndef MOTOLII_STAGE_LAYER_EFFECTS_LAYER_FX_H_
+#define MOTOLII_STAGE_LAYER_EFFECTS_LAYER_FX_H_
 // Per-layer effects for the stage. A layer with effects is drawn alone into an
 // offscreen texture, in a view of its own with post-processing off, as in
 // Filament's samples/rendertarget.cpp. The effects (.wgsl and ISF files,
@@ -195,4 +195,4 @@ void thing_fx_solid(Stage& s, ThingFx& e, bool inFrame);
 // pixels, at most `cells` along the longer side.
 void thing_fx_cover(Stage& s, ThingFx& e, int cells);
 
-#endif  // MOTOLII_STAGE_EFFECTS_LAYER_FX_H_
+#endif  // MOTOLII_STAGE_LAYER_EFFECTS_LAYER_FX_H_

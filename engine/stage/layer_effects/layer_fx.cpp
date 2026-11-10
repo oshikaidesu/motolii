@@ -1,4 +1,4 @@
-#include "stage/effects/layer_fx.h"
+#include "stage/layer_effects/layer_fx.h"
 
 #include <backend/DriverEnums.h>
 #include <backend/PixelBufferDescriptor.h>

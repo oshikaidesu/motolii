@@ -8,13 +8,13 @@
 // Alight Motion's Box or Torus) is instead drawn alone, square to its own face.
 // Its effects run on that image, and the result is laid on the solid's faces
 // where the solid lies. The layer's own sheet is not shown. See
-// engine/stage/effects/layer_fx.h.
+// engine/stage/layer_effects/layer_fx.h.
 
 #include <utility>
 #include <vector>
 
 #include "document/kinds.h"
-#include "stage/effects/layer_fx.h"
+#include "stage/layer_effects/layer_fx.h"
 
 // Returns whether the layer is a group (a Null layer) with effects of its own,
 // including ThorVG effects. The layers in the group are drawn together into one
@@ -45,7 +45,7 @@ bool doc_layer_shows(Doc& d, int layer, ThingFx& e);
 // layer and prepare its images, and a callback that runs in the frame, to draw
 // the layer alone and run its effects. A layer that puts the image on its own
 // faces also gets a callback that runs after the frame. See
-// engine/stage/effects/layer_fx.h.
+// engine/stage/layer_effects/layer_fx.h.
 void doc_layers_fx(Doc& d);
 // Gives each layer that reads what is under it an image of its backdrop. A
 // layer reads its backdrop if it uses a blend mode that the GPU's own blending

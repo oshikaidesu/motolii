@@ -38,8 +38,8 @@
 #include "motion/lottie_motion.h"
 #include "physics/physics.h"
 #include "stage/canvas/canvas_cache.h"
-#include "stage/effects/layer_fx.h"
 #include "stage/effects/screen_fx.h"
+#include "stage/layer_effects/layer_fx.h"
 #include "stage/render/gltf_model.h"
 #include "stage/render/render_stage.h"
 

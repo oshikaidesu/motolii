@@ -57,7 +57,7 @@
 #include "stage/canvas/canvas_edge.h"
 #include "stage/canvas/canvas_flat.h"
 #include "stage/canvas/path_operations.h"
-#include "stage/effects/layer_fx.h"
+#include "stage/layer_effects/layer_fx.h"
 #include "stage/render/gltf_model.h"
 #include "stage/render/render_draw.h"
 #include "stage/render/render_layers.h"
@@ -296,7 +296,7 @@ void doc_evaluate(Doc& d, double now) {
     const int run = runOf[i];
     Doc::Shown& t = *lies[i].shown;
     // A layer with effects of its own is drawn alone and its image is laid in
-    // the scene above it; see engine/stage/effects/layer_fx.h.
+    // the scene above it; see engine/stage/layer_effects/layer_fx.h.
     const bool own = doc_own_fx(d, lies[i].layer);
     // A solid that shows its own image stays in the stage's scene. It is also
     // filmed by its effects view, together with the stage's lights.
