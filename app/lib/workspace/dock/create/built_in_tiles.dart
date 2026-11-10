@@ -196,7 +196,7 @@ final materialGroup = (
       AppGlyphs.radial,
       WindowTokens.toneShape,
       '',
-      'Filament\'s own glass: bends what is behind, a thin film\'s rainbow',
+      'Filament\'s own glass: bends the room around it, a thin film\'s rainbow',
     ),
     CreateTile(
       'Lacquer',

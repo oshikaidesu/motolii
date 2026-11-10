@@ -1,4 +1,6 @@
-// own_glass.mat: glass by Filament's own means, nothing of ours in it: its screen-space refraction of a solid, its
+// own_glass.mat: glass by Filament's own means, nothing of ours in it: its refraction of a solid (of the room, the
+// cubemap: Filament's screen-space refraction drew an opaque white solid on this stage, one frame or five, on Metal and on
+// WebGPU, while this mode shades the faces; what lies behind it in other layers is thick_glass.mat's), its
 // absorption (the glass's colour), its dispersion, its mirroring of the room, and a thin film if wanted. Put down
 // through render.h's own_glass(), which takes its depth from the mesh.
 // thickness: how deep the solid is, for the bend and the colour. absorb: how much of red, green and blue a unit of
@@ -11,7 +13,7 @@ material {
     name : own_glass,
     shadingModel : lit,
     blending : fade,
-    refractionMode : screenspace,
+    refractionMode : cubemap,
     refractionType : solid,
     requires : [ uv0 ],
     parameters : [ { type : float, name : thickness }, { type : float, name : lean }, { type : float3, name : absorb },
