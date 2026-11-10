@@ -1,3 +1,5 @@
+#ifndef MOTOLII_COMMUNITY_AVIUTL_AVIUTL_H_
+#define MOTOLII_COMMUNITY_AVIUTL_AVIUTL_H_
 // Reads AviUtl2 scripts (.anm2 effects and .obj2 objects) apart from drawing them.
 //
 // An AviUtl2 script is a Lua file whose pixel shaders are HLSL stored in Lua comments, as described
@@ -7,7 +9,6 @@
 // declared in the script's header, and converting each shader from HLSL to WGSL with glslang's HLSL
 // front end and Tint, the same way isf.cpp converts the shaders of an ISF file. The implementation
 // is in aviutl.cpp, a separate translation unit because its headers are heavy.
-#pragma once
 #include "community/quickjs/script.h"
 #include <cstdint>
 #include <string>
@@ -83,3 +84,5 @@ struct AviutlShader {
 // Returns the WGSL for the HLSL shader `hlsl` with entry point `entry`, converting it on first
 // use and caching the result. On failure the result's `wgsl` is empty and `why` says why.
 const AviutlShader& aviutl_shader(const std::string& hlsl, const std::string& entry, bool clip);
+
+#endif  // MOTOLII_COMMUNITY_AVIUTL_AVIUTL_H_

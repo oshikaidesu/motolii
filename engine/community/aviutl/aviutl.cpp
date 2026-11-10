@@ -184,6 +184,8 @@ std::vector<ScriptParameter> aviutl_parameters(const std::string& file) {
     return parameters;
 }
 
+namespace {
+
 // Appends to `sh` the placement of every float of the constants buffer, moving it from the HLSL
 // offset `from` to the WGSL offset `to`. A scalar or a vector is one entry. The columns of a matrix
 // and the elements of an array each sit in a register of their own on the HLSL side (16 bytes
@@ -191,7 +193,7 @@ std::vector<ScriptParameter> aviutl_parameters(const std::string& file) {
 // that glslang's SPIR-V gives (Offset decorations, found by the struct's name in `hlsl`).
 // Returns false for a type that cannot be placed.
 using AviutlOffsets = std::map<std::string, std::vector<uint32_t>>;
-static bool aviutl_place(const tint::core::type::Type* t, uint32_t from, uint32_t to, const AviutlOffsets& hlsl, AviutlShader& sh) {
+bool aviutl_place(const tint::core::type::Type* t, uint32_t from, uint32_t to, const AviutlOffsets& hlsl, AviutlShader& sh) {
     using namespace tint::core::type;
     if (t->Is<Vector>() || t->IsScalar()) {
         sh.from.push_back(from), sh.to.push_back(to), sh.count.push_back(t->Is<Vector>() ? t->As<Vector>()->Width() : 1);
@@ -225,7 +227,7 @@ static bool aviutl_place(const tint::core::type::Type* t, uint32_t from, uint32_
 
 // Converts one HLSL pixel shader, whose fragment entry point is `entry`, to WGSL laid out for the
 // interop (see AviutlShader). On failure the result has an empty `wgsl` and `why` is set.
-static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entry, bool clip) {
+AviutlShader aviutl_make(const std::string& hlsl, const std::string& entry, bool clip) {
     AviutlShader sh;
     static std::once_flag once;
     std::call_once(once, [] { glslang::InitializeProcess(); });
@@ -347,6 +349,8 @@ static AviutlShader aviutl_make(const std::string& hlsl, const std::string& entr
     sh.wgsl = out;
     return sh;
 }
+
+}  // namespace
 
 const AviutlShader& aviutl_shader(const std::string& hlsl, const std::string& entry, bool clip) {
     static std::mutex lock;
