@@ -551,17 +551,12 @@ void doc_layers_fx(Doc& d) {
                                      TextureSampler::MagFilter::NEAREST)
                     : TextureSampler(TextureSampler::MinFilter::LINEAR,
                                      TextureSampler::MagFilter::LINEAR));
-      // The glow of the effect result uses the stage's bloom, as a layer
-      // without effects does (see doc_evaluate).
+      // The emissive of the effect result is picked up by the stage's bloom,
+      // as a layer without effects is (see evaluate_glow).
       if (e.look) {
         std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
         e.look->setParameter(
-            "glowing",
-            (float)doc_number(d, layer, "emissive", d.stage->now, 0) +
-                (doc_word(d, layer, "glow").empty()
-                     ? 0.f
-                     : 0.35f * (float)doc_number(d, layer, "glow_opacity",
-                                                 d.stage->now, 1)));
+            "glowing", (float)doc_number(d, layer, "emissive", d.stage->now, 0));
       }
     });
     d.effects.beforeOf.push_back(layer);

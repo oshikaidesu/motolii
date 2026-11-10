@@ -399,9 +399,6 @@ inline const DocValue doc_values[] = {
     // left, 0.5 about the
     // middle, 1 at the right.
     {"align", "text", 0, 1, false, nullptr},
-    {"glow", "image text shape", 0, 0, false, ""},
-    {"glow_blur", "image text shape", 0, 1000, true, nullptr},
-    {"glow_opacity", "image text shape", 0, 1, true, nullptr},
     // trim: how much of its path is cut off the end, like After Effects' Trim
     // Paths and ThorVG's
     // trimpath.
@@ -802,64 +799,16 @@ inline const DocValue doc_values[] = {
     {"shift_x", "camera", -2, 2, true, nullptr},
     {"shift_y", "camera", -2, 2, true, nullptr},
     // The stage's own values, on layer 0: the whole image, Filament's own. The
-    // grade applies to
-    // every image laid: a tone mapper, an exposure in stops, contrast,
-    // saturation, vibrance and
-    // warmth. Also a glow round bright parts, a lens flare, a darkening at the
-    // corners and a fog in
-    // a color, on the stage's own view, the room's light (how bright and how
-    // far turned), and the
-    // color behind everything.
-    {"tone_mapper", "stage", 0, 0, false, "linear aces filmic agx pbr_neutral"},
-    {"exposure", "stage", -10, 10, false, nullptr},
-    {"contrast", "stage", 0, 2, false, nullptr},
-    {"saturation", "stage", 0, 2, false, nullptr},
-    {"vibrance", "stage", 0, 2, false, nullptr},
-    {"temperature", "stage", -1, 1, false, nullptr},
-    {"bloom", "stage", 0, 1, false, nullptr},
-    {"lens_flare", "stage", 0, 1, false, nullptr},
-    {"vignette", "stage", 0, 1, false, nullptr},
-    {"vignette_color", "stage", 0, 0, false, ""},
-    // fog: the stage's, or that of the camera it is seen through, like Alight
-    // Motion's camera has
-    // its Fog. fog_near is how far from the camera the fog begins, in units of
-    // the world, like
-    // Filament's FogOptions distance. render_height, render_rate, render_mbps
-    // and render_blur
-    // describe how a video is exported: its height, frames per second, megabits
-    // per second, and how
-    // many times samples are laid on one another for motion blur. 0 means as it
-    // was.
-    {"fog", "stage camera", 0, 1, false, nullptr},
-    {"fog_color", "stage camera", 0, 0, false, ""},
-    {"fog_near", "stage camera", 0, 1e4, false, nullptr},
-    {"fog_far", "stage camera", 0, 1e4, false, nullptr},
+    // render_ values describe how a video is exported: its height, frames per
+    // second, megabits per second, and how many times samples are laid on one
+    // another for motion blur. 0 means as it was. The color grading, bloom,
+    // vignette, fog and the like are Filament viewer settings files on the
+    // shelf (see stage/effects/viewer_settings.h).
     {"render_height", "stage", 0, 8640, false, nullptr},
     {"render_rate", "stage", 0, 60, false, nullptr},
     {"render_mbps", "stage", 0, 500, false, nullptr},
     {"render_blur", "stage", 0, 64, false, nullptr},
     {"render_alpha", "stage", 0, 1, false, nullptr},
-    // Filament's screen effects on solid layers: ambient_occlusion shades where
-    // they meet and in
-    // their folds (SSAO), and reflections mirrors what is near in them (SSR).
-    {"ambient_occlusion", "stage", 0, 1, false, nullptr},
-    {"reflections", "stage", 0, 1, false, nullptr},
-    // Filament's ASC CDL grade, the same on red, green and blue: each color
-    // times slope, plus
-    // offset, to the power.
-    {"slope", "stage", 0, 4, false, nullptr},
-    {"offset", "stage", -1, 1, false, nullptr},
-    {"power", "stage", 0.1, 4, false, nullptr},
-    // Filament's shadows, midtones and highlights, each tinted with a color of
-    // six hex digits. If
-    // not set, white, which leaves them as they are.
-    {"shadows_color", "stage", 0, 0, false, ""},
-    {"midtones_color", "stage", 0, 0, false, ""},
-    {"highlights_color", "stage", 0, 0, false, ""},
-    // How its edges are smoothed: Filament's FXAA as it came, its temporal one,
-    // which is steadier
-    // on fine edges in motion, or none.
-    {"anti_aliasing", "stage", 0, 0, false, "fxaa taa msaa none"},
     // Which room lights the stage: the rooms made ready in out/.
     {"room", "stage", 0, 0, false,
      "small_studio studio_small_02_2k lightroom venetian_crossroads_2k "

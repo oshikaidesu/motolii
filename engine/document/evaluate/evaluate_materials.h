@@ -3,7 +3,7 @@
 
 // What doc_evaluate sets in the materials of one layer that is on, as the
 // document has it at one time: the 3D box and its bevel, the surface, the
-// material the layer wears, the opacity and the glow. Each function takes the
+// material the layer wears, the opacity and its emissive. Each function takes the
 // layer and `t`, the layer as it is on the stage, and does nothing for a layer
 // it does not apply to.
 
@@ -47,7 +47,7 @@ struct LayerOpacity {
 // and returns what was set.
 LayerOpacity evaluate_opacity(Doc& d, int layer, DocShownLayer& t, double now);
 
-// Sets how much a layer lights itself: its emissive and a share of its glow.
+// Sets how much a layer lights itself: its emissive.
 void evaluate_glow(Doc& d, int layer, DocShownLayer& t, double now);
 
 }  // namespace motolii

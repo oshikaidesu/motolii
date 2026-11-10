@@ -53,9 +53,6 @@ struct DocEffect {
 };
 
 const DocEffect doc_effects[] = {
-    // Kept for projects that have it. The Glow on the shelf is the file
-    // am_lightglow.wgsl.
-    {"Glow", "glow", "on", true, "", "glow_opacity=1"},
     {"Trim Paths", "trim", "keys 0 1 1 0", false, "Path"},
     // Lays one copy of the layer along the outline of the layer under it, as
     // copies 1 with a stagger lay one on an outline; see doc_place.

@@ -1,0 +1,16 @@
+{
+  "view": {
+    "vignette": {
+      "enabled": true,
+      "midPoint": 0.5,
+      "roundness": 0.5,
+      "feather": 0.5,
+      "color": [
+        0,
+        0,
+        0,
+        1
+      ]
+    }
+  }
+}

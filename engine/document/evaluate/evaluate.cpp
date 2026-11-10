@@ -137,7 +137,6 @@ void doc_evaluate(Doc& d, double now) {
   // moment_fx.h.
   doc_layers_fx(d);
   evaluate_layers_read(evaluation);
-  evaluate_bloom(evaluation);
   evaluate_depth_of_field(evaluation);
   evaluate_layers(evaluation);
   evaluate_shadow_type(evaluation);

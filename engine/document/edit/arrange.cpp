@@ -284,8 +284,8 @@ double doc_usual(Doc& d, const char* name) {
   return doc_among(
              "parent_rotate parent_size scale_x scale_y scale_z size speed "
              "volume opacity wide tall visible distance zoom copies "
-             "blur_levelletter_spacing line_spacing contrast saturation "
-             "vibrance environment gradient_scale slope power strength spread",
+             "blur_levelletter_spacing line_spacing environment "
+             "gradient_scale strength spread",
              name)
              ? 1.0
          : !strcmp(name, "duration") ? -1.0
@@ -308,8 +308,6 @@ double doc_usual(Doc& d, const char* name) {
          : !strcmp(name, "intensity") ? 1.0
          : !strcmp(name, "falloff")   ? 10.0
          : !strcmp(name, "cone")      ? 30.0
-         // Where the fog begins, as it was before this could be set.
-         : !strcmp(name, "fog_near") ? 2.0
          // Defaults of physics: what falls and strikes.
          : !strcmp(name, "bounce")   ? 0.3
          : !strcmp(name, "friction") ? 0.5

@@ -304,10 +304,6 @@ bool doc_carry(Doc& d, const char* by, double a, double b) {
     // drag ends.
     if (ok && strstr(doc_making, ("'" + std::string(by) + "'").c_str()))
       ok = doc_match(d);
-    // A property of an effect is rebuilt only if the effect now reaches past
-    // its room.
-    else if (ok && strstr(doc_fxing, ("'" + std::string(by) + "'").c_str()))
-      ok = doc_match(d);
   }
   doc_evaluate(d, now);
   return ok;

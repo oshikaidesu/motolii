@@ -1,0 +1,23 @@
+{
+  "view": {
+    "bloom": {
+      "enabled": true,
+      "strength": 0.3,
+      "resolution": 384,
+      "levels": 6,
+      "blendMode": "ADD",
+      "threshold": true,
+      "highlight": 1000,
+      "quality": "LOW",
+      "lensFlare": false,
+      "starburst": true,
+      "chromaticAberration": 0.005,
+      "ghostCount": 4,
+      "ghostSpacing": 0.6,
+      "ghostThreshold": 1,
+      "haloThickness": 0.1,
+      "haloRadius": 0.4,
+      "haloThreshold": 1
+    }
+  }
+}

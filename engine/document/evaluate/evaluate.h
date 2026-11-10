@@ -151,10 +151,6 @@ inline const char* const doc_making =
     "thickness','light_group','script','copy_fill','gradient','gradient_angle',"
     "'gradient_scale','gradient_spread','wrap','wrap_at','split','ior','"
     "dispersion','swim','dark','vivid','marker','mosh','mosh_with','mosh_at'";
-// Property names of a layer's glow. They are evaluated again at each time and
-// never force a rebuild. Their only influence on building is whether the glow
-// is on.
-inline const char* const doc_fxing = "'glow','glow_blur','glow_opacity'";
 
 }  // namespace motolii
 

@@ -1,0 +1,20 @@
+{
+  "view": {
+    "fog": {
+      "enabled": true,
+      "distance": 2,
+      "maximumOpacity": 1,
+      "height": -1000,
+      "heightFalloff": 0,
+      "color": [
+        0.85,
+        0.85,
+        0.9
+      ],
+      "density": 0.25,
+      "inScatteringStart": 0,
+      "inScatteringSize": -1,
+      "fogColorFromIbl": false
+    }
+  }
+}

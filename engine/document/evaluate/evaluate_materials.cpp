@@ -247,16 +247,12 @@ LayerOpacity evaluate_opacity(Doc& d, int layer, DocShownLayer& t, double now) {
   return {sheetClear, ownClear};
 }
 
-// How much the layer lights itself now: emissive, plus a share of the glow
-// opacity that the bloom picks up when it is past 1. This applies to a flat
-// layer's sheet and a solid's own faces.
+// How much the layer lights itself now: its emissive, which the stage's bloom
+// picks up when it is past 1. This applies to a flat layer's sheet and a
+// solid's own faces.
 void evaluate_glow(Doc& d, int layer, DocShownLayer& t, double now) {
   Stage& s = *d.stage;
-  const float shine =
-      (float)doc_number(d, layer, "emissive", now, 0) +
-      (doc_word(d, layer, "glow").empty()
-           ? 0.f
-           : 0.35f * (float)doc_number(d, layer, "glow_opacity", now, 1));
+  const float shine = (float)doc_number(d, layer, "emissive", now, 0);
   doc_material_instances(s, t, [&](MaterialInstance* look) {
     if (look->getMaterial()->hasParameter("glowing"))
       look->setParameter("glowing", shine);

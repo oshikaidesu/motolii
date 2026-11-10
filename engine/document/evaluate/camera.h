@@ -39,9 +39,6 @@ struct DocLook {
 // The camera the stage is seen through at the current time, as doc_evaluate
 // last worked it out.
 struct DocCamera {
-  // The camera the stage is seen through now. 0 means the stage's own camera
-  // (see doc_evaluate).
-  int looking = 0;
   // The camera of the current time, against the stage's own camera, which is 6
   // units in front and 30 degrees high. rig is how the world is moved for the
   // camera, and a 2D layer moves with it. facing is only how the world is
@@ -82,9 +79,10 @@ struct DocViewCamera {
 // 6 units away, and the field of view of 30 degrees narrows with `zoom`.
 DocViewCamera doc_view_camera_of(Doc& d, int camera, double now);
 // Applies the look of the project to the canvas: color grading, bloom and lens
-// flare, anti-aliasing, vignette, fog, ambient occlusion, screen space
-// reflections, room lighting and the background. The settings are properties of
-// layer 0, which holds the settings of the canvas itself.
+// flare, vignette, fog, ambient occlusion and screen space reflections from the
+// Filament settings files on the canvas and on layers (all off, and a linear
+// tone mapper, without one), then room lighting and the background, which are
+// properties of layer 0, the canvas itself.
 void doc_look(Doc& d);
 
 }  // namespace motolii

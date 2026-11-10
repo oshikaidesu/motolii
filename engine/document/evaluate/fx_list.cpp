@@ -27,9 +27,8 @@ std::vector<std::string> doc_fx_list(Doc& d, int layer, bool off) {
     return hidden.size() <= 2 ||
            hidden.find(";" + doc_fx_title(w) + ";") == std::string::npos;
   };
-  // Glow is not a step of the stack. It is Filament's bloom; see doc_evaluate.
   for (const std::string& w : script_files(doc_word(d, layer, "fx")))
-    if (w != "none" && w != "glow") said.push_back(w);
+    if (w != "none") said.push_back(w);
   for (const std::string& w : said)
     if (seen(w)) all.push_back(w);
   // Add the effect being dragged onto the layer, as it is drawn; see

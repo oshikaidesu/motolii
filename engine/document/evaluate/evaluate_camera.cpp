@@ -111,9 +111,6 @@ void evaluate_camera(Evaluation& evaluation) {
   d.working_camera.on =
       d.working_camera.asked && camera && !d.video_export.writing;
   god_view(s, d.working_camera.on);
-  // The camera layer whose fog settings apply, read by doc_look. 0 in the
-  // working view.
-  d.camera.looking = d.working_camera.on ? 0 : camera;
   const DocViewCamera seen = doc_view_camera_of(d, camera, now);
   const math::double3 eye = seen.eye, look = seen.look, up = seen.up;
   const double far = seen.far, fov = seen.fov;
@@ -140,28 +137,6 @@ void evaluate_camera(Evaluation& evaluation) {
   // The rotation part of d.camera.rig.
   d.camera.facing = math::mat4(d.camera.rig.upperLeft());
   working_view_shown(evaluation);
-}
-
-// Glow uses the stage's Filament bloom. A glowing layer brighter than 1 is
-// picked up through the bloom threshold, as emissive is. The bloom strength
-// follows the strongest glow opacity.
-void evaluate_bloom(const Evaluation& evaluation) {
-  Doc& d = evaluation.d;
-  Stage& s = evaluation.s;
-  const double now = evaluation.now;
-  const std::vector<EvaluatedLayer>& lies = evaluation.lies;
-  const std::vector<int>& runOf = evaluation.runOf;
-  float most = 0.f;
-  for (size_t i = 0; i < lies.size(); ++i)
-    if (runOf[i] >= 0 && !doc_word(d, lies[i].layer, "glow").empty())
-      most = std::max(
-          most, (float)doc_number(d, lies[i].layer, "glow_opacity", now, 1));
-  if (most > 0.f) {
-    View::BloomOptions glow = s.view->getBloomOptions();
-    glow.enabled = true, glow.threshold = true,
-    glow.strength = std::max(glow.strength, std::clamp(0.35f * most, 0.f, 1.f));
-    s.view->setBloomOptions(glow);
-  }
 }
 
 // The camera's lens is enabled on the stage's own view when solid layers are

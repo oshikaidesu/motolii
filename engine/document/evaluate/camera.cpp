@@ -1,7 +1,6 @@
 #include "document/evaluate/camera.h"
 
 #include <filament/Camera.h>
-#include <filament/Color.h>
 #include <filament/ColorGrading.h>
 #include <filament/Engine.h>
 #include <filament/IndirectLight.h>
@@ -25,7 +24,6 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <map>
@@ -51,20 +49,11 @@
 namespace motolii {
 
 namespace math = filament::math;
-using filament::ACCURATE;
-using filament::ACESToneMapper;
-using filament::AgxToneMapper;
-using filament::Color;
 using filament::ColorGrading;
-using filament::FilmicToneMapper;
 using filament::IndirectLight;
-using filament::LinearColorA;
 using filament::LinearToneMapper;
-using filament::PBRNeutralToneMapper;
 using filament::Skybox;
-using filament::sRGBColor;
 using filament::Texture;
-using filament::ToneMapper;
 using filament::View;
 using filament::math::float3;
 using filament::math::float4;
@@ -106,28 +95,6 @@ void doc_look(Doc& d) {
                      255.f
                : otherwise;
   };
-  const std::string mapper = doc_word(d, 0, "tone_mapper");
-  // All the grading values as one string. It is the key that detects a change,
-  // so the color grading is rebuilt only when this differs from the last one.
-  char grade[300];
-  // Slope, offset and power are the ASC CDL values of the grading.
-  const float slope = (float)doc_number(d, 0, "slope", 0, 1),
-              offset = (float)doc_number(d, 0, "offset", 0, 0),
-              power = (float)doc_number(d, 0, "power", 0, 1);
-  std::snprintf(
-      grade, sizeof grade, "%s %g %g %g %g %g %g %g %g", mapper.c_str(),
-      doc_number(d, 0, "exposure", 0, 0), doc_number(d, 0, "contrast", 0, 1),
-      doc_number(d, 0, "saturation", 0, 1), doc_number(d, 0, "vibrance", 0, 1),
-      doc_number(d, 0, "temperature", 0, 0), slope, offset, power);
-  // Reads the shadows, midtones or highlights color, appends its text to the
-  // key and converts the color from sRGB to linear.
-  const auto tint = [&](const char* name) {
-    const float3 c = hex(name, float3{1.f});
-    std::strncat(grade, (" " + doc_word(d, 0, name)).c_str(), 20);
-    return float4{Color::toLinear<ACCURATE>(sRGBColor{c}), 0.f};
-  };
-  const float4 low = tint("shadows_color"), mid = tint("midtones_color"),
-               high = tint("highlights_color");
   // Filament viewer settings files (JSON) with the parameter values of their
   // effects filled in, see stage/effects/viewer_settings.h. They can be on the
   // canvas or on the effects of any layer, as the shelf puts them.
@@ -154,23 +121,15 @@ void doc_look(Doc& d) {
       std::any_of(told.begin(), told.end(), [](const std::string& t) {
         return t.find("\"colorGrading\"") != std::string::npos;
       });
-  std::string key = grade;
-  // A settings file's grading replaces the canvas's, so its text is part of the
-  // key.
-  if (theirs)
+  // The key that detects a change, so the color grading is rebuilt only when
+  // this differs from the last one. A settings file's grading is the whole
+  // grading, so its text is the key; without one the grading never changes.
+  std::string key = "plain";
+  if (theirs) {
+    key.clear();
     for (const std::string& t : told) key += t;
+  }
   if (d.look.graded != key) {
-    static LinearToneMapper linear;
-    static ACESToneMapper aces;
-    static FilmicToneMapper filmic;
-    static AgxToneMapper agx;
-    static PBRNeutralToneMapper neutral;
-    const ToneMapper* tm = mapper == "aces"     ? (const ToneMapper*)&aces
-                           : mapper == "filmic" ? (const ToneMapper*)&filmic
-                           : mapper == "agx"    ? (const ToneMapper*)&agx
-                           : mapper == "pbr_neutral"
-                               ? (const ToneMapper*)&neutral
-                               : (const ToneMapper*)&linear;
     // The previous grading, destroyed once the new one is set.
     ColorGrading* was = const_cast<ColorGrading*>(s.view->getColorGrading());
     ColorGrading* now = nullptr;
@@ -182,102 +141,41 @@ void doc_look(Doc& d) {
       for (const std::string& t : told) read.readJson(t.c_str(), t.size(), &in);
       now =
           filament::viewer::createColorGrading(in.view.colorGrading, s.engine);
-    } else
+    } else {
+      // Without a file the grade is Filament's own defaults on the linear tone
+      // mapper.
+      static LinearToneMapper linear;
       now = ColorGrading::Builder()
-                .toneMapper(tm)
-                .exposure((float)doc_number(d, 0, "exposure", 0, 0))
-                .contrast((float)doc_number(d, 0, "contrast", 0, 1))
-                .saturation((float)doc_number(d, 0, "saturation", 0, 1))
-                .vibrance((float)doc_number(d, 0, "vibrance", 0, 1))
-                .whiteBalance((float)doc_number(d, 0, "temperature", 0, 0), 0.f)
-                .slopeOffsetPower(float3{slope}, float3{offset}, float3{power})
-                // The ranges of shadows, midtones and highlights are Filament's
-                // defaults.
-                .shadowsMidtonesHighlights(low, mid, high,
-                                           float4{0.f, 0.333f, 0.55f, 1.f})
+                .toneMapper(&linear)
+                .exposure(0.f)
+                .contrast(1.f)
+                .saturation(1.f)
+                .vibrance(1.f)
+                .whiteBalance(0.f, 0.f)
+                .slopeOffsetPower(float3{1.f}, float3{0.f}, float3{1.f})
+                .shadowsMidtonesHighlights(
+                    float4{1.f, 1.f, 1.f, 0.f}, float4{1.f, 1.f, 1.f, 0.f},
+                    float4{1.f, 1.f, 1.f, 0.f}, float4{0.f, 0.333f, 0.55f, 1.f})
                 .build(*s.engine);
+    }
     s.view->setColorGrading(now);
     if (was) s.engine->destroy(was);
     d.look.graded = key;
   }
-  View::BloomOptions glow = s.view->getBloomOptions();
-  glow.enabled = doc_number(d, 0, "bloom", 0, 0) > 0.0,
-  glow.strength = (float)doc_number(d, 0, "bloom", 0, 0);
-  glow.lensFlare = glow.starburst = doc_number(d, 0, "lens_flare", 0, 0) > 0.0;
-  // A lens flare is drawn by the passes of the bloom, so bloom is switched on
-  // with it.
-  glow.enabled = glow.enabled || glow.lensFlare;
-  glow.chromaticAberration =
-      0.005f * (float)doc_number(d, 0, "lens_flare", 0, 0),
-  glow.ghostThreshold = glow.haloThreshold = 1.f;
-  s.view->setBloomOptions(glow);
-  // The anti-aliasing mode of the canvas view. Each image layer smooths its own
-  // edges separately.
-  const std::string smooth = doc_word(d, 0, "anti_aliasing");
-  for (View* v : std::vector<View*>{s.view}) {
-    v->setAntiAliasing(smooth.empty() || smooth == "fxaa"
-                           ? View::AntiAliasing::FXAA
-                           : View::AntiAliasing::NONE);
-    View::TemporalAntiAliasingOptions taa = v->getTemporalAntiAliasingOptions();
-    taa.enabled = smooth == "taa";
-    v->setTemporalAntiAliasingOptions(taa);
-  }
+  // Bloom, lens flare, vignette, fog, ambient occlusion and screen space
+  // reflections are Filament's own defaults, which are all off, until a
+  // settings file says otherwise. The edges are smoothed by FXAA, with
+  // multisampling off.
+  s.view->setBloomOptions({}), s.view->setVignetteOptions({}),
+      s.view->setFogOptions({}), s.view->setAmbientOcclusionOptions({}),
+      s.view->setScreenSpaceReflectionsOptions({});
+  s.view->setAntiAliasing(View::AntiAliasing::FXAA);
   View::MultiSampleAntiAliasingOptions many =
       s.view->getMultiSampleAntiAliasingOptions();
-  many.enabled = smooth == "msaa", many.sampleCount = 4;
+  many.enabled = false;
   s.view->setMultiSampleAntiAliasingOptions(many);
-  View::VignetteOptions corners = s.view->getVignetteOptions();
-  corners.enabled = doc_number(d, 0, "vignette", 0, 0) > 0.0,
-  corners.midPoint = 1.f - 0.9f * (float)doc_number(d, 0, "vignette", 0, 0),
-  corners.color = LinearColorA{hex("vignette_color", float3{0.f}), 1.f};
-  s.view->setVignetteOptions(corners);
-  View::FogOptions haze = s.view->getFogOptions();
-  // The layer whose fog is used. It is the camera that the window looks through
-  // if that camera sets a fog of its own, as Alight Motion's camera Fog does.
-  // Otherwise it is the canvas.
-  const int fogBy =
-      d.camera.looking && doc_number(d, d.camera.looking, "fog", 0, 0) > 0.0
-          ? d.camera.looking
-          : 0;
-  const std::string fogColour = doc_word(d, fogBy, "fog_color");
-  // Fog is uniform in height: the height is far below the canvas and the height
-  // falloff is 0.
-  haze.enabled =
-      !d.working_camera.on && doc_number(d, fogBy, "fog", 0, 0) > 0.0,
-  haze.density = 0.5f * (float)doc_number(d, fogBy, "fog", 0, 0),
-  haze.distance = (float)doc_number(d, fogBy, "fog_near", 0, 2),
-  haze.height = -1e3f, haze.heightFalloff = 0.f,
-  haze.color =
-      fogColour.size() == 6
-          ? float3{(float)((std::strtol(fogColour.c_str(), nullptr, 16) >> 16) &
-                           255),
-                   (float)((std::strtol(fogColour.c_str(), nullptr, 16) >> 8) &
-                           255),
-                   (float)(std::strtol(fogColour.c_str(), nullptr, 16) & 255)} /
-                255.f
-          : float3{0.85f, 0.85f, 0.9f},
-  haze.fogColorFromIbl = false;
-  // When `fog_far` is set, as in Alight Motion, the density is chosen so that
-  // the fog is 98 percent opaque at that distance. Filament's fog transmits
-  // e^(-density * distance past its start), so the density is ln(50) divided by
-  // the distance. This is also how three.js's linear Fog far maps onto its
-  // FogExp2.
-  if (const double far = doc_number(d, fogBy, "fog_far", 0, 0);
-      far > haze.distance)
-    haze.density = (float)(doc_number(d, fogBy, "fog", 0, 0) * std::log(50.0) /
-                           (far - haze.distance));
-  s.view->setFogOptions(haze);
-  View::AmbientOcclusionOptions folds = s.view->getAmbientOcclusionOptions();
-  folds.enabled = doc_number(d, 0, "ambient_occlusion", 0, 0) > 0.0,
-  folds.intensity = 2.f * (float)doc_number(d, 0, "ambient_occlusion", 0, 0);
-  s.view->setAmbientOcclusionOptions(folds);
-  View::ScreenSpaceReflectionsOptions mirror =
-      s.view->getScreenSpaceReflectionsOptions();
-  mirror.enabled = doc_number(d, 0, "reflections", 0, 0) > 0.0;
-  s.view->setScreenSpaceReflectionsOptions(mirror);
-  // Filament settings files are applied over the canvas settings. They start
-  // from the options the view has now, so any section that a file does not name
-  // keeps its value.
+  // Filament settings files are applied over the options above. A section that
+  // a file does not name stays as it is.
   if (!told.empty()) {
     filament::viewer::Settings in;
     in.view.bloom = s.view->getBloomOptions(),

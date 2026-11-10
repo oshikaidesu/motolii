@@ -1,0 +1,19 @@
+{
+  "view": {
+    "ssao": {
+      "enabled": true,
+      "aoType": "SAO",
+      "radius": 0.3,
+      "power": 1,
+      "bias": 0.0005,
+      "resolution": 0.5,
+      "intensity": 1,
+      "bilateralThreshold": 0.05,
+      "quality": "LOW",
+      "lowPassFilter": "MEDIUM",
+      "upsampling": "LOW",
+      "bentNormals": false,
+      "minHorizonAngleRad": 0
+    }
+  }
+}

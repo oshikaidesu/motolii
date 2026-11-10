@@ -49,10 +49,6 @@ inline const DocCard doc_cards[] = {
      "camera"},
     // After Effects' Camera Options: Zoom, Focus Distance and Aperture.
     {"Camera Options", "zoom focus aperture", "kind", "camera"},
-    // The camera's own fog, as Alight Motion's camera has: its color, where it
-    // begins and where it
-    // is opaque. The canvas's fog is used when the camera sets none.
-    {"Fog", "fog fog_near fog_far fog_color", "kind", "camera"},
     // After Effects' layer mode and track matte in their simplest form: the
     // layer is drawn over
     // what lies below as the mode says, or only inside the layer before it.
@@ -188,15 +184,6 @@ inline const DocCard doc_cards[] = {
      "light_group sun_size sun_halo",
      "kind", "light"},
     {"Projection", "projection shift_x shift_y"},
-    {"Grade",
-     "tone_mapper exposure contrast saturation vibrance temperature slope "
-     "offset power shadows_color midtones_color highlights_color",
-     nullptr, nullptr, true},
-    // Settings of the canvas. A camera's own fog is on its Fog card.
-    {"Lens",
-     "bloom ambient_occlusion reflections lens_flare vignette vignette_color "
-     "fog fog_near fog_far fog_color anti_aliasing",
-     "kind", "stage"},
     {"Room", "room environment environment_rotate behind background"},
     {"Physics", "physics bounce friction gravity", nullptr, nullptr, true},
     // Group behaviours. Around: the layers are arranged round a center or round
@@ -228,10 +215,6 @@ inline const DocCard doc_cards[] = {
     {"Datamosh", "mosh_with mosh_at", "mosh", "+"},
     // A point cloud's own, see stage/render/point_cloud.h.
     {"Points", "dissolve grain", "file", "~.ply"},
-    // The effects (doc_effects): each has a card while it is on, as After
-    // Effects' Effect Controls.
-    // How strong: Filament's bloom on the layer's own image, see doc_evaluate.
-    {"Glow", "glow_opacity", "glow", "+"},
 };
 // Returns true if `one` is a whole word of the space separated list `words`.
 inline bool doc_among(const std::string& words, const std::string& one) {

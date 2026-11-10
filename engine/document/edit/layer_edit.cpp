@@ -147,8 +147,8 @@ bool doc_knows(Doc& d, int layer, const char* name, const double* number,
   }
   // One color: six hex digits.
   if (word && *word &&
-      (doc_among("vignette_color fog_color background bevel_color side_color "
-                 "back_color stroke_2 stroke_3",
+      (doc_among("background bevel_color side_color back_color stroke_2 "
+                 "stroke_3",
                  name) ||
        (!strcmp(name, "fill") && kind == "light")))
     if (strlen(word) != 6 || strspn(word, "0123456789abcdefABCDEF") != 6)
@@ -164,8 +164,7 @@ bool doc_knows(Doc& d, int layer, const char* name, const double* number,
   // to 1 in Porter and Duff's compositing, 1984.
   const bool flag = doc_among(
                  "keyed clip visible solo lock shadows clip_invert", name),
-             held = doc_among(
-                 "opacity glow_opacity copy_opacity_end", name);
+             held = doc_among("opacity copy_opacity_end", name);
   if (number &&
       (!std::isfinite(*number) || (flag && *number != 0.0 && *number != 1.0) ||
        (held && (*number < v->low || *number > v->high))))

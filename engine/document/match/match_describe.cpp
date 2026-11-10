@@ -135,8 +135,7 @@ void told_effects(Rebuild& rebuild) {
     if (of.find("kind=image") != std::string::npos &&
         !doc_keys_of(d, layer, "cel").at.empty())
       of += " cel=" + std::to_string(std::llround(doc_cel(d, layer, s.now)));
-    of += " order=" + doc_fx_join(doc_fx_list(d, layer)) +
-          " fx=" + (doc_word(d, layer, "glow").empty() ? "0" : "1");
+    of += " order=" + doc_fx_join(doc_fx_list(d, layer));
   }
 }
 
