@@ -46,7 +46,9 @@
 #include "stage/canvas/canvas_renderables.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
+using filament::math::mat4;
+namespace math = filament::math;
+
 using namespace motolii;
 
 // Adds a layer of kind `kind` made from `file`. Returns nonzero on success.

@@ -22,9 +22,11 @@
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-
 namespace motolii {
+
+using filament::Engine;
+using filament::View;
+namespace math = filament::math;
 
 thread_local std::string why_asked;
 
@@ -80,7 +82,7 @@ void stage_scale(Motolii* m) {
   m->scale = want;
   View::DynamicResolutionOptions o;
   o.enabled = want < 1.0, o.minScale = o.maxScale = math::float2{(float)want},
-  o.quality = QualityLevel::MEDIUM;
+  o.quality = filament::QualityLevel::MEDIUM;
   m->s->view->setDynamicResolutionOptions(o);
 }
 int posted(Motolii* m, const std::string& kind, std::function<void()> does) {

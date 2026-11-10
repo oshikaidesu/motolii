@@ -46,9 +46,13 @@
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-
 namespace motolii {
+
+using filament::Camera;
+using filament::ColorGrading;
+using filament::Engine;
+using filament::Renderer;
+using filament::View;
 
 void render_thread_run(Motolii* m, std::string document, int wide, int high,
                        std::promise<bool>* opened) {
@@ -72,7 +76,7 @@ void render_thread_run(Motolii* m, std::string document, int wide, int high,
   m->s->view->setScreenSpaceRefractionEnabled(false);
   // Tone mapping that leaves colors unchanged, so a video, a photo or typed
   // text keeps the colors it came with.
-  static LinearToneMapper as_it_is;
+  static filament::LinearToneMapper as_it_is;
   m->s->view->setColorGrading(
       ColorGrading::Builder().toneMapper(&as_it_is).build(*m->s->engine));
   // Load the image-based lighting environment, then open the document.
