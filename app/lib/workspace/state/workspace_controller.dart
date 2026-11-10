@@ -17,6 +17,7 @@ import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/layer_colors.dart';
 import 'package:motolii/workspace/easing/ease_curve.dart';
 import 'package:motolii/workspace/state/beats.dart';
+import 'package:motolii/workspace/state/composition_settings.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
@@ -42,11 +43,15 @@ class WorkspaceController extends ChangeNotifier {
 
   final layers = <Layer>[];
 
+  // One for the whole app, because widgets read the three getters below without a controller at hand.
+  static final _composition = CompositionSettings();
+
   /// The composition's frame rate and length in frames. After [join] they come from the document.
-  static int fps = 30, duration = 240;
+  static int get fps => _composition.frameRate;
+  static int get duration => _composition.duration;
 
   /// The composition's size in pixels. After [join] it is the document's own size.
-  static Size comp = const Size(1920, 1080);
+  static Size get comp => _composition.size;
 
   /// The engine this window is connected to (see motolii.dart), or null for the sample document.
   /// When connected, the layers are the document's layers, a change is a call to the engine, and the playhead is its time.
@@ -63,8 +68,12 @@ class WorkspaceController extends ChangeNotifier {
       if (document) reread();
       if (moment) seen.value++;
     };
-    fps = _fpsOf(inside); // The timeline counts frames at the document's rate, as the exported video does.
-    comp = Size(inside.size.$1.toDouble(), inside.size.$2.toDouble());
+    // The timeline counts frames at the document's rate, as the exported video does.
+    _composition.frameRate = _fpsOf(inside);
+    _composition.size = Size(
+      inside.size.$1.toDouble(),
+      inside.size.$2.toDouble(),
+    );
     moment.value = (inside.now * fps)
         .round(); // The playhead starts at the engine's time.
     reread();
@@ -214,12 +223,12 @@ class WorkspaceController extends ChangeNotifier {
     if (_fpsOf(m) != fps) {
       // The frame rate changed. Keep the playhead at the same time.
       final at = moment.value / fps;
-      fps = _fpsOf(m);
+      _composition.frameRate = _fpsOf(m);
       moment.value = (at * fps).round();
     }
     rev++;
     reads++;
-    duration = Timeline.timeSync(
+    _composition.duration = Timeline.timeSync(
       'MARK seconds',
       () => (m.seconds * fps).round().clamp(1, 1 << 20),
     );
