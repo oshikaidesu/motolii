@@ -1,23 +1,9 @@
-# build products and render output, only where AGENTS.md 構成の目標 4 lets them be: an out/ anywhere else shows in git status
-/engine/out/
+# Build output and fetched code. Each part ignores its own: engine/.gitignore (out/, third_party/), app/.gitignore (build/).
 third_party/
 # clangd's index
 .cache/
-# (engine/third_party holds what the build fetches, kept out, beside a few small bundled works, kept in: a new one is let in below)
+# (engine/third_party is let back in here so that engine/.gitignore can choose what of it git keeps)
 !/engine/third_party/
-/engine/third_party/*
-!/engine/third_party/anime/
-!/engine/third_party/godot_easing/
-!/engine/third_party/js/
-!/engine/third_party/leva/
-!/engine/third_party/midi_roll/
-!/engine/third_party/thermion_frame/
-!/engine/third_party/ymm4-luascript/
-!/engine/third_party/wordnet_ja/
-!/engine/third_party/noto_sans_jp/
-!/engine/third_party/gflanguages/
-/engine/third_party/js/hermes/
-/engine/third_party/midi_roll/PianoRollSvg.js
 target/
 build/
 node_modules/
