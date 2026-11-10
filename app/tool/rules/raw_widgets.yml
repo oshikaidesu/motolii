@@ -1,15 +1,17 @@
-# Text input, buttons, switches and sliders come from lib/widgets; a panel does not build its own from a raw Flutter widget.
+# OUR OWN RULE, LOW TRUST. Text input and buttons come from lib/widgets; a panel does not build its own from the two raw
+# widgets that package:flutter/widgets.dart and naked_ui give. Every Material and Cupertino widget (TextField, ElevatedButton,
+# InkWell, Switch ...) is closed by dart_code_linter's avoid-banned-imports instead (analysis_options.yaml), not by a list of names.
 # (GestureDetector is not listed: the stage and the graphs use it for dragging on a drawing, not as a button.)
 # `ignores` has two parts. The first is permanent. The second is the baseline: files that broke the rule before it
 # existed. Delete a line when the file is fixed; never add one (a new file that breaks the rule must be fixed instead).
 id: raw-widget
 language: dart
 severity: error
-message: Use the standard part in lib/widgets (TypedField for text, Pressable or Forms for buttons and switches, MiniSlider for sliders), not a raw Flutter widget.
+message: Use the standard part in lib/widgets (TypedField for text, Pressable or Forms for buttons), not a raw EditableText or NakedButton.
 rule:
   any:
-    - {kind: identifier, regex: '^(EditableText|NakedButton|TextField|TextFormField|CupertinoTextField|SelectableText|ElevatedButton|TextButton|IconButton|OutlinedButton|FilledButton|MaterialButton|CupertinoButton|InkWell|InkResponse|Switch|Slider|Checkbox)$'}
-    - {kind: type_identifier, regex: '^(EditableText|NakedButton|TextField|TextFormField|CupertinoTextField|SelectableText|ElevatedButton|TextButton|IconButton|OutlinedButton|FilledButton|MaterialButton|CupertinoButton|InkWell|InkResponse|Switch|Slider|Checkbox)$'}
+    - {kind: identifier, regex: '^(EditableText|NakedButton)$'}
+    - {kind: type_identifier, regex: '^(EditableText|NakedButton)$'}
 files:
   - lib/**
 ignores:

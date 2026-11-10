@@ -9,3 +9,13 @@ linter:
   rules:
     # A file names every neighbour by its package path, so a file can move without its imports being rewritten.
     always_use_package_imports: true
+
+# dart_code_linter (Bancolombia; a maintained fork of Dart Code Metrics), run by CI as
+# `dart pub global run dart_code_linter:metrics analyze lib --fatal-warnings`. It is not in pubspec.yaml.
+dart_code_linter:
+  rules:
+    - avoid-banned-imports:
+        entries:
+          - paths: ['lib/.*\.dart']
+            deny: ['package:flutter/material.dart', 'package:flutter/cupertino.dart']
+            message: 'Panels are built from package:flutter/widgets.dart and lib/widgets, not Material or Cupertino.'

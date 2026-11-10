@@ -1,16 +1,19 @@
-# A colour is written once, in lib/skin, and panels read it. Not allowed in a panel: an 8-digit hex literal, Colors.*,
-# CupertinoColors.*, Color.fromARGB, Color.fromRGBO, and a number given straight to Color(...). (A hex built at run time, or arithmetic inside Color(...), is not seen.)
+# OUR OWN RULE, LOW TRUST: no maintained package checks this (flutter_design_guard has 68 downloads a month, clean_code_lints 67;
+# clean_code_lints gave no diagnostics at all on Dart 3.13). The rule is kept small on purpose. Colors.* and CupertinoColors
+# are not here: they need package:flutter/material.dart or cupertino.dart, and dart_code_linter's avoid-banned-imports
+# (analysis_options.yaml) bans those imports.
+# A colour is written once, in lib/skin, and panels read it. Not allowed in a panel: an 8-digit hex literal,
+# Color.fromARGB, Color.fromRGBO, and a number given straight to Color(...). (A hex built at run time, or arithmetic inside Color(...), is not seen.)
 # `ignores` has two parts. The first is permanent. The second is the baseline: files that broke the rule before it
 # existed. Delete a line when the file is fixed; never add one (a new file that breaks the rule must be fixed instead).
 id: color
 language: dart
 severity: error
-message: A colour is a token in lib/skin. Do not write a hex literal, Colors.*, CupertinoColors.* or Color.fromARGB/fromRGBO in a panel.
+message: A colour is a token in lib/skin. Do not write a hex literal, a number in Color(...) or Color.fromARGB/fromRGBO in a panel.
 rule:
   any:
     - {kind: hex_integer_literal, regex: '^0[xX][0-9A-Fa-f]{8}$'}
-    - {kind: identifier, regex: '^(Colors|CupertinoColors|fromARGB|fromRGBO)$'}
-    - {kind: type_identifier, regex: '^(Colors|CupertinoColors)$'}
+    - {kind: identifier, regex: '^(fromARGB|fromRGBO)$'}
     # A number that is itself an argument of Color(...), const Color(...) or new Color(...): decimal, 6 or 9 digits, -1.
     # (Numbers deeper inside, such as the bounds of a clamp() that computes a colour, are not looked at.)
     - any:
