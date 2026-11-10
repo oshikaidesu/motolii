@@ -8,6 +8,8 @@
 #include "document/evaluate/value_at.h"
 #include "document/undo.h"
 
+namespace motolii {
+
 double doc_seconds(Doc& d) {
   double all = 0.0;
   for (const auto& [layer, t] : d.shown) {
@@ -208,3 +210,5 @@ bool doc_size_is(sqlite3* file, int wide, int high) {
   sqlite3_free(say);
   return ok;
 }
+
+}  // namespace motolii

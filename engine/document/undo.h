@@ -11,6 +11,8 @@
 #include "document/kinds.h"
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // Upgrades the database `schema` of `file` from the old table names to the
 // current ones (layer, keyframe, easing, undo_step), as described in section 3
 // of docs/design/renamed_words.md. It uses SQLite's ALTER TABLE ... RENAME
@@ -65,5 +67,7 @@ bool doc_undo_step(Doc& d, bool back);
 // with all its numbers, however the easing was written. Returns "" if the
 // property has no keyframe at that time.
 std::string doc_easing_of(Doc& d, int layer, const char* name, double at);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_UNDO_H_

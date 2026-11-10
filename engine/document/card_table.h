@@ -6,6 +6,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Each entry is a card with a title and the space separated properties it
 // shows. The cards that apply to a layer are chosen by the next two fields: a
 // property and the value it must have, where a leading `!` means is not, a
@@ -228,4 +230,7 @@ inline const DocCard doc_cards[] = {
 inline bool doc_among(const std::string& words, const std::string& one) {
   return (" " + words + " ").find(" " + one + " ") != std::string::npos;
 }
+
+}  // namespace motolii
+
 #endif  // MOTOLII_DOCUMENT_CARD_TABLE_H_

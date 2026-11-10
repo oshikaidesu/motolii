@@ -8,6 +8,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Returns the bevel profile of a layer as its index in {angular, convex,
 // concave, ogee, step} plus one, or 0 for none. Only a layer with depth
 // (scale_z) can have a bevel.
@@ -24,5 +26,7 @@ long long doc_sketch_written(Doc& d, const std::string& file);
 // change at every time are applied separately by doc_evaluate. Returns false if
 // any layer could not be built; d.error then holds the reason.
 bool doc_match(Doc& d);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_MATCH_H_

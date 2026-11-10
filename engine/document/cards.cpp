@@ -29,6 +29,8 @@
 #include "shelf/shelf_folders.h"
 #include "stage/effects/thorvg_effect_names.h"
 
+namespace motolii {
+
 namespace {
 
 // Returns the layer's script parameter called "name", or nullptr. Script
@@ -389,3 +391,5 @@ bool doc_on(Doc& d, int layer, const char* name) {
   return !w.empty() &&
          (!doc_range(d, layer, name, &low, &high) || std::atof(w.c_str()) != 0);
 }
+
+}  // namespace motolii

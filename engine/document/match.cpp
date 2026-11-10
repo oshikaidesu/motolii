@@ -61,6 +61,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 namespace {
 
 // The property names that move the points of a flat shape as it is drawn (the
@@ -1057,3 +1059,5 @@ bool doc_match(Doc& d) {
   doc_evaluate(d, s.now);
   return all;
 }
+
+}  // namespace motolii

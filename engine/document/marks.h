@@ -10,6 +10,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Returns how long the project is, in seconds: to the end of what ends last. A
 // layer with no duration plays once through itself. Returns 8 if nothing in the
 // project ends.
@@ -69,5 +71,7 @@ bool doc_size(const char* path, int* wide, int* high);
 // because there is nothing before it.
 char* doc_size_words(int wide, int high);
 bool doc_size_is(sqlite3* file, int wide, int high);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_MARKS_H_

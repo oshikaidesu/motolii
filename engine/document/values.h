@@ -4,6 +4,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // One entry per property. The fields of DocShown are: property name, kind of
 // control, unit, label shown to the user, lowest and highest value of the
 // slider, and the name of the fold the property is grouped under (nullptr for
@@ -268,4 +270,7 @@ inline const DocShown doc_shown[] = {
     {"behind", "", "", "Behind", 0, 0, nullptr},
     {"background", "colour", "", "Colour", 0, 0, nullptr},
 };
+
+}  // namespace motolii
+
 #endif  // MOTOLII_DOCUMENT_VALUES_H_

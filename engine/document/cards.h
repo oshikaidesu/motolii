@@ -8,6 +8,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Removes all keyframes of a property, leaving it constant at the value it had
 // at time "at". Returns false if the layer does not have the property.
 bool doc_stay(Doc& d, int layer, const char* name, double at);
@@ -54,5 +56,7 @@ bool doc_range(Doc& d, int layer, const char* name, double* low, double* high);
 // Returns whether a property is on: it has keyframes, or it is set to a nonzero
 // value. A color that is set counts as on, black included.
 bool doc_on(Doc& d, int layer, const char* name);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_CARDS_H_

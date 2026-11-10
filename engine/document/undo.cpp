@@ -13,6 +13,8 @@
 #include "motion/easing_curves.h"
 #include "shelf/shelf_folders.h"
 
+namespace motolii {
+
 namespace {
 
 // Records what an undo step changed, so that the app can be told. Each property
@@ -478,3 +480,5 @@ std::string doc_easing_of(Doc& d, int layer, const char* name, double at) {
   return !said.empty() && interp_said(said, &kind) == 0 ? interp_words(kind)
                                                         : said;
 }
+
+}  // namespace motolii
