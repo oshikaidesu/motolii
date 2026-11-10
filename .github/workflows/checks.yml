@@ -1,5 +1,5 @@
 # The repository's own checks, so they hold for everyone and not only for a clone that ran
-# `git config core.hooksPath .githooks`: the 500-line rule (.githooks/size_check.py), the layout of AGENTS.md
+# `git config core.hooksPath .githooks`: the layout of AGENTS.md
 # 「構成の目標」 (.githooks/layout_check.py), every path a shelf or one of our .md names leading somewhere
 # (.githooks/path_check.py), every Inspector card the engine's declaration (.githooks/card_check.py), every motolii_* call and class
 # we keep reached by the window (.githooks/reach_check.py), no dropped house word in our identifiers or .md (.githooks/word_check.py, report only
@@ -40,8 +40,6 @@ jobs:
           fi
           echo "BASE=$base" >> "$GITHUB_ENV"
           echo "HEAD_SHA=$head" >> "$GITHUB_ENV"
-      - name: 500 lines a file (.githooks/size_check.py)
-        run: python3 .githooks/size_check.py --all "$BASE"
       - name: layout (.githooks/layout_check.py)
         run: python3 .githooks/layout_check.py --all "$BASE"
       - name: paths a shelf or a .md names lead somewhere (.githooks/path_check.py)

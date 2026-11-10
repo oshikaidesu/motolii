@@ -30,7 +30,6 @@ On every commit, `.githooks/pre-commit` (a merge commit gets the same from `pre-
 
 | Check | What it refuses | At a commit | On GitHub (checks.yml) |
 |---|---|---|---|
-| `size_check.py` | A file of our own over 500 lines; a numbered name such as `name_2.dart`. Ours means Dart in `app/lib`, C++ and `.js` in `engine/`, `.js` in `shelves/` (not other people's code in `engine/third_party/` and `shelves/aviutl_scripts/`). Files already over are listed in `over_500.txt` and may not grow | Staged files | All files |
 | `layout_check.py` | Where things go (AGENTS.md 「構成の目標」): stray files at the root, a folder missing from its entrance README's table, `out/` or `build/` in git, numbered or letter-plus-number names, more than 40 files of our own in one folder. A Japanese `.md` with no `.en.md`, or with no English summary | Staged files | All files |
 | `path_check.py` | A path a shelf file or one of our `.md` names (`import`, image, link) that leads nowhere | Staged shelf files (all of them when something is deleted or moved) | All files |
 | `card_check.py` | An Inspector card drawn by hand in Dart (a value name written as a string). Cards are declared in the engine's `card_table.h` | Staged files | All files |

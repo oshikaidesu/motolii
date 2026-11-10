@@ -26,7 +26,6 @@ git config core.hooksPath .githooks
 
 | 検査 | 断る物 | コミット | GitHub（checks.yml） |
 |---|---|---|---|
-| `size_check.py` | 自前のファイルが 500 行を超える。`name_2.dart` のような番号の名前（自前 = `app/lib` の Dart、`engine/` の C++ と `.js`、`shelves/` の `.js`。他人のコードの `engine/third_party/`・`shelves/aviutl_scripts/` は除く）。既に超えている物は `over_500.txt` に書いてあり、増やせません | ステージした物 | 全部 |
 | `layout_check.py` | 置き場（AGENTS.md「構成の目標」）：直下の余計な物、入口の README の表に無いフォルダ、`out/`・`build/` が git に入る、番号や「文字＋数字」の名前、1 フォルダに自前のファイル 40 本を超える。日本語の `.md` に `.en.md` が無い、または英語の要約が無い | ステージした物 | 全部 |
 | `path_check.py` | 棚のファイルと自前の `.md` が書いている道（`import`・画像・リンク）の先が無い | ステージした棚のファイル（何かを消す・動かす時は全部） | 全部 |
 | `card_check.py` | Inspector のカードを Dart で手描きする（値の名前を文字列で書く）。カードはエンジンの `card_table.h` に宣言する | ステージした物 | 全部 |

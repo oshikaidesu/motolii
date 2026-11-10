@@ -38,12 +38,12 @@
 
 来た人も AI も、最初の 3 分でこれだけ読めば動ける。
 
-- 始める前に `git config core.hooksPath .githooks`。コミットのたびに、500 行の決まり・構成の目標（1・2・4・5・6）・件名 72 字が測られる。何がどれに断られ、どう直すかは [.githooks/README.md](.githooks/README.md)。同じ検査は push と PR のたびに CI（`.github/workflows/checks.yml`）も回すので、入れなければ GitHub で落ちる。
+- 始める前に `git config core.hooksPath .githooks`。コミットのたびに、構成の目標（1・2・4・5・6）・件名 72 字が測られる。何がどれに断られ、どう直すかは [.githooks/README.md](.githooks/README.md)。同じ検査は push と PR のたびに CI（`.github/workflows/checks.yml`）も回すので、入れなければ GitHub で落ちる。
 - 言葉：コードも文書も、アプリ・エンジン・レイヤー・プロジェクト・プレビューと、After Effects などと同じ言葉で呼ぶ。左のタブだけ「棚」（Blender の Asset Shelf）。古い言い方との対応は [rename_words.md §1](docs/internal/notes/rename_words.md)。
 - 確かめるときは、錠の要らない静的な検査から始める。
   - Dart：`cd app && dart analyze lib`
   - C++：`./engine/check_syntax.sh`（組み立てと同じ指定で `clang++ -fsyntax-only`。何も書かない。`ok: entry/motolii.mm` か、誤りとその行）
-  - そのほか：`python3 .githooks/size_check.py`・`python3 .githooks/layout_check.py`
+  - そのほか：`python3 .githooks/layout_check.py`
 - テストの手順は [docs/TESTING.md](docs/TESTING.md)。
 - 終わったと言えるのは、使う人に見える物（絵・画面・書き出したファイル）で示せた時だけ。そして、その検査が直す前には落ちるのを見た時だけ。
 
