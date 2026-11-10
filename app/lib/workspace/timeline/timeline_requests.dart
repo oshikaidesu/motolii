@@ -18,7 +18,6 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
 import 'package:motolii/workspace/timeline/timeline_drag.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
-import 'package:motolii/workspace/timeline/timeline_ruler.dart';
 
 mixin TimelineRequests on State<TimelinePane> {
   // The timeline state this mixin is part of: its zoom and scroll.
@@ -97,7 +96,7 @@ mixin TimelineRequests on State<TimelinePane> {
     final t = _t, ws = t.workspace;
     if (ws == null) return;
     final int f;
-    if (t.flagAt(p) case final flag?) {
+    if (t.ruler.flagAt(p) case final flag?) {
       selectedMarker.value = flag;
       f = (flag.$1 * WorkspaceController.fps).round();
     } else {
@@ -119,7 +118,7 @@ mixin TimelineRequests on State<TimelinePane> {
   /// Live plays from the marker instead, so here "Play from Here" is in the right-click menu.
   /// Elsewhere it zooms to the selection, or to the whole project when nothing is selected, as in Live.
   void rulerDouble(Offset p) {
-    if (_t.flagAt(p) case final flag?) {
+    if (_t.ruler.flagAt(p) case final flag?) {
       selectedMarker.value = flag;
       return _rename();
     }
@@ -138,7 +137,7 @@ mixin TimelineRequests on State<TimelinePane> {
   void rulerRight(Offset p) {
     final ws = _t.workspace, m = ws?.inside;
     if (ws == null || m == null) return;
-    if (_t.flagAt(p) case final flag?) {
+    if (_t.ruler.flagAt(p) case final flag?) {
       selectedMarker.value = flag;
       return _t.rulerMenu.currentState?.show(p, [
         ContextMenuItem('Rename…', _rename, keys: '⌘R'),

@@ -12,8 +12,6 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/context_menu.dart';
-import 'package:motolii/workspace/commands/panel_requests.dart'
-    show selectedMarker;
 import 'package:motolii/workspace/easing/ease_curve.dart';
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
@@ -23,6 +21,7 @@ import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/frame_snap.dart';
 import 'package:motolii/workspace/timeline/row_flags.dart';
+import 'package:motolii/workspace/timeline/ruler_marks.dart';
 import 'package:motolii/workspace/timeline/timeline_drag.dart';
 import 'package:motolii/workspace/timeline/timeline_header.dart';
 import 'package:motolii/workspace/timeline/timeline_media.dart';
@@ -56,7 +55,13 @@ class TimelinePaneState extends State<TimelinePane>
 
   /// The beats, video frames, thumbnails and waveforms read for the rows.
   final media = TimelineMediaCache();
-  int workIn = 12, workOut = 228;
+
+  /// The work area and the markers on the ruler, and the drag in hand there.
+  late final ruler = RulerMarks(
+    workspaceOf: () => workspace,
+    viewport: viewport,
+    snapTo: _snapTo,
+  );
   int lastFrame = -1;
 
   // The rows as laid out: each layer's own row, then, while it is expanded, a lane for each of its animated properties.
@@ -135,6 +140,7 @@ class TimelinePaneState extends State<TimelinePane>
     super.initState();
     viewport.addListener(_rebuild);
     media.addListener(_rebuild);
+    ruler.addListener(_rebuild);
     // Starts listening for requests from the app's commands (timeline_requests.dart).
     hearAsks();
   }
@@ -163,6 +169,7 @@ class TimelinePaneState extends State<TimelinePane>
     ticker.dispose();
     viewport.dispose();
     media.dispose();
+    ruler.dispose();
     _focus.dispose();
     stopAsks();
     markWords.dispose();
@@ -216,7 +223,7 @@ class TimelinePaneState extends State<TimelinePane>
   int? restAt;
 
   // Snapping to [stops] and the beat grid at the present zoom, or null while Cmd is held, which turns snapping off.
-  FrameSnap? get _snap => HardwareKeyboard.instance.isMetaPressed
+  FrameSnap? _snapTo(Set<int> stops) => HardwareKeyboard.instance.isMetaPressed
       ? null
       : FrameSnap(
           stops: stops,
@@ -227,7 +234,7 @@ class TimelinePaneState extends State<TimelinePane>
   // The drag distance [by] adjusted so that the nearest of [ends] lands on a snap stop, if one is close enough.
   // Where it landed is kept in [restAt].
   int _snapped(int by, List<int> ends) {
-    final snapped = _snap?.snap(by, ends);
+    final snapped = _snapTo(stops)?.snap(by, ends);
     restAt = snapped?.at;
     return snapped?.by ?? by;
   }
@@ -339,24 +346,12 @@ class TimelinePaneState extends State<TimelinePane>
 
   double lift = 0; // how far a label row has been carried up or down
 
-  int? workDrag; // 0 in, 1 out, 2 both, null scrub
-  double workGrab = 0;
-
-  // The project's markers on the ruler, which work like Ableton Live's locators (see timeline_requests.dart).
-  // A right-click adds one, a click selects it and moves the playhead there, and Cmd+R renames it.
-  // A marker can be dragged by its flag and keeps its name. Dragging it off the ruler, up or down, deletes it.
-  // Each of these is one undo step.
-  (double, String)? markHeld;
-  int markTo = 0;
-  // Where on its flag the marker was grabbed, in frames.
-  // It is kept during the drag, as Live does for locators (6.4) and as workGrab does for the work area.
-  // Without it the marker jumped to the pointer, and one grabbed by the end of its name moved 0.47 s.
-  double markGrab = 0;
+  // The context menus of the ruler, of a bar and of a row's name (see timeline_requests.dart).
+  // On the ruler a right-click adds a marker, a click selects one and moves the playhead there, and Cmd+R renames it.
   final rulerMenu = GlobalKey<ContextMenuState>();
-  // The context menu of a bar (see trackRight in timeline_requests.dart).
   final trackMenu = GlobalKey<ContextMenuState>();
   final labelMenu = GlobalKey<ContextMenuState>();
-  bool markOff = false;
+  // The marker whose name is being edited in its flag.
   (double, String)? naming;
   final markWords = TextEditingController();
   // Commits the marker name when the field loses focus.
@@ -372,91 +367,6 @@ class TimelinePaneState extends State<TimelinePane>
     }
   }
 
-  void rulerMove(Offset p) {
-    final f = viewport.view.frameAt(p.dx).round();
-    if (markHeld != null) {
-      return setState(() {
-        markTo = (viewport.view.frameAt(p.dx) - markGrab).round().clamp(
-          0,
-          WorkspaceController.duration,
-        );
-        // Dragged off the ruler: the marker is deleted on release.
-        markOff =
-            p.dy < -TimelineMetrics.ruler * .6 ||
-            p.dy > TimelineMetrics.ruler * 1.6;
-      });
-    }
-    switch (workDrag) {
-      case 0:
-        // The work area is at least half a second long, so it cannot be dragged out of sight.
-        setState(
-          () => workIn = f.clamp(0, workOut - WorkspaceController.fps ~/ 2),
-        );
-      case 1:
-        setState(
-          () => workOut = f.clamp(
-            workIn + WorkspaceController.fps ~/ 2,
-            WorkspaceController.duration,
-          ),
-        );
-      case 2:
-        final len = workOut - workIn,
-            a = (viewport.view.frameAt(p.dx) - workGrab).round().clamp(
-              0,
-              WorkspaceController.duration - len,
-            );
-        setState(() {
-          workIn = a;
-          workOut = a + len;
-        });
-      default:
-        // As in After Effects, holding Shift while dragging the time indicator snaps it to what it passes.
-        final shift = HardwareKeyboard.instance.isShiftPressed;
-        if (shift) stops = workspace!.stops();
-        workspace!.frame = shift ? _snap?.nearest(f) ?? f : f;
-    }
-  }
-
-  /// Ends a drag on the ruler. The work area becomes the project's on release, as one undo step.
-  void workDragEnd() {
-    final m = workspace?.inside;
-    if (markHeld case (final at, final name)?) {
-      markHeld = null;
-      final to = markTo / WorkspaceController.fps;
-      if (markOff) {
-        workspace!.after(m!.later('mark', number: at));
-      } else if ((to - at).abs() >= 0.5 / WorkspaceController.fps) {
-        // Moved: one undo step, and the name is kept.
-        m!.later('together', number: 1);
-        m.later('mark', number: at);
-        m.later('mark', number: to, word: name);
-        // The colour moves with the marker.
-        if (workspace!.markColors[at] case final k?) {
-          m.later('mark_colour', number: to, word: '$k');
-        }
-        workspace!.after(m.later('together'));
-      } else {
-        // Released where it was grabbed, so a small shake is not a drag. Treated as a click, like rulerTap.
-        selectedMarker.value = (at, name);
-        workspace!
-          ..playing = false
-          ..frame = markTo;
-      }
-      setState(() {});
-      return;
-    }
-    if (workDrag != null) {
-      workspace!.after(
-        m!.later(
-          'work',
-          number: workIn / WorkspaceController.fps,
-          word: '${workOut / WorkspaceController.fps}',
-        ),
-      );
-    }
-    workDrag = null;
-  }
-
   void overview(Offset p, double w) {
     final f = (p.dx - 4) / (w - 8) * WorkspaceController.duration;
     viewport.scrollTo(f - viewport.visible / 2);
@@ -466,12 +376,7 @@ class TimelinePaneState extends State<TimelinePane>
 
   @override
   Widget build(BuildContext context) {
-    if (workDrag == null) {
-      // Takes the project's work area.
-      final (from, to) = workspace!.work;
-      workIn = (from * WorkspaceController.fps).round();
-      workOut = (to * WorkspaceController.fps).round();
-    }
+    ruler.takeWorkArea();
     final ws = WorkspaceScope.of(context, {
       WorkspaceAspect.document,
       WorkspaceAspect.picked,

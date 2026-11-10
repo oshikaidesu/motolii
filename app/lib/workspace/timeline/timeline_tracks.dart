@@ -16,11 +16,9 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
 import 'package:motolii/workspace/timeline/timeline_cache_painter.dart';
 import 'package:motolii/workspace/timeline/timeline_drag.dart';
-import 'package:motolii/workspace/timeline/timeline_media.dart';
 import 'package:motolii/workspace/timeline/timeline_metrics.dart';
 import 'package:motolii/workspace/timeline/timeline_overview.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
-import 'package:motolii/workspace/timeline/timeline_ruler.dart';
 import 'package:motolii/workspace/timeline/timeline_tracks_paint.dart';
 
 extension TimelinePaneTracks on TimelinePaneState {
@@ -55,23 +53,23 @@ extension TimelinePaneTracks on TimelinePaneState {
                   onDoubleTapDown: (d) => rulerDouble(d.localPosition),
                   onDoubleTap: () {},
                   onSecondaryTapDown: (d) => rulerRight(d.localPosition),
-                  onPanDown: (d) => rulerDown(d.localPosition),
-                  onPanUpdate: (d) => rulerMove(d.localPosition),
-                  onPanEnd: (_) => workDragEnd(),
-                  onPanCancel: workDragEnd,
+                  onPanDown: (d) => ruler.down(d.localPosition),
+                  onPanUpdate: (d) => ruler.move(d.localPosition),
+                  onPanEnd: (_) => ruler.end(),
+                  onPanCancel: ruler.end,
                   child: SizedBox(
                     height: TimelineMetrics.ruler,
                     child: CustomPaint(
                       painter: TimelineRulerPainter(
                         view: v,
                         fps: WorkspaceController.fps,
-                        workIn: workIn,
-                        workOut: workOut,
-                        markers: marksOf(workspace!),
-                        markColors: markColorsOf(workspace!),
+                        workIn: ruler.workIn,
+                        workOut: ruler.workOut,
+                        markers: ruler.markers,
+                        markColors: ruler.markerColors,
                         beats: media.beatsOf(ws),
                         tempo: ws.beats,
-                        retimed: retimedOf(ws),
+                        retimed: ruler.retimed,
                       ),
                       foregroundPainter: TimelineCachePainter(
                         view: v,
