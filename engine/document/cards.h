@@ -131,7 +131,7 @@ static std::string doc_cards_of(Doc& d, int layer, std::string* more = nullptr) 
     const bool behaviour = doc_word(d, layer, "kind") == "behaviour";
     bool past = false;
     for (const DocCard& card : doc_cards) {
-        past = past || !strcmp(card.title, "Wave");
+        past = past || !strcmp(card.title, "Field");
         if (behaviour && !(card.when && !strcmp(card.when, "file"))) continue;   // (a behaviour: only its own card, not those of layers that happen to share a name with its knobs)
         if (card.when && card.is[0] == '+') {   // (an effect's card while it is on: doc_on)
             if (!doc_on(d, layer, card.when)) continue;
@@ -154,9 +154,7 @@ static std::string doc_cards_of(Doc& d, int layer, std::string* more = nullptr) 
         //  Color & Fill, Blending, Transform, its Edit, Effects; a video's Speed), the rest asked for by More. The stage's own
         //  are asked for as a whole, by Stage settings)
         const std::string kindNow = doc_word(d, layer, "kind");
-        const std::string splitNow = kindNow == "text" ? doc_word(d, layer, "split") : "";
-        const bool letters = !splitNow.empty() && splitNow != "none" && (!strcmp(card.title, "Copies") || !strcmp(card.title, "Wave") || !strcmp(card.title, "Scatter"));   // (a text split into its letters or words: what moves them each in turn (Delay, Wave, Scatter) unasked, as After Effects' Text Animator is under a text once its range goes by character (the user, 11/5: more of a text's expression))
-        bool said = !card.added || layer == 0 || (!strcmp(card.title, "Play") && kindNow == "video") || letters;
+        bool said = !card.added || layer == 0 || (!strcmp(card.title, "Play") && kindNow == "video");
         for (const char* at = card.names; *at;) {
             const size_t len = strcspn(at, " ");
             const std::string n(at, len);

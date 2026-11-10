@@ -435,7 +435,7 @@ static void doc_evaluate(Doc& d, double now) {
             bend_at(s, t.drawn, (float)doc_number(d, layer, "round", now, 0), (float)doc_number(d, layer, "bloat", now, 0), (float)doc_number(d, layer, "zigzag", now, 0),
                     (float)doc_number(d, layer, "zigzag_ridges", now, 5), (float)doc_number(d, layer, "zigzag_smooth", now, 0), (float)doc_number(d, layer, "offset", now, 0));
         const mat4f place = mat4f(doc_place(d, layer, now));
-        const bool staggered = doc_staggered(d, layer, now);   // (each copy, the first too, as late as its order says, waving as its place in the wave says)
+        const bool staggered = doc_staggered(d, layer, now);   // (each copy, the first too, as late as its order says, laid as its expressions say)
         const std::vector<math::mat4> joins = doc_number(d, layer, "connect", 0, 0) != 0.0 ? doc_joins(d, layer, now) : std::vector<math::mat4>{};   // (a joining layer: its copies lie between another's)
         if (t.grains && t.look) t.look->setParameter("dissolve", (float)doc_number(d, layer, "dissolve", now, 0)), t.look->setParameter("grain", (float)doc_number(d, layer, "grain", now, 1));
         if (t.grains && t.look && t.splatFx) {   // (its effect's uniforms at its own time: the knobs as the document says them, then the effect's updateEffect)

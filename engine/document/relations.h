@@ -394,13 +394,13 @@ static bool doc_physics(Doc& d, int layer, double now, PhysPose* pose, int copy 
     *pose = d.phys->pose((int)index, (int)std::lround(now * 60.0));
     return true;
 }
-// Whether the stage places a layer as a member of its copies (each copy, the first too, as late as its order says, waving
-// as its place in the wave says), or as itself: the stage and whoever asks how it moves (motolii_path) place it alike.
+// Whether the stage places a layer as a member of its copies (each copy, the first too, as late as its order says, laid
+// as its expressions say), or as itself: the stage and whoever asks how it moves (motolii_path) place it alike.
 static std::vector<DocScript*> doc_expressions_fx(Doc& d, int layer);   // (expressions.h)
 static bool doc_staggered(Doc& d, int layer, double now) {
     if (const DocScript* sc = doc_script_of(d, doc_literal_word(d, layer, "script")); sc && sc->run && sc->run->sketch()) return true;   // (one box in a sketch is placed by the sketch all the same)
     if (!doc_expressions_fx(d, layer).empty()) return true;   // (and a layer with no copies by its expressions: itself their one copy, i 0 of n 1)
-    return doc_members(d, layer) > 1 || doc_number(d, layer, "stagger", 0, 0) > 0.0 || doc_number(d, layer, "wave_x", now, 0) != 0.0 || doc_number(d, layer, "wave_y", now, 0) != 0.0 || doc_number(d, layer, "wave_rotate", now, 0) != 0.0 || doc_number(d, layer, "wave_size", now, 0) != 0.0 || doc_number(d, layer, "field_radius", now, 0) > 0.0;
+    return doc_members(d, layer) > 1 || doc_number(d, layer, "stagger", 0, 0) > 0.0 || doc_number(d, layer, "field_radius", now, 0) > 0.0;
 }
 // How far a layer that turns the way it goes (orient) is turned by it at a moment, radians about z: the way its keys
 // carry it then; standing still, the way it last went or will go. 0 for any other.

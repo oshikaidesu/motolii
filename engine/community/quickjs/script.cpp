@@ -255,7 +255,7 @@ static JSValue image_read(JSContext* cx, JSValueConst, int, JSValueConst* a) {  
 struct Script::Own {
     JSRuntime* rt = nullptr;
     JSContext* cx = nullptr;
-    JSValue each = JS_UNDEFINED, parameters = JS_UNDEFINED;
+    JSValue each = JS_UNDEFINED, parameters = JS_UNDEFINED, at = JS_UNDEFINED;
     std::string trouble, file, src;
     bool whole = false;   // no each(): the whole file says every copy at once, as a Canvalry distribution (a PointCloud)
     bool sketch = false;   // a p5.js sketch (p5_stand.h)
@@ -355,11 +355,11 @@ Script::Script(const std::string& file, const std::string& p5, const std::string
     own->each = JS_GetPropertyStr(own->cx, g, "each");
     JS_FreeValue(own->cx, g);
     own->whole = !JS_IsFunction(own->cx, own->each);
-    own->parameters = JS_NewObject(own->cx);
+    own->parameters = JS_NewObject(own->cx), own->at = JS_NewObject(own->cx);
 }
 Script::~Script() {
     if (!own->cx) return;
-    JS_FreeValue(own->cx, own->each), JS_FreeValue(own->cx, own->parameters);
+    JS_FreeValue(own->cx, own->each), JS_FreeValue(own->cx, own->parameters), JS_FreeValue(own->cx, own->at);
     for (JSAtom a : own->said) if (a != JS_ATOM_NULL) JS_FreeAtom(own->cx, a);
     JS_FreeContext(own->cx), JS_FreeRuntime(own->rt);
 }
@@ -428,13 +428,13 @@ std::vector<double> Script::numbers(const std::string& js) {
 }
 const std::string& Script::trouble() const { return own->trouble; }
 
-std::vector<ScriptCopy> Script::copies(int n, double t, const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words, double unit) {
+std::vector<ScriptCopy> Script::copies(int n, double t, const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words, double unit, const std::vector<ScriptCopy>& before) {
     std::vector<ScriptCopy> all((size_t)std::max(n, 0));
     if (!ok()) return all;
     if (!own->whole) {   // (the parameters told once, then each copy asked)
         parameters(numbers, words);
         JS_SetPropertyStr(own->cx, own->parameters, "px", JS_NewFloat64(own->cx, unit));   // (k.px: a pixel of the document in the stage's units, so an expression written in After Effects' pixels says where)
-        for (int i = 0; i < n; ++i) all[(size_t)i] = ask(i, n, t);
+        for (int i = 0; i < n; ++i) all[(size_t)i] = ask(i, n, t, (size_t)i < before.size() ? before[(size_t)i] : ScriptCopy{});
         return all;
     }
     JSContext* cx = own->cx;
@@ -473,24 +473,21 @@ std::vector<ScriptCopy> Script::copies(int n, double t, const std::map<std::stri
     return all;
 }
 
-ScriptCopy Script::each(int i, int n, double t, const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words) {
-    if (!ok() || own->whole) return ScriptCopy{};
-    parameters(numbers, words);
-    return ask(i, n, t);
-}
 void Script::parameters(const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words) {
     JSContext* cx = own->cx;
     for (const auto& [name, v] : numbers) JS_SetPropertyStr(cx, own->parameters, name.c_str(), JS_NewFloat64(cx, v));
     for (const auto& [name, w] : words) JS_SetPropertyStr(cx, own->parameters, name.c_str(), JS_NewString(cx, w.c_str()));
     leva_colours(cx, own->parameters, numbers, words);   // (k.tint "#rrggbb", as leva returns a colour: script_leva.h)
 }
-ScriptCopy Script::ask(int i, int n, double t) {   // (each(), the parameters as last told)
+ScriptCopy Script::ask(int i, int n, double t, const ScriptCopy& at) {   // (each(), the parameters as last told; at: where this copy lies so far, its fifth: one object, told again for each copy)
     ScriptCopy c;
     JSContext* cx = own->cx;
     JS_UpdateStackTop(own->rt);
-    JSValue args[4] = {JS_NewInt32(cx, i), JS_NewInt32(cx, n), JS_NewFloat64(cx, t), JS_DupValue(cx, own->parameters)};
-    JSValue out = JS_Call(cx, own->each, JS_UNDEFINED, 4, args);
-    JS_FreeValue(cx, args[3]);
+    if (own->said[0] == JS_ATOM_NULL) for (int k = 0; k < 12; ++k) own->said[k] = JS_NewAtom(cx, script_copy_names[k]);
+    JS_SetProperty(cx, own->at, own->said[0], JS_NewFloat64(cx, at.x)), JS_SetProperty(cx, own->at, own->said[1], JS_NewFloat64(cx, at.y)), JS_SetProperty(cx, own->at, own->said[2], JS_NewFloat64(cx, at.z));
+    JSValue args[5] = {JS_NewInt32(cx, i), JS_NewInt32(cx, n), JS_NewFloat64(cx, t), JS_DupValue(cx, own->parameters), JS_DupValue(cx, own->at)};
+    JSValue out = JS_Call(cx, own->each, JS_UNDEFINED, 5, args);
+    JS_FreeValue(cx, args[3]), JS_FreeValue(cx, args[4]);
     if (JS_IsException(out)) {
         JSValue e = JS_GetException(cx);
         const char* s = JS_ToCString(cx, e);
@@ -498,7 +495,6 @@ ScriptCopy Script::ask(int i, int n, double t) {   // (each(), the parameters as
         JS_FreeCString(cx, s), JS_FreeValue(cx, e);
         return c;
     }
-    if (own->said[0] == JS_ATOM_NULL) for (int k = 0; k < 12; ++k) own->said[k] = JS_NewAtom(cx, script_copy_names[k]);
     double* const to[12] = {&c.x, &c.y, &c.z, &c.size, &c.rotate, &c.rotate_x, &c.rotate_y, &c.colour, &c.opacity, &c.scale_x, &c.scale_y, &c.scale_z};
     for (int k = 0; k < 12; ++k) {
         JSValue v = JS_GetProperty(cx, out, own->said[k]);

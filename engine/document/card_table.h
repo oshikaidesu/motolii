@@ -23,7 +23,6 @@ static const DocCard doc_cards[] = {
     { "Gradient", "gradient gradient_angle gradient_scale gradient_spread", "fill", "~ ", true },
     // (no Copies card: how many and the copies' own values are on the first expression's card (doc_cards_of), as
     //  After Effects' Repeater keeps its Copies, Offset and Transform (Start/End Opacity) within it)
-    { "Wave", "wave_x wave_y wave_z wave_rotate wave_size wave_speed wave_phase wave_noise noise_scale seed", nullptr, nullptr, true },
     { "Field", "field_x field_y field_z field_radius field_band field_size field_rotate field_push", nullptr, nullptr, true },
     { "Shine", "emissive", "kind", "!solid",
         true }, // (a flat layer lit from within: past 1, the stage's bloom takes it up where it lies in the stage's own view; laid over a solid layer, a
@@ -54,7 +53,7 @@ static const DocCard doc_cards[] = {
     // corners rounded; drawn as a rect its own file fills, doc_match)
     { "Deform",
         "warp bend twist pinch skew squash wiggle stretch bend_direction pin_tl_x pin_tl_y pin_tr_x pin_tr_y pin_bl_x pin_bl_y pin_br_x pin_br_y warp_width "
-        "warp_angle warp_speed skew_axis wiggle_detail wiggle_speed",
+        "warp_angle warp_speed skew_axis wiggle_detail wiggle_speed seed",
         "kind", "shape", true }, // (its points moved as it is drawn: Cavalry's deformers)
     { "Strokes", "stroke_2 stroke_2_width stroke_3 stroke_3_width", "kind",
         "text" }, // (shown unasked: Alight Motion's Border & Shadow is among a text's tiles)   // (more edges, each outside the last, drawn with the words:

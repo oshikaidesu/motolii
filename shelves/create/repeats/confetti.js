@@ -10,7 +10,8 @@
 // set js_ScatterRotate 180
 // set js_ScatterSize 0.5
 // set js_DriftY -0.6
-// set wave_rotate 120
-// set wave_phase 37
-// set wave_x 0.1
+// say script expressions/wave.js
+// set js_wave_rotate 120
+// set js_wave_phase 37
+// set js_wave_x 0.1
 // say copy_fill ff3366 ffd166 1b2fd8 22c55e ff3366

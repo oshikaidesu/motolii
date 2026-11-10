@@ -9,6 +9,7 @@
 // set js_Size 0.9
 // say copy_fill ffffff 000000
 // say copy_fill_way cycle
-// set wave_rotate 25
-// set wave_phase 1
-// set wave_speed 0.4
+// say script expressions/wave.js
+// set js_wave_rotate 25
+// set js_wave_phase 1
+// set js_wave_speed 0.4

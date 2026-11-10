@@ -9,7 +9,8 @@
 // set js_StepX 0
 // set js_StepY -0.25
 // set js_Wide 3
-// set wave_x 0.25
-// set wave_phase 1.5
-// set wave_speed 0.4
+// say script expressions/wave.js
+// set js_wave_x 0.25
+// set js_wave_phase 1.5
+// set js_wave_speed 0.4
 // say copy_fill ffffff ff3366

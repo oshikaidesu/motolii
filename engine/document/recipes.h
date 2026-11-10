@@ -230,7 +230,7 @@ static int doc_make(Doc& d, const char* name) {
         const int layer = now;
         if (!layer) break;
         if (call == "set") doc_set(d, layer, value.c_str(), rest == "first" ? first : rest == "before" ? before : rest == "behind" ? first - 0.5 : std::atof(rest.c_str()));   // (a layer it goes with: the recipe's first, or the one made before this one; an order just behind the first)
-        else if (call == "say") doc_say(d, layer, value.c_str(), value == "script" && rest == "this" ? r->path.c_str() : rest.c_str());   // (another of its layers run by the recipe's own code: "this"; by another recipe's, its name: a preset that lays its copies out says "Repeater", doc_say)
+        else if (call == "say") doc_say(d, layer, value.c_str(), value == "script" && rest == "this" ? r->path.c_str() : value == "script" ? script_shelf_file(rest).c_str() : rest.c_str());   // (another of its layers run by the recipe's own code: "this"; by another recipe's, its name: a preset that lays its copies out says "Repeater", doc_say; by a shelf's file, its shelf and its name, "expressions/wave.js": script_shelf_file)
         else if (call == "here") from = d.stage->now, doc_set(d, layer, "start", from);   // (it begins where the playhead is, as a clip is placed: not a picture that goes round)
         else if (call == "fit") doc_fit(d, layer, value);
         else if (call == "key") { std::istringstream k(rest); double at = 0, is = 0; k >> at >> is; doc_key(d, layer, value.c_str(), from + at, is); }   // (at that moment of the document, wherever the stage stands: its film loops as made)

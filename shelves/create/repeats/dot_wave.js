@@ -7,10 +7,11 @@
 // set js_Columns 16
 // set js_StepX 0.3
 // set js_StepY -0.3
-// set wave_y 0.03
-// set wave_size 1.6
-// set wave_phase 3
-// set wave_noise 1
-// set noise_scale 0.8
-// set wave_speed 0.4
+// say script expressions/wave.js
+// set js_wave_y 0.03
+// set js_wave_size 1.6
+// set js_wave_phase 3
+// set js_wave_noise 1
+// set js_wave_noise_scale 0.8
+// set js_wave_speed 0.4
 // say copy_fill ffd166 ff3366

@@ -11,7 +11,7 @@ Put it in your own folder (`~/Library/Application Support/Motolii/` on a Mac, `%
 | `effects/` | Effects tab tiles (a layer's effect, or the whole screen's) | `.fs` (ISF), `.wgsl`, `.js` (three.js), `.mjs`, `.json` (Filament settings) | The first line's `// Name:`, else the file name. A `.fs`: its file name |
 | `aviutl_scripts/` | Effects tab tiles; the package name is a chip | An AviUtl2 package (`.anm2`, `.obj2`, `@` files), the folder as its author ships it | The script's name and `--label:`; the package name is what follows `__` in the folder name |
 | `create/` | Create tab, Recipes (a picture in one call). One with `function each` shows under Expression; closed packs (`--label:Cavalry`…) in the Program tab | `.js` | The first line's `// Name: what it makes`; a p5 sketch with no head: its file name |
-| `expressions/` | Create tab, Expression (letters or layers coming in and going out; Cavalry's Animators) | `.js` (`function each`) | The first line's `// Name:` |
+| `expressions/` | Create tab, Expression (letters or layers coming in and going out, a wave through a layer's copies; Cavalry's Animators and its oscillator) | `.js` (`function each`) | The first line's `// Name:` |
 | `relations/` | Chips on the preview and in the Relations tab (many layers moved at once) | `.js` | The first line's `// Name:`, else the file name |
 | `looks/` | Effects tab, look tiles (a layer's values, effects and keys saved under a name) | `.motolii` + its tile picture `.png` | The file name as it is (spaces and capitals kept) |
 | `solids/` | A 3D shape on a layer's effect card (Alight Motion's Box, Torus…). No tile yet; it shows when a project names it | `.js` (`export function solid` returning a three.js BufferGeometry) | The first line's `// Name:` |

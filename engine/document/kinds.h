@@ -282,7 +282,6 @@ static const DocValue doc_values[] = {
     {"stagger_from", "image text shape solid", 0, 0, false, "start centre end edges"},   // (which of them moves first: the first, the middle one, the last, the outer ones)
     {"copy_fill", "image text shape", 0, 0, false, ""},   // (its copies coloured from the first colour to the last, in their order: six digits each; one, all in it; none, not coloured each)
     {"copy_fill_way", "image text shape", 0, 0, false, "ramp cycle"},   // (from the first to the last across them all, or one colour each in turn, round and round)
-    {"wave_z", "image text shape solid", -1e3, 1e3, true, nullptr},   // (and waved so far towards the eye and away, a quarter round after up and down: with wave_y, round and round, a helix)
     {"tall", "image text shape", 0, 1e3, true, nullptr},   // (how many times as tall as it is, its anchor staying where it is: a bar growing up from its foot)
     {"copy_tall", "image text shape solid", 0, 0, false, ""},
     {"copy_fill_at", "image text shape", 0, 1, true, nullptr},   // (where along copy_fill each copy's colour is, given by a behaviour (copy_fill_at_by): 0 its first, 1 its last; not given, their order)   // (and its copies each so many times as tall again, in their order, going round: numbers, a bar chart's data; none: all as tall)
@@ -345,11 +344,6 @@ static const DocValue doc_values[] = {
     {"morph_steps", "shape", 0, 64, false, nullptr},   // (and so many steps from itself to it all at once, a blend; 0 or 1: none)
     {"drawing", "shape", 0, 0, false, ""},   // (freehand strokes as they were drawn, ";" between: each its tool (0 pen, 1 brush, 2 fill, 3 eraser), how wide, then each point x y and its pressure, in the path's own units: doc_brush, made by AbsentMotion)
     {"path", "shape", 0, 0, false, ""},   // (a path shape's own path, drawn by a pen: SVG's path data, in its height from its middle, down as SVG goes)   // (only those nearer than this, in units of the stage, finer the further apart: a plexus; 0: each to the next in their order)
-    // (a wave through it and its copies, Cavalry's oscillator: so far across and up (units), so far turned (degrees),
-    //  so much larger (a share), so many times a second, each copy so far behind the one before (turns spread over all)
-    {"wave_x", "image text shape solid", -1e3, 1e3, true, nullptr}, {"wave_y", "image text shape solid", -1e3, 1e3, true, nullptr},
-    {"wave_rotate", "image text shape solid", -1e4, 1e4, true, nullptr}, {"wave_size", "image text shape solid", -1, 10, true, nullptr},
-    {"wave_speed", "image text shape solid", 0, 100, true, nullptr}, {"wave_phase", "image text shape solid", -100, 100, true, nullptr},
     // (a field over its copies, Cavalry's falloff: a round place on the stage (its middle, units; how far it reaches); a
     //  copy within it is so much larger and so far turned, most at its middle, none at its edge)
     {"field_x", "image text shape", -1e4, 1e4, true, nullptr}, {"field_y", "image text shape", -1e4, 1e4, true, nullptr}, {"field_radius", "image text shape", 0, 1e4, true, nullptr},
@@ -357,9 +351,7 @@ static const DocValue doc_values[] = {
     {"field_push", "image text shape", -1e3, 1e3, true, nullptr},   // (and pushed so far away from its middle, in units of the stage; below 0: drawn in)
     {"field_band", "image text shape", 0, 1e4, true, nullptr},   // (a ring so wide, strongest at its radius from its middle and nothing so far either side: a band of large dots going out; 0: a round, strongest in its middle)
     {"field_z", "image text shape", -1e4, 1e4, true, nullptr},   // (where its middle is towards the eye: the field is a ball, near and far measured too)
-    {"wave_noise", "image text shape solid", 0, 1, true, nullptr},   // (how much of the wave is a noise of each copy's own instead of a sine: Cavalry's noise; 1 all noise)
-    {"noise_scale", "image text shape", 0, 1e3, true, nullptr},   // (that noise read where each copy lies, so near ones move alike: how large its blobs are, in units of the stage; 0: each copy its own)
-    {"seed", "image text shape", 0, 1e6, false, nullptr},   // (another seed, another noise of the wave)
+    {"seed", "shape", 0, 1e6, false, nullptr},   // (another seed, another wiggle of its path: evaluate.h)
     {"tint", "video image text shape", 0, 1, true, nullptr}, {"tint_black", "video image text shape", 0, 0, false, ""}, {"tint_white", "video image text shape", 0, 0, false, ""},
     {"tritone", "video image text shape", 0, 1, true, nullptr}, {"tritone_shadow", "video image text shape", 0, 0, false, ""}, {"tritone_midtone", "video image text shape", 0, 0, false, ""}, {"tritone_highlight", "video image text shape", 0, 0, false, ""},   // (how its lines lie one under another, ThorVG's own: 0 at the left, 0.5 about the middle, 1 at the right)
     {"stroke_2", "text", 0, 0, false, ""}, {"stroke_2_width", "text", 0, 1000, false, nullptr}, {"stroke_3", "text", 0, 0, false, ""}, {"stroke_3_width", "text", 0, 1000, false, nullptr},   // (more edges, each outside the last: Alight Motion's Add Border, Illustrator's Appearance)

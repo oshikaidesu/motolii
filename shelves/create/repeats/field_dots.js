@@ -13,7 +13,8 @@
 // key field_x 0 -1.8
 // key field_x 4 1.8
 // key field_x 8 -1.8
-// set wave_y 0.015
-// set wave_noise 1
-// set wave_speed 0.5
+// say script expressions/wave.js
+// set js_wave_y 0.015
+// set js_wave_noise 1
+// set js_wave_speed 0.5
 // say copy_fill ffffff ff3366

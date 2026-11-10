@@ -2,7 +2,7 @@
 // An expression: a .js file with its own each(i, n, t, k) that says where each copy of a layer lies, how turned, how
 // large, how clear (the Repeater, AE Grid/Ring/Stagger, Cavalry's Animators: docs/internal/notes/CREATE_PROGRAM.md). A layer holds
 // any number among its effects (fx), as it holds effects: put on, turned off, moved, put on again and taken off the
-// same way, laid in their order after its script (which still lays its copies as it did).
+// same way, laid in their order after its script (which still lays its copies as it did), each told where those before it lay a copy.
 static bool doc_expression(Doc& d, const std::string& file) {
     if (std::filesystem::path(fx_source(file)).extension() != ".js") return false;
     const DocScript* sc = doc_script_of(d, file);
@@ -84,7 +84,7 @@ static std::vector<ScriptCopy> doc_expressions_lay(Doc& d, int layer, const std:
         }
         numbers["duration"] = doc_literal(d, layer, "duration", 0, -1) + (doc_literal(d, layer, "duration", 0, -1) > 0.0 ? gone : 0.0);   // (how long the layer lasts: an Out ends before it)
         numbers["round"] = d.round;   // (how long the document runs: a flow goes round a whole number of times in it, as scatter's drift did)
-        const std::vector<ScriptCopy> made = sc->run->copies(n, clock, numbers, words, (double)d.stage->h / std::max(1.0, doc_number(d, 0, "high", 0, 1080) * doc_point(d, layer, said)));   // (a pixel of the document, where the layer stands)
+        const std::vector<ScriptCopy> made = sc->run->copies(n, clock, numbers, words, (double)d.stage->h / std::max(1.0, doc_number(d, 0, "high", 0, 1080) * doc_point(d, layer, said)), all);   // (a pixel of the document, where the layer stands; and each copy as those before lay it, each()'s fifth: script.h)
         if (all.empty()) all = made;
         else for (size_t i = 0; i < all.size() && i < made.size(); ++i) doc_expression_over(all[i], made[i]);
     }

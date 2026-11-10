@@ -73,7 +73,7 @@ static double doc_point(Doc& d, int layer, double now) {
     const math::double3 at = (doc_above(d, layer, now) * math::double4{doc_number(d, layer, "x", now, 0), doc_number(d, layer, "y", now, 0), doc_number(d, layer, "z", now, 0), 1.0}).xyz;
     return doc_seen(d, at + math::double3{1, 0, 0}).x - doc_seen(d, at).x;
 }
-// Where a layer is seen at a moment: as the stage places it (a layer alone that waves or is late, as the member it is
+// Where a layer is seen at a moment: as the stage places it (a layer alone that an expression lays or that is late, as the member it is
 // drawn as); one with copies, where they are laid about.
 static math::mat4 doc_shown_at(Doc& d, int layer, double now) { return doc_place(d, layer, now, 0, 0, doc_members(d, layer) == 1 && doc_staggered(d, layer, now)); }
 // A layer's frame on the picture at a moment, as the stage's own eye sees it: its middle, how wide and how high (points

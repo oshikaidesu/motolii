@@ -15,6 +15,7 @@
 // and whose body says, for each copy of the thing it is given to, where it is and how:
 //   function each(i, n, t, k) { return { x, y, z, size, rotate, rotate_x, rotate_y, opacity }; }   // i of n copies, t seconds since the thing began, k the parameters (and k.duration: how long the thing lasts)
 // (as Cavalry's JavaScript Utility gives a Duplicator its points). Behind the interop: QuickJS-ng (js_bench chose it).
+// each() may take a fifth, each(i, n, t, k, at): at.x, at.y, at.z, where the layer's script and the expressions before this one lay this copy (none before: 0 0 0), as After Effects gives an expression `value`; what it returns is laid on top of that all the same (document/expressions.h).
 // k also has duration and px (a pixel of the document, in the stage's units). A recipe may hold an After Effects expression
 // as it is posted: AE.compile(`...`) once, AE.run(f, ...) in each() (ae_expr.h; read once, not every frame).
 #pragma once
@@ -119,14 +120,13 @@ public:
     std::vector<double> numbers(const std::string& js);   // what it answers to that, a Float64Array (empty: it failed, and says so once)
     std::vector<double> paints(int frame, int had, int pic = -1);
     std::vector<int> lines() const;   // (a sketch's lines that draw, as sketch_marked says)   // what makes that frame on a canvas holding the frame `had` (p5_stand.h's __paints)
-    // Each copy at a moment, the parameters as the document says them now (a select by the word it is).
-    ScriptCopy each(int i, int n, double t, const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words);
-    // Every copy at once: each() for each, or, for a file with no each(), the whole file run with its parameters as globals
+    // Every copy at once, the parameters as the document says them now (a select by the word it is): each() for each (its
+    // fifth, where the copy lies so far, from `before`: none, 0 0 0), or, for a file with no each(), the whole file run with its parameters as globals
     // (n0, n1...), time and frame, giving a Canvalry PointCloud whose points are in pixels (`unit` stage units a pixel).
-    std::vector<ScriptCopy> copies(int n, double t, const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words, double unit);
+    std::vector<ScriptCopy> copies(int n, double t, const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words, double unit, const std::vector<ScriptCopy>& before = {});
 private:
     void parameters(const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words);   // (told the script's parameters object)
-    ScriptCopy ask(int i, int n, double t);   // (each() with the parameters as last told)
+    ScriptCopy ask(int i, int n, double t, const ScriptCopy& at);   // (each() with the parameters as last told)
 
     struct Own;
     std::unique_ptr<Own> own;

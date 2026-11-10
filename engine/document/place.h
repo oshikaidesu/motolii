@@ -5,7 +5,7 @@ static double doc_scale_z(Doc& d, int layer, double now) {
     return z == 0 && doc_word(d, layer, "kind") != "solid" ? 1e-3 : z;
 }
 // Where a recipe, or a MIDI file's notes, lay copy `copy` of `n` of a layer (by 0: neither; 1: a MIDI file's note, 2: a recipe's each()): its place, turn and size.
-// Asked first, so that what a falloff weighs and what a wave's noise reads is where the copy lies; the turn and size are put on after the wave, as they were.
+// Asked first, so that what a falloff weighs is where the copy lies.
 struct DocLaid { ScriptCopy c; int by = 0; };
 // What lays a layer's copies, and AbsentMotion's motions on it: the same for each copy, so while a moment is told
 // (d.telling: the document does not change meanwhile) asked once for the layer, as its talls are; else asked as it is.
@@ -50,7 +50,7 @@ static DocLaid doc_laid(Doc& d, int layer, int copy, int n, double said) {
     return out;
 }
 static math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy, bool member) {
-    const double said = now;   // (the moment itself: a wave goes on at it, whatever the copy's delay)
+    const double said = now;   // (the moment itself: what lays its copies is asked at it, whatever the copy's delay)
     struct Placing { Doc& d; int copy, n; bool hasAt; math::double3 at; ~Placing() { d.ctxCopy = copy, d.ctxN = n, d.ctxHasAt = hasAt, d.ctxAt = at; } } was{d, d.ctxCopy, d.ctxN, d.ctxHasAt, d.ctxAt};   // (which copy, as it was before: told back after)
     {
         const int many = member ? doc_members(d, layer) : 1;
@@ -62,44 +62,19 @@ static math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
     float deep = 0.f;
     doc_half(d, layer, &half, &deep);
     const math::double3 anchor{doc_literal(d, layer, "anchor_x", now, 0) * half.x, doc_literal(d, layer, "anchor_y", now, 0) * half.y, doc_literal(d, layer, "anchor_z", now, 0) * deep};
-    // A member of its copies is moved and waved in units of the stage (so a larger layer is not further apart), laid where
-    // its recipe or its MIDI file's notes say (doc_laid) about the layer's own place; then turned and sized as they and its
-    // wave say, about its anchor.
+    // A member of its copies is moved in units of the stage (so a larger layer is not further apart), laid where
+    // its recipe or its MIDI file's notes say (doc_laid) about the layer's own place; then turned and sized as they
+    // say, about its anchor.
     const int n = member ? doc_members(d, layer) : 1;
     const DocLaid laid = member ? doc_laid(d, layer, copy, n, said) : DocLaid{};
     math::double3 shift{0.0};
     math::mat4 own;
     if (member) {
-        shift += math::double3{laid.c.x, laid.c.y, laid.c.z};   // (where its recipe, or its MIDI file's notes, lay this copy: first, so a falloff and a wave's noise read where it lies)
+        shift += math::double3{laid.c.x, laid.c.y, laid.c.z};   // (where its recipe, or its MIDI file's notes, lay this copy: first, so a falloff reads where it lies)
         if (doc_connects(d, layer)) {   // (where this copy lies, as its recipe lays it, on the stage: what a falloff weighs; its own values, unconnected)
             d.ctxAt = (doc_above(d, layer, now, deeper) * math::double4{doc_number(d, layer, "x", now, 0) + shift.x, doc_number(d, layer, "y", now, 0) + shift.y, doc_number(d, layer, "z", now, 0) + shift.z, 1.0}).xyz;
             d.ctxHasAt = true;
         }
-        // (a wave through it: each copy so far behind the one before, at its own moment, a copy staggered so much later)
-        const uint32_t seed = (uint32_t)doc_literal(d, layer, "seed", 0, 0);   // (another seed, another noise)
-        const double said_speed = doc_literal(d, layer, "wave_speed", said, 1), noisy = doc_literal(d, layer, "wave_noise", said, 0);
-        const double turns = std::round(said_speed * d.round), speed = turns > 0.0 ? turns / d.round : said_speed;   // (a whole number of times round in the document: its film loops)
-        double w = std::sin((double)TAU * (speed * now - doc_literal(d, layer, "wave_phase", said, 0) * copy / n));
-        if (noisy > 0.0) {   // (a smooth noise: random values at the corners of a lattice, eased between; its own for each copy, or, with a scale, read where the copy lies)
-            const double scale = doc_literal(d, layer, "noise_scale", said, 0);
-            const auto at = [&](int64_t i, int64_t j, int64_t k) {
-                const int64_t ring = turns > 0.0 ? (int64_t)turns * 2 : 0;   // (round in time as the wave is: the lattice's last row is its first)
-                if (ring > 0) k = ((k % ring) + ring) % ring;
-                uint32_t h = seed * 0x9E3779B9u ^ (uint32_t)i * 0x85EBCA6Bu ^ (uint32_t)j * 0x27d4eb2du ^ (uint32_t)k * 0xC2B2AE35u ^ (scale > 0.0 ? 0u : ((uint32_t)copy + 1u) * 0x165667B1u);
-                h ^= h >> 16, h *= 0x7FEB352Du, h ^= h >> 15, h *= 0x846CA68Bu, h ^= h >> 16;
-                return (double)h / 2147483647.5 - 1.0;
-            };
-            const math::double3 p{scale > 0.0 ? shift.x / scale : 0.0, scale > 0.0 ? shift.y / scale : 0.0, speed * now * 2.0};
-            const math::double3 f{std::floor(p.x), std::floor(p.y), std::floor(p.z)}, u = p - f, e = u * u * (3.0 - 2.0 * u);
-            double sum = 0.0;
-            for (int c = 0; c < 8; ++c)
-                sum += at((int64_t)f.x + (c & 1), (int64_t)f.y + ((c >> 1) & 1), (int64_t)f.z + ((c >> 2) & 1)) * ((c & 1) ? e.x : 1.0 - e.x) * ((c & 2) ? e.y : 1.0 - e.y) * ((c & 4) ? e.z : 1.0 - e.z);
-            w = w * (1.0 - noisy) + noisy * sum;
-        }
-        shift += math::double3{doc_literal(d, layer, "wave_x", said, 0), doc_literal(d, layer, "wave_y", said, 0), 0.0} * w;
-        shift.z += doc_literal(d, layer, "wave_z", said, 0) * std::cos((double)TAU * (speed * now - doc_literal(d, layer, "wave_phase", said, 0) * copy / n));   // (a quarter round after: round and round with up and down)
-        own = own * math::mat4::rotation(w * doc_literal(d, layer, "wave_rotate", said, 0) * (double)TAU / 360.0, math::double3{0, 0, 1}) *
-              math::mat4::scaling(std::max(0.0, 1.0 + w * doc_literal(d, layer, "wave_size", said, 0)));
     }
     if (const std::string file = doc_literal_word(d, layer, "file"); std::filesystem::path(file).extension() == ".mid") {   // (a MIDI file's roll going by: its start at the layer at its first moment, 300 points a second, ALMaMPlayer's track.gd)
         const double speed = doc_literal(d, layer, "speed", 0, 1), point = doc_point(d, layer, said);
@@ -109,7 +84,7 @@ static math::mat4 doc_place(Doc& d, int layer, double now, int deeper, int copy,
             shift.x += (0.5 * w - 300.0 * (said - doc_literal(d, layer, "start", 0, 0))) / point;
     }
     if (laid.by == 1) own = own * math::mat4::scaling(laid.c.size);   // (a MIDI file's note: as large as it is told)
-    else if (laid.by == 2)   // (a recipe's copy turned and sized as its script says, on top of the wave)
+    else if (laid.by == 2)   // (a recipe's copy turned and sized as its script and its expressions say)
         own = own * math::mat4::rotation(laid.c.rotate * (double)TAU / 360.0, math::double3{0, 0, 1}) * math::mat4::rotation(laid.c.rotate_y * (double)TAU / 360.0, math::double3{0, 1, 0}) *
                   math::mat4::rotation(laid.c.rotate_x * (double)TAU / 360.0, math::double3{1, 0, 0}) * math::mat4::scaling(math::double3{laid.c.size * laid.c.scale_x, laid.c.size * laid.c.scale_y, laid.c.size * laid.c.scale_z});
     if (const std::vector<AbsentEffect> moving = doc_placing_absent(d, layer, said); !moving.empty()) {   // (AbsentMotion's own motion, its stack in order, as AbsentMotion moves a layer: absent_motion.h)

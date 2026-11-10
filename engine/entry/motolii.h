@@ -88,7 +88,7 @@ const char* motolii_word(Motolii* m, int layer, const char* name);
 double motolii_lasts(Motolii* m, int layer);
 int motolii_key_times(Motolii* m, int layer, const char* name, double* at, int room);
 int motolii_layer_key_times(Motolii* m, int layer, double* at, int room);   /* every key moment of any of a layer's values, each once, in time (as many as there are; room: how many at holds) */
-/* How a layer moves over a while, as its copy is placed (its wave, scattering, copies' rows and keys all told), n moments
+/* How a layer moves over a while, as its copy is placed (its script's and expressions' laying and its keys all told), n moments
    from `from` to before `to`: path[4i..4i+3] = where it is (x, y, units of the stage), how far it is turned (degrees) and
    how large (a share of its own size). For a shell's small preview that plays by itself. 0: there is no such layer. */
 int motolii_path(Motolii* m, int layer, int copy, double from, double to, int n, double* path);
