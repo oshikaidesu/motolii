@@ -27,7 +27,7 @@ Run these in `app/`. The full procedure is in [`../docs/TESTING.md`](../docs/TES
 
 ```
 dart format --output=none --set-exit-if-changed .
-flutter analyze --no-fatal-infos
+flutter analyze
 flutter test
 ```
 

@@ -102,7 +102,7 @@ Tests written by the same hand that wrote the code tend to repeat its mistakes, 
 [.github/workflows/checks.yml](../.github/workflows/checks.yml) runs on every push and pull request, on Ubuntu with Flutter 3.47.2:
 
 - `dart format --output=none --set-exit-if-changed .`
-- `flutter analyze --no-fatal-infos`
+- `flutter analyze`
 - `flutter test`
 - `clang-format --dry-run --Werror` over the engine's own sources (clang-format 23.1.5, the root `.clang-format`)
 - `python3 .githooks/path_check.py --all`
