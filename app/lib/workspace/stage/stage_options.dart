@@ -2,7 +2,9 @@
 // selected layer or from the fill and stroke the next drawn layer gets, and the selected layer's position.
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_moment.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/hex_color.dart' show colorOfHex;
 import 'package:motolii/skin/tokens.dart';
@@ -15,7 +17,7 @@ import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
-import 'package:motolii/workspace/workspace.dart' show wsPlace;
+import 'package:motolii/workspace/inspector_feed/values.dart' show wsPlace;
 
 /// A document colour (six hex digits) as a Flutter [Color], or null when there is none.
 ///

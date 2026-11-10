@@ -9,7 +9,11 @@ import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter/services.dart' show HardwareKeyboard, KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiMoment, MotoliiWrites, MotoliiQuestions;
+import 'package:motolii/bridge/motolii.dart' show Motolii;
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_moment.dart';
+import 'package:motolii/bridge/motolii_questions.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/menu.dart';

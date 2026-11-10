@@ -12,7 +12,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
 import 'package:motolii/workspace/workspace.dart' show Workspace;
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();

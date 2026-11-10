@@ -5,7 +5,9 @@
 // waiting. While the user drags, the timeline shows the keyframes at the playhead until the drag ends.
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
-import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_moment.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 
 /// Moves the keyframes [keys] (each a row and a frame) [by] frames later, or earlier when [by] is negative.
 void wsSlideKeys(Ws ws, Iterable<WsKey> keys, int by) {

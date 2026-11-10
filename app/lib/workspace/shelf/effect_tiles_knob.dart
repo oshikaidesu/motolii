@@ -2,6 +2,10 @@
 import 'dart:io';
 
 import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_moment.dart';
+import 'package:motolii/bridge/motolii_shelves.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/shelf/effect_tiles_seen.dart';
 

@@ -8,7 +8,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:material_color_utilities/material_color_utilities.dart' show QuantizerCelebi;
 
-import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_moment.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/hex_color.dart' show colorOfHex;
 import 'package:motolii/skin/theme.dart' show ColorTheme;
 import 'package:motolii/skin/tokens.dart';

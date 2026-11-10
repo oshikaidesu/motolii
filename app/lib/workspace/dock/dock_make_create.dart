@@ -4,7 +4,10 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_moment.dart';
+import 'package:motolii/bridge/motolii_shelves.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
@@ -21,6 +24,7 @@ import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
+import 'package:motolii/workspace/state/effects.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// The "N ready" count: how many of the Create shelf's tiles can make or lay out something in the project.

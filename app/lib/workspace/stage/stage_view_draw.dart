@@ -11,7 +11,8 @@ import 'package:perfect_freehand/perfect_freehand.dart' show getStrokeOutlinePoi
 import 'package:perfect_freehand/src/get_stroke_radius.dart'
     show getStrokeRadius; // How wide the pressure makes a point. The package keeps it private, so it is imported from src.
 
-import 'package:motolii/bridge/motolii.dart' show MotoliiDocument, MotoliiWrites;
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/widgets/text_gestures.dart' show textToType;
 import 'package:motolii/workspace/stage/stage_view.dart';
 import 'package:motolii/workspace/stage/stage_view_state.dart';

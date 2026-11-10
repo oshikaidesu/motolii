@@ -22,6 +22,8 @@ import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter/painting.dart' show FileImage, ResizeImage;
 
 import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_questions.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/bridge/engine_paths.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
 import 'package:motolii/workspace/shelf/effect_tiles_seen.dart' show ffmpeg;

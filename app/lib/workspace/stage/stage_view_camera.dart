@@ -5,7 +5,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show MotoliiDocument, MotoliiMoment, MotoliiWrites;
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_moment.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/stage/stage_view.dart';
 import 'package:motolii/workspace/stage/stage_view_state.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';

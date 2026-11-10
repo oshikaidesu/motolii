@@ -9,7 +9,8 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show MotoliiDocument, MotoliiWrites;
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/menu.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart' show wsMarkPicked;

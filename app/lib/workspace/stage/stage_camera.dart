@@ -2,7 +2,8 @@
 // Like After Effects' 2 Views with Active Camera. It is view-only; all editing happens on the stage.
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiWrites;
+import 'package:motolii/bridge/motolii.dart' show Motolii;
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';

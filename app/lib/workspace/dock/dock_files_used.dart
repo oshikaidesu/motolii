@@ -1,7 +1,9 @@
 // Which files the project uses and by which layer, and placing files on the canvas.
 import 'dart:async';
 
-import 'package:motolii/bridge/motolii.dart' show MotoliiDocument, MotoliiWrites, mediaSecondsOf;
+import 'package:motolii/bridge/motolii.dart' show mediaSecondsOf;
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/dock/dock_files.dart';
 import 'package:motolii/workspace/dock/dock_files_sheet.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';

@@ -12,10 +12,10 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/paint_helpers.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/bridge/motolii.dart';
-import 'package:motolii/workspace/workspace.dart' show LayerCards;
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
+import 'package:motolii/workspace/inspector_feed/panel.dart' show LayerCards;
 
 /// The Blend tool: one row per layer, front layer first.
 class BlendTool extends StatelessWidget {

@@ -23,10 +23,11 @@ import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
+import 'package:motolii/workspace/state/effects.dart';
 
 /// One shelf pane. [name] picks which shelf it is and [hint] is the search field's placeholder.
 class WsShelf extends StatefulWidget {

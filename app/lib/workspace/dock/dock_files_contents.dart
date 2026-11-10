@@ -5,7 +5,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiWrites, mediaInfoOf, mediaSecondsOf;
+import 'package:motolii/bridge/motolii.dart' show Motolii, mediaInfoOf, mediaSecondsOf;
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
@@ -21,7 +23,6 @@ import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
 
 class FolderContents extends StatelessWidget {
   const FolderContents(this.c, {super.key});

@@ -5,7 +5,7 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show MotoliiShelves;
+import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/storage/kept_file.dart' show fileKeep, fileList;
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';

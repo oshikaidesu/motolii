@@ -11,7 +11,11 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiWrites, MotoliiQuestions, MotoliiShelves;
+import 'package:motolii/bridge/motolii.dart' show Motolii;
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_questions.dart';
+import 'package:motolii/bridge/motolii_shelves.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/bridge/engine_paths.dart' show motoliiDir;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;

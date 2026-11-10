@@ -4,7 +4,8 @@ import 'dart:io' show Directory, File;
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_watch.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/skin/tokens.dart';
@@ -16,6 +17,7 @@ import 'package:motolii/widgets/two_fingers.dart';
 import 'package:motolii/workspace/stage/stage_options.dart';
 import 'package:motolii/workspace/stage/stage_view.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
+import 'package:motolii/workspace/state/effects.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';

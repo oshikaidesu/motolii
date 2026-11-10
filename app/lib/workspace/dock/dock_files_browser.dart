@@ -3,7 +3,8 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show MotoliiQuestions, MotoliiShelves;
+import 'package:motolii/bridge/motolii_questions.dart';
+import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';

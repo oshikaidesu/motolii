@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:motolii/bridge/motolii.dart' show MotoliiWrites;
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/dock/dock_files.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';

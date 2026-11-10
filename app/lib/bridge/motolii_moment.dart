@@ -1,23 +1,29 @@
 // The time snapshot reader (docs/app/BRIDGE.md M): where layers are and what they show at the snapshot's time.
 // The engine rebuilds the snapshot with each frame.
-part of 'motolii.dart';
+import 'dart:ui' show Offset, Rect;
+
+import 'package:flutter/foundation.dart' show debugPrint;
+
+import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_watch.dart';
 
 extension MotoliiMoment on Motolii {
-  Map<String, dynamic>? _momentOf(int layer) => (_moment['layer'] as Map<String, dynamic>)['$layer'] as Map<String, dynamic>?;
+  Map<String, dynamic>? _momentOf(int layer) => (momentSnapshot['layer'] as Map<String, dynamic>)['$layer'] as Map<String, dynamic>?;
 
   /// Whether [at] is the time of the time snapshot, to within a frame.
-  bool _isNow(double at) => (((_moment['now'] as num?)?.toDouble() ?? -1) - at).abs() < .5 / rate;
+  bool _isNow(double at) => (((momentSnapshot['now'] as num?)?.toDouble() ?? -1) - at).abs() < .5 / rate;
 
   /// The time of the frame the stage last drew. The playhead follows it during playback.
-  double get now => (_moment['now'] as num?)?.toDouble() ?? 0;
+  double get now => (momentSnapshot['now'] as num?)?.toDouble() ?? 0;
 
   /// A property's own value at [at], not what a relation makes of it (see [shows]).
   ///
   /// A property without keyframes comes from the project snapshot. An animated one comes from the time snapshot.
   double? value(int layer, String name, double at) {
     if (!moving(layer).contains(name) || at == 0) {
-      return ((_of(layer)['value'] as Map<String, dynamic>?)?[name] as num?)?.toDouble() ??
-          _usual(layer, name); // The project snapshot holds each property's value at time 0.
+      return ((layerSnapshot(layer)['value'] as Map<String, dynamic>?)?[name] as num?)?.toDouble() ??
+          usual(layer, name); // The project snapshot holds each property's value at time 0.
     }
     if (_isNow(at)) {
       // The time snapshot holds the selected layer and the layers being watched (see [subscribe]).
@@ -25,7 +31,7 @@ extension MotoliiMoment on Motolii {
     }
     final keys = keyTimes(layer, name), i = keys.indexWhere((k) => (k - at).abs() < .5 / rate);
     if (i >= 0) {
-      return (((_of(layer)['keyValues'] as Map<String, dynamic>?)?[name] as List<dynamic>?)?[i] as num?)
+      return (((layerSnapshot(layer)['keyValues'] as Map<String, dynamic>?)?[name] as List<dynamic>?)?[i] as num?)
           ?.toDouble(); // [at] is on a keyframe, so use that keyframe's value.
     }
     return _unasked('value', layer, name, at);
@@ -37,8 +43,8 @@ extension MotoliiMoment on Motolii {
   /// the layer with [subscribe]. A message is printed once per property.
   double? _unasked(String what, int layer, String name, double at) {
     // Just started watching: the value arrives with the next frame.
-    if (_watched.contains(layer)) return null;
-    if (_unaskedSaid.add('$what $name')) debugPrint('BRIDGE: $what($layer, $name, $at) is not in the pictures: ask it ([shownAt]) or watch the thing');
+    if (watched.contains(layer)) return null;
+    if (unaskedSaid.add('$what $name')) debugPrint('BRIDGE: $what($layer, $name, $at) is not in the pictures: ask it ([shownAt]) or watch the thing');
     return null;
   }
 
@@ -60,7 +66,7 @@ extension MotoliiMoment on Motolii {
   /// The numbers are center (x, y), width, height (canvas points from the top left), rotation (degrees, clockwise),
   /// the rotation anchor (x, y) and depth (0 is flat).
   List<double>? bounds(int layer) => switch (_momentOf(layer)?['bounds']) {
-    final List<dynamic> f => Motolii._numbers(f),
+    final List<dynamic> f => Motolii.numbers(f),
     _ => null,
   };
 
@@ -72,13 +78,13 @@ extension MotoliiMoment on Motolii {
 
   /// The points of a path shape as drawn on the canvas, for the selected layer only and without handles. Empty if none.
   List<Offset> points(int layer) {
-    final p = Motolii._numbers(_momentOf(layer)?['points']);
+    final p = Motolii.numbers(_momentOf(layer)?['points']);
     return [for (var i = 0; i + 1 < p.length; i += 2) Offset(p[i], p[i + 1])];
   }
 
   /// The path's curve handles in the same way, each paired with the point it belongs to.
   List<(Offset, Offset)> handles(int layer) {
-    final h = Motolii._numbers(_momentOf(layer)?['handles']), of = Motolii._numbers(_momentOf(layer)?['of']);
+    final h = Motolii.numbers(_momentOf(layer)?['handles']), of = Motolii.numbers(_momentOf(layer)?['of']);
     return [for (var i = 0; i + 1 < h.length; i += 2) (Offset(h[i], h[i + 1]), i + 1 < of.length ? Offset(of[i], of[i + 1]) : Offset(h[i], h[i + 1]))];
   }
 }

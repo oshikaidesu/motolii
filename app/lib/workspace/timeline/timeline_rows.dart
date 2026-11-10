@@ -6,7 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
-import 'package:motolii/bridge/motolii.dart' show MotoliiDocument, MotoliiWrites, MotoliiShelves;
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_shelves.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/layer_colors.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/menu.dart';

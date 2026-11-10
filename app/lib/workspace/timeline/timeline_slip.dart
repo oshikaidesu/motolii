@@ -5,7 +5,10 @@
 // This follows After Effects' slip edit and Premiere Pro's Slip tool.
 import 'dart:math' as math;
 
-import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiMoment, MotoliiWrites, mediaSecondsOf;
+import 'package:motolii/bridge/motolii.dart' show Motolii, mediaSecondsOf;
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_moment.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';

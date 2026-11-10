@@ -17,7 +17,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/dock/dock_make_create.dart' show createNames;
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
 import 'package:motolii/workspace/state/workspace_state.dart';
-import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_shelves.dart';
 
 String get _ownEffects => '${EffectTiles.own}/effects';
 String get _ownExpressions => '${EffectTiles.own}/expressions';

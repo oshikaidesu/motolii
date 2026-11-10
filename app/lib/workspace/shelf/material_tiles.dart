@@ -6,7 +6,7 @@
 // drawn again once the material is rebuilt.
 import 'dart:io';
 
-import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/bridge/engine_paths.dart';
 import 'package:motolii/workspace/shelf/copies_tiles.dart' show TileQueue, drawTiles, tileHome;
 

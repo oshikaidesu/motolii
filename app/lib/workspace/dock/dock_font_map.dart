@@ -3,7 +3,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiQuestions;
+import 'package:motolii/bridge/motolii.dart' show Motolii;
+import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/workspace/dock/dock_files.dart' show dockRead;
 import 'package:motolii/workspace/dock/dock_map.dart';
 

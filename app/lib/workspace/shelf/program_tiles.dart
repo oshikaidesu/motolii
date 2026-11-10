@@ -11,6 +11,8 @@
 import 'dart:io';
 
 import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_questions.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/shelf/copies_tiles.dart' show TileQueue, tileHome;
 import 'package:motolii/workspace/shelf/effect_tiles_seen.dart' show ffmpeg;
 

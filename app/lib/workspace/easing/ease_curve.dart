@@ -1,6 +1,7 @@
 // The curve of an easing: stacked cards, their expressions in the document, and samples for drawing.
 import 'package:flutter/widgets.dart';
 import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/workspace/easing/ease.dart';
 import 'package:motolii/workspace/easing/ease_text.dart';
 

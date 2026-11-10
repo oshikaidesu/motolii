@@ -2,7 +2,7 @@
 import 'dart:io';
 
 import 'package:motolii/bridge/engine_paths.dart' show motoliiShelves;
-import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/workspace/dock/dock_make_create.dart';

@@ -4,7 +4,9 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show MotoliiDocument, MotoliiMoment, MotoliiWrites;
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_moment.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Hov;
@@ -16,7 +18,6 @@ import 'package:motolii/workspace/stage/stage_view.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
 
 /// Marks drawn over the stage for the selected layers and the selected relation.
 /// - Several layers selected: a ring on each, and along the top the relations they can be given together.

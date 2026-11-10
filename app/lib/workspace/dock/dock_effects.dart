@@ -9,7 +9,9 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiShelves;
+import 'package:motolii/bridge/motolii.dart' show Motolii;
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 import 'package:motolii/widgets/media.dart' show Draw;
@@ -31,6 +33,7 @@ import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/widgets/menu.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
+import 'package:motolii/workspace/state/effects.dart';
 
 /// One effect tile of the shelf. The id is a layer effect's name or a file effect's file, since two files can share a name.
 /// The label says what it is for, [on] whether it is applied, `apply` what a double-click or a drop on the stage does.

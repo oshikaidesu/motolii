@@ -5,7 +5,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
-import 'package:motolii/bridge/motolii.dart' show MotoliiWrites;
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, IconPress;

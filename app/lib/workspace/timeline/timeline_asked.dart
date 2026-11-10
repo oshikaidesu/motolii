@@ -5,7 +5,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show MotoliiWrites;
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/layer_colors.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/menu.dart';

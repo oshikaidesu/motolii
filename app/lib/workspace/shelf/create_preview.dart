@@ -18,6 +18,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vector_math/vector_math_64.dart' show Matrix4, Vector3;
 
 import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_moment.dart';
+import 'package:motolii/bridge/motolii_questions.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 
 /// The moving parts of a recipe.
 ///

@@ -2,7 +2,7 @@
 import 'dart:developer' show Timeline;
 import 'dart:math' as math;
 
-import 'package:motolii/bridge/motolii.dart' show MotoliiMoment;
+import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';

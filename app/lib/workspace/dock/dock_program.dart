@@ -20,6 +20,9 @@ import 'dart:io';
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_shelves.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/shelf/copies_tiles.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
@@ -29,7 +32,6 @@ import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/shelf/program_tiles.dart';
 import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
 import 'package:motolii/widgets/menu.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';

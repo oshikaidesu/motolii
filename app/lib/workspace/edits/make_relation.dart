@@ -4,6 +4,10 @@
 // selected layers in it as they look now: their order, the middle and size, a leader, and what each was in before.
 // It is one undo step, and the new behaviour is selected once it exists.
 import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_document.dart';
+import 'package:motolii/bridge/motolii_moment.dart';
+import 'package:motolii/bridge/motolii_shelves.dart';
+import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/edits/group_moves.dart';
 import 'package:motolii/workspace/state/workspace_state.dart';
 

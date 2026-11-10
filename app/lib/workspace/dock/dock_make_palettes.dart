@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/skin/hex_color.dart' show colorOfHex;
 import 'package:motolii/storage/kept_file.dart' show fileJson, fileKeep;
 import 'package:motolii/workspace/dock/dock_make_colors.dart';

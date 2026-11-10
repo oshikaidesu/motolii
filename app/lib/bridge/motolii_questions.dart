@@ -1,6 +1,42 @@
 // Questions to the engine (docs/app/BRIDGE.md Q), asked on another isolate or a platform channel.
 // Each answer is a Future, so the app never blocks on them.
-part of 'motolii.dart';
+import 'dart:async';
+import 'dart:ffi';
+import 'dart:io';
+import 'dart:isolate';
+import 'dart:typed_data';
+
+import 'package:flutter/services.dart' show MethodChannel;
+
+import 'package:ffi/ffi.dart';
+
+import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/bridge/motolii_bindings.dart' as c;
+import 'package:motolii/bridge/motolii_writes.dart';
+
+const _channel = MethodChannel('motolii/stage');
+
+/// A video's thumbnail, made by an engine call on another isolate.
+///
+/// It is cached in the system temp folder, keyed by the video's path and last-modified time.
+final _thumbnails = <String, Future<String?>>{};
+Future<String?> _thumbnail(String lib, String video, [int step = 0, int steps = 1, double? seconds]) async {
+  final folder = Directory('${Directory.systemTemp.path}/motolii_thumbnails')..createSync(recursive: true);
+  // The name comes from the path and modification time, so a later run finds the same file.
+  final named = video.replaceAll(RegExp(r'[^A-Za-z0-9]'), '_');
+  final png =
+      '${folder.path}/${named.length > 150 ? named.substring(named.length - 150) : named}_${File(video).statSync().modified.millisecondsSinceEpoch}${seconds != null
+          ? '_s${(seconds * 10).round()}'
+          : step == 0
+          ? ''
+          : '_$step'}.png';
+  if (File(png).existsSync()) return png;
+  final made = await askEngine(lib, [
+    video,
+    png,
+  ], (b, w) => (seconds != null ? b.motolii_thumbnail_seconds(w[0], w[1], 160, seconds) : b.motolii_thumbnail_at(w[0], w[1], 240, step / steps)) != 0);
+  return made ? png : null;
+}
 
 extension MotoliiQuestions on Motolii {
   /// The stage as a Flutter texture. The engine draws it on its own clock and nothing is copied. Returns -1 if unavailable.
@@ -8,28 +44,23 @@ extension MotoliiQuestions on Motolii {
     // The render thread opens it, so the app never blocks.
     final (a, _) = await answered(later('live'));
     if (a == 0) return -1;
-    return await Motolii._channel.invokeMethod<int>('start', {'lib': libPath, 'handle': _m.address}) ?? -1;
+    return await _channel.invokeMethod<int>('start', {'lib': libPath, 'handle': handle.address}) ?? -1;
   }
 
   /// The tool panel's output as a Flutter texture. Returns -1 if unavailable.
-  Future<int> deskTexture() async => _deskId ??=
-      await Motolii._channel.invokeMethod<int>('start', {
-        'lib': libPath,
-        'handle': _m.address,
-        'front': 'motolii_desk_front',
-        'frames': 'motolii_desk_frames',
-      }) ??
+  Future<int> deskTexture() async => deskId ??=
+      await _channel.invokeMethod<int>('start', {'lib': libPath, 'handle': handle.address, 'front': 'motolii_desk_front', 'frames': 'motolii_desk_frames'}) ??
       -1;
 
   /// Exports the whole project as an .mp4 with the sound of its videos, on another isolate so the app does not block.
   ///
   /// The engine's render thread takes the call in turn, whichever thread it comes from.
   Future<bool> exportVideo(String mp4) {
-    final lib = libPath, at = _m.address;
+    final lib = libPath, at = handle.address;
     return Isolate.run(() {
       final ask = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_export;
       final to = mp4.toNativeUtf8();
-      final done = ask(_P.fromAddress(at), to) != 0;
+      final done = ask(EngineHandle.fromAddress(at), to) != 0;
       malloc.free(to);
       return done;
     });
@@ -40,9 +71,9 @@ extension MotoliiQuestions on Motolii {
   ///
   /// Use it for times other than the current frame's. It runs on another isolate (docs/app/BRIDGE.md Q).
   Future<List<double?>> shownAt(List<(int, String, double)> asks) {
-    final lib = libPath, at = _m.address;
+    final lib = libPath, at = handle.address;
     return Isolate.run(() {
-      final l = DynamicLibrary.open(lib), m = _P.fromAddress(at);
+      final l = DynamicLibrary.open(lib), m = EngineHandle.fromAddress(at);
       final shows = c.MotoliiBindings(l).motolii_shows;
       final out = malloc<Double>();
       final all = [
@@ -148,15 +179,15 @@ extension MotoliiQuestions on Motolii {
   });
 
   /// Asks the engine a question on another isolate (docs/app/BRIDGE.md Q), so the app does not wait for the answer.
-  Future<T> _ask<T>(T Function(DynamicLibrary lib, _P m) ask) {
-    final lib = libPath, at = _m.address;
-    return Isolate.run(() => ask(DynamicLibrary.open(lib), _P.fromAddress(at)));
+  Future<T> _ask<T>(T Function(DynamicLibrary lib, EngineHandle m) ask) {
+    final lib = libPath, at = handle.address;
+    return Isolate.run(() => ask(DynamicLibrary.open(lib), EngineHandle.fromAddress(at)));
   }
 
   /// Like [path] but in 3D. Four numbers per sample: position (x, y, z in stage units) and scale (motolii_path3).
   List<double>? path3(int layer, {int copy = 0, required double to, int n = 24}) {
     final out = malloc<Double>(4 * n);
-    final got = _path3(_m, layer, copy, 0, to, n, out), p = [for (var i = 0; i < 4 * got; i++) out[i]];
+    final got = bindings.motolii_path3(handle, layer, copy, 0, to, n, out), p = [for (var i = 0; i < 4 * got; i++) out[i]];
     malloc.free(out);
     return got > 0 ? p : null;
   }
@@ -164,10 +195,10 @@ extension MotoliiQuestions on Motolii {
   /// A video layer's loudness in dB (0 is full scale), sampled 100 times per second of the video's own time.
   /// Empty if there is no sound or the layer is not a video. The file is decoded once, on another isolate.
   Future<List<double>> loudness(int layer) {
-    final lib = libPath, at = _m.address;
+    final lib = libPath, at = handle.address;
     return Isolate.run(() {
       final ask = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_loudness;
-      final m = _P.fromAddress(at), n = ask(m, layer, nullptr, 0), out = malloc<Float>(n < 1 ? 1 : n);
+      final m = EngineHandle.fromAddress(at), n = ask(m, layer, nullptr, 0), out = malloc<Float>(n < 1 ? 1 : n);
       final got = ask(m, layer, out, n), all = [for (var i = 0; i < got && i < n; i++) out[i].toDouble()];
       malloc.free(out);
       return all;
@@ -210,16 +241,14 @@ extension MotoliiQuestions on Motolii {
   Future<(int, String)> answered(int ticket) {
     final a = answer(ticket);
     if (a >= 0) return Future.value((a, a >= 1 ? '' : answerWhy));
-    return (_waiting[ticket] ??= Completer<(int, String)>()).future;
+    return (waiting[ticket] ??= Completer<(int, String)>()).future;
   }
 
   /// A ticket's answer: -1 if not done yet, 0 if refused ([answerWhy] says why), 1 if done. Each answer is reported once.
   int answer(int ticket) {
-    final a = _answer(_m, ticket);
+    final a = bindings.motolii_answer(handle, ticket);
     // Done: read the snapshots as the engine made them before it answered.
-    if (a >= 0) _take(3);
+    if (a >= 0) takeSnapshots(3);
     return a;
   }
-
-  String get answerWhy => _answerWhy(_m).toDartString();
 }

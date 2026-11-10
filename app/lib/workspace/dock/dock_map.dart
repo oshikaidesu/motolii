@@ -19,7 +19,8 @@ import 'package:flutter/widgets.dart';
 import 'package:force_graph/force_graph.dart' show CollideForce, Force, ForceNode, ForceSimulation;
 import 'package:material_color_utilities/material_color_utilities.dart' show Cam16;
 
-import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiQuestions;
+import 'package:motolii/bridge/motolii.dart' show Motolii;
+import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/storage/kept_file.dart' show fileKeep;
 
 /// Where one shelf's items lie on its map, by id, on a canvas shaped like the viewport ([dockSpread]). [laying] is true
