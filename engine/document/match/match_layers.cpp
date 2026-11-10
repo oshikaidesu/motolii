@@ -20,6 +20,13 @@
 #include "document/evaluate/relations.h"
 #include "document/evaluate/value_at.h"
 #include "document/kinds.h"
+#include "document/match/match_image.h"
+#include "document/match/match_light.h"
+#include "document/match/match_look.h"
+#include "document/match/match_models.h"
+#include "document/match/match_shape.h"
+#include "document/match/match_text.h"
+#include "document/match/match_video.h"
 #include "document/match/rebuild.h"
 #include "media/video_layer.h"
 #include "stage/canvas/canvas_cache.h"
@@ -72,6 +79,160 @@ void take_layer_off(Doc& d, Stage& s,
     s.playing.erase(it->second.shape), take_off(s, it->second.shape);
 }
 
+// Reads what the layer is: its kind, file, blend mode and built-in shape, and
+// the blend mode the GPU is given.
+void layer_words(LayerBuild& build) {
+  Doc& d = build.d;
+  const int layer = build.layer;
+  build.kind = doc_word(d, layer, "kind");
+  build.file = doc_word(d, layer, "file");
+  build.laid = doc_word(d, layer, "blend");
+  build.shape = doc_word(d, layer, "shape");
+  const std::string& laid = build.laid;
+  // A layer with effect files of its own is drawn alone as normal. Its blend
+  // mode is applied once the effects are on (screen_fx.h).
+  const bool effected = doc_fx_files(doc_fx_steps(d, layer));
+  // lay is the blend mode for the GPU, or null when the layer is drawn as
+  // normal. That is the case with effects, with no blend mode, or with a mode
+  // that reads the pixels underneath, which flat.mat mixes itself.
+  build.lay =
+      effected || laid.empty() || laid == "normal" || doc_blend_way(laid)
+          ? nullptr
+          : laid.c_str();
+}
+
+// Returns true when the layer has an effect file that cannot be built. Such a
+// layer is not made: d.error then holds the reason.
+bool effect_file_refuses(Rebuild& rebuild, LayerBuild& build) {
+  Doc& d = build.d;
+  const int layer = build.layer;
+  const bool fxOk = build.fxOk;
+  const std::string& why = build.why;
+  const std::string &kind = build.kind, &file = build.file,
+                    &shape = build.shape;
+  bool& all = rebuild.all;
+  // An effect file that cannot be built refuses the layer of any kind, as an
+  // image's own file is refused.
+  if (!fxOk && doc_fx_files(doc_fx_steps(d, layer))) {
+    d.error = why + ": the " + kind + " " +
+              std::filesystem::path(file + shape).filename().string() +
+              " could not be made";
+    all = false;
+    return true;
+  }
+  return false;
+}
+
+// Keeps the units the layer is made in, and for a flat layer how it is placed.
+void layer_units_and_space(LayerBuild& build) {
+  Doc& d = build.d;
+  const int layer = build.layer;
+  const std::string& kind = build.kind;
+  DocShownLayer& made = build.made;
+  const double units = build.units;
+  made.units = units;
+  if (doc_among("video image text shape", kind))
+    made.space = doc_word(d, layer, "space") == "2.5d" ? 25
+                 : doc_word(d, layer, "space") == "3d" ? 3
+                                                       : 2;
+}
+
+// Builds what the layer is on the stage, as its kind says. When nothing can be
+// built, `why` of the layer says why.
+void build_by_kind(LayerBuild& build) {
+  const std::string &kind = build.kind, &file = build.file,
+                    &shape = build.shape;
+  DocShownLayer& made = build.made;
+  std::string& why = build.why;
+  // A behaviour and a camera draw nothing. A behaviour changes how the values
+  // of other layers move. A camera is the viewpoint of the rest.
+  if (kind == "behaviour")
+    made.behaviour = true;
+  else if (kind == "camera")
+    made.camera = true;
+  else if (kind == "light")
+    match_light(build);
+  else if (shape.empty() && !std::filesystem::is_regular_file(file))
+    why = "there is no such file";
+  else if (kind == "video")
+    match_video(build);
+  else if (kind == "image")
+    match_image(build);
+  else if (kind == "text")
+    match_text(build);
+  else if (kind == "shape")
+    match_shape(build);
+  else if (kind == "solid")
+    match_model(build);
+  else
+    why = std::string("its kind is one of: ") + doc_kinds;
+}
+
+// Returns false when nothing was made of the layer: d.error then holds the
+// reason and the layer is left out.
+bool layer_made(Rebuild& rebuild, LayerBuild& build) {
+  Doc& d = build.d;
+  const DocShownLayer& made = build.made;
+  const std::string& why = build.why;
+  const std::string &kind = build.kind, &file = build.file,
+                    &shape = build.shape;
+  bool& all = rebuild.all;
+  // A level at a cross, or at a drawing it lacks, shows nothing but is kept
+  // so that its next drawing is seen.
+  if (made.celMove && !made.drawn) {
+    if (made.cel >= 0)
+      d.error = why + ": the picture " +
+                std::filesystem::path(file).filename().string(),
+      all = false;
+  } else if (!made.video && !made.drawn && !made.solid && !made.shape &&
+             !made.camera && made.light.isNull() && kind != "behaviour") {
+    d.error = why + ": the " + kind + " " +
+              std::filesystem::path(file + shape).filename().string() +
+              " could not be made";
+    all = false;
+    return false;
+  }
+  return true;
+}
+
+// Makes a layer that is now on the stage cast and receive shadows, if it is a
+// solid.
+void layer_shadows(LayerBuild& build) {
+  Doc& d = build.d;
+  Stage& s = build.s;
+  const int layer = build.layer;
+  const DocShownLayer& made = build.made;
+  // A solid layer casts shadows from lights that throw them, and receives
+  // them. The grains of a point cloud are their own light.
+  if ((made.solid || made.shape) && !made.grains) {
+    const int group = (int)doc_number(d, layer, "light_group", 0, 0);
+    doc_parts(
+        s, d.on_stage.shown[layer],
+        [group](RenderableManager& faces, RenderableManager::Instance one) {
+          // Filament draws contact shadows only where the light asks for them
+          // as well.
+          faces.setCastShadows(one, true), faces.setReceiveShadows(one, true),
+              faces.setScreenSpaceContactShadows(one, true);
+          if (group > 0) faces.setLightChannel(one, (unsigned)group, true);
+        });
+  }
+}
+
+// Builds one layer and puts it on the stage.
+void build_layer(Rebuild& rebuild, int layer, const std::string& of) {
+  LayerBuild build{rebuild.d, rebuild.s, layer, DocShownLayer{of}};
+  layer_words(build);
+  match_fill(build);
+  match_stroke(build);
+  match_flat_look(build);
+  if (effect_file_refuses(rebuild, build)) return;
+  layer_units_and_space(build);
+  build_by_kind(build);
+  if (!layer_made(rebuild, build)) return;
+  rebuild.d.on_stage.shown[layer] = build.made;
+  layer_shadows(build);
+}
+
 }  // namespace
 
 void match_tear_down_changed(Rebuild& rebuild) {
@@ -88,6 +249,14 @@ void match_tear_down_changed(Rebuild& rebuild) {
     }
     take_layer_off(d, s, it);
     it = d.on_stage.shown.erase(it);
+  }
+}
+
+void match_build_layers(Rebuild& rebuild) {
+  Doc& d = rebuild.d;
+  for (const auto& [layer, of] : rebuild.told) {
+    if (d.on_stage.shown.count(layer)) continue;
+    build_layer(rebuild, layer, of);
   }
 }
 

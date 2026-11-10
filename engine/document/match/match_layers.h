@@ -12,6 +12,11 @@ struct Rebuild;
 // for it.
 void match_tear_down_changed(Rebuild& rebuild);
 
+// Builds every layer of `told` that is not on the stage, each as its kind
+// says, and puts it on the stage. A layer that cannot be built is left out:
+// `all` of the rebuild becomes false and d.error holds the reason.
+void match_build_layers(Rebuild& rebuild);
+
 }  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_MATCH_MATCH_LAYERS_H_

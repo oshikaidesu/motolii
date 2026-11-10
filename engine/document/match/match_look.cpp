@@ -37,6 +37,45 @@ namespace math = filament::math;
 
 namespace {
 
+// A fill is one colour of six hex digits. For text or a flat shape it can
+// also be two or more colours that form a ramp. Each colour is six or eight
+// hex digits, and the last two are the alpha, so a colour can fade to
+// clear. Each colour may also carry a position, @ followed by a fraction of
+// the way, as in CSS colour stop positions: ff3366@0.35.
+void fill_colours(const std::string& fill, std::vector<float4>& ramp,
+                  std::vector<float>& rampAt, long& rgb) {
+  std::istringstream said(fill);
+  for (std::string word; said >> word;) {
+    const size_t mark = word.find('@');
+    const std::string one = word.substr(0, mark);
+    rampAt.push_back(
+        mark == std::string::npos
+            ? -1.f
+            : std::clamp(std::strtof(word.c_str() + mark + 1, nullptr), 0.f,
+                         1.f));
+    const bool hex =
+        (one.size() == 6 || one.size() == 8) &&
+        one.find_first_not_of("0123456789abcdefABCDEF") == std::string::npos;
+    const long c =
+        hex ? std::strtol(one.substr(0, 6).c_str(), nullptr, 16) : -1;
+    if (c < 0) {
+      ramp.clear(), rgb = -1;
+      break;
+    }
+    if (ramp.empty()) rgb = c;
+    const float there =
+        one.size() == 8
+            ? (float)std::strtol(one.substr(6).c_str(), nullptr, 16) / 255.f
+            : 1.f;
+    ramp.push_back(float4{(float)((c >> 16) & 255) / 255.f,
+                          (float)((c >> 8) & 255) / 255.f,
+                          (float)(c & 255) / 255.f, there});
+  }
+  // Eight digits (with alpha) are accepted only in a ramp of two colours or
+  // more.
+  if (ramp.size() == 1 && ramp[0].w < 1.f) ramp.clear(), rgb = -1;
+}
+
 // Reads the layer's depth, light and material, and its extra outlines.
 void look_material(LayerBuild& build) {
   Doc& d = build.d;
@@ -90,12 +129,49 @@ void look_ramp(LayerBuild& build) {
                                                                   : 0;
 }
 
+// Draw the copies in one pass when no copy is cleared on its own (no script
+// sets opacity) and their colours form a ramp that flat.mat supports. The
+// 3D layers inside an image do not qualify either.
+void look_copies_together(LayerBuild& build,
+                          const std::vector<AbsentCopy>& repeated) {
+  Doc& d = build.d;
+  const int layer = build.layer;
+  const std::string& kind = build.kind;
+  Canvas2DFx& fx = build.fx;
+  const std::string fills = doc_word(d, layer, "copy_fill"),
+                    script = doc_word(d, layer, "script");
+  std::istringstream said(fills);
+  int colours = 0;
+  for (std::string one; said >> one && one != "none";) ++colours;
+  const DocScript* sc = doc_script_of(d, script);
+  // True when a behaviour gives each copy its own value. Each copy then has
+  // its own look and cannot be drawn in one pass.
+  bool connected = false;
+  doc_rows(d,
+           sqlite3_mprintf("select 1 from keyframe where layer = %d and "
+                           "name glob '*_by' and value <> 0 limit 1",
+                           layer),
+           [&](sqlite3_stmt*) { connected = true; });
+  // Copies that fade individually, such as those of the repeat effect or
+  // the far ones of a scatter field, each need their own alpha.
+  const bool faded =
+      std::any_of(repeated.begin(), repeated.end(),
+                  [](const AbsentCopy& c) { return c.alpha < 0.999; });
+  // Expressions on the layer. Each may set opacity too.
+  const std::vector<DocScript*> laying = doc_expressions_fx(d, layer);
+  const bool clears = (sc && sc->clears) ||
+                      std::any_of(laying.begin(), laying.end(),
+                                  [](const DocScript* e) { return e->clears; });
+  // At most eight colours, the size of the ramp in flat.mat.
+  fx.together = fx.copies > 1 && (kind == "shape" || kind == "text") &&
+                colours <= 8 && !clears && !connected && !faded;
+}
+
 // Reads how many copies the layer has and whether they can be drawn in one
 // pass.
 void look_copies(LayerBuild& build) {
   Doc& d = build.d;
   const int layer = build.layer;
-  const std::string& kind = build.kind;
   Canvas2DFx& fx = build.fx;
   const std::vector<AbsentCopy>& repeated =
       doc_absent_copies(d, layer, d.stage->now);
@@ -103,39 +179,7 @@ void look_copies(LayerBuild& build) {
   // there is one.
   fx.copies = repeated.empty() ? (int)doc_number(d, layer, "copies", 0, 1)
                                : (int)repeated.size();
-  // Draw the copies in one pass when no copy is cleared on its own (no script
-  // sets opacity) and their colours form a ramp that flat.mat supports. The
-  // 3D layers inside an image do not qualify either.
-  {
-    const std::string fills = doc_word(d, layer, "copy_fill"),
-                      script = doc_word(d, layer, "script");
-    std::istringstream said(fills);
-    int colours = 0;
-    for (std::string one; said >> one && one != "none";) ++colours;
-    const DocScript* sc = doc_script_of(d, script);
-    // True when a behaviour gives each copy its own value. Each copy then has
-    // its own look and cannot be drawn in one pass.
-    bool connected = false;
-    doc_rows(d,
-             sqlite3_mprintf("select 1 from keyframe where layer = %d and "
-                             "name glob '*_by' and value <> 0 limit 1",
-                             layer),
-             [&](sqlite3_stmt*) { connected = true; });
-    // Copies that fade individually, such as those of the repeat effect or
-    // the far ones of a scatter field, each need their own alpha.
-    const bool faded =
-        std::any_of(repeated.begin(), repeated.end(),
-                    [](const AbsentCopy& c) { return c.alpha < 0.999; });
-    // Expressions on the layer. Each may set opacity too.
-    const std::vector<DocScript*> laying = doc_expressions_fx(d, layer);
-    const bool clears =
-        (sc && sc->clears) ||
-        std::any_of(laying.begin(), laying.end(),
-                    [](const DocScript* e) { return e->clears; });
-    // At most eight colours, the size of the ramp in flat.mat.
-    fx.together = fx.copies > 1 && (kind == "shape" || kind == "text") &&
-                  colours <= 8 && !clears && !connected && !faded;
-  }
+  look_copies_together(build, repeated);
 }
 
 // Reads how a text is set: how it is split, wrapped and spaced.
@@ -237,47 +281,8 @@ void match_fill(LayerBuild& build) {
   Doc& d = build.d;
   const int layer = build.layer;
   build.fill = doc_word(d, layer, "fill");
-  const std::string& fill = build.fill;
-  // A fill is one colour of six hex digits. For text or a flat shape it can
-  // also be two or more colours that form a ramp. Each colour is six or eight
-  // hex digits, and the last two are the alpha, so a colour can fade to
-  // clear. Each colour may also carry a position, @ followed by a fraction of
-  // the way, as in CSS colour stop positions: ff3366@0.35.
-  std::vector<float4>& ramp = build.ramp;
-  std::vector<float>& rampAt = build.rampAt;
-  long& rgb = build.rgb;
-  {
-    std::istringstream said(fill);
-    for (std::string word; said >> word;) {
-      const size_t mark = word.find('@');
-      const std::string one = word.substr(0, mark);
-      rampAt.push_back(
-          mark == std::string::npos
-              ? -1.f
-              : std::clamp(std::strtof(word.c_str() + mark + 1, nullptr), 0.f,
-                           1.f));
-      const bool hex =
-          (one.size() == 6 || one.size() == 8) &&
-          one.find_first_not_of("0123456789abcdefABCDEF") == std::string::npos;
-      const long c =
-          hex ? std::strtol(one.substr(0, 6).c_str(), nullptr, 16) : -1;
-      if (c < 0) {
-        ramp.clear(), rgb = -1;
-        break;
-      }
-      if (ramp.empty()) rgb = c;
-      const float there =
-          one.size() == 8
-              ? (float)std::strtol(one.substr(6).c_str(), nullptr, 16) / 255.f
-              : 1.f;
-      ramp.push_back(float4{(float)((c >> 16) & 255) / 255.f,
-                            (float)((c >> 8) & 255) / 255.f,
-                            (float)(c & 255) / 255.f, there});
-    }
-    // Eight digits (with alpha) are accepted only in a ramp of two colours or
-    // more.
-    if (ramp.size() == 1 && ramp[0].w < 1.f) ramp.clear(), rgb = -1;
-  }
+  fill_colours(build.fill, build.ramp, build.rampAt, build.rgb);
+  const long rgb = build.rgb;
   build.colour = float3{(float)((rgb >> 16) & 255), (float)((rgb >> 8) & 255),
                         (float)(rgb & 255)} /
                  255.f;

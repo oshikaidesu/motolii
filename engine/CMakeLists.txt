@@ -257,9 +257,13 @@ add_library(motolii_document OBJECT
   document/marks.cpp
   document/match.cpp
   document/match/match_describe.cpp
+  document/match/match_image.cpp
   document/match/match_layers.cpp
+  document/match/match_light.cpp
   document/match/match_look.cpp
+  document/match/match_models.cpp
   document/match/match_shape.cpp
+  document/match/match_text.cpp
   document/match/match_video.cpp
   document/scripts/adapter.cpp
   document/scripts/expressions.cpp
