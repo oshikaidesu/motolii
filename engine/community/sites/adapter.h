@@ -27,6 +27,8 @@
 #include <string>
 #include <vector>
 
+namespace motolii {
+
 // Returns true if `t` contains `word`.
 inline bool adapter_has(const std::string& t, const char* word) {
   return t.find(word) != std::string::npos;
@@ -90,5 +92,7 @@ std::string adapter_js(const std::string& src, const std::string& form);
 // it is applied to, whether that is a video or anything else. Returns `text`
 // unchanged for any other form.
 std::string adapter_isf(const std::string& text);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_SITES_ADAPTER_H_

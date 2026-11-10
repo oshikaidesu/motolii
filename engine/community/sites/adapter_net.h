@@ -12,6 +12,8 @@
 #include <filesystem>
 #include <string>
 
+namespace motolii {
+
 // Downloads `url` to the file `to` with curl. Redirects are followed only over
 // http and https, and the download stops after 60 seconds. Returns true on
 // success.
@@ -27,5 +29,7 @@ std::string adapter_site_work(const std::string& word);
 std::filesystem::path adapter_openprocessing(const std::string& id,
                                              const std::filesystem::path& at,
                                              std::string& why);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_SITES_ADAPTER_NET_H_

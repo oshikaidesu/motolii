@@ -12,6 +12,8 @@
 
 #include "base/json.h"
 
+namespace motolii {
+
 bool adapter_fetch(const std::string& url, const std::filesystem::path& to) {
   const std::string file = to.string();
   const char* line[] = {
@@ -110,3 +112,5 @@ std::filesystem::path adapter_openprocessing(const std::string& id,
     out << "<script src=\"" << name << "\"></script>\n";
   return at / "index.html";
 }
+
+}  // namespace motolii

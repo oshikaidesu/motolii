@@ -9,6 +9,8 @@
 #include "base/json.h"
 #include "community/sites/adapter_shadertoy.h"
 
+namespace motolii {
+
 std::string adapter_shadertoy(const std::string& json, std::string& why) {
   rapidjson::Document all;
   if (all.Parse(json.c_str()).HasParseError())
@@ -118,3 +120,5 @@ std::string adapter_shadertoy(const std::string& json, std::string& why) {
                           word("name").empty() ? "Shadertoy" : word("name"),
                           word("username"));
 }
+
+}  // namespace motolii

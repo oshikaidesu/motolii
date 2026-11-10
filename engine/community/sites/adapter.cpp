@@ -14,6 +14,8 @@
 #include "community/sites/adapter_shadertoy.h"
 #include "third_party/js/twigl/noise.h"
 
+namespace motolii {
+
 namespace {
 
 // Returns `t` as a double-quoted JavaScript string literal. Carriage returns
@@ -441,3 +443,5 @@ std::string adapter_isf(const std::string& text) {
   }
   return text;
 }
+
+}  // namespace motolii

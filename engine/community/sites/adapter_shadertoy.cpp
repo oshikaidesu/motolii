@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+namespace motolii {
+
 namespace {
 
 // Returns `t` with its // and /* */ comments removed. A block comment is
@@ -282,3 +284,5 @@ std::string adapter_tabs_isf(std::string common, std::vector<AdapterTab> tabs,
          run + "gl_FragColor=PASSINDEX==" + std::to_string(tabs.size() - 1) +
          "?vec4(adapter_out.rgb,1.):adapter_out;}\n";
 }
+
+}  // namespace motolii

@@ -7,10 +7,14 @@
 
 #include <string>
 
+namespace motolii {
+
 // Converts the JSON of a Shadertoy shader, as given by the site's API or its
 // Export, with all its tabs, into one ISF text. Returns "" and sets `why` if it
 // cannot be converted. A sound tab is left out, as VVISF leaves it out. A
 // cubemap tab draws something nothing here can read, so it is an error.
 std::string adapter_shadertoy(const std::string& json, std::string& why);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_SITES_ADAPTER_SHADERTOY_JSON_H_

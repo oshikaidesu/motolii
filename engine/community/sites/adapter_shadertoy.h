@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 
+namespace motolii {
+
 // Removes the declarations that other Shadertoy players add for themselves:
 // shader-toy for VS Code's #iChannel lines, GLSL Sandbox's uniforms, and a
 // file's own #version and #define lines.
@@ -42,5 +44,7 @@ struct AdapterTab {
 std::string adapter_tabs_isf(std::string common, std::vector<AdapterTab> tabs,
                              bool film, const std::string& about = "Shadertoy",
                              const std::string& credit = "");
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_SITES_ADAPTER_SHADERTOY_H_
