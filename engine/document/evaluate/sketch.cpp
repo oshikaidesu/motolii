@@ -70,7 +70,7 @@ const SketchShape* doc_sketch_shape(std::vector<SketchShape>& shapes, Script& ru
 // in p5_mesh.h made from the sketch's shader. `names` lists the shader's uniforms, each as a name,
 // a type, a count and a size.
 // The source is compiled with Filament's own matc, as the render shaders are
-// (gpu/filament_webgpu.sh). A real shader takes about a third of a second. The result is cached on
+// (materials/build.sh). A real shader takes about a third of a second. The result is cached on
 // disk under a hash of the source, so each distinct source is compiled once.
 // If compiling fails, the error is printed and the returned paint has no material, so the shader
 // draws nothing.

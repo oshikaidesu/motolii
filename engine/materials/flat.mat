@@ -1,6 +1,6 @@
 // flat.mat: a sheet that shows a picture drawn for the screen (ThorVG's, canvas.h) as it was drawn: its colours are
 // the screen's own numbers, so they are taken back to light before Filament's output step turns light into screen
-// numbers again. Unlit: no lamp and no shadow touches it. flat_lit (filament_webgpu.sh: -TSHADE=lit -DLIT) is the same sheet in
+// numbers again. Unlit: no lamp and no shadow touches it. flat_lit (materials/build.sh: -TSHADE=lit -DLIT) is the same sheet in
 // the lamps' light, as an After Effects 3D layer once its composition has a light: its colour the surface's.
 material {
     name : flat,
@@ -11,7 +11,7 @@ material {
     culling : none,
     doubleSided : true,
     transparentShadow : true,   // (it throws the shadow of what is drawn of it: Filament's own, dithered by how clear it is)
-    blending : ${BLENDING},   // (filament_webgpu.sh builds it once for each way a sheet lies on what is behind: transparent, add, multiply, screen)
+    blending : ${BLENDING},   // (materials/build.sh builds it once for each way a sheet lies on what is behind: transparent, add, multiply, screen)
     depthWrite : true,
     parameters : [
         { type : sampler2d, name : matte0 }, { type : sampler2d, name : matte1 }, { type : sampler2d, name : matte2 }, { type : sampler2d, name : matte3 },
@@ -59,7 +59,7 @@ material {
         { type : float4[3], name : partColour },
         { type : float4[3], name : partSurface },
         { type : sampler2d, name : edge },
-        // a material it wears (document/evaluate/material.h doc_material; flat_<material>, filament_webgpu.sh): clear coat, its roughness, sheen,
+        // a material it wears (document/evaluate/material.h doc_material; flat_<material>, materials/build.sh): clear coat, its roughness, sheen,
         // anisotropy (of glass: how vivid what is seen through it is, first); how thick, of cloth and subsurface (second),
         // and of glass its bend (ior), how far its colours part, how much its face swims; how dark its colour makes what
         // is seen through glass, or how strong a bubble's rim is

@@ -1,23 +1,21 @@
 #!/bin/zsh
-# The C++ checked without building (no lock, nothing written): clang++ -fsyntax-only on the library's one translation
-# unit (entry/motolii.mm, which reads every header of ours it uses) with the flags it is built with, taken from
-# compile_commands.json (tools/compile_commands.sh writes it when it is missing). Errors printed, the exit status clang's.
-#   ./engine/check_syntax.sh                 the library      ./engine/check_syntax.sh community/aviutl/aviutl.cpp   another unit
+# The C++ checked without building: clang's -fsyntax-only on every source of ours, with the flags CMake gives it
+# (out/cmake/compile_commands.json, written by `cmake -S . -B out/cmake -G Ninja`). Nothing is written and no build
+# lock is needed. Prints clang's errors; "ok: <count> sources" when there are none.
+#   ./engine/check_syntax.sh                      every source
+#   ./engine/check_syntax.sh document/undo.cpp    the sources whose path contains the word
 cd "$(dirname "$0")"
-unit=${1:-entry/motolii.mm}
-read_args() {
-  args=("${(@f)$(python3 -c '
-import json, sys
-for u in json.load(open("compile_commands.json")):
-    if u["file"] == sys.argv[1]: print("\n".join(a for a in u["arguments"][1:] if a not in ("-c", sys.argv[1]))); break
-else: sys.exit("not a unit in compile_commands.json: " + sys.argv[1])' $unit)}")
-}
-# (written again when missing, or when a third_party folder it names is gone: written in another checkout, or before the
-# fetch. compile_commands.sh says in one line if third_party is in neither this checkout nor the main one)
-stale=1
-if [ -f compile_commands.json ]; then
-  read_args || exit 1
-  stale=0; for a in $args; do p=${a#-I}; [[ $p != -* && $p == *third_party/* && ! -e $p ]] && stale=1 && break; done
-fi
-if (( stale )); then ./tools/compile_commands.sh > /dev/null || exit 1; read_args || exit 1; fi
-clang++ -fsyntax-only -Wno-everything ${args[@]} $unit && echo "ok: $unit"
+[ -f out/cmake/compile_commands.json ] || cmake -S . -B out/cmake -G Ninja > /dev/null || exit 1
+python3 - "$1" <<'PY'
+import json, subprocess, sys
+from concurrent.futures import ThreadPoolExecutor
+units = [u for u in json.load(open('out/cmake/compile_commands.json'))
+         if '/third_party/' not in u['file'] and sys.argv[1] in u['file']]
+def check(u):
+    command = u['command'].split(' -o ')[0] + ' -fsyntax-only -Wno-everything ' + u['file']
+    return subprocess.run(command, shell=True, cwd=u['directory'], capture_output=True, text=True).stderr
+with ThreadPoolExecutor(8) as pool:
+    errors = [e for e in pool.map(check, units) if e]
+print('\n'.join(errors) if errors else f'ok: {len(units)} sources')
+sys.exit(1 if errors else 0)
+PY

@@ -5,7 +5,7 @@
 //
 // styles.cpp is included whole and unchanged so that DrawStrokeEnd, which is private to that
 // file, can be called from here. The rest of styles.cpp is never called and is removed by the
-// linker (gpu/filament_webgpu.sh, -dead_strip).
+// linker (CMakeLists.txt, -dead_strip).
 #include "community/absent_motion/absent_motion.h"
 
 #include <string>

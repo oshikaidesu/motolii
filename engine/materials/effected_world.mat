@@ -14,7 +14,7 @@ material {
     ],
     requires : [ uv0 ],
     depthWrite : true,   // (as flat.mat: a 2D thing's sheet is told otherwise, document/evaluate/evaluate.h)
-    blending : ${BLENDING},   // (filament_webgpu.sh builds it once for each way a sheet lies on what is behind, as flat.mat)
+    blending : ${BLENDING},   // (materials/build.sh builds it once for each way a sheet lies on what is behind, as flat.mat)
     shadingModel : unlit,
     transparentShadow : true,   // (it throws the shape it is after its effects, as an After Effects layer: its clear parts dithered, flat.mat's way)
     variantFilter : [ skinning, shadowReceiver, vsm ],

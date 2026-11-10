@@ -5,7 +5,7 @@
 //
 // Each function builds an AbsentMotion layer (scene.h) from the caller's layer number, times and
 // effects, and calls AbsentMotion's own code on it. This file is built apart (see
-// gpu/filament_webgpu.sh) together with AbsentMotion's motion.cpp, scene.cpp and easing.cpp,
+// CMakeLists.txt) together with AbsentMotion's motion.cpp, scene.cpp and easing.cpp,
 // unchanged. The parts of scene.cpp that draw or read a scene are never called, and the linker
 // removes them (dead stripping).
 #include "community/absent_motion/absent_motion.h"

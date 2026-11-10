@@ -19,7 +19,7 @@
 // none: a solid then uses Filament's lit surface, and a flat layer is drawn as it is.
 std::string doc_material(Doc& d, int layer);
 // Returns the variant of the material for a flat layer (a video, image, text or shape): the variant
-// of flat.mat made for it (filament_webgpu.sh), with the image as its colour. Returns "" for none,
+// of flat.mat made for it (materials/build.sh), with the image as its colour. Returns "" for none,
 // and the layer is then drawn as it is. For glass the stage behind the layer is read
 // (doc_layers_read).
 std::string doc_sheet_material(Doc& d, int layer);

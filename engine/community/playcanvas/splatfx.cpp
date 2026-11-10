@@ -202,7 +202,7 @@ std::vector<std::pair<std::string, std::vector<float>>> SplatEffect::uniforms(do
 }
 
 namespace {
-// The matp configuration that filament_webgpu.sh passes to matc: -a webgpu -a metal -p desktop.
+// The matp configuration that materials/build.sh passes to matc: -a webgpu -a metal -p desktop.
 struct SplatConfig : matp::Config {
     SplatConfig() { mTargetApi = TargetApi::WEBGPU | TargetApi::METAL; mPlatform = Platform::DESKTOP; }
     Output* getOutput() const noexcept override { return nullptr; }
