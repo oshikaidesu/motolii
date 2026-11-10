@@ -25,7 +25,7 @@ import 'package:motolii/workspace/shelf/empty_fx.dart';
 import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
 import 'package:motolii/workspace/state/state.dart';
-import 'package:motolii/workspace/commands/context_menu.dart';
+import 'package:motolii/widgets/menu.dart';
 
 /// One effect tile of the shelf. The id is a layer effect's name or a file effect's file, since two files can share a name.
 /// The label says what it is for, [on] whether it is applied, `apply` what a double-click or a drop on the stage does.

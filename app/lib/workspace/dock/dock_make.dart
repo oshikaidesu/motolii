@@ -23,7 +23,7 @@ import 'package:motolii/storage/kept_file.dart' show fileJson, fileKeep;
 import 'package:motolii/workspace/dock/dock_widgets.dart';
 import 'package:motolii/skin/theme.dart' show ColorTheme;
 import 'package:motolii/workspace/dock/dock_color_wheel.dart';
-import 'package:motolii/workspace/commands/context_menu.dart';
+import 'package:motolii/widgets/menu.dart';
 import 'package:motolii/workspace/shelf/copies_tiles.dart';
 import 'package:motolii/workspace/shelf/material_tiles.dart';
 import 'package:motolii/workspace/shelf/create_preview.dart';

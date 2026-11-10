@@ -10,7 +10,7 @@
 | `state/` | どのパネルも読むアプリの状態。`state.dart` が入口（レイヤー `WsLayer`、種類の色 `wsTone`）、`window.dart` に `Ws`、`scope.dart` に `WsScope`、`picked.dart` 選ばれた物、`effects.dart` 掛かった効果、`panel_header.dart` パネルの見出しと枠、`beats.dart` テンポの格子 |
 | `window/` | ウィンドウの枠：`panes.dart` パネルの並び（pub の `docking`）、`home.dart` プロジェクトを選ぶ最初の画面、`zoom.dart` 画面全体の拡大 |
 | `top_bar/` | 上のバー：`top_bar.dart`、`size_chip.dart` 画面の大きさ、`timings.dart` エンジンにかかった時間 |
-| `commands/` | 名前の付いた操作と、それを言うキー・メニュー：`keymap.dart` キーの表（VS Code の keybindings.json の形）、`command_actions.dart` 各操作がアプリの状態にすること（キーは Ableton Live 12 の表から）、`menu_bar.dart` メニューバー、`context_menu.dart` 右クリック |
+| `commands/` | 名前の付いた操作と、それを言うキー・メニュー：`keymap.dart` キーの表（VS Code の keybindings.json の形）、`command_actions.dart` 各操作がアプリの状態にすること（キーは Ableton Live 12 の表から）、`menu_bar.dart` メニューバー、`layer_menu.dart` 右クリックの項目（メニューの部品は `widgets/menu.dart`） |
 | `edits/` | 選んだ複数のレイヤーにまとめて掛ける編集：`make_relation.dart` 関係を作る、`group_moves.dart` グループの動き、`keyframe_edits.dart` キーフレームの移動・削除・コピー |
 | `inspector_feed/` | `workspace.dart` の部品：プロジェクトから Inspector（`../inspector/`）へ渡す物。`panel.dart` パネルとして読み直す時、`cards.dart` カード、`values.dart` 値の読み書き、`keyframe_marks.dart` 値の横のキーの印 |
 | `dock/` | 左の棚（Create・Effects・Media・Fonts・Colors …）のパネル |

@@ -7,7 +7,7 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Hov;
 import 'package:motolii/widgets/media.dart' show Draw, glyph;
-import 'package:motolii/workspace/commands/context_menu.dart' show WsMenuItem, WsMenuList;
+import 'package:motolii/widgets/menu.dart' show WsMenuItem, WsMenuList;
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/timeline_painters.dart' show TpGlyph;
 
