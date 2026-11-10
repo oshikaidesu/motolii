@@ -1,5 +1,5 @@
 // The list of places the Effects shelf can look in: All, Recent, Favorites, In This Video, user decks and packs.
-// It sits beside or over the tiles and has the shape of the Media shelf's folder tree (dock_files_browser.dart).
+// It sits beside or over the tiles and has the shape of the Media shelf's folder tree (media/media_shelf.dart).
 // Ableton's browser sidebar lists its Collections this way, Final Cut's Effects browser its categories,
 // Spotify its Library and Premiere its bins.
 // Clicking a row shows what it holds among the tiles, and the search and the kinds narrow the result within it.
@@ -262,7 +262,7 @@ class EffectPlacesState extends State<EffectPlaces> {
     ]);
   }
 
-  // The name field, edited inside the row as dock_program.dart does for a tile's name.
+  // The name field, edited inside the row as the Program shelf does for a tile's name.
   Widget _field(EffectDeck d) => CallbackShortcuts(
     bindings: {
       const SingleActivator(LogicalKeyboardKey.escape): () {

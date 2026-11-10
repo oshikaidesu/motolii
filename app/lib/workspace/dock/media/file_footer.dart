@@ -28,8 +28,13 @@ List<(int, String)> _showing(Motolii m, String file) => [
 
 /// The footer for the selected file: a file the engine can show is placed, a folder is opened.
 class FileFooter extends StatelessWidget {
+  /// The footer for the picked file [n] of the shelf [c].
   const FileFooter(this.n, this.c, this.media, {super.key});
+
+  /// The picked file or folder.
   final FileNode n;
+
+  /// The shelf as it is built now.
   final ShelfContext c;
 
   /// What the shelf keeps between builds: the files picked, and the length and range chosen for the next file.

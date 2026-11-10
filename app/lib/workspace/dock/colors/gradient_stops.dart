@@ -44,6 +44,7 @@ String wordOfStops(List<(Color, double)> stops) {
 /// - Dragging a stop along the bar moves it.
 /// - Remove deletes the selected stop, but at least two stay.
 class GradientStops extends StatefulWidget {
+  /// The editor of [stops]; it tells [onChanged] and [onPick] what the user does.
   const GradientStops(
     this.colors,
     this.stops,

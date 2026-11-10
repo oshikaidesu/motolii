@@ -55,14 +55,6 @@ class EffectsShelf extends StatefulWidget {
   /// What the shelf keeps between builds: its map, and which effect a dragged tile carries.
   final EffectsController effects;
 
-  /// Effect files sorted by name, as After Effects' Effects & Presets panel lists each kind.
-  /// The engine lists them by file, so VIDVOX's capitals came before AbsentMotion's am_ files: two runs of A to Z.
-  /// Computed once per list of files.
-  static final _byName =
-      Expando<
-        List<(String, ShelfItem)>
-      >(); // Each entry is the name as shown and the engine's item.
-
   @override
   State<EffectsShelf> createState() => _EffectsShelfState();
 }
@@ -232,7 +224,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
     final screens = m.items('screen');
     final lined = <(String, ShelfItem)>[
       for (final i in m.items('thing')) (i.name, i),
-      ...(EffectsShelf._byName[screens] ??= ([
+      ...(widget.effects.byName[screens] ??= ([
         for (final i in screens) (shelfNamed(i.id) ?? i.name, i),
       ]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase())))),
       // A saved preset by its name (Save Look). Applying it gives the selected layer its values, effects and keyframes.
@@ -357,7 +349,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
         read[t] = (read[t] ?? 0) + 1;
       }
     }
-    // Tags read from the effects, most common first, as the Fonts shelf's tag chips do (dock_fonts.dart).
+    // Tags read from the effects, most common first, as the Fonts shelf's tag chips do (fonts/fonts_shelf.dart).
     // Each shows the # that is typed to search for it (ShelfTags). A kind with the same word is a different thing:
     // VIDVOX's Feedback kind is not the feedback passes read from the shader.
     // "transition" is left out because the Transition kind is read the same way (isf.cpp). Shadertoy's filters are read from the shaders.

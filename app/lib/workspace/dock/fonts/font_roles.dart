@@ -19,7 +19,10 @@ import 'package:motolii/workspace/shelf/tile_hover.dart';
 /// With no text layer selected, clicking a role chooses which role the next clicked font is for.
 /// With a text layer selected, clicking a role applies that role's font to it. The + button adds a new text in that font.
 class FontRoles extends StatelessWidget {
+  /// The two roles of the shelf [c], their fonts named from [fonts].
   const FontRoles(this.c, this.controller, this.fonts, {super.key});
+
+  /// The shelf as it is built now.
   final ShelfContext c;
 
   /// What the shelf keeps between builds; the fonts used lately are noted in it.

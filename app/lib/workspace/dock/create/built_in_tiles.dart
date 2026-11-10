@@ -77,7 +77,7 @@ final builtInGroups = <(String, List<CreateTile>)>[
     ],
   ),
   (
-    // Every JS file that goes on a layer and moves its values comes after Empty (dock_make_expressions.dart expressionsOf).
+    // Every JS file that goes on a layer and moves its values comes after Empty (expressions.dart expressionsOf).
     'Expression',
     [
       CreateTile(

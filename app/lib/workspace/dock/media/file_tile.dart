@@ -19,7 +19,10 @@ import 'package:motolii/workspace/shelf/tile_colors.dart';
 
 /// A file's thumbnail if it is media, otherwise a flat tile with its kind's mark.
 class FileArt extends StatelessWidget {
+  /// The picture of the file [n].
   const FileArt(this.n, this.media, {super.key, this.step = 0});
+
+  /// The file or folder shown.
   final FileNode n;
 
   /// Asks the engine for a video's thumbnails.
@@ -102,6 +105,7 @@ class FileArt extends StatelessWidget {
 
 /// One file or folder of the open folder, as a tile or as a row of the list.
 class FileTile extends StatefulWidget {
+  /// The tile of [n] on the shelf [c]: a row when [list] is true.
   const FileTile(
     this.n,
     this.c,
@@ -110,11 +114,17 @@ class FileTile extends StatefulWidget {
     this.list = false,
     this.where,
   });
+
+  /// The file or folder shown.
   final FileNode n;
+
+  /// The shelf as it is built now.
   final ShelfContext c;
 
   /// What the shelf keeps between builds: the files picked, the folders read.
   final MediaController media;
+
+  /// Whether the shelf shows rows, not tiles.
   final bool list;
 
   /// The folder a search result sits in.

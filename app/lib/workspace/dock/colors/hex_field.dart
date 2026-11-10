@@ -9,6 +9,7 @@ import 'package:motolii/widgets/text_gestures.dart' show TypedField;
 /// A field for typing a color's hex value, as in the color pickers of After Effects and Figma: #d4a72c, d4a72c or #da2.
 /// It reports the color on Return or when the field loses focus.
 class HexField extends StatelessWidget {
+  /// A field showing [hex] that reports a typed color to [onTold].
   const HexField(this.hex, this.onTold, {super.key});
 
   /// The color shown, as #RRGGBB.

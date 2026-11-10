@@ -19,12 +19,19 @@ import 'package:motolii/workspace/shelf/tile_hover.dart';
 /// Unlike the effect thumbnails, a word is a single ink, so colour can tell which island of fonts it belongs to.
 /// FontMap colours fonts by category in the same way.
 class FontDot extends StatefulWidget {
+  /// The dot of the font [f] on the shelf [c].
   const FontDot(this.f, this.c, this.controller, {super.key, this.map});
+
+  /// The font the dot stands for.
   final FontFile f;
+
+  /// The shelf as it is built now.
   final ShelfContext c;
 
   /// What the shelf keeps between builds: the dots the engine drew and their images.
   final FontsController controller;
+
+  /// The map the dot lies on; its place there gives the dot its colour. Null draws it in one ink.
   final ShelfMap? map;
   @override
   State<FontDot> createState() => _FontDotState();

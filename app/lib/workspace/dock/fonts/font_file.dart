@@ -2,6 +2,7 @@
 
 /// A font file offered on the shelf.
 class FontFile {
+  /// The font named [family], read from the file [path].
   const FontFile(this.family, {this.path, this.script, this.sample});
 
   /// The name the font is listed under: its file's name.

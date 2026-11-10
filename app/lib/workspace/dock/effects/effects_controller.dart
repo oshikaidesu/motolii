@@ -1,7 +1,7 @@
 // What the Effects shelf keeps while the window is open.
 import 'dart:typed_data';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii;
+import 'package:motolii/bridge/motolii.dart' show Motolii, ShelfItem;
 import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/dock/map/image_features.dart';
 import 'package:motolii/workspace/dock/map/shelf_map.dart';
@@ -26,6 +26,11 @@ class EffectsController {
   /// See DockHover's Draggable. Dropped on a deck, the effect goes into it, like a track on a Spotify playlist
   /// or an effect in a Premiere bin.
   final carried = Expando<String>();
+
+  /// Effect files sorted by name, as After Effects' Effects & Presets panel lists each kind.
+  /// The engine lists them by file, so VIDVOX's capitals came before AbsentMotion's am_ files: two runs of A to Z.
+  /// Computed once per list of files. Each entry is the name as shown and the engine's item.
+  final byName = Expando<List<(String, ShelfItem)>>();
 
   /// The Effects map's coordinates for the effects whose tile frames are read from [homes].
   /// An effect is placed by how it looks, from CLIP at three of its sixteen frames so motion counts (or tiny colours), and what it is for ([kinds], the engine's label, such as an ISF's CATEGORIES or its startImage, endImage and progress, see isf.cpp).
