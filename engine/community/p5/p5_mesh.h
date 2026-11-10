@@ -7,6 +7,8 @@
 // p5_after. The comments inside the embedded script are not rewritten here,
 // because they are part of the string literal.
 
+namespace motolii {
+
 inline const char* const p5_mesh = R"(
 // What WEBGL draws, as p5 has it: which of its shapes where its camera sees them, the triangles and lines it makes as it goes,
 // what it clears with. document/evaluate/sketch.h stands them in the world, one mesh each frame. p5 makes a line's corners in triangles
@@ -326,5 +328,7 @@ for (const way of ['drawBuffers', 'drawBuffersScaled', '_drawImmediateFill']) {
   };
 }
 )";
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_P5_P5_MESH_H_

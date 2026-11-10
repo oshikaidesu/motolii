@@ -16,6 +16,8 @@
 #include "community/hydra/hydra_isf.h"
 #include "community/sites/adapter.h"
 
+namespace motolii {
+
 namespace {
 
 // Rewrites GLSL ES as a browser accepts it into the form that isf.cpp reads.
@@ -262,3 +264,5 @@ bool adapter_p5_shader(const std::string& json, std::string& fs,
        "]}*/\n" + frag;
   return true;
 }
+
+}  // namespace motolii

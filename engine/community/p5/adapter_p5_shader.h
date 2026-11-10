@@ -17,6 +17,8 @@
 
 #include "community/hydra/hydra_isf.h"
 
+namespace motolii {
+
 // Seconds over which a linear value is extended; recorded keys cover only about
 // 30 s.
 inline constexpr double ADAPTER_LINE_ENDS = 600.0;
@@ -37,5 +39,7 @@ inline double adapter_line_end(const std::vector<double>& keys) {
 bool adapter_p5_shader(const std::string& json, std::string& fs,
                        std::string& vs, std::vector<HydraParameter>& moving,
                        std::string& why);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_P5_ADAPTER_P5_SHADER_H_

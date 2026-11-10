@@ -12,6 +12,8 @@
 // goes forward, so going back is reading. Frames are its own 60 a second, as
 // requestAnimationFrame and a clock stepped by hand (timesnap's way).
 
+namespace motolii {
+
 inline const char* const p5_before = R"(
 var __T = 0, __Q = [], __seed = 12345, __L = 0;   // (__L: the line of the sketch that draws now: script.h sketch_marked)
 function __at(line, it) { __L = line; return it; }
@@ -361,5 +363,7 @@ function each(i, n, t, k) {
   return at < c.length ? { x: c[at], y: c[at + 1], z: c[at + 2], scale_x: c[at + 3] * strong, scale_y: c[at + 4] * strong, scale_z: c[at + 5] * strong, rotate: c[at + 6], rotate_y: c[at + 7], rotate_x: c[at + 8], colour: c[at + 10] } : { size: 0 };
 }
 )";
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_P5_P5_STAND_H_
