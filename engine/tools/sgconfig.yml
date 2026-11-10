@@ -1,5 +1,0 @@
-# ast-grep's project file for function_census.py: .h and .mm are read as C++
-# (ast-grep.github.io/reference/sgconfig.html).
-ruleDirs: []
-languageGlobs:
-  cpp: ['*.h', '*.mm', '*.cpp']

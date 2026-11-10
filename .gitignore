@@ -2,8 +2,7 @@
 /engine/out/
 /docs/internal/**/out/
 third_party/
-# an editor's clangd: what tools/compile_commands.sh writes, and clangd's own index
-/engine/compile_commands.json
+# clangd's index
 .cache/
 # (engine/third_party holds what the build fetches, kept out, beside a few small bundled works, kept in: a new one is let in below)
 !/engine/third_party/
