@@ -1,3 +1,6 @@
+#ifndef MOTOLII_COMMUNITY_ABSENT_MOTION_ABSENT_MOTION_H_
+#define MOTOLII_COMMUNITY_ABSENT_MOTION_ABSENT_MOTION_H_
+
 // Declarations for the AbsentMotion adapter: motion, repeat, text, line-end, drawing and blur
 // effects of a layer, computed by AbsentMotion's own code. The implementation is in
 // absent_motion.cpp, absent_ends.cpp and absent_drawing.cpp, which are built apart with
@@ -9,7 +12,6 @@
 // AbsentMotion's layer id. startMs, endMs and nowMs are the layer's start, its end and the
 // current time, in milliseconds. Distances are in pixels, y points down, and angles are in
 // degrees clockwise, as in Skia.
-#pragma once
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -81,3 +83,10 @@ struct AbsentCopy { double x = 0, y = 0, rotate = 0, scale = 1, alpha = 1; };
 // These arguments are the ones AbsentMotion's CopiesOf takes. A scatter field is laid over the
 // whole composition, and its copies are as large as reach.
 std::vector<AbsentCopy> absent_copies(const std::vector<AbsentEffect>& effects, int64_t thing, double startMs, double endMs, double nowMs, float wide, float high, float atX, float atY, float reach);
+
+// Returns one of AbsentMotion's easings evaluated at u. type is one of bounce, elastic, cyclic,
+// random, step and elasticStep; p holds its n numbers as Alight Motion gives them (easing.h).
+// At most 8 numbers are used.
+double absent_ease(const char* type, const double* p, int n, double u);
+
+#endif  // MOTOLII_COMMUNITY_ABSENT_MOTION_ABSENT_MOTION_H_

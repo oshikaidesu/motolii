@@ -9,15 +9,23 @@
 // unchanged. The parts of scene.cpp that draw or read a scene are never called, and the linker
 // removes them (dead stripping).
 #include "community/absent_motion/absent_motion.h"
-#include "scene.h"
-#include "textanim.h"
+
 #include <algorithm>
 #include <bit>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <cstring>
+#include <string>
+#include <vector>
 
-// Builds the AbsentMotion layer that the functions below hand to AbsentMotion's code. The layer
-// has the given number and time range, and carries the effects in order.
+#include "easing.h"
+#include "scene.h"
+#include "textanim.h"
+
+#include "community/absent_motion/absent_layer.h"
+
+// See absent_layer.h.
 am::Layer absent_layer(const std::vector<AbsentEffect>& effects, int64_t thing, double startMs, double endMs) {
     am::Layer l;
     l.id = l.noiseId = thing;
@@ -49,6 +57,8 @@ float absent_opacity(const std::vector<AbsentEffect>& effects, int64_t thing, do
     return am::MotionOpacity(absent_layer(effects, thing, startMs, endMs), nowMs);
 }
 
+namespace {
+
 // Scatter Repeat is Alight Motion's own effect, which AbsentMotion has not converted. Its
 // docs/ALIGHT_COMPATIBILITY.md says "Not converted yet", and no other implementation was found.
 // It is therefore written here from what Alight Motion 6.2.60 shows of it, recorded in
@@ -63,24 +73,24 @@ float absent_opacity(const std::vector<AbsentEffect>& effects, int64_t thing, do
 
 // Returns the value at index i of the parameter called name on effect e, or usual when the
 // effect has no such parameter or its list is shorter than i + 1.
-static double scatter_parameter(const AbsentEffect& e, const char* name, size_t i, double usual) {
+double scatter_parameter(const AbsentEffect& e, const char* name, size_t i, double usual) {
     for (const auto& [n, v] : e.params)
         if (n == name) return i < v.size() ? v[i] : usual;
     return usual;
 }
 
 // Returns a hash of seed and k as a number from 0 up to but not including 1 (splitmix64).
-static double scatter_unit(uint64_t seed, uint64_t k) {
+double scatter_unit(uint64_t seed, uint64_t k) {
     uint64_t x = seed + (k + 1) * 0x9e3779b97f4a7c15ull;
     x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ull, x = (x ^ (x >> 27)) * 0x94d049bb133111ebull, x ^= x >> 31;
     return (double)(x >> 11) * (1.0 / 9007199254740992.0);
 }
 
 // Folds v back and forth into the range 0 to 1, so that a wandering value never leaves the disc.
-static double scatter_fold(double v) { return 1.0 - std::fabs(1.0 - std::fmod(std::fabs(v), 2.0)); }
+double scatter_fold(double v) { return 1.0 - std::fabs(1.0 - std::fmod(std::fabs(v), 2.0)); }
 
 // Returns the copies that Scatter Repeat effect e makes, first copy on top.
-static std::vector<am::RepeatCopy> scatter_repeat(const AbsentEffect& e) {
+std::vector<am::RepeatCopy> scatter_repeat(const AbsentEffect& e) {
     const int n = (int)std::clamp<long long>(std::llround(scatter_parameter(e, "count", 0, 20)), 0, 5000);
     const double radius = std::max(0.0, scatter_parameter(e, "radius", 0, 300)), evolution = scatter_parameter(e, "evolution", 0, 0);
     const uint64_t seed = (uint64_t)std::llround(scatter_parameter(e, "seed", 0, 0) * 1000.0) * 0x2545f4914f6cdd1dull + 0x51ed27ull;
@@ -118,7 +128,7 @@ static std::vector<am::RepeatCopy> scatter_repeat(const AbsentEffect& e) {
 
 // Lays a new repeat on the copies built before it: each copy of the new repeat is placed by
 // each of the old copies, as AbsentMotion's RepeatCopies does. The total is capped at 25000.
-static std::vector<am::RepeatCopy> scatter_on(const std::vector<am::RepeatCopy>& built, const std::vector<am::RepeatCopy>& result) {
+std::vector<am::RepeatCopy> scatter_on(const std::vector<am::RepeatCopy>& built, const std::vector<am::RepeatCopy>& result) {
     std::vector<am::RepeatCopy> next;
     next.reserve(std::min<size_t>(25000, built.size() * result.size()));
     for (const am::RepeatCopy& m : built)
@@ -132,6 +142,8 @@ static std::vector<am::RepeatCopy> scatter_on(const std::vector<am::RepeatCopy>&
         }
     return next;
 }
+
+}  // namespace
 
 // See absent_motion.h. The copies are laid as AbsentMotion's CopiesOf (styles.cpp) lays them:
 // from the layer's matrix where it stands, with the layer's rotation and size taken from the
@@ -158,9 +170,7 @@ std::vector<AbsentCopy> absent_copies(const std::vector<AbsentEffect>& effects, 
     return out;
 }
 
-// Returns one of AbsentMotion's easings evaluated at u. type is one of bounce, elastic, cyclic,
-// random, step and elasticStep; p holds its n numbers as Alight Motion gives them (easing.h).
-// At most 8 numbers are used.
+// See absent_motion.h.
 double absent_ease(const char* type, const double* p, int n, double u) {
     static const struct { const char* name; am::Easing::Type type; } kinds[] = {{"bounce", am::Easing::kBounce}, {"elastic", am::Easing::kElastic}, {"cyclic", am::Easing::kCyclic}, {"random", am::Easing::kRandom}, {"step", am::Easing::kStep}, {"elasticStep", am::Easing::kElasticStep}};
     am::Easing e;

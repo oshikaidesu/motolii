@@ -6,14 +6,20 @@
 // drawing.cpp is included whole and unchanged so that its stroke building, which is private to
 // that file, can be called from here. The pieces are either merged into one outline with Skia's
 // union (SkPathOps), or put side by side to be filled as one (libtess2 nonzero, canvas_flat.h).
-#include "drawing.cpp"
 #include "community/absent_motion/absent_motion.h"
+
+#include <algorithm>
+#include <cstdint>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "include/pathops/SkPathOps.h"
 #include "include/utils/SkParsePath.h"
-#include <sstream>
+#include "drawing.cpp"
 
-// Defined in absent_motion.cpp.
-am::Layer absent_layer(const std::vector<AbsentEffect>& effects, int64_t thing, double startMs, double endMs);
+#include "community/absent_motion/absent_layer.h"
 
 // See absent_motion.h.
 std::string absent_drawing(const std::string& strokes, const std::vector<AbsentEffect>& effects, int64_t thing, double startMs, double endMs, double nowMs, bool together) {
