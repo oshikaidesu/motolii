@@ -34,3 +34,24 @@ String get motoliiDoc {
   const given = String.fromEnvironment('MOTOLII_DOC');
   return given.isNotEmpty ? given : '$motoliiDir/out/skin.motolii';
 }
+
+/// The full path of the program [name], found the way execvp does: the first regular file named [name] with an execute
+/// bit set, in the folders of [path] (a ':'-separated PATH value, in order; empty entries are skipped), then in
+/// [fallbacks]. A [name] containing '/' is returned as it is; so is [name] when nothing matches.
+/// An app started from Finder has PATH=/usr/bin:/bin, which has no Homebrew in it.
+String findProgram(
+  String name,
+  String path, {
+  List<String> fallbacks = const ['/opt/homebrew/bin', '/usr/local/bin'],
+}) {
+  if (name.contains('/')) return name;
+  for (final folder in [...path.split(':'), ...fallbacks]) {
+    if (folder.isEmpty) continue;
+    final file = folder.endsWith('/') ? '$folder$name' : '$folder/$name';
+    final stat = FileStat.statSync(file);
+    if (stat.type == FileSystemEntityType.file && stat.mode & 0x49 != 0) {
+      return file;
+    }
+  }
+  return name;
+}

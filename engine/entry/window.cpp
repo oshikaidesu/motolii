@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "base/search_path.h"
 #include "document/card_table.h"
 #include "document/document.h"
 #include "entry/motolii.h"
@@ -42,6 +43,8 @@ void motolii_home(const char* folder) {
 Motolii* motolii_open(const char* document, int wide, int high) {
   // The engine uses Filament's WebGPU backend, wherever it is opened from.
   setenv("BACKEND", "webgpu", 0);
+  // Started from Finder, PATH is /usr/bin:/bin and the shell that popen and system start cannot find ffmpeg.
+  add_to_path();
   // A document being opened reads the folders as they are now. They are read
   // once as a window opens (docs/app/BRIDGE.md, rule 8).
   ++files_changed();

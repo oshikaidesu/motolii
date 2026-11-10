@@ -3,6 +3,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:motolii/bridge/engine_paths.dart' show findProgram;
+
 /// Whether two pictures (or `_%d` runs of them) look the same: every frame differs by less than 2.0, the threshold
 /// AbsentMotion's effect_thumbs.py uses. False when nothing could be measured because ffmpeg is missing.
 bool looksSame(String a, String b) {
@@ -17,13 +19,11 @@ ProcessResult? ffmpeg(
   Encoding? stdoutEncoding = systemEncoding,
 }) {
   try {
-    return Process.runSync('ffmpeg', [
-      '-hide_banner',
-      '-loglevel',
-      'error',
-      '-y',
-      ...also,
-    ], stdoutEncoding: stdoutEncoding);
+    return Process.runSync(
+      findProgram('ffmpeg', Platform.environment['PATH'] ?? ''),
+      ['-hide_banner', '-loglevel', 'error', '-y', ...also],
+      stdoutEncoding: stdoutEncoding,
+    );
   } on ProcessException {
     return null;
   }

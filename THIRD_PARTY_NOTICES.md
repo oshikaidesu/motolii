@@ -71,6 +71,7 @@ Each is fetched from the author's own distribution at a fixed version, and Motol
 | [ThorVG](https://github.com/thorvg/thorvg) | 9203245 | MIT | `engine/deps/thorvg.sh` | `engine/deps/patches/thorvg/` |
 | [Skia](https://skia.org/) (the path part only) | chrome/m149 | BSD-3-Clause | `engine/deps/skia.sh` | none |
 | [libtess2](https://github.com/memononen/libtess2) | 8dbd648 | SGI Free Software License B 2.0 | `engine/deps/libtess2.sh` | none |
+| [FFmpeg](https://ffmpeg.org/) (writes the exported video and the tiles' films; its libraries are linked by the engine through IRIS) | The Homebrew formula's, on the machine that builds | LGPL-2.1 or later; Homebrew's build adds GPL parts (libx264, libx265), so it is not redistributed | `Brewfile` (`brew bundle`) | none |
 | [Jolt Physics](https://github.com/jrouwe/JoltPhysics) | a4b24c3 | MIT | `engine/deps/jolt.sh` | none |
 | [IRIS](https://github.com/electronicarts/IRIS) (checks exported video for flashing) | d96978a | BSD-3-Clause | `engine/deps/iris.sh` | none |
 | [OpenCV](https://github.com/opencv/opencv) (only core, imgproc, features2d and videoio, which IRIS reads) | 4.12.0 (49486f6) | Apache-2.0 | `engine/deps/iris.sh` | none |
