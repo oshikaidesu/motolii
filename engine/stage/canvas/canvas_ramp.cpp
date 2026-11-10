@@ -1,13 +1,13 @@
 // Color ramps for ThorVG gradients: the blend modes between two stops (OKLab,
 // HSV, constant) and the gradient that carries the stops.
 
-#include "stage/canvas/canvas_renderables.h"
-
 #include <thorvg.h>
 
 #include <algorithm>
 #include <cmath>
 #include <vector>
+
+#include "stage/canvas/canvas_renderables.h"
 
 namespace motolii {
 
@@ -166,10 +166,8 @@ tvg::Fill* ramp_of(const std::vector<float4>& given, float w, float h,
     // The w component of a color is its alpha, written as eight bits.
     stops.push_back(
         {at.size() == ramp.size() ? at[i] : (float)i / (float)(ramp.size() - 1),
-         (uint8_t)std::lround(255.f * ramp[i].x),
-         (uint8_t)std::lround(255.f * ramp[i].y),
-         (uint8_t)std::lround(255.f * ramp[i].z),
-         (uint8_t)std::lround(255.f * ramp[i].w)});
+         byte_of(ramp[i].x), byte_of(ramp[i].y), byte_of(ramp[i].z),
+         byte_of(ramp[i].w)});
   g->colorStops(stops.data(), (uint32_t)stops.size());
   return g;
 }

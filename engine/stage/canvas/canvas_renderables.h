@@ -9,6 +9,8 @@
 #include <math/vec4.h>
 #include <thorvg.h>
 
+#include <cmath>
+#include <cstdint>
 #include <functional>
 #include <string>
 #include <vector>
@@ -17,6 +19,9 @@
 #include "stage/render/render_stage.h"
 
 namespace motolii {
+
+// A colour component in 0..1 as the byte ThorVG takes.
+inline uint8_t byte_of(float c) { return (uint8_t)std::lround(255.f * c); }
 
 // Builds a Canvas2D from a ThorVG paint. The paint is drawn into a texture on
 // Filament's device, and a flat sheet shows that texture. Shared by

@@ -1,8 +1,6 @@
 // Text on the stage: finding which characters a font lacks, choosing a
 // fallback font, and setting the words with ThorVG into a canvas.
 
-#include "stage/canvas/canvas_renderables.h"
-
 #include <thorvg.h>
 
 #include <algorithm>
@@ -20,6 +18,8 @@
 #include <system_error>
 #include <utility>
 #include <vector>
+
+#include "stage/canvas/canvas_renderables.h"
 // stb_truetype reports a malformed font by throwing instead of aborting the
 // program. One example is an OpenType cmap (format 4) whose last segment is not
 // 0xFFFF.
@@ -39,6 +39,17 @@ using filament::math::float2;
 using filament::math::float3;
 using filament::math::float4;
 using filament::math::mat4f;
+
+namespace {
+// A ThorVG text in the font of `fontFile` at `size`. ThorVG names a font by its
+// file.
+tvg::Text* text_new(const char* fontFile, float size) {
+  tvg::Text* t = tvg::Text::gen();
+  t->font(std::filesystem::path(fontFile).stem().string().c_str());
+  t->size(size);
+  return t;
+}
+}  // namespace
 
 std::string type_lacks(const std::string& fontFile, const std::string& words) {
   static std::mutex lock;
@@ -125,9 +136,7 @@ bool type_sets(const char* fontFile, const char* words) {
       !type_lacks(fontFile, words).empty() ||
       tvg::Text::load(fontFile) != tvg::Result::Success)
     return false;
-  tvg::Text* t = tvg::Text::gen();
-  t->font(std::filesystem::path(fontFile).stem().string().c_str());
-  t->size(100.f);
+  tvg::Text* t = text_new(fontFile, 100.f);
   t->text(words);
   float x = 0.f, y = 0.f, wide = 0.f, tall = 0.f;
   const bool sets = t->bounds(&x, &y, &wide, &tall) == tvg::Result::Success &&
@@ -151,15 +160,12 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
       s,
       [&](Canvas2D* d, int* w, int* h) -> tvg::Paint* {
         if (tvg::Text::load(fontFile) != tvg::Result::Success) return nullptr;
-        tvg::Text* t = tvg::Text::gen();
         float x = 0.f, y = 0.f, wide = 0.f, tall = 0.f;
         // Letter height in points, about an eighth of the stage's longer side.
         const float fine = 0.12f * (float)std::max(s.w, s.h);
-        // ThorVG names a font by its file.
-        t->font(std::filesystem::path(fontFile).stem().string().c_str());
         // The size as set. ThorVG does not report it back.
         float sized = fine;
-        t->size(sized);
+        tvg::Text* t = text_new(fontFile, sized);
         t->text(words);
         t->spacing(fx.letters, fx.lines);
         if (fx.italic > 0.f) t->italic(fx.italic);
@@ -168,9 +174,7 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
           t->layout(fx.wrapWidth * fine, 0.f),
               t->wrap((tvg::TextWrap)std::clamp(fx.wrap, 0, 4)),
               t->align(align, 0.f);
-        t->fill((uint8_t)std::lround(255.f * colour.x),
-                (uint8_t)std::lround(255.f * colour.y),
-                (uint8_t)std::lround(255.f * colour.z));
+        t->fill(byte_of(colour.x), byte_of(colour.y), byte_of(colour.z));
         bool measured =
             t->bounds(&x, &y, &wide, &tall) == tvg::Result::Success &&
             wide > 0.f && tall > 0.f;
@@ -193,9 +197,7 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
         if (strchr(words, '\n') || fx.wrapWidth > 0.f) {
           std::string one(words);
           one.erase(std::remove(one.begin(), one.end(), '\n'), one.end());
-          tvg::Text* line = tvg::Text::gen();
-          line->font(std::filesystem::path(fontFile).stem().string().c_str());
-          line->size(sized);
+          tvg::Text* line = text_new(fontFile, sized);
           line->text(one.c_str());
           float lineX, lineY, lineWide, lineTall;
           if (line->bounds(&lineX, &lineY, &lineWide, &lineTall) ==
@@ -212,9 +214,7 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
         }
         const float stroke = edge.w * tall;
         if (stroke > 0.f)
-          t->outline(stroke, (uint8_t)std::lround(255.f * edge.x),
-                     (uint8_t)std::lround(255.f * edge.y),
-                     (uint8_t)std::lround(255.f * edge.z));
+          t->outline(stroke, byte_of(edge.x), byte_of(edge.y), byte_of(edge.z));
         // Half of the outline lies outside the letters, so the texture grows by
         // that much on all sides.
         float outline = stroke;
@@ -239,9 +239,7 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
           // Measures `some`. Returns in x where its ink ends and in y how wide
           // it is, both as fractions of the texture width.
           const auto across = [&](const std::string& some) {
-            tvg::Text* up = tvg::Text::gen();
-            up->font(std::filesystem::path(fontFile).stem().string().c_str());
-            up->size(sized);
+            tvg::Text* up = text_new(fontFile, sized);
             up->spacing(fx.letters, fx.lines);
             if (fx.italic > 0.f) up->italic(fx.italic);
             up->text(some.c_str());
@@ -293,9 +291,8 @@ Canvas2D* type(Stage& s, const char* words, const char* fontFile,
         float wider = stroke;
         for (const float4& rim : fx.rims) {
           wider += 2.f * rim.w * tall;
-          const uint8_t r = (uint8_t)std::lround(255.f * rim.x),
-                        g = (uint8_t)std::lround(255.f * rim.y),
-                        b = (uint8_t)std::lround(255.f * rim.z);
+          const uint8_t r = byte_of(rim.x), g = byte_of(rim.y),
+                        b = byte_of(rim.z);
           tvg::Text* round = (tvg::Text*)t->duplicate();
           round->fill(r, g, b), round->outline(wider, r, g, b);
           under.push_back(round);

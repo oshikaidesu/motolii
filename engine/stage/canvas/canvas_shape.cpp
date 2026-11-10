@@ -1,8 +1,6 @@
 // Flat shapes: the path of each named form (rect, star, wave, SVG path data...)
 // and the canvas that fills and strokes it with ThorVG.
 
-#include "stage/canvas/canvas_renderables.h"
-
 #include <thorvg.h>
 
 #include <algorithm>
@@ -11,6 +9,7 @@
 #include <cstring>
 #include <vector>
 
+#include "stage/canvas/canvas_renderables.h"
 #include "stage/canvas/path_operations.h"
 
 namespace motolii {
@@ -209,9 +208,7 @@ Canvas2D* flat(Stage& s, const char* form, float wide, const mat4f& place,
         const float thick = in > 0.f ? 2.f * in : 0.08f * (float)*h;
         tvg::Shape* shape = d->shape = tvg::Shape::gen();
         flat_path(d, shape, form, *w, *h, in, points, inner, round, 0.f);
-        shape->fill((uint8_t)std::lround(255.f * colour.x),
-                    (uint8_t)std::lround(255.f * colour.y),
-                    (uint8_t)std::lround(255.f * colour.z),
+        shape->fill(byte_of(colour.x), byte_of(colour.y), byte_of(colour.z),
                     strcmp(form, "null") && !fx.hollow ? 255 : 0);
         if (fx.ramp.size() > 1 && strcmp(form, "null"))
           shape->fill(ramp_of(fx.ramp, (float)*w, (float)*h, fx.radial,
@@ -219,18 +216,15 @@ Canvas2D* flat(Stage& s, const char* form, float wide, const mat4f& place,
                               fx.rampBlend));
         if (in > 0.f)
           shape->strokeWidth(2.f * in),
-              shape->strokeFill((uint8_t)std::lround(255.f * edge.x),
-                                (uint8_t)std::lround(255.f * edge.y),
-                                (uint8_t)std::lround(255.f * edge.z));
+              shape->strokeFill(byte_of(edge.x), byte_of(edge.y),
+                                byte_of(edge.z));
         // Wave and spiral show only their line, in the edge color or else the
         // fill color, with round ends.
         if (!strcmp(form, "wave") || !strcmp(form, "spiral")) {
           const float3 ink = in > 0.f ? float3{edge.x, edge.y, edge.z} : colour;
           shape->fill(0, 0, 0, 0);
           shape->strokeWidth(thick),
-              shape->strokeFill((uint8_t)std::lround(255.f * ink.x),
-                                (uint8_t)std::lround(255.f * ink.y),
-                                (uint8_t)std::lround(255.f * ink.z));
+              shape->strokeFill(byte_of(ink.x), byte_of(ink.y), byte_of(ink.z));
           shape->strokeCap(tvg::StrokeCap::Round);
         }
         if (fx.cap >= 0) shape->strokeCap((tvg::StrokeCap)fx.cap);

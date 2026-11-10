@@ -146,9 +146,7 @@ Canvas2D* place_canvas(
     if (ground.x >= 0.f) {
       tvg::Shape* under = tvg::Shape::gen();
       under->appendRect(0, 0, (float)w, (float)h);
-      under->fill((uint8_t)std::lround(255.f * ground.x),
-                  (uint8_t)std::lround(255.f * ground.y),
-                  (uint8_t)std::lround(255.f * ground.z), 255);
+      under->fill(byte_of(ground.x), byte_of(ground.y), byte_of(ground.z), 255);
       d->canvas->add(under);
     }
     d->canvas->add(p);
