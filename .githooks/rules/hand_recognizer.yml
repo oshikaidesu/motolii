@@ -3,7 +3,8 @@ id: hand-recognizer
 language: dart
 severity: error
 message: a gesture recognizer written by hand in Dart
-note: hand the press to naked_ui or to Flutter's own widget
+note: use the standard's part (app/lib/widgets/), which stands on naked_ui or Flutter's own widget
+ignores: ['**/lib/widgets/**']   # (the standard: the one place it may be written)
 rule:
   kind: superclass
   regex: GestureRecognizer

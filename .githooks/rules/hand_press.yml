@@ -5,8 +5,10 @@ id: hand-press
 language: dart
 severity: error
 message: a press, hover or overlay written by hand in Dart
-note: hand it to naked_ui (already a dependency) or to Flutter's own widget; Dart keeps the colours, sizes and words
-ignores: ['**/motolii_bindings.dart']
+note: use the standard's part in app/lib/widgets/ (Hov, IconPress, Chip, MiniSlider, TypedField, NumberField); it stands on naked_ui or Flutter's own widget
+# app/lib/widgets/ is the standard every panel stands on: the one place a press of our own may be written (on naked_ui
+# where it has the part). A panel uses the standard's parts and writes none.
+ignores: ['**/motolii_bindings.dart', '**/lib/widgets/**']
 rule:
   kind: identifier
   regex: ^(GestureDetector|RawGestureDetector|Listener|MouseRegion|OverlayPortal|OverlayPortalController|OverlayEntry)$
