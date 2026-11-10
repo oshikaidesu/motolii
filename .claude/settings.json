@@ -54,6 +54,23 @@
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/heavy_ops.py\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "jq -c 'select((.duration_ms // 0) >= 30000) | {hookSpecificOutput:{hookEventName:.hook_event_name,additionalContext:(\"The previous \"+.tool_name+\" call took \"+((.duration_ms/1000)|floor|tostring)+\" s.\")}}'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -c 'select((.duration_ms // 0) >= 30000) | {hookSpecificOutput:{hookEventName:.hook_event_name,additionalContext:(\"The previous \"+.tool_name+\" call took \"+((.duration_ms/1000)|floor|tostring)+\" s.\")}}'",
+            "timeout": 5
           }
         ]
       }
