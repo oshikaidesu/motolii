@@ -1,6 +1,9 @@
+#ifndef MOTOLII_MEDIA_MIDI_ROLL_H_
+#define MOTOLII_MEDIA_MIDI_ROLL_H_
+
 // Renders a MIDI file as a piano roll in SVG text. The implementation in midi_roll.cpp runs
 // bladeSk's PianoRollSvg.js in QuickJS and follows the look of ALMaMPlayer.
-#pragma once
+
 #include <string>
 #include <utility>
 #include <vector>
@@ -27,3 +30,5 @@ struct MidiRollNote { double on = 0, off = 0, x = 0, y = 0, high = 0; int pitch 
 // element ids are "note<i>". Positions are read from the SVG and pitch, velocity and timing
 // from the .notes file stored beside it by midi_roll_file.
 std::vector<MidiRollNote> midi_roll_notes(const std::string& svg);
+
+#endif  // MOTOLII_MEDIA_MIDI_ROLL_H_

@@ -14,14 +14,17 @@
 // height, drawn inset from its edge by a stroke in the background color. Insetting a
 // round-ended bar still gives a round-ended bar. Notes are colored on a black background.
 #include "media/midi_roll.h"
-#include "media/midi_notes.h"
-#include <quickjs.h>
-#include <thorvg.h>
+
 #include <cmath>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
-#include <cstring>
+
+#include <quickjs.h>
+#include <thorvg.h>
+
+#include "media/midi_notes.h"
 
 // Renders `file` as SVG text; see midi_roll.h for the parameters.
 std::string midi_roll(const std::string& file, double bpm, std::string& why, std::string* notes) {

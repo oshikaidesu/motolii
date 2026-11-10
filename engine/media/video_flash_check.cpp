@@ -3,13 +3,15 @@
 // result, the way IRIS's example app does, using IRIS's own settings in
 // config/appsettings.json.
 #include "entry/motolii.h"
-#include "iris/Configuration.h"
-#include "iris/Log.h"
-#include "iris/VideoAnalyser.h"
+
 #include <dlfcn.h>
 #include <filesystem>
 #include <mutex>
 #include <string>
+
+#include "iris/Configuration.h"
+#include "iris/Log.h"
+#include "iris/VideoAnalyser.h"
 
 // Analyses `film` and writes the results into `folder`. Returns the path of the result JSON, or
 // an empty string if the inputs are not regular files, the settings are missing, or the
