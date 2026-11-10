@@ -8,6 +8,8 @@
 // (script_first), and the images its header names (--image@, screen_fx.h).
 import 'dart:io';
 
+import 'package:motolii/workspace/shelf/effect_tiles_review.dart';
+
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
@@ -72,7 +74,7 @@ class EffectCode extends StatefulWidget {
     for (final w in WorkspaceController.fxFiles(fx)) {
       if (!_code.hasMatch(w)) continue;
       final file = source(w),
-          stem = EffectTiles.knobStem(w),
+          stem = TileReview.knobStem(w),
           titled = titleOf(w) == title;
       // A three.js effect is run as a scene once saved (doc_three_saved).
       if (w.endsWith('.js') && _three(file)) continue;

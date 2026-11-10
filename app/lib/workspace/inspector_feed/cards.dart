@@ -1,6 +1,8 @@
 // The inspector's cards, built from what the engine reports for a layer: its cards, and the range and look of each value.
 import 'dart:math' as math;
 
+import 'package:motolii/workspace/shelf/effect_tiles_review.dart';
+
 import 'package:motolii/bridge/engine_paths.dart';
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_document.dart';
@@ -10,7 +12,6 @@ import 'package:motolii/inspector/card_declaration.dart';
 import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/workspace/inspector_feed/values.dart';
-import 'package:motolii/workspace/shelf/effect_tiles.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The cards the engine shows for a layer's values beyond the sample's (motolii_cards), each written as a Params struct
@@ -42,7 +43,7 @@ List<CardDeclaration> _makeCards(WorkspaceController ws, Motolii m, int t) {
     for (final f in WorkspaceController.fxFiles(
       '${m.word(t, 'fx')} ${m.word(t, 'script')}',
     ))
-      ...EffectTiles.weighed(motoliiShelves, f),
+      ...TileReview.weighed(motoliiShelves, f),
   };
   String field(String n) {
     final sh = m.shown(n),

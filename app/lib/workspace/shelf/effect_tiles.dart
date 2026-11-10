@@ -19,7 +19,6 @@
 import 'package:motolii/workspace/easing/ease.dart';
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -35,6 +34,7 @@ import 'package:motolii/bridge/engine_paths.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart'
     show defaultTextFont;
 import 'package:motolii/workspace/shelf/copies_tiles.dart' show TileQueue;
+import 'package:motolii/workspace/shelf/effect_tiles_review.dart';
 import 'package:motolii/workspace/shelf/effect_tiles_knob.dart';
 import 'package:motolii/workspace/shelf/effect_tiles_difference.dart';
 import 'package:motolii/workspace/shelf/effect_tiles_showcase.dart';
@@ -72,137 +72,6 @@ abstract final class EffectTiles {
   /// The times its pictures are drawn at (AbsentMotion's 16 at 12 per second), and the index of the still: well into the motion.
   static final moments = [for (var k = 0; k < 16; k++) 0.1 + k / 12];
   static const still = 10;
-
-  /// How much moving each parameter of [file] alone shows its effect, 0 to 10, as an agent that read only the effect's code judged it.
-  /// Read from app/assets/effect_parameter_weights.json by the shelf entry: the file path from the library folder, including an AviUtl2 script's #name.
-  /// AbsentMotion's effect_showcase.json names by hand the parameter its tile moves; its heaviest agreed with this in 26 of 28 cases.
-  /// Keys are the engine's parameter names (doc_screen_knob in engine/document/scripts/scripts.h), and `_time` is how much letting the effect run shows it.
-  /// Empty when the file was not weighed (the user's own).
-  static Map<String, double> weighed(String dir, String file) => {
-    for (final MapEntry(key: k, value: w) in _entry(dir, file).entries)
-      if (w is num) k == '_time' ? k : 'js_${_stem(file)}_$k': w.toDouble(),
-  };
-
-  /// What the tile moves to show [file] best, as chosen by someone who tried each parameter on the sample (`_best` of the same entry):
-  /// a parameter by the engine's name with the values it goes from and to, or ('_time', 0, 0) to let it run. Null when none was chosen.
-  static (String, double, double)? best(String dir, String file) =>
-      switch (_entry(dir, file)['_best']) {
-        '_time' => ('_time', 0, 0),
-        [final String k, final num from, final num to] => (
-          'js_${_stem(file)}_$k',
-          from.toDouble(),
-          to.toDouble(),
-        ),
-        _ => null,
-      };
-
-  /// The parameters the tile holds fixed while it moves the chosen one, set by hand (`_set` of the same entry), by the engine's names.
-  /// For example a curve's line stays shown while the photo goes round it (Mathy_Su's 線透明度). Empty when none.
-  static Map<String, double> held(String dir, String file) =>
-      switch (_entry(dir, file)['_set']) {
-        final Map<String, dynamic> set => {
-          for (final MapEntry(:key, :value) in set.entries)
-            if (value is num) 'js_${_stem(file)}_$key': value.toDouble(),
-        },
-        _ => const {},
-      };
-
-  /// What the sample lacks for [file] to show, as the reviewer put it (`_needs`: text, picture, sound, motion, chain, path, shape, behind).
-  /// '' when nothing is lacking or the file was not reviewed. `_stops` beside it records the call an AviUtl2 script stopped on (aviutl_fx.h's "not yet").
-  static String needs(String dir, String file) =>
-      switch (_entry(dir, file)['_needs']) {
-        final String w => w,
-        _ => '',
-      };
-
-  /// What the engine said when [file] stopped as the reviewer applied it (`_said`: the "stops:" message in engine/community/aviutl/aviutl_fx.h,
-  /// such as a .mod2 it needs, a call not supported yet, or one AviUtl2 does not have). '' when none. A tile that shows nothing says why under the shelf.
-  static String stopped(String file) =>
-      switch (_entry(motoliiDir, file)['_said']) {
-        final String w => w,
-        _ => '',
-      };
-
-  /// What the sample lacks for [file] in the reviewer's words (`_lacks`, for example "a PSD with layers"). '' when nothing. Shown under the shelf
-  /// beside the one word of [needs], so a tile that shows nothing says what to give it, not only that something is missing.
-  static String lacks(String file) =>
-      switch (_entry(motoliiDir, file)['_lacks']) {
-        final String w => w,
-        _ => '',
-      };
-
-  /// The label of a tile that shows nothing, so the sample is not passed off as the effect. It names what the sample lacks, as the reviewer put it.
-  /// A reviewed effect that lacks nothing (or only text, which its tile is drawn on) is one the engine cannot draw yet, as an AviUtl2 script stops
-  /// on a call not supported yet (aviutl_fx.h's "not yet"). An effect that was not reviewed (the user's own) gets NO CHANGE.
-  static String sameTag(String file) =>
-      switch (_entry(motoliiDir, file).containsKey('_stops')
-      ? ''
-      : needs(motoliiDir, file)) {
-        // An effect seen to stop: what it lacks is not the reason.
-        'picture' => 'FOR 2 LAYERS',
-        'sound' => 'FOR SOUND',
-        'motion' => 'FOR VIDEO',
-        'chain' => 'PART OF A SET',
-        'shape' => 'FOR CUT-OUTS',
-        'behind' => 'NEEDS BACKDROP',
-        'path' => 'FOR PATHS',
-        'input' => 'NEEDS INPUT', // Something the sample lacks that none of the words above covers; [lacks] says what.
-        _ when looked(motoliiDir, file) => 'UNSUPPORTED',
-        _ => 'NO CHANGE',
-      };
-
-  /// Whether [file] was reviewed (it has an entry in the weights file). A reviewed tile that shows nothing and lacks nothing is one the engine cannot draw yet.
-  static bool looked(String dir, String file) =>
-      _entry(dir, file).containsKey('_best') ||
-      _entry(dir, file).containsKey('_needs') ||
-      _entry(dir, file).containsKey('_why');
-
-  static Map<String, dynamic> _entry(String dir, String file) {
-    final all = _weights ??= () {
-      try {
-        return jsonDecode(
-          File(
-            '${Directory(motoliiDir).absolute.parent.path}/app/assets/effect_parameter_weights.json',
-          ).readAsStringSync(),
-        ) as Map<String, dynamic>;
-      } catch (_) {
-        return const <String, dynamic>{};
-      }
-    }();
-    return (all[file.startsWith('$motoliiShelves/')
-                ? file.substring(motoliiShelves.length + 1)
-                : file]
-            as Map<String, dynamic>?) ??
-        const {};
-  }
-
-  /// A file's stem as parameter names spell it (`js_<stem>_<knob>`, see doc_screen_knob).
-  static String knobStem(String file) => _stem(file);
-
-  static String _stem(String file) => String.fromCharCodes([
-    // Byte by byte like the engine's std::isalnum, so ライ becomes ______.
-    for (final b in utf8.encode(
-      file.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), ''),
-    ))
-      (b >= 48 && b <= 57) ||
-              (b >= 65 && b <= 90) ||
-              (b >= 97 && b <= 122) ||
-              b == 95
-          ? b
-          : 95,
-  ]);
-
-  static Map<String, dynamic>? _weights;
-
-  /// What a tile is told when it is drawn (saved beside it as .tells): the weights it goes by, what it moves and what it
-  /// lacks. A tile whose entry was weighed or reviewed again since is drawn again.
-  static String tells(String dir, String file) => switch ({
-    for (final MapEntry(:key, :value) in _entry(dir, file).entries)
-      if (key != '_why') key: value,
-  }) {
-    final w when w.isEmpty => '',
-    final w => jsonEncode(w),
-  };
 
   /// The saved .tells of [home]. Null when it was drawn before tiles were told anything.
   static String? _toldOf(String home) {
@@ -298,7 +167,8 @@ abstract final class EffectTiles {
     ]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase()))) {
       final home = m.tileHome(f);
       // Stale if drawn before tiles showed what the effect does, or with other weights. It is drawn again.
-      final stale = home.isNotEmpty && _toldOf(home) != tells(motoliiDir, f);
+      final stale =
+          home.isNotEmpty && _toldOf(home) != TileReview.tells(motoliiDir, f);
       if (home.isEmpty || (!stale && m.tileImage(f) == home)) continue;
       if (!stale && File(home).existsSync()) {
         m.tileRendered(home, same: File('$home.same').existsSync());
@@ -523,9 +393,11 @@ abstract final class EffectTiles {
           ?RegExp(r'"NAME"\s*:\s*"([^"]+)"').firstMatch(l.group(0)!)?.group(1),
       ]; // ISF_Spec's audio and audioFFT inputs.
       final hears =
-          ears.isNotEmpty || said.contains('sound') || needs(dir, f) == 'sound';
-      final weights = weighed(dir, f), time = weights['_time'] ?? 0;
-      final chosen = best(
+          ears.isNotEmpty ||
+          said.contains('sound') ||
+          TileReview.needs(dir, f) == 'sound';
+      final weights = TileReview.weighed(dir, f), time = weights['_time'] ?? 0;
+      final chosen = TileReview.best(
         dir,
         f,
       ); // What the reviewer chose, after moving each parameter on the sample.
@@ -539,15 +411,17 @@ abstract final class EffectTiles {
       // Whether to try the moving card first. Effects of what came before, and cut-out effects (they need an edge with room around it), have something to see.
       // A glass over the whole photo would just turn it black. An effect that hears goes on the whole picture first, so its sound is drawn large.
       final first =
-          ((show?.moves ?? false) || plays || needs(dir, f) == 'shape') &&
+          ((show?.moves ?? false) ||
+              plays ||
+              TileReview.needs(dir, f) == 'shape') &&
           !hears;
       final base = home.substring(0, home.length - 4);
       var same = false, split = false, stands = true;
       var made = const <String>[];
-      final worded = show?.text != null || needs(dir, f) == 'text'; // For text effects, as the table or the reviewer says: shown on words alone.
+      final worded = show?.text != null || TileReview.needs(dir, f) == 'text'; // For text effects, as the table or the reviewer says: shown on words alone.
       final alone = worded
           ? words
-          : (show?.drawn ?? false) || needs(dir, f) == 'path'
+          : (show?.drawn ?? false) || TileReview.needs(dir, f) == 'path'
           ? math.max(sketch(), 0)
           : 0; // For strokes or a path: shown on the drawing alone.
       final aloneOk =
@@ -565,7 +439,7 @@ abstract final class EffectTiles {
           }();
       final bare = alone != 0 ? 'alone' : 'plain';
       // For effects that take the layer round a path (Mathy_Su's curves): the photo is small over the grid, so the path shows about it, not under it.
-      small = alone == 0 && _entry(dir, f)['_lay'] == 'small';
+      small = alone == 0 && TileReview.entry(dir, f)['_lay'] == 'small';
       if (small) m.set(photo, 'size', 0.6);
       for (final moving in alone != 0 ? [false] : [first, if (!first) true]) {
         // Nothing shows on the whole photo, so use a card moving past, where its edge and motion effects show (AbsentMotion's "move").
@@ -573,7 +447,7 @@ abstract final class EffectTiles {
         // nothing was black) and one for cut-outs, which gets its card over the road: a glass or a shape needs a background to refract.
         final passes =
             (said.contains('transition') ||
-                const {'behind', 'shape'}.contains(needs(dir, f))) &&
+                const {'behind', 'shape'}.contains(TileReview.needs(dir, f))) &&
             alone == 0;
         lay(moving, road: passes, only: alone);
         // A screen effect. A .json is Filament's own settings (engine/stage/effects/viewer_settings.h). An AviUtl2 script goes on a layer instead.
@@ -597,7 +471,11 @@ abstract final class EffectTiles {
                   f,
                 ); // Applied to a layer, as edit.sh says (engine/edit.sh).
         for (final e in ears) {
-          m.set(on, 'js_${_stem(f)}_$e', song.toDouble()); // On the beat.
+          m.set(
+            on,
+            'js_${TileReview.knobStem(f)}_$e',
+            song.toDouble(),
+          ); // On the beat.
         }
         if (hears && !heard && (whole || onIt)) {
           // Asked for once and waited for, so its pictures are drawn hearing it from the first.
@@ -608,7 +486,7 @@ abstract final class EffectTiles {
         final filed = <String, double>{};
         for (final MapEntry(:key, :value) in {
           ...?show?.knobs,
-          ...held(dir, f),
+          ...TileReview.held(dir, f),
         }.entries) {
           if (m.value(on, key, 0) case final was?
               when !vectorPart.hasMatch(key)) {
@@ -762,7 +640,7 @@ abstract final class EffectTiles {
             ? File('$home.same').writeAsStringSync('')
             : File('$home.same').deleteSync();
       } catch (_) {}
-      File('$home.tells').writeAsStringSync(tells(dir, f));
+      File('$home.tells').writeAsStringSync(TileReview.tells(dir, f));
       drawn.add(home);
     }
     m.close();

@@ -1,6 +1,8 @@
 // The parameter that stands for an effect on its tile, and how far it is turned.
 import 'dart:io';
 
+import 'package:motolii/workspace/shelf/effect_tiles_review.dart';
+
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
@@ -12,7 +14,7 @@ import 'package:motolii/workspace/shelf/effect_tiles_difference.dart';
 /// Picks the parameter that stands for an effect on its tile, and the two values it moves between.
 ///
 /// Candidates are tried in this order, and the first one that visibly changes the picture wins:
-/// 1. [first], the parameter the weights in [EffectTiles.weighed] say shows the effect most.
+/// 1. [first], the parameter the weights in [TileReview.weighed] say shows the effect most.
 /// 2. Parameters named like a clock: progress, rotY, evolution, phase (After Effects has Evolution and Transition Completion).
 /// 3. The parameters in [filed], whose values the effect table set: the one that changes the picture most.
 /// 4. The remaining parameters in file order, single numbers before the parts of a vector. Parameters that only fade

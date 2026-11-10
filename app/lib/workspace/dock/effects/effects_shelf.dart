@@ -3,6 +3,7 @@
 // - Whole-screen effects apply to the selected layer as the camera sees it, or to the stage, in order.
 // - Presets saved from a layer's values can be applied to another layer.
 import 'package:flutter/services.dart';
+import 'package:motolii/workspace/shelf/effect_tiles_review.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii_document.dart';
@@ -190,10 +191,10 @@ class _EffectsShelfState extends State<EffectsShelf> {
             ? (picked
                   ? 'A look for the picked thing'
                   : 'A look, on a new board')
-            : i.same && EffectTiles.stopped(id).isNotEmpty
-            ? 'Stops here: ${EffectTiles.stopped(id)}'
-            : i.same && EffectTiles.lacks(id).isNotEmpty
-            ? 'Needs: ${EffectTiles.lacks(id)}'
+            : i.same && TileReview.stopped(id).isNotEmpty
+            ? 'Stops here: ${TileReview.stopped(id)}'
+            : i.same && TileReview.lacks(id).isNotEmpty
+            ? 'Needs: ${TileReview.lacks(id)}'
             : i.about.isEmpty
             ? (picked ? 'On the picked thing' : 'On all under it')
             : i.about,
@@ -227,7 +228,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
             on: !lit
                 ? null
                 : (screened ? 'ON ${screen.indexOf(id) + 1}' : 'ON'),
-            same: screened && i.same ? EffectTiles.sameTag(id) : null,
+            same: screened && i.same ? TileReview.sameTag(id) : null,
           ),
         ),
       );

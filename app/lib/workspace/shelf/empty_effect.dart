@@ -4,6 +4,8 @@
 // so what is typed belongs to that layer alone.
 import 'dart:io';
 
+import 'package:motolii/workspace/shelf/effect_tiles_review.dart';
+
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
@@ -89,10 +91,10 @@ void putEffectFile(
 /// (doc_fx_eye), and fx_file would otherwise remove the existing effect of the same name.
 (String, String) _said(String fx, String file) {
   final title = EffectCode.titleOf(file),
-      stem = EffectTiles.knobStem(file).toLowerCase();
+      stem = TileReview.knobStem(file).toLowerCase();
   final stems = {
     for (final w in WorkspaceController.fxFiles(fx))
-      EffectTiles.knobStem(w).toLowerCase(),
+      TileReview.knobStem(w).toLowerCase(),
   };
   if (!stems.contains(stem)) return (file, title);
   var n = 2;
