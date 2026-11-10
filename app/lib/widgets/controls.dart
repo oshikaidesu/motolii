@@ -1,37 +1,52 @@
-// Controls. One rule: the value is the loudest thing in a control, the chrome around it is grey, the family colour marks only what it belongs to.
+// Small interactive controls: press, icon button, badge, chip and segmented control.
+// In every control the value is the most prominent element, the surrounding chrome is grey,
+// and a family colour appears only on the things that belong to that family.
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
 import '../skin/tokens.dart';
 import '../workspace/state/state.dart' show WsT;
 
-/// The one press of the window: a hand over it ([builder] is told so) and a press ([onTap]), as naked_ui's button gives them.
+/// The app's basic press target, built on naked_ui's [NakedButton].
 class Hov extends StatelessWidget {
   const Hov({super.key, required this.builder, this.cursor = SystemMouseCursors.click, this.onTap});
+
+  /// Builds the child. The bool is true while the pointer hovers.
   final Widget Function(BuildContext, bool) builder;
   final MouseCursor cursor;
+
+  /// Called on a press.
   final VoidCallback? onTap;
   @override
   Widget build(BuildContext context) =>
       NakedButton(onPressed: onTap, mouseCursor: cursor, enableFeedback: false, builder: (context, st, _) => builder(context, st.isHovered));
 }
 
-/// A small square press holding one glyph; [glyph] is given the ink for the moment (resting, hovered, on). The default look is the dock's
-/// header button: raised when on, a step up on hover, no fill at rest, 20 wide, faded. Given [rest] and [ink] it is the tool panel's and the
-/// stage's tile: accent when on, [rest] fill and [ink] at rest, WsT.radius corners, no margin, no fade.
+/// A small square button holding one glyph.
+///
+/// By default it looks like the dock's header button: raised when [on], one step lighter on hover, no fill at rest, 20 wide,
+/// with a colour fade. When [rest] and [ink] are given it looks like a tool panel or stage tile instead:
+/// accent fill when [on], [rest] fill and [ink] at rest, WsT.radius corners, no margin and no fade.
 class IconPress extends StatelessWidget {
   const IconPress(this.glyph, {super.key, this.onTap, this.on = false, this.lit = false, this.size, this.width, this.rest, this.ink});
+
+  /// Builds the glyph in the ink for the current state: resting, hovered or on.
   final Widget Function(Color ink) glyph;
   final VoidCallback? onTap;
-  final bool on, lit; // (lit, tile only: held raised in grey, not the accent)
-  final double? size, width; // (size none: 20, scaled; width none: the size)
+
+  /// [on] shows the selected state. [lit] applies to tiles only and holds the tile raised in grey instead of the accent.
+  final bool on, lit;
+
+  /// Side length in design pixels (default 20, scaled). [width] defaults to [size].
+  final double? size, width;
   final Color? rest, ink;
 
   @override
   Widget build(BuildContext context) {
     final tile = rest != null;
     return Hov(
-      onTap: onTap ?? () {}, // (a press that does nothing still shows the hover)
+      // An empty callback keeps the hover state working when there is no [onTap].
+      onTap: onTap ?? () {},
       cursor: onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
       builder: (context, h) => AnimatedContainer(
         duration: tile ? Duration.zero : Mo.dur,
@@ -50,17 +65,19 @@ class IconPress extends StatelessWidget {
   }
 }
 
-/// A small filled tile holding one mark: how a thing says what it is before its name is read. The dock's is a square (chip radius)
-/// with a glyph; [radius] rounds it otherwise (a circle: half of [size]); given [onTap] it is a press.
+/// A small filled tile holding one mark, so an item shows what it is before its name is read.
+///
+/// By default it is a square with chip-radius corners holding a glyph. [radius] changes the corners; half of [size] makes a circle.
+/// With [onTap] it is a button.
 class Badge extends StatelessWidget {
   const Badge(this.color, {super.key, this.child, this.mark, this.size = 20, this.radius}) : onTap = null, _round = false;
 
-  /// The stage's: a circle, 18 across, the arrow kept over it.
+  /// The stage's badge: a circle 18 across, painted with [mark].
   const Badge.round(this.color, {super.key, required CustomPainter this.mark, this.onTap}) : child = null, size = 18, radius = null, _round = true;
   final Color color;
   final Widget? child;
 
-  /// The mark as a painting, as large as the tile (instead of [child]): painted here, in the one place.
+  /// Paints the mark at the full size of the tile, instead of [child].
   final CustomPainter? mark;
   final double size;
   final Radius? radius;
@@ -80,8 +97,9 @@ class Badge extends StatelessWidget {
   }
 }
 
-/// How a [Chip] looks. The chips of the panels differed only in these: sizes, the fill and ink at rest, hovered and on, the text, an edge.
-/// Heights, paddings and the dot are in design pixels (scaled by Shape).
+/// How a [Chip] looks: sizes, fill and ink at rest, on hover and when on, the text style, and an optional edge.
+///
+/// Heights, paddings and the dot are in design pixels, scaled by Shape.
 class ChipLook {
   const ChipLook({
     required this.ink,
@@ -108,11 +126,15 @@ class ChipLook {
   final double? height;
   final double padX, padY, radius, edgeWidth;
   final bool center, press;
-  final Color? edge; // (a ring all round, [edgeWidth] wide, while not on)
-  final EdgeInsets? margin;
-  final MouseCursor? cursor; // (none: a hand when it can be pressed)
 
-  /// The tool panel's header chip: a well that lifts on hover, the accent when on.
+  /// A ring all round, [edgeWidth] wide, drawn while the chip is not on.
+  final Color? edge;
+  final EdgeInsets? margin;
+
+  /// Defaults to the click cursor when the chip can be pressed.
+  final MouseCursor? cursor;
+
+  /// The tool panel's header chip: a well that lifts on hover and takes the accent when on.
   static ChipLook get tool => ChipLook(
     height: 18,
     fill: WsT.well,
@@ -124,7 +146,8 @@ class ChipLook {
     text: (c) => T.micro(c),
   );
 
-  /// A readout in a well (the top bar's fps, the timeline's name and tempo): 20 high, not a press. Mono, or the micro bold word.
+  /// A readout in a well, such as the top bar's fps or the timeline's name and tempo: 20 high and not pressable.
+  /// Monospace, or the bold micro style when [mono] is false.
   static ChipLook readout({required Color ink, double size = 10, double radius = 4, bool mono = true}) => ChipLook(
     height: 20,
     padX: 7,
@@ -136,7 +159,7 @@ class ChipLook {
     text: (c) => mono ? T.value(c).copyWith(fontSize: T.px(size)) : T.micro(c).copyWith(fontWeight: FontWeight.w600),
   );
 
-  /// A flat chip in a layer's hue with its name in dark ink.
+  /// A flat chip filled with a layer's colour, with its name in dark ink.
   static ChipLook flat(Color tone) => ChipLook(
     height: 16,
     center: true,
@@ -146,7 +169,8 @@ class ChipLook {
     text: (c) => T.micro(c).copyWith(fontWeight: FontWeight.w700),
   );
 
-  /// The dock's tag: [hue] with dark ink, or (none) a quiet raised one in grey; [edge] rings it dark, for tags laid on artwork of unknown colour.
+  /// The dock's tag: filled with [hue] and dark ink, or a quiet raised grey when [hue] is null.
+  /// [edge] adds a dark ring so the tag stays legible on artwork of unknown colour.
   static ChipLook tag(Color? hue, {bool edge = false}) => ChipLook(
     height: edge ? 16 : 14,
     padX: 4,
@@ -160,10 +184,10 @@ class ChipLook {
     text: (c) => T.micro(c).copyWith(fontWeight: FontWeight.w700, letterSpacing: .4, height: 1),
   );
 
-  /// A bare grey word that lights under the hand (Copy, Paste, Reset): no fill, no padding.
+  /// A bare grey word that brightens on hover, such as Copy, Paste or Reset: no fill and no padding.
   static ChipLook get word => ChipLook(padX: 0, ink: Grey.g56, hoverInk: Grey.g95, text: (c) => T.label(c));
 
-  /// A word on the panel's ground, not a press (the bar over the stage lies over a dark or light surround).
+  /// A word on the panel's background, not pressable. Used by the bar over the stage, which sits on a dark or light surround.
   static ChipLook get said => ChipLook(
     padX: 8,
     padY: 5,
@@ -175,7 +199,8 @@ class ChipLook {
     text: (c) => T.label(c),
   );
 
-  /// What things picked together may do together: the accent pill, outlined (not [Chip.on]) when it is only a relation a thing is in.
+  /// An operation available between items selected together: an accent pill.
+  /// It is drawn outlined, not filled as with [Chip.on], when it only shows a relation the item is in.
   static ChipLook get relate => ChipLook(
     padX: 10,
     padY: 5,
@@ -191,12 +216,17 @@ class ChipLook {
   );
 }
 
-/// A small chip: a word, a dot before it or a glyph for it. The default [look] is the tool panel's header chip; [onTap] makes it a press.
+/// A small chip showing a label, optionally with a dot before it or a glyph in place of it.
+/// [look] defaults to the tool panel's header chip. [onTap] makes the chip a button.
 class Chip extends StatelessWidget {
   const Chip({super.key, required this.label, this.dot, this.glyph, this.onTap, this.on = false, this.look});
   final String label;
-  final Color? dot; // (a round mark before the word)
-  final Widget Function(Color ink)? glyph; // (drawn instead of the word)
+
+  /// Colour of a round mark drawn before the label.
+  final Color? dot;
+
+  /// Drawn instead of the label.
+  final Widget Function(Color ink)? glyph;
   final VoidCallback? onTap;
   final bool on;
   final ChipLook? look;
@@ -244,13 +274,14 @@ class Chip extends StatelessWidget {
   }
 }
 
+/// A row of mutually exclusive text options. The option at [index] is selected.
 class Segmented extends StatelessWidget {
   const Segmented({super.key, required this.items, required this.index, required this.onChanged});
   final List<String> items;
   final int index;
   final ValueChanged<int> onChanged;
 
-  /// One selected style across the lab: a g20 pill with g95 text and a 1px accent underline (critique 2026-10-02: four selected styles were found).
+  // Every selected state uses this one style: a g20 pill with g95 text and a 1 px underline in the selection colour.
   @override
   Widget build(BuildContext context) {
     Widget seg(int i) => NakedToggleOption<int>(

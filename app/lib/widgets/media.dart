@@ -1,4 +1,4 @@
-// Private helpers of media_set: art, badges, interaction shells. Colours only from tokens.
+// Shared drawing helpers and a slider for the media widgets. Colours come only from tokens.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -6,6 +6,7 @@ import 'package:naked_ui/naked_ui.dart';
 
 import '../skin/tokens.dart';
 
+/// A painter that calls [fn]. It repaints when [key] changes.
 class Draw extends CustomPainter {
   const Draw(this.fn, [this.key]);
   final void Function(Canvas canvas, Size size) fn;
@@ -16,12 +17,14 @@ class Draw extends CustomPainter {
   bool shouldRepaint(Draw o) => o.key != key;
 }
 
+/// A square box of side [size] painted by [fn]. It repaints when [key] changes.
 Widget glyph(double size, void Function(Canvas, Size) fn, [Object? key]) => SizedBox(
   width: size,
   height: size,
   child: CustomPaint(painter: Draw(fn, key)),
 );
 
+/// Paints a five-pointed star, filled or outlined.
 void drawStar(Canvas c, Size s, Color col, bool fill) {
   final ctr = Offset(s.width / 2, s.height / 2 + .5), ro = s.width * .46, ri = ro * .45;
   final p = Path();
@@ -41,8 +44,10 @@ void drawStar(Canvas c, Size s, Color col, bool fill) {
   );
 }
 
-/// A thin horizontal slider with one or two handles: the track is grey, the part up to (or between) the handles is
-/// filled. Groove, colours, handle shape and the minimum gap between two handles are arguments.
+/// A thin horizontal slider with one or two handles.
+///
+/// The track is grey and the part up to the handle, or between the two handles, is filled.
+/// The groove, colours, handle shape and the minimum gap between two handles are arguments.
 class MiniSlider extends StatelessWidget {
   const MiniSlider({
     super.key,

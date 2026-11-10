@@ -1,22 +1,28 @@
-// A trackpad's two fingers, as Flutter hands them over: since Flutter 3.3 a trackpad's two-finger move and pinch come as
-// pan/zoom events, not as a wheel's scroll (docs.flutter.dev/release/breaking-changes/trackpad-gestures). What they
-// mean is Apple's: two fingers move what is shown, a pinch zooms it about the fingers (developer.apple.com/design/
-// human-interface-guidelines/pointing-devices).
+// A trackpad's two-finger gestures as Flutter reports them. Since Flutter 3.3 a trackpad's two-finger move and pinch arrive as
+// pan/zoom events, not as wheel scroll events (https://docs.flutter.dev/release/breaking-changes/trackpad-gestures).
+// Their meaning follows Apple's guidelines: two fingers move the content and a pinch zooms about the fingers
+// (https://developer.apple.com/design/human-interface-guidelines/pointing-devices).
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
-/// The hands that press and drag: a mouse (a trackpad's click and drag is one too), a finger, a pen. Not a trackpad's
-/// two fingers, which a drag would otherwise take for one (GestureDetector.supportedDevices).
+/// The pointer kinds that press and drag: mouse (including a trackpad's click and drag), touch and stylus.
+/// It excludes a trackpad's two-finger gesture, which a drag recognizer would otherwise treat as a drag (see GestureDetector.supportedDevices).
 const wsPressing = {PointerDeviceKind.mouse, PointerDeviceKind.touch, PointerDeviceKind.stylus, PointerDeviceKind.invertedStylus, PointerDeviceKind.unknown};
 
-/// [child] told of a trackpad's two fingers on it: [onPan] each move, by the way the fingers went (local points);
-/// [onPinch] each change of their spread, by how many times, about where they are; [onPinchStep] +1 or -1 each time
-/// the spread has opened or closed by a quarter (for a zoom of a few steps).
+/// Reports a trackpad's two-finger gestures over [child].
 class WsTwoFingers extends StatefulWidget {
   const WsTwoFingers({super.key, this.onPan, this.onPinch, this.onPinchStep, this.onWheel, required this.child});
-  final void Function(Offset by)? onWheel; // (a wheel's turn, the scroll delta; the other way to carry the view)
+
+  /// Called with a mouse wheel's scroll delta. This is the other way to move the view.
+  final void Function(Offset by)? onWheel;
+
+  /// Called on each move with the movement of the fingers in local points and their position.
   final void Function(Offset by, Offset at)? onPan;
+
+  /// Called on each change of the spread between the fingers with the scale ratio since the previous update and the position of the fingers.
   final void Function(double by, Offset at)? onPinch;
+
+  /// Called with +1 or -1 each time the spread has opened or closed by a quarter, for zooming in a few discrete steps.
   final void Function(int step)? onPinchStep;
   final Widget child;
 
@@ -25,7 +31,9 @@ class WsTwoFingers extends StatefulWidget {
 }
 
 class _WsTwoFingersState extends State<WsTwoFingers> {
-  double _scale = 1, _spread = 1; // (Flutter's scale is from where the fingers came down: each change is told as a ratio)
+  // Flutter's scale is relative to where the fingers touched down, so each change is converted to a ratio.
+  // _spread accumulates that ratio until it triggers a pinch step.
+  double _scale = 1, _spread = 1;
 
   @override
   Widget build(BuildContext context) => Listener(

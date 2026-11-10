@@ -1,4 +1,4 @@
-// Private helpers of the timeline_parts set: glyphs, hit/hover shell, key + bar + lane painters. Sizes are fractions of TL.* (DESIGN.md section 4).
+// Timeline helpers: ruler tick spacing and the timeline's icon set.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 import '../skin/tokens.dart';
 import 'glyphs.dart' show GlyphKind;
 
-// ---------------------------------------------------------------- ticks (the rule of lib/parts/timeline.dart)
+// ---------------------------------------------------------------- ruler ticks
 
 double tpMajor(double ppf, int fps) {
   final steps = {1, 2, 5, 10, fps ~/ 2, fps, 2 * fps, 5 * fps, 10 * fps, 30 * fps, 60 * fps}.where((f) => f > 0).toList()..sort();
@@ -45,7 +45,8 @@ enum TpGlyph implements GlyphKind {
   @override
   String get skin => 'tp.$name';
   @override
-  double stroke(double w) => 1.2; // (on the centred 12-unit grid drawn below)
+  // The stroke width on the centred 12-unit grid used by [draw].
+  double stroke(double w) => 1.2;
   @override
   void draw(Canvas c, Size s, Paint line, Paint fill) {
     c.translate(s.width / 2, s.height / 2);

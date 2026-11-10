@@ -1,17 +1,19 @@
-// text_gestures.dart: what a hand does in a field: a click puts the caret, a double click picks a word, a drag picks a
-// range, a shift-click stretches it. Flutter's own TextSelectionGestureDetectorBuilder, wrapped round the field as its
-// TextField wraps its EditableText (material/text_field.dart: buildGestureDetector, translucent, the EditableText keyed
-// by the delegate and rendererIgnoresPointer). The window's fields are bare EditableTexts, which put the caret and no
-// more (golf_noise.md ④: a word not picked by a double click).
+// Selection gestures for the app's text fields: a click places the caret, a double-click selects a word, a drag selects a range
+// and a Shift-click extends it.
+//
+// This wraps Flutter's TextSelectionGestureDetectorBuilder around the field the way TextField wraps its EditableText
+// (see material/text_field.dart in Flutter: buildGestureDetector, translucent behavior, EditableText keyed by the delegate,
+// rendererIgnoresPointer). A bare EditableText only places the caret and cannot select a word by double-click.
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../skin/tokens.dart';
 
+/// Gives an [EditableText] Flutter's text selection gestures.
 class TextGestures extends StatefulWidget {
   const TextGestures({super.key, required this.field});
 
-  /// The field, carrying [key] and rendererIgnoresPointer: true (the hand is this one's, not the field's own).
+  /// Builds the field. It must use the given key and set rendererIgnoresPointer to true, because the pointer is handled here.
   final EditableText Function(GlobalKey<EditableTextState> key) field;
 
   @override
@@ -31,10 +33,10 @@ class _TextGesturesState extends State<TextGestures> implements TextSelectionGes
   Widget build(BuildContext context) => _gestures.buildGestureDetector(behavior: HitTestBehavior.translucent, child: widget.field(editableTextKey));
 }
 
-/// The one field the window types in: it says what was typed once, when the hand leaves it ([onDone]; Return leaves, Esc
-/// cancels and puts the old back with null). It owns its controller and focus; the owner holds only whether it is shown.
-/// [take]: takes the keys with all of it picked, when built so. [standing]: always there, shows [text] while unfocused and
-/// says only a change. [sayOnLeave] false: only Return says. [escapes]: Esc is the cancel. [hold]: true, a leave is ignored.
+/// The app's single text field for typing.
+///
+/// [onDone] is called once when the user leaves the field, with the typed text. Return leaves with the text; Esc cancels,
+/// restores the old text and passes null. The field owns its controller and focus node. The caller only decides whether it is shown.
 class TypedField extends StatefulWidget {
   const TypedField({
     super.key,
@@ -62,10 +64,20 @@ class TypedField extends StatefulWidget {
   final double cursorWidth;
   final TextAlign align;
   final int lines;
+
+  /// [take]: when built with true, takes focus and selects all the text.
+  /// [standing]: the field is always shown, displays [text] while unfocused, and reports only a changed text.
+  /// [pickOnFocus]: selects all the text whenever the field gains focus.
+  /// [sayOnLeave]: when false, only Return reports the text.
+  /// [escapes]: Esc cancels.
   final bool take, standing, pickOnFocus, sayOnLeave, escapes;
   final void Function(String? said) onDone;
+
+  /// When it returns true, leaving the field is ignored.
   final bool Function()? hold;
-  final ValueChanged<TextEditingValue>? onPick; // (while focused, its text and what is picked of it)
+
+  /// Called while the field has focus with its text and selection.
+  final ValueChanged<TextEditingValue>? onPick;
   @override
   State<TypedField> createState() => TypedFieldState();
 }
@@ -73,12 +85,16 @@ class TypedField extends StatefulWidget {
 class TypedFieldState extends State<TypedField> {
   late final TextEditingController _c = TextEditingController(text: widget.text)..addListener(() => _f.hasFocus ? widget.onPick?.call(_c.value) : null);
   late final FocusNode _f = FocusNode()..addListener(_moved);
-  String? _was; // (what it held as the hand came in: null, the hand is not in)
+  // The text when the user entered the field. Null while the field is not focused.
+  String? _was;
   bool _took = false;
-  bool? _end; // (how the hand is leaving: true Return, false Esc)
+  // How the user is leaving: true for Return, false for Esc.
+  bool? _end;
 
-  /// Writes over what is in it, and whether the hand is in it (the owner's, while the field stays).
+  /// Replaces the text. For the caller to use while the field stays shown.
   void put(String text) => _c.text = text;
+
+  /// Whether the field has focus.
   bool get focused => _f.hasFocus;
 
   void _take() => WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -116,8 +132,10 @@ class TypedFieldState extends State<TypedField> {
   @override
   Widget build(BuildContext context) {
     final w = widget;
-    if (w.take != _took && (_took = w.take)) _take(); // (once each time it is asked)
-    if (w.standing && !_f.hasFocus && _c.text != w.text) _c.text = w.text; // (out of the field it is what the owner has now)
+    // Once for each request.
+    if (w.take != _took && (_took = w.take)) _take();
+    // Without focus the field shows the caller's current text.
+    if (w.standing && !_f.hasFocus && _c.text != w.text) _c.text = w.text;
     final field = TextGestures(
       field: (k) => EditableText(
         key: k,
@@ -139,6 +157,7 @@ class TypedFieldState extends State<TypedField> {
   }
 }
 
-/// The letters picked in a thing's words, kept after the field lets go of the hand (Figma's and Canva's text keep their
-/// selection while a colour is chosen for it): which words, and from where to where in them; null, none picked.
+/// The selection in an item's text, kept after the field loses focus so a colour can be applied to it.
+/// Figma and Canva also keep the text selection while a colour is chosen.
+/// Holds the text and the start and end of the selection, or null when nothing is selected.
 final wordsPicked = ValueNotifier<({String text, int start, int end})?>(null);

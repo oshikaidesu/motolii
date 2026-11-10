@@ -1,25 +1,33 @@
-// A small line-icon set, drawn: one stroke weight, one size grid, g63 idle / g95 active. Placeholders (empty squares) are what the critique flagged, so every tool and tile has a real mark.
+// A small set of line icons drawn in code, with one stroke weight and one size grid.
+// Glyphs use g63 when idle and g95 when active, so every tool and tile has a real mark instead of an empty placeholder.
 import 'package:flutter/widgets.dart';
 
 import '../skin/svg_parts.dart';
 import '../skin/tokens.dart';
 import 'media.dart' show glyph;
 
-/// A set of named marks (the enums here, the timeline's, the dock's): its skin key, its stroke weight on its own grid, its drawing. The one [Glyph] draws any of them.
+/// A set of named marks, such as the enums here, the timeline's and the dock's. The one [Glyph] widget draws any of them.
+///
+/// [skin] is the key under which a skin may supply its own drawing. [stroke] gives the stroke width for a glyph of width `w`.
+/// [draw] paints the mark with a stroke paint and a fill paint.
 abstract interface class GlyphKind {
   String get skin;
   double stroke(double w);
   void draw(Canvas c, Size s, Paint st, Paint fl);
 }
 
+/// Draws a [GlyphKind] at [size] in [color].
 class Glyph extends StatelessWidget {
   const Glyph(this.kind, {super.key, required this.size, required this.color, this.fade = false});
   final GlyphKind kind;
   final double size;
   final Color color;
-  final bool fade; // (the colour eases over, as the timeline's marks do)
+
+  /// Animates colour changes, as the timeline's marks do.
+  final bool fade;
   Widget _box(Color c) => glyph(size, (cv, s) {
-    if (SkinParts.draw(cv, s, kind.skin, c)) return; // (the skin's own picture, if it brings one)
+    // Use the skin's own drawing when it supplies one.
+    if (SkinParts.draw(cv, s, kind.skin, c)) return;
     final st = Paint()
       ..color = c
       ..style = PaintingStyle.stroke
@@ -100,7 +108,8 @@ enum G implements GlyphKind {
         );
         c.drawCircle(p(.5, .52), w * .06, fl);
         c.drawLine(p(.5, .58), p(.5, .9), st);
-      case G.brush: // (a stroke drawn by hand, thick in the middle)
+      // A freehand stroke, thick in the middle.
+      case G.brush:
         c.drawPath(
           Path()
             ..moveTo(w * .16, w * .74)
