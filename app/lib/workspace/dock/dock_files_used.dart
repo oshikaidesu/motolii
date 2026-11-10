@@ -7,7 +7,7 @@ import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/dock/dock_files.dart';
 import 'package:motolii/workspace/dock/dock_files_sheet.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 var _usedNow = <String, String>{};
 

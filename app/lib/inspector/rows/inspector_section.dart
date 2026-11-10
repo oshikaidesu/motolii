@@ -1,5 +1,5 @@
 // A card of the inspector: a heading and its rows.
-import 'package:motolii/widgets/fold_mark.dart';
+import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';
@@ -46,7 +46,7 @@ class Section extends StatelessWidget {
         child: Row(
           children: [
             // The mark is centred in its box and the gap after it equals the card's inset, so it has equal space on both sides.
-            FoldMark(open: open, hot: h),
+            DisclosureTriangle(open: open, hot: h),
             SizedBox(width: InspectorSkin.inset),
             Badge(
               tone,

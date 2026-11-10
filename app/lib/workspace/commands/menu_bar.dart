@@ -19,7 +19,7 @@ import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
 import 'package:motolii/workspace/stage/stage.dart';
 import 'package:motolii/workspace/state/art_scene.dart' show ArtGeometry;
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/workspace.dart';
 
 extension WorkspaceMenus on WorkspaceState {

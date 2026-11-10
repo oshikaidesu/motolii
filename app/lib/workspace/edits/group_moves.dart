@@ -11,7 +11,7 @@
 // end is asked of the engine (where it shows at full strength) and is never computed here.
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The name of a move on its row: its direction and its layers, for example 'in · TURN IN TIME'.
 String groupMoveName(WorkspaceController ws, Iterable<String> who, bool coming) {

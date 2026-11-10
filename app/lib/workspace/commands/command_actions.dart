@@ -6,7 +6,7 @@
 // and the user's keybindings.json can override that mapping.
 import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/edits/keyframe_edits.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 
 /// The frame where playback started.

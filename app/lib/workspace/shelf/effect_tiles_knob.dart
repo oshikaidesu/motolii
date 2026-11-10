@@ -7,7 +7,7 @@ import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
-import 'package:motolii/workspace/shelf/effect_tiles_seen.dart';
+import 'package:motolii/workspace/shelf/effect_tiles_difference.dart';
 
 /// Picks the parameter that stands for an effect on its tile, and the two values it moves between.
 ///

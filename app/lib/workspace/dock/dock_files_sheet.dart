@@ -7,7 +7,7 @@ import 'dart:math' as math;
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/dock/dock_files.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// Reads the columns of an XDTS timesheet, CELSYS's open exchange format: a header line followed by JSON.
 ///

@@ -6,14 +6,14 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:motolii/widgets/controls.dart';
-import 'package:motolii/inspector/controls/inspector_param_controls_angle_dial.dart';
-import 'package:motolii/inspector/controls/inspector_param_controls_gauge.dart';
-import 'package:motolii/inspector/controls/inspector_param_controls_words.dart';
+import 'package:motolii/inspector/controls/inspector_parameter_controls_angle_dial.dart';
+import 'package:motolii/inspector/controls/inspector_parameter_controls_gauge.dart';
+import 'package:motolii/inspector/controls/inspector_parameter_controls_words.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/inspector/inspector_values.dart';
 import 'package:motolii/skin/tokens.dart';
 
-import 'package:motolii/widgets/two_fingers.dart';
+import 'package:motolii/widgets/two_finger_gestures.dart';
 
 /// One parameter as a block: the name on top, the number large under it, a picture of the value in the top-right corner.
 ///
@@ -323,7 +323,7 @@ class _HeightsState extends State<_Heights> {
               start(d.localPosition);
               end();
             },
-            child: CustomPaint(size: size, painter: _BarsPaint(v, _held == null ? math.max(1, v.reduce(math.max) * 1.25) : _top)),
+            child: CustomPaint(size: size, painter: _BarsPainter(v, _held == null ? math.max(1, v.reduce(math.max) * 1.25) : _top)),
           );
         },
       ),
@@ -331,8 +331,8 @@ class _HeightsState extends State<_Heights> {
   }
 }
 
-class _BarsPaint extends CustomPainter {
-  _BarsPaint(this.v, this.top);
+class _BarsPainter extends CustomPainter {
+  _BarsPainter(this.v, this.top);
   final List<double> v;
   final double top;
   @override
@@ -345,7 +345,7 @@ class _BarsPaint extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_BarsPaint o) => o.v != v || o.top != top;
+  bool shouldRepaint(_BarsPainter o) => o.v != v || o.top != top;
 }
 
 /// A long list of options for an effect, shown in the shared floating chooser. The stored value is the option's index.

@@ -4,7 +4,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// How many times each aspect of [ws] was told while [does] ran. An aspect that was not told is left out.
 Map<WorkspaceAspect, int> _told(WorkspaceController ws, void Function() does) {

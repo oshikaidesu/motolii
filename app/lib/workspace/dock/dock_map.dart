@@ -21,7 +21,7 @@ import 'package:material_color_utilities/material_color_utilities.dart' show Cam
 
 import 'package:motolii/bridge/motolii.dart' show Motolii;
 import 'package:motolii/bridge/motolii_questions.dart';
-import 'package:motolii/storage/kept_file.dart' show fileKeep;
+import 'package:motolii/storage/json_file.dart' show fileKeep;
 
 /// Where one shelf's items lie on its map, by id, on a canvas shaped like the viewport ([dockSpread]). [laying] is true
 /// while the layout is being computed.

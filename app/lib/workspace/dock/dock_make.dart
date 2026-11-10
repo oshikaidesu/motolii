@@ -15,7 +15,7 @@ import 'package:motolii/skin/hex_color.dart' show colorOfHex;
 import 'package:motolii/skin/theme.dart' show ColorTheme;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/widgets/dice_paint.dart';
+import 'package:motolii/widgets/dice_painter.dart';
 import 'package:motolii/widgets/media.dart' show MiniSlider, glyph;
 import 'package:motolii/widgets/text_gestures.dart' show TypedField, wordsPicked;
 import 'package:motolii/workspace/dock/dock_color_wheel.dart';
@@ -26,7 +26,7 @@ import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 // ---------------------------------------------------------------- colors
 
@@ -720,7 +720,7 @@ class _HexField extends StatelessWidget {
 
 /// The dice button, showing a face of five. Pressing it throws the box shapes again.
 Widget _colourDice(VoidCallback onTap) => IconPress(
-  (k) => glyph(Shape.z(22), DicePaint(k, 5, filled: false).paint, k),
+  (k) => glyph(Shape.z(22), DicePainter(k, 5, filled: false).paint, k),
   key: const ValueKey('colour-dice'),
   onTap: onTap,
   size: Shape.z(22),

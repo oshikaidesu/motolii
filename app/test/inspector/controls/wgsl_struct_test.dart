@@ -1,7 +1,7 @@
 // parseWgsl: what it reads from an effect's uniform struct. The expected values are what the code gave when this was
 // written, so a move or a split that changes one fails here. Needs no engine.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motolii/inspector/controls/param_infer.dart';
+import 'package:motolii/inspector/controls/parameter_inference.dart';
 
 List<Object?> _read(FieldDeclaration d) => [d.name, d.type, d.attrs, d.advanced, d.fold];
 

@@ -1,4 +1,4 @@
-import 'package:motolii/widgets/fold_mark.dart';
+import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 
 import 'dart:math' as math;
@@ -201,7 +201,7 @@ class ChooserState extends State<Chooser> {
             Expanded(
               child: Text(cur, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.name(cur == widget.options.first ? Grey.g56 : Grey.g91)),
             ),
-            FoldMark(open: true, hot: _open),
+            DisclosureTriangle(open: true, hot: _open),
           ],
         ),
       ),

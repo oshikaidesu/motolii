@@ -1,5 +1,5 @@
 // Adding an effect or expression from a layer to the shelf under a name the user chooses ("Add to shelf" on the
-// card's code, fx_code.dart), and renaming one added that way from its tile's menu.
+// card's code, effect_code.dart), and renaming one added that way from its tile's menu.
 // What is added belongs to the user: it goes in their own folder (EffectTiles.own), never in the library's (engine/).
 // An effect (.fs, .wgsl) goes in effects/, where the Effects shelf reads the user's effects (doc_folders).
 // An expression (a .js with each()) goes in expressions/, the Expression group's folder. The engine also reads it
@@ -16,7 +16,7 @@ import 'package:motolii/widgets/text_gestures.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/dock/dock_make_create.dart' show createNames;
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 
 String get _ownEffects => '${EffectTiles.own}/effects';
@@ -105,7 +105,7 @@ String shelfAdd(WorkspaceController ws, String from, String code, String name, I
   return '';
 }
 
-/// Copies the files the engine reads beside an effect's file (see _beside in fx_code.dart).
+/// Copies the files the engine reads beside an effect's file (see _beside in effect_code.dart).
 /// That is an ISF's .vs, its lines of first.tsv (under the new name, appended to the folder's), and the images its
 /// header names (copied only where none exists, so nothing is overwritten).
 void _beside(String from, String to, String dir) {

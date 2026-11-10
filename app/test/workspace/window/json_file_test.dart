@@ -4,12 +4,12 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motolii/storage/free_name.dart' show firstFree;
-import 'package:motolii/storage/kept_file.dart' show fileKeep, fileJson, fileList;
+import 'package:motolii/storage/unique_name.dart' show firstFree;
+import 'package:motolii/storage/json_file.dart' show fileKeep, fileJson, fileList;
 
 void main() {
   late Directory folder;
-  setUp(() => folder = Directory.systemTemp.createTempSync('settings_file_test'));
+  setUp(() => folder = Directory.systemTemp.createTempSync('json_file_test'));
   tearDown(() => folder.deleteSync(recursive: true));
 
   test('firstFree gives the name itself when it is free, else the first numbered one from 2 that is', () {

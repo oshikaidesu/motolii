@@ -2,8 +2,8 @@
 // The expected values are what the code gave when this was written, so a move or a split that changes one fails here.
 // Needs no engine.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motolii/inspector/controls/inspector_param_controls.dart' show paramColor, paramDefaults;
-import 'package:motolii/inspector/controls/param_infer.dart';
+import 'package:motolii/inspector/controls/inspector_parameter_controls.dart' show paramColor, paramDefaults;
+import 'package:motolii/inspector/controls/parameter_inference.dart';
 
 /// One field as an effect writes it, such as `amount: f32, // @range(0, 10)`, read from a struct of its own.
 FieldDeclaration _decl(String field) => parseWgsl('struct Params {\n$field\n}').single;

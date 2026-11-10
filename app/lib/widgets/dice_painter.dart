@@ -3,8 +3,8 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
 
 /// A die showing [face]. It is a solid square in [ink] with dark pips, or only the pips in [ink] when [filled] is false.
-class DicePaint extends CustomPainter {
-  const DicePaint(this.ink, this.face, {this.filled = true});
+class DicePainter extends CustomPainter {
+  const DicePainter(this.ink, this.face, {this.filled = true});
   final Color ink;
   final int face;
   final bool filled;
@@ -26,5 +26,5 @@ class DicePaint extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(DicePaint o) => o.ink != ink || o.face != face || o.filled != filled;
+  bool shouldRepaint(DicePainter o) => o.ink != ink || o.face != face || o.filled != filled;
 }

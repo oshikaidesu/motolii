@@ -26,7 +26,7 @@ import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/bridge/engine_paths.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
-import 'package:motolii/workspace/shelf/effect_tiles_seen.dart' show ffmpeg;
+import 'package:motolii/workspace/shelf/effect_tiles_difference.dart' show ffmpeg;
 
 /// The cache path of a tile: [kind] and a hash of [key] under the tiles' cache folder.
 String tileHome(String kind, String key) {

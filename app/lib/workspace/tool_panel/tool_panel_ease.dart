@@ -11,7 +11,7 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_state.dart';
 
 import 'package:motolii/workspace/state/layer.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The span of time the easing shapes: from the first selected keyframe to the layer's next keyframe.
 typedef EaseSpan = ({Layer layer, int from, int to, int picked});

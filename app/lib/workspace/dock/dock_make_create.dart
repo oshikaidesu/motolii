@@ -12,20 +12,20 @@ import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
-import 'package:motolii/widgets/menu.dart';
+import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/workspace/dock/dock_folder_row.dart';
 import 'package:motolii/workspace/dock/dock_make_expressions.dart';
 import 'package:motolii/workspace/dock/dock_widgets.dart';
 import 'package:motolii/workspace/shelf/copies_tiles.dart';
 import 'package:motolii/workspace/shelf/create_preview.dart';
-import 'package:motolii/workspace/shelf/empty_fx.dart';
+import 'package:motolii/workspace/shelf/empty_effect.dart';
 import 'package:motolii/workspace/shelf/material_tiles.dart';
 import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
 import 'package:motolii/workspace/state/effects.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The "N ready" count: how many of the Create shelf's tiles can make or lay out something in the project.
 String createFact(WorkspaceController ws) {
@@ -167,7 +167,7 @@ const _worn = {
 };
 // The layer kinds that are visible, and so can wear a material.
 const _wears = {'film', 'picture', 'text', 'shape', 'solid'};
-// Tiles that go on the picked layer, or on a new layer when none is picked (empty_fx.dart).
+// Tiles that go on the picked layer, or on a new layer when none is picked (empty_effect.dart).
 const _onPicked = {'Empty'};
 
 // Tile name to the (kind, shape) of the layer it creates.
@@ -227,7 +227,7 @@ void _make(ShelfContext c, CreateTile tile) {
   // After Effects: New > Adjustment Layer.
   if (name == 'Adjustment') return c.ws.adjustment();
   if (name == 'Empty') {
-    // An empty expression for the user to write (empty_fx.dart). Any earlier error for this tile is cleared.
+    // An empty expression for the user to write (empty_effect.dart). Any earlier error for this tile is cleared.
     c.set(() => c.mem.trouble.remove(name));
     return emptyPut(c.ws, expression: true, told: (why) => c.set(() => why.isEmpty ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why));
   }

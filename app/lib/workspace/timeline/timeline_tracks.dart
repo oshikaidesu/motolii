@@ -9,13 +9,13 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/widgets/menu.dart';
+import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/widgets/text_gestures.dart';
-import 'package:motolii/widgets/two_fingers.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/widgets/two_finger_gestures.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
 import 'package:motolii/workspace/timeline/timeline_drag.dart';
-import 'package:motolii/workspace/timeline/timeline_kept.dart';
+import 'package:motolii/workspace/timeline/timeline_cache_painter.dart';
 import 'package:motolii/workspace/timeline/timeline_media.dart';
 import 'package:motolii/workspace/timeline/timeline_overview.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';

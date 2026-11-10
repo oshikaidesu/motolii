@@ -19,7 +19,7 @@ import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/state/art_scene.dart' show ArtGeometry;
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/top_bar/size_chip.dart';
 import 'package:motolii/workspace/top_bar/timings.dart';
 import 'package:motolii/workspace/top_bar/zoom_readout.dart';

@@ -2,7 +2,7 @@
 //   <Motolii><Window><Zoom Value="1.17"/><Skin Value="labs"/></Window></Motolii>
 import 'dart:io';
 
-import 'package:motolii/storage/kept_file.dart' show fileKeep;
+import 'package:motolii/storage/json_file.dart' show fileKeep;
 
 /// Reads and writes the window settings file.
 abstract final class WindowFile {

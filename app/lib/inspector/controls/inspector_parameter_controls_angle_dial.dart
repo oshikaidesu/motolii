@@ -64,15 +64,15 @@ class _AngleDialState extends State<AngleDial> {
         // Repaints when its value changes, as a number field does (InspectorValues.watch), without rebuilding the Inspector.
         child: ListenableBuilder(
           listenable: doc.watch(widget.id),
-          builder: (context, _) => CustomPaint(size: const Size(22, 22), painter: _DialPaint(doc.get(widget.id) ?? 0, _hot || _last != null)),
+          builder: (context, _) => CustomPaint(size: const Size(22, 22), painter: _DialPainter(doc.get(widget.id) ?? 0, _hot || _last != null)),
         ),
       ),
     );
   }
 }
 
-class _DialPaint extends CustomPainter {
-  const _DialPaint(this.deg, this.hot);
+class _DialPainter extends CustomPainter {
+  const _DialPainter(this.deg, this.hot);
   final double deg;
   final bool hot;
   @override
@@ -103,5 +103,5 @@ class _DialPaint extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_DialPaint o) => o.deg != deg || o.hot != hot;
+  bool shouldRepaint(_DialPainter o) => o.deg != deg || o.hot != hot;
 }

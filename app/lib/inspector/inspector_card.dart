@@ -1,8 +1,8 @@
-import 'package:motolii/widgets/fold_mark.dart';
+import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/widgets/more_menu.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
+import 'package:motolii/inspector/rows/inspector_section.dart';
 
 import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
@@ -206,7 +206,7 @@ class ValuesCard extends StatelessWidget {
   }
 }
 
-/// A card's fold row: 24px high with a rule above. The label is lit while hovered or open, with a [FoldMark] at the right.
+/// A card's fold row: 24px high with a rule above. The label is lit while hovered or open, with a [DisclosureTriangle] at the right.
 class _FoldRow extends StatelessWidget {
   const _FoldRow(this.label, this.open, this.onTap, {super.key});
   final String label;
@@ -226,7 +226,7 @@ class _FoldRow extends StatelessWidget {
           children: [
             Text(label, style: TextStyles.label(h || open ? Grey.g95 : Grey.g63)),
             const Spacer(),
-            FoldMark(open: open, hot: h || open),
+            DisclosureTriangle(open: open, hot: h || open),
           ],
         ),
       ),

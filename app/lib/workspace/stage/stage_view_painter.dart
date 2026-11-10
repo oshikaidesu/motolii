@@ -12,7 +12,7 @@ import 'package:motolii/workspace/stage/stage_view.dart';
 import 'package:motolii/workspace/stage/stage_view_relations.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/layer.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// Draws a line that reads on any artwork: a dark under-stroke, then the colour.
 void _legible(Canvas c, Path p, Color col, [double w = 1.5]) {

@@ -7,7 +7,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/widgets/float_shut.dart' show FloatShut;
+import 'package:motolii/widgets/dismiss_region.dart' show DismissRegion;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 
@@ -160,8 +160,8 @@ class ContextMenuState extends State<ContextMenu> {
         left: math.max(0.0, math.min(at.dx, info.overlaySize.width - w)),
         // Opens downward from the pointer, or upward where there is no room.
         top: at.dy + h <= info.overlaySize.height ? at.dy : math.max(0.0, at.dy - h),
-        child: FloatShut(
-          // The anchor only closes on a left press outside. FloatShut also closes on any press and on Esc, like every floating panel.
+        child: DismissRegion(
+          // The anchor only closes on a left press outside. DismissRegion also closes on any press and on Esc, like every floating panel.
           group: info.tapRegionGroupId,
           shut: _m.close,
           child: ContextMenuList(items: _items, close: _m.close, max: info.overlaySize.height * .5, width: w),

@@ -19,7 +19,7 @@ import 'package:naked_ui/naked_ui.dart';
 import 'package:motolii/bridge/motolii.dart' show docFactsOf;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
-import 'package:motolii/storage/free_name.dart' show firstFree;
+import 'package:motolii/storage/unique_name.dart' show firstFree;
 import 'package:motolii/widgets/text_gestures.dart';
 
 /// One project listed: its file, and the facts saved in it. [facts] and [picture] are null until read, or if the project saved none.

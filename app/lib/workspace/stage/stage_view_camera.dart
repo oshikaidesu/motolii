@@ -11,7 +11,7 @@ import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/stage/stage_view.dart';
 import 'package:motolii/workspace/stage/stage_view_state.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 extension StageViewCamera on StageViewState {
   /// The camera the Camera tool acts on: the selected one, else the project's first.

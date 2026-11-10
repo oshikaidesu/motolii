@@ -3,8 +3,8 @@
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
-import 'package:motolii/storage/free_name.dart' show firstFree;
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/storage/unique_name.dart' show firstFree;
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 extension WorkspaceEffects on WorkspaceController {
   // Forwarders to the statics on WorkspaceController, so the extension can use the same names.

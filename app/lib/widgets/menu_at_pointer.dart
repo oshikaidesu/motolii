@@ -3,8 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/float_shut.dart';
-import 'package:motolii/widgets/menu.dart' show ContextMenuItem, ContextMenuList;
+import 'package:motolii/widgets/dismiss_region.dart';
+import 'package:motolii/widgets/context_menu.dart' show ContextMenuItem, ContextMenuList;
 
 /// A short menu at the pointer position, kept inside the window. It is the right-click menu of a number.
 ///
@@ -37,7 +37,7 @@ class TinyMenuAt extends StatelessWidget {
         Positioned(
           left: at.dx.clamp(0, math.max(0, room.width - wide)).toDouble(),
           top: (at.dy + high <= room.height ? at.dy : math.max(0, at.dy - high)).toDouble(),
-          child: FloatShut(
+          child: DismissRegion(
             shut: hide,
             keep: keep,
             child: ContextMenuList(

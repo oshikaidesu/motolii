@@ -1,10 +1,10 @@
-import 'package:motolii/widgets/dice_paint.dart';
+import 'package:motolii/widgets/dice_painter.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/controls/inspector_param_controls_tile.dart';
+import 'package:motolii/inspector/controls/inspector_parameter_controls_tile.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
@@ -149,7 +149,7 @@ class Dice extends StatelessWidget {
         final v = doc.get(id) ?? 0, hi = p.max ?? 9999, lo = p.min ?? 0;
         doc.set(id, (lo + (v * 7919 + 104729) % (hi - lo + 1)).roundToDouble());
       },
-      builder: (_, h) => CustomPaint(size: const Size(22, 22), painter: DicePaint(h ? Grey.g95 : Grey.g76, (doc.get(id) ?? 0).round() % 6 + 1)),
+      builder: (_, h) => CustomPaint(size: const Size(22, 22), painter: DicePainter(h ? Grey.g95 : Grey.g76, (doc.get(id) ?? 0).round() % 6 + 1)),
     );
   }
 }

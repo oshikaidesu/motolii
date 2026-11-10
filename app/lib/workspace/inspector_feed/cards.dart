@@ -10,7 +10,7 @@ import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/skin/inspector_tokens.dart';
 import 'package:motolii/workspace/inspector_feed/values.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The cards the engine shows for a layer's values beyond the sample's (motolii_cards), each written as a Params struct
 /// the way effects are: a number gets its range and current value, a word gets the list of words it may take.

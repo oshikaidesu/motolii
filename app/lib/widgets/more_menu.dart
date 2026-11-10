@@ -2,8 +2,8 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
-import 'package:motolii/widgets/float_shut.dart';
-import 'package:motolii/widgets/menu.dart' show ContextMenuItem, ContextMenuList;
+import 'package:motolii/widgets/dismiss_region.dart';
+import 'package:motolii/widgets/context_menu.dart' show ContextMenuItem, ContextMenuList;
 
 /// The ⋮ button of an effect card, like AbsentMotion's EffectHeader More.
 ///
@@ -52,7 +52,7 @@ class _CardMoreState extends State<CardMore> {
               : _up
               ? Alignment.bottomRight
               : Alignment.topRight,
-          child: FloatShut(
+          child: DismissRegion(
             shut: _portal.hide,
             group: _link,
             child: ContextMenuList(

@@ -4,8 +4,8 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/inspector/controls/inspector_param_controls.dart';
-import 'package:motolii/inspector/controls/param_infer.dart';
+import 'package:motolii/inspector/controls/inspector_parameter_controls.dart';
+import 'package:motolii/inspector/controls/parameter_inference.dart';
 import 'package:motolii/inspector/inspector_card.dart';
 import 'package:motolii/inspector/inspector_state.dart';
 

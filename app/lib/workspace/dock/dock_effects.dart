@@ -26,11 +26,11 @@ import 'package:motolii/workspace/dock/dock_resizable.dart';
 import 'package:motolii/workspace/dock/dock_tags.dart';
 import 'package:motolii/workspace/shelf/effect_decks.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart';
-import 'package:motolii/workspace/shelf/empty_fx.dart';
+import 'package:motolii/workspace/shelf/empty_effect.dart';
 import 'package:motolii/workspace/shelf/shelf_add.dart';
 import 'package:motolii/workspace/shelf/shelf_tile.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
-import 'package:motolii/widgets/menu.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
+import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_colors.dart';
 import 'package:motolii/workspace/state/effects.dart';
@@ -189,7 +189,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
         if (m.item(f) case final i?) (i.name, i),
     ];
     final every = <_EffectEntry>[
-      // First comes an empty effect. Its code opens on its card, ready for an ISF effect to be pasted in (empty_fx.dart).
+      // First comes an empty effect. Its code opens on its card, ready for an ISF effect to be pasted in (empty_effect.dart).
       (
         id: 'empty:effect',
         name: 'Empty',

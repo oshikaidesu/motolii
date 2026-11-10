@@ -9,18 +9,18 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/inspector/inspector_parts_insp_host.dart';
+import 'package:motolii/inspector/inspector_host.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/inspector_feed/cards.dart';
 import 'package:motolii/workspace/inspector_feed/keyframe_marks.dart';
 import 'package:motolii/workspace/inspector_feed/values.dart';
-import 'package:motolii/workspace/shelf/fx_code.dart';
+import 'package:motolii/workspace/shelf/effect_code.dart';
 import 'package:motolii/workspace/stage/stage_view_relations.dart' show RelationStack;
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/workspace.dart';
 
 /// The Inspector of the lab, fed by the workspace's selection; its panel links open the dock's shelves or the tool panel.
@@ -210,7 +210,7 @@ class _InspectorPanelState extends State<InspectorPane> {
                 ? (m.word(int.parse(l!.id), 'script').endsWith('.js')
                       ? EffectCode(ws, int.parse(l.id), m.word(int.parse(l.id), 'script'), slot: 'script', shelf: false, key: ValueKey('script-code-${l.id}'))
                       : null)
-                : EffectCode.of(ws, int.parse(l!.id), title, names), // (a script's code under its knobs, and an effect's: fx_code.dart)
+                : EffectCode.of(ws, int.parse(l!.id), title, names), // (a script's code under its knobs, and an effect's: effect_code.dart)
       onCardEye: int.tryParse(l?.id ?? '') == null
           ? null
           : (title) => ws.after(m.later('fx_visible', layer: int.parse(l!.id), word: title), (_, _) => ws.reread()),

@@ -6,9 +6,9 @@ import 'dart:io';
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii_shelves.dart';
-import 'package:motolii/storage/kept_file.dart' show fileKeep, fileList;
+import 'package:motolii/storage/json_file.dart' show fileKeep, fileList;
 import 'package:motolii/workspace/shelf/tile_hover.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// What the dock remembers per shelf while the user switches between shelves (selection, chip, folds).
 /// It lives in the dock's state, never in [WorkspaceController].

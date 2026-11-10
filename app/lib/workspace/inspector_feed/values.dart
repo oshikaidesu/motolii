@@ -8,7 +8,7 @@ import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_watch.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The layer being dragged in the inspector, or null.
 /// The drag starts once, updates at every step and ends when the user releases.
@@ -226,7 +226,7 @@ Map<String, bool> layerFlags(WorkspaceController ws, String? id) => {
 };
 
 bool writeFlags(WorkspaceController ws, String? id, Map<String, bool> changed) {
-  // The suffixes mean: .past is a card allowed past its ends (PastRange), and .code is a script's code open under its parameters (fx_code.dart).
+  // The suffixes mean: .past is a card allowed past its ends (PastRange), and .code is a script's code open under its parameters (effect_code.dart).
   bool looked(String k) => k.endsWith('.open') || k.endsWith('.adv') || k.endsWith('.code') || k.endsWith('.past') || k.startsWith('fold.');
   for (final e in changed.entries) {
     if (looked(e.key)) ws.view['inspector.${e.key}'] = e.value;

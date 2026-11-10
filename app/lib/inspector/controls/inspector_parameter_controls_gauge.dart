@@ -12,11 +12,11 @@ class Gauge extends StatelessWidget {
   final double? v, x, y;
   final Parameter p;
   @override
-  Widget build(BuildContext context) => CustomPaint(size: const Size(22, 22), painter: _GaugePaint(v, p, x, y));
+  Widget build(BuildContext context) => CustomPaint(size: const Size(22, 22), painter: _GaugePainter(v, p, x, y));
 }
 
-class _GaugePaint extends CustomPainter {
-  const _GaugePaint(this.v, this.p, this.x, this.y);
+class _GaugePainter extends CustomPainter {
+  const _GaugePainter(this.v, this.p, this.x, this.y);
   final double? v, x, y;
   final Parameter p;
 
@@ -92,5 +92,5 @@ class _GaugePaint extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_GaugePaint o) => o.v != v || o.x != x || o.y != y || o.p != p;
+  bool shouldRepaint(_GaugePainter o) => o.v != v || o.x != x || o.y != y || o.p != p;
 }

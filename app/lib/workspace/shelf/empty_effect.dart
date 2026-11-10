@@ -1,6 +1,6 @@
 // Puts an empty effect, or an empty expression, on the selected layer with its code open on its card. It gives the user
 // somewhere to paste code found on the net (an ISF effect, or a .js with each(), see engine/document/scripts/expressions.h).
-// The file is written fresh on each press, in the user's programs folder where a layer's own copy lives (fx_code.dart),
+// The file is written fresh on each press, in the user's programs folder where a layer's own copy lives (effect_code.dart),
 // so what is typed belongs to that layer alone.
 import 'dart:io';
 
@@ -8,8 +8,8 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
-import 'package:motolii/workspace/shelf/fx_code.dart' show EffectCode;
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/shelf/effect_code.dart' show EffectCode;
+import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/state/effects.dart';

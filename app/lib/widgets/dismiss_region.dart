@@ -5,17 +5,17 @@ import 'package:flutter/widgets.dart';
 /// Built on Flutter's TapRegion, as the menus on macOS and Windows are.
 /// [keep] returns true for a press that must not close it, such as the press that opens it again.
 /// [group] sets which regions count as inside.
-class FloatShut extends StatefulWidget {
-  const FloatShut({super.key, required this.shut, required this.child, this.group, this.keep});
+class DismissRegion extends StatefulWidget {
+  const DismissRegion({super.key, required this.shut, required this.child, this.group, this.keep});
   final VoidCallback shut;
   final Widget child;
   final Object? group;
   final bool Function(PointerDownEvent)? keep;
   @override
-  State<FloatShut> createState() => _FloatShutState();
+  State<DismissRegion> createState() => _DismissRegionState();
 }
 
-class _FloatShutState extends State<FloatShut> {
+class _DismissRegionState extends State<DismissRegion> {
   final _keys = FocusNode(debugLabel: 'float');
   // The widget that had keyboard focus before this one, restored on dispose.
   final _was = FocusManager.instance.primaryFocus;

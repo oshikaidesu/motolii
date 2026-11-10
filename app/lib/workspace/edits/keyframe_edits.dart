@@ -4,7 +4,7 @@
 // time keeps its value and easing at the new time, all as one undo step. The edit is queued on the engine without
 // waiting. While the user drags, the timeline shows the keyframes at the playhead until the drag ends.
 import 'package:motolii/workspace/state/layer.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_writes.dart';

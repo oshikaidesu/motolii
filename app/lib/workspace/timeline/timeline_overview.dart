@@ -1,7 +1,7 @@
 // The whole project in miniature under the tracks. The visible part is highlighted and can be dragged.
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/widgets/two_fingers.dart';
+import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
 
 /// The overview strip. [onDrag] receives the pointer position within the strip.

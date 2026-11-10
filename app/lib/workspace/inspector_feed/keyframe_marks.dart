@@ -3,7 +3,7 @@ import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/workspace/inspector_feed/values.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The keyframe mark of every keyable value of a layer, plus one per property (the strongest mark of its values).
 Map<String, KeyframeState> keyframeMarks(WorkspaceController ws, String? id) {

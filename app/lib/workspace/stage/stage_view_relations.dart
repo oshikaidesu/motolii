@@ -12,7 +12,7 @@ import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Pressable;
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
-import 'package:motolii/widgets/two_fingers.dart';
+import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/stage/stage_view.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
@@ -91,7 +91,7 @@ class RelationMarks extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: WindowTokens.accent, width: 2),
               ),
-              child: CustomPaint(painter: _GlyphPaint(key == 'centre' ? 'cross' : 'arrow', WindowTokens.accent)),
+              child: CustomPaint(painter: _GlyphPainter(key == 'centre' ? 'cross' : 'arrow', WindowTokens.accent)),
             ),
           ),
         );
@@ -195,7 +195,7 @@ class RelationMarks extends StatelessWidget {
                 WindowTokens.accent,
                 onTap: () => freeFromRelation(ws, id),
                 key: ValueKey('ws-free-$id'),
-                mark: _GlyphPaint('x', WindowTokens.onAccent),
+                mark: _GlyphPainter('x', WindowTokens.onAccent),
               ),
             ), // Removes this layer from the relation where it stands; the others stay.
             if ((kind == 'follow' || kind == 'push') && id != leader)
@@ -206,7 +206,7 @@ class RelationMarks extends StatelessWidget {
                   WindowTokens.body.withValues(alpha: .7),
                   onTap: () => makeRelationLeader(ws, id),
                   key: ValueKey('ws-lead-$id'),
-                  mark: _GlyphPaint('crown', Grey.g63),
+                  mark: _GlyphPainter('crown', Grey.g63),
                 ),
               ), // Makes this layer the leader without moving anything.
           ],
@@ -214,7 +214,7 @@ class RelationMarks extends StatelessWidget {
             Positioned(
               left: l.dx - 24,
               top: l.dy - 24,
-              child: Badge.round(WindowTokens.accent, onTap: () {}, key: const ValueKey('ws-leader'), mark: _GlyphPaint('crown', WindowTokens.onAccent)),
+              child: Badge.round(WindowTokens.accent, onTap: () {}, key: const ValueKey('ws-leader'), mark: _GlyphPainter('crown', WindowTokens.onAccent)),
             ), // The leader.
           // The middle of a ring or a row may be a layer: show a faint crown on each other layer, and clicking one makes it the middle.
           if (isRelation && (kind == 'around' || kind == 'row'))
@@ -227,7 +227,7 @@ class RelationMarks extends StatelessWidget {
                     WindowTokens.body.withValues(alpha: .7),
                     onTap: () => ws.after(m.later('set', layer: rel, name: 'leader', number: double.parse(l.id)), (_, _) => ws.reread()),
                     key: ValueKey('ws-lead-${l.id}'),
-                    mark: _GlyphPaint('crown', Grey.g63),
+                    mark: _GlyphPainter('crown', Grey.g63),
                   ),
                 ),
           // Selected one by one, the first layer will lead a Follow or a Push; show its crown before the relation exists.
@@ -239,7 +239,7 @@ class RelationMarks extends StatelessWidget {
                 WindowTokens.body.withValues(alpha: .7),
                 onTap: () {},
                 key: const ValueKey('ws-leader-to-be'),
-                mark: _GlyphPaint('crown', Grey.g63),
+                mark: _GlyphPainter('crown', Grey.g63),
               ),
             ),
           // Tags for the relations the selected layer belongs to, the top one first. Clicking a tag selects that relation.
@@ -445,8 +445,8 @@ class RelationStack extends StatelessWidget {
 }
 
 /// A small mark drawn as a path so no font has to carry it: a cross (centre), an arrow (size), an x (remove) or a crown (leader).
-class _GlyphPaint extends CustomPainter {
-  _GlyphPaint(this.what, this.ink);
+class _GlyphPainter extends CustomPainter {
+  _GlyphPainter(this.what, this.ink);
   final String what;
   final Color ink;
   @override
@@ -488,7 +488,7 @@ class _GlyphPaint extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_GlyphPaint o) => o.what != what || o.ink != ink;
+  bool shouldRepaint(_GlyphPainter o) => o.what != what || o.ink != ink;
 }
 
 /// The pill at the bottom-left of the viewport: the zoom and the pointer position in composition pixels.

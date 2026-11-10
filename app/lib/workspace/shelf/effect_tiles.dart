@@ -32,10 +32,10 @@ import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/bridge/engine_paths.dart';
-import 'package:motolii/workspace/state/workspace_state.dart' show defaultTextFont;
+import 'package:motolii/workspace/state/workspace_controller.dart' show defaultTextFont;
 import 'package:motolii/workspace/shelf/copies_tiles.dart' show TileQueue;
 import 'package:motolii/workspace/shelf/effect_tiles_knob.dart';
-import 'package:motolii/workspace/shelf/effect_tiles_seen.dart';
+import 'package:motolii/workspace/shelf/effect_tiles_difference.dart';
 import 'package:motolii/workspace/shelf/effect_tiles_showcase.dart';
 
 abstract final class EffectTiles {

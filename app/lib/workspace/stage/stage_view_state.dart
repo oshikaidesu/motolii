@@ -16,8 +16,8 @@ import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/widgets/menu.dart';
-import 'package:motolii/widgets/two_fingers.dart';
+import 'package:motolii/widgets/context_menu.dart';
+import 'package:motolii/widgets/two_finger_gestures.dart';
 import 'package:motolii/workspace/commands/layer_menu.dart';
 import 'package:motolii/workspace/edits/make_relation.dart';
 import 'package:motolii/workspace/stage/stage_view.dart';
@@ -29,7 +29,7 @@ import 'package:motolii/workspace/stage/stage_view_relations.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 const _fixed = [0.0, .5, 1.0];
 

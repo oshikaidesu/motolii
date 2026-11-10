@@ -14,13 +14,13 @@ import 'package:motolii/widgets/paint_helpers.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/inspector_feed/panel.dart' show LayerCards;
-import 'package:motolii/widgets/two_fingers.dart';
+import 'package:motolii/widgets/two_finger_gestures.dart';
 
 const _zMax = 3000.0;
 

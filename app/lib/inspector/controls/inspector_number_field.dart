@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:motolii/inspector/controls/inspector_number_field_num_field_state.dart';
-import 'package:motolii/inspector/controls/param_infer.dart' show Parameter;
+import 'package:motolii/inspector/controls/inspector_number_field_state.dart';
+import 'package:motolii/inspector/controls/parameter_inference.dart' show Parameter;
 
 /// The Inspector's number field: a [NumberField] wired to the document, with a caption and an optional glyph.
 class InspectorNumberField extends StatefulWidget {

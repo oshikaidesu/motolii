@@ -17,7 +17,7 @@ import 'package:motolii/widgets/text_gestures.dart';
 import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
 import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline_paint.dart';
 
 /// The timeline header. Narrow widths drop the total time, then the project name and layer summary, then the zoom slider.

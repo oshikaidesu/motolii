@@ -14,7 +14,7 @@ import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/shelf/copies_tiles.dart' show TileQueue, tileHome;
-import 'package:motolii/workspace/shelf/effect_tiles_seen.dart' show ffmpeg;
+import 'package:motolii/workspace/shelf/effect_tiles_difference.dart' show ffmpeg;
 
 abstract final class ProgramTiles {
   static const _render = 384, _keep = 192, _pictures = 32, _perSecond = 24, _from = 1.0;

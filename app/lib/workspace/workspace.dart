@@ -30,7 +30,7 @@ import 'package:motolii/workspace/stage/stage.dart';
 import 'package:motolii/workspace/stage/stage_camera.dart';
 import 'package:motolii/workspace/state/pane.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_align.dart';

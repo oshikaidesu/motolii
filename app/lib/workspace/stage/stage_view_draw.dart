@@ -18,7 +18,7 @@ import 'package:motolii/workspace/stage/stage_view.dart';
 import 'package:motolii/workspace/stage/stage_view_state.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 extension StageViewDraw on StageViewState {
   /// Selects the layers whose centre lies inside the lasso.
@@ -90,7 +90,7 @@ extension StageViewDraw on StageViewState {
     }
     ws.after(m.later('together'), (done, _) {
       if (!done || made <= 0) return;
-      // The new text's field takes the keyboard at once (see inspector_param_controls_tile.dart).
+      // The new text's field takes the keyboard at once (see inspector_parameter_controls_tile.dart).
       if (kind == 'text') textToType = true;
       ws.select('$made');
     });

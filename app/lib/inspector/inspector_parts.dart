@@ -11,11 +11,11 @@ export 'inspector_choosers_header.dart';
 export 'inspector_card.dart';
 export 'controls/inspector_number_field.dart';
 export 'inspector_panel.dart';
-export 'controls/inspector_param_controls_link.dart';
-export 'controls/inspector_param_controls.dart';
+export 'controls/inspector_parameter_controls_link.dart';
+export 'controls/inspector_parameter_controls.dart';
 export 'rows/inspector_rows.dart';
 export 'inspector_state.dart';
-export 'controls/param_infer.dart';
+export 'controls/parameter_inference.dart';
 
 // Width thresholds shared by the whole panel.
 // A cell narrower than unitMinWidth drops its unit. A cell narrower than decimalsMinWidth drops decimals, but never rounds to a false 0.

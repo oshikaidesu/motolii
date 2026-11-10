@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:material_color_utilities/material_color_utilities.dart' show Cam16, ViewingConditions;
 
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/menu.dart';
+import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/workspace/dock/dock_make.dart';
 import 'package:motolii/workspace/dock/dock_make_palettes.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';

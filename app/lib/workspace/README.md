@@ -5,11 +5,11 @@ The app's window and its panels. `Workspace` (`workspace.dart`) is opened by `ap
 | Path | What it holds |
 |---|---|
 | `workspace.dart` | The whole window (`Workspace`): top bar, panes, opening a project. |
-| `state/` | State every panel reads: `workspace_state.dart` (`WorkspaceController`), `workspace_scope.dart` (`WorkspaceScope`), `workspace_aspect.dart` (`WorkspaceAspect`, the part of the state a widget listens to), `layer.dart` (`Layer`, and `layerKindColor`, the color of each layer kind), `pane.dart` (`Pane`, a tab), `art_scene.dart` (`ArtGeometry`, `ArtScene`: sizes and boxes of the Stage picture), `beats.dart` (tempo grid), `window_zoom.dart` (`WindowZoom`). |
+| `state/` | State every panel reads: `workspace_controller.dart` (`WorkspaceController`), `workspace_scope.dart` (`WorkspaceScope`), `workspace_aspect.dart` (`WorkspaceAspect`, the part of the state a widget listens to), `layer.dart` (`Layer`, and `layerKindColor`, the color of each layer kind), `pane.dart` (`Pane`, a tab), `art_scene.dart` (`ArtGeometry`, `ArtScene`: sizes and boxes of the Stage picture), `beats.dart` (tempo grid), `window_zoom.dart` (`WindowZoom`). |
 | `easing/` | Easing itself: `ease.dart` (`Ease` and presets), `ease_text.dart` (the text written into a document), `ease_curve.dart` (curve and formula of stacked cards). |
 | `window/` | The window frame: `panes.dart` (pane layout, built on the pub package `docking`), `home.dart` (first screen, choose a project), `zoom.dart` (draws the whole window at the zoom factor). |
 | `top_bar/` | The top bar: `top_bar.dart`, `size_chip.dart`, `zoom_readout.dart`, `timings.dart` (time the engine took). |
-| `commands/` | Named commands with their keys and menus: `keymap.dart` (key table in the shape of VS Code's keybindings.json), `command_actions.dart`, `panel_requests.dart` (one panel asking another), `menu_bar.dart`, `layer_menu.dart` (right-click items; menu widgets are in `widgets/menu.dart`). |
+| `commands/` | Named commands with their keys and menus: `keymap.dart` (key table in the shape of VS Code's keybindings.json), `command_actions.dart`, `panel_requests.dart` (one panel asking another), `menu_bar.dart`, `layer_menu.dart` (right-click items; menu widgets are in `widgets/context_menu.dart`). |
 | `edits/` | Edits applied to several selected layers: `make_relation.dart`, `group_moves.dart`, `keyframe_edits.dart`. |
 | `inspector_feed/` | What the project hands to the Inspector (`../inspector/`): `panel.dart`, `cards.dart`, `values.dart`, `keyframe_marks.dart`. |
 | `dock/` | The shelf panels on the left (Create, Effects, Media, Fonts, Colors). |

@@ -8,7 +8,7 @@ import 'package:motolii/workspace/easing/ease.dart';
 import 'package:motolii/workspace/easing/ease_text.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:flutter/widgets.dart';
-import 'package:motolii/widgets/fold_mark.dart';
+import 'package:motolii/widgets/disclosure_triangle.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Chip, Pressable;
 import 'package:motolii/widgets/number_field.dart';
@@ -76,7 +76,7 @@ class _EaseNumbersState extends State<EaseNumbers> {
             maxLines: 1,
             style: TextStyles.micro(hot ? Grey.g95 : Grey.g63).copyWith(letterSpacing: .6),
           ),
-          if (kind != null) ...[SizedBox(width: Shape.s(3)), FoldMark(open: easeNumbersOpen, hot: hot)],
+          if (kind != null) ...[SizedBox(width: Shape.s(3)), DisclosureTriangle(open: easeNumbersOpen, hot: hot)],
         ],
       ),
     );

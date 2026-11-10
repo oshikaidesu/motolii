@@ -13,7 +13,7 @@ import 'package:motolii/workspace/stage/stage_view_camera.dart';
 import 'package:motolii/workspace/stage/stage_view_state.dart';
 import 'package:motolii/workspace/state/art_scene.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 
 extension StageViewDrag on StageViewState {
   /// The axis-aligned rectangle that contains the corners of [b].

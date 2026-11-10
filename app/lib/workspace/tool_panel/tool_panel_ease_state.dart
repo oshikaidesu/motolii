@@ -23,7 +23,7 @@ import 'package:motolii/workspace/tool_panel/tool_panel_ease_shelf.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_trial.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_side.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
-import 'package:motolii/workspace/state/workspace_state.dart';
+import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
 /// The curve copied in the Ease tool, kept until the app closes. Like Copy Curve in Alight Motion.
