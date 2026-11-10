@@ -1,10 +1,12 @@
+#ifndef MOTOLII_COMMUNITY_P5_P5_MESH_H_
+#define MOTOLII_COMMUNITY_P5_P5_MESH_H_
+
 // JavaScript source, embedded as a string, that records what a p5.js sketch draws in WEBGL mode:
 // meshes, lights, shaders, textures and text. document/sketch.h consumes the result. It is
 // run by p5_stand.h after p5_after. The comments inside the embedded script are not rewritten
 // here, because they are part of the string literal.
-#pragma once
 
-static const char* const p5_mesh = R"(
+inline const char* const p5_mesh = R"(
 // What WEBGL draws, as p5 has it: which of its shapes where its camera sees them, the triangles and lines it makes as it goes,
 // what it clears with. document/sketch.h stands them in the world, one mesh each frame. p5 makes a line's corners in triangles
 // for its line shader here too, 0.8 s a frame in the heaviest; nothing here reads them.
@@ -323,3 +325,5 @@ for (const way of ['drawBuffers', 'drawBuffersScaled', '_drawImmediateFill']) {
   };
 }
 )";
+
+#endif  // MOTOLII_COMMUNITY_P5_P5_MESH_H_

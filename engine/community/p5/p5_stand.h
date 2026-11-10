@@ -1,15 +1,14 @@
+#ifndef MOTOLII_COMMUNITY_P5_P5_STAND_H_
+#define MOTOLII_COMMUNITY_P5_P5_STAND_H_
+
 // p5.js with no page: a sketch from the net, its file as it is, run by p5.js itself (third_party/js/p5, 1.11.13, LGPL-2.1,
 // its file as it is released) in the script's QuickJS, as Cavalry's and AviUtl's scripts are run by stand-ins for what they
 // ask of their host. No browser and nothing drawn: what p5 draws in WEBGL is taken at drawBuffersScaled, the one adapter its
 // box, plane, ellipsoid, cylinder, cone and torus all go through (src/webgl/p5.RendererGL.Retained.js), with its model
 // matrix (uModelMatrix), and said as the copies of a thing. A frame once run is kept: a sketch only goes forward, so going
 // back is reading. Frames are its own 60 a second, as requestAnimationFrame and a clock stepped by hand (timesnap's way).
-#pragma once
 
-#include "community/p5/p5_three.h"
-#include "community/p5/p5_mesh.h"
-
-static const char* const p5_before = R"(
+inline const char* const p5_before = R"(
 var __T = 0, __Q = [], __seed = 12345, __L = 0;   // (__L: the line of the sketch that draws now: script.h sketch_marked)
 function __at(line, it) { __L = line; return it; }
 Math.random = () => (__seed = (1664525 * __seed + 1013904223) % 4294967296) / 4294967296;   // (the same film each time it is played: p5's own _lcg, src/math/random.js, from one seed)
@@ -192,7 +191,7 @@ for (const k of ['Request', 'Headers', 'Response', 'HTMLElement', 'HTMLCanvasEle
 for (const k in __page) Object.defineProperty(globalThis, k, { value: __page[k], writable: true, configurable: true });
 )";
 
-static const char* const p5_after = R"(
+inline const char* const p5_after = R"(
 // What a sketch's camera or video sees is the film under it: it asks as p5 lets it (createCapture, createVideo) and reads it
 // as a p5.Image, by get() and pixels; its image(video) paints nothing, the film itself being there underneath. A picture
 // it loads is that film too where there is one, so what reads a photo reads the film each frame.
@@ -259,7 +258,7 @@ var OPC = new Proxy({}, { get(t, k) {
 } });
 )";
 
-static const char* const p5_start = R"(
+inline const char* const p5_start = R"(
 new p5();
 if (!globalThis.frameCount && (p5.instance._preloadCount || globalThis._preloadCount)) p5.instance._preloadCount = globalThis._preloadCount = 0, p5.instance._runIfPreloadsAreDone();   // (what preload() asked of the net or of files does not come: on without it)
 var __frames = [], __from = [];
@@ -358,3 +357,5 @@ function each(i, n, t, k) {
   return at < c.length ? { x: c[at], y: c[at + 1], z: c[at + 2], scale_x: c[at + 3] * strong, scale_y: c[at + 4] * strong, scale_z: c[at + 5] * strong, rotate: c[at + 6], rotate_y: c[at + 7], rotate_x: c[at + 8], colour: c[at + 10] } : { size: 0 };
 }
 )";
+
+#endif  // MOTOLII_COMMUNITY_P5_P5_STAND_H_

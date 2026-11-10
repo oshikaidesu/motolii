@@ -1,7 +1,9 @@
-// three.js in a p5.js sketch's script (p5_stand.h), run after p5_after and before the library itself.
-#pragma once
+#ifndef MOTOLII_COMMUNITY_P5_P5_THREE_H_
+#define MOTOLII_COMMUNITY_P5_P5_THREE_H_
 
-static const char* const p5_three = R"(
+// three.js in a p5.js sketch's script (p5_stand.h), run after p5_after and before the library itself.
+
+inline const char* const p5_three = R"(
 // A three.js scene with no WebGLRenderer: three.core.js makes everything else. What its renderer is told to draw is taken
 // mesh by mesh, each pair of a shape and a material one part, a solid of its own in the world, its meshes that solid's copies
 // (document/adapter.h). Seen as its camera sees it: the eye's view brought to the world's, so the sketch's camera moves its solids
@@ -91,3 +93,5 @@ function __three_says(w) {   // (what a part is, for document/adapter.h)
   return [__whole.most[w], c.getHexString(), m.metalness === undefined ? 0 : m.metalness, m.roughness === undefined ? 1 : m.roughness].join(' ');
 }
 )";
+
+#endif  // MOTOLII_COMMUNITY_P5_P5_THREE_H_
