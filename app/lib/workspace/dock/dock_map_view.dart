@@ -1,5 +1,16 @@
 // Draws the map, the name of the item under the pointer, and the similarity list below it.
-part of 'dock_map.dart';
+import 'dart:math' as math;
+
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/window_tokens.dart';
+import 'package:motolii/widgets/app_glyphs.dart';
+import 'package:motolii/widgets/controls.dart' show IconPress;
+import 'package:motolii/widgets/media.dart' show MiniSlider;
+import 'package:motolii/workspace/dock/dock_map.dart';
+import 'package:motolii/workspace/shelf/tile_colors.dart';
 
 /// The map view: each shown item's tile at its position from [DockMapPlaces].
 ///
