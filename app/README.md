@@ -53,8 +53,8 @@ CI runs the first three commands on every push (`../.github/workflows/checks.yml
 | `lib/bridge/` | The border to the engine: calls into `libmotolii.dylib` for the project, shelves, questions and writes. `motolii.dart` holds `Motolii`; `motolii_bindings.dart` is generated. See [`../docs/app/BRIDGE.md`](../docs/app/BRIDGE.md). |
 | `lib/storage/` | Small files the app keeps: `json_file.dart` (write files, read JSON and lists), `window_settings.dart` (`~/.motolii/window.xml`: zoom and the chosen skin). |
 | `lib/skin/` | Look: `tokens.dart` (grays, sizes), `window_tokens.dart`, `inspector_tokens.dart`, `theme.dart` (colors from a skin's `theme.xml`), `skin_parts.dart` (a skin's `parts/*.svg`). |
-| `lib/skin/forms/` | How controls are built per skin: `poster_forms.dart`, `sheet_forms.dart`, `lighttable_forms.dart`, `own_forms.dart`, and `base_controls.dart` for controls a skin does not define. |
 | `lib/widgets/` | The standard parts every panel is built from: `controls.dart` (`Pressable`, `Chip`), `number_field.dart` (`NumberField`), `text_gestures.dart` (`TypedField`), `media.dart` (`MiniSlider`), `glyphs.dart` (`Glyph`), `timeline_painters.dart`. |
+| `lib/widgets/forms/` | How controls are built per skin: `poster_forms.dart`, `sheet_forms.dart`, `lighttable_forms.dart`, `own_forms.dart`, and `base_controls.dart` for controls a skin does not define. |
 | `lib/inspector/` | The Inspector on the right. Cards come from the engine's declarations (`../engine/document/card_table.h`), and `values_card.dart` (`ValuesCard`) draws every one of them. |
 | `lib/inspector/controls/` | Controls per kind of value: number, angle, color, text, link. |
 | `lib/inspector/rows/` | Rows and the frame of a card. |
@@ -85,20 +85,19 @@ Dependencies run one way: from the panels down to the border to the engine (`bri
 
 - A folder may always import itself.
 - `export` counts as an import.
-- A row includes its subfolders, except that `skin/` does not include `skin/forms/`, and the `.dart` files directly in `workspace/` do not include the folders below them.
+- A row includes its subfolders, except that the `.dart` files directly in `workspace/` do not include the folders below them.
 
 | Folder (under `lib/`) | May import |
 |---|---|
 | `bridge/`, `storage/` | Nothing else in the app. |
-| `skin/` (not `forms/`) | `bridge/engine_paths.dart`, `storage/` |
+| `skin/` | `bridge/engine_paths.dart`, `storage/` |
 | `widgets/` | `skin/` |
-| `skin/forms/` | `skin/`, `widgets/` |
-| `inspector/` | `skin/`, `skin/forms/`, `widgets/`. Never `bridge/` or `workspace/`. |
+| `inspector/` | `skin/`, `widgets/`. Never `bridge/` or `workspace/`. |
 | `workspace/easing/` | `bridge/` |
 | `workspace/state/` | `bridge/`, `storage/`, `skin/`, `widgets/glyphs.dart`, `workspace/easing/` |
 | `workspace/edits/` | `workspace/state/` and what it may import |
 | `workspace/commands/` | `workspace/edits/` and what it may import, `widgets/` |
-| `workspace/shelf/` | `workspace/commands/` and what it may import, `skin/forms/`. Never `inspector/`. |
+| `workspace/shelf/` | `workspace/commands/` and what it may import. Never `inspector/`. |
 | `workspace/inspector_feed/` | `workspace/shelf/` and what it may import, `inspector/` |
 | `workspace/dock/`, `stage/`, `timeline/`, `tool_panel/`, `top_bar/`, `window/` | `workspace/inspector_feed/` and what it may import. These six do not import each other. |
 | `workspace/*.dart` (the whole window) | Anything |
@@ -114,7 +113,7 @@ Three rules apply everywhere: do not use `part`; write `export` only in `panel.d
 3. Add one line to the `Workspace` in `lib/main.dart`: `Workspace(document: motoliiDoc, extra: const [Pane('Mine', null, MyPanel.new)])`. A `null` mark shows the first letter of the name; pass a `GlyphKind` for your own mark (a skin's SVG of the same name wins).
 4. Inside a panel, use the parts in `lib/widgets/` instead of writing your own press handlers (`GestureDetector`), text fields (`EditableText`) or painters (`CustomPainter`). If a part is missing, add it to `lib/widgets/` so every panel can use it.
 
-Example skins are in [`../shelves/skins/`](../shelves/skins/), with how to make one. In the app, `lib/skin/theme.dart` reads colors and sizes from `theme.xml`, `lib/skin/skin_parts.dart` reads `<Parts>` pictures, and `lib/skin/forms/` builds controls for `<Forms>`.
+Example skins are in [`../shelves/skins/`](../shelves/skins/), with how to make one. In the app, `lib/skin/theme.dart` reads colors and sizes from `theme.xml`, `lib/skin/skin_parts.dart` reads `<Parts>` pictures, and `lib/widgets/forms/` builds controls for `<Forms>`.
 
 Longer documents are in [`../docs/app/`](../docs/app/): `BRIDGE.md` (calls into the engine), `DESIGN.md` (the sources of the values in `tokens.dart`) and `GESTURES.md` (what presses, drags and keys mean; read it before making a panel).
 

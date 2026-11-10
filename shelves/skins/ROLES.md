@@ -64,7 +64,7 @@ Write these two and all the grey steps below are made between them (a light grou
 ## Words
 `FontMono` `FontSans` `Forms` `Parts` `Shade`
 
-- Forms: the name of how parts are put together (own = the usual, poster = poster style, lighttable = film on a light table, sheet = ink lines on paper). The code is `lib/skin/forms/<name>_forms.dart` (see "Forms" in the README)
+- Forms: the name of how parts are put together (own = the usual, poster = poster style, lighttable = film on a light table, sheet = ink lines on paper). The code is `lib/widgets/forms/<name>_forms.dart` (see "Forms" in the README)
 - Shade: `light` or `dark`. Not needed if you write Background
 - FontSans / FontMono: the name of a font. Write the file's location in `FontSansFile` / `FontMonoFile` and the file is loaded under that name
 - Parts: the folder of icon pictures (the names are in PARTS.md). The location may be relative to theme.xml, `~/`, or absolute

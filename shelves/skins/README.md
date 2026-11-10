@@ -108,11 +108,11 @@ Put `parts/frame.render.svg` (the Render button) or `parts/frame.card.svg` (a ca
 
 Colours, numbers, icons and frames only change appearance. A form goes further: it changes what shape a button is, how choices line up and how a card is built. It is split the way React Aria and Radix split "headless UI":
 
-- **What the app passes in**: the words of a part, its current value and what a press does (`ActionSpec`, `ChoiceSpec`, `SwitchSpec`, `CardSpec` and others in `lib/skin/forms/forms.dart`)
+- **What the app passes in**: the words of a part, its current value and what a press does (`ActionSpec`, `ChoiceSpec`, `SwitchSpec`, `CardSpec` and others in `lib/widgets/forms/forms.dart`)
 - **What a hand does**: [naked_ui](https://pub.dev/packages/naked_ui) (press, hover, select, toggle, and screen-reader support)
 - **What the form writes**: only how these are put together and drawn
 
-A form is one Dart class (`lib/skin/forms/poster_forms.dart` is a sample). The three functions every form must write:
+A form is one Dart class (`lib/widgets/forms/poster_forms.dart` is a sample). The three functions every form must write:
 
 | Form function | Part of the app |
 |---|---|
@@ -122,7 +122,7 @@ A form is one Dart class (`lib/skin/forms/poster_forms.dart` is a sample). The t
 
 The others (`segment`, `flag`, `chips`, `track`, `number` and more) are optional and have a usual drawing. They are listed in [HANDOFF.md](../../docs/app/skins/HANDOFF.md).
 
-To add a form, write a class that extends `Forms` in `lib/skin/forms/<name>_forms.dart`, add one line to `forms` in `lib/skin/forms/forms.dart`, and write `<Forms Value="<name>"/>` in the skin's theme.xml.
+To add a form, write a class that extends `Forms` in `lib/widgets/forms/<name>_forms.dart`, add one line to `forms` in `lib/widgets/forms/forms.dart`, and write `<Forms Value="<name>"/>` in the skin's theme.xml.
 
 **To try it at once**: open the app with `app/tool/live.sh`, and the open app redraws the moment you save the form file (its state stays as it is).
 

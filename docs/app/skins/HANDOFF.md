@@ -10,7 +10,7 @@ The look of the app (Flutter, in `app/`) can be changed in three layers without 
 |---|---|---|---|
 | 1. Values | Colours, light or dark, corners, spacing, sizes, text size, fonts | `theme.xml` (a list of names and values) | Drop the folder in place |
 | 2. Pictures | Icons, and the frames of parts | `parts/*.svg` | Drop the folder in place |
-| 3. Forms | How a part is **put together** (what shape a button is, how choices line up, how a card is built) | One Dart class (`lib/skin/forms/<name>_forms.dart`) | Compiled into the app |
+| 3. Forms | How a part is **put together** (what shape a button is, how choices line up, how a card is built) | One Dart class (`lib/widgets/forms/<name>_forms.dart`) | Compiled into the app |
 
 Layers 1 and 2 are fully described in [README.md](../../../shelves/skins/README.md), [ROLES.md](../../../shelves/skins/ROLES.md) and [PARTS.md](../../../shelves/skins/PARTS.md). Layer 3 is headless UI, split the way React Aria and Radix split it. The rest of this document is mostly about layer 3.
 
@@ -27,12 +27,12 @@ Paths are relative to [`app/`](../../../app/).
 | `lib/skin/layer_colors.dart` | The sixteen label colours of layers (`Label1` to `Label16`) |
 | `lib/storage/window_settings.dart` | Reads and writes `~/.motolii/window.xml` (the zoom and the skin being worn) |
 | `lib/skin/skin_parts.dart` | The icon SVGs (`SkinParts.draw`) and the frame pictures (`SkinParts.frame`). The frame widget `SkinFrame` is `lib/widgets/skin_frame.dart` |
-| `lib/skin/forms/forms.dart` | **The contract of forms**: the specs the app passes, the functions a form writes, and the table `forms` |
-| `lib/skin/forms/base_controls.dart` | The default drawing of the optional form functions |
-| `lib/skin/forms/own_forms.dart` | The usual look of the app |
-| `lib/skin/forms/poster_forms.dart` | A sample: a Swiss geometric poster |
-| `lib/skin/forms/lighttable_forms.dart` | A sample: film on a light table |
-| `lib/skin/forms/sheet_forms.dart` | A sample: ink lines on one sheet of paper |
+| `lib/widgets/forms/forms.dart` | **The contract of forms**: the specs the app passes, the functions a form writes, and the table `forms` |
+| `lib/widgets/forms/base_controls.dart` | The default drawing of the optional form functions |
+| `lib/widgets/forms/own_forms.dart` | The usual look of the app |
+| `lib/widgets/forms/poster_forms.dart` | A sample: a Swiss geometric poster |
+| `lib/widgets/forms/lighttable_forms.dart` | A sample: film on a light table |
+| `lib/widgets/forms/sheet_forms.dart` | A sample: ink lines on one sheet of paper |
 | `../shelves/skins/<name>/` | The sample skins in the repository (labs, paper, streets, poster, lighttable, sheet) |
 | `tool/live.sh` | Runs the app and redraws it the moment a `.dart` file under `lib/` is saved, keeping its state |
 
@@ -44,7 +44,7 @@ Paths are relative to [`app/`](../../../app/).
 - **What a hand does**: [naked_ui](https://pub.dev/packages/naked_ui) (BSD-3). Press, hover, select, toggle and screen-reader support. It has `NakedButton`, `NakedToggle` (a switch with `asSwitch: true`), `NakedToggleGroup` with `NakedToggleOption` (exactly one of several), and also `NakedSlider`, `NakedTabs`, `NakedSelect`, `NakedMenu` and more. The builder receives the state (`isHovered`, `isPressed`, `isSelected`, `isFocused`, `isDisabled`).
 - **The form writes**: only how these are put together and drawn. **Do not rebuild the behaviour yourself.** Use naked_ui and do not add a `GestureDetector`.
 
-### The contract (`lib/skin/forms/forms.dart`)
+### The contract (`lib/widgets/forms/forms.dart`)
 
 A form is a class that extends `Forms`. It must write `action`, `onOff` and `card`. The others have a default in `BaseControls` and may be left out.
 
@@ -86,8 +86,8 @@ A form may also have colours of its own (`poster_forms.dart` has constants for i
 
 ### Steps
 
-1. Write `class XForms extends Forms` in `lib/skin/forms/<name>_forms.dart`, with at least `action`, `onOff` and `card` (`poster_forms.dart` is a sample).
-2. Add `'<name>': XForms()` to `forms` in `lib/skin/forms/forms.dart`, and import it.
+1. Write `class XForms extends Forms` in `lib/widgets/forms/<name>_forms.dart`, with at least `action`, `onOff` and `card` (`poster_forms.dart` is a sample).
+2. Add `'<name>': XForms()` to `forms` in `lib/widgets/forms/forms.dart`, and import it.
 3. In the skin folder's `theme.xml`, write `<Forms Value="<name>"/>` (the colours go in the same theme.xml).
 4. Look at it: open the app with `app/tool/live.sh`, wear the skin in View › Skin, and watch it redraw every time the form file is saved. Check hover and press by hand in that app.
 5. Check it: no clipped text and no overflow. Colour does not affect how text fits, so what you write is the form and the fonts (and Size and TextScale if the skin changes them).
@@ -120,7 +120,7 @@ Direction for the poster sample: a Swiss geometric poster (Posterlad's Checkers,
 
 **A form** (changes how parts are put together). The parts it reaches are in the table in section 3. The dock tab itself (drawn by the `docking` package) is still outside, apart from its mark (section 7).
 
-> Read `docs/app/skins/HANDOFF.md`, write a form of "(the look you want)" in `lib/skin/forms/<name>_forms.dart`, register it, and make a skin that wears it in `shelves/skins/<name>/theme.xml`. First write four to six colours, the fonts and an ASCII layout, and correct the common defaults, then write the code. Write `action`, `onOff` and `card` (a function you do not write stays the app's usual drawing). Open the app with `app/tool/live.sh`, look and fix. In the end check that nothing is clipped and nothing overflows.
+> Read `docs/app/skins/HANDOFF.md`, write a form of "(the look you want)" in `lib/widgets/forms/<name>_forms.dart`, register it, and make a skin that wears it in `shelves/skins/<name>/theme.xml`. First write four to six colours, the fonts and an ASCII layout, and correct the common defaults, then write the code. Write `action`, `onOff` and `card` (a function you do not write stays the app's usual drawing). Open the app with `app/tool/live.sh`, look and fix. In the end check that nothing is clipped and nothing overflows.
 
 ## 6. Pitfalls
 

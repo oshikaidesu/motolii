@@ -107,11 +107,11 @@ Mac に入っている書体なら名前だけでよい。幅の広い書体（M
 
 色・数・印・枠は見た目の差し替えまで。ボタンが何の形をしているか、選択肢がどう並ぶか、札がどう組まれるかまで変えるのがフォーム。React Aria や Radix の「ヘッドレス UI」と同じ分け方で、
 
-- **アプリが渡すもの**：部品の言葉・今の値・押した時にすること（`lib/skin/forms/forms.dart` の `ActionSpec` `ChoiceSpec` `SwitchSpec` `CardSpec`）
+- **アプリが渡すもの**：部品の言葉・今の値・押した時にすること（`lib/widgets/forms/forms.dart` の `ActionSpec` `ChoiceSpec` `SwitchSpec` `CardSpec`）
 - **手で触った時の動き**：[naked_ui](https://pub.dev/packages/naked_ui)（押す・手が乗る・選ぶ・切り替える、読み上げも）
 - **フォームが書くもの**：それをどう組み立てて見せるか、だけ
 
-フォームは Dart のクラス1つ（`lib/skin/forms/poster_forms.dart` が見本）。部品の種類ごとに書く：
+フォームは Dart のクラス1つ（`lib/widgets/forms/poster_forms.dart` が見本）。部品の種類ごとに書く：
 
 | フォームの関数 | アプリの部品 |
 |---|---|
@@ -121,7 +121,7 @@ Mac に入っている書体なら名前だけでよい。幅の広い書体（M
 
 この3つは必ず書く。ほかの関数（`segment` `flag` `chips` `track` `number` など）は書かなくてもよく、書かなければアプリのいつもの絵になる。全部は [HANDOFF.md](../../docs/app/skins/HANDOFF.md)。
 
-新しいフォームは、`lib/skin/forms/<名前>_forms.dart` に `Forms` を継いだクラスを書き、`lib/skin/forms/forms.dart` の `forms` に1行足し、革の theme.xml に `<Forms Value="<名前>"/>` と書く。
+新しいフォームは、`lib/widgets/forms/<名前>_forms.dart` に `Forms` を継いだクラスを書き、`lib/widgets/forms/forms.dart` の `forms` に1行足し、革の theme.xml に `<Forms Value="<名前>"/>` と書く。
 
 **すぐ試す**：`app/tool/live.sh` でアプリを開いておけば、フォームのファイルを保存した瞬間に開いたアプリが描き直る（状態はそのまま）。
 
