@@ -1,7 +1,11 @@
 // The workspace's Timeline panel.
 //
 // It has the transport and timecode on top, layer labels beside the track area, a ruler with the work area, and the playhead.
-// The project lives in WorkspaceController. This panel keeps only how it is viewed: zoom, scroll, loop, the row toggles and the work area.
+// The project lives in WorkspaceController. This panel keeps only how it is viewed, each part in an object the State owns:
+// the zoom and scroll (TimelineViewport), the rows as laid out (TimelineRows), the media read for them
+// (TimelineMediaCache), and the drags in hand on the ruler (RulerMarks) and on the tracks (TrackDrag, SlipEdit).
+// The State itself keeps what needs a widget: the ticker, the focus, the listeners and the widget tree.
+import 'dart:developer' show Timeline;
 import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart' show DragStartBehavior;
@@ -10,6 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
+import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
@@ -36,22 +41,20 @@ import 'package:motolii/workspace/timeline/timeline_paint.dart';
 import 'package:motolii/workspace/timeline/timeline_requests.dart';
 import 'package:motolii/workspace/timeline/timeline_rows.dart';
 import 'package:motolii/workspace/timeline/timeline_tracks_paint.dart';
-import 'package:motolii/workspace/timeline/timeline_view.dart';
 import 'package:motolii/workspace/timeline/track_drag.dart';
 import 'package:motolii/workspace/timeline/timeline_viewport.dart';
 
 class TimelinePane extends StatefulWidget {
   const TimelinePane({super.key});
   @override
-  State<TimelinePane> createState() => TimelinePaneState();
+  State<TimelinePane> createState() => _TimelinePaneState();
 }
 
-class TimelinePaneState extends State<TimelinePane>
+class _TimelinePaneState extends State<TimelinePane>
     with SingleTickerProviderStateMixin, TimelineRequests<TimelinePane> {
-  late final Ticker ticker = createTicker(tick);
-  // One closure, used for both adding and removing the listener.
-  // Tearing off an extension method gives a new closure each time, so removeListener would never match.
-  late final VoidCallback _listener = changed;
+  late final Ticker _ticker = createTicker(_tick);
+  // One closure, kept so that the listener removed is the one that was added.
+  late final VoidCallback _listener = _changed;
   final _focus = FocusNode(debugLabel: 'timeline');
   @override
   WorkspaceController? workspace;
@@ -61,10 +64,10 @@ class TimelinePaneState extends State<TimelinePane>
   final viewport = TimelineViewport(() => WorkspaceController.duration);
 
   /// The beats, video frames, thumbnails and waveforms read for the rows.
-  final media = TimelineMediaCache();
+  final _media = TimelineMediaCache();
 
   /// Where a trimmed video's whole source lies along its row, and the drag that slips it.
-  late final slip = SlipEdit(media: media);
+  late final _slip = SlipEdit(media: _media);
 
   /// The work area and the markers on the ruler, and the drag in hand there.
   @override
@@ -79,28 +82,28 @@ class TimelinePaneState extends State<TimelinePane>
   late final rows = TimelineRows(
     workspaceOf: () => workspace,
     viewport: viewport,
-    media: media,
-    slip: slip,
+    media: _media,
+    slip: _slip,
   );
 
   /// The bar, keyframe or selection box being dragged on the tracks, and the cursor over them.
-  late final drag = TrackDrag(
+  late final _drag = TrackDrag(
     workspaceOf: () => workspace,
     viewport: viewport,
     rows: rows,
-    slip: slip,
+    slip: _slip,
     snapTo: _snapTo,
   );
-  int lastFrame = -1;
+  int _lastFrame = -1;
 
   @override
   void initState() {
     super.initState();
     viewport.addListener(_rebuild);
-    media.addListener(_rebuild);
+    _media.addListener(_rebuild);
     ruler.addListener(_rebuild);
-    slip.addListener(_rebuild);
-    drag.addListener(_rebuild);
+    _slip.addListener(_rebuild);
+    _drag.addListener(_rebuild);
     // Starts listening for requests from the app's commands (timeline_requests.dart).
     listenForRequests();
   }
@@ -116,7 +119,7 @@ class TimelinePaneState extends State<TimelinePane>
       ws.moment.addListener(_listener);
       if (ws.playing) {
         SchedulerBinding.instance.addPostFrameCallback(
-          (_) => mounted ? changed() : null,
+          (_) => mounted ? _changed() : null,
         );
       }
     }
@@ -126,16 +129,56 @@ class TimelinePaneState extends State<TimelinePane>
   void dispose() {
     workspace?.on[WorkspaceAspect.playing]!.removeListener(_listener);
     workspace?.moment.removeListener(_listener);
-    ticker.dispose();
+    _ticker.dispose();
     viewport.dispose();
-    media.dispose();
+    _media.dispose();
     ruler.dispose();
-    slip.dispose();
-    drag.dispose();
+    _slip.dispose();
+    _drag.dispose();
     _focus.dispose();
     disposeRequests();
     super.dispose();
   }
+
+  // ---------------------------------------------------------------- play
+
+  void _changed() {
+    final ws = workspace!;
+    if (ws.playing && !_ticker.isActive) {
+      _ticker.start();
+      _lastFrame = -1;
+      if (ws.frame >= WorkspaceController.duration) ws.frame = 0;
+    } else if (!ws.playing && _ticker.isActive) {
+      _ticker.stop();
+    }
+    _follow(ws.frame);
+  }
+
+  // The tick is wrapped in a named span so it shows up in Flutter's timeline.
+  void _tick(Duration e) => Timeline.timeSync('ws tick', () => _tickNow(e));
+
+  void _tickNow(Duration e) {
+    final ws = workspace!;
+    // The engine keeps the clock. The playhead shows the time of the last frame it drew.
+    _lastFrame = (ws.inside!.now * WorkspaceController.fps).round().clamp(
+      0,
+      WorkspaceController.duration,
+    );
+    ws.frame = _lastFrame;
+  }
+
+  void _toggle() {
+    final ws = workspace!;
+    ws.playing = !ws.playing;
+  }
+
+  void _step(int d) {
+    final ws = workspace!;
+    ws.playing = false;
+    ws.frame = ws.frame + d;
+  }
+
+  // ---------------------------------------------------------------- view
 
   // Draws the timeline again after one of the objects it owns has changed.
   void _rebuild() => setState(() {});
@@ -145,15 +188,15 @@ class TimelinePaneState extends State<TimelinePane>
       viewport.setZoom(z, anchor: anchor ?? workspace!.frame);
 
   /// Keeps the playhead in view when zoomed in: the view pages along as play or a scrub carries it off the edge.
-  void follow(int f) {
+  void _follow(int f) {
     if (!mounted) return;
     viewport.follow(f);
   }
 
   /// A two-finger trackpad slide scrolls the tracks like a wheel, in the opposite direction, so the content follows the fingers.
   /// A pinch zooms around the frame under the fingers, as in Final Cut, Cavalry and Theatre.js.
-  void fingers(Offset by, Offset _) => scrollBy(-by);
-  void pinch(double by, Offset at) => setZoom(
+  void _fingers(Offset by, Offset _) => _scrollBy(-by);
+  void _pinch(double by, Offset at) => setZoom(
     viewport.zoom * by,
     anchor: viewport.view
         .frameAt(at.dx)
@@ -161,7 +204,7 @@ class TimelinePaneState extends State<TimelinePane>
         .clamp(0, WorkspaceController.duration),
   );
 
-  void scrollBy(Offset d) {
+  void _scrollBy(Offset d) {
     final sideways =
         HardwareKeyboard.instance.isShiftPressed || d.dx.abs() > d.dy.abs();
     if (HardwareKeyboard.instance.isMetaPressed ||
@@ -184,7 +227,7 @@ class TimelinePaneState extends State<TimelinePane>
           pixelsPerFrame: viewport.view.pixelsPerFrame,
         );
 
-  void overview(Offset p, double w) {
+  void _overview(Offset p, double w) {
     final f = (p.dx - 4) / (w - 8) * WorkspaceController.duration;
     viewport.scrollTo(f - viewport.visible / 2);
   }
@@ -213,8 +256,8 @@ class TimelinePaneState extends State<TimelinePane>
                 ws: ws,
                 loop: ws.inside!.looping,
                 zoom: viewport.zoom,
-                onToggle: toggle,
-                onStep: step,
+                onToggle: _toggle,
+                onStep: _step,
                 onLoop: () =>
                     setState(() => ws.inside!.looping = !ws.inside!.looping),
                 onZoom: setZoom,
@@ -258,9 +301,9 @@ class TimelinePaneState extends State<TimelinePane>
         child: ContextMenu(
           key: labelMenu,
           child: TwoFingerGestures(
-            onWheel: scrollBy,
+            onWheel: _scrollBy,
             // The labels scroll vertically together with the track rows.
-            onPan: (by, _) => scrollBy(Offset(0, -by.dy)),
+            onPan: (by, _) => _scrollBy(Offset(0, -by.dy)),
             child: ClipRect(
               child: LayoutBuilder(
                 builder: (context, box) {
@@ -454,7 +497,7 @@ class TimelinePaneState extends State<TimelinePane>
                         workOut: ruler.workOut,
                         markers: ruler.markers,
                         markColors: ruler.markerColors,
-                        beats: media.beatsOf(ws),
+                        beats: _media.beatsOf(ws),
                         tempo: ws.beats,
                         retimed: ruler.retimed,
                       ),
@@ -468,12 +511,12 @@ class TimelinePaneState extends State<TimelinePane>
               ),
               Expanded(
                 child: MouseRegion(
-                  cursor: drag.cursor,
-                  onHover: (e) => drag.hover(e.localPosition),
+                  cursor: _drag.cursor,
+                  onHover: (e) => _drag.hover(e.localPosition),
                   child: TwoFingerGestures(
-                    onWheel: scrollBy,
-                    onPan: fingers,
-                    onPinch: pinch,
+                    onWheel: _scrollBy,
+                    onPan: _fingers,
+                    onPinch: _pinch,
                     child: ContextMenu(
                       key: trackMenu,
                       child: GestureDetector(
@@ -481,13 +524,13 @@ class TimelinePaneState extends State<TimelinePane>
                         behavior: HitTestBehavior.opaque,
                         supportedDevices: pressingDevices,
                         dragStartBehavior: DragStartBehavior.down,
-                        onTapDown: (d) => drag.tapDown(d.localPosition),
+                        onTapDown: (d) => _drag.tapDown(d.localPosition),
                         onSecondaryTapDown: (d) => trackRight(d.localPosition),
-                        onTapUp: (d) => drag.tapUp(d.localPosition), // Only fires once the gesture is known not to be a drag.
-                        onPanStart: (d) => drag.down(d.localPosition),
-                        onPanUpdate: (d) => drag.move(d.localPosition),
-                        onPanEnd: (_) => drag.up(),
-                        onPanCancel: () => drag.up(keep: false),
+                        onTapUp: (d) => _drag.tapUp(d.localPosition), // Only fires once the gesture is known not to be a _drag.
+                        onPanStart: (d) => _drag.down(d.localPosition),
+                        onPanUpdate: (d) => _drag.move(d.localPosition),
+                        onPanEnd: (_) => _drag.up(),
+                        onPanCancel: () => _drag.up(keep: false),
                         child: RepaintBoundary(
                           child: CustomPaint(
                             size: Size.infinite,
@@ -496,7 +539,7 @@ class TimelinePaneState extends State<TimelinePane>
                               view: v,
                               fps: WorkspaceController.fps,
                               vscroll: viewport.verticalScroll,
-                              restAt: drag.snappedAt,
+                              restAt: _drag.snappedAt,
                             ),
                           ),
                         ),
@@ -511,7 +554,7 @@ class TimelinePaneState extends State<TimelinePane>
                   from: viewport.scroll,
                   to: viewport.scroll + viewport.visible,
                   frame: frame,
-                  onDrag: (p) => overview(p, box.maxWidth),
+                  onDrag: (p) => _overview(p, box.maxWidth),
                 ),
               ),
             ],
@@ -536,7 +579,7 @@ class TimelinePaneState extends State<TimelinePane>
               ),
             ),
           ),
-          if (drag.selectionBox case (final a, final b)?)
+          if (_drag.selectionBox case (final a, final b)?)
             Positioned.fromRect(
               rect: Rect.fromPoints(
                 a,
