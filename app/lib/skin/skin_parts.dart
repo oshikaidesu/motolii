@@ -2,7 +2,7 @@
 //
 // The theme's `Parts` role names a folder. An SVG there named for a part (`tp.eye.svg`, `glyph.select.svg`, `undo.svg`)
 // is drawn in place of the built-in drawing, in the colour the app gives that part.
-// A `frame.<part>.svg` is stretched around that part in its own colours (see [SkinFrame]).
+// A `frame.<part>.svg` is stretched around that part in its own colours (see SkinFrame in widgets/skin_frame.dart).
 // A part the folder does not have keeps the built-in drawing, so a skin may bring one picture or all of them.
 // The part names are listed in shelves/skins/PARTS.md.
 import 'dart:io';
@@ -11,7 +11,6 @@ import 'dart:ui' as ui;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:motolii/widgets/media.dart' show Draw;
 import 'package:motolii/skin/theme.dart';
 
 /// The pictures of the current skin, loaded from the folder named by the theme's `Parts` role.
@@ -110,30 +109,5 @@ abstract final class SkinParts {
       Paint()..filterQuality = FilterQuality.medium,
     );
     c.restore();
-  }
-}
-
-/// A part's frame from the skin: `frame.<name>.svg` stretched around [child].
-///
-/// While [hover] is true, `frame.<name>.hover.svg` is used instead when the skin has it.
-/// Without either picture, [usual] is the decoration.
-class SkinFrame extends StatelessWidget {
-  const SkinFrame(this.name, {super.key, this.hover = false, required this.usual, required this.child});
-
-  /// The part name, as in `frame.<name>.svg`.
-  final String name;
-
-  /// Whether the pointer is over the part.
-  final bool hover;
-
-  /// The decoration used when the skin has no frame for this part.
-  final Decoration usual;
-  final Widget child;
-  @override
-  Widget build(BuildContext context) {
-    final n = [if (hover) 'frame.$name.hover', 'frame.$name'].where(SkinParts.has).firstOrNull;
-    return n == null
-        ? DecoratedBox(decoration: usual, child: child)
-        : CustomPaint(painter: Draw((c, s) => SkinParts.frame(c, Offset.zero & s, n), n), child: child);
   }
 }

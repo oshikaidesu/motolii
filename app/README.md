@@ -14,7 +14,7 @@ Flutter で書いたアプリ。描くのもプロジェクトを持つのもエ
 | `lib/panel.dart` | 規格の入口。`import 'package:motolii/panel.dart';` の 1 行で、規格の部品・見た目の値（`skin/tokens.dart`）・画面の状態（`Ws`）・エンジンの読み書き（`bridge/`）・タブ（`WsPane`）・エンジンが宣言したカード（`LayerCards`）が全部手に入る |
 | `example/` | 見本（pub の置き場）。`my_panel.dart`：規格だけで組んだ自作のパネル。`dart analyze` が一緒に確かめるので、規格を変えて見本が組めなくなれば赤になる |
 | `lib/storage/` | アプリが手元に残す小さいファイル。`kept_file.dart` ファイルの書き込みと JSON・リストの読み込み、`window_settings.dart` `~/.motolii/window.xml`（倍率と着ているスキン）、`free_name.dart` 空いている名前（コピーに番号を付ける） |
-| `lib/skin/` | 見た目：既定の値と、着ているスキンが差し替える物。`tokens.dart` 色の段と寸法（`docs/app/DESIGN.md` から）、`theme.dart` スキンの theme.xml の色、`svg_parts.dart` スキンの `parts/*.svg`（theme.xml の `<Parts>`）、`forms/` 部品の組み立て方（theme.xml の `<Forms Value="poster"/>` が `poster_forms.dart` を選ぶ。名前の無いスキンは `own_forms.dart`、どのフォームも書かなかった部品は `base_controls.dart`） |
+| `lib/skin/` | 見た目：既定の値と、着ているスキンが差し替える物。`tokens.dart` 色の段と寸法（`docs/app/DESIGN.md` から）、`theme.dart` スキンの theme.xml の色、`skin_parts.dart` スキンの `parts/*.svg`（theme.xml の `<Parts>`）、`forms/` 部品の組み立て方（theme.xml の `<Forms Value="poster"/>` が `poster_forms.dart` を選ぶ。名前の無いスキンは `own_forms.dart`、どのフォームも書かなかった部品は `base_controls.dart`） |
 | `assets/` | アプリが読むデータ。`effect_parameter_weights.json`：効果のパラメーターごとの効き（Effects 棚のタイルが読む）。pubspec の `assets:` には載せない：棚と同じく repo の中から `File` で同期に読む（`lib/workspace/shelf/effect_tiles.dart` の `_entry`） |
 | `test/` | 試験（`flutter test`）。直下の 2 枚は本物の物を見る：`accessibility_guidelines_test.dart` は本物のアプリの画面が Flutter のアクセシビリティの指針を満たすか（エンジンが要る）、`skin_folders_test.dart` は棚のスキンが View › Skin に並ぶか。`inspector/`・`skin/`・`widgets/`・`workspace/` は `lib/` と同じ並びで、エンジンの要らない関数と状態（Inspector の `Doc`、画面の `Ws`）が今返す値を留める：コードを移したり分けたりして値が変わると落ちる |
 | `integration_test/`、`test_driver/` | 実機の Mac でアプリを動かす試験（`flutter drive`）。`frame_timing_test.dart`：タイムラインを回して 1 コマ 16 ms に収まるか |
@@ -75,7 +75,7 @@ python3 tool/check_layers.py --write    # import を切った後に、帳簿を�
 4. パネルの中で、押し（`GestureDetector`・`NakedButton` …）・打ち込み欄（`EditableText`）・手描き（`CustomPainter`）を自分で書くと、コミットで断られる（[`.githooks/README.md`](../.githooks/README.md) の shape_check）。足りない部品は規格（`lib/widgets/`）に足す：そうすれば全パネルが同じ物を使える。
 
 
-見本のスキンは [`../shelves/skins/`](../shelves/skins/)（作り方も同じ所）。アプリの側で、theme.xml の色・寸法は `lib/skin/theme.dart`、`<Parts>` の絵は `lib/skin/svg_parts.dart`、`<Forms>` の組み立て方は `lib/skin/forms/<名前>_forms.dart` が読む。
+見本のスキンは [`../shelves/skins/`](../shelves/skins/)（作り方も同じ所）。アプリの側で、theme.xml の色・寸法は `lib/skin/theme.dart`、`<Parts>` の絵は `lib/skin/skin_parts.dart`、`<Forms>` の組み立て方は `lib/skin/forms/<名前>_forms.dart` が読む。
 
 試験の走らせ方（どれも `app/` で）：
 
