@@ -12,6 +12,8 @@
 #include "document/kinds.h"
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // Returns the matrix that places `layer` on the stage at time `now`. `deeper`
 // is nonzero when the result is wanted before the layer's space (2D, 2.5D or
 // 3D) is applied. With `member`, the matrix is for copy number `copy` of the
@@ -45,4 +47,7 @@ void doc_unshape(Stage& s,
 // silence, when no layer is named or its audio is not yet read.
 std::vector<float> doc_sound_now(Doc& d, int layer, const std::string& file,
                                  const std::string& name, bool fft, int wide);
+
+}  // namespace motolii
+
 #endif  // MOTOLII_DOCUMENT_EVALUATE_PLACE_H_

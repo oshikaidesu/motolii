@@ -66,6 +66,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 void doc_evaluate(Doc& d, double now) {
   Stage& s = *d.stage;
   // Cleared and rebuilt on demand. A flat layer's sheet is now as large as its
@@ -1544,3 +1546,5 @@ double doc_fx_room(Doc& d, int layer) {
                  most("shadow_distance", 10) + 3.0 * most("shadow_blur", 10));
   return r <= 0.0 ? 0.0 : std::exp2(std::ceil(std::log2(std::max(r, 1.0))));
 }
+
+}  // namespace motolii

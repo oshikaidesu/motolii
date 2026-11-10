@@ -7,6 +7,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Brings the stage to the state the document has at time `now`. This covers the
 // camera and lens, layer order and depth sorting, scenes, per-layer materials
 // and copies, lights, clipping and the 3D layers of imported After Effects
@@ -46,5 +48,7 @@ inline const char* const doc_fxing =
 // canvas is made with this much room, so a number changed within it is redrawn
 // without rebuilding the canvas, as a texture atlas keeps power-of-two room.
 double doc_fx_room(Doc& d, int layer);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EVALUATE_EVALUATE_H_

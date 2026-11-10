@@ -15,11 +15,15 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Rebuilds the mesh of layer `layer` from its p5 sketch at time `now`. `t`
 // holds the layer's mesh, its material and the sketch state cached between
 // frames. Does nothing if the layer has no running script. The mesh is only
 // rebuilt when the sketch frame, the scripts, the camera position or a line
 // strength has changed since the last call.
 void doc_sketch_mesh(Doc& d, int layer, Doc::Shown& t, double now);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EVALUATE_SKETCH_H_

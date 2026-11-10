@@ -23,6 +23,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 std::vector<std::string> doc_fx_list(Doc& d, int layer, bool off) {
   std::vector<std::string> said, all;
   const std::string hidden =
@@ -170,3 +172,5 @@ bool doc_fx(Doc& d, int layer, double at, bool most, double units,
               0.5 * std::max(0.0, num("bloat", 0)) + std::fabs(num("warp", 0)));
   return ok;
 }
+
+}  // namespace motolii

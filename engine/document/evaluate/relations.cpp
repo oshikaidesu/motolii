@@ -44,6 +44,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 double doc_behaviour_at(Doc& d, int by, int copy, int n, double t) {
   // Limits how deeply behaviours can drive each other, so that a cycle of them
   // terminates.
@@ -824,3 +826,5 @@ double doc_heading(Doc& d, int layer, double now) {
     if (k >= now && going(k, k + 1.0 / 60.0, &heading)) return heading;
   return 0.0;
 }
+
+}  // namespace motolii

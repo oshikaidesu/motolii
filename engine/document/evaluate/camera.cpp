@@ -51,6 +51,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 DocViewCamera doc_view_camera_of(Doc& d, int camera, double now) {
   const auto turned = [&](const char* name, math::double3 about) {
     return camera ? math::mat4::rotation(doc_number(d, camera, name, now, 0) *
@@ -405,3 +407,5 @@ void doc_look(Doc& d) {
   if (d.backdrop)
     move(s, d.backdrop->sheet, [&](int, const mat4f&) { return mat4f(d.rig); });
 }
+
+}  // namespace motolii

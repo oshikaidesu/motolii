@@ -14,6 +14,8 @@
 #include "physics/physics.h"
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // Returns the value that behaviour layer `by` gives to copy number `copy` of
 // `n` copies at time `t`. The behaviour type is the layer's "file" value:
 // stagger, oscillator, noise or random. A number from 0 to 1 is mapped onto the
@@ -157,4 +159,7 @@ bool doc_staggered(Doc& d, int layer, double now);
 // When it stands still, it is the direction it last moved in, or else the
 // direction it will move in. Returns 0 for any other layer.
 double doc_heading(Doc& d, int layer, double now);
+
+}  // namespace motolii
+
 #endif  // MOTOLII_DOCUMENT_EVALUATE_RELATIONS_H_

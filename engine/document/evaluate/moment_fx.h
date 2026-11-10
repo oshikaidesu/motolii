@@ -16,6 +16,8 @@
 #include "document/kinds.h"
 #include "stage/layer_effects/layer_fx.h"
 
+namespace motolii {
+
 // Returns whether the layer is a group (a Null layer) with effects of its own,
 // including ThorVG effects. The layers in the group are drawn together into one
 // image, the effects run on that image, and the image is laid where the group
@@ -58,5 +60,7 @@ void doc_layers_fx(Doc& d);
 // that one image.
 void doc_layers_read(Doc& d,
                      const std::vector<std::pair<int, Doc::Shown*>>& laid);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EVALUATE_MOMENT_FX_H_

@@ -47,6 +47,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 namespace {
 // Returns the depth scale of a layer at time `now`. A scale of exactly 0 would
 // make the matrix singular, so a layer that is not a solid gets 1e-3 instead.
@@ -610,3 +612,5 @@ std::vector<float> doc_sound_now(Doc& d, int layer, const std::string& file,
   return sound_at(read, fft, wide,
                   now < start ? -1.0 : begin + (now - start) * speed);
 }
+
+}  // namespace motolii

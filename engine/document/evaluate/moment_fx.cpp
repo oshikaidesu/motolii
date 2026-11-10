@@ -44,6 +44,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 namespace {
 
 // Prepares a solid layer before the frame is rendered. Draws the layer square
@@ -669,3 +671,5 @@ void doc_layers_read(Doc& d,
       if (d.beforeOf[k] == layer) s.before.push_back(std::move(fx[k]));
   }
 }
+
+}  // namespace motolii

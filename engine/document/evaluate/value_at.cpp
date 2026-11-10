@@ -17,6 +17,8 @@
 #include "motion/easing_names.h"
 #include "stage/effects/screen_fx.h"
 
+namespace motolii {
+
 bool doc_rows(Doc& d, char* ask,
               const std::function<void(sqlite3_stmt*)>& each) {
   sqlite3_stmt* rows = nullptr;
@@ -290,3 +292,5 @@ std::string doc_word(Doc& d, int layer, const char* name) {
   d.words.emplace(std::make_pair(layer, std::string(name)), is);
   return is;
 }
+
+}  // namespace motolii

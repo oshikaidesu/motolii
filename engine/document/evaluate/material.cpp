@@ -19,6 +19,8 @@
 
 using namespace filament;
 
+namespace motolii {
+
 std::string doc_material(Doc& d, int layer) {
   const std::string said = doc_word(d, layer, "shading");
   if (!said.empty()) return said;
@@ -84,3 +86,5 @@ void doc_parts(Stage& s, const Doc::Shown& t,
   doc_entities(s, t,
                [&](utils::Entity e) { each(faces, faces.getInstance(e)); });
 }
+
+}  // namespace motolii

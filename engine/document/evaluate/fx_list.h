@@ -9,6 +9,8 @@
 #include "document/kinds.h"
 #include "stage/canvas/canvas_cache.h"
 
+namespace motolii {
+
 // Returns the layer's effects in the order they are laid, like the effect stack
 // of After Effects.
 //
@@ -51,5 +53,7 @@ double doc_most(Doc& d, int layer, const char* name, double otherwise);
 // instead; see thing_thor in engine/stage/effects/screen_fx.h.
 bool doc_fx(Doc& d, int layer, double at, bool most, double units,
             Canvas2DFx& fx, std::string& why, bool camera = false);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EVALUATE_FX_LIST_H_

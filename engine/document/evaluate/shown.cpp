@@ -19,6 +19,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 namespace {
 
 // Computes what doc_half caches.
@@ -175,3 +177,5 @@ bool doc_frame(Doc& d, int layer, double now, double* frame) {
   }
   return true;
 }
+
+}  // namespace motolii

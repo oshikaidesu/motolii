@@ -13,6 +13,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Returns the layers in the order they lie, the one furthest back first.
 std::vector<int> doc_layers(Doc& d);
 // Returns how long the layer is on, in seconds, or -1 when it never ends.
@@ -53,5 +55,7 @@ filament::math::mat4 doc_shown_at(Doc& d, int layer, double now);
 // as seen, the pivot x and y, and the depth. Returns false when the layer is
 // not shown.
 bool doc_frame(Doc& d, int layer, double now, double* frame);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_EVALUATE_SHOWN_H_

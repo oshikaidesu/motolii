@@ -8,6 +8,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Returns the values that relation `by`, written as a script file, gives all
 // its layers at time `t`. For each layer the values are those named in
 // doc_relate_names, in order. The script's relate() receives all layers at
@@ -31,4 +33,7 @@ bool doc_pushes(Doc& d, int by);
 // in the world.
 double doc_world_value(Doc& d, int layer, size_t name, double t,
                        double otherwise);
+
+}  // namespace motolii
+
 #endif  // MOTOLII_DOCUMENT_EVALUATE_WORLD_H_

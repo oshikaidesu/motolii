@@ -41,6 +41,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 namespace {
 
 // Returns shape number `i` of the sketch, fetching shapes from the script up to
@@ -449,3 +451,5 @@ void doc_sketch_mesh(Doc& d, int layer, Doc::Shown& t, double now) {
                           m.vb, m.ib, 0, 0);
   }
 }
+
+}  // namespace motolii

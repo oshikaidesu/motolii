@@ -8,6 +8,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // A viewpoint computed from a camera layer. `round` is the rotation matrix of
 // the camera, `look` is the point it looks at, `eye` is the position of the
 // viewer, `up` is the up direction, `far` is the distance of the eye as a
@@ -29,4 +31,7 @@ DocViewCamera doc_view_camera_of(Doc& d, int camera, double now);
 // reflections, room lighting and the background. The settings are properties of
 // layer 0, which holds the settings of the canvas itself.
 void doc_look(Doc& d);
+
+}  // namespace motolii
+
 #endif  // MOTOLII_DOCUMENT_EVALUATE_CAMERA_H_

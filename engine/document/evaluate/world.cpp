@@ -28,6 +28,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 namespace {
 // Returns true if a cached solve has used up its 5 ms time slice for this
 // image, so it should yield, as React's Scheduler does. The app then shows the
@@ -430,3 +432,5 @@ double doc_world_value(Doc& d, int layer, size_t name, double t,
              ? otherwise
              : (*all)[at->second * doc_world_kept + name];
 }
+
+}  // namespace motolii

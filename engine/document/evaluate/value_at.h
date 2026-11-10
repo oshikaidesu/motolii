@@ -12,6 +12,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Runs the query `ask` on the project database and calls `each` once per result
 // row. Takes ownership of `ask`, which must come from sqlite3_mprintf, and
 // frees it. Returns false if SQLite rejects the query.
@@ -86,4 +88,7 @@ inline double doc_own_time(Doc& d, int layer, double at, double by) {
 // Like the cells of a timesheet, a drawing is never between two numbers (see
 // OpenToonz's xdtsio.cpp). Returns 1 if there are no keyframes.
 double doc_cel(Doc& d, int layer, double at);
+
+}  // namespace motolii
+
 #endif  // MOTOLII_DOCUMENT_EVALUATE_VALUE_AT_H_

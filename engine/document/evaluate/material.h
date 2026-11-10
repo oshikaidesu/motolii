@@ -13,6 +13,8 @@
 #include "document/kinds.h"
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // Returns the material a layer wears. In the Material group of the Create tab
 // any layer can wear one, one at a time, and the shading property names it.
 // Documents from before that group existed filled a solid with glass to get
@@ -45,4 +47,7 @@ void doc_parts(
     Stage& s, const Doc::Shown& t,
     const std::function<void(filament::RenderableManager&,
                              filament::RenderableManager::Instance)>& each);
+
+}  // namespace motolii
+
 #endif  // MOTOLII_DOCUMENT_EVALUATE_MATERIAL_H_
