@@ -298,6 +298,7 @@ add_library(motolii_document STATIC
   document/evaluate/moment_fx.cpp
   document/evaluate/moment_fx_parts.cpp
   document/evaluate/place.cpp
+  document/evaluate/place_joins.cpp
   document/evaluate/relations.cpp
   document/evaluate/shown.cpp
   document/evaluate/sketch.cpp
