@@ -2,7 +2,7 @@
 // AbsentMotion shows each effect from a table written beforehand (tools/effect_showcase.json). Here the effect file itself tells the tile what to
 // show, so a file the user puts in needs no table line and no developer. What is read from the file (engine/document/recipes.h, isf_tags):
 // - A transition's progress goes from 0 to 1. An effect that runs by the clock, or keeps its previous frame, is left to run.
-// - Otherwise the sample stands still, so the parameter that stands for the effect goes between two values (see [_telling]).
+// - Otherwise the sample stands still, so the parameter that stands for the effect goes between two values (see [tellingKnob]).
 // - If nothing shows on the whole photo, the effect goes on a card moving across AbsentMotion's grid (its "move" layout).
 // - With no parameter to turn, a line between before and after sweeps across the tile.
 // Only a tile that shows nothing stays still. AbsentMotion's own effects use their line of the table.
@@ -29,10 +29,9 @@ import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/engine_paths.dart';
 import 'package:motolii/workspace/state/workspace_state.dart' show wsTextFont;
 import 'package:motolii/workspace/shelf/copies_tiles.dart' show TileQueue;
-
-part 'effect_tiles_knob.dart';
-part 'effect_tiles_seen.dart';
-part 'effect_tiles_showcase.dart';
+import 'package:motolii/workspace/shelf/effect_tiles_knob.dart';
+import 'package:motolii/workspace/shelf/effect_tiles_seen.dart';
+import 'package:motolii/workspace/shelf/effect_tiles_showcase.dart';
 
 abstract final class EffectTiles {
   static void Function()? _told;
@@ -373,7 +372,7 @@ abstract final class EffectTiles {
     }
     for (final (empty, seen) in [('none', null), ('stage', grid)]) {
       // Nothing on the stage (black), then the grid alone. A tile hardly different from either shows nothing, by the same
-      // _same test. The road alone is not used: rain on a pane, thin streaks over it, is hardly different from it by the mean.
+      // looksSame test. The road alone is not used: rain on a pane, thin streaks over it, is hardly different from it by the mean.
       for (final t in [grid, card, photo, under, words]) {
         m.set(t, 'opacity', t == seen ? 1 : 0);
       }
@@ -459,7 +458,7 @@ abstract final class EffectTiles {
         }
         final filed = <String, double>{};
         for (final MapEntry(:key, :value) in {...?show?.knobs, ...held(dir, f)}.entries) {
-          if (m.value(on, key, 0) case final was? when !_part.hasMatch(key)) filed[key] = was;
+          if (m.value(on, key, 0) case final was? when !vectorPart.hasMatch(key)) filed[key] = was;
           m.set(on, key, value); // As AbsentMotion shows it: the table's values, not the file's defaults.
         }
         final knobs = [
@@ -477,9 +476,9 @@ abstract final class EffectTiles {
           sweeps[k] = [from, to]; // As the reviewer chose it, ahead of the measured one.
         } else if (sweeps.isEmpty && (!runs || heaviest != null)) {
           // An effect that runs by the clock has its heaviest parameter turned as it runs, or none.
-          if (_telling(m, on, knobs, filed, lists, folder.path, first: heaviest, alone: runs) case final knob?) sweeps[knob.$1] = [knob.$2, knob.$3];
+          if (tellingKnob(m, on, knobs, filed, lists, folder.path, first: heaviest, alone: runs) case final knob?) sweeps[knob.$1] = [knob.$2, knob.$3];
         }
-        if (!moving && alone == 0 && !runs && sweeps.isEmpty && enough && _same('${folder.path}/usual.png', '${folder.path}/sample.png')) {
+        if (!moving && alone == 0 && !runs && sweeps.isEmpty && enough && looksSame('${folder.path}/usual.png', '${folder.path}/sample.png')) {
           // Nothing on the photo: no sixteen pictures of nothing.
           if (whole) m.say(0, 'script', 'none');
           if (onIt) m.say(thing, 'fx', 'none');
@@ -503,7 +502,7 @@ abstract final class EffectTiles {
         same =
             enough &&
             (alone == 0 || aloneOk) &&
-            (['${moving ? 'moved' : bare}${passes ? '_road' : ''}', 'none', 'stage'].any((b) => _same('${base}_%d.png', '${folder.path}/${b}_%d.png')));
+            (['${moving ? 'moved' : bare}${passes ? '_road' : ''}', 'none', 'stage'].any((b) => looksSame('${base}_%d.png', '${folder.path}/${b}_%d.png')));
         stands = !moving && !runs && sweeps.isEmpty;
         split = stands && !said.contains('generator');
         if (!same) break;

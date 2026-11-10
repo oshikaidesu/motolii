@@ -1,39 +1,11 @@
-// Part of effect_tiles.dart: whether a tile shows its effect at all. Its pictures are compared with the sample's using
-// ffmpeg's psnr and the mean difference that AbsentMotion's effect_thumbs.py takes.
-part of 'effect_tiles.dart';
-
-/// How far each try differs from the usual picture, as (try number, mean squared error from ffmpeg psnr), in one run.
-List<(int, double)> _changes(String folder) {
-  final r = ffmpeg([
-    '-loop',
-    '1',
-    '-i',
-    '$folder/usual.png',
-    '-i',
-    '$folder/try_%d.png',
-    '-lavfi',
-    '[0:v][1:v]psnr=shortest=1:stats_file=-',
-    '-f',
-    'null',
-    '-',
-  ]);
-  for (var i = 0; File('$folder/try_$i.png').existsSync(); i++) {
-    File('$folder/try_$i.png').deleteSync(); // The next effect may have fewer tries.
-  }
-  if (r == null) return const []; // ffmpeg is missing where the app was started from, so nothing is measured.
-  return [
-    for (final l in '${r.stdout}'.split('\n'))
-      if (RegExp(r'n:(\d+) mse_avg:([\d.]+)').firstMatch(l) case final w?) (int.parse(w.group(1)!) - 1, double.parse(w.group(2)!)),
-  ];
-}
-
-// _plain is the mean squared error at 40 dB, below which a change is not seen. _clear is the error at 24 dB, which is
-// plainly visible with the picture still there, as measured on these tiles.
-final _plain = 255 * 255 / 10000.0, _clear = 255 * 255 / 251.0;
+// Whether a tile shows its effect at all. Its pictures are compared with the sample's using the mean difference that
+// AbsentMotion's effect_thumbs.py takes.
+import 'dart:convert';
+import 'dart:io';
 
 /// Whether two pictures (or `_%d` runs of them) look the same: every frame differs by less than 2.0, the threshold
 /// AbsentMotion's effect_thumbs.py uses. False when nothing could be measured because ffmpeg is missing.
-bool _same(String a, String b) {
+bool looksSame(String a, String b) {
   final changes = _differ(a, b);
   return changes.isNotEmpty && changes.every((c) => c < 2.0);
 }

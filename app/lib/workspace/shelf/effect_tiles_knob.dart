@@ -1,5 +1,9 @@
-// Part of effect_tiles.dart: the parameter that stands for an effect on its tile, and how far it is turned.
-part of 'effect_tiles.dart';
+// The parameter that stands for an effect on its tile, and how far it is turned.
+import 'dart:io';
+
+import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/workspace/shelf/effect_tiles.dart';
+import 'package:motolii/workspace/shelf/effect_tiles_seen.dart';
 
 /// Picks the parameter that stands for an effect on its tile, and the two values it moves between.
 ///
@@ -17,7 +21,7 @@ part of 'effect_tiles.dart';
 ///
 /// If [alone] is set only [first] is tried, because an effect that runs by the clock is left to run.
 /// Returns null when no parameter shows the effect.
-(String, double, double)? _telling(
+(String, double, double)? tellingKnob(
   Motolii m,
   int on,
   List<String> knobs,
@@ -85,14 +89,43 @@ part of 'effect_tiles.dart';
     final most = given.reduce((a, b) => b.$4 > a.$4 ? b : a);
     if (most.$4 > _plain) return (most.$1, most.$2, most.$3);
   }
-  for (final k in [...knobs.where((k) => !_part.hasMatch(k)), ...knobs.where(_part.hasMatch)]) {
+  for (final k in [...knobs.where((k) => !vectorPart.hasMatch(k)), ...knobs.where(vectorPart.hasMatch)]) {
     if (turned(k) case final knob?) return knob;
   }
   return null;
 }
 
+/// How far each try differs from the usual picture, as (try number, mean squared error from ffmpeg psnr), in one run.
+List<(int, double)> _changes(String folder) {
+  final r = ffmpeg([
+    '-loop',
+    '1',
+    '-i',
+    '$folder/usual.png',
+    '-i',
+    '$folder/try_%d.png',
+    '-lavfi',
+    '[0:v][1:v]psnr=shortest=1:stats_file=-',
+    '-f',
+    'null',
+    '-',
+  ]);
+  for (var i = 0; File('$folder/try_$i.png').existsSync(); i++) {
+    File('$folder/try_$i.png').deleteSync(); // The next effect may have fewer tries.
+  }
+  if (r == null) return const []; // ffmpeg is missing where the app was started from, so nothing is measured.
+  return [
+    for (final l in '${r.stdout}'.split('\n'))
+      if (RegExp(r'n:(\d+) mse_avg:([\d.]+)').firstMatch(l) case final w?) (int.parse(w.group(1)!) - 1, double.parse(w.group(2)!)),
+  ];
+}
+
+// _plain is the mean squared error at 40 dB, below which a change is not seen. _clear is the error at 24 dB, which is
+// plainly visible with the picture still there, as measured on these tiles.
+final _plain = 255 * 255 / 10000.0, _clear = 255 * 255 / 251.0;
+
 final _clock = RegExp(r'progress|completion|evolution|phase|rot_?y|進行|進捗|位相', caseSensitive: false);
 
 final _whole = RegExp(r'progress|completion|rot_?y|進行|進捗', caseSensitive: false);
 
-final _part = RegExp(r'_[xyzw]$'), _faint = RegExp(r'alpha|opacity|blend|mix|seed', caseSensitive: false);
+final vectorPart = RegExp(r'_[xyzw]$'), _faint = RegExp(r'alpha|opacity|blend|mix|seed', caseSensitive: false);

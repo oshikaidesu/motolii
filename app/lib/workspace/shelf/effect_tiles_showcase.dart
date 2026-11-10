@@ -1,5 +1,6 @@
-// Part of effect_tiles.dart: AbsentMotion's table of how each of its effects is shown (tools/effect_showcase.json).
-part of 'effect_tiles.dart';
+// AbsentMotion's table of how each of its effects is shown (tools/effect_showcase.json).
+import 'dart:convert';
+import 'dart:io';
 
 /// How AbsentMotion shows an effect, from its tools/effect_showcase.json (Apache-2.0).
 ///
