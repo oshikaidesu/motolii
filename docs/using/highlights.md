@@ -18,8 +18,6 @@ Where it stops: ISF is an open format that VJ tools read too. What is new here i
 
 Blur, Drop Shadow, Duotone and Gradient Map are shelf files like any other; nothing in the effects list is built into the app. A file you drop in is on the same footing as they are, and you can open any of them to see how it is made and copy it.
 
-Where it stops: a blur along one axis only, and the shadow's distance-and-angle setting, are gone. Projects saved before this change do not open with these four effects.
-
 ## Paste code from creative-coding sites and it becomes a layer
 
 Paste a sketch and Motolii works out which site's code it is. It reads Shadertoy, GLSL Sandbox, Hydra, three.js, Two.js, Turtletoy, Paper.js, canvas, Bonzomatic, twigl, Dwitter and tixy, and treats anything else as p5.js. p5.js runs without a browser, and the code stays editable on the layer.
