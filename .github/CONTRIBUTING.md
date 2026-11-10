@@ -16,30 +16,52 @@
 git config core.hooksPath .githooks
 ```
 
-入れなくても、同じ検査（500 行・置き場・件名 72 字）は push と PR のたびに `.github/workflows/checks.yml` が回します。入れておくと、GitHub で落ちる前に手元で止まります。
+入れなくても、ほぼ同じ検査が push と PR のたびに GitHub（`.github/workflows/checks.yml`）で回ります。入れておくと、GitHub で落ちる前に手元で止まります。
 
-コードと台帳の言葉は After Effects・Filament・Flutter・Blender と同じです：アプリ、エンジン、レイヤー、プロジェクト、プレビュー（コードでは `Stage`）。左のタブだけ「棚」（Blender の Asset Shelf）。新しい言い方は作りません。
+コードと文書の言葉は After Effects・Filament・Flutter・Blender と同じです：アプリ、エンジン、レイヤー、プロジェクト、プレビュー（コードでは `Stage`）。左のタブだけ「棚」（Blender の Asset Shelf）。新しい言い方は作りません。
 
-## 確かめ方
+## コミットで走る検査
 
-| 何を | コマンド | 通った時 |
-|---|---|---|
-| 1 ファイル 500 行（下の決まり 2） | `python3 .githooks/size_check.py` | 何も出なければ通過 |
-| 置き場（AGENTS.md「構成の目標」） | `python3 .githooks/layout_check.py` | 何も出なければ通過 |
-| アプリの書き方 | `cd app && flutter analyze lib` | エラー 0（今ある注意は 100） |
+コミットのたびに `.githooks/pre-commit`（マージのコミットは `pre-merge-commit` が同じ物）と `.githooks/commit-msg` が走り、断られたら最後の行に `refused by .githooks/<ファイル>` と出ます。各検査の詳しい直し方は [`.githooks/README.md`](../.githooks/README.md)。手で走らせるには、リポジトリの直下で `python3 .githooks/<ファイル>.py`。
 
-GitHub の Actions で組み立て全部を走らせるのは `.github/workflows/build.yml`（Apple Silicon の Mac で、README の手順どおり組んで `flutter analyze`。コードに触る PR と、Actions の画面から手で）。自分で書いた試験はありません（コードと試験を同じ手が書いていたので、2026-11-08 に全部消しました）。外から求める条件は [`docs/TESTING.md`](../docs/TESTING.md)。作りは [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) と [`engine/README.md`](../engine/README.md)。行動規範は [`.github/CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)、脆弱性は [`.github/SECURITY.md`](SECURITY.md)。
+| 検査 | 断る物 | コミット | GitHub（checks.yml） |
+|---|---|---|---|
+| `size_check.py` | 自前のファイルが 500 行を超える。`name_2.dart` のような番号の名前（自前 = `app/lib` の Dart、`engine/` の C++ と `.js`、`shelves/` の `.js`。他人のコードの `engine/third_party/`・`shelves/aviutl_scripts/` は除く）。既に超えている物は `over_500.txt` に書いてあり、増やせません | ステージした物 | 全部 |
+| `layout_check.py` | 置き場（AGENTS.md「構成の目標」）：直下の余計な物、入口の README の表に無いフォルダ、`out/`・`build/` が git に入る、番号や「文字＋数字」の名前、1 フォルダに自前のファイル 40 本を超える。日本語の `.md` に `.en.md` が無い、または英語の要約が無い | ステージした物 | 全部 |
+| `path_check.py` | 棚のファイルと自前の `.md` が書いている道（`import`・画像・リンク）の先が無い | ステージした棚のファイル（何かを消す・動かす時は全部） | 全部 |
+| `card_check.py` | Inspector のカードを Dart で手描きする（値の名前を文字列で書く）。カードはエンジンの `card_table.h` に宣言する | ステージした物 | 全部 |
+| `reach_check.py` | アプリが届かない物：どこからも呼ばれない `motolii_*` の C の呼び出し、`app/lib` の公開クラス | ステージした物 | 全部 |
+| `format_check.py` | `dart format` のままでない Dart | ステージした Dart。`dart` が無ければ飛ばす | **走らない** |
+| `word_check.py` | 使わなくなった言い方（`docs/internal/notes/rename_words.md`）。今は数を出すだけで断らない | 足した行 | 全部（断らない） |
+| `shape_check.sh` | [ast-grep](https://ast-grep.github.io/) が `.githooks/rules/` の形を断る：Dart の手書きの押し・ホバー・重ね・手描き、C++ のレイヤーの種類を名前で比べる枝。ステージしたファイルは、HEAD より断られる形を増やせません | ステージした物。ast-grep が無ければ飛ばす | 全部（ast-grep を入れて走る） |
+| `subject_check.py` | 件名（1 行目）が 72 字を超える | 書いているコミット | PR・push が持ち込む全コミット |
+
+そのほか、`pre-commit` は最初に `debt: …` の 1 行を出します。断りではなく、決まりがまだ許している数です：500 行を超えているファイルの数（`over_500.txt`）、木に無くても通す道の数（`path_check_allow.txt`）、手で書いた Dart の行数。コミットで減っているかを見るためにあります。
+
+`git commit --no-verify` で手元の検査は飛ばせますが、GitHub で同じ検査が落ちます（`format_check.py` は GitHub に無いので落ちません）。
+
+自分で試すとき：
+
+- Dart：`cd app && dart analyze lib`
+- C++：`./engine/check_syntax.sh`（組み立てずに構文だけ見る。何も書かない）
+
+GitHub の Actions で全部を組み立てるのは `.github/workflows/build.yml`（Apple Silicon の Mac で、README の手順どおり組んで `flutter analyze`。`engine/`・`shelves/`・`app/`・`Brewfile` に触る main への push と PR、そして Actions の画面から手で）。自分で書いた試験はありません（コードと試験を同じ手が書いていたので、2026-11-08 に全部消しました）。外から求める条件は [`docs/TESTING.md`](../docs/TESTING.md)。作りは [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) と [`engine/README.md`](../engine/README.md)。行動規範は [`.github/CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)、脆弱性は [`.github/SECURITY.md`](SECURITY.md)。
+
+Claude Code などの AI で編集する場合だけ、もう 1 つあります。`.claude/hooks/own_code_sign.py` が Claude Code の編集の前に動き、自前のファイル（`app/lib` の Dart、`engine/` の C++）を長くする編集を、先に既にある物を探す（`python3 .githooks/what_exists.py --sketch dart|engine ファイル < 仮コード`）まで止めます。コミットや GitHub では検査されず、人が手で編集する時には関係ありません。
 
 ## 決まり
 
 ### 1. 作る前に探す
-新しく書く前に、ディレクトリ（`engine/` 本体、`app/` アプリ、`docs/` 調べた紙）と、ネットの既存の実装を探してください。作者のやり方のまま使える物があれば、それを使います。
+新しく書く前に、ディレクトリ（`engine/` 本体、`app/` アプリ、`docs/` 調べた紙）と、ネットの既存の実装を探してください。作者のやり方のまま使える物があれば、それを使います。既にある物を言葉で引く道具：`python3 .githooks/what_exists.py wave copies`。
 
-### 2. 新しいファイルは台帳に 1 行
-自分のコードのファイルは 500 行まで。超えそうなら、役目ごとに名前を付けて分けてください（`_2` のような番号の名前は止まります）。実験は自分のブランチに置き、main にはアプリが使う物だけを入れます。
+### 2. 1 ファイル 1 役目、500 行まで
+超えそうなら、役目ごとに名前を付けて分けてください（`_2` のような番号の名前は止まります）。実験は自分のブランチに置き、main にはアプリが使う物だけを入れます。
 
-### 3. コミット（PR）の本文に出典
-何をどこから借りたか（URL・版かコミット）と、何を確かめて何がまだかを書きます。例：`git show d46f69cac`。1 行目（見出し）は 72 字まで、詳しい事は 1 行空けて本文に。超えると `.githooks/commit-msg` がコミットを止め、CI（`.github/workflows/checks.yml`）も PR を落とします。
+### 3. コミットのメッセージ
+- **件名**（1 行目）は 72 字まで、何を変えたかを書きます。例：`Remove the unused Foo card`、`Fix Y in Z`。
+- 1 行空けて**本文**に、なぜ変えたか、何を確かめて何がまだかを書きます。
+- 何かを借りた時は、どこから借りたか（URL・版かコミット）を本文に書きます。例：`git show d46f69cac`。
+- 件名が 72 字を超えると `.githooks/commit-msg` がコミットを止め、GitHub も PR を落とします。書いた文は `git commit -e -F <ファイル>` で戻ります。
 
 ### 4. 他の人の作品を入れる時
 - 作者のフォルダごと、なるべく手を入れずに置く。隣に作者のライセンスの文書（`LICENSE`）と、取ってきた所（`SOURCE.txt`：名前と作者／licence／from／page）。

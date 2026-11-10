@@ -1,10 +1,15 @@
 # Motolii
 
-[![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![ledger](https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml)
+[![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![checks](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml)
 
 **ネットで見つけた表現を、すぐ自分の映像に。**
 
 Motolii は、MV やモーショングラフィックスを制作するためのオープンソースの動画編集ソフトです。
+
+**見つけたファイルを使うには**：[`shelves/README.md`](shelves/README.md) を見てください。ファイルの種類ごとに置き場所と書き方があります。
+
+- ファイル（シェーダー・`.js`・イージングなど）：種類に合うフォルダに置く。例：`effects/` に `.fs` を置くと Effects タブに出る
+- コード（p5.js・Shadertoy など）：置かずに、コピーしてアプリで ⌘V
 
 After Effects のような映像制作を、より簡単な操作で行えるように開発しています。また、Web 上で公開されているエフェクトやスクリプトを、専用プラグインに作り直さずに利用できることも特徴です。
 

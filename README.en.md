@@ -1,10 +1,15 @@
 # Motolii
 
-[![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![ledger](https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/assets.yml)
+[![build](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/build.yml) [![checks](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml/badge.svg)](https://github.com/oshikaidesu/motolii/actions/workflows/checks.yml)
 
 **Use a look you found on the net in your own video, right away.**
 
 Motolii is an open-source video editor for making music videos and motion graphics.
+
+**To use a file you found**, see [`shelves/README.md`](shelves/README.md) ([English version](shelves/README.en.md)). Each kind of file has its own folder and its own way of being written.
+
+- A file (a shader, a `.js`, an easing...): put it in the folder for its kind. For example, a `.fs` in `effects/` shows in the Effects tab.
+- Code (p5.js, Shadertoy...): do not place it; copy it and press ⌘V in the app.
 
 It is being built so that the kind of work done in After Effects takes simpler handling. It can also use effects and scripts published on the web without rebuilding them as dedicated plugins.
 

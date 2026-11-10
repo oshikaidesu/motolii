@@ -18,27 +18,50 @@ As in [`README.en.md`](../README.en.md) ("Try it"). If you will commit, once in 
 git config core.hooksPath .githooks
 ```
 
-Without it, the same checks (500 lines, where things go, 72-character subjects) still run on every push and pull request in `.github/workflows/checks.yml`; with it, they stop you at commit time instead of on GitHub.
+Without it, almost the same checks still run on every push and pull request on GitHub (`.github/workflows/checks.yml`); with it, they stop you at commit time instead of on GitHub.
 
 How the code is laid out: [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) and [`engine/README.md`](../engine/README.md) (which files the current build uses; the rest are earlier probes). Both are in Japanese, with an English summary at the top.
 
-Words in the code and the ledger are the ones After Effects, Filament, Flutter and Blender use: app, engine, layer, project, preview (`Stage` in the code). Only the left tabs have their own name, "shelf" (棚, as in Blender's Asset Shelf). No new coinages.
+Words in the code and the docs are the ones After Effects, Filament, Flutter and Blender use: app, engine, layer, project, preview (`Stage` in the code). Only the left tabs have their own name, "shelf" (棚, as in Blender's Asset Shelf). No new coinages.
 
-## Checks
+## Checks that run at a commit
 
-| What | Command | When it holds |
-|---|---|---|
-| 500 lines a file (rule 2 below) | `python3 .githooks/size_check.py` | silent means it passed |
-| Where things go (AGENTS.md 「構成の目標」) | `python3 .githooks/layout_check.py` | silent means it passed |
-| The UI's code | `cd app && flutter analyze lib` | No errors (100 notices today) |
+On every commit, `.githooks/pre-commit` (a merge commit gets the same from `pre-merge-commit`) and `.githooks/commit-msg` run. When one refuses, the last line says `refused by .githooks/<file>`. How to fix each one: [`.githooks/README.md`](../.githooks/README.md) (Japanese). To run one by hand, from the root of the repository: `python3 .githooks/<file>.py`.
 
-The whole build runs on GitHub Actions in `.github/workflows/build.yml` (on an Apple silicon Mac, built as the README says, then `flutter analyze`; on pull requests that touch the code, and by hand from the Actions tab). There are no self-written tests (they were removed on 2026-11-08: the same hands wrote the code and the tests); the external requirements are in [`docs/TESTING.md`](../docs/TESTING.md).
+| Check | What it refuses | At a commit | On GitHub (checks.yml) |
+|---|---|---|---|
+| `size_check.py` | A file of our own over 500 lines; a numbered name such as `name_2.dart`. Ours means Dart in `app/lib`, C++ and `.js` in `engine/`, `.js` in `shelves/` (not other people's code in `engine/third_party/` and `shelves/aviutl_scripts/`). Files already over are listed in `over_500.txt` and may not grow | Staged files | All files |
+| `layout_check.py` | Where things go (AGENTS.md 「構成の目標」): stray files at the root, a folder missing from its entrance README's table, `out/` or `build/` in git, numbered or letter-plus-number names, more than 40 files of our own in one folder. A Japanese `.md` with no `.en.md`, or with no English summary | Staged files | All files |
+| `path_check.py` | A path a shelf file or one of our `.md` names (`import`, image, link) that leads nowhere | Staged shelf files (all of them when something is deleted or moved) | All files |
+| `card_check.py` | An Inspector card drawn by hand in Dart (a value name written as a string). Cards are declared in the engine's `card_table.h` | Staged files | All files |
+| `reach_check.py` | What the app cannot reach: a `motolii_*` C call nothing calls, a public class in `app/lib` nothing uses | Staged files | All files |
+| `format_check.py` | Dart not as `dart format` leaves it | Staged Dart; skipped if `dart` is not on the PATH | **Not run** |
+| `word_check.py` | Dropped house words (`docs/internal/notes/rename_words.md`). For now it only reports counts and refuses nothing | Added lines | All files (refuses nothing) |
+| `shape_check.sh` | [ast-grep](https://ast-grep.github.io/) refuses the shapes in `.githooks/rules/`: hand-written presses, hovers, overlays and painters in Dart, a C++ branch that compares a layer kind by name. A staged file may not hold more refused shapes than it held at HEAD | Staged files; skipped if ast-grep is not installed | All files (CI installs ast-grep) |
+| `subject_check.py` | A subject (first line) over 72 characters | The commit being written | Every commit a push or pull request brings |
+
+`pre-commit` also prints one line first, `debt: ...`. It refuses nothing. It shows what the rules still let stand: the number of files over 500 lines (`over_500.txt`), the number of paths allowed to lead nowhere (`path_check_allow.txt`), and the lines of hand-written Dart. It is there so you can see whether a commit lowers them.
+
+`git commit --no-verify` skips the local checks, but GitHub fails the same ones (all but `format_check.py`, which GitHub does not run).
+
+To try things yourself:
+
+- Dart: `cd app && dart analyze lib`
+- C++: `./engine/check_syntax.sh` (checks syntax only, writes nothing)
+
+The full build runs on GitHub Actions in `.github/workflows/build.yml` (on an Apple silicon Mac, as the README says, then `flutter analyze`; on pushes to main and pull requests that touch `engine/`, `shelves/`, `app/` or `Brewfile`, and by hand from the Actions tab). There are no self-written tests (they were removed on 2026-11-08: the same hands wrote the code and the tests); the external requirements are in [`docs/TESTING.md`](../docs/TESTING.md).
+
+One more rule applies only when an AI agent edits through Claude Code. `.claude/hooks/own_code_sign.py` runs before the agent's edit and stops an edit that would lengthen a file of our own (Dart in `app/lib`, C++ in `engine/`) until it has looked for what already exists (`python3 .githooks/what_exists.py --sketch dart|engine FILE < SKETCH`). Neither a commit nor GitHub checks it, and it does not concern a person editing by hand.
 
 ## Rules
 
-1. **Look before you write.** Look at the tree (`engine/` the product, `app/` the app, `docs/` research) and existing implementations on the net. If something can be used the way its author meant, use it.
+1. **Look before you write.** Look at the tree (`engine/` the product, `app/` the app, `docs/` research) and existing implementations on the net. If something can be used the way its author meant, use it. To search what already exists by words: `python3 .githooks/what_exists.py wave copies`.
 2. **One job a file, 500 lines at most.** Split by what each part is for and name it so (a bare number like `_2` is refused). Experiments stay on your own branch; main holds only what the app uses.
-3. **Say where things came from.** In the commit or pull request: what was borrowed from where (URL, version or commit), what was checked and what is not done yet. Example: `git show d46f69cac`. Keep the first line (the subject) to 72 characters at most and put the details after a blank line; `.githooks/commit-msg` stops a longer one, and CI (`.github/workflows/checks.yml`) fails the pull request.
+3. **Commit messages.**
+   - The **subject** (first line) is 72 characters at most and says what changed. For example `Remove the unused Foo card`, `Fix Y in Z`.
+   - After one blank line, the **body** says why it changed, what was checked and what is not done yet.
+   - If you borrowed something, say where from (URL, version or commit) in the body. Example: `git show d46f69cac`.
+   - A longer subject is stopped by `.githooks/commit-msg`, and GitHub fails the pull request. The text you wrote is kept: `git commit -e -F <file>`.
 4. **Bundling other people's work.**
    - Keep the author's folder as unchanged as possible, with their licence text (`LICENSE`) and where it came from (`SOURCE.txt`: name and author / licence / from / page) beside it.
    - Work whose author publishes no licence text is not bundled; fetch it from the author at build time instead (`engine/deps/midi_roll.sh` is an example).
