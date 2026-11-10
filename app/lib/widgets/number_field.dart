@@ -7,17 +7,11 @@
 // - How far the value may go is up to the caller through [NumberField.reach], together with the source of that limit.
 // - It paints with the skin's form (lib/widgets/number_field_look.dart) or with the caller's [NumberField.paint].
 //   A panel normally supplies only value, text and onChange.
-import 'dart:async';
-
 import 'package:flutter/gestures.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/widgets/number_field_look.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/text_gestures.dart';
-
-part 'number_field_state.dart';
+import 'package:motolii/widgets/number_field_state.dart';
 
 /// Two clicks within this time count as a double-click.
 const dblParts = Duration(milliseconds: 320);
@@ -152,7 +146,7 @@ class NumberField extends StatefulWidget {
   final Widget Function(BuildContext context, Widget shown, bool typing)? paint;
 
   @override
-  State<NumberField> createState() => _NumberFieldState();
+  State<NumberField> createState() => NumberFieldState();
 }
 
 /// Claims a press that scrubs the field immediately, so an enclosing scroll view cannot take it first.

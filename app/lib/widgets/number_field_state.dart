@@ -1,6 +1,15 @@
-part of 'number_field.dart';
+import 'dart:async';
 
-class _NumberFieldState extends State<NumberField> {
+import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/number_field.dart';
+import 'package:motolii/widgets/number_field_look.dart';
+import 'package:motolii/widgets/text_gestures.dart';
+
+class NumberFieldState extends State<NumberField> {
   final _node = FocusNode(debugLabel: 'num');
   late final FocusNode _ef = FocusNode(debugLabel: 'num-edit', onKeyEvent: _editKey)..addListener(_editFocus);
   // True while the field receiving focus was reached with Tab. That field opens for typing.
