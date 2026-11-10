@@ -21,7 +21,7 @@ import 'package:motolii/workspace/dock/common/resizable_band.dart';
 import 'package:motolii/workspace/dock/common/shelf_footer.dart';
 import 'package:motolii/workspace/dock/common/shelf_tags.dart';
 import 'package:motolii/workspace/dock/common/star_button.dart';
-import 'package:motolii/workspace/dock/dock_effect_places.dart';
+import 'package:motolii/workspace/dock/effects/effect_places.dart';
 import 'package:motolii/workspace/dock/map/shelf_map.dart';
 import 'package:motolii/workspace/dock/map/shelf_map_view.dart';
 import 'package:motolii/workspace/shelf/effect_decks.dart';
