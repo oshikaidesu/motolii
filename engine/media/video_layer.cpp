@@ -30,10 +30,15 @@
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::Engine;
+using filament::Texture;
+using filament::TextureSampler;
+using filament::math::float2;
+using filament::math::float3;
+using filament::math::float4;
+using filament::math::mat4f;
 
 const char* video_trouble = "";
 long video_asked = 0, video_late = 0;
