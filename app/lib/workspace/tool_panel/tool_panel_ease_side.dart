@@ -5,7 +5,7 @@ import 'package:motolii/workspace/easing/ease_text.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/widgets/controls.dart' show Hov, IconPress;
+import 'package:motolii/widgets/controls.dart' show Pressable, IconPress;
 import 'package:motolii/widgets/media.dart' show Draw, glyph;
 
 import 'package:motolii/widgets/more_menu.dart';
@@ -102,7 +102,7 @@ class EaseLeft extends StatelessWidget {
         const Spacer(flex: 2),
         Expanded(
           child: Center(
-            child: Hov(
+            child: Pressable(
               key: const ValueKey('ease-reverse'),
               onTap: onReverse,
               builder: (_, h) =>

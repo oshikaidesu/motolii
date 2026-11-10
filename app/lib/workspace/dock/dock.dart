@@ -116,32 +116,32 @@ class _ShelfPaneState extends State<ShelfPane> {
           name,
           trailing: [
             if (name == 'Media') ...[
-              IconPress(dockMark(DockG.grid), on: !_mem.mediaList, onTap: () => setState(() => _mem.mediaList = false)),
-              IconPress(dockMark(DockG.list), on: _mem.mediaList, onTap: () => setState(() => _mem.mediaList = true)),
+              IconPress(dockMark(AppGlyphs.grid), on: !_mem.mediaList, onTap: () => setState(() => _mem.mediaList = false)),
+              IconPress(dockMark(AppGlyphs.list), on: _mem.mediaList, onTap: () => setState(() => _mem.mediaList = true)),
               IconPress(
-                dockMark(DockG.folder),
+                dockMark(AppGlyphs.folder),
                 on: _mem.mediaDeep,
                 onTap: () => setState(() => _mem.mediaDeep = !_mem.mediaDeep),
               ), // Lists the folders below as well.
               IconPress(
-                dockMark(DockG.files),
+                dockMark(AppGlyphs.files),
                 on: _mem.treeSide != 0,
                 onTap: () => setState(() => _mem.treeSide = (_mem.treeSide + 1) % 3),
               ), // Cycles the folder tree between automatic, left and above.
             ] else if (name == 'Program') ...[
-              IconPress(dockMark(DockG.list), on: !_mem.programCode, onTap: () => setState(() => _mem.programCode = false)),
-              IconPress(dockMark(DockG.program), on: _mem.programCode, onTap: () => setState(() => _mem.programCode = true)),
+              IconPress(dockMark(AppGlyphs.list), on: !_mem.programCode, onTap: () => setState(() => _mem.programCode = false)),
+              IconPress(dockMark(AppGlyphs.program), on: _mem.programCode, onTap: () => setState(() => _mem.programCode = true)),
             ] else ...[
               if (name == 'Effects' || name == 'Fonts') ...[
                 // Shows the items as rows or as a map with similar items close together, like XO's Space beside its list (dock_map.dart).
                 IconPress(
-                  dockMark(DockG.grid),
+                  dockMark(AppGlyphs.grid),
                   key: ValueKey('ws-$name-rows'),
                   on: !_mem.mapped.contains(name),
                   onTap: () => setState(() => _mem.mapped.remove(name)),
                 ),
                 IconPress(
-                  dockMark(DockG.particles),
+                  dockMark(AppGlyphs.particles),
                   key: ValueKey('ws-$name-map'),
                   on: _mem.mapped.contains(name),
                   onTap: () => setState(() => _mem.mapped.add(name)),
@@ -152,7 +152,7 @@ class _ShelfPaneState extends State<ShelfPane> {
                 ListenableBuilder(
                   listenable: EffectTiles.progress,
                   builder: (context, _) => IconPress(
-                    dockMark(DockG.reload),
+                    dockMark(AppGlyphs.reload),
                     key: const ValueKey('ws-fx-reload'),
                     on: EffectTiles.progress.value != null,
                     onTap: ws.inside == null ? null : () => EffectTiles.again(ws.inside!, file: c.sel),
@@ -177,7 +177,7 @@ class _ShelfPaneState extends State<ShelfPane> {
                     },
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: T.label(Grey.g56),
+                    style: TextStyles.label(Grey.g56),
                   ),
                 ),
               ),
@@ -213,7 +213,7 @@ class _ShelfPaneState extends State<ShelfPane> {
                             color: h ? WindowTokens.raised : WindowTokens.well,
                             borderRadius: BorderRadius.all(Shape.r(WindowTokens.chipRadius)),
                           ),
-                          child: Text(t, style: T.micro(Grey.g91)),
+                          child: Text(t, style: TextStyles.micro(Grey.g91)),
                         ),
                       ),
                     ],
@@ -235,7 +235,7 @@ class _ShelfPaneState extends State<ShelfPane> {
               'Program' => ProgramShelf(c),
               'Presets' => Padding(
                 padding: EdgeInsets.all(Shape.s(24)),
-                child: Text('No presets yet', textAlign: TextAlign.center, style: T.label(Grey.g63)),
+                child: Text('No presets yet', textAlign: TextAlign.center, style: TextStyles.label(Grey.g63)),
               ),
               _ => MediaShelf(c),
             },

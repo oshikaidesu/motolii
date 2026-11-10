@@ -16,7 +16,7 @@ class DockStar extends StatelessWidget {
   Widget build(BuildContext context) => DockHover(
     onTap: onTap,
     builder: (context, h) {
-      final col = ink ?? (on ? Pop.keyDot : (h ? Grey.g91 : Grey.g56));
+      final col = ink ?? (on ? InspectorSkin.keyDot : (h ? Grey.g91 : Grey.g56));
       return SizedBox(
         width: Shape.z(20),
         height: Shape.z(20),

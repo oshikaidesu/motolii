@@ -11,7 +11,7 @@ import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
-import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, Hov;
+import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, Pressable;
 import 'package:motolii/widgets/media.dart' show MiniSlider;
 import 'package:motolii/workspace/dock/dock_files.dart';
 import 'package:motolii/workspace/dock/dock_files_browser.dart';
@@ -101,22 +101,22 @@ class FolderContents extends StatelessWidget {
 }
 
 String _kindOf(FileNode n) => switch (n.g) {
-  DockG.folder => 'Folders',
-  DockG.comp => 'Comps',
-  DockG.video => 'Video',
-  DockG.image => 'Images',
-  DockG.light => 'HDR',
-  DockG.audio => 'Audio',
-  DockG.font => 'Fonts',
-  DockG.shape => '3D',
+  AppGlyphs.folder => 'Folders',
+  AppGlyphs.comp => 'Comps',
+  AppGlyphs.video => 'Video',
+  AppGlyphs.image => 'Images',
+  AppGlyphs.light => 'HDR',
+  AppGlyphs.audio => 'Audio',
+  AppGlyphs.font => 'Fonts',
+  AppGlyphs.shape => '3D',
   _ => 'Docs',
 };
 
-MediaType? _typeOf(DockG g) => switch (g) {
-  DockG.video => MediaType.video,
-  DockG.image => MediaType.image,
-  DockG.light => MediaType.hdr,
-  DockG.audio => MediaType.audio,
+MediaType? _typeOf(AppGlyphs g) => switch (g) {
+  AppGlyphs.video => MediaType.video,
+  AppGlyphs.image => MediaType.image,
+  AppGlyphs.light => MediaType.hdr,
+  AppGlyphs.audio => MediaType.audio,
   _ => null,
 };
 
@@ -138,14 +138,14 @@ class _Art extends StatelessWidget {
   final int step;
   @override
   Widget build(BuildContext context) {
-    if (n.disk && (n.g == DockG.video || n.g == DockG.image)) {
+    if (n.disk && (n.g == AppGlyphs.video || n.g == AppGlyphs.image)) {
       // A video shows a thumbnail made by the engine and a photo is read by Flutter. Other files get a flat tile.
       final flat = Container(
         color: WindowTokens.well,
         alignment: Alignment.center,
         child: dockBadge(n.g, Grey.g63, size: Shape.z(26)),
       );
-      if (n.g == DockG.video) {
+      if (n.g == AppGlyphs.video) {
         return FutureBuilder<String?>(
           future: thumbnailAtOf?.call(n.id, step, 8),
           builder: (context, made) => made.data == null
@@ -165,23 +165,23 @@ class _Art extends StatelessWidget {
           : flat;
     }
     return switch (n.g) {
-      DockG.font => Container(
+      AppGlyphs.font => Container(
         color: WindowTokens.toneText,
         alignment: Alignment.center,
         child: Text(
           'Aa',
-          style: T.title(WindowTokens.onAccent).copyWith(fontSize: T.px(18), fontWeight: FontWeight.w700),
+          style: TextStyles.title(WindowTokens.onAccent).copyWith(fontSize: TextStyles.px(18), fontWeight: FontWeight.w700),
         ),
       ),
-      DockG.folder => Container(
+      AppGlyphs.folder => Container(
         color: WindowTokens.well,
         alignment: Alignment.center,
-        child: Glyph(DockG.folder, size: Shape.z(26), color: WindowTokens.accentInk),
+        child: Glyph(AppGlyphs.folder, size: Shape.z(26), color: WindowTokens.accentInk),
       ),
       _ => Container(
         color: WindowTokens.well,
         alignment: Alignment.center,
-        child: dockBadge(n.g, n.g == DockG.comp ? WindowTokens.accent : Grey.g63, size: Shape.z(26)),
+        child: dockBadge(n.g, n.g == AppGlyphs.comp ? WindowTokens.accent : Grey.g63, size: Shape.z(26)),
       ),
     };
   }
@@ -208,7 +208,7 @@ class _TileState extends State<_Tile> {
   Timer? _clock;
 
   FileNode get n => widget.n;
-  bool get _film => n.disk && n.g == DockG.video;
+  bool get _film => n.disk && n.g == AppGlyphs.video;
 
   void _play() {
     setState(() => _playing = !_playing);
@@ -258,7 +258,7 @@ class _TileState extends State<_Tile> {
           Positioned(
             left: 4,
             top: 4,
-            child: Hov(
+            child: Pressable(
               onTap: _play,
               builder: (_, _) => Container(
                 width: Shape.z(16),
@@ -289,12 +289,12 @@ class _TileState extends State<_Tile> {
           Positioned(
             right: 4,
             bottom: 3,
-            child: Text('${n.kids.length}', style: T.value(Grey.g63).copyWith(fontSize: T.px(10))),
+            child: Text('${n.kids.length}', style: TextStyles.value(Grey.g63).copyWith(fontSize: TextStyles.px(10))),
           ),
-        if (_inUse(n, c)) Positioned(right: 3, bottom: 3, child: dockBadge(DockG.link, WindowTokens.accent, size: Shape.z(14))),
+        if (_inUse(n, c)) Positioned(right: 3, bottom: 3, child: dockBadge(AppGlyphs.link, WindowTokens.accent, size: Shape.z(14))),
       ],
       after: (_) => [
-        if (_inUse(n, c)) ...[dockBadge(DockG.link, WindowTokens.accent, size: Shape.z(14)), SizedBox(width: Shape.s(6))],
+        if (_inUse(n, c)) ...[dockBadge(AppGlyphs.link, WindowTokens.accent, size: Shape.z(14)), SizedBox(width: Shape.s(6))],
       ],
     );
   }
@@ -360,7 +360,7 @@ class _Footer extends StatelessWidget {
       key: ValueKey(n.id),
       future: can && m != null ? mediaInfoOf(m.libPath, n.id) : null,
       builder: (context, info) => DockFooter(
-        preview: n.disk && (n.g == DockG.audio || n.g == DockG.video && (info.data ?? '×').isNotEmpty && !(info.data ?? '×').contains('×'))
+        preview: n.disk && (n.g == AppGlyphs.audio || n.g == AppGlyphs.video && (info.data ?? '×').isNotEmpty && !(info.data ?? '×').contains('×'))
             ? _Listen(n)
             : _Art(n),
         title: n.name,
@@ -389,7 +389,7 @@ class _Footer extends StatelessWidget {
                     borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
                     border: Border.all(color: h ? Grey.g95 : const Color(0x00000000)),
                   ),
-                  child: Text('All ${all.length}', style: T.name(Grey.g91).copyWith(fontWeight: FontWeight.w700)),
+                  child: Text('All ${all.length}', style: TextStyles.name(Grey.g91).copyWith(fontWeight: FontWeight.w700)),
                 ),
               )
             : null,
@@ -425,15 +425,15 @@ class _StillSeconds extends StatelessWidget {
       onTap: at + by < 0 || at + by >= _stillSteps.length ? null : () => c.set(() => stillSeconds = _stillSteps[at + by]),
       builder: (_, h) => Padding(
         padding: EdgeInsets.symmetric(horizontal: Shape.s(3)),
-        child: Text(word == 'less' ? '−' : '+', style: T.label(h ? Grey.g95 : Grey.g63)),
+        child: Text(word == 'less' ? '−' : '+', style: TextStyles.label(h ? Grey.g95 : Grey.g63)),
       ),
     );
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('for', style: T.label(Grey.g56)),
+        Text('for', style: TextStyles.label(Grey.g56)),
         step('less', -1),
-        Text(s == 0 ? 'End' : '${s % 1 == 0 ? s.round() : s} s', key: const ValueKey('media-still-seconds'), style: T.label(Grey.g91)),
+        Text(s == 0 ? 'End' : '${s % 1 == 0 ? s.round() : s} s', key: const ValueKey('media-still-seconds'), style: TextStyles.label(Grey.g91)),
         step('more', 1),
       ],
     );
@@ -459,7 +459,7 @@ class _FilmRange extends StatelessWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('use', style: T.label(Grey.g56)),
+          Text('use', style: TextStyles.label(Grey.g56)),
           SizedBox(width: Shape.s(4)),
           MiniSlider(
             // The whole video is a dim track, and the part used is bright between the two handles.
@@ -478,7 +478,7 @@ class _FilmRange extends StatelessWidget {
             onChanged: (v) => c.set(() => filmRanges[file] = (v[0], v[1])),
           ),
           SizedBox(width: Shape.s(4)),
-          Text('${t(a)}–${t(b)}', key: const ValueKey('media-film-said'), style: T.label(Grey.g91)),
+          Text('${t(a)}–${t(b)}', key: const ValueKey('media-film-said'), style: TextStyles.label(Grey.g91)),
         ],
       );
     },
@@ -533,7 +533,7 @@ class _ListenState extends State<_Listen> {
       fit: StackFit.expand,
       children: [
         _Art(widget.n),
-        Center(child: Text(_playing == null ? '▶' : '■', style: T.name(Grey.g95))),
+        Center(child: Text(_playing == null ? '▶' : '■', style: TextStyles.name(Grey.g95))),
       ],
     ),
   );

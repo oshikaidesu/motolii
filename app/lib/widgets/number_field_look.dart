@@ -147,7 +147,11 @@ Widget usualNumber(BuildContext context, NumberSpec n) {
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
-                      child: Text(n.caption!, maxLines: 1, style: n.inline ? T.label(Grey.g63) : T.micro(n.on ? Grey.g63 : Grey.g44).copyWith(height: 1.1)),
+                      child: Text(
+                        n.caption!,
+                        maxLines: 1,
+                        style: n.inline ? TextStyles.label(Grey.g63) : TextStyles.micro(n.on ? Grey.g63 : Grey.g44).copyWith(height: 1.1),
+                      ),
                     ),
                   if (n.inline)
                     Expanded(

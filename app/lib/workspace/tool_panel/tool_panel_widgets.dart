@@ -21,14 +21,14 @@ class ToolSticker extends StatelessWidget {
   Widget build(BuildContext context) {
     final tool = panelTool(WorkspaceScope.read(context), name);
     final tone = name == 'Tools' ? Grey.g76 : tool?.tone ?? Grey.g63;
-    final g = name == 'Tools' ? DockG.tools : tool?.glyph;
+    final g = name == 'Tools' ? AppGlyphs.tools : tool?.glyph;
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(color: tone, borderRadius: BorderRadius.circular(size * .3)),
       child: g == null
           // A tool the user made shows its first letter.
-          ? Center(child: Text(name.characters.first, style: T.micro(WindowTokens.onAccent)))
+          ? Center(child: Text(name.characters.first, style: TextStyles.micro(WindowTokens.onAccent)))
           : Glyph(g, size: size, color: WindowTokens.onAccent),
     );
   }

@@ -56,8 +56,8 @@ class _DockSearchState extends State<DockSearch> {
       onPressed: _focus.requestFocus,
       mouseCursor: MouseCursor.defer,
       child: AnimatedContainer(
-        duration: Mo.dur,
-        curve: Mo.ease,
+        duration: Motion.dur,
+        curve: Motion.ease,
         height: Shape.z(24),
         padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
         decoration: BoxDecoration(
@@ -67,7 +67,7 @@ class _DockSearchState extends State<DockSearch> {
         ),
         child: Row(
           children: [
-            Glyph(DockG.search, size: Shape.z(11), color: _focus.hasFocus ? WindowTokens.accentInk : Grey.g56),
+            Glyph(AppGlyphs.search, size: Shape.z(11), color: _focus.hasFocus ? WindowTokens.accentInk : Grey.g56),
             SizedBox(width: Shape.s(6)),
             Expanded(
               child: Stack(
@@ -75,7 +75,7 @@ class _DockSearchState extends State<DockSearch> {
                 children: [
                   if (c.text.isEmpty)
                     IgnorePointer(
-                      child: Text(widget.hint, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(Grey.g56)),
+                      child: Text(widget.hint, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.name(Grey.g56)),
                     ),
                   TextGestures(
                     field: (k) => EditableText(
@@ -83,7 +83,7 @@ class _DockSearchState extends State<DockSearch> {
                       rendererIgnoresPointer: true,
                       controller: c,
                       focusNode: _focus,
-                      style: T.name(Grey.g95),
+                      style: TextStyles.name(Grey.g95),
                       cursorColor: WindowTokens.accent,
                       backgroundCursorColor: Grey.g44,
                       selectionColor: Grey.g38,
@@ -97,7 +97,7 @@ class _DockSearchState extends State<DockSearch> {
             if (c.text.isNotEmpty)
               DockHover(
                 onTap: c.clear,
-                builder: (context, h) => Glyph(DockG.close, size: Shape.z(10), color: h ? Grey.g95 : Grey.g63),
+                builder: (context, h) => Glyph(AppGlyphs.close, size: Shape.z(10), color: h ? Grey.g95 : Grey.g63),
               ),
           ],
         ),

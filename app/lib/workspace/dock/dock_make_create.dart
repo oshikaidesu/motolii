@@ -45,7 +45,7 @@ String createFact(WorkspaceController ws) {
     'Recipes',
     [
       for (final (name, what) in ws.inside!.createScripts)
-        if (!expressions.contains(name) && !packs.contains(name)) CreateTile(name, DockG.copies, Pop.tonePlace, '', what, recipe: true),
+        if (!expressions.contains(name) && !packs.contains(name)) CreateTile(name, AppGlyphs.copies, InspectorSkin.tonePlace, '', what, recipe: true),
     ],
   );
 }
@@ -54,7 +54,7 @@ String createFact(WorkspaceController ws) {
 /// Alight Motion (+ > Object / Element > Element) and AbsentMotion's ElementPicker
 /// (engine/third_party/AbsentMotion/app/src/main/kotlin/app/absentmotion/ui/editor/ElementUi.kt).
 (String, List<CreateTile>) _elementsOf(WorkspaceController ws) =>
-    ('Elements', [for (final (name, _) in ws.inside!.elements) CreateTile(name, DockG.nullObj, Grey.g76, '', 'Element, linked to its file')]);
+    ('Elements', [for (final (name, _) in ws.inside!.elements) CreateTile(name, AppGlyphs.nullObj, Grey.g76, '', 'Element, linked to its file')]);
 
 // ---------------------------------------------------------------- create
 
@@ -62,7 +62,7 @@ String createFact(WorkspaceController ws) {
 class CreateTile {
   const CreateTile(this.name, this.g, this.hue, this.key, this.what, {this.recipe = false, this.file, this.made = false});
   final String name, key, what;
-  final DockG g;
+  final AppGlyphs g;
   final Color hue;
 
   /// True for a create script, which builds a whole image in one call. It may share a name with a built-in tile:
@@ -84,21 +84,21 @@ final _makes = <(String, List<CreateTile>)>[
   (
     'Layers',
     [
-      CreateTile('Text', DockG.text, WindowTokens.toneText, 'T', 'Type layer'),
+      CreateTile('Text', AppGlyphs.text, WindowTokens.toneText, 'T', 'Type layer'),
       // The default lens is the preview's 30 degrees on Filament's 24 mm film, as the Camera tool panel shows (tool_panel_depth.dart _filmMm).
-      CreateTile('Camera', DockG.camera, WindowTokens.toneCamera, '⇧C', '3D camera, 45 mm'),
-      CreateTile('Null', DockG.nullObj, Grey.g76, '⇧N', 'Invisible parent'),
-      CreateTile('Adjustment', DockG.nullObj, Grey.g76, '', 'What is put on it works on all under it'),
+      CreateTile('Camera', AppGlyphs.camera, WindowTokens.toneCamera, '⇧C', '3D camera, 45 mm'),
+      CreateTile('Null', AppGlyphs.nullObj, Grey.g76, '⇧N', 'Invisible parent'),
+      CreateTile('Adjustment', AppGlyphs.nullObj, Grey.g76, '', 'What is put on it works on all under it'),
     ],
   ),
   (
     'Shapes',
     [
-      CreateTile('Rectangle', DockG.rect, WindowTokens.toneShape, 'R', 'Rounded corners'),
-      CreateTile('Ellipse', DockG.ellipse, WindowTokens.toneShape, 'E', 'Circle with ⇧'),
-      CreateTile('Polygon', DockG.polygon, WindowTokens.toneShape, '', 'Sides · Roundness'),
-      CreateTile('Star', DockG.star, WindowTokens.toneShape, '', 'Points · Inner radius'),
-      CreateTile('Line', DockG.line, WindowTokens.toneShape, 'L', 'Open path'),
+      CreateTile('Rectangle', AppGlyphs.rect, WindowTokens.toneShape, 'R', 'Rounded corners'),
+      CreateTile('Ellipse', AppGlyphs.ellipse, WindowTokens.toneShape, 'E', 'Circle with ⇧'),
+      CreateTile('Polygon', AppGlyphs.polygon, WindowTokens.toneShape, '', 'Sides · Roundness'),
+      CreateTile('Star', AppGlyphs.star, WindowTokens.toneShape, '', 'Points · Inner radius'),
+      CreateTile('Line', AppGlyphs.line, WindowTokens.toneShape, 'L', 'Open path'),
     ],
   ),
   (
@@ -107,8 +107,8 @@ final _makes = <(String, List<CreateTile>)>[
     [
       CreateTile(
         'Empty',
-        DockG.plus,
-        Pop.tonePlace,
+        AppGlyphs.plus,
+        InspectorSkin.tonePlace,
         '',
         'An empty expression on the picked thing (nothing picked: on a new board): write or paste each() into its card\'s code',
       ),
@@ -120,11 +120,11 @@ final _makes = <(String, List<CreateTile>)>[
 final _solids = (
   '3D',
   [
-    CreateTile('Ring', DockG.radial, WindowTokens.toneShape, '', 'A solid ring'),
-    CreateTile('Gem', DockG.polygon, WindowTokens.toneShape, '', 'A cut solid'),
-    CreateTile('Cube', DockG.rect, WindowTokens.toneShape, '', 'A round-edged cube'),
-    CreateTile('Floor', DockG.rect, WindowTokens.toneShape, '', 'A wide flat floor that takes shadows'),
-    CreateTile('Ball', DockG.ellipse, WindowTokens.toneShape, '', 'A ball'),
+    CreateTile('Ring', AppGlyphs.radial, WindowTokens.toneShape, '', 'A solid ring'),
+    CreateTile('Gem', AppGlyphs.polygon, WindowTokens.toneShape, '', 'A cut solid'),
+    CreateTile('Cube', AppGlyphs.rect, WindowTokens.toneShape, '', 'A round-edged cube'),
+    CreateTile('Floor', AppGlyphs.rect, WindowTokens.toneShape, '', 'A wide flat floor that takes shadows'),
+    CreateTile('Ball', AppGlyphs.ellipse, WindowTokens.toneShape, '', 'A ball'),
   ],
 );
 
@@ -132,9 +132,9 @@ final _solids = (
 final _lights = (
   'Light',
   [
-    CreateTile('Sun', DockG.light, WindowTokens.toneCamera, '', 'Light from one way, everywhere'),
-    CreateTile('Point', DockG.light, WindowTokens.toneCamera, '', 'Light from a point, all round'),
-    CreateTile('Spot', DockG.light, WindowTokens.toneCamera, '', 'A cone of light'),
+    CreateTile('Sun', AppGlyphs.light, WindowTokens.toneCamera, '', 'Light from one way, everywhere'),
+    CreateTile('Point', AppGlyphs.light, WindowTokens.toneCamera, '', 'Light from a point, all round'),
+    CreateTile('Spot', AppGlyphs.light, WindowTokens.toneCamera, '', 'A cone of light'),
   ],
 );
 
@@ -146,13 +146,13 @@ final _lights = (
 final _materials = (
   'Material',
   [
-    CreateTile('Lit', DockG.ellipse, WindowTokens.toneShape, '', 'Filament\'s lit surface: its colour, metal, rough, a clear coat'),
-    CreateTile('Cloth', DockG.ellipse, WindowTokens.toneShape, '', 'Soft, no sharp highlight, a sheen at its rim'),
-    CreateTile('Subsurface', DockG.ellipse, WindowTokens.toneShape, '', 'Light goes into it and comes out, as in wax or skin'),
-    CreateTile('Glass', DockG.radial, WindowTokens.toneShape, '', 'Thick glass: bends and tints what lies behind it'),
-    CreateTile('Filament glass', DockG.radial, WindowTokens.toneShape, '', 'Filament\'s own glass: bends what is behind, a thin film\'s rainbow'),
-    CreateTile('Lacquer', DockG.ellipse, WindowTokens.toneShape, '', 'Its colour under a hard clear coat'),
-    CreateTile('Bubble', DockG.radial, WindowTokens.toneShape, '', 'Nearly clear, a bright rim'),
+    CreateTile('Lit', AppGlyphs.ellipse, WindowTokens.toneShape, '', 'Filament\'s lit surface: its colour, metal, rough, a clear coat'),
+    CreateTile('Cloth', AppGlyphs.ellipse, WindowTokens.toneShape, '', 'Soft, no sharp highlight, a sheen at its rim'),
+    CreateTile('Subsurface', AppGlyphs.ellipse, WindowTokens.toneShape, '', 'Light goes into it and comes out, as in wax or skin'),
+    CreateTile('Glass', AppGlyphs.radial, WindowTokens.toneShape, '', 'Thick glass: bends and tints what lies behind it'),
+    CreateTile('Filament glass', AppGlyphs.radial, WindowTokens.toneShape, '', 'Filament\'s own glass: bends what is behind, a thin film\'s rainbow'),
+    CreateTile('Lacquer', AppGlyphs.ellipse, WindowTokens.toneShape, '', 'Its colour under a hard clear coat'),
+    CreateTile('Bubble', AppGlyphs.radial, WindowTokens.toneShape, '', 'Nearly clear, a bright rim'),
   ],
 );
 // Tile name to the shading value it sets.
@@ -395,7 +395,7 @@ Widget _makeTile(CreateTile m, DockCtx c, {Key? key, Widget? naming, ValueChange
       if (m.key.isNotEmpty)
         Align(
           alignment: Alignment.topRight,
-          child: Text(m.key, style: T.micro(dockInk(sel, Grey.g56))),
+          child: Text(m.key, style: TextStyles.micro(dockInk(sel, Grey.g56))),
         ),
     ],
   );

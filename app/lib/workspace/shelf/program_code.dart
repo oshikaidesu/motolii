@@ -66,8 +66,8 @@ class _ProgramCodeState extends State<ProgramCode> {
     },
     indicatorBuilder: (context, editing, chunks, notifier) => DefaultCodeLineNumber(controller: editing, notifier: notifier),
     style: CodeEditorStyle(
-      fontSize: T.value().fontSize,
-      fontFamily: T.mono,
+      fontSize: TextStyles.value().fontSize,
+      fontFamily: TextStyles.mono,
       fontHeight: 1.4,
       textColor: Grey.g91,
       backgroundColor: WindowTokens.well,

@@ -140,12 +140,12 @@ class ViewPainter extends CustomPainter {
 
   void _captions(Canvas c, Rect comp) {
     if (comp.top - v.area.top < 18) return;
-    final l = lineText(scene.title, T.micro(Grey.g76).copyWith(fontWeight: FontWeight.w700)),
-        d = lineText('${ArtGeometry.comp.width.round()} × ${ArtGeometry.comp.height.round()}  ·  ${WorkspaceController.fps} fps', T.micro(Grey.g56));
+    final l = lineText(scene.title, TextStyles.micro(Grey.g76).copyWith(fontWeight: FontWeight.w700)),
+        d = lineText('${ArtGeometry.comp.width.round()} × ${ArtGeometry.comp.height.round()}  ·  ${WorkspaceController.fps} fps', TextStyles.micro(Grey.g56));
     final y = comp.top - 6 - l.height;
     l.paint(c, Offset(comp.left, y));
     d.paint(c, Offset(comp.left + l.width + 8, y));
-    final f = scene.frame, tc = lineText('F ${f.toString().padLeft(3, '0')}', T.value(Grey.g76));
+    final f = scene.frame, tc = lineText('F ${f.toString().padLeft(3, '0')}', TextStyles.value(Grey.g76));
     tc.paint(c, Offset(comp.right - tc.width, comp.top - 6 - tc.height));
   }
 
@@ -302,7 +302,7 @@ class ViewPainter extends CustomPainter {
 
   /// Draws a small rounded name tag above [at], kept inside the viewport.
   void _tag(Canvas c, Offset at, String text, Color fill, Color ink, Color? pip) {
-    final tp = lineText(text, T.micro(ink).copyWith(fontWeight: FontWeight.w700));
+    final tp = lineText(text, TextStyles.micro(ink).copyWith(fontWeight: FontWeight.w700));
     final w = tp.width + 12 + (pip == null ? 0 : 10);
     var o = Offset(at.dx, at.dy - StageTokens.tagH - 4);
     o = Offset(
@@ -367,7 +367,7 @@ class RulerPainter extends CustomPainter {
     c.drawLine(Offset(0, r - .5), Offset(size.width, r - .5), edge);
     c.drawLine(Offset(r - .5, 0), Offset(r - .5, size.height), edge);
     final step = _step(v.s), minor = step / 5, tick = Paint()..color = StageTokens.tick;
-    final label = T.micro(Grey.g56);
+    final label = TextStyles.micro(Grey.g56);
 
     c.save();
     c.clipRect(Rect.fromLTWH(r, 0, size.width - r, r));

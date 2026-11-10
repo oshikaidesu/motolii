@@ -7,7 +7,7 @@ import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Hov;
+import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Pressable;
 import 'package:motolii/widgets/media.dart' show Draw, glyph;
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/timeline_painters.dart' show TpGlyph;
@@ -84,7 +84,7 @@ class ValuesCard extends StatelessWidget {
               children: [
                 // The range lock is open, so values may go past the range ends, as with Houdini's range lock. A press closes it.
                 if (past)
-                  Hov(
+                  Pressable(
                     key: ValueKey('card-past:${card.name}'),
                     onTap: () => doc.flag('$k.past', false),
                     builder: (_, h) => Padding(
@@ -100,7 +100,7 @@ class ValuesCard extends StatelessWidget {
                   ),
                 // A script is added like an effect and removed the same way.
                 if (card.name == 'Script' && doc.onCardRemove != null)
-                  Hov(
+                  Pressable(
                     key: const ValueKey('card-remove:Script'),
                     onTap: () => doc.onCardRemove!(card.name),
                     builder: (_, h) => Padding(
@@ -111,7 +111,7 @@ class ValuesCard extends StatelessWidget {
                 if (at >= 0) ...[
                   // An effect's header has the eye, the ⋮ menu with the rest, and the bin, as in AbsentMotion's EffectHeader and Alight Motion.
                   if (doc.onCardEye != null)
-                    Hov(
+                    Pressable(
                       key: ValueKey('card-${doc.cardsOff.contains(card.name) ? 'show' : 'hide'}:${card.name}'),
                       onTap: () => doc.onCardEye!(card.name),
                       builder: (_, h) => Padding(
@@ -135,7 +135,7 @@ class ValuesCard extends StatelessWidget {
                     ],
                   ),
                   if (doc.onCardRemove != null)
-                    Hov(
+                    Pressable(
                       key: ValueKey('card-remove:${card.name}'),
                       onTap: () => doc.onCardRemove!(card.name),
                       builder: (_, h) => Padding(
@@ -210,16 +210,16 @@ class _FoldRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(top: Shape.s(4)),
-    child: Hov(
+    child: Pressable(
       onTap: onTap,
       builder: (_, h) => Container(
         height: Shape.z(24),
         decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: const Ed().rule)),
+          border: Border(top: BorderSide(color: const InspectorHairline().rule)),
         ),
         child: Row(
           children: [
-            Text(label, style: T.label(h || open ? Grey.g95 : Grey.g63)),
+            Text(label, style: TextStyles.label(h || open ? Grey.g95 : Grey.g63)),
             const Spacer(),
             FoldMark(open: open, hot: h || open),
           ],
@@ -266,19 +266,24 @@ class FxDragGhost extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     width: Shape.z(220),
-    height: Pop.titleH + Pop.insetY * 2,
-    padding: EdgeInsets.symmetric(horizontal: Pop.inset),
+    height: InspectorSkin.titleH + InspectorSkin.insetY * 2,
+    padding: EdgeInsets.symmetric(horizontal: InspectorSkin.inset),
     decoration: BoxDecoration(
       color: Grey.g20,
       boxShadow: [BoxShadow(color: ColorTheme.of('Shadow', const Color(0x99000000)), blurRadius: 14, offset: const Offset(0, 6))],
     ),
     child: Row(
       children: [
-        Badge(fx.tone, size: 16, radius: const Radius.circular(16 * .32), mark: Draw((c, s) => drawLayerMark(c, s, Pop.onAccent), Pop.onAccent)),
+        Badge(
+          fx.tone,
+          size: 16,
+          radius: const Radius.circular(16 * .32),
+          mark: Draw((c, s) => drawLayerMark(c, s, InspectorSkin.onAccent), InspectorSkin.onAccent),
+        ),
         SizedBox(width: Shape.s(6)),
         Text(
           fx.name,
-          style: T.title(Grey.g95).copyWith(fontSize: T.px(12), fontWeight: FontWeight.w700),
+          style: TextStyles.title(Grey.g95).copyWith(fontSize: TextStyles.px(12), fontWeight: FontWeight.w700),
         ),
       ],
     ),

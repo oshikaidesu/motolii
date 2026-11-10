@@ -10,7 +10,7 @@ import 'package:motolii/skin/window_tokens.dart';
 import 'package:flutter/widgets.dart';
 import 'package:motolii/widgets/fold_mark.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Chip, Hov;
+import 'package:motolii/widgets/controls.dart' show Chip, Pressable;
 import 'package:motolii/widgets/number_field.dart';
 
 typedef _Number = ({String name, int at, double lo, double hi, bool many});
@@ -71,7 +71,11 @@ class _EaseNumbersState extends State<EaseNumbers> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text((laid ? 'Result' : easeWord(widget.card)).toUpperCase(), maxLines: 1, style: T.micro(hot ? Grey.g95 : Grey.g63).copyWith(letterSpacing: .6)),
+          Text(
+            (laid ? 'Result' : easeWord(widget.card)).toUpperCase(),
+            maxLines: 1,
+            style: TextStyles.micro(hot ? Grey.g95 : Grey.g63).copyWith(letterSpacing: .6),
+          ),
           if (kind != null) ...[SizedBox(width: Shape.s(3)), FoldMark(open: easeNumbersOpen, hot: hot)],
         ],
       ),
@@ -135,7 +139,7 @@ class _EaseNumbersState extends State<EaseNumbers> {
                 },
               ),
             ),
-          Hov(key: const ValueKey('ease-numbers'), onTap: () => setState(() => easeNumbersOpen = !easeNumbersOpen), builder: (_, h) => name(h)),
+          Pressable(key: const ValueKey('ease-numbers'), onTap: () => setState(() => easeNumbersOpen = !easeNumbersOpen), builder: (_, h) => name(h)),
         ],
       ),
     );

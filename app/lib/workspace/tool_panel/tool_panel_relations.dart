@@ -130,7 +130,7 @@ class _RelationsToolState extends State<RelationsTool> {
                 runSpacing: Shape.s(4),
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Text(many ? '$together picked' : 'Pick two or more', style: T.micro(Grey.g63)),
+                  Text(many ? '$together picked' : 'Pick two or more', style: TextStyles.micro(Grey.g63)),
                   for (final k in wsRelationChoices(ws))
                     GestureDetector(
                       key: ValueKey('ws-tab-relate-$k'),
@@ -473,7 +473,7 @@ class _Map extends CustomPainter {
     }
     for (final e in v.axisEnds.entries) {
       c.drawCircle(e.value, 7, Paint()..color = hue[e.key]!);
-      toolText(c, e.key.toUpperCase(), e.value, T.micro(const Color(0xFF111111)).copyWith(fontWeight: FontWeight.w700), ax: .5, ay: .5);
+      toolText(c, e.key.toUpperCase(), e.value, TextStyles.micro(const Color(0xFF111111)).copyWith(fontWeight: FontWeight.w700), ax: .5, ay: .5);
     }
   }
 

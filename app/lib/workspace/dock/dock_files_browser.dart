@@ -8,7 +8,7 @@ import 'package:motolii/bridge/motolii_shelves.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
-import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/workspace/dock/dock_files.dart';
 import 'package:motolii/workspace/dock/dock_files_contents.dart';
 import 'package:motolii/workspace/dock/dock_files_used.dart';
@@ -86,15 +86,15 @@ List<FileNode> _rootsOf(DockCtx c) {
     FileNode(
       'Project',
       'Project',
-      DockG.folder,
+      AppGlyphs.folder,
       kids: [
         for (final d in {?c.ws.documentFolder, for (final f in files) dirname(f)})
-          FileNode(d, basename(d), DockG.folder), // The project's own folder comes first: a new project is one step from what lies beside it.
+          FileNode(d, basename(d), AppGlyphs.folder), // The project's own folder comes first: a new project is one step from what lies beside it.
         for (final f in files)
           if (glyphOf(f) case final g?) FileNode(f, basename(f), g),
       ],
     ),
-    FileNode(_home, 'Home', DockG.folder),
+    FileNode(_home, 'Home', AppGlyphs.folder),
   ];
 }
 
@@ -104,8 +104,8 @@ List<FileNode> folderPathOf(DockCtx c, String id) {
   if (!id.startsWith('/')) return [roots.first];
   final out = <FileNode>[];
   for (var at = id; ; at = dirname(at)) {
-    if (at == _home || at == '/') return out..insert(0, FileNode(at, at == _home ? 'Home' : '/', DockG.folder));
-    out.insert(0, FileNode(at, basename(at), DockG.folder));
+    if (at == _home || at == '/') return out..insert(0, FileNode(at, at == _home ? 'Home' : '/', AppGlyphs.folder));
+    out.insert(0, FileNode(at, basename(at), AppGlyphs.folder));
   }
 }
 
@@ -142,7 +142,7 @@ class _Tree extends StatelessWidget {
         dockFolderRow(
           key: ValueKey('browser:folder:${n.id}'),
           here: c.mem.folder == n.id,
-          glyph: DockG.folder,
+          glyph: AppGlyphs.folder,
           glyphInk: depth == 0 ? WindowTokens.accentInk : Grey.g63,
           rest: depth == 0 ? Grey.g95 : null,
           bold: depth == 0,
@@ -189,7 +189,7 @@ class FolderCrumbs extends StatelessWidget {
       children: [
         if (searching)
           Expanded(
-            child: Text('Search in ${path.first.name}', maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(Grey.g76)),
+            child: Text('Search in ${path.first.name}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.micro(Grey.g76)),
           )
         else
           Expanded(
@@ -199,10 +199,10 @@ class FolderCrumbs extends StatelessWidget {
                   if (i > 0)
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: Shape.s(5)),
-                      child: Glyph(DockG.chevron, size: Shape.z(6), color: Grey.g56),
+                      child: Glyph(AppGlyphs.chevron, size: Shape.z(6), color: Grey.g56),
                     ),
                   Flexible(
-                    child: Hov(
+                    child: Pressable(
                       key: ValueKey('browser:crumb:${n.id}'),
                       cursor: MouseCursor.defer,
                       onTap: () => _go(c, n.id),
@@ -210,7 +210,7 @@ class FolderCrumbs extends StatelessWidget {
                         n.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: T.micro(n == path.last ? Grey.g95 : Grey.g63).copyWith(fontWeight: n == path.last ? FontWeight.w700 : FontWeight.w500),
+                        style: TextStyles.micro(n == path.last ? Grey.g95 : Grey.g63).copyWith(fontWeight: n == path.last ? FontWeight.w700 : FontWeight.w500),
                       ),
                     ),
                   ),

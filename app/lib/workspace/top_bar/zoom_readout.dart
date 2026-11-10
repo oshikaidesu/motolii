@@ -24,7 +24,7 @@ class _ZoomReadoutState extends State<ZoomReadout> {
       key: const ValueKey('ws-zoom'),
       value: () => WindowZoom.value.value * 100,
       text: (v, _) => '${v.round()}%',
-      style: T.micro(z == WindowZoom.usual ? Grey.g56 : Grey.g91),
+      style: TextStyles.micro(z == WindowZoom.usual ? Grey.g56 : Grey.g91),
       perPx: 1 / 3,
       typeOnTap: false,
       onGrab: () => _held = true,

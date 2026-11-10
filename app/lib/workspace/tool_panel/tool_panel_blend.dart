@@ -3,7 +3,7 @@
 // Clicking a layer name selects it. Expanding a row shows every blend mode of that layer and the engine's Blending card (blend, clip).
 // The list of modes comes from the engine (motolii_words); this file only draws them.
 import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Hov, IconPress;
+import 'package:motolii/widgets/controls.dart' show Pressable, IconPress;
 
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart' show NakedFocusableDetector;
@@ -64,10 +64,10 @@ class _RowState extends State<_Row> {
           ),
           SizedBox(width: Shape.s(8)),
           Expanded(
-            child: Hov(
+            child: Pressable(
               cursor: SystemMouseCursors.basic,
               onTap: () => ws.select(l.id),
-              builder: (_, _) => Text(l.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(ways.isEmpty ? Grey.g56 : Grey.g91)),
+              builder: (_, _) => Text(l.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.name(ways.isEmpty ? Grey.g56 : Grey.g91)),
             ),
           ),
           if (ways.isNotEmpty) ...[
@@ -79,7 +79,7 @@ class _RowState extends State<_Row> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.right,
-                style: T.micro(now == 'normal' ? Grey.g56 : Grey.g91),
+                style: TextStyles.micro(now == 'normal' ? Grey.g56 : Grey.g91),
               ),
             ),
             SizedBox(width: Shape.s(4)),
@@ -147,7 +147,7 @@ class _RowState extends State<_Row> {
           ),
           Padding(
             padding: EdgeInsets.fromLTRB(Shape.s(20), Shape.s(2), Shape.s(6), Shape.s(4)),
-            child: Text((_hover ?? now).replaceAll('_', ' '), style: T.micro(Grey.g76)),
+            child: Text((_hover ?? now).replaceAll('_', ' '), style: TextStyles.micro(Grey.g76)),
           ),
           Padding(
             padding: EdgeInsets.fromLTRB(Shape.s(18), 0, Shape.s(6), Shape.s(2)),

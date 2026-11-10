@@ -15,11 +15,11 @@ const _ink = Color(0xFF111111), _paper = Color(0xFFF4F1EA);
 const _blocks = [_red, _yellow, _blue, _green, _pink];
 
 /// The poster's shapes, each filling its box.
-enum Geo { circle, half, quarter, triangle, stripes, dot }
+enum PosterShapes { circle, half, quarter, triangle, stripes, dot }
 
-class GeoPaint extends CustomPainter {
-  const GeoPaint(this.geo, this.ink, {this.ground});
-  final Geo geo;
+class PosterShapePainter extends CustomPainter {
+  const PosterShapePainter(this.geo, this.ink, {this.ground});
+  final PosterShapes geo;
   final Color ink;
   final Color? ground;
   @override
@@ -29,17 +29,17 @@ class GeoPaint extends CustomPainter {
     c.save();
     c.clipRect(r);
     switch (geo) {
-      case Geo.circle:
+      case PosterShapes.circle:
         c.drawCircle(r.center, s.shortestSide * .38, p);
-      case Geo.dot:
+      case PosterShapes.dot:
         c.drawCircle(r.center, s.shortestSide * .18, p);
-      case Geo.half:
+      case PosterShapes.half:
         c.drawArc(Rect.fromCenter(center: r.bottomCenter, width: s.width, height: s.width), math.pi, math.pi, true, p);
-      case Geo.quarter:
+      case PosterShapes.quarter:
         c.drawArc(Rect.fromCircle(center: r.bottomLeft, radius: s.shortestSide), -math.pi / 2, math.pi / 2, true, p);
-      case Geo.triangle:
+      case PosterShapes.triangle:
         c.drawPath(Path()..addPolygon([r.bottomLeft, r.topRight, r.bottomRight], true), p);
-      case Geo.stripes:
+      case PosterShapes.stripes:
         final w = s.shortestSide / 5;
         for (var x = -s.height; x < s.width + s.height; x += w * 2) {
           c.drawPath(Path()..addPolygon([Offset(x, s.height), Offset(x + w, s.height), Offset(x + w + s.height, 0), Offset(x + s.height, 0)], true), p);
@@ -49,10 +49,10 @@ class GeoPaint extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(GeoPaint o) => o.geo != geo || o.ink != ink || o.ground != ground;
+  bool shouldRepaint(PosterShapePainter o) => o.geo != geo || o.ink != ink || o.ground != ground;
 }
 
-TextStyle _word(Color c, double size) => T.name(c).copyWith(fontSize: T.px(size), fontWeight: FontWeight.w800, letterSpacing: -.3, height: 1);
+TextStyle _word(Color c, double size) => TextStyles.name(c).copyWith(fontSize: TextStyles.px(size), fontWeight: FontWeight.w800, letterSpacing: -.3, height: 1);
 
 class PosterForms extends Forms {
   const PosterForms();
@@ -78,7 +78,9 @@ class PosterForms extends Forms {
             ),
             SizedBox.square(
               dimension: Shape.z(30),
-              child: CustomPaint(painter: GeoPaint(st.isHovered ? Geo.quarter : Geo.circle, st.isHovered ? _red : _paper, ground: _ink)),
+              child: CustomPaint(
+                painter: PosterShapePainter(st.isHovered ? PosterShapes.quarter : PosterShapes.circle, st.isHovered ? _red : _paper, ground: _ink),
+              ),
             ),
           ],
         ),
@@ -111,7 +113,7 @@ class PosterForms extends Forms {
             alignment: s.on ? Alignment.centerRight : Alignment.centerLeft,
             child: SizedBox.square(
               dimension: Shape.z(18),
-              child: CustomPaint(painter: GeoPaint(Geo.circle, st.isHovered ? _pink : _yellow)),
+              child: CustomPaint(painter: PosterShapePainter(PosterShapes.circle, st.isHovered ? _pink : _yellow)),
             ),
           ),
         ],
@@ -125,7 +127,7 @@ class PosterForms extends Forms {
   @override
   Widget card(BuildContext context, CardSpec c) {
     final title = c.title ?? '', block = _blocks[title.codeUnits.fold(7, (a, b) => (a * 31 + b) & 0xffff) % _blocks.length];
-    final geo = Geo.values[(title.length) % Geo.values.length];
+    final geo = PosterShapes.values[(title.length) % PosterShapes.values.length];
     final head = NakedButton(
       onPressed: c.onToggle,
       builder: (context, st, _) => Container(
@@ -144,7 +146,7 @@ class PosterForms extends Forms {
             ?c.trailing,
             SizedBox.square(
               dimension: Shape.z(34),
-              child: CustomPaint(painter: GeoPaint(c.open ? geo : Geo.dot, st.isHovered ? _paper : _ink, ground: c.open ? null : _paper)),
+              child: CustomPaint(painter: PosterShapePainter(c.open ? geo : PosterShapes.dot, st.isHovered ? _paper : _ink, ground: c.open ? null : _paper)),
             ),
           ],
         ),

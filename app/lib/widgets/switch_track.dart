@@ -15,11 +15,11 @@ class PopSwitch extends StatelessWidget {
     height: Shape.z(16),
     padding: EdgeInsets.all(Shape.s(2)),
     alignment: on ? Alignment.centerRight : Alignment.centerLeft,
-    decoration: BoxDecoration(color: on ? Pop.accent : Grey.g26, borderRadius: BorderRadius.all(Shape.r(8))),
+    decoration: BoxDecoration(color: on ? InspectorSkin.accent : Grey.g26, borderRadius: BorderRadius.all(Shape.r(8))),
     child: Container(
       width: Shape.z(12),
       height: Shape.z(12),
-      decoration: BoxDecoration(color: on ? Pop.onAccent : Grey.g63, shape: BoxShape.circle),
+      decoration: BoxDecoration(color: on ? InspectorSkin.onAccent : Grey.g63, shape: BoxShape.circle),
     ),
   );
 }

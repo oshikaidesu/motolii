@@ -156,7 +156,7 @@ class OptionsStrip extends StatelessWidget {
         left: [
           SizedBox(
             width: Shape.z(62),
-            child: Text(stageTools[tool].$2.toUpperCase(), style: T.micro(Grey.g56).copyWith(fontWeight: FontWeight.w700, letterSpacing: 1)),
+            child: Text(stageTools[tool].$2.toUpperCase(), style: TextStyles.micro(Grey.g56).copyWith(fontWeight: FontWeight.w700, letterSpacing: 1)),
           ),
           for (var i = 0; i < items.length; i++) ...[if (i > 0) SizedBox(width: Shape.s(6)), items[i]],
         ],
@@ -194,7 +194,7 @@ class _Field extends StatelessWidget {
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label, style: T.micro(Grey.g56)),
+        Text(label, style: TextStyles.micro(Grey.g56)),
         SizedBox(width: Shape.s(6)),
         if (swatch case final s?)
           Container(
@@ -203,7 +203,7 @@ class _Field extends StatelessWidget {
             decoration: BoxDecoration(color: s, borderRadius: BorderRadius.all(Shape.r(3))),
           )
         else
-          Text(value ?? '', style: T.value(Grey.g91)),
+          Text(value ?? '', style: TextStyles.value(Grey.g91)),
       ],
     ),
   );
@@ -220,7 +220,7 @@ class _Readout extends StatelessWidget {
     if (l == null || ws.many.length > 1) {
       return Text(
         ws.many.isEmpty ? 'Nothing selected' : '${ws.many.length} picked',
-        style: T.label(Grey.g56),
+        style: TextStyles.label(Grey.g56),
       ); // Several layers selected together: say so, as the bar above the stage does.
     }
     Widget pair(String k, String v) => Padding(
@@ -228,9 +228,9 @@ class _Readout extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(k, style: T.micro(Grey.g56)),
+          Text(k, style: TextStyles.micro(Grey.g56)),
           SizedBox(width: Shape.s(4)),
-          Text(v, style: T.value(Grey.g91)),
+          Text(v, style: TextStyles.value(Grey.g91)),
         ],
       ),
     );
@@ -239,7 +239,7 @@ class _Readout extends StatelessWidget {
       children: [
         Badge(l.tone, size: Shape.z(8), radius: Shape.r(2)),
         SizedBox(width: Shape.s(6)),
-        Text(l.name, style: T.name(Grey.g95).copyWith(fontWeight: FontWeight.w600)),
+        Text(l.name, style: TextStyles.name(Grey.g95).copyWith(fontWeight: FontWeight.w600)),
         // A behaviour layer has no image of its own, so there is nothing to say. A camera layer, while its bar covers
         // the current frame, also has no size: only its name is shown, as After Effects' camera layer has no bounds or Scale.
         if (box == null &&
@@ -253,7 +253,7 @@ class _Readout extends StatelessWidget {
                   : ws.freeEye && (scene.layer(l.id)?.live(scene.frame) ?? false)
                   ? 'In Camera View'
                   : 'Not on this frame',
-              style: T.label(Grey.g56),
+              style: TextStyles.label(Grey.g56),
             ), // A 2D layer shows only through the camera, as in After Effects' working views.
           )
         else if (l.kind != LayerKind.camera) ...[

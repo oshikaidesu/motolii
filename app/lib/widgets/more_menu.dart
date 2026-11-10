@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/float_shut.dart';
 import 'package:motolii/widgets/menu.dart' show ContextMenuItem, ContextMenuList;
 
@@ -67,22 +67,20 @@ class _CardMoreState extends State<CardMore> {
       child: TapRegion(
         // A press on the ⋮ itself is not an outside tap, so the ⋮ closes the list instead of it closing and reopening.
         groupId: _link,
-        child: Hov(
+        child: Pressable(
           key: ValueKey('card-more:${widget.name}'),
           onTap: widget.items.isEmpty ? null : _open,
           builder: (_, h) => Padding(
             padding: EdgeInsets.only(right: Shape.s(6)),
             child: Text(
               widget.word,
-              style: T
-                  .label(
-                    h
-                        ? Grey.g95
-                        : widget.big
-                        ? Grey.g76
-                        : Grey.g56,
-                  )
-                  .copyWith(fontSize: widget.big ? T.px(20) : null, fontWeight: widget.big ? FontWeight.w700 : null),
+              style: TextStyles.label(
+                h
+                    ? Grey.g95
+                    : widget.big
+                    ? Grey.g76
+                    : Grey.g56,
+              ).copyWith(fontSize: widget.big ? TextStyles.px(20) : null, fontWeight: widget.big ? FontWeight.w700 : null),
             ),
           ),
         ),

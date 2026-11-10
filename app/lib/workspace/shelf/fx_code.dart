@@ -238,12 +238,12 @@ class _FxCodeState extends State<FxCode> {
             _added = '';
           }),
           enableFeedback: false,
-          child: Text('Add to shelf', style: T.label(Grey.g76)),
+          child: Text('Add to shelf', style: TextStyles.label(Grey.g76)),
         ),
         if (_added.isNotEmpty) ...[
           SizedBox(width: Shape.s(8)),
           Expanded(
-            child: Text(_added, maxLines: 2, overflow: TextOverflow.ellipsis, style: T.label(_addedOk ? Grey.g56 : Role.error)),
+            child: Text(_added, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyles.label(_addedOk ? Grey.g56 : Role.error)),
           ),
         ],
       ],
@@ -259,7 +259,12 @@ class _FxCodeState extends State<FxCode> {
         if (_why.isNotEmpty)
           Padding(
             padding: EdgeInsets.symmetric(vertical: Shape.s(4)),
-            child: Text('Does not compile; the last that did is shown. $_why', maxLines: 4, overflow: TextOverflow.ellipsis, style: T.label(Role.error)),
+            child: Text(
+              'Does not compile; the last that did is shown. $_why',
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyles.label(Role.error),
+            ),
           ),
         Expanded(child: ProgramCode(FxCode.source(_mine ?? widget.word), _write, keep: _making)),
         if (widget.shelf)

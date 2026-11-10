@@ -11,7 +11,7 @@ import 'package:motolii/skin/theme.dart';
 import 'package:motolii/widgets/glyphs.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/widgets/controls.dart' show Pressable;
 
 /// A dropdown for choosing one of [options], stored as a string under [id].
 ///
@@ -137,7 +137,7 @@ class ChooserState extends State<Chooser> {
             child: hits.isEmpty
                 ? Padding(
                     padding: EdgeInsets.all(Shape.s(6)),
-                    child: Text('No match', style: T.label(Grey.g56)),
+                    child: Text('No match', style: TextStyles.label(Grey.g56)),
                   )
                 : ListView.builder(
                     controller: _list,
@@ -146,7 +146,7 @@ class ChooserState extends State<Chooser> {
                     itemCount: hits.length,
                     itemBuilder: (_, i) {
                       final o = hits[i], sel = o == cur;
-                      return Hov(
+                      return Pressable(
                         onTap: () => pick(o),
                         builder: (_, h) => Container(
                           padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
@@ -155,7 +155,7 @@ class ChooserState extends State<Chooser> {
                           child: Row(
                             children: [
                               Expanded(
-                                child: Text(o, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(sel || h ? Grey.g95 : Grey.g76)),
+                                child: Text(o, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.name(sel || h ? Grey.g95 : Grey.g76)),
                               ),
                               if (sel)
                                 Container(
@@ -184,13 +184,13 @@ class ChooserState extends State<Chooser> {
     }
 
     _pick = pick;
-    final field = Hov(
+    final field = Pressable(
       onTap: () => _set(!_open),
       builder: (_, h) => Container(
-        height: Pop.cell,
+        height: InspectorSkin.cell,
         padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
         decoration: BoxDecoration(
-          color: h || _open ? Grey.g10 : Pop.well,
+          color: h || _open ? Grey.g10 : InspectorSkin.well,
           borderRadius: BorderRadius.all(Shape.r(6)),
           border: Border.all(color: _open ? Grey.g63 : const Color(0x00000000)),
         ),
@@ -199,7 +199,7 @@ class ChooserState extends State<Chooser> {
           children: [
             // The default value (the first option) is dim. A chosen one is bright.
             Expanded(
-              child: Text(cur, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(cur == widget.options.first ? Grey.g56 : Grey.g91)),
+              child: Text(cur, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.name(cur == widget.options.first ? Grey.g56 : Grey.g91)),
             ),
             FoldMark(open: true, hot: _open),
           ],
@@ -257,29 +257,29 @@ class InspHeader extends StatelessWidget {
       Kind.shape when w != null => (
         w,
         w == 'Film' || w == 'Picture'
-            ? G.image
+            ? Glyphs.image
             : w == 'Sound'
-            ? G.media
-            : G.shape,
+            ? Glyphs.media
+            : Glyphs.shape,
       ),
-      Kind.shape => ('Shape', G.shape),
-      Kind.text => ('Text', G.text),
-      Kind.camera => ('Camera', G.camera),
-      Kind.group => ('Group', G.grid),
+      Kind.shape => ('Shape', Glyphs.shape),
+      Kind.text => ('Text', Glyphs.text),
+      Kind.camera => ('Camera', Glyphs.camera),
+      Kind.group => ('Group', Glyphs.grid),
       Kind.none => ('', null),
     };
     return Container(
       height: Shape.z(34),
-      padding: EdgeInsets.symmetric(horizontal: Pop.inset),
-      color: Pop.card,
+      padding: EdgeInsets.symmetric(horizontal: InspectorSkin.inset),
+      color: InspectorSkin.card,
       child: Row(
         children: [
           Container(
             width: Shape.z(22),
             height: Shape.z(22),
             alignment: Alignment.center,
-            decoration: BoxDecoration(color: Pop.accent, borderRadius: BorderRadius.all(Shape.r(6))),
-            child: glyph == null ? null : Glyph(glyph, size: Shape.z(13), color: Pop.onAccent),
+            decoration: BoxDecoration(color: InspectorSkin.accent, borderRadius: BorderRadius.all(Shape.r(6))),
+            child: glyph == null ? null : Glyph(glyph, size: Shape.z(13), color: InspectorSkin.onAccent),
           ),
           SizedBox(width: Shape.s(8)),
           Flexible(
@@ -290,14 +290,14 @@ class InspHeader extends StatelessWidget {
               child: Text(
                 doc.name,
                 maxLines: 1,
-                style: T.title(Grey.g100).copyWith(fontSize: T.px(13), fontWeight: FontWeight.w700, height: 1),
+                style: TextStyles.title(Grey.g100).copyWith(fontSize: TextStyles.px(13), fontWeight: FontWeight.w700, height: 1),
               ),
             ),
           ),
           SizedBox(width: Shape.s(6)),
-          Text(word, maxLines: 1, style: T.label(Grey.g56)),
+          Text(word, maxLines: 1, style: TextStyles.label(Grey.g56)),
           const Spacer(),
-          Text('Animate all', style: T.label(Grey.g63)),
+          Text('Animate all', style: TextStyles.label(Grey.g63)),
           SizedBox(width: Shape.s(6)),
           Forms.worn.onOff(
             context,
@@ -320,7 +320,7 @@ class EmptyState extends StatelessWidget {
   const EmptyState({super.key});
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), ed = const Ed();
+    final x = Ctx.of(context), ed = const InspectorHairline();
     // One plain muted line, with no controls and no stale values.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -328,19 +328,19 @@ class EmptyState extends StatelessWidget {
       children: [
         Padding(
           padding: EdgeInsets.only(top: Shape.s(4), bottom: Shape.s(8)),
-          child: Text('Nothing selected', style: T.label(Grey.g56).copyWith(height: 1.4)),
+          child: Text('Nothing selected', style: TextStyles.label(Grey.g56).copyWith(height: 1.4)),
         ),
         // With nothing selected, nothing is shown. After Effects' Effect Controls belongs to a layer and Alight Motion shows none.
         // The stage's own settings appear only when asked for, as in Apple Motion's Project pane.
-        Hov(
+        Pressable(
           key: const ValueKey('stage-settings'),
           onTap: () => x.doc.flag('stage.open', !(x.doc.b['stage.open'] ?? false)),
           builder: (_, h) => Container(
-            height: Pop.cell,
-            margin: EdgeInsets.only(bottom: Pop.gap),
+            height: InspectorSkin.cell,
+            margin: EdgeInsets.only(bottom: InspectorSkin.gap),
             alignment: Alignment.center,
-            decoration: BoxDecoration(color: h ? Grey.g20 : Pop.well, borderRadius: BorderRadius.all(Shape.r(6))),
-            child: Text('Stage settings', style: T.label(h ? Grey.g95 : Grey.g76)),
+            decoration: BoxDecoration(color: h ? Grey.g20 : InspectorSkin.well, borderRadius: BorderRadius.all(Shape.r(6))),
+            child: Text('Stage settings', style: TextStyles.label(h ? Grey.g95 : Grey.g76)),
           ),
         ),
         if (x.doc.b['stage.open'] ?? false)

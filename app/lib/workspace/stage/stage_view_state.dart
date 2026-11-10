@@ -550,7 +550,7 @@ class StageViewState extends State<StageView> implements StageHandles {
                             key: const ValueKey('ws-held-says'),
                             padding: EdgeInsets.symmetric(horizontal: Shape.s(6), vertical: Shape.s(3)),
                             decoration: BoxDecoration(color: WindowTokens.raised, borderRadius: BorderRadius.all(Shape.r(3))),
-                            child: Text(says, style: T.micro(Grey.g95)),
+                            child: Text(says, style: TextStyles.micro(Grey.g95)),
                           ),
                         ),
                       ),

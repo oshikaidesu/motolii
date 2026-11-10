@@ -160,7 +160,7 @@ class ShelfNameField extends StatelessWidget {
       text: name,
       take: true,
       escapes: true,
-      style: small ? T.micro(Grey.g13) : T.name(Grey.g13),
+      style: small ? TextStyles.micro(Grey.g13) : TextStyles.name(Grey.g13),
       cursor: Grey.g13,
       selection: Grey.g63,
       onDone: done,

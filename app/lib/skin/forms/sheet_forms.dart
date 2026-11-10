@@ -49,7 +49,7 @@ class SheetForms extends Forms {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(a.label, style: T.name(Grey.g95, 13, FontWeight.w500, 1.15)),
+            Text(a.label, style: TextStyles.name(Grey.g95, 13, FontWeight.w500, 1.15)),
             SizedBox(width: Shape.s(8)),
             SizedBox.square(dimension: Shape.z(14), child: _mark(hot ? _Mark.quarter : _Mark.ring, hot ? Accent.key : Grey.g38)),
           ],
@@ -70,7 +70,7 @@ class SheetForms extends Forms {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(s.on ? 'On' : 'Off', style: T.name(s.on ? Grey.g95 : Grey.g56, 11, FontWeight.w500, 1.15)),
+          Text(s.on ? 'On' : 'Off', style: TextStyles.name(s.on ? Grey.g95 : Grey.g56, 11, FontWeight.w500, 1.15)),
           SizedBox(width: Shape.s(6)),
           SizedBox.square(dimension: Shape.z(12), child: _mark(s.on ? _Mark.dot : _Mark.ring, st.isHovered ? Accent.key : Grey.g95)),
         ],
@@ -94,7 +94,7 @@ class SheetForms extends Forms {
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
-                      child: Text(c.title!, maxLines: 1, style: T.name(Grey.g95, 13, FontWeight.w500, 1.15)),
+                      child: Text(c.title!, maxLines: 1, style: TextStyles.name(Grey.g95, 13, FontWeight.w500, 1.15)),
                     ),
                   ),
                   ?c.trailing,
@@ -141,7 +141,7 @@ class SheetForms extends Forms {
                     SizedBox(width: Shape.s(4)),
                     Text(
                       c.labels[i],
-                      style: T.label(st.isSelected ? Grey.g100 : Grey.g56).copyWith(fontWeight: st.isSelected ? FontWeight.w600 : FontWeight.w400),
+                      style: TextStyles.label(st.isSelected ? Grey.g100 : Grey.g56).copyWith(fontWeight: st.isSelected ? FontWeight.w600 : FontWeight.w400),
                     ),
                   ],
                 ),
@@ -166,7 +166,7 @@ class SheetForms extends Forms {
             SizedBox.square(dimension: Shape.z(18), child: _mark(f.on ? _Mark.dot : _Mark.ring, ink)),
             SizedBox(width: Shape.s(5)),
             if (f.mark != null) ...[f.mark!(f.on ? Grey.g95 : Grey.g56), SizedBox(width: Shape.s(4))],
-            Text(f.label, style: T.label(f.on ? Grey.g95 : Grey.g56).copyWith(fontWeight: f.on ? FontWeight.w600 : FontWeight.w400)),
+            Text(f.label, style: TextStyles.label(f.on ? Grey.g95 : Grey.g56).copyWith(fontWeight: f.on ? FontWeight.w600 : FontWeight.w400)),
             SizedBox(width: Shape.s(8)),
           ],
         ),
@@ -194,8 +194,8 @@ class SheetForms extends Forms {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (on) ...[SizedBox.square(dimension: Shape.z(5), child: _mark(_Mark.dot, Accent.key)), SizedBox(width: Shape.s(4))],
-                      Text(name, style: T.label(on ? Grey.g100 : Grey.g56).copyWith(fontWeight: on ? FontWeight.w600 : FontWeight.w400)),
-                      if (n != null) ...[SizedBox(width: Shape.s(4)), Text('$n', style: T.value(Grey.g56).copyWith(fontSize: T.px(10)))],
+                      Text(name, style: TextStyles.label(on ? Grey.g100 : Grey.g56).copyWith(fontWeight: on ? FontWeight.w600 : FontWeight.w400)),
+                      if (n != null) ...[SizedBox(width: Shape.s(4)), Text('$n', style: TextStyles.value(Grey.g56).copyWith(fontSize: TextStyles.px(10)))],
                     ],
                   ),
                 );
@@ -236,7 +236,7 @@ class SheetForms extends Forms {
               children: [
                 SizedBox.square(dimension: Shape.z(14), child: _mark(n.fill == null ? _Mark.quarter : _Mark.dot, shape)),
                 SizedBox(width: Shape.s(6)),
-                if (n.caption != null) ...[Text(n.caption!, style: T.micro(n.on ? Grey.g63 : Grey.g44)), SizedBox(width: Shape.s(6))],
+                if (n.caption != null) ...[Text(n.caption!, style: TextStyles.micro(n.on ? Grey.g63 : Grey.g44)), SizedBox(width: Shape.s(6))],
                 if (n.lead != null) Flexible(child: n.lead!),
                 Expanded(
                   child: Align(alignment: Alignment.centerRight, child: shown),

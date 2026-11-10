@@ -103,10 +103,10 @@ extension TimelinePaneRows on TimelinePaneState {
                               onPressed: () => ws.select(other),
                               child: Row(
                                 children: [
-                                  Text(said, maxLines: 1, style: T.label(Grey.g56)),
+                                  Text(said, maxLines: 1, style: TextStyles.label(Grey.g56)),
                                   SizedBox(width: Shape.s(5)),
                                   Flexible(
-                                    child: Text(_numbered(ws, other), maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g91)),
+                                    child: Text(_numbered(ws, other), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.label(Grey.g91)),
                                   ),
                                 ],
                               ),
@@ -126,11 +126,11 @@ extension TimelinePaneRows on TimelinePaneState {
                               children: [
                                 if (laneCard(ws, ws.layers[order[i].layer], n) case final card?) ...[
                                   Flexible(
-                                    child: Text(card, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g56)),
+                                    child: Text(card, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.label(Grey.g56)),
                                   ),
                                   SizedBox(width: Shape.s(5)),
                                 ],
-                                Text(ws.inside?.shown(n)?.label ?? n, maxLines: 1, style: T.label(Grey.g76)),
+                                Text(ws.inside?.shown(n)?.label ?? n, maxLines: 1, style: TextStyles.label(Grey.g76)),
                               ],
                             ),
                           )

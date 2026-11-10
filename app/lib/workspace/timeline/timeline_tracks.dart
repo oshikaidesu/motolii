@@ -164,7 +164,7 @@ extension TimelinePaneTracks on TimelinePaneState {
                     rendererIgnoresPointer: true,
                     controller: markWords,
                     focusNode: markFocus,
-                    style: T.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700),
+                    style: TextStyles.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700),
                     cursorColor: Grey.g13,
                     backgroundCursorColor: Grey.g38,
                     selectionColor: Grey.g13.withValues(alpha: .3), // Highlight for selected text.

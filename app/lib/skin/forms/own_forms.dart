@@ -8,14 +8,14 @@ import 'package:naked_ui/naked_ui.dart';
 import 'package:motolii/widgets/skin_frame.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/forms/forms.dart';
-import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/widgets/controls.dart' show Pressable;
 
 class OwnForms extends Forms {
   const OwnForms();
 
   /// A flat lime pill with dark text, or the skin's frame for it.
   @override
-  Widget action(BuildContext context, ActionSpec a) => Hov(
+  Widget action(BuildContext context, ActionSpec a) => Pressable(
     onTap: a.onPressed,
     builder: (_, h) => SkinFrame(
       'render',
@@ -25,7 +25,7 @@ class OwnForms extends Forms {
         height: Shape.z(26),
         padding: EdgeInsets.symmetric(horizontal: Shape.s(14)),
         alignment: Alignment.center,
-        child: Text(a.label, style: T.name(WindowTokens.onAccent).copyWith(fontWeight: FontWeight.w800)),
+        child: Text(a.label, style: TextStyles.name(WindowTokens.onAccent).copyWith(fontWeight: FontWeight.w800)),
       ),
     ),
   );
@@ -45,7 +45,7 @@ class OwnForms extends Forms {
       children: [
         SizedBox(
           width: Shape.z(20),
-          child: Text(s.on ? 'On' : 'Off', textAlign: TextAlign.right, style: T.label(s.enabled && s.on ? Grey.g95 : Grey.g56)),
+          child: Text(s.on ? 'On' : 'Off', textAlign: TextAlign.right, style: TextStyles.label(s.enabled && s.on ? Grey.g95 : Grey.g56)),
         ),
         SizedBox(width: Shape.s(8)),
         Opacity(
@@ -60,7 +60,7 @@ class OwnForms extends Forms {
   @override
   Widget card(BuildContext context, CardSpec c) => SkinFrame(
     'card',
-    usual: BoxDecoration(color: Pop.card),
+    usual: BoxDecoration(color: InspectorSkin.card),
     child: c.own,
   );
 }

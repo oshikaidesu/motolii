@@ -266,7 +266,7 @@ class EffectPlacesState extends State<EffectPlaces> {
             ListenableBuilder(
               listenable: _words,
               builder: (_, _) =>
-                  _words.text.isEmpty ? IgnorePointer(child: Text('Search words, #tags', maxLines: 1, style: T.name(Grey.g56))) : const SizedBox(),
+                  _words.text.isEmpty ? IgnorePointer(child: Text('Search words, #tags', maxLines: 1, style: TextStyles.name(Grey.g56))) : const SizedBox(),
             ),
           TextGestures(
             key: const ValueKey('ws-fx-naming'),
@@ -275,7 +275,7 @@ class EffectPlacesState extends State<EffectPlaces> {
               rendererIgnoresPointer: true,
               controller: _words,
               focusNode: _focus,
-              style: T.name(Grey.g13),
+              style: TextStyles.name(Grey.g13),
               cursorColor: Grey.g13,
               backgroundCursorColor: Grey.g38,
               selectionColor: Grey.g63,
@@ -291,20 +291,20 @@ class EffectPlacesState extends State<EffectPlaces> {
   EffectDeck? _deckAt(String place) => widget.decks.keys.where((d) => '@${d.name}' == place).firstOrNull;
 
   /// What a row shows: its name, its glyph and its count.
-  (String, DockG, int?) _said(String place) {
+  (String, AppGlyphs, int?) _said(String place) {
     final p = widget.counts, deck = _deckAt(place);
     return switch (place) {
-      'Recent' => ('Recent', DockG.time, p[place]),
-      '★' => ('Favorites', DockG.star, p[place]),
-      'In video' => ('In This Video', DockG.video, p[place]),
-      'Packs' => ('Packs', DockG.folder, widget.packs.length),
+      'Recent' => ('Recent', AppGlyphs.time, p[place]),
+      '★' => ('Favorites', AppGlyphs.star, p[place]),
+      'In video' => ('In This Video', AppGlyphs.video, p[place]),
+      'Packs' => ('Packs', AppGlyphs.folder, widget.packs.length),
       _ when deck != null => (
         deck.name,
-        deck.words.isEmpty ? DockG.list : DockG.search,
+        deck.words.isEmpty ? AppGlyphs.list : AppGlyphs.search,
         widget.decks[deck],
       ), // A deck that finds by search words has its own glyph, as Lightroom's smart collection differs from a plain one.
-      _ when place.startsWith('/') => (place.substring(1), DockG.folder, widget.packs[place.substring(1)]),
-      _ => ('All Effects', DockG.effects, p['All']),
+      _ when place.startsWith('/') => (place.substring(1), AppGlyphs.folder, widget.packs[place.substring(1)]),
+      _ => ('All Effects', AppGlyphs.effects, p['All']),
     };
   }
 
@@ -334,7 +334,7 @@ class EffectPlacesState extends State<EffectPlaces> {
       count: n,
       cover: cover,
       field: field,
-      sub: '${g == DockG.search ? 'By words · ' : ''}${n ?? 0} ${n == 1 ? 'effect' : 'effects'}',
+      sub: '${g == AppGlyphs.search ? 'By words · ' : ''}${n ?? 0} ${n == 1 ? 'effect' : 'effects'}',
       onMenu: menu,
       onTap: onTap ?? () => c.set(() => (c.mem.fxPlace = place, c.mem.fxListOpen = false)),
     );
@@ -375,7 +375,7 @@ class EffectPlacesState extends State<EffectPlaces> {
                   padding: EdgeInsets.fromLTRB(Shape.s(4) + Shape.z(14), Shape.s(4), WindowTokens.inset, Shape.s(6)),
                   child: Text(
                     effectTarget() == d ? 'Drag an effect here from the map, or right-click one' : 'Drag an effect here from the map',
-                    style: T.label(Grey.g63),
+                    style: TextStyles.label(Grey.g63),
                   ),
                 ),
               ],
@@ -441,7 +441,7 @@ class EffectPlacesState extends State<EffectPlaces> {
                   DockSection(
                     'Decks',
                     trailing: Builder(
-                      builder: (b) => IconPress(dockMark(DockG.plus), key: const ValueKey('ws-fx-deck-new'), onTap: () => _plus(b)),
+                      builder: (b) => IconPress(dockMark(AppGlyphs.plus), key: const ValueKey('ws-fx-deck-new'), onTap: () => _plus(b)),
                     ),
                   ),
                   for (final d in widget.decks.keys) ...[_deck(d), if (widget.mapped && c.mem.fxPlace == '@${d.name}') _held(d)],

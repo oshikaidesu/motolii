@@ -102,7 +102,7 @@ class _SizeChipState extends State<SizeChip> {
         child: TypedField(
           text: '${w0.round()}x${h0.round()}',
           take: true,
-          style: T.value(Grey.g95).copyWith(fontSize: T.px(10)),
+          style: TextStyles.value(Grey.g95).copyWith(fontSize: TextStyles.px(10)),
           cursor: WindowTokens.accent,
           onDone: (said) => _commit(ws, said),
         ),
@@ -142,9 +142,9 @@ class _SizeChipState extends State<SizeChip> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Document', style: T.title(Grey.g95).copyWith(fontWeight: FontWeight.w700)),
+                      Text('Document', style: TextStyles.title(Grey.g95).copyWith(fontWeight: FontWeight.w700)),
                       SizedBox(height: Shape.s(12)),
-                      Text('Shape', style: T.label(Grey.g56)),
+                      Text('Shape', style: TextStyles.label(Grey.g56)),
                       SizedBox(height: Shape.s(6)),
                       Wrap(
                         spacing: Shape.s(6),
@@ -155,7 +155,7 @@ class _SizeChipState extends State<SizeChip> {
                         ],
                       ),
                       SizedBox(height: Shape.s(12)),
-                      Text('Resolution', style: T.label(Grey.g56)),
+                      Text('Resolution', style: TextStyles.label(Grey.g56)),
                       SizedBox(height: Shape.s(6)),
                       Wrap(
                         spacing: Shape.s(6),
@@ -172,7 +172,7 @@ class _SizeChipState extends State<SizeChip> {
                       ),
                       SizedBox(height: Shape.s(12)),
                       // The ten frame rates of Alight Motion's new-project sheet.
-                      Text('Frame rate', style: T.label(Grey.g56)),
+                      Text('Frame rate', style: TextStyles.label(Grey.g56)),
                       SizedBox(height: Shape.s(6)),
                       Wrap(
                         spacing: Shape.s(6),
@@ -194,7 +194,7 @@ class _SizeChipState extends State<SizeChip> {
                       ),
                       SizedBox(height: Shape.s(12)),
                       // The six backgrounds of Alight Motion's new-project sheet. Transparent has no colour and is exported clear.
-                      Text('Background', style: T.label(Grey.g56)),
+                      Text('Background', style: TextStyles.label(Grey.g56)),
                       SizedBox(height: Shape.s(6)),
                       Wrap(
                         spacing: Shape.s(6),
@@ -226,7 +226,7 @@ class _SizeChipState extends State<SizeChip> {
                       ),
                       SizedBox(height: Shape.s(12)),
                       // How long a new layer lasts, as Alight Motion's New Layer Length setting. End runs to the end of the project.
-                      Text('New layer length', style: T.label(Grey.g56)),
+                      Text('New layer length', style: TextStyles.label(Grey.g56)),
                       SizedBox(height: Shape.s(6)),
                       Wrap(
                         spacing: Shape.s(6),
@@ -244,11 +244,15 @@ class _SizeChipState extends State<SizeChip> {
                         ],
                       ),
                       SizedBox(height: Shape.s(12)),
-                      Text('$shownW × $shownH  ·  ${WorkspaceController.fps} frames a second', style: T.value(Grey.g76)),
+                      Text('$shownW × $shownH  ·  ${WorkspaceController.fps} frames a second', style: TextStyles.value(Grey.g76)),
                       if (ws.inside case final m?) ...[
                         // Alight Motion's Total Edit Time: how long the project has been worked on.
                         SizedBox(height: Shape.s(6)),
-                        Text('Total Edit Time  ${m.edited ~/ 3600}h ${(m.edited % 3600) ~/ 60}m', key: const ValueKey('size-edited'), style: T.value(Grey.g63)),
+                        Text(
+                          'Total Edit Time  ${m.edited ~/ 3600}h ${(m.edited % 3600) ~/ 60}m',
+                          key: const ValueKey('size-edited'),
+                          style: TextStyles.value(Grey.g63),
+                        ),
                       ],
                     ],
                   ),

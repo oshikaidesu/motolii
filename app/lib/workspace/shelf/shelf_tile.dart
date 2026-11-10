@@ -75,7 +75,7 @@ class ShelfLook {
   /// The space above the first tiles.
   final double top;
 
-  /// Whether the fill animates to its next colour over [Mo.dur] instead of changing at once.
+  /// Whether the fill animates to its next colour over [Motion.dur] instead of changing at once.
   final bool eased;
 }
 
@@ -181,7 +181,7 @@ class ShelfTile extends StatelessWidget {
   Widget? _image(bool h) => item.picture.isEmpty ? null : TileMoving(item.picture, playing: h || !small);
 
   Widget _box({double? height, required EdgeInsetsGeometry padding, AlignmentGeometry? alignment, required Color color, required Widget child}) => look.eased
-      ? AnimatedContainer(duration: Mo.dur, curve: Mo.ease, height: height, padding: padding, alignment: alignment, color: color, child: child)
+      ? AnimatedContainer(duration: Motion.dur, curve: Motion.ease, height: height, padding: padding, alignment: alignment, color: color, child: child)
       : Container(height: height, padding: padding, alignment: alignment, color: color, child: child);
 
   Widget _under(bool h) => Column(
@@ -218,7 +218,11 @@ class ShelfTile extends StatelessWidget {
               naming ??
               FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(item.name, maxLines: 1, style: T.micro(dockInk(picked, ink ?? Grey.g76)).copyWith(fontWeight: bold ? FontWeight.w700 : null)),
+                child: Text(
+                  item.name,
+                  maxLines: 1,
+                  style: TextStyles.micro(dockInk(picked, ink ?? Grey.g76)).copyWith(fontWeight: bold ? FontWeight.w700 : null),
+                ),
               ),
         ),
     ],
@@ -242,7 +246,7 @@ class ShelfTile extends StatelessWidget {
                 wrapWords: false,
                 minFontSize: 6,
                 stepGranularity: .5,
-                style: T.name(dockInk(picked, ink ?? Grey.g95)).copyWith(fontWeight: FontWeight.w700),
+                style: TextStyles.name(dockInk(picked, ink ?? Grey.g95)).copyWith(fontWeight: FontWeight.w700),
               ),
         ),
       ],
@@ -250,7 +254,7 @@ class ShelfTile extends StatelessWidget {
   );
 
   Widget _row(bool h) {
-    final name = naming ?? Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(dockInk(picked, ink)));
+    final name = naming ?? Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.name(dockInk(picked, ink)));
     return _box(
       height: Shape.z(look.row),
       padding: EdgeInsets.only(left: Shape.s(4) + indent, right: WindowTokens.inset),
@@ -275,7 +279,7 @@ class ShelfTile extends StatelessWidget {
                 children: [
                   name,
                   SizedBox(height: Shape.s(4)),
-                  Text(said, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(dockInk(picked, Grey.g63))),
+                  Text(said, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.label(dockInk(picked, Grey.g63))),
                 ],
               ),
             },
@@ -287,12 +291,12 @@ class ShelfTile extends StatelessWidget {
   }
 
   Widget _sample(bool h) =>
-      art?.call(h) ?? Text(item.name, maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: T.name(dockInk(picked, Grey.g95)));
+      art?.call(h) ?? Text(item.name, maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: TextStyles.name(dockInk(picked, Grey.g95)));
 
   Widget _caption() => Row(
     children: [
       Flexible(
-        child: Text(says ?? item.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(dockInk(picked, Grey.g76))),
+        child: Text(says ?? item.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.label(dockInk(picked, Grey.g76))),
       ),
       ...marks,
     ],

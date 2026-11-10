@@ -424,7 +424,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
                                 key: const ValueKey('ease-no-span'),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: T.micro(Grey.g63),
+                                style: TextStyles.micro(Grey.g63),
                               ),
                             ),
                           ),
@@ -433,7 +433,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
                             left: Shape.s(4),
                             right: Shape.s(4),
                             top: Shape.s(2),
-                            child: Text(why, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g63)),
+                            child: Text(why, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.label(Grey.g63)),
                           ),
                         if (span case final s?)
                           Positioned(
@@ -446,7 +446,7 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
                                 key: const ValueKey('ease-span'),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: T.micro(Grey.g63),
+                                style: TextStyles.micro(Grey.g63),
                               ),
                             ),
                           ),

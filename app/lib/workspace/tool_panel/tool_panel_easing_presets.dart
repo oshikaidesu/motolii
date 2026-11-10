@@ -9,7 +9,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_numbers.dart' show easeIsUsual;
-import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/widgets/controls.dart' show Pressable;
 
 /// A square thumbnail of [ease] that the user can click to pick it, or drag onto the graph or the card flow.
 class EasingPresetTile extends StatelessWidget {
@@ -44,7 +44,7 @@ class EasingPresetTile extends StatelessWidget {
 
   // Every tile is the same size and only its ink shows which one is in use, as in AbsentMotion's CurveThumb.
   // The tile lifts slightly while hovered.
-  Widget _tile() => Hov(
+  Widget _tile() => Pressable(
     onTap: onTap,
     builder: (_, h) => Center(
       child: Transform.translate(

@@ -12,7 +12,7 @@ import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Hov, IconPress;
+import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Pressable, IconPress;
 import 'package:motolii/widgets/media.dart' show Draw, glyph;
 import 'package:motolii/widgets/text_gestures.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
@@ -44,13 +44,13 @@ class TopBar extends StatelessWidget {
               ws.document ?? '',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: T.name(Grey.g95).copyWith(fontWeight: FontWeight.w600),
+              style: TextStyles.name(Grey.g95).copyWith(fontWeight: FontWeight.w600),
             ),
           ), // A long name is cut off with an ellipsis so the bar keeps its layout.
           SizedBox(width: Shape.s(6)),
-          Text('/', style: T.name(Grey.g44)),
+          Text('/', style: TextStyles.name(Grey.g44)),
           SizedBox(width: Shape.s(6)),
-          Text(ws.layer?.name ?? 'Stage', style: T.name(Grey.g76)),
+          Text(ws.layer?.name ?? 'Stage', style: TextStyles.name(Grey.g76)),
           SizedBox(width: Shape.s(10)),
           const SizeChip(),
           SizedBox(width: Shape.s(4)),
@@ -90,13 +90,13 @@ class _Wordmark extends StatelessWidget {
         radius: Radius.zero,
         child: Text(
           'M',
-          style: T.title(WindowTokens.onAccent).copyWith(fontSize: T.px(14), fontWeight: FontWeight.w900, height: 1),
+          style: TextStyles.title(WindowTokens.onAccent).copyWith(fontSize: TextStyles.px(14), fontWeight: FontWeight.w900, height: 1),
         ),
       ),
       SizedBox(width: Shape.s(8)),
       Text(
         'Motolii',
-        style: T.title(Grey.g95).copyWith(fontSize: T.px(14), fontWeight: FontWeight.w800, letterSpacing: -.2),
+        style: TextStyles.title(Grey.g95).copyWith(fontSize: TextStyles.px(14), fontWeight: FontWeight.w800, letterSpacing: -.2),
       ),
     ],
   );
@@ -225,7 +225,7 @@ class _Saved extends StatelessWidget {
       ws.notice ?? _savedAt(ws),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: go == null ? T.label(Grey.g63) : T.label(Grey.g63).copyWith(decoration: TextDecoration.underline),
+      style: go == null ? TextStyles.label(Grey.g63) : TextStyles.label(Grey.g63).copyWith(decoration: TextDecoration.underline),
     ); // The underline marks the notice as a link when it has a target.
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -234,7 +234,7 @@ class _Saved extends StatelessWidget {
         SizedBox(width: Shape.s(6)),
         ConstrainedBox(
           constraints: BoxConstraints(maxWidth: Shape.z(260)),
-          child: go == null ? said : Hov(onTap: go, builder: (_, _) => said),
+          child: go == null ? said : Pressable(onTap: go, builder: (_, _) => said),
         ),
       ],
     );
@@ -323,20 +323,20 @@ class _RenderState extends State<_Render> {
             children: [
               SizedBox(
                 width: Shape.z(70),
-                child: Text(k, style: T.label(Grey.g56)),
+                child: Text(k, style: TextStyles.label(Grey.g56)),
               ),
               Expanded(child: v),
             ],
           ),
         );
-        Text fact(String v) => Text(v, style: T.value(Grey.g91));
+        Text fact(String v) => Text(v, style: TextStyles.value(Grey.g91));
         // Esc and Cmd+. cancel, as a Mac dialog's Cancel does. The keys arrive from the name field, which holds focus.
         return CallbackShortcuts(
           bindings: {const SingleActivator(LogicalKeyboardKey.escape): _open.hide, const SingleActivator(LogicalKeyboardKey.period, meta: true): _open.hide},
           child: Stack(
             children: [
               Positioned.fill(
-                child: Hov(
+                child: Pressable(
                   cursor: MouseCursor.defer,
                   onTap: _open.hide,
                   builder: (_, _) => const ColoredBox(color: Color(0x88000000)),
@@ -357,7 +357,7 @@ class _RenderState extends State<_Render> {
                     children: [
                       Padding(
                         padding: EdgeInsets.only(bottom: Shape.s(12)),
-                        child: Text('Render', style: T.title(Grey.g95).copyWith(fontWeight: FontWeight.w700)),
+                        child: Text('Render', style: TextStyles.title(Grey.g95).copyWith(fontWeight: FontWeight.w700)),
                       ),
                       row(
                         'File',
@@ -370,7 +370,7 @@ class _RenderState extends State<_Render> {
                               rendererIgnoresPointer: true,
                               controller: _name,
                               focusNode: _focus,
-                              style: T.value(Grey.g95),
+                              style: TextStyles.value(Grey.g95),
                               cursorColor: WindowTokens.accent,
                               backgroundCursorColor: Grey.g38,
                               maxLines: 1,
@@ -385,7 +385,7 @@ class _RenderState extends State<_Render> {
                           '${ws.documentFolder ?? ''}${_free.isEmpty ? '' : '  ·  $_free'}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: T.label(Grey.g76),
+                          style: TextStyles.label(Grey.g76),
                         ),
                       ),
                       row('Range', fact('Work area  ${t(from)} – ${t(to)}  ·  $frames frames')),
@@ -445,7 +445,7 @@ class _RenderState extends State<_Render> {
                                     Text(
                                       'about ${(now * (to - from) / 8).toStringAsFixed(1)} MB',
                                       key: const ValueKey('render-estimate'),
-                                      style: T.label(Grey.g76),
+                                      style: TextStyles.label(Grey.g76),
                                     ), // Megabits per second times the duration, as Alight Motion estimates it.
                                 ],
                               );
@@ -471,7 +471,7 @@ class _RenderState extends State<_Render> {
                                 _formats.firstWhere((f) => f.$2 == _ending).$3,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: T.label(Grey.g76),
+                                style: TextStyles.label(Grey.g76),
                               ), // On its own line under the chips, because five chips leave no room beside it.
                             ],
                           ),
@@ -481,12 +481,12 @@ class _RenderState extends State<_Render> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Hov(
+                          Pressable(
                             cursor: MouseCursor.defer,
                             onTap: _open.hide,
                             builder: (_, _) => Padding(
                               padding: EdgeInsets.symmetric(horizontal: Shape.s(12), vertical: Shape.s(6)),
-                              child: Text('Cancel', style: T.name(Grey.g76)),
+                              child: Text('Cancel', style: TextStyles.name(Grey.g76)),
                             ),
                           ),
                           SizedBox(width: Shape.s(6)),

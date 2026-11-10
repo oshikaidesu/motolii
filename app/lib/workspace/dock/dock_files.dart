@@ -16,9 +16,9 @@ class FileNode {
   // ignore: prefer_initializing_formals
   const FileNode(this.id, this.name, this.g, {this.meta = '', List<FileNode> kids = const []}) : _kids = kids;
   final String id, name, meta;
-  final DockG g;
+  final AppGlyphs g;
   final List<FileNode> _kids;
-  bool get folder => g == DockG.folder;
+  bool get folder => g == AppGlyphs.folder;
 
   /// A file or folder on disk: its id is its full path. A folder's contents are read when it is first opened (see [listed]).
   bool get disk => id.startsWith('/');
@@ -32,14 +32,14 @@ class FileNode {
 /// The shelf chooses the icon for each kind.
 String Function(String file) kindOfFile = (_) => '';
 Future<String?> Function(String film, int step, int steps)? thumbnailAtOf;
-DockG? glyphOf(String file) => switch (kindOfFile(file)) {
-  'film' => DockG.video,
+AppGlyphs? glyphOf(String file) => switch (kindOfFile(file)) {
+  'film' => AppGlyphs.video,
   // Songs have a tab of their own, as in Alight Motion's Add, where Audio is apart from Media (docs/design/alight_motion_ui.md).
-  'sound' => DockG.audio,
-  'picture' => DockG.image,
-  'solid' => DockG.shape,
-  'text' => DockG.font,
-  'timesheet' => DockG.comp, // Its columns are put together by placeSheet.
+  'sound' => AppGlyphs.audio,
+  'picture' => AppGlyphs.image,
+  'solid' => AppGlyphs.shape,
+  'text' => AppGlyphs.font,
+  'timesheet' => AppGlyphs.comp, // Its columns are put together by placeSheet.
   _ => null,
 };
 
@@ -73,7 +73,7 @@ void readFolder(String path) {
         final name = basename(e.path);
         if (name.startsWith('.')) continue;
         if (e is Directory) {
-          out.add(FileNode(e.path, name, DockG.folder));
+          out.add(FileNode(e.path, name, AppGlyphs.folder));
         } else if (glyphOf(name) case final g?) {
           out.add(FileNode(e.path, name, g, meta: '${name.substring(name.lastIndexOf('.') + 1).toUpperCase()} · ${_size((await e.stat()).size)}'));
         }
@@ -89,18 +89,18 @@ void readFolder(String path) {
 
 /// The kinds of media a file is, by the shelf's mark: a tag and a hue.
 enum MediaType {
-  video('Video', 'VID', DockG.video),
-  image('Images', 'IMG', DockG.image),
-  hdr('HDR', 'HDR', DockG.light),
-  audio('Audio', 'AUD', DockG.audio);
+  video('Video', 'VID', AppGlyphs.video),
+  image('Images', 'IMG', AppGlyphs.image),
+  hdr('HDR', 'HDR', AppGlyphs.light),
+  audio('Audio', 'AUD', AppGlyphs.audio);
 
   const MediaType(this.label, this.badge, this.glyph);
   final String label, badge;
-  final DockG glyph;
+  final AppGlyphs glyph;
   Color get hue => switch (this) {
-    video => Pop.toneTime,
+    video => InspectorSkin.toneTime,
     image => WindowTokens.toneImage,
-    hdr => Pop.toneTextAnim,
+    hdr => InspectorSkin.toneTextAnim,
     audio => WindowTokens.toneAudio,
   };
 }

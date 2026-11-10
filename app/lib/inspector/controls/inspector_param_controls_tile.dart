@@ -41,12 +41,12 @@ class ParamTile extends StatelessWidget {
   static int step(double? w) => w == null || w < 4 ? 0 : (w < 6 ? 1 : (w < 8 ? 2 : 3));
 
   /// The tint of each step above 0: 青磁 (seiji), 撫子 (nadeshiko) and 浅黄 (usuki) from nipponcolors.com.
-  /// Each has a contrast of at least 6:1 against `Pop.well`. It is not final so a picture test can try others.
+  /// Each has a contrast of at least 6:1 against `InspectorSkin.well`. It is not final so a picture test can try others.
   static var steps = const [Color(0xFF69B0AC), Color(0xFFDC9FB4), Color(0xFFFAD689)];
 
-  /// A filter that draws the block as a duotone: `Pop.well` maps to the tinted background, `Grey.g95` to [to], and greys between.
+  /// A filter that draws the block as a duotone: `InspectorSkin.well` maps to the tinted background, `Grey.g95` to [to], and greys between.
   static ColorFilter duotone(Color to) {
-    final lo = Pop.well, hi = Grey.g95, ground = Color.alphaBlend(to.withValues(alpha: .18), lo);
+    final lo = InspectorSkin.well, hi = Grey.g95, ground = Color.alphaBlend(to.withValues(alpha: .18), lo);
     List<double> row(int k, double low, double high, double under, double word) {
       final a = (word - under) / (high - low);
       return [for (var j = 0; j < 5; j++) j == k ? a : (j == 4 ? (under - a * low) * 255 : 0)];
@@ -73,32 +73,37 @@ class ParamTile extends StatelessWidget {
   Widget _body(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc, v = doc.get(id);
     final gauge = SizedBox.square(
-      dimension: Pop.glyph,
+      dimension: InspectorSkin.glyph,
       child: FittedBox(child: Gauge(v, p)),
     );
     // Same layout as a number block: name at the top left, the control along the bottom, the picture at the top right.
-    Widget shell(Widget bottom, {VoidCallback? onTap, Widget? glyph, bool tall = false}) => Hov(
+    Widget shell(Widget bottom, {VoidCallback? onTap, Widget? glyph, bool tall = false}) => Pressable(
       onTap: onTap,
       builder: (_, h) => Container(
-        height: tall ? Pop.tile * 2 + Pop.tileGap : Pop.tile,
-        decoration: BoxDecoration(color: h && onTap != null ? Grey.g20 : Pop.well, borderRadius: BorderRadius.all(Shape.r(6))),
+        height: tall ? InspectorSkin.tile * 2 + InspectorSkin.tileGap : InspectorSkin.tile,
+        decoration: BoxDecoration(color: h && onTap != null ? Grey.g20 : InspectorSkin.well, borderRadius: BorderRadius.all(Shape.r(6))),
         child: Stack(
           children: [
             if (glyph != null)
               Positioned(
-                right: Pop.tilePad - 3,
+                right: InspectorSkin.tilePad - 3,
                 top: 4,
-                width: Pop.glyph,
-                height: Pop.glyph,
+                width: InspectorSkin.glyph,
+                height: InspectorSkin.glyph,
                 child: Center(child: glyph),
               ),
             Padding(
-              padding: EdgeInsets.fromLTRB(Pop.tilePad, Shape.s(4), glyph != null ? Pop.glyph + Pop.tilePad : Pop.tilePad, Shape.s(3)),
+              padding: EdgeInsets.fromLTRB(
+                InspectorSkin.tilePad,
+                Shape.s(4),
+                glyph != null ? InspectorSkin.glyph + InspectorSkin.tilePad : InspectorSkin.tilePad,
+                Shape.s(3),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(p.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(Grey.g63).copyWith(height: 1.1)),
+                  Text(p.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.micro(Grey.g63).copyWith(height: 1.1)),
                   bottom,
                 ],
               ),
@@ -120,7 +125,7 @@ class ParamTile extends StatelessWidget {
               children: [
                 PopSwitch(on: b),
                 SizedBox(width: Shape.s(6)),
-                Text(b ? 'On' : 'Off', style: T.label(Grey.g76)),
+                Text(b ? 'On' : 'Off', style: TextStyles.label(Grey.g76)),
               ],
             ),
           ),
@@ -176,7 +181,7 @@ class ParamTile extends StatelessWidget {
         return _num(
           context,
           glyph: SizedBox.square(
-            dimension: Pop.glyph,
+            dimension: InspectorSkin.glyph,
             child: FittedBox(
               child: Dice(id: id, p: p),
             ),
@@ -195,11 +200,11 @@ class ParamTile extends StatelessWidget {
         return Row(
           children: [
             _PadGlyph(id: id, p: p, size: !point),
-            SizedBox(width: Pop.tileGap),
+            SizedBox(width: InspectorSkin.tileGap),
             Expanded(
               child: _num(context, sub: 'x', caption: '${p.label} ${point ? 'X' : 'W'}'),
             ),
-            SizedBox(width: Pop.tileGap),
+            SizedBox(width: InspectorSkin.tileGap),
             Expanded(
               child: _num(context, sub: 'y', caption: point ? 'Y' : 'H'),
             ),
@@ -252,9 +257,9 @@ class _PadGlyphState extends State<_PadGlyph> {
           setState(() => _drag = false);
         },
         child: Container(
-          width: Pop.tile,
-          height: Pop.tile,
-          decoration: BoxDecoration(color: _drag || _hot ? Grey.g20 : Pop.well, borderRadius: BorderRadius.all(Shape.r(6))),
+          width: InspectorSkin.tile,
+          height: InspectorSkin.tile,
+          decoration: BoxDecoration(color: _drag || _hot ? Grey.g20 : InspectorSkin.well, borderRadius: BorderRadius.all(Shape.r(6))),
           child: FittedBox(
             child: Gauge(null, p, x: doc.get(ix), y: doc.get(iy)),
           ),

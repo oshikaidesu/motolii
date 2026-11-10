@@ -8,13 +8,13 @@ import 'package:motolii/skin/theme.dart';
 /// The app's one motion: 120 ms, ease-out, started the moment the input lands.
 ///
 /// Every state change (hover, select, drop) uses this and nothing else.
-abstract final class Mo {
+abstract final class Motion {
   static const dur = Duration(milliseconds: 120);
   static const ease = Curves.easeOut;
 }
 
 /// The dark grey ramp, named by lightness from 00 to 100.
-abstract final class N {
+abstract final class DarkGrey {
   static const g00 = Color(0xFF000000), g07 = Color(0xFF131313), g10 = Color(0xFF191919), g13 = Color(0xFF202020), g15 = Color(0xFF262626);
   static const g20 = Color(0xFF343434), g26 = Color(0xFF424242), g38 = Color(0xFF616161), g44 = Color(0xFF717171), g56 = Color(0xFF8E8E8E);
   static const g63 = Color(0xFFA1A1A1), g76 = Color(0xFFC1C1C1), g91 = Color(0xFFE7E7E7), g95 = Color(0xFFF2F2F2), g100 = Color(0xFFFFFFFF);
@@ -22,15 +22,15 @@ abstract final class N {
 
 /// The two shades of the colour theme.
 ///
-/// Themed parts (the workspace and the inspector library) read [Grey], never [N].
-/// [N] stays the dark ramp for the older studies, which are dark only.
+/// Themed parts (the workspace and the inspector library) read [Grey], never [DarkGrey].
+/// [DarkGrey] stays the dark ramp for the older studies, which are dark only.
 enum Shade { dark, light }
 
-/// The grey ramp for the current [Grey.shade], using [N]'s names.
+/// The grey ramp for the current [Grey.shade], using [DarkGrey]'s names.
 ///
 /// Each step keeps its role in both shades: ground (the gutter), body, card, well, raised, lines, quiet text, text, strong text.
 /// Only the lightness turns around: in the light shade the cards are the brightest and the text the darkest.
-/// The dark shade is exactly [N].
+/// The dark shade is exactly [DarkGrey].
 abstract final class Grey {
   static final shade = ValueNotifier<Shade>(Shade.dark);
   // A skin that names its shade overrides the switch.
@@ -48,7 +48,7 @@ abstract final class Grey {
     final bg = ColorTheme.roles.value['Background'], fg = ColorTheme.roles.value['Foreground'];
     if (bg == null && fg == null) return own;
     return _madeOnce.putIfAbsent((own, bg, fg, light), () {
-      final body = light ? const Color(0xFFF2F2F4) : N.g07, text = light ? const Color(0xFF121318) : N.g95;
+      final body = light ? const Color(0xFFF2F2F4) : DarkGrey.g07, text = light ? const Color(0xFF121318) : DarkGrey.g95;
       final b = bg ?? body, f = fg ?? text, tb = Hct.fromInt(b.toARGB32()).tone, tf = Hct.fromInt(f.toARGB32()).tone;
       final t =
           (Hct.fromInt(own.toARGB32()).tone - Hct.fromInt(body.toARGB32()).tone) / (Hct.fromInt(text.toARGB32()).tone - Hct.fromInt(body.toARGB32()).tone);
@@ -61,21 +61,21 @@ abstract final class Grey {
 
   static final _madeOnce = <(Color, Color?, Color?, bool), Color>{};
 
-  static Color get g00 => _p('Grey00', N.g00, const Color(0xFFCFD0D4));
-  static Color get g07 => _p('Grey07', N.g07, const Color(0xFFF2F2F4));
-  static Color get g10 => _p('Grey10', N.g10, const Color(0xFFECECEF));
-  static Color get g13 => _p('Grey13', N.g13, const Color(0xFFFFFFFF));
-  static Color get g15 => _p('Grey15', N.g15, const Color(0xFFEAEAED));
-  static Color get g20 => _p('Grey20', N.g20, const Color(0xFFDEDFE3));
-  static Color get g26 => _p('Grey26', N.g26, const Color(0xFFD2D3D8));
-  static Color get g38 => _p('Grey38', N.g38, const Color(0xFFB4B5BC));
-  static Color get g44 => _p('Grey44', N.g44, const Color(0xFF9C9DA5));
-  static Color get g56 => _p('Grey56', N.g56, const Color(0xFF7A7B84));
-  static Color get g63 => _p('Grey63', N.g63, const Color(0xFF696A73));
-  static Color get g76 => _p('Grey76', N.g76, const Color(0xFF4A4B53));
-  static Color get g91 => _p('Grey91', N.g91, const Color(0xFF22232A));
-  static Color get g95 => _p('Grey95', N.g95, const Color(0xFF121318));
-  static Color get g100 => _p('Grey100', N.g100, const Color(0xFF000000));
+  static Color get g00 => _p('Grey00', DarkGrey.g00, const Color(0xFFCFD0D4));
+  static Color get g07 => _p('Grey07', DarkGrey.g07, const Color(0xFFF2F2F4));
+  static Color get g10 => _p('Grey10', DarkGrey.g10, const Color(0xFFECECEF));
+  static Color get g13 => _p('Grey13', DarkGrey.g13, const Color(0xFFFFFFFF));
+  static Color get g15 => _p('Grey15', DarkGrey.g15, const Color(0xFFEAEAED));
+  static Color get g20 => _p('Grey20', DarkGrey.g20, const Color(0xFFDEDFE3));
+  static Color get g26 => _p('Grey26', DarkGrey.g26, const Color(0xFFD2D3D8));
+  static Color get g38 => _p('Grey38', DarkGrey.g38, const Color(0xFFB4B5BC));
+  static Color get g44 => _p('Grey44', DarkGrey.g44, const Color(0xFF9C9DA5));
+  static Color get g56 => _p('Grey56', DarkGrey.g56, const Color(0xFF7A7B84));
+  static Color get g63 => _p('Grey63', DarkGrey.g63, const Color(0xFF696A73));
+  static Color get g76 => _p('Grey76', DarkGrey.g76, const Color(0xFF4A4B53));
+  static Color get g91 => _p('Grey91', DarkGrey.g91, const Color(0xFF22232A));
+  static Color get g95 => _p('Grey95', DarkGrey.g95, const Color(0xFF121318));
+  static Color get g100 => _p('Grey100', DarkGrey.g100, const Color(0xFF000000));
   // The timeline's rows alternate between bandA and bandB, with rowLine between them.
   static Color get bandA => ColorTheme.of('BandA', g10);
   static Color get bandB => ColorTheme.of('BandB', g13);
@@ -133,7 +133,7 @@ TextPainter lineText(String s, TextStyle st) => TextPainter(
 )..layout();
 
 /// The app's text styles and sizes.
-abstract final class T {
+abstract final class TextStyles {
   static String get sans => ColorTheme.word('FontSans', 'Inter');
   static String get mono => ColorTheme.word('FontMono', 'Menlo');
 
@@ -152,7 +152,7 @@ abstract final class T {
     if (c.a < .5) return c;
     final l = c.computeLuminance();
     if (Grey.light) return l <= Grey.g56.computeLuminance() || l > .6 ? c : Grey.g56;
-    return l >= N.g56.computeLuminance() || l < .04 ? c : N.g56;
+    return l >= DarkGrey.g56.computeLuminance() || l < .04 ? c : DarkGrey.g56;
   }
 
   static TextStyle _sans(Color? c, Color dim, double size, FontWeight? w, double height, [double? ls]) => TextStyle(

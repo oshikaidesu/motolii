@@ -42,7 +42,8 @@ class TimelineHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final big = T.value(Grey.g76).copyWith(fontSize: T.px(14), fontWeight: FontWeight.w500, fontFeatures: const [FontFeature.tabularFigures()]);
+    final big = TextStyles.value(Grey.g76)
+        .copyWith(fontSize: TextStyles.px(14), fontWeight: FontWeight.w500, fontFeatures: const [FontFeature.tabularFigures()]);
     final picked = ws.keys.length, layer = ws.layer;
     return PanelHeader(
       '',
@@ -109,7 +110,7 @@ class TimelineHeader extends StatelessWidget {
                 ),
               ),
               SizedBox(width: Shape.s(8)),
-              if (roomy) ...[Text('/ ${ws.timecode(WorkspaceController.duration)}', style: T.value(Grey.g56)), SizedBox(width: Shape.s(10))],
+              if (roomy) ...[Text('/ ${ws.timecode(WorkspaceController.duration)}', style: TextStyles.value(Grey.g56)), SizedBox(width: Shape.s(10))],
               Chip(label: '${WorkspaceController.fps} fps', look: _readout()),
               SizedBox(width: Shape.s(4)),
               _Tempo(ws: ws),
@@ -128,7 +129,7 @@ class TimelineHeader extends StatelessWidget {
                           alignment: Alignment.centerLeft,
                           child: Text(
                             picked > 0 ? '${layer.name}  ·  $picked key${picked == 1 ? '' : 's'}' : '${layer.name}  ·  ${layer.keys.length} keys',
-                            style: T.label(Grey.g76),
+                            style: TextStyles.label(Grey.g76),
                             maxLines: 1,
                           ),
                         ),
@@ -212,7 +213,7 @@ class _Btn extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Glyph(g, size: 11, color: ink),
-        if (label case final l?) ...[SizedBox(width: Shape.s(4)), Text(l, style: T.micro(ink).copyWith(fontWeight: FontWeight.w700))],
+        if (label case final l?) ...[SizedBox(width: Shape.s(4)), Text(l, style: TextStyles.micro(ink).copyWith(fontWeight: FontWeight.w700))],
       ],
     ),
     onTap: onTap,
@@ -306,7 +307,7 @@ class _TempoState extends State<_Tempo> {
             take: true,
             escapes: true,
             hold: () => _tapping,
-            style: T.value(Grey.g95).copyWith(fontSize: T.px(10.5)),
+            style: TextStyles.value(Grey.g95).copyWith(fontSize: TextStyles.px(10.5)),
             cursor: WindowTokens.accent,
             selection: WindowTokens.accent.withValues(alpha: .3),
             onDone: _left,

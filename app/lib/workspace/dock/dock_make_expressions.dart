@@ -42,16 +42,31 @@ List<(String, String)> expressionRecipes() {
 /// The tiles of the Expression group: scripts that are expressions, then the engine's motions, then the user's own.
 List<CreateTile> expressionsOf(WorkspaceController ws) => [
   for (final (name, file) in expressionRecipes())
-    CreateTile(name, DockG.copies, Pop.tonePlace, '', 'On the picked thing, a card of its own (nothing picked: makes its own thing)', file: file, made: true),
+    CreateTile(
+      name,
+      AppGlyphs.copies,
+      InspectorSkin.tonePlace,
+      '',
+      'On the picked thing, a card of its own (nothing picked: makes its own thing)',
+      file: file,
+      made: true,
+    ),
   for (final (name, file) in ws.inside?.animators ?? const <(String, String)>[])
     // A motion the user added is also in expressions/, the engine's motions folder. Its tile is the one below, with its own name.
     if (!shelfAdded(file))
-      CreateTile(name, DockG.copies, Pop.tonePlace, '', 'A motion, on the picked thing, a card of its own (nothing picked: on a new board)', file: file),
+      CreateTile(
+        name,
+        AppGlyphs.copies,
+        InspectorSkin.tonePlace,
+        '',
+        'A motion, on the picked thing, a card of its own (nothing picked: on a new board)',
+        file: file,
+      ),
   for (final (name, file) in shelfExpressions())
     CreateTile(
       name,
-      DockG.copies,
-      Pop.tonePlace,
+      AppGlyphs.copies,
+      InspectorSkin.tonePlace,
       '',
       'Your expression, on the picked thing (nothing picked: on a new board); its knobs are on its card',
       file: file,

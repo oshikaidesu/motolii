@@ -19,7 +19,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_easing_presets.dart';
-import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/media.dart' show Draw;
 
 // Drag data of the tile at the foot of the flow, which stands for all the cards (EaseShapes.onKeep).
@@ -89,7 +89,7 @@ class EaseCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final side = Size.square(this.side);
-    Widget card(int i, Ease c) => Hov(
+    Widget card(int i, Ease c) => Pressable(
       // Hovering shows a x that removes the card, like the rows in Cavalry, Bitwig and Serum.
       builder: (_, h) => Stack(
         clipBehavior: Clip.none,
@@ -147,7 +147,7 @@ class EaseCards extends StatelessWidget {
         key: ValueKey('ease.by.$i'),
         size: gap,
         child: Center(
-          child: Text(how == EaseBy.times ? '×' : '+', style: T.micro(Grey.g76).copyWith(fontWeight: FontWeight.w700, height: 1)),
+          child: Text(how == EaseBy.times ? '×' : '+', style: TextStyles.micro(Grey.g76).copyWith(fontWeight: FontWeight.w700, height: 1)),
         ),
       ),
     };
@@ -175,7 +175,7 @@ class EaseCards extends StatelessWidget {
                       carried(i, c),
                   ],
                   arrow(),
-                  Hov(
+                  Pressable(
                     key: const ValueKey('ease.slot'),
                     onTap: onSlot,
                     builder: (_, h) => EaseSlot(
@@ -215,14 +215,14 @@ class EaseOff extends StatelessWidget {
   const EaseOff({super.key, required this.onTap});
   final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => Hov(
+  Widget build(BuildContext context) => Pressable(
     onTap: onTap,
     builder: (_, over) => Container(
       width: Shape.z(15),
       height: Shape.z(15),
       alignment: Alignment.center,
       decoration: BoxDecoration(color: over ? Grey.g95 : Grey.g38, shape: BoxShape.circle),
-      child: Text('×', style: T.micro(over ? Grey.g13 : Grey.g95).copyWith(fontWeight: FontWeight.w700, height: 1)),
+      child: Text('×', style: TextStyles.micro(over ? Grey.g13 : Grey.g95).copyWith(fontWeight: FontWeight.w700, height: 1)),
     ),
   );
 }

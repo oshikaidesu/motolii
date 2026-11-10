@@ -10,7 +10,7 @@ import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Hov, IconPress;
+import 'package:motolii/widgets/controls.dart' show Pressable, IconPress;
 import 'package:motolii/widgets/glyphs.dart';
 import 'package:motolii/widgets/panel_header.dart';
 import 'package:motolii/widgets/two_fingers.dart';
@@ -30,16 +30,16 @@ class StagePane extends StatelessWidget {
 }
 
 const stageTools = [
-  (G.select, 'Select', 'V'),
-  (G.move, 'Move', 'M'),
-  (G.rect, 'Rectangle', 'R'),
-  (G.ellipse, 'Ellipse', 'E'),
-  (G.pen, 'Pen', 'P'),
-  (G.text, 'Text', 'T'),
+  (Glyphs.select, 'Select', 'V'),
+  (Glyphs.move, 'Move', 'M'),
+  (Glyphs.rect, 'Rectangle', 'R'),
+  (Glyphs.ellipse, 'Ellipse', 'E'),
+  (Glyphs.pen, 'Pen', 'P'),
+  (Glyphs.text, 'Text', 'T'),
   // Freehand path, as in Alight Motion. B is the brush key in Photoshop and After Effects.
-  (G.brush, 'Brush', 'B'),
+  (Glyphs.brush, 'Brush', 'B'),
   // After Effects' Unified Camera tool: a drag orbits the camera, the wheel dollies it.
-  (G.camera, 'Camera', 'C'),
+  (Glyphs.camera, 'Camera', 'C'),
 ];
 
 /// The tools as app commands (`tool.select`, `tool.text` ...). Their letters are in the keymap (keymap.dart).
@@ -159,7 +159,7 @@ class _StageState extends State<_Stage> {
                   SizedBox(width: Shape.s(6)),
                   if (_camera || ws.layers.any((l) => l.kind == LayerKind.camera)) ...[
                     // Alight Motion's PreviewMode: the switch appears once there is a camera to switch to.
-                    Toggle(label: _camera ? 'Camera' : 'Free', glyph: G.camera, on: _camera, onTap: () => setState(() => _camera = !_camera)),
+                    Toggle(label: _camera ? 'Camera' : 'Free', glyph: Glyphs.camera, on: _camera, onTap: () => setState(() => _camera = !_camera)),
                     SizedBox(width: Shape.s(6)),
                   ],
                   Toggle(key: const ValueKey('ws-snapshot-take'), label: 'Snapshot', icon: StageIcon.snap, on: false, onTap: _take),
@@ -234,7 +234,7 @@ class Toggle extends StatelessWidget {
   final bool on;
   final VoidCallback onTap;
   final StageIcon? icon;
-  final G? glyph;
+  final Glyphs? glyph;
   @override
   Widget build(BuildContext context) => Forms.worn.flag(
     context,
@@ -371,7 +371,7 @@ class _Swatches extends StatelessWidget {
   Widget build(BuildContext context) {
     final ws = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.picked}), p = paintOf(ws);
     final fill = p.fill ?? WindowTokens.body, stroke = p.stroke ?? WindowTokens.line, edgeOn = ws.aim == 'stroke';
-    Widget box(String aim, BoxDecoration look) => Hov(
+    Widget box(String aim, BoxDecoration look) => Pressable(
       key: ValueKey('ws-ink-$aim'),
       cursor: MouseCursor.defer,
       onTap: () {

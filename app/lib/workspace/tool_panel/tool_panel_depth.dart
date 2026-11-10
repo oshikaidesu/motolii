@@ -124,11 +124,11 @@ class _DepthToolState extends State<DepthTool> {
           left: [
             Chip(label: cam?.name ?? 'Camera', look: ChipLook.flat(WindowTokens.toneCamera)),
             SizedBox(width: Shape.s(8)),
-            Text('${lens.focal.round()} mm', style: T.value(Grey.g91)),
+            Text('${lens.focal.round()} mm', style: TextStyles.value(Grey.g91)),
             SizedBox(width: Shape.s(8)),
-            Text('f/${lens.fstop.toStringAsFixed(1)}', style: T.value(Grey.g91)),
+            Text('f/${lens.fstop.toStringAsFixed(1)}', style: TextStyles.value(Grey.g91)),
             SizedBox(width: Shape.s(8)),
-            Text('${(lens.fov * 180 / math.pi).toStringAsFixed(1)}° view', style: T.label(Grey.g56)),
+            Text('${(lens.fov * 180 / math.pi).toStringAsFixed(1)}° view', style: TextStyles.label(Grey.g56)),
           ],
           right: [Chip(label: target == null ? 'Focus free' : 'On ${target.name}', dot: target == null ? Grey.g56 : wsTone(target.kind))],
         ),
@@ -183,8 +183,8 @@ class _LensNumbers extends StatelessWidget {
     String far(double v) => v.isInfinite ? '∞' : v.round().toString();
     Widget pair(String a, String b) => Row(
       children: [
-        Expanded(child: Text(a, style: T.label(Grey.g56))),
-        Text(b, style: T.value(Grey.g91).copyWith(fontSize: T.px(10.5))),
+        Expanded(child: Text(a, style: TextStyles.label(Grey.g56))),
+        Text(b, style: TextStyles.value(Grey.g91).copyWith(fontSize: TextStyles.px(10.5))),
       ],
     );
     return ColoredBox(
@@ -326,7 +326,7 @@ class _DepthPainter extends CustomPainter {
     final line = Paint()
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
-    final lab = T.value(Grey.g56).copyWith(fontSize: T.px(9.5));
+    final lab = TextStyles.value(Grey.g56).copyWith(fontSize: TextStyles.px(9.5));
     // Depth rulings every 500 px, labelled every 1000.
     for (var z = 0.0; z <= _zMax; z += 500) {
       final y = m.at(0, z).dy.floorToDouble() + .5;
@@ -388,7 +388,7 @@ class _DepthPainter extends CustomPainter {
     final taken = [for (final sl in slabs) m.slab(sl.x, sl.z, sl.w).inflate(1), Rect.fromLTWH(s.width - 48, y - 8, 42, 16)];
     for (final sl in [...slabs.where((e) => e.id == target), ...slabs.where((e) => e.id != target)]) {
       final r = m.slab(sl.x, sl.z, sl.w), sharp = sl.z >= near && sl.z <= far, on = sl.id == target;
-      final np = lineText(sl.name, T.label(sharp ? Grey.g91 : Grey.g56).copyWith(fontWeight: on ? FontWeight.w700 : FontWeight.w400));
+      final np = lineText(sl.name, TextStyles.label(sharp ? Grey.g91 : Grey.g56).copyWith(fontWeight: on ? FontWeight.w700 : FontWeight.w400));
       final at = Rect.fromLTWH(r.left, r.top - 2 - np.height, np.width, np.height);
       if (!taken.any((t) => t.overlaps(at))) {
         taken.add(at);
@@ -399,7 +399,7 @@ class _DepthPainter extends CustomPainter {
     final tag = '${focus.round()}';
     final tr = RRect.fromRectAndRadius(Rect.fromLTWH(s.width - 48, y - 8, 42, 16), Shape.r(WindowTokens.chipRadius));
     c.drawRRect(tr, fill..color = WindowTokens.accent);
-    toolText(c, tag, tr.center, T.value(WindowTokens.onAccent).copyWith(fontSize: T.px(10), fontWeight: FontWeight.w700), ax: .5, ay: .5);
+    toolText(c, tag, tr.center, TextStyles.value(WindowTokens.onAccent).copyWith(fontSize: TextStyles.px(10), fontWeight: FontWeight.w700), ax: .5, ay: .5);
     // The camera body at the cone's tip.
     final e = m.eye;
     c.drawRRect(
@@ -415,7 +415,7 @@ class _DepthPainter extends CustomPainter {
       fill,
     );
     c.drawCircle(e + const Offset(0, 9), 2.5, Paint()..color = WindowTokens.onAccent);
-    toolText(c, 'CAM', e + const Offset(14, 9), T.micro(Grey.g63).copyWith(fontWeight: FontWeight.w700, letterSpacing: 1), ay: .5);
+    toolText(c, 'CAM', e + const Offset(14, 9), TextStyles.micro(Grey.g63).copyWith(fontWeight: FontWeight.w700, letterSpacing: 1), ay: .5);
   }
 
   @override

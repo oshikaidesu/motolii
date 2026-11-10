@@ -134,7 +134,7 @@ class WtRow {
 }
 
 /// The width of a marker's flag on the ruler, which holds its name. Used both to draw the flag and to hit-test it.
-double wtFlagWidth(String name) => lineText(name, T.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700)).width + 8;
+double wtFlagWidth(String name) => lineText(name, TextStyles.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700)).width + 8;
 
 /// The width of the flag of a marker at [x]: its name's width, cut short where the next marker begins.
 ///
@@ -217,7 +217,7 @@ class WtRulerPainter extends CustomPainter {
     for (final (f, name) in markers) {
       final x = view.x(f).roundToDouble();
       if (x < -60 || x > s.width) continue;
-      final t = lineText(name, T.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700));
+      final t = lineText(name, TextStyles.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700));
       flags.add((Rect.fromLTWH(x, WtM.band + 2, wtFlagRoom(name, x, xs), 12), t, markColors[f] ?? WindowTokens.toneText));
     }
     if (view.ppf >= 3) {
@@ -237,7 +237,7 @@ class WtRulerPainter extends CustomPainter {
       if (isMajor) {
         if (flags.any((m) => m.$1.inflate(3).overlaps(Rect.fromLTWH(x + 3, WtM.band + 2, 24, 12)))) continue;
         final sec = f ~/ fps, fr = (f % fps).round();
-        final t = lineText(mj >= fps ? '${sec}s' : '$sec:${fr.toString().padLeft(2, '0')}', T.value(Grey.g76).copyWith(fontSize: T.px(10)));
+        final t = lineText(mj >= fps ? '${sec}s' : '$sec:${fr.toString().padLeft(2, '0')}', TextStyles.value(Grey.g76).copyWith(fontSize: TextStyles.px(10)));
         t.paint(c, Offset(x + 3, WtM.band + 3));
         t.dispose();
       }

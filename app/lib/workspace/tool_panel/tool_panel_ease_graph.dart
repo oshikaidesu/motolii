@@ -234,7 +234,7 @@ class _EaseGraphState extends State<EaseGraph> {
                     child: Text(
                       says,
                       key: const ValueKey('ease-end-says'),
-                      style: T.value(Grey.g95).copyWith(fontSize: T.px(10)),
+                      style: TextStyles.value(Grey.g95).copyWith(fontSize: TextStyles.px(10)),
                     ),
                   ),
                 ),
@@ -404,7 +404,7 @@ class _GraphPainter extends CustomPainter {
         ..color = WindowTokens.accentInk,
     );
     // The timeline position: the playhead in its own color, where the easing is now, and the frame numbers.
-    final numbers = T.micro(Grey.g56);
+    final numbers = TextStyles.micro(Grey.g56);
     if (from != null && to != null && to! > from!) {
       if (g.width > Shape.z(80)) {
         // When too narrow, only the current frame is shown.
@@ -420,8 +420,9 @@ class _GraphPainter extends CustomPainter {
               ..strokeWidth = 1.5;
         c.drawLine(Offset(x, top - 8), Offset(x, bottom + 4), line);
         c.drawCircle(px(Offset(u, y)), 4.5, Paint()..color = WindowTokens.playhead);
-        if (frame != from && frame != to)
-          toolText(c, '$frame', Offset(x, bottom + 6), T.micro(WindowTokens.playhead).copyWith(fontWeight: FontWeight.w700), ax: .5);
+        if (frame != from && frame != to) {
+          toolText(c, '$frame', Offset(x, bottom + 6), TextStyles.micro(WindowTokens.playhead).copyWith(fontWeight: FontWeight.w700), ax: .5);
+        }
       } else if (g.width > Shape.z(80)) {
         // The frame is outside this span: show which side it lies on.
         final before = frame < from!;
@@ -429,7 +430,7 @@ class _GraphPainter extends CustomPainter {
           c,
           before ? '‹ $frame' : '$frame ›',
           Offset(g.center.dx, bottom + 6),
-          T.micro(WindowTokens.playhead).copyWith(fontWeight: FontWeight.w700),
+          TextStyles.micro(WindowTokens.playhead).copyWith(fontWeight: FontWeight.w700),
           ax: .5,
         );
       }
@@ -462,7 +463,7 @@ class _GraphPainter extends CustomPainter {
           c,
           '${h.x.toStringAsFixed(2)}, ${h.y.toStringAsFixed(2)}',
           o + Offset(h.x < .5 ? 9 : -9, -9),
-          T.value(Grey.g95).copyWith(fontSize: T.px(10)),
+          TextStyles.value(Grey.g95).copyWith(fontSize: TextStyles.px(10)),
           ax: h.x < .5 ? 0 : 1,
           ay: 1,
         );

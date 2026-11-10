@@ -130,7 +130,7 @@ class _DockMapState extends State<DockMap> {
         builder: (context, _) {
           final at = widget.places.places.value;
           if (at.isEmpty) {
-            return Center(child: Text(widget.places.laying.value ? 'Laying out the map…' : 'Nothing on the map yet', style: T.label(Grey.g63)));
+            return Center(child: Text(widget.places.laying.value ? 'Laying out the map…' : 'Nothing on the map yet', style: TextStyles.label(Grey.g63)));
           }
           final tiles = {for (final (id, tile) in widget.shown) id: tile};
           final sw = Shape.z(32) * widget.aspect, gap = Shape.s(4);
@@ -236,7 +236,7 @@ class _DockMapState extends State<DockMap> {
   Widget _settings() => Column(
     crossAxisAlignment: CrossAxisAlignment.end,
     children: [
-      IconPress(dockMark(DockG.more), key: ValueKey('ws-map-$_name-forces'), on: _forces, onTap: () => setState(() => _forces = !_forces)),
+      IconPress(dockMark(AppGlyphs.more), key: ValueKey('ws-map-$_name-forces'), on: _forces, onTap: () => setState(() => _forces = !_forces)),
       if (_forces)
         Container(
           key: ValueKey('ws-map-$_name-forces-open'),
@@ -246,7 +246,7 @@ class _DockMapState extends State<DockMap> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Center force', style: T.label(Grey.g76)),
+              Text('Center force', style: TextStyles.label(Grey.g76)),
               ValueListenableBuilder(
                 valueListenable: widget.places.squeeze,
                 builder: (context, s, _) =>
@@ -285,7 +285,7 @@ class _DockMapState extends State<DockMap> {
                 children: [
                   SizedBox(width: w, height: (w - Shape.s(8)) / widget.aspect, child: widget.peek?.call(id) ?? tiles[id]),
                   SizedBox(height: Shape.s(4)),
-                  Text(widget.names[id] ?? id.split('/').last, maxLines: 2, overflow: TextOverflow.ellipsis, style: T.label(Grey.g91)),
+                  Text(widget.names[id] ?? id.split('/').last, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyles.label(Grey.g91)),
                 ],
               ),
             ),
@@ -303,7 +303,7 @@ class _DockMapState extends State<DockMap> {
     final i = list.indexOf(widget.picked ?? '');
     Widget arrow(String key, int by) => Transform.flip(
       flipX: by < 0,
-      child: IconPress(dockMark(DockG.chevron), key: ValueKey('ws-map-$_name-$key'), onTap: () => _step(list, by)),
+      child: IconPress(dockMark(AppGlyphs.chevron), key: ValueKey('ws-map-$_name-$key'), onTap: () => _step(list, by)),
     );
     return Container(
       key: ValueKey('ws-alike-$_name'),
@@ -324,7 +324,7 @@ class _DockMapState extends State<DockMap> {
             ),
           ),
           arrow('next', 1),
-          IconPress(dockMark(DockG.reload), key: ValueKey('ws-map-$_name-refresh'), on: i > 0, onTap: () => setState(() => _from = widget.picked)),
+          IconPress(dockMark(AppGlyphs.reload), key: ValueKey('ws-map-$_name-refresh'), on: i > 0, onTap: () => setState(() => _from = widget.picked)),
         ],
       ),
     );

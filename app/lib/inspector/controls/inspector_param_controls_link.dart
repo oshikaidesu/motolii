@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/widgets/media.dart' show glyph;
 import 'package:motolii/widgets/number_field.dart' show blockValue;
 
@@ -25,7 +25,7 @@ class LinkLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context);
-    return Hov(
+    return Pressable(
       key: ValueKey('link:${to.name}:$id'),
       onTap: () {
         // Record which parameter the target panel's pick should be applied to.
@@ -41,7 +41,7 @@ class LinkLine extends StatelessWidget {
             ),
             // In a narrow tile the name is cut short like the value, never running over the edge.
             Flexible(
-              child: Text(to.shelf, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(h ? Grey.g95 : Grey.g56)),
+              child: Text(to.shelf, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.micro(h ? Grey.g95 : Grey.g56)),
             ),
             SizedBox(width: Shape.s(2)),
             glyph(7, (c, s) => _drawLinkArrow(c, s, h ? Grey.g95 : Grey.g56), h),

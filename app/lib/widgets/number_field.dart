@@ -20,8 +20,8 @@ const dblParts = Duration(milliseconds: 320);
 /// Implemented as a color inversion with Flutter's ColorFilter.matrix.
 const pastInk = ColorFilter.matrix(<double>[-1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0]);
 
-/// The text style for the number in a tile. A row uses T.value at size 10.5 instead.
-TextStyle blockValue(Color c) => T.value(c).copyWith(fontSize: T.px(14), fontWeight: FontWeight.w600, height: 1.1);
+/// The text style for the number in a tile. A row uses TextStyles.value at size 10.5 instead.
+TextStyle blockValue(Color c) => TextStyles.value(c).copyWith(fontSize: TextStyles.px(14), fontWeight: FontWeight.w600, height: 1.1);
 
 /// A numeric field that can be scrubbed, scrolled, nudged with the arrow keys, and typed into. See the file header.
 class NumberField extends StatefulWidget {

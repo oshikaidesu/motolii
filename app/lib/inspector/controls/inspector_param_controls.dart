@@ -8,7 +8,7 @@ import 'package:motolii/inspector/controls/inspector_param_controls_tile.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/widgets/controls.dart' show Pressable;
 
 /// An effect's parameters as blocks that fill the panel's width.
 ///
@@ -27,8 +27,8 @@ class ParamGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
-      final g = Pop.tileGap;
-      final cols = math.max(1, ((box.maxWidth + g) / (Pop.tileMin + g)).floor());
+      final g = InspectorSkin.tileGap;
+      final cols = math.max(1, ((box.maxWidth + g) / (InspectorSkin.tileMin + g)).floor());
       final rows = <List<Param>>[[]];
       var used = 0;
       for (final p in params) {
@@ -113,14 +113,14 @@ class Steps extends StatelessWidget {
     final x = Ctx.of(context), doc = x.doc, v = doc.get(id) ?? p.def;
     Widget btn(String s, double by) {
       final ok = by < 0 ? v > (p.min ?? -1e9) : v < (p.max ?? 1e9);
-      return Hov(
+      return Pressable(
         onTap: ok ? () => doc.set(id, (v + by).clamp(p.min ?? -1e9, p.max ?? 1e9)) : null,
         builder: (_, h) => Container(
-          width: Pop.glyph,
-          height: (Pop.tile - 2 - 8 - 2) / 2,
+          width: InspectorSkin.glyph,
+          height: (InspectorSkin.tile - 2 - 8 - 2) / 2,
           alignment: Alignment.center,
           decoration: BoxDecoration(color: h && ok ? Grey.g38 : Grey.g20, borderRadius: BorderRadius.all(Shape.r(4))),
-          child: Text(s, style: T.label(ok ? Grey.g91 : Grey.g44).copyWith(fontWeight: FontWeight.w700, height: 1)),
+          child: Text(s, style: TextStyles.label(ok ? Grey.g91 : Grey.g44).copyWith(fontWeight: FontWeight.w700, height: 1)),
         ),
       );
     }
@@ -144,7 +144,7 @@ class Dice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc;
-    return Hov(
+    return Pressable(
       onTap: () {
         final v = doc.get(id) ?? 0, hi = p.max ?? 9999, lo = p.min ?? 0;
         doc.set(id, (lo + (v * 7919 + 104729) % (hi - lo + 1)).roundToDouble());

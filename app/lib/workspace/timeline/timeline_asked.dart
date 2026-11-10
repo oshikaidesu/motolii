@@ -260,7 +260,7 @@ mixin TimelineAsked on State<TimelinePane> {
                   rendererIgnoresPointer: true,
                   controller: _renameWords,
                   focusNode: _renameFocus,
-                  style: T.label(Grey.g13).copyWith(fontWeight: FontWeight.w700),
+                  style: TextStyles.label(Grey.g13).copyWith(fontWeight: FontWeight.w700),
                   cursorColor: Grey.g13,
                   backgroundCursorColor: Grey.g38,
                   maxLines: 1,

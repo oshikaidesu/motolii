@@ -24,11 +24,11 @@ class TimelineLabelHeader extends StatelessWidget {
     leading: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('#', style: T.micro(Grey.g56)),
+        Text('#', style: TextStyles.micro(Grey.g56)),
         SizedBox(width: Shape.s(12)),
-        Text('LAYER', style: T.micro(Grey.g63).copyWith(letterSpacing: 1)),
+        Text('LAYER', style: TextStyles.micro(Grey.g63).copyWith(letterSpacing: 1)),
         SizedBox(width: Shape.s(6)),
-        Text('$count', style: T.value(Grey.g56).copyWith(fontSize: T.px(10))),
+        Text('$count', style: TextStyles.value(Grey.g56).copyWith(fontSize: TextStyles.px(10))),
       ],
     ),
     trailing: [

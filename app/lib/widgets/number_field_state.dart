@@ -261,12 +261,12 @@ class NumberFieldState extends State<NumberField> {
   @override
   Widget build(BuildContext context) {
     final v = widget.value(), live = _drag && _moved, accent = widget.accent;
-    final style = widget.style ?? (widget.inline ? T.value(Grey.g91).copyWith(fontSize: T.px(10.5)) : blockValue(Grey.g95));
+    final style = widget.style ?? (widget.inline ? TextStyles.value(Grey.g91).copyWith(fontSize: TextStyles.px(10.5)) : blockValue(Grey.g95));
     return LayoutBuilder(
       builder: (context, box) {
         final w = _w = box.maxWidth;
         final Widget value = v == null
-            ? Text('Mixed', style: T.label(Grey.g76))
+            ? Text('Mixed', style: TextStyles.label(Grey.g76))
             : FittedBox(
                 // A number wider than its field is drawn smaller, never cut off.
                 fit: BoxFit.scaleDown,
@@ -276,7 +276,7 @@ class NumberFieldState extends State<NumberField> {
                     children: [
                       // Fixed decimal places, as Push shows them, so the width does not jump as the number changes.
                       TextSpan(text: widget.text(v, w), style: style),
-                      if (widget.unit?.call(v, w) case final unit? when unit.isNotEmpty) TextSpan(text: '\u2009$unit', style: T.label(Grey.g44)),
+                      if (widget.unit?.call(v, w) case final unit? when unit.isNotEmpty) TextSpan(text: '\u2009$unit', style: TextStyles.label(Grey.g44)),
                     ],
                   ),
                   maxLines: 1,
@@ -315,7 +315,7 @@ class NumberFieldState extends State<NumberField> {
               NumberSpec(
                 value: value,
                 editor: editor,
-                lead: _err && w >= 150 ? Text('Number required', style: T.label(Role.error)) : null,
+                lead: _err && w >= 150 ? Text('Number required', style: TextStyles.label(Role.error)) : null,
                 glyph: widget.glyph,
                 caption: widget.caption,
                 width: w,

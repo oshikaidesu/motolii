@@ -216,7 +216,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
     if (all.isEmpty) {
       return Padding(
         padding: EdgeInsets.all(Shape.s(24)),
-        child: Text('Copy code from the web, then Paste', textAlign: TextAlign.center, style: T.label(Grey.g63)),
+        child: Text('Copy code from the web, then Paste', textAlign: TextAlign.center, style: TextStyles.label(Grey.g63)),
       );
     }
     if (!c.mem.programCode) {
@@ -276,7 +276,7 @@ class _ProgramShelfState extends State<ProgramShelf> {
           if (sel != null && !c.mem.programCode && tile(sel).isNotEmpty) SizedBox(height: Shape.z(140), child: TileMoving(tile(sel), playing: true)),
           if (sel != null)
             DockFooter(
-              preview: dockBadge(DockG.program, WindowTokens.toneText, size: Shape.z(34)),
+              preview: dockBadge(AppGlyphs.program, WindowTokens.toneText, size: Shape.z(34)),
               title: sel.name,
               meta: c.mem.trouble[sel.file]?.replaceAll('the script ${sel.file}: ', '') ?? sel.first,
               action: 'Create',

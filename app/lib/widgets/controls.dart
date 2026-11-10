@@ -8,8 +8,8 @@ import 'package:naked_ui/naked_ui.dart';
 import 'package:motolii/skin/tokens.dart';
 
 /// The app's basic press target, built on naked_ui's [NakedButton].
-class Hov extends StatelessWidget {
-  const Hov({super.key, required this.builder, this.cursor = SystemMouseCursors.click, this.onTap});
+class Pressable extends StatelessWidget {
+  const Pressable({super.key, required this.builder, this.cursor = SystemMouseCursors.click, this.onTap});
 
   /// Builds the child. The bool is true while the pointer hovers.
   final Widget Function(BuildContext, bool) builder;
@@ -44,13 +44,13 @@ class IconPress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tile = rest != null;
-    return Hov(
+    return Pressable(
       // An empty callback keeps the hover state working when there is no [onTap].
       onTap: onTap ?? () {},
       cursor: onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
       builder: (context, h) => AnimatedContainer(
-        duration: tile ? Duration.zero : Mo.dur,
-        curve: Mo.ease,
+        duration: tile ? Duration.zero : Motion.dur,
+        curve: Motion.ease,
         width: width ?? size ?? Shape.z(20),
         height: size ?? Shape.z(20),
         margin: tile ? null : EdgeInsets.only(left: Shape.s(2)),
@@ -98,7 +98,7 @@ class Badge extends StatelessWidget {
       ),
       child: child ?? CustomPaint(size: Size.square(size), painter: mark),
     );
-    return onTap == null ? tile : Hov(cursor: SystemMouseCursors.basic, onTap: onTap, builder: (_, _) => tile);
+    return onTap == null ? tile : Pressable(cursor: SystemMouseCursors.basic, onTap: onTap, builder: (_, _) => tile);
   }
 }
 
@@ -148,7 +148,7 @@ class ChipLook {
     ink: Grey.g76,
     hoverInk: Grey.g95,
     onInk: WindowTokens.onAccent,
-    text: (c) => T.micro(c),
+    text: (c) => TextStyles.micro(c),
   );
 
   /// A readout in a well, such as the top bar's fps or the timeline's name and tempo: 20 high and not pressable.
@@ -161,7 +161,7 @@ class ChipLook {
     fill: WindowTokens.well,
     ink: ink,
     press: false,
-    text: (c) => mono ? T.value(c).copyWith(fontSize: T.px(size)) : T.micro(c).copyWith(fontWeight: FontWeight.w600),
+    text: (c) => mono ? TextStyles.value(c).copyWith(fontSize: TextStyles.px(size)) : TextStyles.micro(c).copyWith(fontWeight: FontWeight.w600),
   );
 
   /// A flat chip filled with a layer's colour, with its name in dark ink.
@@ -171,7 +171,7 @@ class ChipLook {
     fill: tone,
     ink: WindowTokens.onAccent,
     press: false,
-    text: (c) => T.micro(c).copyWith(fontWeight: FontWeight.w700),
+    text: (c) => TextStyles.micro(c).copyWith(fontWeight: FontWeight.w700),
   );
 
   /// The dock's tag: filled with [hue] and dark ink, or a quiet raised grey when [hue] is null.
@@ -186,11 +186,11 @@ class ChipLook {
     edge: edge ? WindowTokens.onAccent : null,
     edgeWidth: 1.5,
     press: false,
-    text: (c) => T.micro(c).copyWith(fontWeight: FontWeight.w700, letterSpacing: .4, height: 1),
+    text: (c) => TextStyles.micro(c).copyWith(fontWeight: FontWeight.w700, letterSpacing: .4, height: 1),
   );
 
   /// A bare grey word that brightens on hover, such as Copy, Paste or Reset: no fill and no padding.
-  static ChipLook get word => ChipLook(padX: 0, ink: Grey.g56, hoverInk: Grey.g95, text: (c) => T.label(c));
+  static ChipLook get word => ChipLook(padX: 0, ink: Grey.g56, hoverInk: Grey.g95, text: (c) => TextStyles.label(c));
 
   /// A word on the panel's background, not pressable. Used by the bar over the stage, which sits on a dark or light surround.
   static ChipLook get said => ChipLook(
@@ -201,7 +201,7 @@ class ChipLook {
     ink: Grey.g91,
     margin: EdgeInsets.only(right: Shape.s(6)),
     press: false,
-    text: (c) => T.label(c),
+    text: (c) => TextStyles.label(c),
   );
 
   /// An operation available between items selected together: an accent pill.
@@ -217,7 +217,7 @@ class ChipLook {
     edge: WindowTokens.accent,
     cursor: SystemMouseCursors.basic,
     margin: EdgeInsets.only(right: Shape.s(4)),
-    text: (c) => T.label(c),
+    text: (c) => TextStyles.label(c),
   );
 }
 
@@ -275,7 +275,7 @@ class Chip extends StatelessWidget {
     }
 
     if (!l.press && onTap == null) return chip(false);
-    return Hov(onTap: onTap, cursor: l.cursor ?? (onTap == null ? MouseCursor.defer : SystemMouseCursors.click), builder: (_, h) => chip(h));
+    return Pressable(onTap: onTap, cursor: l.cursor ?? (onTap == null ? MouseCursor.defer : SystemMouseCursors.click), builder: (_, h) => chip(h));
   }
 }
 
@@ -305,7 +305,12 @@ class Segmented extends StatelessWidget {
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,
-          child: Text(items[i].toUpperCase(), maxLines: 1, softWrap: false, style: T.micro(i == index ? Grey.g95 : Grey.g63).copyWith(letterSpacing: .4)),
+          child: Text(
+            items[i].toUpperCase(),
+            maxLines: 1,
+            softWrap: false,
+            style: TextStyles.micro(i == index ? Grey.g95 : Grey.g63).copyWith(letterSpacing: .4),
+          ),
         ),
       ),
     );

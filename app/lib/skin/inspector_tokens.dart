@@ -4,8 +4,8 @@ import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
 
 /// The Inspector's skin: rounded cards, filled badges, and one lime fill for "selected".
-class Pop {
-  const Pop._();
+class InspectorSkin {
+  const InspectorSkin._();
   static Color get accent => Accent.fill; // The skin's single accent for the window.
   static Color get onAccent => Accent.on;
   static Color get keyDot => Accent.key;
@@ -51,7 +51,7 @@ class Pop {
 }
 
 /// The inspector's hairline: 12% white.
-class Ed {
-  const Ed();
+class InspectorHairline {
+  const InspectorHairline();
   Color get rule => const Color.fromRGBO(255, 255, 255, .12);
 }

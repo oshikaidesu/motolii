@@ -136,7 +136,10 @@ class NumFieldState extends State<NumField> {
   }
 
   bool _inGlyph(Offset p, double w) =>
-      widget.glyph != null && widget.glyphOwnsPointer && p.dx > w - Pop.glyph - Pop.tilePad && (widget.glyphTall || p.dy < Pop.glyph + Pop.tilePad);
+      widget.glyph != null &&
+      widget.glyphOwnsPointer &&
+      p.dx > w - InspectorSkin.glyph - InspectorSkin.tilePad &&
+      (widget.glyphTall || p.dy < InspectorSkin.glyph + InspectorSkin.tilePad);
 
   // Whether the keyframe mark is drawn, and its state. Pressing the mark adds a keyframe at this time or removes it.
   bool _marked = false;
@@ -168,7 +171,7 @@ class NumFieldState extends State<NumField> {
       );
       return true;
     }
-    if (_marked && e.buttons == kPrimaryButton && (e.localPosition - Offset(w - Pop.tilePad - 3, Pop.tile - 10)).distance <= 9) {
+    if (_marked && e.buttons == kPrimaryButton && (e.localPosition - Offset(w - InspectorSkin.tilePad - 3, InspectorSkin.tile - 10)).distance <= 9) {
       // Read the document's current state, because the field may not have been rebuilt since an undo.
       final now = _x.doc.keys[widget.id] ?? _keys;
       // Pressing the mark adds a keyframe at this time or removes it.
@@ -240,12 +243,12 @@ class NumFieldState extends State<NumField> {
       caption: widget.caption,
       glyph: widget.glyph,
       glyphTall: widget.glyphTall,
-      glyphBox: Pop.glyph,
-      keyDot: !_marked ? null : (ks == KeyS.at ? Pop.keyDot : (ks == KeyS.anim ? Pop.keyDot.withValues(alpha: .5) : Grey.g56)),
+      glyphBox: InspectorSkin.glyph,
+      keyDot: !_marked ? null : (ks == KeyS.at ? InspectorSkin.keyDot : (ks == KeyS.anim ? InspectorSkin.keyDot.withValues(alpha: .5) : Grey.g56)),
       keyEmpty: ks == KeyS.off,
       picked: x.doc.isPicked(widget.id),
-      height: Pop.tile,
-      pad: Pop.tilePad,
+      height: InspectorSkin.tile,
+      pad: InspectorSkin.tilePad,
     );
   }
 }

@@ -86,7 +86,7 @@ class _PanesState extends State<Panes> {
             context,
             selected: status == TabStatus.selected,
             mark: p.glyph == null
-                ? Text(p.name.characters.first, style: T.micro(status == TabStatus.selected ? Grey.g95 : Grey.g56))
+                ? Text(p.name.characters.first, style: TextStyles.micro(status == TabStatus.selected ? Grey.g95 : Grey.g56))
                 : Glyph(p.glyph!, size: Shape.z(12), color: status == TabStatus.selected ? Grey.g95 : Grey.g56),
           ),
         ),
@@ -134,7 +134,7 @@ TabbedViewThemeData _tabs() {
     ..margin = EdgeInsets.zero
     ..innerBottomBorder = null
     ..innerTopBorder = null
-    ..textStyle = T.micro(Grey.g63).copyWith(fontWeight: FontWeight.w600, letterSpacing: .6)
+    ..textStyle = TextStyles.micro(Grey.g63).copyWith(fontWeight: FontWeight.w600, letterSpacing: .6)
     ..decoration = plain ? const BoxDecoration() : BoxDecoration(color: WindowTokens.card)
     ..draggingDecoration = BoxDecoration(color: plain ? WindowTokens.body : WindowTokens.raised)
     ..normalButtonColor = Grey.g56

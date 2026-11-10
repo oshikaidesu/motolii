@@ -23,7 +23,7 @@ class ParamWords extends StatelessWidget {
       take: take,
       escapes: true,
       lines: 2,
-      style: T.name(Grey.g95).copyWith(fontWeight: FontWeight.w400),
+      style: TextStyles.name(Grey.g95).copyWith(fontWeight: FontWeight.w400),
       cursor: Grey.g95,
       backgroundCursor: Grey.g20,
       selection: Role.selected.withValues(alpha: .4),

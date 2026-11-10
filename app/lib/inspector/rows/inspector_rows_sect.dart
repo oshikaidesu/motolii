@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Badge, Hov;
+import 'package:motolii/widgets/controls.dart' show Badge, Pressable;
 import 'package:motolii/widgets/media.dart' show Draw;
 
 /// A card: a heading and its rows. Clicking the heading folds the card.
@@ -39,23 +39,28 @@ class Sect extends StatelessWidget {
       doc.flag('fold.$title', open);
     }
 
-    final head = Hov(
+    final head = Pressable(
       onTap: toggle,
       builder: (_, h) => SizedBox(
-        height: Pop.titleH,
+        height: InspectorSkin.titleH,
         child: Row(
           children: [
             // The mark is centred in its box and the gap after it equals the card's inset, so it has equal space on both sides.
             FoldMark(open: open, hot: h),
-            SizedBox(width: Pop.inset),
-            Badge(tone, size: 16, radius: const Radius.circular(16 * .32), mark: Draw((c, s) => drawLayerMark(c, s, Pop.onAccent), Pop.onAccent)),
+            SizedBox(width: InspectorSkin.inset),
+            Badge(
+              tone,
+              size: 16,
+              radius: const Radius.circular(16 * .32),
+              mark: Draw((c, s) => drawLayerMark(c, s, InspectorSkin.onAccent), InspectorSkin.onAccent),
+            ),
             SizedBox(width: Shape.s(6)),
             Flexible(
               child: Text(
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: T.title(h ? Grey.g100 : Grey.g95).copyWith(fontSize: T.px(12), fontWeight: FontWeight.w700),
+                style: TextStyles.title(h ? Grey.g100 : Grey.g95).copyWith(fontSize: TextStyles.px(12), fontWeight: FontWeight.w700),
               ),
             ),
             const Expanded(child: SizedBox()),
@@ -66,19 +71,19 @@ class Sect extends StatelessWidget {
     );
     final body = open ? children : const <Widget>[];
     final content = Padding(
-      padding: EdgeInsets.symmetric(horizontal: Pop.inset, vertical: Pop.insetY),
+      padding: EdgeInsets.symmetric(horizontal: InspectorSkin.inset, vertical: InspectorSkin.insetY),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
           head,
-          if (body.isNotEmpty) SizedBox(height: Pop.titleGap),
+          if (body.isNotEmpty) SizedBox(height: InspectorSkin.titleGap),
           ...body,
         ],
       ),
     );
     return Padding(
-      padding: EdgeInsets.only(bottom: Pop.gap),
+      padding: EdgeInsets.only(bottom: InspectorSkin.gap),
       child: Forms.worn.card(
         context,
         CardSpec(title: title, tone: tone, open: open, onToggle: toggle, trailing: trailing, body: body, head: head, own: content),

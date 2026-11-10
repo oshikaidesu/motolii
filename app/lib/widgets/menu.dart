@@ -9,7 +9,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:motolii/widgets/float_shut.dart' show FloatShut;
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/widgets/controls.dart' show Pressable;
 
 /// One row of a menu.
 ///
@@ -66,7 +66,7 @@ class ContextMenuList extends StatelessWidget {
             runSpacing: Shape.s(4),
             children: [
               for (var k = 0; k < it.colors.length; k++)
-                Hov(
+                Pressable(
                   key: ValueKey('ws-menu-colour-$k'),
                   cursor: SystemMouseCursors.click,
                   onTap: () {
@@ -91,7 +91,7 @@ class ContextMenuList extends StatelessWidget {
           padding: EdgeInsets.symmetric(vertical: Shape.s(4)),
           child: SizedBox(height: 1, child: ColoredBox(color: Grey.g20)),
         )
-      : Hov(
+      : Pressable(
           key: ValueKey(it.id ?? 'ws-menu-${it.label}'),
           cursor: it.go != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
           onTap: it.go == null
@@ -107,12 +107,12 @@ class ContextMenuList extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(it.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(it.go != null ? Grey.g91 : Grey.g56)),
+                  child: Text(it.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.name(it.go != null ? Grey.g91 : Grey.g56)),
                 ),
                 if (it.go == null && it.why.isNotEmpty)
-                  Text(it.why, maxLines: 1, style: T.label(Grey.g56))
+                  Text(it.why, maxLines: 1, style: TextStyles.label(Grey.g56))
                 else if (it.keys.isNotEmpty)
-                  Text(it.keys, maxLines: 1, style: T.label(Grey.g56)),
+                  Text(it.keys, maxLines: 1, style: TextStyles.label(Grey.g56)),
               ],
             ),
           ),

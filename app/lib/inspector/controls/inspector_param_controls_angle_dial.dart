@@ -19,7 +19,7 @@ class _AngleDialState extends State<AngleDial> {
   double? _last;
   bool _hot = false;
   double _angle(Offset local) {
-    // The dial is drawn around this centre. Its slot may be smaller than the size it asks for (Pop.glyph).
+    // The dial is drawn around this centre. Its slot may be smaller than the size it asks for (InspectorSkin.glyph).
     final o = (context.size ?? const Size(22, 22)).center(Offset.zero);
     return math.atan2(local.dy - o.dy, local.dx - o.dx);
   }

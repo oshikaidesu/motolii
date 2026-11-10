@@ -198,7 +198,7 @@ class _Roles extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(label, style: T.label(dockInk(on, Grey.g63))),
+                      Text(label, style: TextStyles.label(dockInk(on, Grey.g63))),
                       SizedBox(height: Shape.s(2)),
                       Text(f.family, maxLines: 1, overflow: TextOverflow.ellipsis, style: _face(f, 14, dockInk(on, Grey.g95))),
                     ],
@@ -347,7 +347,7 @@ class FontsShelf extends StatelessWidget {
                             padding: EdgeInsets.fromLTRB(WindowTokens.inset, Shape.s(8), WindowTokens.inset, Shape.s(8)),
                             child: Text(
                               '$fontsUnoffered fonts here are not offered: they have no letters of any language (symbols, maths, emoji), or ThorVG cannot read them',
-                              style: T.label(Grey.g56),
+                              style: TextStyles.label(Grey.g56),
                             ),
                           )
                         : null;
@@ -407,7 +407,7 @@ TextStyle _face(_Font f, double size, Color c) => TextStyle(
   fontFamily: _own(f),
   fontFamilyFallback: [f.family, '.AppleSystemUIFont'],
   fontSize: size,
-  color: T.ink(c),
+  color: TextStyles.ink(c),
   height: 1.1,
   decoration: TextDecoration.none,
 );
@@ -520,12 +520,12 @@ class _FontDotState extends State<_FontDot> {
             valueListenable: map.places,
             builder: (context, at, _) => RawImage(
               image: _seen[f.path],
-              color: T.ink(dockInk(sel, dockPalette(at)[f.path] ?? Grey.g95)),
+              color: TextStyles.ink(dockInk(sel, dockPalette(at)[f.path] ?? Grey.g95)),
               colorBlendMode: BlendMode.modulate,
               fit: BoxFit.contain,
             ),
           ),
-          null => RawImage(image: _seen[f.path], color: T.ink(dockInk(sel, Grey.g95)), colorBlendMode: BlendMode.modulate, fit: BoxFit.contain),
+          null => RawImage(image: _seen[f.path], color: TextStyles.ink(dockInk(sel, Grey.g95)), colorBlendMode: BlendMode.modulate, fit: BoxFit.contain),
         },
       ),
     );

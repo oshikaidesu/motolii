@@ -219,7 +219,7 @@ class ColorsShelf extends StatelessWidget {
                           : name[0].toUpperCase() + name.substring(1)} of $who',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: T.name(Grey.g91).copyWith(fontWeight: FontWeight.w600),
+                      style: TextStyles.name(Grey.g91).copyWith(fontWeight: FontWeight.w600),
                     );
                   },
                 ),
@@ -235,7 +235,7 @@ class ColorsShelf extends StatelessWidget {
           if (c.mem.trouble['fill'] case final why?)
             Padding(
               padding: EdgeInsets.only(top: Shape.s(4)),
-              child: Text(why, style: T.label(ColorTheme.of('Alert', const Color(0xFFE5484D)))),
+              child: Text(why, style: TextStyles.label(ColorTheme.of('Alert', const Color(0xFFE5484D)))),
             ),
           SizedBox(height: Shape.s(6)),
           Row(
@@ -359,10 +359,10 @@ class ColorsShelf extends StatelessWidget {
                   'Colours',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: T.label(Grey.g76).copyWith(fontWeight: FontWeight.w600),
+                  style: TextStyles.label(Grey.g76).copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
-              Text('size', style: T.label(Grey.g76)),
+              Text('size', style: TextStyles.label(Grey.g76)),
               SizedBox(width: Shape.s(4)),
               Flexible(
                 // Shrinks in a narrow shelf so it never pushes the row out.
@@ -709,7 +709,7 @@ class _HexField extends StatelessWidget {
     text: hex,
     standing: true,
     pickOnFocus: true,
-    style: T.value(Grey.g91).copyWith(fontWeight: FontWeight.w600),
+    style: TextStyles.value(Grey.g91).copyWith(fontWeight: FontWeight.w600),
     cursor: WindowTokens.accent,
     backgroundCursor: Grey.g44,
     selection: Grey.g38,

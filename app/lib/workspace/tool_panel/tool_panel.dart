@@ -3,7 +3,7 @@
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/widgets/controls.dart' show Chip, Hov, IconPress;
+import 'package:motolii/widgets/controls.dart' show Chip, Pressable, IconPress;
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
@@ -56,7 +56,7 @@ class _ToolHeader extends StatelessWidget {
               Chip(label: wide ? 'Follows selection' : 'Follows', dot: WindowTokens.accent),
             SizedBox(width: WindowTokens.gap),
             IconPress(
-              (ink) => Glyph(DockG.tools, size: 20, color: ink),
+              (ink) => Glyph(AppGlyphs.tools, size: 20, color: ink),
               rest: WindowTokens.well,
               ink: Grey.g76,
               size: 20,
@@ -112,7 +112,7 @@ class _ToolTile extends StatelessWidget {
   final Pane tool;
   final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => Hov(
+  Widget build(BuildContext context) => Pressable(
     onTap: onTap,
     builder: (_, h) => Container(
       padding: EdgeInsets.fromLTRB(Shape.s(7), Shape.s(7), Shape.s(6), Shape.s(7)),
@@ -130,9 +130,12 @@ class _ToolTile extends StatelessWidget {
               tool.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: T.name(h ? Grey.g100 : Grey.g95).copyWith(fontSize: T.px(12), fontWeight: FontWeight.w700),
+              style: TextStyles.name(h ? Grey.g100 : Grey.g95).copyWith(fontSize: TextStyles.px(12), fontWeight: FontWeight.w700),
             ),
-            if (box.maxHeight >= 54) ...[SizedBox(height: Shape.s(3)), Text(tool.acts, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.label(Grey.g56))],
+            if (box.maxHeight >= 54) ...[
+              SizedBox(height: Shape.s(3)),
+              Text(tool.acts, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.label(Grey.g56)),
+            ],
           ],
         ),
       ),

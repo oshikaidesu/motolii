@@ -29,7 +29,7 @@ class PanelHeader extends StatelessWidget {
         Row(
           children: [
             if (leading case final l?) ...[l, SizedBox(width: Shape.s(6))],
-            if (title.isNotEmpty) Text(title, style: T.name(Grey.g95).copyWith(fontWeight: FontWeight.w700)),
+            if (title.isNotEmpty) Text(title, style: TextStyles.name(Grey.g95).copyWith(fontWeight: FontWeight.w700)),
             const Spacer(),
             ...trailing,
           ],

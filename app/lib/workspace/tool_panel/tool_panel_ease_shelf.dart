@@ -18,7 +18,7 @@ import 'package:motolii/workspace/tool_panel/tool_panel_easing_presets.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_side.dart' show drawEaseChevron;
 import 'package:motolii/widgets/media.dart' show Draw;
 
-import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/storage/kept_file.dart' show fileKeep, fileList;
 
 /// The easings the user saved: a curve, a card or all the cards, each stored as its name string.
@@ -51,7 +51,7 @@ class EaseGrip extends StatelessWidget {
   final bool open;
   final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => Hov(
+  Widget build(BuildContext context) => Pressable(
     onTap: onTap,
     builder: (_, h) => Container(
       width: easeGripWide,
@@ -119,14 +119,14 @@ class EaseShelf extends StatelessWidget {
               gridDelegate: across,
               itemCount: kept.length + 1,
               itemBuilder: (_, i) => i == kept.length
-                  ? Hov(
+                  ? Pressable(
                       key: const ValueKey('ease.shelf.slot'),
                       onTap: () => onKeep(-1),
                       builder: (_, h) => Center(
                         child: EaseSlot(side: side, ink: h ? Grey.g76 : Grey.g38),
                       ),
                     )
-                  : Hov(
+                  : Pressable(
                       cursor: MouseCursor.defer,
                       builder: (_, h) {
                         final e = _tiles[kept[i]] ??= easeCard(kept[i], inside);

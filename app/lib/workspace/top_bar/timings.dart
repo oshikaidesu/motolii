@@ -14,7 +14,7 @@ import 'package:motolii/bridge/motolii_watch.dart';
 import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
 /// A red dot with a count of problems, shown only when there are any.
@@ -195,7 +195,7 @@ class _WaitedState extends State<Waited> {
                         for (final l in lines)
                           Padding(
                             padding: EdgeInsets.only(bottom: Shape.s(3)),
-                            child: Text(l, softWrap: true, style: T.micro(Grey.g76)),
+                            child: Text(l, softWrap: true, style: TextStyles.micro(Grey.g76)),
                           ),
                       ],
                     ),
@@ -207,7 +207,7 @@ class _WaitedState extends State<Waited> {
         ),
         child: TapRegion(
           groupId: _group,
-          child: Hov(
+          child: Pressable(
             onTap: () => _show(!_open.isShowing),
             builder: (_, h) => Padding(
               padding: EdgeInsets.only(right: Shape.s(10)),
@@ -219,7 +219,7 @@ class _WaitedState extends State<Waited> {
                     height: Shape.z(6),
                     decoration: BoxDecoration(color: ColorTheme.of('Alert', const Color(0xFFE5484D)), shape: BoxShape.circle),
                   ),
-                  if (_count > 0) ...[SizedBox(width: Shape.s(5)), Text('$_count', style: T.label(h ? Grey.g91 : Grey.g63))],
+                  if (_count > 0) ...[SizedBox(width: Shape.s(5)), Text('$_count', style: TextStyles.label(h ? Grey.g91 : Grey.g63))],
                 ],
               ),
             ),

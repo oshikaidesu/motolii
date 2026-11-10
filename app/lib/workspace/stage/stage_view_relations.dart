@@ -9,7 +9,7 @@ import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Hov;
+import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Pressable;
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/timeline_painters.dart' show TpGlyph;
 import 'package:motolii/widgets/two_fingers.dart';
@@ -389,7 +389,7 @@ class RelationStack extends StatelessWidget {
               final id = int.parse(r), kind = m.word(id, 'file'), on = (m.value(id, 'visible', 0) ?? 1) > .5;
               final lead = (m.value(id, 'leader', 0) ?? 0).round(), leads = '$lead' == t;
               final ink = r == top ? Grey.g95 : Grey.g56;
-              return Hov(
+              return Pressable(
                 key: ValueKey('ws-stack-$r'),
                 cursor: SystemMouseCursors.basic,
                 onTap: () => ws.select(r),
@@ -407,7 +407,7 @@ class RelationStack extends StatelessWidget {
                         ),
                       ), // Filled when the relation is switched on. Its eye is on the relation's own row and bar.
                       SizedBox(width: Shape.s(8)),
-                      Text('${kind[0].toUpperCase()}${kind.substring(1)}', style: T.label(ink)),
+                      Text('${kind[0].toUpperCase()}${kind.substring(1)}', style: TextStyles.label(ink)),
                       SizedBox(width: Shape.s(8)),
                       Expanded(
                         child: Text(
@@ -418,15 +418,15 @@ class RelationStack extends StatelessWidget {
                               : '',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: T.label(Grey.g56),
+                          style: TextStyles.label(Grey.g56),
                         ),
                       ),
                       if (!leads)
-                        Hov(
+                        Pressable(
                           key: ValueKey('ws-stack-free-$r'),
                           cursor: SystemMouseCursors.basic,
                           onTap: () => ws.after(m.later('free', layer: int.parse(t), number: id.toDouble()), (_, _) => ws.reread()),
-                          builder: (_, _) => Text('×', style: T.label(Grey.g56)),
+                          builder: (_, _) => Text('×', style: TextStyles.label(Grey.g56)),
                         ),
                     ],
                   ),
@@ -499,7 +499,7 @@ class Hud extends StatelessWidget {
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('${(scale * 100).round()}%', style: T.value(Grey.g95)),
+        Text('${(scale * 100).round()}%', style: TextStyles.value(Grey.g95)),
         Container(
           width: 1,
           height: Shape.z(10),
@@ -512,10 +512,10 @@ class Hud extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               for (final (l, n) in [('X ', p?.dx), ('Y ', p?.dy)]) ...[
-                Text(l, style: T.micro(Grey.g56)),
+                Text(l, style: TextStyles.micro(Grey.g56)),
                 SizedBox(
                   width: Shape.z(34),
-                  child: Text(n == null ? '—' : '${n.round()}', style: T.value(n == null ? Grey.g56 : Grey.g91)),
+                  child: Text(n == null ? '—' : '${n.round()}', style: TextStyles.value(n == null ? Grey.g56 : Grey.g91)),
                 ),
               ],
             ],

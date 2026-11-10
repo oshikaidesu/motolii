@@ -51,12 +51,12 @@ class ToolReadout extends StatelessWidget {
         children: [
           Text(
             value,
-            style: T.value(Grey.g95).copyWith(fontSize: T.px(18), fontWeight: FontWeight.w700, letterSpacing: -.5),
+            style: TextStyles.value(Grey.g95).copyWith(fontSize: TextStyles.px(18), fontWeight: FontWeight.w700, letterSpacing: -.5),
           ),
-          if (unit.isNotEmpty) ...[SizedBox(width: Shape.s(2)), Text(unit, style: T.label(Grey.g63))],
+          if (unit.isNotEmpty) ...[SizedBox(width: Shape.s(2)), Text(unit, style: TextStyles.label(Grey.g63))],
         ],
       ),
-      if (sub != null) ...[SizedBox(height: Shape.s(3)), Text(sub!, style: T.label(Grey.g56))],
+      if (sub != null) ...[SizedBox(height: Shape.s(3)), Text(sub!, style: TextStyles.label(Grey.g56))],
     ],
   );
 }

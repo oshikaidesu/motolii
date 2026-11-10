@@ -4,7 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/skin/forms/forms.dart';
 
 abstract final class Usual {
@@ -17,7 +17,7 @@ abstract final class Usual {
       mainAxisSize: MainAxisSize.min,
       children: [
         for (var i = 0; i < c.labels.length; i++)
-          Hov(
+          Pressable(
             onTap: () => c.onSelect(i),
             builder: (_, h) => Container(
               height: Shape.z(16),
@@ -29,7 +29,7 @@ abstract final class Usual {
               ),
               child: Text(
                 c.labels[i],
-                style: T.label(i == c.selected ? WindowTokens.onAccent : (h ? Grey.g95 : Grey.g76)).copyWith(fontWeight: FontWeight.w600),
+                style: TextStyles.label(i == c.selected ? WindowTokens.onAccent : (h ? Grey.g95 : Grey.g76)).copyWith(fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -38,7 +38,7 @@ abstract final class Usual {
   );
 
   /// An on/off chip. When on, it is raised and the mark is drawn in the accent colour.
-  static Widget flag(BuildContext context, FlagSpec f) => Hov(
+  static Widget flag(BuildContext context, FlagSpec f) => Pressable(
     onTap: f.onTap,
     builder: (_, h) {
       final ink = f.on ? WindowTokens.accent : (h ? Grey.g91 : Grey.g56);
@@ -54,7 +54,7 @@ abstract final class Usual {
           children: [
             if (f.mark != null) f.mark!(ink),
             if (f.mark != null) SizedBox(width: Shape.s(5)),
-            Text(f.label, style: T.label(f.on || h ? Grey.g95 : Grey.g63).copyWith(fontWeight: FontWeight.w600)),
+            Text(f.label, style: TextStyles.label(f.on || h ? Grey.g95 : Grey.g63).copyWith(fontWeight: FontWeight.w600)),
           ],
         ),
       );
@@ -73,13 +73,13 @@ abstract final class Usual {
       child: Row(
         children: [
           for (final (name, n) in c.chips) ...[
-            Hov(
+            Pressable(
               onTap: () => c.onPick(name),
               builder: (_, h) {
                 final on = name == c.active;
                 return AnimatedContainer(
-                  duration: Mo.dur,
-                  curve: Mo.ease,
+                  duration: Motion.dur,
+                  curve: Motion.ease,
                   height: Shape.z(20),
                   padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
                   decoration: BoxDecoration(
@@ -89,10 +89,10 @@ abstract final class Usual {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(name, style: T.micro(on ? WindowTokens.onAccent : Grey.g91).copyWith(fontWeight: on ? FontWeight.w700 : FontWeight.w500)),
+                      Text(name, style: TextStyles.micro(on ? WindowTokens.onAccent : Grey.g91).copyWith(fontWeight: on ? FontWeight.w700 : FontWeight.w500)),
                       if (n != null) ...[
                         SizedBox(width: Shape.s(4)),
-                        Text('$n', style: T.value(on ? WindowTokens.onAccent : Grey.g56).copyWith(fontSize: T.px(10))),
+                        Text('$n', style: TextStyles.value(on ? WindowTokens.onAccent : Grey.g56).copyWith(fontSize: TextStyles.px(10))),
                       ],
                     ],
                   ),
@@ -132,7 +132,7 @@ abstract final class Usual {
               '${t.index + 1}',
               softWrap: false,
               overflow: TextOverflow.visible,
-              style: T.value(index ?? (t.selected ? Grey.g91 : Grey.g56)).copyWith(fontSize: T.px(10)),
+              style: TextStyles.value(index ?? (t.selected ? Grey.g91 : Grey.g56)).copyWith(fontSize: TextStyles.px(10)),
             ),
           ),
           SizedBox(width: Shape.s(6)),
@@ -141,7 +141,7 @@ abstract final class Usual {
           Expanded(
             child: Text(
               t.name,
-              style: T.name(t.dim ? Grey.g56 : (ink ?? (t.selected ? Grey.g100 : Grey.g91))).copyWith(fontWeight: t.selected ? picked : rest),
+              style: TextStyles.name(t.dim ? Grey.g56 : (ink ?? (t.selected ? Grey.g100 : Grey.g91))).copyWith(fontWeight: t.selected ? picked : rest),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),

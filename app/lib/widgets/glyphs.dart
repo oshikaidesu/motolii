@@ -40,14 +40,14 @@ class Glyph extends StatelessWidget {
   Widget build(BuildContext context) => fade
       ? TweenAnimationBuilder<Color?>(
           tween: ColorTween(end: color),
-          duration: Mo.dur,
+          duration: Motion.dur,
           curve: Curves.easeOut,
           builder: (_, v, _) => _box(v ?? color),
         )
       : _box(color);
 }
 
-enum G implements GlyphKind {
+enum Glyphs implements GlyphKind {
   select,
   move,
   rect,
@@ -70,7 +70,7 @@ enum G implements GlyphKind {
     final w = s.width;
     Offset p(double x, double y) => Offset(x * w, y * w);
     switch (this) {
-      case G.select:
+      case Glyphs.select:
         c.drawPath(
           Path()
             ..moveTo(w * .26, w * .14)
@@ -83,7 +83,7 @@ enum G implements GlyphKind {
             ..close(),
           st,
         );
-      case G.move:
+      case Glyphs.move:
         c.drawLine(p(.5, .12), p(.5, .88), st);
         c.drawLine(p(.12, .5), p(.88, .5), st);
         for (final d in const [Offset(.5, .12), Offset(.5, .88), Offset(.12, .5), Offset(.88, .5)]) {
@@ -91,11 +91,11 @@ enum G implements GlyphKind {
           c.drawLine(p(d.dx, d.dy), p(d.dx + (dx == 0 ? .08 : dx), d.dy + (dy == 0 ? .08 : dy)), st);
           c.drawLine(p(d.dx, d.dy), p(d.dx + (dx == 0 ? -.08 : dx), d.dy + (dy == 0 ? -.08 : dy)), st);
         }
-      case G.rect || G.shape:
+      case Glyphs.rect || Glyphs.shape:
         c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * .18, w * .22, w * .64, w * .56), Radius.circular(w * .08)), st);
-      case G.ellipse:
+      case Glyphs.ellipse:
         c.drawOval(Rect.fromLTWH(w * .16, w * .2, w * .68, w * .6), st);
-      case G.pen:
+      case Glyphs.pen:
         c.drawPath(
           Path()
             ..moveTo(w * .5, w * .1)
@@ -109,7 +109,7 @@ enum G implements GlyphKind {
         c.drawCircle(p(.5, .52), w * .06, fl);
         c.drawLine(p(.5, .58), p(.5, .9), st);
       // A freehand stroke, thick in the middle.
-      case G.brush:
+      case Glyphs.brush:
         c.drawPath(
           Path()
             ..moveTo(w * .16, w * .74)
@@ -119,11 +119,11 @@ enum G implements GlyphKind {
             ..strokeWidth = st.strokeWidth * 1.6
             ..strokeCap = StrokeCap.round,
         );
-      case G.text:
+      case Glyphs.text:
         c.drawLine(p(.22, .2), p(.78, .2), st);
         c.drawLine(p(.5, .2), p(.5, .84), st);
         c.drawLine(p(.38, .84), p(.62, .84), st);
-      case G.image:
+      case Glyphs.image:
         c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * .14, w * .2, w * .72, w * .6), Radius.circular(w * .08)), st);
         c.drawPath(
           Path()
@@ -135,19 +135,19 @@ enum G implements GlyphKind {
           st,
         );
         c.drawCircle(p(.66, .36), w * .05, fl);
-      case G.camera:
+      case Glyphs.camera:
         c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * .12, w * .3, w * .76, w * .5), Radius.circular(w * .08)), st);
         c.drawCircle(p(.5, .55), w * .15, st);
         c.drawLine(p(.34, .3), p(.4, .2), st);
         c.drawLine(p(.4, .2), p(.6, .2), st);
         c.drawLine(p(.6, .2), p(.66, .3), st);
-      case G.grid:
+      case Glyphs.grid:
         for (var i = 0; i < 2; i++) {
           c.drawLine(p(.38 + i * .24, .16), p(.38 + i * .24, .84), st);
           c.drawLine(p(.16, .38 + i * .24), p(.84, .38 + i * .24), st);
         }
         c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * .16, w * .16, w * .68, w * .68), Radius.circular(w * .06)), st);
-      case G.media:
+      case Glyphs.media:
         c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * .14, w * .2, w * .72, w * .6), Radius.circular(w * .08)), st);
         c.drawPath(
           Path()

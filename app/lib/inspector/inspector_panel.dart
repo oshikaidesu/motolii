@@ -7,7 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/inspector/inspector_values.dart';
-import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, Hov;
+import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, Pressable;
 
 // Every card follows one rule. The engine declares the cards (card_table.h, sent by motolii_cards and
 // written as a WGSL uniform struct by workspace/inspector_feed/cards.dart), and [ValuesCard] draws each one the way it draws an effect.
@@ -38,18 +38,18 @@ class AddEffectRow extends StatelessWidget {
       child: Chip(key: ValueKey(key), label: word, onTap: does, look: ChipLook.word),
     );
     return Padding(
-      padding: EdgeInsets.only(bottom: Pop.gap),
+      padding: EdgeInsets.only(bottom: InspectorSkin.gap),
       child: Row(
         children: [
           Expanded(
-            child: Hov(
+            child: Pressable(
               key: const ValueKey('add-effect'),
               onTap: doc.onAddEffect,
               builder: (_, h) => Container(
-                height: Pop.cell,
+                height: InspectorSkin.cell,
                 alignment: Alignment.center,
-                decoration: BoxDecoration(color: h ? Grey.g20 : Pop.well, borderRadius: BorderRadius.all(Shape.r(6))),
-                child: Text('+ Add Effect', style: T.label(h ? Grey.g95 : Grey.g76)),
+                decoration: BoxDecoration(color: h ? Grey.g20 : InspectorSkin.well, borderRadius: BorderRadius.all(Shape.r(6))),
+                child: Text('+ Add Effect', style: TextStyles.label(h ? Grey.g95 : Grey.g76)),
               ),
             ),
           ),
@@ -117,11 +117,11 @@ class _InspectorPanelState extends State<InspectorPanel> {
             children: [
               // The name and Animate button stay put while the cards scroll under them.
               // Alight Motion's keyframe button also sits outside the scrolling area (LayerTools.kt, LayerPanel).
-              if (k != Kind.none) Padding(padding: EdgeInsets.fromLTRB(Pop.gap, Pop.gap, Pop.gap, 0), child: const InspHeader()),
+              if (k != Kind.none) Padding(padding: EdgeInsets.fromLTRB(InspectorSkin.gap, InspectorSkin.gap, InspectorSkin.gap, 0), child: const InspHeader()),
               Expanded(
                 child: ListView(
                   controller: _scroll,
-                  padding: EdgeInsets.all(Pop.gap),
+                  padding: EdgeInsets.all(InspectorSkin.gap),
                   scrollCacheExtent: textToType ? const ScrollCacheExtent.pixels(4000) : null,
                   children: body,
                 ),

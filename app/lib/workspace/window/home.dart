@@ -159,7 +159,7 @@ class _HomeWindowState extends State<HomeWindow> {
           ..add(
             Padding(
               padding: EdgeInsets.only(top: rows.isEmpty ? 0 : 24, bottom: 12),
-              child: Text(day, style: T.label(Grey.g76)),
+              child: Text(day, style: TextStyles.label(Grey.g76)),
             ),
           )
           ..add(grid(docs));
@@ -188,13 +188,13 @@ class _HomeWindowState extends State<HomeWindow> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: WindowTokens.raised),
                 ),
-                child: Text('+  New Project', style: T.title(Grey.g91)),
+                child: Text('+  New Project', style: TextStyles.title(Grey.g91)),
               ),
             ),
             const SizedBox(height: 28),
             Row(
               children: [
-                Text('Projects', style: T.title(Grey.g91)),
+                Text('Projects', style: TextStyles.title(Grey.g91)),
                 const Spacer(),
                 SizedBox(
                   width: 180,
@@ -208,7 +208,7 @@ class _HomeWindowState extends State<HomeWindow> {
                         rendererIgnoresPointer: true,
                         controller: _findText,
                         focusNode: _findFocus,
-                        style: T.label(Grey.g91),
+                        style: TextStyles.label(Grey.g91),
                         cursorColor: WindowTokens.accent,
                         backgroundCursorColor: Grey.g63,
                         onChanged: (v) => setState(() => _find = v),
@@ -252,7 +252,7 @@ class _HomeWindowState extends State<HomeWindow> {
         padX: 8,
         padY: 4,
         radius: 6,
-        text: (c) => T.label(c),
+        text: (c) => TextStyles.label(c),
       ),
     ),
   );
@@ -295,7 +295,7 @@ class _HomeWindowState extends State<HomeWindow> {
                         margin: const EdgeInsets.all(6),
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(color: WindowTokens.accent, borderRadius: BorderRadius.circular(4)),
-                        child: Text('✓', style: T.label(WindowTokens.onAccent)),
+                        child: Text('✓', style: TextStyles.label(WindowTokens.onAccent)),
                       ),
                     ),
                   Positioned(
@@ -309,7 +309,7 @@ class _HomeWindowState extends State<HomeWindow> {
                         margin: const EdgeInsets.all(6),
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(color: WindowTokens.ground, borderRadius: BorderRadius.circular(4)),
-                        child: Text('•••', style: T.label(Grey.g76)),
+                        child: Text('•••', style: TextStyles.label(Grey.g76)),
                       ),
                     ),
                   ),
@@ -319,14 +319,14 @@ class _HomeWindowState extends State<HomeWindow> {
             const SizedBox(height: 8),
             Text(
               d.name,
-              style: T.name(Grey.g91).copyWith(fontWeight: FontWeight.w700),
+              style: TextStyles.name(Grey.g91).copyWith(fontWeight: FontWeight.w700),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 2),
             // CapCut's "254.3M | 02:13".
-            Text([_bytes(d.bytes), if (f != null) _length(f.seconds)].join(' | '), style: T.value(Grey.g63), maxLines: 1),
-            Text(_facts(d).join(' · '), key: ValueKey('home-facts:${d.path}'), style: T.value(Grey.g56), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text([_bytes(d.bytes), if (f != null) _length(f.seconds)].join(' | '), style: TextStyles.value(Grey.g63), maxLines: 1),
+            Text(_facts(d).join(' · '), key: ValueKey('home-facts:${d.path}'), style: TextStyles.value(Grey.g56), maxLines: 1, overflow: TextOverflow.ellipsis),
             if (_menu == d.path)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
@@ -336,7 +336,7 @@ class _HomeWindowState extends State<HomeWindow> {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: _asking == d.path
                       ? [
-                          Text('Move to the Trash?', style: T.label(Grey.g91)),
+                          Text('Move to the Trash?', style: TextStyles.label(Grey.g91)),
                           _button('home-trash-yes:${d.path}', 'Move to Trash', true, () => _trash(d)),
                           _button('home-trash-no:${d.path}', 'Cancel', false, () => setState(() => _asking = null)),
                         ]
