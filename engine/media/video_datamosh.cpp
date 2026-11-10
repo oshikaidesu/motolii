@@ -1,5 +1,7 @@
 #include "media/video_datamosh.h"
 
+#include "base/video_encoder.h"
+
 #include <sys/stat.h>
 
 #include <atomic>
@@ -92,8 +94,9 @@ std::string mosh_file(const std::string& film, double at,
         "list.txt -c copy both.avi; "
         "ffmpeg -nostdin -hide_banner -loglevel error -y -i both.avi -c copy "
         "-bsf:v \"noise=drop='key*gt(n\\,0)'\" moshed.avi; "
-        "ffmpeg -nostdin -hide_banner -loglevel error -y -i moshed.avi -c:v "
-        "h264_videotoolbox -pix_fmt yuv420p -q:v 70 out.mp4; "
+        "ffmpeg -nostdin -hide_banner -loglevel error -y -i moshed.avi -c:v " +
+        h264_encoder_here() + h264_quality(h264_encoder_here(), 0.0) +
+        "-pix_fmt yuv420p out.mp4; "
         "mv out.mp4 " +
         mosh_quoted(out);
     const bool ok =

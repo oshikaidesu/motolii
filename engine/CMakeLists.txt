@@ -181,7 +181,7 @@ add_library(motolii_stage_render STATIC
   stage/render/render_draw.mm
   stage/render/render_layers.cpp
   stage/render/render_stage.cpp)
-target_link_libraries(motolii_stage_render PUBLIC motolii_flags motolii_community_playcanvas)
+target_link_libraries(motolii_stage_render PUBLIC motolii_flags motolii_base motolii_community_playcanvas)
 target_link_libraries(motolii_stage_render PUBLIC filament_libraries)
 
 # Screen effects.
@@ -224,7 +224,7 @@ add_library(motolii_media STATIC
   media/video_datamosh.cpp
   media/video_frames_for_scripts.cpp
   media/video_layer.cpp)
-target_link_libraries(motolii_media PUBLIC motolii_flags motolii_community_quickjs motolii_gpu motolii_stage_render)
+target_link_libraries(motolii_media PUBLIC motolii_flags motolii_base motolii_community_quickjs motolii_gpu motolii_stage_render)
 target_sources(motolii_media PRIVATE $<TARGET_OBJECTS:video_flash_check>)
 target_link_directories(motolii_media PUBLIC ${IRIS}/opencv_out/lib ${IRIS}/opencv_out/lib/opencv4/3rdparty)
 target_link_libraries(motolii_media PUBLIC PkgConfig::GSTREAMER PkgConfig::FFMPEG ${IRIS}/lib/libiris.a

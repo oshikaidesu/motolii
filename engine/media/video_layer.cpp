@@ -486,7 +486,10 @@ Video* video(Stage& s, const char* file, const mat4f& place, float high,
       g_signal_connect(reads, "autoplug-select",
                        G_CALLBACK(+[](GstElement*, GstPad*, GstCaps*,
                                       GstElementFactory* part, gpointer) {
-                         return g_str_has_prefix(GST_OBJECT_NAME(part), "vtdec")
+                         // Hardware decoders (vtdechw on a Mac, d3d11 / va / nv on other systems) carry
+                         // "Hardware" in their klass; the CPU path wants the software ones.
+                         return gst_element_factory_list_is_type(
+                                    part, GST_ELEMENT_FACTORY_TYPE_HARDWARE)
                                     ? 2 /* GST_AUTOPLUG_SELECT_SKIP */
                                     : 0 /* TRY */;
                        }),

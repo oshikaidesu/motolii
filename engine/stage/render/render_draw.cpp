@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "base/video_encoder.h"
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
 
@@ -90,6 +91,11 @@ bool film(Stage& s, const char* path, int frameCount,
     all += "[a" + std::to_string(++n) + "]";
   }
   const std::string ending = std::filesystem::path(path).extension().string();
+  const std::string h264 = ending == ".mp4" ? h264_encoder_here() : "";
+  if (ending == ".mp4" && h264.empty()) {
+    std::fprintf(stderr, "film: this ffmpeg lists no H.264 encoder\n");
+    return false;
+  }
   const bool silent = ending == ".gif" || ending == ".png" || ending == ".jpg";
   const std::string sound =
       n && !silent ? files + " -filter_complex \"" + each + all +
@@ -131,14 +137,12 @@ bool film(Stage& s, const char* path, int frameCount,
                 (said.alpha ? " -alpha_quality 0.75 -pix_fmt bgra"
                             : " -pix_fmt yuv420p") +
                 " -tag:v hvc1 -movflags +faststart " + quoted(path)
-          // H.264 from Apple's VideoToolbox: the ffmpeg this build makes is LGPL only, with no libx264.
-          // -q:v 68 is within 1 VMAF point of libx264 -crf 17 (95.9 against 96.2 on 180 frames of a photo moving,
-          // 95.8 against 96.7 on one standing still; 2 points are not told apart, ottverse.com's study of VMAF 95),
-          // in a file 0.7 to 2.8 times as large.
-          : sized + rate + " -c:v h264_videotoolbox " +
-                (said.mbps > 0.0 ? "-b:v " + mbps + " -maxrate " + mbps
-                                 : std::string("-q:v 68")) +
-                " -g 60 -pix_fmt yuv420p -movflags +faststart " + quoted(path);
+          // H.264 by whichever encoder the LGPL-only ffmpeg has (base/video_encoder.h). On a Mac that is VideoToolbox,
+          // whose -q:v 68 is within 1 VMAF point of libx264 -crf 17 (95.9 against 96.2 on 180 frames of a photo
+          // moving, 95.8 against 96.7 on one standing still; 2 points are not told apart, ottverse.com's study of
+          // VMAF 95), in a file 0.7 to 2.8 times as large.
+          : sized + rate + " -c:v " + h264 + h264_quality(h264, said.mbps) +
+                "-g 60 -pix_fmt yuv420p -movflags +faststart " + quoted(path);
   const std::string cmd =
       "ffmpeg -loglevel error -y -f rawvideo -pix_fmt rgba -s " +
       std::to_string(s.w) + "x" + std::to_string(s.h) + " -r 60 -i -" + sound +
