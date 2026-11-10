@@ -4,8 +4,8 @@ import 'dart:async';
 import 'package:motolii/bridge/motolii.dart' show mediaSecondsOf;
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
-import 'package:motolii/workspace/dock/dock_files.dart';
-import 'package:motolii/workspace/dock/dock_files_sheet.dart';
+import 'package:motolii/workspace/dock/media/file_node.dart';
+import 'package:motolii/workspace/dock/media/timesheet.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 

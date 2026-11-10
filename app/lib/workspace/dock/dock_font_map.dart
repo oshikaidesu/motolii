@@ -5,8 +5,8 @@ import 'dart:typed_data';
 
 import 'package:motolii/bridge/motolii.dart' show Motolii;
 import 'package:motolii/bridge/motolii_questions.dart';
-import 'package:motolii/workspace/dock/dock_files.dart' show dockRead;
 import 'package:motolii/workspace/dock/map/shelf_map.dart';
+import 'package:motolii/workspace/dock/media/file_node.dart' show dockRead;
 
 /// The size in pixels of a font's dot on the map.
 ///

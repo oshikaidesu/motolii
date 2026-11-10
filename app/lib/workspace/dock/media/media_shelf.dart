@@ -11,9 +11,9 @@ import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/controls.dart' show Pressable;
 import 'package:motolii/workspace/dock/common/folder_row.dart';
 import 'package:motolii/workspace/dock/common/resizable_band.dart';
-import 'package:motolii/workspace/dock/dock_files.dart';
-import 'package:motolii/workspace/dock/dock_files_contents.dart';
-import 'package:motolii/workspace/dock/dock_files_used.dart';
+import 'package:motolii/workspace/dock/media/file_node.dart';
+import 'package:motolii/workspace/dock/media/folder_contents.dart';
+import 'package:motolii/workspace/dock/media/place_files.dart';
 import 'package:motolii/workspace/shelf/shelf_context.dart';
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 
