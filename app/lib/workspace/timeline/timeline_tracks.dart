@@ -79,7 +79,7 @@ extension _WsTimelineTracks on _WsTimelineState {
                           child: RepaintBoundary(
                             child: CustomPaint(
                               size: Size.infinite,
-                              painter: WtTracksPainter(rows: rows, view: v, fps: Ws.fps, vscroll: _vscroll, tempo: ws.beats, restAt: _restAt),
+                              painter: WtTracksPainter(rows: rows, view: v, fps: Ws.fps, vscroll: _vscroll, restAt: _restAt),
                             ),
                           ),
                         ),

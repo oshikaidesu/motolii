@@ -8,22 +8,16 @@ final _endsFrom = Expando<Map<String, Map<String, (double, double, double)>>>();
 mixin _EaseEnds on State<EaseTool> {
   String? _trouble;
 
-  // (an end of the stretch pulled [by], in the graph's measure: each value keyed at both its ends moves its key there by
-  //  so much of the way from the one key's value to the other's, or of its knob's span where the two are the same, as
-  //  far as a hand takes it; with Jump on, a key a frame outside first keeps the key's value as it was. One step.)
-  // (each value keyed at both ends of the stretch: its keys' frames and values, the one at the end pulled, and where
-  //  [by] takes it: so much of the way from the one key's value to the other's, or of its knob's span where the two are
-  //  the same, as far as a hand takes it)
-  Iterable<(String, List<int>, List<double>, int, double)> _ends(Ws ws, EaseSpan span, bool start, double by) sync* {
-    final m = ws.inside!, t = int.parse(span.layer.id), from = _from(ws, span);
+  // (each value keyed at both ends of the stretch: its keys' frames and values, and the index of the key at the end pulled;
+  //  with Jump on, a key a frame outside first keeps the key's value as it was. One step.)
+  Iterable<(String, List<int>, List<double>, int)> _ends(Ws ws, EaseSpan span, bool start) sync* {
+    final m = ws.inside!, t = int.parse(span.layer.id);
     for (final name in m.moving(t)) {
       if (ws.stretch case final s? when s.name != name) continue; // (a line picked: that value's ends alone)
       final at = [for (final s in m.keyTimes(t, name)) (s * Ws.fps).round()], vs = m.keyValues(t, name);
       final i = at.indexOf(span.from), j = at.indexOf(span.to), k = start ? i : j;
       if (i < 0 || j < 0 || k >= vs.length || j >= vs.length) continue;
-      final shown = m.shown(name), lo = shown?.low ?? -double.infinity, hi = shown?.high ?? double.infinity;
-      final scale = from[name]?.$3 ?? ((vs[j] - vs[i]).abs() > 1e-9 ? vs[j] - vs[i] : (shown == null ? 1.0 : hi - lo));
-      yield (name, at, vs, k, (vs[k] + by * scale).clamp(math.min(lo, vs[k]), math.max(hi, vs[k])));
+      yield (name, at, vs, k);
     }
   }
 
@@ -33,7 +27,7 @@ mixin _EaseEnds on State<EaseTool> {
   (double, double) _endsOf(Ws ws, EaseSpan? span) {
     if (ws.inside == null || span == null || _from(ws, span).isEmpty) return (0, 1);
     final from = _from(ws, span);
-    for (final (name, at, vs, _, _) in _ends(ws, span, true, 0)) {
+    for (final (name, at, vs, _) in _ends(ws, span, true)) {
       if (from[name] case (final a, final b, final scale)?) return ((vs[at.indexOf(span.from)] - a) / scale, 1 + (vs[at.indexOf(span.to)] - b) / scale);
     }
     return (0, 1);
@@ -41,7 +35,7 @@ mixin _EaseEnds on State<EaseTool> {
 
   // (an end pulled, told as it goes: all one step, the newest one at a time, as _live; what the keys were when it was taken
   //  held, the document's own moving under it. With Jump on, a key a frame outside first keeps the key's value as it was.)
-  List<(String, List<int>, List<double>, int, double)>? _pull;
+  List<(String, List<int>, List<double>, int)>? _pull;
   double? _pullNext;
   bool _pullGoing = false, _pullDone = false;
   double _toward(Motolii m, EaseSpan span, Ws ws, String name, double was, double by) {
@@ -60,14 +54,14 @@ mixin _EaseEnds on State<EaseTool> {
     if (_pull == null && done && by.abs() < 1e-4) return;
     final t = int.parse(span.layer.id), key = start ? span.from : span.to, outside = start ? span.from - 1 : span.to + 1;
     if (_pull == null) {
-      for (final (name, at, vs, _, _) in _ends(ws, span, start, 0)) {
+      for (final (name, at, vs, _) in _ends(ws, span, start)) {
         // (the measure of the bars, as the keys are now, once)
         final i = at.indexOf(span.from), j = at.indexOf(span.to), shown = m.shown(name);
         _from(ws, span).putIfAbsent(name, () => (vs[i], vs[j], (vs[j] - vs[i]).abs() > 1e-9 ? vs[j] - vs[i] : (shown == null ? 1.0 : shown.high - shown.low)));
       }
-      _pull = [..._ends(ws, span, start, 0)];
+      _pull = [..._ends(ws, span, start)];
       m.later('together', number: 1);
-      for (final (name, at, vs, k, _) in _pull!) {
+      for (final (name, at, vs, k) in _pull!) {
         if (easeJump && outside >= 0 && !at.contains(outside)) {
           m.later(
             'key',
@@ -79,7 +73,7 @@ mixin _EaseEnds on State<EaseTool> {
         }
       }
     }
-    for (final (name, _, vs, k, _) in _pull!) {
+    for (final (name, _, vs, k) in _pull!) {
       m.later('key', layer: t, name: name, word: '${key / Ws.fps}', number: _toward(m, span, ws, name, vs[k], by));
     }
     if (done) {
@@ -104,7 +98,7 @@ mixin _EaseEnds on State<EaseTool> {
     final m = ws.inside;
     if (m == null || span == null) return null;
     final t = int.parse(span.layer.id);
-    for (final (name, _, vs, i, _) in _pull ?? [..._ends(ws, span, start, 0)]) {
+    for (final (name, _, vs, i) in _pull ?? [..._ends(ws, span, start)]) {
       final now = _from(ws, span).containsKey(name) ? _toward(m, span, ws, name, vs[i], by) : vs[i];
       final (k, f) = m.reading(t, name);
       final v = now * k + f, shown = m.shown(name);

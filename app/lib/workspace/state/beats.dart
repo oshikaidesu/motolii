@@ -9,8 +9,6 @@ class WsBeats {
   const WsBeats(this.first, this.every);
   final double first, every; // (in frames: where a bar begins, and from one beat to the next)
 
-  static WsBeats? of(double bpm, double from, int fps) => bpm > 0 ? WsBeats(from * fps, 60 / bpm * fps) : null;
-
   /// The beats from a frame to a frame, each with whether a bar begins there.
   Iterable<(double, bool)> between(double a, double b) sync* {
     for (var n = ((a - first) / every).ceil(); first + n * every <= b; n++) {

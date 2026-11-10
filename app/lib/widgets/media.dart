@@ -43,7 +43,7 @@ void drawStar(Canvas c, Size s, Color col, bool fill) {
 
 /// A thin horizontal slider: the track is grey, the value is the brightest thing.
 class MiniSlider extends StatelessWidget {
-  const MiniSlider({super.key, required this.value, required this.onChanged, this.min = 0, this.max = 1, this.width = 88});
+  const MiniSlider({super.key, required this.value, required this.onChanged, this.min = 0, this.max = 1, required this.width});
   final double value, min, max, width;
   final ValueChanged<double> onChanged;
   @override

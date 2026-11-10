@@ -11,11 +11,10 @@ import '../widgets/timeline_painters.dart' show TpGlyph, TpGlyphView;
 /// A card as the inside declares it, an effect's and a thing's own alike: a name and a WGSL uniform struct
 /// (workspace/inspector_feed/cards.dart writes it from motolii_cards, card_table.h). Its fields are whatever [infer] makes of it.
 class Fx {
-  Fx(this.id, this.name, this.wgsl, {Color? tone, Color Function()? toneOf}) : _tone = tone, _toneOf = toneOf;
-  final String id, name, wgsl;
-  final Color? _tone;
-  final Color Function()? _toneOf; // (a skin's colour: read when drawn, so a card made before the skin changed wears the new one)
-  Color get tone => _toneOf?.call() ?? _tone!;
+  Fx(this.name, this.wgsl, {required this.toneOf});
+  final String name, wgsl;
+  final Color Function() toneOf; // (a skin's colour: read when drawn, so a card made before the skin changed wears the new one)
+  Color get tone => toneOf();
   late final List<Decl> decls = parseWgsl(wgsl);
   late final List<Param> params = [for (final d in decls) infer(d)];
 }
@@ -156,7 +155,7 @@ class ValuesCard extends StatelessWidget {
               ],
             ),
       children: [
-        ParamGrid('v', heroes),
+        ParamGrid(heroes),
         if (rest.isNotEmpty) ...[
           Padding(
             padding: EdgeInsets.only(top: Shape.s(4)),
@@ -169,7 +168,7 @@ class ValuesCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Text(rest.first.fold ?? 'Advanced', style: ed.labStyle(h || adv ? Grey.g95 : Grey.g63)),
+                    Text(rest.first.fold ?? 'Advanced', style: T.label(h || adv ? Grey.g95 : Grey.g63)),
                     const Spacer(),
                     FoldMark(open: adv, hot: h || adv),
                   ],
@@ -177,7 +176,7 @@ class ValuesCard extends StatelessWidget {
               ),
             ),
           ),
-          if (adv) ParamGrid('v', rest),
+          if (adv) ParamGrid(rest),
         ],
         if (doc.cardCode?.call(card.name, [for (final p in card.params) p.id]) case final code?) ...[
           // (its code under its knobs, folded as Advanced is: the knobs are what is used, the code what they drive)
@@ -193,7 +192,7 @@ class ValuesCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Text('Code', style: ed.labStyle(h || (doc.b['$k.code'] ?? false) ? Grey.g95 : Grey.g63)),
+                    Text('Code', style: T.label(h || (doc.b['$k.code'] ?? false) ? Grey.g95 : Grey.g63)),
                     const Spacer(),
                     FoldMark(open: doc.b['$k.code'] ?? false, hot: h || (doc.b['$k.code'] ?? false)),
                   ],

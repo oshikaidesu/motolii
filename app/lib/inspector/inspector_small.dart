@@ -54,21 +54,13 @@ class _FloatShutState extends State<FloatShut> {
 }
 
 class Hov extends StatelessWidget {
-  const Hov({super.key, required this.builder, this.cursor = SystemMouseCursors.click, this.onTap, this.excludeSemantics = false});
+  const Hov({super.key, required this.builder, this.cursor = SystemMouseCursors.click, this.onTap});
   final Widget Function(BuildContext, bool) builder;
   final MouseCursor cursor;
   final VoidCallback? onTap;
-
-  /// A Semantics node above already names this control.
-  final bool excludeSemantics;
   @override
-  Widget build(BuildContext context) => NakedButton(
-    onPressed: onTap,
-    mouseCursor: cursor,
-    enableFeedback: false,
-    excludeSemantics: excludeSemantics,
-    builder: (context, st, _) => builder(context, st.isHovered),
-  );
+  Widget build(BuildContext context) =>
+      NakedButton(onPressed: onTap, mouseCursor: cursor, enableFeedback: false, builder: (context, st, _) => builder(context, st.isHovered));
 }
 
 String fmt(double v, int dec, {bool tight = false}) {
@@ -87,18 +79,13 @@ class OnOff extends StatelessWidget {
   final bool on;
   final ValueChanged<bool> onChanged;
   @override
-  Widget build(BuildContext context) {
-    final live = !RowOff.offOf(context);
-    return Forms.worn.onOff(context, SwitchSpec(on: on, onChanged: onChanged, enabled: live)); // (as the skin's forms draw it)
-  }
+  Widget build(BuildContext context) => Forms.worn.onOff(context, SwitchSpec(on: on, onChanged: onChanged)); // (as the skin's forms draw it)
 }
 
-/// The 28x16 on/off track. The arguments say another skin's colours, 1px edge and thumb size; none given is the pop look.
+/// The 28x16 on/off track.
 class PopSwitch extends StatelessWidget {
-  const PopSwitch({super.key, required this.on, this.trackOn, this.trackOff, this.thumbOn, this.thumbOff, this.edgeOn, this.edgeOff, this.thumb = 12});
+  const PopSwitch({super.key, required this.on});
   final bool on;
-  final Color? trackOn, trackOff, thumbOn, thumbOff, edgeOn, edgeOff;
-  final double thumb;
   @override
   Widget build(BuildContext context) => AnimatedContainer(
     duration: const Duration(milliseconds: 120),
@@ -107,15 +94,11 @@ class PopSwitch extends StatelessWidget {
     height: Shape.z(16),
     padding: EdgeInsets.all(Shape.s(2)),
     alignment: on ? Alignment.centerRight : Alignment.centerLeft,
-    decoration: BoxDecoration(
-      color: on ? (trackOn ?? Pop.accent) : (trackOff ?? Grey.g26),
-      borderRadius: BorderRadius.all(Shape.r(8)),
-      border: edgeOn == null ? null : Border.all(color: on ? edgeOn! : edgeOff!, width: 1),
-    ),
+    decoration: BoxDecoration(color: on ? Pop.accent : Grey.g26, borderRadius: BorderRadius.all(Shape.r(8))),
     child: Container(
-      width: Shape.z(thumb),
-      height: Shape.z(thumb),
-      decoration: BoxDecoration(color: on ? (thumbOn ?? Pop.onAccent) : (thumbOff ?? Grey.g63), shape: BoxShape.circle),
+      width: Shape.z(12),
+      height: Shape.z(12),
+      decoration: BoxDecoration(color: on ? Pop.onAccent : Grey.g63, shape: BoxShape.circle),
     ),
   );
 }

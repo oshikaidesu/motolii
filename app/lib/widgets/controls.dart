@@ -45,17 +45,11 @@ class IconPress extends StatelessWidget {
 class Badge extends StatelessWidget {
   const Badge(this.color, {super.key, this.child, this.mark, this.size = 20, this.radius})
     : onTap = null,
-      cursor = SystemMouseCursors.click,
       _round = false,
       assert((child == null) != (mark == null));
 
   /// The stage's: a circle, 18 across, the arrow kept over it.
-  const Badge.round(this.color, {super.key, required CustomPainter this.mark, this.onTap})
-    : child = null,
-      size = 18,
-      radius = null,
-      cursor = SystemMouseCursors.basic,
-      _round = true;
+  const Badge.round(this.color, {super.key, required CustomPainter this.mark, this.onTap}) : child = null, size = 18, radius = null, _round = true;
   final Color color;
   final Widget? child;
 
@@ -64,7 +58,6 @@ class Badge extends StatelessWidget {
   final double size;
   final Radius? radius;
   final VoidCallback? onTap;
-  final MouseCursor cursor;
   final bool _round;
 
   @override
@@ -76,7 +69,7 @@ class Badge extends StatelessWidget {
       decoration: BoxDecoration(color: color, borderRadius: BorderRadius.all(radius ?? (_round ? Radius.circular(size / 2) : Shape.r(WsT.chipRadius)))),
       child: child ?? CustomPaint(size: Size.square(size), painter: mark),
     );
-    return onTap == null ? tile : Hov(cursor: cursor, onTap: onTap, builder: (_, _) => tile);
+    return onTap == null ? tile : Hov(cursor: SystemMouseCursors.basic, onTap: onTap, builder: (_, _) => tile);
   }
 }
 
@@ -97,9 +90,6 @@ class ChipLook {
     this.hoverInk,
     this.onInk,
     this.edge,
-    this.dotSize = 6,
-    this.dotGap = 5,
-    this.softWrap = false,
     this.margin,
     this.cursor,
     this.press = true,
@@ -108,8 +98,8 @@ class ChipLook {
   final Color? fill, hoverFill, onFill, hoverInk, onInk;
   final TextStyle Function(Color ink) text;
   final double? height;
-  final double padX, padY, radius, dotSize, dotGap;
-  final bool center, softWrap, press;
+  final double padX, padY, radius;
+  final bool center, press;
   final Color? edge; // (a 1px ring all round, while not on)
   final EdgeInsets? margin;
   final MouseCursor? cursor; // (none: a hand when it can be pressed)
@@ -124,20 +114,6 @@ class ChipLook {
     hoverInk: Grey.g95,
     onInk: WsT.onAccent,
     text: (c) => T.micro(c),
-  );
-
-  /// A folded card's summary value: a g20 tag (g15 and quiet when [dim]), not a press.
-  static ChipLook brief({bool dim = false}) => ChipLook(
-    height: 16,
-    radius: 8,
-    center: true,
-    fill: dim ? Grey.g15 : Grey.g20,
-    ink: dim ? Grey.g56 : Grey.g95,
-    dotSize: 8,
-    dotGap: 4,
-    softWrap: true,
-    press: false,
-    text: (c) => T.label().copyWith(fontWeight: FontWeight.w600, height: 1, color: c),
   );
 
   /// A readout in a well (the top bar's fps, the timeline's name and tempo): 20 high, not a press. Mono, or the micro bold word.
@@ -188,19 +164,6 @@ class Chip extends StatelessWidget {
   final bool on;
   final ChipLook? look;
 
-  /// The colour a "#RRGGBB" word names, for a chip's [dot].
-  static Color? swatch(String t) => RegExp(r'^#[0-9A-Fa-f]{6}$').hasMatch(t) ? Color(int.parse(t.substring(1), radix: 16) | 0xFF000000) : null;
-
-  /// The chip's laid-out width, so a row can drop the chips that would not fit whole.
-  static double width(String t, ChipLook look) =>
-      (TextPainter(
-        text: TextSpan(text: t, style: look.text(look.ink)),
-        maxLines: 1,
-        textDirection: TextDirection.ltr,
-      )..layout()).width +
-      look.padX * 2 +
-      (swatch(t) != null ? look.dotSize + look.dotGap : 0);
-
   @override
   Widget build(BuildContext context) {
     final l = look ?? ChipLook.tool;
@@ -222,17 +185,17 @@ class Chip extends StatelessWidget {
           children: [
             if (dot != null) ...[
               Container(
-                width: Shape.z(l.dotSize),
-                height: Shape.z(l.dotSize),
+                width: Shape.z(6),
+                height: Shape.z(6),
                 decoration: BoxDecoration(color: on ? WsT.onAccent : dot, shape: BoxShape.circle),
               ),
-              SizedBox(width: Shape.s(l.dotGap)),
+              SizedBox(width: Shape.s(5)),
             ],
             if (glyph != null)
               glyph!(ink)
             else
               Flexible(
-                child: Text(label, maxLines: 1, softWrap: l.softWrap, overflow: TextOverflow.ellipsis, style: l.text(ink)),
+                child: Text(label, maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis, style: l.text(ink)),
               ),
           ],
         ),
@@ -245,11 +208,10 @@ class Chip extends StatelessWidget {
 }
 
 class Segmented extends StatelessWidget {
-  const Segmented({super.key, required this.items, required this.index, this.onChanged, this.expand = false});
+  const Segmented({super.key, required this.items, required this.index, required this.onChanged});
   final List<String> items;
   final int index;
-  final bool expand;
-  final ValueChanged<int>? onChanged;
+  final ValueChanged<int> onChanged;
 
   /// One selected style across the lab: a g20 pill with g95 text and a 1px accent underline (critique 2026-10-02: four selected styles were found).
   @override
@@ -261,7 +223,7 @@ class Segmented extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 120),
         curve: Curves.easeOut,
-        padding: EdgeInsets.symmetric(horizontal: expand ? Shape.s(6) : Shape.s(12)),
+        padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: i == index ? Grey.g20 : null,
@@ -276,15 +238,15 @@ class Segmented extends StatelessWidget {
     );
     return NakedToggleGroup<int>(
       selectedValue: index,
-      onChanged: onChanged == null ? null : (v) => v == null ? null : onChanged!(v),
+      onChanged: (v) => v == null ? null : onChanged(v),
       child: Container(
         height: Shape.z(26),
         padding: EdgeInsets.all(Shape.s(2)),
         decoration: BoxDecoration(color: Grey.g07, borderRadius: BorderRadius.all(Shape.r(7))),
         child: Flex(
           direction: Axis.horizontal,
-          mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-          children: [for (var i = 0; i < items.length; i++) expand ? Expanded(child: seg(i)) : seg(i)],
+          mainAxisSize: MainAxisSize.max,
+          children: [for (var i = 0; i < items.length; i++) Expanded(child: seg(i))],
         ),
       ),
     );

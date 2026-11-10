@@ -20,36 +20,10 @@ export 'inspector_state.dart';
 export 'controls/param_infer.dart';
 
 // ---- 0. open values -------------------------------------------------------------------------------------------------
-// [open] a value cell's height (the lab's ValueWell is 22; rows are 24 on the 4px rhythm; B uses 22).
-double get cellH => Shape.z(22);
 // [open] one narrowing rule for the whole panel (H1): a cell narrower than _wUnit drops its unit, narrower than _wTight drops decimals (never to a false 0).
 const wUnit = 72.0, wTight = 60.0;
 // [open] two clicks within this are a double click.
 const dblParts = Duration(milliseconds: 320);
-
-/// Set by a row: its controls are off (locked, driven or disabled) and whether the panel is narrow (units go everywhere at once).
-class RowOff extends InheritedWidget {
-  const RowOff({super.key, required this.off, required super.child});
-  final bool off;
-  static RowOff? maybe(BuildContext c) => c.dependOnInheritedWidgetOfExactType<RowOff>();
-  static bool offOf(BuildContext c) => maybe(c)?.off ?? false;
-  @override
-  bool updateShouldNotify(RowOff o) => o.off != off;
-}
-
-/// For controls that cannot recolour themselves (Segmented): off = a fixed dim and no pointer.
-class Dis extends StatelessWidget {
-  const Dis({super.key, required this.child});
-  final Widget child;
-  @override
-  Widget build(BuildContext context) {
-    final off = RowOff.offOf(context);
-    return IgnorePointer(
-      ignoring: off,
-      child: Opacity(opacity: off ? .6 : 1, child: child),
-    );
-  }
-}
 
 /// The bold skin of the direct-manipulation prototype: rounded cards, filled badges, one lime fill for "selected".
 class Pop extends InheritedWidget {
@@ -98,14 +72,14 @@ class Pop extends InheritedWidget {
 }
 
 class Ctx extends InheritedWidget {
-  const Ctx({super.key, required this.doc, this.tick, required super.child});
+  const Ctx({super.key, required this.doc, required this.tick, required super.child});
   final Doc doc;
 
   /// Bumped by the host when more than numbers changed (its shape, its words, a pick): only then is everything that
   /// reads the inspector built again; a number alone tells the field that shows it (Doc.watch).
-  final int? tick; // (none: a host that does not count, everything again each time, as before)
+  final int tick;
   static Ctx of(BuildContext c) => c.dependOnInheritedWidgetOfExactType<Ctx>()!;
   static Ctx read(BuildContext c) => c.getInheritedWidgetOfExactType<Ctx>()!;
   @override
-  bool updateShouldNotify(Ctx old) => tick == null || old.tick != tick || old.doc != doc;
+  bool updateShouldNotify(Ctx old) => old.tick != tick || old.doc != doc;
 }

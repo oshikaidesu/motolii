@@ -36,7 +36,6 @@ class MediaShelf extends StatelessWidget {
           children: [
             DockResizable(
               height: c.mem.treeHeight,
-              min: 44,
               max: box.maxHeight - 160,
               reset: dockTreeHeight,
               gripKey: const ValueKey('browser:tree-grip'),

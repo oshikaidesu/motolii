@@ -15,7 +15,7 @@ enum LinkTo {
 
 /// The value line of a block tile that is chosen elsewhere: the value, then where it is chosen.
 class LinkLine extends StatelessWidget {
-  const LinkLine({super.key, required this.to, required this.value, this.id = ''});
+  const LinkLine({super.key, required this.to, required this.value, required this.id});
   final LinkTo to;
   final String value, id;
   @override

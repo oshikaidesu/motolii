@@ -1,7 +1,7 @@
 // timeline_slip.dart: a film cut shorter than it is. What is left of it lies pale along its row, and that carried changes
 // what the bar shows, the bar staying where it is (After Effects' slip edit: the pale slip-edit bar dragged, In and Out
 // stay; Premiere Pro's Slip, its Program Monitor showing the clip meanwhile: so the hand comes to the bar if it was off it).
-part of 'timeline.dart';
+part of 'timeline.dart'; // ignore_for_file: invalid_use_of_protected_member
 
 extension _WsTimelineSlip on _WsTimelineState {
   /// The frames a film lies over whole, as it is now cut (null: no film, or its length not read yet).

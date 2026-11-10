@@ -10,40 +10,40 @@ class InspHost extends StatefulWidget {
   const InspHost({
     super.key,
     required this.kind,
-    this.kindWord,
-    this.movable = const [],
-    this.onCardMove,
-    this.onSum,
-    this.onAddEffect,
-    this.moreCards = const [],
-    this.onMoreCard,
-    this.onCardReset,
-    this.onCardRemove,
-    this.cardCode,
-    this.onCardEye,
-    this.onCardSave,
-    this.onCardInfo,
-    this.onCardDuplicate,
-    this.cardsOff = const [],
-    this.onCardCopy,
-    this.onCardPaste,
-    this.cards,
-    this.title,
-    this.onRoute,
-    this.onAim,
-    this.values = const {},
-    this.strs = const {},
-    this.keyMarks = const {},
-    this.onValues,
-    this.onDrop,
-    this.onKey,
-    this.onWords,
-    this.onAnimateAll,
-    this.animating,
-    this.flags = const {},
-    this.onFlags,
-    this.together,
-    this.live,
+    required this.kindWord,
+    required this.movable,
+    required this.onCardMove,
+    required this.onSum,
+    required this.onAddEffect,
+    required this.moreCards,
+    required this.onMoreCard,
+    required this.onCardReset,
+    required this.onCardRemove,
+    required this.cardCode,
+    required this.onCardEye,
+    required this.onCardSave,
+    required this.onCardInfo,
+    required this.onCardDuplicate,
+    required this.cardsOff,
+    required this.onCardCopy,
+    required this.onCardPaste,
+    required this.cards,
+    required this.title,
+    required this.onRoute,
+    required this.onAim,
+    required this.values,
+    required this.keyMarks,
+    required this.onValues,
+    required this.onDrop,
+    required this.onKey,
+    required this.onWords,
+    required this.onAnimateAll,
+    required this.animating,
+    required this.flags,
+    required this.onFlags,
+    required this.together,
+    required this.live,
+    required this.strs,
     required this.child,
   });
   final Kind kind;
@@ -54,12 +54,12 @@ class InspHost extends StatefulWidget {
 
   /// The values and key marks at a new moment, told without the host being built again (played, only the moment moves:
   /// the fields that show them follow, the rest of the inspector stays as it was built).
-  final ValueListenable<(Map<String, double>, Map<String, KeyS>)>? live;
+  final ValueListenable<(Map<String, double>, Map<String, KeyS>)> live;
 
   /// The host's effects as cards that move up or down its stack (see [Doc.movable]).
   final List<String> movable;
   final void Function(String title, int by)? onCardMove;
-  final double? Function(String sum)? onSum;
+  final double? Function(String sum) onSum;
   final VoidCallback? onAddEffect;
   final List<String> moreCards;
   final void Function(String title)? onMoreCard;
@@ -82,10 +82,10 @@ class InspHost extends StatefulWidget {
   final String? title;
 
   /// A panel link asked for a panel (`Browser › Fonts`, `Ease`); the host opens it.
-  final ValueChanged<String>? onRoute;
+  final ValueChanged<String> onRoute;
 
   /// The slot a panel link was aimed at when it asked for its panel ('' : none), told just before [onRoute].
-  final ValueChanged<String>? onAim;
+  final ValueChanged<String> onAim;
 
   /// Values the host owns (the layer's transform at this frame): written in silently when they change, so edits made here last until then.
   final Map<String, double> values;
@@ -95,22 +95,22 @@ class InspHost extends StatefulWidget {
   final Map<String, KeyS> keyMarks;
 
   /// Values changed in the inspector: [live] while a hand is still on them (not settled), then once more when it lets go.
-  final void Function(Map<String, double> changed, {required bool live})? onValues;
+  final void Function(Map<String, double> changed, {required bool live}) onValues;
 
   /// A hand let go without keeping what it did (Esc): what it showed is to be dropped.
-  final VoidCallback? onDrop;
+  final VoidCallback onDrop;
 
   /// A property's key mark was changed in the inspector.
-  final void Function(String prop, KeyS mark)? onKey;
+  final void Function(String prop, KeyS mark) onKey;
 
   /// Words changed in the inspector (a text's content, a chooser's choice). false: the host did not take them, and they go back to what they were.
-  final bool Function(Map<String, String> changed)? onWords;
+  final bool Function(Map<String, String> changed) onWords;
 
   /// Animate all was turned on or off (the host's document may key whatever a hand changes, wherever the hand is).
-  final ValueChanged<bool>? onAnimateAll;
+  final ValueChanged<bool> onAnimateAll;
 
-  /// The host's own Animate all (null: the inspector keeps its own): shown as it is, never reset by a new kind.
-  final bool? animating;
+  /// The host's own Animate all: shown as it is, never reset by a new kind.
+  final bool animating;
 
   /// The on/off properties the host owns (Clip to below ...), and a change of them told to it. false: the host did not
   /// take it (nothing is behind that switch), and the switch goes back.
@@ -118,7 +118,7 @@ class InspHost extends StatefulWidget {
   final bool Function(Map<String, bool> changed)? onFlags;
 
   /// What one change of the inspector tells the host (values, then key marks) is told inside this, so a host can keep it as one act.
-  final void Function(VoidCallback tells)? together;
+  final void Function(VoidCallback tells) together;
   @override
   State<InspHost> createState() => _InspHostState();
 }
@@ -126,32 +126,14 @@ class InspHost extends StatefulWidget {
 class _InspHostState extends State<InspHost> {
   late Doc doc = _make();
   Doc _make() {
-    final d = Doc(widget.kind, cards: widget.cards ?? const [])
-      ..title = widget.title
-      ..marksEdits =
-          widget.onKey ==
-          null // (a host told of keys keys what a hand changes itself)
-      ..kindWord = widget.kindWord
-      ..movable = widget.movable
-      ..onCardMove = widget.onCardMove
-      ..onSum = widget.onSum
-      ..onAddEffect = widget.onAddEffect
-      ..moreCards = widget.moreCards
-      ..onMoreCard = widget.onMoreCard
-      ..onCardReset = widget.onCardReset
-      ..onCardRemove = widget.onCardRemove
-      ..cardCode = widget.cardCode
-      ..onCardEye = widget.onCardEye
-      ..onCardSave = widget.onCardSave
-      ..onCardInfo = widget.onCardInfo
-      ..onCardDuplicate = widget.onCardDuplicate
-      ..cardsOff = widget.cardsOff
-      ..onCardCopy = widget.onCardCopy
-      ..onCardPaste = widget.onCardPaste
+    final d = Doc(widget.kind, cards: widget.cards ?? const []);
+    _wire(d);
+    d
       ..v.addAll(widget.values)
       ..s2.addAll(widget.strs)
       ..b.addAll(widget.flags)
-      ..keys.addAll(widget.keyMarks);
+      ..keys.addAll(widget.keyMarks)
+      ..animateAll = _animating = widget.animating; // (the host's: the inspector shows it)
     _seen
       ..clear()
       ..addAll(d.v);
@@ -164,13 +146,29 @@ class _InspHostState extends State<InspHost> {
     _seenFlags
       ..clear()
       ..addAll(d.b);
-    if (widget.animating case final on?) {
-      d.animateAll = _animating = on; // (the host's: the inspector shows it)
-    } else {
-      widget.onAnimateAll?.call(_animating = d.animateAll); // (a new document of the inspector begins with it off: the host is told)
-    }
     return d..addListener(_r);
   }
+
+  /// What the host says of the picked thing, given to the document as it is now.
+  void _wire(Doc d) => d
+    ..title = widget.title
+    ..kindWord = widget.kindWord
+    ..movable = widget.movable
+    ..onCardMove = widget.onCardMove
+    ..onSum = widget.onSum
+    ..onAddEffect = widget.onAddEffect
+    ..moreCards = widget.moreCards
+    ..onMoreCard = widget.onMoreCard
+    ..onCardReset = widget.onCardReset
+    ..onCardRemove = widget.onCardRemove
+    ..cardCode = widget.cardCode
+    ..onCardEye = widget.onCardEye
+    ..onCardSave = widget.onCardSave
+    ..onCardInfo = widget.onCardInfo
+    ..onCardDuplicate = widget.onCardDuplicate
+    ..cardsOff = widget.cardsOff
+    ..onCardCopy = widget.onCardCopy
+    ..onCardPaste = widget.onCardPaste;
 
   // what the host has been told of (or gave): only what differs from it is told
   final _seen = <String, double>{};
@@ -178,12 +176,10 @@ class _InspHostState extends State<InspHost> {
   final _seenWords = <String, String>{};
   final _seenFlags = <String, bool>{};
   bool _live = false;
-  void _tell() => widget.together == null || doc.inGesture
-      ? _tells()
-      : widget.together!(_tells); // (under a hand only where it is is told, nothing settled: no step to make one of)
+  void _tell() => doc.inGesture ? _tells() : widget.together(_tells); // (under a hand only where it is is told, nothing settled: no step to make one of)
   bool _animating = false;
   void _tells() {
-    if (doc.animateAll != _animating) widget.onAnimateAll?.call(_animating = doc.animateAll);
+    if (doc.animateAll != _animating) widget.onAnimateAll(_animating = doc.animateAll);
     final live = doc.inGesture,
         changed = {
           for (final e in doc.v.entries)
@@ -191,15 +187,15 @@ class _InspHostState extends State<InspHost> {
         };
     if (changed.isNotEmpty) {
       if (!live) _seen.addAll(changed);
-      widget.onValues?.call(changed, live: live);
+      widget.onValues(changed, live: live);
     } else if (_live && !live) {
-      widget.onDrop?.call();
+      widget.onDrop();
     }
     _live = live;
     for (final e in doc.keys.entries.toList()) {
       if (live || _seenKeys[e.key] == e.value) continue; // (while a hand is on it nothing is settled: told when it lets go)
       _seenKeys[e.key] = e.value;
-      widget.onKey?.call(e.key, e.value);
+      widget.onKey(e.key, e.value);
     }
     final words = {
       for (final e in doc.s2.entries)
@@ -222,7 +218,7 @@ class _InspHostState extends State<InspHost> {
       }
     }
     if (words.isEmpty) return;
-    if (widget.onWords?.call(words) ?? true) {
+    if (widget.onWords(words)) {
       _seenWords.addAll(words);
     } else {
       for (final id in words.keys) {
@@ -233,11 +229,11 @@ class _InspHostState extends State<InspHost> {
 
   void _r() {
     _tell();
-    final r = doc.s2['route'], go = widget.onRoute;
-    if (r != null && go != null) {
+    final r = doc.s2['route'];
+    if (r != null) {
       doc.s2.remove('route');
-      widget.onAim?.call(doc.s2.remove('route.at') ?? '');
-      go(r);
+      widget.onAim(doc.s2.remove('route.at') ?? '');
+      widget.onRoute(r);
     }
     // (while a hand is on a value the whole inspector is not built again each step: the field under the hand shows its
     //  own number and the stage follows what the host is told; everything is built once when the hand lets go)
@@ -248,8 +244,8 @@ class _InspHostState extends State<InspHost> {
   void didUpdateWidget(InspHost o) {
     super.didUpdateWidget(o);
     if (o.live != widget.live) {
-      o.live?.removeListener(_atMoment);
-      widget.live?.addListener(_atMoment);
+      o.live.removeListener(_atMoment);
+      widget.live.addListener(_atMoment);
     }
     if (o.kind != widget.kind ||
         !listEquals(
@@ -263,8 +259,7 @@ class _InspHostState extends State<InspHost> {
       // A host that is told of changes owns the values: whatever it did not take goes back to what it says, as soon
       // as no hand is on them (never under a hand: a value being dragged is not written over, even while it plays).
       // (numbers and key marks: told to the fields that show them; words, flags, choices and the rest: everything again)
-      final owned = widget.onValues != null;
-      if (owned ? !doc.inGesture : !mapEquals(o.values, widget.values)) {
+      if (!doc.inGesture) {
         if (doc.showAt(widget.values, const {})) _tick++; // (a value no field watches changed: shown by building again)
         _seen.addAll(widget.values);
       }
@@ -273,11 +268,9 @@ class _InspHostState extends State<InspHost> {
         doc.b.addAll(widget.flags);
         _seenFlags.addAll(widget.flags);
       }
-      if (widget.onWords != null || !mapEquals(o.strs, widget.strs)) {
-        if (widget.strs.entries.any((e) => doc.s2[e.key] != e.value)) _tick++;
-        doc.s2.addAll(widget.strs);
-        _seenWords.addAll(widget.strs);
-      }
+      if (widget.strs.entries.any((e) => doc.s2[e.key] != e.value)) _tick++;
+      doc.s2.addAll(widget.strs);
+      _seenWords.addAll(widget.strs);
       // (and where what is shown is not what the document says: a key mark pressed shows lit at once, and an undo that
       //  takes the key away leaves the document's marks as they were before the press, so only the shown one differs)
       if (!mapEquals(o.keyMarks, widget.keyMarks) || widget.keyMarks.entries.any((e) => doc.keys[e.key] != e.value)) {
@@ -285,36 +278,18 @@ class _InspHostState extends State<InspHost> {
         _seenKeys.addAll(widget.keyMarks);
       }
     }
-    if (widget.animating case final on? when on != _animating) {
-      doc.animateAll = _animating = on;
+    if (widget.animating != _animating) {
+      doc.animateAll = _animating = widget.animating;
       _tick++;
     }
     if (o.title != widget.title || o.kindWord != widget.kindWord || !listEquals(o.cardsOff, widget.cardsOff)) {
       _tick++; // (an effect's eye shut or opened: its card says so)
     }
-    doc
-      ..title = widget.title
-      ..kindWord = widget.kindWord
-      ..movable = widget.movable
-      ..onCardMove = widget.onCardMove
-      ..onSum = widget.onSum
-      ..onAddEffect = widget.onAddEffect
-      ..moreCards = widget.moreCards
-      ..onMoreCard = widget.onMoreCard
-      ..onCardReset = widget.onCardReset
-      ..onCardRemove = widget.onCardRemove
-      ..cardCode = widget.cardCode
-      ..onCardEye = widget.onCardEye
-      ..onCardSave = widget.onCardSave
-      ..onCardInfo = widget.onCardInfo
-      ..onCardDuplicate = widget.onCardDuplicate
-      ..cardsOff = widget.cardsOff
-      ..onCardCopy = widget.onCardCopy
-      ..onCardPaste = widget.onCardPaste;
+    _wire(doc);
   }
 
   void _atMoment() {
-    final (values, marks) = widget.live!.value;
+    final (values, marks) = widget.live.value;
     if (doc.inGesture) return; // (never under a hand)
     _seen.addAll(values);
     _seenKeys.addAll(marks);
@@ -324,12 +299,12 @@ class _InspHostState extends State<InspHost> {
   @override
   void initState() {
     super.initState();
-    widget.live?.addListener(_atMoment);
+    widget.live.addListener(_atMoment);
   }
 
   @override
   void dispose() {
-    widget.live?.removeListener(_atMoment);
+    widget.live.removeListener(_atMoment);
     doc.dispose();
     super.dispose();
   }

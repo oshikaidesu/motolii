@@ -6,7 +6,6 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
-import '../theme.dart';
 import '../tokens.dart';
 import 'forms.dart';
 
@@ -15,7 +14,7 @@ const _film = Color(0xFF1B1A18), _opal = Color(0xFFF6F7F4), _grease = Color(0xFF
 TextStyle _word(Color c, double size, {FontWeight w = FontWeight.w600}) => T.name(c).copyWith(fontSize: T.px(size), fontWeight: w, height: 1.1);
 
 TextStyle _mono(Color c, double size) =>
-    T.name(c).copyWith(fontFamily: ColorTheme.word('FontMono', 'Menlo'), fontSize: T.px(size), height: 1.1, fontFeatures: const [FontFeature.tabularFigures()]);
+    T.name(c).copyWith(fontFamily: T.mono, fontSize: T.px(size), height: 1.1, fontFeatures: const [FontFeature.tabularFigures()]);
 
 /// A grease-pencil loop around its box: never closed clean, it overshoots its start, wobbles and leans a little; the same
 /// hand for the same seed.

@@ -47,18 +47,7 @@ class OwnForms extends Forms {
         SizedBox(width: Shape.s(8)),
         Opacity(
           opacity: s.enabled ? 1 : .5,
-          child: Pop.on(context)
-              ? PopSwitch(on: s.on)
-              : PopSwitch(
-                  on: s.on,
-                  thumb: 10,
-                  trackOn: C.mode.withValues(alpha: .30),
-                  trackOff: Grey.g20,
-                  thumbOn: Grey.g95,
-                  thumbOff: Grey.g56,
-                  edgeOn: Role.selected.withValues(alpha: .85),
-                  edgeOff: Grey.g26,
-                ),
+          child: PopSwitch(on: s.on),
         ),
       ],
     ),

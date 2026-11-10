@@ -10,7 +10,7 @@ class Gauge extends StatelessWidget {
   const Gauge(this.kind, this.v, this.p, {super.key, this.x, this.y});
   final GaugeKind kind;
   final double? v, x, y;
-  final Param? p;
+  final Param p;
   @override
   Widget build(BuildContext context) => CustomPaint(size: const Size(22, 22), painter: _GaugePaint(kind, v, p, x, y));
 }
@@ -19,10 +19,10 @@ class _GaugePaint extends CustomPainter {
   const _GaugePaint(this.kind, this.v, this.p, this.x, this.y);
   final GaugeKind kind;
   final double? v, x, y;
-  final Param? p;
+  final Param p;
 
-  double _t(double? val, [double? lo, double? hi]) {
-    final a = lo ?? p?.min, b = hi ?? p?.max;
+  double _t(double? val) {
+    final a = p.min, b = p.max;
     if (val == null || a == null || b == null || b == a) return 0;
     return ((val - a) / (b - a)).clamp(0.0, 1.0);
   }
@@ -40,7 +40,7 @@ class _GaugePaint extends CustomPainter {
       case GaugeKind.pie:
         final r = Rect.fromCircle(center: o, radius: 8);
         c.drawCircle(o, 8, dim);
-        final t = (v ?? 0) / ((p?.max ?? 100) == 0 ? 100 : (p!.max!.abs() > 100 ? p!.max!.abs() : 100));
+        final t = (v ?? 0) / ((p.max ?? 100) == 0 ? 100 : (p.max!.abs() > 100 ? p.max!.abs() : 100));
         c.drawArc(r, -math.pi / 2, 2 * math.pi * t.clamp(-1.0, 1.0), true, lit);
         if (t.abs() > 1) c.drawCircle(o, 8, line..color = Grey.g91);
       case GaugeKind.up || GaugeKind.down:

@@ -112,18 +112,8 @@ class Ws extends ChangeNotifier {
   /// shape (the cards) is made again when this moves.
   int reads = 0;
 
-  /// Where the window's building spends its time (for the rampage's report): a name and the time it took, summed.
-  static final spent = <String, Duration>{};
-
-  /// The longest each named part took at once.
-  static final slowest = <String, Duration>{};
-  static T timed<T>(String name, T Function() does) {
-    final w = Stopwatch()..start();
-    final made = Timeline.timeSync(name, does); // (named in Flutter's own timeline too)
-    spent[name] = (spent[name] ?? Duration.zero) + w.elapsed;
-    if (w.elapsed > (slowest[name] ?? Duration.zero)) slowest[name] = w.elapsed;
-    return made;
-  }
+  /// A part of the window's building, named in Flutter's own timeline.
+  static T timed<T>(String name, T Function() does) => Timeline.timeSync(name, does);
 
   /// Where a bar ends, in frames: a thing on for good runs to the document's end.
   static int _outF(int from, double lasts) => lasts < 0 ? duration : (from + (lasts * fps).round()).clamp(from + 1, duration);
@@ -167,7 +157,7 @@ class Ws extends ChangeNotifier {
   /// The document read again, after any change to it: what the panels list is what the document holds.
   /// The document's tempo, beats a minute (0: none), and its beats.
   double get bpm => _inside?.value(0, 'bpm', 0) ?? 0;
-  WsBeats? get beats => WsBeats.of(bpm, _inside?.value(0, 'bpm_from', 0) ?? 0, Ws.fps);
+  WsBeats? get beats => bpm > 0 ? WsBeats((_inside?.value(0, 'bpm_from', 0) ?? 0) * Ws.fps, 60 / bpm * Ws.fps) : null;
 
   /// The document's frame rate (its `frame_rate`, the stage's own), or the inside's when it says none.
   static int _fpsOf(Motolii m) => switch ((m.value(0, 'frame_rate', 0) ?? 0).round()) {
@@ -287,7 +277,7 @@ class Ws extends ChangeNotifier {
 
   /// The playhead, told on its own (Flutter's ValueNotifier): only what shows the moment listens ([WsScope.frameOf]),
   /// the rest of the window is not built again as it moves.
-  final moment = WsMomentNow(112);
+  final moment = ValueNotifier<int>(112);
   int get frame => moment.value;
   set frame(int f) {
     final v = f.clamp(0, duration);

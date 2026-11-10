@@ -202,7 +202,7 @@ const dockSpreadRadius = 13.0;
 /// keeps its pieces together with forceX and forceY to the middle; then the pulls let go and only the pushing apart
 /// run 40 ticks more, removing what the pull leaves, as FontMap's own drawn-together map does (src/experiments/engine/
 /// cartogram.js, relax). Where each lies on that canvas.
-List<Offset> dockSpread(List<Offset> at, [double aspect = 1920 / 1080, double squeeze = 0]) {
+List<Offset> dockSpread(List<Offset> at, double aspect, double squeeze) {
   const pad = 40.0, r = dockSpreadRadius, pull = 0.03;
   final w = math.sqrt(1920 * 1080 * aspect), h = 1920 * 1080 / w;
   final nodes = [

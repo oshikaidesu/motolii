@@ -40,7 +40,7 @@ class _MarkPaint extends CustomPainter {
   bool shouldRepaint(_MarkPaint o) => o.mark != mark || o.ink != ink;
 }
 
-TextStyle _word(Color c, {FontWeight w = FontWeight.w500}) => T.name(c).copyWith(fontSize: T.px(13), fontWeight: w, height: 1.15);
+TextStyle _word(Color c) => T.name(c).copyWith(fontSize: T.px(13), fontWeight: FontWeight.w500, height: 1.15);
 
 class SheetForms extends Forms {
   const SheetForms();
@@ -80,10 +80,7 @@ class SheetForms extends Forms {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            s.on ? 'On' : 'Off',
-            style: _word(s.on ? Grey.g95 : Grey.g56, w: FontWeight.w500).copyWith(fontSize: T.px(11)),
-          ),
+          Text(s.on ? 'On' : 'Off', style: _word(s.on ? Grey.g95 : Grey.g56).copyWith(fontSize: T.px(11))),
           SizedBox(width: Shape.s(6)),
           SizedBox.square(
             dimension: Shape.z(12),

@@ -1,14 +1,12 @@
 // A part of a shelf whose height the hand sets: drag its grip, double-click puts it back.
 import 'package:flutter/gestures.dart' show DragStartBehavior;
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../skin/tokens.dart';
-import 'dock_widgets.dart';
 import '../state/state.dart';
 import '../../widgets/two_fingers.dart';
 
-/// A band whose height the user sets: the grip on its lower edge drags it up or down (clamped to [min]..[max]);
+/// A band whose height the user sets: the grip on its lower edge drags it up or down (clamped to 44..[max]);
 /// a double-click on the grip returns to the default.
 class DockResizable extends StatefulWidget {
   const DockResizable({
@@ -17,13 +15,12 @@ class DockResizable extends StatefulWidget {
     required this.max,
     required this.onHeight,
     required this.child,
-    this.min = 72,
-    this.reset = dockFilterHeight,
-    this.gripKey = const ValueKey('browser:filters-grip'),
+    required this.reset,
+    required this.gripKey,
   });
 
   /// [reset] is where a double-click on the grip puts the height back.
-  final double height, min, max, reset;
+  final double height, max, reset;
   final Key gripKey;
   final ValueChanged<double> onHeight;
   final Widget child;
@@ -36,7 +33,7 @@ class _DockResizableState extends State<DockResizable> {
   bool _hover = false, _drag = false;
   double _h = 0, _from = 0;
 
-  double _clamp(double v) => v.clamp(widget.min, widget.max < widget.min ? widget.min : widget.max);
+  double _clamp(double v) => v.clamp(44.0, widget.max < 44 ? 44.0 : widget.max);
 
   @override
   Widget build(BuildContext context) {

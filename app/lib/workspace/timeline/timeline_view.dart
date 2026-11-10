@@ -20,10 +20,7 @@ extension _WsTimelineView on _WsTimelineState {
 
   void _tickNow(Duration e) {
     final ws = _ws!;
-    _last = (ws.inside!.renderedAt * Ws.fps).round().clamp(
-      0,
-      Ws.duration,
-    ); // (the inside keeps the clock, the playhead shows the moment of the picture it drew last)
+    _last = (ws.inside!.now * Ws.fps).round().clamp(0, Ws.duration); // (the inside keeps the clock, the playhead shows the moment of the picture it drew last)
     ws.frame = _last;
   }
 

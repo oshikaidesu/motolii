@@ -72,7 +72,7 @@ class ArtScene {
   /// stage, the picked one's line), not for every thing at every picture: null, not shown.
   ArtBox? box(String id) => _asked.putIfAbsent(id, () {
     final f = _inside?.bounds(int.tryParse(id) ?? -1);
-    return f == null ? null : ArtBox(Offset(f[0], f[1]), Size(f[2], f[3]), rot: f[4] * math.pi / 180, anchor: Offset(f[5], f[6]));
+    return f == null ? null : ArtBox(Offset(f[0], f[1]), Size(f[2], f[3]), f[4] * math.pi / 180, Offset(f[5], f[6]));
   });
 
   /// Every thing's frame, asked now.
@@ -103,7 +103,7 @@ class ArtScene {
 
 /// A layer's box in document px: centre, unscaled size, rotation and its anchor.
 class ArtBox {
-  const ArtBox(this.c, this.size, {this.rot = 0, Offset? anchor}) : anchor = anchor ?? c;
+  const ArtBox(this.c, this.size, this.rot, this.anchor);
   final Offset c, anchor;
   final Size size;
   final double rot;
@@ -122,10 +122,6 @@ Offset _rot(Offset p, double a) => Offset(p.dx * math.cos(a) - p.dy * math.sin(a
 abstract final class WsArt {
   static Size comp = const Size(1920, 1080); // (a document's own)
   static Offset get centre => comp.center(Offset.zero);
-
-  /// Document px to the px the viewer sees, and back (the stage's eye is the inside's: no camera of the window's own).
-  static Offset toView(ArtScene s, Offset p) => p;
-  static Offset toDoc(ArtScene s, Offset p) => p;
 
   /// The box the stage frames when [id] is selected, or null when the layer has no picture at this frame (the inside
   /// gives a frame only to what it shows: whether it is on is its, not counted again here in frames).

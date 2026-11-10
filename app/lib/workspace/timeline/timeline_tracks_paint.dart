@@ -2,8 +2,6 @@
 // open lane's value line.
 part of 'timeline_paint.dart';
 
-Color wtBand(int i, bool selected) => Forms.worn.trackBand(i, selected);
-
 /// The bar's fill: the kind's hue, a step quieter when not selected; a hidden or soloed-out layer drops to grey.
 Color wtBarFill(WtRow r) => Forms.worn.trackFill(r.tone ?? wsTone(r.kind), dim: r.dim, selected: r.selected);
 
@@ -21,8 +19,7 @@ void _wayLine(Path p, List<double> way, double xa, double xb, double width, doub
 }
 
 class WtTracksPainter extends CustomPainter {
-  const WtTracksPainter({required this.rows, required this.view, required this.fps, required this.vscroll, this.tempo, this.restAt});
-  final WsBeats? tempo;
+  const WtTracksPainter({required this.rows, required this.view, required this.fps, required this.vscroll, this.restAt});
   final int? restAt; // (where the hand has come to rest: Alight Motion's SnapLine)
   final List<WtRow> rows;
   final WtView view;
@@ -37,7 +34,7 @@ class WtTracksPainter extends CustomPainter {
     for (var i = 0; i < rows.length; i++) {
       final top = i * WtM.row - vscroll;
       if (top > s.height || top + WtM.row < 0) continue;
-      c.drawRect(Rect.fromLTWH(0, top, s.width, WtM.row - 1), p..color = wtBand(i, rows[i].selected));
+      c.drawRect(Rect.fromLTWH(0, top, s.width, WtM.row - 1), p..color = Forms.worn.trackBand(i, rows[i].selected));
       c.drawRect(Rect.fromLTWH(0, top + WtM.row - 1, s.width, 1), p..color = Grey.rowLine);
     }
     if (end < s.width) c.drawRect(Rect.fromLTRB(end, 0, s.width, s.height), p..color = WsT.body);

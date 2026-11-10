@@ -89,7 +89,7 @@ class _OptionsStrip extends StatelessWidget {
     7 => [_Field('Drag', value: 'Orbit'), _Field('Wheel', value: 'Dolly')], // (what the hand does with it, as After Effects' camera tools are named)
     6 => [
       _Field('Fill', swatch: p.fill ?? WsT.body),
-      _seg('brush.kind', const ['Brush', 'Pen', 'Fill', 'Eraser'], initial: 0),
+      _seg('brush.kind', const ['Brush', 'Pen', 'Fill', 'Eraser']),
       _seg('brush.size', const ['Thin', 'Medium', 'Thick'], initial: 1),
     ], // (Alight Motion's drawing tools: as the pressure says, as wide all along, the way gone round filled, and its eraser, of the picked drawing)
     _ => [

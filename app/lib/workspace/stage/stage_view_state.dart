@@ -17,7 +17,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
     final v = _shown, scene = widget.scene, b = WsArt.boxOf(scene, widget.selected), l = scene.layer(widget.selected);
     if (v == null || b == null || l == null) return const {};
     final (form, round) = _formOf();
-    return _handles((d) => v.toScreen(WsArt.toView(scene, d)), b, knob: l.kind != WsKind.camera && l.id != 'bg', form: form, round: round, crop: _cropOf());
+    return _handles(v.toScreen, b, knob: l.kind != WsKind.camera && l.id != 'bg', form: form, round: round, crop: _cropOf());
   }
 
   static const _crops = ['crop_left', 'crop_top', 'crop_right', 'crop_bottom'];
@@ -141,11 +141,9 @@ class _StageViewState extends State<StageView> implements StageHandles {
     return _View(area.center - half + _pan, s, area);
   }
 
-  Offset _doc(_View v, Offset local) => WsArt.toDoc(widget.scene, v.toComp(local));
-
   String? _hit(_View v, Offset local) {
     // (a thing that lies off the picture can still be held by its frame and carried back)
-    final d = _doc(v, local), id = WsArt.hit(widget.scene, d), m = WsScope.read(context).inside;
+    final d = v.toComp(local), id = WsArt.hit(widget.scene, d), m = WsScope.read(context).inside;
     if (widget.group && m != null && id != null) {
       // (Group: the outermost of the things it goes with, by the document's parent)
       var t = int.parse(id);
@@ -196,7 +194,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
     setState(() {});
     if (m == null) return;
     if (way != null && _scribbled(way, down, up)) return _fit(v, way);
-    final a = _doc(v, down), h = _doc(v, up) - a;
+    final a = v.toComp(down), h = v.toComp(up) - a;
     final first = !_penning;
     _penning = true;
     if (first) m.later('together', number: 1);
@@ -285,7 +283,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
       return;
     }
     if (h.by case final way?) {
-      var gone = _doc(v, local) - _doc(v, h.from);
+      var gone = v.toComp(local) - v.toComp(h.from);
       // (Figma's: a corner sizes it both ways freely, the side across staying; a side's middle that way only, the hand's
       //  travel across it; ⇧ keeps its width to its height, or turns it 15° at a time; ⌥ about its pivot, from the middle)
       final keys = HardwareKeyboard.instance, sized = way == 'scale' || way == 'edge', even = keys.isShiftPressed && (sized || way == 'turn') ? 'even_' : '';
@@ -490,11 +488,8 @@ class _StageViewState extends State<StageView> implements StageHandles {
                         child: CustomPaint(
                           size: Size.infinite,
                           painter: _PointsPainter(
-                            [for (final p in WsScope.read(context).inside!.points(picked)) v.toScreen(WsArt.toView(widget.scene, p))],
-                            [
-                              for (final (h, o) in WsScope.read(context).inside!.handles(picked))
-                                (v.toScreen(WsArt.toView(widget.scene, h)), v.toScreen(WsArt.toView(widget.scene, o))),
-                            ],
+                            [for (final p in WsScope.read(context).inside!.points(picked)) v.toScreen(p)],
+                            [for (final (h, o) in WsScope.read(context).inside!.handles(picked)) (v.toScreen(h), v.toScreen(o))],
                           ),
                         ),
                       ),
@@ -503,7 +498,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
                             widget.make == 'pen' &&
                             _penWay != null &&
                             _scribbled(_penWay!, from, _last!)) // (a scribble: its way, thin, as the brush's; made a path when let go)
-                      IgnorePointer(child: CustomPaint(painter: _BrushWay(_penWay!, WsT.accent)))
+                      IgnorePointer(child: CustomPaint(painter: _BrushWay(_penWay!)))
                     else if (_drawFrom case final from?
                         when _last != null && widget.make == 'pen') // (the pen's handle being drawn out: through its point, both ways)
                       IgnorePointer(
@@ -557,7 +552,7 @@ class _StageViewState extends State<StageView> implements StageHandles {
                       ),
                     IgnorePointer(child: CustomPaint(painter: _RulerPainter(v, widget.cursor, scene))),
                     _RelationMarks(scene: scene, v: v, lasso: _lasso),
-                    if (_brush case final way?) IgnorePointer(child: CustomPaint(painter: _BrushWay(way, WsT.accent))), // (the way drawn so far, thin: the stroke itself is the inside's once let go) // (drawn round, the things picked together, the relation picked: its shape, its handles, what it moves)
+                    if (_brush case final way?) IgnorePointer(child: CustomPaint(painter: _BrushWay(way))), // (the way drawn so far, thin: the stroke itself is the inside's once let go) // (drawn round, the things picked together, the relation picked: its shape, its handles, what it moves)
                     Positioned(
                       left: _V.ruler + _V.pad,
                       bottom: _V.pad,
@@ -581,15 +576,14 @@ class _StageViewState extends State<StageView> implements StageHandles {
 }
 
 class _BrushWay extends CustomPainter {
-  const _BrushWay(this.way, this.ink);
+  const _BrushWay(this.way);
   final List<Offset> way;
-  final Color ink;
   @override
   void paint(Canvas c, Size s) => c.drawPoints(
     PointMode.polygon,
     way,
     Paint()
-      ..color = ink
+      ..color = WsT.accent
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round,
   );

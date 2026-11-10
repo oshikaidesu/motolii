@@ -127,9 +127,9 @@ extension MotoliiQuestions on Motolii {
   /// How a thing moves over a while, as the stage places it (its wave and all): [n] moments from [from] to before [to],
   /// four numbers each: where it is (x, y, units of the stage), how far turned (degrees), how large (a share). null: no
   /// such thing. Asked once when its values change, for a small preview that then plays by itself (motolii_path).
-  Future<List<double>?> path(int layer, {int copy = 0, double from = 0, required double to, int n = 60}) => _ask((l, m) {
+  Future<List<double>?> path(int layer, {double from = 0, required double to, int n = 60}) => _ask((l, m) {
     final out = malloc<Double>(4 * n);
-    final got = c.MotoliiBindings(l).motolii_path(m, layer, copy, from, to, n, out);
+    final got = c.MotoliiBindings(l).motolii_path(m, layer, 0, from, to, n, out);
     final p = [for (var i = 0; i < 4 * got; i++) out[i]];
     malloc.free(out);
     return got > 0 ? p : null;
@@ -182,17 +182,14 @@ extension MotoliiQuestions on Motolii {
     return all;
   });
 
-  /// A film's first picture, small, as a .png file (null: none could be made). Made once and on another isolate: the
-  /// window does not wait.
-  Future<String?> thumbnail(String video) => _thumbnails[video] ??= _thumbnail(libPath, video);
-
-  /// A picture [step] of [steps] along the film (a tile looked along by the hand's place on it, or played).
   /// The film's picture so many seconds in (a tenth's nearest), small: a bar on the timeline shows what it plays.
   Future<String?> videoFrame(String video, double seconds) =>
       _thumbnails['$video@${(seconds * 10).round()}'] ??= _thumbnail(libPath, video, 0, 1, (seconds * 10).round() / 10);
 
+  /// A picture [step] of [steps] along the film (a tile looked along by the hand's place on it, or played); step 0: its first,
+  /// small, as a .png file (null: none could be made). Made once and on another isolate: the window does not wait.
   Future<String?> thumbnailAt(String video, int step, int steps) =>
-      step == 0 ? thumbnail(video) : _thumbnails['$video#$step/$steps'] ??= _thumbnail(libPath, video, step, steps);
+      step == 0 ? _thumbnails[video] ??= _thumbnail(libPath, video) : _thumbnails['$video#$step/$steps'] ??= _thumbnail(libPath, video, step, steps);
 
   /// A ticket's answer when it comes, and why not if refused: Thermion's VoidCallbackRegistry, as it is (a Completer under
   /// each request's number, completed when the inside says an answer is there: motolii_add_listener 8). Nothing looks again and again.

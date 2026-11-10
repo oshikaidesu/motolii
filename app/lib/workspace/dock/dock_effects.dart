@@ -516,7 +516,6 @@ class _EffectsShelfState extends State<EffectsShelf> {
                         if (c.mem.fxListOpen || building) // (a deck on the map, what it holds under it, at the list's height)
                           DockResizable(
                             height: c.mem.fxListHeight,
-                            min: 44,
                             max: box.maxHeight - 160,
                             reset: dockFxListHeight,
                             gripKey: const ValueKey('ws-fx-list-grip'),

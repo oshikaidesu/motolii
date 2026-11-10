@@ -22,13 +22,11 @@ part 'dock_search.dart';
 part 'dock_stars.dart';
 
 /// The dock's badge: a hue tile with its glyph at .62 of it (the one [Badge], dressed for a shelf).
-Widget dockBadge(DockG g, Color hue, {double size = 20}) => Badge(
+Widget dockBadge(DockG g, Color hue, {required double size}) => Badge(
   hue,
   size: size,
   child: DockGlyph(g, size: size * .62, color: WsT.onAccent),
 );
-
-const dockFilterHeight = 168.0;
 
 /// What the dock remembers per shelf while you hop between shelves (selection, chip, folds). Lives in the dock's state, never in [Ws].
 class DockMem {
@@ -438,17 +436,16 @@ class DockEmpty extends StatelessWidget {
   );
 }
 
-/// A shelf's sections as cards: one column while the shelf is narrow; as it widens, columns of at least [minColumn] px stand side by side
+/// A shelf's sections as cards: one column while the shelf is narrow; as it widens, columns of at least 300 px stand side by side
 /// and each section goes to the shortest column so far ([weights] estimate the heights, in rows). A shelf made wider shows more at once.
 class DockMasonry extends StatelessWidget {
-  const DockMasonry({super.key, required this.children, required this.weights, this.minColumn = 280});
+  const DockMasonry({super.key, required this.children, required this.weights});
   final List<Widget> children;
   final List<double> weights;
-  final double minColumn;
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
-      final n = wsCols(box.maxWidth, minColumn, max: 4);
+      final n = wsCols(box.maxWidth, 300, max: 4);
       if (n == 1) return ListView(padding: EdgeInsets.zero, children: children);
       final cols = List.generate(n, (_) => <Widget>[]), h = List.filled(n, 0.0);
       for (final (i, w) in children.indexed) {

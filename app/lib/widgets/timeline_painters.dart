@@ -7,8 +7,6 @@ import '../skin/svg_parts.dart';
 
 import '../skin/tokens.dart';
 
-const tpFast = Duration(milliseconds: 120);
-
 // ---------------------------------------------------------------- ticks (the rule of lib/parts/timeline.dart)
 
 double tpMajor(double ppf, int fps) {
@@ -134,16 +132,8 @@ class TpGlyphView extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TweenAnimationBuilder<Color?>(
     tween: ColorTween(end: color),
-    duration: tpFast,
+    duration: Mo.dur,
     curve: Curves.easeOut,
-    builder: (_, v, __) => CustomPaint(size: Size.square(size), painter: TpGlyphPainter(g, v ?? color)),
+    builder: (_, v, _) => CustomPaint(size: Size.square(size), painter: TpGlyphPainter(g, v ?? color)),
   );
 }
-
-// ---------------------------------------------------------------- interaction shells
-
-// ---------------------------------------------------------------- keys
-
-// ---------------------------------------------------------------- bars
-
-// ---------------------------------------------------------------- lane (grid + bar + keys + link line + playhead line)

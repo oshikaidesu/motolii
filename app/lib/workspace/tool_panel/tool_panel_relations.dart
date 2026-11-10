@@ -281,8 +281,6 @@ class _View {
     return Offset(size.width / 2 + (q.dx - _fit.center.dx) * _scale, size.height / 2 - (q.dy - _fit.center.dy) * _scale);
   }
 
-  double get unit => _scale;
-
   /// The axes gizmo in the corner, as Blender's: each axis's end, turned as the world is (x red, y green, z blue).
   Offset get axisMiddle => Offset(size.width - 38, size.height - 38);
   Map<String, Offset> get axisEnds => {

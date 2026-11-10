@@ -15,11 +15,10 @@ import '../../widgets/two_fingers.dart';
 /// contract: every block still shows the number and takes typing, scrubbing and the sideways slide; the picture is added, never a replacement.
 /// contract: numbers scrub sideways, all of them; a picture may be handled its own way (a dial turns, a pad moves both ways).
 class ParamTile extends StatelessWidget {
-  const ParamTile(this.fx, this.p, {super.key});
-  final String fx;
+  const ParamTile(this.p, {super.key});
   final Param p;
 
-  String get id => '${fx}_${p.id}';
+  String get id => 'v_${p.id}';
 
   Widget _num(BuildContext context, {String? sub, String? caption, Widget? glyph, bool owns = false, bool tall = false}) {
     final fid = sub == null ? id : '$id.$sub';
@@ -42,7 +41,6 @@ class ParamTile extends StatelessWidget {
         step: p.dec > 0 ? p.step * 10 : 1,
         bipolar: p.look == ParamLook.bipolar,
         turns: p.look == ParamLook.angle, // (counted in turns past one, as After Effects' angle: 1x 30°)
-        enabled: !RowOff.offOf(context),
       ),
     );
   }
@@ -84,19 +82,16 @@ class ParamTile extends StatelessWidget {
 
   Widget _body(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc, v = doc.get(id);
-    final on = !RowOff.offOf(context);
-    Widget gauge(GaugeKind k, {double? vx, double? vy}) => SizedBox.square(
+    Widget gauge(GaugeKind k) => SizedBox.square(
       dimension: Pop.glyph,
-      child: FittedBox(
-        child: Gauge(k, v, p, x: vx, y: vy),
-      ),
+      child: FittedBox(child: Gauge(k, v, p)),
     );
     // the same skeleton as a number block: name at the top-left, the control along the bottom, the picture top-right
     Widget shell(Widget bottom, {VoidCallback? onTap, Widget? glyph, bool tall = false}) => Hov(
-      onTap: on ? onTap : null,
+      onTap: onTap,
       builder: (_, h) => Container(
         height: tall ? Pop.tile * 2 + Pop.tileGap : Pop.tile,
-        decoration: BoxDecoration(color: h && onTap != null && on ? Grey.g20 : Pop.well, borderRadius: BorderRadius.all(Shape.r(6))),
+        decoration: BoxDecoration(color: h && onTap != null ? Grey.g20 : Pop.well, borderRadius: BorderRadius.all(Shape.r(6))),
         child: Stack(
           children: [
             if (glyph != null)
@@ -113,7 +108,7 @@ class ParamTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(p.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(on ? Grey.g63 : Grey.g44).copyWith(height: 1.1)),
+                  Text(p.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(Grey.g63).copyWith(height: 1.1)),
                   bottom,
                 ],
               ),
@@ -132,12 +127,9 @@ class ParamTile extends StatelessWidget {
             child: Row(
               key: ValueKey('toggle:$id'), // (found by its value's id)
               children: [
-                Opacity(
-                  opacity: on ? 1 : .4,
-                  child: PopSwitch(on: b),
-                ),
+                PopSwitch(on: b),
                 SizedBox(width: Shape.s(6)),
-                Text(b ? 'On' : 'Off', style: T.label(on ? Grey.g76 : Grey.g56)),
+                Text(b ? 'On' : 'Off', style: T.label(Grey.g76)),
               ],
             ),
           ),
@@ -147,21 +139,18 @@ class ParamTile extends StatelessWidget {
           SizedBox(
             height: Shape.z(22),
             child: p.options.length <= 4
-                ? Dis(
+                ? Segmented(
                     key: ValueKey('choice:$id'), // (found by its value's id, as a menu of more is)
-                    child: Segmented(
-                      items: p.options,
-                      index: (v ?? 0).round().clamp(0, p.options.length - 1),
-                      expand: true,
-                      onChanged: (i) => doc.set(id, i.toDouble()),
-                    ),
+                    items: p.options,
+                    index: (v ?? 0).round().clamp(0, p.options.length - 1),
+                    onChanged: (i) => doc.set(id, i.toDouble()),
                   )
                 : _ChoiceField(id: id, options: p.options),
           ),
         );
       case ParamLook.color when p.unit == 'words':
         // any words, typed (lines too): said when the hand leaves the field; Esc puts them back (Cavalry's string attribute)
-        return shell(ParamWords(id: id, on: on), tall: true);
+        return shell(ParamWords(id: id), tall: true);
       case ParamLook.color when p.unit == 'file':
         // a file, given from a shelf (the text's font: the Fonts shelf), as a colour is given from the Colors shelf
         return shell(
@@ -172,7 +161,7 @@ class ParamTile extends StatelessWidget {
         );
       case ParamLook.color when p.unit == 'numbers':
         // numbers, one for each in their order (a bar chart's heights): bars a hand drags up and down, said when let go
-        return shell(_Heights(id: id, on: on));
+        return shell(_Heights(id: id));
       case ParamLook.color:
         final all = (doc.s2[id] ?? '—').split(' ').where((c) => hexControls(c) != null).toList();
         return shell(
@@ -275,21 +264,18 @@ class _PadGlyphState extends State<_PadGlyph> {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc, p = widget.p;
-    final on = !RowOff.offOf(context);
     final ix = '${widget.id}.x', iy = '${widget.id}.y';
     final lo = p.min ?? double.negativeInfinity, hi = p.max ?? double.infinity;
     double step(double v, double d) => double.parse((v + d * p.perPx).clamp(lo, hi).toStringAsFixed(math.max(p.dec, 2)));
     return MouseRegion(
-      cursor: on ? SystemMouseCursors.move : SystemMouseCursors.basic,
+      cursor: SystemMouseCursors.move,
       onEnter: (_) => setState(() => _hot = true),
       onExit: (_) => setState(() => _hot = false),
       child: Listener(
-        onPointerDown: on
-            ? (_) {
-                doc.beginGesture();
-                setState(() => _drag = true);
-              }
-            : null,
+        onPointerDown: (_) {
+          doc.beginGesture();
+          setState(() => _drag = true);
+        },
         onPointerMove: (e) {
           if (!_drag) return;
           doc.setMany({ix: step(doc.get(ix) ?? 0, e.delta.dx), iy: step(doc.get(iy) ?? 0, widget.size ? -e.delta.dy : e.delta.dy)});
@@ -317,9 +303,8 @@ class _PadGlyphState extends State<_PadGlyph> {
 
 /// Numbers, one for each in their order, as bars: a hand drags a bar up or down; the row is said once it lets go.
 class _Heights extends StatefulWidget {
-  const _Heights({required this.id, required this.on});
+  const _Heights({required this.id});
   final String id;
-  final bool on;
   @override
   State<_Heights> createState() => _HeightsState();
 }
@@ -361,16 +346,14 @@ class _HeightsState extends State<_Heights> {
           return GestureDetector(
             supportedDevices: wsPressing,
             behavior: HitTestBehavior.opaque,
-            onVerticalDragStart: widget.on ? (d) => start(d.localPosition) : null,
-            onVerticalDragUpdate: widget.on ? (d) => _at(d.localPosition, size) : null,
-            onVerticalDragEnd: widget.on ? (_) => end() : null,
-            onTapUp: widget.on
-                ? (d) {
-                    start(d.localPosition);
-                    end();
-                  }
-                : null,
-            child: CustomPaint(size: size, painter: _BarsPaint(v, _held == null ? math.max(1, v.reduce(math.max) * 1.25) : _top, widget.on)),
+            onVerticalDragStart: (d) => start(d.localPosition),
+            onVerticalDragUpdate: (d) => _at(d.localPosition, size),
+            onVerticalDragEnd: (_) => end(),
+            onTapUp: (d) {
+              start(d.localPosition);
+              end();
+            },
+            child: CustomPaint(size: size, painter: _BarsPaint(v, _held == null ? math.max(1, v.reduce(math.max) * 1.25) : _top)),
           );
         },
       ),
@@ -379,13 +362,12 @@ class _HeightsState extends State<_Heights> {
 }
 
 class _BarsPaint extends CustomPainter {
-  _BarsPaint(this.v, this.top, this.on);
+  _BarsPaint(this.v, this.top);
   final List<double> v;
   final double top;
-  final bool on;
   @override
   void paint(Canvas c, Size s) {
-    final w = s.width / v.length, paint = Paint()..color = on ? Grey.g76 : Grey.g44;
+    final w = s.width / v.length, paint = Paint()..color = Grey.g76;
     for (var i = 0; i < v.length; i++) {
       final h = (v[i] / top).clamp(0.0, 1.0) * s.height;
       c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(i * w + w * .15, s.height - h, w * .7, h), Shape.r(1.5)), paint);
@@ -393,7 +375,7 @@ class _BarsPaint extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_BarsPaint o) => o.v != v || o.top != top || o.on != on;
+  bool shouldRepaint(_BarsPaint o) => o.v != v || o.top != top;
 }
 
 /// A long option list for an effect: the same floating chooser as everywhere, storing the index as the value.

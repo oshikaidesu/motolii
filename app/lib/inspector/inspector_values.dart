@@ -7,9 +7,9 @@ class Doc extends ChangeNotifier {
   Doc(this.kind, {this.cards = const []}) {
     for (final f in cards) {
       for (final (i, p) in f.params.indexed) {
-        paramDefaults(f.id, p).forEach((id, x) => v[id] = d[id] = x); // (the declaration's @default, until the host says the value)
-        if (p.look == ParamLook.color) s2.putIfAbsent('${f.id}_${p.id}', () => paramColor(f.decls[i]));
-        if (p.look == ParamLook.choice) s2.putIfAbsent('${f.id}_${p.id}', () => p.options[p.def.round().clamp(0, p.options.length - 1)]);
+        paramDefaults(p).forEach((id, x) => v[id] = d[id] = x); // (the declaration's @default, until the host says the value)
+        if (p.look == ParamLook.color) s2.putIfAbsent('v_${p.id}', () => paramColor(f.decls[i]));
+        if (p.look == ParamLook.choice) s2.putIfAbsent('v_${p.id}', () => p.options[p.def.round().clamp(0, p.options.length - 1)]);
       }
     }
   }
@@ -28,10 +28,6 @@ class Doc extends ChangeNotifier {
   /// beyond the sample's cards.
   final List<Fx> cards;
   bool animateAll = false;
-
-  /// Whether an edit marks its own key (the sample's rule, D2); off where a host owns the keys (joined: the document
-  /// keys what a hand changes, and a mark told besides was a second key, made before the change, with the old value).
-  bool marksEdits = true;
 
   @override
   void dispose() {
@@ -53,17 +49,16 @@ class Doc extends ChangeNotifier {
 
   void delta(String id, double dx) {
     v[id] = (v[id] ?? 0) + dx;
-    _touch(id);
     notifyListeners();
   }
 
-  ({Map<String, double> values, Map<String, KeyS> keys})? _gesture;
+  Map<String, double>? _gesture;
 
   /// A hand is on a value (between beginGesture and endGesture): what it shows is not settled yet.
   bool get inGesture => _gesture != null;
 
   void beginGesture() {
-    _gesture ??= (values: Map.of(v), keys: Map.of(keys));
+    _gesture ??= Map.of(v);
   }
 
   void endGesture() {
@@ -75,7 +70,7 @@ class Doc extends ChangeNotifier {
     notifyListeners();
     ending = false;
     for (final e in v.entries) {
-      if (before?.values[e.key] != e.value) _watched[e.key]?.value++;
+      if (before?[e.key] != e.value) _watched[e.key]?.value++;
     }
   }
 
@@ -112,7 +107,6 @@ class Doc extends ChangeNotifier {
   void setMany(Map<String, double> xs) {
     for (final e in xs.entries) {
       v[e.key] = e.value;
-      _touch(e.key);
     }
     notifyListeners();
   }
@@ -126,12 +120,6 @@ class Doc extends ChangeNotifier {
       if (animateAll || (keys[p] ?? KeyS.off) != KeyS.off) keys[p] = KeyS.at;
     }
     notifyListeners();
-  }
-
-  /// D2: while Animate all is on (or the property is animated), an edit writes a key at the playhead.
-  void _touch(String id) {
-    final p = propOf(id);
-    if (marksEdits && (animateAll || (keys[p] ?? KeyS.off) != KeyS.off)) keys[p] = KeyS.at;
   }
 
   void setKey(String prop, KeyS s) {
@@ -183,7 +171,7 @@ class Doc extends ChangeNotifier {
   }
 
   late final _grid = [
-    for (final f in cards) [for (final p in f.params) ...paramDefaults(f.id, p).keys],
+    for (final f in cards) [for (final p in f.params) ...paramDefaults(p).keys],
   ];
   (int, int)? _cell(String id) {
     for (var r = 0; r < _grid.length; r++) {

@@ -8,9 +8,8 @@ import '../../widgets/text_gestures.dart';
 
 /// Any words, typed (two lines shown): said to the host when the hand leaves; Esc puts back what was there.
 class ParamWords extends StatefulWidget {
-  const ParamWords({super.key, required this.id, required this.on});
+  const ParamWords({super.key, required this.id});
   final String id;
-  final bool on;
   @override
   State<ParamWords> createState() => ParamWordsState();
 }
@@ -57,7 +56,7 @@ class ParamWordsState extends State<ParamWords> {
   Widget build(BuildContext context) {
     final now = Ctx.of(context).doc.s2[widget.id] ?? '';
     if (!_f.hasFocus && _c.text != now) _c.text = now; // (out of the field it is what the host has now: another thing picked, an undo)
-    if (textToType && widget.on) {
+    if (textToType) {
       // (a text just placed: the first words field built takes the keys, its words picked)
       textToType = false;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -66,22 +65,19 @@ class ParamWordsState extends State<ParamWords> {
         _c.selection = TextSelection(baseOffset: 0, extentOffset: _c.text.length);
       });
     }
-    return IgnorePointer(
-      ignoring: !widget.on,
-      child: TextGestures(
-        key: ValueKey('words:${widget.id}'),
-        field: (k) => EditableText(
-          key: k,
-          rendererIgnoresPointer: true,
-          controller: _c,
-          focusNode: _f,
-          style: T.name(widget.on ? Grey.g95 : Grey.g44).copyWith(fontWeight: FontWeight.w400),
-          cursorColor: Grey.g95,
-          backgroundCursorColor: Grey.g20,
-          minLines: 2,
-          maxLines: 2,
-          selectionColor: Role.selected.withValues(alpha: .4),
-        ),
+    return TextGestures(
+      key: ValueKey('words:${widget.id}'),
+      field: (k) => EditableText(
+        key: k,
+        rendererIgnoresPointer: true,
+        controller: _c,
+        focusNode: _f,
+        style: T.name(Grey.g95).copyWith(fontWeight: FontWeight.w400),
+        cursorColor: Grey.g95,
+        backgroundCursorColor: Grey.g20,
+        minLines: 2,
+        maxLines: 2,
+        selectionColor: Role.selected.withValues(alpha: .4),
       ),
     );
   }

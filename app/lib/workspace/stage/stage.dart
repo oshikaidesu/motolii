@@ -2,7 +2,6 @@
 // The picture is the work (stage_art.dart); the chrome around it stays grey and round, with the accent only on what is on.
 import 'dart:io' show Directory, File;
 
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../inspector/inspector_small.dart' show Hov;

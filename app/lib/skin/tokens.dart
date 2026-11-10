@@ -71,14 +71,13 @@ abstract final class Grey {
 }
 
 abstract final class C {
-  /// The accent. Delegates to [Role.mode].
-  static Color get mode => Role.mode;
+  /// The accent: [Role.selected].
+  static Color get mode => Role.selected;
 }
 
 /// The window's role colours. One palette is set, so each name is that colour.
 abstract final class Role {
   static const selected = Color(0xFF7A87E3);
-  static const mode = Color(0xFF7A87E3);
   static const warning = Color(0xFFF69260);
   static const error = Color(0xFFE5584B);
 }

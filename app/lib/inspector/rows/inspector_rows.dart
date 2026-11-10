@@ -4,15 +4,9 @@ import '../../skin/tokens.dart';
 import '../inspector_parts.dart';
 
 // ---- 5. sections and rows -------------------------------------------------------------------------------------------
-class Rule extends StatelessWidget {
-  const Rule({super.key});
-  @override
-  Widget build(BuildContext context) => Container(height: 1, color: const Ed().rule);
-}
-
 /// A card's fold mark: points right when folded, down when open, so a card that can fold says so before it is touched.
 class FoldMark extends StatelessWidget {
-  const FoldMark({super.key, required this.open, this.hot = false});
+  const FoldMark({super.key, required this.open, required this.hot});
   final bool open, hot;
   @override
   Widget build(BuildContext context) => AnimatedRotation(
@@ -45,7 +39,7 @@ class _FoldPaint extends CustomPainter {
 class RowInfo extends InheritedWidget {
   const RowInfo({super.key, required this.keys, required super.child});
   final KeyS keys;
-  static RowInfo? of(BuildContext c) => c.dependOnInheritedWidgetOfExactType<RowInfo>();
+  static RowInfo of(BuildContext c) => c.dependOnInheritedWidgetOfExactType<RowInfo>()!;
   @override
   bool updateShouldNotify(RowInfo old) => old.keys != keys;
 }

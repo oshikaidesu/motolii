@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
 import 'package:flutter/widgets.dart';
 
-import '../skin/tokens.dart';
 import 'inspector_parts.dart';
 part 'inspector_values.dart';
 
@@ -14,22 +13,12 @@ bool textToType = false;
 
 enum KeyS { off, anim, at }
 
-enum Kind { shape, text, camera, group, several, none }
+enum Kind { shape, text, camera, group, none }
 
-/// The inspector's type: a 12% hairline, caps on headings, and a rule above a group.
+/// The inspector's hairline: 12% white.
 class Ed {
   const Ed();
   Color get rule => const Color.fromRGBO(255, 255, 255, .12);
-  double get gap => 12;
-
-  String head(String s) => s.toUpperCase();
-  String lab(String s) => s;
-  String kick(String s) => s.toUpperCase();
-  TextStyle kickStyle(Color c) => T.micro(c).copyWith(letterSpacing: .8);
-  TextStyle subStyle() => T.name(Grey.g91);
-  TextStyle headStyle() => T.micro(Grey.g56).copyWith(letterSpacing: 1.0);
-  TextStyle labStyle(Color c) => T.label(c);
-  TextStyle nameStyle() => T.title().copyWith(fontSize: T.px(14), fontWeight: FontWeight.w500);
 }
 
 /// The property a value is part of, whose key mark is theirs together: a document's x, y, z are its position; its

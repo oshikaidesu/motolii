@@ -16,43 +16,45 @@ import 'package:flutter/painting.dart' show FileImage, ResizeImage;
 import '../../bridge/motolii.dart';
 import 'effect_tiles.dart' show EffectTiles;
 
-abstract final class CopiesTiles {
-  static final _asked = <String>{}, _queue = <(String, String, String?)>[];
-  static var _drawing = false;
+/// Where a tile goes: [kind] and [key] hashed, in the tiles' cache.
+String tileHome(String kind, String key) {
+  var hash = 1469598103934665603;
+  for (final c in key.codeUnits) {
+    hash = (hash ^ c) * 1099511628211;
+  }
+  return '${Platform.environment['HOME']}/Library/Caches/Motolii/tiles/${kind}_${(hash & 0x7fffffffffffffff).toRadixString(16)}.png';
+}
+
+/// The tiles of one kind, each asked for once and drawn in another isolate by [draw] (the homes drawn); [seen] says
+/// which pictures of a home to forget when it is drawn.
+class TileQueue<T> {
+  TileQueue(this.draw, this.seen);
+  final List<String> Function(String dir, List<T> jobs) draw;
+  final Iterable<String> Function(String home) seen;
+  final _asked = <String>{}, _queue = <T>[];
+  var _drawing = false;
 
   /// Told once some are drawn: the tiles look again.
-  static final drawn = ValueNotifier<int>(0);
+  final drawn = ValueNotifier<int>(0);
 
-  /// Where [file]'s tile goes: by its file and when it was written, as the inside's doc_tile names an effect's.
-  static String home(String file, {String? make}) {
-    var hash = 1469598103934665603;
-    final at = File(file).existsSync() ? File(file).lastModifiedSync().microsecondsSinceEpoch : 0;
-    for (final c in '$file|$at|${make == null ? 'copies 5' : 'make $make'}'.codeUnits) {
-      hash = (hash ^ c) * 1099511628211;
-    }
-    return '${Platform.environment['HOME']}/Library/Caches/Motolii/tiles/copies_${(hash & 0x7fffffffffffffff).toRadixString(16)}.png';
-  }
-
-  /// [file]'s tile ('' none: not drawn yet, or the inside does not take it), asked for once; [make]: the recipe of that
-  /// name, [file] its file, made as it is (a pack).
-  static String of(String file, {String? make}) {
-    final h = home(file, make: make);
-    if (File(h).existsSync()) return h;
-    if (File('$h.none').existsSync() || Platform.environment['FLUTTER_TEST'] == 'true' || !_asked.add(h)) return '';
-    _queue.add((file, h, make));
+  /// [home]'s tile ('' none: not drawn yet, or the inside did not draw it), [job] queued once.
+  String of(String home, T job) {
+    if (File(home).existsSync()) return home;
+    if (File('$home.none').existsSync() || Platform.environment['FLUTTER_TEST'] == 'true' || !_asked.add(home)) return '';
+    _queue.add(job);
     if (!_drawing) unawaited(_work());
     return '';
   }
 
-  static Future<void> _work() async {
+  Future<void> _work() async {
     _drawing = true;
-    final dir = motoliiDir;
+    final dir = motoliiDir, draw = this.draw;
     try {
       while (_queue.isNotEmpty) {
         final some = [..._queue];
         _queue.clear();
         for (final h in await Isolate.run(() => draw(dir, some))) {
-          for (final p in [h, for (final (k, _) in EffectTiles.moments.indexed) EffectTiles.frame(h, k)]) {
+          for (final p in seen(h)) {
             ResizeImage(FileImage(File(p)), width: EffectTiles.readWide).evict();
           }
         }
@@ -62,6 +64,26 @@ abstract final class CopiesTiles {
     } finally {
       _drawing = false;
     }
+  }
+}
+
+abstract final class CopiesTiles {
+  static final _tiles = TileQueue<(String, String, String?)>(draw, (h) => [h, for (final (k, _) in EffectTiles.moments.indexed) EffectTiles.frame(h, k)]);
+
+  /// Told once some are drawn: the tiles look again.
+  static final drawn = _tiles.drawn;
+
+  /// Where [file]'s tile goes: by its file and when it was written, as the inside's doc_tile names an effect's.
+  static String home(String file, {String? make}) {
+    final at = File(file).existsSync() ? File(file).lastModifiedSync().microsecondsSinceEpoch : 0;
+    return tileHome('copies', '$file|$at|${make == null ? 'copies 5' : 'make $make'}');
+  }
+
+  /// [file]'s tile ('' none: not drawn yet, or the inside does not take it), asked for once; [make]: the recipe of that
+  /// name, [file] its file, made as it is (a pack).
+  static String of(String file, {String? make}) {
+    final h = home(file, make: make);
+    return _tiles.of(h, (file, h, make));
   }
 
   /// Each file's tile drawn where its home says; the homes drawn.

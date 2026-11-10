@@ -21,7 +21,7 @@ class _RelationMarks extends StatelessWidget {
     ]), // (where things are in the picture shown)
     builder: (context, _) {
       final ws = WsScope.read(context), m = ws.inside;
-      Offset? on(String id) => scene.box(id) == null ? null : v.toScreen(WsArt.toView(scene, scene.box(id)!.c));
+      Offset? on(String id) => scene.box(id) == null ? null : v.toScreen(scene.box(id)!.c);
       final picked = [
         for (final id in ws.many)
           if (on(id) case final p?) p,
@@ -35,7 +35,7 @@ class _RelationMarks extends StatelessWidget {
       ];
       final now = m?.now ?? 0; // (the moment of the picture shown)
       // (a place of the stage in its own units, on the screen; and back)
-      Offset screen(double x, double y) => v.toScreen(WsArt.toView(scene, Offset(WsArt.comp.width / 2 + x * m!.point, WsArt.comp.height / 2 - y * m.point)));
+      Offset screen(double x, double y) => v.toScreen(Offset(WsArt.comp.width / 2 + x * m!.point, WsArt.comp.height / 2 - y * m.point));
       (double, double) units(Offset p) {
         final c = v.toComp(p);
         return ((c.dx - WsArt.comp.width / 2) / m!.point, (WsArt.comp.height / 2 - c.dy) / m.point);

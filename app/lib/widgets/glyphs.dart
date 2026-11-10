@@ -3,19 +3,17 @@ import 'package:flutter/widgets.dart';
 
 import '../skin/svg_parts.dart';
 
-import '../skin/tokens.dart';
-
 enum G { select, move, rect, ellipse, pen, text, brush, image, camera, grid, shape, media }
 
 class Glyph extends StatelessWidget {
-  const Glyph(this.kind, {super.key, this.size = 18, this.color});
+  const Glyph(this.kind, {super.key, required this.size, required this.color});
   final G kind;
   final double size;
-  final Color? color; // (none: the skin's quiet grey)
+  final Color color;
   @override
   Widget build(BuildContext context) => SizedBox.square(
     dimension: size,
-    child: CustomPaint(painter: _GlyphPainter(kind, color ?? Grey.g63)),
+    child: CustomPaint(painter: _GlyphPainter(kind, color)),
   );
 }
 

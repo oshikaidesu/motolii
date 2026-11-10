@@ -18,8 +18,6 @@ abstract final class WsZoom {
     value.value = ((z * 100).round() / 100).clamp(.5, 2.0);
     if (keep) WindowFile.set('Zoom', value.value.toStringAsFixed(2));
   }
-
-  static void by(int percent) => set(value.value + percent / 100);
 }
 
 /// The zoom in the top bar, quiet: scrubbed sideways it moves 1% every 3 px (kept when let go), tapped twice it is the usual zoom again.

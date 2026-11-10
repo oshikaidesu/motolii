@@ -80,12 +80,6 @@ class _WsAll extends InheritedModel<WsAspect> {
   bool updateShouldNotifyDependent(_WsAll old, Set<WsAspect> dependencies) => ws != old.ws || dependencies.any((a) => told[a] != old.told[a]);
 }
 
-/// The playhead: told when it moves, and again when what was read at it was put off (the inside busy).
-class WsMomentNow extends ValueNotifier<int> {
-  WsMomentNow(super.value);
-  void again() => notifyListeners();
-}
-
 /// The playhead's own scope, under [WsScope]: [WsScope.frameOf].
 class WsMoment extends InheritedNotifier<ValueNotifier<int>> {
   const WsMoment({super.key, required super.notifier, required super.child});

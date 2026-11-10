@@ -2,22 +2,16 @@
 // on a document of its own in another isolate, by the inside, a ball wearing the material before a ramp of two colours
 // (glass is seen by what it bends), one still made small with sips, where the effect tiles go (~/Library/Caches/Motolii/
 // tiles, named by the material and when its compiled material was written: drawn again once that is built again).
-import 'dart:async';
 import 'dart:io';
-import 'dart:isolate';
-
-import 'package:flutter/foundation.dart' show ValueNotifier;
-import 'package:flutter/painting.dart' show FileImage, ResizeImage;
 
 import '../../bridge/motolii.dart';
-import 'effect_tiles.dart' show EffectTiles;
+import 'copies_tiles.dart' show TileQueue, tileHome;
 
 abstract final class MaterialTiles {
-  static final _asked = <String>{}, _queue = <(String, String)>[];
-  static var _drawing = false;
+  static final _tiles = TileQueue<(String, String)>(draw, (h) => [h]);
 
   /// Told once some are drawn: the tiles look again.
-  static final drawn = ValueNotifier<int>(0);
+  static final drawn = _tiles.drawn;
 
   /// The compiled material a ball wearing [wears] is drawn with (document/match.h: surface_model, thick_glass, solid_wear).
   static const _filamat = {
@@ -44,39 +38,13 @@ abstract final class MaterialTiles {
   /// Where [wears]'s tile goes: by the material, how it is shown and when its compiled material was written.
   static String home(String wears) {
     final f = File('$motoliiDir/out/filament_webgpu/${_filamat[wears] ?? wears}.filamat');
-    var hash = 1469598103934665603;
-    for (final c in 'material|$wears|${_shows[wears]}|${f.existsSync() ? f.lastModifiedSync().microsecondsSinceEpoch : 0}'.codeUnits) {
-      hash = (hash ^ c) * 1099511628211;
-    }
-    return '${Platform.environment['HOME']}/Library/Caches/Motolii/tiles/material_${(hash & 0x7fffffffffffffff).toRadixString(16)}.png';
+    return tileHome('material', 'material|$wears|${_shows[wears]}|${f.existsSync() ? f.lastModifiedSync().microsecondsSinceEpoch : 0}');
   }
 
   /// [wears]'s tile ('' none: not drawn yet, or the inside did not draw it), asked for once.
   static String of(String wears) {
     final h = home(wears);
-    if (File(h).existsSync()) return h;
-    if (File('$h.none').existsSync() || Platform.environment['FLUTTER_TEST'] == 'true' || !_asked.add(h)) return '';
-    _queue.add((wears, h));
-    if (!_drawing) unawaited(_work());
-    return '';
-  }
-
-  static Future<void> _work() async {
-    _drawing = true;
-    final dir = motoliiDir;
-    try {
-      while (_queue.isNotEmpty) {
-        final some = [..._queue];
-        _queue.clear();
-        for (final h in await Isolate.run(() => draw(dir, some))) {
-          ResizeImage(FileImage(File(h)), width: EffectTiles.readWide).evict();
-        }
-        drawn.value++;
-      }
-    } catch (_) {
-    } finally {
-      _drawing = false;
-    }
+    return _tiles.of(h, (wears, h));
   }
 
   /// Each material's tile drawn where its home says; the homes drawn.

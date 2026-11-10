@@ -9,8 +9,7 @@ import '../inspector_parts.dart';
 /// An effect's parameters as blocks that fill the panel's width: three across in a normal panel, more when it is widened,
 /// so thirty parameters stay a short list. Order is the shader's; a block that needs room (a point, a size, a choice) takes two.
 class ParamGrid extends StatelessWidget {
-  const ParamGrid(this.fx, this.params, {super.key});
-  final String fx;
+  const ParamGrid(this.params, {super.key});
   final List<Param> params;
 
   static int span(Param p) => switch (p.look) {
@@ -39,13 +38,7 @@ class ParamGrid extends StatelessWidget {
         final filled = ps.fold<int>(0, (a, p) => a + math.min(span(p), cols));
         return Row(
           children: [
-            for (var i = 0; i < ps.length; i++) ...[
-              if (i > 0) SizedBox(width: g),
-              Expanded(
-                flex: math.min(span(ps[i]), cols),
-                child: RowOff(off: false, child: ParamTile(fx, ps[i])),
-              ),
-            ],
+            for (var i = 0; i < ps.length; i++) ...[if (i > 0) SizedBox(width: g), Expanded(flex: math.min(span(ps[i]), cols), child: ParamTile(ps[i]))],
             if (last && filled < cols) ...[SizedBox(width: g), Spacer(flex: cols - filled)],
           ],
         );
@@ -66,10 +59,10 @@ class ParamGrid extends StatelessWidget {
 Color? hexControls(String? s) => s != null && RegExp(r'^#[0-9A-Fa-f]{6}$').hasMatch(s) ? Color(int.parse(s.substring(1), radix: 16) | 0xFF000000) : null;
 
 /// The default value of every id a parameter owns, for a fresh layer and for Reset.
-Map<String, double> paramDefaults(String fx, Param p) => switch (p.look) {
-  ParamLook.point || ParamLook.size => {'${fx}_${p.id}.x': p.def, '${fx}_${p.id}.y': p.defY},
+Map<String, double> paramDefaults(Param p) => switch (p.look) {
+  ParamLook.point || ParamLook.size => {'v_${p.id}.x': p.def, 'v_${p.id}.y': p.defY},
   ParamLook.color => const {},
-  _ => {'${fx}_${p.id}': p.def},
+  _ => {'v_${p.id}': p.def},
 };
 
 /// A colour parameter's default as #RRGGBB, from its 0–1 components.
@@ -106,9 +99,8 @@ class Steps extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc, v = doc.get(id) ?? p.def;
-    final on = !RowOff.offOf(context);
     Widget btn(String s, double by) {
-      final ok = on && (by < 0 ? v > (p.min ?? -1e9) : v < (p.max ?? 1e9));
+      final ok = by < 0 ? v > (p.min ?? -1e9) : v < (p.max ?? 1e9);
       return Hov(
         onTap: ok ? () => doc.set(id, (v + by).clamp(p.min ?? -1e9, p.max ?? 1e9)) : null,
         builder: (_, h) => Container(
@@ -140,15 +132,12 @@ class Dice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), doc = x.doc;
-    final on = !RowOff.offOf(context);
     return Hov(
-      onTap: on
-          ? () {
-              final v = doc.get(id) ?? 0, hi = p.max ?? 9999, lo = p.min ?? 0;
-              doc.set(id, (lo + (v * 7919 + 104729) % (hi - lo + 1)).roundToDouble());
-            }
-          : null,
-      builder: (_, h) => CustomPaint(size: const Size(22, 22), painter: _DicePaint(h && on, (doc.get(id) ?? 0).round() % 6 + 1)),
+      onTap: () {
+        final v = doc.get(id) ?? 0, hi = p.max ?? 9999, lo = p.min ?? 0;
+        doc.set(id, (lo + (v * 7919 + 104729) % (hi - lo + 1)).roundToDouble());
+      },
+      builder: (_, h) => CustomPaint(size: const Size(22, 22), painter: _DicePaint(h, (doc.get(id) ?? 0).round() % 6 + 1)),
     );
   }
 }

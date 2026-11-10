@@ -168,7 +168,6 @@ class ChooserState extends State<Chooser> {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context), cur = x.doc.s2[widget.id] ?? widget.options.first;
-    final on = !RowOff.offOf(context);
     void pick(String o) {
       x.doc.str(widget.id, o);
       _set(false);
@@ -178,25 +177,19 @@ class ChooserState extends State<Chooser> {
     final field = Hov(
       onTap: () => _set(!_open),
       builder: (_, h) => Container(
-        height: Pop.on(context) ? Pop.cell : cellH,
+        height: Pop.cell,
         padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
-        decoration: Pop.on(context)
-            ? BoxDecoration(
-                color: h || _open ? Grey.g10 : Pop.well,
-                borderRadius: BorderRadius.all(Shape.r(6)),
-                border: Border.all(color: _open ? Grey.g63 : const Color(0x00000000)),
-              )
-            : BoxDecoration(
-                color: !on ? Grey.g10 : Grey.g13,
-                borderRadius: BorderRadius.all(Shape.r(4)),
-                border: Border.all(color: _open ? Grey.g63 : (h && on ? Grey.g38 : const Color(0x00000000))),
-              ),
+        decoration: BoxDecoration(
+          color: h || _open ? Grey.g10 : Pop.well,
+          borderRadius: BorderRadius.all(Shape.r(6)),
+          border: Border.all(color: _open ? Grey.g63 : const Color(0x00000000)),
+        ),
         // (a menu says so by its mark, not a word)
         child: Row(
           children: [
             // the default value (the first option) is dim; a chosen one is bright (dim = default)
             Expanded(
-              child: Text(cur, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(!on || cur == widget.options.first ? Grey.g56 : Grey.g91)),
+              child: Text(cur, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.name(cur == widget.options.first ? Grey.g56 : Grey.g91)),
             ),
             FoldMark(open: true, hot: _open),
           ],
@@ -207,37 +200,34 @@ class ChooserState extends State<Chooser> {
     return Focus(
       focusNode: _node,
       onKeyEvent: _key,
-      child: IgnorePointer(
-        ignoring: !on,
-        child: CompositedTransformTarget(
-          link: _link,
-          // (the window's own overlay, not the nearest one: a list that hangs out of its pane is still under the hand)
-          child: OverlayPortal.targetsRootOverlay(
-            controller: _portal,
-            overlayChildBuilder: (_) {
-              final w = (context.findRenderObject() as RenderBox?)?.size.width ?? 160;
-              return Stack(
-                children: [
-                  CompositedTransformFollower(
-                    link: _link,
-                    showWhenUnlinked: false,
-                    targetAnchor: _up ? Alignment.topLeft : Alignment.bottomLeft,
-                    followerAnchor: _up ? Alignment.bottomLeft : Alignment.topLeft,
-                    offset: Offset(0, _up ? -4 : 4),
-                    child: Align(
-                      alignment: _up ? Alignment.bottomLeft : Alignment.topLeft,
-                      child: TapRegion(
-                        groupId: _link,
-                        onTapOutside: (_) => _set(false),
-                        child: SizedBox(width: math.max(w, 160), child: _menu(context, cur, pick)),
-                      ),
+      child: CompositedTransformTarget(
+        link: _link,
+        // (the window's own overlay, not the nearest one: a list that hangs out of its pane is still under the hand)
+        child: OverlayPortal.targetsRootOverlay(
+          controller: _portal,
+          overlayChildBuilder: (_) {
+            final w = (context.findRenderObject() as RenderBox?)?.size.width ?? 160;
+            return Stack(
+              children: [
+                CompositedTransformFollower(
+                  link: _link,
+                  showWhenUnlinked: false,
+                  targetAnchor: _up ? Alignment.topLeft : Alignment.bottomLeft,
+                  followerAnchor: _up ? Alignment.bottomLeft : Alignment.topLeft,
+                  offset: Offset(0, _up ? -4 : 4),
+                  child: Align(
+                    alignment: _up ? Alignment.bottomLeft : Alignment.topLeft,
+                    child: TapRegion(
+                      groupId: _link,
+                      onTapOutside: (_) => _set(false),
+                      child: SizedBox(width: math.max(w, 160), child: _menu(context, cur, pick)),
                     ),
                   ),
-                ],
-              );
-            },
-            child: TapRegion(groupId: _link, child: field), // (a press on it shuts the list by its own tap, not shut and opened again)
-          ),
+                ),
+              ],
+            );
+          },
+          child: TapRegion(groupId: _link, child: field), // (a press on it shuts the list by its own tap, not shut and opened again)
         ),
       ),
     );
@@ -249,7 +239,7 @@ class InspHeader extends StatelessWidget {
   const InspHeader({super.key});
   @override
   Widget build(BuildContext context) {
-    final x = Ctx.of(context), doc = x.doc, ed = const Ed();
+    final doc = Ctx.of(context).doc;
     final w = doc.kindWord; // (what the host calls it, where the kinds have no word)
     final (word, glyph) = switch (doc.kind) {
       Kind.shape when w != null => (
@@ -264,90 +254,45 @@ class InspHeader extends StatelessWidget {
       Kind.text => ('Text', G.text),
       Kind.camera => ('Camera', G.camera),
       Kind.group => ('Group', G.grid),
-      Kind.several => ('Layers', null),
       Kind.none => ('', null),
     };
-    if (Pop.on(context)) {
-      return Container(
-        height: Shape.z(34),
-        padding: EdgeInsets.symmetric(horizontal: Pop.inset),
-        color: Pop.card,
-        child: Row(
-          children: [
-            Container(
-              width: Shape.z(22),
-              height: Shape.z(22),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(color: Pop.accent, borderRadius: BorderRadius.all(Shape.r(6))),
-              child: glyph == null ? null : Glyph(glyph, size: Shape.z(13), color: Pop.onAccent),
-            ),
-            SizedBox(width: Shape.s(8)),
-            Flexible(
-              child: FittedBox(
-                // (drawn smaller, never cut)
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  doc.name,
-                  maxLines: 1,
-                  style: T.title(Grey.g100).copyWith(fontSize: T.px(13), fontWeight: FontWeight.w700, height: 1),
-                ),
-              ),
-            ),
-            SizedBox(width: Shape.s(6)),
-            Text(doc.kind == Kind.several ? 'Several' : word, maxLines: 1, style: T.label(Grey.g56)),
-            const Spacer(),
-            Text('Animate all', style: T.label(Grey.g63)),
-            SizedBox(width: Shape.s(6)),
-            OnOff(
-              on: doc.animateAll,
-              onChanged: (v) {
-                doc.animateAll = v;
-                doc.poke();
-              },
-            ),
-          ],
-        ),
-      );
-    }
-    return Padding(
-      padding: EdgeInsets.only(bottom: Shape.s(4)),
+    return Container(
+      height: Shape.z(34),
+      padding: EdgeInsets.symmetric(horizontal: Pop.inset),
+      color: Pop.card,
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (glyph != null) ...[Glyph(glyph, size: Shape.z(16), color: Grey.g76), SizedBox(width: Shape.s(8))],
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  ed.kick(doc.kind == Kind.several ? 'Several selected' : word),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: ed.kickStyle(Grey.g56),
-                ),
-                SizedBox(height: Shape.s(4)),
-                Text(doc.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: ed.nameStyle()),
-              ],
-            ),
+          Container(
+            width: Shape.z(22),
+            height: Shape.z(22),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: Pop.accent, borderRadius: BorderRadius.all(Shape.r(6))),
+            child: glyph == null ? null : Glyph(glyph, size: Shape.z(13), color: Pop.onAccent),
           ),
           SizedBox(width: Shape.s(8)),
-          // contract: while on, editing an unkeyed value writes its first key at the playhead (D2).
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Animate all', style: T.label(doc.animateAll ? Grey.g95 : Grey.g63)),
-              SizedBox(height: Shape.s(4)),
-              OnOff(
-                on: doc.animateAll,
-                onChanged: (v) {
-                  doc.animateAll = v;
-                  doc.poke();
-                },
+          Flexible(
+            child: FittedBox(
+              // (drawn smaller, never cut)
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                doc.name,
+                maxLines: 1,
+                style: T.title(Grey.g100).copyWith(fontSize: T.px(13), fontWeight: FontWeight.w700, height: 1),
               ),
-            ],
+            ),
+          ),
+          SizedBox(width: Shape.s(6)),
+          Text(word, maxLines: 1, style: T.label(Grey.g56)),
+          const Spacer(),
+          Text('Animate all', style: T.label(Grey.g63)),
+          SizedBox(width: Shape.s(6)),
+          OnOff(
+            on: doc.animateAll,
+            onChanged: (v) {
+              doc.animateAll = v;
+              doc.poke();
+            },
           ),
         ],
       ),

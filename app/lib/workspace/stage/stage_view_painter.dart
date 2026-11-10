@@ -41,8 +41,7 @@ class _ViewPainter extends CustomPainter {
   final String? sel, hover;
   final bool grid, safe;
 
-  Offset _scr(Offset doc) => v.toScreen(WsArt.toView(scene, doc));
-  Path _boxPath(ArtBox b) => Path()..addPolygon([for (final p in b.corners) _scr(p)], true);
+  Path _boxPath(ArtBox b) => Path()..addPolygon([for (final p in b.corners) v.toScreen(p)], true);
 
   @override
   void paint(Canvas c, Size size) {
@@ -63,7 +62,7 @@ class _ViewPainter extends CustomPainter {
     _guides(c);
     if (trail case final w? when w.length > 1) {
       // (thin, an arrow every so often the way it goes)
-      final line = _line(WsT.accent.withValues(alpha: .75), 1.2), pts = [for (final q in w) _scr(q)];
+      final line = _line(WsT.accent.withValues(alpha: .75), 1.2), pts = [for (final q in w) v.toScreen(q)];
       c.drawPoints(PointMode.polygon, pts, line);
       for (var i = 6; i + 1 < pts.length; i += 12) {
         final d = pts[i + 1] - pts[i];
@@ -87,7 +86,7 @@ class _ViewPainter extends CustomPainter {
     if (pivots) {
       for (final MapEntry(:key, :value) in scene.boxes.entries) {
         if (key == sel) continue;
-        final a = _scr(value.anchor);
+        final a = v.toScreen(value.anchor);
         c.drawCircle(a, 3.5, _line(Grey.g00, 3));
         c.drawCircle(a, 3.5, _line(Grey.g91, 1.2));
       }
@@ -99,7 +98,7 @@ class _ViewPainter extends CustomPainter {
     if (marked) {
       // (the inside marks its frame, corners, sides, knob and pivot; its own handles are drawn here, over them)
       if ((WsArt.boxOf(scene, sel), scene.layer(sel)) case (final b?, final l?)) {
-        _own(c, _handles(_scr, b, knob: l.kind != WsKind.camera && l.id != 'bg', form: form.$1, round: form.$2, crop: crop));
+        _own(c, _handles(v.toScreen, b, knob: l.kind != WsKind.camera && l.id != 'bg', form: form.$1, round: form.$2, crop: crop));
       }
       return c.restore();
     }
@@ -164,7 +163,7 @@ class _ViewPainter extends CustomPainter {
   /// A camera in the working eye: its frame, crossed, as AbsentMotion's DrawCameraFrames, the lines to where it is and
   /// the point it looks at as After Effects' camera. Picked, its corners take a hand (the frame's size is the lens).
   void _gizmo(Canvas c, String id) {
-    final g = [for (final p in scene.gizmo(id)) p == null ? null : _scr(p)], picked = id == sel;
+    final g = [for (final p in scene.gizmo(id)) p == null ? null : v.toScreen(p)], picked = id == sel;
     if (g.length < 6) return;
     final ink = picked ? WsT.accent : Grey.g76, frame = [g[0], g[1], g[2], g[3]].nonNulls.toList(), eye = g[5];
     if (frame.length == 4) {
@@ -198,10 +197,10 @@ class _ViewPainter extends CustomPainter {
   }
 
   void _selection(Canvas c, ArtBox b, ArtLayer l) {
-    final h = _handles(_scr, b, knob: l.kind != WsKind.camera && l.id != 'bg', form: form.$1, round: form.$2, crop: crop),
+    final h = _handles(v.toScreen, b, knob: l.kind != WsKind.camera && l.id != 'bg', form: form.$1, round: form.$2, crop: crop),
         pts = [for (var i = 0; i < 4; i++) h['corner $i']!];
     _legible(c, Path()..addPolygon(pts, true), WsT.accent);
-    final top = _scr(b.top);
+    final top = v.toScreen(b.top);
     final lit = WsT.accent.withValues(alpha: 1), seen = (String k) => grip == null || grip == k;
     if (h['turn'] case final knob? when seen('turn')) {
       _legible(

@@ -237,7 +237,7 @@ class EaseCards extends StatelessWidget {
     );
     final axis = across ? Axis.horizontal : Axis.vertical;
     final gap = across ? Size(this.side * .4, side.height) : Size(side.width, this.side * .4);
-    Widget arrow() => CustomPaint(size: gap, painter: _Arrow(Grey.g56, across));
+    Widget arrow() => CustomPaint(size: gap, painter: _Arrow(across));
     Widget by(int i) => switch (_by(said(cards[i]))) {
       // (how it takes what is above it)
       _By.through => arrow(),
@@ -325,8 +325,7 @@ class EaseOff extends StatelessWidget {
 }
 
 class _Arrow extends CustomPainter {
-  const _Arrow(this.ink, this.across);
-  final Color ink;
+  const _Arrow(this.across);
   final bool across;
   @override
   void paint(Canvas c, Size s) {
@@ -338,7 +337,7 @@ class _Arrow extends CustomPainter {
     }
     final x = s.width / 2,
         p = Paint()
-          ..color = ink
+          ..color = Grey.g56
           ..strokeWidth = 1.4
           ..style = PaintingStyle.stroke
           ..strokeCap = StrokeCap.round
@@ -354,7 +353,7 @@ class _Arrow extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_Arrow o) => o.ink != ink || o.across != across;
+  bool shouldRepaint(_Arrow o) => o.across != across;
 }
 
 /// An empty frame, dashed: it says it takes one (Monster Train's empty slots).

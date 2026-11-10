@@ -167,8 +167,8 @@ Map<String, Offset> _handles(
     if (knob) 'turn': top + n * _V.stem,
     'anchor': scr(b.anchor),
     'body': scr(b.c),
-    if (const ['rect', 'polygon', 'star', 'squircle', 'chamfer', 'cog'].contains(form)) 'round': _shapeGrip(c).roundAt(round),
-    if (const ['polygon', 'star', 'cog'].contains(form)) 'points': (c[1] + c[2]) / 2 + _shapeGrip(c).u * 18,
+    if (const ['rect', 'polygon', 'star', 'squircle', 'chamfer', 'cog'].contains(form)) 'round': _gripOf(c).roundAt(round),
+    if (const ['polygon', 'star', 'cog'].contains(form)) 'points': (c[1] + c[2]) / 2 + _gripOf(c).u * 18,
     if (crop.length == 4) ...{
       'crop 0': (c[0] + c[3]) / 2 + (c[1] - c[0]) * crop[0],
       'crop 1': (c[0] + c[1]) / 2 + (c[3] - c[0]) * crop[1],
@@ -197,5 +197,3 @@ extension on ({Offset c0, Offset u, Offset w, double short}) {
   /// How round a hand at `at` makes the corners: how far in along the diagonal, a share of the shorter side.
   double roundOf(Offset at) => (((at - c0).dx * (u + w).dx + (at - c0).dy * (u + w).dy) / 2 / short).clamp(0.0, .5);
 }
-
-({Offset c0, Offset u, Offset w, double short}) _shapeGrip(List<Offset> c) => _gripOf(c);

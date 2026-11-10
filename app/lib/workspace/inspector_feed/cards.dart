@@ -131,7 +131,6 @@ List<Fx> _makeCards(Ws ws, Motolii m, int t) {
       if (title == 'Sound' ||
           !wsSound(m, t)) // (a sound has its volume and no picture to place: Alight Motion's audio layer, docs/internal/reports/alight_motion/alight_ui.md 177)
         Fx(
-          'v',
           title,
           'struct Params {\n${[
             for (final n in names)

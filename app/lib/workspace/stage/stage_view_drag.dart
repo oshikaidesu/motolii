@@ -6,7 +6,7 @@ part of 'stage_view.dart';
 
 extension _StageViewDrag on _StageViewState {
   Rect _bounds(ArtBox b) {
-    final p = [for (final c in b.corners) WsArt.toView(widget.scene, c)];
+    final p = b.corners;
     return p.skip(1).fold(Rect.fromPoints(p[0], p[0]), (r, q) => r.expandToInclude(Rect.fromPoints(q, q)));
   }
 
@@ -140,7 +140,7 @@ extension _StageViewDrag on _StageViewState {
       }
       for (final p in [...m.points(picked), for (final (h, _) in m.handles(picked)) h]) {
         // (a path's own point, moved with its handles; or a handle alone: the inside takes the nearest)
-        final d = (v.toScreen(WsArt.toView(widget.scene, p)) - local).distance;
+        final d = (v.toScreen(p) - local).distance;
         if (d > near) continue;
         near = d;
         by = 'point';
@@ -156,7 +156,7 @@ extension _StageViewDrag on _StageViewState {
       }
       if (by != null) {
         m.take(picked);
-        final at = _doc(v, local); // (points of the picture, as the inside counts them)
+        final at = v.toComp(local); // (points of the picture, as the inside counts them)
         m.dragUpdate('grip', at.dx, at.dy);
         if (ws.playing) ws.playing = false;
         _drag = (from: local, moved: false, by: by);

@@ -25,7 +25,6 @@ class NumFieldState extends State<NumField> {
   DateTime? _lastUp;
 
   Ctx get _x => Ctx.read(context);
-  bool get _on => widget.enabled && !(context.getInheritedWidgetOfExactType<RowOff>()?.off ?? false);
   bool get _bounded => widget.min != null && widget.max != null;
   double get _zeroAt => _bounded ? ((0 - widget.min!) / (widget.max! - widget.min!)).clamp(0.0, 1.0) : 0;
 
@@ -129,11 +128,9 @@ class NumFieldState extends State<NumField> {
       ),
       if (PastRange.of(context) case final f?)
         ('past', _pastCard ? 'Stop at Range Ends' : 'Go Past Range Ends', () => doc.flag(f, !_pastCard)), // (its whole card)
-      if (ks != null) ...[
-        if (ks != KeyS.at) ('key', 'Key this frame', () => doc.setKey(id, KeyS.at)),
-        if (ks == KeyS.at) ('unkey', 'Remove key', () => doc.setKey(id, KeyS.anim)),
-        if (ks != KeyS.off) ('unanimate', 'Remove animation', () => doc.setKey(id, KeyS.off)),
-      ],
+      if (ks != KeyS.at) ('key', 'Key this frame', () => doc.setKey(id, KeyS.at)),
+      if (ks == KeyS.at) ('unkey', 'Remove key', () => doc.setKey(id, KeyS.anim)),
+      if (ks != KeyS.off) ('unanimate', 'Remove animation', () => doc.setKey(id, KeyS.off)),
     ];
   }
 
@@ -167,7 +164,7 @@ class NumFieldState extends State<NumField> {
 
   // (where the key mark is drawn, and what it says: a press near it keys the value there, or takes the key here away)
   Offset? _keyAt;
-  KeyS? _keys;
+  KeyS _keys = KeyS.off;
 
   bool _inMe(Offset at) {
     final box = context.findRenderObject() as RenderBox?;
@@ -175,7 +172,7 @@ class NumFieldState extends State<NumField> {
   }
 
   void _onDown(PointerDownEvent e) {
-    if (!_on || _editing) return;
+    if (_editing) return;
     if (e.buttons == kSecondaryButton) {
       // (After Effects' and Blender's right click on a value; every number, its row or an effect's knob alike: all by the mouse alone, 10/29)
       rightAt = e.pointer;
@@ -256,14 +253,14 @@ class NumFieldState extends State<NumField> {
   // panel's modifier rule), so a slide and a scrub of the same length move a value the same amount. An up/down slide is not claimed, so it scrolls
   // the panel. No button needs holding (do-not-repeat 4).
   void _onSignal(PointerSignalEvent e) {
-    if (e is! PointerScrollEvent || !_on || _editing) return;
+    if (e is! PointerScrollEvent || _editing) return;
     final d = e.scrollDelta;
     if (d.dx.abs() <= d.dy.abs()) return;
     GestureBinding.instance.pointerSignalResolver.register(e, (ev) => _slide((ev as PointerScrollEvent).scrollDelta.dx));
   }
 
   void _onPan(PointerPanZoomUpdateEvent e) {
-    if (!_on || _editing) return;
+    if (_editing) return;
     final d = e.localPanDelta;
     if (d.dx.abs() > d.dy.abs()) _slide(d.dx);
   }
@@ -299,7 +296,7 @@ class NumFieldState extends State<NumField> {
       );
       return KeyEventResult.handled;
     }
-    if (_editing || !_on) return KeyEventResult.ignored;
+    if (_editing) return KeyEventResult.ignored;
     if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
     final k = e.logicalKey;
     if (k == LogicalKeyboardKey.escape && _drag && _moved) {
@@ -335,7 +332,7 @@ class NumFieldState extends State<NumField> {
 
   void _startEdit([String? typed]) {
     // (typed: the number begun with that character)
-    if (!mounted || _editing || !_on) return;
+    if (!mounted || _editing) return;
     final v = _x.doc.get(widget.id);
     _ctl.text = typed ?? (v == null ? '' : fmt(v, widget.decimals));
     _ctl.selection = typed != null ? TextSelection.collapsed(offset: _ctl.text.length) : TextSelection(baseOffset: 0, extentOffset: _ctl.text.length);
@@ -425,23 +422,17 @@ class NumFieldState extends State<NumField> {
   @override
   Widget build(BuildContext context) {
     final x = Ctx.of(context);
-    final v = x.doc.get(widget.id), on = _on;
+    final v = x.doc.get(widget.id);
     final live = _drag && _moved;
-    const idle = Color(0x00000000);
-    final Color edge = live ? C.mode.withValues(alpha: .8) : (_focus || _editing ? Grey.g63 : (_hover && on ? Grey.g38 : idle));
-    final pop = Pop.on(context);
-    final picked = pop && x.doc.isPicked(widget.id);
-    final fillC = pop
-        ? (!on ? Grey.g10 : (picked ? Color.alphaBlend(Pop.accent.withValues(alpha: .14), Pop.well) : (_hover || live ? Grey.g20 : Pop.well)))
-        : (!on ? Grey.g10 : Grey.g13);
+    final picked = x.doc.isPicked(widget.id);
+    final fillC = picked ? Color.alphaBlend(Pop.accent.withValues(alpha: .14), Pop.well) : (_hover || live ? Grey.g20 : Pop.well);
     return LayoutBuilder(
       builder: (context, box) {
         final w = box.maxWidth;
         _w = w;
-        final row = pop ? RowInfo.of(context) : null;
         final showUnit = w >= wUnit, tight = w < wTight;
         final t = (_bounded && v != null) ? ((v - widget.min!) / (widget.max! - widget.min!)).clamp(0.0, 1.0) : 0.0;
-        String unit = widget.unit ?? '';
+        String unit = widget.unit;
         if (widget.turns && v != null && v.abs() >= 360 && w >= 120) unit = '° ${(v / 360).truncate()}x ${fmt(v.remainder(360), 0)}';
         Widget valueText() {
           if (v == null) return Text('Mixed', style: T.label(Grey.g76));
@@ -454,13 +445,9 @@ class NumFieldState extends State<NumField> {
                 children: [
                   TextSpan(
                     text: fmt(v, widget.decimals, tight: tight), // (its places fixed, as Push shows them: a number does not jump in width as it moves)
-                    style: widget.caption != null
-                        ? blockValue(on ? Grey.g95 : Grey.g56)
-                        : pop
-                        ? T.value(on ? Grey.g95 : Grey.g56).copyWith(fontWeight: FontWeight.w600)
-                        : T.value(on ? Grey.g95 : Grey.g56),
+                    style: blockValue(Grey.g95),
                   ),
-                  if (showUnit && unit.isNotEmpty) TextSpan(text: pop ? '\u2009$unit' : ' $unit', style: T.label(pop ? Grey.g44 : Grey.g56)),
+                  if (showUnit && unit.isNotEmpty) TextSpan(text: '\u2009$unit', style: T.label(Grey.g44)),
                 ],
               ),
               maxLines: 1,
@@ -470,14 +457,11 @@ class NumFieldState extends State<NumField> {
         }
 
         final lead = _err && w >= 150 ? Text('Number required', style: T.label(Role.error)) : null;
-        final block = widget.caption != null;
         // contract: animated = a dim dot, keyed at the playhead = a lit dot (the automation blip, not a column). A value
         // that takes keys shows its mark always, hollow when it has none, and a press on it keys it there (Alight Motion's
         // diamond beside each value, After Effects' and Premiere Pro's stopwatch: golf_noise.md (59)).
-        final ks = pop ? (x.doc.keys[widget.id] ?? row?.keys) : null;
-        _keyAt = ks != null && (ks != KeyS.off || x.doc.keys.containsKey(widget.id))
-            ? (block ? Offset(w - Pop.tilePad - 3, Pop.tile - 10) : Offset(w - 6, 6))
-            : null;
+        final ks = x.doc.keys[widget.id] ?? RowInfo.of(context).keys;
+        _keyAt = ks != KeyS.off || x.doc.keys.containsKey(widget.id) ? Offset(w - Pop.tilePad - 3, Pop.tile - 10) : null;
         _keys = ks;
         final editor = _editing
             ? TextGestures(
@@ -486,11 +470,11 @@ class NumFieldState extends State<NumField> {
                   rendererIgnoresPointer: true,
                   controller: _ctl,
                   focusNode: _ef,
-                  style: block ? blockValue(Grey.g95) : T.value(Grey.g95),
+                  style: blockValue(Grey.g95),
                   cursorColor: Grey.g95,
                   backgroundCursorColor: Grey.g20,
                   selectionColor: Role.selected.withValues(alpha: .4),
-                  textAlign: block ? TextAlign.left : (pop ? TextAlign.center : TextAlign.right),
+                  textAlign: TextAlign.left,
                   maxLines: 1,
                   selectAllOnFocus: false, // (_startEdit says the selection: all of the number when begun by a click or Return; the caret after a number begun by typing it, which Flutter's own select-all on a desktop's focus took, so the next key replaced the first: golf P05, "230" came out 0)
                   keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
@@ -510,18 +494,17 @@ class NumFieldState extends State<NumField> {
             glyph: widget.glyph,
             caption: widget.caption,
             width: w,
-            height: block ? Pop.tile : (pop ? Pop.cell : cellH),
+            height: Pop.tile,
             fillColor: fillC,
-            borderColor: picked ? Pop.accentInk.withValues(alpha: .7) : (pop && !(_focus || _editing || live) ? const Color(0x00000000) : edge),
-            rangeColor: on ? Grey.g56 : Grey.g44,
+            borderColor: picked
+                ? Pop.accentInk.withValues(alpha: .7)
+                : (live ? C.mode.withValues(alpha: .8) : (_focus || _editing ? Grey.g63 : const Color(0x00000000))),
+            rangeColor: Grey.g56,
             fill: _bounded && v != null ? t : null,
             zeroAt: _zeroAt,
             bipolar: _bounded && widget.bipolar,
-            block: block,
-            pop: pop,
             editing: _editing,
             glyphTall: widget.glyphTall,
-            on: on,
             hot: _hover,
             live: live,
             keyDot: _keyAt == null ? null : (ks == KeyS.at ? Pop.keyDot : (ks == KeyS.anim ? Pop.keyDot.withValues(alpha: .5) : Grey.g56)),
@@ -549,7 +532,7 @@ class NumFieldState extends State<NumField> {
               gestures: {
                 ScrubClaim: GestureRecognizerFactoryWithHandlers<ScrubClaim>(
                   () => ScrubClaim(),
-                  (r) => r.takes = (e) => _on && !_editing && !(widget.glyph != null && widget.glyphOwnsPointer && _inGlyph(e.localPosition)),
+                  (r) => r.takes = (e) => !_editing && !(widget.glyph != null && widget.glyphOwnsPointer && _inGlyph(e.localPosition)),
                 ),
               },
               child: Listener(
@@ -560,7 +543,7 @@ class NumFieldState extends State<NumField> {
                 onPointerSignal: _onSignal,
                 onPointerPanZoomUpdate: _onPan,
                 child: MouseRegion(
-                  cursor: !on ? SystemMouseCursors.basic : (_editing ? SystemMouseCursors.text : SystemMouseCursors.resizeLeftRight),
+                  cursor: _editing ? SystemMouseCursors.text : SystemMouseCursors.resizeLeftRight,
                   onEnter: (_) => setState(() => _hover = true),
                   onExit: (_) => setState(() => _hover = false),
                   // (past what it vouches for, or going there under the hand: drawn the other way about)

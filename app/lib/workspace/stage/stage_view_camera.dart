@@ -45,7 +45,7 @@ extension _StageViewCamera on _StageViewState {
   bool _gizmoDragStart(_View v, Offset local, {required bool inside}) {
     final ws = WsScope.read(context), m = ws.inside!, scene = widget.scene, at = ws.frame / Ws.fps;
     for (final id in scene.gizmos.keys) {
-      final g = [for (final p in scene.gizmo(id)) p == null ? null : v.toScreen(WsArt.toView(scene, p))], cam = int.parse(id);
+      final g = [for (final p in scene.gizmo(id)) p == null ? null : v.toScreen(p)], cam = int.parse(id);
       if (g.length < 6) continue;
       final frame = [g[0], g[1], g[2], g[3]].nonNulls.toList();
       bool on(Offset? p, double reach) => p != null && (p - local).distance <= reach;

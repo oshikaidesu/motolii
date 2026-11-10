@@ -14,29 +14,27 @@ class NumField extends StatefulWidget {
   const NumField({
     super.key,
     required this.id,
-    this.unit = '',
-    this.decimals = 0,
-    this.min,
-    this.max,
-    this.open = false,
-    this.validMin,
-    this.validMax,
-    this.step = 1,
-    this.perPx = 1,
-    this.enabled = true,
-    this.turns = false,
-    this.bipolar = false,
-    this.caption,
-    this.glyph,
-    this.glyphOwnsPointer = false,
-    this.glyphTall = false,
+    required this.unit,
+    required this.decimals,
+    required this.min,
+    required this.max,
+    required this.open,
+    required this.validMin,
+    required this.validMax,
+    required this.step,
+    required this.perPx,
+    required this.turns,
+    required this.bipolar,
+    required this.caption,
+    required this.glyph,
+    required this.glyphOwnsPointer,
+    required this.glyphTall,
   });
-  final String id;
-  final String? unit;
+  final String id, unit;
   final int decimals;
   final double? min, max;
   final double step, perPx;
-  final bool enabled, turns;
+  final bool turns;
 
   /// [min] and [max] are how far a scrub goes; a number typed goes past them, only a [min] of 0 or more holding
   /// (After Effects' slider and valid ranges, PF_FloatSliderDef).
@@ -49,10 +47,10 @@ class NumField extends StatefulWidget {
   /// A range around zero fills out from the middle.
   final bool bipolar;
 
-  /// Block form: [caption] on top, the value large under it, [glyph] (a picture of the value) in the top-right corner.
+  /// [caption] on top, the value large under it, [glyph] (a picture of the value) in the top-right corner.
   /// With [glyphOwnsPointer] a press on the glyph is the glyph's (a dial, a die), not a scrub.
   /// contract: every number in the Inspector scrubs sideways, whatever it means (a Y, a height); only a glyph may move otherwise.
-  final String? caption;
+  final String caption;
   final Widget? glyph;
   final bool glyphOwnsPointer;
 

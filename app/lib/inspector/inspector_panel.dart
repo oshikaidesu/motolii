@@ -69,7 +69,7 @@ class AddEffectRow extends StatelessWidget {
 
 /// The Inspector: one scrolling stack of the host's cards. Needs an InspHost above it.
 class InspectorPanel extends StatefulWidget {
-  const InspectorPanel({super.key, this.width = 372, this.height = 720});
+  const InspectorPanel({super.key, required this.width, required this.height});
   final double width, height;
   @override
   State<InspectorPanel> createState() => _InspectorPanelState();

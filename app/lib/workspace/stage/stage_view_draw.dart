@@ -15,7 +15,7 @@ extension _StageViewDraw on _StageViewState {
     final path = straight ? (Path()..addRect(Rect.fromPoints(a, z))) : (Path()..addPolygon(round, true));
     ws.pickMany([
       for (final l in widget.scene.layers)
-        if (widget.scene.box(l.id) case final b? when path.contains(v.toScreen(WsArt.toView(widget.scene, b.c)))) l.id,
+        if (widget.scene.box(l.id) case final b? when path.contains(v.toScreen(b.c))) l.id,
     ]);
   }
 
@@ -82,7 +82,7 @@ extension _StageViewDraw on _StageViewState {
   void _fit(_View v, List<Offset> way) {
     final ws = WsScope.read(context), m = ws.inside!;
     _penning = false; // (a path of its own: the pen's next point begins another)
-    final points = [for (final p in way) _doc(v, p)], error = (_doc(v, way.first + const Offset(8, 0)) - points.first).distance;
+    final points = [for (final p in way) v.toComp(p)], error = (v.toComp(way.first + const Offset(8, 0)) - points.first).distance;
     final closed = (points.first - points.last).distance < 4 * error;
     m.later('together', number: 1);
     var made = 0;
@@ -107,7 +107,7 @@ extension _StageViewDraw on _StageViewState {
     setState(() => _brush = null);
     if (way == null || way.length < 2 || m == null) return;
     final options = StrokeOptions(size: widget.brushSize, simulatePressure: true, isComplete: true);
-    final points = getStrokePoints([for (final p in way) PointVector.fromOffset(offset: _doc(v, p))], options: options);
+    final points = getStrokePoints([for (final p in way) PointVector.fromOffset(offset: v.toComp(p))], options: options);
     if (points.length < 2) return;
     getStrokeOutlinePoints(points, options: options, rememberSimulatedPressure: true);
     final said = [

@@ -284,7 +284,6 @@ class CreateShelf extends StatelessWidget {
           child: groups.isEmpty
               ? DockEmpty(c.query)
               : DockMasonry(
-                  minColumn: 300,
                   weights: [for (final (_, items) in groups) 1 + items.length / 3],
                   children: [
                     for (final (g, items) in groups)

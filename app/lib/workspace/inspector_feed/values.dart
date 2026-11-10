@@ -34,7 +34,7 @@ double _unshown(Motolii m, int t, String n, double x) {
 
 // (the moment of the picture on the stage, at a frame: what is read there was set down by the inside as it drew it,
 //  not waited for while it tells the stage a moment the playhead has just been put at)
-double _drawn(Ws ws) => ws.inside?.renderedAt ?? ws.frame / Ws.fps;
+double _drawn(Ws ws) => ws.inside?.now ?? ws.frame / Ws.fps;
 
 /// Joined: only where a thing is, how large and how turned (the inspector's properties), as the stage's readout shows them:
 /// not the cards' hundreds of numbers [wsTransform] reads.
