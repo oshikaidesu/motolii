@@ -22,6 +22,8 @@
 #include <string>
 #include <vector>
 
+namespace motolii {
+
 // `program` is the program a closed pack was written for. Such a recipe is
 // listed on the Program shelf instead of Create; it is "" for the recipes of
 // Create.
@@ -32,5 +34,7 @@ struct DocRecipe {
 };
 // Returns all recipes, rereading the files only when they have changed.
 std::vector<DocRecipe> doc_recipes();
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_SCRIPTS_FOLDERS_H_

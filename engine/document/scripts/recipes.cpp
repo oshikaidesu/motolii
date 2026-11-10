@@ -26,6 +26,8 @@
 #include "stage/effects/screen_fx.h"
 #include "stage/effects/viewer_settings.h"
 
+namespace motolii {
+
 namespace {
 
 // Returns the tile fields for a file, as "\timage\thome\tsame".
@@ -453,3 +455,5 @@ int doc_make(Doc& d, const char* name) {
   }
   return doc_acted(d) && now ? first : 0;
 }
+
+}  // namespace motolii

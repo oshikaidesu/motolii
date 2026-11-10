@@ -13,6 +13,8 @@
 #include "community/script_runner/script_runner.h"
 #include "document/kinds.h"
 
+namespace motolii {
+
 // A script attached to a layer, see
 // engine/community/script_runner/script_runner.h. The
 // parameters declared in the head of the file become properties of the layer,
@@ -123,4 +125,7 @@ std::vector<DocScript*> doc_scripts_on(Doc& d, int layer);
 // x to w, are separate properties and are joined into one parameter that holds
 // numbers in turn. See shelves/effects/sources/from_absent.py.
 std::vector<AbsentEffect> doc_absent_on(Doc& d, int layer, double now);
+
+}  // namespace motolii
+
 #endif  // MOTOLII_DOCUMENT_SCRIPTS_SCRIPTS_H_

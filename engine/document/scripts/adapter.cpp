@@ -34,6 +34,8 @@
 #include "document/undo.h"
 #include "shelf/shelf_folders.h"
 
+namespace motolii {
+
 namespace {
 
 // Writes the animated parameters of imported code as keyframes on the layer
@@ -404,3 +406,5 @@ std::string doc_code_saved(Doc& d, const std::string& file) {
     isf_file(file), doc_scripts_kept(d).why[file] = isf_trouble(file);
   return doc_scripts_kept(d).why[file];
 }
+
+}  // namespace motolii

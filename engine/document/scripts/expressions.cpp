@@ -18,6 +18,8 @@
 #include "document/scripts/scripts.h"
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 bool doc_expression(Doc& d, const std::string& file) {
   if (std::filesystem::path(fx_source(file)).extension() != ".js") return false;
   const DocScript* sc = doc_script_of(d, file);
@@ -150,3 +152,5 @@ std::string doc_expressions_said(Doc& d, int layer) {
   for (const std::string& file : doc_fx_list(d, layer)) all += " " + file;
   return all;
 }
+
+}  // namespace motolii

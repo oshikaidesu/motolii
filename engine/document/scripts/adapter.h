@@ -14,6 +14,8 @@
 
 #include "document/kinds.h"
 
+namespace motolii {
+
 // Imports code from `said`, which is a file path, a link to a supported site,
 // or the code itself, and places it on the canvas as described at the top of
 // this file. `picked` is the selected layer, or 0 for none. Returns the layer
@@ -27,5 +29,7 @@ int doc_door(Doc& d, const std::string& said, int picked);
 // called twice for it; the work is done once, decided by the file's
 // modification time.
 std::string doc_code_saved(Doc& d, const std::string& file);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_SCRIPTS_ADAPTER_H_

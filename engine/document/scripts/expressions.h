@@ -20,6 +20,8 @@
 #include "document/kinds.h"
 #include "document/scripts/scripts.h"
 
+namespace motolii {
+
 // Returns whether `file` is an expression: a .js file whose script lays copies.
 bool doc_expression(Doc& d, const std::string& file);
 // Returns `list` without its expressions. Expressions lay copies and draw
@@ -69,4 +71,7 @@ std::vector<ScriptCopy> doc_expressions_lay(Doc& d, int layer,
 // The caller compares it with the previous string to see whether the result it
 // cached is still valid.
 std::string doc_expressions_said(Doc& d, int layer);
+
+}  // namespace motolii
+
 #endif  // MOTOLII_DOCUMENT_SCRIPTS_EXPRESSIONS_H_

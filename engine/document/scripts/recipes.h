@@ -12,6 +12,8 @@
 #include "document/kinds.h"
 #include "document/scripts/folders.h"
 
+namespace motolii {
+
 // Returns every recipe found in the create folders. A recipe is a .js file
 // whose leading comment lines give its name and description, followed by
 // command lines such as "make ...". A p5.js sketch posted as it is has no such
@@ -69,5 +71,7 @@ std::string doc_recipe_code_path(const std::string& name);
 // Returns the first layer it made, or 0 when nothing was made, in which case
 // d.error says why.
 int doc_make(Doc& d, const char* name);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_DOCUMENT_SCRIPTS_RECIPES_H_

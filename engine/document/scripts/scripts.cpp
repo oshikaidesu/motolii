@@ -28,6 +28,8 @@
 #include "stage/effects/thorvg_effect_names.h"
 #include "stage/effects/viewer_settings.h"
 
+namespace motolii {
+
 const DocShown* doc_shown_of(Doc& d, const char* name) {
   for (const DocShown& one : doc_shown)
     if (!strcmp(one.name, name)) return &one;
@@ -231,3 +233,5 @@ std::vector<AbsentEffect> doc_absent_on(Doc& d, int layer, double now) {
       }
   return all;
 }
+
+}  // namespace motolii
