@@ -12,36 +12,50 @@
 // A single QuickJS runtime is shared by all calls, because loading three.core.js
 // takes about 24 ms. Modules it has loaded are cached by name.
 #include "community/three/solid_three.h"
-#include <quickjs.h>
+
+#include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <map>
 #include <mutex>
 #include <sstream>
+#include <string>
+#include <vector>
+
+#include <quickjs.h>
+
+namespace {
 
 // Returns the whole contents of `file`, or an empty string if it cannot be read.
-static std::string solid_text(const std::string& file) {
+std::string solid_text(const std::string& file) {
     std::ifstream in(file);
     std::stringstream all;
     all << in.rdbuf();
     return all.str();
 }
+
+}  // namespace
+
 // See solid_three.h.
 bool solid_is(const std::string& file) { return std::filesystem::path(file).extension() == ".js" && solid_text(file).find("export function solid") != std::string::npos; }
 // See solid_three.h.
 bool solid_reads(const std::string& file) { return solid_text(file).find("k.alpha") != std::string::npos; }
 
+namespace {
+
 // QuickJS module-name normalizer. Resolves the import `name` found in the module
 // `base` to a full path. The bare name 'three' maps to the three.core.js beside
 // the importing file, as in the import map of three.js's examples/*.html.
 // Relative names are resolved against the importing file's directory.
-static char* solid_name(JSContext* cx, const char* base, const char* name, void*) {
+char* solid_name(JSContext* cx, const char* base, const char* name, void*) {
     const std::filesystem::path dir = std::filesystem::path(base).parent_path();
     const std::filesystem::path to = std::string(name) == "three" ? dir / "three.core.js" : name[0] == '.' ? dir / name : std::filesystem::path(name);
     return js_strdup(cx, to.lexically_normal().string().c_str());
 }
 // QuickJS module loader. Compiles the module at the path `name` without running
 // it. Returns null if the file does not compile.
-static JSModuleDef* solid_load(JSContext* cx, const char* name, void*) {
+JSModuleDef* solid_load(JSContext* cx, const char* name, void*) {
     const std::string src = solid_text(name);
     JSValue built = JS_Eval(cx, src.c_str(), src.size(), name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
     if (JS_IsException(built)) return nullptr;
@@ -54,7 +68,7 @@ static JSModuleDef* solid_load(JSContext* cx, const char* name, void*) {
 // the result in globals as flat typed arrays: __pos, __nrm, __uv, __idx and
 // __repeat. Normals are computed if the geometry has none, and an
 // unindexed geometry gets a sequential index. On failure it sets __why.
-static const char* const solid_wrap = R"(
+const char* const solid_wrap = R"(
 const k = globalThis.__k;
 if (globalThis.__cover) k.alpha = { width: k.coverW, height: k.coverH, values: new Uint8Array(globalThis.__cover) };
 try {
@@ -71,13 +85,15 @@ try {
 // Copies the typed array held in the global property `name` of `g` into `into`,
 // reinterpreting its bytes as T. `into` is left unchanged if the property is not
 // a typed array.
-template <typename T> static void solid_array(JSContext* cx, JSValue g, const char* name, std::vector<T>& into) {
+template <typename T> void solid_array(JSContext* cx, JSValue g, const char* name, std::vector<T>& into) {
     JSValue a = JS_GetPropertyStr(cx, g, name);
     size_t from = 0, bytes = 0, each = 0, size = 0;
     JSValue buffer = JS_GetTypedArrayBuffer(cx, a, &from, &bytes, &each);
     if (const uint8_t* p = JS_IsException(buffer) ? nullptr : JS_GetArrayBuffer(cx, &size, buffer)) into.assign((const T*)(p + from), (const T*)(p + from + bytes));
     JS_FreeValue(cx, buffer), JS_FreeValue(cx, a);
 }
+
+}  // namespace
 
 // See solid_three.h. The runtime and context are created on first use and are
 // guarded by a mutex, so calls from several threads are serialized.

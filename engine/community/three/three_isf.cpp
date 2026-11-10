@@ -19,17 +19,25 @@
 //
 // Not supported: three.js's own #include chunks in the shader.
 #include "community/three/three_isf.h"
-#include <quickjs.h>
+
+#include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <regex>
 #include <sstream>
+#include <string>
+
+#include <quickjs.h>
+
 #include "base/json.h"
+
+namespace {
 
 // Source of the stand-in 'three' module: just enough of Vector2/3/4, Color and
 // Matrix3/4 for a shader module to build its uniform values. Vectors keep their
 // components and Color converts a hex number to r, g, b in 0-1.
-static const char* const three_stand_ins = R"(
+const char* const three_stand_ins = R"(
 export class Vector2 { constructor(x = 0, y = 0) { this.x = x; this.y = y; } }
 export class Vector3 { constructor(x = 0, y = 0, z = 0) { this.x = x; this.y = y; this.z = z; } }
 export class Vector4 { constructor(x = 0, y = 0, z = 0, w = 1) { this.x = x; this.y = y; this.z = z; this.w = w; } }
@@ -40,7 +48,7 @@ export class Matrix3 {} export class Matrix4 {}
 // QuickJS module loader. Compiles the stand-in source for the name "three" and
 // the file at `name` for any other module, without running it. Returns null if
 // the module does not compile.
-static JSModuleDef* three_load(JSContext* cx, const char* name, void*) {
+JSModuleDef* three_load(JSContext* cx, const char* name, void*) {
     std::string src;
     if (std::string(name) == "three") src = three_stand_ins;
     else { std::ifstream in(name); std::stringstream all; all << in.rdbuf(); src = all.str(); }
@@ -51,6 +59,8 @@ static JSModuleDef* three_load(JSContext* cx, const char* name, void*) {
     return m;
 }
 
+}  // namespace
+
 // See three_isf.h.
 bool three_is(const std::string& file) {
     if (std::filesystem::path(file).extension() != ".js") return false;
@@ -60,11 +70,13 @@ bool three_is(const std::string& file) {
     return all.str().find("fragmentShader") != std::string::npos;
 }
 
+namespace {
+
 // Runs the module `file` and returns the export that has a fragmentShader as JSON:
 // {"frag": shader, "d": {defines}, "u": {uniform name: value}}. A Vector2 value is
 // serialized as {x, y} and a Color as {r, g, b}. On failure returns an empty
 // string and sets `why`.
-static std::string three_said(const std::string& file, std::string& why) {
+std::string three_said(const std::string& file, std::string& why) {
     JSRuntime* rt = JS_NewRuntime();
     JSContext* cx = JS_NewContext(rt);
     JS_SetModuleLoaderFunc(rt, nullptr, three_load, nullptr);
@@ -89,6 +101,8 @@ static std::string three_said(const std::string& file, std::string& why) {
     JS_FreeContext(cx), JS_FreeRuntime(rt);
     return out;
 }
+
+}  // namespace
 
 // See three_isf.h. The result is a JSON header comment (CREDIT, ISFVSN, INPUTS),
 // followed by #define lines and the adapted shader body.

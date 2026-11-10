@@ -1,7 +1,9 @@
+#ifndef MOTOLII_COMMUNITY_THREE_SOLID_THREE_H_
+#define MOTOLII_COMMUNITY_THREE_SOLID_THREE_H_
+
 // Declares the interface for building a layer's 3D shape with three.js. The shape
 // comes from a script in solids/*.js and is run by solid_three.cpp. The layer's
 // image is then mapped onto the faces of the resulting mesh (see layer_fx.h).
-#pragma once
 #include <cstdint>
 #include <map>
 #include <string>
@@ -27,3 +29,5 @@ struct SolidMesh { std::vector<float> pos, nrm, uv; std::vector<uint32_t> idx; b
 // Returns true on success. On failure returns false and sets `why` to the error.
 bool solid_three(const std::string& file, const std::map<std::string, double>& numbers, const std::map<std::string, std::string>& words,
                  double wide, double high, const std::vector<uint8_t>& cover, int coverW, int coverH, SolidMesh& out, std::string& why);
+
+#endif  // MOTOLII_COMMUNITY_THREE_SOLID_THREE_H_
