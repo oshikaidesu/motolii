@@ -1,10 +1,10 @@
 import 'package:flutter/widgets.dart';
 
-import '../../skin/tokens.dart';
-import '../inspector_parts.dart';
-import '../../widgets/controls.dart' show Hov;
-import '../../widgets/media.dart' show glyph;
-import '../../widgets/number_field.dart' show blockValue;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/inspector/inspector_parts.dart';
+import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/widgets/media.dart' show glyph;
+import 'package:motolii/widgets/number_field.dart' show blockValue;
 
 /// The panels that own lists of choices, such as fonts and colours.
 /// The Inspector shows the current choice and links to the panel. It never holds the list itself.

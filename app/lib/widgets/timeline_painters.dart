@@ -3,8 +3,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import '../skin/tokens.dart';
-import 'glyphs.dart' show GlyphKind;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/glyphs.dart' show GlyphKind;
 
 // ---------------------------------------------------------------- ruler ticks
 

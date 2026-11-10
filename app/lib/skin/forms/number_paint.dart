@@ -6,7 +6,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import '../tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 
 /// Everything a form needs to draw one number field.
 class NumberSpec {

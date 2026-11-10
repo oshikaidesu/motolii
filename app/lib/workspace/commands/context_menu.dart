@@ -7,11 +7,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import '../../inspector/inspector_small.dart' show FloatShut;
-import '../../skin/tokens.dart';
-import 'keymap.dart' show CommandIntent;
-import '../state/state.dart';
-import '../../widgets/controls.dart' show Hov;
+import 'package:motolii/inspector/inspector_small.dart' show FloatShut;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/commands/keymap.dart' show CommandIntent;
+import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/widgets/controls.dart' show Hov;
 
 /// The context menu for layer [l], opened by a right-click on its bar, its row or the stage.
 ///

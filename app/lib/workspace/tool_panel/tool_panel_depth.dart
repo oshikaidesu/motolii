@@ -6,12 +6,12 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import '../../skin/tokens.dart';
-import 'tool_panel_widgets.dart';
-import '../../widgets/controls.dart' show Chip, ChipLook;
-import '../state/state.dart';
-import '../workspace.dart' show LayerCards;
-import '../../widgets/two_fingers.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
+import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
+import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/workspace.dart' show LayerCards;
+import 'package:motolii/widgets/two_fingers.dart';
 
 const _zMax = 3000.0;
 

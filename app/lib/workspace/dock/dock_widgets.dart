@@ -8,17 +8,19 @@ import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
-import '../../skin/forms/forms.dart';
-import '../../inspector/inspector_parts.dart' show Pop;
-import '../../widgets/media.dart' show drawStar, glyph;
-import '../../skin/tokens.dart';
-import '../../widgets/controls.dart' show Badge, Hov;
+import 'package:motolii/skin/forms/forms.dart';
+import 'package:motolii/inspector/inspector_parts.dart' show Pop;
+import 'package:motolii/widgets/media.dart' show drawStar, glyph;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Badge, Hov;
+
 // Re-exported so shelves get the shared small widgets together with the dock's own.
 export '../../widgets/controls.dart' show Badge, Chip, IconPress;
-import 'dock_glyphs.dart';
-import '../window/settings_file.dart' show fileKeep, fileList;
-import '../state/state.dart';
-import '../../widgets/text_gestures.dart';
+
+import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/workspace/window/settings_file.dart' show fileKeep, fileList;
+import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/widgets/text_gestures.dart';
 
 part 'dock_folder_row.dart';
 part 'dock_search.dart';

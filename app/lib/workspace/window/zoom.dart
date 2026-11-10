@@ -6,9 +6,9 @@
 // The zoom is saved in ~/.motolii/window.xml, beside the skin setting.
 import 'package:flutter/widgets.dart';
 
-import '../../skin/tokens.dart';
-import 'settings_file.dart';
-import '../../widgets/number_field.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/window/settings_file.dart';
+import 'package:motolii/widgets/number_field.dart';
 
 /// The window zoom factor.
 abstract final class WsZoom {

@@ -4,9 +4,9 @@
 
 import 'package:flutter/widgets.dart';
 
-import '../skin/theme.dart';
-import '../skin/tokens.dart';
-import 'inspector_state.dart';
+import 'package:motolii/skin/theme.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/inspector/inspector_state.dart';
 
 export 'inspector_badges.dart';
 export 'inspector_choosers_header.dart';

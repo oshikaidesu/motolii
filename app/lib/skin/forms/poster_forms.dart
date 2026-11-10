@@ -7,8 +7,8 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
-import '../tokens.dart';
-import 'forms.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/forms/forms.dart';
 
 const _red = Color(0xFFE5432D), _yellow = Color(0xFFF7D046), _blue = Color(0xFF2A62C9), _green = Color(0xFF6BBF8C), _pink = Color(0xFFF2A7C6);
 const _ink = Color(0xFF111111), _paper = Color(0xFFF4F1EA);

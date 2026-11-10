@@ -3,9 +3,9 @@
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 
-import '../../skin/tokens.dart';
-import 'timeline_paint.dart';
-import '../state/state.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/timeline/timeline_paint.dart';
+import 'package:motolii/workspace/state/state.dart';
 
 /// Paints the cached frame ranges in [kept] as thin lines under the work-area band.
 class WtKeptPainter extends CustomPainter {

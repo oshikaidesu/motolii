@@ -4,17 +4,17 @@
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../skin/tokens.dart';
-import 'dock_effects.dart';
-import 'dock_files.dart';
-import 'dock_fonts.dart';
-import 'dock_glyphs.dart';
-import 'dock_make.dart';
-import 'dock_widgets.dart';
-import 'dock_tags.dart';
-import 'dock_program.dart';
-import '../shelf/effect_tiles.dart';
-import '../state/state.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/dock/dock_effects.dart';
+import 'package:motolii/workspace/dock/dock_files.dart';
+import 'package:motolii/workspace/dock/dock_fonts.dart';
+import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/workspace/dock/dock_make.dart';
+import 'package:motolii/workspace/dock/dock_widgets.dart';
+import 'package:motolii/workspace/dock/dock_tags.dart';
+import 'package:motolii/workspace/dock/dock_program.dart';
+import 'package:motolii/workspace/shelf/effect_tiles.dart';
+import 'package:motolii/workspace/state/state.dart';
 
 /// One shelf pane. [name] picks which shelf it is and [hint] is the search field's placeholder.
 class WsShelf extends StatefulWidget {

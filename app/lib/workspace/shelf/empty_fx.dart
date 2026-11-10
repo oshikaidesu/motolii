@@ -6,10 +6,10 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
-import '../../skin/tokens.dart';
-import 'effect_tiles.dart' show EffectTiles;
-import 'fx_code.dart' show FxCode;
-import '../state/state.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
+import 'package:motolii/workspace/shelf/fx_code.dart' show FxCode;
+import 'package:motolii/workspace/state/state.dart';
 
 // Left as it is, this effect changes nothing.
 const _isf = '''/*{

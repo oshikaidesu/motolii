@@ -3,9 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/controls/inspector_param_controls_tile.dart';
 
-import '../../skin/tokens.dart';
-import '../inspector_parts.dart';
-import '../../widgets/controls.dart' show Hov;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/inspector/inspector_parts.dart';
+import 'package:motolii/widgets/controls.dart' show Hov;
 
 /// An effect's parameters as blocks that fill the panel's width.
 ///

@@ -8,3 +8,8 @@ analyzer:
   exclude:
     - build/**
     - macos/**
+
+linter:
+  rules:
+    # A file names every neighbour by its package path, so a file can move without its imports being rewritten.
+    always_use_package_imports: true

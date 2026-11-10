@@ -1,14 +1,14 @@
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/rows/inspector_rows_sect.dart';
 
-import '../skin/theme.dart';
-import '../skin/tokens.dart';
-import 'inspector_parts.dart';
-import '../widgets/controls.dart' show Badge, Chip, ChipLook, Hov;
-import '../widgets/media.dart' show Draw, glyph;
-import '../workspace/commands/context_menu.dart' show WsMenuItem, WsMenuList;
-import '../widgets/glyphs.dart' show Glyph;
-import '../widgets/timeline_painters.dart' show TpGlyph;
+import 'package:motolii/skin/theme.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/inspector/inspector_parts.dart';
+import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Hov;
+import 'package:motolii/widgets/media.dart' show Draw, glyph;
+import 'package:motolii/workspace/commands/context_menu.dart' show WsMenuItem, WsMenuList;
+import 'package:motolii/widgets/glyphs.dart' show Glyph;
+import 'package:motolii/widgets/timeline_painters.dart' show TpGlyph;
 
 /// A card as the engine declares it, for an effect or a layer's own values: a name and a WGSL uniform struct.
 ///

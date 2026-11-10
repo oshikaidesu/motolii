@@ -6,11 +6,11 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
-import '../../widgets/media.dart' show Draw;
-import '../tokens.dart';
-import 'base_controls.dart';
-import 'forms.dart';
-import 'number_paint.dart';
+import 'package:motolii/widgets/media.dart' show Draw;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/skin/forms/base_controls.dart';
+import 'package:motolii/skin/forms/forms.dart';
+import 'package:motolii/skin/forms/number_paint.dart';
 
 enum _Mark { dot, ring, quarter }
 

@@ -11,12 +11,12 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
-import '../../bridge/motolii.dart' show motoliiShelves;
-import '../../widgets/text_gestures.dart';
-import '../../skin/tokens.dart';
-import '../dock/dock_make.dart' show createNames;
-import 'effect_tiles.dart' show EffectTiles;
-import '../state/state.dart';
+import 'package:motolii/bridge/motolii.dart' show motoliiShelves;
+import 'package:motolii/widgets/text_gestures.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/dock/dock_make.dart' show createNames;
+import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
+import 'package:motolii/workspace/state/state.dart';
 
 String get _ownEffects => '${EffectTiles.own}/effects';
 String get _ownExpressions => '${EffectTiles.own}/expressions';

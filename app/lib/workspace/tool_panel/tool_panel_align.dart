@@ -4,13 +4,13 @@
 // The engine converts the offset into the layer's own units, taking its parent's rotation into account.
 import 'package:flutter/widgets.dart';
 
-import '../../widgets/controls.dart' show Chip, ChipLook, IconPress;
+import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, IconPress;
 
-import '../../skin/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 
-import 'tool_panel_widgets.dart';
-import '../stage/stage_art.dart' show WsArt;
-import '../state/state.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
+import 'package:motolii/workspace/stage/stage_art.dart' show WsArt;
+import 'package:motolii/workspace/state/state.dart';
 
 /// The Align tool: six buttons that align the selected layer to the canvas edges or center.
 class AlignTool extends StatelessWidget {

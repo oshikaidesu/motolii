@@ -6,8 +6,8 @@ import 'package:motolii/inspector/controls/param_infer.dart' show Param;
 
 import 'package:motolii/inspector/inspector_small.dart' show FloatShut;
 
-import '../../skin/tokens.dart';
-import '../../workspace/commands/context_menu.dart' show WsMenuItem, WsMenuList;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/commands/context_menu.dart' show WsMenuItem, WsMenuList;
 
 /// The Inspector's number field: a [NumberField] wired to the document, with a caption and an optional glyph.
 class NumField extends StatefulWidget {

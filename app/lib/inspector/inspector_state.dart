@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
 import 'package:flutter/widgets.dart';
 
-import 'inspector_parts.dart';
+import 'package:motolii/inspector/inspector_parts.dart';
 part 'inspector_values.dart';
 
 /// Whether the next text-content field should take keyboard focus with all its text selected.

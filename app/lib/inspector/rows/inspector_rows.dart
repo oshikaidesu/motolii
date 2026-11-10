@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 
-import '../../skin/tokens.dart';
-import '../../widgets/media.dart' show glyph;
-import '../inspector_parts.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/media.dart' show glyph;
+import 'package:motolii/inspector/inspector_parts.dart';
 
 /// The disclosure triangle on a card's heading.
 ///

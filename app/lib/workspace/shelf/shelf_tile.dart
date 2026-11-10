@@ -8,11 +8,11 @@ import 'dart:io';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../bridge/motolii.dart' show ShelfItem;
-import '../../skin/tokens.dart';
-import '../dock/dock_widgets.dart';
-import '../state/state.dart';
-import 'effect_tiles.dart';
+import 'package:motolii/bridge/motolii.dart' show ShelfItem;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/dock/dock_widgets.dart';
+import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/shelf/effect_tiles.dart';
 
 // Re-exported so that whoever builds a tile gets the type it takes.
 export '../../bridge/motolii.dart' show ShelfItem;

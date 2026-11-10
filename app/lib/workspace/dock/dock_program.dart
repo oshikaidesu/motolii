@@ -23,17 +23,17 @@ import 'package:re_highlight/languages/javascript.dart';
 import 'package:re_highlight/styles/atom-one-dark.dart';
 import 'package:re_highlight/styles/atom-one-light.dart';
 
-import '../../bridge/motolii.dart';
-import '../../skin/tokens.dart';
-import '../shelf/copies_tiles.dart';
-import 'dock_glyphs.dart';
-import 'dock_widgets.dart';
-import '../shelf/effect_tiles.dart';
-import '../shelf/program_tiles.dart';
-import '../shelf/shelf_add.dart';
-import '../shelf/shelf_tile.dart';
-import '../state/state.dart';
-import '../commands/context_menu.dart';
+import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/shelf/copies_tiles.dart';
+import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/workspace/dock/dock_widgets.dart';
+import 'package:motolii/workspace/shelf/effect_tiles.dart';
+import 'package:motolii/workspace/shelf/program_tiles.dart';
+import 'package:motolii/workspace/shelf/shelf_add.dart';
+import 'package:motolii/workspace/shelf/shelf_tile.dart';
+import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/commands/context_menu.dart';
 
 /// One program on the shelf: its file, what it was written for, and the hash that tells it from the others of those.
 class Program {

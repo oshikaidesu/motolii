@@ -3,9 +3,9 @@
 // Making a relation adds a behaviour layer of the chosen kind (the engine's around, row, follow or push) and puts the
 // selected layers in it as they look now: their order, the middle and size, a leader, and what each was in before.
 // It is one undo step, and the new behaviour is selected once it exists.
-import '../../bridge/motolii.dart';
-import 'group_moves.dart';
-import '../state/state.dart';
+import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/workspace/edits/group_moves.dart';
+import 'package:motolii/workspace/state/state.dart';
 
 const wsRelations = ['around', 'row', 'follow', 'push', 'group', 'relate'];
 

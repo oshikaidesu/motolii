@@ -2,15 +2,15 @@
 // Each mode is drawn as two overlapping discs, and the overlap shows the resulting color.
 // Clicking a layer name selects it. Expanding a row shows every blend mode of that layer and the engine's Blending card (blend, clip).
 // The list of modes comes from the engine (motolii_words); this file only draws them.
-import '../../widgets/controls.dart' show Hov, IconPress;
+import 'package:motolii/widgets/controls.dart' show Hov, IconPress;
 
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart' show NakedFocusableDetector;
 
-import '../../skin/tokens.dart';
-import 'tool_panel_widgets.dart';
-import '../state/state.dart';
-import '../workspace.dart' show LayerCards;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
+import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/workspace.dart' show LayerCards;
 
 /// The Blend tool: one row per layer, front layer first.
 class BlendTool extends StatelessWidget {

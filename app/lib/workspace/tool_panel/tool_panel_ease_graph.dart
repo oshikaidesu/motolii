@@ -11,7 +11,7 @@ import 'package:motolii/workspace/tool_panel/tool_panel_ease_handles.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
 import 'package:motolii/workspace/state/state.dart';
 
-import '../../widgets/two_fingers.dart';
+import 'package:motolii/widgets/two_fingers.dart';
 
 /// The rectangle the curve's square occupies in a graph of size [s]: as large as possible, with room at each side for the bars.
 Rect easeBox(Size s) {

@@ -8,17 +8,17 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import '../../bridge/motolii.dart' show Motolii, mediaInfoOf, mediaSecondsOf;
-import '../../inspector/inspector_parts.dart' show Pop;
-import '../../skin/tokens.dart';
-import 'dock_resizable.dart';
-import 'dock_glyphs.dart';
-import 'dock_widgets.dart';
-import 'dock_tags.dart';
-import '../shelf/shelf_tile.dart';
-import '../state/state.dart';
-import '../../widgets/controls.dart' show Chip, ChipLook, Hov;
-import '../../widgets/media.dart' show MiniSlider;
+import 'package:motolii/bridge/motolii.dart' show Motolii, mediaInfoOf, mediaSecondsOf;
+import 'package:motolii/inspector/inspector_parts.dart' show Pop;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/dock/dock_resizable.dart';
+import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/workspace/dock/dock_widgets.dart';
+import 'package:motolii/workspace/dock/dock_tags.dart';
+import 'package:motolii/workspace/shelf/shelf_tile.dart';
+import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, Hov;
+import 'package:motolii/widgets/media.dart' show MiniSlider;
 part 'dock_files_read.dart';
 part 'dock_files_used.dart';
 part 'dock_files_sheet.dart';

@@ -14,12 +14,12 @@ import 'package:flutter/services.dart' show HardwareKeyboard;
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
-import '../../bridge/motolii.dart' show docFactsOf;
-import '../../skin/tokens.dart';
-import '../../widgets/controls.dart' show Chip, ChipLook;
-import '../state/state.dart';
-import 'settings_file.dart' show firstFree;
-import '../../widgets/text_gestures.dart';
+import 'package:motolii/bridge/motolii.dart' show docFactsOf;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
+import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/window/settings_file.dart' show firstFree;
+import 'package:motolii/widgets/text_gestures.dart';
 
 /// One project listed: its file, and the facts saved in it. [facts] and [picture] are null until read, or if the project saved none.
 class HomeDoc {

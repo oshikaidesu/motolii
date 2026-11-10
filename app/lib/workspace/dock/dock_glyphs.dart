@@ -4,7 +4,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import '../../widgets/glyphs.dart' show GlyphKind;
+import 'package:motolii/widgets/glyphs.dart' show GlyphKind;
+
 export '../../widgets/glyphs.dart' show Glyph;
 
 enum DockG implements GlyphKind {

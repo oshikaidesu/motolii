@@ -1,8 +1,8 @@
 import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 
-import '../skin/tokens.dart';
-import 'inspector_parts.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/inspector/inspector_parts.dart';
 
 /// Closes a floating widget, such as a menu, when the user presses outside it with either button or presses Esc.
 /// Built on Flutter's TapRegion, as the menus on macOS and Windows are.

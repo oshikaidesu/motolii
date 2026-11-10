@@ -9,17 +9,17 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter/widgets.dart';
 
-import '../../bridge/motolii.dart' show Motolii, MotoliiQuestions, motoliiDir;
-import '../../skin/tokens.dart';
-import '../../widgets/controls.dart' show Chip, ChipLook;
-import 'dock_files.dart' show dockRead;
-import 'dock_map.dart';
-import '../window/settings_file.dart' show fileKeep, fileList;
-import 'dock_widgets.dart';
-import 'dock_tags.dart';
-import '../shelf/effect_tiles.dart' show EffectTiles;
-import '../shelf/shelf_tile.dart';
-import '../state/state.dart';
+import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiQuestions, motoliiDir;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
+import 'package:motolii/workspace/dock/dock_files.dart' show dockRead;
+import 'package:motolii/workspace/dock/dock_map.dart';
+import 'package:motolii/workspace/window/settings_file.dart' show fileKeep, fileList;
+import 'package:motolii/workspace/dock/dock_widgets.dart';
+import 'package:motolii/workspace/dock/dock_tags.dart';
+import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
+import 'package:motolii/workspace/shelf/shelf_tile.dart';
+import 'package:motolii/workspace/state/state.dart';
 
 part 'dock_font_map.dart';
 

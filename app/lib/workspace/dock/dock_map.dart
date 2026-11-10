@@ -19,13 +19,13 @@ import 'package:flutter/widgets.dart';
 import 'package:force_graph/force_graph.dart' show CollideForce, Force, ForceNode, ForceSimulation;
 import 'package:material_color_utilities/material_color_utilities.dart' show Cam16;
 
-import '../../bridge/motolii.dart' show Motolii, MotoliiQuestions;
-import '../../widgets/media.dart' show MiniSlider;
-import '../../skin/tokens.dart';
-import 'dock_glyphs.dart';
-import '../window/settings_file.dart' show fileKeep;
-import 'dock_widgets.dart' show dockMark, IconPress;
-import '../state/state.dart' show WsT;
+import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiQuestions;
+import 'package:motolii/widgets/media.dart' show MiniSlider;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/workspace/window/settings_file.dart' show fileKeep;
+import 'package:motolii/workspace/dock/dock_widgets.dart' show dockMark, IconPress;
+import 'package:motolii/workspace/state/state.dart' show WsT;
 part 'dock_map_view.dart';
 
 /// Where one shelf's items lie on its map, by id, on a canvas shaped like the viewport ([dockSpread]). [laying] is true

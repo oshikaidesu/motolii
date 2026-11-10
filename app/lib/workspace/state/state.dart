@@ -12,7 +12,8 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:flutter/widgets.dart';
 
-import '../../bridge/motolii.dart';
+import 'package:motolii/bridge/motolii.dart';
+
 export '../../bridge/motolii.dart'
     show
         MotoliiDocument,
@@ -21,12 +22,14 @@ export '../../bridge/motolii.dart'
         MotoliiQuestions,
         MotoliiShelves,
         MotoliiWatch; // Extensions of Motolii, so anything holding Ws.inside can call the engine's reads.
-import '../../skin/theme.dart';
-import '../../skin/tokens.dart';
-import '../window/panes.dart' show WsAt, WsPane;
-import '../window/settings_file.dart' show firstFree;
-import 'beats.dart';
-import '../stage/stage_art.dart' show WsArt;
+
+import 'package:motolii/skin/theme.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/window/panes.dart' show WsAt, WsPane;
+import 'package:motolii/workspace/window/settings_file.dart' show firstFree;
+import 'package:motolii/workspace/state/beats.dart';
+import 'package:motolii/workspace/stage/stage_art.dart' show WsArt;
+
 export 'beats.dart';
 
 part 'window.dart';

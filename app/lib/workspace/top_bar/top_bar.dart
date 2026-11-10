@@ -11,18 +11,18 @@ import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
-import '../../skin/forms/forms.dart';
-import '../../skin/svg_parts.dart';
-import '../window/zoom.dart';
+import 'package:motolii/skin/forms/forms.dart';
+import 'package:motolii/skin/svg_parts.dart';
+import 'package:motolii/workspace/window/zoom.dart';
 
-import '../../skin/theme.dart';
-import '../../skin/tokens.dart';
-import '../stage/stage_art.dart' show WsArt;
-import '../state/state.dart';
-import '../../widgets/controls.dart' show Badge, Chip, ChipLook, Hov, IconPress;
-import '../../widgets/media.dart' show Draw, glyph;
-import '../../widgets/two_fingers.dart';
-import '../../widgets/text_gestures.dart';
+import 'package:motolii/skin/theme.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/stage/stage_art.dart' show WsArt;
+import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Hov, IconPress;
+import 'package:motolii/widgets/media.dart' show Draw, glyph;
+import 'package:motolii/widgets/two_fingers.dart';
+import 'package:motolii/widgets/text_gestures.dart';
 part 'timings.dart';
 part 'size_chip.dart';
 

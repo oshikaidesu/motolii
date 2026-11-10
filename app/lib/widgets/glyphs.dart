@@ -2,9 +2,9 @@
 // Glyphs use g63 when idle and g95 when active, so every tool and tile has a real mark instead of an empty placeholder.
 import 'package:flutter/widgets.dart';
 
-import '../skin/svg_parts.dart';
-import '../skin/tokens.dart';
-import 'media.dart' show glyph;
+import 'package:motolii/skin/svg_parts.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/media.dart' show glyph;
 
 /// A set of named marks, such as the enums here, the timeline's and the dock's. The one [Glyph] widget draws any of them.
 ///

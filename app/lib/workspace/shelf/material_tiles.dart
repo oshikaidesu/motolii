@@ -6,8 +6,8 @@
 // drawn again once the material is rebuilt.
 import 'dart:io';
 
-import '../../bridge/motolii.dart';
-import 'copies_tiles.dart' show TileQueue, drawTiles, tileHome;
+import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/workspace/shelf/copies_tiles.dart' show TileQueue, drawTiles, tileHome;
 
 abstract final class MaterialTiles {
   static final _tiles = TileQueue<(String, String)>(draw);

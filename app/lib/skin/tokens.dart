@@ -3,7 +3,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:material_color_utilities/hct/hct.dart';
 
-import 'theme.dart';
+import 'package:motolii/skin/theme.dart';
 
 /// The app's one motion: 120 ms, ease-out, started the moment the input lands.
 ///

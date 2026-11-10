@@ -7,7 +7,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import '../window/settings_file.dart' show fileJson, fileKeep;
+import 'package:motolii/workspace/window/settings_file.dart' show fileJson, fileKeep;
 
 abstract final class DockTags {
   static final _own = <String, Set<String>>{};

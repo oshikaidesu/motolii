@@ -13,9 +13,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import '../skin/forms/number_paint.dart';
-import '../skin/tokens.dart';
-import 'text_gestures.dart';
+import 'package:motolii/skin/forms/number_paint.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/text_gestures.dart';
 
 part 'number_field_state.dart';
 

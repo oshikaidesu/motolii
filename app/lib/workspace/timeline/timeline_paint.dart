@@ -7,11 +7,11 @@ import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/foundation.dart' show listEquals, mapEquals, ValueListenable;
 import 'package:flutter/widgets.dart';
 
-import '../../skin/forms/forms.dart';
-import '../../widgets/timeline_painters.dart' show tpFine, tpMajor;
-import '../../skin/tokens.dart';
-import '../../widgets/controls.dart' show Badge;
-import '../state/state.dart';
+import 'package:motolii/skin/forms/forms.dart';
+import 'package:motolii/widgets/timeline_painters.dart' show tpFine, tpMajor;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Badge;
+import 'package:motolii/workspace/state/state.dart';
 
 part 'timeline_tracks_paint.dart';
 

@@ -2,10 +2,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
-import '../tokens.dart';
-import '../../widgets/controls.dart' show Hov;
-import '../../workspace/state/state.dart' show WsT;
-import 'forms.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/workspace/state/state.dart' show WsT;
+import 'package:motolii/skin/forms/forms.dart';
 
 abstract final class Usual {
   /// A row of round options in a well, with the selected one filled.

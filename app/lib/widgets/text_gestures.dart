@@ -7,7 +7,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import '../skin/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 
 /// Gives an [EditableText] Flutter's text selection gestures.
 class TextGestures extends StatefulWidget {

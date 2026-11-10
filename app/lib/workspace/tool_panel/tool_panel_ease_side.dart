@@ -2,8 +2,8 @@
 // reverse and a menu, and a narrow row of easing shapes without names. The layout and behavior are ported; the colors are this app's.
 import 'package:flutter/widgets.dart';
 
-import '../../widgets/controls.dart' show Hov, IconPress;
-import '../../widgets/media.dart' show Draw, glyph;
+import 'package:motolii/widgets/controls.dart' show Hov, IconPress;
+import 'package:motolii/widgets/media.dart' show Draw, glyph;
 
 import 'package:motolii/inspector/inspector_card.dart' show CardMore;
 import 'package:motolii/skin/tokens.dart';

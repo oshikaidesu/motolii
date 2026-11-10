@@ -4,8 +4,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
-import '../skin/tokens.dart';
-import '../workspace/state/state.dart' show WsT;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/state/state.dart' show WsT;
 
 /// The app's basic press target, built on naked_ui's [NakedButton].
 class Hov extends StatelessWidget {

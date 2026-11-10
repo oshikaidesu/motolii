@@ -10,13 +10,13 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../widgets/text_gestures.dart' show TextGestures;
-import '../../skin/tokens.dart';
-import 'dock_glyphs.dart';
-import 'dock_widgets.dart';
-import '../shelf/effect_decks.dart';
-import '../state/state.dart';
-import '../commands/context_menu.dart';
+import 'package:motolii/widgets/text_gestures.dart' show TextGestures;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/workspace/dock/dock_widgets.dart';
+import 'package:motolii/workspace/shelf/effect_decks.dart';
+import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/commands/context_menu.dart';
 
 const dockFxListHeight = 176.0;
 

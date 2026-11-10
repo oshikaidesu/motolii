@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 
-import '../../widgets/text_gestures.dart';
+import 'package:motolii/widgets/text_gestures.dart';
 
 /// A text field for free text, two lines tall. The text is committed when the field loses focus, and Esc restores the previous text.
 class ParamWords extends StatelessWidget {

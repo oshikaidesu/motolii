@@ -2,12 +2,12 @@
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
-import '../svg_parts.dart';
-import '../../inspector/inspector_parts.dart';
-import '../tokens.dart';
-import '../../workspace/state/state.dart' show WsT;
-import 'forms.dart';
-import '../../widgets/controls.dart' show Hov;
+import 'package:motolii/skin/svg_parts.dart';
+import 'package:motolii/inspector/inspector_parts.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/state/state.dart' show WsT;
+import 'package:motolii/skin/forms/forms.dart';
+import 'package:motolii/widgets/controls.dart' show Hov;
 
 class OwnForms extends Forms {
   const OwnForms();

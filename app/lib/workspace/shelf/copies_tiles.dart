@@ -21,8 +21,8 @@ import 'dart:isolate';
 import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter/painting.dart' show FileImage, ResizeImage;
 
-import '../../bridge/motolii.dart';
-import 'effect_tiles.dart' show EffectTiles, ffmpeg;
+import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles, ffmpeg;
 
 /// The cache path of a tile: [kind] and a hash of [key] under the tiles' cache folder.
 String tileHome(String kind, String key) {

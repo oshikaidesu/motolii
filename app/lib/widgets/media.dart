@@ -4,7 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
-import '../skin/tokens.dart';
+import 'package:motolii/skin/tokens.dart';
 
 /// A painter that calls [fn]. It repaints when [key] changes.
 class Draw extends CustomPainter {

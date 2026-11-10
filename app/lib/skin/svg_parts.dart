@@ -11,8 +11,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../widgets/media.dart' show Draw;
-import 'theme.dart';
+import 'package:motolii/widgets/media.dart' show Draw;
+import 'package:motolii/skin/theme.dart';
 
 /// The pictures of the current skin, loaded from the folder named by the theme's `Parts` role.
 abstract final class SkinParts {

@@ -5,10 +5,10 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/theme.dart';
 
-import '../widgets/glyphs.dart';
-import '../skin/tokens.dart';
-import 'inspector_parts.dart';
-import '../widgets/controls.dart' show Hov;
+import 'package:motolii/widgets/glyphs.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/inspector/inspector_parts.dart';
+import 'package:motolii/widgets/controls.dart' show Hov;
 
 /// A dropdown for choosing one of [options], stored as a string under [id].
 ///

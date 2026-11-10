@@ -1,7 +1,7 @@
 // The whole window: the top bar above the panes (panes.dart).
 // The panes are the media shelves, Stage over Timeline, and Inspector over Tool Panel. The user can rearrange them.
 // Each panel lives in its own file and reads the shared Ws.
-import 'dock/dock_widgets.dart' show askDockSearch;
+import 'package:motolii/workspace/dock/dock_widgets.dart' show askDockSearch;
 
 import 'dart:developer' show Timeline;
 import 'dart:async';
@@ -12,37 +12,37 @@ import 'package:docking/docking.dart';
 import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter/widgets.dart';
 
-import '../skin/svg_parts.dart';
-import 'stage/stage_art.dart' show WsArt;
-import 'window/zoom.dart';
-import 'shelf/effect_tiles.dart';
-import 'commands/command_actions.dart';
+import 'package:motolii/skin/svg_parts.dart';
+import 'package:motolii/workspace/stage/stage_art.dart' show WsArt;
+import 'package:motolii/workspace/window/zoom.dart';
+import 'package:motolii/workspace/shelf/effect_tiles.dart';
+import 'package:motolii/workspace/commands/command_actions.dart';
 
 import 'package:motolii/inspector/inspector_parts_insp_host.dart';
 
-import '../inspector/inspector_parts.dart';
-import '../skin/theme.dart';
-import 'tool_panel/tool_panel.dart';
-import 'tool_panel/tool_panel_depth.dart';
-import 'tool_panel/tool_panel_blend.dart';
-import 'tool_panel/tool_panel_align.dart';
-import 'tool_panel/tool_panel_relations.dart';
-import 'tool_panel/tool_panel_ease.dart';
-import 'dock/dock.dart';
-import 'dock/dock_glyphs.dart';
-import 'window/home.dart';
-import 'window/panes.dart';
-import 'edits/keyframe_edits.dart';
-import 'commands/keymap.dart';
-import 'stage/stage.dart';
-import 'stage/stage_camera.dart';
-import 'stage/stage_view.dart' show WsRelationStack;
-import 'timeline/timeline.dart';
-import 'top_bar/top_bar.dart';
-import '../bridge/motolii.dart';
-import 'edits/make_relation.dart';
-import 'state/state.dart';
-import 'shelf/fx_code.dart';
+import 'package:motolii/inspector/inspector_parts.dart';
+import 'package:motolii/skin/theme.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_depth.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_blend.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_align.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_relations.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
+import 'package:motolii/workspace/dock/dock.dart';
+import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/workspace/window/home.dart';
+import 'package:motolii/workspace/window/panes.dart';
+import 'package:motolii/workspace/edits/keyframe_edits.dart';
+import 'package:motolii/workspace/commands/keymap.dart';
+import 'package:motolii/workspace/stage/stage.dart';
+import 'package:motolii/workspace/stage/stage_camera.dart';
+import 'package:motolii/workspace/stage/stage_view.dart' show WsRelationStack;
+import 'package:motolii/workspace/timeline/timeline.dart';
+import 'package:motolii/workspace/top_bar/top_bar.dart';
+import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/workspace/edits/make_relation.dart';
+import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/shelf/fx_code.dart';
 part 'inspector_feed/panel.dart';
 part 'inspector_feed/cards.dart';
 part 'inspector_feed/values.dart';

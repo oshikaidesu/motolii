@@ -1,9 +1,9 @@
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/widgets.dart';
 
-import '../skin/tokens.dart';
-import 'inspector_parts.dart';
-import '../widgets/controls.dart' show Chip, ChipLook, Hov;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/inspector/inspector_parts.dart';
+import 'package:motolii/widgets/controls.dart' show Chip, ChipLook, Hov;
 
 // Every card follows one rule. The engine declares the cards (card_table.h, sent by motolii_cards and
 // written as a WGSL uniform struct by workspace/inspector_feed/cards.dart), and [ValuesCard] draws each one the way it draws an effect.

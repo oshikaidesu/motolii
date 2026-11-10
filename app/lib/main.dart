@@ -2,8 +2,8 @@
 // See bridge/motolii.dart.
 import 'package:flutter/widgets.dart';
 
-import 'bridge/motolii.dart';
-import 'workspace/workspace.dart';
+import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/workspace/workspace.dart';
 
 void main() => runApp(
   WidgetsApp(

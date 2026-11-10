@@ -7,23 +7,23 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../bridge/motolii.dart' show Motolii;
-import '../../skin/tokens.dart';
-import '../../widgets/controls.dart' show Chip, ChipLook;
-import '../../widgets/media.dart' show Draw;
-import 'dock_effect_places.dart';
-import 'dock_glyphs.dart';
-import 'dock_map.dart';
-import 'dock_widgets.dart';
-import 'dock_resizable.dart';
-import 'dock_tags.dart';
-import '../shelf/effect_decks.dart';
-import '../shelf/effect_tiles.dart';
-import '../shelf/empty_fx.dart';
-import '../shelf/shelf_add.dart';
-import '../shelf/shelf_tile.dart';
-import '../state/state.dart';
-import '../commands/context_menu.dart';
+import 'package:motolii/bridge/motolii.dart' show Motolii;
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
+import 'package:motolii/widgets/media.dart' show Draw;
+import 'package:motolii/workspace/dock/dock_effect_places.dart';
+import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/workspace/dock/dock_map.dart';
+import 'package:motolii/workspace/dock/dock_widgets.dart';
+import 'package:motolii/workspace/dock/dock_resizable.dart';
+import 'package:motolii/workspace/dock/dock_tags.dart';
+import 'package:motolii/workspace/shelf/effect_decks.dart';
+import 'package:motolii/workspace/shelf/effect_tiles.dart';
+import 'package:motolii/workspace/shelf/empty_fx.dart';
+import 'package:motolii/workspace/shelf/shelf_add.dart';
+import 'package:motolii/workspace/shelf/shelf_tile.dart';
+import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/commands/context_menu.dart';
 
 /// One effect tile of the shelf. The id is a layer effect's name or a file effect's file, since two files can share a name.
 /// The label says what it is for, [on] whether it is applied, `apply` what a double-click or a drop on the stage does.

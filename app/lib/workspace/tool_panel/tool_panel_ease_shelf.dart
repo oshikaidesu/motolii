@@ -15,8 +15,8 @@ import 'package:motolii/workspace/tool_panel/tool_panel_ease_side.dart' show dra
 import 'package:motolii/widgets/media.dart' show Draw;
 import 'package:motolii/workspace/state/state.dart';
 
-import '../../widgets/controls.dart' show Hov;
-import '../window/settings_file.dart' show fileKeep, fileList;
+import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/workspace/window/settings_file.dart' show fileKeep, fileList;
 
 /// The easings the user saved: a curve, a card or all the cards, each stored as its name string.
 /// Saving works like saving a device preset in Ableton Live (manual, 23.2.5 Saving Presets).

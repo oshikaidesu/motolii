@@ -7,7 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 
-import '../../widgets/number_field.dart';
+import 'package:motolii/widgets/number_field.dart';
 
 /// The Inspector's side of a number field.
 ///

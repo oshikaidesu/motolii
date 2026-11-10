@@ -6,13 +6,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import '../../skin/tokens.dart';
-import 'tool_panel_widgets.dart';
-import '../../widgets/controls.dart' show Chip, ChipLook;
-import '../edits/make_relation.dart';
-import '../stage/stage_art.dart';
-import '../../widgets/two_fingers.dart';
-import '../state/state.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
+import 'package:motolii/widgets/controls.dart' show Chip, ChipLook;
+import 'package:motolii/workspace/edits/make_relation.dart';
+import 'package:motolii/workspace/stage/stage_art.dart';
+import 'package:motolii/widgets/two_fingers.dart';
+import 'package:motolii/workspace/state/state.dart';
 
 class RelationsTool extends StatefulWidget {
   const RelationsTool({super.key});

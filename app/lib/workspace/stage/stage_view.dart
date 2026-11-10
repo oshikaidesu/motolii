@@ -12,22 +12,22 @@ import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter/services.dart' show HardwareKeyboard, KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 
-import '../../skin/tokens.dart';
-import 'stage_art.dart';
-import '../../widgets/two_fingers.dart';
-import '../../bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiMoment, MotoliiWrites, MotoliiQuestions;
-import '../../widgets/glyphs.dart' show Glyph;
-import '../../widgets/timeline_painters.dart' show TpGlyph;
-import '../../inspector/inspector_state.dart' show textToType;
-import '../../widgets/controls.dart' show Badge, Chip, ChipLook, Hov;
-import '../edits/make_relation.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/stage/stage_art.dart';
+import 'package:motolii/widgets/two_fingers.dart';
+import 'package:motolii/bridge/motolii.dart' show Motolii, MotoliiDocument, MotoliiMoment, MotoliiWrites, MotoliiQuestions;
+import 'package:motolii/widgets/glyphs.dart' show Glyph;
+import 'package:motolii/widgets/timeline_painters.dart' show TpGlyph;
+import 'package:motolii/inspector/inspector_state.dart' show textToType;
+import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Hov;
+import 'package:motolii/workspace/edits/make_relation.dart';
 
 import 'package:perfect_freehand/perfect_freehand.dart' show getStrokeOutlinePoints, getStrokePoints, PointVector, StrokeOptions;
 import 'package:perfect_freehand/src/get_stroke_radius.dart'
     show getStrokeRadius; // How wide the pressure makes a point. The package keeps it private, so it is imported from src.
 
-import '../state/state.dart';
-import '../commands/context_menu.dart';
+import 'package:motolii/workspace/state/state.dart';
+import 'package:motolii/workspace/commands/context_menu.dart';
 part 'stage_view_state.dart';
 part 'stage_view_drag.dart';
 part 'stage_view_draw.dart';

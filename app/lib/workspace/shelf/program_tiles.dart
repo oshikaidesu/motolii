@@ -10,9 +10,9 @@
 // Capture starts one second in, so a sketch that builds its image up has something to show (no source for that value).
 import 'dart:io';
 
-import '../../bridge/motolii.dart';
-import 'copies_tiles.dart' show TileQueue, tileHome;
-import 'effect_tiles.dart' show ffmpeg;
+import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/workspace/shelf/copies_tiles.dart' show TileQueue, tileHome;
+import 'package:motolii/workspace/shelf/effect_tiles.dart' show ffmpeg;
 
 abstract final class ProgramTiles {
   static const _render = 384, _keep = 192, _pictures = 32, _perSecond = 24, _from = 1.0;

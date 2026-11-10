@@ -2,13 +2,13 @@
 // A tool the user opens from the catalog stays pinned until the selection changes or the user unpins it.
 import 'package:flutter/widgets.dart';
 
-import '../../widgets/controls.dart' show Chip, Hov, IconPress;
+import 'package:motolii/widgets/controls.dart' show Chip, Hov, IconPress;
 
-import '../../skin/tokens.dart';
-import '../dock/dock_glyphs.dart';
-import '../window/panes.dart';
-import 'tool_panel_widgets.dart';
-import '../state/state.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/workspace/window/panes.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart';
+import 'package:motolii/workspace/state/state.dart';
 
 class WsToolPanel extends StatelessWidget {
   const WsToolPanel({super.key});

@@ -4,18 +4,18 @@ import 'dart:io' show Directory, File;
 
 import 'package:flutter/widgets.dart';
 
-import '../../skin/forms/forms.dart';
-import '../../skin/svg_parts.dart';
+import 'package:motolii/skin/forms/forms.dart';
+import 'package:motolii/skin/svg_parts.dart';
 
-import '../../widgets/controls.dart' show Badge, Hov, IconPress;
-import '../../widgets/glyphs.dart';
-import '../../skin/tokens.dart';
-import 'stage_art.dart';
-import 'stage_view.dart';
-import '../../widgets/two_fingers.dart';
-import '../tool_panel/tool_panel_widgets.dart' show ToolStrip;
-import '../workspace.dart' show wsPlace;
-import '../state/state.dart';
+import 'package:motolii/widgets/controls.dart' show Badge, Hov, IconPress;
+import 'package:motolii/widgets/glyphs.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/stage/stage_art.dart';
+import 'package:motolii/workspace/stage/stage_view.dart';
+import 'package:motolii/widgets/two_fingers.dart';
+import 'package:motolii/workspace/tool_panel/tool_panel_widgets.dart' show ToolStrip;
+import 'package:motolii/workspace/workspace.dart' show wsPlace;
+import 'package:motolii/workspace/state/state.dart';
 
 part 'stage_options.dart';
 

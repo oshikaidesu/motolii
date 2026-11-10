@@ -6,11 +6,11 @@
 import 'package:docking/docking.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../skin/forms/forms.dart';
-import '../../skin/tokens.dart';
-import '../dock/dock_glyphs.dart';
-import '../../widgets/glyphs.dart' show GlyphKind;
-import '../state/state.dart';
+import 'package:motolii/skin/forms/forms.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/dock/dock_glyphs.dart';
+import 'package:motolii/widgets/glyphs.dart' show GlyphKind;
+import 'package:motolii/workspace/state/state.dart';
 
 /// The strip a tab starts on; [catalog] is on no strip: it is opened inside the Tool Panel.
 enum WsAt { shelves, stage, timeline, ease, inspector, tools, catalog }

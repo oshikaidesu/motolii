@@ -17,7 +17,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vector_math/vector_math_64.dart' show Matrix4, Vector3;
 
-import '../../bridge/motolii.dart';
+import 'package:motolii/bridge/motolii.dart';
 
 /// The moving parts of a recipe.
 ///

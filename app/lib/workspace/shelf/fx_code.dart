@@ -11,11 +11,11 @@ import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
-import '../../skin/tokens.dart';
-import '../dock/dock_program.dart' show ProgramCode;
-import 'effect_tiles.dart' show EffectTiles;
-import 'shelf_add.dart';
-import '../state/state.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/dock/dock_program.dart' show ProgramCode;
+import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
+import 'package:motolii/workspace/shelf/shelf_add.dart';
+import 'package:motolii/workspace/state/state.dart';
 
 class FxCode extends StatefulWidget {
   const FxCode(this.ws, this.thing, this.word, {this.slot = 'fx', this.shelf = true, super.key});

@@ -2,11 +2,11 @@
 // a readout, and helpers for drawing text and dashed lines in a painter.
 import 'package:flutter/widgets.dart';
 
-import '../dock/dock_glyphs.dart';
+import 'package:motolii/workspace/dock/dock_glyphs.dart';
 
-import '../../skin/tokens.dart';
-import '../window/panes.dart';
-import '../state/state.dart';
+import 'package:motolii/skin/tokens.dart';
+import 'package:motolii/workspace/window/panes.dart';
+import 'package:motolii/workspace/state/state.dart';
 
 /// The tool named [name], or null if there is none.
 WsPane? panelTool(Ws ws, String name) => ws.tools.where((t) => t.name == name).firstOrNull;

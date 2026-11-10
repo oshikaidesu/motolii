@@ -9,8 +9,8 @@
 //
 // The move is read from the document and queued on the engine without waiting. The position of a layer at the other
 // end is asked of the engine (where it shows at full strength) and is never computed here.
-import '../../bridge/motolii.dart';
-import '../state/state.dart';
+import 'package:motolii/bridge/motolii.dart';
+import 'package:motolii/workspace/state/state.dart';
 
 /// The name of a move on its row: its direction and its layers, for example 'in · TURN IN TIME'.
 String wsMoveName(Ws ws, Iterable<String> who, bool coming) {
