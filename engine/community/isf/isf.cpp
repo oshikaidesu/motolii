@@ -14,18 +14,25 @@
 // engine/stage/effects/screen_fx.h), and audio inputs to the sound of other layers. A custom vertex
 // shader is evaluated at each pixel.
 #include "community/isf/isf.h"
-#include "community/sites/adapter.h"
-#include "community/three/three_isf.h"
+
 #include <sys/stat.h>
+
+#include <algorithm>
+#include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <map>
 #include <mutex>
 #include <regex>
 #include <sstream>
+#include <string>
+#include <system_error>
+#include <utility>
 #include <vector>
-#include "base/json.h"
+
 #include <sqlite3.h>
 #include "glslang/Public/ShaderLang.h"
 #include "SPIRV/GlslangToSpv.h"
@@ -35,9 +42,15 @@
 #include "src/tint/lang/spirv/reader/reader.h"
 #include "src/tint/lang/wgsl/writer/writer.h"
 
+#include "base/json.h"
+#include "community/sites/adapter.h"
+#include "community/three/three_isf.h"
+
+namespace {
+
 // Converts the text of an ISF file into WGSL. `name` is used in the output header and `vertex` is
 // the source of an optional custom vertex shader. Returns the WGSL, or "" with the reason in `why`.
-static std::string isf_wgsl(const std::string& text, const std::string& name, std::string& why, std::string vertex = "") {
+std::string isf_wgsl(const std::string& text, const std::string& name, std::string& why, std::string vertex = "") {
     const size_t open = text.find("/*"), close = text.find("*/");
     rapidjson::Document head;
     if (open == std::string::npos || close == std::string::npos || head.Parse(text.c_str() + open + 2, close - open - 2).HasParseError() || !head.IsObject())
@@ -305,6 +318,16 @@ static std::string isf_wgsl(const std::string& text, const std::string& name, st
     return top + lines + "\n" + wgsl->wgsl;
 }
 
+}  // namespace
+
+std::string fx_source(const std::string& f) {
+    std::error_code wrong;
+    if (std::filesystem::exists(f, wrong)) return f;
+    static const std::regex copy(R"((.*)~[0-9]+(\.[^./]+)$)");
+    std::smatch m;
+    return std::regex_match(f, m, copy) ? m[1].str() + m[2].str() : f;
+}
+
 // Returns the tags of an ISF file, read from its header and body. See isf.h.
 std::string isf_tags(const std::string& file) {
     std::ifstream in(file);
@@ -350,23 +373,28 @@ std::string isf_tags(const std::string& file) {
     return tags;
 }
 
+namespace {
+
 // The last WGSL made for each file, and why the file as it is now was not converted. A half-typed
 // effect keeps drawing as it did before, as a half-typed script keeps what last ran in
 // doc_script_of, and the effect card shows the reason through isf_trouble.
-static std::mutex isf_lock;
-static std::map<std::string, std::string> isf_good, isf_why;
+std::mutex isf_lock;
+std::map<std::string, std::string> isf_good, isf_why;
 // Records why the conversion failed and returns the last good output for the file, or "" if there
 // is none.
-static std::string isf_fallback(const std::string& file, const std::string& why) {
+std::string isf_fallback(const std::string& file, const std::string& why) {
     isf_why[file] = why.empty() ? std::string("it could not be turned into WGSL") : why;
     const auto good = isf_good.find(file);
     return good == isf_good.end() ? "" : good->second;
 }
 // Records a successful conversion, forgets any earlier failure, and returns `out`.
-static std::string isf_built(const std::string& file, const std::string& out) {
+std::string isf_built(const std::string& file, const std::string& out) {
     isf_good[file] = out, isf_why.erase(file);
     return out;
 }
+
+}  // namespace
+
 // See isf.h.
 std::string isf_trouble(const std::string& asked) {
     std::lock_guard<std::mutex> hold(isf_lock);
