@@ -35,7 +35,12 @@ class AddEffectRow extends StatelessWidget {
     ];
     Widget word(String key, String word, VoidCallback? does) => Padding(
       padding: EdgeInsets.only(left: Shape.s(10)),
-      child: Chip(key: ValueKey(key), label: word, onTap: does, look: ChipLook.word),
+      child: Chip(
+        key: ValueKey(key),
+        label: word,
+        onTap: does,
+        look: ChipLook.word,
+      ),
     );
     return Padding(
       padding: EdgeInsets.only(bottom: InspectorSkin.gap),
@@ -48,19 +53,34 @@ class AddEffectRow extends StatelessWidget {
               builder: (_, h) => Container(
                 height: InspectorSkin.cell,
                 alignment: Alignment.center,
-                decoration: BoxDecoration(color: h ? Grey.g20 : InspectorSkin.well, borderRadius: BorderRadius.all(Shape.r(6))),
-                child: Text('+ Add Effect', style: TextStyles.label(h ? Grey.g95 : Grey.g76)),
+                decoration: BoxDecoration(
+                  color: h ? Grey.g20 : InspectorSkin.well,
+                  borderRadius: BorderRadius.all(Shape.r(6)),
+                ),
+                child: Text(
+                  '+ Add Effect',
+                  style: TextStyles.label(h ? Grey.g95 : Grey.g76),
+                ),
               ),
             ),
           ),
           // Copy and paste the whole effect stack with its parameters, as Alight Motion's Copy Effects and Paste Effects do.
           if (doc.movable.isNotEmpty)
-            if (doc.onCardCopy case final copy?) word('effects-copy', 'Copy all', () => copy(names)),
-          if (doc.onCardPaste case final paste?) word('effects-paste', 'Paste', paste),
+            if (doc.onCardCopy case final copy?)
+              word('effects-copy', 'Copy all', () => copy(names)),
+          if (doc.onCardPaste case final paste?)
+            word('effects-paste', 'Paste', paste),
           if (doc.moreCards.isNotEmpty && doc.onMoreCard != null) ...[
             // As in Alight Motion, only the cards for the layer's kind show by default. The rest are listed by name here.
             SizedBox(width: Shape.s(10)),
-            CardMore(name: 'More', word: 'More', items: [for (final title in doc.moreCards) (title, title, () => doc.onMoreCard!(title))]),
+            CardMore(
+              name: 'More',
+              word: 'More',
+              items: [
+                for (final title in doc.moreCards)
+                  (title, title, () => doc.onMoreCard!(title)),
+              ],
+            ),
           ],
         ],
       ),
@@ -96,8 +116,12 @@ class _InspectorPanelState extends State<InspectorPanel> {
       else ...[
         // One stack: Transform first, then the layer's effects, then the other cards. Premiere Pro's Effect Controls lists effects under Motion and Opacity the same way.
         // Every titled card folds on its own.
-        for (final (i, c) in doc.cards.indexed) ...[if (doc.onAddEffect != null && i == _addAt(doc)) const AddEffectRow(), ValuesCard(c)],
-        if (doc.onAddEffect != null && _addAt(doc) >= doc.cards.length) const AddEffectRow(),
+        for (final (i, c) in doc.cards.indexed) ...[
+          if (doc.onAddEffect != null && i == _addAt(doc)) const AddEffectRow(),
+          ValuesCard(c),
+        ],
+        if (doc.onAddEffect != null && _addAt(doc) >= doc.cards.length)
+          const AddEffectRow(),
       ],
     ];
     final panel = Focus(
@@ -118,12 +142,22 @@ class _InspectorPanelState extends State<InspectorPanel> {
               // The name and Animate button stay put while the cards scroll under them.
               // Alight Motion's keyframe button also sits outside the scrolling area (LayerTools.kt, LayerPanel).
               if (k != Kind.none)
-                Padding(padding: EdgeInsets.fromLTRB(InspectorSkin.gap, InspectorSkin.gap, InspectorSkin.gap, 0), child: const InspectorHeader()),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    InspectorSkin.gap,
+                    InspectorSkin.gap,
+                    InspectorSkin.gap,
+                    0,
+                  ),
+                  child: const InspectorHeader(),
+                ),
               Expanded(
                 child: ListView(
                   controller: _scroll,
                   padding: EdgeInsets.all(InspectorSkin.gap),
-                  scrollCacheExtent: textToType ? const ScrollCacheExtent.pixels(4000) : null,
+                  scrollCacheExtent: textToType
+                      ? const ScrollCacheExtent.pixels(4000)
+                      : null,
                   children: body,
                 ),
               ),
@@ -132,7 +166,9 @@ class _InspectorPanelState extends State<InspectorPanel> {
         ),
       ),
     );
-    final floated = Overlay.maybeOf(context) == null ? Overlay.wrap(child: panel) : panel;
+    final floated = Overlay.maybeOf(context) == null
+        ? Overlay.wrap(child: panel)
+        : panel;
     return floated;
   }
 }

@@ -6,7 +6,13 @@ import 'package:flutter/widgets.dart';
 /// [keep] returns true for a press that must not close it, such as the press that opens it again.
 /// [group] sets which regions count as inside.
 class DismissRegion extends StatefulWidget {
-  const DismissRegion({super.key, required this.shut, required this.child, this.group, this.keep});
+  const DismissRegion({
+    super.key,
+    required this.shut,
+    required this.child,
+    this.group,
+    this.keep,
+  });
   final VoidCallback shut;
   final Widget child;
   final Object? group;
@@ -24,7 +30,9 @@ class _DismissRegionState extends State<DismissRegion> {
   void initState() {
     super.initState();
     // Take focus so Esc is handled here; a focused text field would consume it.
-    WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? _keys.requestFocus() : null);
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => mounted ? _keys.requestFocus() : null,
+    );
   }
 
   @override
@@ -43,7 +51,9 @@ class _DismissRegionState extends State<DismissRegion> {
     child: Focus(
       focusNode: _keys,
       onKeyEvent: (_, e) {
-        if (e is! KeyDownEvent || e.logicalKey != LogicalKeyboardKey.escape) return KeyEventResult.ignored;
+        if (e is! KeyDownEvent || e.logicalKey != LogicalKeyboardKey.escape) {
+          return KeyEventResult.ignored;
+        }
         widget.shut();
         return KeyEventResult.handled;
       },

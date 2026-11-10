@@ -18,7 +18,11 @@ class ToolPanel extends StatelessWidget {
   const ToolPanel({super.key});
   @override
   Widget build(BuildContext context) {
-    final ws = WorkspaceScope.of(context, {WorkspaceAspect.fronted, WorkspaceAspect.picked}), name = ws.toolPanel;
+    final ws = WorkspaceScope.of(context, {
+          WorkspaceAspect.fronted,
+          WorkspaceAspect.picked,
+        }),
+        name = ws.toolPanel;
     return Panel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -42,7 +46,11 @@ class _ToolHeader extends StatelessWidget {
   final String name;
   @override
   Widget build(BuildContext context) {
-    final ws = WorkspaceScope.of(context, {WorkspaceAspect.fronted, WorkspaceAspect.picked}), pinned = ws.toolPanelManual != null;
+    final ws = WorkspaceScope.of(context, {
+          WorkspaceAspect.fronted,
+          WorkspaceAspect.picked,
+        }),
+        pinned = ws.toolPanelManual != null;
     return LayoutBuilder(
       builder: (context, box) {
         final wide = box.maxWidth >= 340;
@@ -51,9 +59,16 @@ class _ToolHeader extends StatelessWidget {
           leading: ToolSticker(name),
           trailing: [
             if (pinned)
-              Chip(label: wide ? 'Pinned · Follow' : 'Pinned', dot: Grey.g76, onTap: () => ws.openToolPanel(null))
+              Chip(
+                label: wide ? 'Pinned · Follow' : 'Pinned',
+                dot: Grey.g76,
+                onTap: () => ws.openToolPanel(null),
+              )
             else
-              Chip(label: wide ? 'Follows selection' : 'Follows', dot: WindowTokens.accent),
+              Chip(
+                label: wide ? 'Follows selection' : 'Follows',
+                dot: WindowTokens.accent,
+              ),
             SizedBox(width: WindowTokens.gap),
             IconPress(
               (ink) => Glyph(AppGlyphs.tools, size: 20, color: ink),
@@ -61,7 +76,8 @@ class _ToolHeader extends StatelessWidget {
               ink: Grey.g76,
               size: 20,
               on: name == 'Tools',
-              onTap: () => ws.openToolPanel(name == 'Tools' && pinned ? null : 'Tools'),
+              onTap: () =>
+                  ws.openToolPanel(name == 'Tools' && pinned ? null : 'Tools'),
             ),
           ],
         );
@@ -82,9 +98,15 @@ class _Catalog extends StatelessWidget {
     final ws = WorkspaceScope.read(context);
     return LayoutBuilder(
       builder: (context, box) {
-        final w = box.maxWidth - WindowTokens.gap * 2, h = box.maxHeight - WindowTokens.gap * 2;
-        final cols = gridColumns(w, _cell, gap: WindowTokens.gap, min: 2), rows = (WorkspaceScope.read(context).tools.length / cols).ceil();
-        final tile = ((h - WindowTokens.gap * (rows - 1)) / rows).clamp(_minTile, _maxTile), cw = gridCellWidth(w, cols, gap: WindowTokens.gap);
+        final w = box.maxWidth - WindowTokens.gap * 2,
+            h = box.maxHeight - WindowTokens.gap * 2;
+        final cols = gridColumns(w, _cell, gap: WindowTokens.gap, min: 2),
+            rows = (WorkspaceScope.read(context).tools.length / cols).ceil();
+        final tile = ((h - WindowTokens.gap * (rows - 1)) / rows).clamp(
+              _minTile,
+              _maxTile,
+            ),
+            cw = gridCellWidth(w, cols, gap: WindowTokens.gap);
         return ListView(
           padding: EdgeInsets.all(WindowTokens.gap),
           children: [
@@ -115,8 +137,16 @@ class _ToolTile extends StatelessWidget {
   Widget build(BuildContext context) => Pressable(
     onTap: onTap,
     builder: (_, h) => Container(
-      padding: EdgeInsets.fromLTRB(Shape.s(7), Shape.s(7), Shape.s(6), Shape.s(7)),
-      decoration: BoxDecoration(color: h ? WindowTokens.raised : WindowTokens.card, borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius))),
+      padding: EdgeInsets.fromLTRB(
+        Shape.s(7),
+        Shape.s(7),
+        Shape.s(6),
+        Shape.s(7),
+      ),
+      decoration: BoxDecoration(
+        color: h ? WindowTokens.raised : WindowTokens.card,
+        borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+      ),
       child: LayoutBuilder(
         builder: (context, box) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,11 +160,19 @@ class _ToolTile extends StatelessWidget {
               tool.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyles.name(h ? Grey.g100 : Grey.g95).copyWith(fontSize: TextStyles.px(12), fontWeight: FontWeight.w700),
+              style: TextStyles.name(h ? Grey.g100 : Grey.g95).copyWith(
+                fontSize: TextStyles.px(12),
+                fontWeight: FontWeight.w700,
+              ),
             ),
             if (box.maxHeight >= 54) ...[
               SizedBox(height: Shape.s(3)),
-              Text(tool.acts, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.label(Grey.g56)),
+              Text(
+                tool.acts,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyles.label(Grey.g56),
+              ),
             ],
           ],
         ),

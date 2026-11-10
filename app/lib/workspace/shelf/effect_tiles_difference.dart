@@ -12,9 +12,18 @@ bool looksSame(String a, String b) {
 
 /// Runs ffmpeg over a tile's pictures. Returns null when ffmpeg is missing, as where the app was started from;
 /// the tile is then its still alone.
-ProcessResult? ffmpeg(List<String> also, {Encoding? stdoutEncoding = systemEncoding}) {
+ProcessResult? ffmpeg(
+  List<String> also, {
+  Encoding? stdoutEncoding = systemEncoding,
+}) {
   try {
-    return Process.runSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', ...also], stdoutEncoding: stdoutEncoding);
+    return Process.runSync('ffmpeg', [
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-y',
+      ...also,
+    ], stdoutEncoding: stdoutEncoding);
   } on ProcessException {
     return null;
   }
@@ -25,10 +34,12 @@ ProcessResult? ffmpeg(List<String> also, {Encoding? stdoutEncoding = systemEncod
 /// mean is taken here. Empty when ffmpeg is missing, so nothing is measured.
 List<double> _differ(String a, String b) {
   try {
-    final head = File(a.replaceFirst('%d', '0')).openSync()..setPositionSync(16); // The PNG header holds the width and height.
+    final head = File(a.replaceFirst('%d', '0')).openSync()
+      ..setPositionSync(16); // The PNG header holds the width and height.
     final wh = head.readSync(8);
     head.closeSync();
-    final w = wh[0] << 24 | wh[1] << 16 | wh[2] << 8 | wh[3], h = wh[4] << 24 | wh[5] << 16 | wh[6] << 8 | wh[7];
+    final w = wh[0] << 24 | wh[1] << 16 | wh[2] << 8 | wh[3],
+        h = wh[4] << 24 | wh[5] << 16 | wh[6] << 8 | wh[7];
     final r = ffmpeg([
       '-i',
       a,
@@ -42,7 +53,9 @@ List<double> _differ(String a, String b) {
       'rgba',
       '-',
     ], stdoutEncoding: null);
-    final d = r?.stdout as List<int>? ?? const <int>[], row = w * 4, frame = 2 * row * h;
+    final d = r?.stdout as List<int>? ?? const <int>[],
+        row = w * 4,
+        frame = 2 * row * h;
     if (r == null || r.exitCode != 0 || frame == 0) return const [];
     double change(int f) {
       var sum = 0.0;
@@ -50,7 +63,12 @@ List<double> _differ(String a, String b) {
         for (var x = f + y * 2 * row, end = x + row; x < end; x += 4) {
           final pa = d[x + 3] / 255, pb = d[x + row + 3] / 255;
           for (var c = 0; c < 3; c++) {
-            sum += (d[x + c] * pa + 128 * (1 - pa) - d[x + row + c] * pb - 128 * (1 - pb)).abs();
+            sum +=
+                (d[x + c] * pa +
+                        128 * (1 - pa) -
+                        d[x + row + c] * pb -
+                        128 * (1 - pb))
+                    .abs();
           }
         }
       }

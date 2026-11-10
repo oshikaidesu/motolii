@@ -70,7 +70,9 @@ int fontsUnoffered = 0;
 /// A font that can set the shelf's sample line is offered with that line. A font with other letters is offered
 /// with a sample in its own script, as fonts.google.com does (samples.json, from Google Fonts' gflanguages),
 /// so the user never sees missing-glyph boxes. The bundled fonts and the user's own are offered as well.
-Future<void> fontsRead(WorkspaceController ws) => _reading ??= Zone.root.run<Future<void>>(() async {
+Future<void> fontsRead(
+  WorkspaceController ws,
+) => _reading ??= Zone.root.run<Future<void>>(() async {
   final files = <String>[];
   for (final dir in [
     '/System/Library/Fonts',
@@ -93,7 +95,10 @@ Future<void> fontsRead(WorkspaceController ws) => _reading ??= Zone.root.run<Fut
   var scripts = const <(String, String)>[];
   try {
     scripts = [
-      for (final s in jsonDecode(File('$motoliiDir/third_party/gflanguages/samples.json').readAsStringSync()) as List)
+      for (final s in jsonDecode(
+        File('$motoliiDir/third_party/gflanguages/samples.json')
+            .readAsStringSync(),
+      ) as List)
         for (final w in [s['sample'], s['letters']])
           // The sample text, or else the first letters of the alphabet for a script that has no sample.
           if (w is String && w.isNotEmpty) ('${s['script']}', w),
@@ -101,7 +106,10 @@ Future<void> fontsRead(WorkspaceController ws) => _reading ??= Zone.root.run<Fut
   } catch (_) {
     // Without samples.json only fonts with Latin letters are offered.
   }
-  final first = await ws.inside!.settingFirst(files, [_sample, for (final (_, w) in scripts) w]);
+  final first = await ws.inside!.settingFirst(files, [
+    _sample,
+    for (final (_, w) in scripts) w,
+  ]);
   _disk = [
     for (final (i, f) in files.indexed)
       if (first[i] >= 0)
@@ -122,10 +130,13 @@ Future<void> fontsRead(WorkspaceController ws) => _reading ??= Zone.root.run<Fut
 
 /// The file that stores the eight most recently used fonts, newest first. A test points it elsewhere with
 /// [fontRecentAt]. The Ease tool panel stores its recent easings the same way (ease_stars.json).
-File _recentFile = File('${Platform.environment['HOME']}/.motolii/font_recent.json');
+File _recentFile = File(
+  '${Platform.environment['HOME']}/.motolii/font_recent.json',
+);
 List<String>? _recent;
 void fontRecentAt(File f) => (_recentFile = f, _recent = null);
-List<String> fontRecent() => _recent ??= [for (final s in fileList(_recentFile)) '$s'];
+List<String> fontRecent() =>
+    _recent ??= [for (final s in fileList(_recentFile)) '$s'];
 void _used(String family) {
   final r = fontRecent()
     ..remove(family)
@@ -139,11 +150,22 @@ void _used(String family) {
 void _setFont(ShelfContext c, _Font f) {
   _used(f.family);
   final m = c.ws.inside!, t = int.tryParse(c.ws.selected ?? '');
-  void told(bool done, String why) => c.set(() => done ? c.mem.trouble.remove(f.family) : c.mem.trouble[f.family] = why);
-  if (t != null && m.word(t, 'kind') == 'text') return c.ws.after(m.later('say', layer: t, name: 'file', word: f.path!), told);
+  void told(bool done, String why) => c.set(
+    () => done ? c.mem.trouble.remove(f.family) : c.mem.trouble[f.family] = why,
+  );
+  if (t != null && m.word(t, 'kind') == 'text') {
+    return c.ws.after(
+      m.later('say', layer: t, name: 'file', word: f.path!),
+      told,
+    );
+  }
   // The new text layer and its colors form one undo step.
   m.later('together', number: 1);
-  c.ws.after(m.later('add', name: 'text', word: f.path!), null, (made) => c.ws.select('$made'));
+  c.ws.after(
+    m.later('add', name: 'text', word: f.path!),
+    null,
+    (made) => c.ws.select('$made'),
+  );
   applyChosenInks(c.ws, 'text', '');
   c.ws.after(m.later('together'), told);
 }
@@ -152,9 +174,17 @@ void _setFont(ShelfContext c, _Font f) {
 /// Colors shelf. With a text layer selected nothing happens here: its font is set by a double-click or Apply.
 void _toRole(ShelfContext c, _Font f) {
   final m = c.ws.inside, t = int.tryParse(c.ws.selected ?? '');
-  if (m == null || f.path == null || (t != null && m.word(t, 'kind') == 'text')) return;
+  if (m == null ||
+      f.path == null ||
+      (t != null && m.word(t, 'kind') == 'text')) {
+    return;
+  }
   _used(f.family);
-  c.set(() => c.ws.fontRole == 'body' ? c.ws.bodyFont = f.path! : c.ws.titleFont = f.path!);
+  c.set(
+    () => c.ws.fontRole == 'body'
+        ? c.ws.bodyFont = f.path!
+        : c.ws.titleFont = f.path!,
+  );
 }
 
 /// Adds a text layer in the given font at the playhead, with the current colors, and selects it.
@@ -163,9 +193,18 @@ void _addIn(ShelfContext c, String font) {
   final m = c.ws.inside!;
   // The new text layer and its colors form one undo step.
   m.later('together', number: 1);
-  c.ws.after(m.later('add', name: 'text', word: font), null, (made) => c.ws.select('$made'));
+  c.ws.after(
+    m.later('add', name: 'text', word: font),
+    null,
+    (made) => c.ws.select('$made'),
+  );
   applyChosenInks(c.ws, 'text', '');
-  c.ws.after(m.later('together'), (done, why) => c.set(() => done ? c.mem.trouble.remove('role') : c.mem.trouble['role'] = why));
+  c.ws.after(
+    m.later('together'),
+    (done, why) => c.set(
+      () => done ? c.mem.trouble.remove('role') : c.mem.trouble['role'] = why,
+    ),
+  );
 }
 
 /// The title and body fonts, shown first on the shelf like PowerPoint's Headings and Body theme fonts
@@ -179,14 +218,23 @@ class _Roles extends StatelessWidget {
   final List<_Font> fonts;
   @override
   Widget build(BuildContext context) {
-    final m = c.ws.inside!, t = int.tryParse(c.ws.selected ?? ''), onText = t != null && m.word(t, 'kind') == 'text';
+    final m = c.ws.inside!,
+        t = int.tryParse(c.ws.selected ?? ''),
+        onText = t != null && m.word(t, 'kind') == 'text';
     Widget role(String r, String label, String face) {
-      final f = fonts.where((f) => f.path == face).firstOrNull ?? _Font(face.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), ''), path: face);
+      final f =
+          fonts.where((f) => f.path == face).firstOrNull ??
+          _Font(
+            face.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), ''),
+            path: face,
+          );
       final on = !onText && c.ws.fontRole == r;
       return Expanded(
         child: DockHover(
           key: ValueKey('font-role-$r'),
-          onTap: () => onText ? c.ws.after(m.later('say', layer: t, name: 'file', word: face)) : c.set(() => c.ws.fontRole = r),
+          onTap: () => onText
+              ? c.ws.after(m.later('say', layer: t, name: 'file', word: face))
+              : c.set(() => c.ws.fontRole = r),
           builder: (context, h) => Container(
             height: Shape.z(46),
             padding: EdgeInsets.only(left: Shape.s(8), right: Shape.s(4)),
@@ -198,13 +246,25 @@ class _Roles extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(label, style: TextStyles.label(dockInk(on, Grey.g63))),
+                      Text(
+                        label,
+                        style: TextStyles.label(dockInk(on, Grey.g63)),
+                      ),
                       SizedBox(height: Shape.s(2)),
-                      Text(f.family, maxLines: 1, overflow: TextOverflow.ellipsis, style: _face(f, 14, dockInk(on, Grey.g95))),
+                      Text(
+                        f.family,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: _face(f, 14, dockInk(on, Grey.g95)),
+                      ),
                     ],
                   ),
                 ),
-                Chip(key: ValueKey('font-add-$r'), label: '+', onTap: () => _addIn(c, face)),
+                Chip(
+                  key: ValueKey('font-add-$r'),
+                  label: '+',
+                  onTap: () => _addIn(c, face),
+                ),
               ],
             ),
           ),
@@ -237,7 +297,10 @@ class FontsShelf extends StatelessWidget {
   const FontsShelf(this.c, {super.key});
   final ShelfContext c;
   @override
-  Widget build(BuildContext context) => ValueListenableBuilder<int>(valueListenable: dockRead, builder: (context, _, _) => _shelf(context));
+  Widget build(BuildContext context) => ValueListenableBuilder<int>(
+    valueListenable: dockRead,
+    builder: (context, _, _) => _shelf(context),
+  );
 
   Widget _shelf(BuildContext context) {
     final m = c.ws.inside;
@@ -246,15 +309,29 @@ class FontsShelf extends StatelessWidget {
     // Maps each font file to the text layer that uses it.
     final setIn = {
       for (final l in c.ws.layers)
-        if (m.word(int.parse(l.id), 'kind') == 'text') m.whole(m.word(int.parse(l.id), 'file')): l,
+        if (m.word(int.parse(l.id), 'kind') == 'text')
+          m.whole(m.word(int.parse(l.id), 'file')): l,
     };
     bool used(_Font f) => setIn.containsKey(f.path);
-    Set<String> tagsOf(_Font f) => DockTags.of('Fonts', f.family, f.path == null ? const <String>{} : (c.ws.inside?.fontTags(f.path!) ?? const <String>{}));
-    var hits = fonts.where((f) => DockTags.hit(c.query, f.family, tagsOf(f))).toList();
+    Set<String> tagsOf(_Font f) => DockTags.of(
+      'Fonts',
+      f.family,
+      f.path == null
+          ? const <String>{}
+          : (c.ws.inside?.fontTags(f.path!) ?? const <String>{}),
+    );
+    var hits = fonts
+        .where((f) => DockTags.hit(c.query, f.family, tagsOf(f)))
+        .toList();
     if (hits.isEmpty && c.query.trim().isNotEmpty) {
       // Nothing matches the query as typed, so show the five nearest fonts.
-      final near = c.near([for (final f in fonts) (f.family, '${f.family} ${tagsOf(f).join(' ')}', '')]);
-      hits = [for (final id in near) ...fonts.where((f) => f.family == id).take(1)];
+      final near = c.near([
+        for (final f in fonts)
+          (f.family, '${f.family} ${tagsOf(f).join(' ')}', ''),
+      ]);
+      hits = [
+        for (final id in near) ...fonts.where((f) => f.family == id).take(1),
+      ];
     }
     final vocab = <String, int>{};
     for (final f in hits) {
@@ -262,7 +339,8 @@ class FontsShelf extends StatelessWidget {
         vocab[t] = (vocab[t] ?? 0) + 1;
       }
     }
-    final top = vocab.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final top = vocab.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
     bool keep(_Font f) => switch (c.chip) {
       'All' => true,
       'Used' => used(f),
@@ -273,9 +351,16 @@ class FontsShelf extends StatelessWidget {
     };
     final list = hits.where(keep).toList();
     // Newest first.
-    if (c.chip == 'Recent') list.sort((a, b) => fontRecent().indexOf(a.family).compareTo(fontRecent().indexOf(b.family)));
+    if (c.chip == 'Recent') {
+      list.sort(
+        (a, b) => fontRecent()
+            .indexOf(a.family)
+            .compareTo(fontRecent().indexOf(b.family)),
+      );
+    }
     final sel = fonts.where((f) => f.family == c.sel).firstOrNull;
-    final picked = sel == null ? null : setIn[sel.path], onText = picked != null && picked.id == c.ws.selected;
+    final picked = sel == null ? null : setIn[sel.path],
+        onText = picked != null && picked.id == c.ws.selected;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -284,7 +369,10 @@ class FontsShelf extends StatelessWidget {
           [
             ('All', hits.length),
             ('Used', hits.where(used).length),
-            ('Recent', hits.where((f) => fontRecent().contains(f.family)).length),
+            (
+              'Recent',
+              hits.where((f) => fontRecent().contains(f.family)).length,
+            ),
             ('Starred', hits.where((f) => c.starred(f.family)).length),
             // All tags, most common first. The chip row scrolls.
             for (final t in top) (t.key, t.value),
@@ -300,11 +388,14 @@ class FontsShelf extends StatelessWidget {
                     String? usedBy(_Font f) => setIn[f.path]?.name;
                     if (c.mem.mapped.contains('Fonts')) {
                       // Map view: each font is placed by how its letters look when drawn by ThorVG.
-                      final map = dockMap('Fonts'), files = [for (final f in fonts) ?f.path];
+                      final map = dockMap('Fonts'),
+                          files = [for (final f in fonts) ?f.path];
                       drawFontDots(m, files);
                       // Place fonts by how FontCLIP sees them once the model is available, otherwise by a small drawing of the sample.
                       final clip = dockModel('fontclip_b32');
-                      map.need(m, [for (final f in files) (f, f)], (from) async {
+                      map.need(m, [for (final f in files) (f, f)], (
+                        from,
+                      ) async {
                         // Keyed by file, because two files can share one family name.
                         final List<Float32List?> look;
                         if (clip != null) {
@@ -313,14 +404,21 @@ class FontsShelf extends StatelessWidget {
                           await drawFontDots(m, files);
                           look = [
                             for (final f in from)
-                              if (fontDotsDrawn[f] case final g?) _halved(g) else null,
+                              if (fontDotsDrawn[f] case final g?)
+                                _halved(g)
+                              else
+                                null,
                           ];
                         }
-                        final kinds = [for (final f in from) _kindOf(m, f)], all = kinds.toSet().toList();
+                        final kinds = [for (final f in from) _kindOf(m, f)],
+                            all = kinds.toSet().toList();
                         return dockTogether(
                           [
                             look,
-                            [for (final k in kinds) Float32List(all.length)..[all.indexOf(k)] = 1],
+                            [
+                              for (final k in kinds)
+                                Float32List(all.length)..[all.indexOf(k)] = 1,
+                            ],
                           ],
                           const [1, 0.5],
                         ); // The font style is blended in at half weight so fonts of the same style group together.
@@ -328,9 +426,16 @@ class FontsShelf extends StatelessWidget {
                       final byPath = {for (final f in list) ?f.path: f};
                       return DockMap(
                         map,
-                        [for (final MapEntry(key: p, value: f) in byPath.entries) (p, _FontDot(f, c, map: map))],
+                        [
+                          for (final MapEntry(key: p, value: f)
+                              in byPath.entries)
+                            (p, _FontDot(f, c, map: map)),
+                        ],
                         aspect: fontDotSize.$1 / fontDotSize.$2,
-                        picked: list.where((f) => f.family == c.sel).firstOrNull?.path,
+                        picked: list
+                            .where((f) => f.family == c.sel)
+                            .firstOrNull
+                            ?.path,
                         press: (p) {
                           if (byPath[p] case final f?) {
                             // One click, as elsewhere on the map: it sets the role's font when no text layer is selected.
@@ -340,11 +445,19 @@ class FontsShelf extends StatelessWidget {
                         },
                       );
                     }
-                    final notHere = c.chip == 'All' && c.query.trim().isEmpty && fontsUnoffered > 0
+                    final notHere =
+                        c.chip == 'All' &&
+                            c.query.trim().isEmpty &&
+                            fontsUnoffered > 0
                         ? Padding(
                             // Explains why some fonts are missing instead of hiding them silently.
                             key: const ValueKey('ws-fonts-unoffered'),
-                            padding: EdgeInsets.fromLTRB(WindowTokens.inset, Shape.s(8), WindowTokens.inset, Shape.s(8)),
+                            padding: EdgeInsets.fromLTRB(
+                              WindowTokens.inset,
+                              Shape.s(8),
+                              WindowTokens.inset,
+                              Shape.s(8),
+                            ),
                             child: Text(
                               '$fontsUnoffered fonts here are not offered: they have no letters of any language (symbols, maths, emoji), or ThorVG cannot read them',
                               style: TextStyles.label(Grey.g56),
@@ -357,7 +470,12 @@ class FontsShelf extends StatelessWidget {
                       list: box.maxWidth < 440,
                       count: list.length,
                       footer: notHere,
-                      tile: (i) => _fontTile(list[i], c, list: box.maxWidth < 440, usedBy: usedBy(list[i])),
+                      tile: (i) => _fontTile(
+                        list[i],
+                        c,
+                        list: box.maxWidth < 440,
+                        usedBy: usedBy(list[i]),
+                      ),
                     );
                   },
                 ),
@@ -370,13 +488,20 @@ class FontsShelf extends StatelessWidget {
               child: Text('Aa', style: _face(sel, 15, WindowTokens.onAccent)),
             ),
             title: sel.family,
-            meta: c.mem.trouble[sel.family] ?? '${sel.path!.split('.').last.toUpperCase()} · ${File(sel.path!).parent.path.split('/').last}',
+            meta:
+                c.mem.trouble[sel.family] ??
+                '${sel.path!.split('.').last.toUpperCase()} · ${File(sel.path!).parent.path.split('/').last}',
             // Applies to the selected text layer, or places a new text layer when none is selected.
-            action: m.word(int.tryParse(c.ws.selected ?? '') ?? 0, 'kind') != 'text' ? 'Place' : 'Apply',
+            action:
+                m.word(int.tryParse(c.ws.selected ?? '') ?? 0, 'kind') != 'text'
+                ? 'Place'
+                : 'Apply',
             done: onText,
             doneLabel: 'In use',
             // True when no text layer is selected, so the action creates a new one.
-            fresh: m.word(int.tryParse(c.ws.selected ?? '') ?? 0, 'kind') != 'text',
+            fresh:
+                m.word(int.tryParse(c.ws.selected ?? '') ?? 0, 'kind') !=
+                'text',
             onAction: () => _setFont(c, sel),
           ),
       ],
@@ -396,7 +521,11 @@ String _own(_Font f) {
   if (p == null) return f.family;
   if (_read.add(p)) {
     Zone.root.run(
-      () => (FontLoader(p)..addFont(File(p).readAsBytes().then(ByteData.sublistView))).load().catchError((Object _) {}),
+      () =>
+          (FontLoader(p)
+                ..addFont(File(p).readAsBytes().then(ByteData.sublistView)))
+              .load()
+              .catchError((Object _) {}),
     ); // If the file has gone since, the row stays in the family name's face.
   }
   return p;
@@ -413,10 +542,22 @@ TextStyle _face(_Font f, double size, Color c) => TextStyle(
 );
 
 /// One font as a tile of the Fonts shelf: a row (narrow) or a card (wide), its sample set in its own face.
-Widget _fontTile(_Font f, ShelfContext c, {required bool list, String? usedBy}) {
+Widget _fontTile(
+  _Font f,
+  ShelfContext c, {
+  required bool list,
+  String? usedBy,
+}) {
   final sel = c.sel == f.family, star = c.starred(f.family);
   final tags =
-      f.script ?? DockTags.of('Fonts', f.family, f.path == null ? const <String>{} : (c.ws.inside?.fontTags(f.path!) ?? const <String>{})).take(2).join(' ');
+      f.script ??
+      DockTags.of(
+        'Fonts',
+        f.family,
+        f.path == null
+            ? const <String>{}
+            : (c.ws.inside?.fontTags(f.path!) ?? const <String>{}),
+      ).take(2).join(' ');
   return ShelfTile(
     ShelfItem(f.family, f.family, label: f.script ?? '', about: f.sample ?? ''),
     shelfLooks['Fonts']!,
@@ -433,19 +574,42 @@ Widget _fontTile(_Font f, ShelfContext c, {required bool list, String? usedBy}) 
         ? FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(f.sample ?? _sample, maxLines: 1, style: _face(f, 17, dockInk(sel, Grey.g95))),
+            child: Text(
+              f.sample ?? _sample,
+              maxLines: 1,
+              style: _face(f, 17, dockInk(sel, Grey.g95)),
+            ),
           )
-        : Text(f.sample ?? 'Motion', maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: _face(f, 28, dockInk(sel, Grey.g95))),
+        : Text(
+            f.sample ?? 'Motion',
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.fade,
+            style: _face(f, 28, dockInk(sel, Grey.g95)),
+          ),
     says: '${f.family}  ·  $tags',
     marks: [
-      if (f.script != null) ...[SizedBox(width: Shape.s(6)), Chip(label: _noLatin, look: ChipLook.tag(null))],
-      if (usedBy case final u?) ...[SizedBox(width: Shape.s(6)), Chip(label: u, look: ChipLook.tag(sel ? null : WindowTokens.toneText))],
+      if (f.script != null) ...[
+        SizedBox(width: Shape.s(6)),
+        Chip(label: _noLatin, look: ChipLook.tag(null)),
+      ],
+      if (usedBy case final u?) ...[
+        SizedBox(width: Shape.s(6)),
+        Chip(label: u, look: ChipLook.tag(sel ? null : WindowTokens.toneText)),
+      ],
     ],
     after: (h) => [
       if (star || h || sel)
-        DockStar(on: star, ink: sel ? WindowTokens.onAccent : null, onTap: () => c.star(f.family))
+        DockStar(
+          on: star,
+          ink: sel ? WindowTokens.onAccent : null,
+          onTap: () => c.star(f.family),
+        )
       else
-        SizedBox(width: list ? Shape.s(20) : null, height: list ? null : Shape.s(20)),
+        SizedBox(
+          width: list ? Shape.s(20) : null,
+          height: list ? null : Shape.s(20),
+        ),
     ],
   );
 }
@@ -456,7 +620,15 @@ Widget _fontTile(_Font f, ShelfContext c, {required bool list, String? usedBy}) 
 /// monospace fonts. Returns '' if no kind is known.
 String _kindOf(Motolii m, String path) {
   final t = m.fontTags(path);
-  return t.contains('mono') ? 'mono' : const ['serif', 'sans', 'script', 'ornaments', 'symbols'].firstWhere(t.contains, orElse: () => '');
+  return t.contains('mono')
+      ? 'mono'
+      : const [
+          'serif',
+          'sans',
+          'script',
+          'ornaments',
+          'symbols',
+        ].firstWhere(t.contains, orElse: () => '');
 }
 
 Float32List _halved(Uint8List g) {
@@ -496,17 +668,26 @@ class _FontDotState extends State<_FontDot> {
     for (var i = 0; i < g.length; i++) {
       rgba.setRange(i * 4, i * 4 + 4, [g[i], g[i], g[i], g[i]]); // The pixels are premultiplied white. Without that Flutter showed white boxes.
     }
-    ui.decodeImageFromPixels(rgba, fontDotSize.$1, fontDotSize.$2, ui.PixelFormat.rgba8888, (image) {
-      // Flutter's own decoder turns the pixels into an image.
-      _seen[p] = image;
-      if (mounted) setState(() {});
-    });
+    ui.decodeImageFromPixels(
+      rgba,
+      fontDotSize.$1,
+      fontDotSize.$2,
+      ui.PixelFormat.rgba8888,
+      (image) {
+        // Flutter's own decoder turns the pixels into an image.
+        _seen[p] = image;
+        if (mounted) setState(() {});
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final f = widget.f, c = widget.c, sel = c.sel == f.family;
-    if ((f.path, fontDotsDrawn[f.path]) case (final p?, final g?) when _making.add(p)) _make(p, g);
+    if ((f.path, fontDotsDrawn[f.path]) case (final p?, final g?)
+        when _making.add(p)) {
+      _make(p, g);
+    }
     return DockHover(
       onTap: () {
         c.pick(f.family);
@@ -520,12 +701,19 @@ class _FontDotState extends State<_FontDot> {
             valueListenable: map.places,
             builder: (context, at, _) => RawImage(
               image: _seen[f.path],
-              color: TextStyles.ink(dockInk(sel, dockPalette(at)[f.path] ?? Grey.g95)),
+              color: TextStyles.ink(
+                dockInk(sel, dockPalette(at)[f.path] ?? Grey.g95),
+              ),
               colorBlendMode: BlendMode.modulate,
               fit: BoxFit.contain,
             ),
           ),
-          null => RawImage(image: _seen[f.path], color: TextStyles.ink(dockInk(sel, Grey.g95)), colorBlendMode: BlendMode.modulate, fit: BoxFit.contain),
+          null => RawImage(
+            image: _seen[f.path],
+            color: TextStyles.ink(dockInk(sel, Grey.g95)),
+            colorBlendMode: BlendMode.modulate,
+            fit: BoxFit.contain,
+          ),
         },
       ),
     );

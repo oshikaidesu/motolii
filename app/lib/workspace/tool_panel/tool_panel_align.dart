@@ -35,7 +35,9 @@ class AlignTool extends StatelessWidget {
   /// It runs at most twice. A layer in depth or tilted towards the camera has different bounds after it moves,
   /// so the second pass corrects the remaining offset.
   static void align(WorkspaceController ws, int side, [int pass = 0]) {
-    final m = ws.inside, t = int.tryParse(ws.selected ?? ''), r = t == null ? null : m?.seen(t);
+    final m = ws.inside,
+        t = int.tryParse(ws.selected ?? ''),
+        r = t == null ? null : m?.seen(t);
     if (m == null || t == null || r == null) return;
     final pic = ArtGeometry.comp;
     final dx = switch (side) {
@@ -54,12 +56,20 @@ class AlignTool extends StatelessWidget {
     // Moves the layer like a drag on the stage, without waiting for the engine.
     m.later('drag_start', layer: t);
     m.dragUpdate('place', dx, dy);
-    ws.after(m.later('drag_end', number: 1), (done, _) => done && pass == 0 ? align(ws, side, 1) : null);
+    ws.after(
+      m.later('drag_end', number: 1),
+      (done, _) => done && pass == 0 ? align(ws, side, 1) : null,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.picked}), r = _seen(ws), pic = ArtGeometry.comp;
+    final ws = WorkspaceScope.of(context, {
+          WorkspaceAspect.document,
+          WorkspaceAspect.picked,
+        }),
+        r = _seen(ws),
+        pic = ArtGeometry.comp;
     bool at(int side) =>
         r != null &&
         switch (side) {
@@ -75,7 +85,9 @@ class AlignTool extends StatelessWidget {
       children: [
         if (ws.layer case final l?)
           ToolStrip(
-            left: [Chip(label: l.name, look: ChipLook.flat(layerKindColor(l.kind)))],
+            left: [
+              Chip(label: l.name, look: ChipLook.flat(layerKindColor(l.kind))),
+            ],
           ),
         SizedBox(height: Shape.s(8)),
         for (final row in const [
@@ -122,30 +134,54 @@ class _Side extends CustomPainter {
       ..strokeWidth = 1.4
       ..strokeCap = StrokeCap.round;
     final box = Paint()..color = ink.withValues(alpha: .55);
-    final across = side < 3, k = side % 3, lo = s.width * .2, hi = s.width * .8, mid = s.width / 2;
+    final across = side < 3,
+        k = side % 3,
+        lo = s.width * .2,
+        hi = s.width * .8,
+        mid = s.width / 2;
     final edge = k == 0
         ? lo
         : k == 1
         ? mid
         : hi;
     if (across) {
-      c.drawLine(Offset(edge, s.height * .15), Offset(edge, s.height * .85), line);
+      c.drawLine(
+        Offset(edge, s.height * .15),
+        Offset(edge, s.height * .85),
+        line,
+      );
       final w = s.width * .32,
           left = k == 0
               ? edge
               : k == 1
               ? edge - w / 2
               : edge - w;
-      c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(left, s.height * .32, w, s.height * .36), Shape.r(1.5)), box);
+      c.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(left, s.height * .32, w, s.height * .36),
+          Shape.r(1.5),
+        ),
+        box,
+      );
     } else {
-      c.drawLine(Offset(s.width * .15, edge), Offset(s.width * .85, edge), line);
+      c.drawLine(
+        Offset(s.width * .15, edge),
+        Offset(s.width * .85, edge),
+        line,
+      );
       final h = s.height * .32,
           top = k == 0
               ? edge
               : k == 1
               ? edge - h / 2
               : edge - h;
-      c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(s.width * .32, top, s.width * .36, h), Shape.r(1.5)), box);
+      c.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(s.width * .32, top, s.width * .36, h),
+          Shape.r(1.5),
+        ),
+        box,
+      );
     }
   }
 

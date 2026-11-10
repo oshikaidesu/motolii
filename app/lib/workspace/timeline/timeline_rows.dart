@@ -25,7 +25,12 @@ extension TimelinePaneRows on TimelinePaneState {
   /// The label colours of the layers a behaviour affects, in order, or null for an ordinary layer row (which has a single colour).
   List<Color>? mixOf(WorkspaceController ws, String id) {
     final m = ws.inside, t = int.tryParse(id);
-    if (m == null || t == null || m.word(t, 'kind') != 'behaviour' || !relationKinds.contains(m.word(t, 'file'))) return null;
+    if (m == null ||
+        t == null ||
+        m.word(t, 'kind') != 'behaviour' ||
+        !relationKinds.contains(m.word(t, 'file'))) {
+      return null;
+    }
     return [
       for (final s in m.word(t, 'members').split(' '))
         if (s.isNotEmpty && s != '_') layerLabelColor(s),
@@ -40,7 +45,8 @@ extension TimelinePaneRows on TimelinePaneState {
 
   // Hiding sets the layer's visible property to 0 in the project, so the layer is not on the canvas. It is one undo step.
   // This reads the last snapshot, so no engine call is made while a row is built.
-  bool isHidden(WorkspaceController ws, String id) => ws.layers.any((l) => l.id == id && l.hidden);
+  bool isHidden(WorkspaceController ws, String id) =>
+      ws.layers.any((l) => l.id == id && l.hidden);
 
   /// How many layers a row dragged by [by] rows moves past. A collapsed group counts as itself plus all its members.
   int _places(WorkspaceController ws, Layer l, int by) {
@@ -50,25 +56,47 @@ extension TimelinePaneRows on TimelinePaneState {
             if (o.value == null) ws.layers[o.layer].id,
         ],
         at = seen.indexOf(l.id);
-    final past = by > 0 ? seen.sublist(at + 1, math.min(at + 1 + by, seen.length)) : seen.sublist(math.max(0, at + by), at);
-    return past.fold(0, (n, id) => n + 1 + away.values.where((g) => g == id).length);
+    final past = by > 0
+        ? seen.sublist(at + 1, math.min(at + 1 + by, seen.length))
+        : seen.sublist(math.max(0, at + by), at);
+    return past.fold(
+      0,
+      (n, id) => n + 1 + away.values.where((g) => g == id).length,
+    );
   }
 
   void _eye(WorkspaceController ws, String id) {
-    ws.after(ws.inside!.later('set', layer: int.parse(id), name: 'visible', number: isHidden(ws, id) ? 1 : 0));
+    ws.after(
+      ws.inside!.later(
+        'set',
+        layer: int.parse(id),
+        name: 'visible',
+        number: isHidden(ws, id) ? 1 : 0,
+      ),
+    );
   }
 
   // Solo and lock are stored in the project, as in After Effects. While any layer is solo, only the solo layers are shown.
   // The engine refuses to change a locked layer and reports an error.
-  bool isSolo(WorkspaceController ws, String id) => ws.layers.any((l) => l.id == id && l.solo);
+  bool isSolo(WorkspaceController ws, String id) =>
+      ws.layers.any((l) => l.id == id && l.solo);
 
-  bool isLocked(WorkspaceController ws, String id) => ws.layers.any((l) => l.id == id && l.locked);
+  bool isLocked(WorkspaceController ws, String id) =>
+      ws.layers.any((l) => l.id == id && l.locked);
 
-  bool anySolo(WorkspaceController ws) => ws.layers.any((l) => isSolo(ws, l.id));
+  bool anySolo(WorkspaceController ws) =>
+      ws.layers.any((l) => isSolo(ws, l.id));
 
   void _flag(WorkspaceController ws, String name, String id) {
     final m = ws.inside!;
-    ws.after(m.later('set', layer: int.parse(id), name: name, number: (name == 'solo' ? isSolo(ws, id) : isLocked(ws, id)) ? 0 : 1));
+    ws.after(
+      m.later(
+        'set',
+        layer: int.parse(id),
+        name: name,
+        number: (name == 'solo' ? isSolo(ws, id) : isLocked(ws, id)) ? 0 : 1,
+      ),
+    );
   }
 
   Widget labels(WorkspaceController ws, List<TimelineRow> rows) => Column(
@@ -91,7 +119,9 @@ extension TimelinePaneRows on TimelinePaneState {
                       for (var i = 0; i < rows.length; i++)
                         if (order[i].aim case (final said, final other)?)
                           Positioned(
-                            key: ValueKey('ws-tl-aim-${ws.layers[order[i].layer].id}-$said-$other'),
+                            key: ValueKey(
+                              'ws-tl-aim-${ws.layers[order[i].layer].id}-$said-$other',
+                            ),
                             left: Shape.s(34),
                             right: Shape.s(8),
                             top: i * TimelineMetrics.row - top,
@@ -103,10 +133,19 @@ extension TimelinePaneRows on TimelinePaneState {
                               onPressed: () => ws.select(other),
                               child: Row(
                                 children: [
-                                  Text(said, maxLines: 1, style: TextStyles.label(Grey.g56)),
+                                  Text(
+                                    said,
+                                    maxLines: 1,
+                                    style: TextStyles.label(Grey.g56),
+                                  ),
                                   SizedBox(width: Shape.s(5)),
                                   Flexible(
-                                    child: Text(_numbered(ws, other), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.label(Grey.g91)),
+                                    child: Text(
+                                      _numbered(ws, other),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyles.label(Grey.g91),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -115,7 +154,9 @@ extension TimelinePaneRows on TimelinePaneState {
                         // A property lane shows the property name under its layer's name, as Ableton names a lane after its control.
                         else if (order[i].value case final n?)
                           Positioned(
-                            key: ValueKey('ws-tl-lane-${ws.layers[order[i].layer].id}-$n'),
+                            key: ValueKey(
+                              'ws-tl-lane-${ws.layers[order[i].layer].id}-$n',
+                            ),
                             left: Shape.s(34),
                             right: Shape.s(8),
                             top: i * TimelineMetrics.row - top,
@@ -124,13 +165,23 @@ extension TimelinePaneRows on TimelinePaneState {
                             // This follows Ableton's Device and Control choosers and Logic's plug-in and parameter names.
                             child: Row(
                               children: [
-                                if (laneCard(ws, ws.layers[order[i].layer], n) case final card?) ...[
+                                if (laneCard(ws, ws.layers[order[i].layer], n)
+                                    case final card?) ...[
                                   Flexible(
-                                    child: Text(card, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.label(Grey.g56)),
+                                    child: Text(
+                                      card,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyles.label(Grey.g56),
+                                    ),
                                   ),
                                   SizedBox(width: Shape.s(5)),
                                 ],
-                                Text(ws.inside?.shown(n)?.label ?? n, maxLines: 1, style: TextStyles.label(Grey.g76)),
+                                Text(
+                                  ws.inside?.shown(n)?.label ?? n,
+                                  maxLines: 1,
+                                  style: TextStyles.label(Grey.g76),
+                                ),
                               ],
                             ),
                           )
@@ -144,7 +195,8 @@ extension TimelinePaneRows on TimelinePaneState {
                             // Dragging a row up or down moves the layer forward or back by as many rows as it was dragged.
                             child: GestureDetector(
                               supportedDevices: pressingDevices,
-                              onSecondaryTapDown: (d) => labelRight(l, d.globalPosition),
+                              onSecondaryTapDown: (d) =>
+                                  labelRight(l, d.globalPosition),
                               // Count the whole drag from the pointer-down position.
                               dragStartBehavior: DragStartBehavior.down,
                               onVerticalDragStart: (_) => lift = 0,
@@ -152,7 +204,15 @@ extension TimelinePaneRows on TimelinePaneState {
                               onVerticalDragEnd: (_) {
                                 final by = (lift / TimelineMetrics.row).round();
                                 if (by != 0) {
-                                  ws.after(ws.inside!.later('raise', layer: int.parse(l.id), number: (by > 0 ? -1 : 1) * _places(ws, l, by).toDouble()));
+                                  ws.after(
+                                    ws.inside!.later(
+                                      'raise',
+                                      layer: int.parse(l.id),
+                                      number:
+                                          (by > 0 ? -1 : 1) *
+                                          _places(ws, l, by).toDouble(),
+                                    ),
+                                  );
                                 }
                               },
                               child: TimelineLabelRow(
@@ -164,11 +224,16 @@ extension TimelinePaneRows on TimelinePaneState {
                                 solo: isSolo(ws, l.id),
                                 lanes: l.kind == LayerKind.group
                                     ? ws.groupOpen(l.id)
-                                    : l.keys.isEmpty && linkTargets(ws, l.id).isEmpty && !l.lined
+                                    : l.keys.isEmpty &&
+                                          linkTargets(ws, l.id).isEmpty &&
+                                          !l.lined
                                     ? null
                                     : ws.lanesOpen(l.id),
-                                onLanes: () => l.kind == LayerKind.group ? ws.turnGroup(l.id) : ws.twirl([l.id]),
-                                onSelect: () => HardwareKeyboard.instance.isShiftPressed
+                                onLanes: () => l.kind == LayerKind.group
+                                    ? ws.turnGroup(l.id)
+                                    : ws.twirl([l.id]),
+                                onSelect: () =>
+                                    HardwareKeyboard.instance.isShiftPressed
                                     // Shift selects every row from the last picked one to this one, as in After Effects.
                                     ? selectRange(ws, l.id)
                                     : HardwareKeyboard.instance.isMetaPressed
@@ -184,7 +249,11 @@ extension TimelinePaneRows on TimelinePaneState {
                       for (var i = 0; i < rows.length; i++)
                         if (order[i].value == null)
                           // The rename field is written over the label (Cmd+R).
-                          if (renameField(i, ws.layers[order[i].layer].id, i * TimelineMetrics.row - top) case final f?) f,
+                          ?renameField(
+                            i,
+                            ws.layers[order[i].layer].id,
+                            i * TimelineMetrics.row - top,
+                          ),
                     ],
                   );
                 },

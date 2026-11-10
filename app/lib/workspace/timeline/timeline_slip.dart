@@ -22,27 +22,39 @@ extension TimelinePaneSlip on TimelinePaneState {
   (int, int)? wholeOf(WorkspaceController ws, Layer l) {
     final m = ws.inside, t = int.tryParse(l.id);
     if (m == null || t == null || m.word(t, 'kind') != 'film') return null;
-    final said = m.word(t, 'file'), file = said.startsWith('/') ? said : '${m.home}/$said';
+    final said = m.word(t, 'file'),
+        file = said.startsWith('/') ? said : '${m.home}/$said';
     final seconds = filmSeconds[file];
     if (seconds == null) {
       filmSeconds[file] = 0;
-      mediaSecondsOf(m.libPath, file).then((s) => mounted ? setState(() => filmSeconds[file] = s) : null);
+      mediaSecondsOf(
+        m.libPath,
+        file,
+      ).then((s) => mounted ? setState(() => filmSeconds[file] = s) : null);
     }
     if (seconds == null || seconds <= 0) return null;
-    final rate = WorkspaceController.fps / _speedOf(m, t), from = l.inF - (m.value(t, 'begin', 0) ?? 0) * rate;
+    final rate = WorkspaceController.fps / _speedOf(m, t),
+        from = l.inF - (m.value(t, 'begin', 0) ?? 0) * rate;
     return (from.round(), (from + seconds * rate).round());
   }
 
-  double _speedOf(Motolii m, int t) => switch ((m.value(t, 'speed', 0) ?? 1).abs()) {
-    0 => 1,
-    final s => s,
-  };
+  double _speedOf(Motolii m, int t) =>
+      switch ((m.value(t, 'speed', 0) ?? 1).abs()) {
+        0 => 1,
+        final s => s,
+      };
 
   void slip(WorkspaceController ws, int t, int by) {
     final whole = barWhole, m = ws.inside!;
     if (whole == null) return;
-    final to = by.clamp(math.min(0, barOut - whole.$2), math.max(0, barIn - whole.$1));
-    m.dragUpdate('begin', (barIn - whole.$1 - to) * _speedOf(m, t) / WorkspaceController.fps);
+    final to = by.clamp(
+      math.min(0, barOut - whole.$2),
+      math.max(0, barIn - whole.$1),
+    );
+    m.dragUpdate(
+      'begin',
+      (barIn - whole.$1 - to) * _speedOf(m, t) / WorkspaceController.fps,
+    );
     setState(() {});
   }
 }

@@ -51,7 +51,13 @@ enum ParameterLook {
 
 /// One field of the struct as written, with the attributes found on it.
 class FieldDeclaration {
-  const FieldDeclaration(this.name, this.type, {this.attrs = const {}, this.advanced = false, this.fold});
+  const FieldDeclaration(
+    this.name,
+    this.type, {
+    this.attrs = const {},
+    this.advanced = false,
+    this.fold,
+  });
   final String name;
   final WgslType type;
   final Map<String, List<String>> attrs;
@@ -106,11 +112,14 @@ class Parameter {
 
   bool get bounded => min != null && max != null;
   double get step => dec == 0 ? 1 : math.pow(10, -dec).toDouble();
-  double get perPx => bounded ? (max! - min!) / 200 : (dec == 0 ? 1 : step * 10);
+  double get perPx =>
+      bounded ? (max! - min!) / 200 : (dec == 0 ? 1 : step * 10);
 }
 
 final _structRe = RegExp(r'struct\s+\w+\s*\{([\s\S]*?)\}');
-final _fieldRe = RegExp(r'^\s*(?:@\w+(?:\([^)]*\))?\s*)*(\w+)\s*:\s*([\w<>]+)\s*,?\s*(?://(.*))?$');
+final _fieldRe = RegExp(
+  r'^\s*(?:@\w+(?:\([^)]*\))?\s*)*(\w+)\s*:\s*([\w<>]+)\s*,?\s*(?://(.*))?$',
+);
 final _attrRe = RegExp(r'@(\w+)(?:\(([^)]*)\))?');
 
 WgslType? _type(String t) => switch (t) {
@@ -135,14 +144,21 @@ List<FieldDeclaration> parseWgsl(String src) {
   var advanced = false;
   String? fold;
   Map<String, List<String>> attrs(String s) => {
-    for (final m in _attrRe.allMatches(s)) m.group(1)!: (m.group(2) ?? '').split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+    for (final m in _attrRe.allMatches(s))
+      m.group(1)!: (m.group(2) ?? '')
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList(),
   };
   for (final raw in body.split('\n')) {
     final line = raw.trim();
     if (line.isEmpty) continue;
     if (line.startsWith('//')) {
       final a = attrs(line);
-      if (a.containsKey('advanced') && a.length == 1 && !line.startsWith('///')) {
+      if (a.containsKey('advanced') &&
+          a.length == 1 &&
+          !line.startsWith('///')) {
         advanced = true;
         fold = a['advanced']!.firstOrNull;
       } else {
@@ -154,7 +170,15 @@ List<FieldDeclaration> parseWgsl(String src) {
     final t = m == null ? null : _type(m.group(2)!);
     if (m == null || t == null) continue;
     final all = {...pending, ...attrs(line), ...attrs(m.group(3) ?? '')};
-    out.add(FieldDeclaration(m.group(1)!, t, attrs: all, advanced: advanced || all.containsKey('advanced'), fold: fold));
+    out.add(
+      FieldDeclaration(
+        m.group(1)!,
+        t,
+        attrs: all,
+        advanced: advanced || all.containsKey('advanced'),
+        fold: fold,
+      ),
+    );
     pending = {};
   }
   return out;
@@ -162,9 +186,17 @@ List<FieldDeclaration> parseWgsl(String src) {
 
 /// `blurRadius`, `blur_radius` → [blur, radius]; short forms spelled out.
 List<String> paramWords(String name) {
-  final spaced = name.replaceAllMapped(RegExp(r'([a-z0-9])([A-Z])'), (m) => '${m[1]}_${m[2]}');
+  final spaced = name.replaceAllMapped(
+    RegExp(r'([a-z0-9])([A-Z])'),
+    (m) => '${m[1]}_${m[2]}',
+  );
   return [
-    for (final w in spaced.toLowerCase().split(RegExp(r'[_\s]+')).where((w) => w.isNotEmpty)) ...(_long[w] ?? [w]),
+    for (final w
+        in spaced
+            .toLowerCase()
+            .split(RegExp(r'[_\s]+'))
+            .where((w) => w.isNotEmpty))
+      ...(_long[w] ?? [w]),
   ];
 }
 
@@ -201,14 +233,27 @@ String paramLabel(List<String> w) {
 
 bool _any(List<String> w, Set<String> set) => w.any(set.contains);
 
-const _angleW = {'angle', 'rotation', 'hue', 'phase', 'heading', 'direction', 'twist', 'spin', 'theta', 'turn'};
+const _angleW = {
+  'angle',
+  'rotation',
+  'hue',
+  'phase',
+  'heading',
+  'direction',
+  'twist',
+  'spin',
+  'theta',
+  'turn',
+};
 
 /// Whether a parameter's label names an angle.
 ///
 /// It accepts the words [infer] treats as angles plus the ones AviUtl scripts use (角度, 回転).
 /// A label for how fast something turns, such as 回転速度 or spin speed, is not an angle: it is a slider, as in After Effects.
 bool angleLabel(String label) =>
-    (_any(paramWords(label), _angleW) || RegExp('角度|回転|色相|向き|方向').hasMatch(label)) && !RegExp('速|speed|rate', caseSensitive: false).hasMatch(label);
+    (_any(paramWords(label), _angleW) ||
+        RegExp('角度|回転|色相|向き|方向').hasMatch(label)) &&
+    !RegExp('速|speed|rate', caseSensitive: false).hasMatch(label);
 const _shareW = {
   'mix',
   'amount',
@@ -234,9 +279,32 @@ const _shareW = {
 const _upW = {'height', 'rise', 'lift', 'up', 'top', 'vertical'};
 const _downW = {'drop', 'gravity', 'down', 'sink', 'fall', 'bottom'};
 const _xW = {'width', 'horizontal', 'left', 'right'};
-const _toggleW = {'is', 'use', 'enable', 'enabled', 'invert', 'flip', 'clamp', 'additive', 'pin', 'mirror', 'loop', 'repeat'};
+const _toggleW = {
+  'is',
+  'use',
+  'enable',
+  'enabled',
+  'invert',
+  'flip',
+  'clamp',
+  'additive',
+  'pin',
+  'mirror',
+  'loop',
+  'repeat',
+};
 const _sizeW = {'size', 'scale', 'aspect', 'extent', 'stretch'};
-const _pxW = {'radius', 'size', 'width', 'height', 'distance', 'length', 'offset', 'spread', 'blur'};
+const _pxW = {
+  'radius',
+  'size',
+  'width',
+  'height',
+  'distance',
+  'length',
+  'offset',
+  'spread',
+  'blur',
+};
 
 double? _num(String? s) => s == null ? null : double.tryParse(s);
 
@@ -244,16 +312,20 @@ double? _num(String? s) => s == null ? null : double.tryParse(s);
 Parameter infer(FieldDeclaration d) {
   final w = paramWords(d.name), a = d.attrs;
   final range = a['range'];
-  var min = _num(range?.elementAtOrNull(0)), max = _num(range?.elementAtOrNull(1));
+  var min = _num(range?.elementAtOrNull(0)),
+      max = _num(range?.elementAtOrNull(1));
   var unit = a['unit']?.firstOrNull ?? '';
   final def = a['default'];
-  var d0 = _num(def?.elementAtOrNull(0)) ?? 0, d1 = _num(def?.elementAtOrNull(1)) ?? d0;
+  var d0 = _num(def?.elementAtOrNull(0)) ?? 0,
+      d1 = _num(def?.elementAtOrNull(1)) ?? d0;
   final lab = a['label']?.join(', ') ?? paramLabel(w);
   final ui = a['ui']?.firstOrNull;
   final whole = d.type == WgslType.i32 || d.type == WgslType.u32;
   int dec(double? lo, double? hi) {
     if (whole) return 0;
-    if (a['step']?.firstOrNull case final s?) return s.contains('.') ? s.split('.').last.length : 0;
+    if (a['step']?.firstOrNull case final s?) {
+      return s.contains('.') ? s.split('.').last.length : 0;
+    }
     // Fixed decimal places per unit: seconds and multipliers get one, pixels and degrees get none.
     if (unit == 's' || unit == '×') return 1;
     if (unit == 'px' || unit == '°') return 0;
@@ -261,7 +333,15 @@ Parameter infer(FieldDeclaration d) {
     return span <= 4 ? 2 : (span <= 40 ? 1 : 0);
   }
 
-  Parameter p(ParameterLook look, {double? lo, double? hi, double scale = 1, bool up = true, String? u, List<String> opts = const []}) {
+  Parameter p(
+    ParameterLook look, {
+    double? lo,
+    double? hi,
+    double scale = 1,
+    bool up = true,
+    String? u,
+    List<String> opts = const [],
+  }) {
     final l = lo ?? min, h = hi ?? max;
     return Parameter(
       id: d.name,
@@ -272,7 +352,11 @@ Parameter infer(FieldDeclaration d) {
       def: d0 / scale,
       defY: d1 / scale,
       unit: u ?? unit,
-      dec: scale == 1 ? dec(l, h) : (look == ParameterLook.percent || look == ParameterLook.angle ? 0 : 1),
+      dec: scale == 1
+          ? dec(l, h)
+          : (look == ParameterLook.percent || look == ParameterLook.angle
+                ? 0
+                : 1),
       options: opts,
       advanced: d.advanced,
       open: a.containsKey('open'),
@@ -284,31 +368,64 @@ Parameter infer(FieldDeclaration d) {
     );
   }
 
-  if (a['enum'] case final o? when o.isNotEmpty) return p(ParameterLook.choice, lo: 0, hi: o.length - 1.0, opts: o);
+  if (a['enum'] case final o? when o.isNotEmpty) {
+    return p(ParameterLook.choice, lo: 0, hi: o.length - 1.0, opts: o);
+  }
   if (ui != null) {
     final look = ParameterLook.values.where((l) => l.name == ui).firstOrNull;
     if (look != null) return p(look);
   }
-  if (d.type == WgslType.boolean || a.containsKey('toggle') || (whole && _any(w, _toggleW) && (max == null || max <= 1))) {
+  if (d.type == WgslType.boolean ||
+      a.containsKey('toggle') ||
+      (whole && _any(w, _toggleW) && (max == null || max <= 1))) {
     return p(ParameterLook.toggle, lo: 0, hi: 1);
   }
-  if (d.type == WgslType.vec3 || d.type == WgslType.vec4) return p(ParameterLook.color);
+  if (d.type == WgslType.vec3 || d.type == WgslType.vec4) {
+    return p(ParameterLook.color);
+  }
   if (d.type == WgslType.vec2) {
-    if (_any(w, _sizeW)) return p(ParameterLook.size, lo: min ?? 0, u: unit.isEmpty && _any(w, {'size'}) ? 'px' : null);
+    if (_any(w, _sizeW)) {
+      return p(
+        ParameterLook.size,
+        lo: min ?? 0,
+        u: unit.isEmpty && _any(w, {'size'}) ? 'px' : null,
+      );
+    }
     final uv = _any(w, {'center', 'centre', 'origin', 'focus', 'uv', 'pivot'});
     return p(ParameterLook.point, lo: min ?? (uv ? 0 : -1), hi: max ?? 1);
   }
-  if (_any(w, {'seed'})) return p(ParameterLook.seed, lo: min ?? 0, hi: max ?? 9999);
-  final rad = unit == 'rad' || (min != null && max != null && (max - math.pi).abs() < .01 && (min + math.pi).abs() < .01);
+  if (_any(w, {'seed'})) {
+    return p(ParameterLook.seed, lo: min ?? 0, hi: max ?? 9999);
+  }
+  final rad =
+      unit == 'rad' ||
+      (min != null &&
+          max != null &&
+          (max - math.pi).abs() < .01 &&
+          (min + math.pi).abs() < .01);
   if (unit == '°' || unit == 'deg' || rad || _any(w, _angleW)) {
     final s = rad ? math.pi / 180 : 1.0;
-    return p(ParameterLook.angle, lo: min == null ? -180 : min / s, hi: max == null ? 180 : max / s, scale: s, u: '°');
+    return p(
+      ParameterLook.angle,
+      lo: min == null ? -180 : min / s,
+      hi: max == null ? 180 : max / s,
+      scale: s,
+      u: '°',
+    );
   }
   final unitShare = min == 0 && max == 1 && _any(w, _shareW);
   if (unit == '%' || unitShare) {
-    return p(ParameterLook.percent, lo: unitShare ? 0 : (min ?? 0), hi: unitShare ? 100 : (max ?? 100), scale: unitShare ? .01 : 1, u: '%');
+    return p(
+      ParameterLook.percent,
+      lo: unitShare ? 0 : (min ?? 0),
+      hi: unitShare ? 100 : (max ?? 100),
+      scale: unitShare ? .01 : 1,
+      u: '%',
+    );
   }
-  if (whole && min != null && max != null && max - min <= 12) return p(ParameterLook.stepper);
+  if (whole && min != null && max != null && max - min <= 12) {
+    return p(ParameterLook.stepper);
+  }
   if (unit.isEmpty && _any(w, _pxW)) unit = 'px';
   final last = w.lastOrNull;
   if (last == 'y' || _any(w, _upW) || _any(w, _downW)) {
@@ -316,7 +433,9 @@ Parameter infer(FieldDeclaration d) {
   }
   if (last == 'x' || _any(w, _xW)) return p(ParameterLook.horizontal);
   if (min != null && max != null) {
-    if (min < 0 && max > 0 && (min.abs() - max).abs() <= max * .5) return p(ParameterLook.bipolar);
+    if (min < 0 && max > 0 && (min.abs() - max).abs() <= max * .5) {
+      return p(ParameterLook.bipolar);
+    }
     return p(ParameterLook.bar);
   }
   return p(ParameterLook.scrub);

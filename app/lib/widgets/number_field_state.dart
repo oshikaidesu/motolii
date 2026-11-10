@@ -11,17 +11,28 @@ import 'package:motolii/widgets/text_gestures.dart';
 
 class NumberFieldState extends State<NumberField> {
   final _node = FocusNode(debugLabel: 'num');
-  late final FocusNode _ef = FocusNode(debugLabel: 'num-edit', onKeyEvent: _editKey)..addListener(_editFocus);
+  late final FocusNode _ef = FocusNode(
+    debugLabel: 'num-edit',
+    onKeyEvent: _editKey,
+  )..addListener(_editFocus);
   // True while the field receiving focus was reached with Tab. That field opens for typing.
   static bool _tabbed = false;
   final _ctl = TextEditingController();
-  bool _editing = false, _err = false, _hover = false, _focus = false, _drag = false, _moved = false, _cancelled = false;
+  bool _editing = false,
+      _err = false,
+      _hover = false,
+      _focus = false,
+      _drag = false,
+      _moved = false,
+      _cancelled = false;
   Offset _down = Offset.zero;
   double _start = 0, _acc = 0, _sum = 0, _w = 0;
   DateTime? _lastUp;
 
   bool get _bounded => widget.min != null && widget.max != null;
-  double get _zeroAt => _bounded ? ((0 - widget.min!) / (widget.max! - widget.min!)).clamp(0.0, 1.0) : 0;
+  double get _zeroAt => _bounded
+      ? ((0 - widget.min!) / (widget.max! - widget.min!)).clamp(0.0, 1.0)
+      : 0;
 
   @override
   void dispose() {
@@ -41,11 +52,14 @@ class NumberFieldState extends State<NumberField> {
   }
 
   double _tidy(double v) => double.parse(v.toStringAsFixed(6));
-  double _reach(double to, [double? from]) => widget.reach?.call(to, from) ?? to;
+  double _reach(double to, [double? from]) =>
+      widget.reach?.call(to, from) ?? to;
 
   // Esc during a drag restores the starting value and ignores the rest of the drag. A pointer cancel does the same.
   void _abort() {
-    widget.value() == null ? widget.onBy?.call(-_sum) : widget.onChange?.call(_start);
+    widget.value() == null
+        ? widget.onBy?.call(-_sum)
+        : widget.onChange?.call(_start);
     _cancelled = true;
     _sum = 0;
     if (_moved) widget.onDrop?.call();
@@ -55,7 +69,11 @@ class NumberFieldState extends State<NumberField> {
   void _onDown(PointerDownEvent e) {
     if (_editing) return;
     final theirs = widget.onPress?.call(e, _w);
-    if (theirs == true || (widget.ownsPress?.call(e.localPosition, _w) ?? false) || e.buttons != kPrimaryButton) return;
+    if (theirs == true ||
+        (widget.ownsPress?.call(e.localPosition, _w) ?? false) ||
+        e.buttons != kPrimaryButton) {
+      return;
+    }
     if (widget.keys) _node.requestFocus();
     if (theirs == false) return;
     _down = e.position;
@@ -96,8 +114,11 @@ class NumberFieldState extends State<NumberField> {
       return;
     }
     // Pressed and released in place: start typing.
-    if (widget.typeOnTap && (e.position - _down).distance < kTouchSlop) return _startEdit();
-    final now = DateTime.now(), dbl = _lastUp != null && now.difference(_lastUp!) < doubleClickTime;
+    if (widget.typeOnTap && (e.position - _down).distance < kTouchSlop) {
+      return _startEdit();
+    }
+    final now = DateTime.now(),
+        dbl = _lastUp != null && now.difference(_lastUp!) < doubleClickTime;
     _lastUp = dbl ? null : now;
     if (dbl) widget.onReset?.call();
   }
@@ -115,7 +136,12 @@ class NumberFieldState extends State<NumberField> {
     if (e is! PointerScrollEvent || _editing || widget.perPx == null) return;
     final d = e.scrollDelta;
     if (d.dx.abs() <= d.dy.abs()) return;
-    GestureBinding.instance.pointerSignalResolver.register(e, (ev) => _by((ev as PointerScrollEvent).scrollDelta.dx * widget.perPx! * _mult()));
+    GestureBinding.instance.pointerSignalResolver.register(
+      e,
+      (ev) => _by(
+        (ev as PointerScrollEvent).scrollDelta.dx * widget.perPx! * _mult(),
+      ),
+    );
   }
 
   void _onPan(PointerPanZoomUpdateEvent e) {
@@ -127,14 +153,18 @@ class NumberFieldState extends State<NumberField> {
   void _by(double d) {
     // A slide or nudge moves the value by `d` from where it is now.
     final cur = widget.value();
-    cur == null ? widget.onBy?.call(d) : widget.onChange?.call(_reach(_tidy(cur + d)));
+    cur == null
+        ? widget.onBy?.call(d)
+        : widget.onChange?.call(_reach(_tidy(cur + d)));
   }
 
   KeyEventResult _key(FocusNode n, KeyEvent e) {
     if (_editing && !_ef.hasFocus) {
       // The editor receives keys one frame late. Characters typed in that frame are inserted here so fast typing does not drop them.
       final c = e.character ?? '', at = _ctl.selection;
-      if (e is! KeyDownEvent || !RegExp(r'^[0-9.\-+*/]$').hasMatch(c)) return _editKey(n, e);
+      if (e is! KeyDownEvent || !RegExp(r'^[0-9.\-+*/]$').hasMatch(c)) {
+        return _editKey(n, e);
+      }
       _ctl.value = TextEditingValue(
         text: _ctl.text.replaceRange(at.start, at.end, c),
         selection: TextSelection.collapsed(offset: at.start + 1),
@@ -142,15 +172,23 @@ class NumberFieldState extends State<NumberField> {
       return KeyEventResult.handled;
     }
     if (_editing) return KeyEventResult.ignored;
-    if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
+    if (e is! KeyDownEvent && e is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
     final k = e.logicalKey;
     if (k == LogicalKeyboardKey.escape && _drag && _moved) {
       _abort();
       return KeyEventResult.handled;
     }
-    if (widget.onKey?.call(e) == KeyEventResult.handled) return KeyEventResult.handled;
-    final up = k == LogicalKeyboardKey.arrowUp || k == LogicalKeyboardKey.arrowRight;
-    if (widget.step case final step? when up || k == LogicalKeyboardKey.arrowDown || k == LogicalKeyboardKey.arrowLeft) {
+    if (widget.onKey?.call(e) == KeyEventResult.handled) {
+      return KeyEventResult.handled;
+    }
+    final up =
+        k == LogicalKeyboardKey.arrowUp || k == LogicalKeyboardKey.arrowRight;
+    if (widget.step case final step?
+        when up ||
+            k == LogicalKeyboardKey.arrowDown ||
+            k == LogicalKeyboardKey.arrowLeft) {
       _by((up ? 1 : -1) * step * _mult());
       return KeyEventResult.handled;
     }
@@ -158,7 +196,9 @@ class NumberFieldState extends State<NumberField> {
       _startEdit();
       return KeyEventResult.handled;
     }
-    if (widget.onReset case final reset? when k == LogicalKeyboardKey.delete || k == LogicalKeyboardKey.backspace) {
+    if (widget.onReset case final reset?
+        when k == LogicalKeyboardKey.delete ||
+            k == LogicalKeyboardKey.backspace) {
       reset();
       return KeyEventResult.handled;
     }
@@ -174,7 +214,9 @@ class NumberFieldState extends State<NumberField> {
     if (!mounted || _editing) return;
     final v = widget.value();
     _ctl.text = typed ?? (v == null ? '' : widget.text(v, double.infinity));
-    _ctl.selection = typed != null ? TextSelection.collapsed(offset: _ctl.text.length) : TextSelection(baseOffset: 0, extentOffset: _ctl.text.length);
+    _ctl.selection = typed != null
+        ? TextSelection.collapsed(offset: _ctl.text.length)
+        : TextSelection(baseOffset: 0, extentOffset: _ctl.text.length);
     setState(() {
       _editing = true;
       _err = false;
@@ -191,7 +233,8 @@ class NumberFieldState extends State<NumberField> {
       _close();
       return KeyEventResult.handled;
     }
-    if (e.logicalKey == LogicalKeyboardKey.enter || e.logicalKey == LogicalKeyboardKey.numpadEnter) {
+    if (e.logicalKey == LogicalKeyboardKey.enter ||
+        e.logicalKey == LogicalKeyboardKey.numpadEnter) {
       _commit();
       return KeyEventResult.handled;
     }
@@ -210,19 +253,25 @@ class NumberFieldState extends State<NumberField> {
       }
       return KeyEventResult.handled;
     }
-    if (widget.step case final step? when e.logicalKey == LogicalKeyboardKey.arrowUp || e.logicalKey == LogicalKeyboardKey.arrowDown) {
+    if (widget.step case final step?
+        when e.logicalKey == LogicalKeyboardKey.arrowUp ||
+            e.logicalKey == LogicalKeyboardKey.arrowDown) {
       // As in After Effects and Figma, the arrows move the number typed so far by one step.
       final t = double.tryParse(halfWidth(_ctl.text).trim()) ?? widget.value();
       if (t == null) return KeyEventResult.handled;
       final up = e.logicalKey == LogicalKeyboardKey.arrowUp ? 1 : -1;
       _ctl.text = widget.text(_reach(t + up * step * _mult()), double.infinity);
-      _ctl.selection = TextSelection(baseOffset: 0, extentOffset: _ctl.text.length);
+      _ctl.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _ctl.text.length,
+      );
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
   }
 
-  double? _typed() => (widget.parse ?? double.tryParse)(halfWidth(_ctl.text).trim());
+  double? _typed() =>
+      (widget.parse ?? double.tryParse)(halfWidth(_ctl.text).trim());
   void _say(double t) => (widget.onType ?? widget.onChange)?.call(t);
 
   bool _commit() {
@@ -261,7 +310,11 @@ class NumberFieldState extends State<NumberField> {
   @override
   Widget build(BuildContext context) {
     final v = widget.value(), live = _drag && _moved, accent = widget.accent;
-    final style = widget.style ?? (widget.inline ? TextStyles.value(Grey.g91).copyWith(fontSize: TextStyles.px(10.5)) : blockValue(Grey.g95));
+    final style =
+        widget.style ??
+        (widget.inline
+            ? TextStyles.value(Grey.g91).copyWith(fontSize: TextStyles.px(10.5))
+            : blockValue(Grey.g95));
     return LayoutBuilder(
       builder: (context, box) {
         final w = _w = box.maxWidth;
@@ -276,7 +329,12 @@ class NumberFieldState extends State<NumberField> {
                     children: [
                       // Fixed decimal places, as Push shows them, so the width does not jump as the number changes.
                       TextSpan(text: widget.text(v, w), style: style),
-                      if (widget.unit?.call(v, w) case final unit? when unit.isNotEmpty) TextSpan(text: '\u2009$unit', style: TextStyles.label(Grey.g44)),
+                      if (widget.unit?.call(v, w) case final unit?
+                          when unit.isNotEmpty)
+                        TextSpan(
+                          text: '\u2009$unit',
+                          style: TextStyles.label(Grey.g44),
+                        ),
                     ],
                   ),
                   maxLines: 1,
@@ -294,14 +352,22 @@ class NumberFieldState extends State<NumberField> {
                   style: style,
                   cursorColor: accent ?? Grey.g95,
                   backgroundCursorColor: Grey.g20,
-                  selectionColor: accent?.withValues(alpha: .3) ?? Role.selected.withValues(alpha: .4),
+                  selectionColor:
+                      accent?.withValues(alpha: .3) ??
+                      Role.selected.withValues(alpha: .4),
                   textAlign: widget.inline ? TextAlign.right : TextAlign.left,
                   maxLines: 1,
                   // _startEdit sets the selection: all of the number when editing starts by click or Return, and the caret after the first
                   // character when it starts by typing. Flutter's default select-all on desktop focus would make the next key replace it.
                   selectAllOnFocus: false,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                  inputFormatters: [if (widget.allow case final letters?) FilteringTextInputFormatter.allow(RegExp(letters))],
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                    signed: true,
+                  ),
+                  inputFormatters: [
+                    if (widget.allow case final letters?)
+                      FilteringTextInputFormatter.allow(RegExp(letters)),
+                  ],
                   onChanged: (_) {
                     if (_err) setState(() => _err = false);
                   },
@@ -315,17 +381,36 @@ class NumberFieldState extends State<NumberField> {
               NumberSpec(
                 value: value,
                 editor: editor,
-                lead: _err && w >= 150 ? Text('Number required', style: TextStyles.label(Role.error)) : null,
+                lead: _err && w >= 150
+                    ? Text(
+                        'Number required',
+                        style: TextStyles.label(Role.error),
+                      )
+                    : null,
                 glyph: widget.glyph,
                 caption: widget.caption,
                 width: w,
                 height: widget.height ?? Shape.z(widget.inline ? 22 : 42),
-                fillColor: widget.picked ? Color.alphaBlend(Accent.fill.withValues(alpha: .14), Grey.g15) : (_hover || live ? Grey.g20 : Grey.g15),
+                fillColor: widget.picked
+                    ? Color.alphaBlend(
+                        Accent.fill.withValues(alpha: .14),
+                        Grey.g15,
+                      )
+                    : (_hover || live ? Grey.g20 : Grey.g15),
                 borderColor: widget.picked
                     ? Accent.ink.withValues(alpha: .7)
-                    : (live ? Role.selected.withValues(alpha: .8) : (_focus || _editing ? Grey.g63 : const Color(0x00000000))),
+                    : (live
+                          ? Role.selected.withValues(alpha: .8)
+                          : (_focus || _editing
+                                ? Grey.g63
+                                : const Color(0x00000000))),
                 rangeColor: accent ?? Grey.g56,
-                fill: _bounded && v != null ? ((v - widget.min!) / (widget.max! - widget.min!)).clamp(0.0, 1.0) : null,
+                fill: _bounded && v != null
+                    ? ((v - widget.min!) / (widget.max! - widget.min!)).clamp(
+                        0.0,
+                        1.0,
+                      )
+                    : null,
                 zeroAt: _zeroAt,
                 bipolar: _bounded && widget.bipolar,
                 editing: _editing,
@@ -341,7 +426,12 @@ class NumberFieldState extends State<NumberField> {
             );
         return Actions(
           // As in After Effects and Figma, Cmd+A in a focused field selects its number, not everything in the window.
-          actions: {if (widget.keys) SelectAllTextIntent: CallbackAction<SelectAllTextIntent>(onInvoke: (_) => _startEdit())},
+          actions: {
+            if (widget.keys)
+              SelectAllTextIntent: CallbackAction<SelectAllTextIntent>(
+                onInvoke: (_) => _startEdit(),
+              ),
+          },
           child: Focus(
             focusNode: _node,
             canRequestFocus: widget.keys,
@@ -360,7 +450,9 @@ class NumberFieldState extends State<NumberField> {
               gestures: {
                 ScrubClaim: GestureRecognizerFactoryWithHandlers<ScrubClaim>(
                   () => ScrubClaim(),
-                  (r) => r.takes = (e) => !_editing && !(widget.ownsPress?.call(e.localPosition, _w) ?? false),
+                  (r) => r.takes = (e) =>
+                      !_editing &&
+                      !(widget.ownsPress?.call(e.localPosition, _w) ?? false),
                 ),
               },
               child: Listener(
@@ -371,11 +463,15 @@ class NumberFieldState extends State<NumberField> {
                 onPointerSignal: _onSignal,
                 onPointerPanZoomUpdate: _onPan,
                 child: MouseRegion(
-                  cursor: _editing || widget.perPx == null ? SystemMouseCursors.text : SystemMouseCursors.resizeLeftRight,
+                  cursor: _editing || widget.perPx == null
+                      ? SystemMouseCursors.text
+                      : SystemMouseCursors.resizeLeftRight,
                   onEnter: (_) => setState(() => _hover = true),
                   onExit: (_) => setState(() => _hover = false),
                   // Drawn inverted when past the vouched range, or when a drag is taking it there.
-                  child: (widget.past?.call(live) ?? false) ? ColorFiltered(colorFilter: pastInk, child: body) : body,
+                  child: (widget.past?.call(live) ?? false)
+                      ? ColorFiltered(colorFilter: pastInk, child: body)
+                      : body,
                 ),
               ),
             ),

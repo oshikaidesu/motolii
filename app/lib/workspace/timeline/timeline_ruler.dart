@@ -11,10 +11,17 @@ import 'package:motolii/workspace/timeline/timeline_view.dart';
 extension TimelinePaneRuler on TimelinePaneState {
   /// The mark whose flag is under the pointer [p], if any.
   (double, String)? flagAt(Offset p) {
-    if (p.dy < TimelineMetrics.band + 1 || p.dy > TimelineMetrics.band + 15) return null;
-    final xs = [for (final m in workspace!.marks) view.x((m.$1 * WorkspaceController.fps).round()).roundToDouble()];
+    if (p.dy < TimelineMetrics.band + 1 || p.dy > TimelineMetrics.band + 15) {
+      return null;
+    }
+    final xs = [
+      for (final m in workspace!.marks)
+        view.x((m.$1 * WorkspaceController.fps).round()).roundToDouble(),
+    ];
     for (final m in workspace!.marks.reversed) {
-      final x = view.x((m.$1 * WorkspaceController.fps).round()).roundToDouble();
+      final x = view
+          .x((m.$1 * WorkspaceController.fps).round())
+          .roundToDouble();
       if (p.dx >= x - 2 && p.dx <= x + markerFlagRoom(m.$2, x, xs)) return m;
     }
     return null;
@@ -58,6 +65,8 @@ extension TimelinePaneRuler on TimelinePaneState {
 
   /// The marks' colours by frame. The mark being dragged uses the frame where the pointer holds it.
   Map<int, Color> markColorsOf(WorkspaceController ws) => {
-    for (final MapEntry(key: at, value: k) in ws.markColors.entries) (markHeld?.$1 == at ? markTo : (at * WorkspaceController.fps).round()): labelColor(k - 1),
+    for (final MapEntry(key: at, value: k) in ws.markColors.entries)
+      (markHeld?.$1 == at ? markTo : (at * WorkspaceController.fps).round()):
+          labelColor(k - 1),
   };
 }

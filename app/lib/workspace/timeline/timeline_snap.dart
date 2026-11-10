@@ -13,8 +13,13 @@ extension TimelinePaneSnap on TimelinePaneState {
   int? restOn(int f) {
     if (HardwareKeyboard.instance.isMetaPressed) return null;
     int? best;
-    for (final s in stops.followedBy([if (workspace!.beats case final b?) b.nearest(f)])) {
-      if ((s - f).abs() * view.ppf <= Shape.z(8) && (best == null || (s - f).abs() < (best - f).abs())) best = s;
+    for (final s in stops.followedBy([
+      if (workspace!.beats case final b?) b.nearest(f),
+    ])) {
+      if ((s - f).abs() * view.ppf <= Shape.z(8) &&
+          (best == null || (s - f).abs() < (best - f).abs())) {
+        best = s;
+      }
     }
     return best;
   }
@@ -25,7 +30,8 @@ extension TimelinePaneSnap on TimelinePaneState {
     restAt = null;
     for (final e in ends) {
       final s = restOn(e + by);
-      if (s != null && (restAt == null || (s - e - by).abs() < (went - by).abs())) {
+      if (s != null &&
+          (restAt == null || (s - e - by).abs() < (went - by).abs())) {
         went = s - e;
         restAt = s;
       }

@@ -42,7 +42,11 @@ class StageViewport {
   Offset toScreen(Offset p) => o + p * s;
   Offset toComp(Offset p) => (p - o) / s;
   @override
-  bool operator ==(Object other) => other is StageViewport && other.o == o && other.s == s && other.area == area;
+  bool operator ==(Object other) =>
+      other is StageViewport &&
+      other.o == o &&
+      other.s == s &&
+      other.area == area;
   @override
   int get hashCode => Object.hash(o, s, area);
 }
@@ -148,7 +152,9 @@ Map<String, Offset> selectionHandles(
   double round = 0,
   List<double> crop = const [],
 }) {
-  final top = scr(b.top), dir = top - scr(b.c), n = dir.distance < 1 ? const Offset(0, -1) : dir / dir.distance;
+  final top = scr(b.top),
+      dir = top - scr(b.c),
+      n = dir.distance < 1 ? const Offset(0, -1) : dir / dir.distance;
   final c = [for (final p in b.corners) scr(p)];
   return {
     for (final (i, p) in c.indexed) 'corner $i': p,
@@ -162,8 +168,17 @@ Map<String, Offset> selectionHandles(
     if (knob) 'turn': top + n * StageTokens.stem,
     'anchor': scr(b.anchor),
     'body': scr(b.c),
-    if (const ['rect', 'polygon', 'star', 'squircle', 'chamfer', 'cog'].contains(form)) 'round': gripOf(c).roundAt(round),
-    if (const ['polygon', 'star', 'cog'].contains(form)) 'points': (c[1] + c[2]) / 2 + gripOf(c).u * 18,
+    if (const [
+      'rect',
+      'polygon',
+      'star',
+      'squircle',
+      'chamfer',
+      'cog',
+    ].contains(form))
+      'round': gripOf(c).roundAt(round),
+    if (const ['polygon', 'star', 'cog'].contains(form))
+      'points': (c[1] + c[2]) / 2 + gripOf(c).u * 18,
     if (crop.length == 4) ...{
       'crop 0': (c[0] + c[3]) / 2 + (c[1] - c[0]) * crop[0],
       'crop 1': (c[0] + c[1]) / 2 + (c[3] - c[0]) * crop[1],
@@ -188,10 +203,13 @@ Map<String, Offset> selectionHandles(
 
 extension GripFrame on ({Offset c0, Offset u, Offset w, double short}) {
   /// The roundness handle: in along the diagonal as far as the corners are round, never on the corner itself.
-  Offset roundAt(double round) => c0 + (u + w) * math.max(round.clamp(0.0, .5) * short, 12.0);
+  Offset roundAt(double round) =>
+      c0 + (u + w) * math.max(round.clamp(0.0, .5) * short, 12.0);
 
   /// How round the corners become when the handle is dragged to [at].
   ///
   /// It is how far in along the diagonal the handle is, as a share of the shorter side.
-  double roundOf(Offset at) => (((at - c0).dx * (u + w).dx + (at - c0).dy * (u + w).dy) / 2 / short).clamp(0.0, .5);
+  double roundOf(Offset at) =>
+      (((at - c0).dx * (u + w).dx + (at - c0).dy * (u + w).dy) / 2 / short)
+          .clamp(0.0, .5);
 }

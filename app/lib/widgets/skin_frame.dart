@@ -8,7 +8,13 @@ import 'package:motolii/widgets/media.dart' show Draw;
 /// While [hover] is true, `frame.<name>.hover.svg` is used instead when the skin has it.
 /// Without either picture, [usual] is the decoration.
 class SkinFrame extends StatelessWidget {
-  const SkinFrame(this.name, {super.key, this.hover = false, required this.usual, required this.child});
+  const SkinFrame(
+    this.name, {
+    super.key,
+    this.hover = false,
+    required this.usual,
+    required this.child,
+  });
 
   /// The part name, as in `frame.<name>.svg`.
   final String name;
@@ -21,9 +27,15 @@ class SkinFrame extends StatelessWidget {
   final Widget child;
   @override
   Widget build(BuildContext context) {
-    final n = [if (hover) 'frame.$name.hover', 'frame.$name'].where(SkinParts.has).firstOrNull;
+    final n = [
+      if (hover) 'frame.$name.hover',
+      'frame.$name',
+    ].where(SkinParts.has).firstOrNull;
     return n == null
         ? DecoratedBox(decoration: usual, child: child)
-        : CustomPaint(painter: Draw((c, s) => SkinParts.frame(c, Offset.zero & s, n), n), child: child);
+        : CustomPaint(
+            painter: Draw((c, s) => SkinParts.frame(c, Offset.zero & s, n), n),
+            child: child,
+          );
   }
 }

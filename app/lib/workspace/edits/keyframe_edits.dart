@@ -10,16 +10,30 @@ import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 
 /// Moves the keyframes [keys] (each a row and a frame) [by] frames later, or earlier when [by] is negative.
-void slideKeyframes(WorkspaceController ws, Iterable<SelectedKeyframe> keys, int by) {
+void slideKeyframes(
+  WorkspaceController ws,
+  Iterable<SelectedKeyframe> keys,
+  int by,
+) {
   final m = ws.inside;
   if (m == null || by == 0 || keys.isEmpty) return;
-  final moves = <(int, String, double, double, double, String)>[]; // (layer, property, from, to, value, easing)
+  final moves =
+      <
+        (int, String, double, double, double, String)
+      >[]; // (layer, property, from, to, value, easing)
   for (final k in keys) {
     final t = int.tryParse(k.layer);
     if (t == null) continue;
-    final at = k.frame / WorkspaceController.fps, to = (k.frame + by).clamp(0, WorkspaceController.duration) / WorkspaceController.fps;
+    final at = k.frame / WorkspaceController.fps,
+        to =
+            (k.frame + by).clamp(0, WorkspaceController.duration) /
+            WorkspaceController.fps;
     for (final n in m.moving(t)) {
-      if (!m.keyTimes(t, n).any((s) => (s - at).abs() < .5 / WorkspaceController.fps)) continue;
+      if (!m
+          .keyTimes(t, n)
+          .any((s) => (s - at).abs() < .5 / WorkspaceController.fps)) {
+        continue;
+      }
       moves.add((t, n, at, to, m.value(t, n, at) ?? 0, m.easingOf(t, n, at)));
     }
   }
@@ -30,7 +44,9 @@ void slideKeyframes(WorkspaceController ws, Iterable<SelectedKeyframe> keys, int
   }
   for (final (t, n, _, to, v, way) in moves) {
     m.later('key', layer: t, name: n, word: '$to', number: v);
-    if (way.isNotEmpty) m.later('easing', layer: t, name: n, number: to, word: way);
+    if (way.isNotEmpty) {
+      m.later('easing', layer: t, name: n, number: to, word: way);
+    }
   }
   ws.after(m.later('together'), (_, _) => ws.reread());
 }
@@ -45,7 +61,11 @@ void removeKeyframes(WorkspaceController ws, Iterable<SelectedKeyframe> keys) {
     if (t == null) continue;
     final at = k.frame / WorkspaceController.fps;
     for (final n in m.moving(t)) {
-      if (m.keyTimes(t, n).any((s) => (s - at).abs() < .5 / WorkspaceController.fps)) m.later('unkey', layer: t, name: n, number: at);
+      if (m
+          .keyTimes(t, n)
+          .any((s) => (s - at).abs() < .5 / WorkspaceController.fps)) {
+        m.later('unkey', layer: t, name: n, number: at);
+      }
     }
   }
   ws.clearKeys();
@@ -65,8 +85,19 @@ void copyKeyframes(WorkspaceController ws, Iterable<SelectedKeyframe> keys) {
     for (final k in keys)
       if (int.tryParse(k.layer) case final t?)
         for (final n in m.moving(t))
-          if (m.keyTimes(t, n).any((s) => (s - k.frame / WorkspaceController.fps).abs() < .5 / WorkspaceController.fps))
-            (n, k.frame - first, m.value(t, n, k.frame / WorkspaceController.fps) ?? 0, m.easingOf(t, n, k.frame / WorkspaceController.fps)),
+          if (m
+              .keyTimes(t, n)
+              .any(
+                (s) =>
+                    (s - k.frame / WorkspaceController.fps).abs() <
+                    .5 / WorkspaceController.fps,
+              ))
+            (
+              n,
+              k.frame - first,
+              m.value(t, n, k.frame / WorkspaceController.fps) ?? 0,
+              m.easingOf(t, n, k.frame / WorkspaceController.fps),
+            ),
   ];
 }
 
@@ -78,10 +109,13 @@ void pasteKeyframes(WorkspaceController ws) {
   for (final (n, after, v, way) in copiedKeyframes) {
     final at = (ws.frame + after) / WorkspaceController.fps;
     m.later('key', layer: t, name: n, word: '$at', number: v);
-    if (way.isNotEmpty) m.later('easing', layer: t, name: n, number: at, word: way);
+    if (way.isNotEmpty) {
+      m.later('easing', layer: t, name: n, number: at, word: way);
+    }
   }
   final pasted = [
-    for (final f in {for (final k in copiedKeyframes) ws.frame + k.$2}) (layer: '$t', frame: f),
+    for (final f in {for (final k in copiedKeyframes) ws.frame + k.$2})
+      (layer: '$t', frame: f),
   ];
   ws.after(m.later('together'), (_, _) {
     ws

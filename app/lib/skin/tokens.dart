@@ -15,9 +15,21 @@ abstract final class Motion {
 
 /// The dark grey ramp, named by lightness from 00 to 100.
 abstract final class DarkGrey {
-  static const g00 = Color(0xFF000000), g07 = Color(0xFF131313), g10 = Color(0xFF191919), g13 = Color(0xFF202020), g15 = Color(0xFF262626);
-  static const g20 = Color(0xFF343434), g26 = Color(0xFF424242), g38 = Color(0xFF616161), g44 = Color(0xFF717171), g56 = Color(0xFF8E8E8E);
-  static const g63 = Color(0xFFA1A1A1), g76 = Color(0xFFC1C1C1), g91 = Color(0xFFE7E7E7), g95 = Color(0xFFF2F2F2), g100 = Color(0xFFFFFFFF);
+  static const g00 = Color(0xFF000000),
+      g07 = Color(0xFF131313),
+      g10 = Color(0xFF191919),
+      g13 = Color(0xFF202020),
+      g15 = Color(0xFF262626);
+  static const g20 = Color(0xFF343434),
+      g26 = Color(0xFF424242),
+      g38 = Color(0xFF616161),
+      g44 = Color(0xFF717171),
+      g56 = Color(0xFF8E8E8E);
+  static const g63 = Color(0xFFA1A1A1),
+      g76 = Color(0xFFC1C1C1),
+      g91 = Color(0xFFE7E7E7),
+      g95 = Color(0xFFF2F2F2),
+      g100 = Color(0xFFFFFFFF);
 }
 
 /// The two shades of the colour theme.
@@ -34,9 +46,11 @@ enum Shade { dark, light }
 abstract final class Grey {
   static final shade = ValueNotifier<Shade>(Shade.dark);
   // A skin that names its shade overrides the switch.
-  static bool get light => ColorTheme.shadeSaid.value ?? shade.value == Shade.light;
+  static bool get light =>
+      ColorTheme.shadeSaid.value ?? shade.value == Shade.light;
   // The theme file's colour for the role, else the shade's own step.
-  static Color _p(String role, Color dark, Color light) => ColorTheme.of(role, _made(Grey.light ? light : dark));
+  static Color _p(String role, Color dark, Color light) =>
+      ColorTheme.of(role, _made(Grey.light ? light : dark));
 
   /// Moves a step [own] of the shade's ramp onto the skin's `Background` and `Foreground` colours.
   ///
@@ -45,16 +59,34 @@ abstract final class Grey {
   /// body (Grey07) and text (Grey95). Tones use Material's HCT, so equal tones look equally light.
   /// The hue comes from the nearer of the two colours. The body is the Background itself and the text is the Foreground itself.
   static Color _made(Color own) {
-    final bg = ColorTheme.roles.value['Background'], fg = ColorTheme.roles.value['Foreground'];
+    final bg = ColorTheme.roles.value['Background'],
+        fg = ColorTheme.roles.value['Foreground'];
     if (bg == null && fg == null) return own;
     return _madeOnce.putIfAbsent((own, bg, fg, light), () {
-      final body = light ? const Color(0xFFF2F2F4) : DarkGrey.g07, text = light ? const Color(0xFF121318) : DarkGrey.g95;
-      final b = bg ?? body, f = fg ?? text, tb = Hct.fromInt(b.toARGB32()).tone, tf = Hct.fromInt(f.toARGB32()).tone;
+      final body = light ? const Color(0xFFF2F2F4) : DarkGrey.g07,
+          text = light ? const Color(0xFF121318) : DarkGrey.g95;
+      final b = bg ?? body,
+          f = fg ?? text,
+          tb = Hct.fromInt(b.toARGB32()).tone,
+          tf = Hct.fromInt(f.toARGB32()).tone;
       final t =
-          (Hct.fromInt(own.toARGB32()).tone - Hct.fromInt(body.toARGB32()).tone) / (Hct.fromInt(text.toARGB32()).tone - Hct.fromInt(body.toARGB32()).tone);
+          (Hct.fromInt(own.toARGB32()).tone -
+              Hct.fromInt(body.toARGB32()).tone) /
+          (Hct.fromInt(text.toARGB32()).tone -
+              Hct.fromInt(body.toARGB32()).tone);
       // Grounds take the background's hue and inks the foreground's, so two strong colours never mix into mud.
       final side = Hct.fromInt((t < .5 ? b : f).toARGB32());
-      final made = t == 0 ? b : (t == 1 ? f : Color(Hct.from(side.hue, side.chroma, (tb + (tf - tb) * t).clamp(0.0, 100.0)).toInt()));
+      final made = t == 0
+          ? b
+          : (t == 1
+                ? f
+                : Color(
+                    Hct.from(
+                      side.hue,
+                      side.chroma,
+                      (tb + (tf - tb) * t).clamp(0.0, 100.0),
+                    ).toInt(),
+                  ));
       return made.withAlpha((own.a * 255).round());
     });
   }
@@ -75,7 +107,8 @@ abstract final class Grey {
   static Color get g76 => _p('Grey76', DarkGrey.g76, const Color(0xFF4A4B53));
   static Color get g91 => _p('Grey91', DarkGrey.g91, const Color(0xFF22232A));
   static Color get g95 => _p('Grey95', DarkGrey.g95, const Color(0xFF121318));
-  static Color get g100 => _p('Grey100', DarkGrey.g100, const Color(0xFF000000));
+  static Color get g100 =>
+      _p('Grey100', DarkGrey.g100, const Color(0xFF000000));
   // The timeline's rows alternate between bandA and bandB, with rowLine between them.
   static Color get bandA => ColorTheme.of('BandA', g10);
   static Color get bandB => ColorTheme.of('BandB', g13);
@@ -94,13 +127,18 @@ abstract final class Role {
 /// It comes as a fill, the ink drawn on the fill, the keyframe mark, and [ink] for the accent as a line or text.
 /// In the light shade [ink] is darkened enough to read on white, unless the skin sets it.
 abstract final class Accent {
-  static Color get fill => ColorTheme.of('ChosenDefault', const Color(0xFFB3C66B));
-  static Color get on => ColorTheme.of('ControlOnForeground', const Color(0xFF15170D));
+  static Color get fill =>
+      ColorTheme.of('ChosenDefault', const Color(0xFFB3C66B));
+  static Color get on =>
+      ColorTheme.of('ControlOnForeground', const Color(0xFF15170D));
   static Color get key => ColorTheme.of('Keyframe', const Color(0xFFF2C94C));
   static Color get ink {
     if (!Grey.light) return ColorTheme.of('ChosenInk', fill);
     final h = HSLColor.fromColor(fill);
-    return ColorTheme.of('ChosenInk', h.withLightness(h.lightness.clamp(0, .34)).toColor());
+    return ColorTheme.of(
+      'ChosenInk',
+      h.withLightness(h.lightness.clamp(0, .34)).toColor(),
+    );
   }
 }
 
@@ -138,7 +176,8 @@ abstract final class TextStyles {
   static String get mono => ColorTheme.word('FontMono', 'Menlo');
 
   /// A text size of [x] px, scaled by the skin's `TextScale`.
-  static double px(double x) => x * ColorTheme.number('TextScale', 1).clamp(.85, 1.3);
+  static double px(double x) =>
+      x * ColorTheme.number('TextScale', 1).clamp(.85, 1.3);
 
   // No text is dimmer than g56 or smaller than 10 px. Adobe Spectrum's smallest UI text is also 10 px.
   // Only dim text on a dark ground is lifted (luminance between g26 and g56).
@@ -151,11 +190,20 @@ abstract final class TextStyles {
   static Color _floor(Color c) {
     if (c.a < .5) return c;
     final l = c.computeLuminance();
-    if (Grey.light) return l <= Grey.g56.computeLuminance() || l > .6 ? c : Grey.g56;
+    if (Grey.light) {
+      return l <= Grey.g56.computeLuminance() || l > .6 ? c : Grey.g56;
+    }
     return l >= DarkGrey.g56.computeLuminance() || l < .04 ? c : DarkGrey.g56;
   }
 
-  static TextStyle _sans(Color? c, Color dim, double size, FontWeight? w, double height, [double? ls]) => TextStyle(
+  static TextStyle _sans(
+    Color? c,
+    Color dim,
+    double size,
+    FontWeight? w,
+    double height, [
+    double? ls,
+  ]) => TextStyle(
     fontFamily: sans,
     fontFamilyFallback: const ['.AppleSystemUIFont'],
     fontSize: px(size),
@@ -167,14 +215,30 @@ abstract final class TextStyles {
   );
 
   /// The style for a name. [size], [w] and [height] let a form set its text larger or heavier.
-  static TextStyle name([Color? c, double size = 11, FontWeight? w, double height = 1]) => _sans(c, Grey.g91, size, w, height, .05);
+  static TextStyle name([
+    Color? c,
+    double size = 11,
+    FontWeight? w,
+    double height = 1,
+  ]) => _sans(c, Grey.g91, size, w, height, .05);
   static TextStyle label([Color? c]) => _sans(c, Grey.g63, 10, null, 1, .1);
-  static TextStyle micro([Color? c]) => _sans(c, Grey.g63, 10, FontWeight.w500, 1, .15);
-  static TextStyle value([Color? c]) => TextStyle(fontFamily: mono, fontSize: px(11), color: ink(c ?? Grey.g91), height: 1, decoration: TextDecoration.none);
-  static TextStyle title([Color? c]) => _sans(c, Grey.g95, 13, FontWeight.w600, 1.1);
+  static TextStyle micro([Color? c]) =>
+      _sans(c, Grey.g63, 10, FontWeight.w500, 1, .15);
+  static TextStyle value([Color? c]) => TextStyle(
+    fontFamily: mono,
+    fontSize: px(11),
+    color: ink(c ?? Grey.g91),
+    height: 1,
+    decoration: TextDecoration.none,
+  );
+  static TextStyle title([Color? c]) =>
+      _sans(c, Grey.g95, 13, FontWeight.w600, 1.1);
 }
 
 /// Typed text with the full-width letters and digits of a Japanese input method turned into plain ones.
 ///
 /// For example `１２８：３０` becomes `128:30`.
-String halfWidth(String said) => said.replaceAllMapped(RegExp('[！-～]'), (c) => String.fromCharCode(c[0]!.codeUnitAt(0) - 0xFEE0));
+String halfWidth(String said) => said.replaceAllMapped(
+  RegExp('[！-～]'),
+  (c) => String.fromCharCode(c[0]!.codeUnitAt(0) - 0xFEE0),
+);

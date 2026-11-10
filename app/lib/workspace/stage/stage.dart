@@ -47,7 +47,8 @@ const stageTools = [
 /// They work wherever the app has the keys and no text is being typed, as the tool letters of After Effects and
 /// Photoshop do, not only while the stage has focus.
 Map<String, VoidCallback> stageToolCommands(WorkspaceController ws) => {
-  for (final (i, t) in stageTools.indexed) 'tool.${t.$2.toLowerCase()}': () => ws.setView('stage.tool', i),
+  for (final (i, t) in stageTools.indexed)
+    'tool.${t.$2.toLowerCase()}': () => ws.setView('stage.tool', i),
 };
 
 class _Stage extends StatefulWidget {
@@ -82,7 +83,9 @@ class _StageState extends State<_Stage> {
   }
 
   set _camera(bool v) => _ws.setView('stage.camera', v);
-  Map<String, int> get _opts => _ws.view.putIfAbsent('stage.options', () => <String, int>{}) as Map<String, int>;
+  Map<String, int> get _opts =>
+      _ws.view.putIfAbsent('stage.options', () => <String, int>{})
+          as Map<String, int>;
   final _cursor = ValueNotifier<Offset?>(null);
   final _focus = FocusNode(debugLabel: 'stage');
   // Used to find what is under a shelf tile dropped on the stage.
@@ -107,7 +110,8 @@ class _StageState extends State<_Stage> {
     final m = _ws.inside;
     if (m == null) return;
     // A new name each time, because Flutter's image cache identifies a file by its name.
-    final png = '${Directory.systemTemp.path}/motolii_snapshot_${DateTime.now().microsecondsSinceEpoch}.png';
+    final png =
+        '${Directory.systemTemp.path}/motolii_snapshot_${DateTime.now().microsecondsSinceEpoch}.png';
     if (!m.still(png)) {
       _ws.notice = 'No snapshot: ${m.error}';
       return;
@@ -129,8 +133,16 @@ class _StageState extends State<_Stage> {
     // The scene follows the playhead and the image being shown.
     WorkspaceScope.frameOf(context);
     WorkspaceScope.pictureOf(context);
-    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.picked, WorkspaceAspect.stage, WorkspaceAspect.view}),
-        scene = WorkspaceController.timed('stage scene', () => ArtScene.of(ws, camera: !ws.freeEye));
+    final ws = WorkspaceScope.of(context, {
+          WorkspaceAspect.document,
+          WorkspaceAspect.picked,
+          WorkspaceAspect.stage,
+          WorkspaceAspect.view,
+        }),
+        scene = WorkspaceController.timed(
+          'stage scene',
+          () => ArtScene.of(ws, camera: !ws.freeEye),
+        );
     _tellEye(ws);
     return DragTarget<VoidCallback>(
       // A shelf tile dropped here does what its double click does, as dropping a device on a track does in Ableton.
@@ -138,12 +150,19 @@ class _StageState extends State<_Stage> {
       onAcceptWithDetails: (d) {
         // Apply to the layer under the drop, as After Effects does for an effect dragged onto a layer in the
         // Composition panel. Over no layer, apply to the selected layer, as a double click does.
-        if ((_view.currentState as StageHandles?)?.hitAt(d.offset) case final id?) ws.select(id);
+        if ((_view.currentState as StageHandles?)?.hitAt(d.offset)
+            case final id?) {
+          ws.select(id);
+        }
         d.data();
       },
       builder: (context, hot, _) => DecoratedBox(
         position: DecorationPosition.foreground,
-        decoration: BoxDecoration(border: hot.isEmpty ? null : Border.all(color: WindowTokens.accent, width: 2)),
+        decoration: BoxDecoration(
+          border: hot.isEmpty
+              ? null
+              : Border.all(color: WindowTokens.accent, width: 2),
+        ),
         child: Focus(
           focusNode: _focus,
           child: Column(
@@ -151,18 +170,47 @@ class _StageState extends State<_Stage> {
               PanelHeader(
                 '',
                 trailing: [
-                  Forms.worn.segment(context, ChoiceSpec(labels: stageZooms, selected: _zoom, onSelect: (i) => setState(() => _zoom = i))),
+                  Forms.worn.segment(
+                    context,
+                    ChoiceSpec(
+                      labels: stageZooms,
+                      selected: _zoom,
+                      onSelect: (i) => setState(() => _zoom = i),
+                    ),
+                  ),
                   SizedBox(width: Shape.s(6)),
-                  Toggle(label: 'Safe', icon: StageIcon.safe, on: _safe, onTap: () => setState(() => _safe = !_safe)),
+                  Toggle(
+                    label: 'Safe',
+                    icon: StageIcon.safe,
+                    on: _safe,
+                    onTap: () => setState(() => _safe = !_safe),
+                  ),
                   SizedBox(width: WindowTokens.gap),
-                  Toggle(label: 'Grid', icon: StageIcon.grid, on: _grid, onTap: () => setState(() => _grid = !_grid)),
+                  Toggle(
+                    label: 'Grid',
+                    icon: StageIcon.grid,
+                    on: _grid,
+                    onTap: () => setState(() => _grid = !_grid),
+                  ),
                   SizedBox(width: Shape.s(6)),
-                  if (_camera || ws.layers.any((l) => l.kind == LayerKind.camera)) ...[
+                  if (_camera ||
+                      ws.layers.any((l) => l.kind == LayerKind.camera)) ...[
                     // Alight Motion's PreviewMode: the switch appears once there is a camera to switch to.
-                    Toggle(label: _camera ? 'Camera' : 'Free', glyph: Glyphs.camera, on: _camera, onTap: () => setState(() => _camera = !_camera)),
+                    Toggle(
+                      label: _camera ? 'Camera' : 'Free',
+                      glyph: Glyphs.camera,
+                      on: _camera,
+                      onTap: () => setState(() => _camera = !_camera),
+                    ),
                     SizedBox(width: Shape.s(6)),
                   ],
-                  Toggle(key: const ValueKey('ws-snapshot-take'), label: 'Snapshot', icon: StageIcon.snap, on: false, onTap: _take),
+                  Toggle(
+                    key: const ValueKey('ws-snapshot-take'),
+                    label: 'Snapshot',
+                    icon: StageIcon.snap,
+                    on: false,
+                    onTap: _take,
+                  ),
                   if (_shot != null) ...[
                     SizedBox(width: WindowTokens.gap),
                     Listener(
@@ -170,7 +218,13 @@ class _StageState extends State<_Stage> {
                       onPointerDown: (_) => setState(() => _showing = true),
                       onPointerUp: (_) => setState(() => _showing = false),
                       onPointerCancel: (_) => setState(() => _showing = false),
-                      child: Toggle(key: const ValueKey('ws-snapshot-show'), label: 'Show', icon: StageIcon.show, on: _showing, onTap: () {}),
+                      child: Toggle(
+                        key: const ValueKey('ws-snapshot-show'),
+                        label: 'Show',
+                        icon: StageIcon.show,
+                        on: _showing,
+                        onTap: () {},
+                      ),
                     ),
                   ],
                 ],
@@ -179,13 +233,22 @@ class _StageState extends State<_Stage> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _ToolColumn(active: _tool, onChanged: (i) => setState(() => _tool = i), onTwice: (kind) => _whole(ws, kind)),
+                    _ToolColumn(
+                      active: _tool,
+                      onChanged: (i) => setState(() => _tool = i),
+                      onTwice: (kind) => _whole(ws, kind),
+                    ),
                     Expanded(
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
                           TwoFingerGestures(
-                            onPinchStep: (step) => setState(() => _zoom = (_zoom + step).clamp(0, stageZooms.length - 1)),
+                            onPinchStep: (step) => setState(
+                              () => _zoom = (_zoom + step).clamp(
+                                0,
+                                stageZooms.length - 1,
+                              ),
+                            ),
                             child: StageView(
                               key: _view,
                               scene: scene,
@@ -197,15 +260,46 @@ class _StageState extends State<_Stage> {
                               onPoke: _focus.requestFocus,
                               texture: ws.stageTexture,
                               snapshot: _showing ? _shot : null,
-                              make: const [null, null, 'rect', 'circle', 'pen', 'text', 'brush', 'camera'][_tool],
-                              brushSize: const [8.0, 16.0, 32.0][_opts['brush.size'] ?? 1],
-                              brushTool: const [1, 0, 2, 3][_opts['brush.kind'] ?? 0],
+                              make: const [
+                                null,
+                                null,
+                                'rect',
+                                'circle',
+                                'pen',
+                                'text',
+                                'brush',
+                                'camera',
+                              ][_tool],
+                              brushSize: const [
+                                8.0,
+                                16.0,
+                                32.0,
+                              ][_opts['brush.size'] ?? 1],
+                              brushTool: const [
+                                1,
+                                0,
+                                2,
+                                3,
+                              ][_opts['brush.kind'] ?? 0],
                               axis: _tool == 1 ? _opts['move.axis'] ?? 0 : 0,
                               fromCentre: (_opts['ell.from'] ?? 0) == 1,
-                              snap: _tool < 2 && (_opts[_tool == 0 ? 'sel.snap' : 'move.snap'] ?? 1) == 1,
+                              snap:
+                                  _tool < 2 &&
+                                  (_opts[_tool == 0
+                                              ? 'sel.snap'
+                                              : 'move.snap'] ??
+                                          1) ==
+                                      1,
                               pivots: (_opts['sel.pivot'] ?? 0) == 1,
-                              group: _tool == 0 && (_opts['sel.level'] ?? 0) == 1,
-                              mask: (_opts[_tool == 2 ? 'rect.mode' : 'pen.mode'] ?? 0) == 1 && (_tool == 2 || _tool == 4),
+                              group:
+                                  _tool == 0 && (_opts['sel.level'] ?? 0) == 1,
+                              mask:
+                                  (_opts[_tool == 2
+                                              ? 'rect.mode'
+                                              : 'pen.mode'] ??
+                                          0) ==
+                                      1 &&
+                                  (_tool == 2 || _tool == 4),
                             ),
                           ),
                         ],
@@ -214,7 +308,14 @@ class _StageState extends State<_Stage> {
                   ],
                 ),
               ),
-              OptionsStrip(tool: _tool, opts: _opts, onOpt: (k, v) => setState(() => _opts[k] = v), scene: scene, layer: ws.layer, ws: ws),
+              OptionsStrip(
+                tool: _tool,
+                opts: _opts,
+                onOpt: (k, v) => setState(() => _opts[k] = v),
+                scene: scene,
+                layer: ws.layer,
+                ws: ws,
+              ),
             ],
           ),
         ),
@@ -229,7 +330,14 @@ enum StageIcon { safe, grid, snap, show }
 
 /// An on/off chip: raised with an accent mark when on, a quiet well when off.
 class Toggle extends StatelessWidget {
-  const Toggle({super.key, required this.label, required this.on, required this.onTap, this.icon, this.glyph});
+  const Toggle({
+    super.key,
+    required this.label,
+    required this.on,
+    required this.onTap,
+    this.icon,
+    this.glyph,
+  });
   final String label;
   final bool on;
   final VoidCallback onTap;
@@ -244,7 +352,10 @@ class Toggle extends StatelessWidget {
       onTap: onTap,
       mark: (ink) {
         if (glyph case final g?) return Glyph(g, size: Shape.z(14), color: ink);
-        return CustomPaint(size: const Size.square(12), painter: _IconPainter(icon!, ink));
+        return CustomPaint(
+          size: const Size.square(12),
+          painter: _IconPainter(icon!, ink),
+        );
       },
     ),
   );
@@ -270,15 +381,32 @@ class _IconPainter extends CustomPainter {
       case StageIcon.grid:
         cv.drawRect(r, p);
         for (final t in const [1 / 3, 2 / 3]) {
-          cv.drawLine(Offset(r.left + r.width * t, r.top), Offset(r.left + r.width * t, r.bottom), p);
-          cv.drawLine(Offset(r.left, r.top + r.height * t), Offset(r.right, r.top + r.height * t), p);
+          cv.drawLine(
+            Offset(r.left + r.width * t, r.top),
+            Offset(r.left + r.width * t, r.bottom),
+            p,
+          );
+          cv.drawLine(
+            Offset(r.left, r.top + r.height * t),
+            Offset(r.right, r.top + r.height * t),
+            p,
+          );
         }
       case StageIcon.snap: // A camera body and its lens.
-        cv.drawRRect(RRect.fromRectAndRadius(Rect.fromLTRB(r.left, r.top + r.height * .25, r.right, r.bottom), const Radius.circular(1.5)), p);
+        cv.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTRB(r.left, r.top + r.height * .25, r.right, r.bottom),
+            const Radius.circular(1.5),
+          ),
+          p,
+        );
         cv.drawCircle(r.center.translate(0, r.height * .12), r.width * .2, p);
       case StageIcon.show: // The image halved: then and now.
         cv.drawRect(r, p);
-        cv.drawRect(Rect.fromLTRB(r.left, r.top, r.center.dx, r.bottom), p..style = PaintingStyle.fill);
+        cv.drawRect(
+          Rect.fromLTRB(r.left, r.top, r.center.dx, r.bottom),
+          p..style = PaintingStyle.fill,
+        );
     }
   }
 
@@ -296,7 +424,11 @@ void _whole(WorkspaceController ws, String kind) {
 
 /// The column of tool buttons, with the fill and stroke swatches at its foot.
 class _ToolColumn extends StatelessWidget {
-  const _ToolColumn({required this.active, required this.onChanged, required this.onTwice});
+  const _ToolColumn({
+    required this.active,
+    required this.onChanged,
+    required this.onTwice,
+  });
   final int active;
   final ValueChanged<int> onChanged;
   final ValueChanged<String> onTwice;
@@ -304,7 +436,8 @@ class _ToolColumn extends StatelessWidget {
   static var _last = (-1, 0);
 
   void _press(int i) {
-    final now = DateTime.now().millisecondsSinceEpoch, twice = _last.$1 == i && now - _last.$2 < 500;
+    final now = DateTime.now().millisecondsSinceEpoch,
+        twice = _last.$1 == i && now - _last.$2 < 500;
     _last = (i, now);
     if (twice && (i == 2 || i == 3)) return onTwice(i == 2 ? 'rect' : 'circle');
     onChanged(i);
@@ -334,9 +467,11 @@ class _ToolColumn extends StatelessWidget {
                     margin: EdgeInsets.symmetric(vertical: Shape.s(5)),
                     color: WindowTokens.line,
                   ),
-                if (i != 0 && i != 2 && i != 4 && i != 7) SizedBox(height: Shape.s(3)),
+                if (i != 0 && i != 2 && i != 4 && i != 7)
+                  SizedBox(height: Shape.s(3)),
                 IconPress(
-                  (ink) => Glyph(stageTools[i].$1, size: Shape.z(16), color: ink),
+                  (ink) =>
+                      Glyph(stageTools[i].$1, size: Shape.z(16), color: ink),
                   key: ValueKey('ws-tool-$i'),
                   size: Shape.z(28),
                   rest: WindowTokens.body,
@@ -369,8 +504,14 @@ class _Swatches extends StatelessWidget {
   const _Swatches();
   @override
   Widget build(BuildContext context) {
-    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.picked}), p = paintOf(ws);
-    final fill = p.fill ?? WindowTokens.body, stroke = p.stroke ?? WindowTokens.line, edgeOn = ws.aim == 'stroke';
+    final ws = WorkspaceScope.of(context, {
+          WorkspaceAspect.document,
+          WorkspaceAspect.picked,
+        }),
+        p = paintOf(ws);
+    final fill = p.fill ?? WindowTokens.body,
+        stroke = p.stroke ?? WindowTokens.line,
+        edgeOn = ws.aim == 'stroke';
     Widget box(String aim, BoxDecoration look) => Pressable(
       key: ValueKey('ws-ink-$aim'),
       cursor: MouseCursor.defer,
@@ -383,7 +524,9 @@ class _Swatches extends StatelessWidget {
         height: Shape.z(16),
         foregroundDecoration: ws.aim == aim
             ? BoxDecoration(
-                borderRadius: BorderRadius.all(Shape.r(WindowTokens.chipRadius)),
+                borderRadius: BorderRadius.all(
+                  Shape.r(WindowTokens.chipRadius),
+                ),
                 border: Border.all(color: WindowTokens.accent),
               )
             : null,

@@ -24,10 +24,16 @@ const defaultKeys = <(String, String)>[
   ('cmd+x', 'edit.cut'),
   ('cmd+c', 'edit.copy'),
   ('cmd+v', 'edit.paste'),
-  ('cmd+alt+c', 'edit.copyStyle'), // The Mac's Copy Style, as in Pages, Keynote and TextEdit.
+  (
+    'cmd+alt+c',
+    'edit.copyStyle',
+  ), // The Mac's Copy Style, as in Pages, Keynote and TextEdit.
   ('cmd+alt+v', 'edit.pasteStyle'),
   ('cmd+a', 'edit.selectAll'),
-  ('cmd+shift+a', 'edit.deselectAll'), // Deselect All, as in After Effects and Premiere Pro.
+  (
+    'cmd+shift+a',
+    'edit.deselectAll',
+  ), // Deselect All, as in After Effects and Premiere Pro.
   ('cmd+alt+b', 'edit.workToPicked'), // After Effects: set the work area to the selected layers, else to the whole project.
   ('cmd+d', 'thing.duplicate'), // Live 42.5.
   ('cmd+g', 'thing.group'), // Group, as in Figma and Keynote.
@@ -42,7 +48,10 @@ const defaultKeys = <(String, String)>[
   ('cmd+r', 'thing.rename'), // Live 42.5 and 42.19.
   ('0', 'thing.deactivate'), // Live 42.15, 42.16 and 42.19: 0 switches a clip off and on. Here it toggles the layer's visibility.
   ('s', 'thing.solo'), // Live 42.15 and 42.19.
-  ('u', 'thing.lanes'), // After Effects' U: show the keyframed properties of the selected layers.
+  (
+    'u',
+    'thing.lanes',
+  ), // After Effects' U: show the keyframed properties of the selected layers.
   ('a', 'mark.animate'), // Apple Motion's A (Record Animation): every change is keyframed until it is pressed again.
   ('backspace', 'thing.remove'),
   ('delete', 'thing.remove'),
@@ -61,13 +70,19 @@ const defaultKeys = <(String, String)>[
   ('z', 'zoom.selection'), // Live 42.16.
   ('x', 'zoom.back'),
   ('w', 'zoom.width'),
-  (',', 'frame.previous'), // Live has no frame step. These are the Rive and Jitter keys.
+  (
+    ',',
+    'frame.previous',
+  ), // Live has no frame step. These are the Rive and Jitter keys.
   ('.', 'frame.next'),
   ('j', 'frame.previousStop'), // After Effects' J and K: the previous and next visible item in the time ruler.
   ('k', 'frame.nextStop'),
   ('shift+,', 'frame.back10'),
   ('shift+.', 'frame.forward10'),
-  ('home', 'frame.first'), // Live 42.20: move the insert marker to the beginning.
+  (
+    'home',
+    'frame.first',
+  ), // Live 42.20: move the insert marker to the beginning.
   ('end', 'frame.last'),
   // The canvas tools, with the letters stage.dart lists, as in After Effects and Photoshop.
   ('v', 'tool.select'),
@@ -105,16 +120,25 @@ class Keymap {
   }
 
   /// The first key bound to [command], or null. The menus show it.
-  SingleActivator? keyOf(String command) => pairs.where((p) => p.$2 == command).firstOrNull?.$1;
+  SingleActivator? keyOf(String command) =>
+      pairs.where((p) => p.$2 == command).firstOrNull?.$1;
 
   static bool _same(SingleActivator a, SingleActivator b) =>
-      a.trigger == b.trigger && a.meta == b.meta && a.shift == b.shift && a.control == b.control && a.alt == b.alt;
+      a.trigger == b.trigger &&
+      a.meta == b.meta &&
+      a.shift == b.shift &&
+      a.control == b.control &&
+      a.alt == b.alt;
 }
 
 /// Parses a key written as "cmd+shift+z", "space" or "left" into a [SingleActivator]; null if the key is unknown.
 SingleActivator? activatorOf(String said) {
   final parts = said.toLowerCase().split('+').map((p) => p.trim()).toList();
-  final key = _keys[parts.last] ?? (parts.last.length == 1 ? LogicalKeyboardKey.findKeyByKeyId(parts.last.codeUnitAt(0)) : null);
+  final key =
+      _keys[parts.last] ??
+      (parts.last.length == 1
+          ? LogicalKeyboardKey.findKeyByKeyId(parts.last.codeUnitAt(0))
+          : null);
   if (key == null) return null;
   final mods = parts.sublist(0, parts.length - 1).toSet();
   return SingleActivator(
@@ -166,13 +190,21 @@ class CommandIntent extends Intent {
 
 /// Installs the shortcuts of [keymap] over [child]. [commands] maps each command name to what it does.
 class KeymapShortcuts extends StatelessWidget {
-  const KeymapShortcuts({super.key, required this.keymap, required this.commands, required this.child});
+  const KeymapShortcuts({
+    super.key,
+    required this.keymap,
+    required this.commands,
+    required this.child,
+  });
   final Keymap keymap;
   final Map<String, VoidCallback> commands;
   final Widget child;
   @override
   Widget build(BuildContext context) => Shortcuts(
-    shortcuts: {for (final (a, c) in keymap.pairs) a: CommandIntent(c, !a.meta && !a.control && !a.alt)},
+    shortcuts: {
+      for (final (a, c) in keymap.pairs)
+        a: CommandIntent(c, !a.meta && !a.control && !a.alt),
+    },
     child: Actions(actions: {CommandIntent: _Command(commands)}, child: child),
   );
 }
@@ -185,11 +217,13 @@ class _Command extends Action<CommandIntent> {
   // so a plain key that the workspace handles would never reach it.
   static bool get _typing {
     final at = FocusManager.instance.primaryFocus?.context;
-    return at?.findAncestorStateOfType<EditableTextState>() != null || at?.findAncestorWidgetOfExactType<CodeEditor>() != null;
+    return at?.findAncestorStateOfType<EditableTextState>() != null ||
+        at?.findAncestorWidgetOfExactType<CodeEditor>() != null;
   }
 
   @override
-  bool isEnabled(CommandIntent intent) => commands.containsKey(intent.name) && !(intent.plain && _typing);
+  bool isEnabled(CommandIntent intent) =>
+      commands.containsKey(intent.name) && !(intent.plain && _typing);
   @override
   Object? invoke(CommandIntent intent) {
     commands[intent.name]?.call();

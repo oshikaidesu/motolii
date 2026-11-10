@@ -17,7 +17,14 @@ const pressingDevices = {
 
 /// Reports a trackpad's two-finger gestures over [child].
 class TwoFingerGestures extends StatefulWidget {
-  const TwoFingerGestures({super.key, this.onPan, this.onPinch, this.onPinchStep, this.onWheel, required this.child});
+  const TwoFingerGestures({
+    super.key,
+    this.onPan,
+    this.onPinch,
+    this.onPinchStep,
+    this.onWheel,
+    required this.child,
+  });
 
   /// Called with a mouse wheel's scroll delta. This is the other way to move the view.
   final void Function(Offset by)? onWheel;
@@ -57,7 +64,9 @@ class _TwoFingerGesturesState extends State<TwoFingerGestures> {
           _spread = 1;
         }
       }
-      if (e.localPanDelta != Offset.zero) widget.onPan?.call(e.localPanDelta, e.localPosition);
+      if (e.localPanDelta != Offset.zero) {
+        widget.onPan?.call(e.localPanDelta, e.localPosition);
+      }
     },
     child: widget.child,
   );

@@ -8,12 +8,20 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:motolii/skin/tokens.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease_numbers.dart' show easeIsUsual;
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_numbers.dart'
+    show easeIsUsual;
 import 'package:motolii/widgets/controls.dart' show Pressable;
 
 /// A square thumbnail of [ease] that the user can click to pick it, or drag onto the graph or the card flow.
 class EasingPresetTile extends StatelessWidget {
-  const EasingPresetTile(this.ease, {super.key, required this.on, required this.onTap, required this.side, this.carried = true});
+  const EasingPresetTile(
+    this.ease, {
+    super.key,
+    required this.on,
+    required this.onTap,
+    required this.side,
+    this.carried = true,
+  });
   final Ease ease;
 
   /// The side of the square. The panel sizes it from the space it has, so a row of tiles never leaves a gap.
@@ -49,13 +57,21 @@ class EasingPresetTile extends StatelessWidget {
     builder: (_, h) => Center(
       child: Transform.translate(
         offset: Offset(0, h && carried ? -Shape.s(2) : 0),
-        child: CustomPaint(size: Size.square(side), painter: EaseIcon(ease, on ? WindowTokens.accentInk : (h ? Grey.g95 : Grey.g76))),
+        child: CustomPaint(
+          size: Size.square(side),
+          painter: EaseIcon(
+            ease,
+            on ? WindowTokens.accentInk : (h ? Grey.g95 : Grey.g76),
+          ),
+        ),
       ),
     ),
   );
 }
 
-const easeShadow = [BoxShadow(color: Color(0x80000000), blurRadius: 10, offset: Offset(0, 4))];
+const easeShadow = [
+  BoxShadow(color: Color(0x80000000), blurRadius: 10, offset: Offset(0, 4)),
+];
 
 /// The drag feedback for a card: centred on the pointer and tilted slightly.
 Widget easeHeld(Widget card, double side) {
@@ -68,7 +84,10 @@ Widget easeHeld(Widget card, double side) {
         child: Container(
           width: w,
           height: h,
-          decoration: BoxDecoration(borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)), boxShadow: easeShadow),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+            boxShadow: easeShadow,
+          ),
           child: card,
         ),
       ),
@@ -120,12 +139,16 @@ class EaseIcon extends CustomPainter {
       ..color = ink
       ..strokeWidth = 4.4
       ..strokeCap = StrokeCap.round;
-    void dot(double u, double v) => c.drawCircle(Offset(_x(u), _y(v)), 5.5, Paint()..color = ink);
-    void segment(double u0, double u1, double v0, [double? v1]) => c.drawLine(Offset(_x(u0), _y(v0)), Offset(_x(u1), _y(v1 ?? v0)), bar);
+    void dot(double u, double v) =>
+        c.drawCircle(Offset(_x(u), _y(v)), 5.5, Paint()..color = ink);
+    void segment(double u0, double u1, double v0, [double? v1]) =>
+        c.drawLine(Offset(_x(u0), _y(v0)), Offset(_x(u1), _y(v1 ?? v0)), bar);
     void line(double Function(double) f, int count, [double scale = 1]) {
       final path = Path();
       for (var i = 0; i < count; i++) {
-        final u = i / (count - 1), x = _x(u), y = _y((f(u) * scale).clamp(0.0, 1.0));
+        final u = i / (count - 1),
+            x = _x(u),
+            y = _y((f(u) * scale).clamp(0.0, 1.0));
         i == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
       }
       c.drawPath(path, curve);
@@ -146,7 +169,8 @@ class EaseIcon extends CustomPainter {
 
     final word = said(ease).split(' ').first;
     // A Bezier that goes past 0 or 1 would leave the square if drawn as the icon, so it is drawn as its real curve.
-    final out = word == 'Bezier' && [ease.p1.dy, ease.p2.dy].any((y) => y < 0 || y > 1);
+    final out =
+        word == 'Bezier' && [ease.p1.dy, ease.p2.dy].any((y) => y < 0 || y > 1);
 
     switch (easeIsUsual(said(ease)) && !out ? word : '') {
       // If the numbers were changed, the real curve is drawn. Otherwise an easing with 8 waves would look like 3.5.
@@ -162,13 +186,34 @@ class EaseIcon extends CustomPainter {
         line(_bounceOut, 60);
         dot(1 / 2.75, 1);
       case 'Elastic':
-        line((u) => 1 - math.exp(-5 * u) * math.cos(2 * math.pi * 1.7 * u), 60, .8);
+        line(
+          (u) => 1 - math.exp(-5 * u) * math.cos(2 * math.pi * 1.7 * u),
+          60,
+          .8,
+        );
         dot(.15, .8);
       case 'Cyclic':
         line((u) => .5 + .42 * math.cos(2 * math.pi * 1.25 * u), 60);
         dot(0, .92);
       case 'Random':
-        const noise = [0.0, 1.0, -1.0, 1.0, -.6, 1.0, -1.0, .8, -1.0, 1.0, -.8, 1.0, -1.0, .7, -.5, 0.0];
+        const noise = [
+          0.0,
+          1.0,
+          -1.0,
+          1.0,
+          -.6,
+          1.0,
+          -1.0,
+          .8,
+          -1.0,
+          1.0,
+          -.8,
+          1.0,
+          -1.0,
+          .7,
+          -.5,
+          0.0,
+        ];
         line((u) => .1 + .8 * u + .12 * noise[(u * 15 + .5).toInt()], 16);
         dot(.2, .27);
       case 'Steps':
@@ -199,7 +244,8 @@ class EaseIcon extends CustomPainter {
       // The real curve, scaled to fit the square including any overshoot.
       default:
         final at = [for (var i = 0; i < 48; i++) ease.at(i / 47)];
-        final lo = math.min(0.0, at.reduce(math.min)), hi = math.max(1.0, at.reduce(math.max));
+        final lo = math.min(0.0, at.reduce(math.min)),
+            hi = math.max(1.0, at.reduce(math.max));
         line((u) => .06 + .88 * (ease.at(u) - lo) / (hi - lo), 48);
     }
   }

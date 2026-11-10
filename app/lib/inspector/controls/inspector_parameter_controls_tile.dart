@@ -25,11 +25,25 @@ class ParameterTile extends StatelessWidget {
 
   String get id => 'v_${p.id}';
 
-  Widget _num(BuildContext context, {String? sub, String? caption, Widget? glyph, bool owns = false, bool tall = false}) {
+  Widget _num(
+    BuildContext context, {
+    String? sub,
+    String? caption,
+    Widget? glyph,
+    bool owns = false,
+    bool tall = false,
+  }) {
     final fid = sub == null ? id : '$id.$sub';
     return RowInfo(
       keys: InspectorScope.of(context).doc.keys[id] ?? KeyframeState.off,
-      child: InspectorNumberField(p, id: fid, caption: caption ?? p.label, glyph: glyph, glyphOwnsPointer: owns, glyphTall: tall),
+      child: InspectorNumberField(
+        p,
+        id: fid,
+        caption: caption ?? p.label,
+        glyph: glyph,
+        glyphOwnsPointer: owns,
+        glyphTall: tall,
+      ),
     );
   }
 
@@ -38,18 +52,34 @@ class ParameterTile extends StatelessWidget {
   /// Each step above 0 tints the block with its own colour, so strength reads as a gradation of colour, not as yes or no,
   /// and the block stays quiet enough that the rest is still read. The tint follows GitHub's dark-page labels (Primer):
   /// the background is the colour at 0.18 alpha and the text is the colour itself.
-  static int step(double? w) => w == null || w < 4 ? 0 : (w < 6 ? 1 : (w < 8 ? 2 : 3));
+  static int step(double? w) =>
+      w == null || w < 4 ? 0 : (w < 6 ? 1 : (w < 8 ? 2 : 3));
 
   /// The tint of each step above 0: 青磁 (seiji), 撫子 (nadeshiko) and 浅黄 (usuki) from nipponcolors.com.
   /// Each has a contrast of at least 6:1 against `InspectorSkin.well`. It is not final so a picture test can try others.
-  static var steps = const [Color(0xFF69B0AC), Color(0xFFDC9FB4), Color(0xFFFAD689)];
+  static var steps = const [
+    Color(0xFF69B0AC),
+    Color(0xFFDC9FB4),
+    Color(0xFFFAD689),
+  ];
 
   /// A filter that draws the block as a duotone: `InspectorSkin.well` maps to the tinted background, `Grey.g95` to [to], and greys between.
   static ColorFilter duotone(Color to) {
-    final lo = InspectorSkin.well, hi = Grey.g95, ground = Color.alphaBlend(to.withValues(alpha: .18), lo);
-    List<double> row(int k, double low, double high, double under, double word) {
+    final lo = InspectorSkin.well,
+        hi = Grey.g95,
+        ground = Color.alphaBlend(to.withValues(alpha: .18), lo);
+    List<double> row(
+      int k,
+      double low,
+      double high,
+      double under,
+      double word,
+    ) {
       final a = (word - under) / (high - low);
-      return [for (var j = 0; j < 5; j++) j == k ? a : (j == 4 ? (under - a * low) * 255 : 0)];
+      return [
+        for (var j = 0; j < 5; j++)
+          j == k ? a : (j == 4 ? (under - a * low) * 255 : 0),
+      ];
     }
 
     return ColorFilter.matrix([
@@ -67,7 +97,10 @@ class ParameterTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (step(p.weight)) {
     0 => _body(context),
-    final s => ColorFiltered(colorFilter: duotone(steps[s - 1]), child: _body(context)),
+    final s => ColorFiltered(
+      colorFilter: duotone(steps[s - 1]),
+      child: _body(context),
+    ),
   };
 
   Widget _body(BuildContext context) {
@@ -77,11 +110,21 @@ class ParameterTile extends StatelessWidget {
       child: FittedBox(child: Gauge(v, p)),
     );
     // Same layout as a number block: name at the top left, the control along the bottom, the picture at the top right.
-    Widget shell(Widget bottom, {VoidCallback? onTap, Widget? glyph, bool tall = false}) => Pressable(
+    Widget shell(
+      Widget bottom, {
+      VoidCallback? onTap,
+      Widget? glyph,
+      bool tall = false,
+    }) => Pressable(
       onTap: onTap,
       builder: (_, h) => Container(
-        height: tall ? InspectorSkin.tile * 2 + InspectorSkin.tileGap : InspectorSkin.tile,
-        decoration: BoxDecoration(color: h && onTap != null ? Grey.g20 : InspectorSkin.well, borderRadius: BorderRadius.all(Shape.r(6))),
+        height: tall
+            ? InspectorSkin.tile * 2 + InspectorSkin.tileGap
+            : InspectorSkin.tile,
+        decoration: BoxDecoration(
+          color: h && onTap != null ? Grey.g20 : InspectorSkin.well,
+          borderRadius: BorderRadius.all(Shape.r(6)),
+        ),
         child: Stack(
           children: [
             if (glyph != null)
@@ -96,14 +139,21 @@ class ParameterTile extends StatelessWidget {
               padding: EdgeInsets.fromLTRB(
                 InspectorSkin.tilePad,
                 Shape.s(4),
-                glyph != null ? InspectorSkin.glyph + InspectorSkin.tilePad : InspectorSkin.tilePad,
+                glyph != null
+                    ? InspectorSkin.glyph + InspectorSkin.tilePad
+                    : InspectorSkin.tilePad,
                 Shape.s(3),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(p.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.micro(Grey.g63).copyWith(height: 1.1)),
+                  Text(
+                    p.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyles.micro(Grey.g63).copyWith(height: 1.1),
+                  ),
                   bottom,
                 ],
               ),
@@ -160,13 +210,20 @@ class ParameterTile extends StatelessWidget {
         // A list of numbers, such as a bar chart's heights, edited as bars the user drags up and down. Committed on release.
         return shell(_Heights(id: id));
       case ParameterLook.color:
-        final all = (doc.s2[id] ?? '—').split(' ').where((c) => hexControls(c) != null).toList();
+        final all = (doc.s2[id] ?? '—')
+            .split(' ')
+            .where((c) => hexControls(c) != null)
+            .toList();
         return shell(
           glyph: Swatch(doc.s2[id], ramp: all.length > 1 ? all : null),
           Padding(
             padding: EdgeInsets.only(bottom: Shape.s(3)),
             // With several colours, the line shows how many and the swatch strip shows which.
-            child: LinkLine(to: LinkTo.colors, value: all.length > 1 ? '${all.length}' : doc.s2[id] ?? '—', id: id),
+            child: LinkLine(
+              to: LinkTo.colors,
+              value: all.length > 1 ? '${all.length}' : doc.s2[id] ?? '—',
+              id: id,
+            ),
           ),
         );
       case ParameterLook.angle:
@@ -175,7 +232,12 @@ class ParameterTile extends StatelessWidget {
           glyph: AngleDial(id: id, p: p),
           owns: true,
         );
-      case ParameterLook.percent || ParameterLook.vertical || ParameterLook.horizontal || ParameterLook.bipolar || ParameterLook.bar || ParameterLook.scrub:
+      case ParameterLook.percent ||
+          ParameterLook.vertical ||
+          ParameterLook.horizontal ||
+          ParameterLook.bipolar ||
+          ParameterLook.bar ||
+          ParameterLook.scrub:
         return _num(context, glyph: gauge);
       case ParameterLook.seed:
         return _num(
@@ -202,7 +264,11 @@ class ParameterTile extends StatelessWidget {
             _PadGlyph(id: id, p: p, size: !point),
             SizedBox(width: InspectorSkin.tileGap),
             Expanded(
-              child: _num(context, sub: 'x', caption: '${p.label} ${point ? 'X' : 'W'}'),
+              child: _num(
+                context,
+                sub: 'x',
+                caption: '${p.label} ${point ? 'X' : 'W'}',
+              ),
             ),
             SizedBox(width: InspectorSkin.tileGap),
             Expanded(
@@ -234,7 +300,9 @@ class _PadGlyphState extends State<_PadGlyph> {
     final x = InspectorScope.of(context), doc = x.doc, p = widget.p;
     final ix = '${widget.id}.x', iy = '${widget.id}.y';
     final lo = p.min ?? double.negativeInfinity, hi = p.max ?? double.infinity;
-    double step(double v, double d) => double.parse((v + d * p.perPx).clamp(lo, hi).toStringAsFixed(math.max(p.dec, 2)));
+    double step(double v, double d) => double.parse(
+      (v + d * p.perPx).clamp(lo, hi).toStringAsFixed(math.max(p.dec, 2)),
+    );
     return MouseRegion(
       cursor: SystemMouseCursors.move,
       onEnter: (_) => setState(() => _hot = true),
@@ -246,7 +314,10 @@ class _PadGlyphState extends State<_PadGlyph> {
         },
         onPointerMove: (e) {
           if (!_drag) return;
-          doc.setMany({ix: step(doc.get(ix) ?? 0, e.delta.dx), iy: step(doc.get(iy) ?? 0, widget.size ? -e.delta.dy : e.delta.dy)});
+          doc.setMany({
+            ix: step(doc.get(ix) ?? 0, e.delta.dx),
+            iy: step(doc.get(iy) ?? 0, widget.size ? -e.delta.dy : e.delta.dy),
+          });
         },
         onPointerUp: (_) {
           if (_drag) doc.endGesture();
@@ -259,7 +330,10 @@ class _PadGlyphState extends State<_PadGlyph> {
         child: Container(
           width: InspectorSkin.tile,
           height: InspectorSkin.tile,
-          decoration: BoxDecoration(color: _drag || _hot ? Grey.g20 : InspectorSkin.well, borderRadius: BorderRadius.all(Shape.r(6))),
+          decoration: BoxDecoration(
+            color: _drag || _hot ? Grey.g20 : InspectorSkin.well,
+            borderRadius: BorderRadius.all(Shape.r(6)),
+          ),
           child: FittedBox(
             child: Gauge(null, p, x: doc.get(ix), y: doc.get(iy)),
           ),
@@ -283,14 +357,24 @@ class _HeightsState extends State<_Heights> {
   double _top = 1;
 
   List<double> _said(InspectorValues doc) {
-    final w = [for (final s in (doc.s2[widget.id] ?? '').split(' ')) ?double.tryParse(s)];
+    final w = [
+      for (final s in (doc.s2[widget.id] ?? '').split(' ')) ?double.tryParse(s),
+    ];
     // With no value yet, start from eight equal bars to drag.
     return w.isEmpty ? List.filled(8, 1) : w;
   }
 
   void _at(Offset p, Size box) {
-    final v = _held!, i = (p.dx / box.width * v.length).floor().clamp(0, v.length - 1);
-    setState(() => v[i] = (((1 - p.dy / box.height) * _top) * 10).roundToDouble().clamp(0, _top * 10) / 10);
+    final v = _held!,
+        i = (p.dx / box.width * v.length).floor().clamp(0, v.length - 1);
+    setState(
+      () => v[i] =
+          (((1 - p.dy / box.height) * _top) * 10).roundToDouble().clamp(
+            0,
+            _top * 10,
+          ) /
+          10,
+    );
   }
 
   @override
@@ -308,7 +392,13 @@ class _HeightsState extends State<_Heights> {
           }
 
           void end() {
-            doc.str(widget.id, [for (final x in _held!) x == x.roundToDouble() ? '${x.round()}' : '$x'].join(' '));
+            doc.str(
+              widget.id,
+              [
+                for (final x in _held!)
+                  x == x.roundToDouble() ? '${x.round()}' : '$x',
+              ].join(' '),
+            );
             setState(() => _held = null);
           }
 
@@ -323,7 +413,13 @@ class _HeightsState extends State<_Heights> {
               start(d.localPosition);
               end();
             },
-            child: CustomPaint(size: size, painter: _BarsPainter(v, _held == null ? math.max(1, v.reduce(math.max) * 1.25) : _top)),
+            child: CustomPaint(
+              size: size,
+              painter: _BarsPainter(
+                v,
+                _held == null ? math.max(1, v.reduce(math.max) * 1.25) : _top,
+              ),
+            ),
           );
         },
       ),
@@ -340,7 +436,13 @@ class _BarsPainter extends CustomPainter {
     final w = s.width / v.length, paint = Paint()..color = Grey.g76;
     for (var i = 0; i < v.length; i++) {
       final h = (v[i] / top).clamp(0.0, 1.0) * s.height;
-      c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(i * w + w * .15, s.height - h, w * .7, h), Shape.r(1.5)), paint);
+      c.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(i * w + w * .15, s.height - h, w * .7, h),
+          Shape.r(1.5),
+        ),
+        paint,
+      );
     }
   }
 
@@ -363,7 +465,11 @@ class _ChoiceField extends StatelessWidget {
 
 /// Keeps the chooser's picked name and the numeric index the shader reads in sync.
 class _ChoiceSync extends StatelessWidget {
-  const _ChoiceSync({required this.id, required this.options, required this.child});
+  const _ChoiceSync({
+    required this.id,
+    required this.options,
+    required this.child,
+  });
   final String id;
   final List<String> options;
   final Widget child;
@@ -372,7 +478,9 @@ class _ChoiceSync extends StatelessWidget {
     final doc = InspectorScope.of(context).doc;
     final i = options.indexOf(doc.s2[id] ?? options.first);
     if (i >= 0 && doc.get(id) != i) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => doc.set(id, i.toDouble()));
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => doc.set(id, i.toDouble()),
+      );
     }
     return child;
   }

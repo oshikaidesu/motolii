@@ -9,12 +9,36 @@ import 'package:motolii/widgets/glyphs.dart' show GlyphKind;
 // ---------------------------------------------------------------- ruler ticks
 
 double majorTickSpacing(double ppf, int fps) {
-  final steps = {1, 2, 5, 10, fps ~/ 2, fps, 2 * fps, 5 * fps, 10 * fps, 30 * fps, 60 * fps}.where((f) => f > 0).toList()..sort();
-  return steps.firstWhere((f) => f * ppf >= 70, orElse: () => steps.last).toDouble();
+  final steps = {
+    1,
+    2,
+    5,
+    10,
+    fps ~/ 2,
+    fps,
+    2 * fps,
+    5 * fps,
+    10 * fps,
+    30 * fps,
+    60 * fps,
+  }.where((f) => f > 0).toList()..sort();
+  return steps
+      .firstWhere((f) => f * ppf >= 70, orElse: () => steps.last)
+      .toDouble();
 }
 
 double fineTickSpacing(double ppf, int fps, double major) {
-  final steps = {1, 2, 5, 10, fps ~/ 2, fps, 2 * fps, 5 * fps, 10 * fps}.where((f) => f > 0 && f < major && major % f == 0 && f * ppf >= 12);
+  final steps = {
+    1,
+    2,
+    5,
+    10,
+    fps ~/ 2,
+    fps,
+    2 * fps,
+    5 * fps,
+    10 * fps,
+  }.where((f) => f > 0 && f < major && major % f == 0 && f * ppf >= 12);
   var best = major;
   for (final f in steps) {
     if ((f * ppf - 30).abs() < (best * ppf - 30).abs()) best = f.toDouble();
@@ -51,7 +75,14 @@ enum TimelineGlyphs implements GlyphKind {
   void draw(Canvas c, Size s, Paint line, Paint fill) {
     c.translate(s.width / 2, s.height / 2);
     c.scale(s.shortestSide / 12);
-    Path tri(double x0, double y0, double x1, double y1, double x2, double y2) => Path()
+    Path tri(
+      double x0,
+      double y0,
+      double x1,
+      double y1,
+      double x2,
+      double y2,
+    ) => Path()
       ..moveTo(x0, y0)
       ..lineTo(x1, y1)
       ..lineTo(x2, y2)
@@ -85,7 +116,12 @@ enum TimelineGlyphs implements GlyphKind {
         final sh = Path()
           ..moveTo(-2.3, 0)
           ..lineTo(-2.3, -1.8)
-          ..arcTo(Rect.fromCircle(center: const Offset(0, -1.8), radius: 2.3), math.pi, math.pi, false);
+          ..arcTo(
+            Rect.fromCircle(center: const Offset(0, -1.8), radius: 2.3),
+            math.pi,
+            math.pi,
+            false,
+          );
         if (this == TimelineGlyphs.lock) sh.lineTo(2.3, 0);
         c.drawPath(sh, line);
       case TimelineGlyphs.caretR:

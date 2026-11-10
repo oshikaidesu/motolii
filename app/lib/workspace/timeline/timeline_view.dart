@@ -28,7 +28,10 @@ extension TimelinePaneView on TimelinePaneState {
   void _tickNow(Duration e) {
     final ws = workspace!;
     // The engine keeps the clock. The playhead shows the time of the last frame it drew.
-    lastFrame = (ws.inside!.now * WorkspaceController.fps).round().clamp(0, WorkspaceController.duration);
+    lastFrame = (ws.inside!.now * WorkspaceController.fps).round().clamp(
+      0,
+      WorkspaceController.duration,
+    );
     ws.frame = lastFrame;
   }
 
@@ -45,13 +48,21 @@ extension TimelinePaneView on TimelinePaneState {
 
   // ---------------------------------------------------------------- view
 
-  double get fit => math.max(.1, (trackW - TimelineMetrics.padL - TimelineMetrics.padR) / WorkspaceController.duration);
+  double get fit => math.max(
+    .1,
+    (trackW - TimelineMetrics.padL - TimelineMetrics.padR) /
+        WorkspaceController.duration,
+  );
 
   TimelineView get view => TimelineView(fit * zoom, scroll);
 
   double get visible => WorkspaceController.duration / zoom;
 
-  double clampScroll(double s) => s.clamp(0.0, math.max(0.0, WorkspaceController.duration - visible)).toDouble();
+  double clampScroll(double s) => s
+      .clamp(0.0, math.max(0.0, WorkspaceController.duration - visible))
+      .toDouble();
 
-  double clampV(int rows) => vscroll.clamp(0.0, math.max(0.0, rows * TimelineMetrics.row - rowsH)).toDouble();
+  double clampV(int rows) => vscroll
+      .clamp(0.0, math.max(0.0, rows * TimelineMetrics.row - rowsH))
+      .toDouble();
 }

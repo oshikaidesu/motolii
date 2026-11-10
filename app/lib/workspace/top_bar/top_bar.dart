@@ -12,7 +12,8 @@ import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/skin/skin_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Pressable, IconPress;
+import 'package:motolii/widgets/controls.dart'
+    show Badge, Chip, ChipLook, Pressable, IconPress;
 import 'package:motolii/widgets/media.dart' show Draw, glyph;
 import 'package:motolii/widgets/text_gestures.dart';
 import 'package:motolii/workspace/commands/panel_requests.dart';
@@ -29,7 +30,11 @@ class TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ws = WorkspaceScope.of(context, {WorkspaceAspect.animating, WorkspaceAspect.document, WorkspaceAspect.picked});
+    final ws = WorkspaceScope.of(context, {
+      WorkspaceAspect.animating,
+      WorkspaceAspect.document,
+      WorkspaceAspect.picked,
+    });
     return Container(
       color: WindowTokens.body,
       padding: EdgeInsets.symmetric(horizontal: Shape.s(10)),
@@ -44,7 +49,8 @@ class TopBar extends StatelessWidget {
               ws.document ?? '',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyles.name(Grey.g95).copyWith(fontWeight: FontWeight.w600),
+              style: TextStyles.name(Grey.g95)
+                  .copyWith(fontWeight: FontWeight.w600),
             ),
           ), // A long name is cut off with an ellipsis so the bar keeps its layout.
           SizedBox(width: Shape.s(6)),
@@ -90,13 +96,21 @@ class _Wordmark extends StatelessWidget {
         radius: Radius.zero,
         child: Text(
           'M',
-          style: TextStyles.title(WindowTokens.onAccent).copyWith(fontSize: TextStyles.px(14), fontWeight: FontWeight.w900, height: 1),
+          style: TextStyles.title(WindowTokens.onAccent).copyWith(
+            fontSize: TextStyles.px(14),
+            fontWeight: FontWeight.w900,
+            height: 1,
+          ),
         ),
       ),
       SizedBox(width: Shape.s(8)),
       Text(
         'Motolii',
-        style: TextStyles.title(Grey.g95).copyWith(fontSize: TextStyles.px(14), fontWeight: FontWeight.w800, letterSpacing: -.2),
+        style: TextStyles.title(Grey.g95).copyWith(
+          fontSize: TextStyles.px(14),
+          fontWeight: FontWeight.w800,
+          letterSpacing: -.2,
+        ),
       ),
     ],
   );
@@ -114,9 +128,16 @@ String undoStepName(WorkspaceController ws, String done) {
   for (final (t, n) in c.values) {
     (byThing[t] ??= {}).add(m.shown(n)?.label ?? n);
   }
-  String nameOf(int t) => t == 0 ? 'Stage' : ws.layers.where((l) => l.id == '$t').firstOrNull?.name ?? 'a thing';
-  final said = [for (final e in byThing.entries.take(3)) '${nameOf(e.key)} ${e.value.take(3).join(', ')}${e.value.length > 3 ? '…' : ''}'];
-  return said.isEmpty ? done : '$done: ${said.join(' · ')}${byThing.length > 3 ? ' …' : ''}';
+  String nameOf(int t) => t == 0
+      ? 'Stage'
+      : ws.layers.where((l) => l.id == '$t').firstOrNull?.name ?? 'a thing';
+  final said = [
+    for (final e in byThing.entries.take(3))
+      '${nameOf(e.key)} ${e.value.take(3).join(', ')}${e.value.length > 3 ? '…' : ''}',
+  ];
+  return said.isEmpty
+      ? done
+      : '$done: ${said.join(' · ')}${byThing.length > 3 ? ' …' : ''}';
 }
 
 class _UndoRedo extends StatelessWidget {
@@ -129,7 +150,10 @@ class _UndoRedo extends StatelessWidget {
         IconPress(
           (c) => Transform.flip(
             flipX: flip,
-            child: CustomPaint(size: const Size(12, 10), painter: Draw((cv, s) => _drawUndo(cv, s, c), c)),
+            child: CustomPaint(
+              size: const Size(12, 10),
+              painter: Draw((cv, s) => _drawUndo(cv, s, c), c),
+            ),
           ),
           key: ValueKey(flip ? 'ws-redo' : 'ws-undo'),
           size: Shape.z(24),
@@ -140,7 +164,9 @@ class _UndoRedo extends StatelessWidget {
             if (m == null) return;
             ws.after(
               m.later(flip ? 'redo' : 'undo'),
-              (done, why) => ws.notice = done ? undoStepName(ws, flip ? 'Redone' : 'Undone') : why,
+              (done, why) => ws.notice = done
+                  ? undoStepName(ws, flip ? 'Redone' : 'Undone')
+                  : why,
             ); // The app does not wait for the step to finish.
           },
         ),
@@ -149,7 +175,9 @@ class _UndoRedo extends StatelessWidget {
 }
 
 void _drawUndo(Canvas canvas, Size s, Color c) {
-  if (SkinParts.draw(canvas, s, 'undo', c)) return; // The skin's own icon, if any.
+  if (SkinParts.draw(canvas, s, 'undo', c)) {
+    return; // The skin's own icon, if any.
+  }
   final p = Paint()
     ..color = c
     ..style = PaintingStyle.stroke
@@ -195,7 +223,9 @@ class _ShadeSwitch extends StatelessWidget {
 
 /// A ring with its left half filled: the usual sign for "light or dark".
 void _drawShade(Canvas canvas, Size s, Color c) {
-  if (SkinParts.draw(canvas, s, 'shade', c)) return; // The skin's own icon, if any.
+  if (SkinParts.draw(canvas, s, 'shade', c)) {
+    return; // The skin's own icon, if any.
+  }
   final r = Rect.fromLTWH(.7, .7, s.width - 1.4, s.height - 1.4);
   canvas
     ..drawOval(
@@ -220,21 +250,34 @@ class _Saved extends StatelessWidget {
   const _Saved();
   @override
   Widget build(BuildContext context) {
-    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.notice}), go = ws.noticeGo;
+    final ws = WorkspaceScope.of(context, {
+          WorkspaceAspect.document,
+          WorkspaceAspect.notice,
+        }),
+        go = ws.noticeGo;
     final said = Text(
       ws.notice ?? _savedAt(ws),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: go == null ? TextStyles.label(Grey.g63) : TextStyles.label(Grey.g63).copyWith(decoration: TextDecoration.underline),
+      style: go == null
+          ? TextStyles.label(Grey.g63)
+          : TextStyles.label(Grey.g63)
+                .copyWith(decoration: TextDecoration.underline),
     ); // The underline marks the notice as a link when it has a target.
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Badge(WindowTokens.accent, size: Shape.z(6), radius: Radius.circular(Shape.z(3))),
+        Badge(
+          WindowTokens.accent,
+          size: Shape.z(6),
+          radius: Radius.circular(Shape.z(3)),
+        ),
         SizedBox(width: Shape.s(6)),
         ConstrainedBox(
           constraints: BoxConstraints(maxWidth: Shape.z(260)),
-          child: go == null ? said : Pressable(onTap: go, builder: (_, _) => said),
+          child: go == null
+              ? said
+              : Pressable(onTap: go, builder: (_, _) => said),
         ),
       ],
     );
@@ -249,7 +292,9 @@ class _Render extends StatefulWidget {
 }
 
 class _RenderState extends State<_Render> {
-  final _open = OverlayPortalController(), _name = TextEditingController(), _focus = FocusNode();
+  final _open = OverlayPortalController(),
+      _name = TextEditingController(),
+      _focus = FocusNode();
   @override
   void initState() {
     super.initState();
@@ -270,7 +315,12 @@ class _RenderState extends State<_Render> {
   /// Free space on the folder's disk, as the Mac's df reports it (the Available column, in 1024-byte blocks).
   static String _room(String? folder) {
     try {
-      final cols = (Process.runSync('df', ['-k', folder ?? '.']).stdout as String).trim().split('\n').last.split(RegExp(r'\s+'));
+      final cols =
+          (Process.runSync('df', ['-k', folder ?? '.']).stdout as String)
+              .trim()
+              .split('\n')
+              .last
+              .split(RegExp(r'\s+'));
       return '${(int.parse(cols[3]) / (1024 * 1024)).toStringAsFixed(1)} GB free';
     } catch (_) {
       return '';
@@ -279,11 +329,14 @@ class _RenderState extends State<_Render> {
 
   void _ask() {
     if (!mounted || _open.isShowing) return;
-    final ws = WorkspaceScope.read(context), doc = ws.document ?? 'film.motolii';
+    final ws = WorkspaceScope.read(context),
+        doc = ws.document ?? 'film.motolii';
     _free = _room(ws.documentFolder);
     _name.text = '${doc.replaceFirst(RegExp(r'\.motolii$'), '')}.mp4';
     _open.show();
-    WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? _focus.requestFocus() : null);
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => mounted ? _focus.requestFocus() : null,
+    );
   }
 
   // The export formats the engine writes, chosen by file extension (see render_draw.h). Alight Motion offers the same four.
@@ -294,15 +347,26 @@ class _RenderState extends State<_Render> {
     ('PNG', '.png', 'a picture each, name_0001.png on'),
     ('JPEG', '.jpg', 'a JPEG each, name_0001.jpg on'),
   ];
-  String get _ending => _formats.map((f) => f.$2).firstWhere((e) => _name.text.trim().toLowerCase().endsWith(e), orElse: () => '.mp4');
-  void _as(String ending) =>
-      setState(() => _name.text = '${_name.text.trim().replaceFirst(RegExp(r'\.(mp4|mov|gif|png|jpg)$', caseSensitive: false), '')}$ending');
+  String get _ending => _formats
+      .map((f) => f.$2)
+      .firstWhere(
+        (e) => _name.text.trim().toLowerCase().endsWith(e),
+        orElse: () => '.mp4',
+      );
+  void _as(String ending) => setState(
+    () => _name.text =
+        '${_name.text.trim().replaceFirst(RegExp(r'\.(mp4|mov|gif|png|jpg)$', caseSensitive: false), '')}$ending',
+  );
 
   void _go(WorkspaceController ws) {
     var name = _name.text.trim();
     if (name.isEmpty) return;
-    if (!_formats.any((f) => name.toLowerCase().endsWith(f.$2))) name = '$name.mp4';
-    ws.renderTo = name.startsWith('/') ? name : '${ws.documentFolder ?? '.'}/$name';
+    if (!_formats.any((f) => name.toLowerCase().endsWith(f.$2))) {
+      name = '$name.mp4';
+    }
+    ws.renderTo = name.startsWith('/')
+        ? name
+        : '${ws.documentFolder ?? '.'}/$name';
     _open.hide();
     ws.onRender?.call();
   }
@@ -332,7 +396,11 @@ class _RenderState extends State<_Render> {
         Text fact(String v) => Text(v, style: TextStyles.value(Grey.g91));
         // Esc and Cmd+. cancel, as a Mac dialog's Cancel does. The keys arrive from the name field, which holds focus.
         return CallbackShortcuts(
-          bindings: {const SingleActivator(LogicalKeyboardKey.escape): _open.hide, const SingleActivator(LogicalKeyboardKey.period, meta: true): _open.hide},
+          bindings: {
+            const SingleActivator(LogicalKeyboardKey.escape): _open.hide,
+            const SingleActivator(LogicalKeyboardKey.period, meta: true):
+                _open.hide,
+          },
           child: Stack(
             children: [
               Positioned.fill(
@@ -357,13 +425,23 @@ class _RenderState extends State<_Render> {
                     children: [
                       Padding(
                         padding: EdgeInsets.only(bottom: Shape.s(12)),
-                        child: Text('Render', style: TextStyles.title(Grey.g95).copyWith(fontWeight: FontWeight.w700)),
+                        child: Text(
+                          'Render',
+                          style: TextStyles.title(Grey.g95)
+                              .copyWith(fontWeight: FontWeight.w700),
+                        ),
                       ),
                       row(
                         'File',
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: Shape.s(8), vertical: Shape.s(5)),
-                          decoration: BoxDecoration(color: WindowTokens.well, borderRadius: BorderRadius.all(Shape.r(4))),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: Shape.s(8),
+                            vertical: Shape.s(5),
+                          ),
+                          decoration: BoxDecoration(
+                            color: WindowTokens.well,
+                            borderRadius: BorderRadius.all(Shape.r(4)),
+                          ),
                           child: TextGestures(
                             field: (k) => EditableText(
                               key: k,
@@ -388,8 +466,18 @@ class _RenderState extends State<_Render> {
                           style: TextStyles.label(Grey.g76),
                         ),
                       ),
-                      row('Range', fact('Work area  ${t(from)} – ${t(to)}  ·  $frames frames')),
-                      row('Size', fact('${ArtGeometry.comp.width.round()} × ${ArtGeometry.comp.height.round()}')),
+                      row(
+                        'Range',
+                        fact(
+                          'Work area  ${t(from)} – ${t(to)}  ·  $frames frames',
+                        ),
+                      ),
+                      row(
+                        'Size',
+                        fact(
+                          '${ArtGeometry.comp.width.round()} × ${ArtGeometry.comp.height.round()}',
+                        ),
+                      ),
                       // Export settings, stored in the project as in Alight Motion. A value of 0 matches the preview.
                       for (final (label, name, choices) in [
                         (
@@ -398,7 +486,12 @@ class _RenderState extends State<_Render> {
                           [
                             (0, 'Full'),
                             for (final p in sizeResolutions)
-                              if (p < math.min(ArtGeometry.comp.width, ArtGeometry.comp.height)) (p, '${p}p'),
+                              if (p <
+                                  math.min(
+                                    ArtGeometry.comp.width,
+                                    ArtGeometry.comp.height,
+                                  ))
+                                (p, '${p}p'),
                           ],
                         ),
                         (
@@ -415,18 +508,28 @@ class _RenderState extends State<_Render> {
                           'render_mbps',
                           [
                             (0, 'Auto'),
-                            for (final b in const [4, 8, 16, 32]) (b, '$b Mbps'),
+                            for (final b in const [4, 8, 16, 32])
+                              (b, '$b Mbps'),
                           ],
                         ),
-                        ('Motion blur', 'render_blur', const [(0, 'Off'), (8, 'On')]), // Eight samples per frame, like After Effects' 180° shutter.
+                        (
+                          'Motion blur',
+                          'render_blur',
+                          const [(0, 'Off'), (8, 'On')],
+                        ), // Eight samples per frame, like After Effects' 180° shutter.
                         // Clear leaves empty areas transparent. PNG, GIF and HEVC in .mov keep it (see render_draw.h).
-                        ('Background', 'render_alpha', const [(0, 'Solid'), (1, 'Clear')]),
+                        (
+                          'Background',
+                          'render_alpha',
+                          const [(0, 'Solid'), (1, 'Clear')],
+                        ),
                       ])
                         row(
                           label,
                           StatefulBuilder(
                             builder: (context, again) {
-                              final m = ws.inside, now = (m?.value(0, name, 0) ?? 0).round();
+                              final m = ws.inside,
+                                  now = (m?.value(0, name, 0) ?? 0).round();
                               return Wrap(
                                 spacing: Shape.s(6),
                                 runSpacing: Shape.s(4),
@@ -439,7 +542,16 @@ class _RenderState extends State<_Render> {
                                       on: now == v,
                                       onTap: m == null
                                           ? null
-                                          : () => ws.after(m.later('set', layer: 0, name: name, number: v.toDouble()), (_, _) => mounted ? again(() {}) : null),
+                                          : () => ws.after(
+                                              m.later(
+                                                'set',
+                                                layer: 0,
+                                                name: name,
+                                                number: v.toDouble(),
+                                              ),
+                                              (_, _) =>
+                                                  mounted ? again(() {}) : null,
+                                            ),
                                     ),
                                   if (name == 'render_mbps' && now > 0)
                                     Text(
@@ -463,7 +575,12 @@ class _RenderState extends State<_Render> {
                                 runSpacing: Shape.s(4),
                                 children: [
                                   for (final (label, ending, _) in _formats)
-                                    Chip(key: ValueKey('render-$label'), label: label, on: _ending == ending, onTap: () => again(() => _as(ending))),
+                                    Chip(
+                                      key: ValueKey('render-$label'),
+                                      label: label,
+                                      on: _ending == ending,
+                                      onTap: () => again(() => _as(ending)),
+                                    ),
                                 ],
                               ),
                               SizedBox(height: Shape.s(4)),
@@ -485,12 +602,21 @@ class _RenderState extends State<_Render> {
                             cursor: MouseCursor.defer,
                             onTap: _open.hide,
                             builder: (_, _) => Padding(
-                              padding: EdgeInsets.symmetric(horizontal: Shape.s(12), vertical: Shape.s(6)),
-                              child: Text('Cancel', style: TextStyles.name(Grey.g76)),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: Shape.s(12),
+                                vertical: Shape.s(6),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyles.name(Grey.g76),
+                              ),
                             ),
                           ),
                           SizedBox(width: Shape.s(6)),
-                          Forms.worn.action(context, ActionSpec('Render', () => _go(ws))),
+                          Forms.worn.action(
+                            context,
+                            ActionSpec('Render', () => _go(ws)),
+                          ),
                         ],
                       ),
                     ],
@@ -501,7 +627,10 @@ class _RenderState extends State<_Render> {
           ),
         );
       },
-      child: Forms.worn.action(context, ActionSpec('Render', _ask)), // Drawn by the skin's forms.
+      child: Forms.worn.action(
+        context,
+        ActionSpec('Render', _ask),
+      ), // Drawn by the skin's forms.
     );
   }
 }

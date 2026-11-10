@@ -64,4 +64,10 @@ typedef Stretch = ({int from, int to, String way, List<double> shape});
 typedef SelectedKeyframe = ({String layer, int frame});
 
 /// A stretch of one property selected by its line in the timeline, from the keyframe at [at] seconds to the next keyframe of that property.
-typedef StretchPicked = ({String layer, String name, double at, int from, int to});
+typedef StretchPicked = ({
+  String layer,
+  String name,
+  double at,
+  int from,
+  int to,
+});

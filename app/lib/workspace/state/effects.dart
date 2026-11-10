@@ -25,7 +25,12 @@ extension WorkspaceEffects on WorkspaceController {
     final m = inside;
     if (m == null) return const {};
     return {
-      for (final t in m.layers) ...[...fxFiles(m.word(t, 'fx')), ...fxOf('$t'), if (m.word(t, 'script') case final s when s.isNotEmpty && s != 'none') s],
+      for (final t in m.layers) ...[
+        ...fxFiles(m.word(t, 'fx')),
+        ...fxOf('$t'),
+        if (m.word(t, 'script') case final s when s.isNotEmpty && s != 'none')
+          s,
+      ],
     };
   }
 
@@ -37,8 +42,19 @@ extension WorkspaceEffects on WorkspaceController {
     var made = 0;
     after(m.later('add', name: 'shape', word: kind), null, (t) => made = t);
     m
-      ..later('set', layer: -1, name: 'size', number: WorkspaceController.comp.height / m.point)
-      ..later('set', layer: -1, name: 'wide', number: WorkspaceController.comp.width / WorkspaceController.comp.height);
+      ..later(
+        'set',
+        layer: -1,
+        name: 'size',
+        number: WorkspaceController.comp.height / m.point,
+      )
+      ..later(
+        'set',
+        layer: -1,
+        name: 'wide',
+        number:
+            WorkspaceController.comp.width / WorkspaceController.comp.height,
+      );
     applyChosenInks(this, 'shape', kind);
     also?.call(m);
     after(m.later('together'), (done, _) {
@@ -65,7 +81,12 @@ extension WorkspaceEffects on WorkspaceController {
       return true;
     }
     // The engine puts it at the end of the list or removes it. If refused, say why; a camera accepts motions only.
-    after(m.later('fx_file', layer: t, word: file), (done, why) => done || why.isEmpty ? null : notice = 'Not taken: ${why.split(':').first}');
+    after(
+      m.later('fx_file', layer: t, word: file),
+      (done, why) => done || why.isEmpty
+          ? null
+          : notice = 'Not taken: ${why.split(':').first}',
+    );
     return true;
   }
 
@@ -77,10 +98,17 @@ extension WorkspaceEffects on WorkspaceController {
     if (!had.contains(file)) return screenToggle(file);
     if (!file.endsWith('.fs') && !file.endsWith('.wgsl')) {
       // The wording comes from the engine, see doc_fx_duplicate.
-      notice = 'Not taken: only an ISF or a .wgsl effect is put on again so far';
+      notice =
+          'Not taken: only an ISF or a .wgsl effect is put on again so far';
       return false;
     }
-    return screenToggle(firstFree(file, had.contains, (n) => '${file.substring(0, dot)}~$n${file.substring(dot)}'));
+    return screenToggle(
+      firstFree(
+        file,
+        had.contains,
+        (n) => '${file.substring(0, dot)}~$n${file.substring(dot)}',
+      ),
+    );
   }
 
   /// Previews effect [file] on the selected layer without changing the document. Null ends the preview.
@@ -108,7 +136,12 @@ extension WorkspaceEffects on WorkspaceController {
   void fxToggle(String name) {
     final m = inside, t = int.tryParse(selected ?? '');
     if (m == null) return;
-    if (t == null) return whole('rect', (m) => m.later('effect', layer: -1, name: name, number: frame / fps));
+    if (t == null) {
+      return whole(
+        'rect',
+        (m) => m.later('effect', layer: -1, name: name, number: frame / fps),
+      );
+    }
     // Not awaited.
     after(m.later('effect', layer: t, name: name, number: frame / fps));
   }
@@ -117,7 +150,12 @@ extension WorkspaceEffects on WorkspaceController {
   void lookPut(String file) {
     final m = inside, t = int.tryParse(selected ?? '');
     if (m == null) return;
-    if (t == null) return whole('rect', (m) => m.later('paste_style', layer: -1, word: file));
+    if (t == null) {
+      return whole(
+        'rect',
+        (m) => m.later('paste_style', layer: -1, word: file),
+      );
+    }
     after(m.later('paste_style', layer: t, word: file));
   }
 }

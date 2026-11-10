@@ -47,10 +47,18 @@ class _AngleDialState extends State<AngleDial> {
           // The limits are those of a typed number, not the slider's ends. An angle in After Effects turns without end and counts
           // its revolutions. A closed range of at least one turn wraps around inside the range, as Godot's wrapf does.
           final p = widget.p,
-              lo = p.open && (p.min ?? 0) < 0 ? double.negativeInfinity : p.validMin ?? p.min ?? double.negativeInfinity,
-              hi = p.open ? double.infinity : p.validMax ?? p.max ?? double.infinity;
+              lo = p.open && (p.min ?? 0) < 0
+                  ? double.negativeInfinity
+                  : p.validMin ?? p.min ?? double.negativeInfinity,
+              hi = p.open
+                  ? double.infinity
+                  : p.validMax ?? p.max ?? double.infinity;
           var v = (doc.get(widget.id) ?? 0) + d * 180 / math.pi;
-          if (hi - lo >= 360) v = v > hi ? v - 360 * ((v - hi) / 360).ceil() : (v < lo ? v + 360 * ((lo - v) / 360).ceil() : v);
+          if (hi - lo >= 360) {
+            v = v > hi
+                ? v - 360 * ((v - hi) / 360).ceil()
+                : (v < lo ? v + 360 * ((lo - v) / 360).ceil() : v);
+          }
           doc.set(widget.id, v.clamp(lo, hi).roundToDouble());
         },
         onPointerUp: (_) {
@@ -64,7 +72,13 @@ class _AngleDialState extends State<AngleDial> {
         // Repaints when its value changes, as a number field does (InspectorValues.watch), without rebuilding the Inspector.
         child: ListenableBuilder(
           listenable: doc.watch(widget.id),
-          builder: (context, _) => CustomPaint(size: const Size(22, 22), painter: _DialPainter(doc.get(widget.id) ?? 0, _hot || _last != null)),
+          builder: (context, _) => CustomPaint(
+            size: const Size(22, 22),
+            painter: _DialPainter(
+              doc.get(widget.id) ?? 0,
+              _hot || _last != null,
+            ),
+          ),
         ),
       ),
     );

@@ -10,7 +10,8 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
 
 /// The tool named [name], or null if there is none.
-Pane? panelTool(WorkspaceController ws, String name) => ws.tools.where((t) => t.name == name).firstOrNull;
+Pane? panelTool(WorkspaceController ws, String name) =>
+    ws.tools.where((t) => t.name == name).firstOrNull;
 
 /// A tool's sticker: a flat tile in its colour with the glyph knocked out in dark ink.
 class ToolSticker extends StatelessWidget {
@@ -25,10 +26,18 @@ class ToolSticker extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: tone, borderRadius: BorderRadius.circular(size * .3)),
+      decoration: BoxDecoration(
+        color: tone,
+        borderRadius: BorderRadius.circular(size * .3),
+      ),
       child: g == null
           // A tool the user made shows its first letter.
-          ? Center(child: Text(name.characters.first, style: TextStyles.micro(WindowTokens.onAccent)))
+          ? Center(
+              child: Text(
+                name.characters.first,
+                style: TextStyles.micro(WindowTokens.onAccent),
+              ),
+            )
           : Glyph(g, size: size, color: WindowTokens.onAccent),
     );
   }

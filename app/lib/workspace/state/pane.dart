@@ -10,7 +10,16 @@ enum PaneStrip { shelves, stage, timeline, ease, inspector, tools, catalog }
 ///
 /// An [iconOnly] tab shows the glyph alone. It suits panes whose body already shows the name in a header, and keeps a strip of many tabs narrow.
 class Pane {
-  const Pane(this.name, this.glyph, this.build, {this.at = PaneStrip.inspector, this.minSize = 160, this.iconOnly = false, this.tone, this.acts = ''});
+  const Pane(
+    this.name,
+    this.glyph,
+    this.build, {
+    this.at = PaneStrip.inspector,
+    this.minSize = 160,
+    this.iconOnly = false,
+    this.tone,
+    this.acts = '',
+  });
   final String name;
 
   /// The glyph on the tab. If null, the tab shows the first letter of [name].

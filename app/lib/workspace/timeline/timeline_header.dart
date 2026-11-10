@@ -42,24 +42,44 @@ class TimelineHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final big = TextStyles.value(Grey.g76)
-        .copyWith(fontSize: TextStyles.px(14), fontWeight: FontWeight.w500, fontFeatures: const [FontFeature.tabularFigures()]);
+    final big = TextStyles.value(Grey.g76).copyWith(
+      fontSize: TextStyles.px(14),
+      fontWeight: FontWeight.w500,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
     final picked = ws.keys.length, layer = ws.layer;
     return PanelHeader(
       '',
       height: TimelineMetrics.header,
       child: LayoutBuilder(
         builder: (context, box) {
-          final roomy = box.maxWidth >= 1000, mid = box.maxWidth >= 820, slide = box.maxWidth >= 600; // Narrower than this, only the zoom buttons remain.
+          final roomy = box.maxWidth >= 1000,
+              mid = box.maxWidth >= 820,
+              slide =
+                  box.maxWidth >=
+                  600; // Narrower than this, only the zoom buttons remain.
           return Row(
             children: [
               if (mid) ...[
-                Chip(label: ws.document?.replaceFirst(RegExp(r'\.motolii$'), '') ?? 'Main', look: _readout(mono: false)),
+                Chip(
+                  label:
+                      ws.document?.replaceFirst(RegExp(r'\.motolii$'), '') ??
+                      'Main',
+                  look: _readout(mono: false),
+                ),
                 SizedBox(width: Shape.s(12)),
               ], // End of the project name chip.
-              _RoundButton(TimelineGlyphs.toStart, key: const ValueKey('ws-tl-start'), onTap: () => onStep(-ws.frame)),
+              _RoundButton(
+                TimelineGlyphs.toStart,
+                key: const ValueKey('ws-tl-start'),
+                onTap: () => onStep(-ws.frame),
+              ),
               SizedBox(width: Shape.s(2)),
-              _RoundButton(TimelineGlyphs.stepBack, key: const ValueKey('ws-tl-back'), onTap: () => onStep(-1)),
+              _RoundButton(
+                TimelineGlyphs.stepBack,
+                key: const ValueKey('ws-tl-back'),
+                onTap: () => onStep(-1),
+              ),
               SizedBox(width: Shape.s(2)),
               ValueListenableBuilder<int>(
                 // Only the play button listens to playback, so the rest of the row is not rebuilt.
@@ -74,15 +94,30 @@ class TimelineHeader extends StatelessWidget {
                 ),
               ),
               SizedBox(width: Shape.s(2)),
-              _RoundButton(TimelineGlyphs.stepFwd, key: const ValueKey('ws-tl-fwd'), onTap: () => onStep(1)),
+              _RoundButton(
+                TimelineGlyphs.stepFwd,
+                key: const ValueKey('ws-tl-fwd'),
+                onTap: () => onStep(1),
+              ),
               SizedBox(width: Shape.s(2)),
-              _RoundButton(TimelineGlyphs.loop, key: const ValueKey('ws-tl-loop'), on: loop, onTap: onLoop),
+              _RoundButton(
+                TimelineGlyphs.loop,
+                key: const ValueKey('ws-tl-loop'),
+                on: loop,
+                onTap: onLoop,
+              ),
               SizedBox(width: Shape.s(2)),
               ValueListenableBuilder<int>(
                 // Like the Set button in Ableton Live: adds a marker at the playhead, or removes the one already there.
                 valueListenable: ws.moment,
                 builder: (_, _, _) => _RoundButton(
-                  ws.marks.any((k) => (k.$1 * WorkspaceController.fps).round() == ws.frame) ? TimelineGlyphs.minus : TimelineGlyphs.plus,
+                  ws.marks.any(
+                        (k) =>
+                            (k.$1 * WorkspaceController.fps).round() ==
+                            ws.frame,
+                      )
+                      ? TimelineGlyphs.minus
+                      : TimelineGlyphs.plus,
                   key: const ValueKey('ws-tl-mark'),
                   width: Shape.z(66),
                   label: 'Marker',
@@ -102,15 +137,32 @@ class TimelineHeader extends StatelessWidget {
                   style: big.copyWith(color: Grey.g100),
                   accent: WindowTokens.accent,
                   allow: null,
-                  parse: (said) => parseTimecode(said, ws.frame, WorkspaceController.fps)?.toDouble(),
+                  parse: (said) => parseTimecode(
+                    said,
+                    ws.frame,
+                    WorkspaceController.fps,
+                  )?.toDouble(),
                   sayOnLeave: false,
-                  onType: (to) => onStep(to.round().clamp(0, WorkspaceController.duration) - ws.frame),
-                  paint: (_, shown, typing) =>
-                      typing ? SizedBox(width: Shape.z(72), child: shown) : Text(ws.timecode(), style: big), // One colour and one weight for the whole time.
+                  onType: (to) => onStep(
+                    to.round().clamp(0, WorkspaceController.duration) -
+                        ws.frame,
+                  ),
+                  paint: (_, shown, typing) => typing
+                      ? SizedBox(width: Shape.z(72), child: shown)
+                      : Text(
+                          ws.timecode(),
+                          style: big,
+                        ), // One colour and one weight for the whole time.
                 ),
               ),
               SizedBox(width: Shape.s(8)),
-              if (roomy) ...[Text('/ ${ws.timecode(WorkspaceController.duration)}', style: TextStyles.value(Grey.g56)), SizedBox(width: Shape.s(10))],
+              if (roomy) ...[
+                Text(
+                  '/ ${ws.timecode(WorkspaceController.duration)}',
+                  style: TextStyles.value(Grey.g56),
+                ),
+                SizedBox(width: Shape.s(10)),
+              ],
               Chip(label: '${WorkspaceController.fps} fps', look: _readout()),
               SizedBox(width: Shape.s(4)),
               _Tempo(ws: ws),
@@ -128,7 +180,9 @@ class TimelineHeader extends StatelessWidget {
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            picked > 0 ? '${layer.name}  ·  $picked key${picked == 1 ? '' : 's'}' : '${layer.name}  ·  ${layer.keys.length} keys',
+                            picked > 0
+                                ? '${layer.name}  ·  $picked key${picked == 1 ? '' : 's'}'
+                                : '${layer.name}  ·  ${layer.keys.length} keys',
                             style: TextStyles.label(Grey.g76),
                             maxLines: 1,
                           ),
@@ -138,7 +192,12 @@ class TimelineHeader extends StatelessWidget {
                   ),
                 ),
               const Spacer(),
-              _RoundButton(TimelineGlyphs.minus, key: const ValueKey('ws-tl-zoom-out'), size: Shape.z(22), onTap: () => onZoom(zoom / 1.5)),
+              _RoundButton(
+                TimelineGlyphs.minus,
+                key: const ValueKey('ws-tl-zoom-out'),
+                size: Shape.z(22),
+                onTap: () => onZoom(zoom / 1.5),
+              ),
               SizedBox(width: Shape.s(4)),
               if (slide) ...[
                 MiniSlider(
@@ -152,11 +211,18 @@ class TimelineHeader extends StatelessWidget {
                   fill: Grey.g44,
                   thumb: const Size.square(12),
                   thumbColor: Grey.g91,
-                  onChanged: (v) => onZoom(math.pow(TimelineMetrics.maxZoom, v.first).toDouble()),
+                  onChanged: (v) => onZoom(
+                    math.pow(TimelineMetrics.maxZoom, v.first).toDouble(),
+                  ),
                 ),
                 SizedBox(width: Shape.s(4)),
               ],
-              _RoundButton(TimelineGlyphs.plus, key: const ValueKey('ws-tl-zoom-in'), size: Shape.z(22), onTap: () => onZoom(zoom * 1.5)),
+              _RoundButton(
+                TimelineGlyphs.plus,
+                key: const ValueKey('ws-tl-zoom-in'),
+                size: Shape.z(22),
+                onTap: () => onZoom(zoom * 1.5),
+              ),
               SizedBox(width: Shape.s(4)),
               _RoundButton(
                 TimelineGlyphs.fit,
@@ -186,10 +252,17 @@ int? parseTimecode(String said, int now, int fps) {
   final fields = parts.length > 1
       ? [for (final p in parts.reversed) int.tryParse(p) ?? 0]
       : [
-          for (var s = parts.single; s.isNotEmpty; s = s.length > 2 ? s.substring(0, s.length - 2) : '')
+          for (
+            var s = parts.single;
+            s.isNotEmpty;
+            s = s.length > 2 ? s.substring(0, s.length - 2) : ''
+          )
             int.parse(s.length > 2 ? s.substring(s.length - 2) : s),
         ];
-  final f = fields[0] + (fields.length > 1 ? fields[1] * fps : 0) + (fields.length > 2 ? fields[2] * 60 * fps : 0);
+  final f =
+      fields[0] +
+      (fields.length > 1 ? fields[1] * fps : 0) +
+      (fields.length > 2 ? fields[2] * 60 * fps : 0);
   return switch (m[1]) {
     '+' => now + f,
     '-' => now - f,
@@ -199,7 +272,17 @@ int? parseTimecode(String said, int now, int fps) {
 
 /// A round icon button that lights up on hover. [on] fills it with the accent colour, [lit] raises it in grey.
 class _RoundButton extends StatelessWidget {
-  const _RoundButton(this.g, {super.key, this.onTap, this.on = false, this.lit = false, this.size = 24, this.width, this.rest, this.label});
+  const _RoundButton(
+    this.g, {
+    super.key,
+    this.onTap,
+    this.on = false,
+    this.lit = false,
+    this.size = 24,
+    this.width,
+    this.rest,
+    this.label,
+  });
   final TimelineGlyphs g;
   final VoidCallback? onTap;
   final bool on, lit;
@@ -213,7 +296,13 @@ class _RoundButton extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Glyph(g, size: 11, color: ink),
-        if (label case final l?) ...[SizedBox(width: Shape.s(4)), Text(l, style: TextStyles.micro(ink).copyWith(fontWeight: FontWeight.w700))],
+        if (label case final l?) ...[
+          SizedBox(width: Shape.s(4)),
+          Text(
+            l,
+            style: TextStyles.micro(ink).copyWith(fontWeight: FontWeight.w700),
+          ),
+        ],
       ],
     ),
     onTap: onTap,
@@ -221,7 +310,9 @@ class _RoundButton extends StatelessWidget {
     lit: lit,
     size: size,
     width: width,
-    rest: const Color(0x00000000), // Flat at rest; the button shows itself on hover.
+    rest: const Color(
+      0x00000000,
+    ), // Flat at rest; the button shows itself on hover.
     ink: rest ?? Grey.g56,
   );
 }
@@ -257,11 +348,15 @@ class _TempoState extends State<_Tempo> {
     super.dispose();
   }
 
-  static String _said(double bpm) => bpm == bpm.roundToDouble() ? '${bpm.round()}' : bpm.toStringAsFixed(1);
+  static String _said(double bpm) =>
+      bpm == bpm.roundToDouble() ? '${bpm.round()}' : bpm.toStringAsFixed(1);
 
   void _set(double bpm) {
     final ws = widget.ws;
-    ws.after(ws.inside!.later('set', layer: 0, name: 'bpm', number: bpm.clamp(0, 999)), (_, _) => ws.reread());
+    ws.after(
+      ws.inside!.later('set', layer: 0, name: 'bpm', number: bpm.clamp(0, 999)),
+      (_, _) => ws.reread(),
+    );
   }
 
   void _tap() {
@@ -269,12 +364,20 @@ class _TempoState extends State<_Tempo> {
     _tapped?.cancel();
     _tapped = Timer(const Duration(milliseconds: 2500), () {
       _tapping = false;
-      if (mounted && _field.currentState?.focused != true) setState(() => _typing = false);
+      if (mounted && _field.currentState?.focused != true) {
+        setState(() => _typing = false);
+      }
     });
-    if (_taps.isNotEmpty && now.difference(_taps.last).inMilliseconds > 2000) _taps.clear();
+    if (_taps.isNotEmpty && now.difference(_taps.last).inMilliseconds > 2000) {
+      _taps.clear();
+    }
     _taps.add(now);
     if (_taps.length < 2) return;
-    final bpm = (60000 * (_taps.length - 1) / now.difference(_taps.first).inMilliseconds).clamp(20.0, 999.0);
+    final bpm =
+        (60000 *
+                (_taps.length - 1) /
+                now.difference(_taps.first).inMilliseconds)
+            .clamp(20.0, 999.0);
     _field.currentState?.put(_said((bpm * 10).roundToDouble() / 10));
     _set((bpm * 10).roundToDouble() / 10);
   }
@@ -292,7 +395,10 @@ class _TempoState extends State<_Tempo> {
           _taps.clear();
           setState(() => _typing = true);
         },
-        child: Chip(label: bpm > 0 ? '${_said(bpm)} BPM' : 'BPM', look: _readout()),
+        child: Chip(
+          label: bpm > 0 ? '${_said(bpm)} BPM' : 'BPM',
+          look: _readout(),
+        ),
       );
     }
     return Row(
@@ -307,7 +413,8 @@ class _TempoState extends State<_Tempo> {
             take: true,
             escapes: true,
             hold: () => _tapping,
-            style: TextStyles.value(Grey.g95).copyWith(fontSize: TextStyles.px(10.5)),
+            style: TextStyles.value(Grey.g95)
+                .copyWith(fontSize: TextStyles.px(10.5)),
             cursor: WindowTokens.accent,
             selection: WindowTokens.accent.withValues(alpha: .3),
             onDone: _left,
@@ -329,4 +436,9 @@ class _TempoState extends State<_Tempo> {
 }
 
 /// Chip style of the header's readouts: well background, Grey.g91 text, and the same corner radius as the buttons.
-ChipLook _readout({bool mono = true}) => ChipLook.readout(ink: Grey.g91, size: 10.5, radius: WindowTokens.radius, mono: mono);
+ChipLook _readout({bool mono = true}) => ChipLook.readout(
+  ink: Grey.g91,
+  size: 10.5,
+  radius: WindowTokens.radius,
+  mono: mono,
+);

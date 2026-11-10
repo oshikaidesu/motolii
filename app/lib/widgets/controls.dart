@@ -9,7 +9,12 @@ import 'package:motolii/skin/tokens.dart';
 
 /// The app's basic press target, built on naked_ui's [NakedButton].
 class Pressable extends StatelessWidget {
-  const Pressable({super.key, required this.builder, this.cursor = SystemMouseCursors.click, this.onTap});
+  const Pressable({
+    super.key,
+    required this.builder,
+    this.cursor = SystemMouseCursors.click,
+    this.onTap,
+  });
 
   /// Builds the child. The bool is true while the pointer hovers.
   final Widget Function(BuildContext, bool) builder;
@@ -18,8 +23,12 @@ class Pressable extends StatelessWidget {
   /// Called on a press.
   final VoidCallback? onTap;
   @override
-  Widget build(BuildContext context) =>
-      NakedButton(onPressed: onTap, mouseCursor: cursor, enableFeedback: false, builder: (context, st, _) => builder(context, st.isHovered));
+  Widget build(BuildContext context) => NakedButton(
+    onPressed: onTap,
+    mouseCursor: cursor,
+    enableFeedback: false,
+    builder: (context, st, _) => builder(context, st.isHovered),
+  );
 }
 
 /// A small square button holding one glyph.
@@ -28,7 +37,17 @@ class Pressable extends StatelessWidget {
 /// with a colour fade. When [rest] and [ink] are given it looks like a tool panel or stage tile instead:
 /// accent fill when [on], [rest] fill and [ink] at rest, WindowTokens.radius corners, no margin and no fade.
 class IconPress extends StatelessWidget {
-  const IconPress(this.glyph, {super.key, this.onTap, this.on = false, this.lit = false, this.size, this.width, this.rest, this.ink});
+  const IconPress(
+    this.glyph, {
+    super.key,
+    this.onTap,
+    this.on = false,
+    this.lit = false,
+    this.size,
+    this.width,
+    this.rest,
+    this.ink,
+  });
 
   /// Builds the glyph in the ink for the current state: resting, hovered or on.
   final Widget Function(Color ink) glyph;
@@ -57,11 +76,19 @@ class IconPress extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: tile
-              ? (on ? WindowTokens.accent : (lit ? Grey.g26 : (h ? WindowTokens.raised : rest)))
+              ? (on
+                    ? WindowTokens.accent
+                    : (lit ? Grey.g26 : (h ? WindowTokens.raised : rest)))
               : (on ? WindowTokens.raised : (h ? WindowTokens.card : null)),
-          borderRadius: BorderRadius.all(Shape.r(tile ? WindowTokens.radius : WindowTokens.chipRadius)),
+          borderRadius: BorderRadius.all(
+            Shape.r(tile ? WindowTokens.radius : WindowTokens.chipRadius),
+          ),
         ),
-        child: glyph(tile ? (on ? WindowTokens.onAccent : (h || lit ? Grey.g95 : ink!)) : (on || h ? Grey.g95 : Grey.g63)),
+        child: glyph(
+          tile
+              ? (on ? WindowTokens.onAccent : (h || lit ? Grey.g95 : ink!))
+              : (on || h ? Grey.g95 : Grey.g63),
+        ),
       ),
     );
   }
@@ -72,10 +99,26 @@ class IconPress extends StatelessWidget {
 /// By default it is a square with chip-radius corners holding a glyph. [radius] changes the corners; half of [size] makes a circle.
 /// With [onTap] it is a button.
 class Badge extends StatelessWidget {
-  const Badge(this.color, {super.key, this.child, this.mark, this.size = 20, this.radius}) : onTap = null, _round = false;
+  const Badge(
+    this.color, {
+    super.key,
+    this.child,
+    this.mark,
+    this.size = 20,
+    this.radius,
+  }) : onTap = null,
+       _round = false;
 
   /// The stage's badge: a circle 18 across, painted with [mark].
-  const Badge.round(this.color, {super.key, required CustomPainter this.mark, this.onTap}) : child = null, size = 18, radius = null, _round = true;
+  const Badge.round(
+    this.color, {
+    super.key,
+    required CustomPainter this.mark,
+    this.onTap,
+  }) : child = null,
+       size = 18,
+       radius = null,
+       _round = true;
   final Color color;
   final Widget? child;
 
@@ -94,11 +137,22 @@ class Badge extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.all(radius ?? (_round ? Radius.circular(size / 2) : Shape.r(WindowTokens.chipRadius))),
+        borderRadius: BorderRadius.all(
+          radius ??
+              (_round
+                  ? Radius.circular(size / 2)
+                  : Shape.r(WindowTokens.chipRadius)),
+        ),
       ),
       child: child ?? CustomPaint(size: Size.square(size), painter: mark),
     );
-    return onTap == null ? tile : Pressable(cursor: SystemMouseCursors.basic, onTap: onTap, builder: (_, _) => tile);
+    return onTap == null
+        ? tile
+        : Pressable(
+            cursor: SystemMouseCursors.basic,
+            onTap: onTap,
+            builder: (_, _) => tile,
+          );
   }
 }
 
@@ -153,7 +207,12 @@ class ChipLook {
 
   /// A readout in a well, such as the top bar's fps or the timeline's name and tempo: 20 high and not pressable.
   /// Monospace, or the bold micro style when [mono] is false.
-  static ChipLook readout({required Color ink, double size = 10, double radius = 4, bool mono = true}) => ChipLook(
+  static ChipLook readout({
+    required Color ink,
+    double size = 10,
+    double radius = 4,
+    bool mono = true,
+  }) => ChipLook(
     height: 20,
     padX: 7,
     radius: radius,
@@ -161,7 +220,9 @@ class ChipLook {
     fill: WindowTokens.well,
     ink: ink,
     press: false,
-    text: (c) => mono ? TextStyles.value(c).copyWith(fontSize: TextStyles.px(size)) : TextStyles.micro(c).copyWith(fontWeight: FontWeight.w600),
+    text: (c) => mono
+        ? TextStyles.value(c).copyWith(fontSize: TextStyles.px(size))
+        : TextStyles.micro(c).copyWith(fontWeight: FontWeight.w600),
   );
 
   /// A flat chip filled with a layer's colour, with its name in dark ink.
@@ -186,11 +247,17 @@ class ChipLook {
     edge: edge ? WindowTokens.onAccent : null,
     edgeWidth: 1.5,
     press: false,
-    text: (c) => TextStyles.micro(c).copyWith(fontWeight: FontWeight.w700, letterSpacing: .4, height: 1),
+    text: (c) => TextStyles.micro(c)
+        .copyWith(fontWeight: FontWeight.w700, letterSpacing: .4, height: 1),
   );
 
   /// A bare grey word that brightens on hover, such as Copy, Paste or Reset: no fill and no padding.
-  static ChipLook get word => ChipLook(padX: 0, ink: Grey.g56, hoverInk: Grey.g95, text: (c) => TextStyles.label(c));
+  static ChipLook get word => ChipLook(
+    padX: 0,
+    ink: Grey.g56,
+    hoverInk: Grey.g95,
+    text: (c) => TextStyles.label(c),
+  );
 
   /// A word on the panel's background, not pressable. Used by the bar over the stage, which sits on a dark or light surround.
   static ChipLook get said => ChipLook(
@@ -224,7 +291,15 @@ class ChipLook {
 /// A small chip showing a label, optionally with a dot before it or a glyph in place of it.
 /// [look] defaults to the tool panel's header chip. [onTap] makes the chip a button.
 class Chip extends StatelessWidget {
-  const Chip({super.key, required this.label, this.dot, this.glyph, this.onTap, this.on = false, this.look});
+  const Chip({
+    super.key,
+    required this.label,
+    this.dot,
+    this.glyph,
+    this.onTap,
+    this.on = false,
+    this.look,
+  });
   final String label;
 
   /// Colour of a round mark drawn before the label.
@@ -245,11 +320,18 @@ class Chip extends StatelessWidget {
       return Container(
         height: l.height == null ? null : Shape.z(l.height!),
         margin: l.margin,
-        padding: EdgeInsets.symmetric(horizontal: Shape.s(l.padX), vertical: Shape.s(l.padY)),
+        padding: EdgeInsets.symmetric(
+          horizontal: Shape.s(l.padX),
+          vertical: Shape.s(l.padY),
+        ),
         alignment: l.center ? Alignment.center : null,
         decoration: BoxDecoration(
-          color: on ? l.onFill ?? l.fill : (lit ? l.hoverFill ?? l.fill : l.fill),
-          border: l.edge != null && !on ? Border.all(color: l.edge!, width: l.edgeWidth) : null,
+          color: on
+              ? l.onFill ?? l.fill
+              : (lit ? l.hoverFill ?? l.fill : l.fill),
+          border: l.edge != null && !on
+              ? Border.all(color: l.edge!, width: l.edgeWidth)
+              : null,
           borderRadius: BorderRadius.all(Shape.r(l.radius)),
         ),
         child: Row(
@@ -259,7 +341,10 @@ class Chip extends StatelessWidget {
               Container(
                 width: Shape.z(6),
                 height: Shape.z(6),
-                decoration: BoxDecoration(color: on ? WindowTokens.onAccent : dot, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: on ? WindowTokens.onAccent : dot,
+                  shape: BoxShape.circle,
+                ),
               ),
               SizedBox(width: Shape.s(5)),
             ],
@@ -267,7 +352,13 @@ class Chip extends StatelessWidget {
               glyph!(ink)
             else
               Flexible(
-                child: Text(label, maxLines: 1, softWrap: false, overflow: TextOverflow.ellipsis, style: l.text(ink)),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  style: l.text(ink),
+                ),
               ),
           ],
         ),
@@ -275,13 +366,24 @@ class Chip extends StatelessWidget {
     }
 
     if (!l.press && onTap == null) return chip(false);
-    return Pressable(onTap: onTap, cursor: l.cursor ?? (onTap == null ? MouseCursor.defer : SystemMouseCursors.click), builder: (_, h) => chip(h));
+    return Pressable(
+      onTap: onTap,
+      cursor:
+          l.cursor ??
+          (onTap == null ? MouseCursor.defer : SystemMouseCursors.click),
+      builder: (_, h) => chip(h),
+    );
   }
 }
 
 /// A row of mutually exclusive text options. The option at [index] is selected.
 class Segmented extends StatelessWidget {
-  const Segmented({super.key, required this.items, required this.index, required this.onChanged});
+  const Segmented({
+    super.key,
+    required this.items,
+    required this.index,
+    required this.onChanged,
+  });
   final List<String> items;
   final int index;
   final ValueChanged<int> onChanged;
@@ -301,7 +403,12 @@ class Segmented extends StatelessWidget {
         decoration: BoxDecoration(
           color: i == index ? Grey.g20 : null,
           borderRadius: BorderRadius.all(Shape.r(5)),
-          border: Border(bottom: BorderSide(color: i == index ? Role.selected : const Color(0x00000000), width: 1)),
+          border: Border(
+            bottom: BorderSide(
+              color: i == index ? Role.selected : const Color(0x00000000),
+              width: 1,
+            ),
+          ),
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,
@@ -309,7 +416,8 @@ class Segmented extends StatelessWidget {
             items[i].toUpperCase(),
             maxLines: 1,
             softWrap: false,
-            style: TextStyles.micro(i == index ? Grey.g95 : Grey.g63).copyWith(letterSpacing: .4),
+            style: TextStyles.micro(i == index ? Grey.g95 : Grey.g63)
+                .copyWith(letterSpacing: .4),
           ),
         ),
       ),
@@ -320,11 +428,16 @@ class Segmented extends StatelessWidget {
       child: Container(
         height: Shape.z(26),
         padding: EdgeInsets.all(Shape.s(2)),
-        decoration: BoxDecoration(color: Grey.g07, borderRadius: BorderRadius.all(Shape.r(7))),
+        decoration: BoxDecoration(
+          color: Grey.g07,
+          borderRadius: BorderRadius.all(Shape.r(7)),
+        ),
         child: Flex(
           direction: Axis.horizontal,
           mainAxisSize: MainAxisSize.max,
-          children: [for (var i = 0; i < items.length; i++) Expanded(child: seg(i))],
+          children: [
+            for (var i = 0; i < items.length; i++) Expanded(child: seg(i)),
+          ],
         ),
       ),
     );

@@ -10,8 +10,14 @@ class MyPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ws = WorkspaceScope.of(context), m = ws.inside, layer = int.tryParse(ws.selected ?? '');
-    if (m == null || layer == null) return Center(child: Text('Pick a layer', style: TextStyles.label(Grey.g56)));
+    final ws = WorkspaceScope.of(context),
+        m = ws.inside,
+        layer = int.tryParse(ws.selected ?? '');
+    if (m == null || layer == null) {
+      return Center(
+        child: Text('Pick a layer', style: TextStyles.label(Grey.g56)),
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -28,7 +34,9 @@ class MyPanel extends StatelessWidget {
           onGrab: () => m.take(layer),
           onChange: (v) => m.dragUpdate('opacity', v),
           onDrop: () => ws.after(m.later('drag_end', number: 1)),
-          onType: (v) => ws.after(m.later('set', layer: layer, name: 'opacity', number: v)),
+          onType: (v) => ws.after(
+            m.later('set', layer: layer, name: 'opacity', number: v),
+          ),
         ),
         // The layer's values as the engine declares them (engine/document/card_table.h): no Dart of one's own.
         Expanded(
@@ -36,7 +44,9 @@ class MyPanel extends StatelessWidget {
         ),
         Chip(
           label: 'Opaque',
-          onTap: () => ws.after(m.later('set', layer: layer, name: 'opacity', number: 1)),
+          onTap: () => ws.after(
+            m.later('set', layer: layer, name: 'opacity', number: 1),
+          ),
         ),
       ],
     );

@@ -6,7 +6,13 @@ import 'package:motolii/workspace/timeline/timeline_paint.dart';
 
 /// The overview strip. [onDrag] receives the pointer position within the strip.
 class TimelineOverview extends StatefulWidget {
-  const TimelineOverview({super.key, required this.from, required this.to, required this.frame, required this.onDrag});
+  const TimelineOverview({
+    super.key,
+    required this.from,
+    required this.to,
+    required this.frame,
+    required this.onDrag,
+  });
   final double from, to;
   final int frame;
   final ValueChanged<Offset> onDrag;
@@ -28,7 +34,12 @@ class _OverviewState extends State<TimelineOverview> {
       child: SizedBox(
         height: TimelineMetrics.overview,
         child: CustomPaint(
-          painter: TimelineOverviewPainter(from: widget.from, to: widget.to, frame: widget.frame, hot: _h),
+          painter: TimelineOverviewPainter(
+            from: widget.from,
+            to: widget.to,
+            frame: widget.frame,
+            hot: _h,
+          ),
         ),
       ),
     ),

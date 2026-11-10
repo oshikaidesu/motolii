@@ -6,7 +6,9 @@ import 'dart:io';
 void fileKeep(File f, Object data) {
   try {
     f.parent.createSync(recursive: true);
-    data is String ? f.writeAsStringSync(data) : f.writeAsBytesSync(data as List<int>);
+    data is String
+        ? f.writeAsStringSync(data)
+        : f.writeAsBytesSync(data as List<int>);
   } catch (_) {}
 }
 

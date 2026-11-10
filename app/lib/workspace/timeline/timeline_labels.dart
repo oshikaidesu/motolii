@@ -12,7 +12,11 @@ import 'package:motolii/workspace/timeline/timeline_paint.dart';
 
 /// Header of the name column: layer count and the visibility, solo and lock icons.
 class TimelineLabelHeader extends StatelessWidget {
-  const TimelineLabelHeader({super.key, required this.count, required this.solo});
+  const TimelineLabelHeader({
+    super.key,
+    required this.count,
+    required this.solo,
+  });
   final int count;
   final bool solo;
   @override
@@ -26,16 +30,35 @@ class TimelineLabelHeader extends StatelessWidget {
       children: [
         Text('#', style: TextStyles.micro(Grey.g56)),
         SizedBox(width: Shape.s(12)),
-        Text('LAYER', style: TextStyles.micro(Grey.g63).copyWith(letterSpacing: 1)),
+        Text(
+          'LAYER',
+          style: TextStyles.micro(Grey.g63).copyWith(letterSpacing: 1),
+        ),
         SizedBox(width: Shape.s(6)),
-        Text('$count', style: TextStyles.value(Grey.g56).copyWith(fontSize: TextStyles.px(10))),
+        Text(
+          '$count',
+          style: TextStyles.value(Grey.g56)
+              .copyWith(fontSize: TextStyles.px(10)),
+        ),
       ],
     ),
     trailing: [
-      for (final g in const [TimelineGlyphs.eye, TimelineGlyphs.solo, TimelineGlyphs.lock])
+      for (final g in const [
+        TimelineGlyphs.eye,
+        TimelineGlyphs.solo,
+        TimelineGlyphs.lock,
+      ])
         SizedBox(
           width: Shape.z(20),
-          child: Center(child: Glyph(g, size: 10, color: g == TimelineGlyphs.solo && solo ? WindowTokens.accent : Grey.g56)),
+          child: Center(
+            child: Glyph(
+              g,
+              size: 10,
+              color: g == TimelineGlyphs.solo && solo
+                  ? WindowTokens.accent
+                  : Grey.g56,
+            ),
+          ),
         ),
     ],
   );
@@ -89,15 +112,36 @@ class _LabelRowState extends State<TimelineLabelRow> {
             children: [
               SizedBox(width: Shape.z(10) * widget.depth), // Indent layers inside a group, as in Apple Motion's Layers list and Cavalry's tree.
               if (widget.lanes case final open?)
-                _Toggle(open ? TimelineGlyphs.caretD : TimelineGlyphs.caretR, on: false, lit: true, onTap: widget.onLanes)
+                _Toggle(
+                  open ? TimelineGlyphs.caretD : TimelineGlyphs.caretR,
+                  on: false,
+                  lit: true,
+                  onTap: widget.onLanes,
+                )
               else
                 SizedBox(width: Shape.z(20)),
               TimelineThumbnail(r),
             ],
           ),
-          eye: _Toggle(widget.hidden ? TimelineGlyphs.eyeOff : TimelineGlyphs.eye, on: false, lit: !widget.hidden, onTap: widget.onEye),
-          solo: _Toggle(TimelineGlyphs.solo, on: widget.solo, lit: _h || sel, onTap: widget.onSolo),
-          lock: _Toggle(r.locked ? TimelineGlyphs.lock : TimelineGlyphs.unlock, on: false, lit: r.locked || _h || sel, strong: r.locked, onTap: widget.onLock),
+          eye: _Toggle(
+            widget.hidden ? TimelineGlyphs.eyeOff : TimelineGlyphs.eye,
+            on: false,
+            lit: !widget.hidden,
+            onTap: widget.onEye,
+          ),
+          solo: _Toggle(
+            TimelineGlyphs.solo,
+            on: widget.solo,
+            lit: _h || sel,
+            onTap: widget.onSolo,
+          ),
+          lock: _Toggle(
+            r.locked ? TimelineGlyphs.lock : TimelineGlyphs.unlock,
+            on: false,
+            lit: r.locked || _h || sel,
+            strong: r.locked,
+            onTap: widget.onLock,
+          ),
         ),
       ),
     );
@@ -106,7 +150,13 @@ class _LabelRowState extends State<TimelineLabelRow> {
 
 /// A row toggle shown as a bare icon. [on] puts it on an accent chip, [strong] on a raised grey one.
 class _Toggle extends StatelessWidget {
-  const _Toggle(this.g, {required this.on, required this.lit, this.strong = false, required this.onTap});
+  const _Toggle(
+    this.g, {
+    required this.on,
+    required this.lit,
+    this.strong = false,
+    required this.onTap,
+  });
   final TimelineGlyphs g;
   final bool on, lit, strong;
   final VoidCallback onTap;
@@ -127,7 +177,13 @@ class _Toggle extends StatelessWidget {
             color: on ? WindowTokens.accent : (strong ? Grey.g26 : null),
             borderRadius: BorderRadius.all(Shape.r(WindowTokens.chipRadius)),
           ),
-          child: Glyph(g, size: 10, color: on ? WindowTokens.onAccent : (strong ? Grey.g95 : (lit ? Grey.g76 : Grey.g38))),
+          child: Glyph(
+            g,
+            size: 10,
+            color: on
+                ? WindowTokens.onAccent
+                : (strong ? Grey.g95 : (lit ? Grey.g76 : Grey.g38)),
+          ),
         ),
       ),
     ),

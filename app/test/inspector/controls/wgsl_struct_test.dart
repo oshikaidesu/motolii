@@ -3,7 +3,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/inspector/controls/parameter_inference.dart';
 
-List<Object?> _read(FieldDeclaration d) => [d.name, d.type, d.attrs, d.advanced, d.fold];
+List<Object?> _read(FieldDeclaration d) => [
+  d.name,
+  d.type,
+  d.attrs,
+  d.advanced,
+  d.fold,
+];
 
 void main() {
   test('a text with no struct has no fields', () {
@@ -91,12 +97,16 @@ struct Params {
   });
 
   test('the comment after a field wins over the lines above it', () {
-    final d = parseWgsl('struct P {\n/// @default(1)\nx: f32, // @default(2)\n}').single;
+    final d = parseWgsl(
+      'struct P {\n/// @default(1)\nx: f32, // @default(2)\n}',
+    ).single;
     expect(d.attrs['default'], ['2']);
   });
 
-  test('a // @advanced line marks every field after it, and may name the fold', () {
-    final decls = parseWgsl('''
+  test(
+    'a // @advanced line marks every field after it, and may name the fold',
+    () {
+      final decls = parseWgsl('''
 struct Params {
   first: f32,
   // @advanced
@@ -106,11 +116,17 @@ struct Params {
   fourth: f32,
 }
 ''');
-    expect(
-      [for (final d in decls) (d.name, d.advanced, d.fold)],
-      const [('first', false, null), ('second', true, null), ('third', true, 'Each copy'), ('fourth', true, 'Each copy')],
-    );
-  });
+      expect(
+        [for (final d in decls) (d.name, d.advanced, d.fold)],
+        const [
+          ('first', false, null),
+          ('second', true, null),
+          ('third', true, 'Each copy'),
+          ('fourth', true, 'Each copy'),
+        ],
+      );
+    },
+  );
 
   test('@advanced written on a field marks that field only', () {
     final decls = parseWgsl('''
@@ -121,6 +137,13 @@ struct Params {
   third: f32,
 }
 ''');
-    expect([for (final d in decls) (d.name, d.advanced, d.fold)], const [('first', true, null), ('second', true, null), ('third', false, null)]);
+    expect(
+      [for (final d in decls) (d.name, d.advanced, d.fold)],
+      const [
+        ('first', true, null),
+        ('second', true, null),
+        ('third', false, null),
+      ],
+    );
   });
 }

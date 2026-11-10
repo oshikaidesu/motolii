@@ -24,10 +24,16 @@ import 'package:motolii/workspace/timeline/timeline_tracks_paint.dart';
 import 'package:motolii/workspace/timeline/timeline_view.dart';
 
 extension TimelinePaneTracks on TimelinePaneState {
-  Widget tracks(WorkspaceController ws, List<TimelineRow> rows) => LayoutBuilder(
+  Widget tracks(
+    WorkspaceController ws,
+    List<TimelineRow> rows,
+  ) => LayoutBuilder(
     builder: (context, box) {
       trackW = box.maxWidth;
-      rowsH = math.max(0, box.maxHeight - TimelineMetrics.ruler - TimelineMetrics.overview);
+      rowsH = math.max(
+        0,
+        box.maxHeight - TimelineMetrics.ruler - TimelineMetrics.overview,
+      );
       scroll = clampScroll(scroll);
       vscroll = clampV(rows.length);
       final v = view;
@@ -42,7 +48,9 @@ extension TimelinePaneTracks on TimelinePaneState {
                   key: const ValueKey('ws-tl-ruler'),
                   behavior: HitTestBehavior.opaque,
                   supportedDevices: pressingDevices,
-                  onTapUp: (d) => rulerTap(d.localPosition), // Like Ableton Live's scrub area.
+                  onTapUp: (d) => rulerTap(
+                    d.localPosition,
+                  ), // Like Ableton Live's scrub area.
                   onDoubleTapDown: (d) => rulerDouble(d.localPosition),
                   onDoubleTap: () {},
                   onSecondaryTapDown: (d) => rulerRight(d.localPosition),
@@ -64,7 +72,10 @@ extension TimelinePaneTracks on TimelinePaneState {
                         tempo: ws.beats,
                         retimed: retimedOf(ws),
                       ),
-                      foregroundPainter: TimelineCachePainter(view: v, kept: ws.kept), // Marks the frames cached on disk for playback.
+                      foregroundPainter: TimelineCachePainter(
+                        view: v,
+                        kept: ws.kept,
+                      ), // Marks the frames cached on disk for playback.
                     ),
                   ),
                 ),
@@ -97,7 +108,13 @@ extension TimelinePaneTracks on TimelinePaneState {
                         child: RepaintBoundary(
                           child: CustomPaint(
                             size: Size.infinite,
-                            painter: TimelineTracksPainter(rows: rows, view: v, fps: WorkspaceController.fps, vscroll: vscroll, restAt: restAt),
+                            painter: TimelineTracksPainter(
+                              rows: rows,
+                              view: v,
+                              fps: WorkspaceController.fps,
+                              vscroll: vscroll,
+                              restAt: restAt,
+                            ),
                           ),
                         ),
                       ),
@@ -107,7 +124,12 @@ extension TimelinePaneTracks on TimelinePaneState {
               ),
               ValueListenableBuilder<int>(
                 valueListenable: ws.moment,
-                builder: (_, frame, _) => TimelineOverview(from: scroll, to: scroll + visible, frame: frame, onDrag: (p) => overview(p, box.maxWidth)),
+                builder: (_, frame, _) => TimelineOverview(
+                  from: scroll,
+                  to: scroll + visible,
+                  frame: frame,
+                  onDrag: (p) => overview(p, box.maxWidth),
+                ),
               ),
             ],
           ),
@@ -133,7 +155,10 @@ extension TimelinePaneTracks on TimelinePaneState {
           ),
           if (selectionBox case (final a, final b)?)
             Positioned.fromRect(
-              rect: Rect.fromPoints(a, b).shift(Offset(0, TimelineMetrics.ruler)),
+              rect: Rect.fromPoints(
+                a,
+                b,
+              ).shift(Offset(0, TimelineMetrics.ruler)),
               child: IgnorePointer(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
@@ -164,10 +189,13 @@ extension TimelinePaneTracks on TimelinePaneState {
                     rendererIgnoresPointer: true,
                     controller: markWords,
                     focusNode: markFocus,
-                    style: TextStyles.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700),
+                    style: TextStyles.micro(Grey.g13)
+                        .copyWith(fontWeight: FontWeight.w700),
                     cursorColor: Grey.g13,
                     backgroundCursorColor: Grey.g38,
-                    selectionColor: Grey.g13.withValues(alpha: .3), // Highlight for selected text.
+                    selectionColor: Grey.g13.withValues(
+                      alpha: .3,
+                    ), // Highlight for selected text.
                     maxLines: 1,
                     onSubmitted: (_) => markFocus.unfocus(),
                   ),

@@ -14,9 +14,18 @@ import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// The name of a move on its row: its direction and its layers, for example 'in · TURN IN TIME'.
-String groupMoveName(WorkspaceController ws, Iterable<String> who, bool coming) {
-  final names = [for (final id in who) ws.layers.where((l) => l.id == id).firstOrNull?.name ?? id];
-  final all = names.length > 4 ? '${names.take(3).join(' ')} +${names.length - 3}' : names.join(' ');
+String groupMoveName(
+  WorkspaceController ws,
+  Iterable<String> who,
+  bool coming,
+) {
+  final names = [
+    for (final id in who)
+      ws.layers.where((l) => l.id == id).firstOrNull?.name ?? id,
+  ];
+  final all = names.length > 4
+      ? '${names.take(3).join(' ')} +${names.length - 3}'
+      : names.join(' ');
   return '${coming ? 'in' : 'out'} · $all';
 }
 
@@ -30,22 +39,45 @@ void makeGroupMove(WorkspaceController ws, List<String> who, double start) {
   if (m == null || who.isEmpty) return;
   final held = {
     for (final l in ws.layers)
-      if (int.tryParse(l.id) case final b? when m.word(b, 'kind') == 'behaviour' && m.word(b, 'file') == 'group')
+      if (int.tryParse(l.id) case final b?
+          when m.word(b, 'kind') == 'behaviour' && m.word(b, 'file') == 'group')
         for (final w in m.word(b, 'members').split(' '))
           if (int.tryParse(w) case final t? when m.layers.contains(t)) '$t',
   };
   final coming = !who.any(held.contains);
   m.later('together', number: 1);
-  ws.after(m.later('add', name: 'behaviour', word: 'group'), null, (b) => ws.select('$b'));
+  ws.after(
+    m.later('add', name: 'behaviour', word: 'group'),
+    null,
+    (b) => ws.select('$b'),
+  );
   m.later('set', layer: -1, name: 'strength', number: 1);
   m.later('say', layer: -1, name: 'name', word: groupMoveName(ws, who, coming));
   m.later('relate', layer: -1, word: who.join(' '));
   m.later('set', layer: -1, name: 'lag', number: .08);
   m.later('set', layer: -1, name: 'y', number: -.15);
   m.later('set', layer: -1, name: 'opacity', number: 0);
-  m.later('key', layer: -1, name: 'strength', word: '$start', number: coming ? 1 : 0);
-  m.later('key', layer: -1, name: 'strength', word: '${start + .6}', number: coming ? 0 : 1);
-  m.later('easing', layer: -1, name: 'strength', number: start, word: 'Bezier 0.200 0 0.2 1.000');
+  m.later(
+    'key',
+    layer: -1,
+    name: 'strength',
+    word: '$start',
+    number: coming ? 1 : 0,
+  );
+  m.later(
+    'key',
+    layer: -1,
+    name: 'strength',
+    word: '${start + .6}',
+    number: coming ? 0 : 1,
+  );
+  m.later(
+    'easing',
+    layer: -1,
+    name: 'strength',
+    number: start,
+    word: 'Bezier 0.200 0 0.2 1.000',
+  );
   ws.after(m.later('together'), (done, why) {
     if (!done) ws.notice = 'No move made: $why'; // The whole undo step is undone; the top bar shows why.
     ws.reread();

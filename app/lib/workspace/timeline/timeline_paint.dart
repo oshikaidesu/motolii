@@ -4,13 +4,15 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart' show setEquals;
-import 'package:flutter/foundation.dart' show listEquals, mapEquals, ValueListenable;
+import 'package:flutter/foundation.dart'
+    show listEquals, mapEquals, ValueListenable;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Badge;
-import 'package:motolii/widgets/timeline_painters.dart' show fineTickSpacing, majorTickSpacing;
+import 'package:motolii/widgets/timeline_painters.dart'
+    show fineTickSpacing, majorTickSpacing;
 import 'package:motolii/workspace/state/beats.dart';
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
@@ -43,7 +45,8 @@ class TimelineView {
   double x(num f) => TimelineMetrics.padL + (f - scroll) * ppf;
   double frameAt(double x) => (x - TimelineMetrics.padL) / ppf + scroll;
   @override
-  bool operator ==(Object other) => other is TimelineView && other.ppf == ppf && other.scroll == scroll;
+  bool operator ==(Object other) =>
+      other is TimelineView && other.ppf == ppf && other.scroll == scroll;
   @override
   int get hashCode => Object.hash(ppf, scroll);
 }
@@ -86,14 +89,16 @@ class TimelineRow {
   final List<(int, double)>? lane;
   final List<List<double>>? laneWays; // The easing curve from each keyframe to the next: 0 at the keyframe, 1 at the next.
   final int? laneOn; // The index of the stretch selected by clicking its line.
-  final Color? tone; // The label colour. Null uses the colour of the layer's kind.
+  final Color?
+  tone; // The label colour. Null uses the colour of the layer's kind.
   final List<Color>? mix; // For a relation, the label colours of its layers; the bar is a gradient of them.
   final String name;
   final List<double>? wave; // How loud the sound is at each frame of the bar, in dB. Null if there is no sound.
   final List<ui.Image>? frames; // One image per stretch of a video's bar. Null if not a video or not read yet.
   final String? form; // A shape's form as named by the engine (rect, circle, star...), drawn as a small icon at the row's left.
   final Color? fill;
-  final bool outline; // True if the shape has no fill; [fill] is then the stroke colour.
+  final bool
+  outline; // True if the shape has no fill; [fill] is then the stroke colour.
   final LayerKind kind;
   final int inF, outF;
   final List<int> keys;
@@ -118,7 +123,10 @@ class TimelineRow {
       other.clipped == clipped &&
       other.whole == whole &&
       identical(other.wave, wave) &&
-      identical(other.frames, frames) && // Read once per change: the same list until the project changes.
+      identical(
+        other.frames,
+        frames,
+      ) && // Read once per change: the same list until the project changes.
       other.form == form &&
       other.fill == fill &&
       other.outline == outline &&
@@ -127,20 +135,39 @@ class TimelineRow {
       other.stretches.length == stretches.length &&
       [
         for (var i = 0; i < stretches.length; i++)
-          other.stretches[i].from == stretches[i].from && other.stretches[i].to == stretches[i].to && other.stretches[i].way == stretches[i].way,
+          other.stretches[i].from == stretches[i].from &&
+              other.stretches[i].to == stretches[i].to &&
+              other.stretches[i].way == stretches[i].way,
       ].every((same) => same);
   @override
-  int get hashCode => Object.hash(name, kind, inF, outF, Object.hashAll(keys), Object.hashAllUnordered(picked), selected, dim, locked);
+  int get hashCode => Object.hash(
+    name,
+    kind,
+    inF,
+    outF,
+    Object.hashAll(keys),
+    Object.hashAllUnordered(picked),
+    selected,
+    dim,
+    locked,
+  );
 }
 
 /// The width of a marker's flag on the ruler, which holds its name. Used both to draw the flag and to hit-test it.
-double markerFlagWidth(String name) => lineText(name, TextStyles.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700)).width + 8;
+double markerFlagWidth(String name) =>
+    lineText(
+      name,
+      TextStyles.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700),
+    ).width +
+    8;
 
 /// The width of the flag of a marker at [x]: its name's width, cut short where the next marker begins.
 ///
 /// Logic Pro likewise shows a marker's name only as far as the following marker. [xs] holds the x of every marker.
 double markerFlagRoom(String name, double x, Iterable<double> xs) {
-  final next = xs.where((o) => o > x).fold<double?>(null, (a, o) => a == null || o < a ? o : a);
+  final next = xs
+      .where((o) => o > x)
+      .fold<double?>(null, (a, o) => a == null || o < a ? o : a);
   final w = markerFlagWidth(name);
   return next == null ? w : math.max(6, math.min(w, next - x - 1));
 }
@@ -163,7 +190,8 @@ class TimelineRulerPainter extends CustomPainter {
   final TimelineView view;
   final int fps, workIn, workOut;
   final List<(int, String)> markers;
-  final Map<int, Color> markColors; // A marker's colour by its frame, if it has one.
+  final Map<int, Color>
+  markColors; // A marker's colour by its frame, if it has one.
 
   /// Frames where the videos' sound has a beat: a short tick each at the ruler's foot.
   final List<int> beats;
@@ -178,24 +206,56 @@ class TimelineRulerPainter extends CustomPainter {
   void paint(Canvas c, Size s) {
     final p = Paint(), end = view.x(WorkspaceController.duration);
     c.drawRect(Offset.zero & s, p..color = Grey.g10);
-    c.drawRect(Rect.fromLTRB(0, 0, s.width, TimelineMetrics.band), p..color = Grey.g07);
-    if (end < s.width) c.drawRect(Rect.fromLTRB(end, TimelineMetrics.band, s.width, s.height), p..color = Grey.g07);
+    c.drawRect(
+      Rect.fromLTRB(0, 0, s.width, TimelineMetrics.band),
+      p..color = Grey.g07,
+    );
+    if (end < s.width) {
+      c.drawRect(
+        Rect.fromLTRB(end, TimelineMetrics.band, s.width, s.height),
+        p..color = Grey.g07,
+      );
+    }
 
     final a = view.x(workIn), b = view.x(workOut);
-    c.drawRRect(RRect.fromLTRBR(a, 2, b, TimelineMetrics.band - 1, Shape.r(3)), p..color = Grey.g38);
+    c.drawRRect(
+      RRect.fromLTRBR(a, 2, b, TimelineMetrics.band - 1, Shape.r(3)),
+      p..color = Grey.g38,
+    );
     for (final x in [a, b - 4]) {
-      c.drawRRect(RRect.fromLTRBR(x, 1, x + 4, TimelineMetrics.band, Shape.r(2)), p..color = Grey.g76);
+      c.drawRRect(
+        RRect.fromLTRBR(x, 1, x + 4, TimelineMetrics.band, Shape.r(2)),
+        p..color = Grey.g76,
+      );
     }
 
-    final mj = majorTickSpacing(view.ppf, fps), fn = fineTickSpacing(view.ppf, fps, mj), bottom = s.height - 1;
+    final mj = majorTickSpacing(view.ppf, fps),
+        fn = fineTickSpacing(view.ppf, fps, mj),
+        bottom = s.height - 1;
     for (final f in beats) {
       final x = view.x(f).roundToDouble();
-      if (x >= 0 && x <= s.width) c.drawRect(Rect.fromLTWH(x, bottom - 7, 2, 7), p..color = WindowTokens.toneAudio);
+      if (x >= 0 && x <= s.width) {
+        c.drawRect(
+          Rect.fromLTWH(x, bottom - 7, 2, 7),
+          p..color = WindowTokens.toneAudio,
+        );
+      }
     }
     if (tempo case final b?) {
-      for (final (f, bar) in b.between(view.scroll, view.scroll + s.width / view.ppf)) {
+      for (final (f, bar) in b.between(
+        view.scroll,
+        view.scroll + s.width / view.ppf,
+      )) {
         if (bar || b.every * view.ppf >= 8) {
-          c.drawRect(Rect.fromLTWH(view.x(f).roundToDouble(), bottom - (bar ? 11 : 6), 1, bar ? 11 : 6), p..color = bar ? WindowTokens.accent : Grey.g56);
+          c.drawRect(
+            Rect.fromLTWH(
+              view.x(f).roundToDouble(),
+              bottom - (bar ? 11 : 6),
+              1,
+              bar ? 11 : 6,
+            ),
+            p..color = bar ? WindowTokens.accent : Grey.g56,
+          );
         }
       }
     }
@@ -217,27 +277,57 @@ class TimelineRulerPainter extends CustomPainter {
     for (final (f, name) in markers) {
       final x = view.x(f).roundToDouble();
       if (x < -60 || x > s.width) continue;
-      final t = lineText(name, TextStyles.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700));
-      flags.add((Rect.fromLTWH(x, TimelineMetrics.band + 2, markerFlagRoom(name, x, xs), 12), t, markColors[f] ?? WindowTokens.toneText));
+      final t = lineText(
+        name,
+        TextStyles.micro(Grey.g13).copyWith(fontWeight: FontWeight.w700),
+      );
+      flags.add((
+        Rect.fromLTWH(
+          x,
+          TimelineMetrics.band + 2,
+          markerFlagRoom(name, x, xs),
+          12,
+        ),
+        t,
+        markColors[f] ?? WindowTokens.toneText,
+      ));
     }
     if (view.ppf >= 3) {
       final f0 = view.scroll.floor();
       for (var f = math.max(0, f0); f <= WorkspaceController.duration; f++) {
         final x = view.x(f).roundToDouble();
         if (x > s.width) break;
-        if (f % fn != 0) c.drawRect(Rect.fromLTWH(x, bottom - 3, 1, 3), p..color = Grey.g26);
+        if (f % fn != 0) {
+          c.drawRect(Rect.fromLTWH(x, bottom - 3, 1, 3), p..color = Grey.g26);
+        }
       }
     }
     final f0 = (view.scroll / fn).floor() * fn;
-    for (var f = math.max(0.0, f0); f <= WorkspaceController.duration; f += fn) {
+    for (
+      var f = math.max(0.0, f0);
+      f <= WorkspaceController.duration;
+      f += fn
+    ) {
       final x = view.x(f).roundToDouble();
       if (x > s.width) break;
       final isMajor = f % mj == 0;
-      c.drawRect(Rect.fromLTWH(x, bottom - (isMajor ? 9 : 5), 1, isMajor ? 9 : 5), p..color = isMajor ? Grey.g63 : Grey.g44);
+      c.drawRect(
+        Rect.fromLTWH(x, bottom - (isMajor ? 9 : 5), 1, isMajor ? 9 : 5),
+        p..color = isMajor ? Grey.g63 : Grey.g44,
+      );
       if (isMajor) {
-        if (flags.any((m) => m.$1.inflate(3).overlaps(Rect.fromLTWH(x + 3, TimelineMetrics.band + 2, 24, 12)))) continue;
+        if (flags.any(
+          (m) => m.$1
+              .inflate(3)
+              .overlaps(Rect.fromLTWH(x + 3, TimelineMetrics.band + 2, 24, 12)),
+        )) {
+          continue;
+        }
         final sec = f ~/ fps, fr = (f % fps).round();
-        final t = lineText(mj >= fps ? '${sec}s' : '$sec:${fr.toString().padLeft(2, '0')}', TextStyles.value(Grey.g76).copyWith(fontSize: TextStyles.px(10)));
+        final t = lineText(
+          mj >= fps ? '${sec}s' : '$sec:${fr.toString().padLeft(2, '0')}',
+          TextStyles.value(Grey.g76).copyWith(fontSize: TextStyles.px(10)),
+        );
         t.paint(c, Offset(x + 3, TimelineMetrics.band + 3));
         t.dispose();
       }
@@ -255,14 +345,22 @@ class TimelineRulerPainter extends CustomPainter {
           ..close(),
         p..color = ink,
       );
-      c.drawRect(Rect.fromLTWH(x, r.bottom, 1, bottom - r.bottom), p..color = ink);
+      c.drawRect(
+        Rect.fromLTWH(x, r.bottom, 1, bottom - r.bottom),
+        p..color = ink,
+      );
       c.save();
-      c.clipRect(Rect.fromLTRB(r.left, r.top, r.right - 3, r.bottom)); // Cut the name at the end of its flag.
+      c.clipRect(
+        Rect.fromLTRB(r.left, r.top, r.right - 3, r.bottom),
+      ); // Cut the name at the end of its flag.
       t.paint(c, Offset(r.left + 3, r.center.dy - t.height / 2));
       c.restore();
       t.dispose();
     }
-    c.drawRect(Rect.fromLTWH(0, bottom, s.width, 1), p..color = WindowTokens.line);
+    c.drawRect(
+      Rect.fromLTWH(0, bottom, s.width, 1),
+      p..color = WindowTokens.line,
+    );
   }
 
   @override
@@ -280,7 +378,12 @@ class TimelineRulerPainter extends CustomPainter {
 
 /// Paints the playhead: a thin line with a small head.
 class TimelinePlayheadPainter extends CustomPainter {
-  const TimelinePlayheadPainter({required this.view, required this.frame, required this.headTop, this.moment}) : super(repaint: moment);
+  const TimelinePlayheadPainter({
+    required this.view,
+    required this.frame,
+    required this.headTop,
+    this.moment,
+  }) : super(repaint: moment);
   final TimelineView view;
   final int frame;
   final double headTop;
@@ -296,7 +399,14 @@ class TimelinePlayheadPainter extends CustomPainter {
     // The frame is shown in the header's time. A head that carried the frame number hid marker names under it.
     // Blender and Cavalry number their playheads, but they put markers on a row of their own.
     final w = Shape.z(9), cx = (x + .5).clamp(w / 2, s.width - w / 2);
-    final pill = RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(cx, headTop + 8), width: w, height: Shape.z(15)), Shape.r(4));
+    final pill = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: Offset(cx, headTop + 8),
+        width: w,
+        height: Shape.z(15),
+      ),
+      Shape.r(4),
+    );
     c.drawRect(Rect.fromLTWH(x, headTop + 8, 1, s.height - headTop - 8), p);
     p.color = WindowTokens.accent;
     c.drawRRect(pill, p);
@@ -311,14 +421,23 @@ class TimelinePlayheadPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(TimelinePlayheadPainter o) => o.view != view || o.frame != frame || o.headTop != headTop || o.moment != moment;
+  bool shouldRepaint(TimelinePlayheadPainter o) =>
+      o.view != view ||
+      o.frame != frame ||
+      o.headTop != headTop ||
+      o.moment != moment;
 }
 
 // ---------------------------------------------------------------- overview (the horizontal scroll strip)
 
 /// Paints the overview strip: the whole project in miniature with the visible range and the playhead.
 class TimelineOverviewPainter extends CustomPainter {
-  const TimelineOverviewPainter({required this.from, required this.to, required this.frame, required this.hot});
+  const TimelineOverviewPainter({
+    required this.from,
+    required this.to,
+    required this.frame,
+    required this.hot,
+  });
   final double from, to;
   final int frame;
   final bool hot;
@@ -328,13 +447,29 @@ class TimelineOverviewPainter extends CustomPainter {
     final p = Paint(), w = s.width - 8;
     double x(double f) => 4 + f / WorkspaceController.duration * w;
     c.drawRect(Offset.zero & s, p..color = WindowTokens.body);
-    c.drawRRect(RRect.fromLTRBR(4, 3, s.width - 4, s.height - 3, Shape.r(3)), p..color = Grey.g13);
-    c.drawRRect(RRect.fromLTRBR(x(from), 3, math.max(x(to), x(from) + 12), s.height - 3, Shape.r(3)), p..color = hot ? Grey.g44 : Grey.g26);
-    c.drawRect(Rect.fromLTWH(x(frame.toDouble()).roundToDouble(), 2, 2, s.height - 4), p..color = WindowTokens.playhead);
+    c.drawRRect(
+      RRect.fromLTRBR(4, 3, s.width - 4, s.height - 3, Shape.r(3)),
+      p..color = Grey.g13,
+    );
+    c.drawRRect(
+      RRect.fromLTRBR(
+        x(from),
+        3,
+        math.max(x(to), x(from) + 12),
+        s.height - 3,
+        Shape.r(3),
+      ),
+      p..color = hot ? Grey.g44 : Grey.g26,
+    );
+    c.drawRect(
+      Rect.fromLTWH(x(frame.toDouble()).roundToDouble(), 2, 2, s.height - 4),
+      p..color = WindowTokens.playhead,
+    );
   }
 
   @override
-  bool shouldRepaint(TimelineOverviewPainter o) => o.from != from || o.to != to || o.frame != frame || o.hot != hot;
+  bool shouldRepaint(TimelineOverviewPainter o) =>
+      o.from != from || o.to != to || o.frame != frame || o.hot != hot;
 }
 
 // ---------------------------------------------------------------- kind chip
@@ -355,17 +490,31 @@ class TimelineThumbnail extends StatelessWidget {
         borderRadius: BorderRadius.all(Shape.r(3)),
         child: SizedBox.square(
           dimension: TimelineMetrics.chip,
-          child: RawImage(image: f.first, fit: BoxFit.cover, opacity: AlwaysStoppedAnimation(r.dim ? .35 : 1)),
+          child: RawImage(
+            image: f.first,
+            fit: BoxFit.cover,
+            opacity: AlwaysStoppedAnimation(r.dim ? .35 : 1),
+          ),
         ),
       );
     }
-    if (r.form case final form? when r.kind == LayerKind.shape && form != 'null') {
+    if (r.form case final form?
+        when r.kind == LayerKind.shape && form != 'null') {
       return Container(
         width: TimelineMetrics.chip,
         height: TimelineMetrics.chip,
-        decoration: BoxDecoration(color: Grey.g20, borderRadius: BorderRadius.all(Shape.r(3))),
+        decoration: BoxDecoration(
+          color: Grey.g20,
+          borderRadius: BorderRadius.all(Shape.r(3)),
+        ),
         child: CustomPaint(
-          painter: _FormPainter(form, (r.fill ?? layerKindColor(r.kind)).withValues(alpha: r.dim ? .35 : 1), outline: r.outline),
+          painter: _FormPainter(
+            form,
+            (r.fill ?? layerKindColor(r.kind)).withValues(
+              alpha: r.dim ? .35 : 1,
+            ),
+            outline: r.outline,
+          ),
         ),
       );
     }
@@ -390,13 +539,20 @@ class _FormPainter extends CustomPainter {
     Path round(int n, double inner) => Path()
       ..addPolygon([
         for (var i = 0; i < n * (inner < 1 ? 2 : 1); i++)
-          b.center + Offset.fromDirection(-math.pi / 2 + i * math.pi * 2 / (n * (inner < 1 ? 2 : 1)), b.width / 2 * (inner < 1 && i.isOdd ? inner : 1)),
+          b.center +
+              Offset.fromDirection(
+                -math.pi / 2 + i * math.pi * 2 / (n * (inner < 1 ? 2 : 1)),
+                b.width / 2 * (inner < 1 && i.isOdd ? inner : 1),
+              ),
       ], true);
     switch (form) {
       case 'rect' || 'solid':
         c.drawRect(b, f);
       case 'squircle' || 'chamfer':
-        c.drawRRect(RRect.fromRectAndRadius(b, Radius.circular(b.width * .3)), f);
+        c.drawRRect(
+          RRect.fromRectAndRadius(b, Radius.circular(b.width * .3)),
+          f,
+        );
       case 'polygon':
         c.drawPath(round(6, 1), f);
       case 'star':
@@ -411,7 +567,8 @@ class _FormPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_FormPainter o) => o.form != form || o.ink != ink || o.outline != outline;
+  bool shouldRepaint(_FormPainter o) =>
+      o.form != form || o.ink != ink || o.outline != outline;
 }
 
 /// A layer's kind: a small square of its colour with the kind's mark drawn in dark ink.
@@ -455,7 +612,10 @@ class _KindPainter extends CustomPainter {
         );
         c.drawCircle(o(.68, .28), w * .09, f);
       case LayerKind.camera:
-        c.drawRRect(RRect.fromLTRBR(w * .16, w * .32, w * .64, w * .7, Shape.r(1.5)), f);
+        c.drawRRect(
+          RRect.fromLTRBR(w * .16, w * .32, w * .64, w * .7, Shape.r(1.5)),
+          f,
+        );
         c.drawPath(
           Path()
             ..moveTo(w * .66, w * .51)
@@ -468,11 +628,23 @@ class _KindPainter extends CustomPainter {
         c.drawRect(Rect.fromLTRB(w * .2, w * .2, w * .62, w * .62), st);
         c.drawRect(Rect.fromLTRB(w * .4, w * .4, w * .8, w * .8), f);
       case LayerKind.particles:
-        for (final (x, y, r) in const [(.3, .32, .1), (.68, .3, .07), (.5, .56, .12), (.26, .74, .07), (.74, .72, .09)]) {
+        for (final (x, y, r) in const [
+          (.3, .32, .1),
+          (.68, .3, .07),
+          (.5, .56, .12),
+          (.26, .74, .07),
+          (.74, .72, .09),
+        ]) {
           c.drawCircle(o(x, y), w * r, f);
         }
       case LayerKind.audio:
-        for (final (x, h) in const [(.24, .2), (.38, .4), (.52, .28), (.66, .44), (.8, .16)]) {
+        for (final (x, h) in const [
+          (.24, .2),
+          (.38, .4),
+          (.52, .28),
+          (.66, .44),
+          (.8, .16),
+        ]) {
           c.drawLine(o(x, .5 - h / 2 - .04), o(x, .5 + h / 2 + .04), st);
         }
     }

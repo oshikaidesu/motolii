@@ -9,7 +9,8 @@ import 'package:motolii/bridge/motolii_moment.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
-import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Pressable;
+import 'package:motolii/widgets/controls.dart'
+    show Badge, Chip, ChipLook, Pressable;
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
 import 'package:motolii/widgets/two_finger_gestures.dart';
@@ -26,7 +27,12 @@ import 'package:motolii/workspace/state/workspace_scope.dart';
 ///   Along the top are its name and the Release button.
 /// - One layer selected: the relations it belongs to, as outlined tags beside it.
 class RelationMarks extends StatelessWidget {
-  const RelationMarks({super.key, required this.scene, required this.v, required this.lasso});
+  const RelationMarks({
+    super.key,
+    required this.scene,
+    required this.v,
+    required this.lasso,
+  });
   final ArtScene scene;
   final StageViewport v;
   final List<Offset>? lasso;
@@ -40,24 +46,35 @@ class RelationMarks extends StatelessWidget {
     ]), // Where the layers are in the preview shown.
     builder: (context, _) {
       final ws = WorkspaceScope.read(context), m = ws.inside;
-      Offset? on(String id) => scene.box(id) == null ? null : v.toScreen(scene.box(id)!.c);
-      final picked = [
-        for (final id in ws.many)
-          if (on(id) case final p?) p,
-      ];
+      Offset? on(String id) =>
+          scene.box(id) == null ? null : v.toScreen(scene.box(id)!.c);
+      final picked = [for (final id in ws.many) ?on(id)];
       final together = relatableLayers(ws);
-      final rel = int.tryParse(ws.selected ?? ''), kind = rel == null || m == null ? '' : m.word(rel, 'file');
-      final isRelation = rel != null && m != null && m.word(rel, 'kind') == 'behaviour' && relationKinds.contains(kind);
+      final rel = int.tryParse(ws.selected ?? ''),
+          kind = rel == null || m == null ? '' : m.word(rel, 'file');
+      final isRelation =
+          rel != null &&
+          m != null &&
+          m.word(rel, 'kind') == 'behaviour' &&
+          relationKinds.contains(kind);
       final members = [
         for (final id in relationMembers(ws))
           if (on(id) case final p?) (id, p),
       ];
       final now = m?.now ?? 0;
       // Converts between a point in stage units and a point on the screen.
-      Offset screen(double x, double y) => v.toScreen(Offset(ArtGeometry.comp.width / 2 + x * m!.point, ArtGeometry.comp.height / 2 - y * m.point));
+      Offset screen(double x, double y) => v.toScreen(
+        Offset(
+          ArtGeometry.comp.width / 2 + x * m!.point,
+          ArtGeometry.comp.height / 2 - y * m.point,
+        ),
+      );
       (double, double) units(Offset p) {
         final c = v.toComp(p);
-        return ((c.dx - ArtGeometry.comp.width / 2) / m!.point, (ArtGeometry.comp.height / 2 - c.dy) / m.point);
+        return (
+          (c.dx - ArtGeometry.comp.width / 2) / m!.point,
+          (ArtGeometry.comp.height / 2 - c.dy) / m.point,
+        );
       }
 
       final shape = <_Shape>[];
@@ -68,10 +85,20 @@ class RelationMarks extends StatelessWidget {
         final off = val('visible', 1) <= .5;
         leader = val('leader') > 0 ? '${val('leader').round()}' : null;
         // For a ring or a row, the middle is the leader's position and the centre is an offset from it.
-        final lead = kind == 'around' || kind == 'row' ? int.tryParse(leader ?? '') : null;
-        final lx = lead == null ? 0.0 : m.shows(lead, 'x', now)?.$1 ?? 0, ly = lead == null ? 0.0 : m.shows(lead, 'y', now)?.$1 ?? 0;
-        final cx = val('centre_x') + lx, cy = val('centre_y') + ly, mid = screen(cx, cy), px = m.point * v.s;
-        Widget handle(String key, Offset at, void Function((double, double) u) dragUpdate) => Positioned(
+        final lead = kind == 'around' || kind == 'row'
+            ? int.tryParse(leader ?? '')
+            : null;
+        final lx = lead == null ? 0.0 : m.shows(lead, 'x', now)?.$1 ?? 0,
+            ly = lead == null ? 0.0 : m.shows(lead, 'y', now)?.$1 ?? 0;
+        final cx = val('centre_x') + lx,
+            cy = val('centre_y') + ly,
+            mid = screen(cx, cy),
+            px = m.point * v.s;
+        Widget handle(
+          String key,
+          Offset at,
+          void Function((double, double) u) dragUpdate,
+        ) => Positioned(
           left: at.dx - 7,
           top: at.dy - 7,
           child: GestureDetector(
@@ -80,9 +107,12 @@ class RelationMarks extends StatelessWidget {
             onPanStart: (_) => m.take(rel),
             onPanUpdate: (d) {
               final box = context.findRenderObject() as RenderBox?;
-              if (box != null) dragUpdate(units(box.globalToLocal(d.globalPosition)));
+              if (box != null) {
+                dragUpdate(units(box.globalToLocal(d.globalPosition)));
+              }
             },
-            onPanEnd: (_) => ws.after(m.later('drag_end', number: 1), (_, _) => ws.reread()),
+            onPanEnd: (_) =>
+                ws.after(m.later('drag_end', number: 1), (_, _) => ws.reread()),
             child: Container(
               width: 16,
               height: 16,
@@ -91,18 +121,31 @@ class RelationMarks extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: WindowTokens.accent, width: 2),
               ),
-              child: CustomPaint(painter: _GlyphPainter(key == 'centre' ? 'cross' : 'arrow', WindowTokens.accent)),
+              child: CustomPaint(
+                painter: _GlyphPainter(
+                  key == 'centre' ? 'cross' : 'arrow',
+                  WindowTokens.accent,
+                ),
+              ),
             ),
           ),
         );
         if (kind == 'around') {
-          final r = val('radius', .5), turn = val('offset') + .5 / math.max(1, members.length), tilt = val('tilt') * math.pi / 180;
+          final r = val('radius', .5),
+              turn = val('offset') + .5 / math.max(1, members.length),
+              tilt = val('tilt') * math.pi / 180;
           if (tilt.abs() < 1e-6 || members.length < 3) {
             shape.add(_Shape.ring(mid, r * px, off: off));
           } else {
             // Tilted, the layers are spread in depth, so draw a line through their on-screen positions in order, closing the loop.
             for (var k = 0; k < members.length; k++) {
-              shape.add(_Shape.line(members[k].$2, members[(k + 1) % members.length].$2, off: off));
+              shape.add(
+                _Shape.line(
+                  members[k].$2,
+                  members[(k + 1) % members.length].$2,
+                  off: off,
+                ),
+              );
             }
           }
           // With a leader the leader is the centre, so there is no centre handle; the user drags the leader itself.
@@ -120,13 +163,29 @@ class RelationMarks extends StatelessWidget {
             ..add(
               handle(
                 'size',
-                screen(cx + r * math.sin(turn * 2 * math.pi), cy + r * math.cos(turn * 2 * math.pi) * math.cos(tilt)),
-                (u) => m.dragUpdate('radius', math.sqrt(math.pow(u.$1 - cx, 2) + math.pow((u.$2 - cy) / math.max(.2, math.cos(tilt).abs()), 2))),
+                screen(
+                  cx + r * math.sin(turn * 2 * math.pi),
+                  cy + r * math.cos(turn * 2 * math.pi) * math.cos(tilt),
+                ),
+                (u) => m.dragUpdate(
+                  'radius',
+                  math.sqrt(
+                    math.pow(u.$1 - cx, 2) +
+                        math.pow(
+                          (u.$2 - cy) / math.max(.2, math.cos(tilt).abs()),
+                          2,
+                        ),
+                  ),
+                ),
               ),
             );
         } else if (kind == 'row') {
-          final gap = val('gap', .2), n = math.max(1, m.word(rel, 'members').split(' ').length), half = gap * (n - 1) / 2;
-          shape.add(_Shape.line(screen(cx - half, cy), screen(cx + half, cy), off: off));
+          final gap = val('gap', .2),
+              n = math.max(1, m.word(rel, 'members').split(' ').length),
+              half = gap * (n - 1) / 2;
+          shape.add(
+            _Shape.line(screen(cx - half, cy), screen(cx + half, cy), off: off),
+          );
           // The handles sit above the line so they do not cover the layers in the row.
           const above = Offset(0, -30);
           handles
@@ -140,43 +199,74 @@ class RelationMarks extends StatelessWidget {
                     ..dragUpdate('centre_y', u.$2 - (lift - zero) - ly);
                 }),
             ])
-            ..add(handle('size', screen(cx + half, cy) + above, (u) => m.dragUpdate('gap', math.max(0, u.$1 - cx) * 2 / math.max(1, n - 1))));
+            ..add(
+              handle(
+                'size',
+                screen(cx + half, cy) + above,
+                (u) => m.dragUpdate(
+                  'gap',
+                  math.max(0, u.$1 - cx) * 2 / math.max(1, n - 1),
+                ),
+              ),
+            );
         } else if (kind == 'push' && leader != null && on(leader) != null) {
           final l = on(leader)!, r = val('radius', .5);
           shape.add(_Shape.ring(l, r * px, off: off));
           handles.add(
             handle('size', l + Offset(r * px, 0), (u) {
               final (lx, ly) = units(l);
-              m.dragUpdate('radius', math.sqrt(math.pow(u.$1 - lx, 2) + math.pow(u.$2 - ly, 2)));
+              m.dragUpdate(
+                'radius',
+                math.sqrt(math.pow(u.$1 - lx, 2) + math.pow(u.$2 - ly, 2)),
+              );
             }),
           );
         }
       }
-      final tags = relationsOfSelected(ws), sel = ws.selected == null ? null : on(ws.selected!);
+      final tags = relationsOfSelected(ws),
+          sel = ws.selected == null ? null : on(ws.selected!);
       // A layer is selected: draw the shape of each relation it belongs to, including its leader's ring while it is dragged.
       if (sel != null && m != null && !isRelation)
         for (final r in tags.map(int.parse)) {
           double val(String n, [double or = 0]) => m.value(r, n, now) ?? or;
-          final px = m.point * v.s, l = val('leader') > 0 ? on('${val('leader').round()}') : null, off = val('visible', 1) <= .5;
+          final px = m.point * v.s,
+              l = val('leader') > 0 ? on('${val('leader').round()}') : null,
+              off = val('visible', 1) <= .5;
           switch (m.word(r, 'file')) {
             case 'around':
               final lid = val('leader') > 0 ? val('leader').round() : null,
                   lx = lid == null ? 0.0 : m.shows(lid, 'x', now)?.$1 ?? 0,
                   ly = lid == null ? 0.0 : m.shows(lid, 'y', now)?.$1 ?? 0;
               final pts = [
-                for (final s in m.word(r, 'members').split(' '))
-                  if (on(s) case final p?) p,
+                for (final s in m.word(r, 'members').split(' ')) ?on(s),
               ];
               if (val('tilt').abs() > 1e-6 && pts.length > 2) {
                 for (var k = 0; k < pts.length; k++) {
-                  shape.add(_Shape.line(pts[k], pts[(k + 1) % pts.length], off: off));
+                  shape.add(
+                    _Shape.line(pts[k], pts[(k + 1) % pts.length], off: off),
+                  );
                 }
               } else {
-                shape.add(_Shape.ring(screen(val('centre_x') + lx, val('centre_y') + ly), val('radius', .5) * px, off: off));
+                shape.add(
+                  _Shape.ring(
+                    screen(val('centre_x') + lx, val('centre_y') + ly),
+                    val('radius', .5) * px,
+                    off: off,
+                  ),
+                );
               }
             case 'row':
-              final half = val('gap', .2) * (m.word(r, 'members').split(' ').length - 1) / 2;
-              shape.add(_Shape.line(screen(val('centre_x') - half, val('centre_y')), screen(val('centre_x') + half, val('centre_y')), off: off));
+              final half =
+                  val('gap', .2) *
+                  (m.word(r, 'members').split(' ').length - 1) /
+                  2;
+              shape.add(
+                _Shape.line(
+                  screen(val('centre_x') - half, val('centre_y')),
+                  screen(val('centre_x') + half, val('centre_y')),
+                  off: off,
+                ),
+              );
             case 'push' when l != null:
               shape.add(_Shape.ring(l, val('radius', .5) * px, off: off));
           }
@@ -184,7 +274,13 @@ class RelationMarks extends StatelessWidget {
       return Stack(
         children: [
           IgnorePointer(
-            child: CustomPaint(size: Size.infinite, painter: _MarksPainter(lasso, [...picked, for (final (_, p) in members) p], shape)),
+            child: CustomPaint(
+              size: Size.infinite,
+              painter: _MarksPainter(lasso, [
+                ...picked,
+                for (final (_, p) in members) p,
+              ], shape),
+            ),
           ),
           ...handles,
           for (final (id, p) in members) ...[
@@ -214,24 +310,44 @@ class RelationMarks extends StatelessWidget {
             Positioned(
               left: l.dx - 24,
               top: l.dy - 24,
-              child: Badge.round(WindowTokens.accent, onTap: () {}, key: const ValueKey('ws-leader'), mark: _GlyphPainter('crown', WindowTokens.onAccent)),
+              child: Badge.round(
+                WindowTokens.accent,
+                onTap: () {},
+                key: const ValueKey('ws-leader'),
+                mark: _GlyphPainter('crown', WindowTokens.onAccent),
+              ),
             ), // The leader.
           // The middle of a ring or a row may be a layer: show a faint crown on each other layer, and clicking one makes it the middle.
           if (isRelation && (kind == 'around' || kind == 'row'))
             for (final l in ws.layers)
-              if (l.id != leader && l.id != '$rel' && !members.any((e) => e.$1 == l.id) && m.word(int.parse(l.id), 'kind') != 'behaviour' && on(l.id) != null)
+              if (l.id != leader &&
+                  l.id != '$rel' &&
+                  !members.any((e) => e.$1 == l.id) &&
+                  m.word(int.parse(l.id), 'kind') != 'behaviour' &&
+                  on(l.id) != null)
                 Positioned(
                   left: on(l.id)!.dx - 24,
                   top: on(l.id)!.dy - 24,
                   child: Badge.round(
                     WindowTokens.body.withValues(alpha: .7),
-                    onTap: () => ws.after(m.later('set', layer: rel, name: 'leader', number: double.parse(l.id)), (_, _) => ws.reread()),
+                    onTap: () => ws.after(
+                      m.later(
+                        'set',
+                        layer: rel,
+                        name: 'leader',
+                        number: double.parse(l.id),
+                      ),
+                      (_, _) => ws.reread(),
+                    ),
                     key: ValueKey('ws-lead-${l.id}'),
                     mark: _GlyphPainter('crown', Grey.g63),
                   ),
                 ),
           // Selected one by one, the first layer will lead a Follow or a Push; show its crown before the relation exists.
-          if (!isRelation && ws.manyInOrder && ws.many.length > 1 && on(ws.many.first) != null)
+          if (!isRelation &&
+              ws.manyInOrder &&
+              ws.many.length > 1 &&
+              on(ws.many.first) != null)
             Positioned(
               left: on(ws.many.first)!.dx - 24,
               top: on(ws.many.first)!.dy - 24,
@@ -274,19 +390,34 @@ class RelationMarks extends StatelessWidget {
                   runSpacing: Shape.s(4),
                   children: together.length > 1
                       ? [
-                          Chip(label: '${together.length} picked', look: ChipLook.said),
+                          Chip(
+                            label: '${together.length} picked',
+                            look: ChipLook.said,
+                          ),
                           for (final k in relationChoices(ws))
-                            Chip(label: relationLabel(k), look: ChipLook.relate, on: true, onTap: () => makeRelation(ws, k), key: ValueKey('ws-relate-$k')),
+                            Chip(
+                              label: relationLabel(k),
+                              look: ChipLook.relate,
+                              on: true,
+                              onTap: () => makeRelation(ws, k),
+                              key: ValueKey('ws-relate-$k'),
+                            ),
                         ]
                       : [
-                          Chip(label: '${relationLabel(relationKindOf(m!, rel!))} · ${relationMembers(ws).length}', look: ChipLook.said),
+                          Chip(
+                            label:
+                                '${relationLabel(relationKindOf(m!, rel!))} · ${relationMembers(ws).length}',
+                            look: ChipLook.said,
+                          ),
                           Chip(
                             label: relationLabel('eye'),
                             look: ChipLook.relate,
                             on: true,
                             onTap: () => toggleRelation(ws),
                             glyph: (_) => Glyph(
-                              (m.value(rel, 'visible', 0) ?? 1) > .5 ? TimelineGlyphs.eye : TimelineGlyphs.eyeOff,
+                              (m.value(rel, 'visible', 0) ?? 1) > .5
+                                  ? TimelineGlyphs.eye
+                                  : TimelineGlyphs.eyeOff,
                               color: WindowTokens.onAccent,
                               size: Shape.z(12),
                               fade: true,
@@ -343,14 +474,20 @@ class _MarksPainter extends CustomPainter {
   @override
   void paint(Canvas c, Size s) {
     final ink = linePaint(WindowTokens.accent, 1.5);
-    if (lasso case final l? when l.length > 1) c.drawPath(Path()..addPolygon(l, false), ink);
+    if (lasso case final l? when l.length > 1) {
+      c.drawPath(Path()..addPolygon(l, false), ink);
+    }
     for (final p in at) {
       c.drawCircle(p, 14, ink);
     }
     for (final sh in shape) {
-      final thin = linePaint(WindowTokens.accent.withValues(alpha: sh.off ? .25 : .8));
+      final thin = linePaint(
+        WindowTokens.accent.withValues(alpha: sh.off ? .25 : .8),
+      );
       final path = sh.b == null
-          ? (Path()..addOval(Rect.fromCenter(center: sh.a, width: 2 * sh.r, height: 2 * sh.r)))
+          ? (Path()..addOval(
+              Rect.fromCenter(center: sh.a, width: 2 * sh.r, height: 2 * sh.r),
+            ))
           : (Path()
               ..moveTo(sh.a.dx, sh.a.dy)
               ..lineTo(sh.b!.dx, sh.b!.dy));
@@ -373,7 +510,10 @@ class RelationStack extends StatelessWidget {
   const RelationStack({super.key});
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: Listenable.merge([WorkspaceScope.read(context).on[WorkspaceAspect.document], WorkspaceScope.read(context).on[WorkspaceAspect.picked]]),
+    listenable: Listenable.merge([
+      WorkspaceScope.read(context).on[WorkspaceAspect.document],
+      WorkspaceScope.read(context).on[WorkspaceAspect.picked],
+    ]),
     builder: (context, _) => _built(context),
   ); // Listens on its own so the inspector is not rebuilt when a value of another layer changes.
 
@@ -382,17 +522,26 @@ class RelationStack extends StatelessWidget {
     if (m == null || t == null) return const SizedBox.shrink();
     final rels = relationsOfSelected(ws), top = relationInEffect(ws);
     if (rels.isEmpty) return const SizedBox.shrink();
-    String nameOf(int i) => '${ws.layers.indexWhere((l) => l.id == '$i') + 1}. ${ws.layers.where((l) => l.id == '$i').firstOrNull?.name ?? ''}';
+    String nameOf(int i) =>
+        '${ws.layers.indexWhere((l) => l.id == '$i') + 1}. ${ws.layers.where((l) => l.id == '$i').firstOrNull?.name ?? ''}';
     return Container(
       key: const ValueKey('ws-relation-stack'),
-      padding: EdgeInsets.fromLTRB(Shape.s(10), Shape.s(8), Shape.s(10), Shape.s(6)),
+      padding: EdgeInsets.fromLTRB(
+        Shape.s(10),
+        Shape.s(8),
+        Shape.s(10),
+        Shape.s(6),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (final r in rels)
             () {
-              final id = int.parse(r), kind = m.word(id, 'file'), on = (m.value(id, 'visible', 0) ?? 1) > .5;
-              final lead = (m.value(id, 'leader', 0) ?? 0).round(), leads = '$lead' == t;
+              final id = int.parse(r),
+                  kind = m.word(id, 'file'),
+                  on = (m.value(id, 'visible', 0) ?? 1) > .5;
+              final lead = (m.value(id, 'leader', 0) ?? 0).round(),
+                  leads = '$lead' == t;
               final ink = r == top ? Grey.g95 : Grey.g56;
               return Pressable(
                 key: ValueKey('ws-stack-$r'),
@@ -412,7 +561,10 @@ class RelationStack extends StatelessWidget {
                         ),
                       ), // Filled when the relation is switched on. Its eye is on the relation's own row and bar.
                       SizedBox(width: Shape.s(8)),
-                      Text('${kind[0].toUpperCase()}${kind.substring(1)}', style: TextStyles.label(ink)),
+                      Text(
+                        '${kind[0].toUpperCase()}${kind.substring(1)}',
+                        style: TextStyles.label(ink),
+                      ),
                       SizedBox(width: Shape.s(8)),
                       Expanded(
                         child: Text(
@@ -430,8 +582,16 @@ class RelationStack extends StatelessWidget {
                         Pressable(
                           key: ValueKey('ws-stack-free-$r'),
                           cursor: SystemMouseCursors.basic,
-                          onTap: () => ws.after(m.later('free', layer: int.parse(t), number: id.toDouble()), (_, _) => ws.reread()),
-                          builder: (_, _) => Text('×', style: TextStyles.label(Grey.g56)),
+                          onTap: () => ws.after(
+                            m.later(
+                              'free',
+                              layer: int.parse(t),
+                              number: id.toDouble(),
+                            ),
+                            (_, _) => ws.reread(),
+                          ),
+                          builder: (_, _) =>
+                              Text('×', style: TextStyles.label(Grey.g56)),
                         ),
                     ],
                   ),
@@ -493,14 +653,17 @@ class _GlyphPainter extends CustomPainter {
 
 /// The pill at the bottom-left of the viewport: the zoom and the pointer position in composition pixels.
 class Hud extends StatelessWidget {
-  Hud({super.key, required this.scale, required this.cursor});
+  const Hud({super.key, required this.scale, required this.cursor});
   final double scale;
   final ValueNotifier<Offset?> cursor;
   @override
   Widget build(BuildContext context) => Container(
     height: StageTokens.hud,
     padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
-    decoration: BoxDecoration(color: WindowTokens.card, borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius))),
+    decoration: BoxDecoration(
+      color: WindowTokens.card,
+      borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+    ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -520,7 +683,10 @@ class Hud extends StatelessWidget {
                 Text(l, style: TextStyles.micro(Grey.g56)),
                 SizedBox(
                   width: Shape.z(34),
-                  child: Text(n == null ? '—' : '${n.round()}', style: TextStyles.value(n == null ? Grey.g56 : Grey.g91)),
+                  child: Text(
+                    n == null ? '—' : '${n.round()}',
+                    style: TextStyles.value(n == null ? Grey.g56 : Grey.g91),
+                  ),
                 ),
               ],
             ],
@@ -533,7 +699,12 @@ class Hud extends StatelessWidget {
 
 /// The navigator: the whole frame in miniature, the part the viewport shows outlined. Shown only when zoomed past fit.
 class StageNavigator extends StatelessWidget {
-  const StageNavigator({super.key, required this.scene, required this.view, this.texture});
+  const StageNavigator({
+    super.key,
+    required this.scene,
+    required this.view,
+    this.texture,
+  });
   final ArtScene scene;
   final StageViewport view;
 
@@ -541,7 +712,8 @@ class StageNavigator extends StatelessWidget {
   final int? texture;
   @override
   Widget build(BuildContext context) {
-    final h = StageTokens.mapW * ArtGeometry.comp.height / ArtGeometry.comp.width;
+    final h =
+        StageTokens.mapW * ArtGeometry.comp.height / ArtGeometry.comp.width;
     return Container(
       width: StageTokens.mapW + 8,
       height: h + 8,
@@ -550,8 +722,17 @@ class StageNavigator extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if (texture != null) Texture(textureId: texture!, filterQuality: FilterQuality.medium),
-          CustomPaint(painter: _MapPainter(scene, Rect.fromPoints(view.toComp(view.area.topLeft), view.toComp(view.area.bottomRight)))),
+          if (texture != null)
+            Texture(textureId: texture!, filterQuality: FilterQuality.medium),
+          CustomPaint(
+            painter: _MapPainter(
+              scene,
+              Rect.fromPoints(
+                view.toComp(view.area.topLeft),
+                view.toComp(view.area.bottomRight),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -569,7 +750,12 @@ class _MapPainter extends CustomPainter {
     c.clipRect(Offset.zero & s);
     c.scale(k);
     c.restore();
-    final r = Rect.fromLTRB(shown.left * k, shown.top * k, shown.right * k, shown.bottom * k).intersect(Offset.zero & s);
+    final r = Rect.fromLTRB(
+      shown.left * k,
+      shown.top * k,
+      shown.right * k,
+      shown.bottom * k,
+    ).intersect(Offset.zero & s);
     c.drawRect(r.deflate(.75), linePaint(WindowTokens.accent, 1.5));
   }
 
@@ -594,7 +780,8 @@ class PointsPainter extends CustomPainter {
   final List<(Offset, Offset)> handles;
   @override
   void paint(Canvas c, Size _) {
-    final edge = linePaint(WindowTokens.accent), inside = Paint()..color = const Color(0xFFFFFFFF);
+    final edge = linePaint(WindowTokens.accent),
+        inside = Paint()..color = const Color(0xFFFFFFFF);
     for (final (h, o) in handles) {
       if ((h - o).distance < 1) continue;
       c
@@ -603,7 +790,11 @@ class PointsPainter extends CustomPainter {
         ..drawCircle(h, 3, edge);
     }
     for (final p in at) {
-      final r = Rect.fromCenter(center: p, width: Shape.z(6), height: Shape.z(6));
+      final r = Rect.fromCenter(
+        center: p,
+        width: Shape.z(6),
+        height: Shape.z(6),
+      );
       c
         ..drawRect(r, inside)
         ..drawRect(r, edge);
@@ -611,5 +802,6 @@ class PointsPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(PointsPainter o) => !listEquals(o.at, at) || !listEquals(o.handles, handles);
+  bool shouldRepaint(PointsPainter o) =>
+      !listEquals(o.at, at) || !listEquals(o.handles, handles);
 }

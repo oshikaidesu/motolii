@@ -41,7 +41,9 @@ class _ProgramCodeState extends State<ProgramCode> {
   void didUpdateWidget(ProgramCode old) {
     super.didUpdateWidget(old);
     final now = File(widget.file).readAsStringSync();
-    if (now != _written && !(_soon?.isActive ?? false) && !widget.keep) _text.text = _written = now; // Another editor wrote the file.
+    if (now != _written && !(_soon?.isActive ?? false) && !widget.keep) {
+      _text.text = _written = now; // Another editor wrote the file.
+    }
   }
 
   @override
@@ -64,7 +66,8 @@ class _ProgramCodeState extends State<ProgramCode> {
       _soon?.cancel();
       _soon = Timer(const Duration(milliseconds: 400), _save);
     },
-    indicatorBuilder: (context, editing, chunks, notifier) => DefaultCodeLineNumber(controller: editing, notifier: notifier),
+    indicatorBuilder: (context, editing, chunks, notifier) =>
+        DefaultCodeLineNumber(controller: editing, notifier: notifier),
     style: CodeEditorStyle(
       fontSize: TextStyles.value().fontSize,
       fontFamily: TextStyles.mono,
@@ -74,8 +77,16 @@ class _ProgramCodeState extends State<ProgramCode> {
       selectionColor: WindowTokens.accent.withAlpha(90),
       cursorColor: Grey.g91,
       codeTheme: CodeHighlightTheme(
-        languages: {widget.file.endsWith('.fs') ? 'glsl' : 'javascript': CodeHighlightThemeMode(mode: widget.file.endsWith('.fs') ? langGlsl : langJavascript)},
-        theme: Grey.g07.computeLuminance() > .5 ? atomOneLightTheme : atomOneDarkTheme,
+        languages: {
+          widget.file.endsWith('.fs')
+              ? 'glsl'
+              : 'javascript': CodeHighlightThemeMode(
+            mode: widget.file.endsWith('.fs') ? langGlsl : langJavascript,
+          ),
+        },
+        theme: Grey.g07.computeLuminance() > .5
+            ? atomOneLightTheme
+            : atomOneDarkTheme,
       ),
     ),
   );

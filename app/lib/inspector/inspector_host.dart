@@ -1,7 +1,8 @@
 // Owns the panel's values (InspectorValues) and provides them again whenever they change. A different kind makes a new document, so give the widget a key.
 // The look follows docs/app/DESIGN.md: hairlines, type carries hierarchy, grey levels, and an accent only for Role.selected.
 
-import 'package:flutter/foundation.dart' show ValueListenable, listEquals, mapEquals;
+import 'package:flutter/foundation.dart'
+    show ValueListenable, listEquals, mapEquals;
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/inspector/inspector_values.dart';
@@ -116,7 +117,8 @@ class InspectorHost extends StatefulWidget {
   final Map<String, KeyframeState> keyMarks;
 
   /// Values changed in the inspector. [live] is true while a drag is still in progress, and the call is repeated once when the drag ends.
-  final void Function(Map<String, double> changed, {required bool live}) onValues;
+  final void Function(Map<String, double> changed, {required bool live})
+  onValues;
 
   /// A drag was cancelled with Esc: what it showed is to be dropped.
   final VoidCallback onDrop;
@@ -202,7 +204,9 @@ class _InspectorHostState extends State<InspectorHost> {
   void _tell() => doc.inGesture ? _tells() : widget.together(_tells);
   bool _animating = false;
   void _tells() {
-    if (doc.animateAll != _animating) widget.onAnimateAll(_animating = doc.animateAll);
+    if (doc.animateAll != _animating) {
+      widget.onAnimateAll(_animating = doc.animateAll);
+    }
     final live = doc.inGesture,
         changed = {
           for (final e in doc.v.entries)
@@ -223,7 +227,10 @@ class _InspectorHostState extends State<InspectorHost> {
     }
     final words = {
       for (final e in doc.s2.entries)
-        if (e.key != 'route' && e.key != 'route.at' && _seenWords[e.key] != e.value) e.key: e.value,
+        if (e.key != 'route' &&
+            e.key != 'route.at' &&
+            _seenWords[e.key] != e.value)
+          e.key: e.value,
     };
     if (widget.onFlags case final tell?) {
       final flags = {
@@ -247,7 +254,9 @@ class _InspectorHostState extends State<InspectorHost> {
       _seenWords.addAll(words);
     } else {
       for (final id in words.keys) {
-        _seenWords.containsKey(id) ? doc.s2[id] = _seenWords[id]! : doc.s2.remove(id);
+        _seenWords.containsKey(id)
+            ? doc.s2[id] = _seenWords[id]!
+            : doc.s2.remove(id);
       }
     }
   }
@@ -274,8 +283,20 @@ class _InspectorHostState extends State<InspectorHost> {
     }
     if (o.kind != widget.kind ||
         !listEquals(
-          o.cards?.map((f) => f.name + f.wgsl.replaceAll(RegExp(r'@default\([^)]*\)'), '')).toList(),
-          widget.cards?.map((f) => f.name + f.wgsl.replaceAll(RegExp(r'@default\([^)]*\)'), '')).toList(),
+          o.cards
+              ?.map(
+                (f) =>
+                    f.name +
+                    f.wgsl.replaceAll(RegExp(r'@default\([^)]*\)'), ''),
+              )
+              .toList(),
+          widget.cards
+              ?.map(
+                (f) =>
+                    f.name +
+                    f.wgsl.replaceAll(RegExp(r'@default\([^)]*\)'), ''),
+              )
+              .toList(),
         )) {
       doc.dispose();
       doc = _make();
@@ -299,7 +320,8 @@ class _InspectorHostState extends State<InspectorHost> {
       _seenWords.addAll(widget.strs);
       // Also cover the case where what is shown differs from the document. A key mark that was just pressed shows lit at once,
       // and an undo that removes the key leaves the document's marks as they were before the press, so only the shown one differs.
-      if (!mapEquals(o.keyMarks, widget.keyMarks) || widget.keyMarks.entries.any((e) => doc.keys[e.key] != e.value)) {
+      if (!mapEquals(o.keyMarks, widget.keyMarks) ||
+          widget.keyMarks.entries.any((e) => doc.keys[e.key] != e.value)) {
         doc.showAt(const {}, widget.keyMarks);
         _seenKeys.addAll(widget.keyMarks);
       }
@@ -308,7 +330,9 @@ class _InspectorHostState extends State<InspectorHost> {
       doc.animateAll = _animating = widget.animating;
       _tick++;
     }
-    if (o.title != widget.title || o.kindWord != widget.kindWord || !listEquals(o.cardsOff, widget.cardsOff)) {
+    if (o.title != widget.title ||
+        o.kindWord != widget.kindWord ||
+        !listEquals(o.cardsOff, widget.cardsOff)) {
       // The eye of an effect was shut or opened, so its card must change.
       _tick++;
     }
@@ -340,5 +364,6 @@ class _InspectorHostState extends State<InspectorHost> {
 
   int _tick = 0;
   @override
-  Widget build(BuildContext context) => InspectorScope(doc: doc, tick: _tick, child: widget.child);
+  Widget build(BuildContext context) =>
+      InspectorScope(doc: doc, tick: _tick, child: widget.child);
 }

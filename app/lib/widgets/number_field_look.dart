@@ -85,7 +85,8 @@ NumberPaint _paint = usualNumber;
 /// Installs a form's [Forms.number] when the forms library loads.
 void bindNumber(NumberPaint paint) => _paint = paint;
 
-Widget paintNumber(BuildContext context, NumberSpec spec) => _paint(context, spec);
+Widget paintNumber(BuildContext context, NumberSpec spec) =>
+    _paint(context, spec);
 
 /// The app's default number field: a filled well with the range mark along the bottom.
 Widget usualNumber(BuildContext context, NumberSpec n) {
@@ -136,11 +137,18 @@ Widget usualNumber(BuildContext context, NumberSpec n) {
             child: Padding(
               padding: n.inline
                   ? EdgeInsets.symmetric(horizontal: n.pad)
-                  : EdgeInsets.fromLTRB(n.pad, Shape.s(4), n.glyph != null ? n.glyphBox + n.pad : n.pad, Shape.s(5)),
+                  : EdgeInsets.fromLTRB(
+                      n.pad,
+                      Shape.s(4),
+                      n.glyph != null ? n.glyphBox + n.pad : n.pad,
+                      Shape.s(5),
+                    ),
               child: Flex(
                 // A tile is a column, with the caption above the number.
                 direction: n.inline ? Axis.horizontal : Axis.vertical,
-                crossAxisAlignment: n.inline ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+                crossAxisAlignment: n.inline
+                    ? CrossAxisAlignment.center
+                    : CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   if (n.caption != null)
@@ -150,17 +158,26 @@ Widget usualNumber(BuildContext context, NumberSpec n) {
                       child: Text(
                         n.caption!,
                         maxLines: 1,
-                        style: n.inline ? TextStyles.label(Grey.g63) : TextStyles.micro(n.on ? Grey.g63 : Grey.g44).copyWith(height: 1.1),
+                        style: n.inline
+                            ? TextStyles.label(Grey.g63)
+                            : TextStyles.micro(n.on ? Grey.g63 : Grey.g44)
+                                  .copyWith(height: 1.1),
                       ),
                     ),
                   if (n.inline)
                     Expanded(
-                      child: Align(alignment: Alignment.centerRight, child: shown),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: shown,
+                      ),
                     )
                   else
                     SizedBox(
                       height: Shape.z(18),
-                      child: Align(alignment: Alignment.centerLeft, child: shown),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: shown,
+                      ),
                     ),
                 ],
               ),

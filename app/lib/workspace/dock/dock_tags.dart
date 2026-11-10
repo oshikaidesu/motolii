@@ -20,9 +20,13 @@ abstract final class DockTags {
     if (_read) return;
     _read = true;
     try {
-      final told = fileJson(File('${Platform.environment['HOME']}/.motolii/tags.json')) as Map;
+      final told = fileJson(
+        File('${Platform.environment['HOME']}/.motolii/tags.json'),
+      ) as Map;
       for (final e in told.entries) {
-        _own['${e.key}'] = {for (final t in e.value as List) '$t'.toLowerCase()};
+        _own['${e.key}'] = {
+          for (final t in e.value as List) '$t'.toLowerCase(),
+        };
       }
     } catch (_) {
       // No file, or not a map: only the built-in tags are used.
@@ -41,13 +45,18 @@ abstract final class DockTags {
   ///
   /// This follows Alfred's Keyword Latching (alfredapp.com/help/kb/understanding-result-ordering).
   /// It is stored in ~/.motolii/latched.json as {"Effects|adjustment layer": the item's id}. A test can point it elsewhere.
-  static File _latchFile = File('${Platform.environment['HOME']}/.motolii/latched.json');
+  static File _latchFile = File(
+    '${Platform.environment['HOME']}/.motolii/latched.json',
+  );
   static Map<String, String>? _latches;
   static void latchedAt(File f) => (_latchFile = f, _latches = null);
   static Map<String, String> get _latched {
     if (_latches case final l?) return l;
     try {
-      return _latches = {for (final e in (fileJson(_latchFile) as Map).entries) '${e.key}': '${e.value}'};
+      return _latches = {
+        for (final e in (fileJson(_latchFile) as Map).entries)
+          '${e.key}': '${e.value}',
+      };
     } catch (_) {
       // No file yet, or not a map.
       return _latches = {};
@@ -55,7 +64,9 @@ abstract final class DockTags {
   }
 
   /// The item latched to these words on a shelf, or null if there is none.
-  static String? latched(String shelf, String query) => query.trim().isEmpty ? null : _latched['$shelf|${query.trim().toLowerCase()}'];
+  static String? latched(String shelf, String query) => query.trim().isEmpty
+      ? null
+      : _latched['$shelf|${query.trim().toLowerCase()}'];
 
   /// Latches [id] to [query] on [shelf].
   static void latch(String shelf, String query, String id) {

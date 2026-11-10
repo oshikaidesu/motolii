@@ -36,21 +36,38 @@ List<CardDeclaration> _makeCards(WorkspaceController ws, Motolii m, int t) {
   // The time of the frame on screen.
   final at = drawnTime(ws);
   // How much each parameter of the layer's effects moves its result, as the effect tiles show it.
-  final weights = {for (final f in WorkspaceController.fxFiles('${m.word(t, 'fx')} ${m.word(t, 'script')}')) ...EffectTiles.weighed(motoliiShelves, f)};
+  final weights = {
+    for (final f in WorkspaceController.fxFiles(
+      '${m.word(t, 'fx')} ${m.word(t, 'script')}',
+    ))
+      ...EffectTiles.weighed(motoliiShelves, f),
+  };
   String field(String n) {
     final sh = m.shown(n),
-        label = '@label(${sh?.label ?? n.replaceAll('_', ' ').replaceRange(0, 1, n[0].toUpperCase())})${weights[n] == null ? '' : ' @weight(${weights[n]})'}';
+        label =
+            '@label(${sh?.label ?? n.replaceAll('_', ' ').replaceRange(0, 1, n[0].toUpperCase())})${weights[n] == null ? '' : ' @weight(${weights[n]})'}';
     if (sh?.look == 'thing') {
       // Another layer, listed by the names the timeline shows: None first, then the others. The stored number is the document's.
-      final others = otherLayers(ws, t), at = others.values.toList().indexOf((m.value(t, n, 0) ?? 0).round());
+      final others = otherLayers(ws, t),
+          at = others.values.toList().indexOf((m.value(t, n, 0) ?? 0).round());
       return '  /// $label @enum(${['None', ...others.keys.map((o) => o.replaceAll(',', ' '))].join(', ')}) @default(${at + 1})\n  $n: u32,';
     }
     if (m.words(t, n) case final words when words.isNotEmpty) {
       return '  /// $label @enum(${words.join(', ')}) @default(${math.max(0, words.indexOf(m.word(t, n)))})\n  $n: u32,';
     }
     if (m.range(t, n) case (final lo0, final hi0)) {
-      final a = shownNumber(m, t, n, sh != null && sh.high > sh.low ? sh.low : lo0),
-          b = shownNumber(m, t, n, sh != null && sh.high > sh.low ? sh.high : hi0),
+      final a = shownNumber(
+            m,
+            t,
+            n,
+            sh != null && sh.high > sh.low ? sh.low : lo0,
+          ),
+          b = shownNumber(
+            m,
+            t,
+            n,
+            sh != null && sh.high > sh.low ? sh.high : hi0,
+          ),
           lo = math.min(a, b),
           hi = math.max(a, b);
       // The card's range is how far the slider goes. A typed number may go as far as the engine accepts.
@@ -58,7 +75,11 @@ List<CardDeclaration> _makeCards(WorkspaceController ws, Motolii m, int t) {
       // Example: the From value of Datamosh slides to 10 s but can be typed up to the engine's limit.
       final va = shownNumber(m, t, n, lo0),
           vb = shownNumber(m, t, n, hi0),
-          valid = sh?.open != true && (math.min(va, vb) < lo || math.max(va, vb) > hi) ? ' @valid(${math.min(va, vb)}, ${math.max(va, vb)})' : '';
+          valid =
+              sh?.open != true &&
+                  (math.min(va, vb) < lo || math.max(va, vb) > hi)
+              ? ' @valid(${math.min(va, vb)}, ${math.max(va, vb)})'
+              : '';
       // An effect's angle in degrees is recognised by its label and shown as a dial, like PF_ADD_ANGLE in After Effects.
       final turned = sh?.look == '' && hi - lo >= 90 && angleLabel(sh!.label);
       final ui = switch (turned ? 'angle' : sh?.look) {
@@ -69,7 +90,8 @@ List<CardDeclaration> _makeCards(WorkspaceController ws, Motolii m, int t) {
         'share' when lo >= 0 && hi <= 100 => '@ui(percent)',
         _ => lo < 0 && hi > 0 ? '@ui(bipolar)' : '@ui(bar)',
       };
-      final whole = sh?.look == 'count' || sh?.look == 'onoff' || sh?.look == 'seed';
+      final whole =
+          sh?.look == 'count' || sh?.look == 'onoff' || sh?.look == 'seed';
       return '  /// $label $ui @range($lo, $hi)${sh?.open == true ? ' @open' : ''}$valid @unit(${turned ? '°' : sh?.unit ?? ''}) @default(${shownNumber(m, t, n, m.value(t, n, at) ?? lo0)})\n  $n: ${whole ? 'u32' : 'f32'},';
     }
     // Any word: colours of six digits each, taken from the Colors shelf, or numbers with one for each copy.

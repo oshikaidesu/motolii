@@ -38,11 +38,16 @@ abstract final class SkinParts {
     final next = <String, PictureInfo>{};
     final folder = Directory(dir);
     if (dir.isNotEmpty && folder.existsSync()) {
-      for (final f in folder.listSync().whereType<File>().where((f) => f.path.endsWith('.svg'))) {
+      for (final f in folder.listSync().whereType<File>().where(
+        (f) => f.path.endsWith('.svg'),
+      )) {
         try {
           final name = f.uri.pathSegments.last.replaceAll('.svg', '');
           next[name] = await vg.loadPicture(SvgFileLoader(f), null);
-          if (RegExp(r'data-slice="([0-9.]+)"').firstMatch(f.readAsStringSync()) case final m?) _slices[name] = double.parse(m.group(1)!);
+          if (RegExp(r'data-slice="([0-9.]+)"').firstMatch(f.readAsStringSync())
+              case final m?) {
+            _slices[name] = double.parse(m.group(1)!);
+          }
         } catch (_) {
           // A picture that cannot be read is skipped, so the built-in drawing stays.
         }
@@ -71,11 +76,19 @@ abstract final class SkinParts {
   static bool draw(Canvas c, Size s, String name, Color color) {
     final p = _pics[name];
     if (p == null || p.size.isEmpty) return false;
-    final k = (s.width / p.size.width) < (s.height / p.size.height) ? s.width / p.size.width : s.height / p.size.height;
+    final k = (s.width / p.size.width) < (s.height / p.size.height)
+        ? s.width / p.size.width
+        : s.height / p.size.height;
     c.save();
-    c.translate((s.width - p.size.width * k) / 2, (s.height - p.size.height * k) / 2);
+    c.translate(
+      (s.width - p.size.width * k) / 2,
+      (s.height - p.size.height * k) / 2,
+    );
     c.scale(k);
-    c.saveLayer(Offset.zero & p.size, Paint()..colorFilter = ColorFilter.mode(color, BlendMode.srcIn));
+    c.saveLayer(
+      Offset.zero & p.size,
+      Paint()..colorFilter = ColorFilter.mode(color, BlendMode.srcIn),
+    );
     c.drawPicture(p.picture);
     c.restore();
     c.restore();
@@ -97,14 +110,25 @@ abstract final class SkinParts {
       Canvas(rec)
         ..scale(k)
         ..drawPicture(p.picture);
-      return rec.endRecording().toImageSync((p.size.width * k).ceil(), (p.size.height * k).ceil());
+      return rec.endRecording().toImageSync(
+        (p.size.width * k).ceil(),
+        (p.size.height * k).ceil(),
+      );
     }();
-    final sl = (_slices[name] ?? (p.size.shortestSide / 3)).clamp(0.0, p.size.shortestSide / 2 - .5);
+    final sl = (_slices[name] ?? (p.size.shortestSide / 3)).clamp(
+      0.0,
+      p.size.shortestSide / 2 - .5,
+    );
     c.save();
     c.scale(1 / k);
     c.drawImageNine(
       img,
-      Rect.fromLTRB(sl * k, sl * k, (p.size.width - sl) * k, (p.size.height - sl) * k),
+      Rect.fromLTRB(
+        sl * k,
+        sl * k,
+        (p.size.width - sl) * k,
+        (p.size.height - sl) * k,
+      ),
       Rect.fromLTRB(r.left * k, r.top * k, r.right * k, r.bottom * k),
       Paint()..filterQuality = FilterQuality.medium,
     );

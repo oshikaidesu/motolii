@@ -17,11 +17,17 @@ void main() {
   <OddLength Value="#1234567"/>
 </Theme></Motolii>
 ''');
-    expect(roles, {'ChosenDefault': const Color(0xFFB3C66B), 'Grey07': const Color(0x80131313)});
+    expect(roles, {
+      'ChosenDefault': const Color(0xFFB3C66B),
+      'Grey07': const Color(0x80131313),
+    });
   });
 
   test('parse keeps the last value of a role written twice', () {
-    expect(ColorTheme.parse('<Alert Value="#ff0000"/><Alert Value="#00ff00"/>'), {'Alert': const Color(0xFF00FF00)});
+    expect(
+      ColorTheme.parse('<Alert Value="#ff0000"/><Alert Value="#00ff00"/>'),
+      {'Alert': const Color(0xFF00FF00)},
+    );
   });
 
   test('parse gives no roles for a text with none', () {

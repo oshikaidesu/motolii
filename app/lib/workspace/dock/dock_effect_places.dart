@@ -84,7 +84,8 @@ class EffectPlacesState extends State<EffectPlaces> {
   // The Favorites going into the deck being named. They are cleared once it is named, as in Lightroom's Save.
   List<String>? _saving;
   final _words = TextEditingController();
-  late final FocusNode _focus = FocusNode()..addListener(() => _focus.hasFocus ? null : _named());
+  late final FocusNode _focus = FocusNode()
+    ..addListener(() => _focus.hasFocus ? null : _named());
 
   @override
   void dispose() {
@@ -129,7 +130,12 @@ class EffectPlacesState extends State<EffectPlaces> {
   /// and Spotify's Add to Playlist. [words] is saved as the deck's search, so effects that appear later join it too
   /// (Lightroom's Create Smart Collection, Ableton's Add Label). When made from the +, the new deck is opened.
   void newDeck({DeckThing? thing, String words = ''}) {
-    final c = widget.c, d = EffectDeck(deckName(words.isEmpty ? 'Deck' : words), words: words, things: [?thing]);
+    final c = widget.c,
+        d = EffectDeck(
+          deckName(words.isEmpty ? 'Deck' : words),
+          words: words,
+          things: [?thing],
+        );
     c.set(() {
       effectDecks().add(d);
       effectDecksKeep();
@@ -142,7 +148,10 @@ class EffectPlacesState extends State<EffectPlaces> {
   /// Adds a deck from a deck code copied from elsewhere. Effects this machine lacks are kept and marked,
   /// as Hearthstone does when it reads a deck code.
   Future<void> _paste() async {
-    final c = widget.c, d = deckRead((await Clipboard.getData(Clipboard.kTextPlain))?.text?.trim() ?? '');
+    final c = widget.c,
+        d = deckRead(
+          (await Clipboard.getData(Clipboard.kTextPlain))?.text?.trim() ?? '',
+        );
     if (d == null) {
       c.ws.notice = 'No deck code to paste';
       return;
@@ -155,7 +164,9 @@ class EffectPlacesState extends State<EffectPlaces> {
       effectDecksKeep();
       c.mem.fxPlace = '@${d.name}';
     });
-    c.ws.notice = away > 0 ? 'Added ${d.name}: $away not on this machine' : 'Added ${d.name}';
+    c.ws.notice = away > 0
+        ? 'Added ${d.name}: $away not on this machine'
+        : 'Added ${d.name}';
   }
 
   void _open(Offset at, List<ContextMenuItem> items) {
@@ -168,7 +179,8 @@ class EffectPlacesState extends State<EffectPlaces> {
     final q = widget.c.query.trim();
     _open((at.findRenderObject() as RenderBox).localToGlobal(Offset.zero), [
       ContextMenuItem('New Deck', newDeck),
-      if (q.isNotEmpty) ContextMenuItem('New Deck from “$q”', () => newDeck(words: q)),
+      if (q.isNotEmpty)
+        ContextMenuItem('New Deck from “$q”', () => newDeck(words: q)),
       ContextMenuItem('Paste Deck Code', _paste),
     ]);
   }
@@ -176,8 +188,11 @@ class EffectPlacesState extends State<EffectPlaces> {
   /// The menu item that sets the deck an effect's right-click adds to. It is on the row's own context menu.
   /// Choosing it again returns the target to the Favorites. Lightroom Classic has the same Set as Target Collection
   /// item, on the Quick Collection too, and unchecking it works the same way.
-  ContextMenuItem _aim(EffectDeck? d) =>
-      ContextMenuItem('Set as Target Deck', () => widget.c.set(() => effectTargetSet(d?.target == true ? null : d)), keys: effectTarget() == d ? '✓' : '');
+  ContextMenuItem _aim(EffectDeck? d) => ContextMenuItem(
+    'Set as Target Deck',
+    () => widget.c.set(() => effectTargetSet(d?.target == true ? null : d)),
+    keys: effectTarget() == d ? '✓' : '',
+  );
 
   /// The context menu of the Favorites row, modeled on Lightroom Classic's menu on the Quick Collection:
   /// Set as Target Collection, Save Quick Collection… and Clear Quick Collection
@@ -215,7 +230,10 @@ class EffectPlacesState extends State<EffectPlaces> {
                 naming(d);
               },
       ),
-      ContextMenuItem('Clear Favorites', held.isEmpty ? null : () => c.unstar(held)),
+      ContextMenuItem(
+        'Clear Favorites',
+        held.isEmpty ? null : () => c.unstar(held),
+      ),
     ]);
   }
 
@@ -229,7 +247,8 @@ class EffectPlacesState extends State<EffectPlaces> {
       ContextMenuItem('Edit Search…', () => naming(d, search: true)),
       ContextMenuItem('Copy Deck Code', () {
         Clipboard.setData(ClipboardData(text: deckCode(d)));
-        c.ws.notice = 'Copied ${d.name}: Paste Deck Code on the + brings it back';
+        c.ws.notice =
+            'Copied ${d.name}: Paste Deck Code on the + brings it back';
       }),
       const ContextMenuItem.rule(),
       ContextMenuItem(
@@ -248,7 +267,9 @@ class EffectPlacesState extends State<EffectPlaces> {
       const SingleActivator(LogicalKeyboardKey.escape): () {
         if (_saving != null) {
           // Escape during Save Favorites… cancels it.
-          widget.c.set(() => (effectDecks().remove(d), widget.c.mem.fxPlace = '★'));
+          widget.c.set(
+            () => (effectDecks().remove(d), widget.c.mem.fxPlace = '★'),
+          );
           _saving = null;
         }
         _words.text = _search ? d.words : d.name;
@@ -265,8 +286,15 @@ class EffectPlacesState extends State<EffectPlaces> {
           if (_search)
             ListenableBuilder(
               listenable: _words,
-              builder: (_, _) =>
-                  _words.text.isEmpty ? IgnorePointer(child: Text('Search words, #tags', maxLines: 1, style: TextStyles.name(Grey.g56))) : const SizedBox(),
+              builder: (_, _) => _words.text.isEmpty
+                  ? IgnorePointer(
+                      child: Text(
+                        'Search words, #tags',
+                        maxLines: 1,
+                        style: TextStyles.name(Grey.g56),
+                      ),
+                    )
+                  : const SizedBox(),
             ),
           TextGestures(
             key: const ValueKey('ws-fx-naming'),
@@ -288,7 +316,8 @@ class EffectPlacesState extends State<EffectPlaces> {
     ),
   );
 
-  EffectDeck? _deckAt(String place) => widget.decks.keys.where((d) => '@${d.name}' == place).firstOrNull;
+  EffectDeck? _deckAt(String place) =>
+      widget.decks.keys.where((d) => '@${d.name}' == place).firstOrNull;
 
   /// What a row shows: its name, its glyph and its count.
   (String, AppGlyphs, int?) _said(String place) {
@@ -303,7 +332,11 @@ class EffectPlacesState extends State<EffectPlaces> {
         deck.words.isEmpty ? AppGlyphs.list : AppGlyphs.search,
         widget.decks[deck],
       ), // A deck that finds by search words has its own glyph, as Lightroom's smart collection differs from a plain one.
-      _ when place.startsWith('/') => (place.substring(1), AppGlyphs.folder, widget.packs[place.substring(1)]),
+      _ when place.startsWith('/') => (
+        place.substring(1),
+        AppGlyphs.folder,
+        widget.packs[place.substring(1)],
+      ),
       _ => ('All Effects', AppGlyphs.effects, p['All']),
     };
   }
@@ -311,15 +344,31 @@ class EffectPlacesState extends State<EffectPlaces> {
   /// One row, built on the Media shelf's folder row (dockFolderRow). Clicking it shows what it holds.
   /// [cover] is a deck's picture; the row then looks like a playlist in Spotify's library
   /// (cover, name, and the count under it).
-  Widget _row(String place, {int depth = 0, bool? open, VoidCallback? onTap, ValueChanged<Offset>? menu, Widget? field, bool lit = false, Widget? cover}) {
-    final c = widget.c, here = c.mem.fxPlace == place || lit, to = effectTarget();
+  Widget _row(
+    String place, {
+    int depth = 0,
+    bool? open,
+    VoidCallback? onTap,
+    ValueChanged<Offset>? menu,
+    Widget? field,
+    bool lit = false,
+    Widget? cover,
+  }) {
+    final c = widget.c,
+        here = c.mem.fxPlace == place || lit,
+        to = effectTarget();
     final (name, g, n) = _said(place);
     final aim = place == (to == null ? '★' : '@${to.name}');
     // The target deck is marked with a + after its name, as in Lightroom. The + stays when a long name is cut short.
     Widget named(TextStyle s) => Row(
       children: [
         Flexible(
-          child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: s),
+          child: Text(
+            name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: s,
+          ),
         ),
         if (aim) Text(' +', key: const ValueKey('ws-fx-target'), style: s),
       ],
@@ -334,31 +383,41 @@ class EffectPlacesState extends State<EffectPlaces> {
       count: n,
       cover: cover,
       field: field,
-      sub: '${g == AppGlyphs.search ? 'By words · ' : ''}${n ?? 0} ${n == 1 ? 'effect' : 'effects'}',
+      sub:
+          '${g == AppGlyphs.search ? 'By words · ' : ''}${n ?? 0} ${n == 1 ? 'effect' : 'effects'}',
       onMenu: menu,
-      onTap: onTap ?? () => c.set(() => (c.mem.fxPlace = place, c.mem.fxListOpen = false)),
+      onTap:
+          onTap ??
+          () => c.set(() => (c.mem.fxPlace = place, c.mem.fxListOpen = false)),
     );
   }
 
   Widget _deck(EffectDeck d) => _into(
     d,
-    (over) => _row('@${d.name}', field: _naming == d ? _field(d) : null, lit: over, menu: (at) => _deckMenu(d, at), cover: widget.covers['@${d.name}']),
+    (over) => _row(
+      '@${d.name}',
+      field: _naming == d ? _field(d) : null,
+      lit: over,
+      menu: (at) => _deckMenu(d, at),
+      cover: widget.covers['@${d.name}'],
+    ),
   );
 
   /// Makes the row accept a dragged tile. Dropped on [d] it goes into that deck. Dropped on the Favorites ([d] null)
   /// it is starred, like a track dropped on a Spotify playlist or on Liked Songs.
-  Widget _into(EffectDeck? d, Widget Function(bool over) row) => DragTarget<VoidCallback>(
-    onWillAcceptWithDetails: (o) => carriedEffect[o.data] != null,
-    onAcceptWithDetails: (o) {
-      final id = carriedEffect[o.data]!;
-      d != null
-          ? widget.put(d, id)
-          : widget.c.starred(id)
-          ? null
-          : widget.c.star(id);
-    },
-    builder: (context, over, _) => row(over.isNotEmpty),
-  );
+  Widget _into(EffectDeck? d, Widget Function(bool over) row) =>
+      DragTarget<VoidCallback>(
+        onWillAcceptWithDetails: (o) => carriedEffect[o.data] != null,
+        onAcceptWithDetails: (o) {
+          final id = carriedEffect[o.data]!;
+          d != null
+              ? widget.put(d, id)
+              : widget.c.starred(id)
+              ? null
+              : widget.c.star(id);
+        },
+        builder: (context, over, _) => row(over.isNotEmpty),
+      );
 
   /// On the map, the effects the open deck holds, shown under its row like Hearthstone's deck list beside its collection.
   /// A dragged effect dropped on it is added. While the deck is empty it shows how to add one.
@@ -372,9 +431,16 @@ class EffectPlacesState extends State<EffectPlaces> {
             ? widget.held
             : [
                 Padding(
-                  padding: EdgeInsets.fromLTRB(Shape.s(4) + Shape.z(14), Shape.s(4), WindowTokens.inset, Shape.s(6)),
+                  padding: EdgeInsets.fromLTRB(
+                    Shape.s(4) + Shape.z(14),
+                    Shape.s(4),
+                    WindowTokens.inset,
+                    Shape.s(6),
+                  ),
                   child: Text(
-                    effectTarget() == d ? 'Drag an effect here from the map, or right-click one' : 'Drag an effect here from the map',
+                    effectTarget() == d
+                        ? 'Drag an effect here from the map, or right-click one'
+                        : 'Drag an effect here from the map',
                     style: TextStyles.label(Grey.g63),
                   ),
                 ),
@@ -385,12 +451,18 @@ class EffectPlacesState extends State<EffectPlaces> {
 
   @override
   Widget build(BuildContext context) {
-    final c = widget.c, open = c.mem.open.contains('fx:packs'), deck = _deckAt(c.mem.fxPlace);
+    final c = widget.c,
+        open = c.mem.open.contains('fx:packs'),
+        deck = _deckAt(c.mem.fxPlace);
     return ContextMenu(
       key: _menu,
       child: ColoredBox(
         color: WindowTokens.body,
-        child: widget.narrow && !c.mem.fxListOpen && widget.mapped && (deck != null || c.mem.fxPlace == '★')
+        child:
+            widget.narrow &&
+                !c.mem.fxListOpen &&
+                widget.mapped &&
+                (deck != null || c.mem.fxPlace == '★')
             ? Column(
                 // Folded to the open deck on the map, with what it holds below, as the browser goes into a category and back.
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -402,12 +474,17 @@ class EffectPlacesState extends State<EffectPlaces> {
                       open: false,
                       lit: true,
                       onTap: () => c.set(() => c.mem.fxListOpen = true),
-                      menu: (at) => deck == null ? _favoritesMenu(at) : _deckMenu(deck, at),
+                      menu: (at) => deck == null
+                          ? _favoritesMenu(at)
+                          : _deckMenu(deck, at),
                       cover: widget.covers[c.mem.fxPlace],
                     ),
                   ),
                   Expanded(
-                    child: ListView(padding: EdgeInsets.zero, children: [_held(deck)]),
+                    child: ListView(
+                      padding: EdgeInsets.zero,
+                      children: [_held(deck)],
+                    ),
                   ),
                 ],
               )
@@ -435,18 +512,34 @@ class EffectPlacesState extends State<EffectPlaces> {
                 children: [
                   _row('All'),
                   _row('Recent'),
-                  _into(null, (over) => _row('★', lit: over, menu: (at) => _favoritesMenu(at))),
+                  _into(
+                    null,
+                    (over) =>
+                        _row('★', lit: over, menu: (at) => _favoritesMenu(at)),
+                  ),
                   if (widget.mapped && c.mem.fxPlace == '★') _held(null),
                   _row('In video'),
                   DockSection(
                     'Decks',
                     trailing: Builder(
-                      builder: (b) => IconPress(dockMark(AppGlyphs.plus), key: const ValueKey('ws-fx-deck-new'), onTap: () => _plus(b)),
+                      builder: (b) => IconPress(
+                        dockMark(AppGlyphs.plus),
+                        key: const ValueKey('ws-fx-deck-new'),
+                        onTap: () => _plus(b),
+                      ),
                     ),
                   ),
-                  for (final d in widget.decks.keys) ...[_deck(d), if (widget.mapped && c.mem.fxPlace == '@${d.name}') _held(d)],
+                  for (final d in widget.decks.keys) ...[
+                    _deck(d),
+                    if (widget.mapped && c.mem.fxPlace == '@${d.name}')
+                      _held(d),
+                  ],
                   // The effects bundled by their authors, collapsed, like Ableton's Packs.
-                  _row('Packs', open: open, onTap: () => c.toggle(c.mem.open, 'fx:packs')),
+                  _row(
+                    'Packs',
+                    open: open,
+                    onTap: () => c.toggle(c.mem.open, 'fx:packs'),
+                  ),
                   if (open)
                     for (final p in widget.packs.keys) _row('/$p', depth: 1),
                 ],

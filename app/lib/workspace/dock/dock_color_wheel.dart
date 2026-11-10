@@ -6,11 +6,18 @@
 // with its own corner, so when the window is drawn scaled down (WindowZoom, 76%) clicks missed the wheel.
 // The ring and square used here convert the position with globalToLocal, which works at any scale.
 import 'package:flutter/widgets.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart' show ColorPickerArea, ColorPickerHueRing, PaletteType;
+import 'package:flutter_colorpicker/flutter_colorpicker.dart'
+    show ColorPickerArea, ColorPickerHueRing, PaletteType;
 
 /// A hue ring with a saturation and value square inside it. [onChanged] gets every new color.
 class ColorWheel extends StatelessWidget {
-  const ColorWheel({super.key, required this.color, required this.onChanged, this.onStart, this.onEnd});
+  const ColorWheel({
+    super.key,
+    required this.color,
+    required this.onChanged,
+    this.onStart,
+    this.onEnd,
+  });
   final HSVColor color;
   final ValueChanged<HSVColor> onChanged;
 
@@ -36,15 +43,23 @@ class ColorWheel extends StatelessWidget {
             // The hue is the angle from the center, so both rings give the same result.
             SizedBox.square(
               dimension: s,
-              child: IgnorePointer(child: ColorPickerHueRing(color, onChanged, strokeWidth: _ring)),
+              child: IgnorePointer(
+                child: ColorPickerHueRing(color, onChanged, strokeWidth: _ring),
+              ),
             ),
             SizedBox.square(
               dimension: s + _ring,
-              child: Opacity(opacity: 0, child: ColorPickerHueRing(color, onChanged, strokeWidth: _ring)),
+              child: Opacity(
+                opacity: 0,
+                child: ColorPickerHueRing(color, onChanged, strokeWidth: _ring),
+              ),
             ),
             SizedBox.square(
               dimension: s / 1.6,
-              child: ClipRRect(borderRadius: const BorderRadius.all(Radius.circular(3)), child: ColorPickerArea(color, onChanged, PaletteType.hsv)),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.all(Radius.circular(3)),
+                child: ColorPickerArea(color, onChanged, PaletteType.hsv),
+              ),
             ),
           ],
         );

@@ -19,7 +19,12 @@ enum LinkTo {
 
 /// The value line of a block tile whose value is chosen in another panel: the value, then where to choose it.
 class LinkLine extends StatelessWidget {
-  const LinkLine({super.key, required this.to, required this.value, required this.id});
+  const LinkLine({
+    super.key,
+    required this.to,
+    required this.value,
+    required this.id,
+  });
   final LinkTo to;
   final String value, id;
   @override
@@ -37,14 +42,28 @@ class LinkLine extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: blockValue(Grey.g95)),
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: blockValue(Grey.g95),
+              ),
             ),
             // In a narrow tile the name is cut short like the value, never running over the edge.
             Flexible(
-              child: Text(to.shelf, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.micro(h ? Grey.g95 : Grey.g56)),
+              child: Text(
+                to.shelf,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyles.micro(h ? Grey.g95 : Grey.g56),
+              ),
             ),
             SizedBox(width: Shape.s(2)),
-            glyph(7, (c, s) => _drawLinkArrow(c, s, h ? Grey.g95 : Grey.g56), h),
+            glyph(
+              7,
+              (c, s) => _drawLinkArrow(c, s, h ? Grey.g95 : Grey.g56),
+              h,
+            ),
           ],
         ),
       ),

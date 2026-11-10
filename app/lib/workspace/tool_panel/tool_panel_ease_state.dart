@@ -90,12 +90,21 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
       (int.parse(s.layer), s.name, s.at)
     else if (ws.keys.isEmpty) // Nothing picked: the segment the playhead is in.
       if (easeSpan(ws) case final s?)
-        for (final at in keysAt(ws, s).entries) (int.parse(s.layer.id), at.key, at.value),
+        for (final at in keysAt(ws, s).entries)
+          (int.parse(s.layer.id), at.key, at.value),
     for (final k in ws.keys)
       if (ws.layers.where((l) => l.id == k.layer).firstOrNull case final l?)
         for (final at in keysAt(ws, (
           layer: l,
-          from: l.keys.any((f) => f > k.frame) ? k.frame : (l.keys.where((f) => f < k.frame).fold<int?>(null, (a, f) => a == null || f > a ? f : a) ?? k.frame),
+          from: l.keys.any((f) => f > k.frame)
+              ? k.frame
+              : (l.keys
+                        .where((f) => f < k.frame)
+                        .fold<int?>(
+                          null,
+                          (a, f) => a == null || f > a ? f : a,
+                        ) ??
+                    k.frame),
           to: k.frame,
           picked: k.frame,
         )).entries)
@@ -140,7 +149,10 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
       return;
     }
     _open = false;
-    ws.after(ws.inside!.later('together', number: -1), (_, _) => mounted ? setState(() => _base = null) : null);
+    ws.after(
+      ws.inside!.later('together', number: -1),
+      (_, _) => mounted ? setState(() => _base = null) : null,
+    );
   }
 
   void _define(Motolii m, String word) {
@@ -176,17 +188,29 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
         m.later('easing', layer: t, name: name, number: at, word: to);
       }
       _define(m, to);
-      ws.after(m.later('together'), (done, why) => mounted ? setState(() => trouble = done ? null : why) : null);
+      ws.after(
+        m.later('together'),
+        (done, why) =>
+            mounted ? setState(() => trouble = done ? null : why) : null,
+      );
       return;
     }
-    if (told.isEmpty) return setState(() => trouble = all.isEmpty ? 'No key where the stretch begins' : null);
+    if (told.isEmpty) {
+      return setState(
+        () => trouble = all.isEmpty ? 'No key where the stretch begins' : null,
+      );
+    }
     m.later('together', number: 1);
     _define(m, to);
     for (final (t, name, at) in told) {
       m.later('easing', layer: t, name: name, number: at, word: to);
     }
     _define(m, to);
-    ws.after(m.later('together'), (done, why) => mounted ? setState(() => trouble = done ? null : why) : null);
+    ws.after(
+      m.later('together'),
+      (done, why) =>
+          mounted ? setState(() => trouble = done ? null : why) : null,
+    );
   }
 
   // Applies the curve after every keyframe of each picked keyframe's layer, for every property keyed there, as one undo step.
@@ -200,21 +224,52 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
     _define(m, said(e));
     for (final l in ws.layers.where((l) => layers.contains(l.id))) {
       for (final f in l.keys) {
-        for (final at in keysAt(ws, (layer: l, from: f, to: f, picked: f)).entries) {
-          m.later('easing', layer: int.parse(l.id), name: at.key, number: at.value, word: said(e));
+        for (final at in keysAt(ws, (
+          layer: l,
+          from: f,
+          to: f,
+          picked: f,
+        )).entries) {
+          m.later(
+            'easing',
+            layer: int.parse(l.id),
+            name: at.key,
+            number: at.value,
+            word: said(e),
+          );
         }
       }
     }
-    ws.after(m.later('together'), (done, why) => mounted ? setState(() => trouble = done ? null : why) : null);
+    ws.after(
+      m.later('together'),
+      (done, why) =>
+          mounted ? setState(() => trouble = done ? null : why) : null,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.picked}), span = easeSpan(ws), store = eases[ws] ??= {}, id = spanId(span);
+    final ws = WorkspaceScope.of(context, {
+          WorkspaceAspect.document,
+          WorkspaceAspect.picked,
+        }),
+        span = easeSpan(ws),
+        store = eases[ws] ??= {},
+        id = spanId(span);
     if ((ws.inside, span) case (final m?, final span?)) {
       final at = keysAt(ws, span);
-      final inDocument = at.isEmpty ? easingPreset('Linear') : heard(m.easingOf(int.parse(span.layer.id), at.keys.first, at.values.first));
-      if (_told case final t? when !ws.waiting || said(t) == said(inDocument)) _told = null;
+      final inDocument = at.isEmpty
+          ? easingPreset('Linear')
+          : heard(
+              m.easingOf(
+                int.parse(span.layer.id),
+                at.keys.first,
+                at.values.first,
+              ),
+            );
+      if (_told case final t? when !ws.waiting || said(t) == said(inDocument)) {
+        _told = null;
+      }
       var ease = _pending ?? _told ?? _base ?? inDocument;
       if (easeOther(ease) && ease.drawn == null) {
         // There is no tile for this kind, so its curve is the one the engine computes for it now.
@@ -239,30 +294,65 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
       );
     }
     // No segment: the panel keeps its own easing, so the user can make and save presets. The document is not changed.
-    final own = store[id] ?? easingPreset(ws.inside == null ? 'Ease' : 'Linear');
-    return _body(ws, span, easeOther(own) ? easeCard(said(own), ws.inside) : own, (e) => setState(() => store[id] = e));
+    final own =
+        store[id] ?? easingPreset(ws.inside == null ? 'Ease' : 'Linear');
+    return _body(
+      ws,
+      span,
+      easeOther(own) ? easeCard(said(own), ws.inside) : own,
+      (e) => setState(() => store[id] = e),
+    );
   }
 
   // Lays out the panel as AbsentMotion's EasingPanel.kt does: the left column, the graph and the preset thumbnails.
-  Widget _body(WorkspaceController ws, EaseSpan? span, Ease ease, ValueChanged<Ease> set) {
-    final cards = easeIsLaid(said(ease)) ? [for (final c in easeCards(said(ease))) easeCard(c, ws.inside)] : [ease];
+  Widget _body(
+    WorkspaceController ws,
+    EaseSpan? span,
+    Ease ease,
+    ValueChanged<Ease> set,
+  ) {
+    final cards = easeIsLaid(said(ease))
+        ? [for (final c in easeCards(said(ease))) easeCard(c, ws.inside)]
+        : [ease];
     // Over plain Linear there is nothing to layer onto, so the new easing replaces it.
-    Ease laidOn(Ease e) => said(ease) == 'Linear' ? e : easeLaid([...cards, for (final c in easeCards(said(e))) easeCard(c, ws.inside)]);
-    final pile = _held == null ? cards : [for (final c in easeCards(said(_held!))) easeCard(c, ws.inside)];
-    if (spanId(span) != _cardOf) (_cardOf = spanId(span), _card = 0, _adding = false, _overLocked = false);
-    final at = _card.clamp(0, cards.length - 1), card = cards[at], laid = cards.length > 1, whole = laid && _card < 0;
-    void put(Ease e) => set(laid ? easeLaid([...cards]..[at] = easeCard(said(e), ws.inside)) : e);
+    Ease laidOn(Ease e) => said(ease) == 'Linear'
+        ? e
+        : easeLaid([
+            ...cards,
+            for (final c in easeCards(said(e))) easeCard(c, ws.inside),
+          ]);
+    final pile = _held == null
+        ? cards
+        : [for (final c in easeCards(said(_held!))) easeCard(c, ws.inside)];
+    if (spanId(span) != _cardOf) {
+      (_cardOf = spanId(span), _card = 0, _adding = false, _overLocked = false);
+    }
+    final at = _card.clamp(0, cards.length - 1),
+        card = cards[at],
+        laid = cards.length > 1,
+        whole = laid && _card < 0;
+    void put(Ease e) => set(
+      laid ? easeLaid([...cards]..[at] = easeCard(said(e), ws.inside)) : e,
+    );
     final bezier = easeIsBezier(card);
-    final overshoot = bezier && (easeOvershoot || _overLocked || [card.p1.dy, card.p2.dy].any((y) => y < 0 || y > 1));
+    final overshoot =
+        bezier &&
+        (easeOvershoot ||
+            _overLocked ||
+            [card.p1.dy, card.p2.dy].any((y) => y < 0 || y > 1));
     _overLocked = overshoot;
     // Where the beats fall on the selected card. A card that takes the cards above it as input follows their result, not the clock,
     // so a handle placed on a beat line does not miss the beat in the video.
-    final grid = ws.beats, clock = !whole && at > 0 && easeThrough(card) ? easeLaid(cards.sublist(0, at)) : null;
+    final grid = ws.beats,
+        clock = !whole && at > 0 && easeThrough(card)
+            ? easeLaid(cards.sublist(0, at))
+            : null;
     final beats = grid == null || span == null
         ? const <double>[]
         : [
             for (final (f, _) in grid.between(span.from + 1, span.to - 1))
-              if ((f - span.from) / (span.to - span.from) case final u) clock?.at(u).clamp(0.0, 1.0) ?? u,
+              if ((f - span.from) / (span.to - span.from) case final u)
+                clock?.at(u).clamp(0.0, 1.0) ?? u,
           ];
     void add(Ease e) {
       _adding = false;
@@ -294,7 +384,9 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
     }
 
     // Like AbsentMotion's reversed(): a Bezier has its handles turned, any other kind is marked as reversed.
-    final turned = bezier ? card.reversed() : Ease(card.kind, card.p1, card.p2, easeTurn(said(card)));
+    final turned = bezier
+        ? card.reversed()
+        : Ease(card.kind, card.p1, card.p2, easeTurn(said(card)));
     void overshootSet() {
       setState(() {
         easeOvershoot = !overshoot;
@@ -302,7 +394,12 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
       });
       // Turning it off pulls the handles back inside 0 to 1, or the user could not reach them. AbsentMotion only zooms the view.
       if (overshoot && [card.p1.dy, card.p2.dy].any((y) => y < 0 || y > 1)) {
-        put(card.withHandles(Offset(card.p1.dx, card.p1.dy.clamp(0.0, 1.0)), Offset(card.p2.dx, card.p2.dy.clamp(0.0, 1.0))));
+        put(
+          card.withHandles(
+            Offset(card.p1.dx, card.p1.dy.clamp(0.0, 1.0)),
+            Offset(card.p2.dx, card.p2.dy.clamp(0.0, 1.0)),
+          ),
+        );
       }
     }
 
@@ -316,8 +413,12 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
       onChanged: put,
       jump: easeJump,
       overshoot: overshoot && !whole,
-      onEnd: ws.inside == null ? null : (start, by) => toEnd(ws, span, start, by, done: true),
-      onEndMove: ws.inside == null ? null : (start, by) => toEnd(ws, span, start, by),
+      onEnd: ws.inside == null
+          ? null
+          : (start, by) => toEnd(ws, span, start, by, done: true),
+      onEndMove: ws.inside == null
+          ? null
+          : (start, by) => toEnd(ws, span, start, by),
       endSays: (start, by) => endSays(ws, span, start, by),
       trial: trial,
     );
@@ -328,27 +429,46 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
         final left = Shape.z(34), tall = box.maxHeight > box.maxWidth * 1.1;
         final side =
             (tall
-                    ? math.min(box.maxWidth / easeFits(box.maxWidth) - Shape.s(4), (box.maxHeight * .4) / 2 - Shape.s(12))
-                    : math.min(box.maxHeight / easeFits(box.maxHeight) - Shape.s(6), (box.maxWidth * .55 - left) / 2 - Shape.s(12)))
+                    ? math.min(
+                        box.maxWidth / easeFits(box.maxWidth) - Shape.s(4),
+                        (box.maxHeight * .4) / 2 - Shape.s(12),
+                      )
+                    : math.min(
+                        box.maxHeight / easeFits(box.maxHeight) - Shape.s(6),
+                        (box.maxWidth * .55 - left) / 2 - Shape.s(12),
+                      ))
                 .clamp(Shape.z(16), Shape.z(64));
         final column = side + Shape.s(12);
         final leftColumn = SizedBox(
           width: left,
           child: EaseLeft(
-            onReverse: !whole && card != easingPreset('Linear') && turned != card ? () => put(turned) : null,
+            onReverse:
+                !whole && card != easingPreset('Linear') && turned != card
+                ? () => put(turned)
+                : null,
             menu: [
               (
                 'copy',
                 'Copy Curve',
                 () {
                   setState(() => easeCopied = ease);
-                  Clipboard.setData(ClipboardData(text: easeText(ease))).catchError((_) {});
+                  Clipboard.setData(ClipboardData(text: easeText(ease)))
+                      .catchError((_) {});
                 },
               ),
               // Pastes the curve copied in the app, or a cubic-bezier() or linear() from a web page. See easeFromText.
               ('paste', 'Paste Curve', () => paste(set)),
-              if (easeCopied != null && ws.inside != null) ('all', 'Paste Curve to All Keyframes', () => paste((e) => _onEveryKey(ws, e))),
-              ('jump', easeJump ? 'Jump On' : 'Jump Off', () => setState(() => easeJump = !easeJump)),
+              if (easeCopied != null && ws.inside != null)
+                (
+                  'all',
+                  'Paste Curve to All Keyframes',
+                  () => paste((e) => _onEveryKey(ws, e)),
+                ),
+              (
+                'jump',
+                easeJump ? 'Jump On' : 'Jump Off',
+                () => setState(() => easeJump = !easeJump),
+              ),
             ],
           ),
         );
@@ -392,13 +512,18 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
           onAcceptWithDetails: (d) {
             _held = null;
             if (d.data case final Ease e) {
-              _card = cards.length; // The card just added becomes the selected one.
+              _card =
+                  cards.length; // The card just added becomes the selected one.
               set(laidOn(e));
             }
           },
           builder: (_, hot, _) => DecoratedBox(
             position: DecorationPosition.foreground,
-            decoration: BoxDecoration(border: hot.isEmpty ? null : Border.all(color: WindowTokens.accent, width: 2)),
+            decoration: BoxDecoration(
+              border: hot.isEmpty
+                  ? null
+                  : Border.all(color: WindowTokens.accent, width: 2),
+            ),
             child: Flex(
               direction: tall ? Axis.vertical : Axis.horizontal,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -410,8 +535,14 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
                       children: [
                         Positioned.fill(
                           child: span == null
-                              ? EaseTrial(way: said(ease), builder: (trial) => graph(ws.frame, trial))
-                              : ValueListenableBuilder<int>(valueListenable: ws.moment, builder: (_, frame, _) => graph(frame)),
+                              ? EaseTrial(
+                                  way: said(ease),
+                                  builder: (trial) => graph(ws.frame, trial),
+                                )
+                              : ValueListenableBuilder<int>(
+                                  valueListenable: ws.moment,
+                                  builder: (_, frame, _) => graph(frame),
+                                ),
                         ),
                         if (span == null && ws.inside != null)
                           Positioned(
@@ -433,7 +564,12 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
                             left: Shape.s(4),
                             right: Shape.s(4),
                             top: Shape.s(2),
-                            child: Text(why, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.label(Grey.g63)),
+                            child: Text(
+                              why,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyles.label(Grey.g63),
+                            ),
                           ),
                         if (span case final s?)
                           Positioned(
@@ -451,7 +587,12 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
                             ),
                           ),
                         Positioned.fill(
-                          child: EaseNumbers(card: whole ? easeLaid(cards) : card, onChanged: put, overshoot: overshoot, onOvershoot: overshootSet),
+                          child: EaseNumbers(
+                            card: whole ? easeLaid(cards) : card,
+                            onChanged: put,
+                            overshoot: overshoot,
+                            onOvershoot: overshootSet,
+                          ),
                         ),
                         Positioned(
                           left: Shape.s(2),
@@ -479,8 +620,14 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
                     now: whole ? -1 : at,
                     whole: pile.length > 1 ? _held ?? easeLaid(cards) : null,
                     onWhole: () => setState(() => _card = -1),
-                    onPress: (i) => setState(() => (_card = i, _adding = false, _overLocked = false)),
-                    onOff: (i) => set(cards.length > 1 ? easeLaid([...cards]..removeAt(i)) : easingPreset('Linear')),
+                    onPress: (i) => setState(
+                      () => (_card = i, _adding = false, _overLocked = false),
+                    ),
+                    onOff: (i) => set(
+                      cards.length > 1
+                          ? easeLaid([...cards]..removeAt(i))
+                          : easingPreset('Linear'),
+                    ),
                     onMove: (from, to) {
                       final next = [...cards];
                       next.insert(to, next.removeAt(from));
@@ -490,16 +637,33 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
                     onLay: (e, i) {
                       _held = null;
                       _card = i;
-                      set(easeLaid([...cards]..insertAll(i, [for (final c in easeCards(said(e))) easeCard(c, ws.inside)])));
+                      set(
+                        easeLaid(
+                          [...cards]..insertAll(i, [
+                            for (final c in easeCards(said(e)))
+                              easeCard(c, ws.inside),
+                          ]),
+                        ),
+                      );
                     },
-                    onOver: (e, i) => over(e == null ? null : easeLaid([...cards]..insertAll(i, [for (final c in easeCards(said(e))) easeCard(c, ws.inside)]))),
+                    onOver: (e, i) => over(
+                      e == null
+                          ? null
+                          : easeLaid(
+                              [...cards]..insertAll(i, [
+                                for (final c in easeCards(said(e)))
+                                  easeCard(c, ws.inside),
+                              ]),
+                            ),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
         );
-        final across = (box.maxWidth * .3 / column).floor().clamp(1, 6), wide = across * column;
+        final across = (box.maxWidth * .3 / column).floor().clamp(1, 6),
+            wide = across * column;
         const slide = Duration(milliseconds: 200);
         return Stack(
           clipBehavior: Clip.hardEdge,
@@ -515,7 +679,8 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
                             children: [
                               Expanded(
                                 child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
                                     leftColumn,
                                     Expanded(child: target),
@@ -540,7 +705,8 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
                       curve: Curves.easeOutCubic,
                       width: _shelf ? wide : 0,
                       // Once the shelf is closed it is no longer built, so it is not rebuilt while the user drags a handle.
-                      onEnd: () => _shelf ? null : setState(() => _shelfShown = false),
+                      onEnd: () =>
+                          _shelf ? null : setState(() => _shelfShown = false),
                       child: !_shelfShown
                           ? null
                           : OverflowBox(
@@ -555,7 +721,9 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
                                 side: side,
                                 inside: ws.inside,
                                 onKeep: keep,
-                                onForget: (e) => setState(() => easeKeep(said(e), off: true)),
+                                onForget: (e) => setState(
+                                  () => easeKeep(said(e), off: true),
+                                ),
                                 onPick: (e) {
                                   if (_adding) return add(e);
                                   _card = 0; // A preset is a whole easing.
@@ -573,7 +741,11 @@ class EaseToolState extends State<EaseTool> with EaseEnds {
               curve: Curves.easeOutCubic,
               top: Shape.s(8),
               right: _shelf ? wide : 0,
-              child: EaseGrip(key: const ValueKey('ease.shelf'), open: _shelf, onTap: () => shelf(!_shelf)),
+              child: EaseGrip(
+                key: const ValueKey('ease.shelf'),
+                open: _shelf,
+                onTap: () => shelf(!_shelf),
+              ),
             ),
           ],
         );

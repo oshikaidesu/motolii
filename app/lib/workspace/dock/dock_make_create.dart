@@ -30,7 +30,8 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 /// The "N ready" count: how many of the Create shelf's tiles can make or lay out something in the project.
 String createFact(WorkspaceController ws) {
   // Scripts that are expressions have tiles in the Expression group, so they are counted with the expressions.
-  final recipes = _recipesOf(ws).$2.length, expressions = expressionsOf(ws).length;
+  final recipes = _recipesOf(ws).$2.length,
+      expressions = expressionsOf(ws).length;
   // The shelf shows only these tiles.
   return '${_asked.length + _worn.length + recipes + expressions} ready';
 }
@@ -45,7 +46,15 @@ String createFact(WorkspaceController ws) {
     'Recipes',
     [
       for (final (name, what) in ws.inside!.createScripts)
-        if (!expressions.contains(name) && !packs.contains(name)) CreateTile(name, AppGlyphs.copies, InspectorSkin.tonePlace, '', what, recipe: true),
+        if (!expressions.contains(name) && !packs.contains(name))
+          CreateTile(
+            name,
+            AppGlyphs.copies,
+            InspectorSkin.tonePlace,
+            '',
+            what,
+            recipe: true,
+          ),
     ],
   );
 }
@@ -53,14 +62,34 @@ String createFact(WorkspaceController ws) {
 /// Saved elements (Edit > Save to My Elements). Each is added at the playhead and stays linked to its file, as in
 /// Alight Motion (+ > Object / Element > Element) and AbsentMotion's ElementPicker
 /// (engine/third_party/AbsentMotion/app/src/main/kotlin/app/absentmotion/ui/editor/ElementUi.kt).
-(String, List<CreateTile>) _elementsOf(WorkspaceController ws) =>
-    ('Elements', [for (final (name, _) in ws.inside!.elements) CreateTile(name, AppGlyphs.nullObj, Grey.g76, '', 'Element, linked to its file')]);
+(String, List<CreateTile>) _elementsOf(WorkspaceController ws) => (
+  'Elements',
+  [
+    for (final (name, _) in ws.inside!.elements)
+      CreateTile(
+        name,
+        AppGlyphs.nullObj,
+        Grey.g76,
+        '',
+        'Element, linked to its file',
+      ),
+  ],
+);
 
 // ---------------------------------------------------------------- create
 
 /// One tile of the Create shelf. [key] is the keyboard shortcut shown on the tile and [what] the line shown in the footer.
 class CreateTile {
-  const CreateTile(this.name, this.g, this.hue, this.key, this.what, {this.recipe = false, this.file, this.made = false});
+  const CreateTile(
+    this.name,
+    this.g,
+    this.hue,
+    this.key,
+    this.what, {
+    this.recipe = false,
+    this.file,
+    this.made = false,
+  });
   final String name, key, what;
   final AppGlyphs g;
   final Color hue;
@@ -84,21 +113,69 @@ final _makes = <(String, List<CreateTile>)>[
   (
     'Layers',
     [
-      CreateTile('Text', AppGlyphs.text, WindowTokens.toneText, 'T', 'Type layer'),
+      CreateTile(
+        'Text',
+        AppGlyphs.text,
+        WindowTokens.toneText,
+        'T',
+        'Type layer',
+      ),
       // The default lens is the preview's 30 degrees on Filament's 24 mm film, as the Camera tool panel shows (tool_panel_depth.dart _filmMm).
-      CreateTile('Camera', AppGlyphs.camera, WindowTokens.toneCamera, '⇧C', '3D camera, 45 mm'),
+      CreateTile(
+        'Camera',
+        AppGlyphs.camera,
+        WindowTokens.toneCamera,
+        '⇧C',
+        '3D camera, 45 mm',
+      ),
       CreateTile('Null', AppGlyphs.nullObj, Grey.g76, '⇧N', 'Invisible parent'),
-      CreateTile('Adjustment', AppGlyphs.nullObj, Grey.g76, '', 'What is put on it works on all under it'),
+      CreateTile(
+        'Adjustment',
+        AppGlyphs.nullObj,
+        Grey.g76,
+        '',
+        'What is put on it works on all under it',
+      ),
     ],
   ),
   (
     'Shapes',
     [
-      CreateTile('Rectangle', AppGlyphs.rect, WindowTokens.toneShape, 'R', 'Rounded corners'),
-      CreateTile('Ellipse', AppGlyphs.ellipse, WindowTokens.toneShape, 'E', 'Circle with ⇧'),
-      CreateTile('Polygon', AppGlyphs.polygon, WindowTokens.toneShape, '', 'Sides · Roundness'),
-      CreateTile('Star', AppGlyphs.star, WindowTokens.toneShape, '', 'Points · Inner radius'),
-      CreateTile('Line', AppGlyphs.line, WindowTokens.toneShape, 'L', 'Open path'),
+      CreateTile(
+        'Rectangle',
+        AppGlyphs.rect,
+        WindowTokens.toneShape,
+        'R',
+        'Rounded corners',
+      ),
+      CreateTile(
+        'Ellipse',
+        AppGlyphs.ellipse,
+        WindowTokens.toneShape,
+        'E',
+        'Circle with ⇧',
+      ),
+      CreateTile(
+        'Polygon',
+        AppGlyphs.polygon,
+        WindowTokens.toneShape,
+        '',
+        'Sides · Roundness',
+      ),
+      CreateTile(
+        'Star',
+        AppGlyphs.star,
+        WindowTokens.toneShape,
+        '',
+        'Points · Inner radius',
+      ),
+      CreateTile(
+        'Line',
+        AppGlyphs.line,
+        WindowTokens.toneShape,
+        'L',
+        'Open path',
+      ),
     ],
   ),
   (
@@ -120,10 +197,34 @@ final _makes = <(String, List<CreateTile>)>[
 final _solids = (
   '3D',
   [
-    CreateTile('Ring', AppGlyphs.radial, WindowTokens.toneShape, '', 'A solid ring'),
-    CreateTile('Gem', AppGlyphs.polygon, WindowTokens.toneShape, '', 'A cut solid'),
-    CreateTile('Cube', AppGlyphs.rect, WindowTokens.toneShape, '', 'A round-edged cube'),
-    CreateTile('Floor', AppGlyphs.rect, WindowTokens.toneShape, '', 'A wide flat floor that takes shadows'),
+    CreateTile(
+      'Ring',
+      AppGlyphs.radial,
+      WindowTokens.toneShape,
+      '',
+      'A solid ring',
+    ),
+    CreateTile(
+      'Gem',
+      AppGlyphs.polygon,
+      WindowTokens.toneShape,
+      '',
+      'A cut solid',
+    ),
+    CreateTile(
+      'Cube',
+      AppGlyphs.rect,
+      WindowTokens.toneShape,
+      '',
+      'A round-edged cube',
+    ),
+    CreateTile(
+      'Floor',
+      AppGlyphs.rect,
+      WindowTokens.toneShape,
+      '',
+      'A wide flat floor that takes shadows',
+    ),
     CreateTile('Ball', AppGlyphs.ellipse, WindowTokens.toneShape, '', 'A ball'),
   ],
 );
@@ -132,9 +233,27 @@ final _solids = (
 final _lights = (
   'Light',
   [
-    CreateTile('Sun', AppGlyphs.light, WindowTokens.toneCamera, '', 'Light from one way, everywhere'),
-    CreateTile('Point', AppGlyphs.light, WindowTokens.toneCamera, '', 'Light from a point, all round'),
-    CreateTile('Spot', AppGlyphs.light, WindowTokens.toneCamera, '', 'A cone of light'),
+    CreateTile(
+      'Sun',
+      AppGlyphs.light,
+      WindowTokens.toneCamera,
+      '',
+      'Light from one way, everywhere',
+    ),
+    CreateTile(
+      'Point',
+      AppGlyphs.light,
+      WindowTokens.toneCamera,
+      '',
+      'Light from a point, all round',
+    ),
+    CreateTile(
+      'Spot',
+      AppGlyphs.light,
+      WindowTokens.toneCamera,
+      '',
+      'A cone of light',
+    ),
   ],
 );
 
@@ -146,13 +265,55 @@ final _lights = (
 final _materials = (
   'Material',
   [
-    CreateTile('Lit', AppGlyphs.ellipse, WindowTokens.toneShape, '', 'Filament\'s lit surface: its colour, metal, rough, a clear coat'),
-    CreateTile('Cloth', AppGlyphs.ellipse, WindowTokens.toneShape, '', 'Soft, no sharp highlight, a sheen at its rim'),
-    CreateTile('Subsurface', AppGlyphs.ellipse, WindowTokens.toneShape, '', 'Light goes into it and comes out, as in wax or skin'),
-    CreateTile('Glass', AppGlyphs.radial, WindowTokens.toneShape, '', 'Thick glass: bends and tints what lies behind it'),
-    CreateTile('Filament glass', AppGlyphs.radial, WindowTokens.toneShape, '', 'Filament\'s own glass: bends what is behind, a thin film\'s rainbow'),
-    CreateTile('Lacquer', AppGlyphs.ellipse, WindowTokens.toneShape, '', 'Its colour under a hard clear coat'),
-    CreateTile('Bubble', AppGlyphs.radial, WindowTokens.toneShape, '', 'Nearly clear, a bright rim'),
+    CreateTile(
+      'Lit',
+      AppGlyphs.ellipse,
+      WindowTokens.toneShape,
+      '',
+      'Filament\'s lit surface: its colour, metal, rough, a clear coat',
+    ),
+    CreateTile(
+      'Cloth',
+      AppGlyphs.ellipse,
+      WindowTokens.toneShape,
+      '',
+      'Soft, no sharp highlight, a sheen at its rim',
+    ),
+    CreateTile(
+      'Subsurface',
+      AppGlyphs.ellipse,
+      WindowTokens.toneShape,
+      '',
+      'Light goes into it and comes out, as in wax or skin',
+    ),
+    CreateTile(
+      'Glass',
+      AppGlyphs.radial,
+      WindowTokens.toneShape,
+      '',
+      'Thick glass: bends and tints what lies behind it',
+    ),
+    CreateTile(
+      'Filament glass',
+      AppGlyphs.radial,
+      WindowTokens.toneShape,
+      '',
+      'Filament\'s own glass: bends what is behind, a thin film\'s rainbow',
+    ),
+    CreateTile(
+      'Lacquer',
+      AppGlyphs.ellipse,
+      WindowTokens.toneShape,
+      '',
+      'Its colour under a hard clear coat',
+    ),
+    CreateTile(
+      'Bubble',
+      AppGlyphs.radial,
+      WindowTokens.toneShape,
+      '',
+      'Nearly clear, a bright rim',
+    ),
   ],
 );
 // Tile name to the shading value it sets.
@@ -218,7 +379,9 @@ void _make(ShelfContext c, CreateTile tile) {
     // A create script: one undo step, and the new layer is selected. It does not wait for the result.
     c.ws.after(
       m.later('create', word: name),
-      (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why),
+      (done, why) => c.set(
+        () => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why,
+      ),
       (made) => c.ws.select('$made'),
     );
     return;
@@ -229,20 +392,38 @@ void _make(ShelfContext c, CreateTile tile) {
   if (name == 'Empty') {
     // An empty expression for the user to write (empty_effect.dart). Any earlier error for this tile is cleared.
     c.set(() => c.mem.trouble.remove(name));
-    return emptyPut(c.ws, expression: true, told: (why) => c.set(() => why.isEmpty ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why));
+    return emptyPut(
+      c.ws,
+      expression: true,
+      told: (why) => c.set(
+        () => why.isEmpty
+            ? c.mem.trouble.remove(name)
+            : c.mem.trouble[name] = why,
+      ),
+    );
   }
   if (_worn[name] case final wears?) {
     // Replaces the picked layer's material. With nothing picked, creates a ball wearing it and selects the ball.
     final t = int.tryParse(c.ws.selected ?? '');
-    void told(bool done, String why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why);
+    void told(bool done, String why) => c.set(
+      () => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why,
+    );
     if (t != null) {
-      if (!_wears.contains(m.word(t, 'kind'))) return c.set(() => c.mem.trouble[name] = 'A camera, a light or a null wears nothing: pick a thing that is seen');
+      if (!_wears.contains(m.word(t, 'kind'))) {
+        return c.set(
+          () => c.mem.trouble[name] = 'A camera, a light or a null wears nothing: pick a thing that is seen',
+        );
+      }
       c.ws.after(m.later('say', layer: t, name: 'shading', word: wears), told);
       return;
     }
     // One undo step covers the ball and its material.
     m.later('together', number: 1);
-    c.ws.after(m.later('add', name: 'solid', word: 'ball'), null, (made) => c.ws.select('$made'));
+    c.ws.after(
+      m.later('add', name: 'solid', word: 'ball'),
+      null,
+      (made) => c.ws.select('$made'),
+    );
     applyChosenInks(c.ws, 'solid', 'ball');
     m.later('say', layer: -1, name: 'shading', word: wears);
     c.ws.after(m.later('together'), told);
@@ -252,8 +433,14 @@ void _make(ShelfContext c, CreateTile tile) {
     if (m.elements.where((e) => e.$1 == name).firstOrNull case final e?) {
       // Added at the playhead, in the middle, and selected, as in AbsentMotion's addElement.
       c.ws.after(
-        m.later('element', word: e.$2, number: c.ws.frame / WorkspaceController.fps),
-        (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why),
+        m.later(
+          'element',
+          word: e.$2,
+          number: c.ws.frame / WorkspaceController.fps,
+        ),
+        (done, why) => c.set(
+          () => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why,
+        ),
         (made) => c.ws.select('$made'),
       );
     }
@@ -263,7 +450,15 @@ void _make(ShelfContext c, CreateTile tile) {
   // One undo step covers the layer and its colors.
   m.later('together', number: 1);
   // Does not wait: the new layer is selected once it exists. A text layer uses the body font.
-  c.ws.after(m.later('add', name: asked.$1, word: asked.$1 == 'text' ? c.ws.bodyFace : asked.$2), null, (made) => c.ws.select('$made'));
+  c.ws.after(
+    m.later(
+      'add',
+      name: asked.$1,
+      word: asked.$1 == 'text' ? c.ws.bodyFace : asked.$2,
+    ),
+    null,
+    (made) => c.ws.select('$made'),
+  );
   applyChosenInks(c.ws, asked.$1, asked.$2);
   for (final e in (_starts[name] ?? const <String, double>{}).entries) {
     m.later('set', layer: -1, name: e.key, number: e.value);
@@ -273,7 +468,12 @@ void _make(ShelfContext c, CreateTile tile) {
     // As in After Effects, a light added to the project takes over from the default light. The room dims, and its old value is one field in Stage settings.
     m.later('set', layer: 0, name: 'environment', number: .3);
   }
-  c.ws.after(m.later('together'), (done, why) => c.set(() => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why));
+  c.ws.after(
+    m.later('together'),
+    (done, why) => c.set(
+      () => done ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why,
+    ),
+  );
 }
 
 /// The Create shelf: filter chips above grouped tiles, and a footer for the selected tile.
@@ -286,14 +486,18 @@ class CreateShelf extends StatelessWidget {
       _recipesOf(c.ws),
       _makes.first,
       _elementsOf(c.ws),
-      for (final (g, items) in _makes.skip(1)) g == 'Expression' ? (g, [...items, ...expressionsOf(c.ws)]) : (g, items),
+      for (final (g, items) in _makes.skip(1))
+        g == 'Expression'
+            ? (g, [...items, ...expressionsOf(c.ws)])
+            : (g, items),
       _solids,
       _materials,
       _lights,
     ].where((e) => e.$2.isNotEmpty).toList();
     var groups = [
       for (final (g, items) in makes)
-        if (c.chip == 'All' || c.chip == g) (g, items.where((m) => c.hit(m.name)).toList()),
+        if (c.chip == 'All' || c.chip == g)
+          (g, items.where((m) => c.hit(m.name)).toList()),
     ].where((e) => e.$2.isNotEmpty).toList();
     if (groups.isEmpty && c.query.trim().isNotEmpty) {
       // Nothing matches the query as typed, so show the nearest five, each in its own group.
@@ -307,15 +511,21 @@ class CreateShelf extends StatelessWidget {
       ], least: c.query.runes.every((r) => r < 128) ? 75 : 0);
       groups = [
         for (final (g, items) in makes)
-          if (c.chip == 'All' || c.chip == g) (g, [for (final id in near) ...items.where((m) => m.id == id)]),
+          if (c.chip == 'All' || c.chip == g)
+            (g, [for (final id in near) ...items.where((m) => m.id == id)]),
       ].where((e) => e.$2.isNotEmpty).toList();
     }
-    final sel = c.foot(makes.expand((e) => e.$2).where((m) => m.id == c.sel).firstOrNull);
+    final sel = c.foot(
+      makes.expand((e) => e.$2).where((m) => m.id == c.sel).firstOrNull,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         DockChips(
-          [('All', makes.fold<int>(0, (s, e) => s + e.$2.length)), for (final (g, items) in makes) (g, items.length)],
+          [
+            ('All', makes.fold<int>(0, (s, e) => s + e.$2.length)),
+            for (final (g, items) in makes) (g, items.length),
+          ],
           active: c.chip,
           onPick: c.pickChip,
         ),
@@ -323,7 +533,9 @@ class CreateShelf extends StatelessWidget {
           child: groups.isEmpty
               ? DockEmpty(c.query)
               : DockMasonry(
-                  weights: [for (final (_, items) in groups) 1 + items.length / 3],
+                  weights: [
+                    for (final (_, items) in groups) 1 + items.length / 3,
+                  ],
                   children: [
                     for (final (g, items) in groups)
                       Padding(
@@ -335,10 +547,17 @@ class CreateShelf extends StatelessWidget {
                               g,
                               count: items.length,
                               hue: items.first.hue,
-                              folded: c.query.isEmpty && c.mem.createFolded.contains(g),
-                              onTap: () => c.set(() => c.mem.createFolded.contains(g) ? c.mem.createFolded.remove(g) : c.mem.createFolded.add(g)),
+                              folded:
+                                  c.query.isEmpty &&
+                                  c.mem.createFolded.contains(g),
+                              onTap: () => c.set(
+                                () => c.mem.createFolded.contains(g)
+                                    ? c.mem.createFolded.remove(g)
+                                    : c.mem.createFolded.add(g),
+                              ),
                             ),
-                            if (!(c.query.isEmpty && c.mem.createFolded.contains(g))) ...[
+                            if (!(c.query.isEmpty &&
+                                c.mem.createFolded.contains(g))) ...[
                               const SizedBox(height: WindowTokens.gutter),
                               ShelfGrid(
                                 shelfLooks['Create']!,
@@ -346,7 +565,13 @@ class CreateShelf extends StatelessWidget {
                                 count: items.length,
                                 tile: (i) {
                                   final m = items[i];
-                                  return m.file != null && shelfAdded(m.file!) ? _OwnTile(m, c, key: ValueKey('ws-own-${m.file}')) : _makeTile(m, c);
+                                  return m.file != null && shelfAdded(m.file!)
+                                      ? _OwnTile(
+                                          m,
+                                          c,
+                                          key: ValueKey('ws-own-${m.file}'),
+                                        )
+                                      : _makeTile(m, c);
                                 },
                               ),
                             ],
@@ -360,11 +585,19 @@ class CreateShelf extends StatelessWidget {
           DockFooter(
             preview: dockBadge(sel.g, sel.hue, size: Shape.z(34)),
             title: '${sel.name} layer',
-            meta: c.mem.trouble[sel.name] ?? 'At ${c.ws.timecode()} · ${sel.what}',
-            action: sel.onPicked || (_worn.containsKey(sel.name) && c.ws.selected != null) ? 'Put on' : 'Create',
+            meta:
+                c.mem.trouble[sel.name] ??
+                'At ${c.ws.timecode()} · ${sel.what}',
+            action:
+                sel.onPicked ||
+                    (_worn.containsKey(sel.name) && c.ws.selected != null)
+                ? 'Put on'
+                : 'Create',
             // A tile creates a new layer. Copies are laid out on the picked layer, a material is put on it, and so is an empty
             // expression (or a new layer when none is picked).
-            fresh: !sel.onPicked && !(_worn.containsKey(sel.name) && c.ws.selected != null),
+            fresh:
+                !sel.onPicked &&
+                !(_worn.containsKey(sel.name) && c.ws.selected != null),
             onAction: () => _make(c, sel),
           ),
       ],
@@ -373,13 +606,22 @@ class CreateShelf extends StatelessWidget {
 }
 
 /// One Create tile in the shelf's look. [naming] replaces the name while it is being renamed; [onMenu] is called with the position of a right click.
-Widget _makeTile(CreateTile m, ShelfContext c, {Key? key, Widget? naming, ValueChanged<Offset>? onMenu}) {
+Widget _makeTile(
+  CreateTile m,
+  ShelfContext c, {
+  Key? key,
+  Widget? naming,
+  ValueChanged<Offset>? onMenu,
+}) {
   final sel = c.sel == m.id, inside = c.ws.inside;
   final makes =
       inside != null &&
       (m.recipe
           ? inside.createScripts.any((r) => r.$1 == m.name)
-          : _asked.containsKey(m.name) || _worn.containsKey(m.name) || m.onPicked || inside.elements.any((e) => e.$1 == m.name));
+          : _asked.containsKey(m.name) ||
+                _worn.containsKey(m.name) ||
+                m.onPicked ||
+                inside.elements.any((e) => e.$1 == m.name));
   return ShelfTile(
     ShelfItem(m.id, m.name, about: m.what),
     shelfLooks['Create']!,
@@ -405,7 +647,11 @@ Widget _makeTile(CreateTile m, ShelfContext c, {Key? key, Widget? naming, ValueC
 Widget _makeArt(CreateTile m, ShelfContext c, bool sel) {
   Widget mark() => Align(
     alignment: Alignment.topLeft,
-    child: Glyph(m.g, size: Shape.z(26), color: sel ? WindowTokens.onAccent : m.hue),
+    child: Glyph(
+      m.g,
+      size: Shape.z(26),
+      color: sel ? WindowTokens.onAccent : m.hue,
+    ),
   );
   if (m.recipe && _isRecipe(c, m.name)) {
     // A script: its motion as the engine computes it, drawn by the app, with the whole list moving at once.
@@ -444,26 +690,44 @@ Widget _makeArt(CreateTile m, ShelfContext c, bool sel) {
 bool _isRecipe(ShelfContext c, String name) {
   final m = c.ws.inside;
   if (m == null || !m.createScripts.any((r) => r.$1 == name)) return false;
-  RecipeMotions.ask(File(m.libPath).parent.parent.path, [for (final r in m.createScripts) r.$1]);
+  RecipeMotions.ask(File(m.libPath).parent.parent.path, [
+    for (final r in m.createScripts) r.$1,
+  ]);
   return true;
 }
 
 /// Puts an expression on the picked layer, or on a new layer when none is picked.
 void _expressionPut(ShelfContext c, CreateTile tile) {
-  final m = c.ws.inside!, name = tile.name, file = tile.file!, t = int.tryParse(c.ws.selected ?? '');
-  void told(String why) => c.set(() => why.isEmpty ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why);
+  final m = c.ws.inside!,
+      name = tile.name,
+      file = tile.file!,
+      t = int.tryParse(c.ws.selected ?? '');
+  void told(String why) => c.set(
+    () => why.isEmpty ? c.mem.trouble.remove(name) : c.mem.trouble[name] = why,
+  );
   c.set(() => c.mem.trouble.remove(name));
   if (t == null && tile.made) {
     // Created the same way as a script tile.
-    return c.ws.after(m.later('create', word: name), (done, why) => told(done ? '' : why), (made) => c.ws.select('$made'));
+    return c.ws.after(
+      m.later('create', word: name),
+      (done, why) => told(done ? '' : why),
+      (made) => c.ws.select('$made'),
+    );
   }
-  final first = t != null && !WorkspaceController.fxFiles(m.word(t, 'fx')).contains(file);
+  final first =
+      t != null && !WorkspaceController.fxFiles(m.word(t, 'fx')).contains(file);
   putEffectFile(c.ws, file, expression: true, told: told);
   if (t == null) return;
   // If the script's head has a "// set copies N" line and the layer has no copies to lay out yet, set copies to N.
   // The first time the Repeater is added, its starting parameters are also set from _laid.
-  final head = File(file).readAsLinesSync().takeWhile((l) => l.startsWith('//'));
-  if (head.map((l) => RegExp(r'^// set copies (\d+)').firstMatch(l)?[1]).nonNulls.firstOrNull case final n? when (m.value(t, 'copies', 0) ?? 1) <= 1) {
+  final head = File(file)
+      .readAsLinesSync()
+      .takeWhile((l) => l.startsWith('//'));
+  if (head
+          .map((l) => RegExp(r'^// set copies (\d+)').firstMatch(l)?[1])
+          .nonNulls
+          .firstOrNull
+      case final n? when (m.value(t, 'copies', 0) ?? 1) <= 1) {
     m.later('set', layer: t, name: 'copies', number: double.parse(n));
   }
   if (first) {
@@ -504,7 +768,12 @@ class _OwnTileState extends State<_OwnTile> {
     setState(() => _naming = false);
     final m = widget.m, ws = widget.c.ws;
     if (to == null || to.trim() == m.name) return;
-    final why = shelfRename(ws, m.file!, to, createNames(ws).difference({m.name}));
+    final why = shelfRename(
+      ws,
+      m.file!,
+      to,
+      createNames(ws).difference({m.name}),
+    );
     if (why.isNotEmpty) ws.notice = 'Not renamed: $why';
   }
 
@@ -517,7 +786,9 @@ class _OwnTileState extends State<_OwnTile> {
       naming: _naming ? ShelfNameField(widget.m.name, _renamed) : null,
       onMenu: (at) {
         final box = _menu.currentContext?.findRenderObject() as RenderBox?;
-        _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [ContextMenuItem('Rename…', () => setState(() => _naming = true))]);
+        _menu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [
+          ContextMenuItem('Rename…', () => setState(() => _naming = true)),
+        ]);
       },
     ),
   );

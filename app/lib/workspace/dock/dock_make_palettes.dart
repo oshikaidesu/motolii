@@ -12,7 +12,14 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 
 /// A color palette: the starters, the user's saved ones, or one taken from a photo.
 class ColorPalette {
-  const ColorPalette(this.id, this.name, this.colors, {this.saved = false, this.reference, this.shares});
+  const ColorPalette(
+    this.id,
+    this.name,
+    this.colors, {
+    this.saved = false,
+    this.reference,
+    this.shares,
+  });
   final String id, name;
   final List<Color> colors;
   final bool saved;
@@ -34,7 +41,13 @@ class ColorPalette {
 ///
 /// The engine does the mixing (gradient_blend, CSS Color 4's color-interpolation-method).
 class ShelfGradient {
-  const ShelfGradient(this.name, this.colors, {this.blend = 'oklab', this.saved = false, this.at});
+  const ShelfGradient(
+    this.name,
+    this.colors, {
+    this.blend = 'oklab',
+    this.saved = false,
+    this.at,
+  });
   final String name;
   final List<Color> colors;
 
@@ -45,18 +58,66 @@ class ShelfGradient {
 }
 
 const _starterPals = <ColorPalette>[
-  ColorPalette('pop', 'Pop Poster', [Color(0xFFB3C66B), Color(0xFF4781E5), Color(0xFFF08A5D), Color(0xFFE974AB), Color(0xFFEFCB4E), Color(0xFF15170D)]),
-  ColorPalette('riso', 'Riso Print', [Color(0xFFFF48B0), Color(0xFF0078BF), Color(0xFFFFE800), Color(0xFF00A95C), Color(0xFFF15060), Color(0xFFF2EDE4)]),
-  ColorPalette('coda', 'Coda Title', [Color(0xFFD9D2C3), Color(0xFFF08A5D), Color(0xFF7FB8B0), Color(0xFF3B3631), Color(0xFFF2C94C)]),
-  ColorPalette('market', 'Night Market', [Color(0xFF1B1F3B), Color(0xFF53354A), Color(0xFFE84545), Color(0xFFFFB740), Color(0xFF2B9EB3)]),
-  ColorPalette('candy', 'Candy Shop', [Color(0xFFFFB5C2), Color(0xFFB5EAD7), Color(0xFFC7CEEA), Color(0xFFFFDAC1), Color(0xFFE2F0CB), Color(0xFF9ADCFF)]),
-  ColorPalette('signal', 'Signal', [Color(0xFFFF3B30), Color(0xFFFF9500), Color(0xFFFFCC00), Color(0xFF34C759), Color(0xFF007AFF), Color(0xFFAF52DE)]),
+  ColorPalette('pop', 'Pop Poster', [
+    Color(0xFFB3C66B),
+    Color(0xFF4781E5),
+    Color(0xFFF08A5D),
+    Color(0xFFE974AB),
+    Color(0xFFEFCB4E),
+    Color(0xFF15170D),
+  ]),
+  ColorPalette('riso', 'Riso Print', [
+    Color(0xFFFF48B0),
+    Color(0xFF0078BF),
+    Color(0xFFFFE800),
+    Color(0xFF00A95C),
+    Color(0xFFF15060),
+    Color(0xFFF2EDE4),
+  ]),
+  ColorPalette('coda', 'Coda Title', [
+    Color(0xFFD9D2C3),
+    Color(0xFFF08A5D),
+    Color(0xFF7FB8B0),
+    Color(0xFF3B3631),
+    Color(0xFFF2C94C),
+  ]),
+  ColorPalette('market', 'Night Market', [
+    Color(0xFF1B1F3B),
+    Color(0xFF53354A),
+    Color(0xFFE84545),
+    Color(0xFFFFB740),
+    Color(0xFF2B9EB3),
+  ]),
+  ColorPalette('candy', 'Candy Shop', [
+    Color(0xFFFFB5C2),
+    Color(0xFFB5EAD7),
+    Color(0xFFC7CEEA),
+    Color(0xFFFFDAC1),
+    Color(0xFFE2F0CB),
+    Color(0xFF9ADCFF),
+  ]),
+  ColorPalette('signal', 'Signal', [
+    Color(0xFFFF3B30),
+    Color(0xFFFF9500),
+    Color(0xFFFFCC00),
+    Color(0xFF34C759),
+    Color(0xFF007AFF),
+    Color(0xFFAF52DE),
+  ]),
 ];
 
 const _starterGrads = <ShelfGradient>[
   ShelfGradient('Lime dusk', [Color(0xFFB3C66B), Color(0xFF4781E5)]),
-  ShelfGradient('Hot pink', [Color(0xFFE974AB), Color(0xFFF08A5D), Color(0xFFEFCB4E)]),
-  ShelfGradient('Deep sea', [Color(0xFF15170D), Color(0xFF2B9EB3), Color(0xFF7DD5B1)]),
+  ShelfGradient('Hot pink', [
+    Color(0xFFE974AB),
+    Color(0xFFF08A5D),
+    Color(0xFFEFCB4E),
+  ]),
+  ShelfGradient('Deep sea', [
+    Color(0xFF15170D),
+    Color(0xFF2B9EB3),
+    Color(0xFF7DD5B1),
+  ]),
 ];
 
 // What the user has saved, in ~/.motolii/colors.json: {"palettes": [{"name": "", "colors": ["#rrggbb"]}], "gradients": [{"name": "", "colors": [], "blend": "oklab"}], "colours": [], "tile": 52}.
@@ -86,7 +147,9 @@ void colorsRead() {
     final told = fileJson(_mineFile) as Map;
     for (final (i, p) in ((told['palettes'] as List?) ?? const []).indexed) {
       final cs = [for (final h in (p['colors'] as List)) ?colorOfHex('$h')];
-      final sh = (p['shares'] as List?)?.map((v) => (v as num).toDouble()).toList();
+      final sh = (p['shares'] as List?)
+          ?.map((v) => (v as num).toDouble())
+          .toList();
       if (cs.isNotEmpty) {
         ownPalettes.add(
           ColorPalette(
@@ -100,8 +163,12 @@ void colorsRead() {
         );
       }
     }
-    ownColors.addAll([for (final h in (told['colours'] as List?) ?? const []) ?colorOfHex('$h')]);
-    if (told['tile'] case final num v) bentoTile = v.toDouble().clamp(bentoTileLeast, bentoTileMost);
+    ownColors.addAll([
+      for (final h in (told['colours'] as List?) ?? const []) ?colorOfHex('$h'),
+    ]);
+    if (told['tile'] case final num v) {
+      bentoTile = v.toDouble().clamp(bentoTileLeast, bentoTileMost);
+    }
     for (final g in (told['gradients'] as List?) ?? const []) {
       final cs = [for (final h in (g['colors'] as List)) ?colorOfHex('$h')];
       final at = (g['at'] as List?)?.map((v) => (v as num).toDouble()).toList();
@@ -110,7 +177,9 @@ void colorsRead() {
           ShelfGradient(
             '${g['name']}',
             cs,
-            blend: g['blend'] as String? ?? (g['oklab'] == false ? 'rgb' : 'oklab'),
+            blend:
+                g['blend'] as String? ??
+                (g['oklab'] == false ? 'rgb' : 'oklab'),
             saved: true,
             at: at != null && at.length == cs.length ? at : null,
           ),
@@ -154,7 +223,8 @@ List<ColorPalette> get colorPalettes => [...ownPalettes, ..._starterPals];
 List<ShelfGradient> get shelfGradients => [...ownGradients, ..._starterGrads];
 
 String hexOfColor(Color c) {
-  String h(double v) => (v * 255).round().toRadixString(16).padLeft(2, '0').toUpperCase();
+  String h(double v) =>
+      (v * 255).round().toRadixString(16).padLeft(2, '0').toUpperCase();
   return '#${h(c.r)}${h(c.g)}${h(c.b)}';
 }
 
@@ -164,7 +234,9 @@ Map<String, Color> usedColors(WorkspaceController ws) {
   if (m == null) return const {};
   return {
     for (final l in ws.layers)
-      if (m.word(int.parse(l.id), 'fill').split(' ').first.split('@').first case final f when f.length == 6)
-        if (int.tryParse(f, radix: 16) case final v?) l.name: Color(0xFF000000 | v),
+      if (m.word(int.parse(l.id), 'fill').split(' ').first.split('@').first
+          case final f when f.length == 6)
+        if (int.tryParse(f, radix: 16) case final v?)
+          l.name: Color(0xFF000000 | v),
   };
 }

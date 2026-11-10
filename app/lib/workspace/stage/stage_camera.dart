@@ -31,7 +31,9 @@ class _CameraViewState extends State<CameraView> {
   /// nobody looks at costs no second image.
   void _look(Duration _) {
     if (!mounted) return;
-    final m = WorkspaceScope.read(context).inside, seen = context.findAncestorWidgetOfExactType<Offstage>()?.offstage != true;
+    final m = WorkspaceScope.read(context).inside,
+        seen =
+            context.findAncestorWidgetOfExactType<Offstage>()?.offstage != true;
     if (_told != (m, seen)) {
       // A newly opened document starts with the tab not announced.
       _told = (m, seen);
@@ -48,7 +50,10 @@ class _CameraViewState extends State<CameraView> {
 
   @override
   Widget build(BuildContext context) {
-    final id = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.stage}).stageTexture;
+    final id = WorkspaceScope.of(context, {
+      WorkspaceAspect.document,
+      WorkspaceAspect.stage,
+    }).stageTexture;
     return ColoredBox(
       color: Grey.g10,
       child: id == null
@@ -56,7 +61,10 @@ class _CameraViewState extends State<CameraView> {
           : Center(
               child: AspectRatio(
                 aspectRatio: ArtGeometry.comp.aspectRatio,
-                child: Texture(textureId: id, filterQuality: FilterQuality.medium),
+                child: Texture(
+                  textureId: id,
+                  filterQuality: FilterQuality.medium,
+                ),
               ),
             ),
     );

@@ -7,7 +7,8 @@ import 'package:flutter/foundation.dart' show ValueNotifier;
 ///
 /// The string names the request and the int counts requests so that repeating one still notifies listeners.
 final timelineRequest = ValueNotifier<(String, int)>(('', 0));
-void requestTimeline(String what) => timelineRequest.value = (what, timelineRequest.value.$2 + 1);
+void requestTimeline(String what) =>
+    timelineRequest.value = (what, timelineRequest.value.$2 + 1);
 
 /// Asks the selected layer's row to start renaming (Live 42.5 and 42.19: Cmd+R renames).
 final renameRequested = ValueNotifier<int>(0);

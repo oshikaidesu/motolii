@@ -19,7 +19,12 @@ extension StageViewDrag on StageViewState {
   /// The axis-aligned rectangle that contains the corners of [b].
   Rect _bounds(ArtBox b) {
     final p = b.corners;
-    return p.skip(1).fold(Rect.fromPoints(p[0], p[0]), (r, q) => r.expandToInclude(Rect.fromPoints(q, q)));
+    return p
+        .skip(1)
+        .fold(
+          Rect.fromPoints(p[0], p[0]),
+          (r, q) => r.expandToInclude(Rect.fromPoints(q, q)),
+        );
   }
 
   /// Collects the lines that dragging layer [id] snaps to: the canvas, the guides and the other layers' bounds.
@@ -29,14 +34,19 @@ extension StageViewDrag on StageViewState {
     final held = boxes[id];
     if (!widget.snap || held == null || m == null) return snapTo = null;
     int top(int t) {
-      for (var p = (m.value(t, 'parent', 0) ?? 0).round(), n = 0; p > 0 && n < 64; p = (m.value(t, 'parent', 0) ?? 0).round(), n++) {
+      for (
+        var p = (m.value(t, 'parent', 0) ?? 0).round(), n = 0;
+        p > 0 && n < 64;
+        p = (m.value(t, 'parent', 0) ?? 0).round(), n++
+      ) {
         t = p;
       }
       return t;
     }
 
     final mine = top(int.parse(id)), c = ArtGeometry.comp;
-    final xs = <(double, double)>[(0, c.width)], ys = <(double, double)>[(0, c.height)];
+    final xs = <(double, double)>[(0, c.width)],
+        ys = <(double, double)>[(0, c.height)];
     for (final g in widget.scene.guidesX) {
       xs.add((g, g));
     }
@@ -57,21 +67,33 @@ extension StageViewDrag on StageViewState {
   Offset snapped(Offset by, double s) {
     final to = snapTo;
     if (to == null) return by;
-    (double, double?) one(double lo, double size, double d, List<(double, double)> lines) {
+    (double, double?) one(
+      double lo,
+      double size,
+      double d,
+      List<(double, double)> lines,
+    ) {
       (double, double)? best;
       for (final (a, b) in lines) {
         for (final line in [a, (a + b) / 2, b]) {
           for (final mine in [lo + d, lo + d + size / 2, lo + d + size]) {
             final diff = line - mine;
-            if (diff.abs() <= 6 / s && (best == null || diff.abs() < best.$1.abs())) best = (diff, line);
+            if (diff.abs() <= 6 / s &&
+                (best == null || diff.abs() < best.$1.abs())) {
+              best = (diff, line);
+            }
           }
         }
       }
       return best == null ? (d, null) : (d + best.$1, best.$2);
     }
 
-    final (x, mx) = widget.axis == 2 ? (by.dx, null) : one(to.box.left, to.box.width, by.dx, to.xs);
-    final (y, my) = widget.axis == 1 ? (by.dy, null) : one(to.box.top, to.box.height, by.dy, to.ys);
+    final (x, mx) = widget.axis == 2
+        ? (by.dx, null)
+        : one(to.box.left, to.box.width, by.dx, to.xs);
+    final (y, my) = widget.axis == 1
+        ? (by.dy, null)
+        : one(to.box.top, to.box.height, by.dy, to.ys);
     met = (mx, my);
     return Offset(x, y);
   }
@@ -98,11 +120,22 @@ extension StageViewDrag on StageViewState {
     final p = pulling, ws = WorkspaceScope.read(context), m = ws.inside;
     pulling = null;
     if (p == null || m == null) return;
-    final over = p.axis == 'y' ? local.dy < StageTokens.ruler : local.dx < StageTokens.ruler, at = v.toComp(local);
+    final over = p.axis == 'y'
+            ? local.dy < StageTokens.ruler
+            : local.dx < StageTokens.ruler,
+        at = v.toComp(local);
     // Group the guide changes into one undo step.
     m.later('together', number: 1);
-    if (p.was != null) m.later('guide', name: p.axis, number: p.was!, word: 'off');
-    if (!over) m.later('guide', name: p.axis, number: ((p.axis == 'x' ? at.dx : at.dy)).roundToDouble());
+    if (p.was != null) {
+      m.later('guide', name: p.axis, number: p.was!, word: 'off');
+    }
+    if (!over) {
+      m.later(
+        'guide',
+        name: p.axis,
+        number: ((p.axis == 'x' ? at.dx : at.dy)).roundToDouble(),
+      );
+    }
     ws.after(m.later('together'));
   }
 
@@ -111,7 +144,9 @@ extension StageViewDrag on StageViewState {
   void dragStart(StageViewport v, Offset local) {
     if (widget.make == 'camera') {
       // As with After Effects' Unified Camera tool, dragging orbits the camera around its point of interest.
-      final ws = WorkspaceScope.read(context), m = ws.inside, cam = cameraOf(ws);
+      final ws = WorkspaceScope.read(context),
+          m = ws.inside,
+          cam = cameraOf(ws);
       if (m == null || cam == null) {
         ws.notice = 'No camera: add one from Create › Layers';
         return;
@@ -124,7 +159,10 @@ extension StageViewDrag on StageViewState {
       final at = ws.frame / WorkspaceController.fps;
       m.take(cam);
       if (ws.playing) ws.playing = false;
-      orbitFrom = (x: m.value(cam, 'rotate_x', at) ?? 0, y: m.value(cam, 'rotate_y', at) ?? 0);
+      orbitFrom = (
+        x: m.value(cam, 'rotate_x', at) ?? 0,
+        y: m.value(cam, 'rotate_y', at) ?? 0,
+      );
       drag = (from: local, moved: false, by: 'orbit');
       return;
     }
@@ -159,7 +197,10 @@ extension StageViewDrag on StageViewState {
         };
         grip = key;
       }
-      for (final p in [...m.points(picked), for (final (h, _) in m.handles(picked)) h]) {
+      for (final p in [
+        ...m.points(picked),
+        for (final (h, _) in m.handles(picked)) h,
+      ]) {
         // A path point (moved with its handles) or a bezier handle alone. The engine picks the nearest one.
         final d = (v.toScreen(p) - local).distance;
         if (d > near) continue;
@@ -171,10 +212,26 @@ extension StageViewDrag on StageViewState {
       // The zone is a square 2 × 1.62 × 4.5 px out from each corner, as in tldraw's rotate corners
       // (SelectionForegroundOverlayUtil.ts).
       for (var i = 0; by == null && handles.containsKey('turn') && i < 4; i++) {
-        final (c, a, b) = (handles['corner $i'], handles['corner ${(i + 1) % 4}'], handles['corner ${(i + 3) % 4}']);
-        if (c == null || a == null || b == null || (c - a).distance < 1 || (c - b).distance < 1) continue;
-        final p = local - c, u = (c - a) / (c - a).distance, w = (c - b) / (c - b).distance, s = p.dx * u.dx + p.dy * u.dy, r = p.dx * w.dx + p.dy * w.dy;
-        if (s >= 0 && r >= 0 && s <= 14.58 && r <= 14.58) (by, grip) = ('turn', 'turn');
+        final (c, a, b) = (
+          handles['corner $i'],
+          handles['corner ${(i + 1) % 4}'],
+          handles['corner ${(i + 3) % 4}'],
+        );
+        if (c == null ||
+            a == null ||
+            b == null ||
+            (c - a).distance < 1 ||
+            (c - b).distance < 1) {
+          continue;
+        }
+        final p = local - c,
+            u = (c - a) / (c - a).distance,
+            w = (c - b) / (c - b).distance,
+            s = p.dx * u.dx + p.dy * u.dy,
+            r = p.dx * w.dx + p.dy * w.dy;
+        if (s >= 0 && r >= 0 && s <= 14.58 && r <= 14.58) {
+          (by, grip) = ('turn', 'turn');
+        }
       }
       if (by != null) {
         m.take(picked);
@@ -190,9 +247,12 @@ extension StageViewDrag on StageViewState {
     if (m != null && gizmoDragStart(v, local, inside: false)) return;
     // Guides come after the handles, which lie over everything else.
     if (_pull(v, local)) return;
-    final id = m == null ? null : hitLocal(v, local), t = int.tryParse(id ?? '');
+    final id = m == null ? null : hitLocal(v, local),
+        t = int.tryParse(id ?? '');
     // Layers are tested first, then the camera frames they lie in.
-    if (m != null && t == null && gizmoDragStart(v, local, inside: true)) return;
+    if (m != null && t == null && gizmoDragStart(v, local, inside: true)) {
+      return;
+    }
     if (m != null && t == null) {
       // Nothing under the pointer: draw a lasso.
       ws.select(null);
@@ -210,7 +270,10 @@ extension StageViewDrag on StageViewState {
 
   /// Ends the current drag. With [keep] false, or when nothing moved, the engine discards the change.
   void dragEnd({bool keep = true}) {
-    final h = drag, ws = WorkspaceScope.read(context), m = ws.inside, free = h?.by == 'orbit' && ws.freeEye;
+    final h = drag,
+        ws = WorkspaceScope.read(context),
+        m = ws.inside,
+        free = h?.by == 'orbit' && ws.freeEye;
     drag = null;
     orbitFrom = null;
     lensFrom = null;
@@ -224,15 +287,19 @@ extension StageViewDrag on StageViewState {
 
   /// The id of the selected layer's parent, or null if it has none.
   String? parentOf() {
-    final m = WorkspaceScope.read(context).inside, t = int.tryParse(widget.selected ?? '');
-    final p = m == null || t == null ? 0 : (m.value(t, 'parent', 0) ?? 0).round();
+    final m = WorkspaceScope.read(context).inside,
+        t = int.tryParse(widget.selected ?? '');
+    final p = m == null || t == null
+        ? 0
+        : (m.value(t, 'parent', 0) ?? 0).round();
     return p > 0 ? '$p' : null;
   }
 
   /// The readout for the value a drag is changing, as the stage shows it now: position, size, rotation or anchor point.
   /// [by] is the drag kind. Distances are in canvas pixels and angles in degrees, clockwise as seen.
   String? heldSays(String? by) {
-    final m = WorkspaceScope.read(context).inside, t = int.tryParse(widget.selected ?? '');
+    final m = WorkspaceScope.read(context).inside,
+        t = int.tryParse(widget.selected ?? '');
     final f = m == null || t == null ? null : m.bounds(t);
     if (f == null) return null;
     return switch (by) {

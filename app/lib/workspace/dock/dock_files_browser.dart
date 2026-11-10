@@ -30,11 +30,16 @@ class MediaShelf extends StatelessWidget {
   final ShelfContext c;
 
   @override
-  Widget build(BuildContext context) => ValueListenableBuilder<int>(valueListenable: dockRead, builder: (context, _, _) => _shelf(context));
+  Widget build(BuildContext context) => ValueListenableBuilder<int>(
+    valueListenable: dockRead,
+    builder: (context, _, _) => _shelf(context),
+  );
 
   Widget _shelf(BuildContext context) {
     final at = c.mem.folder;
-    if (at != 'Project' && !at.startsWith('/')) c.mem.folder = _rootsOf(c).first.id;
+    if (at != 'Project' && !at.startsWith('/')) {
+      c.mem.folder = _rootsOf(c).first.id;
+    }
     return LayoutBuilder(
       builder: (context, box) {
         if (switch (c.mem.treeSide) {
@@ -88,7 +93,10 @@ List<FileNode> _rootsOf(ShelfContext c) {
       'Project',
       AppGlyphs.folder,
       kids: [
-        for (final d in {?c.ws.documentFolder, for (final f in files) dirname(f)})
+        for (final d in {
+          ?c.ws.documentFolder,
+          for (final f in files) dirname(f),
+        })
           FileNode(d, basename(d), AppGlyphs.folder), // The project's own folder comes first: a new project is one step from what lies beside it.
         for (final f in files)
           if (glyphOf(f) case final g?) FileNode(f, basename(f), g),
@@ -104,13 +112,18 @@ List<FileNode> folderPathOf(ShelfContext c, String id) {
   if (!id.startsWith('/')) return [roots.first];
   final out = <FileNode>[];
   for (var at = id; ; at = dirname(at)) {
-    if (at == _home || at == '/') return out..insert(0, FileNode(at, at == _home ? 'Home' : '/', AppGlyphs.folder));
+    if (at == _home || at == '/') {
+      return out
+        ..insert(0, FileNode(at, at == _home ? 'Home' : '/', AppGlyphs.folder));
+    }
     out.insert(0, FileNode(at, basename(at), AppGlyphs.folder));
   }
 }
 
 void _go(ShelfContext c, String id) => c.set(() {
-  if (id.startsWith('/')) readFolder(id); // A folder on disk is read again each time it is opened.
+  if (id.startsWith('/')) {
+    readFolder(id); // A folder on disk is read again each time it is opened.
+  }
   c.mem.folder = id;
   // Only that folder opens: the same folder is listed under more than one location,
   // and opening every location above it would move the rows under the pointer.
@@ -121,8 +134,12 @@ void openNode(FileNode n, ShelfContext c) {
   if (n.folder) return _go(c, n.id);
   if (DockHover.cmdAtPress && kindOfFile(n.id).isNotEmpty) {
     // Cmd adds or removes one file from the selection, as in Finder.
-    if (filesPicked.isEmpty && c.sel != null && kindOfFile(c.sel!).isNotEmpty) filesPicked.add(c.sel!);
-    filesPicked.contains(n.id) ? filesPicked.remove(n.id) : filesPicked.add(n.id);
+    if (filesPicked.isEmpty && c.sel != null && kindOfFile(c.sel!).isNotEmpty) {
+      filesPicked.add(c.sel!);
+    }
+    filesPicked.contains(n.id)
+        ? filesPicked.remove(n.id)
+        : filesPicked.add(n.id);
   } else {
     filesPicked.clear();
   }
@@ -136,8 +153,12 @@ class _Tree extends StatelessWidget {
   Widget build(BuildContext context) {
     final rows = <Widget>[];
     void walk(FileNode n, int depth) {
-      final open = c.mem.open.contains(n.id), subs = open || n.listed ? n.kids.where((k) => k.folder).toList() : const <FileNode>[];
-      final hasSubs = !n.listed || subs.isNotEmpty, files = n.listed ? n.kids.where((k) => !k.folder).length : 0;
+      final open = c.mem.open.contains(n.id),
+          subs = open || n.listed
+              ? n.kids.where((k) => k.folder).toList()
+              : const <FileNode>[];
+      final hasSubs = !n.listed || subs.isNotEmpty,
+          files = n.listed ? n.kids.where((k) => !k.folder).length : 0;
       rows.add(
         dockFolderRow(
           key: ValueKey('browser:folder:${n.id}'),
@@ -151,7 +172,12 @@ class _Tree extends StatelessWidget {
           onToggle: hasSubs ? () => c.toggle(c.mem.open, n.id) : null,
           count: files > 0 ? files : null,
           onTap: () => _go(c, n.id),
-          name: (s) => Text(n.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: s),
+          name: (s) => Text(
+            n.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: s,
+          ),
         ),
       );
       if (open) {
@@ -189,7 +215,12 @@ class FolderCrumbs extends StatelessWidget {
       children: [
         if (searching)
           Expanded(
-            child: Text('Search in ${path.first.name}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.micro(Grey.g76)),
+            child: Text(
+              'Search in ${path.first.name}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyles.micro(Grey.g76),
+            ),
           )
         else
           Expanded(
@@ -199,7 +230,11 @@ class FolderCrumbs extends StatelessWidget {
                   if (i > 0)
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: Shape.s(5)),
-                      child: Glyph(AppGlyphs.chevron, size: Shape.z(6), color: Grey.g56),
+                      child: Glyph(
+                        AppGlyphs.chevron,
+                        size: Shape.z(6),
+                        color: Grey.g56,
+                      ),
                     ),
                   Flexible(
                     child: Pressable(
@@ -210,7 +245,14 @@ class FolderCrumbs extends StatelessWidget {
                         n.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyles.micro(n == path.last ? Grey.g95 : Grey.g63).copyWith(fontWeight: n == path.last ? FontWeight.w700 : FontWeight.w500),
+                        style:
+                            TextStyles.micro(
+                              n == path.last ? Grey.g95 : Grey.g63,
+                            ).copyWith(
+                              fontWeight: n == path.last
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                            ),
                       ),
                     ),
                   ),

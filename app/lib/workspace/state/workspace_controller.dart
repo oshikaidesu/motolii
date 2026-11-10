@@ -23,14 +23,17 @@ import 'package:motolii/workspace/state/workspace_aspect.dart';
 
 /// Whether layer [t] is a sound: a video layer whose file has no image, hidden and only heard (see doc_add).
 /// Like Alight Motion's audio layer (docs/design/alight_motion_ui.md).
-bool isSoundLayer(Motolii m, int t) => m.word(t, 'kind') == 'film' && m.kindOf(m.word(t, 'file')) == 'sound';
+bool isSoundLayer(Motolii m, int t) =>
+    m.word(t, 'kind') == 'film' && m.kindOf(m.word(t, 'file')) == 'sound';
 
 /// The window's state: the document's layers as rows (read from the engine), the selection, the playhead and the view.
 /// Every panel listens to this and nothing else, and never keeps a copy of it.
 /// Changes notify once per user action. Nothing ticks while idle; the playhead advances only while [playing].
 class WorkspaceController extends ChangeNotifier {
   /// One counter per aspect, so a listener of one aspect never hears the others.
-  late final on = {for (final a in WorkspaceAspect.values) a: ValueNotifier<int>(0)};
+  late final on = {
+    for (final a in WorkspaceAspect.values) a: ValueNotifier<int>(0),
+  };
   void _tell(WorkspaceAspect a) {
     if (a == WorkspaceAspect.picked || a == WorkspaceAspect.document) _watch();
     on[a]!.value++;
@@ -62,9 +65,11 @@ class WorkspaceController extends ChangeNotifier {
     };
     fps = _fpsOf(inside); // The timeline counts frames at the document's rate, as the exported video does.
     comp = Size(inside.size.$1.toDouble(), inside.size.$2.toDouble());
-    moment.value = (inside.now * fps).round(); // The playhead starts at the engine's time.
+    moment.value = (inside.now * fps)
+        .round(); // The playhead starts at the engine's time.
     reread();
-    final kept = inside.settings; // Choices saved with the document: its inks and fonts.
+    final kept =
+        inside.settings; // Choices saved with the document: its inks and fonts.
     _ink = kept['ink'] ?? '';
     _edge = kept['edge'] ?? '';
     _inkBlend = kept['ink_blend'] ?? '';
@@ -138,14 +143,19 @@ class WorkspaceController extends ChangeNotifier {
   /// Like [rev] but without drags. Things built from the document's structure, such as the cards, rebuild when it changes.
   int reads = 0;
 
-  static T timed<T>(String name, T Function() does) => Timeline.timeSync(name, does);
+  static T timed<T>(String name, T Function() does) =>
+      Timeline.timeSync(name, does);
 
   // A layer that lasts forever (negative [lasts]) runs to the document's end.
-  static int _outF(int from, double lasts) => lasts < 0 ? duration : (from + (lasts * fps).round()).clamp(from + 1, duration);
+  static int _outF(int from, double lasts) => lasts < 0
+      ? duration
+      : (from + (lasts * fps).round()).clamp(from + 1, duration);
 
   /// Reads layer [id]'s bar from the engine again, for example during a drag, so the drawn bar matches the engine.
   void respan(String id) {
-    final m = _inside, l = layers.where((l) => l.id == id).firstOrNull, t = int.tryParse(id);
+    final m = _inside,
+        l = layers.where((l) => l.id == id).firstOrNull,
+        t = int.tryParse(id);
     if (m == null || l == null || t == null) return;
     l.inF = ((m.value(t, 'start', 0) ?? 0) * fps).round();
     l.outF = _outF(l.inF, m.lasts(t));
@@ -180,12 +190,18 @@ class WorkspaceController extends ChangeNotifier {
 
   /// The document's tempo in beats per minute (0 for none), and its beat grid.
   double get bpm => _inside?.value(0, 'bpm', 0) ?? 0;
-  Beats? get beats => bpm > 0 ? Beats((_inside?.value(0, 'bpm_from', 0) ?? 0) * WorkspaceController.fps, 60 / bpm * WorkspaceController.fps) : null;
+  Beats? get beats => bpm > 0
+      ? Beats(
+          (_inside?.value(0, 'bpm_from', 0) ?? 0) * WorkspaceController.fps,
+          60 / bpm * WorkspaceController.fps,
+        )
+      : null;
 
-  static int _fpsOf(Motolii m) => switch ((m.value(0, 'frame_rate', 0) ?? 0).round()) {
-    > 0 && final r => r,
-    _ => m.rate,
-  };
+  static int _fpsOf(Motolii m) =>
+      switch ((m.value(0, 'frame_rate', 0) ?? 0).round()) {
+        > 0 && final r => r,
+        _ => m.rate,
+      };
 
   /// Reads the document again after any change, so the panels list what the document holds.
   void reread() => Timeline.timeSync('ws reread', _reread);
@@ -203,24 +219,38 @@ class WorkspaceController extends ChangeNotifier {
     }
     rev++;
     reads++;
-    duration = Timeline.timeSync('MARK seconds', () => (m.seconds * fps).round().clamp(1, 1 << 20));
+    duration = Timeline.timeSync(
+      'MARK seconds',
+      () => (m.seconds * fps).round().clamp(1, 1 << 20),
+    );
     chosenLabelColors
       ..clear()
       ..addAll({
         for (final t in m.layers)
-          if (m.words(t, 'label').indexOf(m.word(t, 'label')) case final i when i > 0) '$t': i - 1,
+          if (m.words(t, 'label').indexOf(m.word(t, 'label')) case final i
+              when i > 0)
+            '$t': i - 1,
       });
     final tl = TimelineTask()..start('MARK layers');
-    final holding = {for (final t in m.layers) (m.value(t, 'parent', 0) ?? 0).round()}; // The ids of layers that are parents.
+    final holding = {
+      for (final t in m.layers) (m.value(t, 'parent', 0) ?? 0).round(),
+    }; // The ids of layers that are parents.
     layers
       ..clear()
       ..addAll([
-        for (final t in m.layers.reversed) // The topmost layer comes first, as in the sample.
+        for (final t
+            in m
+                .layers
+                .reversed) // The topmost layer comes first, as in the sample.
           () {
-            final kind = m.word(t, 'kind'), from = ((m.value(t, 'start', 0) ?? 0) * fps).round(), lasts = m.lasts(t);
+            final kind = m.word(t, 'kind'),
+                from = ((m.value(t, 'start', 0) ?? 0) * fps).round(),
+                lasts = m.lasts(t);
             final name = m.word(t, 'name');
             // A keyframe on any animatable property shows as a keyframe on the bar. The engine says which properties those are.
-            final keys = <int>{for (final s in m.layerKeyTimes(t)) (s * fps).round()}.toList()..sort();
+            final keys = <int>{
+              for (final s in m.layerKeyTimes(t)) (s * fps).round(),
+            }.toList()..sort();
             return Layer(
               '$t',
               name,
@@ -229,7 +259,9 @@ class WorkspaceController extends ChangeNotifier {
                 'camera' => LayerKind.camera,
                 'film' when isSoundLayer(m, t) => LayerKind.audio,
                 'film' || 'picture' => LayerKind.image,
-                'shape' when m.word(t, 'shape') == 'null' && holding.contains(t) => LayerKind.group,
+                'shape'
+                    when m.word(t, 'shape') == 'null' && holding.contains(t) =>
+                  LayerKind.group,
                 _ => LayerKind.shape,
               },
               from,
@@ -239,12 +271,22 @@ class WorkspaceController extends ChangeNotifier {
                 > 0 && final p => '$p',
                 _ => null,
               },
-              lined: (kind == 'picture' || kind == 'solid') && m.values(t).any((n) => n.startsWith('js_line_')),
+              lined:
+                  (kind == 'picture' || kind == 'solid') &&
+                  m.values(t).any((n) => n.startsWith('js_line_')),
               hidden: (m.value(t, 'visible', 0) ?? 1) < .5,
               solo: (m.value(t, 'solo', 0) ?? 0) > .5,
               locked: (m.value(t, 'lock', 0) ?? 0) > .5,
               clipped: (m.value(t, 'clip', 0) ?? 0) > .5,
-              stretches: [for (final (a, b, way) in m.layerStretches(t)) (from: (a * fps).round(), to: (b * fps).round(), way: way, shape: easeCurve(way, m))],
+              stretches: [
+                for (final (a, b, way) in m.layerStretches(t))
+                  (
+                    from: (a * fps).round(),
+                    to: (b * fps).round(),
+                    way: way,
+                    shape: easeCurve(way, m),
+                  ),
+              ],
             );
           }(),
       ]);
@@ -253,7 +295,9 @@ class WorkspaceController extends ChangeNotifier {
       _sel = layers.firstOrNull?.id;
     }
     // A selected keyframe stays selected while it exists; a selected stretch moves to that property's next keyframe.
-    _keys.removeWhere((k) => !layers.any((l) => l.id == k.layer && l.keys.contains(k.frame)));
+    _keys.removeWhere(
+      (k) => !layers.any((l) => l.id == k.layer && l.keys.contains(k.frame)),
+    );
     if (_stretch case final s?) _stretch = _stretchOf(s.layer, s.name, s.from);
     tl.finish();
     _tell(WorkspaceAspect.document);
@@ -280,7 +324,8 @@ class WorkspaceController extends ChangeNotifier {
       for (final l in layers)
         if (l.kind == LayerKind.camera) ?int.tryParse(l.id),
       for (final l in layers)
-        if (int.tryParse(l.id) case final t? when m.word(t, 'kind') == 'behaviour')
+        if (int.tryParse(l.id) case final t?
+            when m.word(t, 'kind') == 'behaviour')
           t, // Relations: the Relations tool panel draws each from its parameters at the current time.
       if (sel != null && m.word(sel, 'kind') == 'behaviour')
         for (final w in m.word(sel, 'members').split(' ')) ?int.tryParse(w),
@@ -354,9 +399,22 @@ class WorkspaceController extends ChangeNotifier {
   }
 
   StretchPicked? _stretchOf(String layer, String name, int from) {
-    final t = int.tryParse(layer), at = t == null ? const <double>[] : _inside?.keyTimes(t, name) ?? const <double>[];
-    final i = at.indexWhere((s) => (s * WorkspaceController.fps).round() == from);
-    return i < 0 || i + 1 >= at.length ? null : (layer: layer, name: name, at: at[i], from: from, to: (at[i + 1] * WorkspaceController.fps).round());
+    final t = int.tryParse(layer),
+        at = t == null
+            ? const <double>[]
+            : _inside?.keyTimes(t, name) ?? const <double>[];
+    final i = at.indexWhere(
+      (s) => (s * WorkspaceController.fps).round() == from,
+    );
+    return i < 0 || i + 1 >= at.length
+        ? null
+        : (
+            layer: layer,
+            name: name,
+            at: at[i],
+            from: from,
+            to: (at[i + 1] * WorkspaceController.fps).round(),
+          );
   }
 
   /// Selects the stretch of property [name] on [layer] that starts at frame [from], and shows the Ease panel.
@@ -377,7 +435,9 @@ class WorkspaceController extends ChangeNotifier {
     final v = f.clamp(0, duration);
     if (v == moment.value) return;
     moment.value = v;
-    if (!_playing) _inside?.at(v / fps); // While stopped, the preview jumps to the new time.
+    if (!_playing) {
+      _inside?.at(v / fps); // While stopped, the preview jumps to the new time.
+    }
   }
 
   bool _playing = false;
@@ -402,7 +462,9 @@ class WorkspaceController extends ChangeNotifier {
   }
 
   /// Whether the preview uses the working camera, not the document's camera layer (AbsentMotion's cameraMode off).
-  bool get freeEye => !viewOf('stage.camera', false) && layers.any((l) => l.kind == LayerKind.camera);
+  bool get freeEye =>
+      !viewOf('stage.camera', false) &&
+      layers.any((l) => l.kind == LayerKind.camera);
 
   /// The working camera's position as an orbit around the world's centre: yaw, pitch and distance.
   List<double> get eye => viewOf('stage.eye', const [0.0, 0.0, 1.0]);
@@ -480,9 +542,11 @@ class WorkspaceController extends ChangeNotifier {
   // Which layers show their keyframed properties in lanes under their rows. The user opens them (After Effects' twirl,
   // Ableton's unfolded track). With Animate on, every layer is open and only the ones the user shut are tracked.
   final _lanesOpen = <String>{}, _lanesShut = <String>{};
-  bool lanesOpen(String id) => animating ? !_lanesShut.contains(id) : _lanesOpen.contains(id);
+  bool lanesOpen(String id) =>
+      animating ? !_lanesShut.contains(id) : _lanesOpen.contains(id);
   // Whether the user opened the lanes of what a relation aims at. Animate opens keyframe lanes only.
-  bool aimsOpen(String id) => _lanesOpen.contains(id) && !_lanesShut.contains(id);
+  bool aimsOpen(String id) =>
+      _lanesOpen.contains(id) && !_lanesShut.contains(id);
   void twirl(Iterable<String> ids) {
     final open = ids.any(lanesOpen), s = animating ? _lanesShut : _lanesOpen;
     open == animating ? s.addAll(ids) : s.removeAll(ids);
@@ -530,7 +594,9 @@ class WorkspaceController extends ChangeNotifier {
   }
 
   /// How many groups contain layer [l]. Its row is indented by that many levels.
-  int depth(Layer l) => _over(l, {for (final x in layers) x.id: x}).where((p) => p.kind == LayerKind.group).length;
+  int depth(Layer l) => _over(l, {
+    for (final x in layers) x.id: x,
+  }).where((p) => p.kind == LayerKind.group).length;
 
   /// What the undo steps changed since the last read (null when unknown, as after a drag).
   /// A panel showing only some properties rebuilds only when they are among these.
@@ -544,7 +610,11 @@ class WorkspaceController extends ChangeNotifier {
 
   /// Waits without blocking for a request made with [Motolii.later], then reads the document again and calls
   /// [then] with whether it succeeded and why not. [got] receives the answer, such as the id of a new layer.
-  void after(int ticket, [void Function(bool done, String why)? then, void Function(int answer)? got]) {
+  void after(
+    int ticket, [
+    void Function(bool done, String why)? then,
+    void Function(int answer)? got,
+  ]) {
     final m = _inside;
     if (m == null) return;
     _afters++;
@@ -557,7 +627,9 @@ class WorkspaceController extends ChangeNotifier {
   }
 
   // Splits an effect list the way the engine reads it: a path, spaces included, up to its extension (see script_files in script.h).
-  static final _files = RegExp(r'/.*?\.(?:(?:wgsl|fs|js|mjs|json|am)(?= |$)|(?:anm2|obj2)[^ ]*)|[^ ]+');
+  static final _files = RegExp(
+    r'/.*?\.(?:(?:wgsl|fs|js|mjs|json|am)(?= |$)|(?:anm2|obj2)[^ ]*)|[^ ]+',
+  );
 
   static List<String> fxFiles(String fx) => [
     for (final f in _files.allMatches(fx).map((m) => m[0]!))
@@ -575,23 +647,47 @@ class WorkspaceController extends ChangeNotifier {
 }
 
 /// The font a new text layer uses: one that every machine of the platform has. The Create shelf and the preview's text tool share it.
-final defaultTextFont = Platform.isWindows ? 'C:/Windows/Fonts/arial.ttf' : '/System/Library/Fonts/Supplemental/Arial Unicode.ttf';
+final defaultTextFont = Platform.isWindows
+    ? 'C:/Windows/Fonts/arial.ttf'
+    : '/System/Library/Fonts/Supplemental/Arial Unicode.ttf';
 
 /// Applies the chosen inks to the layer just added (layer -1), wherever it was added from, including the Fonts and Create shelves.
 /// A text or a flat shape takes all the inks, because the preview draws only those. A line takes its colour only.
 void applyChosenInks(WorkspaceController ws, String kind, String shape) {
   final m = ws.inside;
-  if (m == null || !(kind == 'text' || kind == 'shape' && shape != 'null')) return;
+  if (m == null || !(kind == 'text' || kind == 'shape' && shape != 'null')) {
+    return;
+  }
   final line = shape == 'line';
   if (ws.ink.isNotEmpty) m.later('say', layer: -1, name: 'fill', word: ws.ink);
   // With no ink chosen, a shape gets a random colour as in Alight Motion (AbsentMotion's addShape, randomColor): any hue,
   // saturation 0.3 to 0.8, value 0.55 to 1. It is written to the document so the Inspector and Colors shelf show it.
   if (ws.ink.isEmpty && kind == 'shape') {
-    final r = math.Random(), c = HSVColor.fromAHSV(1, r.nextDouble() * 360, .3 + r.nextDouble() * .5, .55 + r.nextDouble() * .45).toColor();
-    m.later('say', layer: -1, name: 'fill', word: [c.r, c.g, c.b].map((v) => (v * 255).round().toRadixString(16).padLeft(2, '0')).join());
+    final r = math.Random(),
+        c = HSVColor.fromAHSV(
+          1,
+          r.nextDouble() * 360,
+          .3 + r.nextDouble() * .5,
+          .55 + r.nextDouble() * .45,
+        ).toColor();
+    m.later(
+      'say',
+      layer: -1,
+      name: 'fill',
+      word: [
+        c.r,
+        c.g,
+        c.b,
+      ].map((v) => (v * 255).round().toRadixString(16).padLeft(2, '0')).join(),
+    );
   }
   if (ws.ink.contains(' ') && ws.inkBlend.isNotEmpty && !line) {
-    m.later('say', layer: -1, name: 'gradient_blend', word: ws.inkBlend); // A gradient ink is mixed as it was chosen.
+    m.later(
+      'say',
+      layer: -1,
+      name: 'gradient_blend',
+      word: ws.inkBlend,
+    ); // A gradient ink is mixed as it was chosen.
   }
   if (ws.edge.isNotEmpty && !line) {
     m

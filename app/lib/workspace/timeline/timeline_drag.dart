@@ -29,20 +29,42 @@ extension TimelinePaneDrag on TimelinePaneState {
   // - A second click in the same place adds a keyframe there, as a double-click off the line does in Live.
   void laneTap(Offset p) {
     final ws = workspace!, m = ws.inside, r = rowAt(p.dy), v = view;
-    if (m == null || r == null || r.value == null || isLocked(ws, r.l.id)) return;
-    final t = int.parse(r.l.id), name = r.value!, row = laneRow(ws, r.l, name), pts = row.lane ?? const [];
+    if (m == null || r == null || r.value == null || isLocked(ws, r.l.id)) {
+      return;
+    }
+    final t = int.parse(r.l.id),
+        name = r.value!,
+        row = laneRow(ws, r.l, name),
+        pts = row.lane ?? const [];
     if (pts.isEmpty) return;
     for (final k in m.keyTimes(t, name)) {
-      if ((v.x((k * WorkspaceController.fps).round()) - p.dx).abs() <= TimelineMetrics.keyPicked + 2) {
+      if ((v.x((k * WorkspaceController.fps).round()) - p.dx).abs() <=
+          TimelineMetrics.keyPicked + 2) {
         return ws.after(m.later('unkey', layer: t, name: name, number: k));
       }
     }
-    final now = DateTime.now(), twice = lanePressed != null && now.difference(lanePressed!) < kDoubleTapTimeout && (p - laneAt).distance < kDoubleTapSlop;
+    final now = DateTime.now(),
+        twice =
+            lanePressed != null &&
+            now.difference(lanePressed!) < kDoubleTapTimeout &&
+            (p - laneAt).distance < kDoubleTapSlop;
     lanePressed = twice ? null : now;
     laneAt = p;
     final f = v.frameAt(p.dx);
-    if (twice) return ws.after(m.later('key_here', layer: t, name: name, number: f.round().clamp(0, WorkspaceController.duration) / WorkspaceController.fps));
-    final from = pts.where((q) => q.$1 <= f).lastOrNull?.$1, inside = from != null && pts.any((q) => q.$1 > f);
+    if (twice) {
+      return ws.after(
+        m.later(
+          'key_here',
+          layer: t,
+          name: name,
+          number:
+              f.round().clamp(0, WorkspaceController.duration) /
+              WorkspaceController.fps,
+        ),
+      );
+    }
+    final from = pts.where((q) => q.$1 <= f).lastOrNull?.$1,
+        inside = from != null && pts.any((q) => q.$1 > f);
     inside ? ws.pickStretch(r.l.id, name, from) : ws.clearKeys();
   }
 
@@ -59,7 +81,8 @@ extension TimelinePaneDrag on TimelinePaneState {
     if (r.value != null) return;
     final i = r.i, l = r.l;
     final cy = i * TimelineMetrics.row - vscroll + TimelineMetrics.row / 2;
-    if (!isLocked(ws, l.id) && (p.dy - cy).abs() <= TimelineMetrics.bar / 2 + 2) {
+    if (!isLocked(ws, l.id) &&
+        (p.dy - cy).abs() <= TimelineMetrics.bar / 2 + 2) {
       int? best;
       var bd = TimelineMetrics.keyPicked + 2;
       for (final k in l.keys) {
@@ -69,7 +92,12 @@ extension TimelinePaneDrag on TimelinePaneState {
           best = k;
         }
       }
-      if (best != null) return ws.pickKey((layer: l.id, frame: best), add: HardwareKeyboard.instance.isShiftPressed);
+      if (best != null) {
+        return ws.pickKey((
+          layer: l.id,
+          frame: best,
+        ), add: HardwareKeyboard.instance.isShiftPressed);
+      }
     }
     final f = v.frameAt(p.dx);
     if (f >= l.inF && f <= l.outF) {
@@ -91,15 +119,30 @@ extension TimelinePaneDrag on TimelinePaneState {
     if (r.value case final n?) {
       // On a lane, a click on a keyframe deletes it.
       final t = int.parse(l.id);
-      final at = ws.inside!.keyTimes(t, n), f = v.frameAt(p.dx) / WorkspaceController.fps;
-      return at.any((k) => (v.x((k * WorkspaceController.fps).round()) - p.dx).abs() <= TimelineMetrics.keyPicked + 2) ||
+      final at = ws.inside!.keyTimes(t, n),
+          f = v.frameAt(p.dx) / WorkspaceController.fps;
+      return at.any(
+                (k) =>
+                    (v.x((k * WorkspaceController.fps).round()) - p.dx).abs() <=
+                    TimelineMetrics.keyPicked + 2,
+              ) ||
               (at.isNotEmpty && f > at.first && f < at.last)
           ? SystemMouseCursors.click
           : SystemMouseCursors.precise;
     }
-    if (isLocked(ws, l.id) || p.dx < a - 6 || p.dx > b + 6) return _onPale(ws, l, p) ? SystemMouseCursors.grab : SystemMouseCursors.precise;
-    if (l.keys.any((k) => (v.x(k) - p.dx).abs() <= TimelineMetrics.keyPicked + 2)) return SystemMouseCursors.click;
-    return (p.dx - a).abs() <= 6 || (p.dx - b).abs() <= 6 ? SystemMouseCursors.resizeLeftRight : SystemMouseCursors.grab;
+    if (isLocked(ws, l.id) || p.dx < a - 6 || p.dx > b + 6) {
+      return _onPale(ws, l, p)
+          ? SystemMouseCursors.grab
+          : SystemMouseCursors.precise;
+    }
+    if (l.keys.any(
+      (k) => (v.x(k) - p.dx).abs() <= TimelineMetrics.keyPicked + 2,
+    )) {
+      return SystemMouseCursors.click;
+    }
+    return (p.dx - a).abs() <= 6 || (p.dx - b).abs() <= 6
+        ? SystemMouseCursors.resizeLeftRight
+        : SystemMouseCursors.grab;
   }
 
   bool grab(Offset p) {
@@ -113,7 +156,8 @@ extension TimelinePaneDrag on TimelinePaneState {
     if (isLocked(workspace!, l.id) || (off && !_onPale(ws, l, p))) return false;
     for (final k in l.keys) {
       if ((v.x(k) - p.dx).abs() > TimelineMetrics.keyPicked + 2) continue;
-      final held = (layer: l.id, frame: k), all = ws.keys.contains(held) ? ws.keys.toList() : [held];
+      final held = (layer: l.id, frame: k),
+          all = ws.keys.contains(held) ? ws.keys.toList() : [held];
       if (!ws.keys.contains(held)) ws.pickKey(held);
       if (ws.playing) ws.playing = false;
       slide = (keys: all, grab: k, by: 0);

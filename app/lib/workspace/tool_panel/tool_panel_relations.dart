@@ -44,11 +44,16 @@ class _RelationsToolState extends State<RelationsTool> {
   Map<String, List<_Point3>> _stationsOf(WorkspaceController ws) {
     final m = ws.inside, r = int.tryParse(ws.selected ?? '');
     final at = (ws.rev, ws.selected);
-    if (_stations?.$1 == at || _stationsAsked == at || m == null) return _stations?.$2 ?? const {};
+    if (_stations?.$1 == at || _stationsAsked == at || m == null) {
+      return _stations?.$2 ?? const {};
+    }
     _stationsAsked = at;
-    final moments = r != null && m.word(r, 'kind') == 'behaviour' ? ({for (final n in m.moving(r)) ...m.keyTimes(r, n)}.toList()..sort()) : <double>[];
+    final moments = r != null && m.word(r, 'kind') == 'behaviour'
+        ? ({for (final n in m.moving(r)) ...m.keyTimes(r, n)}.toList()..sort())
+        : <double>[];
     final members = [
-      for (final s in r == null ? const <String>[] : m.word(r, 'members').split(' '))
+      for (final s
+          in r == null ? const <String>[] : m.word(r, 'members').split(' '))
         if (int.tryParse(s) case final t? when moments.length > 1) t,
     ];
     m
@@ -65,7 +70,10 @@ class _RelationsToolState extends State<RelationsTool> {
             () => _stations = (
               at,
               {
-                for (final t in members) '$t': [for (final _ in moments) (x: next(), y: next(), z: next())],
+                for (final t in members)
+                  '$t': [
+                    for (final _ in moments) (x: next(), y: next(), z: next()),
+                  ],
               },
             ),
           );
@@ -75,18 +83,31 @@ class _RelationsToolState extends State<RelationsTool> {
 
   Map<String, List<_Point3>> _pathsOf(WorkspaceController ws) {
     final m = ws.inside;
-    if (_paths?.$1 == ws.rev || _pathsAsked == ws.rev || m == null) return _paths?.$2 ?? const {};
+    if (_paths?.$1 == ws.rev || _pathsAsked == ws.rev || m == null) {
+      return _paths?.$2 ?? const {};
+    }
     final rev = _pathsAsked = ws.rev;
     const steps = 60;
     final things = [
       for (final l in ws.layers)
-        if (int.tryParse(l.id) case final t? when m.word(t, 'kind') != 'behaviour' && m.word(t, 'kind') != 'camera') t,
+        if (int.tryParse(l.id) case final t?
+            when m.word(t, 'kind') != 'behaviour' &&
+                m.word(t, 'kind') != 'camera')
+          t,
     ];
     m
         .shownAt([
           for (final t in things)
             for (var k = 0; k <= steps; k++)
-              for (final n in const ['x', 'y', 'z']) (t, n, k / steps * WorkspaceController.duration / WorkspaceController.fps),
+              for (final n in const ['x', 'y', 'z'])
+                (
+                  t,
+                  n,
+                  k /
+                      steps *
+                      WorkspaceController.duration /
+                      WorkspaceController.fps,
+                ),
         ])
         .then((v) {
           if (!mounted) return;
@@ -94,9 +115,20 @@ class _RelationsToolState extends State<RelationsTool> {
           double next() => v[i++] ?? 0;
           final out = <String, List<_Point3>>{};
           for (final t in things) {
-            final way = [for (var k = 0; k <= steps; k++) (x: next(), y: next(), z: next())];
+            final way = [
+              for (var k = 0; k <= steps; k++)
+                (x: next(), y: next(), z: next()),
+            ];
             // Keep only the layers that move.
-            if (way.any((p) => (p.x - way.first.x).abs() + (p.y - way.first.y).abs() + (p.z - way.first.z).abs() > 1e-4)) out['$t'] = way;
+            if (way.any(
+              (p) =>
+                  (p.x - way.first.x).abs() +
+                      (p.y - way.first.y).abs() +
+                      (p.z - way.first.z).abs() >
+                  1e-4,
+            )) {
+              out['$t'] = way;
+            }
           }
           setState(() => _paths = (rev, out));
         });
@@ -112,31 +144,52 @@ class _RelationsToolState extends State<RelationsTool> {
       WorkspaceScope.read(context).seen,
     ]),
     builder: (context, _) {
-      final ws = WorkspaceScope.read(context), world = _World.of(ws), together = relatableLayers(ws).length, many = together > 1;
+      final ws = WorkspaceScope.read(context),
+          world = _World.of(ws),
+          together = relatableLayers(ws).length,
+          many = together > 1;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ToolStrip(
-            left: [Chip(label: 'Relations · ${world.relations.length}', look: ChipLook.flat(WindowTokens.toneGroup))],
+            left: [
+              Chip(
+                label: 'Relations · ${world.relations.length}',
+                look: ChipLook.flat(WindowTokens.toneGroup),
+              ),
+            ],
           ),
           ColoredBox(
             // The row names what the tab is for in the words that do it, as the top of the preview does.
             // Blender's Constraints tab also holds its own Add menu.
             color: WindowTokens.card,
             child: Padding(
-              padding: EdgeInsets.fromLTRB(WindowTokens.inset, 0, WindowTokens.inset, Shape.s(5)),
+              padding: EdgeInsets.fromLTRB(
+                WindowTokens.inset,
+                0,
+                WindowTokens.inset,
+                Shape.s(5),
+              ),
               child: Wrap(
                 spacing: Shape.s(4),
                 runSpacing: Shape.s(4),
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Text(many ? '$together picked' : 'Pick two or more', style: TextStyles.micro(Grey.g63)),
+                  Text(
+                    many ? '$together picked' : 'Pick two or more',
+                    style: TextStyles.micro(Grey.g63),
+                  ),
                   for (final k in relationChoices(ws))
                     GestureDetector(
                       key: ValueKey('ws-tab-relate-$k'),
                       onTap: many ? () => makeRelation(ws, k) : null,
                       child: IntrinsicWidth(
-                        child: Chip(label: relationLabel(k), look: ChipLook.flat(many ? WindowTokens.accent : Grey.g38)),
+                        child: Chip(
+                          label: relationLabel(k),
+                          look: ChipLook.flat(
+                            many ? WindowTokens.accent : Grey.g38,
+                          ),
+                        ),
                       ),
                     ),
                 ],
@@ -149,17 +202,33 @@ class _RelationsToolState extends State<RelationsTool> {
               color: WindowTokens.card,
               child: LayoutBuilder(
                 builder: (context, box) {
-                  final view = _View(world, box.biggest, _yaw, _pitch, paths: _pathsOf(ws), zoom: _zoom);
+                  final view = _View(
+                    world,
+                    box.biggest,
+                    _yaw,
+                    _pitch,
+                    paths: _pathsOf(ws),
+                    zoom: _zoom,
+                  );
                   // Two fingers on a trackpad turn the view, as in Blender, through the drag handler below. A pinch zooms in.
                   return TwoFingerGestures(
-                    onWheel: (d) => setState(() => _zoom = (_zoom * math.exp(-d.dy / 300)).clamp(.3, 8.0)),
-                    onPinch: (by, _) => setState(() => _zoom = (_zoom * by).clamp(.3, 8.0)),
+                    onWheel: (d) => setState(
+                      () => _zoom = (_zoom * math.exp(-d.dy / 300)).clamp(
+                        .3,
+                        8.0,
+                      ),
+                    ),
+                    onPinch: (by, _) =>
+                        setState(() => _zoom = (_zoom * by).clamp(.3, 8.0)),
                     child: GestureDetector(
                       key: const ValueKey('ws-relations-map'),
                       behavior: HitTestBehavior.opaque,
                       onPanUpdate: (d) => setState(() {
                         _yaw += d.delta.dx * .01;
-                        _pitch = (_pitch - d.delta.dy * .01).clamp(-math.pi / 2, math.pi / 2);
+                        _pitch = (_pitch - d.delta.dy * .01).clamp(
+                          -math.pi / 2,
+                          math.pi / 2,
+                        );
                       }),
                       onTapUp: (d) {
                         if (view.axisAt(d.localPosition) case final a?) {
@@ -174,11 +243,15 @@ class _RelationsToolState extends State<RelationsTool> {
                             _pitch = pitch;
                           });
                         }
-                        if (view.hit(d.localPosition) case final id?) ws.select(id);
+                        if (view.hit(d.localPosition) case final id?) {
+                          ws.select(id);
+                        }
                       },
                       child: CustomPaint(
                         size: box.biggest,
-                        painter: _Map(view, ws.selected, {if (_pathsOf(ws)[ws.selected] case final w?) ws.selected!: w}, _stationsOf(ws)),
+                        painter: _Map(view, ws.selected, {
+                          ws.selected!: ?_pathsOf(ws)[ws.selected],
+                        }, _stationsOf(ws)),
                       ),
                     ),
                   );
@@ -213,7 +286,10 @@ class _World {
     final now = m.now, things = <String, (_Point3, Color, String)>{};
     _Point3? camera;
     // Prefer the position where the layer is shown, since a relation moves depth too.
-    double v(int t, String n) => (n == 'x' || n == 'y' || n == 'z' ? m.shows(t, n, now)?.$1 : null) ?? m.value(t, n, now) ?? 0;
+    double v(int t, String n) =>
+        (n == 'x' || n == 'y' || n == 'z' ? m.shows(t, n, now)?.$1 : null) ??
+        m.value(t, n, now) ??
+        0;
     final rels = <_Relation>[];
     for (final l in ws.layers) {
       final t = int.tryParse(l.id);
@@ -235,9 +311,21 @@ class _World {
         camera = at;
         continue;
       }
-      things[l.id] = (at, l.tone, l.name); // The label colour, the same as its row's.
+      things[l.id] = (
+        at,
+        l.tone,
+        l.name,
+      ); // The label colour, the same as its row's.
     }
-    return _World(things, camera, rels, Size(ArtGeometry.comp.width / 2 / m.point, ArtGeometry.comp.height / 2 / m.point));
+    return _World(
+      things,
+      camera,
+      rels,
+      Size(
+        ArtGeometry.comp.width / 2 / m.point,
+        ArtGeometry.comp.height / 2 / m.point,
+      ),
+    );
   }
 }
 
@@ -247,7 +335,11 @@ class _Relation {
     : radius = v(int.parse(id), 'radius'),
       gap = v(int.parse(id), 'gap'),
       tilt = v(int.parse(id), 'tilt') * math.pi / 180,
-      centre = (x: v(int.parse(id), 'centre_x'), y: v(int.parse(id), 'centre_y'), z: 0.0),
+      centre = (
+        x: v(int.parse(id), 'centre_x'),
+        y: v(int.parse(id), 'centre_y'),
+        z: 0.0,
+      ),
       leader = '${v(int.parse(id), 'leader').round()}';
   final String id, kind, leader;
   final List<String> members;
@@ -257,11 +349,17 @@ class _Relation {
 
 /// The world rotated and fitted to the map.
 class _View {
-  _View(this.world, this.size, double yaw, double pitch, {Map<String, List<_Point3>> paths = const {}, double zoom = 1})
-    : _cy = math.cos(yaw),
-      _sy = math.sin(yaw),
-      _cp = math.cos(pitch),
-      _sp = math.sin(pitch) {
+  _View(
+    this.world,
+    this.size,
+    double yaw,
+    double pitch, {
+    Map<String, List<_Point3>> paths = const {},
+    double zoom = 1,
+  }) : _cy = math.cos(yaw),
+       _sy = math.sin(yaw),
+       _cp = math.cos(pitch),
+       _sp = math.sin(pitch) {
     // Fit to the layers and their paths, not the camera's frame, so what moves fills the map. Scrolling zooms in.
     final all = [
       for (final (p, _, _) in world.things.values) _turn(p),
@@ -274,7 +372,8 @@ class _View {
       r = r.expandToInclude(Rect.fromCenter(center: p, width: 0, height: 0));
     }
     _fit = r.inflate(r.longestSide * .08 + .05);
-    _scale = math.min(size.width / _fit.width, size.height / _fit.height) * zoom;
+    _scale =
+        math.min(size.width / _fit.width, size.height / _fit.height) * zoom;
   }
   final _World world;
   final Size size;
@@ -283,7 +382,13 @@ class _View {
   late final double _scale;
 
   List<_Point3> get _frame => [
-    for (final (sx, sy) in const [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)]) (x: sx * world.half.width, y: sy * world.half.height, z: 0.0),
+    for (final (sx, sy) in const [
+      (-1.0, -1.0),
+      (1.0, -1.0),
+      (1.0, 1.0),
+      (-1.0, 1.0),
+    ])
+      (x: sx * world.half.width, y: sy * world.half.height, z: 0.0),
   ];
 
   Offset _turn(_Point3 p) {
@@ -294,13 +399,20 @@ class _View {
 
   Offset on(_Point3 p) {
     final q = _turn(p);
-    return Offset(size.width / 2 + (q.dx - _fit.center.dx) * _scale, size.height / 2 - (q.dy - _fit.center.dy) * _scale);
+    return Offset(
+      size.width / 2 + (q.dx - _fit.center.dx) * _scale,
+      size.height / 2 - (q.dy - _fit.center.dy) * _scale,
+    );
   }
 
   /// The axes gizmo in the corner, as in Blender: the end of each axis, rotated with the world (x red, y green, z blue).
   Offset get axisMiddle => Offset(size.width - 38, size.height - 38);
   Map<String, Offset> get axisEnds => {
-    for (final (n, p) in const [('x', (x: 1.0, y: 0.0, z: 0.0)), ('y', (x: 0.0, y: 1.0, z: 0.0)), ('z', (x: 0.0, y: 0.0, z: 1.0))])
+    for (final (n, p) in const [
+      ('x', (x: 1.0, y: 0.0, z: 0.0)),
+      ('y', (x: 0.0, y: 1.0, z: 0.0)),
+      ('z', (x: 0.0, y: 0.0, z: 1.0)),
+    ])
       n: axisMiddle + Offset(_turn(p).dx, -_turn(p).dy) * 20,
   };
   String? axisAt(Offset at) {
@@ -330,12 +442,18 @@ class _View {
   /// Points along a relation's shape, in the world.
   List<_Point3> shape(_Relation r) {
     final lead = world.things[r.leader]?.$1;
-    final c = (x: r.centre.x + (lead?.x ?? 0), y: r.centre.y + (lead?.y ?? 0), z: lead?.z ?? 0.0);
+    final c = (
+      x: r.centre.x + (lead?.x ?? 0),
+      y: r.centre.y + (lead?.y ?? 0),
+      z: lead?.z ?? 0.0,
+    );
     switch (r.kind) {
       case 'around' || 'push':
         final o = r.kind == 'push' ? lead : c;
         if (o == null) return const [];
-        final t = r.kind == 'push' ? 0.0 : r.tilt; // An around relation is tipped back by its tilt.
+        final t = r.kind == 'push'
+            ? 0.0
+            : r.tilt; // An around relation is tipped back by its tilt.
         return [
           for (var k = 0; k <= 48; k++)
             (
@@ -346,7 +464,10 @@ class _View {
         ];
       case 'row':
         final half = r.gap * (r.members.length - 1) / 2;
-        return [for (var k = 0; k <= 12; k++) (x: c.x - half + 2 * half * k / 12, y: c.y, z: c.z)];
+        return [
+          for (var k = 0; k <= 12; k++)
+            (x: c.x - half + 2 * half * k / 12, y: c.y, z: c.z),
+        ];
       default:
         // A follow has no shape of its own here; the painter draws its threads from the leader to each layer.
         return const [];
@@ -368,11 +489,17 @@ class _Map extends CustomPainter {
       ..strokeWidth = 1;
     // The camera's frame and where the camera stands.
     line.color = WindowTokens.toneCamera;
-    c.drawPath(Path()..addPolygon([for (final p in v._frame) v.on(p)], true), line);
-    if (v.world.camera case final cam?) c.drawCircle(v.on(cam), 5, Paint()..color = WindowTokens.toneCamera);
+    c.drawPath(
+      Path()..addPolygon([for (final p in v._frame) v.on(p)], true),
+      line,
+    );
+    if (v.world.camera case final cam?) {
+      c.drawCircle(v.on(cam), 5, Paint()..color = WindowTokens.toneCamera);
+    }
     // Each relation's shape and its threads to its layers, in its own colour.
     for (final r in v.world.relations) {
-      final hue = layerLabelColor(r.id), picked = r.id == selected; // The same label colour as its row.
+      final hue = layerLabelColor(r.id),
+          picked = r.id == selected; // The same label colour as its row.
       line
         ..color = hue.withValues(alpha: picked ? 1 : .7)
         ..strokeWidth = picked ? 2 : 1;
@@ -381,20 +508,28 @@ class _Map extends CustomPainter {
         // The shape is drawn as separate segments, so it reads as a relation and not a layer.
         // Each stretch takes the colour of the layer it carries, as the bar in its row does.
         if (r.members.isNotEmpty) {
-          line.color = layerLabelColor(r.members[(k * r.members.length / pts.length).floor().clamp(0, r.members.length - 1)])
-              .withValues(alpha: picked ? 1 : .8);
+          line.color = layerLabelColor(
+            r.members[(k * r.members.length / pts.length).floor().clamp(
+              0,
+              r.members.length - 1,
+            )],
+          ).withValues(alpha: picked ? 1 : .8);
         }
         c.drawLine(pts[k], pts[k + 1], line);
       }
       final lead = v.world.things[r.leader]?.$1;
       if (r.kind == 'follow' && lead != null) {
         for (final m in r.members) {
-          if (v.world.things[m]?.$1 case final p?) c.drawLine(v.on(lead), v.on(p), line);
+          if (v.world.things[m]?.$1 case final p?) {
+            c.drawLine(v.on(lead), v.on(p), line);
+          }
         }
       }
       if (lead != null) c.drawCircle(v.on(lead), 9, line); // Ring the leader.
       for (final m in r.members) {
-        if (v.world.things[m]?.$1 case final p?) c.drawCircle(v.on(p), 7, Paint()..color = hue.withValues(alpha: .25));
+        if (v.world.things[m]?.$1 case final p?) {
+          c.drawCircle(v.on(p), 7, Paint()..color = hue.withValues(alpha: .25));
+        }
       }
     }
     // Each moving layer's path over the duration, in its colour, with a dot per step.
@@ -402,7 +537,8 @@ class _Map extends CustomPainter {
     // An easing shows as the dots bunching up and spreading out.
     for (final e in paths.entries) {
       // As in After Effects, only the picked layer's path, with a dot per step.
-      final hue = v.world.things[e.key]?.$2 ?? WindowTokens.accent, pts = [for (final p in e.value) v.on(p)];
+      final hue = v.world.things[e.key]?.$2 ?? WindowTokens.accent,
+          pts = [for (final p in e.value) v.on(p)];
       c.drawPath(
         Path()..addPolygon(pts, false),
         Paint()
@@ -416,7 +552,8 @@ class _Map extends CustomPainter {
     }
     for (final e in stations.entries) {
       // For a picked relation: where each layer stands at each of its keyframes, joined by straight lines and ringed.
-      final hue = v.world.things[e.key]?.$2 ?? WindowTokens.accent, pts = [for (final p in e.value) v.on(p)];
+      final hue = v.world.things[e.key]?.$2 ?? WindowTokens.accent,
+          pts = [for (final p in e.value) v.on(p)];
       c.drawPath(
         Path()..addPolygon(pts, false),
         Paint()
@@ -460,7 +597,11 @@ class _Map extends CustomPainter {
       }
     }
     // The axes gizmo: a line to the end of each axis and a coloured ball with its letter. Tapping a ball looks from that side.
-    const hue = {'x': Color(0xFFFF3352), 'y': Color(0xFF8BDC00), 'z': Color(0xFF2890FF)};
+    const hue = {
+      'x': Color(0xFFFF3352),
+      'y': Color(0xFF8BDC00),
+      'z': Color(0xFF2890FF),
+    };
     final mid = v.axisMiddle;
     for (final e in v.axisEnds.entries) {
       c.drawLine(
@@ -470,11 +611,23 @@ class _Map extends CustomPainter {
           ..color = hue[e.key]!
           ..strokeWidth = 1.5,
       );
-      c.drawCircle(mid - (e.value - mid), 3, Paint()..color = hue[e.key]!.withValues(alpha: .4)); // The opposite end, faint.
+      c.drawCircle(
+        mid - (e.value - mid),
+        3,
+        Paint()..color = hue[e.key]!.withValues(alpha: .4),
+      ); // The opposite end, faint.
     }
     for (final e in v.axisEnds.entries) {
       c.drawCircle(e.value, 7, Paint()..color = hue[e.key]!);
-      toolText(c, e.key.toUpperCase(), e.value, TextStyles.micro(const Color(0xFF111111)).copyWith(fontWeight: FontWeight.w700), ax: .5, ay: .5);
+      toolText(
+        c,
+        e.key.toUpperCase(),
+        e.value,
+        TextStyles.micro(const Color(0xFF111111))
+            .copyWith(fontWeight: FontWeight.w700),
+        ax: .5,
+        ay: .5,
+      );
     }
   }
 

@@ -16,7 +16,10 @@ class WorkspaceScope extends StatefulWidget {
 
   /// Returns the window's state and rebuilds the caller when one of [aspects] changes.
   /// With no [aspects] the caller rebuilds on any change. The window's own widgets always name theirs.
-  static WorkspaceController of(BuildContext c, [Set<WorkspaceAspect>? aspects]) {
+  static WorkspaceController of(
+    BuildContext c, [
+    Set<WorkspaceAspect>? aspects,
+  ]) {
     for (final a in aspects ?? WorkspaceAspect.values) {
       InheritedModel.inheritFrom<_AspectScope>(c, aspect: a);
     }
@@ -24,21 +27,26 @@ class WorkspaceScope extends StatefulWidget {
   }
 
   /// Returns the window's state without subscribing to changes.
-  static WorkspaceController read(BuildContext c) => c.getInheritedWidgetOfExactType<_AspectScope>()!.ws;
+  static WorkspaceController read(BuildContext c) =>
+      c.getInheritedWidgetOfExactType<_AspectScope>()!.ws;
 
   /// Returns the playhead frame and rebuilds the caller when it moves. Nothing else in the window rebuilds on that.
-  static int frameOf(BuildContext c) => c.dependOnInheritedWidgetOfExactType<PlayheadScope>()!.notifier!.value;
+  static int frameOf(BuildContext c) =>
+      c.dependOnInheritedWidgetOfExactType<PlayheadScope>()!.notifier!.value;
 
   /// Returns a counter that increases whenever the engine produces a new snapshot of the current time.
   /// Widgets that show values at the displayed time use it to rebuild.
-  static int pictureOf(BuildContext c) => c.dependOnInheritedWidgetOfExactType<_SnapshotScope>()!.notifier!.value;
+  static int pictureOf(BuildContext c) =>
+      c.dependOnInheritedWidgetOfExactType<_SnapshotScope>()!.notifier!.value;
   @override
   State<WorkspaceScope> createState() => _WorkspaceScopeState();
 }
 
 class _WorkspaceScopeState extends State<WorkspaceScope> {
   late Map<WorkspaceAspect, int> _told = _now();
-  Map<WorkspaceAspect, int> _now() => {for (final MapEntry(:key, :value) in widget.ws.on.entries) key: value.value};
+  Map<WorkspaceAspect, int> _now() => {
+    for (final MapEntry(:key, :value) in widget.ws.on.entries) key: value.value,
+  };
   @override
   void initState() {
     super.initState();
@@ -78,18 +86,30 @@ class _SnapshotScope extends InheritedNotifier<ValueNotifier<int>> {
 }
 
 class _AspectScope extends InheritedModel<WorkspaceAspect> {
-  const _AspectScope({required this.ws, required this.told, required super.child});
+  const _AspectScope({
+    required this.ws,
+    required this.told,
+    required super.child,
+  });
   final WorkspaceController ws;
 
   /// How many times each aspect has notified, as of this build.
   final Map<WorkspaceAspect, int> told;
   @override
-  bool updateShouldNotify(_AspectScope old) => !mapEquals(told, old.told) || ws != old.ws;
+  bool updateShouldNotify(_AspectScope old) =>
+      !mapEquals(told, old.told) || ws != old.ws;
   @override
-  bool updateShouldNotifyDependent(_AspectScope old, Set<WorkspaceAspect> dependencies) => ws != old.ws || dependencies.any((a) => told[a] != old.told[a]);
+  bool updateShouldNotifyDependent(
+    _AspectScope old,
+    Set<WorkspaceAspect> dependencies,
+  ) => ws != old.ws || dependencies.any((a) => told[a] != old.told[a]);
 }
 
 /// The playhead's own scope below [WorkspaceScope], read through [WorkspaceScope.frameOf].
 class PlayheadScope extends InheritedNotifier<ValueNotifier<int>> {
-  const PlayheadScope({super.key, required super.notifier, required super.child});
+  const PlayheadScope({
+    super.key,
+    required super.notifier,
+    required super.child,
+  });
 }

@@ -47,9 +47,13 @@ class Program {
   ///
   /// [kind] is what the program was written for, as the engine reports it. A pack's file is never overwritten.
   final String? recipe, kind;
-  String get stem => file.substring(file.lastIndexOf('/') + 1, file.lastIndexOf('.'));
-  String get form => kind ?? (stem.contains('-') ? stem.substring(0, stem.lastIndexOf('-')) : stem);
-  String get tail => stem.contains('-') ? stem.substring(stem.lastIndexOf('-') + 1) : '';
+  String get stem =>
+      file.substring(file.lastIndexOf('/') + 1, file.lastIndexOf('.'));
+  String get form =>
+      kind ??
+      (stem.contains('-') ? stem.substring(0, stem.lastIndexOf('-')) : stem);
+  String get tail =>
+      stem.contains('-') ? stem.substring(stem.lastIndexOf('-') + 1) : '';
 
   /// The name used when none is set: what it was written for, then its hash.
   String get plain => '$form $tail'.trim();
@@ -60,11 +64,19 @@ class Program {
   String get name {
     if (recipe case final r?) return r;
     try {
-      if (shelfSidecar(file).existsSync()) return shelfSidecar(file).readAsStringSync().trim();
+      if (shelfSidecar(file).existsSync()) {
+        return shelfSidecar(file).readAsStringSync().trim();
+      }
       final lines = File(file).readAsLinesSync();
-      final kept = RegExp(r'^/\*\{.*"DESCRIPTION":"([^"]*)"').firstMatch(lines.first)?[1];
+      final kept = RegExp(r'^/\*\{.*"DESCRIPTION":"([^"]*)"')
+          .firstMatch(lines.first)?[1];
       if (kept != null && kept != 'Shadertoy') return kept;
-      return [for (final l in lines.take(8)) RegExp(r'^// (.+) by [^,]+, [^,]+, openprocessing\.org/sketch/\d+').firstMatch(l)?[1]].nonNulls.firstOrNull ??
+      return [
+            for (final l in lines.take(8))
+              RegExp(
+                r'^// (.+) by [^,]+, [^,]+, openprocessing\.org/sketch/\d+',
+              ).firstMatch(l)?[1],
+          ].nonNulls.firstOrNull ??
           plain;
     } catch (_) {
       return plain;
@@ -73,21 +85,33 @@ class Program {
 
   /// Sets the name to [to]. An empty name removes the sidecar, so [name] falls back to [plain].
   void rename(String to) {
-    if (to.trim().isNotEmpty) return shelfSidecar(file).writeAsStringSync(to.trim());
+    if (to.trim().isNotEmpty) {
+      return shelfSidecar(file).writeAsStringSync(to.trim());
+    }
     if (shelfSidecar(file).existsSync()) shelfSidecar(file).deleteSync();
   }
 
   /// The first line of the file that says something.
   String get first {
     try {
-      final kept = RegExp(r'^/\*\{.*"DESCRIPTION":"([^"]*)"(?:,"CREDIT":"([^"]*)")?')
+      final kept =
+          RegExp(r'^/\*\{.*"DESCRIPTION":"([^"]*)"(?:,"CREDIT":"([^"]*)")?')
           // A multi-tab file describes itself in its first line.
           .firstMatch(File(file).readAsLinesSync().first);
-      if (kept != null && kept[1] != 'Shadertoy') return kept[2] == null ? kept[1]! : '${kept[1]} · ${kept[2]}';
+      if (kept != null && kept[1] != 'Shadertoy') {
+        return kept[2] == null ? kept[1]! : '${kept[1]} · ${kept[2]}';
+      }
       return File(file)
           .readAsLinesSync()
           .map((l) => l.trim())
-          .firstWhere((l) => l.isNotEmpty && !l.startsWith('//') && !l.startsWith('#') && !l.startsWith('/*'), orElse: () => '');
+          .firstWhere(
+            (l) =>
+                l.isNotEmpty &&
+                !l.startsWith('//') &&
+                !l.startsWith('#') &&
+                !l.startsWith('/*'),
+            orElse: () => '',
+          );
     } catch (_) {
       return '';
     }
@@ -100,12 +124,18 @@ class Program {
 List<Program> programs() {
   final dir = Directory('${EffectTiles.own}/programs');
   if (!dir.existsSync()) return const [];
-  final all = dir.listSync().whereType<File>().where((f) => RegExp(r'\.(js|fs|hydra)$').hasMatch(f.path)).toList();
+  final all = dir
+      .listSync()
+      .whereType<File>()
+      .where((f) => RegExp(r'\.(js|fs|hydra)$').hasMatch(f.path))
+      .toList();
   final made = {
     for (final f in all)
-      if (RegExp(r'\.(hydra|js)$').hasMatch(f.path)) f.path.replaceFirst(RegExp(r'\.(hydra|js)$'), '.fs'),
+      if (RegExp(r'\.(hydra|js)$').hasMatch(f.path))
+        f.path.replaceFirst(RegExp(r'\.(hydra|js)$'), '.fs'),
   };
-  final kept = all.where((f) => !made.contains(f.path)).toList()..sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+  final kept = all.where((f) => !made.contains(f.path)).toList()
+    ..sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
   return [for (final f in kept) Program(f.path)];
 }
 
@@ -113,7 +143,12 @@ List<Program> programs() {
 ///
 /// A pack that was also put in from the web and kept appears only once.
 List<Program> programsAndPacks(Motolii? m) {
-  final own = programs(), stems = {for (final p in own) p.stem}, kinds = {for (final (name, kind) in m?.packKinds ?? const <(String, String)>[]) name: kind};
+  final own = programs(),
+      stems = {for (final p in own) p.stem},
+      kinds = {
+        for (final (name, kind) in m?.packKinds ?? const <(String, String)>[])
+          name: kind,
+      };
   return [
     ...own,
     for (final (name, file) in m?.packs ?? const <(String, String)>[])
@@ -130,7 +165,9 @@ class ProgramShelf extends StatefulWidget {
 
 class _ProgramShelfState extends State<ProgramShelf> {
   ShelfContext get c => widget.c;
-  void _told(Program p, bool done, String why) => c.set(() => done ? c.mem.trouble.remove(p.file) : c.mem.trouble[p.file] = why);
+  void _told(Program p, bool done, String why) => c.set(
+    () => done ? c.mem.trouble.remove(p.file) : c.mem.trouble[p.file] = why,
+  );
   final _menu = GlobalKey<ContextMenuState>();
 
   /// The file whose name is being edited, if any.
@@ -161,11 +198,21 @@ class _ProgramShelfState extends State<ProgramShelf> {
         // Created as Create's tile does it (see _make in dock_make_colors.dart).
       );
     }
-    c.ws.after(m.later('adapter', layer: int.tryParse(c.ws.selected ?? '') ?? 0, word: p.file), (done, why) => _told(p, done, why), (made) {
-      if (made <= 0) return;
-      if (p.name != p.plain) c.ws.after(m.later('say', layer: made, name: 'name', word: p.name));
-      c.ws.select('$made');
-    });
+    c.ws.after(
+      m.later(
+        'adapter',
+        layer: int.tryParse(c.ws.selected ?? '') ?? 0,
+        word: p.file,
+      ),
+      (done, why) => _told(p, done, why),
+      (made) {
+        if (made <= 0) return;
+        if (p.name != p.plain) {
+          c.ws.after(m.later('say', layer: made, name: 'name', word: p.name));
+        }
+        c.ws.select('$made');
+      },
+    );
   }
 
   void _rename(Program p) => setState(() => _renaming = p.file);
@@ -179,7 +226,11 @@ class _ProgramShelfState extends State<ProgramShelf> {
       const ContextMenuItem.rule(),
       ContextMenuItem(
         Platform.isWindows ? 'Show in Explorer' : 'Show in Finder',
-        () => Platform.isWindows ? Process.run('explorer', ['/select,${p.file.replaceAll('/', r'\')}']) : Process.run('open', ['-R', p.file]),
+        () => Platform.isWindows
+            ? Process.run('explorer', [
+                '/select,${p.file.replaceAll('/', r'\')}',
+              ])
+            : Process.run('open', ['-R', p.file]),
       ),
     ]);
   }
@@ -200,8 +251,17 @@ class _ProgramShelfState extends State<ProgramShelf> {
   Program? _stood(List<Program> all) {
     final m = c.ws.inside, t = int.tryParse(c.ws.selected ?? '');
     if (m == null || t == null) return null;
-    final said = '${m.word(t, 'file')} ${m.word(t, 'script')} ${m.word(t, 'fx')}';
-    return all.where((p) => said.contains(p.file) || said.contains(p.file.replaceFirst(RegExp(r'\.(hydra|js)$'), '.fs'))).firstOrNull;
+    final said =
+        '${m.word(t, 'file')} ${m.word(t, 'script')} ${m.word(t, 'fx')}';
+    return all
+        .where(
+          (p) =>
+              said.contains(p.file) ||
+              said.contains(
+                p.file.replaceFirst(RegExp(r'\.(hydra|js)$'), '.fs'),
+              ),
+        )
+        .firstOrNull;
   }
 
   @override
@@ -211,30 +271,57 @@ class _ProgramShelfState extends State<ProgramShelf> {
     for (final p in all) {
       forms[p.form] = (forms[p.form] ?? 0) + 1;
     }
-    final shown = all.where((p) => (c.chip == 'All' || c.chip == p.form) && (c.hit(p.name) || c.hit(p.stem) || c.hit(p.first))).toList();
-    final sel = c.foot((c.mem.programCode ? _stood(all) : null) ?? all.where((p) => p.file == c.sel).firstOrNull);
+    final shown = all
+        .where(
+          (p) =>
+              (c.chip == 'All' || c.chip == p.form) &&
+              (c.hit(p.name) || c.hit(p.stem) || c.hit(p.first)),
+        )
+        .toList();
+    final sel = c.foot(
+      (c.mem.programCode ? _stood(all) : null) ??
+          all.where((p) => p.file == c.sel).firstOrNull,
+    );
     if (all.isEmpty) {
       return Padding(
         padding: EdgeInsets.all(Shape.s(24)),
-        child: Text('Copy code from the web, then Paste', textAlign: TextAlign.center, style: TextStyles.label(Grey.g63)),
+        child: Text(
+          'Copy code from the web, then Paste',
+          textAlign: TextAlign.center,
+          style: TextStyles.label(Grey.g63),
+        ),
       );
     }
     if (!c.mem.programCode) {
-      ProgramTiles.ask(all.where((p) => p.recipe == null).map((p) => p.file), () {
-        if (mounted) setState(() {});
-      });
+      ProgramTiles.ask(
+        all.where((p) => p.recipe == null).map((p) => p.file),
+        () {
+          if (mounted) setState(() {});
+        },
+      );
     }
     // A pack's tile is drawn by its name, as Create's expressions are.
     String tile(Program p) => switch (p.recipe) {
       final r? => CopiesTiles.of(p.file, make: r),
-      _ => File(ProgramTiles.home(p.file)).existsSync() ? ProgramTiles.home(p.file) : '',
+      _ =>
+        File(ProgramTiles.home(p.file)).existsSync()
+            ? ProgramTiles.home(p.file)
+            : '',
     };
     return ContextMenu(
       key: _menu,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (!c.mem.programCode) DockChips([('All', all.length), for (final e in forms.entries) (e.key, e.value)], active: c.chip, onPick: c.pickChip),
+          if (!c.mem.programCode)
+            DockChips(
+              [
+                ('All', all.length),
+                for (final e in forms.entries) (e.key, e.value),
+              ],
+              active: c.chip,
+              onPick: c.pickChip,
+            ),
           Expanded(
             child:
                 c.mem.programCode &&
@@ -257,7 +344,9 @@ class _ProgramShelfState extends State<ProgramShelf> {
                       return ShelfTile(
                         ShelfItem(p.file, p.name, picture: tile(p)),
                         shelfLooks['Program']!,
-                        key: ValueKey('ws-program-${p.stem}-${tile(p).isEmpty ? 0 : File(tile(p)).lastModifiedSync().millisecondsSinceEpoch}'),
+                        key: ValueKey(
+                          'ws-program-${p.stem}-${tile(p).isEmpty ? 0 : File(tile(p)).lastModifiedSync().millisecondsSinceEpoch}',
+                        ),
                         onTap: () => c.pick(p.file),
                         onApply: () => _put(p),
                         onMenu: (at) => _menuOn(p, at),
@@ -273,12 +362,25 @@ class _ProgramShelfState extends State<ProgramShelf> {
                   ),
           ),
           // Large, as on the Effects shelf.
-          if (sel != null && !c.mem.programCode && tile(sel).isNotEmpty) SizedBox(height: Shape.z(140), child: TileMoving(tile(sel), playing: true)),
+          if (sel != null && !c.mem.programCode && tile(sel).isNotEmpty)
+            SizedBox(
+              height: Shape.z(140),
+              child: TileMoving(tile(sel), playing: true),
+            ),
           if (sel != null)
             DockFooter(
-              preview: dockBadge(AppGlyphs.program, WindowTokens.toneText, size: Shape.z(34)),
+              preview: dockBadge(
+                AppGlyphs.program,
+                WindowTokens.toneText,
+                size: Shape.z(34),
+              ),
               title: sel.name,
-              meta: c.mem.trouble[sel.file]?.replaceAll('the script ${sel.file}: ', '') ?? sel.first,
+              meta:
+                  c.mem.trouble[sel.file]?.replaceAll(
+                    'the script ${sel.file}: ',
+                    '',
+                  ) ??
+                  sel.first,
               action: 'Create',
               fresh: true,
               onAction: () => _put(sel),

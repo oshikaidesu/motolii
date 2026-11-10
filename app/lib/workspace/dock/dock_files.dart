@@ -14,7 +14,13 @@ import 'package:motolii/widgets/app_glyphs.dart';
 /// A file or folder in the Media shelf's tree.
 class FileNode {
   // ignore: prefer_initializing_formals
-  const FileNode(this.id, this.name, this.g, {this.meta = '', List<FileNode> kids = const []}) : _kids = kids;
+  const FileNode(
+    this.id,
+    this.name,
+    this.g, {
+    this.meta = '',
+    this._kids = const [],
+  });
   final String id, name, meta;
   final AppGlyphs g;
   final List<FileNode> _kids;
@@ -45,9 +51,12 @@ AppGlyphs? glyphOf(String file) => switch (kindOfFile(file)) {
 
 String basename(String path) => path.substring(path.lastIndexOf('/') + 1);
 
-String dirname(String path) => path.lastIndexOf('/') <= 0 ? '/' : path.substring(0, path.lastIndexOf('/'));
+String dirname(String path) =>
+    path.lastIndexOf('/') <= 0 ? '/' : path.substring(0, path.lastIndexOf('/'));
 
-String _size(int bytes) => bytes >= 1 << 20 ? '${(bytes / (1 << 20)).toStringAsFixed(1)} MB' : '${(bytes / 1024).ceil()} KB';
+String _size(int bytes) => bytes >= 1 << 20
+    ? '${(bytes / (1 << 20)).toStringAsFixed(1)} MB'
+    : '${(bytes / 1024).ceil()} KB';
 
 final _lists = <String, List<FileNode>>{};
 
@@ -75,13 +84,22 @@ void readFolder(String path) {
         if (e is Directory) {
           out.add(FileNode(e.path, name, AppGlyphs.folder));
         } else if (glyphOf(name) case final g?) {
-          out.add(FileNode(e.path, name, g, meta: '${name.substring(name.lastIndexOf('.') + 1).toUpperCase()} · ${_size((await e.stat()).size)}'));
+          out.add(
+            FileNode(
+              e.path,
+              name,
+              g,
+              meta:
+                  '${name.substring(name.lastIndexOf('.') + 1).toUpperCase()} · ${_size((await e.stat()).size)}',
+            ),
+          );
         }
       }
     } on FileSystemException {
       out.clear();
     }
-    _lists[path] = out..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    _lists[path] = out
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     _reading.remove(path);
     dockRead.value++;
   }();

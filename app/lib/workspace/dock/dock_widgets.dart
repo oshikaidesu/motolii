@@ -15,7 +15,15 @@ export '../../widgets/controls.dart' show Badge, Chip, IconPress;
 
 /// A section header inside a shelf body: a hue swatch, the title in capitals, an optional count, and an optional fold chevron.
 class DockSection extends StatelessWidget {
-  const DockSection(this.title, {super.key, this.count, this.hue, this.folded, this.onTap, this.trailing});
+  const DockSection(
+    this.title, {
+    super.key,
+    this.count,
+    this.hue,
+    this.folded,
+    this.onTap,
+    this.trailing,
+  });
   final String title;
   final int? count;
   final Color? hue;
@@ -36,14 +44,21 @@ class DockSection extends StatelessWidget {
               turns: folded! ? 0 : .25,
               duration: Motion.dur,
               curve: Motion.ease,
-              child: Glyph(AppGlyphs.chevron, size: Shape.z(8), color: Grey.g63),
+              child: Glyph(
+                AppGlyphs.chevron,
+                size: Shape.z(8),
+                color: Grey.g63,
+              ),
             ),
             SizedBox(width: Shape.s(6)),
           ],
           Container(
             width: Shape.z(8),
             height: Shape.z(8),
-            decoration: BoxDecoration(color: hue ?? Grey.g56, borderRadius: BorderRadius.all(Shape.r(2))),
+            decoration: BoxDecoration(
+              color: hue ?? Grey.g56,
+              borderRadius: BorderRadius.all(Shape.r(2)),
+            ),
           ),
           SizedBox(width: Shape.s(6)),
           Expanded(
@@ -51,7 +66,8 @@ class DockSection extends StatelessWidget {
               title.toUpperCase(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyles.micro(Grey.g91).copyWith(fontWeight: FontWeight.w700, letterSpacing: .9),
+              style: TextStyles.micro(Grey.g91)
+                  .copyWith(fontWeight: FontWeight.w700, letterSpacing: .9),
             ),
           ),
           // The trailing widget is scaled down in a narrow shelf, never clipped.
@@ -59,10 +75,19 @@ class DockSection extends StatelessWidget {
             Flexible(
               child: Align(
                 alignment: Alignment.centerRight,
-                child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerRight, child: w),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: w,
+                ),
               ),
             ),
-          if (count != null) Text('$count', style: TextStyles.value(Grey.g56).copyWith(fontSize: TextStyles.px(10))),
+          if (count != null)
+            Text(
+              '$count',
+              style: TextStyles.value(Grey.g56)
+                  .copyWith(fontSize: TextStyles.px(10)),
+            ),
         ],
       ),
     ),
@@ -107,7 +132,11 @@ class DockFooter extends StatelessWidget {
   final bool done;
   @override
   Widget build(BuildContext context) {
-    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.picked}), l = fresh ? null : ws.layer;
+    final ws = WorkspaceScope.of(context, {
+          WorkspaceAspect.document,
+          WorkspaceAspect.picked,
+        }),
+        l = fresh ? null : ws.layer;
     return Container(
       // At least 52 high and as tall as its content. A fixed 52 overflowed by a point (RenderFlex overflow) with two lines of text.
       constraints: BoxConstraints(minHeight: Shape.z(52)),
@@ -115,12 +144,18 @@ class DockFooter extends StatelessWidget {
       decoration: BoxDecoration(
         color: WindowTokens.card,
         border: Border(
-          top: BorderSide(color: WindowTokens.ground, width: WindowTokens.gutter),
+          top: BorderSide(
+            color: WindowTokens.ground,
+            width: WindowTokens.gutter,
+          ),
         ),
       ),
       child: Row(
         children: [
-          if (preview case final p?) ...[SizedBox.square(dimension: Shape.z(34), child: p), SizedBox(width: Shape.s(8))],
+          if (preview case final p?) ...[
+            SizedBox.square(dimension: Shape.z(34), child: p),
+            SizedBox(width: Shape.s(8)),
+          ],
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -130,11 +165,17 @@ class DockFooter extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyles.name(Grey.g95).copyWith(fontWeight: FontWeight.w600),
+                  style: TextStyles.name(Grey.g95)
+                      .copyWith(fontWeight: FontWeight.w600),
                 ),
                 SizedBox(height: Shape.s(4)),
                 // Up to two lines of whole words before anything is cut off.
-                Text(meta, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyles.label(Grey.g63)),
+                Text(
+                  meta,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyles.label(Grey.g63),
+                ),
                 SizedBox(height: Shape.s(4)),
                 Row(
                   children: [
@@ -143,22 +184,39 @@ class DockFooter extends StatelessWidget {
                       Container(
                         width: Shape.z(6),
                         height: Shape.z(6),
-                        decoration: BoxDecoration(color: layerKindColor(l.kind), borderRadius: BorderRadius.all(Shape.r(1))),
+                        decoration: BoxDecoration(
+                          color: layerKindColor(l.kind),
+                          borderRadius: BorderRadius.all(Shape.r(1)),
+                        ),
                       ),
                       SizedBox(width: Shape.s(4)),
                       Flexible(
-                        child: Text(l.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.label(Grey.g91)),
+                        child: Text(
+                          l.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyles.label(Grey.g91),
+                        ),
                       ),
                     ] else
                       Flexible(
-                        child: Text('new layer', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.label(Grey.g91)),
+                        child: Text(
+                          'new layer',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyles.label(Grey.g91),
+                        ),
                       ),
                     // Scaled down rather than clipped when the shelf is narrow.
                     if (lasts case final w?) ...[
                       SizedBox(width: Shape.s(8)),
                       Flexible(
                         flex: 3,
-                        child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: w),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: w,
+                        ),
                       ),
                     ],
                   ],
@@ -179,9 +237,15 @@ class DockFooter extends StatelessWidget {
               decoration: BoxDecoration(
                 color: done ? WindowTokens.raised : WindowTokens.accent,
                 borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
-                border: Border.all(color: h && !done ? Grey.g95 : const Color(0x00000000)),
+                border: Border.all(
+                  color: h && !done ? Grey.g95 : const Color(0x00000000),
+                ),
               ),
-              child: Text(done ? doneLabel : action, style: TextStyles.name(done ? Grey.g76 : WindowTokens.onAccent).copyWith(fontWeight: FontWeight.w700)),
+              child: Text(
+                done ? doneLabel : action,
+                style: TextStyles.name(done ? Grey.g76 : WindowTokens.onAccent)
+                    .copyWith(fontWeight: FontWeight.w700),
+              ),
             ),
           ),
         ],
@@ -200,7 +264,11 @@ class DockEmpty extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.all(Shape.s(24)),
-    child: Text(said ?? 'Nothing matches “$query”', textAlign: TextAlign.center, style: TextStyles.label(Grey.g63)),
+    child: Text(
+      said ?? 'Nothing matches “$query”',
+      textAlign: TextAlign.center,
+      style: TextStyles.label(Grey.g63),
+    ),
   );
 }
 
@@ -235,7 +303,10 @@ class DockMasonry extends StatelessWidget {
               for (final (i, col) in cols.indexed) ...[
                 if (i > 0) const SizedBox(width: WindowTokens.gutter),
                 Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: col),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: col,
+                  ),
                 ),
               ],
             ],

@@ -63,14 +63,28 @@ class ChooserState extends State<Chooser> {
   // Down, Up, Return or Space open the list. The arrows move through it, Return picks the highlighted option and Escape closes it.
   // A typed letter jumps to the first option that starts with it.
   KeyEventResult _key(FocusNode n, KeyEvent e) {
-    if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
-    final k = e.logicalKey, down = k == LogicalKeyboardKey.arrowDown, up = k == LogicalKeyboardKey.arrowUp;
-    final enter = k == LogicalKeyboardKey.enter || k == LogicalKeyboardKey.numpadEnter;
-    final letter = (e.character?.trim().length ?? 0) == 1 && !HardwareKeyboard.instance.isMetaPressed && !HardwareKeyboard.instance.isControlPressed
+    if (e is! KeyDownEvent && e is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+    final k = e.logicalKey,
+        down = k == LogicalKeyboardKey.arrowDown,
+        up = k == LogicalKeyboardKey.arrowUp;
+    final enter =
+        k == LogicalKeyboardKey.enter || k == LogicalKeyboardKey.numpadEnter;
+    final letter =
+        (e.character?.trim().length ?? 0) == 1 &&
+            !HardwareKeyboard.instance.isMetaPressed &&
+            !HardwareKeyboard.instance.isControlPressed
         ? e.character!
         : null;
     if (!_open) {
-      if (!down && !up && !enter && k != LogicalKeyboardKey.space && letter == null) return KeyEventResult.ignored;
+      if (!down &&
+          !up &&
+          !enter &&
+          k != LogicalKeyboardKey.space &&
+          letter == null) {
+        return KeyEventResult.ignored;
+      }
       _set(true);
       if (letter == null) return KeyEventResult.handled;
     }
@@ -84,7 +98,11 @@ class ChooserState extends State<Chooser> {
       if (_at >= 0 && _at < _hits.length) _pick?.call(_hits[_at]);
     } else if (letter != null) {
       final now = DateTime.now();
-      _typed = (now.difference(_typedAt) > const Duration(seconds: 1) ? '' : _typed) + letter.toLowerCase();
+      _typed =
+          (now.difference(_typedAt) > const Duration(seconds: 1)
+              ? ''
+              : _typed) +
+          letter.toLowerCase();
       _typedAt = now;
       final to = _hits.indexWhere((o) => o.toLowerCase().startsWith(_typed));
       if (to >= 0) _go(to);
@@ -98,17 +116,28 @@ class ChooserState extends State<Chooser> {
     if (open) {
       // The list floats over the panel and never pushes the rows below it. It opens upward when there is no room underneath.
       final box = context.findRenderObject() as RenderBox?;
-      final overlay = Overlay.maybeOf(context, rootOverlay: true)?.context.findRenderObject() as RenderBox?;
+      final overlay =
+          Overlay.maybeOf(
+                context,
+                rootOverlay: true,
+              )?.context.findRenderObject()
+              as RenderBox?;
       if (box != null && overlay != null) {
-        final bottom = box.localToGlobal(Offset(0, box.size.height), ancestor: overlay).dy;
+        final bottom = box
+            .localToGlobal(Offset(0, box.size.height), ancestor: overlay)
+            .dy;
         final need = math.min(widget.options.length, _maxItems) * _itemH + 12;
-        _up = overlay.size.height - bottom < need && bottom - box.size.height > need;
+        _up =
+            overlay.size.height - bottom < need &&
+            bottom - box.size.height > need;
       }
     }
     setState(() => _open = open);
     open ? _portal.show() : _portal.hide();
     if (open) {
-      _at = widget.options.indexOf(InspectorScope.read(context).doc.s2[widget.id] ?? widget.options.first);
+      _at = widget.options.indexOf(
+        InspectorScope.read(context).doc.s2[widget.id] ?? widget.options.first,
+      );
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _node.requestFocus();
@@ -126,7 +155,13 @@ class ChooserState extends State<Chooser> {
         color: Grey.g15,
         borderRadius: BorderRadius.all(Shape.r(8)),
         border: Border.all(color: Grey.g26),
-        boxShadow: [BoxShadow(color: ColorTheme.of('Shadow', const Color(0x99000000)), blurRadius: 16, offset: const Offset(0, 6))],
+        boxShadow: [
+          BoxShadow(
+            color: ColorTheme.of('Shadow', const Color(0x99000000)),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -150,18 +185,33 @@ class ChooserState extends State<Chooser> {
                         onTap: () => pick(o),
                         builder: (_, h) => Container(
                           padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
-                          decoration: BoxDecoration(color: h || i == _at ? Grey.g26 : (sel ? Grey.g20 : null), borderRadius: BorderRadius.all(Shape.r(5))),
+                          decoration: BoxDecoration(
+                            color: h || i == _at
+                                ? Grey.g26
+                                : (sel ? Grey.g20 : null),
+                            borderRadius: BorderRadius.all(Shape.r(5)),
+                          ),
                           alignment: Alignment.centerLeft,
                           child: Row(
                             children: [
                               Expanded(
-                                child: Text(o, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.name(sel || h ? Grey.g95 : Grey.g76)),
+                                child: Text(
+                                  o,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyles.name(
+                                    sel || h ? Grey.g95 : Grey.g76,
+                                  ),
+                                ),
                               ),
                               if (sel)
                                 Container(
                                   width: Shape.z(5),
                                   height: Shape.z(5),
-                                  decoration: BoxDecoration(color: Grey.g95, shape: BoxShape.circle),
+                                  decoration: BoxDecoration(
+                                    color: Grey.g95,
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
                             ],
                           ),
@@ -177,7 +227,8 @@ class ChooserState extends State<Chooser> {
 
   @override
   Widget build(BuildContext context) {
-    final x = InspectorScope.of(context), cur = x.doc.s2[widget.id] ?? widget.options.first;
+    final x = InspectorScope.of(context),
+        cur = x.doc.s2[widget.id] ?? widget.options.first;
     void pick(String o) {
       x.doc.str(widget.id, o);
       _set(false);
@@ -199,7 +250,14 @@ class ChooserState extends State<Chooser> {
           children: [
             // The default value (the first option) is dim. A chosen one is bright.
             Expanded(
-              child: Text(cur, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.name(cur == widget.options.first ? Grey.g56 : Grey.g91)),
+              child: Text(
+                cur,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyles.name(
+                  cur == widget.options.first ? Grey.g56 : Grey.g91,
+                ),
+              ),
             ),
             DisclosureTriangle(open: true, hot: _open),
           ],
@@ -216,21 +274,27 @@ class ChooserState extends State<Chooser> {
         child: OverlayPortal.targetsRootOverlay(
           controller: _portal,
           overlayChildBuilder: (_) {
-            final w = (context.findRenderObject() as RenderBox?)?.size.width ?? 160;
+            final w =
+                (context.findRenderObject() as RenderBox?)?.size.width ?? 160;
             return Stack(
               children: [
                 CompositedTransformFollower(
                   link: _link,
                   showWhenUnlinked: false,
                   targetAnchor: _up ? Alignment.topLeft : Alignment.bottomLeft,
-                  followerAnchor: _up ? Alignment.bottomLeft : Alignment.topLeft,
+                  followerAnchor: _up
+                      ? Alignment.bottomLeft
+                      : Alignment.topLeft,
                   offset: Offset(0, _up ? -4 : 4),
                   child: Align(
                     alignment: _up ? Alignment.bottomLeft : Alignment.topLeft,
                     child: TapRegion(
                       groupId: _link,
                       onTapOutside: (_) => _set(false),
-                      child: SizedBox(width: math.max(w, 160), child: _menu(context, cur, pick)),
+                      child: SizedBox(
+                        width: math.max(w, 160),
+                        child: _menu(context, cur, pick),
+                      ),
                     ),
                   ),
                 ),
@@ -278,8 +342,17 @@ class InspectorHeader extends StatelessWidget {
             width: Shape.z(22),
             height: Shape.z(22),
             alignment: Alignment.center,
-            decoration: BoxDecoration(color: InspectorSkin.accent, borderRadius: BorderRadius.all(Shape.r(6))),
-            child: glyph == null ? null : Glyph(glyph, size: Shape.z(13), color: InspectorSkin.onAccent),
+            decoration: BoxDecoration(
+              color: InspectorSkin.accent,
+              borderRadius: BorderRadius.all(Shape.r(6)),
+            ),
+            child: glyph == null
+                ? null
+                : Glyph(
+                    glyph,
+                    size: Shape.z(13),
+                    color: InspectorSkin.onAccent,
+                  ),
           ),
           SizedBox(width: Shape.s(8)),
           Flexible(
@@ -290,7 +363,11 @@ class InspectorHeader extends StatelessWidget {
               child: Text(
                 doc.name,
                 maxLines: 1,
-                style: TextStyles.title(Grey.g100).copyWith(fontSize: TextStyles.px(13), fontWeight: FontWeight.w700, height: 1),
+                style: TextStyles.title(Grey.g100).copyWith(
+                  fontSize: TextStyles.px(13),
+                  fontWeight: FontWeight.w700,
+                  height: 1,
+                ),
               ),
             ),
           ),
@@ -328,19 +405,29 @@ class EmptyState extends StatelessWidget {
       children: [
         Padding(
           padding: EdgeInsets.only(top: Shape.s(4), bottom: Shape.s(8)),
-          child: Text('Nothing selected', style: TextStyles.label(Grey.g56).copyWith(height: 1.4)),
+          child: Text(
+            'Nothing selected',
+            style: TextStyles.label(Grey.g56).copyWith(height: 1.4),
+          ),
         ),
         // With nothing selected, nothing is shown. After Effects' Effect Controls belongs to a layer and Alight Motion shows none.
         // The stage's own settings appear only when asked for, as in Apple Motion's Project pane.
         Pressable(
           key: const ValueKey('stage-settings'),
-          onTap: () => x.doc.flag('stage.open', !(x.doc.b['stage.open'] ?? false)),
+          onTap: () =>
+              x.doc.flag('stage.open', !(x.doc.b['stage.open'] ?? false)),
           builder: (_, h) => Container(
             height: InspectorSkin.cell,
             margin: EdgeInsets.only(bottom: InspectorSkin.gap),
             alignment: Alignment.center,
-            decoration: BoxDecoration(color: h ? Grey.g20 : InspectorSkin.well, borderRadius: BorderRadius.all(Shape.r(6))),
-            child: Text('Stage settings', style: TextStyles.label(h ? Grey.g95 : Grey.g76)),
+            decoration: BoxDecoration(
+              color: h ? Grey.g20 : InspectorSkin.well,
+              borderRadius: BorderRadius.all(Shape.r(6)),
+            ),
+            child: Text(
+              'Stage settings',
+              style: TextStyles.label(h ? Grey.g95 : Grey.g76),
+            ),
           ),
         ),
         if (x.doc.b['stage.open'] ?? false)

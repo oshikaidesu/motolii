@@ -6,7 +6,8 @@ import 'package:motolii/skin/tokens.dart';
 /// The Inspector's skin: rounded cards, filled badges, and one lime fill for "selected".
 class InspectorSkin {
   const InspectorSkin._();
-  static Color get accent => Accent.fill; // The skin's single accent for the window.
+  static Color get accent =>
+      Accent.fill; // The skin's single accent for the window.
   static Color get onAccent => Accent.on;
   static Color get keyDot => Accent.key;
 
@@ -40,14 +41,20 @@ class InspectorSkin {
 
   /// Each card is tinted by its kind, so a folded stack reads by hue before it reads by title.
   /// The layer's own cards are muted. Effects are saturated, since they are the ones that pile up.
-  static Color get toneLayer => ColorTheme.of('ToneLayer', const Color(0xFF9AA4B2));
-  static Color get toneBlend => ColorTheme.of('ToneBlend', const Color(0xFF7FB8B0));
+  static Color get toneLayer =>
+      ColorTheme.of('ToneLayer', const Color(0xFF9AA4B2));
+  static Color get toneBlend =>
+      ColorTheme.of('ToneBlend', const Color(0xFF7FB8B0));
 
   /// Features the app provides itself (no shader), with one hue per family so a Repeater and a Trim Paths never look like the same kind of card.
-  static Color get tonePlace => ColorTheme.of('TonePlace', const Color(0xFFF08A5D));
-  static Color get toneTextAnim => ColorTheme.of('ToneTextAnim', const Color(0xFFE8C76A));
-  static Color get toneTime => ColorTheme.of('ToneTime', const Color(0xFFE58FB4));
-  static Color get toneLayout => ColorTheme.of('ToneLayout', const Color(0xFF7C9CBF));
+  static Color get tonePlace =>
+      ColorTheme.of('TonePlace', const Color(0xFFF08A5D));
+  static Color get toneTextAnim =>
+      ColorTheme.of('ToneTextAnim', const Color(0xFFE8C76A));
+  static Color get toneTime =>
+      ColorTheme.of('ToneTime', const Color(0xFFE58FB4));
+  static Color get toneLayout =>
+      ColorTheme.of('ToneLayout', const Color(0xFF7C9CBF));
 }
 
 /// The inspector's hairline: 12% white.

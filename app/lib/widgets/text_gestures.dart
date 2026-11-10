@@ -20,7 +20,8 @@ class TextGestures extends StatefulWidget {
   State<TextGestures> createState() => _TextGesturesState();
 }
 
-class _TextGesturesState extends State<TextGestures> implements TextSelectionGestureDetectorBuilderDelegate {
+class _TextGesturesState extends State<TextGestures>
+    implements TextSelectionGestureDetectorBuilderDelegate {
   @override
   final editableTextKey = GlobalKey<EditableTextState>();
   @override
@@ -30,7 +31,10 @@ class _TextGesturesState extends State<TextGestures> implements TextSelectionGes
   late final _gestures = TextSelectionGestureDetectorBuilder(delegate: this);
 
   @override
-  Widget build(BuildContext context) => _gestures.buildGestureDetector(behavior: HitTestBehavior.translucent, child: widget.field(editableTextKey));
+  Widget build(BuildContext context) => _gestures.buildGestureDetector(
+    behavior: HitTestBehavior.translucent,
+    child: widget.field(editableTextKey),
+  );
 }
 
 /// The app's single text field for typing.
@@ -83,7 +87,8 @@ class TypedField extends StatefulWidget {
 }
 
 class TypedFieldState extends State<TypedField> {
-  late final TextEditingController _c = TextEditingController(text: widget.text)..addListener(() => _f.hasFocus ? widget.onPick?.call(_c.value) : null);
+  late final TextEditingController _c = TextEditingController(text: widget.text)
+    ..addListener(() => _f.hasFocus ? widget.onPick?.call(_c.value) : null);
   late final FocusNode _f = FocusNode()..addListener(_moved);
   // The text when the user entered the field. Null while the field is not focused.
   String? _was;
@@ -116,7 +121,12 @@ class TypedFieldState extends State<TypedField> {
     }
     final was = _was;
     if (was == null || (widget.hold?.call() ?? false)) return;
-    final said = _end != false && (widget.sayOnLeave || _end == true) && (!widget.standing || _c.text != was) ? _c.text : null;
+    final said =
+        _end != false &&
+            (widget.sayOnLeave || _end == true) &&
+            (!widget.standing || _c.text != was)
+        ? _c.text
+        : null;
     if (_end == false) _c.text = was;
     _was = _end = null;
     widget.onDone(said);
@@ -153,7 +163,15 @@ class TypedFieldState extends State<TypedField> {
         onSubmitted: (_) => _leave(true),
       ),
     );
-    return w.escapes ? CallbackShortcuts(bindings: {const SingleActivator(LogicalKeyboardKey.escape): () => _leave(false)}, child: field) : field;
+    return w.escapes
+        ? CallbackShortcuts(
+            bindings: {
+              const SingleActivator(LogicalKeyboardKey.escape): () =>
+                  _leave(false),
+            },
+            child: field,
+          )
+        : field;
   }
 }
 

@@ -12,7 +12,10 @@ abstract final class BaseControls {
   static Widget segment(BuildContext context, ChoiceSpec c) => Container(
     height: Shape.z(20),
     padding: EdgeInsets.all(Shape.s(2)),
-    decoration: BoxDecoration(color: WindowTokens.well, borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius))),
+    decoration: BoxDecoration(
+      color: WindowTokens.well,
+      borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+    ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -24,12 +27,20 @@ abstract final class BaseControls {
               padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: i == c.selected ? WindowTokens.accent : (h ? WindowTokens.raised : WindowTokens.well),
-                borderRadius: BorderRadius.all(Shape.r(WindowTokens.chipRadius)),
+                color: i == c.selected
+                    ? WindowTokens.accent
+                    : (h ? WindowTokens.raised : WindowTokens.well),
+                borderRadius: BorderRadius.all(
+                  Shape.r(WindowTokens.chipRadius),
+                ),
               ),
               child: Text(
                 c.labels[i],
-                style: TextStyles.label(i == c.selected ? WindowTokens.onAccent : (h ? Grey.g95 : Grey.g76)).copyWith(fontWeight: FontWeight.w600),
+                style: TextStyles.label(
+                  i == c.selected
+                      ? WindowTokens.onAccent
+                      : (h ? Grey.g95 : Grey.g76),
+                ).copyWith(fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -46,7 +57,9 @@ abstract final class BaseControls {
         height: Shape.z(20),
         padding: EdgeInsets.only(left: Shape.s(6), right: Shape.s(8)),
         decoration: BoxDecoration(
-          color: f.on ? Grey.g26 : (h ? WindowTokens.raised : WindowTokens.well),
+          color: f.on
+              ? Grey.g26
+              : (h ? WindowTokens.raised : WindowTokens.well),
           borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
         ),
         child: Row(
@@ -54,7 +67,11 @@ abstract final class BaseControls {
           children: [
             if (f.mark != null) f.mark!(ink),
             if (f.mark != null) SizedBox(width: Shape.s(5)),
-            Text(f.label, style: TextStyles.label(f.on || h ? Grey.g95 : Grey.g63).copyWith(fontWeight: FontWeight.w600)),
+            Text(
+              f.label,
+              style: TextStyles.label(f.on || h ? Grey.g95 : Grey.g63)
+                  .copyWith(fontWeight: FontWeight.w600),
+            ),
           ],
         ),
       );
@@ -69,7 +86,12 @@ abstract final class BaseControls {
     height: Shape.z(28),
     child: SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: EdgeInsets.fromLTRB(WindowTokens.inset, Shape.s(2), WindowTokens.inset, Shape.s(6)),
+      padding: EdgeInsets.fromLTRB(
+        WindowTokens.inset,
+        Shape.s(2),
+        WindowTokens.inset,
+        Shape.s(6),
+      ),
       child: Row(
         children: [
           for (final (name, n) in c.chips) ...[
@@ -83,16 +105,35 @@ abstract final class BaseControls {
                   height: Shape.z(20),
                   padding: EdgeInsets.symmetric(horizontal: Shape.s(7)),
                   decoration: BoxDecoration(
-                    color: on ? WindowTokens.accent : (h ? WindowTokens.raised : WindowTokens.well),
-                    borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
+                    color: on
+                        ? WindowTokens.accent
+                        : (h ? WindowTokens.raised : WindowTokens.well),
+                    borderRadius: BorderRadius.all(
+                      Shape.r(WindowTokens.radius),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(name, style: TextStyles.micro(on ? WindowTokens.onAccent : Grey.g91).copyWith(fontWeight: on ? FontWeight.w700 : FontWeight.w500)),
+                      Text(
+                        name,
+                        style:
+                            TextStyles.micro(
+                              on ? WindowTokens.onAccent : Grey.g91,
+                            ).copyWith(
+                              fontWeight: on
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                            ),
+                      ),
                       if (n != null) ...[
                         SizedBox(width: Shape.s(4)),
-                        Text('$n', style: TextStyles.value(on ? WindowTokens.onAccent : Grey.g56).copyWith(fontSize: TextStyles.px(10))),
+                        Text(
+                          '$n',
+                          style: TextStyles.value(
+                            on ? WindowTokens.onAccent : Grey.g56,
+                          ).copyWith(fontSize: TextStyles.px(10)),
+                        ),
                       ],
                     ],
                   ),
@@ -132,7 +173,9 @@ abstract final class BaseControls {
               '${t.index + 1}',
               softWrap: false,
               overflow: TextOverflow.visible,
-              style: TextStyles.value(index ?? (t.selected ? Grey.g91 : Grey.g56)).copyWith(fontSize: TextStyles.px(10)),
+              style: TextStyles.value(
+                index ?? (t.selected ? Grey.g91 : Grey.g56),
+              ).copyWith(fontSize: TextStyles.px(10)),
             ),
           ),
           SizedBox(width: Shape.s(6)),
@@ -141,7 +184,9 @@ abstract final class BaseControls {
           Expanded(
             child: Text(
               t.name,
-              style: TextStyles.name(t.dim ? Grey.g56 : (ink ?? (t.selected ? Grey.g100 : Grey.g91))).copyWith(fontWeight: t.selected ? picked : rest),
+              style: TextStyles.name(
+                t.dim ? Grey.g56 : (ink ?? (t.selected ? Grey.g100 : Grey.g91)),
+              ).copyWith(fontWeight: t.selected ? picked : rest),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -156,7 +201,13 @@ abstract final class BaseControls {
       onPressed: t.onSelect,
       enableFeedback: false,
       child: Container(
-        color: banded ? (t.selected ? Grey.g20 : (t.hot ? Grey.g15 : (t.index.isEven ? Grey.bandA : Grey.bandB))) : null,
+        color: banded
+            ? (t.selected
+                  ? Grey.g20
+                  : (t.hot
+                        ? Grey.g15
+                        : (t.index.isEven ? Grey.bandA : Grey.bandB)))
+            : null,
         padding: EdgeInsets.only(bottom: Shape.s(bottom)),
         child: !banded
             ? row

@@ -12,7 +12,8 @@ Map<WorkspaceAspect, int> _told(WorkspaceController ws, void Function() does) {
   does();
   return {
     for (final a in WorkspaceAspect.values)
-      if (ws.on[a]!.value - before[a]! case final times when times != 0) a: times,
+      if (ws.on[a]!.value - before[a]! case final times when times != 0)
+        a: times,
   };
 }
 
@@ -22,7 +23,8 @@ WorkspaceController _ws() {
   return ws;
 }
 
-Layer _layer(String id, LayerKind kind, {String? parent}) => Layer(id, 'Layer $id', kind, 0, 240, const [], parent: parent);
+Layer _layer(String id, LayerKind kind, {String? parent}) =>
+    Layer(id, 'Layer $id', kind, 0, 240, const [], parent: parent);
 
 /// Group 1 holds group 2, which holds shape 3. Shape 4 is the parent of text 5 without being a group.
 WorkspaceController _nested() => _ws()
@@ -34,17 +36,27 @@ WorkspaceController _nested() => _ws()
     _layer('5', LayerKind.text, parent: '4'),
   ]);
 
-const SelectedKeyframe _a = (layer: '3', frame: 10), _b = (layer: '4', frame: 20), _c = (layer: '3', frame: 30);
+const SelectedKeyframe _a = (layer: '3', frame: 10),
+    _b = (layer: '4', frame: 20),
+    _c = (layer: '3', frame: 30);
 
 void main() {
   test('a new state has nothing selected, the playhead at frame 112 and a document of 240 frames at 30 a second', () {
     final ws = _ws();
     expect((WorkspaceController.fps, WorkspaceController.duration), (30, 240));
-    expect((ws.selected, ws.layer, ws.stretch, ws.aim, ws.fronted, ws.inside), (null, null, null, null, null, null));
-    expect((ws.frame, ws.playing, ws.animating, ws.rev, ws.reads), (112, false, false, 0, 0));
+    expect(
+      (ws.selected, ws.layer, ws.stretch, ws.aim, ws.fronted, ws.inside),
+      (null, null, null, null, null, null),
+    );
+    expect(
+      (ws.frame, ws.playing, ws.animating, ws.rev, ws.reads),
+      (112, false, false, 0, 0),
+    );
     expect(ws.many, isEmpty);
     expect(ws.keys, isEmpty);
-    expect([for (final a in WorkspaceAspect.values) ws.on[a]!.value], everyElement(0));
+    expect([
+      for (final a in WorkspaceAspect.values) ws.on[a]!.value,
+    ], everyElement(0));
   });
 
   group('the selection', () {
@@ -74,10 +86,14 @@ void main() {
 
     test('pickMany replaces the layers picked together, tells picked every time, and leaves the selected layer alone', () {
       final ws = _ws()..select('9');
-      expect(_told(ws, () => ws.pickMany(['3', '4'])), {WorkspaceAspect.picked: 1});
+      expect(_told(ws, () => ws.pickMany(['3', '4'])), {
+        WorkspaceAspect.picked: 1,
+      });
       expect(ws.many, {'3', '4'});
       expect((ws.manyInOrder, ws.selected), (false, '9'));
-      expect(_told(ws, () => ws.pickMany(['4'], inOrder: true)), {WorkspaceAspect.picked: 1});
+      expect(_told(ws, () => ws.pickMany(['4'], inOrder: true)), {
+        WorkspaceAspect.picked: 1,
+      });
       expect(ws.many, {'4'});
       expect(ws.manyInOrder, isTrue);
     });
@@ -97,7 +113,9 @@ void main() {
 
     test('pickKeys selects exactly these keyframes and the layer of the first; with none, the layer stays', () {
       final ws = _ws()..select('9');
-      expect(_told(ws, () => ws.pickKeys([_b, _a])), {WorkspaceAspect.picked: 1});
+      expect(_told(ws, () => ws.pickKeys([_b, _a])), {
+        WorkspaceAspect.picked: 1,
+      });
       expect(ws.keys, {_a, _b});
       expect(ws.selected, '4');
       expect(_told(ws, () => ws.pickKeys([])), {WorkspaceAspect.picked: 1});
@@ -116,7 +134,9 @@ void main() {
 
     test('with no engine, pickStretch selects the layer, finds no stretch and fronts nothing', () {
       final ws = _ws()..pickKey(_a);
-      expect(_told(ws, () => ws.pickStretch('4', 'opacity', 10)), {WorkspaceAspect.picked: 1});
+      expect(_told(ws, () => ws.pickStretch('4', 'opacity', 10)), {
+        WorkspaceAspect.picked: 1,
+      });
       expect(ws.keys, isEmpty);
       expect((ws.selected, ws.stretch, ws.fronted), ('4', null, null));
     });
@@ -130,20 +150,23 @@ void main() {
   });
 
   group('the playhead', () {
-    test('frame moves the playhead, kept inside the document, and tells no aspect', () {
-      final ws = _ws();
-      var moved = 0, heard = 0;
-      ws.moment.addListener(() => moved++);
-      ws.addListener(() => heard++);
-      expect(_told(ws, () => ws.frame = 50), isEmpty);
-      expect((ws.frame, ws.moment.value, moved, heard), (50, 50, 1, 0));
-      ws.frame = 50;
-      expect(moved, 1);
-      ws.frame = -5;
-      expect(ws.frame, 0);
-      ws.frame = 9999;
-      expect((ws.frame, moved), (WorkspaceController.duration, 3));
-    });
+    test(
+      'frame moves the playhead, kept inside the document, and tells no aspect',
+      () {
+        final ws = _ws();
+        var moved = 0, heard = 0;
+        ws.moment.addListener(() => moved++);
+        ws.addListener(() => heard++);
+        expect(_told(ws, () => ws.frame = 50), isEmpty);
+        expect((ws.frame, ws.moment.value, moved, heard), (50, 50, 1, 0));
+        ws.frame = 50;
+        expect(moved, 1);
+        ws.frame = -5;
+        expect(ws.frame, 0);
+        ws.frame = 9999;
+        expect((ws.frame, moved), (WorkspaceController.duration, 3));
+      },
+    );
 
     test('playing tells playing when it changes', () {
       final ws = _ws();
@@ -163,15 +186,20 @@ void main() {
   });
 
   group('the panels', () {
-    test('setView keeps a value under a name and tells view when it changes', () {
-      final ws = _ws();
-      expect(ws.viewOf('stage.tool', 'select'), 'select');
-      expect(_told(ws, () => ws.setView('stage.tool', 'pen')), {WorkspaceAspect.view: 1});
-      expect(_told(ws, () => ws.setView('stage.tool', 'pen')), isEmpty);
-      expect(ws.viewOf('stage.tool', 'select'), 'pen');
-      expect(_told(ws, () => ws.setView('never.set', null)), isEmpty);
-      expect(ws.eye, [0, 0, 1]);
-    });
+    test(
+      'setView keeps a value under a name and tells view when it changes',
+      () {
+        final ws = _ws();
+        expect(ws.viewOf('stage.tool', 'select'), 'select');
+        expect(_told(ws, () => ws.setView('stage.tool', 'pen')), {
+          WorkspaceAspect.view: 1,
+        });
+        expect(_told(ws, () => ws.setView('stage.tool', 'pen')), isEmpty);
+        expect(ws.viewOf('stage.tool', 'select'), 'pen');
+        expect(_told(ws, () => ws.setView('never.set', null)), isEmpty);
+        expect(ws.eye, [0, 0, 1]);
+      },
+    );
 
     test('the working camera is the eye while a camera layer exists and the view is not through it', () {
       final ws = _ws();
@@ -200,13 +228,20 @@ void main() {
     test('openToolPanel names the tool and fronts the Tool Panel', () {
       final ws = _ws();
       expect(ws.toolPanel, 'Tools');
-      expect(_told(ws, () => ws.openToolPanel('Ease')), {WorkspaceAspect.fronted: 1});
-      expect((ws.toolPanelManual, ws.toolPanel, ws.fronted), ('Ease', 'Ease', ('Tool Panel', 1)));
+      expect(_told(ws, () => ws.openToolPanel('Ease')), {
+        WorkspaceAspect.fronted: 1,
+      });
+      expect(
+        (ws.toolPanelManual, ws.toolPanel, ws.fronted),
+        ('Ease', 'Ease', ('Tool Panel', 1)),
+      );
     });
 
     test('notice tells notice when the text changes, and forgets what clicking the old one did', () {
       final ws = _ws();
-      expect(_told(ws, () => ws.notice = 'Rendering…'), {WorkspaceAspect.notice: 1});
+      expect(_told(ws, () => ws.notice = 'Rendering…'), {
+        WorkspaceAspect.notice: 1,
+      });
       ws.noticeGo = () {};
       expect(_told(ws, () => ws.notice = 'Rendering…'), isEmpty);
       expect(ws.noticeGo, isNotNull);
@@ -225,8 +260,13 @@ void main() {
   group('the rows', () {
     test('twirl opens the lanes of the layers when none of them is open, else shuts them all, and tells animating', () {
       final ws = _ws();
-      expect(_told(ws, () => ws.twirl(['3', '4'])), {WorkspaceAspect.animating: 1});
-      expect((ws.lanesOpen('3'), ws.lanesOpen('4'), ws.aimsOpen('3')), (true, true, true));
+      expect(_told(ws, () => ws.twirl(['3', '4'])), {
+        WorkspaceAspect.animating: 1,
+      });
+      expect(
+        (ws.lanesOpen('3'), ws.lanesOpen('4'), ws.aimsOpen('3')),
+        (true, true, true),
+      );
       ws.twirl(['3']);
       expect((ws.lanesOpen('3'), ws.lanesOpen('4')), (false, true));
       ws.twirl(['3', '4']);
@@ -236,9 +276,13 @@ void main() {
     test('turnGroup opens or closes a group and its own lanes with it, and tells animating', () {
       final ws = _ws();
       expect(ws.groupOpen('1'), isFalse);
-      expect(_told(ws, () => ws.turnGroup('1')), {WorkspaceAspect.animating: 1});
+      expect(_told(ws, () => ws.turnGroup('1')), {
+        WorkspaceAspect.animating: 1,
+      });
       expect((ws.groupOpen('1'), ws.lanesOpen('1')), (true, true));
-      expect(_told(ws, () => ws.turnGroup('1')), {WorkspaceAspect.animating: 1});
+      expect(_told(ws, () => ws.turnGroup('1')), {
+        WorkspaceAspect.animating: 1,
+      });
       expect((ws.groupOpen('1'), ws.lanesOpen('1')), (false, false));
     });
 
@@ -278,17 +322,30 @@ void main() {
       final ws = _ws();
       expect(_told(ws, ws.reread), isEmpty);
       expect((ws.rev, ws.waiting), (0, false));
-      expect(_told(ws, () => ws.animating = true), {WorkspaceAspect.animating: 1});
+      expect(_told(ws, () => ws.animating = true), {
+        WorkspaceAspect.animating: 1,
+      });
       expect(ws.animating, isFalse);
     });
 
     test('fxFiles splits an effect list into its files, keeping the spaces inside a path that starts with /', () {
       expect(WorkspaceController.fxFiles(''), isEmpty);
       expect(WorkspaceController.fxFiles('none'), isEmpty);
-      expect(WorkspaceController.fxFiles('blur.wgsl glow.fs'), ['blur.wgsl', 'glow.fs']);
-      expect(WorkspaceController.fxFiles('/Users/me/My Effects/soft glow.wgsl /lib/tint.fs'), ['/Users/me/My Effects/soft glow.wgsl', '/lib/tint.fs']);
+      expect(WorkspaceController.fxFiles('blur.wgsl glow.fs'), [
+        'blur.wgsl',
+        'glow.fs',
+      ]);
+      expect(
+        WorkspaceController.fxFiles(
+          '/Users/me/My Effects/soft glow.wgsl /lib/tint.fs',
+        ),
+        ['/Users/me/My Effects/soft glow.wgsl', '/lib/tint.fs'],
+      );
       expect(WorkspaceController.fxFiles('none /a b/c.json'), ['/a b/c.json']);
-      expect(WorkspaceController.fxFiles('/x/script.anm2@Track1 /y/z.js'), ['/x/script.anm2@Track1', '/y/z.js']);
+      expect(WorkspaceController.fxFiles('/x/script.anm2@Track1 /y/z.js'), [
+        '/x/script.anm2@Track1',
+        '/y/z.js',
+      ]);
     });
   });
 
@@ -296,7 +353,11 @@ void main() {
     final ws = WorkspaceController()..dispose();
     expect(() => ws.moment.addListener(() {}), throwsFlutterError);
     for (final a in WorkspaceAspect.values) {
-      expect(() => ws.on[a]!.addListener(() {}), throwsFlutterError, reason: a.name);
+      expect(
+        () => ws.on[a]!.addListener(() {}),
+        throwsFlutterError,
+        reason: a.name,
+      );
     }
   });
 }

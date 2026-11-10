@@ -9,7 +9,16 @@ import 'package:motolii/skin/window_tokens.dart';
 /// [height], [color] and [padding] are for headers that need to be taller, darker or tighter.
 /// [child] replaces the whole row.
 class PanelHeader extends StatelessWidget {
-  const PanelHeader(this.title, {super.key, this.trailing = const [], this.leading, this.height, this.color, this.padding, this.child});
+  const PanelHeader(
+    this.title, {
+    super.key,
+    this.trailing = const [],
+    this.leading,
+    this.height,
+    this.color,
+    this.padding,
+    this.child,
+  });
   final String title;
   final List<Widget> trailing;
   final Widget? leading, child;
@@ -29,7 +38,12 @@ class PanelHeader extends StatelessWidget {
         Row(
           children: [
             if (leading case final l?) ...[l, SizedBox(width: Shape.s(6))],
-            if (title.isNotEmpty) Text(title, style: TextStyles.name(Grey.g95).copyWith(fontWeight: FontWeight.w700)),
+            if (title.isNotEmpty)
+              Text(
+                title,
+                style: TextStyles.name(Grey.g95)
+                    .copyWith(fontWeight: FontWeight.w700),
+              ),
             const Spacer(),
             ...trailing,
           ],

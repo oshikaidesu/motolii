@@ -15,7 +15,8 @@ import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_easing_presets.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease_side.dart' show drawEaseChevron;
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_side.dart'
+    show drawEaseChevron;
 import 'package:motolii/widgets/media.dart' show Draw;
 
 import 'package:motolii/widgets/controls.dart' show Pressable;
@@ -24,13 +25,16 @@ import 'package:motolii/storage/json_file.dart' show fileKeep, fileList;
 /// The easings the user saved: a curve, a card or all the cards, each stored as its name string.
 /// Saving works like saving a device preset in Ableton Live (manual, 23.2.5 Saving Presets).
 /// The list lives in ~/.motolii/ease_kept.json, next to colors.json.
-File _keptFile = File('${Platform.environment['HOME']}/.motolii/ease_kept.json');
+File _keptFile = File(
+  '${Platform.environment['HOME']}/.motolii/ease_kept.json',
+);
 List<String>? _kept;
 
 /// Points the list at another file and forgets what was read. Tests use this, as they do with coloursAt.
 void easeKeptAt(File f) => (_keptFile = f, _kept = null);
 
-List<String> easeKept() => _kept ??= [for (final w in fileList(_keptFile)) '$w'];
+List<String> easeKept() =>
+    _kept ??= [for (final w in fileList(_keptFile)) '$w'];
 
 /// Saves [word], or removes it when [off] is set.
 void easeKeep(String word, {bool off = false}) {
@@ -60,7 +64,12 @@ class EaseGrip extends StatelessWidget {
         color: h ? Grey.g56 : Grey.g38,
         borderRadius: BorderRadius.horizontal(left: Shape.r(4)),
       ),
-      child: CustomPaint(painter: Draw((cv, s) => drawEaseChevron(cv, s, h ? Grey.g95 : Grey.g76, !open), (h, open))),
+      child: CustomPaint(
+        painter: Draw(
+          (cv, s) => drawEaseChevron(cv, s, h ? Grey.g95 : Grey.g76, !open),
+          (h, open),
+        ),
+      ),
     ),
   );
 }
@@ -104,14 +113,25 @@ class EaseShelf extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final kept = easeKept();
-    final across = SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: columns, mainAxisExtent: pitch);
-    Widget tile(Ease e, Key key) => EasingPresetTile(e, key: key, on: said(e) == now, side: side, onTap: () => said(e) == now ? null : onPick(e));
+    final across = SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: columns,
+      mainAxisExtent: pitch,
+    );
+    Widget tile(Ease e, Key key) => EasingPresetTile(
+      e,
+      key: key,
+      on: said(e) == now,
+      side: side,
+      onTap: () => said(e) == now ? null : onPick(e),
+    );
     return DragTarget<int>(
       onAcceptWithDetails: (d) => onKeep(d.data),
       builder: (_, hot, _) => DecoratedBox(
         decoration: BoxDecoration(
           color: WindowTokens.card,
-          border: hot.isEmpty ? Border(left: BorderSide(color: Grey.g38)) : Border.all(color: WindowTokens.accent, width: 2),
+          border: hot.isEmpty
+              ? Border(left: BorderSide(color: Grey.g38))
+              : Border.all(color: WindowTokens.accent, width: 2),
         ),
         child: CustomScrollView(
           slivers: [
@@ -123,7 +143,10 @@ class EaseShelf extends StatelessWidget {
                       key: const ValueKey('ease.shelf.slot'),
                       onTap: () => onKeep(-1),
                       builder: (_, h) => Center(
-                        child: EaseSlot(side: side, ink: h ? Grey.g76 : Grey.g38),
+                        child: EaseSlot(
+                          side: side,
+                          ink: h ? Grey.g76 : Grey.g38,
+                        ),
                       ),
                     )
                   : Pressable(
@@ -132,12 +155,17 @@ class EaseShelf extends StatelessWidget {
                         final e = _tiles[kept[i]] ??= easeCard(kept[i], inside);
                         return Stack(
                           children: [
-                            Positioned.fill(child: tile(e, ValueKey('ease.kept.${kept[i]}'))),
+                            Positioned.fill(
+                              child: tile(e, ValueKey('ease.kept.${kept[i]}')),
+                            ),
                             if (h)
                               Positioned(
                                 right: 0,
                                 top: 0,
-                                child: EaseOff(key: ValueKey('ease.forget.${kept[i]}'), onTap: () => onForget(e)),
+                                child: EaseOff(
+                                  key: ValueKey('ease.forget.${kept[i]}'),
+                                  onTap: () => onForget(e),
+                                ),
                               ),
                           ],
                         );
@@ -147,11 +175,19 @@ class EaseShelf extends StatelessWidget {
             SliverToBoxAdapter(
               child: Container(
                 height: 1,
-                margin: EdgeInsets.symmetric(vertical: Shape.s(3), horizontal: Shape.s(4)),
+                margin: EdgeInsets.symmetric(
+                  vertical: Shape.s(3),
+                  horizontal: Shape.s(4),
+                ),
                 color: Grey.g38,
               ),
             ),
-            SliverGrid.builder(gridDelegate: across, itemCount: ways.length, itemBuilder: (_, i) => tile(ways[i], ValueKey('ease.${ways[i].name}'))),
+            SliverGrid.builder(
+              gridDelegate: across,
+              itemCount: ways.length,
+              itemBuilder: (_, i) =>
+                  tile(ways[i], ValueKey('ease.${ways[i].name}')),
+            ),
           ],
         ),
       ),

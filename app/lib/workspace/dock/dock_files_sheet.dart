@@ -19,26 +19,55 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 /// An item before frame 0 shows from the start, which CLIP STUDIO writes sometimes.
 /// A number with a letter, such as 3a, is not supported and is returned in `unread`.
 /// Returns null if [text] is not a timesheet.
-({int frames, List<(String, List<(int, int)>)> columns, Set<String> unread})? _sheetOf(String text) {
+({int frames, List<(String, List<(int, int)>)> columns, Set<String> unread})?
+_sheetOf(String text) {
   const first = 'exchangeDigitalTimeSheet Save Data';
   if (!text.startsWith(first)) return null;
   try {
-    final table = (jsonDecode(text.substring(first.length)) as Map)['timeTables'][0] as Map, unread = <String>{};
-    final names = (table['timeTableHeaders'] as List).firstWhere((h) => h['fieldId'] == 0)['names'] as List;
-    final tracks = ((table['fields'] as List).firstWhere((f) => f['fieldId'] == 0)['tracks'] as List).cast<Map>().toList()
-      ..sort((a, b) => (a['trackNo'] as int).compareTo(b['trackNo'] as int));
+    final table =
+            (jsonDecode(text.substring(first.length)) as Map)['timeTables'][0]
+                as Map,
+        unread = <String>{};
+    final names =
+        (table['timeTableHeaders'] as List).firstWhere(
+              (h) => h['fieldId'] == 0,
+            )['names']
+            as List;
+    final tracks =
+        ((table['fields'] as List).firstWhere(
+                  (f) => f['fieldId'] == 0,
+                )['tracks']
+                as List)
+            .cast<Map>()
+            .toList()
+          ..sort(
+            (a, b) => (a['trackNo'] as int).compareTo(b['trackNo'] as int),
+          );
     List<(int, int)> keysOf(Map track) {
       final keys = <int, int>{0: -1};
-      for (final item in (track['frames'] as List).cast<Map>().toList()..sort((a, b) => (a['frame'] as int).compareTo(b['frame'] as int))) {
-        final values = [for (final d in item['data'] as List) ...d['values'] as List];
-        final said = values.isEmpty ? 'SYMBOL_NULL_CELL' : '${values.first}', n = said == 'SYMBOL_NULL_CELL' ? -1 : int.tryParse(said);
+      for (final item
+          in (track['frames'] as List).cast<Map>().toList()..sort(
+            (a, b) => (a['frame'] as int).compareTo(b['frame'] as int),
+          )) {
+        final values = [
+          for (final d in item['data'] as List) ...d['values'] as List,
+        ];
+        final said = values.isEmpty ? 'SYMBOL_NULL_CELL' : '${values.first}',
+            n = said == 'SYMBOL_NULL_CELL' ? -1 : int.tryParse(said);
         if (n != null) keys[math.max(0, item['frame'] as int)] = n;
         if (n == null && !said.startsWith('SYMBOL_')) unread.add(said);
       }
       return [for (final e in keys.entries) (e.key, e.value)];
     }
 
-    return (frames: table['duration'] as int, columns: [for (final t in tracks) ('${names[t['trackNo'] as int]}'.trim(), keysOf(t))], unread: unread);
+    return (
+      frames: table['duration'] as int,
+      columns: [
+        for (final t in tracks)
+          ('${names[t['trackNo'] as int]}'.trim(), keysOf(t)),
+      ],
+      unread: unread,
+    );
   } catch (_) {
     return null;
   }
@@ -53,10 +82,16 @@ List<(int, String)>? levelOf(List<String> files, {int least = 2}) {
   String? level;
   for (final f in files) {
     final m = named.firstMatch(f);
-    if (kindOfFile(f) != 'picture' || m == null || (level ??= '${m[1]}${m[3]}') != '${m[1]}${m[3]}') return null;
+    if (kindOfFile(f) != 'picture' ||
+        m == null ||
+        (level ??= '${m[1]}${m[3]}') != '${m[1]}${m[3]}') {
+      return null;
+    }
     drawings.add((int.parse(m[2]!), f));
   }
-  return drawings.length < least ? null : (drawings..sort((a, b) => a.$1.compareTo(b.$1)));
+  return drawings.length < least
+      ? null
+      : (drawings..sort((a, b) => a.$1.compareTo(b.$1)));
 }
 
 /// Finds the drawings of the level [name] for the timesheet file [sheet].
@@ -65,7 +100,8 @@ List<(int, String)>? levelOf(List<String> files, {int least = 2}) {
 /// (A.0001.png, A_0001.png). It looks in the sheet's folder, then in a subfolder of that name, as CLIP STUDIO writes
 /// foo/A/ (OpenToonz's xdtsimportpopup.cpp, updateSuggestions).
 List<(int, String)>? _levelNamed(String sheet, String name) {
-  final here = File(sheet).parent.path, named = RegExp('^${RegExp.escape(name)}[._]\\d+\\.[^./]+\$');
+  final here = File(sheet).parent.path,
+      named = RegExp('^${RegExp.escape(name)}[._]\\d+\\.[^./]+\$');
   for (final folder in [here, '$here/$name']) {
     if (!Directory(folder).existsSync()) continue;
     if (levelOf([
@@ -91,7 +127,10 @@ Future<void> placeSheet(ShelfContext c, String file) async {
     c.ws.notice = 'Not a timesheet: ${basename(file)}';
     return;
   }
-  final m = c.ws.inside!, from = c.ws.frame / WorkspaceController.fps, missing = <String>[], made = <Future<int>>[];
+  final m = c.ws.inside!,
+      from = c.ws.frame / WorkspaceController.fps,
+      missing = <String>[],
+      made = <Future<int>>[];
   m.later('together', number: 1);
   for (final (name, keys) in sheet.columns) {
     if (_levelNamed(file, name) case final drawings?) {
@@ -105,7 +144,13 @@ Future<void> placeSheet(ShelfContext c, String file) async {
       for (final (f, n) in keys) {
         final at = '${from + f / 24}';
         m.later('key', layer: -1, name: 'cel', word: at, number: n.toDouble());
-        m.later('easing', layer: -1, name: 'cel', number: double.parse(at), word: 'hold');
+        m.later(
+          'easing',
+          layer: -1,
+          name: 'cel',
+          number: double.parse(at),
+          word: 'hold',
+        );
       }
       made.add(asked.future);
     } else {
@@ -122,5 +167,6 @@ Future<void> placeSheet(ShelfContext c, String file) async {
     if (missing.isNotEmpty) 'no drawings named ${missing.join(', ')} beside it',
     if (sheet.unread.isNotEmpty) 'not read: ${sheet.unread.join(', ')}',
   ];
-  c.ws.notice = 'Placed ${ids.length} of ${sheet.columns.length} columns of ${basename(file)}${told.isEmpty ? '' : ': ${told.join('; ')}'}';
+  c.ws.notice =
+      'Placed ${ids.length} of ${sheet.columns.length} columns of ${basename(file)}${told.isEmpty ? '' : ': ${told.join('; ')}'}';
 }

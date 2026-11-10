@@ -19,18 +19,33 @@ import 'package:motolii/workspace/state/workspace_scope.dart';
 /// The easing shapes shown in one row, one click each.
 /// They are Alight Motion's, in the order of AbsentMotion's EasingCatalog.families, with the four Beziers first.
 /// The second row of AbsentMotion's panel is not needed because the shelf holds the rest.
-const easeShapes = ['Linear', 'In', 'Out', 'In-out', 'Bounce', 'Elastic', 'Cyclic', 'Random', 'Steps', 'ElasticSteps'];
+const easeShapes = [
+  'Linear',
+  'In',
+  'Out',
+  'In-out',
+  'Bounce',
+  'Elastic',
+  'Cyclic',
+  'Random',
+  'Steps',
+  'ElasticSteps',
+];
 
 /// How many shapes a row of [length] shows: as many as fit at a good size, at least seven, plus part of the next one.
 /// The cut-off shape tells the user there is more to scroll to.
-double easeFits(double length) => (length / Shape.z(34)).floorToDouble().clamp(7, easeShapes.length) + .45;
+double easeFits(double length) =>
+    (length / Shape.z(34)).floorToDouble().clamp(7, easeShapes.length) + .45;
 
 /// Whether [e] is a Linear or Bezier curve.
-bool easeIsBezier(Ease e) => const {'Linear', 'Bezier'}.contains(said(e).split(' ').first);
+bool easeIsBezier(Ease e) =>
+    const {'Linear', 'Bezier'}.contains(said(e).split(' ').first);
 
 /// The row of shapes, followed by Hold, which is reached by scrolling.
 List<Ease> easeRow(List<Ease> ways) {
-  Ease? named(String n) => easingPresets.where((p) => p.name == n).firstOrNull ?? ways.where((w) => w.name == n).firstOrNull;
+  Ease? named(String n) =>
+      easingPresets.where((p) => p.name == n).firstOrNull ??
+      ways.where((w) => w.name == n).firstOrNull;
   return [for (final n in easeShapes) ?named(n), easingPreset('Hold')];
 }
 
@@ -43,12 +58,21 @@ List<Ease> easeOthers(List<Ease> ways) => [
 /// Whether [now] is this shape, as in AbsentMotion's EasingCatalog.matches: a Bezier matches by its numbers, any other kind by its name.
 bool _isOf(Ease shape, Ease now) {
   final word = said(now), base = easeIsTurned(word) ? easeTurn(word) : word;
-  return easeIsBezier(shape) ? shape == now : said(shape).split(' ').first == base.split(' ').first;
+  return easeIsBezier(shape)
+      ? shape == now
+      : said(shape).split(' ').first == base.split(' ').first;
 }
 
 /// The row beside the graph. Clicking a shape applies it to the keyframe interval, and clicking Linear straightens a curve.
 class EaseShapes extends StatelessWidget {
-  const EaseShapes({super.key, required this.ease, required this.shapes, required this.side, required this.onPick, this.across = false});
+  const EaseShapes({
+    super.key,
+    required this.ease,
+    required this.shapes,
+    required this.side,
+    required this.onPick,
+    this.across = false,
+  });
 
   /// The current easing.
   final Ease ease;
@@ -67,7 +91,9 @@ class EaseShapes extends StatelessWidget {
     child: LayoutBuilder(
       builder: (_, box) => ListView(
         scrollDirection: across ? Axis.horizontal : Axis.vertical,
-        itemExtent: (across ? box.maxWidth : box.maxHeight) / easeFits(across ? box.maxWidth : box.maxHeight),
+        itemExtent:
+            (across ? box.maxWidth : box.maxHeight) /
+            easeFits(across ? box.maxWidth : box.maxHeight),
         children: [
           for (final e in shapes)
             EasingPresetTile(
@@ -76,7 +102,10 @@ class EaseShapes extends StatelessWidget {
               on: _isOf(e, ease),
               side: side,
               // Clicking the shape already in use does nothing, so its own numbers are kept.
-              onTap: () => _isOf(e, ease) && !(easeIsBezier(e) && said(e) != said(ease)) ? null : onPick(e),
+              onTap: () =>
+                  _isOf(e, ease) && !(easeIsBezier(e) && said(e) != said(ease))
+                  ? null
+                  : onPick(e),
             ),
         ],
       ),
@@ -105,14 +134,27 @@ class EaseLeft extends StatelessWidget {
             child: Pressable(
               key: const ValueKey('ease-reverse'),
               onTap: onReverse,
-              builder: (_, h) =>
-                  glyph(Shape.z(18), (cv, s) => _drawReverse(cv, s, onReverse == null ? Grey.g38 : (h ? Grey.g95 : Grey.g76)), (onReverse == null, h)),
+              builder: (_, h) => glyph(
+                Shape.z(18),
+                (cv, s) => _drawReverse(
+                  cv,
+                  s,
+                  onReverse == null ? Grey.g38 : (h ? Grey.g95 : Grey.g76),
+                ),
+                (onReverse == null, h),
+              ),
             ),
           ),
         ),
         Expanded(
           child: Center(
-            child: CardMore(name: 'Ease', word: '⋯', above: true, big: true, items: menu),
+            child: CardMore(
+              name: 'Ease',
+              word: '⋯',
+              above: true,
+              big: true,
+              items: menu,
+            ),
           ),
         ),
       ],
@@ -162,7 +204,12 @@ class EaseStep extends StatelessWidget {
     return to == null
         ? const SizedBox.shrink()
         : IconPress(
-            paintInk((ink) => Draw((cv, s) => drawEaseChevron(cv, s, ink, back), (ink, back))),
+            paintInk(
+              (ink) => Draw((cv, s) => drawEaseChevron(cv, s, ink, back), (
+                ink,
+                back,
+              )),
+            ),
             rest: WindowTokens.well,
             ink: Grey.g76,
             key: ValueKey(back ? 'ease-previous' : 'ease-next'),
@@ -174,7 +221,8 @@ class EaseStep extends StatelessWidget {
 
 /// Draws a chevron pointing back (left) or forward (right).
 void drawEaseChevron(Canvas c, Size s, Color ink, bool back) {
-  final x = back ? s.width * .6 : s.width * .4, d = back ? -s.width * .2 : s.width * .2;
+  final x = back ? s.width * .6 : s.width * .4,
+      d = back ? -s.width * .2 : s.width * .2;
   c.drawPath(
     Path()
       ..moveTo(x, s.height * .25)

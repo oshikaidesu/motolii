@@ -79,13 +79,27 @@ class ShelfLook {
   final bool eased;
 }
 
-const _square = ShelfLook(ShelfForm.under, cell: 84, sized: true, row: 22, rowArt: Size(18, 18), rowGap: 6, eased: false);
+const _square = ShelfLook(
+  ShelfForm.under,
+  cell: 84,
+  sized: true,
+  row: 22,
+  rowArt: Size(18, 18),
+  rowGap: 6,
+  eased: false,
+);
 
 /// The look of every shelf, keyed by the shelf's name (ShelfContext.shelf).
 const shelfLooks = <String, ShelfLook>{
   'Effects': _square,
   'Program': _square,
-  'Media': ShelfLook(ShelfForm.under, cell: 76, min: 2, aspect: 16 / 9, top: WindowTokens.gutter),
+  'Media': ShelfLook(
+    ShelfForm.under,
+    cell: 76,
+    min: 2,
+    aspect: 16 / 9,
+    top: WindowTokens.gutter,
+  ),
   'Create': ShelfLook(ShelfForm.over, cell: 74, min: 2, height: 70),
   'Fonts': ShelfLook(ShelfForm.words, cell: 200, height: 96, row: 46),
 };
@@ -178,11 +192,33 @@ class ShelfTile extends StatelessWidget {
 
   // In the grid the image always plays while in sight (TileMoving decides that). When [small] it plays only under the
   // pointer, because decoding 1,255 animated images at 16 frames each takes about 3 GB.
-  Widget? _image(bool h) => item.picture.isEmpty ? null : TileMoving(item.picture, playing: h || !small);
+  Widget? _image(bool h) => item.picture.isEmpty
+      ? null
+      : TileMoving(item.picture, playing: h || !small);
 
-  Widget _box({double? height, required EdgeInsetsGeometry padding, AlignmentGeometry? alignment, required Color color, required Widget child}) => look.eased
-      ? AnimatedContainer(duration: Motion.dur, curve: Motion.ease, height: height, padding: padding, alignment: alignment, color: color, child: child)
-      : Container(height: height, padding: padding, alignment: alignment, color: color, child: child);
+  Widget _box({
+    double? height,
+    required EdgeInsetsGeometry padding,
+    AlignmentGeometry? alignment,
+    required Color color,
+    required Widget child,
+  }) => look.eased
+      ? AnimatedContainer(
+          duration: Motion.dur,
+          curve: Motion.ease,
+          height: height,
+          padding: padding,
+          alignment: alignment,
+          color: color,
+          child: child,
+        )
+      : Container(
+          height: height,
+          padding: padding,
+          alignment: alignment,
+          color: color,
+          child: child,
+        );
 
   Widget _under(bool h) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -200,7 +236,10 @@ class ShelfTile extends StatelessWidget {
               IgnorePointer(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    border: Border.all(color: lit || picked ? WindowTokens.accentInk : Grey.g76, width: lit || picked ? 2 : 1),
+                    border: Border.all(
+                      color: lit || picked ? WindowTokens.accentInk : Grey.g76,
+                      width: lit || picked ? 2 : 1,
+                    ),
                   ),
                 ),
               ),
@@ -221,7 +260,8 @@ class ShelfTile extends StatelessWidget {
                 child: Text(
                   item.name,
                   maxLines: 1,
-                  style: TextStyles.micro(dockInk(picked, ink ?? Grey.g76)).copyWith(fontWeight: bold ? FontWeight.w700 : null),
+                  style: TextStyles.micro(dockInk(picked, ink ?? Grey.g76))
+                      .copyWith(fontWeight: bold ? FontWeight.w700 : null),
                 ),
               ),
         ),
@@ -230,10 +270,15 @@ class ShelfTile extends StatelessWidget {
 
   Widget _over(bool h) => _box(
     padding: EdgeInsets.all(Shape.s(7)),
-    color: picked ? WindowTokens.accent : (h ? WindowTokens.raised : WindowTokens.card),
+    color: picked
+        ? WindowTokens.accent
+        : (h ? WindowTokens.raised : WindowTokens.card),
     child: Stack(
       children: [
-        if (art case final a?) a(h) else if (_image(h) case final p?) Positioned.fill(child: p),
+        if (art case final a?)
+          a(h)
+        else if (_image(h) case final p?)
+          Positioned.fill(child: p),
         ...?over?.call(h),
         Align(
           alignment: Alignment.bottomLeft,
@@ -246,7 +291,8 @@ class ShelfTile extends StatelessWidget {
                 wrapWords: false,
                 minFontSize: 6,
                 stepGranularity: .5,
-                style: TextStyles.name(dockInk(picked, ink ?? Grey.g95)).copyWith(fontWeight: FontWeight.w700),
+                style: TextStyles.name(dockInk(picked, ink ?? Grey.g95))
+                    .copyWith(fontWeight: FontWeight.w700),
               ),
         ),
       ],
@@ -254,10 +300,20 @@ class ShelfTile extends StatelessWidget {
   );
 
   Widget _row(bool h) {
-    final name = naming ?? Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.name(dockInk(picked, ink)));
+    final name =
+        naming ??
+        Text(
+          item.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyles.name(dockInk(picked, ink)),
+        );
     return _box(
       height: Shape.z(look.row),
-      padding: EdgeInsets.only(left: Shape.s(4) + indent, right: WindowTokens.inset),
+      padding: EdgeInsets.only(
+        left: Shape.s(4) + indent,
+        right: WindowTokens.inset,
+      ),
       color: dockFill(picked, h),
       child: Row(
         children: [
@@ -266,7 +322,11 @@ class ShelfTile extends StatelessWidget {
             height: Shape.z(look.rowArt.height),
             child: Stack(
               fit: StackFit.expand,
-              children: [art?.call(h) ?? _image(h) ?? ColoredBox(color: WindowTokens.card)],
+              children: [
+                art?.call(h) ??
+                    _image(h) ??
+                    ColoredBox(color: WindowTokens.card),
+              ],
             ),
           ),
           SizedBox(width: Shape.s(look.rowGap)),
@@ -279,7 +339,12 @@ class ShelfTile extends StatelessWidget {
                 children: [
                   name,
                   SizedBox(height: Shape.s(4)),
-                  Text(said, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.label(dockInk(picked, Grey.g63))),
+                  Text(
+                    said,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyles.label(dockInk(picked, Grey.g63)),
+                  ),
                 ],
               ),
             },
@@ -291,12 +356,24 @@ class ShelfTile extends StatelessWidget {
   }
 
   Widget _sample(bool h) =>
-      art?.call(h) ?? Text(item.name, maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: TextStyles.name(dockInk(picked, Grey.g95)));
+      art?.call(h) ??
+      Text(
+        item.name,
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.fade,
+        style: TextStyles.name(dockInk(picked, Grey.g95)),
+      );
 
   Widget _caption() => Row(
     children: [
       Flexible(
-        child: Text(says ?? item.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.label(dockInk(picked, Grey.g76))),
+        child: Text(
+          says ?? item.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyles.label(dockInk(picked, Grey.g76)),
+        ),
       ),
       ...marks,
     ],
@@ -330,7 +407,12 @@ class ShelfTile extends StatelessWidget {
       final x? => Shape.z(x),
       null => null,
     },
-    padding: EdgeInsets.fromLTRB(WindowTokens.inset, Shape.s(8), Shape.s(4), Shape.s(8)),
+    padding: EdgeInsets.fromLTRB(
+      WindowTokens.inset,
+      Shape.s(8),
+      Shape.s(4),
+      Shape.s(8),
+    ),
     color: dockFill(picked, h, WindowTokens.card),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -376,8 +458,16 @@ class ShelfGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
-      final round = pad ?? EdgeInsets.only(top: look.top), wide = box.maxWidth - round.horizontal;
-      final across = list ? 1 : cols ?? gridColumns(wide, look.sized ? Shape.z(look.cell) : look.cell, min: look.min);
+      final round = pad ?? EdgeInsets.only(top: look.top),
+          wide = box.maxWidth - round.horizontal;
+      final across = list
+          ? 1
+          : cols ??
+                gridColumns(
+                  wide,
+                  look.sized ? Shape.z(look.cell) : look.cell,
+                  min: look.min,
+                );
       return CustomScrollView(
         shrinkWrap: shrinkWrap,
         physics: shrinkWrap ? const NeverScrollableScrollPhysics() : null,
@@ -394,7 +484,9 @@ class ShelfGrid extends StatelessWidget {
                     : switch (look.height) {
                         final x? => Shape.z(x),
                         // A tile is its image plus its name bar.
-                        null => gridCellWidth(wide, across) / look.aspect + (small ? 0 : Shape.z(ShelfTile.bar)),
+                        null =>
+                          gridCellWidth(wide, across) / look.aspect +
+                              (small ? 0 : Shape.z(ShelfTile.bar)),
                       },
               ),
               itemCount: count,
@@ -422,7 +514,10 @@ class TileMoving extends StatefulWidget {
 }
 
 class TileMovingState extends State<TileMoving> {
-  static final _way = [for (var k = 0; k < EffectTiles.moments.length; k++) k, for (var k = EffectTiles.moments.length - 2; k > 0; k--) k];
+  static final _way = [
+    for (var k = 0; k < EffectTiles.moments.length; k++) k,
+    for (var k = EffectTiles.moments.length - 2; k > 0; k--) k,
+  ];
   int? _step;
   Timer? _clock;
   // False while its tab or page is hidden, via TickerMode as an AnimationController does.
@@ -433,13 +528,19 @@ class TileMovingState extends State<TileMoving> {
         widget.playing &&
         _awake &&
         // Check the last frame: a tile drawn with fewer frames stays as it is until it is drawn again.
-        File(EffectTiles.frame(widget.file, EffectTiles.moments.length - 1)).existsSync();
+        File(EffectTiles.frame(widget.file, EffectTiles.moments.length - 1))
+            .existsSync();
     if (go == (_clock != null)) return;
     _clock?.cancel();
     _clock = go
         ? Timer.periodic(
             const Duration(microseconds: 41667),
-            (_) => mounted && _inSight() ? setState(() => _step = ((_step ?? EffectTiles.still) + 1) % _way.length) : null,
+            (_) => mounted && _inSight()
+                ? setState(
+                    () => _step =
+                        ((_step ?? EffectTiles.still) + 1) % _way.length,
+                  )
+                : null,
           )
         : null;
     if (!go) _step = null;
@@ -450,7 +551,8 @@ class TileMovingState extends State<TileMoving> {
     final box = context.findRenderObject();
     if (box is! RenderBox || !box.attached || !box.hasSize) return false;
     var r = box.localToGlobal(Offset.zero) & box.size;
-    if (Scrollable.maybeOf(context)?.context.findRenderObject() case final RenderBox view when view.attached && view.hasSize) {
+    if (Scrollable.maybeOf(context)?.context.findRenderObject()
+        case final RenderBox view when view.attached && view.hasSize) {
       r = r.intersect(view.localToGlobal(Offset.zero) & view.size);
     }
     r = r.intersect(Offset.zero & MediaQuery.sizeOf(context));
@@ -485,7 +587,11 @@ class TileMovingState extends State<TileMoving> {
   @override
   Widget build(BuildContext context) => Image.file(
     key: ValueKey(FileStat.statSync(widget.file).modified),
-    File(_step == null ? widget.file : EffectTiles.frame(widget.file, _way[_step!])),
+    File(
+      _step == null
+          ? widget.file
+          : EffectTiles.frame(widget.file, _way[_step!]),
+    ),
     fit: BoxFit.cover,
     cacheWidth: EffectTiles.readWide,
     gaplessPlayback: true,

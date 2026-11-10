@@ -10,7 +10,8 @@ class RowInfo extends InheritedWidget {
 
   /// The keyframe state of the property the rows below belong to.
   final KeyframeState keys;
-  static RowInfo of(BuildContext c) => c.dependOnInheritedWidgetOfExactType<RowInfo>()!;
+  static RowInfo of(BuildContext c) =>
+      c.dependOnInheritedWidgetOfExactType<RowInfo>()!;
   @override
   bool updateShouldNotify(RowInfo old) => old.keys != keys;
 }

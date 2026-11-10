@@ -54,14 +54,18 @@ class EffectsShelf extends StatefulWidget {
   /// Effect files sorted by name, as After Effects' Effects & Presets panel lists each kind.
   /// The engine lists them by file, so VIDVOX's capitals came before AbsentMotion's am_ files: two runs of A to Z.
   /// Computed once per list of files.
-  static final _byName = Expando<List<(String, ShelfItem)>>(); // Each entry is the name as shown and the engine's item.
+  static final _byName =
+      Expando<
+        List<(String, ShelfItem)>
+      >(); // Each entry is the name as shown and the engine's item.
 
   @override
   State<EffectsShelf> createState() => _EffectsShelfState();
 }
 
 class _EffectsShelfState extends State<EffectsShelf> {
-  final _menu = GlobalKey<ContextMenuState>(), _places = GlobalKey<EffectPlacesState>();
+  final _menu = GlobalKey<ContextMenuState>(),
+      _places = GlobalKey<EffectPlacesState>();
   final _tileKeys = FocusNode(debugLabel: 'ws-fx-tiles'); // Once a tile is pressed, B goes to the tiles instead of the stage's brush.
   ShelfContext get c => widget.c;
   String? _renaming; // The file the user added whose name is being edited in its tile (shelf_add.dart).
@@ -70,7 +74,12 @@ class _EffectsShelfState extends State<EffectsShelf> {
   void _renamed(String file, String was, String? to) {
     setState(() => _renaming = null);
     if (to == null || to.trim() == was) return;
-    final why = shelfRename(c.ws, file, to, shelfTaken(c.ws, expression: false).difference({was}));
+    final why = shelfRename(
+      c.ws,
+      file,
+      to,
+      shelfTaken(c.ws, expression: false).difference({was}),
+    );
     if (why.isNotEmpty) c.ws.notice = 'Not renamed: $why';
   }
 
@@ -84,18 +93,21 @@ class _EffectsShelfState extends State<EffectsShelf> {
   Widget build(BuildContext context) {
     final ws = c.ws, m = ws.inside;
     if (m == null) return DockEmpty(c.query);
-    final on = ws.fxOf(ws.selected), screen = ws.screenFx, picked = int.tryParse(ws.selected ?? '') != null;
+    final on = ws.fxOf(ws.selected),
+        screen = ws.screenFx,
+        picked = int.tryParse(ws.selected ?? '') != null;
     // A layer's own effects, presets and motions go on the selected layer, or on a new layer when none is selected.
     // Whole-screen effects go on the selected layer, or on the stage.
     // Applying while words are typed in the search box latches the effect to those words, so it comes first next time.
     VoidCallback chosen(String id, VoidCallback put, {bool taken = false}) {
-      final VoidCallback go = () {
+      void go() {
         // A closure of its own rather than a tear-off, because a dragged tile is identified by it.
         DockTags.latch('Effects', c.query, id);
         if (!taken) c.set(() => effectUsed(id, words: c.query, chip: c.chip));
         ws.tryOn(null); // Stop previewing the hovered effect first: applying reads the document as it is.
         put();
-      };
+      }
+
       carriedEffect[go] = id;
       return go;
     }
@@ -103,30 +115,46 @@ class _EffectsShelfState extends State<EffectsShelf> {
     // Effects are listed whatever is selected, as After Effects' Effects & Presets panel does.
     // With no layer selected, a layer effect goes on a new layer (WorkspaceController.fxToggle).
     // A screen effect on the stage is taken off by Remove, and a press adds another (WorkspaceController.screenPut).
-    VoidCallback? off(_EffectEntry e) => screen.contains(e.id) ? () => ws.screenToggle(e.id) : null;
+    VoidCallback? off(_EffectEntry e) =>
+        screen.contains(e.id) ? () => ws.screenToggle(e.id) : null;
     final look = shelfLooks['Effects']!;
     // Overlays on a tile's image, none on a small tile.
     // ON, with its place among the stage's effects, when applied; the reason the sample looks unchanged (FOR SOUND, UNSUPPORTED ...);
     // and the star when starred or hovered.
-    List<Widget> Function(bool) marks(String id, bool small, {String? on, String? same}) =>
+    List<Widget> Function(bool) marks(
+      String id,
+      bool small, {
+      String? on,
+      String? same,
+    }) =>
         (h) => [
           if (on != null && !small)
             Positioned(
               left: 3,
               top: 3,
-              child: Chip(label: on, look: ChipLook.tag(WindowTokens.accent, edge: true)),
+              child: Chip(
+                label: on,
+                look: ChipLook.tag(WindowTokens.accent, edge: true),
+              ),
             ),
           if (same != null && !small)
             Positioned(
               left: 3,
               bottom: 3,
-              child: Chip(label: same, look: ChipLook.tag(Grey.g63, edge: true)),
+              child: Chip(
+                label: same,
+                look: ChipLook.tag(Grey.g63, edge: true),
+              ),
             ), // Shows why the sample is unchanged: what it lacks, or that the engine does not draw it yet.
           if (!small && (c.starred(id) || h))
             Positioned(
               right: 0,
               top: 0,
-              child: DockStar(key: ValueKey('ws-star-$id'), on: c.starred(id), onTap: () => c.star(id)),
+              child: DockStar(
+                key: ValueKey('ws-star-$id'),
+                on: c.starred(id),
+                onTap: () => c.star(id),
+              ),
             ),
         ];
     // What the engine said about each effect, by id: a layer effect by its name, a file effect by its file.
@@ -134,9 +162,17 @@ class _EffectsShelfState extends State<EffectsShelf> {
     String pic(String id) => seen[id]?.picture ?? '';
     // Builds one item for any of the three listings; only what really differs by listing is switched on its [from].
     _EffectEntry fx(String name, ShelfItem i) {
-      final thing = i.from == 'thing', screened = i.from == 'screen', id = thing ? i.name : i.id;
+      final thing = i.from == 'thing',
+          screened = i.from == 'screen',
+          id = thing ? i.name : i.id;
       final lit = thing ? on.contains(id) : screened && screen.contains(id);
-      final apply = chosen(id, thing ? () => ws.fxToggle(id) : (screened ? () => ws.screenPut(id) : () => ws.lookPut(id)), taken: thing && lit);
+      final apply = chosen(
+        id,
+        thing
+            ? () => ws.fxToggle(id)
+            : (screened ? () => ws.screenPut(id) : () => ws.lookPut(id)),
+        taken: thing && lit,
+      );
       seen[id] = i;
       return (
         id: id,
@@ -147,7 +183,9 @@ class _EffectsShelfState extends State<EffectsShelf> {
         said: thing
             ? _said(ws, id)
             : !screened
-            ? (picked ? 'A look for the picked thing' : 'A look, on a new board')
+            ? (picked
+                  ? 'A look for the picked thing'
+                  : 'A look, on a new board')
             : i.same && EffectTiles.stopped(id).isNotEmpty
             ? 'Stops here: ${EffectTiles.stopped(id)}'
             : i.same && EffectTiles.lacks(id).isNotEmpty
@@ -158,20 +196,28 @@ class _EffectsShelfState extends State<EffectsShelf> {
         tile: (small, menu) => ShelfTile(
           ShelfItem(id, name, picture: i.picture),
           look,
-          key: small || thing ? null : ValueKey(screened ? 'ws-screen-$id' : 'ws-look-$name'),
+          key: small || thing
+              ? null
+              : ValueKey(screened ? 'ws-screen-$id' : 'ws-look-$name'),
           small: small,
-          art: thing && i.picture.isEmpty ? _painted(Draw((c, _) => _effectLook(c, name), name)) : null, // Without an image, its small drawing.
+          art: thing && i.picture.isEmpty
+              ? _painted(Draw((c, _) => _effectLook(c, name), name))
+              : null, // Without an image, its small drawing.
           picked: c.sel == id,
           lit: lit,
           onTap: () => c.pick(id),
           onApply: apply,
           onMenu: menu,
           onHover: screened ? (h) => ws.tryOn(h ? id : null) : null, // Shows what it does on the selected layer meanwhile (WorkspaceController.tryOn).
-          naming: screened && _renaming == id ? ShelfNameField(name, (to) => _renamed(id, name, to)) : null,
+          naming: screened && _renaming == id
+              ? ShelfNameField(name, (to) => _renamed(id, name, to))
+              : null,
           over: marks(
             id,
             small,
-            on: !lit ? null : (screened ? 'ON ${screen.indexOf(id) + 1}' : 'ON'),
+            on: !lit
+                ? null
+                : (screened ? 'ON ${screen.indexOf(id) + 1}' : 'ON'),
             same: screened && i.same ? EffectTiles.sameTag(id) : null,
           ),
         ),
@@ -182,8 +228,9 @@ class _EffectsShelfState extends State<EffectsShelf> {
     final screens = m.items('screen');
     final lined = <(String, ShelfItem)>[
       for (final i in m.items('thing')) (i.name, i),
-      ...(EffectsShelf._byName[screens] ??= ([for (final i in screens) (shelfNamed(i.id) ?? i.name, i)]
-        ..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase())))),
+      ...(EffectsShelf._byName[screens] ??= ([
+        for (final i in screens) (shelfNamed(i.id) ?? i.name, i),
+      ]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase())))),
       // A saved preset by its name (Save Look). Applying it gives the selected layer its values, effects and keyframes.
       for (final (_, f) in m.presets)
         if (m.item(f) case final i?) (i.name, i),
@@ -195,8 +242,17 @@ class _EffectsShelfState extends State<EffectsShelf> {
         name: 'Empty',
         label: '',
         on: false,
-        apply: chosen('empty:effect', () => emptyPut(ws, expression: false, told: (why) => why.isEmpty ? null : ws.notice = 'Not taken: $why')),
-        said: picked ? 'An empty effect on the picked thing: paste ISF code into its card' : 'An empty effect, on a new board: paste ISF code into its card',
+        apply: chosen(
+          'empty:effect',
+          () => emptyPut(
+            ws,
+            expression: false,
+            told: (why) => why.isEmpty ? null : ws.notice = 'Not taken: $why',
+          ),
+        ),
+        said: picked
+            ? 'An empty effect on the picked thing: paste ISF code into its card'
+            : 'An empty effect, on a new board: paste ISF code into its card',
         tile: (small, menu) => ShelfTile(
           ShelfItem('empty:effect', 'Empty'),
           look,
@@ -204,7 +260,14 @@ class _EffectsShelfState extends State<EffectsShelf> {
           art: _painted(const EmptyLook()),
           picked: c.sel == 'empty:effect',
           onTap: () => c.pick('empty:effect'),
-          onApply: chosen('empty:effect', () => emptyPut(ws, expression: false, told: (why) => why.isEmpty ? null : ws.notice = 'Not taken: $why')),
+          onApply: chosen(
+            'empty:effect',
+            () => emptyPut(
+              ws,
+              expression: false,
+              told: (why) => why.isEmpty ? null : ws.notice = 'Not taken: $why',
+            ),
+          ),
           onMenu: menu,
         ),
       ),
@@ -214,7 +277,8 @@ class _EffectsShelfState extends State<EffectsShelf> {
     // Search matches the name, or what the effect does in its author's words, as Alight Motion's search reads descriptions.
     // It also matches the tags read from the effect (DockTags), each word on its own.
     // When nothing matches, as for a misspelt or partial word, the nearest five by RapidFuzz are shown, like "Did you mean".
-    Set<String> tagsOf(String id) => DockTags.of('Effects', id, seen[id]?.tags ?? const {});
+    Set<String> tagsOf(String id) =>
+        DockTags.of('Effects', id, seen[id]?.tags ?? const {});
     bool found(String q, _EffectEntry e) =>
         q.isEmpty ||
         e.name.toLowerCase().contains(q.toLowerCase()) ||
@@ -229,9 +293,11 @@ class _EffectsShelfState extends State<EffectsShelf> {
         ? const <String>[]
         : m.find(c.query, [
             for (final e in every)
-              if (!hit.contains(e.id)) (e.id, '${e.name} ${e.label}', (seen[e.id]?.about ?? '')),
+              if (!hit.contains(e.id))
+                (e.id, '${e.name} ${e.label}', (seen[e.id]?.about ?? '')),
           ]);
-    final first = DockTags.latched('Effects', c.query), latched = every.where((e) => e.id == first).take(1).toList();
+    final first = DockTags.latched('Effects', c.query),
+        latched = every.where((e) => e.id == first).take(1).toList();
     final all = [
       ...latched,
       for (final e in hits)
@@ -239,7 +305,8 @@ class _EffectsShelfState extends State<EffectsShelf> {
       for (final id in near)
         if (id != first) ...every.where((e) => e.id == id).take(1),
     ];
-    final byId = {for (final e in all) e.id: e}, recent = [for (final id in effectRecent()) ?byId[id]];
+    final byId = {for (final e in all) e.id: e},
+        recent = [for (final id in effectRecent()) ?byId[id]];
     // The decks: what the user put in and what their words find, as one EffectDeck.
     final decks = effectDecks(),
         deckIds = {
@@ -256,10 +323,14 @@ class _EffectsShelfState extends State<EffectsShelf> {
     }
     // Every pack folder is listed, even with one effect, as sashimono-edit's add menu gives each folder its own submenu (add_menu.py:280).
     final deck = decks.where((d) => '@${d.name}' == c.mem.fxPlace).firstOrNull;
-    final place = deck != null || !c.mem.fxPlace.startsWith('@') ? c.mem.fxPlace : 'All', pack = place.startsWith('/') ? place.substring(1) : null;
+    final place = deck != null || !c.mem.fxPlace.startsWith('@')
+            ? c.mem.fxPlace
+            : 'All',
+        pack = place.startsWith('/') ? place.substring(1) : null;
     // On the map, the map shows all effects and the selected deck sits beside it to add and remove effects, like Hearthstone's
     // Collection Manager. Elsewhere a deck shows what it holds as tiles.
-    final building = c.mem.mapped.contains('Effects') && (deck != null || place == '★');
+    final building =
+        c.mem.mapped.contains('Effects') && (deck != null || place == '★');
     // Recent lists the last effects applied, newest first, like the Fonts shelf's Recent. Alight Motion keeps forty (EffectBrowser.kt:117).
     final here = place == 'Recent'
         ? recent
@@ -287,16 +358,33 @@ class _EffectsShelfState extends State<EffectsShelf> {
     // VIDVOX's Feedback kind is not the feedback passes read from the shader.
     // "transition" is left out because the Transition kind is read the same way (isf.cpp). Shadertoy's filters are read from the shaders.
     final tagChips = [
-      for (final t in (read.entries.where((t) => t.key != 'transition').toList()..sort((a, b) => b.value.compareTo(a.value)))) MapEntry('#${t.key}', t.value),
+      for (final t
+          in (read.entries.where((t) => t.key != 'transition').toList()
+            ..sort((a, b) => b.value.compareTo(a.value))))
+        MapEntry('#${t.key}', t.value),
     ]; // Most common first; the row scrolls, since all the kinds follow it.
-    final chip = kinds.containsKey(c.chip) || tagChips.any((t) => t.key == c.chip) ? c.chip : 'All';
+    final chip =
+        kinds.containsKey(c.chip) || tagChips.any((t) => t.key == c.chip)
+        ? c.chip
+        : 'All';
     final shown = [
       for (final e in here)
-        if (chip == 'All' || (chip.startsWith('#') ? tagsOf(e.id).contains(chip.substring(1)) : e.label == chip)) e,
+        if (chip == 'All' ||
+            (chip.startsWith('#')
+                ? tagsOf(e.id).contains(chip.substring(1))
+                : e.label == chip))
+          e,
     ];
     // An effect the deck holds but the shelf does not: its name is kept and marked. Layer effects are excluded, since they wait for a layer.
-    final known = {...every.map((e) => e.id), ...m.layerEffects.map((e) => e.$1), ...m.presets.map((e) => e.$2), ...m.animators.map((e) => e.$2)};
-    if (deck != null && deck.things.any((t) => !known.contains(t.id))) deckSettle(deck, known);
+    final known = {
+      ...every.map((e) => e.id),
+      ...m.layerEffects.map((e) => e.$1),
+      ...m.presets.map((e) => e.$2),
+      ...m.animators.map((e) => e.$2),
+    };
+    if (deck != null && deck.things.any((t) => !known.contains(t.id))) {
+      deckSettle(deck, known);
+    }
     final lost = <_EffectEntry>[
       if (deck != null && c.query.isEmpty)
         for (final t in deck.things)
@@ -321,7 +409,10 @@ class _EffectsShelfState extends State<EffectsShelf> {
                   Positioned(
                     left: 3,
                     bottom: 3,
-                    child: Chip(label: 'NOT HERE', look: ChipLook.tag(Grey.g63, edge: true)),
+                    child: Chip(
+                      label: 'NOT HERE',
+                      look: ChipLook.tag(Grey.g63, edge: true),
+                    ),
                   ),
                 ],
               ),
@@ -329,7 +420,11 @@ class _EffectsShelfState extends State<EffectsShelf> {
     ];
     // Up to ten recent effects show above the tiles while nothing narrows the list, as Alight Motion's effect browser opens on its last ten
     // at EffectBrowser.kt:217. A list out of sight is not revisited, so the recent ones stay in view.
-    final inSight = place == 'All' && chip == 'All' && c.query.isEmpty && !c.mem.mapped.contains('Effects')
+    final inSight =
+        place == 'All' &&
+            chip == 'All' &&
+            c.query.isEmpty &&
+            !c.mem.mapped.contains('Effects')
         ? recent.take(10).toList()
         : const <_EffectEntry>[]; // On the map only the map shows, as in XO's Space: the recent box took half the shelf.
     final listed = building ? shown : [...shown, ...lost];
@@ -339,19 +434,27 @@ class _EffectsShelfState extends State<EffectsShelf> {
         : deck == null
         ? const <String>{}
         : deckIds[deck]!;
-    final held = !building ? const <_EffectEntry>[] : [for (final id in holds) ...every.where((e) => e.id == id).take(1), ...lost];
+    final held = !building
+        ? const <_EffectEntry>[]
+        : [
+            for (final id in holds) ...every.where((e) => e.id == id).take(1),
+            ...lost,
+          ];
     void put(EffectDeck d, _EffectEntry e) => c.set(() {
       d.toggle(e.id, e.name, found: d.words.isNotEmpty && found(d.words, e));
       effectDecksKeep();
     });
     // Where one press sends an effect, however many decks exist: the target deck, else Favorites. A notice says where it went.
     // Lightroom Classic does the same with Add to Target Collection (B), using the Quick Collection until a target is set.
-    final to = effectTarget(), aim = to != null && deckIds.containsKey(to) ? to : null;
-    bool aimed(_EffectEntry e) => aim != null ? deckIds[aim]!.contains(e.id) : c.starred(e.id);
+    final to = effectTarget(),
+        aim = to != null && deckIds.containsKey(to) ? to : null;
+    bool aimed(_EffectEntry e) =>
+        aim != null ? deckIds[aim]!.contains(e.id) : c.starred(e.id);
     void target(_EffectEntry e) {
       final was = aimed(e);
       aim != null ? put(aim, e) : c.star(e.id);
-      ws.notice = '${was ? 'Removed from' : 'Added to'} ${aim?.name ?? 'Favorites'}';
+      ws.notice =
+          '${was ? 'Removed from' : 'Added to'} ${aim?.name ?? 'Favorites'}';
     }
 
     // Actions on an effect are in its right-click menu and the footer's three-dot button, as in Ableton's item menu.
@@ -364,17 +467,33 @@ class _EffectsShelfState extends State<EffectsShelf> {
         ] else
           ContextMenuItem(e.on ? 'Remove' : 'Add', e.apply),
         const ContextMenuItem.rule(),
-        ContextMenuItem('${aimed(e) ? 'Remove from' : 'Add to'} ${aim == null ? 'Favorites' : 'Target Deck'}', () => target(e), keys: 'B'),
-        ContextMenuItem('New Deck…', () => _places.currentState?.newDeck(thing: DeckThing(e.id, e.name, effectSum(e.id)))),
-        if (shelfAdded(e.id)) ...[const ContextMenuItem.rule(), ContextMenuItem('Rename…', () => setState(() => _renaming = e.id))],
+        ContextMenuItem(
+          '${aimed(e) ? 'Remove from' : 'Add to'} ${aim == null ? 'Favorites' : 'Target Deck'}',
+          () => target(e),
+          keys: 'B',
+        ),
+        ContextMenuItem(
+          'New Deck…',
+          () => _places.currentState?.newDeck(
+            thing: DeckThing(e.id, e.name, effectSum(e.id)),
+          ),
+        ),
+        if (shelfAdded(e.id)) ...[
+          const ContextMenuItem.rule(),
+          ContextMenuItem('Rename…', () => setState(() => _renaming = e.id)),
+        ],
         if (effectPack(e.id) case final p? when packs.containsKey(p)) ...[
           const ContextMenuItem.rule(),
-          ContextMenuItem('Go to Pack: $p', () => c.set(() => c.mem.fxPlace = '/$p')),
+          ContextMenuItem(
+            'Go to Pack: $p',
+            () => c.set(() => c.mem.fxPlace = '/$p'),
+          ),
         ],
       ]);
     }
 
-    Widget tile(_EffectEntry e, bool small) => e.tile(small, (at) => menuOn(e, at));
+    Widget tile(_EffectEntry e, bool small) =>
+        e.tile(small, (at) => menuOn(e, at));
     // A strip for an effect the deck holds, under the deck's row, like a card in a Hearthstone deck list: its image and name.
     // A click selects it, a double-click applies it, a drop applies it where released, and a right-click opens its menu, as on its tile.
     Widget strip(_EffectEntry e) => ShelfTile(
@@ -422,24 +541,33 @@ class _EffectsShelfState extends State<EffectsShelf> {
       key: _places,
       narrow: narrow,
       known: known,
-      packs: Map.fromEntries(packs.entries.toList()..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase()))),
+      packs: Map.fromEntries(
+        packs.entries.toList()
+          ..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase())),
+      ),
       counts: {
         'All': all.length,
         'Recent': recent.length,
         '★': all.where((e) => c.starred(e.id)).length,
         'In video': all.where((e) => used.contains(e.id)).length,
       },
-      decks: {for (final d in decks) d: deckIds[d]!.intersection(byId.keys.toSet()).length},
+      decks: {
+        for (final d in decks)
+          d: deckIds[d]!.intersection(byId.keys.toSet()).length,
+      },
       mapped: c.mem.mapped.contains('Effects'),
       held: [for (final e in held) strip(e)],
       covers: {for (final d in decks) '@${d.name}': ?cover(deckIds[d]!)},
       put: (d, id) {
-        if (every.where((e) => e.id == id).firstOrNull case final e? when !(deckIds[d]?.contains(id) ?? false)) {
+        if (every.where((e) => e.id == id).firstOrNull case final e?
+            when !(deckIds[d]?.contains(id) ?? false)) {
           put(d, e); // A deck made a moment ago is not in the table yet (Save Favorites...).
         }
       },
     );
-    final sel = c.foot([...all, ...lost].where((e) => e.id == c.sel).firstOrNull);
+    final sel = c.foot(
+      [...all, ...lost].where((e) => e.id == c.sel).firstOrNull,
+    );
     final tiles = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -447,7 +575,10 @@ class _EffectsShelfState extends State<EffectsShelf> {
           [
             ('All', here.length),
             for (final t in tagChips) (t.key, t.value),
-            for (final k in kinds.entries.toList()..sort((a, b) => b.value.compareTo(a.value))) (k.key, k.value),
+            for (final k
+                in kinds.entries.toList()
+                  ..sort((a, b) => b.value.compareTo(a.value)))
+              (k.key, k.value),
           ],
           active: chip,
           onPick: c.pickChip,
@@ -459,26 +590,37 @@ class _EffectsShelfState extends State<EffectsShelf> {
             cols: 5,
             small: true,
             shrinkWrap: true,
-            pad: EdgeInsets.only(top: WindowTokens.gutter, bottom: WindowTokens.gutter),
+            pad: EdgeInsets.only(
+              top: WindowTokens.gutter,
+              bottom: WindowTokens.gutter,
+            ),
             count: inSight.length,
             tile: (i) => tile(inSight[i], true),
           ), // Two rows as in Alight Motion's box, one row until a sixth effect: a single tile in a row looked empty over the shelf.
         Expanded(
           child: CallbackShortcuts(
             // B runs the target action on the selected effect, like the menu's single row, as in Lightroom's Library grid.
-            bindings: {const SingleActivator(LogicalKeyboardKey.keyB): () => sel == null ? null : target(sel)},
+            bindings: {
+              const SingleActivator(LogicalKeyboardKey.keyB): () =>
+                  sel == null ? null : target(sel),
+            },
             child: Focus(
               focusNode: _tileKeys,
               child: TapRegion(
                 behavior: HitTestBehavior.translucent,
-                onTapInside: (_) => c.mem.mapped.contains('Effects') ? null : _tileKeys.requestFocus(), // The map handles the keys itself.
+                onTapInside: (_) => c.mem.mapped.contains('Effects')
+                    ? null
+                    : _tileKeys
+                          .requestFocus(), // The map handles the keys itself.
                 child: listed.isEmpty
                     ? DockEmpty(
                         c.query,
                         said: c.query.isNotEmpty
                             ? null
                             : deck != null
-                            ? (identical(deck, aim) ? 'Drag an effect onto the deck, or right-click one' : 'Drag an effect onto the deck')
+                            ? (identical(deck, aim)
+                                  ? 'Drag an effect onto the deck, or right-click one'
+                                  : 'Drag an effect onto the deck')
                             : 'Nothing here yet',
                       )
                     : c.mem.mapped.contains('Effects')
@@ -486,7 +628,8 @@ class _EffectsShelfState extends State<EffectsShelf> {
                         // Laid out by the tiles there are, and again once all are drawn; tiles drawn in between join then.
                         listenable: EffectTiles.progress,
                         builder: (context, _) {
-                          final map = dockMap('Effects'), drawing = EffectTiles.progress.value != null;
+                          final map = dockMap('Effects'),
+                              drawing = EffectTiles.progress.value != null;
                           final clip = dockModel('clip_b32'); // Placed by how CLIP sees each tile's frames once the model is made, else by tiny colours.
                           final drawn = [
                             for (final e in every)
@@ -496,7 +639,9 @@ class _EffectsShelfState extends State<EffectsShelf> {
                             map.need(
                               m,
                               [for (final e in drawn) (e.id, pic(e.id))],
-                              (from) => _effectNumbers(m, clip, [for (final e in drawn) e.label], from),
+                              (from) => _effectNumbers(m, clip, [
+                                for (final e in drawn) e.label,
+                              ], from),
                               also: '${clip ?? ''} kinds',
                             );
                           }
@@ -510,7 +655,11 @@ class _EffectsShelfState extends State<EffectsShelf> {
                           );
                         },
                       )
-                    : ShelfGrid(look, count: listed.length, tile: (i) => tile(listed[i], false)),
+                    : ShelfGrid(
+                        look,
+                        count: listed.length,
+                        tile: (i) => tile(listed[i], false),
+                      ),
               ),
             ),
           ),
@@ -546,25 +695,29 @@ class _EffectsShelfState extends State<EffectsShelf> {
                             max: box.maxHeight - 160,
                             reset: dockEffectListHeight,
                             gripKey: const ValueKey('ws-fx-list-grip'),
-                            onHeight: (h) => c.set(() => c.mem.fxListHeight = h),
+                            onHeight: (h) =>
+                                c.set(() => c.mem.fxListHeight = h),
                             child: list(true),
                           )
                         else
-                          SizedBox(
-                            height: Shape.z(22),
-                            child: list(true),
-                          ), // One row for the list leaves room for tiles: the whole list left 3.3 rows of tiles, or 1.7 with the footer open.
+                          SizedBox(height: Shape.z(22), child: list(true)), // One row for the list leaves room for tiles: the whole list left 3.3 rows of tiles, or 1.7 with the footer open.
                         Expanded(child: tiles),
                       ],
                     ),
             ),
           ),
           if (sel != null && pic(sel.id).isNotEmpty) // A large moving sample of the selected effect, as Alight Motion's effect browser opens.
-            SizedBox(key: const ValueKey('ws-fx-preview'), height: Shape.z(140), child: TileMoving(pic(sel.id), playing: true)),
+            SizedBox(
+              key: const ValueKey('ws-fx-preview'),
+              height: Shape.z(140),
+              child: TileMoving(pic(sel.id), playing: true),
+            ),
           if (sel != null)
             DockFooter(
               title: sel.name,
-              meta: sel.label.isEmpty ? sel.said : '${sel.label} · ${sel.said} · double-click to add', // A click selects, a double-click applies.
+              meta: sel.label.isEmpty
+                  ? sel.said
+                  : '${sel.label} · ${sel.said} · double-click to add', // A click selects, a double-click applies.
               action: sel.on ? 'Remove' : 'Add',
               fresh: !picked,
               onAction: off(sel) ?? sel.apply,
@@ -572,7 +725,12 @@ class _EffectsShelfState extends State<EffectsShelf> {
                 builder: (b) => IconPress(
                   dockMark(AppGlyphs.more),
                   key: const ValueKey('ws-fx-more'),
-                  onTap: () => menuOn(sel, (b.findRenderObject() as RenderBox).localToGlobal(Offset.zero)),
+                  onTap: () => menuOn(
+                    sel,
+                    (b.findRenderObject() as RenderBox).localToGlobal(
+                      Offset.zero,
+                    ),
+                  ),
                 ),
               ),
             ), // With nothing selected, the effect goes on a layer of its own.
@@ -592,10 +750,17 @@ Widget Function(bool) _painted(CustomPainter p) =>
 /// An effect is placed by how it looks, from CLIP at three of its sixteen frames so motion counts (or tiny colours), and what it is for ([kinds], the engine's label, such as an ISF's CATEGORIES or its startImage, endImage and progress, see isf.cpp).
 /// The kind is weighted twice as much as the look: each kind becomes an island with similar effects near each other,
 /// as XO's Space keeps each drum type's colour together.
-Future<List<Float32List?>> _effectNumbers(Motolii m, String? clip, List<String> kinds, List<String> homes) async {
+Future<List<Float32List?>> _effectNumbers(
+  Motolii m,
+  String? clip,
+  List<String> kinds,
+  List<String> homes,
+) async {
   final look = [
     for (final f in homes)
-      await (clip == null ? dockTiny : (List<String> at) => dockSeen(m, clip, at))([
+      await (clip == null
+          ? dockTiny
+          : (List<String> at) => dockSeen(m, clip, at))([
         for (final k in const [0, 7, 15]) EffectTiles.frame(f, k),
       ]),
   ];
@@ -614,7 +779,9 @@ Future<List<Float32List?>> _effectNumbers(Motolii m, String? clip, List<String> 
 String _said(WorkspaceController ws, String name) {
   final m = ws.inside!,
       v = m.layerEffects.firstWhere((e) => e.$1 == name).$2,
-      t = int.tryParse(ws.selected ?? ''); // The selected layer's id, or null when none is selected.
+      t = int.tryParse(
+        ws.selected ?? '',
+      ); // The selected layer's id, or null when none is selected.
   final now = t == null ? '' : m.word(t, v);
   return now.isEmpty ? '$v · none on it' : '$v · $now';
 }

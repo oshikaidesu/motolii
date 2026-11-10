@@ -10,8 +10,14 @@ class DicePainter extends CustomPainter {
   final bool filled;
   @override
   void paint(Canvas c, Size s) {
-    final r = Rect.fromCenter(center: s.center(Offset.zero), width: Shape.z(16), height: Shape.z(16));
-    if (filled) c.drawRRect(RRect.fromRectAndRadius(r, Shape.r(4)), Paint()..color = ink);
+    final r = Rect.fromCenter(
+      center: s.center(Offset.zero),
+      width: Shape.z(16),
+      height: Shape.z(16),
+    );
+    if (filled) {
+      c.drawRRect(RRect.fromRectAndRadius(r, Shape.r(4)), Paint()..color = ink);
+    }
     const pips = {
       1: [(0, 0)],
       2: [(-1, -1), (1, 1)],
@@ -21,10 +27,15 @@ class DicePainter extends CustomPainter {
       6: [(-1, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (1, 1)],
     };
     for (final (dx, dy) in pips[face]!) {
-      c.drawCircle(r.center + Offset(dx * 4.0, dy * 4.0), 1.5, Paint()..color = filled ? Grey.g10 : ink);
+      c.drawCircle(
+        r.center + Offset(dx * 4.0, dy * 4.0),
+        1.5,
+        Paint()..color = filled ? Grey.g10 : ink,
+      );
     }
   }
 
   @override
-  bool shouldRepaint(DicePainter o) => o.ink != ink || o.face != face || o.filled != filled;
+  bool shouldRepaint(DicePainter o) =>
+      o.ink != ink || o.face != face || o.filled != filled;
 }

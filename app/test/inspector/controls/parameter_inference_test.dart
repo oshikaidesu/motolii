@@ -2,22 +2,27 @@
 // The expected values are what the code gave when this was written, so a move or a split that changes one fails here.
 // Needs no engine.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motolii/inspector/controls/inspector_parameter_controls.dart' show paramColor, paramDefaults;
+import 'package:motolii/inspector/controls/inspector_parameter_controls.dart'
+    show paramColor, paramDefaults;
 import 'package:motolii/inspector/controls/parameter_inference.dart';
 
 /// One field as an effect writes it, such as `amount: f32, // @range(0, 10)`, read from a struct of its own.
-FieldDeclaration _decl(String field) => parseWgsl('struct Params {\n$field\n}').single;
+FieldDeclaration _decl(String field) =>
+    parseWgsl('struct Params {\n$field\n}').single;
 Parameter _infer(String field) => infer(_decl(field));
 
 void main() {
-  test('paramWords splits a field name into words and spells the short forms out', () {
-    expect(paramWords('blurRadius'), ['blur', 'radius']);
-    expect(paramWords('blur_radius'), ['blur', 'radius']);
-    expect(paramWords('glowCol'), ['glow', 'colour']);
-    expect(paramWords('dx'), ['offset', 'x']);
-    expect(paramWords('rot'), ['rotation']);
-    expect(paramWords(''), isEmpty);
-  });
+  test(
+    'paramWords splits a field name into words and spells the short forms out',
+    () {
+      expect(paramWords('blurRadius'), ['blur', 'radius']);
+      expect(paramWords('blur_radius'), ['blur', 'radius']);
+      expect(paramWords('glowCol'), ['glow', 'colour']);
+      expect(paramWords('dx'), ['offset', 'x']);
+      expect(paramWords('rot'), ['rotation']);
+      expect(paramWords(''), isEmpty);
+    },
+  );
 
   test('paramLabel writes the words as a label: the first capitalised, a single letter as a capital', () {
     expect(paramLabel(['blur', 'radius']), 'Blur radius');
@@ -26,23 +31,53 @@ void main() {
     expect(paramLabel([]), '');
   });
 
-  test('angleLabel knows an angle by its name, and a speed of turning is not one', () {
-    for (final angle in ['angle', 'Rotation', 'rot', 'Hue', 'direction', '角度', '回転', '向き']) {
-      expect(angleLabel(angle), isTrue, reason: angle);
-    }
-    for (final other in ['Blur', 'Saturation', 'Spin speed', 'Rotation rate', '回転速度']) {
-      expect(angleLabel(other), isFalse, reason: other);
-    }
-  });
+  test(
+    'angleLabel knows an angle by its name, and a speed of turning is not one',
+    () {
+      for (final angle in [
+        'angle',
+        'Rotation',
+        'rot',
+        'Hue',
+        'direction',
+        '角度',
+        '回転',
+        '向き',
+      ]) {
+        expect(angleLabel(angle), isTrue, reason: angle);
+      }
+      for (final other in [
+        'Blur',
+        'Saturation',
+        'Spin speed',
+        'Rotation rate',
+        '回転速度',
+      ]) {
+        expect(angleLabel(other), isFalse, reason: other);
+      }
+    },
+  );
 
   group('infer', () {
     test('guesses the look, the range and the unit of each kind of field', () {
       const cases = <(String, List<Object?>)>[
         // What the declaration says outright.
-        ('mode: i32, // @enum(Low, Med, High)', [ParameterLook.choice, 0, 2, '']),
-        ('amount: f32, // @ui(bar) @range(0, 10)', [ParameterLook.bar, 0, 10, '']),
-        ('amount: f32, // @ui(angle) @range(0, 90)', [ParameterLook.angle, 0, 90, '']),
-        ('amount: f32, // @ui(nonsense)', [ParameterLook.scrub, null, null, '']),
+        (
+          'mode: i32, // @enum(Low, Med, High)',
+          [ParameterLook.choice, 0, 2, ''],
+        ),
+        (
+          'amount: f32, // @ui(bar) @range(0, 10)',
+          [ParameterLook.bar, 0, 10, ''],
+        ),
+        (
+          'amount: f32, // @ui(angle) @range(0, 90)',
+          [ParameterLook.angle, 0, 90, ''],
+        ),
+        (
+          'amount: f32, // @ui(nonsense)',
+          [ParameterLook.scrub, null, null, ''],
+        ),
         // On or off.
         ('on: bool,', [ParameterLook.toggle, 0, 1, '']),
         ('strength: f32, // @toggle', [ParameterLook.toggle, 0, 1, '']),
@@ -60,15 +95,24 @@ void main() {
         // The name and the unit.
         ('seed: f32,', [ParameterLook.seed, 0, 9999, '']),
         ('angle: f32,', [ParameterLook.angle, -180, 180, '°']),
-        ('turn: f32, // @unit(deg) @range(0, 90)', [ParameterLook.angle, 0, 90, '°']),
+        (
+          'turn: f32, // @unit(deg) @range(0, 90)',
+          [ParameterLook.angle, 0, 90, '°'],
+        ),
         ('phase: f32, // @unit(rad)', [ParameterLook.angle, -180, 180, '°']),
         ('mix: f32, // @range(0, 1)', [ParameterLook.percent, 0, 100, '%']),
         ('mix: f32, // @range(0, 2)', [ParameterLook.bar, 0, 2, '']),
         ('gain: f32, // @unit(%)', [ParameterLook.percent, 0, 100, '%']),
-        ('gain: f32, // @unit(%) @range(-50, 50)', [ParameterLook.percent, -50, 50, '%']),
+        (
+          'gain: f32, // @unit(%) @range(-50, 50)',
+          [ParameterLook.percent, -50, 50, '%'],
+        ),
         ('count: i32, // @range(1, 8)', [ParameterLook.stepper, 1, 8, '']),
         ('count: i32, // @range(0, 100)', [ParameterLook.bar, 0, 100, '']),
-        ('blurRadius: f32, // @range(0, 200)', [ParameterLook.bar, 0, 200, 'px']),
+        (
+          'blurRadius: f32, // @range(0, 200)',
+          [ParameterLook.bar, 0, 200, 'px'],
+        ),
         ('offsetY: f32,', [ParameterLook.vertical, null, null, 'px']),
         ('drop: f32,', [ParameterLook.vertical, null, null, '']),
         ('dx: f32,', [ParameterLook.horizontal, null, null, 'px']),
@@ -90,20 +134,30 @@ void main() {
     });
 
     test('a choice lists its options', () {
-      expect(_infer('mode: i32, // @enum(Low, Med, High)').options, ['Low', 'Med', 'High']);
+      expect(_infer('mode: i32, // @enum(Low, Med, High)').options, [
+        'Low',
+        'Med',
+        'High',
+      ]);
     });
 
     test('@default gives the value a field starts from, and a second number for its Y', () {
       expect(_infer('gain: f32,').def, 0);
       expect(_infer('gain: f32, // @default(12)').def, 12);
-      final one = _infer('center: vec2f, // @default(0.5)'), two = _infer('center: vec2f, // @default(0.5, 0.25)');
+      final one = _infer('center: vec2f, // @default(0.5)'),
+          two = _infer('center: vec2f, // @default(0.5, 0.25)');
       expect((one.def, one.defY), (.5, .5));
       expect((two.def, two.defY), (.5, .25));
     });
 
     test('radians are shown as degrees and a 0 to 1 share as a percentage, defaults included', () {
-      final twist = _infer('twist: f32, // @range(-3.14159, 3.14159) @default(1.5708)');
-      expect((twist.look, twist.unit, twist.dec), (ParameterLook.angle, '°', 0));
+      final twist = _infer(
+        'twist: f32, // @range(-3.14159, 3.14159) @default(1.5708)',
+      );
+      expect(
+        (twist.look, twist.unit, twist.dec),
+        (ParameterLook.angle, '°', 0),
+      );
       expect(twist.min, closeTo(-180, .01));
       expect(twist.max, closeTo(180, .01));
       expect(twist.def, closeTo(90, .01));
@@ -131,38 +185,89 @@ void main() {
       }
     });
 
-    test('the label, the typed limits, the weight and the fold are carried over', () {
-      final p = _infer('// @advanced(Each copy)\ngain: f32, // @label(Output, gain) @open @valid(-10, 10) @weight(7) @range(0, 1)');
-      expect((p.id, p.label, p.open, p.validMin, p.validMax, p.weight, p.advanced, p.fold), ('gain', 'Output, gain', true, -10, 10, 7, true, 'Each copy'));
-      final plain = _infer('blurRadius: f32,');
-      expect(
-        (plain.label, plain.open, plain.validMin, plain.validMax, plain.weight, plain.advanced, plain.fold),
-        ('Blur radius', false, null, null, null, false, null),
-      );
-    });
+    test(
+      'the label, the typed limits, the weight and the fold are carried over',
+      () {
+        final p = _infer(
+          '// @advanced(Each copy)\ngain: f32, // @label(Output, gain) @open @valid(-10, 10) @weight(7) @range(0, 1)',
+        );
+        expect(
+          (
+            p.id,
+            p.label,
+            p.open,
+            p.validMin,
+            p.validMax,
+            p.weight,
+            p.advanced,
+            p.fold,
+          ),
+          ('gain', 'Output, gain', true, -10, 10, 7, true, 'Each copy'),
+        );
+        final plain = _infer('blurRadius: f32,');
+        expect(
+          (
+            plain.label,
+            plain.open,
+            plain.validMin,
+            plain.validMax,
+            plain.weight,
+            plain.advanced,
+            plain.fold,
+          ),
+          ('Blur radius', false, null, null, null, false, null),
+        );
+      },
+    );
   });
 
   test('a Parameter steps by its last decimal, and a drag crosses a known range in 200 px', () {
-    const ranged = Parameter(id: 'a', label: 'A', look: ParameterLook.bar, min: 0, max: 200, dec: 2);
+    const ranged = Parameter(
+      id: 'a',
+      label: 'A',
+      look: ParameterLook.bar,
+      min: 0,
+      max: 200,
+      dec: 2,
+    );
     expect((ranged.bounded, ranged.perPx), (true, 1));
     expect(ranged.step, closeTo(.01, 1e-12));
     const whole = Parameter(id: 'a', label: 'A', look: ParameterLook.scrub);
     expect((whole.bounded, whole.step, whole.perPx), (false, 1, 1));
-    const fine = Parameter(id: 'a', label: 'A', look: ParameterLook.scrub, dec: 2);
+    const fine = Parameter(
+      id: 'a',
+      label: 'A',
+      look: ParameterLook.scrub,
+      dec: 2,
+    );
     expect(fine.perPx, closeTo(.1, 1e-12));
   });
 
   test('paramDefaults names every value a parameter owns: two for a point or a size, none for a colour', () {
-    expect(paramDefaults(_infer('center: vec2f, // @default(0.5, 0.25)')), {'v_center.x': .5, 'v_center.y': .25});
-    expect(paramDefaults(_infer('boxSize: vec2f,')), {'v_boxSize.x': 0, 'v_boxSize.y': 0});
+    expect(paramDefaults(_infer('center: vec2f, // @default(0.5, 0.25)')), {
+      'v_center.x': .5,
+      'v_center.y': .25,
+    });
+    expect(paramDefaults(_infer('boxSize: vec2f,')), {
+      'v_boxSize.x': 0,
+      'v_boxSize.y': 0,
+    });
     expect(paramDefaults(_infer('tint: vec3f,')), isEmpty);
-    expect(paramDefaults(_infer('amount: f32, // @default(4)')), {'v_amount': 4});
+    expect(paramDefaults(_infer('amount: f32, // @default(4)')), {
+      'v_amount': 4,
+    });
   });
 
   test('paramColor writes a colour default as #RRGGBB: white with none, each part kept inside 0 to 1', () {
     expect(paramColor(_decl('tint: vec3f, // @default(1, 0.5, 0)')), '#FF8000');
     expect(paramColor(_decl('tint: vec3f,')), '#FFFFFF');
-    expect(paramColor(_decl('tint: vec3f, // @default(2, -1, 0.2)')), '#FF0033');
-    expect(paramColor(_decl('glow: vec4f, // @default(0, 0, 0, 0.5)')), '#000000');
+    expect(
+      paramColor(_decl('tint: vec3f, // @default(2, -1, 0.2)')),
+      '#FF0033',
+    );
+    expect(
+      paramColor(_decl('glow: vec4f, // @default(0, 0, 0, 0.5)')),
+      '#000000',
+    );
   });
 }

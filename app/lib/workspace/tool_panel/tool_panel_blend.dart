@@ -22,10 +22,18 @@ class BlendTool extends StatelessWidget {
   const BlendTool({super.key});
   @override
   Widget build(BuildContext context) {
-    final ws = WorkspaceScope.of(context, {WorkspaceAspect.document, WorkspaceAspect.picked});
+    final ws = WorkspaceScope.of(context, {
+      WorkspaceAspect.document,
+      WorkspaceAspect.picked,
+    });
     return ListView(
-      padding: EdgeInsets.symmetric(horizontal: WindowTokens.gap, vertical: Shape.s(6)),
-      children: [for (final l in ws.layers) _Row(l, picked: l.id == ws.selected)],
+      padding: EdgeInsets.symmetric(
+        horizontal: WindowTokens.gap,
+        vertical: Shape.s(6),
+      ),
+      children: [
+        for (final l in ws.layers) _Row(l, picked: l.id == ws.selected),
+      ],
     );
   }
 }
@@ -44,30 +52,50 @@ class _RowState extends State<_Row> {
   String? _hover;
   @override
   Widget build(BuildContext context) {
-    final l = widget.l, ws = WorkspaceScope.of(context, {WorkspaceAspect.document}), m = ws.inside, t = int.tryParse(l.id);
-    final ways = m == null || t == null ? const <String>[] : m.words(t, 'blend');
-    final now = ways.isEmpty ? '' : (m!.word(t!, 'blend').isEmpty ? ways.first : m.word(t, 'blend'));
+    final l = widget.l,
+        ws = WorkspaceScope.of(context, {WorkspaceAspect.document}),
+        m = ws.inside,
+        t = int.tryParse(l.id);
+    final ways = m == null || t == null
+        ? const <String>[]
+        : m.words(t, 'blend');
+    final now = ways.isEmpty
+        ? ''
+        : (m!.word(t!, 'blend').isEmpty ? ways.first : m.word(t, 'blend'));
     void say(String name, String word) {
-      if (m != null && t != null) ws.after(m.later('say', layer: t, name: name, word: word));
+      if (m != null && t != null) {
+        ws.after(m.later('say', layer: t, name: name, word: word));
+      }
     }
 
     final row = Container(
       height: Shape.z(34),
       padding: EdgeInsets.symmetric(horizontal: Shape.s(6)),
-      decoration: BoxDecoration(color: widget.picked ? WindowTokens.well : null, borderRadius: BorderRadius.all(Shape.r(5))),
+      decoration: BoxDecoration(
+        color: widget.picked ? WindowTokens.well : null,
+        borderRadius: BorderRadius.all(Shape.r(5)),
+      ),
       child: Row(
         children: [
           Container(
             width: Shape.z(4),
             height: Shape.z(18),
-            decoration: BoxDecoration(color: layerKindColor(l.kind), borderRadius: BorderRadius.all(Shape.r(2))),
+            decoration: BoxDecoration(
+              color: layerKindColor(l.kind),
+              borderRadius: BorderRadius.all(Shape.r(2)),
+            ),
           ),
           SizedBox(width: Shape.s(8)),
           Expanded(
             child: Pressable(
               cursor: SystemMouseCursors.basic,
               onTap: () => ws.select(l.id),
-              builder: (_, _) => Text(l.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.name(ways.isEmpty ? Grey.g56 : Grey.g91)),
+              builder: (_, _) => Text(
+                l.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyles.name(ways.isEmpty ? Grey.g56 : Grey.g91),
+              ),
             ),
           ),
           if (ways.isNotEmpty) ...[
@@ -118,7 +146,12 @@ class _RowState extends State<_Row> {
         children: [
           row,
           Padding(
-            padding: EdgeInsets.fromLTRB(Shape.s(18), Shape.s(4), Shape.s(6), Shape.s(2)),
+            padding: EdgeInsets.fromLTRB(
+              Shape.s(18),
+              Shape.s(4),
+              Shape.s(6),
+              Shape.s(2),
+            ),
             child: Wrap(
               spacing: 2,
               runSpacing: 2,
@@ -130,7 +163,8 @@ class _RowState extends State<_Row> {
                     for (final w in g)
                       NakedFocusableDetector(
                         canRequestFocus: false,
-                        onHoverChange: (over) => setState(() => _hover = over ? w : null),
+                        onHoverChange: (over) =>
+                            setState(() => _hover = over ? w : null),
                         child: IconPress(
                           paintInk((ink) => _Way(w, ink)),
                           rest: WindowTokens.well,
@@ -146,11 +180,24 @@ class _RowState extends State<_Row> {
             ),
           ),
           Padding(
-            padding: EdgeInsets.fromLTRB(Shape.s(20), Shape.s(2), Shape.s(6), Shape.s(4)),
-            child: Text((_hover ?? now).replaceAll('_', ' '), style: TextStyles.micro(Grey.g76)),
+            padding: EdgeInsets.fromLTRB(
+              Shape.s(20),
+              Shape.s(2),
+              Shape.s(6),
+              Shape.s(4),
+            ),
+            child: Text(
+              (_hover ?? now).replaceAll('_', ' '),
+              style: TextStyles.micro(Grey.g76),
+            ),
           ),
           Padding(
-            padding: EdgeInsets.fromLTRB(Shape.s(18), 0, Shape.s(6), Shape.s(2)),
+            padding: EdgeInsets.fromLTRB(
+              Shape.s(18),
+              0,
+              Shape.s(6),
+              Shape.s(2),
+            ),
             child: LayerCards(layer: l.id, only: const ['Blending']),
           ),
         ],
@@ -167,7 +214,14 @@ const _order = [
   ['normal'],
   ['darken', 'multiply', 'color_burn', 'linear_burn', 'darker_color'],
   ['add', 'lighten', 'screen', 'color_dodge', 'lighter_color'],
-  ['overlay', 'soft_light', 'hard_light', 'linear_light', 'vivid_light', 'pin_light'],
+  [
+    'overlay',
+    'soft_light',
+    'hard_light',
+    'linear_light',
+    'vivid_light',
+    'pin_light',
+  ],
   ['difference', 'exclusion', 'subtract', 'divide'],
   ['hue', 'saturation', 'color', 'luminosity'],
 ];
@@ -208,7 +262,9 @@ class _Way extends CustomPainter {
   };
   @override
   void paint(Canvas c, Size s) {
-    final r = s.shortestSide * .27, a = Offset(s.width * .38, s.height / 2), b = Offset(s.width * .62, s.height / 2);
+    final r = s.shortestSide * .27,
+        a = Offset(s.width * .38, s.height / 2),
+        b = Offset(s.width * .62, s.height / 2);
     c.drawCircle(a, r, Paint()..color = _under);
     c.drawCircle(b, r, Paint()..color = _over);
     final lens = Path.combine(

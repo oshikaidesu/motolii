@@ -21,7 +21,13 @@ Map<String, String> filesUsed(WorkspaceController ws) {
   return _usedNow = {
     // The front layer is the first row, so going in reverse makes it the last entry and therefore the one kept.
     for (final l in ws.layers.reversed)
-      if (m.word(int.parse(l.id), 'file') case final f when f.isNotEmpty && !const {'behaviour', 'camera', 'light'}.contains(m.word(int.parse(l.id), 'kind')))
+      if (m.word(int.parse(l.id), 'file') case final f
+          when f.isNotEmpty &&
+              !const {
+                'behaviour',
+                'camera',
+                'light',
+              }.contains(m.word(int.parse(l.id), 'kind')))
         // Behaviour, camera and light layers hold a kind name instead of a file.
         m.whole(f): l.id,
   };
@@ -44,7 +50,9 @@ Future<void> placeFiles(ShelfContext c, List<String> files) async {
   if (levelOf(files) case final drawings?) return _placeLevel(c, drawings);
   final m = c.ws.inside!;
   final lengths = [
-    for (final (i, s) in (await Future.wait([for (final f in files) mediaSecondsOf(m.libPath, f)])).indexed)
+    for (final (i, s) in (await Future.wait([
+      for (final f in files) mediaSecondsOf(m.libPath, f),
+    ])).indexed)
       kindOfFile(files[i]) == 'picture' ? stillSeconds : s,
   ]; // A still image lasts as long as chosen.
   m.later('together', number: 1);
@@ -57,7 +65,14 @@ Future<void> placeFiles(ShelfContext c, List<String> files) async {
       asked.complete(0);
     }, asked.complete);
     if (_fitted(f)) m.later('fit', layer: -1, word: 'fit');
-    if (lengths[i] > 0) m.later('set', layer: -1, name: 'duration', number: lengths[i]); // Applies to the layer just added.
+    if (lengths[i] > 0) {
+      m.later(
+        'set',
+        layer: -1,
+        name: 'duration',
+        number: lengths[i],
+      ); // Applies to the layer just added.
+    }
     made.add(asked.future);
   }
   c.ws.after(m.later('together'));
@@ -66,7 +81,12 @@ Future<void> placeFiles(ShelfContext c, List<String> files) async {
       for (final i in ids)
         if (i > 0) i,
     ];
-    if (all.length > 1 && lengths.every((s) => s > 0)) c.ws.after(m.later('time_align', word: 'stagger ${all.join(' ')}'), (_, _) => c.ws.reread());
+    if (all.length > 1 && lengths.every((s) => s > 0)) {
+      c.ws.after(
+        m.later('time_align', word: 'stagger ${all.join(' ')}'),
+        (_, _) => c.ws.reread(),
+      );
+    }
     c.ws.pickMany([for (final i in all) '$i']);
     filesPicked.clear();
   });
@@ -81,17 +101,30 @@ Future<void> placeFiles(ShelfContext c, List<String> files) async {
 /// timesheet. Drawings numbered 1, 3, 5 are therefore held across the gaps, which After Effects users ask for on the
 /// forum and After Effects lacks. The timing can then be changed by moving the keyframes.
 void _placeLevel(ShelfContext c, List<(int, String)> drawings) {
-  final m = c.ws.inside!, from = c.ws.frame / WorkspaceController.fps, first = drawings.first.$1;
+  final m = c.ws.inside!,
+      from = c.ws.frame / WorkspaceController.fps,
+      first = drawings.first.$1;
   m.later('together', number: 1);
   c.ws.after(m.later('add', word: drawings.first.$2), (done, why) {
     if (!done) c.set(() => c.mem.trouble[drawings.first.$2] = why);
   }, (made) => c.ws.select('$made'));
   m.later('fit', layer: -1, word: 'fit');
-  m.later('set', layer: -1, name: 'duration', number: (drawings.last.$1 - first + 1) / 24);
+  m.later(
+    'set',
+    layer: -1,
+    name: 'duration',
+    number: (drawings.last.$1 - first + 1) / 24,
+  );
   for (final (n, _) in drawings) {
     final at = '${from + (n - first) / 24}';
     m.later('key', layer: -1, name: 'cel', word: at, number: n.toDouble());
-    m.later('easing', layer: -1, name: 'cel', number: double.parse(at), word: 'hold');
+    m.later(
+      'easing',
+      layer: -1,
+      name: 'cel',
+      number: double.parse(at),
+      word: 'hold',
+    );
   }
   c.ws.after(m.later('together'), (_, _) => c.ws.reread());
   filesPicked.clear();
@@ -101,7 +134,12 @@ void _placeLevel(ShelfContext c, List<(int, String)> drawings) {
 /// videoLayer in AbsentMotion's editor/EditorActions.kt and VideoActions.kt). Vector images such as Lottie and SVG
 /// are placed as they are.
 bool _fitted(String file) =>
-    kindOfFile(file) == 'film' || kindOfFile(file) == 'picture' && RegExp(r'\.(jpe?g|png|webp|bmp|heic)$', caseSensitive: false).hasMatch(file);
+    kindOfFile(file) == 'film' ||
+    kindOfFile(file) == 'picture' &&
+        RegExp(
+          r'\.(jpe?g|png|webp|bmp|heic)$',
+          caseSensitive: false,
+        ).hasMatch(file);
 
 final _placing = <String>{};
 
@@ -114,15 +152,29 @@ void placeFile(ShelfContext c, FileNode n) {
   }
   final m = c.ws.inside!,
       still = kindOfFile(n.id) == 'picture' && stillSeconds > 0,
-      cut = const ['film', 'sound'].contains(kindOfFile(n.id)) ? filmRanges[n.id] : null,
+      cut = const ['film', 'sound'].contains(kindOfFile(n.id))
+          ? filmRanges[n.id]
+          : null,
       fit = _fitted(n.id); // The engine works out what the file is without waiting, and the layer is selected once made.
-  if (still || cut != null || fit) m.later('together', number: 1); // Adding, fitting and setting the length are one undo step.
+  if (still || cut != null || fit) {
+    m.later(
+      'together',
+      number: 1,
+    ); // Adding, fitting and setting the length are one undo step.
+  }
   c.ws.after(m.later('add', word: n.id), (done, why) {
     _placing.remove(n.id);
     c.set(() => done ? c.mem.trouble.remove(n.id) : c.mem.trouble[n.id] = why);
   }, (made) => c.ws.select('$made'));
   if (fit) m.later('fit', layer: -1, word: 'fit');
-  if (still) m.later('set', layer: -1, name: 'duration', number: stillSeconds); // Applies to the layer just added.
+  if (still) {
+    m.later(
+      'set',
+      layer: -1,
+      name: 'duration',
+      number: stillSeconds,
+    ); // Applies to the layer just added.
+  }
   if (cut case (final a, final b)) {
     mediaSecondsOf(m.libPath, n.id).then((len) {
       // The length is already known because the range band drew it. The begin time is where the band's left end is in the video.

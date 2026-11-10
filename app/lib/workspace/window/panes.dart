@@ -21,7 +21,10 @@ class Panes extends StatefulWidget {
   final List<Pane> panes;
 
   /// Builds the arrangement a new window starts with.
-  final DockingArea Function(DockingArea Function(PaneStrip at, {double? size}) strip) preset;
+  final DockingArea Function(
+    DockingArea Function(PaneStrip at, {double? size}) strip,
+  )
+  preset;
   @override
   State<Panes> createState() => _PanesState();
 }
@@ -57,7 +60,8 @@ class _PanesState extends State<Panes> {
   void _toFront(String s) {
     final tabs = _layout.findDockingTabsWithItem(s);
     if (tabs == null) return;
-    final i = [for (var k = 0; k < tabs.childrenCount; k++) tabs.childAt(k).id].indexOf(s);
+    final i = [for (var k = 0; k < tabs.childrenCount; k++) tabs.childAt(k).id]
+        .indexOf(s);
     if (i < 0 || tabs.selectedIndex == i) return;
     tabs.selectedIndex = i;
     _layout.rebuild();
@@ -69,7 +73,9 @@ class _PanesState extends State<Panes> {
       for (final p in widget.panes)
         if (p.at == at) p,
     ];
-    return here.length == 1 ? _item(here.single, size: size) : DockingTabs([for (final p in here) _item(p)], size: size);
+    return here.length == 1
+        ? _item(here.single, size: size)
+        : DockingTabs([for (final p in here) _item(p)], size: size);
   }
 
   DockingItem _item(Pane p, {double? size}) {
@@ -86,8 +92,17 @@ class _PanesState extends State<Panes> {
             context,
             selected: status == TabStatus.selected,
             mark: p.glyph == null
-                ? Text(p.name.characters.first, style: TextStyles.micro(status == TabStatus.selected ? Grey.g95 : Grey.g56))
-                : Glyph(p.glyph!, size: Shape.z(12), color: status == TabStatus.selected ? Grey.g95 : Grey.g56),
+                ? Text(
+                    p.name.characters.first,
+                    style: TextStyles.micro(
+                      status == TabStatus.selected ? Grey.g95 : Grey.g56,
+                    ),
+                  )
+                : Glyph(
+                    p.glyph!,
+                    size: Shape.z(12),
+                    color: status == TabStatus.selected ? Grey.g95 : Grey.g56,
+                  ),
           ),
         ),
       ),
@@ -107,9 +122,17 @@ class _PanesState extends State<Panes> {
     child: MultiSplitViewTheme(
       data: MultiSplitViewThemeData(
         dividerThickness: WindowTokens.gutter * 2,
-        dividerPainter: DividerPainters.background(color: WindowTokens.ground, highlightedColor: WindowTokens.accentInk),
+        dividerPainter: DividerPainters.background(
+          color: WindowTokens.ground,
+          highlightedColor: WindowTokens.accentInk,
+        ),
       ),
-      child: Docking(layout: _layout, maximizableItem: false, maximizableTab: false, maximizableTabsArea: false),
+      child: Docking(
+        layout: _layout,
+        maximizableItem: false,
+        maximizableTab: false,
+        maximizableTabsArea: false,
+      ),
     ),
   );
 }
@@ -117,7 +140,9 @@ class _PanesState extends State<Panes> {
 /// The tab strip theme: a quiet band on the gutter, with the selected tab in the panel's body color and an accent underline.
 /// A form with [Forms.plainTabs] drops the tab backgrounds, so its own glyph is the only sign of which pane is selected.
 TabbedViewThemeData _tabs() {
-  final t = Grey.light ? TabbedViewThemeData.minimalist() : TabbedViewThemeData.dark();
+  final t = Grey.light
+      ? TabbedViewThemeData.minimalist()
+      : TabbedViewThemeData.dark();
   final plain = Forms.worn.plainTabs;
   t.tabsArea
     ..color = WindowTokens.ground
@@ -130,13 +155,23 @@ TabbedViewThemeData _tabs() {
     ..hoverButtonColor = Grey.g91;
   t.tab
     // The padding is small enough for seven shelf tabs to fit a dock squeezed to 229 px by a 1280 px window.
-    ..padding = EdgeInsets.fromLTRB(Shape.s(plain ? 4 : 8), Shape.s(5), Shape.s(plain ? 4 : 8), Shape.s(5))
+    ..padding = EdgeInsets.fromLTRB(
+      Shape.s(plain ? 4 : 8),
+      Shape.s(5),
+      Shape.s(plain ? 4 : 8),
+      Shape.s(5),
+    )
     ..margin = EdgeInsets.zero
     ..innerBottomBorder = null
     ..innerTopBorder = null
-    ..textStyle = TextStyles.micro(Grey.g63).copyWith(fontWeight: FontWeight.w600, letterSpacing: .6)
-    ..decoration = plain ? const BoxDecoration() : BoxDecoration(color: WindowTokens.card)
-    ..draggingDecoration = BoxDecoration(color: plain ? WindowTokens.body : WindowTokens.raised)
+    ..textStyle = TextStyles.micro(Grey.g63)
+        .copyWith(fontWeight: FontWeight.w600, letterSpacing: .6)
+    ..decoration = plain
+        ? const BoxDecoration()
+        : BoxDecoration(color: WindowTokens.card)
+    ..draggingDecoration = BoxDecoration(
+      color: plain ? WindowTokens.body : WindowTokens.raised,
+    )
     ..normalButtonColor = Grey.g56
     ..hoverButtonColor = Grey.g91
     ..selectedStatus = (TabStatusThemeData()
@@ -144,11 +179,15 @@ TabbedViewThemeData _tabs() {
           ? const BoxDecoration()
           : BoxDecoration(
               color: WindowTokens.body,
-              border: Border(bottom: BorderSide(color: WindowTokens.accentInk, width: 2)),
+              border: Border(
+                bottom: BorderSide(color: WindowTokens.accentInk, width: 2),
+              ),
             )
       ..fontColor = Grey.g95)
     ..highlightedStatus = (TabStatusThemeData()
-      ..decoration = plain ? const BoxDecoration() : BoxDecoration(color: WindowTokens.raised)
+      ..decoration = plain
+          ? const BoxDecoration()
+          : BoxDecoration(color: WindowTokens.raised)
       ..fontColor = Grey.g91);
   t.contentArea
     ..decoration = BoxDecoration(color: WindowTokens.body)

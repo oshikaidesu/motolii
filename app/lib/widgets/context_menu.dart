@@ -16,13 +16,34 @@ import 'package:motolii/widgets/controls.dart' show Pressable;
 /// A null [go] means the row cannot be done now, and [why] says why. [keys] is the keyboard shortcut shown beside it.
 /// The shortcut is never the only way to run it. [ContextMenuItem.rule] is a divider between groups.
 class ContextMenuItem {
-  const ContextMenuItem(this.label, this.go, {this.keys = '', this.why = '', this.id}) : colors = const [], picked = -1, pick = null;
-  const ContextMenuItem.rule() : label = '', go = null, keys = '', why = '', id = null, colors = const [], picked = -1, pick = null;
+  const ContextMenuItem(
+    this.label,
+    this.go, {
+    this.keys = '',
+    this.why = '',
+    this.id,
+  }) : colors = const [],
+       picked = -1,
+       pick = null;
+  const ContextMenuItem.rule()
+    : label = '',
+      go = null,
+      keys = '',
+      why = '',
+      id = null,
+      colors = const [],
+      picked = -1,
+      pick = null;
 
   /// A row of colours to choose from, as Ableton Live's context menus end with the clip or track colours.
   ///
   /// [picked] is the index of the current colour, or -1 for none. [pick] is called with the index of the one clicked.
-  const ContextMenuItem.colors(this.colors, this.picked, this.pick) : label = '', go = null, keys = '', why = '', id = null;
+  const ContextMenuItem.colors(this.colors, this.picked, this.pick)
+    : label = '',
+      go = null,
+      keys = '',
+      why = '',
+      id = null;
   final String label, keys, why;
 
   /// The row's widget key, when it should not be derived from the label.
@@ -44,7 +65,13 @@ class ContextMenu extends StatefulWidget {
 ///
 /// Choosing an item runs it and then calls [close]. The workspace context menu and the inspector's ⋮ and right-click lists all use this.
 class ContextMenuList extends StatelessWidget {
-  const ContextMenuList({super.key, required this.items, required this.close, required this.max, required this.width});
+  const ContextMenuList({
+    super.key,
+    required this.items,
+    required this.close,
+    required this.max,
+    required this.width,
+  });
   final List<ContextMenuItem> items;
   final VoidCallback close;
   final double max, width;
@@ -79,7 +106,12 @@ class ContextMenuList extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: it.colors[k],
                       borderRadius: BorderRadius.all(Shape.r(3)),
-                      border: Border.all(color: k == it.picked || h ? Grey.g95 : const Color(0x00000000), width: 2),
+                      border: Border.all(
+                        color: k == it.picked || h
+                            ? Grey.g95
+                            : const Color(0x00000000),
+                        width: 2,
+                      ),
                     ),
                   ),
                 ),
@@ -93,7 +125,9 @@ class ContextMenuList extends StatelessWidget {
         )
       : Pressable(
           key: ValueKey(it.id ?? 'ws-menu-${it.label}'),
-          cursor: it.go != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+          cursor: it.go != null
+              ? SystemMouseCursors.click
+              : SystemMouseCursors.basic,
           onTap: it.go == null
               ? null
               : () {
@@ -103,11 +137,19 @@ class ContextMenuList extends StatelessWidget {
           builder: (_, h) => Container(
             height: _row,
             padding: EdgeInsets.symmetric(horizontal: Shape.s(8)),
-            decoration: BoxDecoration(color: h && it.go != null ? Grey.g20 : null, borderRadius: BorderRadius.all(Shape.r(4))),
+            decoration: BoxDecoration(
+              color: h && it.go != null ? Grey.g20 : null,
+              borderRadius: BorderRadius.all(Shape.r(4)),
+            ),
             child: Row(
               children: [
                 Expanded(
-                  child: Text(it.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.name(it.go != null ? Grey.g91 : Grey.g56)),
+                  child: Text(
+                    it.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyles.name(it.go != null ? Grey.g91 : Grey.g56),
+                  ),
                 ),
                 if (it.go == null && it.why.isNotEmpty)
                   Text(it.why, maxLines: 1, style: TextStyles.label(Grey.g56))
@@ -127,13 +169,23 @@ class ContextMenuList extends StatelessWidget {
       color: Grey.g13,
       borderRadius: BorderRadius.all(Shape.r(6)),
       border: Border.all(color: Grey.g26),
-      boxShadow: [BoxShadow(color: const Color(0x80000000), blurRadius: 24, offset: const Offset(0, 8))],
+      boxShadow: [
+        BoxShadow(
+          color: const Color(0x80000000),
+          blurRadius: 24,
+          offset: const Offset(0, 8),
+        ),
+      ],
     ),
     child: ConstrainedBox(
       // A long list scrolls within [max].
       constraints: BoxConstraints(maxHeight: max),
       child: SingleChildScrollView(
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [for (final it in items) _one(it)]),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [for (final it in items) _one(it)],
+        ),
       ),
     ),
   );
@@ -154,17 +206,30 @@ class ContextMenuState extends State<ContextMenu> {
     controller: _m,
     overlayBuilder: (context, info) {
       final w = Shape.z(220), pad = Shape.s(4);
-      final h = math.min(info.overlaySize.height * .5, [for (final it in _items) ContextMenuList.high(it)].fold(0.0, (a, b) => a + b)) + pad * 2;
+      final h =
+          math.min(
+            info.overlaySize.height * .5,
+            [for (final it in _items) ContextMenuList.high(it)]
+                .fold(0.0, (a, b) => a + b),
+          ) +
+          pad * 2;
       final at = info.anchorRect.topLeft + (info.position ?? Offset.zero);
       return Positioned(
         left: math.max(0.0, math.min(at.dx, info.overlaySize.width - w)),
         // Opens downward from the pointer, or upward where there is no room.
-        top: at.dy + h <= info.overlaySize.height ? at.dy : math.max(0.0, at.dy - h),
+        top: at.dy + h <= info.overlaySize.height
+            ? at.dy
+            : math.max(0.0, at.dy - h),
         child: DismissRegion(
           // The anchor only closes on a left press outside. DismissRegion also closes on any press and on Esc, like every floating panel.
           group: info.tapRegionGroupId,
           shut: _m.close,
-          child: ContextMenuList(items: _items, close: _m.close, max: info.overlaySize.height * .5, width: w),
+          child: ContextMenuList(
+            items: _items,
+            close: _m.close,
+            max: info.overlaySize.height * .5,
+            width: w,
+          ),
         ),
       );
     },

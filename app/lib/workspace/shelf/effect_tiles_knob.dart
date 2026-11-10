@@ -35,8 +35,12 @@ import 'package:motolii/workspace/shelf/effect_tiles_difference.dart';
   String? first,
   bool alone = false,
 }) {
-  if (!m.at(EffectTiles.moments[EffectTiles.still]) || !m.still('$folder/usual.png')) return null;
-  bool says(RegExp words, String k) => words.hasMatch(k) || words.hasMatch(m.shown(k)?.label ?? '');
+  if (!m.at(EffectTiles.moments[EffectTiles.still]) ||
+      !m.still('$folder/usual.png')) {
+    return null;
+  }
+  bool says(RegExp words, String k) =>
+      words.hasMatch(k) || words.hasMatch(m.shown(k)?.label ?? '');
   double change(String k, double to, double back) {
     m.set(on, k, to);
     m.still('$folder/try_0.png');
@@ -56,8 +60,12 @@ import 'package:motolii/workspace/shelf/effect_tiles_difference.dart';
         tried++ == 8) {
       return null;
     }
-    final (low, high) = span != null && span.high > span.low ? (span.low, span.high) : range;
-    final half = from + (((high - from).abs() >= (from - low).abs() ? high : low) - from) / 2;
+    final (low, high) = span != null && span.high > span.low
+        ? (span.low, span.high)
+        : range;
+    final half =
+        from +
+        (((high - from).abs() >= (from - low).abs() ? high : low) - from) / 2;
     if (change(k, half, from) <= _plain) return null;
     if (says(_whole, k)) return (k, from, half);
     final steps = [
@@ -74,8 +82,18 @@ import 'package:motolii/workspace/shelf/effect_tiles_difference.dart';
       m.still('$folder/try_$i.png');
     }
     m.set(on, k, from);
-    final fine = _changes(folder), ways = [for (final (i, v) in at.indexed) (v, fine.elementAtOrNull(i)?.$2 ?? 0)];
-    return (k, from, (ways.where((w) => w.$2 >= _clear).firstOrNull ?? ways.reduce((a, b) => b.$2 > a.$2 ? b : a)).$1);
+    final fine = _changes(folder),
+        ways = [
+          for (final (i, v) in at.indexed)
+            (v, fine.elementAtOrNull(i)?.$2 ?? 0),
+        ];
+    return (
+      k,
+      from,
+      (ways.where((w) => w.$2 >= _clear).firstOrNull ??
+              ways.reduce((a, b) => b.$2 > a.$2 ? b : a))
+          .$1,
+    );
   }
 
   if (first != null) {
@@ -87,13 +105,18 @@ import 'package:motolii/workspace/shelf/effect_tiles_difference.dart';
   }
   final given = [
     for (final MapEntry(key: k, value: was) in filed.entries)
-      if (m.value(on, k, 0) case final to? when to != was && !_faint.hasMatch(k)) (k, was, to, change(k, was, to)),
+      if (m.value(on, k, 0) case final to?
+          when to != was && !_faint.hasMatch(k))
+        (k, was, to, change(k, was, to)),
   ];
   if (given.isNotEmpty) {
     final most = given.reduce((a, b) => b.$4 > a.$4 ? b : a);
     if (most.$4 > _plain) return (most.$1, most.$2, most.$3);
   }
-  for (final k in [...knobs.where((k) => !vectorPart.hasMatch(k)), ...knobs.where(vectorPart.hasMatch)]) {
+  for (final k in [
+    ...knobs.where((k) => !vectorPart.hasMatch(k)),
+    ...knobs.where(vectorPart.hasMatch),
+  ]) {
     if (turned(k) case final knob?) return knob;
   }
   return null;
@@ -115,12 +138,14 @@ List<(int, double)> _changes(String folder) {
     '-',
   ]);
   for (var i = 0; File('$folder/try_$i.png').existsSync(); i++) {
-    File('$folder/try_$i.png').deleteSync(); // The next effect may have fewer tries.
+    File('$folder/try_$i.png')
+        .deleteSync(); // The next effect may have fewer tries.
   }
   if (r == null) return const []; // ffmpeg is missing where the app was started from, so nothing is measured.
   return [
     for (final l in '${r.stdout}'.split('\n'))
-      if (RegExp(r'n:(\d+) mse_avg:([\d.]+)').firstMatch(l) case final w?) (int.parse(w.group(1)!) - 1, double.parse(w.group(2)!)),
+      if (RegExp(r'n:(\d+) mse_avg:([\d.]+)').firstMatch(l) case final w?)
+        (int.parse(w.group(1)!) - 1, double.parse(w.group(2)!)),
   ];
 }
 
@@ -128,8 +153,15 @@ List<(int, double)> _changes(String folder) {
 // plainly visible with the picture still there, as measured on these tiles.
 final _plain = 255 * 255 / 10000.0, _clear = 255 * 255 / 251.0;
 
-final _clock = RegExp(r'progress|completion|evolution|phase|rot_?y|進行|進捗|位相', caseSensitive: false);
+final _clock = RegExp(
+  r'progress|completion|evolution|phase|rot_?y|進行|進捗|位相',
+  caseSensitive: false,
+);
 
-final _whole = RegExp(r'progress|completion|rot_?y|進行|進捗', caseSensitive: false);
+final _whole = RegExp(
+  r'progress|completion|rot_?y|進行|進捗',
+  caseSensitive: false,
+);
 
-final vectorPart = RegExp(r'_[xyzw]$'), _faint = RegExp(r'alpha|opacity|blend|mix|seed', caseSensitive: false);
+final vectorPart = RegExp(r'_[xyzw]$'),
+    _faint = RegExp(r'alpha|opacity|blend|mix|seed', caseSensitive: false);

@@ -61,14 +61,23 @@ enum AppGlyphs implements GlyphKind {
   void draw(Canvas cv, Size s, Paint st, Paint fl) {
     final w = s.width;
     Offset p(double x, double y) => Offset(x * w, y * w);
-    Rect r(double l, double t, double rw, double rh) => Rect.fromLTWH(l * w, t * w, rw * w, rh * w);
-    RRect rr(double l, double t, double rw, double rh, [double rad = .1]) => RRect.fromRectAndRadius(r(l, t, rw, rh), Radius.circular(rad * w));
-    Path poly(List<Offset> pts) => Path()..addPolygon(pts.map((o) => p(o.dx, o.dy)).toList(), true);
-    Path ngon(int n, double rad, {double inner = 0, double rot = -math.pi / 2}) {
+    Rect r(double l, double t, double rw, double rh) =>
+        Rect.fromLTWH(l * w, t * w, rw * w, rh * w);
+    RRect rr(double l, double t, double rw, double rh, [double rad = .1]) =>
+        RRect.fromRectAndRadius(r(l, t, rw, rh), Radius.circular(rad * w));
+    Path poly(List<Offset> pts) =>
+        Path()..addPolygon(pts.map((o) => p(o.dx, o.dy)).toList(), true);
+    Path ngon(
+      int n,
+      double rad, {
+      double inner = 0,
+      double rot = -math.pi / 2,
+    }) {
       final pts = <Offset>[];
       final k = inner > 0 ? n * 2 : n;
       for (var i = 0; i < k; i++) {
-        final a = rot + i * 2 * math.pi / k, rv = inner > 0 && i.isOdd ? inner : rad;
+        final a = rot + i * 2 * math.pi / k,
+            rv = inner > 0 && i.isOdd ? inner : rad;
         pts.add(Offset(.5 + math.cos(a) * rv, .5 + math.sin(a) * rv));
       }
       return poly(pts);
@@ -77,13 +86,22 @@ enum AppGlyphs implements GlyphKind {
     switch (this) {
       case AppGlyphs.media || AppGlyphs.video:
         cv.drawRRect(rr(.1, .2, .8, .6, .12), st);
-        cv.drawPath(poly(const [Offset(.42, .36), Offset(.64, .5), Offset(.42, .64)]), fl);
+        cv.drawPath(
+          poly(const [Offset(.42, .36), Offset(.64, .5), Offset(.42, .64)]),
+          fl,
+        );
       // "fx" is the mark After Effects and Premiere Pro use for a layer's effects. A sparkle was tried but looked like a +.
       case AppGlyphs.effects:
         final t = TextPainter(
           text: TextSpan(
             text: 'fx',
-            style: TextStyle(color: fl.color, fontSize: w * .8, fontStyle: FontStyle.italic, fontWeight: FontWeight.w700, height: 1),
+            style: TextStyle(
+              color: fl.color,
+              fontSize: w * .8,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w700,
+              height: 1,
+            ),
           ),
           textDirection: TextDirection.ltr,
         )..layout();
@@ -116,13 +134,21 @@ enum AppGlyphs implements GlyphKind {
           this == AppGlyphs.folder ? fl : st,
         );
       case AppGlyphs.create || AppGlyphs.plus:
-        if (this == AppGlyphs.create) cv.drawRRect(rr(.12, .12, .76, .76, .18), st);
+        if (this == AppGlyphs.create) {
+          cv.drawRRect(rr(.12, .12, .76, .76, .18), st);
+        }
         final k = this == AppGlyphs.create ? .3 : .2;
         cv.drawLine(p(.5, k), p(.5, 1 - k), st);
         cv.drawLine(p(k, .5), p(1 - k, .5), st);
       // The round arrow of a browser's reload button.
       case AppGlyphs.reload:
-        cv.drawArc(r(.14, .14, .72, .72), -math.pi * .3, math.pi * 1.65, false, st);
+        cv.drawArc(
+          r(.14, .14, .72, .72),
+          -math.pi * .3,
+          math.pi * 1.65,
+          false,
+          st,
+        );
         cv.drawLine(p(.84, .1), p(.82, .34), st);
         cv.drawLine(p(.82, .34), p(.58, .3), st);
       // Code's angle brackets with a slash.
@@ -144,7 +170,10 @@ enum AppGlyphs implements GlyphKind {
         cv.drawLine(p(.28, .28), p(.72, .72), st);
         cv.drawLine(p(.72, .28), p(.28, .72), st);
       case AppGlyphs.chevron:
-        cv.drawPath(poly(const [Offset(.34, .22), Offset(.72, .5), Offset(.34, .78)]), fl);
+        cv.drawPath(
+          poly(const [Offset(.34, .22), Offset(.72, .5), Offset(.34, .78)]),
+          fl,
+        );
       case AppGlyphs.stage:
         cv.drawRRect(rr(.08, .2, .84, .6, .08), st);
         cv.drawCircle(p(.5, .5), w * .1, fl);
@@ -172,7 +201,10 @@ enum AppGlyphs implements GlyphKind {
         cv.drawRRect(rr(.325, .575, .3, .15, .05), fl);
       case AppGlyphs.tools:
         for (var i = 0; i < 4; i++) {
-          cv.drawRRect(rr(.2 + (i % 2) * .325, .2 + (i ~/ 2) * .325, .275, .275, .05), fl);
+          cv.drawRRect(
+            rr(.2 + (i % 2) * .325, .2 + (i ~/ 2) * .325, .275, .275, .05),
+            fl,
+          );
         }
       case AppGlyphs.grid:
         for (var i = 0; i < 2; i++) {
@@ -190,7 +222,11 @@ enum AppGlyphs implements GlyphKind {
         cv.drawCircle(p(.5, .5), w * .18, fl);
         for (var i = 0; i < 8; i++) {
           final a = i * math.pi / 4;
-          cv.drawLine(p(.5 + math.cos(a) * .3, .5 + math.sin(a) * .3), p(.5 + math.cos(a) * .44, .5 + math.sin(a) * .44), st);
+          cv.drawLine(
+            p(.5 + math.cos(a) * .3, .5 + math.sin(a) * .3),
+            p(.5 + math.cos(a) * .44, .5 + math.sin(a) * .44),
+            st,
+          );
         }
 
       case AppGlyphs.copies:
@@ -202,7 +238,15 @@ enum AppGlyphs implements GlyphKind {
         cv.drawLine(p(.18, .2), p(.82, .2), st);
         cv.drawLine(p(.5, .2), p(.5, .84), st);
       case AppGlyphs.particles:
-        const dots = [(.2, .3, .08), (.46, .18, .06), (.74, .3, .1), (.3, .62, .1), (.6, .56, .07), (.82, .74, .06), (.5, .84, .08)];
+        const dots = [
+          (.2, .3, .08),
+          (.46, .18, .06),
+          (.74, .3, .1),
+          (.3, .62, .1),
+          (.6, .56, .07),
+          (.82, .74, .06),
+          (.5, .84, .08),
+        ];
         for (final (x, y, rad) in dots) {
           cv.drawCircle(p(x, y), w * rad, fl);
         }
@@ -216,7 +260,10 @@ enum AppGlyphs implements GlyphKind {
         cv.drawCircle(p(.64, .38), w * .24, st);
       case AppGlyphs.camera:
         cv.drawRRect(rr(.08, .3, .6, .44, .1), fl);
-        cv.drawPath(poly(const [Offset(.72, .52), Offset(.92, .34), Offset(.92, .7)]), fl);
+        cv.drawPath(
+          poly(const [Offset(.72, .52), Offset(.92, .34), Offset(.92, .7)]),
+          fl,
+        );
       case AppGlyphs.nullObj:
         cv.drawRect(r(.18, .18, .64, .64), st);
         cv.drawLine(p(.5, .3), p(.5, .7), st);
@@ -238,7 +285,11 @@ enum AppGlyphs implements GlyphKind {
       case AppGlyphs.radial:
         for (var i = 0; i < 8; i++) {
           final a = i * math.pi / 4;
-          cv.drawCircle(p(.5 + math.cos(a) * .34, .5 + math.sin(a) * .34), w * .08, fl);
+          cv.drawCircle(
+            p(.5 + math.cos(a) * .34, .5 + math.sin(a) * .34),
+            w * .08,
+            fl,
+          );
         }
       case AppGlyphs.comp:
         cv.drawRect(r(.1, .22, .8, .56), st);
@@ -248,7 +299,16 @@ enum AppGlyphs implements GlyphKind {
         }
       case AppGlyphs.image:
         cv.drawRect(r(.1, .2, .8, .6), st);
-        cv.drawPath(poly(const [Offset(.18, .74), Offset(.42, .44), Offset(.6, .64), Offset(.7, .54), Offset(.84, .74)]), fl);
+        cv.drawPath(
+          poly(const [
+            Offset(.18, .74),
+            Offset(.42, .44),
+            Offset(.6, .64),
+            Offset(.7, .54),
+            Offset(.84, .74),
+          ]),
+          fl,
+        );
         cv.drawCircle(p(.68, .36), w * .07, fl);
       case AppGlyphs.audio:
         const hs = [.2, .5, .34, .7, .44, .26];

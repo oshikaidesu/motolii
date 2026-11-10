@@ -12,7 +12,13 @@ extension MotoliiWatch on Motolii {
 
   /// The frame ranges [from, to) of the stage that are cached on disk for playback (motolii_cache).
   List<(int, int)> get cache {
-    final n = bindings.motolii_cache(handle).toDartString().split(' ').where((w) => w.isNotEmpty).map(int.parse).toList();
+    final n = bindings
+        .motolii_cache(handle)
+        .toDartString()
+        .split(' ')
+        .where((w) => w.isNotEmpty)
+        .map(int.parse)
+        .toList();
     return [for (var i = 0; i + 1 < n.length; i += 2) (n[i], n[i + 1])];
   }
 

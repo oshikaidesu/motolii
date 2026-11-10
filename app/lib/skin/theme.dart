@@ -26,7 +26,8 @@ import 'dart:typed_data' show ByteData;
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/engine_paths.dart' show motoliiOwn, motoliiShelves;
+import 'package:motolii/bridge/engine_paths.dart'
+    show motoliiOwn, motoliiShelves;
 import 'package:motolii/storage/window_settings.dart' show WindowFile;
 import 'package:motolii/skin/hex_color.dart' show colorOfHex;
 
@@ -47,10 +48,11 @@ abstract final class ColorTheme {
   static Color of(String role, Color usual) => roles.value[role] ?? usual;
 
   /// The number of [role] in the theme, else [usual].
-  static double number(String role, double usual) => switch (double.tryParse(words.value[role] ?? '')) {
-    final n? when n.isFinite => n,
-    _ => usual,
-  }; // NaN and Infinity fall back to [usual].
+  static double number(String role, double usual) =>
+      switch (double.tryParse(words.value[role] ?? '')) {
+        final n? when n.isFinite => n,
+        _ => usual,
+      }; // NaN and Infinity fall back to [usual].
 
   /// The text of [role] in the theme, else [usual].
   static String word(String role, String usual) => words.value[role] ?? usual;
@@ -64,7 +66,11 @@ abstract final class ColorTheme {
   ///
   /// The user's own folder wins over shelves/skins. ~/.motolii/skins is an older location, still read so that a skin worn
   /// from there is not lost.
-  static List<String> get _skinFolders => ['$motoliiShelves/skins', '${Platform.environment['HOME']}/.motolii/skins', skins];
+  static List<String> get _skinFolders => [
+    '$motoliiShelves/skins',
+    '${Platform.environment['HOME']}/.motolii/skins',
+    skins,
+  ];
 
   /// The folder of each skin, by skin name.
   static Map<String, String> _skinsByName() {
@@ -72,7 +78,9 @@ abstract final class ColorTheme {
     for (final at in _skinFolders) {
       try {
         for (final d in Directory(at).listSync().whereType<Directory>()) {
-          if (File('${d.path}/theme.xml').existsSync()) by[d.uri.pathSegments[d.uri.pathSegments.length - 2]] = d.path;
+          if (File('${d.path}/theme.xml').existsSync()) {
+            by[d.uri.pathSegments[d.uri.pathSegments.length - 2]] = d.path;
+          }
         }
       } catch (_) {
         // A folder that is not there has no skins.
@@ -90,7 +98,11 @@ abstract final class ColorTheme {
     _ => null,
   };
 
-  static String get _worn => at ?? (skin == null ? '' : '${_skinsByName()[skin] ?? '$skins/$skin'}/theme.xml');
+  static String get _worn =>
+      at ??
+      (skin == null
+          ? ''
+          : '${_skinsByName()[skin] ?? '$skins/$skin'}/theme.xml');
 
   /// Switches to the skin [name], or to the built-in look when null, and stores the choice for the next launch.
   static void wear(String? name) {
@@ -110,7 +122,12 @@ abstract final class ColorTheme {
       folder = file.parent.path;
       final xml = file.readAsStringSync();
       roles.value = parse(xml);
-      words.value = {for (final m in RegExp(r'<(\w+)\s+Value="([^"#][^"]*)"\s*/>').allMatches(xml)) m.group(1)!: m.group(2)!};
+      words.value = {
+        for (final m in RegExp(
+          r'<(\w+)\s+Value="([^"#][^"]*)"\s*/>',
+        ).allMatches(xml))
+          m.group(1)!: m.group(2)!,
+      };
     } catch (_) {
       roles.value = const {};
       words.value = const {};
@@ -130,15 +147,20 @@ abstract final class ColorTheme {
   ///
   /// A path named by a role is relative to this folder unless it is absolute (`/...`) or starts at home (`~/...`).
   static String folder = '';
-  static String place(String w) =>
-      w.isEmpty || w.startsWith('/') ? w : (w.startsWith('~/') ? '${Platform.environment['HOME']}${w.substring(1)}' : '$folder/$w');
+  static String place(String w) => w.isEmpty || w.startsWith('/')
+      ? w
+      : (w.startsWith('~/')
+            ? '${Platform.environment['HOME']}${w.substring(1)}'
+            : '$folder/$w');
 
   /// Whether the theme asks for the light shade, or null when it does not say and the app's own switch decides.
   static final shadeSaid = ValueNotifier<bool?>(null);
 
   /// Loads each `Font...File` role's font file under the family its `Font...` role names.
   static void _fonts() {
-    for (final e in words.value.entries.where((e) => e.key.startsWith('Font') && e.key.endsWith('File'))) {
+    for (final e in words.value.entries.where(
+      (e) => e.key.startsWith('Font') && e.key.endsWith('File'),
+    )) {
       final family = words.value[e.key.substring(0, e.key.length - 4)];
       final path = place(e.value);
       if (family == null || !File(path).existsSync()) continue;
@@ -160,7 +182,9 @@ abstract final class ColorTheme {
     if (file.path.isEmpty) return;
     try {
       file.parent.createSync(recursive: true);
-      _watching = file.parent.watch().where((e) => e.path == file.path).listen((_) {
+      _watching = file.parent.watch().where((e) => e.path == file.path).listen((
+        _,
+      ) {
         load(file.path);
         changed();
       });
@@ -171,6 +195,9 @@ abstract final class ColorTheme {
 
   /// The colour roles of a theme file: every `<Name Value="#rrggbb"/>` or `"#rrggbbaa"`.
   static Map<String, Color> parse(String xml) => {
-    for (final m in RegExp(r'<(\w+)\s+Value="(#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?)"\s*/>').allMatches(xml)) m.group(1)!: colorOfHex(m.group(2)!)!,
+    for (final m in RegExp(
+      r'<(\w+)\s+Value="(#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?)"\s*/>',
+    ).allMatches(xml))
+      m.group(1)!: colorOfHex(m.group(2)!)!,
   };
 }

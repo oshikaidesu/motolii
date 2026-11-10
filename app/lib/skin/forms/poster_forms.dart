@@ -10,7 +10,11 @@ import 'package:naked_ui/naked_ui.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/forms/forms.dart';
 
-const _red = Color(0xFFE5432D), _yellow = Color(0xFFF7D046), _blue = Color(0xFF2A62C9), _green = Color(0xFF6BBF8C), _pink = Color(0xFFF2A7C6);
+const _red = Color(0xFFE5432D),
+    _yellow = Color(0xFFF7D046),
+    _blue = Color(0xFF2A62C9),
+    _green = Color(0xFF6BBF8C),
+    _pink = Color(0xFFF2A7C6);
 const _ink = Color(0xFF111111), _paper = Color(0xFFF4F1EA);
 const _blocks = [_red, _yellow, _blue, _green, _pink];
 
@@ -34,25 +38,58 @@ class PosterShapePainter extends CustomPainter {
       case PosterShapes.dot:
         c.drawCircle(r.center, s.shortestSide * .18, p);
       case PosterShapes.half:
-        c.drawArc(Rect.fromCenter(center: r.bottomCenter, width: s.width, height: s.width), math.pi, math.pi, true, p);
+        c.drawArc(
+          Rect.fromCenter(
+            center: r.bottomCenter,
+            width: s.width,
+            height: s.width,
+          ),
+          math.pi,
+          math.pi,
+          true,
+          p,
+        );
       case PosterShapes.quarter:
-        c.drawArc(Rect.fromCircle(center: r.bottomLeft, radius: s.shortestSide), -math.pi / 2, math.pi / 2, true, p);
+        c.drawArc(
+          Rect.fromCircle(center: r.bottomLeft, radius: s.shortestSide),
+          -math.pi / 2,
+          math.pi / 2,
+          true,
+          p,
+        );
       case PosterShapes.triangle:
-        c.drawPath(Path()..addPolygon([r.bottomLeft, r.topRight, r.bottomRight], true), p);
+        c.drawPath(
+          Path()..addPolygon([r.bottomLeft, r.topRight, r.bottomRight], true),
+          p,
+        );
       case PosterShapes.stripes:
         final w = s.shortestSide / 5;
         for (var x = -s.height; x < s.width + s.height; x += w * 2) {
-          c.drawPath(Path()..addPolygon([Offset(x, s.height), Offset(x + w, s.height), Offset(x + w + s.height, 0), Offset(x + s.height, 0)], true), p);
+          c.drawPath(
+            Path()..addPolygon([
+              Offset(x, s.height),
+              Offset(x + w, s.height),
+              Offset(x + w + s.height, 0),
+              Offset(x + s.height, 0),
+            ], true),
+            p,
+          );
         }
     }
     c.restore();
   }
 
   @override
-  bool shouldRepaint(PosterShapePainter o) => o.geo != geo || o.ink != ink || o.ground != ground;
+  bool shouldRepaint(PosterShapePainter o) =>
+      o.geo != geo || o.ink != ink || o.ground != ground;
 }
 
-TextStyle _word(Color c, double size) => TextStyles.name(c).copyWith(fontSize: TextStyles.px(size), fontWeight: FontWeight.w800, letterSpacing: -.3, height: 1);
+TextStyle _word(Color c, double size) => TextStyles.name(c).copyWith(
+  fontSize: TextStyles.px(size),
+  fontWeight: FontWeight.w800,
+  letterSpacing: -.3,
+  height: 1,
+);
 
 class PosterForms extends Forms {
   const PosterForms();
@@ -79,7 +116,11 @@ class PosterForms extends Forms {
             SizedBox.square(
               dimension: Shape.z(30),
               child: CustomPaint(
-                painter: PosterShapePainter(st.isHovered ? PosterShapes.quarter : PosterShapes.circle, st.isHovered ? _red : _paper, ground: _ink),
+                painter: PosterShapePainter(
+                  st.isHovered ? PosterShapes.quarter : PosterShapes.circle,
+                  st.isHovered ? _red : _paper,
+                  ground: _ink,
+                ),
               ),
             ),
           ],
@@ -113,7 +154,12 @@ class PosterForms extends Forms {
             alignment: s.on ? Alignment.centerRight : Alignment.centerLeft,
             child: SizedBox.square(
               dimension: Shape.z(18),
-              child: CustomPaint(painter: PosterShapePainter(PosterShapes.circle, st.isHovered ? _pink : _yellow)),
+              child: CustomPaint(
+                painter: PosterShapePainter(
+                  PosterShapes.circle,
+                  st.isHovered ? _pink : _yellow,
+                ),
+              ),
             ),
           ),
         ],
@@ -126,8 +172,12 @@ class PosterForms extends Forms {
   /// The colour is one of the poster blocks, chosen from the title. The rows sit on paper beneath, framed by a black rule.
   @override
   Widget card(BuildContext context, CardSpec c) {
-    final title = c.title ?? '', block = _blocks[title.codeUnits.fold(7, (a, b) => (a * 31 + b) & 0xffff) % _blocks.length];
-    final geo = PosterShapes.values[(title.length) % PosterShapes.values.length];
+    final title = c.title ?? '',
+        block =
+            _blocks[title.codeUnits.fold(7, (a, b) => (a * 31 + b) & 0xffff) %
+                _blocks.length];
+    final geo =
+        PosterShapes.values[(title.length) % PosterShapes.values.length];
     final head = NakedButton(
       onPressed: c.onToggle,
       builder: (context, st, _) => Container(
@@ -146,7 +196,13 @@ class PosterForms extends Forms {
             ?c.trailing,
             SizedBox.square(
               dimension: Shape.z(34),
-              child: CustomPaint(painter: PosterShapePainter(c.open ? geo : PosterShapes.dot, st.isHovered ? _paper : _ink, ground: c.open ? null : _paper)),
+              child: CustomPaint(
+                painter: PosterShapePainter(
+                  c.open ? geo : PosterShapes.dot,
+                  st.isHovered ? _paper : _ink,
+                  ground: c.open ? null : _paper,
+                ),
+              ),
             ),
           ],
         ),
@@ -165,8 +221,15 @@ class PosterForms extends Forms {
           if (c.title != null) head else ?c.head,
           if (c.open && c.body.isNotEmpty)
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: Shape.s(10), vertical: Shape.s(8)),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: c.body),
+              padding: EdgeInsets.symmetric(
+                horizontal: Shape.s(10),
+                vertical: Shape.s(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: c.body,
+              ),
             ),
         ],
       ),

@@ -14,32 +14,60 @@ import 'dart:io';
 /// - moves: the layer is moved by the sample's drift.
 /// - text: the words a text effect is shown on (the "text" layout).
 /// - drawn: strokes are drawn for it (the "drawing" layout).
-({Map<String, double> knobs, double? split, Map<String, List<double>> sweeps, bool moves, String? text, bool drawn})? showcase(
-  String file,
-  String head,
-  Map<String, dynamic> table,
-) {
-  final name = RegExp(r'/am_([a-z0-9]+)\.wgsl$').firstMatch(file)?.group(1) ?? RegExp(r'^// --absent:([a-z0-9]+)', multiLine: true).firstMatch(head)?.group(1);
-  final show = name == null ? null : (table['effects'] as Map<String, dynamic>?)?[name] as Map<String, dynamic>?;
+({
+  Map<String, double> knobs,
+  double? split,
+  Map<String, List<double>> sweeps,
+  bool moves,
+  String? text,
+  bool drawn,
+})?
+showcase(String file, String head, Map<String, dynamic> table) {
+  final name =
+      RegExp(r'/am_([a-z0-9]+)\.wgsl$').firstMatch(file)?.group(1) ??
+      RegExp(
+        r'^// --absent:([a-z0-9]+)',
+        multiLine: true,
+      ).firstMatch(head)?.group(1);
+  final show = name == null
+      ? null
+      : (table['effects'] as Map<String, dynamic>?)?[name]
+            as Map<String, dynamic>?;
   if (show == null) return null;
-  final tracks = {for (final t in RegExp(r'--track@([A-Za-z0-9_]+):').allMatches(head)) t.group(1)!};
-  final stem = file.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), '').replaceAll(RegExp(r'[^A-Za-z0-9_]'), '_');
+  final tracks = {
+    for (final t in RegExp(r'--track@([A-Za-z0-9_]+):').allMatches(head))
+      t.group(1)!,
+  };
+  final stem = file
+      .split('/')
+      .last
+      .replaceFirst(RegExp(r'\.[^.]*$'), '')
+      .replaceAll(RegExp(r'[^A-Za-z0-9_]'), '_');
   final knobs = <String, double>{}, sweeps = <String, List<double>>{};
   String? named(String p, String way) => [
     for (final n in [p, 'R_$p', '${p}_']) '$n$way',
   ].where(tracks.contains).firstOrNull;
-  for (final MapEntry(key: p, :value) in ((show['params'] as Map<String, dynamic>?) ?? const {}).entries) {
-    if (show.containsKey('animate') && value is List && value.every((x) => x is num)) {
+  for (final MapEntry(key: p, :value)
+      in ((show['params'] as Map<String, dynamic>?) ?? const {}).entries) {
+    if (show.containsKey('animate') &&
+        value is List &&
+        value.every((x) => x is num)) {
       // A list of numbers is the keys of an animated property, evenly spaced, as effect_thumbs.py prop does.
       if (named(p, '') case final knob?) {
-        sweeps['js_${stem}_$knob'] = [for (final x in value) (x as num).toDouble()];
+        sweeps['js_${stem}_$knob'] = [
+          for (final x in value) (x as num).toDouble(),
+        ];
         continue;
       }
     }
     final parts = switch (value) {
       num v => [v.toDouble()],
       bool v => [v ? 1.0 : 0.0],
-      String v when RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(v) => [for (var i = 1; i < 7; i += 2) int.parse(v.substring(i, i + 2), radix: 16) / 255, 1.0],
+      String v when RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(v) => [
+        for (var i = 1; i < 7; i += 2)
+          int.parse(v.substring(i, i + 2), radix: 16) / 255,
+        1.0,
+      ],
       List v when v.length <= 4 && v.every((x) => x is num) => [
         for (final x in v) (x as num).toDouble(),
       ], // A vector. A longer list is not one and is left as the file has it.
@@ -63,7 +91,10 @@ import 'dart:io';
 /// AbsentMotion's table, read once in each isolate that draws. Empty where the library does not have it.
 Map<String, dynamic> table(String dir) {
   try {
-    return jsonDecode(File('$dir/third_party/AbsentMotion/tools/effect_showcase.json').readAsStringSync()) as Map<String, dynamic>;
+    return jsonDecode(
+      File('$dir/third_party/AbsentMotion/tools/effect_showcase.json')
+          .readAsStringSync(),
+    ) as Map<String, dynamic>;
   } catch (_) {
     return const {};
   }

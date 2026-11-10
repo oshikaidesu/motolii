@@ -22,19 +22,27 @@ import 'package:motolii/workspace/state/workspace_controller.dart';
 /// A user's file replaces a library file of the same name, as the engine's doc_folders does.
 List<(String, String)> expressionRecipes() {
   final by = <String, String>{};
-  for (final dir in ['$motoliiShelves/create', '${EffectTiles.own}/recipes', '${EffectTiles.own}/create']) {
+  for (final dir in [
+    '$motoliiShelves/create',
+    '${EffectTiles.own}/recipes',
+    '${EffectTiles.own}/create',
+  ]) {
     // recipes/ is the user's folder under its former name, which doc_folders still reads.
     final d = Directory(dir);
     if (!d.existsSync()) continue;
     for (final f in d.listSync(recursive: true).whereType<File>()) {
       // Subfolders: shapes/, cavalry/, repeats/, over_footage/.
       final n = f.path.split('/').last;
-      if (n.endsWith('.js') && f.readAsStringSync().contains(RegExp(r'function\s+each\b'))) by[n] = f.path;
+      if (n.endsWith('.js') &&
+          f.readAsStringSync().contains(RegExp(r'function\s+each\b'))) {
+        by[n] = f.path;
+      }
     }
   }
   return [
     for (final f in by.values)
-      if (File(f).readAsLinesSync().firstOrNull case final first? when first.startsWith('// ') && first.contains(':'))
+      if (File(f).readAsLinesSync().firstOrNull case final first?
+          when first.startsWith('// ') && first.contains(':'))
         (first.substring(3, first.indexOf(':')), f),
   ]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase()));
 }

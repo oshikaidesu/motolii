@@ -30,7 +30,8 @@ class HomeProject {
   final int bytes;
   ({int wide, int high, double seconds, double rate})? facts;
   String? picture;
-  String get name => path.split('/').last.replaceFirst(RegExp(r'\.motolii$'), '');
+  String get name =>
+      path.split('/').last.replaceFirst(RegExp(r'\.motolii$'), '');
 }
 
 class HomeWindow extends StatefulWidget {
@@ -73,7 +74,9 @@ class _HomeWindowState extends State<HomeWindow> {
   // Selected projects, as in Alight Motion's menu "Select" or Cmd-click in the Finder.
   // While any is selected, a click toggles selection instead of opening.
   final _picked = <String>{};
-  late final Directory _pictures = Directory.systemTemp.createTempSync('motolii_home');
+  late final Directory _pictures = Directory.systemTemp.createTempSync(
+    'motolii_home',
+  );
 
   @override
   void initState() {
@@ -116,7 +119,11 @@ class _HomeWindowState extends State<HomeWindow> {
 
   /// Copies the project next to it, named "Name Copy" (AbsentMotion's naming), with a number added if that name is taken.
   void _duplicate(HomeProject d) {
-    final to = firstFree('${widget.folder}/${d.name} Copy.motolii', (f) => File(f).existsSync(), (n) => '${widget.folder}/${d.name} Copy $n.motolii');
+    final to = firstFree(
+      '${widget.folder}/${d.name} Copy.motolii',
+      (f) => File(f).existsSync(),
+      (n) => '${widget.folder}/${d.name} Copy $n.motolii',
+    );
     File(d.path).copySync(to);
     _menu = null;
     _read();
@@ -125,7 +132,11 @@ class _HomeWindowState extends State<HomeWindow> {
   /// Moves the project to the user's ~/.Trash, as the Finder does, adding a number if the name is taken there.
   void _trash(HomeProject d) {
     final trash = '${Platform.environment['HOME']}/.Trash';
-    final to = firstFree('$trash/${d.name}.motolii', (f) => File(f).existsSync(), (n) => '$trash/${d.name} $n.motolii');
+    final to = firstFree(
+      '$trash/${d.name}.motolii',
+      (f) => File(f).existsSync(),
+      (n) => '$trash/${d.name} $n.motolii',
+    );
     try {
       File(d.path).renameSync(to);
     } catch (_) {
@@ -135,9 +146,23 @@ class _HomeWindowState extends State<HomeWindow> {
     _read();
   }
 
-  static const _months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  static const _months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
   // AbsentMotion's dateHeader in English: d MMMM yyyy.
-  static String _day(DateTime t) => '${t.day} ${_months[t.month - 1]} ${t.year}';
+  static String _day(DateTime t) =>
+      '${t.day} ${_months[t.month - 1]} ${t.year}';
 
   @override
   Widget build(BuildContext context) {
@@ -146,9 +171,19 @@ class _HomeWindowState extends State<HomeWindow> {
           for (final d in _docs)
             if (d.name.toLowerCase().contains(_find.toLowerCase())) d,
         ];
-    Widget grid(List<HomeProject> docs) => Wrap(spacing: 20, runSpacing: 20, children: [for (final d in docs) _card(d)]);
+    Widget grid(List<HomeProject> docs) => Wrap(
+      spacing: 20,
+      runSpacing: 20,
+      children: [for (final d in docs) _card(d)],
+    );
     if (byName) {
-      rows.add(grid(shown..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()))));
+      rows.add(
+        grid(
+          shown..sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          ),
+        ),
+      );
     } else {
       final byDay = <String, List<HomeProject>>{};
       for (final d in shown..sort((a, b) => b.changed.compareTo(a.changed))) {
@@ -173,7 +208,12 @@ class _HomeWindowState extends State<HomeWindow> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(children: [const Spacer(), _button('home-close', '×', false, widget.onClose)]),
+            Row(
+              children: [
+                const Spacer(),
+                _button('home-close', '×', false, widget.onClose),
+              ],
+            ),
             const SizedBox(height: 8),
             NakedButton(
               enableFeedback: false,
@@ -188,7 +228,10 @@ class _HomeWindowState extends State<HomeWindow> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: WindowTokens.raised),
                 ),
-                child: Text('+  New Project', style: TextStyles.title(Grey.g91)),
+                child: Text(
+                  '+  New Project',
+                  style: TextStyles.title(Grey.g91),
+                ),
               ),
             ),
             const SizedBox(height: 28),
@@ -199,8 +242,14 @@ class _HomeWindowState extends State<HomeWindow> {
                 SizedBox(
                   width: 180,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: WindowTokens.inset, vertical: 4),
-                    decoration: BoxDecoration(color: WindowTokens.card, borderRadius: BorderRadius.circular(6)),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: WindowTokens.inset,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: WindowTokens.card,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
                     child: TextGestures(
                       key: const ValueKey('home-find'),
                       field: (k) => EditableText(
@@ -218,12 +267,32 @@ class _HomeWindowState extends State<HomeWindow> {
                 ),
                 const SizedBox(width: 8),
                 if (_picked.isNotEmpty) ...[
-                  _button('home-export', 'Export ${_picked.length}', true, () => widget.onExport([..._picked])),
-                  _button('home-unpick', 'Cancel', false, () => setState(_picked.clear)),
+                  _button(
+                    'home-export',
+                    'Export ${_picked.length}',
+                    true,
+                    () => widget.onExport([..._picked]),
+                  ),
+                  _button(
+                    'home-unpick',
+                    'Cancel',
+                    false,
+                    () => setState(_picked.clear),
+                  ),
                   const SizedBox(width: 8),
                 ],
-                _button('home-by-date', 'Date', !byName, () => setState(() => byName = false)),
-                _button('home-by-name', 'Name', byName, () => setState(() => byName = true)),
+                _button(
+                  'home-by-date',
+                  'Date',
+                  !byName,
+                  () => setState(() => byName = false),
+                ),
+                _button(
+                  'home-by-name',
+                  'Name',
+                  byName,
+                  () => setState(() => byName = true),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -266,7 +335,8 @@ class _HomeWindowState extends State<HomeWindow> {
       child: NakedButton(
         enableFeedback: false,
         key: ValueKey('home-doc:${d.path}'),
-        onPressed: () => _picked.isNotEmpty || HardwareKeyboard.instance.isMetaPressed
+        onPressed: () =>
+            _picked.isNotEmpty || HardwareKeyboard.instance.isMetaPressed
             ? setState(() {
                 if (!_picked.remove(d.path)) _picked.add(d.path);
               })
@@ -279,13 +349,16 @@ class _HomeWindowState extends State<HomeWindow> {
               decoration: BoxDecoration(
                 color: WindowTokens.card,
                 borderRadius: BorderRadius.circular(8),
-                border: open ? Border.all(color: WindowTokens.accent, width: 2) : null,
+                border: open
+                    ? Border.all(color: WindowTokens.accent, width: 2)
+                    : null,
               ),
               clipBehavior: Clip.antiAlias,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  if (d.picture != null) Image.file(File(d.picture!), fit: BoxFit.cover),
+                  if (d.picture != null)
+                    Image.file(File(d.picture!), fit: BoxFit.cover),
                   if (_picked.contains(d.path))
                     Positioned(
                       left: 0,
@@ -293,9 +366,18 @@ class _HomeWindowState extends State<HomeWindow> {
                       child: Container(
                         key: ValueKey('home-picked:${d.path}'),
                         margin: const EdgeInsets.all(6),
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: WindowTokens.accent, borderRadius: BorderRadius.circular(4)),
-                        child: Text('✓', style: TextStyles.label(WindowTokens.onAccent)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: WindowTokens.accent,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '✓',
+                          style: TextStyles.label(WindowTokens.onAccent),
+                        ),
                       ),
                     ),
                   Positioned(
@@ -304,11 +386,19 @@ class _HomeWindowState extends State<HomeWindow> {
                     child: NakedButton(
                       enableFeedback: false,
                       key: ValueKey('home-more:${d.path}'),
-                      onPressed: () => setState(() => _menu = _menu == d.path ? null : d.path),
+                      onPressed: () => setState(
+                        () => _menu = _menu == d.path ? null : d.path,
+                      ),
                       child: Container(
                         margin: const EdgeInsets.all(6),
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: WindowTokens.ground, borderRadius: BorderRadius.circular(4)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: WindowTokens.ground,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                         child: Text('•••', style: TextStyles.label(Grey.g76)),
                       ),
                     ),
@@ -319,14 +409,25 @@ class _HomeWindowState extends State<HomeWindow> {
             const SizedBox(height: 8),
             Text(
               d.name,
-              style: TextStyles.name(Grey.g91).copyWith(fontWeight: FontWeight.w700),
+              style: TextStyles.name(Grey.g91)
+                  .copyWith(fontWeight: FontWeight.w700),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 2),
             // CapCut's "254.3M | 02:13".
-            Text([_bytes(d.bytes), if (f != null) _length(f.seconds)].join(' | '), style: TextStyles.value(Grey.g63), maxLines: 1),
-            Text(_facts(d).join(' · '), key: ValueKey('home-facts:${d.path}'), style: TextStyles.value(Grey.g56), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(
+              [_bytes(d.bytes), if (f != null) _length(f.seconds)].join(' | '),
+              style: TextStyles.value(Grey.g63),
+              maxLines: 1,
+            ),
+            Text(
+              _facts(d).join(' · '),
+              key: ValueKey('home-facts:${d.path}'),
+              style: TextStyles.value(Grey.g56),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             if (_menu == d.path)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
@@ -336,12 +437,30 @@ class _HomeWindowState extends State<HomeWindow> {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: _asking == d.path
                       ? [
-                          Text('Move to the Trash?', style: TextStyles.label(Grey.g91)),
-                          _button('home-trash-yes:${d.path}', 'Move to Trash', true, () => _trash(d)),
-                          _button('home-trash-no:${d.path}', 'Cancel', false, () => setState(() => _asking = null)),
+                          Text(
+                            'Move to the Trash?',
+                            style: TextStyles.label(Grey.g91),
+                          ),
+                          _button(
+                            'home-trash-yes:${d.path}',
+                            'Move to Trash',
+                            true,
+                            () => _trash(d),
+                          ),
+                          _button(
+                            'home-trash-no:${d.path}',
+                            'Cancel',
+                            false,
+                            () => setState(() => _asking = null),
+                          ),
                         ]
                       : [
-                          _button('home-open:${d.path}', 'Open', false, () => widget.onOpen(d.path)),
+                          _button(
+                            'home-open:${d.path}',
+                            'Open',
+                            false,
+                            () => widget.onOpen(d.path),
+                          ),
                           _button(
                             'home-select:${d.path}',
                             'Select',
@@ -351,9 +470,25 @@ class _HomeWindowState extends State<HomeWindow> {
                               _menu = null;
                             }),
                           ),
-                          _button('home-export:${d.path}', 'Export…', false, () => widget.onExport([d.path])),
-                          _button('home-duplicate:${d.path}', 'Duplicate', false, () => _duplicate(d)),
-                          if (!open) _button('home-trash:${d.path}', 'Move to Trash', false, () => setState(() => _asking = d.path)),
+                          _button(
+                            'home-export:${d.path}',
+                            'Export…',
+                            false,
+                            () => widget.onExport([d.path]),
+                          ),
+                          _button(
+                            'home-duplicate:${d.path}',
+                            'Duplicate',
+                            false,
+                            () => _duplicate(d),
+                          ),
+                          if (!open)
+                            _button(
+                              'home-trash:${d.path}',
+                              'Move to Trash',
+                              false,
+                              () => setState(() => _asking = d.path),
+                            ),
                         ],
                 ),
               ),
@@ -376,17 +511,27 @@ class _HomeWindowState extends State<HomeWindow> {
       }
     }
     return [
-      if (ratio != null) ...[ratio, '${math.min(f.wide, f.high)}p'] else '${f.wide}x${f.high}',
+      if (ratio != null) ...[
+        ratio,
+        '${math.min(f.wide, f.high)}p',
+      ] else
+        '${f.wide}x${f.high}',
       '${f.rate == f.rate.roundToDouble() ? f.rate.round() : f.rate}fps',
     ]; // The frame rate is the project's own frame_rate.
   }
 
   static String _bytes(int bytes) {
     // Follows ExportOptions.kt formatBytes.
-    String f(double v, String unit) => (v >= 10 ? v.toStringAsFixed(0) : v.toStringAsFixed(1).replaceFirst(RegExp(r'\.0$'), '')) + unit;
+    String f(double v, String unit) =>
+        (v >= 10
+            ? v.toStringAsFixed(0)
+            : v.toStringAsFixed(1).replaceFirst(RegExp(r'\.0$'), '')) +
+        unit;
     if (bytes < 1024) return '${math.max(bytes, 0)}B';
     if (bytes < 1024 * 1024 - 512) return f(bytes / 1024, 'KB');
-    if (bytes < 1024 * 1024 * 1024 - 512 * 1024) return f(bytes / (1024 * 1024), 'MB');
+    if (bytes < 1024 * 1024 * 1024 - 512 * 1024) {
+      return f(bytes / (1024 * 1024), 'MB');
+    }
     return f(bytes / (1024 * 1024 * 1024), 'GB');
   }
 
@@ -394,6 +539,8 @@ class _HomeWindowState extends State<HomeWindow> {
     // CapCut's "02:13"; an hour or more gives AbsentMotion's "01:02:13".
     final s = seconds.round();
     String two(int n) => n.toString().padLeft(2, '0');
-    return s >= 3600 ? '${two(s ~/ 3600)}:${two(s ~/ 60 % 60)}:${two(s % 60)}' : '${two(s ~/ 60)}:${two(s % 60)}';
+    return s >= 3600
+        ? '${two(s ~/ 3600)}:${two(s ~/ 60 % 60)}:${two(s % 60)}'
+        : '${two(s ~/ 60)}:${two(s % 60)}';
   }
 }

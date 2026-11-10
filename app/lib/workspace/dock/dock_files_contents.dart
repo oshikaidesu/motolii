@@ -5,7 +5,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import 'package:motolii/bridge/motolii.dart' show Motolii, mediaInfoOf, mediaSecondsOf;
+import 'package:motolii/bridge/motolii.dart'
+    show Motolii, mediaInfoOf, mediaSecondsOf;
 import 'package:motolii/bridge/motolii_document.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/skin/tokens.dart';
@@ -30,7 +31,9 @@ class FolderContents extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final path = folderPathOf(c, c.mem.folder), here = path.last;
-    final root = here.disk ? here : path.first; // On the disk a search stays within the open folder.
+    final root = here.disk
+        ? here
+        : path.first; // On the disk a search stays within the open folder.
     final searching = c.query.isNotEmpty;
     final List<FileNode> items;
     if (searching) {
@@ -42,7 +45,10 @@ class FolderContents extends StatelessWidget {
           } else if (DockTags.hit(
             c.query,
             k.name,
-            DockTags.of('Media', k.id, {_kindOf(k).toLowerCase(), if (k.id.contains('.')) k.id.split('.').last.toLowerCase()}),
+            DockTags.of('Media', k.id, {
+              _kindOf(k).toLowerCase(),
+              if (k.id.contains('.')) k.id.split('.').last.toLowerCase(),
+            }),
           )) {
             found.add(k);
           }
@@ -50,7 +56,8 @@ class FolderContents extends StatelessWidget {
       }
 
       walk(root, 0);
-      items = {for (final n in found) n.id: n}.values.toList(); // A file in use appears twice, so keep one per id.
+      items = {for (final n in found) n.id: n}.values
+          .toList(); // A file in use appears twice, so keep one per id.
     } else {
       if (c.mem.mediaDeep) {
         // Lists the files of the folder and of every folder below it together.
@@ -69,7 +76,10 @@ class FolderContents extends StatelessWidget {
         below(here, 0);
         items = [...here.kids.where((k) => k.folder), ...all];
       } else {
-        items = [...here.kids.where((k) => k.folder), ...here.kids.where((k) => !k.folder)];
+        items = [
+          ...here.kids.where((k) => k.folder),
+          ...here.kids.where((k) => !k.folder),
+        ];
       }
     }
     final kinds = <String, int>{};
@@ -77,13 +87,24 @@ class FolderContents extends StatelessWidget {
       kinds.update(_kindOf(n), (v) => v + 1, ifAbsent: () => 1);
     }
     final chip = kinds.containsKey(c.chip) ? c.chip : 'All';
-    final shown = chip == 'All' ? items : items.where((n) => _kindOf(n) == chip).toList();
-    final sel = c.foot(shown.where((n) => n.id == c.sel && !n.folder).firstOrNull);
+    final shown = chip == 'All'
+        ? items
+        : items.where((n) => _kindOf(n) == chip).toList();
+    final sel = c.foot(
+      shown.where((n) => n.id == c.sel && !n.folder).firstOrNull,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FolderCrumbs(path, c, searching: searching),
-        DockChips([('All', items.length), for (final e in kinds.entries) (e.key, e.value)], active: chip, onPick: c.pickChip),
+        DockChips(
+          [
+            ('All', items.length),
+            for (final e in kinds.entries) (e.key, e.value),
+          ],
+          active: chip,
+          onPick: c.pickChip,
+        ),
         Expanded(
           child: shown.isEmpty
               ? DockEmpty(c.query)
@@ -91,7 +112,14 @@ class FolderContents extends StatelessWidget {
                   shelfLooks['Media']!,
                   list: c.mem.mediaList,
                   count: shown.length,
-                  tile: (i) => _Tile(shown[i], c, list: c.mem.mediaList, where: searching ? (shown[i].disk ? basename(dirname(shown[i].id)) : '') : null),
+                  tile: (i) => _Tile(
+                    shown[i],
+                    c,
+                    list: c.mem.mediaList,
+                    where: searching
+                        ? (shown[i].disk ? basename(dirname(shown[i].id)) : '')
+                        : null,
+                  ),
                 ),
         ),
         if (sel != null) _Footer(sel, c),
@@ -152,15 +180,27 @@ class _Art extends StatelessWidget {
               ? flat
               : ColoredBox(
                   color: WindowTokens.well,
-                  child: Image.file(File(made.data!), fit: BoxFit.contain, gaplessPlayback: true),
+                  child: Image.file(
+                    File(made.data!),
+                    fit: BoxFit.contain,
+                    gaplessPlayback: true,
+                  ),
                 ),
         );
       }
-      final photo = RegExp(r'\.(png|jpe?g|webp)$', caseSensitive: false).hasMatch(n.id);
+      final photo = RegExp(
+        r'\.(png|jpe?g|webp)$',
+        caseSensitive: false,
+      ).hasMatch(n.id);
       return photo
           ? ColoredBox(
               color: WindowTokens.well,
-              child: Image.file(File(n.id), fit: BoxFit.contain, cacheWidth: 240, errorBuilder: (_, _, _) => flat),
+              child: Image.file(
+                File(n.id),
+                fit: BoxFit.contain,
+                cacheWidth: 240,
+                errorBuilder: (_, _, _) => flat,
+              ),
             )
           : flat;
     }
@@ -170,18 +210,28 @@ class _Art extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           'Aa',
-          style: TextStyles.title(WindowTokens.onAccent).copyWith(fontSize: TextStyles.px(18), fontWeight: FontWeight.w700),
+          style: TextStyles.title(
+            WindowTokens.onAccent,
+          ).copyWith(fontSize: TextStyles.px(18), fontWeight: FontWeight.w700),
         ),
       ),
       AppGlyphs.folder => Container(
         color: WindowTokens.well,
         alignment: Alignment.center,
-        child: Glyph(AppGlyphs.folder, size: Shape.z(26), color: WindowTokens.accentInk),
+        child: Glyph(
+          AppGlyphs.folder,
+          size: Shape.z(26),
+          color: WindowTokens.accentInk,
+        ),
       ),
       _ => Container(
         color: WindowTokens.well,
         alignment: Alignment.center,
-        child: dockBadge(n.g, n.g == AppGlyphs.comp ? WindowTokens.accent : Grey.g63, size: Shape.z(26)),
+        child: dockBadge(
+          n.g,
+          n.g == AppGlyphs.comp ? WindowTokens.accent : Grey.g63,
+          size: Shape.z(26),
+        ),
       ),
     };
   }
@@ -213,7 +263,12 @@ class _TileState extends State<_Tile> {
   void _play() {
     setState(() => _playing = !_playing);
     _clock?.cancel();
-    if (_playing) _clock = Timer.periodic(const Duration(milliseconds: 280), (_) => mounted ? setState(() => _step = (_step + 1) % 8) : null);
+    if (_playing) {
+      _clock = Timer.periodic(
+        const Duration(milliseconds: 280),
+        (_) => mounted ? setState(() => _step = (_step + 1) % 8) : null,
+      );
+    }
     if (!_playing) setState(() => _step = 0);
   }
 
@@ -225,15 +280,25 @@ class _TileState extends State<_Tile> {
 
   // A vector image is named by its file extension, so a .json file is a Lottie.
   String _badge(MediaType t) {
-    if (t != MediaType.image || !n.disk || RegExp(r'\.(png|jpe?g|webp)$', caseSensitive: false).hasMatch(n.id)) return t.badge;
+    if (t != MediaType.image ||
+        !n.disk ||
+        RegExp(r'\.(png|jpe?g|webp)$', caseSensitive: false).hasMatch(n.id)) {
+      return t.badge;
+    }
     final end = n.id.split('.').last.toLowerCase();
     return end == 'json' ? 'LOTTIE' : end.toUpperCase();
   }
 
   @override
   Widget build(BuildContext context) {
-    final c = widget.c, list = widget.list, sel = c.sel == n.id || (list ? false : filesPicked.contains(n.id)), t = _typeOf(n.g);
-    final can = kindOfFile(n.id).isNotEmpty, meta = widget.where == null ? _metaOf(n) : '${widget.where} · ${_metaOf(n)}';
+    final c = widget.c,
+        list = widget.list,
+        sel = c.sel == n.id || (list ? false : filesPicked.contains(n.id)),
+        t = _typeOf(n.g);
+    final can = kindOfFile(n.id).isNotEmpty,
+        meta = widget.where == null
+            ? _metaOf(n)
+            : '${widget.where} · ${_metaOf(n)}';
     return ShelfTile(
       ShelfItem(n.id, n.name, label: _kindOf(n), about: meta),
       shelfLooks['Media']!,
@@ -244,14 +309,19 @@ class _TileState extends State<_Tile> {
       ink: list ? null : (n.folder ? Grey.g91 : Grey.g76),
       says: meta,
       onTap: () => openNode(n, c),
-      onApply: !list && can && !n.folder ? () => placeFile(c, n) : null, // Double-click or drag to the canvas places the file.
+      onApply: !list && can && !n.folder
+          ? () => placeFile(c, n)
+          : null, // Double-click or drag to the canvas places the file.
       onMove: _film && !_playing
           ? (at) {
-              final w = (context.size?.width ?? 1) * 1.0, k = (at.dx / math.max(1, w) * 8).floor().clamp(0, 7);
+              final w = (context.size?.width ?? 1) * 1.0,
+                  k = (at.dx / math.max(1, w) * 8).floor().clamp(0, 7);
               if (k != _step) setState(() => _step = k);
             }
           : null,
-      onHover: (h) => h || !_film || _playing || _step == 0 ? null : setState(() => _step = 0),
+      onHover: (h) => h || !_film || _playing || _step == 0
+          ? null
+          : setState(() => _step = 0),
       art: (_) => _Art(n, step: _step),
       over: (h) => [
         if (_film)
@@ -263,11 +333,18 @@ class _TileState extends State<_Tile> {
               builder: (_, _) => Container(
                 width: Shape.z(16),
                 height: Shape.z(16),
-                decoration: BoxDecoration(color: const Color(0xAA000000), borderRadius: BorderRadius.all(Shape.r(8))),
+                decoration: BoxDecoration(
+                  color: const Color(0xAA000000),
+                  borderRadius: BorderRadius.all(Shape.r(8)),
+                ),
                 child: Center(
                   child: Text(
                     _playing ? '■' : '▶',
-                    style: TextStyle(fontSize: Shape.z(8), height: 1, color: const Color(0xFFFFFFFF)),
+                    style: TextStyle(
+                      fontSize: Shape.z(8),
+                      height: 1,
+                      color: const Color(0xFFFFFFFF),
+                    ),
                   ),
                 ),
               ),
@@ -277,24 +354,46 @@ class _TileState extends State<_Tile> {
           Positioned(
             left: 3,
             top: 3,
-            child: Chip(label: _badge(t), look: ChipLook.tag(t.hue, edge: true)),
+            child: Chip(
+              label: _badge(t),
+              look: ChipLook.tag(t.hue, edge: true),
+            ),
           ),
         if (_film && (h || sel) && t != null)
           Positioned(
             right: 3,
             top: 3,
-            child: Chip(label: _badge(t), look: ChipLook.tag(t.hue, edge: true)),
+            child: Chip(
+              label: _badge(t),
+              look: ChipLook.tag(t.hue, edge: true),
+            ),
           ),
         if (n.folder && n.listed)
           Positioned(
             right: 4,
             bottom: 3,
-            child: Text('${n.kids.length}', style: TextStyles.value(Grey.g63).copyWith(fontSize: TextStyles.px(10))),
+            child: Text(
+              '${n.kids.length}',
+              style: TextStyles.value(Grey.g63)
+                  .copyWith(fontSize: TextStyles.px(10)),
+            ),
           ),
-        if (_inUse(n, c)) Positioned(right: 3, bottom: 3, child: dockBadge(AppGlyphs.link, WindowTokens.accent, size: Shape.z(14))),
+        if (_inUse(n, c))
+          Positioned(
+            right: 3,
+            bottom: 3,
+            child: dockBadge(
+              AppGlyphs.link,
+              WindowTokens.accent,
+              size: Shape.z(14),
+            ),
+          ),
       ],
       after: (_) => [
-        if (_inUse(n, c)) ...[dockBadge(AppGlyphs.link, WindowTokens.accent, size: Shape.z(14)), SizedBox(width: Shape.s(6))],
+        if (_inUse(n, c)) ...[
+          dockBadge(AppGlyphs.link, WindowTokens.accent, size: Shape.z(14)),
+          SizedBox(width: Shape.s(6)),
+        ],
       ],
     );
   }
@@ -304,7 +403,8 @@ class _TileState extends State<_Tile> {
 List<(int, String)> _showing(Motolii m, String file) => [
   for (final t in m.layers)
     for (final w in const ['file', 'fill_media'])
-      if (m.word(t, w) case final f when f.isNotEmpty && m.whole(f) == file) (t, w),
+      if (m.word(t, w) case final f when f.isNotEmpty && m.whole(f) == file)
+        (t, w),
 ];
 
 /// Replaces what every entry of [all] shows with [file], in one undo step.
@@ -340,10 +440,17 @@ class _Footer extends StatelessWidget {
         onAction: () => placeFiles(c, filesPicked.toList()),
       );
     }
-    final layer = _layerOf(n, c), can = kindOfFile(n.id).isNotEmpty, m = c.ws.inside;
+    final layer = _layerOf(n, c),
+        can = kindOfFile(n.id).isNotEmpty,
+        m = c.ws.inside;
     // With a shape layer selected, an image file fills the shape, as in Alight Motion's Fill > Media.
     final shape = int.tryParse(c.ws.selected ?? ''),
-        fills = m != null && shape != null && kindOfFile(n.id) == 'picture' && m.word(shape, 'kind') == 'shape' && m.word(shape, 'shape') != 'null';
+        fills =
+            m != null &&
+            shape != null &&
+            kindOfFile(n.id) == 'picture' &&
+            m.word(shape, 'kind') == 'shape' &&
+            m.word(shape, 'shape') != 'null';
     // An image or video layer is selected and a file of the same kind chosen: the layer shows that file instead and keeps
     // its position, size, keyframes and effects. This is After Effects' Replace Layer Source and Premiere Pro's Replace With Clip.
     final swaps =
@@ -354,17 +461,30 @@ class _Footer extends StatelessWidget {
         const {'picture', 'film'}.contains(m.word(shape, 'kind')) &&
         kindOfFile(n.id) == m.word(shape, 'kind');
     // The other layers that show the same file, which _replaceAll replaces together with this one.
-    final all = swaps ? _showing(m, m.whole(m.word(shape, 'file'))) : const <(int, String)>[];
+    final all = swaps
+        ? _showing(m, m.whole(m.word(shape, 'file')))
+        : const <(int, String)>[];
     return FutureBuilder<String>(
       // The description comes from GStreamer's discoverer, like Alight Motion's Media Info. The key gives each file its own state.
       key: ValueKey(n.id),
       future: can && m != null ? mediaInfoOf(m.libPath, n.id) : null,
       builder: (context, info) => DockFooter(
-        preview: n.disk && (n.g == AppGlyphs.audio || n.g == AppGlyphs.video && (info.data ?? '×').isNotEmpty && !(info.data ?? '×').contains('×'))
+        preview:
+            n.disk &&
+                (n.g == AppGlyphs.audio ||
+                    n.g == AppGlyphs.video &&
+                        (info.data ?? '×').isNotEmpty &&
+                        !(info.data ?? '×').contains('×'))
             ? _Listen(n)
             : _Art(n),
         title: n.name,
-        meta: c.mem.trouble[n.id] ?? [if (layer != null) 'In use', if (info.data case final i? when i.isNotEmpty) i, _metaOf(n)].join(' · '),
+        meta:
+            c.mem.trouble[n.id] ??
+            [
+              if (layer != null) 'In use',
+              if (info.data case final i? when i.isNotEmpty) i,
+              _metaOf(n),
+            ].join(' · '),
         action: fills
             ? 'Fill shape'
             : swaps
@@ -386,10 +506,18 @@ class _Footer extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: WindowTokens.raised,
-                    borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
-                    border: Border.all(color: h ? Grey.g95 : const Color(0x00000000)),
+                    borderRadius: BorderRadius.all(
+                      Shape.r(WindowTokens.radius),
+                    ),
+                    border: Border.all(
+                      color: h ? Grey.g95 : const Color(0x00000000),
+                    ),
                   ),
-                  child: Text('All ${all.length}', style: TextStyles.name(Grey.g91).copyWith(fontWeight: FontWeight.w700)),
+                  child: Text(
+                    'All ${all.length}',
+                    style: TextStyles.name(Grey.g91)
+                        .copyWith(fontWeight: FontWeight.w700),
+                  ),
                 ),
               )
             : null,
@@ -397,13 +525,23 @@ class _Footer extends StatelessWidget {
             ? null
             : switch (kindOfFile(n.id)) {
                 'picture' => _StillSeconds(c),
-                'film' || 'sound' when m != null => _FilmRange(c, n.id, mediaSecondsOf(m.libPath, n.id)),
+                'film' || 'sound' when m != null => _FilmRange(
+                  c,
+                  n.id,
+                  mediaSecondsOf(m.libPath, n.id),
+                ),
                 _ => null,
               },
         onAction: () => fills
-            ? c.ws.after(m.later('say', layer: shape, name: 'fill_media', word: n.id))
+            ? c.ws.after(
+                m.later('say', layer: shape, name: 'fill_media', word: n.id),
+              )
             : swaps
-            ? c.ws.after(m.later('say', layer: shape, name: 'file', word: n.id), (done, why) => done ? c.ws.reread() : c.ws.notice = 'Not replaced: $why')
+            ? c.ws.after(
+                m.later('say', layer: shape, name: 'file', word: n.id),
+                (done, why) =>
+                    done ? c.ws.reread() : c.ws.notice = 'Not replaced: $why',
+              )
             : can
             ? placeFile(c, n)
             : c.ws.select(layer),
@@ -422,10 +560,15 @@ class _StillSeconds extends StatelessWidget {
     final at = _stillSteps.indexOf(stillSeconds), s = stillSeconds;
     Widget step(String word, int by) => DockHover(
       key: ValueKey('media-still-$word'),
-      onTap: at + by < 0 || at + by >= _stillSteps.length ? null : () => c.set(() => stillSeconds = _stillSteps[at + by]),
+      onTap: at + by < 0 || at + by >= _stillSteps.length
+          ? null
+          : () => c.set(() => stillSeconds = _stillSteps[at + by]),
       builder: (_, h) => Padding(
         padding: EdgeInsets.symmetric(horizontal: Shape.s(3)),
-        child: Text(word == 'less' ? '−' : '+', style: TextStyles.label(h ? Grey.g95 : Grey.g63)),
+        child: Text(
+          word == 'less' ? '−' : '+',
+          style: TextStyles.label(h ? Grey.g95 : Grey.g63),
+        ),
       ),
     );
     return Row(
@@ -433,7 +576,11 @@ class _StillSeconds extends StatelessWidget {
       children: [
         Text('for', style: TextStyles.label(Grey.g56)),
         step('less', -1),
-        Text(s == 0 ? 'End' : '${s % 1 == 0 ? s.round() : s} s', key: const ValueKey('media-still-seconds'), style: TextStyles.label(Grey.g91)),
+        Text(
+          s == 0 ? 'End' : '${s % 1 == 0 ? s.round() : s} s',
+          key: const ValueKey('media-still-seconds'),
+          style: TextStyles.label(Grey.g91),
+        ),
         step('more', 1),
       ],
     );
@@ -455,7 +602,8 @@ class _FilmRange extends StatelessWidget {
       if (len <= 0) return const SizedBox.shrink(); // Without a known length the whole video is used.
       final (a, b) = filmRanges[file] ?? (0.0, 1.0);
       final w = Shape.z(84);
-      String t(double f) => '${(f * len ~/ 60)}:${(f * len % 60).toStringAsFixed(1).padLeft(4, '0')}';
+      String t(double f) =>
+          '${(f * len ~/ 60)}:${(f * len % 60).toStringAsFixed(1).padLeft(4, '0')}';
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -478,14 +626,26 @@ class _FilmRange extends StatelessWidget {
             onChanged: (v) => c.set(() => filmRanges[file] = (v[0], v[1])),
           ),
           SizedBox(width: Shape.s(4)),
-          Text('${t(a)}–${t(b)}', key: const ValueKey('media-film-said'), style: TextStyles.label(Grey.g91)),
+          Text(
+            '${t(a)}–${t(b)}',
+            key: const ValueKey('media-film-said'),
+            style: TextStyles.label(Grey.g91),
+          ),
         ],
       );
     },
   );
 }
 
-const _stillSteps = [0.5, 1.0, 2.0, 3.0, 5.0, 10.0, 0.0]; // Seconds. 0 means until the end of the project.
+const _stillSteps = [
+  0.5,
+  1.0,
+  2.0,
+  3.0,
+  5.0,
+  10.0,
+  0.0,
+]; // Seconds. 0 means until the end of the project.
 
 /// Plays a sound file before it is placed, as Alight Motion does before adding a song. Clicking plays it with macOS's
 /// afplay. Clicking again, or selecting another file, stops it.
@@ -510,7 +670,11 @@ class _ListenState extends State<_Listen> {
       return;
     }
     setState(() => _playing = p);
-    p.exitCode.then((_) => mounted && identical(_playing, p) ? setState(() => _playing = null) : null);
+    p.exitCode.then(
+      (_) => mounted && identical(_playing, p)
+          ? setState(() => _playing = null)
+          : null,
+    );
   }
 
   @override
@@ -533,7 +697,12 @@ class _ListenState extends State<_Listen> {
       fit: StackFit.expand,
       children: [
         _Art(widget.n),
-        Center(child: Text(_playing == null ? '▶' : '■', style: TextStyles.name(Grey.g95))),
+        Center(
+          child: Text(
+            _playing == null ? '▶' : '■',
+            style: TextStyles.name(Grey.g95),
+          ),
+        ),
       ],
     ),
   );

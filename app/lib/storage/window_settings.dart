@@ -6,11 +6,17 @@ import 'package:motolii/storage/json_file.dart' show fileKeep;
 
 /// Reads and writes the window settings file.
 abstract final class WindowFile {
-  static File get _file => File('${Platform.environment['HOME']}/.motolii/window.xml');
+  static File get _file =>
+      File('${Platform.environment['HOME']}/.motolii/window.xml');
 
   static Map<String, String> _all() {
     try {
-      return {for (final m in RegExp(r'<(\w+)\s+Value="([^"]*)"\s*/>').allMatches(_file.readAsStringSync())) m.group(1)!: m.group(2)!};
+      return {
+        for (final m in RegExp(
+          r'<(\w+)\s+Value="([^"]*)"\s*/>',
+        ).allMatches(_file.readAsStringSync()))
+          m.group(1)!: m.group(2)!,
+      };
     } catch (_) {
       return {};
     }

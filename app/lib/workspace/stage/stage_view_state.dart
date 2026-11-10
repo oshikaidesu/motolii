@@ -6,7 +6,8 @@ import 'dart:ui' show PointMode;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/scheduler.dart' show SchedulerBinding;
-import 'package:flutter/services.dart' show HardwareKeyboard, KeyDownEvent, KeyEvent, LogicalKeyboardKey;
+import 'package:flutter/services.dart'
+    show HardwareKeyboard, KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 
 import 'package:motolii/bridge/motolii.dart' show Motolii;
@@ -36,33 +37,56 @@ const _fixed = [0.0, .5, 1.0];
 class StageViewState extends State<StageView> implements StageHandles {
   Offset _pan = Offset.zero;
   String? _hover;
-  StageViewport? _shown; // The view as last laid out, so handle positions match the screen.
+  StageViewport?
+  _shown; // The view as last laid out, so handle positions match the screen.
 
   @override
   String? hitAt(Offset global) {
     final box = context.findRenderObject() as RenderBox?, v = _shown;
-    return box == null || v == null ? null : hitLocal(v, box.globalToLocal(global));
+    return box == null || v == null
+        ? null
+        : hitLocal(v, box.globalToLocal(global));
   }
 
   @override
   Map<String, Offset> get handles {
-    final v = _shown, scene = widget.scene, b = ArtGeometry.boxOf(scene, widget.selected), l = scene.layer(widget.selected);
+    final v = _shown,
+        scene = widget.scene,
+        b = ArtGeometry.boxOf(scene, widget.selected),
+        l = scene.layer(widget.selected);
     if (v == null || b == null || l == null) return const {};
     final (form, round) = _formOf();
-    return selectionHandles(v.toScreen, b, knob: l.kind != LayerKind.camera && l.id != 'bg', form: form, round: round, crop: _cropOf());
+    return selectionHandles(
+      v.toScreen,
+      b,
+      knob: l.kind != LayerKind.camera && l.id != 'bg',
+      form: form,
+      round: round,
+      crop: _cropOf(),
+    );
   }
 
   static const _crops = ['crop_left', 'crop_top', 'crop_right', 'crop_bottom'];
 
   /// The selected image's crop, as the share cut from each side, while it is being cropped; empty otherwise.
   List<double> _cropOf() {
-    final m = WorkspaceScope.read(context).inside, t = int.tryParse(widget.selected ?? '');
-    if (m == null || t == null || _cropping != widget.selected || !_photo(m, t)) return const [];
+    final m = WorkspaceScope.read(context).inside,
+        t = int.tryParse(widget.selected ?? '');
+    if (m == null ||
+        t == null ||
+        _cropping != widget.selected ||
+        !_photo(m, t)) {
+      return const [];
+    }
     return [for (final n in _crops) m.value(t, n, 0) ?? 0];
   }
 
   static bool _photo(Motolii m, int t) =>
-      m.word(t, 'kind') == 'picture' && RegExp(r'\.(jpe?g|png|webp|bmp)$', caseSensitive: false).hasMatch(m.word(t, 'file'));
+      m.word(t, 'kind') == 'picture' &&
+      RegExp(
+        r'\.(jpe?g|png|webp|bmp)$',
+        caseSensitive: false,
+      ).hasMatch(m.word(t, 'file'));
 
   // Double-clicking a selected image starts cropping: bars appear on its sides until a click elsewhere or Enter.
   // Figma's Crop and Keynote's image editing work this way.
@@ -71,8 +95,15 @@ class StageViewState extends State<StageView> implements StageHandles {
   Timer? _tapWait;
   bool _enter(KeyEvent e) {
     // Ignored while the user is typing text.
-    if (_cropping == null || e is! KeyDownEvent || e.logicalKey != LogicalKeyboardKey.enter) return false;
-    if (primaryFocus?.context?.findAncestorWidgetOfExactType<EditableText>() != null) return false;
+    if (_cropping == null ||
+        e is! KeyDownEvent ||
+        e.logicalKey != LogicalKeyboardKey.enter) {
+      return false;
+    }
+    if (primaryFocus?.context?.findAncestorWidgetOfExactType<EditableText>() !=
+        null) {
+      return false;
+    }
     setState(() => _cropping = null);
     return true;
   }
@@ -85,7 +116,8 @@ class StageViewState extends State<StageView> implements StageHandles {
 
   /// The selected shape's kind and corner radius, for its handles.
   (String, double) _formOf() {
-    final m = WorkspaceScope.read(context).inside, t = int.tryParse(widget.selected ?? '');
+    final m = WorkspaceScope.read(context).inside,
+        t = int.tryParse(widget.selected ?? '');
     if (m == null || t == null || m.word(t, 'kind') != 'shape') return ('', 0);
     return (m.word(t, 'shape'), m.value(t, 'round', 0) ?? 0);
   }
@@ -94,7 +126,9 @@ class StageViewState extends State<StageView> implements StageHandles {
   void didUpdateWidget(StageView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.zoom != widget.zoom) _pan = Offset.zero;
-    if (oldWidget.make != widget.make) penning = false; // Another tool: the pen's next point starts a new shape.
+    if (oldWidget.make != widget.make) {
+      penning = false; // Another tool: the pen's next point starts a new shape.
+    }
   }
 
   // When the engine draws the whole pane, the stage sits inside it where this view puts it. The engine is told again when
@@ -104,14 +138,17 @@ class StageViewState extends State<StageView> implements StageHandles {
   Motolii? _deskOf;
   double? _toldDpr;
   void _deskTo(StageViewport v) {
-    final dpr = MediaQuery.devicePixelRatioOf(context), m = WorkspaceScope.read(context).inside;
+    final dpr = MediaQuery.devicePixelRatioOf(context),
+        m = WorkspaceScope.read(context).inside;
     if (m != _deskOf) {
       // A different project was opened: forget the old engine view and send it again.
       _desk = null;
       _toldDesk = null;
       _toldPick = null;
     }
-    if (widget.texture == null || (v == _toldDesk && dpr == _toldDpr)) return; // Also sent again when the window's pixel ratio changes.
+    if (widget.texture == null || (v == _toldDesk && dpr == _toldDpr)) {
+      return; // Also sent again when the window's pixel ratio changes.
+    }
     _toldDesk = v;
     _toldDpr = dpr;
     if ((_deskOf = m) == null) return;
@@ -136,7 +173,11 @@ class StageViewState extends State<StageView> implements StageHandles {
         }
         if (a == 0) return;
         _toldPick = null;
-        if (_desk == null) m.deskTexture().then((id) => mounted && id >= 0 ? setState(() => _desk = id) : null);
+        if (_desk == null) {
+          m.deskTexture().then(
+            (id) => mounted && id >= 0 ? setState(() => _desk = id) : null,
+          );
+        }
       }
 
       SchedulerBinding.instance
@@ -150,7 +191,10 @@ class StageViewState extends State<StageView> implements StageHandles {
   void _pickTo() {
     final m = _deskOf;
     if (_desk == null || m == null) return;
-    final now = (int.tryParse(widget.selected ?? '') ?? 0, int.tryParse(_hover ?? '') ?? 0);
+    final now = (
+      int.tryParse(widget.selected ?? '') ?? 0,
+      int.tryParse(_hover ?? '') ?? 0,
+    );
     if (now == _toldPick) return;
     _toldPick = now;
     m.pick(now.$1, now.$2);
@@ -166,23 +210,38 @@ class StageViewState extends State<StageView> implements StageHandles {
   }
 
   StageViewport _view(Size size) {
-    final area = Rect.fromLTRB(StageTokens.ruler, StageTokens.ruler, size.width, size.height);
+    final area = Rect.fromLTRB(
+      StageTokens.ruler,
+      StageTokens.ruler,
+      size.width,
+      size.height,
+    );
     final fit = math.max(
       .02,
-      math.min((area.width - StageTokens.fitMargin * 2) / ArtGeometry.comp.width, (area.height - StageTokens.fitMargin * 2) / ArtGeometry.comp.height),
+      math.min(
+        (area.width - StageTokens.fitMargin * 2) / ArtGeometry.comp.width,
+        (area.height - StageTokens.fitMargin * 2) / ArtGeometry.comp.height,
+      ),
     );
     final s = widget.zoom == 0 ? fit : _fixed[widget.zoom];
-    final half = Offset(ArtGeometry.comp.width * s, ArtGeometry.comp.height * s) / 2;
+    final half =
+        Offset(ArtGeometry.comp.width * s, ArtGeometry.comp.height * s) / 2;
     return StageViewport(area.center - half + _pan, s, area);
   }
 
   String? hitLocal(StageViewport v, Offset local) {
     // A layer off the canvas can still be grabbed by its frame and dragged back.
-    final d = v.toComp(local), id = ArtGeometry.hit(widget.scene, d), m = WorkspaceScope.read(context).inside;
+    final d = v.toComp(local),
+        id = ArtGeometry.hit(widget.scene, d),
+        m = WorkspaceScope.read(context).inside;
     if (widget.group && m != null && id != null) {
       // Grouping: pick the outermost ancestor by following parents.
       var t = int.parse(id);
-      for (var p = (m.value(t, 'parent', 0) ?? 0).round(), n = 0; p > 0 && n < 64; p = (m.value(t, 'parent', 0) ?? 0).round(), n++) {
+      for (
+        var p = (m.value(t, 'parent', 0) ?? 0).round(), n = 0;
+        p > 0 && n < 64;
+        p = (m.value(t, 'parent', 0) ?? 0).round(), n++
+      ) {
         t = p;
       }
       return '$t';
@@ -235,13 +294,20 @@ class StageViewState extends State<StageView> implements StageHandles {
     if (first) m.later('together', number: 1);
     var made = 0;
     ws.after(
-      m.later('pen', layer: first ? int.tryParse(widget.selected ?? '') ?? 0 : -1, word: '${a.dx} ${a.dy} ${h.dx} ${h.dy}'),
+      m.later(
+        'pen',
+        layer: first ? int.tryParse(widget.selected ?? '') ?? 0 : -1,
+        word: '${a.dx} ${a.dy} ${h.dx} ${h.dy}',
+      ),
       null,
       (t) => made = t,
     ); // On the first point a closed selected path gains or loses a point; otherwise a new path begins.
     if (first) {
       applyChosenInks(ws, 'shape', 'path');
-      ws.after(m.later('together'), (done, _) => done && made > 0 ? ws.select('$made') : null);
+      ws.after(
+        m.later('together'),
+        (done, _) => done && made > 0 ? ws.select('$made') : null,
+      );
     }
   }
 
@@ -249,19 +315,27 @@ class StageViewState extends State<StageView> implements StageHandles {
   /// freehand line, not a handle.
   static bool _scribbled(List<Offset> way, Offset down, Offset up) {
     final d = up - down, long = d.distance;
-    return way.any((p) => (long < 1 ? (p - down).distance : ((p - down).dx * d.dy - (p - down).dy * d.dx).abs() / long) > 16);
+    return way.any(
+      (p) =>
+          (long < 1
+              ? (p - down).distance
+              : ((p - down).dx * d.dy - (p - down).dy * d.dx).abs() / long) >
+          16,
+    );
   }
 
   // The brush stroke so far, in window points. On release the points are smoothed by perfect-freehand (MIT, Steve Ruiz; Dart
   // port by Adil Hanney), which also simulates pressure from speed. The engine keeps the stroke and builds its outline the
   // way Alight Motion's brush does. Each point's pressure is its radius here over half the brush size.
   List<Offset>? brush;
-  ({double x, double y})? orbitFrom; // The camera's rotation when the drag started.
+  ({double x, double y})?
+  orbitFrom; // The camera's rotation when the drag started.
   double? dollyAt; // Its distance while the wheel turns.
   Timer? dollyRest;
 
   double orbitRate = .25; // Degrees of rotation per pixel dragged.
-  ({double zoom, double reach, Offset middle})? lensFrom; // The frame's zoom, reach and centre when the drag started.
+  ({double zoom, double reach, Offset middle})?
+  lensFrom; // The frame's zoom, reach and centre when the drag started.
 
   void _dragUpdate(StageViewport v, Offset local) {
     final h = drag, ws = WorkspaceScope.read(context), m = ws.inside;
@@ -276,14 +350,26 @@ class StageViewState extends State<StageView> implements StageHandles {
     if (h.by == 'gizmo lens' && lensFrom != null) {
       // Compare the pointer's distance from the centre with where the drag began: further out is a larger frame, a wider lens.
       final l = lensFrom!;
-      m.dragUpdate('zoom', (l.zoom * l.reach / math.max((local - l.middle).distance, 1)).clamp(.01, 100.0));
+      m.dragUpdate(
+        'zoom',
+        (l.zoom * l.reach / math.max((local - l.middle).distance, 1)).clamp(
+          .01,
+          100.0,
+        ),
+      );
       drag = (from: h.from, moved: true, by: h.by);
       return;
     }
     if (h.by == 'orbit' && orbitFrom != null) {
       // Sideways rotates around the layer, up and down rotates over it: a quarter of a degree per pixel.
       final d = local - h.from, o = orbitFrom!;
-      if (ws.freeEye) return ws.setView('stage.eye', [o.y - d.dx * .25, (o.x - d.dy * .25).clamp(-89.0, 89.0), ws.eye[2]]);
+      if (ws.freeEye) {
+        return ws.setView('stage.eye', [
+          o.y - d.dx * .25,
+          (o.x - d.dy * .25).clamp(-89.0, 89.0),
+          ws.eye[2],
+        ]);
+      }
       m.dragUpdate('rotate_y', o.y - d.dx * .25);
       m.dragUpdate('rotate_x', (o.x - d.dy * .25).clamp(-89.0, 89.0));
       drag = (from: h.from, moved: true, by: 'orbit');
@@ -293,22 +379,42 @@ class StageViewState extends State<StageView> implements StageHandles {
     final all = (local - h.from) / v.s; // Screen pixels to canvas points.
     if (h.by case final way? when way.startsWith('crop ')) {
       // Move the side in as far as the pointer goes inward from the cut edge, leaving at least some of the image.
-      final side = int.parse(way.substring(5)), c = [for (var i = 0; i < 4; i++) handles['corner $i'] ?? Offset.zero], crop = _cropOf();
-      final across = side.isEven ? c[1] - c[0] : c[3] - c[0], len = math.max(1.0, across.distance), dir = across / len * (side < 2 ? 1.0 : -1.0);
-      final at = handles[way] ?? h.from, inBy = ((local - at).dx * dir.dx + (local - at).dy * dir.dy) / len;
-      if (crop.length == 4) m.dragUpdate(_crops[side], (crop[side] + inBy).clamp(0.0, .95 - crop[(side + 2) % 4]));
+      final side = int.parse(way.substring(5)),
+          c = [for (var i = 0; i < 4; i++) handles['corner $i'] ?? Offset.zero],
+          crop = _cropOf();
+      final across = side.isEven ? c[1] - c[0] : c[3] - c[0],
+          len = math.max(1.0, across.distance),
+          dir = across / len * (side < 2 ? 1.0 : -1.0);
+      final at = handles[way] ?? h.from,
+          inBy = ((local - at).dx * dir.dx + (local - at).dy * dir.dy) / len;
+      if (crop.length == 4) {
+        m.dragUpdate(
+          _crops[side],
+          (crop[side] + inBy).clamp(0.0, .95 - crop[(side + 2) % 4]),
+        );
+      }
       drag = (from: h.from, moved: true, by: way);
       setState(() {});
       return;
     }
     if (h.by case final way? when way == 'round' || way == 'points') {
       // Shape handles: corner radius or number of points follows the pointer.
-      final c = [for (var i = 0; i < 4; i++) handles['corner $i'] ?? Offset.zero], g = gripOf(c), t = int.tryParse(widget.selected ?? '');
+      final c = [
+            for (var i = 0; i < 4; i++) handles['corner $i'] ?? Offset.zero,
+          ],
+          g = gripOf(c),
+          t = int.tryParse(widget.selected ?? '');
       if (way == 'round') m.dragUpdate('round', g.roundOf(local));
       if (way == 'points' && t != null) {
         m.dragUpdate(
           'points',
-          ((m.value(t, 'points', 0) ?? 5) + (((local - h.from).dx * g.u.dx + (local - h.from).dy * g.u.dy) / 24).round()).clamp(3, 64).toDouble(),
+          ((m.value(t, 'points', 0) ?? 5) +
+                  (((local - h.from).dx * g.u.dx +
+                              (local - h.from).dy * g.u.dy) /
+                          24)
+                      .round())
+              .clamp(3, 64)
+              .toDouble(),
         );
       }
       drag = (from: h.from, moved: true, by: way);
@@ -319,21 +425,30 @@ class StageViewState extends State<StageView> implements StageHandles {
       var gone = v.toComp(local) - v.toComp(h.from);
       // As in Figma: a corner handle resizes freely in both directions with the opposite side fixed; a side handle resizes that
       // way only. Shift keeps the aspect ratio or rotates in 15 degree steps; Alt scales from the centre.
-      final keys = HardwareKeyboard.instance, sized = way == 'scale' || way == 'edge', even = keys.isShiftPressed && (sized || way == 'turn') ? 'even_' : '';
+      final keys = HardwareKeyboard.instance,
+          sized = way == 'scale' || way == 'edge',
+          even = keys.isShiftPressed && (sized || way == 'turn') ? 'even_' : '';
       if (heldGrip case final g? when way == 'edge') {
-        final at = handles[g], across = handles['side ${(int.parse(g.substring(5)) + 2) % 4}'];
+        final at = handles[g],
+            across = handles['side ${(int.parse(g.substring(5)) + 2) % 4}'];
         if (at != null && across != null && (at - across).distance > 1) {
           final n = (at - across) / (at - across).distance;
           gone = n * (gone.dx * n.dx + gone.dy * n.dy);
         }
       }
-      m.dragUpdate('$even${sized ? (keys.isAltPressed ? 'scale' : 'side') : way}', gone.dx, gone.dy);
+      m.dragUpdate(
+        '$even${sized ? (keys.isAltPressed ? 'scale' : 'side') : way}',
+        gone.dx,
+        gone.dy,
+      );
       drag = (from: h.from, moved: true, by: way);
       setState(() {});
       return;
     }
     // The Move tool. Shift locks to horizontal or vertical, whichever the pointer has gone further, as in Illustrator and Figma.
-    final axis = widget.axis == 0 && HardwareKeyboard.instance.isShiftPressed ? (all.dx.abs() >= all.dy.abs() ? 1 : 2) : widget.axis;
+    final axis = widget.axis == 0 && HardwareKeyboard.instance.isShiftPressed
+        ? (all.dx.abs() >= all.dy.abs() ? 1 : 2)
+        : widget.axis;
     final by = snapped(switch (axis) {
       1 => Offset(all.dx, 0),
       2 => Offset(0, all.dy),
@@ -347,9 +462,17 @@ class StageViewState extends State<StageView> implements StageHandles {
   /// Pans by [by] (two-finger trackpad movement, or the wheel in the other direction) when zoomed in. At Fit there is nowhere to pan.
   void _panBy(Offset by, StageViewport v) {
     if (widget.zoom == 0) return;
-    final lim = Offset(ArtGeometry.comp.width * v.s / 2 + v.area.width / 2 - 60, ArtGeometry.comp.height * v.s / 2 + v.area.height / 2 - 60);
+    final lim = Offset(
+      ArtGeometry.comp.width * v.s / 2 + v.area.width / 2 - 60,
+      ArtGeometry.comp.height * v.s / 2 + v.area.height / 2 - 60,
+    );
     final p = _pan + by;
-    setState(() => _pan = Offset(p.dx.clamp(-lim.dx, lim.dx), p.dy.clamp(-lim.dy, lim.dy)));
+    setState(
+      () => _pan = Offset(
+        p.dx.clamp(-lim.dx, lim.dx),
+        p.dy.clamp(-lim.dy, lim.dy),
+      ),
+    );
   }
 
   // The selected layer's motion path over time as the engine computes it (including its wave), in canvas points, drawn thin
@@ -357,17 +480,34 @@ class StageViewState extends State<StageView> implements StageHandles {
   // layer stays put.
   (Object?, List<Offset>?) _trail = (null, null);
   List<Offset>? _trailOf() {
-    final ws = WorkspaceScope.read(context), m = ws.inside, t = int.tryParse(widget.selected ?? '');
-    if (m == null || t == null || const {'behaviour', 'camera', 'light'}.contains(m.word(t, 'kind'))) return null;
+    final ws = WorkspaceScope.read(context),
+        m = ws.inside,
+        t = int.tryParse(widget.selected ?? '');
+    if (m == null ||
+        t == null ||
+        const {'behaviour', 'camera', 'light'}.contains(m.word(t, 'kind'))) {
+      return null;
+    }
     final key = (ws.rev, t);
     if (_trail.$1 != key) {
       _trail = (key, null);
-      final start = m.value(t, 'start', 0) ?? 0, lasts = m.lasts(t), end = lasts > 0 ? start + lasts : m.seconds;
+      final start = m.value(t, 'start', 0) ?? 0,
+          lasts = m.lasts(t),
+          end = lasts > 0 ? start + lasts : m.seconds;
       if (end > start) {
         m.path(t, from: start, to: end, n: 90).then((p) {
           if (!mounted || _trail.$1 != key || p == null) return;
-          final c = ArtGeometry.centre, pts = [for (var i = 0; i + 1 < p.length; i += 4) c + Offset(p[i], -p[i + 1]) * m.point];
-          setState(() => _trail = (key, pts.any((q) => (q - pts.first).distance > 1) ? pts : null));
+          final c = ArtGeometry.centre,
+              pts = [
+                for (var i = 0; i + 1 < p.length; i += 4)
+                  c + Offset(p[i], -p[i + 1]) * m.point,
+              ];
+          setState(
+            () => _trail = (
+              key,
+              pts.any((q) => (q - pts.first).distance > 1) ? pts : null,
+            ),
+          );
         });
       }
     }
@@ -379,7 +519,9 @@ class StageViewState extends State<StageView> implements StageHandles {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
-      final v = _shown = _view(box.biggest), scene = widget.scene, trail = _trailOf();
+      final v = _shown = _view(box.biggest),
+          scene = widget.scene,
+          trail = _trailOf();
       _deskTo(v);
       _pickTo();
       return ContextMenu(
@@ -402,24 +544,51 @@ class StageViewState extends State<StageView> implements StageHandles {
               supportedDevices: pressingDevices,
               onSecondaryTapDown: (d) {
                 // Context menu for the layer under the pointer, same as on its bar.
-                final ws = WorkspaceScope.read(context), id = hitLocal(v, d.localPosition), l = ws.layers.where((l) => l.id == id).firstOrNull;
-                if (l != null) _menu.currentState?.show(d.localPosition, layerContextMenu(context, ws, l));
+                final ws = WorkspaceScope.read(context),
+                    id = hitLocal(v, d.localPosition),
+                    l = ws.layers.where((l) => l.id == id).firstOrNull;
+                if (l != null) {
+                  _menu.currentState?.show(
+                    d.localPosition,
+                    layerContextMenu(context, ws, l),
+                  );
+                }
               },
               onTapUp: (d) {
                 widget.onPoke?.call();
-                if (widget.make == 'pen') return _pen(v, d.localPosition, d.localPosition); // A click makes a corner point.
-                if (widget.make == 'brush') return; // A stroke is drawn, not clicked.
-                if (widget.make != null) return draw(v, drawFrom = d.localPosition); // A click creates one layer there.
-                final hit = hitLocal(v, d.localPosition), ws = WorkspaceScope.read(context), m = ws.inside;
-                if (HardwareKeyboard.instance.isShiftPressed || HardwareKeyboard.instance.isMetaPressed) {
+                if (widget.make == 'pen') {
+                  return _pen(
+                    v,
+                    d.localPosition,
+                    d.localPosition,
+                  ); // A click makes a corner point.
+                }
+                if (widget.make == 'brush') {
+                  return; // A stroke is drawn, not clicked.
+                }
+                if (widget.make != null) {
+                  return draw(
+                    v,
+                    drawFrom = d.localPosition,
+                  ); // A click creates one layer there.
+                }
+                final hit = hitLocal(v, d.localPosition),
+                    ws = WorkspaceScope.read(context),
+                    m = ws.inside;
+                if (HardwareKeyboard.instance.isShiftPressed ||
+                    HardwareKeyboard.instance.isMetaPressed) {
                   return hit == null ? null : selectAlso(ws, hit); // Shift or Cmd adds or removes the layer; on empty space nothing is lost.
                 }
                 final twice = hit != null && hit == _tapped;
                 _tapWait?.cancel();
                 _tapped = twice ? null : hit;
-                if (!twice) _tapWait = Timer(kDoubleTapTimeout, () => _tapped = null);
+                if (!twice) {
+                  _tapWait = Timer(kDoubleTapTimeout, () => _tapped = null);
+                }
                 ws.select(hit);
-                final crop = twice && m != null && _photo(m, int.parse(hit)) ? hit : null;
+                final crop = twice && m != null && _photo(m, int.parse(hit))
+                    ? hit
+                    : null;
                 if (crop != _cropping) setState(() => _cropping = crop);
               },
               dragStartBehavior: DragStartBehavior.down, // Grab the layer where the pointer went down, not where it had got to when the drag was recognised.
@@ -441,7 +610,9 @@ class StageViewState extends State<StageView> implements StageHandles {
                   : lasso != null
                   ? lassoDragEnd(v)
                   : drawFrom != null
-                  ? (widget.make == 'pen' ? _pen(v, drawFrom!, _last ?? drawFrom!) : draw(v, _last ?? drawFrom!))
+                  ? (widget.make == 'pen'
+                        ? _pen(v, drawFrom!, _last ?? drawFrom!)
+                        : draw(v, _last ?? drawFrom!))
                   : pulling != null
                   ? pullDragEnd(v, _last!)
                   : dragEnd(),
@@ -466,7 +637,9 @@ class StageViewState extends State<StageView> implements StageHandles {
                         _hover == widget.selected ? null : _hover,
                         grid: widget.grid,
                         safe: widget.safe,
-                        part: widget.texture == null ? ViewPart.all : ViewPart.under,
+                        part: widget.texture == null
+                            ? ViewPart.all
+                            : ViewPart.under,
                         pivots: widget.pivots,
                         met: met,
                         trail: trail,
@@ -482,12 +655,17 @@ class StageViewState extends State<StageView> implements StageHandles {
                     Positioned.fromRect(
                       rect: v.area,
                       child: IgnorePointer(
-                        child: Texture(textureId: desk, filterQuality: FilterQuality.medium),
+                        child: Texture(
+                          textureId: desk,
+                          filterQuality: FilterQuality.medium,
+                        ),
                       ),
                     ),
                     Positioned.fromRect(
                       rect: v.comp,
-                      child: const IgnorePointer(child: SizedBox(key: ValueKey('ws-stage-comp'))),
+                      child: const IgnorePointer(
+                        child: SizedBox(key: ValueKey('ws-stage-comp')),
+                      ),
                     ), // Where the canvas lies inside it.
                   ] else
                     Positioned.fromRect(
@@ -497,7 +675,10 @@ class StageViewState extends State<StageView> implements StageHandles {
                             ? const SizedBox(key: ValueKey('ws-stage-comp'))
                             : ClipRect(
                                 key: const ValueKey('ws-stage-comp'),
-                                child: Texture(textureId: widget.texture!, filterQuality: FilterQuality.medium),
+                                child: Texture(
+                                  textureId: widget.texture!,
+                                  filterQuality: FilterQuality.medium,
+                                ),
                               ),
                       ),
                     ),
@@ -505,7 +686,12 @@ class StageViewState extends State<StageView> implements StageHandles {
                     Positioned.fromRect(
                       rect: v.comp,
                       child: IgnorePointer(
-                        child: Image.file(File(shot), key: const ValueKey('ws-stage-snapshot'), fit: BoxFit.fill, gaplessPlayback: true),
+                        child: Image.file(
+                          File(shot),
+                          key: const ValueKey('ws-stage-snapshot'),
+                          fit: BoxFit.fill,
+                          gaplessPlayback: true,
+                        ),
                       ),
                     ),
                   if (int.tryParse(widget.selected ?? '') case final picked?
@@ -514,8 +700,18 @@ class StageViewState extends State<StageView> implements StageHandles {
                       child: CustomPaint(
                         size: Size.infinite,
                         painter: PointsPainter(
-                          [for (final p in WorkspaceScope.read(context).inside!.points(picked)) v.toScreen(p)],
-                          [for (final (h, o) in WorkspaceScope.read(context).inside!.handles(picked)) (v.toScreen(h), v.toScreen(o))],
+                          [
+                            for (final p in WorkspaceScope.read(
+                              context,
+                            ).inside!.points(picked))
+                              v.toScreen(p),
+                          ],
+                          [
+                            for (final (h, o) in WorkspaceScope.read(
+                              context,
+                            ).inside!.handles(picked))
+                              (v.toScreen(h), v.toScreen(o)),
+                          ],
                         ),
                       ),
                     ),
@@ -523,24 +719,41 @@ class StageViewState extends State<StageView> implements StageHandles {
                       when _last != null &&
                           widget.make == 'pen' &&
                           penWay != null &&
-                          _scribbled(penWay!, from, _last!)) // A scribble is drawn thin like the brush and becomes a path on release.
-                    IgnorePointer(child: CustomPaint(painter: _BrushWay(penWay!)))
-                  else if (drawFrom case final from?
-                      when _last != null && widget.make == 'pen') // The pen's handle being pulled out, drawn through its point both ways.
+                          _scribbled(
+                            penWay!,
+                            from,
+                            _last!,
+                          )) // A scribble is drawn thin like the brush and becomes a path on release.
                     IgnorePointer(
-                      child: CustomPaint(size: Size.infinite, painter: PointsPainter([from], [(_last!, from), (from * 2 - _last!, from)])),
+                      child: CustomPaint(painter: _BrushWay(penWay!)),
                     )
-                  else if (drawFrom case final from? when _last != null) // The box of the layer being drawn.
+                  else if (drawFrom case final from?
+                      when _last != null &&
+                          widget.make ==
+                              'pen') // The pen's handle being pulled out, drawn through its point both ways.
+                    IgnorePointer(
+                      child: CustomPaint(
+                        size: Size.infinite,
+                        painter: PointsPainter(
+                          [from],
+                          [(_last!, from), (from * 2 - _last!, from)],
+                        ),
+                      ),
+                    )
+                  else if (drawFrom case final from?
+                      when _last != null) // The box of the layer being drawn.
                     Positioned.fromRect(
                       rect: Rect.fromPoints(from, _last!),
                       child: IgnorePointer(
                         child: DecoratedBox(
-                          decoration: BoxDecoration(border: Border.all(color: WindowTokens.accent)),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: WindowTokens.accent),
+                          ),
                         ),
                       ),
                     ),
-                  if (drag case final h?
-                      when h.moved && _last != null) // Show the numbers beside the pointer while dragging, as Figma does; Alight Motion shows none.
+                  if (drag
+                      case final h? when h.moved && _last != null) // Show the numbers beside the pointer while dragging, as Figma does; Alight Motion shows none.
                     if (heldSays(h.by) case final says?)
                       Positioned(
                         left: _last!.dx + 16,
@@ -548,9 +761,18 @@ class StageViewState extends State<StageView> implements StageHandles {
                         child: IgnorePointer(
                           child: Container(
                             key: const ValueKey('ws-held-says'),
-                            padding: EdgeInsets.symmetric(horizontal: Shape.s(6), vertical: Shape.s(3)),
-                            decoration: BoxDecoration(color: WindowTokens.raised, borderRadius: BorderRadius.all(Shape.r(3))),
-                            child: Text(says, style: TextStyles.micro(Grey.g95)),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: Shape.s(6),
+                              vertical: Shape.s(3),
+                            ),
+                            decoration: BoxDecoration(
+                              color: WindowTokens.raised,
+                              borderRadius: BorderRadius.all(Shape.r(3)),
+                            ),
+                            child: Text(
+                              says,
+                              style: TextStyles.micro(Grey.g95),
+                            ),
                           ),
                         ),
                       ),
@@ -576,21 +798,32 @@ class StageViewState extends State<StageView> implements StageHandles {
                         ),
                       ),
                     ),
-                  IgnorePointer(child: CustomPaint(painter: RulerPainter(v, widget.cursor, scene))),
+                  IgnorePointer(
+                    child: CustomPaint(
+                      painter: RulerPainter(v, widget.cursor, scene),
+                    ),
+                  ),
                   // Marks for the lasso, the layers picked together and the picked relation: its shape, handles and what it moves.
                   RelationMarks(scene: scene, v: v, lasso: lasso),
                   // The brush path so far, drawn thin; once released the stroke belongs to the engine.
-                  if (brush case final way?) IgnorePointer(child: CustomPaint(painter: _BrushWay(way))),
+                  if (brush case final way?)
+                    IgnorePointer(child: CustomPaint(painter: _BrushWay(way))),
                   Positioned(
                     left: StageTokens.ruler + StageTokens.pad,
                     bottom: StageTokens.pad,
                     child: Hud(scale: v.s, cursor: widget.cursor),
                   ),
-                  if (widget.zoom != 0 && box.maxWidth > 360 && box.maxHeight > 220)
+                  if (widget.zoom != 0 &&
+                      box.maxWidth > 360 &&
+                      box.maxHeight > 220)
                     Positioned(
                       right: StageTokens.pad,
                       bottom: StageTokens.pad,
-                      child: StageNavigator(scene: scene, view: v, texture: widget.texture),
+                      child: StageNavigator(
+                        scene: scene,
+                        view: v,
+                        texture: widget.texture,
+                      ),
                     ),
                 ],
               ),

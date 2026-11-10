@@ -60,7 +60,8 @@ class _DockResizableState extends State<DockResizable> {
               _from = d.globalPosition.dy;
               _h = _box.currentContext?.size?.height ?? widget.height;
             }),
-            onVerticalDragUpdate: (d) => widget.onHeight(_clamp(_h + d.globalPosition.dy - _from)),
+            onVerticalDragUpdate: (d) =>
+                widget.onHeight(_clamp(_h + d.globalPosition.dy - _from)),
             onVerticalDragEnd: (_) => setState(() => _drag = false),
             onDoubleTap: () => widget.onHeight(widget.reset),
             child: Container(
@@ -70,7 +71,10 @@ class _DockResizableState extends State<DockResizable> {
               child: Container(
                 width: Shape.z(28),
                 height: Shape.z(3),
-                decoration: BoxDecoration(color: lit ? WindowTokens.accent : Grey.g38, borderRadius: BorderRadius.all(Shape.r(1.5))),
+                decoration: BoxDecoration(
+                  color: lit ? WindowTokens.accent : Grey.g38,
+                  borderRadius: BorderRadius.all(Shape.r(1.5)),
+                ),
               ),
             ),
           ),

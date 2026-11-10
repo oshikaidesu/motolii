@@ -25,7 +25,8 @@ extension TimelinePaneMedia on TimelinePaneState {
     final start = m.value(t, 'start', 0) ?? 0;
     return [
       for (final n in const ['retime_in', 'retime_out'])
-        if ((m.value(t, n, 0) ?? 0) > 0) ((start + m.value(t, n, 0)!) * WorkspaceController.fps).round(),
+        if ((m.value(t, n, 0) ?? 0) > 0)
+          ((start + m.value(t, n, 0)!) * WorkspaceController.fps).round(),
     ];
   }
 
@@ -37,8 +38,11 @@ extension TimelinePaneMedia on TimelinePaneState {
     if (beatsAsked == ws.reads) return beats?.$2 ?? const [];
     final asks = <Future<List<double>>>[];
     for (final l in ws.layers) {
-      final t = int.tryParse(l.id), rise = t == null ? 0.0 : m.value(t, 'beats', 0) ?? 0;
-      if (rise > 0 && waveOf(ws, l) != null) asks.add(m.strikes(t!, rise)); // Only after its sound has been read.
+      final t = int.tryParse(l.id),
+          rise = t == null ? 0.0 : m.value(t, 'beats', 0) ?? 0;
+      if (rise > 0 && waveOf(ws, l) != null) {
+        asks.add(m.strikes(t!, rise)); // Only after its sound has been read.
+      }
     }
     final reads = beatsAsked = ws.reads;
     Future.wait(asks).then(
@@ -60,20 +64,41 @@ extension TimelinePaneMedia on TimelinePaneState {
   /// A few frames to draw along a video layer's bar, or the thumbnail of an image layer; null if there are none.
   List<ui.Image>? framesOf(WorkspaceController ws, Layer l) {
     final m = ws.inside, t = int.tryParse(l.id);
-    if (m != null && t != null && m.word(t, 'kind') == 'picture') return _stillOf(m.whole(m.word(t, 'file')), l.id);
+    if (m != null && t != null && m.word(t, 'kind') == 'picture') {
+      return _stillOf(m.whole(m.word(t, 'file')), l.id);
+    }
     if (m == null || t == null || m.word(t, 'kind') != 'film') return null;
-    final file = m.whole(m.word(t, 'file')), begin = m.value(t, 'begin', 0) ?? 0, speed = m.value(t, 'speed', 0) ?? 1, start = m.value(t, 'start', 0) ?? 0;
+    final file = m.whole(m.word(t, 'file')),
+        begin = m.value(t, 'begin', 0) ?? 0,
+        speed = m.value(t, 'speed', 0) ?? 1,
+        start = m.value(t, 'start', 0) ?? 0;
     final key = (file, begin, speed, start, l.inF, l.outF);
     if (frames[l.id] case (final k, final f) when k == key) return f;
     if (framesAsked[l.id] != key) {
       framesAsked[l.id] = key;
       const n = 6;
       final lasts = (l.outF - l.inF) / WorkspaceController.fps;
-      final seconds = [for (var i = 0; i < n; i++) begin + (speed < 0 ? lasts - (i + .5) / n * lasts : (i + .5) / n * lasts) * speed.abs()];
-      Future.wait([for (final s in seconds) m.videoFrame(file, s)]).then((pngs) async {
+      final seconds = [
+        for (var i = 0; i < n; i++)
+          begin +
+              (speed < 0
+                      ? lasts - (i + .5) / n * lasts
+                      : (i + .5) / n * lasts) *
+                  speed.abs(),
+      ];
+      Future.wait([for (final s in seconds) m.videoFrame(file, s)]).then((
+        pngs,
+      ) async {
         // No frames could be read: the file has sound only.
-        if (pngs.any((p) => p == null)) return mounted ? setState(() => frames[l.id] = (key, null)) : null;
-        final read = [for (final p in pngs) (await (await ui.instantiateImageCodec(File(p!).readAsBytesSync())).getNextFrame()).image];
+        if (pngs.any((p) => p == null)) {
+          return mounted ? setState(() => frames[l.id] = (key, null)) : null;
+        }
+        final read = [
+          for (final p in pngs)
+            (await (await ui.instantiateImageCodec(
+              File(p!).readAsBytesSync(),
+            )).getNextFrame()).image,
+        ];
         if (mounted) setState(() => frames[l.id] = (key, read));
       });
     }
@@ -85,9 +110,16 @@ extension TimelinePaneMedia on TimelinePaneState {
   (String, Color?, bool)? formOf(WorkspaceController ws, Layer l) {
     final m = ws.inside, t = int.tryParse(l.id);
     if (m == null || t == null || m.word(t, 'kind') != 'shape') return null;
-    Color? colour(String hex) => hex.length == 6 && int.tryParse(hex, radix: 16) != null ? Color(0xFF000000 | int.parse(hex, radix: 16)) : null;
+    Color? colour(String hex) =>
+        hex.length == 6 && int.tryParse(hex, radix: 16) != null
+        ? Color(0xFF000000 | int.parse(hex, radix: 16))
+        : null;
     final outline = m.word(t, 'fill') == 'none';
-    return (m.word(t, 'shape'), colour(m.word(t, outline ? 'stroke' : 'fill')), outline);
+    return (
+      m.word(t, 'shape'),
+      colour(m.word(t, outline ? 'stroke' : 'fill')),
+      outline,
+    );
   }
 
   /// The image of an image layer, decoded once at a small height and repeated along the bar as in Alight Motion
@@ -98,7 +130,10 @@ extension TimelinePaneMedia on TimelinePaneState {
       framesAsked[id] = file;
       () async {
         try {
-          final read = (await (await ui.instantiateImageCodec(await File(file).readAsBytes(), targetHeight: 48)).getNextFrame()).image;
+          final read = (await (await ui.instantiateImageCodec(
+            await File(file).readAsBytes(),
+            targetHeight: 48,
+          )).getNextFrame()).image;
           if (mounted) setState(() => frames[id] = (file, [read]));
         } catch (_) {
           if (mounted) setState(() => frames[id] = (file, null));
@@ -114,20 +149,47 @@ extension TimelinePaneMedia on TimelinePaneState {
     if (m == null || t == null || m.word(t, 'kind') != 'film') return null;
     final key = (ws.reads, l.inF, l.outF);
     final had = waves[l.id];
-    if (had case (final r, final a, final b, final w) when (r, a, b) == key) return w;
+    if (had case (final r, final a, final b, final w) when (r, a, b) == key) {
+      return w;
+    }
     if (waveAsked[l.id] != key) {
       // The engine answers on another isolate; the waveform is drawn on the bar when the answer arrives.
       waveAsked[l.id] = key;
-      m.loudnessOver(t, l.inF / WorkspaceController.fps, l.outF / WorkspaceController.fps, l.outF - l.inF).then((w) {
-        if (!mounted) return;
-        if (w == null) {
-          if (asked.add(l.id)) m.loudness(t).then((_) => mounted ? setState(() => (waveAsked.remove(l.id), beats = null, beatsAsked = null)) : null);
-          return;
-        }
-        setState(
-          () => (waves[l.id] = (key.$1, key.$2, key.$3, w.isEmpty ? null : w), beats = null, beatsAsked = null),
-        ); // The sound has now been read, so the beats are requested again.
-      });
+      m
+          .loudnessOver(
+            t,
+            l.inF / WorkspaceController.fps,
+            l.outF / WorkspaceController.fps,
+            l.outF - l.inF,
+          )
+          .then((w) {
+            if (!mounted) return;
+            if (w == null) {
+              if (asked.add(l.id)) {
+                m
+                    .loudness(t)
+                    .then(
+                      (_) => mounted
+                          ? setState(
+                              () => (
+                                waveAsked.remove(l.id),
+                                beats = null,
+                                beatsAsked = null,
+                              ),
+                            )
+                          : null,
+                    );
+              }
+              return;
+            }
+            setState(
+              () => (
+                waves[l.id] = (key.$1, key.$2, key.$3, w.isEmpty ? null : w),
+                beats = null,
+                beatsAsked = null,
+              ),
+            ); // The sound has now been read, so the beats are requested again.
+          });
     }
     return had?.$4;
   }

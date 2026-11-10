@@ -4,7 +4,12 @@ import 'dart:math' as math;
 import 'dart:ui' show FramePhase, FrameTiming;
 
 import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:flutter/gestures.dart' show GestureBinding, PointerEvent, PointerPanZoomUpdateEvent, PointerScrollEvent;
+import 'package:flutter/gestures.dart'
+    show
+        GestureBinding,
+        PointerEvent,
+        PointerPanZoomUpdateEvent,
+        PointerScrollEvent;
 import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter/widgets.dart';
 
@@ -94,7 +99,9 @@ class _WaitedState extends State<Waited> {
   }
 
   void _pointer(PointerEvent e) {
-    if (e.down || e is PointerScrollEvent || e is PointerPanZoomUpdateEvent) _moved = true;
+    if (e.down || e is PointerScrollEvent || e is PointerPanZoomUpdateEvent) {
+      _moved = true;
+    }
   }
 
   /// Handles Flutter's per-frame timings ([FrameTiming]).
@@ -107,16 +114,27 @@ class _WaitedState extends State<Waited> {
     final moved = _moved || WorkspaceScope.read(context).playing;
     _moved = false;
     if (timings.isEmpty) return;
-    final now = DateTime.now(), last = timings.last.timestampInMicroseconds(FramePhase.rasterFinish);
+    final now = DateTime.now(),
+        last = timings.last.timestampInMicroseconds(FramePhase.rasterFinish);
     for (final f in timings) {
-      final start = f.timestampInMicroseconds(FramePhase.vsyncStart), finish = f.timestampInMicroseconds(FramePhase.rasterFinish);
+      final start = f.timestampInMicroseconds(FramePhase.vsyncStart),
+          finish = f.timestampInMicroseconds(FramePhase.rasterFinish);
       final going = _lastFinish > 0 && start - _lastFinish <= 2 * _beat;
       _lastFinish = finish;
-      final build = f.buildDuration.inMicroseconds, raster = f.rasterDuration.inMicroseconds;
-      if (!moved || !going || _born.elapsed.inSeconds < 3 || (build <= _beat && raster <= _beat)) continue;
+      final build = f.buildDuration.inMicroseconds,
+          raster = f.rasterDuration.inMicroseconds;
+      if (!moved ||
+          !going ||
+          _born.elapsed.inSeconds < 3 ||
+          (build <= _beat && raster <= _beat)) {
+        continue;
+      }
       final at = now.subtract(Duration(microseconds: last - finish));
       String ms(int us) => (us / 1000).toStringAsFixed(1);
-      final slow = [if (build > _beat) "the window's build ${ms(build)} ms", if (raster > _beat) "the window's raster ${ms(raster)} ms"].join(', ');
+      final slow = [
+        if (build > _beat) "the window's build ${ms(build)} ms",
+        if (raster > _beat) "the window's raster ${ms(raster)} ms",
+      ].join(', ');
       _late.add(
         '${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}:${at.second.toString().padLeft(2, '0')}.${at.millisecond.toString().padLeft(3, '0')} '
         '$slow (build ${ms(build)}, raster ${ms(raster)}, all ${ms(f.totalSpan.inMicroseconds)})${kDebugMode ? ', a debug build: slower than the app' : ''}',
@@ -155,7 +173,9 @@ class _WaitedState extends State<Waited> {
     // The engine's and the app's lines, newest first. Each line starts with its clock time.
     final lines = _open.isShowing
         ? ([
-            ...(WorkspaceScope.read(context).inside?.broken ?? '').split('\n').where((l) => l.isNotEmpty),
+            ...(WorkspaceScope.read(context).inside?.broken ?? '')
+                .split('\n')
+                .where((l) => l.isNotEmpty),
             ..._late,
           ]..sort((a, b) => b.compareTo(a))).take(40).toList()
         : const <String>[];
@@ -180,7 +200,9 @@ class _WaitedState extends State<Waited> {
                 mouseCursor: SystemMouseCursors.basic,
                 child: Container(
                   width: Shape.z(520),
-                  constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(overlay).height * .7), // Lines wrap rather than being cut, and a long list scrolls.
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.sizeOf(overlay).height * .7,
+                  ), // Lines wrap rather than being cut, and a long list scrolls.
                   padding: EdgeInsets.all(Shape.s(10)),
                   decoration: BoxDecoration(
                     color: WindowTokens.card,
@@ -195,7 +217,11 @@ class _WaitedState extends State<Waited> {
                         for (final l in lines)
                           Padding(
                             padding: EdgeInsets.only(bottom: Shape.s(3)),
-                            child: Text(l, softWrap: true, style: TextStyles.micro(Grey.g76)),
+                            child: Text(
+                              l,
+                              softWrap: true,
+                              style: TextStyles.micro(Grey.g76),
+                            ),
                           ),
                       ],
                     ),
@@ -217,9 +243,18 @@ class _WaitedState extends State<Waited> {
                   Container(
                     width: Shape.z(6),
                     height: Shape.z(6),
-                    decoration: BoxDecoration(color: ColorTheme.of('Alert', const Color(0xFFE5484D)), shape: BoxShape.circle),
+                    decoration: BoxDecoration(
+                      color: ColorTheme.of('Alert', const Color(0xFFE5484D)),
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                  if (_count > 0) ...[SizedBox(width: Shape.s(5)), Text('$_count', style: TextStyles.label(h ? Grey.g91 : Grey.g63))],
+                  if (_count > 0) ...[
+                    SizedBox(width: Shape.s(5)),
+                    Text(
+                      '$_count',
+                      style: TextStyles.label(h ? Grey.g91 : Grey.g63),
+                    ),
+                  ],
                 ],
               ),
             ),

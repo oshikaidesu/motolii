@@ -5,7 +5,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:motolii/storage/unique_name.dart' show firstFree;
-import 'package:motolii/storage/json_file.dart' show fileKeep, fileJson, fileList;
+import 'package:motolii/storage/json_file.dart'
+    show fileKeep, fileJson, fileList;
 
 void main() {
   late Directory folder;
@@ -13,7 +14,8 @@ void main() {
   tearDown(() => folder.deleteSync(recursive: true));
 
   test('firstFree gives the name itself when it is free, else the first numbered one from 2 that is', () {
-    String free(Set<String> taken) => firstFree('Deck', taken.contains, (n) => 'Deck $n');
+    String free(Set<String> taken) =>
+        firstFree('Deck', taken.contains, (n) => 'Deck $n');
     expect(free({}), 'Deck');
     expect(free({'Deck'}), 'Deck 2');
     expect(free({'Deck', 'Deck 2', 'Deck 3'}), 'Deck 4');
@@ -40,16 +42,28 @@ void main() {
     expect(file.readAsStringSync(), '[]');
   });
 
-  test('fileJson gives null for a missing file and for text that is not JSON', () {
-    expect(fileJson(File('${folder.path}/missing.json')), isNull);
-    expect(fileJson(File('${folder.path}/kept.json')..writeAsStringSync('not json')), isNull);
-  });
+  test(
+    'fileJson gives null for a missing file and for text that is not JSON',
+    () {
+      expect(fileJson(File('${folder.path}/missing.json')), isNull);
+      expect(
+        fileJson(
+          File('${folder.path}/kept.json')..writeAsStringSync('not json'),
+        ),
+        isNull,
+      );
+    },
+  );
 
-  test('fileList gives the list a file holds, and an empty one for anything else', () {
-    final file = File('${folder.path}/kept.json')..writeAsStringSync('["a", 2]');
-    expect(fileList(file), ['a', 2]);
-    expect(fileList(file..writeAsStringSync('{"a": 2}')), isEmpty);
-    expect(fileList(file..writeAsStringSync('not json')), isEmpty);
-    expect(fileList(File('${folder.path}/missing.json')), isEmpty);
-  });
+  test(
+    'fileList gives the list a file holds, and an empty one for anything else',
+    () {
+      final file = File('${folder.path}/kept.json')
+        ..writeAsStringSync('["a", 2]');
+      expect(fileList(file), ['a', 2]);
+      expect(fileList(file..writeAsStringSync('{"a": 2}')), isEmpty);
+      expect(fileList(file..writeAsStringSync('not json')), isEmpty);
+      expect(fileList(File('${folder.path}/missing.json')), isEmpty);
+    },
+  );
 }

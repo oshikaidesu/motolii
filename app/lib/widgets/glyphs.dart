@@ -18,7 +18,13 @@ abstract interface class GlyphKind {
 
 /// Draws a [GlyphKind] at [size] in [color].
 class Glyph extends StatelessWidget {
-  const Glyph(this.kind, {super.key, required this.size, required this.color, this.fade = false});
+  const Glyph(
+    this.kind, {
+    super.key,
+    required this.size,
+    required this.color,
+    this.fade = false,
+  });
   final GlyphKind kind;
   final double size;
   final Color color;
@@ -86,13 +92,33 @@ enum Glyphs implements GlyphKind {
       case Glyphs.move:
         c.drawLine(p(.5, .12), p(.5, .88), st);
         c.drawLine(p(.12, .5), p(.88, .5), st);
-        for (final d in const [Offset(.5, .12), Offset(.5, .88), Offset(.12, .5), Offset(.88, .5)]) {
-          final dx = d.dx == .5 ? 0.0 : (d.dx < .5 ? .09 : -.09), dy = d.dy == .5 ? 0.0 : (d.dy < .5 ? .09 : -.09);
-          c.drawLine(p(d.dx, d.dy), p(d.dx + (dx == 0 ? .08 : dx), d.dy + (dy == 0 ? .08 : dy)), st);
-          c.drawLine(p(d.dx, d.dy), p(d.dx + (dx == 0 ? -.08 : dx), d.dy + (dy == 0 ? -.08 : dy)), st);
+        for (final d in const [
+          Offset(.5, .12),
+          Offset(.5, .88),
+          Offset(.12, .5),
+          Offset(.88, .5),
+        ]) {
+          final dx = d.dx == .5 ? 0.0 : (d.dx < .5 ? .09 : -.09),
+              dy = d.dy == .5 ? 0.0 : (d.dy < .5 ? .09 : -.09);
+          c.drawLine(
+            p(d.dx, d.dy),
+            p(d.dx + (dx == 0 ? .08 : dx), d.dy + (dy == 0 ? .08 : dy)),
+            st,
+          );
+          c.drawLine(
+            p(d.dx, d.dy),
+            p(d.dx + (dx == 0 ? -.08 : dx), d.dy + (dy == 0 ? -.08 : dy)),
+            st,
+          );
         }
       case Glyphs.rect || Glyphs.shape:
-        c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * .18, w * .22, w * .64, w * .56), Radius.circular(w * .08)), st);
+        c.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(w * .18, w * .22, w * .64, w * .56),
+            Radius.circular(w * .08),
+          ),
+          st,
+        );
       case Glyphs.ellipse:
         c.drawOval(Rect.fromLTWH(w * .16, w * .2, w * .68, w * .6), st);
       case Glyphs.pen:
@@ -124,7 +150,13 @@ enum Glyphs implements GlyphKind {
         c.drawLine(p(.5, .2), p(.5, .84), st);
         c.drawLine(p(.38, .84), p(.62, .84), st);
       case Glyphs.image:
-        c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * .14, w * .2, w * .72, w * .6), Radius.circular(w * .08)), st);
+        c.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(w * .14, w * .2, w * .72, w * .6),
+            Radius.circular(w * .08),
+          ),
+          st,
+        );
         c.drawPath(
           Path()
             ..moveTo(w * .2, w * .72)
@@ -136,7 +168,13 @@ enum Glyphs implements GlyphKind {
         );
         c.drawCircle(p(.66, .36), w * .05, fl);
       case Glyphs.camera:
-        c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * .12, w * .3, w * .76, w * .5), Radius.circular(w * .08)), st);
+        c.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(w * .12, w * .3, w * .76, w * .5),
+            Radius.circular(w * .08),
+          ),
+          st,
+        );
         c.drawCircle(p(.5, .55), w * .15, st);
         c.drawLine(p(.34, .3), p(.4, .2), st);
         c.drawLine(p(.4, .2), p(.6, .2), st);
@@ -146,9 +184,21 @@ enum Glyphs implements GlyphKind {
           c.drawLine(p(.38 + i * .24, .16), p(.38 + i * .24, .84), st);
           c.drawLine(p(.16, .38 + i * .24), p(.84, .38 + i * .24), st);
         }
-        c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * .16, w * .16, w * .68, w * .68), Radius.circular(w * .06)), st);
+        c.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(w * .16, w * .16, w * .68, w * .68),
+            Radius.circular(w * .06),
+          ),
+          st,
+        );
       case Glyphs.media:
-        c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(w * .14, w * .2, w * .72, w * .6), Radius.circular(w * .08)), st);
+        c.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(w * .14, w * .2, w * .72, w * .6),
+            Radius.circular(w * .08),
+          ),
+          st,
+        );
         c.drawPath(
           Path()
             ..moveTo(w * .44, w * .38)

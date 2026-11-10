@@ -12,7 +12,8 @@ class WindowZoomed extends StatelessWidget {
     valueListenable: WindowZoom.value,
     builder: (context, z, _) => LayoutBuilder(
       builder: (context, box) {
-        final mq = MediaQuery.of(context), size = Size(box.maxWidth / z, box.maxHeight / z);
+        final mq = MediaQuery.of(context),
+            size = Size(box.maxWidth / z, box.maxHeight / z);
         return ClipRect(
           child: OverflowBox(
             alignment: Alignment.topLeft,
@@ -25,7 +26,10 @@ class WindowZoomed extends StatelessWidget {
               alignment: Alignment.topLeft,
               // The larger pixel ratio makes the preview render sharply.
               child: MediaQuery(
-                data: mq.copyWith(size: size, devicePixelRatio: mq.devicePixelRatio * z),
+                data: mq.copyWith(
+                  size: size,
+                  devicePixelRatio: mq.devicePixelRatio * z,
+                ),
                 child: child,
               ),
             ),

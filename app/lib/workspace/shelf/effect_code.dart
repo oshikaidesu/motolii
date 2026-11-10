@@ -20,7 +20,14 @@ import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/workspace/shelf/program_code.dart';
 
 class EffectCode extends StatefulWidget {
-  const EffectCode(this.ws, this.thing, this.word, {this.slot = 'fx', this.shelf = true, super.key});
+  const EffectCode(
+    this.ws,
+    this.thing,
+    this.word, {
+    this.slot = 'fx',
+    this.shelf = true,
+    super.key,
+  });
   final WorkspaceController ws;
   final int thing;
 
@@ -48,9 +55,16 @@ class EffectCode extends StatefulWidget {
   /// An expression's own parameters are `js_<param>`, so the file is the .js whose header declares them all.
   /// If two files fit, the one whose title matches the card wins, then the longer name.
   /// A card with no parameters (the engine still gives it a card, doc_cards_of) is matched by title alone.
-  static EffectCode? of(WorkspaceController ws, int thing, String title, List<String> names) {
+  static EffectCode? of(
+    WorkspaceController ws,
+    int thing,
+    String title,
+    List<String> names,
+  ) {
     final word = fileOf(ws.inside!.word(thing, 'fx'), title, names);
-    return word == null ? null : EffectCode(ws, thing, word, key: ValueKey('fx-code-$thing-$title'));
+    return word == null
+        ? null
+        : EffectCode(ws, thing, word, key: ValueKey('fx-code-$thing-$title'));
   }
 
   /// The file in a layer's [fx] that the card belongs to, or null if there is none or it is not code.
@@ -58,7 +72,9 @@ class EffectCode extends StatefulWidget {
     (String, int)? best;
     for (final w in WorkspaceController.fxFiles(fx)) {
       if (!_code.hasMatch(w)) continue;
-      final file = source(w), stem = EffectTiles.knobStem(w), titled = titleOf(w) == title;
+      final file = source(w),
+          stem = EffectTiles.knobStem(w),
+          titled = titleOf(w) == title;
       // A three.js effect is run as a scene once saved (doc_three_saved).
       if (w.endsWith('.js') && _three(file)) continue;
       if (names.isEmpty) {
@@ -82,14 +98,19 @@ class EffectCode extends StatefulWidget {
   /// Any other file gets the name in its first line ("// Repeater: …"), else its file name with each _ as a space
   /// and the first letter capitalised.
   static String titleOf(String w) {
-    final file = source(w), stem = w.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), '');
-    if (file != w) return '${titleOf(file)} ${stem.substring(stem.lastIndexOf('~') + 1)}';
+    final file = source(w),
+        stem = w.split('/').last.replaceFirst(RegExp(r'\.[^.]*$'), '');
+    if (file != w) {
+      return '${titleOf(file)} ${stem.substring(stem.lastIndexOf('~') + 1)}';
+    }
     if (w.endsWith('.fs')) return stem;
     var first = '';
     try {
       first = File(file).readAsLinesSync().firstOrNull ?? '';
     } catch (_) {}
-    if (first.startsWith('// ') && first.contains(':')) return first.substring(3, first.indexOf(':'));
+    if (first.startsWith('// ') && first.contains(':')) {
+      return first.substring(3, first.indexOf(':'));
+    }
     final t = stem.replaceAll('_', ' ');
     return t.isEmpty ? t : t[0].toUpperCase() + t.substring(1);
   }
@@ -98,7 +119,9 @@ class EffectCode extends StatefulWidget {
   static List<String> _head(String file) {
     try {
       return [
-        for (final l in File(file).readAsLinesSync().takeWhile((l) => l.startsWith('//') || l.trim().isEmpty))
+        for (final l in File(file).readAsLinesSync().takeWhile(
+          (l) => l.startsWith('//') || l.trim().isEmpty,
+        ))
           if (l.startsWith('//')) l,
       ];
     } catch (_) {
@@ -109,7 +132,10 @@ class EffectCode extends StatefulWidget {
   /// The parameter names declared in [head], such as "// --track@StepX:Step X,…" (script_knobs).
   static List<String> _knobs(List<String> head) => [
     for (final l in head)
-      if ((l.indexOf('--'), l.indexOf('@'), l.indexOf(':')) case (final d, final a, final c) when d >= 0 && d < a && a < c && c > a + 1) l.substring(a + 1, c),
+      if ((l.indexOf('--'), l.indexOf('@'), l.indexOf(':'))
+          case (final d, final a, final c)
+          when d >= 0 && d < a && a < c && c > a + 1)
+        l.substring(a + 1, c),
   ];
 
   static bool _three(String file) {
@@ -122,7 +148,9 @@ class EffectCode extends StatefulWidget {
   }
 
   /// The file to read for an effect [w]. An effect applied again ("Glow~2.fs") reads its original's file (fx_source, isf.h).
-  static String source(String w) => File(w).existsSync() ? w : w.replaceFirstMapped(RegExp(r'~[0-9]+(\.[^./]+)$'), (x) => x[1]!);
+  static String source(String w) => File(w).existsSync()
+      ? w
+      : w.replaceFirstMapped(RegExp(r'~[0-9]+(\.[^./]+)$'), (x) => x[1]!);
 }
 
 class _EffectCodeState extends State<EffectCode> {
@@ -148,7 +176,9 @@ class _EffectCodeState extends State<EffectCode> {
     if (!file.startsWith(_own)) return false;
     for (final t in m.layers) {
       for (final w in WorkspaceController.fxFiles(m.word(t, widget.slot))) {
-        if (!(t == widget.thing && w == word) && EffectCode.source(w) == file) return false;
+        if (!(t == widget.thing && w == word) && EffectCode.source(w) == file) {
+          return false;
+        }
       }
     }
     return true;
@@ -162,12 +192,18 @@ class _EffectCodeState extends State<EffectCode> {
       _typed = text;
       return;
     }
-    final ws = widget.ws, m = ws.inside!, word = _mine ?? widget.word, file = EffectCode.source(word);
+    final ws = widget.ws,
+        m = ws.inside!,
+        word = _mine ?? widget.word,
+        file = EffectCode.source(word);
     if (_alone(word)) {
       File(file).writeAsStringSync(text);
       return _saved(file);
     }
-    final dir = '$_own${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}', to = '$dir/${file.split('/').last}', said = '$dir/${word.split('/').last}';
+    final dir =
+            '$_own${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}',
+        to = '$dir/${file.split('/').last}',
+        said = '$dir/${word.split('/').last}';
     Directory(dir).createSync(recursive: true);
     _beside(file, word, dir);
     File(file).copySync(to);
@@ -175,7 +211,12 @@ class _EffectCodeState extends State<EffectCode> {
     _making = true;
     _typed = text;
     // Joined the way doc_fx_join does.
-    final fx = [for (final w in WorkspaceController.fxFiles(m.word(widget.thing, widget.slot))) w == word ? said : w].join(' ');
+    final fx = [
+      for (final w in WorkspaceController.fxFiles(
+        m.word(widget.thing, widget.slot),
+      ))
+        w == word ? said : w,
+    ].join(' ');
     m.later('say', layer: widget.thing, name: widget.slot, word: fx);
     ws.after(m.later('code', word: to), (_, _) {
       _making = false;
@@ -185,10 +226,11 @@ class _EffectCodeState extends State<EffectCode> {
     });
   }
 
-  void _saved(String file) => widget.ws.after(widget.ws.inside!.later('code', word: file), (done, why) {
-    if (mounted) setState(() => _why = done ? '' : why.trim());
-    widget.ws.reread();
-  });
+  void _saved(String file) =>
+      widget.ws.after(widget.ws.inside!.later('code', word: file), (done, why) {
+        if (mounted) setState(() => _why = done ? '' : why.trim());
+        widget.ws.reread();
+      });
 
   /// Copies the files the engine reads beside [from] to the copy's folder [dir].
   static void _beside(String from, String word, String dir) {
@@ -203,11 +245,19 @@ class _EffectCodeState extends State<EffectCode> {
         for (final l in first.readAsLinesSync())
           if (l.split('\t').first == name) l,
       ];
-      if (lines.isNotEmpty) File('$dir/first.tsv').writeAsStringSync('${lines.join('\n')}\n');
+      if (lines.isNotEmpty) {
+        File('$dir/first.tsv').writeAsStringSync('${lines.join('\n')}\n');
+      }
     }
     for (final l in File(from).readAsLinesSync()) {
-      final image = RegExp(r'^//.*--image@[^:]*:(.+)$').firstMatch(l)?[1]?.trim();
-      if (image == null || image.startsWith('/') || !File('$home/$image').existsSync()) continue;
+      final image = RegExp(r'^//.*--image@[^:]*:(.+)$')
+          .firstMatch(l)?[1]
+          ?.trim();
+      if (image == null ||
+          image.startsWith('/') ||
+          !File('$home/$image').existsSync()) {
+        continue;
+      }
       File('$dir/$image').parent.createSync(recursive: true);
       File('$home/$image').copySync('$dir/$image');
     }
@@ -218,18 +268,33 @@ class _EffectCodeState extends State<EffectCode> {
   void _add(String? name) {
     setState(() => _adding = null);
     if (name == null) return;
-    final word = _mine ?? widget.word, file = EffectCode.source(word), expression = shelfIsExpression(file);
+    final word = _mine ?? widget.word,
+        file = EffectCode.source(word),
+        expression = shelfIsExpression(file);
     final why = _why.isNotEmpty
         ? 'It does not compile: fix it first'
-        : shelfAdd(widget.ws, file, _typed ?? File(file).readAsStringSync(), name, shelfTaken(widget.ws, expression: expression));
+        : shelfAdd(
+            widget.ws,
+            file,
+            _typed ?? File(file).readAsStringSync(),
+            name,
+            shelfTaken(widget.ws, expression: expression),
+          );
     setState(() {
       _addedOk = why.isEmpty;
-      _added = why.isEmpty ? 'Added to ${expression ? 'Create, Copies' : 'Effects'} as ${name.trim()}' : why;
+      _added = why.isEmpty
+          ? 'Added to ${expression ? 'Create, Copies' : 'Effects'} as ${name.trim()}'
+          : why;
     });
   }
 
   Widget _shelf() {
-    if (_adding case final name?) return SizedBox(height: Shape.s(18), child: ShelfNameField(name, _add, small: false));
+    if (_adding case final name?) {
+      return SizedBox(
+        height: Shape.s(18),
+        child: ShelfNameField(name, _add, small: false),
+      );
+    }
     return Row(
       children: [
         NakedButton(
@@ -243,7 +308,12 @@ class _EffectCodeState extends State<EffectCode> {
         if (_added.isNotEmpty) ...[
           SizedBox(width: Shape.s(8)),
           Expanded(
-            child: Text(_added, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyles.label(_addedOk ? Grey.g56 : Role.error)),
+            child: Text(
+              _added,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyles.label(_addedOk ? Grey.g56 : Role.error),
+            ),
           ),
         ],
       ],
@@ -266,7 +336,13 @@ class _EffectCodeState extends State<EffectCode> {
               style: TextStyles.label(Role.error),
             ),
           ),
-        Expanded(child: ProgramCode(EffectCode.source(_mine ?? widget.word), _write, keep: _making)),
+        Expanded(
+          child: ProgramCode(
+            EffectCode.source(_mine ?? widget.word),
+            _write,
+            keep: _making,
+          ),
+        ),
         if (widget.shelf)
           Padding(
             padding: EdgeInsets.only(top: Shape.s(4)),

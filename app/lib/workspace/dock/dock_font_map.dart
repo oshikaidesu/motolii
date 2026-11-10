@@ -15,20 +15,26 @@ import 'package:motolii/workspace/dock/dock_map.dart';
 const fontDotSize = (96, 32);
 final fontDotsDrawn = <String, Uint8List?>{};
 Future<void>? _drawing;
-Future<void> drawFontDots(Motolii m, List<String> files) => _drawing ??= Zone.root.run<Future<void>>(() async {
-  // Runs once, like fontsRead.
-  final byWord = <String, List<String>>{};
-  for (final f in files) {
-    (byWord[_wordOf(f, 0)] ??= []).add(f);
-  }
-  for (final MapEntry(key: w, value: some) in byWord.entries) {
-    final drawn = await m.typePictures(some, w, fontDotSize.$1, fontDotSize.$2);
-    for (final (i, f) in some.indexed) {
-      fontDotsDrawn[f] = drawn[i];
-    }
-  }
-  dockRead.value++;
-});
+Future<void> drawFontDots(Motolii m, List<String> files) =>
+    _drawing ??= Zone.root.run<Future<void>>(() async {
+      // Runs once, like fontsRead.
+      final byWord = <String, List<String>>{};
+      for (final f in files) {
+        (byWord[_wordOf(f, 0)] ??= []).add(f);
+      }
+      for (final MapEntry(key: w, value: some) in byWord.entries) {
+        final drawn = await m.typePictures(
+          some,
+          w,
+          fontDotSize.$1,
+          fontDotSize.$2,
+        );
+        for (final (i, f) in some.indexed) {
+          fontDotsDrawn[f] = drawn[i];
+        }
+      }
+      dockRead.value++;
+    });
 
 /// Sample text for fonts that cannot show Latin letters, keyed by file. Filled by fontsRead.
 var fontSamples = const <String, String>{};
@@ -41,7 +47,11 @@ String _wordOf(String path, int line) {
   final own = fontSamples[path];
   if (own == null) return const ['Motion', 'Hamburge', 'fonstiv'][line];
   final words = own.split(' '), letters = own.runes.toList();
-  final some = words.length > 1 ? words : [for (final r in letters) String.fromCharCode(r)], half = (some.length / 2).ceil(), by = words.length > 1 ? ' ' : '';
+  final some = words.length > 1
+          ? words
+          : [for (final r in letters) String.fromCharCode(r)],
+      half = (some.length / 2).ceil(),
+      by = words.length > 1 ? ' ' : '';
   return switch (line) {
     0 => words.length > 1 ? words.first : some.take(6).join(),
     1 => some.take(half).join(by),
@@ -55,7 +65,11 @@ String _wordOf(String path, int line) {
 /// "Hamburge" over "fonstiv" in a 224 pixel square with a 12 pixel margin. Each line fits in its half, at most 200 wide
 /// and 85 tall, is set at size 75 or smaller and is centred on its half. The text is black on white.
 /// Fonts are embedded 32 at a time, and an entry is null when the font could not be drawn.
-Future<List<Float32List?>> byFontClip(Motolii m, String model, List<String> files) async {
+Future<List<Float32List?>> byFontClip(
+  Motolii m,
+  String model,
+  List<String> files,
+) async {
   String key(String f) {
     // The cache key is the model, the font and its modification time, as for the effect thumbnails, so only a new font is embedded.
     try {
@@ -72,7 +86,8 @@ Future<List<Float32List?>> byFontClip(Motolii m, String model, List<String> file
       ];
   if (missing.isEmpty) return out;
   final lines = [
-        for (final _ in const [1, 2]) List<Uint8List?>.filled(missing.length, null),
+        for (final _ in const [1, 2])
+          List<Uint8List?>.filled(missing.length, null),
       ],
       byWords = <(String, String), List<int>>{};
   for (final (k, f) in missing.indexed) {
@@ -81,7 +96,13 @@ Future<List<Float32List?>> byFontClip(Motolii m, String model, List<String> file
   for (final MapEntry(key: (a, b), value: ks) in byWords.entries) {
     // A font with its own sample text uses its own two lines.
     for (final (j, w) in [a, b].indexed) {
-      final drawn = await m.typePictures([for (final k in ks) missing[k]], w, 202, 87, most: 75);
+      final drawn = await m.typePictures(
+        [for (final k in ks) missing[k]],
+        w,
+        202,
+        87,
+        most: 75,
+      );
       for (final (i, k) in ks.indexed) {
         lines[j][k] = drawn[i];
       }
@@ -93,7 +114,11 @@ Future<List<Float32List?>> byFontClip(Motolii m, String model, List<String> file
           for (final k in some)
             if (lines[0][k] != null && lines[1][k] != null) k,
         ];
-    final told = drawn.isEmpty ? null : await m.likeness(model, [for (final k in drawn) _specimen(lines[0][k]!, lines[1][k]!)]);
+    final told = drawn.isEmpty
+        ? null
+        : await m.likeness(model, [
+            for (final k in drawn) _specimen(lines[0][k]!, lines[1][k]!),
+          ]);
     for (final (j, k) in drawn.indexed) {
       if (told?[j] case final t?) {
         dockLookKeep(key(missing[k]), t);

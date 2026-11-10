@@ -20,5 +20,6 @@ class Beats {
   }
 
   /// The frame of the beat nearest to [frame].
-  int nearest(int frame) => (first + ((frame - first) / every).round() * every).round();
+  int nearest(int frame) =>
+      (first + ((frame - first) / every).round() * every).round();
 }

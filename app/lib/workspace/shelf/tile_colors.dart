@@ -14,8 +14,11 @@ Widget dockBadge(AppGlyphs g, Color hue, {required double size}) => Badge(
 );
 
 /// Fill and ink colors: a selected item uses the accent with dark ink, and hover is one grey step lighter.
-Color dockFill(bool sel, bool hover, [Color? rest]) => sel ? WindowTokens.accent : (hover ? WindowTokens.card : rest ?? WindowTokens.body);
-Color dockInk(bool sel, [Color? rest]) => sel ? WindowTokens.onAccent : rest ?? Grey.g91;
+Color dockFill(bool sel, bool hover, [Color? rest]) => sel
+    ? WindowTokens.accent
+    : (hover ? WindowTokens.card : rest ?? WindowTokens.body);
+Color dockInk(bool sel, [Color? rest]) =>
+    sel ? WindowTokens.onAccent : rest ?? Grey.g91;
 
 /// The glyph of an [IconPress] in the dock's header: 11 wide, in the ink color the press gives.
 Widget Function(Color) dockMark(AppGlyphs g) =>

@@ -6,7 +6,8 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/window_tokens.dart';
 import 'package:motolii/widgets/app_glyphs.dart';
 import 'package:motolii/widgets/text_gestures.dart';
-import 'package:motolii/workspace/commands/panel_requests.dart' show dockSearchAsked, dockSearchAwaited;
+import 'package:motolii/workspace/commands/panel_requests.dart'
+    show dockSearchAsked, dockSearchAwaited;
 import 'package:motolii/workspace/shelf/tile_hover.dart';
 
 /// The search field at the top of a shelf, with a hint while empty and a clear button once it has text.
@@ -25,7 +26,9 @@ class _DockSearchState extends State<DockSearch> {
     super.initState();
     _focus.addListener(_r);
     dockSearchAsked.addListener(_asked);
-    if (dockSearchAwaited) WidgetsBinding.instance.addPostFrameCallback((_) => _asked());
+    if (dockSearchAwaited) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _asked());
+    }
   }
 
   void _r() => setState(() {});
@@ -36,9 +39,14 @@ class _DockSearchState extends State<DockSearch> {
     _focus.requestFocus();
     // The press that asked gives the keys back to the panel it came from one frame later (see inspector_panel.dart),
     // so ask again after that frame.
-    WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? _focus.requestFocus() : null);
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => mounted ? _focus.requestFocus() : null,
+    );
     WidgetsBinding.instance.scheduleFrame();
-    widget.controller.selection = TextSelection(baseOffset: 0, extentOffset: widget.controller.text.length);
+    widget.controller.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: widget.controller.text.length,
+    );
   }
 
   @override
@@ -63,11 +71,17 @@ class _DockSearchState extends State<DockSearch> {
         decoration: BoxDecoration(
           color: WindowTokens.well,
           borderRadius: BorderRadius.all(Shape.r(WindowTokens.radius)),
-          border: Border.all(color: _focus.hasFocus ? WindowTokens.accentInk : WindowTokens.well),
+          border: Border.all(
+            color: _focus.hasFocus ? WindowTokens.accentInk : WindowTokens.well,
+          ),
         ),
         child: Row(
           children: [
-            Glyph(AppGlyphs.search, size: Shape.z(11), color: _focus.hasFocus ? WindowTokens.accentInk : Grey.g56),
+            Glyph(
+              AppGlyphs.search,
+              size: Shape.z(11),
+              color: _focus.hasFocus ? WindowTokens.accentInk : Grey.g56,
+            ),
             SizedBox(width: Shape.s(6)),
             Expanded(
               child: Stack(
@@ -75,7 +89,12 @@ class _DockSearchState extends State<DockSearch> {
                 children: [
                   if (c.text.isEmpty)
                     IgnorePointer(
-                      child: Text(widget.hint, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyles.name(Grey.g56)),
+                      child: Text(
+                        widget.hint,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyles.name(Grey.g56),
+                      ),
                     ),
                   TextGestures(
                     field: (k) => EditableText(
@@ -97,12 +116,24 @@ class _DockSearchState extends State<DockSearch> {
             if (c.text.isNotEmpty)
               DockHover(
                 onTap: c.clear,
-                builder: (context, h) => Glyph(AppGlyphs.close, size: Shape.z(10), color: h ? Grey.g95 : Grey.g63),
+                builder: (context, h) => Glyph(
+                  AppGlyphs.close,
+                  size: Shape.z(10),
+                  color: h ? Grey.g95 : Grey.g63,
+                ),
               ),
           ],
         ),
       ),
     );
-    return Padding(padding: EdgeInsets.fromLTRB(WindowTokens.inset, Shape.s(6), WindowTokens.inset, Shape.s(4)), child: well);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        WindowTokens.inset,
+        Shape.s(6),
+        WindowTokens.inset,
+        Shape.s(4),
+      ),
+      child: well,
+    );
   }
 }

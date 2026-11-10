@@ -27,10 +27,13 @@ class ParameterWords extends StatelessWidget {
       cursor: Grey.g95,
       backgroundCursor: Grey.g20,
       selection: Role.selected.withValues(alpha: .4),
-      onDone: (said) => said == null ? null : InspectorScope.read(context).doc.str(id, said),
+      onDone: (said) =>
+          said == null ? null : InspectorScope.read(context).doc.str(id, said),
       // Remembers the selected characters in wordsPicked so the Colors shelf can colour just those.
       onPick: (v) =>
-          wordsPicked.value = v.selection.isValid && !v.selection.isCollapsed ? (text: v.text, start: v.selection.start, end: v.selection.end) : null,
+          wordsPicked.value = v.selection.isValid && !v.selection.isCollapsed
+          ? (text: v.text, start: v.selection.start, end: v.selection.end)
+          : null,
     );
   }
 }

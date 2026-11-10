@@ -13,11 +13,17 @@ import 'dart:io';
 import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
-import 'package:motolii/workspace/shelf/copies_tiles.dart' show TileQueue, tileHome;
-import 'package:motolii/workspace/shelf/effect_tiles_difference.dart' show ffmpeg;
+import 'package:motolii/workspace/shelf/copies_tiles.dart'
+    show TileQueue, tileHome;
+import 'package:motolii/workspace/shelf/effect_tiles_difference.dart'
+    show ffmpeg;
 
 abstract final class ProgramTiles {
-  static const _render = 384, _keep = 192, _pictures = 32, _perSecond = 24, _from = 1.0;
+  static const _render = 384,
+      _keep = 192,
+      _pictures = 32,
+      _perSecond = 24,
+      _from = 1.0;
   // Four at a time, so a program that crashes the app loses at most four.
   static final _tiles = TileQueue<(String, String)>(_draw, batch: 4);
 
@@ -32,15 +38,23 @@ abstract final class ProgramTiles {
     _tiles.onDrawn = (_) => changed();
     for (final f in files) {
       final to = home(f), written = File(f).lastModifiedSync();
-      bool since(String p) => File(p).existsSync() && File(p).lastModifiedSync().isAfter(written);
-      if (!since(to) && !since('$to.trying')) _tiles.ask('$f $written', (f, to));
+      bool since(String p) =>
+          File(p).existsSync() && File(p).lastModifiedSync().isAfter(written);
+      if (!since(to) && !since('$to.trying')) {
+        _tiles.ask('$f $written', (f, to));
+      }
     }
     _tiles.start();
   }
 
   static List<String> _draw(String dir, List<(String, String)> files) {
     final folder = Directory.systemTemp.createTempSync('motolii_programs');
-    final m = Motolii.open('${folder.path}/tiles.motolii', wide: _render, high: _render, dir: dir);
+    final m = Motolii.open(
+      '${folder.path}/tiles.motolii',
+      wide: _render,
+      high: _render,
+      dir: dir,
+    );
     if (m == null) return [];
     for (final (f, to) in files) {
       final trying = File('$to.trying')..createSync(recursive: true);
@@ -52,7 +66,11 @@ abstract final class ProgramTiles {
         sleep(const Duration(milliseconds: 10));
         said = m.answer(ticket);
       }
-      if (said >= 1 && [for (var k = 0; k < _pictures; k++) m.at(_from + k / _perSecond) && m.still('${folder.path}/$k.png')].every((done) => done)) {
+      if (said >= 1 &&
+          [
+            for (var k = 0; k < _pictures; k++)
+              m.at(_from + k / _perSecond) && m.still('${folder.path}/$k.png'),
+          ].every((done) => done)) {
         _kept(folder.path, to);
       }
       for (final t in m.layers.toList()) {
@@ -69,8 +87,21 @@ abstract final class ProgramTiles {
 
   static void _kept(String folder, String to) {
     final moving = '$folder/moving.apng';
-    ffmpeg(['-framerate', '$_perSecond', '-i', '$folder/%d.png', '-vf', 'scale=$_keep:$_keep:flags=lanczos', '-plays', '0', '-f', 'apng', moving]);
+    ffmpeg([
+      '-framerate',
+      '$_perSecond',
+      '-i',
+      '$folder/%d.png',
+      '-vf',
+      'scale=$_keep:$_keep:flags=lanczos',
+      '-plays',
+      '0',
+      '-f',
+      'apng',
+      moving,
+    ]);
     // Without ffmpeg there is no animation, so the middle frame is used as a single image.
-    File(File(moving).existsSync() ? moving : '$folder/${_pictures ~/ 2}.png').copySync(to);
+    File(File(moving).existsSync() ? moving : '$folder/${_pictures ~/ 2}.png')
+        .copySync(to);
   }
 }

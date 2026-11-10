@@ -2,7 +2,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
-import 'package:material_color_utilities/material_color_utilities.dart' show Cam16, ViewingConditions;
+import 'package:material_color_utilities/material_color_utilities.dart'
+    show Cam16, ViewingConditions;
 
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/context_menu.dart';
@@ -34,7 +35,9 @@ const _rainbow = [
   Color(0xFFAF52DE),
   Color(0xFFFF3B30),
 ];
-final _hovered = ValueNotifier<String?>(null); // The group of the box under the pointer.
+final _hovered = ValueNotifier<String?>(
+  null,
+); // The group of the box under the pointer.
 
 /// Where each box lies, in grid cells, as (x, y, width, height).
 /// The dice picks each box's shape: a color that covers more of the picture gets a larger box, and a gradient a wide one.
@@ -56,7 +59,9 @@ List<(int, int, int, int)> _packed(List<BentoBox> boxes, int cols, int seed) {
   for (final b in boxes) {
     var thrown = 0; // The last throw that changed this box.
     for (var d = 1; d <= seed; d++) {
-      if (math.Random(Object.hash(d, b.group, b.i, 7)).nextDouble() < .35) thrown = d;
+      if (math.Random(Object.hash(d, b.group, b.i, 7)).nextDouble() < .35) {
+        thrown = d;
+      }
     }
     final r = math.Random(Object.hash(thrown, b.group, b.i));
     final shapes = b.grad != null
@@ -75,7 +80,9 @@ List<(int, int, int, int)> _packed(List<BentoBox> boxes, int cols, int seed) {
       ].firstOrNull;
       if (x == null) continue;
       for (var j = y; j < y + h; j++) {
-        taken.putIfAbsent(j, () => {}).addAll([for (var i = x; i < x + w; i++) i]);
+        taken.putIfAbsent(j, () => {}).addAll([
+          for (var i = x; i < x + w; i++) i,
+        ]);
       }
       out.add((x, y, w, h));
       break;
@@ -85,7 +92,8 @@ List<(int, int, int, int)> _packed(List<BentoBox> boxes, int cols, int seed) {
 }
 
 final _boxMenu = GlobalKey<ContextMenuState>();
-(String, List<(int, int, int, int)>)? _bentoLaid; // The last layout, keyed by what it was laid out for.
+(String, List<(int, int, int, int)>)?
+_bentoLaid; // The last layout, keyed by what it was laid out for.
 
 /// The range of the box size slider. The size can be any value in it, not a few steps,
 /// like Finder's icon size, Photoshop's Swatches panel and Lightroom's thumbnails.
@@ -107,11 +115,18 @@ class Bento extends StatelessWidget {
       // CLIP STUDIO PAINT's Color Set and CSS Grid's repeat(auto-fill, minmax()) work the same way.
       // The layout is redone only when the columns, the colors or the dice change, and only then do the boxes move.
       // Widening the shelf just stretches them without a new layout, which keeps the app at 60 frames per second.
-      final cols = math.max(1, box.maxWidth ~/ Shape.z(bentoTile)), unit = box.maxWidth / cols, all = boxes;
-      final key = '$cols/$bentoDice/${[for (final b in all) '${b.group}.${b.i}.${b.weight.toStringAsFixed(2)}'].join(',')}';
-      final laid = _bentoLaid?.$1 == key ? _bentoLaid!.$2 : _packed(all, cols, bentoDice), moved = _bentoLaid?.$1 != key;
+      final cols = math.max(1, box.maxWidth ~/ Shape.z(bentoTile)),
+          unit = box.maxWidth / cols,
+          all = boxes;
+      final key =
+          '$cols/$bentoDice/${[for (final b in all) '${b.group}.${b.i}.${b.weight.toStringAsFixed(2)}'].join(',')}';
+      final laid = _bentoLaid?.$1 == key
+              ? _bentoLaid!.$2
+              : _packed(all, cols, bentoDice),
+          moved = _bentoLaid?.$1 != key;
       _bentoLaid = (key, laid);
-      final rows = laid.fold(0, (a, l) => math.max(a, l.$2 + l.$4)), gap = Shape.s(3);
+      final rows = laid.fold(0, (a, l) => math.max(a, l.$2 + l.$4)),
+          gap = Shape.s(3);
       return ContextMenu(
         key: _boxMenu,
         child: SizedBox(
@@ -121,13 +136,17 @@ class Bento extends StatelessWidget {
               for (final (k, b) in all.indexed)
                 AnimatedPositioned(
                   key: ValueKey('${b.group}-${b.i}'),
-                  duration: moved ? const Duration(milliseconds: 200) : Duration.zero,
+                  duration: moved
+                      ? const Duration(milliseconds: 200)
+                      : Duration.zero,
                   curve: Curves.easeOutCubic,
                   left: laid[k].$1 * unit,
                   top: laid[k].$2 * unit,
                   width: laid[k].$3 * unit - gap,
                   height: laid[k].$4 * unit - gap,
-                  child: b.grad != null ? _GradientTile('grad-${b.i}', b.grad!, c) : _ColorBox(b, c),
+                  child: b.grad != null
+                      ? _GradientTile('grad-${b.i}', b.grad!, c)
+                      : _ColorBox(b, c),
                 ),
             ],
           ),
@@ -146,7 +165,9 @@ class _ColorBox extends StatelessWidget {
   final ShelfContext c;
   @override
   Widget build(BuildContext context) {
-    final col = b.colour!, own = b.group == 'mine', pal = colorPalettes.where((p) => p.id == b.group).firstOrNull;
+    final col = b.colour!,
+        own = b.group == 'mine',
+        pal = colorPalettes.where((p) => p.id == b.group).firstOrNull;
     return DockHover(
       key: ValueKey('colour-box-${b.group}-${b.i}'),
       onMenu: (at) {
@@ -179,7 +200,10 @@ class _ColorBox extends StatelessWidget {
         ];
         if (items.isEmpty) return;
         final box = _boxMenu.currentContext?.findRenderObject() as RenderBox?;
-        _boxMenu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, items);
+        _boxMenu.currentState?.show(
+          box?.globalToLocal(at) ?? Offset.zero,
+          items,
+        );
       },
       onHover: (on) {
         paletteShown.value = on ? b.group : palettePressed;
@@ -197,7 +221,9 @@ class _ColorBox extends StatelessWidget {
             decoration: BoxDecoration(
               color: col,
               borderRadius: BorderRadius.all(Shape.r(over == b.group ? 3 : 5)),
-              border: wheelFrom == hexOfColor(col).substring(1).toLowerCase() ? Border.all(color: Grey.g95, width: 2) : null,
+              border: wheelFrom == hexOfColor(col).substring(1).toLowerCase()
+                  ? Border.all(color: Grey.g95, width: 2)
+                  : null,
             ),
           );
           return over != b.group
@@ -226,7 +252,9 @@ class _GradientTile extends StatelessWidget {
   final ShelfContext c;
   @override
   Widget build(BuildContext context) {
-    final word = [for (final k in g.colors) hexOfColor(k).substring(1).toLowerCase()].join(' ');
+    final word = [
+      for (final k in g.colors) hexOfColor(k).substring(1).toLowerCase(),
+    ].join(' ');
     final (look, at) = _previewOf(g.colors, g.blend, g.at);
     return Semantics(
       label: g.name,
@@ -236,23 +264,34 @@ class _GradientTile extends StatelessWidget {
             ? null
             : (at) {
                 // The menu of the user's own gradient, which can be deleted like the user's own colors.
-                final box = _boxMenu.currentContext?.findRenderObject() as RenderBox?;
-                _boxMenu.currentState?.show(box?.globalToLocal(at) ?? Offset.zero, [
-                  ContextMenuItem(
-                    'Delete this gradient',
-                    () => c.set(() {
-                      ownGradients.remove(g);
-                      colorsKeep();
-                    }),
-                  ),
-                ]);
+                final box =
+                    _boxMenu.currentContext?.findRenderObject() as RenderBox?;
+                _boxMenu.currentState?.show(
+                  box?.globalToLocal(at) ?? Offset.zero,
+                  [
+                    ContextMenuItem(
+                      'Delete this gradient',
+                      () => c.set(() {
+                        ownGradients.remove(g);
+                        colorsKeep();
+                      }),
+                    ),
+                  ],
+                );
               },
-        onTap: () => putGradient(c, g.colors, g.blend, g.at), // Applies it with the stop positions and blend it was saved with.
+        onTap: () => putGradient(
+          c,
+          g.colors,
+          g.blend,
+          g.at,
+        ), // Applies it with the stop positions and blend it was saved with.
         builder: (context, h) => Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(colors: look, stops: at),
             borderRadius: BorderRadius.all(Shape.r(5)),
-            border: wheelFrom == word ? Border.all(color: Grey.g95, width: 2) : (h ? Border.all(color: Grey.g76) : null),
+            border: wheelFrom == word
+                ? Border.all(color: Grey.g95, width: 2)
+                : (h ? Border.all(color: Grey.g76) : null),
           ),
         ),
       ),
@@ -261,7 +300,11 @@ class _GradientTile extends StatelessWidget {
 }
 
 /// The stops for a gradient's preview on the shelf, mixed as the engine will mix it. OKLab is drawn with CAM16, the nearest perceptual mix Flutter has.
-(List<Color>, List<double>?) _previewOf(List<Color> cs, String blend, [List<double>? at]) => at != null && blend == 'rgb'
+(List<Color>, List<double>?) _previewOf(
+  List<Color> cs,
+  String blend, [
+  List<double>? at,
+]) => at != null && blend == 'rgb'
     ? (cs, at)
     : switch (blend) {
         'steps' => (
@@ -269,13 +312,21 @@ class _GradientTile extends StatelessWidget {
             for (final c in cs) ...[c, c],
           ],
           [
-            for (var i = 0; i < cs.length; i++) ...[i / cs.length, (i + 1) / cs.length],
+            for (var i = 0; i < cs.length; i++) ...[
+              i / cs.length,
+              (i + 1) / cs.length,
+            ],
           ],
         ),
         'hue' => (
           [
             for (var i = 0; i < cs.length - 1; i++)
-              for (var k = 0; k < 6; k++) HSVColor.lerp(HSVColor.fromColor(cs[i]), HSVColor.fromColor(cs[i + 1]), k / 6)!.toColor(),
+              for (var k = 0; k < 6; k++)
+                HSVColor.lerp(
+                  HSVColor.fromColor(cs[i]),
+                  HSVColor.fromColor(cs[i + 1]),
+                  k / 6,
+                )!.toColor(),
             cs.last,
           ],
           null,
@@ -291,7 +342,8 @@ List<Color> _stopsOf(List<Color> cs, bool smooth) {
   if (!smooth || cs.length < 2) return cs;
   final out = <Color>[];
   for (var i = 0; i < cs.length - 1; i++) {
-    final a = Cam16.fromInt(cs[i].toARGB32()), b = Cam16.fromInt(cs[i + 1].toARGB32());
+    final a = Cam16.fromInt(cs[i].toARGB32()),
+        b = Cam16.fromInt(cs[i + 1].toARGB32());
     for (var k = 0; k < 5; k++) {
       final t = k / 5;
       out.add(

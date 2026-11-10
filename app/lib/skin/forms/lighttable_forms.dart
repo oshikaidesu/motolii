@@ -14,10 +14,18 @@ import 'package:motolii/widgets/media.dart' show Draw;
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/skin/forms/forms.dart';
 
-const _film = Color(0xFF1B1A18), _opal = Color(0xFFF6F7F4), _grease = Color(0xFFF06A1E), _graphite = Color(0xFF26292B), _loupe = Color(0xFFA9AEAB);
+const _film = Color(0xFF1B1A18),
+    _opal = Color(0xFFF6F7F4),
+    _grease = Color(0xFFF06A1E),
+    _graphite = Color(0xFF26292B),
+    _loupe = Color(0xFFA9AEAB);
 
-TextStyle _mono(Color c, double size) =>
-    TextStyles.name(c).copyWith(fontFamily: TextStyles.mono, fontSize: TextStyles.px(size), height: 1.1, fontFeatures: const [FontFeature.tabularFigures()]);
+TextStyle _mono(Color c, double size) => TextStyles.name(c).copyWith(
+  fontFamily: TextStyles.mono,
+  fontSize: TextStyles.px(size),
+  height: 1.1,
+  fontFeatures: const [FontFeature.tabularFigures()],
+);
 
 /// A grease-pencil loop around its box.
 ///
@@ -28,15 +36,23 @@ class _Loop extends CustomPainter {
   final Color ink;
   @override
   void paint(Canvas c, Size s) {
-    final rnd = math.Random(seed), a0 = rnd.nextDouble() * math.pi * 2, lean = (rnd.nextDouble() - .5) * .08;
-    final rx = (s.width / 2 - 2) / 1.08, ry = (s.height / 2 - 2) / 1.08, k = 2 + rnd.nextInt(2), ph = rnd.nextDouble() * 6;
+    final rnd = math.Random(seed),
+        a0 = rnd.nextDouble() * math.pi * 2,
+        lean = (rnd.nextDouble() - .5) * .08;
+    final rx = (s.width / 2 - 2) / 1.08,
+        ry = (s.height / 2 - 2) / 1.08,
+        k = 2 + rnd.nextInt(2),
+        ph = rnd.nextDouble() * 6;
     final p = Path();
     for (var i = 0; i <= 72; i++) {
       // The loop runs 72 of 64 steps, so the pencil goes past where it started.
       final t = a0 + i / 64 * math.pi * 2;
       final w = 1 + .045 * math.sin(k * t + ph) - .05 * i / 72;
       final x = rx * w * math.cos(t), y = ry * w * math.sin(t);
-      final pt = Offset(s.width / 2 + x * math.cos(lean) - y * math.sin(lean), s.height / 2 + x * math.sin(lean) + y * math.cos(lean));
+      final pt = Offset(
+        s.width / 2 + x * math.cos(lean) - y * math.sin(lean),
+        s.height / 2 + x * math.sin(lean) + y * math.cos(lean),
+      );
       i == 0 ? p.moveTo(pt.dx, pt.dy) : p.lineTo(pt.dx, pt.dy);
     }
     c.drawPath(
@@ -69,15 +85,30 @@ class _Sprockets extends CustomPainter {
       c.drawRect(Rect.fromLTWH(0, 0, strip, s.height), film);
       final hw = strip * .42, hh = strip * .32, pitch = strip * .78;
       for (var y = strip * .3; y + hh < s.height; y += pitch) {
-        c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH((strip - hw) / 2, y, hw, hh), Radius.circular(hh * .25)), light);
+        c.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH((strip - hw) / 2, y, hw, hh),
+            Radius.circular(hh * .25),
+          ),
+          light,
+        );
       }
       return;
     }
     c.drawRect(Offset.zero & s, film);
-    final hh = s.height * .09, hw = s.height * .13, pitch = s.height * .26, m = s.height * .06;
+    final hh = s.height * .09,
+        hw = s.height * .13,
+        pitch = s.height * .26,
+        m = s.height * .06;
     for (var x = pitch * .3; x + hw < s.width; x += pitch) {
       for (final y in [m, s.height - m - hh]) {
-        c.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(x, y, hw, hh), Radius.circular(hh * .3)), light);
+        c.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(x, y, hw, hh),
+            Radius.circular(hh * .3),
+          ),
+          light,
+        );
       }
     }
   }
@@ -88,14 +119,29 @@ class _Sprockets extends CustomPainter {
 
 /// The arrow printed on the film edge: pointing right when closed, down when open.
 void _drawArrow(Canvas c, Size s, bool open, Color ink) {
-  final r = Rect.fromCenter(center: s.center(Offset.zero), width: s.shortestSide * .5, height: s.shortestSide * .5);
-  c.drawPath(Path()..addPolygon(open ? [r.topLeft, r.topRight, r.bottomCenter] : [r.topLeft, r.centerRight, r.bottomLeft], true), Paint()..color = ink);
+  final r = Rect.fromCenter(
+    center: s.center(Offset.zero),
+    width: s.shortestSide * .5,
+    height: s.shortestSide * .5,
+  );
+  c.drawPath(
+    Path()..addPolygon(
+      open
+          ? [r.topLeft, r.topRight, r.bottomCenter]
+          : [r.topLeft, r.centerRight, r.bottomLeft],
+      true,
+    ),
+    Paint()..color = ink,
+  );
 }
 
-Widget _looped(bool on, int seed, Widget child, {bool hand = false}) => CustomPaint(
-  foregroundPainter: on ? _Loop(seed) : (hand ? _Loop(seed, ink: _grease.withValues(alpha: .45)) : null),
-  child: child,
-);
+Widget _looped(bool on, int seed, Widget child, {bool hand = false}) =>
+    CustomPaint(
+      foregroundPainter: on
+          ? _Loop(seed)
+          : (hand ? _Loop(seed, ink: _grease.withValues(alpha: .45)) : null),
+      child: child,
+    );
 
 class LightTableForms extends Forms {
   const LightTableForms();
@@ -116,8 +162,15 @@ class LightTableForms extends Forms {
             st.isHovered || st.isPressed,
             7,
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: Shape.s(8), vertical: Shape.s(2)),
-              child: Text(a.label, maxLines: 1, style: TextStyles.name(_opal, 15, FontWeight.w700, 1.1)),
+              padding: EdgeInsets.symmetric(
+                horizontal: Shape.s(8),
+                vertical: Shape.s(2),
+              ),
+              child: Text(
+                a.label,
+                maxLines: 1,
+                style: TextStyles.name(_opal, 15, FontWeight.w700, 1.1),
+              ),
             ),
           ),
         ),
@@ -142,7 +195,11 @@ class LightTableForms extends Forms {
           width: Shape.z(40),
           height: Shape.z(22),
           alignment: Alignment.center,
-          child: Text(s.on ? 'On' : 'Off', maxLines: 1, style: _mono(s.on ? _graphite : Grey.g56, 12)),
+          child: Text(
+            s.on ? 'On' : 'Off',
+            maxLines: 1,
+            style: _mono(s.on ? _graphite : Grey.g56, 12),
+          ),
         ),
       ),
     ),
@@ -165,20 +222,42 @@ class LightTableForms extends Forms {
                   Container(
                     width: Shape.z(9),
                     height: Shape.z(9),
-                    decoration: BoxDecoration(color: c.tone ?? _loupe, shape: BoxShape.circle),
+                    decoration: BoxDecoration(
+                      color: c.tone ?? _loupe,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                   SizedBox(width: Shape.s(7)),
                   Expanded(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
-                      child: Text(c.title!, maxLines: 1, style: TextStyles.name(_graphite, 17, FontWeight.w600, 1.1)),
+                      child: Text(
+                        c.title!,
+                        maxLines: 1,
+                        style: TextStyles.name(
+                          _graphite,
+                          17,
+                          FontWeight.w600,
+                          1.1,
+                        ),
+                      ),
                     ),
                   ),
                   ?c.trailing,
                   SizedBox.square(
                     dimension: Shape.z(22),
-                    child: CustomPaint(painter: Draw((cv, s) => _drawArrow(cv, s, c.open, st.isHovered ? _grease : _loupe), (c.open, st.isHovered))),
+                    child: CustomPaint(
+                      painter: Draw(
+                        (cv, s) => _drawArrow(
+                          cv,
+                          s,
+                          c.open,
+                          st.isHovered ? _grease : _loupe,
+                        ),
+                        (c.open, st.isHovered),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -189,8 +268,17 @@ class LightTableForms extends Forms {
       child: Container(
         color: _opal.withValues(alpha: .6),
         margin: EdgeInsets.only(left: strip),
-        padding: EdgeInsets.fromLTRB(Shape.s(10), Shape.s(2), Shape.s(6), Shape.s(6)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [?head, if (c.open) ...c.body]),
+        padding: EdgeInsets.fromLTRB(
+          Shape.s(10),
+          Shape.s(2),
+          Shape.s(6),
+          Shape.s(6),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [?head, if (c.open) ...c.body],
+        ),
       ),
     );
   }

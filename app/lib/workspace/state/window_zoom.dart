@@ -10,7 +10,9 @@ abstract final class WindowZoom {
   /// The zoom a window opens at and a double-click returns to. At 100% the parts looked too large.
   static const usual = .88;
 
-  static final value = ValueNotifier<double>((double.tryParse(WindowFile.get('Zoom') ?? '') ?? usual).clamp(.5, 2.0));
+  static final value = ValueNotifier<double>(
+    (double.tryParse(WindowFile.get('Zoom') ?? '') ?? usual).clamp(.5, 2.0),
+  );
 
   /// Sets the zoom, rounded to the nearest 1% and limited to 50% to 200%. Unless [keep] is false, it is also saved for the next run.
   static void set(double z, {bool keep = true}) {

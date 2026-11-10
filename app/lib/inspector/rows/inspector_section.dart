@@ -13,7 +13,13 @@ import 'package:motolii/widgets/media.dart' show Draw;
 ///
 /// Alt-click folds or opens every card of the document at once, like Option-click on a disclosure triangle in Finder's list view.
 class Section extends StatelessWidget {
-  const Section({super.key, required this.title, required this.children, required this.trailing, required this.tone});
+  const Section({
+    super.key,
+    required this.title,
+    required this.children,
+    required this.trailing,
+    required this.tone,
+  });
 
   /// The heading text. It also names the card's fold flag in the document.
   final String title;
@@ -32,7 +38,9 @@ class Section extends StatelessWidget {
     final doc = InspectorScope.of(context).doc;
     final open = !(doc.b['fold.$title'] ?? false);
     void toggle() {
-      if (!HardwareKeyboard.instance.isAltPressed) return doc.flag('fold.$title', open);
+      if (!HardwareKeyboard.instance.isAltPressed) {
+        return doc.flag('fold.$title', open);
+      }
       for (final c in doc.cards) {
         doc.flag('fold.${c.name}', open);
       }
@@ -52,7 +60,10 @@ class Section extends StatelessWidget {
               tone,
               size: 16,
               radius: const Radius.circular(16 * .32),
-              mark: Draw((c, s) => drawLayerMark(c, s, InspectorSkin.onAccent), InspectorSkin.onAccent),
+              mark: Draw(
+                (c, s) => drawLayerMark(c, s, InspectorSkin.onAccent),
+                InspectorSkin.onAccent,
+              ),
             ),
             SizedBox(width: Shape.s(6)),
             Flexible(
@@ -60,7 +71,10 @@ class Section extends StatelessWidget {
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyles.title(h ? Grey.g100 : Grey.g95).copyWith(fontSize: TextStyles.px(12), fontWeight: FontWeight.w700),
+                style: TextStyles.title(h ? Grey.g100 : Grey.g95).copyWith(
+                  fontSize: TextStyles.px(12),
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             const Expanded(child: SizedBox()),
@@ -71,7 +85,10 @@ class Section extends StatelessWidget {
     );
     final body = open ? children : const <Widget>[];
     final content = Padding(
-      padding: EdgeInsets.symmetric(horizontal: InspectorSkin.inset, vertical: InspectorSkin.insetY),
+      padding: EdgeInsets.symmetric(
+        horizontal: InspectorSkin.inset,
+        vertical: InspectorSkin.insetY,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
@@ -86,7 +103,16 @@ class Section extends StatelessWidget {
       padding: EdgeInsets.only(bottom: InspectorSkin.gap),
       child: Forms.worn.card(
         context,
-        CardSpec(title: title, tone: tone, open: open, onToggle: toggle, trailing: trailing, body: body, head: head, own: content),
+        CardSpec(
+          title: title,
+          tone: tone,
+          open: open,
+          onToggle: toggle,
+          trailing: trailing,
+          body: body,
+          head: head,
+          own: content,
+        ),
       ),
     );
   }

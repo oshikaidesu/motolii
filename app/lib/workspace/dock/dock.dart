@@ -40,9 +40,21 @@ class ShelfPane extends StatefulWidget {
 class _ShelfPaneState extends State<ShelfPane> {
   // What the shelf remembers of itself (selection, folds, search). It lives in the window's view,
   // so the shelf looks the same when it is opened again.
-  ShelfMemory get _mem => WorkspaceScope.read(context).view.putIfAbsent('dock.${widget.name}', ShelfMemory.new) as ShelfMemory;
-  late final TextEditingController _search = TextEditingController(text: WorkspaceScope.read(context).viewOf('dock.${widget.name}.search', ''))
-    ..addListener(() => setState(() => WorkspaceScope.read(context).view['dock.${widget.name}.search'] = _search.text));
+  ShelfMemory get _mem =>
+      WorkspaceScope.read(context).view
+              .putIfAbsent('dock.${widget.name}', ShelfMemory.new)
+          as ShelfMemory;
+  late final TextEditingController _search =
+      TextEditingController(
+        text: WorkspaceScope.read(context)
+            .viewOf('dock.${widget.name}.search', ''),
+      )..addListener(
+        () => setState(
+          () =>
+              WorkspaceScope.read(context).view['dock.${widget.name}.search'] =
+                  _search.text,
+        ),
+      );
 
   // The shelf follows the document one frame after the render thread. After a change, the inspector and the canvas
   // build in that frame and the shelf in the next, once for all the changes since. Building them together
@@ -55,7 +67,11 @@ class _ShelfPaneState extends State<ShelfPane> {
   int? _rev;
   Object? _shows;
   Object _showing(WorkspaceController ws) => switch (widget.name) {
-    'Effects' => (ws.screenFx.join(' '), ws.motion, ws.fxOf(ws.selected).join(' ')),
+    'Effects' => (
+      ws.screenFx.join(' '),
+      ws.motion,
+      ws.fxOf(ws.selected).join(' '),
+    ),
     'Create' => ws.layers.map((l) => '${l.id} ${l.name}').join(' '),
     _ => ws.rev,
   };
@@ -88,7 +104,10 @@ class _ShelfPaneState extends State<ShelfPane> {
     super.didChangeDependencies();
     final ws = WorkspaceScope.read(context);
     if (ws != _ws) {
-      for (final a in const [WorkspaceAspect.document, WorkspaceAspect.picked]) {
+      for (final a in const [
+        WorkspaceAspect.document,
+        WorkspaceAspect.picked,
+      ]) {
         _ws?.on[a]!.removeListener(_later);
         ws.on[a]!.addListener(_later);
       }
@@ -108,7 +127,14 @@ class _ShelfPaneState extends State<ShelfPane> {
   @override
   Widget build(BuildContext context) {
     final ws = WorkspaceScope.read(context), name = widget.name;
-    final c = ShelfContext(name, _mem, _search.text.trim(), ws, setState, _search.clear);
+    final c = ShelfContext(
+      name,
+      _mem,
+      _search.text.trim(),
+      ws,
+      setState,
+      _search.clear,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -116,8 +142,16 @@ class _ShelfPaneState extends State<ShelfPane> {
           name,
           trailing: [
             if (name == 'Media') ...[
-              IconPress(dockMark(AppGlyphs.grid), on: !_mem.mediaList, onTap: () => setState(() => _mem.mediaList = false)),
-              IconPress(dockMark(AppGlyphs.list), on: _mem.mediaList, onTap: () => setState(() => _mem.mediaList = true)),
+              IconPress(
+                dockMark(AppGlyphs.grid),
+                on: !_mem.mediaList,
+                onTap: () => setState(() => _mem.mediaList = false),
+              ),
+              IconPress(
+                dockMark(AppGlyphs.list),
+                on: _mem.mediaList,
+                onTap: () => setState(() => _mem.mediaList = true),
+              ),
               IconPress(
                 dockMark(AppGlyphs.folder),
                 on: _mem.mediaDeep,
@@ -126,11 +160,20 @@ class _ShelfPaneState extends State<ShelfPane> {
               IconPress(
                 dockMark(AppGlyphs.files),
                 on: _mem.treeSide != 0,
-                onTap: () => setState(() => _mem.treeSide = (_mem.treeSide + 1) % 3),
+                onTap: () =>
+                    setState(() => _mem.treeSide = (_mem.treeSide + 1) % 3),
               ), // Cycles the folder tree between automatic, left and above.
             ] else if (name == 'Program') ...[
-              IconPress(dockMark(AppGlyphs.list), on: !_mem.programCode, onTap: () => setState(() => _mem.programCode = false)),
-              IconPress(dockMark(AppGlyphs.program), on: _mem.programCode, onTap: () => setState(() => _mem.programCode = true)),
+              IconPress(
+                dockMark(AppGlyphs.list),
+                on: !_mem.programCode,
+                onTap: () => setState(() => _mem.programCode = false),
+              ),
+              IconPress(
+                dockMark(AppGlyphs.program),
+                on: _mem.programCode,
+                onTap: () => setState(() => _mem.programCode = true),
+              ),
             ] else ...[
               if (name == 'Effects' || name == 'Fonts') ...[
                 // Shows the items as rows or as a map with similar items close together, like XO's Space beside its list (dock_map.dart).
@@ -155,22 +198,29 @@ class _ShelfPaneState extends State<ShelfPane> {
                     dockMark(AppGlyphs.reload),
                     key: const ValueKey('ws-fx-reload'),
                     on: EffectTiles.progress.value != null,
-                    onTap: ws.inside == null ? null : () => EffectTiles.again(ws.inside!, file: c.sel),
+                    onTap: ws.inside == null
+                        ? null
+                        : () => EffectTiles.again(ws.inside!, file: c.sel),
                   ),
                 ),
               ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: Shape.z(88)),
                 child: ListenableBuilder(
-                  listenable: Listenable.merge([dockRead, EffectTiles.progress]),
+                  listenable: Listenable.merge([
+                    dockRead,
+                    EffectTiles.progress,
+                  ]),
                   builder: (context, _) => Text(
                     switch (name) {
                       // What the engine offers: its fonts and effects, the colors the document uses, and the tile drawing progress.
                       'Fonts' => '${fontsOffered ?? '…'} fonts',
                       'Effects' => switch (EffectTiles.progress.value) {
                         (final done, final all) => '$done of $all',
-                        null => '${(ws.inside?.layerEffects.length ?? 0) + (ws.inside?.effects.length ?? 0)} ready',
+                        null =>
+                          '${(ws.inside?.layerEffects.length ?? 0) + (ws.inside?.effects.length ?? 0)} ready',
                       },
-                      'Colors' => '${usedColors(ws).values.toSet().length} used here',
+                      'Colors' =>
+                        '${usedColors(ws).values.toSet().length} used here',
                       'Create' => createFact(ws),
                       'Presets' => '0',
                       _ => '',
@@ -191,7 +241,10 @@ class _ShelfPaneState extends State<ShelfPane> {
             final done = DockTags.completing(name, _search.text);
             if (done.isEmpty) return const SizedBox.shrink();
             return Padding(
-              padding: EdgeInsets.symmetric(horizontal: WindowTokens.inset, vertical: Shape.s(3)),
+              padding: EdgeInsets.symmetric(
+                horizontal: WindowTokens.inset,
+                vertical: Shape.s(3),
+              ),
               child: SingleChildScrollView(
                 // All of them in one line that scrolls sideways, as the chips row does (BaseControls.chips).
                 scrollDirection: Axis.horizontal,
@@ -204,14 +257,21 @@ class _ShelfPaneState extends State<ShelfPane> {
                           final text = DockTags.complete(_search.text, t);
                           _search.value = TextEditingValue(
                             text: text,
-                            selection: TextSelection.collapsed(offset: text.length),
+                            selection: TextSelection.collapsed(
+                              offset: text.length,
+                            ),
                           );
                         },
                         builder: (context, h) => Container(
-                          padding: EdgeInsets.symmetric(horizontal: Shape.s(7), vertical: Shape.s(2)),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: Shape.s(7),
+                            vertical: Shape.s(2),
+                          ),
                           decoration: BoxDecoration(
                             color: h ? WindowTokens.raised : WindowTokens.well,
-                            borderRadius: BorderRadius.all(Shape.r(WindowTokens.chipRadius)),
+                            borderRadius: BorderRadius.all(
+                              Shape.r(WindowTokens.chipRadius),
+                            ),
                           ),
                           child: Text(t, style: TextStyles.micro(Grey.g91)),
                         ),
@@ -235,7 +295,11 @@ class _ShelfPaneState extends State<ShelfPane> {
               'Program' => ProgramShelf(c),
               'Presets' => Padding(
                 padding: EdgeInsets.all(Shape.s(24)),
-                child: Text('No presets yet', textAlign: TextAlign.center, style: TextStyles.label(Grey.g63)),
+                child: Text(
+                  'No presets yet',
+                  textAlign: TextAlign.center,
+                  style: TextStyles.label(Grey.g63),
+                ),
               ),
               _ => MediaShelf(c),
             },

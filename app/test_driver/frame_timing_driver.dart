@@ -10,10 +10,17 @@ Future<void> main() {
   return integrationDriver(
     responseDataCallback: (data) async {
       if (data == null) return;
-      final timeline = driver.Timeline.fromJson(data['frame_timing'] as Map<String, dynamic>);
+      final timeline = driver.Timeline.fromJson(
+        data['frame_timing'] as Map<String, dynamic>,
+      );
       final summary = driver.TimelineSummary.summarize(timeline);
       // (chrome://tracing opens the full timeline; the summary has the budget counts)
-      await summary.writeTimelineToFile('frame_timing', pretty: true, includeSummary: true, destinationDirectory: 'build/test_output');
+      await summary.writeTimelineToFile(
+        'frame_timing',
+        pretty: true,
+        includeSummary: true,
+        destinationDirectory: 'build/test_output',
+      );
       final s = summary.summaryJson;
       final frames = s['frame_count'] as int;
       final build = s['missed_frame_build_budget_count'] as int;
@@ -23,8 +30,16 @@ Future<void> main() {
         'frames $frames, missed build budget $build (worst ${s['worst_frame_build_time_millis']} ms), '
         'missed raster budget $raster (worst ${s['worst_frame_rasterizer_time_millis']} ms)',
       );
-      if (frames == 0) throw StateError('no frames were recorded: the interaction drew nothing');
-      if (build + raster > 0) throw StateError('$build build and $raster raster frames missed the 16 ms budget');
+      if (frames == 0) {
+        throw StateError(
+          'no frames were recorded: the interaction drew nothing',
+        );
+      }
+      if (build + raster > 0) {
+        throw StateError(
+          '$build build and $raster raster frames missed the 16 ms budget',
+        );
+      }
     },
   );
 }

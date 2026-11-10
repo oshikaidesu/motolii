@@ -8,7 +8,8 @@ import 'dart:io';
 
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/bridge/engine_paths.dart';
-import 'package:motolii/workspace/shelf/copies_tiles.dart' show TileQueue, drawTiles, tileHome;
+import 'package:motolii/workspace/shelf/copies_tiles.dart'
+    show TileQueue, drawTiles, tileHome;
 
 abstract final class MaterialTiles {
   static final _tiles = TileQueue<(String, String)>(draw);
@@ -35,16 +36,26 @@ abstract final class MaterialTiles {
   /// - Lit: red and glossy, to show sharp highlights.
   /// - Cloth: blue and rough with sheen. Filament's cloth has no highlight and a soft rim.
   /// - Subsurface: orange and thin, lit from behind. Filament's subsurface glows at the edge and fills the shadow warm.
-  static const _shows = <String, (String, Map<String, double>, (double, double)?)>{
-    'lit': ('e8452c', {'roughness': .25}, null),
-    'cloth': ('2a3fa8', {'roughness': 1, 'sheen': 1}, (150, 1.5)),
-    'subsurface': ('ff5a2a', {'thickness': .02, 'roughness': .7}, (180, 1.5)),
-  };
+  static const _shows =
+      <String, (String, Map<String, double>, (double, double)?)>{
+        'lit': ('e8452c', {'roughness': .25}, null),
+        'cloth': ('2a3fa8', {'roughness': 1, 'sheen': 1}, (150, 1.5)),
+        'subsurface': (
+          'ff5a2a',
+          {'thickness': .02, 'roughness': .7},
+          (180, 1.5),
+        ),
+      };
 
   /// The cache path of the tile for [wears]. It depends on the material, how it is shown, and when its compiled material was written.
   static String home(String wears) {
-    final f = File('$motoliiDir/out/filament_webgpu/${_filamat[wears] ?? wears}.filamat');
-    return tileHome('material', 'material|$wears|${_shows[wears]}|${f.existsSync() ? f.lastModifiedSync().microsecondsSinceEpoch : 0}');
+    final f = File(
+      '$motoliiDir/out/filament_webgpu/${_filamat[wears] ?? wears}.filamat',
+    );
+    return tileHome(
+      'material',
+      'material|$wears|${_shows[wears]}|${f.existsSync() ? f.lastModifiedSync().microsecondsSinceEpoch : 0}',
+    );
   }
 
   /// The tile for [wears], or '' if it is not drawn yet or the engine failed to draw it. Requests it once.
@@ -54,36 +65,45 @@ abstract final class MaterialTiles {
   }
 
   /// Draws each material's tile at its home path and returns the paths drawn.
-  static List<String> draw(String dir, List<(String, String)> materials) => drawTiles(dir, 'motolii_materials', materials, (j) => j.$2, (m, job, home) {
-    final wears = job.$1, back = m.add('shape', 'rect'); // The backdrop glass bends and tints: a colour ramp.
-    m
-      ..say(back, 'fill', 'ff3366 3366ff')
-      ..set(back, 'gradient_angle', 90)
-      ..set(back, 'scale_x', 4)
-      ..set(back, 'scale_y', 4)
-      ..set(back, 'z', -1);
-    final ball = m.add('solid', 'ball');
-    m
-      ..say(ball, 'shading', wears)
-      ..set(ball, 'scale_x', 1.4)
-      ..set(ball, 'scale_y', 1.4)
-      ..set(ball, 'scale_z', 1.4);
-    if (_shows[wears] case (final fill, final numbers, final sun)) {
-      m.say(ball, 'fill', fill);
-      for (final e in numbers.entries) {
-        m.set(ball, e.key, e.value);
-      }
-      if (sun != null) {
-        final light = m.add('light', 'sun');
+  static List<String> draw(String dir, List<(String, String)> materials) =>
+      drawTiles(dir, 'motolii_materials', materials, (j) => j.$2, (
+        m,
+        job,
+        home,
+      ) {
+        final wears = job.$1,
+            back = m.add(
+              'shape',
+              'rect',
+            ); // The backdrop glass bends and tints: a colour ramp.
         m
-          ..set(light, 'rotate_y', sun.$1)
-          ..set(light, 'intensity', sun.$2);
-      }
-    }
-    final still = '${home.substring(0, home.length - 4)}_still.png';
-    if (!m.at(0) || !m.still(still)) return false;
-    Process.runSync('sips', ['-Z', '192', still]);
-    File(still).renameSync(home);
-    return true;
-  });
+          ..say(back, 'fill', 'ff3366 3366ff')
+          ..set(back, 'gradient_angle', 90)
+          ..set(back, 'scale_x', 4)
+          ..set(back, 'scale_y', 4)
+          ..set(back, 'z', -1);
+        final ball = m.add('solid', 'ball');
+        m
+          ..say(ball, 'shading', wears)
+          ..set(ball, 'scale_x', 1.4)
+          ..set(ball, 'scale_y', 1.4)
+          ..set(ball, 'scale_z', 1.4);
+        if (_shows[wears] case (final fill, final numbers, final sun)) {
+          m.say(ball, 'fill', fill);
+          for (final e in numbers.entries) {
+            m.set(ball, e.key, e.value);
+          }
+          if (sun != null) {
+            final light = m.add('light', 'sun');
+            m
+              ..set(light, 'rotate_y', sun.$1)
+              ..set(light, 'intensity', sun.$2);
+          }
+        }
+        final still = '${home.substring(0, home.length - 4)}_still.png';
+        if (!m.at(0) || !m.still(still)) return false;
+        Process.runSync('sips', ['-Z', '192', still]);
+        File(still).renameSync(home);
+        return true;
+      });
 }

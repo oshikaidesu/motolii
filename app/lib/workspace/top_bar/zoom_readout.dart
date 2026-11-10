@@ -35,7 +35,10 @@ class _ZoomReadoutState extends State<ZoomReadout> {
       },
       onReset: () => WindowZoom.set(WindowZoom.usual),
       paint: (_, shown, _) => Padding(
-        padding: EdgeInsets.symmetric(horizontal: Shape.s(4), vertical: Shape.s(4)),
+        padding: EdgeInsets.symmetric(
+          horizontal: Shape.s(4),
+          vertical: Shape.s(4),
+        ),
         child: shown,
       ),
     ),

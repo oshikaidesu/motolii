@@ -29,7 +29,8 @@ abstract final class WindowTokens {
 
   /// The one accent (same as the Inspector's) and the ink drawn on it.
   static Color get accent => Accent.fill;
-  static Color get accentHot => Color.lerp(accent, const Color(0xFFFFFFFF), .14)!;
+  static Color get accentHot =>
+      Color.lerp(accent, const Color(0xFFFFFFFF), .14)!;
   static Color get onAccent => Accent.on;
   static Color get keyDot => Accent.key;
 
@@ -48,12 +49,15 @@ abstract final class WindowTokens {
   static Color get toneShape => ColorTheme.of('Clip1', const Color(0xFFF08A5D));
   static Color get toneText => ColorTheme.of('Clip2', const Color(0xFFD9D2C3));
   static Color get toneImage => ColorTheme.of('Clip3', const Color(0xFF7FB8B0));
-  static Color get toneCamera => ColorTheme.of('Clip4', const Color(0xFFA7B4C8));
+  static Color get toneCamera =>
+      ColorTheme.of('Clip4', const Color(0xFFA7B4C8));
   static Color get toneGroup => ColorTheme.of('Clip5', const Color(0xFFB0A6F0));
-  static Color get toneParticles => ColorTheme.of('Clip6', const Color(0xFFF2A65A));
+  static Color get toneParticles =>
+      ColorTheme.of('Clip6', const Color(0xFFF2A65A));
   static Color get toneAudio => ColorTheme.of('Clip7', const Color(0xFF5CC8E8));
   // The marks on the ruler for a layer's intro and outro, like Alight Motion's small yellow ones.
-  static Color get toneMark => ColorTheme.of('ElementMark', const Color(0xFFF2C94C));
+  static Color get toneMark =>
+      ColorTheme.of('ElementMark', const Color(0xFFF2C94C));
 
   /// The playhead line: the accent, so "now" is the loudest line in the window. Its head is an [accent] fill.
   static Color get playhead => accentInk;

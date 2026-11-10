@@ -22,7 +22,8 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
 
   /// Moves the playhead to the nearest stop in direction [way] (After Effects' J and K).
   void hop(int way) {
-    final all = ws.stops().where((f) => (f - ws.frame) * way > 0).toList()..sort();
+    final all = ws.stops().where((f) => (f - ws.frame) * way > 0).toList()
+      ..sort();
     if (all.isNotEmpty) step((way > 0 ? all.first : all.last) - ws.frame);
   }
 
@@ -35,7 +36,11 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
     if (ws.keys.isNotEmpty) {
       slideKeyframes(ws, ws.keys.toList(), by);
       ws.pickKeys([
-        for (final k in ws.keys) (layer: k.layer, frame: (k.frame + by).clamp(0, WorkspaceController.duration)),
+        for (final k in ws.keys)
+          (
+            layer: k.layer,
+            frame: (k.frame + by).clamp(0, WorkspaceController.duration),
+          ),
       ]); // The keyframes stay selected at their new frames.
       return;
     }
@@ -50,7 +55,9 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
   void row(int by) {
     if (ws.layers.isEmpty) return;
     final i = ws.layers.indexWhere((l) => l.id == ws.selected);
-    ws.select(ws.layers[(i < 0 ? 0 : i + by).clamp(0, ws.layers.length - 1)].id);
+    ws.select(
+      ws.layers[(i < 0 ? 0 : i + by).clamp(0, ws.layers.length - 1)].id,
+    );
   }
 
   return {
@@ -76,12 +83,21 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
     'layer.previous': () => row(-1),
     'layer.next': () => row(1),
     // Live 42.5 and 42.19 Cmd+R: renames the selected track, or the selected locator.
-    'thing.rename': () => ws.selected == null && selectedMarker.value == null ? null : renameRequested.value++,
+    'thing.rename': () => ws.selected == null && selectedMarker.value == null
+        ? null
+        : renameRequested.value++,
     'thing.solo': () {
       // Live 42.15 and 42.19 S: solo the selected tracks.
       final t = int.tryParse(ws.selected ?? ''), m = ws.inside;
       if (t == null || m == null) return;
-      ws.after(m.later('set', layer: t, name: 'solo', number: ws.layer?.solo == true ? 0 : 1));
+      ws.after(
+        m.later(
+          'set',
+          layer: t,
+          name: 'solo',
+          number: ws.layer?.solo == true ? 0 : 1,
+        ),
+      );
     },
     'thing.lanes': () {
       // After Effects' U: shows the keyframed properties of the selected layers, and hides them when pressed again.
@@ -90,12 +106,17 @@ Map<String, void Function()> abletonCommands(WorkspaceController ws) {
     },
     // Apple Motion's A (Mark > Record Animation). The top bar's Animate and the inspector's Animate All do the same.
     'mark.animate': () => ws.animating = !ws.animating,
-    'loop.toggle': () => requestTimeline('loop'), // Live 42.16 Cmd+L: toggle the loop brace.
-    'zoom.in': () => requestTimeline('in'), // Live 42.9 +: zoom in on the time ruler.
+    'loop.toggle': () =>
+        requestTimeline('loop'), // Live 42.16 Cmd+L: toggle the loop brace.
+    'zoom.in': () =>
+        requestTimeline('in'), // Live 42.9 +: zoom in on the time ruler.
     'zoom.out': () => requestTimeline('out'), // Live 42.9 -.
-    'zoom.selection': () => requestTimeline('selection'), // Live 42.16 Z: zoom to the time selection.
+    'zoom.selection': () => requestTimeline(
+      'selection',
+    ), // Live 42.16 Z: zoom to the time selection.
     'zoom.back': () => requestTimeline('back'), // Live 42.16 X: zoom back.
-    'zoom.width': () => requestTimeline('fit'), // Live 42.16 W: fit the whole width.
+    'zoom.width': () =>
+        requestTimeline('fit'), // Live 42.16 W: fit the whole width.
     // Live has no frame step. These are the Rive and Jitter keys, comma and period.
     'frame.previous': () => step(-1),
     'frame.next': () => step(1),

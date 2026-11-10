@@ -7,7 +7,8 @@ import 'package:motolii/inspector/rows/inspector_section.dart';
 import 'package:motolii/skin/theme.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
-import 'package:motolii/widgets/controls.dart' show Badge, Chip, ChipLook, Pressable;
+import 'package:motolii/widgets/controls.dart'
+    show Badge, Chip, ChipLook, Pressable;
 import 'package:motolii/widgets/media.dart' show Draw, glyph;
 import 'package:motolii/widgets/glyphs.dart' show Glyph;
 import 'package:motolii/widgets/timeline_painters.dart' show TimelineGlyphs;
@@ -48,7 +49,12 @@ class CardWords extends StatelessWidget {
         ])
           Padding(
             padding: EdgeInsets.only(right: Shape.s(6)),
-            child: Chip(key: ValueKey('card-${word.toLowerCase()}:$name'), label: word, onTap: does, look: ChipLook.word),
+            child: Chip(
+              key: ValueKey('card-${word.toLowerCase()}:$name'),
+              label: word,
+              onTap: does,
+              look: ChipLook.word,
+            ),
           ),
         if (more.isNotEmpty) CardMore(name: name, items: more),
       ],
@@ -62,7 +68,11 @@ class ValuesCard extends StatelessWidget {
   final CardDeclaration card;
   @override
   Widget build(BuildContext context) {
-    final x = InspectorScope.of(context), doc = x.doc, k = 'v.${card.name}', adv = doc.b['$k.adv'] ?? false, past = doc.b['$k.past'] ?? false;
+    final x = InspectorScope.of(context),
+        doc = x.doc,
+        k = 'v.${card.name}',
+        adv = doc.b['$k.adv'] ?? false,
+        past = doc.b['$k.past'] ?? false;
     final heroes = [
           for (final p in card.params)
             if (!p.advanced) p,
@@ -77,7 +87,10 @@ class ValuesCard extends StatelessWidget {
     final sect = Section(
       title: card.name,
       tone: card.tone,
-      trailing: (at < 0 || doc.onCardMove == null) && doc.onCardReset == null && doc.onCardCopy == null
+      trailing:
+          (at < 0 || doc.onCardMove == null) &&
+              doc.onCardReset == null &&
+              doc.onCardCopy == null
           ? null
           : Row(
               mainAxisSize: MainAxisSize.min,
@@ -89,14 +102,25 @@ class ValuesCard extends StatelessWidget {
                     onTap: () => doc.flag('$k.past', false),
                     builder: (_, h) => Padding(
                       padding: EdgeInsets.only(right: Shape.s(6)),
-                      child: Glyph(TimelineGlyphs.unlock, size: 12, color: h ? Grey.g95 : Grey.g76, fade: true),
+                      child: Glyph(
+                        TimelineGlyphs.unlock,
+                        size: 12,
+                        color: h ? Grey.g95 : Grey.g76,
+                        fade: true,
+                      ),
                     ),
                   ),
                 if (at < 0)
                   CardWords(
                     card.name,
                     [for (final p in card.params) p.id],
-                    more: [('past', past ? 'Stop at Range Ends' : 'Go Past Range Ends', () => doc.flag('$k.past', !past))],
+                    more: [
+                      (
+                        'past',
+                        past ? 'Stop at Range Ends' : 'Go Past Range Ends',
+                        () => doc.flag('$k.past', !past),
+                      ),
+                    ],
                   ),
                 // A script is added like an effect and removed the same way.
                 if (card.name == 'Script' && doc.onCardRemove != null)
@@ -105,19 +129,27 @@ class ValuesCard extends StatelessWidget {
                     onTap: () => doc.onCardRemove!(card.name),
                     builder: (_, h) => Padding(
                       padding: EdgeInsets.only(right: Shape.s(6)),
-                      child: glyph(Shape.z(12), (c, s) => _drawBin(c, s, h ? Grey.g95 : Grey.g56), h),
+                      child: glyph(
+                        Shape.z(12),
+                        (c, s) => _drawBin(c, s, h ? Grey.g95 : Grey.g56),
+                        h,
+                      ),
                     ),
                   ),
                 if (at >= 0) ...[
                   // An effect's header has the eye, the ⋮ menu with the rest, and the bin, as in AbsentMotion's EffectHeader and Alight Motion.
                   if (doc.onCardEye != null)
                     Pressable(
-                      key: ValueKey('card-${doc.cardsOff.contains(card.name) ? 'show' : 'hide'}:${card.name}'),
+                      key: ValueKey(
+                        'card-${doc.cardsOff.contains(card.name) ? 'show' : 'hide'}:${card.name}',
+                      ),
                       onTap: () => doc.onCardEye!(card.name),
                       builder: (_, h) => Padding(
                         padding: EdgeInsets.only(right: Shape.s(6)),
                         child: Glyph(
-                          doc.cardsOff.contains(card.name) ? TimelineGlyphs.eyeOff : TimelineGlyphs.eye,
+                          doc.cardsOff.contains(card.name)
+                              ? TimelineGlyphs.eyeOff
+                              : TimelineGlyphs.eye,
                           size: 12,
                           color: h ? Grey.g95 : Grey.g56,
                           fade: true,
@@ -130,13 +162,37 @@ class ValuesCard extends StatelessWidget {
                       // The items follow AbsentMotion's More menu (Effect Info, Reset to Defaults, Copy Effect, Paste Effect Values),
                       // Alight Motion's Duplicate, and saving the effect as a preset.
                       // The first item does the same as a right click on any of its numbers (PastRange).
-                      ('past', past ? 'Stop at Range Ends' : 'Go Past Range Ends', () => doc.flag('$k.past', !past)),
-                      if (doc.onCardInfo case final info?) ('info', 'Effect Info', () => info(card.name)),
-                      if (doc.onCardReset case final reset?) ('reset', 'Reset to Defaults', () => reset([for (final p in card.params) p.id])),
-                      if (doc.onCardDuplicate case final duplicate?) ('duplicate', 'Duplicate', () => duplicate(card.name)),
-                      if (doc.onCardCopy case final copy?) ('copy', 'Copy Effect', () => copy([for (final p in card.params) p.id])),
-                      if (doc.onCardPaste case final paste?) ('paste', 'Paste Effect Values', paste),
-                      if (doc.onCardSave case final save?) ('save', 'Save as Preset', () => save(card.name, [for (final p in card.params) p.id])),
+                      (
+                        'past',
+                        past ? 'Stop at Range Ends' : 'Go Past Range Ends',
+                        () => doc.flag('$k.past', !past),
+                      ),
+                      if (doc.onCardInfo case final info?)
+                        ('info', 'Effect Info', () => info(card.name)),
+                      if (doc.onCardReset case final reset?)
+                        (
+                          'reset',
+                          'Reset to Defaults',
+                          () => reset([for (final p in card.params) p.id]),
+                        ),
+                      if (doc.onCardDuplicate case final duplicate?)
+                        ('duplicate', 'Duplicate', () => duplicate(card.name)),
+                      if (doc.onCardCopy case final copy?)
+                        (
+                          'copy',
+                          'Copy Effect',
+                          () => copy([for (final p in card.params) p.id]),
+                        ),
+                      if (doc.onCardPaste case final paste?)
+                        ('paste', 'Paste Effect Values', paste),
+                      if (doc.onCardSave case final save?)
+                        (
+                          'save',
+                          'Save as Preset',
+                          () => save(card.name, [
+                            for (final p in card.params) p.id,
+                          ]),
+                        ),
                     ],
                   ),
                   if (doc.onCardRemove != null)
@@ -145,7 +201,11 @@ class ValuesCard extends StatelessWidget {
                       onTap: () => doc.onCardRemove!(card.name),
                       builder: (_, h) => Padding(
                         padding: EdgeInsets.only(right: Shape.s(6)),
-                        child: glyph(Shape.z(12), (c, s) => _drawBin(c, s, h ? Grey.g95 : Grey.g56), h),
+                        child: glyph(
+                          Shape.z(12),
+                          (c, s) => _drawBin(c, s, h ? Grey.g95 : Grey.g56),
+                          h,
+                        ),
                       ),
                     ),
                 ],
@@ -161,7 +221,12 @@ class ValuesCard extends StatelessWidget {
                       child: SizedBox(
                         width: Shape.z(16),
                         height: Shape.z(16),
-                        child: CustomPaint(painter: Draw((c, s) => _drawGrip(c, s, Grey.g56), Grey.g56)),
+                        child: CustomPaint(
+                          painter: Draw(
+                            (c, s) => _drawGrip(c, s, Grey.g56),
+                            Grey.g56,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -169,11 +234,25 @@ class ValuesCard extends StatelessWidget {
             ),
       children: [
         ParameterGrid(heroes),
-        if (rest.isNotEmpty) ...[_FoldRow(rest.first.fold ?? 'Advanced', adv, () => doc.flag('$k.adv', !adv)), if (adv) ParameterGrid(rest)],
-        if (doc.cardCode?.call(card.name, [for (final p in card.params) p.id]) case final code?) ...[
+        if (rest.isNotEmpty) ...[
+          _FoldRow(
+            rest.first.fold ?? 'Advanced',
+            adv,
+            () => doc.flag('$k.adv', !adv),
+          ),
+          if (adv) ParameterGrid(rest),
+        ],
+        if (doc.cardCode?.call(card.name, [for (final p in card.params) p.id])
+            case final code?) ...[
           // The card's code folds under its params like Advanced does. The params are what the user edits and the code is what they drive.
-          _FoldRow('Code', doc.b['$k.code'] ?? false, () => doc.flag('$k.code', !(doc.b['$k.code'] ?? false)), key: ValueKey('card-code:${card.name}')),
-          if (doc.b['$k.code'] ?? false) SizedBox(height: Shape.z(360), child: code),
+          _FoldRow(
+            'Code',
+            doc.b['$k.code'] ?? false,
+            () => doc.flag('$k.code', !(doc.b['$k.code'] ?? false)),
+            key: ValueKey('card-code:${card.name}'),
+          ),
+          if (doc.b['$k.code'] ?? false)
+            SizedBox(height: Shape.z(360), child: code),
         ],
       ],
     );
@@ -181,8 +260,10 @@ class ValuesCard extends StatelessWidget {
     if (at < 0 || doc.onCardMove == null) return shown;
     return DragTarget<String>(
       // An effect dropped on this card takes its place. The line shows on which side it lands.
-      onWillAcceptWithDetails: (d) => d.data != card.name && doc.movable.contains(d.data),
-      onAcceptWithDetails: (d) => doc.onCardMove!(d.data, at - doc.movable.indexOf(d.data)),
+      onWillAcceptWithDetails: (d) =>
+          d.data != card.name && doc.movable.contains(d.data),
+      onAcceptWithDetails: (d) =>
+          doc.onCardMove!(d.data, at - doc.movable.indexOf(d.data)),
       builder: (context, held, _) {
         final from = held.isEmpty ? -1 : doc.movable.indexOf(held.first!);
         final below = from >= 0 && from < at;
@@ -220,11 +301,16 @@ class _FoldRow extends StatelessWidget {
       builder: (_, h) => Container(
         height: Shape.z(24),
         decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: const InspectorHairline().rule)),
+          border: Border(
+            top: BorderSide(color: const InspectorHairline().rule),
+          ),
         ),
         child: Row(
           children: [
-            Text(label, style: TextStyles.label(h || open ? Grey.g95 : Grey.g63)),
+            Text(
+              label,
+              style: TextStyles.label(h || open ? Grey.g95 : Grey.g63),
+            ),
             const Spacer(),
             DisclosureTriangle(open: open, hot: h || open),
           ],
@@ -241,7 +327,11 @@ void _drawGrip(Canvas c, Size s, Color ink) {
     ..strokeWidth = 1.4
     ..strokeCap = StrokeCap.round;
   for (final y in const [.32, .5, .68]) {
-    c.drawLine(Offset(s.width * .25, s.height * y), Offset(s.width * .75, s.height * y), paint);
+    c.drawLine(
+      Offset(s.width * .25, s.height * y),
+      Offset(s.width * .75, s.height * y),
+      paint,
+    );
   }
 }
 
@@ -275,7 +365,13 @@ class EffectDragGhost extends StatelessWidget {
     padding: EdgeInsets.symmetric(horizontal: InspectorSkin.inset),
     decoration: BoxDecoration(
       color: Grey.g20,
-      boxShadow: [BoxShadow(color: ColorTheme.of('Shadow', const Color(0x99000000)), blurRadius: 14, offset: const Offset(0, 6))],
+      boxShadow: [
+        BoxShadow(
+          color: ColorTheme.of('Shadow', const Color(0x99000000)),
+          blurRadius: 14,
+          offset: const Offset(0, 6),
+        ),
+      ],
     ),
     child: Row(
       children: [
@@ -283,12 +379,17 @@ class EffectDragGhost extends StatelessWidget {
           fx.tone,
           size: 16,
           radius: const Radius.circular(16 * .32),
-          mark: Draw((c, s) => drawLayerMark(c, s, InspectorSkin.onAccent), InspectorSkin.onAccent),
+          mark: Draw(
+            (c, s) => drawLayerMark(c, s, InspectorSkin.onAccent),
+            InspectorSkin.onAccent,
+          ),
         ),
         SizedBox(width: Shape.s(6)),
         Text(
           fx.name,
-          style: TextStyles.title(Grey.g95).copyWith(fontSize: TextStyles.px(12), fontWeight: FontWeight.w700),
+          style: TextStyles.title(
+            Grey.g95,
+          ).copyWith(fontSize: TextStyles.px(12), fontWeight: FontWeight.w700),
         ),
       ],
     ),

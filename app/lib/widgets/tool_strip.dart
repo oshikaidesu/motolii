@@ -6,7 +6,15 @@ import 'package:motolii/skin/window_tokens.dart';
 
 /// The strip over a tool's body: what it works on at the left (cut off, never wrapped, when narrow), actions at the right.
 class ToolStrip extends StatelessWidget {
-  const ToolStrip({super.key, required this.left, this.right = const [], this.height, this.color, this.line = false, this.gap});
+  const ToolStrip({
+    super.key,
+    required this.left,
+    this.right = const [],
+    this.height,
+    this.color,
+    this.line = false,
+    this.gap,
+  });
   final List<Widget> left, right;
   final double? height, gap;
   final Color? color;
@@ -51,12 +59,22 @@ class ToolReadout extends StatelessWidget {
         children: [
           Text(
             value,
-            style: TextStyles.value(Grey.g95).copyWith(fontSize: TextStyles.px(18), fontWeight: FontWeight.w700, letterSpacing: -.5),
+            style: TextStyles.value(Grey.g95).copyWith(
+              fontSize: TextStyles.px(18),
+              fontWeight: FontWeight.w700,
+              letterSpacing: -.5,
+            ),
           ),
-          if (unit.isNotEmpty) ...[SizedBox(width: Shape.s(2)), Text(unit, style: TextStyles.label(Grey.g63))],
+          if (unit.isNotEmpty) ...[
+            SizedBox(width: Shape.s(2)),
+            Text(unit, style: TextStyles.label(Grey.g63)),
+          ],
         ],
       ),
-      if (sub != null) ...[SizedBox(height: Shape.s(3)), Text(sub!, style: TextStyles.label(Grey.g56))],
+      if (sub != null) ...[
+        SizedBox(height: Shape.s(3)),
+        Text(sub!, style: TextStyles.label(Grey.g56)),
+      ],
     ],
   );
 }

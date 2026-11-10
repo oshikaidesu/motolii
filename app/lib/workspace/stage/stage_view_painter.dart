@@ -70,12 +70,15 @@ class ViewPainter extends CustomPainter {
   final String? sel, hover;
   final bool grid, safe;
 
-  Path _boxPath(ArtBox b) => Path()..addPolygon([for (final p in b.corners) v.toScreen(p)], true);
+  Path _boxPath(ArtBox b) =>
+      Path()..addPolygon([for (final p in b.corners) v.toScreen(p)], true);
 
   @override
   void paint(Canvas c, Size size) {
     final comp = v.comp;
-    if (part != ViewPart.over) c.drawRect(Offset.zero & size, Paint()..color = StageTokens.surround);
+    if (part != ViewPart.over) {
+      c.drawRect(Offset.zero & size, Paint()..color = StageTokens.surround);
+    }
     c.save();
     c.clipRect(v.area);
     if (part != ViewPart.over) _captions(c, comp);
@@ -91,7 +94,8 @@ class ViewPainter extends CustomPainter {
     _guides(c);
     if (trail case final w? when w.length > 1) {
       // A thin line with an arrowhead at intervals along the direction of motion.
-      final line = linePaint(WindowTokens.accent.withValues(alpha: .75), 1.2), pts = [for (final q in w) v.toScreen(q)];
+      final line = linePaint(WindowTokens.accent.withValues(alpha: .75), 1.2),
+          pts = [for (final q in w) v.toScreen(q)];
       c.drawPoints(PointMode.polygon, pts, line);
       for (var i = 6; i + 1 < pts.length; i += 12) {
         final d = pts[i + 1] - pts[i];
@@ -107,10 +111,18 @@ class ViewPainter extends CustomPainter {
       }
     }
     if (met.$1 case final x?) {
-      c.drawLine(Offset(v.toScreen(Offset(x, 0)).dx, v.area.top), Offset(v.toScreen(Offset(x, 0)).dx, v.area.bottom), linePaint(WindowTokens.accent));
+      c.drawLine(
+        Offset(v.toScreen(Offset(x, 0)).dx, v.area.top),
+        Offset(v.toScreen(Offset(x, 0)).dx, v.area.bottom),
+        linePaint(WindowTokens.accent),
+      );
     }
     if (met.$2 case final y?) {
-      c.drawLine(Offset(v.area.left, v.toScreen(Offset(0, y)).dy), Offset(v.area.right, v.toScreen(Offset(0, y)).dy), linePaint(WindowTokens.accent));
+      c.drawLine(
+        Offset(v.area.left, v.toScreen(Offset(0, y)).dy),
+        Offset(v.area.right, v.toScreen(Offset(0, y)).dy),
+        linePaint(WindowTokens.accent),
+      );
     }
     if (pivots) {
       for (final MapEntry(:key, :value) in scene.boxes.entries) {
@@ -121,31 +133,60 @@ class ViewPainter extends CustomPainter {
       }
     }
     // The selected layer's parent frame, in grey.
-    if (ArtGeometry.boxOf(scene, parent) case final b?) c.drawPath(_boxPath(b), linePaint(Grey.g63, 1));
+    if (ArtGeometry.boxOf(scene, parent) case final b?) {
+      c.drawPath(_boxPath(b), linePaint(Grey.g63, 1));
+    }
     for (final id in scene.gizmos.keys) {
       _gizmo(c, id);
     }
     if (marked) {
       // The engine marks the frame, corners, sides, rotate knob and anchor. Only the layer's own handles are drawn here.
-      if ((ArtGeometry.boxOf(scene, sel), scene.layer(sel)) case (final b?, final l?)) {
-        _own(c, selectionHandles(v.toScreen, b, knob: l.kind != LayerKind.camera && l.id != 'bg', form: form.$1, round: form.$2, crop: crop));
+      if ((ArtGeometry.boxOf(scene, sel), scene.layer(sel)) case (
+        final b?,
+        final l?,
+      )) {
+        _own(
+          c,
+          selectionHandles(
+            v.toScreen,
+            b,
+            knob: l.kind != LayerKind.camera && l.id != 'bg',
+            form: form.$1,
+            round: form.$2,
+            crop: crop,
+          ),
+        );
       }
       return c.restore();
     }
     // The hovered layer's outline uses its label colour, like its row in the layer list.
-    if (ArtGeometry.boxOf(scene, hover) case final b?) _legible(c, _boxPath(b), layerLabelColor(hover!), 1);
-    if (ArtGeometry.boxOf(scene, sel) case final b?) _selection(c, b, scene.layer(sel)!);
+    if (ArtGeometry.boxOf(scene, hover) case final b?) {
+      _legible(c, _boxPath(b), layerLabelColor(hover!), 1);
+    }
+    if (ArtGeometry.boxOf(scene, sel) case final b?) {
+      _selection(c, b, scene.layer(sel)!);
+    }
     c.restore();
   }
 
   void _captions(Canvas c, Rect comp) {
     if (comp.top - v.area.top < 18) return;
-    final l = lineText(scene.title, TextStyles.micro(Grey.g76).copyWith(fontWeight: FontWeight.w700)),
-        d = lineText('${ArtGeometry.comp.width.round()} × ${ArtGeometry.comp.height.round()}  ·  ${WorkspaceController.fps} fps', TextStyles.micro(Grey.g56));
+    final l = lineText(
+          scene.title,
+          TextStyles.micro(Grey.g76).copyWith(fontWeight: FontWeight.w700),
+        ),
+        d = lineText(
+          '${ArtGeometry.comp.width.round()} × ${ArtGeometry.comp.height.round()}  ·  ${WorkspaceController.fps} fps',
+          TextStyles.micro(Grey.g56),
+        );
     final y = comp.top - 6 - l.height;
     l.paint(c, Offset(comp.left, y));
     d.paint(c, Offset(comp.left + l.width + 8, y));
-    final f = scene.frame, tc = lineText('F ${f.toString().padLeft(3, '0')}', TextStyles.value(Grey.g76));
+    final f = scene.frame,
+        tc = lineText(
+          'F ${f.toString().padLeft(3, '0')}',
+          TextStyles.value(Grey.g76),
+        );
     tc.paint(c, Offset(comp.right - tc.width, comp.top - 6 - tc.height));
   }
 
@@ -163,9 +204,26 @@ class ViewPainter extends CustomPainter {
 
   void _safe(Canvas c, Rect comp) {
     final p = linePaint(StageTokens.safe);
-    c.drawRect(Rect.fromCenter(center: comp.center, width: comp.width * .9, height: comp.height * .9), linePaint(StageTokens.overlay));
-    final t = Rect.fromCenter(center: comp.center, width: comp.width * .8, height: comp.height * .8), k = comp.width * .03;
-    for (final (o, dx, dy) in [(t.topLeft, 1.0, 1.0), (t.topRight, -1.0, 1.0), (t.bottomRight, -1.0, -1.0), (t.bottomLeft, 1.0, -1.0)]) {
+    c.drawRect(
+      Rect.fromCenter(
+        center: comp.center,
+        width: comp.width * .9,
+        height: comp.height * .9,
+      ),
+      linePaint(StageTokens.overlay),
+    );
+    final t = Rect.fromCenter(
+          center: comp.center,
+          width: comp.width * .8,
+          height: comp.height * .8,
+        ),
+        k = comp.width * .03;
+    for (final (o, dx, dy) in [
+      (t.topLeft, 1.0, 1.0),
+      (t.topRight, -1.0, 1.0),
+      (t.bottomRight, -1.0, -1.0),
+      (t.bottomLeft, 1.0, -1.0),
+    ]) {
       c.drawPath(
         Path()
           ..moveTo(o.dx + dx * k, o.dy)
@@ -195,9 +253,14 @@ class ViewPainter extends CustomPainter {
   /// position to the frame corners, and its point of interest as in After Effects. The selected camera also gets
   /// corner handles, because the frame size sets the lens.
   void _gizmo(Canvas c, String id) {
-    final g = [for (final p in scene.gizmo(id)) p == null ? null : v.toScreen(p)], picked = id == sel;
+    final g = [
+          for (final p in scene.gizmo(id)) p == null ? null : v.toScreen(p),
+        ],
+        picked = id == sel;
     if (g.length < 6) return;
-    final ink = picked ? WindowTokens.accent : Grey.g76, frame = [g[0], g[1], g[2], g[3]].nonNulls.toList(), eye = g[5];
+    final ink = picked ? WindowTokens.accent : Grey.g76,
+        frame = [g[0], g[1], g[2], g[3]].nonNulls.toList(),
+        eye = g[5];
     if (frame.length == 4) {
       _legible(c, Path()..addPolygon(frame, true), ink, picked ? 2 : 1);
       c.drawLine(frame[0], frame[2], linePaint(ink.withValues(alpha: .35), 1));
@@ -208,7 +271,10 @@ class ViewPainter extends CustomPainter {
         }
       if (picked)
         for (final p in frame) {
-          c.drawRect(Rect.fromCenter(center: p, width: 7, height: 7), Paint()..color = ink);
+          c.drawRect(
+            Rect.fromCenter(center: p, width: 7, height: 7),
+            Paint()..color = ink,
+          );
         }
     }
     if (g[4] case final look?) {
@@ -229,11 +295,19 @@ class ViewPainter extends CustomPainter {
   }
 
   void _selection(Canvas c, ArtBox b, ArtLayer l) {
-    final h = selectionHandles(v.toScreen, b, knob: l.kind != LayerKind.camera && l.id != 'bg', form: form.$1, round: form.$2, crop: crop),
+    final h = selectionHandles(
+          v.toScreen,
+          b,
+          knob: l.kind != LayerKind.camera && l.id != 'bg',
+          form: form.$1,
+          round: form.$2,
+          crop: crop,
+        ),
         pts = [for (var i = 0; i < 4; i++) h['corner $i']!];
     _legible(c, Path()..addPolygon(pts, true), WindowTokens.accent);
     final top = v.toScreen(b.top);
-    final lit = WindowTokens.accent.withValues(alpha: 1), seen = (String k) => grip == null || grip == k;
+    final lit = WindowTokens.accent.withValues(alpha: 1);
+    bool seen(String k) => grip == null || grip == k;
     if (h['turn'] case final knob? when seen('turn')) {
       _legible(
         c,
@@ -253,7 +327,11 @@ class ViewPainter extends CustomPainter {
         if (h['side $i'] case final s?) ('side $i', s),
     ]) {
       if (!seen(key)) continue;
-      final r = Rect.fromCenter(center: p, width: StageTokens.handle, height: StageTokens.handle).inflate(grip == key ? StageTokens.handle / 2 : 0);
+      final r = Rect.fromCenter(
+        center: p,
+        width: StageTokens.handle,
+        height: StageTokens.handle,
+      ).inflate(grip == key ? StageTokens.handle / 2 : 0);
       c.drawRect(r.inflate(1), Paint()..color = Grey.g00);
       c.drawRect(r, Paint()..color = lit);
     }
@@ -263,13 +341,30 @@ class ViewPainter extends CustomPainter {
       final big = grip == 'anchor' ? 1.6 : 1.0;
       c.drawCircle(a, 6 * big, linePaint(Grey.g00, 3.5));
       c.drawCircle(a, 6 * big, linePaint(lit, 1.5));
-      for (final d in const [Offset(1, 0), Offset(-1, 0), Offset(0, 1), Offset(0, -1)]) {
+      for (final d in const [
+        Offset(1, 0),
+        Offset(-1, 0),
+        Offset(0, 1),
+        Offset(0, -1),
+      ]) {
         c.drawLine(a + d * 3, a + d * 10 * big, linePaint(Grey.g00, 3));
         c.drawLine(a + d * 3, a + d * 10 * big, linePaint(lit, 1.2));
       }
     }
-    final bounds = pts.skip(1).fold(Rect.fromPoints(pts[0], pts[0]), (r, p) => r.expandToInclude(Rect.fromPoints(p, p)));
-    _tag(c, bounds.topLeft, l.name, WindowTokens.accent, WindowTokens.onAccent, layerKindColor(l.kind));
+    final bounds = pts
+        .skip(1)
+        .fold(
+          Rect.fromPoints(pts[0], pts[0]),
+          (r, p) => r.expandToInclude(Rect.fromPoints(p, p)),
+        );
+    _tag(
+      c,
+      bounds.topLeft,
+      l.name,
+      WindowTokens.accent,
+      WindowTokens.onAccent,
+      layerKindColor(l.kind),
+    );
   }
 
   /// Draws the selected layer's own handles (roundness, points, crop), besides the frame handles that the engine marks
@@ -286,14 +381,21 @@ class ViewPainter extends CustomPainter {
     if (h['points'] case final p? when seen('points')) {
       // Point count: a diamond outside one side.
       final big = grip == 'points' ? 1.6 : 1.0,
-          d = Path()..addPolygon([p + Offset(0, -5 * big), p + Offset(5 * big, 0), p + Offset(0, 5 * big), p + Offset(-5 * big, 0)], true);
+          d = Path()
+            ..addPolygon([
+              p + Offset(0, -5 * big),
+              p + Offset(5 * big, 0),
+              p + Offset(0, 5 * big),
+              p + Offset(-5 * big, 0),
+            ], true);
       c.drawPath(d, linePaint(Grey.g00, 3));
       c.drawPath(d, Paint()..color = lit);
     }
     for (var i = 0; i < 4; i++) {
       // Image crop: a bar on each side where the image is cut.
       if (h['crop $i'] case final p? when seen('crop $i')) {
-        final big = grip == 'crop $i' ? 1.6 : 1.0, along = i.isEven ? Offset(0, 7 * big) : Offset(7 * big, 0);
+        final big = grip == 'crop $i' ? 1.6 : 1.0,
+            along = i.isEven ? Offset(0, 7 * big) : Offset(7 * big, 0);
         c.drawLine(p - along, p + along, linePaint(Grey.g00, 6));
         c.drawLine(p - along, p + along, linePaint(lit, 3));
       }
@@ -301,15 +403,34 @@ class ViewPainter extends CustomPainter {
   }
 
   /// Draws a small rounded name tag above [at], kept inside the viewport.
-  void _tag(Canvas c, Offset at, String text, Color fill, Color ink, Color? pip) {
-    final tp = lineText(text, TextStyles.micro(ink).copyWith(fontWeight: FontWeight.w700));
+  void _tag(
+    Canvas c,
+    Offset at,
+    String text,
+    Color fill,
+    Color ink,
+    Color? pip,
+  ) {
+    final tp = lineText(
+      text,
+      TextStyles.micro(ink).copyWith(fontWeight: FontWeight.w700),
+    );
     final w = tp.width + 12 + (pip == null ? 0 : 10);
     var o = Offset(at.dx, at.dy - StageTokens.tagH - 4);
     o = Offset(
-      o.dx.clamp(v.area.left + 4, math.max(v.area.left + 4, v.area.right - w - 4)),
-      o.dy.clamp(v.area.top + 4, math.max(v.area.top + 4, v.area.bottom - StageTokens.tagH - 4)),
+      o.dx.clamp(
+        v.area.left + 4,
+        math.max(v.area.left + 4, v.area.right - w - 4),
+      ),
+      o.dy.clamp(
+        v.area.top + 4,
+        math.max(v.area.top + 4, v.area.bottom - StageTokens.tagH - 4),
+      ),
     );
-    final r = RRect.fromRectAndRadius(Rect.fromLTWH(o.dx, o.dy, w, StageTokens.tagH), Shape.r(WindowTokens.chipRadius));
+    final r = RRect.fromRectAndRadius(
+      Rect.fromLTWH(o.dx, o.dy, w, StageTokens.tagH),
+      Shape.r(WindowTokens.chipRadius),
+    );
     c.drawRRect(r.inflate(1), Paint()..color = Grey.g00);
     c.drawRRect(r, Paint()..color = fill);
     var x = o.dx + 6;
@@ -358,22 +479,44 @@ class RulerPainter extends CustomPainter {
   @override
   void paint(Canvas c, Size size) {
     final r = StageTokens.ruler;
-    final comp = v.comp, bg = Paint()..color = StageTokens.rulerGround, span = Paint()..color = StageTokens.rulerSpan;
+    final comp = v.comp,
+        bg = Paint()..color = StageTokens.rulerGround,
+        span = Paint()..color = StageTokens.rulerSpan;
     c.drawRect(Rect.fromLTWH(0, 0, size.width, r), bg);
     c.drawRect(Rect.fromLTWH(0, 0, r, size.height), bg);
-    c.drawRect(Rect.fromLTRB(math.max(comp.left, r), 0, math.min(comp.right, size.width), r), span);
-    c.drawRect(Rect.fromLTRB(0, math.max(comp.top, r), r, math.min(comp.bottom, size.height)), span);
+    c.drawRect(
+      Rect.fromLTRB(
+        math.max(comp.left, r),
+        0,
+        math.min(comp.right, size.width),
+        r,
+      ),
+      span,
+    );
+    c.drawRect(
+      Rect.fromLTRB(
+        0,
+        math.max(comp.top, r),
+        r,
+        math.min(comp.bottom, size.height),
+      ),
+      span,
+    );
     final edge = linePaint(WindowTokens.line);
     c.drawLine(Offset(0, r - .5), Offset(size.width, r - .5), edge);
     c.drawLine(Offset(r - .5, 0), Offset(r - .5, size.height), edge);
-    final step = _step(v.s), minor = step / 5, tick = Paint()..color = StageTokens.tick;
+    final step = _step(v.s),
+        minor = step / 5,
+        tick = Paint()..color = StageTokens.tick;
     final label = TextStyles.micro(Grey.g56);
 
     c.save();
     c.clipRect(Rect.fromLTWH(r, 0, size.width - r, r));
-    final x0 = (v.toComp(Offset(r, 0)).dx / minor).floor() * minor, x1 = v.toComp(Offset(size.width, 0)).dx;
+    final x0 = (v.toComp(Offset(r, 0)).dx / minor).floor() * minor,
+        x1 = v.toComp(Offset(size.width, 0)).dx;
     for (var x = x0; x <= x1; x += minor) {
-      final sx = v.toScreen(Offset(x, 0)).dx.roundToDouble() + .5, major = (x / step).round() * step == x;
+      final sx = v.toScreen(Offset(x, 0)).dx.roundToDouble() + .5,
+          major = (x / step).round() * step == x;
       c.drawLine(Offset(sx, major ? 2 : r - 4), Offset(sx, r), tick);
       if (major) lineText('${x.round()}', label).paint(c, Offset(sx + 3, 2));
     }
@@ -381,9 +524,11 @@ class RulerPainter extends CustomPainter {
 
     c.save();
     c.clipRect(Rect.fromLTWH(0, r, r, size.height - r));
-    final y0 = (v.toComp(Offset(0, r)).dy / minor).floor() * minor, y1 = v.toComp(Offset(0, size.height)).dy;
+    final y0 = (v.toComp(Offset(0, r)).dy / minor).floor() * minor,
+        y1 = v.toComp(Offset(0, size.height)).dy;
     for (var y = y0; y <= y1; y += minor) {
-      final sy = v.toScreen(Offset(0, y)).dy.roundToDouble() + .5, major = (y / step).round() * step == y;
+      final sy = v.toScreen(Offset(0, y)).dy.roundToDouble() + .5,
+          major = (y / step).round() * step == y;
       c.drawLine(Offset(major ? 2 : r - 4, sy), Offset(r, sy), tick);
       if (major) {
         c.save();
@@ -398,11 +543,29 @@ class RulerPainter extends CustomPainter {
     final g = Paint()..color = StageTokens.guide;
     for (final gx in scene.guidesX) {
       final x = v.toScreen(Offset(gx, 0)).dx;
-      if (x > r) c.drawPath(Path()..addPolygon([Offset(x - 4, r - 5), Offset(x + 4, r - 5), Offset(x, r)], true), g);
+      if (x > r) {
+        c.drawPath(
+          Path()..addPolygon([
+            Offset(x - 4, r - 5),
+            Offset(x + 4, r - 5),
+            Offset(x, r),
+          ], true),
+          g,
+        );
+      }
     }
     for (final gy in scene.guidesY) {
       final y = v.toScreen(Offset(0, gy)).dy;
-      if (y > r) c.drawPath(Path()..addPolygon([Offset(r - 5, y - 4), Offset(r - 5, y + 4), Offset(r, y)], true), g);
+      if (y > r) {
+        c.drawPath(
+          Path()..addPolygon([
+            Offset(r - 5, y - 4),
+            Offset(r - 5, y + 4),
+            Offset(r, y),
+          ], true),
+          g,
+        );
+      }
     }
 
     if (cursor.value case final p?) {
@@ -417,5 +580,6 @@ class RulerPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(RulerPainter o) => o.v != v || o.cursor != cursor || o.scene != scene;
+  bool shouldRepaint(RulerPainter o) =>
+      o.v != v || o.cursor != cursor || o.scene != scene;
 }

@@ -26,7 +26,8 @@ import 'package:motolii/bridge/motolii_questions.dart';
 import 'package:motolii/bridge/motolii_writes.dart';
 import 'package:motolii/bridge/engine_paths.dart';
 import 'package:motolii/workspace/shelf/effect_tiles.dart' show EffectTiles;
-import 'package:motolii/workspace/shelf/effect_tiles_difference.dart' show ffmpeg;
+import 'package:motolii/workspace/shelf/effect_tiles_difference.dart'
+    show ffmpeg;
 
 /// The cache path of a tile: [kind] and a hash of [key] under the tiles' cache folder.
 String tileHome(String kind, String key) {
@@ -42,7 +43,12 @@ String tileHome(String kind, String key) {
 /// [draw] draws up to [batch] jobs at a time and returns the paths it drew. With [moving], the frames beside each still
 /// are evicted from the image cache too. [progress] reports how many are drawn out of how many.
 class TileQueue<T> {
-  TileQueue(this.draw, {this.moving = false, this.batch = 1 << 30, this.progress});
+  TileQueue(
+    this.draw, {
+    this.moving = false,
+    this.batch = 1 << 30,
+    this.progress,
+  });
   final List<String> Function(String dir, List<T> jobs) draw;
   final bool moving;
   final int batch;
@@ -72,7 +78,9 @@ class TileQueue<T> {
   ///
   /// Returns false when [key] was already requested, or under flutter test, where nothing is drawn.
   bool ask(String key, T job, {int? at}) {
-    if (Platform.environment['FLUTTER_TEST'] == 'true' || !_asked.add(key)) return false;
+    if (Platform.environment['FLUTTER_TEST'] == 'true' || !_asked.add(key)) {
+      return false;
+    }
     _queue.insert(at ?? _queue.length, job);
     return true;
   }
@@ -98,9 +106,13 @@ class TileQueue<T> {
           for (final p in [
             h,
             if (moving)
-              for (final (k, _) in EffectTiles.moments.indexed) EffectTiles.frame(h, k),
+              for (final (k, _) in EffectTiles.moments.indexed)
+                EffectTiles.frame(h, k),
           ]) {
-            ResizeImage(FileImage(File(p)), width: EffectTiles.readWide).evict();
+            ResizeImage(
+              FileImage(File(p)),
+              width: EffectTiles.readWide,
+            ).evict();
           }
         }
         onDrawn?.call(homes);
@@ -118,10 +130,22 @@ class TileQueue<T> {
 ///
 /// [one] draws a single tile. If it returns false or throws, a `.none` file marks that the engine could not draw it.
 /// Returns the paths of the tiles made.
-List<String> drawTiles<T>(String dir, String prefix, List<T> jobs, String Function(T) homeOf, bool Function(Motolii m, T job, String home) one) {
+List<String> drawTiles<T>(
+  String dir,
+  String prefix,
+  List<T> jobs,
+  String Function(T) homeOf,
+  bool Function(Motolii m, T job, String home) one,
+) {
   final folder = Directory.systemTemp.createTempSync(prefix), made = <String>[];
   for (final (i, job) in jobs.indexed) {
-    final home = homeOf(job), m = Motolii.open('${folder.path}/$i.motolii', wide: 1080, high: 1080, dir: dir);
+    final home = homeOf(job),
+        m = Motolii.open(
+          '${folder.path}/$i.motolii',
+          wide: 1080,
+          high: 1080,
+          dir: dir,
+        );
     if (m == null) continue;
     try {
       Directory(File(home).parent.path).createSync(recursive: true);
@@ -146,15 +170,23 @@ List<String> drawTiles<T>(String dir, String prefix, List<T> jobs, String Functi
 
 /// Tiles for the Copies entries on the Create shelf.
 abstract final class CopiesTiles {
-  static final _tiles = TileQueue<(String, String, String?)>(draw, moving: true);
+  static final _tiles = TileQueue<(String, String, String?)>(
+    draw,
+    moving: true,
+  );
 
   /// Notifies after a batch is drawn, so the tiles redraw.
   static final drawn = _tiles.drawn;
 
   /// The cache path of [file]'s tile, named by its path and modification time, as the engine's doc_tile names an effect's.
   static String home(String file, {String? make}) {
-    final at = File(file).existsSync() ? File(file).lastModifiedSync().microsecondsSinceEpoch : 0;
-    return tileHome('copies', '$file|$at|${make == null ? 'copies 5' : 'make $make'}');
+    final at = File(file).existsSync()
+        ? File(file).lastModifiedSync().microsecondsSinceEpoch
+        : 0;
+    return tileHome(
+      'copies',
+      '$file|$at|${make == null ? 'copies 5' : 'make $make'}',
+    );
   }
 
   /// Returns [file]'s tile, or '' when it is not drawn yet or the engine rejects the file. It is requested once.
@@ -166,28 +198,39 @@ abstract final class CopiesTiles {
   }
 
   /// Draws each file's tile at its cache path and returns the paths drawn.
-  static List<String> draw(String dir, List<(String, String, String?)> files) => drawTiles(dir, 'motolii_copies', files, (j) => j.$2, (m, job, home) {
-    // Each tile gets its own project, so the parameter values one expression sets (js_<name>) do not reach the next.
-    final (f, _, make) = job;
-    // A pack is created by name, as the Program shelf creates it.
-    final on = make != null ? _answer(m, m.later('create', word: make)) >= 1 : _put(m, f);
-    final base = home.substring(0, home.length - 4);
-    final pictures = [
-      if (on)
-        for (final (k, at) in EffectTiles.moments.indexed)
-          if (m.at(at) && m.still('${base}_$k.png')) '${base}_$k.png',
-    ];
-    if (pictures.length >= EffectTiles.moments.length) {
-      Process.runSync('sips', ['-Z', '192', ...pictures]);
-      File(pictures[EffectTiles.still]).copySync(home);
-      // Without ffmpeg only the still exists.
-      ffmpeg(['-i', '${base}_%d.png', '-q:v', '6', '-start_number', '0', '${base}_%d.jpg']);
-    }
-    for (final p in pictures) {
-      File(p).deleteSync();
-    }
-    return pictures.length >= EffectTiles.moments.length;
-  });
+  static List<String> draw(String dir, List<(String, String, String?)> files) =>
+      drawTiles(dir, 'motolii_copies', files, (j) => j.$2, (m, job, home) {
+        // Each tile gets its own project, so the parameter values one expression sets (js_<name>) do not reach the next.
+        final (f, _, make) = job;
+        // A pack is created by name, as the Program shelf creates it.
+        final on = make != null
+            ? _answer(m, m.later('create', word: make)) >= 1
+            : _put(m, f);
+        final base = home.substring(0, home.length - 4);
+        final pictures = [
+          if (on)
+            for (final (k, at) in EffectTiles.moments.indexed)
+              if (m.at(at) && m.still('${base}_$k.png')) '${base}_$k.png',
+        ];
+        if (pictures.length >= EffectTiles.moments.length) {
+          Process.runSync('sips', ['-Z', '192', ...pictures]);
+          File(pictures[EffectTiles.still]).copySync(home);
+          // Without ffmpeg only the still exists.
+          ffmpeg([
+            '-i',
+            '${base}_%d.png',
+            '-q:v',
+            '6',
+            '-start_number',
+            '0',
+            '${base}_%d.jpg',
+          ]);
+        }
+        for (final p in pictures) {
+          File(p).deleteSync();
+        }
+        return pictures.length >= EffectTiles.moments.length;
+      });
 
   /// Builds the tile's layer for expression file [f]: the shape its header names, with the expression applied.
   ///
@@ -201,29 +244,43 @@ abstract final class CopiesTiles {
       ..set(t, 'size', (_head(f, 'size') ?? 0.1) * 2.5)
       ..set(t, 'copies', _head(f, 'copies') ?? 5);
     // The other header lines set the layer's remaining values, as the recipe does, such as a maze's white or a row's height.
-    for (final l in File(f).readAsLinesSync().takeWhile((l) => l.startsWith('//') && !l.startsWith('// then '))) {
-      if (RegExp(r'^// (say|set) ([a-z_]+) (.+)$').firstMatch(l) case final w? when !{'size', 'copies', 'script'}.contains(w[2])) {
-        w[1] == 'say' ? m.say(t, w[2]!, w[3]!) : m.set(t, w[2]!, double.tryParse(w[3]!) ?? 0);
+    for (final l in File(f).readAsLinesSync().takeWhile(
+      (l) => l.startsWith('//') && !l.startsWith('// then '),
+    )) {
+      if (RegExp(r'^// (say|set) ([a-z_]+) (.+)$').firstMatch(l) case final w?
+          when !{'size', 'copies', 'script'}.contains(w[2])) {
+        w[1] == 'say'
+            ? m.say(t, w[2]!, w[3]!)
+            : m.set(t, w[2]!, double.tryParse(w[3]!) ?? 0);
       }
     }
     // A line is thickened so it reads at 192 px.
     if (shape == 'line') m.set(t, 'tall', (_head(f, 'tall') ?? 1) * 4);
     // Apply the file, then check that the engine accepts it as code. A SyntaxError fails (EffectCode: "does not compile").
-    return _answered(m, m.later('fx_file', layer: t, word: f)) && _answered(m, m.later('code', word: f));
+    return _answered(m, m.later('fx_file', layer: t, word: f)) &&
+        _answered(m, m.later('code', word: f));
   }
 
   /// The number a header line sets, such as "// set size 0.03", or null when the header has none.
   static double? _head(String file, String name) {
-    for (final l in File(file).readAsLinesSync().takeWhile((l) => l.startsWith('//'))) {
-      if (RegExp('^// set $name ([0-9.]+)').firstMatch(l)?[1] case final v?) return double.tryParse(v);
+    for (final l in File(
+      file,
+    ).readAsLinesSync().takeWhile((l) => l.startsWith('//'))) {
+      if (RegExp('^// set $name ([0-9.]+)').firstMatch(l)?[1] case final v?) {
+        return double.tryParse(v);
+      }
     }
     return null;
   }
 
   /// The word a header line gives, such as "// make shape line", or null when the header has none.
   static String? _said(String file, String what) {
-    for (final l in File(file).readAsLinesSync().takeWhile((l) => l.startsWith('//'))) {
-      if (RegExp('^// $what ([a-z_]+)').firstMatch(l)?[1] case final v?) return v;
+    for (final l in File(
+      file,
+    ).readAsLinesSync().takeWhile((l) => l.startsWith('//'))) {
+      if (RegExp('^// $what ([a-z_]+)').firstMatch(l)?[1] case final v?) {
+        return v;
+      }
     }
     return null;
   }

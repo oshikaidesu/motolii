@@ -20,7 +20,9 @@ extension StageViewCamera on StageViewState {
     if (m == null) return null;
     if (picked != null && m.word(picked, 'kind') == 'camera') return picked;
     for (final l in ws.layers) {
-      if (int.tryParse(l.id) case final t? when m.word(t, 'kind') == 'camera') return t;
+      if (int.tryParse(l.id) case final t? when m.word(t, 'kind') == 'camera') {
+        return t;
+      }
     }
     return null;
   }
@@ -32,11 +34,16 @@ extension StageViewCamera on StageViewState {
     if (m == null || cam == null) return;
     if (ws.freeEye) {
       // As in After Effects' custom views, the tool moves the view, not the camera layer.
-      return ws.setView('stage.eye', [ws.eye[0], ws.eye[1], (ws.eye[2] * math.exp(by * .002)).clamp(.01, 100.0)]);
+      return ws.setView('stage.eye', [
+        ws.eye[0],
+        ws.eye[1],
+        (ws.eye[2] * math.exp(by * .002)).clamp(.01, 100.0),
+      ]);
     }
     if (dollyAt == null) {
       m.take(cam);
-      dollyAt = m.value(cam, 'distance', ws.frame / WorkspaceController.fps) ?? 1;
+      dollyAt =
+          m.value(cam, 'distance', ws.frame / WorkspaceController.fps) ?? 1;
     }
     dollyAt = (dollyAt! * math.exp(by * .002)).clamp(.01, 100.0);
     m.dragUpdate('distance', dollyAt!);
@@ -55,22 +62,43 @@ extension StageViewCamera on StageViewState {
   ///
   /// [inside] makes any point in the frame count as a hit, not only its handles.
   bool gizmoDragStart(StageViewport v, Offset local, {required bool inside}) {
-    final ws = WorkspaceScope.read(context), m = ws.inside!, scene = widget.scene, at = ws.frame / WorkspaceController.fps;
+    final ws = WorkspaceScope.read(context),
+        m = ws.inside!,
+        scene = widget.scene,
+        at = ws.frame / WorkspaceController.fps;
     for (final id in scene.gizmos.keys) {
-      final g = [for (final p in scene.gizmo(id)) p == null ? null : v.toScreen(p)], cam = int.parse(id);
+      final g = [
+            for (final p in scene.gizmo(id)) p == null ? null : v.toScreen(p),
+          ],
+          cam = int.parse(id);
       if (g.length < 6) continue;
       final frame = [g[0], g[1], g[2], g[3]].nonNulls.toList();
-      bool on(Offset? p, double reach) => p != null && (p - local).distance <= reach;
+      bool on(Offset? p, double reach) =>
+          p != null && (p - local).distance <= reach;
       final String by;
       if (on(g[5], 10)) {
         by = 'gizmo orbit';
         // Degrees per pixel, so the camera turns as far as the pointer travels on the circle it orbits.
-        orbitRate = g[4] == null ? .25 : 180 / math.pi / math.max((g[5]! - g[4]!).distance, 60);
-        orbitFrom = (x: m.value(cam, 'rotate_x', at) ?? 0, y: m.value(cam, 'rotate_y', at) ?? 0);
-      } else if (widget.selected == id && frame.any((p) => on(p, 8)) && g[4] != null) {
+        orbitRate = g[4] == null
+            ? .25
+            : 180 / math.pi / math.max((g[5]! - g[4]!).distance, 60);
+        orbitFrom = (
+          x: m.value(cam, 'rotate_x', at) ?? 0,
+          y: m.value(cam, 'rotate_y', at) ?? 0,
+        );
+      } else if (widget.selected == id &&
+          frame.any((p) => on(p, 8)) &&
+          g[4] != null) {
         by = 'gizmo lens';
-        lensFrom = (zoom: m.value(cam, 'zoom', at) ?? 1, reach: (local - g[4]!).distance, middle: g[4]!);
-      } else if (on(g[4], 10) || (inside && frame.length == 4 && (Path()..addPolygon(frame, true)).contains(local))) {
+        lensFrom = (
+          zoom: m.value(cam, 'zoom', at) ?? 1,
+          reach: (local - g[4]!).distance,
+          middle: g[4]!,
+        );
+      } else if (on(g[4], 10) ||
+          (inside &&
+              frame.length == 4 &&
+              (Path()..addPolygon(frame, true)).contains(local))) {
         by = 'place';
       } else {
         continue;

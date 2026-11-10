@@ -17,8 +17,12 @@ class EaseTrial extends StatefulWidget {
   State<EaseTrial> createState() => _EaseTrialState();
 }
 
-class _EaseTrialState extends State<EaseTrial> with SingleTickerProviderStateMixin {
-  late final _run = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800))..addStatusListener(_ended);
+class _EaseTrialState extends State<EaseTrial>
+    with SingleTickerProviderStateMixin {
+  late final _run = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1800),
+  )..addStatusListener(_ended);
   bool _over = false;
 
   void _ended(AnimationStatus s) {
@@ -47,6 +51,11 @@ class _EaseTrialState extends State<EaseTrial> with SingleTickerProviderStateMix
     },
     onExit: (_) => _over = false,
     // The progress is scaled by 1.2 and clamped, so the end value is held briefly before the run stops.
-    child: AnimatedBuilder(animation: _run, builder: (_, _) => widget.builder(_run.isAnimating ? (_run.value * 1.2).clamp(0.0, 1.0) : null)),
+    child: AnimatedBuilder(
+      animation: _run,
+      builder: (_, _) => widget.builder(
+        _run.isAnimating ? (_run.value * 1.2).clamp(0.0, 1.0) : null,
+      ),
+    ),
   );
 }

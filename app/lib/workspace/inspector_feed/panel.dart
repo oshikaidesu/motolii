@@ -16,7 +16,8 @@ import 'package:motolii/workspace/inspector_feed/cards.dart';
 import 'package:motolii/workspace/inspector_feed/keyframe_marks.dart';
 import 'package:motolii/workspace/inspector_feed/values.dart';
 import 'package:motolii/workspace/shelf/effect_code.dart';
-import 'package:motolii/workspace/stage/stage_view_relations.dart' show RelationStack;
+import 'package:motolii/workspace/stage/stage_view_relations.dart'
+    show RelationStack;
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_aspect.dart';
 import 'package:motolii/workspace/state/workspace_scope.dart';
@@ -37,7 +38,9 @@ class _InspectorPanelState extends State<InspectorPane> {
   //  picked has keys; played, a thing with no keys shows the same numbers, so it is not built again each picture)
   WorkspaceController? _ws;
   String? _id(WorkspaceController ws) => widget.layer ?? ws.selected;
-  Layer? _layerOf(WorkspaceController ws) => widget.layer == null ? ws.layer : ws.layers.where((x) => x.id == widget.layer).firstOrNull;
+  Layer? _layerOf(WorkspaceController ws) => widget.layer == null
+      ? ws.layer
+      : ws.layers.where((x) => x.id == widget.layer).firstOrNull;
   Object? _seen;
   (int, bool)? _stageKeyed;
   bool _keyed(WorkspaceController ws) {
@@ -45,12 +48,21 @@ class _InspectorPanelState extends State<InspectorPane> {
     if (l != null) return l.keys.isNotEmpty;
     final m = ws.inside;
     if (m == null) return true;
-    if (_stageKeyed?.$1 != ws.rev) _stageKeyed = (ws.rev, m.moving(0).any((n) => m.keyTimes(0, n).isNotEmpty)); // (the stage's: once a document)
+    if (_stageKeyed?.$1 != ws.rev) {
+      _stageKeyed = (
+        ws.rev,
+        m.moving(0).any((n) => m.keyTimes(0, n).isNotEmpty),
+      ); // (the stage's: once a document)
+    }
     return _stageKeyed!.$2;
   }
 
   // (the moment alone moved: the values and key marks told to the inspector as it stands; anything else: built again)
-  final _live = ValueNotifier<(Map<String, double>, Map<String, KeyframeState>)>((const {}, const {}));
+  final _live =
+      ValueNotifier<(Map<String, double>, Map<String, KeyframeState>)>((
+        const {},
+        const {},
+      ));
   int? _frame;
   String? _titles; // (the picked thing's cards' titles as last read)
   Object _now(WorkspaceController ws) => (ws.rev, _id(ws), ws.animating);
@@ -58,8 +70,16 @@ class _InspectorPanelState extends State<InspectorPane> {
   // (the reading of the document changed only numbers of what is picked, none that changes its cards: they are told
   //  to the fields that show them, as a moment's are; anything else, or not known: the inspector built again)
   bool _onlyNumbers(WorkspaceController ws) {
-    final m = ws.inside, c = ws.lastChange, t = int.tryParse(_id(ws) ?? '') ?? (_id(ws) == null ? 0 : null);
-    if (m == null || c == null || c.layers || t == null || const bool.fromEnvironment('NOPOUR')) return false;
+    final m = ws.inside,
+        c = ws.lastChange,
+        t = int.tryParse(_id(ws) ?? '') ?? (_id(ws) == null ? 0 : null);
+    if (m == null ||
+        c == null ||
+        c.layers ||
+        t == null ||
+        const bool.fromEnvironment('NOPOUR')) {
+      return false;
+    }
     final titles = [for (final (title, _) in m.cards(t)) title].join(';');
     if (titles != _titles) {
       // (a card put on or taken off by its values alone: the Script card's knobs, as the Repeater is laid out from the Create shelf or taken off by its Reset)
@@ -67,11 +87,19 @@ class _InspectorPanelState extends State<InspectorPane> {
       return false;
     }
     for (final (thing, name) in c.values) {
-      if (name == 'name' || (thing == t && (m.shaping.contains(name) || m.range(t, name) == null || m.shown(name)?.look == 'thing'))) {
+      if (name == 'name' ||
+          (thing == t &&
+              (m.shaping.contains(name) ||
+                  m.range(t, name) == null ||
+                  m.shown(name)?.look == 'thing'))) {
         return false; // (another thing: shown by its name, a word) // (a name changed anywhere: things are named on cards; a word: it is not watched)
       }
       // (nor is an effect's colour, three numbers shown as one swatch as a word is (cards.dart): golf_noise.md (84))
-      if (thing == t && RegExp(r'_[xyz]$').hasMatch(name) && RegExp(r' [rgb]$').hasMatch(m.shown(name)?.label ?? '')) return false;
+      if (thing == t &&
+          RegExp(r'_[xyz]$').hasMatch(name) &&
+          RegExp(r' [rgb]$').hasMatch(m.shown(name)?.label ?? '')) {
+        return false;
+      }
     }
     return true;
   }
@@ -81,16 +109,28 @@ class _InspectorPanelState extends State<InspectorPane> {
     WorkspaceAspect.picked,
     WorkspaceAspect.animating,
   ]; // (what the inspector shows: the picked thing's cards, Animate all)
-  void _changed() => Timeline.timeSync('inspector at a moment', _changedNow); // (named in Flutter's timeline)
+  void _changed() => Timeline.timeSync(
+    'inspector at a moment',
+    _changedNow,
+  ); // (named in Flutter's timeline)
   void _changedNow() {
     final ws = _ws!, now = _now(ws), was = _seen;
     if (now != _seen) {
       _seen = now;
       _frame = ws.frame;
-      if (was is (int, String?, bool) && was.$2 == _id(ws) && was.$3 == ws.animating && _onlyNumbers(ws)) {
+      if (was is (int, String?, bool) &&
+          was.$2 == _id(ws) &&
+          was.$3 == ws.animating &&
+          _onlyNumbers(ws)) {
         _live.value = (
-          WorkspaceController.timed('transform', () => layerTransform(ws, _layerOf(ws)?.id)),
-          WorkspaceController.timed('key marks', () => keyframeMarks(ws, _layerOf(ws)?.id)),
+          WorkspaceController.timed(
+            'transform',
+            () => layerTransform(ws, _layerOf(ws)?.id),
+          ),
+          WorkspaceController.timed(
+            'key marks',
+            () => keyframeMarks(ws, _layerOf(ws)?.id),
+          ),
         );
         return;
       }
@@ -99,8 +139,14 @@ class _InspectorPanelState extends State<InspectorPane> {
       _frame = ws.frame;
       if (!_keyed(ws)) return;
       _live.value = (
-        WorkspaceController.timed('transform', () => layerTransform(ws, _layerOf(ws)?.id)),
-        WorkspaceController.timed('key marks', () => keyframeMarks(ws, _layerOf(ws)?.id)),
+        WorkspaceController.timed(
+          'transform',
+          () => layerTransform(ws, _layerOf(ws)?.id),
+        ),
+        WorkspaceController.timed(
+          'key marks',
+          () => keyframeMarks(ws, _layerOf(ws)?.id),
+        ),
       );
       _settle?.cancel();
       _settle = Timer(
@@ -116,10 +162,18 @@ class _InspectorPanelState extends State<InspectorPane> {
   //  at a moment): the numbers told to the fields that show them; nothing built again)
   void _seenNow() {
     final ws = _ws!;
-    if (_now(ws) != _seen || _id(ws) == null || ws.playing) return; // (played: the moment's own reading above)
+    if (_now(ws) != _seen || _id(ws) == null || ws.playing) {
+      return; // (played: the moment's own reading above)
+    }
     _live.value = (
-      WorkspaceController.timed('transform', () => layerTransform(ws, _layerOf(ws)?.id)),
-      WorkspaceController.timed('key marks', () => keyframeMarks(ws, _layerOf(ws)?.id)),
+      WorkspaceController.timed(
+        'transform',
+        () => layerTransform(ws, _layerOf(ws)?.id),
+      ),
+      WorkspaceController.timed(
+        'key marks',
+        () => keyframeMarks(ws, _layerOf(ws)?.id),
+      ),
     );
   }
 
@@ -127,7 +181,12 @@ class _InspectorPanelState extends State<InspectorPane> {
   (Size, InspectorPanel)? _panel;
   InspectorPanel _panelOf(BoxConstraints box) {
     final size = Size(box.maxWidth, box.maxHeight);
-    if (_panel?.$1 != size) _panel = (size, InspectorPanel(width: box.maxWidth, height: box.maxHeight));
+    if (_panel?.$1 != size) {
+      _panel = (
+        size,
+        InspectorPanel(width: box.maxWidth, height: box.maxHeight),
+      );
+    }
     return _panel!.$2;
   }
 
@@ -143,7 +202,9 @@ class _InspectorPanelState extends State<InspectorPane> {
       _ws?.moment.removeListener(_changed);
       _ws?.seen.removeListener(_seenNow);
       _ws = ws;
-      ws.moment.addListener(_changed); // (the playhead too: the inspector's numbers are at the moment)
+      ws.moment.addListener(
+        _changed,
+      ); // (the playhead too: the inspector's numbers are at the moment)
       ws.seen.addListener(_seenNow);
       _seen = _now(ws);
       _frame = ws.frame;
@@ -164,20 +225,45 @@ class _InspectorPanelState extends State<InspectorPane> {
 
   @override
   Widget build(BuildContext context) {
-    final ws = WorkspaceScope.read(context), l = _layerOf(ws), k = _kindOf(l), m = ws.inside!, own = widget.only == null;
-    if (!own && l == null) return const SizedBox.shrink(); // (never the stage's cards)
+    final ws = WorkspaceScope.read(context),
+        l = _layerOf(ws),
+        k = _kindOf(l),
+        m = ws.inside!,
+        own = widget.only == null;
+    if (!own && l == null) {
+      return const SizedBox.shrink(); // (never the stage's cards)
+    }
     Widget host(Widget child) => InspectorHost(
       key: ValueKey(k),
       kind: k,
       kindWord: _kindWord(ws, l?.id),
-      cards: WorkspaceController.timed('value cards', () => valueCards(ws, l?.id)?.where((c) => own || widget.only!.contains(c.name)).toList()),
+      cards: WorkspaceController.timed(
+        'value cards',
+        () => valueCards(
+          ws,
+          l?.id,
+        )?.where((c) => own || widget.only!.contains(c.name)).toList(),
+      ),
       title: l?.name,
       onRoute: ws.route,
-      onAim: (at) => ws.aim = at.startsWith('v_') ? at.substring(2) : null, // (a colour link of a card is aimed at that value)
-      movable: !own || int.tryParse(l?.id ?? '') == null ? const [] : m.fxTitles(int.parse(l!.id)), // (its effects, up or down their stack)
+      onAim: (at) => ws.aim = at.startsWith('v_')
+          ? at.substring(2)
+          : null, // (a colour link of a card is aimed at that value)
+      movable: !own || int.tryParse(l?.id ?? '') == null
+          ? const []
+          : m.fxTitles(
+              int.parse(l!.id),
+            ), // (its effects, up or down their stack)
       onCardMove: !own || int.tryParse(l?.id ?? '') == null
           ? null
-          : (title, by) => ws.after(m.later('fx_move', layer: int.parse(l!.id), word: title, number: by.toDouble())),
+          : (title, by) => ws.after(
+              m.later(
+                'fx_move',
+                layer: int.parse(l!.id),
+                word: title,
+                number: by.toDouble(),
+              ),
+            ),
       onSum: m.workOut,
       moreCards: !own || int.tryParse(l?.id ?? '') == null
           ? const []
@@ -191,7 +277,11 @@ class _InspectorPanelState extends State<InspectorPane> {
               m.asked.putIfAbsent(int.parse(l!.id), () => {}).add(title);
               ws.reread();
             },
-      onAddEffect: !own || int.tryParse(l?.id ?? '') == null || l?.kind == LayerKind.audio || m.word(int.parse(l!.id), 'kind') == 'light'
+      onAddEffect:
+          !own ||
+              int.tryParse(l?.id ?? '') == null ||
+              l?.kind == LayerKind.audio ||
+              m.word(int.parse(l!.id), 'kind') == 'light'
           ? null
           : () {
               // (a light takes none: the inside's fx is a film's, a picture's, a text's, a shape's, a solid's, a camera's)
@@ -201,19 +291,36 @@ class _InspectorPanelState extends State<InspectorPane> {
       onCardRemove: int.tryParse(l?.id ?? '') == null
           ? null
           : (title) => ws.after(
-              title == 'Script' ? m.later('say', layer: int.parse(l!.id), name: 'script', word: '') : m.later('fx_out', layer: int.parse(l!.id), word: title),
+              title == 'Script'
+                  ? m.later(
+                      'say',
+                      layer: int.parse(l!.id),
+                      name: 'script',
+                      word: '',
+                    )
+                  : m.later('fx_out', layer: int.parse(l!.id), word: title),
               (_, _) => ws.reread(),
             ),
       cardCode: int.tryParse(l?.id ?? '') == null
           ? null
           : (title, names) => title == 'Script'
                 ? (m.word(int.parse(l!.id), 'script').endsWith('.js')
-                      ? EffectCode(ws, int.parse(l.id), m.word(int.parse(l.id), 'script'), slot: 'script', shelf: false, key: ValueKey('script-code-${l.id}'))
+                      ? EffectCode(
+                          ws,
+                          int.parse(l.id),
+                          m.word(int.parse(l.id), 'script'),
+                          slot: 'script',
+                          shelf: false,
+                          key: ValueKey('script-code-${l.id}'),
+                        )
                       : null)
                 : EffectCode.of(ws, int.parse(l!.id), title, names), // (a script's code under its knobs, and an effect's: effect_code.dart)
       onCardEye: int.tryParse(l?.id ?? '') == null
           ? null
-          : (title) => ws.after(m.later('fx_visible', layer: int.parse(l!.id), word: title), (_, _) => ws.reread()),
+          : (title) => ws.after(
+              m.later('fx_visible', layer: int.parse(l!.id), word: title),
+              (_, _) => ws.reread(),
+            ),
       onCardDuplicate: int.tryParse(l?.id ?? '') == null
           ? null
           : (title) => ws.after(
@@ -225,12 +332,20 @@ class _InspectorPanelState extends State<InspectorPane> {
           : '$title: ${m.about(title)}', // (in its maker's words, as the shelf searches them)
       onCardSave: int.tryParse(l?.id ?? '') == null
           ? null
-          : (title, names) => ws.after(m.later('keep_preset', layer: int.parse(l!.id), name: names.join(' '), word: title), (done, why) {
-              // (that effect's values and keys a look on the Effects shelf, by its name and a number the inside gives it)
-              m.forgetFolders();
-              ws.notice = done ? 'Preset kept: $title' : 'Not kept: $why';
-              ws.reread();
-            }),
+          : (title, names) => ws.after(
+              m.later(
+                'keep_preset',
+                layer: int.parse(l!.id),
+                name: names.join(' '),
+                word: title,
+              ),
+              (done, why) {
+                // (that effect's values and keys a look on the Effects shelf, by its name and a number the inside gives it)
+                m.forgetFolders();
+                ws.notice = done ? 'Preset kept: $title' : 'Not kept: $why';
+                ws.reread();
+              },
+            ),
       cardsOff: int.tryParse(l?.id ?? '') == null
           ? const []
           : [
@@ -239,7 +354,10 @@ class _InspectorPanelState extends State<InspectorPane> {
             ],
       onCardReset: !own || int.tryParse(l?.id ?? '') == null
           ? null
-          : (names) => ws.after(m.later('reset', layer: int.parse(l!.id), word: names.join(' ')), (_, _) => ws.reread()),
+          : (names) => ws.after(
+              m.later('reset', layer: int.parse(l!.id), word: names.join(' ')),
+              (_, _) => ws.reread(),
+            ),
       onCardCopy: !own || int.tryParse(l?.id ?? '') == null
           ? null
           : (names) => m.later(
@@ -251,18 +369,36 @@ class _InspectorPanelState extends State<InspectorPane> {
       onCardPaste: !own || int.tryParse(l?.id ?? '') == null
           ? null
           : () => File(WorkspaceState.clipboard('card')).existsSync()
-                ? ws.after(m.later('paste_style', layer: int.parse(l!.id), word: WorkspaceState.clipboard('card')), (_, _) => ws.reread())
+                ? ws.after(
+                    m.later(
+                      'paste_style',
+                      layer: int.parse(l!.id),
+                      word: WorkspaceState.clipboard('card'),
+                    ),
+                    (_, _) => ws.reread(),
+                  )
                 : null,
-      values: WorkspaceController.timed('transform', () => layerTransform(ws, l?.id)),
+      values: WorkspaceController.timed(
+        'transform',
+        () => layerTransform(ws, l?.id),
+      ),
       strs: WorkspaceController.timed('words', () => layerWords(ws, l?.id)),
       onWords: (changed) => writeWords(ws, l?.id, changed),
       onAnimateAll: (on) => ws.animating = on,
       animating: ws.animating,
-      flags: own ? WorkspaceController.timed('flags', () => layerFlags(ws, l?.id)) : const {},
+      flags: own
+          ? WorkspaceController.timed('flags', () => layerFlags(ws, l?.id))
+          : const {},
       onFlags: own ? (changed) => writeFlags(ws, l?.id, changed) : null,
-      keyMarks: WorkspaceController.timed('key marks', () => keyframeMarks(ws, l?.id)),
-      onValues: (changed, {required live}) => writeNumbers(ws, l?.id, changed, live: live),
-      onDrop: () => ws.after(m.later('drag_end')), // (put down unchanged, without waiting)
+      keyMarks: WorkspaceController.timed(
+        'key marks',
+        () => keyframeMarks(ws, l?.id),
+      ),
+      onValues: (changed, {required live}) =>
+          writeNumbers(ws, l?.id, changed, live: live),
+      onDrop: () => ws.after(
+        m.later('drag_end'),
+      ), // (put down unchanged, without waiting)
       onKey: (prop, mark) => applyKeyframeMark(ws, l?.id, prop, mark),
       together: (tells) {
         // (one step, asked without waiting: begun and ended in the inside's queue around what is told)
@@ -278,7 +414,9 @@ class _InspectorPanelState extends State<InspectorPane> {
             children: [
               const RelationStack(),
               Expanded(
-                child: LayoutBuilder(builder: (context, box) => host(_panelOf(box))),
+                child: LayoutBuilder(
+                  builder: (context, box) => host(_panelOf(box)),
+                ),
               ), // (the same panel while the pane keeps its size: built again only by what it reads, InspectorScope)
             ],
           )
@@ -293,7 +431,9 @@ class _Cards extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [for (final c in InspectorScope.of(context).doc.cards) ValuesCard(c)],
+    children: [
+      for (final c in InspectorScope.of(context).doc.cards) ValuesCard(c),
+    ],
   );
 }
 
@@ -303,15 +443,23 @@ class LayerCards extends StatelessWidget {
   final String layer;
   final List<String> only;
   @override
-  Widget build(BuildContext context) => InspectorPane(key: ValueKey(layer), layer: layer, only: only);
+  Widget build(BuildContext context) =>
+      InspectorPane(key: ValueKey(layer), layer: layer, only: only);
 }
 
 /// The document's name for a layer's kind, for kinds the inspector's own [Kind] has no entry for (video, image, solid).
 String? _kindWord(WorkspaceController ws, String? id) {
-  final t = int.tryParse(id ?? ''), w = t == null ? '' : ws.inside?.word(t, 'kind') ?? '';
-  if (w == 'behaviour') return relationKinds.contains(ws.inside?.word(t!, 'file')) ? 'Relation' : 'Behaviour';
+  final t = int.tryParse(id ?? ''),
+      w = t == null ? '' : ws.inside?.word(t, 'kind') ?? '';
+  if (w == 'behaviour') {
+    return relationKinds.contains(ws.inside?.word(t!, 'file'))
+        ? 'Relation'
+        : 'Behaviour';
+  }
   if (w == 'film' && isSoundLayer(ws.inside!, t!)) return 'Sound';
-  return const {'film', 'picture', 'solid', 'light'}.contains(w) ? w.replaceRange(0, 1, w[0].toUpperCase()) : null;
+  return const {'film', 'picture', 'solid', 'light'}.contains(w)
+      ? w.replaceRange(0, 1, w[0].toUpperCase())
+      : null;
 }
 
 Kind _kindOf(Layer? l) => switch (l?.kind) {

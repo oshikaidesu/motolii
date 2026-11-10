@@ -10,7 +10,16 @@ import 'package:motolii/skin/window_tokens.dart';
 
 /// Hover and tap handling for a tile. It rebuilds only when the pointer enters or leaves.
 class DockHover extends StatefulWidget {
-  const DockHover({super.key, required this.builder, this.onTap, this.onDoubleTap, this.picks = false, this.onHover, this.onMenu, this.onMove});
+  const DockHover({
+    super.key,
+    required this.builder,
+    this.onTap,
+    this.onDoubleTap,
+    this.picks = false,
+    this.onHover,
+    this.onMenu,
+    this.onMove,
+  });
 
   /// Whether Cmd was held when the last tile was pressed.
   static bool cmdAtPress = false;
@@ -65,7 +74,12 @@ class _DockHoverState extends State<DockHover> {
   // left the shelf's button acting on the previously selected tile. The second press belongs to the double-click.
   void _down(PointerDownEvent e) {
     DockHover.cmdAtPress = HardwareKeyboard.instance.isMetaPressed;
-    if (!widget.picks || widget.onDoubleTap == null || widget.onTap == null || e.buttons != kPrimaryButton) return;
+    if (!widget.picks ||
+        widget.onDoubleTap == null ||
+        widget.onTap == null ||
+        e.buttons != kPrimaryButton) {
+      return;
+    }
     final second = _second?.isActive ?? false;
     _second?.cancel();
     _second = second ? null : Timer(kDoubleTapTimeout, () {});
@@ -78,7 +92,10 @@ class _DockHoverState extends State<DockHover> {
   void _up(PointerEvent e) {
     if (!DockHover.secondMayCome.value) return;
     DockHover._past?.cancel();
-    DockHover._past = Timer(kDoubleTapTimeout, () => DockHover.secondMayCome.value = false);
+    DockHover._past = Timer(
+      kDoubleTapTimeout,
+      () => DockHover.secondMayCome.value = false,
+    );
   }
 
   @override
@@ -86,7 +103,9 @@ class _DockHoverState extends State<DockHover> {
     cursor: widget.onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
     onEnter: (_) => _hover(true),
     onExit: (_) => _hover(false),
-    onHover: widget.onMove == null ? null : (e) => widget.onMove!(e.localPosition),
+    onHover: widget.onMove == null
+        ? null
+        : (e) => widget.onMove!(e.localPosition),
     child: _carried(
       Listener(
         // Sees the press as it arrives, before the gesture arena decides what it is.
@@ -95,9 +114,13 @@ class _DockHoverState extends State<DockHover> {
         onPointerCancel: _up,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: widget.picks && widget.onDoubleTap != null ? null : widget.onTap,
+          onTap: widget.picks && widget.onDoubleTap != null
+              ? null
+              : widget.onTap,
           onDoubleTap: widget.onDoubleTap,
-          onSecondaryTapDown: widget.onMenu == null ? null : (d) => widget.onMenu!(d.globalPosition),
+          onSecondaryTapDown: widget.onMenu == null
+              ? null
+              : (d) => widget.onMenu!(d.globalPosition),
           child: widget.builder(context, _h),
         ),
       ),
@@ -114,7 +137,10 @@ class _DockHoverState extends State<DockHover> {
             child: Container(
               width: Shape.z(22),
               height: Shape.z(22),
-              decoration: BoxDecoration(color: WindowTokens.accent, borderRadius: BorderRadius.all(Shape.r(4))),
+              decoration: BoxDecoration(
+                color: WindowTokens.accent,
+                borderRadius: BorderRadius.all(Shape.r(4)),
+              ),
             ),
           ),
           child: tile,

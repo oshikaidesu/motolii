@@ -6,15 +6,19 @@ import 'package:crypto/crypto.dart' show sha256;
 
 import 'package:motolii/bridge/engine_paths.dart' show motoliiShelves;
 import 'package:motolii/storage/unique_name.dart' show firstFree;
-import 'package:motolii/storage/json_file.dart' show fileJson, fileKeep, fileList;
+import 'package:motolii/storage/json_file.dart'
+    show fileJson, fileKeep, fileList;
 
 /// The file of recently used effects, newest first, at most forty, as Alight Motion's effect browser keeps them
 /// (EffectBrowser.kt:117). It is stored like the Fonts shelf's font_recent.json. Tests point it elsewhere with
 /// [effectRecentAt].
-File _recentFile = File('${Platform.environment['HOME']}/.motolii/effect_recent.json');
+File _recentFile = File(
+  '${Platform.environment['HOME']}/.motolii/effect_recent.json',
+);
 List<String>? _recent;
 void effectRecentAt(File f) => (_recentFile = f, _recent = null);
-List<String> effectRecent() => _recent ??= [for (final s in fileList(_recentFile)) '$s'];
+List<String> effectRecent() =>
+    _recent ??= [for (final s in fileList(_recentFile)) '$s'];
 
 /// Records that an effect was applied.
 ///
@@ -28,8 +32,10 @@ void effectUsed(String id, {required String words, required String chip}) {
   if (r.length > 40) r.removeRange(40, r.length);
   fileKeep(_recentFile, jsonEncode(r));
   try {
-    File('${_recentFile.parent.path}/effect_used.jsonl')
-        .writeAsStringSync('${jsonEncode({'at': DateTime.now().toIso8601String(), 'id': id, 'words': words, 'chip': chip})}\n', mode: FileMode.append);
+    File('${_recentFile.parent.path}/effect_used.jsonl').writeAsStringSync(
+      '${jsonEncode({'at': DateTime.now().toIso8601String(), 'id': id, 'words': words, 'chip': chip})}\n',
+      mode: FileMode.append,
+    );
   } catch (_) {
     // The log is optional. The recent list stays in memory while the app is open.
   }
@@ -46,7 +52,8 @@ class DeckThing {
   String id;
   final String name, sum;
   Map<String, String> get json => {'id': id, 'name': name, 'sum': sum};
-  static DeckThing of(Map j) => DeckThing('${j['id']}', '${j['name']}', '${j['sum'] ?? ''}');
+  static DeckThing of(Map j) =>
+      DeckThing('${j['id']}', '${j['name']}', '${j['sum'] ?? ''}');
 }
 
 /// A deck of effects made by the user, like Ableton's Collections or Suitcase's sets.
@@ -56,7 +63,13 @@ class DeckThing {
 /// search alone cannot be adjusted by hand, so a deck has both, as Lightroom's collections and smart collections do.
 /// [without] holds the effects that the words find but the user removed.
 class EffectDeck {
-  EffectDeck(this.name, {this.words = '', List<DeckThing>? things, Set<String>? without}) : things = things ?? [], without = without ?? {};
+  EffectDeck(
+    this.name, {
+    this.words = '',
+    List<DeckThing>? things,
+    Set<String>? without,
+  }) : things = things ?? [],
+       without = without ?? {};
   String name, words;
   final List<DeckThing> things;
   final Set<String> without;
@@ -72,13 +85,16 @@ class EffectDeck {
   static EffectDeck of(Map j) => EffectDeck(
     '${j['name']}',
     words: '${j['words'] ?? ''}',
-    things: [for (final t in j['things'] as List? ?? const []) DeckThing.of(t as Map)],
+    things: [
+      for (final t in j['things'] as List? ?? const []) DeckThing.of(t as Map),
+    ],
     without: {for (final s in j['without'] as List? ?? const []) '$s'},
   );
 
   /// Adds the effect to the deck or removes it by hand. [found] tells whether the deck's words find it.
   void toggle(String id, String name, {required bool found}) {
-    final there = !without.contains(id) && (found || things.any((t) => t.id == id));
+    final there =
+        !without.contains(id) && (found || things.any((t) => t.id == id));
     things.removeWhere((t) => t.id == id);
     without.remove(id);
     if (there && found) without.add(id);
@@ -87,12 +103,17 @@ class EffectDeck {
 }
 
 /// The file that stores the decks, like the Colors shelf's palettes. Tests point it elsewhere with [effectDecksAt].
-File _decksFile = File('${Platform.environment['HOME']}/.motolii/effect_decks.json');
+File _decksFile = File(
+  '${Platform.environment['HOME']}/.motolii/effect_decks.json',
+);
 List<EffectDeck>? _decks;
 void effectDecksAt(File f) => (_decksFile = f, _decks = null);
 List<EffectDeck> effectDecks() => _decks ??= () {
   try {
-    return [for (final d in (fileJson(_decksFile) as Map)['decks'] as List) EffectDeck.of(d as Map)..target = d['target'] == true];
+    return [
+      for (final d in (fileJson(_decksFile) as Map)['decks'] as List)
+        EffectDeck.of(d as Map)..target = d['target'] == true,
+    ];
   } catch (_) {
     return <EffectDeck>[];
   }
@@ -102,7 +123,8 @@ void effectDecksKeep() {
     _decksFile,
     jsonEncode({
       'decks': [
-        for (final d in effectDecks()) {...d.json, if (d.target) 'target': true},
+        for (final d in effectDecks())
+          {...d.json, if (d.target) 'target': true},
       ],
     }),
   );
@@ -122,7 +144,8 @@ void effectTargetSet(EffectDeck? to) {
 
 /// A deck name no other deck has: [name], then "name 2" and so on, as Finder names a copy.
 String deckName(String name) {
-  final held = {for (final d in effectDecks()) d.name}, base = name.trim().isEmpty ? 'Deck' : name.trim();
+  final held = {for (final d in effectDecks()) d.name},
+      base = name.trim().isEmpty ? 'Deck' : name.trim();
   return firstFree(base, held.contains, (k) => '$base $k');
 }
 
@@ -131,7 +154,11 @@ String effectSum(String id) {
   try {
     // An id with '#' names one script of a file. The part after '#' is kept.
     final at = id.indexOf('#');
-    return sha256.convert(File(at < 0 ? id : id.substring(0, at)).readAsBytesSync()).toString().substring(0, 12) + (at < 0 ? '' : id.substring(at));
+    return sha256
+            .convert(File(at < 0 ? id : id.substring(0, at)).readAsBytesSync())
+            .toString()
+            .substring(0, 12) +
+        (at < 0 ? '' : id.substring(at));
   } catch (_) {
     return '';
   }
@@ -139,10 +166,13 @@ String effectSum(String id) {
 
 /// The name of the pack an effect came in: the folder under aviutl_scripts ('author__pack'), without the author part.
 /// Null for an effect that came alone.
-String? effectPack(String id) => RegExp(r'/aviutl_scripts/(?:[^/]*?__)?([^/]+)/').firstMatch(id)?[1];
+String? effectPack(String id) =>
+    RegExp(r'/aviutl_scripts/(?:[^/]*?__)?([^/]+)/').firstMatch(id)?[1];
 
 /// An effect id relative to the shelves folder that ships with the app, so it is the same on any machine.
-String _place(String id) => id.startsWith('$motoliiShelves/') ? id.substring(motoliiShelves.length + 1) : id;
+String _place(String id) => id.startsWith('$motoliiShelves/')
+    ? id.substring(motoliiShelves.length + 1)
+    : id;
 
 /// Encodes a deck as one line of text that can be pasted anywhere, as a Hearthstone deck code is pasted into a forum
 /// or a video description.
@@ -170,7 +200,15 @@ String deckCode(EffectDeck d) =>
 EffectDeck? deckRead(String line) {
   if (!line.startsWith(deckCodeHead)) return null;
   try {
-    return EffectDeck.of(jsonDecode(utf8.decode(gzip.decode(base64Url.decode(line.substring(deckCodeHead.length).trim())))) as Map);
+    return EffectDeck.of(
+      jsonDecode(
+        utf8.decode(
+          gzip.decode(
+            base64Url.decode(line.substring(deckCodeHead.length).trim()),
+          ),
+        ),
+      ) as Map,
+    );
   } catch (_) {
     return null;
   }
@@ -186,7 +224,11 @@ void deckSettle(EffectDeck d, Set<String> ids) {
   Map<String, String>? sums;
   for (final t in d.things) {
     if (ids.contains(t.id)) continue;
-    final here = at[_place(t.id)] ?? (t.sum.isEmpty ? null : (sums ??= {for (final id in ids) effectSum(id): id})[t.sum]);
+    final here =
+        at[_place(t.id)] ??
+        (t.sum.isEmpty
+            ? null
+            : (sums ??= {for (final id in ids) effectSum(id): id})[t.sum]);
     if (here != null) t.id = here;
   }
   final out = {for (final s in d.without) at[_place(s)] ?? s};

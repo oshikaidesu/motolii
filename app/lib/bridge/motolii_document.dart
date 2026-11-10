@@ -4,32 +4,50 @@ import 'package:motolii/bridge/motolii.dart';
 import 'package:motolii/bridge/motolii_watch.dart';
 
 extension MotoliiDocument on Motolii {
-  Map<String, dynamic> layerSnapshot(int layer) => layerSnapshots[layer] ?? const {};
+  Map<String, dynamic> layerSnapshot(int layer) =>
+      layerSnapshots[layer] ?? const {};
 
   /// The default of a property the project does not store, if the layer's kind has that property (the engine's `doc_usual` and `doc_knows` tables).
   double? usual(int layer, String name) {
     if (!layerSnapshots.containsKey(layer)) return null;
     final kind = layer == 0 ? 'stage' : word(layer, 'kind');
-    final knows = kindProperties.putIfAbsent(kind, () => _spaced((documentSnapshot['knows'] as Map<String, dynamic>?)?[kind]).toSet());
-    return knows.contains(name) ? ((documentSnapshot['usual'] as Map<String, dynamic>?)?[name] as num?)?.toDouble() : null;
+    final knows = kindProperties.putIfAbsent(
+      kind,
+      () =>
+          _spaced((documentSnapshot['knows'] as Map<String, dynamic>?)?[kind])
+              .toSet(),
+    );
+    return knows.contains(name)
+        ? ((documentSnapshot['usual'] as Map<String, dynamic>?)?[name] as num?)
+              ?.toDouble()
+        : null;
   }
 
   double get seconds => (documentSnapshot['seconds'] as num?)?.toDouble() ?? 0;
 
   /// A layer's string property by name (kind, file, shape, blend, text, fill). Empty if it has none.
-  String word(int layer, String name) => ((layerSnapshot(layer)['word'] as Map<String, dynamic>?)?[name] as String?) ?? '';
+  String word(int layer, String name) =>
+      ((layerSnapshot(layer)['word'] as Map<String, dynamic>?)?[name]
+          as String?) ??
+      '';
 
   /// How long a layer is on, in seconds. A negative value means it never ends.
-  double lasts(int layer) => (layerSnapshot(layer)['lasts'] as num?)?.toDouble() ?? -1;
+  double lasts(int layer) =>
+      (layerSnapshot(layer)['lasts'] as num?)?.toDouble() ?? -1;
 
   /// The time of every keyframe of any property of a layer, each once and in order. The timeline bar draws these.
-  List<double> layerKeyTimes(int layer) => Motolii.numbers(layerSnapshot(layer)['keys']);
+  List<double> layerKeyTimes(int layer) =>
+      Motolii.numbers(layerSnapshot(layer)['keys']);
 
   /// The times of a property's keyframes. Empty if it has none.
-  List<double> keyTimes(int layer, String name) => Motolii.numbers((layerSnapshot(layer)['keyTimes'] as Map<String, dynamic>?)?[name]);
+  List<double> keyTimes(int layer, String name) => Motolii.numbers(
+    (layerSnapshot(layer)['keyTimes'] as Map<String, dynamic>?)?[name],
+  );
 
   /// The value of each keyframe of a property, in the order of [keyTimes].
-  List<double> keyValues(int layer, String name) => Motolii.numbers((layerSnapshot(layer)['keyValues'] as Map<String, dynamic>?)?[name]);
+  List<double> keyValues(int layer, String name) => Motolii.numbers(
+    (layerSnapshot(layer)['keyValues'] as Map<String, dynamic>?)?[name],
+  );
 
   /// What the undo steps changed since the last call (calling clears it).
   ///
@@ -41,7 +59,8 @@ extension MotoliiDocument on Motolii {
       layers: lines.contains('layers'),
       values: {
         for (final l in lines)
-          if (l.indexOf(' ') case final i when i > 0) (int.parse(l.substring(0, i)), l.substring(i + 1)),
+          if (l.indexOf(' ') case final i when i > 0)
+            (int.parse(l.substring(0, i)), l.substring(i + 1)),
       },
     );
   }
@@ -69,25 +88,35 @@ extension MotoliiDocument on Motolii {
 
   /// The markers, each a time and a name, in time order. Setting a marker's name to empty removes it.
   List<(double, String)> get marks => [
-    for (final line in ((documentSnapshot['marks'] as String?) ?? '').split('\n'))
-      if (line.indexOf(' ') case final i when i > 0) (double.parse(line.substring(0, i)), line.substring(i + 1)),
+    for (final line in ((documentSnapshot['marks'] as String?) ?? '').split(
+      '\n',
+    ))
+      if (line.indexOf(' ') case final i when i > 0)
+        (double.parse(line.substring(0, i)), line.substring(i + 1)),
   ];
 
   /// The app's choices saved with the project. They are not undo steps. Keyed by name.
   Map<String, String> get settings => {
-    for (final line in ((documentSnapshot['settings'] as String?) ?? '').split('\n'))
-      if (line.indexOf(' ') case final i when i > 0) line.substring(0, i): line.substring(i + 1),
+    for (final line in ((documentSnapshot['settings'] as String?) ?? '').split(
+      '\n',
+    ))
+      if (line.indexOf(' ') case final i when i > 0)
+        line.substring(0, i): line.substring(i + 1),
   };
 
   /// The markers that have a colour, mapping each marker's time to a label colour from 1 to 16.
   Map<double, int> get markColors => {
-    for (final line in ((documentSnapshot['markColours'] as String?) ?? '').split('\n'))
-      if (line.indexOf(' ') case final i when i > 0) double.parse(line.substring(0, i)): int.parse(line.substring(i + 1)),
+    for (final line
+        in ((documentSnapshot['markColours'] as String?) ?? '').split('\n'))
+      if (line.indexOf(' ') case final i when i > 0)
+        double.parse(line.substring(0, i)): int.parse(line.substring(i + 1)),
   };
 
   /// The guides: 'x' for vertical and 'y' for horizontal, each at a distance in points from the canvas's left or top edge.
   List<(String, double)> get guides => [
-    for (final line in ((documentSnapshot['guides'] as String?) ?? '').split('\n'))
+    for (final line in ((documentSnapshot['guides'] as String?) ?? '').split(
+      '\n',
+    ))
       if (line.length > 2) (line[0], double.parse(line.substring(2))),
   ];
 
@@ -137,45 +166,61 @@ extension MotoliiDocument on Motolii {
   ];
 
   /// The lowest and highest value of a numeric property. Null if the layer has no such property.
-  (double, double)? range(int layer, String name) => switch ((layerSnapshot(layer)['range'] as Map<String, dynamic>?)?[name]) {
-    [final num lo, final num hi] => (lo.toDouble(), hi.toDouble()),
-    _ => null,
-  };
+  (double, double)? range(int layer, String name) =>
+      switch ((layerSnapshot(layer)['range'] as Map<String, dynamic>?)?[name]) {
+        [final num lo, final num hi] => (lo.toDouble(), hi.toDouble()),
+        _ => null,
+      };
 
   /// The strings a property may take, such as blend modes. Empty if any string is allowed or the layer has no such property.
-  List<String> words(int layer, String name) => _spaced((layerSnapshot(layer)['words'] as Map<String, dynamic>?)?[name]);
+  List<String> words(int layer, String name) =>
+      _spaced((layerSnapshot(layer)['words'] as Map<String, dynamic>?)?[name]);
 
   List<String> get easingNames => _spaced(documentSnapshot['easingNames']);
 
   double easingAt(String easing, double u) {
     // An easing stored in the project is sampled from its curve in the snapshot.
     // One given by its numbers is evaluated by the engine, which does not read the project.
-    if ((documentSnapshot['easingCurves'] as Map<String, dynamic>?)?[easing] case final List<dynamic> c when c.length > 1) {
-      final at = u.clamp(0.0, 1.0) * (c.length - 1), i = at.floor().clamp(0, c.length - 2), f = at - i;
-      return (c[i] as num).toDouble() * (1 - f) + (c[i + 1] as num).toDouble() * f;
+    if ((documentSnapshot['easingCurves'] as Map<String, dynamic>?)?[easing]
+        case final List<dynamic> c when c.length > 1) {
+      final at = u.clamp(0.0, 1.0) * (c.length - 1),
+          i = at.floor().clamp(0, c.length - 2),
+          f = at - i;
+      return (c[i] as num).toDouble() * (1 - f) +
+          (c[i + 1] as num).toDouble() * f;
     }
-    return withStrings([easing], (s) => bindings.motolii_easing_at(handle, s[0], u));
+    return withStrings([
+      easing,
+    ], (s) => bindings.motolii_easing_at(handle, s[0], u));
   }
 
   /// An easing evaluated exactly by the engine, not interpolated from the snapshot's few samples. Use it for large curves.
-  double easingExact(String easing, double u) => withStrings([easing], (s) => bindings.motolii_easing_at(handle, s[0], u));
+  double easingExact(String easing, double u) =>
+      withStrings([easing], (s) => bindings.motolii_easing_at(handle, s[0], u));
 
   /// Every keyframed span of a layer as (from, to, easing), with times in seconds, so the timeline can draw each easing.
   List<(double, double, String)> layerStretches(int layer) => [
-    for (final l in ((layerSnapshot(layer)['stretches'] as String?) ?? '').split('\n'))
-      if (l.split('\t') case [final a, final b, final w]) (double.parse(a), double.parse(b), w),
+    for (final l
+        in ((layerSnapshot(layer)['stretches'] as String?) ?? '').split('\n'))
+      if (l.split('\t') case [final a, final b, final w])
+        (double.parse(a), double.parse(b), w),
   ];
 
   /// The easing of the span that starts at a property's keyframe. Empty if there is no keyframe at [at].
   String easingOf(int layer, String name, double at) {
-    final keys = keyTimes(layer, name), easings = (layerSnapshot(layer)['keyEasings'] as Map<String, dynamic>?)?[name] as List<dynamic>?;
+    final keys = keyTimes(layer, name),
+        easings =
+            (layerSnapshot(layer)['keyEasings'] as Map<String, dynamic>?)?[name]
+                as List<dynamic>?;
     // Pick the keyframe nearest [at] within half a frame. Two can fall in one frame when a bar is stretched off the frame grid.
     var i = -1;
     var near = .5 / rate;
     for (final (k, s) in keys.indexed) {
       if ((s - at).abs() < near) (i, near) = (k, (s - at).abs());
     }
-    return i < 0 || easings == null || i >= easings.length ? '' : easings[i] as String;
+    return i < 0 || easings == null || i >= easings.length
+        ? ''
+        : easings[i] as String;
   }
 
   /// Canvas points per stage unit at z = 0.
@@ -188,7 +233,11 @@ extension MotoliiDocument on Motolii {
   /// For example positions are in canvas points from the top left, and fractions are shown as percentages.
   /// Asked once per layer and name.
   (double, double) reading(int layer, String name) {
-    final f = (((layerSnapshot(layer)['reading'] as Map<String, dynamic>?)?[name] as String?) ?? '').split(' ');
+    final f =
+        (((layerSnapshot(layer)['reading'] as Map<String, dynamic>?)?[name]
+                    as String?) ??
+                '')
+            .split(' ');
     return f.length < 2 ? (1.0, 0.0) : (double.parse(f[0]), double.parse(f[1]));
   }
 }

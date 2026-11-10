@@ -18,15 +18,18 @@ class Draw extends CustomPainter {
 }
 
 /// A square box of side [size] painted by [fn]. It repaints when [key] changes.
-Widget glyph(double size, void Function(Canvas, Size) fn, [Object? key]) => SizedBox(
-  width: size,
-  height: size,
-  child: CustomPaint(painter: Draw(fn, key)),
-);
+Widget glyph(double size, void Function(Canvas, Size) fn, [Object? key]) =>
+    SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(painter: Draw(fn, key)),
+    );
 
 /// Paints a five-pointed star, filled or outlined.
 void drawStar(Canvas c, Size s, Color col, bool fill) {
-  final ctr = Offset(s.width / 2, s.height / 2 + .5), ro = s.width * .46, ri = ro * .45;
+  final ctr = Offset(s.width / 2, s.height / 2 + .5),
+      ro = s.width * .46,
+      ri = ro * .45;
   final p = Path();
   for (var i = 0; i < 10; i++) {
     final rr = i.isEven ? ro : ri, an = -math.pi / 2 + i * math.pi / 5;
@@ -89,12 +92,18 @@ class MiniSlider extends StatelessWidget {
       onChanged: onChanged,
       builder: (context, st, _) {
         final tw = Shape.z(thumb.width), pad = inset ?? tw / 2;
-        final xs = [for (var i = 0; i < values.length; i++) pad + (width - 2 * pad) * st.visualPercentageAt(i)];
+        final xs = [
+          for (var i = 0; i < values.length; i++)
+            pad + (width - 2 * pad) * st.visualPercentageAt(i),
+        ];
         final from = xs.length > 1 ? xs.first : 0.0;
         Widget bar(double w, Color c) => Container(
           width: w,
           height: Shape.z(groove),
-          decoration: BoxDecoration(color: c, borderRadius: BorderRadius.all(Shape.r(groove / 2))),
+          decoration: BoxDecoration(
+            color: c,
+            borderRadius: BorderRadius.all(Shape.r(groove / 2)),
+          ),
         );
         return SizedBox(
           width: width,
@@ -103,14 +112,22 @@ class MiniSlider extends StatelessWidget {
             alignment: Alignment.centerLeft,
             children: [
               bar(width, well ?? Grey.g26),
-              Positioned(left: from, child: bar(xs.last - from, fill ?? Grey.g56)),
+              Positioned(
+                left: from,
+                child: bar(xs.last - from, fill ?? Grey.g56),
+              ),
               for (final x in xs)
                 Positioned(
                   left: x - tw / 2,
                   child: Container(
                     width: tw,
                     height: Shape.z(thumb.height),
-                    decoration: BoxDecoration(color: thumbColor ?? Grey.g95, borderRadius: BorderRadius.all(Radius.circular(thumbRadius ?? 99))),
+                    decoration: BoxDecoration(
+                      color: thumbColor ?? Grey.g95,
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(thumbRadius ?? 99),
+                      ),
+                    ),
                   ),
                 ),
             ],

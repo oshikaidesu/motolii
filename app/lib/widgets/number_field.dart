@@ -18,10 +18,35 @@ const doubleClickTime = Duration(milliseconds: 320);
 
 /// Inverts a number's colours (light for dark) to mark a value outside the range the caller has a source for.
 /// Implemented as a color inversion with Flutter's ColorFilter.matrix.
-const pastInk = ColorFilter.matrix(<double>[-1, 0, 0, 0, 255, 0, -1, 0, 0, 255, 0, 0, -1, 0, 255, 0, 0, 0, 1, 0]);
+const pastInk = ColorFilter.matrix(<double>[
+  -1,
+  0,
+  0,
+  0,
+  255,
+  0,
+  -1,
+  0,
+  0,
+  255,
+  0,
+  0,
+  -1,
+  0,
+  255,
+  0,
+  0,
+  0,
+  1,
+  0,
+]);
 
 /// The text style for the number in a tile. A row uses TextStyles.value at size 10.5 instead.
-TextStyle blockValue(Color c) => TextStyles.value(c).copyWith(fontSize: TextStyles.px(14), fontWeight: FontWeight.w600, height: 1.1);
+TextStyle blockValue(Color c) => TextStyles.value(c).copyWith(
+  fontSize: TextStyles.px(14),
+  fontWeight: FontWeight.w600,
+  height: 1.1,
+);
 
 /// A numeric field that can be scrubbed, scrolled, nudged with the arrow keys, and typed into. See the file header.
 class NumberField extends StatefulWidget {
@@ -154,5 +179,6 @@ class NumberField extends StatefulWidget {
 class ScrubClaim extends EagerGestureRecognizer {
   bool Function(PointerDownEvent) takes = (_) => false;
   @override
-  bool isPointerAllowed(PointerDownEvent event) => takes(event) && super.isPointerAllowed(event);
+  bool isPointerAllowed(PointerDownEvent event) =>
+      takes(event) && super.isPointerAllowed(event);
 }

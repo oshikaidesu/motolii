@@ -11,7 +11,8 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/context_menu.dart';
 import 'package:motolii/widgets/text_gestures.dart';
 import 'package:motolii/workspace/commands/layer_menu.dart';
-import 'package:motolii/workspace/commands/panel_requests.dart' show timelineRequest, renameRequested, requestTimeline, selectedMarker;
+import 'package:motolii/workspace/commands/panel_requests.dart'
+    show timelineRequest, renameRequested, requestTimeline, selectedMarker;
 import 'package:motolii/workspace/state/layer.dart';
 import 'package:motolii/workspace/state/workspace_controller.dart';
 import 'package:motolii/workspace/timeline/timeline.dart';
@@ -29,7 +30,8 @@ mixin TimelineRequests on State<TimelinePane> {
   // The id of the layer row being renamed with Cmd+R, as in Live.
   String? _renaming;
   final _renameWords = TextEditingController();
-  late final FocusNode _renameFocus = FocusNode()..addListener(() => _renameFocus.hasFocus ? null : _renamed());
+  late final FocusNode _renameFocus = FocusNode()
+    ..addListener(() => _renameFocus.hasFocus ? null : _renamed());
 
   void hearAsks() {
     timelineRequest.addListener(_heard);
@@ -63,7 +65,9 @@ mixin TimelineRequests on State<TimelinePane> {
                 if (ws.layer case final l?) ...[l.inF, l.outF],
               ];
         if (frames.isEmpty) return;
-        final a = frames.reduce((p, q) => p < q ? p : q), b = frames.reduce((p, q) => p > q ? p : q), span = (b - a).clamp(6, WorkspaceController.duration);
+        final a = frames.reduce((p, q) => p < q ? p : q),
+            b = frames.reduce((p, q) => p > q ? p : q),
+            span = (b - a).clamp(6, WorkspaceController.duration);
         _before ??= (t.zoom, t.scroll);
         t.setZoom(WorkspaceController.duration / (span * 1.2), anchor: a);
         setState(() => t.scroll = t.clampScroll(a - span * .1));
@@ -118,7 +122,9 @@ mixin TimelineRequests on State<TimelinePane> {
       return _rename();
     }
     final ws = _t.workspace;
-    if (ws != null && (ws.keys.isNotEmpty || ws.layer != null)) return requestTimeline('selection');
+    if (ws != null && (ws.keys.isNotEmpty || ws.layer != null)) {
+      return requestTimeline('selection');
+    }
     _t.setZoom(1);
   }
 
@@ -134,7 +140,10 @@ mixin TimelineRequests on State<TimelinePane> {
       selectedMarker.value = flag;
       return _t.rulerMenu.currentState?.show(p, [
         ContextMenuItem('Rename…', _rename, keys: '⌘R'),
-        ContextMenuItem('Play from Here', () => _playAt((flag.$1 * WorkspaceController.fps).round())),
+        ContextMenuItem(
+          'Play from Here',
+          () => _playAt((flag.$1 * WorkspaceController.fps).round()),
+        ),
         const ContextMenuItem.rule(),
         ContextMenuItem('Delete', () {
           selectedMarker.value = null;
@@ -145,20 +154,40 @@ mixin TimelineRequests on State<TimelinePane> {
         ContextMenuItem.colors(
           [for (var k = 0; k < 16; k++) labelColor(k)],
           (ws.markColors[flag.$1] ?? 0) - 1,
-          (k) => ws.after(m.later('mark_colour', number: flag.$1, word: '${k + 1}')),
+          (k) => ws.after(
+            m.later('mark_colour', number: flag.$1, word: '${k + 1}'),
+          ),
         ),
       ]);
     }
-    final at = _t.view.frameAt(p.dx).round().clamp(0, WorkspaceController.duration) / WorkspaceController.fps,
-        taken = ws.marks.any((k) => (k.$1 - at).abs() < 0.5 / WorkspaceController.fps);
+    final at =
+            _t.view
+                .frameAt(p.dx)
+                .round()
+                .clamp(0, WorkspaceController.duration) /
+            WorkspaceController.fps,
+        taken = ws.marks.any(
+          (k) => (k.$1 - at).abs() < 0.5 / WorkspaceController.fps,
+        );
     _t.rulerMenu.currentState?.show(p, [
-      ContextMenuItem('Add Marker', taken ? null : () => _addMark(at, named: false), why: 'One is here'),
-      ContextMenuItem('Add Marker and Name…', taken ? null : () => _addMark(at, named: true), why: 'One is here'),
+      ContextMenuItem(
+        'Add Marker',
+        taken ? null : () => _addMark(at, named: false),
+        why: 'One is here',
+      ),
+      ContextMenuItem(
+        'Add Marker and Name…',
+        taken ? null : () => _addMark(at, named: true),
+        why: 'One is here',
+      ),
       if (ws.beats != null)
         ContextMenuItem(
           // Starts a bar here, as in Live.
           'Set 1.1.1 Here',
-          () => ws.after(m.later('set', layer: 0, name: 'bpm_from', number: at), (_, _) => ws.reread()),
+          () => ws.after(
+            m.later('set', layer: 0, name: 'bpm_from', number: at),
+            (_, _) => ws.reread(),
+          ),
         ),
     ]);
   }
@@ -178,7 +207,10 @@ mixin TimelineRequests on State<TimelinePane> {
   void labelRight(Layer l, Offset global) {
     final menu = _t.labelMenu.currentState, ws = _t.workspace;
     if (menu == null || ws == null) return;
-    menu.show((menu.context.findRenderObject() as RenderBox).globalToLocal(global), layerContextMenu(context, ws, l));
+    menu.show(
+      (menu.context.findRenderObject() as RenderBox).globalToLocal(global),
+      layerContextMenu(context, ws, l),
+    );
   }
 
   /// The Marker button, as Set Locator in Live (6.4).
@@ -187,7 +219,10 @@ mixin TimelineRequests on State<TimelinePane> {
   void setMark() {
     final ws = _t.workspace, m = ws?.inside;
     if (ws == null || m == null) return;
-    if (ws.marks.where((k) => (k.$1 * WorkspaceController.fps).round() == ws.frame).firstOrNull case (final was, _)?) {
+    if (ws.marks
+            .where((k) => (k.$1 * WorkspaceController.fps).round() == ws.frame)
+            .firstOrNull
+        case (final was, _)?) {
       selectedMarker.value = null;
       return ws.after(m.later('mark', number: was));
     }
@@ -215,13 +250,19 @@ mixin TimelineRequests on State<TimelinePane> {
       setState(() => _t.naming = flag);
       _t.markWords
         ..text = flag.$2
-        ..selection = TextSelection(baseOffset: 0, extentOffset: flag.$2.length);
+        ..selection = TextSelection(
+          baseOffset: 0,
+          extentOffset: flag.$2.length,
+        );
       return _t.markFocus.requestFocus();
     }
     if (ws.layer == null) return;
     setState(() => _renaming = ws.layer!.id);
     _renameWords.text = ws.layer!.name;
-    _renameWords.selection = TextSelection(baseOffset: 0, extentOffset: _renameWords.text.length);
+    _renameWords.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: _renameWords.text.length,
+    );
     _renameFocus.requestFocus();
   }
 
@@ -229,8 +270,11 @@ mixin TimelineRequests on State<TimelinePane> {
     final id = _renaming, ws = _t.workspace, words = _renameWords.text.trim();
     if (id == null) return;
     setState(() => _renaming = null);
-    final t = int.tryParse(id), was = ws?.layers.where((l) => l.id == id).firstOrNull?.name;
-    if (t != null && words.isNotEmpty && words != was && ws?.inside != null) ws!.after(ws.inside!.later('say', layer: t, name: 'name', word: words));
+    final t = int.tryParse(id),
+        was = ws?.layers.where((l) => l.id == id).firstOrNull?.name;
+    if (t != null && words.isNotEmpty && words != was && ws?.inside != null) {
+      ws!.after(ws.inside!.later('say', layer: t, name: 'name', word: words));
+    }
   }
 
   /// The name field over the row being renamed.
@@ -245,7 +289,12 @@ mixin TimelineRequests on State<TimelinePane> {
           child: CallbackShortcuts(
             bindings: {
               const SingleActivator(LogicalKeyboardKey.escape): () {
-                _renameWords.text = _t.workspace?.layers.where((l) => l.id == id).firstOrNull?.name ?? '';
+                _renameWords.text =
+                    _t.workspace?.layers
+                        .where((l) => l.id == id)
+                        .firstOrNull
+                        ?.name ??
+                    '';
                 _renameFocus.unfocus();
               },
             },
@@ -260,7 +309,8 @@ mixin TimelineRequests on State<TimelinePane> {
                   rendererIgnoresPointer: true,
                   controller: _renameWords,
                   focusNode: _renameFocus,
-                  style: TextStyles.label(Grey.g13).copyWith(fontWeight: FontWeight.w700),
+                  style: TextStyles.label(Grey.g13)
+                      .copyWith(fontWeight: FontWeight.w700),
                   cursorColor: Grey.g13,
                   backgroundCursorColor: Grey.g38,
                   maxLines: 1,

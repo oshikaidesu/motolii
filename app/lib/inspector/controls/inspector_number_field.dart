@@ -1,10 +1,19 @@
 import 'package:flutter/widgets.dart';
 import 'package:motolii/inspector/controls/inspector_number_field_state.dart';
-import 'package:motolii/inspector/controls/parameter_inference.dart' show Parameter;
+import 'package:motolii/inspector/controls/parameter_inference.dart'
+    show Parameter;
 
 /// The Inspector's number field: a [NumberField] wired to the document, with a caption and an optional glyph.
 class InspectorNumberField extends StatefulWidget {
-  const InspectorNumberField(this.p, {super.key, required this.id, required this.caption, this.glyph, this.glyphOwnsPointer = false, this.glyphTall = false});
+  const InspectorNumberField(
+    this.p, {
+    super.key,
+    required this.id,
+    required this.caption,
+    this.glyph,
+    this.glyphOwnsPointer = false,
+    this.glyphTall = false,
+  });
 
   /// The parameter as its card declares it. [InspectorNumberFieldState] reads its unit, decimal places and range from it.
   final Parameter p;
@@ -41,7 +50,8 @@ class PastRange extends InheritedWidget {
   final String flag;
 
   /// The flag of the nearest [PastRange], or null outside one.
-  static String? of(BuildContext c) => c.getInheritedWidgetOfExactType<PastRange>()?.flag;
+  static String? of(BuildContext c) =>
+      c.getInheritedWidgetOfExactType<PastRange>()?.flag;
   @override
   bool updateShouldNotify(PastRange o) => o.flag != flag;
 }

@@ -96,13 +96,22 @@ class EaseCards extends StatelessWidget {
         children: [
           SizedBox.fromSize(
             size: side,
-            child: EasingPresetTile(c, on: i == now, side: this.side, onTap: () => onPress(i), carried: false),
+            child: EasingPresetTile(
+              c,
+              on: i == now,
+              side: this.side,
+              onTap: () => onPress(i),
+              carried: false,
+            ),
           ),
           if (h && (cards.length > 1 || c != easingPreset('Linear')))
             Positioned(
               right: -Shape.s(4),
               top: -Shape.s(3),
-              child: EaseOff(key: ValueKey('ease.off.$i'), onTap: () => onOff(i)),
+              child: EaseOff(
+                key: ValueKey('ease.off.$i'),
+                onTap: () => onOff(i),
+              ),
             ),
         ],
       ),
@@ -121,7 +130,9 @@ class EaseCards extends StatelessWidget {
         position: DecorationPosition.foreground,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.all(Shape.r(5)),
-          border: hot.isEmpty ? null : Border.all(color: WindowTokens.accent, width: 2),
+          border: hot.isEmpty
+              ? null
+              : Border.all(color: WindowTokens.accent, width: 2),
         ),
         child: child,
       ),
@@ -138,8 +149,13 @@ class EaseCards extends StatelessWidget {
       child: card(i, c),
     );
     final axis = across ? Axis.horizontal : Axis.vertical;
-    final gap = across ? Size(this.side * .4, side.height) : Size(side.width, this.side * .4);
-    Widget arrow() => CustomPaint(size: gap, painter: Draw((cv, s) => _drawArrow(cv, s, across), across));
+    final gap = across
+        ? Size(this.side * .4, side.height)
+        : Size(side.width, this.side * .4);
+    Widget arrow() => CustomPaint(
+      size: gap,
+      painter: Draw((cv, s) => _drawArrow(cv, s, across), across),
+    );
     Widget by(int i) => switch (easeBy(said(cards[i]))) {
       // How the card combines with the result above it.
       EaseBy.through => arrow(),
@@ -147,7 +163,11 @@ class EaseCards extends StatelessWidget {
         key: ValueKey('ease.by.$i'),
         size: gap,
         child: Center(
-          child: Text(how == EaseBy.times ? '×' : '+', style: TextStyles.micro(Grey.g76).copyWith(fontWeight: FontWeight.w700, height: 1)),
+          child: Text(
+            how == EaseBy.times ? '×' : '+',
+            style: TextStyles.micro(Grey.g76)
+                .copyWith(fontWeight: FontWeight.w700, height: 1),
+          ),
         ),
       ),
     };
@@ -159,7 +179,9 @@ class EaseCards extends StatelessWidget {
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: axis,
-              padding: across ? EdgeInsets.symmetric(horizontal: Shape.s(4)) : EdgeInsets.symmetric(vertical: Shape.s(4)),
+              padding: across
+                  ? EdgeInsets.symmetric(horizontal: Shape.s(4))
+                  : EdgeInsets.symmetric(vertical: Shape.s(4)),
               child: Flex(
                 direction: axis,
                 mainAxisSize: MainAxisSize.min,
@@ -193,14 +215,32 @@ class EaseCards extends StatelessWidget {
           ),
           if (whole case final w?)
             Padding(
-              padding: across ? EdgeInsets.only(left: Shape.s(4), right: Shape.s(6)) : EdgeInsets.only(top: Shape.s(4), bottom: Shape.s(6)),
+              padding: across
+                  ? EdgeInsets.only(left: Shape.s(4), right: Shape.s(6))
+                  : EdgeInsets.only(top: Shape.s(4), bottom: Shape.s(6)),
               child: Draggable<int>(
                 data: _all,
                 dragAnchorStrategy: pointerDragAnchorStrategy,
-                feedback: easeHeld(EasingPresetTile(w, on: false, side: this.side, onTap: () {}, carried: false), this.side),
+                feedback: easeHeld(
+                  EasingPresetTile(
+                    w,
+                    on: false,
+                    side: this.side,
+                    onTap: () {},
+                    carried: false,
+                  ),
+                  this.side,
+                ),
                 child: SizedBox.fromSize(
                   size: side,
-                  child: EasingPresetTile(w, key: const ValueKey('ease.whole'), on: now < 0, side: this.side, onTap: onWhole, carried: false),
+                  child: EasingPresetTile(
+                    w,
+                    key: const ValueKey('ease.whole'),
+                    on: now < 0,
+                    side: this.side,
+                    onTap: onWhole,
+                    carried: false,
+                  ),
                 ),
               ),
             ),
@@ -221,8 +261,15 @@ class EaseOff extends StatelessWidget {
       width: Shape.z(15),
       height: Shape.z(15),
       alignment: Alignment.center,
-      decoration: BoxDecoration(color: over ? Grey.g95 : Grey.g38, shape: BoxShape.circle),
-      child: Text('×', style: TextStyles.micro(over ? Grey.g13 : Grey.g95).copyWith(fontWeight: FontWeight.w700, height: 1)),
+      decoration: BoxDecoration(
+        color: over ? Grey.g95 : Grey.g38,
+        shape: BoxShape.circle,
+      ),
+      child: Text(
+        '×',
+        style: TextStyles.micro(over ? Grey.g13 : Grey.g95)
+            .copyWith(fontWeight: FontWeight.w700, height: 1),
+      ),
     ),
   );
 }
@@ -261,11 +308,18 @@ class EaseSlot extends StatelessWidget {
   /// The color of the dashed outline.
   final Color ink;
   @override
-  Widget build(BuildContext context) => CustomPaint(size: Size.square(side), painter: Draw((cv, s) => _drawSlot(cv, s, ink), ink));
+  Widget build(BuildContext context) => CustomPaint(
+    size: Size.square(side),
+    painter: Draw((cv, s) => _drawSlot(cv, s, ink), ink),
+  );
 }
 
 void _drawSlot(Canvas c, Size s, Color ink) {
-  final k = s.width / 68, box = RRect.fromRectAndRadius(Rect.fromLTWH(3 * k, 4 * k, 61 * k, 60 * k), Radius.circular(8 * k));
+  final k = s.width / 68,
+      box = RRect.fromRectAndRadius(
+        Rect.fromLTWH(3 * k, 4 * k, 61 * k, 60 * k),
+        Radius.circular(8 * k),
+      );
   final line = Paint()
     ..color = ink
     ..strokeWidth = 1.2

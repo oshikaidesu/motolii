@@ -20,8 +20,15 @@ const _channel = MethodChannel('motolii/stage');
 ///
 /// It is cached in the system temp folder, keyed by the video's path and last-modified time.
 final _thumbnails = <String, Future<String?>>{};
-Future<String?> _thumbnail(String lib, String video, [int step = 0, int steps = 1, double? seconds]) async {
-  final folder = Directory('${Directory.systemTemp.path}/motolii_thumbnails')..createSync(recursive: true);
+Future<String?> _thumbnail(
+  String lib,
+  String video, [
+  int step = 0,
+  int steps = 1,
+  double? seconds,
+]) async {
+  final folder = Directory('${Directory.systemTemp.path}/motolii_thumbnails')
+    ..createSync(recursive: true);
   // The name comes from the path and modification time, so a later run finds the same file.
   final named = video.replaceAll(RegExp(r'[^A-Za-z0-9]'), '_');
   final png =
@@ -31,10 +38,15 @@ Future<String?> _thumbnail(String lib, String video, [int step = 0, int steps = 
           ? ''
           : '_$step'}.png';
   if (File(png).existsSync()) return png;
-  final made = await askEngine(lib, [
-    video,
-    png,
-  ], (b, w) => (seconds != null ? b.motolii_thumbnail_seconds(w[0], w[1], 160, seconds) : b.motolii_thumbnail_at(w[0], w[1], 240, step / steps)) != 0);
+  final made = await askEngine(
+    lib,
+    [video, png],
+    (b, w) =>
+        (seconds != null
+            ? b.motolii_thumbnail_seconds(w[0], w[1], 160, seconds)
+            : b.motolii_thumbnail_at(w[0], w[1], 240, step / steps)) !=
+        0,
+  );
   return made ? png : null;
 }
 
@@ -44,12 +56,21 @@ extension MotoliiQuestions on Motolii {
     // The render thread opens it, so the app never blocks.
     final (a, _) = await answered(later('live'));
     if (a == 0) return -1;
-    return await _channel.invokeMethod<int>('start', {'lib': libPath, 'handle': handle.address}) ?? -1;
+    return await _channel.invokeMethod<int>('start', {
+          'lib': libPath,
+          'handle': handle.address,
+        }) ??
+        -1;
   }
 
   /// The tool panel's output as a Flutter texture. Returns -1 if unavailable.
   Future<int> deskTexture() async => deskId ??=
-      await _channel.invokeMethod<int>('start', {'lib': libPath, 'handle': handle.address, 'front': 'motolii_desk_front', 'frames': 'motolii_desk_frames'}) ??
+      await _channel.invokeMethod<int>('start', {
+        'lib': libPath,
+        'handle': handle.address,
+        'front': 'motolii_desk_front',
+        'frames': 'motolii_desk_frames',
+      }) ??
       -1;
 
   /// Exports the whole project as an .mp4 with the sound of its videos, on another isolate so the app does not block.
@@ -110,14 +131,27 @@ extension MotoliiQuestions on Motolii {
   ///
   /// The text is no larger than [most] when that is above 0. An entry is null if nothing was drawn
   /// (motolii_type_frame). Runs on another isolate, like [settingFirst].
-  Future<List<Uint8List?>> typePictures(List<String> fonts, String words, int w, int h, {double most = 0}) {
+  Future<List<Uint8List?>> typePictures(
+    List<String> fonts,
+    String words,
+    int w,
+    int h, {
+    double most = 0,
+  }) {
     final lib = libPath;
     return Isolate.run(() {
-      final ask = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_type_frame;
-      final said = words.toNativeUtf8(), out = malloc<UnsignedChar>(w * h), all = <Uint8List?>[];
+      final ask = c.MotoliiBindings(DynamicLibrary.open(lib))
+          .motolii_type_frame;
+      final said = words.toNativeUtf8(),
+          out = malloc<UnsignedChar>(w * h),
+          all = <Uint8List?>[];
       for (final f in fonts) {
         final file = f.toNativeUtf8();
-        all.add(ask(file, said, w, h, most, out) != 0 ? Uint8List.fromList(out.cast<Uint8>().asTypedList(w * h)) : null);
+        all.add(
+          ask(file, said, w, h, most, out) != 0
+              ? Uint8List.fromList(out.cast<Uint8>().asTypedList(w * h))
+              : null,
+        );
         malloc.free(file);
       }
       malloc.free(said);
@@ -132,12 +166,29 @@ extension MotoliiQuestions on Motolii {
     final lib = libPath;
     return Isolate.run(() {
       const side = 224 * 224 * 4, dims = 512;
-      final n = pictures.length, file = model.toNativeUtf8(), into = malloc<UnsignedChar>(n * side + 1), out = malloc<Float>(n * dims + 1);
+      final n = pictures.length,
+          file = model.toNativeUtf8(),
+          into = malloc<UnsignedChar>(n * side + 1),
+          out = malloc<Float>(n * dims + 1);
       for (final (i, p) in pictures.indexed) {
-        into.cast<Uint8>().asTypedList(n * side).setRange(i * side, (i + 1) * side, p);
+        into
+            .cast<Uint8>()
+            .asTypedList(n * side)
+            .setRange(i * side, (i + 1) * side, p);
       }
-      final encoded = n > 0 && c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_likeness(file.cast(), into, n, dims, out) != 0;
-      final all = encoded ? [for (var i = 0; i < n; i++) Float32List.fromList(out.asTypedList(n * dims).sublist(i * dims, (i + 1) * dims))] : null;
+      final encoded =
+          n > 0 &&
+          c.MotoliiBindings(DynamicLibrary.open(lib))
+                  .motolii_likeness(file.cast(), into, n, dims, out) !=
+              0;
+      final all = encoded
+          ? [
+              for (var i = 0; i < n; i++)
+                Float32List.fromList(
+                  out.asTypedList(n * dims).sublist(i * dims, (i + 1) * dims),
+                ),
+            ]
+          : null;
       malloc.free(file);
       malloc.free(into);
       malloc.free(out);
@@ -157,8 +208,11 @@ extension MotoliiQuestions on Motolii {
       for (var i = 0; i < n; i++) {
         at.asTypedList(n * dims).setRange(i * dims, (i + 1) * dims, points[i]);
       }
-      final got = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_map(at, n, dims, xy);
-      final laid = got == 0 ? null : [for (var i = 0; i < n; i++) (xy[2 * i], xy[2 * i + 1])];
+      final got = c.MotoliiBindings(DynamicLibrary.open(lib))
+          .motolii_map(at, n, dims, xy);
+      final laid = got == 0
+          ? null
+          : [for (var i = 0; i < n; i++) (xy[2 * i], xy[2 * i + 1])];
       malloc.free(at);
       malloc.free(xy);
       return laid;
@@ -170,9 +224,15 @@ extension MotoliiQuestions on Motolii {
   /// Returns [n] samples from [from] up to [to], four numbers each: position (x, y in stage units), rotation (degrees)
   /// and scale (a fraction). Null if there is no such layer. Ask once when the properties change, to drive a small
   /// preview that then plays on its own (motolii_path).
-  Future<List<double>?> path(int layer, {double from = 0, required double to, int n = 60}) => _ask((l, m) {
+  Future<List<double>?> path(
+    int layer, {
+    double from = 0,
+    required double to,
+    int n = 60,
+  }) => _ask((l, m) {
     final out = malloc<Double>(4 * n);
-    final got = c.MotoliiBindings(l).motolii_path(m, layer, 0, from, to, n, out);
+    final got = c.MotoliiBindings(l)
+        .motolii_path(m, layer, 0, from, to, n, out);
     final p = [for (var i = 0; i < 4 * got; i++) out[i]];
     malloc.free(out);
     return got > 0 ? p : null;
@@ -181,13 +241,21 @@ extension MotoliiQuestions on Motolii {
   /// Asks the engine a question on another isolate (docs/app/BRIDGE.md Q), so the app does not wait for the answer.
   Future<T> _ask<T>(T Function(DynamicLibrary lib, EngineHandle m) ask) {
     final lib = libPath, at = handle.address;
-    return Isolate.run(() => ask(DynamicLibrary.open(lib), EngineHandle.fromAddress(at)));
+    return Isolate.run(
+      () => ask(DynamicLibrary.open(lib), EngineHandle.fromAddress(at)),
+    );
   }
 
   /// Like [path] but in 3D. Four numbers per sample: position (x, y, z in stage units) and scale (motolii_path3).
-  List<double>? path3(int layer, {int copy = 0, required double to, int n = 24}) {
+  List<double>? path3(
+    int layer, {
+    int copy = 0,
+    required double to,
+    int n = 24,
+  }) {
     final out = malloc<Double>(4 * n);
-    final got = bindings.motolii_path3(handle, layer, copy, 0, to, n, out), p = [for (var i = 0; i < 4 * got; i++) out[i]];
+    final got = bindings.motolii_path3(handle, layer, copy, 0, to, n, out),
+        p = [for (var i = 0; i < 4 * got; i++) out[i]];
     malloc.free(out);
     return got > 0 ? p : null;
   }
@@ -198,8 +266,11 @@ extension MotoliiQuestions on Motolii {
     final lib = libPath, at = handle.address;
     return Isolate.run(() {
       final ask = c.MotoliiBindings(DynamicLibrary.open(lib)).motolii_loudness;
-      final m = EngineHandle.fromAddress(at), n = ask(m, layer, nullptr, 0), out = malloc<Float>(n < 1 ? 1 : n);
-      final got = ask(m, layer, out, n), all = [for (var i = 0; i < got && i < n; i++) out[i].toDouble()];
+      final m = EngineHandle.fromAddress(at),
+          n = ask(m, layer, nullptr, 0),
+          out = malloc<Float>(n < 1 ? 1 : n);
+      final got = ask(m, layer, out, n),
+          all = [for (var i = 0; i < got && i < n; i++) out[i].toDouble()];
       malloc.free(out);
       return all;
     });
@@ -207,10 +278,18 @@ extension MotoliiQuestions on Motolii {
 
   /// A video layer's loudness in dB at [n] project times from [from] up to [to], at the points where the layer shows them.
   /// -100 means silent or not shown. Null if the sound has not been read yet ([loudness] reads it). Empty means no sound.
-  Future<List<double>?> loudnessOver(int layer, double from, double to, int n) => _ask((l, m) {
+  Future<List<double>?> loudnessOver(
+    int layer,
+    double from,
+    double to,
+    int n,
+  ) => _ask((l, m) {
     final out = malloc<Float>(n < 1 ? 1 : n);
-    final got = c.MotoliiBindings(l).motolii_loudness_over(m, layer, from, to, n, out);
-    final all = got < 0 ? null : [for (var i = 0; i < got; i++) out[i].toDouble()];
+    final got = c.MotoliiBindings(l)
+        .motolii_loudness_over(m, layer, from, to, n, out);
+    final all = got < 0
+        ? null
+        : [for (var i = 0; i < got; i++) out[i].toDouble()];
     malloc.free(out);
     return all;
   });
@@ -219,20 +298,34 @@ extension MotoliiQuestions on Motolii {
   /// Ask after its loudness has been read ([loudness]).
   Future<List<double>> strikes(int layer, double rise) => _ask((l, m) {
     final ask = c.MotoliiBindings(l).motolii_strikes;
-    final n = ask(m, layer, rise, 0, nullptr, 0), out = malloc<Double>(n < 1 ? 1 : n);
-    final got = ask(m, layer, rise, 0, out, n), all = [for (var i = 0; i < got && i < n; i++) out[i]];
+    final n = ask(m, layer, rise, 0, nullptr, 0),
+        out = malloc<Double>(n < 1 ? 1 : n);
+    final got = ask(m, layer, rise, 0, out, n),
+        all = [for (var i = 0; i < got && i < n; i++) out[i]];
     malloc.free(out);
     return all;
   });
 
   /// A small frame of the video at [seconds], rounded to the nearest tenth. A timeline bar shows it to indicate what the video plays.
   Future<String?> videoFrame(String video, double seconds) =>
-      _thumbnails['$video@${(seconds * 10).round()}'] ??= _thumbnail(libPath, video, 0, 1, (seconds * 10).round() / 10);
+      _thumbnails['$video@${(seconds * 10).round()}'] ??= _thumbnail(
+        libPath,
+        video,
+        0,
+        1,
+        (seconds * 10).round() / 10,
+      );
 
   /// A small .png of the frame [step] of [steps] along the video, for a tile that scrubs with the pointer or plays.
   /// Step 0 is the first frame. Null if no image could be made. Made once, on another isolate.
-  Future<String?> thumbnailAt(String video, int step, int steps) =>
-      step == 0 ? _thumbnails[video] ??= _thumbnail(libPath, video) : _thumbnails['$video#$step/$steps'] ??= _thumbnail(libPath, video, step, steps);
+  Future<String?> thumbnailAt(String video, int step, int steps) => step == 0
+      ? _thumbnails[video] ??= _thumbnail(libPath, video)
+      : _thumbnails['$video#$step/$steps'] ??= _thumbnail(
+          libPath,
+          video,
+          step,
+          steps,
+        );
 
   /// Completes with a ticket's answer when it arrives, and with the reason if it was refused.
   ///

@@ -18,8 +18,15 @@ class InspectorValues extends ChangeNotifier {
       for (final (i, p) in f.params.indexed) {
         // Start from the declaration's @default until the caller supplies the value.
         paramDefaults(p).forEach((id, x) => v[id] = d[id] = x);
-        if (p.look == ParameterLook.color) s2.putIfAbsent('v_${p.id}', () => paramColor(f.decls[i]));
-        if (p.look == ParameterLook.choice) s2.putIfAbsent('v_${p.id}', () => p.options[p.def.round().clamp(0, p.options.length - 1)]);
+        if (p.look == ParameterLook.color) {
+          s2.putIfAbsent('v_${p.id}', () => paramColor(f.decls[i]));
+        }
+        if (p.look == ParameterLook.choice) {
+          s2.putIfAbsent(
+            'v_${p.id}',
+            () => p.options[p.def.round().clamp(0, p.options.length - 1)],
+          );
+        }
       }
     }
   }
@@ -112,7 +119,8 @@ class InspectorValues extends ChangeNotifier {
 
   /// One notifier per value id, or `key:` plus the property name for a key mark. [showAt] and [setKey] bump them.
   final _watched = <String, ValueNotifier<int>>{};
-  ValueListenable<int> watch(String id) => _watched.putIfAbsent(id, () => ValueNotifier(0));
+  ValueListenable<int> watch(String id) =>
+      _watched.putIfAbsent(id, () => ValueNotifier(0));
 
   void setMany(Map<String, double> xs) {
     for (final e in xs.entries) {
@@ -127,7 +135,9 @@ class InspectorValues extends ChangeNotifier {
       final dv = d[i] ?? 0;
       v[i] = dv;
       final p = propOf(i);
-      if (animateAll || (keys[p] ?? KeyframeState.off) != KeyframeState.off) keys[p] = KeyframeState.at;
+      if (animateAll || (keys[p] ?? KeyframeState.off) != KeyframeState.off) {
+        keys[p] = KeyframeState.at;
+      }
     }
     notifyListeners();
   }
@@ -158,12 +168,19 @@ class InspectorValues extends ChangeNotifier {
   bool isPicked(String id) => picked.length > 1 && picked.contains(id);
 
   void pick(String id, {bool span = false}) {
-    final from = _pickFrom, a = from == null ? null : _cell(from), b = _cell(id), shown = picked.length > 1;
+    final from = _pickFrom,
+        a = from == null ? null : _cell(from),
+        b = _cell(id),
+        shown = picked.length > 1;
     picked.clear();
     if (span && a != null && b != null) {
       for (var r = math.min(a.$1, b.$1); r <= math.max(a.$1, b.$1); r++) {
         final row = _grid[r];
-        for (var c = math.min(a.$2, b.$2); c <= math.max(a.$2, b.$2) && c < row.length; c++) {
+        for (
+          var c = math.min(a.$2, b.$2);
+          c <= math.max(a.$2, b.$2) && c < row.length;
+          c++
+        ) {
           picked.add(row[c]);
         }
       }

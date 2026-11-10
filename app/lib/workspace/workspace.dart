@@ -78,7 +78,10 @@ class WorkspaceState extends State<Workspace> {
     // Reads the theme's SVG parts from the folder the theme names.
     SkinParts.follow();
     // With no project given, start a new untitled one, as After Effects does.
-    _join(widget.document ?? '${Directory.systemTemp.createTempSync('motolii').path}/Untitled.motolii');
+    _join(
+      widget.document ??
+          '${Directory.systemTemp.createTempSync('motolii').path}/Untitled.motolii',
+    );
   }
 
   /// Opens another project in place of the current one, creating it if it does not exist.
@@ -94,7 +97,8 @@ class WorkspaceState extends State<Workspace> {
   /// AbsentMotion does the same when its editor closes (MainActivity.kt saveThumbnail).
   /// The thumbnail is taken at the playhead, or at the time set by file.poster.
   /// It is not saved when another project is opened in place of this one, because its last requests would go unanswered.
-  void keepPoster() => engine?.poster('${Directory.systemTemp.path}/motolii_poster_$pid.png');
+  void keepPoster() =>
+      engine?.poster('${Directory.systemTemp.path}/motolii_poster_$pid.png');
 
   /// Whether the project list is shown over the window (AbsentMotion's home screen; see home.dart).
   bool home = false;
@@ -111,13 +115,16 @@ class WorkspaceState extends State<Workspace> {
 
   /// The file where a copied layer or preset is kept between windows (the engine's own format: document/edit/presets.h).
   static String clipboard(String what) {
-    final dir = Directory('${Platform.environment['HOME']}/Library/Caches/Motolii')..createSync(recursive: true);
+    final dir = Directory(
+      '${Platform.environment['HOME']}/Library/Caches/Motolii',
+    )..createSync(recursive: true);
     return '${dir.path}/clipboard_$what.motolii';
   }
 
   /// The selected layers: all of the multi-selection if there is one, otherwise the single selected layer.
   List<int> pickedLayers() => [
-    for (final id in ws.many.isNotEmpty ? ws.many : {?ws.selected}) ?int.tryParse(id),
+    for (final id in ws.many.isNotEmpty ? ws.many : {?ws.selected})
+      ?int.tryParse(id),
   ];
 
   /// Applies [tell] to each selected layer, as a single undo step.
@@ -136,16 +143,21 @@ class WorkspaceState extends State<Workspace> {
   String? textWhenCopied;
 
   void copy(String call, String what) {
-    Clipboard.getData(Clipboard.kTextPlain).then((said) => textWhenCopied = said?.text);
+    Clipboard.getData(Clipboard.kTextPlain)
+        .then((said) => textWhenCopied = said?.text);
     final t = int.tryParse(ws.selected ?? '');
-    if (engine != null && t != null) engine!.later(call, layer: t, word: clipboard(what));
+    if (engine != null && t != null) {
+      engine!.later(call, layer: t, word: clipboard(what));
+    }
   }
 
   /// Runs [act] on the focused text field if it handles that intent, so the field keeps its own keys.
   /// Returns true if the field handled it. This uses Flutter's text actions.
   bool typed<T extends Intent>(T act) {
     final box = primaryFocus?.context;
-    if (box == null || Actions.maybeFind<T>(box, intent: act) == null) return false;
+    if (box == null || Actions.maybeFind<T>(box, intent: act) == null) {
+      return false;
+    }
     Actions.maybeInvoke(box, act);
     return true;
   }
@@ -153,7 +165,9 @@ class WorkspaceState extends State<Workspace> {
   String fresh() {
     final here = File(documentPath!).parent.path;
     for (var n = 1; ; n++) {
-      if (!File('$here/untitled_$n.motolii').existsSync()) return '$here/untitled_$n.motolii';
+      if (!File('$here/untitled_$n.motolii').existsSync()) {
+        return '$here/untitled_$n.motolii';
+      }
     }
   }
 
@@ -165,8 +179,14 @@ class WorkspaceState extends State<Workspace> {
     ws.renderTo = null;
     ws.notice = 'Writing ${mp4.split('/').last} …';
     final done = await m.exportVideo(mp4);
-    if (mounted) ws.notice = done ? 'Written: ${mp4.split('/').last}' : 'Not written: ${m.error}';
-    if (done && RegExp(r'\.(mp4|mov|m4v)$').hasMatch(mp4)) unawaited(_checkFlashes(m, mp4));
+    if (mounted) {
+      ws.notice = done
+          ? 'Written: ${mp4.split('/').last}'
+          : 'Not written: ${m.error}';
+    }
+    if (done && RegExp(r'\.(mp4|mov|m4v)$').hasMatch(mp4)) {
+      unawaited(_checkFlashes(m, mp4));
+    }
     return done;
   }
 
@@ -174,20 +194,25 @@ class WorkspaceState extends State<Workspace> {
   ///
   /// YouTube Studio's Checks do the same while a video uploads (EA's IRIS: flashesOf).
   Future<void> _checkFlashes(Motolii m, String film) async {
-    final written = 'Written: ${film.split('/').last}', checking = '$written · Checking flashes…';
+    final written = 'Written: ${film.split('/').last}',
+        checking = '$written · Checking flashes…';
     ws.notice = checking;
     final fails = await flashesOf(m.libPath, film);
     // If the notice changed in the meantime, the newer notice stays.
     if (!mounted || ws.notice != checking) return;
-    String clock(double s) => '${s ~/ 60}:${(s % 60).toStringAsFixed(1).padLeft(4, '0')}';
+    String clock(double s) =>
+        '${s ~/ 60}:${(s % 60).toStringAsFixed(1).padLeft(4, '0')}';
     // The result comes first and the name after, because the bar cuts off its end (NN/g: F-shaped reading).
     final name = film.split('/').last;
     ws.notice = switch (fails) {
       null => written,
       [] => 'Flash check: no issues found · $name',
-      _ => 'Flash check: too many flashes at ${fails.map((f) => '${clock(f.$1)}–${clock(f.$2)}').join(', ')} · $name',
+      _ =>
+        'Flash check: too many flashes at ${fails.map((f) => '${clock(f.$1)}–${clock(f.$2)}').join(', ')} · $name',
     };
-    if (fails case [(final from, _), ...]) ws.noticeGo = () => ws.frame = (from * WorkspaceController.fps).floor();
+    if (fails case [(final from, _), ...]) {
+      ws.noticeGo = () => ws.frame = (from * WorkspaceController.fps).floor();
+    }
   }
 
   /// Exports the listed projects.
@@ -209,7 +234,10 @@ class WorkspaceState extends State<Workspace> {
       if (mounted && documentPath == d && await _render()) written++;
     }
     if (back != null && back != documentPath) await open(back);
-    if (mounted) ws.notice = 'Written: $written of ${docs.length} films, each beside its document';
+    if (mounted) {
+      ws.notice =
+          'Written: $written of ${docs.length} films, each beside its document';
+    }
   }
 
   /// Gathers the project and its media into `<name> package` beside it, so it can be moved elsewhere whole
@@ -217,9 +245,12 @@ class WorkspaceState extends State<Workspace> {
   void package() {
     final m = engine, doc = documentPath;
     if (m == null || doc == null) return;
-    final name = doc.split('/').last.replaceFirst(RegExp(r'\.motolii$'), ''), folder = '${File(doc).parent.path}/$name package';
+    final name = doc.split('/').last.replaceFirst(RegExp(r'\.motolii$'), ''),
+        folder = '${File(doc).parent.path}/$name package';
     final n = m.pack(folder, name);
-    ws.notice = n < 0 ? 'Not packaged: ${m.error}' : 'Packaged with $n ${n == 1 ? 'file' : 'files'}: $name package';
+    ws.notice = n < 0
+        ? 'Not packaged: ${m.error}'
+        : 'Packaged with $n ${n == 1 ? 'file' : 'files'}: $name package';
   }
 
   /// Exports the frame at the playhead as a PNG beside the project (Premiere Pro's Export Frame). The top bar shows the result.
@@ -227,7 +258,9 @@ class WorkspaceState extends State<Workspace> {
     final m = engine, doc = documentPath;
     if (m == null || doc == null) return;
     final png = '${doc.substring(0, doc.lastIndexOf('.'))}_${ws.frame}.png';
-    ws.notice = m.still(png) ? 'Written: ${png.split('/').last}' : 'Not written: ${m.error}';
+    ws.notice = m.still(png)
+        ? 'Written: ${png.split('/').last}'
+        : 'Not written: ${m.error}';
   }
 
   /// Holds the focus when nothing else in the window does (a field was left or a pane closed), so the window's keys still work.
@@ -236,7 +269,8 @@ class WorkspaceState extends State<Workspace> {
     bool fallen() {
       // True when the focus is outside the window.
       final now = FocusManager.instance.primaryFocus;
-      return now == null || (now is FocusScopeNode && _windowFocus.ancestors.contains(now));
+      return now == null ||
+          (now is FocusScopeNode && _windowFocus.ancestors.contains(now));
     }
 
     if (!mounted || !fallen() || _windowFocus.context == null) return;
@@ -258,10 +292,14 @@ class WorkspaceState extends State<Workspace> {
       inside,
       () {
         // A file put in the user's effects folder shows on the shelves at once. An element file that is overwritten is followed wherever it is used.
-        if (mounted) ws.after(inside.later('follow_elements'), (_, _) => ws.reread());
+        if (mounted) {
+          ws.after(inside.later('follow_elements'), (_, _) => ws.reread());
+        }
       },
       program: (file) {
-        if (mounted) ws.after(inside.later('code', word: file), (_, _) => ws.reread());
+        if (mounted) {
+          ws.after(inside.later('code', word: file), (_, _) => ws.reread());
+        }
       },
     );
     // Follow the elements when the project opens, as AbsentMotion does when a project loads.
@@ -310,7 +348,10 @@ class WorkspaceState extends State<Workspace> {
         // One widget instance, reused. Carrying a card or tab changes the overlay, and the whole window,
         // including every shelf's tiles, used to be rebuilt each time (18,358 widgets, 90 ms per pick-up or drop).
         const window = _Window();
-        if (box.maxWidth >= WindowTokens.minWindow.width && box.maxHeight >= WindowTokens.minWindow.height) return window;
+        if (box.maxWidth >= WindowTokens.minWindow.width &&
+            box.maxHeight >= WindowTokens.minWindow.height) {
+          return window;
+        }
         return FittedBox(
           // Laid out at no less than the minimum window size and shrunk only as far as needed, so a zoomed window stays zoomed.
           child: SizedBox(
@@ -380,30 +421,143 @@ class _Window extends StatelessWidget {
       SizedBox(height: WindowTokens.topBar, child: TopBar()),
       const SizedBox(height: WindowTokens.gutter),
       Expanded(
-        child: Panes(panes: WorkspaceScope.read(context).panes, preset: _preset),
+        child: Panes(
+          panes: WorkspaceScope.read(context).panes,
+          preset: _preset,
+        ),
       ),
     ],
   );
 }
 
 final _panes = [
-  Pane('Media', AppGlyphs.media, () => const ShelfPane('Media', 'Search files and media'), at: PaneStrip.shelves, minSize: 240, iconOnly: true),
-  Pane('Effects', AppGlyphs.effects, () => const ShelfPane('Effects', 'Search effects and features'), at: PaneStrip.shelves, minSize: 240, iconOnly: true),
-  Pane('Fonts', AppGlyphs.fonts, () => const ShelfPane('Fonts', 'Search fonts'), at: PaneStrip.shelves, minSize: 240, iconOnly: true),
-  Pane('Colors', AppGlyphs.colors, () => const ShelfPane('Colors', 'Search palettes'), at: PaneStrip.shelves, minSize: 240, iconOnly: true),
-  Pane('Create', AppGlyphs.create, () => const ShelfPane('Create', 'Search layers and shapes'), at: PaneStrip.shelves, minSize: 240, iconOnly: true),
-  Pane('Program', AppGlyphs.program, () => const ShelfPane('Program', 'Search code'), at: PaneStrip.shelves, minSize: 240, iconOnly: true),
-  Pane('Presets', AppGlyphs.files, () => const ShelfPane('Presets', 'Search presets'), at: PaneStrip.shelves, minSize: 240, iconOnly: true),
-  Pane('Stage', AppGlyphs.stage, () => const StagePane(), at: PaneStrip.stage, minSize: 320),
-  Pane('Camera View', AppGlyphs.camera, () => const CameraView(), at: PaneStrip.stage, minSize: 240),
-  Pane('Inspector', AppGlyphs.inspector, () => const InspectorPane(), minSize: 200),
-  Pane('Timeline', AppGlyphs.timeline, () => const TimelinePane(), at: PaneStrip.timeline, minSize: 160),
-  Pane('Ease', AppGlyphs.time, () => const EaseTool(), at: PaneStrip.ease, minSize: 260),
-  Pane('Camera', AppGlyphs.camera, () => const DepthTool(), at: PaneStrip.tools, minSize: WindowTokens.lower),
-  Pane('Tool Panel', AppGlyphs.toolPanel, () => const ToolPanel(), at: PaneStrip.tools, minSize: WindowTokens.lower),
-  Pane('Relations', AppGlyphs.toolPanel, () => const RelationsTool(), at: PaneStrip.tools, minSize: WindowTokens.lower),
-  Pane('Blend', AppGlyphs.blend, BlendTool.new, at: PaneStrip.catalog, tone: InspectorSkin.toneBlend, acts: 'Layer stack'),
-  Pane('Align', AppGlyphs.align, AlignTool.new, at: PaneStrip.catalog, tone: InspectorSkin.toneLayout, acts: 'Selection'),
+  Pane(
+    'Media',
+    AppGlyphs.media,
+    () => const ShelfPane('Media', 'Search files and media'),
+    at: PaneStrip.shelves,
+    minSize: 240,
+    iconOnly: true,
+  ),
+  Pane(
+    'Effects',
+    AppGlyphs.effects,
+    () => const ShelfPane('Effects', 'Search effects and features'),
+    at: PaneStrip.shelves,
+    minSize: 240,
+    iconOnly: true,
+  ),
+  Pane(
+    'Fonts',
+    AppGlyphs.fonts,
+    () => const ShelfPane('Fonts', 'Search fonts'),
+    at: PaneStrip.shelves,
+    minSize: 240,
+    iconOnly: true,
+  ),
+  Pane(
+    'Colors',
+    AppGlyphs.colors,
+    () => const ShelfPane('Colors', 'Search palettes'),
+    at: PaneStrip.shelves,
+    minSize: 240,
+    iconOnly: true,
+  ),
+  Pane(
+    'Create',
+    AppGlyphs.create,
+    () => const ShelfPane('Create', 'Search layers and shapes'),
+    at: PaneStrip.shelves,
+    minSize: 240,
+    iconOnly: true,
+  ),
+  Pane(
+    'Program',
+    AppGlyphs.program,
+    () => const ShelfPane('Program', 'Search code'),
+    at: PaneStrip.shelves,
+    minSize: 240,
+    iconOnly: true,
+  ),
+  Pane(
+    'Presets',
+    AppGlyphs.files,
+    () => const ShelfPane('Presets', 'Search presets'),
+    at: PaneStrip.shelves,
+    minSize: 240,
+    iconOnly: true,
+  ),
+  Pane(
+    'Stage',
+    AppGlyphs.stage,
+    () => const StagePane(),
+    at: PaneStrip.stage,
+    minSize: 320,
+  ),
+  Pane(
+    'Camera View',
+    AppGlyphs.camera,
+    () => const CameraView(),
+    at: PaneStrip.stage,
+    minSize: 240,
+  ),
+  Pane(
+    'Inspector',
+    AppGlyphs.inspector,
+    () => const InspectorPane(),
+    minSize: 200,
+  ),
+  Pane(
+    'Timeline',
+    AppGlyphs.timeline,
+    () => const TimelinePane(),
+    at: PaneStrip.timeline,
+    minSize: 160,
+  ),
+  Pane(
+    'Ease',
+    AppGlyphs.time,
+    () => const EaseTool(),
+    at: PaneStrip.ease,
+    minSize: 260,
+  ),
+  Pane(
+    'Camera',
+    AppGlyphs.camera,
+    () => const DepthTool(),
+    at: PaneStrip.tools,
+    minSize: WindowTokens.lower,
+  ),
+  Pane(
+    'Tool Panel',
+    AppGlyphs.toolPanel,
+    () => const ToolPanel(),
+    at: PaneStrip.tools,
+    minSize: WindowTokens.lower,
+  ),
+  Pane(
+    'Relations',
+    AppGlyphs.toolPanel,
+    () => const RelationsTool(),
+    at: PaneStrip.tools,
+    minSize: WindowTokens.lower,
+  ),
+  Pane(
+    'Blend',
+    AppGlyphs.blend,
+    BlendTool.new,
+    at: PaneStrip.catalog,
+    tone: InspectorSkin.toneBlend,
+    acts: 'Layer stack',
+  ),
+  Pane(
+    'Align',
+    AppGlyphs.align,
+    AlignTool.new,
+    at: PaneStrip.catalog,
+    tone: InspectorSkin.toneLayout,
+    acts: 'Selection',
+  ),
 ];
 
 /// Height of a pane's tab strip, added to the reference heights so the panels keep theirs.
@@ -414,13 +568,31 @@ const _strip = 22.0;
 ///
 /// Side and lower panes start at their reference sizes in px. The panes without a size share what is left.
 /// The filling panes must be given no weight: `multi_split_view` turns sizes into weights and would scale them against any weight given.
-DockingArea _preset(DockingArea Function(PaneStrip at, {double? size}) strip) => DockingRow([
-  DockingColumn([
-    DockingRow([strip(PaneStrip.shelves, size: WindowTokens.dock), strip(PaneStrip.stage)]),
-    // Ease edits the easing between two keyframes, so it sits beside Timeline. It is never made shorter than 220,
-    // the height at which its seven shapes and curve stay readable. This is docking's own minimum, as in VS Code's views.
-    DockingRow([strip(PaneStrip.timeline), strip(PaneStrip.ease, size: WindowTokens.inspector)], size: WindowTokens.lower + _strip, minimalSize: 220),
-  ]),
-  // The lower strip holds the Camera tool, whatever is selected.
-  DockingColumn([strip(PaneStrip.inspector), strip(PaneStrip.tools, size: WindowTokens.lower + _strip)], size: WindowTokens.inspector, minimalSize: 340),
-]);
+DockingArea _preset(DockingArea Function(PaneStrip at, {double? size}) strip) =>
+    DockingRow([
+      DockingColumn([
+        DockingRow([
+          strip(PaneStrip.shelves, size: WindowTokens.dock),
+          strip(PaneStrip.stage),
+        ]),
+        // Ease edits the easing between two keyframes, so it sits beside Timeline. It is never made shorter than 220,
+        // the height at which its seven shapes and curve stay readable. This is docking's own minimum, as in VS Code's views.
+        DockingRow(
+          [
+            strip(PaneStrip.timeline),
+            strip(PaneStrip.ease, size: WindowTokens.inspector),
+          ],
+          size: WindowTokens.lower + _strip,
+          minimalSize: 220,
+        ),
+      ]),
+      // The lower strip holds the Camera tool, whatever is selected.
+      DockingColumn(
+        [
+          strip(PaneStrip.inspector),
+          strip(PaneStrip.tools, size: WindowTokens.lower + _strip),
+        ],
+        size: WindowTokens.inspector,
+        minimalSize: 340,
+      ),
+    ]);
