@@ -18,7 +18,6 @@
 #include <sqlite3.h>
 
 #include "document/arrange.h"
-#include "document/card_table.h"
 #include "document/cards.h"
 #include "document/easings_put.h"
 #include "document/expressions.h"
