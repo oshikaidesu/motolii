@@ -1,3 +1,6 @@
+#ifndef MOTOLII_COMMUNITY_AFTER_EFFECTS_AE_EXPR_H_
+#define MOTOLII_COMMUNITY_AFTER_EFFECTS_AE_EXPR_H_
+
 // JavaScript prelude that compiles and runs After Effects expressions.
 //
 // The prelude is a raw string, ae_prelude, that the caller evaluates in a QuickJS-ng context
@@ -35,8 +38,8 @@
 //
 // wiggle and random do not reproduce After Effects' own random sequences, so values that
 // depend on the exact numbers will not match After Effects.
-#pragma once
-static const char ae_prelude[] = R"AEJS(
+
+inline const char ae_prelude[] = R"AEJS(
 (function (G) {
   const val = (x) => (x !== null && typeof x === 'object' && !Array.isArray(x) && 'value' in x) ? x.value : x;
   const lift = (f) => function (a, b) {
@@ -158,3 +161,5 @@ static const char ae_prelude[] = R"AEJS(
   G.AE = { compile, run, comp: makeComp, name: (s) => String(s).replace(/\W+/g, '_'), H };
 })(globalThis);
 )AEJS";
+
+#endif  // MOTOLII_COMMUNITY_AFTER_EFFECTS_AE_EXPR_H_
