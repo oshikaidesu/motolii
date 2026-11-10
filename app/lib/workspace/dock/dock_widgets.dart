@@ -27,7 +27,7 @@ part 'dock_stars.dart';
 Widget dockBadge(DockG g, Color hue, {required double size}) => Badge(
   hue,
   size: size,
-  child: DockGlyph(g, size: size * .62, color: WsT.onAccent),
+  child: Glyph(g, size: size * .62, color: WsT.onAccent),
 );
 
 /// What the dock remembers per shelf while you hop between shelves (selection, chip, folds). Lives in the dock's state, never in [Ws].
@@ -250,7 +250,7 @@ class DockSection extends StatelessWidget {
               turns: folded! ? 0 : .25,
               duration: Mo.dur,
               curve: Mo.ease,
-              child: DockGlyph(DockG.chevron, size: Shape.z(8), color: Grey.g63),
+              child: Glyph(DockG.chevron, size: Shape.z(8), color: Grey.g63),
             ),
             SizedBox(width: Shape.s(6)),
           ],
@@ -284,7 +284,7 @@ class DockSection extends StatelessWidget {
 
 /// The glyph of an [IconPress] in the dock's header: 11 wide, in the ink the press gives.
 Widget Function(Color) dockMark(DockG g) =>
-    (ink) => DockGlyph(g, size: Shape.z(11), color: ink);
+    (ink) => Glyph(g, size: Shape.z(11), color: ink);
 
 /// The foot of a shelf: what is picked (preview, name, facts), where it would go (the selected layer), and the one action, in the accent.
 class DockFooter extends StatelessWidget {

@@ -12,7 +12,8 @@ import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_ease_cards.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_easing_presets.dart';
-import 'package:motolii/workspace/tool_panel/tool_panel_ease_side.dart' show EaseChevron;
+import 'package:motolii/workspace/tool_panel/tool_panel_ease_side.dart' show drawEaseChevron;
+import 'package:motolii/widgets/media.dart' show Draw;
 import 'package:motolii/workspace/state/state.dart';
 
 import '../../widgets/controls.dart' show Hov;
@@ -53,7 +54,7 @@ class EaseGrip extends StatelessWidget {
         color: h ? Grey.g56 : Grey.g38,
         borderRadius: BorderRadius.horizontal(left: Shape.r(4)),
       ),
-      child: CustomPaint(painter: EaseChevron(h ? Grey.g95 : Grey.g76, !open)),
+      child: CustomPaint(painter: Draw((cv, s) => drawEaseChevron(cv, s, h ? Grey.g95 : Grey.g76, !open), (h, open))),
     ),
   );
 }

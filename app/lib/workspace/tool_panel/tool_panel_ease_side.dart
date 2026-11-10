@@ -3,6 +3,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../../widgets/controls.dart' show Hov, IconPress;
+import '../../widgets/media.dart' show Draw, glyph;
 
 import 'package:motolii/inspector/inspector_card.dart' show CardMore;
 import 'package:motolii/skin/tokens.dart';
@@ -89,7 +90,8 @@ class EaseLeft extends StatelessWidget {
             child: Hov(
               key: const ValueKey('ease-reverse'),
               onTap: onReverse,
-              builder: (_, h) => CustomPaint(size: Size.square(Shape.z(18)), painter: _Reverse(onReverse == null ? Grey.g38 : (h ? Grey.g95 : Grey.g76))),
+              builder: (_, h) =>
+                  glyph(Shape.z(18), (cv, s) => _drawReverse(cv, s, onReverse == null ? Grey.g38 : (h ? Grey.g95 : Grey.g76)), (onReverse == null, h)),
             ),
           ),
         ),
@@ -103,37 +105,28 @@ class EaseLeft extends StatelessWidget {
   );
 }
 
-class _Reverse extends CustomPainter {
-  // (AbsentMotion's EasingIcons.kt REVERSE_ARROWS)
-  const _Reverse(this.ink);
-  final Color ink;
-  @override
-  void paint(Canvas c, Size s) {
-    final k = s.width / 24;
-    c.scale(k);
-    c.drawPath(
-      Path()
-        ..moveTo(16, 3)
-        ..lineTo(20, 7)
-        ..lineTo(16, 11)
-        ..moveTo(20, 7)
-        ..lineTo(4, 7)
-        ..moveTo(8, 21)
-        ..lineTo(4, 17)
-        ..lineTo(8, 13)
-        ..moveTo(4, 17)
-        ..lineTo(20, 17),
-      Paint()
-        ..color = ink
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.9
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_Reverse o) => o.ink != ink;
+// (AbsentMotion's EasingIcons.kt REVERSE_ARROWS)
+void _drawReverse(Canvas c, Size s, Color ink) {
+  c.scale(s.width / 24);
+  c.drawPath(
+    Path()
+      ..moveTo(16, 3)
+      ..lineTo(20, 7)
+      ..lineTo(16, 11)
+      ..moveTo(20, 7)
+      ..lineTo(4, 7)
+      ..moveTo(8, 21)
+      ..lineTo(4, 17)
+      ..lineTo(8, 13)
+      ..moveTo(4, 17)
+      ..lineTo(20, 17),
+    Paint()
+      ..color = ink
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.9
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round,
+  );
 }
 
 /// The arrow to the curve before or after, in a bottom corner of the graph (AbsentMotion's StretchButton).
@@ -154,7 +147,7 @@ class EaseStep extends StatelessWidget {
     return to == null
         ? const SizedBox.shrink()
         : IconPress(
-            paintInk((ink) => EaseChevron(ink, back)),
+            paintInk((ink) => Draw((cv, s) => drawEaseChevron(cv, s, ink, back), (ink, back))),
             rest: WsT.well,
             ink: Grey.g76,
             key: ValueKey(back ? 'ease-previous' : 'ease-next'),
@@ -164,27 +157,18 @@ class EaseStep extends StatelessWidget {
   }
 }
 
-class EaseChevron extends CustomPainter {
-  const EaseChevron(this.ink, this.back);
-  final Color ink;
-  final bool back;
-  @override
-  void paint(Canvas c, Size s) {
-    final x = back ? s.width * .6 : s.width * .4, d = back ? -s.width * .2 : s.width * .2;
-    c.drawPath(
-      Path()
-        ..moveTo(x, s.height * .25)
-        ..lineTo(x + d, s.height / 2)
-        ..lineTo(x, s.height * .75),
-      Paint()
-        ..color = ink
-        ..strokeWidth = 1.4
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
-  }
-
-  @override
-  bool shouldRepaint(EaseChevron o) => o.ink != ink || o.back != back;
+void drawEaseChevron(Canvas c, Size s, Color ink, bool back) {
+  final x = back ? s.width * .6 : s.width * .4, d = back ? -s.width * .2 : s.width * .2;
+  c.drawPath(
+    Path()
+      ..moveTo(x, s.height * .25)
+      ..lineTo(x + d, s.height / 2)
+      ..lineTo(x, s.height * .75),
+    Paint()
+      ..color = ink
+      ..strokeWidth = 1.4
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round,
+  );
 }

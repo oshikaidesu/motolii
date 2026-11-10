@@ -3,9 +3,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import '../../skin/svg_parts.dart';
+import '../../widgets/glyphs.dart' show GlyphKind;
+export '../../widgets/glyphs.dart' show Glyph;
 
-enum DockG {
+enum DockG implements GlyphKind {
   media,
   effects,
   fonts,
@@ -48,37 +49,15 @@ enum DockG {
   blend,
   align,
   tools,
-  reload,
-}
-
-class DockGlyph extends StatelessWidget {
-  const DockGlyph(this.g, {super.key, this.size = 14, required this.color});
-  final DockG g;
-  final double size;
-  final Color color;
-  @override
-  Widget build(BuildContext context) => SizedBox.square(
-    dimension: size,
-    child: CustomPaint(painter: _P(g, color)),
-  );
-}
-
-class _P extends CustomPainter {
-  const _P(this.g, this.c);
-  final DockG g;
-  final Color c;
+  reload;
 
   @override
-  void paint(Canvas cv, Size s) {
-    if (SkinParts.draw(cv, s, 'dock.${g.name}', c)) return; // (the skin's own picture, if it brings one)
+  String get skin => 'dock.$name';
+  @override
+  double stroke(double w) => math.max(1.2, w * .1);
+  @override
+  void draw(Canvas cv, Size s, Paint st, Paint fl) {
     final w = s.width;
-    final st = Paint()
-      ..color = c
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = math.max(1.2, w * .1)
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    final fl = Paint()..color = c;
     Offset p(double x, double y) => Offset(x * w, y * w);
     Rect r(double l, double t, double rw, double rh) => Rect.fromLTWH(l * w, t * w, rw * w, rh * w);
     RRect rr(double l, double t, double rw, double rh, [double rad = .1]) => RRect.fromRectAndRadius(r(l, t, rw, rh), Radius.circular(rad * w));
@@ -93,7 +72,7 @@ class _P extends CustomPainter {
       return poly(pts);
     }
 
-    switch (g) {
+    switch (this) {
       case DockG.media || DockG.video:
         cv.drawRRect(rr(.1, .2, .8, .6, .12), st);
         cv.drawPath(poly(const [Offset(.42, .36), Offset(.64, .5), Offset(.42, .64)]), fl);
@@ -101,7 +80,7 @@ class _P extends CustomPainter {
         final t = TextPainter(
           text: TextSpan(
             text: 'fx',
-            style: TextStyle(color: c, fontSize: w * .8, fontStyle: FontStyle.italic, fontWeight: FontWeight.w700, height: 1),
+            style: TextStyle(color: fl.color, fontSize: w * .8, fontStyle: FontStyle.italic, fontWeight: FontWeight.w700, height: 1),
           ),
           textDirection: TextDirection.ltr,
         )..layout();
@@ -131,11 +110,11 @@ class _P extends CustomPainter {
             ..lineTo(w * .9, w * .8)
             ..lineTo(w * .1, w * .8)
             ..close(),
-          g == DockG.folder ? fl : st,
+          this == DockG.folder ? fl : st,
         );
       case DockG.create || DockG.plus:
-        if (g == DockG.create) cv.drawRRect(rr(.12, .12, .76, .76, .18), st);
-        final k = g == DockG.create ? .3 : .2;
+        if (this == DockG.create) cv.drawRRect(rr(.12, .12, .76, .76, .18), st);
+        final k = this == DockG.create ? .3 : .2;
         cv.drawLine(p(.5, k), p(.5, 1 - k), st);
         cv.drawLine(p(k, .5), p(1 - k, .5), st);
       case DockG.reload: // (the round arrow on a browser's reload)
@@ -277,7 +256,4 @@ class _P extends CustomPainter {
         cv.drawRRect(rr(.42, .34, .5, .32, .16), st);
     }
   }
-
-  @override
-  bool shouldRepaint(_P o) => o.g != g || o.c != c;
 }

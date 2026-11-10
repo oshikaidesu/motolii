@@ -2,38 +2,66 @@
 import 'package:flutter/widgets.dart';
 
 import '../skin/svg_parts.dart';
+import '../skin/tokens.dart';
+import 'media.dart' show glyph;
 
-enum G { select, move, rect, ellipse, pen, text, brush, image, camera, grid, shape, media }
-
-class Glyph extends StatelessWidget {
-  const Glyph(this.kind, {super.key, required this.size, required this.color});
-  final G kind;
-  final double size;
-  final Color color;
-  @override
-  Widget build(BuildContext context) => SizedBox.square(
-    dimension: size,
-    child: CustomPaint(painter: _GlyphPainter(kind, color)),
-  );
+/// A set of named marks (the enums here, the timeline's, the dock's): its skin key, its stroke weight on its own grid, its drawing. The one [Glyph] draws any of them.
+abstract interface class GlyphKind {
+  String get skin;
+  double stroke(double w);
+  void draw(Canvas c, Size s, Paint st, Paint fl);
 }
 
-class _GlyphPainter extends CustomPainter {
-  const _GlyphPainter(this.kind, this.color);
-  final G kind;
+class Glyph extends StatelessWidget {
+  const Glyph(this.kind, {super.key, required this.size, required this.color, this.fade = false});
+  final GlyphKind kind;
+  final double size;
   final Color color;
+  final bool fade; // (the colour eases over, as the timeline's marks do)
+  Widget _box(Color c) => glyph(size, (cv, s) {
+    if (SkinParts.draw(cv, s, kind.skin, c)) return; // (the skin's own picture, if it brings one)
+    final st = Paint()
+      ..color = c
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = kind.stroke(s.width)
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    kind.draw(cv, s, st, Paint()..color = c);
+  }, (kind, c));
   @override
-  void paint(Canvas c, Size s) {
-    if (SkinParts.draw(c, s, 'glyph.${kind.name}', color)) return; // (the skin's own picture, if it brings one)
-    final w = s.width,
-        st = Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = w * .08
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round,
-        fl = Paint()..color = color;
+  Widget build(BuildContext context) => fade
+      ? TweenAnimationBuilder<Color?>(
+          tween: ColorTween(end: color),
+          duration: Mo.dur,
+          curve: Curves.easeOut,
+          builder: (_, v, _) => _box(v ?? color),
+        )
+      : _box(color);
+}
+
+enum G implements GlyphKind {
+  select,
+  move,
+  rect,
+  ellipse,
+  pen,
+  text,
+  brush,
+  image,
+  camera,
+  grid,
+  shape,
+  media;
+
+  @override
+  String get skin => 'glyph.$name';
+  @override
+  double stroke(double w) => w * .08;
+  @override
+  void draw(Canvas c, Size s, Paint st, Paint fl) {
+    final w = s.width;
     Offset p(double x, double y) => Offset(x * w, y * w);
-    switch (kind) {
+    switch (this) {
       case G.select:
         c.drawPath(
           Path()
@@ -122,7 +150,4 @@ class _GlyphPainter extends CustomPainter {
         );
     }
   }
-
-  @override
-  bool shouldRepaint(_GlyphPainter o) => o.kind != kind || o.color != color;
 }

@@ -363,7 +363,7 @@ Widget _makeTile(_Make m, DockCtx c, {Key? key, Widget? naming, ValueChanged<Off
 Widget _makeArt(_Make m, DockCtx c, bool sel) {
   Widget mark() => Align(
     alignment: Alignment.topLeft,
-    child: DockGlyph(m.g, size: Shape.z(26), color: sel ? WsT.onAccent : m.hue),
+    child: Glyph(m.g, size: Shape.z(26), color: sel ? WsT.onAccent : m.hue),
   );
   if (m.recipe && _isRecipe(c, m.name)) {
     // (a recipe: its motion as the inside reckons it, drawn by the window, the whole list moving at once)

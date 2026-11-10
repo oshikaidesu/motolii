@@ -174,7 +174,7 @@ class _Crumbs extends StatelessWidget {
                   if (i > 0)
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: Shape.s(5)),
-                      child: DockGlyph(DockG.chevron, size: Shape.z(6), color: Grey.g56),
+                      child: Glyph(DockG.chevron, size: Shape.z(6), color: Grey.g56),
                     ),
                   Flexible(
                     child: Hov(

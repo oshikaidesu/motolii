@@ -258,7 +258,12 @@ class _RelationMarks extends StatelessWidget {
                             look: ChipLook.relate,
                             on: true,
                             onTap: () => wsSwitch(ws),
-                            glyph: (_) => TpGlyphView((m.value(rel, 'visible', 0) ?? 1) > .5 ? TpGlyph.eye : TpGlyph.eyeOff, WsT.onAccent, size: Shape.z(12)),
+                            glyph: (_) => Glyph(
+                              (m.value(rel, 'visible', 0) ?? 1) > .5 ? TpGlyph.eye : TpGlyph.eyeOff,
+                              color: WsT.onAccent,
+                              size: Shape.z(12),
+                              fade: true,
+                            ),
                             key: const ValueKey('ws-relation-switch'),
                           ), // (its eye, as on its row: shut, what it is on top of shows)
                           Chip(

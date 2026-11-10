@@ -25,9 +25,7 @@ class _LabelHeader extends StatelessWidget {
       for (final g in const [TpGlyph.eye, TpGlyph.solo, TpGlyph.lock])
         SizedBox(
           width: Shape.z(20),
-          child: Center(
-            child: CustomPaint(size: const Size.square(10), painter: TpGlyphPainter(g, g == TpGlyph.solo && solo ? WsT.accent : Grey.g56)),
-          ),
+          child: Center(child: Glyph(g, size: 10, color: g == TpGlyph.solo && solo ? WsT.accent : Grey.g56)),
         ),
     ],
   );
@@ -114,7 +112,7 @@ class _Toggle extends StatelessWidget {
           height: Shape.z(17),
           alignment: Alignment.center,
           decoration: BoxDecoration(color: on ? WsT.accent : (strong ? Grey.g26 : null), borderRadius: BorderRadius.all(Shape.r(WsT.chipRadius))),
-          child: CustomPaint(size: const Size.square(10), painter: TpGlyphPainter(g, on ? WsT.onAccent : (strong ? Grey.g95 : (lit ? Grey.g76 : Grey.g38)))),
+          child: Glyph(g, size: 10, color: on ? WsT.onAccent : (strong ? Grey.g95 : (lit ? Grey.g76 : Grey.g38))),
         ),
       ),
     ),

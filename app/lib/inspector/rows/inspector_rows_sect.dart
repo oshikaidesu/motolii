@@ -5,6 +5,7 @@ import 'package:motolii/skin/forms/forms.dart';
 import 'package:motolii/inspector/inspector_parts.dart';
 import 'package:motolii/skin/tokens.dart';
 import 'package:motolii/widgets/controls.dart' show Badge, Hov;
+import 'package:motolii/widgets/media.dart' show Draw;
 
 /// A card: a heading and its rows, folded by its title.
 class Sect extends StatelessWidget {
@@ -37,7 +38,7 @@ class Sect extends StatelessWidget {
             // the mark sits centred in its box, and the gap after it equals the card's inset, so it has the same air on both sides
             FoldMark(open: open, hot: h),
             SizedBox(width: Pop.inset),
-            Badge(tone, size: 16, radius: const Radius.circular(16 * .32), mark: MarkPaint(Pop.onAccent)),
+            Badge(tone, size: 16, radius: const Radius.circular(16 * .32), mark: Draw((c, s) => drawLayerMark(c, s, Pop.onAccent), Pop.onAccent)),
             SizedBox(width: Shape.s(6)),
             Flexible(
               child: Text(

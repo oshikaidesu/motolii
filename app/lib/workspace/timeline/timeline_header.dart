@@ -225,7 +225,7 @@ class _Btn extends StatelessWidget {
     (ink) => Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        CustomPaint(size: const Size.square(11), painter: TpGlyphPainter(g, ink)),
+        Glyph(g, size: 11, color: ink),
         if (label case final l?) ...[SizedBox(width: Shape.s(4)), Text(l, style: T.micro(ink).copyWith(fontWeight: FontWeight.w700))],
       ],
     ),

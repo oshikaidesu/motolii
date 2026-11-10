@@ -28,7 +28,7 @@ class ToolSticker extends StatelessWidget {
       decoration: BoxDecoration(color: tone, borderRadius: BorderRadius.circular(size * .3)),
       child: g == null
           ? Center(child: Text(name.characters.first, style: T.micro(WsT.onAccent))) // (a tool of your own: its first letter)
-          : DockGlyph(g, size: size, color: WsT.onAccent),
+          : Glyph(g, size: size, color: WsT.onAccent),
     );
   }
 }

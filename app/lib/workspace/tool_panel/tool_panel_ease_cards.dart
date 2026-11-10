@@ -14,6 +14,7 @@ import 'package:motolii/workspace/tool_panel/tool_panel_ease.dart';
 import 'package:motolii/workspace/tool_panel/tool_panel_easing_presets.dart';
 import 'package:motolii/workspace/state/state.dart';
 import 'package:motolii/widgets/controls.dart' show Hov;
+import 'package:motolii/widgets/media.dart' show Draw;
 
 const _over = '×', _space = '~', _turned = 'Reverse:'; // (a way defined in a document is one word)
 const _all = -1; // (what the tile at the foot of the flow carries: all the cards, EaseShapes.onKeep)
@@ -237,7 +238,7 @@ class EaseCards extends StatelessWidget {
     );
     final axis = across ? Axis.horizontal : Axis.vertical;
     final gap = across ? Size(this.side * .4, side.height) : Size(side.width, this.side * .4);
-    Widget arrow() => CustomPaint(size: gap, painter: _Arrow(across));
+    Widget arrow() => CustomPaint(size: gap, painter: Draw((cv, s) => _drawArrow(cv, s, across), across));
     Widget by(int i) => switch (_by(said(cards[i]))) {
       // (how it takes what is above it)
       _By.through => arrow(),
@@ -324,36 +325,28 @@ class EaseOff extends StatelessWidget {
   );
 }
 
-class _Arrow extends CustomPainter {
-  const _Arrow(this.across);
-  final bool across;
-  @override
-  void paint(Canvas c, Size s) {
-    if (across) {
-      // (the same arrow, turned to point along the row)
-      c.translate(0, s.height);
-      c.rotate(-math.pi / 2);
-      s = Size(s.height, s.width);
-    }
-    final x = s.width / 2,
-        p = Paint()
-          ..color = Grey.g56
-          ..strokeWidth = 1.4
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round;
-    c.drawLine(Offset(x, 1), Offset(x, s.height - 2), p);
-    c.drawPath(
-      Path()
-        ..moveTo(x - 3, s.height - 5)
-        ..lineTo(x, s.height - 2)
-        ..lineTo(x + 3, s.height - 5),
-      p,
-    );
+void _drawArrow(Canvas c, Size s, bool across) {
+  if (across) {
+    // (the same arrow, turned to point along the row)
+    c.translate(0, s.height);
+    c.rotate(-math.pi / 2);
+    s = Size(s.height, s.width);
   }
-
-  @override
-  bool shouldRepaint(_Arrow o) => o.across != across;
+  final x = s.width / 2,
+      p = Paint()
+        ..color = Grey.g56
+        ..strokeWidth = 1.4
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round;
+  c.drawLine(Offset(x, 1), Offset(x, s.height - 2), p);
+  c.drawPath(
+    Path()
+      ..moveTo(x - 3, s.height - 5)
+      ..lineTo(x, s.height - 2)
+      ..lineTo(x + 3, s.height - 5),
+    p,
+  );
 }
 
 /// An empty frame, dashed: it says it takes one (Monster Train's empty slots).
@@ -362,26 +355,18 @@ class EaseSlot extends StatelessWidget {
   final double side;
   final Color ink;
   @override
-  Widget build(BuildContext context) => CustomPaint(size: Size.square(side), painter: _Slot(ink));
+  Widget build(BuildContext context) => CustomPaint(size: Size.square(side), painter: Draw((cv, s) => _drawSlot(cv, s, ink), ink));
 }
 
-class _Slot extends CustomPainter {
-  const _Slot(this.ink);
-  final Color ink;
-  @override
-  void paint(Canvas c, Size s) {
-    final k = s.width / 68, box = RRect.fromRectAndRadius(Rect.fromLTWH(3 * k, 4 * k, 61 * k, 60 * k), Radius.circular(8 * k));
-    final line = Paint()
-      ..color = ink
-      ..strokeWidth = 1.2
-      ..style = PaintingStyle.stroke;
-    for (final m in (Path()..addRRect(box)).computeMetrics()) {
-      for (var d = 0.0; d < m.length; d += 7) {
-        c.drawPath(m.extractPath(d, d + 4), line);
-      }
+void _drawSlot(Canvas c, Size s, Color ink) {
+  final k = s.width / 68, box = RRect.fromRectAndRadius(Rect.fromLTWH(3 * k, 4 * k, 61 * k, 60 * k), Radius.circular(8 * k));
+  final line = Paint()
+    ..color = ink
+    ..strokeWidth = 1.2
+    ..style = PaintingStyle.stroke;
+  for (final m in (Path()..addRRect(box)).computeMetrics()) {
+    for (var d = 0.0; d < m.length; d += 7) {
+      c.drawPath(m.extractPath(d, d + 4), line);
     }
   }
-
-  @override
-  bool shouldRepaint(_Slot o) => o.ink != ink;
 }

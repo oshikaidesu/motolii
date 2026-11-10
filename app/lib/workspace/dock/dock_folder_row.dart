@@ -34,7 +34,7 @@ Widget dockFolderRow({
               turns: open ? .25 : 0,
               duration: Mo.dur,
               curve: Mo.ease,
-              child: DockGlyph(DockG.chevron, size: Shape.z(7), color: dockInk(here, Grey.g63)),
+              child: Glyph(DockG.chevron, size: Shape.z(7), color: dockInk(here, Grey.g63)),
             ),
     );
     return AnimatedContainer(
@@ -49,7 +49,7 @@ Widget dockFolderRow({
           if (cover != null)
             SizedBox.square(dimension: Shape.z(28), child: cover)
           else
-            DockGlyph(glyph, size: Shape.z(12), color: here ? WsT.onAccent : glyphInk ?? Grey.g63),
+            Glyph(glyph, size: Shape.z(12), color: here ? WsT.onAccent : glyphInk ?? Grey.g63),
           SizedBox(width: Shape.s(6)),
           Expanded(
             child:

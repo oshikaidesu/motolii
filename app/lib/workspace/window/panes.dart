@@ -97,7 +97,7 @@ class _WsPanesState extends State<WsPanes> {
             selected: status == TabStatus.selected,
             mark: p.glyph == null
                 ? Text(p.name.characters.first, style: T.micro(status == TabStatus.selected ? Grey.g95 : Grey.g56))
-                : DockGlyph(p.glyph!, size: Shape.z(12), color: status == TabStatus.selected ? Grey.g95 : Grey.g56),
+                : Glyph(p.glyph!, size: Shape.z(12), color: status == TabStatus.selected ? Grey.g95 : Grey.g56),
           ),
         ),
       ),

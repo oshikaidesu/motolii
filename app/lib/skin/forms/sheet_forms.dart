@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
+import '../../widgets/media.dart' show Draw;
 import '../tokens.dart';
 import 'base_controls.dart';
 import 'forms.dart';
@@ -12,13 +13,8 @@ import 'number_paint.dart';
 
 enum _Mark { dot, ring, quarter }
 
-class _MarkPaint extends CustomPainter {
-  const _MarkPaint(this.mark, this.ink);
-  final _Mark mark;
-  final Color ink;
-
-  @override
-  void paint(Canvas c, Size s) {
+Widget _mark(_Mark mark, Color ink) => CustomPaint(
+  painter: Draw((c, s) {
     final p = Paint()..color = ink;
     final r = s.shortestSide;
     switch (mark) {
@@ -35,11 +31,8 @@ class _MarkPaint extends CustomPainter {
       case _Mark.quarter:
         c.drawArc(Rect.fromCircle(center: Offset(0, s.height), radius: r), -math.pi / 2, math.pi / 2, true, p);
     }
-  }
-
-  @override
-  bool shouldRepaint(_MarkPaint o) => o.mark != mark || o.ink != ink;
-}
+  }, (mark, ink)),
+);
 
 class SheetForms extends Forms {
   const SheetForms();
@@ -57,10 +50,7 @@ class SheetForms extends Forms {
           children: [
             Text(a.label, style: T.name(Grey.g95, 13, FontWeight.w500, 1.15)),
             SizedBox(width: Shape.s(8)),
-            SizedBox.square(
-              dimension: Shape.z(14),
-              child: CustomPaint(painter: _MarkPaint(hot ? _Mark.quarter : _Mark.ring, hot ? Accent.key : Grey.g38)),
-            ),
+            SizedBox.square(dimension: Shape.z(14), child: _mark(hot ? _Mark.quarter : _Mark.ring, hot ? Accent.key : Grey.g38)),
           ],
         ),
       );
@@ -81,10 +71,7 @@ class SheetForms extends Forms {
         children: [
           Text(s.on ? 'On' : 'Off', style: T.name(s.on ? Grey.g95 : Grey.g56, 11, FontWeight.w500, 1.15)),
           SizedBox(width: Shape.s(6)),
-          SizedBox.square(
-            dimension: Shape.z(12),
-            child: CustomPaint(painter: _MarkPaint(s.on ? _Mark.dot : _Mark.ring, st.isHovered ? Accent.key : Grey.g95)),
-          ),
+          SizedBox.square(dimension: Shape.z(12), child: _mark(s.on ? _Mark.dot : _Mark.ring, st.isHovered ? Accent.key : Grey.g95)),
         ],
       ),
     ),
@@ -101,13 +88,7 @@ class SheetForms extends Forms {
               height: Shape.z(28),
               child: Row(
                 children: [
-                  if (c.tone != null) ...[
-                    SizedBox.square(
-                      dimension: Shape.z(6),
-                      child: CustomPaint(painter: _MarkPaint(_Mark.dot, c.tone!)),
-                    ),
-                    SizedBox(width: Shape.s(8)),
-                  ],
+                  if (c.tone != null) ...[SizedBox.square(dimension: Shape.z(6), child: _mark(_Mark.dot, c.tone!)), SizedBox(width: Shape.s(8))],
                   Expanded(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
@@ -116,10 +97,7 @@ class SheetForms extends Forms {
                     ),
                   ),
                   ?c.trailing,
-                  SizedBox.square(
-                    dimension: Shape.z(12),
-                    child: CustomPaint(painter: _MarkPaint(c.open ? _Mark.quarter : _Mark.ring, st.isHovered ? Accent.key : Grey.g38)),
-                  ),
+                  SizedBox.square(dimension: Shape.z(12), child: _mark(c.open ? _Mark.quarter : _Mark.ring, st.isHovered ? Accent.key : Grey.g38)),
                 ],
               ),
             ),
@@ -158,10 +136,7 @@ class SheetForms extends Forms {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox.square(
-                      dimension: Shape.z(18),
-                      child: CustomPaint(painter: _MarkPaint(st.isSelected ? _Mark.quarter : _Mark.ring, st.isSelected ? Accent.key : Grey.g38)),
-                    ),
+                    SizedBox.square(dimension: Shape.z(18), child: _mark(st.isSelected ? _Mark.quarter : _Mark.ring, st.isSelected ? Accent.key : Grey.g38)),
                     SizedBox(width: Shape.s(4)),
                     Text(
                       c.labels[i],
@@ -187,10 +162,7 @@ class SheetForms extends Forms {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox.square(
-              dimension: Shape.z(18),
-              child: CustomPaint(painter: _MarkPaint(f.on ? _Mark.dot : _Mark.ring, ink)),
-            ),
+            SizedBox.square(dimension: Shape.z(18), child: _mark(f.on ? _Mark.dot : _Mark.ring, ink)),
             SizedBox(width: Shape.s(5)),
             if (f.mark != null) ...[f.mark!(f.on ? Grey.g95 : Grey.g56), SizedBox(width: Shape.s(4))],
             Text(f.label, style: T.label(f.on ? Grey.g95 : Grey.g56).copyWith(fontWeight: f.on ? FontWeight.w600 : FontWeight.w400)),
@@ -220,13 +192,7 @@ class SheetForms extends Forms {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (on) ...[
-                        SizedBox.square(
-                          dimension: Shape.z(5),
-                          child: CustomPaint(painter: _MarkPaint(_Mark.dot, Accent.key)),
-                        ),
-                        SizedBox(width: Shape.s(4)),
-                      ],
+                      if (on) ...[SizedBox.square(dimension: Shape.z(5), child: _mark(_Mark.dot, Accent.key)), SizedBox(width: Shape.s(4))],
                       Text(name, style: T.label(on ? Grey.g100 : Grey.g56).copyWith(fontWeight: on ? FontWeight.w600 : FontWeight.w400)),
                       if (n != null) ...[SizedBox(width: Shape.s(4)), Text('$n', style: T.value(Grey.g56).copyWith(fontSize: T.px(10)))],
                     ],
@@ -245,10 +211,7 @@ class SheetForms extends Forms {
     context,
     t,
     banded: false,
-    mark: SizedBox.square(
-      dimension: Shape.z(16),
-      child: CustomPaint(painter: _MarkPaint(t.selected ? _Mark.quarter : _Mark.ring, t.selected ? Accent.key : Grey.g38)),
-    ),
+    mark: SizedBox.square(dimension: Shape.z(16), child: _mark(t.selected ? _Mark.quarter : _Mark.ring, t.selected ? Accent.key : Grey.g38)),
     index: Grey.g56,
     ink: Grey.g95,
     rest: FontWeight.w400,
@@ -270,10 +233,7 @@ class SheetForms extends Forms {
             padding: EdgeInsets.only(right: n.glyph != null ? n.glyphBox : 0, bottom: n.fill == null ? 0 : 2),
             child: Row(
               children: [
-                SizedBox.square(
-                  dimension: Shape.z(14),
-                  child: CustomPaint(painter: _MarkPaint(n.fill == null ? _Mark.quarter : _Mark.dot, shape)),
-                ),
+                SizedBox.square(dimension: Shape.z(14), child: _mark(n.fill == null ? _Mark.quarter : _Mark.dot, shape)),
                 SizedBox(width: Shape.s(6)),
                 if (n.caption != null) ...[Text(n.caption!, style: T.micro(n.on ? Grey.g63 : Grey.g44)), SizedBox(width: Shape.s(6))],
                 if (n.lead != null) Flexible(child: n.lead!),
@@ -323,10 +283,7 @@ class SheetForms extends Forms {
   Widget paneMark(BuildContext context, {required bool selected, required Widget mark}) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      SizedBox.square(
-        dimension: Shape.z(14),
-        child: CustomPaint(painter: _MarkPaint(selected ? _Mark.quarter : _Mark.ring, selected ? Accent.key : Grey.g38)),
-      ),
+      SizedBox.square(dimension: Shape.z(14), child: _mark(selected ? _Mark.quarter : _Mark.ring, selected ? Accent.key : Grey.g38)),
       SizedBox(width: Shape.s(4)),
       mark,
     ],

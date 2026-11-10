@@ -67,7 +67,7 @@ class _DockSearchState extends State<DockSearch> {
         ),
         child: Row(
           children: [
-            DockGlyph(DockG.search, size: Shape.z(11), color: _focus.hasFocus ? WsT.accentInk : Grey.g56),
+            Glyph(DockG.search, size: Shape.z(11), color: _focus.hasFocus ? WsT.accentInk : Grey.g56),
             SizedBox(width: Shape.s(6)),
             Expanded(
               child: Stack(
@@ -97,7 +97,7 @@ class _DockSearchState extends State<DockSearch> {
             if (c.text.isNotEmpty)
               DockHover(
                 onTap: c.clear,
-                builder: (context, h) => DockGlyph(DockG.close, size: Shape.z(10), color: h ? Grey.g95 : Grey.g63),
+                builder: (context, h) => Glyph(DockG.close, size: Shape.z(10), color: h ? Grey.g95 : Grey.g63),
               ),
           ],
         ),

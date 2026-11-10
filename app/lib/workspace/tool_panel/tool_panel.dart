@@ -52,7 +52,7 @@ class _ToolHeader extends StatelessWidget {
               Chip(label: wide ? 'Follows selection' : 'Follows', dot: WsT.accent),
             SizedBox(width: WsT.gap),
             IconPress(
-              (ink) => DockGlyph(DockG.tools, size: 20, color: ink),
+              (ink) => Glyph(DockG.tools, size: 20, color: ink),
               rest: WsT.well,
               ink: Grey.g76,
               size: 20,

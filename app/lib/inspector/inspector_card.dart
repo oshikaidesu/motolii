@@ -5,8 +5,10 @@ import '../skin/theme.dart';
 import '../skin/tokens.dart';
 import 'inspector_parts.dart';
 import '../widgets/controls.dart' show Badge, Chip, ChipLook, Hov;
+import '../widgets/media.dart' show Draw, glyph;
 import '../workspace/commands/context_menu.dart' show WsMenuItem, WsMenuList;
-import '../widgets/timeline_painters.dart' show TpGlyph, TpGlyphView;
+import '../widgets/glyphs.dart' show Glyph;
+import '../widgets/timeline_painters.dart' show TpGlyph;
 
 // ---- 10. a card ------------------------------------------------------------------------------------------------------
 /// A card as the inside declares it, an effect's and a thing's own alike: a name and a WGSL uniform struct
@@ -78,7 +80,7 @@ class ValuesCard extends StatelessWidget {
                     onTap: () => doc.flag('$k.past', false),
                     builder: (_, h) => Padding(
                       padding: EdgeInsets.only(right: Shape.s(6)),
-                      child: TpGlyphView(TpGlyph.unlock, h ? Grey.g95 : Grey.g76),
+                      child: Glyph(TpGlyph.unlock, size: 12, color: h ? Grey.g95 : Grey.g76, fade: true),
                     ),
                   ),
                 if (at < 0)
@@ -93,7 +95,7 @@ class ValuesCard extends StatelessWidget {
                     onTap: () => doc.onCardRemove!(card.name),
                     builder: (_, h) => Padding(
                       padding: EdgeInsets.only(right: Shape.s(6)),
-                      child: CustomPaint(size: Size.square(Shape.z(12)), painter: _Bin(h ? Grey.g95 : Grey.g56)),
+                      child: glyph(Shape.z(12), (c, s) => _drawBin(c, s, h ? Grey.g95 : Grey.g56), h),
                     ),
                   ),
                 if (at >= 0) ...[
@@ -104,7 +106,7 @@ class ValuesCard extends StatelessWidget {
                       onTap: () => doc.onCardEye!(card.name),
                       builder: (_, h) => Padding(
                         padding: EdgeInsets.only(right: Shape.s(6)),
-                        child: TpGlyphView(doc.cardsOff.contains(card.name) ? TpGlyph.eyeOff : TpGlyph.eye, h ? Grey.g95 : Grey.g56),
+                        child: Glyph(doc.cardsOff.contains(card.name) ? TpGlyph.eyeOff : TpGlyph.eye, size: 12, color: h ? Grey.g95 : Grey.g56, fade: true),
                       ),
                     ),
                   CardMore(
@@ -130,7 +132,7 @@ class ValuesCard extends StatelessWidget {
                       onTap: () => doc.onCardRemove!(card.name),
                       builder: (_, h) => Padding(
                         padding: EdgeInsets.only(right: Shape.s(6)),
-                        child: CustomPaint(size: Size.square(Shape.z(12)), painter: _Bin(h ? Grey.g95 : Grey.g56)),
+                        child: glyph(Shape.z(12), (c, s) => _drawBin(c, s, h ? Grey.g95 : Grey.g56), h),
                       ),
                     ),
                 ],
@@ -145,7 +147,7 @@ class ValuesCard extends StatelessWidget {
                       child: SizedBox(
                         width: Shape.z(16),
                         height: Shape.z(16),
-                        child: CustomPaint(painter: _Grip(Grey.g56)),
+                        child: CustomPaint(painter: Draw((c, s) => _drawGrip(c, s, Grey.g56), Grey.g56)),
                       ),
                     ),
                   ),
@@ -219,22 +221,14 @@ class _FoldRow extends StatelessWidget {
 }
 
 /// Three short lines, ≡: an effect's card held there is dragged up or down its stack.
-class _Grip extends CustomPainter {
-  const _Grip(this.ink);
-  final Color ink;
-  @override
-  void paint(Canvas c, Size s) {
-    final paint = Paint()
-      ..color = ink
-      ..strokeWidth = 1.4
-      ..strokeCap = StrokeCap.round;
-    for (final y in const [.32, .5, .68]) {
-      c.drawLine(Offset(s.width * .25, s.height * y), Offset(s.width * .75, s.height * y), paint);
-    }
+void _drawGrip(Canvas c, Size s, Color ink) {
+  final paint = Paint()
+    ..color = ink
+    ..strokeWidth = 1.4
+    ..strokeCap = StrokeCap.round;
+  for (final y in const [.32, .5, .68]) {
+    c.drawLine(Offset(s.width * .25, s.height * y), Offset(s.width * .75, s.height * y), paint);
   }
-
-  @override
-  bool shouldRepaint(_Grip o) => o.ink != ink;
 }
 
 /// An effect card's ⋮ (AbsentMotion's EffectHeader More): what else is done with it, in a short list over the panel,
@@ -318,30 +312,22 @@ class _CardMoreState extends State<CardMore> {
 }
 
 /// A bin: an effect taken off by it (AbsentMotion's Trash on its header).
-class _Bin extends CustomPainter {
-  _Bin(this.color);
-  final Color color;
-  @override
-  void paint(Canvas c, Size s) {
-    final p = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-    final w = s.width;
-    c.drawLine(Offset(w * .15, w * .25), Offset(w * .85, w * .25), p);
-    c.drawLine(Offset(w * .4, w * .12), Offset(w * .6, w * .12), p);
-    c.drawPath(
-      Path()
-        ..moveTo(w * .25, w * .3)
-        ..lineTo(w * .3, w * .9)
-        ..lineTo(w * .7, w * .9)
-        ..lineTo(w * .75, w * .3),
-      p,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_Bin o) => o.color != color;
+void _drawBin(Canvas c, Size s, Color color) {
+  final p = Paint()
+    ..color = color
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.2;
+  final w = s.width;
+  c.drawLine(Offset(w * .15, w * .25), Offset(w * .85, w * .25), p);
+  c.drawLine(Offset(w * .4, w * .12), Offset(w * .6, w * .12), p);
+  c.drawPath(
+    Path()
+      ..moveTo(w * .25, w * .3)
+      ..lineTo(w * .3, w * .9)
+      ..lineTo(w * .7, w * .9)
+      ..lineTo(w * .75, w * .3),
+    p,
+  );
 }
 
 /// What follows the pointer while an effect is dragged: the folded head, lifted.
@@ -359,7 +345,7 @@ class FxDragGhost extends StatelessWidget {
     ),
     child: Row(
       children: [
-        Badge(fx.tone, size: 16, radius: const Radius.circular(16 * .32), mark: MarkPaint(Pop.onAccent)),
+        Badge(fx.tone, size: 16, radius: const Radius.circular(16 * .32), mark: Draw((c, s) => drawLayerMark(c, s, Pop.onAccent), Pop.onAccent)),
         SizedBox(width: Shape.s(6)),
         Text(
           fx.name,

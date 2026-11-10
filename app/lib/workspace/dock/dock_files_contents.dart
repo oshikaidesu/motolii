@@ -123,7 +123,7 @@ class _Art extends StatelessWidget {
       DockG.folder => Container(
         color: WsT.well,
         alignment: Alignment.center,
-        child: DockGlyph(DockG.folder, size: Shape.z(26), color: WsT.accentInk),
+        child: Glyph(DockG.folder, size: Shape.z(26), color: WsT.accentInk),
       ),
       _ => Container(
         color: WsT.well,

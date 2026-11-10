@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:naked_ui/naked_ui.dart';
 
+import '../../widgets/media.dart' show Draw;
 import '../tokens.dart';
 import 'forms.dart';
 
@@ -78,18 +79,9 @@ class _Sprockets extends CustomPainter {
 }
 
 /// Edge-print arrow: ▸ shut, ▾ open.
-class _Arrow extends CustomPainter {
-  const _Arrow(this.open, this.ink);
-  final bool open;
-  final Color ink;
-  @override
-  void paint(Canvas c, Size s) {
-    final r = Rect.fromCenter(center: s.center(Offset.zero), width: s.shortestSide * .5, height: s.shortestSide * .5);
-    c.drawPath(Path()..addPolygon(open ? [r.topLeft, r.topRight, r.bottomCenter] : [r.topLeft, r.centerRight, r.bottomLeft], true), Paint()..color = ink);
-  }
-
-  @override
-  bool shouldRepaint(_Arrow o) => o.open != open || o.ink != ink;
+void _drawArrow(Canvas c, Size s, bool open, Color ink) {
+  final r = Rect.fromCenter(center: s.center(Offset.zero), width: s.shortestSide * .5, height: s.shortestSide * .5);
+  c.drawPath(Path()..addPolygon(open ? [r.topLeft, r.topRight, r.bottomCenter] : [r.topLeft, r.centerRight, r.bottomLeft], true), Paint()..color = ink);
 }
 
 Widget _looped(bool on, int seed, Widget child, {bool hand = false}) => CustomPaint(
@@ -176,7 +168,7 @@ class LightTableForms extends Forms {
                   ?c.trailing,
                   SizedBox.square(
                     dimension: Shape.z(22),
-                    child: CustomPaint(painter: _Arrow(c.open, st.isHovered ? _grease : _loupe)),
+                    child: CustomPaint(painter: Draw((cv, s) => _drawArrow(cv, s, c.open, st.isHovered ? _grease : _loupe), (c.open, st.isHovered))),
                   ),
                 ],
               ),

@@ -3,9 +3,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-import '../skin/svg_parts.dart';
-
 import '../skin/tokens.dart';
+import 'glyphs.dart' show GlyphKind;
 
 // ---------------------------------------------------------------- ticks (the rule of lib/parts/timeline.dart)
 
@@ -25,31 +24,38 @@ double tpFine(double ppf, int fps, double major) {
 
 // ---------------------------------------------------------------- glyphs
 
-enum TpGlyph { eye, eyeOff, solo, lock, unlock, caretR, caretD, play, pause, toStart, stepBack, stepFwd, loop, fit, plus, minus }
-
-class TpGlyphPainter extends CustomPainter {
-  const TpGlyphPainter(this.g, this.color);
-  final TpGlyph g;
-  final Color color;
+enum TpGlyph implements GlyphKind {
+  eye,
+  eyeOff,
+  solo,
+  lock,
+  unlock,
+  caretR,
+  caretD,
+  play,
+  pause,
+  toStart,
+  stepBack,
+  stepFwd,
+  loop,
+  fit,
+  plus,
+  minus;
 
   @override
-  void paint(Canvas c, Size s) {
-    if (SkinParts.draw(c, s, 'tp.${g.name}', color)) return; // (the skin's own picture, if it brings one)
+  String get skin => 'tp.$name';
+  @override
+  double stroke(double w) => 1.2; // (on the centred 12-unit grid drawn below)
+  @override
+  void draw(Canvas c, Size s, Paint line, Paint fill) {
     c.translate(s.width / 2, s.height / 2);
     c.scale(s.shortestSide / 12);
-    final line = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..color = color;
-    final fill = Paint()..color = color;
     Path tri(double x0, double y0, double x1, double y1, double x2, double y2) => Path()
       ..moveTo(x0, y0)
       ..lineTo(x1, y1)
       ..lineTo(x2, y2)
       ..close();
-    switch (g) {
+    switch (this) {
       case TpGlyph.eye:
         c.drawPath(
           Path()
@@ -79,7 +85,7 @@ class TpGlyphPainter extends CustomPainter {
           ..moveTo(-2.3, 0)
           ..lineTo(-2.3, -1.8)
           ..arcTo(Rect.fromCircle(center: const Offset(0, -1.8), radius: 2.3), math.pi, math.pi, false);
-        if (g == TpGlyph.lock) sh.lineTo(2.3, 0);
+        if (this == TpGlyph.lock) sh.lineTo(2.3, 0);
         c.drawPath(sh, line);
       case TpGlyph.caretR:
         c.drawPath(tri(-2, -3.6, 2.8, 0, -2, 3.6), fill);
@@ -119,21 +125,4 @@ class TpGlyphPainter extends CustomPainter {
         c.drawLine(const Offset(-4, 0), const Offset(4, 0), line);
     }
   }
-
-  @override
-  bool shouldRepaint(TpGlyphPainter o) => o.g != g || o.color != color;
-}
-
-class TpGlyphView extends StatelessWidget {
-  const TpGlyphView(this.g, this.color, {super.key, this.size = 12});
-  final TpGlyph g;
-  final Color color;
-  final double size;
-  @override
-  Widget build(BuildContext context) => TweenAnimationBuilder<Color?>(
-    tween: ColorTween(end: color),
-    duration: Mo.dur,
-    curve: Curves.easeOut,
-    builder: (_, v, _) => CustomPaint(size: Size.square(size), painter: TpGlyphPainter(g, v ?? color)),
-  );
 }

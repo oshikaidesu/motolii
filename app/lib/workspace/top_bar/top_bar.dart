@@ -20,6 +20,7 @@ import '../../skin/tokens.dart';
 import '../stage/stage_art.dart' show WsArt;
 import '../state/state.dart';
 import '../../widgets/controls.dart' show Badge, Chip, ChipLook, Hov, IconPress;
+import '../../widgets/media.dart' show Draw, glyph;
 import '../../widgets/two_fingers.dart';
 import '../../widgets/text_gestures.dart';
 part 'timings.dart';
@@ -128,7 +129,7 @@ class _UndoRedo extends StatelessWidget {
         IconPress(
           (c) => Transform.flip(
             flipX: flip,
-            child: CustomPaint(size: const Size(12, 10), painter: _UndoPaint(c)),
+            child: CustomPaint(size: const Size(12, 10), painter: Draw((cv, s) => _drawUndo(cv, s, c), c)),
           ),
           key: ValueKey(flip ? 'ws-redo' : 'ws-undo'),
           size: Shape.z(24),
@@ -148,38 +149,30 @@ class _UndoRedo extends StatelessWidget {
   );
 }
 
-class _UndoPaint extends CustomPainter {
-  const _UndoPaint(this.c);
-  final Color c;
-  @override
-  void paint(Canvas canvas, Size s) {
-    if (SkinParts.draw(canvas, s, 'undo', c)) return; // (the skin's own picture, if it brings one)
-    final p = Paint()
-      ..color = c
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    canvas
-      ..drawPath(
-        Path()
-          ..moveTo(1, 4)
-          ..lineTo(8, 4)
-          ..arcToPoint(Offset(8, s.height - 1), radius: Shape.r(3.2))
-          ..lineTo(4, s.height - 1),
-        p,
-      )
-      ..drawPath(
-        Path()
-          ..moveTo(4, 1)
-          ..lineTo(1, 4)
-          ..lineTo(4, 7),
-        p,
-      );
-  }
-
-  @override
-  bool shouldRepaint(_UndoPaint o) => o.c != c;
+void _drawUndo(Canvas canvas, Size s, Color c) {
+  if (SkinParts.draw(canvas, s, 'undo', c)) return; // (the skin's own picture, if it brings one)
+  final p = Paint()
+    ..color = c
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.4
+    ..strokeCap = StrokeCap.round
+    ..strokeJoin = StrokeJoin.round;
+  canvas
+    ..drawPath(
+      Path()
+        ..moveTo(1, 4)
+        ..lineTo(8, 4)
+        ..arcToPoint(Offset(8, s.height - 1), radius: Shape.r(3.2))
+        ..lineTo(4, s.height - 1),
+      p,
+    )
+    ..drawPath(
+      Path()
+        ..moveTo(4, 1)
+        ..lineTo(1, 4)
+        ..lineTo(4, 7),
+      p,
+    );
 }
 
 /// Dark / light: flips [Grey.shade] and rebuilds the whole window in place (reassemble keeps every State, so the edit survives).
@@ -192,7 +185,7 @@ class _ShadeSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => IconPress(
-    (c) => CustomPaint(size: const Size(12, 12), painter: _ShadePaint(c)),
+    (c) => glyph(12, (cv, s) => _drawShade(cv, s, c), c),
     key: const ValueKey('ws-shade'),
     onTap: flip,
     size: Shape.z(24),
@@ -202,26 +195,18 @@ class _ShadeSwitch extends StatelessWidget {
 }
 
 /// A ring with its left half filled: the usual sign for "light or dark".
-class _ShadePaint extends CustomPainter {
-  const _ShadePaint(this.c);
-  final Color c;
-  @override
-  void paint(Canvas canvas, Size s) {
-    if (SkinParts.draw(canvas, s, 'shade', c)) return; // (the skin's own picture, if it brings one)
-    final r = Rect.fromLTWH(.7, .7, s.width - 1.4, s.height - 1.4);
-    canvas
-      ..drawOval(
-        r,
-        Paint()
-          ..color = c
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.4,
-      )
-      ..drawArc(r, 1.5708, 3.14159, true, Paint()..color = c);
-  }
-
-  @override
-  bool shouldRepaint(_ShadePaint o) => o.c != c;
+void _drawShade(Canvas canvas, Size s, Color c) {
+  if (SkinParts.draw(canvas, s, 'shade', c)) return; // (the skin's own picture, if it brings one)
+  final r = Rect.fromLTWH(.7, .7, s.width - 1.4, s.height - 1.4);
+  canvas
+    ..drawOval(
+      r,
+      Paint()
+        ..color = c
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.4,
+    )
+    ..drawArc(r, 1.5708, 3.14159, true, Paint()..color = c);
 }
 
 /// When the document's file was last written (a change is written as it is made).

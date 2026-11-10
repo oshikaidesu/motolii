@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../../skin/tokens.dart';
 import '../inspector_parts.dart';
 import '../../widgets/controls.dart' show Hov;
+import '../../widgets/media.dart' show glyph;
 
 /// The panels that own lists (fonts, colours, eases). The Inspector shows what is set and sends you there; it never holds the list.
 enum LinkTo {
@@ -39,7 +40,7 @@ class LinkLine extends StatelessWidget {
               child: Text(to.shelf, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.micro(h ? Grey.g95 : Grey.g56)),
             ), // (a narrow tile: cut short as its value is, never over the edge)
             SizedBox(width: Shape.s(2)),
-            CustomPaint(size: const Size(7, 7), painter: _LinkArrowPaint(h ? Grey.g95 : Grey.g56)),
+            glyph(7, (c, s) => _drawLinkArrow(c, s, h ? Grey.g95 : Grey.g56), h),
           ],
         ),
       ),
@@ -47,27 +48,19 @@ class LinkLine extends StatelessWidget {
   }
 }
 
-class _LinkArrowPaint extends CustomPainter {
-  const _LinkArrowPaint(this.c);
-  final Color c;
-  @override
-  void paint(Canvas canvas, Size s) {
-    final p = Paint()
-      ..color = c
-      ..strokeWidth = 1.3
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    canvas
-      ..drawLine(Offset(1, s.height - 1), Offset(s.width - 1, 1), p)
-      ..drawPath(
-        Path()
-          ..moveTo(s.width * .35, 1)
-          ..lineTo(s.width - 1, 1)
-          ..lineTo(s.width - 1, s.height * .65),
-        p,
-      );
-  }
-
-  @override
-  bool shouldRepaint(_LinkArrowPaint o) => o.c != c;
+void _drawLinkArrow(Canvas canvas, Size s, Color c) {
+  final p = Paint()
+    ..color = c
+    ..strokeWidth = 1.3
+    ..style = PaintingStyle.stroke
+    ..strokeCap = StrokeCap.round;
+  canvas
+    ..drawLine(Offset(1, s.height - 1), Offset(s.width - 1, 1), p)
+    ..drawPath(
+      Path()
+        ..moveTo(s.width * .35, 1)
+        ..lineTo(s.width - 1, 1)
+        ..lineTo(s.width - 1, s.height * .65),
+      p,
+    );
 }
