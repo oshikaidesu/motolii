@@ -256,6 +256,11 @@ add_library(motolii_document OBJECT
   document/evaluate/world.cpp
   document/marks.cpp
   document/match.cpp
+  document/match/match_describe.cpp
+  document/match/match_layers.cpp
+  document/match/match_look.cpp
+  document/match/match_shape.cpp
+  document/match/match_video.cpp
   document/scripts/adapter.cpp
   document/scripts/expressions.cpp
   document/scripts/folders.cpp

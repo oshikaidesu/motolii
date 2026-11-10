@@ -43,6 +43,12 @@
 #include "document/evaluate/value_at.h"
 #include "document/kinds.h"
 #include "document/marks.h"
+#include "document/match/match_describe.h"
+#include "document/match/match_layers.h"
+#include "document/match/match_look.h"
+#include "document/match/match_shape.h"
+#include "document/match/match_video.h"
+#include "document/match/rebuild.h"
 #include "document/scripts/expressions.h"
 #include "document/scripts/scripts.h"
 #include "media/midi_notes.h"
@@ -76,14 +82,6 @@ namespace math = filament::math;
 
 namespace {
 
-// The property names that move the points of a flat shape as it is drawn (the
-// vertex stage of flat.mat). A shape with any of them set is tessellated finely
-// along its whole length. A shape with none is subdivided only around its
-// curves, so a long line takes four points rather than two thousand.
-const char* const doc_bending =
-    "'warp','bend','twist','pinch','skew','squash','wiggle','stretch','pin_tl_"
-    "x','pin_tl_y','pin_tr_x','pin_tr_y','pin_bl_x','pin_bl_y','pin_br_x','pin_"
-    "br_y'";
 // Converts text for a column of vertical writing, like After Effects' Vertical
 // Type. Punctuation that lies along a line is replaced by its Unicode
 // <vertical> presentation form. The long vowel mark has no such form there, so
@@ -104,25 +102,6 @@ std::string doc_column(std::string words) {
          at += strlen(form[1]))
       words.replace(at, strlen(form[0]), form[1]);
   return words;
-}
-
-// Returns true if the layer has any bending property set, either in its
-// keyframes or in the values held by a drag in progress.
-bool doc_bends(Doc& d, int layer) {
-  bool any = false;
-  // A property driven by a behaviour (name_by) bends the layer too.
-  doc_rows(d,
-           sqlite3_mprintf(
-               "select 1 from keyframe where layer = %d and (name in (%s) or "
-               "(name glob '*_by' and substr(name, 1, length(name) - 3) in "
-               "(%s))) and (value <> 0 or at <> 0) limit 1",
-               layer, doc_bending, doc_bending),
-           [&](sqlite3_stmt*) { any = true; });
-  if (d.held.layer == layer)
-    for (const auto& [name, is] : d.held.tried)
-      any =
-          any || (is != 0.0 && strstr(doc_bending, ("'" + name + "'").c_str()));
-  return any;
 }
 // Returns the path of drawing number n of the level that `file` belongs to. The
 // drawings of a level are files in one folder, told apart by the number at the
@@ -145,53 +124,9 @@ std::string doc_cel_file(const std::string& file, double n) {
           (stem.substr(0, from) + number + p.extension().string()))
       .string();
 }
-// Returns the path of the datamosh of a video layer (video_datamosh.h): the
-// video rendered again with the motion of another video poured in. Returns ""
-// when mosh is off, there is no other video, or the result is not rendered yet.
-// The layer then plays its own video meanwhile.
-std::string doc_mosh(Doc& d, int layer) {
-  if (!doc_on(d, layer, "mosh") || doc_word(d, layer, "kind") != "video")
-    return "";
-  const int with = (int)doc_number(d, layer, "mosh_with", 0, 0);
-  const std::string file = doc_word(d, layer, "file"),
-                    other = with > 0 && with != layer
-                                ? doc_word(d, with, "file")
-                                : "";
-  if (other.empty() || doc_word(d, with, "kind") != "video") return "";
-  return mosh_file(file, doc_number(d, layer, "mosh_at", 0, 1), other);
-}
-// Returns true if the layer is lit by the scene's lights. It is lit like an
-// After Effects 3D layer once the project has a light layer. With no light it
-// is drawn as it is, unless it is metallic: a metal shows what it mirrors, and
-// it mirrors the stage's environment, like the reflection map of Element 3D.
-bool doc_lit(Doc& d, int layer) {
-  const std::string space = doc_word(d, layer, "space");
-  if (!doc_among("video text image shape",
-                 doc_word(d, layer, "kind").c_str()) ||
-      (space != "3d" && space != "2.5d" && !doc_on(d, layer, "scale_z")))
-    return false;
-  if (doc_on(d, layer, "metallic")) return true;
-  for (const int t : doc_layers(d))
-    if (doc_word(d, t, "kind") == "light") return true;
-  return false;
-}
-// Returns true for metallic, roughness and reflectance on a layer that is not a
-// solid. A solid is rebuilt when these change. A flat layer (a sheet) has them
-// evaluated at each time (evaluate.h) and its image is left alone.
-bool doc_sheet_told(Doc& d, int layer, const std::string& name) {
-  return doc_among("metallic roughness reflectance", name.c_str()) &&
-         doc_word(d, layer, "kind") != "solid";
-}
 
 }  // namespace
 
-int doc_bevel(Doc& d, int layer) {
-  const std::string way = doc_word(d, layer, "bevel");
-  const char* const ways[] = {"angular", "convex", "concave", "ogee", "step"};
-  for (int k = 0; k < 5; k++)
-    if (way == ways[k] && doc_on(d, layer, "scale_z")) return k + 1;
-  return 0;
-}
 long long doc_sketch_written(Doc& d, const std::string& file) {
   DocSketch& one = doc_scripts_kept(d).sketches[file];
   std::error_code wrong;
@@ -215,149 +150,11 @@ bool doc_match(Doc& d) {
   // The frame rate of the document. Time is shown in whole frames from the next
   // frame on.
   s.frames = doc_number(d, 0, "frame_rate", 0, 0);
-  // For each layer, the text of every property its construction depends on.
-  std::map<int, std::string> told;
-  doc_rows(
-      d,
-      sqlite3_mprintf(
-          "select layer, group_concat(name || '=' || value, ' ') from (select "
-          "* from keyframe where layer > 0 and (name in (%s) or name glob "
-          "'*_by') and not (name in ('metallic', 'roughness', 'reflectance') "
-          "and layer in (select layer from keyframe where name = 'kind' and "
-          "value != 'solid')) order by layer, name) group by layer",
-          doc_making),
-      [&](sqlite3_stmt* row) {
-        told[sqlite3_column_int(row, 0)] =
-            (const char*)sqlite3_column_text(row, 1);
-      });
-  // Every blend mode that reads the pixels underneath is drawn the same way, as
-  // normal, and flat.mat mixes it. Switching between them changes only the look
-  // and needs no rebuild, so replace the mode with * to make them compare
-  // equal.
-  for (auto& [layer, of] : told)
-    if (const size_t at = of.find("blend="); at != std::string::npos) {
-      const size_t end = of.find(' ', at);
-      if (doc_blend_way(of.substr(at + 6, end == std::string::npos
-                                              ? std::string::npos
-                                              : end - at - 6)))
-        of.replace(at + 6,
-                   (end == std::string::npos ? of.size() : end) - at - 6, "*");
-    }
-  for (auto& [layer, of] : told) {
-    if (of.find("kind=image") != std::string::npos)
-      if (const std::string file = doc_word(d, layer, "file");
-          std::filesystem::path(file).extension() == ".js")
-        of += " written=" + std::to_string(doc_sketch_written(d, file));
-    // A three.js part is rebuilt from its code when the file changes; see
-    // doc_three_saved.
-    if (of.find("kind=solid") != std::string::npos)
-      if (const std::string file = doc_word(d, layer, "file");
-          std::filesystem::path(file).extension() == ".glb") {
-        std::error_code wrong;
-        of += " written=" +
-              std::to_string(
-                  (long long)std::filesystem::last_write_time(file, wrong)
-                      .time_since_epoch()
-                      .count());
-      }
-  }
-  // Whether the layer bends: tessellated finely, or subdivided only around its
-  // curves.
-  for (auto& [layer, of] : told)
-    of += doc_bends(d, layer) ? " bent=1" : " bent=0";
-  // Effects: record which are on and how much room they need, but not their
-  // parameter values.
-  for (auto& [layer, of] : told) {
-    const auto on = [&](const char* name) {
-      return std::max(doc_most(d, layer, name, 0),
-                      doc_number(d, layer, name, 0, 0)) > 0.0;
-    };
-    // Rebuilt once its datamosh has been rendered.
-    if (doc_on(d, layer, "mosh")) of += " moshed=" + doc_mosh(d, layer);
-    // Rebuilt when it is given depth, because its sheet then becomes a box.
-    if (doc_on(d, layer, "scale_z")) of += " deep";
-    if (doc_bevel(d, layer)) of += " bevel";
-    // Rebuilt when a light is added or removed.
-    if (doc_lit(d, layer)) of += " lit";
-    // The text as the text effects show it now. Rebuilt when it changes.
-    if (of.find("kind=text") != std::string::npos)
-      of += " shown=" + doc_text_shown(d, layer, s.now);
-    // The drawing of a level shown now. Rebuilt when its keyframes change it.
-    if (of.find("kind=image") != std::string::npos &&
-        !doc_keys_of(d, layer, "cel").at.empty())
-      of += " cel=" + std::to_string(std::llround(doc_cel(d, layer, s.now)));
-    of += " order=" + doc_fx_join(doc_fx_list(d, layer)) +
-          " fx=" + std::to_string((int)on("blur")) +
-          (doc_word(d, layer, "shadow").empty() ? "0" : "1") +
-          (doc_word(d, layer, "glow").empty() ? "0" : "1") +
-          std::to_string((int)on("tint")) + std::to_string((int)on("tritone")) +
-          " room=" + std::to_string(doc_fx_room(d, layer));
-  }
-  // Values held by a drag in progress also count, so the layer is rebuilt as it
-  // will be after the drag.
-  if (const auto held = told.find(d.held.layer); held != told.end())
-    for (const auto& [name, is] : d.held.said)
-      if (name[0] != ' ') held->second += " " + name + "~" + is;
-  if (const auto held = told.find(d.held.layer); held != told.end())
-    for (const auto& [name, is] : d.held.tried)
-      // A property that moves is redrawn at every time by doc_evaluate anyway.
-      // It triggers a rebuild only when it switches on or off.
-      if (strstr(doc_making, ("'" + name + "'").c_str()) &&
-          !doc_sheet_told(d, d.held.layer, name)) {
-        bool moves = false;
-        for (const DocValue& one : doc_values)
-          moves = moves || (one.moves && name == one.name);
-        const auto from = d.held.from.find(name);
-        if (!moves)
-          held->second += " " + name + "~" + std::to_string(is);
-        else if (from != d.held.from.end() &&
-                 (from->second != 0.0) != (is != 0.0))
-          held->second += " " + name + "~" + (is != 0.0 ? "on" : "off");
-      }
-  for (auto it = d.on_stage.shown.begin(); it != d.on_stage.shown.end();) {
-    const auto still = told.find(it->first);
-    // A text whose words came out wider than its image is always rebuilt.
-    if (still != told.end() && still->second == it->second.of &&
-        !(it->second.drawn && it->second.drawn->outgrown)) {
-      ++it;
-      continue;
-    }
-    // Remove it from the scene of its run first, because the removal code below
-    // takes layers only out of the stage's own scene.
-    if (it->second.scene && it->second.scene != s.scene)
-      doc_entities(s, it->second,
-                   [&](utils::Entity e) { it->second.scene->remove(e); });
-    // Give the copies back their own materials first, while the copies are
-    // still known.
-    if (const Mesh* m = it->second.video   ? it->second.video->sheet
-                        : it->second.drawn ? it->second.drawn->sheet
-                                           : it->second.shape)
-      doc_copy_looks_off(d, m,
-                         it->second.video   ? it->second.video->look
-                         : it->second.drawn ? it->second.drawn->look
-                                            : it->second.look);
-    // Then remove the shape it uses to cut a matte.
-    if (const Mesh* m = it->second.video   ? it->second.video->sheet
-                        : it->second.drawn ? it->second.drawn->sheet
-                                           : it->second.shape)
-      doc_unshape(s,
-                  [m](const Stage::Renderable& made) { return made.of == m; });
-    if (it->second.video) video_off(s, it->second.video);
-    if (it->second.drawn) canvas_off(s, it->second.drawn);
-    for (const auto& deep : it->second.deep) canvas_off(s, deep.sheet);
-    if (it->second.solid) solid_off(s, it->second.solid);
-    // Remove the light from every scene and destroy it.
-    if (!it->second.light.isNull()) {
-      s.scene->remove(it->second.light);
-      s.engine->getLightManager().destroy(it->second.light),
-          utils::EntityManager::get().destroy(it->second.light);
-    }
-    // The sorting of a point cloud is dropped with it.
-    if (it->second.shape)
-      s.playing.erase(it->second.shape), take_off(s, it->second.shape);
-    it = d.on_stage.shown.erase(it);
-  }
-  bool all = true;
+  Rebuild rebuild{d, s};
+  match_describe_layers(rebuild);
+  match_tear_down_changed(rebuild);
+  const std::map<int, std::string>& told = rebuild.told;
+  bool& all = rebuild.all;
   for (const auto& [layer, of] : told) {
     if (d.on_stage.shown.count(layer)) continue;
     DocShownLayer made{of};
@@ -1070,7 +867,7 @@ bool doc_match(Doc& d) {
     }
   }
   doc_evaluate(d, s.now);
-  return all;
+  return rebuild.all;
 }
 
 }  // namespace motolii
