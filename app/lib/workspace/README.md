@@ -12,7 +12,7 @@ The app's window and its panels. `Workspace` (`workspace.dart`) is opened by `ap
 | `commands/` | Named commands with their keys and menus: `keymap.dart` (key table in the shape of VS Code's keybindings.json), `command_actions.dart`, `panel_requests.dart` (one panel asking another), `menu_bar.dart`, `layer_menu.dart` (right-click items; menu widgets are in `widgets/context_menu.dart`). |
 | `edits/` | Edits applied to several selected layers: `make_relation.dart`, `group_moves.dart`, `keyframe_edits.dart`. |
 | `inspector_feed/` | What the project hands to the Inspector (`../inspector/`): `panel.dart`, `cards.dart`, `values.dart`, `keyframe_marks.dart`. |
-| `dock/` | The shelf panels on the left (Create, Effects, Media, Fonts, Colors). |
+| `dock/` | The shelf panels on the left. `shelf_pane.dart` (`ShelfPane`) is one pane: header, search field and the shelf's body. One folder per shelf: `create/`, `effects/`, `media/`, `fonts/`, `colors/`, `program/`. In each, `*_shelf.dart` is the widget, `*_controller.dart` what the shelf keeps while the window is open, and `*_commands.dart` its calls to the engine. `map/` shows a shelf as a map of similar items (Effects, Fonts); `common/` holds the widgets the shelves share (footer, section header, filter chips, search field). |
 | `shelf/` | Tiles shown in shelves (effects, scripts, materials). |
 | `stage/` | The preview: the engine's picture and the drags on top of it. |
 | `timeline/` | The timeline. |
@@ -76,7 +76,7 @@ On Mac it is `~/Library/Application Support/Motolii/`; on Windows `%APPDATA%\Mot
 - Take values from `WindowTokens` (`lib/skin/window_tokens.dart`), `InspectorSkin` (`lib/skin/inspector_tokens.dart`), and `Grey` and `TextStyles` (`lib/skin/tokens.dart`). Do not write numbers in place.
 - Boxes (panels, cards) are square and sit edge to edge, with a dark line (`WindowTokens.gutter`) between. Things you touch or read (fields, chips, buttons) are round.
 - Colors are flat and opaque. The accent is one lime. Paint fills with `WindowTokens.accent` or `InspectorSkin.accent`; draw lines and text on a background with `accentInk`, because lime melts into white in Light. The playhead line is `accentInk`, its head is `accent`.
-- Each layer kind has one color (`layerKindColor`), the same in the timeline bar, the Dock and the Stage. Kind colors do not change with the theme.
+- Each layer kind has one color (`layerKindColor`), the same in the timeline bar, the shelves and the Stage. Kind colors do not change with the theme.
 - The half-circle button in the top bar (key `ws-shade`) switches Dark and Light. It flips `Grey.shade` and calls `reassembleApplication()`, so state, and any edit in progress, stays.
 - Take grays as `Grey.g07` and so on. `DarkGrey` is a fixed dark scale and does not follow the theme. A color that changes with the theme cannot be `const`: use a getter, or `Color?` with `?? Grey.xx`, because a `final` keeps the first color.
 
@@ -84,7 +84,7 @@ On Mac it is `~/Library/Application Support/Motolii/`; on Windows `%APPDATA%\Mot
 
 - Media and Files are one shelf, Media: a tree of places (Project, Home, Desktop, Downloads) and folders on the left (above when narrow), the open folder as thumbnails or a list on the right. Search covers everything under the current place and shows the folder name of each hit.
 - Shelf tabs show a mark only; Stage, Inspector, Timeline and Tool Panel show a mark and a name.
-- Panes use extra width: grids choose their column count with `gridColumns(width, cell width)` and `gridCellWidth`; lists of groups use `DockMasonry` (one column is 260 to 300 px or more, up to 4). The Inspector stays one column of cards.
+- Panes use extra width: grids choose their column count with `gridColumns(width, cell width)` and `gridCellWidth`; lists of groups use `ShelfMasonry` (one column is 260 to 300 px or more, up to 4). The Inspector stays one column of cards.
 - Do not hide rarely used values such as a seed: declare them `@advanced` and `ValuesCard` folds them.
 - Path operations can be stacked any number of times; the UI does not limit them.
 - The Effects list has no thumbnails. Select a row to try it on the selected layer, Add or Enter to keep it, Cancel or Esc to undo.

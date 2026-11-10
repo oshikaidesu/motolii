@@ -65,7 +65,7 @@ CI runs the first three commands on every push (`../.github/workflows/checks.yml
 | `lib/workspace/commands/` | Named commands with their keys and menus: `keymap.dart`, `menu_bar.dart`. |
 | `lib/workspace/inspector_feed/` | What the project hands to the Inspector: `cards.dart`, `values.dart`. |
 | `lib/workspace/shelf/` | Tiles shown in shelves (effects, scripts, materials): `shelf_tile.dart`, `effect_tiles.dart`. |
-| `lib/workspace/dock/` | The shelf panels on the left. |
+| `lib/workspace/dock/` | The shelf panels on the left: `shelf_pane.dart` (`ShelfPane`: header, search field, body), one folder per shelf (`create/`, `effects/`, `media/`, `fonts/`, `colors/`, `program/`), `map/` (a shelf shown as a map of similar items) and `common/` (widgets the shelves share). |
 | `lib/workspace/stage/` | The preview: the engine's picture and the drags on top of it. |
 | `lib/workspace/timeline/` | The timeline. |
 | `lib/workspace/tool_panel/` | The tool panel under the Inspector (Ease, Align, Blend, Depth, Relations). |
