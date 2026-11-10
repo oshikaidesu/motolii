@@ -33,6 +33,8 @@
 // the contents of the buffer.
 #include <lua.hpp>
 
+namespace motolii {
+
 // obj.getpixeldata(target, order) returns a userdata holding the pixels, then w
 // and h. If the buffer does not exist it returns nil, 0, 0.
 int aviutl_getpixeldata(lua_State* L);
@@ -54,5 +56,7 @@ int aviutl_getpixel(lua_State* L);
 // the pixels in the userdata. It does nothing if the userdata holds fewer than
 // w x h pixels or if w or h is 0 or above 8192.
 int aviutl_putpixeldata(lua_State* L);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_AVIUTL_AVIUTL_PIXELS_H_

@@ -20,6 +20,8 @@
 
 using namespace filament;
 
+namespace motolii {
+
 namespace {
 
 // Creates an 8-bit RGBA image and render target of the given size, for one
@@ -161,3 +163,5 @@ int aviutl_putpixeldata(lua_State* L) {
   aviutl_let_go(r, img);
   return 0;
 }
+
+}  // namespace motolii

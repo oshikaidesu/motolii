@@ -34,6 +34,8 @@
 
 using namespace filament;
 
+namespace motolii {
+
 namespace {
 
 // Lua source loaded into every script's Lua state. It defines the AviUtl
@@ -481,3 +483,5 @@ void aviutl_draw_step(Stage& s, AviutlRun& r, Texture* from, RenderTarget* to,
   lua_pop(L, 1);
   aviutl_lay(r, out, to, w, h, 0, 0, 1, 1, 0, 1, 0, 0, -1, 1, 0, 2);
 }
+
+}  // namespace motolii

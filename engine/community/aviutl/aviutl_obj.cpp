@@ -23,6 +23,8 @@
 
 using namespace filament;
 
+namespace motolii {
+
 int aviutl_module(lua_State* L) {
   return luaL_error(L,
                     "needs %s.mod2, an AviUtl2 script module (a Windows DLL)",
@@ -386,3 +388,5 @@ int aviutl_setfont(lua_State* L) {
   f.bold = aviutl_num(L, 6) != 0, f.italic = aviutl_num(L, 7) != 0;
   return 0;
 }
+
+}  // namespace motolii

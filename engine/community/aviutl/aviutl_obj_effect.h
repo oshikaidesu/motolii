@@ -9,6 +9,8 @@
 
 #include "community/aviutl/aviutl.h"
 
+namespace motolii {
+
 // Sets the script variable for parameter `v` according to its kind (lua.txt).
 // The value comes from `num`, which looks up a parameter's value by name, or
 // from the Lua value at stack index `said` when obj.effect passed one. The
@@ -21,5 +23,7 @@ void aviutl_set(lua_State* L, const AviutlVar& v,
 // clipping, offscreen drawing). Then the effects Sashimono Edit remakes are
 // tried, then scripts in this file. An unknown name raises an error.
 int aviutl_effect(lua_State* L);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_AVIUTL_AVIUTL_OBJ_EFFECT_H_

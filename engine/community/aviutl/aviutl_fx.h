@@ -35,6 +35,8 @@
 #include "stage/effects/screen_fx.h"
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // An image buffer: its texture `t`, the render target `rt` for drawing into it,
 // and its size in pixels.
 struct AviutlBuf {
@@ -245,5 +247,7 @@ std::vector<std::filesystem::path> aviutl_shared(
 interop::Screen* aviutl_interop(AviutlRun& r, const std::string& name,
                                 bool clip, std::string& why,
                                 const AviutlShader** built = nullptr);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_AVIUTL_AVIUTL_FX_H_

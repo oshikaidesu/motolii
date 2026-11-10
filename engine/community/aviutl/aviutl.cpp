@@ -32,6 +32,8 @@
 #include "src/tint/lang/wgsl/sem/variable.h"
 #include "src/tint/lang/wgsl/writer/writer.h"
 
+namespace motolii {
+
 bool aviutl_is(const std::string& file) {
   for (const char* e : {".anm2", ".obj2"})
     if (const size_t at = file.rfind(e);
@@ -494,3 +496,5 @@ const AviutlShader& aviutl_shader(const std::string& hlsl,
   if (auto m = built.find(key); m != built.end()) return m->second;
   return built[key] = aviutl_make(hlsl, entry, clip);
 }
+
+}  // namespace motolii

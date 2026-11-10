@@ -19,6 +19,8 @@
 
 #include "community/quickjs/script.h"
 
+namespace motolii {
+
 // Returns true if `file` names an AviUtl2 script: a path ending in .anm2 or
 // .obj2, optionally followed by "#" and the name of one script.
 bool aviutl_is(const std::string& file);
@@ -113,5 +115,7 @@ struct AviutlShader {
 // `wgsl` is empty and `why` says why.
 const AviutlShader& aviutl_shader(const std::string& hlsl,
                                   const std::string& entry, bool clip);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_AVIUTL_AVIUTL_H_

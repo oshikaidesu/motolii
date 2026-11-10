@@ -24,6 +24,8 @@
 
 using namespace filament;
 
+namespace motolii {
+
 const char* const aviutl_placing = R"(
 struct K { m: vec4f, at: vec2f, src: vec2f, size: vec2f, alpha: f32, way: f32, colour: vec4f }
 @group(0) @binding(0) var sourceTexture: texture_2d<f32>;
@@ -282,3 +284,5 @@ interop::Screen* aviutl_interop(AviutlRun& r, const std::string& name,
                         &why, sh.textureCount);
   return d;
 }
+
+}  // namespace motolii

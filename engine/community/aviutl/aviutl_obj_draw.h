@@ -7,6 +7,8 @@
 
 #include "community/aviutl/aviutl_fx.h"
 
+namespace motolii {
+
 // Draws an image placed in depth, as obj.draw and the frame's own placement do
 // with z, rx or ry. The four corners are rotated about the centre (cx, cy) by
 // X, then Y, then Z, in degrees, then moved by (x, y, z) and seen by the
@@ -40,5 +42,7 @@ int aviutl_draw(lua_State* L);
 // 28 numbers are coloured faces ({x0 .. z3, r0, g0, b0, a0 .. a3}), as used by
 // 連結ライン.obj2.
 int aviutl_drawpoly(lua_State* L);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_AVIUTL_AVIUTL_OBJ_DRAW_H_

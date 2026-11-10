@@ -31,6 +31,8 @@
 
 #include "community/aviutl/aviutl_fx.h"
 
+namespace motolii {
+
 // Loads an image file with ThorVG and returns it as a cached image. A relative
 // name refers to a file beside the script. Returns nullptr when the name is
 // empty, the file does not exist or ThorVG cannot read it; the script then
@@ -42,5 +44,7 @@ const AviutlBuf* aviutl_image(AviutlRun& r, std::string file);
 // and false if nothing could be loaded. A form that is not implemented raises
 // "not yet: ..." through aviutl_no.
 int aviutl_load(lua_State* L);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_AVIUTL_AVIUTL_LOAD_H_

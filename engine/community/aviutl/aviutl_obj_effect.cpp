@@ -30,6 +30,8 @@
 
 using namespace filament;
 
+namespace motolii {
+
 namespace {
 
 // AviUtl's built-in effects as remade by Sashimono Edit (MIT). Their ISF files
@@ -422,3 +424,5 @@ int aviutl_effect(lua_State* L) {
   if (const int ran = aviutl_called(L, r, n); ran >= 0) return ran;
   return aviutl_no(L, "obj.effect " + n);
 }
+
+}  // namespace motolii

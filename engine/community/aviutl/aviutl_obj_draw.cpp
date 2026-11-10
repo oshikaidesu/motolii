@@ -18,6 +18,8 @@
 
 using namespace filament;
 
+namespace motolii {
+
 namespace {
 
 // One corner of a face. (x, y, z) is the position in pixels relative to the
@@ -300,3 +302,5 @@ int aviutl_drawpoly(lua_State* L) {
   if (own) r.drew = true;
   return 0;
 }
+
+}  // namespace motolii

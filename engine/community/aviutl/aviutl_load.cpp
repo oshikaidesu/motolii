@@ -27,6 +27,8 @@
 
 using namespace filament;
 
+namespace motolii {
+
 namespace {
 
 // Corner count of each figure name accepted by obj.load: circle (0), background
@@ -364,3 +366,5 @@ int aviutl_load(lua_State* L) {
   return aviutl_no(
       L, "obj.load " + kind + (kind == "figure" ? " " + aviutl_str(L, 2) : ""));
 }
+
+}  // namespace motolii

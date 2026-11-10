@@ -8,6 +8,8 @@
 // raises an error naming it.
 #include <lua.hpp>
 
+namespace motolii {
+
 // obj.module(name) loads a script module (.mod2), which lua.txt describes as a
 // way to get the functions of an AviUtl2 script module. A module is a Windows
 // DLL, so none can be loaded here. The script stops with an error naming the
@@ -91,5 +93,7 @@ int aviutl_setanchor(lua_State* L);
 // objapi.py lua_getfont). The spacing values after them are not read yet. The
 // defaults are size 48, white colour and black edge.
 int aviutl_setfont(lua_State* L);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_COMMUNITY_AVIUTL_AVIUTL_OBJ_H_
