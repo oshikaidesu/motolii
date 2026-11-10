@@ -3,7 +3,8 @@
 // - A search matches an item by its name, its tags or, for a color, its code. Each word of the search is matched on its own.
 // - The word being typed is completed from the tags the shelf has seen.
 // - The user's own tags are read once from ~/.motolii/tags.json, as {"Colors|coda": ["title", "warm"]}.
-//   The key is the shelf name, a bar, then the item's id.
+//   The key is the shelf name, a bar, then the item's id. They are the way to tag an item that is not the user's to
+//   edit (a file that came with the app or from outside); a file's own `// --tag:` line is read by the engine.
 import 'dart:convert';
 import 'dart:io';
 
@@ -14,6 +15,12 @@ import 'package:motolii/storage/json_file.dart' show fileJson, fileKeep;
 class ShelfTags {
   final _own = <String, Set<String>>{};
   bool _read = false;
+  static File _ownFile = File(
+    '${Platform.environment['HOME']}/.motolii/tags.json',
+  );
+
+  /// Sets where the user's own tags are kept. A test points it at a file of its own before it opens a window.
+  static void ownAt(File f) => _ownFile = f;
 
   /// The tags each shelf has used so far. A search is completed from these words.
   final seen = <String, Set<String>>{};
@@ -22,9 +29,7 @@ class ShelfTags {
     if (_read) return;
     _read = true;
     try {
-      final told = fileJson(
-        File('${Platform.environment['HOME']}/.motolii/tags.json'),
-      ) as Map;
+      final told = fileJson(_ownFile) as Map;
       for (final e in told.entries) {
         _own['${e.key}'] = {
           for (final t in e.value as List) '$t'.toLowerCase(),
@@ -33,6 +38,31 @@ class ShelfTags {
     } catch (_) {
       // No file, or not a map: only the built-in tags are used.
     }
+  }
+
+  /// The user's own tags of an item.
+  Set<String> ownOf(String shelf, String id) {
+    _load();
+    return {...?_own['$shelf|$id']};
+  }
+
+  /// Sets the user's own tags of an item and keeps them in the tag file. A leading # is dropped, so `#basic` is `basic`.
+  void setOwn(String shelf, String id, Iterable<String> tags) {
+    _load();
+    final set = {
+      for (final t in tags) t.trim().toLowerCase().replaceFirst(RegExp(r'^#'), ''),
+    }..remove('');
+    if (set.isEmpty) {
+      _own.remove('$shelf|$id');
+    } else {
+      _own['$shelf|$id'] = set;
+    }
+    fileKeep(
+      _ownFile,
+      jsonEncode({
+        for (final e in _own.entries) e.key: e.value.toList()..sort(),
+      }),
+    );
   }
 
   /// The tags of an item: the built-in ones and the user's own.

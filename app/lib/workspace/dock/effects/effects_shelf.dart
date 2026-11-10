@@ -65,6 +65,14 @@ class _EffectsShelfState extends State<EffectsShelf> {
   final _tileKeys = FocusNode(debugLabel: 'ws-fx-tiles'); // Once a tile is pressed, B goes to the tiles instead of the stage's brush.
   ShelfContext get c => widget.c;
   String? _renaming; // The file the user added whose name is being edited in its tile (shelf_add.dart).
+  String? _tagging; // The effect whose own tags are being edited in its tile, as words with spaces between.
+
+  void _tagged(String id, String? to) {
+    setState(() => _tagging = null);
+    if (to != null) {
+      widget.effects.tags.setOwn('Effects', id, to.split(RegExp(r'\s+')));
+    }
+  }
 
   // Renames by the displayed name written beside the tile, never by the file name.
   void _renamed(String file, String was, String? to) {
@@ -205,7 +213,12 @@ class _EffectsShelfState extends State<EffectsShelf> {
           onApply: apply,
           onMenu: menu,
           onHover: screened ? (h) => ws.tryOn(h ? id : null) : null, // Shows what it does on the selected layer meanwhile (WorkspaceController.tryOn).
-          naming: screened && _renaming == id
+          naming: _tagging == id
+              ? ShelfNameField(
+                  widget.effects.tags.ownOf('Effects', id).join(' '),
+                  (to) => _tagged(id, to),
+                )
+              : screened && _renaming == id
               ? ShelfNameField(name, (to) => _renamed(id, name, to))
               : null,
           over: marks(
@@ -474,6 +487,7 @@ class _EffectsShelfState extends State<EffectsShelf> {
             thing: DeckThing(e.id, e.name, effectSum(e.id)),
           ),
         ),
+        ContextMenuItem('Tags…', () => setState(() => _tagging = e.id)),
         if (shelfAdded(e.id)) ...[
           const ContextMenuItem.rule(),
           ContextMenuItem('Rename…', () => setState(() => _renaming = e.id)),
