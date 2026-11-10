@@ -15,19 +15,15 @@ struct Doc;
 // Returns the layer's effects in the order they are laid, like the effect stack
 // of After Effects.
 //
-// The "fx" property names the effects in order. Effect files (.wgsl) and the
-// built-in ThorVG effects (doc_thor_names) can be mixed in any order. A ThorVG
-// effect that is on but not named, as in a project saved before "fx" existed,
-// comes first, in the old order: colors, shadow, glow, blur.
+// The "fx" property names the effects in order.
 //
 // With `off` set, effects that are turned off are included, as the effect cards
 // list them (fx_off, the eye on an effect in Alight Motion). Otherwise only
 // effects that are on are returned.
 std::vector<std::string> doc_fx_list(Doc& d, int layer, bool off = false);
-// Returns whether the layer's effects are laid on it as the camera sees it,
-// rather than in its own canvas as ThorVG draws it. That is the case when any
-// effect in `list` is a file. Then all of them run in order in the camera view;
-// see thing_effects_draw in engine/stage/layer_effects/layer_fx.h.
+// Returns whether any effect in `list` is a file. Then all of them run in
+// order in the camera view; see thing_effects_draw in
+// engine/stage/layer_effects/layer_fx.h.
 bool doc_fx_files(const std::vector<std::string>& list);
 // Returns the effects as the stack runs them: the list from doc_fx_list without
 // expressions. AbsentMotion's Motion Blur and Shutter Blur are replaced by its
@@ -43,17 +39,13 @@ std::string doc_fx_join(const std::vector<std::string>& list);
 // or its set value when it has no keyframes. `otherwise` is the default for an
 // unset property.
 double doc_most(Doc& d, int layer, const char* name, double otherwise);
-// Fills `fx` with the built-in ThorVG effects of a flat layer, either at time
-// `at` or, with `most` set, as far as each one reaches at its largest. Lengths
-// are stored as fractions of the layer's height. `units` is the number of
-// canvas points in one stage unit, used to convert them.
+// Fills `fx` with how far a flat layer's shape reaches beyond its box, either
+// at time `at` or, with `most` set, as far as it reaches at its largest. Also
+// checks that the layer's effect files exist and can be run.
 //
-// Returns false when a color is not six hex digits, and then `why` says which.
-// Built-in effects that are missing from the layer's effect list are switched
-// off, unless `camera` is set. A camera lays them as a step of its stack
-// instead; see thing_thor in engine/stage/effects/screen_fx.h.
-bool doc_fx(Doc& d, int layer, double at, bool most, double units,
-            Canvas2DFx& fx, std::string& why, bool camera = false);
+// Returns false when one cannot, and then `why` says which.
+bool doc_fx(Doc& d, int layer, double at, bool most, Canvas2DFx& fx,
+            std::string& why);
 
 }  // namespace motolii
 

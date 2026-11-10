@@ -48,8 +48,8 @@ struct DocEffects {
   ScreenStack screen;
 };
 
-// Returns whether the layer is a group (a Null layer) with effects of its own,
-// including ThorVG effects. The layers in the group are drawn together into one
+// Returns whether the layer is a group (a Null layer) with effects of its own.
+// The layers in the group are drawn together into one
 // image, the effects run on that image, and the image is laid where the group
 // lies. This matches Alight Motion, where a group is a scene as wide and high
 // as the stage

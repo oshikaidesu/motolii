@@ -43,9 +43,8 @@ bool doc_fx_say(Doc& d, int layer, const std::vector<std::string>& list);
 // endImage input for the image it goes to.
 bool doc_fx_file(Doc& d, int layer, const char* file, double now = NAN);
 // Moves one of the layer's effects by `by` places in its list, like dragging an
-// effect up or down the stack in After Effects. The effect is a file, or a
-// built-in ThorVG effect named by its property, or either one named by its card
-// title. This is one undo step.
+// effect up or down the stack in After Effects. The effect is a file, named by
+// its file or by its card title. This is one undo step.
 bool doc_fx_move(Doc& d, int layer, const char* name, int by);
 // Puts the shelf effect `name` on the layer at time `at`, or takes it off if it
 // is already on. Taking it off unsets its property and its keyframes. This is
@@ -56,9 +55,8 @@ bool doc_effect(Doc& d, int layer, const char* name, double at);
 bool doc_fx_eye(Doc& d, int layer, const char* title);
 // Takes one of the layer's effects off, named by its card title or its own
 // name. This is what the shelf does when the effect is pressed again, and what
-// Delete does on an effect card in Alight Motion. An effect file is removed
-// from the list, see doc_fx_file. A built-in ThorVG effect is unset, see
-// doc_effect. This is one undo step.
+// Delete does on an effect card in Alight Motion. The effect file is removed
+// from the list, see doc_fx_file. This is one undo step.
 bool doc_fx_out(Doc& d, int layer, const char* name);
 
 }  // namespace motolii

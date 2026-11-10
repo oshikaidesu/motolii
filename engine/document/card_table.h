@@ -230,15 +230,8 @@ inline const DocCard doc_cards[] = {
     {"Points", "dissolve grain", "file", "~.ply"},
     // The effects (doc_effects): each has a card while it is on, as After
     // Effects' Effect Controls.
-    {"Gaussian Blur", "blur blur_direction", "blur", "+"},
-    {"Drop Shadow",
-     "shadow shadow_distance shadow_angle shadow_blur shadow_opacity", "shadow",
-     "+"},
     // How strong: Filament's bloom on the layer's own image, see doc_evaluate.
     {"Glow", "glow_opacity", "glow", "+"},
-    {"Duotone", "tint tint_black tint_white", "tint", "+"},
-    {"Gradient Map", "tritone tritone_shadow tritone_midtone tritone_highlight",
-     "tritone", "+"},
 };
 // Returns true if `one` is a whole word of the space separated list `words`.
 inline bool doc_among(const std::string& words, const std::string& one) {

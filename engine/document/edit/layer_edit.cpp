@@ -165,7 +165,7 @@ bool doc_knows(Doc& d, int layer, const char* name, const double* number,
   const bool flag = doc_among(
                  "keyed clip visible solo lock shadows clip_invert", name),
              held = doc_among(
-                 "opacity shadow_opacity glow_opacity copy_opacity_end", name);
+                 "opacity glow_opacity copy_opacity_end", name);
   if (number &&
       (!std::isfinite(*number) || (flag && *number != 0.0 && *number != 1.0) ||
        (held && (*number < v->low || *number > v->high))))

@@ -151,19 +151,10 @@ inline const char* const doc_making =
     "thickness','light_group','script','copy_fill','gradient','gradient_angle',"
     "'gradient_scale','gradient_spread','wrap','wrap_at','split','ior','"
     "dispersion','swim','dark','vivid','marker','mosh','mosh_with','mosh_at'";
-// Property names of a flat layer's ThorVG effects, see doc_fx. These are
-// evaluated again at each time with fx_at and never force a rebuild. Their only
-// influence on building is which of them are on and how much room around the
-// layer they need, see doc_fx_room.
-inline const char* const doc_fxing =
-    "'blur','shadow','shadow_distance','shadow_angle','shadow_blur','shadow_"
-    "opacity','glow','glow_blur','glow_opacity','tint','tint_black','tint_"
-    "white','tritone','tritone_shadow','tritone_midtone','tritone_highlight'";
-// Returns how far a layer's effects reach beyond the layer at most, in document
-// units, rounded up to a power of two. Returns 0 if none reach. The layer's
-// canvas is made with this much room, so a number changed within it is redrawn
-// without rebuilding the canvas, as a texture atlas keeps power-of-two room.
-double doc_fx_room(Doc& d, int layer);
+// Property names of a layer's glow. They are evaluated again at each time and
+// never force a rebuild. Their only influence on building is whether the glow
+// is on.
+inline const char* const doc_fxing = "'glow','glow_blur','glow_opacity'";
 
 }  // namespace motolii
 

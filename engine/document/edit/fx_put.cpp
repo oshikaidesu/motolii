@@ -20,14 +20,13 @@
 #include "document/scripts/scripts.h"
 #include "document/undo.h"
 #include "shelf/shelf_folders.h"
-#include "stage/effects/thorvg_effect_names.h"
 
 namespace motolii {
 
 namespace {
 
-// One entry of the table below. The built-in effects of ThorVG are turned on by
-// setting a property.
+// One entry of the table below. A built-in effect is turned on by setting a
+// property.
 //   name   the name shown on the Effects shelf
 //   value  the property that turns the effect on
 //   on     what the property is set to when the effect is put on: a number, a
@@ -54,9 +53,6 @@ struct DocEffect {
 };
 
 const DocEffect doc_effects[] = {
-    {"Gaussian Blur", "blur", "12", false, "Light"},
-    {"Drop Shadow", "shadow", "000000", true, "Light",
-     "shadow_distance=10 shadow_angle=135 shadow_blur=10 shadow_opacity=0.5"},
     // Kept for projects that have it. The Glow on the shelf is the file
     // am_lightglow.wgsl.
     {"Glow", "glow", "on", true, "", "glow_opacity=1"},
@@ -68,10 +64,6 @@ const DocEffect doc_effects[] = {
      "Goes along the outline of the layer under it, end to end in a second. "
      "Alight Motion's Move Along Path"},
     {"Datamosh", "mosh", "1", false, "Glitch", "mosh_at=1"},
-    {"Duotone", "tint", "1", false, "Color",
-     "tint_black:1b1f5c tint_white:ff8a65"},
-    {"Gradient Map", "tritone", "1", false, "Color",
-     "tritone_shadow:1b1f5c tritone_midtone:c44569 tritone_highlight:ffd166"},
     // The fill of the layer is whatever is behind it, so the effects on the
     // layer work on the background in the layer's shape. The layer still blends
     // with what is under it as its blend mode says. This is the Adjustment
@@ -188,9 +180,6 @@ bool doc_effect(Doc& d, int layer, const char* name, double at) {
     const bool on = !strcmp(e.value, "fill")
                         ? doc_word(d, layer, "fill") == e.on
                         : doc_on(d, layer, e.value);
-    // A built-in effect is added at the end of the layer's list, as After
-    // Effects does, or removed from it.
-    std::vector<std::string> list = doc_fx_list(d, layer, true);
     doc_act(d);
     bool ok;
     // Taking it off unsets the property, which restores the state before it was
@@ -240,13 +229,6 @@ bool doc_effect(Doc& d, int layer, const char* name, double at) {
       else if (at_ != lie.begin() && at_ != lie.end())
         ok = doc_set(d, layer, "copy_on", *(at_ - 1));
     }
-    if (ok && doc_thor_letter(e.value)) {
-      if (const auto had = std::find(list.begin(), list.end(), e.value);
-          had != list.end())
-        list.erase(had);
-      if (!on) list.push_back(e.value);
-      ok = doc_fx_say(d, layer, list);
-    }
     if (!ok) d.act.ok = false;
     return doc_acted(d);
   }
@@ -282,10 +264,7 @@ bool doc_fx_out(Doc& d, int layer, const char* name) {
     });
   if (at == list.end())
     return d.error = std::string(name) + " is not among its effects", false;
-  if (!doc_thor_letter(*at)) return doc_fx_file(d, layer, at->c_str());
-  for (const DocEffect& e : doc_effects)
-    if (*at == e.value) return doc_effect(d, layer, e.name, 0.0);
-  return d.error = *at + " is put on by no effect", false;
+  return doc_fx_file(d, layer, at->c_str());
 }
 
 }  // namespace motolii

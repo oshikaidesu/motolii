@@ -121,10 +121,6 @@ void told_effects(Rebuild& rebuild) {
   // Effects: record which are on and how much room they need, but not their
   // parameter values.
   for (auto& [layer, of] : told) {
-    const auto on = [&](const char* name) {
-      return std::max(doc_most(d, layer, name, 0),
-                      doc_number(d, layer, name, 0, 0)) > 0.0;
-    };
     // Rebuilt once its datamosh has been rendered.
     if (doc_on(d, layer, "mosh")) of += " moshed=" + doc_mosh(d, layer);
     // Rebuilt when it is given depth, because its sheet then becomes a box.
@@ -140,11 +136,7 @@ void told_effects(Rebuild& rebuild) {
         !doc_keys_of(d, layer, "cel").at.empty())
       of += " cel=" + std::to_string(std::llround(doc_cel(d, layer, s.now)));
     of += " order=" + doc_fx_join(doc_fx_list(d, layer)) +
-          " fx=" + std::to_string((int)on("blur")) +
-          (doc_word(d, layer, "shadow").empty() ? "0" : "1") +
-          (doc_word(d, layer, "glow").empty() ? "0" : "1") +
-          std::to_string((int)on("tint")) + std::to_string((int)on("tritone")) +
-          " room=" + std::to_string(doc_fx_room(d, layer));
+          " fx=" + (doc_word(d, layer, "glow").empty() ? "0" : "1");
   }
 }
 

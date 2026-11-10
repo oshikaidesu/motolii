@@ -26,7 +26,6 @@
 #include "document/kinds.h"
 #include "document/values.h"
 #include "shelf/shelf_folders.h"
-#include "stage/effects/thorvg_effect_names.h"
 #include "stage/effects/viewer_settings.h"
 
 namespace motolii {
@@ -187,8 +186,7 @@ std::vector<DocScript*> doc_scripts_on(Doc& d, int layer) {
   if (layer != 0) {
     if (DocScript* sc = doc_script_of(d, said)) all.push_back(sc);
     for (const std::string& file : script_files(doc_word(d, layer, "fx")))
-      if (!doc_thor_letter(file))
-        if (DocScript* sc = doc_script_of(d, file)) all.push_back(sc);
+      if (DocScript* sc = doc_script_of(d, file)) all.push_back(sc);
     // An image layer can be an After Effects file, which has slots, or a
     // sketch, which has lines that draw. The image layer runs a sketch itself,
     // see doc_match, so a .js file is not run here.

@@ -91,7 +91,7 @@ extension WorkspaceEffects on WorkspaceController {
   }
 
   /// Adds effect [file] after the others on the selected layer. If it is already there, adds another copy, as After
-  /// Effects' Effects & Presets panel does (Gaussian Blur 2). The copy is named as the engine's Duplicate names it
+  /// Effects' Effects & Presets panel does (Glow 2). The copy is named as the engine's Duplicate names it
   /// ("Glow~2.fs", see doc_fx_duplicate), which works for ISF and .wgsl files only.
   bool screenPut(String file) {
     final had = screenFx, dot = file.lastIndexOf('.');

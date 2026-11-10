@@ -146,16 +146,4 @@ void doc_evaluate(Doc& d, double now) {
   evaluate_composition_layers(evaluation);
 }
 
-double doc_fx_room(Doc& d, int layer) {
-  const auto most = [&](const char* name, double otherwise) {
-    return std::max(doc_most(d, layer, name, otherwise),
-                    doc_number(d, layer, name, 0, otherwise));
-  };
-  double r = 3.0 * most("blur", 0);
-  if (!doc_word(d, layer, "shadow").empty())
-    r = std::max(r,
-                 most("shadow_distance", 10) + 3.0 * most("shadow_blur", 10));
-  return r <= 0.0 ? 0.0 : std::exp2(std::ceil(std::log2(std::max(r, 1.0))));
-}
-
 }  // namespace motolii

@@ -66,26 +66,6 @@ void video_shown(Doc& d, int layer, DocShownLayer& t, double now,
     else
       video_at(s, t.video, (float)since);
   }
-  // A video layer's look is applied in its material, as ThorVG effects do for
-  // an image. The look covers blur, tint and tritone. The blur is in video
-  // pixels along blur_direction.
-  if (t.video && t.video->look) {
-    Canvas2DFx fx;
-    std::string why;
-    doc_fx(d, layer, now, false, 1.0, fx, why);
-    const std::string way = doc_word(d, layer, "blur_direction");
-    const float blur = (float)doc_number(d, layer, "blur", now, 0);
-    const float4 grade[6] = {
-        {way == "vertical" ? 0.f : blur / (float)t.video->w,
-         way == "horizontal" ? 0.f : blur / (float)t.video->h, fx.tint,
-         fx.tritone},
-        {fx.tints[0], 0.f},
-        {fx.tints[1], 0.f},
-        {fx.tones[0], 0.f},
-        {fx.tones[1], 0.f},
-        {fx.tones[2], 0.f}};
-    t.video->look->setParameter("grade", grade, 6);
-  }
 }
 
 // Play the solid's own animation for each copy, from the time the layer
@@ -188,12 +168,6 @@ void drawing_shown(Doc& d, int layer, DocShownLayer& t, double now,
     canvas_at(
         s, t.drawn,
         std::fmod((float)doc_own_time(d, layer, now, since), t.drawn->seconds));
-  // Update the layer's effects. Those that move are drawn again.
-  if (t.drawn && !t.drawn->effects.empty()) {
-    Canvas2DFx fx;
-    std::string why;
-    if (doc_fx(d, layer, now, false, t.units, fx, why)) fx_at(s, t.drawn, fx);
-  }
   if (t.drawn && t.drawn->shape)
     trim_at(s, t.drawn, (float)doc_number(d, layer, "trim", now, 0),
             (float)doc_number(d, layer, "trim_begin", now, 0),

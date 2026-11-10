@@ -16,7 +16,6 @@
 #include <math/vec2.h>
 #include <math/vec3.h>
 #include <math/vec4.h>
-#include <thorvg.h>
 #include <utils/EntityManager.h>
 #include <webgpu/webgpu.h>
 
@@ -41,7 +40,6 @@
 #include "gpu/screen_interop.h"
 #include "stage/canvas/canvas_cache.h"
 #include "stage/effects/screen_fx.h"
-#include "stage/effects/thorvg_effect_names.h"
 #include "stage/render/render_draw.h"
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
@@ -94,11 +92,6 @@ void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
       // A script that draws works on the whole stage, as AviUtl2 draws an
       // object on its screen.
       st.wide |= scripts.back()->wide;
-      continue;
-    }
-    // One of ThorVG's own effects. ThorVG draws it at its place in the chain.
-    if (const char k = doc_thor_letter(file)) {
-      st.steps.push_back(k);
       continue;
     }
     // A splat effect. The point cloud applies it; see render/point_cloud.h.
@@ -157,36 +150,6 @@ void thing_effects(Stage& s, ScreenStack& st, const std::string& files) {
   st.aviutl = scripts;
 }
 
-void thing_thor(Stage& s, ScreenStack& st, char k, void* from, int into,
-                uint32_t w, uint32_t h, const Canvas2DFx& fx, float ppp) {
-  // Filament's drawing into `from` must reach the GPU queue first, because
-  // ThorVG starts drawing at once.
-  interop::submit(s.engine);
-  interop::on_driver(s.engine, [&s, &st, k, from, into, w, h, fx, ppp] {
-    tvg::WgCanvas*& c = st.thor[into];
-    if (!c) {
-      tvg::Initializer::init(0);
-      c = tvg::WgCanvas::gen();
-      if (c->target(interop::device(s.engine), interop::instance(s.engine),
-                    st.device[into + 1], w, h, tvg::ColorSpace::ABGR8888S,
-                    1) != tvg::Result::Success)
-        return;
-    }
-    c->remove();
-    tvg::Picture* image = tvg::Picture::gen();
-    if (image->load(from, w, h) != tvg::Result::Success)
-      return tvg::Paint::rel(image);
-    tvg::Scene* scene = tvg::Scene::gen();
-    scene->add(image);
-    scene->add(tvg::SceneEffect::Clear);
-    effect_on(scene, k, fx, ppp);
-    c->add(scene);
-    c->update();
-    c->draw(true);
-    c->sync();
-  });
-}
-
 void thing_fx_textures(Stage& s, ScreenStack& st, View* v) {
   const Viewport vp = v->getViewport();
   const uint32_t w = (uint32_t)std::max(1, vp.left + (int)vp.width),
@@ -202,13 +165,10 @@ void thing_fx_textures(Stage& s, ScreenStack& st, View* v) {
     // Release the device textures only after the drawing that uses them has
     // finished.
     interop::on_driver(
-        s.engine, [built = std::vector<void*>(st.device, st.device + 3),
-                   thor = std::vector<tvg::WgCanvas*>(st.thor, st.thor + 2)] {
-          for (tvg::WgCanvas* c : thor) delete c;
+        s.engine, [built = std::vector<void*>(st.device, st.device + 3)] {
           for (void* t : built)
             if (t) wgpuTextureRelease((WGPUTexture)t);
         });
-    st.thor[0] = st.thor[1] = nullptr;
     int n = 0;
     // Creates a texture on the device so that ThorVG can read and draw it, and
     // imports it into Filament.
@@ -261,7 +221,6 @@ void thing_fx_textures(Stage& s, ScreenStack& st, View* v) {
 
 void thing_effects_draw(Stage& s, ScreenStack& st, View* v,
                         const ScreenNumbers& numbers,
-                        const std::function<Canvas2DFx()>& thorFx,
                         const ScreenTextures& textures) {
   // The textures already exist if the layer was aimed; otherwise they are
   // created here.
@@ -283,15 +242,6 @@ void thing_effects_draw(Stage& s, ScreenStack& st, View* v,
   // With no effects only the layer's own image is needed, for other layers to
   // use.
   if (st.steps.empty()) return;
-  // Pixels of the layer's texture per stage point, as the stage's view draws. A
-  // smaller view, such as the tool panel's, has fewer.
-  const float ppp =
-      (float)s.view->getViewport().width / (float)std::max(1, s.w);
-  const Canvas2DFx thor =
-      thorFx && std::any_of(st.steps.begin(), st.steps.end(),
-                            [](char k) { return k != 0 && k != 'a'; })
-          ? thorFx()
-          : Canvas2DFx{};
   // Convert the image to sRGB for the effects; see screen_tone in screen_fx.h.
   screen_tone(s, st.shot, st.betweenTarget[1], w, h, true);
   // Each step draws into one of the two alternating textures. The effects take
@@ -305,12 +255,6 @@ void thing_effects_draw(Stage& s, ScreenStack& st, View* v,
           st.aviutl[a]->ground = st.ground, st.aviutl[a]->sounds = &st.sounds;
       aviutl_draw_step(s, *st.aviutl[a++], from, st.betweenTarget[i % 2],
                        numbers, w, h);
-      continue;
-    }
-    // One of ThorVG's own effects.
-    if (st.steps[i]) {
-      thing_thor(s, st, st.steps[i], st.device[i == 0 ? 2 : 1 + (i - 1) % 2],
-                 (int)(i % 2), w, h, thor, ppp);
       continue;
     }
     screen_fresh(s, *st.fx[f]);

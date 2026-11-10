@@ -116,7 +116,7 @@ struct DocExact {
 };
 // Returns the scripts on a layer, in order. For a layer these are the file in
 // its "script" value, which is one path and may contain spaces, then the files
-// in its "fx" list, except ThorVG's own effects. For an image layer they also
+// in its "fx" list. For an image layer they also
 // include the slots of an After Effects file, or the lines of a sketch that
 // draw. For layer 0, the stage, these are the files in its "script" value, one
 // over another.

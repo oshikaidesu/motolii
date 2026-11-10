@@ -328,8 +328,7 @@ void match_flat_look(LayerBuild& build) {
   look_edge_ends(build);
   // Build at the largest size the effects reach. Each time then evaluates
   // them as they are at that time.
-  build.fxOk =
-      doc_fx(build.d, build.layer, 0.0, true, build.units, build.fx, build.why);
+  build.fxOk = doc_fx(build.d, build.layer, 0.0, true, build.fx, build.why);
 }
 
 }  // namespace motolii

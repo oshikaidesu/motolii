@@ -35,17 +35,9 @@ namespace motolii {
 // Does nothing if st.files already equals `files`. Fills st.fx with the GPU
 // effects and st.aviutl with the AviUtl2 script runners, reusing a runner
 // already open for the same file. st.steps gets one code per step: 'a' for an
-// AviUtl2 script, a ThorVG letter, or 0 for the next entry of st.fx. Also sets
+// AviUtl2 script, or 0 for the next entry of st.fx. Also sets
 // st.readsBehind and st.wide.
 void thing_effects(Stage& s, ScreenStack& st, const std::string& files);
-// Runs one of ThorVG's own effects as one step of the chain. `k` is the
-// effect's letter. The input is the GPU texture `from`, w by h pixels. The
-// output goes to the texture with index `into` (0 or 1) of the two alternating
-// textures. The input is put in a ThorVG scene, the effect is applied to the
-// scene, and the drawing runs on the driver thread in order with Filament's
-// drawing. Lengths in `fx` are stage points, `ppp` pixels each.
-void thing_thor(Stage& s, ScreenStack& st, char k, void* from, int into,
-                uint32_t w, uint32_t h, const Canvas2DFx& fx, float ppp);
 // Creates or recreates the offscreen textures and render targets of a layer's
 // effects, sized to the view's viewport. Called before the frame, because the
 // material that shows a texture is given it later by thing_fx_seen.
@@ -60,12 +52,9 @@ inline filament::Texture* thing_fx_seen(const ScreenStack& st) {
 // Draws the layer alone into st.shot, then runs its effects one after another
 // through the two alternating textures st.between. The image is converted to
 // sRGB before the effects and back to linear light after. The result is left in
-// st.seen. `thorFx` supplies the values of ThorVG effects and is called only
-// when the chain has one. `textures` returns the extra textures an effect asks
-// for by name.
+// st.seen. `textures` returns the extra textures an effect asks for by name.
 void thing_effects_draw(Stage& s, ScreenStack& st, filament::View* v,
                         const ScreenNumbers& numbers,
-                        const std::function<Canvas2DFx()>& thorFx = nullptr,
                         const ScreenTextures& textures = nullptr);
 
 // State of a layer that has effects of its own: the view it is drawn alone in,

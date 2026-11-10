@@ -228,9 +228,6 @@ Canvas2D* place_canvas(
     // Scale the sheet for multi-line text, so that `high` stays the height of
     // one line.
     high *= d->tallBy, own = high;
-    // Effect sizes are fractions of this height: the content as drawn, without
-    // the margin.
-    const float tall = (float)h;
     if (fx.reach > 0.f) {
       // Add a margin for effects that reach beyond the content. fx.reach is a
       // fraction of its height.
@@ -240,30 +237,6 @@ Canvas2D* place_canvas(
       // keeps its size.
       high *= ((float)h + 2.f * room) / (float)h;
       w += 2 * (int)room, h += 2 * (int)room;
-    }
-    // Effects need a ThorVG scene. Enlarge the picture on all sides by as far
-    // as the effects reach.
-    if (fx.blur > 0.f || fx.shadow.w > 0.f || fx.tint > 0.f ||
-        fx.tritone > 0.f) {
-      const float blur = fx.blur * tall, fall = fx.fall * tall,
-                  soft = fx.soft * tall;
-      const int room = (int)std::ceil(
-          std::max({3.f * blur, fx.shadow.w > 0.f ? fall + 3.f * soft : 0.f,
-                    fx.room * tall}));
-      // One scene holds all the effects, applied in order.
-      tvg::Scene* scene = tvg::Scene::gen();
-      scene->add(p);
-      d->effects.push_back(scene);
-      p = scene;
-      p->translate((float)room, (float)room);
-      effects_on(d->effects, fx, tall);
-      // Remember the effects so those that change over time can be drawn again
-      // at each time.
-      d->tall = tall, d->fx = fx;
-      // Enlarge the sheet by the same ratio as the texture, so the content
-      // keeps its size.
-      high *= (float)(h + 2 * room) / (float)h;
-      w += 2 * room, h += 2 * room;
     }
     d->canvasHigh = (float)h;
     // Limit the texture to 4096 points on its longer side, which leaves room to

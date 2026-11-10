@@ -399,18 +399,6 @@ inline const DocValue doc_values[] = {
     // left, 0.5 about the
     // middle, 1 at the right.
     {"align", "text", 0, 1, false, nullptr},
-    // ThorVG's own scene effects on a layer it draws: a blur, and a shadow with
-    // a color, how far it
-    // falls, which way, how soft and how much of it. Lengths are in points of
-    // the image at size 1.
-    {"blur", "video image text shape", 0, 1000, true, nullptr},
-    {"blur_direction", "video image text shape", 0, 0, false,
-     "both horizontal vertical"},
-    {"shadow", "image text shape", 0, 0, false, ""},
-    {"shadow_distance", "image text shape", 0, 1000, true, nullptr},
-    {"shadow_angle", "image text shape", -1e6, 1e6, true, nullptr},
-    {"shadow_blur", "image text shape", 0, 1000, true, nullptr},
-    {"shadow_opacity", "image text shape", 0, 1, true, nullptr},
     {"glow", "image text shape", 0, 0, false, ""},
     {"glow_blur", "image text shape", 0, 1000, true, nullptr},
     {"glow_opacity", "image text shape", 0, 1, true, nullptr},
@@ -685,17 +673,6 @@ inline const DocValue doc_values[] = {
     {"field_z", "image text shape", -1e4, 1e4, true, nullptr},
     // Another seed gives another wiggle of the path (evaluate.h).
     {"seed", "shape", 0, 1e6, false, nullptr},
-    // tint maps a layer's darks and lights to two colors by this much, like
-    // ThorVG's tint. tritone
-    // maps its darks, middle tones and lights to three colors, like ThorVG's
-    // tritone.
-    {"tint", "video image text shape", 0, 1, true, nullptr},
-    {"tint_black", "video image text shape", 0, 0, false, ""},
-    {"tint_white", "video image text shape", 0, 0, false, ""},
-    {"tritone", "video image text shape", 0, 1, true, nullptr},
-    {"tritone_shadow", "video image text shape", 0, 0, false, ""},
-    {"tritone_midtone", "video image text shape", 0, 0, false, ""},
-    {"tritone_highlight", "video image text shape", 0, 0, false, ""},
     // More edges, each outside the last: Alight Motion's Add Border,
     // Illustrator's Appearance.
     {"stroke_2", "text", 0, 0, false, ""},

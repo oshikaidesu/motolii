@@ -38,7 +38,6 @@
 #include "document/scripts/scripts.h"
 #include "stage/canvas/canvas_cache.h"
 #include "stage/effects/screen_fx.h"
-#include "stage/effects/thorvg_effect_names.h"
 #include "stage/render/render_draw.h"
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
@@ -168,10 +167,9 @@ bool doc_fx_frame(Doc& d, int layer, const ThingFx& e, double* frame) {
 // solid's file reads the image, also updates the solid from it, using the
 // precision parameter (default 160).
 void doc_layer_solid(Doc& d, int layer, ThingFx& e,
-                     const ScreenNumbers& numbers,
-                     const std::function<Canvas2DFx()>& thorFx) {
+                     const ScreenNumbers& numbers) {
   Stage& s = *d.stage;
-  thing_effects_draw(s, e.st, e.view, numbers, thorFx);
+  thing_effects_draw(s, e.st, e.view, numbers);
   if (solid_reads(e.solidFile))
     thing_fx_cover(
         s, e,
@@ -285,14 +283,10 @@ void doc_sheet_reads(Doc& d, int layer, float way, Texture* picture) {
 
 bool doc_holds_fx(Doc& d, int layer) {
   if (doc_word(d, layer, "shape") != "null") return false;
-  const std::vector<std::string> steps = doc_fx_steps(d, layer);
-  return doc_fx_files(steps) ||
-         std::any_of(steps.begin(), steps.end(), [](const std::string& w) {
-           return doc_thor_letter(w) != 0;
-         });
+  return doc_fx_files(doc_fx_steps(d, layer));
 }
 bool doc_own_fx(Doc& d, int layer) {
-  return doc_fx_files(doc_fx_steps(d, layer)) || doc_holds_fx(d, layer);
+  return doc_fx_files(doc_fx_steps(d, layer));
 }
 bool doc_layer_stands(Doc& d, int layer, ThingFx& e) {
   thing_effects(*d.stage, e.st, doc_fx_join(doc_fx_steps(d, layer)));
@@ -474,24 +468,6 @@ void doc_layers_fx(Doc& d) {
       return doc_number(d, layer, doc_screen_parameter(file, name).c_str(),
                         d.stage->now, usual);
     };
-    // ThorVG's own effects among the layer's steps, as they are now. Lengths
-    // are in points of the stage.
-    const auto thorFx = [&d, layer = layer, &e = e] {
-      std::lock_guard<std::recursive_timed_mutex> hold(d.lock);
-      Canvas2DFx fx;
-      std::string why;
-      doc_fx(d, layer, d.stage->now, false, 1.0, fx, why, true);
-      double frame[8];
-      const auto t = d.on_stage.shown.find(layer);
-      if (t != d.on_stage.shown.end() && t->second.drawn &&
-          t->second.drawn->fx.overHigh > 0.f &&
-          doc_fx_frame(d, layer, e, frame)) {
-        const float k = (float)(frame[3] / (t->second.units *
-                                            t->second.drawn->fx.overHigh));
-        fx.blur *= k, fx.fall *= k, fx.soft *= k;
-      }
-      return fx;
-    };
     // Before the frame: works out where the layer is seen, what its images are,
     // and what its sheet shows.
     s.aim.push_back([&s, &d, layer = layer, &e = e] {
@@ -590,10 +566,9 @@ void doc_layers_fx(Doc& d) {
     });
     d.effects.beforeOf.push_back(layer);
     // In the frame: draws the layer alone and runs its effects.
-    s.before.push_back([&d, layer = layer, &e = e, numbers, thorFx] {
-      if (!e.solidFile.empty())
-        return doc_layer_solid(d, layer, e, numbers, thorFx);
-      thing_effects_draw(*d.stage, e.st, e.view, numbers, thorFx);
+    s.before.push_back([&d, layer = layer, &e = e, numbers] {
+      if (!e.solidFile.empty()) return doc_layer_solid(d, layer, e, numbers);
+      thing_effects_draw(*d.stage, e.st, e.view, numbers);
       if (e.shell) doc_layer_shell(d, layer, e, true);
     });
     if (e.shell)

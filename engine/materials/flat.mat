@@ -42,10 +42,6 @@ material {
         // [4] Cavalry's motion stretch: which way it moves and how fast (its own units a second, as it is turned), how much it stretches for that;
         // [5] [6] After Effects' corner pin: how far its corners are moved (top left, top right; bottom left, bottom right)
         { type : float4[8], name : bends },
-        // a film's own look, as ThorVG's effects give a picture theirs: [0] how far it is blurred (across, up: shares of
-        // the picture), how much its darks and lights are made two colours, how much three; [1] [2] the two (tint);
-        // [3] [4] [5] the three (tritone: shadow, middle, highlight). All 0: as it is.
-        { type : float4[6], name : grade },
         // a thing with depth (deep.glsl): half its box across, up and through, in its own lengths (all 0: a sheet), and 1: its box open (0: Z 0, shut, a sheet);
         // how its box's corners turn into its picture's (a film on its side: video_layer.h)
         { type : float4, name : deep },
@@ -179,22 +175,9 @@ fragment {
         if (materialParams.filmed > 0.5) {
             // video keeps light and colour apart, in its own range: to red, green, blue by the film's own rule
             c = filmAt(uv);
-            vec4 g = materialParams.grade[0];
-            if (g.x > 0.0 || g.y > 0.0) {   // (blurred: read at twelve places round it, near and far, and itself)
-                vec3 sum = c;
-                for (int k = 0; k < 12; k++) {
-                    float a = 6.2831853 * (float(k) + 0.5 * float(k / 6)) / 6.0, r = k < 6 ? 0.45 : 1.0;
-                    sum += filmAt(uv + vec2(cos(a), sin(a)) * g.xy * r);
-                }
-                c = sum / 13.0;
-            }
         }
         // (the screen's own rule, exactly: Filament's output step is its reverse, so a number comes out as it went in)
         float kept = keyLeft(c);
-        vec4 g = materialParams.grade[0];   // (a film's colours made two or three, after its green is keyed out by its own: ThorVG's tint and tritone)
-        float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
-        if (g.z > 0.0) c = mix(c, mix(materialParams.grade[1].rgb, materialParams.grade[2].rgb, l), g.z);
-        if (g.w > 0.0) c = mix(c, l < 0.5 ? mix(materialParams.grade[3].rgb, materialParams.grade[4].rgb, 2.0 * l) : mix(materialParams.grade[4].rgb, materialParams.grade[5].rgb, 2.0 * l - 1.0), g.w);   // (the colour is then the film's share of the point already: only its clearness is `kept`)
         float there = deepEdge >= 0.0 ? deepEdge : materialParams.filmed > 0.5 ? 1.0 : drawn.a;
         vec4 ownColour = deepPart > 0 ? materialParams.partColour[deepPart - 1] : vec4(0.0);
         c = min(mix(c, ownColour.rgb, ownColour.a) * deepShade + deepShine, vec3(1.0));

@@ -29,7 +29,6 @@
 #include "document/scripts/scripts.h"
 #include "document/undo.h"
 #include "shelf/shelf_folders.h"
-#include "stage/effects/thorvg_effect_names.h"
 #include "stage/render/gltf_model.h"
 
 namespace motolii {
@@ -151,10 +150,6 @@ std::string doc_fx_title(const std::string& name) {
     const std::string stem = std::filesystem::path(name).stem().string();
     return doc_fx_title(source) + " " + stem.substr(stem.rfind('~') + 1);
   }
-  if (doc_thor_letter(name))
-    for (const DocCard& card : doc_cards)
-      if (card.when && card.is[0] == '+' && name == card.when)
-        return card.title;
   // Title as the shelf names it: the name in the file's first comment line,
   // written by the file's author (see doc_folder_names). Cached per effect and
   // read again when files change.
@@ -235,9 +230,6 @@ std::string doc_cards_of(Doc& d, int layer, std::string* more) {
   // lists applied effects under Motion and Opacity. Otherwise the effect cards
   // sit below ten mostly unused cards.
   std::string all, besides;
-  // Cards of ThorVG effects, keyed by the property that turns each effect on.
-  // They are laid out later in the order of the effect list.
-  std::map<std::string, std::string> effects;
   const bool behaviour = doc_word(d, layer, "kind") == "behaviour";
   bool past = false;
   for (const DocCard& card : doc_cards) {
@@ -301,11 +293,8 @@ std::string doc_cards_of(Doc& d, int layer, std::string* more) {
       *more +=
           (more->empty() ? "" : "; ") + std::string(card.title) + ": " + names;
     if (names.empty() || !said) continue;
-    if (card.when && card.is[0] == '+' && doc_thor_letter(card.when))
-      effects[card.when] = std::string(card.title) + ": " + names;
-    else
-      (past ? besides : all) += ((past ? besides : all).empty() ? "" : "; ") +
-                                std::string(card.title) + ": " + names;
+    (past ? besides : all) += ((past ? besides : all).empty() ? "" : "; ") +
+                              std::string(card.title) + ": " + names;
   }
   // The number of copies goes on the card of the first expression, as After
   // Effects' Repeater has Copies and Cavalry's Duplicator has Count. It is the
@@ -318,28 +307,21 @@ std::string doc_cards_of(Doc& d, int layer, std::string* more) {
                         "copy_opacity_end", "tall", "copy_tall"})
     if (has.find(" " + std::string(n) + " ") != std::string::npos)
       copied += std::string(" ") + n;
-  // One card per effect, in effect order, for ThorVG effects and file effects
-  // alike. Effects that are turned off are included because their values are
-  // kept.
+  // One card per effect, in effect order. Effects that are turned off are
+  // included because their values are kept.
   if (layer != 0)
     for (const std::string& w : doc_fx_list(d, layer, true)) {
+      // A file effect, with or without parameters. Its card is where the user
+      // reaches its visibility toggle, its bin and its code.
       std::string card;
-      if (doc_thor_letter(w)) {
-        if (const auto at = effects.find(w); at != effects.end())
-          card = at->second;
-      } else {
-        // A file effect, with or without parameters. Its card is where the user
-        // reaches its visibility toggle, its bin and its code.
-        if (const DocScript* sc = doc_script_of(d, w))
-          for (const DocValue& one : sc->values)
-            card += (card.empty() ? "" : " ") + std::string(one.name);
-        if (!copies && doc_expression(d, w))
-          card =
-              "copies" + std::string(card.empty() ? "" : " ") + card + copied,
-          copies = true;
-        card = doc_fx_title(w) + ": " + card;
-      }
-      if (!card.empty()) all += (all.empty() ? "" : "; ") + card;
+      if (const DocScript* sc = doc_script_of(d, w))
+        for (const DocValue& one : sc->values)
+          card += (card.empty() ? "" : " ") + std::string(one.name);
+      if (!copies && doc_expression(d, w))
+        card = "copies" + std::string(card.empty() ? "" : " ") + card + copied,
+        copies = true;
+      card = doc_fx_title(w) + ": " + card;
+      all += (all.empty() ? "" : "; ") + card;
     }
   if (!besides.empty()) all += (all.empty() ? "" : "; ") + besides;
   if (doc_among("image text shape solid stage behaviour",

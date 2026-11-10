@@ -27,9 +27,8 @@ std::string doc_moving(Doc& d, int layer);
 // Returns the names of all properties of a layer, separated by spaces: those
 // the values table lists for its kind, plus its script parameters.
 std::string doc_has(Doc& d, int layer);
-// Returns the title of the card of an effect in a layer's effect list. A ThorVG
-// effect uses its card's title, such as Gaussian Blur. A file effect uses its
-// file name as a title, so halftone becomes Halftone.
+// Returns the title of the card of an effect in a layer's effect list. An
+// effect uses its file name as a title, so halftone becomes Halftone.
 std::string doc_fx_title(const std::string& name);
 // Duplicates the effect with the given card title on the layer, placing the
 // copy right after the original with the same parameter values and keyframes.
@@ -42,7 +41,7 @@ std::string doc_fx_title(const std::string& name);
 // the new effect name, or "" with d.error set on failure.
 std::string doc_fx_duplicate(Doc& d, int layer, const std::string& title);
 // Returns the titles of a layer's effect cards in effect order, separated by
-// ";", such as "Halftone;Gaussian Blur". Effects that are turned off are
+// ";", such as "Halftone;Glow 2". Effects that are turned off are
 // included because their cards exist.
 std::string doc_fx_titles(Doc& d, int layer);
 // Returns the cards of a layer as "title: name name; title: name". A card

@@ -48,8 +48,7 @@ class EffectCode extends StatefulWidget {
 
   /// Finds the code file behind a layer's effect card, or null if the card is not a code effect.
   ///
-  /// The match uses the card's parameter [names], not the title alone, because two cards can share a title
-  /// (ThorVG's Tint is called Duotone, as an ISF file may be).
+  /// The match uses the card's parameter [names], not the title alone, because two cards can share a title.
   /// An effect's parameters, and those of an expression applied again ("repeater~2.js"), are named after the file
   /// (`js_<stem>_<param>`, document/scripts/scripts.h doc_script_of), so the file is the one whose name they all begin with.
   /// An expression's own parameters are `js_<param>`, so the file is the .js whose header declares them all.

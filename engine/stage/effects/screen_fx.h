@@ -18,7 +18,6 @@
 // `height` (points). Any other member is read as a parameter of the same name.
 #include <filament/RenderTarget.h>
 #include <filament/Texture.h>
-#include <thorvg.h>
 
 #include <cstdint>
 #include <filesystem>
@@ -215,18 +214,13 @@ struct ScreenStack {
   interop::Screen* copy = nullptr;
   // A layer's effects as steps in order, like After Effects' effect stack (see
   // thing_effects_draw in layer_fx.h). A step of 0 is the next entry of `fx`,
-  // drawn by Filament. Any other letter selects one of ThorVG's own effects
-  // (Canvas2DFx::order), drawn by ThorVG reading the image the step before
-  // made. The images belong to the device and are shared by both: Filament
-  // draws into them, and ThorVG reads and draws.
+  // drawn by Filament; 'a' is an AviUtl2 script.
   std::vector<char> steps;
   // The AviUtl2 scripts to run in order, for step 'a' (see
   // community/aviutl/aviutl_fx.h).
   std::vector<std::shared_ptr<struct AviutlRun>> aviutl;
   // The native WGPUTexture handles of shot, between[0] and between[1].
   void* device[3] = {nullptr, nullptr, nullptr};
-  // The ThorVG canvases that draw into each of the between images.
-  tvg::WgCanvas* thor[2] = {nullptr, nullptr};
   // The layer's image as the camera sees it, with its effects applied, for the
   // current frame.
   filament::Texture* seen = nullptr;

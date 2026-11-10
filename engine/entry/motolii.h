@@ -457,8 +457,7 @@ void motolii_finished(Motolii* m, void (*listener)(void*), void* with);
 const char* motolii_cache(Motolii* m);
 /* Returns the titles of a layer's effect cards in the order its effects are
    laid, separated by
-   ";", or "" if there are none. ThorVG's own effects and files' effects are
-   alike. Move one with motolii_later "fx_move" (word: a title, number: how many
+   ";", or "" if there are none. Move one with motolii_later "fx_move" (word: a title, number: how many
    places, up when less than 0). */
 const char* motolii_fx_titles(Motolii* m, int layer);
 /* Starts playback (playing nonzero), in which time goes on by the clock and

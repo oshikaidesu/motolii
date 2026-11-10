@@ -150,8 +150,7 @@ void drawn_shape(LayerBuild& build) {
                                            : drawn;
   const bool plain = !fx.thick && !wave && shape != "spiral" &&
                      shape != "null" && fx.media.empty() &&
-                     fx.ramp.size() < 2 && fx.blur <= 0.f &&
-                     fx.shadow.w <= 0.f && fx.tint <= 0.f && fx.tritone <= 0.f;
+                     fx.ramp.size() < 2;
   if (plain)
     mesh_shape(build, form, line, high);
   else

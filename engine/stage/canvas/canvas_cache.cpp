@@ -52,15 +52,9 @@ std::filesystem::path cache_file(const Canvas2D* d, int at) {
   if (d->keyBase.empty() || !d->target) return {};
   std::string all = d->keyBase;
   const auto add = [&](float v) { all += "|" + std::to_string(v); };
-  const Canvas2DFx& f = d->fx;
   add((float)wgpuTextureGetWidth(d->target)),
       add((float)wgpuTextureGetHeight(d->target));
-  for (float v : {f.blur, (float)f.blurWay, f.shadow.x, f.shadow.y, f.shadow.z,
-                  f.shadow.w, f.fall, f.way, f.soft, f.tint, f.tritone,
-                  d->fromFrame, d->toFrame})
-    add(v);
-  for (const float3& c : f.tints) add(c.x), add(c.y), add(c.z);
-  for (const float3& c : f.tones) add(c.x), add(c.y), add(c.z);
+  for (float v : {d->fromFrame, d->toFrame}) add(v);
   for (uint32_t id : d->deep) add((float)id);
   all += "|" + d->slots;
   // FNV-1a, 64 bit.
@@ -273,35 +267,6 @@ void cache_draw(Stage& s, Canvas2D* d, int at, bool keep,
 
 }  // namespace
 
-void effect_on(tvg::Scene* on, char k, const Canvas2DFx& fx, float tall) {
-  const auto c = [](float v) { return (int)std::lround(255.f * v); };
-  if (k == 't' && fx.tint > 0.f)
-    on->add(tvg::SceneEffect::Tint, c(fx.tints[0].x), c(fx.tints[0].y),
-            c(fx.tints[0].z), c(fx.tints[1].x), c(fx.tints[1].y),
-            c(fx.tints[1].z), (double)(100.f * fx.tint));
-  if (k == 'r' && fx.tritone > 0.f)
-    on->add(tvg::SceneEffect::Tritone, c(fx.tones[0].x), c(fx.tones[0].y),
-            c(fx.tones[0].z), c(fx.tones[1].x), c(fx.tones[1].y),
-            c(fx.tones[1].z), c(fx.tones[2].x), c(fx.tones[2].y),
-            c(fx.tones[2].z), c(1.f - fx.tritone));
-  if (k == 's' && fx.shadow.w > 0.f)
-    on->add(tvg::SceneEffect::DropShadow, c(fx.shadow.x), c(fx.shadow.y),
-            c(fx.shadow.z), c(fx.shadow.w), (double)fx.way,
-            (double)(fx.fall * tall), (double)std::max(fx.soft * tall, 0.01f),
-            75);
-  // blurWay is the blur direction: both, across, or up and down.
-  if (k == 'b' && fx.blur > 0.f)
-    on->add(tvg::SceneEffect::GaussianBlur, (double)(fx.blur * tall),
-            fx.blurWay, 0, 75);
-}
-
-void effects_on(const std::vector<tvg::Scene*>& chain, const Canvas2DFx& fx,
-                float tall) {
-  tvg::Scene* on = chain[0];
-  on->add(tvg::SceneEffect::Clear);
-  for (const char* k = fx.order; *k; ++k) effect_on(on, *k, fx, tall);
-}
-
 void trim_at(Stage& s, Canvas2D* d, float cut, float begin, float offset) {
   const float3 is{cut, begin, offset};
   if (!d->shape || (is == d->trimmed)) return;
@@ -381,7 +346,7 @@ void lit_at(Stage& s, Canvas2D* d, const std::vector<float>& lit,
     // ThorVG redraws a picture only if the picture itself is marked changed,
     // not its parts (see update in tvgPicture.h). Paint::opacity marks it.
     d->film->picture()->opacity(254), d->film->picture()->opacity(255);
-    // Draws now even if the picture does not move, as fx_at does.
+    // Draws now even if the picture does not move.
     d->canvas->update();
     d->canvas->draw(true), d->stale = true;
     d->canvas->sync();
@@ -407,27 +372,6 @@ bool words_at(Stage& s, Canvas2D* d, const std::string& words) {
     d->canvas->sync();
   });
   return true;
-}
-
-void fx_at(Stage& s, Canvas2D* d, const Canvas2DFx& told) {
-  if (d->effects.empty()) return;
-  const Canvas2DFx fx = told.over(d->fx.overHigh);
-  const Canvas2DFx& was = d->fx;
-  if (fx.blur == was.blur && fx.blurWay == was.blurWay &&
-      (fx.shadow == was.shadow) && fx.fall == was.fall && fx.way == was.way &&
-      fx.soft == was.soft && fx.tint == was.tint && fx.tritone == was.tritone &&
-      !strcmp(fx.order, was.order) && (fx.tints[0] == was.tints[0]) &&
-      (fx.tints[1] == was.tints[1]) && (fx.tones[0] == was.tones[0]) &&
-      (fx.tones[1] == was.tones[1]) && (fx.tones[2] == was.tones[2]))
-    return;
-  d->fx = fx;
-  cache_drop(s, d);
-  interop::on_driver(s.engine, [d, fx] {
-    effects_on(d->effects, fx, d->tall);
-    d->canvas->update();
-    d->canvas->draw(true), d->stale = true;
-    d->canvas->sync();
-  });
 }
 
 const std::filesystem::path& cache_dir() {

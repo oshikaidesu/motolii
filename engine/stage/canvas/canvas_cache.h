@@ -37,12 +37,8 @@
 
 namespace motolii {
 
-// Effects and drawing options of a flat layer drawn by ThorVG. Lengths are
-// fractions of the layer height unless noted; see over().
-//
-// tint is how strongly dark and light areas are mapped to two colors; 0 means
-// off. tritone is how strongly dark, middle and light areas are mapped to three
-// colors; 0 means off.
+// Drawing options of a flat layer drawn by ThorVG. Lengths are fractions of the
+// layer height unless noted; see over().
 //
 // split makes a text draw each letter as a copy of its own.
 struct Canvas2DFx {
@@ -87,18 +83,7 @@ struct Canvas2DFx {
   int heads = 0;
   float headSize = 4.f;
   int headShape = 0, headStart = -1;
-  // shadow is the RGBA color of the drop shadow. way, fall and soft are its
-  // angle, distance and softness, the last two as fractions of the layer
-  // height. blurWay is the blur direction passed to ThorVG.
-  float blur = 0.f;
-  int blurWay = 0;
   float overHigh = 1.f;
-  filament::math::float4 shadow{0.f};
-  float fall = 0.f, way = 0.f, soft = 0.f;
-  float tint = 0.f;
-  filament::math::float3 tints[2]{};
-  float tritone = 0.f;
-  filament::math::float3 tones[3]{};
   int copies = 1;
   // Two or more colors. The shape is filled with ThorVG's linear gradient from
   // the first color at the top to the last at the bottom.
@@ -121,13 +106,6 @@ struct Canvas2DFx {
   // The most a bent shape extends past its box, as a fraction of its height.
   // See bend_at. The image is made larger on all sides by this amount.
   float reach = 0.f;
-  // How far effects may reach around the layer, as a fraction of its height.
-  // Space for it is made in the image (doc_fx_room). Changes within it are
-  // redrawn without rebuilding the image.
-  float room = 0.f;
-  // Effects in the order they are laid out in the layer's effect list
-  // (doc_fx_list): t tint, r tritone, s shadow, b blur.
-  char order[5] = "trsb";
   // radial selects ThorVG's radial gradient, from the middle outward, instead
   // of a linear one. rampAngle is the rotation, clockwise. rampScale is the
   // length as a fraction of reach. spread is how the gradient continues past
@@ -135,12 +113,10 @@ struct Canvas2DFx {
   bool radial = false;
   float rampAngle = 0.f, rampScale = 1.f;
   int spread = 0;
-  // Returns a copy for a layer `high` units tall, with the lengths divided by
-  // `high` so they become fractions of the height.
+  // Returns a copy for a layer `high` units tall.
   Canvas2DFx over(float high) const {
     Canvas2DFx f = *this;
-    f.blur /= high, f.fall /= high, f.soft /= high, f.room /= high,
-        f.overHigh = high;
+    f.overHigh = high;
     return f;
   }
 };
@@ -337,15 +313,10 @@ struct Canvas2D {
   std::vector<filament::math::float2> letters;
   // The section that plays when one is named, in frames of the file.
   float fromFrame = 0.f, toFrame = 0.f;
-  // The ThorVG scenes the effects are applied to. Driver thread only.
-  std::vector<tvg::Scene*> effects;
-  // The height it was drawn at, in its own points. Effect lengths are fractions
-  // of it.
-  float tall = 0.f;
   // For a text: how many times as tall as one line the text is. The size gives
   // the height of a line.
   float tallBy = 1.f;
-  // The effects as last set.
+  // The drawing options the layer was made with.
   Canvas2DFx fx;
   // The text's own words as a ThorVG text. Driver thread only. words_at updates
   // it in place. Null when the text is split, wrapped or aligned.
@@ -363,14 +334,6 @@ struct Canvas2D {
   std::atomic<bool> outgrown{false};
 };
 
-// Adds one of ThorVG's own effects to the scene `on`. `k` is a letter of
-// Canvas2DFx::order. Lengths in `fx` are fractions of `tall` points.
-void effect_on(tvg::Scene* on, char k, const Canvas2DFx& fx, float tall);
-// Replaces the effects on chain[0] with those in `fx`, in the order of
-// fx.order. Lengths are fractions of `tall` points.
-void effects_on(const std::vector<tvg::Scene*>& chain, const Canvas2DFx& fx,
-                float tall);
-
 // Trims a flat shape's path. `cut` of it is removed from the end and `begin`
 // from the beginning, and the part left is slid along the path by `offset` of
 // the way round. This uses ThorVG's trimpath, which wraps past either end, like
@@ -386,7 +349,7 @@ void bend_at(Stage& s, Canvas2D* d, float round, float bloat, float zigzag,
              float ridges, float smooth, float offset);
 
 // Applies the slots of an After Effects file (lottie_slots_json) and draws it
-// again for the next frame, as fx_at does for effects. Does nothing if the
+// again for the next frame. Does nothing if the
 // slots are unchanged. Uses ThorVG's own slot API: generate the slots, then
 // apply them.
 void slots_at(Stage& s, Canvas2D* d, const std::string& slots);
@@ -406,12 +369,6 @@ void lit_at(Stage& s, Canvas2D* d, const std::vector<float>& lit,
 // layer has no words of its own to set, or if the last words did not fit the
 // image (outgrown).
 bool words_at(Stage& s, Canvas2D* d, const std::string& words);
-// Applies the effects of a flat layer, with lengths as fractions of its height
-// at the time it was made, and draws it again for the next frame. Does nothing
-// if the effects are unchanged. Effects reach no further than they did at their
-// most.
-void fx_at(Stage& s, Canvas2D* d, const Canvas2DFx& told);
-
 // Frames are also cached on disk in ~/Library/Caches/Motolii/frames, so that a
 // reopened project shows frames drawn earlier without drawing them again. Each
 // frame is one file, compressed with zstd as Filament builds it. A file is
