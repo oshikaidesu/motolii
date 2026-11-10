@@ -13,6 +13,8 @@
 #include <system_error>
 #include <thread>
 
+namespace motolii {
+
 std::atomic<bool> mosh_done{false};
 
 namespace {
@@ -104,3 +106,5 @@ std::string mosh_file(const std::string& film, double at,
   }).detach();
   return "";
 }
+
+}  // namespace motolii

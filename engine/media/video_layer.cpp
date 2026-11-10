@@ -33,6 +33,8 @@
 using namespace filament;
 using namespace filament::math;
 
+namespace motolii {
+
 const char* video_trouble = "";
 long video_asked = 0, video_late = 0;
 
@@ -749,3 +751,5 @@ void video_at(Stage& s, Video* v, float seconds) {
   video_late += !sure;
   video_put(s, v);
 }
+
+}  // namespace motolii

@@ -37,6 +37,8 @@
 
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // State of one video layer: its GStreamer reader, the frames being shown, and
 // the quad that displays them.
 struct Video {
@@ -166,5 +168,7 @@ void key_own(Video* v, bool always);
 // next. The video loops when it ends. The frame for a time is the last one due
 // by then, judged by the video's own timestamps.
 void video_at(Stage& s, Video* v, float seconds);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_MEDIA_VIDEO_LAYER_H_

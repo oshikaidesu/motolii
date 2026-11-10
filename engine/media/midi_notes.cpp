@@ -15,6 +15,8 @@
 
 #include "media/gstreamer_file_source.h"
 
+namespace motolii {
+
 std::vector<MidiEvent> midi_events(const char* file) {
   static const bool started = (gst_init(nullptr, nullptr), true);
   (void)started;
@@ -165,3 +167,5 @@ std::vector<ScriptCopy> midi_copies(const std::vector<MidiNote>& notes, int n,
   }
   return all;
 }
+
+}  // namespace motolii

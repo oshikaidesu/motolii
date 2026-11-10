@@ -8,6 +8,8 @@
 #include <map>
 #include <string>
 
+namespace motolii {
+
 namespace {
 
 // Computes the position in its file, in seconds, of a layer's sound at the time
@@ -119,3 +121,5 @@ void heard(const std::map<const void*, Stage::Sound>& told,
     if (!h.on) gst_element_set_state(h.bin, GST_STATE_PLAYING), h.on = true;
   }
 }
+
+}  // namespace motolii

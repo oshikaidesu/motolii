@@ -6,6 +6,8 @@
 #include <cstring>
 #include <string>
 
+namespace motolii {
+
 bool FilmRead::open(const std::string& file, int wide) {
   gst_init(nullptr, nullptr);
   const std::string line =
@@ -42,3 +44,5 @@ bool FilmRead::next() {
   gst_sample_unref(one);
   return true;
 }
+
+}  // namespace motolii

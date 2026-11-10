@@ -20,6 +20,8 @@
 
 #include "stage/render/render_stage.h"
 
+namespace motolii {
+
 // The player of one layer's sound.
 struct Heard {
   GstElement* bin = nullptr;
@@ -45,5 +47,7 @@ std::map<const void*, Stage::Sound> heard_told(Stage& s);
 // played without holding the document, which heard_told has already read.
 void heard(const std::map<const void*, Stage::Sound>& told,
            std::map<const void*, Heard>& all, double now, bool playing);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_MEDIA_SOUND_PLAYBACK_H_

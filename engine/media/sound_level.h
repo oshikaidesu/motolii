@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+namespace motolii {
+
 // Returns the loudness of the loudest channel of `file` in dB, where 0 is full
 // scale, sampled every 1/rate seconds of the file's own time. Returns an empty
 // list if no sound could be read.
@@ -56,5 +58,7 @@ const SoundRead* sound_of(const std::string& file);
 // inside the range. The wave is the 1024 samples up to `at`, and each sample is
 // mapped by (sample * 4 + 4) / 8. Returns silence when there is no data.
 std::vector<float> sound_at(const SoundRead* r, bool fft, int wide, double at);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_MEDIA_SOUND_LEVEL_H_

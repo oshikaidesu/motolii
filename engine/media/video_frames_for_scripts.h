@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+namespace motolii {
+
 // A GStreamer pipeline that decodes a video file to RGBA frames at 60 fps and
 // hands them out one by one.
 struct FilmRead {
@@ -39,5 +41,7 @@ struct FilmRead {
   // the previous frame is kept.
   bool next();
 };
+
+}  // namespace motolii
 
 #endif  // MOTOLII_MEDIA_VIDEO_FRAMES_FOR_SCRIPTS_H_

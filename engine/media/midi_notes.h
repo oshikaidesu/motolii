@@ -16,6 +16,8 @@
 
 #include "community/quickjs/script.h"
 
+namespace motolii {
+
 // A note-on or note-off event, in the order of the file. The MIDI status byte
 // is 0x90 for on and 0x80 for off. A note-on with velocity 0 counts as an off.
 // `at` is in seconds.
@@ -86,5 +88,7 @@ const std::vector<MidiNote>& midi_of(const std::string& file);
 // A note that has not yet started is invisible.
 std::vector<ScriptCopy> midi_copies(const std::vector<MidiNote>& notes, int n,
                                     double t, double unit, double roll = 0);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_MEDIA_MIDI_NOTES_H_

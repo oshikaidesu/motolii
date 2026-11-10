@@ -14,6 +14,8 @@
 
 #include "media/gstreamer_file_source.h"
 
+namespace motolii {
+
 namespace {
 
 // Reads the sound of `file` once, decoding it at full speed.
@@ -211,3 +213,5 @@ std::vector<float> sound_at(const SoundRead* r, bool fft, int wide, double at) {
   }
   return v;
 }
+
+}  // namespace motolii

@@ -14,6 +14,8 @@
 #include "iris/Log.h"
 #include "iris/VideoAnalyser.h"
 
+namespace motolii {
+
 const char* video_flash_check(const char* film, const char* folder) {
   static thread_local std::string out;
   out.clear();
@@ -51,3 +53,5 @@ const char* video_flash_check(const char* film, const char* folder) {
   }
   return out.c_str();
 }
+
+}  // namespace motolii

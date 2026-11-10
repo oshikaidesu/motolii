@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 
+namespace motolii {
+
 // Returns the piano roll of `file` as SVG text.
 // `bpm` is the tempo to play the file's beats at; 0 uses the tempo stored in
 // the file. On failure returns "" and sets `why` to the reason. If `notes` is
@@ -37,5 +39,7 @@ struct MidiRollNote {
 // pitch, velocity and timing from the .notes file stored beside it by
 // midi_roll_file.
 std::vector<MidiRollNote> midi_roll_notes(const std::string& svg);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_MEDIA_MIDI_ROLL_H_

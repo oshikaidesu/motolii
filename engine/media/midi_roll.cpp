@@ -29,6 +29,8 @@
 
 #include "media/midi_notes.h"
 
+namespace motolii {
+
 // Renders `file` as SVG text; see midi_roll.h for the parameters.
 std::string midi_roll(const std::string& file, double bpm, std::string& why,
                       std::string* notes) {
@@ -200,3 +202,5 @@ std::vector<MidiRollNote> midi_roll_notes(const std::string& svg) {
   }
   return notes;
 }
+
+}  // namespace motolii

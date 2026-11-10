@@ -16,6 +16,8 @@
 #include <atomic>
 #include <string>
 
+namespace motolii {
+
 // Set when a datamosh file has been made since the last time it was asked for.
 // The canvas then has to be rebuilt to match; see motolii.mm.
 extern std::atomic<bool> mosh_done;
@@ -26,5 +28,7 @@ extern std::atomic<bool> mosh_done;
 // not be made.
 std::string mosh_file(const std::string& film, double at,
                       const std::string& with);
+
+}  // namespace motolii
 
 #endif  // MOTOLII_MEDIA_VIDEO_DATAMOSH_H_

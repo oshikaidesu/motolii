@@ -5,6 +5,8 @@
 
 #include <gst/gst.h>
 
+namespace motolii {
+
 // Sets the "location" property of the filesrc element named "in" in `pipeline`
 // to `file`. The path is set with g_object_set, as in the GStreamer tutorials,
 // instead of being written into the pipeline description. A path with non-ASCII
@@ -13,5 +15,7 @@ inline void gst_read_from(GstElement* pipeline, const char* file) {
   if (GstElement* in = gst_bin_get_by_name(GST_BIN(pipeline), "in"))
     g_object_set(in, "location", file, nullptr), gst_object_unref(in);
 }
+
+}  // namespace motolii
 
 #endif  // MOTOLII_MEDIA_GSTREAMER_FILE_SOURCE_H_
