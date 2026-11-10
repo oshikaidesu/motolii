@@ -242,6 +242,7 @@ add_library(motolii_document OBJECT
   document/evaluate/evaluate_lights.cpp
   document/evaluate/evaluate_materials.cpp
   document/evaluate/evaluate_scenes.cpp
+  document/evaluate/evaluate_shape.cpp
   document/evaluate/fx_list.cpp
   document/evaluate/material.cpp
   document/evaluate/moment_fx.cpp
