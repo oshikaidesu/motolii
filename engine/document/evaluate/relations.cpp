@@ -43,10 +43,11 @@
 #include "stage/canvas/path_operations.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+namespace math = filament::math;
+using filament::MaterialInstance;
+using filament::math::float2;
 
 double doc_behaviour_at(Doc& d, int by, int copy, int n, double t) {
   // Limits how deeply behaviours can drive each other, so that a cycle of them

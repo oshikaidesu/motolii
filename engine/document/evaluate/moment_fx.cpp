@@ -43,10 +43,18 @@
 #include "stage/render/render_layers.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+namespace math = filament::math;
+using filament::Camera;
+using filament::MaterialInstance;
+using filament::RenderableManager;
+using filament::RenderTarget;
+using filament::Texture;
+using filament::TextureSampler;
+using filament::math::float2;
+using filament::math::float3;
+using filament::math::mat4f;
 
 namespace {
 

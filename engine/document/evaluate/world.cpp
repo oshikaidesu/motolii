@@ -25,10 +25,10 @@
 #include "document/evaluate/value_at.h"
 #include "document/scripts/scripts.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+namespace math = filament::math;
+using filament::math::float2;
 
 namespace {
 // Returns true if a cached solve has used up its 5 ms time slice for this

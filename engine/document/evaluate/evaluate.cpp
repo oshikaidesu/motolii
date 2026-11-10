@@ -22,9 +22,6 @@
 #include "stage/canvas/canvas_cache.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
 
 namespace {

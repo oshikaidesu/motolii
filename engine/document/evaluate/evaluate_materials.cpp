@@ -28,10 +28,13 @@
 #include "stage/layer_effects/layer_fx.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::MaterialInstance;
+using filament::RenderableManager;
+using filament::math::float2;
+using filament::math::float3;
+using filament::math::float4;
 
 // When the 3D box opens or shuts, update the deep parameter and the depth
 // settings of the layer's material and of its copies' materials.

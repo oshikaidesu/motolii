@@ -40,10 +40,18 @@
 #include "stage/canvas/canvas_sketch.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+namespace math = filament::math;
+using filament::Material;
+using filament::MaterialInstance;
+using filament::RenderableManager;
+using filament::TextureSampler;
+using filament::math::float2;
+using filament::math::float3;
+using filament::math::float4;
+using filament::math::mat3f;
+using filament::math::mat4f;
 
 namespace {
 

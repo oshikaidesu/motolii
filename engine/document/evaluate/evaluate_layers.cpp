@@ -41,10 +41,12 @@
 #include "stage/render/render_draw.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::Scene;
+using filament::math::float3;
+using filament::math::float4;
+using filament::math::mat4f;
 
 namespace {
 

@@ -20,10 +20,13 @@
 #include "stage/render/gltf_model.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+namespace math = filament::math;
+using filament::Aabb;
+using filament::math::float2;
+using filament::math::float3;
+using filament::math::max;
 
 namespace {
 

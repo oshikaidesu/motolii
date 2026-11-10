@@ -20,9 +20,12 @@
 #include "stage/layer_effects/layer_fx.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-
 namespace motolii {
+
+namespace math = filament::math;
+using filament::LightManager;
+using filament::Scene;
+using filament::View;
 
 // Soft shadows, Filament's PCSS, are used on the stage's own view while any
 // light that is on asks for them. Otherwise crisp shadows are used.

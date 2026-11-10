@@ -17,9 +17,10 @@
 #include "stage/render/gltf_model.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-
 namespace motolii {
+
+using filament::MaterialInstance;
+using filament::RenderableManager;
 
 std::string doc_material(Doc& d, int layer) {
   const std::string said = doc_word(d, layer, "shading");

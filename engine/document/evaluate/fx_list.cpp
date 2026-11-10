@@ -21,10 +21,10 @@
 #include "document/scripts/scripts.h"
 #include "stage/effects/thorvg_effect_names.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+using filament::math::float3;
+using filament::math::float4;
 
 std::vector<std::string> doc_fx_list(Doc& d, int layer, bool off) {
   std::vector<std::string> said, all;

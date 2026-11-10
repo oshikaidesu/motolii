@@ -48,10 +48,27 @@
 #include "stage/render/render_draw.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+namespace math = filament::math;
+using filament::ACCURATE;
+using filament::ACESToneMapper;
+using filament::AgxToneMapper;
+using filament::Color;
+using filament::ColorGrading;
+using filament::FilmicToneMapper;
+using filament::IndirectLight;
+using filament::LinearColorA;
+using filament::LinearToneMapper;
+using filament::PBRNeutralToneMapper;
+using filament::Skybox;
+using filament::sRGBColor;
+using filament::Texture;
+using filament::ToneMapper;
+using filament::View;
+using filament::math::float3;
+using filament::math::float4;
+using filament::math::mat4f;
 
 DocViewCamera doc_view_camera_of(Doc& d, int camera, double now) {
   const auto turned = [&](const char* name, math::double3 about) {

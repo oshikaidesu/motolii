@@ -35,10 +35,17 @@
 #include "stage/render/render_draw.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+namespace math = filament::math;
+using filament::ACCURATE;
+using filament::Color;
+using filament::MaterialInstance;
+using filament::sRGBColor;
+using filament::math::float2;
+using filament::math::float3;
+using filament::math::float4;
+using filament::math::mat4f;
 
 namespace {
 

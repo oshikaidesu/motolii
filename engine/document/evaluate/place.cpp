@@ -44,10 +44,11 @@
 #include "stage/canvas/path_operations.h"
 #include "stage/render/render_stage.h"
 
-using namespace filament;
-using namespace filament::math;
-
 namespace motolii {
+
+namespace math = filament::math;
+using filament::MaterialInstance;
+using filament::math::float2;
 
 namespace {
 // Returns the depth scale of a layer at time `now`. A scale of exactly 0 would
